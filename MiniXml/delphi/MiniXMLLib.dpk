@@ -1,0 +1,49 @@
+package MiniXMLLib;
+
+{$R *.res}
+{$ALIGN 8}
+{$ASSERTIONS OFF}
+{$BOOLEVAL OFF}
+{$DEBUGINFO OFF}
+{$EXTENDEDSYNTAX ON}
+{$IMPORTEDDATA ON}
+{$IOCHECKS OFF}
+{$LOCALSYMBOLS OFF}
+{$LONGSTRINGS ON}
+{$OPENSTRINGS ON}
+{$OPTIMIZATION ON}
+{$OVERFLOWCHECKS OFF}
+{$RANGECHECKS OFF}
+{$REFERENCEINFO OFF}
+{$SAFEDIVIDE OFF}
+{$STACKFRAMES OFF}
+{$TYPEDADDRESS OFF}
+{$VARSTRINGCHECKS ON}
+{$WRITEABLECONST ON}
+{$MINENUMSIZE 1}
+{$IMAGEBASE $400000}
+{$DESCRIPTION 'Mini XML'}
+{$LIBSUFFIX '70'}
+{$RUNONLY}
+{$IMPLICITBUILD OFF}
+
+requires
+  rtl,
+  vcl;
+
+contains
+  mnXMLWriter in '..\source\mnXMLWriter.pas',
+  mnXMLScanner in '..\source\mnXMLScanner.pas',
+  mnXMLStreams in '..\source\mnXMLStreams.pas',
+  mnXMLUtils in '..\source\mnXMLUtils.pas',
+  mnXML in '..\source\mnXML.pas',
+  mnXMLFPClasses in '..\source\mnXMLFPClasses.pas',
+  mnXMLNodes in '..\source\mnXMLNodes.pas',
+  mnXMLReader in '..\source\mnXMLReader.pas',
+  mnXMLRtti in '..\source\mnXMLRtti.pas',
+  mnXMLRttiProfile in '..\source\mnXMLRttiProfile.pas',
+  mnXMLRttiReader in '..\source\mnXMLRttiReader.pas',
+  mnXMLRttiWriter in '..\source\mnXMLRttiWriter.pas',
+  mnXMLRttiStdClasses in '..\source\mnXMLRttiStdClasses.pas';
+
+end.

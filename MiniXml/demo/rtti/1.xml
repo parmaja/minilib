@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="iso-8859-1" ?>
+<Object Type="TMemo">  <Left>254</Left>  <Top>178</Top>  <Width>185</Width>  <Height>89</Height>  <Constraints>    <MaxHeight>50</MaxHeight>  </Constraints>  <Lines>    <Strings>      <Line>line90</Line>      <Line>zaher</Line>      <Line>line3</Line>    </Strings>  </Lines>  <TabOrder>5</TabOrder></Object>

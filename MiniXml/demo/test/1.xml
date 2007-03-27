@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="iso-8859-1" ?>
+<!--
+-
+- phpMyAdmin XML Dump
+- version 2.6.1
+- http://www.phpmyadmin.net
+-
+- Host: localhost
+- Generation Time: Nov 28, 2005 at 06:44 PM
+- Server version: 4.0.16
+- PHP Version: 5.0.4
+-->
+
+<!--
+- Database: `hmailserver`
+-->
+<hmailserver>
+  <!-- Table hm_accounts -->
+    <hm_accounts>
+        <accountid>1</accountid>
+        <accountdomainid>1</accountdomainid>
+        <accountadminlevel>2</accountadminlevel>
+        <accountaddress>zaher@server.sahlisoft</accountaddress>
+        <accountpassword>279397037320d89985afb1b2b7c96d0a</accountpassword>
+        <accountactive>1</accountactive>
+        <accountisad>0</accountisad>
+        <accountaddomain></accountaddomain>
+        <accountadusername></accountadusername>
+        <accountmaxsize>0</accountmaxsize>
+        <accountvacationmessageon>0</accountvacationmessageon>
+        <accountvacationmessage></accountvacationmessage>
+        <accountvacationsubject></accountvacationsubject>
+        <accountpwencryption>2</accountpwencryption>
+    </hm_accounts>
+</hmailserver>
+        

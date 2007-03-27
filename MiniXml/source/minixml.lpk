@@ -1,0 +1,109 @@
+<?xml version="1.0"?>
+<CONFIG>
+  <Package Version="2">
+    <PathDelim Value="\"/>
+    <Name Value="MiniXML"/>
+    <CompilerOptions>
+      <Version Value="5"/>
+      <PathDelim Value="\"/>
+      <SearchPaths>
+        <OtherUnitFiles Value="."/>
+        <UnitOutputDirectory Value="..\units\$(TargetCPU)-$(TargetOS)"/>
+      </SearchPaths>
+      <Parsing>
+        <SyntaxOptions>
+          <IncludeAssertionCode Value="True"/>
+          <DelphiCompat Value="True"/>
+        </SyntaxOptions>
+      </Parsing>
+      <CodeGeneration>
+        <Generate Value="Faster"/>
+      </CodeGeneration>
+      <Linking>
+        <Debugging>
+          <UseLineInfoUnit Value="False"/>
+        </Debugging>
+      </Linking>
+      <Other>
+        <Verbosity>
+          <ShoLineNum Value="True"/>
+        </Verbosity>
+        <CompilerPath Value="$(CompPath)"/>
+      </Other>
+    </CompilerOptions>
+    <Files Count="14">
+      <Item1>
+        <Filename Value="mnXML.pas"/>
+        <UnitName Value="mnXML"/>
+      </Item1>
+      <Item2>
+        <Filename Value="mnXMLBase64.pas"/>
+        <UnitName Value="mnXMlBase64"/>
+      </Item2>
+      <Item3>
+        <Filename Value="mnXMLFPClasses.pas"/>
+        <UnitName Value="mnXMLFPClasses"/>
+      </Item3>
+      <Item4>
+        <Filename Value="mnXMLNodes.pas"/>
+        <UnitName Value="mnXMLNodes"/>
+      </Item4>
+      <Item5>
+        <Filename Value="mnXMLReader.pas"/>
+        <UnitName Value="mnXMLReader"/>
+      </Item5>
+      <Item6>
+        <Filename Value="mnXMLRtti.pas"/>
+        <UnitName Value="mnXMLRtti"/>
+      </Item6>
+      <Item7>
+        <Filename Value="mnXMLRttiProfile.pas"/>
+        <UnitName Value="mnXMLRttiProfile"/>
+      </Item7>
+      <Item8>
+        <Filename Value="mnXMLRttiReader.pas"/>
+        <UnitName Value="mnXMLRttiReader"/>
+      </Item8>
+      <Item9>
+        <Filename Value="mnXMLRttiStdClasses.pas"/>
+        <UnitName Value="mnXMLRttiStdClasses"/>
+      </Item9>
+      <Item10>
+        <Filename Value="mnXMLRttiWriter.pas"/>
+        <UnitName Value="mnXMLRttiWriter"/>
+      </Item10>
+      <Item11>
+        <Filename Value="mnXMLScanner.pas"/>
+        <UnitName Value="mnXMLScanner"/>
+      </Item11>
+      <Item12>
+        <Filename Value="mnXMLStreams.pas"/>
+        <UnitName Value="mnXMLStreams"/>
+      </Item12>
+      <Item13>
+        <Filename Value="mnXMLUtils.pas"/>
+        <UnitName Value="mnXMLUtils"/>
+      </Item13>
+      <Item14>
+        <Filename Value="mnXMLWriter.pas"/>
+        <UnitName Value="mnXMLWriter"/>
+      </Item14>
+    </Files>
+    <Type Value="RunAndDesignTime"/>
+    <RequiredPkgs Count="1">
+      <Item1>
+        <PackageName Value="FCL"/>
+        <MinVersion Major="1" Valid="True"/>
+      </Item1>
+    </RequiredPkgs>
+    <UsageOptions>
+      <LinkerOptions Value="
+"/>
+      <UnitPath Value="$(PkgOutDir)\"/>
+    </UsageOptions>
+    <PublishOptions>
+      <Version Value="2"/>
+      <IgnoreBinaries Value="False"/>
+    </PublishOptions>
+  </Package>
+</CONFIG>
