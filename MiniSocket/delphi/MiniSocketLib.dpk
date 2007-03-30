@@ -1,0 +1,47 @@
+package MiniSocketLib;
+
+{$R *.res}
+{$ALIGN 8}
+{$ASSERTIONS OFF}
+{$BOOLEVAL OFF}
+{$DEBUGINFO OFF}
+{$EXTENDEDSYNTAX ON}
+{$IMPORTEDDATA ON}
+{$IOCHECKS OFF}
+{$LOCALSYMBOLS OFF}
+{$LONGSTRINGS ON}
+{$OPENSTRINGS ON}
+{$OPTIMIZATION ON}
+{$OVERFLOWCHECKS OFF}
+{$RANGECHECKS OFF}
+{$REFERENCEINFO OFF}
+{$SAFEDIVIDE OFF}
+{$STACKFRAMES OFF}
+{$TYPEDADDRESS OFF}
+{$VARSTRINGCHECKS ON}
+{$WRITEABLECONST ON}
+{$MINENUMSIZE 1}
+{$IMAGEBASE $400000}
+{$DESCRIPTION 'Mini Socket TCP/IP'}
+{$LIBSUFFIX '70'}
+{$RUNONLY}
+{$IMPLICITBUILD OFF}
+
+requires
+  rtl,
+  vcl;
+
+contains
+  mnWinSock2 in 'mnWinSock2.pas',
+  mnSockets in 'mnSockets.pas',
+  mnHttpServer in 'mnHttpServer.pas',
+  mnStreams in 'mnStreams.pas',
+  mnServers in 'mnServers.pas',
+  mnConnections in 'mnConnections.pas',
+  mnCommandClients in 'mnCommandClients.pas',
+  mnCommandServers in 'mnCommandServers.pas',
+  mnClients in 'mnClients.pas',
+  mnConsts in 'mnConsts.pas',
+  mnWinSockets in 'mnWinSockets.pas';
+
+end.

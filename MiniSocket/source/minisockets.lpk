@@ -1,0 +1,79 @@
+<?xml version="1.0"?>
+<CONFIG>
+  <Package Version="2">
+    <PathDelim Value="\"/>
+    <Name Value="minisockets"/>
+    <CompilerOptions>
+      <Version Value="5"/>
+      <PathDelim Value="\"/>
+      <SearchPaths>
+        <OtherUnitFiles Value="$(TargetOS)\"/>
+        <UnitOutputDirectory Value="..\units\$(TargetCPU)-$(TargetOS)"/>
+      </SearchPaths>
+      <Parsing>
+        <SyntaxOptions>
+          <DelphiCompat Value="True"/>
+        </SyntaxOptions>
+      </Parsing>
+      <CodeGeneration>
+        <Generate Value="Faster"/>
+      </CodeGeneration>
+      <Other>
+        <CompilerPath Value="$(CompPath)"/>
+      </Other>
+    </CompilerOptions>
+    <Version Major="1" Build="1"/>
+    <Files Count="9">
+      <Item1>
+        <Filename Value="mnClients.pas"/>
+        <UnitName Value="mnClients"/>
+      </Item1>
+      <Item2>
+        <Filename Value="mnCommandClients.pas"/>
+        <UnitName Value="mnCommandClients"/>
+      </Item2>
+      <Item3>
+        <Filename Value="mnCommandServers.pas"/>
+        <UnitName Value="mnCommandServers"/>
+      </Item3>
+      <Item4>
+        <Filename Value="mnConnections.pas"/>
+        <UnitName Value="mnConnections"/>
+      </Item4>
+      <Item5>
+        <Filename Value="mnConsts.pas"/>
+        <UnitName Value="mnConsts"/>
+      </Item5>
+      <Item6>
+        <Filename Value="mnHttpServer.pas"/>
+        <UnitName Value="mnHttpServer"/>
+      </Item6>
+      <Item7>
+        <Filename Value="mnServers.pas"/>
+        <UnitName Value="mnServers"/>
+      </Item7>
+      <Item8>
+        <Filename Value="mnSockets.pas"/>
+        <UnitName Value="mnSockets"/>
+      </Item8>
+      <Item9>
+        <Filename Value="mnStreams.pas"/>
+        <UnitName Value="mnStreams"/>
+      </Item9>
+    </Files>
+    <Type Value="RunAndDesignTime"/>
+    <RequiredPkgs Count="1">
+      <Item1>
+        <PackageName Value="FCL"/>
+        <MinVersion Major="1" Valid="True"/>
+      </Item1>
+    </RequiredPkgs>
+    <UsageOptions>
+      <UnitPath Value="$(PkgOutDir)\"/>
+    </UsageOptions>
+    <PublishOptions>
+      <Version Value="2"/>
+      <IgnoreBinaries Value="False"/>
+    </PublishOptions>
+  </Package>
+</CONFIG>
