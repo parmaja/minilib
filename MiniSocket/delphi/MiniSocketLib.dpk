@@ -32,16 +32,15 @@ requires
   vcl;
 
 contains
-  mnWinSock2 in 'mnWinSock2.pas',
-  mnSockets in 'mnSockets.pas',
-  mnHttpServer in 'mnHttpServer.pas',
-  mnStreams in 'mnStreams.pas',
-  mnServers in 'mnServers.pas',
-  mnConnections in 'mnConnections.pas',
-  mnCommandClients in 'mnCommandClients.pas',
-  mnCommandServers in 'mnCommandServers.pas',
-  mnClients in 'mnClients.pas',
-  mnConsts in 'mnConsts.pas',
-  mnWinSockets in 'mnWinSockets.pas';
+  mnWin32Sockets in '..\source\mnWin32Sockets.pas',
+  mnSockets in '..\source\mnSockets.pas',
+  mnHttpServer in '..\source\mnHttpServer.pas',
+  mnStreams in '..\source\mnStreams.pas',
+  mnServers in '..\source\mnServers.pas',
+  mnConnections in '..\source\mnConnections.pas',
+  mnCommandClients in '..\source\mnCommandClients.pas',
+  mnCommandServers in '..\source\mnCommandServers.pas',
+  mnClients in '..\source\mnClients.pas',
+  mnConsts in '..\source\mnConsts.pas';
 
 end.
