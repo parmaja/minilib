@@ -1,1 +1,1 @@
-mnWebServer.exe /run /root="c:\offline\" /port=3128  /hide
+mnWebServer for test multu thread socket server purpose.

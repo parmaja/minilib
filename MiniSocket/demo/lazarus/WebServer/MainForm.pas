@@ -1,7 +1,4 @@
 unit MainForm;
-
-{$MODE Delphi}
-
 {**
  *  This file is part of the "Mini Library"
  *
@@ -9,6 +6,9 @@ unit MainForm;
  *            See the file COPYING.MLGPL, included in this distribution,
  * @author    Zaher Dirkey <zaher at parmaja dot com>
  *}
+
+{$MODE Delphi}
+
 interface
 
 uses
@@ -28,16 +28,16 @@ type
     StopBtn: TButton;
     VirtualDomainsChk: TCheckBox;
     Label2: TLabel;
-    PortEdit: TEdit;                          
-    StayOnTopChk: TCheckBox;             
+    PortEdit: TEdit;
     NumberOfThreadsLbl: TLabel;
     NumberOfThreads: TLabel;
     Bevel1: TBevel;
+    procedure FormHide(Sender: TObject);
     procedure StartBtnClick(Sender: TObject);
+    procedure StayOnTopChkChange(Sender: TObject);
     procedure StopBtnClick(Sender: TObject);
     procedure VirtualDomainsChkChange(Sender: TObject);
     procedure FormCreate(Sender: TObject);
-    procedure StayOnTopChkClick(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
   private
     WebServer: TmnHttpServer;
@@ -59,6 +59,15 @@ begin
   WebServer.Start;
 end;
 
+procedure TMain.FormHide(Sender: TObject);
+begin
+end;
+
+procedure TMain.StayOnTopChkChange(Sender: TObject);
+begin
+
+end;
+
 procedure TMain.StopBtnClick(Sender: TObject);
 begin
   WebServer.Stop;
@@ -73,53 +82,67 @@ procedure TMain.WebServerBeforeOpen(Sender: TObject);
 var
   aRoot:string;
 begin
-  Memo.Clear;
   StartBtn.Enabled:=false;
   StopBtn.Enabled:=True;
   aRoot := RootEdit.Text;
   if LeftStr(aRoot, 2)='.\' then
-     aRoot := ExtractFilePath(Application.ExeName) + Copy(aRoot, 3, MaxInt);
+    aRoot := ExtractFilePath(Application.ExeName) + Copy(aRoot, 3, MaxInt);
   WebServer.DocumentRoot := aRoot;
   WebServer.Port:=PortEdit.Text;
-  WebServer.VirtualDomains:= VirtualDomainsChk.Checked;
+  WebServer.VirtualDomains := VirtualDomainsChk.Checked;
 end;
 
-function FindCmdLineValue(Switch: string; var Value: string; const Chars: TSysCharSet = ['/','-']; Seprator: Char = ' '; IgnoreCase: Boolean = true): Boolean;
+function FindCmdLineValue(Switch: string; var Value: string; const Chars: TSysCharSet = ['/','-']; Seprator: Char = '='): Boolean;
 var
-  I: Integer;
-  S: string;
+  i, l: Integer;
+  s, c, w: string;
 begin
-  Switch := Switch + Seprator;
-  for I := 1 to ParamCount do
+  Result := False;
+  l := Length(Switch);
+  for i := 1 to ParamCount do
   begin
-    S := ParamStr(I);
-    if (Chars = []) or (S[1] in Chars) then
-      if IgnoreCase then
+    s := ParamStr(i);
+    c := Copy(s, l + 2, 1);
+    w := Copy(s, 2, l);
+    if (Chars = []) or ((s <> '') and (s[1] in Chars)) then
+      if (w = Switch) and ((c = '') or (c = Seprator)) then
       begin
-        if (AnsiCompareText(Copy(S, 2, Length(Switch)), Switch) = 0) then
-        begin
-          Result := True;
-          Value := Copy(S, Length(Switch) + 2, Maxint);
-          Exit;
-        end;
-      end
-      else
-      begin
-        if (AnsiCompareStr(Copy(S, 2, Length(Switch)), Switch) = 0) then
-        begin
-          Result := True;
-          Value := Copy(S, Length(Switch) + 2, Maxint);
-          Exit;
-        end;
+        Value := Copy(S, l + 3, Maxint);
+        Result := True;
+        break;
       end;
   end;
-  Result := False;
 end;
 
 procedure TMain.FormCreate(Sender: TObject);
 var
-  s:string;
   aReg:TRegistry;
+  function GetOption(AName, ADefault:string):string;
+  var
+    s:string;
+  begin
+    if FindCmdLineValue(AName, s) then
+      Result :=AnsiDequotedStr(s, '"')
+    else if aReg.ValueExists(AName) then
+      Result := aReg.ReadString(AName)
+    else
+      Result := ADefault;
+  end;
+  
+  function GetSwitch(AName, ADefault:string):string;//if found in cmd mean it is true
+  var
+    s:string;
+  begin
+    if FindCmdLineValue(AName, s) then
+      Result := 'True'
+    else if aReg.ValueExists(AName) then
+      Result := aReg.ReadString(AName)
+    else
+      Result := ADefault;
+  end;
+
+var
+  aAutoRun:Boolean;
 begin
   WebServer := TmnHttpServer.Create(Self);
   WebServer.OnBeforeOpen := WebServerBeforeOpen;
@@ -127,57 +150,41 @@ begin
   WebServer.OnChanged :=  WebServerChanged;
   WebServer.OnLog := WebServerLog;
 
-  if ParamCount=0 then
-  begin
-    aReg:=TRegistry.Create;
+  aReg := TRegistry.Create;
+  try
     aReg.OpenKey('software\miniWebServer\Options', True);
-    if aReg.ValueExists('DocumentRoot') then
-      RootEdit.Text:=aReg.ReadString('DocumentRoot');
-    if aReg.ValueExists('Port') then
-      PortEdit.Text:=aReg.ReadString('Port');
+    RootEdit.Text := GetOption('root', '.\html');
+    PortEdit.Text := GetOption('port', '80');
+    VirtualDomainsChk.Checked := StrToBoolDef(GetOption('virtual', ''), False);
+    aAutoRun := StrToBoolDef(GetSwitch('run', ''), False);
+  finally
     aReg.Free;
-  end
-  else
-  begin
-    if FindCmdLineValue('root',s) then
-      RootEdit.Text:=AnsiDequotedStr(s,'"');
-    if FindCmdLineValue('port',s) then
-      PortEdit.Text:=s;
-    if FindCmdLineValue('multi',s) then
-      VirtualDomainsChk.Checked:=StrToBoolDef(s,true);
-    if FindCmdLineSwitch('run',true) then
-      WebServer.Start;
   end;
-end;
-
-procedure TMain.StayOnTopChkClick(Sender: TObject);
-begin
-{	if StayOnTopChk.Checked then
-  	SetWindowPos(Handle, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE or
-          SWP_NOSIZE or SWP_NOACTIVATE)
-  else
-  	SetWindowPos(Handle, HWND_NOTOPMOST, 0, 0, 0, 0, SWP_NOMOVE or
-          SWP_NOSIZE or SWP_NOACTIVATE);}
+  if aAutoRun then
+     WebServer.Start;
 end;
 
 procedure TMain.FormDestroy(Sender: TObject);
 var
   aReg:TRegistry;
 begin
-  if ParamCount=0 then
+  if ParamCount = 0 then
   begin
     aReg := TRegistry.Create;
-    aReg.OpenKey('software\miniWebServer\Options', True);
-    aReg.WriteString('DocumentRoot', RootEdit.Text);
-    aReg.WriteString('Port', PortEdit.Text);
-    aReg.Free;
+    try
+      aReg.OpenKey('software\miniWebServer\Options', True);
+      aReg.WriteString('root', RootEdit.Text);
+      aReg.WriteString('port', PortEdit.Text);
+    finally
+      aReg.Free;
+    end;
   end
 end;
 
 procedure TMain.WebServerAfterClose(Sender: TObject);
 begin
-	StartBtn.Enabled:=True;
-  StopBtn.Enabled:=False;
+	StartBtn.Enabled := True;
+  StopBtn.Enabled := False;
 end;
 
 procedure TMain.WebServerChanged(Listener: TmnListener);

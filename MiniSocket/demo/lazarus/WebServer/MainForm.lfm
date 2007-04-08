@@ -1,123 +1,147 @@
 object Main: TMain
-  Left = 300
-  Height = 271
+  Left = 298
+  Height = 254
   Top = 140
-  Width = 202
-  HorzScrollBar.Page = 201
-  VertScrollBar.Page = 270
+  Width = 204
+  HorzScrollBar.Page = 203
+  VertScrollBar.Page = 253
   ActiveControl = StartBtn
+  BorderIcons = [biSystemMenu, biMinimize]
+  BorderStyle = bsSingle
   Caption = 'Mini Web Server'
+  Font.CharSet = ARABIC_CHARSET
+  Font.Color = clBlack
   Font.Height = -11
-  Font.Name = 'MS Sans Serif'
+  Font.Name = 'Tahoma'
+  Font.Pitch = fpVariable
   OnCreate = FormCreate
   OnDestroy = FormDestroy
+  OnHide = FormHide
   object Bevel1: TBevel
-    Left = 61
+    Left = 43
     Height = 18
     Top = 53
     Width = 78
   end
   object Label1: TLabel
-    Left = 20
+    Left = 11
     Height = 14
     Top = 8
     Width = 24
     Caption = 'Root'
     Color = clNone
+    Font.CharSet = ARABIC_CHARSET
+    Font.Color = clBlack
+    Font.Height = -11
+    Font.Name = 'Tahoma'
+    Font.Pitch = fpVariable
     ParentColor = False
   end
   object Label2: TLabel
-    Left = 23
+    Left = 14
     Height = 14
     Top = 32
     Width = 21
     Caption = 'Port'
     Color = clNone
     ParentColor = False
+    ParentFont = True
   end
   object NumberOfThreadsLbl: TLabel
-    Left = 14
+    Left = 5
     Height = 14
     Top = 54
     Width = 30
     Caption = 'Count'
     Color = clNone
+    Font.CharSet = ARABIC_CHARSET
+    Font.Color = clBlack
+    Font.Height = -11
+    Font.Name = 'Tahoma'
+    Font.Pitch = fpVariable
     ParentColor = False
   end
   object NumberOfThreads: TLabel
-    Left = 67
+    Left = 49
     Height = 13
     Top = 55
     Width = 65
     AutoSize = False
     Caption = '0'
     Color = clNone
+    Font.CharSet = ANSI_CHARSET
+    Font.Color = clBlack
+    Font.Height = -11
+    Font.Name = 'Tahoma'
+    Font.Pitch = fpVariable
     ParentColor = False
   end
   object Memo: TMemo
     Left = 2
-    Height = 125
-    Top = 143
-    Width = 197
+    Height = 129
+    Top = 122
+    Width = 199
     Anchors = [akTop, akLeft, akRight, akBottom]
+    ParentFont = True
     ReadOnly = True
     ScrollBars = ssVertical
     TabOrder = 1
   end
   object StartBtn: TButton
-    Left = 14
+    Left = 5
     Height = 22
-    Top = 114
+    Top = 95
     Width = 60
     BorderSpacing.InnerBorder = 4
     Caption = 'Start'
     Default = True
     OnClick = StartBtnClick
+    ParentFont = True
     TabOrder = 0
   end
   object RootEdit: TEdit
-    Left = 61
+    Left = 43
     Height = 21
     Top = 6
-    Width = 134
+    Width = 156
+    ParentFont = True
     TabOrder = 2
     Text = '.\html'
   end
   object StopBtn: TButton
-    Left = 77
+    Left = 70
     Height = 22
-    Top = 114
+    Top = 95
     Width = 60
     BorderSpacing.InnerBorder = 4
     Caption = 'Stop'
     Enabled = False
     OnClick = StopBtnClick
+    ParentFont = True
     TabOrder = 3
   end
   object VirtualDomainsChk: TCheckBox
-    Left = 23
-    Height = 13
-    Top = 77
-    Width = 81
+    Left = 14
+    Height = 16
+    Top = 75
+    Width = 93
+    AutoSize = False
     Caption = 'Multi Domain'
+    Font.CharSet = ANSI_CHARSET
+    Font.Color = clBlack
+    Font.Height = -11
+    Font.Name = 'Tahoma'
+    Font.Pitch = fpVariable
     OnChange = VirtualDomainsChkChange
     TabOrder = 4
   end
   object PortEdit: TEdit
-    Left = 61
+    Left = 43
     Height = 21
     Top = 29
-    Width = 75
+    Width = 78
+    ParentFont = True
     TabOrder = 5
-    Text = '81'
-  end
-  object StayOnTopChk: TCheckBox
-    Left = 23
-    Height = 13
-    Top = 94
-    Width = 74
-    Caption = 'Stay on top'
-    OnClick = StayOnTopChkClick
-    TabOrder = 6
+    Text = '80'
   end
 end

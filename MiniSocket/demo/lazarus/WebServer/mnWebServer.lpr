@@ -1,21 +1,28 @@
 program mnWebServer;
 
+{**
+ *  This file is part of the "Mini Library"
+ *
+ * @license   modifiedLGPL (modified of http://www.gnu.org/licenses/lgpl.html)
+ *            See the file COPYING.MLGPL, included in this distribution,
+ * @author    Zaher Dirkey <zaher at parmaja dot com>
+ *}
+
+
 uses
   Interfaces,
   Forms,
   LCLIntf,
   SysUtils,
-  mnWin32Sockets,
   mnStreams,
   mnClients,
-  MainForm in 'MainForm.pas' {Main}, minisockets;
+  MainForm in 'MainForm.pas' {Main};
 
 begin
   Application.Initialize;
-  if FindCmdLineSwitch('hide',true) then
+  if FindCmdLineSwitch('hide', True) then
   begin
-    Application.ShowMainForm:=False;
-//    Application.Active := False;
+    Application.ShowMainForm := False;
 //    ShowWindow(Application.Handle,SW_HIDE);
   end;
   Application.CreateForm(TMain, Main);

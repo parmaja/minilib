@@ -7,7 +7,7 @@
       <MainUnit Value="0"/>
       <IconPath Value="./"/>
       <TargetFileExt Value=".exe"/>
-      <ActiveEditorIndexAtStart Value="2"/>
+      <ActiveEditorIndexAtStart Value="0"/>
     </General>
     <VersionInfo>
       <ProjectVersion Value=""/>
@@ -21,6 +21,7 @@
     <RunParams>
       <local>
         <FormatVersion Value="1"/>
+        <CommandLineParams Value="/run /root=&quot;./html&quot; /port=81  /hide"/>
         <LaunchingApplication PathPlusParams="/usr/X11R6/bin/xterm -T 'Lazarus Run Output' -e $(LazarusDir)/tools/runwait.sh $(TargetCmdLine)"/>
       </local>
     </RunParams>
@@ -33,33 +34,29 @@
         <PackageName Value="LCL"/>
       </Item2>
     </RequiredPackages>
-    <Units Count="17">
+    <Units Count="23">
       <Unit0>
         <Filename Value="mnWebServer.lpr"/>
         <IsPartOfProject Value="True"/>
-        <CursorPos X="6" Y="8"/>
-        <TopLine Value="1"/>
-        <EditorIndex Value="0"/>
-        <UsageCount Value="27"/>
+        <CursorPos X="1" Y="20"/>
+        <TopLine Value="4"/>
+        <EditorIndex Value="4"/>
+        <UsageCount Value="31"/>
         <Loaded Value="True"/>
       </Unit0>
       <Unit1>
         <Filename Value="..\..\..\source\mnStreams.pas"/>
         <UnitName Value="mnStreams"/>
-        <CursorPos X="1" Y="88"/>
-        <TopLine Value="75"/>
-        <EditorIndex Value="6"/>
+        <CursorPos X="1" Y="2"/>
+        <TopLine Value="1"/>
         <UsageCount Value="10"/>
-        <Loaded Value="True"/>
       </Unit1>
       <Unit2>
         <Filename Value="..\..\..\source\mnConnections.pas"/>
         <UnitName Value="mnConnections"/>
-        <CursorPos X="1" Y="97"/>
-        <TopLine Value="84"/>
-        <EditorIndex Value="5"/>
+        <CursorPos X="1" Y="2"/>
+        <TopLine Value="1"/>
         <UsageCount Value="10"/>
-        <Loaded Value="True"/>
       </Unit2>
       <Unit3>
         <Filename Value="MainForm.pas"/>
@@ -68,10 +65,10 @@
         <IsPartOfProject Value="True"/>
         <ResourceFilename Value="MainForm.lrs"/>
         <UnitName Value="MainForm"/>
-        <CursorPos X="20" Y="83"/>
-        <TopLine Value="64"/>
-        <EditorIndex Value="2"/>
-        <UsageCount Value="26"/>
+        <CursorPos X="28" Y="203"/>
+        <TopLine Value="177"/>
+        <EditorIndex Value="0"/>
+        <UsageCount Value="30"/>
         <Loaded Value="True"/>
       </Unit3>
       <Unit4>
@@ -91,29 +88,25 @@
       <Unit6>
         <Filename Value="..\..\..\source\mnSockets.pas"/>
         <UnitName Value="mnSockets"/>
-        <CursorPos X="21" Y="46"/>
-        <TopLine Value="33"/>
-        <EditorIndex Value="7"/>
+        <CursorPos X="1" Y="2"/>
+        <TopLine Value="1"/>
         <UsageCount Value="13"/>
-        <Loaded Value="True"/>
       </Unit6>
       <Unit7>
         <Filename Value="..\..\..\source\mnServers.pas"/>
         <UnitName Value="mnServers"/>
-        <CursorPos X="1" Y="288"/>
-        <TopLine Value="275"/>
-        <EditorIndex Value="4"/>
+        <CursorPos X="13" Y="393"/>
+        <TopLine Value="391"/>
+        <EditorIndex Value="1"/>
         <UsageCount Value="10"/>
         <Loaded Value="True"/>
       </Unit7>
       <Unit8>
         <Filename Value="..\..\..\source\mnHttpServer.pas"/>
         <UnitName Value="mnHttpServer"/>
-        <CursorPos X="1" Y="132"/>
-        <TopLine Value="123"/>
-        <EditorIndex Value="3"/>
+        <CursorPos X="1" Y="13"/>
+        <TopLine Value="1"/>
         <UsageCount Value="13"/>
-        <Loaded Value="True"/>
       </Unit8>
       <Unit9>
         <Filename Value="MainForm.lfm"/>
@@ -124,18 +117,18 @@
       </Unit9>
       <Unit10>
         <Filename Value="C:\lazarus\lcl\include\application.inc"/>
-        <CursorPos X="18" Y="332"/>
-        <TopLine Value="316"/>
-        <UsageCount Value="9"/>
+        <CursorPos X="1" Y="1571"/>
+        <TopLine Value="1558"/>
+        <EditorIndex Value="5"/>
+        <UsageCount Value="11"/>
+        <Loaded Value="True"/>
       </Unit10>
       <Unit11>
         <Filename Value="..\..\..\source\mnWin32Sockets.pas"/>
         <UnitName Value="mnWin32Sockets"/>
-        <CursorPos X="1" Y="104"/>
-        <TopLine Value="92"/>
-        <EditorIndex Value="1"/>
+        <CursorPos X="1" Y="1"/>
+        <TopLine Value="1"/>
         <UsageCount Value="10"/>
-        <Loaded Value="True"/>
       </Unit11>
       <Unit12>
         <Filename Value="C:\lazarus\fpc\2.1.3\source\rtl\win\winsock2.pp"/>
@@ -154,9 +147,9 @@
       <Unit14>
         <Filename Value="..\..\..\source\minisockets.pas"/>
         <UnitName Value="minisockets"/>
-        <CursorPos X="73" Y="10"/>
+        <CursorPos X="17" Y="11"/>
         <TopLine Value="1"/>
-        <UsageCount Value="9"/>
+        <UsageCount Value="10"/>
       </Unit14>
       <Unit15>
         <Filename Value="..\..\..\source\mnRegMiniSockets.pas"/>
@@ -172,20 +165,175 @@
         <TopLine Value="1"/>
         <UsageCount Value="10"/>
       </Unit16>
+      <Unit17>
+        <Filename Value="C:\lazarus\fpc\2.1.3\source\rtl\objpas\sysutils\sysstrh.inc"/>
+        <CursorPos X="10" Y="195"/>
+        <TopLine Value="182"/>
+        <EditorIndex Value="2"/>
+        <UsageCount Value="11"/>
+        <Loaded Value="True"/>
+      </Unit17>
+      <Unit18>
+        <Filename Value="..\..\..\source\minisockets.lpk"/>
+        <CursorPos X="1" Y="1"/>
+        <TopLine Value="1"/>
+        <UsageCount Value="10"/>
+        <SyntaxHighlighter Value="XML"/>
+      </Unit18>
+      <Unit19>
+        <Filename Value="C:\lazarus\lcl\forms.pp"/>
+        <UnitName Value="Forms"/>
+        <CursorPos X="30" Y="1126"/>
+        <TopLine Value="1113"/>
+        <EditorIndex Value="6"/>
+        <UsageCount Value="11"/>
+        <Loaded Value="True"/>
+      </Unit19>
+      <Unit20>
+        <Filename Value="C:\lazarus\lcl\include\applicationproperties.inc"/>
+        <CursorPos X="16" Y="224"/>
+        <TopLine Value="211"/>
+        <EditorIndex Value="7"/>
+        <UsageCount Value="11"/>
+        <Loaded Value="True"/>
+      </Unit20>
+      <Unit21>
+        <Filename Value="C:\lazarus\fpc\2.1.3\source\rtl\objpas\objpas.pp"/>
+        <UnitName Value="objpas"/>
+        <CursorPos X="1" Y="1"/>
+        <TopLine Value="1"/>
+        <UsageCount Value="10"/>
+      </Unit21>
+      <Unit22>
+        <Filename Value="C:\lazarus\fpc\2.1.3\source\rtl\objpas\sysutils\sysstr.inc"/>
+        <CursorPos X="3" Y="1692"/>
+        <TopLine Value="1686"/>
+        <EditorIndex Value="3"/>
+        <UsageCount Value="11"/>
+        <Loaded Value="True"/>
+      </Unit22>
     </Units>
-    <JumpHistory Count="3" HistoryIndex="2">
+    <JumpHistory Count="30" HistoryIndex="29">
       <Position1>
         <Filename Value="MainForm.pas"/>
-        <Caret Line="135" Column="10" TopLine="114"/>
+        <Caret Line="103" Column="1" TopLine="90"/>
       </Position1>
       <Position2>
         <Filename Value="MainForm.pas"/>
-        <Caret Line="1" Column="1" TopLine="1"/>
+        <Caret Line="104" Column="1" TopLine="91"/>
       </Position2>
       <Position3>
         <Filename Value="MainForm.pas"/>
-        <Caret Line="26" Column="13" TopLine="13"/>
+        <Caret Line="100" Column="1" TopLine="87"/>
       </Position3>
+      <Position4>
+        <Filename Value="MainForm.pas"/>
+        <Caret Line="101" Column="1" TopLine="88"/>
+      </Position4>
+      <Position5>
+        <Filename Value="MainForm.pas"/>
+        <Caret Line="102" Column="1" TopLine="89"/>
+      </Position5>
+      <Position6>
+        <Filename Value="MainForm.pas"/>
+        <Caret Line="103" Column="1" TopLine="90"/>
+      </Position6>
+      <Position7>
+        <Filename Value="MainForm.pas"/>
+        <Caret Line="104" Column="1" TopLine="91"/>
+      </Position7>
+      <Position8>
+        <Filename Value="MainForm.pas"/>
+        <Caret Line="106" Column="1" TopLine="93"/>
+      </Position8>
+      <Position9>
+        <Filename Value="MainForm.pas"/>
+        <Caret Line="104" Column="26" TopLine="94"/>
+      </Position9>
+      <Position10>
+        <Filename Value="MainForm.pas"/>
+        <Caret Line="97" Column="20" TopLine="90"/>
+      </Position10>
+      <Position11>
+        <Filename Value="MainForm.pas"/>
+        <Caret Line="103" Column="1" TopLine="90"/>
+      </Position11>
+      <Position12>
+        <Filename Value="MainForm.pas"/>
+        <Caret Line="104" Column="1" TopLine="91"/>
+      </Position12>
+      <Position13>
+        <Filename Value="MainForm.pas"/>
+        <Caret Line="100" Column="1" TopLine="87"/>
+      </Position13>
+      <Position14>
+        <Filename Value="MainForm.pas"/>
+        <Caret Line="101" Column="1" TopLine="88"/>
+      </Position14>
+      <Position15>
+        <Filename Value="MainForm.pas"/>
+        <Caret Line="102" Column="1" TopLine="89"/>
+      </Position15>
+      <Position16>
+        <Filename Value="MainForm.pas"/>
+        <Caret Line="103" Column="1" TopLine="90"/>
+      </Position16>
+      <Position17>
+        <Filename Value="MainForm.pas"/>
+        <Caret Line="104" Column="1" TopLine="91"/>
+      </Position17>
+      <Position18>
+        <Filename Value="MainForm.pas"/>
+        <Caret Line="106" Column="1" TopLine="93"/>
+      </Position18>
+      <Position19>
+        <Filename Value="MainForm.pas"/>
+        <Caret Line="108" Column="37" TopLine="94"/>
+      </Position19>
+      <Position20>
+        <Filename Value="MainForm.pas"/>
+        <Caret Line="105" Column="36" TopLine="90"/>
+      </Position20>
+      <Position21>
+        <Filename Value="MainForm.pas"/>
+        <Caret Line="94" Column="21" TopLine="82"/>
+      </Position21>
+      <Position22>
+        <Filename Value="MainForm.pas"/>
+        <Caret Line="103" Column="21" TopLine="90"/>
+      </Position22>
+      <Position23>
+        <Filename Value="MainForm.pas"/>
+        <Caret Line="106" Column="1" TopLine="93"/>
+      </Position23>
+      <Position24>
+        <Filename Value="MainForm.pas"/>
+        <Caret Line="107" Column="1" TopLine="94"/>
+      </Position24>
+      <Position25>
+        <Filename Value="MainForm.pas"/>
+        <Caret Line="108" Column="1" TopLine="95"/>
+      </Position25>
+      <Position26>
+        <Filename Value="MainForm.pas"/>
+        <Caret Line="142" Column="25" TopLine="126"/>
+      </Position26>
+      <Position27>
+        <Filename Value="C:\lazarus\fpc\2.1.3\source\rtl\objpas\sysutils\sysstr.inc"/>
+        <Caret Line="1682" Column="14" TopLine="1680"/>
+      </Position27>
+      <Position28>
+        <Filename Value="MainForm.pas"/>
+        <Caret Line="36" Column="5" TopLine="35"/>
+      </Position28>
+      <Position29>
+        <Filename Value="MainForm.pas"/>
+        <Caret Line="85" Column="1" TopLine="62"/>
+      </Position29>
+      <Position30>
+        <Filename Value="MainForm.pas"/>
+        <Caret Line="59" Column="15" TopLine="57"/>
+      </Position30>
     </JumpHistory>
   </ProjectOptions>
   <CompilerOptions>
@@ -223,10 +371,22 @@
         <Line Value="1944"/>
       </Item3>
     </BreakPoints>
-    <Watches Count="1">
+    <Watches Count="5">
       <Item1>
-        <Expression Value="Application"/>
+        <Expression Value="w"/>
       </Item1>
+      <Item2>
+        <Expression Value="S"/>
+      </Item2>
+      <Item3>
+        <Expression Value="Switch"/>
+      </Item3>
+      <Item4>
+        <Expression Value="c"/>
+      </Item4>
+      <Item5>
+        <Expression Value="Value"/>
+      </Item5>
     </Watches>
     <Exceptions Count="2">
       <Item1>

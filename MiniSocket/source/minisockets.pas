@@ -8,7 +8,7 @@ interface
 
 uses
   mnClients, mnCommandClients, mnCommandServers, mnConnections, mnConsts, 
-    mnHttpServer, mnServers, mnSockets, mnStreams;
+    mnHttpServer, mnServers, mnSockets, mnStreams, LazarusPackageIntf; 
 
 implementation
 
@@ -17,4 +17,5 @@ begin
 end; 
 
 initialization
+  RegisterPackage('minisockets', @Register); 
 end.
