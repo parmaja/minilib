@@ -21,26 +21,29 @@ type
   { TMain }
 
   TMain = class(TForm)
+    Bevel2: TBevel;
     Memo: TMemo;
+    MaxOfThreads: TLabel;
     StartBtn: TButton;
     RootEdit: TEdit;
     Label1: TLabel;
     StopBtn: TButton;
-    VirtualDomainsChk: TCheckBox;
     Label2: TLabel;
     PortEdit: TEdit;
     NumberOfThreadsLbl: TLabel;
     NumberOfThreads: TLabel;
     Bevel1: TBevel;
+    ExitBtn: TButton;
+    procedure ExitBtnClick(Sender: TObject);
     procedure FormHide(Sender: TObject);
     procedure StartBtnClick(Sender: TObject);
     procedure StayOnTopChkChange(Sender: TObject);
     procedure StopBtnClick(Sender: TObject);
-    procedure VirtualDomainsChkChange(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
   private
     WebServer: TmnHttpServer;
+    FMax:Integer;
     procedure WebServerBeforeOpen(Sender: TObject);
     procedure WebServerAfterClose(Sender: TObject);
     procedure WebServerChanged(Listener: TmnListener);
@@ -63,6 +66,11 @@ procedure TMain.FormHide(Sender: TObject);
 begin
 end;
 
+procedure TMain.ExitBtnClick(Sender: TObject);
+begin
+  Close;
+end;
+
 procedure TMain.StayOnTopChkChange(Sender: TObject);
 begin
 
@@ -74,22 +82,17 @@ begin
   StartBtn.Enabled:=true;
 end;
 
-procedure TMain.VirtualDomainsChkChange(Sender: TObject);
-begin
-end;
-
 procedure TMain.WebServerBeforeOpen(Sender: TObject);
 var
   aRoot:string;
 begin
-  StartBtn.Enabled:=false;
-  StopBtn.Enabled:=True;
+  StartBtn.Enabled := False;
+  StopBtn.Enabled := True;
   aRoot := RootEdit.Text;
   if LeftStr(aRoot, 2)='.\' then
     aRoot := ExtractFilePath(Application.ExeName) + Copy(aRoot, 3, MaxInt);
   WebServer.DocumentRoot := aRoot;
-  WebServer.Port:=PortEdit.Text;
-  WebServer.VirtualDomains := VirtualDomainsChk.Checked;
+  WebServer.Port := PortEdit.Text;
 end;
 
 function FindCmdLineValue(Switch: string; var Value: string; const Chars: TSysCharSet = ['/','-']; Seprator: Char = '='): Boolean;
@@ -155,7 +158,6 @@ begin
     aReg.OpenKey('software\miniWebServer\Options', True);
     RootEdit.Text := GetOption('root', '.\html');
     PortEdit.Text := GetOption('port', '80');
-    VirtualDomainsChk.Checked := StrToBoolDef(GetOption('virtual', ''), False);
     aAutoRun := StrToBoolDef(GetSwitch('run', ''), False);
   finally
     aReg.Free;
@@ -189,7 +191,10 @@ end;
 
 procedure TMain.WebServerChanged(Listener: TmnListener);
 begin
+  if FMax < Listener.Count then
+    FMax := Listener.Count;
   NumberOfThreads.Caption:=IntToStr(Listener.Count);
+  MaxOfThreads.Caption:=IntToStr(FMax);
 end;
 
 procedure TMain.WebServerLog(Connection: TmnConnection; const S: String);

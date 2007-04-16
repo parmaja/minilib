@@ -6,6 +6,11 @@ unit mnHttpServer;
  *            See the file COPYING.MLGPL, included in this distribution,
  * @author    Zaher Dirkey <zaher at parmaja dot com>
  *}
+
+{$IFDEF FPC}
+{$MODE DELPHI}
+{$ENDIF}
+
 interface
 
 uses
@@ -45,7 +50,6 @@ type
     FAcceptPostedData: Boolean;
     FHeaderStrings: TStringList;
     FRequestPort: string;
-    VirtualDomains: Boolean;
     FProxyRequest: Boolean;
     procedure ReceiveData;
     procedure ProcessRequest;
@@ -81,7 +85,6 @@ type
 
   TmnHttpListener = class(TmnListener)
   private
-    FVirtualDomains: Boolean;
     FDocumentRoot: string;
     FAddress: string;
     FPort: Integer;
@@ -96,7 +99,6 @@ type
     property Port: Integer read FPort write FPort;
     property Address: string read FAddress write FAddress;
     property DocumentRoot: string read FDocumentRoot write FDocumentRoot;
-    property VirtualDomains: Boolean read FVirtualDomains write FVirtualDomains;
     property DefaultDocument: TStringList read FDefaultDocument write SetDefaultDocument;
   end;
 
@@ -106,7 +108,6 @@ type
   private
     FDocumentRoot: string;
     FDefaultDocument: TStringList;
-    FVirtualDomains: Boolean;
     procedure SetDefaultDoc(const Value: TStringList);
   protected
     procedure Notification(AComponent: TComponent; operation: TOperation); override;
@@ -116,7 +117,6 @@ type
     destructor Destroy; override;
   published
     property DocumentRoot: string read FDocumentRoot write FDocumentRoot;
-    property VirtualDomains: Boolean read FVirtualDomains write FVirtualDomains;
     property DefaultDocument: TStringList read FDefaultDocument write SetDefaultDoc;
   end;
 
@@ -298,7 +298,7 @@ var
   Body: string;
 begin
   Body := '<HTML><HEAD><TITLE>404 Not Found</TITLE></HEAD>' +
-    '<BODY><H1>404 Not Found</H1>The requested URL ' + FPath +
+    '<BODY><H1>404 Not Found</H1>The requested URL ' + FDocument +
     ' was not found on this server.<P><h1>Powerd by Mini Web Server</h3></BODY></HTML>' + sEOL;
   Stream.WriteString(Body);
 end;
@@ -306,17 +306,16 @@ end;
 procedure THttpConnection.ProcessRequest;
 begin
   FDocument := ExcludeTrailingPathDelimiter(FDocumentRoot);
-  if VirtualDomains and not FProxyRequest then
-  begin
+  if FProxyRequest then
     FDocument := FDocument + '\' + FRequestHost + '\' + FPath
-  end
   else
     FDocument := FDocument + '\' + FPath;
 
   FDocument := StringReplace(FDocument, '/', '\', [rfReplaceAll]);
-
+  
   if FDocument[Length(FDocument)] = '\' then
     FDocument := GetDocument(FDocument);
+    
   if FMethod = 'GET' then
     ProcessGet
   else if FMethod = 'POST' then
@@ -325,6 +324,7 @@ begin
     ProcessHead
   else
     Answer404;
+  Listener.Log(Self, FDocument);//when i put this line first not work in WinCE!!!
 end;
 
 procedure THttpConnection.ProcessPost;
@@ -373,7 +373,6 @@ begin
     if Connected then
     begin
       FAnswerContentType := DocumentToContentType(FDocument);
-      Listener.Log(Self, FDocument);
       aDocStream := TFileStream.Create(FDocument, fmOpenRead or fmShareDenyWrite);
       DocSize := aDocStream.Size;
       if Connected then
@@ -409,7 +408,6 @@ function TmnHttpServer.CreateListener: TmnListener;
 begin
   Result := TmnHttpListener.Create;
   TmnHttpListener(Result).DocumentRoot := ExcludeTrailingPathDelimiter(FDocumentRoot);
-  TmnHttpListener(Result).VirtualDomains := FVirtualDomains;
   TmnHttpListener(Result).DefaultDocument.Assign(FDefaultDocument);
 end;
 
@@ -450,7 +448,6 @@ function TmnHttpListener.CreateConnection(vSocket: TmnCustomSocket): TmnServerCo
 begin
   Result := THttpConnection.Create(vSocket);
   (Result as THttpConnection).DocumentRoot := FDocumentRoot;
-  (Result as THttpConnection).VirtualDomains := VirtualDomains;
 end;
 
 procedure TmnHttpListener.SetDefaultDocument(const Value: TStringList);

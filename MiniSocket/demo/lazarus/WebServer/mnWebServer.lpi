@@ -21,7 +21,6 @@
     <RunParams>
       <local>
         <FormatVersion Value="1"/>
-        <CommandLineParams Value="/run /root=&quot;./html&quot; /port=81  /hide"/>
         <LaunchingApplication PathPlusParams="/usr/X11R6/bin/xterm -T 'Lazarus Run Output' -e $(LazarusDir)/tools/runwait.sh $(TargetCmdLine)"/>
       </local>
     </RunParams>
@@ -38,25 +37,27 @@
       <Unit0>
         <Filename Value="mnWebServer.lpr"/>
         <IsPartOfProject Value="True"/>
-        <CursorPos X="1" Y="20"/>
-        <TopLine Value="4"/>
-        <EditorIndex Value="4"/>
-        <UsageCount Value="31"/>
+        <CursorPos X="1" Y="1"/>
+        <TopLine Value="1"/>
+        <EditorIndex Value="5"/>
+        <UsageCount Value="33"/>
         <Loaded Value="True"/>
       </Unit0>
       <Unit1>
         <Filename Value="..\..\..\source\mnStreams.pas"/>
         <UnitName Value="mnStreams"/>
-        <CursorPos X="1" Y="2"/>
+        <CursorPos X="1" Y="1"/>
         <TopLine Value="1"/>
         <UsageCount Value="10"/>
       </Unit1>
       <Unit2>
         <Filename Value="..\..\..\source\mnConnections.pas"/>
         <UnitName Value="mnConnections"/>
-        <CursorPos X="1" Y="2"/>
-        <TopLine Value="1"/>
+        <CursorPos X="3" Y="44"/>
+        <TopLine Value="29"/>
+        <EditorIndex Value="4"/>
         <UsageCount Value="10"/>
+        <Loaded Value="True"/>
       </Unit2>
       <Unit3>
         <Filename Value="MainForm.pas"/>
@@ -65,10 +66,10 @@
         <IsPartOfProject Value="True"/>
         <ResourceFilename Value="MainForm.lrs"/>
         <UnitName Value="MainForm"/>
-        <CursorPos X="28" Y="203"/>
-        <TopLine Value="177"/>
+        <CursorPos X="23" Y="76"/>
+        <TopLine Value="69"/>
         <EditorIndex Value="0"/>
-        <UsageCount Value="30"/>
+        <UsageCount Value="32"/>
         <Loaded Value="True"/>
       </Unit3>
       <Unit4>
@@ -88,25 +89,27 @@
       <Unit6>
         <Filename Value="..\..\..\source\mnSockets.pas"/>
         <UnitName Value="mnSockets"/>
-        <CursorPos X="1" Y="2"/>
-        <TopLine Value="1"/>
-        <UsageCount Value="13"/>
+        <CursorPos X="15" Y="65"/>
+        <TopLine Value="37"/>
+        <UsageCount Value="14"/>
       </Unit6>
       <Unit7>
         <Filename Value="..\..\..\source\mnServers.pas"/>
         <UnitName Value="mnServers"/>
-        <CursorPos X="13" Y="393"/>
-        <TopLine Value="391"/>
-        <EditorIndex Value="1"/>
-        <UsageCount Value="10"/>
+        <CursorPos X="3" Y="324"/>
+        <TopLine Value="317"/>
+        <EditorIndex Value="3"/>
+        <UsageCount Value="11"/>
         <Loaded Value="True"/>
       </Unit7>
       <Unit8>
         <Filename Value="..\..\..\source\mnHttpServer.pas"/>
         <UnitName Value="mnHttpServer"/>
-        <CursorPos X="1" Y="13"/>
-        <TopLine Value="1"/>
-        <UsageCount Value="13"/>
+        <CursorPos X="18" Y="315"/>
+        <TopLine Value="306"/>
+        <EditorIndex Value="1"/>
+        <UsageCount Value="14"/>
+        <Loaded Value="True"/>
       </Unit8>
       <Unit9>
         <Filename Value="MainForm.lfm"/>
@@ -119,16 +122,16 @@
         <Filename Value="C:\lazarus\lcl\include\application.inc"/>
         <CursorPos X="1" Y="1571"/>
         <TopLine Value="1558"/>
-        <EditorIndex Value="5"/>
         <UsageCount Value="11"/>
-        <Loaded Value="True"/>
       </Unit10>
       <Unit11>
         <Filename Value="..\..\..\source\mnWin32Sockets.pas"/>
         <UnitName Value="mnWin32Sockets"/>
-        <CursorPos X="1" Y="1"/>
-        <TopLine Value="1"/>
-        <UsageCount Value="10"/>
+        <CursorPos X="14" Y="36"/>
+        <TopLine Value="22"/>
+        <EditorIndex Value="2"/>
+        <UsageCount Value="11"/>
+        <Loaded Value="True"/>
       </Unit11>
       <Unit12>
         <Filename Value="C:\lazarus\fpc\2.1.3\source\rtl\win\winsock2.pp"/>
@@ -169,9 +172,7 @@
         <Filename Value="C:\lazarus\fpc\2.1.3\source\rtl\objpas\sysutils\sysstrh.inc"/>
         <CursorPos X="10" Y="195"/>
         <TopLine Value="182"/>
-        <EditorIndex Value="2"/>
         <UsageCount Value="11"/>
-        <Loaded Value="True"/>
       </Unit17>
       <Unit18>
         <Filename Value="..\..\..\source\minisockets.lpk"/>
@@ -185,17 +186,13 @@
         <UnitName Value="Forms"/>
         <CursorPos X="30" Y="1126"/>
         <TopLine Value="1113"/>
-        <EditorIndex Value="6"/>
         <UsageCount Value="11"/>
-        <Loaded Value="True"/>
       </Unit19>
       <Unit20>
         <Filename Value="C:\lazarus\lcl\include\applicationproperties.inc"/>
         <CursorPos X="16" Y="224"/>
-        <TopLine Value="211"/>
-        <EditorIndex Value="7"/>
+        <TopLine Value="199"/>
         <UsageCount Value="11"/>
-        <Loaded Value="True"/>
       </Unit20>
       <Unit21>
         <Filename Value="C:\lazarus\fpc\2.1.3\source\rtl\objpas\objpas.pp"/>
@@ -208,131 +205,129 @@
         <Filename Value="C:\lazarus\fpc\2.1.3\source\rtl\objpas\sysutils\sysstr.inc"/>
         <CursorPos X="3" Y="1692"/>
         <TopLine Value="1686"/>
-        <EditorIndex Value="3"/>
         <UsageCount Value="11"/>
-        <Loaded Value="True"/>
       </Unit22>
     </Units>
     <JumpHistory Count="30" HistoryIndex="29">
       <Position1>
-        <Filename Value="MainForm.pas"/>
-        <Caret Line="103" Column="1" TopLine="90"/>
+        <Filename Value="..\..\..\source\mnHttpServer.pas"/>
+        <Caret Line="120" Column="1" TopLine="105"/>
       </Position1>
       <Position2>
-        <Filename Value="MainForm.pas"/>
-        <Caret Line="104" Column="1" TopLine="91"/>
+        <Filename Value="..\..\..\source\mnHttpServer.pas"/>
+        <Caret Line="309" Column="42" TopLine="294"/>
       </Position2>
       <Position3>
-        <Filename Value="MainForm.pas"/>
-        <Caret Line="100" Column="1" TopLine="87"/>
+        <Filename Value="..\..\..\source\mnHttpServer.pas"/>
+        <Caret Line="1" Column="1" TopLine="1"/>
       </Position3>
       <Position4>
-        <Filename Value="MainForm.pas"/>
-        <Caret Line="101" Column="1" TopLine="88"/>
+        <Filename Value="..\..\..\source\mnHttpServer.pas"/>
+        <Caret Line="53" Column="18" TopLine="38"/>
       </Position4>
       <Position5>
-        <Filename Value="MainForm.pas"/>
-        <Caret Line="102" Column="1" TopLine="89"/>
+        <Filename Value="..\..\..\source\mnHttpServer.pas"/>
+        <Caret Line="153" Column="16" TopLine="138"/>
       </Position5>
       <Position6>
-        <Filename Value="MainForm.pas"/>
-        <Caret Line="103" Column="1" TopLine="90"/>
+        <Filename Value="..\..\..\source\mnHttpServer.pas"/>
+        <Caret Line="201" Column="20" TopLine="186"/>
       </Position6>
       <Position7>
-        <Filename Value="MainForm.pas"/>
-        <Caret Line="104" Column="1" TopLine="91"/>
+        <Filename Value="..\..\..\source\mnHttpServer.pas"/>
+        <Caret Line="309" Column="62" TopLine="294"/>
       </Position7>
       <Position8>
-        <Filename Value="MainForm.pas"/>
-        <Caret Line="106" Column="1" TopLine="93"/>
+        <Filename Value="..\..\..\source\mnHttpServer.pas"/>
+        <Caret Line="411" Column="1" TopLine="396"/>
       </Position8>
       <Position9>
-        <Filename Value="MainForm.pas"/>
-        <Caret Line="104" Column="26" TopLine="94"/>
+        <Filename Value="..\..\..\source\mnHttpServer.pas"/>
+        <Caret Line="451" Column="1" TopLine="436"/>
       </Position9>
       <Position10>
-        <Filename Value="MainForm.pas"/>
-        <Caret Line="97" Column="20" TopLine="90"/>
+        <Filename Value="..\..\..\source\mnHttpServer.pas"/>
+        <Caret Line="1" Column="1" TopLine="1"/>
       </Position10>
       <Position11>
-        <Filename Value="MainForm.pas"/>
-        <Caret Line="103" Column="1" TopLine="90"/>
+        <Filename Value="..\..\..\source\mnHttpServer.pas"/>
+        <Caret Line="53" Column="1" TopLine="38"/>
       </Position11>
       <Position12>
-        <Filename Value="MainForm.pas"/>
-        <Caret Line="104" Column="1" TopLine="91"/>
+        <Filename Value="..\..\..\source\mnHttpServer.pas"/>
+        <Caret Line="94" Column="25" TopLine="79"/>
       </Position12>
       <Position13>
-        <Filename Value="MainForm.pas"/>
-        <Caret Line="100" Column="1" TopLine="87"/>
+        <Filename Value="..\..\..\source\mnHttpServer.pas"/>
+        <Caret Line="167" Column="37" TopLine="152"/>
       </Position13>
       <Position14>
-        <Filename Value="MainForm.pas"/>
-        <Caret Line="101" Column="1" TopLine="88"/>
+        <Filename Value="..\..\..\source\mnHttpServer.pas"/>
+        <Caret Line="171" Column="56" TopLine="156"/>
       </Position14>
       <Position15>
-        <Filename Value="MainForm.pas"/>
-        <Caret Line="102" Column="1" TopLine="89"/>
+        <Filename Value="..\..\..\source\mnHttpServer.pas"/>
+        <Caret Line="317" Column="30" TopLine="304"/>
       </Position15>
       <Position16>
-        <Filename Value="MainForm.pas"/>
-        <Caret Line="103" Column="1" TopLine="90"/>
+        <Filename Value="..\..\..\source\mnHttpServer.pas"/>
+        <Caret Line="316" Column="22" TopLine="301"/>
       </Position16>
       <Position17>
-        <Filename Value="MainForm.pas"/>
-        <Caret Line="104" Column="1" TopLine="91"/>
+        <Filename Value="..\..\..\source\mnHttpServer.pas"/>
+        <Caret Line="319" Column="22" TopLine="301"/>
       </Position17>
       <Position18>
-        <Filename Value="MainForm.pas"/>
-        <Caret Line="106" Column="1" TopLine="93"/>
+        <Filename Value="..\..\..\source\mnHttpServer.pas"/>
+        <Caret Line="171" Column="45" TopLine="167"/>
       </Position18>
       <Position19>
-        <Filename Value="MainForm.pas"/>
-        <Caret Line="108" Column="37" TopLine="94"/>
+        <Filename Value="..\..\..\source\mnHttpServer.pas"/>
+        <Caret Line="440" Column="31" TopLine="432"/>
       </Position19>
       <Position20>
-        <Filename Value="MainForm.pas"/>
-        <Caret Line="105" Column="36" TopLine="90"/>
+        <Filename Value="..\..\..\source\mnHttpServer.pas"/>
+        <Caret Line="1" Column="1" TopLine="1"/>
       </Position20>
       <Position21>
-        <Filename Value="MainForm.pas"/>
-        <Caret Line="94" Column="21" TopLine="82"/>
+        <Filename Value="..\..\..\source\mnHttpServer.pas"/>
+        <Caret Line="28" Column="25" TopLine="13"/>
       </Position21>
       <Position22>
-        <Filename Value="MainForm.pas"/>
-        <Caret Line="103" Column="21" TopLine="90"/>
+        <Filename Value="..\..\..\source\mnHttpServer.pas"/>
+        <Caret Line="94" Column="25" TopLine="79"/>
       </Position22>
       <Position23>
-        <Filename Value="MainForm.pas"/>
-        <Caret Line="106" Column="1" TopLine="93"/>
+        <Filename Value="..\..\..\source\mnHttpServer.pas"/>
+        <Caret Line="167" Column="37" TopLine="152"/>
       </Position23>
       <Position24>
-        <Filename Value="MainForm.pas"/>
-        <Caret Line="107" Column="1" TopLine="94"/>
+        <Filename Value="..\..\..\source\mnHttpServer.pas"/>
+        <Caret Line="171" Column="56" TopLine="156"/>
       </Position24>
       <Position25>
-        <Filename Value="MainForm.pas"/>
-        <Caret Line="108" Column="1" TopLine="95"/>
+        <Filename Value="..\..\..\source\mnHttpServer.pas"/>
+        <Caret Line="26" Column="34" TopLine="20"/>
       </Position25>
       <Position26>
-        <Filename Value="MainForm.pas"/>
-        <Caret Line="142" Column="25" TopLine="126"/>
+        <Filename Value="..\..\..\source\mnServers.pas"/>
+        <Caret Line="26" Column="35" TopLine="18"/>
       </Position26>
       <Position27>
-        <Filename Value="C:\lazarus\fpc\2.1.3\source\rtl\objpas\sysutils\sysstr.inc"/>
-        <Caret Line="1682" Column="14" TopLine="1680"/>
+        <Filename Value="..\..\..\source\mnHttpServer.pas"/>
+        <Caret Line="291" Column="14" TopLine="268"/>
       </Position27>
       <Position28>
-        <Filename Value="MainForm.pas"/>
-        <Caret Line="36" Column="5" TopLine="35"/>
+        <Filename Value="..\..\..\source\mnHttpServer.pas"/>
+        <Caret Line="327" Column="13" TopLine="306"/>
       </Position28>
       <Position29>
         <Filename Value="MainForm.pas"/>
-        <Caret Line="85" Column="1" TopLine="62"/>
+        <Caret Line="153" Column="29" TopLine="139"/>
       </Position29>
       <Position30>
         <Filename Value="MainForm.pas"/>
-        <Caret Line="59" Column="15" TopLine="57"/>
+        <Caret Line="38" Column="5" TopLine="36"/>
       </Position30>
     </JumpHistory>
   </ProjectOptions>

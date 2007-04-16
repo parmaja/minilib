@@ -1,10 +1,10 @@
 object Main: TMain
   Left = 298
-  Height = 254
+  Height = 183
   Top = 140
-  Width = 204
-  HorzScrollBar.Page = 203
-  VertScrollBar.Page = 253
+  Width = 220
+  HorzScrollBar.Page = 219
+  VertScrollBar.Page = 182
   ActiveControl = StartBtn
   BorderIcons = [biSystemMenu, biMinimize]
   BorderStyle = bsSingle
@@ -76,11 +76,32 @@ object Main: TMain
     Font.Pitch = fpVariable
     ParentColor = False
   end
+  object Bevel2: TBevel
+    Left = 123
+    Height = 18
+    Top = 53
+    Width = 78
+  end
+  object MaxOfThreads: TLabel
+    Left = 129
+    Height = 13
+    Top = 55
+    Width = 65
+    AutoSize = False
+    Caption = '0'
+    Color = clNone
+    Font.CharSet = ANSI_CHARSET
+    Font.Color = clBlack
+    Font.Height = -11
+    Font.Name = 'Tahoma'
+    Font.Pitch = fpVariable
+    ParentColor = False
+  end
   object Memo: TMemo
     Left = 2
-    Height = 129
-    Top = 122
-    Width = 199
+    Height = 77
+    Top = 103
+    Width = 215
     Anchors = [akTop, akLeft, akRight, akBottom]
     ParentFont = True
     ReadOnly = True
@@ -88,9 +109,9 @@ object Main: TMain
     TabOrder = 1
   end
   object StartBtn: TButton
-    Left = 5
+    Left = 2
     Height = 22
-    Top = 95
+    Top = 77
     Width = 60
     BorderSpacing.InnerBorder = 4
     Caption = 'Start'
@@ -103,15 +124,16 @@ object Main: TMain
     Left = 43
     Height = 21
     Top = 6
-    Width = 156
+    Width = 174
+    Anchors = [akTop, akLeft, akRight]
     ParentFont = True
     TabOrder = 2
     Text = '.\html'
   end
   object StopBtn: TButton
-    Left = 70
+    Left = 67
     Height = 22
-    Top = 95
+    Top = 77
     Width = 60
     BorderSpacing.InnerBorder = 4
     Caption = 'Stop'
@@ -120,28 +142,24 @@ object Main: TMain
     ParentFont = True
     TabOrder = 3
   end
-  object VirtualDomainsChk: TCheckBox
-    Left = 14
-    Height = 16
-    Top = 75
-    Width = 93
-    AutoSize = False
-    Caption = 'Multi Domain'
-    Font.CharSet = ANSI_CHARSET
-    Font.Color = clBlack
-    Font.Height = -11
-    Font.Name = 'Tahoma'
-    Font.Pitch = fpVariable
-    OnChange = VirtualDomainsChkChange
-    TabOrder = 4
-  end
   object PortEdit: TEdit
     Left = 43
     Height = 21
     Top = 29
     Width = 78
     ParentFont = True
-    TabOrder = 5
+    TabOrder = 4
     Text = '80'
+  end
+  object ExitBtn: TButton
+    Left = 157
+    Height = 22
+    Top = 77
+    Width = 60
+    BorderSpacing.InnerBorder = 4
+    Caption = 'Exit'
+    OnClick = ExitBtnClick
+    ParentFont = True
+    TabOrder = 5
   end
 end

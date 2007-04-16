@@ -14,8 +14,6 @@ uses
   Forms,
   LCLIntf,
   SysUtils,
-  mnStreams,
-  mnClients,
   MainForm in 'MainForm.pas' {Main};
 
 begin
@@ -23,7 +21,6 @@ begin
   if FindCmdLineSwitch('hide', True) then
   begin
     Application.ShowMainForm := False;
-//    ShowWindow(Application.Handle,SW_HIDE);
   end;
   Application.CreateForm(TMain, Main);
   Application.Run;
