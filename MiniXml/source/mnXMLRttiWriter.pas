@@ -80,7 +80,9 @@ begin
   if Count > 0 then
   begin
     List := TList.Create;
+    {$IFDEF FPC}
     PropList := nil;
+    {$ENDIF}
     GetMem(PropList, Count * SizeOf(Pointer));
     try
       GetPropInfos(Instance.ClassInfo, PropList);

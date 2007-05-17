@@ -62,7 +62,9 @@ var
   aBuffer: pchar;
   n: cardinal;
 begin
+  {$IFDEF FPC}
   aBuffer := nil;
+  {$ENDIF}
   GetMem(aBuffer, BufferSize);
   Result := 0;
   try
