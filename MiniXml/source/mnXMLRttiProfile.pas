@@ -18,7 +18,6 @@ type
   TmnProfile = class(TInterfacedPersistent, IStreamPersist)
   private
     FChanged: Boolean;
-    FList: TObjectList;
   protected
     procedure Loading; virtual;
     procedure Loaded; virtual;
@@ -27,10 +26,29 @@ type
     procedure LoadDefault; virtual;
   public
     constructor Create;
-    destructor Destroy; override;
     procedure Clear; virtual;
-    procedure LoadFromStream(Stream: TStream);
-    procedure SaveToStream(Stream: TStream);
+    procedure LoadFromStream(Stream: TStream); virtual;
+    procedure SaveToStream(Stream: TStream); virtual;
+    procedure LoadFromFile(FileName: string);
+    procedure SafeLoadFromFile(FileName: string);
+    procedure SaveToFile(FileName: string);
+    property Changed: Boolean read FChanged write FChanged;
+  end;
+
+  TmnComponentProfile = class(TComponent, IStreamPersist)
+  private
+    FChanged: Boolean;
+  protected
+    procedure Loading; virtual;
+    procedure Loaded; override;
+    procedure Saving; virtual;
+    procedure Saved; virtual;
+    procedure LoadDefault; virtual;
+  public
+    constructor Create(AOwner:TComponent); override;
+    procedure Clear; virtual;
+    procedure LoadFromStream(Stream: TStream); virtual;
+    procedure SaveToStream(Stream: TStream); virtual;
     procedure LoadFromFile(FileName: string);
     procedure SafeLoadFromFile(FileName: string);
     procedure SaveToFile(FileName: string);
@@ -83,19 +101,11 @@ end;
 constructor TmnProfile.Create;
 begin
   inherited Create;
-  FList := TObjectList.Create;
   LoadDefault;
-end;
-
-destructor TmnProfile.Destroy;
-begin
-  FList.Free;
-  inherited;
 end;
 
 procedure TmnProfile.LoadDefault;
 begin
-
 end;
 
 procedure TmnProfile.Loaded;
@@ -132,7 +142,6 @@ end;
 
 procedure TmnProfile.Loading;
 begin
-
 end;
 
 procedure TmnProfile.Saved;
@@ -277,6 +286,107 @@ end;
 constructor TmnXMLItem.Create;
 begin
   inherited Create;
+end;
+
+{ TmnComponentProfile }
+
+procedure TmnComponentProfile.Clear;
+begin
+end;
+
+constructor TmnComponentProfile.Create(AOwner:TComponent); 
+begin
+  inherited;
+  LoadDefault;
+end;
+
+procedure TmnComponentProfile.LoadDefault;
+begin
+end;
+
+procedure TmnComponentProfile.Loaded;
+begin
+  inherited;
+end;
+
+procedure TmnComponentProfile.LoadFromFile(FileName: string);
+var
+  Stream: TStream;
+begin
+  Stream := TFileStream.Create(FileName, fmOpenRead or fmShareDenyWrite);
+  try
+    LoadFromStream(Stream);
+  finally
+    Stream.Free;
+  end;
+end;
+
+procedure TmnComponentProfile.LoadFromStream(Stream: TStream);
+var
+  aReader: TmnXMLRttiReader;
+begin
+  Loading;
+  aReader := TmnXMLRttiReader.Create(TmnXMLStream.Create(Stream, False));
+  try
+    aReader.ReadRoot(Self);
+    aReader.Stop;
+    FChanged := False;
+  finally
+    aReader.Free;
+  end;
+  Loaded;
+end;
+
+procedure TmnComponentProfile.Loading;
+begin
+end;
+
+procedure TmnComponentProfile.SafeLoadFromFile(FileName: string);
+begin
+  try
+    if FileExists(FileName) then
+      LoadFromFile(FileName);
+  except
+    Clear;
+  end;
+end;
+
+procedure TmnComponentProfile.Saved;
+begin
+end;
+
+procedure TmnComponentProfile.SaveToFile(FileName: string);
+var
+  Stream: TStream;
+begin
+  Stream := TFileStream.Create(FileName, fmCreate);
+  try
+    SaveToStream(Stream);
+  finally
+    Stream.Free;
+  end;
+end;
+
+procedure TmnComponentProfile.SaveToStream(Stream: TStream);
+var
+  aWriter: TmnXMLRttiWriter;
+begin
+  Saving;
+  aWriter := TmnXMLRttiWriter.Create(TmnXMLStream.Create(Stream, False));
+  aWriter.Smart := True;
+  aWriter.WriteTypes := False;
+  try
+    aWriter.WriteRoot(Self);
+    aWriter.Stop;
+    FChanged := False;
+  finally
+    aWriter.Free;
+  end;
+  Saved;
+end;
+
+procedure TmnComponentProfile.Saving;
+begin
 end;
 
 end.
