@@ -81,7 +81,8 @@ type
   public
     PropertyClassName:string;
     PropertyName: string;
-    PropertyClass: TClass; 
+    PropertyClass: TClass;
+    PropertyInterface:TGUID; 
     IsInterface: Boolean;
     FilerClass: TmnXMLRttiFilerClass;
   end;
@@ -91,13 +92,14 @@ type
     function GetItem(Index: Integer): TmnXMLRttiRegisterItem;
     procedure SetItem(Index: Integer; const Value: TmnXMLRttiRegisterItem);
     function FindFilerClass(const PropertyName: string; Instance: TObject): TmnXMLRttiRegisterItem;
+    function FindFilerInterface(const PropertyName: string; Instance: Pointer): TmnXMLRttiRegisterItem;
   public
     //register functions
     procedure RegisterClassProperty(PropertyClassName:string; PropertyClass: TClass; PropertyName: string; FilerClass: TmnXMLRttiFilerClass);
-    procedure RegisterInterface(PropertyName: string; FilerClass: TmnXMLRttiFilerClass);
+    procedure RegisterInterfaceProperty(PropertyName: string; PropertyInterface:TGUID; FilerClass: TmnXMLRttiFilerClass);
     //read/write functions
-    function CreateFiler(Owner: TObject; const PropertyName: string; Instance: TObject; DefaultFiler: TmnXMLRttiFilerClass = nil): TmnXMLRttiFiler;
-    procedure WriteClassProperties(const PropertyClassName: string; Writer: TmnXMLRttiCustomWriter; Instance: TObject);
+    function CreateFiler(Owner: TObject; const PropertyName: string; Instance: Pointer; IsInterface:Boolean; DefaultFiler: TmnXMLRttiFilerClass = nil): TmnXMLRttiFiler;
+    procedure WriteClassProperties(const PropertyClassName: string; Writer: TmnXMLRttiCustomWriter; Instance: Pointer);
     procedure WriteInterface(const PropertyName: string; Writer: TmnXMLRttiCustomWriter; Instance: Pointer);
     property Items[Index: Integer]: TmnXMLRttiRegisterItem read GetItem write SetItem; default;
   end;
@@ -146,14 +148,14 @@ end;
 
 { TmnRttiRegister }
 
-procedure TmnRttiRegister.WriteClassProperties(const PropertyClassName: string; Writer: TmnXMLRttiCustomWriter; Instance: TObject);
+procedure TmnRttiRegister.WriteClassProperties(const PropertyClassName: string; Writer: TmnXMLRttiCustomWriter; Instance: Pointer);
 var
   i:Integer;
   aFiler: TmnXMLRttiFiler;
 begin
   for i := 0 to Count - 1 do
   begin
-    if ((PropertyClassName = '') or (Items[i].PropertyClassName = '') or (PropertyClassName = Items[i].PropertyClassName)) and (Instance.InheritsFrom(Items[i].PropertyClass)) then
+    if ((PropertyClassName = '') or (Items[i].PropertyClassName = '') or (PropertyClassName = Items[i].PropertyClassName)) and (TObject(Instance).InheritsFrom(Items[i].PropertyClass)) then
     begin
       aFiler := Items[i].FilerClass.Create(Writer, Instance);
       try
@@ -208,12 +210,31 @@ begin
   end;
 end;
 
+function TmnRttiRegister.FindFilerInterface(const PropertyName: string;
+  Instance: Pointer): TmnXMLRttiRegisterItem;
+var
+  i: Integer;
+begin
+  Result := nil;
+  for i := 0 to Count - 1 do
+  begin
+    if ((PropertyName = Items[i].PropertyName)) and (Supports(IInterface(Instance), (Items[i].PropertyInterface))) then
+    begin
+      Result := Items[i]; //first sepical one
+      break;
+    end;
+  end;
+end;
+
 function TmnRttiRegister.CreateFiler(Owner: TObject; const PropertyName: string;
-  Instance: TObject; DefaultFiler: TmnXMLRttiFilerClass): TmnXMLRttiFiler;
+  Instance: Pointer; IsInterface:Boolean; DefaultFiler: TmnXMLRttiFilerClass): TmnXMLRttiFiler;
 var
   aItem: TmnXMLRttiRegisterItem;
 begin
-  aItem := FindFilerClass(PropertyName, Instance);
+  if IsInterface then
+    aItem := FindFilerInterface(PropertyName, Instance)
+  else
+    aItem := FindFilerClass(PropertyName, Instance);
   if aItem <> nil then
     Result := aItem.FilerClass.Create(Owner, Instance)
   else if DefaultFiler <> nil then
@@ -258,7 +279,7 @@ begin
   Filer.ReadStart;
 end;
 
-procedure TmnRttiRegister.RegisterInterface(PropertyName: string; FilerClass: TmnXMLRttiFilerClass);
+procedure TmnRttiRegister.RegisterInterfaceProperty(PropertyName: string; PropertyInterface:TGUID; FilerClass: TmnXMLRttiFilerClass);
 var
   aObject: TmnXMLRttiRegisterItem;
 begin
@@ -266,6 +287,7 @@ begin
     raise EmnXMLException.Create('PropertyName not defined');
   aObject := TmnXMLRttiRegisterItem.Create;
   aObject.PropertyName := PropertyName;
+  aObject.PropertyInterface := PropertyInterface;
   aObject.IsInterface := True;
   aObject.FilerClass := FilerClass;
   Add(aObject);

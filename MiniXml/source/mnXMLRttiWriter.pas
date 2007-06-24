@@ -1,7 +1,7 @@
 unit mnXMLRttiWriter;
 {**
  *  This file is part of the "Mini Library"
- *
+ *                  
  * @license   modifiedLGPL (modified of http://www.gnu.org/licenses/lgpl.html)
  *            See the file COPYING.MLGPL, included in this distribution,
  * @author    Zaher Dirkey <zaher at parmaja dot com>
@@ -91,7 +91,7 @@ begin
         PropInfo := PropList^[I];
         if PropInfo = nil then
           Break;
-        if IsStoredProp(Instance, PropInfo) and (PropInfo^.GetProc <> nil) and ((PropInfo^.SetProc <> nil) or (PropInfo^.PropType^.Kind = tkClass)) then
+        if IsStoredProp(Instance, PropInfo) and (PropInfo^.GetProc <> nil) and ((PropInfo^.SetProc <> nil) or (PropInfo^.PropType^.Kind in [tkClass, tkInterface])) then
           List.Add(PropInfo);
       end;
     finally

@@ -60,7 +60,7 @@ type
 
   TmnXMLRttiReader = class(TmnXMLRttiCustomRead)
   private
-    function CreateFiler(const PropertyName: string; Instance: TObject): TmnXMLRttiFiler;
+    function CreateFiler(const PropertyName: string; Instance: TObject; IsInterface:Boolean): TmnXMLRttiFiler;
   protected
     procedure ReadAttributes(const Text: string); override;
     procedure ReadText(const Text: string); override; //value of property
@@ -135,7 +135,7 @@ begin
   if IsStoredProp(Instance, PropInfo) and (PropInfo^.GetProc <> nil) and
     ((PropInfo^.SetProc <> nil) or
     ((GetOrdProp(Instance, PropInfo) <> 0) and //Must be not null when read properties or must have a SetProc
-    (PropInfo^.PropType^.Kind = tkClass))) then
+    (PropInfo^.PropType^.Kind in [tkClass, tkInterface]))) then
   begin
     ReadProperty(Instance, PropInfo, Value)
   end
@@ -166,7 +166,7 @@ begin
       begin
 {        if aObject is TComponent then
           Include(THackedComponent(aObject).ComponentState, csLoading);}
-        (Owner as TmnXMLRttiReader).Stack.Push((Owner as TmnXMLRttiReader).CreateFiler(Name, aObject));
+        (Owner as TmnXMLRttiReader).Stack.Push((Owner as TmnXMLRttiReader).CreateFiler(Name, aObject, False));
 {        if aObject is TComponent then
           THackedComponent(aObject).Loaded;}//not worked
       end
@@ -181,16 +181,16 @@ begin
     PropInfo := GetPropInfo(TObject(Instance).ClassInfo, Name);
     if PropInfo <> nil then
     begin
-      if PropInfo^.PropType^.Kind = tkClass then
+      if PropInfo^.PropType^.Kind in [tkClass, tkInterface] then
       begin
-        (Owner as TmnXMLRttiReader).Stack.Push((Owner as TmnXMLRttiReader).CreateFiler(Name, TObject(GetOrdProp(TObject(Instance), Name))));
+        (Owner as TmnXMLRttiReader).Stack.Push((Owner as TmnXMLRttiReader).CreateFiler(Name, TObject(GetOrdProp(TObject(Instance), Name)), PropInfo^.PropType^.Kind = tkInterface));
       end
       else
         FReadState := ofsProperty;
     end
     else
     begin
-      aFiler := PermanentRegister.CreateFiler(Owner, Name, Instance);
+      aFiler := PermanentRegister.CreateFiler(Owner, Name, Instance, False);
       if aFiler <> nil then
         (Owner as TmnXMLRttiReader).Stack.Push(aFiler)
       else
@@ -283,10 +283,17 @@ var
     end
     else
     begin
-      (Owner as TmnXMLRttiReader).Stack.Push((Owner as TmnXMLRttiReader).CreateFiler(PropInfo^.Name, Data));
+      (Owner as TmnXMLRttiReader).Stack.Push((Owner as TmnXMLRttiReader).CreateFiler(PropInfo^.Name, Data, False));
     end;
   end;
 
+  procedure ReadInterfaceProp;
+  var
+    Data: TObject;
+  begin
+    Data := TObject(GetOrdProp(Instance, PropInfo));
+    (Owner as TmnXMLRttiReader).Stack.Push((Owner as TmnXMLRttiReader).CreateFiler(PropInfo^.Name, Data, True));
+  end;
 begin
   PropType := GetPropType(PropInfo);
   case PropType^.Kind of
@@ -309,7 +316,8 @@ begin
     tkClass:
       ReadObjectProp;
     tkMethod: ; //not yet
-    tkInterface: ; //not yet
+    tkInterface:
+      ReadInterfaceProp; //not yet
   end;
 end;
 
@@ -318,9 +326,9 @@ begin
   (Owner as TmnXMLRttiReader).Stack.Push(TmnXMLRttiSkipFiler.Create(Owner, Instance));
 end;
 
-function TmnXMLRttiReader.CreateFiler(const PropertyName: string; Instance: TObject): TmnXMLRttiFiler;
+function TmnXMLRttiReader.CreateFiler(const PropertyName: string; Instance: TObject; IsInterface:Boolean): TmnXMLRttiFiler;
 begin
-  Result := PermanentRegister.CreateFiler(Self, PropertyName, Instance, TmnXMLRttiObjectFiler)
+  Result := PermanentRegister.CreateFiler(Self, PropertyName, Instance, IsInterface, TmnXMLRttiObjectFiler)
 end;
 
 procedure TmnXMLRttiObjectFiler.ReadClose(const Name: string);
@@ -347,7 +355,7 @@ begin
   finally
     aStrings.Free;
   end;
-  (Owner as TmnXMLRttiReader).Stack.Push((Owner as TmnXMLRttiReader).CreateFiler('', Instance));
+  (Owner as TmnXMLRttiReader).Stack.Push((Owner as TmnXMLRttiReader).CreateFiler('', Instance, False));
 end;
 
 procedure TmnXMLRttiRootFiler.ReadValue(const Text: string);
