@@ -49,6 +49,7 @@ function URIToFileName(const URI: string): string;
 function FileNameToURI(FileName: string): string;
 function IncludeSlash(const S: string): string;
 function StrToStrings(Separators, WhiteSpace: TSysCharSet; Content: string; Strings: TStrings): Integer;
+function LeftSubStr(S, Separator:string):string;
 
 implementation
 
@@ -455,6 +456,28 @@ begin
       Strings.EndUpdate;
     end;
   end;
+end;
+
+function LeftSubStr(S, Separator:string):string;
+var
+  p:Integer;
+begin
+  p := Pos(Separator, S);
+  if p > 0 then
+    Result := Copy(S, 1 , P - 1)
+  else
+    Result := S;
+end;
+
+function RightSubStr(S, Separator:string):string;
+var
+  p:Integer;
+begin
+  p := Pos(Separator, S);
+  if p > 0 then
+    Result := Copy(S, P + 1 , MaxInt)
+  else
+    Result := '';
 end;
 
 end.

@@ -9,15 +9,12 @@ unit mnXMLRttiReader;
 interface
 
 uses
-  Classes, SysUtils, TypInfo,
+  Classes, SysUtils, TypInfo, StrUtils,
   mnXML, mnXMLRtti, mnXMLFPClasses;
 
 type
-  TmnXMLRttiObjectFilerState = (ofsNone, ofsProperty);
-
   TmnXMLRttiObjectFiler = class(TmnXMLRttiFiler)
   private
-    FReadState: TmnXMLRttiObjectFilerState;
     CurrentTag: string;
   protected
     function FindClass(const ClassName: string): TClass; virtual;
@@ -26,6 +23,7 @@ type
     procedure PropertyError(PropName: string);
     procedure ReadProperty(Instance: TObject; PropInfo: PPropInfo; const Value: string);
     procedure ReadPropertyValue(Instance: TObject; const PropName: string; const Value: string);
+    function ReadVariant(Value:string; ValueType:string):Variant;
   public
     procedure ReadOpen(const Name, Attributes: string); override;
     procedure ReadValue(const Text: string); override;
@@ -75,6 +73,39 @@ implementation
 
 uses
   mnXMLUtils;
+
+function StrDateToDate(Value:string):TDateTime;
+var
+  p:Integer;
+  function Fetch(s:string):Integer;
+  var
+    i:Integer;
+  begin
+    Result := 0;
+    i := p;
+    while p < Length(s) do
+    begin
+      if (s[p] in ['-', ':', ' ']) then
+      begin
+        Result := StrToIntDef(Copy(s, i, p - i - 1), 0);
+        Inc(p);
+        break;
+      end;
+      Inc(p);
+    end;
+  end;
+var
+  y,m,d,h,n,s: Integer;
+begin
+  p := 1;
+  y := Fetch(Value);
+  m := Fetch(Value);
+  d := Fetch(Value);
+  h := Fetch(Value);
+  n := Fetch(Value);
+  s := Fetch(Value);
+  Result := EncodeDate(y, m, d) + EncodeTime(h, n, s, 0); 
+end;
 
 type
   THackedComponent = class(TComponent);
@@ -126,8 +157,7 @@ begin
   end;
 end;
 
-procedure TmnXMLRttiObjectFiler.ReadPropertyValue(Instance: TObject;
-  const PropName: string; const Value: string);
+procedure TmnXMLRttiObjectFiler.ReadPropertyValue(Instance: TObject; const PropName: string; const Value: string);
 var
   PropInfo: PPropInfo;
 begin
@@ -185,8 +215,6 @@ begin
       begin
         (Owner as TmnXMLRttiReader).Stack.Push((Owner as TmnXMLRttiReader).CreateFiler(Name, TObject(GetOrdProp(TObject(Instance), Name)), PropInfo^.PropType^.Kind = tkInterface));
       end
-      else
-        FReadState := ofsProperty;
     end
     else
     begin
@@ -204,13 +232,54 @@ begin
   ReadPropertyValue(Instance, CurrentTag, Text);
 end;
 
+function TmnXMLRttiObjectFiler.ReadVariant(Value:string; ValueType:string):Variant;
+var
+  aSingle:Single;
+  aDouble:Double;
+begin
+  //need to improve this function
+  if ValueType = 'String' then
+    Result := Value
+  else if ValueType = 'OleStr' then
+    Result := Value
+  else if ValueType = 'Byte' then
+    Result := Byte(StrToInt(Value))
+  else if ValueType = 'ShortInt' then
+    Result := SmallInt(StrToInt(Value))
+  else if ValueType = 'Word' then
+    Result := Word(StrToInt(Value))
+  else if ValueType = 'SmallInt' then
+    Result := SmallInt(StrToInt(Value))
+  else if ValueType = 'Integer' then
+    Result := StrToInt(Value)
+  else if ValueType = 'Single' then
+  begin
+    aSingle := StrToFloat(Value);
+    Result := aSingle;
+  end
+  else if ValueType = 'Double' then
+  begin
+    aDouble := StrToFloat(Value);
+    Result := aDouble;
+  end
+  else if ValueType = 'Currency' then
+    Result := StrToCurr(Value)
+  else if ValueType = 'Int64' then
+    Result := StrToInt64(Value)
+  else if ValueType = 'LongWord' then
+    Result := StrToInt64(Value)
+  else if ValueType = 'Date' then
+    Result := StrDateToDate(Value)
+  else if ValueType = 'Boolean' then
+    Result := StrToBool(Value)
+end;
+
 procedure TmnXMLRttiObjectFiler.PropertyError(PropName: string);
 begin
   SkipProperty(PropName);
 end;
 
-procedure TmnXMLRttiObjectFiler.ReadProperty(Instance: TObject;
-  PropInfo: PPropInfo; const Value: string);
+procedure TmnXMLRttiObjectFiler.ReadProperty(Instance: TObject; PropInfo: PPropInfo; const Value: string);
 var
   PropType: PTypeInfo;
 
@@ -269,7 +338,7 @@ var
 
   procedure ReadVariantProp;
   begin
-    SetVariantProp(Instance, PropInfo, Value);
+    SetVariantProp(Instance, PropInfo, ReadVariant(Value, ''));
   end;
 
   procedure ReadObjectProp;
@@ -333,7 +402,6 @@ end;
 
 procedure TmnXMLRttiObjectFiler.ReadClose(const Name: string);
 begin
-  FReadState := ofsNone;
 end;
 
 { TmnXMLRttiRootFiler }

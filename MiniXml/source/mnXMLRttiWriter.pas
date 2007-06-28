@@ -9,7 +9,7 @@ unit mnXMLRttiWriter;
 interface
 
 uses
-  Classes, SysUtils, TypInfo,
+  Classes, SysUtils, Variants, TypInfo,
   mnXMLRtti, mnXMLFPClasses;
 
 type
@@ -19,10 +19,12 @@ type
     FRoot: TComponent;
     FWriteRefrences: Boolean;
   protected
+    procedure DoStart; override;
     procedure WriteProperty(Instance: TObject; PropInfo: PPropInfo);
     procedure WriteProperties(Name:string; Instance: TObject; WithInitTag: Boolean);
     procedure WriteComponent(Component: TComponent);
-    procedure DoStart; override;
+    procedure WriteValue(Value:string; ValueType: string = '');
+    procedure WriteVariant(Value:Variant);
   public
     constructor Create; override;
     procedure WriteObject(Instance: TObject); override;
@@ -64,6 +66,60 @@ begin
   WriteProperties('', Instance, True);
   WriteCloseTag('rtti');
   FRoot := nil;
+end;
+
+procedure TmnXMLRttiWriter.WriteValue(Value:string; ValueType: string = '');
+begin
+  if ValueType <> '' then
+    WriteAttributes('ValueType="' +  ValueType + '"');
+  WriteStopTag;
+  WriteText(Value);
+end;
+
+procedure TmnXMLRttiWriter.WriteVariant(Value: Variant);
+begin
+//Notice that varEmpty not saved
+  case VarType(Value) and varTypeMask of
+    varNull:
+      WriteValue('');
+    varString:
+      WriteValue(Value, 'String');
+    varOleStr:
+      WriteValue(Value, 'OleStr');
+    varByte:
+      WriteValue(Value, 'Byte');
+    varShortInt:
+      WriteValue(Value, 'ShortInt');
+    varWord:
+      WriteValue(Value, 'Word');
+    varSmallInt:
+      WriteValue(Value, 'SmallInt');
+    varInteger:
+      WriteValue(Value, 'Integer');
+    varSingle:
+      WriteValue(Value, 'Single');
+    varDouble:
+      WriteValue(Value, 'Double');
+    varCurrency:
+      WriteValue(Value, 'Currency');
+    varLongWord:
+      WriteValue(Value, 'LongWord');
+    varInt64:
+      WriteValue(Value, 'Int64');
+    varDate:
+      WriteValue(FormatDateTime('yyyy-mm-dd hh:nn:ss', Value), 'Date');
+    varBoolean:
+    begin
+      if Value then
+        WriteValue('True', 'Boolean')
+      else
+        WriteValue('False', 'Boolean');
+    end;
+  else
+    try
+    finally
+    end;
+  end;
 end;
 
 procedure TmnXMLRttiWriter.WriteProperties(Name:string; Instance: TObject; WithInitTag: Boolean);
@@ -142,8 +198,7 @@ var
     S := '';
     if not ((Assigned(IntToIdent) and IntToIdent(Value, S))) then
       S := IntToStr(Value);
-    WriteStopTag;
-    WriteText(S);
+    WriteValue(S);
   end;
 
   procedure WriteEnumeration;
@@ -153,8 +208,7 @@ var
   begin
     Value := GetOrdProp(Instance, PropInfo);
     S := GetEnumName(PropType, Value);
-    WriteStopTag;
-    WriteText(S);
+    WriteValue(S);
   end;
 
   procedure WriteSet;
@@ -162,8 +216,7 @@ var
     S: string;
   begin
     S := GetSetProp(Instance, PropInfo, False);
-    WriteStopTag;
-    WriteText(S);
+    WriteValue(S);
   end;
 
   procedure WriteChar;
@@ -171,8 +224,7 @@ var
     Value: Char;
   begin
     Value := Char(GetOrdProp(Instance, PropInfo));
-    WriteStopTag;
-    WriteText(Value);
+    WriteValue(Value);
   end;
 
   procedure WriteInt64Prop;
@@ -180,8 +232,7 @@ var
     Value: Int64;
   begin
     Value := GetInt64Prop(Instance, PropInfo);
-    WriteStopTag;
-    WriteText(IntToStr(Value));
+    WriteValue(IntToStr(Value));
   end;
 
   procedure WriteFloatProp;
@@ -189,8 +240,7 @@ var
     Value: Extended;
   begin
     Value := GetFloatProp(Instance, PropInfo);
-    WriteStopTag;
-    WriteText(FloatToStr(Value));
+    WriteValue(FloatToStr(Value));
   end;
 
   procedure WriteStrProp;
@@ -198,8 +248,7 @@ var
     Value: WideString;
   begin
     Value := GetWideStrProp(Instance, PropInfo);
-    WriteStopTag;
-    WriteText(Value);
+    WriteValue(Value);
   end;
 
   procedure WriteVariantProp;
@@ -207,8 +256,7 @@ var
     Value: Variant;
   begin
     Value := GetVariantProp(Instance, PropInfo);
-    WriteStopTag;
-    WriteText(Value);
+    WriteVariant(Value);
   end;
 
   procedure WriteObjectProp;
@@ -218,10 +266,9 @@ var
     Value := TObject(GetOrdProp(Instance, PropInfo));
     if (Value is TComponent) and not (csSubComponent in (Value as TComponent).ComponentStyle) then
     begin
-      WriteStopTag;
       if WriteRefrences then
       begin
-        WriteText((Value as TComponent).Name);
+        WriteValue((Value as TComponent).Name);
       end;
     end
     else
