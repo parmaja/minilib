@@ -77,6 +77,8 @@ begin
 end;
 
 procedure TmnXMLRttiWriter.WriteVariant(Value: Variant);
+var
+  s:string;
 begin
 //Notice that varEmpty not saved
   case VarType(Value) and varTypeMask of
@@ -107,7 +109,12 @@ begin
     varInt64:
       WriteValue(Value, 'Int64');
     varDate:
-      WriteValue(FormatDateTime('yyyy-mm-dd hh:nn:ss', Value), 'Date');
+    begin
+      s:= FormatDateTime('yyyy-mm-dd', Value);
+      if Frac(Value) <> 0 then
+        s:= s + FormatDateTime(' hh:nn:ss', Value);
+      WriteValue(s, 'Date');
+    end;
     varBoolean:
     begin
       if Value then

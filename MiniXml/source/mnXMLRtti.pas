@@ -48,10 +48,11 @@ type
     Depth: Integer;
     Instance: Pointer;
     Owner: TObject;
+    Attributes: TStrings;
     constructor Create(Owner: TObject; Instance: Pointer);
     destructor Destroy; override;
     procedure ReadStart; virtual;
-    procedure ReadOpen(const Name, Attributes: string); virtual; abstract;
+    procedure ReadOpen(const Name:string); virtual; abstract;
     procedure ReadValue(const Text: string); virtual; abstract;
     procedure ReadClose(const Name: string); virtual; abstract;
     procedure ReadFinish; virtual;
@@ -119,6 +120,7 @@ uses
 constructor TmnXMLRttiFiler.Create(Owner: TObject; Instance: Pointer);
 begin
   inherited Create;
+  Attributes := TStringList.Create;
   Self.Instance := Instance;
   Self.Owner := Owner;
 end;
@@ -135,6 +137,7 @@ end;
 
 destructor TmnXMLRttiFiler.Destroy;
 begin
+  FreeAndNil(Attributes);
   inherited;
 end;
 

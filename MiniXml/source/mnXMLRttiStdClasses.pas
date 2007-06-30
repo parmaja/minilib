@@ -18,7 +18,7 @@ type
     FReadState: Boolean;
   public
     procedure ReadStart; override;
-    procedure ReadOpen(const Name, Attributes: string); override;
+    procedure ReadOpen(const Name: string); override;
     procedure ReadValue(const Text: string); override;
     procedure ReadClose(const Name: string); override;
     procedure Write(Writer: TmnXMLRttiCustomWriter; Instance: Pointer); override;
@@ -30,7 +30,7 @@ type
     function CreateObject(Instance: TObject; const ClassName, Name: string): TObject; override;
   public
     procedure ReadStart; override;
-    procedure ReadOpen(const Name, Attributes: string); override;
+    procedure ReadOpen(const Name: string); override;
     procedure Write(Writer: TmnXMLRttiCustomWriter; Instance: Pointer); override;
   end;
 
@@ -47,7 +47,7 @@ type
     function CreateObject(Instance: TObject; const ClassName, Name: string): TObject; override;
   public
     procedure ReadStart; override;
-    procedure ReadOpen(const Name, Attributes: string); override;
+    procedure ReadOpen(const Name: string); override;
     procedure Write(Writer: TmnXMLRttiCustomWriter; Instance: Pointer); override;
   end;
   
@@ -62,7 +62,7 @@ begin
   FReadState := False;
 end;
 
-procedure TmnXMLRttiStrings.ReadOpen(const Name, Attributes: string);
+procedure TmnXMLRttiStrings.ReadOpen(const Name: string);
 begin
   if Name <> 'Line' then
     raise EmnXMLParserException.Create('Line tag expected but found ' + Name);
@@ -116,7 +116,7 @@ begin
     Result := inherited FindClass(ClassName);
 end;
 
-procedure TmnXMLRttiCollection.ReadOpen(const Name, Attributes: string);
+procedure TmnXMLRttiCollection.ReadOpen(const Name: string);
 begin
   inherited;
 end;
@@ -189,7 +189,7 @@ begin
   (Instance as TmnXMLItems).Add(Result);
 end;
 
-procedure TmnXMLRttiItems.ReadOpen(const Name, Attributes: string);
+procedure TmnXMLRttiItems.ReadOpen(const Name: string);
 begin
   inherited;
 

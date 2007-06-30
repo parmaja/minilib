@@ -25,7 +25,7 @@ type
     procedure ReadPropertyValue(Instance: TObject; const PropName: string; const Value: string);
     function ReadVariant(Value:string; ValueType:string):Variant;
   public
-    procedure ReadOpen(const Name, Attributes: string); override;
+    procedure ReadOpen(const Name: string); override;
     procedure ReadValue(const Text: string); override;
     procedure ReadClose(const Name: string); override;
     procedure Write(Writer: TmnXMLRttiCustomWriter; Instance: Pointer); override;
@@ -33,7 +33,7 @@ type
 
   TmnXMLRttiHeaderFiler = class(TmnXMLRttiFiler)
   public
-    procedure ReadOpen(const Name, Attributes: string); override;
+    procedure ReadOpen(const Name: string); override;
     procedure ReadValue(const Text: string); override;
     procedure ReadClose(const Name: string); override;
     procedure Write(Writer: TmnXMLRttiCustomWriter; Instance: Pointer); override;
@@ -41,7 +41,7 @@ type
 
   TmnXMLRttiRootFiler = class(TmnXMLRttiFiler)
   public
-    procedure ReadOpen(const Name, Attributes: string); override;
+    procedure ReadOpen(const Name: string); override;
     procedure ReadValue(const Text: string); override;
     procedure ReadClose(const Name: string); override;
     procedure Write(Writer: TmnXMLRttiCustomWriter; Instance: Pointer); override;
@@ -50,7 +50,7 @@ type
   TmnXMLRttiSkipFiler = class(TmnXMLRttiFiler)
   private
   public
-    procedure ReadOpen(const Name, Attributes: string); override;
+    procedure ReadOpen(const Name: string); override;
     procedure ReadValue(const Text: string); override;
     procedure ReadClose(const Name: string); override;
     procedure Write(Writer: TmnXMLRttiCustomWriter; Instance: Pointer); override;
@@ -77,17 +77,17 @@ uses
 function StrDateToDate(Value:string):TDateTime;
 var
   p:Integer;
-  function Fetch(s:string):Integer;
+  function Fetch(const s:string):Integer;
   var
     i:Integer;
   begin
     Result := 0;
     i := p;
-    while p < Length(s) do
+    while True do
     begin
-      if (s[p] in ['-', ':', ' ']) then
+      if (p > Length(s)) or (s[p] in ['-', ':', ' ']) then
       begin
-        Result := StrToIntDef(Copy(s, i, p - i - 1), 0);
+        Result := StrToIntDef(Copy(s, i, p - i), 0);
         Inc(p);
         break;
       end;
@@ -113,9 +113,17 @@ type
 { TmnXMLRttiReader }
 
 procedure TmnXMLRttiReader.ReadAttributes(const Text: string);
+var
+  aAttributes: TStrings;
 begin
   inherited;
-  Stack.Current.ReadOpen(CurrentTag, Text);
+  aAttributes := CreateAttStrings(Text);
+  try
+    Stack.Current.Attributes.Assign(aAttributes);
+    Stack.Current.ReadOpen(CurrentTag);
+  finally
+    aAttributes.Free;
+  end;
   Inc(Stack.Current.Depth);
 end;
 
@@ -131,7 +139,10 @@ begin
   inherited;
   Dec(Stack.Current.Depth);
   if Stack.Current.Depth > 0 then
-    Stack.Current.ReadClose(Name)
+  begin
+    Stack.Current.ReadClose(Name);
+//    Stack.Current.Attributes.Assign(nil);
+  end
   else
     Stack.Pop
 end;
@@ -179,32 +190,26 @@ begin
   Result := Stack.Current.Instance;
 end;
 
-procedure TmnXMLRttiObjectFiler.ReadOpen(const Name, Attributes: string);
+procedure TmnXMLRttiObjectFiler.ReadOpen(const Name: string);
 var
   PropInfo: PPropInfo;
-  aStrings: TStrings;
   aObject: TObject;
   aFiler: TmnXMLRttiFiler;
 begin
   CurrentTag := Name;
   if Name = 'Object' then
   begin
-    aStrings := CreateAttStrings(Attributes);
-    try
-      aObject := CreateObject(Instance, DequoteStr(aStrings.Values['Type']), DequoteStr(aStrings.Values['Name']));
-      if aObject <> nil then
-      begin
+    aObject := CreateObject(Instance, DequoteStr(Attributes.Values['Type']), DequoteStr(Attributes.Values['Name']));
+    if aObject <> nil then
+    begin
 {        if aObject is TComponent then
-          Include(THackedComponent(aObject).ComponentState, csLoading);}
-        (Owner as TmnXMLRttiReader).Stack.Push((Owner as TmnXMLRttiReader).CreateFiler(Name, aObject, False));
+        Include(THackedComponent(aObject).ComponentState, csLoading);}
+      (Owner as TmnXMLRttiReader).Stack.Push((Owner as TmnXMLRttiReader).CreateFiler(Name, aObject, False));
 {        if aObject is TComponent then
-          THackedComponent(aObject).Loaded;}//not worked
-      end
-      else
-        PropertyError(Name);
-    finally
-      aStrings.Free;
-    end;
+        THackedComponent(aObject).Loaded;}//not worked
+    end
+    else
+      PropertyError(Name);
   end
   else
   begin
@@ -272,6 +277,8 @@ begin
     Result := StrDateToDate(Value)
   else if ValueType = 'Boolean' then
     Result := StrToBool(Value)
+  else
+    Result := Value;
 end;
 
 procedure TmnXMLRttiObjectFiler.PropertyError(PropName: string);
@@ -338,7 +345,7 @@ var
 
   procedure ReadVariantProp;
   begin
-    SetVariantProp(Instance, PropInfo, ReadVariant(Value, ''));
+    SetVariantProp(Instance, PropInfo, ReadVariant(Value, DequoteStr(Attributes.Values['ValueType'])));
   end;
 
   procedure ReadObjectProp;
@@ -410,19 +417,12 @@ procedure TmnXMLRttiRootFiler.ReadClose(const Name: string);
 begin
 end;
 
-procedure TmnXMLRttiRootFiler.ReadOpen(const Name, Attributes: string);
-var
-  aStrings: TStrings;
+procedure TmnXMLRttiRootFiler.ReadOpen(const Name: string);
 begin
   if Name <> 'Object' then
     raise EmnXMLParserException.Create('Root tag <Object> not defined');
-  aStrings := CreateAttStrings(Attributes);
-  try
-    if Instance = nil then
-      Instance := FindClass(aStrings.Values['Class']).Create;
-  finally
-    aStrings.Free;
-  end;
+  if Instance = nil then
+    Instance := FindClass(Attributes.Values['Class']).Create;
   (Owner as TmnXMLRttiReader).Stack.Push((Owner as TmnXMLRttiReader).CreateFiler('', Instance, False));
 end;
 
@@ -441,7 +441,7 @@ procedure TmnXMLRttiSkipFiler.ReadClose(const Name: string);
 begin
 end;
 
-procedure TmnXMLRttiSkipFiler.ReadOpen(const Name, Attributes: string);
+procedure TmnXMLRttiSkipFiler.ReadOpen(const Name: string);
 begin
 end;
 
@@ -491,21 +491,14 @@ procedure TmnXMLRttiHeaderFiler.ReadClose(const Name: string);
 begin
 end;
 
-procedure TmnXMLRttiHeaderFiler.ReadOpen(const Name, Attributes: string);
-var
-  aStrings: TStrings;
+procedure TmnXMLRttiHeaderFiler.ReadOpen(const Name: string);
 begin
   if Name <> 'rtti' then
     raise EmnXMLParserException.Create('Header tag <rtti> not defined');
-  aStrings := CreateAttStrings(Attributes);
-  try
-    if DequoteStr(aStrings.Values['author']) <> cRttiAuthor then
-      raise EmnXMLParserException.Create('Header author attribute must be MiniXML');
-    if DequoteStr(aStrings.Values['version']) <> cRttiVersion then
-      raise EmnXMLParserException.Create('Version not compatible with ' + cRttiVersion);
-  finally
-    aStrings.Free;
-  end;
+  if DequoteStr(Attributes.Values['author']) <> cRttiAuthor then
+    raise EmnXMLParserException.Create('Header author attribute must be MiniXML');
+  if DequoteStr(Attributes.Values['version']) <> cRttiVersion then
+    raise EmnXMLParserException.Create('Version not compatible with ' + cRttiVersion);
   (Owner as TmnXMLRttiReader).Stack.Push(TmnXMLRttiRootFiler.Create(Owner, Instance));
 end;
 
