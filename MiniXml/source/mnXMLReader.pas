@@ -54,8 +54,9 @@ begin
   Line := 1;
   while not Stream.EOF do
   begin
-    Stream.ReadLn(Text);
-    ParseLine(Text, Line);
+    Text := '';
+    if Stream.ReadLn(Text) then
+      ParseLine(Text, Line);
     Line := Line + 1;
   end;
 end;

@@ -198,7 +198,7 @@ var
   var
     S: string;
     IntToIdent: TIntToIdent;
-    Value: Longint;
+    Value: Int64; //more compatible with FPC
   begin
     Value := GetOrdProp(Instance, PropInfo);
     IntToIdent := FindIntToIdent(PropType);
@@ -210,7 +210,7 @@ var
 
   procedure WriteEnumeration;
   var
-    Value: Longint;
+    Value: Int64;
     S: string;
   begin
     Value := GetOrdProp(Instance, PropInfo);

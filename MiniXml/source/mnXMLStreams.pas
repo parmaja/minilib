@@ -101,6 +101,9 @@ var
   s: string;
   p: Integer;
 begin
+  {$IFDEF FPC}
+  S := '';
+  {$ENDIF}
   ReadLn(S);
   p := Pos(' ', s);
   if p > 0 then

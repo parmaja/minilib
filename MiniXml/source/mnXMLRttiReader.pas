@@ -9,7 +9,7 @@ unit mnXMLRttiReader;
 interface
 
 uses
-  Classes, SysUtils, TypInfo, StrUtils,
+  Classes, SysUtils, TypInfo, 
   mnXML, mnXMLRtti, mnXMLFPClasses;
 
 type
@@ -95,7 +95,7 @@ var
     end;
   end;
 var
-  y,m,d,h,n,s: Integer;
+  y,m,d,h,n,s: Word;
 begin
   p := 1;
   y := Fetch(Value);

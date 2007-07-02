@@ -16,7 +16,7 @@ uses
 {$IFDEF FPC}
 
 const
-  LOCALE_FONTSIGNATURE            = $00000058;   { font signature }
+  LOCALE_FONTSIGNATURE            = $00000058;   { font signature } //found in JwaWinNLS
 
 //function and classes not founded in FreePascal
 
@@ -27,6 +27,7 @@ type
   TGetLookupInfoEvent = procedure(var Ancestor: TPersistent;
     var Root, LookupRoot, RootAncestor: TComponent) of object;
 
+//this functions found in classes.inc but need to declair it in the Inteface of unit classesh.inc
 function FindIntToIdent(AIntegerType: Pointer): TIntToIdent;
 function FindIdentToInt(AIntegerType: Pointer): TIdentToInt;
 

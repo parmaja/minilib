@@ -324,7 +324,7 @@ var
 
   function IsDefaultOrdProp: Boolean;
   var
-    Value: Longint;
+    Value: Int64; //more compatible with FPC
     Default: LongInt;
   begin
     Value := GetOrdProp(Instance, PropInfo);
@@ -376,7 +376,7 @@ var
   var
     Value: Pointer;
   begin
-    Value := Pointer(Longword(GetOrdProp(Instance, PropInfo)));
+    Value := Pointer(GetOrdProp(Instance, PropInfo));
     Result := Value = nil;
   end;
 begin
