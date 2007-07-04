@@ -48,7 +48,7 @@ function StringsToString(Strings: TStrings; LineBreak: string = sLineBreak): str
 function URIToFileName(const URI: string): string;
 function FileNameToURI(FileName: string): string;
 function IncludeSlash(const S: string): string;
-function StrToStrings(Separators, WhiteSpace: TSysCharSet; Content: string; Strings: TStrings): Integer;
+function StrToStrings(Separators, WhiteSpace: TSysCharSet; Content: string; Strings: TStrings; DequoteValues:Boolean = False): Integer;
 function LeftSubStr(S, Separator:string):string;
 
 implementation
@@ -167,7 +167,7 @@ end;
 
 procedure ReadAttStrings(Strings: TStrings; const Attributes: string); overload;
 begin
-  StrToStrings([' '], [], PChar(Attributes), Strings);
+  StrToStrings([' '], [], PChar(Attributes), Strings, True);
 end;
 
 function CreateAttStrings(const Attributes: string): TStrings; overload;
@@ -404,11 +404,12 @@ begin
   end;
 end;
 
-function StrToStrings(Separators, WhiteSpace: TSysCharSet; Content: string; Strings: TStrings): Integer;
+function StrToStrings(Separators, WhiteSpace: TSysCharSet; Content: string; Strings: TStrings; DequoteValues:Boolean): Integer;
 var
-  Head, Tail: Integer;
+  Head, Tail, P: Integer;
   EOS, InQuote: Boolean;
   QuoteChar: Char;
+  S:string;
 begin
   Result := 0;
   if (Strings = nil) then
@@ -441,12 +442,19 @@ begin
           else
             Break;
         end;
-        EOS := Tail > Length(Content);                 
+        EOS := Tail > Length(Content);
         if (Head <> Tail) then
         begin
           if Strings <> nil then
           begin
-            Strings.Add(Copy(Content, Head, Tail - Head));
+            S:= Copy(Content, Head, Tail - Head);
+            if DequoteValues then
+            begin
+              P := Pos('=', S);
+              if P > 0 then
+                S:= Copy(S, 1, P) + DequoteStr(Copy(S, P + 1 , MaxInt));
+            end;
+            Strings.Add(S);
           end;
           Inc(Result);
         end;

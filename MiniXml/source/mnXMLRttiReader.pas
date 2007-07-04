@@ -199,7 +199,7 @@ begin
   CurrentTag := Name;
   if Name = 'Object' then
   begin
-    aObject := CreateObject(Instance, DequoteStr(Attributes.Values['Type']), DequoteStr(Attributes.Values['Name']));
+    aObject := CreateObject(Instance, Attributes.Values['Type'], Attributes.Values['Name']);
     if aObject <> nil then
     begin
 {        if aObject is TComponent then
@@ -345,7 +345,7 @@ var
 
   procedure ReadVariantProp;
   begin
-    SetVariantProp(Instance, PropInfo, ReadVariant(Value, DequoteStr(Attributes.Values['ValueType'])));
+    SetVariantProp(Instance, PropInfo, ReadVariant(Value, Attributes.Values['ValueType']));
   end;
 
   procedure ReadObjectProp;
@@ -495,9 +495,9 @@ procedure TmnXMLRttiHeaderFiler.ReadOpen(const Name: string);
 begin
   if Name <> 'rtti' then
     raise EmnXMLParserException.Create('Header tag <rtti> not defined');
-  if DequoteStr(Attributes.Values['author']) <> cRttiAuthor then
+  if Attributes.Values['author'] <> cRttiAuthor then
     raise EmnXMLParserException.Create('Header author attribute must be MiniXML');
-  if DequoteStr(Attributes.Values['version']) <> cRttiVersion then
+  if Attributes.Values['version'] <> cRttiVersion then
     raise EmnXMLParserException.Create('Version not compatible with ' + cRttiVersion);
   (Owner as TmnXMLRttiReader).Stack.Push(TmnXMLRttiRootFiler.Create(Owner, Instance));
 end;
