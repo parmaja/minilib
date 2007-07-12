@@ -14,7 +14,7 @@ interface
 uses
   LCLIntf, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
   Registry, StdCtrls, ExtCtrls, mnWin32Sockets, mnConnections, mnSockets, mnServers, mnHttpServer,
-  LResources, Buttons;
+  LResources, Buttons, Menus;
 
 type
 
@@ -22,8 +22,10 @@ type
 
   TMain = class(TForm)
     Bevel2: TBevel;
+    MainMenu1: TMainMenu;
     Memo: TMemo;
     MaxOfThreads: TLabel;
+    MenuItem1: TMenuItem;
     StartBtn: TButton;
     RootEdit: TEdit;
     Label1: TLabel;
@@ -36,6 +38,7 @@ type
     ExitBtn: TButton;
     procedure ExitBtnClick(Sender: TObject);
     procedure FormHide(Sender: TObject);
+    procedure MenuItem1Click(Sender: TObject);
     procedure StartBtnClick(Sender: TObject);
     procedure StayOnTopChkChange(Sender: TObject);
     procedure StopBtnClick(Sender: TObject);
@@ -64,6 +67,11 @@ end;
 
 procedure TMain.FormHide(Sender: TObject);
 begin
+end;
+
+procedure TMain.MenuItem1Click(Sender: TObject);
+begin
+  Close;
 end;
 
 procedure TMain.ExitBtnClick(Sender: TObject);
@@ -124,6 +132,7 @@ var
   var
     s:string;
   begin
+    s := '';
     if FindCmdLineValue(AName, s) then
       Result :=AnsiDequotedStr(s, '"')
     else if aReg.ValueExists(AName) then
@@ -136,6 +145,7 @@ var
   var
     s:string;
   begin
+    s := '';
     if FindCmdLineValue(AName, s) then
       Result := 'True'
     else if aReg.ValueExists(AName) then

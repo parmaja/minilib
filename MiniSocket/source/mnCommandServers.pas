@@ -8,6 +8,8 @@ unit mnCommandServers;
  *}
 interface
 
+{$M+}
+
 uses
   SysUtils, Classes, Contnrs, mnSockets, mnStreams, mnServers;
 

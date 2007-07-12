@@ -1,19 +1,22 @@
 object Main: TMain
   Left = 298
-  Height = 183
+  Height = 227
   Top = 140
-  Width = 220
-  HorzScrollBar.Page = 219
-  VertScrollBar.Page = 182
+  Width = 207
+  HorzScrollBar.Page = 206
+  VertScrollBar.Page = 207
   ActiveControl = StartBtn
   BorderIcons = [biSystemMenu, biMinimize]
   BorderStyle = bsSingle
   Caption = 'Mini Web Server'
+  ClientHeight = 208
+  ClientWidth = 207
   Font.CharSet = ARABIC_CHARSET
   Font.Color = clBlack
   Font.Height = -11
   Font.Name = 'Tahoma'
   Font.Pitch = fpVariable
+  Menu = MainMenu1
   OnCreate = FormCreate
   OnDestroy = FormDestroy
   OnHide = FormHide
@@ -29,7 +32,6 @@ object Main: TMain
     Top = 8
     Width = 24
     Caption = 'Root'
-    Color = clNone
     Font.CharSet = ARABIC_CHARSET
     Font.Color = clBlack
     Font.Height = -11
@@ -43,7 +45,6 @@ object Main: TMain
     Top = 32
     Width = 21
     Caption = 'Port'
-    Color = clNone
     ParentColor = False
     ParentFont = True
   end
@@ -53,7 +54,6 @@ object Main: TMain
     Top = 54
     Width = 30
     Caption = 'Count'
-    Color = clNone
     Font.CharSet = ARABIC_CHARSET
     Font.Color = clBlack
     Font.Height = -11
@@ -68,7 +68,6 @@ object Main: TMain
     Width = 65
     AutoSize = False
     Caption = '0'
-    Color = clNone
     Font.CharSet = ANSI_CHARSET
     Font.Color = clBlack
     Font.Height = -11
@@ -89,7 +88,6 @@ object Main: TMain
     Width = 65
     AutoSize = False
     Caption = '0'
-    Color = clNone
     Font.CharSet = ANSI_CHARSET
     Font.Color = clBlack
     Font.Height = -11
@@ -99,9 +97,9 @@ object Main: TMain
   end
   object Memo: TMemo
     Left = 2
-    Height = 77
+    Height = 102
     Top = 103
-    Width = 215
+    Width = 202
     Anchors = [akTop, akLeft, akRight, akBottom]
     ParentFont = True
     ReadOnly = True
@@ -124,14 +122,14 @@ object Main: TMain
     Left = 43
     Height = 21
     Top = 6
-    Width = 174
+    Width = 161
     Anchors = [akTop, akLeft, akRight]
     ParentFont = True
     TabOrder = 2
     Text = '.\html'
   end
   object StopBtn: TButton
-    Left = 67
+    Left = 65
     Height = 22
     Top = 77
     Width = 60
@@ -152,14 +150,23 @@ object Main: TMain
     Text = '80'
   end
   object ExitBtn: TButton
-    Left = 157
+    Left = 143
     Height = 22
     Top = 77
-    Width = 60
+    Width = 61
+    Anchors = [akTop, akRight]
     BorderSpacing.InnerBorder = 4
     Caption = 'Exit'
     OnClick = ExitBtnClick
     ParentFont = True
     TabOrder = 5
+  end
+  object MainMenu1: TMainMenu
+    left = 16
+    top = 120
+    object MenuItem1: TMenuItem
+      Caption = 'Exit'
+      OnClick = MenuItem1Click
+    end
   end
 end

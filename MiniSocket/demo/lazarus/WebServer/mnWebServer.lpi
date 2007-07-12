@@ -24,30 +24,24 @@
         <LaunchingApplication PathPlusParams="/usr/X11R6/bin/xterm -T 'Lazarus Run Output' -e $(LazarusDir)/tools/runwait.sh $(TargetCmdLine)"/>
       </local>
     </RunParams>
-    <RequiredPackages Count="2">
+    <RequiredPackages Count="1">
       <Item1>
-        <PackageName Value="minisockets"/>
-        <MinVersion Major="1" Build="1" Valid="True"/>
-      </Item1>
-      <Item2>
         <PackageName Value="LCL"/>
-      </Item2>
+      </Item1>
     </RequiredPackages>
-    <Units Count="23">
+    <Units Count="37">
       <Unit0>
         <Filename Value="mnWebServer.lpr"/>
         <IsPartOfProject Value="True"/>
-        <CursorPos X="1" Y="1"/>
+        <CursorPos X="14" Y="7"/>
         <TopLine Value="1"/>
-        <EditorIndex Value="5"/>
-        <UsageCount Value="33"/>
-        <Loaded Value="True"/>
+        <UsageCount Value="34"/>
       </Unit0>
       <Unit1>
         <Filename Value="..\..\..\source\mnStreams.pas"/>
         <UnitName Value="mnStreams"/>
-        <CursorPos X="1" Y="1"/>
-        <TopLine Value="1"/>
+        <CursorPos X="3" Y="178"/>
+        <TopLine Value="164"/>
         <UsageCount Value="10"/>
       </Unit1>
       <Unit2>
@@ -55,9 +49,7 @@
         <UnitName Value="mnConnections"/>
         <CursorPos X="3" Y="44"/>
         <TopLine Value="29"/>
-        <EditorIndex Value="4"/>
         <UsageCount Value="10"/>
-        <Loaded Value="True"/>
       </Unit2>
       <Unit3>
         <Filename Value="MainForm.pas"/>
@@ -66,10 +58,10 @@
         <IsPartOfProject Value="True"/>
         <ResourceFilename Value="MainForm.lrs"/>
         <UnitName Value="MainForm"/>
-        <CursorPos X="23" Y="76"/>
-        <TopLine Value="69"/>
+        <CursorPos X="51" Y="15"/>
+        <TopLine Value="1"/>
         <EditorIndex Value="0"/>
-        <UsageCount Value="32"/>
+        <UsageCount Value="33"/>
         <Loaded Value="True"/>
       </Unit3>
       <Unit4>
@@ -98,18 +90,14 @@
         <UnitName Value="mnServers"/>
         <CursorPos X="3" Y="324"/>
         <TopLine Value="317"/>
-        <EditorIndex Value="3"/>
         <UsageCount Value="11"/>
-        <Loaded Value="True"/>
       </Unit7>
       <Unit8>
         <Filename Value="..\..\..\source\mnHttpServer.pas"/>
         <UnitName Value="mnHttpServer"/>
-        <CursorPos X="18" Y="315"/>
-        <TopLine Value="306"/>
-        <EditorIndex Value="1"/>
+        <CursorPos X="1" Y="1"/>
+        <TopLine Value="1"/>
         <UsageCount Value="14"/>
-        <Loaded Value="True"/>
       </Unit8>
       <Unit9>
         <Filename Value="MainForm.lfm"/>
@@ -127,11 +115,9 @@
       <Unit11>
         <Filename Value="..\..\..\source\mnWin32Sockets.pas"/>
         <UnitName Value="mnWin32Sockets"/>
-        <CursorPos X="14" Y="36"/>
-        <TopLine Value="22"/>
-        <EditorIndex Value="2"/>
+        <CursorPos X="22" Y="63"/>
+        <TopLine Value="49"/>
         <UsageCount Value="11"/>
-        <Loaded Value="True"/>
       </Unit11>
       <Unit12>
         <Filename Value="C:\lazarus\fpc\2.1.3\source\rtl\win\winsock2.pp"/>
@@ -184,8 +170,8 @@
       <Unit19>
         <Filename Value="C:\lazarus\lcl\forms.pp"/>
         <UnitName Value="Forms"/>
-        <CursorPos X="30" Y="1126"/>
-        <TopLine Value="1113"/>
+        <CursorPos X="21" Y="1239"/>
+        <TopLine Value="1237"/>
         <UsageCount Value="11"/>
       </Unit19>
       <Unit20>
@@ -207,129 +193,104 @@
         <TopLine Value="1686"/>
         <UsageCount Value="11"/>
       </Unit22>
+      <Unit23>
+        <Filename Value="C:\lazarus\lcl\interfaces\win32\interfaces.pp"/>
+        <UnitName Value="Interfaces"/>
+        <CursorPos X="1" Y="1"/>
+        <TopLine Value="1"/>
+        <UsageCount Value="10"/>
+      </Unit23>
+      <Unit24>
+        <Filename Value="C:\lazarus\lcl\extctrls.pp"/>
+        <UnitName Value="ExtCtrls"/>
+        <CursorPos X="34" Y="73"/>
+        <TopLine Value="62"/>
+        <UsageCount Value="10"/>
+      </Unit24>
+      <Unit25>
+        <Filename Value="C:\lazarus\fpc\2.1.5\source\rtl\win32\classes.pp"/>
+        <UnitName Value="Classes"/>
+        <CursorPos X="1" Y="1"/>
+        <TopLine Value="1"/>
+        <UsageCount Value="10"/>
+      </Unit25>
+      <Unit26>
+        <Filename Value="C:\lazarus\lcl\controls.pp"/>
+        <UnitName Value="Controls"/>
+        <CursorPos X="1" Y="1048"/>
+        <TopLine Value="1036"/>
+        <UsageCount Value="10"/>
+      </Unit26>
+      <Unit27>
+        <Filename Value="C:\lazarus\lcl\lcltype.pp"/>
+        <UnitName Value="LCLType"/>
+        <CursorPos X="1" Y="33"/>
+        <TopLine Value="23"/>
+        <UsageCount Value="10"/>
+      </Unit27>
+      <Unit28>
+        <Filename Value="C:\lazarus\lcl\include\customform.inc"/>
+        <CursorPos X="1" Y="644"/>
+        <TopLine Value="633"/>
+        <UsageCount Value="10"/>
+      </Unit28>
+      <Unit29>
+        <Filename Value="..\..\..\..\..\..\..\pascal\lib\pos\source\posButtonLists.pas"/>
+        <UnitName Value="posButtonLists"/>
+        <CursorPos X="25" Y="15"/>
+        <TopLine Value="1"/>
+        <UsageCount Value="10"/>
+      </Unit29>
+      <Unit30>
+        <Filename Value="..\..\..\..\..\..\..\pascal\lib\pos\source\posControls.pas"/>
+        <UnitName Value="posControls"/>
+        <CursorPos X="28" Y="19"/>
+        <TopLine Value="8"/>
+        <UsageCount Value="10"/>
+      </Unit30>
+      <Unit31>
+        <Filename Value="C:\lazarus\lcl\graphics.pp"/>
+        <UnitName Value="Graphics"/>
+        <CursorPos X="1" Y="124"/>
+        <TopLine Value="116"/>
+        <UsageCount Value="10"/>
+      </Unit31>
+      <Unit32>
+        <Filename Value="..\..\..\..\..\..\..\pascal\lib\pos\source\posButtons.pas"/>
+        <UnitName Value="posButtons"/>
+        <CursorPos X="1" Y="29"/>
+        <TopLine Value="17"/>
+        <UsageCount Value="10"/>
+      </Unit32>
+      <Unit33>
+        <Filename Value="C:\lazarus\lcl\include\control.inc"/>
+        <CursorPos X="5" Y="688"/>
+        <TopLine Value="679"/>
+        <UsageCount Value="10"/>
+      </Unit33>
+      <Unit34>
+        <Filename Value="..\..\..\..\..\..\..\pascal\lib\pos\source\posEdits.pas"/>
+        <UnitName Value="posEdits"/>
+        <CursorPos X="20" Y="60"/>
+        <TopLine Value="57"/>
+        <UsageCount Value="10"/>
+      </Unit34>
+      <Unit35>
+        <Filename Value="..\..\..\..\..\..\..\pascal\lib\pos\source\posLists.pas"/>
+        <UnitName Value="posLists"/>
+        <CursorPos X="38" Y="201"/>
+        <TopLine Value="190"/>
+        <UsageCount Value="10"/>
+      </Unit35>
+      <Unit36>
+        <Filename Value="..\..\..\..\..\..\..\pascal\lib\pos\source\posKeyboards.pas"/>
+        <UnitName Value="posKeyboards"/>
+        <CursorPos X="1" Y="189"/>
+        <TopLine Value="178"/>
+        <UsageCount Value="10"/>
+      </Unit36>
     </Units>
-    <JumpHistory Count="30" HistoryIndex="29">
-      <Position1>
-        <Filename Value="..\..\..\source\mnHttpServer.pas"/>
-        <Caret Line="120" Column="1" TopLine="105"/>
-      </Position1>
-      <Position2>
-        <Filename Value="..\..\..\source\mnHttpServer.pas"/>
-        <Caret Line="309" Column="42" TopLine="294"/>
-      </Position2>
-      <Position3>
-        <Filename Value="..\..\..\source\mnHttpServer.pas"/>
-        <Caret Line="1" Column="1" TopLine="1"/>
-      </Position3>
-      <Position4>
-        <Filename Value="..\..\..\source\mnHttpServer.pas"/>
-        <Caret Line="53" Column="18" TopLine="38"/>
-      </Position4>
-      <Position5>
-        <Filename Value="..\..\..\source\mnHttpServer.pas"/>
-        <Caret Line="153" Column="16" TopLine="138"/>
-      </Position5>
-      <Position6>
-        <Filename Value="..\..\..\source\mnHttpServer.pas"/>
-        <Caret Line="201" Column="20" TopLine="186"/>
-      </Position6>
-      <Position7>
-        <Filename Value="..\..\..\source\mnHttpServer.pas"/>
-        <Caret Line="309" Column="62" TopLine="294"/>
-      </Position7>
-      <Position8>
-        <Filename Value="..\..\..\source\mnHttpServer.pas"/>
-        <Caret Line="411" Column="1" TopLine="396"/>
-      </Position8>
-      <Position9>
-        <Filename Value="..\..\..\source\mnHttpServer.pas"/>
-        <Caret Line="451" Column="1" TopLine="436"/>
-      </Position9>
-      <Position10>
-        <Filename Value="..\..\..\source\mnHttpServer.pas"/>
-        <Caret Line="1" Column="1" TopLine="1"/>
-      </Position10>
-      <Position11>
-        <Filename Value="..\..\..\source\mnHttpServer.pas"/>
-        <Caret Line="53" Column="1" TopLine="38"/>
-      </Position11>
-      <Position12>
-        <Filename Value="..\..\..\source\mnHttpServer.pas"/>
-        <Caret Line="94" Column="25" TopLine="79"/>
-      </Position12>
-      <Position13>
-        <Filename Value="..\..\..\source\mnHttpServer.pas"/>
-        <Caret Line="167" Column="37" TopLine="152"/>
-      </Position13>
-      <Position14>
-        <Filename Value="..\..\..\source\mnHttpServer.pas"/>
-        <Caret Line="171" Column="56" TopLine="156"/>
-      </Position14>
-      <Position15>
-        <Filename Value="..\..\..\source\mnHttpServer.pas"/>
-        <Caret Line="317" Column="30" TopLine="304"/>
-      </Position15>
-      <Position16>
-        <Filename Value="..\..\..\source\mnHttpServer.pas"/>
-        <Caret Line="316" Column="22" TopLine="301"/>
-      </Position16>
-      <Position17>
-        <Filename Value="..\..\..\source\mnHttpServer.pas"/>
-        <Caret Line="319" Column="22" TopLine="301"/>
-      </Position17>
-      <Position18>
-        <Filename Value="..\..\..\source\mnHttpServer.pas"/>
-        <Caret Line="171" Column="45" TopLine="167"/>
-      </Position18>
-      <Position19>
-        <Filename Value="..\..\..\source\mnHttpServer.pas"/>
-        <Caret Line="440" Column="31" TopLine="432"/>
-      </Position19>
-      <Position20>
-        <Filename Value="..\..\..\source\mnHttpServer.pas"/>
-        <Caret Line="1" Column="1" TopLine="1"/>
-      </Position20>
-      <Position21>
-        <Filename Value="..\..\..\source\mnHttpServer.pas"/>
-        <Caret Line="28" Column="25" TopLine="13"/>
-      </Position21>
-      <Position22>
-        <Filename Value="..\..\..\source\mnHttpServer.pas"/>
-        <Caret Line="94" Column="25" TopLine="79"/>
-      </Position22>
-      <Position23>
-        <Filename Value="..\..\..\source\mnHttpServer.pas"/>
-        <Caret Line="167" Column="37" TopLine="152"/>
-      </Position23>
-      <Position24>
-        <Filename Value="..\..\..\source\mnHttpServer.pas"/>
-        <Caret Line="171" Column="56" TopLine="156"/>
-      </Position24>
-      <Position25>
-        <Filename Value="..\..\..\source\mnHttpServer.pas"/>
-        <Caret Line="26" Column="34" TopLine="20"/>
-      </Position25>
-      <Position26>
-        <Filename Value="..\..\..\source\mnServers.pas"/>
-        <Caret Line="26" Column="35" TopLine="18"/>
-      </Position26>
-      <Position27>
-        <Filename Value="..\..\..\source\mnHttpServer.pas"/>
-        <Caret Line="291" Column="14" TopLine="268"/>
-      </Position27>
-      <Position28>
-        <Filename Value="..\..\..\source\mnHttpServer.pas"/>
-        <Caret Line="327" Column="13" TopLine="306"/>
-      </Position28>
-      <Position29>
-        <Filename Value="MainForm.pas"/>
-        <Caret Line="153" Column="29" TopLine="139"/>
-      </Position29>
-      <Position30>
-        <Filename Value="MainForm.pas"/>
-        <Caret Line="38" Column="5" TopLine="36"/>
-      </Position30>
-    </JumpHistory>
+    <JumpHistory Count="0" HistoryIndex="-1"/>
   </ProjectOptions>
   <CompilerOptions>
     <Version Value="5"/>
