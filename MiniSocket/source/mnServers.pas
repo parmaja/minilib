@@ -84,6 +84,8 @@ type
     FListener: TmnListener;
     FAddress: string;
     FOnBeforeOpen: TNotifyEvent;
+    FOnAfterOpen: TNotifyEvent;
+    FOnBeforeClose: TNotifyEvent;
     FOnAfterClose: TNotifyEvent;
     FOnLog: TmnOnLog;
     FOnChanged: TmnOnListenerNotify;
@@ -95,6 +97,7 @@ type
     function CreateListener: TmnListener; virtual;
     procedure DoChanged(Listener: TmnListener); virtual;
     procedure DoBeforeOpen; virtual;
+    procedure DoAfterOpen; virtual;
     procedure DoBeforeClose; virtual;
     procedure DoAfterClose; virtual;
   public
@@ -112,7 +115,9 @@ type
     property Address: string read FAddress write SetAddress;
     property Active: boolean read FActive write SetActive default False;
     property OnBeforeOpen: TNotifyEvent read FOnBeforeOpen write FOnBeforeOpen;
+    property OnAfterOpen: TNotifyEvent read FOnAfterOpen write FOnAfterOpen;
     property OnAfterClose: TNotifyEvent read FOnAfterClose write FOnAfterClose;
+    property OnBeforeClose: TNotifyEvent read FOnBeforeClose write FOnBeforeClose;
     property OnLog: TmnOnLog read FOnLog write FOnLog;
     property OnChanged: TmnOnListenerNotify read FOnChanged write FOnChanged;
   end;
@@ -192,6 +197,11 @@ end;
 
 procedure TmnServer.DoBeforeClose;
 begin
+  if not (csDestroying in ComponentState) then
+  begin
+    if Assigned(FOnBeforeClose) then
+      FOnBeforeClose(Self);
+  end;
 end;
 
 function TmnServer.GetCount: Integer;
@@ -200,6 +210,15 @@ begin
     Result := Listener.Count
   else
     Result := 0;
+end;
+
+procedure TmnServer.DoAfterOpen;
+begin
+  if not (csDestroying in ComponentState) then
+  begin
+    if Assigned(FOnAfterOpen) then
+      FOnAfterOpen(Self);
+  end;
 end;
 
 { TmnListener }
@@ -407,7 +426,8 @@ begin
       except
         FreeAndNil(FListener);
         raise;
-      end
+      end;
+      DoAfterOpen;
     finally
     end;
   end;

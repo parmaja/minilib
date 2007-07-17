@@ -503,7 +503,7 @@ begin
   Result := TmnWinSocket.Create(aHandle)
 end;
 
-initialization
+initialization                                                                                                  
   RegisterWallSocket(TmnWinWallSocket.Create);
 end.
 

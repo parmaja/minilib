@@ -10,6 +10,7 @@ interface
 
 uses
   Classes, SysUtils, TypInfo, 
+  {$IFDEF FPC} LCLProc, {$ENDIF}
   mnXML, mnXMLRtti, mnXMLFPClasses;
 
 type
@@ -18,6 +19,7 @@ type
     CurrentTag: string;
   protected
     function FindClass(const ClassName: string): TClass; virtual;
+    function SafeFindClass(const ClassName: string): TClass; 
     function CreateObject(Instance: TObject; const ClassName, Name: string): TObject; virtual;
     procedure SkipProperty(PropName: string);
     procedure PropertyError(PropName: string);
@@ -338,9 +340,14 @@ var
     SetFloatProp(Instance, PropInfo, Data);
   end;
 
-  procedure ReadStrProp;
+  procedure ReadWideStrProp;
   begin
     SetWideStrProp(Instance, PropInfo, Value);
+  end;
+
+  procedure ReadStrProp;
+  begin
+    SetStrProp(Instance, PropInfo, Value);
   end;
 
   procedure ReadVariantProp;
@@ -385,7 +392,9 @@ begin
       ReadInt64Prop;
     tkFloat:
       ReadFloatProp;
-    tkString, tkLString, tkWString:
+    tkWString:
+      ReadWideStrProp;
+    {$IFDEF FPC} tkAString, {$ENDIF} tkLString, tkString:
       ReadStrProp;
     tkVariant:
       ReadVariantProp;
@@ -509,6 +518,13 @@ end;
 
 procedure TmnXMLRttiHeaderFiler.Write(Writer: TmnXMLRttiCustomWriter; Instance: Pointer);
 begin
+end;
+
+function TmnXMLRttiObjectFiler.SafeFindClass(const ClassName: string): TClass;
+begin
+  Result := FindClass(ClassName);
+  if Result = nil then
+    raise EmnXMLParserException.Create('Class not found ' + ClassName);
 end;
 
 end.

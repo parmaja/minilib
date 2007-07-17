@@ -32,6 +32,7 @@ type
     procedure LoadFromFile(FileName: string);
     procedure SafeLoadFromFile(FileName: string);
     procedure SaveToFile(FileName: string);
+    procedure SaveToString(var S: string);
     property Changed: Boolean read FChanged write FChanged;
   end;
 
@@ -55,20 +56,24 @@ type
     property Changed: Boolean read FChanged write FChanged;
   end;
 
-  TmnXMLItem = class(TPersistent)
-  public
-    constructor Create; virtual;
-  end;
+{ ProfileList }
 
-  TmnXMLItemClass = class of TmnXMLItem;
+  TmnXMLItem = Class(TmnProfile)
+  public
+  end;
+  
+  { TmnXMLItems }
 
   TmnXMLItems = class(TObjectList)
   private
     function GetItem(Index: Integer): TmnXMLItem;
     procedure SetItem(Index: Integer; const Value: TmnXMLItem);
+  protected
+    function DoCreateItem:TmnXMLItem; virtual; abstract;
   public
+    function CreateItem:TmnXMLItem;
     property Items[Index: Integer]: TmnXMLItem read GetItem write SetItem; default;
-  end; 
+  end;
 
 procedure XMLReadObjectStream(Instance: TObject; Stream: TStream);
 procedure XMLWriteObjectStream(Instance: TObject; Stream: TStream);
@@ -269,23 +274,17 @@ begin
   end;
 end;
 
-{ TmnXMLItems }
-
-function TmnXMLItems.GetItem(Index: Integer): TmnXMLItem;
+procedure TmnProfile.SaveToString(var S: string);
+var
+  Stream: TStringStream;
 begin
-  Result := inherited Items[Index] as TmnXMLItem;
-end;
-
-procedure TmnXMLItems.SetItem(Index: Integer; const Value: TmnXMLItem);
-begin
-  inherited Items[Index] := Value;
-end;
-
-{ TmnXMLItem }
-
-constructor TmnXMLItem.Create;
-begin
-  inherited Create;
+  Stream := TStringStream.Create('');
+  try
+    SaveToStream(Stream);
+    S := Stream.DataString;
+  finally
+    Stream.Free;
+  end;
 end;
 
 { TmnComponentProfile }
@@ -387,6 +386,25 @@ end;
 
 procedure TmnComponentProfile.Saving;
 begin
+end;
+
+{ TmnXMLItems }
+
+function TmnXMLItems.GetItem(Index: Integer): TmnXMLItem;
+begin
+  Result := inherited Items[Index] as TmnXMLItem;
+end;
+
+procedure TmnXMLItems.SetItem(Index: Integer;
+  const Value: TmnXMLItem);
+begin
+  inherited Items[Index] := Value;
+end;
+
+function TmnXMLItems.CreateItem: TmnXMLItem;
+begin
+  Result := DoCreateItem;
+  Add(Result);
 end;
 
 end.

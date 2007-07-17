@@ -42,6 +42,7 @@ type
     procedure Execute(Connection: TmnCommandConnection); virtual;
   public
     constructor Create(Connection: TmnCommandConnection; const Params:string); virtual;
+    class function GetCommandName:string; virtual; 
     property Server:TmnServer read FServer;
     property Name: string read FName;
     property KeepAlive: Boolean read FKeepAlive write FKeepAlive;
@@ -92,7 +93,8 @@ type
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
-    function RegisterCommand(vName: string; CommandClass: TmnCommandClass): Integer;
+    function RegisterCommand(vName: string; CommandClass: TmnCommandClass): Integer; overload;
+    function RegisterCommand(CommandClass: TmnCommandClass): Integer; overload;
   published
   end;
 
@@ -266,6 +268,11 @@ procedure TmnCommand.Execute(Connection: TmnCommandConnection);
 begin
 end;
 
+class function TmnCommand.GetCommandName: string;
+begin
+  Result := ''; 
+end;
+
 { TmnCommands }
 
 function TmnCommands.Add(const Name: string; CommandClass: TmnCommandClass): Integer;
@@ -301,6 +308,11 @@ end;
 procedure TmnCommands.SetItem(Index: Integer; Value: TmnCommandClassItem);
 begin
   inherited Items[Index] := Value;
+end;
+
+function TmnCommandServer.RegisterCommand(CommandClass: TmnCommandClass): Integer;
+begin
+  Result := RegisterCommand(CommandClass.GetCommandName, CommandClass);
 end;
 
 end.

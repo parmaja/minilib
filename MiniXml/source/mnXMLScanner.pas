@@ -42,6 +42,8 @@ type
 
     FNextScan: string;
     FNextState: TmnScanState;
+    FCompleted: Boolean;
+    FStarted: Boolean;
     procedure FlushBuffer(State: TmnScanState);
     procedure ScanBody(NextState: TmnScanState; const SubStr, Text: string; Line: Integer; var Column: Integer);
     procedure ScanStricted(NextState: TmnScanState; const SubStr, Text: string; Line: Integer; var Column: Integer);
@@ -84,6 +86,8 @@ type
     procedure DoStop; override;
     property State: TmnScanState read FState;
     property Depth: Integer read GetDepth;
+    property Started:Boolean read FStarted;
+    property Completed:Boolean read FCompleted;
     property CurrentTag: string read FCurrentTag; //use with attributes or leaf elements
   public
     constructor Create; override;
@@ -123,7 +127,9 @@ begin
   FNextScan := '>';
   AddBuffer(RangeStr(Text, Column, p), ssScanStricted); //must be in CloseTag state, ScanStricted will make it
   Column := p + 1; //eat the > char
-  FDepthOut := FDepthOut - 1;
+  FDepthOut := FDepthOut + 1;
+  if FStarted and (Depth = 0) then
+    FCompleted := True;
 end;
 
 procedure TmnXMLScanner.ssOnEscape(const Text: string; Line: Integer; var Column: Integer);
@@ -432,6 +438,8 @@ begin
   if MidStr(Text, 1, Length(sXMLAnsiOpen)) = sXMLAnsiOpen then
   begin
     //There is a header and it is a Ansi document
+    FStarted := True;
+    FCompleted := False;
     Column := Column + Length(sXMLAnsiOpen) + 1; //put the column to the first char of attributes of xml document
     ChangeState(ssHeader);
   end

@@ -7,7 +7,7 @@ unit mnXMLUtils;
  * @author    Zaher Dirkey <zaher at parmaja dot com>
  *}
 interface
-
+{$H+}
 uses
   Classes, SysUtils, Typinfo;
 
@@ -348,11 +348,19 @@ var
     Result := Value = 0;
   end;
 
-  function IsDefaultStrProp: Boolean;
+  function IsDefaultWideStrProp: Boolean;
   var
     Value: WideString;
   begin
     Value := GetWideStrProp(Instance, PropInfo);
+    Result := Value = '';
+  end;
+
+  function IsDefaultStrProp: Boolean;
+  var
+    Value: string;
+  begin
+    Value := GetStrProp(Instance, PropInfo);
     Result := Value = '';
   end;
 
@@ -380,7 +388,7 @@ var
     Result := Value = nil;
   end;
 begin
-  Result := True;
+  Result := True;// not default for default :P
   if (PropInfo^.GetProc <> nil) and ((PropInfo^.SetProc <> nil) or (PropInfo^.PropType^.Kind = tkClass) or (PropInfo^.PropType^.Kind = tkInterface)) then
   begin
     PropType := GetPropType(PropInfo);
@@ -389,7 +397,9 @@ begin
         Result := IsDefaultOrdProp;
       tkFloat:
         Result := IsDefaultFloatProp;
-      tkString, tkLString, tkWString:
+      tkWString:
+        Result := IsDefaultWideStrProp;
+      {$IFDEF FPC} tkAString, {$ENDIF} tkString, tkLString:
         Result := IsDefaultStrProp;
       tkMethod: Result := False;
       tkVariant:

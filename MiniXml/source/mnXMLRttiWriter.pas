@@ -10,6 +10,7 @@ interface
 
 uses
   Classes, SysUtils, Variants, TypInfo,
+  {$IFDEF FPC} LCLProc, {$ENDIF}
   mnXMLRtti, mnXMLFPClasses;
 
 type
@@ -250,11 +251,19 @@ var
     WriteValue(FloatToStr(Value));
   end;
 
-  procedure WriteStrProp;
+  procedure WriteWideStrProp;
   var
     Value: WideString;
   begin
     Value := GetWideStrProp(Instance, PropInfo);
+    WriteValue(Value);
+  end;
+
+  procedure WriteStrProp;
+  var
+    Value: ansistring;
+  begin
+    Value := GetStrProp(Instance, PropInfo);
     WriteValue(Value);
   end;
 
@@ -297,10 +306,14 @@ var
   end;
 
 begin
+  {$IFDEF FPC}
+    if PropInfo.Name = 'Name' then
+       debugln;
+  {$ENDIF}
   if not IsDefaultValue(Instance, PropInfo) then
   begin
     PropType := GetPropType(PropInfo);
-    if PropType^.Kind in [tkInteger, tkChar, tkSet, tkEnumeration, tkInt64, tkFloat, tkString, tkLString, tkWString, tkVariant, tkClass, tkInterface] then
+    if PropType^.Kind in [tkInteger, tkChar, tkSet, tkEnumeration, tkInt64, tkFloat, {$IFDEF FPC} tkAString, {$ENDIF} tkString, tkLString, tkWString, tkVariant, tkClass, tkInterface] then
     begin
       WriteStartTag(PropInfo^.Name);
       if FWriteTypes then
@@ -318,7 +331,9 @@ begin
           WriteInt64Prop;
         tkFloat:
           WriteFloatProp;
-        tkString, tkLString, tkWString:
+        tkWString:
+          WriteWideStrProp;
+        {$IFDEF FPC} tkAString, {$ENDIF} tkString, tkLString:
           WriteStrProp;
         tkVariant:
           WriteVariantProp;

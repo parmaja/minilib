@@ -15,11 +15,11 @@ Count=0
 EditWindowCount=0
 PackageWindowCount=1
 
-[D:\work\delphi\lib\MiniLib\MiniXml\delphi\MiniXMLLib.dpk]
+[D:\work\pascal\lib\minilib\MiniXml\delphi\MiniXMLLib.dpk]
 FormState=0
-FormOnTop=1
+FormOnTop=0
 
-[D:\work\delphi\lib\MiniLib\MiniXml\delphi\ProjectGroup1.bpg]
+[D:\work\pascal\lib\minilib\MiniXml\delphi\ProjectGroup1.bpg]
 FormState=0
 FormOnTop=0
 
@@ -43,7 +43,7 @@ TextLabels=1
 Toolbar=1
 SectionWidth0=150
 SectionWidth1=210
-Module=D:\work\delphi\lib\MiniLib\MiniXml\delphi\MiniXMLLib.dpk
+Module=D:\work\pascal\lib\minilib\MiniXml\delphi\MiniXMLLib.dpk
 
 [Watches]
 Count=0

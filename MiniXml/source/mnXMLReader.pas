@@ -43,7 +43,6 @@ end;
 procedure TmnXMLReader.DoStop;
 begin
   inherited;
-
 end;
 
 procedure TmnXMLReader.ParseStream;
@@ -52,18 +51,19 @@ var
   Line: Integer;
 begin
   Line := 1;
-  while not Stream.EOF do
+  while not Stream.EOF and not Completed do
   begin
     Text := '';
     if Stream.ReadLn(Text) then
       ParseLine(Text, Line);
     Line := Line + 1;
   end;
+{  if not Completed then
+    raise EmnXMLParserException.Create('Not completed xml', Line, Column);}
 end;
 
 procedure TmnXMLReader.DoReadState(ReadState: TmnXMLReadState);
 begin
-
 end;
 
 end.

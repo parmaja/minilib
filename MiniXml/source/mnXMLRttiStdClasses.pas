@@ -34,7 +34,7 @@ type
     procedure Write(Writer: TmnXMLRttiCustomWriter; Instance: Pointer); override;
   end;
 
-  TmnXMLRttiObjectList= class(TmnXMLRttiObjectFiler) // not safe, it must pure object for items not have own create constructor
+  TmnXMLRttiProfileItems= class(TmnXMLRttiObjectFiler)
   protected
     function CreateObject(Instance: TObject; const ClassName, Name: string): TObject; override;
   public
@@ -42,15 +42,6 @@ type
     procedure Write(Writer: TmnXMLRttiCustomWriter; Instance: Pointer); override;
   end;
 
-  TmnXMLRttiItems= class(TmnXMLRttiObjectFiler)
-  protected
-    function CreateObject(Instance: TObject; const ClassName, Name: string): TObject; override;
-  public
-    procedure ReadStart; override;
-    procedure ReadOpen(const Name: string); override;
-    procedure Write(Writer: TmnXMLRttiCustomWriter; Instance: Pointer); override;
-  end;
-  
 implementation
 
 { TmnXMLRttiStrings }
@@ -105,7 +96,7 @@ begin
   if SameText((Instance as TCollection).ItemClass.ClassName, ClassName) then
     Result := (Instance as TCollection).ItemClass.Create(Instance as TCollection)
   else
-    Result := FindClass(ClassName).Create;
+    Result := SafeFindClass(ClassName).Create;
 end;
 
 function TmnXMLRttiCollection.FindClass(const ClassName: string): TClass;
@@ -146,85 +137,40 @@ begin
   end;
 end;
 
-{ TmnXMLRttiObjectList }
+{ TmnXMLRttiProfileItems }
 
-function TmnXMLRttiObjectList.CreateObject(Instance: TObject;
-  const ClassName, Name: string): TObject;
+function TmnXMLRttiProfileItems.CreateObject(Instance: TObject; const ClassName, Name: string): TObject;
 begin
-  Result := FindClass(ClassName).Create;
-  (Instance as TObjectList).Add(Result);
+  Result := TmnXMLItems(Instance).CreateItem;
 end;
 
-procedure TmnXMLRttiObjectList.ReadStart;
-begin
-  inherited;
-  if not (TObject(Instance) is TObjectList) then
-    raise EmnXMLException.Create('not support this class');
-  (TObject(Instance) as TObjectList).Clear;
-end;
-
-procedure TmnXMLRttiObjectList.Write(Writer: TmnXMLRttiCustomWriter; Instance: Pointer);
-var
-  i: Integer;
-begin
-  if not (TObject(Instance) is TObjectList) then
-    raise EmnXMLException.Create('not support this class');
-  with Writer do
-  begin
-    WriteOpenTag('Items');
-    for I := 0 to TObjectList(Instance).Count - 1 do
-    begin
-      Writer.WriteObject(TObjectList(Instance).Items[I]);
-    end;
-    WriteCloseTag('Items');
-  end;
-end;
-
-{ TmnXMLRttiItems }
-
-function TmnXMLRttiItems.CreateObject(Instance: TObject; const ClassName,
-  Name: string): TObject;
-begin
-  Result := TmnXMLItemClass(FindClass(ClassName)).Create;
-  (Instance as TmnXMLItems).Add(Result);
-end;
-
-procedure TmnXMLRttiItems.ReadOpen(const Name: string);
-begin
-  inherited;
-
-end;
-
-procedure TmnXMLRttiItems.ReadStart;
+procedure TmnXMLRttiProfileItems.ReadStart;
 begin
   if not (TObject(Instance) is TmnXMLItems) then
-    raise EmnXMLException.Create('not support this class');
+    raise EmnXMLException.Create('Not support this class');
   (TObject(Instance) as TmnXMLItems).Clear;
 end;
 
-procedure TmnXMLRttiItems.Write(Writer: TmnXMLRttiCustomWriter;
+procedure TmnXMLRttiProfileItems.Write(Writer: TmnXMLRttiCustomWriter;
   Instance: Pointer);
 var
   I:Integer;
 begin
-  if not (TObject(Instance) is TObjectList) then
-    raise EmnXMLException.Create('not support this class');
+  if not (TObject(Instance) is TmnXMLItems) then
+    raise EmnXMLException.Create('Not support this class');
   with Writer do
   begin
-    WriteOpenTag('Items');
-    for I := 0 to TObjectList(Instance).Count - 1 do
+    for I := 0 to TmnXMLItems(Instance).Count - 1 do
     begin
-      Writer.WriteObject(TObjectList(Instance).Items[I]);
+      Writer.WriteObject(TmnXMLItems(Instance).Items[I]);
     end;
-    WriteCloseTag('Items');
   end;
 end;
 
 initialization
   PermanentRegister.RegisterClassProperty('', TStrings, 'Strings', TmnXMLRttiStrings);
   PermanentRegister.RegisterClassProperty('', TCollection, 'Items', TmnXMLRttiCollection);
-//  PermanentRegister.RegisterClassProperty(TObjectList, 'Items', TmnXMLRttiObjectList);
-  PermanentRegister.RegisterClassProperty('', TmnXMLItems, 'Items', TmnXMLRttiItems);
+  PermanentRegister.RegisterClassProperty('', TmnXMLItems, 'Items', TmnXMLRttiProfileItems);
 finalization
 end.
 

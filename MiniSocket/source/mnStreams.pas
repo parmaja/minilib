@@ -68,6 +68,7 @@ type
     function WriteString(const Value: string): Cardinal;
     function WriteStrings(const Value: TStrings): Cardinal;
     function WriteLn(const Value: string; EOL: string = sEOL): Cardinal;
+    function WriteEOF(EOL: string = sEOL): Cardinal;
     procedure WriteCommand(const Command: string; const Params: string = '');
     constructor Create(vSocket: TmnCustomSocket = nil); override;
     destructor Destroy; override;
@@ -252,6 +253,11 @@ begin
   finally
     FreeMem(aBuffer, BufferSize);
   end;
+end;
+
+function TmnConnectionStream.WriteEOF(EOL: string): Cardinal;
+begin
+  Result := WriteString(EOL);
 end;
 
 { TmnConnectionStream }

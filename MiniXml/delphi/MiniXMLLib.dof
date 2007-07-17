@@ -135,15 +135,8 @@ ProductName=
 ProductVersion=1.0.0.0
 Comments=
 [Excluded Packages]
-d:\work\system\MiniXMLLib70.bpl=Mini XML
-D:\Work\system\AnnexesDesign70.bpl=Annexes for Plugin manager 2002 Design time
-d:\work\system\MiniTranslator70.bpl=MiniTranslator Localizer and GetText
-D:\work\system\tcbReportEditors.bpl=tcb Report Editors
-D:\work\system\FBScriptorDesign70.bpl=(untitled)
 d:\work\system\QuranLib70.bpl=Free Quran Lib
 d:\work\system\QuranLib_D70.bpl=Free Quran Lib Design
-D:\Work\system\DluxReportDesign.bpl=(untitled)
-D:\work\system\tcbGuiDesign70.bpl=tcb SQL Design Time
 [HistoryLists\hlUnitAliases]
 Count=1
 Item0=WinTypes=Windows;WinProcs=Windows;DbiTypes=BDE;DbiProcs=BDE;DbiErrs=BDE;

@@ -7,7 +7,7 @@ unit mnXMLStreams;
  * @author    Zaher Dirkey <zaher at parmaja dot com>
  *}
 interface
-
+{$H+}
 uses   
   Classes, SysUtils, StrUtils;
 
