@@ -4,6 +4,9 @@
 {** Written by David Barton (davebarton@bigfoot.com) **************************}
 {** http://www.scramdisk.clara.net/ *******************************************}
 {******************************************************************************}
+
+{$MODE Delphi}
+
 unit mnXMlBase64;
 
 interface

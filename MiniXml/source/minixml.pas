@@ -2,6 +2,8 @@
 This source is only used to compile and install the package.
  }
 
+{$MODE Delphi}
+
 unit MiniXML; 
 
 interface

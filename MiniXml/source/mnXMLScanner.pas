@@ -6,6 +6,9 @@ unit mnXMLScanner;
  *            See the file COPYING.MLGPL, included in this distribution,
  * @author    Zaher Dirkey <zaher at parmaja dot com>
  *}
+
+{$MODE Delphi}
+
 interface
 
 uses

@@ -6,6 +6,9 @@ unit mnXMLRttiReader;
  *            See the file COPYING.MLGPL, included in this distribution,
  * @author    Zaher Dirkey <zaher at parmaja dot com>
  *}
+
+{$MODE Delphi}
+
 interface
 
 uses
@@ -292,7 +295,7 @@ procedure TmnXMLRttiObjectFiler.ReadProperty(Instance: TObject; PropInfo: PPropI
 var
   PropType: PTypeInfo;
 
-  procedure ReadIntProp;
+  procedure ReadIntegerProp;
   var
     Data: Longint;
     IdentToInt: TIdentToInt;
@@ -301,6 +304,11 @@ var
     if not ((Assigned(IdentToInt) and IdentToInt(Value, Data))) then
       Data := StrToInt(Value);
     SetOrdProp(Instance, PropInfo, Data);
+  end;
+
+  procedure ReadBoolProp;
+  begin
+    SetOrdProp(Instance, PropInfo, Ord(StrToBoolDef(Value, True)));
   end;
 
   procedure ReadCharProp;
@@ -340,12 +348,12 @@ var
     SetFloatProp(Instance, PropInfo, Data);
   end;
 
-  procedure ReadWideStrProp;
+  procedure ReadWideStringProp;
   begin
     SetWideStrProp(Instance, PropInfo, Value);
   end;
 
-  procedure ReadStrProp;
+  procedure ReadStringProp;
   begin
     SetStrProp(Instance, PropInfo, Value);
   end;
@@ -381,7 +389,7 @@ begin
   PropType := GetPropType(PropInfo);
   case PropType^.Kind of
     tkInteger:
-      ReadIntProp;
+      ReadIntegerProp;
     tkChar:
       ReadCharProp;
     tkSet:
@@ -393,9 +401,9 @@ begin
     tkFloat:
       ReadFloatProp;
     tkWString:
-      ReadWideStrProp;
-    {$IFDEF FPC} tkAString, {$ENDIF} tkLString, tkString:
-      ReadStrProp;
+      ReadWideStringProp;
+    tkLString, tkString:
+      ReadStringProp;
     tkVariant:
       ReadVariantProp;
     tkClass:
@@ -403,6 +411,12 @@ begin
     tkMethod: ; //not yet
     tkInterface:
       ReadInterfaceProp; //not yet
+    {$IFDEF FPC}
+    tkAString:
+      ReadStringProp;
+    tkBool:
+      ReadBoolProp;
+    {$ENDIF}
   end;
 end;
 

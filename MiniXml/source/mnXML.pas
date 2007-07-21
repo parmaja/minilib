@@ -6,6 +6,9 @@ unit mnXML;
  *            See the file COPYING.MLGPL, included in this distribution,
  * @author    Zaher Dirkey <zaher at parmaja dot com>
  *}
+
+{$MODE Delphi}
+
 interface
 
 uses
@@ -104,6 +107,8 @@ type
     property Values[Index: string]: string read GetValue write SetValue; default;
   end;
 
+  { TmnXMLFiler }
+
   TmnXMLFiler = class(TmnXMLObject)
   private
     FActive: Boolean;
@@ -123,6 +128,7 @@ type
   public
     constructor Create; overload; virtual;
     constructor Create(Stream: TmnXMLStream; Owned: Boolean = True); overload;
+    constructor Create(const FileName:string); overload;
     destructor Destroy; override;
     procedure Start;
     procedure Stop;
@@ -152,6 +158,11 @@ begin
     raise EmnXMLException.Create('Stream is nil');
   FStream := Stream;
   FOwned := Owned;
+end;
+
+constructor TmnXMLFiler.Create(const FileName: string);
+begin
+  Create(TmnXMLStream.Create(TFileStream.Create(FileName, fmOpenRead)));
 end;
 
 constructor TmnXMLFiler.Create;

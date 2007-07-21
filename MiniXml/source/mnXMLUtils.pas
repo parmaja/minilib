@@ -6,10 +6,13 @@ unit mnXMLUtils;
  *            See the file COPYING.MLGPL, included in this distribution,
  * @author    Zaher Dirkey <zaher at parmaja dot com>
  *}
+
+{$MODE Delphi}
+
 interface
 {$H+}
 uses
-  Classes, SysUtils, Typinfo;
+  Classes, SysUtils, Typinfo, Variants;
 
 const
   sNotWellFormed = 'not well-formed';
@@ -57,8 +60,7 @@ uses
 {$IFDEF FPC}
   mnXMLFPClasses,
 {$ENDIF}
-  StrUtils,
-  Variants;
+  StrUtils;
 
 function RepeatString(const Str: string; Count: Integer): string;
 begin
@@ -332,6 +334,16 @@ var
     Result := (Default <> LongInt($80000000)) and (Value = Default);
   end;
 
+  function IsDefaultBoolProp: Boolean;
+  var
+    Value: Int64;
+    Default: LongInt;
+  begin
+    Value := GetOrdProp(Instance, PropInfo);
+    Default := PPropInfo(PropInfo)^.Default;
+    Result := (Default <> LongInt($80000000)) and (Value = Default);
+  end;
+
   function IsDefaultFloatProp: Boolean;
   var
     Value: Extended;
@@ -399,7 +411,7 @@ begin
         Result := IsDefaultFloatProp;
       tkWString:
         Result := IsDefaultWideStrProp;
-      {$IFDEF FPC} tkAString, {$ENDIF} tkString, tkLString:
+      tkString, tkLString:
         Result := IsDefaultStrProp;
       tkMethod: Result := False;
       tkVariant:
@@ -410,6 +422,12 @@ begin
         Result := IsDefaultClassProp;
       tkInterface:
         Result := IsDefaultInterfaceProp;
+      {$IFDEF FPC}
+      tkAString:
+        Result := IsDefaultStrProp;
+      tkBool:
+        Result := IsDefaultBoolProp;
+      {$ENDIF}
     end;
   end;
 end;

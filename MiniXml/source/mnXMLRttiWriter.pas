@@ -6,12 +6,15 @@ unit mnXMLRttiWriter;
  *            See the file COPYING.MLGPL, included in this distribution,
  * @author    Zaher Dirkey <zaher at parmaja dot com>
  *}
+
+{$MODE Delphi}
+
 interface
 
 uses
-  Classes, SysUtils, Variants, TypInfo,
+  Classes, SysUtils, TypInfo,
   {$IFDEF FPC} LCLProc, {$ENDIF}
-  mnXMLRtti, mnXMLFPClasses;
+  mnXMLRtti, mnXMLFPClasses, Variants;
 
 type
   TmnXMLRttiWriter = class(TmnXMLRttiCustomWriter)
@@ -195,7 +198,7 @@ end;
 procedure TmnXMLRttiWriter.WriteProperty(Instance: TObject; PropInfo: PPropInfo);
 var
   PropType: PTypeInfo;
-  procedure WriteIntProp;
+  procedure WriteIntegerProp;
   var
     S: string;
     IntToIdent: TIntToIdent;
@@ -209,7 +212,7 @@ var
     WriteValue(S);
   end;
 
-  procedure WriteEnumeration;
+  procedure WriteEnumerationProp;
   var
     Value: Int64;
     S: string;
@@ -219,7 +222,17 @@ var
     WriteValue(S);
   end;
 
-  procedure WriteSet;
+  procedure WriteBoolProp;
+  var
+    Value: Int64;
+    S: string;
+  begin
+    Value := GetOrdProp(Instance, PropInfo);
+    S := BoolToStr(Value <> 0, True);
+    WriteValue(S);
+  end;
+
+  procedure WriteSetProp;
   var
     S: string;
   begin
@@ -227,7 +240,7 @@ var
     WriteValue(S);
   end;
 
-  procedure WriteChar;
+  procedure WriteCharProp;
   var
     Value: Char;
   begin
@@ -251,7 +264,7 @@ var
     WriteValue(FloatToStr(Value));
   end;
 
-  procedure WriteWideStrProp;
+  procedure WriteWideStringProp;
   var
     Value: WideString;
   begin
@@ -259,7 +272,7 @@ var
     WriteValue(Value);
   end;
 
-  procedure WriteStrProp;
+  procedure WriteStringProp;
   var
     Value: ansistring;
   begin
@@ -306,42 +319,43 @@ var
   end;
 
 begin
-  {$IFDEF FPC}
-    if PropInfo.Name = 'Name' then
-       debugln;
-  {$ENDIF}
   if not IsDefaultValue(Instance, PropInfo) then
   begin
     PropType := GetPropType(PropInfo);
-    if PropType^.Kind in [tkInteger, tkChar, tkSet, tkEnumeration, tkInt64, tkFloat, {$IFDEF FPC} tkAString, {$ENDIF} tkString, tkLString, tkWString, tkVariant, tkClass, tkInterface] then
+    if not (PropType^.Kind in [tkUnknown, tkMethod, tkRecord, tkArray, tkObject, tkWChar, tkQWord, tkDynArray, tkInterfaceRaw]) then
     begin
       WriteStartTag(PropInfo^.Name);
       if FWriteTypes then
         WriteAttributes('Type="' + PropType.Name + '"');
       case PropType^.Kind of
         tkInteger:
-          WriteIntProp;
+          WriteIntegerProp;
         tkChar:
-          WriteChar;
+          WriteCharProp;
         tkSet:
-          WriteSet;
+          WriteSetProp;
         tkEnumeration:
-          WriteEnumeration;
+          WriteEnumerationProp;
         tkInt64:
           WriteInt64Prop;
         tkFloat:
           WriteFloatProp;
         tkWString:
-          WriteWideStrProp;
-        {$IFDEF FPC} tkAString, {$ENDIF} tkString, tkLString:
-          WriteStrProp;
+          WriteWideStringProp;
+        tkString, tkLString:
+          WriteStringProp;
         tkVariant:
           WriteVariantProp;
         tkClass:
           WriteObjectProp;
-        tkMethod: ; //not yet
         tkInterface:
           WriteInterfaceProp;
+        {$IFDEF FPC}
+          tkAString:
+            WriteStringProp;
+          tkBool:
+            WriteBoolProp;
+        {$ENDIF}
       end;
       if TagStarted then
         WriteStopTag;
