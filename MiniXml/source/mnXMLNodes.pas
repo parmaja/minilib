@@ -7,7 +7,9 @@ unit mnXMLNodes;
  * @author    Zaher Dirkey <zaher at parmaja dot com>
  *}
 
+{$IFDEF FPC}
 {$MODE Delphi}
+{$ENDIF}
 
 interface
 

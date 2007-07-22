@@ -9,9 +9,9 @@ unit mnXMLFPClasses;
  * function and classes not founded in FreePascal
  *
  *}
-
+{$IFDEF FPC}
 {$MODE Delphi}
-
+{$ENDIF}
 interface
 
 {$DEFINE FPC}//emulating FPC functions

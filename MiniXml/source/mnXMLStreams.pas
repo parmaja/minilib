@@ -6,9 +6,9 @@ unit mnXMLStreams;
  *            See the file COPYING.MLGPL, included in this distribution,
  * @author    Zaher Dirkey <zaher at parmaja dot com>
  *}
-
+{$IFDEF FPC}
 {$MODE Delphi}
-
+{$ENDIF}
 interface
 {$H+}
 uses   

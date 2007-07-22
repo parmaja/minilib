@@ -6,14 +6,13 @@ unit mnXMLRttiWriter;
  *            See the file COPYING.MLGPL, included in this distribution,
  * @author    Zaher Dirkey <zaher at parmaja dot com>
  *}
-
+{$IFDEF FPC}
 {$MODE Delphi}
-
+{$ENDIF}
 interface
 
 uses
   Classes, SysUtils, TypInfo,
-  {$IFDEF FPC} LCLProc, {$ENDIF}
   mnXMLRtti, mnXMLFPClasses, Variants;
 
 type
@@ -322,7 +321,7 @@ begin
   if not IsDefaultValue(Instance, PropInfo) then
   begin
     PropType := GetPropType(PropInfo);
-    if not (PropType^.Kind in [tkUnknown, tkMethod, tkRecord, tkArray, tkObject, tkWChar, tkQWord, tkDynArray, tkInterfaceRaw]) then
+    if not (PropType^.Kind in [tkUnknown, tkMethod, tkRecord, tkArray, {$IFDEF FPC}tkObject, tkWChar, tkQWord, tkInterfaceRaw, {$ENDIF}tkDynArray]) then
     begin
       WriteStartTag(PropInfo^.Name);
       if FWriteTypes then
