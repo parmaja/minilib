@@ -229,9 +229,9 @@ end;
 procedure TmnConnectionStream.WriteCommand(const Command, Params: string);
 begin
   if Params <> '' then
-    WriteLn(Command + ' ' + Params)
+    WriteLn(UpperCase(Command) + ' ' + Params)
   else
-    WriteLn(Command);
+    WriteLn(UpperCase(Command));
 end;
 
 function TmnConnectionStream.ReadStream(Dest: TStream): Longint;
