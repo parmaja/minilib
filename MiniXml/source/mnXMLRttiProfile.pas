@@ -12,13 +12,14 @@ unit mnXMLRttiProfile;
 interface
 
 uses
+  Windows,      
   SysUtils, Variants, Classes, Contnrs,
   mnXMLStreams, mnXMLRttiReader, mnXMLRttiWriter;
 
 type
   EmnProfileException = class(Exception);
 
-  TmnProfile = class(TInterfacedPersistent, IStreamPersist)
+  TmnProfile = class(TPersistent, IStreamPersist)
   private
     FChanged: Boolean;
   protected
@@ -27,9 +28,12 @@ type
     procedure Saving; virtual;
     procedure Saved; virtual;
     procedure LoadDefault; virtual;
+    function _AddRef: Integer; stdcall;
+    function _Release: Integer; stdcall;
   public
     constructor Create;
     procedure Clear; virtual;
+    function QueryInterface(const IID: TGUID; out Obj): HResult; virtual; stdcall;
     procedure LoadFromStream(Stream: TStream); virtual;
     procedure SaveToStream(Stream: TStream); virtual;
     procedure LoadFromFile(FileName: string);
@@ -152,6 +156,13 @@ procedure TmnProfile.Loading;
 begin
 end;
 
+function TmnProfile.QueryInterface(const IID: TGUID; out Obj): HResult;
+const
+  E_NOINTERFACE = HResult($80004002);
+begin
+  if GetInterface(IID, Obj) then Result := 0 else Result := E_NOINTERFACE;
+end;
+
 procedure TmnProfile.Saved;
 begin
 end;
@@ -198,6 +209,16 @@ end;
 
 procedure TmnProfile.Saving;
 begin
+end;
+
+function TmnProfile._AddRef: Integer;
+begin
+  Result := 0;
+end;
+
+function TmnProfile._Release: Integer;
+begin
+  Result := 0;
 end;
 
 procedure XMLReadObjectStream(Instance: TObject; Stream: TStream);
