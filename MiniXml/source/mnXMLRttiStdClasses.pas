@@ -33,7 +33,6 @@ type
     function CreateObject(Instance: TObject; const ClassName, Name: string): TObject; override;
   public
     procedure ReadStart; override;
-    procedure ReadOpen(const Name: string); override;
     procedure Write(Writer: TmnXMLRttiCustomWriter; Instance: Pointer); override;
   end;
 
@@ -110,11 +109,6 @@ begin
     Result := inherited FindClass(ClassName);
 end;
 
-procedure TmnXMLRttiCollection.ReadOpen(const Name: string);
-begin
-  inherited;
-end;
-
 procedure TmnXMLRttiCollection.ReadStart;
 begin
   inherited;
@@ -162,18 +156,21 @@ begin
   if not (TObject(Instance) is TmnXMLItems) then
     raise EmnXMLException.Create('Not support this class');
   with Writer do
+  if TmnXMLItems(Instance).Count > 0 then
   begin
+    WriteOpenTag('Objects');
     for I := 0 to TmnXMLItems(Instance).Count - 1 do
     begin
       Writer.WriteObject(TmnXMLItems(Instance).Items[I]);
     end;
+    WriteCloseTag('Objects');
   end;
 end;
 
 initialization
   PermanentRegister.RegisterClassProperty('', TStrings, 'Strings', TmnXMLRttiStrings);
   PermanentRegister.RegisterClassProperty('', TCollection, 'Items', TmnXMLRttiCollection);
-  PermanentRegister.RegisterClassProperty('', TmnXMLItems, 'Items', TmnXMLRttiProfileItems);
+  PermanentRegister.RegisterClassProperty('', TmnXMLItems, 'Objects', TmnXMLRttiProfileItems);
 finalization
 end.
 

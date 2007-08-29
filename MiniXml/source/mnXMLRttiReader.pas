@@ -501,7 +501,7 @@ begin
       TComponent(Result).Name := Name;
     end
     else
-      Result := aClass.Create
+      Result := aClass.Create;//zaher wrong create idea
   end
   else
     Result := nil;

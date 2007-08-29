@@ -103,6 +103,7 @@ type
     procedure RegisterInterfaceProperty(PropertyName: string; PropertyInterface:TGUID; FilerClass: TmnXMLRttiFilerClass);
     //read/write functions
     function CreateFiler(Owner: TObject; const PropertyName: string; Instance: Pointer; IsInterface:Boolean; DefaultFiler: TmnXMLRttiFilerClass = nil): TmnXMLRttiFiler;
+    function HaveClassProperties(const PropertyClassName: string; Writer: TmnXMLRttiCustomWriter; Instance: Pointer):Boolean;
     procedure WriteClassProperties(const PropertyClassName: string; Writer: TmnXMLRttiCustomWriter; Instance: Pointer);
     procedure WriteInterface(const PropertyName: string; Writer: TmnXMLRttiCustomWriter; Instance: Pointer);
     property Items[Index: Integer]: TmnXMLRttiRegisterItem read GetItem write SetItem; default;
@@ -176,6 +177,21 @@ end;
 function TmnRttiRegister.GetItem(Index: Integer): TmnXMLRttiRegisterItem;
 begin
   Result := inherited Items[Index] as TmnXMLRttiRegisterItem;
+end;
+
+function TmnRttiRegister.HaveClassProperties(const PropertyClassName: string;
+  Writer: TmnXMLRttiCustomWriter; Instance: Pointer): Boolean;
+var
+  i:Integer;
+begin
+  for i := 0 to Count - 1 do
+  begin
+    if ((PropertyClassName = '') or (Items[i].PropertyClassName = '') or (PropertyClassName = Items[i].PropertyClassName)) and (TObject(Instance).InheritsFrom(Items[i].PropertyClass)) then
+    begin
+      Result := True;
+      break;
+    end;
+  end;
 end;
 
 procedure TmnRttiRegister.RegisterClassProperty(PropertyClassName:string; PropertyClass: TClass; PropertyName: string; FilerClass: TmnXMLRttiFilerClass);

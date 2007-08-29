@@ -19,7 +19,7 @@ type
   TmnXMLRttiWriter = class(TmnXMLRttiCustomWriter)
   private
     FWriteTypes: Boolean;
-    FRoot: TComponent;
+    FRoot: TComponent; 
     FWriteRefrences: Boolean;
   protected
     procedure DoStart; override;
@@ -135,14 +135,17 @@ end;
 procedure TmnXMLRttiWriter.WriteProperties(Name:string; Instance: TObject; WithInitTag: Boolean);
 var
   I, Count: Integer;
+  IsEmpty: Boolean;
   PropInfo: PPropInfo;
   PropList: PPropList;
   List: TList;
 begin
+  List := nil;
   if Instance is TPersistent then //TObject not support RTTI :-(
     Count := GetTypeData(Instance.ClassInfo)^.PropCount
   else
     Count := 0;
+
   if Count > 0 then
   begin
     List := TList.Create;
@@ -163,33 +166,32 @@ begin
     finally
       FreeMem(PropList, Count * SizeOf(Pointer));
     end;
-
+    
     Count := List.Count;
-    if Count > 0 then
+  end;
+
+  IsEmpty := (Count = 0) and not (Instance is TComponent) and not (PermanentRegister.HaveClassProperties(Name, Self, Instance));
+
+  if not IsEmpty then
+  begin
+    if WithInitTag then
     begin
-      if WithInitTag then
-      begin
-        if (Instance is TComponent) and ((Instance as TComponent).Name <> '') then
-          WriteOpenTag('Object', 'Type="' + Instance.ClassName + '" Name="' + (Instance as TComponent).Name + '"')
-        else
-          WriteOpenTag('Object', 'Type="' + Instance.ClassName + '"');
-      end;
-      for i := 0 to Count - 1 do
-      begin
-        WriteProperty(Instance, PPropInfo(List[i]));
-      end;
+      if (Instance is TComponent) and ((Instance as TComponent).Name <> '') then
+        WriteOpenTag('Object', 'Type="' + Instance.ClassName + '" Name="' + (Instance as TComponent).Name + '"')
+      else
+        WriteOpenTag('Object', 'Type="' + Instance.ClassName + '"');
     end;
-    List.Free;
+    for i := 0 to Count - 1 do
+      WriteProperty(Instance, PPropInfo(List[i]));
+    FreeAndNil(List);
   end;
 
   PermanentRegister.WriteClassProperties(Name, Self, Instance);
 
   if (Instance is TComponent) then
-  begin
     THackComponent(Instance).GetChildren(WriteComponent, FRoot);
-  end;
 
-  if Count > 0 then
+   if not IsEmpty then
     if WithInitTag then
       WriteCloseTag('Object');
 end;

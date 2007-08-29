@@ -6,9 +6,11 @@ unit mnXMLRttiProfile;
  *            See the file COPYING.MLGPL, included in this distribution,
  * @author    Zaher Dirkey <zaher at parmaja dot com>
  *}
+ 
 {$IFDEF FPC}
 {$MODE Delphi}
 {$ENDIF}
+
 interface
 
 uses
@@ -40,6 +42,7 @@ type
     procedure SafeLoadFromFile(FileName: string);
     procedure SaveToFile(FileName: string);
     procedure SaveToString(var S: string);
+    procedure LoadFromString(S: string);
     property Changed: Boolean read FChanged write FChanged;
   end;
 
@@ -71,14 +74,36 @@ type
   
   { TmnXMLItems }
 
-  TmnXMLItems = class(TObjectList)
+  TmnXMLItems = class(TmnXMLItem)
   private
+    FList: TObjectList;
     function GetItem(Index: Integer): TmnXMLItem;
     procedure SetItem(Index: Integer; const Value: TmnXMLItem);
+    function GetCount: Integer;
+    procedure SetCount(const Value: Integer);
+    function GetOwnsObjects: Boolean;
+    procedure SetOwnsObjects(const Value: Boolean);
   protected
     function DoCreateItem:TmnXMLItem; virtual; abstract;
   public
+    constructor Create; overload;
+    constructor Create(AOwnsObjects: Boolean); overload;
+    destructor Destroy; override;
+    procedure Update; virtual;
+    procedure Clear; override;
+    procedure Delete(Index: Integer);
+    procedure Exchange(Index1, Index2: Integer);
+    procedure Sort(Compare: TListSortCompare);
+    function Add(AItem: TmnXMLItem): Integer;
+    function Extract(AItem: TmnXMLItem): TmnXMLItem;
+    function Remove(AItem: TmnXMLItem): Integer;
+    procedure Insert(Index: Integer; AItem: TmnXMLItem);
+    function IndexOf(AItem: TmnXMLItem): Integer;
+    function First: TmnXMLItem;
+    function Last: TmnXMLItem;
     function CreateItem:TmnXMLItem;
+    property Count:Integer read GetCount write SetCount;
+    property OwnsObjects: Boolean read GetOwnsObjects write SetOwnsObjects;
     property Items[Index: Integer]: TmnXMLItem read GetItem write SetItem; default;
   end;
 
@@ -150,6 +175,23 @@ begin
     aReader.Free;
   end;
   Loaded;
+end;
+
+procedure TmnProfile.LoadFromString(S: string);
+var
+  aStream: TStringStream;
+begin
+  if S <> '' then
+  begin
+    aStream := TStringStream.Create('');
+    try
+      aStream.WriteString(S);
+      aStream.Seek(0, soFromBeginning);
+      LoadFromStream(aStream);
+    finally
+      aStream.Free;
+    end;
+  end;
 end;
 
 procedure TmnProfile.Loading;
@@ -414,21 +456,133 @@ end;
 
 { TmnXMLItems }
 
+type
+  TMyObjectList = Class(TObjectList)
+  public
+    FItems: TmnXMLItems;
+    procedure Notify(Ptr: Pointer; Action: TListNotification); override;
+  end;
+
+{ TMyObjectList }
+
+procedure TMyObjectList.Notify(Ptr: Pointer; Action: TListNotification);
+begin
+  inherited;
+  FItems.Update;
+end;
+
+function TmnXMLItems.GetCount: Integer;
+begin
+  Result := FList.Count;
+end;
+
 function TmnXMLItems.GetItem(Index: Integer): TmnXMLItem;
 begin
-  Result := inherited Items[Index] as TmnXMLItem;
+  Result := FList[Index] as TmnXMLItem;
 end;
 
-procedure TmnXMLItems.SetItem(Index: Integer;
-  const Value: TmnXMLItem);
+function TmnXMLItems.GetOwnsObjects: Boolean;
 begin
-  inherited Items[Index] := Value;
+  Result := FList.OwnsObjects;
 end;
 
+function TmnXMLItems.IndexOf(AItem: TmnXMLItem): Integer;
+begin
+  Result := FList.IndexOf(AItem);
+end;
+
+procedure TmnXMLItems.Insert(Index: Integer; AItem: TmnXMLItem);
+begin
+  FList.Insert(Index, AItem);
+end;
+
+function TmnXMLItems.Last: TmnXMLItem;
+begin
+  Result := FList.Last as TmnXMLItem;
+end;
+
+function TmnXMLItems.Remove(AItem: TmnXMLItem): Integer;
+begin
+  Result := FList.Remove(AItem);
+end;
+
+procedure TmnXMLItems.SetCount(const Value: Integer);
+begin
+  FList.Count := Value;
+end;
+
+procedure TmnXMLItems.SetItem(Index: Integer; const Value: TmnXMLItem);
+begin
+  FList[Index] := Value;
+end;
+
+procedure TmnXMLItems.SetOwnsObjects(const Value: Boolean);
+begin
+  FList.OwnsObjects := Value;
+end;
+
+procedure TmnXMLItems.Sort(Compare: TListSortCompare);
+begin
+  FList.Sort(Compare);
+end;
+
+procedure TmnXMLItems.Update;
+begin
+end;
+
+function TmnXMLItems.Add(AItem: TmnXMLItem): Integer;
+begin
+  Result := FList.Add(AItem);
+end;
+
+procedure TmnXMLItems.Clear;
+begin
+  FList.Clear;
+  inherited;
+end; 
+
+constructor TmnXMLItems.Create(AOwnsObjects: Boolean);
+begin
+  inherited Create;
+  FList := TMyObjectList.Create(AOwnsObjects);
+  (FList as TMyObjectList).FItems := Self;
+end;
+
+constructor TmnXMLItems.Create;
+begin
+  Create(True);
+end;
+                
 function TmnXMLItems.CreateItem: TmnXMLItem;
 begin
   Result := DoCreateItem;
   Add(Result);
+end;
+
+procedure TmnXMLItems.Delete(Index: Integer);
+begin
+  FList.Delete(Index);
+end;
+
+destructor TmnXMLItems.Destroy;
+begin
+  FreeAndNil(FList);
+  inherited;
+end;
+
+procedure TmnXMLItems.Exchange(Index1, Index2: Integer);
+begin
+  FList.Exchange(Index1, Index2);
+end;
+
+function TmnXMLItems.Extract(AItem: TmnXMLItem): TmnXMLItem;
+begin
+  Result := FList.Extract(AItem) as TmnXMLItem;
+end;
+
+function TmnXMLItems.First: TmnXMLItem;
+begin
+  Result := FList.First as TmnXMLItem;
 end;
 
 end.
