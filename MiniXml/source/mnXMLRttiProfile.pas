@@ -86,8 +86,7 @@ type
   protected
     function DoCreateItem:TmnXMLItem; virtual; abstract;
   public
-    constructor Create; overload;
-    constructor Create(AOwnsObjects: Boolean); overload;
+    constructor Create(AOwnsObjects: Boolean = True); 
     destructor Destroy; override;
     procedure Update; virtual;
     procedure Clear; override;
@@ -548,11 +547,6 @@ begin
   (FList as TMyObjectList).FItems := Self;
 end;
 
-constructor TmnXMLItems.Create;
-begin
-  Create(True);
-end;
-                
 function TmnXMLItems.CreateItem: TmnXMLItem;
 begin
   Result := DoCreateItem;

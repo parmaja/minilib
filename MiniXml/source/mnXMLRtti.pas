@@ -184,6 +184,7 @@ function TmnRttiRegister.HaveClassProperties(const PropertyClassName: string;
 var
   i:Integer;
 begin
+  Result := False;
   for i := 0 to Count - 1 do
   begin
     if ((PropertyClassName = '') or (Items[i].PropertyClassName = '') or (PropertyClassName = Items[i].PropertyClassName)) and (TObject(Instance).InheritsFrom(Items[i].PropertyClass)) then
