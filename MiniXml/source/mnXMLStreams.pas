@@ -222,11 +222,12 @@ var
     Result := (FPos < FEnd);
   end;
 var
-  idx: Integer;
+  idx, l: Integer;
   t: string;
 begin
   Idx := 1;
   Matched := False;
+  l := Length(S);
   Result := '';
   while not Matched and CheckBuffer do
   begin
@@ -238,7 +239,7 @@ begin
       else
         Idx := 1;
       Inc(P);
-      if Idx > Length(S) then
+      if Idx > l then
       begin
         Matched := True;
         break;
@@ -251,4 +252,5 @@ begin
 end;
 
 end.
+
 

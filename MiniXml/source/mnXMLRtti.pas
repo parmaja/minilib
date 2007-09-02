@@ -227,7 +227,7 @@ begin
     end; //take care there is no else here, named Property is more power than non named}
     if ((PropertyName = Items[i].PropertyName)) and (Instance.InheritsFrom(Items[i].PropertyClass)) then
     begin
-      Result := Items[i]; //first sepical one
+      Result := Items[i]; //first one
       break;
     end;
   end;

@@ -21,9 +21,12 @@ uses
 type
   EmnProfileException = class(Exception);
 
+  { TmnProfile }
+
   TmnProfile = class(TPersistent, IStreamPersist)
   private
     FChanged: Boolean;
+    FAge: TDateTime;
   protected
     procedure Loading; virtual;
     procedure Loaded; virtual;
@@ -44,10 +47,14 @@ type
     procedure SaveToString(var S: string);
     procedure LoadFromString(S: string);
     property Changed: Boolean read FChanged write FChanged;
+    property Age:TDateTime read FAge write FAge;
   end;
+
+  { TmnComponentProfile }
 
   TmnComponentProfile = class(TComponent, IStreamPersist)
   private
+    FAge: TDateTime;
     FChanged: Boolean;
   protected
     procedure Loading; virtual;
@@ -64,11 +71,13 @@ type
     procedure SafeLoadFromFile(FileName: string);
     procedure SaveToFile(FileName: string);
     property Changed: Boolean read FChanged write FChanged;
+    property Age:TDateTime read FAge write FAge;
   end;
 
-{ ProfileList }
+  { TmnXMLItem }
 
   TmnXMLItem = Class(TmnProfile)
+  private
   public
   end;
   
