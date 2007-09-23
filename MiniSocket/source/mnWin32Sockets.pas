@@ -7,8 +7,10 @@ unit mnWin32Sockets;
  * @author    Zaher Dirkey <zaher at parmaja dot com>
  *}
 
+{$M+}
+{$H+}
 {$IFDEF FPC}
-{$MODE DELPHI}
+{$mode delphi}
 {$ENDIF}
 
 interface

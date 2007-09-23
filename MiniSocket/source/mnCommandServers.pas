@@ -6,9 +6,14 @@ unit mnCommandServers;
  *            See the file COPYING.MLGPL, included in this distribution,
  * @author    Zaher Dirkey <zaher at parmaja dot com>
  *}
-interface
 
 {$M+}
+{$H+}
+{$IFDEF FPC}
+{$mode delphi}
+{$ENDIF}
+
+interface
 
 uses
   SysUtils, Classes, Contnrs, mnSockets, mnStreams, mnServers;
@@ -242,7 +247,7 @@ end;
 function TmnCommandServer.RegisterCommand(vName: string; CommandClass: TmnCommandClass): Integer;
 begin
   if FCommands.Find(vName) <> nil then
-    raise TmnCommandExceotion.Create('Command already exists');
+    raise TmnCommandExceotion.Create('Command already exists: ' + vName);
   Result := FCommands.Add(vName, CommandClass);
 end;
 

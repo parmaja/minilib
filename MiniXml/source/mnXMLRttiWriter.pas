@@ -1,4 +1,4 @@
-unit mnXMLRttiWriter;
+unit mnXMLRttiWriter;         
 {**
  *  This file is part of the "Mini Library"
  *                  
@@ -6,9 +6,13 @@ unit mnXMLRttiWriter;
  *            See the file COPYING.MLGPL, included in this distribution,
  * @author    Zaher Dirkey <zaher at parmaja dot com>
  *}
+
+{$M+}
+{$H+}
 {$IFDEF FPC}
-{$MODE Delphi}
+{$mode delphi}
 {$ENDIF}
+
 interface
 
 uses
@@ -199,6 +203,7 @@ end;
 procedure TmnXMLRttiWriter.WriteProperty(Instance: TObject; PropInfo: PPropInfo);
 var
   PropType: PTypeInfo;
+//  TypeData: PTypeData;
   procedure WriteIntegerProp;
   var
     S: string;
@@ -323,6 +328,7 @@ begin
   if not IsDefaultValue(Instance, PropInfo) then
   begin
     PropType := GetPropType(PropInfo);
+//    TypeData := GetTypeData(PropType);
     if not (PropType^.Kind in [tkUnknown, tkMethod, tkRecord, tkArray, {$IFDEF FPC}tkObject, tkWChar, tkQWord, tkInterfaceRaw, {$ENDIF}tkDynArray]) then
     begin
       WriteStartTag(PropInfo^.Name);

@@ -6,9 +6,13 @@ unit mnXMLReader;
  *            See the file COPYING.MLGPL, included in this distribution,
  * @author    Zaher Dirkey <zaher at parmaja dot com>
  *}
+
+{$M+}
+{$H+}
 {$IFDEF FPC}
-{$MODE Delphi}
+{$mode delphi}
 {$ENDIF}
+
 interface
 
 uses

@@ -7,8 +7,10 @@ unit mnHttpServer;
  * @author    Zaher Dirkey <zaher at parmaja dot com>
  *}
 
+{$M+}
+{$H+}
 {$IFDEF FPC}
-{$MODE DELPHI}
+{$mode delphi}
 {$ENDIF}
 
 interface
@@ -240,8 +242,8 @@ procedure THttpConnection.ReceiveData;
         FRequestHeader[j] := (Copy(s, 0, i - 1)) + '=' + TrimLeft(Copy(s, i + 1, MaxInt));
       end;
     end;
-    FRequestContentType := FRequestHeader.Values['content-type'];
-    FRequestContentLength := StrToIntDef(FRequestHeader.Values['content-length'], 0);
+    FRequestContentType := FRequestHeader.Values['Content-Type'];
+    FRequestContentLength := StrToIntDef(FRequestHeader.Values['Content-Length'], 0);
     FRequestAccept := FRequestHeader.Values['Accept'];
     FRequestReferer := FRequestHeader.Values['Referer'];
     FRequestAcceptLanguage := FRequestHeader.Values['Accept-Language'];

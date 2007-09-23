@@ -6,9 +6,13 @@ unit mnXMLRttiReader;
  *            See the file COPYING.MLGPL, included in this distribution,
  * @author    Zaher Dirkey <zaher at parmaja dot com>
  *}
+
+{$M+}
+{$H+}
 {$IFDEF FPC}
-{$MODE Delphi}
+{$mode delphi}
 {$ENDIF}
+
 interface
 
 uses
@@ -176,6 +180,7 @@ procedure TmnXMLRttiObjectFiler.ReadPropertyValue(Instance: TObject; const PropN
 var
   PropInfo: PPropInfo;
 begin
+  //need to test the speed
   PropInfo := GetPropInfo(Instance.ClassInfo, PropName);
   if IsStoredProp(Instance, PropInfo) and (PropInfo^.GetProc <> nil) and
     ((PropInfo^.SetProc <> nil) or
@@ -293,15 +298,19 @@ end;
 procedure TmnXMLRttiObjectFiler.ReadProperty(Instance: TObject; PropInfo: PPropInfo; const Value: string);
 var
   PropType: PTypeInfo;
+  TypeData: PTypeData;
 
   procedure ReadIntegerProp;
   var
     Data: Longint;
     IdentToInt: TIdentToInt;
   begin
+    Data := 0;
     IdentToInt := FindIdentToInt(PropType);
     if not ((Assigned(IdentToInt) and IdentToInt(Value, Data))) then
-      Data := StrToInt(Value);
+    begin
+      Data := StrToIntDef(Value, 0);
+    end;
     SetOrdProp(Instance, PropInfo, Data);
   end;
 
@@ -347,6 +356,14 @@ var
     SetFloatProp(Instance, PropInfo, Data);
   end;
 
+  procedure ReadCurrProp;
+  var
+    Data: Currency;
+  begin
+    Data := StrToCurr(Value);
+    SetFloatProp(Instance, PropInfo, Data);
+  end;
+
   procedure ReadWideStringProp;
   begin
     SetWideStrProp(Instance, PropInfo, Value);
@@ -386,6 +403,7 @@ var
   end;
 begin
   PropType := GetPropType(PropInfo);
+  TypeData := GetTypeData(PropType);
   case PropType^.Kind of
     tkInteger:
       ReadIntegerProp;
@@ -398,7 +416,12 @@ begin
     tkInt64:
       ReadInt64Prop;
     tkFloat:
-      ReadFloatProp;
+    begin
+      if (TypeData <> nil) and (TypeData^.FloatType = ftCurr) then
+        ReadCurrProp
+      else
+        ReadFloatProp;
+    end;
     tkWString:
       ReadWideStringProp;
     tkLString, tkString:

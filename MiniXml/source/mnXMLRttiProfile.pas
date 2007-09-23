@@ -6,9 +6,11 @@ unit mnXMLRttiProfile;
  *            See the file COPYING.MLGPL, included in this distribution,
  * @author    Zaher Dirkey <zaher at parmaja dot com>
  *}
- 
+
+{$M+}
+{$H+}
 {$IFDEF FPC}
-{$MODE Delphi}
+{$mode delphi}
 {$ENDIF}
 
 interface
@@ -21,17 +23,16 @@ uses
 type
   EmnProfileException = class(Exception);
 
-  { TmnProfile }
-
-  TmnProfile = class(TPersistent, IStreamPersist)
+  { TmnXMLProfile }
+  TmnXMLProfile = class(TPersistent, IStreamPersist)
   private
     FChanged: Boolean;
     FAge: TDateTime;
   protected
     procedure Loading; virtual;
-    procedure Loaded; virtual;
+    procedure Loaded(Failed:Boolean); virtual;
     procedure Saving; virtual;
-    procedure Saved; virtual;
+    procedure Saved(Failed:Boolean); virtual;
     procedure LoadDefault; virtual;
     function _AddRef: Integer; stdcall;
     function _Release: Integer; stdcall;
@@ -76,7 +77,7 @@ type
 
   { TmnXMLItem }
 
-  TmnXMLItem = Class(TmnProfile)
+  TmnXMLItem = Class(TmnXMLProfile)
   private
   public
   end;
@@ -137,27 +138,27 @@ begin
   Result := True;
 end;
 
-{ TmnProfile }
+{ TmnXMLProfile }
 
-procedure TmnProfile.Clear;
+procedure TmnXMLProfile.Clear;
 begin
 end;
 
-constructor TmnProfile.Create;
+constructor TmnXMLProfile.Create;
 begin
   inherited Create;
   LoadDefault;
 end;
 
-procedure TmnProfile.LoadDefault;
+procedure TmnXMLProfile.LoadDefault;
 begin
 end;
 
-procedure TmnProfile.Loaded;
+procedure TmnXMLProfile.Loaded(Failed:Boolean);
 begin
 end;
 
-procedure TmnProfile.LoadFromFile(FileName: string);
+procedure TmnXMLProfile.LoadFromFile(FileName: string);
 var
   Stream: TStream;
 begin
@@ -169,23 +170,29 @@ begin
   end;
 end;
 
-procedure TmnProfile.LoadFromStream(Stream: TStream);
+procedure TmnXMLProfile.LoadFromStream(Stream: TStream);
 var
   aReader: TmnXMLRttiReader;
+  Failed: Boolean;
 begin
+  Failed := True;
   Loading;
-  aReader := TmnXMLRttiReader.Create(TmnXMLStream.Create(Stream, False));
   try
-    aReader.ReadRoot(Self);
-    aReader.Stop;
-    FChanged := False;
+    aReader := TmnXMLRttiReader.Create(TmnXMLStream.Create(Stream, False));
+    try
+      aReader.ReadRoot(Self);
+      aReader.Stop;
+      FChanged := False;
+    finally
+      aReader.Free;
+    end;
+    Failed := False;
   finally
-    aReader.Free;
+    Loaded(Failed);
   end;
-  Loaded;
 end;
 
-procedure TmnProfile.LoadFromString(S: string);
+procedure TmnXMLProfile.LoadFromString(S: string);
 var
   aStream: TStringStream;
 begin
@@ -202,22 +209,22 @@ begin
   end;
 end;
 
-procedure TmnProfile.Loading;
+procedure TmnXMLProfile.Loading;
 begin
 end;
 
-function TmnProfile.QueryInterface(const IID: TGUID; out Obj): HResult;
+function TmnXMLProfile.QueryInterface(const IID: TGUID; out Obj): HResult;
 const
   E_NOINTERFACE = HResult($80004002);
 begin
   if GetInterface(IID, Obj) then Result := 0 else Result := E_NOINTERFACE;
 end;
 
-procedure TmnProfile.Saved;
+procedure TmnXMLProfile.Saved(Failed:Boolean);
 begin
 end;
 
-procedure TmnProfile.SafeLoadFromFile(FileName: string);
+procedure TmnXMLProfile.SafeLoadFromFile(FileName: string);
 begin
   try
     if FileExists(FileName) then
@@ -227,7 +234,7 @@ begin
   end;
 end;
 
-procedure TmnProfile.SaveToFile(FileName: string);
+procedure TmnXMLProfile.SaveToFile(FileName: string);
 var
   Stream: TStream;
 begin
@@ -239,34 +246,40 @@ begin
   end;
 end;
 
-procedure TmnProfile.SaveToStream(Stream: TStream);
+procedure TmnXMLProfile.SaveToStream(Stream: TStream);
 var
   aWriter: TmnXMLRttiWriter;
+  Failed: Boolean;
 begin
+  Failed := True;
   Saving;
-  aWriter := TmnXMLRttiWriter.Create(TmnXMLStream.Create(Stream, False));
-  aWriter.Smart := True;
-  aWriter.WriteTypes := False;
   try
-    aWriter.WriteRoot(Self);
-    aWriter.Stop;
-    FChanged := False;
+    aWriter := TmnXMLRttiWriter.Create(TmnXMLStream.Create(Stream, False));
+    aWriter.Smart := True;
+    aWriter.WriteTypes := False;
+    try
+      aWriter.WriteRoot(Self);
+      aWriter.Stop;
+      FChanged := False;
+    finally
+      aWriter.Free;
+    end;
+    Failed := False;
   finally
-    aWriter.Free;
+    Saved(Failed);
   end;
-  Saved;
 end;
 
-procedure TmnProfile.Saving;
+procedure TmnXMLProfile.Saving;
 begin
 end;
 
-function TmnProfile._AddRef: Integer;
+function TmnXMLProfile._AddRef: Integer;
 begin
   Result := 0;
 end;
 
-function TmnProfile._Release: Integer;
+function TmnXMLProfile._Release: Integer;
 begin
   Result := 0;
 end;
@@ -348,7 +361,7 @@ begin
   end;
 end;
 
-procedure TmnProfile.SaveToString(var S: string);
+procedure TmnXMLProfile.SaveToString(var S: string);
 var
   Stream: TStringStream;
 begin
