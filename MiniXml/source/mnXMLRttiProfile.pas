@@ -16,7 +16,9 @@ unit mnXMLRttiProfile;
 interface
 
 uses
+  {$IFDEF WINDOWS}
   Windows,      
+  {$ENDIF}
   SysUtils, Variants, Classes, Contnrs,
   mnXMLStreams, mnXMLRttiReader, mnXMLRttiWriter;
 

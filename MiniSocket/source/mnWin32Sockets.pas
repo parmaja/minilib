@@ -20,8 +20,11 @@ uses
   SysUtils,
   //mnWinSock2,
 {$IFDEF FPC}
+{$IFDEF WINDOWS}
   WinSock2,
-//  sockets,
+{$ELSE}
+  sockets,
+{$ENDIF}
 {$ELSE}
   WinSock,
 {$ENDIF}

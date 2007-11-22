@@ -58,22 +58,24 @@ type
     FPos: PChar;
     FEnd: PChar;
     FBufferSize: Cardinal;
+    FEOF: Boolean;
   protected
   public
+    constructor Create(vSocket: TmnCustomSocket = nil); override;
+    destructor Destroy; override;
     procedure LoadBuffer;
     function Read(var Buffer; Count: Longint): Longint; override;
-    function ReadUntil(const S: string): string;
+    function ReadUntil(const S: string; var Matched: Boolean): string;
     function ReadLn(const EOL: string = sEOL): string;
     procedure ReadCommand(var Command: string; var Params: string);
     function ReadStream(Dest: TStream): Longint;
+    procedure ReadStrings(Value: TStrings; EOL: string = sEOL);
     function WriteStream(Source: TStream): Longint;
     function WriteString(const Value: string): Cardinal;
-    function WriteStrings(const Value: TStrings): Cardinal;
+    function WriteStrings(const Value: TStrings; EOL: string = sEOL): Cardinal;
     function WriteLn(const Value: string; EOL: string = sEOL): Cardinal;
     function WriteEOF(EOL: string = sEOL): Cardinal;
     procedure WriteCommand(const Command: string; const Params: string = '');
-    constructor Create(vSocket: TmnCustomSocket = nil); override;
-    destructor Destroy; override;
   end;
 
 implementation
@@ -197,7 +199,7 @@ begin
   Result := WriteString(Value + EOL);
 end;
 
-function TmnConnectionStream.WriteStrings(const Value: TStrings): Cardinal;
+function TmnConnectionStream.WriteStrings(const Value: TStrings; EOL: string): Cardinal;
 var
   i: Integer;
 begin
@@ -205,7 +207,7 @@ begin
   for i := 0 to Value.Count - 1 do
   begin
     if Value[i] <> '' then //stupid delphi always add empty line in last of TStringList
-      Result := Result + WriteLn(Value[i]);
+      Result := Result + WriteLn(Value[i], EOL);
   end;
 end;
 
@@ -225,6 +227,18 @@ begin
   begin
     Command := s;
     Params := '';
+  end;
+end;
+
+procedure TmnConnectionStream.ReadStrings(Value: TStrings; EOL: string);
+var
+  s:string;
+begin
+  while Connected do
+  begin
+    S := ReadLn;
+    if S <> '' then
+      Value.Add(S);
   end;
 end;
 
@@ -281,11 +295,16 @@ begin
 end;
 
 procedure TmnConnectionStream.LoadBuffer;
+var
+  aSize: Cardinal;
 begin
   if FPos < FEnd then
     raise EmnStreamException.Create('Buffer is not empty to load');
   FPos := FBuffer;
-  FEnd := FPos + inherited Read(FBuffer^, FBufferSize);
+  aSize := inherited Read(FBuffer^, FBufferSize);
+  FEnd := FPos + aSize;
+  if aSize = 0 then
+    FEOF := True;
 end;
 
 function TmnConnectionStream.Read(var Buffer; Count: Integer): Longint;
@@ -316,32 +335,32 @@ begin
 end;
 
 function TmnConnectionStream.ReadLn(const EOL: string): string;
+var
+  aMatched: Boolean;
 begin
-  Result := ReadUntil(EOL);
-  if Result <> '' then
+  Result := ReadUntil(EOL, aMatched);
+  if aMatched and (Result <> '') then
     Result := LeftStr(Result, Length(Result) - Length(EOL));
 end;
 
-function TmnConnectionStream.ReadUntil(const S: string): string;
+function TmnConnectionStream.ReadUntil(const S: string; var Matched: Boolean): string;
 var
   P: PChar;
   function CheckBuffer: Boolean;
   begin
     if not (FPos < FEnd) then
-    begin
       LoadBuffer;
-    end;
     Result := (FPos < FEnd);
   end;
 var
-  idx: Integer;
+  idx, l: Integer;
   t: string;
-  Founded: Boolean;
 begin
   Idx := 1;
-  Founded := False;
+  Matched := False;
+  l := Length(S);
   Result := '';
-  while not Founded and CheckBuffer do
+  while not Matched and CheckBuffer do
   begin
     P := FPos;
     while P < FEnd do
@@ -351,9 +370,9 @@ begin
       else
         Idx := 1;
       Inc(P);
-      if Idx > Length(S) then
+      if Idx > l then
       begin
-        Founded := True;
+        Matched := True;
         break;
       end;
     end;

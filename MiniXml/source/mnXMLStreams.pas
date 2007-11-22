@@ -40,6 +40,7 @@ type
     function Write(const Buffer; Count: Longint): Longint; override;
     procedure ReadUntil(const S: string; var Result: string; var Matched: Boolean);
     function ReadLn(var S: string): Boolean; overload;
+    procedure ReadStrings(Value: TStrings);
     procedure ReadCommand(var Command: string; var Params: string);
     function WriteStream(Source: TStream): Longint;
     function WriteString(const Value: string): Cardinal;
@@ -144,6 +145,17 @@ begin
     ReadUntil(EndOfLine, S, aMatched);
     if aMatched and (S <> '') then
       S := LeftStr(S, Length(S) - Length(EndOfLine));
+  end;
+end;
+
+procedure TmnXMLStream.ReadStrings(Value: TStrings);
+var
+  s:string;
+begin
+  while not EOF do
+  begin
+    if ReadLn(S) then
+      Value.Add(S);
   end;
 end;
 
