@@ -25,11 +25,13 @@ uses
 type
   EmnProfileException = class(Exception);
 
+  TmnXMLProfileStates = set of (psChanged, psLoading, psSaving);
+
   { TmnXMLProfile }
   TmnXMLProfile = class(TPersistent, IStreamPersist)
   private
-    FChanged: Boolean;
     FAge: TDateTime;
+    FState: TmnXMLProfileStates;
   protected
     procedure Loading; virtual;
     procedure Loaded(Failed:Boolean); virtual;
@@ -49,7 +51,7 @@ type
     procedure SaveToFile(FileName: string);
     procedure SaveToString(var S: string);
     procedure LoadFromString(S: string);
-    property Changed: Boolean read FChanged write FChanged;
+    property State: TmnXMLProfileStates read FState write FState;
     property Age:TDateTime read FAge write FAge;
   end;
 
@@ -178,18 +180,20 @@ var
   Failed: Boolean;
 begin
   Failed := True;
+  FState := FState + [psLoading];
   Loading;
   try
     aReader := TmnXMLRttiReader.Create(TmnXMLStream.Create(Stream, False));
     try
       aReader.ReadRoot(Self);
       aReader.Stop;
-      FChanged := False;
+      FState := FState - [psChanged];
     finally
       aReader.Free;
     end;
     Failed := False;
   finally
+    FState := FState - [psLoading];
     Loaded(Failed);
   end;
 end;
@@ -254,6 +258,7 @@ var
   Failed: Boolean;
 begin
   Failed := True;
+  FState := FState + [psSaving];
   Saving;
   try
     aWriter := TmnXMLRttiWriter.Create(TmnXMLStream.Create(Stream, False));
@@ -262,12 +267,13 @@ begin
     try
       aWriter.WriteRoot(Self);
       aWriter.Stop;
-      FChanged := False;
+      FState := FState - [psChanged];
     finally
       aWriter.Free;
     end;
     Failed := False;
   finally
+    FState := FState - [psSaving];
     Saved(Failed);
   end;
 end;
