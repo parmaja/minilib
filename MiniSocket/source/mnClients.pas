@@ -19,7 +19,7 @@ uses
   Classes,
   SysUtils,
   mnSockets,
-  mnStreams,
+  mnSocketStreams, 
   mnConnections;
 
 type

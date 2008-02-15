@@ -16,7 +16,7 @@ unit mnCommandServers;
 interface
 
 uses
-  SysUtils, Classes, Contnrs, mnSockets, mnStreams, mnServers;
+  SysUtils, Classes, Contnrs, mnSockets, mnSocketStreams, mnServers;
 
 type
   TmnCommandExceotion = class(Exception);

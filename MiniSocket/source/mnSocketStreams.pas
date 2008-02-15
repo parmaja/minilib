@@ -1,4 +1,4 @@
-unit mnStreams;
+unit mnSocketStreams;
 {**
  *  This file is part of the "Mini Library"
  *

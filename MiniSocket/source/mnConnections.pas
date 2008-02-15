@@ -23,7 +23,7 @@ uses
   mnWin32Sockets,
 {$ENDIF}
   mnSockets,
-  mnStreams;
+  mnSocketStreams;
 
 type
   TmnThread = class(TThread)
