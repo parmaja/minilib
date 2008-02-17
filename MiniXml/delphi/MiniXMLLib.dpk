@@ -28,7 +28,8 @@ package MiniXMLLib;
 
 requires
   rtl,
-  vcl;
+  vcl,
+  MiniCommonsLib;
 
 contains
   mnXMLWriter in '..\source\mnXMLWriter.pas',

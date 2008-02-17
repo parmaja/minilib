@@ -23,7 +23,7 @@ uses
   mnSockets;
 
 const
-  cReadTimeout = 5000;
+  cReadTimeout = 15000;
 
 type
   EmnStreamException = class(Exception);

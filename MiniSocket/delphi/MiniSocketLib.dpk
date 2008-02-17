@@ -28,13 +28,14 @@ package MiniSocketLib;
 
 requires
   rtl,
-  vcl;
+  vcl,
+  MiniCommonsLib;
 
 contains
   mnWin32Sockets in '..\source\mnWin32Sockets.pas',
   mnSockets in '..\source\mnSockets.pas',
   mnHttpServer in '..\source\mnHttpServer.pas',
-  mnStreams in '..\source\mnStreams.pas',
+  mnSocketStreams in '..\source\mnSocketStreams.pas',
   mnServers in '..\source\mnServers.pas',
   mnConnections in '..\source\mnConnections.pas',
   mnCommandClients in '..\source\mnCommandClients.pas',

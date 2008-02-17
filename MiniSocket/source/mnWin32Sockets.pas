@@ -39,7 +39,7 @@ type
     function Valid(Value: Integer; WithZero: Boolean = False): Boolean;
     function Check(Value: Integer; WithZero: Boolean = False): Boolean;
     function GetActive: Boolean; override;
-    function DoSelect(Timeout: Integer; Check: TSelectCheck): TmnError; override;
+    function DoSelect(Timeout: Int64; Check: TSelectCheck): TmnError; override;
   public
     constructor Create(Handle: TSocket);
     function RecvLength: Cardinal; override;
@@ -132,7 +132,7 @@ begin
   end;
 end;
 
-function TmnWinSocket.DoSelect(Timeout: Integer; Check: TSelectCheck): TmnError;
+function TmnWinSocket.DoSelect(Timeout: Int64; Check: TSelectCheck): TmnError;
 var
   FSet: TFDSet;
   PSetRead, PSetWrite: PFDSet;
@@ -153,11 +153,13 @@ begin
     PSetWrite := @FSet;
   end;
   if Timeout = -1 then
+  begin
   {$IFDEF FPC}
-    c := WinSock2.select(0, PSetRead, PSetWrite, nil, nil)
+    c := WinSock2.select(0, PSetRead, PSetWrite, nil, @TimeVal)
   {$ELSE}
-    c := WinSock.select(0, PSetRead, PSetWrite, nil, nil)
+    c := WinSock.select(0, PSetRead, PSetWrite, nil, @TimeVal)
   {$ENDIF}
+  end
   else
   begin
     TimeVal.tv_sec := Timeout div 1000;

@@ -37,7 +37,7 @@ type
     procedure Error;
     function GetActive: Boolean; virtual; abstract;
     procedure CheckActive;
-    function DoSelect(Timeout: Integer; Check: TSelectCheck): TmnError; virtual; abstract;
+    function DoSelect(Timeout: Int64; Check: TSelectCheck): TmnError; virtual; abstract;
   public
     destructor Destroy; override;
     function RecvLength: Cardinal; virtual; abstract;
@@ -46,7 +46,7 @@ type
     function Shutdown(How: TmnShutdown): TmnError; virtual; abstract;
     function Send(const Buffer; var Count: Longint): TmnError; virtual; abstract;
     function Receive(var Buffer; var Count: Longint): TmnError; virtual; abstract;
-    function Select(Timeout: Integer; Check: TSelectCheck): TmnError;
+    function Select(Timeout: Int64; Check: TSelectCheck): TmnError;
     function Listen: TmnError; virtual; abstract;
     function Accept: TmnCustomSocket; virtual; abstract;
     procedure Cancel; virtual; abstract;
@@ -136,7 +136,7 @@ begin
   raise EmnException.Create(Msg);
 end;
 
-function TmnCustomSocket.Select(Timeout: Integer;
+function TmnCustomSocket.Select(Timeout: Int64;
   Check: TSelectCheck): TmnError;
 begin
   Result := DoSelect(Timeout, Check);
