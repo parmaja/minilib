@@ -155,9 +155,9 @@ begin
   if Timeout = -1 then
   begin
   {$IFDEF FPC}
-    c := WinSock2.select(0, PSetRead, PSetWrite, nil, @TimeVal)
+    c := WinSock2.select(0, PSetRead, PSetWrite, nil, nil)
   {$ELSE}
-    c := WinSock.select(0, PSetRead, PSetWrite, nil, @TimeVal)
+    c := WinSock.select(0, PSetRead, PSetWrite, nil, nil)
   {$ENDIF}
   end
   else
