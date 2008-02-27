@@ -57,6 +57,7 @@ function FileNameToURI(FileName: string): string;
 function IncludeSlash(const S: string): string;
 function StrToStrings(Separators, WhiteSpace: TSysCharSet; Content: string; Strings: TStrings; DequoteValues:Boolean = False): Integer;
 function LeftSubStr(S, Separator:string):string;
+function RightSubStr(S, Separator:string):string;
 
 implementation
 

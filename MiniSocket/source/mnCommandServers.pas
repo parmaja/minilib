@@ -275,7 +275,7 @@ end;
 
 class function TmnCommand.GetCommandName: string;
 begin
-  Result := ''; 
+  Result := ClassName;
 end;
 
 { TmnCommands }
