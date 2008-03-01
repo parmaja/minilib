@@ -36,7 +36,6 @@ begin
     Conn.Connect;
     Session := TmncSQLiteSession.Create(Conn);
     try
-      Session.Mode := smTransactions;
       Session.Start;
       Cmd := TmncSQLiteCommand.Create(Session);
       try
@@ -54,7 +53,7 @@ begin
         Cmd.Params['nationality'] := 222;
         Cmd.Execute;
         Cmd.Close;
-      Session.Commit;
+        Session.Commit;
         Cmd.SQL.Text := 'select * from companies';
         Cmd.SQL.Add('where name = ?name');
         Cmd.Prepare;

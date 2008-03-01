@@ -12,6 +12,7 @@ unit mncSQLite;
 {$IFDEF FPC}
 {$mode delphi}
 {$ENDIF}
+//  ExecuteSQL('PRAGMA TEMP_STORE=MEMORY');//zaher
 
 interface
 
@@ -33,6 +34,7 @@ type
     procedure DoConnect; override;
     procedure DoDisconnect; override;
     function GetConnected:Boolean; override;
+    class function GetMode:TmncTransactionMode; override;
   public
     constructor Create;
     function EncodeString(s: string): string; override; //eg. AnsiToUTF8
@@ -55,6 +57,8 @@ type
     procedure ExecuteSQL(SQL: string);
     function GetActive: Boolean; override;
   public
+    constructor Create(vConnection: TmncConnection); override;
+    destructor Destroy; override;
     property Connection:TmncSQLiteConnection read GetConnection write SetConnection;
   end;
 
@@ -96,7 +100,7 @@ begin
   begin
     s := DecodeString(sqlite3_errmsg(FDBHandle));
     if ExtraMsg <> '' then
-      s := s + #13 + ExtraMsg;
+      s := s + ' - ' + ExtraMsg;
     raise EmncException.Create(s);
   end;
 end;
@@ -145,6 +149,15 @@ end;
 
 { TmncSQLiteSession }
 
+destructor TmncSQLiteSession.Destroy;
+begin
+  inherited;
+end;
+procedure TmncSQLiteSession.DoStart;
+begin
+  ExecuteSQL('BEGIN');
+end;
+
 procedure TmncSQLiteSession.DoCommit;
 begin
   ExecuteSQL('COMMIT');
@@ -155,26 +168,21 @@ begin
   ExecuteSQL('ROLLBACK');
 end;
 
-procedure TmncSQLiteSession.DoStart;
-begin
-  ExecuteSQL('BEGIN');
-end;
-
 procedure TmncSQLiteSession.ExecuteSQL(SQL: string);
 var
  lMsg  : pchar;
  s : string;
  r  : integer;
 begin
- lMSg := nil;
- s := Connection.EncodeString(SQL);
- r := sqlite3_exec(Connection.FDBHandle, PChar(s), nil, nil, @lMsg);
- if lMSg <> nil then
- begin
-   s := Connection.DecodeString(lMSg);
-   sqlite3_free(lMSg);
- end;
- Connection.CheckError(r, s);
+  lMSg := nil;
+  s := Connection.EncodeString(SQL);
+  r := sqlite3_exec(Connection.FDBHandle, PChar(s), nil, nil, @lMsg);
+  if lMSg <> nil then
+  begin
+    s := Connection.DecodeString(lMSg);
+    sqlite3_free(lMSg);
+  end;
+  Connection.CheckError(r, s);
 end;
 
 function TmncSQLiteSession.GetActive: Boolean;
@@ -182,9 +190,19 @@ begin
   Result:= inherited GetActive;
 end;
 
+constructor TmncSQLiteSession.Create(vConnection: TmncConnection);
+begin
+  inherited;
+end;
+
 function TmncSQLiteSession.GetConnection: TmncSQLiteConnection;
 begin
   Result := inherited Connection as TmncSQLiteConnection;
+end;
+
+class function TmncSQLiteConnection.GetMode: TmncTransactionMode;
+begin
+  Result := smSingleTransactions;
 end;
 
 procedure TmncSQLiteSession.SetConnection(const AValue: TmncSQLiteConnection);
@@ -211,7 +229,7 @@ begin
       else
         ExtraMsg := '';
       if ExtraMsg <> '' then
-        s := s + #13 + ExtraMsg;
+        s := s + ' - ' + ExtraMsg;
       FStatment := nil;
     end;
     raise EmncException.Create(s);

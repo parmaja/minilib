@@ -49,6 +49,12 @@ type
   end;
 
 //Connection as like connect by FTP server to send commands or a Database to send SQL
+{
+  smNone: No transactions support
+  smTransactions: all session have the same transacion like PG and SQLite
+  smMultiTransactions: every session have transacion like as Firebird
+}
+  TmncTransactionMode = (smNone, smSingleTransactions, smMultiTransactions);
 
   TmncConnection = class(TmncObject)
   private
@@ -59,6 +65,7 @@ type
     FAutoStart: Boolean;
     FAutoCreate: Boolean;
     FSessions: TmncSessions;
+    FStartCount: Integer;
     procedure SetConnected(const Value: Boolean);
   protected
     procedure DoConnect; virtual; abstract;
@@ -67,6 +74,7 @@ type
     property Sessions: TmncSessions read FSessions;
     function EncodeString(s: string): string; virtual; //eg. AnsiToUTF8
     function DecodeString(s: string): string; virtual; //eg. UTF8ToAnsi
+    class function GetMode:TmncTransactionMode; virtual;
   public
     constructor Create;
     destructor Destroy; override;
@@ -74,6 +82,7 @@ type
     procedure Disconnect;
     procedure Open;//Alias for Connect
     procedure Close;//Alias for Disonnect;
+    property Mode:TmncTransactionMode read GetMode;
     property AutoStart:Boolean read FAutoStart write FAutoStart;//AutoStart the Session when created
     property Connected:Boolean read GetConnected write SetConnected;
     property Active:Boolean read GetConnected write SetConnected;
@@ -85,8 +94,7 @@ type
   end;
 
   //Session it branch/clone of Connection but usefull for take a special params, it like Transactions.
-  TmncSessionMode = (smNormal, smTransactions);
-  TmncSessionAction = (sdaCommit, sdaRollback); 
+  TmncSessionAction = (sdaCommit, sdaRollback);
 
   TmncSession = class(TmncObject)
   private
@@ -94,28 +102,23 @@ type
     FConnection: TmncConnection;
     FCommands: TmncCommands;
     FStartCount: Integer;
-    FMode: TmncSessionMode;
     FAction: TmncSessionAction;
     procedure SetParams(const Value: TStrings);
     procedure SetConnection(const Value: TmncConnection);
     procedure SetActive(const Value: Boolean);
-    procedure SetMode(const Value: TmncSessionMode);
-    function GetInStart: Boolean;
   protected
-    function GetActive:Boolean; virtual; 
+    function GetActive:Boolean; virtual;
     procedure DoStart; virtual; abstract;
     procedure DoCommit; virtual; abstract;
     procedure DoRollback; virtual; abstract;
     property Commands:TmncCommands read FCommands;
   public
-    constructor Create(vConnection: TmncConnection);
+    constructor Create(vConnection: TmncConnection); virtual;
     destructor Destroy; override;
     procedure Start;
     procedure Commit;
     procedure Rollback;
     procedure Stop;
-    property InStart:Boolean read GetInStart;
-    property Mode:TmncSessionMode read FMode write SetMode;
     property Action:TmncSessionAction read FAction write FAction; 
     property Connection:TmncConnection read FConnection write SetConnection;
     property Active: Boolean read GetActive write SetActive;
@@ -352,6 +355,7 @@ type
     procedure DoClose; virtual; abstract;
     procedure DoCommit; virtual; abstract;//some time we need make commit with command or session
     procedure DoRollback; virtual; abstract;
+    procedure DoRequestChanged(Sender: TObject); virtual;
     property Request:TStrings read FRequest write SetRequest;
     property ParamList: TmncParamList read FParamList; //for Dublicated names when pass the params when execute
   public
@@ -431,9 +435,15 @@ begin
   end;
 end;
 
+
 function TmncConnection.EncodeString(s:string): string;
 begin
   Result := s; 
+end;
+
+class function TmncConnection.GetMode: TmncTransactionMode;
+begin
+  Result := smNone;
 end;
 
 function TmncConnection.DecodeString(s:string): string;
@@ -456,6 +466,8 @@ begin
   inherited Create;
   Session := vSession;
   FRequest := TStringList.Create;
+  (FRequest as TStringList).OnChange := DoRequestChanged;
+
   FFields := TmncFields.Create;
   FParams := TmncParams.Create;
   FParamList := TmncParamList.Create;
@@ -471,6 +483,12 @@ begin
   FreeAndNil(FParamList);
   FreeAndNil(FParams);
   inherited;
+end;
+
+procedure TmncCommand.DoRequestChanged(Sender: TObject);
+begin
+  if Active then
+    Close;
 end;
 
 function TmncCommand.EOF: Boolean;
@@ -612,11 +630,21 @@ end;
 
 procedure TmncSession.Commit;
 begin
-  if not InStart then
+  if not Active then
     raise EmncException.Create('Oops you have not started yet!');
-  if (Mode = smTransactions) then
-    DoCommit;
+
   Dec(FStartCount);
+  case Connection.Mode of
+    smMultiTransactions: DoCommit;
+    smSingleTransactions:
+    begin
+      if Connection.FStartCount = 0 then
+        raise EmncException.Create('Connection not started yet!');
+      Dec(Connection.FStartCount);
+      if Connection.FStartCount = 0 then
+        DoCommit;
+    end;
+  end;
 end;
 
 constructor TmncSession.Create(vConnection: TmncConnection);
@@ -630,7 +658,7 @@ end;
 
 destructor TmncSession.Destroy;
 begin
-  FCommands.Close;
+  Stop;
   while FCommands.Count > 0 do
     FCommands[0].Session := nil;
   Connection := nil;
@@ -640,21 +668,25 @@ end;
 
 function TmncSession.GetActive: Boolean;
 begin
-  Result := InStart;
-end;
-
-function TmncSession.GetInStart: Boolean;
-begin
   Result := FStartCount > 0;
 end;
 
 procedure TmncSession.Rollback;
 begin
-  if not InStart then
+  if not Active then
     raise EmncException.Create('Oops you have not started yet!');
-  if (Mode = smTransactions) then
-    DoRollback;
   Dec(FStartCount);
+  case Connection.Mode of
+    smMultiTransactions: DoRollback;
+    smSingleTransactions:
+    begin
+      if Connection.FStartCount = 0 then
+        raise EmncException.Create('Connection not started yet!');
+      Dec(Connection.FStartCount);
+      if Connection.FStartCount = 0 then
+        DoRollback;
+    end;
+  end;
 end;
 
 procedure TmncSession.SetActive(const Value: Boolean);
@@ -680,16 +712,6 @@ begin
   end;
 end;
 
-procedure TmncSession.SetMode(const Value: TmncSessionMode);
-begin
-  if FMode <> Value then
-  begin
-    if InStart then
-      raise EmncException.Create('Can not change session mode.');
-    FMode := Value;
-  end;
-end;
-
 procedure TmncSession.SetParams(const Value: TStrings);
 begin
   FParams.Assign(Value);
@@ -697,16 +719,24 @@ end;
 
 procedure TmncSession.Start;
 begin
-  if (Mode = smTransactions) and (Active) then
+  if (Connection.Mode <> smNone) and (Active) then
     raise EmncException.Create('Session is already active.');
-  if (Mode = smTransactions) then
-    DoStart;
+  case Connection.Mode of
+    smMultiTransactions: DoStart;
+    smSingleTransactions:
+    begin
+      if Connection.FStartCount = 0 then
+        DoStart;
+      Inc(Connection.FStartCount);
+    end;
+  end;
   Inc(FStartCount);
 end;
 
 procedure TmncSession.Stop;
 begin
-  if InStart then
+  FCommands.Close;
+  if Active then
   begin
     if Action = sdaCommit then
       Commit
@@ -1008,7 +1038,6 @@ var
 begin
   for i := 0 to Count -1 do
   begin
-    Items[i].Commands.Close;
     Items[i].Stop;
   end;
 end;
