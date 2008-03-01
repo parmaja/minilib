@@ -12,7 +12,6 @@ unit mncSQLite;
 {$IFDEF FPC}
 {$mode delphi}
 {$ENDIF}
-//  ExecuteSQL('PRAGMA TEMP_STORE=MEMORY');//zaher
 
 interface
 
