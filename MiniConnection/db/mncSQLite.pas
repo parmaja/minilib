@@ -154,6 +154,7 @@ begin
 end;
 procedure TmncSQLiteSession.DoStart;
 begin
+  ExecuteSQL('PRAGMA TEMP_STORE=MEMORY');//for WINCE
   ExecuteSQL('BEGIN');
 end;
 
