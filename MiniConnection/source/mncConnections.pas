@@ -48,6 +48,8 @@ type
     property Items[Index: Integer]: TmncCommand read GetItem write SetItem; default;
   end;
 
+  TmncCodepageConvert = (cpcNone, cpcAnsi, cpcUnicode, cpcUTF8);
+
 //Connection as like connect by FTP server to send commands or a Database to send SQL
 {
   smNone: No transactions support
@@ -438,7 +440,7 @@ end;
 
 function TmncConnection.EncodeString(s:string): string;
 begin
-  Result := s; 
+  Result := s;
 end;
 
 class function TmncConnection.GetMode: TmncTransactionMode;
@@ -448,7 +450,7 @@ end;
 
 function TmncConnection.DecodeString(s:string): string;
 begin
-  Result := s; 
+  Result := s;
 end;
 
 { TmncCommand }
@@ -777,7 +779,7 @@ function TmncRecord.FieldByName(vName: string): TmncFieldValue;
 begin
   Result := Find(vName);
   if Result = nil then
-    raise EmncException.Create('Field "' + vName + '" not found');
+     raise EmncException.Create('Field "' + vName + '" not found');
 end;
 
 function TmncRecord.Find(vName: string): TmncFieldValue;

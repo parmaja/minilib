@@ -28,7 +28,7 @@ type
   TmncSQLiteConnection = class(TmncConnection)
   private
     FDBHandle:PSqlite3;
-    FUseAnsi: Boolean;
+    FCodepageConvert: TmncCodepageConvert;
   protected
     procedure DoConnect; override;
     procedure DoDisconnect; override;
@@ -40,7 +40,7 @@ type
     function DecodeString(s: string): string; override; //eg. UTF8ToAnsi
     procedure CheckError(Error: Integer; ExtraMsg: string = '');
     property DBHandle:PSqlite3 read FDBHandle;
-    property UseAnsi: Boolean read FUseAnsi write FUseAnsi default True;
+    property CodepageConvert: TmncCodepageConvert read FCodepageConvert write FCodepageConvert default cpcAnsi;
   end;
 
   { TmncSQLiteSession }
@@ -97,7 +97,7 @@ var
 begin
   if (Error <> SQLITE_OK) then
   begin
-    s := DecodeString(sqlite3_errmsg(FDBHandle));
+    s := 'sqlite: ' + DecodeString(sqlite3_errmsg(FDBHandle));
     if ExtraMsg <> '' then
       s := s + ' - ' + ExtraMsg;
     raise EmncException.Create(s);
@@ -109,15 +109,17 @@ end;
 constructor TmncSQLiteConnection.Create;
 begin
   inherited Create;
-  FUseAnsi := True;
+  FCodepageConvert := cpcAnsi;
 end;
 
 function TmncSQLiteConnection.DecodeString(s: string): string;
 begin
-  if FUseAnsi then
-    Result := Utf8ToAnsi(s)
+  case FCodepageConvert of
+    cpcAnsi: Result := Utf8ToAnsi(s);
+    cpcUnicode: Result := UTF8Encode(s);
   else
     Result := s;
+  end;
 end;
 
 procedure TmncSQLiteConnection.DoConnect;
@@ -140,10 +142,12 @@ end;
 
 function TmncSQLiteConnection.EncodeString(s: string): string;
 begin
-  if FUseAnsi then
-    Result := AnsiToUtf8(s)
-  else                     
+  case FCodepageConvert of
+    cpcAnsi: Result := AnsiToUtf8(s);
+    cpcUnicode: Result := UTF8Decode(s);
+  else
     Result := s;
+  end;
 end;
 
 { TmncSQLiteSession }
@@ -220,7 +224,7 @@ var
 begin
   if (Error <> SQLITE_OK) then
   begin
-    s := Connection.DecodeString(sqlite3_errmsg(Connection.DBHandle));
+    s := 'sqlite: ' + Connection.DecodeString(sqlite3_errmsg(Connection.DBHandle));
     if Active then
     begin
       r := sqlite3_finalize(FStatment);//without check error prevent the loop
@@ -324,6 +328,7 @@ end;
 
 procedure TmncSQLiteCommand.DoExecute;
 begin
+  FBOF := True;
   if FStatment <> nil then
     CheckError(sqlite3_reset(FStatment));
   ApplyValues;

@@ -23,6 +23,15 @@ const
     '"' //sqlSQLite
     );
 
+  SQL_Engine_Param: array[TSQL_Engine] of string = (
+    '?', //sqlePlan
+    ':', //sqlParadox
+    '?', //sqlFirebird
+    '?', //sqlMySQL
+    '?', //sqlPostgres
+    '?' //sqlSQLite
+    );
+
   SQL_Engine_Bool_Values: array[TSQL_Engine] of array[Boolean] of string = (
     ('False', 'True'), //sqlePlan
     ('False', 'True'), //sqlParadox
