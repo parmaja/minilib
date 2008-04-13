@@ -21,14 +21,23 @@ uses
 type
   EmnStreamException = class(Exception);
 
-  TmnStream = class(TStream)
+  TmnCustomStream = class(TStream)
+  private
+    FBufferSize: Cardinal;
+  published
+  public
+    function WriteString(const Value: string): Cardinal;
+    function WriteStream(Source: TStream): Longint;
+    property BufferSize: Cardinal read FBufferSize write FBufferSize;
+  end;
+  
+  TmnStream = class(TmnCustomStream)
   private
     FStreamOwned: Boolean;
     FStream: TStream;
     FBuffer: PChar;
     FPos: PChar;
     FEnd: PChar;
-    FBufferSize: Cardinal;
     FEOF: Boolean;
     FEndOfLine: string;
     procedure LoadBuffer;
@@ -42,13 +51,10 @@ type
     function ReadLn(var S: string): Boolean; overload;
     procedure ReadStrings(Value: TStrings);
     procedure ReadCommand(var Command: string; var Params: string);
-    function WriteStream(Source: TStream): Longint;
-    function WriteString(const Value: string): Cardinal;
     function WriteStrings(const Value: TStrings): Cardinal;
     function WriteLn(const Value: string): Cardinal;
     procedure WriteCommand(const Command: string; const Params: string = '');
     property EOF: Boolean read FEOF;
-    property BufferSize: Cardinal read FBufferSize write FBufferSize;
     property EndOfLine: string read FEndOfLine write FEndOfLine;
   end;
 
@@ -60,12 +66,12 @@ const
 
 { TmnStream }
 
-function TmnStream.WriteString(const Value: string): Cardinal;
+function TmnCustomStream.WriteString(const Value: string): Cardinal;
 begin
-  Result := FStream.Write(Pointer(Value)^, Length(Value));
+  Result := Write(Pointer(Value)^, Length(Value));
 end;
 
-function TmnStream.WriteStream(Source: TStream): Longint;
+function TmnCustomStream.WriteStream(Source: TStream): Longint;
 var
   aBuffer: pchar;
   n: cardinal;
