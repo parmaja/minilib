@@ -1,0 +1,409 @@
+<?xml version="1.0"?>
+<CONFIG>
+  <ProjectOptions>
+    <PathDelim Value="\"/>
+    <Version Value="6"/>
+    <General>
+      <MainUnit Value="0"/>
+      <IconPath Value="./"/>
+      <TargetFileExt Value=".exe"/>
+      <ActiveEditorIndexAtStart Value="0"/>
+    </General>
+    <VersionInfo>
+      <ProjectVersion Value=""/>
+      <Language Value=""/>
+      <CharSet Value=""/>
+    </VersionInfo>
+    <PublishOptions>
+      <Version Value="2"/>
+      <IgnoreBinaries Value="False"/>
+      <IncludeFileFilter Value="*.(pas|pp|inc|lfm|lpr|lrs|lpi|lpk|sh|xml)"/>
+      <ExcludeFileFilter Value="*.(bak|ppu|ppw|o|so);*~;backup"/>
+    </PublishOptions>
+    <RunParams>
+      <local>
+        <FormatVersion Value="1"/>
+        <LaunchingApplication PathPlusParams="/usr/X11R6/bin/xterm -T 'Lazarus Run Output' -e $(LazarusDir)/tools/runwait.sh $(TargetCmdLine)"/>
+      </local>
+    </RunParams>
+    <RequiredPackages Count="1">
+      <Item1>
+        <PackageName Value="LCL"/>
+      </Item1>
+    </RequiredPackages>
+    <Units Count="19">
+      <Unit0>
+        <Filename Value="UnicodeTest.lpr"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="UnicodeTest"/>
+        <CursorPos X="33" Y="11"/>
+        <TopLine Value="1"/>
+        <EditorIndex Value="8"/>
+        <UsageCount Value="24"/>
+        <Loaded Value="True"/>
+      </Unit0>
+      <Unit1>
+        <Filename Value="MainForms.pas"/>
+        <ComponentName Value="Form1"/>
+        <IsPartOfProject Value="True"/>
+        <ResourceFilename Value="MainForms.lrs"/>
+        <UnitName Value="MainForms"/>
+        <CursorPos X="31" Y="69"/>
+        <TopLine Value="65"/>
+        <EditorIndex Value="0"/>
+        <UsageCount Value="24"/>
+        <Loaded Value="True"/>
+      </Unit1>
+      <Unit2>
+        <Filename Value="..\..\cputils.pas"/>
+        <UnitName Value="cputils"/>
+        <CursorPos X="31" Y="42"/>
+        <TopLine Value="26"/>
+        <UsageCount Value="11"/>
+      </Unit2>
+      <Unit3>
+        <Filename Value="..\..\cp1252.pas"/>
+        <UnitName Value="cp1252"/>
+        <CursorPos X="23" Y="85"/>
+        <TopLine Value="74"/>
+        <UsageCount Value="11"/>
+      </Unit3>
+      <Unit4>
+        <Filename Value="..\..\cp1256.pas"/>
+        <UnitName Value="cp1256"/>
+        <CursorPos X="36" Y="137"/>
+        <TopLine Value="127"/>
+        <UsageCount Value="11"/>
+      </Unit4>
+      <Unit5>
+        <Filename Value="V:\programs\lazarus\lcl\include\canvas.inc"/>
+        <CursorPos X="18" Y="1438"/>
+        <TopLine Value="1423"/>
+        <UsageCount Value="10"/>
+      </Unit5>
+      <Unit6>
+        <Filename Value="V:\programs\lazarus\fpc\src\rtl\win\wininc\redef.inc"/>
+        <CursorPos X="45" Y="394"/>
+        <TopLine Value="383"/>
+        <UsageCount Value="10"/>
+      </Unit6>
+      <Unit7>
+        <Filename Value="V:\programs\lazarus\fpc\src\rtl\inc\wstringh.inc"/>
+        <CursorPos X="31" Y="34"/>
+        <TopLine Value="16"/>
+        <EditorIndex Value="9"/>
+        <UsageCount Value="12"/>
+        <Loaded Value="True"/>
+      </Unit7>
+      <Unit8>
+        <Filename Value="V:\programs\lazarus\fpc\src\rtl\inc\wustrings.inc"/>
+        <CursorPos X="1" Y="81"/>
+        <TopLine Value="74"/>
+        <EditorIndex Value="11"/>
+        <UsageCount Value="12"/>
+        <Loaded Value="True"/>
+      </Unit8>
+      <Unit9>
+        <Filename Value="V:\programs\lazarus\fpc\src\rtl\win\wininc\func.inc"/>
+        <CursorPos X="1" Y="944"/>
+        <TopLine Value="926"/>
+        <UsageCount Value="10"/>
+      </Unit9>
+      <Unit10>
+        <Filename Value="V:\programs\lazarus\fpc\src\rtl\inc\systemh.inc"/>
+        <CursorPos X="26" Y="240"/>
+        <TopLine Value="222"/>
+        <EditorIndex Value="10"/>
+        <UsageCount Value="11"/>
+        <Loaded Value="True"/>
+      </Unit10>
+      <Unit11>
+        <Filename Value="..\..\source\cp1252.pas"/>
+        <UnitName Value="cp1252"/>
+        <CursorPos X="1" Y="85"/>
+        <TopLine Value="79"/>
+        <EditorIndex Value="5"/>
+        <UsageCount Value="11"/>
+        <Loaded Value="True"/>
+      </Unit11>
+      <Unit12>
+        <Filename Value="..\..\source\cputils.pas"/>
+        <UnitName Value="cputils"/>
+        <CursorPos X="1" Y="65"/>
+        <TopLine Value="53"/>
+        <EditorIndex Value="4"/>
+        <UsageCount Value="11"/>
+        <Loaded Value="True"/>
+      </Unit12>
+      <Unit13>
+        <Filename Value="D:\Desktop\cp1250.h"/>
+        <CursorPos X="1" Y="1"/>
+        <TopLine Value="1"/>
+        <UsageCount Value="10"/>
+        <SyntaxHighlighter Value="C++"/>
+      </Unit13>
+      <Unit14>
+        <Filename Value="..\..\source\cp1250.pas"/>
+        <UnitName Value="cp1250"/>
+        <CursorPos X="1" Y="121"/>
+        <TopLine Value="119"/>
+        <EditorIndex Value="6"/>
+        <UsageCount Value="11"/>
+        <Bookmarks Count="1">
+          <Item0 X="19" Y="60" ID="1"/>
+        </Bookmarks>
+        <Loaded Value="True"/>
+      </Unit14>
+      <Unit15>
+        <Filename Value="D:\Desktop\LibXmlParser.pas"/>
+        <UnitName Value="LibXmlParser"/>
+        <CursorPos X="1" Y="691"/>
+        <TopLine Value="715"/>
+        <EditorIndex Value="7"/>
+        <UsageCount Value="11"/>
+        <Loaded Value="True"/>
+      </Unit15>
+      <Unit16>
+        <Filename Value="..\..\source\cp1256.pas"/>
+        <UnitName Value="cp1256"/>
+        <CursorPos X="1" Y="140"/>
+        <TopLine Value="135"/>
+        <EditorIndex Value="3"/>
+        <UsageCount Value="11"/>
+        <Loaded Value="True"/>
+      </Unit16>
+      <Unit17>
+        <Filename Value="V:\programs\lazarus\fpc\src\rtl\objpas\sysutils\syswideh.inc"/>
+        <CursorPos X="10" Y="1"/>
+        <TopLine Value="1"/>
+        <EditorIndex Value="1"/>
+        <UsageCount Value="10"/>
+        <Loaded Value="True"/>
+      </Unit17>
+      <Unit18>
+        <Filename Value="V:\programs\lazarus\fpc\src\rtl\objpas\sysutils\syswide.inc"/>
+        <CursorPos X="53" Y="74"/>
+        <TopLine Value="72"/>
+        <EditorIndex Value="2"/>
+        <UsageCount Value="10"/>
+        <Loaded Value="True"/>
+      </Unit18>
+    </Units>
+    <JumpHistory Count="30" HistoryIndex="29">
+      <Position1>
+        <Filename Value="..\..\source\cputils.pas"/>
+        <Caret Line="60" Column="1" TopLine="49"/>
+      </Position1>
+      <Position2>
+        <Filename Value="..\..\source\cputils.pas"/>
+        <Caret Line="61" Column="1" TopLine="50"/>
+      </Position2>
+      <Position3>
+        <Filename Value="..\..\source\cputils.pas"/>
+        <Caret Line="63" Column="1" TopLine="52"/>
+      </Position3>
+      <Position4>
+        <Filename Value="..\..\source\cputils.pas"/>
+        <Caret Line="64" Column="24" TopLine="53"/>
+      </Position4>
+      <Position5>
+        <Filename Value="..\..\source\cputils.pas"/>
+        <Caret Line="66" Column="1" TopLine="53"/>
+      </Position5>
+      <Position6>
+        <Filename Value="..\..\source\cp1250.pas"/>
+        <Caret Line="140" Column="1" TopLine="129"/>
+      </Position6>
+      <Position7>
+        <Filename Value="..\..\source\cp1250.pas"/>
+        <Caret Line="141" Column="1" TopLine="130"/>
+      </Position7>
+      <Position8>
+        <Filename Value="..\..\source\cp1250.pas"/>
+        <Caret Line="143" Column="1" TopLine="132"/>
+      </Position8>
+      <Position9>
+        <Filename Value="..\..\source\cp1250.pas"/>
+        <Caret Line="145" Column="1" TopLine="134"/>
+      </Position9>
+      <Position10>
+        <Filename Value="..\..\source\cp1250.pas"/>
+        <Caret Line="147" Column="1" TopLine="135"/>
+      </Position10>
+      <Position11>
+        <Filename Value="..\..\source\cp1250.pas"/>
+        <Caret Line="149" Column="1" TopLine="135"/>
+      </Position11>
+      <Position12>
+        <Filename Value="..\..\source\cp1250.pas"/>
+        <Caret Line="151" Column="1" TopLine="135"/>
+      </Position12>
+      <Position13>
+        <Filename Value="..\..\source\cp1250.pas"/>
+        <Caret Line="142" Column="7" TopLine="135"/>
+      </Position13>
+      <Position14>
+        <Filename Value="MainForms.pas"/>
+        <Caret Line="83" Column="1" TopLine="69"/>
+      </Position14>
+      <Position15>
+        <Filename Value="..\..\source\cp1250.pas"/>
+        <Caret Line="142" Column="1" TopLine="131"/>
+      </Position15>
+      <Position16>
+        <Filename Value="..\..\source\cputils.pas"/>
+        <Caret Line="66" Column="20" TopLine="53"/>
+      </Position16>
+      <Position17>
+        <Filename Value="..\..\source\cputils.pas"/>
+        <Caret Line="67" Column="13" TopLine="53"/>
+      </Position17>
+      <Position18>
+        <Filename Value="MainForms.pas"/>
+        <Caret Line="83" Column="1" TopLine="69"/>
+      </Position18>
+      <Position19>
+        <Filename Value="..\..\source\cputils.pas"/>
+        <Caret Line="67" Column="1" TopLine="55"/>
+      </Position19>
+      <Position20>
+        <Filename Value="..\..\source\cputils.pas"/>
+        <Caret Line="24" Column="24" TopLine="13"/>
+      </Position20>
+      <Position21>
+        <Filename Value="MainForms.pas"/>
+        <Caret Line="82" Column="23" TopLine="69"/>
+      </Position21>
+      <Position22>
+        <Filename Value="MainForms.pas"/>
+        <Caret Line="83" Column="1" TopLine="69"/>
+      </Position22>
+      <Position23>
+        <Filename Value="..\..\source\cputils.pas"/>
+        <Caret Line="67" Column="1" TopLine="55"/>
+      </Position23>
+      <Position24>
+        <Filename Value="..\..\source\cp1250.pas"/>
+        <Caret Line="142" Column="1" TopLine="131"/>
+      </Position24>
+      <Position25>
+        <Filename Value="..\..\source\cputils.pas"/>
+        <Caret Line="67" Column="1" TopLine="55"/>
+      </Position25>
+      <Position26>
+        <Filename Value="..\..\source\cp1250.pas"/>
+        <Caret Line="142" Column="1" TopLine="131"/>
+      </Position26>
+      <Position27>
+        <Filename Value="..\..\source\cputils.pas"/>
+        <Caret Line="67" Column="1" TopLine="55"/>
+      </Position27>
+      <Position28>
+        <Filename Value="..\..\source\cp1250.pas"/>
+        <Caret Line="142" Column="1" TopLine="131"/>
+      </Position28>
+      <Position29>
+        <Filename Value="..\..\source\cputils.pas"/>
+        <Caret Line="67" Column="1" TopLine="55"/>
+      </Position29>
+      <Position30>
+        <Filename Value="..\..\source\cp1252.pas"/>
+        <Caret Line="92" Column="1" TopLine="82"/>
+      </Position30>
+    </JumpHistory>
+  </ProjectOptions>
+  <CompilerOptions>
+    <Version Value="5"/>
+    <PathDelim Value="\"/>
+    <SearchPaths>
+      <OtherUnitFiles Value="W:\home\pascal\lib\minilib\unicodes\source\"/>
+    </SearchPaths>
+    <CodeGeneration>
+      <Generate Value="Faster"/>
+    </CodeGeneration>
+    <Linking>
+      <Options>
+        <Win32>
+          <GraphicApplication Value="True"/>
+        </Win32>
+      </Options>
+    </Linking>
+    <Other>
+      <CustomOptions Value="-dWindowsUnicodeSupport
+"/>
+      <CompilerPath Value="$(CompPath)"/>
+    </Other>
+  </CompilerOptions>
+  <Debugging>
+    <BreakPoints Count="15">
+      <Item1>
+        <Source Value="..\..\..\..\..\..\..\work\delphi\jobs\tacbord_sql\source\mpos\wince\lazarus\fpc\2.0.4\source\fcl\inc\inifiles.pp"/>
+        <Line Value="434"/>
+      </Item1>
+      <Item2>
+        <Source Value="C:\pascal\fpgui\gfx\gdi\fpgfxpackage.pas"/>
+        <Line Value="3"/>
+      </Item2>
+      <Item3>
+        <Source Value="C:\lazarus\fpc\2.1.3\source\packages\fcl-db\src\db.pas"/>
+        <Line Value="1944"/>
+      </Item3>
+      <Item4>
+        <Source Value="C:\lazarus\fpc\2.1.5\source\rtl\objpas\classes\compon.inc"/>
+        <Line Value="215"/>
+      </Item4>
+      <Item5>
+        <Source Value="..\..\..\..\..\..\..\work\delphi\jobs\tacbord_sql\source\mpos\pda\source\OptionsForms.lfm"/>
+        <Line Value="17"/>
+      </Item5>
+      <Item6>
+        <Source Value="..\..\..\..\..\..\..\work\delphi\jobs\tacbord_sql\source\mpos\pda\lib\mposSessions.pas"/>
+        <Line Value="736"/>
+      </Item6>
+      <Item7>
+        <Source Value="C:\lazarus\fpc\2.1.5\src\packages\fcl-db\src\sqlite\sqlite3ds.pas"/>
+        <Line Value="305"/>
+      </Item7>
+      <Item8>
+        <Source Value="V:\programs\lazarus\fpc\src\packages\fcl-base\src\inc\blowfish.pp"/>
+        <Line Value="177"/>
+      </Item8>
+      <Item9>
+        <Source Value="V:\programs\lazarus\fpc\src\packages\fcl-db\src\sqldb\sqlite\sqlite3conn.pp"/>
+        <Line Value="225"/>
+      </Item9>
+      <Item10>
+        <Source Value="..\..\..\..\..\..\..\work\delphi\jobs\tacbord_sql\source\mpos\lib\mposFBEngine.pas"/>
+        <Line Value="122"/>
+      </Item10>
+      <Item11>
+        <Source Value="..\..\..\..\..\..\..\work\delphi\jobs\tacbord_sql\source\mpos\lib\mposFBEngine.pas"/>
+        <Line Value="116"/>
+      </Item11>
+      <Item12>
+        <Source Value="..\..\..\..\..\..\..\work\delphi\jobs\tacbord_sql\source\mpos\lib\mposFBEngine.pas"/>
+        <Line Value="208"/>
+      </Item12>
+      <Item13>
+        <Source Value="..\..\..\..\..\..\..\work\delphi\jobs\tacbord_sql\source\mpos\lib\mposSessions.pas"/>
+        <Line Value="2257"/>
+      </Item13>
+      <Item14>
+        <Source Value="..\..\..\..\..\..\..\work\delphi\jobs\tacbord_sql\source\mpos\pda\source\LoginForms.pas"/>
+        <Line Value="118"/>
+      </Item14>
+      <Item15>
+        <Source Value="..\..\..\..\pos\source\posUtils.pas"/>
+        <Line Value="199"/>
+      </Item15>
+    </BreakPoints>
+    <Exceptions Count="2">
+      <Item1>
+        <Name Value="ECodetoolError"/>
+      </Item1>
+      <Item2>
+        <Name Value="EFOpenError"/>
+      </Item2>
+    </Exceptions>
+  </Debugging>
+</CONFIG>

@@ -47,7 +47,7 @@ type
     destructor Destroy; override;
     function Read(var Buffer; Count: Longint): Longint; override;
     function Write(const Buffer; Count: Longint): Longint; override;
-    procedure ReadUntil(const S: string; var Result: string; var Matched: Boolean);
+    procedure ReadUntil(const UntilStr: string; var Result: string; var Matched: Boolean);
     function ReadLn(var S: string): Boolean; overload;
     procedure ReadStrings(Value: TStrings);
     procedure ReadCommand(var Command: string; var Params: string);
@@ -234,7 +234,7 @@ begin
   Result := aCount;
 end;
 
-procedure TmnStream.ReadUntil(const S: string; var Result: string; var Matched: Boolean);
+procedure TmnStream.ReadUntil(const UntilStr: string; var Result: string; var Matched: Boolean);
 var
   P: PChar;
   function CheckBuffer: Boolean;
@@ -249,14 +249,14 @@ var
 begin
   Idx := 1;
   Matched := False;
-  l := Length(S);
+  l := Length(UntilStr);
   Result := '';
   while not Matched and CheckBuffer do
   begin
     P := FPos;
     while P < FEnd do
     begin
-      if S[idx] = P^ then
+      if UntilStr[idx] = P^ then
         Inc(Idx)
       else
         Idx := 1;
