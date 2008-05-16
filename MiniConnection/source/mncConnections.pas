@@ -132,7 +132,7 @@ type
   TmncCustomField = class(TObject)
   private
     FName: string;
-    procedure SetAsNullString(const AValue: string);
+    procedure SetAsNullString(const Value: string);
   protected
     function GetVariant: Variant; virtual; abstract;
     procedure SetVariant(const Value: Variant); virtual; abstract;
@@ -165,6 +165,7 @@ type
     function GetAsTrimString: string;
     procedure SetAsTrimString(const Value: string);
 
+  public
     property Value: Variant read GetVariant write SetVariant;
     property AsVariant: Variant read GetVariant write SetVariant;
     property AsString: string read GetAsString write SetAsString;
@@ -182,7 +183,6 @@ type
     function GetIsEmpty: Boolean; virtual;
     function GetText: string; virtual;
     property Text: string read GetText;
-  public
     procedure Clear;
     property IsEmpty: Boolean read GetIsEmpty;
     property IsNull: Boolean read GetIsNull;
@@ -197,6 +197,21 @@ type
   end;
 
   TmncCustomFieldClass = class of TmncCustomField;
+  
+  { TmncCustomFields }
+
+  TmncCustomFields = class(TObjectList)
+  private
+    function GetFieldByName(Index: string): TmncCustomField;
+    function GetItem(Index: Integer): TmncCustomField;
+  protected
+    function FindField(vName:string): TmncCustomField; virtual; abstract;
+  public
+    function Add(AField: TmncCustomField): Integer; overload;
+    function FieldByName(vName:string): TmncCustomField;
+    property Items[Index: Integer]: TmncCustomField read GetItem;
+    property Field[Index: string]: TmncCustomField read GetFieldByName; default;
+  end;
 
   TmncField = class(TmncCustomField)
   private
@@ -210,16 +225,15 @@ type
 
   TmncFieldClass = class of TmncField;
 
-  TmncFields = class(TObjectList)
+  TmncFields = class(TmncCustomFields)
   private
     function GetItem(Index: Integer): TmncField;
-    procedure SetItem(Index: Integer; const Value: TmncField);
   protected
+    function FindField(vName:string): TmncCustomField; override;
   public
     function Add(Index: Integer; Name:string; FieldClass: TmncFieldClass = nil): TmncField; overload;
     function Add(Name:string): TmncField; overload;
-    function Find(vName:string): TmncField;
-    property Items[Index: Integer]: TmncField read GetItem write SetItem; default;
+    property Items[Index: Integer]: TmncField read GetItem; default;
   end;
 
   TmncFieldValue = class(TmncCustomField)
@@ -247,25 +261,26 @@ type
     property AsDateTime;
   end;
 
-  TmncRecord = class(TObjectList)
+  { TmncRecord }
+
+  TmncRecord = class(TmncCustomFields)
   private
     FFields: TmncFields;
     function GetItem(Index: Integer): TmncFieldValue;
-    procedure SetItem(Index: Integer; const Value: TmncFieldValue);
     function GetField(Index: string): TmncFieldValue;
     function GetValue(Index: string): Variant;
     procedure SetValue(Index: string; const Value: Variant);
   protected
   public
     constructor Create(vFields:TmncFields);
-    function Find(vName:string): TmncFieldValue;
+    function FindField(vName:string): TmncCustomField; override;
     function FieldByName(vName:string): TmncFieldValue;
     function Add(Field:TmncField; Value:Variant):TmncFieldValue; overload;
     function Add(Field:TmncField):TmncFieldValue; overload;
     function Add(FieldIndex:Integer; Value:Variant):TmncFieldValue; overload;
-    property Fields:TmncFields read FFields;
+    property Fields: TmncFields read FFields;
     property Field[Index: string]:TmncFieldValue read GetField;
-    property Items[Index: Integer]: TmncFieldValue read GetItem write SetItem;
+    property Items[Index: Integer]: TmncFieldValue read GetItem;
     property Value[Index: string]: Variant read GetValue write SetValue; default;
   end;
 
@@ -299,18 +314,17 @@ type
     property BufferAllocated:Boolean read GetBufferAllocated;  
   end;
 
-  TmncCustomParams = class(TObjectList)
+  TmncCustomParams = class(TmncCustomFields)
   private
   protected
     function GetParam(Index: string): TmncParam;
     function GetItem(Index: Integer): TmncParam;
-    procedure SetItem(Index: Integer; const Value: TmncParam);
   public
     procedure Clear; override;
-    function Find(vName:string): TmncParam;
+    function FindField(vName:string): TmncCustomField; override;
     function ParamByName(vName:string): TmncParam;
     property Param[Index: string]: TmncParam read GetParam;
-    property Items[Index: Integer]: TmncParam read GetItem write SetItem;
+    property Items[Index: Integer]: TmncParam read GetItem;
   end;
 
   TmncParams = class(TmncCustomParams)
@@ -329,6 +343,8 @@ type
   public
     constructor Create;
   end;
+
+  { TmncCommand }
 
   TmncCommand = class(TmncObject)
   private
@@ -458,9 +474,10 @@ end;
 procedure TmncCommand.Clear;
 begin
   FPrepared:= False;
-  Request.Clear;
-  Params.Clear;
-  ParamList.Clear;
+  FRequest.Clear;
+  if FParams <> nil then
+    FParams.Clear;
+  FParamList.Clear;
 end;
 
 constructor TmncCommand.Create(vSession:TmncSession);
@@ -511,7 +528,7 @@ end;
 
 function TmncCommand.FieldIsExist(Name: string): Boolean;
 begin
-  Result := Fields.Find(Name) <> nil;
+  Result := Fields.FindField(Name) <> nil;
 end;
 
 function TmncCommand.GetField(Index: string): TmncFieldValue;
@@ -560,6 +577,8 @@ end;
 
 procedure TmncCommand.Rollback;
 begin
+  if Active then
+    Close;
   DoCommit;
 end;
 
@@ -617,6 +636,8 @@ end;
 
 procedure TmncCommand.Commit;
 begin
+  if Active then
+    Close;
   DoCommit;
 end;
 
@@ -760,6 +781,11 @@ begin
   Result := Add(Fields[FieldIndex], Value);
 end;
 
+function TmncRecord.FieldByName(vName: string): TmncFieldValue;
+begin
+  Result := inherited FieldByName(vName) as TmncFieldValue;
+end;
+
 function TmncRecord.Add(Field: TmncField): TmncFieldValue;
 begin
   Result := TmncFieldValue.Create(Field);
@@ -775,14 +801,14 @@ begin
     raise EmncException.Create('vFields must be not nil');
 end;
 
-function TmncRecord.FieldByName(vName: string): TmncFieldValue;
+function TmncCustomFields.FieldByName(vName: string): TmncCustomField;
 begin
-  Result := Find(vName);
+  Result := FindField(vName);
   if Result = nil then
      raise EmncException.Create('Field "' + vName + '" not found');
 end;
 
-function TmncRecord.Find(vName: string): TmncFieldValue;
+function TmncRecord.FindField(vName: string): TmncCustomField;
 var
   i: Integer;
 begin
@@ -804,17 +830,12 @@ end;
 
 function TmncRecord.GetItem(Index: Integer): TmncFieldValue;
 begin
-  Result := inherited Items[Index] as TmncFieldValue;
+  Result := (inherited Items[Index]) as TmncFieldValue;
 end;
 
 function TmncRecord.GetValue(Index: string): Variant;
 begin
   Result := Field[Index].Value;
-end;
-
-procedure TmncRecord.SetItem(Index: Integer; const Value: TmncFieldValue);
-begin
-  inherited Items[Index] := Value;
 end;
 
 procedure TmncRecord.SetValue(Index: string; const Value: Variant);
@@ -831,7 +852,7 @@ begin
   Result := FieldClass.Create;
   Result.Index := Index;
   Result.Name := Name;
-  inherited Add(Result)
+  inherited Add(Result);
 end;
 
 function TmncFields.Add(Name: string): TmncField;
@@ -839,7 +860,7 @@ begin
   Result := Add(Count, Name);  
 end;
 
-function TmncFields.Find(vName: string): TmncField;
+function TmncFields.FindField(vName: string): TmncCustomField;
 var
   i: Integer;
 begin
@@ -859,11 +880,6 @@ begin
   Result := inherited Items[Index] as TmncField;
 end;
 
-procedure TmncFields.SetItem(Index: Integer; const Value: TmncField);
-begin
-  inherited Items[Index] := Value;
-end;
-
 { TmncFieldValue }
 
 constructor TmncFieldValue.Create(vField: TmncField);
@@ -881,7 +897,7 @@ end;
 
 function TmncParams.AddExists(Name: string): TmncParam;
 begin
-  Result := Find(Name);
+  Result := FindField(Name) as TmncParam;
   if Result = nil then
     Result := Add(Name);
 end;
@@ -903,12 +919,12 @@ end;
 
 function TmncCustomParams.ParamByName(vName: string): TmncParam;
 begin
-  Result := Find(vName);
+  Result := FindField(vName) as TmncParam;
   if Result = nil then
     raise EmncException.Create('Param ' + vName + ' not found');
 end;
 
-function TmncCustomParams.Find(vName: string): TmncParam;
+function TmncCustomParams.FindField(vName: string): TmncCustomField;
 var
   i: Integer;
 begin
@@ -923,6 +939,7 @@ begin
   end;
 end;
 
+
 function TmncCustomParams.GetParam(Index: string): TmncParam;
 begin
   Result := ParamByName(Index);
@@ -931,11 +948,6 @@ end;
 function TmncCustomParams.GetItem(Index: Integer): TmncParam;
 begin
   Result := inherited Items[Index] as TmncParam;
-end;
-
-procedure TmncCustomParams.SetItem(Index: Integer; const Value: TmncParam);
-begin
-  inherited Items[Index] := Value;
 end;
 
 function TmncFieldValue.GetVariant: Variant;
@@ -961,12 +973,12 @@ end;
 
 function TmncField.GetVariant: Variant;
 begin
-  raise EmncException.Create('Yout must not use it');
+  raise EmncException.Create('You must not use it!');
 end;
 
 procedure TmncField.SetVariant(const Value: Variant);
 begin
-  raise EmncException.Create('Yout must not use it');
+  raise EmncException.Create('You must not use it!');
 end;
 
 { TmncParam }
@@ -1154,12 +1166,12 @@ begin
     Result := Value;
 end;
 
-procedure TmncCustomField.SetAsNullString(const AValue: string);
+procedure TmncCustomField.SetAsNullString(const Value: string);
 begin
   if Value = '' then
     Clear
   else
-    AsString := '';
+    AsString := Value;
 end;
 
 procedure TmncCustomField.SetAsBoolean(const Value: Boolean);
@@ -1205,6 +1217,23 @@ end;
 procedure TmncCustomField.SetAsTrimString(const Value: string);
 begin
   AsString := Trim(Value);
+end;
+
+{ TmncCustomFields }
+
+function TmncCustomFields.GetFieldByName(Index: string): TmncCustomField;
+begin
+  Result := FieldByName(Index);
+end;
+
+function TmncCustomFields.GetItem(Index: Integer): TmncCustomField;
+begin
+  Result := (inherited Items[Index]) as TmncCustomField;
+end;
+
+function TmncCustomFields.Add(AField: TmncCustomField): Integer;
+begin
+  Result := inherited Add(AField);
 end;
 
 end.

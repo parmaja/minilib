@@ -35,7 +35,7 @@ const
   SQL_Engine_Bool_Values: array[TSQL_Engine] of array[Boolean] of string = (
     ('False', 'True'), //sqlePlan
     ('False', 'True'), //sqlParadox
-    ('0', 'True'), //sqlFirebird
+    ('0', '1'), //sqlFirebird
     ('false', 'true'), //sqlMySQL
     ('false', 'true'), //sqlPostgres
     ('false', 'true') //sqlSQLite

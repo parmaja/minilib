@@ -38,7 +38,7 @@ type
     constructor Create;
     function EncodeString(s: string): string; override; //eg. AnsiToUTF8
     function DecodeString(s: string): string; override; //eg. UTF8ToAnsi
-    procedure CheckError(Error: Integer; ExtraMsg: string = '');
+    procedure CheckError(Error: Integer; const ExtraMsg: string = '');
     property DBHandle:PSqlite3 read FDBHandle;
     property CodepageConvert: TmncCodepageConvert read FCodepageConvert write FCodepageConvert default cpcAnsi;
   end;
@@ -91,7 +91,7 @@ type
 
 implementation
 
-procedure TmncSQLiteConnection.CheckError(Error:longint; ExtraMsg: string);
+procedure TmncSQLiteConnection.CheckError(Error:longint; const ExtraMsg: string);
 var
   s : String;
 begin
@@ -126,7 +126,7 @@ procedure TmncSQLiteConnection.DoConnect;
 begin
   if not AutoCreate and not FileExists(Resource) then
     raise EmncException.Create('Database not exist: "' + Resource + '"');
-  CheckError(sqlite3_open(PChar(Resource), @FDBHandle));
+  CheckError(sqlite3_open(PChar(Resource), @FDBHandle), Resource);
 end;
 
 function TmncSQLiteConnection.GetConnected: Boolean;
@@ -372,6 +372,7 @@ end;
 
 procedure TmncSQLiteCommand.DoRollback;
 begin
+  Session.Rollback;
 end;
 
 procedure TmncSQLiteCommand.DoClose;
@@ -383,6 +384,7 @@ end;
 
 procedure TmncSQLiteCommand.DoCommit;
 begin
+  Session.Commit;
 end;
 
 procedure TmncSQLiteCommand.FetchFields;
