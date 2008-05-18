@@ -20,7 +20,11 @@ uses
   {$ifdef Linux}
   mnLinuxCommStreams,
   {$else}
+  {$ifdef WINCE}
+  mnWinCECommStreams,
+  {$else}
   mnWinCommStreams,
+  {$endif}
   {$endif}
   mnCommClasses;
 

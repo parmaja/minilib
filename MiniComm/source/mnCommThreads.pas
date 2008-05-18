@@ -20,23 +20,31 @@ uses
   mnStreams, mnCommClasses;
 
 type
+
+  { TmnCommThread }
+
   TmnCommThread = class(TThread)
   private
     FCommStream: TmnCustomCommStream;
+    FUseWaitEvent: Boolean;
   protected
     procedure DoTerminate; override;
-    procedure Execute; override;
     procedure StringArrived(S: string); virtual;
+    procedure Execute; override;
   public
     constructor Create(CreateSuspended: Boolean; CommStream: TmnCustomCommStream);
+    destructor Destroy; override;
+    property UseWaitEvent: Boolean read FUseWaitEvent write FUseWaitEvent;
     property CommStream: TmnCustomCommStream read FCommStream;
   end;
 
   TmnCommStreamThread = class(TmnCommThread)
+  private
+    procedure InternalStringArrived; 
   protected
     FBuffer: string;
-    procedure DoStringArrived; virtual;
     procedure StringArrived(S: string); override;
+    procedure DoStringArrived(S: string); virtual;
   public
     constructor Create(CreateSuspended: Boolean; CommStream: TmnCustomCommStream);
   end;
@@ -54,22 +62,37 @@ begin
   FCommStream := CommStream;
 end;
 
+destructor TmnCommThread.Destroy;
+begin
+  if FreeOnTerminate then
+    FreeAndNil(FCommStream);
+  inherited Destroy;
+end;
+
 procedure TmnCommThread.DoTerminate;
 begin
   if FCommStream <> nil then
+  begin
     FCommStream.Cancel;
+    if FreeOnTerminate then
+      FCommStream.Close;
+  end;
   inherited;
 end;
 
 procedure TmnCommThread.Execute;
 begin
-  inherited;
   try
     // You muse have EventChar and QueMode
     while not Terminated and FCommStream.Connected do
     begin
-      if FCommStream.WaitEvent([evRxFlag]) <> [] then;
-        StringArrived(FCommStream.ReadString);
+      if not UseWaitEvent or (FCommStream.WaitEvent([evError, evRxFlag]) <> []) then;
+      begin
+        if not Terminated and FCommStream.Connected then
+        begin
+          StringArrived(FCommStream.ReadString);
+        end;
+      end;
     end;
   finally
   end;
@@ -89,15 +112,19 @@ begin
     CommStream.QueMode := True;
 end;
 
-procedure TmnCommStreamThread.DoStringArrived;
+procedure TmnCommStreamThread.DoStringArrived(S: string);
 begin
+end;
+
+procedure TmnCommStreamThread.InternalStringArrived;
+begin
+  DoStringArrived(FBuffer);
 end;
 
 procedure TmnCommStreamThread.StringArrived(S: string);
 begin
-  inherited;
   FBuffer := S;
-  Synchronize(DoStringArrived);
+  InternalStringArrived;
 end;
 
 end.

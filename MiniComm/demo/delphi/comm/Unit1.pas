@@ -10,8 +10,7 @@ uses
 type
   TmnMyCommThread = class(TmnCommStreamThread)
   protected
-    FBuffer: string;
-    procedure DoStringArrived; override;
+    procedure DoStringArrived(S: string); override;
   public
   end;
 
@@ -57,6 +56,7 @@ begin
   try
     aStream.ReadTimeout := 2;
     aStream.Timeout := 10000;
+    aStream.UseOverlapped := True;
     aStream.Connect;
     while True do
     begin
@@ -88,6 +88,7 @@ var
 begin
   aStream := TmnCommStream.Create(True, PortEdit.Text, 9600);
   try
+    aStream.UseOverlapped := True;
     aStream.Connect;
     aStream.WriteString('Hello Terminals'#13#10);
   finally
@@ -100,9 +101,10 @@ begin
   if FThread = nil then
   begin
     FCommStream := TmnCommStream.Create(True, PortEdit.Text, 9600);
-    FCommStream.EventChar := #10;
+    FCommStream.EventChar := #13;
 //    FCommStream.ReadTimeout := 10; or use QueMode
     FCommStream.QueMode := True;
+    FCommStream.UseOverlapped := True;
     FCommStream.Connect;
     FThread := TmnMyCommThread.Create(True, FCommStream);
     FThread.FreeOnTerminate := True;
@@ -115,6 +117,7 @@ begin
   if FThread <> nil then
   begin
     FThread.Terminate;
+    FCommStream.Close;
     FThread := nil;
   end;
   FCancel := True;
@@ -131,10 +134,10 @@ begin
   FCancel := False;
   aStream := TmnCommStream.Create(True, PortEdit.Text, 9600);
   try
-    aStream.UseOverlapped := False;
     aStream.EventChar := #13;
 //    aStream.ReadTimeout := 10; or use QueMode
     aStream.QueMode := True;
+    aStream.UseOverlapped := False;
     aStream.Connect;
     while True do
     begin
@@ -162,10 +165,10 @@ end;
 
 { TmnMyCommThread }
 
-procedure TmnMyCommThread.DoStringArrived;
+procedure TmnMyCommThread.DoStringArrived(S: string);
 begin
   inherited;
-  Form1.Memo1.Lines.Add(Trim(FBuffer));
+  Form1.Memo1.Lines.Add(Trim(S));
 end;
 
 end.

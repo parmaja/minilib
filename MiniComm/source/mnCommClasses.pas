@@ -98,7 +98,7 @@ type
     function DoRead(var Buffer; Count: Integer): Integer; virtual; abstract;
     function DoWrite(const Buffer; Count: Integer): Integer; virtual; abstract;
   public
-    constructor Create(Suspend: Boolean; Port: string; BaudRate: Int64; DataBits: TDataBits = dbEight; Parity: TParityBits = prNone; StopBits: TStopBits = sbOneStopBit; FlowControl: TFlowControl = fcHardware; UseOverlapped: Boolean = True); overload;
+    constructor Create(Suspend: Boolean; Port: string; BaudRate: Int64; DataBits: TDataBits = dbEight; Parity: TParityBits = prNone; StopBits: TStopBits = sbOneStopBit; FlowControl: TFlowControl = fcHardware; UseOverlapped: Boolean = False); overload;
     constructor Create(Params: string); overload;
     destructor Destroy; override;
     procedure Connect;
@@ -212,7 +212,7 @@ begin
   Result.XoffChar := #19;
   Result.DSRSensitivity := False;
   Result.ControlRTS := rtsDisable;
-  Result.ControlDTR := dtrDisable;
+  Result.ControlDTR := dtrDisable;//or enable like as Synaser
   Result.TxContinueOnXoff := False;
   Result.OutCTSFlow := False;
   Result.OutDSRFlow := False;
@@ -263,7 +263,8 @@ begin
     begin
       if QueMode then
         Count := GetInQue;
-      Result := DoRead(Buffer, Count)
+      if Connected then
+        Result := DoRead(Buffer, Count)
     end
     else
       Result := 0;

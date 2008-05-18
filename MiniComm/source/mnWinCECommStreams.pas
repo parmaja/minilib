@@ -1,4 +1,4 @@
-unit mnWinCommStreams;
+unit mnWinCECommStreams;
 {**
  *  This file is part of the "Mini Comm"
  *
@@ -22,6 +22,9 @@ uses
   mnStreams, mnCommClasses;
 
 type
+
+  { TmnOSCommStream }
+
   TmnOSCommStream = class(TmnCustomCommStream)
   private
     FHandle: THandle;
@@ -32,6 +35,7 @@ type
     function GetConnected: Boolean; override;
     function DoWrite(const Buffer; Count: Integer): Integer; override;
     function DoRead(var Buffer; Count: Integer): Integer; override;
+    function GetFlowControlFlags: TFlowControlFlags; override;
   public
     function WaitEvent(const Events: TComEvents): TComEvents; override;
     function GetInQue: Integer; override;
@@ -63,24 +67,22 @@ var
   aTimeouts: TCommTimeouts;
   P:Pointer;
   aMode: Cardinal;
+  aShare: Cardinal;
 begin
-  if UseOverlapped then
-    FCancelEvent := CreateEvent(nil, True, False, nil);
-
   {$ifdef WINCE}
-  P := PWideChar(UTF8Decode(Port+':'));
+  P := PWideChar(UTF8Decode((Port+':')));
   {$else}
   P := PChar('\\.\' + Port);
   {$endif}
-  
+
   aMode := 0;
   case ConnectMode of
     ccmReadWrite: aMode := GENERIC_READ or GENERIC_WRITE;
     ccmRead: aMode := GENERIC_READ;
     ccmWrite: aMode := GENERIC_WRITE;
   end;
-  
-  f := CreateFile(P, aMode, 0, nil, OPEN_EXISTING, cOverlapped[UseOverlapped], 0);
+
+  f := CreateFile(P, aMode, FILE_SHARE_READ or FILE_SHARE_WRITE, nil, OPEN_EXISTING, 0, 0);
 
   if (f = INVALID_HANDLE_VALUE) then
   begin
@@ -89,8 +91,10 @@ begin
 
   FHandle := f;
   try
-    if not SetupComm(FHandle, BufferSize, BufferSize) then
+{    if not SetupComm(FHandle, BufferSize, BufferSize) then //some devices may not support this API.
+    begin
       RaiseLastOSError;
+    end;}
 
     DCB.DCBlength := SizeOf(TDCB);
     DCB.XonLim := BufferSize div 4;
@@ -139,7 +143,10 @@ begin
 
     // apply settings
     if not SetCommState(FHandle, DCB) then
-      RaiseLastOSError;
+    begin
+      raise EComPort.Create('SetupComm');
+//      RaiseLastOSError;
+    end;
 
     aTimeouts.ReadIntervalTimeout := MAXWORD;
     aTimeouts.ReadTotalTimeoutMultiplier := ReadTimeout;
@@ -148,7 +155,10 @@ begin
     aTimeouts.WriteTotalTimeoutConstant := WriteTimeoutConst;
 
     if not SetCommTimeouts(FHandle, aTimeouts) then
-      RaiseLastOSError;
+    begin
+      raise EComPort.Create('SetupComm');
+//      RaiseLastOSError;
+    end;
 
   except
     if FHandle <> 0 then
@@ -190,14 +200,9 @@ var
   Errors: DWORD;
   ComStat: TComStat;
 begin
-  if Connected then
-  begin
-    if not ClearCommError(FHandle, Errors, @ComStat) then
-      raise EComPort.Create('Clear Com Failed');
-    Result := ComStat.cbInQue;
-  end
-  else
-    Result := 0;
+  if not ClearCommError(FHandle, Errors, @ComStat) then
+    raise EComPort.Create('Clear Com Failed');
+  Result := ComStat.cbInQue;
 end;
 
 procedure TmnOSCommStream.Purge;
@@ -218,168 +223,74 @@ end;
 
 function TmnOSCommStream.WaitEvent(const Events: TComEvents): TComEvents;
 var
-  Overlapped: TOverlapped;
-  EventHandles: array[0..1] of THandle;
   Mask: DWord;
-  Count: Integer;
   E: Boolean;
-  R: Integer;
 begin
   Result := [];
-  FillChar(Overlapped, SizeOf(TOverlapped), 0);
-  Overlapped.hEvent := CreateEvent(nil, True, False, nil);
-  EventHandles[0] := Overlapped.hEvent;
-  if FCancelEvent <> 0 then
-  begin
-    EventHandles[1] := FCancelEvent;
-    Count := 2;
-  end
-  else
-    Count := 1;
-
   try
-    Mask := EventsToInt(Events);
-    SetCommMask(FHandle, Mask);
-    E := WaitCommEvent(FHandle, Mask, @Overlapped);
-    if (E) or (GetLastError = ERROR_IO_PENDING) then
-    begin
-      R := WaitForMultipleObjects(Count, @EventHandles,  False, Timeout);
-      if (R = WAIT_OBJECT_0) then
-      begin
-        GetOverlappedResult(FHandle, Overlapped, Mask, False);
-        Result := IntToEvents(Mask);
-      end;
-      E := (R = WAIT_OBJECT_0)
-        or (R = WAIT_OBJECT_0 + 1) or (R = WAIT_TIMEOUT);
-      SetCommMask(FHandle, 0);
-    end;
-
+    SetCommMask(FHandle, EventsToInt(Events));
+    Mask := 0;
+    E := WaitCommEvent(FHandle, Mask, nil);
     if not E then
     begin
-      raise EComPort.Create('Wait Failed');
+      Result := [];
+      //raise EComPort.Create('Wait Failed');
     end;
+      Result := IntToEvents(Mask);
   finally
-    CloseHandle(Overlapped.hEvent);
+    SetCommMask(FHandle, 0);
   end;
+end;
+
+function TmnOSCommStream.GetFlowControlFlags: TFlowControlFlags;
+begin
+  Result := inherited GetFlowControlFlags;
+  //Result.ControlDTR := dtrEnable;
 end;
 
 function TmnOSCommStream.DoRead(var Buffer; Count: Integer): Integer;
 var
   Bytes: DWORD;
-  Overlapped: TOverlapped;
-  EventHandles: array[0..1] of THandle;
-  P: POverlapped;
   E: Cardinal;
-  R: Integer;
 begin
   Bytes := 0;
   Result := 0;
-  P := nil;
   try
-    if UseOverlapped then
-    begin
-      FillChar(Overlapped, Sizeof(Overlapped), 0);
-      Overlapped.hEvent := CreateEvent(nil, True, True, nil);
-      EventHandles[0] := Overlapped.hEvent;
-      EventHandles[1] := FCancelEvent;
-      P := @Overlapped;   
-    end
-    else
-      P := nil;
-
-    if ReadFile(FHandle, Buffer, Count, Bytes, P) then
+    if ReadFile(FHandle, Buffer, Count, Bytes, nil) then
     begin
       E := 0;
     end
     else
       E := GetLastError;
 
-    if UseOverlapped and (E = ERROR_IO_PENDING) then
-    begin
-      R:= WaitForMultipleObjects(2, @EventHandles, False, Timeout);
-      if R = WAIT_TIMEOUT then
-      begin
-        if FailTimeout then
-          raise EComPort.Create('Read Timeout')
-        else
-          Result := 0;
-      end
-      else if (R = WAIT_OBJECT_0) then
-      begin
-        GetOverlappedResult(FHandle, Overlapped, Bytes, False);
-        Result := Bytes;
-      end;
-    end
+    if E > 0 then
+      RaiseLastOSError
     else
-    begin
-      if E > 0 then
-        RaiseLastOSError
-      else
-        Result := Bytes;
-    end;
+      Result := Bytes;
   finally
-    if P <> nil then //it is Overlapped
-      CloseHandle(Overlapped.hEvent);
   end;
 end;
 
 function TmnOSCommStream.DoWrite(const Buffer; Count: Integer): Integer;
 var
   Bytes: DWORD;
-  Overlapped: TOverlapped;
-  EventHandles: array[0..1] of THandle;
-  P: POverlapped;
   E: Cardinal;
-  R: Integer;
 begin
   Bytes := 0;
   Result := 0;
-  P := nil;
   try
-    if UseOverlapped then
-    begin
-      FillChar(Overlapped, Sizeof(Overlapped), 0);
-      Overlapped.hEvent := CreateEvent(nil, True, True, nil);
-      EventHandles[0] := Overlapped.hEvent;
-      EventHandles[1] := FCancelEvent;
-      P := @Overlapped;
-    end
-    else
-      P := nil;
-
-    if WriteFile(FHandle, Buffer, Count, Bytes, P) then
+    if WriteFile(FHandle, Buffer, Count, Bytes, nil) then
     begin
       E := 0;
     end
     else
       E := GetLastError;
 
-    if UseOverlapped and (E = ERROR_IO_PENDING) then
-    begin
-      R:= WaitForMultipleObjects(2, @EventHandles, False, Timeout);
-      if R = WAIT_TIMEOUT then
-      begin
-        if FailTimeout then
-          raise EComPort.Create('Read Timeout')
-        else
-          Result := 0;
-      end
-      else if (R = WAIT_OBJECT_0) then
-      begin
-        GetOverlappedResult(FHandle, Overlapped, Bytes, False);
-        Result := Bytes;
-      end;
-    end
+    if E > 0 then
+      RaiseLastOSError
     else
-    begin
-      if E > 0 then
-        RaiseLastOSError
-      else
-        Result := Bytes;
-    end;
+      Result := Bytes;
   finally
-    if P <> nil then //it is Overlapped
-      CloseHandle(Overlapped.hEvent);
   end;
 end;
 
