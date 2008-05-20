@@ -9,8 +9,31 @@ unit GPSUtils;
  
 {
   see
+  http://en.wikipedia.org/wiki/Geographic_coordinate_system
+  http://geography.about.com/c/ht/00/07/How_Convert_Decimal_Degrees0962932697.htm
   http://gpsinformation.org/dale/nmea.htm#position
+  http://www.csgnetwork.com/gpscoordconv.html
   http://boulter.com/gps
+  
+Sample
+
+  $GPGGA,180924.000,4036.9101,N,07359.9423,W,1,......
+
+  4036.9101,N,07359.9423,W
+
+  N40.369101 W73.599423
+
+  http://boulter.com/gps
+  enter N40.369101 W73.599423
+  Result DMS
+  N40 22 08	         W73 35 57
+  and DM
+  N 40 22.146	W 73 35.965
+
+  $GPGGA,205226.000,4038.0325,N,07401.2500,W,1,9,0.90,41.6,M,-34.3,M,,*5B
+  
+  $GPGGA,204852.000,4038.0022,N,07401.2578,W,1,6,1.64,31.7,M,-34.3,M,,*5B
+
 }
  
 {$M+}
@@ -28,32 +51,15 @@ uses
 type
   EGPSError = class(Exception);
   
-  TGPSSourceInfo = record
-    Latitude: string;
-    Longitude: string;
-//    Altitude: Double;
-  end;
-
-  TGPSDataInfo = record
-    Latitude: double;
-    Longitude: double;
-  end;
-
-  TGPSDegreeInfo = record
-    Latitude: Double;
-    Longitude: Double;
-  end;
-
-  TGPSGMapInfo = record
-    Latitude: string;
-    Longitude: string;
+  TGPSDecimalInfo = record
+    Latitude: Extended;
+    Longitude: Extended;
   end;
 
   TGPSInfo = record
-    Source:TGPSSourceInfo;
-    Data: TGPSDataInfo;
-    Degree: TGPSDegreeInfo;
-    GMap: TGPSGMapInfo;
+    Source: string;
+    Decimal: TGPSDecimalInfo;
+    LastAccess: TDateTime;
   end;
 
   { TmnGPSThread }
@@ -72,6 +78,12 @@ type
 function GPSInfo:TGPSInfo;
 procedure SetGPSInfo(Info: TGPSInfo);
 
+function GPSDecimalToDMS(Value:Extended; D, M, S:string):string; overload;//you can call with (v, '°','''','"')
+function GPSDecimalToDMS(Value:Extended):string; overload;
+function GPSDecimalToDM(Value:Extended; D, M:string): string; overload;
+function GPSDecimalToDM(Value:Extended):string; overload;
+function GPSToMAP(Info: TGPSDecimalInfo):string; overload;
+function GPSToMAP(Latitude: Extended; Longitude: Extended) :string; overload;
 function GPSPrase(Command:string; var Info:TGPSInfo):Boolean;
 
 implementation
@@ -104,27 +116,68 @@ begin
   end;
 end;
 
+function GPSDecimalToDMS(Value:Extended; D, M, S:string):string;
+var
+  t: Integer;
+begin
+  t := Trunc(Value);
+  Result := IntToStr(t) + ' ';
+  Value := (Value - t) * 60;
+
+  t := Trunc(Value);
+  Result := Result + IntToStr(t) + ' ';
+  Value := (Value - t) * 60;
+  Result := Result + FormatFloat('0.0000', Value);
+end;
+
+function GPSDecimalToDMS(Value:Extended):string;
+begin
+  Result := GPSDecimalToDMS(Value, ' ', ' ', '');
+end;
+
+function GPSDecimalToDM(Value:Extended; D, M:string):string;
+var
+  t: Integer;
+begin
+  t := Trunc(Value);
+  Result := IntToStr(t) + D;
+  Value := (Value - t) * 60;
+
+  Result := Result + FormatFloat('0.0000', Value) + M;
+end;
+
+function GPSDecimalToDM(Value:Extended):string;
+begin
+  Result := GPSDecimalToDM(Value, ' ', '');
+end;
+
+function GPSToMAP(Latitude: Extended; Longitude: Extended) :string; overload;
+begin
+  if Latitude < 0 then
+    Result := '-'
+  else
+    Result := '+';
+  Result := Result + FormatFloat('0.000000', Abs(Latitude));
+  Result := Result + ',';
+  if Longitude < 0 then
+    Result := Result + '-'
+  else
+    Result := Result + '+';
+  Result := Result + FormatFloat('0.000000', Abs(Longitude));
+end;
+
+function GPSToMAP(Info: TGPSDecimalInfo):string;
+begin
+  Result := GPSToMAP(Info.Latitude, Info.Longitude)
+end;
+
 function GPSPrase(Command:string; var Info:TGPSInfo):Boolean;
 var
   P: Integer;
   CS:string;
+  D, M: string;
   Params:TStringList;
   CMD: string;
-  function GetDegree(S, D, N:String):Double;
-  var
-    v: Double;
-  begin
-    v := StrToFloatDef(S, 99999);
-    if v <> 99999 then
-    begin
-      Result := Trunc(v / 100);
-      Result := Result + (v - (Result * 100)) / 60;
-      if D = N then
-        Result := - Result;
-
-      //Result := D + Format('%.d', Trunc(v)) + frac(v);
-    end;
-  end;
 begin
   Result := False;
   Command := Trim(Command);
@@ -142,21 +195,22 @@ begin
         CMD := Params[0];
         if CMD = 'GSV' then //Satellite info
         else if CMD = 'GSA' then //Fix
-        else if CMD = 'GGA' then //Fix
+        else if CMD = 'GGA' then
         begin
           Result := True;
-          Info.Source.Latitude:= Params[2] + ' ' + Params[3];
-          Info.Source.Longitude:= Params[4] + ' ' + Params[5];
-          Info.Data.Latitude:=StrToFloatDef(Params[2], 0);
+          Info.Source:= Params[3] + Params[2] + ',' + Params[5] + Params[4];
+          D := Copy(Params[2], 1, 2);//3 char for Degree
+          M := Copy(Params[2], 3, MaxInt);
+          Info.Decimal.Latitude := StrToIntDef(D, 0) + (StrToFloatDef(M, 0) / 60);
           if Params[3] = 'S' then
-            Info.Data.Latitude := -Info.Data.Latitude;
-          Info.Data.Longitude:=StrToFloatDef(Params[4], 0);
+            Info.Decimal.Latitude := -Info.Decimal.Latitude;
+
+          D := Copy(Params[4], 1, 3);//3 char for Degree
+          M := Copy(Params[4], 4, MaxInt);
+          Info.Decimal.Longitude := StrToIntDef(D, 0) + (StrToFloatDef(M, 0) / 60);
           if Params[5] = 'W' then
-            Info.Data.Longitude := -Info.Data.Longitude;
-          Info.Degree.Latitude := GetDegree(Params[2], Params[3], 'S');
-          Info.Degree.Longitude := GetDegree(Params[4], Params[5], 'W');
-          Info.GMap.Latitude := Params[3] + FormatFloat('0.0000', Abs(Info.Degree.Latitude));
-          Info.GMap.Longitude := Params[5] + FormatFloat('0.0000', Abs(Info.Degree.Longitude));
+            Info.Decimal.Longitude := -Info.Decimal.Longitude;
+          Info.LastAccess := Now;
         end;
       finally
         Params.Free;
