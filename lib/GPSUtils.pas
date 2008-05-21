@@ -86,33 +86,39 @@ function GPSToMAP(Info: TGPSDecimalInfo):string; overload;
 function GPSToMAP(Latitude: Extended; Longitude: Extended) :string; overload;
 function GPSPrase(Command:string; var Info:TGPSInfo):Boolean;
 
+
+function GPSLock:TCriticalSection;
+
 implementation
 
 var
   FGPSLock : TCriticalSection = nil;
   FGPSInfo: TGPSInfo;
 
-function GPSInfo: TGPSInfo;
+function GPSLock:TCriticalSection;
 begin
   if FGPSLock = nil then
     FGPSLock := TCriticalSection.Create;
-  FGPSLock.Enter;
+  Result := FGPSLock;
+end;
+
+function GPSInfo: TGPSInfo;
+begin
+  GPSLock.Enter;
   try
     Result := FGPSInfo;
   finally
-    FGPSLock.Leave;
+    GPSLock.Leave;
   end;
 end;
 
 procedure SetGPSInfo(Info: TGPSInfo);
 begin
-  if FGPSLock = nil then
-    FGPSLock := TCriticalSection.Create;
-  FGPSLock.Enter;
+  GPSLock.Enter;
   try
     FGPSInfo := Info;
   finally
-    FGPSLock.Leave;
+    GPSLock.Leave;
   end;
 end;
 
@@ -225,10 +231,11 @@ var
 begin
   FBuffer := FBuffer + S;
   P := AnsiPos(FEndOfLine, FBuffer);
-  if P > 0 then
+  while P > 0 do
   begin
     Parse(Copy(FBuffer, 1, P - 1));
     FBuffer := Copy(FBuffer, P + 1, MaxInt);
+    P := AnsiPos(FEndOfLine, FBuffer);
   end;
 end;
 
@@ -237,7 +244,14 @@ var
   Info:TGPSInfo;
 begin
   if GPSPrase(S, Info) then
+  begin
     SetGPSInfo(Info);
+//    if CommStream.Connected then
+//    begin
+//      FBuffer:='';
+//      CommStream.Purge;//try to clear cache, we need a runtime values from GPS receiver
+//    end;
+  end;
 end;
 
 initialization
