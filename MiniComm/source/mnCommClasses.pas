@@ -76,6 +76,7 @@ type
     FUseOverlapped: Boolean;
     FTimeout: Cardinal;
     FReadTimeout: Cardinal;
+    FWriteThrough: Boolean;
     FWriteTimeout: Cardinal;
     FFailTimeout: Boolean;
     FReadTimeoutConst: Cardinal;
@@ -123,6 +124,7 @@ type
     property FlowControl: TFlowControl read FFlowControl write FFlowControl;
     property EventChar: Char read FEventChar write SetEventChar default #0;
     property DiscardNull: Boolean read FDiscardNull write SetDiscardNull default False;
+    property WriteThrough: Boolean read FWriteThrough write FWriteThrough;
     property BufferSize: Integer read FBufferSize write SetBufferSize;
 
     property UseOverlapped: Boolean read FUseOverlapped write SetUseOverlapped;

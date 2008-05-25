@@ -80,7 +80,7 @@ begin
     ccmWrite: aMode := GENERIC_WRITE;
   end;
   
-  f := CreateFile(P, aMode, 0, nil, OPEN_EXISTING, cOverlapped[UseOverlapped], 0);
+  f := CreateFile(P, aMode, 0, nil, OPEN_EXISTING, cWriteThrough[WriteThrough] or cOverlapped[UseOverlapped], 0);
 
   if (f = INVALID_HANDLE_VALUE) then
   begin

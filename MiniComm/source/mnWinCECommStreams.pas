@@ -83,6 +83,7 @@ begin
   end;
 
   f := CreateFile(P, aMode, FILE_SHARE_READ or FILE_SHARE_WRITE, nil, OPEN_EXISTING, 0, 0);
+//  cWriteThrough[WriteThrough]
 
   if (f = INVALID_HANDLE_VALUE) then
   begin
