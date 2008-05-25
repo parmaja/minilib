@@ -61,6 +61,8 @@ type
     property Connection:TmncSQLiteConnection read GetConnection write SetConnection;
   end;
 
+  { TmncSQLiteCommand }
+
   TmncSQLiteCommand = class(TmncSQLCommand)
   private
     FStatment:PPsqlite3_stmt;
@@ -87,6 +89,7 @@ type
     destructor Destroy; override;
     procedure Clear; override;
     function RowsAffected: Integer; virtual;
+    function GetLastInsertID: Int64;
   end;
 
 implementation
@@ -264,6 +267,12 @@ end;
 function TmncSQLiteCommand.RowsAffected: Integer;
 begin
   Result := 0;
+end;
+
+function TmncSQLiteCommand.GetLastInsertID: Int64;
+begin
+  CheckActive;
+  Result := sqlite3_last_insert_rowid(FStatment);
 end;
 
 procedure TmncSQLiteCommand.ApplyValues;

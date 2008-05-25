@@ -365,6 +365,7 @@ type
     function GetParam(Index: string): TmncParam;
   protected
     FRequest: TStrings;
+    procedure CheckActive;
     function GetActive: Boolean; virtual; abstract;
     function GetEOF:Boolean; virtual; abstract;
     procedure DoPrepare; virtual; abstract;
@@ -549,6 +550,12 @@ begin
     Result := Params.Param[Index]
   else
     raise EmncException.Create('Params is nil');
+end;
+
+procedure TmncCommand.CheckActive;
+begin
+  if not Active then
+    raise EmncException.Create('Not active/opened');
 end;
 
 function TmncCommand.Next: Boolean;

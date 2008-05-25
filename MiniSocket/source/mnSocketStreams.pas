@@ -35,7 +35,7 @@ type
     function GetConnected: Boolean;
     procedure FreeSocket;
   protected
-    function CreateSocket: TmnCustomSocket; virtual;  
+    function CreateSocket: TmnCustomSocket; virtual;
   public
     constructor Create(vSocket: TmnCustomSocket); virtual;
     destructor Destroy; override;
