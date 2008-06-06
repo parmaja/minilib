@@ -62,7 +62,7 @@ type
     FAge: TDateTime;
     FChanged: Boolean;
   protected
-    procedure Loading; virtual;
+    procedure Loading; virtual;//there is Loading in FPC
     procedure Loaded; override;
     procedure Saving; virtual;
     procedure Saved; virtual;

@@ -1,0 +1,165 @@
+object Form1: TForm1
+  Left = 329
+  Height = 276
+  Top = 99
+  Width = 392
+  HorzScrollBar.Page = 391
+  VertScrollBar.Page = 256
+  Caption = 'GPS Mon'
+  ClientHeight = 257
+  ClientWidth = 392
+  Font.CharSet = ANSI_CHARSET
+  Font.Color = clBlack
+  Font.Height = -11
+  Font.Name = 'Tahoma'
+  Font.Pitch = fpVariable
+  Menu = MainMenu1
+  OnClose = FormClose
+  OnCreate = FormCreate
+  OnDestroy = FormDestroy
+  object Label1: TLabel
+    Left = 15
+    Height = 14
+    Top = 12
+    Width = 24
+    Caption = 'COM'
+    ParentColor = False
+    ParentFont = True
+  end
+  object Label3: TLabel
+    Left = 14
+    Height = 14
+    Top = 40
+    Width = 25
+    Caption = 'Baud'
+    ParentColor = False
+    ParentFont = True
+  end
+  object Label2: TLabel
+    Left = 14
+    Height = 14
+    Top = 211
+    Width = 37
+    Anchors = [akLeft, akBottom]
+    Caption = 'Decmial'
+    ParentColor = False
+  end
+  object DMLbl: TLabel
+    Left = 19
+    Height = 14
+    Top = 237
+    Width = 16
+    Anchors = [akLeft, akBottom]
+    Caption = 'DM'
+    ParentColor = False
+  end
+  object StartBtn: TButton
+    Left = 14
+    Height = 25
+    Top = 67
+    Width = 75
+    Caption = 'Start'
+    OnClick = StartBtnClick
+    ParentFont = True
+    TabOrder = 0
+  end
+  object StopBtn: TButton
+    Left = 95
+    Height = 25
+    Top = 67
+    Width = 75
+    Caption = 'Stop'
+    OnClick = StopBtnClick
+    ParentFont = True
+    TabOrder = 1
+  end
+  object ListBox1: TListBox
+    Left = 3
+    Height = 103
+    Top = 98
+    Width = 386
+    Anchors = [akTop, akLeft, akRight, akBottom]
+    ParentFont = True
+    TabOrder = 2
+  end
+  object PortEdit: TPanel
+    Left = 43
+    Height = 23
+    Top = 8
+    Width = 192
+    Alignment = taLeftJustify
+    BevelOuter = bvNone
+    BevelWidth = 3
+    BorderStyle = bsSingle
+    ParentFont = True
+    TabOrder = 3
+  end
+  object BaudRateEdit: TPanel
+    Left = 43
+    Height = 23
+    Top = 36
+    Width = 192
+    Alignment = taLeftJustify
+    BevelOuter = bvNone
+    BevelWidth = 3
+    BorderStyle = bsSingle
+    ParentFont = True
+    TabOrder = 4
+  end
+  object ConvertBtn: TButton
+    Left = 264
+    Height = 25
+    Top = 231
+    Width = 75
+    Anchors = [akLeft, akBottom]
+    Caption = 'Convert'
+    OnClick = ConvertBtnClick
+    ParentFont = True
+    TabOrder = 5
+  end
+  object DecimalEdit: TEdit
+    Left = 56
+    Height = 23
+    Top = 206
+    Width = 203
+    Anchors = [akLeft, akBottom]
+    TabOrder = 6
+  end
+  object DMEdit: TEdit
+    Left = 56
+    Height = 23
+    Top = 232
+    Width = 203
+    Anchors = [akLeft, akBottom]
+    TabOrder = 7
+  end
+  object ConvertBtn1: TButton
+    Left = 264
+    Height = 25
+    Top = 205
+    Width = 75
+    Anchors = [akLeft, akBottom]
+    Caption = 'Test'
+    OnClick = ConvertBtn1Click
+    ParentFont = True
+    TabOrder = 8
+  end
+  object MainMenu1: TMainMenu
+    left = 108
+    top = 124
+    object MenuItem1: TMenuItem
+      Caption = 'Exit'
+      OnClick = MenuItem1Click
+    end
+    object MenuItem3: TMenuItem
+      Caption = 'Tools'
+    end
+  end
+  object GPSTimer: TTimer
+    Enabled = False
+    Interval = 500
+    OnTimer = GPSTimerTimer
+    left = 40
+    top = 128
+  end
+end

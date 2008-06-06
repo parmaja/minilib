@@ -1,0 +1,78 @@
+object Form1: TForm1
+  Left = 323
+  Height = 138
+  Top = 134
+  Width = 400
+  HorzScrollBar.Page = 399
+  VertScrollBar.Page = 137
+  ActiveControl = PortEdit
+  Caption = 'GPS Enu'
+  ClientHeight = 138
+  ClientWidth = 400
+  object Label1: TLabel
+    Left = 36
+    Height = 14
+    Top = 24
+    Width = 24
+    Caption = 'COM'
+    ParentColor = False
+  end
+  object Label2: TLabel
+    Left = 13
+    Height = 14
+    Top = 79
+    Width = 47
+    Caption = 'File Name'
+    ParentColor = False
+  end
+  object Label3: TLabel
+    Left = 29
+    Height = 14
+    Top = 52
+    Width = 31
+    Caption = 'Speed'
+    ParentColor = False
+  end
+  object PortEdit: TEdit
+    Left = 63
+    Height = 23
+    Top = 20
+    Width = 192
+    TabOrder = 0
+    Text = 'COM5'
+  end
+  object StartBtn: TButton
+    Left = 69
+    Height = 25
+    Top = 104
+    Width = 75
+    Caption = 'Start'
+    OnClick = StartBtnClick
+    TabOrder = 1
+  end
+  object FileEdit: TEdit
+    Left = 63
+    Height = 23
+    Top = 75
+    Width = 329
+    TabOrder = 2
+    Text = 'c:\go.txt'
+  end
+  object StopBtn: TButton
+    Left = 149
+    Height = 25
+    Top = 104
+    Width = 75
+    Caption = 'Stop'
+    OnClick = StopBtnClick
+    TabOrder = 3
+  end
+  object SpeedEdit: TEdit
+    Left = 63
+    Height = 23
+    Top = 48
+    Width = 192
+    TabOrder = 4
+    Text = '4800'
+  end
+end

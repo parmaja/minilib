@@ -1,0 +1,356 @@
+<?xml version="1.0"?>
+<CONFIG>
+  <ProjectOptions>
+    <PathDelim Value="\"/>
+    <Version Value="6"/>
+    <General>
+      <MainUnit Value="0"/>
+      <IconPath Value="./"/>
+      <TargetFileExt Value=".exe"/>
+      <ActiveEditorIndexAtStart Value="1"/>
+    </General>
+    <VersionInfo>
+      <ProjectVersion Value=""/>
+      <Language Value=""/>
+      <CharSet Value=""/>
+    </VersionInfo>
+    <PublishOptions>
+      <Version Value="2"/>
+      <IgnoreBinaries Value="False"/>
+      <IncludeFileFilter Value="*.(pas|pp|inc|lfm|lpr|lrs|lpi|lpk|sh|xml)"/>
+      <ExcludeFileFilter Value="*.(bak|ppu|ppw|o|so);*~;backup"/>
+    </PublishOptions>
+    <RunParams>
+      <local>
+        <FormatVersion Value="1"/>
+        <LaunchingApplication PathPlusParams="/usr/X11R6/bin/xterm -T 'Lazarus Run Output' -e $(LazarusDir)/tools/runwait.sh $(TargetCmdLine)"/>
+      </local>
+    </RunParams>
+    <RequiredPackages Count="1">
+      <Item1>
+        <PackageName Value="LCL"/>
+      </Item1>
+    </RequiredPackages>
+    <Units Count="26">
+      <Unit0>
+        <Filename Value="GPSMon.lpr"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="GPSMon"/>
+        <CursorPos X="15" Y="16"/>
+        <TopLine Value="1"/>
+        <UsageCount Value="53"/>
+      </Unit0>
+      <Unit1>
+        <Filename Value="MainForms.pas"/>
+        <ComponentName Value="Form1"/>
+        <IsPartOfProject Value="True"/>
+        <ResourceFilename Value="MainForms.lrs"/>
+        <UnitName Value="MainForms"/>
+        <CursorPos X="69" Y="10"/>
+        <TopLine Value="1"/>
+        <EditorIndex Value="0"/>
+        <UsageCount Value="53"/>
+        <Loaded Value="True"/>
+      </Unit1>
+      <Unit2>
+        <Filename Value="..\..\lib\minilib\Commons\mnStreams.pas"/>
+        <UnitName Value="mnStreams"/>
+        <CursorPos X="1" Y="19"/>
+        <TopLine Value="19"/>
+        <UsageCount Value="20"/>
+      </Unit2>
+      <Unit3>
+        <Filename Value="..\..\lib\minilib\MiniComm\source\mnCustomCommStreams.pas"/>
+        <UnitName Value="mnCustomCommStreams"/>
+        <CursorPos X="11" Y="219"/>
+        <TopLine Value="188"/>
+        <UsageCount Value="8"/>
+      </Unit3>
+      <Unit4>
+        <Filename Value="..\..\lib\minilib\MiniComm\source\mnCommStreams.pas"/>
+        <UnitName Value="mnCommStreams"/>
+        <CursorPos X="21" Y="24"/>
+        <TopLine Value="4"/>
+        <UsageCount Value="20"/>
+      </Unit4>
+      <Unit5>
+        <Filename Value="..\..\lib\minilib\MiniComm\source\mnWinCommStreams.pas"/>
+        <UnitName Value="mnWinCommStreams"/>
+        <CursorPos X="1" Y="83"/>
+        <TopLine Value="69"/>
+        <UsageCount Value="20"/>
+      </Unit5>
+      <Unit6>
+        <Filename Value="V:\programs\lazarus\fpc\src\rtl\win\wininc\defines.inc"/>
+        <CursorPos X="25" Y="449"/>
+        <TopLine Value="439"/>
+        <UsageCount Value="20"/>
+      </Unit6>
+      <Unit7>
+        <Filename Value="V:\programs\lazarus\fpc\src\rtl\objpas\classes\classesh.inc"/>
+        <CursorPos X="15" Y="1363"/>
+        <TopLine Value="1346"/>
+        <UsageCount Value="19"/>
+      </Unit7>
+      <Unit8>
+        <Filename Value="..\..\lib\synaser\source\synaser.pas"/>
+        <UnitName Value="synaser"/>
+        <CursorPos X="6" Y="1108"/>
+        <TopLine Value="1091"/>
+        <UsageCount Value="19"/>
+      </Unit8>
+      <Unit9>
+        <Filename Value="..\..\lib\minilib\MiniComm\source\mnCommClasses.pas"/>
+        <UnitName Value="mnCommClasses"/>
+        <CursorPos X="7" Y="91"/>
+        <TopLine Value="85"/>
+        <UsageCount Value="19"/>
+      </Unit9>
+      <Unit10>
+        <Filename Value="..\..\lib\minilib\MiniComm\source\mnCommThreads.pas"/>
+        <UnitName Value="mnCommThreads"/>
+        <CursorPos X="3" Y="92"/>
+        <TopLine Value="83"/>
+        <UsageCount Value="19"/>
+      </Unit10>
+      <Unit11>
+        <Filename Value="..\..\..\..\work\delphi\jobs\tacbord_sql\source\mpos\pda\calc\src\Main.pas"/>
+        <ComponentName Value="CalcForm"/>
+        <HasResources Value="True"/>
+        <UnitName Value="Main"/>
+        <CursorPos X="1" Y="71"/>
+        <TopLine Value="63"/>
+        <UsageCount Value="8"/>
+      </Unit11>
+      <Unit12>
+        <Filename Value="..\..\lib\minilib\MiniComm\source\mnWinCECommStreams.pas"/>
+        <UnitName Value="mnWinCECommStreams"/>
+        <CursorPos X="1" Y="211"/>
+        <TopLine Value="208"/>
+        <UsageCount Value="19"/>
+      </Unit12>
+      <Unit13>
+        <Filename Value="..\..\lib\minilib\MiniComm\source\mnWinCommTypes.pas"/>
+        <UnitName Value="mnWinCommTypes"/>
+        <CursorPos X="3" Y="49"/>
+        <TopLine Value="31"/>
+        <UsageCount Value="14"/>
+      </Unit13>
+      <Unit14>
+        <Filename Value="..\..\lib\minilib\lib\GPSUtils.pas"/>
+        <UnitName Value="GPSUtils"/>
+        <CursorPos X="18" Y="238"/>
+        <TopLine Value="221"/>
+        <UsageCount Value="16"/>
+        <Bookmarks Count="1">
+          <Item0 X="3" Y="240" ID="1"/>
+        </Bookmarks>
+      </Unit14>
+      <Unit15>
+        <Filename Value="V:\programs\lazarus\fpc\src\rtl\objpas\sysutils\sysansih.inc"/>
+        <CursorPos X="10" Y="24"/>
+        <TopLine Value="1"/>
+        <UsageCount Value="12"/>
+      </Unit15>
+      <Unit16>
+        <Filename Value="V:\programs\lazarus\fpc\src\rtl\objpas\sysutils\sysansi.inc"/>
+        <CursorPos X="11" Y="51"/>
+        <TopLine Value="36"/>
+        <UsageCount Value="12"/>
+      </Unit16>
+      <Unit17>
+        <Filename Value="V:\programs\lazarus\fpc\src\rtl\inc\systemh.inc"/>
+        <CursorPos X="11" Y="621"/>
+        <TopLine Value="603"/>
+        <UsageCount Value="12"/>
+      </Unit17>
+      <Unit18>
+        <Filename Value="V:\programs\lazarus\fpc\src\rtl\inc\astrings.inc"/>
+        <CursorPos X="3" Y="780"/>
+        <TopLine Value="775"/>
+        <UsageCount Value="12"/>
+      </Unit18>
+      <Unit19>
+        <Filename Value="V:\programs\lazarus\fpc\src\packages\fcl-base\src\syncobjs.pp"/>
+        <UnitName Value="syncobjs"/>
+        <CursorPos X="20" Y="74"/>
+        <TopLine Value="55"/>
+        <UsageCount Value="11"/>
+      </Unit19>
+      <Unit20>
+        <Filename Value="V:\programs\lazarus\fpc\src\rtl\inc\mathh.inc"/>
+        <CursorPos X="54" Y="69"/>
+        <TopLine Value="51"/>
+        <UsageCount Value="13"/>
+      </Unit20>
+      <Unit21>
+        <Filename Value="V:\programs\lazarus\lcl\customtimer.pas"/>
+        <UnitName Value="CustomTimer"/>
+        <CursorPos X="14" Y="57"/>
+        <TopLine Value="38"/>
+        <UsageCount Value="11"/>
+      </Unit21>
+      <Unit22>
+        <Filename Value="V:\programs\lazarus\fpc\src\rtl\objpas\sysutils\sysstrh.inc"/>
+        <CursorPos X="27" Y="166"/>
+        <TopLine Value="157"/>
+        <UsageCount Value="12"/>
+      </Unit22>
+      <Unit23>
+        <Filename Value="..\..\MiniComm\source\mnCommThreads.pas"/>
+        <UnitName Value="mnCommThreads"/>
+        <CursorPos X="1" Y="1"/>
+        <TopLine Value="1"/>
+        <UsageCount Value="10"/>
+      </Unit23>
+      <Unit24>
+        <Filename Value="..\..\lib\GPSUtils.pas"/>
+        <UnitName Value="GPSUtils"/>
+        <CursorPos X="22" Y="215"/>
+        <TopLine Value="192"/>
+        <EditorIndex Value="2"/>
+        <UsageCount Value="10"/>
+        <Loaded Value="True"/>
+      </Unit24>
+      <Unit25>
+        <Filename Value="..\..\lib\GPSThreads.pas"/>
+        <UnitName Value="GPSThreads"/>
+        <CursorPos X="1" Y="29"/>
+        <TopLine Value="29"/>
+        <EditorIndex Value="1"/>
+        <UsageCount Value="10"/>
+        <Loaded Value="True"/>
+      </Unit25>
+    </Units>
+    <JumpHistory Count="6" HistoryIndex="5">
+      <Position1>
+        <Filename Value="..\..\lib\GPSThreads.pas"/>
+        <Caret Line="36" Column="1" TopLine="15"/>
+      </Position1>
+      <Position2>
+        <Filename Value="..\..\lib\GPSUtils.pas"/>
+        <Caret Line="77" Column="1" TopLine="52"/>
+      </Position2>
+      <Position3>
+        <Filename Value="..\..\lib\GPSThreads.pas"/>
+        <Caret Line="38" Column="1" TopLine="38"/>
+      </Position3>
+      <Position4>
+        <Filename Value="..\..\lib\GPSUtils.pas"/>
+        <Caret Line="213" Column="1" TopLine="188"/>
+      </Position4>
+      <Position5>
+        <Filename Value="..\..\lib\GPSUtils.pas"/>
+        <Caret Line="215" Column="14" TopLine="191"/>
+      </Position5>
+      <Position6>
+        <Filename Value="..\..\lib\GPSThreads.pas"/>
+        <Caret Line="69" Column="1" TopLine="44"/>
+      </Position6>
+    </JumpHistory>
+  </ProjectOptions>
+  <CompilerOptions>
+    <Version Value="5"/>
+    <PathDelim Value="\"/>
+    <SearchPaths>
+      <OtherUnitFiles Value="W:\home\pascal\lib\minilib\Lib\;W:\home\pascal\lib\minilib\Commons\;W:\home\pascal\lib\minilib\MiniComm\source\;W:\home\pascal\lib\minilib\MiniComm\printers\escpos\;W:\home\pascal\lib\minilib\Unicodes\source\;W:\home\pascal\lib\minilib\MiniConnection\source\;W:\home\pascal\lib\minilib\MiniConnection\db\;W:\home\pascal\lib\minilib\MiniXml\source\;W:\home\pascal\lib\minilib\MiniSocket\source\;W:\home\pascal\lib\pos\source\;W:\home\pascal\lib\pos\reports\source\"/>
+    </SearchPaths>
+    <CodeGeneration>
+      <Generate Value="Faster"/>
+    </CodeGeneration>
+    <Linking>
+      <Options>
+        <Win32>
+          <GraphicApplication Value="True"/>
+        </Win32>
+      </Options>
+    </Linking>
+    <Other>
+      <CompilerPath Value="$(CompPath)"/>
+    </Other>
+  </CompilerOptions>
+  <Debugging>
+    <BreakPoints Count="18">
+      <Item1>
+        <Source Value="..\..\..\..\work\delphi\jobs\tacbord_sql\source\mpos\wince\lazarus\fpc\2.0.4\source\fcl\inc\inifiles.pp"/>
+        <Line Value="434"/>
+      </Item1>
+      <Item2>
+        <Source Value="C:\pascal\fpgui\gfx\gdi\fpgfxpackage.pas"/>
+        <Line Value="3"/>
+      </Item2>
+      <Item3>
+        <Source Value="C:\lazarus\fpc\2.1.3\source\packages\fcl-db\src\db.pas"/>
+        <Line Value="1944"/>
+      </Item3>
+      <Item4>
+        <Source Value="C:\lazarus\fpc\2.1.5\source\rtl\objpas\classes\compon.inc"/>
+        <Line Value="215"/>
+      </Item4>
+      <Item5>
+        <Source Value="..\..\..\..\work\delphi\jobs\tacbord_sql\source\mpos\pda\source\OptionsForms.lfm"/>
+        <Line Value="17"/>
+      </Item5>
+      <Item6>
+        <Source Value="..\..\..\..\work\delphi\jobs\tacbord_sql\source\mpos\pda\lib\mposSessions.pas"/>
+        <Line Value="736"/>
+      </Item6>
+      <Item7>
+        <Source Value="C:\lazarus\fpc\2.1.5\src\packages\fcl-db\src\sqlite\sqlite3ds.pas"/>
+        <Line Value="305"/>
+      </Item7>
+      <Item8>
+        <Source Value="V:\programs\lazarus\fpc\src\packages\fcl-base\src\inc\blowfish.pp"/>
+        <Line Value="177"/>
+      </Item8>
+      <Item9>
+        <Source Value="V:\programs\lazarus\fpc\src\packages\fcl-db\src\sqldb\sqlite\sqlite3conn.pp"/>
+        <Line Value="225"/>
+      </Item9>
+      <Item10>
+        <Source Value="..\..\..\..\work\delphi\jobs\tacbord_sql\source\mpos\lib\mposFBEngine.pas"/>
+        <Line Value="122"/>
+      </Item10>
+      <Item11>
+        <Source Value="..\..\..\..\work\delphi\jobs\tacbord_sql\source\mpos\lib\mposFBEngine.pas"/>
+        <Line Value="116"/>
+      </Item11>
+      <Item12>
+        <Source Value="..\..\..\..\work\delphi\jobs\tacbord_sql\source\mpos\lib\mposFBEngine.pas"/>
+        <Line Value="208"/>
+      </Item12>
+      <Item13>
+        <Source Value="..\..\..\..\work\delphi\jobs\tacbord_sql\source\mpos\lib\mposSessions.pas"/>
+        <Line Value="2257"/>
+      </Item13>
+      <Item14>
+        <Source Value="..\..\..\..\work\delphi\jobs\tacbord_sql\source\mpos\lib\mposProcesses.pas"/>
+        <Line Value="748"/>
+      </Item14>
+      <Item15>
+        <Source Value="..\..\..\..\work\delphi\jobs\tacbord_sql\source\mpos\lib\mposProcesses.pas"/>
+        <Line Value="961"/>
+      </Item15>
+      <Item16>
+        <Source Value="..\..\..\..\ramez\CabCaller\Unicodes\source\ucputils.pas"/>
+        <Line Value="45"/>
+      </Item16>
+      <Item17>
+        <Source Value="V:\programs\lazarus\fpc\src\packages\fcl-image\src\fpimage.inc"/>
+        <Line Value="327"/>
+      </Item17>
+      <Item18>
+        <Source Value="..\..\lib\minilib\MiniComm\source\mnWinCommStreams.pas"/>
+        <Line Value="212"/>
+      </Item18>
+    </BreakPoints>
+    <Exceptions Count="2">
+      <Item1>
+        <Name Value="ECodetoolError"/>
+      </Item1>
+      <Item2>
+        <Name Value="EFOpenError"/>
+      </Item2>
+    </Exceptions>
+  </Debugging>
+</CONFIG>

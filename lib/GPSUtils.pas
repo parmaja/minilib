@@ -46,7 +46,7 @@ interface
 
 uses
   Classes, SysUtils, SyncObjs,
-  mnStreams, mnCommClasses, mnCommThreads;
+  mnStreams, mnCommClasses;
   
 type
   EGPSError = class(Exception);
@@ -62,22 +62,6 @@ type
     LastAccess: TDateTime;
   end;
 
-  { TmnGPSThread }
-
-  TmnGPSThread = class(TmnCommThread)
-  private
-    FEndOfLine: string;
-    FBuffer: string;
-  protected
-    procedure StringArrived(S: string); override;
-    procedure Parse(S: string); virtual;
-  public
-    property EndOfLine: string read FEndOfLine write FEndOfLine;
-  end;
-
-function GPSInfo:TGPSInfo;
-procedure SetGPSInfo(Info: TGPSInfo);
-
 function GPSDecimalToDMS(Value:Extended; D, M, S:string):string; overload;//you can call with (v, '°','''','"')
 function GPSDecimalToDMS(Value:Extended):string; overload;
 function GPSDecimalToDM(Value:Extended; D, M:string): string; overload;
@@ -86,41 +70,11 @@ function GPSToMAP(Info: TGPSDecimalInfo):string; overload;
 function GPSToMAP(Latitude: Extended; Longitude: Extended) :string; overload;
 function GPSPrase(Command:string; var Info:TGPSInfo):Boolean;
 
-
+function GPSInfo:TGPSInfo;
+procedure SetGPSInfo(Info: TGPSInfo);
 function GPSLock:TCriticalSection;
 
 implementation
-
-var
-  FGPSLock : TCriticalSection = nil;
-  FGPSInfo: TGPSInfo;
-
-function GPSLock:TCriticalSection;
-begin
-  if FGPSLock = nil then
-    FGPSLock := TCriticalSection.Create;
-  Result := FGPSLock;
-end;
-
-function GPSInfo: TGPSInfo;
-begin
-  GPSLock.Enter;
-  try
-    Result := FGPSInfo;
-  finally
-    GPSLock.Leave;
-  end;
-end;
-
-procedure SetGPSInfo(Info: TGPSInfo);
-begin
-  GPSLock.Enter;
-  try
-    FGPSInfo := Info;
-  finally
-    GPSLock.Leave;
-  end;
-end;
 
 function GPSDecimalToDMS(Value:Extended; D, M, S:string):string;
 var
@@ -225,32 +179,34 @@ begin
   end;
 end;
 
-procedure TmnGPSThread.StringArrived(S: string);
 var
-  P: Integer;
+  FGPSLock : TCriticalSection = nil;
+  FGPSInfo: TGPSInfo;
+
+function GPSLock:TCriticalSection;
 begin
-  FBuffer := FBuffer + S;
-  P := AnsiPos(FEndOfLine, FBuffer);
-  while P > 0 do
-  begin
-    Parse(Copy(FBuffer, 1, P - 1));
-    FBuffer := Copy(FBuffer, P + 1, MaxInt);
-    P := AnsiPos(FEndOfLine, FBuffer);
+  if FGPSLock = nil then
+    FGPSLock := TCriticalSection.Create;
+  Result := FGPSLock;
+end;
+
+function GPSInfo: TGPSInfo;
+begin
+  GPSLock.Enter;
+  try
+    Result := FGPSInfo;
+  finally
+    GPSLock.Leave;
   end;
 end;
 
-procedure TmnGPSThread.Parse(S: string);
-var
-  Info:TGPSInfo;
+procedure SetGPSInfo(Info: TGPSInfo);
 begin
-  if GPSPrase(S, Info) then
-  begin
-    SetGPSInfo(Info);
-//    if CommStream.Connected then
-//    begin
-//      FBuffer:='';
-//      CommStream.Purge;//try to clear cache, we need a runtime values from GPS receiver
-//    end;
+  GPSLock.Enter;
+  try
+    FGPSInfo := Info;
+  finally
+    GPSLock.Leave;
   end;
 end;
 
