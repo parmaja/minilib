@@ -27,6 +27,8 @@ var
 
 implementation
 
+uses mnSPTPrinters;
+
 {$R *.dfm}
 
 procedure TForm1.Button1Click(Sender: TObject);
@@ -46,15 +48,17 @@ begin
     aStream := TFileStream.Create('c:\print.prn', fmCreate)
   else
     aStream := TmnCommStream.Create(False, Edit1.Text, 9600);
-  Printer := TmnESCPOSPrinter.Create(mnpsCanvas, aStream);
+  Printer := TSPT8Printer.Create(mnpsCanvas, aStream);
+  Printer.DefaultWidth := 520;
+  Printer.DefaultHeight := 200;
   Printer.NewPage;
-  Printer.Page.Height := 200;
   if LowChk.Checked then
     Printer.Density := mndLow;
   try
     Printer.Page.Canvas.FillRect(Printer.Page.BoundsRect);
     Printer.Page.Canvas.Font.Size := 14;
     Printer.Page.Canvas.Font.Style := [];
+    Printer.Density := mndLow;
     Print('„—Õ»« »ﬂ„ ›Ì ”Â·Ì ”Ê› ');
     Printer.Page.Canvas.Font.Style := [fsBold];
     Print( '«”„ «·⁄„Ì·: “«Â— œÌ—ﬂÌ');
@@ -64,7 +68,6 @@ begin
     Print( 'SN: 145111001');
     Print( 'SN: 654654654');
     Print( '------------------');
-//    Printer.Page.PrintCanvas(Printer.Canvas);
     Printer.EndPage;
 {    Printer.PrintBarcode('546798798');
     Printer.CarriageReturn;
@@ -88,13 +91,15 @@ begin
   aStream := TmnCommStream.Create(False, Edit1.Text, 9600);
   Printer := TmnESCPOSPrinter.Create(mnpsCanvas, aStream);
   try
-    Printer.Page.Canvas.FillRect(Printer.Page.BoundsRect);
+//    Printer.Page.
+//    Printer.Page.Canvas.FillRect(Printer.Page.BoundsRect);
     Print('Hello to ESC/POS');
     Print( 'Printer');
     Print( '------------------');
     Print( '145111001');
     Print( '654654654');
     Print( '------------------');
+    Printer.PrintBarcode('546798798');
   finally
     Printer.Free;
     aStream.Free;

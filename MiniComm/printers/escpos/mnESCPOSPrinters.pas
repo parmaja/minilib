@@ -34,6 +34,9 @@ type
     function CreateBitmap:TBitmap;
     procedure ResizePage; override;
     function GetCanvas: TCanvas; override;
+    procedure PrintCanvasAsBitImage(Canvas: TCanvas);
+    procedure PrintCanvasAsRasterBitImage(Canvas: TCanvas);
+    procedure PrintCanvasAsRasterBitImageChunks(Canvas: TCanvas);
   public
     constructor Create(Printer: TmnCustomPrinter); override;
     destructor Destroy; override;
@@ -48,12 +51,17 @@ type
   protected
     procedure PrintPage(vPage:TmnCustomPage); override;
     function DoCreatePage: TmnCustomPage; override;
-    
+
     function GetName: string; override;
     function GetSEQ_BitImage(Dots: Word): string; virtual;
+    function GetSEQ_RasterBitImage(W, H: Word): string; virtual;
     function GetSEQ_BitImageFlag: string; virtual;
+    function GetSEQ_RasterBitImageFlag: string; virtual;
     function GetDensityBytes: Integer; virtual;
     function GetLineSpacing: Integer; virtual;
+    //
+    procedure GetInitBitImageCommands(var S:string); virtual;
+    procedure GetInitRasterBitImageCommands(var S:string); virtual;
   public
     constructor Create(Style: TmnPrintStyle; Stream: TStream); override;
     procedure LineFeed;
@@ -79,6 +87,7 @@ const
   seqSetAbsolutePosition = seqESC + '$';
   seqSetRelativePosition = seqESC + '\';
   seqBitImage = seqESC + '*';
+  seqRasterBitImage = seqGS + 'v0';
   seqSetBarcodeHeight = seqGS + 'k';
   seqSelectHRICharacter = seqGS + 'H';
   seqPrintBarcode = seqGS + #$6B;
@@ -120,6 +129,26 @@ begin
   end;
 end;
 
+function TmnESCPOSPrinter.GetSEQ_RasterBitImage(W, H: Word): string;
+var
+  c:Integer;
+begin
+  c := W div 8;
+  if (W mod 8) > 0 then
+    c := W + 1;
+  Result := seqRasterBitImage + GetSEQ_RasterBitImageFlag + Chr(lo(c)) + Chr(hi(c)) + Chr(lo(H)) + Chr(hi(H));
+end;
+
+function TmnESCPOSPrinter.GetSEQ_RasterBitImageFlag: string;
+begin
+  case Density of
+    mndHi: Result := #0;
+    mndMedium: Result := #0;
+  else
+    Result := #$0;
+  end;
+end;
+
 function TmnESCPOSPrinter.GetDensityBytes: Integer;
 begin
   case Density of
@@ -128,6 +157,15 @@ begin
   else
     Result := 1;
   end;
+end;
+
+procedure TmnESCPOSPrinter.GetInitBitImageCommands(var S: string);
+begin
+end;
+
+procedure TmnESCPOSPrinter.GetInitRasterBitImageCommands(var S: string);
+begin
+
 end;
 
 function TmnESCPOSPrinter.GetLineSpacing: Integer;
@@ -153,6 +191,13 @@ begin
 end;
 
 procedure TmnESCPOSPage.PrintCanvas(Canvas: TCanvas);
+begin
+  PrintCanvasAsBitImage(Canvas);
+//  PrintCanvasAsRasterBitImage(Canvas);
+//  PrintCanvasAsRasterBitImageChunks(Canvas);
+end;
+
+procedure TmnESCPOSPage.PrintCanvasAsBitImage(Canvas: TCanvas);
 var
   x: Integer;
   s: AnsiString;
@@ -182,6 +227,7 @@ var
 var
   l: Integer;
   c, d: Integer;
+  ExtraCommands: string;
   aPrinter: TmnESCPOSPrinter;
 begin
   inherited;
@@ -192,10 +238,14 @@ begin
   IntfImage := FBitmap.CreateIntfImage;
 {$ENDIF}
   try
-    S :=seqSetLineSpacing + chr(aPrinter.GetLineSpacing);
-    s := s + seqSetLeftMargin + chr(0) + chr(0);
+    S := seqSetLineSpacing + chr(aPrinter.GetLineSpacing);
     s := s + seqSetCharacterSpacing + #0;
     aPrinter.Print(S);
+
+    ExtraCommands := '';
+    aPrinter.GetInitBitImageCommands(ExtraCommands);
+    aPrinter.Print(ExtraCommands);
+
     while l < Height do
     begin
       s := aPrinter.GetSEQ_BitImage(Width);
@@ -209,6 +259,139 @@ begin
         S := S + seqLF;
       aPrinter.Print(S);
     end;
+  finally
+{$IFDEF FPC}
+    IntfImage.Free;
+{$ENDIF}
+  end;
+end;
+
+procedure TmnESCPOSPage.PrintCanvasAsRasterBitImage(Canvas: TCanvas);
+var
+  x, y: Integer;
+  s: AnsiString;
+{$IFDEF FPC}
+  IntfImage: TLazIntfImage;
+{$ENDIF}
+  procedure ScanNow;
+  var
+    i: Integer;
+    b: Byte;
+  begin
+    b := 0;
+    for i := 0 to 7 do
+    begin
+      b := b shl 1;
+{$IFDEF FPC}
+      if (x < IntfImage.Width) and (IntfImage.TColors[x, y] = clBlack) then
+{$ELSE}
+      if (x < Width) and (Canvas.Pixels[x, y] = clBlack) then
+{$ENDIF}
+        b := b or 1;
+      Inc(x)
+    end;
+    s := s + Chr(b);
+  end;
+var
+  ExtraCommands: string;
+  aPrinter: TmnESCPOSPrinter;
+begin
+  inherited;
+  aPrinter := (FPrinter as TmnESCPOSPrinter);
+{$IFDEF FPC}
+  IntfImage := FBitmap.CreateIntfImage;
+{$ENDIF}
+  try
+    ExtraCommands := '';
+    aPrinter.GetInitRasterBitImageCommands(ExtraCommands);
+    aPrinter.Print(ExtraCommands);
+
+    s := aPrinter.GetSEQ_RasterBitImage(Width, Height);
+    aPrinter.Print(s);
+
+    y := 0;
+    while y < Height do
+    begin
+      s := '';
+      x := 0;
+      aPrinter.Print(ExtraCommands);
+      while x < Width do
+      begin
+        ScanNow;
+      end;
+      Inc(y);
+      aPrinter.Print(s);
+    end;
+  finally
+{$IFDEF FPC}
+    IntfImage.Free;
+{$ENDIF}
+  end;
+end;
+
+procedure TmnESCPOSPage.PrintCanvasAsRasterBitImageChunks(Canvas: TCanvas);
+var
+  x, y: Integer;
+  s: AnsiString;
+{$IFDEF FPC}
+  IntfImage: TLazIntfImage;
+{$ENDIF}
+  procedure ScanNow;
+  var
+    i: Integer;
+    b: Byte;
+  begin
+    b := 0;
+    for i := 0 to 7 do
+    begin
+      b := b shl 1;
+{$IFDEF FPC}
+      if (x < IntfImage.Width) and (IntfImage.TColors[x, y] = clBlack) then
+{$ELSE}
+      if (x < Width) and (Canvas.Pixels[x, y] = clBlack) then
+{$ENDIF}
+        b := b or 1;
+      Inc(x)
+    end;
+    s := s + Chr(b);
+  end;
+var
+  ExtraCommands: string;
+  aPrinter: TmnESCPOSPrinter;
+  h, chunk: Integer;
+begin
+  inherited;
+  aPrinter := (FPrinter as TmnESCPOSPrinter);
+{$IFDEF FPC}
+  IntfImage := FBitmap.CreateIntfImage;
+{$ENDIF}
+  try
+    ExtraCommands := '';
+    aPrinter.GetInitRasterBitImageCommands(ExtraCommands);
+    aPrinter.Print(ExtraCommands);
+
+    chunk := 24;
+    h := chunk;
+    y := 0;
+    repeat
+      s := aPrinter.GetSEQ_RasterBitImage(Width, chunk);
+      aPrinter.Print(s);
+      while y < h do
+      begin
+        s := '';
+        x := 0;
+        aPrinter.Print(ExtraCommands);
+        while x < Width do
+        begin
+          ScanNow;
+        end;
+        Inc(y);
+        aPrinter.Print(s);
+      end;
+      if y >= Height then
+        break;
+      h := h + chunk;
+    until h >= height;
   finally
 {$IFDEF FPC}
     IntfImage.Free;
@@ -242,12 +425,10 @@ begin
   Result.Width := Width;
   Result.Height := Height;
   Result.Canvas.Brush.Color := clWhite;
-  Result.Canvas.FillRect(0, 0, Width, Height);
+  Result.Canvas.FillRect(Rect(0, 0, Width, Height));
 end;
 
 procedure TmnESCPOSPage.ResizePage;
-var
-  aBitmap: TBitmap;
 begin
   inherited;
   if FBitmap <> nil then
@@ -268,8 +449,8 @@ end;
 constructor TmnESCPOSPage.Create(Printer: TmnCustomPrinter);
 begin
   inherited;
-  Width := 380;
-  Height := Width;
+  Width := Printer.DefaultWidth;
+  Height := Printer.DefaultHeight;
 end;
 
 destructor TmnESCPOSPage.Destroy;

@@ -61,10 +61,10 @@ type
   private
     FBitmap:TBitmap;
     FPage: TmnCustomPage;
-    FWidth: Integer;
-    FHeight: Integer;
     FStyle: TmnPrintStyle;
     FDensity: TmnDensity;
+    FDefaultHeight: Integer;
+    FDefaultWidth: Integer;
     procedure SetCurrentPage(const AValue: TmnCustomPage);
   protected
     FStream:TStream;
@@ -88,6 +88,8 @@ type
     property Style:TmnPrintStyle read FStyle;
     property Density:TmnDensity read FDensity write FDensity;
     property Name:string read GetName;
+    property DefaultWidth: Integer read FDefaultWidth write FDefaultWidth default 380;
+    property DefaultHeight: Integer read FDefaultHeight write FDefaultHeight default 380;
   end;
 
 implementation
@@ -99,6 +101,8 @@ begin
   inherited Create;
   FStream := Stream;
   FStyle := Style;
+  FDefaultWidth := 380;
+  FDefaultHeight := 380;
 end;
 
 function TmnCustomPrinter.GetName: string;
@@ -170,13 +174,13 @@ end;
 
 procedure TmnCustomPrinter.Print(S: AnsiString);
 begin
-  if FStream <> nil then
+  if (FStream <> nil) and (S <> '') then
     FStream.Write(PChar(S)^, Length(s));
 end;
 
 procedure TmnCustomPrinter.PrintLn(S: AnsiString);
 begin
-  PrintLn(s + #13#10);
+  Print(s + #13#10);
 end;
 
 { TmnCustomPage }

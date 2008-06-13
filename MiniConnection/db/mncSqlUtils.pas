@@ -57,7 +57,7 @@ procedure AppendAndDate(var vSql: string; const vFieldName: string; vDate: TDate
 procedure AppendBetweenDate(var vSql: string; const vFieldName: string; vFromDate, vToDate: TDateTime; vAndOr: string = 'and');
 procedure AppendNotBetweenDate(var vSql: string; const vFieldName: string; vFromDate, vToDate: TDateTime; vAndOr: string = 'and');
 procedure AppendBetweenData(var vSql: string; const vFieldName: string; vFrom, vTo: Integer; vAndOr: string = 'and');
-procedure AppendAndNumber(var vSql: string; const vFieldName: string; vNumber: Integer; vEqual: string = '='; vAndOr: string = 'and');
+procedure AppendAndNumber(var vSql: string; const vFieldName: string; vNumber: Int64; vEqual: string = '='; vAndOr: string = 'and');
 procedure AppendAndData(var vSql: string; const vFieldName: string; Value: Integer; vEqual: string = '='; vAndOr: string = 'and');
 procedure AddData(var vSql: string; const vAndOr, vFieldName: string; Value: Integer);
 procedure AppendRangeDate(var vSql: string; const vFieldName: string; vFromDate, vToDate: TDateTime);
@@ -239,7 +239,7 @@ begin
   end;
 end;
 
-procedure AppendAndNumber(var vSql: string; const vFieldName: string; vNumber: Integer; vEqual: string; vAndOr: string);
+procedure AppendAndNumber(var vSql: string; const vFieldName: string; vNumber: Int64; vEqual: string; vAndOr: string);
 var
   Str: string;
 begin

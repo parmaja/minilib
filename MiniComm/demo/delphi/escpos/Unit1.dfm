@@ -37,7 +37,7 @@ object Form1: TForm1
     Width = 121
     Height = 21
     TabOrder = 2
-    Text = 'COM61'
+    Text = 'COM1'
   end
   object ToFileChk: TCheckBox
     Left = 145
