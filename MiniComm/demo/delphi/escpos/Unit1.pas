@@ -55,10 +55,12 @@ begin
   if LowChk.Checked then
     Printer.Density := mndLow;
   try
+    Printer.BeginDocument;
+    Printer.PrintLn('        '); //for wake up printer if it in sleep;
     Printer.Page.Canvas.FillRect(Printer.Page.BoundsRect);
     Printer.Page.Canvas.Font.Size := 14;
     Printer.Page.Canvas.Font.Style := [];
-    Printer.Density := mndLow;
+//    Printer.Density := mndLow;
     Print('„—Õ»« »ﬂ„ ›Ì ”Â·Ì ”Ê› ');
     Printer.Page.Canvas.Font.Style := [fsBold];
     Print( '«”„ «·⁄„Ì·: “«Â— œÌ—ﬂÌ');
@@ -68,7 +70,9 @@ begin
     Print( 'SN: 145111001');
     Print( 'SN: 654654654');
     Print( '------------------');
+    Printer.Page.SaveToFile('c:\page.bmp');
     Printer.EndPage;
+    Printer.EndDocument;
 {    Printer.PrintBarcode('546798798');
     Printer.CarriageReturn;
     Printer.LineFeed;}

@@ -64,14 +64,18 @@ type
     procedure GetInitRasterBitImageCommands(var S:string); virtual;
   public
     constructor Create(Style: TmnPrintStyle; Stream: TStream); override;
+    procedure Reset;
     procedure LineFeed;
+    procedure Return;
+    procedure Bell;
     procedure CarriageReturn;
     procedure PrintBarcode(Barcode: AnsiString; PrintHRI:Boolean = True);
   end;
 
 const
   seqNull = #0;
-  seqBill = #$07;
+  seqWakeup = #0;
+  seqBell = #$07;
   seqLF = #$0A;
   seqCR = #$0D;
   seqFF = #$0C;
@@ -114,6 +118,11 @@ begin
   inherited;
 end;
 
+procedure TmnESCPOSPrinter.Reset;
+begin
+  Print(seqReset);
+end;
+
 function TmnESCPOSPrinter.GetSEQ_BitImage(Dots: Word): string;
 begin
   Result := seqBitImage + GetSEQ_BitImageFlag + Chr(lo(Dots)) + Chr(hi(Dots));
@@ -145,7 +154,7 @@ begin
     mndHi: Result := #0;
     mndMedium: Result := #0;
   else
-    Result := #$0;
+    Result := #$0;//must #$3;
   end;
 end;
 
@@ -177,7 +186,7 @@ procedure TmnESCPOSPrinter.PrintPage(vPage: TmnCustomPage);
 begin
   inherited;
   vPage.PrintCanvas(vPage.Canvas);
-  LineFeed;
+  Return;
 end;
 
 function TmnESCPOSPrinter.DoCreatePage: TmnCustomPage;
@@ -215,9 +224,9 @@ var
     begin
       b := b shl 1;
 {$IFDEF FPC}
-      if (y < IntfImage.Height) and (IntfImage.TColors[x, y] = clBlack) then
+      if (y < IntfImage.Height) and (IntfImage.TColors[x, y] <> clWhite) then
 {$ELSE}
-      if (y < Height) and (Canvas.Pixels[x, y] = clBlack) then
+      if (y < Height) and (Canvas.Pixels[x, y] <> clWhite) then
 {$ENDIF}
         b := b or 1;
       Inc(y)
@@ -283,9 +292,9 @@ var
     begin
       b := b shl 1;
 {$IFDEF FPC}
-      if (x < IntfImage.Width) and (IntfImage.TColors[x, y] = clBlack) then
+      if (x < IntfImage.Width) and (IntfImage.TColors[x, y] <> clWhite) then
 {$ELSE}
-      if (x < Width) and (Canvas.Pixels[x, y] = clBlack) then
+      if (x < Width) and (Canvas.Pixels[x, y] <> clWhite) then
 {$ENDIF}
         b := b or 1;
       Inc(x)
@@ -314,7 +323,6 @@ begin
     begin
       s := '';
       x := 0;
-      aPrinter.Print(ExtraCommands);
       while x < Width do
       begin
         ScanNow;
@@ -346,9 +354,9 @@ var
     begin
       b := b shl 1;
 {$IFDEF FPC}
-      if (x < IntfImage.Width) and (IntfImage.TColors[x, y] = clBlack) then
+      if (x < IntfImage.Width) and (IntfImage.TColors[x, y] <> clWhite) then
 {$ELSE}
-      if (x < Width) and (Canvas.Pixels[x, y] = clBlack) then
+      if (x < Width) and (Canvas.Pixels[x, y] <> clWhite) then
 {$ENDIF}
         b := b or 1;
       Inc(x)
@@ -368,19 +376,18 @@ begin
   try
     ExtraCommands := '';
     aPrinter.GetInitRasterBitImageCommands(ExtraCommands);
-    aPrinter.Print(ExtraCommands);
 
     chunk := 24;
     h := chunk;
     y := 0;
     repeat
+      aPrinter.Print(ExtraCommands);
       s := aPrinter.GetSEQ_RasterBitImage(Width, chunk);
       aPrinter.Print(s);
       while y < h do
       begin
         s := '';
         x := 0;
-        aPrinter.Print(ExtraCommands);
         while x < Width do
         begin
           ScanNow;
@@ -402,6 +409,16 @@ end;
 procedure TmnESCPOSPrinter.LineFeed;
 begin
   Print(seqLF);
+end;
+
+procedure TmnESCPOSPrinter.Return;
+begin
+  Print(seqCR + seqLF);
+end;
+
+procedure TmnESCPOSPrinter.Bell;
+begin
+  Print(seqBell);
 end;
 
 procedure TmnESCPOSPrinter.PrintBarcode(Barcode:AnsiString; PrintHRI:Boolean);

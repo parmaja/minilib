@@ -29,11 +29,23 @@ type
     procedure GetInitBitImageCommands(var S:string); override;
   end;
 
+  { TmnSPT8Page }
+
+  TmnSPT8Page = class(TmnESCPOSPage)
+  protected
+  public
+    procedure PrintCanvas(Canvas: TCanvas); override;
+  end;
+  
+  { TSPT8Printer }
+
   TSPT8Printer = class(TmnESCPOSPrinter)
   protected
-    procedure GetInitBitImageCommands(var S:string); override;
+    function DoCreatePage: TmnCustomPage; override;
+    procedure GetInitRasterBitImageCommands(var S: string); override;
   public
-//    procedure PrintCanvas(Canvas: TCanvas); override;
+    procedure BeginDocument; override;
+    constructor Create(Style: TmnPrintStyle; Stream: TStream); override;
   end;
 
 implementation
@@ -49,10 +61,36 @@ end;
 
 { TSPT8Printer }
 
-procedure TSPT8Printer.GetInitBitImageCommands(var S: string);
+function TSPT8Printer.DoCreatePage: TmnCustomPage;
+begin
+  Result := TmnSPT8Page.Create(Self);
+end;
+
+procedure TSPT8Printer.GetInitRasterBitImageCommands(var S: string);
+begin
+  S := #0 + seqSetAbsolutePosition + #0 + #0 + S;// first #0 for wakeup as email from support
+end;
+
+procedure TSPT8Printer.BeginDocument;
 begin
   inherited;
+  //this kind of printer need to wake up before send data
+  Print(seqWakeup);
+  Sleep(100);
+  Print(seqWakeup);
+end;
 
+constructor TSPT8Printer.Create(Style: TmnPrintStyle; Stream: TStream);
+begin
+  inherited;
+  DefaultWidth := 520;
+end;
+
+{ TmnSPT8Page }
+
+procedure TmnSPT8Page.PrintCanvas(Canvas: TCanvas);
+begin
+  PrintCanvasAsRasterBitImageChunks(Canvas);
 end;
 
 end.
