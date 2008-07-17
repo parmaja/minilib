@@ -10,15 +10,15 @@ unit mnXMLRttiProfile;
 {$M+}
 {$H+}
 {$IFDEF FPC}
-{$mode delphi}
+{$MODE delphi}
 {$ENDIF}
 
 interface
 
 uses
-  {$IFDEF WINDOWS}
-  Windows,      
-  {$ENDIF}
+{$IFDEF WINDOWS}
+  Windows,
+{$ENDIF}
   SysUtils, Variants, Classes, Contnrs,
   mnXMLStreams, mnXMLRttiReader, mnXMLRttiWriter;
 
@@ -34,9 +34,9 @@ type
     FProfileState: TmnXMLProfileStates;
   protected
     procedure Loading; virtual;
-    procedure Loaded(Failed:Boolean); virtual;
+    procedure Loaded(Failed: Boolean); virtual;
     procedure Saving; virtual;
-    procedure Saved(Failed:Boolean); virtual;
+    procedure Saved(Failed: Boolean); virtual;
     procedure LoadDefault; virtual;
     function _AddRef: Integer; stdcall;
     function _Release: Integer; stdcall;
@@ -52,7 +52,7 @@ type
     procedure SaveToString(var S: string);
     procedure LoadFromString(S: string);
     property ProfileState: TmnXMLProfileStates read FProfileState write FProfileState;
-    property Age:TDateTime read FAge write FAge;
+    property Age: TDateTime read FAge write FAge;
   end;
 
   { TmnComponentProfile }
@@ -62,13 +62,13 @@ type
     FAge: TDateTime;
     FChanged: Boolean;
   protected
-    procedure Loading; virtual;//there is Loading in FPC
+    procedure Loading; virtual; //there is Loading in FPC
     procedure Loaded; override;
     procedure Saving; virtual;
     procedure Saved; virtual;
     procedure LoadDefault; virtual;
   public
-    constructor Create(AOwner:TComponent); override;
+    constructor Create(AOwner: TComponent); override;
     procedure Clear; virtual;
     procedure LoadFromStream(Stream: TStream); virtual;
     procedure SaveToStream(Stream: TStream); virtual;
@@ -76,16 +76,16 @@ type
     procedure SafeLoadFromFile(FileName: string);
     procedure SaveToFile(FileName: string);
     property Changed: Boolean read FChanged write FChanged;
-    property Age:TDateTime read FAge write FAge;
+    property Age: TDateTime read FAge write FAge;
   end;
 
   { TmnXMLItem }
 
-  TmnXMLItem = Class(TmnXMLProfile)
+  TmnXMLItem = class(TmnXMLProfile)
   private
   public
   end;
-  
+
   { TmnXMLItems }
 
   TmnXMLItems = class(TmnXMLItem)
@@ -98,9 +98,9 @@ type
     function GetOwnsObjects: Boolean;
     procedure SetOwnsObjects(const Value: Boolean);
   protected
-    function DoCreateItem:TmnXMLItem; virtual; abstract;
+    function DoCreateItem: TmnXMLItem; virtual; abstract;
   public
-    constructor Create(AOwnsObjects: Boolean = True); 
+    constructor Create(AOwnsObjects: Boolean = True);
     destructor Destroy; override;
     procedure Update; virtual;
     procedure Clear; override;
@@ -114,8 +114,8 @@ type
     function IndexOf(AItem: TmnXMLItem): Integer;
     function First: TmnXMLItem;
     function Last: TmnXMLItem;
-    function CreateItem:TmnXMLItem;
-    property Count:Integer read GetCount write SetCount;
+    function CreateItem: TmnXMLItem;
+    property Count: Integer read GetCount write SetCount;
     property OwnsObjects: Boolean read GetOwnsObjects write SetOwnsObjects;
     property Items[Index: Integer]: TmnXMLItem read GetItem write SetItem; default;
   end;
@@ -158,7 +158,7 @@ procedure TmnXMLProfile.LoadDefault;
 begin
 end;
 
-procedure TmnXMLProfile.Loaded(Failed:Boolean);
+procedure TmnXMLProfile.Loaded(Failed: Boolean);
 begin
 end;
 
@@ -226,7 +226,7 @@ begin
   if GetInterface(IID, Obj) then Result := 0 else Result := E_NOINTERFACE;
 end;
 
-procedure TmnXMLProfile.Saved(Failed:Boolean);
+procedure TmnXMLProfile.Saved(Failed: Boolean);
 begin
 end;
 
@@ -388,7 +388,7 @@ procedure TmnComponentProfile.Clear;
 begin
 end;
 
-constructor TmnComponentProfile.Create(AOwner:TComponent); 
+constructor TmnComponentProfile.Create(AOwner: TComponent);
 begin
   inherited;
   LoadDefault;
@@ -486,7 +486,7 @@ end;
 { TmnXMLItems }
 
 type
-  TMyObjectList = Class(TObjectList)
+  TMyObjectList = class(TObjectList)
   public
     FItems: TmnXMLItems;
     procedure Notify(Ptr: Pointer; Action: TListNotification); override;
@@ -568,7 +568,7 @@ procedure TmnXMLItems.Clear;
 begin
   FList.Clear;
   inherited;
-end; 
+end;
 
 constructor TmnXMLItems.Create(AOwnsObjects: Boolean);
 begin

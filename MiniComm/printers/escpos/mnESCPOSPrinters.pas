@@ -224,9 +224,9 @@ var
     begin
       b := b shl 1;
 {$IFDEF FPC}
-      if (y < IntfImage.Height) and (IntfImage.TColors[x, y] <> clWhite) then
+      if (y < IntfImage.Height) and (IntfImage.TColors[x, y] = clBlack) then
 {$ELSE}
-      if (y < Height) and (Canvas.Pixels[x, y] <> clWhite) then
+      if (y < Height) and (Canvas.Pixels[x, y]  = clBlack) then
 {$ENDIF}
         b := b or 1;
       Inc(y)
@@ -292,9 +292,9 @@ var
     begin
       b := b shl 1;
 {$IFDEF FPC}
-      if (x < IntfImage.Width) and (IntfImage.TColors[x, y] <> clWhite) then
+      if (x < IntfImage.Width) and (IntfImage.TColors[x, y] = clBlack) then
 {$ELSE}
-      if (x < Width) and (Canvas.Pixels[x, y] <> clWhite) then
+      if (x < Width) and (Canvas.Pixels[x, y] = clBlack) then
 {$ENDIF}
         b := b or 1;
       Inc(x)
@@ -354,9 +354,9 @@ var
     begin
       b := b shl 1;
 {$IFDEF FPC}
-      if (x < IntfImage.Width) and (IntfImage.TColors[x, y] <> clWhite) then
+      if (x < IntfImage.Width) and (IntfImage.TColors[x, y] = clBlack) then
 {$ELSE}
-      if (x < Width) and (Canvas.Pixels[x, y] <> clWhite) then
+      if (x < Width) and (Canvas.Pixels[x, y] = clBlack) then
 {$ENDIF}
         b := b or 1;
       Inc(x)

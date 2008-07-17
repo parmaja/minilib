@@ -24,9 +24,13 @@ uses
   mnPrinters, mnESCPOSPrinters;
 
 type
+
+  { TSPTIIIPrinter }
+
   TSPTIIIPrinter = class(TmnESCPOSPrinter)
   protected
     procedure GetInitBitImageCommands(var S:string); override;
+    constructor Create(Style: TmnPrintStyle; Stream: TStream); override;
   end;
 
   { TmnSPT8Page }
@@ -57,6 +61,12 @@ procedure TSPTIIIPrinter.GetInitBitImageCommands(var S:string);
 begin
   inherited;
   S := S + seqSetLeftMargin + chr(0) + chr(0);
+end;
+
+constructor TSPTIIIPrinter.Create(Style: TmnPrintStyle; Stream: TStream);
+begin
+  inherited Create(Style, Stream);
+  DefaultWidth := 380;
 end;
 
 { TSPT8Printer }

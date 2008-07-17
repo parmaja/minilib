@@ -19,7 +19,7 @@ function ucpAnsiToUnicode(const S:AnsiString; Proc:Tmbtowc_proc):WideString; ove
 function ucpUnicodeToAnsi(const S:WideString):AnsiString; overload;
 function ucpUnicodeToAnsi(const S:WideString; Proc:Twctomb_proc):AnsiString; overload;
 
-procedure ucpInstall(MBToWCProc:Tmbtowc_proc; WCtoMBProc:Twctomb_proc; Hook:Boolean = True);
+procedure ucpInstall(MBToWCProc:Tmbtowc_proc; WCtoMBProc:Twctomb_proc{$ifdef FPC}; Hook:Boolean = True{$endif});
 
 implementation
 
@@ -35,22 +35,27 @@ type
 var
   FConverter: TucpConverter;
 
-procedure Ansi2WideMove(source:pchar;var dest:widestring;len:SizeInt);
+{$ifdef FPC}
+procedure Ansi2WideMove(source:pchar;var dest:widestring; len: SizeInt);
 begin
   dest := ucpAnsiToUnicode(source);
 end;
 
-procedure Wide2AnsiMove(source:pwidechar;var dest:ansistring;len:SizeInt);
+procedure Wide2AnsiMove(source:pwidechar;var dest:ansistring; len: SizeInt);
 begin
   dest := ucpUnicodeToAnsi(source);
 end;
+{$endif}
 
-procedure ucpInstall(MBToWCProc:Tmbtowc_proc; WCtoMBProc:Twctomb_proc; Hook:Boolean);
+procedure ucpInstall(MBToWCProc:Tmbtowc_proc; WCtoMBProc:Twctomb_proc{$ifdef FPC}; Hook:Boolean{$endif});
+{$ifdef FPC}
 var
   Manager: TWideStringManager;
+{$endif}
 begin
   FConverter.MBToWCProc := MBToWCProc;
   FConverter.WCToMBProc := WCtoMBProc;
+  {$ifdef FPC}
   if Hook then
   begin
     GetWideStringManager(Manager);
@@ -58,6 +63,7 @@ begin
     Manager.Wide2AnsiMoveProc := Wide2AnsiMove;
     SetWideStringManager(Manager);
   end;
+  {$endif}
 end;
 
 function ucpAnsiToUnicode(const s: AnsiString; Proc:Tmbtowc_proc): WideString; overload;
