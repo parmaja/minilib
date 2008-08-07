@@ -1,4 +1,4 @@
-unit mnXMLRttiWriter;         
+unit mnXMLRttiWriter;
 {**
  *  This file is part of the "Mini Library"
  *                  
@@ -143,10 +143,13 @@ var
   PropInfo: PPropInfo;
   PropList: PPropList;
   List: TList;
+  aInfo: PTypeInfo;
 begin
   List := nil;
-  if Instance is TPersistent then //TObject not support RTTI :-(
-    Count := GetTypeData(Instance.ClassInfo)^.PropCount
+
+  aInfo := Instance.ClassInfo;
+  if aInfo <> nil then
+    Count := GetTypeData(aInfo)^.PropCount
   else
     Count := 0;
 
