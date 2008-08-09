@@ -57,6 +57,7 @@ const
     (0, CBR_110, CBR_300, CBR_600, CBR_1200, CBR_2400, CBR_4800, CBR_9600,
      CBR_14400, CBR_19200, CBR_38400, CBR_56000, CBR_57600, CBR_115200,
      CBR_128000, CBR_256000);}
+     
   cDataBits: array[TDataBits] of Integer = (5, 6, 7, 8);
 
   cControlRTS: array[TRTSFlowControl] of Integer =
@@ -64,6 +65,7 @@ const
      RTS_CONTROL_ENABLE shl 12,
      RTS_CONTROL_HANDSHAKE shl 12,
      RTS_CONTROL_TOGGLE shl 12);
+     
   cControlDTR: array[TDTRFlowControl] of Integer =
     (DTR_CONTROL_DISABLE shl 4,
      DTR_CONTROL_ENABLE shl 4,
