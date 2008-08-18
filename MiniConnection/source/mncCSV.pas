@@ -10,42 +10,46 @@ unit mncCSV;
 {$M+}
 {$H+}
 {$IFDEF FPC}
-{$mode delphi}
+{$MODE delphi}
 {$ENDIF}
 
 interface
 
 uses
-  Classes, SysUtils,
+  Classes, SysUtils, Variants,
   mncConnections, mnStreams;
 
 type
   TmncCSVConnection = class(TmncConnection)
   private
-    FSpliteChar: Char;
-    FHaveHeader: Boolean;
-    FEndOfLine: string;
   protected
     procedure DoConnect; override;
     procedure DoDisconnect; override;
-    function GetConnected:Boolean; override;
+    function GetConnected: Boolean; override;
   public
     constructor Create;
-    property SpliteChar:Char read FSpliteChar write FSpliteChar default #9;
-    property EndOfLine:string read FEndOfLine write FEndOfLine;
-    property HaveHeader: Boolean read FHaveHeader write FHaveHeader default True;
   end;
 
   { TmncCSVSession }
 
   TmncCSVSession = class(TmncSession)
+  private
+    FEndOfLine: string;
+    FHaveHeader: Boolean;
+    FSpliteChar: Char;
   protected
     procedure DoStart; override;
     procedure DoCommit; override;
     procedure DoRollback; override;
   public
+    constructor Create(vConnection: TmncConnection); override;
+    property SpliteChar: Char read FSpliteChar write FSpliteChar default #9;
+    property EndOfLine: string read FEndOfLine write FEndOfLine;
+    property HaveHeader: Boolean read FHaveHeader write FHaveHeader default True;
   end;
   TmncCSVMode = (csvmRead, csvmWrite);
+
+  { TmncCSVCommand }
 
   TmncCSVCommand = class(TmncCommand)
   private
@@ -53,23 +57,25 @@ type
     FStream: TStream;
     FMode: TmncCSVMode;
     function GetConnection: TmncCSVConnection;
+    function GetSession: TmncCSVSession;
   protected
     procedure LoadHeader;
     procedure PrepareParams;
     procedure SaveHeader;
     procedure LoadRecord;
     procedure SaveRecord;
-    function ReadLine:TStringList;
-    procedure WriteLine(S:string);//Because i am not trust with Strings.Text
+    function ReadLine: TStringList;
+    procedure WriteLine(S: string); //Because i am not trust with Strings.Text
     procedure DoPrepare; override;
     procedure DoExecute; override;
     procedure DoNext; override;
-    function GetEOF:Boolean; override;
-    function GetActive:Boolean; override;
+    function GetEOF: Boolean; override;
+    function GetActive: Boolean; override;
     procedure DoClose; override;
-    property Connection:TmncCSVConnection read GetConnection;
+    property Session: TmncCSVSession read GetSession;
+    property Connection: TmncCSVConnection read GetConnection;
   public
-    constructor Create(vSession:TmncSession; vStream: TStream; vMode: TmncCSVMode);
+    constructor Create(vSession: TmncSession; vStream: TStream; vMode: TmncCSVMode);
     destructor Destroy; override;
     property Mode: TmncCSVMode read FMode;
   end;
@@ -81,9 +87,6 @@ implementation
 constructor TmncCSVConnection.Create;
 begin
   inherited Create;
-  FHaveHeader := True;
-  SpliteChar := #9; //TAB
-  EndOfLine := #13;
 end;
 
 procedure TmncCSVConnection.DoConnect;
@@ -92,7 +95,7 @@ end;
 
 function TmncCSVConnection.GetConnected: Boolean;
 begin
-  Result := True;  
+  Result := True;
 end;
 
 procedure TmncCSVConnection.DoDisconnect;
@@ -113,9 +116,17 @@ procedure TmncCSVSession.DoRollback;
 begin
 end;
 
+constructor TmncCSVSession.Create(vConnection: TmncConnection);
+begin
+  inherited;
+  FHaveHeader := True;
+  SpliteChar := #9; //TAB
+  EndOfLine := #13;
+end;
+
 { TmncCSVCommand }
 
-constructor TmncCSVCommand.Create(vSession:TmncSession; vStream: TStream; vMode: TmncCSVMode);
+constructor TmncCSVCommand.Create(vSession: TmncSession; vStream: TStream; vMode: TmncCSVMode);
 begin
   inherited Create(vSession);
   FMode := vMode;
@@ -149,8 +160,8 @@ end;
 procedure TmncCSVCommand.DoPrepare;
 begin
   FCSVStream := TmnStream.Create(FStream, False);
-  FCSVStream.EndOfLine := Connection.EndOfLine;
-  if (Session.Connection as TmncCSVConnection).HaveHeader then
+  FCSVStream.EndOfLine := Session.EndOfLine;
+  if Session.HaveHeader then
   begin
     if (Mode = csvmWrite) then
       SaveHeader
@@ -164,7 +175,7 @@ procedure TmncCSVCommand.DoClose;
 begin
   FreeAndNil(FCSVStream);
 end;
- 
+
 function TmncCSVCommand.GetActive: Boolean;
 begin
   Result := FCSVStream = nil;
@@ -175,6 +186,11 @@ begin
   Result := Session.Connection as TmncCSVConnection;
 end;
 
+function TmncCSVCommand.GetSession: TmncCSVSession;
+begin
+  Result := (Inherited Session) as TmncCSVSession;
+end;
+
 procedure TmncCSVCommand.LoadHeader;
 var
   aStrings: TStringList;
@@ -183,9 +199,9 @@ begin
   Fields.Clear;
   aStrings := ReadLine;
   try
-    for i := 0 to aStrings.Count -1 do
+    for i := 0 to aStrings.Count - 1 do
     begin
-      Fields.Add(i, aStrings[i]);//TODO must Dequote
+      Fields.Add(i, aStrings[i]); //TODO must Dequote
     end;
   finally
     aStrings.Free;
@@ -201,9 +217,9 @@ begin
   aRecord := TmncRecord.Create(Fields);
   aStrings := ReadLine;
   try
-    for i := 0 to aStrings.Count -1 do
+    for i := 0 to aStrings.Count - 1 do
     begin
-      aRecord.Add(i, aStrings[i]);//TODO must Dequote
+      aRecord.Add(i, aStrings[i]); //TODO must Dequote
     end;
   finally
     aStrings.Free;
@@ -217,7 +233,7 @@ var
   aParams: TmncParams;
 begin
   aParams := TmncParams.Create;
-  for i := 0 to Fields.Count -1 do
+  for i := 0 to Fields.Count - 1 do
     aParams.Add(Fields[i].Name);
   Params := aParams;
 end;
@@ -229,7 +245,7 @@ begin
   s := '';
   Result := TStringList.Create;
   FCSVStream.ReadLn(s);
-  ExtractStrings([Connection.SpliteChar], [], PChar(s), Result);
+  ExtractStrings([Session.SpliteChar], [], PChar(s), Result);
 end;
 
 procedure TmncCSVCommand.SaveHeader;
@@ -238,7 +254,7 @@ var
   s: string;
 begin
   s := '';
-  for i := 0 to Fields.Count -1 do
+  for i := 0 to Fields.Count - 1 do
   begin
     if s <> '' then
       s := s + #9;
@@ -251,13 +267,19 @@ procedure TmncCSVCommand.SaveRecord;
 var
   i: Integer;
   s: string;
+  v: Variant;
+  First: Boolean;
 begin
   s := '';
-  for i := 0 to Params.Count -1 do
+  First := True;
+  for i := 0 to Params.Count - 1 do
   begin
-    if s <> '' then
-      s := s + #9;
-    s := s + Params.Items[i].Value;
+    if not First then
+      s := s + Session.SpliteChar
+    else
+      First := False;
+    v := Params.Items[i].Value;
+    s := s + VarToStrDef(v, '');
   end;
   WriteLine(s);
 end;

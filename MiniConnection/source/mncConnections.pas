@@ -10,7 +10,7 @@ unit mncConnections;
 {$M+}
 {$H+}
 {$IFDEF FPC}
-{$mode delphi}
+{$MODE delphi}
 {$ENDIF}
 
 interface
@@ -72,27 +72,27 @@ type
   protected
     procedure DoConnect; virtual; abstract;
     procedure DoDisconnect; virtual; abstract;
-    function GetConnected:Boolean; virtual; abstract;
+    function GetConnected: Boolean; virtual; abstract;
     property Sessions: TmncSessions read FSessions;
     function EncodeString(s: string): string; virtual; //eg. AnsiToUTF8
     function DecodeString(s: string): string; virtual; //eg. UTF8ToAnsi
-    class function GetMode:TmncTransactionMode; virtual;
+    class function GetMode: TmncTransactionMode; virtual;
   public
     constructor Create;
     destructor Destroy; override;
     procedure Connect;
     procedure Disconnect;
-    procedure Open;//Alias for Connect
-    procedure Close;//Alias for Disonnect;
-    property Mode:TmncTransactionMode read GetMode;
-    property AutoStart:Boolean read FAutoStart write FAutoStart;//AutoStart the Session when created
-    property Connected:Boolean read GetConnected write SetConnected;
-    property Active:Boolean read GetConnected write SetConnected;
+    procedure Open; //Alias for Connect
+    procedure Close; //Alias for Disonnect;
+    property Mode: TmncTransactionMode read GetMode;
+    property AutoStart: Boolean read FAutoStart write FAutoStart; //AutoStart the Session when created
+    property Connected: Boolean read GetConnected write SetConnected;
+    property Active: Boolean read GetConnected write SetConnected;
     property AutoCreate: Boolean read FAutoCreate write FAutoCreate default False;
-    property Host:string read FHost write FHost;
-    property Resource:string read FResource write FResource;//can be a Database name or Alias or service name etc...
-    property UserName:string read FUserName write FUserName;
-    property Password:string read FPassword write FPassword;
+    property Host: string read FHost write FHost;
+    property Resource: string read FResource write FResource; //can be a Database name or Alias or service name etc...
+    property UserName: string read FUserName write FUserName;
+    property Password: string read FPassword write FPassword;
   end;
 
   //Session it branch/clone of Connection but usefull for take a special params, it like Transactions.
@@ -109,11 +109,11 @@ type
     procedure SetConnection(const Value: TmncConnection);
     procedure SetActive(const Value: Boolean);
   protected
-    function GetActive:Boolean; virtual;
+    function GetActive: Boolean; virtual;
     procedure DoStart; virtual; abstract;
     procedure DoCommit; virtual; abstract;
     procedure DoRollback; virtual; abstract;
-    property Commands:TmncCommands read FCommands;
+    property Commands: TmncCommands read FCommands;
   public
     constructor Create(vConnection: TmncConnection); virtual;
     destructor Destroy; override;
@@ -121,10 +121,10 @@ type
     procedure Commit;
     procedure Rollback;
     procedure Stop;
-    property Action:TmncSessionAction read FAction write FAction; 
-    property Connection:TmncConnection read FConnection write SetConnection;
+    property Action: TmncSessionAction read FAction write FAction;
+    property Connection: TmncConnection read FConnection write SetConnection;
     property Active: Boolean read GetActive write SetActive;
-    property Params:TStrings read FParams write SetParams;
+    property Params: TStrings read FParams write SetParams;
   end;
 
   { TmncCustomField }
@@ -152,7 +152,7 @@ type
     function GetAsCurrency: Currency; virtual;
     procedure SetAsCurrency(const Value: Currency); virtual;
 
-    function GetAsDate: TDateTime; virtual;//zaher must use trunc
+    function GetAsDate: TDateTime; virtual; //zaher must use trunc
     procedure SetAsDate(const Value: TDateTime); virtual;
 
     function GetAsDateTime: TDateTime; virtual;
@@ -193,11 +193,11 @@ type
     procedure SaveToStream(Stream: TStream);
     procedure SaveToIStream(Stream: IStreamPersist);}
   published
-    property Name:string read FName write FName;
+    property Name: string read FName write FName;
   end;
 
   TmncCustomFieldClass = class of TmncCustomField;
-  
+
   { TmncCustomFields }
 
   TmncCustomFields = class(TObjectList)
@@ -205,10 +205,10 @@ type
     function GetFieldByName(Index: string): TmncCustomField;
     function GetItem(Index: Integer): TmncCustomField;
   protected
-    function FindField(vName:string): TmncCustomField; virtual; abstract;
+    function FindField(vName: string): TmncCustomField; virtual; abstract;
   public
     function Add(AField: TmncCustomField): Integer; overload;
-    function FieldByName(vName:string): TmncCustomField;
+    function FieldByName(vName: string): TmncCustomField;
     property Items[Index: Integer]: TmncCustomField read GetItem;
     property Field[Index: string]: TmncCustomField read GetFieldByName; default;
   end;
@@ -220,7 +220,7 @@ type
     function GetVariant: Variant; override;
     procedure SetVariant(const Value: Variant); override;
   published
-    property Index:Integer read FIndex write FIndex;
+    property Index: Integer read FIndex write FIndex;
   end;
 
   TmncFieldClass = class of TmncField;
@@ -229,10 +229,10 @@ type
   private
     function GetItem(Index: Integer): TmncField;
   protected
-    function FindField(vName:string): TmncCustomField; override;
+    function FindField(vName: string): TmncCustomField; override;
   public
-    function Add(Index: Integer; Name:string; FieldClass: TmncFieldClass = nil): TmncField; overload;
-    function Add(Name:string): TmncField; overload;
+    function Add(Index: Integer; Name: string; FieldClass: TmncFieldClass = nil): TmncField; overload;
+    function Add(Name: string): TmncField; overload;
     property Items[Index: Integer]: TmncField read GetItem; default;
   end;
 
@@ -246,7 +246,7 @@ type
   public
     constructor Create(vField: TmncField);
   published
-    property Field:TmncField read FField write FField;
+    property Field: TmncField read FField write FField;
     property Value;
     property AsVariant;
     property AsString;
@@ -272,14 +272,14 @@ type
     procedure SetValue(Index: string; const Value: Variant);
   protected
   public
-    constructor Create(vFields:TmncFields);
-    function FindField(vName:string): TmncCustomField; override;
-    function FieldByName(vName:string): TmncFieldValue;
-    function Add(Field:TmncField; Value:Variant):TmncFieldValue; overload;
-    function Add(Field:TmncField):TmncFieldValue; overload;
-    function Add(FieldIndex:Integer; Value:Variant):TmncFieldValue; overload;
+    constructor Create(vFields: TmncFields);
+    function FindField(vName: string): TmncCustomField; override;
+    function FieldByName(vName: string): TmncFieldValue;
+    function Add(Field: TmncField; Value: Variant): TmncFieldValue; overload;
+    function Add(Field: TmncField): TmncFieldValue; overload;
+    function Add(FieldIndex: Integer; Value: Variant): TmncFieldValue; overload;
     property Fields: TmncFields read FFields;
-    property Field[Index: string]:TmncFieldValue read GetField;
+    property Field[Index: string]: TmncFieldValue read GetField;
     property Items[Index: Integer]: TmncFieldValue read GetItem;
     property Value[Index: string]: Variant read GetValue write SetValue; default;
   end;
@@ -311,7 +311,7 @@ type
     property AsDateTime;
     property Buffer: Pointer read FBuffer;
     property BufferSize: Integer read FBufferSize;
-    property BufferAllocated:Boolean read GetBufferAllocated;  
+    property BufferAllocated: Boolean read GetBufferAllocated;
   end;
 
   TmncCustomParams = class(TmncCustomFields)
@@ -321,8 +321,8 @@ type
     function GetItem(Index: Integer): TmncParam;
   public
     procedure Clear; override;
-    function FindField(vName:string): TmncCustomField; override;
-    function ParamByName(vName:string): TmncParam;
+    function FindField(vName: string): TmncCustomField; override;
+    function ParamByName(vName: string): TmncParam;
     property Param[Index: string]: TmncParam read GetParam;
     property Items[Index: Integer]: TmncParam read GetItem;
   end;
@@ -333,8 +333,8 @@ type
     procedure SetValue(Index: string; const Value: Variant);
   published
   public
-    function Add(Name: string):TmncParam;
-    function AddExists(Name: string):TmncParam;
+    function Add(Name: string): TmncParam;
+    function AddExists(Name: string): TmncParam;
     property Value[Index: string]: Variant read GetValue write SetValue; default;
   end;
 
@@ -367,39 +367,39 @@ type
     FRequest: TStrings;
     procedure CheckActive;
     function GetActive: Boolean; virtual; abstract;
-    function GetEOF:Boolean; virtual; abstract;
+    function GetEOF: Boolean; virtual; abstract;
     procedure DoPrepare; virtual; abstract;
-    procedure DoExecute; virtual; abstract;//Here apply the ParamList and execute the sql
+    procedure DoExecute; virtual; abstract; //Here apply the ParamList and execute the sql
     procedure DoNext; virtual; abstract;
     procedure DoClose; virtual; abstract;
-    procedure DoCommit; virtual; abstract;//some time we need make commit with command or session
-    procedure DoRollback; virtual; abstract;
+    procedure DoCommit; virtual; //some time we need make commit with command or session
+    procedure DoRollback; virtual;
     procedure DoRequestChanged(Sender: TObject); virtual;
-    property Request:TStrings read FRequest write SetRequest;
+    property Request: TStrings read FRequest write SetRequest;
     property ParamList: TmncParamList read FParamList; //for Dublicated names when pass the params when execute
   public
-    constructor Create(vSession:TmncSession);
+    constructor Create(vSession: TmncSession);
     destructor Destroy; override;
     procedure Prepare;
     function Execute: Boolean;
     procedure Close;
-    function Next:Boolean;
-    function EOF:Boolean;
+    function Next: Boolean;
+    function EOF: Boolean;
     procedure Clear; virtual;
     procedure Commit;
     procedure Rollback;
-    function ReleaseCurrent:TmncRecord;
-    function ReleaseParams:TmncParams;
-    function FieldIsExist(Name:string):Boolean;
-    property NextOnExecute:Boolean read FNextOnExecute write FNextOnExecute default True;
+    function ReleaseCurrent: TmncRecord;
+    function ReleaseParams: TmncParams;
+    function FieldIsExist(Name: string): Boolean;
+    property NextOnExecute: Boolean read FNextOnExecute write FNextOnExecute default True;
     property Active: Boolean read GetActive write SetActive;
     property Prepared: Boolean read FPrepared;
     property Session: TmncSession read FSession write SetSession;
-    property Current:TmncRecord read FCurrent write SetCurrent;
-    property Params:TmncParams read FParams write SetParams;
-    property Fields:TmncFields read FFields write SetFields;
+    property Current: TmncRecord read FCurrent write SetCurrent;
+    property Params: TmncParams read FParams write SetParams;
+    property Fields: TmncFields read FFields write SetFields;
     property Param[Index: string]: TmncParam read GetParam;
-    property Field[Index: string]:TmncFieldValue read GetField;
+    property Field[Index: string]: TmncFieldValue read GetField;
   end;
 
 implementation
@@ -455,7 +455,7 @@ begin
 end;
 
 
-function TmncConnection.EncodeString(s:string): string;
+function TmncConnection.EncodeString(s: string): string;
 begin
   Result := s;
 end;
@@ -465,7 +465,7 @@ begin
   Result := smNone;
 end;
 
-function TmncConnection.DecodeString(s:string): string;
+function TmncConnection.DecodeString(s: string): string;
 begin
   Result := s;
 end;
@@ -474,14 +474,14 @@ end;
 
 procedure TmncCommand.Clear;
 begin
-  FPrepared:= False;
+  FPrepared := False;
   FRequest.Clear;
   if FParams <> nil then
     FParams.Clear;
   FParamList.Clear;
 end;
 
-constructor TmncCommand.Create(vSession:TmncSession);
+constructor TmncCommand.Create(vSession: TmncSession);
 begin
   inherited Create;
   Session := vSession;
@@ -558,6 +558,14 @@ begin
     raise EmncException.Create('Not active/opened');
 end;
 
+procedure TmncCommand.DoCommit;
+begin
+end;
+
+procedure TmncCommand.DoRollback;
+begin
+end;
+
 function TmncCommand.Next: Boolean;
 begin
   DoNext;
@@ -566,6 +574,7 @@ end;
 
 procedure TmncCommand.Prepare;
 begin
+//  if not FPrepared then
   DoPrepare;
   FPrepared := True;
 end;
@@ -653,7 +662,7 @@ begin
   if not Active then
     raise EmncException.Create('Command already Closed');
   DoClose;
-  FPrepared:= False;
+  FPrepared := False;
 end;
 
 { TmncSession }
@@ -667,13 +676,13 @@ begin
   case Connection.Mode of
     smMultiTransactions: DoCommit;
     smSingleTransactions:
-    begin
-      if Connection.FStartCount = 0 then
-        raise EmncException.Create('Connection not started yet!');
-      Dec(Connection.FStartCount);
-      if Connection.FStartCount = 0 then
-        DoCommit;
-    end;
+      begin
+        if Connection.FStartCount = 0 then
+          raise EmncException.Create('Connection not started yet!');
+        Dec(Connection.FStartCount);
+        if Connection.FStartCount = 0 then
+          DoCommit;
+      end;
   end;
 end;
 
@@ -709,13 +718,13 @@ begin
   case Connection.Mode of
     smMultiTransactions: DoRollback;
     smSingleTransactions:
-    begin
-      if Connection.FStartCount = 0 then
-        raise EmncException.Create('Connection not started yet!');
-      Dec(Connection.FStartCount);
-      if Connection.FStartCount = 0 then
-        DoRollback;
-    end;
+      begin
+        if Connection.FStartCount = 0 then
+          raise EmncException.Create('Connection not started yet!');
+        Dec(Connection.FStartCount);
+        if Connection.FStartCount = 0 then
+          DoRollback;
+      end;
   end;
 end;
 
@@ -754,11 +763,11 @@ begin
   case Connection.Mode of
     smMultiTransactions: DoStart;
     smSingleTransactions:
-    begin
-      if Connection.FStartCount = 0 then
-        DoStart;
-      Inc(Connection.FStartCount);
-    end;
+      begin
+        if Connection.FStartCount = 0 then
+          DoStart;
+        Inc(Connection.FStartCount);
+      end;
   end;
   Inc(FStartCount);
 end;
@@ -775,7 +784,7 @@ begin
   end;
 end;
 
-function TmncRecord.Add(Field:TmncField; Value: Variant): TmncFieldValue;
+function TmncRecord.Add(Field: TmncField; Value: Variant): TmncFieldValue;
 begin
   Result := TmncFieldValue.Create(Field);
   Result.Value := Value;
@@ -812,7 +821,7 @@ function TmncCustomFields.FieldByName(vName: string): TmncCustomField;
 begin
   Result := FindField(vName);
   if Result = nil then
-     raise EmncException.Create('Field "' + vName + '" not found');
+    raise EmncException.Create('Field "' + vName + '" not found');
 end;
 
 function TmncRecord.FindField(vName: string): TmncCustomField;
@@ -820,7 +829,7 @@ var
   i: Integer;
 begin
   Result := nil;
-  for i := 0 to Count -1 do
+  for i := 0 to Count - 1 do
   begin
     if SameText(vName, Items[i].Field.Name) then
     begin
@@ -864,7 +873,7 @@ end;
 
 function TmncFields.Add(Name: string): TmncField;
 begin
-  Result := Add(Count, Name);  
+  Result := Add(Count, Name);
 end;
 
 function TmncFields.FindField(vName: string): TmncCustomField;
@@ -872,7 +881,7 @@ var
   i: Integer;
 begin
   Result := nil;
-  for i := 0 to Count -1 do
+  for i := 0 to Count - 1 do
   begin
     if SameText(vName, Items[i].Name) then
     begin
@@ -936,7 +945,7 @@ var
   i: Integer;
 begin
   Result := nil;
-  for i := 0 to Count -1 do
+  for i := 0 to Count - 1 do
   begin
     if SameText(vName, Items[i].Name) then
     begin
@@ -1035,7 +1044,7 @@ procedure TmncCommands.Close;
 var
   i: Integer;
 begin
-  for i := 0 to Count -1 do
+  for i := 0 to Count - 1 do
   begin
     Items[i].Active := False;
   end;
@@ -1057,7 +1066,7 @@ procedure TmncSessions.Stop;
 var
   i: Integer;
 begin
-  for i := 0 to Count -1 do
+  for i := 0 to Count - 1 do
   begin
     Items[i].Stop;
   end;
@@ -1146,7 +1155,7 @@ begin
   else
   begin
     Result := Value;
-    Result :=  TimeOf(Result);
+    Result := TimeOf(Result);
   end;
 end;
 

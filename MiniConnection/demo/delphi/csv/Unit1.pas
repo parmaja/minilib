@@ -47,7 +47,7 @@ begin
         Cmd.Params['Address'] := 'Address1';
         Cmd.Execute;
         Cmd.Params['Name'] := 'Name2';
-        Cmd.Params['Address'] := 'Address2';
+        Cmd.Param['Address'].AsCurrency := 100;
         Cmd.Execute;
       finally
         aStream.Free;
