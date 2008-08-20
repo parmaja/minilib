@@ -83,16 +83,19 @@ end;
 procedure TmnXMLRttiStrings.Write(Writer: TmnXMLRttiCustomWriter; Instance: Pointer);
 var
   i: Integer;
+  st: TStrings;
 begin
   if not (TObject(Instance) is TStrings) then
     raise EmnXMLException.Create('not support this class');
-  with Writer do
-  begin
-    WriteOpenTag('Strings');
-    for i := 0 to TStrings(Instance).Count - 1 do
-      Write('Line', TStrings(Instance)[i]);
-    WriteCloseTag('Strings');
-  end;
+  st := TStrings(Instance);
+  if st.Count>0 then //belal for not writing OpenTag & CloseTag
+    with Writer do
+    begin
+      WriteOpenTag('Strings');
+      for i := 0 to st.Count - 1 do
+        Write('Line', st[i]);
+      WriteCloseTag('Strings');
+    end;
 end;
 
 { TmnXMLRttiCollection }
