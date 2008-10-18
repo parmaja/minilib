@@ -28,7 +28,6 @@ type
   TmncSQLiteConnection = class(TmncConnection)
   private
     FDBHandle:PSqlite3;
-    FCodepageConvert: TmncCodepageConvert;
   protected
     procedure DoConnect; override;
     procedure DoDisconnect; override;
@@ -36,11 +35,8 @@ type
     class function GetMode:TmncTransactionMode; override;
   public
     constructor Create;
-    function EncodeString(s: string): string; override; //eg. AnsiToUTF8
-    function DecodeString(s: string): string; override; //eg. UTF8ToAnsi
     procedure CheckError(Error: Integer; const ExtraMsg: string = '');
     property DBHandle:PSqlite3 read FDBHandle;
-    property CodepageConvert: TmncCodepageConvert read FCodepageConvert write FCodepageConvert default cpcAnsi;
   end;
 
   { TmncSQLiteSession }
@@ -96,11 +92,11 @@ implementation
 
 procedure TmncSQLiteConnection.CheckError(Error:longint; const ExtraMsg: string);
 var
-  s : String;
+  s : Utf8String;
 begin
   if (Error <> SQLITE_OK) then
   begin
-    s := 'sqlite: ' + DecodeString(sqlite3_errmsg(FDBHandle));
+    s := 'sqlite: ' + sqlite3_errmsg(FDBHandle);
     if ExtraMsg <> '' then
       s := s + ' - ' + ExtraMsg;
     raise EmncException.Create(s);
@@ -112,17 +108,6 @@ end;
 constructor TmncSQLiteConnection.Create;
 begin
   inherited Create;
-  FCodepageConvert := cpcAnsi;
-end;
-
-function TmncSQLiteConnection.DecodeString(s: string): string;
-begin
-  case FCodepageConvert of
-    cpcAnsi: Result := Utf8ToAnsi(s);
-    cpcUnicode: Result := UTF8Encode(s);
-  else
-    Result := s;
-  end;
 end;
 
 procedure TmncSQLiteConnection.DoConnect;
@@ -141,16 +126,6 @@ procedure TmncSQLiteConnection.DoDisconnect;
 begin
   CheckError(sqlite3_close(FDBHandle));
   FDBHandle := nil;
-end;
-
-function TmncSQLiteConnection.EncodeString(s: string): string;
-begin
-  case FCodepageConvert of
-    cpcAnsi: Result := AnsiToUtf8(s);
-    cpcUnicode: Result := UTF8Decode(s);
-  else
-    Result := s;
-  end;
 end;
 
 { TmncSQLiteSession }
@@ -178,15 +153,15 @@ end;
 procedure TmncSQLiteSession.ExecuteSQL(SQL: string);
 var
  lMsg  : pchar;
- s : string;
+ s : Utf8String;
  r  : integer;
 begin
   lMSg := nil;
-  s := Connection.EncodeString(SQL);
+  s := SQL;
   r := sqlite3_exec(Connection.FDBHandle, PChar(s), nil, nil, @lMsg);
   if lMSg <> nil then
   begin
-    s := Connection.DecodeString(lMSg);
+    s := lMsg;
     sqlite3_free(lMSg);
   end;
   Connection.CheckError(r, s);
@@ -221,18 +196,18 @@ end;
 
 procedure TmncSQLiteCommand.CheckError(Error: Integer);
 var
-  s : String;
+  s : Utf8String;
   ExtraMsg: string;
   r: Integer;
 begin
   if (Error <> SQLITE_OK) then
   begin
-    s := 'sqlite: ' + Connection.DecodeString(sqlite3_errmsg(Connection.DBHandle));
+    s := 'sqlite: ' + sqlite3_errmsg(Connection.DBHandle);
     if Active then
     begin
       r := sqlite3_finalize(FStatment);//without check error prevent the loop
       if (r <> SQLITE_OK) then
-        ExtraMsg := Connection.DecodeString(sqlite3_errmsg(Connection.DBHandle))
+        ExtraMsg := sqlite3_errmsg(Connection.DBHandle)
       else
         ExtraMsg := '';
       if ExtraMsg <> '' then
@@ -277,7 +252,7 @@ end;
 
 procedure TmncSQLiteCommand.ApplyValues;
 var
-  s: string;
+  s: UTF8String;
   i: Integer;
   d: Double;
   c: Currency;
@@ -325,7 +300,7 @@ begin
         begin
           if not ParamList.Items[i].BufferAllocated then
           begin
-            s := Connection.EncodeString(ParamList.Items[i].Value);
+            s := VarToStrDef(ParamList.Items[i].Value, '');
             ParamList.Items[i].AllocBuffer(PChar(s)^, Length(s));
           end;
           CheckError(sqlite3_bind_text(FStatment, i + 1, PChar(ParamList.Items[i].Buffer), ParamList.Items[i].BufferSize, nil));
@@ -373,7 +348,6 @@ var
 begin
   FBOF := True;
   s := ParseSQL([]);
-//  s := Connection.EncodeString(ParseSQL([]));
 //  sqlite3_prepare_v2
   r := sqlite3_prepare(Connection.DBHandle, PChar(s), -1 , @FStatment, @FTail);
   CheckError(r);
@@ -407,7 +381,7 @@ begin
   for i := 0 to c -1 do
   begin
 //    sqlite3_column_type
-    aName := Connection.DecodeString(sqlite3_column_name(FStatment, i));
+    aName := sqlite3_column_name(FStatment, i);
     Fields.Add(aName);
   end;
 end;
@@ -417,7 +391,7 @@ var
   i: Integer;
   c: Integer;
   int:Int64;
-  str: string;
+  str: Utf8String;
   flt: Double;
   aCurrent: TmncRecord;
   aType: Integer;
@@ -447,7 +421,7 @@ begin
         end;
         else
         begin
-          str := Connection.DecodeString(sqlite3_column_text(FStatment, i));
+          str := sqlite3_column_text(FStatment, i);
           aCurrent.Add(i, str);
         end;
       end;

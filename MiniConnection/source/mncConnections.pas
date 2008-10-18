@@ -74,8 +74,6 @@ type
     procedure DoDisconnect; virtual; abstract;
     function GetConnected: Boolean; virtual; abstract;
     property Sessions: TmncSessions read FSessions;
-    function EncodeString(s: string): string; virtual; //eg. AnsiToUTF8
-    function DecodeString(s: string): string; virtual; //eg. UTF8ToAnsi
     class function GetMode: TmncTransactionMode; virtual;
   public
     constructor Create;
@@ -454,20 +452,9 @@ begin
   end;
 end;
 
-
-function TmncConnection.EncodeString(s: string): string;
-begin
-  Result := s;
-end;
-
 class function TmncConnection.GetMode: TmncTransactionMode;
 begin
   Result := smNone;
-end;
-
-function TmncConnection.DecodeString(s: string): string;
-begin
-  Result := s;
 end;
 
 { TmncCommand }
