@@ -10,7 +10,7 @@ unit mnXMLUtils;
 {$M+}
 {$H+}
 {$IFDEF FPC}
-{$mode delphi}
+{$MODE delphi}
 {$ENDIF}
 
 interface
@@ -55,9 +55,9 @@ function StringsToString(Strings: TStrings; LineBreak: string = sLineBreak): str
 function URIToFileName(const URI: string): string;
 function FileNameToURI(FileName: string): string;
 function IncludeSlash(const S: string): string;
-function StrToStrings(Separators, WhiteSpace: TSysCharSet; Content: string; Strings: TStrings; DequoteValues:Boolean = False): Integer;
-function LeftSubStr(S, Separator:string):string;
-function RightSubStr(S, Separator:string):string;
+function StrToStrings(Content: string; Strings: TStrings; Separators:TSysCharSet; WhiteSpace: TSysCharSet = [#0, #13, #10]; DequoteValues: Boolean = False; Quotes: TSysCharSet = ['''', '"']): Integer;
+function LeftSubStr(S, Separator: string): string;
+function RightSubStr(S, Separator: string): string;
 
 implementation
 
@@ -174,7 +174,7 @@ end;
 
 procedure ReadAttStrings(Strings: TStrings; const Attributes: string); overload;
 begin
-  StrToStrings([' '], [], PChar(Attributes), Strings, True);
+  StrToStrings(Attributes, Strings, [' '], [#0, #13, #10], True);
 end;
 
 function CreateAttStrings(const Attributes: string): TStrings; overload;
@@ -292,7 +292,7 @@ end;
 
 function FileNameToURI(FileName: string): string;
 const
-  sChars = ['-' , '_' , '.' , '!' , '~' , '*' , '''' , '(' , ')'];
+  sChars = ['-', '_', '.', '!', '~', '*', '''', '(', ')'];
 var
   i: Integer;
 begin
@@ -303,7 +303,7 @@ begin
     if (FileName[i] in sChars) or (FileName[i] in ['A'..'Z', 'a'..'z', '0'..'9']) then
       Result := Result + FileName[i]
     else
-      Result := Result + '%'+ IntToHex(Ord(FileName[i]), 2);
+      Result := Result + '%' + IntToHex(Ord(FileName[i]), 2);
   end;
   Result := 'file:///' + Result;
 end;
@@ -405,7 +405,7 @@ var
     Result := Value = nil;
   end;
 begin
-  Result := True;// not default for default :P
+  Result := True; // not default for default :P
   if (PropInfo^.GetProc <> nil) and ((PropInfo^.SetProc <> nil) or (PropInfo^.PropType^.Kind = tkClass) or (PropInfo^.PropType^.Kind = tkInterface)) then
   begin
     PropType := GetPropType(PropInfo);
@@ -427,22 +427,22 @@ begin
         Result := IsDefaultClassProp;
       tkInterface:
         Result := IsDefaultInterfaceProp;
-      {$IFDEF FPC}
+{$IFDEF FPC}
       tkAString:
         Result := IsDefaultStrProp;
       tkBool:
         Result := IsDefaultBoolProp;
-      {$ENDIF}
+{$ENDIF}
     end;
   end;
 end;
 
-function StrToStrings(Separators, WhiteSpace: TSysCharSet; Content: string; Strings: TStrings; DequoteValues:Boolean): Integer;
+function StrToStrings(Content: string; Strings: TStrings; Separators, WhiteSpace: TSysCharSet; DequoteValues: Boolean; Quotes: TSysCharSet): Integer;
 var
   Head, Tail, P: Integer;
-  EOS, InQuote: Boolean;
+  InQuote: Boolean;
   QuoteChar: Char;
-  S:string;
+  S: string;
 begin
   Result := 0;
   if (Strings = nil) then
@@ -455,15 +455,14 @@ begin
     Strings.BeginUpdate;
     try
       repeat
-        while Content[Tail] in WhiteSpace + [#13, #10] do
+        while (Tail <= Length(Content)) and (Content[Tail] in WhiteSpace) do
           Tail := Tail + 1;
         Head := Tail;
         while True do
         begin
-          while (InQuote and not (Content[Tail] in [QuoteChar, #0])) or
-            not (Content[Tail] in Separators + [#0, #13, #10, '''', '"']) do
+          while (Tail <= Length(Content)) and ((InQuote and not (Content[Tail] <> QuoteChar)) or (not (Content[Tail] in Separators))) do
             Tail := Tail + 1;
-          if Content[Tail] in ['''', '"'] then
+          if (Tail <= Length(Content)) and (Content[Tail] in Quotes) then
           begin
             if (QuoteChar <> #0) and (QuoteChar = Content[Tail]) then
               QuoteChar := #0
@@ -475,48 +474,47 @@ begin
           else
             Break;
         end;
-        EOS := Tail > Length(Content);
-        if (Head <> Tail) then
+        if (Tail <> Head) then
         begin
           if Strings <> nil then
           begin
-            S:= Copy(Content, Head, Tail - Head);
+            S := Copy(Content, Head, Tail - Head);
             if DequoteValues then
             begin
               P := Pos('=', S);
               if P > 0 then
-                S:= Copy(S, 1, P) + DequoteStr(Copy(S, P + 1 , MaxInt));
+                S := Copy(S, 1, P) + DequoteStr(Copy(S, P + 1, MaxInt));
             end;
             Strings.Add(S);
           end;
           Inc(Result);
         end;
         Tail := Tail + 1;
-      until EOS;
+      until Tail > Length(Content);
     finally
       Strings.EndUpdate;
     end;
   end;
 end;
 
-function LeftSubStr(S, Separator:string):string;
+function LeftSubStr(S, Separator: string): string;
 var
-  p:Integer;
+  p: Integer;
 begin
   p := Pos(Separator, S);
   if p > 0 then
-    Result := Copy(S, 1 , P - 1)
+    Result := Copy(S, 1, P - 1)
   else
     Result := S;
 end;
 
-function RightSubStr(S, Separator:string):string;
+function RightSubStr(S, Separator: string): string;
 var
-  p:Integer;
+  p: Integer;
 begin
   p := Pos(Separator, S);
   if p > 0 then
-    Result := Copy(S, P + 1 , MaxInt)
+    Result := Copy(S, P + 1, MaxInt)
   else
     Result := '';
 end;
