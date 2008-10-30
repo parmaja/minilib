@@ -322,7 +322,7 @@ var
   var
     Value: Pointer;
   begin
-    Value := Pointer(Longword(GetOrdProp(Instance, PropInfo)));
+    Value := Pointer(GetInterfaceProp(Instance, PropInfo));
     WriteStopTag;
     PermanentRegister.WriteInterface(PropInfo^.Name, Self, Value);
   end;

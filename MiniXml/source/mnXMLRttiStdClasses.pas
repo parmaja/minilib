@@ -144,8 +144,14 @@ end;
 { TmnXMLRttiProfileItems }
 
 function TmnXMLRttiProfileItems.CreateObject(Instance: TObject; const ClassName, Name: string): TObject;
+var
+  AClass: TClass;
 begin
-  Result := TmnXMLItems(Instance).CreateItem;
+  AClass := FindClass(ClassName);
+  if (AClass = nil) or AClass.InheritsFrom(TmnXMLItem) then // if we not found the class we will pass AClass as nil and make XMLItems create is childs
+    Result := TmnXMLItems(Instance).CreateItem(TmnXMLItemClass(AClass))
+  else
+    raise EmnXMLException.Create('Not support this class '+ ClassName);
 end;
 
 procedure TmnXMLRttiProfileItems.ReadStart;
@@ -155,8 +161,7 @@ begin
   (TObject(Instance) as TmnXMLItems).Clear;
 end;
 
-procedure TmnXMLRttiProfileItems.Write(Writer: TmnXMLRttiCustomWriter;
-  Instance: Pointer);
+procedure TmnXMLRttiProfileItems.Write(Writer: TmnXMLRttiCustomWriter; Instance: Pointer);
 var
   I:Integer;
 begin

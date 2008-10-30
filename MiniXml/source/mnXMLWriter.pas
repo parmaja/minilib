@@ -36,6 +36,8 @@ type
   public
     constructor Create; override;
     destructor Destroy; override;
+    //Return tabs/spaces to put before write line in smart mode
+    function GetIndents: string;
     //WriteStartTag like <name wotk wit StopTag
     //without add attribute and te > sign
     procedure WriteStartTag(const Name: string);
@@ -80,7 +82,7 @@ begin
     end;
   end;
   if Smart and FTaging and (Tabs <> '') then
-    Stream.WriteString(Stream.EndOfLine + RepeatString(Tabs, FOpenedTags.Count) + '</' + Name + '>')
+    Stream.WriteString(Stream.EndOfLine + GetIndents + '</' + Name + '>')
   else
     Stream.WriteString('</' + Name + '>');
   FTaging := True;
@@ -108,6 +110,11 @@ begin
     while FOpenedTags.Count > 0 do
       WriteCloseTag;
   end;
+end;
+
+function TmnXMLWriter.GetIndents: string;
+begin
+  Result := RepeatString(Tabs, FOpenedTags.Count);
 end;
 
 procedure TmnXMLWriter.DoStart;

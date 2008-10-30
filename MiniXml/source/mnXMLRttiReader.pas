@@ -66,7 +66,7 @@ type
 
   TmnXMLRttiReader = class(TmnXMLRttiCustomRead)
   private
-    function CreateFiler(const PropertyName: string; Instance: TObject; IsInterface:Boolean): TmnXMLRttiFiler;
+    function CreateFiler(const PropertyName: string; Instance: Pointer; IsInterface:Boolean): TmnXMLRttiFiler;
   protected
     procedure ReadAttributes(const Text: string); override;
     procedure ReadText(const Text: string); override; //value of property
@@ -204,6 +204,7 @@ var
   PropInfo: PPropInfo;
   aObject: TObject;
   aFiler: TmnXMLRttiFiler;
+  aInstance: Pointer;
 begin
   CurrentTag := Name;
   if Name = 'Object' then
@@ -227,7 +228,11 @@ begin
     begin
       if PropInfo^.PropType^.Kind in [tkClass, tkInterface] then
       begin
-        (Owner as TmnXMLRttiReader).Stack.Push((Owner as TmnXMLRttiReader).CreateFiler(Name, TObject(GetOrdProp(TObject(Instance), Name)), PropInfo^.PropType^.Kind = tkInterface));
+        if PropInfo^.PropType^.Kind = tkInterface then//use this way more safe when build in packages for delphi projects 
+          aInstance := Pointer(GetInterfaceProp(TObject(Instance), Name))
+        else
+          aInstance := Pointer(GetObjectProp(TObject(Instance), Name));
+        (Owner as TmnXMLRttiReader).Stack.Push((Owner as TmnXMLRttiReader).CreateFiler(Name, aInstance, PropInfo^.PropType^.Kind = tkInterface));
       end
     end
     else
@@ -447,7 +452,7 @@ begin
   (Owner as TmnXMLRttiReader).Stack.Push(TmnXMLRttiSkipFiler.Create(Owner, Instance));
 end;
 
-function TmnXMLRttiReader.CreateFiler(const PropertyName: string; Instance: TObject; IsInterface:Boolean): TmnXMLRttiFiler;
+function TmnXMLRttiReader.CreateFiler(const PropertyName: string; Instance: Pointer; IsInterface:Boolean): TmnXMLRttiFiler;
 begin
   Result := PermanentRegister.CreateFiler(Self, PropertyName, Instance, IsInterface, TmnXMLRttiObjectFiler)
 end;

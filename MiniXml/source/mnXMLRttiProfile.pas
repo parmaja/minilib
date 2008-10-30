@@ -28,6 +28,7 @@ type
   TmnXMLProfileStates = set of (psChanged, psLoading, psSaving);
 
   { TmnXMLProfile }
+  
   TmnXMLProfile = class(TPersistent, IStreamPersist)
   private
     FAge: TDateTime;
@@ -86,6 +87,8 @@ type
   public
   end;
 
+  TmnXMLItemClass = class of TmnXMLItem;
+
   { TmnXMLItems }
 
   TmnXMLItems = class(TmnXMLItem)
@@ -98,7 +101,7 @@ type
     function GetOwnsObjects: Boolean;
     procedure SetOwnsObjects(const Value: Boolean);
   protected
-    function DoCreateItem: TmnXMLItem; virtual; abstract;
+    function DoCreateItem(AClass: TmnXMLItemClass): TmnXMLItem; virtual; 
   public
     constructor Create(AOwnsObjects: Boolean = True);
     destructor Destroy; override;
@@ -114,7 +117,7 @@ type
     function IndexOf(AItem: TmnXMLItem): Integer;
     function First: TmnXMLItem;
     function Last: TmnXMLItem;
-    function CreateItem: TmnXMLItem;
+    function CreateItem(AClass: TmnXMLItemClass): TmnXMLItem;
     property Count: Integer read GetCount write SetCount;
     property OwnsObjects: Boolean read GetOwnsObjects write SetOwnsObjects;
     property Items[Index: Integer]: TmnXMLItem read GetItem write SetItem; default;
@@ -577,9 +580,9 @@ begin
   (FList as TMyObjectList).FItems := Self;
 end;
 
-function TmnXMLItems.CreateItem: TmnXMLItem;
+function TmnXMLItems.CreateItem(AClass: TmnXMLItemClass): TmnXMLItem;
 begin
-  Result := DoCreateItem;
+  Result := DoCreateItem(AClass);
   Add(Result);
 end;
 
@@ -592,6 +595,11 @@ destructor TmnXMLItems.Destroy;
 begin
   FreeAndNil(FList);
   inherited;
+end;
+
+function TmnXMLItems.DoCreateItem(AClass: TmnXMLItemClass): TmnXMLItem;
+begin
+  Result := AClass.Create;
 end;
 
 procedure TmnXMLItems.Exchange(Index1, Index2: Integer);
