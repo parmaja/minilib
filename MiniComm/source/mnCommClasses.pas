@@ -335,6 +335,7 @@ end;
 
 function TmnCustomCommStream.WaitEvent(const Events: TComEvents): TComEvents;
 begin
+  Result := [];
 end;
 
 function TmnCustomCommStream.Write(const Buffer; Count: Integer): Integer;

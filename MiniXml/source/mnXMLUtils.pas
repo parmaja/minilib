@@ -399,9 +399,9 @@ var
 
   function IsDefaultInterfaceProp: Boolean;
   var
-    Value: Pointer;
+    Value: IInterface;
   begin
-    Value := Pointer(GetOrdProp(Instance, PropInfo));
+    Value := GetInterfaceProp(Instance, PropInfo);
     Result := Value = nil;
   end;
 begin

@@ -48,7 +48,7 @@ type
     property Items[Index: Integer]: TmncCommand read GetItem write SetItem; default;
   end;
 
-  TmncCodepageConvert = (cpcNone, cpcAnsi, cpcUnicode, cpcUTF8);
+  TmncCodepageConvert = (cpcNone, cpcAnsi, cpcUTF8, cpcUnicode);
 
 //Connection as like connect by FTP server to send commands or a Database to send SQL
 {
@@ -976,6 +976,7 @@ end;
 
 function TmncField.GetVariant: Variant;
 begin
+  Result := null;
   raise EmncException.Create('You must not use it!');
 end;
 

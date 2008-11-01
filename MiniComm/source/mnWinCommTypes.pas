@@ -45,8 +45,8 @@ const
   dcb_RTSControl       = $00003000;
   dcb_AbortOnError     = $00004000;
 
-  cOverlapped: array[Boolean] of Integer = (0, FILE_FLAG_OVERLAPPED);
-  cWriteThrough: array[Boolean] of Integer = (0, FILE_FLAG_WRITE_THROUGH);//not Inteter
+  cOverlapped: array[Boolean] of Cardinal = (0, FILE_FLAG_OVERLAPPED);
+  cWriteThrough: array[Boolean] of Cardinal = (0, FILE_FLAG_WRITE_THROUGH);//not Inteter
 
   cParityBits: array[TParityBits] of Integer =
     (NOPARITY, ODDPARITY, EVENPARITY, MARKPARITY, SPACEPARITY);

@@ -140,7 +140,7 @@ end;
 
 function TmnESCPOSPrinter.GetSEQ_RasterBitImage(W, H: Word): string;
 var
-  c:Integer;
+  c: Word;
 begin
   c := W div 8;
   if (W mod 8) > 0 then

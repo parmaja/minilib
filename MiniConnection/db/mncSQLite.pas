@@ -61,7 +61,7 @@ type
 
   TmncSQLiteCommand = class(TmncSQLCommand)
   private
-    FStatment:PPsqlite3_stmt;
+    FStatment: PPsqlite3_stmt;
     FTail: pchar;
     FBOF: Boolean;
     FEOF: Boolean;

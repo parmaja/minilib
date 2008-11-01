@@ -1,8 +1,8 @@
 unit ucputils;
 
-{$ifdef FPC}
-{$mode delphi}
-{$endif}
+{$IFDEF FPC}
+{$MODE delphi}
+{$ENDIF}
 
 interface
 
@@ -10,52 +10,53 @@ uses
   SysUtils, Variants, Classes;
 
 type
-  TMBToWC_Proc = procedure (S:AnsiChar; var R: WideChar);
-  TWCToMB_Proc = procedure (S:WideChar;var R: AnsiChar);
+  TMBToWC_Proc = procedure(S: AnsiChar; var R: WideChar);
+  TWCToMB_Proc = procedure(S: WideChar; var R: AnsiChar);
 
-function ucpAnsiToUnicode(const S:AnsiString):WideString; overload;
-function ucpAnsiToUnicode(const S:AnsiString; Proc:Tmbtowc_proc):WideString; overload;
+function ucpAnsiToUnicode(const S: AnsiString): WideString; overload;
+function ucpAnsiToUnicode(const S: AnsiString; Proc: Tmbtowc_proc): WideString; overload;
 
-function ucpUnicodeToAnsi(const S:WideString):AnsiString; overload;
-function ucpUnicodeToAnsi(const S:WideString; Proc:Twctomb_proc):AnsiString; overload;
+function ucpUnicodeToAnsi(const S: WideString): AnsiString; overload;
+function ucpUnicodeToAnsi(const S: WideString; Proc: Twctomb_proc): AnsiString; overload;
 
-procedure ucpInstall(MBToWCProc:Tmbtowc_proc; WCtoMBProc:Twctomb_proc{$ifdef FPC}; Hook:Boolean = True{$endif});
+procedure ucpInstall(MBToWCProc: Tmbtowc_proc; WCtoMBProc: Twctomb_proc{$IFDEF FPC}; Hook: Boolean = True{$ENDIF});
 
 implementation
 
 uses
-  ucp1250;//the default code page
+  ucp1250; //the default code page
 
 type
   TucpConverter = record
-    MBToWCProc: procedure (S:AnsiChar; var R: WideChar);
-    WCToMBProc: procedure (S:WideChar;var R: AnsiChar);
+    MBToWCProc: procedure(S: AnsiChar; var R: WideChar);
+    WCToMBProc: procedure(S: WideChar; var R: AnsiChar);
   end;
-  
+
 var
   FConverter: TucpConverter;
 
-{$ifdef FPC}
-procedure Ansi2WideMove(source:pchar;var dest:widestring; len: SizeInt);
+{$IFDEF FPC}
+
+procedure Ansi2WideMove(source: pAnsiChar; var dest: widestring; len: SizeInt);
 begin
   dest := ucpAnsiToUnicode(source);
 end;
 
-procedure Wide2AnsiMove(source:pwidechar;var dest:ansistring; len: SizeInt);
+procedure Wide2AnsiMove(source: pwidechar; var dest: ansistring; len: SizeInt);
 begin
   dest := ucpUnicodeToAnsi(source);
 end;
-{$endif}
+{$ENDIF}
 
-procedure ucpInstall(MBToWCProc:Tmbtowc_proc; WCtoMBProc:Twctomb_proc{$ifdef FPC}; Hook:Boolean{$endif});
-{$ifdef FPC}
+procedure ucpInstall(MBToWCProc: Tmbtowc_proc; WCtoMBProc: Twctomb_proc{$IFDEF FPC}; Hook: Boolean{$ENDIF});
+{$IFDEF FPC}
 var
   Manager: TWideStringManager;
-{$endif}
+{$ENDIF}
 begin
   FConverter.MBToWCProc := MBToWCProc;
   FConverter.WCToMBProc := WCtoMBProc;
-  {$ifdef FPC}
+{$IFDEF FPC}
   if Hook then
   begin
     GetWideStringManager(Manager);
@@ -63,10 +64,10 @@ begin
     Manager.Wide2AnsiMoveProc := Wide2AnsiMove;
     SetWideStringManager(Manager);
   end;
-  {$endif}
+{$ENDIF}
 end;
 
-function ucpAnsiToUnicode(const s: AnsiString; Proc:Tmbtowc_proc): WideString; overload;
+function ucpAnsiToUnicode(const s: AnsiString; Proc: Tmbtowc_proc): WideString; overload;
 var
   i: Integer;
   r: WideChar;
@@ -81,12 +82,12 @@ begin
   end;
 end;
 
-function ucpAnsiToUnicode(const S: AnsiString):WideString; overload;
+function ucpAnsiToUnicode(const S: AnsiString): WideString; overload;
 begin
   Result := ucpAnsiToUnicode(S, FConverter.MBToWCProc);
 end;
 
-function ucpUnicodeToAnsi(const S:WideString; Proc:Twctomb_proc):AnsiString; overload;
+function ucpUnicodeToAnsi(const S: WideString; Proc: Twctomb_proc): AnsiString; overload;
 var
   i: Integer;
   r: AnsiChar;
@@ -101,7 +102,9 @@ begin
   end;
 end;
 
-function ucpUnicodeToAnsi(const S:WideString):AnsiString; overload;
+function ucpUnicodeToAnsi(const S: WideString): AnsiString; overload;
+var
+  ico:Integer;
 begin
   Result := ucpUnicodeToAnsi(S, FConverter.WCToMBProc);
 end;
@@ -110,3 +113,4 @@ initialization
   FConverter.MBToWCProc := cp1250_mbtowc;
   FConverter.WCToMBProc := cp1250_wctomb;
 end.
+

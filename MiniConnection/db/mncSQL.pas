@@ -57,6 +57,7 @@ var
 begin
   //TODO stored procedures and trigger must not check param in budy procedure
   sProcessedSQL := '';
+  sParamName := '';
   slNames := TStringList.Create;
   try
     { Do some initializations of variables }

@@ -342,11 +342,6 @@ begin
   end;
 end;
 
-function MakeWhere(const vSql: string): string;
-begin
-
-end;
-
 procedure AppendWhere(var vSql: string; const vWhere: string); overload;
 begin
   if vWhere <> '' then
