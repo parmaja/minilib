@@ -1,0 +1,20 @@
+msgid ""
+msgstr ""
+"Last-Translator: Zaher\n"
+"PO-Revision-Date: 2008-08-02 23:08+0200\n"
+"Language-Team: Arabic <test@test.test>\n"
+"Project-Id-Version: \n"
+"POT-Creation-Date: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Poedit-Language: Arabic\n"
+
+#: lazarusidestrconsts:srkmcommand1
+msgid "command1"
+msgstr "√„—1"
+
+#: lazarusidestrconsts:srkmcommand2
+msgid "command2"
+msgstr "√„—2"
+

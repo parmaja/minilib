@@ -19,7 +19,7 @@ function ucpAnsiToUnicode(const S: AnsiString; Proc: Tmbtowc_proc): WideString; 
 function ucpUnicodeToAnsi(const S: WideString): AnsiString; overload;
 function ucpUnicodeToAnsi(const S: WideString; Proc: Twctomb_proc): AnsiString; overload;
 
-procedure ucpInstall(MBToWCProc: Tmbtowc_proc; WCtoMBProc: Twctomb_proc{$IFDEF FPC}; Hook: Boolean = True{$ENDIF});
+procedure ucpInstall(MBToWCProc: Tmbtowc_proc; WCtoMBProc: Twctomb_proc{$IFDEF FPC}; Hook: Boolean{$ENDIF});
 
 implementation
 
