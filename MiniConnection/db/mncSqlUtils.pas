@@ -67,6 +67,7 @@ procedure AppendAndStr(var vSql: string; const vFieldName: string; Value: string
 procedure AppendAndVariant(var vSql: string; const vFieldName: string; Value: Variant; vEqual: string = '='; vAndOr: string = 'and');
 procedure AppendAndCustom(var vSql: string; const vCustStr: string; vAndOr: string = 'and');
 procedure AppendAndBool(var vSql: string; const vFieldName: string; Value: Boolean; vEqual: string = '='; vAndOr: string = 'and');
+procedure AppendAndIntBool(var vSql: string; const vFieldName: string; Value: Boolean; vEqual: string = '='; vAndOr: string = 'and');
 
 
 function ForSelect(Table: string; Fields: array of string; Keys: array of string; ExtraFields: array of string): string; overload;
@@ -322,6 +323,19 @@ begin
   if (vSql <> '') then
     vSql := vSql + ' ' + vAndOr;
   aStr := DBBool(Value);
+  vSql := vSql + ' (' + DBName(vFieldName) + vEqual + aStr + ')' + #13;
+end;
+
+procedure AppendAndIntBool(var vSql: string; const vFieldName: string; Value: Boolean; vEqual: string; vAndOr: string);
+var
+  aStr: string;
+begin
+  if (vSql <> '') then
+    vSql := vSql + ' ' + vAndOr;
+  if Value then
+    aStr := '1'
+  else
+    aStr := '0';
   vSql := vSql + ' (' + DBName(vFieldName) + vEqual + aStr + ')' + #13;
 end;
 

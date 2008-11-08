@@ -16,13 +16,13 @@ unit mncSQLite;
 interface
 
 uses
-  Classes, SysUtils, Variants, 
+  Classes, SysUtils, Variants, StrUtils,
   {$ifdef FPC}
   sqlite3,
   {$else}
   mncSQLiteHeader,
   {$endif}
-  mnStreams, mncConnections, mncSQL;
+  mnUtils, mnStreams, mncConnections, mncSQL;
 
 type
   TmncSQLiteConnection = class(TmncConnection)
@@ -137,6 +137,9 @@ end;
 procedure TmncSQLiteSession.DoStart;
 begin
   ExecuteSQL('PRAGMA TEMP_STORE=MEMORY');//for WINCE
+  ExecuteSQL('PRAGMA full_column_names=0');
+  ExecuteSQL('PRAGMA short_column_names=1');
+  ExecuteSQL('PRAGMA encoding = "UTF-8"');
   ExecuteSQL('BEGIN');
 end;
 
@@ -381,7 +384,7 @@ begin
   for i := 0 to c -1 do
   begin
 //    sqlite3_column_type
-    aName := sqlite3_column_name(FStatment, i);
+    aName :=  DequoteStr(sqlite3_column_name(FStatment, i));
     Fields.Add(aName);
   end;
 end;

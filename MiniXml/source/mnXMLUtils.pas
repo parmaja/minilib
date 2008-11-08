@@ -16,7 +16,8 @@ unit mnXMLUtils;
 interface
 
 uses
-  Classes, SysUtils, Typinfo, Variants;
+  Classes, SysUtils, Typinfo, Variants,
+  mnUtils;
 
 const
   sNotWellFormed = 'not well-formed';
@@ -47,8 +48,6 @@ function ScanIdentifier(const s: string; Start: Integer): Integer;
 function ScanQuoted(SubStr, Text: string): Integer;
 function CreateAttStrings(const Attributes: string): TStrings;
 procedure ReadAttStrings(Strings: TStrings; const Attributes: string);
-function DequoteStr(Str: string): string;
-function QuoteStr(Str: string; QuoteChar: string = '"'): string;
 function CutStr(const ID, S: string; Dequote: Boolean = False): string;
 function ExpandToPath(FileName: string; Path: string): string;
 function StringsToString(Strings: TStrings; LineBreak: string = sLineBreak): string;
@@ -181,52 +180,6 @@ function CreateAttStrings(const Attributes: string): TStrings; overload;
 begin
   Result := TStringList.Create;
   ReadAttStrings(Result, Attributes);
-end;
-
-function QuoteStr(Str, QuoteChar: string): string;
-begin
-  if Str = '' then
-    Result := QuoteChar + QuoteChar
-  else
-  begin
-    if Str[1] = '"' then
-    begin
-      if Str[Length(Str)] <> '"' then
-        Result := Result + '"'
-    end
-    else if Str[1] = '''' then
-    begin
-      if Str[Length(Str)] <> '''' then
-        Result := Result + '''';
-    end
-    else
-      Result := QuoteChar + Str + QuoteChar;
-  end;
-end;
-
-function DequoteStr(Str: string): string;
-begin
-  if Str = '' then
-    Result := ''
-  else
-  begin
-    if Str[1] = '"' then
-    begin
-      if Str[Length(Str)] = '"' then
-        Result := MidStr(Str, 2, Length(Str) - 2)
-      else
-        Result := MidStr(Str, 2, Length(Str) - 1)
-    end
-    else if Str[1] = '''' then
-    begin
-      if Str[Length(Str)] = '''' then
-        Result := MidStr(Str, 2, Length(Str) - 2)
-      else
-        Result := MidStr(Str, 2, Length(Str) - 1)
-    end
-    else
-      Result := Str;
-  end;
 end;
 
 function CutStr(const ID, S: string; Dequote: Boolean = False): string;

@@ -16,7 +16,8 @@ unit mnXML;
 interface
 
 uses
-  Classes, SysUtils, mnXMLStreams, mnXMLUtils, Contnrs;
+  Classes, SysUtils, Contnrs,
+  mnXMLStreams, mnXMLUtils, mnUtils;
 
 type
   TmnBoolean = (Default, Yes, No);
