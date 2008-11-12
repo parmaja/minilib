@@ -28,6 +28,8 @@ const
 type
   EmnStreamException = class(Exception);
   
+  { TmnSocketStream }
+
   TmnSocketStream = class(TStream)
   private
     FTimeout: Integer;
@@ -35,6 +37,7 @@ type
     function GetConnected: Boolean;
     procedure FreeSocket;
   protected
+    procedure DoError(S: string); virtual;
     function CreateSocket: TmnCustomSocket; virtual;
   public
     constructor Create(vSocket: TmnCustomSocket); virtual;
@@ -52,14 +55,18 @@ type
     property Connected: Boolean read GetConnected;
   end;
 
+  { TmnConnectionStream }
+
   TmnConnectionStream = class(TmnSocketStream)
   private
     FBuffer: PChar;
+    FEOFOnError: Boolean;
     FPos: PChar;
     FEnd: PChar;
     FBufferSize: Cardinal;
     FEOF: Boolean;
   protected
+    procedure DoError(S: string); override;
   public
     constructor Create(vSocket: TmnCustomSocket = nil); override;
     destructor Destroy; override;
@@ -74,8 +81,10 @@ type
     function WriteString(const Value: string): Cardinal;
     function WriteStrings(const Value: TStrings; EOL: string = sEOL): Cardinal;
     function WriteLn(const Value: string; EOL: string = sEOL): Cardinal;
-    function WriteEOF(EOL: string = sEOL): Cardinal;
+    function WriteEOL(EOL: string = sEOL): Cardinal;
     procedure WriteCommand(const Command: string; const Params: string = '');
+    //EOFOnError:True socket not raise an error just make EOF flag
+    property EOFOnError: Boolean read FEOFOnError write FEOFOnError default False;
   end;
 
 implementation
@@ -84,15 +93,18 @@ implementation
 
 destructor TmnSocketStream.Destroy;
 begin
-  Disconnect;
-  inherited;
+  try
+    Disconnect;
+  finally
+    inherited;
+  end;
 end;
 
 function TmnSocketStream.Write(const Buffer; Count: Longint): Longint;
 begin
   if not Connected then
-    raise EmnStreamException.Create('SocketStream not connected');
-  if WaitToWrite(FTimeout) then
+    DoError('SocketStream not connected')
+  else if WaitToWrite(FTimeout) then
   begin
     if Socket.Send(Buffer, Count) >= erClosed then
     begin
@@ -112,23 +124,26 @@ end;
 function TmnSocketStream.Read(var Buffer; Count: Longint): Longint;
 begin
   if not Connected then
-    raise EmnStreamException.Create('SocketStream not connected');
-  if (Count = -1) then
-    Count := Socket.RecvLength;
-  if WaitToRead(FTimeout) then
+    DoError('SocketStream not connected')
+  else
   begin
-    if (Socket = nil) or (Socket.Receive(Buffer, Count) >= erClosed) then
+    if (Count = -1) then
+      Count := Socket.RecvLength;
+    if WaitToRead(FTimeout) then
+    begin
+      if (Socket = nil) or (Socket.Receive(Buffer, Count) >= erClosed) then
+      begin
+        FreeSocket;
+        Result := 0;
+      end
+      else
+        Result := Count;
+    end
+    else
     begin
       FreeSocket;
       Result := 0;
-    end
-    else
-      Result := Count;
-  end
-  else
-  begin
-    FreeSocket;
-    Result := 0;
+    end;
   end;
 end;
 
@@ -271,12 +286,20 @@ begin
   end;
 end;
 
-function TmnConnectionStream.WriteEOF(EOL: string): Cardinal;
+function TmnConnectionStream.WriteEOL(EOL: string): Cardinal;
 begin
   Result := WriteString(EOL);
 end;
 
 { TmnConnectionStream }
+
+procedure TmnConnectionStream.DoError(S: string);
+begin
+  if FEOFOnError then
+    FEOF := True
+  else
+    inherited;
+end;
 
 constructor TmnConnectionStream.Create(vSocket: TmnCustomSocket);
 begin
@@ -406,6 +429,11 @@ end;
 procedure TmnSocketStream.FreeSocket;
 begin
   FreeAndNil(FSocket);
+end;
+
+procedure TmnSocketStream.DoError(S: string);
+begin
+  raise EmnStreamException.Create(S);
 end;
 
 procedure TmnSocketStream.Shutdown;

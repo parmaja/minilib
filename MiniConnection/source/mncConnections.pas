@@ -131,6 +131,15 @@ type
   private
     FName: string;
     procedure SetAsNullString(const Value: string);
+
+    function GetAsAnsiString: ansistring;
+    procedure SetAsAnsiString(const Value: ansistring);
+
+    function GetAsWideString: widestring;
+    procedure SetAsWideString(const Value: widestring);
+
+    function GetAsUtf8String: UTF8String;
+    procedure SetAsUtf8String(const Value: UTF8String);
   protected
     function GetVariant: Variant; virtual; abstract;
     procedure SetVariant(const Value: Variant); virtual; abstract;
@@ -166,6 +175,11 @@ type
   public
     property Value: Variant read GetVariant write SetVariant;
     property AsVariant: Variant read GetVariant write SetVariant;
+    //AsAnsiString: Convert strign to utf8 it is special for Lazarus
+    property AsAnsiString: ansistring read GetAsAnsiString write SetAsAnsiString;
+
+    property AsWideString: widestring read GetAsWideString write SetAsWideString;
+    property AsUtf8String: Utf8String read GetAsUtf8String write SetAsUtf8String;
     property AsString: string read GetAsString write SetAsString;
     property AsTrimString: string read GetAsTrimString write SetAsTrimString;
     property AsNullString: string read GetAsString write SetAsNullString;
@@ -1211,6 +1225,37 @@ end;
 procedure TmncCustomField.SetAsString(const Value: string);
 begin
   Self.Value := Value;
+end;
+
+function TmncCustomField.GetAsAnsiString: ansistring;
+begin
+  Result := Utf8ToAnsi(GetAsString);
+end;
+
+procedure TmncCustomField.SetAsAnsiString(const Value: ansistring);
+begin
+  //fpc not auto convert because string type it same with ansistring
+  SetAsString(AnsiToUtf8(Value));
+end;
+
+function TmncCustomField.GetAsWideString: widestring;
+begin
+  Result := GetAsString;//the compiler will convert it
+end;
+
+procedure TmncCustomField.SetAsWideString(const Value: widestring);
+begin
+  SetAsString(Value);
+end;
+
+function TmncCustomField.GetAsUtf8String: UTF8String;
+begin
+  Result := GetAsString;//the compiler will convert it
+end;
+
+procedure TmncCustomField.SetAsUtf8String(const Value: UTF8String);
+begin
+  SetAsString(Value);
 end;
 
 procedure TmncCustomField.SetAsTime(const Value: TDateTime);

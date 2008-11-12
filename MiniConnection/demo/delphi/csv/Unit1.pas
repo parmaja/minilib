@@ -39,6 +39,7 @@ begin
       aStream := TFileStream.Create('c:\test1.csv', fmCreate);
       try
         Cmd := TmncCSVCommand.Create(Session, aStream, csvmWrite);
+        Cmd.EOFOnEmpty := True;
         Cmd.Fields.Add('Name');
         Cmd.Fields.Add('Address');
 
@@ -61,7 +62,7 @@ begin
   end;
 end;
 
-
+{$define NO_HEADER}
 procedure TForm1.Button2Click(Sender: TObject);
 var
   Conn: TmncCSVConnection;
@@ -74,10 +75,19 @@ begin
   try
     Conn.Connect;
     Session := TmncCSVSession.Create(Conn);
+    //if no header
+    {$ifdef NO_HEADER}
+    Session.HaveHeader := False;
+    {$endif}
     try
       aStream := TFileStream.Create('c:\test1.csv', fmOpenRead);
       try
         Cmd := TmncCSVCommand.Create(Session, aStream, csvmRead);
+    {$ifdef NO_HEADER}
+        Cmd.Fields.Add('Name');
+        Cmd.Fields.Add('Address');
+    {$endif}
+        Cmd.EOFOnEmpty := True;
         Cmd.Execute;
         while not Cmd.EOF do
         begin

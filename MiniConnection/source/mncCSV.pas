@@ -56,15 +56,16 @@ type
     FCSVStream: TmnStream;
     FStream: TStream;
     FMode: TmncCSVMode;
+    FEOFOnEmpty: Boolean;
     function GetConnection: TmncCSVConnection;
     function GetSession: TmncCSVSession;
   protected
-    procedure LoadHeader;
     procedure PrepareParams;
+    procedure LoadHeader;
     procedure SaveHeader;
     procedure LoadRecord;
     procedure SaveRecord;
-    function ReadLine: TStringList;
+    function ReadLine(var Strings: TStringList): Boolean;
     procedure WriteLine(S: string); //Because i am not trust with Strings.Text
     procedure DoPrepare; override;
     procedure DoExecute; override;
@@ -78,6 +79,8 @@ type
     constructor Create(vSession: TmncSession; vStream: TStream; vMode: TmncCSVMode);
     destructor Destroy; override;
     property Mode: TmncCSVMode read FMode;
+    //EOFOnEmpty: when True make EOF when read empty line  
+    property EOFOnEmpty: Boolean read FEOFOnEmpty write FEOFOnEmpty;
   end;
 
 implementation
@@ -197,15 +200,19 @@ var
   i: Integer;
 begin
   Fields.Clear;
-  aStrings := ReadLine;
-  try
-    for i := 0 to aStrings.Count - 1 do
-    begin
-      Fields.Add(i, aStrings[i]); //TODO must Dequote
+  if ReadLine(aStrings) then
+  begin
+    try
+      for i := 0 to aStrings.Count - 1 do
+      begin
+        Fields.Add(i, aStrings[i]); //TODO must Dequote
+      end;
+    finally
+      aStrings.Free;
     end;
-  finally
-    aStrings.Free;
-  end;
+  end
+  else
+    FreeAndNil(FCSVStream);//close it for make EOF
 end;
 
 procedure TmncCSVCommand.LoadRecord;
@@ -214,17 +221,21 @@ var
   aRecord: TmncRecord;
   i: Integer;
 begin
-  aRecord := TmncRecord.Create(Fields);
-  aStrings := ReadLine;
-  try
-    for i := 0 to aStrings.Count - 1 do
-    begin
-      aRecord.Add(i, aStrings[i]); //TODO must Dequote
+  if ReadLine(aStrings) then
+  begin
+    aRecord := TmncRecord.Create(Fields);
+    try
+      for i := 0 to aStrings.Count - 1 do
+      begin
+        aRecord.Add(i, aStrings[i]); //TODO must Dequote
+      end;
+    finally
+      aStrings.Free;
     end;
-  finally
-    aStrings.Free;
-  end;
-  Current := aRecord;
+    Current := aRecord;
+  end
+  else
+    FreeAndNil(FCSVStream);//close it for make EOF
 end;
 
 procedure TmncCSVCommand.PrepareParams;
@@ -238,14 +249,17 @@ begin
   Params := aParams;
 end;
 
-function TmncCSVCommand.ReadLine: TStringList;
+function TmncCSVCommand.ReadLine(var Strings: TStringList): Boolean;
 var
   s: string;
 begin
   s := '';
-  Result := TStringList.Create;
+  Strings := TStringList.Create;
   FCSVStream.ReadLn(s);
-  ExtractStrings([Session.SpliteChar], [], PChar(s), Result);
+  s := Trim(s);
+  Result := (s <> '') or not (EOFOnEmpty);
+  if Result then
+    ExtractStrings([Session.SpliteChar], [], PChar(s), Strings);
 end;
 
 procedure TmncCSVCommand.SaveHeader;

@@ -1,0 +1,20 @@
+{ This is an automatically generated lazarus resource file }
+
+LazarusResources.Add('TForm1','FORMDATA',[
+  'TPF0'#6'TForm1'#5'Form1'#4'Left'#3'"'#1#6'Height'#3','#1#3'Top'#3#158#0#5'Wi'
+  +'dth'#3#22#2#18'HorzScrollBar.Page'#3#21#2#18'VertScrollBar.Page'#3'+'#1#7'C'
+  +'aption'#6#3'Tea'#12'ClientHeight'#3','#1#11'ClientWidth'#3#22#2#0#6'TLabel'
+  +#6'Label1'#4'Left'#2#8#6'Height'#2#14#3'Top'#2#28#5'Width'#2' '#7'Caption'#6
+  +#6'Label1'#11'ParentColor'#8#0#0#6'TLabel'#6'Label2'#4'Left'#2#8#6'Height'#2
+  +#14#3'Top'#2'B'#5'Width'#2' '#7'Caption'#6#6'Label2'#11'ParentColor'#8#0#0#5
+  +'TEdit'#5'Edit1'#4'Left'#2'0'#6'Height'#2#23#3'Top'#2#24#5'Width'#3#157#0#8
+  +'TabOrder'#2#0#4'Text'#6#10'9879879879'#0#0#5'TEdit'#5'Edit2'#4'Left'#2'0'#6
+  +'Height'#2#23#3'Top'#2'='#5'Width'#3#157#0#8'TabOrder'#2#1#0#0#7'TButton'#7
+  +'Button1'#4'Left'#2#24#6'Height'#2#25#3'Top'#2'`'#5'Width'#2'K'#7'Caption'#6
+  +#7'Encrypt'#7'OnClick'#7#12'Button1Click'#8'TabOrder'#2#2#0#0#7'TButton'#7'B'
+  +'utton2'#4'Left'#2'h'#6'Height'#2#25#3'Top'#2'`'#5'Width'#2'K'#7'Caption'#6#7
+  +'Decrypt'#7'OnClick'#7#12'Button2Click'#8'TabOrder'#2#3#0#0#8'TListBox'#8'Li'
+  +'stBox1'#4'Left'#3#216#0#6'Height'#3#0#1#3'Top'#2' '#5'Width'#3' '#1#8'TabOr'
+  +'der'#2#4#0#0#7'TButton'#7'Button3'#4'Left'#3#217#0#6'Height'#2#25#3'Top'#2#3
+  +#5'Width'#2'K'#7'Caption'#6#4'Test'#8'TabOrder'#2#5#0#0#0
+]);

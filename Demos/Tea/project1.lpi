@@ -1,0 +1,168 @@
+<?xml version="1.0"?>
+<CONFIG>
+  <ProjectOptions>
+    <PathDelim Value="\"/>
+    <Version Value="6"/>
+    <General>
+      <MainUnit Value="0"/>
+      <IconPath Value="./"/>
+      <TargetFileExt Value=".exe"/>
+    </General>
+    <VersionInfo>
+      <ProjectVersion Value=""/>
+      <Language Value=""/>
+      <CharSet Value=""/>
+    </VersionInfo>
+    <PublishOptions>
+      <Version Value="2"/>
+      <IgnoreBinaries Value="False"/>
+      <IncludeFileFilter Value="*.(pas|pp|inc|lfm|lpr|lrs|lpi|lpk|sh|xml)"/>
+      <ExcludeFileFilter Value="*.(bak|ppu|ppw|o|so);*~;backup"/>
+    </PublishOptions>
+    <RunParams>
+      <local>
+        <FormatVersion Value="1"/>
+        <LaunchingApplication PathPlusParams="/usr/X11R6/bin/xterm -T 'Lazarus Run Output' -e $(LazarusDir)/tools/runwait.sh $(TargetCmdLine)"/>
+      </local>
+    </RunParams>
+    <RequiredPackages Count="1">
+      <Item1>
+        <PackageName Value="LCL"/>
+      </Item1>
+    </RequiredPackages>
+    <Units Count="13">
+      <Unit0>
+        <Filename Value="project1.lpr"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="project1"/>
+        <UsageCount Value="25"/>
+      </Unit0>
+      <Unit1>
+        <Filename Value="Unit1.pas"/>
+        <ComponentName Value="Form1"/>
+        <IsPartOfProject Value="True"/>
+        <ResourceFilename Value="Unit1.lrs"/>
+        <UnitName Value="Unit1"/>
+        <CursorPos X="6" Y="49"/>
+        <TopLine Value="36"/>
+        <UsageCount Value="25"/>
+      </Unit1>
+      <Unit2>
+        <Filename Value="..\..\lib\tea.pas"/>
+        <UnitName Value="tea"/>
+        <CursorPos X="2" Y="146"/>
+        <TopLine Value="111"/>
+        <UsageCount Value="12"/>
+      </Unit2>
+      <Unit3>
+        <Filename Value="..\..\lib\GPSUtils.pas"/>
+        <UnitName Value="GPSUtils"/>
+        <CursorPos X="1" Y="2"/>
+        <TopLine Value="1"/>
+        <UsageCount Value="9"/>
+      </Unit3>
+      <Unit4>
+        <Filename Value="V:\programs\lazarus\fpc\src\rtl\inc\systemh.inc"/>
+        <CursorPos X="14" Y="482"/>
+        <TopLine Value="469"/>
+        <UsageCount Value="12"/>
+      </Unit4>
+      <Unit5>
+        <Filename Value="V:\programs\lazarus\fpc\src\rtl\inc\system.inc"/>
+        <CursorPos X="4" Y="240"/>
+        <TopLine Value="238"/>
+        <UsageCount Value="12"/>
+      </Unit5>
+      <Unit6>
+        <Filename Value="V:\programs\lazarus\fpc\src\rtl\inc\generic.inc"/>
+        <CursorPos X="5" Y="1708"/>
+        <TopLine Value="1705"/>
+        <UsageCount Value="9"/>
+      </Unit6>
+      <Unit7>
+        <Filename Value="V:\programs\lazarus\fpc\src\rtl\win\systhrd.inc"/>
+        <CursorPos X="10" Y="33"/>
+        <TopLine Value="32"/>
+        <UsageCount Value="9"/>
+      </Unit7>
+      <Unit8>
+        <Filename Value="V:\programs\lazarus\fpc\src\rtl\inc\innr.inc"/>
+        <CursorPos X="4" Y="18"/>
+        <TopLine Value="5"/>
+        <UsageCount Value="9"/>
+      </Unit8>
+      <Unit9>
+        <Filename Value="V:\programs\lazarus\fpc\src\rtl\objpas\sysutils\sysstrh.inc"/>
+        <CursorPos X="10" Y="107"/>
+        <TopLine Value="94"/>
+        <UsageCount Value="9"/>
+      </Unit9>
+      <Unit10>
+        <Filename Value="U:\Encryption\tea.c"/>
+        <CursorPos X="1" Y="1"/>
+        <TopLine Value="1"/>
+        <UsageCount Value="9"/>
+        <SyntaxHighlighter Value="C++"/>
+      </Unit10>
+      <Unit11>
+        <Filename Value="V:\programs\lazarus\components\turbopower_ipro\ipstrms.pas"/>
+        <UnitName Value="IpStrms"/>
+        <CursorPos X="17" Y="154"/>
+        <TopLine Value="146"/>
+        <UsageCount Value="10"/>
+      </Unit11>
+      <Unit12>
+        <Filename Value="V:\programs\lazarus\tools\install\cross_unix\debian_crosswin32\postrm"/>
+        <CursorPos X="1" Y="1"/>
+        <TopLine Value="1"/>
+        <UsageCount Value="10"/>
+        <SyntaxHighlighter Value="None"/>
+      </Unit12>
+    </Units>
+    <JumpHistory Count="0" HistoryIndex="-1"/>
+  </ProjectOptions>
+  <CompilerOptions>
+    <Version Value="5"/>
+    <PathDelim Value="\"/>
+    <SearchPaths>
+      <OtherUnitFiles Value="W:\home\pascal\lib\minilib\lib\"/>
+    </SearchPaths>
+    <CodeGeneration>
+      <Generate Value="Faster"/>
+    </CodeGeneration>
+    <Linking>
+      <Options>
+        <Win32>
+          <GraphicApplication Value="True"/>
+        </Win32>
+      </Options>
+    </Linking>
+    <Other>
+      <CompilerPath Value="$(CompPath)"/>
+    </Other>
+  </CompilerOptions>
+  <Debugging>
+    <BreakPoints Count="3">
+      <Item1>
+        <Source Value="..\..\..\..\..\..\work\delphi\jobs\tacbord_sql\source\mpos\lib\mposProcesses.pas"/>
+        <Line Value="779"/>
+      </Item1>
+      <Item2>
+        <Source Value="..\..\..\..\..\..\work\delphi\jobs\tacbord_sql\source\mpos\lib\mposProcesses.pas"/>
+        <Line Value="1518"/>
+      </Item2>
+      <Item3>
+        <Source Value="..\..\..\..\..\..\work\delphi\jobs\tacbord_sql\source\mpos\lib\mposDBSessions.pas"/>
+        <Line Value="1460"/>
+      </Item3>
+    </BreakPoints>
+    <Exceptions Count="2">
+      <Item1>
+        <Name Value="ECodetoolError"/>
+      </Item1>
+      <Item2>
+        <Name Value="EFOpenError"/>
+      </Item2>
+    </Exceptions>
+  </Debugging>
+</CONFIG>

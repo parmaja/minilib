@@ -176,10 +176,11 @@ begin
           if aClass <> nil then
           begin
             FCommandObject := aClass.Create(Self, aParams);
-            FCommandObject.FServer:=Listener.Server;
-            FCommandObject.FName := aCommand;
+            FCommandObject.FServer := Listener.Server;
+            FCommandObject.FName := UpperCase(aCommand);
 //            Listener.Log(Self, aCommand);
           end;
+          //TODO make a default command if not found
         finally
           Listener.Leave;
         end;
@@ -248,7 +249,7 @@ function TmnCommandServer.RegisterCommand(vName: string; CommandClass: TmnComman
 begin
   if FCommands.Find(vName) <> nil then
     raise TmnCommandExceotion.Create('Command already exists: ' + vName);
-  Result := FCommands.Add(vName, CommandClass);
+  Result := FCommands.Add(UpperCase(vName), CommandClass);
 end;
 
 function TmnCommandListener.GetCommandClass(const Name: string): TmnCommandClass;
@@ -317,7 +318,7 @@ end;
 
 function TmnCommandServer.RegisterCommand(CommandClass: TmnCommandClass): Integer;
 begin
-  Result := RegisterCommand(CommandClass.GetCommandName, CommandClass);
+  Result := RegisterCommand(UpperCase(CommandClass.GetCommandName), CommandClass);
 end;
 
 end.
