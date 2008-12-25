@@ -50,9 +50,9 @@ type
     function Send(const Buffer; var Count: Longint): TmnError; override;
     function Shutdown(How: TmnShutdown): TmnError; override;
     function Listen: TmnError; override;
+    function GetLocalAddress: ansistring; override;
+    function GetRemoteAddress: ansistring; override;
     function GetLocalName: string; override;
-    function GetLocalAddress: string; override;
-    function GetRemoteAddress: string; override;
     function GetRemoteName: string; override;
   end;
 
@@ -64,8 +64,8 @@ type
   public
     constructor Create; override;
     destructor Destroy; override;
-    function Bind(Options: TmnOptions; const Port: string; const Address: string = ''): TmnCustomSocket; override;
-    function Connect(Options: TmnOptions; const Port: string; const Address: string = ''): TmnCustomSocket; override;
+    function Bind(Options: TmnOptions; const Port: ansistring; const Address: ansistring = ''): TmnCustomSocket; override;
+    function Connect(Options: TmnOptions; const Port: ansistring; const Address: ansistring = ''): TmnCustomSocket; override;
     procedure Startup; override;
     procedure Cleanup; override;
   end;
@@ -294,7 +294,7 @@ begin
   Result := not ((Value = SOCKET_ERROR) or (WithZero and (Value = 0)));
 end;
 
-function TmnWinSocket.GetRemoteAddress: string;
+function TmnWinSocket.GetRemoteAddress: ansistring;
 var
   SockAddrIn: TSockAddrIn;
   Size: Integer;
@@ -312,6 +312,7 @@ var
   SockAddrIn: TSockAddrIn;
   Size: Integer;
   aHostEnt: PHostEnt;
+  s: ansistring;
 begin
   CheckActive;
   Size := SizeOf(SockAddrIn);
@@ -319,27 +320,34 @@ begin
   begin
     aHostEnt := gethostbyaddr(@SockAddrIn.sin_addr.s_addr, 4, PF_INET);
     if aHostEnt <> nil then
-      Result := aHostEnt.h_name
+      s := aHostEnt.h_name
     else
-      Result := '';
+      s := '';
   end
   else
-    Result := '';
+    s := '';
+  Result := s;
 end;
 
-function TmnWinSocket.GetLocalAddress: string;
+function TmnWinSocket.GetLocalAddress: ansistring;
 var
-  aName: string;
-  aAddr: PChar;
+  aName: AnsiString;
+  aAddr: PAnsiChar;
   sa: TInAddr;
   aHostEnt: PHostEnt;
 begin
   CheckActive;
-  aName := GetLocalName;
+  SetLength(aName, 250);
+{$IFDEF FPC}
+  WinSock2.gethostname(PChar(aName), Length(aName));
+{$ELSE}
+  WinSock.gethostname(PAnsiChar(aName), Length(aName));
+{$ENDIF}
+  aName := PAnsiChar(aName);
 {$IFDEF FPC}
   aHostEnt := WinSock2.gethostbyname(PChar(aName));
 {$ELSE}
-  aHostEnt := WinSock.gethostbyname(PChar(aName));
+  aHostEnt := WinSock.gethostbyname(PAnsiChar(aName));
 {$ENDIF}
   if aHostEnt <> nil then
   begin
@@ -360,15 +368,18 @@ begin
 end;
 
 function TmnWinSocket.GetLocalName: string;
+var
+  s: ansistring;
 begin
   CheckActive;
-  SetLength(Result, 250);
+  SetLength(s, 250);
 {$IFDEF FPC}
-  WinSock2.gethostname(PChar(result), Length(Result));
+  WinSock2.gethostname(PChar(s), Length(s));
 {$ELSE}
-  WinSock.gethostname(PChar(result), Length(Result));
+  WinSock.gethostname(PAnsiChar(s), Length(s));
 {$ENDIF}
-  Result := string(PChar(result));
+  s := PAnsiChar(s);
+  Result := s;
 end;
 
 procedure TmnWinSocket.Cancel;
@@ -400,12 +411,12 @@ const
   SO_TRUE:Longbool=True;
   SO_FALSE:Longbool=False;
 
-function TmnWinWallSocket.Bind(Options: TmnOptions; const Port: string; const Address: string): TmnCustomSocket;
+function TmnWinWallSocket.Bind(Options: TmnOptions; const Port: ansistring; const Address: ansistring): TmnCustomSocket;
 var
   aHandle: TSocket;
   aSockAddr: TSockAddr;
   aHostEnt: PHostEnt;
-  aAddr: array[0..3] of char;
+  aAddr: array[0..3] of AnsiChar;
 begin
   aHandle := socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
   if aHandle = INVALID_SOCKET then
@@ -417,7 +428,7 @@ begin
     WinSock2.setsockopt(aHandle, SOL_SOCKET, SO_REUSEADDR, PChar(@SO_TRUE), SizeOf(SO_TRUE));
   {$ENDIF}
 {$ELSE}
-    WinSock.setsockopt(aHandle, SOL_SOCKET, SO_REUSEADDR, PChar(@SO_TRUE), SizeOf(SO_TRUE));
+    WinSock.setsockopt(aHandle, SOL_SOCKET, SO_REUSEADDR, PAnsiChar(@SO_TRUE), SizeOf(SO_TRUE));
 {$ENDIF}
 
   aSockAddr.sin_family := AF_INET;
@@ -426,10 +437,10 @@ begin
     aSockAddr.sin_addr.s_addr := INADDR_ANY
   else
   begin
-    aSockAddr.sin_addr.s_addr := inet_addr(PChar(Address));
+    aSockAddr.sin_addr.s_addr := inet_addr(PAnsiChar(Address));
     if aSockAddr.sin_addr.s_addr = INADDR_NONE then
     begin
-      aHostEnt := gethostbyname(PChar(Address));
+      aHostEnt := gethostbyname(PAnsiChar(Address));
       if aHostEnt <> nil then
       begin
         Move(aHostEnt.h_addr^, aAddr, aHostEnt.h_length);
@@ -473,12 +484,12 @@ begin
   Inc(FCount)
 end;
 
-function TmnWinWallSocket.Connect(Options: TmnOptions; const Port, Address: string): TmnCustomSocket;
+function TmnWinWallSocket.Connect(Options: TmnOptions; const Port, Address: ansistring): TmnCustomSocket;
 var
   aHandle: TSocket;
   aSockAddr: TSockAddr;
   aHostEnt: PHostEnt;
-  aAddr: PChar;
+  aAddr: PAnsiChar;
 begin
   aHandle := socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
   if aHandle = INVALID_SOCKET then
@@ -487,10 +498,10 @@ begin
   aSockAddr.sin_family := AF_INET;
   aSockAddr.sin_port := htons(LookupPort(Port));
 
-  aSockAddr.sin_addr.s_addr := inet_addr(PChar(Address));
+  aSockAddr.sin_addr.s_addr := inet_addr(PAnsiChar(Address));
   if aSockAddr.sin_addr.s_addr = INADDR_NONE then
   begin
-    aHostEnt := gethostbyname(PChar(Address));
+    aHostEnt := gethostbyname(PAnsiChar(Address));
     if aHostEnt <> nil then
     begin
       Move(aHostEnt.h_addr^, aAddr, aHostEnt.h_length);
@@ -513,5 +524,3 @@ end;
 initialization                                                                                                  
   RegisterWallSocket(TmnWinWallSocket.Create);
 end.
-
- 

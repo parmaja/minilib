@@ -23,6 +23,7 @@ package MiniTranslator;
 {$MINENUMSIZE 1}
 {$IMAGEBASE $400000}
 {$DESCRIPTION 'MiniTranslator Localizer'}
+{$RUNONLY}
 {$IMPLICITBUILD OFF}
 
 requires
@@ -30,8 +31,9 @@ requires
   vcl;
 
 contains
-  LangClasses in '..\source\LangClasses.pas',	
+  LangClasses in '..\source\LangClasses.pas',
   LangSupports in '..\source\LangSupports.pas',
   LangUtils in '..\source\LangUtils.pas',
   PO_Languages in '..\source\PO_Languages.pas';
+
 end.

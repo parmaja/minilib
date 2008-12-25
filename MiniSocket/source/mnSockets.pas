@@ -51,9 +51,9 @@ type
     function Accept: TmnCustomSocket; virtual; abstract;
     procedure Cancel; virtual; abstract;
     property Active: Boolean read GetActive;
-    function GetLocalAddress: string; virtual; abstract;
+    function GetLocalAddress: ansistring; virtual; abstract;
+    function GetRemoteAddress: ansistring; virtual; abstract;
     function GetLocalName: string; virtual; abstract;
-    function GetRemoteAddress: string; virtual; abstract;
     function GetRemoteName: string; virtual; abstract;
   end;
 
@@ -62,8 +62,8 @@ type
   public
     constructor Create; virtual;
     destructor Destroy; override;
-    function Bind(Options: TmnOptions; const Port: string; const Address: string = ''): TmnCustomSocket; virtual; abstract;
-    function Connect(Options: TmnOptions; const Port: string; const Address: string = ''): TmnCustomSocket; virtual; abstract;
+    function Bind(Options: TmnOptions; const Port: ansistring; const Address: ansistring = ''): TmnCustomSocket; virtual; abstract;
+    function Connect(Options: TmnOptions; const Port: ansistring; const Address: ansistring = ''): TmnCustomSocket; virtual; abstract;
     procedure Startup; virtual; abstract;
     procedure Cleanup; virtual; abstract;
   end;
