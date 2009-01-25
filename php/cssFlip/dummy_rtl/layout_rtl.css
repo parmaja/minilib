@@ -1,0 +1,19 @@
+BODY {
+  direction: rtl;
+}
+
+DIV.postfootright {
+   TEXT-ALIGN: left;
+}
+
+DIV.postleft, DIV.postfootleft {
+  FLOAT:right;
+  WIDTH: 18em;
+  OVERFLOW: hidden;
+}
+
+DIV.postright, DIV.postfootright {
+   BORDER-right-color: #A2FFBA;    
+   BORDER-right-WIDTH: 18em;    
+   BORDER-right-STYLE: solid;
+}

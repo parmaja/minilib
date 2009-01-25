@@ -1,0 +1,11 @@
+BODY {
+  direction: rtl;
+}
+
+A {
+    background-color: Yellow;;
+    BACKGROUND-IMAGE: url(new.gif);
+    BACKGROUND-REPEAT: no-repeat;
+    background-position: right;
+    padding-left: 12px;
+}

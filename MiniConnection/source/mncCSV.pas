@@ -17,7 +17,7 @@ interface
 
 uses
   Classes, SysUtils, Variants,
-  mncConnections, mnStreams;
+  mnUtils, mncConnections, mnStreams;
 
 type
   TmncCSVConnection = class(TmncConnection)
@@ -200,12 +200,13 @@ var
   i: Integer;
 begin
   Fields.Clear;
+  aStrings := nil;
   if ReadLine(aStrings) then
   begin
     try
       for i := 0 to aStrings.Count - 1 do
       begin
-        Fields.Add(i, aStrings[i]); //TODO must Dequote
+        Fields.Add(i, DequoteStr(aStrings[i]));
       end;
     finally
       aStrings.Free;
@@ -227,7 +228,7 @@ begin
     try
       for i := 0 to aStrings.Count - 1 do
       begin
-        aRecord.Add(i, aStrings[i]); //TODO must Dequote
+        aRecord.Add(i, DequoteStr(aStrings[i]));
       end;
     finally
       aStrings.Free;
@@ -259,7 +260,7 @@ begin
   s := Trim(s);
   Result := (s <> '') or not (EOFOnEmpty);
   if Result then
-    ExtractStrings([Session.SpliteChar], [], PChar(s), Strings);
+    StrToStrings(s, Strings, [Session.SpliteChar], [#0, #13, #10], True, ['"']);
 end;
 
 procedure TmncCSVCommand.SaveHeader;

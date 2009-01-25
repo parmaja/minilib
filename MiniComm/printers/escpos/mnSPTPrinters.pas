@@ -29,7 +29,7 @@ type
 
   TSPTIIIPrinter = class(TmnESCPOSPrinter)
   protected
-    procedure GetInitBitImageCommands(var S:string); override;
+    procedure GetInitBitImageCommands(var S: string); override;
   public
     constructor Create(Style: TmnPrintStyle; Stream: TStream); override;
   end;
