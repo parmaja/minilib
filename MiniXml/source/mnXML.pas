@@ -91,8 +91,8 @@ type
 
   TmnXMLAttribute = class(TmnXMLObject)
   private
-    FValue: string;
     FName: string;
+    FValue: string;
     function GetValue: string;
   public
     property Name: string read FName write FName; //write not sure if needed

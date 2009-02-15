@@ -26,7 +26,7 @@ const
 
 const
   OPEN_IDENTIFIER_CHARS = ['A'..'Z', 'a'..'z', '_'];
-  IDENTIFIER_CHARS = OPEN_IDENTIFIER_CHARS + ['0'..'9', '-', '.'];
+  IDENTIFIER_CHARS = OPEN_IDENTIFIER_CHARS + ['0'..'9', '-', '.', ':']; //for : xdebug send tag like xdebug:message
   sXMLAnsiOpen = '<?xml '; //with the space
   sCloseComment = '-->';
   sCDATA = 'CDATA';

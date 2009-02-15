@@ -612,7 +612,7 @@ begin
   Result := FList.Extract(AItem) as TmnXMLItem;
 end;
 
-function TmnXMLItems.First: TmnXMLItem;
+function TmnXMLItems.First: TmnXMLItem;                              
 begin
   Result := FList.First as TmnXMLItem;
 end;

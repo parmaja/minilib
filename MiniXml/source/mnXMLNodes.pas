@@ -84,10 +84,11 @@ type
     constructor Create; virtual;
     destructor Destroy; override;
     procedure Clear;
+    function GetAttribute(Name, Attribute: string; Default: string = ''): string;
     property Empty:Boolean read GetEmpty;
     property Current: TmnXMLNode read FCurrent;
     property Root: TmnXMLNode read FRoot;
-    property Items[Index:string]:TmnXMLNode read GetItems; default;
+    property Items[Index: string]:TmnXMLNode read GetItems; default;
     //Enhanced = true it is useful when need to rewrite the xml data, when Enhanced = false mean we take the nodes for proceess the data, the comment will ignored and all text and cdata merged
     property Enhanced: Boolean read FEnhanced write FEnhanced default False;
   end;
@@ -307,6 +308,32 @@ destructor TmnXMLNodes.Destroy;
 begin
   FreeAndNil(FRoot);
   inherited;
+end;
+
+function TmnXMLNodes.GetAttribute(Name, Attribute, Default: string): string;
+var
+  aNode: TmnXMLNode;
+  aAttribute: TmnXMLAttribute;
+begin
+  if FRoot = nil then
+    Result := Default
+  else
+  begin
+    if FRoot.Name = Name then
+      aNode := FRoot
+    else
+      aNode := Items[Name];
+    if aNode = nil then
+      Result := Default
+    else
+    begin
+      aAttribute := aNode.Attributes.Find(Attribute);
+      if aAttribute = nil then
+        Result := Default
+      else
+        Result := aAttribute.Value;
+    end;
+  end;
 end;
 
 function TmnXMLNodes.GetEmpty: Boolean;

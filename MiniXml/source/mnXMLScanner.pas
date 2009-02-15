@@ -447,7 +447,7 @@ begin
     //There is a header and it is a Ansi document
     FStarted := True;
     FCompleted := False;
-    Column := Column + Length(sXMLAnsiOpen) + 1; //put the column to the first char of attributes of xml document
+    Column := Column + Length(sXMLAnsiOpen); //put the column to the first char of attributes of xml document
     ChangeState(ssHeader);
   end
   else
