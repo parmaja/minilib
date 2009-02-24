@@ -76,8 +76,9 @@ type
   public
     constructor Create(ASDL: TmnSDL);
     destructor Destroy; override;
-    procedure Open(Name:string; Size: Integer);
-    function RenderText(Text:string; Color: TColor):TmnSDLCustomSurface;
+    procedure Open(Name: string; Size: Integer);
+    function Render(Text: string; Color: TColor):TmnSDLCustomSurface;
+    function RenderUnicode(Text: widestring; Color: TColor):TmnSDLCustomSurface;
     procedure Close;
   end;
 
@@ -293,7 +294,7 @@ begin
   //FName := Name;
 end;
 
-function TSDLTTF.RenderText(Text: string; Color: TColor): TmnSDLCustomSurface;
+function TSDLTTF.Render(Text: string; Color: TColor): TmnSDLCustomSurface;
 var
   aSDL_Surface: PSDL_Surface;
   SDLColor: TSDL_Color;
@@ -301,8 +302,29 @@ var
 begin
   SDLColor := ColorToSDLColor(Color);
   SDLColor2 := ColorToSDLColor(clRed);
-  //aSDL_Surface := TTF_RenderText_Shaded(FFont, PChar(Text), SDLColor, SDLColor2);
+  //aSDL_Surface := TTF_Render_Shaded(FFont, PChar(Text), SDLColor, SDLColor2);
   aSDL_Surface := TTF_RenderText_Blended(FFont, PChar(Text), SDLColor);
+  if aSDL_Surface <> nil then
+  begin
+    Result := TmnSDLSurface.Create(FSDL);
+    Result.FSDL_Surface := aSDL_Surface;
+  end
+  else
+    Result := nil;
+end;
+
+function TSDLTTF.RenderUnicode(Text: widestring; Color: TColor): TmnSDLCustomSurface;
+var
+  aSDL_Surface: PSDL_Surface;
+  SDLColor: TSDL_Color;
+  SDLColor2: TSDL_Color;
+  p: Pointer;
+begin
+  SDLColor := ColorToSDLColor(Color);
+  SDLColor2 := ColorToSDLColor(clRed);
+  //aSDL_Surface := TTF_RenderText_Shaded(FFont, PChar(Text), SDLColor, SDLColor2);
+  p := PWideChar(Text);
+  aSDL_Surface := TTF_RenderUNICODE_Blended(FFont, p, SDLColor);
   if aSDL_Surface <> nil then
   begin
     Result := TmnSDLSurface.Create(FSDL);
