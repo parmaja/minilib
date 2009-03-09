@@ -50,7 +50,6 @@ type
     FAddress: string;
     FList: TmnConnectionList;
     FOnLog: TmnOnLog;
-    FOnChanged: TmnOnListenerNotify;
     FServer: TmnServer;
     procedure Connect;
     procedure Disconnect;
@@ -59,11 +58,12 @@ type
   protected
     FOptions: TmnOptions;
     function CreateConnection(Socket: TmnCustomSocket): TmnServerConnection; virtual;
-    procedure Shutdown;
+    procedure Prepare; virtual; // called before add a new connection
+    procedure Shutdown; virtual; 
     procedure Execute; override;
-    procedure Changed;
-    procedure Remove(Connection: TmnServerConnection);
-    procedure Add(Connection: TmnServerConnection);
+    procedure Changed; virtual; 
+    procedure Remove(Connection: TmnServerConnection); virtual;
+    procedure Add(Connection: TmnServerConnection); virtual; 
   public
     constructor Create; virtual;
     destructor Destroy; override;
@@ -76,7 +76,6 @@ type
     property Count: Integer read GetCount;
     property Options: TmnOptions read FOptions;
     property OnLog: TmnOnLog read FOnLog write FOnLog;
-    property OnChanged: TmnOnListenerNotify read FOnChanged write FOnChanged;
   end;
 
   TmnServer = class(TComponent)
@@ -91,6 +90,7 @@ type
     FOnAfterClose: TNotifyEvent;
     FOnLog: TmnOnLog;
     FOnChanged: TmnOnListenerNotify;
+    FOnPrepare: TmnOnListenerNotify;
     procedure SetActive(const Value: Boolean);
     procedure SetAddress(const Value: string);
     procedure SetPort(const Value: string);
@@ -98,6 +98,7 @@ type
   protected
     function CreateListener: TmnListener; virtual;
     procedure DoChanged(Listener: TmnListener); virtual;
+    procedure DoPrepare(Listener: TmnListener); virtual;
     procedure DoBeforeOpen; virtual;
     procedure DoAfterOpen; virtual;
     procedure DoBeforeClose; virtual;
@@ -122,6 +123,7 @@ type
     property OnBeforeClose: TNotifyEvent read FOnBeforeClose write FOnBeforeClose;
     property OnLog: TmnOnLog read FOnLog write FOnLog;
     property OnChanged: TmnOnListenerNotify read FOnChanged write FOnChanged;
+    property OnPrepare: TmnOnListenerNotify read FOnPrepare write FOnPrepare;
   end;
 
 implementation
@@ -197,6 +199,15 @@ begin
   end;
 end;
 
+procedure TmnServer.DoPrepare(Listener: TmnListener);
+begin
+  if not (csDestroying in ComponentState) then
+  begin
+    if Assigned(FOnPrepare) then
+      FOnPrepare(Listener);
+  end;
+end;
+
 procedure TmnServer.DoBeforeClose;
 begin
   if not (csDestroying in ComponentState) then
@@ -238,10 +249,8 @@ end;
 
 procedure TmnListener.Changed;
 begin
-  if Assigned(FOnChanged) then
-  begin
-    FOnChanged(Self);
-  end;
+  if FServer <> nil then
+    FServer.DoChanged(Self);
 end;
 
 procedure TmnListener.Connect;
@@ -306,10 +315,11 @@ begin
         else
         begin
           try
-            aConnection := CreateConnection(aSocket);
-            aConnection.Listener := Self;
             Enter; //because we add connection to a thread list
             try
+              Prepare;
+              aConnection := CreateConnection(aSocket);
+              aConnection.Listener := Self;
               aConnection.Start;
             finally
               Leave;
@@ -346,6 +356,12 @@ begin
       Leave;
     end;
   end;
+end;
+
+procedure TmnListener.Prepare;
+begin
+  if FServer <> nil then
+    FServer.DoPrepare(Self);
 end;
 
 procedure TmnListener.Remove(Connection: TmnServerConnection);
@@ -419,7 +435,6 @@ begin
       try
         FListener := CreateListener;
         FListener.OnLog := OnLog;
-        FListener.OnChanged := DoChanged;
         FListener.FServer := Self;
         FListener.FPort := FPort;
         FListener.FAddress := Address;

@@ -176,7 +176,7 @@ constructor TmnStream.Create(AStream: TStream; Owned: Boolean = True);
 begin
   inherited Create;
   if AStream = nil then
-    raise EmnStreamException.Create('CapStream not accept Stream = nil');
+    raise EmnStreamException.Create('Stream = nil');
   FStreamOwned := Owned;
   FStream := AStream;
   FBufferSize := cBufferSize;

@@ -136,7 +136,7 @@ end;
 function GetText(const ID: string): string;
 var
   s: string;
-begin
+begin           
   if LangFindText(ID, s) then
     Result := s
   else
