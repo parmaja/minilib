@@ -15,7 +15,7 @@ unit PO_Languages;
 interface
 
 uses
-  Windows, Messages, 
+  Windows, Messages,
   SysUtils, Variants, Classes, Contnrs,
   LangClasses;
 
@@ -60,10 +60,10 @@ uses
 const
   ssMsgId = 'msgid ';
   ssMsgStr = 'msgstr ';
+  ssComment = '#';
   ssFlags = '#, ';
   ssReference = '#: ';
   ssAutoComment = '#. ';
-  ssComment = '# ';
   ssMsgPlural = 'msgid_plural '; //not yet
   ssMsgStrs = 'msgstr['; //not yet
 
@@ -142,10 +142,10 @@ var
 
   function CheckComments: Boolean;
   begin
-    Result := CheckAndCut(FLangItem.Comment, ssComment) or
-      CheckAndCut(FLangItem.AutoComment, ssAutoComment) or
+    Result := CheckAndCut(FLangItem.AutoComment, ssAutoComment) or
       CheckAndCut(FLangItem.Flags, ssFlags) or
-      CheckAndCut(FLangItem.Reference, ssReference);
+      CheckAndCut(FLangItem.Reference, ssReference) or
+      CheckAndCut(FLangItem.Comment, ssComment);
   end;
 
   function CheckNewText: Boolean;
@@ -156,12 +156,6 @@ var
       CreateLangItem;
       FState := poMsgID;
       FLangItem.ID := DequoteStr(Trim(MidStr(aLine, Length(ssMsgID) + 1, MaxInt)));
-    end
-    else if LeftStr(aLine, Length(ssComment)) = ssComment then
-    begin
-      CreateLangItem;
-      FState := poComment;
-      FLangItem.Comment := MidStr(aLine, Length(ssComment) + 1, MaxInt);
     end
     else if LeftStr(aLine, Length(ssAutoComment)) = ssAutoComment then
     begin
@@ -174,6 +168,12 @@ var
       CreateLangItem;
       FState := poComment;
       FLangItem.Flags := MidStr(aLine, Length(ssFlags), MaxInt);
+    end
+    else if LeftStr(aLine, Length(ssComment)) = ssComment then
+    begin
+      CreateLangItem;
+      FState := poComment;
+      FLangItem.Comment := MidStr(aLine, Length(ssComment) + 1, MaxInt);
     end
     else
       Result := False;
@@ -231,7 +231,7 @@ var
   s: string;
   p: Integer;
   i: Integer;
-  aList:TStringList;
+  aList: TStringList;
   ForceUTF8: Boolean;
 begin
   ForceUTF8 := False;
@@ -254,7 +254,7 @@ begin
   begin
     s := Contents.GetText('');
     ExtractStrings([#13], [' '], PChar(s), Contents.Settings);
-    for  i := 0 to Contents.Settings.Count -1 do
+    for i := 0 to Contents.Settings.Count - 1 do
     begin
       s := Trim(Contents.Settings[i]);
       p := Pos(':', s);
@@ -362,7 +362,7 @@ procedure TPO_Parser.Generate(Strings: TStringList);
   begin
     with Item do
     begin
-      WriteComments(ssComment, Comment);
+      WriteComments(ssComment + ' ', Comment);
       WriteComments(ssAutoComment, AutoComment);
       WriteComments(ssFlags, Flags);
       WriteComments(ssReference, Reference);
@@ -374,7 +374,7 @@ procedure TPO_Parser.Generate(Strings: TStringList);
 var
   i: Integer;
 begin
-  for i := 0 to Contents.Count -1 do
+  for i := 0 to Contents.Count - 1 do
   begin
     WriteItem(Contents[i]);
   end;

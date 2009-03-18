@@ -139,7 +139,6 @@ type
 
   TLanguages = class(TObjectList)
   private
-    FNotifyObjects: TInterfaceList;
     FDefaultLanguage: TLanguage;
     FCurrentLanguage: TLanguage;
     FUseDefaultText: Boolean;
@@ -148,12 +147,9 @@ type
     function GetItem(Index: Integer): TLanguage;
     procedure SetItem(Index: Integer; const Value: TLanguage);
     function GetCurrent: TLanguage;
-    procedure NotifyObjects;
   public
     constructor Create;
     destructor Destroy; override;
-    procedure AddNotify(AObject: ILanguageRead);
-    procedure RemoveNotify(AObject: ILanguageRead);
     function Add(Language: TLanguage): Integer;
     procedure ResetCurrentLanguage;
     procedure SetCurrentLanguage(const Name: string; Safe: Boolean = False);
@@ -192,10 +188,23 @@ type
 
   TLangParserClass = class of TLangParser;
 
+  TLangNotifier = class(TObject)
+  private
+    FNotifyObjects: TInterfaceList;
+  protected
+    procedure NotifyObjects(const LanguageInfo: TLanguageInfo);
+  public
+    constructor Create;
+    destructor Destroy; override;
+    procedure AddNotify(AObject: ILanguageRead);
+    procedure RemoveNotify(AObject: ILanguageRead);
+  end;
+
 const
   sUTF8BOM: array[1..3] of char = (#$EF, #$BB, #$BF);
 
 function Languages: TLanguages;
+function LangNotifier: TLangNotifier;
 procedure InitLanguages(LanguagesClass:TLanguagesClass = nil);
 function LangFindText(const ID: string; var Value: string): Boolean;
 
@@ -207,6 +216,7 @@ implementation
 
 var
   FLanguages: TLanguages = nil;
+  FLangNotifier: TLangNotifier = nil;
 
 function LangFindText(const ID: string; var Value: string): Boolean;
 begin
@@ -214,6 +224,13 @@ begin
     Result := FLanguages.GetText(ID, Value)
   else
     Result := False;
+end;
+
+function LangNotifier: TLangNotifier;
+begin
+  if FLangNotifier = nil then
+    FLangNotifier := TLangNotifier.Create;
+  Result := FLangNotifier;
 end;
 
 function Languages: TLanguages;
@@ -341,17 +358,9 @@ begin
   Result := inherited Add(Language);
 end;
 
-procedure TLanguages.AddNotify(AObject: ILanguageRead);
-begin
-  if not Supports(AObject, ILanguageRead) then
-    raise ELangException.Create('Object must support of ILanguageRead');
-  FNotifyObjects.Add(AObject);
-end;
-
 constructor TLanguages.Create;
 begin
   inherited Create;
-  FNotifyObjects := TInterfaceList.Create;
 end;
 
 function TLanguages.FindLanguage(const Name: string): TLanguage;
@@ -437,11 +446,6 @@ begin
   end;
 end;
 
-procedure TLanguages.RemoveNotify(AObject: ILanguageRead);
-begin
-  FNotifyObjects.Remove(AObject);  
-end;
-
 procedure TLanguages.ResetCurrentLanguage;
 begin
   FCurrentLanguage := nil;
@@ -461,7 +465,7 @@ begin
   if FCurrentLanguage = nil then
     raise ELangException.Create('Language "' + Name + '" not found');
   if OldLanguage <> FCurrentLanguage then
-    NotifyObjects;
+    LangNotifier.NotifyObjects(Current.Info);
 end;
 
 procedure TLanguages.SetDefaultLanguage(const Name: string);
@@ -477,7 +481,6 @@ end;
 
 destructor TLanguages.Destroy;
 begin
-  FreeAndNil(FNotifyObjects);
   inherited;
 end;
 
@@ -496,16 +499,6 @@ begin
   if i >= Count then
     i := 0;
   Result := Items[i].Name;
-end;
-
-procedure TLanguages.NotifyObjects;
-var
-  i: Integer;
-begin
-  for i := 0 to FNotifyObjects.Count -1 do
-  begin
-    ILanguageRead(FNotifyObjects[i]).LanguageChanged(Current.Info);
-  end;
 end;
 
 { TLangContents }
@@ -620,9 +613,46 @@ begin
   FContents := AContents;
 end;
 
+{ TLangNotifier }
+
+procedure TLangNotifier.AddNotify(AObject: ILanguageRead);
+begin
+  if not Supports(AObject, ILanguageRead) then
+    raise ELangException.Create('Object must support of ILanguageRead');
+  FNotifyObjects.Add(AObject);
+end;
+
+constructor TLangNotifier.Create;
+begin
+  FNotifyObjects := TInterfaceList.Create;
+end;
+
+destructor TLangNotifier.Destroy;
+begin
+  FreeAndNil(FNotifyObjects);
+  inherited;
+end;
+
+procedure TLangNotifier.NotifyObjects(const LanguageInfo: TLanguageInfo);
+var
+  i: Integer;
+begin
+  for i := 0 to FNotifyObjects.Count -1 do
+  begin
+    ILanguageRead(FNotifyObjects[i]).LanguageChanged(LanguageInfo);
+  end;
+end;
+
+procedure TLangNotifier.RemoveNotify(AObject: ILanguageRead);
+begin
+  FNotifyObjects.Remove(AObject);
+end;
+
 initialization
   FLanguages := nil;
+  FLangNotifier := nil;
 finalization
   FreeAndNil(FLanguages);
+  FreeAndNil(FLangNotifier);
 end.
 
