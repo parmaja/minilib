@@ -10,7 +10,7 @@ unit mnServers;
 {$M+}
 {$H+}
 {$IFDEF FPC}
-{$mode delphi}
+{$MODE delphi}
 {$ENDIF}
 
 interface
@@ -59,11 +59,11 @@ type
     FOptions: TmnOptions;
     function CreateConnection(Socket: TmnCustomSocket): TmnServerConnection; virtual;
     procedure Prepare; virtual; // called before add a new connection
-    procedure Shutdown; virtual; 
+    procedure Shutdown; virtual;
     procedure Execute; override;
-    procedure Changed; virtual; 
+    procedure Changed; virtual;
     procedure Remove(Connection: TmnServerConnection); virtual;
-    procedure Add(Connection: TmnServerConnection); virtual; 
+    procedure Add(Connection: TmnServerConnection); virtual;
   public
     constructor Create; virtual;
     destructor Destroy; override;
@@ -320,10 +320,11 @@ begin
               Prepare;
               aConnection := CreateConnection(aSocket);
               aConnection.Listener := Self;
-              aConnection.Start;
+//              aConnection.Start;
             finally
               Leave;
             end;
+            aConnection.Start; //moved here need some test
           finally
           end;
         end;
@@ -349,11 +350,11 @@ procedure TmnListener.Log(Connection: TmnConnection; S: string);
 begin
   if Assigned(FOnLog) then
   begin
-    Enter;
+//    Enter;
     try
       FOnLog(Connection, S);
     finally
-      Leave;
+//      Leave;
     end;
   end;
 end;

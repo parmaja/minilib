@@ -10,7 +10,7 @@ unit mnConnections;
 {$M+}
 {$H+}
 {$IFDEF FPC}
-{$mode delphi}
+{$MODE delphi}
 {$ENDIF}
 
 interface

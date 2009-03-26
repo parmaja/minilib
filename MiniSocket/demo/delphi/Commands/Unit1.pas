@@ -6,11 +6,12 @@ unit Unit1;
  *            See the file COPYING.MLGPL, included in this distribution,
  * @author    Zaher Dirkey <zaher at parmaja dot com>
  *}
+ 
 interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms, Dialogs, StdCtrls,
-  mnWinSockets, mnSockets, mnServers, mnClients, mnStreams, mnConnections, mnCommandClients, mnCommandServers;
+  mnSockets, mnServers, mnClients, mnStreams, mnConnections, mnCommandServers;
 
 type
   TForm1 = class(TForm)
@@ -19,8 +20,6 @@ type
     Button1: TButton;
     Button2: TButton;
     Button3: TButton;
-    mnCommandClient: TmnCommandClient;
-    mnCommandServer: TmnCommandServer;
     procedure CommandClick(Sender: TObject);
     procedure Button2Click(Sender: TObject);
     procedure Button3Click(Sender: TObject);
@@ -28,6 +27,8 @@ type
     procedure Button1Click(Sender: TObject);
   private
     FStream:TmnClientStream;
+    //mnCommandClient: TmnCommandClient;
+    mnCommandServer: TmnCommandServer;
   public
     { Public declarations }
   end;

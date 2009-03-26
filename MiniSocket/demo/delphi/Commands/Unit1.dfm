@@ -1,9 +1,9 @@
 object Form1: TForm1
   Left = 223
   Top = 192
-  Width = 413
-  Height = 228
   Caption = 'Form1'
+  ClientHeight = 213
+  ClientWidth = 405
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -14,7 +14,7 @@ object Form1: TForm1
   OnCreate = FormCreate
   DesignSize = (
     405
-    201)
+    213)
   PixelsPerInch = 96
   TextHeight = 13
   object Command: TButton
@@ -63,17 +63,5 @@ object Form1: TForm1
     Caption = 'Stop'
     TabOrder = 4
     OnClick = Button3Click
-  end
-  object mnCommandClient: TmnCommandClient
-    Address = '0.0.0.0'
-    Left = 219
-    Top = 86
-  end
-  object mnCommandServer: TmnCommandServer
-    Port = '11011'
-    Address = '0.0.0.0'
-    Active = True
-    Left = 39
-    Top = 62
   end
 end

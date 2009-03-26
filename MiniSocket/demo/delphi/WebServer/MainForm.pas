@@ -10,7 +10,8 @@ interface
 
 uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
-  Registry, StdCtrls, ExtCtrls, mnWin32Sockets, mnConnections, mnSockets, mnServers, mnHttpServer;
+  Registry, StdCtrls, ExtCtrls, mnWin32Sockets, mnConnections, mnSockets, mnServers,
+  mnHttpServer;
 
 type
   TMain = class(TForm)
@@ -19,24 +20,23 @@ type
     RootEdit: TEdit;
     Label1: TLabel;
     StopBtn: TButton;
-    VirtualDomainsChk: TCheckBox;
     Label2: TLabel;
     PortEdit: TEdit;
     StayOnTopChk: TCheckBox;
     NumberOfThreadsLbl: TLabel;
     NumberOfThreads: TLabel;
     Bevel1: TBevel;
-    WebServer: TmnHttpServer;
     procedure StartBtnClick(Sender: TObject);
     procedure StopBtnClick(Sender: TObject);
-    procedure WebServerBeforeOpen(Sender: TObject);
-    procedure FormCreate(Sender: TObject);
     procedure StayOnTopChkClick(Sender: TObject);
+    procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
+  private
+    WebServer: TmnHttpServer;
+    procedure WebServerBeforeOpen(Sender: TObject);
     procedure WebServerAfterClose(Sender: TObject);
     procedure WebServerChanged(Listener: TmnListener);
     procedure WebServerLog(Connection: TmnConnection; const S: string);
-  private
   public
   end;
 
@@ -65,7 +65,7 @@ begin
   StopBtn.Enabled := True;
   WebServer.DocumentRoot := RootEdit.Text;
   WebServer.Port := PortEdit.Text;
-  WebServer.VirtualDomains := VirtualDomainsChk.Checked;
+//  WebServer.VirtualDomains := VirtualDomainsChk.Checked;
 end;
 
 function FindCmdLineValue(Switch: string; var Value: string; const Chars: TSysCharSet = ['/', '-']; Seprator: Char = ' '; IgnoreCase: Boolean = true): Boolean;
@@ -105,15 +105,24 @@ var
   s: string;
   aReg: TRegistry;
 begin
+  WebServer := TmnHttpServer.Create(Self);
+  WebServer.OnBeforeOpen := WebServerBeforeOpen;
+  WebServer.OnAfterClose := WebServerAfterClose;
+  WebServer.OnChanged := WebServerChanged;
+  WebServer.OnLog := WebServerLog; 
+  RootEdit.Text := ExpandFileName(ExtractFilePath(Application.ExeName) + '..\..\lazarus\WebServer\html\');
   if ParamCount = 0 then
   begin
     aReg := TRegistry.Create;
-    aReg.OpenKey('software\miniWebServer\Options', True);
-    if aReg.ValueExists('DocumentRoot') then
-      RootEdit.Text := aReg.ReadString('DocumentRoot');
-    if aReg.ValueExists('Port') then
-      PortEdit.Text := aReg.ReadString('Port');
-    aReg.Free;
+    try
+      aReg.OpenKey('software\miniWebServer\Options', True);
+      if aReg.ValueExists('DocumentRoot') then
+        RootEdit.Text := aReg.ReadString('DocumentRoot');
+      if aReg.ValueExists('Port') then
+        PortEdit.Text := aReg.ReadString('Port');
+    finally
+      aReg.Free;
+    end;
   end
   else
   begin
@@ -121,8 +130,6 @@ begin
       RootEdit.Text := AnsiDequotedStr(s, '"');
     if FindCmdLineValue('port', s) then
       PortEdit.Text := s;
-    if FindCmdLineValue('multi', s) then
-      VirtualDomainsChk.Checked := StrToBoolDef(s, true);
     if FindCmdLineSwitch('run', true) then
       WebServer.Start;
   end;
@@ -165,6 +172,7 @@ end;
 
 procedure TMain.WebServerLog(Connection: TmnConnection; const S: string);
 begin
+//  Connection.Synchronize();
   Memo.Lines.Add(Connection.Stream.Socket.GetRemoteAddress + ': ' + s);
 end;
 

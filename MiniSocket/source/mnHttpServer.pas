@@ -10,7 +10,7 @@ unit mnHttpServer;
 {$M+}
 {$H+}
 {$IFDEF FPC}
-{$mode delphi}
+{$MODE delphi}
 {$ENDIF}
 
 interface
@@ -314,10 +314,10 @@ begin
     FDocument := FDocument + '\' + FPath;
 
   FDocument := StringReplace(FDocument, '/', '\', [rfReplaceAll]);
-  
+
   if FDocument[Length(FDocument)] = '\' then
     FDocument := GetDocument(FDocument);
-    
+
   if FMethod = 'GET' then
     ProcessGet
   else if FMethod = 'POST' then
@@ -326,7 +326,7 @@ begin
     ProcessHead
   else
     Answer404;
-  Listener.Log(Self, FDocument);//when i put this line first not work in WinCE!!!
+  Listener.Log(Self, FDocument); //when i put this line first not work in WinCE!!!
 end;
 
 procedure THttpConnection.ProcessPost;

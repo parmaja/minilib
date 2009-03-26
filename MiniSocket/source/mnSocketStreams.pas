@@ -274,6 +274,9 @@ var
   aBuffer: pchar;
   n: Integer;
 begin
+  {$ifdef FPC} //less hint in fpc
+  aBuffer := nil;
+  {$endif}
   GetMem(aBuffer, BufferSize);
   Result := 0;
   try
@@ -363,6 +366,7 @@ function TmnConnectionStream.ReadLn(const EOL: string): string;
 var
   aMatched: Boolean;
 begin
+  aMatched := False;
   Result := ReadUntil(EOL, aMatched);
   if aMatched and (Result <> '') then
     Result := LeftStr(Result, Length(Result) - Length(EOL));

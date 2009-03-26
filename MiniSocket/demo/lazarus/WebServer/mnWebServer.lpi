@@ -2,12 +2,14 @@
 <CONFIG>
   <ProjectOptions>
     <PathDelim Value="\"/>
-    <Version Value="5"/>
+    <Version Value="7"/>
     <General>
+      <Flags>
+        <LRSInOutputDirectory Value="False"/>
+      </Flags>
       <MainUnit Value="0"/>
-      <IconPath Value="./"/>
       <TargetFileExt Value=".exe"/>
-      <ActiveEditorIndexAtStart Value="0"/>
+      <ActiveEditorIndexAtStart Value="4"/>
     </General>
     <VersionInfo>
       <ProjectVersion Value=""/>
@@ -29,13 +31,15 @@
         <PackageName Value="LCL"/>
       </Item1>
     </RequiredPackages>
-    <Units Count="37">
+    <Units Count="44">
       <Unit0>
         <Filename Value="mnWebServer.lpr"/>
         <IsPartOfProject Value="True"/>
-        <CursorPos X="14" Y="7"/>
+        <CursorPos X="59" Y="19"/>
         <TopLine Value="1"/>
-        <UsageCount Value="34"/>
+        <EditorIndex Value="1"/>
+        <UsageCount Value="35"/>
+        <Loaded Value="True"/>
       </Unit0>
       <Unit1>
         <Filename Value="..\..\..\source\mnStreams.pas"/>
@@ -56,12 +60,12 @@
         <ComponentName Value="Main"/>
         <HasResources Value="True"/>
         <IsPartOfProject Value="True"/>
-        <ResourceFilename Value="MainForm.lrs"/>
+        <ResourceBaseClass Value="Form"/>
         <UnitName Value="MainForm"/>
-        <CursorPos X="51" Y="15"/>
+        <CursorPos X="26" Y="10"/>
         <TopLine Value="1"/>
         <EditorIndex Value="0"/>
-        <UsageCount Value="33"/>
+        <UsageCount Value="34"/>
         <Loaded Value="True"/>
       </Unit3>
       <Unit4>
@@ -115,9 +119,11 @@
       <Unit11>
         <Filename Value="..\..\..\source\mnWin32Sockets.pas"/>
         <UnitName Value="mnWin32Sockets"/>
-        <CursorPos X="22" Y="63"/>
-        <TopLine Value="49"/>
+        <CursorPos X="15" Y="143"/>
+        <TopLine Value="129"/>
+        <EditorIndex Value="5"/>
         <UsageCount Value="11"/>
+        <Loaded Value="True"/>
       </Unit11>
       <Unit12>
         <Filename Value="C:\lazarus\fpc\2.1.3\source\rtl\win\winsock2.pp"/>
@@ -235,14 +241,14 @@
         <UsageCount Value="10"/>
       </Unit28>
       <Unit29>
-        <Filename Value="..\..\..\..\..\..\..\pascal\lib\pos\source\posButtonLists.pas"/>
+        <Filename Value="..\..\..\..\..\pos\source\posButtonLists.pas"/>
         <UnitName Value="posButtonLists"/>
         <CursorPos X="25" Y="15"/>
         <TopLine Value="1"/>
         <UsageCount Value="10"/>
       </Unit29>
       <Unit30>
-        <Filename Value="..\..\..\..\..\..\..\pascal\lib\pos\source\posControls.pas"/>
+        <Filename Value="..\..\..\..\..\pos\source\posControls.pas"/>
         <UnitName Value="posControls"/>
         <CursorPos X="28" Y="19"/>
         <TopLine Value="8"/>
@@ -256,7 +262,7 @@
         <UsageCount Value="10"/>
       </Unit31>
       <Unit32>
-        <Filename Value="..\..\..\..\..\..\..\pascal\lib\pos\source\posButtons.pas"/>
+        <Filename Value="..\..\..\..\..\pos\source\posButtons.pas"/>
         <UnitName Value="posButtons"/>
         <CursorPos X="1" Y="29"/>
         <TopLine Value="17"/>
@@ -269,38 +275,135 @@
         <UsageCount Value="10"/>
       </Unit33>
       <Unit34>
-        <Filename Value="..\..\..\..\..\..\..\pascal\lib\pos\source\posEdits.pas"/>
+        <Filename Value="..\..\..\..\..\pos\source\posEdits.pas"/>
         <UnitName Value="posEdits"/>
         <CursorPos X="20" Y="60"/>
         <TopLine Value="57"/>
         <UsageCount Value="10"/>
       </Unit34>
       <Unit35>
-        <Filename Value="..\..\..\..\..\..\..\pascal\lib\pos\source\posLists.pas"/>
+        <Filename Value="..\..\..\..\..\pos\source\posLists.pas"/>
         <UnitName Value="posLists"/>
         <CursorPos X="38" Y="201"/>
         <TopLine Value="190"/>
         <UsageCount Value="10"/>
       </Unit35>
       <Unit36>
-        <Filename Value="..\..\..\..\..\..\..\pascal\lib\pos\source\posKeyboards.pas"/>
+        <Filename Value="..\..\..\..\..\pos\source\posKeyboards.pas"/>
         <UnitName Value="posKeyboards"/>
         <CursorPos X="1" Y="189"/>
         <TopLine Value="178"/>
         <UsageCount Value="10"/>
       </Unit36>
+      <Unit37>
+        <Filename Value="fpc.cfg"/>
+        <CursorPos X="1" Y="1"/>
+        <TopLine Value="1"/>
+        <UsageCount Value="10"/>
+        <SyntaxHighlighter Value="None"/>
+      </Unit37>
+      <Unit38>
+        <Filename Value="run.bat"/>
+        <CursorPos X="1" Y="1"/>
+        <TopLine Value="1"/>
+        <UsageCount Value="10"/>
+        <SyntaxHighlighter Value="None"/>
+      </Unit38>
+      <Unit39>
+        <Filename Value="compile-wince.cmd"/>
+        <CursorPos X="46" Y="2"/>
+        <TopLine Value="1"/>
+        <EditorIndex Value="2"/>
+        <UsageCount Value="10"/>
+        <Loaded Value="True"/>
+        <SyntaxHighlighter Value="None"/>
+      </Unit39>
+      <Unit40>
+        <Filename Value="..\..\..\..\..\..\..\..\work\delphi\jobs\tacbord_sql\source\mpos\pda\compile-wince.cmd"/>
+        <CursorPos X="1" Y="17"/>
+        <TopLine Value="1"/>
+        <EditorIndex Value="7"/>
+        <UsageCount Value="10"/>
+        <Loaded Value="True"/>
+        <SyntaxHighlighter Value="None"/>
+      </Unit40>
+      <Unit41>
+        <Filename Value="extrafpc.cfg"/>
+        <CursorPos X="75" Y="12"/>
+        <TopLine Value="1"/>
+        <EditorIndex Value="3"/>
+        <UsageCount Value="10"/>
+        <Loaded Value="True"/>
+        <SyntaxHighlighter Value="None"/>
+      </Unit41>
+      <Unit42>
+        <Filename Value="..\..\..\..\..\..\..\..\work\delphi\jobs\tacbord_sql\source\mpos\pda\extrafpc.cfg"/>
+        <CursorPos X="1" Y="45"/>
+        <TopLine Value="21"/>
+        <EditorIndex Value="6"/>
+        <UsageCount Value="10"/>
+        <Loaded Value="True"/>
+        <SyntaxHighlighter Value="None"/>
+      </Unit42>
+      <Unit43>
+        <Filename Value="..\..\..\source\mnSocketStreams.pas"/>
+        <UnitName Value="mnSocketStreams"/>
+        <CursorPos X="21" Y="367"/>
+        <TopLine Value="353"/>
+        <EditorIndex Value="4"/>
+        <UsageCount Value="10"/>
+        <Loaded Value="True"/>
+      </Unit43>
     </Units>
-    <JumpHistory Count="0" HistoryIndex="-1"/>
+    <JumpHistory Count="10" HistoryIndex="9">
+      <Position1>
+        <Filename Value="mnWebServer.lpr"/>
+        <Caret Line="7" Column="14" TopLine="1"/>
+      </Position1>
+      <Position2>
+        <Filename Value="mnWebServer.lpr"/>
+        <Caret Line="3" Column="1" TopLine="1"/>
+      </Position2>
+      <Position3>
+        <Filename Value="..\..\..\..\..\..\..\..\work\delphi\jobs\tacbord_sql\source\mpos\pda\compile-wince.cmd"/>
+        <Caret Line="1" Column="1" TopLine="1"/>
+      </Position3>
+      <Position4>
+        <Filename Value="..\..\..\source\mnSocketStreams.pas"/>
+        <Caret Line="1" Column="1" TopLine="1"/>
+      </Position4>
+      <Position5>
+        <Filename Value="..\..\..\source\mnSocketStreams.pas"/>
+        <Caret Line="277" Column="18" TopLine="263"/>
+      </Position5>
+      <Position6>
+        <Filename Value="..\..\..\source\mnSocketStreams.pas"/>
+        <Caret Line="77" Column="29" TopLine="65"/>
+      </Position6>
+      <Position7>
+        <Filename Value="..\..\..\source\mnSocketStreams.pas"/>
+        <Caret Line="79" Column="44" TopLine="65"/>
+      </Position7>
+      <Position8>
+        <Filename Value="..\..\..\source\mnWin32Sockets.pas"/>
+        <Caret Line="63" Column="22" TopLine="49"/>
+      </Position8>
+      <Position9>
+        <Filename Value="..\..\..\source\mnWin32Sockets.pas"/>
+        <Caret Line="446" Column="32" TopLine="432"/>
+      </Position9>
+      <Position10>
+        <Filename Value="..\..\..\source\mnSocketStreams.pas"/>
+        <Caret Line="79" Column="44" TopLine="65"/>
+      </Position10>
+    </JumpHistory>
   </ProjectOptions>
   <CompilerOptions>
-    <Version Value="5"/>
+    <Version Value="8"/>
     <PathDelim Value="\"/>
     <SearchPaths>
       <OtherUnitFiles Value="..\..\..\source\;..\..\..\source\$(TargetOS)\"/>
     </SearchPaths>
-    <CodeGeneration>
-      <Generate Value="Faster"/>
-    </CodeGeneration>
     <Linking>
       <Options>
         <Win32>
@@ -315,7 +418,7 @@
   <Debugging>
     <BreakPoints Count="3">
       <Item1>
-        <Source Value="..\..\..\..\..\..\..\pascal\wince\lazarus\fpc\2.0.4\source\fcl\inc\inifiles.pp"/>
+        <Source Value="..\..\..\..\..\..\wince\lazarus\fpc\2.0.4\source\fcl\inc\inifiles.pp"/>
         <Line Value="434"/>
       </Item1>
       <Item2>

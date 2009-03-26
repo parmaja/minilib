@@ -10,7 +10,7 @@ unit mnCommandServers;
 {$M+}
 {$H+}
 {$IFDEF FPC}
-{$mode delphi}
+{$MODE delphi}
 {$ENDIF}
 
 interface
@@ -25,6 +25,7 @@ type
   TmnCommandConnectionState = (hcRequest, hcHeader, hcPostedData);
 
   TmnCommand = class;
+
   TmnCommandConnection = class(TmnServerConnection)
   private
     FCommandObject: TmnCommand;
@@ -43,14 +44,30 @@ type
     FName: string;
     FKeepAlive: Boolean;
     FServer: TmnServer;
+    FConcur: Boolean;
+    FSingle: Boolean;
+    FConnection: TmnCommandConnection;
+    FLocking: Boolean;
+    FRaiseExceptions: Boolean;
   protected
-    procedure Execute(Connection: TmnCommandConnection); virtual;
+    FWorking: Boolean;
+    procedure Execute; virtual;
   public
-    constructor Create(Connection: TmnCommandConnection; const Params:string); virtual;
-    class function GetCommandName:string; virtual; 
-    property Server:TmnServer read FServer;
+    constructor Create(Connection: TmnCommandConnection; const Params: string); virtual;
+    //GetCommandName: make name for command when register it, useful when log the name of it
+    class function GetCommandName: string; virtual;
+    property Server: TmnServer read FServer;
+    property Connection: TmnCommandConnection read FConnection;
     property Name: string read FName;
-    property KeepAlive: Boolean read FKeepAlive write FKeepAlive;
+    property RaiseExceptions: Boolean read FRaiseExceptions write FRaiseExceptions default False;
+    //Lock the server when execute the command
+    property Locking: Boolean read FLocking write FLocking default True;
+    //Concur: Synchronize the connection thread, when use it in GUI application
+    property Concur: Boolean read FConcur write FConcur default False;
+    //KeepAlive keey the command object after disconnect, not completed yet!
+    property KeepAlive: Boolean read FKeepAlive write FKeepAlive default False;
+    //Single command not launch another command if there is a privouse live command, depend on KeepAlive
+    property Single: Boolean read FSingle write FSingle;
   end;
 
   TmnCommandClass = class of TmnCommand;
@@ -64,7 +81,7 @@ type
     property CommandClass: TmnCommandClass read FCommandClass;
   end;
 
-  TmnCommands = class(TObjectList)
+  TmnCommandClasses = class(TObjectList)
   private
     function GetItem(Index: Integer): TmnCommandClassItem;
     procedure SetItem(Index: Integer; Value: TmnCommandClassItem);
@@ -78,7 +95,7 @@ type
   private
     FAddress: string;
     FPort: Integer;
-    FCommands: TmnCommands;
+    FCommands: TmnCommandClasses; //refrence to TmnCommandServer.FCommands
   protected
     function CreateConnection(vSocket: TmnCustomSocket): TmnServerConnection; override;
   public
@@ -91,7 +108,7 @@ type
 
   TmnCommandServer = class(TmnServer)
   private
-    FCommands: TmnCommands;
+    FCommands: TmnCommandClasses;
   protected
     procedure Notification(AComponent: TComponent; operation: TOperation); override;
     function CreateListener: TmnListener; override;
@@ -108,7 +125,7 @@ implementation
 constructor TmnCommandServer.Create(AOwner: TComponent);
 begin
   inherited;
-  FCommands := TmnCommands.Create(True);
+  FCommands := TmnCommandClasses.Create(True);
   Port := '81';
 end;
 
@@ -132,7 +149,7 @@ end;
 function TmnCommandConnection.CreateStream(Socket: TmnCustomSocket): TmnConnectionStream;
 begin
   Result := inherited CreateStream(Socket);
-  Result.Timeout := -1; 
+  Result.Timeout := -1;
 end;
 
 destructor TmnCommandConnection.Destroy;
@@ -166,6 +183,7 @@ begin
       aCommand := aCmd;
       aParams := '';
     end;
+
     if Connected then
     begin
       if FCommandObject = nil then
@@ -177,23 +195,43 @@ begin
           begin
             FCommandObject := aClass.Create(Self, aParams);
             FCommandObject.FServer := Listener.Server;
+            FCommandObject.FConnection := Self;
             FCommandObject.FName := UpperCase(aCommand);
-//            Listener.Log(Self, aCommand);
           end;
           //TODO make a default command if not found
         finally
           Listener.Leave;
         end;
       end;
+
       if FCommandObject <> nil then
       begin
         try
-          FCommandObject.Execute(Self);
+          FCommandObject.FWorking := True; //TODO
+          if FCommandObject.Locking then
+            Listener.Enter;
+          try
+            if FCommandObject.Concur then
+              Synchronize(FCommandObject.Execute)
+            else
+              FCommandObject.Execute;
+          finally
+            FCommandObject.FWorking := False;
+            if FCommandObject.Locking then
+              Listener.Leave;
+          end;
         except
-          Stream.Disconnect;
+          if FCommandObject.RaiseExceptions then
+            raise;
         end;
-        if not FCommandObject.KeepAlive then
+        if FCommandObject.KeepAlive then
+        //TODO
+        else
+        begin
+          if Stream.Connected then
+            Stream.Disconnect;
           FreeAndNil(FCommandObject);
+        end;
       end
       else
         Stream.Disconnect;
@@ -265,12 +303,13 @@ end;
 
 { TmnCommand }
 
-constructor TmnCommand.Create(Connection: TmnCommandConnection; const Params:string);
+constructor TmnCommand.Create(Connection: TmnCommandConnection; const Params: string);
 begin
   inherited Create;
+  FLocking := True;
 end;
 
-procedure TmnCommand.Execute(Connection: TmnCommandConnection);
+procedure TmnCommand.Execute;
 begin
 end;
 
@@ -279,9 +318,9 @@ begin
   Result := ClassName;
 end;
 
-{ TmnCommands }
+{ TmnCommandClasses }
 
-function TmnCommands.Add(const Name: string; CommandClass: TmnCommandClass): Integer;
+function TmnCommandClasses.Add(const Name: string; CommandClass: TmnCommandClass): Integer;
 var
   aItem: TmnCommandClassItem;
 begin
@@ -291,7 +330,7 @@ begin
   Result := inherited Add(aItem);
 end;
 
-function TmnCommands.Find(const Name: string): TmnCommandClassItem;
+function TmnCommandClasses.Find(const Name: string): TmnCommandClassItem;
 var
   i: Integer;
 begin
@@ -306,12 +345,12 @@ begin
   end;
 end;
 
-function TmnCommands.GetItem(Index: Integer): TmnCommandClassItem;
+function TmnCommandClasses.GetItem(Index: Integer): TmnCommandClassItem;
 begin
   Result := inherited Items[Index] as TmnCommandClassItem;
 end;
 
-procedure TmnCommands.SetItem(Index: Integer; Value: TmnCommandClassItem);
+procedure TmnCommandClasses.SetItem(Index: Integer; Value: TmnCommandClassItem);
 begin
   inherited Items[Index] := Value;
 end;

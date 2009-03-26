@@ -8,10 +8,7 @@ program Project1;
  *}
 uses
   Forms,
-  Unit1 in 'Unit1.pas' {Form1},
-  mnServers in '..\..\source\mnServers.pas',
-  mnCommandClients in '..\..\source\mnCommandClients.pas',
-  mnConsts in '..\..\source\mnConsts.pas';
+  Unit1 in 'Unit1.pas' {Form1};
 
 {$R *.res}
 

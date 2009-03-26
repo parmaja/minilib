@@ -1,10 +1,10 @@
 object Main: TMain
   Left = 165
   Top = 169
-  Width = 556
-  Height = 224
   BiDiMode = bdRightToLeft
   Caption = 'Mini Web Server'
+  ClientHeight = 190
+  ClientWidth = 548
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -17,7 +17,7 @@ object Main: TMain
   OnDestroy = FormDestroy
   DesignSize = (
     548
-    197)
+    190)
   PixelsPerInch = 96
   TextHeight = 13
   object Bevel1: TBevel
@@ -35,7 +35,7 @@ object Main: TMain
     Caption = 'Root'
   end
   object Label2: TLabel
-    Left = 15
+    Left = 9
     Top = 32
     Width = 19
     Height = 13
@@ -64,9 +64,9 @@ object Main: TMain
   end
   object Memo: TMemo
     Left = 0
-    Top = 90
+    Top = 79
     Width = 548
-    Height = 106
+    Height = 117
     Anchors = [akLeft, akTop, akRight, akBottom]
     BiDiMode = bdLeftToRight
     ParentBiDiMode = False
@@ -105,15 +105,6 @@ object Main: TMain
     TabOrder = 3
     OnClick = StopBtnClick
   end
-  object VirtualDomainsChk: TCheckBox
-    Left = 4
-    Top = 52
-    Width = 97
-    Height = 17
-    Anchors = [akTop, akRight]
-    Caption = 'Virtual Domain'
-    TabOrder = 4
-  end
   object PortEdit: TEdit
     Left = 46
     Top = 29
@@ -122,33 +113,17 @@ object Main: TMain
     Anchors = [akLeft, akTop, akRight]
     BiDiMode = bdLeftToRight
     ParentBiDiMode = False
-    TabOrder = 5
+    TabOrder = 4
     Text = '81'
   end
   object StayOnTopChk: TCheckBox
-    Left = 4
-    Top = 69
+    Left = 2
+    Top = 52
     Width = 97
     Height = 17
     Anchors = [akTop, akRight]
     Caption = 'Stay on top'
-    TabOrder = 6
+    TabOrder = 5
     OnClick = StayOnTopChkClick
-  end
-  object WebServer: TmnHttpServer
-    Port = '81'
-    Address = '0.0.0.0'
-    OnBeforeOpen = WebServerBeforeOpen
-    OnAfterClose = WebServerAfterClose
-    OnLog = WebServerLog
-    OnChanged = WebServerChanged
-    VirtualDomains = False
-    DefaultDocument.Strings = (
-      'index.html'
-      'index.htm'
-      'default.html'
-      'default.htm')
-    Left = 359
-    Top = 88
   end
 end
