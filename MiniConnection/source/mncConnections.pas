@@ -1101,7 +1101,7 @@ end;
 
 function TmncCustomField.GetAsCurrency: Currency;
 begin
-  if IsEmpty then
+  if IsEmpty or not VarIsNumeric(Value) then
     Result := 0
   else
     Result := Value;
