@@ -225,10 +225,12 @@ begin
   if ReadLine(aStrings) then
   begin
     aRecord := TmncRecord.Create(Fields);
+    i := 0;
     try
-      for i := 0 to aStrings.Count - 1 do
+      while (i < aStrings.Count) and (i < Fields.Count) do
       begin
         aRecord.Add(i, DequoteStr(aStrings[i]));
+        Inc(i); 
       end;
     finally
       aStrings.Free;
