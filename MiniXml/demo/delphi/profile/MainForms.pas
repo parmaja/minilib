@@ -32,7 +32,7 @@ type
     function GetItem(Index: Integer): TMyItem;
     procedure SetItem(Index: Integer; const Value: TMyItem);
   public
-    function DoCreateItem:TmnXMLItem; override;
+    function DoCreateItem(AClass: TmnXMLItemClass):TmnXMLItem; override;
     property Items[Index: Integer]: TMyItem read GetItem write SetItem; default;
     property Name:string read FName write FName;
   published
@@ -43,8 +43,10 @@ type
     Memo1: TMemo;
     Button2: TButton;
     Memo2: TMemo;
+    Button3: TButton;
     procedure Button1Click(Sender: TObject);
     procedure Button2Click(Sender: TObject);
+    procedure Button3Click(Sender: TObject);
   private
   public
   end;
@@ -58,7 +60,7 @@ implementation
 
 { TMyItems }
 
-function TMyItems.DoCreateItem: TmnXMLItem;
+function TMyItems.DoCreateItem(AClass: TmnXMLItemClass): TmnXMLItem;
 begin
   Result := TMyItem.Create;
 end;
@@ -85,7 +87,7 @@ begin
     aItems.Name := 'Address';
 
     aItem:=TMyItem.Create;
-    aItem.Name := 'Zaher Dirkey';
+    aItem.Name := 'Zaher'#13#10' Dirkey';
     aItems.Add(aItem);
 
     aSubItem:=TMyItem.Create;
@@ -105,6 +107,7 @@ begin
     aItems.Add(aItem);
 
     aItems.SaveToString(s);
+    aItems.SaveToFile('c:\333.txt');
     Memo1.Lines.Text := s;
   finally
     aItems.Free;
@@ -119,6 +122,27 @@ begin
   aItems := TMyItems.Create;
   try
     aItems.LoadFromString(Memo1.Lines.Text);
+    if aItems.Count > 0 then
+    begin
+      aItems.SaveToString(s);
+      Memo2.Lines.Text := s;
+    end
+    else
+      Memo2.Lines.Clear;
+  finally
+    aItems.Free;
+  end;
+end;
+
+procedure TMainForm.Button3Click(Sender: TObject);
+var
+  aItems:TMyItems;
+  s:string;
+begin
+  aItems := TMyItems.Create;
+  try
+    aItems.LoadFromFile('c:\333.txt');
+    aItems.SaveToFile('c:\444.txt');
     if aItems.Count > 0 then
     begin
       aItems.SaveToString(s);

@@ -44,12 +44,21 @@ object MainForm: TMainForm
     OnClick = Button2Click
   end
   object Memo2: TMemo
-    Left = 301
+    Left = 302
     Top = 5
     Width = 199
     Height = 357
     Anchors = [akLeft, akTop, akRight, akBottom]
     TabOrder = 3
     WordWrap = False
+  end
+  object Button3: TButton
+    Left = 5
+    Top = 65
+    Width = 75
+    Height = 25
+    Caption = 'Read'
+    TabOrder = 4
+    OnClick = Button3Click
   end
 end

@@ -61,7 +61,7 @@ begin
   while not Stream.EOF and not Completed do
   begin
     Text := '';
-    if Stream.ReadLn(Text) then
+    if Stream.ReadLn(Text, False) then
       ParseLine(Text, Line);
     Line := Line + 1;
   end;
