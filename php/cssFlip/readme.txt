@@ -9,11 +9,11 @@ php css_flip.php style\ style_rtl\
 
 example
 
-php css_flip.php c:\fluxbb\Oxygen\ c:\fluxbb\Oxygen_rtl\
+php css_flip.php c:\fluxbb\style\ c:\fluxbb\style_rtl\
 
 for format the files
 
-php css_flip.php c:\fluxbb\Oxygen\ c:\fluxbb\Oxygen_rtl\ -noflip
+php css_flip.php c:\fluxbb\style\ c:\fluxbb\style_rtl\ -noflip
 
 or you can use it run time fliping, see demo folder.
 
