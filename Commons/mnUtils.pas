@@ -21,6 +21,7 @@ uses
 function DequoteStr(Str: string): string;
 function QuoteStr(Str: string; QuoteChar: string = '"'): string;
 function StrToStrings(Content: string; Strings: TStrings; Separators:TSysCharSet; WhiteSpace: TSysCharSet = [#0, #13, #10]; DequoteValues: Boolean = False; Quotes: TSysCharSet = ['''', '"']): Integer;
+function ExpandToPath(FileName: string; Path: string; Root:string = ''): string;
 
 implementation
 
@@ -128,6 +129,20 @@ begin
       Strings.EndUpdate;
     end;
   end;
+end;
+
+function ExpandToPath(FileName: string; Path: string; Root:string): string;
+begin
+  if (FileName <> '') and ((LeftStr(FileName, 3) = '../') or (LeftStr(FileName, 3) = '..\')) then
+    Result := ExpandFileName(IncludeTrailingPathDelimiter(Root) + IncludeTrailingPathDelimiter(Path) + FileName)
+  else if (FileName <> '') and ((LeftStr(FileName, 2) = './') or (LeftStr(FileName, 2) = '.\')) then
+    Result := IncludeTrailingPathDelimiter(Root) + IncludeTrailingPathDelimiter(Path) + RightStr(FileName, Length(FileName) - 2)
+  else if (FileName <> '') and (LeftStr(FileName, 2) <> '\\') and ((LeftStr(FileName, 1) = '/') or (LeftStr(FileName, 1) = '\')) then
+    Result := ExtractFileDrive(Path) + FileName
+  else if ExtractFilePath(FileName) = '' then
+    Result := IncludeTrailingPathDelimiter(Path) + FileName
+  else
+    Result := FileName;
 end;
 
 end.

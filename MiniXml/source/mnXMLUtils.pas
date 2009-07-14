@@ -49,7 +49,6 @@ function ScanQuoted(SubStr, Text: string): Integer;
 function CreateAttStrings(const Attributes: string): TStrings;
 procedure ReadAttStrings(Strings: TStrings; const Attributes: string);
 function CutStr(const ID, S: string; Dequote: Boolean = False): string;
-function ExpandToPath(FileName: string; Path: string): string;
 function StringsToString(Strings: TStrings; LineBreak: string = sLineBreak): string;
 function URIToFileName(const URI: string): string;
 function FileNameToURI(FileName: string): string;
@@ -186,20 +185,6 @@ begin
   Result := MidStr(S, Length(ID) + 1, MaxInt);
   if Dequote then
     Result := DequoteStr(Trim(Result));
-end;
-
-function ExpandToPath(FileName: string; Path: string): string;
-begin
-  if (FileName <> '') and ((LeftStr(FileName, 3) = '../') or (LeftStr(FileName, 3) = '..\')) then
-    Result := ExpandFileName(IncludeTrailingPathDelimiter(Path) + FileName)
-  else if (FileName <> '') and ((LeftStr(FileName, 2) = './') or (LeftStr(FileName, 2) = '.\')) then
-    Result := IncludeTrailingPathDelimiter(Path) + RightStr(FileName, Length(FileName) - 2)
-  else if (FileName <> '') and (LeftStr(FileName, 2) <> '\\') and ((LeftStr(FileName, 1) = '/') or (LeftStr(FileName, 1) = '\')) then
-    Result := ExtractFileDrive(Path) + FileName
-  else if ExtractFilePath(FileName) = '' then
-    Result := IncludeTrailingPathDelimiter(Path) + FileName
-  else
-    Result := FileName;
 end;
 
 function StringsToString(Strings: TStrings; LineBreak: string): string;

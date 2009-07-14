@@ -356,13 +356,20 @@ type
     constructor Create;
   end;
 
+  TmncLinkedObject = class(TmncObject)
+  private
+    FSession: TmncSession;
+    procedure SetSession(const Value: TmncSession);
+  public
+    property Session: TmncSession read FSession write SetSession;
+  end;
+
   { TmncCommand }
 
-  TmncCommand = class(TmncObject)
+  TmncCommand = class(TmncLinkedObject)
   private
     FCurrent: TmncRecord;
     FParams: TmncParams;
-    FSession: TmncSession;
     FPrepared: Boolean;
     FNextOnExecute: Boolean;
     FFields: TmncFields;
@@ -371,7 +378,6 @@ type
     procedure SetFields(const Value: TmncFields);
     procedure SetCurrent(const Value: TmncRecord);
     procedure SetParams(const Value: TmncParams);
-    procedure SetSession(const Value: TmncSession);
     procedure SetActive(const Value: Boolean);
     function GetField(Index: string): TmncFieldValue;
     function GetParam(Index: string): TmncParam;
@@ -406,7 +412,6 @@ type
     property NextOnExecute: Boolean read FNextOnExecute write FNextOnExecute default True;
     property Active: Boolean read GetActive write SetActive;
     property Prepared: Boolean read FPrepared;
-    property Session: TmncSession read FSession write SetSession;
     property Current: TmncRecord read FCurrent write SetCurrent;
     property Params: TmncParams read FParams write SetParams;
     property Fields: TmncFields read FFields write SetFields;
@@ -639,7 +644,7 @@ begin
   //TODO OnRequestChanged;
 end;
 
-procedure TmncCommand.SetSession(const Value: TmncSession);
+procedure TmncLinkedObject.SetSession(const Value: TmncSession);
 begin
   if FSession <> Value then
   begin
