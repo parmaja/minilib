@@ -508,6 +508,7 @@ begin
   FreeAndNil(FCurrent);
   FreeAndNil(FParamList);
   FreeAndNil(FParams);
+  FreeAndNil(FFields);
   inherited;
 end;
 
