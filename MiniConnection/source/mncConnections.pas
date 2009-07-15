@@ -26,7 +26,7 @@ type
   end;
 
   TmncSession = class;
-  TmncCommand = class;
+  TmncLinkObject = class;
 
   TmncSessions = class(TObjectList)
   private
@@ -38,14 +38,14 @@ type
     property Items[Index: Integer]: TmncSession read GetItem write SetItem; default;
   end;
 
-  TmncCommands = class(TObjectList)
+  TmncLinks = class(TObjectList)
   private
-    function GetItem(Index: Integer): TmncCommand;
-    procedure SetItem(Index: Integer; const Value: TmncCommand);
+    function GetItem(Index: Integer): TmncLinkObject;
+    procedure SetItem(Index: Integer; const Value: TmncLinkObject);
   protected
     procedure Close;
   public
-    property Items[Index: Integer]: TmncCommand read GetItem write SetItem; default;
+    property Items[Index: Integer]: TmncLinkObject read GetItem write SetItem; default;
   end;
 
   TmncCodepageConvert = (cpcNone, cpcAnsi, cpcUTF8, cpcUnicode);
@@ -100,7 +100,7 @@ type
   private
     FParams: TStrings;
     FConnection: TmncConnection;
-    FCommands: TmncCommands;
+    FCommands: TmncLinks;
     FStartCount: Integer;
     FAction: TmncSessionAction;
     procedure SetParams(const Value: TStrings);
@@ -111,7 +111,7 @@ type
     procedure DoStart; virtual; abstract;
     procedure DoCommit; virtual; abstract;
     procedure DoRollback; virtual; abstract;
-    property Commands: TmncCommands read FCommands;
+    property Commands: TmncLinks read FCommands;
   public
     constructor Create(vConnection: TmncConnection); virtual;
     destructor Destroy; override;
@@ -356,17 +356,24 @@ type
     constructor Create;
   end;
 
-  TmncLinkedObject = class(TmncObject)
+  { TmncLinkObject }
+
+  TmncLinkObject = class(TmncObject)
   private
     FSession: TmncSession;
     procedure SetSession(const Value: TmncSession);
+  protected
+    function GetActive: Boolean; virtual;
+    procedure SetActive(const Value: Boolean); virtual;
   public
+    destructor Destroy; override;
     property Session: TmncSession read FSession write SetSession;
+    property Active: Boolean read GetActive write SetActive;
   end;
 
   { TmncCommand }
 
-  TmncCommand = class(TmncLinkedObject)
+  TmncCommand = class(TmncLinkObject)
   private
     FCurrent: TmncRecord;
     FParams: TmncParams;
@@ -378,13 +385,12 @@ type
     procedure SetFields(const Value: TmncFields);
     procedure SetCurrent(const Value: TmncRecord);
     procedure SetParams(const Value: TmncParams);
-    procedure SetActive(const Value: Boolean);
     function GetField(Index: string): TmncFieldValue;
     function GetParam(Index: string): TmncParam;
+    procedure SetActive(const Value: Boolean); override;
   protected
     FRequest: TStrings;
     procedure CheckActive;
-    function GetActive: Boolean; virtual; abstract;
     function GetEOF: Boolean; virtual; abstract;
     procedure DoPrepare; virtual; abstract;
     procedure DoExecute; virtual; abstract; //Here apply the ParamList and execute the sql
@@ -410,7 +416,6 @@ type
     function ReleaseParams: TmncParams;
     function FieldIsExist(Name: string): Boolean;
     property NextOnExecute: Boolean read FNextOnExecute write FNextOnExecute default True;
-    property Active: Boolean read GetActive write SetActive;
     property Prepared: Boolean read FPrepared;
     property Current: TmncRecord read FCurrent write SetCurrent;
     property Params: TmncParams read FParams write SetParams;
@@ -503,7 +508,7 @@ end;
 destructor TmncCommand.Destroy;
 begin
   Active := False;
-  Session := nil;
+  Session := nil;//already in Linked but must be sure before free other objects
   FreeAndNil(FRequest);
   FreeAndNil(FCurrent);
   FreeAndNil(FParamList);
@@ -645,7 +650,7 @@ begin
   //TODO OnRequestChanged;
 end;
 
-procedure TmncLinkedObject.SetSession(const Value: TmncSession);
+procedure TmncLinkObject.SetSession(const Value: TmncSession);
 begin
   if FSession <> Value then
   begin
@@ -655,6 +660,21 @@ begin
     if FSession <> nil then
       FSession.Commands.Add(Self);
   end;
+end;
+
+function TmncLinkObject.GetActive: Boolean;
+begin
+  Result := False;
+end;
+
+procedure TmncLinkObject.SetActive(const Value: Boolean);
+begin
+end;
+
+destructor TmncLinkObject.Destroy;
+begin
+  Session := nil;
+  inherited Destroy;
 end;
 
 procedure TmncCommand.Commit;
@@ -697,7 +717,7 @@ constructor TmncSession.Create(vConnection: TmncConnection);
 begin
   inherited Create;
   Connection := vConnection;
-  FCommands := TmncCommands.Create(False);
+  FCommands := TmncLinks.Create(False);
   if Connection.AutoStart then
     Start;
 end;
@@ -1046,9 +1066,9 @@ begin
   FValue := Value;
 end;
 
-{ TmncCommands }
+{ TmncLinks }
 
-procedure TmncCommands.Close;
+procedure TmncLinks.Close;
 var
   i: Integer;
 begin
@@ -1058,12 +1078,12 @@ begin
   end;
 end;
 
-function TmncCommands.GetItem(Index: Integer): TmncCommand;
+function TmncLinks.GetItem(Index: Integer): TmncLinkObject;
 begin
-  Result := inherited Items[Index] as TmncCommand;
+  Result := inherited Items[Index] as TmncLinkObject;
 end;
 
-procedure TmncCommands.SetItem(Index: Integer; const Value: TmncCommand);
+procedure TmncLinks.SetItem(Index: Integer; const Value: TmncLinkObject);
 begin
   inherited Items[Index] := Value;
 end;
