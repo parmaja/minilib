@@ -1,0 +1,872 @@
+object MainForm: TMainForm
+  Left = 327
+  Height = 359
+  Top = 217
+  Width = 567
+  ActiveControl = SQLEdit
+  BorderIcons = [biSystemMenu, biMinimize]
+  BorderStyle = bsSingle
+  Caption = 'SQLite'
+  ClientHeight = 339
+  ClientWidth = 567
+  Font.CharSet = ANSI_CHARSET
+  Font.Color = clBlack
+  Font.Height = -11
+  Font.Name = 'Tahoma'
+  Font.Pitch = fpVariable
+  Font.Quality = fqDraft
+  Menu = MainMenu
+  LCLVersion = '0.9.27'
+  object ClientPanel: TPanel
+    Left = 0
+    Height = 316
+    Top = 0
+    Width = 567
+    Align = alClient
+    BevelOuter = bvNone
+    ClientHeight = 316
+    ClientWidth = 567
+    TabOrder = 0
+    object SQLPanel: TPanel
+      Left = 16
+      Height = 297
+      Top = 16
+      Width = 250
+      BevelOuter = bvNone
+      ClientHeight = 297
+      ClientWidth = 250
+      TabOrder = 0
+      object SQLEdit: TSynEdit
+        Left = 0
+        Height = 298
+        Top = 0
+        Width = 250
+        Align = alTop
+        Anchors = [akTop, akLeft, akRight, akBottom]
+        Font.CharSet = ANSI_CHARSET
+        Font.Color = clBlack
+        Font.Height = -11
+        Font.Name = 'Courier New'
+        Font.Pitch = fpFixed
+        Font.Quality = fqDraft
+        ParentColor = False
+        ParentFont = False
+        TabOrder = 0
+        BookMarkOptions.Xoffset = -18
+        Gutter.Visible = False
+        Gutter.Width = 0
+        Gutter.MouseActions = <        
+          item
+            Shift = []
+            ShiftMask = []
+            Button = mbLeft
+            ClickCount = ccAny
+            ClickDir = cdDown
+            Command = 13
+            MoveCaret = False
+            Option = 0
+            Priority = 0
+          end        
+          item
+            Shift = []
+            ShiftMask = []
+            Button = mbRight
+            ClickCount = ccSingle
+            ClickDir = cdUp
+            Command = 12
+            MoveCaret = False
+            Option = 0
+            Priority = 0
+          end>
+        Keystrokes = <        
+          item
+            Command = 3
+            ShortCut = 38
+          end        
+          item
+            Command = 103
+            ShortCut = 8230
+          end        
+          item
+            Command = 211
+            ShortCut = 16422
+          end        
+          item
+            Command = 4
+            ShortCut = 40
+          end        
+          item
+            Command = 104
+            ShortCut = 8232
+          end        
+          item
+            Command = 212
+            ShortCut = 16424
+          end        
+          item
+            Command = 1
+            ShortCut = 37
+          end        
+          item
+            Command = 101
+            ShortCut = 8229
+          end        
+          item
+            Command = 5
+            ShortCut = 16421
+          end        
+          item
+            Command = 105
+            ShortCut = 24613
+          end        
+          item
+            Command = 2
+            ShortCut = 39
+          end        
+          item
+            Command = 102
+            ShortCut = 8231
+          end        
+          item
+            Command = 6
+            ShortCut = 16423
+          end        
+          item
+            Command = 106
+            ShortCut = 24615
+          end        
+          item
+            Command = 10
+            ShortCut = 34
+          end        
+          item
+            Command = 110
+            ShortCut = 8226
+          end        
+          item
+            Command = 14
+            ShortCut = 16418
+          end        
+          item
+            Command = 114
+            ShortCut = 24610
+          end        
+          item
+            Command = 9
+            ShortCut = 33
+          end        
+          item
+            Command = 109
+            ShortCut = 8225
+          end        
+          item
+            Command = 13
+            ShortCut = 16417
+          end        
+          item
+            Command = 113
+            ShortCut = 24609
+          end        
+          item
+            Command = 7
+            ShortCut = 36
+          end        
+          item
+            Command = 107
+            ShortCut = 8228
+          end        
+          item
+            Command = 15
+            ShortCut = 16420
+          end        
+          item
+            Command = 115
+            ShortCut = 24612
+          end        
+          item
+            Command = 8
+            ShortCut = 35
+          end        
+          item
+            Command = 108
+            ShortCut = 8227
+          end        
+          item
+            Command = 16
+            ShortCut = 16419
+          end        
+          item
+            Command = 116
+            ShortCut = 24611
+          end        
+          item
+            Command = 223
+            ShortCut = 45
+          end        
+          item
+            Command = 201
+            ShortCut = 16429
+          end        
+          item
+            Command = 604
+            ShortCut = 8237
+          end        
+          item
+            Command = 502
+            ShortCut = 46
+          end        
+          item
+            Command = 603
+            ShortCut = 8238
+          end        
+          item
+            Command = 501
+            ShortCut = 8
+          end        
+          item
+            Command = 501
+            ShortCut = 8200
+          end        
+          item
+            Command = 504
+            ShortCut = 16392
+          end        
+          item
+            Command = 601
+            ShortCut = 32776
+          end        
+          item
+            Command = 602
+            ShortCut = 40968
+          end        
+          item
+            Command = 509
+            ShortCut = 13
+          end        
+          item
+            Command = 199
+            ShortCut = 16449
+          end        
+          item
+            Command = 201
+            ShortCut = 16451
+          end        
+          item
+            Command = 610
+            ShortCut = 24649
+          end        
+          item
+            Command = 509
+            ShortCut = 16461
+          end        
+          item
+            Command = 510
+            ShortCut = 16462
+          end        
+          item
+            Command = 503
+            ShortCut = 16468
+          end        
+          item
+            Command = 611
+            ShortCut = 24661
+          end        
+          item
+            Command = 604
+            ShortCut = 16470
+          end        
+          item
+            Command = 603
+            ShortCut = 16472
+          end        
+          item
+            Command = 507
+            ShortCut = 16473
+          end        
+          item
+            Command = 506
+            ShortCut = 24665
+          end        
+          item
+            Command = 601
+            ShortCut = 16474
+          end        
+          item
+            Command = 602
+            ShortCut = 24666
+          end        
+          item
+            Command = 301
+            ShortCut = 16432
+          end        
+          item
+            Command = 302
+            ShortCut = 16433
+          end        
+          item
+            Command = 303
+            ShortCut = 16434
+          end        
+          item
+            Command = 304
+            ShortCut = 16435
+          end        
+          item
+            Command = 305
+            ShortCut = 16436
+          end        
+          item
+            Command = 306
+            ShortCut = 16437
+          end        
+          item
+            Command = 307
+            ShortCut = 16438
+          end        
+          item
+            Command = 308
+            ShortCut = 16439
+          end        
+          item
+            Command = 309
+            ShortCut = 16440
+          end        
+          item
+            Command = 310
+            ShortCut = 16441
+          end        
+          item
+            Command = 351
+            ShortCut = 24624
+          end        
+          item
+            Command = 352
+            ShortCut = 24625
+          end        
+          item
+            Command = 353
+            ShortCut = 24626
+          end        
+          item
+            Command = 354
+            ShortCut = 24627
+          end        
+          item
+            Command = 355
+            ShortCut = 24628
+          end        
+          item
+            Command = 356
+            ShortCut = 24629
+          end        
+          item
+            Command = 357
+            ShortCut = 24630
+          end        
+          item
+            Command = 358
+            ShortCut = 24631
+          end        
+          item
+            Command = 359
+            ShortCut = 24632
+          end        
+          item
+            Command = 360
+            ShortCut = 24633
+          end        
+          item
+            Command = 231
+            ShortCut = 24654
+          end        
+          item
+            Command = 232
+            ShortCut = 24643
+          end        
+          item
+            Command = 233
+            ShortCut = 24652
+          end        
+          item
+            Command = 612
+            ShortCut = 9
+          end        
+          item
+            Command = 613
+            ShortCut = 8201
+          end        
+          item
+            Command = 250
+            ShortCut = 24642
+          end>
+        MouseActions = <        
+          item
+            Shift = []
+            ShiftMask = [ssShift, ssAlt]
+            Button = mbLeft
+            ClickCount = ccSingle
+            ClickDir = cdDown
+            Command = 1
+            MoveCaret = True
+            Option = 0
+            Priority = 0
+          end        
+          item
+            Shift = [ssShift]
+            ShiftMask = [ssShift, ssAlt]
+            Button = mbLeft
+            ClickCount = ccSingle
+            ClickDir = cdDown
+            Command = 1
+            MoveCaret = True
+            Option = 1
+            Priority = 0
+          end        
+          item
+            Shift = [ssAlt]
+            ShiftMask = [ssShift, ssAlt]
+            Button = mbLeft
+            ClickCount = ccSingle
+            ClickDir = cdDown
+            Command = 3
+            MoveCaret = True
+            Option = 0
+            Priority = 0
+          end        
+          item
+            Shift = [ssShift, ssAlt]
+            ShiftMask = [ssShift, ssAlt]
+            Button = mbLeft
+            ClickCount = ccSingle
+            ClickDir = cdDown
+            Command = 3
+            MoveCaret = True
+            Option = 1
+            Priority = 0
+          end        
+          item
+            Shift = []
+            ShiftMask = []
+            Button = mbRight
+            ClickCount = ccSingle
+            ClickDir = cdUp
+            Command = 12
+            MoveCaret = False
+            Option = 0
+            Priority = 0
+          end        
+          item
+            Shift = []
+            ShiftMask = []
+            Button = mbLeft
+            ClickCount = ccDouble
+            ClickDir = cdDown
+            Command = 6
+            MoveCaret = True
+            Option = 0
+            Priority = 0
+          end        
+          item
+            Shift = []
+            ShiftMask = []
+            Button = mbLeft
+            ClickCount = ccTriple
+            ClickDir = cdDown
+            Command = 7
+            MoveCaret = True
+            Option = 0
+            Priority = 0
+          end        
+          item
+            Shift = []
+            ShiftMask = []
+            Button = mbLeft
+            ClickCount = ccQuad
+            ClickDir = cdDown
+            Command = 8
+            MoveCaret = True
+            Option = 0
+            Priority = 0
+          end        
+          item
+            Shift = []
+            ShiftMask = []
+            Button = mbMiddle
+            ClickCount = ccSingle
+            ClickDir = cdDown
+            Command = 10
+            MoveCaret = True
+            Option = 0
+            Priority = 0
+          end        
+          item
+            Shift = [ssCtrl]
+            ShiftMask = [ssShift, ssAlt, ssCtrl]
+            Button = mbLeft
+            ClickCount = ccSingle
+            ClickDir = cdUp
+            Command = 11
+            MoveCaret = False
+            Option = 0
+            Priority = 0
+          end>
+        MouseSelActions = <        
+          item
+            Shift = []
+            ShiftMask = []
+            Button = mbLeft
+            ClickCount = ccSingle
+            ClickDir = cdDown
+            Command = 9
+            MoveCaret = False
+            Option = 0
+            Priority = 0
+          end>
+        Lines.Strings = (
+          'select * from table'
+        )
+        BracketHighlightStyle = sbhsBoth
+        TabWidth = 2
+        object TSynGutterPartList
+          object TSynGutterMarks
+            Width = 23
+          end
+          object TSynGutterLineNumber
+            Width = 25
+            MouseActions = <>
+            MarkupInfo.Background = clBtnFace
+            MarkupInfo.Foreground = clNone
+            DigitCount = 2
+            ShowOnlyLineNumbersMultiplesOf = 1
+            ZeroStart = False
+            LeadingZeros = False
+          end
+          object TSynGutterChanges
+            Width = 4
+            ModifiedColor = 59900
+            SavedColor = clGreen
+          end
+          object TSynGutterSeparator
+            Width = 2
+          end
+          object TSynGutterCodeFolding
+            MouseActions = <            
+              item
+                Shift = []
+                ShiftMask = []
+                Button = mbRight
+                ClickCount = ccSingle
+                ClickDir = cdUp
+                Command = 16
+                MoveCaret = False
+                Option = 0
+                Priority = 0
+              end            
+              item
+                Shift = []
+                ShiftMask = [ssShift]
+                Button = mbMiddle
+                ClickCount = ccAny
+                ClickDir = cdDown
+                Command = 14
+                MoveCaret = False
+                Option = 0
+                Priority = 0
+              end            
+              item
+                Shift = [ssShift]
+                ShiftMask = [ssShift]
+                Button = mbMiddle
+                ClickCount = ccAny
+                ClickDir = cdDown
+                Command = 14
+                MoveCaret = False
+                Option = 1
+                Priority = 0
+              end            
+              item
+                Shift = []
+                ShiftMask = []
+                Button = mbLeft
+                ClickCount = ccAny
+                ClickDir = cdDown
+                Command = 0
+                MoveCaret = False
+                Option = 0
+                Priority = 0
+              end>
+            MarkupInfo.Background = clNone
+            MarkupInfo.Foreground = clGray
+            MouseActionsExpanded = <            
+              item
+                Shift = []
+                ShiftMask = []
+                Button = mbLeft
+                ClickCount = ccAny
+                ClickDir = cdDown
+                Command = 14
+                MoveCaret = False
+                Option = 0
+                Priority = 0
+              end>
+            MouseActionsCollapsed = <            
+              item
+                Shift = [ssCtrl]
+                ShiftMask = [ssCtrl]
+                Button = mbLeft
+                ClickCount = ccAny
+                ClickDir = cdDown
+                Command = 15
+                MoveCaret = False
+                Option = 0
+                Priority = 0
+              end            
+              item
+                Shift = []
+                ShiftMask = [ssCtrl]
+                Button = mbLeft
+                ClickCount = ccAny
+                ClickDir = cdDown
+                Command = 15
+                MoveCaret = False
+                Option = 1
+                Priority = 0
+              end>
+          end
+        end
+      end
+    end
+    object ResultPanel: TPanel
+      Left = 40
+      Height = 282
+      Top = 48
+      Width = 186
+      BevelOuter = bvNone
+      ClientHeight = 282
+      ClientWidth = 186
+      TabOrder = 1
+      object StringGrid1: TStringGrid
+        Left = 0
+        Height = 249
+        Top = 0
+        Width = 186
+        Align = alTop
+        ColCount = 2
+        TabOrder = 0
+        TitleFont.CharSet = ANSI_CHARSET
+        TitleFont.Color = clBlack
+        TitleFont.Height = -11
+        TitleFont.Name = 'Tahoma'
+        TitleFont.Pitch = fpVariable
+        TitleFont.Quality = fqDraft
+      end
+    end
+    object RootPanel: TPanel
+      Left = 337
+      Height = 258
+      Top = 32
+      Width = 203
+      BevelOuter = bvNone
+      ClientHeight = 258
+      ClientWidth = 203
+      TabOrder = 2
+      object Label1: TLabel
+        Left = 7
+        Height = 14
+        Top = 13
+        Width = 94
+        Caption = 'Database Directory'
+        ParentColor = False
+      end
+      object Label2: TLabel
+        Left = 7
+        Height = 14
+        Top = 58
+        Width = 52
+        Caption = 'Databases'
+        ParentColor = False
+      end
+      object ConnectBtn: TButton
+        Left = 5
+        Height = 25
+        Top = 231
+        Width = 75
+        Anchors = [akLeft, akBottom]
+        Caption = 'Connect'
+        OnClick = ConnectBtnClick
+        TabOrder = 3
+      end
+      object DisconnectBtn: TButton
+        Left = 83
+        Height = 25
+        Top = 231
+        Width = 75
+        Anchors = [akLeft, akBottom]
+        Caption = 'Disconnect'
+        TabOrder = 4
+      end
+      object DatabasesCbo: TComboBox
+        Left = 3
+        Height = 21
+        Top = 74
+        Width = 200
+        Anchors = [akTop, akLeft, akRight]
+        ItemHeight = 13
+        OnDropDown = DatabasesCboDropDown
+        TabOrder = 1
+      end
+      object ExclusiveChk: TCheckBox
+        Left = 9
+        Height = 17
+        Top = 105
+        Width = 62
+        Caption = 'Exclusive'
+        TabOrder = 2
+      end
+      object DataPathCbo: TComboBox
+        Left = 3
+        Height = 21
+        Top = 33
+        Width = 200
+        Anchors = [akTop, akLeft, akRight]
+        ItemHeight = 13
+        OnDropDown = DataPathCboDropDown
+        OnExit = DataPathCboExit
+        TabOrder = 0
+        Text = '\'
+      end
+      object ExclusiveChk1: TCheckBox
+        Left = 9
+        Height = 17
+        Top = 124
+        Width = 110
+        Caption = 'Create if not exists'
+        TabOrder = 5
+      end
+    end
+    object ObjectsPanel: TPanel
+      Left = 104
+      Height = 255
+      Top = 65
+      Width = 234
+      BevelOuter = bvNone
+      ClientHeight = 255
+      ClientWidth = 234
+      TabOrder = 3
+      object TitleLbl: TLabel
+        Left = 5
+        Height = 14
+        Top = 4
+        Width = 21
+        Caption = 'Title'
+        ParentColor = False
+      end
+      object MembersList: TListBox
+        Left = 2
+        Height = 207
+        Top = 46
+        Width = 230
+        Anchors = [akTop, akLeft, akRight, akBottom]
+        ItemHeight = 0
+        OnDblClick = MembersListDblClick
+        OnKeyPress = MembersListKeyPress
+        TabOrder = 0
+      end
+      object GroupsList: TComboBox
+        Left = 2
+        Height = 21
+        Top = 22
+        Width = 230
+        Anchors = [akTop, akLeft, akRight]
+        ItemHeight = 13
+        OnClick = GroupsListClick
+        OnSelect = GroupsListSelect
+        Style = csDropDownList
+        TabOrder = 1
+      end
+    end
+  end
+  object TopPanel: TPanel
+    Left = 0
+    Height = 23
+    Top = 316
+    Width = 567
+    Align = alBottom
+    BevelOuter = bvSpace
+    ClientHeight = 23
+    ClientWidth = 567
+    TabOrder = 1
+    object SQLBtn: TSpeedButton
+      Left = 76
+      Height = 21
+      Top = 1
+      Width = 31
+      Align = alLeft
+      Caption = 'SQL'
+      Color = clBtnFace
+      NumGlyphs = 0
+      OnClick = SQLBtnClick
+    end
+    object OpenBtn: TSpeedButton
+      Left = 40
+      Height = 21
+      Top = 1
+      Width = 36
+      Align = alLeft
+      Caption = 'Open'
+      Color = clBtnFace
+      NumGlyphs = 0
+      OnClick = OpenBtnClick
+    end
+    object SpeedButton5: TSpeedButton
+      Left = 1
+      Height = 21
+      Top = 1
+      Width = 39
+      Align = alLeft
+      Caption = 'Start'
+      Color = clBtnFace
+      NumGlyphs = 0
+      OnClick = SpeedButton5Click
+    end
+    object ExecuteBtn: TSpeedButton
+      Left = 162
+      Height = 21
+      Top = 1
+      Width = 55
+      Align = alLeft
+      Caption = 'Execute'
+      Color = clBtnFace
+      NumGlyphs = 0
+      OnClick = ExecuteBtnClick
+    end
+    object ObjectsBtn: TSpeedButton
+      Left = 107
+      Height = 21
+      Top = 1
+      Width = 55
+      Align = alLeft
+      Caption = 'Objects'
+      Color = clBtnFace
+      NumGlyphs = 0
+      OnClick = ObjectsBtnClick
+    end
+  end
+  object MainMenu: TMainMenu
+    left = 292
+    top = 17
+    object MenuItem1: TMenuItem
+      Caption = 'Exit'
+      OnClick = MenuItem1Click
+    end
+    object ToolsMnu: TMenuItem
+      Caption = 'Tools'
+      object AboutMnu: TMenuItem
+        Caption = 'About'
+      end
+      object OptionsMnu: TMenuItem
+        Caption = 'Options'
+      end
+    end
+  end
+end
