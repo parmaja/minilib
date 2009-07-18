@@ -54,7 +54,7 @@ type
   public
     constructor Create(vConnection: TmncConnection); override;
     destructor Destroy; override;
-    property Connection:TmncSQLiteConnection read GetConnection write SetConnection;
+    property Connection: TmncSQLiteConnection read GetConnection write SetConnection;
   end;
 
   { TmncSQLiteCommand }
@@ -84,7 +84,7 @@ type
     constructor Create(vSession:TmncSession);
     destructor Destroy; override;
     procedure Clear; override;
-    function RowsAffected: Integer; virtual;
+    function GetRowsChanged: Integer; virtual;
     function GetLastInsertID: Int64;
   end;
 
@@ -242,9 +242,10 @@ begin
   Result := (FStatment = nil) or FEOF; 
 end;
 
-function TmncSQLiteCommand.RowsAffected: Integer;
+function TmncSQLiteCommand.GetRowsChanged: Integer;
 begin
-  Result := 0;
+  CheckActive;
+  Result := sqlite3_changes(FStatment);
 end;
 
 function TmncSQLiteCommand.GetLastInsertID: Int64;

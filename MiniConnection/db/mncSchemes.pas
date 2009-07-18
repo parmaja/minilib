@@ -29,7 +29,7 @@ type
   TExtractObject = (etDomain, etTable, etRole, etTrigger, etForeign, etIndex, etData, etGrant, etCheck);
   TExtractObjects = set of TExtractObject;
 
-  TExtractOption = (ekAlter, ekSystem, ekOrder);
+  TExtractOption = (ekExtra, ekAlter, ekSystem, ekOrder);
   TschmEnumOptions = set of TExtractOption;
 
   { TmncSchemeItem }
@@ -50,6 +50,8 @@ type
     property Attributes: TStringList read FAttributes write FAttributes;
   end;
 
+  { TmncSchemeItems }
+
   TmncSchemeItems = class(TObjectList)
   private
     FExtraData: TStringList;
@@ -58,7 +60,8 @@ type
     function GetExtraData: TStringList;
   public
     function Find(const Name: string): TmncSchemeItem;
-    function Add(Name: string; Comment: string = ''): Integer;
+    function Add(vSchemeItem: TmncSchemeItem): Integer; overload;
+    function Add(Name: string; Comment: string = ''): Integer; overload;
     property Items[Index: Integer]: TmncSchemeItem read GetItem write SetItem; default;
     property ExtraData: TStringList read GetExtraData;
   end;
@@ -113,7 +116,7 @@ begin
   aItem := TmncSchemeItem.Create;
   aItem.Name := Name;
   aItem.Comment := Comment;
-  Result := inherited Add(aItem);
+  Result := Add(aItem);
 end;
 
 function TmncSchemeItems.Find(const Name: string): TmncSchemeItem;
@@ -129,6 +132,11 @@ begin
       break;
     end;
   end;
+end;
+
+function TmncSchemeItems.Add(vSchemeItem: TmncSchemeItem): Integer;
+begin
+  Result := inherited Add(vSchemeItem);
 end;
 
 function TmncSchemeItems.GetExtraData: TStringList;

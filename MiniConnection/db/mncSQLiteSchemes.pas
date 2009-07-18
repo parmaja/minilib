@@ -171,8 +171,29 @@ end;
 
 procedure TmncSQLiteScheme.EnumFields(Scheme: TmncSchemeItems; RelationName: string;
   Options: TschmEnumOptions);
+var
+  aCMD: TmncSQLiteCommand;
+  i: Integer;
+  aItem: TmncSchemeItem;
 begin
-  EnumCMD(Scheme, 'pragma table_info(''' + (RelationName) + ''')');
+  aCMD := CreateCMD('pragma table_info(''' + (RelationName) + ''')');
+  try
+    aCMD.Prepare;
+    aCMD.Execute;
+    while not aCMD.EOF do
+    begin
+      aItem := TmncSchemeItem.Create;
+      aItem.Name := aCMD.Field['name'].AsString;
+      aItem.Attributes.Add(aCMD.Field['type'].AsString);
+      aItem.Attributes.Add(IntToStr(ord(aCMD.Field['pk'].AsInteger <> 0)));
+      aItem.Attributes.Add(IntToStr(ord(aCMD.Field['notnull'].AsInteger <> 0)));
+      aItem.Attributes.Add(aCMD.Field['dflt_value'].AsString);
+      aItem.Attributes.Add(aCMD.Field['cid'].AsString);
+      Scheme.Add(aItem);
+      aCMD.Next;
+    end;
+  finally
+  end;
 end;
 
 end.

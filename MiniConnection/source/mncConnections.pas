@@ -172,7 +172,6 @@ type
     function GetAsTrimString: string;
     procedure SetAsTrimString(const Value: string);
 
-  public
     property Value: Variant read GetVariant write SetVariant;
     property AsVariant: Variant read GetVariant write SetVariant;
     //AsAnsiString: Convert strign to utf8 it is special for Lazarus
@@ -195,7 +194,6 @@ type
     function GetIsEmpty: Boolean; virtual;
     function GetText: string; virtual;
     property Text: string read GetText;
-    procedure Clear;
     property IsEmpty: Boolean read GetIsEmpty;
     property IsNull: Boolean read GetIsNull;
 {    procedure LoadFromFile(const FileName: string);
@@ -204,6 +202,8 @@ type
     procedure SaveToFile(const FileName: string);
     procedure SaveToStream(Stream: TStream);
     procedure SaveToIStream(Stream: IStreamPersist);}
+  public
+    procedure Clear;//make value null
   published
     property Name: string read FName write FName;
   end;
@@ -225,14 +225,18 @@ type
     property Field[Index: string]: TmncCustomField read GetFieldByName; default;
   end;
 
+  { TmncField }
+
   TmncField = class(TmncCustomField)
   private
     FIndex: Integer;
+    FSize: Integer;
   protected
     function GetVariant: Variant; override;
     procedure SetVariant(const Value: Variant); override;
   published
     property Index: Integer read FIndex write FIndex;
+    //property Size: Integer read FSize write FSize;//todo not yet
   end;
 
   TmncFieldClass = class of TmncField;
@@ -259,6 +263,8 @@ type
     constructor Create(vField: TmncField);
   published
     property Field: TmncField read FField write FField;
+    property IsEmpty;
+    property IsNull;
     property Value;
     property AsVariant;
     property AsString;
@@ -278,6 +284,7 @@ type
   TmncRecord = class(TmncCustomFields)
   private
     FFields: TmncFields;
+    FRowID: Integer;
     function GetItem(Index: Integer): TmncFieldValue;
     function GetField(Index: string): TmncFieldValue;
     function GetValue(Index: string): Variant;
@@ -294,6 +301,7 @@ type
     property Field[Index: string]: TmncFieldValue read GetField;
     property Items[Index: Integer]: TmncFieldValue read GetItem;
     property Value[Index: string]: Variant read GetValue write SetValue; default;
+    property RowID: Integer read FRowID write FRowID default 0; //most of SQL engines have this value
   end;
 
   TmncParam = class(TmncCustomField)
@@ -309,6 +317,12 @@ type
     destructor Destroy; override;
     procedure AllocBuffer(var P; Size: Integer);
     procedure FreeBuffer;
+    property Buffer: Pointer read FBuffer;
+    property BufferSize: Integer read FBufferSize;
+    property BufferAllocated: Boolean read GetBufferAllocated;
+
+    property IsEmpty;
+    property IsNull;
     property Value;
     property AsVariant;
     property AsString;
@@ -321,9 +335,6 @@ type
     property AsDate;
     property AsTime;
     property AsDateTime;
-    property Buffer: Pointer read FBuffer;
-    property BufferSize: Integer read FBufferSize;
-    property BufferAllocated: Boolean read GetBufferAllocated;
   end;
 
   TmncCustomParams = class(TmncCustomFields)
@@ -417,9 +428,9 @@ type
     function FieldIsExist(Name: string): Boolean;
     property NextOnExecute: Boolean read FNextOnExecute write FNextOnExecute default True;
     property Prepared: Boolean read FPrepared;
-    property Current: TmncRecord read FCurrent write SetCurrent;
     property Params: TmncParams read FParams write SetParams;
     property Fields: TmncFields read FFields write SetFields;
+    property Current: TmncRecord read FCurrent write SetCurrent;
     property Param[Index: string]: TmncParam read GetParam;
     property Field[Index: string]: TmncFieldValue read GetField;
   end;
@@ -1017,12 +1028,12 @@ end;
 function TmncField.GetVariant: Variant;
 begin
   Result := null;
-  raise EmncException.Create('You must not use it!');
+  raise EmncException.Create('Field have no value, You must not use it, try use Current!');
 end;
 
 procedure TmncField.SetVariant(const Value: Variant);
 begin
-  raise EmncException.Create('You must not use it!');
+  raise EmncException.Create('Field have no value, You must not use it, try use Current!');
 end;
 
 { TmncParam }
