@@ -39,7 +39,7 @@ type
     constructor Create;
     destructor Destroy; override;
     procedure LoadScheme;
-    procedure Open(Name:string);
+    procedure Open(Name:string; vAutoCreate: Boolean);
     procedure Close;
     function IsActive: Boolean;
     procedure Connected;
@@ -134,9 +134,10 @@ begin
   end;
 end;
 
-procedure TsqlvSession.Open(Name: string);
+procedure TsqlvSession.Open(Name: string; vAutoCreate: Boolean);
 begin
   DBConnection.Resource := Name;
+  DBConnection.AutoCreate := vAutoCreate;
   DBConnection.Connect;
   DBSession.Start;
   sqlvEngine.AddRecent(Name);

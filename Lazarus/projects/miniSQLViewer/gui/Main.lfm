@@ -1,11 +1,9 @@
 object MainForm: TMainForm
-  Left = 327
+  Left = 345
   Height = 359
-  Top = 217
+  Top = 147
   Width = 567
   ActiveControl = SQLEdit
-  BorderIcons = [biSystemMenu, biMinimize]
-  BorderStyle = bsSingle
   Caption = 'SQLite'
   ClientHeight = 339
   ClientWidth = 567
@@ -16,6 +14,7 @@ object MainForm: TMainForm
   Font.Pitch = fpVariable
   Font.Quality = fqDraft
   Menu = MainMenu
+  OnShortCut = FormShortCut
   LCLVersion = '0.9.27'
   object ClientPanel: TPanel
     Left = 0
@@ -28,20 +27,42 @@ object MainForm: TMainForm
     ClientWidth = 567
     TabOrder = 0
     object SQLPanel: TPanel
-      Left = 16
-      Height = 297
-      Top = 16
+      Left = 8
+      Height = 270
+      Top = 12
       Width = 250
+      BevelInner = bvLowered
       BevelOuter = bvNone
-      ClientHeight = 297
+      BorderWidth = 2
+      ClientHeight = 270
       ClientWidth = 250
       TabOrder = 0
+      object SQLBackwardBtn: TSpeedButton
+        Left = 205
+        Height = 18
+        Top = 4
+        Width = 20
+        Anchors = [akTop, akRight]
+        Color = clBtnFace
+        Flat = True
+        NumGlyphs = 0
+        OnClick = SQLBackwardBtnClick
+      end
+      object SQLForwardBtn: TSpeedButton
+        Left = 224
+        Height = 18
+        Top = 4
+        Width = 20
+        Anchors = [akTop, akRight]
+        Color = clBtnFace
+        Flat = True
+        NumGlyphs = 0
+      end
       object SQLEdit: TSynEdit
-        Left = 0
-        Height = 298
-        Top = 0
-        Width = 250
-        Align = alTop
+        Left = 5
+        Height = 243
+        Top = 22
+        Width = 239
         Anchors = [akTop, akLeft, akRight, akBottom]
         Font.CharSet = ANSI_CHARSET
         Font.Color = clBlack
@@ -53,6 +74,7 @@ object MainForm: TMainForm
         ParentFont = False
         TabOrder = 0
         BookMarkOptions.Xoffset = -18
+        BookMarkOptions.OnChange = nil
         Gutter.Visible = False
         Gutter.Width = 0
         Gutter.MouseActions = <        
@@ -637,21 +659,42 @@ object MainForm: TMainForm
       end
     end
     object ResultPanel: TPanel
-      Left = 40
-      Height = 282
-      Top = 48
+      Left = 60
+      Height = 183
+      Top = 36
       Width = 186
+      BevelInner = bvLowered
       BevelOuter = bvNone
-      ClientHeight = 282
+      BorderWidth = 2
+      ClientHeight = 183
       ClientWidth = 186
       TabOrder = 1
-      object StringGrid1: TStringGrid
-        Left = 0
-        Height = 249
-        Top = 0
-        Width = 186
-        Align = alTop
-        ColCount = 2
+      object FetchCountLbl: TLabel
+        Left = 51
+        Height = 14
+        Top = 5
+        Width = 7
+        Caption = '0'
+        ParentColor = False
+      end
+      object FetchedLbl: TLabel
+        Left = 5
+        Height = 14
+        Top = 5
+        Width = 44
+        Caption = 'Fetched:'
+        ParentColor = False
+      end
+      object DataGrid: TStringGrid
+        Left = 5
+        Height = 158
+        Top = 19
+        Width = 176
+        Anchors = [akTop, akLeft, akRight, akBottom]
+        AutoEdit = False
+        ColCount = 3
+        DefaultRowHeight = 18
+        Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goRangeSelect, goDrawFocusSelected, goColSizing, goSmoothScroll, goFixedRowNumbering]
         TabOrder = 0
         TitleFont.CharSet = ANSI_CHARSET
         TitleFont.Color = clBlack
@@ -659,6 +702,11 @@ object MainForm: TMainForm
         TitleFont.Name = 'Tahoma'
         TitleFont.Pitch = fpVariable
         TitleFont.Quality = fqDraft
+        ColWidths = (
+          22
+          77
+          77
+        )
       end
     end
     object RootPanel: TPanel
@@ -666,7 +714,9 @@ object MainForm: TMainForm
       Height = 258
       Top = 32
       Width = 203
+      BevelInner = bvLowered
       BevelOuter = bvNone
+      BorderWidth = 2
       ClientHeight = 258
       ClientWidth = 203
       TabOrder = 2
@@ -686,48 +736,21 @@ object MainForm: TMainForm
         Caption = 'Databases'
         ParentColor = False
       end
-      object ConnectBtn: TButton
-        Left = 5
-        Height = 25
-        Top = 231
-        Width = 75
-        Anchors = [akLeft, akBottom]
-        Caption = 'Connect'
-        OnClick = ConnectBtnClick
-        TabOrder = 3
-      end
-      object DisconnectBtn: TButton
-        Left = 83
-        Height = 25
-        Top = 231
-        Width = 75
-        Anchors = [akLeft, akBottom]
-        Caption = 'Disconnect'
-        TabOrder = 4
-      end
       object DatabasesCbo: TComboBox
-        Left = 3
+        Left = 5
         Height = 21
         Top = 74
-        Width = 200
+        Width = 193
         Anchors = [akTop, akLeft, akRight]
         ItemHeight = 13
         OnDropDown = DatabasesCboDropDown
         TabOrder = 1
       end
-      object ExclusiveChk: TCheckBox
-        Left = 9
-        Height = 17
-        Top = 105
-        Width = 62
-        Caption = 'Exclusive'
-        TabOrder = 2
-      end
       object DataPathCbo: TComboBox
-        Left = 3
+        Left = 5
         Height = 21
         Top = 33
-        Width = 200
+        Width = 193
         Anchors = [akTop, akLeft, akRight]
         ItemHeight = 13
         OnDropDown = DataPathCboDropDown
@@ -735,22 +758,26 @@ object MainForm: TMainForm
         TabOrder = 0
         Text = '\'
       end
-      object ExclusiveChk1: TCheckBox
+      object AutoCreateChk: TCheckBox
         Left = 9
         Height = 17
-        Top = 124
+        Top = 101
         Width = 110
+        BidiMode = bdRightToLeftReadingOnly
         Caption = 'Create if not exists'
-        TabOrder = 5
+        ParentBidiMode = False
+        TabOrder = 2
       end
     end
     object ObjectsPanel: TPanel
-      Left = 104
-      Height = 255
-      Top = 65
+      Left = 87
+      Height = 153
+      Top = 98
       Width = 234
+      BevelInner = bvLowered
       BevelOuter = bvNone
-      ClientHeight = 255
+      BorderWidth = 2
+      ClientHeight = 153
       ClientWidth = 234
       TabOrder = 3
       object TitleLbl: TLabel
@@ -761,28 +788,197 @@ object MainForm: TMainForm
         Caption = 'Title'
         ParentColor = False
       end
-      object MembersList: TListBox
-        Left = 2
-        Height = 207
-        Top = 46
-        Width = 230
-        Anchors = [akTop, akLeft, akRight, akBottom]
-        ItemHeight = 0
-        OnDblClick = MembersListDblClick
-        OnKeyPress = MembersListKeyPress
-        TabOrder = 0
+      object ForwardBtn: TSpeedButton
+        Left = 208
+        Height = 18
+        Top = 4
+        Width = 20
+        Anchors = [akTop, akRight]
+        Color = clBtnFace
+        Flat = True
+        Glyph.Data = {
+          46030000424D460300000000000036000000280000000E0000000E0000000100
+          2000000000001003000064000000640000000000000000000000000000000000
+          00000000000000000000000000000000000200000010000000230000001B0000
+          000A000000020000000000000000000000000000000000000000000000000000
+          000000000001000000060000001900000037000000370000001E0000000A0000
+          0002000000000000000000000000000000000000000000000001000000070000
+          00FF0000002A000000450000004D0000003B0000001F0000000A000000020000
+          00000000000000000000000000000000000200000012000000FF000000FF0000
+          0052000000570000004F0000003B0000001E0000000800000001000000000000
+          0000000000000000000300000018000000FF000000FF000000FF000000590000
+          00570000004D0000003300000012000000020000000000000000000000000000
+          00FF000000FF000000FF000000FF000000FF000000FF000000570000004D0000
+          00330000001200000002000000000000000000000000000000FF000000FF0000
+          00FF000000FF000000FF000000FF000000FF0000003A0000001E000000080000
+          0001000000000000000000000000000000FF000000FF000000FF000000FF0000
+          00FF000000FF000000FF0000001E0000000A0000000200000000000000000000
+          000000000000000000FF000000FF000000FF000000FF000000FF000000FF0000
+          001E0000000A0000000200000000000000000000000000000000000000000000
+          000000000000000000FF000000FF000000FF0000001B0000000A000000020000
+          0000000000000000000000000000000000000000000000000000000000000000
+          00FF000000FF0000000C00000007000000020000000000000000000000000000
+          00000000000000000000000000000000000000000000000000FF000000010000
+          0001000000010000000000000000000000000000000000000000000000000000
+          0000000000000000000000000000000000000000000000000000000000000000
+          0000000000000000000000000000000000000000000000000000000000000000
+          0000000000000000000000000000000000000000000000000000000000000000
+          00000000000000000000
+        }
+        NumGlyphs = 0
+        OnClick = ForwardBtnClick
+      end
+      object BackwordBtn: TSpeedButton
+        Left = 188
+        Height = 18
+        Top = 4
+        Width = 20
+        Anchors = [akTop, akRight]
+        Color = clBtnFace
+        Flat = True
+        Glyph.Data = {
+          46030000424D460300000000000036000000280000000E0000000E0000000100
+          2000000000001003000064000000640000000000000000000000000000000000
+          00000000000000000000000000000000000000000000000000020000000A0000
+          001B000000230000001000000002000000000000000000000000000000000000
+          00000000000000000000000000020000000A0000001E00000037000000370000
+          0019000000060000000100000000000000000000000000000000000000000000
+          00020000000A0000001F000000FF0000004D000000450000002A000000140000
+          00070000000000000000000000000000000000000001000000080000001E0000
+          00FF000000FF0000005700000052000000450000003000000012000000000000
+          000000000000000000000000000200000012000000FF000000FF000000FF0000
+          005900000058000000530000003E000000180000000000000000000000000000
+          000000000002000000FF000000FF000000FF000000FF000000FF000000FF0000
+          00530000003E0000001800000000000000000000000000000000000000FF0000
+          00FF000000FF000000FF000000FF000000FF000000FF000000450000002F0000
+          001200000000000000000000000000000000000000FF000000FF000000FF0000
+          00FF000000FF000000FF000000FF000000290000001400000007000000000000
+          0000000000000000000000000000000000FF000000FF000000FF000000FF0000
+          00FF000000FF0000001900000005000000010000000000000000000000000000
+          00000000000000000000000000FF000000FF000000FF0000001B000000230000
+          0010000000020000000000000000000000000000000000000000000000000000
+          000000000000000000FF000000FF000000070000000C00000006000000010000
+          0000000000000000000000000000000000000000000000000000000000000000
+          0000000000FF0000000100000001000000010000000000000000000000000000
+          0000000000000000000000000000000000000000000000000000000000000000
+          0000000000000000000000000000000000000000000000000000000000000000
+          0000000000000000000000000000000000000000000000000000000000000000
+          00000000000000000000
+        }
+        NumGlyphs = 0
+        OnClick = BackwordBtnClick
+      end
+      object FirstBtn: TSpeedButton
+        Left = 166
+        Height = 18
+        Top = 4
+        Width = 20
+        Anchors = [akTop, akRight]
+        Color = clBtnFace
+        Flat = True
+        Glyph.Data = {
+          46030000424D460300000000000036000000280000000E0000000E0000000100
+          2000000000001003000064000000640000000000000000000000000000000000
+          000000000002000000120000002C0000002C0000001200000003000000020000
+          000A0000001B0000002300000010000000020000000000000000000000030000
+          00180000003B0000003B00000018000000050000000A0000001E000000370000
+          003700000019000000060000000000000000000000FF000000FF0000003D0000
+          003D0000001B0000000D0000001F000000FF0000004D000000450000002A0000
+          00140000000000000000000000FF000000FF0000003D0000003E000000210000
+          0021000000FF000000FF00000057000000520000004500000030000000000000
+          0000000000FF000000FF0000003D000000400000002B000000FF000000FF0000
+          00FF0000005900000058000000530000003E0000000000000000000000FF0000
+          00FF0000003D00000040000000FF000000FF000000FF000000FF000000FF0000
+          00FF000000530000003E0000000000000000000000FF000000FF0000003D0000
+          00FF000000FF000000FF000000FF000000FF000000FF000000FF000000450000
+          002F0000000000000000000000FF000000FF0000003D000000FF000000FF0000
+          00FF000000FF000000FF000000FF000000FF0000002900000014000000000000
+          0000000000FF000000FF0000003B0000003B000000FF000000FF000000FF0000
+          00FF000000FF000000FF00000019000000050000000000000000000000FF0000
+          00FF0000002C0000002C00000012000000FF000000FF000000FF0000001B0000
+          002300000010000000020000000000000000000000FF000000FF000000110000
+          00110000000700000001000000FF000000FF000000070000000C000000060000
+          00010000000000000000000000FF000000FF0000000200000002000000010000
+          000000000000000000FF00000001000000010000000100000000000000000000
+          0000000000000000000000000000000000000000000000000000000000000000
+          0000000000000000000000000000000000000000000000000000000000000000
+          0000000000000000000000000000000000000000000000000000000000000000
+          00000000000000000000
+        }
+        NumGlyphs = 0
+        OnClick = FirstBtnClick
       end
       object GroupsList: TComboBox
-        Left = 2
+        Left = 5
         Height = 21
-        Top = 22
-        Width = 230
+        Top = 23
+        Width = 224
         Anchors = [akTop, akLeft, akRight]
         ItemHeight = 13
-        OnClick = GroupsListClick
         OnSelect = GroupsListSelect
         Style = csDropDownList
+        TabOrder = 0
+      end
+      object MembersGrid: TStringGrid
+        Left = 5
+        Height = 102
+        Top = 46
+        Width = 224
+        Anchors = [akTop, akLeft, akRight, akBottom]
+        AutoEdit = False
+        ColCount = 1
+        DefaultRowHeight = 18
+        FixedCols = 0
+        Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goDrawFocusSelected, goColSizing, goRowSelect]
+        RowCount = 3
+        ScrollBars = ssAutoVertical
         TabOrder = 1
+        TitleFont.CharSet = ANSI_CHARSET
+        TitleFont.Color = clBlack
+        TitleFont.Height = -11
+        TitleFont.Name = 'Tahoma'
+        TitleFont.Pitch = fpVariable
+        TitleFont.Quality = fqDraft
+        OnDblClick = MembersGridDblClick
+        ColWidths = (
+          229
+        )
+      end
+    end
+    object InfoPanel: TPanel
+      Left = 395
+      Height = 99
+      Top = 212
+      Width = 123
+      BevelInner = bvLowered
+      BevelOuter = bvNone
+      BorderWidth = 2
+      ClientHeight = 99
+      ClientWidth = 123
+      TabOrder = 4
+      object InfoLbl: TLabel
+        Left = 9
+        Height = 14
+        Top = 5
+        Width = 21
+        Caption = 'Info'
+        ParentColor = False
+      end
+      object ResultEdit: TMemo
+        Left = 4
+        Height = 72
+        Top = 22
+        Width = 115
+        Anchors = [akTop, akLeft, akRight, akBottom]
+        Font.CharSet = ANSI_CHARSET
+        Font.Color = clBlack
+        Font.Height = -11
+        Font.Name = 'Courier New'
+        Font.Pitch = fpFixed
+        Font.Quality = fqDraft
+        ParentFont = False
+        ScrollBars = ssAutoBoth
+        TabOrder = 0
       end
     end
   end
@@ -797,7 +993,7 @@ object MainForm: TMainForm
     ClientWidth = 567
     TabOrder = 1
     object SQLBtn: TSpeedButton
-      Left = 76
+      Left = 190
       Height = 21
       Top = 1
       Width = 31
@@ -808,7 +1004,7 @@ object MainForm: TMainForm
       OnClick = SQLBtnClick
     end
     object OpenBtn: TSpeedButton
-      Left = 40
+      Left = 154
       Height = 21
       Top = 1
       Width = 36
@@ -830,7 +1026,7 @@ object MainForm: TMainForm
       OnClick = SpeedButton5Click
     end
     object ExecuteBtn: TSpeedButton
-      Left = 162
+      Left = 386
       Height = 21
       Top = 1
       Width = 55
@@ -841,7 +1037,7 @@ object MainForm: TMainForm
       OnClick = ExecuteBtnClick
     end
     object ObjectsBtn: TSpeedButton
-      Left = 107
+      Left = 221
       Height = 21
       Top = 1
       Width = 55
@@ -850,6 +1046,50 @@ object MainForm: TMainForm
       Color = clBtnFace
       NumGlyphs = 0
       OnClick = ObjectsBtnClick
+    end
+    object ResultsBtn: TSpeedButton
+      Left = 331
+      Height = 21
+      Top = 1
+      Width = 55
+      Align = alLeft
+      Caption = 'Results'
+      Color = clBtnFace
+      NumGlyphs = 0
+      OnClick = ResultsBtnClick
+    end
+    object InfoBtn: TSpeedButton
+      Left = 276
+      Height = 21
+      Top = 1
+      Width = 55
+      Align = alLeft
+      Caption = 'Info'
+      Color = clBtnFace
+      NumGlyphs = 0
+      OnClick = InfoBtnClick
+    end
+    object DisconnectBtn: TButton
+      Left = 93
+      Height = 21
+      Top = 1
+      Width = 61
+      Align = alLeft
+      Anchors = [akLeft, akBottom]
+      Caption = 'Disconnect'
+      OnClick = DisconnectBtnClick
+      TabOrder = 0
+    end
+    object ConnectBtn: TButton
+      Left = 40
+      Height = 21
+      Top = 1
+      Width = 53
+      Align = alLeft
+      Anchors = [akLeft, akBottom]
+      Caption = 'Connect'
+      OnClick = ConnectBtnClick
+      TabOrder = 1
     end
   end
   object MainMenu: TMainMenu

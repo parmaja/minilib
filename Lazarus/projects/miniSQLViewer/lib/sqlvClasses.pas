@@ -65,7 +65,7 @@ type
   private
     FAttributes: TStringList;
     FComment: string;
-    FRelated: string;
+    FGroup: string;
     FName: string;
     FStyle: TsqlvNodeStyle;
     FTitle: string;
@@ -78,10 +78,11 @@ type
     destructor Destroy; override;
     procedure ShowProperty; virtual;
     procedure Execute(const MemberName: string); virtual;
-    procedure EnumRelated(Nodes: TsqlvNodes); overload;
-    procedure Enum(var SchemeName:string; SchemeItems: TmncSchemeItems; const MemberName: string = ''); virtual;
+    procedure Enum(Nodes: TsqlvNodes);
+    procedure EnumHeader(Header: TStringList); virtual;
+    procedure EnumScheme(var SchemeName:string; SchemeItems: TmncSchemeItems; const MemberName: string = ''); virtual;
     property CanExecute: Boolean read GetCanExecute;
-    property Related: string read FRelated write FRelated;
+    property Group: string read FGroup write FGroup;
     property Name: string read FName write FName;
     property Comment: string read FComment write FComment;
     property Attributes: TStringList read FAttributes write FAttributes;
@@ -98,7 +99,7 @@ type
     function GetItem(Index: Integer): TsqlvNode;
     procedure SetItem(Index: Integer; const Value: TsqlvNode);
   public
-    procedure EnumRelated(Name: string; Nodes: TsqlvNodes); overload;
+    procedure Enum(Name: string; Nodes: TsqlvNodes); overload;
     function Find(const Name: string): TsqlvNode;
     property Items[Index: Integer]: TsqlvNode read GetItem write SetItem; default;
   end;
@@ -111,6 +112,27 @@ type
     function Add(vNode:TsqlvNode): Integer;
   end;
 
+  TsqlvHistoryItem = class(TObject)
+    Name:string;
+    MemberName: string;
+  end;
+
+  { TsqlvHistory }
+
+  TsqlvHistory = class(TObjectList)
+  private
+    FIndex: Integer;
+    function GetItem(Index: Integer): TsqlvHistoryItem;
+  public
+    constructor create;
+    function Add(History: TsqlvHistoryItem): Integer;
+    procedure Add(const Name, MemberName: string);
+    function HaveForward: Boolean;
+    function HaveBackward: Boolean;
+    property Items[Index: Integer]: TsqlvHistoryItem read GetItem; default;
+    property Index: Integer read FIndex write FIndex;
+  end;
+
   { TsqlvEngine }
 
   TsqlvEngine = class(TsqlvCustomNodes)
@@ -119,6 +141,8 @@ type
     FSetting: TsqlvSetting;
     FRecents: TStringList;
     FWorkPath: string;
+    FHistory: TsqlvHistory;
+    FSQLHistory: TsqlvHistory;
     procedure SetWorkPath(const Value: string);
   public
     constructor Create;
@@ -127,14 +151,24 @@ type
     procedure SaveSetting;
     procedure LoadRecents;
     procedure SaveRecents;
+    //vSilent: without add to history
+    procedure Launch(Name: string; MemberName: string =''; vSilent:Boolean = False);
+    procedure Launch(Node: TsqlvNode; MemberName: string; vSilent:Boolean = False);
+    procedure LaunchGroup(SchemeName: string; MemberName: string =''; vSilent:Boolean = False);
     procedure RegisterFilter(Filter: string);
     procedure RegisterViewer(Classes: array of TsqlvNodeClass);
     procedure AddRecent(Name:string);
+    procedure LoadFile(FileName:string; Strings:TStrings);
+    procedure SaveFile(FileName:string; Strings:TStrings);
+    procedure Backward;
+    procedure Forward;
     function GetAllSupportedFiles: string;
     property Setting: TsqlvSetting read FSetting;
     property Recents: TStringList read FRecents;
     property Session: TsqlvSession read FSession;
     property WorkPath :string read FWorkPath write SetWorkPath;
+    property History: TsqlvHistory read FHistory;
+    property SQLHistory: TsqlvHistory read FSQLHistory;
   end;
 
   TsqlvMenuItem = class(TMenuItem)
@@ -152,13 +186,9 @@ var
   AddOpenSaveDialogFilters: string = '';
 
 function sqlvEngine: TsqlvEngine;
-procedure FillPopupMenu(PopupMenu: TPopupMenu; Session: TsqlvSession; Node: TsqlvNode; MemberName: string); overload;
-procedure FillPopupMenu(PopupMenu: TPopupMenu; Session: TsqlvSession; Related: string; MemberName: string); overload;
-procedure Launch(Name: string; MemberName: string = ''); overload;
-procedure Launch(Node: TsqlvNode; MemberName: string = ''); overload;
-procedure LaunchRelated(SchemeName: string; MemberName: string = ''); overload;
-procedure BackForm(vRelated: string);
 
+procedure FillPopupMenu(PopupMenu: TPopupMenu; Session: TsqlvSession; Node: TsqlvNode; MemberName: string); overload;
+procedure FillPopupMenu(PopupMenu: TPopupMenu; Session: TsqlvSession; Group: string; MemberName: string); overload;
 
 implementation
 
@@ -193,6 +223,35 @@ begin
     Recents.Capacity := 10;
 end;
 
+procedure TsqlvEngine.LoadFile(FileName: string; Strings: TStrings);
+begin
+  if FileExists(WorkPath + FileName) then
+    Strings.LoadFromFile(WorkPath + FileName);
+end;
+
+procedure TsqlvEngine.SaveFile(FileName: string; Strings: TStrings);
+begin
+  Strings.SaveToFile(WorkPath + FileName);
+end;
+
+procedure TsqlvEngine.Backward;
+begin
+  if History.HaveBackward then
+  begin
+    History.Index := History.Index - 1;
+    Launch(History[History.Index].Name, History[History.Index].MemberName, True);
+  end;
+end;
+
+procedure TsqlvEngine.Forward;
+begin
+  if History.HaveForward then
+  begin
+    History.Index := History.Index + 1;
+    Launch(History[History.Index].Name, History[History.Index].MemberName, True);
+  end;
+end;
+
 procedure TsqlvEngine.SaveSetting;
 begin
   FSetting.SaveToFile(WorkPath + 'sqlviewer.config');
@@ -221,7 +280,7 @@ end;
 
 { TsqlvNodes }
 
-procedure TsqlvCustomNodes.EnumRelated(Name: string; Nodes: TsqlvNodes);
+procedure TsqlvCustomNodes.Enum(Name: string; Nodes: TsqlvNodes);
 var
   i: Integer;
   aDefault: Integer;
@@ -232,7 +291,7 @@ begin
   c := 0;
   for i := 0 to Count - 1 do
   begin
-    if SameText(Items[i].Related, Name) then
+    if SameText(Items[i].Group, Name) then
     begin
       if (aDefault < 0) and (nsDefault in Items[i].Style) then
         aDefault := c;
@@ -296,11 +355,11 @@ begin
   inherited Destroy;
 end;
 
-procedure TsqlvNode.Enum(var SchemeName:string; SchemeItems: TmncSchemeItems; const MemberName: string);
+procedure TsqlvNode.EnumScheme(var SchemeName:string; SchemeItems: TmncSchemeItems; const MemberName: string);
 begin
 end;
 
-{procedure TsqlvNode.EnumRelated(Session: TsqlvSession; Strings: TStrings);
+{procedure TsqlvNode.Enum(Session: TsqlvSession; Strings: TStrings);
 var
   i: Integer;
   aDefault: Integer;
@@ -311,7 +370,7 @@ begin
   c := 0;
   for i := 0 to sqlvClasses.Count - 1 do
   begin
-    if SameText(sqlvClasses[i].Related, Name) then
+    if SameText(sqlvClasses[i].Group, Name) then
     begin
       if (aDefault < 0) and sqlvClasses[i].IsDefault then
         aDefault := c;
@@ -323,10 +382,15 @@ begin
     Strings.Move(aDefault, 0);
 end;}
 
-procedure TsqlvNode.EnumRelated(Nodes: TsqlvNodes);
+procedure TsqlvNode.Enum(Nodes: TsqlvNodes);
 begin
-  inherited;
-  sqlvEngine.EnumRelated(Name, Nodes);
+  sqlvEngine.Enum(Name, Nodes);
+end;
+
+procedure TsqlvNode.EnumHeader(Header: TStringList);
+begin
+  Header.Clear;
+  Header.Add(Title);
 end;
 
 procedure TsqlvNode.Execute(const MemberName: string);
@@ -371,7 +435,7 @@ begin
         PopupMenu.Items.Add(aMenuItem);
       end;
 
-      Node.EnumRelated(aNodes);
+      Node.Enum(aNodes);
       for i := 0 to aNodes.Count - 1 do
       begin
         aMenuItem := TsqlvMenuItem.Create(PopupMenu);
@@ -388,7 +452,7 @@ begin
   end;
 end;
 
-procedure FillPopupMenu(PopupMenu: TPopupMenu; Session: TsqlvSession; Related: string; MemberName: string);
+procedure FillPopupMenu(PopupMenu: TPopupMenu; Session: TsqlvSession; Group: string; MemberName: string);
 var
   aNodes: TsqlvNodes;
   aMenuItem: TsqlvMenuItem;
@@ -396,7 +460,7 @@ var
 begin
   aNodes := TsqlvNodes.Create;
   try
-    sqlvEngine.EnumRelated(Related, aNodes);
+    sqlvEngine.Enum(Group, aNodes);
     for i := 0 to aNodes.Count - 1 do
     begin
       aMenuItem := TsqlvMenuItem.Create(PopupMenu);
@@ -412,36 +476,44 @@ begin
   end;
 end;
 
-procedure Launch(Name: string; MemberName: string = ''); overload;
+procedure TsqlvEngine.Launch(Name: string; MemberName: string; vSilent:Boolean); overload;
 var
   aNode: TsqlvNode;
 begin
   try
-    aNode := sqlvEngine.Find(Name);
+    aNode := Find(Name);
     if aNode = nil then
       raise Exception.Create(Name +' Node not found');
-    Launch(aNode);
+    Launch(aNode, MemberName, vSilent);
   finally
   end;
 end;
 
-procedure Launch(Node: TsqlvNode; MemberName: string);
+procedure TsqlvEngine.Launch(Node: TsqlvNode; MemberName: string; vSilent:Boolean);
 var
   aNodes: TsqlvNodes;
 begin
   if Node <> nil then
   begin
     if Node.CanExecute then
-      Node.Execute(MemberName)
+    begin
+      Node.Execute(MemberName);
+      if not vSilent then
+        History.Add(Node.Name, MemberName);
+    end
     else
     begin
       aNodes := TsqlvNodes.Create;
       try
-        Node.EnumRelated(aNodes);
+        Node.Enum(aNodes);
         if MemberName = '' then
           MemberName := Node.Name;
         if aNodes.Count > 0 then
+        begin
           aNodes[0].Execute(MemberName);
+          if not vSilent then
+            History.Add(aNodes[0].Name, MemberName);
+        end;
       finally
         aNodes.Free;
       end;
@@ -449,39 +521,24 @@ begin
   end;
 end;
 
-procedure LaunchRelated(SchemeName: string; MemberName: string = ''); overload;
+procedure TsqlvEngine.LaunchGroup(SchemeName: string; MemberName: string; vSilent:Boolean); overload;
 var
   aNodes: TsqlvNodes;
   aNode: TsqlvNode;
 begin
   aNodes := TsqlvNodes.Create;
   try
-    aNode := sqlvEngine.Find(SchemeName);
+    aNode := Find(SchemeName);
     if (aNode <> nil) and (aNode.CanExecute) then
-      aNode.Execute(MemberName)
+       Launch(aNode, MemberName, vSilent)
     else
     begin
-      sqlvEngine.EnumRelated(SchemeName, aNodes);
-      if aNodes.Count > 0 then
-        aNodes[0].Execute(MemberName);
+      Enum(SchemeName, aNodes);
+      Launch(aNodes[0], MemberName, vSilent);
     end;
   finally
     aNodes.Free;
   end;
-end;
-
-procedure BackForm(vRelated: string);
-{var
-  i: Integer;}
-begin
-{  for i := 0 to Application.MainForm.MDIChildCount - 1 do
-  begin
-    if (Application.MainForm.MDIChildren[i] is TsqlvForm) and ((Application.MainForm.MDIChildren[i] as TsqlvForm).Related = vRelated) then
-    begin
-      Application.MainForm.MDIChildren[i].Show;
-      break;
-    end;
-  end;}
 end;
 
 { TsqlvClass }
@@ -489,9 +546,11 @@ end;
 constructor TsqlvEngine.Create;
 begin
   inherited Create(True);
+  FHistory := TsqlvHistory.create;
+  FSQLHistory := TsqlvHistory.create;
   FSetting := TsqlvSetting.Create;
   FRecents := TStringList.Create;
-  FSession:=TsqlvSession.Create;
+  FSession := TsqlvSession.Create;
 end;
 
 
@@ -500,6 +559,8 @@ begin
   FreeAndNil(FSession);
   FreeAndNil(FSetting);
   FreeAndNil(FRecents);
+  FreeAndNil(FHistory);
+  FreeAndNil(FSQLHistory);
   inherited;
 end;
 
@@ -545,6 +606,53 @@ end;
 procedure TsqlvEngine.LoadSetting;
 begin
   FSetting.SafeLoadFromFile(WorkPath + 'sqlviewer.config');
+end;
+
+{ TsqlvHistory }
+
+function TsqlvHistory.GetItem(Index: Integer): TsqlvHistoryItem;
+begin
+  Result := inherited Items[Index] as TsqlvHistoryItem;
+end;
+
+constructor TsqlvHistory.create;
+begin
+  inherited Create(True);
+  Index := 0;
+end;
+
+function TsqlvHistory.Add(History: TsqlvHistoryItem): Integer;
+begin
+  if (Count > 0) and (Index < Count -1) then
+    Count := Index;//cut to index - 1
+  Result := inherited Add(History);
+  Index := Count - 1;
+end;
+
+procedure TsqlvHistory.Add(const Name, MemberName: string);
+var
+  aHistory: TsqlvHistoryItem;
+begin
+  if (Count > 0) then
+  begin
+    aHistory := Items[Count - 1];
+    if (aHistory.Name = Name) and (aHistory.MemberName = MemberName) then
+      exit;//do not duplicate the last one
+  end;
+  aHistory := TsqlvHistoryItem.Create;
+  aHistory.Name := Name;
+  aHistory.MemberName := MemberName;
+  Add(aHistory);
+end;
+
+function TsqlvHistory.HaveForward: Boolean;
+begin
+  Result := Index < Count - 1;
+end;
+
+function TsqlvHistory.HaveBackward: Boolean;
+begin
+  Result := Index > 0;
 end;
 
 initialization
