@@ -1,4 +1,12 @@
 unit sqlvSessions;
+{**
+ *  This file is part of the "Mini Connections"
+ *
+ * @license   modifiedLGPL (modified of http://www.gnu.org/licenses/lgpl.html)
+ *            See the file COPYING.MLGPL, included in this distribution,
+ * @author    Zaher Dirkey <zaher at parmaja dot com>
+ *}
+
 
 {$mode objfpc}{$H+}
 
@@ -17,14 +25,14 @@ type
   private
     FDBConnection: TmncSQLiteConnection;
     FDBSession: TmncSQLiteSession;
-    FTables: TmncSchemeItems;
-    FGenerators: TmncSchemeItems;
-    FProceduers: TmncSchemeItems;
-    FViews: TmncSchemeItems;
-    FFunctions: TmncSchemeItems;
-    FExceptions: TmncSchemeItems;
-    FDomains: TmncSchemeItems;
-    FFields: TmncSchemeItems;
+    FTables: TmncSchemaItems;
+    FGenerators: TmncSchemaItems;
+    FProceduers: TmncSchemaItems;
+    FViews: TmncSchemaItems;
+    FFunctions: TmncSchemaItems;
+    FExceptions: TmncSchemaItems;
+    FDomains: TmncSchemaItems;
+    FFields: TmncSchemaItems;
     FOnDisconnected: TsqlvOnNotifySession;
     FOnConnected: TsqlvOnNotifySession;
     FOnSessionStarted: TsqlvOnNotifySession;
@@ -38,7 +46,7 @@ type
   public
     constructor Create;
     destructor Destroy; override;
-    procedure LoadScheme;
+    procedure LoadSchema;
     procedure Open(Name:string; vAutoCreate: Boolean);
     procedure Close;
     function IsActive: Boolean;
@@ -50,14 +58,14 @@ type
     property OnSessionStoped: TsqlvOnNotifySession read FOnSessionStoped write FOnSessionStoped;
     property DBConnection: TmncSQLiteConnection read FDBConnection;
     property DBSession: TmncSQLiteSession read FDBSession;
-    property Tables: TmncSchemeItems read FTables;
-    property Proceduers: TmncSchemeItems read FProceduers;
-    property Views: TmncSchemeItems read FViews;
-    property Generators: TmncSchemeItems read FGenerators;
-    property Functions: TmncSchemeItems read FFunctions;
-    property Exceptions: TmncSchemeItems read FExceptions;
-    property Domains: TmncSchemeItems read FDomains;
-    property Fields: TmncSchemeItems read FFields;
+    property Tables: TmncSchemaItems read FTables;
+    property Proceduers: TmncSchemaItems read FProceduers;
+    property Views: TmncSchemaItems read FViews;
+    property Generators: TmncSchemaItems read FGenerators;
+    property Functions: TmncSchemaItems read FFunctions;
+    property Exceptions: TmncSchemaItems read FExceptions;
+    property Domains: TmncSchemaItems read FDomains;
+    property Fields: TmncSchemaItems read FFields;
   end;
 
 implementation
@@ -70,7 +78,7 @@ uses
 procedure TsqlvSession.Connected;
 begin
   DBSession.Start;
-  LoadScheme;
+  LoadSchema;
   if Assigned(FOnConnected) then
     FOnConnected;
   RunLoginSQL;
@@ -81,14 +89,14 @@ begin
   inherited;
   FDBConnection := TmncSQLiteConnection.Create;
   FDBSession := TmncSQLiteSession.Create(DBConnection);
-  FTables := TmncSchemeItems.Create;
-  FProceduers := TmncSchemeItems.Create;
-  FViews := TmncSchemeItems.Create;
-  FGenerators := TmncSchemeItems.Create;
-  FExceptions := TmncSchemeItems.Create;
-  FFunctions := TmncSchemeItems.Create;
-  FDomains := TmncSchemeItems.Create;
-  FFields := TmncSchemeItems.Create;
+  FTables := TmncSchemaItems.Create;
+  FProceduers := TmncSchemaItems.Create;
+  FViews := TmncSchemaItems.Create;
+  FGenerators := TmncSchemaItems.Create;
+  FExceptions := TmncSchemaItems.Create;
+  FFunctions := TmncSchemaItems.Create;
+  FDomains := TmncSchemaItems.Create;
+  FFields := TmncSchemaItems.Create;
 end;
 
 destructor TsqlvSession.Destroy;
@@ -113,24 +121,24 @@ begin
     FOnDisconnected;
 end;
 
-procedure TsqlvSession.LoadScheme;
+procedure TsqlvSession.LoadSchema;
 var
-  Scheme: TmncSQLiteScheme;
+  Schema: TmncSQLiteSchema;
 begin
-  Scheme := TmncSQLiteScheme.Create;
+  Schema := TmncSQLiteSchema.Create;
   try
-    Scheme.Session := DBSession;
-    Scheme.EnumObject(Tables, sokTable, '', [ekSystem]);
-    Scheme.EnumObject(Views, sokView);
-    Scheme.EnumObject(Proceduers, sokProcedure);
-    Scheme.EnumObject(Generators, sokGenerator);
-    Scheme.EnumObject(Functions, sokFunction);
-    Scheme.EnumObject(Exceptions, sokException);
-    Scheme.EnumObject(Domains, sokDomain);
+    Schema.Session := DBSession;
+    Schema.EnumObject(Tables, sokTable, '', [ekSystem]);
+    Schema.EnumObject(Views, sokView);
+    Schema.EnumObject(Proceduers, sokProcedure);
+    Schema.EnumObject(Generators, sokGenerator);
+    Schema.EnumObject(Functions, sokFunction);
+    Schema.EnumObject(Exceptions, sokException);
+    Schema.EnumObject(Domains, sokDomain);
     if sqlvEngine.Setting.LoadFieldsToAutoComplete then
-      Scheme.EnumObject(Fields, sokFields);
+      Schema.EnumObject(Fields, sokFields);
   finally
-    Scheme.Free;
+    Schema.Free;
   end;
 end;
 

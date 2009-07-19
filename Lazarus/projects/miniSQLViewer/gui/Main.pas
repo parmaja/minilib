@@ -1,6 +1,23 @@
 unit Main;
+{**
+ *  This file is part of the "Mini Connections"
+ *
+ * @license   modifiedLGPL (modified of http://www.gnu.org/licenses/lgpl.html)
+ *            See the file COPYING.MLGPL, included in this distribution,
+ * @author    Zaher Dirkey <zaher at parmaja dot com>
+ *}
+
 
 {$mode objfpc}{$H+}
+
+{todo: Save/Load sql scripts DONE}
+{todo: More short cuts}
+{todo: Assoiate with *.sqlite}
+{todo: Auto complete in SQLEdit}
+{todo: Export/Import As CSV}
+{todo: Extract the schema of whale database}
+{todo: Find and Replace}
+
 
 interface
 
@@ -58,6 +75,9 @@ type
   { TMainForm }
 
   TMainForm = class(TForm)
+    OpenDialog: TOpenDialog;
+    SaveDialog: TSaveDialog;
+    SQLLoadBtn: TButton;
     FirstBtn: TSpeedButton;
     ResultsBtn: TSpeedButton;
     InfoPanel: TPanel;
@@ -76,9 +96,9 @@ type
     MainMenu: TMainMenu;
     MenuItem1: TMenuItem;
     AboutMnu: TMenuItem;
-    OptionsMnu: TMenuItem;
     ForwardBtn: TSpeedButton;
     MembersGrid: TStringGrid;
+    SQLSaveBtn: TButton;
     ToolsMnu: TMenuItem;
     TitleLbl: TLabel;
     DataPathCbo: TComboBox;
@@ -99,6 +119,7 @@ type
     SQLPanel: TPanel;
     DataGrid: TStringGrid;
     BackwordBtn: TSpeedButton;
+    procedure AboutMnuClick(Sender: TObject);
     procedure BackwordBtnClick(Sender: TObject);
     procedure Button1Click(Sender: TObject);
     procedure ConnectBtnClick(Sender: TObject);
@@ -123,10 +144,15 @@ type
     procedure OpenBtnClick(Sender: TObject);
     procedure SpeedButton5Click(Sender: TObject);
     procedure ForwardBtnClick(Sender: TObject);
+    procedure SQLForwardBtnClick(Sender: TObject);
+    procedure SQLLoadBtnClick(Sender: TObject);
+    procedure SQLSaveBtnClick(Sender: TObject);
   private
+    LastSQLFileName: string;
     FLockEnum: Boolean;
     FSqliteSyn: TSynSqliteSyn;
     FDataPath: string;
+    procedure Connect;
     procedure FileFoundEvent(FileIterator: TFileIterator);
     procedure DirectoryFoundEvent(FileIterator: TFileIterator);
     procedure EnumDatabases;
@@ -141,11 +167,12 @@ type
     FCancel: Boolean;
     procedure AddSql;
     procedure ClearGrid;
-    procedure Execute;
+    procedure Execute(SQLCMD: TmncSQLiteCommand; SQL:TStringList; ShowGrid:Boolean);
+    procedure ExecuteScript;
     procedure FillGrid(SQLCMD: TmncSQLiteCommand);
     function LogTime(Start: TDateTime): string;
-    procedure RefreshSQLHistory;
-    procedure RefreshHistory;
+    procedure RefreshSQLHistory(Sender: TObject);
+    procedure RefreshHistory(Sender: TObject);
     procedure SetState(const AValue: TsqlState);
     procedure StateChanged;
     function GetDatabaseName: string;
@@ -154,7 +181,7 @@ type
     property DataPath: string read FDataPath write SetDataPath;
   public
     GroupsNames: TStringList;
-    SchemeName: string;
+    SchemaName: string;
     MebmerName: string;
     constructor Create(TheOwner: TComponent); override;
     destructor Destroy; override;
@@ -168,12 +195,14 @@ var
 
 implementation
 
+uses
+  AboutForm;
+
 { TMainForm }
 
 procedure TMainForm.ConnectBtnClick(Sender: TObject);
 begin
-  sqlvEngine.Session.Open(GetDatabaseName, AutoCreateChk.Checked);
-  sqlvEngine.Launch('Database', DatabasesCbo.Text);
+  Connect;
 end;
 
 procedure TMainForm.DatabasesCboDropDown(Sender: TObject);
@@ -188,6 +217,15 @@ end;
 procedure TMainForm.BackwordBtnClick(Sender: TObject);
 begin
   sqlvEngine.Backward;
+end;
+
+procedure TMainForm.AboutMnuClick(Sender: TObject);
+begin
+  with TAboutForm.Create(Application) do
+  begin
+    ShowModal;
+    Free;
+  end;
 end;
 
 procedure TMainForm.DataPathCboDropDown(Sender: TObject);
@@ -208,7 +246,7 @@ end;
 
 procedure TMainForm.ExecuteBtnClick(Sender: TObject);
 begin
-  Execute;
+  ExecuteScript;
 end;
 
 procedure TMainForm.FirstBtnClick(Sender: TObject);
@@ -221,7 +259,10 @@ begin
   if Msg.CharCode = VK_F9 then
   begin
     if (State = sqlsSQL) and sqlvEngine.Session.IsActive then
-      Execute;
+    begin
+      ExecuteScript;
+      Handled := True;
+    end;
   end;
 end;
 
@@ -276,7 +317,12 @@ end;
 
 procedure TMainForm.SQLBackwardBtnClick(Sender: TObject);
 begin
-
+  if (sqlvEngine.SQLHistory.HaveBackward) then
+  begin
+    sqlvEngine.SQLHistory.Backward;
+    if (sqlvEngine.SQLHistory.Current <> nil) then
+      SQLEdit.Lines.Text := sqlvEngine.SQLHistory.Current.Text;
+  end;
 end;
 
 procedure TMainForm.OpenBtnClick(Sender: TObject);
@@ -297,6 +343,44 @@ end;
 procedure TMainForm.ForwardBtnClick(Sender: TObject);
 begin
   sqlvEngine.Forward;
+end;
+
+procedure TMainForm.SQLForwardBtnClick(Sender: TObject);
+begin
+  if (sqlvEngine.SQLHistory.HaveForward) then
+  begin
+    sqlvEngine.SQLHistory.Forward;
+    if sqlvEngine.SQLHistory.Current <> nil then
+      SQLEdit.Lines.Text := sqlvEngine.SQLHistory.Current.Text;
+  end;
+end;
+
+procedure TMainForm.SQLLoadBtnClick(Sender: TObject);
+begin
+  OpenDialog.DefaultExt := '*.sql';
+  OpenDialog.Filter := '*.sql';
+  OpenDialog.InitialDir := Application.Location;
+  if OpenDialog.Execute then
+  begin
+    LastSQLFileName := OpenDialog.FileName;
+    SQLEdit.Lines.LoadFromFile(OpenDialog.FileName);
+  end;
+end;
+
+procedure TMainForm.SQLSaveBtnClick(Sender: TObject);
+begin
+  SaveDialog.FileName := LastSQLFileName;
+  SaveDialog.DefaultExt := '*.sql';
+  SAveDialog.Filter := '*.sql';
+  SaveDialog.InitialDir := Application.Location;
+  if SaveDialog.Execute then
+    SQLEdit.Lines.LoadFromFile(SaveDialog.FileName);
+end;
+
+procedure TMainForm.Connect;
+begin
+  sqlvEngine.Session.Open(GetDatabaseName, AutoCreateChk.Checked);
+  sqlvEngine.Launch('Database', DatabasesCbo.Text);
 end;
 
 procedure TMainForm.FileFoundEvent(FileIterator: TFileIterator);
@@ -412,10 +496,14 @@ begin
   FileName := ExtractFileName(FileName);
   i:= DatabasesCbo.Items.IndexOf(FileName);
   if i >= 0 then
-    DatabasesCbo.ItemIndex := i;
+    DatabasesCbo.ItemIndex := i
+  else
+    DatabasesCbo.Text := FileName;
 end;
 
 constructor TMainForm.Create(TheOwner: TComponent);
+var
+  aFile: string;
 begin
   inherited Create(TheOwner);
   //SQLEdit.CharWidth := 8;
@@ -449,9 +537,26 @@ begin
   PanelsList.Add(InfoPanel);
   PanelsList.Add(InfoPanel, ResultsBtn, True);
   PanelsList.Add(InfoPanel, SQLBtn, True);
-  if sqlvEngine.Recents.Count > 0 then
-    SetRealDataPath(sqlvEngine.Recents[0]);
+  sqlvEngine.History.OnChanged := @RefreshHistory;
+  sqlvEngine.SQLHistory.OnChanged := @RefreshSQLHistory;
   sqlvEngine.LoadFile('recent.sql', SQLEdit.Lines);
+  AddSql;
+  sqlvEngine.History.Changed;
+  sqlvEngine.SQLHistory.Changed;
+  if Paramcount > 0 then
+  begin
+    aFile := ParamStrUTF8(1);
+    if FileExistsUTF8(aFile) then
+    begin
+      SetRealDataPath(aFile);
+      Connect;
+    end;
+  end
+  else
+  begin
+    if sqlvEngine.Recents.Count > 0 then
+      SetRealDataPath(sqlvEngine.Recents[0]);
+  end;
   StateChanged;
 end;
 
@@ -585,8 +690,8 @@ end;
 
 procedure TMainForm.OpenMember;
 begin
-  if (MembersGrid.RowCount > 1) and (MembersGrid.Row > 1) then
-    sqlvEngine.LaunchGroup(SchemeName, MembersGrid.Cells[0, MembersGrid.Row]);
+  if (MembersGrid.RowCount > 1) and (MembersGrid.Row >= 1) then
+    sqlvEngine.LaunchGroup(SchemaName, MembersGrid.Cells[0, MembersGrid.Row]);
 end;
 
 procedure TMainForm.OpenGroup;
@@ -595,13 +700,13 @@ begin
     sqlvEngine.Launch(GroupsNames[GroupsList.ItemIndex], MebmerName, True);
 end;
 
-procedure TMainForm.RefreshSQLHistory;
+procedure TMainForm.RefreshSQLHistory(Sender: TObject);
 begin
   SQLForwardBtn.Enabled := sqlvEngine.SQLHistory.HaveForward;
   SQLBackwardBtn.Enabled := sqlvEngine.SQLHistory.HaveBackward;
 end;
 
-procedure TMainForm.RefreshHistory;
+procedure TMainForm.RefreshHistory(Sender: TObject);
 begin
   ForwardBtn.Enabled := sqlvEngine.History.HaveForward;
   BackwordBtn.Enabled := sqlvEngine.History.HaveBackward;
@@ -609,12 +714,63 @@ end;
 
 procedure TMainForm.AddSql;
 begin
-  sqlvEngine.SQLHistory.Add(SQLEdit.Text, '');
-  RefreshSQLHistory;
+  sqlvEngine.SQLHistory.Add('', SQLEdit.Text);
 end;
 
-procedure TMainForm.Execute;
+procedure TMainForm.Execute(SQLCMD: TmncSQLiteCommand; SQL:TStringList; ShowGrid:Boolean);
 var
+  t: TDateTime;
+begin
+  try
+    ResultEdit.Lines.Add('========= Execute ==========');
+    SQLCMD.SQL.Assign(SQL);
+    t := NOW;
+    SQLCMD.Prepare;
+{          if not ShowCMDParams(SQLCMD) then//that todo
+    begin
+      ResultEdit.Lines.Add('Canceled by user');
+      Abort;
+    end;}
+    try
+      ResultEdit.Lines.Add('Prepare time: ' + LogTime(t));
+//            SQLCMD.NextOnExecute := False;
+      t := NOW;
+      SQLCMD.Execute;
+      ResultEdit.Lines.Add('Execute time: ' + LogTime(t));
+      if ShowGrid then
+      begin
+        if not SQLCMD.EOF then
+        begin
+          State := sqlsResults;
+          DataGrid.SetFocus;
+          t := NOW;
+          if SQLCMD.Eof then
+            ClearGrid
+          else
+            FillGrid(SQLCMD);
+          ResultEdit.Lines.Add('Fetch time: ' + LogTime(t));
+        end
+        else
+        begin
+          ClearGrid;
+          State := sqlsInfo;
+        end;
+      end;
+      ResultEdit.Lines.Add('Last Row ID: ' + IntToStr(SQLCMD.GetLastInsertID));
+      ResultEdit.Lines.Add('Rows affected: ' + IntToStr(SQLCMD.GetRowsChanged));
+    except
+      if ShowGrid then
+        ClearGrid;
+      raise;
+    end;
+  finally
+  end;
+end;
+
+procedure TMainForm.ExecuteScript;
+var
+  aStrings: TStringList;
+  i: Integer;
   t: TDateTime;
   SQLSession: TmncSQLiteSession;
   SQLCMD: TmncSQLiteCommand;
@@ -622,72 +778,42 @@ begin
   sqlvEngine.SaveFile('recent.sql', SQLEdit.Lines);
   SQLSession := TmncSQLiteSession.Create(sqlvEngine.Session.DBConnection);
   SQLCMD := TmncSQLiteCommand.Create(SQLSession);
+  aStrings := TStringList.Create;
   try
-    if not SQLCMD.Active then
-    begin
+    SqlBtn.Enabled := False;
+    Screen.Cursor := crHourGlass;
+    try
+      SQLSession.Start;
       ResultEdit.Clear;
       AddSQL;
-      SQLCMD.SQL.Text := SQLEdit.Text;
-      SqlBtn.Enabled := False;
-      Screen.Cursor := crHourGlass;
-      try
-        SQLSession.Start;
-        try
-          ResultEdit.Lines.Add('========= Execute ==========');
-          t := NOW;
-          SQLCMD.Prepare;
-{          if not ShowCMDParams(SQLCMD) then//that todo
-          begin
-            ResultEdit.Lines.Add('Canceled by user');
-            Abort;
-          end;}
-          try
-            ResultEdit.Lines.Add('Prepare time: ' + LogTime(t));
-            SQLCMD.NextOnExecute := False;
-            t := NOW;
-            SQLCMD.Execute;
-            ResultEdit.Lines.Add('Execute time: ' + LogTime(t));
-            if not SQLCMD.EOF then
-            begin
-              State := sqlsResults;
-              DataGrid.SetFocus;
-              t := NOW;
-              SQLCMD.Next;
-              if SQLCMD.Eof then
-                ClearGrid
-              else
-                FillGrid(SQLCMD);
-              ResultEdit.Lines.Add('Fetch time: ' + LogTime(t));
-            end
-            else
-            begin
-              ClearGrid;
-              State := sqlsInfo;
-            end;
-            ResultEdit.Lines.Add('Last Row ID: ' + IntToStr(SQLCMD.GetLastInsertID));
-            ResultEdit.Lines.Add('Rows affected: ' + IntToStr(SQLCMD.GetRowsChanged));
-            SQLSession.Commit;
-          except
-            ClearGrid;
-            raise;
-          end;
-        except
-          on E: Exception do
-          begin
-            SQLSession.Rollback;
-            ResultEdit.Lines.Add(E.Message);
-            raise;
-          end
+      for i := 0 to SQLEdit.Lines.Count - 1 do
+      begin
+        if Trim(SQLEdit.Lines[i]) = '^' then
+        begin
+          Execute(SQLCMD, aStrings, False);
+          aStrings.Clear;
+        end
         else
-          raise;
-        end;
-      finally
-        ResultEdit.Lines.Add('');
-        Screen.Cursor := crDefault;
-        SqlBtn.Enabled := True;
+          aStrings.Add(SQLEdit.Lines[i]);
       end;
+      if aStrings.Count > 0 then
+        Execute(SQLCMD, aStrings, True);
+      SQLSession.Commit;
+    except
+      on E: Exception do
+      begin
+        SQLSession.Rollback;
+        ResultEdit.Lines.Add(E.Message);
+        raise;
+      end
+    else
+      raise;
     end;
   finally
+    ResultEdit.Lines.Add('');
+    Screen.Cursor := crDefault;
+    SqlBtn.Enabled := True;
+    aStrings.Free;
     SQLCMD.Free;
     SQLSession.Free;
   end;
@@ -730,6 +856,7 @@ begin
   DataGrid.ColWidths[0] := 24;
   DataGrid.Row := 1;
   DataGrid.Col := 1;
+  DataGrid.Cells[0, 0] := '';
   cw := GetCharWidth; //must calc from canvas
   for i := 1 to DataGrid.ColCount - 1 do
   begin
@@ -754,7 +881,7 @@ begin
   while not SQLCMD.EOF do
   begin
     DataGrid.RowCount := c + 1;
-    DataGrid.Cells[0, c] := IntToStr(c - 1);
+    DataGrid.Cells[0, c] := IntToStr(c);
     for i := 1 to DataGrid.ColCount - 1 do
     begin
       DataGrid.Cells[i, c] := SQLCMD.Current.Items[i - 1].AsString;

@@ -1,4 +1,11 @@
 unit sqlvStdClasses;
+{**
+ *  This file is part of the "Mini Connections"
+ *
+ * @license   modifiedLGPL (modified of http://www.gnu.org/licenses/lgpl.html)
+ *            See the file COPYING.MLGPL, included in this distribution,
+ * @author    Zaher Dirkey <zaher at parmaja dot com>
+ *}
 
 {$mode objfpc}{$H+}
 
@@ -19,7 +26,7 @@ type
     procedure LoadHeader(vHeader:TStringList);
     procedure LoadEditor(vStrings:TStringList);
     procedure LoadGroups(vNodes:TsqlvNodes; vMemberName:string; vOpenDefault: Boolean);
-    procedure LoadMembers(vSchemeName:string; vNodes:TsqlvNodes);
+    procedure LoadMembers(vSchemaName:string; vNodes:TsqlvNodes);
   end;
 
   { TsqlvDatabase }
@@ -43,20 +50,20 @@ type
   TsqlvTables = class(TsqlvMembers)
   public
     constructor Create; override;
-    procedure EnumScheme(var SchemeName:string; SchemeItems: TmncSchemeItems; const MemberName: string); override;
+    procedure EnumSchema(var SchemaName:string; SchemaItems: TmncSchemaItems; const MemberName: string); override;
   end;
 
   TsqlvTable = class(TsqlvGuiNode)
   public
     constructor Create; override;
     procedure Execute(const MemberName: string); override;
-    //procedure Enum(var SchemeName:string; SchemeItems: TmncSchemeItems; const MemberName: string); override;
+    //procedure Enum(var SchemaName:string; SchemaItems: TmncSchemaItems; const MemberName: string); override;
   end;
 
   TsqlvProcedures = class(TsqlvMembers)
   public
     constructor Create; override;
-    procedure EnumScheme(var SchemeName:string; SchemeItems: TmncSchemeItems; const MemberName: string); override;
+    procedure EnumSchema(var SchemaName:string; SchemaItems: TmncSchemaItems; const MemberName: string); override;
   end;
 
   TsqlvProcedure = class(TsqlvGuiNode)
@@ -67,7 +74,7 @@ type
 
   TsqlvViews = class(TsqlvMembers)
   public
-    procedure EnumScheme(var SchemeName:string; SchemeItems: TmncSchemeItems; const MemberName: string); override;
+    procedure EnumSchema(var SchemaName:string; SchemaItems: TmncSchemaItems; const MemberName: string); override;
     constructor Create; override;
   end;
 
@@ -79,25 +86,25 @@ type
 
   TsqlvSequences = class(TsqlvMembers)
   public
-    procedure EnumScheme(var SchemeName:string; SchemeItems: TmncSchemeItems; const MemberName: string); override;
+    procedure EnumSchema(var SchemaName:string; SchemaItems: TmncSchemaItems; const MemberName: string); override;
     constructor Create; override;
   end;
 
   TsqlvTypes = class(TsqlvMembers)
   public
-    procedure EnumScheme(var SchemeName:string; SchemeItems: TmncSchemeItems; const MemberName: string); override;
+    procedure EnumSchema(var SchemaName:string; SchemaItems: TmncSchemaItems; const MemberName: string); override;
     constructor Create; override;
   end;
 
   TsqlvExceptions = class(TsqlvMembers)
   public
-    procedure EnumScheme(var SchemeName:string; SchemeItems: TmncSchemeItems; const MemberName: string); override;
+    procedure EnumSchema(var SchemaName:string; SchemaItems: TmncSchemaItems; const MemberName: string); override;
     constructor Create; override;
   end;
 
   TsqlvFunctions = class(TsqlvMembers)
   public
-    procedure EnumScheme(var SchemeName:string; SchemeItems: TmncSchemeItems; const MemberName: string); override;
+    procedure EnumSchema(var SchemaName:string; SchemaItems: TmncSchemaItems; const MemberName: string); override;
     constructor Create; override;
   end;
 
@@ -106,13 +113,13 @@ type
   TsqlvTriggers = class(TsqlvMembers)
   public
     constructor Create; override;
-    procedure EnumScheme(var SchemeName:string; SchemeItems: TmncSchemeItems; const MemberName: string); override;
+    procedure EnumSchema(var SchemaName:string; SchemaItems: TmncSchemaItems; const MemberName: string); override;
   end;
 
   TsqlvTableTriggers = class(TsqlvMembers)
   public
     constructor Create; override;
-    procedure EnumScheme(var SchemeName:string; SchemeItems: TmncSchemeItems; const MemberName: string); override;
+    procedure EnumSchema(var SchemaName:string; SchemaItems: TmncSchemaItems; const MemberName: string); override;
   end;
 
   TsqlvTrigger = class(TsqlvGuiNode)
@@ -124,7 +131,7 @@ type
   TsqlvTableIndices = class(TsqlvMembers)
   public
     constructor Create; override;
-    procedure EnumScheme(var SchemeName:string; SchemeItems: TmncSchemeItems; const MemberName: string); override;
+    procedure EnumSchema(var SchemaName:string; SchemaItems: TmncSchemaItems; const MemberName: string); override;
   end;
 
   TsqlvDropIndex = class(TsqlvNode)
@@ -139,7 +146,7 @@ type
   public
     constructor Create; override;
     procedure EnumHeader(Header: TStringList); override;
-    procedure EnumScheme(var SchemeName:string; SchemeItems: TmncSchemeItems; const MemberName: string); override;
+    procedure EnumSchema(var SchemaName:string; SchemaItems: TmncSchemaItems; const MemberName: string); override;
   end;
 
   TsqlvDropField = class(TsqlvGuiNode)
@@ -195,17 +202,17 @@ begin
   ImageIndex := IMG_TABLE;
 end;
 
-procedure TsqlvTables.EnumScheme(var SchemeName:string; SchemeItems: TmncSchemeItems; const MemberName: string);
+procedure TsqlvTables.EnumSchema(var SchemaName:string; SchemaItems: TmncSchemaItems; const MemberName: string);
 var
-  aScheme: TmncSQLiteScheme;
+  aSchema: TmncSQLiteSchema;
 begin
-  SchemeName := 'Table';
-  aScheme := TmncSQLiteScheme.Create;
+  SchemaName := 'Table';
+  aSchema := TmncSQLiteSchema.Create;
   try
-    aScheme.Session := sqlvEngine.Session.DBSession;
-    aScheme.EnumTables(SchemeItems);
+    aSchema.Session := sqlvEngine.Session.DBSession;
+    aSchema.EnumTables(SchemaItems);
   finally
-    aScheme.Free
+    aSchema.Free
   end;
 end;
 
@@ -221,17 +228,17 @@ begin
   ImageIndex := IMG_PROCEDURE;
 end;
 
-procedure TsqlvProcedures.EnumScheme(var SchemeName:string; SchemeItems: TmncSchemeItems; const MemberName: string);
+procedure TsqlvProcedures.EnumSchema(var SchemaName:string; SchemaItems: TmncSchemaItems; const MemberName: string);
 var
-  aScheme: TmncSQLiteScheme;
+  aSchema: TmncSQLiteSchema;
 begin
-  SchemeName:='Procedure';
-  aScheme := TmncSQLiteScheme.Create;
+  SchemaName:='Procedure';
+  aSchema := TmncSQLiteSchema.Create;
   try
-    aScheme.Session := sqlvEngine.Session.DBSession;
-    aScheme.EnumProcedures(SchemeItems);
+    aSchema.Session := sqlvEngine.Session.DBSession;
+    aSchema.EnumProcedures(SchemaItems);
   finally
-    aScheme.Free
+    aSchema.Free
   end;
 end;
 
@@ -247,17 +254,17 @@ begin
   ImageIndex := IMG_VIEW;
 end;
 
-procedure TsqlvViews.EnumScheme(var SchemeName:string; SchemeItems: TmncSchemeItems; const MemberName: string);
+procedure TsqlvViews.EnumSchema(var SchemaName:string; SchemaItems: TmncSchemaItems; const MemberName: string);
 var
-  aScheme: TmncSQLiteScheme;
+  aSchema: TmncSQLiteSchema;
 begin
-  SchemeName:='View';
-  aScheme := TmncSQLiteScheme.Create;
+  SchemaName:='View';
+  aSchema := TmncSQLiteSchema.Create;
   try
-    aScheme.Session := sqlvEngine.Session.DBSession;
-    aScheme.EnumViews(SchemeItems);
+    aSchema.Session := sqlvEngine.Session.DBSession;
+    aSchema.EnumViews(SchemaItems);
   finally
-    aScheme.Free
+    aSchema.Free
   end;
 end;
 
@@ -273,17 +280,17 @@ begin
   ImageIndex := IMG_GENERATOR;
 end;
 
-procedure TsqlvSequences.EnumScheme(var SchemeName:string; SchemeItems: TmncSchemeItems; const MemberName: string);
+procedure TsqlvSequences.EnumSchema(var SchemaName:string; SchemaItems: TmncSchemaItems; const MemberName: string);
 var
-  aScheme: TmncSQLiteScheme;
+  aSchema: TmncSQLiteSchema;
 begin
-  SchemeName:='Sequences';
-  aScheme := TmncSQLiteScheme.Create;
+  SchemaName:='Sequences';
+  aSchema := TmncSQLiteSchema.Create;
   try
-    aScheme.Session := sqlvEngine.Session.DBSession;
-    aScheme.EnumSequences(SchemeItems);
+    aSchema.Session := sqlvEngine.Session.DBSession;
+    aSchema.EnumSequences(SchemaItems);
   finally
-    aScheme.Free
+    aSchema.Free
   end;
 end;
 
@@ -299,17 +306,17 @@ begin
   ImageIndex := IMG_DOMAIN;
 end;
 
-procedure TsqlvTypes.EnumScheme(var SchemeName:string; SchemeItems: TmncSchemeItems; const MemberName: string);
+procedure TsqlvTypes.EnumSchema(var SchemaName:string; SchemaItems: TmncSchemaItems; const MemberName: string);
 var
-  aScheme: TmncSQLiteScheme;
+  aSchema: TmncSQLiteSchema;
 begin
-  SchemeName:='Domain';
-  aScheme := TmncSQLiteScheme.Create;
+  SchemaName:='Domain';
+  aSchema := TmncSQLiteSchema.Create;
   try
-    aScheme.Session := sqlvEngine.Session.DBSession;
-    aScheme.EnumTypes(SchemeItems);
+    aSchema.Session := sqlvEngine.Session.DBSession;
+    aSchema.EnumTypes(SchemaItems);
   finally
-    aScheme.Free
+    aSchema.Free
   end;
 end;
 
@@ -325,17 +332,17 @@ begin
   ImageIndex := IMG_EXCEPTION;
 end;
 
-procedure TsqlvExceptions.EnumScheme(var SchemeName:string; SchemeItems: TmncSchemeItems; const MemberName: string);
+procedure TsqlvExceptions.EnumSchema(var SchemaName:string; SchemaItems: TmncSchemaItems; const MemberName: string);
 var
-  aScheme: TmncSQLiteScheme;
+  aSchema: TmncSQLiteSchema;
 begin
-  SchemeName:='Exception';
-  aScheme := TmncSQLiteScheme.Create;
+  SchemaName:='Exception';
+  aSchema := TmncSQLiteSchema.Create;
   try
-    aScheme.Session := sqlvEngine.Session.DBSession;
-    aScheme.EnumExceptions(SchemeItems);
+    aSchema.Session := sqlvEngine.Session.DBSession;
+    aSchema.EnumExceptions(SchemaItems);
   finally
-    aScheme.Free
+    aSchema.Free
   end;
 end;
 
@@ -351,17 +358,17 @@ begin
   ImageIndex := IMG_FUNCTION;
 end;
 
-procedure TsqlvFunctions.EnumScheme(var SchemeName:string; SchemeItems: TmncSchemeItems; const MemberName: string);
+procedure TsqlvFunctions.EnumSchema(var SchemaName:string; SchemaItems: TmncSchemaItems; const MemberName: string);
 var
-  aScheme: TmncSQLiteScheme;
+  aSchema: TmncSQLiteSchema;
 begin
-  SchemeName:='Function';
-  aScheme := TmncSQLiteScheme.Create;
+  SchemaName:='Function';
+  aSchema := TmncSQLiteSchema.Create;
   try
-    aScheme.Session := sqlvEngine.Session.DBSession;
-    aScheme.EnumFunctions(SchemeItems);
+    aSchema.Session := sqlvEngine.Session.DBSession;
+    aSchema.EnumFunctions(SchemaItems);
   finally
-    aScheme.Free
+    aSchema.Free
   end;
 end;
 
@@ -397,18 +404,18 @@ end;
 
 procedure TsqlvProcedure.Execute(const MemberName: string);
 var
-  aScheme: TmncSQLiteScheme;
+  aSchema: TmncSQLiteSchema;
   aStrings: TStringList;
 begin
   inherited;
   aStrings := TStringList.Create;
   try
-    aScheme := TmncSQLiteScheme.Create;
+    aSchema := TmncSQLiteSchema.Create;
     try
-      aScheme.Session := sqlvEngine.Session.DBSession;
-      //aScheme.ExtractObject(aStrings, sokProcedure, MemberName, [ekAlter]);
+      aSchema.Session := sqlvEngine.Session.DBSession;
+      //aSchema.ExtractObject(aStrings, sokProcedure, MemberName, [ekAlter]);
     finally
-      aScheme.Free;
+      aSchema.Free;
     end;
     LoadEditor(aStrings);
   finally
@@ -430,18 +437,18 @@ end;
 
 procedure TsqlvView.Execute(const MemberName: string);
 var
-  aScheme: TmncSQLiteScheme;
+  aSchema: TmncSQLiteSchema;
   aStrings: TStringList;
 begin
   inherited;
   aStrings := TStringList.Create;
   try
-    aScheme := TmncSQLiteScheme.Create;
+    aSchema := TmncSQLiteSchema.Create;
     try
-      aScheme.Session := sqlvEngine.Session.DBSession;
-      //aScheme.ExtractObject(aStrings, sokView, MemberName, [ekAlter]);
+      aSchema.Session := sqlvEngine.Session.DBSession;
+      //aSchema.ExtractObject(aStrings, sokView, MemberName, [ekAlter]);
     finally
-      aScheme.Free;
+      aSchema.Free;
     end;
     LoadEditor(aStrings);
   finally
@@ -461,18 +468,18 @@ begin
   ImageIndex := IMG_TRIGGER;
 end;
 
-procedure TsqlvTableTriggers.EnumScheme(var SchemeName: string; SchemeItems: TmncSchemeItems; const MemberName: string);
+procedure TsqlvTableTriggers.EnumSchema(var SchemaName: string; SchemaItems: TmncSchemaItems; const MemberName: string);
 var
-  aScheme: TmncSQLiteScheme;
+  aSchema: TmncSQLiteSchema;
 begin
   inherited;
-  SchemeName := 'Trigger';
-  aScheme := TmncSQLiteScheme.Create;
+  SchemaName := 'Trigger';
+  aSchema := TmncSQLiteSchema.Create;
   try
-    aScheme.Session := sqlvEngine.Session.DBSession;
-    aScheme.EnumTriggers(SchemeItems, MemberName);
+    aSchema.Session := sqlvEngine.Session.DBSession;
+    aSchema.EnumTriggers(SchemaItems, MemberName);
   finally
-    aScheme.Free;
+    aSchema.Free;
   end;
 end;
 
@@ -490,18 +497,18 @@ end;
 
 procedure TsqlvTrigger.Execute(const MemberName: string);
 var
-  aScheme: TmncSQLiteScheme;
+  aSchema: TmncSQLiteSchema;
   aStrings: TStringList;
 begin
   inherited;
   aStrings := TStringList.Create;
   try
-    aScheme := TmncSQLiteScheme.Create;
+    aSchema := TmncSQLiteSchema.Create;
     try
-      aScheme.Session := sqlvEngine.Session.DBSession;
-      aScheme.GetTriggerSource(aStrings, MemberName, [ekAlter]);
+      aSchema.Session := sqlvEngine.Session.DBSession;
+      aSchema.GetTriggerSource(aStrings, MemberName, [ekAlter]);
     finally
-      aScheme.Free;
+      aSchema.Free;
     end;
     LoadEditor(aStrings);
   finally
@@ -521,17 +528,17 @@ begin
   ImageIndex := IMG_INDEX;
 end;
 
-procedure TsqlvTableIndices.EnumScheme(var SchemeName: string; SchemeItems: TmncSchemeItems; const MemberName: string);
+procedure TsqlvTableIndices.EnumSchema(var SchemaName: string; SchemaItems: TmncSchemaItems; const MemberName: string);
 var
-  aScheme: TmncSQLiteScheme;
+  aSchema: TmncSQLiteSchema;
 begin
-  SchemeName:='Index';
-  aScheme := TmncSQLiteScheme.Create;
+  SchemaName:='Index';
+  aSchema := TmncSQLiteSchema.Create;
   try
-    aScheme.Session := sqlvEngine.Session.DBSession;
-    aScheme.EnumIndexes(SchemeItems, MemberName);
+    aSchema.Session := sqlvEngine.Session.DBSession;
+    aSchema.EnumIndexes(SchemaItems, MemberName);
   finally
-    aScheme.Free
+    aSchema.Free
   end;
 end;
 
@@ -575,18 +582,18 @@ begin
   Header.Add('Default');
 end;
 
-procedure TsqlvTableFields.EnumScheme(var SchemeName: string;
-  SchemeItems: TmncSchemeItems; const MemberName: string);
+procedure TsqlvTableFields.EnumSchema(var SchemaName: string;
+  SchemaItems: TmncSchemaItems; const MemberName: string);
 var
-  aScheme: TmncSQLiteScheme;
+  aSchema: TmncSQLiteSchema;
 begin
-  SchemeName:='Field';
-  aScheme := TmncSQLiteScheme.Create;
+  SchemaName:='Field';
+  aSchema := TmncSQLiteSchema.Create;
   try
-    aScheme.Session := sqlvEngine.Session.DBSession;
-    aScheme.EnumFields(SchemeItems, MemberName);
+    aSchema.Session := sqlvEngine.Session.DBSession;
+    aSchema.EnumFields(SchemaItems, MemberName);
   finally
-    aScheme.Free
+    aSchema.Free
   end;
 end;
 
@@ -686,16 +693,16 @@ end;
 procedure TsqlvGuiNode.EnumMembers(const vMemberName: string);
 var
   i: Integer;
-  aItems: TmncSchemeItems;
-  aSchemeName: string;
+  aItems: TmncSchemaItems;
+  aSchemaName: string;
   aNodes: TsqlvNodes;
   aNode: TsqlvNode;
 begin
   inherited;
   aNodes := TsqlvNodes.Create;
-  aItems := TmncSchemeItems.Create;
+  aItems := TmncSchemaItems.Create;
   try
-    EnumScheme(aSchemeName, aItems, vMemberName);
+    EnumSchema(aSchemaName, aItems, vMemberName);
     for i := 0 to aItems.Count -1 do
     begin
       aNode := TsqlvNode.Create;
@@ -704,7 +711,7 @@ begin
       aNode.Attributes.Assign(aItems[i].Attributes);
       aNodes.Add(aNode);
     end;
-    LoadMembers(aSchemeName, aNodes);
+    LoadMembers(aSchemaName, aNodes);
   finally
     aItems.Free;
     aNodes.Free;
@@ -721,6 +728,8 @@ begin
     for i := 0 to vHeader.Count -1 do
     begin
       MembersGrid.Cells[i, 0] := vHeader[i];
+//      if i = 0 then
+//        MembersGrid.Columns[i].SizePriority := 50;
     end;
   end;
 end;
@@ -775,7 +784,7 @@ begin
   end;
 end;
 
-procedure TsqlvGuiNode.LoadMembers(vSchemeName:string; vNodes: TsqlvNodes);
+procedure TsqlvGuiNode.LoadMembers(vSchemaName:string; vNodes: TsqlvNodes);
 var
   i, j, c: Integer;
   d: Integer;
@@ -797,7 +806,7 @@ begin
     MembersGrid.BeginUpdate;
     try
       MembersGrid.RowCount := 1;//fixed only
-      MembersGrid.Cells[0, 0] := vSchemeName;
+      MembersGrid.Cells[0, 0] := vSchemaName;
       for i := 0 to vNodes.Count -1 do
       begin
         if not (nsCommand in vNodes[i].Style) then
@@ -821,7 +830,8 @@ begin
     if d < 0 then
       d := 0;
     MembersGrid.Row := d;
-    SchemeName := vSchemeName;
+    MembersGrid.AutoSizeColumns;
+    SchemaName := vSchemaName;
     State := sqlsMembers;
   end;
 end;
@@ -838,17 +848,17 @@ begin
   ImageIndex := IMG_TRIGGER;
 end;
 
-procedure TsqlvTriggers.EnumScheme(var SchemeName: string; SchemeItems: TmncSchemeItems; const MemberName: string);
+procedure TsqlvTriggers.EnumSchema(var SchemaName: string; SchemaItems: TmncSchemaItems; const MemberName: string);
 var
-  aScheme: TmncSQLiteScheme;
+  aSchema: TmncSQLiteSchema;
 begin
-  SchemeName := 'Trigger';
-  aScheme := TmncSQLiteScheme.Create;
+  SchemaName := 'Trigger';
+  aSchema := TmncSQLiteSchema.Create;
   try
-    aScheme.Session := sqlvEngine.Session.DBSession;
-    aScheme.EnumTriggers(SchemeItems);
+    aSchema.Session := sqlvEngine.Session.DBSession;
+    aSchema.EnumTriggers(SchemaItems);
   finally
-    aScheme.Free
+    aSchema.Free
   end;
 end;
 

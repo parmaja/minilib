@@ -44,9 +44,9 @@ object MainForm: TMainForm
         Width = 20
         Anchors = [akTop, akRight]
         Color = clBtnFace
-        Flat = True
         NumGlyphs = 0
         OnClick = SQLBackwardBtnClick
+        ShowCaption = False
       end
       object SQLForwardBtn: TSpeedButton
         Left = 224
@@ -55,13 +55,13 @@ object MainForm: TMainForm
         Width = 20
         Anchors = [akTop, akRight]
         Color = clBtnFace
-        Flat = True
         NumGlyphs = 0
+        OnClick = SQLForwardBtnClick
       end
       object SQLEdit: TSynEdit
         Left = 5
-        Height = 243
-        Top = 22
+        Height = 241
+        Top = 24
         Width = 239
         Anchors = [akTop, akLeft, akRight, akBottom]
         Font.CharSet = ANSI_CHARSET
@@ -74,9 +74,7 @@ object MainForm: TMainForm
         ParentFont = False
         TabOrder = 0
         BookMarkOptions.Xoffset = -18
-        BookMarkOptions.OnChange = nil
-        Gutter.Visible = False
-        Gutter.Width = 0
+        Gutter.Width = 19
         Gutter.MouseActions = <        
           item
             Shift = []
@@ -550,11 +548,8 @@ object MainForm: TMainForm
         BracketHighlightStyle = sbhsBoth
         TabWidth = 2
         object TSynGutterPartList
-          object TSynGutterMarks
-            Width = 23
-          end
           object TSynGutterLineNumber
-            Width = 25
+            Width = 15
             MouseActions = <>
             MarkupInfo.Background = clBtnFace
             MarkupInfo.Foreground = clNone
@@ -571,97 +566,31 @@ object MainForm: TMainForm
           object TSynGutterSeparator
             Width = 2
           end
-          object TSynGutterCodeFolding
-            MouseActions = <            
-              item
-                Shift = []
-                ShiftMask = []
-                Button = mbRight
-                ClickCount = ccSingle
-                ClickDir = cdUp
-                Command = 16
-                MoveCaret = False
-                Option = 0
-                Priority = 0
-              end            
-              item
-                Shift = []
-                ShiftMask = [ssShift]
-                Button = mbMiddle
-                ClickCount = ccAny
-                ClickDir = cdDown
-                Command = 14
-                MoveCaret = False
-                Option = 0
-                Priority = 0
-              end            
-              item
-                Shift = [ssShift]
-                ShiftMask = [ssShift]
-                Button = mbMiddle
-                ClickCount = ccAny
-                ClickDir = cdDown
-                Command = 14
-                MoveCaret = False
-                Option = 1
-                Priority = 0
-              end            
-              item
-                Shift = []
-                ShiftMask = []
-                Button = mbLeft
-                ClickCount = ccAny
-                ClickDir = cdDown
-                Command = 0
-                MoveCaret = False
-                Option = 0
-                Priority = 0
-              end>
-            MarkupInfo.Background = clNone
-            MarkupInfo.Foreground = clGray
-            MouseActionsExpanded = <            
-              item
-                Shift = []
-                ShiftMask = []
-                Button = mbLeft
-                ClickCount = ccAny
-                ClickDir = cdDown
-                Command = 14
-                MoveCaret = False
-                Option = 0
-                Priority = 0
-              end>
-            MouseActionsCollapsed = <            
-              item
-                Shift = [ssCtrl]
-                ShiftMask = [ssCtrl]
-                Button = mbLeft
-                ClickCount = ccAny
-                ClickDir = cdDown
-                Command = 15
-                MoveCaret = False
-                Option = 0
-                Priority = 0
-              end            
-              item
-                Shift = []
-                ShiftMask = [ssCtrl]
-                Button = mbLeft
-                ClickCount = ccAny
-                ClickDir = cdDown
-                Command = 15
-                MoveCaret = False
-                Option = 1
-                Priority = 0
-              end>
-          end
         end
+      end
+      object SQLLoadBtn: TButton
+        Left = 5
+        Height = 19
+        Top = 4
+        Width = 50
+        Caption = 'Load'
+        OnClick = SQLLoadBtnClick
+        TabOrder = 1
+      end
+      object SQLSaveBtn: TButton
+        Left = 54
+        Height = 19
+        Top = 4
+        Width = 50
+        Caption = 'Save'
+        OnClick = SQLSaveBtnClick
+        TabOrder = 2
       end
     end
     object ResultPanel: TPanel
-      Left = 60
+      Left = 45
       Height = 183
-      Top = 36
+      Top = 55
       Width = 186
       BevelInner = bvLowered
       BevelOuter = bvNone
@@ -670,7 +599,7 @@ object MainForm: TMainForm
       ClientWidth = 186
       TabOrder = 1
       object FetchCountLbl: TLabel
-        Left = 51
+        Left = 54
         Height = 14
         Top = 5
         Width = 7
@@ -678,7 +607,7 @@ object MainForm: TMainForm
         ParentColor = False
       end
       object FetchedLbl: TLabel
-        Left = 5
+        Left = 7
         Height = 14
         Top = 5
         Width = 44
@@ -694,7 +623,7 @@ object MainForm: TMainForm
         AutoEdit = False
         ColCount = 3
         DefaultRowHeight = 18
-        Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goRangeSelect, goDrawFocusSelected, goColSizing, goSmoothScroll, goFixedRowNumbering]
+        Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goRangeSelect, goDrawFocusSelected, goColSizing, goSmoothScroll]
         TabOrder = 0
         TitleFont.CharSet = ANSI_CHARSET
         TitleFont.Color = clBlack
@@ -772,7 +701,7 @@ object MainForm: TMainForm
     object ObjectsPanel: TPanel
       Left = 87
       Height = 153
-      Top = 98
+      Top = 96
       Width = 234
       BevelInner = bvLowered
       BevelOuter = bvNone
@@ -781,9 +710,9 @@ object MainForm: TMainForm
       ClientWidth = 234
       TabOrder = 3
       object TitleLbl: TLabel
-        Left = 5
+        Left = 7
         Height = 14
-        Top = 4
+        Top = 6
         Width = 21
         Caption = 'Title'
         ParentColor = False
@@ -795,7 +724,6 @@ object MainForm: TMainForm
         Width = 20
         Anchors = [akTop, akRight]
         Color = clBtnFace
-        Flat = True
         Glyph.Data = {
           46030000424D460300000000000036000000280000000E0000000E0000000100
           2000000000001003000064000000640000000000000000000000000000000000
@@ -829,13 +757,12 @@ object MainForm: TMainForm
         OnClick = ForwardBtnClick
       end
       object BackwordBtn: TSpeedButton
-        Left = 188
+        Left = 189
         Height = 18
         Top = 4
         Width = 20
         Anchors = [akTop, akRight]
         Color = clBtnFace
-        Flat = True
         Glyph.Data = {
           46030000424D460300000000000036000000280000000E0000000E0000000100
           2000000000001003000064000000640000000000000000000000000000000000
@@ -869,13 +796,12 @@ object MainForm: TMainForm
         OnClick = BackwordBtnClick
       end
       object FirstBtn: TSpeedButton
-        Left = 166
+        Left = 170
         Height = 18
         Top = 4
         Width = 20
         Anchors = [akTop, akRight]
         Color = clBtnFace
-        Flat = True
         Glyph.Data = {
           46030000424D460300000000000036000000280000000E0000000E0000000100
           2000000000001003000064000000640000000000000000000000000000000000
@@ -931,7 +857,6 @@ object MainForm: TMainForm
         FixedCols = 0
         Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goDrawFocusSelected, goColSizing, goRowSelect]
         RowCount = 3
-        ScrollBars = ssAutoVertical
         TabOrder = 1
         TitleFont.CharSet = ANSI_CHARSET
         TitleFont.Color = clBlack
@@ -941,20 +866,20 @@ object MainForm: TMainForm
         TitleFont.Quality = fqDraft
         OnDblClick = MembersGridDblClick
         ColWidths = (
-          229
+          117
         )
       end
     end
     object InfoPanel: TPanel
-      Left = 395
-      Height = 99
-      Top = 212
-      Width = 123
+      Left = 385
+      Height = 123
+      Top = 155
+      Width = 170
       BevelInner = bvLowered
       BevelOuter = bvNone
       BorderWidth = 2
-      ClientHeight = 99
-      ClientWidth = 123
+      ClientHeight = 123
+      ClientWidth = 170
       TabOrder = 4
       object InfoLbl: TLabel
         Left = 9
@@ -966,9 +891,9 @@ object MainForm: TMainForm
       end
       object ResultEdit: TMemo
         Left = 4
-        Height = 72
+        Height = 96
         Top = 22
-        Width = 115
+        Width = 162
         Anchors = [akTop, akLeft, akRight, akBottom]
         Font.CharSet = ANSI_CHARSET
         Font.Color = clBlack
@@ -1026,7 +951,7 @@ object MainForm: TMainForm
       OnClick = SpeedButton5Click
     end
     object ExecuteBtn: TSpeedButton
-      Left = 386
+      Left = 357
       Height = 21
       Top = 1
       Width = 55
@@ -1048,10 +973,10 @@ object MainForm: TMainForm
       OnClick = ObjectsBtnClick
     end
     object ResultsBtn: TSpeedButton
-      Left = 331
+      Left = 309
       Height = 21
       Top = 1
-      Width = 55
+      Width = 48
       Align = alLeft
       Caption = 'Results'
       Color = clBtnFace
@@ -1062,7 +987,7 @@ object MainForm: TMainForm
       Left = 276
       Height = 21
       Top = 1
-      Width = 55
+      Width = 33
       Align = alLeft
       Caption = 'Info'
       Color = clBtnFace
@@ -1093,8 +1018,8 @@ object MainForm: TMainForm
     end
   end
   object MainMenu: TMainMenu
-    left = 292
-    top = 17
+    left = 270
+    top = 7
     object MenuItem1: TMenuItem
       Caption = 'Exit'
       OnClick = MenuItem1Click
@@ -1103,10 +1028,23 @@ object MainForm: TMainForm
       Caption = 'Tools'
       object AboutMnu: TMenuItem
         Caption = 'About'
-      end
-      object OptionsMnu: TMenuItem
-        Caption = 'Options'
+        OnClick = AboutMnuClick
       end
     end
+  end
+  object OpenDialog: TOpenDialog
+    DefaultExt = '.sql'
+    FileName = '*.sql'
+    Filter = '*.sql'
+    InitialDir = '\'
+    left = 355
+    top = 72
+  end
+  object SaveDialog: TSaveDialog
+    DefaultExt = '.sql'
+    FileName = '*.sql'
+    Filter = '*.sql'
+    left = 328
+    top = 7
   end
 end

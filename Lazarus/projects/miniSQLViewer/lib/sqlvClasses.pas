@@ -1,4 +1,11 @@
 unit sqlvClasses;
+{**
+ *  This file is part of the "Mini Connections"
+ *
+ * @license   modifiedLGPL (modified of http://www.gnu.org/licenses/lgpl.html)
+ *            See the file COPYING.MLGPL, included in this distribution,
+ * @author    Zaher Dirkey <zaher at parmaja dot com>
+ *}
 
 interface
 
@@ -80,7 +87,7 @@ type
     procedure Execute(const MemberName: string); virtual;
     procedure Enum(Nodes: TsqlvNodes);
     procedure EnumHeader(Header: TStringList); virtual;
-    procedure EnumScheme(var SchemeName:string; SchemeItems: TmncSchemeItems; const MemberName: string = ''); virtual;
+    procedure EnumSchema(var SchemaName:string; SchemaItems: TmncSchemaItems; const MemberName: string = ''); virtual;
     property CanExecute: Boolean read GetCanExecute;
     property Group: string read FGroup write FGroup;
     property Name: string read FName write FName;
@@ -113,8 +120,8 @@ type
   end;
 
   TsqlvHistoryItem = class(TObject)
-    Name:string;
-    MemberName: string;
+    Name: string;
+    Text: string;
   end;
 
   { TsqlvHistory }
@@ -122,15 +129,25 @@ type
   TsqlvHistory = class(TObjectList)
   private
     FIndex: Integer;
+    FMaxCount: Integer;
+    FOnChanged: TNotifyEvent;
+    function GetCurrent: TsqlvHistoryItem;
     function GetItem(Index: Integer): TsqlvHistoryItem;
+  protected
   public
-    constructor create;
+    constructor Create;
     function Add(History: TsqlvHistoryItem): Integer;
-    procedure Add(const Name, MemberName: string);
-    function HaveForward: Boolean;
+    procedure Add(const Name, Text: string);
     function HaveBackward: Boolean;
+    function Backward: Boolean;
+    function HaveForward: Boolean;
+    function Forward: Boolean;
+    procedure Changed; virtual;
     property Items[Index: Integer]: TsqlvHistoryItem read GetItem; default;
     property Index: Integer read FIndex write FIndex;
+    property Current: TsqlvHistoryItem read GetCurrent;
+    property OnChanged: TNotifyEvent read FOnChanged write FOnChanged;
+    property MaxCount: Integer read FMaxCount write FMaxCount;
   end;
 
   { TsqlvEngine }
@@ -154,7 +171,7 @@ type
     //vSilent: without add to history
     procedure Launch(Name: string; MemberName: string =''; vSilent:Boolean = False);
     procedure Launch(Node: TsqlvNode; MemberName: string; vSilent:Boolean = False);
-    procedure LaunchGroup(SchemeName: string; MemberName: string =''; vSilent:Boolean = False);
+    procedure LaunchGroup(SchemaName: string; MemberName: string =''; vSilent:Boolean = False);
     procedure RegisterFilter(Filter: string);
     procedure RegisterViewer(Classes: array of TsqlvNodeClass);
     procedure AddRecent(Name:string);
@@ -236,19 +253,19 @@ end;
 
 procedure TsqlvEngine.Backward;
 begin
-  if History.HaveBackward then
+  if History.Current <> nil then
   begin
-    History.Index := History.Index - 1;
-    Launch(History[History.Index].Name, History[History.Index].MemberName, True);
+    Launch(History.Current.Name, History.Current.Text, True);
+    History.Backward;
   end;
 end;
 
 procedure TsqlvEngine.Forward;
 begin
-  if History.HaveForward then
+  if History.Current <> nil then
   begin
-    History.Index := History.Index + 1;
-    Launch(History[History.Index].Name, History[History.Index].MemberName, True);
+    Launch(History.Current.Name, History.Current.Text, True);
+    History.Forward;
   end;
 end;
 
@@ -355,7 +372,7 @@ begin
   inherited Destroy;
 end;
 
-procedure TsqlvNode.EnumScheme(var SchemeName:string; SchemeItems: TmncSchemeItems; const MemberName: string);
+procedure TsqlvNode.EnumSchema(var SchemaName:string; SchemaItems: TmncSchemaItems; const MemberName: string);
 begin
 end;
 
@@ -521,19 +538,19 @@ begin
   end;
 end;
 
-procedure TsqlvEngine.LaunchGroup(SchemeName: string; MemberName: string; vSilent:Boolean); overload;
+procedure TsqlvEngine.LaunchGroup(SchemaName: string; MemberName: string; vSilent:Boolean); overload;
 var
   aNodes: TsqlvNodes;
   aNode: TsqlvNode;
 begin
   aNodes := TsqlvNodes.Create;
   try
-    aNode := Find(SchemeName);
+    aNode := Find(SchemaName);
     if (aNode <> nil) and (aNode.CanExecute) then
        Launch(aNode, MemberName, vSilent)
     else
     begin
-      Enum(SchemeName, aNodes);
+      Enum(SchemaName, aNodes);
       Launch(aNodes[0], MemberName, vSilent);
     end;
   finally
@@ -588,7 +605,7 @@ begin
   s := s + Setting.OpenSaveDialogFilters;
   if s <> '' then
   begin
-    Result := 'All Supported|*.fdb';
+    Result := 'All Supported|*.sqlite';
     aStrings := TStringList.Create;
     StrToStrings(s, aStrings, ['|'], [' ', #13, #10]);
     for i := 0 to aStrings.Count - 1 do
@@ -597,10 +614,10 @@ begin
         Result := Result + ';' + aStrings[i];
     end;
     aStrings.Free;
-    Result := Result + '|' + sFBSQLFilter + '|' + s + '|' + sAllFilesFilter;
+    Result := Result + '|' + sSqliteFilter + '|' + s + '|' + sAllFilesFilter;
   end
   else
-    Result := Result + sFBSQLFilter + '|' + sAllFilesFilter;
+    Result := Result + sSqliteFilter + '|' + sAllFilesFilter;
 end;
 
 procedure TsqlvEngine.LoadSetting;
@@ -615,34 +632,52 @@ begin
   Result := inherited Items[Index] as TsqlvHistoryItem;
 end;
 
+procedure TsqlvHistory.Changed;
+begin
+  if Assigned(OnChanged) then
+    OnChanged(Self);
+end;
+
+function TsqlvHistory.GetCurrent: TsqlvHistoryItem;
+begin
+  if (Index < Count) and (Index >=0) then
+    Result := Items[Index]
+  else
+    Result := nil;
+end;
+
 constructor TsqlvHistory.create;
 begin
   inherited Create(True);
   Index := 0;
+  MaxCount := 50;
 end;
 
 function TsqlvHistory.Add(History: TsqlvHistoryItem): Integer;
 begin
-  if (Count > 0) and (Index < Count -1) then
-    Count := Index;//cut to index - 1
+  if (Count > 0) and (Index >=0) then
+    Count := Index + 1;//cut to index
   Result := inherited Add(History);
-  Index := Count - 1;
+  Index := Result;
+  if (Count > MaxCount) and (Count > 0) then
+    Delete(0);
 end;
 
-procedure TsqlvHistory.Add(const Name, MemberName: string);
+procedure TsqlvHistory.Add(const Name, Text: string);
 var
   aHistory: TsqlvHistoryItem;
 begin
   if (Count > 0) then
   begin
     aHistory := Items[Count - 1];
-    if (aHistory.Name = Name) and (aHistory.MemberName = MemberName) then
+    if (aHistory.Name = Name) and (aHistory.Text = Text) then
       exit;//do not duplicate the last one
   end;
   aHistory := TsqlvHistoryItem.Create;
   aHistory.Name := Name;
-  aHistory.MemberName := MemberName;
+  aHistory.Text := Text;
   Add(aHistory);
+  Changed;
 end;
 
 function TsqlvHistory.HaveForward: Boolean;
@@ -653,6 +688,26 @@ end;
 function TsqlvHistory.HaveBackward: Boolean;
 begin
   Result := Index > 0;
+end;
+
+function TsqlvHistory.Forward: Boolean;
+begin
+  Result := HaveForward;
+  if Result then
+  begin
+    Index := Index + 1;
+    Changed;
+  end;
+end;
+
+function TsqlvHistory.Backward: Boolean;
+begin
+  Result := HaveBackward;
+  if Result then
+  begin
+    Index := Index - 1;
+    Changed;
+  end;
 end;
 
 initialization
