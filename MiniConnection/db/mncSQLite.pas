@@ -25,6 +25,9 @@ uses
   mnUtils, mnStreams, mncConnections, mncSQL;
 
 type
+
+  { TmncSQLiteConnection }
+
   TmncSQLiteConnection = class(TmncConnection)
   private
     FDBHandle:PSqlite3;
@@ -36,6 +39,7 @@ type
   public
     constructor Create;
     procedure CheckError(Error: Integer; const ExtraMsg: string = '');
+    procedure Interrupt;
     property DBHandle:PSqlite3 read FDBHandle;
   end;
 
@@ -43,17 +47,22 @@ type
 
   TmncSQLiteSession = class(TmncSession)
   private
+    FExclusive: Boolean;
     function GetConnection: TmncSQLiteConnection;
     procedure SetConnection(const AValue: TmncSQLiteConnection);
+    procedure SetExclusive(const AValue: Boolean);
   protected
     procedure DoStart; override;
     procedure DoCommit; override;
     procedure DoRollback; override;
-    procedure ExecuteSQL(SQL: string);
     function GetActive: Boolean; override;
   public
     constructor Create(vConnection: TmncConnection); override;
     destructor Destroy; override;
+    procedure Execute(SQL: string);
+    function GetLastInsertID: Int64;
+    function GetRowsChanged: Integer;
+    property Exclusive: Boolean read FExclusive write SetExclusive;
     property Connection: TmncSQLiteConnection read GetConnection write SetConnection;
   end;
 
@@ -70,6 +79,8 @@ type
     procedure FetchValues;
     procedure ApplyValues;
     procedure CheckError(Error:longint);
+    function GetSession: TmncSQLiteSession;
+    procedure SetSession(const AValue: TmncSQLiteSession);
   protected
     procedure DoPrepare; override;
     procedure DoExecute; override;
@@ -80,6 +91,7 @@ type
     procedure DoCommit; override;
     procedure DoRollback; override;
     property Connection:TmncSQLiteConnection read GetConnection;
+    property Session: TmncSQLiteSession read GetSession write SetSession;
   public
     constructor Create(vSession:TmncSession);
     destructor Destroy; override;
@@ -99,7 +111,7 @@ begin
     s := 'sqlite: ' + sqlite3_errmsg(FDBHandle);
     if ExtraMsg <> '' then
       s := s + ' - ' + ExtraMsg;
-    raise EmncException.Create(s);
+    raise EmncException.Create(s) {$ifdef fpc} at get_caller_frame(get_frame) {$endif};
   end;
 end;
 
@@ -108,6 +120,11 @@ end;
 constructor TmncSQLiteConnection.Create;
 begin
   inherited Create;
+end;
+
+procedure TmncSQLiteConnection.Interrupt;
+begin
+  sqlite3_interrupt(DBHandle);
 end;
 
 procedure TmncSQLiteConnection.DoConnect;
@@ -136,24 +153,28 @@ begin
 end;
 procedure TmncSQLiteSession.DoStart;
 begin
-  ExecuteSQL('PRAGMA TEMP_STORE=MEMORY');//for WINCE
-  ExecuteSQL('PRAGMA full_column_names=0');
-  ExecuteSQL('PRAGMA short_column_names=1');
-  ExecuteSQL('PRAGMA encoding = "UTF-8"');
-  ExecuteSQL('BEGIN');
+  Execute('PRAGMA TEMP_STORE=MEMORY');//for WINCE
+  Execute('PRAGMA full_column_names=0');
+  Execute('PRAGMA short_column_names=1');
+  Execute('PRAGMA encoding = "UTF-8"');
+  if Exclusive then
+    Execute('PRAGMA locking_mode = EXCLUSIVE')
+  else
+    Execute('PRAGMA locking_mode = NORMAL');
+  Execute('BEGIN');
 end;
 
 procedure TmncSQLiteSession.DoCommit;
 begin
-  ExecuteSQL('COMMIT');
+  Execute('COMMIT');
 end;
 
 procedure TmncSQLiteSession.DoRollback;
 begin
-  ExecuteSQL('ROLLBACK');
+  Execute('ROLLBACK');
 end;
 
-procedure TmncSQLiteSession.ExecuteSQL(SQL: string);
+procedure TmncSQLiteSession.Execute(SQL: string);
 var
  lMsg  : pchar;
  s : Utf8String;
@@ -168,6 +189,18 @@ begin
     sqlite3_free(lMSg);
   end;
   Connection.CheckError(r, s);
+end;
+
+function TmncSQLiteSession.GetLastInsertID: Int64;
+begin
+  CheckActive;
+  Result := sqlite3_last_insert_rowid(Connection.DBHandle);
+end;
+
+function TmncSQLiteSession.GetRowsChanged: Integer;
+begin
+  CheckActive;
+  Result := sqlite3_changes(Connection.DBHandle);
 end;
 
 function TmncSQLiteSession.GetActive: Boolean;
@@ -195,9 +228,19 @@ begin
   inherited Connection := AValue;
 end;
 
+procedure TmncSQLiteSession.SetExclusive(const AValue: Boolean);
+begin
+  if FExclusive <> AValue then
+  begin
+    FExclusive := AValue;
+    if Active then
+      raise EmncException.Create('You can not set Exclusive when session active');
+  end;
+end;
+
 { TmncSQLiteCommand }
 
-procedure TmncSQLiteCommand.CheckError(Error: Integer);
+procedure TmncSQLiteCommand.CheckError(Error: longint);
 var
   s : Utf8String;
   ExtraMsg: string;
@@ -217,8 +260,18 @@ begin
         s := s + ' - ' + ExtraMsg;
       FStatment := nil;
     end;
-    raise EmncException.Create(s);
+    raise EmncException.Create(s) {$ifdef fpc} at get_caller_frame(get_frame) {$endif};
   end;
+end;
+
+function TmncSQLiteCommand.GetSession: TmncSQLiteSession;
+begin
+  Result := inherited Session as TmncSQLiteSession;
+end;
+
+procedure TmncSQLiteCommand.SetSession(const AValue: TmncSQLiteSession);
+begin
+  inherited Session := AValue;
 end;
 
 procedure TmncSQLiteCommand.Clear;
@@ -244,14 +297,12 @@ end;
 
 function TmncSQLiteCommand.GetRowsChanged: Integer;
 begin
-  CheckActive;
-  Result := sqlite3_changes(FStatment);
+  Result := Session.GetRowsChanged;
 end;
 
 function TmncSQLiteCommand.GetLastInsertID: Int64;
 begin
-  CheckActive;
-  Result := sqlite3_last_insert_rowid(FStatment);
+  Result := Session.GetLastInsertID;
 end;
 
 procedure TmncSQLiteCommand.ApplyValues;
@@ -399,6 +450,7 @@ var
   flt: Double;
   aCurrent: TmncRecord;
   aType: Integer;
+  //aSize: Integer;
 begin
   c := sqlite3_column_count(FStatment);
   if c > 0 then
@@ -406,8 +458,9 @@ begin
     aCurrent := TmncRecord.Create(Fields);
     for i := 0 to c - 1 do
     begin
-//TStorageType = (stNone,stInteger,stFloat,stText,stBlob,stNull);
+//    TStorageType = (stNone,stInteger,stFloat,stText,stBlob,stNull);
       aType := sqlite3_column_type(FStatment, i);
+      //aSize := sqlite3_column_bytes(FStatment, i);
       case aType of
         SQLITE_NULL:
         begin

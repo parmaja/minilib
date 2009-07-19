@@ -32,9 +32,9 @@ type
   TExtractOption = (ekExtra, ekAlter, ekSystem, ekOrder);
   TschmEnumOptions = set of TExtractOption;
 
-  { TmncSchemeItem }
+  { TmncSchemaItem }
 
-  TmncSchemeItem = class(TObject)
+  TmncSchemaItem = class(TObject)
   private
     FAttributes: TStringList;
     FName: string;
@@ -50,43 +50,43 @@ type
     property Attributes: TStringList read FAttributes write FAttributes;
   end;
 
-  { TmncSchemeItems }
+  { TmncSchemaItems }
 
-  TmncSchemeItems = class(TObjectList)
+  TmncSchemaItems = class(TObjectList)
   private
     FExtraData: TStringList;
-    function GetItem(Index: Integer): TmncSchemeItem;
-    procedure SetItem(Index: Integer; const Value: TmncSchemeItem);
+    function GetItem(Index: Integer): TmncSchemaItem;
+    procedure SetItem(Index: Integer; const Value: TmncSchemaItem);
     function GetExtraData: TStringList;
   public
-    function Find(const Name: string): TmncSchemeItem;
-    function Add(vSchemeItem: TmncSchemeItem): Integer; overload;
+    function Find(const Name: string): TmncSchemaItem;
+    function Add(vSchemaItem: TmncSchemaItem): Integer; overload;
     function Add(Name: string; Comment: string = ''): Integer; overload;
-    property Items[Index: Integer]: TmncSchemeItem read GetItem write SetItem; default;
+    property Items[Index: Integer]: TmncSchemaItem read GetItem write SetItem; default;
     property ExtraData: TStringList read GetExtraData;
   end;
 
-  { TmncScheme }
+  { TmncSchema }
 
-  TmncScheme = class(TmncLinkObject)
+  TmncSchema = class(TmncLinkObject)
   private
     FIncludeHeader: Boolean;
   protected
   public
     destructor Destroy; override;
-    procedure EnumObject(Scheme: TmncSchemeItems; Kind: TschmKind; RelationName: string = ''; Options: TschmEnumOptions = []);
+    procedure EnumObject(Schema: TmncSchemaItems; Kind: TschmKind; RelationName: string = ''; Options: TschmEnumOptions = []);
     //---------------------
-    procedure EnumTables(Scheme: TmncSchemeItems; Options: TschmEnumOptions = []); virtual;
-    procedure EnumViews(Scheme: TmncSchemeItems; Options: TschmEnumOptions = []); virtual;
-    procedure EnumProcedures(Scheme: TmncSchemeItems; Options: TschmEnumOptions = []); virtual;
-    procedure EnumSequences(Scheme: TmncSchemeItems; Options: TschmEnumOptions = []); virtual;
-    procedure EnumFunctions(Scheme: TmncSchemeItems; Options: TschmEnumOptions = []); virtual;
-    procedure EnumExceptions(Scheme: TmncSchemeItems; Options: TschmEnumOptions = []); virtual;
-    procedure EnumTypes(Scheme: TmncSchemeItems; Options: TschmEnumOptions = []); virtual;
-    procedure EnumConstraints(Scheme: TmncSchemeItems; RelationName: string = ''; Options: TschmEnumOptions = []); virtual;
-    procedure EnumTriggers(Scheme: TmncSchemeItems; RelationName: string = ''; Options: TschmEnumOptions = []); virtual;
-    procedure EnumIndexes(Scheme: TmncSchemeItems; RelationName: string = ''; Options: TschmEnumOptions = []); virtual;
-    procedure EnumFields(Scheme: TmncSchemeItems; RelationName: string = ''; Options: TschmEnumOptions = []); virtual;
+    procedure EnumTables(Schema: TmncSchemaItems; Options: TschmEnumOptions = []); virtual;
+    procedure EnumViews(Schema: TmncSchemaItems; Options: TschmEnumOptions = []); virtual;
+    procedure EnumProcedures(Schema: TmncSchemaItems; Options: TschmEnumOptions = []); virtual;
+    procedure EnumSequences(Schema: TmncSchemaItems; Options: TschmEnumOptions = []); virtual;
+    procedure EnumFunctions(Schema: TmncSchemaItems; Options: TschmEnumOptions = []); virtual;
+    procedure EnumExceptions(Schema: TmncSchemaItems; Options: TschmEnumOptions = []); virtual;
+    procedure EnumTypes(Schema: TmncSchemaItems; Options: TschmEnumOptions = []); virtual;
+    procedure EnumConstraints(Schema: TmncSchemaItems; RelationName: string = ''; Options: TschmEnumOptions = []); virtual;
+    procedure EnumTriggers(Schema: TmncSchemaItems; RelationName: string = ''; Options: TschmEnumOptions = []); virtual;
+    procedure EnumIndexes(Schema: TmncSchemaItems; RelationName: string = ''; Options: TschmEnumOptions = []); virtual;
+    procedure EnumFields(Schema: TmncSchemaItems; RelationName: string = ''; Options: TschmEnumOptions = []); virtual;
     //source
     procedure GetTriggerSource(Strings:TStringList; RelationName: string; Options: TschmEnumOptions = []); virtual;
   published
@@ -107,19 +107,19 @@ type
 
 implementation
 
-{ TmncSchemeItems }
+{ TmncSchemaItems }
 
-function TmncSchemeItems.Add(Name, Comment: string): Integer;
+function TmncSchemaItems.Add(Name, Comment: string): Integer;
 var
-  aItem: TmncSchemeItem;
+  aItem: TmncSchemaItem;
 begin
-  aItem := TmncSchemeItem.Create;
+  aItem := TmncSchemaItem.Create;
   aItem.Name := Name;
   aItem.Comment := Comment;
   Result := Add(aItem);
 end;
 
-function TmncSchemeItems.Find(const Name: string): TmncSchemeItem;
+function TmncSchemaItems.Find(const Name: string): TmncSchemaItem;
 var
   i: Integer;
 begin
@@ -134,24 +134,24 @@ begin
   end;
 end;
 
-function TmncSchemeItems.Add(vSchemeItem: TmncSchemeItem): Integer;
+function TmncSchemaItems.Add(vSchemaItem: TmncSchemaItem): Integer;
 begin
-  Result := inherited Add(vSchemeItem);
+  Result := inherited Add(vSchemaItem);
 end;
 
-function TmncSchemeItems.GetExtraData: TStringList;
+function TmncSchemaItems.GetExtraData: TStringList;
 begin
   if FExtraData = nil then
     FExtraData := TStringList.Create;
   Result := FExtraData;
 end;
 
-function TmncSchemeItems.GetItem(Index: Integer): TmncSchemeItem;
+function TmncSchemaItems.GetItem(Index: Integer): TmncSchemaItem;
 begin
-  Result := inherited Items[Index] as TmncSchemeItem;
+  Result := inherited Items[Index] as TmncSchemaItem;
 end;
 
-procedure TmncSchemeItems.SetItem(Index: Integer; const Value: TmncSchemeItem);
+procedure TmncSchemaItems.SetItem(Index: Integer; const Value: TmncSchemaItem);
 begin
   inherited Items[Index] := Value;
 end;
@@ -161,121 +161,121 @@ const
   TERM = ';';
   ProcTerm = '^';
 
-{ TmncScheme }
+{ TmncSchema }
 
-destructor TmncScheme.Destroy;
+destructor TmncSchema.Destroy;
 begin
   inherited;
 end;
 
-{ TmncSchemeItem }
+{ TmncSchemaItem }
 
-function TmncSchemeItem.GetData: TStringList;
+function TmncSchemaItem.GetData: TStringList;
 begin
   if FData = nil then
     FData := TStringList.Create;
   Result := FData;
 end;
 
-constructor TmncSchemeItem.Create;
+constructor TmncSchemaItem.Create;
 begin
   inherited;
   FAttributes := TStringList.Create;
 end;
 
-destructor TmncSchemeItem.Destroy;
+destructor TmncSchemaItem.Destroy;
 begin
   FreeAndNil(FAttributes);
   inherited Destroy;
 end;
 
-procedure TmncScheme.EnumObject(Scheme: TmncSchemeItems; Kind: TschmKind; RelationName: string; Options: TschmEnumOptions);
+procedure TmncSchema.EnumObject(Schema: TmncSchemaItems; Kind: TschmKind; RelationName: string; Options: TschmEnumOptions);
 begin
   case Kind of
     sokDatabase: ;
-    sokDomain: EnumTypes(Scheme, Options);
-    sokTable: EnumTables(Scheme, Options);
-    sokView: EnumViews(Scheme, Options);
-    sokProcedure: EnumProcedures(Scheme, Options);
-    sokFunction: EnumFunctions(Scheme, Options);
-    sokGenerator: EnumSequences(Scheme, Options);
-    sokException: EnumExceptions(Scheme, Options);
+    sokDomain: EnumTypes(Schema, Options);
+    sokTable: EnumTables(Schema, Options);
+    sokView: EnumViews(Schema, Options);
+    sokProcedure: EnumProcedures(Schema, Options);
+    sokFunction: EnumFunctions(Schema, Options);
+    sokGenerator: EnumSequences(Schema, Options);
+    sokException: EnumExceptions(Schema, Options);
     sokRole: ;
-    sokTrigger: EnumTriggers(Scheme, RelationName, Options);
+    sokTrigger: EnumTriggers(Schema, RelationName, Options);
     sokForeign: ;
-    sokFields: EnumFields(Scheme, RelationName, Options);
-    sokIndexes: EnumIndexes(Scheme, RelationName, Options);
-    sokConstraints: EnumConstraints(Scheme, RelationName, Options);
+    sokFields: EnumFields(Schema, RelationName, Options);
+    sokIndexes: EnumIndexes(Schema, RelationName, Options);
+    sokConstraints: EnumConstraints(Schema, RelationName, Options);
     sokData: ;
   end;
 end;
 
-procedure TmncScheme.EnumTables(Scheme: TmncSchemeItems;
+procedure TmncSchema.EnumTables(Schema: TmncSchemaItems;
   Options: TschmEnumOptions);
 begin
 
 end;
 
-procedure TmncScheme.EnumViews(Scheme: TmncSchemeItems; Options: TschmEnumOptions
+procedure TmncSchema.EnumViews(Schema: TmncSchemaItems; Options: TschmEnumOptions
   );
 begin
 
 end;
 
-procedure TmncScheme.EnumProcedures(Scheme: TmncSchemeItems;
+procedure TmncSchema.EnumProcedures(Schema: TmncSchemaItems;
   Options: TschmEnumOptions);
 begin
 
 end;
 
-procedure TmncScheme.EnumSequences(Scheme: TmncSchemeItems;
+procedure TmncSchema.EnumSequences(Schema: TmncSchemaItems;
   Options: TschmEnumOptions);
 begin
 
 end;
 
-procedure TmncScheme.EnumFunctions(Scheme: TmncSchemeItems;
+procedure TmncSchema.EnumFunctions(Schema: TmncSchemaItems;
   Options: TschmEnumOptions);
 begin
 
 end;
 
-procedure TmncScheme.EnumExceptions(Scheme: TmncSchemeItems;
+procedure TmncSchema.EnumExceptions(Schema: TmncSchemaItems;
   Options: TschmEnumOptions);
 begin
 
 end;
 
-procedure TmncScheme.EnumTypes(Scheme: TmncSchemeItems;
+procedure TmncSchema.EnumTypes(Schema: TmncSchemaItems;
   Options: TschmEnumOptions);
 begin
 
 end;
 
-procedure TmncScheme.EnumConstraints(Scheme: TmncSchemeItems;
+procedure TmncSchema.EnumConstraints(Schema: TmncSchemaItems;
   RelationName: string; Options: TschmEnumOptions);
 begin
 
 end;
 
-procedure TmncScheme.EnumTriggers(Scheme: TmncSchemeItems;
+procedure TmncSchema.EnumTriggers(Schema: TmncSchemaItems;
   RelationName: string; Options: TschmEnumOptions);
 begin
 
 end;
 
-procedure TmncScheme.EnumIndexes(Scheme: TmncSchemeItems; RelationName: string;
+procedure TmncSchema.EnumIndexes(Schema: TmncSchemaItems; RelationName: string;
   Options: TschmEnumOptions);
 begin
 
 end;
 
-procedure TmncScheme.EnumFields(Scheme: TmncSchemeItems; RelationName: string; Options: TschmEnumOptions);
+procedure TmncSchema.EnumFields(Schema: TmncSchemaItems; RelationName: string; Options: TschmEnumOptions);
 begin
 
 end;
 
-procedure TmncScheme.GetTriggerSource(Strings: TStringList; RelationName: string; Options: TschmEnumOptions = []);
+procedure TmncSchema.GetTriggerSource(Strings: TStringList; RelationName: string; Options: TschmEnumOptions = []);
 begin
 
 end;

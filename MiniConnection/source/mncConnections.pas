@@ -96,6 +96,8 @@ type
   //Session it branch/clone of Connection but usefull for take a special params, it like Transactions.
   TmncSessionAction = (sdaCommit, sdaRollback);
 
+  { TmncSession }
+
   TmncSession = class(TmncObject)
   private
     FParams: TStrings;
@@ -108,6 +110,7 @@ type
     procedure SetActive(const Value: Boolean);
   protected
     function GetActive: Boolean; virtual;
+    procedure CheckActive;
     procedure DoStart; virtual; abstract;
     procedure DoCommit; virtual; abstract;
     procedure DoRollback; virtual; abstract;
@@ -578,7 +581,7 @@ end;
 procedure TmncCommand.CheckActive;
 begin
   if not Active then
-    raise EmncException.Create('Not active/opened');
+    raise EmncException.Create('Command is not active/opened');
 end;
 
 procedure TmncCommand.DoCommit;
@@ -746,6 +749,12 @@ end;
 function TmncSession.GetActive: Boolean;
 begin
   Result := FStartCount > 0;
+end;
+
+procedure TmncSession.CheckActive;
+begin
+  if not Active then
+    raise EmncException.Create('Session is not active/opened');
 end;
 
 procedure TmncSession.Rollback;
@@ -1028,7 +1037,7 @@ end;
 function TmncField.GetVariant: Variant;
 begin
   Result := null;
-  raise EmncException.Create('Field have no value, You must not use it, try use Current!');
+  raise EmncException.Create('Field have no value, You must not use it, try use Current!') at get_caller_addr(get_frame);
 end;
 
 procedure TmncField.SetVariant(const Value: Variant);
