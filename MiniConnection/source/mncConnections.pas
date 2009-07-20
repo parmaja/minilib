@@ -58,8 +58,12 @@ type
 }
   TmncTransactionMode = (smNone, smSingleTransactions, smMultiTransactions);
 
+  { TmncConnection }
+
   TmncConnection = class(TmncObject)
   private
+    FOnConnected: TNotifyEvent;
+    FOnDisconnected: TNotifyEvent;
     FPassword: string;
     FResource: string;
     FHost: string;
@@ -91,6 +95,8 @@ type
     property Resource: string read FResource write FResource; //can be a Database name or Alias or service name etc...
     property UserName: string read FUserName write FUserName;
     property Password: string read FPassword write FPassword;
+    property OnConnected: TNotifyEvent read FOnConnected write FOnConnected;
+    property OnDisconnected: TNotifyEvent read FOnDisconnected write FOnDisconnected;
   end;
 
   //Session it branch/clone of Connection but usefull for take a special params, it like Transactions.
@@ -450,6 +456,8 @@ end;
 procedure TmncConnection.Connect;
 begin
   DoConnect;
+  if Assigned(OnConnected) then
+    OnConnected(Self);
 end;
 
 constructor TmncConnection.Create;
@@ -472,6 +480,8 @@ end;
 procedure TmncConnection.Disconnect;
 begin
   DoDisconnect;
+  if Assigned(OnDisconnected) then
+    OnDisconnected(Self);
 end;
 
 procedure TmncConnection.Open;
