@@ -13,8 +13,8 @@ unit sqlvSessions;
 interface
 
 uses
-  SysUtils, Classes, mncSchemes,
-  mncSQL, mncConnections, mncSQLite, mncSQLiteSchemes;
+  SysUtils, Classes, mncSchemas,
+  mncSQL, mncConnections, mncSQLite, mncSQLiteSchemas;
 
 type
   TsqlvOnNotifySession = procedure of object;

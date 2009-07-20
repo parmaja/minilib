@@ -1,5 +1,0 @@
-<?xml version="1.0"?>
-<CONFIG>
-  <Compiler Value="V:\FPC\bin\i386-Win32\ppc386.exe" Date="982165710"/>
-  <Params Value=" -MObjFPC -Scgi -O1 -gl -vewnhi -l -Fuw:\programs\lazarus\lcl\units\i386-win32\ -Fuw:\programs\lazarus\lcl\units\i386-win32\win32\ -Fuw:\programs\lazarus\packager\units\i386-win32\ -FuW:\home\pascal\lib\minilib\Lazarus\components\native\ -Fu. -FUW:\home\pascal\lib\minilib\Lazarus\components\native\./units\i386-win32\ -dLCL -dLCLwin32 NativeLib.pas"/>
-</CONFIG>

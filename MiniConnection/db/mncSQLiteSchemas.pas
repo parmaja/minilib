@@ -1,4 +1,4 @@
-unit mncSQLiteSchemes;
+unit mncSQLiteSchemas;
 {**
  *  This file is part of the "Mini Connections"
  *
@@ -17,7 +17,7 @@ interface
 
 uses
   SysUtils, Classes, contnrs,
-  mncSQL, mncSchemes, mncConnections, mncSQLite;
+  mncSQL, mncSchemas, mncConnections, mncSQLite;
 
 type
   { TmncSQLiteSchema }

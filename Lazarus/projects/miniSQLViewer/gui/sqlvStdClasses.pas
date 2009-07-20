@@ -12,8 +12,9 @@ unit sqlvStdClasses;
 interface
 
 uses
-  SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  mncSchemes, sqlvSessions, sqlvClasses, ComCtrls, StdCtrls, mncSQLiteSchemes;
+  SysUtils, Variants, Classes, Graphics, Controls, Forms, StdCtrls,
+  mncSchemas, mncSQLiteSchemas,
+  sqlvSessions, sqlvClasses;
 
 type
 

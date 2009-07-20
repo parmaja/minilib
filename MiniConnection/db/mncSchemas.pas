@@ -1,4 +1,4 @@
-unit mncSchemes;
+unit mncSchemas;
 {**
  *  This file is part of the "Mini Connections"
  *

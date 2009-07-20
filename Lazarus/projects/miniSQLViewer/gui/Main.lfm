@@ -74,7 +74,6 @@ object MainForm: TMainForm
         ParentFont = False
         TabOrder = 0
         BookMarkOptions.Xoffset = -18
-        BookMarkOptions.OnChange = nil
         Gutter.Width = 21
         Gutter.MouseActions = <        
           item

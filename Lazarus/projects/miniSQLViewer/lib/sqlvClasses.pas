@@ -15,7 +15,7 @@ uses
   SysUtils, Variants, Classes, Controls,
   mnXMLRttiProfile, mnXMLStreams,
   Dialogs, Contnrs,
-  mncSchemes, mnUtils,
+  mncSchemas, mnUtils,
   sqlvConsts, sqlvSessions, Menus, ImgList;
 
 const

@@ -29,7 +29,7 @@ uses
   contnrs, ExtCtrls, StdCtrls, SynEdit, FileUtil, Buttons, Menus,
   SynHighlighterSqlite, sqlvSessions,
   SynCompletion, SynEditAutoComplete, SynHighlighterHashEntries,
-  mnUtils, mncSQLite, mncSchemes, mncSqliteSchemes, sqlvClasses, sqlvStdClasses, LMessages;
+  mnUtils, mncSQLite, mncSchemas, mncSqliteSchemas, sqlvClasses, sqlvStdClasses, LMessages;
 
 type
   TsqlState = (sqlsRoot, sqlsSQL, sqlsResults, sqlsInfo, sqlsMembers);
