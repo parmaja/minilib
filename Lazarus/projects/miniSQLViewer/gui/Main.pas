@@ -10,10 +10,12 @@ unit Main;
 
 {$mode objfpc}{$H+}
 
-{todo: Save/Load sql scripts DONE}
-{todo: More short cuts}
+{todo: Save/Load sql scripts: DONE}
+{todo: Auto complete: DONE}
+
+{todo: search for members: Done}
+{todo: More short cuts: Return in members}
 {todo: Assoiate with *.sqlite}
-{todo: Auto complete in SQLEdit}
 {todo: Export/Import As CSV}
 {todo: Extract the schema of whale database}
 {todo: Find and Replace}
@@ -26,6 +28,7 @@ uses
   dateutils, LCLType,
   contnrs, ExtCtrls, StdCtrls, SynEdit, FileUtil, Buttons, Menus,
   SynHighlighterSqlite, sqlvSessions,
+  SynCompletion, SynEditAutoComplete, SynHighlighterHashEntries,
   mnUtils, mncSQLite, mncSchemes, mncSqliteSchemes, sqlvClasses, sqlvStdClasses, LMessages;
 
 type
@@ -133,7 +136,16 @@ type
     procedure GroupsListClick(Sender: TObject);
     procedure GroupsListSelect(Sender: TObject);
     procedure InfoBtnClick(Sender: TObject);
+    procedure MembersGridClick(Sender: TObject);
+    procedure MembersGridColRowMoved(Sender: TObject; IsColumn: Boolean;
+      sIndex, tIndex: Integer);
     procedure MembersGridDblClick(Sender: TObject);
+    procedure MembersGridKeyDown(Sender: TObject; var Key: Word;
+      Shift: TShiftState);
+    procedure MembersGridSelectCell(Sender: TObject; aCol, aRow: Integer;
+      var CanSelect: Boolean);
+    procedure MembersGridSelection(Sender: TObject; aCol, aRow: Integer);
+    procedure MembersGridUTF8KeyPress(Sender: TObject; var UTF8Key: TUTF8Char);
     procedure MenuItem1Click(Sender: TObject);
     procedure ObjectsBtnClick(Sender: TObject);
     procedure MembersListDblClick(Sender: TObject);
@@ -148,10 +160,15 @@ type
     procedure SQLLoadBtnClick(Sender: TObject);
     procedure SQLSaveBtnClick(Sender: TObject);
   private
+    FSearching: Boolean;
+    FFirstSearch: Boolean;
+    FSearch: UTF8String;
+    FSearchTime: TDateTime;
     LastSQLFileName: string;
     FLockEnum: Boolean;
     FSqliteSyn: TSynSqliteSyn;
     FDataPath: string;
+    procedure SearchFor(S: string);
     procedure Connect;
     procedure FileFoundEvent(FileIterator: TFileIterator);
     procedure DirectoryFoundEvent(FileIterator: TFileIterator);
@@ -165,11 +182,14 @@ type
     FState: TsqlState;
     PanelsList: TPanelsList;
     FCancel: Boolean;
+    Completion: TSynCompletion;
     procedure AddSql;
     procedure ClearGrid;
+    procedure DoAddKeyword(AKeyword: string; AKind: integer);
     procedure Execute(SQLCMD: TmncSQLiteCommand; SQL:TStringList; ShowGrid:Boolean);
     procedure ExecuteScript;
     procedure FillGrid(SQLCMD: TmncSQLiteCommand);
+    procedure LoadCompletion;
     function LogTime(Start: TDateTime): string;
     procedure RefreshSQLHistory(Sender: TObject);
     procedure RefreshHistory(Sender: TObject);
@@ -281,9 +301,55 @@ begin
   State := sqlsInfo;
 end;
 
+procedure TMainForm.MembersGridClick(Sender: TObject);
+begin
+  if not FSearching then
+    FSearch := '';
+end;
+
+procedure TMainForm.MembersGridColRowMoved(Sender: TObject; IsColumn: Boolean;
+  sIndex, tIndex: Integer);
+begin
+
+end;
+
 procedure TMainForm.MembersGridDblClick(Sender: TObject);
 begin
   OpenMember;
+end;
+
+procedure TMainForm.MembersGridKeyDown(Sender: TObject; var Key: Word;
+  Shift: TShiftState);
+begin
+  case Key of
+    VK_RETURN:
+    begin
+      OpenMember;
+    end;
+  end;
+end;
+
+procedure TMainForm.MembersGridSelectCell(Sender: TObject; aCol, aRow: Integer;
+  var CanSelect: Boolean);
+begin
+
+end;
+
+procedure TMainForm.MembersGridSelection(Sender: TObject; aCol, aRow: Integer);
+begin
+
+end;
+
+procedure TMainForm.MembersGridUTF8KeyPress(Sender: TObject;
+  var UTF8Key: TUTF8Char);
+begin
+  if (FSearch = '') or (SecondsBetween(Now, FSearchTime) > 3) then
+  begin
+    FFirstSearch := True;
+    FSearch := '';
+  end;
+  FSearch := FSearch + UTF8Key;
+  SearchFor(FSearch);
 end;
 
 procedure TMainForm.MenuItem1Click(Sender: TObject);
@@ -377,6 +443,30 @@ begin
     SQLEdit.Lines.LoadFromFile(SaveDialog.FileName);
 end;
 
+procedure TMainForm.SearchFor(S: string);
+var
+  i: Integer;
+  t: string;
+  f: Integer;
+begin
+  f := ord(not FFirstSearch);
+  for i := MembersGrid.Row + f to MembersGrid.RowCount -1 do
+  begin
+    t := LeftStr(MembersGrid.Cells[0, i], Length(S));
+    if SameText(S, t) then
+    begin
+      FSearching := True;
+      try
+        MembersGrid.Row := i;
+      finally
+        FSearching := False;
+      end;
+      break;
+    end;
+  end;
+  FSearchTime := Now;
+end;
+
 procedure TMainForm.Connect;
 begin
   sqlvEngine.Session.Open(GetDatabaseName, AutoCreateChk.Checked);
@@ -438,12 +528,14 @@ end;
 
 procedure TMainForm.Connected;
 begin
-
+  FreeAndNil(Completion);
+  Completion := TSynCompletion.Create(nil);
+  LoadCompletion;
 end;
 
 procedure TMainForm.Disconnected;
 begin
-
+  FreeAndNil(Completion);
 end;
 
 procedure TMainForm.SessionStarted;
@@ -506,7 +598,9 @@ var
   aFile: string;
 begin
   inherited Create(TheOwner);
-  //SQLEdit.CharWidth := 8;
+  {$ifdef WINCE}
+  SQLEdit.Font.Size := 8;
+  {$endif}
   SQLBackwardBtn.Glyph.Assign(BackwordBtn.Glyph);
   SQLForwardBtn.Glyph.Assign(ForwardBtn.Glyph);
   GroupsNames := TStringList.Create;
@@ -537,6 +631,7 @@ begin
   PanelsList.Add(InfoPanel);
   PanelsList.Add(InfoPanel, ResultsBtn, True);
   PanelsList.Add(InfoPanel, SQLBtn, True);
+
   sqlvEngine.History.OnChanged := @RefreshHistory;
   sqlvEngine.SQLHistory.OnChanged := @RefreshSQLHistory;
   sqlvEngine.LoadFile('recent.sql', SQLEdit.Lines);
@@ -913,6 +1008,37 @@ begin
   m := (s div 60);
   s := (s mod 60);
   Result := Format('%d:%d:%d', [m, s, ms]);
+end;
+
+procedure TMainForm.DoAddKeyword(AKeyword: string; AKind: integer);
+begin
+  AKeyword := LowerCase(AKeyword);
+  Completion.ItemList.Add(AKeyword);
+end;
+
+procedure TMainForm.LoadCompletion;
+  procedure FillNow(Name: string; SchemaItems: TmncSchemaItems);
+  var
+    i: Integer;
+  begin
+    for i := 0 to SchemaItems.Count - 1 do
+      Completion.ItemList.Add(SchemaItems[i].Name);
+  end;
+begin
+  Completion.AddEditor(SQLEdit);
+  Completion.Editor := SQLEdit;
+  Completion.EndOfTokenChr := Completion.EndOfTokenChr + ' ';
+  Completion.CaseSensitive := True;
+  EnumerateKeywords(Ord(tkDatatype), SqliteTypes, SQLEdit.IdentChars, @DoAddKeyword);
+  EnumerateKeywords(Ord(tkFunction), SqliteFunctions, SQLEdit.IdentChars, @DoAddKeyword);
+  EnumerateKeywords(Ord(tkKey), SqliteKeywords, SQLEdit.IdentChars, @DoAddKeyword);
+  FillNow('Table', sqlvEngine.Session.Tables);
+  FillNow('Fields', sqlvEngine.Session.Fields);
+  FillNow('View', sqlvEngine.Session.Views);
+  //FillNow('Procedure', (Owner as TfbvSession).Proceduers);
+  //FillNow('Triggers', (Owner as TfbvSession).Triggers);
+  //FillNow('Functions', (Owner as TfbvSession).Functions);
+  //FillNow('Exceptions', (Owner as TfbvSession).Exceptions);
 end;
 
 initialization

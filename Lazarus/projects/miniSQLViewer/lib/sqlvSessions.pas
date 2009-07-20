@@ -26,12 +26,12 @@ type
     FDBConnection: TmncSQLiteConnection;
     FDBSession: TmncSQLiteSession;
     FTables: TmncSchemaItems;
-    FGenerators: TmncSchemaItems;
+    FSequences: TmncSchemaItems;
     FProceduers: TmncSchemaItems;
     FViews: TmncSchemaItems;
     FFunctions: TmncSchemaItems;
     FExceptions: TmncSchemaItems;
-    FDomains: TmncSchemaItems;
+    FTypes: TmncSchemaItems;
     FFields: TmncSchemaItems;
     FOnDisconnected: TsqlvOnNotifySession;
     FOnConnected: TsqlvOnNotifySession;
@@ -61,10 +61,10 @@ type
     property Tables: TmncSchemaItems read FTables;
     property Proceduers: TmncSchemaItems read FProceduers;
     property Views: TmncSchemaItems read FViews;
-    property Generators: TmncSchemaItems read FGenerators;
+    property Sequences: TmncSchemaItems read FSequences;
     property Functions: TmncSchemaItems read FFunctions;
     property Exceptions: TmncSchemaItems read FExceptions;
-    property Domains: TmncSchemaItems read FDomains;
+    property Types: TmncSchemaItems read FTypes;
     property Fields: TmncSchemaItems read FFields;
   end;
 
@@ -79,9 +79,9 @@ procedure TsqlvSession.Connected;
 begin
   DBSession.Start;
   LoadSchema;
+  RunLoginSQL;
   if Assigned(FOnConnected) then
     FOnConnected;
-  RunLoginSQL;
 end;
 
 constructor TsqlvSession.Create;
@@ -89,13 +89,16 @@ begin
   inherited;
   FDBConnection := TmncSQLiteConnection.Create;
   FDBSession := TmncSQLiteSession.Create(DBConnection);
+  FDBConnection.OnConnected :=  @ConnectionAfterConnect;
+  FDBConnection.OnDisconnected :=  @ConnectionAfterDisconnect;
+
   FTables := TmncSchemaItems.Create;
   FProceduers := TmncSchemaItems.Create;
   FViews := TmncSchemaItems.Create;
-  FGenerators := TmncSchemaItems.Create;
+  FSequences := TmncSchemaItems.Create;
   FExceptions := TmncSchemaItems.Create;
   FFunctions := TmncSchemaItems.Create;
-  FDomains := TmncSchemaItems.Create;
+  FTypes := TmncSchemaItems.Create;
   FFields := TmncSchemaItems.Create;
 end;
 
@@ -104,10 +107,10 @@ begin
   FreeAndNil(FTables);
   FreeAndNil(FProceduers);
   FreeAndNil(FViews);
-  FreeAndNil(FGenerators);
+  FreeAndNil(FSequences);
   FreeAndNil(FExceptions);
   FreeAndNil(FFunctions);
-  FreeAndNil(FDomains);
+  FreeAndNil(FTypes);
   FreeAndNil(FFields);
   FreeAndNil(FDBSession);
   FreeAndNil(FDBConnection);
@@ -131,10 +134,10 @@ begin
     Schema.EnumObject(Tables, sokTable, '', [ekSystem]);
     Schema.EnumObject(Views, sokView);
     Schema.EnumObject(Proceduers, sokProcedure);
-    Schema.EnumObject(Generators, sokGenerator);
+    Schema.EnumObject(Sequences, sokGenerator);
     Schema.EnumObject(Functions, sokFunction);
     Schema.EnumObject(Exceptions, sokException);
-    Schema.EnumObject(Domains, sokDomain);
+    Schema.EnumObject(Types, sokDomain);
     if sqlvEngine.Setting.LoadFieldsToAutoComplete then
       Schema.EnumObject(Fields, sokFields);
   finally
@@ -147,7 +150,6 @@ begin
   DBConnection.Resource := Name;
   DBConnection.AutoCreate := vAutoCreate;
   DBConnection.Connect;
-  DBSession.Start;
   sqlvEngine.AddRecent(Name);
   sqlvEngine.SaveRecents;
 end;
