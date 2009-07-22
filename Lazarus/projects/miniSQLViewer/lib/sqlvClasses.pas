@@ -37,10 +37,15 @@ const
 type
   EsqlvException = class(Exception);
 
+  TSchemaInfo = record
+    Name: string;
+    Value: string;
+  end;
+
   TsqlvSetting = class(TmnXMLProfile)
   private
     FOpenSaveDialogFilters: string;
-    FLoadFieldsToAutoComplete: Boolean;
+    FCacheSchemas: Boolean;
     FLogoutSQL: string;
     FLoginSQL: string;
     FInternalLogoutSQL: string;
@@ -49,7 +54,7 @@ type
     property InternalLoginSQL:string read FInternalLoginSQL write FInternalLoginSQL;
     property InternalLogoutSQL:string read FInternalLogoutSQL write FInternalLogoutSQL;
   published
-    property LoadFieldsToAutoComplete:Boolean read FLoadFieldsToAutoComplete write FLoadFieldsToAutoComplete default False;
+    property CacheSchemas:Boolean read FCacheSchemas write FCacheSchemas default False;
     property OpenSaveDialogFilters:string read FOpenSaveDialogFilters write FOpenSaveDialogFilters;
     property LoginSQL:string read FLoginSQL write FLoginSQL;
     property LogoutSQL:string read FLogoutSQL write FLogoutSQL;
@@ -71,7 +76,6 @@ type
   TsqlvNode = class(TObject)
   private
     FAttributes: TStringList;
-    FComment: string;
     FGroup: string;
     FName: string;
     FStyle: TsqlvNodeStyle;
@@ -86,12 +90,12 @@ type
     procedure ShowProperty; virtual;
     procedure Execute(const MemberName: string); virtual;
     procedure Enum(Nodes: TsqlvNodes);
+    procedure EnumDefaults(Nodes: TsqlvNodes);
     procedure EnumHeader(Header: TStringList); virtual;
     procedure EnumSchema(var SchemaName:string; SchemaItems: TmncSchemaItems; const MemberName: string = ''); virtual;
     property CanExecute: Boolean read GetCanExecute;
     property Group: string read FGroup write FGroup;
     property Name: string read FName write FName;
-    property Comment: string read FComment write FComment;
     property Attributes: TStringList read FAttributes write FAttributes;
     property Title: string read FTitle write FTitle;
     property Kind: TschmKind read FKind write FKind default sokNone;
@@ -101,13 +105,16 @@ type
 
   TsqlvNodeClass = class of TsqlvNode;
 
+  { TsqlvCustomNodes }
+
   TsqlvCustomNodes = class(TObjectList)
   private
     function GetItem(Index: Integer): TsqlvNode;
     procedure SetItem(Index: Integer; const Value: TsqlvNode);
   public
-    procedure Enum(Name: string; Nodes: TsqlvNodes); overload;
-    function Find(const Name: string): TsqlvNode;
+    procedure Enum(Name: string; Nodes: TsqlvNodes; OnlyDefaults:Boolean = False); overload;
+    function Find(const Name: string): TsqlvNode; overload;
+    function Find(const Group, Name: string): TsqlvNode; overload;
     property Items[Index: Integer]: TsqlvNode read GetItem write SetItem; default;
   end;
 
@@ -169,7 +176,7 @@ type
     procedure LoadRecents;
     procedure SaveRecents;
     //vSilent: without add to history
-    procedure Launch(Name: string; MemberName: string =''; vSilent:Boolean = False);
+    procedure Launch(Name: string; Group: string; MemberName: string; vSilent:Boolean = False);
     procedure Launch(Node: TsqlvNode; MemberName: string; vSilent:Boolean = False);
     procedure LaunchGroup(SchemaName: string; MemberName: string =''; vSilent:Boolean = False);
     procedure RegisterFilter(Filter: string);
@@ -199,7 +206,6 @@ type
   end;
 
 var
-  LoadFieldsToAutoComplete: Boolean = False;
   AddOpenSaveDialogFilters: string = '';
 
 function sqlvEngine: TsqlvEngine;
@@ -255,7 +261,7 @@ procedure TsqlvEngine.Backward;
 begin
   if History.Current <> nil then
   begin
-    Launch(History.Current.Name, History.Current.Text, True);
+    //Launch(History.Current.Name, History.Current.Text, True);
     History.Backward;
   end;
 end;
@@ -264,7 +270,7 @@ procedure TsqlvEngine.Forward;
 begin
   if History.Current <> nil then
   begin
-    Launch(History.Current.Name, History.Current.Text, True);
+    //Launch(History.Current.Name, History.Current.Text, True);
     History.Forward;
   end;
 end;
@@ -297,7 +303,7 @@ end;
 
 { TsqlvNodes }
 
-procedure TsqlvCustomNodes.Enum(Name: string; Nodes: TsqlvNodes);
+procedure TsqlvCustomNodes.Enum(Name: string; Nodes: TsqlvNodes; OnlyDefaults:Boolean = False);
 var
   i: Integer;
   aDefault: Integer;
@@ -308,7 +314,7 @@ begin
   c := 0;
   for i := 0 to Count - 1 do
   begin
-    if SameText(Items[i].Group, Name) then
+    if SameText(Items[i].Group, Name) and (not OnlyDefaults or (nsDefault in Items[i].Style)) then
     begin
       if (aDefault < 0) and (nsDefault in Items[i].Style) then
         aDefault := c;
@@ -328,6 +334,21 @@ begin
   for i := 0 to Count - 1 do
   begin
     if SameText(Name, Items[i].Name) then
+    begin
+      Result := Items[i];
+      break;
+    end;
+  end;
+end;
+
+function TsqlvCustomNodes.Find(const Group, Name: string): TsqlvNode;
+var
+  i: Integer;
+begin
+  Result := nil;
+  for i := 0 to Count - 1 do
+  begin
+    if SameText(Group, Items[i].Group) and SameText(Name, Items[i].Name) then
     begin
       Result := Items[i];
       break;
@@ -400,6 +421,11 @@ begin
 end;}
 
 procedure TsqlvNode.Enum(Nodes: TsqlvNodes);
+begin
+  sqlvEngine.Enum(Name, Nodes);
+end;
+
+procedure TsqlvNode.EnumDefaults(Nodes: TsqlvNodes);
 begin
   sqlvEngine.Enum(Name, Nodes);
 end;
@@ -493,14 +519,23 @@ begin
   end;
 end;
 
-procedure TsqlvEngine.Launch(Name: string; MemberName: string; vSilent:Boolean); overload;
+procedure TsqlvEngine.Launch(Name: string; Group, MemberName: string; vSilent:Boolean); overload;
 var
   aNode: TsqlvNode;
+  s: string;
 begin
   try
-    aNode := Find(Name);
+    if Group = '' then
+      aNode := Find(Name)
+    else
+      aNode := Find(Group, Name);
     if aNode = nil then
-      raise Exception.Create(Name +' Node not found');
+    begin
+      s := Group;
+      if s <> '' then
+        s := s + '\';
+      raise Exception.Create(s + Name + ' node not found');
+    end;
     Launch(aNode, MemberName, vSilent);
   finally
   end;
@@ -522,7 +557,7 @@ begin
     begin
       aNodes := TsqlvNodes.Create;
       try
-        Node.Enum(aNodes);
+        Node.EnumDefaults(aNodes);
         if MemberName = '' then
           MemberName := Node.Name;
         if aNodes.Count > 0 then
@@ -551,7 +586,8 @@ begin
     else
     begin
       Enum(SchemaName, aNodes);
-      Launch(aNodes[0], MemberName, vSilent);
+      if aNodes.Count > 0 then
+        Launch(aNodes[0], MemberName, vSilent);
     end;
   finally
     aNodes.Free;

@@ -135,62 +135,35 @@ const
 
   // functions
   SqliteFunctions =
-    'AVG,CAST,COUNT,GEN_ID,MAX,MIN,SUM,UPPER'+
-    'ABS,ACOS,ASCII_CHAR,ASCII_VAL,ASIN,ATAN,ATAN2,'+
-    'BIN_AND,BIN_OR,BIN_SHL,BIN_SHR,BIN_XOR,'+
-    'CEIL,COS,COSH,COT,DATEADD,DATEDIFF,DECODE,'+
-    'EXP,FLOOR,GEN_UUID,HASH,LN,LOG,LOG10,LPAD,'+
-    'MAXVALUE,MINVALUE,MOD,OVERLAY,PI,POWER,'+
-    'RAND,REPLACE,REVERSE,ROUND,RPAD,'+
-    'SIGN,SIN,SINH,SQRT,TAN,TANH,TRUNC,'+
-    'UUID_TO_CHAR,CHAR_TO_UUID';
+    //Aggregate Functions
+    'avg,count,group_concat,max,min,sum,total,'+
+    //Core Functions
+    'abs,changes,coalesce,ifnull,hex,last_insert_rowid,length,'+//glob,like,
+    'load_extension,lower,ltrim,nullif,quote,random,randomblob,round,rtrim,'+//replace,
+    'soundex,sqlite_version,substr,total_changes,trim,typeof,upper,zeroblob,'+
+    //Date Functions
+    'date,time,datetime,julianday,strftime';
+
+
 
   // keywords
   SqliteKeywords: string =
-    'ACTIVE,ADD,AFTER,ALL,ALTER,AND,ANY,AS,ASC,ASCENDING,AT,AUTO,AUTONOMOUS,AUTODDL,'+
-    'BASED,BASENAME,BASE_NAME,BEFORE,BEGIN,BETWEEN,BLOBEDIT,BLOCK,BREAK,BUFFER,BY,' +
-    'CACHE,CASE,CHARACTER_LENGTH,CHAR_LENGTH,CHECK,' +
-    'CHECK_POINT_LEN,CHECK_POINT_LENGTH,COALESCE,COLLATE,COLLATION,COLUMN,COMMIT,' +
-    'COMMITED,COMPILETIME,COMPUTED,CLOSE,CONDITIONAL,CONNECT,CONSTRAINT,' +
-    'CONTAINING,CONTINUE,CREATE,CURRENT,CURRENT_DATE,CURRENT_TIME,' +
-    'CURRENT_CONNECTION,CURRENT_TIMESTAMP,CURRENT_TRANSACTION,CURSOR,' +
-    'DATABASE,DAY,DB_KEY,DEBUG,DEC,DECLARE,DEFAULT,DELETE,DELETING,DESC,DESCENDING,' +
-    'DESCRIBE,DESCRIPTOR,DISCONNECT,DISTINCT,DO,DOMAIN,DROP,ECHO,EDIT,ELSE,END,' +
-    'ENTRY_POINT,ESCAPE,EVENT,EXCEPTION,EXECUTE,EXISTS,EXIT,EXTERN,EXTERNAL,EXTRACT,' +
-    'FETCH,FILE,FILTER,FIRST,FOR,FOREIGN,FOUND,FREE_IT,FROM,FULL,FUNCTION,' +
-    'GDSCODE,GENERATOR,GLOBAL,GOTO,GRANT,GROUP,GROUP_COMMIT_WAIT,GROUP_COMMIT_WAIT_TIME,' +
-    'HAVING,HELP,HOUR,'+
-    'IF,IIF,IMMEDIATE,IN,INACTIVE,INDEX,INDICATOR,INIT,INNER,INPUT,INPUT_TYPE,INSENSITIVE,' +
-    'INSERT,INSERTING,INT,INTO,IS,ISOLATION,ISQL,'+
-    'JOIN,'+
-    'KEY,LAST,LIST,'+
-    'LC_MESSAGES,LC_TYPE,LEAVE,LEFT,LENGTH,LEV,LEVEL,LIKE,' +
-    'LOGFILE,LOG_BUFFER_SIZE,LOG_BUF_SIZE,LONG,LOCK,MANUAL,' +
-    'MATCHING,MAXIMUM,MAXIMUM_SEGMENT,MAX_SEGMENT,MERGE,MESSAGE,MINIMUM,MINUTE,MODULE_NAME,MONTH,' +
-    'NAMES,NATIONAL,NATURAL,NCHAR,NEW,NEXT,NO,NOAUTO,NOT,NULL,NULLIF' +
-    'NUM_LOG_BUFFS,NUM_LOG_BUFFERS,'+
-    'OCTET_LENGTH,OF,OLD,ON,ONLY,OPEN,OPTION,OR,' +
-    'ORDER,OUTER,OUTPUT,OUTPUT_TYPE,OVERFLOW,'+
-    'PAGE,PAGELENGTH,PAGES,PAGE_SIZE,' +
-    'PARAMETER,PASSWORD,PLAN,POSITION,POST_EVENT,PREPARE,PROCEDURE,' +
-    'PROTECTED,PRIMARY,PRIVILEGES,PUBLIC,QUIT,RAW_PARTITIONS,READ,REAL,' +
-    'RECORD_VERSION,RECREATE,REFERENCES,RELEASE,RESERV,RESERVING,RETAIN,RETURN,' +
-    'RETURNING,RETURNING_VALUES,RETURNS,RESTART,REVOKE,RIGHT,ROLLBACK,ROW_COUNT,ROWS,RUNTIME,'+
-    'SAVEPOINT,SCHEMA,SECOND,' +
-    'SEGMENT,SELECT,SET,SEQUENCE,SHADOW,SHARED,SHELL,SHOW,SIMILAR,SINGULAR,SIZE,SNAPSHOT,SOME,' +
-    'SORT,SKIP,SQL,SQLCODE,SQLERROR,SQLWARNING,STABILITY,STARTING,STARTS,' +
-    'SENSITIVE,STATEMENT,STATIC,STATISTICS,SUB_TYPE,SUSPEND,SUBSTRING,'+
-    'TABLE,TERMINATOR,THEN,TO,TRANSACTION,TRANSLATE,TRANSLATION,TRIGGER,TRIM,TYPE,' +
-    'UNCOMMITTED,UNION,UNIQUE,UNICODE,UPDATE,UPDATING,USER,USING,UTF8,'+
-    'VALUE,VALUES,VARIABLE,VARYING,VERSION,VIEW,' +
-    'WAIT,WEEKDAY,WHEN,WHENEVER,WHERE,WHILE,WITH,WORK,WRITE,'+
-    'YEAR,YEARDAY';
+    'abort,add,after,all,alter,analyze,and,as,asc,attach,autoincrement,'+
+    'before,begin,between,by,cascade,case,cast,check,collate,column,commit,'+
+    'conflict,constraint,create,cross,current_date,current_time,current_timestamp,'+
+    'database,default,deferrable,deferred,delete,desc,detach,distinct,drop,each,'+
+    'else,end,escape,except,exclusive,exists,explain,fail,for,foreign,from,full,'+
+    'glob,group,having,if,ignore,immediate,in,index,indexed,initially,inner,insert,'+
+    'instead,intersect,into,is,isnull,join,key,left,like,limit,match,natural,not,'+
+    'notnull,null,of,offset,on,or,order,outer,plan,pragma,primary,query,raise,'+
+    'references,regexp,reindex,release,rename,replace,restrict,right,rollback,'+
+    'row,savepoint,select,set,table,temp,temporary,then,to,transaction,trigger,'+
+    'union,unique,update,using,vacuum,values,view,virtual,when,where';
+
 
   // types
-  SqliteTypes = 'BIGINT,BLOB,CHAR,CHARACTER,DATE,DECIMAL,DOUBLE,FLOAT,INT64,INTEGER,' +
-    'NUMERIC,PRECISION,SMALLINT,TIME,TIMESTAMP,VARCHAR';
-
-  ISQLKeywords = 'TERM';
+  SqliteTypes = 'blob,char,character,decimal,double,float,integer,' +
+    'numeric,precision,smallint,timestamp,varchar';
 
 implementation
 
@@ -332,12 +305,12 @@ begin
   fDataTypeAttri := TSynHighlighterAttributes.Create(SYNS_AttrDataType);
   fDataTypeAttri.Style := [fsBold];
   AddAttribute(fDataTypeAttri);
-  fObjectAttri := TSynHighlighterAttributes.Create(SYNS_AttrObjects);
-  fObjectAttri.Style := [fsBold];
-  AddAttribute(fObjectAttri);
+  FObjectAttri := TSynHighlighterAttributes.Create(SYNS_AttrObjects);
+  FObjectAttri.Style := [fsBold];
+  AddAttribute(FObjectAttri);
   fExceptionAttri := TSynHighlighterAttributes.Create(SYNS_AttrException);
   fExceptionAttri.Style := [fsItalic];
-  AddAttribute(fExceptionAttri);
+  AddAttribute(FExceptionAttri);
   fFunctionAttri := TSynHighlighterAttributes.Create(SYNS_AttrFunction);
   fFunctionAttri.Style := [fsBold];
   AddAttribute(fFunctionAttri);
@@ -360,7 +333,6 @@ begin
   EnumerateKeywords(Ord(tkDatatype), SqliteTypes, IdentChars, DoAddKeyword);
   EnumerateKeywords(Ord(tkFunction), SqliteFunctions, IdentChars, DoAddKeyword);
   EnumerateKeywords(Ord(tkKey), SqliteKeywords, IdentChars, DoAddKeyword);
-  EnumerateKeywords(Ord(tkKey), ISQLKeywords, IdentChars, DoAddKeyword);
   MakeMethodTables;
   fDefaultFilter := SYNS_FilterSQL;
   fRange := rsUnknown;

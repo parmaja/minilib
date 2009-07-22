@@ -22,11 +22,11 @@ type
 
   TsqlvGuiNode = class(TsqlvNode)
   public
-    procedure EnumGroups(vGroup, vMemberName: string; vOpenDefault: Boolean);
+    procedure EnumGroups(vGroup, vMemberName: string; vSelectDefault: Boolean);
     procedure EnumMembers(const vMemberName: string);
     procedure LoadHeader(vHeader:TStringList);
     procedure LoadEditor(vStrings:TStringList);
-    procedure LoadGroups(vNodes:TsqlvNodes; vMemberName:string; vOpenDefault: Boolean);
+    procedure LoadGroup(vNodes:TsqlvNodes; vMemberName:string; vSelectDefault: Boolean);
     procedure LoadMembers(vSchemaName:string; vNodes:TsqlvNodes);
   end;
 
@@ -59,6 +59,16 @@ type
     constructor Create; override;
     procedure Execute(const MemberName: string); override;
     //procedure Enum(var SchemaName:string; SchemaItems: TmncSchemaItems; const MemberName: string); override;
+  end;
+
+  { TsqlvIndex }
+
+  TsqlvIndex = class(TsqlvGuiNode)
+  public
+    constructor Create; override;
+    procedure Execute(const MemberName: string); override;
+    procedure EnumHeader(Header: TStringList); override;
+    procedure EnumSchema(var SchemaName:string; SchemaItems: TmncSchemaItems; const MemberName: string); override;
   end;
 
   TsqlvProcedures = class(TsqlvMembers)
@@ -129,9 +139,21 @@ type
     procedure Execute(const MemberName: string); override;
   end;
 
+  { TsqlvIndices }
+
+  TsqlvIndices = class(TsqlvMembers)
+  public
+    constructor Create; override;
+    procedure EnumHeader(Header: TStringList); override;
+    procedure EnumSchema(var SchemaName:string; SchemaItems: TmncSchemaItems; const MemberName: string); override;
+  end;
+
+  { TsqlvTableIndices }
+
   TsqlvTableIndices = class(TsqlvMembers)
   public
     constructor Create; override;
+    procedure EnumHeader(Header: TStringList); override;
     procedure EnumSchema(var SchemaName:string; SchemaItems: TmncSchemaItems; const MemberName: string); override;
   end;
 
@@ -277,7 +299,7 @@ begin
   Group := 'Database';
   Name := 'Sequences';
   Title := 'Sequences';
-  Kind := sokGenerator;
+  Kind := sokSequences;
   ImageIndex := IMG_GENERATOR;
 end;
 
@@ -303,7 +325,7 @@ begin
   Group := 'Database';
   Name := 'Types';
   Title := 'Types';
-  Kind := sokDomain;
+  Kind := sokTypes;
   ImageIndex := IMG_DOMAIN;
 end;
 
@@ -463,7 +485,7 @@ constructor TsqlvTableTriggers.Create;
 begin
   inherited;
   Group := 'Table';
-  Name := 'TableTriggers';
+  Name := 'Triggers';
   Title := 'Triggers';
   Kind := sokTrigger;
   ImageIndex := IMG_TRIGGER;
@@ -525,19 +547,25 @@ begin
   Group := 'Table';
   Name := 'Indices';
   Title := 'Indices';
-  Kind := sokIndexes;
+  Kind := sokIndices;
   ImageIndex := IMG_INDEX;
+end;
+
+procedure TsqlvTableIndices.EnumHeader(Header: TStringList);
+begin
+  inherited EnumHeader(Header);
+  Header.Add('Unique');
 end;
 
 procedure TsqlvTableIndices.EnumSchema(var SchemaName: string; SchemaItems: TmncSchemaItems; const MemberName: string);
 var
   aSchema: TmncSQLiteSchema;
 begin
-  SchemaName:='Index';
+  SchemaName :='Index';
   aSchema := TmncSQLiteSchema.Create;
   try
     aSchema.Session := sqlvEngine.Session.DBSession;
-    aSchema.EnumIndexes(SchemaItems, MemberName);
+    aSchema.EnumIndices(SchemaItems, MemberName);
   finally
     aSchema.Free
   end;
@@ -551,7 +579,7 @@ begin
   Group := 'Index';
   Name := 'DropIndex';
   Title := 'Drop Index';
-  Kind := sokIndexes;
+  Kind := sokIndices;
   Style := Style + [nsCommand];
   ImageIndex := IMG_INDEX;
 end;
@@ -568,7 +596,7 @@ constructor TsqlvTableFields.Create;
 begin
   inherited;
   Group := 'Table';
-  Name := 'TableFields';
+  Name := 'Fields';
   Title := 'Fields';
   Kind := sokFields;
   ImageIndex := IMG_FIELD;
@@ -673,11 +701,9 @@ begin
   aStrings.Free;
 end;
 
-{ TsqlvSelectProcedure }
-
 { TsqlvGuiNode }
 
-procedure TsqlvGuiNode.EnumGroups(vGroup, vMemberName: string; vOpenDefault: Boolean);
+procedure TsqlvGuiNode.EnumGroups(vGroup, vMemberName: string; vSelectDefault: Boolean);
 var
   i: Integer;
   aNodes: TsqlvNodes;
@@ -685,7 +711,7 @@ begin
   aNodes := TsqlvNodes.Create;
   try
     sqlvEngine.Enum(vGroup, aNodes);
-    LoadGroups(aNodes, vMemberName, vOpenDefault);
+    LoadGroup(aNodes, vMemberName, vSelectDefault);
   finally
     aNodes.Free;
   end;
@@ -708,7 +734,6 @@ begin
     begin
       aNode := TsqlvNode.Create;
       aNode.Name := aItems[i].Name;
-      aNode.Comment := aItems[i].Comment;
       aNode.Attributes.Assign(aItems[i].Attributes);
       aNodes.Add(aNode);
     end;
@@ -747,7 +772,7 @@ begin
   end;
 end;
 
-procedure TsqlvGuiNode.LoadGroups(vNodes: TsqlvNodes; vMemberName:string; vOpenDefault: Boolean);
+procedure TsqlvGuiNode.LoadGroup(vNodes: TsqlvNodes; vMemberName:string; vSelectDefault: Boolean);
 var
   i, c: Integer;
   d: Integer;
@@ -776,10 +801,12 @@ begin
     end;
     if d < 0 then
       d := 0;
-    GroupsList.ItemIndex := d;
-    MebmerName := vMemberName;
+    if vNodes.Count > 0 then
+      GroupsList.ItemIndex := d;
+    GroupInfo.Name := Self.Name;
+    GroupInfo.Value := vMemberName;
     TitleLbl.Caption := Self.Title + ': ' + vMemberName;
-    if vOpenDefault then
+    if vSelectDefault then
       OpenGroup;
     State := sqlsMembers;
   end;
@@ -881,9 +908,79 @@ begin
   EnumGroups(Name, MemberName, True);
 end;
 
+{ TsqlvIndex }
+
+constructor TsqlvIndex.Create;
+begin
+  inherited Create;
+  Group := 'Indices';
+  Name := 'Index';
+  Title := 'Index';
+  Kind := sokIndex;
+  ImageIndex := IMG_INDEX;
+end;
+
+procedure TsqlvIndex.Execute(const MemberName: string);
+begin
+  inherited;
+  EnumMembers(MemberName);
+end;
+
+procedure TsqlvIndex.EnumHeader(Header: TStringList);
+begin
+  inherited EnumHeader(Header);
+  Header.Add('Value');
+end;
+
+procedure TsqlvIndex.EnumSchema(var SchemaName: string; SchemaItems: TmncSchemaItems; const MemberName: string);
+var
+  aSchema: TmncSQLiteSchema;
+begin
+  SchemaName := 'Property';
+  aSchema := TmncSQLiteSchema.Create;
+  try
+    aSchema.Session := sqlvEngine.Session.DBSession;
+    aSchema.GetIndexInfo(SchemaItems, MemberName);
+  finally
+    aSchema.Free
+  end;
+end;
+
+{ TsqlvIndices }
+
+constructor TsqlvIndices.Create;
+begin
+  inherited Create;
+  Group := 'Database';
+  Name := 'Indices';
+  Title := 'Indices';
+  Kind := sokIndices;
+  ImageIndex := IMG_INDEX;
+end;
+
+procedure TsqlvIndices.EnumHeader(Header: TStringList);
+begin
+  inherited;
+end;
+
+procedure TsqlvIndices.EnumSchema(var SchemaName: string; SchemaItems: TmncSchemaItems; const MemberName: string);
+var
+  aSchema: TmncSQLiteSchema;
+begin
+  SchemaName:='Index';
+  aSchema := TmncSQLiteSchema.Create;
+  try
+    aSchema.Session := sqlvEngine.Session.DBSession;
+    aSchema.EnumIndices(SchemaItems, '');
+  finally
+    aSchema.Free
+  end;
+end;
+
 initialization
   sqlvEngine.RegisterViewer([TsqlvDatabase]);
-  sqlvEngine.RegisterViewer([TsqlvTables, TsqlvTable, TsqlvTableFields, TsqlvTableIndices, TsqlvDropIndex]);
+  sqlvEngine.RegisterViewer([TsqlvTables, TsqlvTable, TsqlvTableFields]);
+  sqlvEngine.RegisterViewer([TsqlvIndices, TsqlvTableIndices, TsqlvIndex, TsqlvDropIndex]);
   sqlvEngine.RegisterViewer([TsqlvEmptyTable, TsqlvDropField, TsqlvNewField]);
   sqlvEngine.RegisterViewer([TsqlvViews, TsqlvView]);
   sqlvEngine.RegisterViewer([TsqlvTriggers, TsqlvTrigger, TsqlvTableTriggers]);

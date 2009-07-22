@@ -19,51 +19,44 @@ uses
   SysUtils, Classes, contnrs,
   mncSQL, mncConnections;
 
-//todo sokGenerator to sequance
 type
-//  sokNone, temp dummy
-  TschmKind = (sokNone, sokDatabase, sokDomain, sokTable, sokView, sokProcedure, sokFunction,
-    sokGenerator, sokException, sokRole, sokTrigger, sokForeign,
-    sokIndexes, sokConstraints, sokFields, sokData);
+  TschmKind = (sokNone, sokDatabase, sokTypes, sokTable, sokIndex, sokView,
+               sokProcedure, sokFunction, sokSequences, sokException, sokRole,
+               sokTrigger, sokForeign, sokIndices, sokConstraints, sokFields,
+               sokData, sokProperty, sokProperties);
 
-  TExtractObject = (etDomain, etTable, etRole, etTrigger, etForeign, etIndex, etData, etGrant, etCheck);
+  TExtractObject = (etDomain, etTable, etRole, etTrigger, etForeign,
+                    etIndex, etData, etGrant, etCheck);
+
   TExtractObjects = set of TExtractObject;
 
-  TExtractOption = (ekExtra, ekAlter, ekSystem, ekOrder);
+  TExtractOption = (ekExtra, ekAlter, ekSystem, ekSort);
   TschmEnumOptions = set of TExtractOption;
 
   { TmncSchemaItem }
 
   TmncSchemaItem = class(TObject)
   private
-    FAttributes: TStringList;
     FName: string;
-    FComment: string;
-    FData: TStringList;
-    function GetData: TStringList;
+    FAttributes: TStringList;
   public
     constructor Create;
     destructor Destroy; override;
     property Name: string read FName write FName;
-    property Comment: string read FComment write FComment;
-    property Data: TStringList read GetData;
-    property Attributes: TStringList read FAttributes write FAttributes;
+    property Attributes: TStringList read FAttributes;
   end;
 
   { TmncSchemaItems }
 
   TmncSchemaItems = class(TObjectList)
   private
-    FExtraData: TStringList;
     function GetItem(Index: Integer): TmncSchemaItem;
     procedure SetItem(Index: Integer; const Value: TmncSchemaItem);
-    function GetExtraData: TStringList;
   public
     function Find(const Name: string): TmncSchemaItem;
     function Add(vSchemaItem: TmncSchemaItem): Integer; overload;
-    function Add(Name: string; Comment: string = ''): Integer; overload;
+    function Add(Name: string): TmncSchemaItem; overload;
     property Items[Index: Integer]: TmncSchemaItem read GetItem write SetItem; default;
-    property ExtraData: TStringList read GetExtraData;
   end;
 
   { TmncSchema }
@@ -74,7 +67,7 @@ type
   protected
   public
     destructor Destroy; override;
-    procedure EnumObject(Schema: TmncSchemaItems; Kind: TschmKind; RelationName: string = ''; Options: TschmEnumOptions = []);
+    procedure EnumObject(Schema: TmncSchemaItems; Kind: TschmKind; MemberName: string = ''; Options: TschmEnumOptions = []);
     //---------------------
     procedure EnumTables(Schema: TmncSchemaItems; Options: TschmEnumOptions = []); virtual;
     procedure EnumViews(Schema: TmncSchemaItems; Options: TschmEnumOptions = []); virtual;
@@ -83,12 +76,12 @@ type
     procedure EnumFunctions(Schema: TmncSchemaItems; Options: TschmEnumOptions = []); virtual;
     procedure EnumExceptions(Schema: TmncSchemaItems; Options: TschmEnumOptions = []); virtual;
     procedure EnumTypes(Schema: TmncSchemaItems; Options: TschmEnumOptions = []); virtual;
-    procedure EnumConstraints(Schema: TmncSchemaItems; RelationName: string = ''; Options: TschmEnumOptions = []); virtual;
-    procedure EnumTriggers(Schema: TmncSchemaItems; RelationName: string = ''; Options: TschmEnumOptions = []); virtual;
-    procedure EnumIndexes(Schema: TmncSchemaItems; RelationName: string = ''; Options: TschmEnumOptions = []); virtual;
-    procedure EnumFields(Schema: TmncSchemaItems; RelationName: string = ''; Options: TschmEnumOptions = []); virtual;
+    procedure EnumConstraints(Schema: TmncSchemaItems; MemberName: string = ''; Options: TschmEnumOptions = []); virtual;
+    procedure EnumTriggers(Schema: TmncSchemaItems; MemberName: string = ''; Options: TschmEnumOptions = []); virtual;
+    procedure EnumIndices(Schema: TmncSchemaItems; MemberName: string = ''; Options: TschmEnumOptions = []); virtual;
+    procedure EnumFields(Schema: TmncSchemaItems; MemberName: string = ''; Options: TschmEnumOptions = []); virtual;
     //source
-    procedure GetTriggerSource(Strings:TStringList; RelationName: string; Options: TschmEnumOptions = []); virtual;
+    procedure GetTriggerSource(Strings:TStringList; MemberName: string; Options: TschmEnumOptions = []); virtual;
   published
     property IncludeHeader: Boolean read FIncludeHeader write FIncludeHeader default False;
   end;
@@ -109,14 +102,11 @@ implementation
 
 { TmncSchemaItems }
 
-function TmncSchemaItems.Add(Name, Comment: string): Integer;
-var
-  aItem: TmncSchemaItem;
+function TmncSchemaItems.Add(Name: string): TmncSchemaItem;
 begin
-  aItem := TmncSchemaItem.Create;
-  aItem.Name := Name;
-  aItem.Comment := Comment;
-  Result := Add(aItem);
+  Result := TmncSchemaItem.Create;
+  Result.Name := Name;
+  Add(Result);
 end;
 
 function TmncSchemaItems.Find(const Name: string): TmncSchemaItem;
@@ -137,13 +127,6 @@ end;
 function TmncSchemaItems.Add(vSchemaItem: TmncSchemaItem): Integer;
 begin
   Result := inherited Add(vSchemaItem);
-end;
-
-function TmncSchemaItems.GetExtraData: TStringList;
-begin
-  if FExtraData = nil then
-    FExtraData := TStringList.Create;
-  Result := FExtraData;
 end;
 
 function TmncSchemaItems.GetItem(Index: Integer): TmncSchemaItem;
@@ -170,13 +153,6 @@ end;
 
 { TmncSchemaItem }
 
-function TmncSchemaItem.GetData: TStringList;
-begin
-  if FData = nil then
-    FData := TStringList.Create;
-  Result := FData;
-end;
-
 constructor TmncSchemaItem.Create;
 begin
   inherited;
@@ -186,26 +162,26 @@ end;
 destructor TmncSchemaItem.Destroy;
 begin
   FreeAndNil(FAttributes);
-  inherited Destroy;
+  inherited;
 end;
 
-procedure TmncSchema.EnumObject(Schema: TmncSchemaItems; Kind: TschmKind; RelationName: string; Options: TschmEnumOptions);
+procedure TmncSchema.EnumObject(Schema: TmncSchemaItems; Kind: TschmKind; MemberName: string; Options: TschmEnumOptions);
 begin
   case Kind of
     sokDatabase: ;
-    sokDomain: EnumTypes(Schema, Options);
+    sokTypes: EnumTypes(Schema, Options);
     sokTable: EnumTables(Schema, Options);
     sokView: EnumViews(Schema, Options);
     sokProcedure: EnumProcedures(Schema, Options);
     sokFunction: EnumFunctions(Schema, Options);
-    sokGenerator: EnumSequences(Schema, Options);
+    sokSequences: EnumSequences(Schema, Options);
     sokException: EnumExceptions(Schema, Options);
     sokRole: ;
-    sokTrigger: EnumTriggers(Schema, RelationName, Options);
+    sokTrigger: EnumTriggers(Schema, MemberName, Options);
     sokForeign: ;
-    sokFields: EnumFields(Schema, RelationName, Options);
-    sokIndexes: EnumIndexes(Schema, RelationName, Options);
-    sokConstraints: EnumConstraints(Schema, RelationName, Options);
+    sokFields: EnumFields(Schema, MemberName, Options);
+    sokIndices: EnumIndices(Schema, MemberName, Options);
+    sokConstraints: EnumConstraints(Schema, MemberName, Options);
     sokData: ;
   end;
 end;
@@ -253,29 +229,29 @@ begin
 end;
 
 procedure TmncSchema.EnumConstraints(Schema: TmncSchemaItems;
-  RelationName: string; Options: TschmEnumOptions);
+  MemberName: string; Options: TschmEnumOptions);
 begin
 
 end;
 
 procedure TmncSchema.EnumTriggers(Schema: TmncSchemaItems;
-  RelationName: string; Options: TschmEnumOptions);
+  MemberName: string; Options: TschmEnumOptions);
 begin
 
 end;
 
-procedure TmncSchema.EnumIndexes(Schema: TmncSchemaItems; RelationName: string;
+procedure TmncSchema.EnumIndices(Schema: TmncSchemaItems; MemberName: string;
   Options: TschmEnumOptions);
 begin
 
 end;
 
-procedure TmncSchema.EnumFields(Schema: TmncSchemaItems; RelationName: string; Options: TschmEnumOptions);
+procedure TmncSchema.EnumFields(Schema: TmncSchemaItems; MemberName: string; Options: TschmEnumOptions);
 begin
 
 end;
 
-procedure TmncSchema.GetTriggerSource(Strings: TStringList; RelationName: string; Options: TschmEnumOptions = []);
+procedure TmncSchema.GetTriggerSource(Strings: TStringList; MemberName: string; Options: TschmEnumOptions = []);
 begin
 
 end;

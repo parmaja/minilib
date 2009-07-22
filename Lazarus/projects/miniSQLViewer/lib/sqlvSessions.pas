@@ -128,20 +128,22 @@ procedure TsqlvSession.LoadSchema;
 var
   Schema: TmncSQLiteSchema;
 begin
-  Schema := TmncSQLiteSchema.Create;
-  try
-    Schema.Session := DBSession;
-    Schema.EnumObject(Tables, sokTable, '', [ekSystem]);
-    Schema.EnumObject(Views, sokView);
-    Schema.EnumObject(Proceduers, sokProcedure);
-    Schema.EnumObject(Sequences, sokGenerator);
-    Schema.EnumObject(Functions, sokFunction);
-    Schema.EnumObject(Exceptions, sokException);
-    Schema.EnumObject(Types, sokDomain);
-    if sqlvEngine.Setting.LoadFieldsToAutoComplete then
+  if sqlvEngine.Setting.CacheSchemas then
+  begin
+    Schema := TmncSQLiteSchema.Create;
+    try
+      Schema.Session := DBSession;
+      Schema.EnumObject(Tables, sokTable, '', [ekSystem, ekSort]);
+      Schema.EnumObject(Views, sokView, '', [ekSort]);
+      Schema.EnumObject(Proceduers, sokProcedure, '', [ekSort]);
+      Schema.EnumObject(Sequences, sokSequences, '', [ekSort]);
+      Schema.EnumObject(Functions, sokFunction, '', [ekSort]);
+      Schema.EnumObject(Exceptions, sokException, '', [ekSort]);
+      Schema.EnumObject(Types, sokTypes, '', [ekSort]);
       Schema.EnumObject(Fields, sokFields);
-  finally
-    Schema.Free;
+    finally
+      Schema.Free;
+    end;
   end;
 end;
 
