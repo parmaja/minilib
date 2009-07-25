@@ -7,6 +7,9 @@ if errorlevel 1 goto erroroccurred
 e:\utils\upx bin\wince\sqliteviewer.exe
 if errorlevel 1 goto erroroccurred
 
+call copy-pocketpc.cmd
+if errorlevel 1 goto erroroccurred
+
 goto noerrors
 
 :erroroccurred

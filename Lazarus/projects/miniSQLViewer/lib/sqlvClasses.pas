@@ -16,7 +16,8 @@ uses
   mnXMLRttiProfile, mnXMLStreams,
   Dialogs, Contnrs,
   mncSchemas, mnUtils,
-  sqlvConsts, sqlvSessions, Menus, ImgList;
+  sqlvConsts, sqlvSessions,
+  Menus, Buttons, ImgList;
 
 const
   IMG_UNKOWN = 0;
@@ -84,11 +85,12 @@ type
     FImageIndex: TImageIndex;
   protected
     function GetCanExecute: Boolean; virtual;
+    procedure DoExecute(const MemberName: string; Params: TmncParams = nil); virtual;
   public
     constructor Create; virtual;
     destructor Destroy; override;
     procedure ShowProperty; virtual;
-    procedure Execute(const MemberName: string); virtual;
+    procedure Execute(const MemberName: string; Params: TmncParams = nil);
     procedure Enum(Nodes: TsqlvNodes);
     procedure EnumDefaults(Nodes: TsqlvNodes);
     procedure EnumHeader(Header: TStringList); virtual;
@@ -195,6 +197,8 @@ type
     property SQLHistory: TsqlvHistory read FSQLHistory;
   end;
 
+  { TsqlvMenuItem }
+
   TsqlvMenuItem = class(TMenuItem)
   private
     FNode: TsqlvNode;
@@ -203,6 +207,19 @@ type
     procedure Click; override;
     property Node: TsqlvNode read FNode write FNode;
     property MemberName: string read FMemberName write FMemberName;
+  end;
+
+  { TsqlvButton }
+
+  TsqlvButton = class(TButton)
+  private
+    FNode: TsqlvNode;
+  public
+    GroupInfo: TSchemaInfo;//Table,Accounts
+    SchemaName: string;//Field
+    MemberName: string;
+    procedure Click; override;
+    property Node: TsqlvNode read FNode write FNode;
   end;
 
 var
@@ -427,7 +444,7 @@ end;
 
 procedure TsqlvNode.EnumDefaults(Nodes: TsqlvNodes);
 begin
-  sqlvEngine.Enum(Name, Nodes);
+  sqlvEngine.Enum(Name, Nodes, True);
 end;
 
 procedure TsqlvNode.EnumHeader(Header: TStringList);
@@ -436,13 +453,19 @@ begin
   Header.Add(Title);
 end;
 
-procedure TsqlvNode.Execute(const MemberName: string);
+procedure TsqlvNode.Execute(const MemberName: string; Params: TmncParams = nil);
 begin
+  DoExecute(MemberName, Params);
+  FreeAndNil(Params);
 end;
 
 function TsqlvNode.GetCanExecute: Boolean;
 begin
   Result := True;
+end;
+
+procedure TsqlvNode.DoExecute(const MemberName: string; Params: TmncParams);
+begin
 end;
 
 procedure TsqlvNode.ShowProperty;
@@ -454,7 +477,7 @@ end;
 procedure TsqlvMenuItem.Click;
 begin
   inherited;
-  Node.Execute(MemberName);
+  //Node.Execute(MemberName);
 end;
 
 procedure FillPopupMenu(PopupMenu: TPopupMenu; Session: TsqlvSession; Node: TsqlvNode; MemberName: string);
@@ -585,7 +608,7 @@ begin
        Launch(aNode, MemberName, vSilent)
     else
     begin
-      Enum(SchemaName, aNodes);
+      Enum(SchemaName, aNodes, True);
       if aNodes.Count > 0 then
         Launch(aNodes[0], MemberName, vSilent);
     end;
@@ -744,6 +767,14 @@ begin
     Index := Index - 1;
     Changed;
   end;
+end;
+
+{ TsqlvButton }
+
+procedure TsqlvButton.Click;
+begin
+  inherited Click;
+  Node.Execute(MemberName, TmncParams.Create([GroupInfo.Name], [GroupInfo.Value]));
 end;
 
 initialization

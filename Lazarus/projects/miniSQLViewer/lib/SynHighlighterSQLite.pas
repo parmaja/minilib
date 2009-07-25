@@ -19,9 +19,9 @@ uses
   Classes, SynEditTypes, SynEditHighlighter, SynHighlighterHashEntries;
 
 type
-  TtkTokenKind = (tkComment, tkDatatype, tkObject, tkException,
+  TtkTokenKind = (tkComment, tkDatatype, tkObject,
     tkFunction, tkIdentifier, tkKey, tkNull, tkNumber, tkSpace,
-    tkString, tkSymbol, tkUnknown, tkVariable);
+    tkString, tkSymbol, tkVariable, tkUnknown);
 
   TRangeState = (rsUnknown, rsComment, rsString);
 
@@ -40,28 +40,27 @@ type
 
   TSynSqliteSyn = class(TSynCustomHighlighter)
   private
-    fRange: TRangeState;
-    fLine: PChar;
-    fLineNumber: Integer;
-    fProcTable: array[#0..#255] of TProcTableProc;
+    FRange: TRangeState;
+    FLine: PChar;
+    FLineNumber: Integer;
+    FProcTable: array[#0..#255] of TProcTableProc;
     Run: LongInt;
-    fStringLen: Integer;
-    fToIdent: PChar;
-    fTokenPos: Integer;
-    fTokenID: TtkTokenKind;
-    fKeywords: TSynHashEntryList;
-    fCommentAttri: TSynHighlighterAttributes;
-    fDataTypeAttri: TSynHighlighterAttributes;
-    fObjectAttri: TSynHighlighterAttributes;
-    fExceptionAttri: TSynHighlighterAttributes;
-    fFunctionAttri: TSynHighlighterAttributes;
-    fIdentifierAttri: TSynHighlighterAttributes;
-    fKeyAttri: TSynHighlighterAttributes;
-    fNumberAttri: TSynHighlighterAttributes;
-    fSpaceAttri: TSynHighlighterAttributes;
-    fStringAttri: TSynHighlighterAttributes;
-    fSymbolAttri: TSynHighlighterAttributes;
-    fVariableAttri: TSynHighlighterAttributes;
+    FStringLen: Integer;
+    FToIdent: PChar;
+    FTokenPos: Integer;
+    FTokenID: TtkTokenKind;
+    FKeywords: TSynHashEntryList;
+    FCommentAttri: TSynHighlighterAttributes;
+    FDataTypeAttri: TSynHighlighterAttributes;
+    FObjectAttri: TSynHighlighterAttributes;
+    FFunctionAttri: TSynHighlighterAttributes;
+    FIdentifierAttri: TSynHighlighterAttributes;
+    FKeyAttri: TSynHighlighterAttributes;
+    FNumberAttri: TSynHighlighterAttributes;
+    FSpaceAttri: TSynHighlighterAttributes;
+    FStringAttri: TSynHighlighterAttributes;
+    FSymbolAttri: TSynHighlighterAttributes;
+    FVariableAttri: TSynHighlighterAttributes;
     function KeyHash(ToHash: PChar): Integer;
     function KeyComp(const aKey: string): Boolean;
     procedure AndSymbolProc;
@@ -118,7 +117,6 @@ type
     property CommentAttri: TSynHighlighterAttributes read fCommentAttri write fCommentAttri;
     property DataTypeAttri: TSynHighlighterAttributes read fDataTypeAttri write fDataTypeAttri;
     property ObjectAttri: TSynHighlighterAttributes read fObjectAttri write fObjectAttri;
-    property ExceptionAttri: TSynHighlighterAttributes read fExceptionAttri write fExceptionAttri;
     property FunctionAttri: TSynHighlighterAttributes read fFunctionAttri write fFunctionAttri;
     property IdentifierAttri: TSynHighlighterAttributes read fIdentifierAttri write fIdentifierAttri;
     property KeyAttri: TSynHighlighterAttributes read fKeyAttri write fKeyAttri;
@@ -298,44 +296,46 @@ end;
 constructor TSynSqliteSyn.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
-  fKeywords := TSynHashEntryList.Create;
-  fCommentAttri := TSynHighlighterAttributes.Create(SYNS_AttrComment);
-  fCommentAttri.Style := [fsItalic];
+  FKeywords := TSynHashEntryList.Create;
+  FCommentAttri := TSynHighlighterAttributes.Create(SYNS_AttrComment);
+  FCommentAttri.Style := [fsBold];
+  FCommentAttri.Foreground := clMaroon;
   AddAttribute(fCommentAttri);
-  fDataTypeAttri := TSynHighlighterAttributes.Create(SYNS_AttrDataType);
-  fDataTypeAttri.Style := [fsBold];
+  FDataTypeAttri := TSynHighlighterAttributes.Create(SYNS_AttrDataType);
+  FDataTypeAttri.Style := [fsBold];
+  FDataTypeAttri.Foreground := $00C56A31;
   AddAttribute(fDataTypeAttri);
   FObjectAttri := TSynHighlighterAttributes.Create(SYNS_AttrObjects);
   FObjectAttri.Style := [fsBold];
+  FObjectAttri.Foreground := clGreen;
   AddAttribute(FObjectAttri);
-  fExceptionAttri := TSynHighlighterAttributes.Create(SYNS_AttrException);
-  fExceptionAttri.Style := [fsItalic];
-  AddAttribute(FExceptionAttri);
-  fFunctionAttri := TSynHighlighterAttributes.Create(SYNS_AttrFunction);
-  fFunctionAttri.Style := [fsBold];
+  FFunctionAttri := TSynHighlighterAttributes.Create(SYNS_AttrFunction);
+  FFunctionAttri.Style := [fsBold];
+  FFunctionAttri.Foreground := $00C56A31;
   AddAttribute(fFunctionAttri);
-  fIdentifierAttri := TSynHighlighterAttributes.Create(SYNS_AttrIdentifier);
+  FIdentifierAttri := TSynHighlighterAttributes.Create(SYNS_AttrIdentifier);
   AddAttribute(fIdentifierAttri);
-  fKeyAttri := TSynHighlighterAttributes.Create(SYNS_AttrReservedWord);
-  fKeyAttri.Style := [fsBold];
+  FKeyAttri := TSynHighlighterAttributes.Create(SYNS_AttrReservedWord);
+  FKeyAttri.Style := [fsBold];
+  FKeyAttri.Foreground := $00C56A31;
   AddAttribute(fKeyAttri);
-  fNumberAttri := TSynHighlighterAttributes.Create(SYNS_AttrNumber);
+  FNumberAttri := TSynHighlighterAttributes.Create(SYNS_AttrNumber);
   AddAttribute(fNumberAttri);
-  fSpaceAttri := TSynHighlighterAttributes.Create(SYNS_AttrSpace);
+  FSpaceAttri := TSynHighlighterAttributes.Create(SYNS_AttrSpace);
   AddAttribute(fSpaceAttri);
-  fStringAttri := TSynHighlighterAttributes.Create(SYNS_AttrString);
+  FStringAttri := TSynHighlighterAttributes.Create(SYNS_AttrString);
   AddAttribute(fStringAttri);
   FSymbolAttri := TSynHighlighterAttributes.Create(SYNS_AttrSymbol);
   AddAttribute(FSymbolAttri);
-  fVariableAttri := TSynHighlighterAttributes.Create(SYNS_AttrVariable);
+  FVariableAttri := TSynHighlighterAttributes.Create(SYNS_AttrVariable);
   AddAttribute(fVariableAttri);
   SetAttributesOnChange(DefHighlightChange);
   EnumerateKeywords(Ord(tkDatatype), SqliteTypes, IdentChars, DoAddKeyword);
   EnumerateKeywords(Ord(tkFunction), SqliteFunctions, IdentChars, DoAddKeyword);
   EnumerateKeywords(Ord(tkKey), SqliteKeywords, IdentChars, DoAddKeyword);
   MakeMethodTables;
-  fDefaultFilter := SYNS_FilterSQL;
-  fRange := rsUnknown;
+  FDefaultFilter := SYNS_FilterSQL;
+  FRange := rsUnknown;
 end;
 
 destructor TSynSqliteSyn.Destroy;
@@ -594,7 +594,7 @@ var
   tk: TtkTokenKind;
 begin
   tk := IdentKind(PChar(AKeyword));
-  Result := tk in [tkDatatype, tkException, tkFunction, tkKey, tkObject];
+  Result := tk in [tkDatatype, tkFunction, tkKey, tkObject];
 end;
 
 procedure TSynSqliteSyn.Next;
@@ -663,7 +663,6 @@ begin
     tkComment: Result := FCommentAttri;
     tkDatatype: Result := FDataTypeAttri;
     tkObject: Result := FObjectAttri;
-    tkException: Result := FExceptionAttri;
     tkFunction: Result := FFunctionAttri;
     tkIdentifier: Result := FIdentifierAttri;
     tkKey: Result := FKeyAttri;

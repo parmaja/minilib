@@ -1,11 +1,12 @@
 object MainForm: TMainForm
-  Left = 244
-  Height = 359
-  Top = 192
+  Left = 331
+  Height = 381
+  Hint = 'Connect F9'
+  Top = 113
   Width = 567
   ActiveControl = SQLEdit
   Caption = 'SQLite'
-  ClientHeight = 339
+  ClientHeight = 361
   ClientWidth = 567
   Font.CharSet = ANSI_CHARSET
   Font.Color = clBlack
@@ -14,18 +15,21 @@ object MainForm: TMainForm
   Font.Pitch = fpVariable
   Font.Quality = fqDraft
   Menu = MainMenu
+  OnClose = FormClose
+  OnCloseQuery = FormCloseQuery
   OnShortCut = FormShortCut
   LCLVersion = '0.9.27'
   object ClientPanel: TPanel
     Left = 0
-    Height = 316
+    Height = 339
     Top = 0
     Width = 567
     Align = alClient
     BevelOuter = bvNone
-    ClientHeight = 316
+    ClientHeight = 339
     ClientWidth = 567
     TabOrder = 0
+    OnClick = ClientPanelClick
     object SQLPanel: TPanel
       Left = 8
       Height = 270
@@ -37,6 +41,7 @@ object MainForm: TMainForm
       ClientHeight = 270
       ClientWidth = 250
       TabOrder = 0
+      OnClick = SQLPanelClick
       object SQLBackwardBtn: TSpeedButton
         Left = 204
         Height = 18
@@ -122,17 +127,15 @@ object MainForm: TMainForm
         Top = 24
         Width = 239
         Anchors = [akTop, akLeft, akRight, akBottom]
-        Font.CharSet = ANSI_CHARSET
-        Font.Color = clBlack
         Font.Height = -13
         Font.Name = 'Courier New'
         Font.Pitch = fpFixed
-        Font.Quality = fqDraft
+        Font.Quality = fqNonAntialiased
         ParentColor = False
         ParentFont = False
         TabOrder = 0
         BookMarkOptions.Xoffset = -18
-        Gutter.Width = 21
+        Gutter.Width = 23
         Gutter.MouseActions = <        
           item
             Shift = []
@@ -603,6 +606,8 @@ object MainForm: TMainForm
         Lines.Strings = (
           'select * from table'
         )
+        Options = [eoAutoIndent, eoGroupUndo, eoScrollPastEol, eoTabIndent, eoTabsToSpaces, eoTrimTrailingSpaces, eoBracketHighlight]
+        Options2 = []
         BracketHighlightStyle = sbhsBoth
         TabWidth = 2
         object TSynGutterPartList
@@ -618,7 +623,7 @@ object MainForm: TMainForm
           end
           object TSynGutterChanges
             Width = 4
-            ModifiedColor = 59900
+            ModifiedColor = clRed
             SavedColor = clGreen
           end
           object TSynGutterSeparator
@@ -630,19 +635,28 @@ object MainForm: TMainForm
         Left = 5
         Height = 19
         Top = 4
-        Width = 50
+        Width = 54
         Caption = 'Load'
         OnClick = SQLLoadBtnClick
         TabOrder = 1
       end
       object SQLSaveBtn: TButton
-        Left = 55
+        Left = 60
         Height = 19
         Top = 4
-        Width = 50
+        Width = 54
         Caption = 'Save'
         OnClick = SQLSaveBtnClick
         TabOrder = 2
+      end
+      object SQLSaveAsBtn: TButton
+        Left = 115
+        Height = 19
+        Top = 4
+        Width = 54
+        Caption = 'Save As'
+        OnClick = SQLSaveAsBtnClick
+        TabOrder = 3
       end
     end
     object ResultPanel: TPanel
@@ -710,7 +724,7 @@ object MainForm: TMainForm
       object Label1: TLabel
         Left = 7
         Height = 14
-        Top = 48
+        Top = 51
         Width = 94
         Caption = 'Database Directory'
         ParentColor = False
@@ -718,23 +732,23 @@ object MainForm: TMainForm
       object Label2: TLabel
         Left = 7
         Height = 14
-        Top = 90
-        Width = 52
-        Caption = 'Databases'
+        Top = 96
+        Width = 90
+        Caption = 'Databases *.sqlite'
         ParentColor = False
       end
       object Label3: TLabel
         Left = 7
         Height = 14
-        Top = 7
-        Width = 94
-        Caption = 'Database Directory'
+        Top = 8
+        Width = 57
+        Caption = 'Recent files'
         ParentColor = False
       end
       object DatabasesCbo: TComboBox
         Left = 5
         Height = 21
-        Top = 107
+        Top = 114
         Width = 193
         Anchors = [akTop, akLeft, akRight]
         ItemHeight = 13
@@ -744,7 +758,7 @@ object MainForm: TMainForm
       object DataPathCbo: TComboBox
         Left = 5
         Height = 21
-        Top = 66
+        Top = 70
         Width = 193
         Anchors = [akTop, akLeft, akRight]
         ItemHeight = 13
@@ -756,7 +770,7 @@ object MainForm: TMainForm
       object AutoCreateChk: TCheckBox
         Left = 9
         Height = 17
-        Top = 133
+        Top = 140
         Width = 110
         BidiMode = bdRightToLeftReadingOnly
         Caption = 'Create if not exists'
@@ -766,7 +780,7 @@ object MainForm: TMainForm
       object RecentsCbo: TComboBox
         Left = 5
         Height = 21
-        Top = 24
+        Top = 26
         Width = 193
         Anchors = [akTop, akLeft, akRight]
         ItemHeight = 13
@@ -777,7 +791,7 @@ object MainForm: TMainForm
       object BrowseBtn: TButton
         Left = 144
         Height = 19
-        Top = 46
+        Top = 49
         Width = 54
         Anchors = [akTop, akRight]
         Caption = 'Browse'
@@ -787,7 +801,7 @@ object MainForm: TMainForm
       object RemoveBtn: TButton
         Left = 144
         Height = 19
-        Top = 4
+        Top = 5
         Width = 54
         Anchors = [akTop, akRight]
         Caption = 'Remove'
@@ -797,12 +811,22 @@ object MainForm: TMainForm
       object CacheSchemaChk: TCheckBox
         Left = 10
         Height = 17
-        Top = 155
+        Top = 162
         Width = 176
         BidiMode = bdRightToLeftReadingOnly
         Caption = 'Cache Schema for auto complete'
         ParentBidiMode = False
         TabOrder = 6
+      end
+      object RefreshBtn: TButton
+        Left = 144
+        Height = 19
+        Top = 93
+        Width = 54
+        Anchors = [akTop, akRight]
+        Caption = 'Refresh'
+        OnClick = RefreshBtnClick
+        TabOrder = 7
       end
     end
     object GroupPanel: TPanel
@@ -810,55 +834,24 @@ object MainForm: TMainForm
       Height = 153
       Top = 96
       Width = 234
-      BevelInner = bvLowered
       BevelOuter = bvNone
       BorderWidth = 2
       ClientHeight = 153
       ClientWidth = 234
       TabOrder = 3
-      object TitleLbl: TLabel
-        Left = 7
-        Height = 14
-        Top = 6
-        Width = 21
-        Caption = 'Title'
-        ParentColor = False
-      end
-      object FirstBtn: TSpeedButton
-        Left = 204
-        Height = 18
-        Top = 4
-        Width = 25
-        Anchors = [akTop, akRight]
-        Caption = 'Up'
-        Color = clBtnFace
-        NumGlyphs = 0
-        OnClick = FirstBtnClick
-      end
-      object GroupsList: TComboBox
-        Left = 5
-        Height = 21
-        Top = 23
-        Width = 224
-        Anchors = [akTop, akLeft, akRight]
-        ItemHeight = 13
-        OnSelect = GroupsListSelect
-        Style = csDropDownList
-        TabOrder = 0
-      end
       object MembersGrid: TStringGrid
-        Left = 5
-        Height = 102
+        Left = 2
+        Height = 83
         Top = 46
-        Width = 224
-        Anchors = [akTop, akLeft, akRight, akBottom]
+        Width = 230
+        Align = alClient
         AutoEdit = False
         ColCount = 1
         DefaultRowHeight = 18
         FixedCols = 0
         Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goDrawFocusSelected, goColSizing, goRowSelect]
         RowCount = 3
-        TabOrder = 1
+        TabOrder = 0
         TitleFont.CharSet = ANSI_CHARSET
         TitleFont.Color = clBlack
         TitleFont.Height = -11
@@ -873,6 +866,57 @@ object MainForm: TMainForm
           117
         )
       end
+      object ActionsPanel: TPanel
+        Left = 2
+        Height = 22
+        Top = 129
+        Width = 230
+        Align = alBottom
+        BevelOuter = bvNone
+        TabOrder = 1
+      end
+      object GroupsPanel: TPanel
+        Left = 2
+        Height = 44
+        Top = 2
+        Width = 230
+        Align = alTop
+        BevelOuter = bvNone
+        ClientHeight = 44
+        ClientWidth = 230
+        TabOrder = 2
+        object TitleLbl: TLabel
+          Left = 2
+          Height = 14
+          Top = 4
+          Width = 21
+          Caption = 'Title'
+          ParentColor = False
+        end
+        object FirstBtn: TSpeedButton
+          Left = 196
+          Height = 19
+          Top = 1
+          Width = 32
+          Anchors = [akTop, akRight]
+          Caption = 'Top'
+          Color = clBtnFace
+          NumGlyphs = 0
+          OnClick = FirstBtnClick
+        end
+        object GroupsList: TComboBox
+          Left = 2
+          Height = 21
+          Top = 21
+          Width = 226
+          Anchors = [akTop, akLeft, akRight]
+          ItemHeight = 13
+          OnKeyPress = GroupsListKeyPress
+          OnSelect = GroupsListSelect
+          Style = csDropDownList
+          TabOrder = 0
+        end
+      end
     end
     object InfoPanel: TPanel
       Left = 389
@@ -884,12 +928,19 @@ object MainForm: TMainForm
       BorderWidth = 2
       ClientHeight = 123
       ClientWidth = 170
+      Font.CharSet = ANSI_CHARSET
+      Font.Color = clBlack
+      Font.Height = -13
+      Font.Name = 'Courier New'
+      Font.Pitch = fpFixed
+      Font.Quality = fqDraft
+      ParentFont = False
       TabOrder = 4
       object InfoLbl: TLabel
         Left = 9
-        Height = 14
+        Height = 17
         Top = 5
-        Width = 21
+        Width = 33
         Caption = 'Info'
         ParentColor = False
       end
@@ -913,94 +964,18 @@ object MainForm: TMainForm
   end
   object TopPanel: TPanel
     Left = 0
-    Height = 23
-    Top = 316
+    Height = 22
+    Top = 339
     Width = 567
     Align = alBottom
     BevelOuter = bvSpace
-    ClientHeight = 23
+    ClientHeight = 22
     ClientWidth = 567
     TabOrder = 1
-    object SQLBtn: TSpeedButton
-      Left = 192
-      Height = 21
-      Top = 1
-      Width = 31
-      Align = alLeft
-      Caption = 'SQL'
-      Color = clBtnFace
-      NumGlyphs = 0
-      OnClick = SQLBtnClick
-    end
-    object OpenBtn: TSpeedButton
-      Left = 156
-      Height = 21
-      Top = 1
-      Width = 36
-      Align = alLeft
-      Caption = 'Open'
-      Color = clBtnFace
-      NumGlyphs = 0
-      OnClick = OpenBtnClick
-    end
-    object SpeedButton5: TSpeedButton
-      Left = 1
-      Height = 21
-      Top = 1
-      Width = 39
-      Align = alLeft
-      Caption = 'Start'
-      Color = clBtnFace
-      NumGlyphs = 0
-      OnClick = SpeedButton5Click
-    end
-    object ExecuteBtn: TSpeedButton
-      Left = 353
-      Height = 21
-      Top = 1
-      Width = 50
-      Align = alLeft
-      Caption = 'Execute'
-      Color = clBtnFace
-      NumGlyphs = 0
-      OnClick = ExecuteBtnClick
-    end
-    object SchemaBtn: TSpeedButton
-      Left = 223
-      Height = 21
-      Top = 1
-      Width = 49
-      Align = alLeft
-      Caption = 'Schema'
-      Color = clBtnFace
-      NumGlyphs = 0
-      OnClick = SchemaBtnClick
-    end
-    object ResultsBtn: TSpeedButton
-      Left = 305
-      Height = 21
-      Top = 1
-      Width = 48
-      Align = alLeft
-      Caption = 'Results'
-      Color = clBtnFace
-      NumGlyphs = 0
-      OnClick = ResultsBtnClick
-    end
-    object InfoBtn: TSpeedButton
-      Left = 272
-      Height = 21
-      Top = 1
-      Width = 33
-      Align = alLeft
-      Caption = 'Info'
-      Color = clBtnFace
-      NumGlyphs = 0
-      OnClick = InfoBtnClick
-    end
     object DisconnectBtn: TButton
       Left = 93
-      Height = 21
+      Height = 20
+      Hint = 'Disconnect Shift+F9'
       Top = 1
       Width = 63
       Align = alLeft
@@ -1011,7 +986,7 @@ object MainForm: TMainForm
     end
     object ConnectBtn: TButton
       Left = 40
-      Height = 21
+      Height = 20
       Top = 1
       Width = 53
       Align = alLeft
@@ -1020,13 +995,84 @@ object MainForm: TMainForm
       OnClick = ConnectBtnClick
       TabOrder = 1
     end
+    object StartBtn: TButton
+      Left = 1
+      Height = 20
+      Top = 1
+      Width = 39
+      Align = alLeft
+      Caption = 'Start'
+      OnClick = StartBtnClick
+      TabOrder = 2
+    end
+    object ExecuteBtn: TButton
+      Left = 353
+      Height = 20
+      Top = 1
+      Width = 50
+      Align = alLeft
+      Caption = 'Execute'
+      OnClick = ExecuteBtnClick
+      TabOrder = 3
+    end
+    object ResultsBtn: TButton
+      Left = 305
+      Height = 20
+      Top = 1
+      Width = 48
+      Align = alLeft
+      Caption = 'Results'
+      OnClick = ResultsBtnClick
+      TabOrder = 4
+    end
+    object InfoBtn: TButton
+      Left = 272
+      Height = 20
+      Top = 1
+      Width = 33
+      Align = alLeft
+      Caption = 'Info'
+      OnClick = InfoBtnClick
+      TabOrder = 5
+    end
+    object SchemaBtn: TButton
+      Left = 223
+      Height = 20
+      Top = 1
+      Width = 49
+      Align = alLeft
+      Caption = 'Schema'
+      OnClick = SchemaBtnClick
+      TabOrder = 6
+    end
+    object SQLBtn: TButton
+      Left = 192
+      Height = 20
+      Hint = 'SQL editor F6'
+      Top = 1
+      Width = 31
+      Align = alLeft
+      Caption = 'SQL'
+      OnClick = SQLBtnClick
+      TabOrder = 7
+    end
+    object OpenBtn: TButton
+      Left = 156
+      Height = 20
+      Top = 1
+      Width = 36
+      Align = alLeft
+      Caption = 'Open'
+      OnClick = OpenBtnClick
+      TabOrder = 8
+    end
   end
   object MainMenu: TMainMenu
     left = 270
     top = 7
-    object MenuItem1: TMenuItem
+    object ExitMnu: TMenuItem
       Caption = 'Exit'
-      OnClick = MenuItem1Click
+      OnClick = ExitMnuClick
     end
     object ToolsMnu: TMenuItem
       Caption = 'Tools'
@@ -1042,7 +1088,7 @@ object MainForm: TMainForm
     Filter = '*.sql'
     InitialDir = '\'
     left = 292
-    top = 60
+    top = 43
   end
   object SaveDialog: TSaveDialog
     DefaultExt = '.sql'

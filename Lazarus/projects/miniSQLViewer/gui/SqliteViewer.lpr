@@ -16,7 +16,8 @@ uses
   {$ENDIF}{$ENDIF}
   Interfaces, // this includes the LCL widgetset
   Forms
-  { you can add units after this }, Main, AboutForm;
+  { you can add units after this }, Main, AboutForm, sqlvStdClasses,
+  sqlvClasses;
 
 begin
   Application.Initialize;
