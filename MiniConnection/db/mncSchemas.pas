@@ -59,7 +59,35 @@ type
     property Items[Index: Integer]: TmncSchemaItem read GetItem write SetItem; default;
   end;
 
-  { TmncSchema }
+
+  { TmncParamItem }
+
+  TmncParamItem = class(TObject)
+  private
+    FName: string;
+    FValue: string;
+  public
+    property Name: string read FName write FName;
+    property Value: string read FValue write FValue;
+  end;
+
+  { TmncParams }
+
+  TmncParams = class(TObjectList)
+  private
+    function GetItem(Index: Integer): TmncParamItem;
+    function GetValues(Index: string): string;
+    procedure SetItem(Index: Integer; const Value: TmncParamItem);
+  public
+    constructor Create(Names, Values: array of string);
+    function Find(const Name: string): TmncParamItem;
+    function Add(Param: TmncParamItem): Integer; overload;
+    function Add(Name, Value: string): TmncParamItem; overload;
+    property Items[Index: Integer]: TmncParamItem read GetItem write SetItem;
+    property Values[Index: string]:string read GetValues; default;
+  end;
+
+{ TmncSchema }
 
   TmncSchema = class(TmncLinkObject)
   private
@@ -254,6 +282,78 @@ end;
 procedure TmncSchema.GetTriggerSource(Strings: TStringList; MemberName: string; Options: TschmEnumOptions = []);
 begin
 
+end;
+
+{ TmncParams }
+
+function TmncParams.GetItem(Index: Integer): TmncParamItem;
+begin
+  Result := inherited Items[Index] as TmncParamItem;
+end;
+
+function TmncParams.GetValues(Index: string): string;
+var
+  aItem: TmncParamItem;
+begin
+  if Self = nil then
+    Result := ''
+  else
+  begin
+    aItem := Find(Index);
+    if aItem = nil then
+      Result := ''
+    else
+      Result := aItem.Value;
+  end;
+end;
+
+procedure TmncParams.SetItem(Index: Integer; const Value: TmncParamItem);
+begin
+  inherited Items[Index] := Value;
+end;
+
+constructor TmncParams.Create(Names, Values: array of string);
+var
+  i: Integer;
+  v: string;
+begin
+  inherited Create(True);
+  for i := 0 to Length(Names) - 1 do
+  begin
+    if i < Length(Values) then
+      v := Values[i]
+    else
+      v := '';
+    Add(Names[i], v);
+  end;
+end;
+
+function TmncParams.Find(const Name: string): TmncParamItem;
+var
+  i: Integer;
+begin
+  Result := nil;
+  for i := 0 to Count - 1 do
+  begin
+    if SameText(Name, Items[i].Name) then
+    begin
+      Result := Items[i];
+      break;
+    end;
+  end;
+end;
+
+function TmncParams.Add(Param: TmncParamItem): Integer;
+begin
+  Result := inherited Add(Param);
+end;
+
+function TmncParams.Add(Name, Value: string): TmncParamItem;
+begin
+  Result := TmncParamItem.Create;
+  Result.Name := Name;
+  Result.Value := Value;
+  Add(Result);
 end;
 
 end.
