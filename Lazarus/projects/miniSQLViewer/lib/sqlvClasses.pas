@@ -85,12 +85,12 @@ type
     FImageIndex: TImageIndex;
   protected
     function GetCanExecute: Boolean; virtual;
-    procedure DoExecute(const MemberName: string; Params: TmncParams = nil); virtual;
+    procedure DoExecute(const Value: string; Params: TmncParams = nil); virtual;
   public
     constructor Create; virtual;
     destructor Destroy; override;
     procedure ShowProperty; virtual;
-    procedure Execute(const MemberName: string; Params: TmncParams = nil);
+    procedure Execute(const Value: string; Params: TmncParams = nil);
     procedure Enum(Nodes: TsqlvNodes);
     procedure EnumDefaults(Nodes: TsqlvNodes);
     procedure EnumHeader(Header: TStringList); virtual;
@@ -129,7 +129,6 @@ type
   end;
 
   TsqlvHistoryItem = class(TObject)
-    Name: string;
     Text: string;
   end;
 
@@ -146,7 +145,7 @@ type
   public
     constructor Create;
     function Add(History: TsqlvHistoryItem): Integer;
-    procedure Add(const Name, Text: string);
+    procedure Add(const Text: string; Silent: Boolean);
     function HaveBackward: Boolean;
     function Backward: Boolean;
     function HaveForward: Boolean;
@@ -186,8 +185,6 @@ type
     procedure AddRecent(Name:string);
     procedure LoadFile(FileName:string; Strings:TStrings);
     procedure SaveFile(FileName:string; Strings:TStrings);
-    procedure Backward;
-    procedure Forward;
     function GetAllSupportedFiles: string;
     property Setting: TsqlvSetting read FSetting;
     property Recents: TStringList read FRecents;
@@ -214,10 +211,11 @@ type
   TsqlvButton = class(TButton)
   private
     FNode: TsqlvNode;
+  protected
+    function GetMemberName: string; virtual;
   public
     GroupInfo: TSchemaInfo;//Table,Accounts
     SchemaName: string;//Field
-    MemberName: string;
     procedure Click; override;
     property Node: TsqlvNode read FNode write FNode;
   end;
@@ -272,24 +270,6 @@ end;
 procedure TsqlvEngine.SaveFile(FileName: string; Strings: TStrings);
 begin
   Strings.SaveToFile(WorkPath + FileName);
-end;
-
-procedure TsqlvEngine.Backward;
-begin
-  if History.Current <> nil then
-  begin
-    //Launch(History.Current.Name, History.Current.Text, True);
-    History.Backward;
-  end;
-end;
-
-procedure TsqlvEngine.Forward;
-begin
-  if History.Current <> nil then
-  begin
-    //Launch(History.Current.Name, History.Current.Text, True);
-    History.Forward;
-  end;
 end;
 
 procedure TsqlvEngine.SaveSetting;
@@ -453,9 +433,9 @@ begin
   Header.Add(Title);
 end;
 
-procedure TsqlvNode.Execute(const MemberName: string; Params: TmncParams = nil);
+procedure TsqlvNode.Execute(const Value: string; Params: TmncParams = nil);
 begin
-  DoExecute(MemberName, Params);
+  DoExecute(Value, Params);
   FreeAndNil(Params);
 end;
 
@@ -464,7 +444,7 @@ begin
   Result := True;
 end;
 
-procedure TsqlvNode.DoExecute(const MemberName: string; Params: TmncParams);
+procedure TsqlvNode.DoExecute(const Value: string; Params: TmncParams);
 begin
 end;
 
@@ -573,8 +553,6 @@ begin
     if Node.CanExecute then
     begin
       Node.Execute(MemberName);
-      if not vSilent then
-        History.Add(Node.Name, MemberName);
     end
     else
     begin
@@ -586,8 +564,6 @@ begin
         if aNodes.Count > 0 then
         begin
           aNodes[0].Execute(MemberName);
-          if not vSilent then
-            History.Add(aNodes[0].Name, MemberName);
         end;
       finally
         aNodes.Free;
@@ -699,13 +675,13 @@ end;
 
 function TsqlvHistory.GetCurrent: TsqlvHistoryItem;
 begin
-  if (Index < Count) and (Index >=0) then
+  if (Index < Count) and (FIndex >=0) then
     Result := Items[Index]
   else
     Result := nil;
 end;
 
-constructor TsqlvHistory.create;
+constructor TsqlvHistory.Create;
 begin
   inherited Create(True);
   Index := 0;
@@ -714,39 +690,47 @@ end;
 
 function TsqlvHistory.Add(History: TsqlvHistoryItem): Integer;
 begin
-  if (Count > 0) and (Index >=0) then
-    Count := Index + 1;//cut to index
-  Result := inherited Add(History);
-  Index := Result;
   if (Count > MaxCount) and (Count > 0) then
+  begin
     Delete(0);
+    FIndex := FIndex - 1
+  end;
+  Result := inherited Add(History);
 end;
 
-procedure TsqlvHistory.Add(const Name, Text: string);
+procedure TsqlvHistory.Add(const Text: string; Silent: Boolean);
 var
+  i: Integer;
   aHistory: TsqlvHistoryItem;
 begin
   if (Count > 0) then
   begin
     aHistory := Items[Count - 1];
-    if (aHistory.Name = Name) and (aHistory.Text = Text) then
+    if (aHistory.Text = Text) then
       exit;//do not duplicate the last one
+    if (Index < Count) and (Index >= 0) then
+    begin
+      aHistory := Items[Index];
+      if (aHistory.Text = Text) then
+        exit;//do not duplicate the current one
+    end;
   end;
   aHistory := TsqlvHistoryItem.Create;
-  aHistory.Name := Name;
   aHistory.Text := Text;
-  Add(aHistory);
+  i := Add(aHistory);
+  if not Silent then
+    Index := i;
   Changed;
 end;
 
 function TsqlvHistory.HaveForward: Boolean;
 begin
-  Result := Index < Count - 1;
+  Result := (Count > 0) and (Index < Count - 1);
 end;
 
 function TsqlvHistory.HaveBackward: Boolean;
 begin
-  Result := Index > 0;
+  Result := (Count> 0) and (FIndex > 0);
 end;
 
 function TsqlvHistory.Forward: Boolean;
@@ -754,7 +738,7 @@ begin
   Result := HaveForward;
   if Result then
   begin
-    Index := Index + 1;
+    Index := FIndex + 1;
     Changed;
   end;
 end;
@@ -764,17 +748,22 @@ begin
   Result := HaveBackward;
   if Result then
   begin
-    Index := Index - 1;
+    Index := FIndex - 1;
     Changed;
   end;
 end;
 
 { TsqlvButton }
 
+function TsqlvButton.GetMemberName: string;
+begin
+  Result := '';
+end;
+
 procedure TsqlvButton.Click;
 begin
   inherited Click;
-  Node.Execute(MemberName, TmncParams.Create([GroupInfo.Name], [GroupInfo.Value]));
+  Node.Execute(GetMemberName, TmncParams.Create([GroupInfo.Name], [GroupInfo.Value]));
 end;
 
 initialization

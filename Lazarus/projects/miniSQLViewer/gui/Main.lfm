@@ -3,11 +3,11 @@ object MainForm: TMainForm
   Height = 381
   Hint = 'Connect F9'
   Top = 113
-  Width = 567
+  Width = 607
   ActiveControl = SQLEdit
   Caption = 'SQLite'
   ClientHeight = 361
-  ClientWidth = 567
+  ClientWidth = 607
   Font.CharSet = ANSI_CHARSET
   Font.Color = clBlack
   Font.Height = -11
@@ -23,27 +23,27 @@ object MainForm: TMainForm
     Left = 0
     Height = 339
     Top = 0
-    Width = 567
+    Width = 607
     Align = alClient
     BevelOuter = bvNone
     ClientHeight = 339
-    ClientWidth = 567
+    ClientWidth = 607
     TabOrder = 0
     OnClick = ClientPanelClick
     object SQLPanel: TPanel
       Left = 8
       Height = 270
       Top = 12
-      Width = 250
+      Width = 285
       BevelInner = bvLowered
       BevelOuter = bvNone
       BorderWidth = 2
       ClientHeight = 270
-      ClientWidth = 250
+      ClientWidth = 285
       TabOrder = 0
       OnClick = SQLPanelClick
       object SQLBackwardBtn: TSpeedButton
-        Left = 204
+        Left = 239
         Height = 18
         Top = 4
         Width = 20
@@ -83,7 +83,7 @@ object MainForm: TMainForm
         ShowCaption = False
       end
       object SQLForwardBtn: TSpeedButton
-        Left = 224
+        Left = 259
         Height = 18
         Top = 4
         Width = 20
@@ -121,11 +121,26 @@ object MainForm: TMainForm
         NumGlyphs = 0
         OnClick = SQLForwardBtnClick
       end
+      object Label4: TLabel
+        Left = 6
+        Height = 14
+        Top = 24
+        Width = 21
+        Caption = 'File:'
+        ParentColor = False
+      end
+      object FileNameLbl: TLabel
+        Left = 32
+        Height = 14
+        Top = 24
+        Width = 1
+        ParentColor = False
+      end
       object SQLEdit: TSynEdit
         Left = 5
-        Height = 241
-        Top = 24
-        Width = 239
+        Height = 227
+        Top = 38
+        Width = 274
         Anchors = [akTop, akLeft, akRight, akBottom]
         Font.Height = -13
         Font.Name = 'Courier New'
@@ -135,7 +150,8 @@ object MainForm: TMainForm
         ParentFont = False
         TabOrder = 0
         BookMarkOptions.Xoffset = -18
-        Gutter.Width = 23
+        BookMarkOptions.OnChange = nil
+        Gutter.Width = 21
         Gutter.MouseActions = <        
           item
             Shift = []
@@ -632,31 +648,40 @@ object MainForm: TMainForm
         end
       end
       object SQLLoadBtn: TButton
-        Left = 5
+        Left = 54
         Height = 19
         Top = 4
-        Width = 54
-        Caption = 'Load'
+        Width = 48
+        Caption = '&Load'
         OnClick = SQLLoadBtnClick
         TabOrder = 1
       end
       object SQLSaveBtn: TButton
-        Left = 60
+        Left = 103
         Height = 19
         Top = 4
-        Width = 54
-        Caption = 'Save'
+        Width = 48
+        Caption = '&Save'
         OnClick = SQLSaveBtnClick
         TabOrder = 2
       end
       object SQLSaveAsBtn: TButton
-        Left = 115
+        Left = 152
         Height = 19
         Top = 4
-        Width = 54
+        Width = 48
         Caption = 'Save As'
         OnClick = SQLSaveAsBtnClick
         TabOrder = 3
+      end
+      object SQLNewBtn: TButton
+        Left = 5
+        Height = 19
+        Top = 4
+        Width = 48
+        Caption = '&New'
+        OnClick = SQLNewBtnClick
+        TabOrder = 4
       end
     end
     object ResultPanel: TPanel
@@ -966,11 +991,11 @@ object MainForm: TMainForm
     Left = 0
     Height = 22
     Top = 339
-    Width = 567
+    Width = 607
     Align = alBottom
     BevelOuter = bvSpace
     ClientHeight = 22
-    ClientWidth = 567
+    ClientWidth = 607
     TabOrder = 1
     object DisconnectBtn: TButton
       Left = 93
@@ -1068,7 +1093,7 @@ object MainForm: TMainForm
     end
   end
   object MainMenu: TMainMenu
-    left = 270
+    left = 294
     top = 7
     object ExitMnu: TMenuItem
       Caption = 'Exit'

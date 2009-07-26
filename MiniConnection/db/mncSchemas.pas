@@ -23,7 +23,7 @@ type
   TschmKind = (sokNone, sokDatabase, sokTypes, sokTable, sokIndex, sokView,
                sokProcedure, sokFunction, sokSequences, sokException, sokRole,
                sokTrigger, sokForeign, sokIndices, sokConstraints, sokFields,
-               sokData, sokProperty, sokProperties);
+               sokField, sokData, sokProperty, sokProperties);
 
   TExtractObject = (etDomain, etTable, etRole, etTrigger, etForeign,
                     etIndex, etData, etGrant, etCheck);

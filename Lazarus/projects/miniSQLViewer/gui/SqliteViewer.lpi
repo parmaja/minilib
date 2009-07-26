@@ -36,14 +36,14 @@
         <PackageName Value="LCL"/>
       </Item2>
     </RequiredPackages>
-    <Units Count="165">
+    <Units Count="166">
       <Unit0>
         <Filename Value="SqliteViewer.lpr"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="SqliteViewer"/>
         <CursorPos X="1" Y="1"/>
         <TopLine Value="1"/>
-        <UsageCount Value="146"/>
+        <UsageCount Value="154"/>
       </Unit0>
       <Unit1>
         <Filename Value="Main.pas"/>
@@ -51,14 +51,14 @@
         <ComponentName Value="MainForm"/>
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="Main"/>
-        <CursorPos X="34" Y="22"/>
-        <TopLine Value="1"/>
+        <CursorPos X="29" Y="907"/>
+        <TopLine Value="891"/>
         <EditorIndex Value="0"/>
-        <UsageCount Value="146"/>
+        <UsageCount Value="154"/>
         <Bookmarks Count="3">
-          <Item0 X="1" Y="215" ID="0"/>
-          <Item1 X="6" Y="603" ID="1"/>
-          <Item2 X="9" Y="608" ID="2"/>
+          <Item0 X="1" Y="220" ID="0"/>
+          <Item1 X="1" Y="544" ID="1"/>
+          <Item2 X="9" Y="627" ID="2"/>
         </Bookmarks>
         <Loaded Value="True"/>
       </Unit1>
@@ -340,9 +340,11 @@
         <Filename Value="..\lib\sqlvClasses.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="sqlvClasses"/>
-        <CursorPos X="1" Y="1"/>
-        <TopLine Value="1"/>
-        <UsageCount Value="49"/>
+        <CursorPos X="29" Y="144"/>
+        <TopLine Value="135"/>
+        <EditorIndex Value="3"/>
+        <UsageCount Value="57"/>
+        <Loaded Value="True"/>
       </Unit41>
       <Unit42>
         <Filename Value="..\lib\sqlvSessions.pas"/>
@@ -506,9 +508,11 @@
         <Filename Value="sqlvStdClasses.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="sqlvStdClasses"/>
-        <CursorPos X="22" Y="501"/>
-        <TopLine Value="480"/>
-        <UsageCount Value="44"/>
+        <CursorPos X="15" Y="26"/>
+        <TopLine Value="10"/>
+        <EditorIndex Value="1"/>
+        <UsageCount Value="52"/>
+        <Loaded Value="True"/>
       </Unit65>
       <Unit66>
         <Filename Value="..\..\..\..\..\programs\lazarus\lcl\include\customlistbox.inc"/>
@@ -580,9 +584,9 @@
       <Unit76>
         <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\components\synedit\synedit.pp"/>
         <UnitName Value="SynEdit"/>
-        <CursorPos X="1" Y="8071"/>
-        <TopLine Value="8041"/>
-        <UsageCount Value="14"/>
+        <CursorPos X="3" Y="6020"/>
+        <TopLine Value="6011"/>
+        <UsageCount Value="15"/>
       </Unit76>
       <Unit77>
         <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\components\synedit\syntextdrawer.pp"/>
@@ -628,9 +632,11 @@
       </Unit82>
       <Unit83>
         <Filename Value="..\..\..\..\..\..\..\..\programs\fpc\src\rtl\objpas\classes\classesh.inc"/>
-        <CursorPos X="15" Y="561"/>
-        <TopLine Value="540"/>
-        <UsageCount Value="13"/>
+        <CursorPos X="3" Y="170"/>
+        <TopLine Value="149"/>
+        <EditorIndex Value="4"/>
+        <UsageCount Value="14"/>
+        <Loaded Value="True"/>
       </Unit83>
       <Unit84>
         <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\lcl\grids.pas"/>
@@ -741,7 +747,7 @@
         <UnitName Value="AboutForm"/>
         <CursorPos X="15" Y="16"/>
         <TopLine Value="1"/>
-        <UsageCount Value="75"/>
+        <UsageCount Value="83"/>
       </Unit99>
       <Unit100>
         <Filename Value="..\..\..\..\..\..\..\delphi\projects\LightPHPEdit\source\gui\AboutForms.pas"/>
@@ -819,9 +825,9 @@
       <Unit110>
         <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\components\synedit\syncompletion.pas"/>
         <UnitName Value="SynCompletion"/>
-        <CursorPos X="12" Y="4"/>
+        <CursorPos X="1" Y="1"/>
         <TopLine Value="1"/>
-        <UsageCount Value="14"/>
+        <UsageCount Value="15"/>
       </Unit110>
       <Unit111>
         <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\ide\sourceeditprocs.pas"/>
@@ -874,9 +880,11 @@
       <Unit118>
         <Filename Value="..\..\..\..\MiniConnection\db\mncSchemas.pas"/>
         <UnitName Value="mncSchemas"/>
-        <CursorPos X="1" Y="74"/>
-        <TopLine Value="57"/>
-        <UsageCount Value="16"/>
+        <CursorPos X="24" Y="25"/>
+        <TopLine Value="4"/>
+        <EditorIndex Value="2"/>
+        <UsageCount Value="18"/>
+        <Loaded Value="True"/>
       </Unit118>
       <Unit119>
         <Filename Value="..\..\..\..\MiniXml\source\mnXMLRttiWriter.pas"/>
@@ -1171,110 +1179,139 @@
       <Unit164>
         <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\lcl\dialogs.pp"/>
         <UnitName Value="Dialogs"/>
-        <CursorPos X="21" Y="38"/>
-        <TopLine Value="27"/>
-        <EditorIndex Value="1"/>
+        <CursorPos X="1" Y="1"/>
+        <TopLine Value="1"/>
         <UsageCount Value="10"/>
-        <Loaded Value="True"/>
       </Unit164>
+      <Unit165>
+        <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\components\synedit\syneditpointclasses.pas"/>
+        <UnitName Value="SynEditPointClasses"/>
+        <CursorPos X="51" Y="175"/>
+        <TopLine Value="154"/>
+        <UsageCount Value="11"/>
+      </Unit165>
     </Units>
-    <JumpHistory Count="24" HistoryIndex="23">
+    <JumpHistory Count="30" HistoryIndex="29">
       <Position1>
-        <Filename Value="Main.pas"/>
-        <Caret Line="574" Column="3" TopLine="572"/>
+        <Filename Value="..\lib\sqlvClasses.pas"/>
+        <Caret Line="685" Column="61" TopLine="677"/>
       </Position1>
       <Position2>
-        <Filename Value="Main.pas"/>
-        <Caret Line="581" Column="5" TopLine="539"/>
+        <Filename Value="..\lib\sqlvClasses.pas"/>
+        <Caret Line="693" Column="1" TopLine="677"/>
       </Position2>
       <Position3>
-        <Filename Value="Main.pas"/>
-        <Caret Line="580" Column="3" TopLine="578"/>
+        <Filename Value="..\lib\sqlvClasses.pas"/>
+        <Caret Line="720" Column="1" TopLine="695"/>
       </Position3>
       <Position4>
         <Filename Value="Main.pas"/>
-        <Caret Line="526" Column="3" TopLine="524"/>
+        <Caret Line="1089" Column="52" TopLine="1078"/>
       </Position4>
       <Position5>
         <Filename Value="Main.pas"/>
-        <Caret Line="579" Column="5" TopLine="570"/>
+        <Caret Line="909" Column="3" TopLine="893"/>
       </Position5>
       <Position6>
         <Filename Value="Main.pas"/>
-        <Caret Line="585" Column="1" TopLine="564"/>
+        <Caret Line="153" Column="20" TopLine="153"/>
       </Position6>
       <Position7>
         <Filename Value="Main.pas"/>
-        <Caret Line="589" Column="1" TopLine="568"/>
+        <Caret Line="160" Column="20" TopLine="153"/>
       </Position7>
       <Position8>
         <Filename Value="Main.pas"/>
-        <Caret Line="591" Column="1" TopLine="570"/>
+        <Caret Line="1085" Column="12" TopLine="1081"/>
       </Position8>
       <Position9>
         <Filename Value="Main.pas"/>
-        <Caret Line="526" Column="9" TopLine="524"/>
+        <Caret Line="1" Column="1" TopLine="1"/>
       </Position9>
       <Position10>
         <Filename Value="Main.pas"/>
-        <Caret Line="573" Column="24" TopLine="570"/>
+        <Caret Line="110" Column="13" TopLine="94"/>
       </Position10>
       <Position11>
         <Filename Value="Main.pas"/>
-        <Caret Line="1" Column="1" TopLine="1"/>
+        <Caret Line="548" Column="38" TopLine="544"/>
       </Position11>
       <Position12>
-        <Filename Value="Main.pas"/>
-        <Caret Line="249" Column="29" TopLine="227"/>
+        <Filename Value="..\lib\sqlvClasses.pas"/>
+        <Caret Line="691" Column="25" TopLine="677"/>
       </Position12>
       <Position13>
-        <Filename Value="Main.pas"/>
-        <Caret Line="552" Column="29" TopLine="531"/>
+        <Filename Value="..\lib\sqlvClasses.pas"/>
+        <Caret Line="1" Column="1" TopLine="1"/>
       </Position13>
       <Position14>
-        <Filename Value="Main.pas"/>
-        <Caret Line="573" Column="24" TopLine="552"/>
+        <Filename Value="..\lib\sqlvClasses.pas"/>
+        <Caret Line="149" Column="23" TopLine="133"/>
       </Position14>
       <Position15>
         <Filename Value="Main.pas"/>
-        <Caret Line="1" Column="1" TopLine="1"/>
+        <Caret Line="546" Column="1" TopLine="544"/>
       </Position15>
       <Position16>
         <Filename Value="Main.pas"/>
-        <Caret Line="248" Column="24" TopLine="227"/>
+        <Caret Line="1" Column="1" TopLine="1"/>
       </Position16>
       <Position17>
         <Filename Value="Main.pas"/>
-        <Caret Line="552" Column="24" TopLine="531"/>
+        <Caret Line="226" Column="27" TopLine="210"/>
       </Position17>
       <Position18>
         <Filename Value="Main.pas"/>
-        <Caret Line="559" Column="14" TopLine="552"/>
+        <Caret Line="538" Column="1" TopLine="522"/>
       </Position18>
       <Position19>
         <Filename Value="Main.pas"/>
-        <Caret Line="142" Column="70" TopLine="121"/>
+        <Caret Line="557" Column="3" TopLine="555"/>
       </Position19>
       <Position20>
         <Filename Value="Main.pas"/>
-        <Caret Line="307" Column="7" TopLine="303"/>
+        <Caret Line="88" Column="25" TopLine="88"/>
       </Position20>
       <Position21>
         <Filename Value="Main.pas"/>
-        <Caret Line="314" Column="25" TopLine="303"/>
+        <Caret Line="1081" Column="1" TopLine="1066"/>
       </Position21>
       <Position22>
         <Filename Value="Main.pas"/>
-        <Caret Line="309" Column="96" TopLine="298"/>
+        <Caret Line="592" Column="17" TopLine="583"/>
       </Position22>
       <Position23>
         <Filename Value="Main.pas"/>
-        <Caret Line="310" Column="13" TopLine="299"/>
+        <Caret Line="1" Column="1" TopLine="1"/>
       </Position23>
       <Position24>
         <Filename Value="Main.pas"/>
-        <Caret Line="313" Column="8" TopLine="299"/>
+        <Caret Line="225" Column="27" TopLine="209"/>
       </Position24>
+      <Position25>
+        <Filename Value="Main.pas"/>
+        <Caret Line="556" Column="15" TopLine="540"/>
+      </Position25>
+      <Position26>
+        <Filename Value="Main.pas"/>
+        <Caret Line="592" Column="17" TopLine="576"/>
+      </Position26>
+      <Position27>
+        <Filename Value="Main.pas"/>
+        <Caret Line="1" Column="1" TopLine="1"/>
+      </Position27>
+      <Position28>
+        <Filename Value="Main.pas"/>
+        <Caret Line="225" Column="27" TopLine="209"/>
+      </Position28>
+      <Position29>
+        <Filename Value="Main.pas"/>
+        <Caret Line="556" Column="15" TopLine="540"/>
+      </Position29>
+      <Position30>
+        <Filename Value="Main.pas"/>
+        <Caret Line="592" Column="17" TopLine="576"/>
+      </Position30>
     </JumpHistory>
   </ProjectOptions>
   <CompilerOptions>
@@ -1304,11 +1341,6 @@
     </Other>
   </CompilerOptions>
   <Debugging>
-    <Watches Count="1">
-      <Item1>
-        <Expression Value="FName"/>
-      </Item1>
-    </Watches>
     <Exceptions Count="2">
       <Item1>
         <Name Value="ECodetoolError"/>

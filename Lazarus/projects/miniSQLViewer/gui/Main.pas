@@ -32,6 +32,7 @@ uses
   mnUtils, mncSQLite, mncSchemas, mncSqliteSchemas, sqlvClasses, sqlvStdClasses, LMessages;
 
 type
+
   TsqlState = (sqlsRoot, sqlsSQL, sqlsResults, sqlsInfo, sqlsMembers);
 
   TControlObject = class(TObject)
@@ -83,6 +84,8 @@ type
     FirstBtn: TSpeedButton;
     GroupsList: TComboBox;
     InfoBtn: TButton;
+    Label4: TLabel;
+    FileNameLbl: TLabel;
     OpenBtn: TButton;
     GroupsPanel: TPanel;
     RefreshBtn: TButton;
@@ -94,6 +97,7 @@ type
     SaveDialog: TSaveDialog;
     SchemaBtn: TButton;
     SQLSaveAsBtn: TButton;
+    SQLNewBtn: TButton;
     StartBtn: TButton;
     SQLBtn: TButton;
     SQLLoadBtn: TButton;
@@ -161,6 +165,7 @@ type
     procedure SQLBackwardBtnClick(Sender: TObject);
     procedure SQLBtnClick(Sender: TObject);
     procedure OpenBtnClick(Sender: TObject);
+    procedure SQLNewBtnClick(Sender: TObject);
     procedure SQLPanelClick(Sender: TObject);
     procedure SQLSaveAsBtnClick(Sender: TObject);
     procedure StartBtnClick(Sender: TObject);
@@ -172,7 +177,7 @@ type
     FFirstSearch: Boolean;
     FSearch: UTF8String;
     FSearchTime: TDateTime;
-    LastSQLFileName: string;
+    FLastSQLFile: string;
     FLockEnum: Boolean;
     FSqliteSyn: TSynSqliteSyn;
     Completion: TSynCompletion;
@@ -196,7 +201,6 @@ type
     FState: TsqlState;
     PanelsList: TPanelsList;
     FCancel: Boolean;
-    procedure AddSql;
     procedure ClearGrid;
     procedure DoAddKeyword(AKeyword: string; AKind: integer);
     procedure Execute(SQLCMD: TmncSQLiteCommand; SQL:TStringList; ShowGrid:Boolean);
@@ -205,6 +209,7 @@ type
     procedure LoadCompletion;
     function LogTime(Start: TDateTime): string;
     procedure RefreshSQLHistory(Sender: TObject);
+    procedure SetLastSQLFile(const AValue: string);
     procedure SetState(const AValue: TsqlState);
     procedure StateChanged;
     function GetDatabaseName: string;
@@ -217,11 +222,22 @@ type
     SchemaName: string;//Field
     constructor Create(TheOwner: TComponent); override;
     destructor Destroy; override;
+    procedure AddRecentSQL(Silent: Boolean = False);
     procedure OpenMember;
     procedure OpenGroup;
     procedure UpdateActions;
     property State: TsqlState read FState write SetState;
+    property LastSQLFile: string read FLastSQLFile write SetLastSQLFile;
   end;
+
+  { TMyButton }
+
+  TMyButton = class(TsqlvButton)
+  protected
+    Form: TMainForm;
+    function GetMemberName: string; override;
+  end;
+
 
 var
   MainForm: TMainForm;
@@ -304,7 +320,7 @@ procedure TMainForm.FormCloseQuery(Sender: TObject; var CanClose: boolean);
 var
   w: Integer;
 begin
-  if SQLEdit.Modified and (LastSQLFileName <> '') then
+  if SQLEdit.Modified and (LastSQLFile <> '') then
   begin
      w := MessageDlg('Save', 'SQL not saved, do you want to save', mtWarning, mbYesNoCancel, '');
      if w = mrYes then
@@ -516,19 +532,32 @@ begin
   State := sqlsResults;
 end;
 
+procedure TMainForm.SQLForwardBtnClick(Sender: TObject);
+begin
+  sqlvEngine.SQLHistory.Forward;
+  if sqlvEngine.SQLHistory.Current <> nil then
+    SQLEdit.Lines.Text := sqlvEngine.SQLHistory.Current.Text;
+end;
+
 procedure TMainForm.SQLBackwardBtnClick(Sender: TObject);
 begin
-  if (sqlvEngine.SQLHistory.HaveBackward) then
-  begin
-    sqlvEngine.SQLHistory.Backward;
-    if (sqlvEngine.SQLHistory.Current <> nil) then
-      SQLEdit.Lines.Text := sqlvEngine.SQLHistory.Current.Text;
-  end;
+  sqlvEngine.SQLHistory.Backward;
+  if (sqlvEngine.SQLHistory.Current <> nil) then
+    SQLEdit.Lines.Text := sqlvEngine.SQLHistory.Current.Text;
 end;
 
 procedure TMainForm.OpenBtnClick(Sender: TObject);
 begin
   OpenMember;
+end;
+
+procedure TMainForm.SQLNewBtnClick(Sender: TObject);
+begin
+  AddRecentSQL;
+  LastSQLFile := '';
+  SQLEdit.Lines.Clear;
+  SQLEdit.Modified := False;
+  SQLEdit.SetFocus;
 end;
 
 procedure TMainForm.SQLPanelClick(Sender: TObject);
@@ -551,16 +580,6 @@ begin
   State := sqlsRoot;
 end;
 
-procedure TMainForm.SQLForwardBtnClick(Sender: TObject);
-begin
-  if (sqlvEngine.SQLHistory.HaveForward) then
-  begin
-    sqlvEngine.SQLHistory.Forward;
-    if sqlvEngine.SQLHistory.Current <> nil then
-      SQLEdit.Lines.Text := sqlvEngine.SQLHistory.Current.Text;
-  end;
-end;
-
 procedure TMainForm.SQLLoadBtnClick(Sender: TObject);
 begin
   OpenDialog.FileName := '*.sql';
@@ -570,9 +589,9 @@ begin
     OpenDialog.InitialDir := Application.Location;
   if OpenDialog.Execute then
   begin
-    AddSql;
-    LastSQLFileName := OpenDialog.FileName;
-    SQLEdit.Lines.LoadFromFile(OpenDialog.FileName);
+    AddRecentSQL;
+    LastSQLFile := OpenDialog.FileName;
+    SQLEdit.Lines.LoadFromFile(LastSQLFile);
     SQLEdit.Modified := False;
   end;
 end;
@@ -584,26 +603,26 @@ end;
 
 procedure TMainForm.SaveAsSQLFile;
 begin
-  SaveDialog.FileName := LastSQLFileName;
+  SaveDialog.FileName := LastSQLFile;
   SaveDialog.DefaultExt := 'sql';
   SAveDialog.Filter := '*.sql';
   SaveDialog.InitialDir := Application.Location;
   if SaveDialog.Execute then
   begin
-    LastSQLFileName := SaveDialog.FileName;
+    LastSQLFile := SaveDialog.FileName;
     SaveLastSQLFile;
   end;
 end;
 
 procedure TMainForm.SaveLastSQLFile;
 begin
-  if LastSQLFileName = '' then
+  if LastSQLFile = '' then
   begin
     SaveAsSQLFile;
   end
-  else if LastSQLFileName <> '' then
+  else if LastSQLFile <> '' then
   begin
-    SQLEdit.Lines.SaveToFile(LastSQLFileName);
+    SQLEdit.Lines.SaveToFile(LastSQLFile);
     SQLEdit.Modified := False;
   end;
 end;
@@ -762,10 +781,25 @@ procedure TMainForm.StateChanged;
 begin
   case FState of
     sqlsRoot: PanelsList.Show(RootPanel, sqlvEngine.Session.IsActive);
-    sqlsSQL: PanelsList.Show(SQLPanel, sqlvEngine.Session.IsActive);
-    sqlsResults: PanelsList.Show(ResultPanel, sqlvEngine.Session.IsActive);
+    sqlsSQL:
+    begin
+      PanelsList.Show(SQLPanel, sqlvEngine.Session.IsActive);
+      {if SQLEdit.CanFocus then
+        SQLEdit.SetFocus;}
+    end;
+    sqlsResults:
+    begin
+      PanelsList.Show(ResultPanel, sqlvEngine.Session.IsActive);
+      {if DataGrid.CanFocus then
+        DataGrid.SetFocus;}
+    end;
     sqlsInfo: PanelsList.Show(InfoPanel, sqlvEngine.Session.IsActive);
-    sqlsMembers: PanelsList.Show(GroupPanel, sqlvEngine.Session.IsActive);
+    sqlsMembers:
+    begin
+      PanelsList.Show(GroupPanel, sqlvEngine.Session.IsActive);
+      {if MembersGrid.CanFocus then
+        MembersGrid.SetFocus;}
+    end;
   end;
 end;
 
@@ -773,19 +807,18 @@ procedure TMainForm.UpdateActions;
 var
   i: Integer;
   aNodes: TsqlvNodes;
-  aButton: TsqlvButton;
-  aMemberName: string;
+  aButton: TMyButton;
 begin
   FreeAndNil(FActionsObjects);
   FActionsObjects := TObjectList.Create(True);
-  aMemberName := MembersGrid.Cells[0, MembersGrid.Row];
   aNodes := TsqlvNodes.Create;
   try
     sqlvEngine.Enum(SchemaName, aNodes);
     for i := 0 to aNodes.Count - 1 do
     if nsCommand in aNodes[i].Style then
     begin
-      aButton := TsqlvButton.Create(nil);
+      aButton := TMyButton.Create(nil);
+      aButton.Form := Self;
       aButton.Parent := ActionsPanel;
       aButton.Align := alLeft;
       aButton.AutoSize := True;
@@ -794,7 +827,6 @@ begin
       aButton.Caption := aNodes[i].Title;
       aButton.Node := aNodes[i];
       aButton.GroupInfo := GroupInfo;
-      aButton.MemberName := aMemberName;
       //aButton.ImageIndex := Node.ImageIndex;
       FActionsObjects.Add(aButton);
     end;
@@ -872,7 +904,6 @@ begin
 
   sqlvEngine.SQLHistory.OnChanged := @RefreshSQLHistory;
   sqlvEngine.LoadFile('recent.sql', SQLEdit.Lines);
-  AddSql;
   sqlvEngine.History.Changed;
   sqlvEngine.SQLHistory.Changed;
   if ParamCount > 0 then
@@ -882,7 +913,7 @@ begin
     begin
       if SameText(ExtractFileExt(aFile), '.sql') then
       begin
-        LastSQLFileName := aFile;
+        LastSQLFile := aFile;
         SQLEdit.Lines.LoadFromFile(aFile);
         State := sqlsSQL;
       end
@@ -1049,9 +1080,15 @@ begin
   SQLBackwardBtn.Enabled := sqlvEngine.SQLHistory.HaveBackward;
 end;
 
-procedure TMainForm.AddSql;
+procedure TMainForm.SetLastSQLFile(const AValue: string);
 begin
-  sqlvEngine.SQLHistory.Add('', SQLEdit.Text);
+  FLastSQLFile := AValue;
+  FileNameLbl.Caption := AValue;
+end;
+
+procedure TMainForm.AddRecentSQL(Silent: Boolean);
+begin
+  sqlvEngine.SQLHistory.Add(SQLEdit.Text, Silent);
 end;
 
 procedure TMainForm.Execute(SQLCMD: TmncSQLiteCommand; SQL:TStringList; ShowGrid:Boolean);
@@ -1111,6 +1148,7 @@ var
   t: TDateTime;
   SQLSession: TmncSQLiteSession;
   SQLCMD: TmncSQLiteCommand;
+  aStart: Integer;
 begin
   sqlvEngine.SaveFile('recent.sql', SQLEdit.Lines);
   SQLSession := TmncSQLiteSession.Create(sqlvEngine.Session.DBConnection);
@@ -1122,13 +1160,15 @@ begin
     try
       SQLSession.Start;
       ResultEdit.Clear;
-      AddSQL;
+      AddRecentSQL;
+      aStart := 0;
       for i := 0 to SQLEdit.Lines.Count - 1 do
       begin
         if Trim(SQLEdit.Lines[i]) = '^' then
         begin
           Execute(SQLCMD, aStrings, False);
           aStrings.Clear;
+          aStart := i + 1;//+1 to skip terminator
         end
         else
           aStrings.Add(SQLEdit.Lines[i]);
@@ -1141,6 +1181,8 @@ begin
       begin
         SQLSession.Rollback;
         ResultEdit.Lines.Add(E.Message);
+        SQLEdit.CaretX := 0;
+        SQLEdit.CaretY := aStart + 1;//CaretY start from 1
         raise;
       end
     else
@@ -1282,6 +1324,13 @@ begin
   //FillNow('Triggers', (Owner as TfbvSession).Triggers);
   //FillNow('Functions', (Owner as TfbvSession).Functions);
   //FillNow('Exceptions', (Owner as TfbvSession).Exceptions);
+end;
+
+{ TMyButton }
+
+function TMyButton.GetMemberName: string;
+begin
+  Result := Form.MembersGrid.Cells[0, Form.MembersGrid.Row];
 end;
 
 initialization

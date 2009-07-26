@@ -22,11 +22,13 @@ type
 
   TsqlvGuiNode = class(TsqlvNode)
   public
-    procedure EnumGroups(vGroup, vMemberName: string; vSelectDefault: Boolean);
+    procedure LoadEditor(vStrings:TStringList);
+    procedure LoadEditor(S: string);
+
+    procedure EnumGroups(vGroup, vMemberName: string; Params: TmncParams; vSelectDefault: Boolean);
     procedure EnumMembers(const vMemberName: string);
     procedure LoadHeader(vHeader:TStringList);
-    procedure LoadEditor(vStrings:TStringList);
-    procedure LoadGroup(vNodes:TsqlvNodes; vMemberName:string; vSelectDefault: Boolean);
+    procedure LoadGroup(vNodes:TsqlvNodes; vMemberName:string; Params: TmncParams; vSelectDefault: Boolean);
     procedure LoadMembers(vSchemaName:string; vNodes:TsqlvNodes);
   end;
 
@@ -36,7 +38,7 @@ type
   private
   public
     constructor Create; override;
-    procedure DoExecute(const MemberName: string; Params: TmncParams = nil); override;
+    procedure DoExecute(const Value: string; Params: TmncParams = nil); override;
   end;
 
   { TsqlvMembers }
@@ -47,7 +49,7 @@ type
     function GetCanExecute: Boolean; override;
   public
     constructor Create; override;
-    procedure DoExecute(const MemberName: string; Params: TmncParams = nil); override;
+    procedure DoExecute(const Value: string; Params: TmncParams = nil); override;
   end;
 
   { TsqlvTables }
@@ -61,7 +63,7 @@ type
   TsqlvTable = class(TsqlvGuiNode)
   public
     constructor Create; override;
-    procedure DoExecute(const MemberName: string; Params: TmncParams = nil); override;
+    procedure DoExecute(const Value: string; Params: TmncParams = nil); override;
   end;
 
   { TsqlvIndex }
@@ -69,7 +71,7 @@ type
   TsqlvIndex = class(TsqlvGuiNode)
   public
     constructor Create; override;
-    procedure DoExecute(const MemberName: string; Params: TmncParams = nil); override;
+    procedure DoExecute(const Value: string; Params: TmncParams = nil); override;
     procedure EnumHeader(Header: TStringList); override;
     procedure EnumSchema(var SchemaName:string; SchemaItems: TmncSchemaItems; const MemberName: string); override;
   end;
@@ -87,7 +89,7 @@ type
   TsqlvProcedure = class(TsqlvGuiNode)
   public
     constructor Create; override;
-    procedure DoExecute(const MemberName: string; Params: TmncParams = nil); override;
+    procedure DoExecute(const Value: string; Params: TmncParams = nil); override;
   end;
 
   { TsqlvViews }
@@ -103,7 +105,7 @@ type
   TsqlvView = class(TsqlvGuiNode)
   public
     constructor Create; override;
-    procedure DoExecute(const MemberName: string; Params: TmncParams = nil); override;
+    procedure DoExecute(const Value: string; Params: TmncParams = nil); override;
   end;
 
   { TsqlvSequences }
@@ -157,7 +159,7 @@ type
   TsqlvTrigger = class(TsqlvGuiNode)
   public
     constructor Create; override;
-    procedure DoExecute(const MemberName: string; Params: TmncParams = nil); override;
+    procedure DoExecute(const Value: string; Params: TmncParams = nil); override;
   end;
 
   { TsqlvIndices }
@@ -183,7 +185,7 @@ type
   TsqlvDropIndex = class(TsqlvNode)
   public
     constructor Create; override;
-    procedure DoExecute(const MemberName: string; Params: TmncParams = nil); override;
+    procedure DoExecute(const Value: string; Params: TmncParams = nil); override;
   end;
 
   { TsqlvTableFields }
@@ -195,12 +197,20 @@ type
     procedure EnumSchema(var SchemaName:string; SchemaItems: TmncSchemaItems; const MemberName: string); override;
   end;
 
+  { TsqlvDropTable }
+
+  TsqlvDropTable = class(TsqlvGuiNode)
+  public
+    constructor Create; override;
+    procedure DoExecute(const Value: string; Params: TmncParams = nil); override;
+  end;
+
   { TsqlvDropField }
 
   TsqlvDropField = class(TsqlvGuiNode)
   public
     constructor Create; override;
-    procedure DoExecute(const MemberName: string; Params: TmncParams = nil); override;
+    procedure DoExecute(const Value: string; Params: TmncParams = nil); override;
   end;
 
   { TsqlvNewField }
@@ -208,7 +218,7 @@ type
   TsqlvNewField = class(TsqlvGuiNode)
   public
     constructor Create; override;
-    procedure DoExecute(const MemberName: string; Params: TmncParams = nil); override;
+    procedure DoExecute(const Value: string; Params: TmncParams = nil); override;
   end;
 
   { TsqlvEmptyTable }
@@ -216,7 +226,7 @@ type
   TsqlvEmptyTable = class(TsqlvGuiNode)
   public
     constructor Create; override;
-    procedure DoExecute(const MemberName: string; Params: TmncParams = nil); override;
+    procedure DoExecute(const Value: string; Params: TmncParams = nil); override;
   end;
 
 implementation
@@ -236,10 +246,10 @@ begin
   ImageIndex := IMG_DATABASE;
 end;
 
-procedure TsqlvDatabase.DoExecute(const MemberName: string; Params: TmncParams);
+procedure TsqlvDatabase.DoExecute(const Value: string; Params: TmncParams);
 begin
   inherited;
-  EnumGroups('Database', MemberName, True);
+  EnumGroups('Database', Value, Params, True);
 end;
 
 { TsqlvTables }
@@ -431,10 +441,10 @@ begin
   inherited;
 end;
 
-procedure TsqlvMembers.DoExecute(const MemberName: string; Params: TmncParams);
+procedure TsqlvMembers.DoExecute(const Value: string; Params: TmncParams);
 begin
   inherited;
-  EnumMembers(MemberName);
+  EnumMembers(Value);
 end;
 
 function TsqlvMembers.GetCanExecute: Boolean;
@@ -454,7 +464,7 @@ begin
   ImageIndex := IMG_PROCEDURE;
 end;
 
-procedure TsqlvProcedure.DoExecute(const MemberName: string; Params: TmncParams);
+procedure TsqlvProcedure.DoExecute(const Value: string; Params: TmncParams);
 var
   aSchema: TmncSQLiteSchema;
   aStrings: TStringList;
@@ -487,7 +497,7 @@ begin
   ImageIndex := IMG_VIEW;
 end;
 
-procedure TsqlvView.DoExecute(const MemberName: string; Params: TmncParams);
+procedure TsqlvView.DoExecute(const Value: string; Params: TmncParams);
 var
   aSchema: TmncSQLiteSchema;
   aStrings: TStringList;
@@ -547,7 +557,7 @@ begin
   ImageIndex := IMG_TRIGGER;
 end;
 
-procedure TsqlvTrigger.DoExecute(const MemberName: string; Params: TmncParams);
+procedure TsqlvTrigger.DoExecute(const Value: string; Params: TmncParams);
 var
   aSchema: TmncSQLiteSchema;
   aStrings: TStringList;
@@ -558,7 +568,7 @@ begin
     aSchema := TmncSQLiteSchema.Create;
     try
       aSchema.Session := sqlvEngine.Session.DBSession;
-      aSchema.GetTriggerSource(aStrings, MemberName, [ekAlter]);
+      aSchema.GetTriggerSource(aStrings, Value, [ekAlter]);
     finally
       aSchema.Free;
     end;
@@ -613,7 +623,7 @@ begin
   ImageIndex := IMG_INDEX;
 end;
 
-procedure TsqlvDropIndex.DoExecute(const MemberName: string; Params: TmncParams);
+procedure TsqlvDropIndex.DoExecute(const Value: string; Params: TmncParams);
 begin
   inherited;
 
@@ -668,7 +678,7 @@ begin
   ImageIndex := IMG_FIELD;
 end;
 
-procedure TsqlvNewField.DoExecute(const MemberName: string; Params: TmncParams);
+procedure TsqlvNewField.DoExecute(const Value: string; Params: TmncParams);
 var
   aStrings: TStringList;
   aFieldName: string;
@@ -696,13 +706,13 @@ begin
   ImageIndex := IMG_COMMAND;
 end;
 
-procedure TsqlvEmptyTable.DoExecute(const MemberName: string; Params: TmncParams);
+procedure TsqlvEmptyTable.DoExecute(const Value: string; Params: TmncParams);
 var
   aStrings: TStringList;
 begin
   inherited;
   aStrings := TStringList.Create;
-  aStrings.Text := 'delete from ' + MemberName;
+  aStrings.Text := 'delete from ' + Value;
   LoadEditor(aStrings);
   aStrings.Free;
 end;
@@ -715,19 +725,19 @@ begin
   Group := 'Field';
   Name := 'DropField';
   Title := 'Drop Field';
-  Kind := sokFields;
+  Kind := sokField;
   Style := Style + [nsCommand];
   ImageIndex := IMG_FIELD;
 end;
 
-procedure TsqlvDropField.DoExecute(const MemberName: string; Params: TmncParams);
+procedure TsqlvDropField.DoExecute(const Value: string; Params: TmncParams);
 var
   aStrings: TStringList;
 begin
   inherited;
   aStrings := TStringList.Create;
   try
-    aStrings.Text := 'alter table ' + Params['Table'] + ' drop column ' + MemberName;
+    aStrings.Text := 'alter table ' + Params['Table'] + ' drop column ' + Value;
     LoadEditor(aStrings);
   finally
     aStrings.Free;
@@ -736,7 +746,7 @@ end;
 
 { TsqlvGuiNode }
 
-procedure TsqlvGuiNode.EnumGroups(vGroup, vMemberName: string; vSelectDefault: Boolean);
+procedure TsqlvGuiNode.EnumGroups(vGroup, vMemberName: string; Params: TmncParams; vSelectDefault: Boolean);
 var
   i: Integer;
   aNodes: TsqlvNodes;
@@ -744,7 +754,7 @@ begin
   aNodes := TsqlvNodes.Create;
   try
     sqlvEngine.Enum(vGroup, aNodes);
-    LoadGroup(aNodes, vMemberName, vSelectDefault);
+    LoadGroup(aNodes, vMemberName, Params, vSelectDefault);
   finally
     aNodes.Free;
   end;
@@ -795,17 +805,23 @@ end;
 
 procedure TsqlvGuiNode.LoadEditor(vStrings: TStringList);
 begin
+  LoadEditor(vStrings.Text);
+end;
+
+procedure TsqlvGuiNode.LoadEditor(S: string);
+begin
   with MainForm do
   begin
+    AddRecentSQL;
     SQLEdit.Lines.BeginUpdate;
-    SQLEdit.Lines.Text := vStrings.Text;
+    SQLEdit.Lines.Text := S;
     SQLEdit.Lines.EndUpdate;
     State := sqlsSQL;
     SQLEdit.SetFocus;
   end;
 end;
 
-procedure TsqlvGuiNode.LoadGroup(vNodes: TsqlvNodes; vMemberName:string; vSelectDefault: Boolean);
+procedure TsqlvGuiNode.LoadGroup(vNodes: TsqlvNodes; vMemberName:string; Params: TmncParams; vSelectDefault: Boolean);
 var
   i, c: Integer;
   d: Integer;
@@ -936,10 +952,10 @@ begin
   ImageIndex := IMG_TABLE;
 end;
 
-procedure TsqlvTable.DoExecute(const MemberName: string; Params: TmncParams);
+procedure TsqlvTable.DoExecute(const Value: string; Params: TmncParams);
 begin
   inherited;
-  EnumGroups(Name, MemberName, True);
+  EnumGroups(Name, Value, Params, True);
 end;
 
 { TsqlvIndex }
@@ -954,10 +970,10 @@ begin
   ImageIndex := IMG_INDEX;
 end;
 
-procedure TsqlvIndex.DoExecute(const MemberName: string; Params: TmncParams);
+procedure TsqlvIndex.DoExecute(const Value: string; Params: TmncParams);
 begin
   inherited;
-  EnumMembers(MemberName);
+  EnumMembers(Value);
 end;
 
 procedure TsqlvIndex.EnumHeader(Header: TStringList);
@@ -1011,11 +1027,32 @@ begin
   end;
 end;
 
+{ TsqlvDropTable }
+
+constructor TsqlvDropTable.Create;
+begin
+  inherited Create;
+  Group := 'Table';
+  Name := 'DropTable';
+  Title := 'Drop Table';
+  Kind := sokTable;
+  Style := Style + [nsCommand];
+  ImageIndex := IMG_TABLE;
+end;
+
+procedure TsqlvDropTable.DoExecute(const Value: string; Params: TmncParams);
+var
+  aStrings: TStringList;
+begin
+  inherited;
+  LoadEditor('drop table ' + Value);
+end;
+
 initialization
   sqlvEngine.RegisterViewer([TsqlvDatabase]);
-  sqlvEngine.RegisterViewer([TsqlvTables, TsqlvTable, TsqlvTableFields]);
+  sqlvEngine.RegisterViewer([TsqlvTables, TsqlvTable, TsqlvTableFields, TsqlvEmptyTable, TsqlvDropTable]);
   sqlvEngine.RegisterViewer([TsqlvIndices, TsqlvTableIndices, TsqlvIndex, TsqlvDropIndex]);
-  sqlvEngine.RegisterViewer([TsqlvEmptyTable, TsqlvDropField{, TsqlvNewField}]);
+  sqlvEngine.RegisterViewer([TsqlvDropField{, TsqlvNewField}]);
   sqlvEngine.RegisterViewer([TsqlvViews, TsqlvView]);
   sqlvEngine.RegisterViewer([TsqlvTriggers, TsqlvTrigger, TsqlvTableTriggers]);
   //sqlvEngine.RegisterViewer([TsqlvTypes, TsqlvExceptions, TsqlvFunctions]);

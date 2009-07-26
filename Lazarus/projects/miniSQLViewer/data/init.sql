@@ -1,3 +1,4 @@
+--This sample how to create database and use ^ terminator
 create table Categories
 (
   CatID integer  NOT NULL,
@@ -15,8 +16,8 @@ create table Groups
   GrpName varchar(200)  NOT NULL,
   constraint pkGroups Primary Key (GrpID)
 );
-
 ^
+
 CREATE UNIQUE INDEX IdxGrpName ON Groups (GrpName ASC)
 ^
 
@@ -27,6 +28,7 @@ create table Genres
   constraint pkGenres Primary Key (GnrID)
 );
 ^
+
 CREATE UNIQUE INDEX IdxGnrName ON Genres (GnrName ASC)
 ^
 
@@ -45,11 +47,13 @@ create table Plants
   constraint fkPlntCategory foreign key (PlntCategory)  REFERENCES Categories (CatID) ON UPDATE CASCADE ON DELETE SET DEFAULT,
   constraint fkPlntGroup foreign key (PlntGroup)  REFERENCES Groups (GrpID) ON UPDATE CASCADE ON DELETE SET DEFAULT
 );
-
 ^
+
 CREATE  INDEX IdxPlntGenre ON Plants (PlntGenre ASC)
 ^
+
 CREATE  INDEX IdxPlntCategory ON Plants (PlntCategory ASC)
 ^
+
 CREATE  INDEX IdxPlntGroup ON Plants (PlntGroup ASC)
 ^
