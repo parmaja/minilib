@@ -39,6 +39,8 @@ type
 
   TPO_State = (poNone, poComment, poMsgId, poMsgStr);
 
+  { TPO_Parser }
+
   TPO_Parser = class(TLangParser)
   private
     FState: TPO_State;
@@ -48,6 +50,7 @@ type
     procedure ParseLine(ALine: string); //if you like to parse line by line not use a Contents property
     procedure Parse(Strings: TStringList); override;
     procedure Generate(Strings: TStringList); override;
+    class function GetName: string; override;
     class function GetFileExtensions: string; override;
     class function GetTitle: string; override;
   end;
@@ -378,6 +381,11 @@ begin
   begin
     WriteItem(Contents[i]);
   end;
+end;
+
+class function TPO_Parser.GetName: string;
+begin
+  Result := 'GetTextPOFiles';
 end;
 
 class function TPO_Parser.GetFileExtensions: string;

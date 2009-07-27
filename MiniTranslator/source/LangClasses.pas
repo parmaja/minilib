@@ -7,9 +7,9 @@ unit LangClasses;
  * @author    Zaher Dirkey <zaher at parmaja dot com>
  *}
 
-{$IFDEF FPC}
-{$MODE delphi}
-{$ENDIF}
+{$ifdef FPC}
+{$mode objfpc}{$H+}
+{$endif}
 {$M+}
 
 {
@@ -48,35 +48,66 @@ type
 
   TLangEncoding = (lncNone, lncAnsi, lncUTF8);
 
+  TLangContents = class;
+
+  { TLangItem }
+
   TLangItem = class(TObject)
+  private
+    FID: string;
+    FText: string;
+    FContents: TLangContents;
+    FModified: Boolean;
+    FVisible: Boolean;
+    function GetDisplayID: string;
+    function GetDisplayText: string;
+    procedure SetDisplayID(AValue: string);
+    procedure SetDisplayText(AValue: string);
+    procedure SetID(const AValue: string);
+    procedure SetModified(const AValue: Boolean);
+    procedure SetText(const AValue: string);
   public
-    ID: string;
-    Text: string;
     AutoComment: string;
     Comment: string;
     Reference: string;
     Flags: string;
-//    Original: string; //i hate that :(
+    procedure Changed;
+    property Contents: TLangContents read FContents;
+    property ID: string read FID write SetID;
+    property Text: string read FText write SetText;
+    property Visible: Boolean read FVisible write FVisible;
+    property Modified: Boolean read FModified write SetModified;
+    property DisplayText: string read GetDisplayText write SetDisplayText;
+    property DisplayID: string read GetDisplayID write SetDisplayID;
   end;
+
+  { TLangContents }
 
   TLangContents = class(TObjectList)
   private
+    FEnabled: Boolean;
+    FModified: Boolean;
     FName: string;
     FSettings: TStringList;
     FRightToLeft: Boolean;
     FCharset: string;
     FEncoding: TLangEncoding;
+    FVisible: Boolean;
     function GetItem(Index: Integer): TLangItem;
     procedure SetItem(Index: Integer; const Value: TLangItem);
+    procedure SetModified(const AValue: Boolean);
   protected
     function DoCreateLangItem: TLangItem; virtual;
     procedure EncodeText(var Text: string); virtual;
+    procedure DecodeText(var Text: string); virtual;
   public
     constructor Create;
     destructor Destroy; override;
+    procedure Changed; virtual;
     property Name: string read FName write FName;
     function GetText(const ID: string; var Text: string): Boolean; overload;
     function GetText(const ID: string): string; overload;
+    function FindID(const ID: string): TLangItem; virtual;
     function Add(LangItem: TLangItem): Integer;
     function CreateLangItem: TLangItem;
     property Items[Index: Integer]: TLangItem read GetItem write SetItem; default;
@@ -84,6 +115,9 @@ type
     property Charset: string read FCharset write FCharset;
     property Encoding: TLangEncoding read FEncoding write FEncoding;
     property RightToLeft: Boolean read FRightToLeft write FRightToLeft;
+    property Visible: Boolean read FVisible write FVisible default True;
+    property Enabled: Boolean read FEnabled write FEnabled default True;
+    property Modified: Boolean read FModified write SetModified;
   end;
 
   TLanguageInfo = record
@@ -91,7 +125,7 @@ type
     LangName: string;
     LocalName: string;
     ShortName: string;
-    RightToLeft: Boolean;
+    IsRightToLeft: Boolean;
   end;
 
   ILanguageRead = interface(IInterface) 
@@ -106,11 +140,15 @@ type
 
   TLangParser = class;
 
+  { TLanguage }
+
   TLanguage = class(TObjectList)
   private
     FInfo: TLanguageInfo;
+    FModified: Boolean;
+    function GetContents(Index: string): TLangContents;
     function GetItem(Index: Integer): TLangContents;
-    procedure SetItem(Index: Integer; const Value: TLangContents);
+    procedure SetModified(const AValue: Boolean);
   protected
     function FindText(const ID: string; var Text: string): Boolean; virtual;
     function DoCreateContents: TLangContents; virtual;
@@ -122,13 +160,18 @@ type
     function Add(Contents: TLangContents): Integer;
     function GetText(const ID: string): string; overload;
     function GetText(const Section: string; const ID: string): string; overload;
+    function Find(Name:string): TLangContents;
+    function FindID(const ID: string): TLangItem; virtual; overload;
+    function FindID(ContentsName:string; const ID: string): TLangItem; virtual; overload;
+    property Modified: Boolean read FModified write SetModified;
     property Name: string read FInfo.LangName write FInfo.LangName;
     property LocalName: string read FInfo.LocalName write FInfo.LocalName;
     property ShortName: string read FInfo.ShortName write FInfo.ShortName;
-    property RightToLeft: Boolean read FInfo.RightToLeft write FInfo.RightToLeft;
+    property IsRightToLeft: Boolean read FInfo.IsRightToLeft write FInfo.IsRightToLeft;
     property ID: Cardinal read FInfo.LangID write FInfo.LangID;
     property Info: TLanguageInfo read FInfo write FInfo;
-    property Items[Index: Integer]: TLangContents read GetItem write SetItem; default;
+    property Items[Index: Integer]: TLangContents read GetItem; default;
+    property Contents[Index: string]: TLangContents read GetContents;
   end;
 
   TLanguageClass = class of TLanguage;
@@ -171,6 +214,8 @@ type
 
   TLanguagesClass = class of TLanguages;
 
+  { TLangParser }
+
   TLangParser = class(TObject)
   private
     FContents: TLangContents;
@@ -181,16 +226,22 @@ type
     constructor Create(AContents: TLangContents); overload;
     procedure Parse(Strings: TStringList); virtual; abstract;
     procedure Generate(Strings: TStringList); virtual; abstract;
+    class function GetName: string; virtual;
     class function GetFileExtensions: string; virtual;
     class function GetTitle: string; virtual;
+    class function IsMultiFiles: Boolean; virtual;
+    class function IsKeyAsOriginal: Boolean; virtual;
     property Contents: TLangContents read FContents write SetContents;
   end;
 
   TLangParserClass = class of TLangParser;
 
-  TLangNotifier = class(TObject)
+  { TLangOptions }
+
+  TLangOptions = class(TObject)
   private
     FNotifyObjects: TInterfaceList;
+    FParserClasses: TClassList;
   protected
     procedure NotifyObjects(const LanguageInfo: TLanguageInfo);
   public
@@ -198,15 +249,19 @@ type
     destructor Destroy; override;
     procedure AddNotify(AObject: ILanguageRead);
     procedure RemoveNotify(AObject: ILanguageRead);
+    procedure RegisterParserClass(ParserClass: TLangParserClass);
+    procedure RegisterLanguagesClass(LanguagesClass: TLanguagesClass);
   end;
 
 const
   sUTF8BOM: array[1..3] of char = (#$EF, #$BB, #$BF);
 
 function Languages: TLanguages;
-function LangNotifier: TLangNotifier;
-procedure InitLanguages(LanguagesClass:TLanguagesClass = nil);
+function LangOptions: TLangOptions;
+procedure InitLanguages(LanguagesClass: TLanguagesClass = nil);
 function LangFindText(const ID: string; var Value: string): Boolean;
+procedure ParseLanguageFile(FileName: string; Language: TLanguage; Parser: TLangParser = nil);
+procedure GenerateLanguageFile(FileName: string; Language: TLanguage; Parser: TLangParser = nil);
 
 var
   //default for Delphi or Lazarus
@@ -216,7 +271,7 @@ implementation
 
 var
   FLanguages: TLanguages = nil;
-  FLangNotifier: TLangNotifier = nil;
+  FLangOptions: TLangOptions = nil;
 
 function LangFindText(const ID: string; var Value: string): Boolean;
 begin
@@ -226,11 +281,11 @@ begin
     Result := False;
 end;
 
-function LangNotifier: TLangNotifier;
+function LangOptions: TLangOptions;
 begin
-  if FLangNotifier = nil then
-    FLangNotifier := TLangNotifier.Create;
-  Result := FLangNotifier;
+  if FLangOptions = nil then
+    FLangOptions := TLangOptions.Create;
+  Result := FLangOptions;
 end;
 
 function Languages: TLanguages;
@@ -286,6 +341,19 @@ end;
 function TLanguage.GetItem(Index: Integer): TLangContents;
 begin
   Result := inherited Items[Index] as TLangContents;
+end;
+
+procedure TLanguage.SetModified(const AValue: Boolean);
+begin
+  if FModified <> AValue then
+  begin
+    FModified :=AValue;
+  end;
+end;
+
+function TLanguage.GetContents(Index: string): TLangContents;
+begin
+  Result := Find(Index);
 end;
 
 function TLanguage.FindText(const ID: string; var Text: string): Boolean;
@@ -346,9 +414,42 @@ begin
     Result := ID;
 end;
 
-procedure TLanguage.SetItem(Index: Integer; const Value: TLangContents);
+function TLanguage.Find(Name: string): TLangContents;
+var
+  i: Integer;
 begin
-  inherited Items[Index] := Value;
+  Result := nil;
+  for i := 0 to Count - 1 do
+  begin
+    if SameText(Items[i].Name, Name) then
+    begin
+      Result := Items[i];
+      Break;
+    end;
+  end;
+end;
+
+function TLanguage.FindID(const ID: string): TLangItem;
+var
+  i: Integer;
+begin
+  Result := nil;
+  for i := 0 to Count - 1 do
+  begin
+    Result := Items[i].FindID(ID);
+    if Result <> nil then
+      Break;
+  end;
+end;
+
+function TLanguage.FindID(ContentsName: string; const ID: string): TLangItem;
+var
+  aContents: TLangContents;
+begin
+  Result := nil;
+  aContents := Find(ContentsName);
+  if aContents <> nil then
+    Result := aContents.FindID(ID);
 end;
 
 { TLanguages }
@@ -465,7 +566,7 @@ begin
   if FCurrentLanguage = nil then
     raise ELangException.Create('Language "' + Name + '" not found');
   if OldLanguage <> FCurrentLanguage then
-    LangNotifier.NotifyObjects(Current.Info);
+    LangOptions.NotifyObjects(Current.Info);
 end;
 
 procedure TLanguages.SetDefaultLanguage(const Name: string);
@@ -512,11 +613,14 @@ constructor TLangContents.Create;
 begin
   inherited Create;
   FSettings := TStringList.Create;
+  FVisible := True;
+  FEnabled := True;
 end;
 
 function TLangContents.CreateLangItem: TLangItem;
 begin
   Result := DoCreateLangItem;
+  Result.FContents := Self;
   Add(Result);
 end;
 
@@ -524,6 +628,10 @@ destructor TLangContents.Destroy;
 begin
   FSettings.Free;
   inherited;
+end;
+
+procedure TLangContents.Changed;
+begin
 end;
 
 function TLangContents.DoCreateLangItem: TLangItem;
@@ -552,6 +660,27 @@ begin
   end;
 end;
 
+procedure TLangContents.DecodeText(var Text: string);
+begin
+  if SystemEncoding <> Encoding then
+  begin
+    case Encoding of
+      lncAnsi:
+      begin
+        case SystemEncoding of
+          lncUTF8: Text := Utf8ToAnsi(Text);
+        end;
+      end;
+      lncUTF8:
+      begin
+        case SystemEncoding of
+          lncAnsi: Text := AnsiToUtf8(Text);
+        end;
+      end;
+    end;
+  end;
+end;
+
 function TLangContents.GetItem(Index: Integer): TLangItem;
 begin
   Result := inherited Items[Index] as TLangItem;
@@ -560,6 +689,21 @@ end;
 function TLangContents.GetText(const ID: string): string;
 begin
   GetText(ID, Result);
+end;
+
+function TLangContents.FindID(const ID: string): TLangItem;
+var
+  i: Integer;
+begin
+  Result := nil;
+  for i := 0 to Count -1 do
+  begin
+    if SameText(ID, Items[i].ID) then
+    begin
+      Result := Items[i];
+      break;
+    end
+  end;
 end;
 
 function TLangContents.GetText(const ID: string; var Text: string): Boolean;
@@ -572,8 +716,7 @@ begin
     if SameText(ID, Items[i].ID) then
     begin
       Result := True;
-      Text := Items[i].Text;
-      EncodeText(Text);
+      Text := Items[i].DisplayText;
       break;
     end
   end;
@@ -582,6 +725,15 @@ end;
 procedure TLangContents.SetItem(Index: Integer; const Value: TLangItem);
 begin
   inherited Items[Index] := Value;
+end;
+
+procedure TLangContents.SetModified(const AValue: Boolean);
+begin
+  if FModified <> AValue then
+  begin
+    FModified := AValue;
+    Changed;
+  end;
 end;
 
 constructor TLangParser.Create;
@@ -599,6 +751,16 @@ begin
   Result := '';
 end;
 
+class function TLangParser.IsMultiFiles: Boolean;
+begin
+  Result := True;
+end;
+
+class function TLangParser.IsKeyAsOriginal: Boolean;
+begin
+  Result := False;
+end;
+
 procedure TLangParser.SetContents(const Value: TLangContents);
 begin
   if FContents <> Value then
@@ -613,27 +775,34 @@ begin
   FContents := AContents;
 end;
 
-{ TLangNotifier }
+class function TLangParser.GetName: string;
+begin
+  Result := '';
+end;
 
-procedure TLangNotifier.AddNotify(AObject: ILanguageRead);
+{ TLangOptions }
+
+procedure TLangOptions.AddNotify(AObject: ILanguageRead);
 begin
   if not Supports(AObject, ILanguageRead) then
     raise ELangException.Create('Object must support of ILanguageRead');
   FNotifyObjects.Add(AObject);
 end;
 
-constructor TLangNotifier.Create;
+constructor TLangOptions.Create;
 begin
   FNotifyObjects := TInterfaceList.Create;
+  FParserClasses := TClassList.Create;
 end;
 
-destructor TLangNotifier.Destroy;
+destructor TLangOptions.Destroy;
 begin
   FreeAndNil(FNotifyObjects);
+  FreeAndNil(FParserClasses);
   inherited;
 end;
 
-procedure TLangNotifier.NotifyObjects(const LanguageInfo: TLanguageInfo);
+procedure TLangOptions.NotifyObjects(const LanguageInfo: TLanguageInfo);
 var
   i: Integer;
 begin
@@ -643,16 +812,130 @@ begin
   end;
 end;
 
-procedure TLangNotifier.RemoveNotify(AObject: ILanguageRead);
+procedure TLangOptions.RemoveNotify(AObject: ILanguageRead);
 begin
   FNotifyObjects.Remove(AObject);
 end;
 
+procedure TLangOptions.RegisterParserClass(ParserClass: TLangParserClass);
+begin
+
+end;
+
+procedure TLangOptions.RegisterLanguagesClass(LanguagesClass: TLanguagesClass);
+begin
+
+end;
+
+procedure ParseLanguageFile(FileName:string; Language: TLanguage; Parser: TLangParser);
+var
+  Contents: TLangContents;
+  Strings: TStringList;
+begin
+  Contents := Language.CreateContents;//this auto add the contents to Language
+  if Parser = nil then
+    Parser := Language.CreateParser;
+  if Parser = nil then
+    raise ELangException.Create('There is no parser for TLanguage');
+  Strings := TStringList.Create;
+  try
+    Parser.Contents := Contents;
+    Strings.LoadFromFile(FileName);
+    Parser.Parse(Strings);
+  finally
+    Strings.Free;
+    Parser.Free;
+  end;
+end;
+
+procedure GenerateLanguageFile(FileName: string; Language: TLanguage; Parser: TLangParser = nil);
+var
+  Contents: TLangContents;
+  Strings: TStringList;
+begin
+  Contents := Language.CreateContents;//this auto add the contents to Language
+  if Parser = nil then
+    Parser := Language.CreateParser;
+  if Parser = nil then
+    raise ELangException.Create('There is no parser for TLanguage');
+  Strings := TStringList.Create;
+  try
+    Parser.Generate(Strings);
+    Parser.Contents := Contents;
+    Strings.SaveToFile(FileName);
+  finally
+    Strings.Free;
+    Parser.Free;
+  end;
+end;
+
+{ TLangItem }
+
+procedure TLangItem.SetModified(const AValue: Boolean);
+begin
+  if FModified <> AValue then
+  begin
+    FModified := AValue;
+    Changed;
+  end;
+end;
+
+procedure TLangItem.SetText(const AValue: string);
+begin
+  FText := AValue;
+  Modified := True;
+end;
+
+function TLangItem.GetDisplayText: string;
+begin
+  if FContents = nil then
+    raise ELangException.Create('FContents = nil');
+  Result := Text;
+  FContents.EncodeText(Result);
+end;
+
+function TLangItem.GetDisplayID: string;
+begin
+  if FContents = nil then
+    raise ELangException.Create('FContents = nil');
+  Result := ID;
+  FContents.EncodeText(Result);
+end;
+
+procedure TLangItem.SetDisplayID(AValue: string);
+begin
+  if FContents = nil then
+    raise ELangException.Create('FContents = nil');
+  FContents.DecodeText(AValue);
+  ID := AValue;
+end;
+
+procedure TLangItem.SetDisplayText(AValue: string);
+begin
+  if FContents = nil then
+    raise ELangException.Create('FContents = nil');
+  FContents.DecodeText(AValue);
+  Text := AValue;
+end;
+
+procedure TLangItem.SetID(const AValue: string);
+begin
+  FID := AValue;
+  Modified := True;
+end;
+
+procedure TLangItem.Changed;
+begin
+  FModified := True;
+  if FContents <> nil then
+    FContents.Changed;
+end;
+
 initialization
   FLanguages := nil;
-  FLangNotifier := nil;
+  FLangOptions := nil;
 finalization
   FreeAndNil(FLanguages);
-  FreeAndNil(FLangNotifier);
+  FreeAndNil(FLangOptions);
 end.
 

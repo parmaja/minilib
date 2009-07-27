@@ -21,6 +21,7 @@ uses
 
 begin
   Application.Initialize;
+  Application.Title := 'SQLite viewer';
   Application.CreateForm(TMainForm, MainForm);
   Application.Run;
 end.

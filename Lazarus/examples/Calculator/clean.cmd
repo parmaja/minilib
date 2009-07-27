@@ -1,0 +1,1 @@
+erase /f /s /q *.~* *.ddp *.map *.o *.ppu *.bak *.compiled

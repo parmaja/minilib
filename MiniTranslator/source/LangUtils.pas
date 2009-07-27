@@ -6,7 +6,11 @@ unit LangUtils;
  *            See the file COPYING.MLGPL, included in this distribution,
  * @author    Zaher Dirkey <zaher at parmaja dot com>
  *}
- 
+
+{$ifdef FPC}
+{$mode fpcobj}{$H+}
+{$endif}
+
 interface
 
 uses
@@ -24,27 +28,6 @@ implementation
 
 uses
   IniFiles;
-  
-procedure ParseLanguage(Language: TLanguage; FileName:string);
-var
-  Parser: TLangParser;
-  Contents: TLangContents;
-  Strings: TStringList;
-begin
-  Contents := Language.CreateContents;//this auto add the contents to Language 
-  Parser := Language.CreateParser;
-  if Parser = nil then
-    raise ELangException.Create('There is no parser for TLanguage');
-  Strings := TStringList.Create;
-  try
-    Parser.Contents := Contents;
-    Strings.LoadFromFile(FileName);
-    Parser.Parse(Strings);
-  finally
-    Strings.Free;
-    Parser.Free;
-  end;
-end;
   
 procedure LoadLanguage(Language: TLanguage; const Path, Extension: String);
 var

@@ -1,0 +1,254 @@
+<?xml version="1.0"?>
+<CONFIG>
+  <ProjectOptions>
+    <PathDelim Value="\"/>
+    <Version Value="7"/>
+    <General>
+      <Flags>
+        <LRSInOutputDirectory Value="False"/>
+      </Flags>
+      <MainUnit Value="0"/>
+      <TargetFileExt Value=".exe"/>
+      <Icon Value="0"/>
+      <UseXPManifest Value="True"/>
+    </General>
+    <VersionInfo>
+      <ProjectVersion Value=""/>
+    </VersionInfo>
+    <PublishOptions>
+      <Version Value="2"/>
+      <IgnoreBinaries Value="False"/>
+      <IncludeFileFilter Value="*.(pas|pp|inc|lfm|lpr|lrs|lpi|lpk|sh|xml)"/>
+      <ExcludeFileFilter Value="*.(bak|ppu|ppw|o|so);*~;backup"/>
+    </PublishOptions>
+    <RunParams>
+      <local>
+        <FormatVersion Value="1"/>
+        <LaunchingApplication PathPlusParams="/usr/X11R6/bin/xterm -T 'Lazarus Run Output' -e $(LazarusDir)/tools/runwait.sh $(TargetCmdLine)"/>
+      </local>
+    </RunParams>
+    <RequiredPackages Count="1">
+      <Item1>
+        <PackageName Value="LCL"/>
+      </Item1>
+    </RequiredPackages>
+    <Units Count="16">
+      <Unit0>
+        <Filename Value="Calculator.lpr"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="Calculator"/>
+        <CursorPos X="1" Y="1"/>
+        <TopLine Value="1"/>
+        <UsageCount Value="32"/>
+      </Unit0>
+      <Unit1>
+        <Filename Value="Main.pas"/>
+        <ComponentName Value="CalcForm"/>
+        <IsPartOfProject Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+        <UnitName Value="Main"/>
+        <CursorPos X="1" Y="1"/>
+        <TopLine Value="1"/>
+        <UsageCount Value="32"/>
+      </Unit1>
+      <Unit2>
+        <Filename Value="FPCalculators.pas"/>
+        <UnitName Value="FPCalculators"/>
+        <CursorPos X="20" Y="34"/>
+        <TopLine Value="16"/>
+        <UsageCount Value="11"/>
+      </Unit2>
+      <Unit3>
+        <Filename Value="..\compile-wince.cmd"/>
+        <CursorPos X="19" Y="2"/>
+        <TopLine Value="1"/>
+        <UsageCount Value="11"/>
+        <SyntaxHighlighter Value="None"/>
+      </Unit3>
+      <Unit4>
+        <Filename Value="..\..\..\lib\minilib\lib\FPCalculators.pas"/>
+        <UnitName Value="FPCalculators"/>
+        <CursorPos X="7" Y="1"/>
+        <TopLine Value="1"/>
+        <UsageCount Value="12"/>
+        <Bookmarks Count="1">
+          <Item0 X="13" Y="279" ID="1"/>
+        </Bookmarks>
+      </Unit4>
+      <Unit5>
+        <Filename Value="..\..\..\..\..\programs\fpc\src\rtl\objpas\sysutils\sysstrh.inc"/>
+        <CursorPos X="1" Y="1"/>
+        <TopLine Value="1"/>
+        <UsageCount Value="12"/>
+      </Unit5>
+      <Unit6>
+        <Filename Value="..\..\..\..\..\programs\fpc\src\rtl\objpas\sysutils\sysstr.inc"/>
+        <CursorPos X="1" Y="1"/>
+        <TopLine Value="1"/>
+        <UsageCount Value="12"/>
+      </Unit6>
+      <Unit7>
+        <Filename Value="..\..\..\..\..\programs\fpc\src\rtl\objpas\sysutils\sysinth.inc"/>
+        <CursorPos X="1" Y="1"/>
+        <TopLine Value="1"/>
+        <UsageCount Value="12"/>
+      </Unit7>
+      <Unit8>
+        <Filename Value="..\..\..\..\..\programs\fpc\src\rtl\objpas\strutils.pp"/>
+        <UnitName Value="strutils"/>
+        <CursorPos X="1" Y="12"/>
+        <TopLine Value="1"/>
+        <UsageCount Value="12"/>
+      </Unit8>
+      <Unit9>
+        <Filename Value="Main.lfm"/>
+        <CursorPos X="4" Y="359"/>
+        <TopLine Value="317"/>
+        <UsageCount Value="10"/>
+        <SyntaxHighlighter Value="LFM"/>
+      </Unit9>
+      <Unit10>
+        <Filename Value="..\..\..\lib\minilib\lib\calculators.pas"/>
+        <UnitName Value="calculators"/>
+        <CursorPos X="22" Y="45"/>
+        <TopLine Value="18"/>
+        <UsageCount Value="11"/>
+      </Unit10>
+      <Unit11>
+        <Filename Value="V:\dev\fpc\ide\fpcalc.pas"/>
+        <UnitName Value="FPCalc"/>
+        <CursorPos X="1" Y="1"/>
+        <TopLine Value="1"/>
+        <UsageCount Value="10"/>
+      </Unit11>
+      <Unit12>
+        <Filename Value="V:\dev\fpc\rtl\COPYING.FPC"/>
+        <CursorPos X="1" Y="1"/>
+        <TopLine Value="1"/>
+        <UsageCount Value="10"/>
+        <SyntaxHighlighter Value="None"/>
+      </Unit12>
+      <Unit13>
+        <Filename Value="..\extra.cfg"/>
+        <CursorPos X="5" Y="13"/>
+        <TopLine Value="1"/>
+        <UsageCount Value="10"/>
+        <SyntaxHighlighter Value="None"/>
+      </Unit13>
+      <Unit14>
+        <Filename Value="..\compile-win32.cmd"/>
+        <CursorPos X="1" Y="1"/>
+        <TopLine Value="1"/>
+        <UsageCount Value="10"/>
+        <SyntaxHighlighter Value="None"/>
+      </Unit14>
+      <Unit15>
+        <Filename Value="..\lib\calculators.pas"/>
+        <UnitName Value="calculators"/>
+        <CursorPos X="1" Y="1"/>
+        <TopLine Value="1"/>
+        <UsageCount Value="10"/>
+      </Unit15>
+    </Units>
+    <JumpHistory Count="0" HistoryIndex="-1"/>
+  </ProjectOptions>
+  <CompilerOptions>
+    <Version Value="8"/>
+    <PathDelim Value="\"/>
+    <Target>
+      <Filename Value="..\bin\Calculator.exe"/>
+    </Target>
+    <SearchPaths>
+      <OtherUnitFiles Value="..\lib\"/>
+    </SearchPaths>
+    <Linking>
+      <Options>
+        <Win32>
+          <GraphicApplication Value="True"/>
+        </Win32>
+      </Options>
+    </Linking>
+    <Other>
+      <ConfigFile>
+        <ConfigFilePath Value="..\extra.cfg"/>
+      </ConfigFile>
+      <CompilerPath Value="$(CompPath)"/>
+    </Other>
+  </CompilerOptions>
+  <Debugging>
+    <BreakPoints Count="16">
+      <Item1>
+        <Source Value="..\..\..\..\..\work\delphi\jobs\tacbord_sql\source\mpos\wince\lazarus\fpc\2.0.4\source\fcl\inc\inifiles.pp"/>
+        <Line Value="434"/>
+      </Item1>
+      <Item2>
+        <Source Value="C:\pascal\fpgui\gfx\gdi\fpgfxpackage.pas"/>
+        <Line Value="3"/>
+      </Item2>
+      <Item3>
+        <Source Value="C:\lazarus\fpc\2.1.3\source\packages\fcl-db\src\db.pas"/>
+        <Line Value="1944"/>
+      </Item3>
+      <Item4>
+        <Source Value="C:\lazarus\fpc\2.1.5\source\rtl\objpas\classes\compon.inc"/>
+        <Line Value="215"/>
+      </Item4>
+      <Item5>
+        <Source Value="..\..\..\..\..\work\delphi\jobs\tacbord_sql\source\mpos\pda\source\OptionsForms.lfm"/>
+        <Line Value="17"/>
+      </Item5>
+      <Item6>
+        <Source Value="..\..\..\..\..\work\delphi\jobs\tacbord_sql\source\mpos\pda\lib\mposSessions.pas"/>
+        <Line Value="736"/>
+      </Item6>
+      <Item7>
+        <Source Value="C:\lazarus\fpc\2.1.5\src\packages\fcl-db\src\sqlite\sqlite3ds.pas"/>
+        <Line Value="305"/>
+      </Item7>
+      <Item8>
+        <Source Value="V:\programs\lazarus\fpc\src\packages\fcl-base\src\inc\blowfish.pp"/>
+        <Line Value="177"/>
+      </Item8>
+      <Item9>
+        <Source Value="V:\programs\lazarus\fpc\src\packages\fcl-db\src\sqldb\sqlite\sqlite3conn.pp"/>
+        <Line Value="225"/>
+      </Item9>
+      <Item10>
+        <Source Value="..\..\..\..\..\work\delphi\jobs\tacbord_sql\source\mpos\lib\mposFBEngine.pas"/>
+        <Line Value="122"/>
+      </Item10>
+      <Item11>
+        <Source Value="..\..\..\..\..\work\delphi\jobs\tacbord_sql\source\mpos\lib\mposFBEngine.pas"/>
+        <Line Value="116"/>
+      </Item11>
+      <Item12>
+        <Source Value="..\..\..\..\..\work\delphi\jobs\tacbord_sql\source\mpos\lib\mposFBEngine.pas"/>
+        <Line Value="208"/>
+      </Item12>
+      <Item13>
+        <Source Value="..\..\..\..\..\work\delphi\jobs\tacbord_sql\source\mpos\lib\mposSessions.pas"/>
+        <Line Value="2257"/>
+      </Item13>
+      <Item14>
+        <Source Value="..\..\..\..\..\work\delphi\jobs\tacbord_sql\source\mpos\lib\mposProcesses.pas"/>
+        <Line Value="748"/>
+      </Item14>
+      <Item15>
+        <Source Value="..\..\..\..\..\work\delphi\jobs\tacbord_sql\source\mpos\lib\mposProcesses.pas"/>
+        <Line Value="961"/>
+      </Item15>
+      <Item16>
+        <Source Value="..\..\Unicodes\source\ucputils.pas"/>
+        <Line Value="45"/>
+      </Item16>
+    </BreakPoints>
+    <Exceptions Count="2">
+      <Item1>
+        <Name Value="ECodetoolError"/>
+      </Item1>
+      <Item2>
+        <Name Value="EFOpenError"/>
+      </Item2>
+    </Exceptions>
+  </Debugging>
+</CONFIG>
