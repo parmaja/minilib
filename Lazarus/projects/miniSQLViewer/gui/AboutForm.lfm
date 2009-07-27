@@ -1,0 +1,104 @@
+object AboutForm: TAboutForm
+  Left = 401
+  Height = 280
+  Top = 150
+  Width = 254
+  Caption = 'About Mini SQL Viewer'
+  ClientHeight = 280
+  ClientWidth = 254
+  OnCreate = FormCreate
+  ParentBiDiMode = False
+  LCLVersion = '0.9.27'
+  object Label2: TLabel
+    Left = 6
+    Height = 14
+    Top = 164
+    Width = 48
+    Anchors = [akLeft, akBottom]
+    Caption = 'Thanks to'
+    ParentColor = False
+  end
+  object Label3: TLabel
+    Left = 9
+    Height = 14
+    Top = 181
+    Width = 156
+    Anchors = [akLeft, akBottom]
+    Caption = 'FPC team (www.freepascal.org)'
+    ParentColor = False
+  end
+  object Label4: TLabel
+    Left = 9
+    Height = 14
+    Top = 197
+    Width = 186
+    Anchors = [akLeft, akBottom]
+    Caption = 'Lazarus Team (lazarus.freepascal.org)'
+    ParentColor = False
+  end
+  object Label5: TLabel
+    Left = 6
+    Height = 14
+    Top = 215
+    Width = 112
+    Anchors = [akLeft, akBottom]
+    Caption = 'Writen by Zaher Dirkey'
+    ParentColor = False
+  end
+  object Label6: TLabel
+    Left = 14
+    Height = 14
+    Top = 232
+    Width = 100
+    Anchors = [akLeft, akBottom]
+    Caption = 'zaher@parmaja.com'
+    ParentColor = False
+  end
+  object VersionLbl: TLabel
+    Left = 9
+    Height = 14
+    Top = 5
+    Width = 36
+    Caption = 'Version'
+    ParentColor = False
+  end
+  object VersionLbl1: TLabel
+    Left = 6
+    Height = 14
+    Top = 144
+    Width = 182
+    Anchors = [akLeft, akBottom]
+    Caption = 'www.sourceforge.net/projects/minilib'
+    Font.Color = clBlue
+    ParentColor = False
+    ParentFont = False
+  end
+  object CloseBtn: TButton
+    Left = 4
+    Height = 22
+    Top = 255
+    Width = 75
+    Anchors = [akLeft, akBottom]
+    Caption = 'Close'
+    ModalResult = 1
+    TabOrder = 0
+  end
+  object Memo1: TMemo
+    Left = 4
+    Height = 115
+    Top = 27
+    Width = 246
+    Anchors = [akTop, akLeft, akRight, akBottom]
+    Lines.Strings = (
+      'Mini SQL Viewer (sqlite3 viewer)'
+      ''
+      ' This program is distributed in the hope that it '
+      'will be useful, but WITHOUT ANY WARRANTY; '
+      'without even the implied warranty of '
+      'MERCHANTABILITY or FITNESS FOR A '
+      'PARTICULAR PURPOSE.'
+    )
+    ReadOnly = True
+    TabOrder = 1
+  end
+end
