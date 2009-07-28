@@ -1,0 +1,31 @@
+{ This is an automatically generated lazarus resource file }
+
+LazarusResources.Add('TAboutForm','FORMDATA',[
+  'TPF0'#10'TAboutForm'#9'AboutForm'#4'Left'#3#215#0#6'Height'#3#199#0#3'Top'#3
+  +#201#0#5'Width'#3'O'#1#11'BorderStyle'#7#8'bsDialog'#7'Caption'#6#5'About'#12
+  +'ClientHeight'#3#199#0#11'ClientWidth'#3'O'#1#11'Font.Height'#2#245#9'Font.N'
+  +'ame'#6#13'MS Sans Serif'#7'OnClose'#7#9'FormClose'#8'Position'#7#16'poMainF'
+  +'ormCenter'#10'LCLVersion'#6#6'0.9.27'#0#6'TLabel'#6'Label1'#4'Left'#2'3'#6
+  +'Height'#2#14#3'Top'#2#16#5'Width'#2'B'#7'Caption'#6#14'miniTranslator'#11'P'
+  +'arentColor'#8#0#0#6'TImage'#6'Image1'#4'Left'#2#12#6'Height'#2' '#3'Top'#2
+  +#10#5'Width'#2' '#8'AutoSize'#9#0#0#6'TLabel'#6'Label3'#4'Left'#2#14#6'Heigh'
+  +'t'#2#14#3'Top'#2'.'#5'Width'#3#133#0#7'Caption'#6#28'miniTranslator for lan'
+  +'guages'#11'ParentColor'#8#0#0#6'TLabel'#6'Label4'#4'Left'#2'F'#6'Height'#2
+  +#14#3'Top'#2'B'#5'Width'#2'w'#7'Caption'#6#22'http://www.parmaja.com'#10'Fon'
+  +'t.Color'#7#6'clBlue'#11'Font.Height'#2#245#9'Font.Name'#6#13'MS Sans Serif'
+  +#11'ParentColor'#8#10'ParentFont'#8#0#0#6'TLabel'#6'Label5'#4'Left'#2''#6'H'
+  +'eight'#2#14#3'Top'#2#16#5'Width'#2#25#7'Caption'#6#5'1.5.1'#11'ParentColor'
+  +#8#0#0#6'TLabel'#6'Label6'#4'Left'#3#205#0#6'Height'#2#14#3'Top'#3#178#0#5'W'
+  +'idth'#2'q'#7'Anchors'#11#6'akLeft'#8'akBottom'#0#7'Caption'#6#23'Writen by:'
+  +' Zaher Dirkey'#11'ParentColor'#8#0#0#6'TLabel'#6'Label8'#4'Left'#2#12#6'Hei'
+  +'ght'#2#14#3'Top'#2'B'#5'Width'#2'4'#7'Caption'#6#12'project site'#11'Parent'
+  +'Color'#8#0#0#7'TButton'#7'Button1'#4'Left'#2#7#6'Height'#2#21#3'Top'#3#174#0
+  +#5'Width'#2'K'#7'Anchors'#11#6'akLeft'#8'akBottom'#0#7'Caption'#6#5'Close'#11
+  +'ModalResult'#2#1#8'TabOrder'#2#0#0#0#5'TMemo'#5'Memo1'#4'Left'#2#5#6'Height'
+  +#2'V'#3'Top'#2'U'#5'Width'#3'F'#1#7'Anchors'#11#5'akTop'#6'akLeft'#7'akRight'
+  +#8'akBottom'#0#13'Lines.Strings'#1#6'@miniTranslator is free software; you c'
+  +'an redistribute it and/or '#6'<modify it under the terms of the GNU General'
+  +' Public License '#6#3'as '#6'@ published by the Free Software Foundation; e'
+  +'ither version 2 of '#6'4the  License, or (at your option) any later version'
+  +'.'#0#8'ReadOnly'#9#10'ScrollBars'#7#10'ssVertical'#8'TabOrder'#2#1#0#0#0
+]);

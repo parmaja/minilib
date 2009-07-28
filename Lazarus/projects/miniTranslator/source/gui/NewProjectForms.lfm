@@ -1,0 +1,92 @@
+object NewProjectForm: TNewProjectForm
+  Left = 231
+  Height = 165
+  Top = 162
+  Width = 349
+  BorderStyle = bsDialog
+  Caption = 'Trasnlator Class'
+  ClientHeight = 165
+  ClientWidth = 349
+  Font.Height = -11
+  Font.Name = 'MS Sans Serif'
+  OnCreate = FormCreate
+  Position = poMainFormCenter
+  LCLVersion = '0.9.27'
+  object Label5: TLabel
+    Left = 6
+    Height = 14
+    Top = 32
+    Width = 25
+    Caption = 'Type'
+    ParentColor = False
+  end
+  object Label6: TLabel
+    Left = 6
+    Height = 14
+    Top = 56
+    Width = 29
+    Caption = 'Name'
+    ParentColor = False
+  end
+  object Label1: TLabel
+    Left = 8
+    Height = 14
+    Top = 6
+    Width = 141
+    Caption = 'Choose translator project type'
+    ParentColor = False
+  end
+  object Label2: TLabel
+    Left = 6
+    Height = 14
+    Top = 78
+    Width = 29
+    Caption = 'Notes'
+    ParentColor = False
+  end
+  object Button3: TButton
+    Left = 4
+    Height = 22
+    Top = 140
+    Width = 75
+    Anchors = [akLeft, akBottom]
+    Caption = 'OK'
+    Default = True
+    ModalResult = 1
+    TabOrder = 0
+  end
+  object Button4: TButton
+    Left = 81
+    Height = 22
+    Top = 140
+    Width = 75
+    Anchors = [akLeft, akBottom]
+    Cancel = True
+    Caption = 'Cancel'
+    ModalResult = 2
+    TabOrder = 1
+  end
+  object IDCbo: TComboBox
+    Left = 47
+    Height = 21
+    Top = 28
+    Width = 296
+    ItemHeight = 13
+    Style = csDropDownList
+    TabOrder = 2
+  end
+  object NameEdit: TEdit
+    Left = 47
+    Height = 23
+    Top = 52
+    Width = 185
+    TabOrder = 3
+  end
+  object NotesEdit: TMemo
+    Left = 47
+    Height = 57
+    Top = 78
+    Width = 185
+    TabOrder = 4
+  end
+end

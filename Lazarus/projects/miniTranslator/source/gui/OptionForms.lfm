@@ -1,0 +1,134 @@
+object OptionsForm: TOptionsForm
+  Left = 285
+  Height = 185
+  Top = 244
+  Width = 493
+  BorderStyle = bsDialog
+  Caption = 'Options'
+  ClientHeight = 185
+  ClientWidth = 493
+  Font.Height = -11
+  Font.Name = 'MS Sans Serif'
+  Position = poMainFormCenter
+  LCLVersion = '0.9.27'
+  object LocalNameLbl: TLabel
+    Left = 6
+    Height = 14
+    Top = 59
+    Width = 49
+    Caption = 'Language'
+    ParentColor = False
+  end
+  object OriginalNameLbl: TLabel
+    Left = 6
+    Height = 14
+    Top = 82
+    Width = 87
+    Caption = 'Original Language'
+    ParentColor = False
+  end
+  object Label6: TLabel
+    Left = 6
+    Height = 14
+    Top = 35
+    Width = 29
+    Caption = 'Name'
+    ParentColor = False
+  end
+  object Label2: TLabel
+    Left = 6
+    Height = 14
+    Top = 10
+    Width = 25
+    Caption = 'Type'
+    ParentColor = False
+  end
+  object NotesLbl: TLabel
+    Left = 6
+    Height = 14
+    Top = 107
+    Width = 29
+    Caption = 'Notes'
+    ParentColor = False
+  end
+  object Button3: TButton
+    Left = 4
+    Height = 22
+    Top = 160
+    Width = 75
+    Anchors = [akLeft, akBottom]
+    Caption = 'OK'
+    Default = True
+    ModalResult = 1
+    TabOrder = 0
+  end
+  object Button4: TButton
+    Left = 81
+    Height = 22
+    Top = 160
+    Width = 75
+    Anchors = [akLeft, akBottom]
+    Cancel = True
+    Caption = 'Cancel'
+    ModalResult = 2
+    TabOrder = 1
+  end
+  object LocalNameEdit: TEdit
+    Left = 96
+    Height = 23
+    Top = 56
+    Width = 310
+    TabOrder = 2
+  end
+  object OriginalNameBtn: TButton
+    Left = 411
+    Height = 21
+    Top = 78
+    Width = 74
+    Caption = 'Select'
+    OnClick = OriginalNameBtnClick
+    TabOrder = 3
+  end
+  object OriginalNameEdit: TEdit
+    Left = 96
+    Height = 23
+    Top = 81
+    Width = 310
+    TabOrder = 4
+  end
+  object LocalNameBtn: TButton
+    Left = 411
+    Height = 21
+    Top = 53
+    Width = 74
+    Caption = 'Select'
+    OnClick = LocalNameBtnClick
+    TabOrder = 5
+  end
+  object NameEdit: TEdit
+    Left = 96
+    Height = 23
+    Top = 31
+    Width = 160
+    TabOrder = 6
+  end
+  object ProjectTypeEdit: TEdit
+    Left = 96
+    Height = 23
+    Top = 5
+    Width = 311
+    Color = clBtnFace
+    TabOrder = 7
+  end
+  object NotesEdit: TMemo
+    Left = 96
+    Height = 48
+    Top = 106
+    Width = 310
+    TabOrder = 8
+  end
+  object OpenDialog: TOpenDialog
+    left = 306
+    top = 33
+  end
+end

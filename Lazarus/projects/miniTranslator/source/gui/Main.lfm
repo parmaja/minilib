@@ -1,0 +1,556 @@
+object MainForm: TMainForm
+  Left = 355
+  Height = 359
+  Top = 132
+  Width = 621
+  ActiveControl = LocalValueEdit
+  Caption = 'Mini Translator'
+  ClientHeight = 339
+  ClientWidth = 621
+  Font.Height = -11
+  Font.Name = 'MS Sans Serif'
+  KeyPreview = True
+  Menu = MainMenu
+  OnActivate = FormActivate
+  OnClose = FormClose
+  OnCloseQuery = FormCloseQuery
+  OnCreate = FormCreate
+  LCLVersion = '0.9.27'
+  object LeftSplitter: TSplitter
+    Left = 295
+    Height = 235
+    Top = 104
+    Width = 4
+  end
+  object UpSplitter: TSplitter
+    Cursor = crVSplit
+    Left = 0
+    Height = 4
+    Top = 100
+    Width = 621
+    Align = alTop
+    ResizeAnchor = akTop
+  end
+  object Panel2: TPanel
+    Left = 299
+    Height = 235
+    Top = 104
+    Width = 322
+    Align = alClient
+    BevelOuter = bvNone
+    ClientHeight = 235
+    ClientWidth = 322
+    TabOrder = 0
+    object Splitter1: TSplitter
+      Cursor = crVSplit
+      Left = 0
+      Height = 4
+      Top = 117
+      Width = 322
+      Align = alTop
+      ResizeAnchor = akTop
+    end
+    object OriginalPanel: TPanel
+      Left = 0
+      Height = 117
+      Top = 0
+      Width = 322
+      Align = alTop
+      BevelOuter = bvNone
+      ClientHeight = 117
+      ClientWidth = 322
+      TabOrder = 1
+      object Label5: TLabel
+        Left = 6
+        Height = 14
+        Top = 20
+        Width = 56
+        Caption = 'Original text'
+        ParentColor = False
+      end
+      object Label9: TLabel
+        Left = 6
+        Height = 14
+        Top = 3
+        Width = 12
+        Caption = 'ID'
+        ParentColor = False
+      end
+      object OriginalValueEdit: TMemo
+        Left = 0
+        Height = 79
+        Top = 37
+        Width = 318
+        Anchors = [akTop, akLeft, akRight, akBottom]
+        ParentBidiMode = False
+        ReadOnly = True
+        ScrollBars = ssBoth
+        TabOrder = 0
+      end
+      object KeyLbl: TEdit
+        Left = 64
+        Height = 17
+        Top = 1
+        Width = 254
+        Anchors = [akTop, akLeft, akRight]
+        AutoSize = False
+        BorderStyle = bsNone
+        Color = clGray
+        Font.Color = clWhite
+        Font.Height = -11
+        Font.Name = 'MS Sans Serif'
+        ParentFont = False
+        ReadOnly = True
+        TabStop = False
+        TabOrder = 1
+      end
+    end
+    object LocalPanel: TPanel
+      Left = 0
+      Height = 114
+      Top = 121
+      Width = 322
+      Align = alClient
+      BevelOuter = bvNone
+      ClientHeight = 114
+      ClientWidth = 322
+      TabOrder = 0
+      object Label6: TLabel
+        Left = 5
+        Height = 14
+        Top = 21
+        Width = 47
+        Caption = 'Local text'
+        ParentColor = False
+      end
+      object Label8: TLabel
+        Left = 5
+        Height = 14
+        Top = 3
+        Width = 45
+        Caption = 'Comment'
+        ParentColor = False
+      end
+      object LocalValueEdit: TMemo
+        Left = 1
+        Height = 73
+        Top = 38
+        Width = 317
+        Anchors = [akTop, akLeft, akRight, akBottom]
+        OnChange = LocalValueEditChange
+        ParentBidiMode = False
+        ScrollBars = ssBoth
+        TabOrder = 0
+      end
+      object CommentEdit: TEdit
+        Left = 64
+        Height = 17
+        Top = 1
+        Width = 254
+        Anchors = [akTop, akLeft, akRight]
+        AutoSize = False
+        BorderStyle = bsNone
+        Color = clCream
+        ReadOnly = True
+        TabStop = False
+        TabOrder = 1
+      end
+    end
+  end
+  object LeftLayoutPanel: TPanel
+    Left = 0
+    Height = 235
+    Top = 104
+    Width = 295
+    Align = alLeft
+    BevelOuter = bvNone
+    ClientHeight = 235
+    ClientWidth = 295
+    TabOrder = 1
+    object Splitter2: TSplitter
+      Left = 150
+      Height = 235
+      Top = 0
+      Width = 4
+    end
+    object Panel3: TPanel
+      Left = 0
+      Height = 235
+      Top = 0
+      Width = 150
+      Align = alLeft
+      BevelOuter = bvNone
+      ClientHeight = 235
+      ClientWidth = 150
+      TabOrder = 0
+      object Label2: TLabel
+        Left = 5
+        Height = 14
+        Top = 3
+        Width = 43
+        Caption = 'Contents'
+        ParentColor = False
+      end
+      object SectionList: TListBox
+        Left = 4
+        Height = 211
+        Top = 21
+        Width = 145
+        Anchors = [akTop, akLeft, akRight, akBottom]
+        ItemHeight = 17
+        OnClick = SectionListClick
+        Style = lbOwnerDrawFixed
+        TabOrder = 0
+      end
+    end
+    object Panel4: TPanel
+      Left = 154
+      Height = 235
+      Top = 0
+      Width = 141
+      Align = alClient
+      BevelOuter = bvNone
+      ClientHeight = 235
+      ClientWidth = 141
+      TabOrder = 1
+      object Label3: TLabel
+        Left = 5
+        Height = 14
+        Top = 3
+        Width = 19
+        Caption = 'Key'
+        ParentColor = False
+      end
+      object IdentList: TListBox
+        Left = 0
+        Height = 210
+        Top = 22
+        Width = 139
+        Anchors = [akTop, akLeft, akRight, akBottom]
+        ItemHeight = 17
+        OnClick = IdentListClick
+        Style = lbOwnerDrawFixed
+        TabOrder = 0
+      end
+    end
+  end
+  object TopLayoutPanel: TPanel
+    Left = 0
+    Height = 74
+    Top = 26
+    Width = 621
+    Align = alTop
+    BevelOuter = bvNone
+    ClientHeight = 74
+    ClientWidth = 621
+    TabOrder = 2
+    object Label1: TLabel
+      Left = 7
+      Height = 14
+      Top = 1
+      Width = 61
+      Caption = 'Ident/MsgID'
+      ParentColor = False
+    end
+    object AllIdentList: TListBox
+      Left = 4
+      Height = 57
+      Top = 17
+      Width = 614
+      Anchors = [akTop, akLeft, akRight, akBottom]
+      ItemHeight = 17
+      OnClick = AllIdentListClick
+      Style = lbOwnerDrawFixed
+      TabOrder = 0
+    end
+  end
+  object Panel1: TPanel
+    Left = 0
+    Height = 26
+    Top = 0
+    Width = 621
+    Align = alTop
+    BevelOuter = bvNone
+    ClientHeight = 26
+    ClientWidth = 621
+    TabOrder = 4
+    object Label4: TLabel
+      Left = 17
+      Height = 14
+      Top = 5
+      Width = 21
+      Caption = 'Find'
+      ParentColor = False
+    end
+    object Label7: TLabel
+      Left = 332
+      Height = 14
+      Top = 5
+      Width = 9
+      Caption = 'in'
+      ParentColor = False
+    end
+    object FindEdit: TEdit
+      Left = 51
+      Height = 21
+      Top = 2
+      Width = 250
+      AutoSize = False
+      OnKeyPress = FindEditKeyPress
+      TabOrder = 0
+    end
+    object Button1: TButton
+      Left = 304
+      Height = 21
+      Top = 2
+      Width = 24
+      Caption = 'Go'
+      OnClick = Button1Click
+      TabOrder = 1
+    end
+    object FindKindCbo: TComboBox
+      Left = 347
+      Height = 21
+      Top = 2
+      Width = 145
+      AutoSize = False
+      ItemHeight = 13
+      ItemIndex = 0
+      Items.Strings = (
+        'Local language'
+        'Original language'
+      )
+      OnClick = FindKindCboClick
+      Style = csDropDownList
+      TabOrder = 2
+      Text = 'Local language'
+    end
+  end
+  object MainMenu: TMainMenu
+    left = 439
+    top = 192
+    object FileMnu: TMenuItem
+      Caption = 'File'
+      object NewMnu: TMenuItem
+        Caption = 'New'
+        OnClick = NewMnuClick
+      end
+      object OpenMnu: TMenuItem
+        Caption = 'Open'
+        OnClick = OpenMnuClick
+      end
+      object ReopenMnu: TMenuItem
+        Caption = '&Reopen'
+      end
+      object SaveMnu: TMenuItem
+        Caption = 'Save'
+        ShortCut = 16467
+        OnClick = SaveMnuClick
+      end
+      object SaveAsMnu: TMenuItem
+        Caption = 'Save As'
+      end
+      object SaveAllMnu: TMenuItem
+        Caption = 'Save All'
+        OnClick = SaveAllMnuClick
+      end
+      object N8: TMenuItem
+        Caption = '-'
+      end
+      object UpgradeMnu: TMenuItem
+        Caption = 'Upgrade'
+        OnClick = UpgradeMnuClick
+      end
+      object MergeMnu: TMenuItem
+        Caption = 'Merge'
+      end
+      object ExportMnu: TMenuItem
+        Caption = 'Export'
+      end
+      object N7: TMenuItem
+        Caption = '-'
+      end
+      object Close1: TMenuItem
+        Caption = 'Close'
+        OnClick = Close1Click
+      end
+      object N1: TMenuItem
+        Caption = '-'
+      end
+      object ExitMnu: TMenuItem
+        Caption = 'Exit'
+        OnClick = ExitMnuClick
+      end
+    end
+    object EditMnu: TMenuItem
+      Caption = 'Edit'
+      object Add1: TMenuItem
+        Caption = 'Add'
+      end
+      object Delete1: TMenuItem
+        Caption = 'Delete'
+      end
+      object N4: TMenuItem
+        Caption = '-'
+      end
+      object OptionsMnu: TMenuItem
+        Caption = 'Options'
+        OnClick = OptionsMnuClick
+      end
+    end
+    object SearchMnu: TMenuItem
+      Caption = 'Find'
+      object FindInLocalMnu: TMenuItem
+        AutoCheck = True
+        Caption = 'Find in Local'
+        Checked = True
+        RadioItem = True
+        OnClick = FindInLocalMnuClick
+      end
+      object FindinOriginalMnu: TMenuItem
+        AutoCheck = True
+        Caption = 'Find in Original'
+        RadioItem = True
+        OnClick = FindinOriginalMnuClick
+      end
+      object N2: TMenuItem
+        Caption = '-'
+      end
+      object FindFirstMnu: TMenuItem
+        Caption = 'Find'
+        ShortCut = 16454
+        OnClick = FindFirstMnuClick
+      end
+      object FindNextMnu: TMenuItem
+        Caption = 'Find Next'
+        ShortCut = 114
+        OnClick = FindNextMnuClick
+      end
+      object FindMnu: TMenuItem
+        Caption = 'Find Key'
+        ShortCut = 16459
+        OnClick = FindMnuClick
+      end
+      object FindNonTransMnu: TMenuItem
+        Caption = 'Find non translated'
+      end
+      object N6: TMenuItem
+        Caption = '-'
+      end
+      object Bookmark1: TMenuItem
+        Caption = 'Bookmark'
+      end
+      object NextMnu: TMenuItem
+        Caption = 'Next'
+        ShortCut = 16424
+        OnClick = NextMnuClick
+      end
+      object PriorMnu: TMenuItem
+        Caption = 'Prior'
+        ShortCut = 16422
+        OnClick = PriorMnuClick
+      end
+    end
+    object ViewMnu: TMenuItem
+      Caption = 'View'
+      object LeftLayoutMnu: TMenuItem
+        AutoCheck = True
+        Caption = 'Left Layout'
+        Checked = True
+        RadioItem = True
+        OnClick = LeftLayoutMnuClick
+      end
+      object TopLayoutMnu: TMenuItem
+        AutoCheck = True
+        Caption = 'Top Layout'
+        RadioItem = True
+        OnClick = TopLayoutMnuClick
+      end
+      object N5: TMenuItem
+        Caption = '-'
+      end
+      object FilterNotTranslatedMnu: TMenuItem
+        AutoCheck = True
+        Caption = 'Not translated only'
+        OnClick = FilterNotTranslatedMnuClick
+      end
+      object Logreport1: TMenuItem
+        Caption = 'Log report'
+        OnClick = Logreport1Click
+      end
+      object N9: TMenuItem
+        Caption = '-'
+      end
+      object FontMnu: TMenuItem
+        Caption = 'Font'
+        OnClick = FontMnuClick
+      end
+    end
+    object ToolsMnu: TMenuItem
+      Caption = 'Tools'
+      object CleanMnu: TMenuItem
+        Caption = 'Clean all'
+        OnClick = CleanMnuClick
+      end
+      object Removeduplicated1: TMenuItem
+        Caption = 'Report duplicated'
+        OnClick = Removeduplicated1Click
+      end
+      object Removedublicated1: TMenuItem
+        Caption = 'Remove duplicated'
+        OnClick = Removedublicated1Click
+      end
+      object N3: TMenuItem
+        Caption = '-'
+      end
+      object Retranslaterepeated1: TMenuItem
+        Caption = 'Retranslate repeated'
+        OnClick = Retranslaterepeated1Click
+      end
+      object Reportretranslate1: TMenuItem
+        Caption = 'Report retranslate'
+        OnClick = Reportretranslate1Click
+      end
+      object N10: TMenuItem
+        Caption = '-'
+      end
+      object Progressreport1: TMenuItem
+        Caption = 'Progress report'
+        OnClick = Progressreport1Click
+      end
+      object N11: TMenuItem
+        Caption = '-'
+      end
+    end
+    object HelpMnu: TMenuItem
+      Caption = 'Help'
+      object AboutMnu: TMenuItem
+        Caption = 'About'
+        OnClick = AboutMnuClick
+      end
+    end
+  end
+  object OpenDialog: TOpenDialog
+    DefaultExt = '.translator'
+    FileName = '*.translator'
+    Filter = 'miniTranslator|*.translator|All Files|*.*'
+    Options = [ofHideReadOnly, ofAllowMultiSelect, ofEnableSizing]
+    left = 471
+    top = 55
+  end
+  object SaveDialog: TSaveDialog
+    DefaultExt = '.translator'
+    FileName = '*.translator'
+    Filter = 'miniTranslator|*.translator|All Files|*.*'
+    left = 350
+    top = 193
+  end
+  object FontDialog: TFontDialog
+    Font.Height = -11
+    Font.Name = 'MS Sans Serif'
+    MinFontSize = 0
+    MaxFontSize = 0
+    left = 201
+    top = 221
+  end
+end

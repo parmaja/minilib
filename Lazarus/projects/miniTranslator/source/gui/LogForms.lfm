@@ -1,0 +1,52 @@
+object LogForm: TLogForm
+  Left = 141
+  Height = 240
+  Top = 233
+  Width = 527
+  Caption = 'Log'
+  ClientHeight = 240
+  ClientWidth = 527
+  Font.Height = -11
+  Font.Name = 'MS Sans Serif'
+  Position = poMainFormCenter
+  LCLVersion = '0.9.27'
+  object CloseBtn: TButton
+    Left = 4
+    Height = 22
+    Top = 216
+    Width = 75
+    Anchors = [akLeft, akBottom]
+    Caption = 'Close'
+    Default = True
+    ModalResult = 1
+    TabOrder = 0
+  end
+  object LogMemo: TMemo
+    Left = 3
+    Height = 209
+    Top = 4
+    Width = 521
+    Anchors = [akTop, akLeft, akRight, akBottom]
+    ReadOnly = True
+    ScrollBars = ssBoth
+    TabOrder = 1
+    WordWrap = False
+  end
+  object Button1: TButton
+    Left = 81
+    Height = 22
+    Top = 216
+    Width = 75
+    Anchors = [akLeft, akBottom]
+    Caption = 'Save'
+    OnClick = Button1Click
+    TabOrder = 2
+  end
+  object SaveDialog: TSaveDialog
+    DefaultExt = '.txt'
+    FileName = '*.txt'
+    Filter = 'Text files (*.txt)|*.txt|All files|*.*'
+    left = 360
+    top = 108
+  end
+end

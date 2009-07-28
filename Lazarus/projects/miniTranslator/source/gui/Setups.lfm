@@ -1,0 +1,69 @@
+object SetupForm: TSetupForm
+  Left = 216
+  Height = 279
+  Top = 192
+  Width = 483
+  BorderStyle = bsSingle
+  Caption = 'Setup'
+  ClientHeight = 279
+  ClientWidth = 483
+  Font.Height = -11
+  Font.Name = 'MS Sans Serif'
+  OnCreate = FormCreate
+  LCLVersion = '0.9.27'
+  object Label1: TLabel
+    Left = 17
+    Height = 14
+    Top = 18
+    Width = 270
+    Caption = 'Please, type your workspace folder for save your options.'
+    ParentColor = False
+  end
+  object Label2: TLabel
+    Left = 24
+    Height = 14
+    Top = 54
+    Width = 88
+    Caption = 'Workspace Folder'
+    ParentColor = False
+  end
+  object Button1: TButton
+    Left = 447
+    Height = 20
+    Top = 75
+    Width = 22
+    Caption = '...'
+    OnClick = Button1Click
+    TabOrder = 1
+  end
+  object OkBtn: TButton
+    Left = 321
+    Height = 25
+    Top = 248
+    Width = 75
+    Anchors = [akLeft, akBottom]
+    Caption = '&Ok'
+    Default = True
+    OnClick = OkBtnClick
+    TabOrder = 2
+  end
+  object CancelBtn: TButton
+    Left = 400
+    Height = 25
+    Top = 248
+    Width = 75
+    Anchors = [akLeft, akBottom]
+    Cancel = True
+    Caption = '&Cancel'
+    ModalResult = 2
+    TabOrder = 3
+  end
+  object WorkPathEdit: TComboBox
+    Left = 24
+    Height = 21
+    Top = 74
+    Width = 420
+    ItemHeight = 13
+    TabOrder = 0
+  end
+end
