@@ -1047,7 +1047,7 @@ end;
 function TmncField.GetVariant: Variant;
 begin
   Result := null;
-  raise EmncException.Create('Field have no value, You must not use it, try use Current!') at get_caller_addr(get_frame);
+  raise EmncException.Create('Field have no value, You must not use it, try use Current!') {$ifdef fpc}at get_caller_addr(get_frame){$endif};
 end;
 
 procedure TmncField.SetVariant(const Value: Variant);

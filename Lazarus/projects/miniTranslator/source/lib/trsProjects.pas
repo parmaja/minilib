@@ -21,38 +21,44 @@ type
   TToolsList = class(TObjectList)
   end;
 
+  { TtrsProject }
+
   TtrsProject = class(TmnXMLProfile)
   private
+    FInternal: Boolean;
     FName: string;
     FOriginalName: string;
     FLocalName: string;
     FNotes: string;
     FFileName: string;
-    FID: string;
+    FFiler: string;
     FFilerClass: TLangFilerClass;
     FLog: TStringList;
     FHaveWarring: Boolean;
     FToolsList: TObjectList;
-    procedure SetID(const Value: string);
+    FDictionary: TtrsDictionary;
+    procedure SetFiler(const Value: string);
+    procedure SetFilerClass(const AValue: TLangFilerClass);
   public
     Current: TLangItem;
     FindWordStr: string;
     //
-    Dictionary:TtrsDictionary;
     constructor Create;
     destructor Destroy; override;
-    property FilerClass: TLangFilerClass read FFilerClass;
+    property FilerClass: TLangFilerClass read FFilerClass write SetFilerClass;
     procedure LoadLanguage;
     procedure UpgradeLanguage;
     procedure SaveLanguage(Force: Boolean);
     procedure ExportLanguage(vParserClass: TLangParserClass);
-    procedure LoadDictionary(var vLanguage: TLanguage; Path: string);
-    procedure SaveDictionary(const Path: string; var vDictionary: TLanguage; Force: Boolean);
+    procedure LoadDictionary(vSource: string; var vLanguage: TLanguage);
+    procedure SaveDictionary(vSource: string; var vLanguage: TLanguage; Force: Boolean);
     property Log: TStringList read FLog write FLog;
     property HaveWarring: Boolean read FHaveWarring write FHaveWarring;
     property ToolsList: TObjectList read FToolsList;
+    property Internal: Boolean read FInternal write FInternal default False;
+    property Dictionary: TtrsDictionary read FDictionary;
   published
-    property ID: string read FID write SetID;
+    property Filer: string read FFiler write SetFiler;
     property OriginalName: string read FOriginalName write FOriginalName;
     property LocalName: string read FLocalName write FLocalName;
     property Name: string read FName write FName;
@@ -75,11 +81,12 @@ begin
   inherited;
   FToolsList := TObjectList.Create;
   FLog := TStringList.Create;
+  FDictionary := TtrsDictionary.Create;
 end;
 
 destructor TtrsProject.Destroy;
 begin
-  FreeAndNil(Dictionary);
+  FreeAndNil(FDictionary);
   FreeAndNil(FToolsList);
   FreeAndNil(FLog);
   inherited;
@@ -95,7 +102,7 @@ begin
   //SaveDictionary(LocalName, aParser, True);
 end;
 
-procedure TtrsProject.LoadDictionary(var vLanguage: TLanguage; Path: string);
+procedure TtrsProject.LoadDictionary(vSource: string; var vLanguage: TLanguage);
 var
   aFiler: TLangFiler;
 begin
@@ -106,7 +113,7 @@ begin
     vLanguage := TLanguage.Create;
     aFiler := FilerClass.Create;
     try
-      aFiler.LoadFrom(FileName, vLanguage);
+      aFiler.LoadFrom(vSource, vLanguage);
     finally
       aFiler.Free;
     end;
@@ -122,10 +129,10 @@ var
 begin
   if (LocalName <> '') then
   begin
-    LoadDictionary(Dictionary.Local, LocalName);
+    LoadDictionary(LocalName, Dictionary.Local);
     if (OriginalName <> '') then
     begin
-      LoadDictionary(Dictionary.Original, OriginalName);
+      LoadDictionary(OriginalName, Dictionary.Original);
       try
         Log.BeginUpdate;
         Log.Add('--------- deprecated words ---------');
@@ -144,15 +151,17 @@ begin
   end;
 end;
 
-procedure TtrsProject.SaveDictionary(const Path: string; var vDictionary: TLanguage; Force: Boolean);
+procedure TtrsProject.SaveDictionary(vSource: string; var vLanguage: TLanguage; Force: Boolean);
 var
-  aParser: TPO_Parser;
+  aFiler: TLangFiler;
 begin
-  aParser := TPO_Parser.Create;
+  if FilerClass = nil then
+    raise Exception.Create('FilerClass is nil');
+  aFiler := FilerClass.Create;
   try
-    GenerateLanguageFile(FileName, vDictionary, aParser);//add force
+    aFiler.SaveTo(vSource, vLanguage); //add force
   finally
-    aParser.Free;
+    aFiler.Free;
   end;
 end;
 
@@ -161,17 +170,24 @@ begin
   SaveDictionary(LocalName, Dictionary.Local, Force);
 end;
 
-procedure TtrsProject.SetID(const Value: string);
+procedure TtrsProject.SetFiler(const Value: string);
+var
+  aFilerClass: TLangFilerClass;
 begin
-  if FID <> Value then
+  if FFiler <> Value then
   begin
-    if FFilerClass <> nil then
-      raise Exception.Create('You can not change the type of project!');
-    FFilerClass := LangOptions.FindFilerClass(Value);
-    if FFilerClass = nil then
+    aFilerClass := LangOptions.FindFiler(Value);
+    if aFilerClass = nil then
       raise Exception.Create(Value + ' type not found!');
-    FID := Value;
+    FFilerClass := aFilerClass;
+    FFiler := Value;
   end;
+end;
+
+procedure TtrsProject.SetFilerClass(const AValue: TLangFilerClass);
+begin
+  FFilerClass := AValue;
+  FFiler := FFilerClass.GetName;
 end;
 
 procedure TtrsProject.UpgradeLanguage;
@@ -184,9 +200,9 @@ begin
   else if (LocalName <> '') and (OriginalName <> '') then
   begin
     aOldFiles := nil;
-    LoadDictionary(aOldFiles, LocalName);
-    LoadDictionary(Dictionary.Local, OriginalName);
-    LoadDictionary(Dictionary.Original, OriginalName);
+    LoadDictionary(LocalName, aOldFiles);
+    LoadDictionary(OriginalName, Dictionary.Local);
+    LoadDictionary(OriginalName, Dictionary.Original);
     //Local.Files[0].FileName := aOldFiles.Files[0].FileName; //zaher ya zaher
     Log.BeginUpdate;
     Log.Add('--------- deprecated words ---------');

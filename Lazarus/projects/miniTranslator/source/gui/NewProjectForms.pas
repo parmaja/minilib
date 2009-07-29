@@ -16,16 +16,20 @@ uses
   Dialogs, StdCtrls, ExtCtrls, LResources, trsProjects;
 
 type
+
+  { TNewProjectForm }
+
   TNewProjectForm = class(TForm)
     Button3: TButton;
     Button4: TButton;
-    IDCbo: TComboBox;
+    FilerCbo: TComboBox;
     Label5: TLabel;
     Label6: TLabel;
     NameEdit: TEdit;
     Label1: TLabel;
     NotesEdit: TMemo;
     Label2: TLabel;
+    procedure Button4Click(Sender: TObject);
     procedure FormCreate(Sender: TObject);
   private
     { Private declarations }
@@ -47,7 +51,7 @@ begin
     if ShowModal = mrOk then
     begin
       Result := TtrsProject.Create;
-      Result.ID := TLangFiler(IDCbo.Items.Objects[IDCbo.ItemIndex]).GetName;
+      Result.FilerClass := TLangFilerClass(FilerCbo.Items.Objects[FilerCbo.ItemIndex]);
       Result.Name := NameEdit.Text;
       Result.Notes := NotesEdit.Text;
     end
@@ -61,8 +65,13 @@ var
   i:Integer;
 begin
   for i := 0 to LangOptions.FilerClasses.Count - 1 do
-      IDCbo.Items.AddObject(LangOptions.FilerClasses[i].GetTitle, TObject(LangOptions.FilerClasses[i]));
-  IDCbo.ItemIndex := 0;
+      FilerCbo.Items.AddObject(LangOptions.FilerClasses[i].GetTitle, TObject(LangOptions.FilerClasses[i]));
+  FilerCbo.ItemIndex := 0;
+end;
+
+procedure TNewProjectForm.Button4Click(Sender: TObject);
+begin
+
 end;
 
 initialization

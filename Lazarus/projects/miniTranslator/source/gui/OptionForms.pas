@@ -12,6 +12,7 @@ interface
 
 uses
   LCLIntf, Messages, SysUtils, Classes, Graphics, Controls, Forms,
+  LangClasses, LangUtils,
   Dialogs, StdCtrls, ExtCtrls, LResources, trsProjects;
 
 type
@@ -61,7 +62,7 @@ begin
     LocalNameEdit.Text := FProject.LocalName;
     OldOriginal := FProject.OriginalName;
     OldLocal := FProject.LocalName;
-    if FProject.FilerClass.IsSingle then
+    if lffAlone in FProject.FilerClass.GetFlags then
     begin
       OriginalNameEdit.Visible := False;
       OriginalNameLbl.Visible := False;
@@ -107,7 +108,7 @@ var
 begin
   if FProject <> nil then
   begin
-    if FProject.FilerClass.IsMultiFiles then
+    if lffDirectory in FProject.FilerClass.GetFlags then
     begin
       d := OriginalNameEdit.Text;
       if SelectDirectory('Select your lang folder', '', d) then
@@ -117,7 +118,7 @@ begin
     end
     else
     begin
-      OpenDialog.Filter := FProject.FilerClass.GetName + ' (*' + FProject.FilerClass.GetExtensions + ')|*' + FProject.FilerClass.GetExtensions + '|All files|*.*';
+      OpenDialog.Filter := FProject.FilerClass.GetName + ' (*' + FProject.FilerClass.GetExtension + ')|*' + FProject.FilerClass.GetExtension + '|All files|*.*';
       if OpenDialog.Execute then
       begin
         Edit.Text := OpenDialog.FileName;

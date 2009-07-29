@@ -22,14 +22,21 @@ type
   { TMainForm }
 
   TMainForm = class(TForm)
+    ApplicationProperties: TApplicationProperties;
+    HintLbl: TLabel;
     MainMenu: TMainMenu;
-    FileMnu: TMenuItem;
+    ExitMnu: TMenuItem;
+    SaveMnu: TMenuItem;
+    OpenMnu: TMenuItem;
+    NewMnu: TMenuItem;
+    _MenuItem: TMenuItem;
+    ProjectsMnu: TMenuItem;
     HelpMnu: TMenuItem;
     AboutMnu: TMenuItem;
-    OpenMnu: TMenuItem;
-    N1: TMenuItem;
-    ExitMnu: TMenuItem;
-    SaveAsMnu: TMenuItem;
+    FileMnu: TMenuItem;
+    OpenProjectMnu: TMenuItem;
+    FooterPanel: TPanel;
+    SaveAsProjectMnu: TMenuItem;
     EditMnu: TMenuItem;
     NextMnu: TMenuItem;
     FindMnu: TMenuItem;
@@ -42,15 +49,15 @@ type
     OpenDialog: TOpenDialog;
     FindFirstMnu: TMenuItem;
     CleanMnu: TMenuItem;
-    NewMnu: TMenuItem;
+    NewProjectMnu: TMenuItem;
     OptionsMnu: TMenuItem;
     N4: TMenuItem;
     ViewMnu: TMenuItem;
     LeftLayoutMnu: TMenuItem;
     TopLayoutMnu: TMenuItem;
     N5: TMenuItem;
-    ReopenMnu: TMenuItem;
-    SaveMnu: TMenuItem;
+    ReopenProjectMnu: TMenuItem;
+    SaveProjectMnu: TMenuItem;
     SaveDialog: TSaveDialog;
     Close1: TMenuItem;
     UpgradeMnu: TMenuItem;
@@ -72,7 +79,7 @@ type
     N6: TMenuItem;
     Bookmark1: TMenuItem;
     MergeMnu: TMenuItem;
-    N7: TMenuItem;
+    _N7: TMenuItem;
     N8: TMenuItem;
     ExportMnu: TMenuItem;
     CommentEdit: TEdit;
@@ -109,8 +116,12 @@ type
     N10: TMenuItem;
     N11: TMenuItem;
     Reportretranslate1: TMenuItem;
+    procedure ApplicationPropertiesShowHint(var HintStr: string;
+      var CanShow: Boolean; var HintInfo: THintInfo);
     procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
     procedure IdentListClick(Sender: TObject);
+    procedure OpenMnuClick(Sender: TObject);
+    procedure SaveAsProjectMnuClick(Sender: TObject);
     procedure SectionListClick(Sender: TObject);
     procedure FormCloseQuery(Sender: TObject; var CanClose: Boolean);
     procedure ExitMnuClick(Sender: TObject);
@@ -124,10 +135,10 @@ type
     procedure CleanMnuClick(Sender: TObject);
     procedure LeftLayoutMnuClick(Sender: TObject);
     procedure TopLayoutMnuClick(Sender: TObject);
-    procedure NewMnuClick(Sender: TObject);
+    procedure NewProjectMnuClick(Sender: TObject);
     procedure OptionsMnuClick(Sender: TObject);
-    procedure SaveMnuClick(Sender: TObject);
-    procedure OpenMnuClick(Sender: TObject);
+    procedure SaveProjectMnuClick(Sender: TObject);
+    procedure OpenProjectMnuClick(Sender: TObject);
     procedure Close1Click(Sender: TObject);
     procedure UpgradeMnuClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
@@ -149,6 +160,10 @@ type
     procedure FilterNotTranslatedMnuClick(Sender: TObject);
   private
     Showed: Boolean;
+    FProject: TtrsProject;
+    function GetProject: TtrsProject;
+    procedure SetProject(const AValue: TtrsProject);
+    function CreateDefaultProject(vExtension: string): TtrsProject;
     procedure UpdateView;
     procedure FindByEdit;
     procedure ReopenClick(Sender: TObject);
@@ -179,8 +194,8 @@ type
     procedure EnumTools(vCaption: string; vOnClick: TNotifyEvent; vAutoInSave:Boolean);
   public
     FindIndex: Integer;
-    Project: TtrsProject;
     procedure ResetFind;
+    property Project: TtrsProject read GetProject write SetProject;
     procedure UpdateSetting;
   end;
 
@@ -219,6 +234,12 @@ begin
   finally
     aReg.Free;
   end;
+end;
+
+procedure TMainForm.ApplicationPropertiesShowHint(var HintStr: string;
+  var CanShow: Boolean; var HintInfo: THintInfo);
+begin
+  HintLbl.Caption := HintInfo.HintStr;
 end;
 
 procedure TMainForm.EnumContents;
@@ -276,6 +297,28 @@ begin
   LoadValueFromList;
 end;
 
+procedure TMainForm.OpenMnuClick(Sender: TObject);
+var
+  e: string;
+begin
+  OpenDialog.DefaultExt := 'po';
+  OpenDialog.Filter := 'PO gettext|*.po|Plan files|*.ini|All Files|*.*';
+  OpenDialog.FileName := '*.po;*.ini';
+  if OpenDialog.Execute then
+  begin
+    e := ExtractFileName(OpenDialog.FileName);
+    Project := CreateDefaultProject(e);
+    Project.LoadDictionary(OpenDialog.FileName, Project.Dictionary.Local);
+    ProjectLoaded;
+    RefreshProject;
+  end;
+end;
+
+procedure TMainForm.SaveAsProjectMnuClick(Sender: TObject);
+begin
+
+end;
+
 procedure TMainForm.LoadValueFromList;
 begin
   if (IdentList.ItemIndex >= 0) and (SectionList.ItemIndex >= 0) then
@@ -315,12 +358,12 @@ begin
     else
       LocalValueEdit.BidiMode := bdLeftToRight;
 
-    if Project.FilerClass.IsMultiFiles then
+    if lffMultiple in Project.FilerClass.GetFlags then
       LocalValueEdit.WantReturns := False
     else
       LocalValueEdit.WantReturns := True;
 
-    OriginalPanel.Visible := (Project.Dictionary.Original <> nil) or (Project.FilerClass.IsKeyAsOriginal);
+    OriginalPanel.Visible := (Project.Dictionary.Original <> nil) or (lffAlone in Project.FilerClass.GetFlags);
     if Project.Dictionary.Original <> nil then
     begin
       if Project.Dictionary.Original.IsRightToLeft then
@@ -328,15 +371,13 @@ begin
       else
         OriginalValueEdit.BidiMode := bdLeftToRight;
 
-      if Project.FilerClass.IsMultiFiles then
+      if lffMultiple in Project.FilerClass.GetFlags then
         OriginalValueEdit.WantReturns := False
       else
         OriginalValueEdit.WantReturns := True;
     end;
     EnumContents;
-    SectionList.ItemIndex := 0;
     EnumIdents;
-    IdentList.ItemIndex := 0;
     EnumAll;
   end;
 end;
@@ -479,18 +520,21 @@ begin
   UpdateView;
 end;
 
-procedure TMainForm.NewMnuClick(Sender: TObject);
+procedure TMainForm.NewProjectMnuClick(Sender: TObject);
+var
+  aProject: TtrsProject;
 begin
   if AskCloseProject then
   begin
-    Project := ShowNewProject;
-    if Project <> nil then
+    aProject := ShowNewProject;
+    if aProject <> nil then
     begin
       try
-        if ShowOptions(Project, True) then
+        if ShowOptions(aProject, True) then
         begin
+          Project := aProject;
           ProjectLoaded;
-          RefreshProject;
+          RefreshProject;//zaher: maybe moved to SetProject
         end;
       except
         on E: Exception do
@@ -509,7 +553,7 @@ var
   r: Integer;
 begin
   Result := True;
-  if Project <> nil then
+  if (Project <> nil) then
   begin
     if (Project.Dictionary.Local <> nil) and Project.Dictionary.Local.Modified then
     begin
@@ -558,13 +602,13 @@ begin
   aReg := TRegistry.Create;
   aReg.OpenKey(sSoftwareRegKey, True);
   aStrings.Text := aReg.ReadString('RecentFiles');
-  ReopenMnu.Clear;
+  ReopenProjectMnu.Clear;
   for i := 0 to aStrings.Count - 1 do
   begin
     aMenuItem := TMenuItem.Create(Self);
     aMenuItem.Caption := aStrings[i];
     aMenuItem.OnClick := @ReopenClick;
-    ReopenMnu.Add(aMenuItem);
+    ReopenProjectMnu.Add(aMenuItem);
   end;
   aStrings.Free;
   aReg.Free;
@@ -659,7 +703,7 @@ begin
   UpdateSetting;
 end;
 
-procedure TMainForm.SaveMnuClick(Sender: TObject);
+procedure TMainForm.SaveProjectMnuClick(Sender: TObject);
 begin
   if Project.FileName <> '' then
   begin
@@ -679,8 +723,11 @@ begin
   end;
 end;
 
-procedure TMainForm.OpenMnuClick(Sender: TObject);
+procedure TMainForm.OpenProjectMnuClick(Sender: TObject);
 begin
+  OpenDialog.DefaultExt := 'translator';
+  OpenDialog.Filter := 'miniTranslator|*.translator|All Files|*.*';
+  OpenDialog.FileName := '*.translator';
   if OpenDialog.Execute then
   begin
     LoadProject(OpenDialog.FileName, False);
@@ -704,6 +751,7 @@ procedure TMainForm.FormCreate(Sender: TObject);
 var
   aReg: TRegistry;
 begin
+  HintLbl.Caption := '';
   aReg := TRegistry.Create;
   try
     aReg.OpenKey(sSoftwareRegKey, False);
@@ -748,7 +796,7 @@ end;
 
 procedure TMainForm.CloseProject;
 begin
-  FreeAndNil(Project);
+  FreeAndNil(FProject);
   ClearAll;
 end;
 
@@ -1055,6 +1103,34 @@ end;
 procedure TMainForm.FilterNotTranslatedMnuClick(Sender: TObject);
 begin
   Enumerate;
+end;
+
+function TMainForm.GetProject: TtrsProject;
+begin
+  if FProject= nil then
+    FProject := CreateDefaultProject('');
+  Result := FProject;
+end;
+
+procedure TMainForm.SetProject(const AValue: TtrsProject);
+begin
+  if FProject <> AValue then
+  begin
+    FreeAndNil(FProject);
+    FProject := AValue;
+  end;
+end;
+
+function TMainForm.CreateDefaultProject(vExtension: string): TtrsProject;
+var
+  aFilerClass: TLangFilerClass;
+begin
+  Result := TtrsProject.Create;
+  aFilerClass := LangOptions.FindFilerByExt(vExtension);
+  if aFilerClass = nil then
+    aFilerClass := TPOFileFiler;
+  Result.FilerClass := aFilerClass;
+  Result.Internal := True;
 end;
 
 initialization

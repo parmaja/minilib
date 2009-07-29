@@ -25,7 +25,7 @@ interface
 
 uses
   Classes, SysUtils, LResources, Forms, Controls, Graphics, Dialogs, Grids,
-  dateutils, LCLType, LCLIntf, Types,
+  dateutils, LCLType, LCLIntf, Types, mncConnections,
   contnrs, ExtCtrls, StdCtrls, SynEdit, FileUtil, Buttons, Menus,
   SynHighlighterSqlite, sqlvSessions,
   SynCompletion, SynEditAutoComplete, SynHighlighterHashEntries,

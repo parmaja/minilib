@@ -3,11 +3,11 @@ object MainForm: TMainForm
   Height = 381
   Hint = 'Connect F9'
   Top = 127
-  Width = 607
+  Width = 564
   ActiveControl = SQLEdit
   Caption = 'SQLite Viewer'
   ClientHeight = 361
-  ClientWidth = 607
+  ClientWidth = 564
   Font.CharSet = ANSI_CHARSET
   Font.Color = clBlack
   Font.Height = -11
@@ -23,11 +23,11 @@ object MainForm: TMainForm
     Left = 0
     Height = 339
     Top = 0
-    Width = 607
+    Width = 564
     Align = alClient
     BevelOuter = bvNone
     ClientHeight = 339
-    ClientWidth = 607
+    ClientWidth = 564
     TabOrder = 0
     OnClick = ClientPanelClick
     object SQLPanel: TPanel
@@ -150,7 +150,6 @@ object MainForm: TMainForm
         ParentFont = False
         TabOrder = 0
         BookMarkOptions.Xoffset = -18
-        BookMarkOptions.OnChange = nil
         Gutter.Width = 21
         Gutter.MouseActions = <        
           item
@@ -991,11 +990,11 @@ object MainForm: TMainForm
     Left = 0
     Height = 22
     Top = 339
-    Width = 607
+    Width = 564
     Align = alBottom
     BevelOuter = bvSpace
     ClientHeight = 22
-    ClientWidth = 607
+    ClientWidth = 564
     TabOrder = 1
     object DisconnectBtn: TButton
       Left = 93

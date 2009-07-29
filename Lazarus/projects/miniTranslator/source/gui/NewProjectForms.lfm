@@ -64,9 +64,10 @@ object NewProjectForm: TNewProjectForm
     Cancel = True
     Caption = 'Cancel'
     ModalResult = 2
+    OnClick = Button4Click
     TabOrder = 1
   end
-  object IDCbo: TComboBox
+  object FilerCbo: TComboBox
     Left = 47
     Height = 21
     Top = 28

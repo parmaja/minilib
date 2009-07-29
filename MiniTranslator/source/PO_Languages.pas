@@ -15,28 +15,10 @@ unit PO_Languages;
 interface
 
 uses
-  Windows, Messages,
   SysUtils, Variants, Classes, Contnrs,
   LangClasses;
 
 type
-  TPO_LangItem = class(TLangItem)
-  public
-  end;
-
-  TPO_LangContents = class(TLangContents)
-  protected
-    function DoCreateLangItem: TLangItem; override;
-  public
-  end;
-
-  TPO_Language = class(TLanguage)
-  protected
-    function DoCreateContents: TLangContents; override;
-  public
-    function CreateParser: TLangParser; override;
-  end;
-
   TPO_State = (poNone, poComment, poMsgId, poMsgStr);
 
   { TPO_Parser }
@@ -51,7 +33,7 @@ type
     procedure Parse(Strings: TStringList); override;
     procedure Generate(Strings: TStringList); override;
     class function GetName: string; override;
-    class function GetFileExtensions: string; override;
+    class function GetExtension: string; override;
     class function GetTitle: string; override;
   end;
 
@@ -253,44 +235,42 @@ begin
     ParseLine(s);
     Inc(l);
   end;
-  if Contents is TPO_LangContents then
+
+  s := Contents.GetText('');
+  ExtractStrings([#13], [' '], PChar(s), Contents.Settings);
+  for i := 0 to Contents.Settings.Count - 1 do
   begin
-    s := Contents.GetText('');
-    ExtractStrings([#13], [' '], PChar(s), Contents.Settings);
-    for i := 0 to Contents.Settings.Count - 1 do
+    s := Trim(Contents.Settings[i]);
+    p := Pos(':', s);
+    if p > 0 then
     begin
-      s := Trim(Contents.Settings[i]);
-      p := Pos(':', s);
-      if p > 0 then
-      begin
-        s := Trim(Copy(s, 1, p - 1)) + '=' + Trim(Copy(s, p + 1, MaxInt));
-        Contents.Settings[i] := s;
-      end
-      else
-        Contents.Settings[i] := Trim(s);
-    end;
-    Contents.Name := Contents.Settings.Values['X-Name'];
-    s := Trim(Contents.Settings.Values['Content-Type']);
-    if s <> '' then
+      s := Trim(Copy(s, 1, p - 1)) + '=' + Trim(Copy(s, p + 1, MaxInt));
+      Contents.Settings[i] := s;
+    end
+    else
+      Contents.Settings[i] := Trim(s);
+  end;
+  Contents.Name := Contents.Settings.Values['X-Name'];
+  s := Trim(Contents.Settings.Values['Content-Type']);
+  if s <> '' then
+  begin
+    p := Pos(';', s);
+    if p > 0 then
     begin
-      p := Pos(';', s);
-      if p > 0 then
-      begin
-        s := Trim(copy(s, p + 1, MaxInt));
-        aList := TStringList.Create;
-        try
-          ExtractStrings([';'], [' '], PChar(s), aList);
-          Contents.Charset := aList.Values['CharSet'];
-        finally
-          aList.Free;
-        end;
+      s := Trim(copy(s, p + 1, MaxInt));
+      aList := TStringList.Create;
+      try
+        ExtractStrings([';'], [' '], PChar(s), aList);
+        Contents.Charset := aList.Values['CharSet'];
+      finally
+        aList.Free;
       end;
     end;
-    if ForceUTF8 or SameText(Contents.Charset, 'utf-8') then
-      Contents.Encoding := lncUTF8
-    else
-      Contents.Encoding := lncAnsi;
   end;
+  if ForceUTF8 or SameText(Contents.Charset, 'utf-8') then
+    Contents.Encoding := lncUTF8
+  else
+    Contents.Encoding := lncAnsi;
 end;
 
 {procedure TPO_Parser.New;
@@ -388,9 +368,9 @@ begin
   Result := 'GetTextPOFiles';
 end;
 
-class function TPO_Parser.GetFileExtensions: string;
+class function TPO_Parser.GetExtension: string;
 begin
-  Result := '.po'
+  Result := 'PO'
 end;
 
 class function TPO_Parser.GetTitle: string;
@@ -410,27 +390,6 @@ begin
   end;
 end;
 }
-
-{ TPOWordItem }
-
-{ TPO_LangContents }
-
-function TPO_LangContents.DoCreateLangItem: TLangItem;
-begin
-  Result := TPO_LangItem.Create;
-end;
-
-{ TPO_Language }
-
-function TPO_Language.CreateParser: TLangParser;
-begin
-  Result := TPO_Parser.Create;
-end;
-
-function TPO_Language.DoCreateContents: TLangContents;
-begin
-  Result := TPO_LangContents.Create;
-end;
 
 initialization
 finalization

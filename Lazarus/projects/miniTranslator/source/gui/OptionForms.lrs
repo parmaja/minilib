@@ -20,11 +20,11 @@ LazarusResources.Add('TOptionsForm','FORMDATA',[
   +'Anchors'#11#6'akLeft'#8'akBottom'#0#6'Cancel'#9#7'Caption'#6#6'Cancel'#11'M'
   +'odalResult'#2#2#8'TabOrder'#2#1#0#0#5'TEdit'#13'LocalNameEdit'#4'Left'#2'`'
   +#6'Height'#2#23#3'Top'#2'8'#5'Width'#3'6'#1#8'TabOrder'#2#2#0#0#7'TButton'#15
-  +'OriginalNameBtn'#4'Left'#3#155#1#6'Height'#2#21#3'Top'#2'N'#5'Width'#2'J'#7
+  +'OriginalNameBtn'#4'Left'#3#155#1#6'Height'#2#21#3'Top'#2'Q'#5'Width'#2'J'#7
   +'Caption'#6#6'Select'#7'OnClick'#7#20'OriginalNameBtnClick'#8'TabOrder'#2#3#0
   +#0#5'TEdit'#16'OriginalNameEdit'#4'Left'#2'`'#6'Height'#2#23#3'Top'#2'Q'#5'W'
   +'idth'#3'6'#1#8'TabOrder'#2#4#0#0#7'TButton'#12'LocalNameBtn'#4'Left'#3#155#1
-  +#6'Height'#2#21#3'Top'#2'5'#5'Width'#2'J'#7'Caption'#6#6'Select'#7'OnClick'#7
+  +#6'Height'#2#21#3'Top'#2'8'#5'Width'#2'J'#7'Caption'#6#6'Select'#7'OnClick'#7
   +#17'LocalNameBtnClick'#8'TabOrder'#2#5#0#0#5'TEdit'#8'NameEdit'#4'Left'#2'`'
   +#6'Height'#2#23#3'Top'#2#31#5'Width'#3#160#0#8'TabOrder'#2#6#0#0#5'TEdit'#15
   +'ProjectTypeEdit'#4'Left'#2'`'#6'Height'#2#23#3'Top'#2#5#5'Width'#3'7'#1#5'C'

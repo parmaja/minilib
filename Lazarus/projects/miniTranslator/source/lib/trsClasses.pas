@@ -43,15 +43,11 @@ type
 
   TtrsDictionary = class(TObject)
   private
-    FLocal: TtrsLanguage;
-    FOriginal: TtrsLanguage;
-    FParserClass: TLangParser;
   public
+    Local: TtrsLanguage;
+    Original: TtrsLanguage;
     constructor Create;
     destructor Destroy; override;
-    property ParserClass: TLangParser read FParserClass;
-    property Local: TtrsLanguage read FLocal;
-    property Original: TtrsLanguage read FOriginal;
   end;
 
 implementation
@@ -127,6 +123,8 @@ end;
 
 destructor TtrsDictionary.Destroy;
 begin
+  FreeAndNil(Local);
+  FreeAndNil(Original);
   inherited Destroy;
 end;
 

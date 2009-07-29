@@ -83,7 +83,7 @@ object OptionsForm: TOptionsForm
   object OriginalNameBtn: TButton
     Left = 411
     Height = 21
-    Top = 78
+    Top = 81
     Width = 74
     Caption = 'Select'
     OnClick = OriginalNameBtnClick
@@ -99,7 +99,7 @@ object OptionsForm: TOptionsForm
   object LocalNameBtn: TButton
     Left = 411
     Height = 21
-    Top = 53
+    Top = 56
     Width = 74
     Caption = 'Select'
     OnClick = LocalNameBtnClick
