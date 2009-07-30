@@ -37,7 +37,7 @@ type
 {
   this not standard directory PO files and setting.ini file
 }
-  TPODirctoryFiler = class(TLangFiler)
+  TPODirectoryFiler = class(TLangFiler)
   public
     constructor Create; override;
     function CreateParser:TLangParser; override;
@@ -49,9 +49,9 @@ type
     class function GetFlags: TLangFilerFlags; override;
   end;
 
-  { TPODirctoryExFiler }
+  { TPODirectoryExFiler }
 
-  TPODirctoryExFiler = class(TPODirctoryFiler) //with setting.ini
+  TPODirectoryExFiler = class(TPODirectoryFiler) //with setting.ini
   public
     procedure LoadFrom(vSource: string; vLanguage:TLanguage); override;
     class function GetName: string; override;
@@ -133,19 +133,19 @@ begin
     Result := ID;
 end;
 
-{ TPODirctoryFiler }
+{ TPODirectoryFiler }
 
-constructor TPODirctoryFiler.Create;
+constructor TPODirectoryFiler.Create;
 begin
   inherited Create;
 end;
 
-function TPODirctoryFiler.CreateParser: TLangParser;
+function TPODirectoryFiler.CreateParser: TLangParser;
 begin
   Result := TPO_Parser.Create;
 end;
 
-procedure TPODirctoryFiler.LoadFrom(vSource: string; vLanguage: TLanguage);
+procedure TPODirectoryFiler.LoadFrom(vSource: string; vLanguage: TLanguage);
 var
   I: Integer;
   SearchRec: TSearchRec;
@@ -179,26 +179,26 @@ begin
   end;
 end;
 
-procedure TPODirctoryFiler.SaveTo(vSource: string; vLanguage: TLanguage);
+procedure TPODirectoryFiler.SaveTo(vSource: string; vLanguage: TLanguage);
 begin
 end;
 
-class function TPODirctoryFiler.GetName: string;
+class function TPODirectoryFiler.GetName: string;
 begin
   Result :='PODir';
 end;
 
-class function TPODirctoryFiler.GetTitle: string;
+class function TPODirectoryFiler.GetTitle: string;
 begin
   Result := 'PO Directory';
 end;
 
-class function TPODirctoryFiler.GetExtension: string;
+class function TPODirectoryFiler.GetExtension: string;
 begin
   Result :='PO';
 end;
 
-class function TPODirctoryFiler.GetFlags: TLangFilerFlags;
+class function TPODirectoryFiler.GetFlags: TLangFilerFlags;
 begin
   Result := [lffDirectory, lffMultiple];
 end;
@@ -278,9 +278,9 @@ begin
   Result := [lffAlone];
 end;
 
-{ TPODirctoryExFiler }
+{ TPODirectoryExFiler }
 
-procedure TPODirctoryExFiler.LoadFrom(vSource: string; vLanguage: TLanguage);
+procedure TPODirectoryExFiler.LoadFrom(vSource: string; vLanguage: TLanguage);
 var
   aPath, aName, aFile: String;
   aIniFile: TIniFile;
@@ -305,19 +305,19 @@ begin
   inherited;
 end;
 
-class function TPODirctoryExFiler.GetName: string;
+class function TPODirectoryExFiler.GetName: string;
 begin
   Result := 'PODirEx';
 end;
 
-class function TPODirctoryExFiler.GetTitle: string;
+class function TPODirectoryExFiler.GetTitle: string;
 begin
   Result := 'PO Directory with setting.ini'
 end;
 
 initialization
   LangOptions.RegisterFilerClass(TPOFileFiler);
-  LangOptions.RegisterFilerClass(TPODirctoryFiler);
-  LangOptions.RegisterFilerClass(TPODirctoryExFiler);
+  LangOptions.RegisterFilerClass(TPODirectoryFiler);
+  LangOptions.RegisterFilerClass(TPODirectoryExFiler);
 end.
 
