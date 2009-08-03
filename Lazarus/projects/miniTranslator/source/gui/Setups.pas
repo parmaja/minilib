@@ -13,13 +13,18 @@ interface
 uses
   LCLIntf,
   SysUtils, Classes, Graphics, Controls, Forms,
+  FileUtil,
   trsProjects, Dialogs, StdCtrls, LResources;
 
 type
+
+  { TSetupForm }
+
   TSetupForm = class(TForm)
     Label1: TLabel;
     Label2: TLabel;
     Button1: TButton;
+    Label3: TLabel;
     OkBtn: TButton;
     CancelBtn: TButton;
     WorkPathEdit: TComboBox;
@@ -27,23 +32,29 @@ type
     procedure OkBtnClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
   private
-    { Private declarations }
+    OldWorkPath: string;
   public
-    { Public declarations }
   end;
+
+function ShowSetup: Boolean;
 
 implementation
 
+function ShowSetup: Boolean;
+begin
+  with TSetupForm.Create(Application) do
+  begin
+    Result := ShowModal = mrOK;
+    Free;
+  end;
+end;
 
-uses
-  Registry;
-  
 procedure TSetupForm.Button1Click(Sender: TObject);
 var
   aFolder: string;
 begin
   aFolder := WorkPathEdit.Text;
-//  if SelectFolder('Select root directory for you project', '', aFolder) then
+  if SelectDirectory('Select root directory for you project', '', aFolder) then
   begin
     WorkPathEdit.Text := aFolder;
   end;
@@ -51,7 +62,7 @@ end;
 
 procedure TSetupForm.OkBtnClick(Sender: TObject);
 var
-  aReg: TRegistry;
+  aStrings: TStringList;
 begin
   if WorkPathEdit.Text = '' then
   begin
@@ -62,13 +73,16 @@ begin
   else
   begin
     ForceDirectories(WorkPathEdit.Text);
-    aReg := TRegistry.Create;
+    aStrings := TStringList.Create;
     try
-  //    aReg.RootKey := HKEY_LOCAL_MACHINE;
-      if aReg.OpenKey(sSoftwareRegKey, True) then
-        aReg.writeString('WorkPath', IncludeTrailingPathDelimiter(WorkPathEdit.Text));
+      if FileExists(GetConfigFileName) then
+        aStrings.LoadFromFile(GetConfigFileName);
+      aStrings.Values['WorkPath'] := IncludeTrailingPathDelimiter(WorkPathEdit.Text);
+      aStrings.SaveToFile(GetConfigFileName);
+      if OldWorkPath = '' then
+        trsEngine.WorkPath := IncludeTrailingPathDelimiter(WorkPathEdit.Text);
     finally
-      aReg.Free;
+      aStrings.Free;
     end;
   end;
   ModalResult := mrOK;
@@ -76,16 +90,18 @@ end;
 
 procedure TSetupForm.FormCreate(Sender: TObject);
 var
-  aReg: TRegistry;
+  s: string;
 begin
-  aReg := TRegistry.Create(KEY_READ);
-  try
-//    aReg.RootKey := HKEY_LOCAL_MACHINE;
-    if aReg.OpenKey(sSoftwareRegKey, False) and aReg.ValueExists('WorkPath') then
-      WorkPathEdit.Text := aReg.ReadString('WorkPath');
-  finally
-    aReg.Free;
-  end;
+  OldWorkPath := trsEngine.WorkPath;
+  WorkPathEdit.Text := OldWorkPath;
+  s := GetEnvironmentVariableUTF8('WORKSPACE');
+  if s <> '' then
+    WorkPathEdit.Items.Add(s + sMiniTranslator);
+  s := GetEnvironmentVariableUTF8('HOME');
+  if s <> '' then
+    WorkPathEdit.Items.Add(s + sMiniTranslator);
+  WorkPathEdit.Items.Add(GetAppConfigDir(False)+sMiniTranslator);
+  WorkPathEdit.Items.Add(GetAppConfigDir(True)+sMiniTranslator);
 end;
 
 initialization

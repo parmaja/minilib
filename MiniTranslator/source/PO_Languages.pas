@@ -1,16 +1,16 @@
 unit PO_Languages;
 {**
- *  This file is part of the "Mini Library"
+ *  This file is part of the "Mini Library" http://www.sourceforge.net/projects/minilib
  *
  * @license   modifiedLGPL (modified of http://www.gnu.org/licenses/lgpl.html)
  *            See the file COPYING.MLGPL, included in this distribution,
  * @author    Zaher Dirkey <zaher at parmaja dot com>
  *}
 
-{$IFDEF FPC}
-{$MODE delphi}
-{$ENDIF}
-{$M+}
+{$ifdef FPC}
+{$mode objfpc}
+{$endif}
+{$M+}{$H+}
 
 interface
 
@@ -28,19 +28,61 @@ type
     FState: TPO_State;
   protected
     FLangItem: TLangItem; //for multiline need to keep it in object body
+    procedure DoParse(Strings: TStringList); override;
+    procedure DoGenerate(Strings: TStringList); override;
   public
     procedure ParseLine(ALine: string); //if you like to parse line by line not use a Contents property
-    procedure Parse(Strings: TStringList); override;
-    procedure Generate(Strings: TStringList); override;
     class function GetName: string; override;
     class function GetExtension: string; override;
+    class function GetTitle: string; override;
+  end;
+
+  { TPOFileFiler }
+
+  TPOFileFiler = class(TLangFiler)
+  protected
+    procedure DoLoadFrom(vSource: string; vLanguage:TLanguage); override;
+    procedure DoSaveTo(vSource: string; vLanguage:TLanguage); override;
+  public
+    constructor Create; override;
+    function CreateParser:TLangParser; override;
+    class function GetName: string; override;
+    class function GetTitle: string; override;
+    class function GetExtension: string; override;
+    class function GetFlags: TLangFilerFlags; override;
+  end;
+
+  { TPODirFiler }
+{
+  this not standard directory PO files and setting.ini file
+}
+  TPODirectoryFiler = class(TLangFiler)
+  protected
+    procedure DoLoadFrom(vSource: string; vLanguage:TLanguage); override;
+    procedure DoSaveTo(vSource: string; vLanguage:TLanguage); override;
+  public
+    constructor Create; override;
+    function CreateParser:TLangParser; override;
+    class function GetName: string; override;
+    class function GetTitle: string; override;
+    class function GetExtension: string; override;
+    class function GetFlags: TLangFilerFlags; override;
+  end;
+
+  { TPODirectoryExFiler }
+
+  TPODirectoryExFiler = class(TPODirectoryFiler) //with setting.ini
+  protected
+    procedure DoLoadFrom(vSource: string; vLanguage:TLanguage); override;
+  public
+    class function GetName: string; override;
     class function GetTitle: string; override;
   end;
 
 implementation
 
 uses
-  StrUtils;
+  StrUtils, mnUtils;
 
 const
   ssMsgId = 'msgid ';
@@ -52,50 +94,31 @@ const
   ssMsgPlural = 'msgid_plural '; //not yet
   ssMsgStrs = 'msgstr['; //not yet
 
-function DequoteStr(Str: string): string;
+const
+{$ifdef WINDOWS}
+  sOSEOL = #13#10;
+{$else}
+  sOSEOL = #13;
+{$endif}
+
+function EscapeString(s: string):string;
 begin
-  if Str = '' then
-    Result := ''
-  else
-  begin
-    if Str[1] = '"' then
-    begin
-      if Str[Length(Str)] = '"' then
-        Result := MidStr(Str, 2, Length(Str) - 2)
-      else
-        Result := MidStr(Str, 2, Length(Str) - 1)
-    end
-    else if Str[1] = '''' then
-    begin
-      if Str[Length(Str)] = '''' then
-        Result := MidStr(Str, 2, Length(Str) - 2)
-      else
-        Result := MidStr(Str, 2, Length(Str) - 1)
-    end
-    else
-      Result := Str;
-  end;
+  //stupid :( we need optimized function
+  Result := s;
+  Result := StringReplace(DequoteStr(Result), '\n', sOSEOL, [rfReplaceAll]);
+  Result := StringReplace(DequoteStr(Result), '\t', #9, [rfReplaceAll]);
+  Result := StringReplace(DequoteStr(Result), '\"', '"', [rfReplaceAll]);
+  Result := StringReplace(DequoteStr(Result), '\\', '\', [rfReplaceAll]);
 end;
 
-function QuoteStr(Str: string; QuoteChar: string = '"'): string;
+function DescapeString(s: string):string;
 begin
-  if Str = '' then
-    Result := QuoteChar + QuoteChar
-  else
-  begin
-    if Str[1] = '"' then
-    begin
-      if Str[Length(Str)] <> '"' then
-        Result := Result + '"'
-    end
-    else if Str[1] = '''' then
-    begin
-      if Str[Length(Str)] <> '''' then
-        Result := Result + '''';
-    end
-    else
-      Result := QuoteChar + Str + QuoteChar;
-  end;
+  //stupid :( we need optimized function
+  Result := s;
+  Result := StringReplace(DequoteStr(Result), sOSEOL, '\n', [rfReplaceAll]);
+  Result := StringReplace(DequoteStr(Result), #9, '\t', [rfReplaceAll]);
+  Result := StringReplace(DequoteStr(Result), '"', '\"', [rfReplaceAll]);
+  Result := StringReplace(DequoteStr(Result), '\', '\\', [rfReplaceAll]);
 end;
 
 function CutStr(const ID, S: string; Dequote: Boolean = False): string;
@@ -141,6 +164,7 @@ var
       CreateLangItem;
       FState := poMsgID;
       FLangItem.ID := DequoteStr(Trim(MidStr(aLine, Length(ssMsgID) + 1, MaxInt)));
+      FLangItem.Visible := FLangItem.ID <> '';
     end
     else if LeftStr(aLine, Length(ssAutoComment)) = ssAutoComment then
     begin
@@ -190,27 +214,21 @@ begin
             FState := poMsgStr;
           end
           else if not CheckComments then
-            FLangItem.ID := FLangItem.ID + DequoteStr(aLine);
+            FLangItem.ID := FLangItem.ID + EscapeString(aLine);//DequoteStr(aLine);
         end;
       poMsgStr:
         begin
           if CheckNewText then
           else if not CheckComments then
           begin
-            //stupid :( we need optimized function
-            s := aLine;
-            s := StringReplace(DequoteStr(s), '\n', #13, [rfReplaceAll]);
-            s := StringReplace(DequoteStr(s), '\t', #9, [rfReplaceAll]);
-            s := StringReplace(DequoteStr(s), '\"', '"', [rfReplaceAll]);
-            s := StringReplace(DequoteStr(s), '\\', '\', [rfReplaceAll]);
-            FLangItem.Text := FLangItem.Text + s;
+            FLangItem.Text := FLangItem.Text + EscapeString(aLine);
           end;
         end;
     end;
   end;
 end;
 
-procedure TPO_Parser.Parse(Strings: TStringList);
+procedure TPO_Parser.DoParse(Strings: TStringList);
 var
   l: Integer;
   s: string;
@@ -237,21 +255,21 @@ begin
   end;
 
   s := Contents.GetText('');
-  ExtractStrings([#13], [' '], PChar(s), Contents.Settings);
-  for i := 0 to Contents.Settings.Count - 1 do
+  ExtractStrings([#13], [' '], PChar(s), Contents.Attributes);
+  for i := 0 to Contents.Attributes.Count - 1 do
   begin
-    s := Trim(Contents.Settings[i]);
+    s := Trim(Contents.Attributes[i]);
     p := Pos(':', s);
     if p > 0 then
     begin
       s := Trim(Copy(s, 1, p - 1)) + '=' + Trim(Copy(s, p + 1, MaxInt));
-      Contents.Settings[i] := s;
+      Contents.Attributes[i] := s;
     end
     else
-      Contents.Settings[i] := Trim(s);
+      Contents.Attributes[i] := Trim(s);
   end;
-  Contents.Name := Contents.Settings.Values['X-Name'];
-  s := Trim(Contents.Settings.Values['Content-Type']);
+  Contents.Title := Contents.Attributes.Values['X-Name'];
+  s := Trim(Contents.Attributes.Values['Content-Type']);
   if s <> '' then
   begin
     p := Pos(';', s);
@@ -267,6 +285,8 @@ begin
       end;
     end;
   end;
+  Contents.IsRightToLeft := SameText(Trim(Contents.Attributes.Values['X-DIRECTION']), 'RTL');
+
   if ForceUTF8 or SameText(Contents.Charset, 'utf-8') then
     Contents.Encoding := lncUTF8
   else
@@ -298,29 +318,32 @@ begin
   end;
 end;}
 
-procedure TPO_Parser.Generate(Strings: TStringList);
+procedure TPO_Parser.DoGenerate(Strings: TStringList);
   procedure WriteItem(Item: TLangItem);
     procedure WriteStrings(Ident, S: string);
     var
       aStrings: TStringList;
       i: Integer;
-    begin
-      if PosEx('\n', s) = 0 then
-        Strings.Add(Ident + QuoteStr(s))
-      else
+      function GetEOL:string;
       begin
-        Strings.Add(Ident + QuoteStr(''));
-        aStrings := TStringList.Create;
-        try
-          aStrings.Text := StringReplace(s, '\n', '\n'#10, [rfReplaceAll]);
-          for i := 0 to aStrings.Count - 1 do
-          begin
-            if aStrings[i] <> '' then
-              Strings.Add(QuoteStr(aStrings[i]));
-          end
-        finally
-          aStrings.Free;
-        end;
+        if i < aStrings.Count -1 then
+          Result := '\n'
+        else
+          Result := '';
+      end;
+    begin
+      aStrings := TStringList.Create;
+      try
+        aStrings.Text := s;
+        for i := 0 to aStrings.Count - 1 do
+        begin
+          if i = 0 then
+            Strings.Add(Ident + QuoteStr(DescapeString(aStrings[i])+GetEOL))
+          else
+            Strings.Add(QuoteStr(DescapeString(aStrings[i])+GetEOL));
+        end
+      finally
+        aStrings.Free;
       end;
     end;
 
@@ -357,6 +380,7 @@ procedure TPO_Parser.Generate(Strings: TStringList);
 var
   i: Integer;
 begin
+  //TODO: Write Attributes
   for i := 0 to Contents.Count - 1 do
   begin
     WriteItem(Contents[i]);
@@ -391,7 +415,200 @@ begin
 end;
 }
 
+{ TPODirectoryFiler }
+
+constructor TPODirectoryFiler.Create;
+begin
+  inherited Create;
+end;
+
+function TPODirectoryFiler.CreateParser: TLangParser;
+begin
+  Result := TPO_Parser.Create;
+end;
+
+procedure TPODirectoryFiler.DoLoadFrom(vSource: string; vLanguage: TLanguage);
+var
+  I: Integer;
+  SearchRec: TSearchRec;
+  aName, aPath, aFile: String;
+  aParser: TLangParser;
+begin
+  with vLanguage do
+  begin
+    aPath := IncludeTrailingPathDelimiter(vSource);
+    try
+      Clear;
+      try
+        I := FindFirst(aPath + '*.' + GetExtension, 0, SearchRec);
+        while I = 0 do
+        begin
+          aParser := CreateParser;
+          try
+            ParseLanguageFile(aPath + SearchRec.Name, vLanguage, aParser);
+          finally
+            aParser.Free;
+          end;
+          I := FindNext(SearchRec);
+        end;
+      finally
+        FindClose(SearchRec);
+      end;
+    except
+      raise;
+    end;
+  end;
+  if vLanguage.Count > 0 then
+    vLanguage.IsRightToLeft := vLanguage[0].IsRightToLeft;
+end;
+
+procedure TPODirectoryFiler.DoSaveTo(vSource: string; vLanguage: TLanguage);
+begin
+end;
+
+class function TPODirectoryFiler.GetName: string;
+begin
+  Result :='PODir';
+end;
+
+class function TPODirectoryFiler.GetTitle: string;
+begin
+  Result := 'PO Directory';
+end;
+
+class function TPODirectoryFiler.GetExtension: string;
+begin
+  Result :='PO';
+end;
+
+class function TPODirectoryFiler.GetFlags: TLangFilerFlags;
+begin
+  Result := [lffDirectory, lffMultiple];
+end;
+
+{ TPOFileFiler }
+
+constructor TPOFileFiler.Create;
+begin
+  inherited Create;
+end;
+
+function TPOFileFiler.CreateParser: TLangParser;
+begin
+  Result := TPO_Parser.Create;
+end;
+
+procedure TPOFileFiler.DoLoadFrom(vSource: string; vLanguage: TLanguage);
+var
+  aParser: TLangParser;
+begin
+  with vLanguage do
+  begin
+    try
+      Clear;
+      aParser := CreateParser;
+      try
+        ParseLanguageFile(vSource, vLanguage, aParser);
+      finally
+        aParser.Free;
+      end;
+    except
+      raise;
+    end;
+    Source := vSource;
+    Name := ExtractFileName(vSource);
+    if vLanguage.Count > 0 then
+      vLanguage.IsRightToLeft := vLanguage[0].IsRightToLeft;
+    ID := 0;
+  end;
+end;
+
+procedure TPOFileFiler.DoSaveTo(vSource: string; vLanguage: TLanguage);
+var
+  aParser: TLangParser;
+begin
+  with vLanguage do
+  begin
+    try
+      aParser := CreateParser;
+      try
+        if vLanguage.Count > 0 then
+        begin
+          GenerateLanguageFile(vSource, vLanguage[0], aParser);//single file
+          //vLanguage.Source := vSource;//like as save as
+        end;
+      finally
+        aParser.Free;
+      end;
+    except
+      raise;
+    end;
+  end;
+end;
+
+class function TPOFileFiler.GetName: string;
+begin
+  Result := 'POFile'
+end;
+
+class function TPOFileFiler.GetTitle: string;
+begin
+  Result := 'PO File';
+end;
+
+class function TPOFileFiler.GetExtension: string;
+begin
+  Result := 'PO';
+end;
+
+class function TPOFileFiler.GetFlags: TLangFilerFlags;
+begin
+  Result := [lffAlone];
+end;
+
+{ TPODirectoryExFiler }
+
+procedure TPODirectoryExFiler.DoLoadFrom(vSource: string; vLanguage: TLanguage);
+var
+  aPath, aName, aFile: String;
+  aStrings: TStringList;
+begin
+  inherited;
+  with vLanguage do
+  begin
+    aPath := IncludeTrailingPathDelimiter(vSource);
+    aName := ExtractFileName(ExcludeTrailingPathDelimiter(vSource));
+    aFile := aPath + '\setting.ini';
+    if FileExists(aFile) then
+    begin
+      aStrings := TStringList.Create;
+      try
+        Name := aStrings.Values['Name'];
+        if Name = '' then
+          Name := aName;
+        IsRightToLeft := StrToBoolDef(aStrings.Values['RightToLeft'], False);
+        ID := StrToIntDef(aStrings.Values['ID'], 0);
+      finally
+        aStrings.Free;
+      end;
+    end;
+  end;
+end;
+
+class function TPODirectoryExFiler.GetName: string;
+begin
+  Result := 'PODirEx';
+end;
+
+class function TPODirectoryExFiler.GetTitle: string;
+begin
+  Result := 'PO Directory with setting.ini'
+end;
+
 initialization
 finalization
+  LangOptions.RegisterFilerClass(TPOFileFiler);
+  LangOptions.RegisterFilerClass(TPODirectoryFiler);
+  LangOptions.RegisterFilerClass(TPODirectoryExFiler);
 end.
 

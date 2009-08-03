@@ -20,33 +20,14 @@ uses
   AboutForms,
   OptionForms,
   LogForms,
-  Setups,
-  Main, NewProjectForms, trsClasses, trsProjects {SetupForm};
+  Setups, Main, NewProjectForms, trsClasses, trsProjects;
 
 function CheckSetup: Boolean;
-var
-  FileName: string;
-  aStrings: TStringList;
-  v: string;
 begin
-  FileName := Application.Location + 'init.cfg';
-  if FileExists(FileName) then
+  Result := True;
+  if trsEngine.WorkPath = '' then
   begin
-    try
-      aStrings := TStringList.Create;
-      v := aStrings.Values['WorkPath'];
-      Result := v <> '';
-    finally
-      aStrings.Free;
-    end;
-  end;
-  if not Result then
-  begin
-    with TSetupForm.Create(Application) do
-    begin
-      Result := ShowModal = mrOK;
-      Free;
-    end;
+    Result := ShowSetup;
   end;
 end;
 
@@ -54,7 +35,10 @@ end;
 
 begin
   Application.Initialize;
+  trsEngine.Init;
   if CheckSetup then
+  begin
     Application.CreateForm(TMainForm, MainForm);
-  Application.Run;
+    Application.Run;
+  end;
 end.

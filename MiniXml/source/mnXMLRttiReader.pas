@@ -82,7 +82,7 @@ implementation
 uses
   mnXMLUtils;
 
-function StrDateToDate(Value:string):TDateTime;
+function StrDateToDate(Value:string): TDateTime;
 var
   p:Integer;
   function Fetch(const s:string):Integer;
@@ -182,10 +182,10 @@ var
 begin
   //need to test the speed
   PropInfo := GetPropInfo(Instance.ClassInfo, PropName);
-  if IsStoredProp(Instance, PropInfo) and (PropInfo^.GetProc <> nil) and
+  if (PropInfo^.GetProc <> nil) and //i removed IsStoredProp for reader must not check if stored, it is alread have default value and not stored
     ((PropInfo^.SetProc <> nil) or
-    ((GetOrdProp(Instance, PropInfo) <> 0) and //Must be not null when read properties or must have a SetProc
-    (PropInfo^.PropType^.Kind in [tkClass, tkInterface]))) then
+      ((GetOrdProp(Instance, PropInfo) <> 0) and //Must be not null when read properties or must have a SetProc
+      (PropInfo^.PropType^.Kind in [tkClass, tkInterface]))) then
   begin
     ReadProperty(Instance, PropInfo, Value)
   end

@@ -1,6 +1,6 @@
 unit trsProjects;
 {**
- * Mini Translator
+ * This file is part of the "Mini Translator" http://www.sourceforge.net/projects/minilib
  *
  * @license    GPL 2 (http://www.gnu.org/licenses/gpl.html)
  * @author    Zaher Dirkey <zaher at parmaja dot com>
@@ -11,7 +11,7 @@ unit trsProjects;
 interface
 
 uses
-  SysUtils, Variants, Classes, Graphics, Controls,
+  SysUtils, Variants, Classes, Forms, Graphics, Controls,
   Contnrs, RTLConsts, Dialogs,
   LangClasses, PO_Languages,
   trsClasses,
@@ -51,7 +51,7 @@ type
     procedure SaveLanguage(Force: Boolean);
     procedure ExportLanguage(vParserClass: TLangParserClass);
     procedure LoadDictionary(vSource: string; var vLanguage: TLanguage);
-    procedure SaveDictionary(vSource: string; var vLanguage: TLanguage; Force: Boolean);
+    procedure SaveDictionary(vSource: string; vLanguage: TLanguage; Force: Boolean);
     property Log: TStringList read FLog write FLog;
     property HaveWarring: Boolean read FHaveWarring write FHaveWarring;
     property ToolsList: TObjectList read FToolsList;
@@ -66,13 +66,65 @@ type
     property Notes: string read FNotes write FNotes;
   end;
 
+  { TtrsOptions }
+
+  TtrsOptions = class(TmnXMLProfile)
+  private
+    FFont: TFont;
+    FFormHeight: Integer;
+    FFormWidth: Integer;
+    FTopLayout: Boolean;
+    procedure SetFont(const AValue: TFont);
+  public
+    constructor Create;
+    destructor Destroy; override;
+  published
+    property FormWidth: Integer read FFormWidth write FFormWidth default 0;
+    property FormHeight: Integer read FFormHeight write FFormHeight default 0;
+    property TopLayout: Boolean read FTopLayout write FTopLayout default False;
+    property Font: TFont read FFont write SetFont;
+  end;
+
+  { TtrsEngine }
+
+  TtrsEngine = class(TObject)
+  private
+    FOptions: TtrsOptions;
+  public
+    WorkPath: string;
+    constructor Create;
+    destructor Destroy; override;
+    procedure Init;
+    procedure LoadOptions;
+    procedure SaveOptions;
+    property Options: TtrsOptions read FOptions;
+  end;
+
+function GetConfigFileName: string;
+function trsEngine: TtrsEngine;
+
 const
-  sSoftwareRegKey = 'Software\anyTranslator';
+  sMiniTranslator = 'miniTranslator';
 
 implementation
 
 uses
   StrUtils;
+
+function GetConfigFileName: string;
+begin
+  Result := Application.Location + 'init.cfg';
+end;
+
+var
+  FtrsEngine: TtrsEngine = nil;
+
+function trsEngine:TtrsEngine;
+begin
+  if FtrsEngine = nil then
+    FtrsEngine:=TtrsEngine.Create;
+  Result := FtrsEngine;
+end;
 
 { TtrsProject }
 
@@ -151,7 +203,7 @@ begin
   end;
 end;
 
-procedure TtrsProject.SaveDictionary(vSource: string; var vLanguage: TLanguage; Force: Boolean);
+procedure TtrsProject.SaveDictionary(vSource: string; vLanguage: TLanguage; Force: Boolean);
 var
   aFiler: TLangFiler;
 begin
@@ -219,7 +271,73 @@ begin
   end;
 end;
 
+{ TtrsEngine }
+
+constructor TtrsEngine.Create;
+begin
+  inherited Create;
+  FOptions := TtrsOptions.Create;
+end;
+
+destructor TtrsEngine.Destroy;
+begin
+  FreeAndNil(FOptions);
+  inherited;
+end;
+
+procedure TtrsEngine.Init;
+var
+  aStrings: TStringList;
+begin
+  aStrings := TStringList.Create;
+  try
+    if FileExists(GetConfigFileName) then
+      aStrings.LoadFromFile(GetConfigFileName);
+    WorkPath := aStrings.Values['WorkPath'];
+  finally
+    aStrings.Free;
+  end;
+  LoadOptions;
+end;
+
+procedure TtrsEngine.LoadOptions;
+var
+  s:string;
+begin
+  Options.SafeLoadFromFile(WorkPath + 'options.xml');
+  s := Options.Font.Name;
+end;
+
+procedure TtrsEngine.SaveOptions;
+begin
+  Options.SaveToFile(WorkPath + 'options.xml');
+end;
+
+{ TtrsOptions }
+
+procedure TtrsOptions.SetFont(const AValue: TFont);
+begin
+  if FFont <> AValue then
+  begin
+    FFont.Assign(AValue);
+  end;
+end;
+
+constructor TtrsOptions.Create;
+begin
+  inherited Create;
+  FFont := TFont.Create;
+  FFont.Quality := fqDefault;
+  FFont.Pitch := fpDefault;
+end;
+
+destructor TtrsOptions.Destroy;
+begin
+  FreeAndNil(FFont);
+  inherited Destroy;
+end;
+
 initialization
 finalization
+  FreeAndNil(FtrsEngine);
 end.
-

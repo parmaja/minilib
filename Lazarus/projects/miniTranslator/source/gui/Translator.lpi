@@ -8,7 +8,7 @@
       <TargetFileExt Value=".exe"/>
       <UseAppBundle Value="False"/>
       <Icon Value="0"/>
-      <ActiveEditorIndexAtStart Value="2"/>
+      <ActiveEditorIndexAtStart Value="6"/>
     </General>
     <VersionInfo>
       <ProjectVersion Value=""/>
@@ -30,13 +30,13 @@
         <PackageName Value="LCL"/>
       </Item1>
     </RequiredPackages>
-    <Units Count="43">
+    <Units Count="72">
       <Unit0>
         <Filename Value="Translator.lpr"/>
         <IsPartOfProject Value="True"/>
-        <CursorPos X="1" Y="21"/>
-        <TopLine Value="10"/>
-        <UsageCount Value="42"/>
+        <CursorPos X="1" Y="1"/>
+        <TopLine Value="1"/>
+        <UsageCount Value="63"/>
       </Unit0>
       <Unit1>
         <Filename Value="AboutForms.pas"/>
@@ -47,7 +47,7 @@
         <UnitName Value="AboutForms"/>
         <CursorPos X="1" Y="1"/>
         <TopLine Value="1"/>
-        <UsageCount Value="42"/>
+        <UsageCount Value="63"/>
       </Unit1>
       <Unit2>
         <Filename Value="LogForms.pas"/>
@@ -58,7 +58,7 @@
         <UnitName Value="LogForms"/>
         <CursorPos X="20" Y="50"/>
         <TopLine Value="9"/>
-        <UsageCount Value="42"/>
+        <UsageCount Value="63"/>
       </Unit2>
       <Unit3>
         <Filename Value="OptionForms.pas"/>
@@ -69,17 +69,21 @@
         <UnitName Value="OptionForms"/>
         <CursorPos X="1" Y="1"/>
         <TopLine Value="1"/>
-        <UsageCount Value="42"/>
+        <UsageCount Value="63"/>
       </Unit3>
       <Unit4>
         <Filename Value="Setups.pas"/>
+        <IsPartOfProject Value="True"/>
         <ComponentName Value="SetupForm"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="Setups"/>
-        <CursorPos X="6" Y="16"/>
-        <TopLine Value="5"/>
-        <UsageCount Value="8"/>
+        <CursorPos X="1" Y="1"/>
+        <TopLine Value="1"/>
+        <UsageCount Value="36"/>
+        <Bookmarks Count="1">
+          <Item0 X="1" Y="75" ID="1"/>
+        </Bookmarks>
       </Unit4>
       <Unit5>
         <Filename Value="TrasnlatorClassForms.pas"/>
@@ -89,7 +93,7 @@
         <UnitName Value="TrasnlatorClassForms"/>
         <CursorPos X="1" Y="1"/>
         <TopLine Value="1"/>
-        <UsageCount Value="25"/>
+        <UsageCount Value="23"/>
       </Unit5>
       <Unit6>
         <Filename Value="Main.pas"/>
@@ -98,12 +102,12 @@
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="Main"/>
-        <CursorPos X="1" Y="1"/>
-        <TopLine Value="1"/>
+        <CursorPos X="29" Y="700"/>
+        <TopLine Value="693"/>
         <EditorIndex Value="0"/>
-        <UsageCount Value="42"/>
+        <UsageCount Value="63"/>
         <Bookmarks Count="1">
-          <Item0 X="1" Y="312" ID="1"/>
+          <Item0 X="11" Y="344" ID="1"/>
         </Bookmarks>
         <Loaded Value="True"/>
       </Unit6>
@@ -111,21 +115,21 @@
         <Filename Value="Main.lfm"/>
         <CursorPos X="19" Y="572"/>
         <TopLine Value="554"/>
-        <UsageCount Value="8"/>
+        <UsageCount Value="6"/>
         <SyntaxHighlighter Value="LFM"/>
       </Unit7>
       <Unit8>
         <Filename Value="..\..\clean.cmd"/>
         <CursorPos X="72" Y="1"/>
         <TopLine Value="1"/>
-        <UsageCount Value="8"/>
+        <UsageCount Value="6"/>
         <SyntaxHighlighter Value="None"/>
       </Unit8>
       <Unit9>
         <Filename Value="..\..\..\miniSQLViewer\clean.cmd"/>
         <CursorPos X="1" Y="2"/>
         <TopLine Value="1"/>
-        <UsageCount Value="8"/>
+        <UsageCount Value="6"/>
         <SyntaxHighlighter Value="None"/>
       </Unit9>
       <Unit10>
@@ -133,161 +137,167 @@
         <UnitName Value="TranslatorProjects"/>
         <CursorPos X="40" Y="55"/>
         <TopLine Value="34"/>
-        <UsageCount Value="11"/>
+        <UsageCount Value="9"/>
       </Unit10>
       <Unit11>
         <Filename Value="..\..\release.cmd"/>
         <CursorPos X="10" Y="1"/>
         <TopLine Value="1"/>
-        <UsageCount Value="8"/>
+        <UsageCount Value="6"/>
         <SyntaxHighlighter Value="None"/>
       </Unit11>
       <Unit12>
         <Filename Value="..\..\backup.cmd"/>
         <CursorPos X="1" Y="1"/>
         <TopLine Value="1"/>
-        <UsageCount Value="8"/>
+        <UsageCount Value="6"/>
         <SyntaxHighlighter Value="None"/>
       </Unit12>
       <Unit13>
         <Filename Value="..\..\source.lst"/>
         <CursorPos X="1" Y="1"/>
         <TopLine Value="1"/>
-        <UsageCount Value="8"/>
+        <UsageCount Value="6"/>
         <SyntaxHighlighter Value="None"/>
       </Unit13>
       <Unit14>
         <Filename Value="..\..\compile.cmd"/>
         <CursorPos X="1" Y="1"/>
         <TopLine Value="1"/>
-        <UsageCount Value="8"/>
+        <UsageCount Value="6"/>
         <SyntaxHighlighter Value="None"/>
       </Unit14>
       <Unit15>
         <Filename Value="..\..\extra.cfg"/>
         <CursorPos X="4" Y="31"/>
         <TopLine Value="10"/>
-        <UsageCount Value="8"/>
+        <UsageCount Value="6"/>
         <SyntaxHighlighter Value="None"/>
       </Unit15>
       <Unit16>
         <Filename Value="..\..\..\..\..\MiniTranslator\source\LangClasses.pas"/>
         <UnitName Value="LangClasses"/>
-        <CursorPos X="57" Y="845"/>
-        <TopLine Value="838"/>
-        <EditorIndex Value="4"/>
-        <UsageCount Value="20"/>
+        <CursorPos X="1" Y="985"/>
+        <TopLine Value="964"/>
+        <EditorIndex Value="11"/>
+        <UsageCount Value="24"/>
+        <Bookmarks Count="2">
+          <Item0 X="15" Y="114" ID="2"/>
+          <Item1 X="5" Y="169" ID="3"/>
+        </Bookmarks>
         <Loaded Value="True"/>
       </Unit16>
       <Unit17>
         <Filename Value="..\..\..\..\..\MiniTranslator\source\LangUtils.pas"/>
         <UnitName Value="LangUtils"/>
-        <CursorPos X="15" Y="53"/>
-        <TopLine Value="33"/>
-        <EditorIndex Value="2"/>
-        <UsageCount Value="15"/>
+        <CursorPos X="1" Y="1"/>
+        <TopLine Value="1"/>
+        <EditorIndex Value="3"/>
+        <UsageCount Value="19"/>
         <Loaded Value="True"/>
       </Unit17>
       <Unit18>
         <Filename Value="..\..\..\..\..\MiniXml\source\mnXMLRttiProfile.pas"/>
         <UnitName Value="mnXMLRttiProfile"/>
-        <CursorPos X="14" Y="137"/>
-        <TopLine Value="117"/>
-        <UsageCount Value="9"/>
+        <CursorPos X="25" Y="22"/>
+        <TopLine Value="1"/>
+        <UsageCount Value="10"/>
       </Unit18>
       <Unit19>
         <Filename Value="..\..\oldTranslator\source\mnGetText.pas"/>
         <UnitName Value="mnGetText"/>
         <CursorPos X="1" Y="22"/>
         <TopLine Value="22"/>
-        <UsageCount Value="8"/>
+        <UsageCount Value="6"/>
       </Unit19>
       <Unit20>
         <Filename Value="..\..\oldTranslator\source\mnTranslatorClasses.pas"/>
         <UnitName Value="mnTranslatorClasses"/>
         <CursorPos X="7" Y="881"/>
         <TopLine Value="870"/>
-        <UsageCount Value="15"/>
+        <UsageCount Value="13"/>
       </Unit20>
       <Unit21>
         <Filename Value="..\..\..\..\..\MiniTranslator\source\FLAT_Languages.pas"/>
         <UnitName Value="RST_Languages"/>
         <CursorPos X="1" Y="1"/>
         <TopLine Value="1"/>
-        <UsageCount Value="8"/>
+        <UsageCount Value="6"/>
       </Unit21>
       <Unit22>
         <Filename Value="..\..\..\..\..\MiniTranslator\source\PO_Languages.pas"/>
         <UnitName Value="PO_Languages"/>
-        <CursorPos X="16" Y="378"/>
-        <TopLine Value="355"/>
-        <EditorIndex Value="3"/>
-        <UsageCount Value="15"/>
+        <CursorPos X="28" Y="316"/>
+        <TopLine Value="306"/>
+        <EditorIndex Value="4"/>
+        <UsageCount Value="19"/>
         <Loaded Value="True"/>
       </Unit22>
       <Unit23>
         <Filename Value="..\..\..\..\..\..\..\..\..\programs\fpc\src\rtl\objpas\classes\classesh.inc"/>
-        <CursorPos X="14" Y="278"/>
-        <TopLine Value="257"/>
-        <UsageCount Value="8"/>
+        <CursorPos X="14" Y="579"/>
+        <TopLine Value="560"/>
+        <EditorIndex Value="10"/>
+        <UsageCount Value="12"/>
+        <Loaded Value="True"/>
       </Unit23>
       <Unit24>
         <Filename Value="..\..\..\..\..\..\..\..\..\programs\fpc\src\rtl\objpas\classes\cregist.inc"/>
         <CursorPos X="9" Y="228"/>
         <TopLine Value="186"/>
-        <UsageCount Value="8"/>
+        <UsageCount Value="6"/>
       </Unit24>
       <Unit25>
         <Filename Value="AboutForms.lrs"/>
         <CursorPos X="1" Y="1"/>
         <TopLine Value="1"/>
-        <UsageCount Value="8"/>
+        <UsageCount Value="6"/>
       </Unit25>
       <Unit26>
         <Filename Value="Main.lrs"/>
         <CursorPos X="1" Y="1"/>
         <TopLine Value="1"/>
-        <UsageCount Value="8"/>
+        <UsageCount Value="6"/>
       </Unit26>
       <Unit27>
         <Filename Value="..\..\..\..\..\..\..\..\..\programs\lazarus\lcl\dialogs.pp"/>
         <UnitName Value="Dialogs"/>
         <CursorPos X="1" Y="2"/>
         <TopLine Value="1"/>
-        <UsageCount Value="8"/>
+        <UsageCount Value="6"/>
       </Unit27>
       <Unit28>
         <Filename Value="..\..\..\..\..\MiniXml\source\mnXMLUtils.pas"/>
         <UnitName Value="mnXMLUtils"/>
-        <CursorPos X="1" Y="1"/>
+        <CursorPos X="84" Y="18"/>
         <TopLine Value="1"/>
-        <UsageCount Value="8"/>
+        <UsageCount Value="9"/>
       </Unit28>
       <Unit29>
         <Filename Value="..\..\..\..\..\..\..\..\..\programs\fpc\src\rtl\objpas\strutils.pp"/>
         <UnitName Value="strutils"/>
         <CursorPos X="18" Y="174"/>
         <TopLine Value="148"/>
-        <UsageCount Value="8"/>
+        <UsageCount Value="6"/>
       </Unit29>
       <Unit30>
         <Filename Value="..\..\..\..\..\..\..\..\..\programs\lazarus\lcl\forms.pp"/>
         <UnitName Value="Forms"/>
         <CursorPos X="1" Y="1825"/>
         <TopLine Value="1804"/>
-        <UsageCount Value="8"/>
+        <UsageCount Value="6"/>
       </Unit30>
       <Unit31>
         <Filename Value="NewProjectForms.lrs"/>
         <CursorPos X="1" Y="1"/>
         <TopLine Value="1"/>
-        <UsageCount Value="8"/>
+        <UsageCount Value="6"/>
       </Unit31>
       <Unit32>
         <Filename Value="NewProjectForms.lfm"/>
         <CursorPos X="1" Y="1"/>
         <TopLine Value="1"/>
-        <UsageCount Value="8"/>
+        <UsageCount Value="6"/>
         <SyntaxHighlighter Value="LFM"/>
       </Unit32>
       <Unit33>
@@ -299,26 +309,26 @@
         <UnitName Value="NewProjectForms"/>
         <CursorPos X="15" Y="53"/>
         <TopLine Value="38"/>
-        <UsageCount Value="28"/>
+        <UsageCount Value="49"/>
       </Unit33>
       <Unit34>
         <Filename Value="..\lib\trsProjects.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="trsProjects"/>
-        <CursorPos X="26" Y="121"/>
-        <TopLine Value="105"/>
-        <EditorIndex Value="5"/>
-        <UsageCount Value="34"/>
+        <CursorPos X="1" Y="214"/>
+        <TopLine Value="193"/>
+        <EditorIndex Value="1"/>
+        <UsageCount Value="55"/>
         <Loaded Value="True"/>
       </Unit34>
       <Unit35>
         <Filename Value="..\lib\trsClasses.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="trsClasses"/>
-        <CursorPos X="1" Y="121"/>
-        <TopLine Value="119"/>
-        <EditorIndex Value="1"/>
-        <UsageCount Value="34"/>
+        <CursorPos X="1" Y="1"/>
+        <TopLine Value="1"/>
+        <EditorIndex Value="2"/>
+        <UsageCount Value="55"/>
         <Loaded Value="True"/>
       </Unit35>
       <Unit36>
@@ -326,169 +336,377 @@
         <UnitName Value="contnrs"/>
         <CursorPos X="5" Y="126"/>
         <TopLine Value="105"/>
-        <UsageCount Value="11"/>
+        <UsageCount Value="9"/>
       </Unit36>
       <Unit37>
         <Filename Value="..\..\..\..\..\..\..\..\..\programs\fpc\src\rtl\inc\objpash.inc"/>
         <CursorPos X="23" Y="175"/>
         <TopLine Value="154"/>
-        <UsageCount Value="11"/>
+        <UsageCount Value="9"/>
       </Unit37>
       <Unit38>
         <Filename Value="..\..\..\..\..\..\..\..\..\programs\lazarus\lcl\include\customlistbox.inc"/>
         <CursorPos X="1" Y="566"/>
         <TopLine Value="555"/>
-        <UsageCount Value="10"/>
+        <UsageCount Value="8"/>
       </Unit38>
       <Unit39>
         <Filename Value="..\..\demos\test\test.po"/>
         <CursorPos X="1" Y="27"/>
         <TopLine Value="1"/>
-        <UsageCount Value="10"/>
+        <UsageCount Value="8"/>
         <SyntaxHighlighter Value="None"/>
       </Unit39>
       <Unit40>
         <Filename Value="..\..\demos\test\drupal-ar.po"/>
         <CursorPos X="1" Y="1"/>
         <TopLine Value="1"/>
-        <UsageCount Value="10"/>
+        <UsageCount Value="8"/>
         <SyntaxHighlighter Value="None"/>
       </Unit40>
       <Unit41>
         <Filename Value="..\..\demos\test\en.po"/>
         <CursorPos X="1" Y="1"/>
         <TopLine Value="1"/>
-        <UsageCount Value="10"/>
+        <UsageCount Value="8"/>
         <SyntaxHighlighter Value="None"/>
       </Unit41>
       <Unit42>
         <Filename Value="..\..\demos\test\ar.po"/>
         <CursorPos X="1" Y="1"/>
         <TopLine Value="1"/>
+        <EditorIndex Value="6"/>
         <UsageCount Value="10"/>
+        <Loaded Value="True"/>
         <SyntaxHighlighter Value="None"/>
       </Unit42>
+      <Unit43>
+        <Filename Value="..\..\..\..\..\..\..\..\..\programs\fpc\src\rtl\objpas\sysutils\filutilh.inc"/>
+        <CursorPos X="10" Y="86"/>
+        <TopLine Value="65"/>
+        <UsageCount Value="9"/>
+      </Unit43>
+      <Unit44>
+        <Filename Value="..\..\..\..\..\..\..\..\..\programs\fpc\src\rtl\win\sysutils.pp"/>
+        <UnitName Value="sysutils"/>
+        <CursorPos X="23" Y="768"/>
+        <TopLine Value="752"/>
+        <UsageCount Value="9"/>
+      </Unit44>
+      <Unit45>
+        <Filename Value="..\..\..\..\..\..\..\..\..\programs\fpc\src\rtl\objpas\sysutils\osutilsh.inc"/>
+        <CursorPos X="10" Y="21"/>
+        <TopLine Value="1"/>
+        <UsageCount Value="8"/>
+      </Unit45>
+      <Unit46>
+        <Filename Value="..\..\..\..\..\..\..\..\..\programs\fpc\src\rtl\objpas\sysutils\osutil.inc"/>
+        <CursorPos X="3" Y="121"/>
+        <TopLine Value="118"/>
+        <UsageCount Value="8"/>
+      </Unit46>
+      <Unit47>
+        <Filename Value="..\..\..\..\..\..\..\..\..\workspace\lazarus\idemake.cfg"/>
+        <CursorPos X="1" Y="16"/>
+        <TopLine Value="1"/>
+        <UsageCount Value="8"/>
+        <SyntaxHighlighter Value="None"/>
+      </Unit47>
+      <Unit48>
+        <Filename Value="..\..\..\..\..\..\..\..\..\programs\lazarus\ide\buildmanager.pas"/>
+        <UnitName Value="BuildManager"/>
+        <CursorPos X="27" Y="1274"/>
+        <TopLine Value="1253"/>
+        <UsageCount Value="8"/>
+      </Unit48>
+      <Unit49>
+        <Filename Value="..\..\..\..\..\..\..\..\..\programs\lazarus\lcl\fileutil.pas"/>
+        <UnitName Value="FileUtil"/>
+        <CursorPos X="10" Y="216"/>
+        <TopLine Value="195"/>
+        <UsageCount Value="8"/>
+      </Unit49>
+      <Unit50>
+        <Filename Value="..\..\..\..\..\..\..\..\..\programs\lazarus\lcl\include\fileutil.inc"/>
+        <CursorPos X="30" Y="248"/>
+        <TopLine Value="246"/>
+        <UsageCount Value="8"/>
+      </Unit50>
+      <Unit51>
+        <Filename Value="..\..\..\..\..\..\..\..\..\workspace\miniTranslator\options.xml"/>
+        <CursorPos X="1" Y="1"/>
+        <TopLine Value="1"/>
+        <UsageCount Value="10"/>
+        <SyntaxHighlighter Value="XML"/>
+      </Unit51>
+      <Unit52>
+        <Filename Value="..\..\..\..\..\..\..\..\..\programs\lazarus\lcl\graphics.pp"/>
+        <UnitName Value="Graphics"/>
+        <CursorPos X="61" Y="550"/>
+        <TopLine Value="529"/>
+        <UsageCount Value="9"/>
+      </Unit52>
+      <Unit53>
+        <Filename Value="..\..\..\..\..\..\..\..\..\programs\lazarus\lcl\include\font.inc"/>
+        <CursorPos X="33" Y="1245"/>
+        <TopLine Value="1243"/>
+        <UsageCount Value="9"/>
+      </Unit53>
+      <Unit54>
+        <Filename Value="..\..\..\..\..\MiniXml\source\mnXMLRttiWriter.pas"/>
+        <UnitName Value="mnXMLRttiWriter"/>
+        <CursorPos X="1" Y="1"/>
+        <TopLine Value="1"/>
+        <UsageCount Value="9"/>
+      </Unit54>
+      <Unit55>
+        <Filename Value="..\..\..\..\..\MiniXml\source\mnXMLRtti.pas"/>
+        <UnitName Value="mnXMLRtti"/>
+        <CursorPos X="14" Y="109"/>
+        <TopLine Value="88"/>
+        <UsageCount Value="10"/>
+      </Unit55>
+      <Unit56>
+        <Filename Value="..\..\..\..\..\MiniXml\source\mnXML.pas"/>
+        <UnitName Value="mnXML"/>
+        <CursorPos X="55" Y="165"/>
+        <TopLine Value="158"/>
+        <UsageCount Value="9"/>
+      </Unit56>
+      <Unit57>
+        <Filename Value="..\..\..\..\..\MiniXml\source\mnXMLStreams.pas"/>
+        <UnitName Value="mnXMLStreams"/>
+        <CursorPos X="1" Y="1"/>
+        <TopLine Value="1"/>
+        <UsageCount Value="9"/>
+      </Unit57>
+      <Unit58>
+        <Filename Value="..\..\..\..\..\MiniXml\source\mnXMLWriter.pas"/>
+        <UnitName Value="mnXMLWriter"/>
+        <CursorPos X="40" Y="126"/>
+        <TopLine Value="105"/>
+        <UsageCount Value="10"/>
+      </Unit58>
+      <Unit59>
+        <Filename Value="..\..\..\..\..\MiniXml\source\mnXMLRttiReader.pas"/>
+        <UnitName Value="mnXMLRttiReader"/>
+        <CursorPos X="49" Y="185"/>
+        <TopLine Value="164"/>
+        <UsageCount Value="10"/>
+        <Bookmarks Count="2">
+          <Item0 X="23" Y="317" ID="1"/>
+          <Item1 X="41" Y="184" ID="2"/>
+        </Bookmarks>
+      </Unit59>
+      <Unit60>
+        <Filename Value="..\..\..\..\..\MiniXml\source\mnXMLScanner.pas"/>
+        <UnitName Value="mnXMLScanner"/>
+        <CursorPos X="1" Y="409"/>
+        <TopLine Value="388"/>
+        <UsageCount Value="10"/>
+      </Unit60>
+      <Unit61>
+        <Filename Value="..\..\..\..\..\..\..\..\..\programs\fpc\src\packages\fcl-image\src\fpcanvas.pp"/>
+        <UnitName Value="FPCanvas"/>
+        <CursorPos X="26" Y="82"/>
+        <TopLine Value="61"/>
+        <UsageCount Value="8"/>
+      </Unit61>
+      <Unit62>
+        <Filename Value="..\..\..\..\..\..\..\..\..\programs\fpc\src\packages\fcl-image\src\fphelper.inc"/>
+        <CursorPos X="3" Y="20"/>
+        <TopLine Value="18"/>
+        <UsageCount Value="8"/>
+      </Unit62>
+      <Unit63>
+        <Filename Value="..\..\..\..\..\..\..\..\..\programs\fpc\src\rtl\objpas\classes\classes.inc"/>
+        <CursorPos X="3" Y="420"/>
+        <TopLine Value="408"/>
+        <UsageCount Value="9"/>
+      </Unit63>
+      <Unit64>
+        <Filename Value="..\..\..\..\..\..\..\..\..\programs\fpc\src\rtl\objpas\typinfo.pp"/>
+        <UnitName Value="typinfo"/>
+        <CursorPos X="10" Y="651"/>
+        <TopLine Value="630"/>
+        <UsageCount Value="9"/>
+      </Unit64>
+      <Unit65>
+        <Filename Value="..\..\..\..\..\..\..\..\..\programs\fpc\src\rtl\objpas\sysutils\sysstrh.inc"/>
+        <CursorPos X="1" Y="1"/>
+        <TopLine Value="1"/>
+        <UsageCount Value="10"/>
+      </Unit65>
+      <Unit66>
+        <Filename Value="..\..\..\..\..\..\..\..\..\programs\fpc\src\rtl\objpas\sysutils\sysstr.inc"/>
+        <CursorPos X="10" Y="1707"/>
+        <TopLine Value="1705"/>
+        <UsageCount Value="10"/>
+      </Unit66>
+      <Unit67>
+        <Filename Value="..\..\..\..\..\..\..\..\..\programs\lazarus\lcl\translations.pas"/>
+        <UnitName Value="Translations"/>
+        <CursorPos X="1" Y="197"/>
+        <TopLine Value="161"/>
+        <EditorIndex Value="7"/>
+        <UsageCount Value="12"/>
+        <Loaded Value="True"/>
+      </Unit67>
+      <Unit68>
+        <Filename Value="..\..\..\..\..\..\..\..\..\programs\lazarus\lcl\lclproc.pas"/>
+        <UnitName Value="LCLProc"/>
+        <CursorPos X="1" Y="306"/>
+        <TopLine Value="287"/>
+        <EditorIndex Value="8"/>
+        <UsageCount Value="12"/>
+        <Loaded Value="True"/>
+      </Unit68>
+      <Unit69>
+        <Filename Value="..\..\..\..\..\..\..\..\..\programs\fpc\src\rtl\win32\system.pp"/>
+        <UnitName Value="System"/>
+        <CursorPos X="2" Y="35"/>
+        <TopLine Value="14"/>
+        <EditorIndex Value="9"/>
+        <UsageCount Value="12"/>
+        <Loaded Value="True"/>
+      </Unit69>
+      <Unit70>
+        <Filename Value="..\..\..\..\..\Commons\mnUtils.pas"/>
+        <UnitName Value="mnUtils"/>
+        <CursorPos X="10" Y="24"/>
+        <TopLine Value="1"/>
+        <EditorIndex Value="5"/>
+        <UsageCount Value="11"/>
+        <Loaded Value="True"/>
+      </Unit70>
+      <Unit71>
+        <Filename Value="D:\Users\Job\Desktop\MiniTranslator\demos\test\ar.po"/>
+        <CursorPos X="40" Y="16"/>
+        <TopLine Value="1"/>
+        <UsageCount Value="10"/>
+        <SyntaxHighlighter Value="None"/>
+      </Unit71>
     </Units>
     <JumpHistory Count="30" HistoryIndex="29">
       <Position1>
-        <Filename Value="Main.pas"/>
-        <Caret Line="17" Column="16" TopLine="1"/>
+        <Filename Value="..\..\..\..\..\MiniTranslator\source\PO_Languages.pas"/>
+        <Caret Line="217" Column="56" TopLine="196"/>
       </Position1>
       <Position2>
-        <Filename Value="Main.pas"/>
-        <Caret Line="159" Column="53" TopLine="138"/>
+        <Filename Value="..\..\..\..\..\MiniTranslator\source\PO_Languages.pas"/>
+        <Caret Line="1" Column="1" TopLine="1"/>
       </Position2>
       <Position3>
-        <Filename Value="Main.pas"/>
-        <Caret Line="1095" Column="35" TopLine="1056"/>
+        <Filename Value="..\..\..\..\..\MiniTranslator\source\PO_Languages.pas"/>
+        <Caret Line="104" Column="22" TopLine="83"/>
       </Position3>
       <Position4>
-        <Filename Value="Main.pas"/>
-        <Caret Line="118" Column="45" TopLine="118"/>
+        <Filename Value="..\..\..\..\..\MiniTranslator\source\PO_Languages.pas"/>
+        <Caret Line="114" Column="23" TopLine="83"/>
       </Position4>
       <Position5>
-        <Filename Value="Main.pas"/>
-        <Caret Line="292" Column="3" TopLine="288"/>
+        <Filename Value="..\..\..\..\..\MiniTranslator\source\PO_Languages.pas"/>
+        <Caret Line="217" Column="56" TopLine="196"/>
       </Position5>
       <Position6>
-        <Filename Value="Main.pas"/>
-        <Caret Line="1" Column="1" TopLine="1"/>
+        <Filename Value="..\..\..\..\..\MiniTranslator\source\PO_Languages.pas"/>
+        <Caret Line="224" Column="60" TopLine="196"/>
       </Position6>
       <Position7>
-        <Filename Value="Main.pas"/>
-        <Caret Line="46" Column="28" TopLine="25"/>
+        <Filename Value="..\..\..\..\..\MiniTranslator\source\PO_Languages.pas"/>
+        <Caret Line="329" Column="39" TopLine="309"/>
       </Position7>
       <Position8>
-        <Filename Value="Main.pas"/>
-        <Caret Line="299" Column="13" TopLine="278"/>
+        <Filename Value="..\..\..\..\..\MiniTranslator\source\PO_Languages.pas"/>
+        <Caret Line="1" Column="1" TopLine="1"/>
       </Position8>
       <Position9>
-        <Filename Value="Main.pas"/>
-        <Caret Line="300" Column="19" TopLine="280"/>
+        <Filename Value="..\..\..\..\..\MiniTranslator\source\PO_Languages.pas"/>
+        <Caret Line="104" Column="22" TopLine="83"/>
       </Position9>
       <Position10>
-        <Filename Value="Main.pas"/>
-        <Caret Line="1" Column="1" TopLine="1"/>
+        <Filename Value="..\..\..\..\..\MiniTranslator\source\PO_Languages.pas"/>
+        <Caret Line="114" Column="23" TopLine="83"/>
       </Position10>
       <Position11>
-        <Filename Value="Main.pas"/>
-        <Caret Line="186" Column="29" TopLine="165"/>
+        <Filename Value="..\..\..\..\..\MiniTranslator\source\PO_Languages.pas"/>
+        <Caret Line="224" Column="1" TopLine="203"/>
       </Position11>
       <Position12>
-        <Filename Value="Main.pas"/>
-        <Caret Line="300" Column="19" TopLine="279"/>
+        <Filename Value="..\..\..\..\..\MiniTranslator\source\PO_Languages.pas"/>
+        <Caret Line="105" Column="1" TopLine="84"/>
       </Position12>
       <Position13>
-        <Filename Value="Main.pas"/>
-        <Caret Line="519" Column="11" TopLine="499"/>
+        <Filename Value="..\..\..\..\..\MiniTranslator\source\PO_Languages.pas"/>
+        <Caret Line="107" Column="1" TopLine="86"/>
       </Position13>
       <Position14>
-        <Filename Value="Main.pas"/>
-        <Caret Line="301" Column="5" TopLine="280"/>
+        <Filename Value="..\..\..\..\..\MiniTranslator\source\PO_Languages.pas"/>
+        <Caret Line="224" Column="1" TopLine="203"/>
       </Position14>
       <Position15>
-        <Filename Value="Main.pas"/>
-        <Caret Line="302" Column="5" TopLine="277"/>
+        <Filename Value="..\..\..\..\..\MiniTranslator\source\PO_Languages.pas"/>
+        <Caret Line="105" Column="1" TopLine="84"/>
       </Position15>
       <Position16>
-        <Filename Value="Main.pas"/>
-        <Caret Line="299" Column="75" TopLine="279"/>
+        <Filename Value="..\..\..\..\..\MiniTranslator\source\PO_Languages.pas"/>
+        <Caret Line="107" Column="1" TopLine="86"/>
       </Position16>
       <Position17>
-        <Filename Value="Main.pas"/>
-        <Caret Line="862" Column="30" TopLine="842"/>
+        <Filename Value="..\..\..\..\..\MiniTranslator\source\PO_Languages.pas"/>
+        <Caret Line="108" Column="1" TopLine="87"/>
       </Position17>
       <Position18>
-        <Filename Value="Main.pas"/>
-        <Caret Line="120" Column="54" TopLine="99"/>
+        <Filename Value="..\..\..\..\..\MiniTranslator\source\PO_Languages.pas"/>
+        <Caret Line="109" Column="1" TopLine="88"/>
       </Position18>
       <Position19>
-        <Filename Value="Main.pas"/>
-        <Caret Line="309" Column="3" TopLine="307"/>
+        <Filename Value="..\..\..\..\..\MiniTranslator\source\PO_Languages.pas"/>
+        <Caret Line="110" Column="1" TopLine="89"/>
       </Position19>
       <Position20>
-        <Filename Value="Main.pas"/>
-        <Caret Line="120" Column="5" TopLine="99"/>
+        <Filename Value="..\..\..\..\..\MiniTranslator\source\PO_Languages.pas"/>
+        <Caret Line="111" Column="1" TopLine="90"/>
       </Position20>
       <Position21>
-        <Filename Value="Main.pas"/>
-        <Caret Line="241" Column="3" TopLine="238"/>
+        <Filename Value="..\..\..\..\..\MiniTranslator\source\PO_Languages.pas"/>
+        <Caret Line="224" Column="1" TopLine="203"/>
       </Position21>
       <Position22>
-        <Filename Value="Main.pas"/>
-        <Caret Line="26" Column="12" TopLine="26"/>
+        <Filename Value="..\..\..\..\..\MiniTranslator\source\PO_Languages.pas"/>
+        <Caret Line="342" Column="24" TopLine="306"/>
       </Position22>
       <Position23>
-        <Filename Value="Main.pas"/>
-        <Caret Line="119" Column="44" TopLine="98"/>
+        <Filename Value="..\..\demos\test\ar.po"/>
+        <Caret Line="17" Column="45" TopLine="1"/>
       </Position23>
       <Position24>
-        <Filename Value="Main.pas"/>
-        <Caret Line="242" Column="39" TopLine="239"/>
+        <Filename Value="..\..\demos\test\ar.po"/>
+        <Caret Line="4" Column="16" TopLine="1"/>
       </Position24>
       <Position25>
-        <Filename Value="Main.pas"/>
-        <Caret Line="360" Column="35" TopLine="344"/>
+        <Filename Value="..\..\demos\test\ar.po"/>
+        <Caret Line="7" Column="41" TopLine="1"/>
       </Position25>
       <Position26>
-        <Filename Value="Main.pas"/>
-        <Caret Line="14" Column="54" TopLine="1"/>
+        <Filename Value="..\..\demos\test\ar.po"/>
+        <Caret Line="13" Column="38" TopLine="1"/>
       </Position26>
       <Position27>
-        <Filename Value="Main.pas"/>
-        <Caret Line="13" Column="53" TopLine="1"/>
+        <Filename Value="..\..\demos\test\ar.po"/>
+        <Caret Line="15" Column="1" TopLine="1"/>
       </Position27>
       <Position28>
-        <Filename Value="..\..\..\..\..\MiniTranslator\source\LangUtils.pas"/>
-        <Caret Line="54" Column="14" TopLine="29"/>
+        <Filename Value="..\..\demos\test\ar.po"/>
+        <Caret Line="20" Column="1" TopLine="1"/>
       </Position28>
       <Position29>
-        <Filename Value="..\..\..\..\..\MiniTranslator\source\LangUtils.pas"/>
-        <Caret Line="321" Column="46" TopLine="281"/>
+        <Filename Value="..\..\demos\test\ar.po"/>
+        <Caret Line="18" Column="28" TopLine="1"/>
       </Position29>
       <Position30>
-        <Filename Value="..\..\..\..\..\MiniTranslator\source\LangUtils.pas"/>
-        <Caret Line="1" Column="1" TopLine="1"/>
+        <Filename Value="..\..\demos\test\ar.po"/>
+        <Caret Line="6" Column="1" TopLine="1"/>
       </Position30>
     </JumpHistory>
   </ProjectOptions>

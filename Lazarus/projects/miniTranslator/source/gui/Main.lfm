@@ -1,12 +1,12 @@
 object MainForm: TMainForm
-  Left = 304
-  Height = 359
-  Top = 113
-  Width = 621
+  Left = 377
+  Height = 400
+  Top = 101
+  Width = 600
   ActiveControl = LocalValueEdit
   Caption = 'Mini Translator'
-  ClientHeight = 339
-  ClientWidth = 621
+  ClientHeight = 380
+  ClientWidth = 600
   Font.Height = -11
   Font.Name = 'MS Sans Serif'
   KeyPreview = True
@@ -19,7 +19,7 @@ object MainForm: TMainForm
   LCLVersion = '0.9.27'
   object LeftSplitter: TSplitter
     Left = 295
-    Height = 211
+    Height = 252
     Top = 105
     Width = 5
   end
@@ -28,38 +28,38 @@ object MainForm: TMainForm
     Left = 0
     Height = 5
     Top = 100
-    Width = 621
+    Width = 600
     Align = alTop
     ResizeAnchor = akTop
   end
   object Panel2: TPanel
     Left = 300
-    Height = 211
+    Height = 252
     Top = 105
-    Width = 321
+    Width = 300
     Align = alClient
     BevelOuter = bvNone
-    ClientHeight = 211
-    ClientWidth = 321
+    ClientHeight = 252
+    ClientWidth = 300
     TabOrder = 0
     object Splitter1: TSplitter
       Cursor = crVSplit
       Left = 0
       Height = 4
-      Top = 117
-      Width = 321
+      Top = 102
+      Width = 300
       Align = alTop
       ResizeAnchor = akTop
     end
     object OriginalPanel: TPanel
       Left = 0
-      Height = 117
+      Height = 102
       Top = 0
-      Width = 321
+      Width = 300
       Align = alTop
       BevelOuter = bvNone
-      ClientHeight = 117
-      ClientWidth = 321
+      ClientHeight = 102
+      ClientWidth = 300
       TabOrder = 1
       object Label5: TLabel
         Left = 5
@@ -78,10 +78,10 @@ object MainForm: TMainForm
         ParentColor = False
       end
       object OriginalValueEdit: TMemo
-        Left = 1
-        Height = 79
+        Left = 2
+        Height = 64
         Top = 37
-        Width = 317
+        Width = 295
         Anchors = [akTop, akLeft, akRight, akBottom]
         ParentBidiMode = False
         ReadOnly = True
@@ -92,7 +92,7 @@ object MainForm: TMainForm
         Left = 64
         Height = 17
         Top = 1
-        Width = 253
+        Width = 232
         Anchors = [akTop, akLeft, akRight]
         AutoSize = False
         BorderStyle = bsNone
@@ -108,13 +108,13 @@ object MainForm: TMainForm
     end
     object LocalPanel: TPanel
       Left = 0
-      Height = 90
-      Top = 121
-      Width = 321
+      Height = 146
+      Top = 106
+      Width = 300
       Align = alClient
       BevelOuter = bvNone
-      ClientHeight = 90
-      ClientWidth = 321
+      ClientHeight = 146
+      ClientWidth = 300
       TabOrder = 0
       object Label6: TLabel
         Left = 5
@@ -127,16 +127,16 @@ object MainForm: TMainForm
       object Label8: TLabel
         Left = 5
         Height = 14
-        Top = 3
+        Top = 4
         Width = 45
         Caption = 'Comment'
         ParentColor = False
       end
       object LocalValueEdit: TMemo
-        Left = 1
-        Height = 52
+        Left = 2
+        Height = 107
         Top = 38
-        Width = 316
+        Width = 294
         Anchors = [akTop, akLeft, akRight, akBottom]
         OnChange = LocalValueEditChange
         ParentBidiMode = False
@@ -146,8 +146,8 @@ object MainForm: TMainForm
       object CommentEdit: TEdit
         Left = 64
         Height = 17
-        Top = 1
-        Width = 253
+        Top = 2
+        Width = 232
         Anchors = [akTop, akLeft, akRight]
         AutoSize = False
         BorderStyle = bsNone
@@ -160,28 +160,28 @@ object MainForm: TMainForm
   end
   object LeftLayoutPanel: TPanel
     Left = 0
-    Height = 211
+    Height = 252
     Top = 105
     Width = 295
     Align = alLeft
     BevelOuter = bvNone
-    ClientHeight = 211
+    ClientHeight = 252
     ClientWidth = 295
     TabOrder = 1
     object Splitter2: TSplitter
       Left = 150
-      Height = 211
+      Height = 252
       Top = 0
       Width = 6
     end
     object Panel3: TPanel
       Left = 0
-      Height = 211
+      Height = 252
       Top = 0
       Width = 150
       Align = alLeft
       BevelOuter = bvNone
-      ClientHeight = 211
+      ClientHeight = 252
       ClientWidth = 150
       TabOrder = 0
       object Label2: TLabel
@@ -194,23 +194,24 @@ object MainForm: TMainForm
       end
       object SectionList: TListBox
         Left = 4
-        Height = 190
+        Height = 230
         Top = 21
         Width = 145
         Anchors = [akTop, akLeft, akRight, akBottom]
         ItemHeight = 0
         OnClick = SectionListClick
+        Style = lbOwnerDrawFixed
         TabOrder = 0
       end
     end
     object Panel4: TPanel
       Left = 156
-      Height = 211
+      Height = 252
       Top = 0
       Width = 139
       Align = alClient
       BevelOuter = bvNone
-      ClientHeight = 211
+      ClientHeight = 252
       ClientWidth = 139
       TabOrder = 1
       object Label3: TLabel
@@ -223,12 +224,13 @@ object MainForm: TMainForm
       end
       object IdentList: TListBox
         Left = 1
-        Height = 190
+        Height = 230
         Top = 21
         Width = 137
         Anchors = [akTop, akLeft, akRight, akBottom]
         ItemHeight = 0
         OnClick = IdentListClick
+        OnDrawItem = IdentListDrawItem
         TabOrder = 0
       end
     end
@@ -237,11 +239,11 @@ object MainForm: TMainForm
     Left = 0
     Height = 74
     Top = 26
-    Width = 621
+    Width = 600
     Align = alTop
     BevelOuter = bvNone
     ClientHeight = 74
-    ClientWidth = 621
+    ClientWidth = 600
     TabOrder = 2
     object Label1: TLabel
       Left = 7
@@ -255,7 +257,7 @@ object MainForm: TMainForm
       Left = 4
       Height = 56
       Top = 18
-      Width = 614
+      Width = 593
       Anchors = [akTop, akLeft, akRight, akBottom]
       ItemHeight = 0
       OnClick = AllIdentListClick
@@ -266,14 +268,14 @@ object MainForm: TMainForm
     Left = 0
     Height = 26
     Top = 0
-    Width = 621
+    Width = 600
     Align = alTop
     BevelOuter = bvNone
     ClientHeight = 26
-    ClientWidth = 621
+    ClientWidth = 600
     TabOrder = 4
     object Label4: TLabel
-      Left = 17
+      Left = 6
       Height = 14
       Top = 6
       Width = 21
@@ -289,10 +291,10 @@ object MainForm: TMainForm
       ParentColor = False
     end
     object FindEdit: TEdit
-      Left = 51
+      Left = 35
       Height = 21
       Top = 3
-      Width = 250
+      Width = 266
       AutoSize = False
       OnKeyPress = FindEditKeyPress
       TabOrder = 0
@@ -327,14 +329,14 @@ object MainForm: TMainForm
   object FooterPanel: TPanel
     Left = 0
     Height = 23
-    Top = 316
-    Width = 621
+    Top = 357
+    Width = 600
     Align = alBottom
     BevelInner = bvLowered
     BevelOuter = bvSpace
     BevelWidth = 3
     ClientHeight = 23
-    ClientWidth = 621
+    ClientWidth = 600
     TabOrder = 6
     object HintLbl: TLabel
       Left = 6
@@ -358,10 +360,24 @@ object MainForm: TMainForm
         Caption = 'Open'
         OnClick = OpenMnuClick
       end
+      object ReopenFilesMnu: TMenuItem
+        Caption = 'Reopen'
+      end
       object SaveMnu: TMenuItem
         Caption = 'Save'
+        OnClick = SaveMnuClick
       end
       object _MenuItem: TMenuItem
+        Caption = '-'
+      end
+      object WorkPathMnu: TMenuItem
+        Caption = 'Work path'
+        OnClick = WorkPathMnuClick
+      end
+      object OptionsMnu: TMenuItem
+        Caption = 'Options'
+      end
+      object MenuItem1: TMenuItem
         Caption = '-'
       end
       object ExitMnu: TMenuItem
@@ -396,6 +412,10 @@ object MainForm: TMainForm
         Caption = 'Save All'
         OnClick = SaveAllMnuClick
       end
+      object Close1: TMenuItem
+        Caption = 'Close'
+        OnClick = Close1Click
+      end
       object N8: TMenuItem
         Caption = '-'
       end
@@ -412,9 +432,9 @@ object MainForm: TMainForm
       object _N7: TMenuItem
         Caption = '-'
       end
-      object Close1: TMenuItem
-        Caption = 'Close'
-        OnClick = Close1Click
+      object ProjectOptionsMnu: TMenuItem
+        Caption = 'Options'
+        OnClick = ProjectOptionsMnuClick
       end
     end
     object EditMnu: TMenuItem
@@ -424,13 +444,6 @@ object MainForm: TMainForm
       end
       object Delete1: TMenuItem
         Caption = 'Delete'
-      end
-      object N4: TMenuItem
-        Caption = '-'
-      end
-      object OptionsMnu: TMenuItem
-        Caption = 'Options'
-        OnClick = OptionsMnuClick
       end
     end
     object SearchMnu: TMenuItem
@@ -555,9 +568,6 @@ object MainForm: TMainForm
         Caption = 'Progress report'
         OnClick = Progressreport1Click
       end
-      object N11: TMenuItem
-        Caption = '-'
-      end
     end
     object HelpMnu: TMenuItem
       Caption = 'Help'
@@ -592,7 +602,7 @@ object MainForm: TMainForm
   object ApplicationProperties: TApplicationProperties
     BidiMode = bdLeftToRight
     OnShowHint = ApplicationPropertiesShowHint
-    left = 269
+    left = 227
     top = 146
   end
 end

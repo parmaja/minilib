@@ -3,13 +3,13 @@ object SetupForm: TSetupForm
   Height = 279
   Top = 192
   Width = 483
-  BorderStyle = bsSingle
   Caption = 'Setup'
   ClientHeight = 279
   ClientWidth = 483
   Font.Height = -11
   Font.Name = 'MS Sans Serif'
   OnCreate = FormCreate
+  Position = poMainFormCenter
   LCLVersion = '0.9.27'
   object Label1: TLabel
     Left = 17
@@ -20,11 +20,19 @@ object SetupForm: TSetupForm
     ParentColor = False
   end
   object Label2: TLabel
-    Left = 24
+    Left = 17
     Height = 14
     Top = 54
     Width = 88
     Caption = 'Workspace Folder'
+    ParentColor = False
+  end
+  object Label3: TLabel
+    Left = 17
+    Height = 14
+    Top = 104
+    Width = 245
+    Caption = 'If you change your path, copy your files by your self.'
     ParentColor = False
   end
   object Button1: TButton

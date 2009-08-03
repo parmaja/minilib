@@ -1,6 +1,6 @@
 unit trsClasses;
 {**
- * Mini Translator
+ * This file is part of the "Mini Translator" http://www.sourceforge.net/projects/minilib
  *
  * @license    GPL 2 (http://www.gnu.org/licenses/gpl.html)
  * @author    Zaher Dirkey <zaher at parmaja dot com>
@@ -12,7 +12,7 @@ interface
 
 uses
   SysUtils, Variants, Classes, Controls,
-  LangClasses, PO_Languages, contnrs,
+  LangClasses, LangUtils, PO_Languages, contnrs,
   mnXMLRtti, mnXMLRttiProfile;
 
 type

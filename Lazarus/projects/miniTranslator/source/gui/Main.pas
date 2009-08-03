@@ -1,6 +1,6 @@
 unit Main;
 {**
- * Mini Translator
+ * This file is part of the "Mini Translator" http://www.sourceforge.net/projects/minilib
  *
  * @license    GPL 2 (http://www.gnu.org/licenses/gpl.html)
  * @author    Zaher Dirkey <zaher at parmaja dot com>
@@ -15,6 +15,7 @@ uses
   LResources, LCLIntf, LangUtils,
   Registry, Contnrs, FileCtrl, Dialogs, Grids, LangClasses, Menus,
   ExtCtrls, trsProjects, trsClasses,
+  Setups, PO_Languages,
   mnXMLUtils, mnXMLRtti, mnXMLRttiProfile;
 
 type
@@ -26,6 +27,11 @@ type
     HintLbl: TLabel;
     MainMenu: TMainMenu;
     ExitMnu: TMenuItem;
+    MenuItem1: TMenuItem;
+    ReopenFilesMnu: TMenuItem;
+    WorkPathMnu: TMenuItem;
+    OptionsMnu: TMenuItem;
+    ProjectOptionsMnu: TMenuItem;
     SaveMnu: TMenuItem;
     OpenMnu: TMenuItem;
     NewMnu: TMenuItem;
@@ -50,8 +56,6 @@ type
     FindFirstMnu: TMenuItem;
     CleanMnu: TMenuItem;
     NewProjectMnu: TMenuItem;
-    OptionsMnu: TMenuItem;
-    N4: TMenuItem;
     ViewMnu: TMenuItem;
     LeftLayoutMnu: TMenuItem;
     TopLayoutMnu: TMenuItem;
@@ -114,14 +118,17 @@ type
     Retranslaterepeated1: TMenuItem;
     N3: TMenuItem;
     N10: TMenuItem;
-    N11: TMenuItem;
     Reportretranslate1: TMenuItem;
     procedure ApplicationPropertiesShowHint(var HintStr: string;
       var CanShow: Boolean; var HintInfo: THintInfo);
     procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
     procedure IdentListClick(Sender: TObject);
+    procedure IdentListDrawItem(Control: TWinControl; Index: Integer;
+      ARect: TRect; State: TOwnerDrawState);
     procedure OpenMnuClick(Sender: TObject);
+    procedure ProjectOptionsMnuClick(Sender: TObject);
     procedure SaveAsProjectMnuClick(Sender: TObject);
+    procedure SaveMnuClick(Sender: TObject);
     procedure SectionListClick(Sender: TObject);
     procedure FormCloseQuery(Sender: TObject; var CanClose: Boolean);
     procedure ExitMnuClick(Sender: TObject);
@@ -158,25 +165,33 @@ type
     procedure Retranslaterepeated1Click(Sender: TObject);
     procedure Reportretranslate1Click(Sender: TObject);
     procedure FilterNotTranslatedMnuClick(Sender: TObject);
+    procedure WorkPathMnuClick(Sender: TObject);
   private
     Showed: Boolean;
     FProject: TtrsProject;
+    procedure UpdateFonts;
     function GetProject: TtrsProject;
     procedure SetProject(const AValue: TtrsProject);
     function CreateDefaultProject(vExtension: string): TtrsProject;
     procedure UpdateView;
     procedure FindByEdit;
-    procedure ReopenClick(Sender: TObject);
+    procedure ReopenProjectClick(Sender: TObject);
+    procedure ReopenFileClick(Sender: TObject);
     procedure ExportClick(Sender: TObject);
     procedure ProjectLoaded;
     procedure LoadProject(FileName: string; Upgrade: Boolean);
     procedure SaveProject(FileName: string; Force: Boolean);
+    procedure LoadFile(FileName: string);
+    procedure SaveFile(FileName: string);
     procedure SaveAsProject;
     procedure JumpTo(Word: TLangItem);
     procedure ClearAll;
     procedure CloseProject;
     function AskCloseProject: Boolean;
-    procedure ProcessRecentFile(FileName: string);
+    procedure ProcessRecentProjects(FileName: string);
+    procedure EnumRecentProjects;
+    procedure ProcessRecentFiles(FileName: string);
+    procedure EnumRecentFiles;
     procedure EnumContents;
     procedure EnumIdents(Silent: Boolean = False);
     procedure EnumAll;
@@ -187,7 +202,6 @@ type
     procedure LoadValueFromList;
     procedure LoadValueFromAllList;
     procedure FindFirst;
-    procedure EnumRecentFile;
     procedure EnumExports;
     procedure RefreshProject;
     function FindNext: Boolean;
@@ -210,30 +224,15 @@ uses
 
 
 procedure TMainForm.FormClose(Sender: TObject; var CloseAction: TCloseAction);
-var
-  aReg: TRegistry;
-  s: string;
 begin
   if Project <> nil then
   begin
     CloseProject;
   end;
-  aReg := TRegistry.Create;
-  try
-    aReg.OpenKey(sSoftwareRegKey, True);
-    if WindowState = wsNormal then
-    begin
-      XMLWriteObjectString(Font, s);
-      aReg.WriteString('Font', s);
-      aReg.WriteBool('TopLayout', TopLayoutMnu.Checked);
-      aReg.WriteInteger('Top', Top);
-      aReg.WriteInteger('Left', Left);
-      aReg.WriteInteger('Width', Width);
-      aReg.WriteInteger('Height', Height);
-    end;
-  finally
-    aReg.Free;
-  end;
+  trsEngine.Options.FormWidth := Width;
+  trsEngine.Options.FormHeight := Height;
+  trsEngine.Options.TopLayout := TopLayoutMnu.Checked;
+  trsEngine.SaveOptions;
 end;
 
 procedure TMainForm.ApplicationPropertiesShowHint(var HintStr: string;
@@ -297,6 +296,12 @@ begin
   LoadValueFromList;
 end;
 
+procedure TMainForm.IdentListDrawItem(Control: TWinControl; Index: Integer;
+  ARect: TRect; State: TOwnerDrawState);
+begin
+  //ARect.Right := ARect.Left + 3;
+end;
+
 procedure TMainForm.OpenMnuClick(Sender: TObject);
 var
   e: string;
@@ -306,17 +311,37 @@ begin
   OpenDialog.FileName := '*.po;*.ini';
   if OpenDialog.Execute then
   begin
-    e := ExtractFileName(OpenDialog.FileName);
-    Project := CreateDefaultProject(e);
-    Project.LoadDictionary(OpenDialog.FileName, Project.Dictionary.Local);
-    ProjectLoaded;
-    RefreshProject;
+    LoadFile(OpenDialog.FileName);
+  end;
+end;
+
+procedure TMainForm.ProjectOptionsMnuClick(Sender: TObject);
+begin
+  if Project <> nil then
+  begin
+    try
+      ShowOptions(Project, False);
+      ProjectLoaded;
+      Enumerate;
+    except
+      on E: Exception do
+      begin
+        Project.Log.Add('Error: ' + E.Message);
+        ClearAll;
+        raise;
+      end;
+    end;
   end;
 end;
 
 procedure TMainForm.SaveAsProjectMnuClick(Sender: TObject);
 begin
 
+end;
+
+procedure TMainForm.SaveMnuClick(Sender: TObject);
+begin
+  SaveFile('');
 end;
 
 procedure TMainForm.LoadValueFromList;
@@ -574,47 +599,32 @@ end;
 
 procedure TMainForm.OptionsMnuClick(Sender: TObject);
 begin
-  if Project <> nil then
-  begin
-    try
-      ShowOptions(Project, False);
-      ProjectLoaded;
-      Enumerate;
-    except
-      on E: Exception do
-      begin
-        Project.Log.Add('Error: ' + E.Message);
-        ClearAll;
-        raise;
-      end;
-    end;
-  end;
 end;
 
-procedure TMainForm.EnumRecentFile;
+procedure TMainForm.EnumRecentProjects;
 var
-  aReg: TRegistry;
   i: Integer;
   aStrings: TStringList;
   aMenuItem: TMenuItem;
 begin
   aStrings := TStringList.Create;
-  aReg := TRegistry.Create;
-  aReg.OpenKey(sSoftwareRegKey, True);
-  aStrings.Text := aReg.ReadString('RecentFiles');
-  ReopenProjectMnu.Clear;
-  for i := 0 to aStrings.Count - 1 do
-  begin
-    aMenuItem := TMenuItem.Create(Self);
-    aMenuItem.Caption := aStrings[i];
-    aMenuItem.OnClick := @ReopenClick;
-    ReopenProjectMnu.Add(aMenuItem);
+  try
+    if FileExists(trsEngine.WorkPath + 'recents_projects.cfg') then
+    aStrings.LoadFromFile(trsEngine.WorkPath + 'recents_projects.cfg');
+    ReopenProjectMnu.Clear;
+    for i := 0 to aStrings.Count - 1 do
+    begin
+      aMenuItem := TMenuItem.Create(Self);
+      aMenuItem.Caption := aStrings[i];
+      aMenuItem.OnClick := @ReopenProjectClick;
+      ReopenProjectMnu.Add(aMenuItem);
+    end;
+  finally
+    aStrings.Free;
   end;
-  aStrings.Free;
-  aReg.Free;
 end;
 
-procedure TMainForm.ReopenClick(Sender: TObject);
+procedure TMainForm.ReopenProjectClick(Sender: TObject);
 var
   aFile: string;
 begin
@@ -622,6 +632,17 @@ begin
   begin
     aFile := (Sender as TMenuItem).Caption;
     LoadProject(aFile, False);
+  end;
+end;
+
+procedure TMainForm.ReopenFileClick(Sender: TObject);
+var
+  aFile: string;
+begin
+  if Sender is TMenuItem then
+  begin
+    aFile := (Sender as TMenuItem).Caption;
+    LoadFile(aFile);
   end;
 end;
 
@@ -647,7 +668,7 @@ begin
       end;
       ProjectLoaded;
       RefreshProject;
-      ProcessRecentFile(FileName);
+      ProcessRecentProjects(FileName);
       if Project.HaveWarring then
         ShowLogForm(Project.Log);
     except
@@ -670,31 +691,105 @@ begin
       if (Project.ToolsList[i] as TMenuItem).Tag = 1 then
         (Project.ToolsList[i] as TMenuItem).Click;
   end;
-  ProcessRecentFile(FileName);
+  ProcessRecentProjects(FileName);
   UpdateSetting;
 end;
 
-procedure TMainForm.ProcessRecentFile(FileName: string);
+procedure TMainForm.LoadFile(FileName: string);
 var
-  aReg: TRegistry;
+  e: string;
+begin
+  e := ExtractFileName(FileName);
+  Project := CreateDefaultProject(e);
+  Project.LoadDictionary(FileName, Project.Dictionary.Local);
+  ProcessRecentFiles(FileName);
+  ProjectLoaded;
+  RefreshProject;
+end;
+
+procedure TMainForm.SaveFile(FileName: string);
+var
+  e: string;
+begin
+  if (Project.Dictionary <> nil) and (Project.Dictionary.Local <> nil) then
+  begin
+    if FileName = '' then
+      FileName := Project.Dictionary.Local.Source;
+    Project.SaveDictionary(FileName, Project.Dictionary.Local, False);
+    ProcessRecentFiles(FileName);
+    ProjectLoaded;
+    RefreshProject;
+  end;
+end;
+
+procedure TMainForm.ProcessRecentProjects(FileName: string);
+var
   i: Integer;
   aStrings: TStringList;
 begin
   aStrings := TStringList.Create;
-  aReg := TRegistry.Create;
-  aReg.OpenKey(sSoftwareRegKey, True);
-  aStrings.Text := aReg.ReadString('RecentFiles');
-  i := aStrings.IndexOf(FileName);
-  if i >= 0 then
-    aStrings.Move(i, 0)
-  else
-    aStrings.Insert(0, FileName);
-  while aStrings.Count > 10 do
-    aStrings.Delete(10);
-  aReg.WriteString('RecentFiles', aStrings.Text);
-  aStrings.Free;
-  aReg.Free;
-  EnumRecentFile;
+  try
+    if FileExists(trsEngine.WorkPath + 'recents_projects.cfg') then
+      aStrings.LoadFromFile(trsEngine.WorkPath + 'recents_projects.cfg');
+    i := aStrings.IndexOf(FileName);
+    if i >= 0 then
+      aStrings.Move(i, 0)
+    else
+      aStrings.Insert(0, FileName);
+    while aStrings.Count > 10 do
+      aStrings.Delete(10);
+    aStrings.SaveToFile(trsEngine.WorkPath + 'recents_projects.cfg');
+  finally
+    aStrings.Free;
+  end;
+  EnumRecentProjects;
+end;
+
+procedure TMainForm.ProcessRecentFiles(FileName: string);
+var
+  i: Integer;
+  aStrings: TStringList;
+begin
+  aStrings := TStringList.Create;
+  try
+    if FileExists(trsEngine.WorkPath + 'recents_files.cfg') then
+      aStrings.LoadFromFile(trsEngine.WorkPath + 'recents_files.cfg');
+    i := aStrings.IndexOf(FileName);
+    if i >= 0 then
+      aStrings.Move(i, 0)
+    else
+      aStrings.Insert(0, FileName);
+    while aStrings.Count > 10 do
+      aStrings.Delete(10);
+    aStrings.SaveToFile(trsEngine.WorkPath + 'recents_files.cfg');
+  finally
+    aStrings.Free;
+  end;
+  EnumRecentFiles;
+end;
+
+procedure TMainForm.EnumRecentFiles;
+var
+  i: Integer;
+  aStrings: TStringList;
+  aMenuItem: TMenuItem;
+begin
+  aStrings := TStringList.Create;
+  try
+    if FileExists(trsEngine.WorkPath + 'recents_files.cfg') then
+    aStrings.LoadFromFile(trsEngine.WorkPath + 'recents_files.cfg');
+    //ReopenFilesMnu.BeginUpdate;
+    ReopenFilesMnu.Clear;
+    for i := 0 to aStrings.Count - 1 do
+    begin
+      aMenuItem := TMenuItem.Create(Self);
+      aMenuItem.Caption := aStrings[i];
+      aMenuItem.OnClick := @ReopenFileClick;
+      ReopenFilesMnu.Add(aMenuItem);
+    end;
+  finally
+    aStrings.Free;
+  end;
 end;
 
 procedure TMainForm.RefreshProject;
@@ -752,29 +847,15 @@ var
   aReg: TRegistry;
 begin
   HintLbl.Caption := '';
-  aReg := TRegistry.Create;
-  try
-    aReg.OpenKey(sSoftwareRegKey, False);
-
-    if aReg.ValueExists('Font') then
-    begin
-      XMLReadObjectString(Font, aReg.ReadString('Font'));
-    end;
-    if aReg.ValueExists('TopLayout') then
-      TopLayoutMnu.Checked := aReg.ReadBool('TopLayout');
-    if aReg.ValueExists('Top') then
-      Top := aReg.ReadInteger('Top');
-    if aReg.ValueExists('Left') then
-      Left := aReg.ReadInteger('Left');
-    if aReg.ValueExists('Width') then
-      Width := aReg.ReadInteger('Width');
-    if aReg.ValueExists('Height') then
-      Height := aReg.ReadInteger('Height');
-  finally
-    aReg.Free;
-  end;
+  TopLayoutMnu.Checked := trsEngine.Options.TopLayout;
+  if trsEngine.Options.FormWidth > 100 then
+    Width := trsEngine.Options.FormWidth;
+  if trsEngine.Options.FormHeight > 100 then
+    Height := trsEngine.Options.FormHeight;
+  UpdateFonts;
   UpdateView;
-  EnumRecentFile;
+  EnumRecentProjects;
+  EnumRecentFiles;
   EnumExports;
 end;
 
@@ -932,9 +1013,12 @@ end;
 
 procedure TMainForm.FontMnuClick(Sender: TObject);
 begin
+  FontDialog.Font := trsEngine.Options.Font;
   if FontDialog.Execute then
   begin
-    Font.Assign(FontDialog.Font);
+    trsEngine.Options.Font.Assign(FontDialog.Font);
+    trsEngine.SaveOptions;
+    UpdateFonts;
   end;
 end;
 
@@ -1103,6 +1187,17 @@ end;
 procedure TMainForm.FilterNotTranslatedMnuClick(Sender: TObject);
 begin
   Enumerate;
+end;
+
+procedure TMainForm.WorkPathMnuClick(Sender: TObject);
+begin
+  ShowSetup;
+end;
+
+procedure TMainForm.UpdateFonts;
+begin
+  OriginalValueEdit.Font.Assign(trsEngine.Options.Font);
+  LocalValueEdit.Font.Assign(trsEngine.Options.Font);
 end;
 
 function TMainForm.GetProject: TtrsProject;
