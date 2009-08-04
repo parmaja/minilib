@@ -1034,6 +1034,9 @@ begin
     raise ELangException.Create('FContents = nil');
   Result := Text;
   FContents.EncodeText(Result);
+{$ifdef WINDOWS}
+  Result := StringReplace(Result, #13, #13#10, [rfReplaceAll]);
+{$endif}
 end;
 
 function TLangItem.GetDisplayID: string;
@@ -1042,10 +1045,16 @@ begin
     raise ELangException.Create('FContents = nil');
   Result := ID;
   FContents.EncodeText(Result);
+{$ifdef WINDOWS}
+  Result := StringReplace(Result, #13, #13#10, [rfReplaceAll]);
+{$endif}
 end;
 
 procedure TLangItem.SetDisplayID(AValue: string);
 begin
+{$ifdef WINDOWS}
+  AValue := StringReplace(AValue, #13#10, #13, [rfReplaceAll]);
+{$endif}
   if FContents = nil then
     raise ELangException.Create('FContents = nil');
   FContents.DecodeText(AValue);
@@ -1054,6 +1063,9 @@ end;
 
 procedure TLangItem.SetDisplayText(AValue: string);
 begin
+{$ifdef WINDOWS}
+  AValue := StringReplace(AValue, #13#10, #13, [rfReplaceAll]);
+{$endif}
   if FContents = nil then
     raise ELangException.Create('FContents = nil');
   FContents.DecodeText(AValue);

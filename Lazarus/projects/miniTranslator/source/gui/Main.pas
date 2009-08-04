@@ -699,12 +699,15 @@ procedure TMainForm.LoadFile(FileName: string);
 var
   e: string;
 begin
-  e := ExtractFileName(FileName);
-  Project := CreateDefaultProject(e);
-  Project.LoadDictionary(FileName, Project.Dictionary.Local);
-  ProcessRecentFiles(FileName);
-  ProjectLoaded;
-  RefreshProject;
+  if AskCloseProject then
+  begin
+    e := ExtractFileName(FileName);
+    Project := CreateDefaultProject(e);
+    Project.LoadDictionary(FileName, Project.Dictionary.Local);
+    ProcessRecentFiles(FileName);
+    ProjectLoaded;
+    RefreshProject;
+  end;
 end;
 
 procedure TMainForm.SaveFile(FileName: string);

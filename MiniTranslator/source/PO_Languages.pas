@@ -88,9 +88,9 @@ const
   ssMsgId = 'msgid ';
   ssMsgStr = 'msgstr ';
   ssComment = '#';
-  ssFlags = '#, ';
-  ssReference = '#: ';
-  ssAutoComment = '#. ';
+  ssFlags = '#,';
+  ssReference = '#:';
+  ssAutoComment = '#.';
   ssMsgPlural = 'msgid_plural '; //not yet
   ssMsgStrs = 'msgstr['; //not yet
 
@@ -101,31 +101,23 @@ const
   sOSEOL = #13;
 {$endif}
 
-function EscapeString(s: string):string;
+function EscapePOString(s: string):string;
 begin
-  //stupid :( we need optimized function
-  Result := s;
-  Result := StringReplace(DequoteStr(Result), '\n', sOSEOL, [rfReplaceAll]);
-  Result := StringReplace(DequoteStr(Result), '\t', #9, [rfReplaceAll]);
-  Result := StringReplace(DequoteStr(Result), '\"', '"', [rfReplaceAll]);
-  Result := StringReplace(DequoteStr(Result), '\\', '\', [rfReplaceAll]);
+  Result := EscapeString(s, '\', [#8, #9, #13, '\', '"'], ['b', 't', 'n', '\', '"']);
 end;
 
-function DescapeString(s: string):string;
+function DescapePOString(s: string):string;
 begin
-  //stupid :( we need optimized function
-  Result := s;
-  Result := StringReplace(DequoteStr(Result), sOSEOL, '\n', [rfReplaceAll]);
-  Result := StringReplace(DequoteStr(Result), #9, '\t', [rfReplaceAll]);
-  Result := StringReplace(DequoteStr(Result), '"', '\"', [rfReplaceAll]);
-  Result := StringReplace(DequoteStr(Result), '\', '\\', [rfReplaceAll]);
+  Result := DescapeString(s, '\', [#8, #9, #13, '\', '"'], ['b', 't', 'n', '\', '"']);
 end;
 
-function CutStr(const ID, S: string; Dequote: Boolean = False): string;
+function CutStrID(const ID, S: string; Dequote, Descape: Boolean): string;
 begin
-  Result := MidStr(S, Length(ID) + 1, MaxInt);
+  Result := TrimLeft(MidStr(S, Length(ID) + 1, MaxInt));
   if Dequote then
     Result := DequoteStr(Trim(Result));
+  if Descape then
+    Result := DescapePOString(Result);
 end;
 
 procedure TPO_Parser.ParseLine(ALine: string);
@@ -137,14 +129,14 @@ var
     FLangItem := Contents.CreateLangItem;
   end;
 
-  function CheckAndCut(var S: string; ID: string): Boolean;
+  function CheckAndCut(var S: string; const ID: string): Boolean;
   begin
     Result := LeftStr(aLine, Length(ID)) = ID;
     if Result then
     begin
       if S <> '' then
         S := S + #13;
-      S := S + CutStr(ID, aLine);
+      S := S + CutStrID(ID, S, False, False);
     end;
   end;
 
@@ -163,26 +155,26 @@ var
     begin
       CreateLangItem;
       FState := poMsgID;
-      FLangItem.ID := DequoteStr(Trim(MidStr(aLine, Length(ssMsgID) + 1, MaxInt)));
+      FLangItem.ID := CutStrID(ssMsgID, aLine, True, True);
       FLangItem.Visible := FLangItem.ID <> '';
     end
     else if LeftStr(aLine, Length(ssAutoComment)) = ssAutoComment then
     begin
       CreateLangItem;
       FState := poComment;
-      FLangItem.AutoComment := MidStr(aLine, Length(ssAutoComment), MaxInt);
+      FLangItem.AutoComment := CutStrID(ssAutoComment, aLine, False, False);
     end
     else if LeftStr(aLine, Length(ssFlags)) = ssFlags then
     begin
       CreateLangItem;
       FState := poComment;
-      FLangItem.Flags := MidStr(aLine, Length(ssFlags), MaxInt);
+      FLangItem.Flags := CutStrID(ssFlags, aLine, False, False);
     end
     else if LeftStr(aLine, Length(ssComment)) = ssComment then
     begin
       CreateLangItem;
       FState := poComment;
-      FLangItem.Comment := MidStr(aLine, Length(ssComment) + 1, MaxInt);
+      FLangItem.Comment := CutStrID(aLine, ssComment, False, False);
     end
     else
       Result := False;
@@ -199,7 +191,7 @@ begin
         begin
           if LeftStr(aLine, Length(ssMsgID)) = ssMsgID then
           begin
-            s := CutStr(ssMsgID, aLine, True);
+            s := CutStrID(ssMsgID, aLine, True, True);
             FLangItem.ID := s;
             FState := poMsgID;
           end
@@ -210,18 +202,18 @@ begin
         begin
           if LeftStr(aLine, Length(ssMsgStr)) = ssMsgStr then
           begin
-            FLangItem.Text := CutStr(ssMsgStr, aLine, True);
+            FLangItem.Text := CutStrID(ssMsgStr, aLine, True, True);
             FState := poMsgStr;
           end
           else if not CheckComments then
-            FLangItem.ID := FLangItem.ID + EscapeString(aLine);//DequoteStr(aLine);
+            FLangItem.ID := FLangItem.ID + DescapePOString(DequoteStr(aLine));
         end;
       poMsgStr:
         begin
           if CheckNewText then
           else if not CheckComments then
           begin
-            FLangItem.Text := FLangItem.Text + EscapeString(aLine);
+            FLangItem.Text := FLangItem.Text + DescapePOString(DequoteStr(aLine));
           end;
         end;
     end;
@@ -338,9 +330,9 @@ procedure TPO_Parser.DoGenerate(Strings: TStringList);
         for i := 0 to aStrings.Count - 1 do
         begin
           if i = 0 then
-            Strings.Add(Ident + QuoteStr(DescapeString(aStrings[i])+GetEOL))
+            Strings.Add(Ident + QuoteStr(EscapePOString(aStrings[i])+GetEOL))
           else
-            Strings.Add(QuoteStr(DescapeString(aStrings[i])+GetEOL));
+            Strings.Add(QuoteStr(EscapePOString(aStrings[i])+GetEOL));
         end
       finally
         aStrings.Free;
@@ -358,7 +350,7 @@ procedure TPO_Parser.DoGenerate(Strings: TStringList);
         for i := 0 to aStrings.Count - 1 do
         begin
           if aStrings[i] <> '' then
-            Strings.Add(Ident + aStrings[i]);
+            Strings.Add(Ident + ' ' + aStrings[i]);
         end;
       finally
         aStrings.Free;
@@ -368,7 +360,7 @@ procedure TPO_Parser.DoGenerate(Strings: TStringList);
   begin
     with Item do
     begin
-      WriteComments(ssComment + ' ', Comment);
+      WriteComments(ssComment, Comment);
       WriteComments(ssAutoComment, AutoComment);
       WriteComments(ssFlags, Flags);
       WriteComments(ssReference, Reference);

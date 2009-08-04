@@ -7,7 +7,7 @@
       <MainUnit Value="0"/>
       <TargetFileExt Value=".exe"/>
       <UseAppBundle Value="False"/>
-      <ActiveEditorIndexAtStart Value="1"/>
+      <ActiveEditorIndexAtStart Value="0"/>
     </General>
     <VersionInfo>
       <ProjectVersion Value=""/>
@@ -33,16 +33,14 @@
         <PackageName Value="LCL"/>
       </Item2>
     </RequiredPackages>
-    <Units Count="176">
+    <Units Count="177">
       <Unit0>
         <Filename Value="SqliteViewer.lpr"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="SqliteViewer"/>
         <CursorPos X="42" Y="3"/>
         <TopLine Value="1"/>
-        <EditorIndex Value="2"/>
-        <UsageCount Value="155"/>
-        <Loaded Value="True"/>
+        <UsageCount Value="156"/>
       </Unit0>
       <Unit1>
         <Filename Value="Main.pas"/>
@@ -50,10 +48,10 @@
         <ComponentName Value="MainForm"/>
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="Main"/>
-        <CursorPos X="52" Y="28"/>
-        <TopLine Value="1"/>
+        <CursorPos X="1" Y="1303"/>
+        <TopLine Value="1297"/>
         <EditorIndex Value="0"/>
-        <UsageCount Value="155"/>
+        <UsageCount Value="156"/>
         <Bookmarks Count="3">
           <Item0 X="1" Y="220" ID="0"/>
           <Item1 X="1" Y="544" ID="1"/>
@@ -341,7 +339,7 @@
         <UnitName Value="sqlvClasses"/>
         <CursorPos X="29" Y="144"/>
         <TopLine Value="135"/>
-        <UsageCount Value="58"/>
+        <UsageCount Value="59"/>
       </Unit41>
       <Unit42>
         <Filename Value="..\lib\sqlvSessions.pas"/>
@@ -507,7 +505,7 @@
         <UnitName Value="sqlvStdClasses"/>
         <CursorPos X="15" Y="26"/>
         <TopLine Value="10"/>
-        <UsageCount Value="53"/>
+        <UsageCount Value="54"/>
       </Unit65>
       <Unit66>
         <Filename Value="..\..\..\..\..\programs\lazarus\lcl\include\customlistbox.inc"/>
@@ -648,11 +646,9 @@
       <Unit86>
         <Filename Value="..\..\..\..\MiniConnection\source\mncConnections.pas"/>
         <UnitName Value="mncConnections"/>
-        <CursorPos X="1" Y="1"/>
+        <CursorPos X="27" Y="11"/>
         <TopLine Value="1"/>
-        <EditorIndex Value="1"/>
         <UsageCount Value="21"/>
-        <Loaded Value="True"/>
       </Unit86>
       <Unit87>
         <Filename Value="..\..\..\..\..\..\..\..\programs\fpc\src\rtl\objpas\sysutils\sysutilh.inc"/>
@@ -742,7 +738,7 @@
         <UnitName Value="AboutForm"/>
         <CursorPos X="15" Y="16"/>
         <TopLine Value="1"/>
-        <UsageCount Value="84"/>
+        <UsageCount Value="85"/>
       </Unit99>
       <Unit100>
         <Filename Value="..\..\..\..\..\..\..\delphi\projects\LightPHPEdit\source\gui\AboutForms.pas"/>
@@ -1216,18 +1212,14 @@
         <UnitName Value="LazarusIDEStrConsts"/>
         <CursorPos X="11" Y="43"/>
         <TopLine Value="33"/>
-        <EditorIndex Value="3"/>
         <UsageCount Value="10"/>
-        <Loaded Value="True"/>
       </Unit170>
       <Unit171>
         <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\ide\idecmdline.pas"/>
         <UnitName Value="IDECmdLine"/>
         <CursorPos X="15" Y="169"/>
         <TopLine Value="167"/>
-        <EditorIndex Value="4"/>
         <UsageCount Value="10"/>
-        <Loaded Value="True"/>
       </Unit171>
       <Unit172>
         <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\ide\main.pp"/>
@@ -1241,150 +1233,30 @@
         <UnitName Value="LazConf"/>
         <CursorPos X="13" Y="245"/>
         <TopLine Value="240"/>
-        <EditorIndex Value="5"/>
         <UsageCount Value="10"/>
-        <Loaded Value="True"/>
       </Unit173>
       <Unit174>
         <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\ide\include\win\lazbaseconf.inc"/>
         <CursorPos X="32" Y="169"/>
-        <TopLine Value="159"/>
-        <EditorIndex Value="6"/>
+        <TopLine Value="145"/>
         <UsageCount Value="10"/>
-        <Loaded Value="True"/>
       </Unit174>
       <Unit175>
         <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\ide\keymapping.pp"/>
         <UnitName Value="KeyMapping"/>
         <CursorPos X="51" Y="38"/>
         <TopLine Value="27"/>
-        <EditorIndex Value="7"/>
         <UsageCount Value="10"/>
-        <Loaded Value="True"/>
       </Unit175>
+      <Unit176>
+        <Filename Value="V:\dev\lazarus\components\synedit\syncompletion.pas"/>
+        <UnitName Value="SynCompletion"/>
+        <CursorPos X="37" Y="284"/>
+        <TopLine Value="266"/>
+        <UsageCount Value="10"/>
+      </Unit176>
     </Units>
-    <JumpHistory Count="30" HistoryIndex="29">
-      <Position1>
-        <Filename Value="SqliteViewer.lpr"/>
-        <Caret Line="10" Column="36" TopLine="1"/>
-      </Position1>
-      <Position2>
-        <Filename Value="Main.pas"/>
-        <Caret Line="895" Column="24" TopLine="891"/>
-      </Position2>
-      <Position3>
-        <Filename Value="Main.pas"/>
-        <Caret Line="32" Column="35" TopLine="1"/>
-      </Position3>
-      <Position4>
-        <Filename Value="Main.pas"/>
-        <Caret Line="1" Column="1" TopLine="1"/>
-      </Position4>
-      <Position5>
-        <Filename Value="Main.pas"/>
-        <Caret Line="3" Column="42" TopLine="1"/>
-      </Position5>
-      <Position6>
-        <Filename Value="Main.pas"/>
-        <Caret Line="110" Column="11" TopLine="89"/>
-      </Position6>
-      <Position7>
-        <Filename Value="Main.pas"/>
-        <Caret Line="112" Column="14" TopLine="89"/>
-      </Position7>
-      <Position8>
-        <Filename Value="Main.pas"/>
-        <Caret Line="159" Column="21" TopLine="138"/>
-      </Position8>
-      <Position9>
-        <Filename Value="Main.pas"/>
-        <Caret Line="211" Column="21" TopLine="190"/>
-      </Position9>
-      <Position10>
-        <Filename Value="Main.pas"/>
-        <Caret Line="252" Column="27" TopLine="231"/>
-      </Position10>
-      <Position11>
-        <Filename Value="Main.pas"/>
-        <Caret Line="254" Column="9" TopLine="231"/>
-      </Position11>
-      <Position12>
-        <Filename Value="Main.pas"/>
-        <Caret Line="298" Column="30" TopLine="277"/>
-      </Position12>
-      <Position13>
-        <Filename Value="Main.pas"/>
-        <Caret Line="300" Column="12" TopLine="277"/>
-      </Position13>
-      <Position14>
-        <Filename Value="Main.pas"/>
-        <Caret Line="344" Column="22" TopLine="323"/>
-      </Position14>
-      <Position15>
-        <Filename Value="Main.pas"/>
-        <Caret Line="346" Column="19" TopLine="323"/>
-      </Position15>
-      <Position16>
-        <Filename Value="Main.pas"/>
-        <Caret Line="670" Column="5" TopLine="644"/>
-      </Position16>
-      <Position17>
-        <Filename Value="Main.pas"/>
-        <Caret Line="1" Column="1" TopLine="1"/>
-      </Position17>
-      <Position18>
-        <Filename Value="Main.pas"/>
-        <Caret Line="3" Column="42" TopLine="1"/>
-      </Position18>
-      <Position19>
-        <Filename Value="SqliteViewer.lpr"/>
-        <Caret Line="24" Column="1" TopLine="1"/>
-      </Position19>
-      <Position20>
-        <Filename Value="SqliteViewer.lpr"/>
-        <Caret Line="1" Column="1" TopLine="1"/>
-      </Position20>
-      <Position21>
-        <Filename Value="..\..\..\..\MiniConnection\source\mncConnections.pas"/>
-        <Caret Line="419" Column="1" TopLine="408"/>
-      </Position21>
-      <Position22>
-        <Filename Value="..\..\..\..\MiniConnection\source\mncConnections.pas"/>
-        <Caret Line="1" Column="1" TopLine="1"/>
-      </Position22>
-      <Position23>
-        <Filename Value="..\..\..\..\MiniConnection\source\mncConnections.pas"/>
-        <Caret Line="1050" Column="92" TopLine="1029"/>
-      </Position23>
-      <Position24>
-        <Filename Value="..\..\..\..\MiniConnection\source\mncConnections.pas"/>
-        <Caret Line="1" Column="1" TopLine="1"/>
-      </Position24>
-      <Position25>
-        <Filename Value="..\..\..\..\MiniConnection\source\mncConnections.pas"/>
-        <Caret Line="7" Column="37" TopLine="1"/>
-      </Position25>
-      <Position26>
-        <Filename Value="..\..\..\..\MiniConnection\source\mncConnections.pas"/>
-        <Caret Line="1050" Column="122" TopLine="1029"/>
-      </Position26>
-      <Position27>
-        <Filename Value="..\..\..\..\MiniConnection\source\mncConnections.pas"/>
-        <Caret Line="1" Column="1" TopLine="1"/>
-      </Position27>
-      <Position28>
-        <Filename Value="..\..\..\..\MiniConnection\source\mncConnections.pas"/>
-        <Caret Line="1056" Column="122" TopLine="1029"/>
-      </Position28>
-      <Position29>
-        <Filename Value="..\..\..\..\MiniConnection\source\mncConnections.pas"/>
-        <Caret Line="1" Column="1" TopLine="1"/>
-      </Position29>
-      <Position30>
-        <Filename Value="..\..\..\..\MiniConnection\source\mncConnections.pas"/>
-        <Caret Line="1048" Column="122" TopLine="1029"/>
-      </Position30>
-    </JumpHistory>
+    <JumpHistory Count="0" HistoryIndex="-1"/>
   </ProjectOptions>
   <CompilerOptions>
     <Version Value="8"/>

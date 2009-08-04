@@ -23,6 +23,16 @@ function QuoteStr(Str: string; QuoteChar: string = '"'): string;
 function StrToStrings(Content: string; Strings: TStrings; Separators:TSysCharSet; WhiteSpace: TSysCharSet = [#0, #13, #10]; DequoteValues: Boolean = False; Quotes: TSysCharSet = ['''', '"']): Integer;
 function ExpandToPath(FileName: string; Path: string; Root:string = ''): string;
 
+{
+  EscapeString: Example
+    EscapeString(Text, '\', [#13, #10, #9 , #8, '"'], ['r', 'n', 't', 'b', '"']);
+
+  DescapeString: Reverse of EscapeString with same params
+  Both functions is case sensitive
+}
+function EscapeString(const S: string; Esc: string; Chars:array of AnsiChar; Escapes: array of string): string;
+function DescapeString(const S: string; Esc: string; Chars:array of AnsiChar; Escapes: array of string): string;
+
 implementation
 
 function QuoteStr(Str, QuoteChar: string): string;
@@ -143,6 +153,170 @@ begin
     Result := IncludeTrailingPathDelimiter(Path) + FileName
   else
     Result := FileName;
+end;
+
+procedure cMoveStr(var Start:Integer; var Dest: string; const Source: string);
+var
+  i, l: Integer;
+begin
+  l := (Length(Dest) - Start) + 1;
+  if l > Length(Source) then
+    l := Length(Source);
+  for i := 1 to l do
+  begin
+    Dest[Start] := Source[i];
+    Start := Start + 1;
+  end;
+end;
+
+function cCompareStr(Start: Integer; const Str: string; const WithStr: string): Boolean;
+var
+  i, l: Integer;
+begin
+  Result := True;
+  if (Length(Str) - Start + 1) < Length(WithStr) then
+  begin
+    Result := False;
+    exit;
+  end;
+  for i := 1 to Length(WithStr) do
+  begin
+    if Str[Start + i - 1] <> WithStr[i] then
+    begin
+      Result := False;
+      break;
+    end;
+  end;
+end;
+
+function EscapeString(const S: string; Esc: string; Chars:array of AnsiChar; Escapes: array of string): string;
+  function InChars(const Char: AnsiChar): Integer;
+  var
+    i: Integer;
+  begin
+    Result := -1;
+    for i := 0 to Length(Chars) -1 do
+    begin
+      if Char = Chars[i] then
+      begin
+        Result := i;
+        break;
+      end;
+    end;
+  end;
+var
+  i, j: Integer;
+  NewLength: Integer;
+  p, c, l: Integer;
+  NeedEscape: Boolean;
+begin
+  if Length(Chars) <> Length(Escapes) then
+    raise Exception.Create('Chars and Escapes not identical');
+  NeedEscape := False;
+  NewLength := Length(S);
+  for i := 1 to Length(S) do
+  begin
+    p := InChars(S[i]);
+    if p >= 0 then
+    begin
+      NewLength := NewLength - 1 + Length(Esc) + Length(Escapes[p]);
+      NeedEscape:=True;
+    end;
+  end;
+  if not NeedEscape then
+    Result := S
+  else
+  begin
+    SetLength(Result, NewLength);
+    c := 1;
+    for i := 1 to Length(S) do
+    begin
+      p := InChars(S[i]);
+      if p >= 0 then
+      begin
+        cMoveStr(c, Result, Esc);
+        cMoveStr(c, Result, Escapes[p])
+      end
+      else
+      begin
+        Result[c] := S[i];
+        c := c + 1;
+      end;
+    end;
+  end;
+end;
+
+function DescapeString(const S: string; Esc: string; Chars:array of AnsiChar; Escapes: array of string): string;
+  function InEscape(Start: Integer): Integer;
+  var
+    i: Integer;
+  begin
+    Result := -1;
+    for i := 0 to Length(Escapes) -1 do
+    begin
+      if cCompareStr(Start, S, Escapes[i]) then
+      begin
+        Result := i;
+        break;
+      end;
+    end;
+  end;
+var
+  i, j: Integer;
+  NewLength: Integer;
+  p, c, l: Integer;
+  NeedDescape: Boolean;
+begin
+  if Length(Chars) <> Length(Escapes) then
+    raise Exception.Create('Chars and Escapes not identical');
+  NeedDescape := False;
+  NewLength := Length(S);
+  i := 1;
+  while i <= Length(S) do
+  begin
+    if cCompareStr(i, S, Esc) then
+    begin
+      i := i + Length(Esc);
+      p := InEscape(i);
+      if p >= 0 then
+      begin
+        NewLength := NewLength - Length(Esc) - Length(Escapes[p]) + 1;
+        NeedDescape:=True;
+        i := i + Length(Escapes[p]);
+      end;
+    end
+    else
+      i := i + 1;
+  end;
+  if not NeedDescape then
+    Result := S
+  else
+  begin
+    SetLength(Result, NewLength);
+    c := 1;
+    i := 1;
+    while i <= Length(S) do
+    begin
+      if cCompareStr(i, S, Esc) then
+      begin
+        i := i + Length(Esc);
+        p := InEscape(i);
+        if p >= 0 then
+        begin
+          cMoveStr(c, Result, Chars[p]);
+          i := i + Length(Escapes[p]);
+        end
+        else
+          cMoveStr(c, Result, Esc);
+      end
+      else
+      begin
+        Result[c] := S[i];
+        c := c + 1;
+        i := i + 1;
+      end;
+    end;
+  end;
 end;
 
 end.

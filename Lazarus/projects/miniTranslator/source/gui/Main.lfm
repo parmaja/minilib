@@ -1,11 +1,11 @@
 object MainForm: TMainForm
-  Left = 377
-  Height = 400
-  Top = 101
+  Left = 440
+  Height = 357
+  Top = 110
   Width = 600
   ActiveControl = LocalValueEdit
   Caption = 'Mini Translator'
-  ClientHeight = 380
+  ClientHeight = 337
   ClientWidth = 600
   Font.Height = -11
   Font.Name = 'MS Sans Serif'
@@ -19,7 +19,7 @@ object MainForm: TMainForm
   LCLVersion = '0.9.27'
   object LeftSplitter: TSplitter
     Left = 295
-    Height = 252
+    Height = 209
     Top = 105
     Width = 5
   end
@@ -34,12 +34,12 @@ object MainForm: TMainForm
   end
   object Panel2: TPanel
     Left = 300
-    Height = 252
+    Height = 209
     Top = 105
     Width = 300
     Align = alClient
     BevelOuter = bvNone
-    ClientHeight = 252
+    ClientHeight = 209
     ClientWidth = 300
     TabOrder = 0
     object Splitter1: TSplitter
@@ -108,12 +108,12 @@ object MainForm: TMainForm
     end
     object LocalPanel: TPanel
       Left = 0
-      Height = 146
+      Height = 103
       Top = 106
       Width = 300
       Align = alClient
       BevelOuter = bvNone
-      ClientHeight = 146
+      ClientHeight = 103
       ClientWidth = 300
       TabOrder = 0
       object Label6: TLabel
@@ -134,7 +134,7 @@ object MainForm: TMainForm
       end
       object LocalValueEdit: TMemo
         Left = 2
-        Height = 107
+        Height = 64
         Top = 38
         Width = 294
         Anchors = [akTop, akLeft, akRight, akBottom]
@@ -160,28 +160,28 @@ object MainForm: TMainForm
   end
   object LeftLayoutPanel: TPanel
     Left = 0
-    Height = 252
+    Height = 209
     Top = 105
     Width = 295
     Align = alLeft
     BevelOuter = bvNone
-    ClientHeight = 252
+    ClientHeight = 209
     ClientWidth = 295
     TabOrder = 1
     object Splitter2: TSplitter
       Left = 150
-      Height = 252
+      Height = 209
       Top = 0
       Width = 6
     end
     object Panel3: TPanel
       Left = 0
-      Height = 252
+      Height = 209
       Top = 0
       Width = 150
       Align = alLeft
       BevelOuter = bvNone
-      ClientHeight = 252
+      ClientHeight = 209
       ClientWidth = 150
       TabOrder = 0
       object Label2: TLabel
@@ -194,7 +194,7 @@ object MainForm: TMainForm
       end
       object SectionList: TListBox
         Left = 4
-        Height = 230
+        Height = 187
         Top = 21
         Width = 145
         Anchors = [akTop, akLeft, akRight, akBottom]
@@ -206,12 +206,12 @@ object MainForm: TMainForm
     end
     object Panel4: TPanel
       Left = 156
-      Height = 252
+      Height = 209
       Top = 0
       Width = 139
       Align = alClient
       BevelOuter = bvNone
-      ClientHeight = 252
+      ClientHeight = 209
       ClientWidth = 139
       TabOrder = 1
       object Label3: TLabel
@@ -224,7 +224,7 @@ object MainForm: TMainForm
       end
       object IdentList: TListBox
         Left = 1
-        Height = 230
+        Height = 187
         Top = 21
         Width = 137
         Anchors = [akTop, akLeft, akRight, akBottom]
@@ -329,7 +329,7 @@ object MainForm: TMainForm
   object FooterPanel: TPanel
     Left = 0
     Height = 23
-    Top = 357
+    Top = 314
     Width = 600
     Align = alBottom
     BevelInner = bvLowered
