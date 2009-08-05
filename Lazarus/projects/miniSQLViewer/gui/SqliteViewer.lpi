@@ -40,7 +40,7 @@
         <UnitName Value="SqliteViewer"/>
         <CursorPos X="42" Y="3"/>
         <TopLine Value="1"/>
-        <UsageCount Value="156"/>
+        <UsageCount Value="161"/>
       </Unit0>
       <Unit1>
         <Filename Value="Main.pas"/>
@@ -48,14 +48,12 @@
         <ComponentName Value="MainForm"/>
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="Main"/>
-        <CursorPos X="1" Y="1303"/>
-        <TopLine Value="1297"/>
+        <CursorPos X="1" Y="1316"/>
+        <TopLine Value="1301"/>
         <EditorIndex Value="0"/>
-        <UsageCount Value="156"/>
-        <Bookmarks Count="3">
-          <Item0 X="1" Y="220" ID="0"/>
-          <Item1 X="1" Y="544" ID="1"/>
-          <Item2 X="9" Y="627" ID="2"/>
+        <UsageCount Value="161"/>
+        <Bookmarks Count="1">
+          <Item0 X="9" Y="628" ID="2"/>
         </Bookmarks>
         <Loaded Value="True"/>
       </Unit1>
@@ -339,7 +337,7 @@
         <UnitName Value="sqlvClasses"/>
         <CursorPos X="29" Y="144"/>
         <TopLine Value="135"/>
-        <UsageCount Value="59"/>
+        <UsageCount Value="64"/>
       </Unit41>
       <Unit42>
         <Filename Value="..\lib\sqlvSessions.pas"/>
@@ -505,7 +503,7 @@
         <UnitName Value="sqlvStdClasses"/>
         <CursorPos X="15" Y="26"/>
         <TopLine Value="10"/>
-        <UsageCount Value="54"/>
+        <UsageCount Value="59"/>
       </Unit65>
       <Unit66>
         <Filename Value="..\..\..\..\..\programs\lazarus\lcl\include\customlistbox.inc"/>
@@ -577,9 +575,9 @@
       <Unit76>
         <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\components\synedit\synedit.pp"/>
         <UnitName Value="SynEdit"/>
-        <CursorPos X="3" Y="6020"/>
-        <TopLine Value="6011"/>
-        <UsageCount Value="15"/>
+        <CursorPos X="5" Y="238"/>
+        <TopLine Value="217"/>
+        <UsageCount Value="16"/>
       </Unit76>
       <Unit77>
         <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\components\synedit\syntextdrawer.pp"/>
@@ -738,7 +736,7 @@
         <UnitName Value="AboutForm"/>
         <CursorPos X="15" Y="16"/>
         <TopLine Value="1"/>
-        <UsageCount Value="85"/>
+        <UsageCount Value="90"/>
       </Unit99>
       <Unit100>
         <Filename Value="..\..\..\..\..\..\..\delphi\projects\LightPHPEdit\source\gui\AboutForms.pas"/>
@@ -816,9 +814,16 @@
       <Unit110>
         <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\components\synedit\syncompletion.pas"/>
         <UnitName Value="SynCompletion"/>
-        <CursorPos X="1" Y="1"/>
-        <TopLine Value="1"/>
-        <UsageCount Value="15"/>
+        <CursorPos X="1" Y="811"/>
+        <TopLine Value="793"/>
+        <EditorIndex Value="1"/>
+        <UsageCount Value="17"/>
+        <Bookmarks Count="3">
+          <Item0 X="53" Y="822" ID="0"/>
+          <Item1 X="22" Y="811" ID="1"/>
+          <Item2 X="24" Y="579" ID="3"/>
+        </Bookmarks>
+        <Loaded Value="True"/>
       </Unit110>
       <Unit111>
         <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\ide\sourceeditprocs.pas"/>
@@ -1256,7 +1261,116 @@
         <UsageCount Value="10"/>
       </Unit176>
     </Units>
-    <JumpHistory Count="0" HistoryIndex="-1"/>
+    <JumpHistory Count="27" HistoryIndex="26">
+      <Position1>
+        <Filename Value="Main.pas"/>
+        <Caret Line="1317" Column="57" TopLine="1303"/>
+      </Position1>
+      <Position2>
+        <Filename Value="Main.pas"/>
+        <Caret Line="1" Column="1" TopLine="1"/>
+      </Position2>
+      <Position3>
+        <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\components\synedit\syncompletion.pas"/>
+        <Caret Line="770" Column="1" TopLine="759"/>
+      </Position3>
+      <Position4>
+        <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\components\synedit\syncompletion.pas"/>
+        <Caret Line="971" Column="1" TopLine="968"/>
+      </Position4>
+      <Position5>
+        <Filename Value="Main.pas"/>
+        <Caret Line="1" Column="1" TopLine="1"/>
+      </Position5>
+      <Position6>
+        <Filename Value="Main.pas"/>
+        <Caret Line="1319" Column="18" TopLine="1313"/>
+      </Position6>
+      <Position7>
+        <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\components\synedit\syncompletion.pas"/>
+        <Caret Line="287" Column="27" TopLine="276"/>
+      </Position7>
+      <Position8>
+        <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\components\synedit\syncompletion.pas"/>
+        <Caret Line="1" Column="1" TopLine="1"/>
+      </Position8>
+      <Position9>
+        <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\components\synedit\syncompletion.pas"/>
+        <Caret Line="111" Column="19" TopLine="100"/>
+      </Position9>
+      <Position10>
+        <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\components\synedit\syncompletion.pas"/>
+        <Caret Line="176" Column="77" TopLine="165"/>
+      </Position10>
+      <Position11>
+        <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\components\synedit\syncompletion.pas"/>
+        <Caret Line="201" Column="30" TopLine="190"/>
+      </Position11>
+      <Position12>
+        <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\components\synedit\syncompletion.pas"/>
+        <Caret Line="206" Column="31" TopLine="190"/>
+      </Position12>
+      <Position13>
+        <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\components\synedit\syncompletion.pas"/>
+        <Caret Line="287" Column="27" TopLine="276"/>
+      </Position13>
+      <Position14>
+        <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\components\synedit\syncompletion.pas"/>
+        <Caret Line="1" Column="1" TopLine="1"/>
+      </Position14>
+      <Position15>
+        <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\components\synedit\syncompletion.pas"/>
+        <Caret Line="111" Column="19" TopLine="100"/>
+      </Position15>
+      <Position16>
+        <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\components\synedit\syncompletion.pas"/>
+        <Caret Line="176" Column="27" TopLine="165"/>
+      </Position16>
+      <Position17>
+        <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\components\synedit\syncompletion.pas"/>
+        <Caret Line="174" Column="56" TopLine="165"/>
+      </Position17>
+      <Position18>
+        <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\components\synedit\syncompletion.pas"/>
+        <Caret Line="176" Column="77" TopLine="165"/>
+      </Position18>
+      <Position19>
+        <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\components\synedit\syncompletion.pas"/>
+        <Caret Line="201" Column="30" TopLine="165"/>
+      </Position19>
+      <Position20>
+        <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\components\synedit\syncompletion.pas"/>
+        <Caret Line="206" Column="31" TopLine="165"/>
+      </Position20>
+      <Position21>
+        <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\components\synedit\syncompletion.pas"/>
+        <Caret Line="287" Column="81" TopLine="266"/>
+      </Position21>
+      <Position22>
+        <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\components\synedit\syncompletion.pas"/>
+        <Caret Line="811" Column="22" TopLine="790"/>
+      </Position22>
+      <Position23>
+        <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\components\synedit\syncompletion.pas"/>
+        <Caret Line="1137" Column="45" TopLine="1116"/>
+      </Position23>
+      <Position24>
+        <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\components\synedit\syncompletion.pas"/>
+        <Caret Line="1139" Column="31" TopLine="1116"/>
+      </Position24>
+      <Position25>
+        <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\components\synedit\syncompletion.pas"/>
+        <Caret Line="1153" Column="46" TopLine="1116"/>
+      </Position25>
+      <Position26>
+        <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\components\synedit\syncompletion.pas"/>
+        <Caret Line="811" Column="1" TopLine="790"/>
+      </Position26>
+      <Position27>
+        <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\components\synedit\syncompletion.pas"/>
+        <Caret Line="812" Column="1" TopLine="791"/>
+      </Position27>
+    </JumpHistory>
   </ProjectOptions>
   <CompilerOptions>
     <Version Value="8"/>
@@ -1286,6 +1400,16 @@
     </Other>
   </CompilerOptions>
   <Debugging>
+    <BreakPoints Count="2">
+      <Item1>
+        <Source Value="..\..\..\..\..\..\..\..\programs\lazarus\components\synedit\syncompletion.pas"/>
+        <Line Value="537"/>
+      </Item1>
+      <Item2>
+        <Source Value="..\..\..\..\..\..\..\..\programs\lazarus\components\synedit\syncompletion.pas"/>
+        <Line Value="569"/>
+      </Item2>
+    </BreakPoints>
     <Exceptions Count="2">
       <Item1>
         <Name Value="ECodetoolError"/>

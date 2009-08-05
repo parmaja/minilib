@@ -312,6 +312,7 @@ end;
 
 procedure TMainForm.FormClose(Sender: TObject; var CloseAction: TCloseAction);
 begin
+  sqlvEngine.SaveFile('recent.sql', SQLEdit.Lines);
   sqlvEngine.Session.Close;
   Application.Terminate;
 end;
@@ -747,8 +748,6 @@ end;
 
 procedure TMainForm.Connected;
 begin
-  FreeAndNil(Completion);
-  Completion := TSynCompletion.Create(nil);
   LoadCompletion;
   RecentsCbo.Items.Assign(sqlvEngine.Recents);
 end;
@@ -931,6 +930,8 @@ begin
   end;
   RecentsCbo.Items.Assign(sqlvEngine.Recents);
   StateChanged;
+  if not sqlvEngine.Session.IsActive then //already loaded in connect
+    LoadCompletion;
 end;
 
 destructor TMainForm.Destroy;
@@ -1309,17 +1310,20 @@ procedure TMainForm.LoadCompletion;
       Completion.ItemList.Add(SchemaItems[i].Name);
   end;
 begin
-  //Completion.AddEditor(SQLEdit);
-  Completion.Editor := SQLEdit;
-  Completion.EndOfTokenChr := Completion.EndOfTokenChr + #13;
+  FreeAndNil(Completion);
+  Completion := TSynCompletion.Create(nil);
+  Completion.AddEditor(SQLEdit);
   Completion.TheForm.Font.Assign(SQLEdit.Font);
-  //Completion.CaseSensitive := True;
+  Completion.CaseSensitive := False;
   EnumerateKeywords(Ord(tkDatatype), SqliteTypes, SQLEdit.IdentChars, @DoAddKeyword);
   EnumerateKeywords(Ord(tkFunction), SqliteFunctions, SQLEdit.IdentChars, @DoAddKeyword);
   EnumerateKeywords(Ord(tkKey), SqliteKeywords, SQLEdit.IdentChars, @DoAddKeyword);
-  FillNow('Table', sqlvEngine.Session.Tables);
-  FillNow('Fields', sqlvEngine.Session.Fields);
-  FillNow('View', sqlvEngine.Session.Views);
+  if sqlvEngine.Session.IsActive then
+  begin
+    FillNow('Table', sqlvEngine.Session.Tables);
+    FillNow('Fields', sqlvEngine.Session.Fields);
+    FillNow('View', sqlvEngine.Session.Views);
+  end;
   //FillNow('Procedure', (Owner as TfbvSession).Proceduers);
   //FillNow('Triggers', (Owner as TfbvSession).Triggers);
   //FillNow('Functions', (Owner as TfbvSession).Functions);

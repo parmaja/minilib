@@ -1,8 +1,8 @@
 object MainForm: TMainForm
-  Left = 491
+  Left = 661
   Height = 381
   Hint = 'Connect F9'
-  Top = 127
+  Top = 158
   Width = 564
   ActiveControl = SQLEdit
   Caption = 'SQLite Viewer'
@@ -622,7 +622,7 @@ object MainForm: TMainForm
           'select * from table'
         )
         Options = [eoAutoIndent, eoGroupUndo, eoScrollPastEol, eoTabIndent, eoTabsToSpaces, eoTrimTrailingSpaces, eoBracketHighlight]
-        Options2 = []
+        Options2 = [eoOverwriteBlock]
         BracketHighlightStyle = sbhsBoth
         TabWidth = 2
         object TSynGutterPartList
