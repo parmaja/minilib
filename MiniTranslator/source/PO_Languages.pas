@@ -7,9 +7,9 @@ unit PO_Languages;
  * @author    Zaher Dirkey <zaher at parmaja dot com>
  *}
 
-{$ifdef FPC}
-{$mode objfpc}
-{$endif}
+{$IFDEF FPC}
+{$MODE objfpc}
+{$ENDIF}
 {$M+}{$H+}
 
 interface
@@ -19,7 +19,9 @@ uses
   LangClasses;
 
 type
-  TPO_State = (poNone, poComment, poMsgId, poMsgStr);
+  //keep poMsgStr in first
+  TPO_State = (poMsgStr, poMsgId, poMsgCtxt, poComment, poAutoComment, poReference, poFlags, poPreviousID, poPreviousText);
+  //
 
   { TPO_Parser }
 
@@ -31,7 +33,8 @@ type
     procedure DoParse(Strings: TStringList); override;
     procedure DoGenerate(Strings: TStringList); override;
   public
-    procedure ParseLine(ALine: string); //if you like to parse line by line not use a Contents property
+    procedure Clear;
+    procedure ParseLine(Number:Integer; ALine: string); //if you like to parse line by line not use a Contents property
     class function GetName: string; override;
     class function GetExtension: string; override;
     class function GetTitle: string; override;
@@ -41,11 +44,11 @@ type
 
   TPOFileFiler = class(TLangFiler)
   protected
-    procedure DoLoadFrom(vSource: string; vLanguage:TLanguage); override;
-    procedure DoSaveTo(vSource: string; vLanguage:TLanguage); override;
+    procedure DoLoadFrom(vSource: string; vLanguage: TLanguage); override;
+    procedure DoSaveTo(vSource: string; vLanguage: TLanguage); override;
   public
     constructor Create; override;
-    function CreateParser:TLangParser; override;
+    function CreateParser: TLangParser; override;
     class function GetName: string; override;
     class function GetTitle: string; override;
     class function GetExtension: string; override;
@@ -58,11 +61,11 @@ type
 }
   TPODirectoryFiler = class(TLangFiler)
   protected
-    procedure DoLoadFrom(vSource: string; vLanguage:TLanguage); override;
-    procedure DoSaveTo(vSource: string; vLanguage:TLanguage); override;
+    procedure DoLoadFrom(vSource: string; vLanguage: TLanguage); override;
+    procedure DoSaveTo(vSource: string; vLanguage: TLanguage); override;
   public
     constructor Create; override;
-    function CreateParser:TLangParser; override;
+    function CreateParser: TLangParser; override;
     class function GetName: string; override;
     class function GetTitle: string; override;
     class function GetExtension: string; override;
@@ -73,7 +76,7 @@ type
 
   TPODirectoryExFiler = class(TPODirectoryFiler) //with setting.ini
   protected
-    procedure DoLoadFrom(vSource: string; vLanguage:TLanguage); override;
+    procedure DoLoadFrom(vSource: string; vLanguage: TLanguage); override;
   public
     class function GetName: string; override;
     class function GetTitle: string; override;
@@ -85,28 +88,35 @@ uses
   StrUtils, mnUtils;
 
 const
-  ssMsgId = 'msgid ';
-  ssMsgStr = 'msgstr ';
+  ssMsgId = 'msgid';
+  ssMsgCtxt = 'msgctxt';
+  ssMsgStr = 'msgstr';
   ssComment = '#';
   ssFlags = '#,';
   ssReference = '#:';
   ssAutoComment = '#.';
-  ssMsgPlural = 'msgid_plural '; //not yet
-  ssMsgStrs = 'msgstr['; //not yet
+  ssPreviousText = '#| ';
+  ssPreviousID = '#| msgid';
 
-const
-{$ifdef WINDOWS}
+//not supported
+  ssMsgPlural = 'msgid_plural ';
+  ssMsgStrs = 'msgstr[';
+
+{$IFDEF WINDOWS}
   sOSEOL = #13#10;
-{$else}
+{$ELSE}
   sOSEOL = #13;
-{$endif}
+{$ENDIF}
 
-function EscapePOString(s: string):string;
+  sPOCommands: array[TPO_State] of string = (ssMsgStr, ssMsgId, ssMsgCtxt,
+    ssComment, ssAutoComment, ssReference, ssFlags, ssPreviousID, ssPreviousText);
+
+function EscapePOString(s: string): string;
 begin
   Result := EscapeString(s, '\', [#8, #9, #13, '\', '"'], ['b', 't', 'n', '\', '"']);
 end;
 
-function DescapePOString(s: string):string;
+function DescapePOString(s: string): string;
 begin
   Result := DescapeString(s, '\', [#8, #9, #13, '\', '"'], ['b', 't', 'n', '\', '"']);
 end;
@@ -120,101 +130,83 @@ begin
     Result := DescapePOString(Result);
 end;
 
-procedure TPO_Parser.ParseLine(ALine: string);
-var
-  s: string;
+procedure TPO_Parser.ParseLine(Number:Integer; ALine: string);
 
-  procedure CreateLangItem;
+  function Check(const vLine: string; const WithText: string): Boolean;
   begin
-    FLangItem := Contents.CreateLangItem;
+    Result := LeftStr(vLine, Length(WithText)) = WithText;
   end;
 
-  function CheckAndCut(var S: string; const ID: string): Boolean;
+  function CheckAndAssign(vState: TPO_State; CreateNew, Convert: Boolean; const vLine: string): Boolean;
+  var
+    S: string;
+    W: string;
   begin
-    Result := LeftStr(aLine, Length(ID)) = ID;
+    W := sPOCommands[vState];
+    Result := Check(vLine, W);
     if Result then
     begin
-      if S <> '' then
-        S := S + #13;
-      S := S + CutStrID(ID, S, False, False);
+      if CreateNew then
+        FLangItem := Contents.CreateLangItem;
+      FState := vState;
+      S := CutStrID(W, aLine, Convert, Convert);
+      case vState of
+        poMsgID: FLangItem.ID := FLangItem.ID + S;
+        poMsgStr: FLangItem.Text := FLangItem.Text + S;
+        poMsgCtxt: FLangItem.Context := FLangItem.Context + S;
+        poAutoComment: FLangItem.AutoComment := FLangItem.AutoComment + S;
+        poFlags: FLangItem.Flags := FLangItem.Flags + S;
+        poReference: FLangItem.Reference := FLangItem.Reference + S;
+        poPreviousID: FLangItem.PreviousID := FLangItem.PreviousID + S;
+        poPreviousText: FLangItem.PreviousText := FLangItem.PreviousText + S;
+        poComment: FLangItem.Comment := FLangItem.Comment + S;
+      end;
+      if CreateNew and (FState = poMsgID) and (FLangItem.ID = '') then
+        FLangItem.Visible := False;
     end;
   end;
 
-  function CheckComments: Boolean;
+  function CheckText(CheckNew: Boolean): Boolean;
   begin
-    Result := CheckAndCut(FLangItem.AutoComment, ssAutoComment) or
-      CheckAndCut(FLangItem.Flags, ssFlags) or
-      CheckAndCut(FLangItem.Reference, ssReference) or
-      CheckAndCut(FLangItem.Comment, ssComment);
-  end;
-
-  function CheckNewText: Boolean;
-  begin
-    Result := True;
-    if LeftStr(aLine, Length(ssMsgID)) = ssMsgID then
-    begin
-      CreateLangItem;
-      FState := poMsgID;
-      FLangItem.ID := CutStrID(ssMsgID, aLine, True, True);
-      FLangItem.Visible := FLangItem.ID <> '';
-    end
-    else if LeftStr(aLine, Length(ssAutoComment)) = ssAutoComment then
-    begin
-      CreateLangItem;
-      FState := poComment;
-      FLangItem.AutoComment := CutStrID(ssAutoComment, aLine, False, False);
-    end
-    else if LeftStr(aLine, Length(ssFlags)) = ssFlags then
-    begin
-      CreateLangItem;
-      FState := poComment;
-      FLangItem.Flags := CutStrID(ssFlags, aLine, False, False);
-    end
-    else if LeftStr(aLine, Length(ssComment)) = ssComment then
-    begin
-      CreateLangItem;
-      FState := poComment;
-      FLangItem.Comment := CutStrID(aLine, ssComment, False, False);
-    end
-    else
-      Result := False;
+    Result :=
+      CheckAndAssign(poMsgCtxt, CheckNew, True, aLine) or
+      CheckAndAssign(poAutoComment, CheckNew, False, aLine) or
+      CheckAndAssign(poFlags, CheckNew, False, aLine) or
+      CheckAndAssign(poReference, CheckNew, False, aLine) or
+      CheckAndAssign(poPreviousID, CheckNew, False, aLine) or
+      CheckAndAssign(poPreviousText, CheckNew, False, aLine) or
+      CheckAndAssign(poComment, CheckNew, False, aLine);
   end;
 begin
   if aLine <> '' then
   begin
     case FState of
-      poNone:
+      poMsgCtxt, poComment..poPreviousText:
         begin
-          CheckNewText;
-        end;
-      poComment:
-        begin
-          if LeftStr(aLine, Length(ssMsgID)) = ssMsgID then
-          begin
-            s := CutStrID(ssMsgID, aLine, True, True);
-            FLangItem.ID := s;
-            FState := poMsgID;
-          end
+          if CheckAndAssign(poMsgID, False, True, aLine) then
+          else if CheckText(False) then
+          else if LeftStr(aLine, 1) <> '"' then
+            raise ELangException.Create('PO file Malformed at line ' + IntToStr(Number) + ' in ' + Contents.Source)
           else
-            CheckComments;
+            FLangItem.ID := FLangItem.ID + DescapePOString(DequoteStr(aLine));
         end;
       poMsgId:
         begin
-          if LeftStr(aLine, Length(ssMsgStr)) = ssMsgStr then
-          begin
-            FLangItem.Text := CutStrID(ssMsgStr, aLine, True, True);
-            FState := poMsgStr;
-          end
-          else if not CheckComments then
+          if CheckAndAssign(poMsgStr, False, True, aLine) then
+          else if CheckText(False) then
+          else if LeftStr(aLine, 1) <> '"' then
+            raise ELangException.Create('PO file Malformed at line ' + IntToStr(Number) + ' in ' + Contents.Source)
+          else
             FLangItem.ID := FLangItem.ID + DescapePOString(DequoteStr(aLine));
         end;
       poMsgStr:
         begin
-          if CheckNewText then
-          else if not CheckComments then
-          begin
+          if CheckAndAssign(poMsgID, True, True, aLine) then
+          else if CheckText(True) then //if there is a MsgID or any comment then it is new Item
+          else if LeftStr(aLine, 1) <> '"' then
+            raise ELangException.Create('PO file Malformed at line ' + IntToStr(Number) + ' in ' + Contents.Source)
+          else
             FLangItem.Text := FLangItem.Text + DescapePOString(DequoteStr(aLine));
-          end;
         end;
     end;
   end;
@@ -242,8 +234,8 @@ begin
         Delete(s, 1, 3);
       end;
     end;
-    ParseLine(s);
-    Inc(l);
+    Inc(l);//before parse the line for first line take 1
+    ParseLine(l, Trim(s));  
   end;
 
   s := Contents.GetText('');
@@ -312,30 +304,36 @@ end;}
 
 procedure TPO_Parser.DoGenerate(Strings: TStringList);
   procedure WriteItem(Item: TLangItem);
-    procedure WriteStrings(Ident, S: string);
+    procedure WriteStrings(Ident, S: string; Force: Boolean);
     var
       aStrings: TStringList;
       i: Integer;
-      function GetEOL:string;
+      function GetEOL: string;
       begin
-        if i < aStrings.Count -1 then
+        if i < (aStrings.Count - 1) then
           Result := '\n'
         else
           Result := '';
       end;
     begin
-      aStrings := TStringList.Create;
-      try
-        aStrings.Text := s;
-        for i := 0 to aStrings.Count - 1 do
-        begin
-          if i = 0 then
-            Strings.Add(Ident + QuoteStr(EscapePOString(aStrings[i])+GetEOL))
+      if Force or (s <> '') then
+      begin
+        aStrings := TStringList.Create;
+        try
+          aStrings.Text := s;
+          if (aStrings.Count <= 1) then
+            Strings.Add(Ident + ' ' +QuoteStr(EscapePOString(s)))
           else
-            Strings.Add(QuoteStr(EscapePOString(aStrings[i])+GetEOL));
-        end
-      finally
-        aStrings.Free;
+          begin
+            Strings.Add(Ident + ' ""');
+            for i := 0 to aStrings.Count - 1 do
+            begin
+              Strings.Add(QuoteStr(EscapePOString(aStrings[i]) + GetEOL));
+            end
+          end;
+        finally
+          aStrings.Free;
+        end;
       end;
     end;
 
@@ -344,17 +342,20 @@ procedure TPO_Parser.DoGenerate(Strings: TStringList);
       aStrings: TStringList;
       i: Integer;
     begin
-      aStrings := TStringList.Create;
-      try
-        ExtractStrings([#13], [], PChar(s), aStrings);
-        for i := 0 to aStrings.Count - 1 do
-        begin
-          if aStrings[i] <> '' then
-            Strings.Add(Ident + ' ' + aStrings[i]);
-        end;
-      finally
-        aStrings.Free;
-      end
+      if s <> '' then
+      begin
+        aStrings := TStringList.Create;
+        try
+          ExtractStrings([#13], [], PChar(s), aStrings);
+          for i := 0 to aStrings.Count - 1 do
+          begin
+            if aStrings[i] <> '' then
+              Strings.Add(Ident + ' ' + aStrings[i]);
+          end;
+        finally
+          aStrings.Free;
+        end
+      end;
     end;
 
   begin
@@ -362,10 +363,13 @@ procedure TPO_Parser.DoGenerate(Strings: TStringList);
     begin
       WriteComments(ssComment, Comment);
       WriteComments(ssAutoComment, AutoComment);
-      WriteComments(ssFlags, Flags);
       WriteComments(ssReference, Reference);
-      WriteStrings(ssMsgID, ID);
-      WriteStrings(ssMsgStr, Text);
+      WriteComments(ssFlags, Flags);
+      WriteComments(ssPreviousID, PreviousID);
+      WriteComments(ssPreviousText, PreviousText);
+      WriteStrings(ssMsgCtxt, Context, False);
+      WriteStrings(ssMsgID, ID, True);
+      WriteStrings(ssMsgStr, Text, True);
       Strings.Add('');
     end;
   end;
@@ -377,6 +381,12 @@ begin
   begin
     WriteItem(Contents[i]);
   end;
+end;
+
+procedure TPO_Parser.Clear;
+begin
+  FLangItem := nil;
+  FState := poMsgStr;
 end;
 
 class function TPO_Parser.GetName: string;
@@ -423,7 +433,7 @@ procedure TPODirectoryFiler.DoLoadFrom(vSource: string; vLanguage: TLanguage);
 var
   I: Integer;
   SearchRec: TSearchRec;
-  aName, aPath, aFile: String;
+  aPath: string;
   aParser: TLangParser;
 begin
   with vLanguage do
@@ -460,7 +470,7 @@ end;
 
 class function TPODirectoryFiler.GetName: string;
 begin
-  Result :='PODir';
+  Result := 'PODir';
 end;
 
 class function TPODirectoryFiler.GetTitle: string;
@@ -470,7 +480,7 @@ end;
 
 class function TPODirectoryFiler.GetExtension: string;
 begin
-  Result :='PO';
+  Result := 'PO';
 end;
 
 class function TPODirectoryFiler.GetFlags: TLangFilerFlags;
@@ -526,7 +536,7 @@ begin
       try
         if vLanguage.Count > 0 then
         begin
-          GenerateLanguageFile(vSource, vLanguage[0], aParser);//single file
+          GenerateLanguageFile(vSource, vLanguage[0], aParser); //single file
           //vLanguage.Source := vSource;//like as save as
         end;
       finally
@@ -562,7 +572,7 @@ end;
 
 procedure TPODirectoryExFiler.DoLoadFrom(vSource: string; vLanguage: TLanguage);
 var
-  aPath, aName, aFile: String;
+  aPath, aName, aFile: string;
   aStrings: TStringList;
 begin
   inherited;
@@ -570,11 +580,12 @@ begin
   begin
     aPath := IncludeTrailingPathDelimiter(vSource);
     aName := ExtractFileName(ExcludeTrailingPathDelimiter(vSource));
-    aFile := aPath + '\setting.ini';
+    aFile := aPath + '\language.conf';
     if FileExists(aFile) then
     begin
       aStrings := TStringList.Create;
       try
+        aStrings.LoadFromFile(aFile);
         Name := aStrings.Values['Name'];
         if Name = '' then
           Name := aName;
@@ -594,7 +605,7 @@ end;
 
 class function TPODirectoryExFiler.GetTitle: string;
 begin
-  Result := 'PO Directory with setting.ini'
+  Result := 'PO Config Directory'
 end;
 
 initialization

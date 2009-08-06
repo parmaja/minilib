@@ -53,8 +53,6 @@ type
 
   TLangItem = class(TObject)
   private
-    FID: string;
-    FText: string;
     FContents: TLangContents;
     FModified: Boolean;
     FVisible: Boolean;
@@ -66,12 +64,17 @@ type
     procedure SetModified(const AValue: Boolean);
     procedure SetText(const AValue: string);
   protected
+    FID: string;
+    FText: string;
     function GetInUpdate: Boolean;
   public
+    Context: string;
     AutoComment: string;
     Comment: string;
     Reference: string;
     Flags: string;
+    PreviousID: string;
+    PreviousText: string;
     constructor Create;
     procedure Changed; virtual;
     procedure Clean; virtual;
@@ -81,7 +84,7 @@ type
     property Visible: Boolean read FVisible write FVisible default True;
     property Modified: Boolean read FModified write SetModified default False;
     property DisplayText: string read GetDisplayText write SetDisplayText;
-    property DisplayID: string read GetDisplayID write SetDisplayID;
+    property DisplayID: string read GetDisplayID write SetDisplayID; //deprecated;
   end;
 
   TLanguage = class;
@@ -246,7 +249,6 @@ type
     procedure DoGenerate(Strings: TStringList); virtual; abstract;
   public
     constructor Create; overload;
-    constructor Create(AContents: TLangContents); overload;
     procedure Parse(Strings: TStringList);
     procedure Generate(Strings: TStringList);
     class function GetName: string; virtual;
@@ -865,12 +867,6 @@ begin
     raise ELangException.Create('Contents is nil');
 end;
 
-constructor TLangParser.Create(AContents: TLangContents);
-begin
-  Create;
-  FContents := AContents;
-end;
-
 procedure TLangParser.Parse(Strings: TStringList);
 begin
   CheckContents;
@@ -972,9 +968,9 @@ begin
   try
     Parser.Contents := Contents;
     Strings.LoadFromFile(FileName);
-    Parser.Parse(Strings);
     Contents.Name := ExtractFileName(FileName);
     Contents.Source := FileName;
+    Parser.Parse(Strings);
   finally
     Strings.Free;
   end;
