@@ -1,7 +1,7 @@
 object MainForm: TMainForm
-  Left = 440
+  Left = 301
   Height = 357
-  Top = 110
+  Top = 159
   Width = 600
   ActiveControl = LocalValueEdit
   Caption = 'Mini Translator'
@@ -15,6 +15,7 @@ object MainForm: TMainForm
   OnClose = FormClose
   OnCloseQuery = FormCloseQuery
   OnCreate = FormCreate
+  OnShow = FormShow
   ShowHint = True
   LCLVersion = '0.9.27'
   object LeftSplitter: TSplitter
@@ -147,7 +148,7 @@ object MainForm: TMainForm
         Left = 64
         Height = 17
         Top = 2
-        Width = 232
+        Width = 196
         Anchors = [akTop, akLeft, akRight]
         AutoSize = False
         BorderStyle = bsNone
@@ -155,6 +156,16 @@ object MainForm: TMainForm
         ReadOnly = True
         TabStop = False
         TabOrder = 1
+      end
+      object EditCommentBtn: TButton
+        Left = 263
+        Height = 21
+        Top = 0
+        Width = 31
+        Anchors = [akTop, akRight]
+        Caption = 'Edit'
+        OnClick = EditCommentBtnClick
+        TabOrder = 2
       end
     end
   end
@@ -188,8 +199,8 @@ object MainForm: TMainForm
         Left = 5
         Height = 14
         Top = 3
-        Width = 43
-        Caption = 'Contents'
+        Width = 63
+        Caption = 'Section/Files'
         ParentColor = False
       end
       object SectionList: TListBox
@@ -218,8 +229,8 @@ object MainForm: TMainForm
         Left = 5
         Height = 14
         Top = 3
-        Width = 19
-        Caption = 'Key'
+        Width = 35
+        Caption = 'Key/ID'
         ParentColor = False
       end
       object IdentList: TListBox
@@ -249,8 +260,8 @@ object MainForm: TMainForm
       Left = 7
       Height = 14
       Top = 1
-      Width = 55
-      Caption = 'Key/MsgID'
+      Width = 35
+      Caption = 'Key/ID'
       ParentColor = False
     end
     object AllIdentList: TListBox
@@ -376,6 +387,7 @@ object MainForm: TMainForm
       end
       object OptionsMnu: TMenuItem
         Caption = 'Options'
+        OnClick = OptionsMnuClick
       end
       object MenuItem1: TMenuItem
         Caption = '-'

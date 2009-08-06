@@ -24,6 +24,7 @@ type
 
   TMainForm = class(TForm)
     ApplicationProperties: TApplicationProperties;
+    EditCommentBtn: TButton;
     HintLbl: TLabel;
     MainMenu: TMainMenu;
     ExitMnu: TMenuItem;
@@ -121,7 +122,9 @@ type
     Reportretranslate1: TMenuItem;
     procedure ApplicationPropertiesShowHint(var HintStr: string;
       var CanShow: Boolean; var HintInfo: THintInfo);
+    procedure EditCommentBtnClick(Sender: TObject);
     procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
+    procedure FormShow(Sender: TObject);
     procedure IdentListClick(Sender: TObject);
     procedure IdentListDrawItem(Control: TWinControl; Index: Integer;
       ARect: TRect; State: TOwnerDrawState);
@@ -206,6 +209,7 @@ type
     procedure RefreshProject;
     function FindNext: Boolean;
     procedure EnumTools(vCaption: string; vOnClick: TNotifyEvent; vAutoInSave:Boolean);
+    procedure Loaded; override;
   public
     FindIndex: Integer;
     procedure ResetFind;
@@ -229,16 +233,25 @@ begin
   begin
     CloseProject;
   end;
+  trsEngine.Options.TopLayout := TopLayoutMnu.Checked;
   trsEngine.Options.FormWidth := Width;
   trsEngine.Options.FormHeight := Height;
-  trsEngine.Options.TopLayout := TopLayoutMnu.Checked;
   trsEngine.SaveOptions;
+end;
+
+procedure TMainForm.FormShow(Sender: TObject);
+begin
 end;
 
 procedure TMainForm.ApplicationPropertiesShowHint(var HintStr: string;
   var CanShow: Boolean; var HintInfo: THintInfo);
 begin
   HintLbl.Caption := HintInfo.HintStr;
+end;
+
+procedure TMainForm.EditCommentBtnClick(Sender: TObject);
+begin
+
 end;
 
 procedure TMainForm.EnumContents;
@@ -850,11 +863,11 @@ var
   aReg: TRegistry;
 begin
   HintLbl.Caption := '';
-  TopLayoutMnu.Checked := trsEngine.Options.TopLayout;
   if trsEngine.Options.FormWidth > 100 then
     Width := trsEngine.Options.FormWidth;
   if trsEngine.Options.FormHeight > 100 then
     Height := trsEngine.Options.FormHeight;
+  TopLayoutMnu.Checked := trsEngine.Options.TopLayout;
   UpdateFonts;
   UpdateView;
   EnumRecentProjects;
@@ -1150,6 +1163,11 @@ begin
   aMenuItem.Tag := Ord(vAutoInSave);
   ToolsMnu.Add(aMenuItem);
   Project.ToolsList.Add(aMenuItem);
+end;
+
+procedure TMainForm.Loaded;
+begin
+  inherited Loaded;
 end;
 
 procedure TMainForm.ResetFind;
