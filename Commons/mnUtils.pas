@@ -20,7 +20,7 @@ uses
 
 function DequoteStr(Str: string): string;
 function QuoteStr(Str: string; QuoteChar: string = '"'): string;
-function StrToStrings(Content: string; Strings: TStrings; Separators:TSysCharSet; WhiteSpace: TSysCharSet = [#0, #13, #10]; DequoteValues: Boolean = False; Quotes: TSysCharSet = ['''', '"']): Integer;
+function StrToStrings(Content: string; Strings: TStrings; Separators: TSysCharSet; WhiteSpace: TSysCharSet = [#0, #13, #10]; DequoteValues: Boolean = False; Quotes: TSysCharSet = ['''', '"']): Integer;
 function ExpandToPath(FileName: string; Path: string; Root:string = ''): string;
 
 {
@@ -30,6 +30,7 @@ function ExpandToPath(FileName: string; Path: string; Root:string = ''): string;
   DescapeString: Reverse of EscapeString with same params
   Both functions is case sensitive
 }
+
 function EscapeString(const S: string; Esc: string; Chars:array of AnsiChar; Escapes: array of string): string;
 function DescapeString(const S: string; Esc: string; Chars:array of AnsiChar; Escapes: array of string): string;
 
@@ -171,7 +172,7 @@ end;
 
 function cCompareStr(Start: Integer; const Str: string; const WithStr: string): Boolean;
 var
-  i, l: Integer;
+  i: Integer;
 begin
   Result := True;
   if (Length(Str) - Start + 1) < Length(WithStr) then
@@ -205,9 +206,9 @@ function EscapeString(const S: string; Esc: string; Chars:array of AnsiChar; Esc
     end;
   end;
 var
-  i, j: Integer;
+  i: Integer;
   NewLength: Integer;
-  p, c, l: Integer;
+  p, c: Integer;
   NeedEscape: Boolean;
 begin
   if Length(Chars) <> Length(Escapes) then
@@ -262,9 +263,9 @@ function DescapeString(const S: string; Esc: string; Chars:array of AnsiChar; Es
     end;
   end;
 var
-  i, j: Integer;
+  i: Integer;
   NewLength: Integer;
-  p, c, l: Integer;
+  p, c: Integer;
   NeedDescape: Boolean;
 begin
   if Length(Chars) <> Length(Escapes) then

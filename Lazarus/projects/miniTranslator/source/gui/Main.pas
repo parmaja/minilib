@@ -8,6 +8,16 @@ unit Main;
 
 {$mode objfpc}{$H+}
 
+{TODO: Make it work :P }
+{TODO: Bookmarks}
+{TODO: Save Bookmarks in projects}
+{TODO: Edit comments}
+{TODO: Edit Language properties}
+{TODO: Highlight not translated items}
+{TODO: Highlight fuzzy items}
+{TODO: Highlight flaged}
+{TODO: save in current system locale not just utf-8}
+
 interface
 
 uses
@@ -15,7 +25,8 @@ uses
   LResources, LCLIntf, LangUtils,
   Registry, Contnrs, FileCtrl, Dialogs, Grids, LangClasses, Menus,
   ExtCtrls, trsProjects, trsClasses,
-  Setups, PO_Languages,
+  Setups,
+  PO_Languages, FluxBB_Parser,
   mnXMLUtils, mnXMLRtti, mnXMLRttiProfile;
 
 type
@@ -30,6 +41,7 @@ type
     ExitMnu: TMenuItem;
     MenuItem1: TMenuItem;
     ReopenFilesMnu: TMenuItem;
+    GroupsList: TComboBox;
     WorkPathMnu: TMenuItem;
     OptionsMnu: TMenuItem;
     ProjectOptionsMnu: TMenuItem;
@@ -105,11 +117,9 @@ type
     FindKindCbo: TComboBox;
     Panel3: TPanel;
     Label2: TLabel;
-    SectionList: TListBox;
     Panel4: TPanel;
     Label3: TLabel;
     IdentList: TListBox;
-    Splitter2: TSplitter;
     UpSplitter: TSplitter;
     Label8: TLabel;
     Label9: TLabel;
@@ -144,6 +154,7 @@ type
     procedure FindFirstMnuClick(Sender: TObject);
     procedure CleanMnuClick(Sender: TObject);
     procedure LeftLayoutMnuClick(Sender: TObject);
+    procedure GroupsListSelect(Sender: TObject);
     procedure TopLayoutMnuClick(Sender: TObject);
     procedure NewProjectMnuClick(Sender: TObject);
     procedure OptionsMnuClick(Sender: TObject);
@@ -187,7 +198,7 @@ type
     procedure LoadFile(FileName: string);
     procedure SaveFile(FileName: string);
     procedure SaveAsProject;
-    procedure JumpTo(Word: TLangItem);
+    procedure JumpTo(Item: TLangItem);
     procedure ClearAll;
     procedure CloseProject;
     function AskCloseProject: Boolean;
@@ -201,7 +212,7 @@ type
     procedure Enumerate;
     procedure UpdateIdentList;
     procedure UpdateAllIdentList;
-    procedure LoadValueFromWord(Word: TLangItem);
+    procedure LoadValueFromWord(Item: TLangItem);
     procedure LoadValueFromList;
     procedure LoadValueFromAllList;
     procedure FindFirst;
@@ -259,19 +270,19 @@ var
   i, j: Integer;
   aContents: TLangContents;
 begin
-  SectionList.Items.BeginUpdate;
+  GroupsList.Items.BeginUpdate;
   try
-    SectionList.Clear;
+    GroupsList.Clear;
     for i := 0 to Project.Dictionary.Local.Count - 1 do
     begin
       aContents := Project.Dictionary.Local[i];
       if aContents.Visible then
-        SectionList.Items.AddObject(aContents.Name, aContents);
+        GroupsList.Items.AddObject(aContents.Name, aContents);
     end;
-    if SectionList.Items.Count > 0 then
-      SectionList.ItemIndex := 0;
+    if GroupsList.Items.Count > 0 then
+      GroupsList.ItemIndex := 0;
   finally
-    SectionList.Items.EndUpdate;
+    GroupsList.Items.EndUpdate;
   end;
 end;
 
@@ -285,9 +296,9 @@ begin
   IdentList.Items.BeginUpdate;
   try
     IdentList.Clear;
-    if SectionList.ItemIndex >= 0 then
+    if GroupsList.ItemIndex >= 0 then
     begin
-      aContents := Project.Dictionary.Local.Find(SectionList.Items[SectionList.ItemIndex]);
+      aContents := Project.Dictionary.Local.Find(GroupsList.Items[GroupsList.ItemIndex]);
       for i := 0 to aContents.Count - 1 do
       begin
          if aContents[i].Visible and (not Filtered or (aContents.Items[i].Text='')) then
@@ -320,8 +331,11 @@ var
   e: string;
 begin
   OpenDialog.DefaultExt := 'po';
-  OpenDialog.Filter := 'PO gettext|*.po|Plan files|*.ini|All Files|*.*';
-  OpenDialog.FileName := '*.po;*.ini';
+  OpenDialog.FileName := '';
+  //OpenDialog.Filter := 'PO gettext|*.po|Plan files|*.ini|All Files|*.*';
+  OpenDialog.Filter := GetDialogFilter([lffSingle]);
+  OpenDialog.FilterIndex := 0;
+  //OpenDialog.FileName := '*.po;*.ini';
   if OpenDialog.Execute then
   begin
     LoadFile(OpenDialog.FileName);
@@ -359,7 +373,7 @@ end;
 
 procedure TMainForm.LoadValueFromList;
 begin
-  if (IdentList.ItemIndex >= 0) and (SectionList.ItemIndex >= 0) then
+  if (IdentList.ItemIndex >= 0) and (GroupsList.ItemIndex >= 0) then
     LoadValueFromWord(TLangItem(IdentList.Items.Objects[IdentList.ItemIndex]))
   else
     LoadValueFromWord(nil);
@@ -368,10 +382,6 @@ end;
 
 procedure TMainForm.SectionListClick(Sender: TObject);
 begin
-  if SectionList.ItemIndex >= 0 then
-  begin
-    EnumIdents;
-  end;
 end;
 
 procedure TMainForm.FormCloseQuery(Sender: TObject; var CanClose: Boolean);
@@ -553,6 +563,14 @@ begin
   UpdateView;
 end;
 
+procedure TMainForm.GroupsListSelect(Sender: TObject);
+begin
+  if GroupsList.ItemIndex >= 0 then
+  begin
+    EnumIdents;
+  end;
+end;
+
 procedure TMainForm.TopLayoutMnuClick(Sender: TObject);
 begin
   UpdateView;
@@ -714,7 +732,9 @@ var
 begin
   if AskCloseProject then
   begin
-    e := ExtractFileName(FileName);
+    e := ExtractFileExt(ExtractFileName(FileName));
+    if LeftStr(e, 1) = '.' then
+      Delete(e, 1, 1);
     Project := CreateDefaultProject(e);
     Project.LoadDictionary(FileName, Project.Dictionary.Local);
     ProcessRecentFiles(FileName);
@@ -724,8 +744,6 @@ begin
 end;
 
 procedure TMainForm.SaveFile(FileName: string);
-var
-  e: string;
 begin
   if (Project.Dictionary <> nil) and (Project.Dictionary.Local <> nil) then
   begin
@@ -878,7 +896,7 @@ end;
 procedure TMainForm.ClearAll;
 begin
   AllIdentList.Clear;
-  SectionList.Clear;
+  GroupsList.Clear;
   IdentList.Clear;
   OriginalValueEdit.Clear;
   LocalValueEdit.Clear;
@@ -954,33 +972,33 @@ var
   aContents: TLangContents;
   i: Integer;
 begin
-  i := SectionList.Items.IndexOfObject(Project.Current.Contents);
-  if SectionList.ItemIndex >= 0 then
-    aContents := TLangContents(SectionList.Items.Objects[SectionList.ItemIndex])
+  i := GroupsList.Items.IndexOfObject(Project.Current.Contents);
+  if GroupsList.ItemIndex >= 0 then
+    aContents := TLangContents(GroupsList.Items.Objects[GroupsList.ItemIndex])
   else
     aContents := nil;
-  SectionList.ItemIndex := i;
-  if SectionList.ItemIndex >= 0 then
+  GroupsList.ItemIndex := i;
+  if GroupsList.ItemIndex >= 0 then
   begin
-    if aContents <> TLangContents(SectionList.Items.Objects[SectionList.ItemIndex]) then
+    if aContents <> TLangContents(GroupsList.Items.Objects[GroupsList.ItemIndex]) then
       EnumIdents(True);
     IdentList.ItemIndex := IdentList.Items.IndexOfObject(Project.Current);
   end;
 end;
 
-procedure TMainForm.LoadValueFromWord(Word: TLangItem);
+procedure TMainForm.LoadValueFromWord(Item: TLangItem);
 begin
-  if Word <> nil then
+  if Item <> nil then
   begin
     Project.Current := nil; //locking ValueEdit.Changed
-    LocalValueEdit.Text := Word.DisplayText;
+    LocalValueEdit.Text := Item.DisplayText;
     if Project.Dictionary.Original <> nil then
-      OriginalValueEdit.Text := Project.Dictionary.Original.Values[Word.Contents.Name].FindID(Word.ID).DisplayText//error
+      OriginalValueEdit.Text := Project.Dictionary.Original.GetText(Item.Contents.Name, Item.ID)
     else
-      OriginalValueEdit.Text := Word.DisplayID;
-    KeyLbl.Text := Word.Contents.Name + '\' + Word.ID;
-    CommentEdit.Text := Word.Comment;
-    Project.Current := Word;
+      OriginalValueEdit.Text := Item.DisplayID;
+    KeyLbl.Text := Item.Contents.Name + '\' + Item.ID;
+    CommentEdit.Text := Item.Comment;
+    Project.Current := Item;
   end
   else
   begin
@@ -1081,13 +1099,13 @@ begin
   end
 end;
 
-procedure TMainForm.JumpTo(Word: TLangItem);
+procedure TMainForm.JumpTo(Item: TLangItem);
 begin
   Project.Current := nil;
-  Word := Project.Dictionary.Local.FindID(Word.Contents.Name, Word.ID);
-  if Word <> nil then
+  Item := Project.Dictionary.Local.FindID(Item.Contents.Name, Item.ID);
+  if Item <> nil then
   begin
-    Project.Current := Word;
+    Project.Current := Item;
     UpdateIdentList;
     UpdateAllIdentList;
     LoadValueFromList;

@@ -12,18 +12,17 @@ interface
 
 uses
   SysUtils, Variants, Classes, Controls,
-  LangClasses, LangUtils, PO_Languages, contnrs,
+  LangClasses, LangUtils,
+  PO_Languages, FluxBB_Parser, contnrs,
   mnXMLRtti, mnXMLRttiProfile;
 
 type
 
   { TtrsIndex }
 
-  TtrsIndex = class(TObjectList)
+  TtrsIndex = class(TLangList)
   private
-    function GetItem(Index: Integer): TLangItem;
   public
-    property Items[Index: Integer]: TLangItem read GetItem; default;
   end;
 
   { TtrsLanguage }
@@ -49,6 +48,8 @@ type
     constructor Create;
     destructor Destroy; override;
   end;
+
+function GetDialogFilter(vFlags: TLangFilerFlags): string;
 
 implementation
 //show count of non translated items
@@ -126,13 +127,6 @@ begin
   FreeAndNil(Local);
   FreeAndNil(Original);
   inherited Destroy;
-end;
-
-{ TtrsIndex }
-
-function TtrsIndex.GetItem(Index: Integer): TLangItem;
-begin
-  Result := inherited Items[Index] as TLangItem;
 end;
 
 { TtrsLanguage }
@@ -237,6 +231,37 @@ begin
       end
     end;
   end;
+end;
+
+function GetDialogFilter(vFlags: TLangFilerFlags): string;
+var
+  i: Integer;
+  s: string;
+  aAll: string;
+begin
+  aAll := '';
+  Result := '';
+  try
+    for i := 0 to LangOptions.FilerClasses.Count - 1 do
+    if (vFlags * LangOptions.FilerClasses[i].GetFlags) = vFlags then
+    begin
+      if Result <> '' then
+        Result := Result + '|';
+        s := '*.' + LangOptions.FilerClasses[i].GetExtension;
+        if aAll <> '' then
+          aAll := aAll + ';';
+        aAll := aAll + '*.' + LangOptions.FilerClasses[i].GetExtension;
+      Result := Result + LangOptions.FilerClasses[i].GetTitle + ' (' + s + ')|' + s;
+    end;
+  finally
+  end;
+
+  if Result <> '' then
+    Result := 'All files ('+aAll+')|' + aAll + '|' + Result;
+
+  if Result <> '' then
+    Result := Result + '|';
+  Result := Result + 'Any file (*.*)|*.*';
 end;
 
 initialization
