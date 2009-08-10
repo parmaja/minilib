@@ -34,7 +34,7 @@ type
     procedure DoGenerate(Strings: TStringList); override;
   public
     procedure Clear;
-    procedure ParseLine(Number:Integer; ALine: string); //if you like to parse line by line not use a Contents property
+    procedure ParseLine(Number:Integer; ALine: string);
     class function GetName: string; override;
     class function GetExtension: string; override;
     class function GetTitle: string; override;
@@ -47,7 +47,6 @@ type
     procedure DoLoadFrom(vSource: string; vLanguage: TLanguage); override;
     procedure DoSaveTo(vSource: string; vLanguage: TLanguage); override;
   public
-    constructor Create; override;
     function CreateParser: TLangParser; override;
     class function GetName: string; override;
     class function GetTitle: string; override;
@@ -161,8 +160,8 @@ procedure TPO_Parser.ParseLine(Number:Integer; ALine: string);
         poPreviousText: FLangItem.PreviousText := FLangItem.PreviousText + S;
         poComment: FLangItem.Comment := FLangItem.Comment + S;
       end;
-      if CreateNew and (FState = poMsgID) and (FLangItem.ID = '') then
-        FLangItem.Visible := False;
+{      if CreateNew and (FState = poMsgID) and (FLangItem.ID = '') then
+        FLangItem.Visible := False;}
     end;
   end;
 
@@ -220,6 +219,7 @@ var
   i: Integer;
   aList: TStringList;
   ForceUTF8: Boolean;
+  aItem: TLangItem;
 begin
   ForceUTF8 := False;
   l := 0;
@@ -238,19 +238,24 @@ begin
     ParseLine(l, Trim(s));  
   end;
 
-  s := Contents.GetText('');
-  ExtractStrings([#13], [' '], PChar(s), Contents.Attributes);
-  for i := 0 to Contents.Attributes.Count - 1 do
+  aItem := Contents.Find('');
+  if aItem <> nil then
   begin
-    s := Trim(Contents.Attributes[i]);
-    p := Pos(':', s);
-    if p > 0 then
+    s := aItem.DisplayText;
+    ExtractStrings([#13], [' '], PChar(s), Contents.Attributes);
+    for i := 0 to Contents.Attributes.Count - 1 do
     begin
-      s := Trim(Copy(s, 1, p - 1)) + '=' + Trim(Copy(s, p + 1, MaxInt));
-      Contents.Attributes[i] := s;
-    end
-    else
-      Contents.Attributes[i] := Trim(s);
+      s := Trim(Contents.Attributes[i]);
+      p := Pos(':', s);
+      if p > 0 then
+      begin
+        s := Trim(Copy(s, 1, p - 1)) + '=' + Trim(Copy(s, p + 1, MaxInt));
+        Contents.Attributes[i] := s;
+      end
+      else
+        Contents.Attributes[i] := Trim(s);
+    end;
+    aItem.Visible := False;
   end;
   Contents.Title := Contents.Attributes.Values['X-Name'];
   s := Trim(Contents.Attributes.Values['Content-Type']);
@@ -396,7 +401,7 @@ end;
 
 class function TPO_Parser.GetExtension: string;
 begin
-  Result := 'PO'
+  Result := 'po'
 end;
 
 class function TPO_Parser.GetTitle: string;
@@ -430,36 +435,8 @@ begin
 end;
 
 procedure TPODirectoryFiler.DoLoadFrom(vSource: string; vLanguage: TLanguage);
-var
-  I: Integer;
-  SearchRec: TSearchRec;
-  aPath: string;
-  aParser: TLangParser;
 begin
-  with vLanguage do
-  begin
-    aPath := IncludeTrailingPathDelimiter(vSource);
-    try
-      Clear;
-      try
-        I := FindFirst(aPath + '*.' + GetExtension, 0, SearchRec);
-        while I = 0 do
-        begin
-          aParser := CreateParser;
-          try
-            ParseLanguageFile(aPath + SearchRec.Name, vLanguage, aParser);
-          finally
-            aParser.Free;
-          end;
-          I := FindNext(SearchRec);
-        end;
-      finally
-        FindClose(SearchRec);
-      end;
-    except
-      raise;
-    end;
-  end;
+  DefaultDirLoadFrom(vSource, vLanguage);
   if vLanguage.Count > 0 then
     vLanguage.IsRightToLeft := vLanguage[0].IsRightToLeft;
 end;
@@ -480,7 +457,7 @@ end;
 
 class function TPODirectoryFiler.GetExtension: string;
 begin
-  Result := 'PO';
+  Result := 'po';
 end;
 
 class function TPODirectoryFiler.GetFlags: TLangFilerFlags;
@@ -490,62 +467,22 @@ end;
 
 { TPOFileFiler }
 
-constructor TPOFileFiler.Create;
-begin
-  inherited Create;
-end;
-
 function TPOFileFiler.CreateParser: TLangParser;
 begin
   Result := TPO_Parser.Create;
 end;
 
 procedure TPOFileFiler.DoLoadFrom(vSource: string; vLanguage: TLanguage);
-var
-  aParser: TLangParser;
 begin
-  with vLanguage do
-  begin
-    try
-      Clear;
-      aParser := CreateParser;
-      try
-        ParseLanguageFile(vSource, vLanguage, aParser);
-      finally
-        aParser.Free;
-      end;
-    except
-      raise;
-    end;
-    Source := vSource;
-    Name := ExtractFileName(vSource);
-    if vLanguage.Count > 0 then
-      vLanguage.IsRightToLeft := vLanguage[0].IsRightToLeft;
-    ID := 0;
-  end;
+  DefaultSingleLoadFrom(vSource, vLanguage);
+  if vLanguage.Count > 0 then
+    vLanguage.IsRightToLeft := vLanguage[0].IsRightToLeft;
+  vLanguage.ID := 0;
 end;
 
 procedure TPOFileFiler.DoSaveTo(vSource: string; vLanguage: TLanguage);
-var
-  aParser: TLangParser;
 begin
-  with vLanguage do
-  begin
-    try
-      aParser := CreateParser;
-      try
-        if vLanguage.Count > 0 then
-        begin
-          GenerateLanguageFile(vSource, vLanguage[0], aParser); //single file
-          //vLanguage.Source := vSource;//like as save as
-        end;
-      finally
-        aParser.Free;
-      end;
-    except
-      raise;
-    end;
-  end;
+  DefaultSingleSaveTo(vSource, vLanguage);
 end;
 
 class function TPOFileFiler.GetName: string;
@@ -560,12 +497,12 @@ end;
 
 class function TPOFileFiler.GetExtension: string;
 begin
-  Result := 'PO';
+  Result := 'po';
 end;
 
 class function TPOFileFiler.GetFlags: TLangFilerFlags;
 begin
-  Result := [lffAlone];
+  Result := [lffSingle, lffAlone];
 end;
 
 { TPODirectoryExFiler }
@@ -609,9 +546,9 @@ begin
 end;
 
 initialization
-finalization
   LangOptions.RegisterFilerClass(TPOFileFiler);
   LangOptions.RegisterFilerClass(TPODirectoryFiler);
   LangOptions.RegisterFilerClass(TPODirectoryExFiler);
+finalization
 end.
 

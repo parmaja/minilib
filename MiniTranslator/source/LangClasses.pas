@@ -36,6 +36,9 @@ unit LangClasses;
           LangItem
             ID
             Text
+
+  Group is list of contents items usfule when your language in one file have sections like INI languages
+  Group not own its items because it is already owned by the language it is like a index
 }
 interface
 
@@ -53,7 +56,10 @@ type
 
   TLangItem = class(TObject)
   private
+    FID: string;
+    FText: string;
     FContents: TLangContents;
+    FLine: Integer;
     FModified: Boolean;
     FVisible: Boolean;
     function GetDisplayID: string;
@@ -61,11 +67,10 @@ type
     procedure SetDisplayID(AValue: string);
     procedure SetDisplayText(AValue: string);
     procedure SetID(const AValue: string);
+    procedure SetLine(const AValue: Integer);
     procedure SetModified(const AValue: Boolean);
     procedure SetText(const AValue: string);
   protected
-    FID: string;
-    FText: string;
     function GetInUpdate: Boolean;
   public
     Context: string;
@@ -83,16 +88,55 @@ type
     property Text: string read FText write SetText;
     property Visible: Boolean read FVisible write FVisible default True;
     property Modified: Boolean read FModified write SetModified default False;
+
     property DisplayText: string read GetDisplayText write SetDisplayText;
     property DisplayID: string read GetDisplayID write SetDisplayID; //deprecated;
+    //May be usfule for show it in translator editor
+    property Line: Integer read FLine write SetLine;
   end;
 
   TLanguage = class;
 
+
+  { TLangList }
+
+  TLangList = class(TObjectList)
+  private
+    function GetValues(Index: string): TLangItem;
+    function GetItem(Index: Integer): TLangItem;
+  public
+    function Find(ID: string): TLangItem;
+    property Items[Index: Integer]: TLangItem read GetItem; default;
+    property Values[Index: string]: TLangItem read GetValues;
+  end;
+
+  { TLangGroup }
+
+  TLangGroup = class(TLangList)
+  private
+    FName: string;
+  public
+    constructor Create; virtual;
+  published
+    property Name:string read FName write FName;
+  end;
+
+  { TLangGroups }
+
+  TLangGroups = class(TObjectList)
+  private
+    function GetItem(Index: Integer): TLangGroup;
+  public
+    function Last: TLangGroup;
+    property Items[Index: Integer]: TLangGroup read GetItem; default;
+  end;
+
   { TLangContents }
 
-  TLangContents = class(TObjectList)
+  TLangContents = class(TLangList)
   private
+    FComment: string;
+    FGroups: TLangGroups;
     FLanguage: TLanguage;
     FEnabled: Boolean;
     FModified: Boolean;
@@ -104,7 +148,6 @@ type
     FSource: string;
     FTitle: string;
     FVisible: Boolean;
-    function GetItem(Index: Integer): TLangItem;
     procedure SetModified(const AValue: Boolean);
   protected
     function GetInUpdate: Boolean;
@@ -119,19 +162,19 @@ type
     property Name: string read FName write FName;
     property Title: string read FTitle write FTitle; //extra name PO x-name
     property Source: string read FSource write FSource;
-    function GetText(const ID: string; var Text: string): Boolean; overload;
-    function GetText(const ID: string): string; overload;
-    function FindID(const ID: string): TLangItem; virtual;
     function Add(LangItem: TLangItem): Integer;
     function CreateLangItem: TLangItem;
-    property Items[Index: Integer]: TLangItem read GetItem; default;
     property Attributes: TStringList read FAttributes;
     property Charset: string read FCharset write FCharset;
+    property Comment: string read FComment write FComment;
     property Encoding: TLangEncoding read FEncoding write FEncoding;
     property IsRightToLeft: Boolean read FIsRightToLeft write FIsRightToLeft;
+    //Visible like as properties of PO file the empty ID
     property Visible: Boolean read FVisible write FVisible default True;
     property Enabled: Boolean read FEnabled write FEnabled default True;
     property Modified: Boolean read FModified write SetModified;
+    //Groups: Can collect some items in a group, need it when write external tools  
+    property Groups: TLangGroups read FGroups;
   end;
 
   TLanguageInfo = record
@@ -163,11 +206,10 @@ type
     FSource: string;
     FUpdateCount: Integer;
     function GetInUpdate: Boolean;
-    function GetValues(Index: string): TLangContents;
     function GetItem(Index: Integer): TLangContents;
+    function GetContents(Index: string): TLangContents;
     procedure SetModified(const AValue: Boolean);
   protected
-    function FindText(const ID: string; var Text: string): Boolean; virtual;
     function DoCreateContents: TLangContents; virtual;
     procedure Changed; virtual;
   public
@@ -176,11 +218,17 @@ type
 
     function CreateContents: TLangContents;
     function Add(Contents: TLangContents): Integer;
-    function GetText(const ID: string): string; overload;
-    function GetText(const Section: string; const ID: string): string; overload;
-    function Find(Name:string): TLangContents;
-    function FindID(const ID: string): TLangItem; overload;
-    function FindID(ContentsName:string; const ID: string): TLangItem; overload;
+    //FindText result empty string if ID not founded
+    function FindText(vID: string; var Founded: Boolean): string; overload;
+    function FindText(vContents, vID: string; var Founded: Boolean): string; overload;
+    function FindText(vID: string): string; overload;
+    //GetText return the ID as result if ID not founded
+    function GetText(const vID: string): string; overload;
+    function GetText(const vContents: string; const vID: string): string; overload;
+    //Find find a Contents
+    function Find(vName:string): TLangContents;
+    function FindID(const vID: string): TLangItem; overload;
+    function FindID(vContents:string; const vID: string): TLangItem; overload;
     procedure BeginUpdate;
     procedure EndUpdate;
     property InUpdate: Boolean read GetInUpdate;
@@ -194,7 +242,7 @@ type
     property Info: TLanguageInfo read FInfo write FInfo;
     property Source: string read FSource write FSource;
     property Items[Index: Integer]: TLangContents read GetItem; default;
-    property Values[Index: string]: TLangContents read GetValues;
+    property Contents[Index: string]: TLangContents read GetContents;
   end;
 
   TLanguageClass = class of TLanguage;
@@ -224,8 +272,8 @@ type
     function IndexOfLanguage(const Name: string): Integer;
     function NextLanguageName: string;
     property Current: TLanguage read GetCurrent;
-    function GetText(const ID: string): string; overload;
-    function GetText(const ID: string; var Text: string): Boolean; overload;
+    function GetText(const vID: string): string; overload;
+    function GetText(const vID: string; var vText: string): Boolean; overload;
     function Macro(const S: string): string;
     property Items[Index: Integer]: TLanguage read GetItem write SetItem; default;
     //if ID not found return the default text fromdefault language
@@ -249,10 +297,15 @@ type
     procedure DoGenerate(Strings: TStringList); virtual; abstract;
   public
     constructor Create; overload;
+    //Parse: when load the language file it parse and create
     procedure Parse(Strings: TStringList);
+    //Generate for save the language file to its syntax
     procedure Generate(Strings: TStringList);
+    //GetName name of filer
     class function GetName: string; virtual;
+    //GetTitle name of filer but for display it in front UI
     class function GetTitle: string; virtual;
+    //GetExtension like 'PO' do not include dot '.'
     class function GetExtension: string; virtual;
     property Contents: TLangContents read FContents write SetContents;
   end;
@@ -263,6 +316,7 @@ type
     lffDefault, //default filer for its externsion
     lffMultiple, //Multiple files
     lffDirectory, //Mutli file based on directory
+    lffSingle, //not lffDirectory single file
     lffAlone //Single Language there is no Original language
     );
   TLangFilerFlags = set of TLangFilerFlag;
@@ -272,11 +326,18 @@ type
   TLangFiler = class(TObject)
   private
   protected
+    //Default Load and Save you can used of make your own
+    procedure DefaultSingleLoadFrom(vSource: string; vLanguage:TLanguage);
+    procedure DefaultSingleSaveTo(vSource: string; vLanguage:TLanguage);
+
+    procedure DefaultDirLoadFrom(vSource: string; vLanguage:TLanguage);
+    procedure DefaultDirSaveTo(vSource: string; vLanguage:TLanguage);
+
     procedure DoLoadFrom(vSource: string; vLanguage:TLanguage); virtual; abstract;
     procedure DoSaveTo(vSource: string; vLanguage:TLanguage); virtual; abstract;
   public
     constructor Create; virtual;
-    function CreateParser:TLangParser; virtual; abstract;
+    function CreateParser: TLangParser; virtual; abstract;
     procedure LoadFrom(vSource: string; vLanguage:TLanguage); //vName File or Directory
     procedure SaveTo(vSource: string; vLanguage:TLanguage);
     class function GetName: string; virtual; //Name for enumrate
@@ -403,11 +464,6 @@ begin
     FModified := True;
 end;
 
-function TLanguage.GetItem(Index: Integer): TLangContents;
-begin
-  Result := inherited Items[Index] as TLangContents;
-end;
-
 procedure TLanguage.SetModified(const AValue: Boolean);
 begin
   if FModified <> AValue then
@@ -416,7 +472,7 @@ begin
   end;
 end;
 
-function TLanguage.GetValues(Index: string): TLangContents;
+function TLanguage.GetContents(Index: string): TLangContents;
 begin
   Result := Find(Index);
 end;
@@ -426,72 +482,65 @@ begin
   Result := FUpdateCount > 0;
 end;
 
-function TLanguage.FindText(const ID: string; var Text: string): Boolean;
-var
-  i: Integer;
-  s: string;
+function TLanguage.GetItem(Index: Integer): TLangContents;
 begin
-  Result := False;
-  for i := 0 to Count - 1 do
-  begin
-    Result := Items[i].GetText(ID, s);
-    if Result then
-    begin
-      Text := s;
-      Break;
-    end;
-  end;
+  Result := inherited Items[Index] as TLangContents;
 end;
 
-function TLanguage.GetText(const ID: string): string;
+function TLanguage.GetText(const vID: string): string;
 var
-  i: Integer;
-  s: string;
+  Founded: Boolean;
+begin
+  Result := FindText(vID, Founded);
+  if not Founded then
+    Result := vID;
+end;
+
+function TLanguage.GetText(const vContents: string; const vID: string): string;
+var
   Founded: Boolean;
 begin
   Founded := False;
-  for i := 0 to Count - 1 do
-  begin
-    Founded := Items[i].GetText(ID, s);
-    if Founded then
-    begin
-      Result := s;
-      break;
-    end;
-  end;
+  Result := FindText(vContents, vID, Founded);
   if not Founded then
-    Result := ID;
+    Result := vID;
 end;
 
-function TLanguage.GetText(const Section: string; const ID: string): string;
+function TLanguage.FindText(vID: string): string;
 var
-  i: Integer;
-  s: string;
   Founded: Boolean;
 begin
-  Founded := False;
-  for i := 0 to Count - 1 do
-  begin
-    if Items[i].Name = Section then
-    begin
-      Founded := Items[i].GetText(ID, s);
-      if Founded then
-        Result := s;
-      break;
-    end;
-  end;
-  if not Founded then
-    Result := ID;
+  Result := FindText(vID, Founded);
 end;
 
-function TLanguage.Find(Name: string): TLangContents;
+function TLanguage.FindText(vID: string; var Founded: Boolean): string;
+var
+  aItem: TLangItem;
+begin
+  aItem := FindID(vID);
+  Founded := aItem <> nil;
+  if Founded then
+    Result := aItem.DisplayText;
+end;
+
+function TLanguage.FindText(vContents, vID: string; var Founded: Boolean): string;
+var
+  aItem: TLangItem;
+begin
+  aItem := FindID(vContents, vID);
+  Founded := aItem <> nil;
+  if Founded then
+    Result := aItem.DisplayText;
+end;
+
+function TLanguage.Find(vName: string): TLangContents;
 var
   i: Integer;
 begin
   Result := nil;
   for i := 0 to Count - 1 do
   begin
-    if SameText(Items[i].Name, Name) then
+    if SameText(Items[i].Name, vName) then
     begin
       Result := Items[i];
       Break;
@@ -499,27 +548,27 @@ begin
   end;
 end;
 
-function TLanguage.FindID(const ID: string): TLangItem;
+function TLanguage.FindID(const vID: string): TLangItem;
 var
   i: Integer;
 begin
   Result := nil;
   for i := 0 to Count - 1 do
   begin
-    Result := Items[i].FindID(ID);
+    Result := Items[i].Find(vID);
     if Result <> nil then
       Break;
   end;
 end;
 
-function TLanguage.FindID(ContentsName: string; const ID: string): TLangItem;
+function TLanguage.FindID(vContents: string; const vID: string): TLangItem;
 var
   aContents: TLangContents;
 begin
   Result := nil;
-  aContents := Find(ContentsName);
+  aContents := Find(vContents);
   if aContents <> nil then
-    Result := aContents.FindID(ID);
+    Result := aContents.Find(vID);
 end;
 
 procedure TLanguage.BeginUpdate;
@@ -583,43 +632,47 @@ begin
   Result := inherited Items[Index] as TLanguage;
 end;
 
-function TLanguages.GetText(const ID: string): string;
+function TLanguages.GetText(const vID: string): string;
 var
   aFound: Boolean;
 begin
+  aFound := False;
   Result := '';
-  aFound := (FCurrentLanguage <> nil) and FCurrentLanguage.FindText(ID, Result);
+  if (FCurrentLanguage <> nil) then
+    Result := FCurrentLanguage.FindText(vID, aFound);
   if UseDefaultText and (not aFound and (FCurrentLanguage <> FDefaultLanguage)) then
   begin
     if FDefaultLanguage = nil then
       raise ELangException.Create('There is no default language set');
-    aFound := FDefaultLanguage.FindText(ID, Result);
+    Result := FDefaultLanguage.FindText(vID, aFound);
   end;
   if not aFound then
-    Result := ID
+    Result := vID
   else
   begin
     Result := Macro(Result);
   end;
 end;
 
-function TLanguages.GetText(const ID: string; var Text: string): Boolean;
+function TLanguages.GetText(const vID: string; var vText: string): Boolean;
 begin
-  Result := (FCurrentLanguage <> nil) and FCurrentLanguage.FindText(ID, Text);
+  Result := False;
+  if (FCurrentLanguage <> nil) then
+    vText := FCurrentLanguage.FindText(vID, Result);
   if UseDefaultText and not Result and (FCurrentLanguage <> FDefaultLanguage) then
   begin
     if FDefaultLanguage = nil then
       raise ELangException.Create('There is no default language set');
-    Result := FDefaultLanguage.FindText(ID, Text);
+    vText := FDefaultLanguage.FindText(vID, Result);
   end;
   if TestMode and not Result then
   begin
     Result := True;
-    Text := ID;
+    vText := vID;
   end
   else
   begin
-    Text := Macro(Text);
+    vText := Macro(vText);
   end;
 end;
 
@@ -704,6 +757,7 @@ constructor TLangContents.Create;
 begin
   inherited Create;
   FAttributes := TStringList.Create;
+  FGroups := TLangGroups.Create(True);
   FVisible := True;
   FEnabled := True;
 end;
@@ -718,6 +772,7 @@ end;
 destructor TLangContents.Destroy;
 begin
   FreeAndNil(FAttributes);
+  FreeAndNil(FGroups);
   inherited;
 end;
 
@@ -786,47 +841,6 @@ begin
         end;
       end;
     end;
-  end;
-end;
-
-function TLangContents.GetItem(Index: Integer): TLangItem;
-begin
-  Result := inherited Items[Index] as TLangItem;
-end;
-
-function TLangContents.GetText(const ID: string): string;
-begin
-  GetText(ID, Result);
-end;
-
-function TLangContents.FindID(const ID: string): TLangItem;
-var
-  i: Integer;
-begin
-  Result := nil;
-  for i := 0 to Count -1 do
-  begin
-    if SameText(ID, Items[i].ID) then
-    begin
-      Result := Items[i];
-      break;
-    end
-  end;
-end;
-
-function TLangContents.GetText(const ID: string; var Text: string): Boolean;
-var
-  i: Integer;
-begin
-  Result := False;
-  for i := 0 to Count -1 do
-  begin
-    if SameText(ID, Items[i].ID) then
-    begin
-      Result := True;
-      Text := Items[i].DisplayText;
-      break;
-    end
   end;
 end;
 
@@ -1074,6 +1088,12 @@ begin
   Modified := True;
 end;
 
+procedure TLangItem.SetLine(const AValue: Integer);
+begin
+  if FLine =AValue then exit;
+  FLine :=AValue;
+end;
+
 procedure TLangItem.Changed;
 begin
   if not GetInUpdate then
@@ -1090,6 +1110,89 @@ begin
 end;
 
 { TLangFiler }
+
+procedure TLangFiler.DefaultSingleLoadFrom(vSource: string; vLanguage: TLanguage);
+var
+  aParser: TLangParser;
+begin
+  with vLanguage do
+  begin
+    try
+      Clear;
+      aParser := CreateParser;
+      try
+        ParseLanguageFile(vSource, vLanguage, aParser);
+      finally
+        aParser.Free;
+      end;
+    except
+      raise;
+    end;
+    Source := vSource;
+    Name := ExtractFileName(vSource);
+    ID := 0;
+  end;
+end;
+
+procedure TLangFiler.DefaultSingleSaveTo(vSource: string; vLanguage: TLanguage);
+var
+  aParser: TLangParser;
+begin
+  with vLanguage do
+  begin
+    try
+      aParser := CreateParser;
+      try
+        if vLanguage.Count > 0 then
+        begin
+          GenerateLanguageFile(vSource, vLanguage[0], aParser);
+        end;
+      finally
+        aParser.Free;
+      end;
+    except
+      raise;
+    end;
+  end;
+end;
+
+procedure TLangFiler.DefaultDirLoadFrom(vSource: string; vLanguage: TLanguage);
+var
+  I: Integer;
+  SearchRec: TSearchRec;
+  aPath: string;
+  aParser: TLangParser;
+begin
+  with vLanguage do
+  begin
+    aPath := IncludeTrailingPathDelimiter(vSource);
+    try
+      Clear;
+      try
+        I := FindFirst(aPath + '*.' + GetExtension, 0, SearchRec);
+        while I = 0 do
+        begin
+          aParser := CreateParser;
+          try
+            ParseLanguageFile(aPath + SearchRec.Name, vLanguage, aParser);
+          finally
+            aParser.Free;
+          end;
+          I := FindNext(SearchRec);
+        end;
+      finally
+        FindClose(SearchRec);
+      end;
+    except
+      raise;
+    end;
+  end;
+end;
+
+procedure TLangFiler.DefaultDirSaveTo(vSource: string; vLanguage: TLanguage);
+begin
+
+end;
 
 constructor TLangFiler.Create;
 begin
@@ -1136,6 +1239,50 @@ end;
 function TFilerClasses.GetItem(Index: Integer): TLangFilerClass;
 begin
   Result := TLangFilerClass(inherited Items[Index]);
+end;
+
+{ TLangGroups }
+
+function TLangGroups.GetItem(Index: Integer): TLangGroup;
+begin
+  Result := inherited Items[Index] as TLangGroup;
+end;
+
+function TLangGroups.Last: TLangGroup;
+begin
+  Result := inherited Last as TLangGroup;
+end;
+
+{ TLangGroup }
+
+constructor TLangGroup.Create;
+begin
+  inherited Create(False);
+end;
+
+function TLangList.GetValues(Index: string): TLangItem;
+begin
+  Result := Find(Index);
+end;
+
+function TLangList.GetItem(Index: Integer): TLangItem;
+begin
+  Result := inherited Items[Index] as TLangItem;
+end;
+
+function TLangList.Find(ID: string): TLangItem;
+var
+  i: Integer;
+begin
+  Result := nil;
+  for i := 0 to Count -1 do
+  begin
+    if SameText(ID, Items[i].ID) then
+    begin
+      Result := Items[i];
+      break;
+    end
+  end;
 end;
 
 initialization
