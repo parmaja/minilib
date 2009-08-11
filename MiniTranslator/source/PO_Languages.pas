@@ -517,7 +517,7 @@ begin
   begin
     aPath := IncludeTrailingPathDelimiter(vSource);
     aName := ExtractFileName(ExcludeTrailingPathDelimiter(vSource));
-    aFile := aPath + '\language.conf';
+    aFile := aPath + 'language.conf';
     if FileExists(aFile) then
     begin
       aStrings := TStringList.Create;
