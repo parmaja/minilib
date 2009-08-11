@@ -27,7 +27,7 @@ uses
   ExtCtrls, trsProjects, trsClasses,
   Setups,
   PO_Languages, FluxBB_Parser,
-  mnXMLUtils, mnXMLRtti, mnXMLRttiProfile;
+  mnStreams, mnXMLUtils, mnXMLRtti, mnXMLRttiProfile;
 
 type
 

@@ -48,7 +48,7 @@ type
     function Read(var Buffer; Count: Longint): Longint; override;
     function Write(const Buffer; Count: Longint): Longint; override;
     procedure ReadUntil(const UntilStr: string; var Result: string; var Matched: Boolean);
-    function ReadLn(var S: string): Boolean; overload;
+    function ReadLn(var S: string; ExcludeEOL: Boolean = True): Boolean; overload;
     procedure ReadStrings(Value: TStrings);
     procedure ReadCommand(var Command: string; var Params: string);
     function WriteStrings(const Value: TStrings): Cardinal;
@@ -140,7 +140,7 @@ begin
     WriteLn(Command);
 end;
 
-function TmnStream.ReadLn(var S: string): Boolean;
+function TmnStream.ReadLn(var S: string; ExcludeEOL: Boolean = True): Boolean;
 var
   aMatched: Boolean;
 begin
@@ -149,7 +149,7 @@ begin
   begin
     aMatched := False;
     ReadUntil(EndOfLine, S, aMatched);
-    if aMatched and (S <> '') then
+    if ExcludeEOL and aMatched and (S <> '') then
       S := LeftStr(S, Length(S) - Length(EndOfLine));
   end;
 end;
