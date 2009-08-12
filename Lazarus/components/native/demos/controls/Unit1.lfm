@@ -1,0 +1,98 @@
+object Form1: TForm1
+  Left = 376
+  Height = 389
+  Top = 140
+  Width = 576
+  Caption = 'Form1'
+  ClientHeight = 389
+  ClientWidth = 576
+  LCLVersion = '0.9.27'
+  object ntvProgressBar1: TntvProgressBar
+    Left = 91
+    Height = 28
+    Top = 36
+    Width = 167
+    ShowProgress = False
+    Color = clGray
+    Font.Color = clWhite
+    TabOrder = 0
+  end
+  object ntvGauge1: TntvGauge
+    Left = 295
+    Height = 20
+    Top = 94
+    Width = 185
+    Position = 50
+    SubPosition = 10
+    Color = clGray
+    Font.Color = clWhite
+    TabOrder = 1
+  end
+  object ntvPageControl1: TntvPageControl
+    Left = 177
+    Height = 150
+    Top = 166
+    Width = 250
+    StoreIndex = False
+    TabStyle = tbTabs
+    Items = <    
+      item
+        Caption = 'Page [0]'
+        Name = 'ntvPageControl1Page0'
+        Enabled = False
+      end    
+      item
+        Caption = 'Page [1]'
+        Name = 'ntvPageControl1Page1'
+        Enabled = False
+      end    
+      item
+        Caption = 'Page [2]'
+        Name = 'ntvPageControl1Page2'
+        Enabled = False
+      end>
+    Caption = 'ntvPageControl1'
+    TabOrder = 2
+    OnClick = ntvPageControl1Click
+    Pages = <    
+      item
+        Page = ntvPageControl1Page0
+      end    
+      item
+        Page = ntvPageControl1Page1
+      end    
+      item
+        Page = ntvPageControl1Page2
+      end>
+    object ntvPage1: TntvPage
+      Left = 3
+      Height = 122
+      Top = 25
+      Width = 244
+    end
+    object ntvPage2: TntvPage
+      Left = 3
+      Height = 122
+      Top = 25
+      Width = 244
+    end
+    object ntvPageControl1Page1: TntvPage
+      Left = 3
+      Height = 122
+      Top = 25
+      Width = 244
+    end
+    object ntvPageControl1Page2: TntvPage
+      Left = 3
+      Height = 122
+      Top = 25
+      Width = 244
+    end
+    object ntvPageControl1Page0: TntvPage
+      Left = 3
+      Height = 122
+      Top = 25
+      Width = 244
+    end
+  end
+end

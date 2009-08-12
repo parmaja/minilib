@@ -6,14 +6,12 @@ interface
 
 uses
   Classes, SysUtils, LResources, TypInfo, LCLProc, Forms, Controls, 
-  DotMatrix, ntvCtrls{, CmponentsEditors};
+  ntvDotMatrix, ntvCtrls, ntvProgressBars, ntvPageControls;
 
 
-//type
+{type
 
-  { TntvPageControlEditor }
-
-  {TntvPageControlEditor = class(TDefaultComponentEditor)
+  TntvPageControlEditor = class(TDefaultComponentEditor)
   protected
     procedure AddNewPageToDesigner(Index: integer); virtual;
     procedure DoAddPage; virtual;

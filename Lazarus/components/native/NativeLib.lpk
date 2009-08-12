@@ -14,7 +14,7 @@
         <CreateMakefileOnBuild Value="True"/>
       </Other>
     </CompilerOptions>
-    <Files Count="4">
+    <Files Count="6">
       <Item1>
         <Filename Value="ntvCtrls.pas"/>
         <UnitName Value="ntvCtrls"/>
@@ -29,9 +29,17 @@
         <UnitName Value="ntvUtils"/>
       </Item3>
       <Item4>
-        <Filename Value="DotMatrix.pas"/>
-        <UnitName Value="DotMatrix"/>
+        <Filename Value="ntvPageControls.pas"/>
+        <UnitName Value="ntvPageControls"/>
       </Item4>
+      <Item5>
+        <Filename Value="ntvProgressBars.pas"/>
+        <UnitName Value="ntvProgressBars"/>
+      </Item5>
+      <Item6>
+        <Filename Value="ntvDotMatrix.pas"/>
+        <UnitName Value="ntvDotMatrix"/>
+      </Item6>
     </Files>
     <Type Value="RunAndDesignTime"/>
     <RequiredPkgs Count="2">
