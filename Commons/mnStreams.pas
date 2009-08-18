@@ -18,6 +18,9 @@ interface
 uses
   Classes, SysUtils, StrUtils;
 
+const
+  sEndOfLine = #$A;
+
 type
   EmnStreamException = class(Exception);
 
@@ -31,6 +34,8 @@ type
     property BufferSize: Cardinal read FBufferSize write FBufferSize;
   end;
   
+  { TmnStream }
+
   TmnStream = class(TmnCustomStream)
   private
     FStreamOwned: Boolean;
@@ -43,7 +48,8 @@ type
     procedure LoadBuffer;
   protected
   public
-    constructor Create(AStream: TStream; Owned: Boolean = True); virtual;
+    constructor Create(AStream: TStream; AEndOfLine:string; Owned: Boolean = True); overload; virtual; 
+    constructor Create(AStream: TStream; Owned: Boolean = True); overload;
     destructor Destroy; override;
     function Read(var Buffer; Count: Longint): Longint; override;
     function Write(const Buffer; Count: Longint): Longint; override;
@@ -62,7 +68,6 @@ implementation
 
 const
   cBufferSize = 2048;
-  sEOL = #$A;
 
 { TmnStream }
 
@@ -172,7 +177,7 @@ end;
 
 { TmnStream }
 
-constructor TmnStream.Create(AStream: TStream; Owned: Boolean = True);
+constructor TmnStream.Create(AStream: TStream; AEndOfLine:string; Owned: Boolean = True);
 begin
   inherited Create;
   if AStream = nil then
@@ -183,7 +188,12 @@ begin
   GetMem(FBuffer, FBufferSize);
   FPos := FBuffer;
   FEnd := FBuffer;
-  FEndOfLine := sEOL;
+  FEndOfLine := AEndOfLine;
+end;
+
+constructor TmnStream.Create(AStream: TStream; Owned: Boolean);
+begin
+  Create(AStream, sEndOfLine, Owned);
 end;
 
 destructor TmnStream.Destroy;
@@ -247,6 +257,8 @@ var
   idx, l: Integer;
   t: string;
 begin
+  if UntilStr = '' then
+    raise Exception.Create('UntilStr is empty!');
   Idx := 1;
   Matched := False;
   l := Length(UntilStr);

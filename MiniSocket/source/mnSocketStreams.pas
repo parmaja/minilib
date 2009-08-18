@@ -19,11 +19,13 @@ uses
   Classes,
   SysUtils,
   StrUtils,
-  mnConsts,
+  mnStreams,
   mnSockets;
 
 const
   cReadTimeout = 15000;
+  cDataBuffSize = 8192;
+  cBufferSize = 1024;
 
 type
   EmnStreamException = class(Exception);
@@ -65,6 +67,7 @@ type
     FEnd: PChar;
     FBufferSize: Cardinal;
     FEOF: Boolean;
+    FEndOfLine: string;
   protected
     procedure DoError(S: string); override;
   public
@@ -72,19 +75,25 @@ type
     destructor Destroy; override;
     procedure LoadBuffer;
     function Read(var Buffer; Count: Longint): Longint; override;
-    function ReadUntil(const S: string; var Matched: Boolean): string;
-    function ReadLn(const EOL: string = sEOL): string;
+    procedure ReadUntil(const UntilStr: string; var Result: string; var Matched: Boolean);
+    function ReadLn(const EOL: string): string; overload;
+    function ReadLn: string; overload;
     procedure ReadCommand(var Command: string; var Params: string);
     function ReadStream(Dest: TStream): Longint;
-    procedure ReadStrings(Value: TStrings; EOL: string = sEOL);
+    procedure ReadStrings(Value: TStrings; EOL: string); overload;
+    procedure ReadStrings(Value: TStrings); overload;
     function WriteStream(Source: TStream): Longint;
     function WriteString(const Value: string): Cardinal;
-    function WriteStrings(const Value: TStrings; EOL: string = sEOL): Cardinal;
-    function WriteLn(const Value: string; EOL: string = sEOL): Cardinal;
-    function WriteEOL(EOL: string = sEOL): Cardinal;
+    function WriteStrings(const Value: TStrings; EOL: string): Cardinal; overload;
+    function WriteStrings(const Value: TStrings): Cardinal; overload;
+    function WriteLn(const Value: string; EOL: string): Cardinal; overload;
+    function WriteLn(const Value: string): Cardinal; overload;
+    function WriteEOL(EOL: string): Cardinal; overload;
+    function WriteEOL: Cardinal; overload;
     procedure WriteCommand(const Command: string; const Params: string = '');
     //EOFOnError:True socket not raise an error just make EOF flag
     property EOFOnError: Boolean read FEOFOnError write FEOFOnError default False;
+    property EndOfLine: string read FEndOfLine write FEndOfLine;
   end;
 
 implementation
@@ -190,6 +199,11 @@ begin
   Result := Write(Pointer(Value)^, Length(Value));
 end;
 
+function TmnConnectionStream.WriteStrings(const Value: TStrings): Cardinal;
+begin
+  Result := WriteStrings(Value, EndOfLine);
+end;
+
 function TmnConnectionStream.WriteStream(Source: TStream): Longint;
 const
   BufferSize = 4 * 1024;
@@ -247,6 +261,11 @@ begin
   end;
 end;
 
+function TmnConnectionStream.ReadLn: string;
+begin
+  Result := ReadLn(EndOfLine);
+end;
+
 procedure TmnConnectionStream.ReadStrings(Value: TStrings; EOL: string);
 var
   s:string;
@@ -265,6 +284,16 @@ begin
     WriteLn(UpperCase(Command) + ' ' + Params)
   else
     WriteLn(UpperCase(Command));
+end;
+
+function TmnConnectionStream.WriteEOL: Cardinal;
+begin
+  Result := WriteEOL(EndOfLine);  
+end;
+
+function TmnConnectionStream.WriteLn(const Value: string): Cardinal;
+begin
+  Result := WriteLn(Value, EndOfLine);
 end;
 
 function TmnConnectionStream.ReadStream(Dest: TStream): Longint;
@@ -291,6 +320,11 @@ begin
   end;
 end;
 
+procedure TmnConnectionStream.ReadStrings(Value: TStrings);
+begin
+  ReadStrings(Value, EndOfLine);
+end;
+
 function TmnConnectionStream.WriteEOL(EOL: string): Cardinal;
 begin
   Result := WriteString(EOL);
@@ -309,6 +343,7 @@ end;
 constructor TmnConnectionStream.Create(vSocket: TmnCustomSocket);
 begin
   inherited;
+  EndOfLine := sEndOfLine;
   FBufferSize := cBufferSize;
   GetMem(FBuffer, FBufferSize);
   FPos := FBuffer;
@@ -367,12 +402,12 @@ var
   aMatched: Boolean;
 begin
   aMatched := False;
-  Result := ReadUntil(EOL, aMatched);
+  ReadUntil(EOL, Result, aMatched);
   if aMatched and (Result <> '') then
     Result := LeftStr(Result, Length(Result) - Length(EOL));
 end;
 
-function TmnConnectionStream.ReadUntil(const S: string; var Matched: Boolean): string;
+procedure TmnConnectionStream.ReadUntil(const UntilStr: string; var Result: string; var Matched: Boolean);
 var
   P: PChar;
   function CheckBuffer: Boolean;
@@ -385,16 +420,18 @@ var
   idx, l: Integer;
   t: string;
 begin
+  if UntilStr = '' then
+    raise Exception.Create('UntilStr is empty!');
   Idx := 1;
   Matched := False;
-  l := Length(S);
+  l := Length(UntilStr);
   Result := '';
   while not Matched and CheckBuffer do
   begin
     P := FPos;
     while P < FEnd do
     begin
-      if S[idx] = P^ then
+      if UntilStr[idx] = P^ then
         Inc(Idx)
       else
         Idx := 1;

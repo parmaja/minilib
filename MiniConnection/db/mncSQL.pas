@@ -53,7 +53,7 @@ const
     sProcessedSQL := sProcessedSQL + s;
   end;
 var
-  aParam:TmncParam;
+  aParam: TmncParamItem;
 begin
   //TODO stored procedures and trigger must not check param in budy procedure
   sProcessedSQL := '';

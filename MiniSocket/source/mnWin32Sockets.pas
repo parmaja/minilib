@@ -517,7 +517,7 @@ begin
 {$ELSE}
   if WinSock.connect(aHandle, aSockAddr, SizeOf(aSockAddr)) = SOCKET_ERROR then
 {$ENDIF}
-      raise EmnException.Create('Failed to connect the socket, error #' + IntToStr(WSAGetLastError) + '.'#13'port "' + Port + '".');
+      raise EmnException.Create('Failed to connect the socket, error #' + IntToStr(WSAGetLastError) + '.'#13'Address "' + Address +'" Port "' + Port + '".');
   Result := TmnWinSocket.Create(aHandle)
 end;
 

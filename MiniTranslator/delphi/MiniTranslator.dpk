@@ -28,12 +28,12 @@ package MiniTranslator;
 
 requires
   rtl,
-  vcl;
+  vcl,
+  MiniCommonsLib;
 
 contains
   LangClasses in '..\source\LangClasses.pas',
   LangSupports in '..\source\LangSupports.pas',
   LangUtils in '..\source\LangUtils.pas',
   PO_Languages in '..\source\PO_Languages.pas';
-
 end.

@@ -11,12 +11,19 @@ File_8=TSourceModule,'W:\work\delphi\jobs\tacbord_sql\source\std\StdModule.pas',
 File_9=TSourceModule,'W:\work\delphi\jobs\tacbord_sql\source\std\Rebuilds.pas',0,1,1,1,1,0,0,,
 
 [Modules]
-Count=0
+Module0=W:\home\pascal\lib\minilib\MiniConnection\source\mncConnections.pas
+Count=1
 EditWindowCount=1
 
+[W:\home\pascal\lib\minilib\MiniConnection\source\mncConnections.pas]
+ModuleType=TSourceModule
+FormState=0
+FormOnTop=0
+
 [EditWindow0]
-ViewCount=0
-CurrentView=-1
+ViewCount=1
+CurrentEditView=W:\home\pascal\lib\minilib\MiniConnection\source\mncConnections.pas
+View0=0
 PercentageSizes=1
 Create=1
 Visible=1
@@ -46,6 +53,17 @@ BottomPanelData=0000080001020100000009000000446F636B5369746531803E00000000000002
 BottomMiddlePanelSize=0
 BottomMiddlePanelClients=DockSite0
 BottomMiddelPanelData=0000080001000100000009000000446F636B53697465302C1900000000000000791B000000000000FFFFFFFF
+
+[View0]
+CustomEditViewType=TEditView
+Module=W:\home\pascal\lib\minilib\MiniConnection\source\mncConnections.pas
+CursorX=33
+CursorY=241
+TopLine=223
+LeftCol=1
+Elisions=
+Bookmarks=
+EditViewName=W:\home\pascal\lib\minilib\MiniConnection\source\mncConnections.pas
 
 [Watches]
 Count=0
@@ -122,8 +140,8 @@ Create=1
 Visible=0
 Docked=1
 State=0
-Left=0
-Top=0
+Left=1440
+Top=78
 Width=2000
 Height=6713
 MaxLeft=-1
@@ -413,7 +431,7 @@ Visible=0
 Docked=1
 State=0
 Left=0
-Top=0
+Top=78
 Width=1896
 Height=3667
 MaxLeft=-1
@@ -512,8 +530,8 @@ Create=1
 Visible=0
 Docked=1
 State=0
-Left=0
-Top=0
+Left=276
+Top=689
 Width=2347
 Height=1471
 MaxLeft=-1
@@ -537,7 +555,7 @@ Visible=0
 Docked=1
 State=0
 Left=0
-Top=0
+Top=692
 Width=3826
 Height=3460
 MaxLeft=-1
@@ -560,8 +578,8 @@ Create=1
 Visible=0
 Docked=1
 State=0
-Left=0
-Top=0
+Left=1440
+Top=78
 Width=2000
 Height=6138
 MaxLeft=-1

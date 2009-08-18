@@ -1227,6 +1227,7 @@ end;
 
 class function TLangFiler.GetFlags: TLangFilerFlags;
 begin
+  Result := []
 end;
 
 class function TLangFiler.GetExtension: string;

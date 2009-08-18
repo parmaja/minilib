@@ -2,7 +2,7 @@
 #
 #   Makefile.fpc for NativeLib 0.0
 #
-#   This file was generated on 7/2/2009
+#   This file was generated on 8/16/2009
 
 [package]
 name=nativelib
@@ -10,7 +10,7 @@ version=0.0
 
 [compiler]
 unittargetdir=./units/$(CPU_TARGET)-$(OS_TARGET)
-unitdir=../../../../../../../programs/lazarus/lcl/units/$(CPU_TARGET)-$(OS_TARGET)/ ../../../../../../../programs/lazarus/lcl/units/$(CPU_TARGET)-$(OS_TARGET)/$(LCL_PLATFORM)/ ../../../../../../../programs/lazarus/packager/units/$(CPU_TARGET)-$(OS_TARGET)/ ./
+unitdir=../../../../../../../programs/lazarus/ideintf/units/$(CPU_TARGET)-$(OS_TARGET)/ ../../../../../../../programs/lazarus/lcl/units/$(CPU_TARGET)-$(OS_TARGET)/ ../../../../../../../programs/lazarus/lcl/units/$(CPU_TARGET)-$(OS_TARGET)/$(LCL_PLATFORM)/ ../../../../../../../programs/lazarus/packager/units/$(CPU_TARGET)-$(OS_TARGET)/ ./
 includedir=./
 options=-dLCL -dLCL$(LCL_PLATFORM) -MObjFPC -Scgi
 

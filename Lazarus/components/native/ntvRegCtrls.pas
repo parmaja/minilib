@@ -5,30 +5,24 @@ unit ntvRegCtrls;
 interface
 
 uses
-  Classes, SysUtils, LResources, TypInfo, LCLProc, Forms, Controls, 
-  ntvDotMatrix, ntvCtrls, ntvProgressBars, ntvPageControls;
+  Classes, SysUtils, Menus, LResources, TypInfo, LCLProc, Forms, Controls,
+  ntvDotMatrix, ntvCtrls, ntvProgressBars, ntvPageControls,
+  ComponentEditors, PropEdits{, OIFavouriteProperties};
 
+type
 
-{type
+  { TntvPageControlEditor }
 
   TntvPageControlEditor = class(TDefaultComponentEditor)
   protected
-    procedure AddNewPageToDesigner(Index: integer); virtual;
-    procedure DoAddPage; virtual;
-    procedure DoInsertPage; virtual;
-    procedure DoDeletePage; virtual;
-    procedure DoMoveActivePageLeft; virtual;
-    procedure DoMoveActivePageRight; virtual;
-    procedure DoMovePage(CurIndex, NewIndex: Integer); virtual;
-    procedure AddMenuItemsForPages(ParentMenuItem: TMenuItem); virtual;
-    procedure ShowPageMenuItemClick(Sender: TObject);
   public
+    constructor Create(AComponent: TComponent; ADesigner: TComponentEditorDesigner); override;
+    procedure Edit; override;
     procedure ExecuteVerb(Index: Integer); override;
     function GetVerb(Index: Integer): string; override;
     function GetVerbCount: Integer; override;
     procedure PrepareItem(Index: Integer; const AnItem: TMenuItem); override;
-    function Notebook: TCustomNotebook; virtual;
-  end;}
+  end;
 
 
 procedure Register;
@@ -36,83 +30,58 @@ procedure Register;
 implementation
 
 procedure Register;
+  procedure AddFav(ABaseClass: TPersistentClass; const APropertyName: string);
+  begin
+  //  DefaultOIFavouriteProperties.Add(TOIFavouriteProperty.Create(ABaseClass,APropertyName,true));
+  end;
 begin
   RegisterComponents('Native', [TDotMatrix, TntvProgressBar, TntvGauge, TntvPageControl, TntvPage]);
-  //RegisterComponentEditor(TntvPageControl, TntvPageControlEditor);
+  RegisterComponentEditor(TntvPageControl, TntvPageControlEditor);
+  AddFav(TntvPageControl, 'Items');
   //RegisterNoIcon([TntvPage]);
 end;
 
 { TntvPageControlEditor }
 
-{procedure TntvPageControlEditor.AddNewPageToDesigner(Index: integer);
+constructor TntvPageControlEditor.Create(AComponent: TComponent;
+  ADesigner: TComponentEditorDesigner);
 begin
-
+  inherited Create(AComponent, ADesigner);
+  BestEditEvent := 'Items';
 end;
 
-procedure TntvPageControlEditor.DoAddPage;
+procedure TntvPageControlEditor.Edit;
 begin
-
-end;
-
-procedure TntvPageControlEditor.DoInsertPage;
-begin
-
-end;
-
-procedure TntvPageControlEditor.DoDeletePage;
-begin
-
-end;
-
-procedure TntvPageControlEditor.DoMoveActivePageLeft;
-begin
-
-end;
-
-procedure TntvPageControlEditor.DoMoveActivePageRight;
-begin
-
-end;
-
-procedure TntvPageControlEditor.DoMovePage(CurIndex, NewIndex: Integer);
-begin
-
-end;
-
-procedure TntvPageControlEditor.AddMenuItemsForPages(ParentMenuItem: TMenuItem);
-begin
-
-end;
-
-procedure TntvPageControlEditor.ShowPageMenuItemClick(Sender: TObject);
-begin
-
+  EditCollection(Component, (Component as TntvPageControl).Items, 'Items');
 end;
 
 procedure TntvPageControlEditor.ExecuteVerb(Index: Integer);
 begin
-  inherited ExecuteVerb(Index);
+  case Index of
+    0: Edit;
+    1: (Component as TntvPageControl).NextPage;
+    2: (Component as TntvPageControl).PriorPage;
+  end;
 end;
 
 function TntvPageControlEditor.GetVerb(Index: Integer): string;
 begin
-  Result:=inherited GetVerb(Index);
+  case Index of
+    0: Result := 'Pages';
+    1: Result := 'Next';
+    2: Result := 'Prior';
+  end;
 end;
 
 function TntvPageControlEditor.GetVerbCount: Integer;
 begin
-  Result:=inherited GetVerbCount;
+  Result := 3;
 end;
 
 procedure TntvPageControlEditor.PrepareItem(Index: Integer; const AnItem: TMenuItem);
 begin
-  inherited PrepareItem(Index, AnItem);
+  inherited;
 end;
-
-function TntvPageControlEditor.Notebook: TCustomNotebook;
-begin
-
-end;}
 
 initialization
 end.

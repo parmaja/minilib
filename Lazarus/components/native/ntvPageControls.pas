@@ -1,29 +1,49 @@
 unit ntvPageControls;
+{**
+ *  This file is part of the "Mini Library"
+ *
+ * @url       http://www.sourceforge.net/projects/minilib
+ * @license   modifiedLGPL (modified of http://www.gnu.org/licenses/lgpl.html)
+ *            See the file COPYING.MLGPL, included in this distribution,
+ * @author    Belal Alhamed <belalhamed at gmail dot com>
+ * @author    Zaher Dirkey <zaher at parmaja dot com>
+ *}
 
 {$mode objfpc}{$H+}
 
 interface
 
 uses
-  Classes, Messages, Controls, ExtCtrls, SysUtils, Math, Contnrs, Graphics, Forms,
+  Classes, Messages, Controls, SysUtils, Math, Contnrs, Graphics, Forms,
   LCLType, LCLIntf, LMessages, LCLProc,
   ntvutils;
 
+const
+  ControlTabWidth = 35;
+  HeaderHeightAdd = 10;
+  nMixFlag = 75;
+
 type
+  TTabStyle = (tbTabs, tbGradientTabs, tbFlatButtons, tbOfficeXPButtons);
+  TSraGradientStyle = (gVertical, gVertCenter);
+
+  TOnSelectPage = procedure(Sender: TObject; OldPage: TWinControl; NewPage: TWinControl; var CanSelect: boolean) of object;
+  TOnPageChanged = procedure(Sender: TObject; OldPage: TWinControl; NewPage: TWinControl) of object;
 
   TntvPageControl = class;
   TntvPageItem = class;
 
+  { TntvPage }
+
   TntvPage = class(TCustomControl)
   private
-    FItem: TntvPageItem;
   protected
-    //procedure CMVisibleChanged(var Message: TLMessage); message CM_VISIBLECHANGED; belal
   public
     constructor Create(AOwner: TComponent); override;
-    destructor Destroy; override;
-    property Item: TntvPageItem read FItem write FItem;
+    procedure Paint; override;
   published
+    property TabStop default False;
+    property Align default alClient;
   end;
 
   { TntvPageItem }
@@ -35,7 +55,7 @@ type
     FPageWidth: Integer;
     FImageIndex: Integer;
     FName: string;
-    FEnabled: boolean;
+    FEnabled: Boolean;
     FVisible: Boolean;
 
     procedure SetCaption(const Value: string);
@@ -111,36 +131,32 @@ type
     FItems: TntvPages;
     FStoreIndex: Boolean;
     FWrapper: TObject;
-    FPageBorder: TPageBorder;
+    FPageBorder: Integer;
     FShowButtons: Boolean;
     FShowTabs: Boolean;
-
     TabRect: TRect;
     FTabStyle: TTabStyle;
     FUnderMouseIndex: Integer;
     OldUnderMouseIndex: Integer;
     FImageList: TImageList;
-
     procedure ReadWrapper(Reader: TReader);
     procedure WriteWrapper(Writer: TWriter);
-
     procedure SetPageIndex(Value: Integer);
     procedure SetFirstPage(const Value: Integer);
     function GetPageIndex: Integer;
-
     procedure WMGetDlgCode(var message: TWMGetDlgCode); message WM_GetDlgCode;
-
-    procedure CNNotify(var Message: TLMNotify); message CN_NOTIFY;
     procedure CMFocusChanged(var Message: TMessage); message CM_FOCUSCHANGED; //belal
     procedure CMDialogKey(var Message: TCMDialogKey); message CM_DIALOGKEY;
     procedure CMControlChange(var Message: TCMControlChange); message CM_CONTROLCHANGE;
     procedure EraseBackground(DC: HDC); override;
-    //procedure CMDesignHitTest(var Message: TCMDesignHitTest); message CM_DESIGNHITTEST;
-
     function ChildKey(var Message: TLMKey): boolean; override;
+    //procedure CMDesignHitTest(var Message: TCMDesignHitTest); message CM_DESIGNHITTEST;
+    procedure CMHitTest(var Message: TCMHITTEST); message CM_HITTEST;
+    procedure LMNCHitTest(var Message: TLMNCHITTEST); message LM_NCHITTEST;
+    function GetClientRect: TRect; virtual;
     procedure FontChanged(Sender: TObject); override;
 
-    procedure SetPageBorder(const Value: TPageBorder);
+    procedure SetPageBorder(const Value: Integer);
     procedure SetActivePage(const Value: TWinControl);
     function GetActivePage: TWinControl;
     procedure SetShowButtons(const Value: Boolean);
@@ -157,8 +173,7 @@ type
     procedure DrawBottomLine(vRect: TRect);
     procedure SetImageList(const Value: TImageList);
     procedure AdjustTextRect(var vRect: TRect; vImageIndex: Integer);
-
-  protected //dbgrids
+  protected
     procedure KeyDown(var Key: Word; Shift: TShiftState); override;
     procedure DefineProperties(Filer: TFiler); override;
     procedure Notification(AComponent: TComponent; Operation: TOperation); override;
@@ -170,6 +185,7 @@ type
 
     function NextPageBtnRect: TRect;
     function PriorPageBtnRect: TRect;
+
     procedure NextPageBtnClick;
     procedure PriorPageBtnClick;
 
@@ -207,7 +223,8 @@ type
     procedure InternalDrawBorder; virtual;
     procedure InternalDrawShadowedBorder; virtual;
     property UnderMouseIndex: Integer read FUnderMouseIndex write SetUnderMouseIndex;
-
+    class function GetControlClassDefaultSize: TPoint;
+    procedure WndProc(var TheMessage: TLMessage); override;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -224,12 +241,9 @@ type
     property ShowButtons: Boolean read FShowButtons write SetShowButtons default True;
     property ShowTabs: Boolean read FShowTabs write SetShowTabs default True;
     property PageIndex: Integer read GetPageIndex write SetPageIndex stored FStoreIndex default 0;
-    property PageBorder: TPageBorder read FPageBorder write SetPageBorder default 3;
-
-    //<Ayman>
+    property PageBorder: Integer read FPageBorder write SetPageBorder default 3;
     property TabStyle: TTabStyle read FTabStyle write SetTabStyle default tbGradientTabs;
     property ImageList: TImageList read FImageList write SetImageList;
-    //</Ayman>
 
     property Items: TntvPages read FItems write FItems;
 
@@ -242,7 +256,6 @@ type
     property Caption;
     property Color;
     property Constraints;
-    //property Ctl3D;
     property DockSite;
     property DragCursor;
     property DragKind;
@@ -251,7 +264,6 @@ type
     property Font;
     property ParentBiDiMode;
     property ParentColor;
-    //property ParentCtl3D;
     property ParentFont;
     property ParentShowHint;
     property PopupMenu;
@@ -282,10 +294,27 @@ type
 implementation
 
 uses
+  WSControls, WSLCLClasses,
   Types;
 
 type
+  { TntvWSPageControl }
 
+  TntvWSPageControl = class(TWSWinControl)
+  protected
+  published
+    class function GetDesignInteractive(const AWinControl: TWinControl; AClientPos: TPoint): Boolean; override;
+  end;
+
+{ TntvWSPageControl }
+
+class function TntvWSPageControl.GetDesignInteractive(
+  const AWinControl: TWinControl; AClientPos: TPoint): Boolean;
+begin
+  Result := False;
+end;
+
+type
   TPageWrapperItem = class(TCollectionItem)
   private
     FPage: TWinControl;
@@ -307,7 +336,6 @@ type
     function Add: TPageWrapperItem;
     property Items[Index: Integer]: TPageWrapperItem read GetItem write SetItem; default;
   published
-
   end;
 
 { TntvPage }
@@ -316,15 +344,14 @@ type
 constructor TntvPage.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
+  ControlStyle := ControlStyle + [csAcceptsControls];
   TabStop := False;
-  Visible := False;
-  ControlStyle := ControlStyle + [csAcceptsControls, csReflector];
   Align := alClient;
 end;
 
-destructor TntvPage.Destroy;
+procedure TntvPage.Paint;
 begin
-  inherited;
+  inherited Paint;
 end;
 
 { TntvPageControl }
@@ -332,8 +359,8 @@ end;
 constructor TntvPageControl.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
-  FPageList := TPagesList.Create;
-  FPageList.OwnsObjects := False;
+  ControlStyle := [csDesignInteractive, csClickEvents, csAcceptsControls, csSetCaption, csOpaque, csDoubleClicks];
+  FPageList := TPagesList.Create(False);
   FPageBorder := 3;
   FWrapper := TPagesWrapper.Create(Self);
   FItems := TntvPages.Create(Self);
@@ -341,17 +368,15 @@ begin
   Height := 150;
   FPageIndex := -1;
   FFirstPage := 0;
-  ControlStyle := [csCaptureMouse, csClickEvents, csAcceptsControls, csSetCaption, csOpaque, csDoubleClicks, csReplicatable];
   CalcHeaderRect;
   FShowButtons := True;
   FShowTabs := True;
-
   //<Ayman>
   FUnderMouseIndex := -1;
   OldUnderMouseIndex := -1;
   FTabStyle := tbGradientTabs;
   //</Ayman>
-
+  SetInitialBounds(0,0,GetControlClassDefaultSize.X,GetControlClassDefaultSize.Y);
 end;
 
 destructor TntvPageControl.Destroy;
@@ -421,7 +446,7 @@ begin
       Brush.Color := Color;
       Brush.Style := bsSolid;
       FillRect(ClientRect);
-      Exit; //Note: -------------> Exit procedure
+      Exit;
     end
     else
     begin
@@ -431,7 +456,7 @@ begin
       Brush.Color := Color;
       Brush.Style := bsSolid;
       Inc(Rect.Top, HeaderHeight - 1);
-      inflateRect(Rect, -1, -1);
+      InflateRect(Rect, -1, -1);
       FillRect(Rect);
     end;
 
@@ -576,14 +601,13 @@ var
   i, x: Integer;
 begin
   Result := Rect(0, 0, 0, 0);
+  //TODO: HeaderHeight
   if (Index < FPageList.Count) and (Index > -1) then
   begin
     x := 0;
     for i := FirstPage to Index do
       x := x + FPageList[i].PageWidth;
-
     R := Bounds(0, 0, 0, HeaderHeight);
-
     if UseRightToLeftAlignment then
     begin
       x := ClientWidth - x;
@@ -698,7 +722,7 @@ begin
   try
     TmpCanvas.Handle := GetDC(0);
     TmpCanvas.Font.Assign(Font);
-    FHeaderHeight := TmpCanvas.TextHeight('A') + HeighAdd;
+    FHeaderHeight := TmpCanvas.TextHeight('A') + HeaderHeightAdd;
   finally
     ReleaseDC(0, TmpCanvas.Handle);
     TmpCanvas.Free;
@@ -825,6 +849,40 @@ begin
   end;
 end;}
 
+procedure TntvPageControl.CMHitTest(var Message: TCMHITTEST);
+var
+  pt: TPoint;
+  i: Integer;
+begin
+  inherited;
+{  pt := SmallPointToPoint(Message.Pos);
+  if FPageList.Count = 0 then
+    Exit;
+  if PtInRect(GetControlTabRect, pt) then
+    Message.Result := 1
+  else
+  begin
+    for i := FirstPage to FPageList.Count - 1 do
+      if PtInRect(GetTabRect(i), pt) then
+      begin
+        if ActivePage <> FPageList[i].Page then
+          Message.Result := 1;
+        Break;
+      end;
+  end;}
+end;
+
+procedure TntvPageControl.LMNCHitTest(var Message: TLMNCHITTEST);
+begin
+  Message.Result := HTTRANSPARENT;
+end;
+
+function TntvPageControl.GetClientRect: TRect;
+begin
+  Result := GetClientRect;
+  //Result.Top := Result.Top + HeaderHeight;
+end;
+
 function TntvPageControl.LeftMouseDown(Point: TPoint): boolean;
 var
   i: Integer;
@@ -932,7 +990,7 @@ begin
             BringToFront;
             Visible := True;
             Align := alClient;
-            if (vSetFocus) and not (csDesigning in ComponentState) and not (csLoading in ComponentState) and (not Self.Focused) then
+            if (vSetFocus) and {not (csDesigning in ComponentState) and }not (csLoading in ComponentState) and (not Self.Focused) then
             begin
               ParentForm := GetParentForm(Self);
               if ParentForm <> nil then
@@ -1042,11 +1100,6 @@ end;
 function TntvPageControl.GetPageIndex: Integer;
 begin
   Result := FPageIndex;
-end;
-
-procedure TntvPageControl.CNNotify(var Message: TLMNotify);
-begin
-  inherited;
 end;
 
 procedure TntvPageControl.CMControlChange(var Message: TCMControlChange);
@@ -1182,7 +1235,7 @@ begin
   PageIndex := PageIndex - 1;
 end;
 
-procedure TntvPageControl.SetPageBorder(const Value: TPageBorder);
+procedure TntvPageControl.SetPageBorder(const Value: Integer);
 begin
   if FPageBorder <> Value then
   begin
@@ -1196,7 +1249,7 @@ begin
   Result := ClientRect;
   if ShowTabs then
     Inc(Result.Top, HeaderHeight - 1);
-  inflateRect(Result, -FPageBorder, -FPageBorder);
+  InflateRect(Result, -FPageBorder, -FPageBorder);
 end;
 
 procedure TntvPageControl.SetActivePage(const Value: TWinControl);
@@ -1244,7 +1297,7 @@ begin
       Caption := Format('Page [%d]', [Index]);
       Name := Format(PageControl.Name + 'Page%d', [Index]);
       FPage := TntvPage.Create(PageControl.Owner);
-      (FPage as TntvPage).Item := Self;
+//      (FPage as TntvPage).Item := Self;
       FPage.Name := Name;
       FPage.Parent := PageControl;
       FPage.Show;
@@ -1738,6 +1791,17 @@ begin
   end;
 end;
 
+class function TntvPageControl.GetControlClassDefaultSize: TPoint;
+begin
+  Result.x := 200;
+  Result.y := 240;
+end;
+
+procedure TntvPageControl.WndProc(var TheMessage: TLMessage);
+begin
+  inherited;
+end;
+
 procedure TntvPageControl.DrawNormalHeader;
 const
   FillColor: array[boolean] of TColor = (clDkGray, clBlack);
@@ -1952,7 +2016,6 @@ var
 begin
   if not (csLoading in FPageControl.ComponentState) then
   begin
-
     TmpCanvas := TCanvas.Create;
     try
       TmpCanvas.Handle := GetDC(0);

@@ -1,4 +1,13 @@
 unit ntvUtils;
+{**
+ *  This file is part of the "Mini Library"
+ *
+ * @url       http://www.sourceforge.net/projects/minilib
+ * @license   modifiedLGPL (modified of http://www.gnu.org/licenses/lgpl.html)
+ *            See the file COPYING.MLGPL, included in this distribution,
+ * @author    Belal Alhamed <belalhamed at gmail dot com>
+ * @author    Zaher Dirkey <zaher at parmaja dot com>
+ *}
 
 {$mode objfpc}{$H+}
 interface
@@ -7,35 +16,17 @@ uses
   Dialogs, Classes, Messages, Controls, ExtCtrls, SysUtils, Math, Contnrs, Graphics,
   LCLType, Forms, LCLIntf;
 
-const
-  ControlTabWidth = 35;
-  HeighAdd = 10;
-  nMixFlag = 75;
-
-type
-  TPaintStatus = (psMain, psSub, psAll);
-  TPaintStatusSet = set of TPaintStatus;
-
-  TTabStyle = (tbTabs, tbGradientTabs, tbFlatButtons, tbOfficeXPButtons);
-  TSraGradientStyle = (gVertical, gVertCenter);
-
-  TOnSelectPage = procedure(Sender: TObject; OldPage: TWinControl; NewPage: TWinControl; var CanSelect: boolean) of object;
-  TOnPageChanged = procedure(Sender: TObject; OldPage: TWinControl; NewPage: TWinControl) of object;
-
-  TPageBorder = 1..255;
-
-
 procedure ExcludeRect (Canvas: TCanvas; Rect: TRect);
 function WidthOf(R: TRect): Integer;
-function HeighOf(R: TRect): Integer;
+function HeightOf(R: TRect): Integer;
 
 function MixColors(C1, C2: TColor; W1: Integer): TColor;
-
 procedure ntvMapWindowRect(vFrom, vTo: THandle; var R: TRect);
 
 implementation
 
-uses Types;
+uses
+  Types;
 
 procedure ntvMapWindowRect(vFrom, vTo: THandle; var R: TRect);
 var
@@ -79,11 +70,10 @@ begin
   Result := R.Right - R.Left;
 end;
 
-function HeighOf(R: TRect): Integer;
+function HeightOf(R: TRect): Integer;
 begin
   Result := R.Bottom - R.Top;
 end;
-
 
 end.
 

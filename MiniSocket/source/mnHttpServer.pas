@@ -16,7 +16,7 @@ unit mnHttpServer;
 interface
 
 uses
-  SysUtils, Classes, mnSockets, mnServers, mnConsts;
+  SysUtils, Classes, mnSockets, mnServers, mnStreams;
 
 type
   THttpConnection = class;
@@ -301,7 +301,7 @@ var
 begin
   Body := '<HTML><HEAD><TITLE>404 Not Found</TITLE></HEAD>' +
     '<BODY><H1>404 Not Found</H1>The requested URL ' + FDocument +
-    ' was not found on this server.<P><h1>Powerd by Mini Web Server</h3></BODY></HTML>' + sEOL;
+    ' was not found on this server.<P><h1>Powerd by Mini Web Server</h3></BODY></HTML>' + sEndOfLine;
   Stream.WriteString(Body);
 end;
 
@@ -378,10 +378,10 @@ begin
       aDocStream := TFileStream.Create(FDocument, fmOpenRead or fmShareDenyWrite);
       DocSize := aDocStream.Size;
       if Connected then
-        Stream.WriteString(FVersion + ' 200 OK' + sEOL +
-          'Content-Type: ' + FAnswerContentType + sEOL +
-          'Content-Length: ' + IntToStr(DocSize) + sEOL +
-          sEOL);
+        Stream.WriteString(FVersion + ' 200 OK' + sEndOfLine +
+          'Content-Type: ' + FAnswerContentType + sEndOfLine +
+          'Content-Length: ' + IntToStr(DocSize) + sEndOfLine +
+          sEndOfLine);
       if Connected then
         Stream.WriteStream(aDocStream);
       aDocStream.Free;

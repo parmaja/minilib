@@ -20,9 +20,15 @@ uses
   mnStreams;
 
 type
-  TmnXMLStream = class(TmnStream);
+
+  { TmnXMLStream }
+
+  TmnXMLStream = class(TmnStream)
+  public
+  end;
 
 implementation
+
 end.
 
 
