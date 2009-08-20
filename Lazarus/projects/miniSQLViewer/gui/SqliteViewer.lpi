@@ -48,7 +48,7 @@
         <ComponentName Value="MainForm"/>
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="Main"/>
-        <CursorPos X="1" Y="1316"/>
+        <CursorPos X="29" Y="1306"/>
         <TopLine Value="1301"/>
         <EditorIndex Value="0"/>
         <UsageCount Value="161"/>
@@ -1380,7 +1380,7 @@
     </Target>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)\"/>
-      <OtherUnitFiles Value="..\lib\;W:\home\pascal\lib\minilib\Commons\;W:\home\pascal\lib\minilib\MiniConnection\source\;W:\home\pascal\lib\minilib\MiniConnection\db\;W:\home\pascal\lib\minilib\MiniXml\source\;W:\programs\lazarus\components\synedit\"/>
+      <OtherUnitFiles Value="..\lib\;W:\home\pascal\lib\minilib\Commons\;W:\home\pascal\lib\minilib\MiniConnection\source\;W:\home\pascal\lib\minilib\MiniConnection\db\;W:\home\pascal\lib\minilib\MiniConnection\db\sqlite\;W:\home\pascal\lib\minilib\MiniXml\source\;W:\programs\lazarus\components\synedit\"/>
       <UnitOutputDirectory Value="..\units"/>
       <LCLWidgetType Value="win32"/>
     </SearchPaths>

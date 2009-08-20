@@ -4,7 +4,7 @@ uses
   Forms,
   Unit1 in 'Unit1.pas' {Form1},
   mncConnections in '..\..\..\source\mncConnections.pas',
-  mncSQLite in '..\..\..\db\mncSQLite.pas',
+  mncSQLite in '..\..\..\db\sqlite\mncSQLite.pas',
   mncSQL in '..\..\..\db\mncSQL.pas';
 
 {$R *.res}

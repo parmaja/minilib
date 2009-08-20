@@ -33,6 +33,10 @@ requires
 
 contains
   mncConnections in '..\source\mncConnections.pas',
-  mncCSV in '..\source\mncCSV.pas';
-
+  mncCSV in '..\source\mncCSV.pas',
+  mncSQL in '..\db\mncSQL.pas',
+  mncSchemas in '..\db\mncSchemas.pas',
+  mncSQLite in '..\db\sqlite\mncSQLite.pas',
+  mncSQLiteHeader in '..\db\sqlite\mncSQLiteHeader.pas',
+  mncSQLiteSchemas in '..\db\sqlite\mncSQLiteSchemas.pas';
 end.
