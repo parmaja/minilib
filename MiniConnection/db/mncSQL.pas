@@ -20,25 +20,25 @@ uses
   mncConnections;
 
 type
-  TmncParseSQLOptions = set of (psoGenerateParams, psoAddParamsNames);
+  TmncParseSQLOptions = set of (psoGenerateParams, psoAddParamsID, psoAddParamsNames);
   
   TmncSQLCommand = class(TmncCommand)
   private
   protected
-    function ParseSQL(Options:TmncParseSQLOptions): string;
+    function ParseSQL(Options: TmncParseSQLOptions; ParamChar: string = '?'): string;
   public
     property SQL: TStrings read FRequest;//Alias of Request
   end;
 
 implementation
 
-function TmncSQLCommand.ParseSQL(Options:TmncParseSQLOptions): string;
+function TmncSQLCommand.ParseSQL(Options: TmncParseSQLOptions; ParamChar: string = '?'): string;
 var
   cCurChar, cNextChar, cQuoteChar: Char;
   sSQL, sProcessedSQL, sParamName: string;
   i, LenSQL: Integer;
   iCurState, iCurParamState: Integer;
-  iParamSuffix: Integer;
+  iParam: Integer;
   slNames: TStrings;
 const
   DefaultState = 0;
@@ -60,8 +60,7 @@ begin
   sParamName := '';
   slNames := TStringList.Create;
   try
-    { Do some initializations of variables }
-    iParamSuffix := 0;
+    iParam := 1;
     cQuoteChar := '''';
     sSQL := Trim(SQL.Text) + ' ';//zaher that dummy
     i := 1;
@@ -91,7 +90,9 @@ begin
               '?':
                 begin
                   iCurState := ParamState;
-                  AddToSQL('?');
+                  AddToSQL(ParamChar);
+{                  if psoAddParamsID in Options then
+                    AddToSQL();}
                 end;
               '/': if (cNextChar = '*') then
                 begin
@@ -133,16 +134,16 @@ begin
             begin
               if cCurChar = '"' then
                 iCurParamState := ParamQuoteState
-              else if (cCurChar in ['A'..'Z', 'a'..'z', '0'..'9', '_', ' ', '$']) then //Quoted can include spaces
+              else if (cCurChar in ['A'..'Z', 'a'..'z', '0'..'9', '_', ' ']) then //Quoted can include spaces
               begin
                 sParamName := sParamName + cCurChar;
                 if psoAddParamsNames in Options then
                   AddToSQL(cCurChar);
               end
-              else if psoGenerateParams in Options then//if passed ? without name of params
+              else if psoGenerateParams in Options then//if passed ? (ParamChar) without name of params
               begin
-                sParamName := '_Param_' + IntToStr(iParamSuffix);
-                Inc(iParamSuffix);
+                sParamName := '_Param_' + IntToStr(iParam);
+                Inc(iParam);
                 iCurState := DefaultState;
                 slNames.Add(sParamName);
                 sParamName := '';
@@ -168,11 +169,15 @@ begin
             if (iCurParamState <> ParamQuoteState) and
               (iCurState <> DefaultState) then
             begin
-              if not (cNextChar in ['A'..'Z', 'a'..'z',
-                '0'..'9', '_', '$']) then
+              if not (cNextChar in ['A'..'Z', 'a'..'z', '0'..'9', '_']) then
               begin
                 Inc(i);
                 iCurState := DefaultState;
+                if psoAddParamsID in Options then
+                begin
+                  AddToSQL(IntToStr(iParam));
+                  Inc(iParam);
+                end;
                 //slNames.Add(UpperCase(sParamName));
                 slNames.Add(sParamName);
                 sParamName := '';

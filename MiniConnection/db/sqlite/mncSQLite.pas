@@ -30,17 +30,17 @@ type
 
   TmncSQLiteConnection = class(TmncConnection)
   private
-    FDBHandle:PSqlite3;
+    FDBHandle: PSqlite3;
   protected
     procedure DoConnect; override;
     procedure DoDisconnect; override;
     function GetConnected:Boolean; override;
     class function GetMode:TmncTransactionMode; override;
+    procedure CheckError(Error: Integer; const ExtraMsg: string = '');
   public
     constructor Create;
-    procedure CheckError(Error: Integer; const ExtraMsg: string = '');
     procedure Interrupt;
-    property DBHandle:PSqlite3 read FDBHandle;
+    property DBHandle: PSqlite3 read FDBHandle;
   end;
 
   { TmncSQLiteSession }
@@ -55,6 +55,7 @@ type
     procedure DoStart; override;
     procedure DoCommit; override;
     procedure DoRollback; override;
+    procedure DoStop; override;
     function GetActive: Boolean; override;
   public
     constructor Create(vConnection: TmncConnection); override;
@@ -77,11 +78,11 @@ type
     function GetConnection: TmncSQLiteConnection;
     procedure FetchFields;
     procedure FetchValues;
-    procedure ApplyValues;
-    procedure CheckError(Error:longint);
+    procedure ApplyParams;
     function GetSession: TmncSQLiteSession;
     procedure SetSession(const AValue: TmncSQLiteSession);
   protected
+    procedure CheckError(Error:longint);
     procedure DoPrepare; override;
     procedure DoExecute; override;
     procedure DoNext; override;
@@ -98,6 +99,7 @@ type
     procedure Clear; override;
     function GetRowsChanged: Integer; virtual;
     function GetLastInsertID: Int64;
+    property Statment: PPsqlite3_stmt read FStatment;
   end;
 
 implementation
@@ -174,9 +176,14 @@ begin
   Execute('ROLLBACK');
 end;
 
+procedure TmncSQLiteSession.DoStop;
+begin
+  //Nothing to do
+end;
+
 procedure TmncSQLiteSession.Execute(SQL: string);
 var
- lMsg  : pchar;
+ lMsg  : PChar;
  s : Utf8String;
  r  : integer;
 begin
@@ -305,7 +312,7 @@ begin
   Result := Session.GetLastInsertID;
 end;
 
-procedure TmncSQLiteCommand.ApplyValues;
+procedure TmncSQLiteCommand.ApplyParams;
 var
   s: UTF8String;
   i: Integer;
@@ -370,7 +377,7 @@ begin
   FBOF := True;
   if FStatment <> nil then
     CheckError(sqlite3_reset(FStatment));
-  ApplyValues;
+  ApplyParams;
 end;
 
 procedure TmncSQLiteCommand.DoNext;
@@ -458,7 +465,7 @@ begin
     aCurrent := TmncRecord.Create(Fields);
     for i := 0 to c - 1 do
     begin
-//    TStorageType = (stNone,stInteger,stFloat,stText,stBlob,stNull);
+//    TStorageType = (stNone, stInteger, stFloat, stText, stBlob, stNull);
       aType := sqlite3_column_type(FStatment, i);
       //aSize := sqlite3_column_bytes(FStatment, i);
       case aType of

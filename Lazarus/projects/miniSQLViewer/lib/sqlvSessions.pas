@@ -31,7 +31,7 @@ type
     FViews: TmncSchemaItems;
     FFunctions: TmncSchemaItems;
     FExceptions: TmncSchemaItems;
-    FTypes: TmncSchemaItems;
+    FDomains: TmncSchemaItems;
     FFields: TmncSchemaItems;
     FOnDisconnected: TsqlvOnNotifySession;
     FOnConnected: TsqlvOnNotifySession;
@@ -64,7 +64,7 @@ type
     property Sequences: TmncSchemaItems read FSequences;
     property Functions: TmncSchemaItems read FFunctions;
     property Exceptions: TmncSchemaItems read FExceptions;
-    property Types: TmncSchemaItems read FTypes;
+    property Domains: TmncSchemaItems read FDomains;
     property Fields: TmncSchemaItems read FFields;
   end;
 
@@ -98,7 +98,7 @@ begin
   FSequences := TmncSchemaItems.Create;
   FExceptions := TmncSchemaItems.Create;
   FFunctions := TmncSchemaItems.Create;
-  FTypes := TmncSchemaItems.Create;
+  FDomains := TmncSchemaItems.Create;
   FFields := TmncSchemaItems.Create;
 end;
 
@@ -110,7 +110,7 @@ begin
   FreeAndNil(FSequences);
   FreeAndNil(FExceptions);
   FreeAndNil(FFunctions);
-  FreeAndNil(FTypes);
+  FreeAndNil(FDomains);
   FreeAndNil(FFields);
   FreeAndNil(FDBSession);
   FreeAndNil(FDBConnection);
@@ -139,7 +139,7 @@ begin
       Schema.EnumObject(Sequences, sokSequences, '', [ekSort]);
       Schema.EnumObject(Functions, sokFunction, '', [ekSort]);
       Schema.EnumObject(Exceptions, sokException, '', [ekSort]);
-      Schema.EnumObject(Types, sokTypes, '', [ekSort]);
+      Schema.EnumObject(Domains, sokDomains, '', [ekSort]);
       Schema.EnumObject(Fields, sokFields);
     finally
       Schema.Free;

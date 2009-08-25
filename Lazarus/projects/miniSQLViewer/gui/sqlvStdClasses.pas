@@ -116,9 +116,9 @@ type
     constructor Create; override;
   end;
 
-  { TsqlvTypes }
+  { TsqlvDomains }
 
-  TsqlvTypes = class(TsqlvMembers)
+  TsqlvDomains = class(TsqlvMembers)
   public
     procedure EnumSchema(var SchemaName:string; SchemaItems: TmncSchemaItems; const MemberName: string); override;
     constructor Create; override;
@@ -356,19 +356,19 @@ begin
   end;
 end;
 
-{ TsqlvTypes }
+{ TsqlvDomains }
 
-constructor TsqlvTypes.Create;
+constructor TsqlvDomains.Create;
 begin
   inherited;
   Group := 'Database';
-  Name := 'Types';
-  Title := 'Types';
-  Kind := sokTypes;
+  Name := 'Domains';
+  Title := 'Domains';
+  Kind := sokDomains;
   ImageIndex := IMG_DOMAIN;
 end;
 
-procedure TsqlvTypes.EnumSchema(var SchemaName:string; SchemaItems: TmncSchemaItems; const MemberName: string);
+procedure TsqlvDomains.EnumSchema(var SchemaName:string; SchemaItems: TmncSchemaItems; const MemberName: string);
 var
   aSchema: TmncSQLiteSchema;
 begin
@@ -376,7 +376,7 @@ begin
   aSchema := TmncSQLiteSchema.Create;
   try
     aSchema.Session := sqlvEngine.Session.DBSession;
-    aSchema.EnumTypes(SchemaItems);
+    aSchema.EnumDomains(SchemaItems);
   finally
     aSchema.Free
   end;
@@ -1055,7 +1055,7 @@ initialization
   sqlvEngine.RegisterViewer([TsqlvDropField{, TsqlvNewField}]);
   sqlvEngine.RegisterViewer([TsqlvViews, TsqlvView]);
   sqlvEngine.RegisterViewer([TsqlvTriggers, TsqlvTrigger, TsqlvTableTriggers]);
-  //sqlvEngine.RegisterViewer([TsqlvTypes, TsqlvExceptions, TsqlvFunctions]);
+  //sqlvEngine.RegisterViewer([TsqlvDomains, TsqlvExceptions, TsqlvFunctions]);
   //sqlvEngine.RegisterViewer([TsqlvProcedures, TsqlvProcedure]);
   //sqlvEngine.RegisterViewer([TsqlvSequences]);
 end.

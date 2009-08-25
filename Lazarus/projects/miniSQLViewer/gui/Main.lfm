@@ -1,8 +1,8 @@
 object MainForm: TMainForm
-  Left = 661
+  Left = 748
   Height = 381
   Hint = 'Connect F9'
-  Top = 158
+  Top = 215
   Width = 564
   ActiveControl = SQLEdit
   Caption = 'SQLite Viewer'
@@ -150,7 +150,8 @@ object MainForm: TMainForm
         ParentFont = False
         TabOrder = 0
         BookMarkOptions.Xoffset = -18
-        Gutter.Width = 21
+        BookMarkOptions.OnChange = nil
+        Gutter.Width = 23
         Gutter.MouseActions = <        
           item
             Shift = []

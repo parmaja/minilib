@@ -20,10 +20,10 @@ uses
   mncSQL, mncConnections;
 
 type
-  TschmKind = (sokNone, sokDatabase, sokTypes, sokTable, sokIndex, sokView,
-               sokProcedure, sokFunction, sokSequences, sokException, sokRole,
+  TschmKind = (sokNone, sokDatabase, sokDomains, sokTable, sokIndex, sokView,
+               sokProcedure, sokFunction, sokSequences, sokException, sokRole, sokRoles,
                sokTrigger, sokForeign, sokIndices, sokConstraints, sokFields,
-               sokField, sokData, sokProperty, sokProperties);
+               sokField, sokTypes, sokOperators, sokData, sokProperty, sokProperties);
 
   TExtractObject = (etDomain, etTable, etRole, etTrigger, etForeign,
                     etIndex, etData, etGrant, etCheck);
@@ -103,7 +103,7 @@ type
     procedure EnumSequences(Schema: TmncSchemaItems; Options: TschmEnumOptions = []); virtual;
     procedure EnumFunctions(Schema: TmncSchemaItems; Options: TschmEnumOptions = []); virtual;
     procedure EnumExceptions(Schema: TmncSchemaItems; Options: TschmEnumOptions = []); virtual;
-    procedure EnumTypes(Schema: TmncSchemaItems; Options: TschmEnumOptions = []); virtual;
+    procedure EnumDomains(Schema: TmncSchemaItems; Options: TschmEnumOptions = []); virtual;
     procedure EnumConstraints(Schema: TmncSchemaItems; MemberName: string = ''; Options: TschmEnumOptions = []); virtual;
     procedure EnumTriggers(Schema: TmncSchemaItems; MemberName: string = ''; Options: TschmEnumOptions = []); virtual;
     procedure EnumIndices(Schema: TmncSchemaItems; MemberName: string = ''; Options: TschmEnumOptions = []); virtual;
@@ -119,12 +119,12 @@ type
     TypeName: string;
   end;
 
-  TPrivTypes = record
+  TPrivDomains = record
     PrivFlag: Integer;
     PrivString: string;
   end;
 
-  TSQLTypes = array[0..14] of TSQLType;
+  TSQLDomains = array[0..14] of TSQLType;
 
 implementation
 
@@ -197,7 +197,7 @@ procedure TmncSchema.EnumObject(Schema: TmncSchemaItems; Kind: TschmKind; Member
 begin
   case Kind of
     sokDatabase: ;
-    sokTypes: EnumTypes(Schema, Options);
+    sokDomains: EnumDomains(Schema, Options);
     sokTable: EnumTables(Schema, Options);
     sokView: EnumViews(Schema, Options);
     sokProcedure: EnumProcedures(Schema, Options);
@@ -250,7 +250,7 @@ begin
 
 end;
 
-procedure TmncSchema.EnumTypes(Schema: TmncSchemaItems;
+procedure TmncSchema.EnumDomains(Schema: TmncSchemaItems;
   Options: TschmEnumOptions);
 begin
 

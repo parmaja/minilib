@@ -38,7 +38,7 @@ type
     procedure EnumSequences(Schema: TmncSchemaItems; Options: TschmEnumOptions = []); override;
     procedure EnumFunctions(Schema: TmncSchemaItems; Options: TschmEnumOptions = []); override;
     procedure EnumExceptions(Schema: TmncSchemaItems; Options: TschmEnumOptions = []); override;
-    procedure EnumTypes(Schema: TmncSchemaItems; Options: TschmEnumOptions = []); override;
+    procedure EnumDomains(Schema: TmncSchemaItems; Options: TschmEnumOptions = []); override;
     procedure EnumConstraints(Schema: TmncSchemaItems; MemberName: string = ''; Options: TschmEnumOptions = []); override;
     procedure EnumTriggers(Schema: TmncSchemaItems; MemberName: string = ''; Options: TschmEnumOptions = []); override;
     procedure EnumIndices(Schema: TmncSchemaItems; MemberName: string = ''; Options: TschmEnumOptions = []); override;
@@ -144,7 +144,7 @@ begin
 
 end;
 
-procedure TmncSQLiteSchema.EnumTypes(Schema: TmncSchemaItems;
+procedure TmncSQLiteSchema.EnumDomains(Schema: TmncSchemaItems;
   Options: TschmEnumOptions);
 begin
 

@@ -16,7 +16,7 @@ unit mncConnections;
 interface
 
 uses
-  Classes, SysUtils, DateUtils, Variants, Contnrs;
+  Classes, SysUtils, DateUtils, Variants, Contnrs, syncobjs;
 
 type
   EmncException = class(Exception)
@@ -65,6 +65,7 @@ type
     FOnConnected: TNotifyEvent;
     FOnDisconnected: TNotifyEvent;
     FPassword: string;
+    FPort: string;
     FResource: string;
     FHost: string;
     FUserName: string;
@@ -92,6 +93,7 @@ type
     property Active: Boolean read GetConnected write SetConnected;
     property AutoCreate: Boolean read FAutoCreate write FAutoCreate default False;
     property Host: string read FHost write FHost;
+    property Port: string read FPort write FPort;
     property Resource: string read FResource write FResource; //can be a Database name or Alias or service name etc...
     property UserName: string read FUserName write FUserName;
     property Password: string read FPassword write FPassword;
@@ -120,6 +122,7 @@ type
     procedure DoStart; virtual; abstract;
     procedure DoCommit; virtual; abstract;
     procedure DoRollback; virtual; abstract;
+    procedure DoStop; virtual; abstract;
     property Commands: TmncLinks read FCommands;
   public
     constructor Create(vConnection: TmncConnection); virtual;
@@ -405,6 +408,8 @@ type
     property Active: Boolean read GetActive write SetActive;
   end;
 
+//  TmncCommandStatus = (csSQLEmpty, csSQLCommand, csSQLRows);
+
   { TmncCommand }
 
   TmncCommand = class(TmncLinkObject)
@@ -425,6 +430,7 @@ type
     FRequest: TStrings;
     procedure SetActive(const Value: Boolean); override;
     procedure CheckActive;
+    procedure CheckStarted; //Check the session is started
     function GetEOF: Boolean; virtual; abstract;
     procedure DoPrepare; virtual; abstract;
     procedure DoExecute; virtual; abstract; //Here apply the ParamList and execute the sql
@@ -458,7 +464,19 @@ type
     property Field[Index: string]: TmncRecordItem read GetField;
   end;
 
+function ConnectionLock: TCriticalSection;
+
 implementation
+
+var
+  FConnectionLock: TCriticalSection = nil;
+
+function ConnectionLock: TCriticalSection;
+begin
+  if FConnectionLock = nil then
+    FConnectionLock := TCriticalSection.Create;
+  Result := FConnectionLock;
+end;
 
 { TmncConnection }
 
@@ -608,6 +626,12 @@ begin
     raise EmncException.Create('Command is not active/opened');
 end;
 
+procedure TmncCommand.CheckStarted;
+begin
+  if (Session = nil) or not Session.Active then
+    raise EmncException.Create('Session is not active/started');
+end;
+
 procedure TmncCommand.DoCommit;
 begin
 end;
@@ -624,7 +648,7 @@ end;
 
 procedure TmncCommand.Prepare;
 begin
-//  if not FPrepared then
+  CheckStarted;
   DoPrepare;
   FPrepared := True;
 end;
@@ -853,6 +877,7 @@ begin
     else
       Rollback;
   end;
+  DoStop;
 end;
 
 function TmncRecord.Add(Field: TmncField; Value: Variant): TmncRecordItem;
@@ -1361,5 +1386,7 @@ begin
   Result := FieldByName(Index) as TmncRecordField;
 end;
 
+finalization
+  FreeAndNil(FConnectionLock);
 end.
 
