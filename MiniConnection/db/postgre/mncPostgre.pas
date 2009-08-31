@@ -12,12 +12,13 @@ unit mncPostgre;
 {$H+}
 {$IFDEF FPC}
 {$mode delphi}
+{$warning Postgre unit not stable yet}
 {$ENDIF}
 
 interface
 
 uses
-  Classes, SysUtils, Variants, StrUtils, syncobjs,
+  Classes, SysUtils, Variants, StrUtils,
   {$ifdef FPC}
   //postgres3,
   postgres3dyn,
@@ -70,8 +71,6 @@ type
     constructor Create(vConnection: TmncConnection); override;
     destructor Destroy; override;
     procedure Execute(SQL: string);
-    function GetLastInsertID: Int64;
-    function GetRowsChanged: Integer;
     property Exclusive: Boolean read FExclusive write SetExclusive;
     property Connection: TmncPGConnection read GetConnection write SetConnection;
     property DBHandle: PPGconn read FDBHandle;
@@ -104,7 +103,7 @@ type
     procedure DoNext; override;
     function GetEOF: Boolean; override;
     function GetActive: Boolean; override;
-    procedure DoClose; override;
+1    procedure DoClose; override;
     procedure DoCommit; override;
     procedure DoRollback; override;
     property Connection: TmncPGConnection read GetConnection;
@@ -113,7 +112,7 @@ type
     constructor Create(vSession:TmncSession);
     destructor Destroy; override;
     procedure Clear; override;
-    function GetRowsChanged: Integer; virtual;
+    function GetRowsChanged: Integer;
     function GetLastInsertID: Int64;
     property Statment: PPGresult read FStatment;//opened by PQexecPrepared
     property Status: TExecStatusType read FStatus;
@@ -121,6 +120,26 @@ type
   end;
 
 implementation
+
+const
+  Oid_Bool     = 16;
+  Oid_Bytea    = 17;
+  Oid_Text     = 25;
+  Oid_Oid      = 26;
+  Oid_Name     = 19;
+  Oid_Int8     = 20;
+  Oid_int2     = 21;
+  Oid_Int4     = 23;
+  Oid_Float4   = 700;
+  Oid_Money    = 790;
+  Oid_Float8   = 701;
+  Oid_Unknown  = 705;
+  Oid_bpchar   = 1042;
+  Oid_varchar  = 1043;
+  Oid_timestamp = 1114;
+  oid_date      = 1082;
+  oid_time      = 1083;
+  oid_numeric   = 1700;
 
 var
   IsPostgresInitialised: Boolean = False;
@@ -253,18 +272,6 @@ begin
   PQclear(r);
 end;
 
-function TmncPGSession.GetLastInsertID: Int64;
-begin
-  CheckActive;
-  //Result := PG3_last_insert_rowid(Connection.DBHandle);
-end;
-
-function TmncPGSession.GetRowsChanged: Integer;
-begin
-  CheckActive;
-  //Result := PG3_changes(Connection.DBHandle);
-end;
-
 function TmncPGSession.GetActive: Boolean;
 begin
   Result:= inherited GetActive;
@@ -392,20 +399,16 @@ begin
   Result := (FStatment = nil) or FEOF; 
 end;
 
-function TmncPGCommand.GetRowsChanged: Integer;
-begin
-  Result := Session.GetRowsChanged;
-end;
-
 function TmncPGCommand.GetLastInsertID: Int64;
 begin
-  Result := Session.GetLastInsertID;
+  Result := 0;
 end;
 
 procedure TmncPGCommand.DoExecute;
 var
   Values: TArrayOfPChar;
-  p: pointer;
+  P: pointer;
+  FF: Longint;//Result Field format
 begin
   if FStatment <> nil then
     PQclear(FStatment);
@@ -413,11 +416,12 @@ begin
     if Params.Count > 0 then
     begin
       CreateParamValues(Values);
-      p := @Values[0];
+      P := @Values[0];
     end
     else
       p := nil;
-    FStatment := PQexecPrepared(Session.DBHandle, PChar(FHandle), Params.Count, p, nil, nil, 1);
+    FF := 1;//format as binnary.
+    FStatment := PQexecPrepared(Session.DBHandle, PChar(FHandle), Params.Count, P, nil, nil, FF);
   finally
     FreeParamValues(Values);
   end;
@@ -501,15 +505,16 @@ end;
 
 procedure TmncPGCommand.FetchValues;
 var
-  i: Integer;
-  c: Integer;
-  int:Int64;
   str: Utf8String;
-  flt: Double;
-  aCurrent: TmncRecord;
+  t: Int64;
+  d: Double;
   aType: Integer;
   v: Variant;
-  //aSize: Integer;
+  aFieldSize: Integer;
+  p: PChar;
+  i: Integer;
+  c: Integer;
+  aCurrent: TmncRecord;
 begin
   c := PQnfields(FStatment);
   if c > 0 then
@@ -521,33 +526,41 @@ begin
         aCurrent.Add(i, NULL)
       else
       begin
-        str := PQgetvalue(FStatment, FTuple, i);
-        aCurrent.Add(i, str);
+        aFieldSize := PQfsize(Statment, i);
+        p := PQgetvalue(FStatment, FTuple, i);
+        case PQftype(Statment, i) of
+          Oid_varchar, Oid_bpchar, Oid_name:
+            v := string(p);
+          Oid_oid,
+          Oid_int4:
+            v := BEtoN(PInteger(p)^);
+          Oid_int2:
+            v  := BEtoN(PShortInt(p)^);
+          Oid_int8:
+            v := BEtoN(PInt64(p)^);
+          Oid_Float4, Oid_Float8:
+          begin
+          end;
+          Oid_Date:
+          begin
+            d := BEtoN(plongint(p)^) + 36526;
+            v := TDateTime(d);
+          end;
+          Oid_Time,
+          Oid_TimeStamp:
+          begin
+            t := BEtoN(pint64(p)^);
+            v := TDateTime(t);//todo
+          end;
+          Oid_Bool:
+             v := (p[0] <> #0);
+          Oid_Money:;
+          Oid_Unknown:;
+        end;
+
+        aCurrent.Add(i, v);
       end;
     end;
-{
-      aType := PG3_column_type(FStatment, i);
-      case aType of
-        PG_NULL:
-        begin
-          aCurrent.Add(i, Null);
-        end;
-        PG_INTEGER:
-        begin
-          int := PG3_column_int(FStatment, i);
-          aCurrent.Add(i, int);
-        end;
-        PG_FLOAT:
-        begin
-          flt := PG3_column_double(FStatment, i);
-          aCurrent.Add(i, flt);
-        end;
-        else
-        begin
-          str := PG3_column_text(FStatment, i);
-          aCurrent.Add(i, str);
-        end;
-      end;}
     Current := aCurrent;
   end;
 end;
@@ -560,6 +573,12 @@ end;
 function TmncPGCommand.GetConnection: TmncPGConnection;
 begin
   Result := Session.Connection as TmncPGConnection;
+end;
+
+function TmncPGCommand.GetRowsChanged: Integer;
+begin
+  CheckActive;
+  Result := StrToIntDef(PQcmdTuples(FStatment), 0);
 end;
 
 end.

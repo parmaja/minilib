@@ -54,6 +54,7 @@ type
 {
   smNone: No transactions support
   smTransactions: all session have the same transacion like PG and SQLite
+                  But note that we make in PG for every session a new connection to database
   smMultiTransactions: every session have transacion like as Firebird
 }
   TmncTransactionMode = (smNone, smSingleTransactions, smMultiTransactions);
@@ -1386,6 +1387,7 @@ begin
   Result := FieldByName(Index) as TmncRecordField;
 end;
 
+initialization
 finalization
   FreeAndNil(FConnectionLock);
 end.
