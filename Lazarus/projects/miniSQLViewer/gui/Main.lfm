@@ -1,8 +1,8 @@
 object MainForm: TMainForm
-  Left = 748
+  Left = 267
   Height = 381
   Hint = 'Connect F9'
-  Top = 215
+  Top = 212
   Width = 564
   ActiveControl = SQLEdit
   Caption = 'SQLite Viewer'
@@ -18,15 +18,15 @@ object MainForm: TMainForm
   OnClose = FormClose
   OnCloseQuery = FormCloseQuery
   OnShortCut = FormShortCut
-  LCLVersion = '0.9.27'
+  LCLVersion = '0.9.29'
   object ClientPanel: TPanel
     Left = 0
-    Height = 339
+    Height = 337
     Top = 0
     Width = 564
     Align = alClient
     BevelOuter = bvNone
-    ClientHeight = 339
+    ClientHeight = 337
     ClientWidth = 564
     TabOrder = 0
     OnClick = ClientPanelClick
@@ -150,7 +150,6 @@ object MainForm: TMainForm
         ParentFont = False
         TabOrder = 0
         BookMarkOptions.Xoffset = -18
-        BookMarkOptions.OnChange = nil
         Gutter.Width = 23
         Gutter.MouseActions = <        
           item
@@ -866,7 +865,7 @@ object MainForm: TMainForm
       TabOrder = 3
       object MembersGrid: TStringGrid
         Left = 2
-        Height = 83
+        Height = 105
         Top = 46
         Width = 230
         Align = alClient
@@ -891,15 +890,6 @@ object MainForm: TMainForm
           117
         )
       end
-      object ActionsPanel: TPanel
-        Left = 2
-        Height = 22
-        Top = 129
-        Width = 230
-        Align = alBottom
-        BevelOuter = bvNone
-        TabOrder = 1
-      end
       object GroupsPanel: TPanel
         Left = 2
         Height = 44
@@ -909,7 +899,7 @@ object MainForm: TMainForm
         BevelOuter = bvNone
         ClientHeight = 44
         ClientWidth = 230
-        TabOrder = 2
+        TabOrder = 1
         object TitleLbl: TLabel
           Left = 2
           Height = 14
@@ -986,22 +976,54 @@ object MainForm: TMainForm
         TabOrder = 0
       end
     end
+    object ActionsPanel: TPanel
+      Left = 0
+      Height = 24
+      Top = 313
+      Width = 564
+      Align = alBottom
+      BevelInner = bvSpace
+      BevelOuter = bvSpace
+      ClientHeight = 24
+      ClientWidth = 564
+      TabOrder = 5
+      object Label5: TLabel
+        Left = 6
+        Height = 14
+        Top = 5
+        Width = 36
+        Caption = 'Actions'
+        ParentColor = False
+      end
+      object ActionsList: TComboBox
+        Left = 50
+        Height = 21
+        Top = 2
+        Width = 511
+        Anchors = [akTop, akLeft, akRight]
+        ItemHeight = 13
+        OnSelect = ActionsListSelect
+        Style = csDropDownList
+        TabOrder = 0
+      end
+    end
   end
   object TopPanel: TPanel
     Left = 0
-    Height = 22
-    Top = 339
+    Height = 24
+    Top = 337
     Width = 564
     Align = alBottom
+    BevelInner = bvSpace
     BevelOuter = bvSpace
-    ClientHeight = 22
+    ClientHeight = 24
     ClientWidth = 564
     TabOrder = 1
     object DisconnectBtn: TButton
-      Left = 93
+      Left = 94
       Height = 20
       Hint = 'Disconnect Shift+F9'
-      Top = 1
+      Top = 2
       Width = 63
       Align = alLeft
       Anchors = [akLeft, akBottom]
@@ -1010,9 +1032,9 @@ object MainForm: TMainForm
       TabOrder = 0
     end
     object ConnectBtn: TButton
-      Left = 40
+      Left = 41
       Height = 20
-      Top = 1
+      Top = 2
       Width = 53
       Align = alLeft
       Anchors = [akLeft, akBottom]
@@ -1021,9 +1043,9 @@ object MainForm: TMainForm
       TabOrder = 1
     end
     object StartBtn: TButton
-      Left = 1
+      Left = 2
       Height = 20
-      Top = 1
+      Top = 2
       Width = 39
       Align = alLeft
       Caption = 'Start'
@@ -1031,9 +1053,9 @@ object MainForm: TMainForm
       TabOrder = 2
     end
     object ExecuteBtn: TButton
-      Left = 353
+      Left = 354
       Height = 20
-      Top = 1
+      Top = 2
       Width = 50
       Align = alLeft
       Caption = 'Execute'
@@ -1041,9 +1063,9 @@ object MainForm: TMainForm
       TabOrder = 3
     end
     object ResultsBtn: TButton
-      Left = 305
+      Left = 306
       Height = 20
-      Top = 1
+      Top = 2
       Width = 48
       Align = alLeft
       Caption = 'Results'
@@ -1051,9 +1073,9 @@ object MainForm: TMainForm
       TabOrder = 4
     end
     object InfoBtn: TButton
-      Left = 272
+      Left = 273
       Height = 20
-      Top = 1
+      Top = 2
       Width = 33
       Align = alLeft
       Caption = 'Info'
@@ -1061,9 +1083,9 @@ object MainForm: TMainForm
       TabOrder = 5
     end
     object SchemaBtn: TButton
-      Left = 223
+      Left = 224
       Height = 20
-      Top = 1
+      Top = 2
       Width = 49
       Align = alLeft
       Caption = 'Schema'
@@ -1071,10 +1093,10 @@ object MainForm: TMainForm
       TabOrder = 6
     end
     object SQLBtn: TButton
-      Left = 192
+      Left = 193
       Height = 20
       Hint = 'SQL editor F6'
-      Top = 1
+      Top = 2
       Width = 31
       Align = alLeft
       Caption = 'SQL'
@@ -1082,9 +1104,9 @@ object MainForm: TMainForm
       TabOrder = 7
     end
     object OpenBtn: TButton
-      Left = 156
+      Left = 157
       Height = 20
-      Top = 1
+      Top = 2
       Width = 36
       Align = alLeft
       Caption = 'Open'

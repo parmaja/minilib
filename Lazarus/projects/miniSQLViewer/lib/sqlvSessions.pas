@@ -171,7 +171,7 @@ procedure TsqlvSession.RunLoginSQL;
 var
   CMD: TmncSQLiteCommand;
 begin
-  CMD := TmncSQLiteCommand.Create(nil);
+  CMD := TmncSQLiteCommand.Create;
   try
     CMD.Session := DBSession;
     if sqlvEngine.Setting.InternalLoginSQL <> '' then
@@ -196,7 +196,7 @@ procedure TsqlvSession.RunLogoutSQL;
 var
   CMD: TmncSQLiteCommand;
 begin
-  CMD := TmncSQLiteCommand.Create(nil);
+  CMD := TmncSQLiteCommand.Create;
   try
     CMD.Session := DBSession;
     if sqlvEngine.Setting.InternalLogoutSQL <> '' then

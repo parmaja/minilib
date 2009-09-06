@@ -52,6 +52,7 @@ type
     procedure SetConnection(const AValue: TmncSQLiteConnection);
     procedure SetExclusive(const AValue: Boolean);
   protected
+    procedure DoInit; override;
     procedure DoStart; override;
     procedure DoCommit; override;
     procedure DoRollback; override;
@@ -94,8 +95,6 @@ type
     property Connection:TmncSQLiteConnection read GetConnection;
     property Session: TmncSQLiteSession read GetSession write SetSession;
   public
-    constructor Create(vSession:TmncSession);
-    destructor Destroy; override;
     procedure Clear; override;
     function GetRowsChanged: Integer; virtual;
     function GetLastInsertID: Int64;
@@ -155,14 +154,6 @@ begin
 end;
 procedure TmncSQLiteSession.DoStart;
 begin
-  Execute('PRAGMA TEMP_STORE=MEMORY');//for WINCE
-  Execute('PRAGMA full_column_names=0');
-  Execute('PRAGMA short_column_names=1');
-  Execute('PRAGMA encoding = "UTF-8"');
-  if Exclusive then
-    Execute('PRAGMA locking_mode = EXCLUSIVE')
-  else
-    Execute('PRAGMA locking_mode = NORMAL');
   Execute('BEGIN');
 end;
 
@@ -227,7 +218,7 @@ end;
 
 class function TmncSQLiteConnection.GetMode: TmncTransactionMode;
 begin
-  Result := smSingleTransactions;
+  Result := smEmulateTransaction;
 end;
 
 procedure TmncSQLiteSession.SetConnection(const AValue: TmncSQLiteConnection);
@@ -243,6 +234,18 @@ begin
     if Active then
       raise EmncException.Create('You can not set Exclusive when session active');
   end;
+end;
+
+procedure TmncSQLiteSession.DoInit;
+begin
+  Execute('PRAGMA TEMP_STORE=MEMORY');//for WINCE
+  Execute('PRAGMA full_column_names=0');
+  Execute('PRAGMA short_column_names=1');
+  Execute('PRAGMA encoding = "UTF-8"');
+  if Exclusive then
+    Execute('PRAGMA locking_mode = EXCLUSIVE')
+  else
+    Execute('PRAGMA locking_mode = NORMAL');
 end;
 
 { TmncSQLiteCommand }
@@ -285,16 +288,6 @@ procedure TmncSQLiteCommand.Clear;
 begin
   inherited;
   FBOF := True;
-end;
-
-constructor TmncSQLiteCommand.Create(vSession:TmncSession);
-begin
-  inherited Create(vSession);
-end;
-
-destructor TmncSQLiteCommand.Destroy;
-begin
-  inherited;
 end;
 
 function TmncSQLiteCommand.GetEOF: Boolean;

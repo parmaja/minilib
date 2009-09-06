@@ -27,12 +27,13 @@ uses
   Classes, SysUtils, LResources, Forms, Controls, Graphics, Dialogs, Grids,
   dateutils, LCLType, LCLIntf, Types, mncConnections,
   contnrs, ExtCtrls, StdCtrls, SynEdit, FileUtil, Buttons, Menus,
-  SynHighlighterSqlite, sqlvSessions,
+  SynHighlighterSqlite, sqlvSessions, mncCSV,
   SynCompletion, SynEditAutoComplete, SynHighlighterHashEntries,
-  mnUtils, mncSQLite, mncSchemas, mncSqliteSchemas, sqlvClasses, sqlvStdClasses, LMessages;
+  mnUtils, mncSQLite, mncSchemas, mncSqliteSchemas, mncCSVExchanges,
+  sqlvClasses, sqlvStdClasses, LMessages;
 
 type
-
+  TExecuteType = (execNormal, execExport, execImport);
   TsqlState = (sqlsRoot, sqlsSQL, sqlsResults, sqlsInfo, sqlsMembers);
 
   TControlObject = class(TObject)
@@ -40,6 +41,12 @@ type
     Control: TControl;
     UseActive: Boolean;
     Reverse: Boolean;
+  end;
+
+  TActionInfo = record
+    Name: string;
+    Value: string;
+    Node: TsqlvNode;
   end;
 
   { TControlObjects }
@@ -83,9 +90,11 @@ type
     ExecuteBtn: TButton;
     FirstBtn: TSpeedButton;
     GroupsList: TComboBox;
+    ActionsList: TComboBox;
     InfoBtn: TButton;
     Label4: TLabel;
     FileNameLbl: TLabel;
+    Label5: TLabel;
     OpenBtn: TButton;
     GroupsPanel: TPanel;
     RefreshBtn: TButton;
@@ -133,6 +142,7 @@ type
     SQLPanel: TPanel;
     DataGrid: TStringGrid;
     procedure AboutMnuClick(Sender: TObject);
+    procedure ActionsListSelect(Sender: TObject);
     procedure BrowseBtnClick(Sender: TObject);
     procedure ClientPanelClick(Sender: TObject);
     procedure ConnectBtnClick(Sender: TObject);
@@ -141,6 +151,7 @@ type
     procedure DataPathCboExit(Sender: TObject);
     procedure DisconnectBtnClick(Sender: TObject);
     procedure ExecuteBtnClick(Sender: TObject);
+    procedure ExportBtnClick(Sender: TObject);
     procedure FirstBtnClick(Sender: TObject);
     procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
     procedure FormCloseQuery(Sender: TObject; var CanClose: boolean);
@@ -182,7 +193,7 @@ type
     FSqliteSyn: TSynSqliteSyn;
     Completion: TSynCompletion;
     FDataPath: string;
-    FActionsObjects: TObjectList;
+    FActions: array of TActionInfo;
     procedure SaveAsSQLFile;
     procedure SaveLastSQLFile;
     procedure CheckSearch;
@@ -203,8 +214,7 @@ type
     FCancel: Boolean;
     procedure ClearGrid;
     procedure DoAddKeyword(AKeyword: string; AKind: integer);
-    procedure Execute(SQLCMD: TmncSQLiteCommand; SQL:TStringList; ShowGrid:Boolean);
-    procedure ExecuteScript;
+    procedure Execute(ExecuteType: TExecuteType; SQLCMD: TmncSQLiteCommand; SQL:TStringList; ShowGrid:Boolean);
     procedure FillGrid(SQLCMD: TmncSQLiteCommand);
     procedure LoadCompletion;
     function LogTime(Start: TDateTime): string;
@@ -220,24 +230,17 @@ type
     GroupsNames: TStringList;//Fields, Indexes
     GroupInfo: TSchemaInfo;//Table,Accounts
     SchemaName: string;//Field
+    FActionsSchemaName: string;
     constructor Create(TheOwner: TComponent); override;
     destructor Destroy; override;
     procedure AddRecentSQL(Silent: Boolean = False);
+    procedure ExecuteScript(ExecuteType: TExecuteType);
     procedure OpenMember;
     procedure OpenGroup;
-    procedure UpdateActions;
+    procedure UpdateToolActions(vSchemaName: string);
     property State: TsqlState read FState write SetState;
     property LastSQLFile: string read FLastSQLFile write SetLastSQLFile;
   end;
-
-  { TMyButton }
-
-  TMyButton = class(TsqlvButton)
-  protected
-    Form: TMainForm;
-    function GetMemberName: string; override;
-  end;
-
 
 var
   MainForm: TMainForm;
@@ -285,6 +288,26 @@ begin
   end;
 end;
 
+procedure TMainForm.ActionsListSelect(Sender: TObject);
+var
+  aMemberName: string;
+  aInfo: TActionInfo;
+begin
+  if ActionsList.ItemIndex >= 0 then
+  begin
+    try
+      aInfo := FActions[ActionsList.ItemIndex];
+      if State = sqlsMembers then
+        aMemberName := MembersGrid.Cells[0, MembersGrid.Row]
+      else
+        aMemberName := '';
+      aInfo.Node.Execute(aMemberName, TmncParams.Create([aInfo.Name], [aInfo.Value]));
+    finally
+      ActionsList.ItemIndex := -1;
+    end;
+  end;
+end;
+
 procedure TMainForm.DataPathCboDropDown(Sender: TObject);
 begin
   DataPath := DataPathCbo.Text;
@@ -302,7 +325,11 @@ end;
 
 procedure TMainForm.ExecuteBtnClick(Sender: TObject);
 begin
-  ExecuteScript;
+  ExecuteScript(execNormal);
+end;
+
+procedure TMainForm.ExportBtnClick(Sender: TObject);
+begin
 end;
 
 procedure TMainForm.FirstBtnClick(Sender: TObject);
@@ -364,13 +391,14 @@ begin
         VK_F6:
         begin
           State := sqlsSQL;
+          SQLEdit.SetFocus;
           Handled := True;
         end;
         VK_F9:
         begin
           if sqlvEngine.Session.IsActive then
           begin
-            ExecuteScript;
+            ExecuteScript(execNormal);
             Handled := True;
           end;
         end;
@@ -380,13 +408,14 @@ begin
         VK_F6:
         begin
           State := sqlsSQL;
+          SQLEdit.SetFocus;
           Handled := True;
         end;
         VK_F9:
         begin
           if sqlvEngine.Session.IsActive then
           begin
-            ExecuteScript;
+            ExecuteScript(execNormal);
             Handled := True;
           end;
         end;
@@ -401,6 +430,7 @@ begin
         VK_F6:
         begin
           State := sqlsResults;
+          DataGrid.SetFocus;
           Handled := True;
         end;
         VK_F7:
@@ -417,7 +447,7 @@ begin
         begin
           if sqlvEngine.Session.IsActive then
           begin
-            ExecuteScript;
+            ExecuteScript(execNormal);
             Handled := True;
           end;
         end;
@@ -697,7 +727,6 @@ var
   aFiles: TStringList;
   aFileSearcher: TFileSearcher;
   OldFile: string;
-  s: string;
   aUpPath: string;
 begin
   if not FLockEnum then
@@ -779,60 +808,70 @@ end;
 procedure TMainForm.StateChanged;
 begin
   case FState of
-    sqlsRoot: PanelsList.Show(RootPanel, sqlvEngine.Session.IsActive);
+    sqlsRoot:
+    begin
+      PanelsList.Show(RootPanel, sqlvEngine.Session.IsActive);
+      UpdateToolActions('GUI.Root');
+    end;
     sqlsSQL:
     begin
       PanelsList.Show(SQLPanel, sqlvEngine.Session.IsActive);
-      {if SQLEdit.CanFocus then
-        SQLEdit.SetFocus;}
+      UpdateToolActions('GUI.SQL');
     end;
     sqlsResults:
     begin
       PanelsList.Show(ResultPanel, sqlvEngine.Session.IsActive);
       {if DataGrid.CanFocus then
         DataGrid.SetFocus;}
+      UpdateToolActions('GUI.Results');
     end;
-    sqlsInfo: PanelsList.Show(InfoPanel, sqlvEngine.Session.IsActive);
+    sqlsInfo:
+    begin
+      PanelsList.Show(InfoPanel, sqlvEngine.Session.IsActive);
+      UpdateToolActions('GUI.Info');
+    end;
     sqlsMembers:
     begin
       PanelsList.Show(GroupPanel, sqlvEngine.Session.IsActive);
+      UpdateToolActions(SchemaName);
       {if MembersGrid.CanFocus then
         MembersGrid.SetFocus;}
     end;
   end;
 end;
 
-procedure TMainForm.UpdateActions;
+procedure TMainForm.UpdateToolActions(vSchemaName: string);
 var
-  i: Integer;
+  i, c: Integer;
   aNodes: TsqlvNodes;
-  aButton: TMyButton;
 begin
-  FreeAndNil(FActionsObjects);
-  FActionsObjects := TObjectList.Create(True);
-  aNodes := TsqlvNodes.Create;
-  try
-    sqlvEngine.Enum(SchemaName, aNodes);
-    for i := 0 to aNodes.Count - 1 do
-    if nsCommand in aNodes[i].Style then
+  if FActionsSchemaName <> vSchemaName then
+  begin
+    FActionsSchemaName := vSchemaName;
+    ActionsList.Items.Clear;
+    FActions := nil;
+    if vSchemaName <> '' then
     begin
-      aButton := TMyButton.Create(nil);
-      aButton.Form := Self;
-      aButton.Parent := ActionsPanel;
-      aButton.Align := alLeft;
-      aButton.AutoSize := True;
-      aButton.Visible := True;
-
-      aButton.Caption := aNodes[i].Title;
-      aButton.Node := aNodes[i];
-      aButton.GroupInfo := GroupInfo;
-      //aButton.ImageIndex := Node.ImageIndex;
-      FActionsObjects.Add(aButton);
+      aNodes := TsqlvNodes.Create;
+      try
+        sqlvEngine.Enum(vSchemaName, aNodes, sqlvEngine.Session.IsActive);
+        c := 0;
+        for i := 0 to aNodes.Count - 1 do
+        if nsCommand in aNodes[i].Style then
+        begin
+          SetLength(FActions, c + 1);
+          ActionsList.Items.Add(aNodes[i].Title);
+          FActions[c].Name := GroupInfo.Name;
+          FActions[c].Value := GroupInfo.Value;
+          FActions[c].Node := aNodes[i];
+          Inc(c);
+        end;
+      finally
+        aNodes.Free;
+      end;
     end;
-  finally
-    aNodes.Free;
+    ActionsPanel.Visible := ActionsList.Items.Count > 0;
   end;
-  ActionsPanel.Visible := FActionsObjects.Count > 0;
 end;
 
 function TMainForm.GetDatabaseName: string;
@@ -870,7 +909,6 @@ begin
   SQLEdit.Font.Size := 8;
   {$endif}
   GroupsNames := TStringList.Create;
-  FActionsObjects := TObjectList.Create(True);
   sqlvEngine.WorkPath := Application.Location;
   sqlvEngine.Session.OnConnected := @Connected;
   sqlvEngine.Session.OnDisconnected := @Disconnected;
@@ -937,7 +975,6 @@ end;
 destructor TMainForm.Destroy;
 begin
   FreeAndNil(GroupsNames);
-  FreeAndNil(FActionsObjects);
   FreeAndNil(PanelsList);
   inherited Destroy;
 end;
@@ -1092,45 +1129,73 @@ begin
   sqlvEngine.SQLHistory.Add(SQLEdit.Text, Silent);
 end;
 
-procedure TMainForm.Execute(SQLCMD: TmncSQLiteCommand; SQL:TStringList; ShowGrid:Boolean);
+procedure TMainForm.Execute(ExecuteType: TExecuteType; SQLCMD: TmncSQLiteCommand; SQL:TStringList; ShowGrid:Boolean);
 var
   t: TDateTime;
+  aExport: TmncCSVExport;
+  aImport: TmncCSVImport;
 begin
   try
     ResultEdit.Lines.Add('========= Execute ==========');
     SQLCMD.SQL.Assign(SQL);
-    t := NOW;
-    SQLCMD.Prepare;
-{          if not ShowCMDParams(SQLCMD) then//that todo
-    begin
-      ResultEdit.Lines.Add('Canceled by user');
-      Abort;
-    end;}
     try
-      ResultEdit.Lines.Add('Prepare time: ' + LogTime(t));
-//      SQLCMD.NextOnExecute := False;
-      t := NOW;
-      SQLCMD.Execute;
-      ResultEdit.Lines.Add('Execute time: ' + LogTime(t));
-      if ShowGrid then
-      begin
-        if not SQLCMD.EOF then
+      case ExecuteType of
+        execNormal:
         begin
-          State := sqlsResults;
-          DataGrid.SetFocus;
           t := NOW;
-          if SQLCMD.Eof then
-            ClearGrid
-          else
-            FillGrid(SQLCMD);
-          ResultEdit.Lines.Add('Fetch time: ' + LogTime(t));
-        end
-        else
+         SQLCMD.Prepare;
+          ResultEdit.Lines.Add('Prepare time: ' + LogTime(t));
+{          if not ShowCMDParams(SQLCMD) then//that todo
+           begin
+             ResultEdit.Lines.Add('Canceled by user');
+             Abort;
+            end;}
+//      SQLCMD.NextOnExecute := False;
+          t := NOW;
+          SQLCMD.Execute;
+          ResultEdit.Lines.Add('Execute time: ' + LogTime(t));
+          if ShowGrid then
+          begin
+            if not SQLCMD.EOF then
+            begin
+              State := sqlsResults;
+              DataGrid.SetFocus;
+              t := NOW;
+              if SQLCMD.Eof then
+                ClearGrid
+              else
+                FillGrid(SQLCMD);
+              ResultEdit.Lines.Add('Fetch time: ' + LogTime(t));
+            end
+            else
+            begin
+              ClearGrid;
+              State := sqlsInfo;
+            end;
+          end;
+        end;
+        execExport:
         begin
-          ClearGrid;
-          State := sqlsInfo;
+          aExport := TmncCSVExport.Create;
+          try
+            OpenDialog.FileName := '*.csv';
+            OpenDialog.DefaultExt := 'csv';
+            OpenDialog.Filter := '*.csv';
+            if OpenDialog.Execute then
+            begin
+              t := NOW;
+              aExport.Command := SQLCMD;
+              aExport.FileName := OpenDialog.FileName;
+              aExport.Execute;
+              ResultEdit.Lines.Add('Export time: ' + LogTime(t));
+            end;
+            ShowMessage('Export count: '+IntToStr(aExport.Count));
+          finally
+            aExport.Free;
+          end;
         end;
       end;
+
       ResultEdit.Lines.Add('Last Row ID: ' + IntToStr(SQLCMD.GetLastInsertID));
       ResultEdit.Lines.Add('Rows affected: ' + IntToStr(SQLCMD.GetRowsChanged));
     except
@@ -1142,18 +1207,17 @@ begin
   end;
 end;
 
-procedure TMainForm.ExecuteScript;
+procedure TMainForm.ExecuteScript(ExecuteType: TExecuteType);
 var
   aStrings: TStringList;
   i: Integer;
-  t: TDateTime;
   SQLSession: TmncSQLiteSession;
   SQLCMD: TmncSQLiteCommand;
   aStart: Integer;
 begin
   sqlvEngine.SaveFile('recent.sql', SQLEdit.Lines);
   SQLSession := TmncSQLiteSession.Create(sqlvEngine.Session.DBConnection);
-  SQLCMD := TmncSQLiteCommand.Create(SQLSession);
+  SQLCMD := TmncSQLiteCommand.CreateBy(SQLSession);
   aStrings := TStringList.Create;
   try
     SqlBtn.Enabled := False;
@@ -1167,7 +1231,7 @@ begin
       begin
         if Trim(SQLEdit.Lines[i]) = '^' then
         begin
-          Execute(SQLCMD, aStrings, False);
+          Execute(ExecuteType, SQLCMD, aStrings, False);
           aStrings.Clear;
           aStart := i + 1;//+1 to skip terminator
         end
@@ -1175,7 +1239,7 @@ begin
           aStrings.Add(SQLEdit.Lines[i]);
       end;
       if aStrings.Count > 0 then
-        Execute(SQLCMD, aStrings, True);
+        Execute(ExecuteType, SQLCMD, aStrings, True);
       SQLSession.Commit;
     except
       on E: Exception do
@@ -1200,8 +1264,6 @@ begin
 end;
 
 procedure TMainForm.ClearGrid;
-var
-  FixedCols: Integer;
 begin
   DataGrid.FixedCols := 1;
   DataGrid.FixedRows := 1;
@@ -1310,11 +1372,17 @@ procedure TMainForm.LoadCompletion;
       Completion.ItemList.Add(SchemaItems[i].Name);
   end;
 begin
-  FreeAndNil(Completion);
-  Completion := TSynCompletion.Create(nil);
-  Completion.AddEditor(SQLEdit);
-  Completion.TheForm.Font.Assign(SQLEdit.Font);
-  Completion.CaseSensitive := False;
+{  FreeAndNil(Completion);
+  Completion := TSynCompletion.Create(nil);} //there is bug in TSynCompletion when remove editor
+  if Completion = nil then
+  begin
+    Completion := TSynCompletion.Create(nil);
+    Completion.AddEditor(SQLEdit);
+    Completion.TheForm.Font.Assign(SQLEdit.Font);
+    Completion.CaseSensitive := False;
+  end
+  else
+    Completion.ItemList.Clear;
   EnumerateKeywords(Ord(tkDatatype), SqliteTypes, SQLEdit.IdentChars, @DoAddKeyword);
   EnumerateKeywords(Ord(tkFunction), SqliteFunctions, SQLEdit.IdentChars, @DoAddKeyword);
   EnumerateKeywords(Ord(tkKey), SqliteKeywords, SQLEdit.IdentChars, @DoAddKeyword);
@@ -1328,13 +1396,6 @@ begin
   //FillNow('Triggers', (Owner as TfbvSession).Triggers);
   //FillNow('Functions', (Owner as TfbvSession).Functions);
   //FillNow('Exceptions', (Owner as TfbvSession).Exceptions);
-end;
-
-{ TMyButton }
-
-function TMyButton.GetMemberName: string;
-begin
-  Result := Form.MembersGrid.Cells[0, Form.MembersGrid.Row];
 end;
 
 initialization

@@ -7,7 +7,7 @@
       <MainUnit Value="0"/>
       <TargetFileExt Value=".exe"/>
       <UseAppBundle Value="False"/>
-      <ActiveEditorIndexAtStart Value="2"/>
+      <ActiveEditorIndexAtStart Value="4"/>
     </General>
     <VersionInfo>
       <ProjectVersion Value=""/>
@@ -33,14 +33,14 @@
         <PackageName Value="LCL"/>
       </Item2>
     </RequiredPackages>
-    <Units Count="185">
+    <Units Count="197">
       <Unit0>
         <Filename Value="SqliteViewer.lpr"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="SqliteViewer"/>
         <CursorPos X="42" Y="3"/>
         <TopLine Value="1"/>
-        <UsageCount Value="166"/>
+        <UsageCount Value="177"/>
       </Unit0>
       <Unit1>
         <Filename Value="Main.pas"/>
@@ -48,12 +48,13 @@
         <ComponentName Value="MainForm"/>
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="Main"/>
-        <CursorPos X="45" Y="32"/>
-        <TopLine Value="16"/>
+        <CursorPos X="1" Y="1267"/>
+        <TopLine Value="1257"/>
         <EditorIndex Value="0"/>
-        <UsageCount Value="166"/>
-        <Bookmarks Count="1">
-          <Item0 X="9" Y="628" ID="2"/>
+        <UsageCount Value="177"/>
+        <Bookmarks Count="2">
+          <Item0 X="19" Y="1194" ID="1"/>
+          <Item1 X="15" Y="395" ID="2"/>
         </Bookmarks>
         <Loaded Value="True"/>
       </Unit1>
@@ -62,184 +63,184 @@
         <UnitName Value="posRegCtrls"/>
         <CursorPos X="3" Y="13"/>
         <TopLine Value="1"/>
-        <UsageCount Value="5"/>
+        <UsageCount Value="4"/>
       </Unit2>
       <Unit3>
         <Filename Value="..\..\lib\pos\source\poslib.pas"/>
         <UnitName Value="poslib"/>
         <CursorPos X="1" Y="18"/>
         <TopLine Value="1"/>
-        <UsageCount Value="5"/>
+        <UsageCount Value="4"/>
       </Unit3>
       <Unit4>
         <Filename Value="V:\programs\lazarus\packager\registration\lazaruspackageintf.pas"/>
         <UnitName Value="LazarusPackageIntf"/>
         <CursorPos X="1" Y="1"/>
         <TopLine Value="1"/>
-        <UsageCount Value="1"/>
+        <UsageCount Value="10"/>
       </Unit4>
       <Unit5>
         <Filename Value="..\..\..\..\programs\fpc\src\rtl\win32\classes.pp"/>
         <UnitName Value="Classes"/>
         <CursorPos X="1" Y="1"/>
         <TopLine Value="1"/>
-        <UsageCount Value="5"/>
+        <UsageCount Value="4"/>
       </Unit5>
       <Unit6>
         <Filename Value="..\..\..\..\programs\lazarus\lcl\forms.pp"/>
         <UnitName Value="Forms"/>
         <CursorPos X="29" Y="1148"/>
         <TopLine Value="1128"/>
-        <UsageCount Value="5"/>
+        <UsageCount Value="4"/>
       </Unit6>
       <Unit7>
         <Filename Value="..\..\..\..\programs\lazarus\lcl\controls.pp"/>
         <UnitName Value="Controls"/>
         <CursorPos X="32" Y="1644"/>
         <TopLine Value="1624"/>
-        <UsageCount Value="5"/>
+        <UsageCount Value="4"/>
       </Unit7>
       <Unit8>
         <Filename Value="..\..\..\..\programs\fpc\src\rtl\objpas\classes\classesh.inc"/>
         <CursorPos X="1" Y="1"/>
         <TopLine Value="1"/>
-        <UsageCount Value="5"/>
+        <UsageCount Value="4"/>
       </Unit8>
       <Unit9>
         <Filename Value="..\..\lib\pos\source\posPanels.pas"/>
         <UnitName Value="posPanels"/>
         <CursorPos X="3" Y="21"/>
         <TopLine Value="1"/>
-        <UsageCount Value="5"/>
+        <UsageCount Value="4"/>
       </Unit9>
       <Unit10>
         <Filename Value="..\..\lib\pos\source\posControls.pas"/>
         <UnitName Value="posControls"/>
         <CursorPos X="1" Y="1033"/>
         <TopLine Value="996"/>
-        <UsageCount Value="5"/>
+        <UsageCount Value="4"/>
       </Unit10>
       <Unit11>
         <Filename Value="..\..\..\..\programs\fpc\src\packages\fcl-base\src\contnrs.pp"/>
         <UnitName Value="contnrs"/>
         <CursorPos X="1" Y="8"/>
         <TopLine Value="8"/>
-        <UsageCount Value="4"/>
+        <UsageCount Value="3"/>
       </Unit11>
       <Unit12>
         <Filename Value="..\..\lib\minilib\MiniConnection\db\mncSQLite.pas"/>
         <UnitName Value="mncSQLite"/>
         <CursorPos X="5" Y="116"/>
         <TopLine Value="109"/>
-        <UsageCount Value="4"/>
+        <UsageCount Value="3"/>
       </Unit12>
       <Unit13>
         <Filename Value="..\..\..\..\programs\lazarus\lcl\fileutil.pas"/>
         <UnitName Value="FileUtil"/>
         <CursorPos X="14" Y="140"/>
         <TopLine Value="115"/>
-        <UsageCount Value="4"/>
+        <UsageCount Value="3"/>
       </Unit13>
       <Unit14>
         <Filename Value="..\..\..\..\programs\lazarus\lcl\include\fileutil.inc"/>
         <CursorPos X="3" Y="1729"/>
         <TopLine Value="1727"/>
-        <UsageCount Value="4"/>
+        <UsageCount Value="3"/>
       </Unit14>
       <Unit15>
         <Filename Value="..\..\..\delphi\projects\LightPHPEdit\source\lib\FileInfo.pas"/>
         <UnitName Value="FileInfo"/>
         <CursorPos X="1" Y="2"/>
         <TopLine Value="1"/>
-        <UsageCount Value="3"/>
+        <UsageCount Value="2"/>
       </Unit15>
       <Unit16>
         <Filename Value="..\..\..\delphi\projects\LightPHPEdit\source\gui\lpeClasses.pas"/>
         <UnitName Value="lpeClasses"/>
         <CursorPos X="1" Y="1"/>
         <TopLine Value="1"/>
-        <UsageCount Value="3"/>
+        <UsageCount Value="2"/>
       </Unit16>
       <Unit17>
         <Filename Value="..\..\..\delphi\projects\LightPHPEdit\source\gui\lpeSettings.pas"/>
         <UnitName Value="lpeSettings"/>
         <CursorPos X="49" Y="119"/>
         <TopLine Value="106"/>
-        <UsageCount Value="3"/>
+        <UsageCount Value="2"/>
       </Unit17>
       <Unit18>
         <Filename Value="..\..\..\delphi\projects\LightPHPEdit\source\lib\hh.pas"/>
         <UnitName Value="hh"/>
         <CursorPos X="16" Y="187"/>
         <TopLine Value="179"/>
-        <UsageCount Value="3"/>
+        <UsageCount Value="2"/>
       </Unit18>
       <Unit19>
         <Filename Value="..\..\..\delphi\projects\LightPHPEdit\source\editor\EditorEngine.pas"/>
         <UnitName Value="EditorEngine"/>
         <CursorPos X="21" Y="14"/>
         <TopLine Value="1"/>
-        <UsageCount Value="3"/>
+        <UsageCount Value="2"/>
       </Unit19>
       <Unit20>
         <Filename Value="..\..\..\delphi\projects\LightPHPEdit\source\gui\lpePHPIniForm.pas"/>
         <UnitName Value="lpePHPIniForm"/>
         <CursorPos X="1" Y="1"/>
         <TopLine Value="1"/>
-        <UsageCount Value="3"/>
+        <UsageCount Value="2"/>
       </Unit20>
       <Unit21>
         <Filename Value="..\..\lib\minilib\Commons\mnUtils.pas"/>
         <UnitName Value="mnUtils"/>
         <CursorPos X="20" Y="141"/>
         <TopLine Value="105"/>
-        <UsageCount Value="3"/>
+        <UsageCount Value="2"/>
       </Unit21>
       <Unit22>
         <Filename Value="..\..\lib\minilib\MiniXml\source\mnXMLUtils.pas"/>
         <UnitName Value="mnXMLUtils"/>
         <CursorPos X="1" Y="52"/>
         <TopLine Value="31"/>
-        <UsageCount Value="3"/>
+        <UsageCount Value="2"/>
       </Unit22>
       <Unit23>
         <Filename Value="..\..\..\..\programs\lazarus\lcl\include\control.inc"/>
         <CursorPos X="1" Y="2640"/>
         <TopLine Value="2619"/>
-        <UsageCount Value="3"/>
+        <UsageCount Value="2"/>
       </Unit23>
       <Unit24>
         <Filename Value="..\..\..\..\programs\fpc\src\rtl\objpas\sysutils\filutilh.inc"/>
         <CursorPos X="3" Y="17"/>
         <TopLine Value="1"/>
-        <UsageCount Value="3"/>
+        <UsageCount Value="2"/>
       </Unit24>
       <Unit25>
         <Filename Value="..\lib\SynHighlighterSQLite.pas"/>
         <UnitName Value="SynHighlighterSqlite"/>
         <CursorPos X="17" Y="308"/>
         <TopLine Value="298"/>
-        <UsageCount Value="13"/>
+        <UsageCount Value="12"/>
       </Unit25>
       <Unit26>
         <Filename Value="..\..\..\..\..\programs\lazarus\components\synedit\synedithighlighter.pp"/>
         <UnitName Value="SynEditHighlighter"/>
         <CursorPos X="25" Y="262"/>
         <TopLine Value="241"/>
-        <UsageCount Value="4"/>
+        <UsageCount Value="3"/>
       </Unit26>
       <Unit27>
         <Filename Value="..\..\..\..\..\programs\lazarus\components\synedit\synedit.inc"/>
         <CursorPos X="1" Y="53"/>
         <TopLine Value="42"/>
-        <UsageCount Value="3"/>
+        <UsageCount Value="2"/>
       </Unit27>
       <Unit28>
         <Filename Value="..\lib\sqlSessions.pas"/>
         <UnitName Value="sqlSessions"/>
         <CursorPos X="7" Y="57"/>
         <TopLine Value="38"/>
-        <UsageCount Value="4"/>
+        <UsageCount Value="3"/>
         <Bookmarks Count="1">
           <Item0 X="11" Y="109" ID="1"/>
         </Bookmarks>
@@ -249,35 +250,35 @@
         <UnitName Value="mncSQL"/>
         <CursorPos X="26" Y="25"/>
         <TopLine Value="3"/>
-        <UsageCount Value="4"/>
+        <UsageCount Value="3"/>
       </Unit29>
       <Unit30>
         <Filename Value="..\..\..\lib\minilib\MiniConnection\db\mncSchemes.pas"/>
         <UnitName Value="mncSchemes"/>
         <CursorPos X="1" Y="15"/>
         <TopLine Value="1"/>
-        <UsageCount Value="20"/>
+        <UsageCount Value="19"/>
       </Unit30>
       <Unit31>
         <Filename Value="..\..\..\lib\minilib\MiniConnection\source\mncConnections.pas"/>
         <UnitName Value="mncConnections"/>
         <CursorPos X="1" Y="1"/>
         <TopLine Value="1"/>
-        <UsageCount Value="13"/>
+        <UsageCount Value="12"/>
       </Unit31>
       <Unit32>
         <Filename Value="..\..\..\..\..\work\delphi\lib\FBC\core\FBExtract.pas"/>
         <UnitName Value="FBExtract"/>
         <CursorPos X="1" Y="2408"/>
         <TopLine Value="2397"/>
-        <UsageCount Value="3"/>
+        <UsageCount Value="2"/>
       </Unit32>
       <Unit33>
         <Filename Value="..\..\..\lib\minilib\MiniConnection\db\mncSQLiteSchemes.pas"/>
         <UnitName Value="mncSQLiteSchemes"/>
         <CursorPos X="3" Y="164"/>
         <TopLine Value="147"/>
-        <UsageCount Value="18"/>
+        <UsageCount Value="17"/>
         <Bookmarks Count="1">
           <Item0 X="3" Y="164" ID="1"/>
         </Bookmarks>
@@ -287,65 +288,67 @@
         <UnitName Value="sqlViewerClasses"/>
         <CursorPos X="1" Y="85"/>
         <TopLine Value="85"/>
-        <UsageCount Value="3"/>
+        <UsageCount Value="2"/>
       </Unit34>
       <Unit35>
         <Filename Value="..\..\..\lib\minilib\MiniXml\source\mnXMLRttiWriter.pas"/>
         <UnitName Value="mnXMLRttiWriter"/>
         <CursorPos X="1" Y="1"/>
         <TopLine Value="1"/>
-        <UsageCount Value="5"/>
+        <UsageCount Value="4"/>
       </Unit35>
       <Unit36>
         <Filename Value="..\..\..\..\..\work\delphi\lib\FBViewer\lib\fbViewerConsts.pas"/>
         <UnitName Value="fbViewerConsts"/>
         <CursorPos X="1" Y="1"/>
         <TopLine Value="1"/>
-        <UsageCount Value="2"/>
+        <UsageCount Value="1"/>
       </Unit36>
       <Unit37>
         <Filename Value="..\lib\sqlViewerConsts.pas"/>
         <UnitName Value="fbViewerConsts"/>
         <CursorPos X="9" Y="1"/>
         <TopLine Value="1"/>
-        <UsageCount Value="2"/>
+        <UsageCount Value="1"/>
       </Unit37>
       <Unit38>
         <Filename Value="..\..\..\lib\minilib\Commons\mnUtils.pas"/>
         <UnitName Value="mnUtils"/>
         <CursorPos X="32" Y="12"/>
         <TopLine Value="1"/>
-        <UsageCount Value="3"/>
+        <UsageCount Value="2"/>
       </Unit38>
       <Unit39>
         <Filename Value="..\lib\sqlViewerUtils.pas"/>
         <UnitName Value="fbViewerUtils"/>
         <CursorPos X="6" Y="1"/>
         <TopLine Value="1"/>
-        <UsageCount Value="2"/>
+        <UsageCount Value="1"/>
       </Unit39>
       <Unit40>
         <Filename Value="..\..\..\lib\minilib\MiniConnection\db\mncSQLite.pas"/>
         <UnitName Value="mncSQLite"/>
         <CursorPos X="37" Y="117"/>
         <TopLine Value="102"/>
-        <UsageCount Value="7"/>
+        <UsageCount Value="6"/>
       </Unit40>
       <Unit41>
         <Filename Value="..\lib\sqlvClasses.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="sqlvClasses"/>
-        <CursorPos X="29" Y="144"/>
-        <TopLine Value="135"/>
-        <UsageCount Value="69"/>
+        <CursorPos X="32" Y="290"/>
+        <TopLine Value="274"/>
+        <EditorIndex Value="5"/>
+        <UsageCount Value="80"/>
+        <Loaded Value="True"/>
       </Unit41>
       <Unit42>
         <Filename Value="..\lib\sqlvSessions.pas"/>
         <UnitName Value="sqlvSessions"/>
-        <CursorPos X="32" Y="141"/>
-        <TopLine Value="121"/>
-        <EditorIndex Value="1"/>
-        <UsageCount Value="47"/>
+        <CursorPos X="34" Y="199"/>
+        <TopLine Value="178"/>
+        <EditorIndex Value="7"/>
+        <UsageCount Value="53"/>
         <Loaded Value="True"/>
       </Unit42>
       <Unit43>
@@ -353,213 +356,213 @@
         <UnitName Value="sqlvConsts"/>
         <CursorPos X="3" Y="19"/>
         <TopLine Value="1"/>
-        <UsageCount Value="8"/>
+        <UsageCount Value="7"/>
       </Unit43>
       <Unit44>
         <Filename Value="..\..\..\..\..\programs\lazarus\lcl\fileutil.pas"/>
         <UnitName Value="FileUtil"/>
         <CursorPos X="10" Y="80"/>
         <TopLine Value="64"/>
-        <UsageCount Value="5"/>
+        <UsageCount Value="4"/>
       </Unit44>
       <Unit45>
         <Filename Value="..\..\..\..\..\programs\lazarus\lcl\include\fileutil.inc"/>
         <CursorPos X="3" Y="1034"/>
         <TopLine Value="1023"/>
-        <UsageCount Value="5"/>
+        <UsageCount Value="4"/>
       </Unit45>
       <Unit46>
         <Filename Value="..\..\..\..\..\programs\fpc\src\rtl\objpas\classes\classesh.inc"/>
         <CursorPos X="22" Y="186"/>
         <TopLine Value="170"/>
-        <UsageCount Value="5"/>
+        <UsageCount Value="4"/>
       </Unit46>
       <Unit47>
         <Filename Value="..\..\..\..\..\programs\fpc\src\rtl\objpas\classes\lists.inc"/>
         <CursorPos X="3" Y="59"/>
         <TopLine Value="57"/>
-        <UsageCount Value="5"/>
+        <UsageCount Value="4"/>
       </Unit47>
       <Unit48>
         <Filename Value="..\..\..\..\..\programs\lazarus\components\synedit\synedit.pp"/>
         <UnitName Value="SynEdit"/>
         <CursorPos X="19" Y="7006"/>
         <TopLine Value="6980"/>
-        <UsageCount Value="6"/>
+        <UsageCount Value="5"/>
       </Unit48>
       <Unit49>
         <Filename Value="..\..\..\..\..\programs\lazarus\components\synunihighlighter\synunihighlighter.pas"/>
         <UnitName Value="synunihighlighter"/>
         <CursorPos X="1" Y="346"/>
         <TopLine Value="338"/>
-        <UsageCount Value="3"/>
+        <UsageCount Value="2"/>
       </Unit49>
       <Unit50>
         <Filename Value="..\..\..\..\..\programs\lazarus\components\synedit\synhighlightercpp.pp"/>
         <UnitName Value="SynHighlighterCpp"/>
         <CursorPos X="1" Y="1485"/>
         <TopLine Value="1479"/>
-        <UsageCount Value="3"/>
+        <UsageCount Value="2"/>
       </Unit50>
       <Unit51>
         <Filename Value="..\..\..\..\..\programs\lazarus\components\synedit\synhighlightervb.pas"/>
         <UnitName Value="SynHighlighterVB"/>
         <CursorPos X="15" Y="215"/>
         <TopLine Value="194"/>
-        <UsageCount Value="3"/>
+        <UsageCount Value="2"/>
       </Unit51>
       <Unit52>
         <Filename Value="..\..\..\..\..\programs\lazarus\components\synedit\synhighlighterpas.pp"/>
         <UnitName Value="SynHighlighterPas"/>
         <CursorPos X="22" Y="221"/>
         <TopLine Value="202"/>
-        <UsageCount Value="3"/>
+        <UsageCount Value="2"/>
       </Unit52>
       <Unit53>
         <Filename Value="..\..\..\..\..\programs\lazarus\components\synedit\synedithighlighterfoldbase.pas"/>
         <UnitName Value="SynEditHighlighterFoldBase"/>
         <CursorPos X="3" Y="167"/>
         <TopLine Value="145"/>
-        <UsageCount Value="3"/>
+        <UsageCount Value="2"/>
       </Unit53>
       <Unit54>
         <Filename Value="..\..\..\..\..\programs\fpc\src\packages\sqlite\src\sqlitedb.pas"/>
         <UnitName Value="SQLitedb"/>
         <CursorPos X="1" Y="1"/>
         <TopLine Value="1"/>
-        <UsageCount Value="4"/>
+        <UsageCount Value="3"/>
       </Unit54>
       <Unit55>
         <Filename Value="..\..\..\..\..\programs\fpc\src\packages\fcl-db\src\sqlite\sqlite3ds.pas"/>
         <UnitName Value="sqlite3ds"/>
         <CursorPos X="1" Y="1"/>
         <TopLine Value="1"/>
-        <UsageCount Value="4"/>
+        <UsageCount Value="3"/>
       </Unit55>
       <Unit56>
         <Filename Value="..\..\..\..\..\programs\fpc\src\packages\fcl-db\src\sqlite\sqliteds.pas"/>
         <UnitName Value="sqliteds"/>
         <CursorPos X="1" Y="1"/>
         <TopLine Value="1"/>
-        <UsageCount Value="4"/>
+        <UsageCount Value="3"/>
       </Unit56>
       <Unit57>
         <Filename Value="..\..\..\..\..\programs\fpc\src\packages\fcl-db\src\sqlite\customsqliteds.pas"/>
         <UnitName Value="customsqliteds"/>
         <CursorPos X="1" Y="1"/>
         <TopLine Value="1"/>
-        <UsageCount Value="4"/>
+        <UsageCount Value="3"/>
       </Unit57>
       <Unit58>
         <Filename Value="..\..\..\..\..\programs\fpc\src\packages\fcl-db\src\datadict\fpddsqlite3.pp"/>
         <UnitName Value="fpddsqlite3"/>
         <CursorPos X="1" Y="1"/>
         <TopLine Value="1"/>
-        <UsageCount Value="4"/>
+        <UsageCount Value="3"/>
       </Unit58>
       <Unit59>
         <Filename Value="..\..\..\..\..\programs\fpc\src\packages\sqlite\src\sqlite3dyn.pp"/>
         <UnitName Value="sqlite3dyn"/>
         <CursorPos X="1" Y="1"/>
         <TopLine Value="1"/>
-        <UsageCount Value="4"/>
+        <UsageCount Value="3"/>
       </Unit59>
       <Unit60>
         <Filename Value="..\..\..\..\..\programs\fpc\src\packages\sqlite\src\sqlite.pp"/>
         <UnitName Value="sqlite"/>
         <CursorPos X="14" Y="79"/>
         <TopLine Value="74"/>
-        <UsageCount Value="4"/>
+        <UsageCount Value="3"/>
       </Unit60>
       <Unit61>
         <Filename Value="..\..\..\..\..\programs\lazarus\components\sqlite\sqlite3laz.pas"/>
         <UnitName Value="sqlite3laz"/>
         <CursorPos X="1" Y="1"/>
         <TopLine Value="1"/>
-        <UsageCount Value="4"/>
+        <UsageCount Value="3"/>
       </Unit61>
       <Unit62>
         <Filename Value="..\..\..\..\..\programs\lazarus\components\sqlite\sqlitelaz.pas"/>
         <UnitName Value="sqlitelaz"/>
         <CursorPos X="1" Y="1"/>
         <TopLine Value="1"/>
-        <UsageCount Value="4"/>
+        <UsageCount Value="3"/>
       </Unit62>
       <Unit63>
         <Filename Value="..\..\..\..\..\programs\fpc\src\packages\fcl-db\src\sqldb\sqlite\sqlite3conn.pp"/>
         <UnitName Value="sqlite3conn"/>
         <CursorPos X="82" Y="706"/>
         <TopLine Value="701"/>
-        <UsageCount Value="4"/>
+        <UsageCount Value="3"/>
       </Unit63>
       <Unit64>
         <Filename Value="..\lib\sqlvStdClasses.pas"/>
         <UnitName Value="fbvStdClasses"/>
         <CursorPos X="10" Y="1"/>
         <TopLine Value="1"/>
-        <UsageCount Value="3"/>
+        <UsageCount Value="2"/>
       </Unit64>
       <Unit65>
         <Filename Value="sqlvStdClasses.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="sqlvStdClasses"/>
-        <CursorPos X="43" Y="1044"/>
-        <TopLine Value="1020"/>
-        <EditorIndex Value="2"/>
-        <UsageCount Value="64"/>
+        <CursorPos X="24" Y="704"/>
+        <TopLine Value="704"/>
+        <EditorIndex Value="4"/>
+        <UsageCount Value="75"/>
         <Loaded Value="True"/>
       </Unit65>
       <Unit66>
         <Filename Value="..\..\..\..\..\programs\lazarus\lcl\include\customlistbox.inc"/>
         <CursorPos X="1" Y="1"/>
         <TopLine Value="1"/>
-        <UsageCount Value="7"/>
+        <UsageCount Value="6"/>
       </Unit66>
       <Unit67>
         <Filename Value="..\..\..\..\..\programs\lazarus\lcl\interfaces\win32\win32listsl.inc"/>
         <CursorPos X="1" Y="163"/>
         <TopLine Value="142"/>
-        <UsageCount Value="5"/>
+        <UsageCount Value="4"/>
       </Unit67>
       <Unit68>
         <Filename Value="..\..\..\..\..\programs\lazarus\lcl\include\control.inc"/>
         <CursorPos X="1" Y="2228"/>
         <TopLine Value="2206"/>
-        <UsageCount Value="5"/>
+        <UsageCount Value="4"/>
       </Unit68>
       <Unit69>
         <Filename Value="..\..\..\..\..\programs\fpc\src\packages\fcl-base\src\contnrs.pp"/>
         <UnitName Value="contnrs"/>
         <CursorPos X="14" Y="82"/>
         <TopLine Value="61"/>
-        <UsageCount Value="9"/>
+        <UsageCount Value="8"/>
       </Unit69>
       <Unit70>
         <Filename Value="..\..\..\..\..\programs\lazarus\lcl\stdctrls.pp"/>
         <UnitName Value="StdCtrls"/>
         <CursorPos X="5" Y="563"/>
         <TopLine Value="542"/>
-        <UsageCount Value="5"/>
+        <UsageCount Value="4"/>
       </Unit70>
       <Unit71>
         <Filename Value="..\compile-wince.cmd"/>
         <CursorPos X="1" Y="11"/>
         <TopLine Value="1"/>
-        <UsageCount Value="14"/>
+        <UsageCount Value="13"/>
         <SyntaxHighlighter Value="None"/>
       </Unit71>
       <Unit72>
         <Filename Value="..\extrafpc.cfg"/>
         <CursorPos X="1" Y="4"/>
         <TopLine Value="1"/>
-        <UsageCount Value="6"/>
+        <UsageCount Value="5"/>
         <SyntaxHighlighter Value="None"/>
       </Unit72>
       <Unit73>
         <Filename Value="..\extra.cfg"/>
         <CursorPos X="4" Y="23"/>
         <TopLine Value="1"/>
-        <UsageCount Value="24"/>
+        <UsageCount Value="23"/>
         <SyntaxHighlighter Value="None"/>
       </Unit73>
       <Unit74>
@@ -567,28 +570,28 @@
         <UnitName Value="interfaces"/>
         <CursorPos X="20" Y="11"/>
         <TopLine Value="1"/>
-        <UsageCount Value="7"/>
+        <UsageCount Value="6"/>
       </Unit74>
       <Unit75>
         <Filename Value="..\..\..\..\..\programs\lazarus\components\synedit\syntextdrawer.pp"/>
         <UnitName Value="SynTextDrawer"/>
         <CursorPos X="38" Y="252"/>
         <TopLine Value="238"/>
-        <UsageCount Value="6"/>
+        <UsageCount Value="5"/>
       </Unit75>
       <Unit76>
         <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\components\synedit\synedit.pp"/>
         <UnitName Value="SynEdit"/>
         <CursorPos X="5" Y="238"/>
         <TopLine Value="217"/>
-        <UsageCount Value="16"/>
+        <UsageCount Value="15"/>
       </Unit76>
       <Unit77>
         <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\components\synedit\syntextdrawer.pp"/>
         <UnitName Value="SynTextDrawer"/>
         <CursorPos X="32" Y="917"/>
         <TopLine Value="896"/>
-        <UsageCount Value="14"/>
+        <UsageCount Value="13"/>
         <Bookmarks Count="1">
           <Item0 X="32" Y="917" ID="1"/>
         </Bookmarks>
@@ -598,139 +601,143 @@
         <UnitName Value="LCLType"/>
         <CursorPos X="6" Y="349"/>
         <TopLine Value="344"/>
-        <UsageCount Value="8"/>
+        <UsageCount Value="7"/>
       </Unit78>
       <Unit79>
         <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\lcl\include\winapih.inc"/>
         <CursorPos X="1" Y="146"/>
         <TopLine Value="125"/>
-        <UsageCount Value="14"/>
+        <UsageCount Value="13"/>
       </Unit79>
       <Unit80>
         <Filename Value="..\..\..\..\MiniConnection\db\mncSQLiteSchemes.pas"/>
         <UnitName Value="mncSQLiteSchemes"/>
         <CursorPos X="1" Y="97"/>
         <TopLine Value="76"/>
-        <UsageCount Value="23"/>
+        <UsageCount Value="22"/>
       </Unit80>
       <Unit81>
         <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\lcl\include\customcombobox.inc"/>
         <CursorPos X="1" Y="1"/>
         <TopLine Value="1"/>
-        <UsageCount Value="13"/>
+        <UsageCount Value="12"/>
       </Unit81>
       <Unit82>
         <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\lcl\interfaces\win32\win32listsl.inc"/>
         <CursorPos X="1" Y="386"/>
         <TopLine Value="377"/>
-        <UsageCount Value="19"/>
+        <UsageCount Value="18"/>
       </Unit82>
       <Unit83>
         <Filename Value="..\..\..\..\..\..\..\..\programs\fpc\src\rtl\objpas\classes\classesh.inc"/>
-        <CursorPos X="3" Y="170"/>
-        <TopLine Value="149"/>
-        <UsageCount Value="14"/>
+        <CursorPos X="37" Y="1563"/>
+        <TopLine Value="1541"/>
+        <UsageCount Value="16"/>
       </Unit83>
       <Unit84>
         <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\lcl\grids.pas"/>
         <UnitName Value="Grids"/>
         <CursorPos X="5" Y="8944"/>
         <TopLine Value="8940"/>
-        <UsageCount Value="16"/>
+        <UsageCount Value="15"/>
       </Unit84>
       <Unit85>
         <Filename Value="..\..\..\..\MiniConnection\db\mncSchemes.pas"/>
         <UnitName Value="mncSchemes"/>
         <CursorPos X="14" Y="47"/>
         <TopLine Value="26"/>
-        <UsageCount Value="16"/>
+        <UsageCount Value="15"/>
       </Unit85>
       <Unit86>
         <Filename Value="..\..\..\..\MiniConnection\source\mncConnections.pas"/>
         <UnitName Value="mncConnections"/>
-        <CursorPos X="27" Y="11"/>
-        <TopLine Value="1"/>
-        <UsageCount Value="21"/>
+        <CursorPos X="63" Y="435"/>
+        <TopLine Value="415"/>
+        <EditorIndex Value="8"/>
+        <UsageCount Value="27"/>
+        <Loaded Value="True"/>
       </Unit86>
       <Unit87>
         <Filename Value="..\..\..\..\..\..\..\..\programs\fpc\src\rtl\objpas\sysutils\sysutilh.inc"/>
         <CursorPos X="16" Y="190"/>
         <TopLine Value="185"/>
-        <UsageCount Value="10"/>
+        <UsageCount Value="9"/>
       </Unit87>
       <Unit88>
         <Filename Value="..\..\..\..\MiniConnection\db\mncSQLite.pas"/>
         <UnitName Value="mncSQLite"/>
         <CursorPos X="1" Y="1"/>
         <TopLine Value="1"/>
-        <UsageCount Value="20"/>
+        <UsageCount Value="19"/>
       </Unit88>
       <Unit89>
         <Filename Value="..\..\..\..\MiniConnection\db\mncSQL.pas"/>
         <UnitName Value="mncSQL"/>
-        <CursorPos X="1" Y="1"/>
-        <TopLine Value="1"/>
-        <UsageCount Value="7"/>
+        <CursorPos X="33" Y="30"/>
+        <TopLine Value="14"/>
+        <UsageCount Value="11"/>
       </Unit89>
       <Unit90>
         <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\lcl\include\control.inc"/>
         <CursorPos X="3" Y="1510"/>
         <TopLine Value="1499"/>
-        <UsageCount Value="11"/>
+        <UsageCount Value="10"/>
       </Unit90>
       <Unit91>
         <Filename Value="..\..\..\..\..\..\..\..\programs\fpc\src\rtl\objpas\dateutil.inc"/>
         <CursorPos X="46" Y="1338"/>
         <TopLine Value="1336"/>
-        <UsageCount Value="6"/>
+        <UsageCount Value="5"/>
       </Unit91>
       <Unit92>
         <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\lcl\lmessages.pp"/>
         <UnitName Value="LMessages"/>
         <CursorPos X="10" Y="148"/>
         <TopLine Value="127"/>
-        <UsageCount Value="9"/>
+        <UsageCount Value="8"/>
       </Unit92>
       <Unit93>
         <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\lcl\interfaces\wince\wincedialogs.lrs"/>
         <CursorPos X="37" Y="1"/>
         <TopLine Value="1"/>
-        <UsageCount Value="11"/>
+        <UsageCount Value="10"/>
       </Unit93>
       <Unit94>
         <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\lcl\interfaces\wince\wincewsdialogs.pp"/>
         <UnitName Value="WinCEWSDialogs"/>
         <CursorPos X="3" Y="126"/>
         <TopLine Value="99"/>
-        <UsageCount Value="7"/>
+        <UsageCount Value="6"/>
       </Unit94>
       <Unit95>
         <Filename Value="..\compile-win32.cmd"/>
         <CursorPos X="12" Y="8"/>
         <TopLine Value="1"/>
-        <UsageCount Value="11"/>
+        <UsageCount Value="10"/>
         <SyntaxHighlighter Value="None"/>
       </Unit95>
       <Unit96>
         <Filename Value="..\data\init.sql"/>
         <CursorPos X="1" Y="1"/>
         <TopLine Value="1"/>
-        <UsageCount Value="8"/>
+        <UsageCount Value="7"/>
         <SyntaxHighlighter Value="SQL"/>
       </Unit96>
       <Unit97>
         <Filename Value="..\..\..\..\..\..\..\..\programs\fpc\src\packages\fcl-base\src\contnrs.pp"/>
         <UnitName Value="contnrs"/>
-        <CursorPos X="23" Y="72"/>
-        <TopLine Value="66"/>
-        <UsageCount Value="7"/>
+        <CursorPos X="3" Y="72"/>
+        <TopLine Value="51"/>
+        <EditorIndex Value="3"/>
+        <UsageCount Value="12"/>
+        <Loaded Value="True"/>
       </Unit97>
       <Unit98>
         <Filename Value="..\lib\sqlvSQLForms.pas"/>
         <UnitName Value="fbvSQLForms"/>
         <CursorPos X="1" Y="1"/>
         <TopLine Value="1"/>
-        <UsageCount Value="10"/>
+        <UsageCount Value="9"/>
       </Unit98>
       <Unit99>
         <Filename Value="AboutForm.pas"/>
@@ -740,20 +747,20 @@
         <UnitName Value="AboutForm"/>
         <CursorPos X="15" Y="16"/>
         <TopLine Value="1"/>
-        <UsageCount Value="95"/>
+        <UsageCount Value="106"/>
       </Unit99>
       <Unit100>
         <Filename Value="..\..\..\..\..\..\..\delphi\projects\LightPHPEdit\source\gui\AboutForms.pas"/>
         <UnitName Value="AboutForms"/>
         <CursorPos X="39" Y="35"/>
         <TopLine Value="27"/>
-        <UsageCount Value="8"/>
+        <UsageCount Value="7"/>
       </Unit100>
       <Unit101>
         <Filename Value="..\..\..\..\..\..\..\delphi\projects\LightPHPEdit\source\gui\AboutForms.dfm"/>
         <CursorPos X="5" Y="383"/>
         <TopLine Value="370"/>
-        <UsageCount Value="8"/>
+        <UsageCount Value="7"/>
         <SyntaxHighlighter Value="LFM"/>
       </Unit101>
       <Unit102>
@@ -761,39 +768,39 @@
         <UnitName Value="MainForm"/>
         <CursorPos X="70" Y="734"/>
         <TopLine Value="721"/>
-        <UsageCount Value="7"/>
+        <UsageCount Value="6"/>
       </Unit102>
       <Unit103>
         <Filename Value="..\..\..\..\..\..\..\..\programs\fpc\src\packages\sqlite\src\sqlite3.inc"/>
         <CursorPos X="10" Y="22"/>
         <TopLine Value="1"/>
-        <UsageCount Value="11"/>
+        <UsageCount Value="10"/>
       </Unit103>
       <Unit104>
         <Filename Value="V:\dev\fpc\packages\sqlite\src\sqlite3.inc"/>
         <CursorPos X="1" Y="2450"/>
         <TopLine Value="2443"/>
-        <UsageCount Value="8"/>
+        <UsageCount Value="7"/>
       </Unit104>
       <Unit105>
         <Filename Value="..\..\..\..\..\..\..\..\programs\fpc\src\rtl\objpas\sysutils\sysstrh.inc"/>
         <CursorPos X="3" Y="239"/>
         <TopLine Value="221"/>
-        <UsageCount Value="10"/>
+        <UsageCount Value="9"/>
       </Unit105>
       <Unit106>
         <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\components\synedit\syneditautocomplete.pp"/>
         <UnitName Value="SynEditAutoComplete"/>
         <CursorPos X="19" Y="93"/>
         <TopLine Value="71"/>
-        <UsageCount Value="11"/>
+        <UsageCount Value="10"/>
       </Unit106>
       <Unit107>
         <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\components\synedit\synhighlighterhashentries.pas"/>
         <UnitName Value="SynHighlighterHashEntries"/>
-        <CursorPos X="1" Y="195"/>
-        <TopLine Value="174"/>
-        <UsageCount Value="9"/>
+        <CursorPos X="3" Y="152"/>
+        <TopLine Value="146"/>
+        <UsageCount Value="11"/>
       </Unit107>
       <Unit108>
         <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\ide\codetemplatesdlg.pas"/>
@@ -803,7 +810,7 @@
         <UnitName Value="CodeTemplatesDlg"/>
         <CursorPos X="22" Y="99"/>
         <TopLine Value="88"/>
-        <UsageCount Value="9"/>
+        <UsageCount Value="8"/>
       </Unit108>
       <Unit109>
         <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\ide\sourceeditor.pp"/>
@@ -813,18 +820,19 @@
         <UnitName Value="SourceEditor"/>
         <CursorPos X="19" Y="6845"/>
         <TopLine Value="6836"/>
-        <UsageCount Value="10"/>
+        <UsageCount Value="9"/>
       </Unit109>
       <Unit110>
         <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\components\synedit\syncompletion.pas"/>
         <UnitName Value="SynCompletion"/>
-        <CursorPos X="1" Y="811"/>
-        <TopLine Value="793"/>
-        <UsageCount Value="18"/>
-        <Bookmarks Count="3">
+        <CursorPos X="32" Y="1471"/>
+        <TopLine Value="1454"/>
+        <UsageCount Value="19"/>
+        <Bookmarks Count="4">
           <Item0 X="53" Y="822" ID="0"/>
-          <Item1 X="22" Y="811" ID="1"/>
-          <Item2 X="24" Y="579" ID="3"/>
+          <Item1 X="3" Y="1593" ID="1"/>
+          <Item2 X="1" Y="1569" ID="2"/>
+          <Item3 X="24" Y="579" ID="3"/>
         </Bookmarks>
       </Unit110>
       <Unit111>
@@ -832,132 +840,134 @@
         <UnitName Value="SourceEditProcs"/>
         <CursorPos X="14" Y="182"/>
         <TopLine Value="140"/>
-        <UsageCount Value="9"/>
+        <UsageCount Value="8"/>
       </Unit111>
       <Unit112>
         <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\components\synedit\syneditplugins.pas"/>
         <UnitName Value="SynEditPlugins"/>
         <CursorPos X="1" Y="14"/>
         <TopLine Value="1"/>
-        <UsageCount Value="9"/>
+        <UsageCount Value="8"/>
       </Unit112>
       <Unit113>
         <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\lcl\interfaces\gtk\gtkproc.inc"/>
         <CursorPos X="25" Y="3399"/>
         <TopLine Value="3383"/>
-        <UsageCount Value="9"/>
+        <UsageCount Value="8"/>
       </Unit113>
       <Unit114>
         <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\ide\lazarus.pp"/>
         <UnitName Value="Lazarus"/>
         <CursorPos X="1" Y="1"/>
         <TopLine Value="1"/>
-        <UsageCount Value="9"/>
+        <UsageCount Value="8"/>
       </Unit114>
       <Unit115>
         <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\ideintf\propedits.pp"/>
         <UnitName Value="PropEdits"/>
         <CursorPos X="16" Y="85"/>
         <TopLine Value="67"/>
-        <UsageCount Value="8"/>
+        <UsageCount Value="7"/>
       </Unit115>
       <Unit116>
         <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\ideintf\idecommands.pas"/>
         <UnitName Value="IDECommands"/>
         <CursorPos X="15" Y="1077"/>
         <TopLine Value="1062"/>
-        <UsageCount Value="8"/>
+        <UsageCount Value="7"/>
       </Unit116>
       <Unit117>
         <Filename Value="..\..\..\..\MiniConnection\db\mncSQLiteSchemas.pas"/>
         <UnitName Value="mncSQLiteSchemas"/>
         <CursorPos X="2" Y="3"/>
         <TopLine Value="1"/>
-        <UsageCount Value="18"/>
+        <UsageCount Value="17"/>
       </Unit117>
       <Unit118>
         <Filename Value="..\..\..\..\MiniConnection\db\mncSchemas.pas"/>
         <UnitName Value="mncSchemas"/>
-        <CursorPos X="1" Y="1"/>
-        <TopLine Value="1"/>
-        <UsageCount Value="18"/>
+        <CursorPos X="25" Y="23"/>
+        <TopLine Value="2"/>
+        <EditorIndex Value="2"/>
+        <UsageCount Value="20"/>
+        <Loaded Value="True"/>
       </Unit118>
       <Unit119>
         <Filename Value="..\..\..\..\MiniXml\source\mnXMLRttiWriter.pas"/>
         <UnitName Value="mnXMLRttiWriter"/>
         <CursorPos X="1" Y="6"/>
         <TopLine Value="1"/>
-        <UsageCount Value="8"/>
+        <UsageCount Value="7"/>
       </Unit119>
       <Unit120>
         <Filename Value="V:\dev\lazarus-ccr\bindings\pascocoa\appkit\NSResponder.inc"/>
         <CursorPos X="8" Y="171"/>
         <TopLine Value="160"/>
-        <UsageCount Value="9"/>
+        <UsageCount Value="8"/>
       </Unit120>
       <Unit121>
         <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\lcl\stdctrls.pp"/>
         <UnitName Value="StdCtrls"/>
         <CursorPos X="15" Y="1088"/>
         <TopLine Value="1067"/>
-        <UsageCount Value="10"/>
+        <UsageCount Value="9"/>
       </Unit121>
       <Unit122>
         <Filename Value="..\..\..\..\..\..\..\..\programs\fpc\src\rtl\objpas\classes\stringl.inc"/>
         <CursorPos X="3" Y="854"/>
         <TopLine Value="853"/>
-        <UsageCount Value="10"/>
+        <UsageCount Value="9"/>
       </Unit122>
       <Unit123>
         <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\lcl\controls.pp"/>
         <UnitName Value="Controls"/>
-        <CursorPos X="8" Y="992"/>
-        <TopLine Value="981"/>
-        <UsageCount Value="11"/>
+        <CursorPos X="3" Y="306"/>
+        <TopLine Value="285"/>
+        <UsageCount Value="12"/>
       </Unit123>
       <Unit124>
         <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\lcl\include\wincontrol.inc"/>
         <CursorPos X="53" Y="3474"/>
         <TopLine Value="3454"/>
-        <UsageCount Value="9"/>
+        <UsageCount Value="8"/>
       </Unit124>
       <Unit125>
         <Filename Value="..\..\..\..\..\..\..\..\programs\fpc\src\rtl\objpas\classes\compon.inc"/>
-        <CursorPos X="3" Y="538"/>
-        <TopLine Value="535"/>
+        <CursorPos X="3" Y="530"/>
+        <TopLine Value="528"/>
         <UsageCount Value="9"/>
       </Unit125>
       <Unit126>
         <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\lcl\interfaces\wince\wincelistslh.inc"/>
         <CursorPos X="1" Y="72"/>
         <TopLine Value="62"/>
-        <UsageCount Value="19"/>
+        <UsageCount Value="18"/>
       </Unit126>
       <Unit127>
         <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\lcl\interfaces\wince\wincelistsl.inc"/>
         <CursorPos X="41" Y="373"/>
         <TopLine Value="352"/>
-        <UsageCount Value="19"/>
+        <UsageCount Value="18"/>
       </Unit127>
       <Unit128>
         <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\lcl\interfaces\wince\winceproc.pp"/>
         <UnitName Value="winceproc"/>
         <CursorPos X="1" Y="801"/>
         <TopLine Value="784"/>
-        <UsageCount Value="19"/>
+        <UsageCount Value="18"/>
       </Unit128>
       <Unit129>
         <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\lcl\interfaces\wince\wincewsstdctrls.pp"/>
         <UnitName Value="WinCEWSStdCtrls"/>
         <CursorPos X="1" Y="1"/>
         <TopLine Value="1"/>
-        <UsageCount Value="10"/>
+        <UsageCount Value="9"/>
       </Unit129>
       <Unit130>
         <Filename Value="..\..\..\..\..\..\projects\BidiMode\extra.cfg"/>
         <CursorPos X="1" Y="1"/>
         <TopLine Value="1"/>
-        <UsageCount Value="9"/>
+        <UsageCount Value="8"/>
         <SyntaxHighlighter Value="None"/>
       </Unit130>
       <Unit131>
@@ -965,415 +975,573 @@
         <UnitName Value="win32proc"/>
         <CursorPos X="11" Y="728"/>
         <TopLine Value="696"/>
-        <UsageCount Value="9"/>
+        <UsageCount Value="8"/>
       </Unit131>
       <Unit132>
         <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\lcl\lclmessageglue.pas"/>
         <UnitName Value="LCLMessageGlue"/>
         <CursorPos X="1" Y="1"/>
         <TopLine Value="1"/>
-        <UsageCount Value="9"/>
+        <UsageCount Value="8"/>
       </Unit132>
       <Unit133>
         <Filename Value="..\..\..\..\..\..\..\..\programs\fpc\src\rtl\win\wininc\func.inc"/>
-        <CursorPos X="10" Y="435"/>
-        <TopLine Value="414"/>
-        <UsageCount Value="9"/>
+        <CursorPos X="1" Y="1348"/>
+        <TopLine Value="1344"/>
+        <UsageCount Value="13"/>
       </Unit133>
       <Unit134>
         <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\lcl\include\intfbaselcl.inc"/>
         <CursorPos X="69" Y="572"/>
         <TopLine Value="543"/>
-        <UsageCount Value="9"/>
+        <UsageCount Value="8"/>
       </Unit134>
       <Unit135>
         <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\lcl\interfaces\wince\wincewinapih.inc"/>
         <CursorPos X="36" Y="133"/>
         <TopLine Value="128"/>
-        <UsageCount Value="9"/>
+        <UsageCount Value="8"/>
       </Unit135>
       <Unit136>
         <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\lcl\interfaces\wince\wincewinapi.inc"/>
         <CursorPos X="7" Y="1708"/>
         <TopLine Value="1696"/>
-        <UsageCount Value="9"/>
+        <UsageCount Value="8"/>
       </Unit136>
       <Unit137>
         <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\lcl\interfaces\win32\win32winapi.inc"/>
         <CursorPos X="32" Y="2301"/>
         <TopLine Value="2300"/>
-        <UsageCount Value="9"/>
+        <UsageCount Value="8"/>
       </Unit137>
       <Unit138>
         <Filename Value="..\..\..\..\..\..\..\..\programs\fpc\src\rtl\win\wininc\struct.inc"/>
         <CursorPos X="15" Y="223"/>
         <TopLine Value="202"/>
-        <UsageCount Value="9"/>
+        <UsageCount Value="8"/>
       </Unit138>
       <Unit139>
         <Filename Value="..\..\..\..\..\..\..\..\programs\fpc\src\rtl\win\wininc\messages.inc"/>
         <CursorPos X="6" Y="948"/>
         <TopLine Value="927"/>
-        <UsageCount Value="9"/>
+        <UsageCount Value="8"/>
       </Unit139>
       <Unit140>
         <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\lcl\interfaces\win32\win32winapih.inc"/>
         <CursorPos X="10" Y="129"/>
         <TopLine Value="108"/>
-        <UsageCount Value="9"/>
+        <UsageCount Value="8"/>
       </Unit140>
       <Unit141>
         <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\lcl\interfaces\win32\win32listslh.inc"/>
         <CursorPos X="14" Y="87"/>
         <TopLine Value="66"/>
-        <UsageCount Value="19"/>
+        <UsageCount Value="18"/>
       </Unit141>
       <Unit142>
         <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\lcl\include\winapi.inc"/>
         <CursorPos X="3" Y="487"/>
         <TopLine Value="485"/>
-        <UsageCount Value="14"/>
+        <UsageCount Value="13"/>
       </Unit142>
       <Unit143>
         <Filename Value="..\..\..\..\..\..\..\..\programs\fpc\src\packages\graph\src\win32\wincrt.pp"/>
         <UnitName Value="wincrt"/>
         <CursorPos X="1" Y="45"/>
         <TopLine Value="45"/>
-        <UsageCount Value="10"/>
+        <UsageCount Value="9"/>
       </Unit143>
       <Unit144>
         <Filename Value="..\..\..\..\..\..\..\..\programs\fpc\src\rtl\win32\windows.pp"/>
         <UnitName Value="windows"/>
         <CursorPos X="1" Y="1"/>
         <TopLine Value="1"/>
-        <UsageCount Value="12"/>
+        <UsageCount Value="11"/>
       </Unit144>
       <Unit145>
         <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\lcl\lclintf.pas"/>
         <UnitName Value="LCLIntf"/>
         <CursorPos X="13" Y="37"/>
         <TopLine Value="26"/>
-        <UsageCount Value="14"/>
+        <UsageCount Value="13"/>
       </Unit145>
       <Unit146>
         <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\components\synedit\syneditmiscprocs.pp"/>
         <UnitName Value="SynEditMiscProcs"/>
         <CursorPos X="11" Y="38"/>
         <TopLine Value="23"/>
-        <UsageCount Value="13"/>
+        <UsageCount Value="12"/>
       </Unit146>
       <Unit147>
         <Filename Value="..\..\..\..\..\..\..\..\programs\fpc\src\rtl\objpas\types.pp"/>
         <UnitName Value="types"/>
         <CursorPos X="3" Y="98"/>
         <TopLine Value="77"/>
-        <UsageCount Value="13"/>
+        <UsageCount Value="12"/>
       </Unit147>
       <Unit148>
         <Filename Value="V:\dev\fpc\rtl\objpas\freebidi.pp"/>
         <UnitName Value="FreeBIDI"/>
         <CursorPos X="1" Y="294"/>
         <TopLine Value="294"/>
-        <UsageCount Value="10"/>
+        <UsageCount Value="9"/>
       </Unit148>
       <Unit149>
         <Filename Value="V:\dev\fpc\rtl\objpas\utf8bidi.pp"/>
         <UnitName Value="UTF8BIDI"/>
         <CursorPos X="14" Y="16"/>
         <TopLine Value="1"/>
-        <UsageCount Value="10"/>
+        <UsageCount Value="9"/>
       </Unit149>
       <Unit150>
         <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\components\synedit\synedit.inc"/>
         <CursorPos X="1" Y="43"/>
         <TopLine Value="1"/>
-        <UsageCount Value="12"/>
+        <UsageCount Value="11"/>
       </Unit150>
       <Unit151>
         <Filename Value="..\..\..\..\..\..\..\..\programs\fpc\src\packages\sqlite\src\sqlite3.pp"/>
         <UnitName Value="sqlite3"/>
         <CursorPos X="5" Y="3"/>
         <TopLine Value="1"/>
-        <UsageCount Value="10"/>
+        <UsageCount Value="9"/>
       </Unit151>
       <Unit152>
         <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\lcl\graphics.pp"/>
         <UnitName Value="Graphics"/>
         <CursorPos X="6" Y="242"/>
         <TopLine Value="234"/>
-        <UsageCount Value="16"/>
+        <UsageCount Value="15"/>
       </Unit152>
       <Unit153>
         <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\lcl\menus.pp"/>
         <UnitName Value="Menus"/>
         <CursorPos X="34" Y="220"/>
         <TopLine Value="209"/>
-        <UsageCount Value="15"/>
+        <UsageCount Value="14"/>
       </Unit153>
       <Unit154>
         <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\lcl\include\customcheckbox.inc"/>
         <CursorPos X="3" Y="190"/>
         <TopLine Value="181"/>
-        <UsageCount Value="10"/>
+        <UsageCount Value="9"/>
       </Unit154>
       <Unit155>
         <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\lcl\include\buttons.inc"/>
         <CursorPos X="2" Y="308"/>
         <TopLine Value="294"/>
-        <UsageCount Value="10"/>
+        <UsageCount Value="9"/>
       </Unit155>
       <Unit156>
         <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\lcl\buttons.pp"/>
         <UnitName Value="Buttons"/>
         <CursorPos X="3" Y="73"/>
         <TopLine Value="52"/>
-        <UsageCount Value="13"/>
+        <UsageCount Value="12"/>
       </Unit156>
       <Unit157>
         <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\lcl\include\bitbtn.inc"/>
         <CursorPos X="3" Y="50"/>
         <TopLine Value="46"/>
-        <UsageCount Value="13"/>
+        <UsageCount Value="12"/>
       </Unit157>
       <Unit158>
         <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\lcl\include\speedbutton.inc"/>
         <CursorPos X="3" Y="114"/>
         <TopLine Value="112"/>
-        <UsageCount Value="13"/>
+        <UsageCount Value="12"/>
       </Unit158>
       <Unit159>
         <Filename Value="..\..\..\..\..\..\..\..\programs\fpc\src\rtl\inc\varianth.inc"/>
         <CursorPos X="10" Y="499"/>
         <TopLine Value="482"/>
-        <UsageCount Value="10"/>
+        <UsageCount Value="9"/>
       </Unit159>
       <Unit160>
         <Filename Value="..\..\..\..\..\..\..\..\programs\fpc\src\rtl\objpas\sysutils\sysansih.inc"/>
         <CursorPos X="10" Y="1"/>
         <TopLine Value="1"/>
-        <UsageCount Value="10"/>
+        <UsageCount Value="9"/>
       </Unit160>
       <Unit161>
         <Filename Value="..\..\..\..\..\..\..\..\programs\fpc\src\rtl\objpas\sysutils\sysstr.inc"/>
         <CursorPos X="3" Y="228"/>
         <TopLine Value="223"/>
-        <UsageCount Value="10"/>
+        <UsageCount Value="9"/>
       </Unit161>
       <Unit162>
         <Filename Value="..\..\..\..\..\..\..\..\programs\fpc\src\rtl\inc\systemh.inc"/>
         <CursorPos X="3" Y="300"/>
         <TopLine Value="290"/>
-        <UsageCount Value="10"/>
+        <UsageCount Value="9"/>
       </Unit162>
       <Unit163>
         <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\components\synedit\syneditstrconst.pp"/>
         <UnitName Value="SynEditStrConst"/>
         <CursorPos X="3" Y="188"/>
         <TopLine Value="177"/>
-        <UsageCount Value="10"/>
+        <UsageCount Value="9"/>
       </Unit163>
       <Unit164>
         <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\lcl\dialogs.pp"/>
         <UnitName Value="Dialogs"/>
         <CursorPos X="1" Y="1"/>
         <TopLine Value="1"/>
-        <UsageCount Value="10"/>
+        <UsageCount Value="9"/>
       </Unit164>
       <Unit165>
         <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\components\synedit\syneditpointclasses.pas"/>
         <UnitName Value="SynEditPointClasses"/>
         <CursorPos X="51" Y="175"/>
         <TopLine Value="154"/>
-        <UsageCount Value="11"/>
+        <UsageCount Value="10"/>
       </Unit165>
       <Unit166>
         <Filename Value="V:\dev\lazarus-ccr\components\tparadoxdataset\paradox.pas"/>
         <UnitName Value="paradox"/>
         <CursorPos X="37" Y="225"/>
         <TopLine Value="183"/>
-        <UsageCount Value="10"/>
+        <UsageCount Value="9"/>
       </Unit166>
       <Unit167>
         <Filename Value="V:\dev\lazarus-ccr\applications\wikihelp\src\uappconsts.pas"/>
         <UnitName Value="uAppconsts"/>
         <CursorPos X="1" Y="1"/>
         <TopLine Value="1"/>
-        <UsageCount Value="10"/>
+        <UsageCount Value="9"/>
       </Unit167>
       <Unit168>
         <Filename Value="..\..\..\..\..\..\projects\anyTranslator\source\gui\AboutForms.pas"/>
         <UnitName Value="AboutForms"/>
         <CursorPos X="17" Y="1"/>
         <TopLine Value="1"/>
-        <UsageCount Value="10"/>
+        <UsageCount Value="9"/>
       </Unit168>
       <Unit169>
         <Filename Value="..\..\..\..\MiniTranslator\extra\FluxBB_Parser.pas"/>
         <UnitName Value="FluxBB_Parser"/>
         <CursorPos X="1" Y="1"/>
         <TopLine Value="1"/>
-        <UsageCount Value="10"/>
+        <UsageCount Value="9"/>
       </Unit169>
       <Unit170>
         <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\ide\lazarusidestrconsts.pas"/>
         <UnitName Value="LazarusIDEStrConsts"/>
         <CursorPos X="11" Y="43"/>
         <TopLine Value="33"/>
-        <UsageCount Value="10"/>
+        <UsageCount Value="9"/>
       </Unit170>
       <Unit171>
         <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\ide\idecmdline.pas"/>
         <UnitName Value="IDECmdLine"/>
         <CursorPos X="15" Y="169"/>
         <TopLine Value="167"/>
-        <UsageCount Value="10"/>
+        <UsageCount Value="9"/>
       </Unit171>
       <Unit172>
         <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\ide\main.pp"/>
         <UnitName Value="Main"/>
         <CursorPos X="1" Y="15447"/>
         <TopLine Value="15426"/>
-        <UsageCount Value="10"/>
+        <UsageCount Value="9"/>
       </Unit172>
       <Unit173>
         <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\ide\lazconf.pp"/>
         <UnitName Value="LazConf"/>
         <CursorPos X="13" Y="245"/>
         <TopLine Value="240"/>
-        <UsageCount Value="10"/>
+        <UsageCount Value="9"/>
       </Unit173>
       <Unit174>
         <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\ide\include\win\lazbaseconf.inc"/>
         <CursorPos X="32" Y="169"/>
         <TopLine Value="145"/>
-        <UsageCount Value="10"/>
+        <UsageCount Value="9"/>
       </Unit174>
       <Unit175>
         <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\ide\keymapping.pp"/>
         <UnitName Value="KeyMapping"/>
         <CursorPos X="51" Y="38"/>
         <TopLine Value="27"/>
-        <UsageCount Value="10"/>
+        <UsageCount Value="9"/>
       </Unit175>
       <Unit176>
         <Filename Value="V:\dev\lazarus\components\synedit\syncompletion.pas"/>
         <UnitName Value="SynCompletion"/>
         <CursorPos X="37" Y="284"/>
         <TopLine Value="266"/>
-        <UsageCount Value="10"/>
+        <UsageCount Value="9"/>
       </Unit176>
       <Unit177>
         <Filename Value="..\..\..\..\..\..\..\..\programs\fpc\src\packages\postgres\src\postgres3.pp"/>
         <UnitName Value="postgres3"/>
         <CursorPos X="1" Y="34"/>
         <TopLine Value="34"/>
-        <UsageCount Value="10"/>
+        <UsageCount Value="9"/>
       </Unit177>
       <Unit178>
         <Filename Value="..\..\..\..\..\..\..\..\programs\fpc\src\packages\postgres\src\postgres3types.inc"/>
         <CursorPos X="1" Y="1"/>
         <TopLine Value="1"/>
-        <UsageCount Value="10"/>
+        <UsageCount Value="9"/>
       </Unit178>
       <Unit179>
         <Filename Value="..\..\..\..\..\..\..\..\programs\fpc\src\packages\postgres\src\dllisttypes.inc"/>
         <CursorPos X="1" Y="1"/>
         <TopLine Value="1"/>
-        <UsageCount Value="10"/>
+        <UsageCount Value="9"/>
       </Unit179>
       <Unit180>
         <Filename Value="..\..\..\..\..\..\..\..\programs\fpc\src\packages\postgres\src\dllistdyn.pp"/>
         <UnitName Value="DllistDyn"/>
         <CursorPos X="1" Y="1"/>
         <TopLine Value="1"/>
-        <UsageCount Value="10"/>
+        <UsageCount Value="9"/>
       </Unit180>
       <Unit181>
         <Filename Value="..\..\..\..\..\..\..\..\programs\fpc\src\packages\postgres\src\postgres.pp"/>
         <UnitName Value="postgres"/>
         <CursorPos X="1" Y="267"/>
         <TopLine Value="225"/>
-        <UsageCount Value="10"/>
+        <UsageCount Value="9"/>
       </Unit181>
       <Unit182>
         <Filename Value="..\..\..\..\MiniConnection\db\postgre\mncPGSchemas.pas"/>
         <UnitName Value="mncSQLiteSchemas"/>
         <CursorPos X="1" Y="1"/>
         <TopLine Value="1"/>
-        <UsageCount Value="10"/>
+        <UsageCount Value="9"/>
       </Unit182>
       <Unit183>
         <Filename Value="..\..\..\..\MiniConnection\db\postgre\mncPGHeader.pas"/>
         <UnitName Value="mncSQLiteHeader"/>
         <CursorPos X="1" Y="17"/>
         <TopLine Value="1"/>
-        <UsageCount Value="10"/>
+        <UsageCount Value="9"/>
       </Unit183>
       <Unit184>
         <Filename Value="..\..\..\..\MiniConnection\db\postgre\mncPostgre.pas"/>
         <UnitName Value="mncPostgre"/>
         <CursorPos X="10" Y="21"/>
         <TopLine Value="1"/>
-        <UsageCount Value="10"/>
+        <UsageCount Value="9"/>
       </Unit184>
+      <Unit185>
+        <Filename Value="..\..\..\..\..\..\..\..\work\delphi\lib\FBC\core\FBMolds.pas"/>
+        <UnitName Value="FBMolds"/>
+        <CursorPos X="5" Y="13"/>
+        <TopLine Value="7"/>
+        <UsageCount Value="9"/>
+      </Unit185>
+      <Unit186>
+        <Filename Value="..\..\..\..\MiniConnection\source\mncExchanges.pas"/>
+        <UnitName Value="mncExchanges"/>
+        <CursorPos X="12" Y="1"/>
+        <TopLine Value="1"/>
+        <UsageCount Value="11"/>
+        <Bookmarks Count="1">
+          <Item0 X="1" Y="178" ID="1"/>
+        </Bookmarks>
+      </Unit186>
+      <Unit187>
+        <Filename Value="..\..\..\..\Commons\mnUtils.pas"/>
+        <UnitName Value="mnUtils"/>
+        <CursorPos X="1" Y="1"/>
+        <TopLine Value="1"/>
+        <UsageCount Value="12"/>
+      </Unit187>
+      <Unit188>
+        <Filename Value="..\..\..\..\MiniConnection\source\mncCSVExchanges.pas"/>
+        <UnitName Value="mncCSVExchanges"/>
+        <CursorPos X="1" Y="167"/>
+        <TopLine Value="156"/>
+        <EditorIndex Value="6"/>
+        <UsageCount Value="14"/>
+        <Loaded Value="True"/>
+      </Unit188>
+      <Unit189>
+        <Filename Value="..\..\..\..\MiniConnection\db\sqlite\mncSQLiteSchemas.pas"/>
+        <UnitName Value="mncSQLiteSchemas"/>
+        <CursorPos X="1" Y="64"/>
+        <TopLine Value="53"/>
+        <EditorIndex Value="9"/>
+        <UsageCount Value="12"/>
+        <Loaded Value="True"/>
+      </Unit189>
+      <Unit190>
+        <Filename Value="..\..\..\..\MiniConnection\db\sqlite\mncSQLite.pas"/>
+        <UnitName Value="mncSQLite"/>
+        <CursorPos X="8" Y="218"/>
+        <TopLine Value="200"/>
+        <UsageCount Value="12"/>
+      </Unit190>
+      <Unit191>
+        <Filename Value="..\..\..\..\..\..\..\delphi\projects\LightPHPEdit\source\editor\EditorEngine.pas"/>
+        <UnitName Value="EditorEngine"/>
+        <CursorPos X="48" Y="12"/>
+        <TopLine Value="1"/>
+        <UsageCount Value="11"/>
+      </Unit191>
+      <Unit192>
+        <Filename Value="..\..\..\..\..\..\..\..\work\delphi\etc\SynEdit\Source\SynCompletionProposal.pas"/>
+        <UnitName Value="SynCompletionProposal"/>
+        <CursorPos X="17" Y="3215"/>
+        <TopLine Value="3209"/>
+        <UsageCount Value="11"/>
+      </Unit192>
+      <Unit193>
+        <Filename Value="..\..\..\..\..\..\..\..\111.csv"/>
+        <CursorPos X="1" Y="1"/>
+        <TopLine Value="1"/>
+        <UsageCount Value="10"/>
+        <SyntaxHighlighter Value="None"/>
+      </Unit193>
+      <Unit194>
+        <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\lcl\include\buttoncontrol.inc"/>
+        <CursorPos X="1" Y="1"/>
+        <TopLine Value="1"/>
+        <UsageCount Value="10"/>
+      </Unit194>
+      <Unit195>
+        <Filename Value="..\..\..\..\MiniConnection\source\mncCSV.pas"/>
+        <UnitName Value="mncCSV"/>
+        <CursorPos X="32" Y="54"/>
+        <TopLine Value="43"/>
+        <EditorIndex Value="1"/>
+        <UsageCount Value="10"/>
+        <Loaded Value="True"/>
+      </Unit195>
+      <Unit196>
+        <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\components\synedit\syneditkeycmds.pp"/>
+        <UnitName Value="SynEditKeyCmds"/>
+        <CursorPos X="16" Y="1008"/>
+        <TopLine Value="999"/>
+        <EditorIndex Value="10"/>
+        <UsageCount Value="10"/>
+        <Loaded Value="True"/>
+      </Unit196>
     </Units>
-    <JumpHistory Count="14" HistoryIndex="13">
+    <JumpHistory Count="30" HistoryIndex="29">
       <Position1>
-        <Filename Value="Main.pas"/>
-        <Caret Line="1303" Column="27" TopLine="1301"/>
+        <Filename Value="sqlvStdClasses.pas"/>
+        <Caret Line="710" Column="3" TopLine="699"/>
       </Position1>
       <Position2>
-        <Filename Value="Main.pas"/>
-        <Caret Line="1" Column="1" TopLine="1"/>
+        <Filename Value="sqlvStdClasses.pas"/>
+        <Caret Line="777" Column="1" TopLine="766"/>
       </Position2>
       <Position3>
-        <Filename Value="..\lib\sqlvSessions.pas"/>
-        <Caret Line="53" Column="15" TopLine="32"/>
+        <Filename Value="..\..\..\..\MiniConnection\source\mncCSVExchanges.pas"/>
+        <Caret Line="265" Column="1" TopLine="243"/>
       </Position3>
       <Position4>
-        <Filename Value="..\lib\sqlvSessions.pas"/>
-        <Caret Line="142" Column="42" TopLine="121"/>
+        <Filename Value="..\..\..\..\MiniConnection\source\mncCSVExchanges.pas"/>
+        <Caret Line="260" Column="14" TopLine="241"/>
       </Position4>
       <Position5>
-        <Filename Value="..\lib\sqlvSessions.pas"/>
-        <Caret Line="1" Column="1" TopLine="1"/>
+        <Filename Value="..\..\..\..\MiniConnection\source\mncCSVExchanges.pas"/>
+        <Caret Line="167" Column="1" TopLine="156"/>
       </Position5>
       <Position6>
-        <Filename Value="..\lib\sqlvSessions.pas"/>
-        <Caret Line="34" Column="13" TopLine="1"/>
+        <Filename Value="..\..\..\..\MiniConnection\source\mncCSVExchanges.pas"/>
+        <Caret Line="165" Column="1" TopLine="154"/>
       </Position6>
       <Position7>
-        <Filename Value="..\lib\sqlvSessions.pas"/>
-        <Caret Line="67" Column="21" TopLine="46"/>
+        <Filename Value="..\..\..\..\MiniConnection\source\mncCSVExchanges.pas"/>
+        <Caret Line="162" Column="1" TopLine="151"/>
       </Position7>
       <Position8>
-        <Filename Value="..\lib\sqlvSessions.pas"/>
-        <Caret Line="66" Column="44" TopLine="46"/>
+        <Filename Value="..\..\..\..\MiniConnection\source\mncCSVExchanges.pas"/>
+        <Caret Line="168" Column="17" TopLine="157"/>
       </Position8>
       <Position9>
-        <Filename Value="..\lib\sqlvSessions.pas"/>
-        <Caret Line="67" Column="52" TopLine="46"/>
+        <Filename Value="..\..\..\..\MiniConnection\db\sqlite\mncSQLiteSchemas.pas"/>
+        <Caret Line="56" Column="39" TopLine="35"/>
       </Position9>
       <Position10>
-        <Filename Value="..\lib\sqlvSessions.pas"/>
-        <Caret Line="101" Column="11" TopLine="80"/>
+        <Filename Value="..\..\..\..\MiniConnection\db\sqlite\mncSQLiteSchemas.pas"/>
+        <Caret Line="236" Column="1" TopLine="225"/>
       </Position10>
       <Position11>
-        <Filename Value="..\lib\sqlvSessions.pas"/>
-        <Caret Line="113" Column="22" TopLine="80"/>
+        <Filename Value="..\..\..\..\MiniConnection\db\sqlite\mncSQLiteSchemas.pas"/>
+        <Caret Line="200" Column="1" TopLine="189"/>
       </Position11>
       <Position12>
-        <Filename Value="sqlvStdClasses.pas"/>
-        <Caret Line="26" Column="15" TopLine="10"/>
+        <Filename Value="..\..\..\..\MiniConnection\db\sqlite\mncSQLiteSchemas.pas"/>
+        <Caret Line="176" Column="11" TopLine="167"/>
       </Position12>
       <Position13>
-        <Filename Value="sqlvStdClasses.pas"/>
-        <Caret Line="363" Column="19" TopLine="346"/>
+        <Filename Value="..\..\..\..\..\..\..\..\programs\lazarus\components\synedit\syneditkeycmds.pp"/>
+        <Caret Line="1" Column="1" TopLine="1"/>
       </Position13>
       <Position14>
-        <Filename Value="sqlvStdClasses.pas"/>
-        <Caret Line="1" Column="1" TopLine="1"/>
+        <Filename Value="..\..\..\..\MiniConnection\source\mncCSV.pas"/>
+        <Caret Line="79" Column="17" TopLine="58"/>
       </Position14>
+      <Position15>
+        <Filename Value="..\..\..\..\MiniConnection\source\mncCSVExchanges.pas"/>
+        <Caret Line="175" Column="12" TopLine="159"/>
+      </Position15>
+      <Position16>
+        <Filename Value="Main.pas"/>
+        <Caret Line="23" Column="44" TopLine="1"/>
+      </Position16>
+      <Position17>
+        <Filename Value="Main.pas"/>
+        <Caret Line="240" Column="15" TopLine="229"/>
+      </Position17>
+      <Position18>
+        <Filename Value="sqlvStdClasses.pas"/>
+        <Caret Line="1069" Column="1" TopLine="1059"/>
+      </Position18>
+      <Position19>
+        <Filename Value="sqlvStdClasses.pas"/>
+        <Caret Line="937" Column="5" TopLine="927"/>
+      </Position19>
+      <Position20>
+        <Filename Value="Main.pas"/>
+        <Caret Line="843" Column="38" TopLine="833"/>
+      </Position20>
+      <Position21>
+        <Filename Value="Main.pas"/>
+        <Caret Line="730" Column="1" TopLine="719"/>
+      </Position21>
+      <Position22>
+        <Filename Value="Main.pas"/>
+        <Caret Line="1136" Column="26" TopLine="1125"/>
+      </Position22>
+      <Position23>
+        <Filename Value="Main.pas"/>
+        <Caret Line="1258" Column="1" TopLine="1247"/>
+      </Position23>
+      <Position24>
+        <Filename Value="sqlvStdClasses.pas"/>
+        <Caret Line="938" Column="5" TopLine="927"/>
+      </Position24>
+      <Position25>
+        <Filename Value="..\..\..\..\MiniConnection\source\mncCSV.pas"/>
+        <Caret Line="80" Column="35" TopLine="68"/>
+      </Position25>
+      <Position26>
+        <Filename Value="..\..\..\..\MiniConnection\source\mncCSV.pas"/>
+        <Caret Line="225" Column="6" TopLine="204"/>
+      </Position26>
+      <Position27>
+        <Filename Value="..\..\..\..\MiniConnection\source\mncCSV.pas"/>
+        <Caret Line="284" Column="3" TopLine="267"/>
+      </Position27>
+      <Position28>
+        <Filename Value="..\..\..\..\MiniConnection\source\mncCSV.pas"/>
+        <Caret Line="54" Column="32" TopLine="43"/>
+      </Position28>
+      <Position29>
+        <Filename Value="..\..\..\..\MiniConnection\source\mncConnections.pas"/>
+        <Caret Line="428" Column="23" TopLine="415"/>
+      </Position29>
+      <Position30>
+        <Filename Value="..\..\..\..\MiniConnection\source\mncConnections.pas"/>
+        <Caret Line="435" Column="63" TopLine="415"/>
+      </Position30>
     </JumpHistory>
   </ProjectOptions>
   <CompilerOptions>
@@ -1397,6 +1565,7 @@
     </Linking>
     <Other>
       <Verbosity>
+        <ShowHints Value="False"/>
         <ShowGenInfo Value="False"/>
       </Verbosity>
       <WriteFPCLogo Value="False"/>

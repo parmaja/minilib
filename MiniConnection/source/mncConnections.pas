@@ -52,12 +52,13 @@ type
 
 //Connection as like connect by FTP server to send commands or a Database to send SQL
 {
-  smNone: No transactions support
-  smTransactions: all session have the same transacion like PG and SQLite
-                  But note that we make in PG for every session a new connection to database
-  smMultiTransactions: every session have transacion like as Firebird
+  smNone:                No transactions support
+  smSingleTransaction:  All sessions have the same transacion like PG and SQLite
+                         but we make in PG for every session a new connection to database so PG is smMultiTransactions
+  smEmulateTransaction: Single transaction but last session commited make the real commit
+  smMultiTransaction:   Every session have transacion like as Firebird
 }
-  TmncTransactionMode = (smNone, smSingleTransactions, smMultiTransactions);
+  TmncTransactionMode = (smNone, smSingleTransaction, smEmulateTransaction, smMultiTransaction);
 
   { TmncConnection }
 
@@ -120,6 +121,7 @@ type
   protected
     function GetActive: Boolean; virtual;
     procedure CheckActive;
+    procedure DoInit; virtual;
     procedure DoStart; virtual; abstract;
     procedure DoCommit; virtual; abstract;
     procedure DoRollback; virtual; abstract;
@@ -138,11 +140,20 @@ type
     property Params: TStrings read FParams write SetParams;
   end;
 
+  TmncBlobType = (blobBinary, blobText);
+
   { TmncCustomField }
 
   TmncCustomField = class(TObject)
   private
+    FBlobType: TmncBlobType;
+    FIsBlob: Boolean;
     FName: string;
+    function GetAsHex: string;
+    procedure SetAsHex(const AValue: string);
+    function GetAsText: string;
+    procedure SetAsText(const AValue: string);
+
     procedure SetAsNullString(const Value: string);
 
     function GetAsAnsiString: ansistring;
@@ -202,6 +213,8 @@ type
     property AsDate: TDateTime read GetAsDate write SetAsDate;
     property AsTime: TDateTime read GetAsTime write SetAsTime;
     property AsDateTime: TDateTime read GetAsDateTime write SetAsDateTime;
+    property AsHex: string read GetAsHex write SetAsHex;
+    property AsText: string read GetAsText write SetAsText; //binary text blob convert to hex
 
     function GetIsNull: Boolean;
     function GetIsEmpty: Boolean; virtual;
@@ -209,6 +222,8 @@ type
     property Text: string read GetText;
     property IsEmpty: Boolean read GetIsEmpty;
     property IsNull: Boolean read GetIsNull;
+    property IsBlob: Boolean read FIsBlob write FIsBlob default false;
+    property BlobType: TmncBlobType read FBlobType write FBlobType default blobBinary;
 {    procedure LoadFromFile(const FileName: string);
     procedure LoadFromStream(Stream: TStream);
     procedure LoadFromIStream(Stream: IStreamPersist);
@@ -274,6 +289,9 @@ type
   published
     property IsEmpty;
     property IsNull;
+    property IsBlob;
+    property BlobType;
+
     property Value;
     property AsVariant;
     property AsString;
@@ -287,6 +305,8 @@ type
     property AsDate;
     property AsTime;
     property AsDateTime;
+    property AsText; //binary text blob convert to hex
+    property AsHex;
   end;
 
   { TmncCustomRecord }
@@ -336,9 +356,9 @@ type
     function Add(Field: TmncField): TmncRecordItem; overload;
     function Add(FieldIndex: Integer; Value: Variant): TmncRecordItem; overload;
     property Fields: TmncFields read FFields;
-    property Items[Index: Integer]: TmncRecordItem read GetItem;
     property Value[Index: string]: Variant read GetValue write SetValue;
     property Field[Index: string]: TmncRecordItem read GetField; default;
+    property Items[Index: Integer]: TmncRecordItem read GetItem;
     property RowID: Integer read FRowID write FRowID default 0; //most of SQL engines have this value
   end;
 
@@ -404,12 +424,12 @@ type
     function GetActive: Boolean; virtual;
     procedure SetActive(const Value: Boolean); virtual;
   public
+    constructor Create; virtual;
+    constructor CreateBy(vSession: TmncSession);
     destructor Destroy; override;
     property Session: TmncSession read FSession write SetSession;
     property Active: Boolean read GetActive write SetActive;
   end;
-
-//  TmncCommandStatus = (csSQLEmpty, csSQLCommand, csSQLRows);
 
   { TmncCommand }
 
@@ -443,7 +463,7 @@ type
     property Request: TStrings read FRequest write SetRequest;
     property ParamList: TmncParamList read FParamList; //for Dublicated names when pass the params when execute
   public
-    constructor Create(vSession: TmncSession);
+    constructor Create; override;
     destructor Destroy; override;
     procedure Prepare;
     function Execute: Boolean;
@@ -549,19 +569,6 @@ begin
   FParamList.Clear;
 end;
 
-constructor TmncCommand.Create(vSession: TmncSession);
-begin
-  inherited Create;
-  Session := vSession;
-  FRequest := TStringList.Create;
-  (FRequest as TStringList).OnChange := DoRequestChanged;
-
-  FFields := TmncFields.Create;
-  FParams := TmncParams.Create;
-  FParamList := TmncParamList.Create;
-  FNextOnExecute := True;
-end;
-
 destructor TmncCommand.Destroy;
 begin
   Active := False;
@@ -578,6 +585,18 @@ procedure TmncCommand.DoRequestChanged(Sender: TObject);
 begin
   if Active then
     Close;
+end;
+
+constructor TmncCommand.Create;
+begin
+  inherited;
+  FRequest := TStringList.Create;
+  (FRequest as TStringList).OnChange := DoRequestChanged;
+
+  FFields := TmncFields.Create;
+  FParams := TmncParams.Create;
+  FParamList := TmncParamList.Create;
+  FNextOnExecute := True;
 end;
 
 function TmncCommand.EOF: Boolean;
@@ -670,7 +689,7 @@ procedure TmncCommand.Rollback;
 begin
   if Active then
     Close;
-  DoCommit;
+  DoRollback;
 end;
 
 procedure TmncCommand.SetActive(const Value: Boolean);
@@ -734,6 +753,17 @@ procedure TmncLinkObject.SetActive(const Value: Boolean);
 begin
 end;
 
+constructor TmncLinkObject.Create;
+begin
+  inherited Create;
+end;
+
+constructor TmncLinkObject.CreateBy(vSession: TmncSession);
+begin
+  Create;
+  Session := vSession;//Session not FSession
+end;
+
 destructor TmncLinkObject.Destroy;
 begin
   Session := nil;
@@ -761,17 +791,25 @@ procedure TmncSession.Commit;
 begin
   if not Active then
     raise EmncException.Create('Oops you have not started yet!');
-
   Dec(FStartCount);
   case Connection.Mode of
-    smMultiTransactions: DoCommit;
-    smSingleTransactions:
+    smMultiTransaction: DoCommit;
+    smSingleTransaction:
       begin
         if Connection.FStartCount = 0 then
           raise EmncException.Create('Connection not started yet!');
         Dec(Connection.FStartCount);
-        if Connection.FStartCount = 0 then
+        if (Connection.FStartCount > 0) then
           DoCommit;
+      end;
+    smEmulateTransaction:
+      begin
+        if Connection.FStartCount = 0 then
+          raise EmncException.Create('Connection not started yet!');
+        Dec(Connection.FStartCount);
+        DoCommit;
+        if (Connection.FStartCount > 0) then
+          DoStart;
       end;
   end;
 end;
@@ -806,20 +844,33 @@ begin
     raise EmncException.Create('Session is not active/opened');
 end;
 
+procedure TmncSession.DoInit;
+begin
+end;
+
 procedure TmncSession.Rollback;
 begin
   if not Active then
     raise EmncException.Create('Oops you have not started yet!');
   Dec(FStartCount);
   case Connection.Mode of
-    smMultiTransactions: DoRollback;
-    smSingleTransactions:
+    smMultiTransaction: DoRollback;
+    smSingleTransaction:
       begin
         if Connection.FStartCount = 0 then
           raise EmncException.Create('Connection not started yet!');
         Dec(Connection.FStartCount);
-        if Connection.FStartCount = 0 then
+        if (Connection.FStartCount > 0) then
           DoRollback;
+      end;
+    smEmulateTransaction:
+      begin
+        if Connection.FStartCount = 0 then
+          raise EmncException.Create('Connection not started yet!');
+        Dec(Connection.FStartCount);
+        DoRollback;
+        if (Connection.FStartCount > 0) then
+          DoStart;
       end;
   end;
 end;
@@ -856,9 +907,11 @@ procedure TmncSession.Start;
 begin
   if (Connection.Mode <> smNone) and (Active) then
     raise EmncException.Create('Session is already active.');
+  DoInit;
   case Connection.Mode of
-    smMultiTransactions: DoStart;
-    smSingleTransactions:
+    smMultiTransaction: DoStart;
+    smSingleTransaction,
+    smEmulateTransaction:
       begin
         if Connection.FStartCount = 0 then
           DoStart;
@@ -1287,6 +1340,32 @@ begin
     AsString := Value;
 end;
 
+function TmncCustomField.GetAsHex: string;
+var
+  s: string;
+begin
+  s := GetAsString;
+  SetLength(Result, Length(s) * 2);
+  BinToHex(PChar(s), @Result[1], Length(s));
+end;
+
+function TmncCustomField.GetAsText: string;
+begin
+  if (IsBlob) and (BlobType = blobText) then
+    Result := AsHex
+  else
+    Result := AsString;
+end;
+
+procedure TmncCustomField.SetAsHex(const AValue: string);
+var
+  s: string;
+begin
+  SetLength(s, Length(Value) div 2);
+  HexToBin(PChar(AValue), @s[1], Length(s));
+  AsString := s;
+end;
+
 procedure TmncCustomField.SetAsBoolean(const Value: Boolean);
 begin
   AsInteger := Ord(Value);
@@ -1336,6 +1415,11 @@ end;
 function TmncCustomField.GetAsWideString: widestring;
 begin
   Result := GetAsString;//the compiler will convert it
+end;
+
+procedure TmncCustomField.SetAsText(const AValue: string);
+begin
+
 end;
 
 procedure TmncCustomField.SetAsWideString(const Value: widestring);
@@ -1391,4 +1475,3 @@ initialization
 finalization
   FreeAndNil(FConnectionLock);
 end.
-

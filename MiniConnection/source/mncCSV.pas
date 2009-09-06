@@ -76,7 +76,7 @@ type
     property Session: TmncCSVSession read GetSession;
     property Connection: TmncCSVConnection read GetConnection;
   public
-    constructor Create(vSession: TmncSession; vStream: TStream; vMode: TmncCSVMode);
+    constructor Create(vSession: TmncSession; vStream: TStream; vMode: TmncCSVMode); overload;
     destructor Destroy; override;
     property Mode: TmncCSVMode read FMode;
     //EOFOnEmpty: when True make EOF when read empty line  
@@ -131,7 +131,7 @@ end;
 
 constructor TmncCSVCommand.Create(vSession: TmncSession; vStream: TStream; vMode: TmncCSVMode);
 begin
-  inherited Create(vSession);
+  inherited CreateBy(vSession);
   FMode := vMode;
   FStream := vStream;
 end;

@@ -53,7 +53,7 @@ implementation
 
 function TmncSQLiteSchema.CreateCMD(SQL: string): TmncSQLiteCommand;
 begin
-  Result := TmncSQLiteCommand.Create(Session);
+  Result := TmncSQLiteCommand.CreateBy(Session);
   Result.SQL.Text := SQL;
 end;
 
@@ -61,7 +61,6 @@ procedure TmncSQLiteSchema.EnumCMD(Schema: TmncSchemaItems; SQL: string; Fields:
 var
   aCMD: TmncSQLiteCommand;
   aItem: TmncSchemaItem;
-  aComment: string;
   i: Integer;
 begin
   aCMD := CreateCMD(SQL);
@@ -173,6 +172,7 @@ procedure TmncSQLiteSchema.EnumIndices(Schema: TmncSchemaItems; MemberName: stri
 var
   s: string;
 begin
+  s := '';
   if MemberName <> '' then
   begin
     s := s + 'PRAGMA index_list('''+ MemberName +''')' + GetSortSQL(Options);
@@ -197,7 +197,6 @@ end;
 procedure TmncSQLiteSchema.GetIndexInfo(Schema: TmncSchemaItems; MemberName: string; Options: TschmEnumOptions);
 var
   aCMD: TmncSQLiteCommand;
-  i: Integer;
   aItem: TmncSchemaItem;
 begin
   aCMD := CreateCMD('PRAGMA index_info('''+ MemberName +''')');
@@ -233,7 +232,6 @@ procedure TmncSQLiteSchema.EnumFields(Schema: TmncSchemaItems; MemberName: strin
   Options: TschmEnumOptions);
 var
   aCMD: TmncSQLiteCommand;
-  i: Integer;
   aItem: TmncSchemaItem;
 begin
   aCMD := CreateCMD('pragma table_info(''' + (MemberName) + ''')' + GetSortSQL(Options));

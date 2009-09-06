@@ -205,6 +205,24 @@ type
     procedure DoExecute(const Value: string; Params: TmncParams = nil); override;
   end;
 
+  { TsqlvSelectTable }
+
+  TsqlvSelectTable = class(TsqlvGuiNode)
+  public
+    constructor Create; override;
+    procedure DoExecute(const Value: string; Params: TmncParams = nil); override;
+  end;
+
+  { TsqlvDropTable }
+
+  { TsqlvInsertTable }
+
+  TsqlvInsertTable = class(TsqlvGuiNode)
+  public
+    constructor Create; override;
+    procedure DoExecute(const Value: string; Params: TmncParams = nil); override;
+  end;
+
   { TsqlvDropField }
 
   TsqlvDropField = class(TsqlvGuiNode)
@@ -224,6 +242,14 @@ type
   { TsqlvEmptyTable }
 
   TsqlvEmptyTable = class(TsqlvGuiNode)
+  public
+    constructor Create; override;
+    procedure DoExecute(const Value: string; Params: TmncParams = nil); override;
+  end;
+
+  { TsqlvExportSQL }
+
+  TsqlvExportSQL = class(TsqlvGuiNode)
   public
     constructor Create; override;
     procedure DoExecute(const Value: string; Params: TmncParams = nil); override;
@@ -748,12 +774,11 @@ end;
 
 procedure TsqlvGuiNode.EnumGroups(vGroup, vMemberName: string; Params: TmncParams; vSelectDefault: Boolean);
 var
-  i: Integer;
   aNodes: TsqlvNodes;
 begin
   aNodes := TsqlvNodes.Create;
   try
-    sqlvEngine.Enum(vGroup, aNodes);
+    sqlvEngine.Enum(vGroup, aNodes, sqlvEngine.Session.IsActive);
     LoadGroup(aNodes, vMemberName, Params, vSelectDefault);
   finally
     aNodes.Free;
@@ -909,8 +934,8 @@ begin
     MembersGrid.Row := d;
     MembersGrid.AutoSizeColumns;
     SchemaName := vSchemaName;
-    UpdateActions;
     State := sqlsMembers;
+    UpdateToolActions(vSchemaName);
   end;
 end;
 
@@ -1041,16 +1066,100 @@ begin
 end;
 
 procedure TsqlvDropTable.DoExecute(const Value: string; Params: TmncParams);
-var
-  aStrings: TStringList;
 begin
   inherited;
   LoadEditor('drop table ' + Value);
 end;
 
+{ TsqlvSelectTable }
+
+constructor TsqlvSelectTable.Create;
+begin
+  inherited Create;
+  Group := 'Table';
+  Name := 'SelectTable';
+  Title := 'Select';
+  Kind := sokTable;
+  Style := Style + [nsCommand];
+  ImageIndex := IMG_TABLE;
+end;
+
+procedure TsqlvSelectTable.DoExecute(const Value: string; Params: TmncParams);
+begin
+  inherited;
+  LoadEditor('select * from ' + Value);
+end;
+
+{ TsqlvInsertTable }
+
+constructor TsqlvInsertTable.Create;
+begin
+  inherited Create;
+  Group := 'Table';
+  Name := 'InsertTable';
+  Title := 'Insert';
+  Kind := sokTable;
+  Style := Style + [nsCommand];
+  ImageIndex := IMG_TABLE;
+end;
+
+procedure TsqlvInsertTable.DoExecute(const Value: string; Params: TmncParams);
+var
+  aSchema: TmncSQLiteSchema;
+  aItems: TmncSchemaItems;
+  s1, s2: string;
+  i: Integer;
+begin
+  inherited DoExecute(Value, Params);
+  aItems := TmncSchemaItems.create;
+  try
+    aSchema := TmncSQLiteSchema.Create;
+    try
+      aSchema.Session := sqlvEngine.Session.DBSession;
+      aSchema.EnumFields(aItems, Value);
+    finally
+      aSchema.Free
+    end;
+    s1 := '';
+    s2 := '';
+    for i := 0 to aItems.Count - 1 do
+    begin
+      if i > 0 then
+      begin
+        s1 := s1 + ' ,';
+        s2 := s2 + ' ,';
+      end;
+      s1 := s1+ aItems[i].Name;
+      s2 := s2 + '?' + aItems[i].Name;
+    end;
+  finally
+    aItems.Free;
+  end;
+  LoadEditor('insert into ' + Value + '(' + s1 + ') values (' + s2 +')');
+end;
+
+{ TsqlvExportSQL }
+
+constructor TsqlvExportSQL.Create;
+begin
+  inherited Create;
+  Group := 'GUI.SQL';
+  Name := 'ExportSQL';
+  Title := 'Export';
+  Kind := sokNone;
+  Style := [nsNeedSession, nsCommand];
+  ImageIndex := IMG_COMMAND;
+end;
+
+procedure TsqlvExportSQL.DoExecute(const Value: string; Params: TmncParams);
+begin
+  with MainForm do
+    ExecuteScript(execExport);
+end;
+
 initialization
   sqlvEngine.RegisterViewer([TsqlvDatabase]);
-  sqlvEngine.RegisterViewer([TsqlvTables, TsqlvTable, TsqlvTableFields, TsqlvEmptyTable, TsqlvDropTable]);
+  sqlvEngine.RegisterViewer([TsqlvTables, TsqlvTable, TsqlvTableFields, TsqlvEmptyTable, TsqlvDropTable, TsqlvSelectTable, TsqlvInsertTable]);
   sqlvEngine.RegisterViewer([TsqlvIndices, TsqlvTableIndices, TsqlvIndex, TsqlvDropIndex]);
   sqlvEngine.RegisterViewer([TsqlvDropField{, TsqlvNewField}]);
   sqlvEngine.RegisterViewer([TsqlvViews, TsqlvView]);
@@ -1058,5 +1167,6 @@ initialization
   //sqlvEngine.RegisterViewer([TsqlvDomains, TsqlvExceptions, TsqlvFunctions]);
   //sqlvEngine.RegisterViewer([TsqlvProcedures, TsqlvProcedure]);
   //sqlvEngine.RegisterViewer([TsqlvSequences]);
+  sqlvEngine.RegisterViewer([TsqlvExportSQL]);
 end.
 

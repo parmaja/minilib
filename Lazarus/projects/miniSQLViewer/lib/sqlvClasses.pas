@@ -16,8 +16,7 @@ uses
   mnXMLRttiProfile, mnXMLStreams,
   Dialogs, Contnrs,
   mncSchemas, mnUtils,
-  sqlvConsts, sqlvSessions,
-  Menus, Buttons, ImgList;
+  sqlvConsts, sqlvSessions, ImgList;
 
 const
   IMG_UNKOWN = 0;
@@ -68,9 +67,10 @@ type
   nsCommand: It is command not SQL member
   nsEditor: Show a script in SQL editor like triggers or stored prpocedures
   nsButton: Make it visible as button or menu in gui form
+  nsNeedSession: Enum only when session is active
 }
 
-  TsqlvNodeStyle = set of (nsDefault, nsCommand, nsEditor, nsButton);
+  TsqlvNodeStyle = set of (nsDefault, nsCommand, nsEditor, nsButton, nsNeedSession);
 
   { TsqlvNode }
 
@@ -114,7 +114,7 @@ type
     function GetItem(Index: Integer): TsqlvNode;
     procedure SetItem(Index: Integer; const Value: TsqlvNode);
   public
-    procedure Enum(Name: string; Nodes: TsqlvNodes; OnlyDefaults:Boolean = False); overload;
+    procedure Enum(Name: string; Nodes: TsqlvNodes; SessionActive:Boolean; OnlyDefaults: Boolean = False); overload;
     function Find(const Name: string): TsqlvNode; overload;
     function Find(const Group, Name: string): TsqlvNode; overload;
     property Items[Index: Integer]: TsqlvNode read GetItem write SetItem; default;
@@ -194,39 +194,10 @@ type
     property SQLHistory: TsqlvHistory read FSQLHistory;
   end;
 
-  { TsqlvMenuItem }
-
-  TsqlvMenuItem = class(TMenuItem)
-  private
-    FNode: TsqlvNode;
-    FMemberName: string;
-  public
-    procedure Click; override;
-    property Node: TsqlvNode read FNode write FNode;
-    property MemberName: string read FMemberName write FMemberName;
-  end;
-
-  { TsqlvButton }
-
-  TsqlvButton = class(TButton)
-  private
-    FNode: TsqlvNode;
-  protected
-    function GetMemberName: string; virtual;
-  public
-    GroupInfo: TSchemaInfo;//Table,Accounts
-    SchemaName: string;//Field
-    procedure Click; override;
-    property Node: TsqlvNode read FNode write FNode;
-  end;
-
 var
   AddOpenSaveDialogFilters: string = '';
 
 function sqlvEngine: TsqlvEngine;
-
-procedure FillPopupMenu(PopupMenu: TPopupMenu; Session: TsqlvSession; Node: TsqlvNode; MemberName: string); overload;
-procedure FillPopupMenu(PopupMenu: TPopupMenu; Session: TsqlvSession; Group: string; MemberName: string); overload;
 
 implementation
 
@@ -300,7 +271,7 @@ end;
 
 { TsqlvNodes }
 
-procedure TsqlvCustomNodes.Enum(Name: string; Nodes: TsqlvNodes; OnlyDefaults:Boolean = False);
+procedure TsqlvCustomNodes.Enum(Name: string; Nodes: TsqlvNodes; SessionActive:Boolean; OnlyDefaults:Boolean = False);
 var
   i: Integer;
   aDefault: Integer;
@@ -311,7 +282,7 @@ begin
   c := 0;
   for i := 0 to Count - 1 do
   begin
-    if SameText(Items[i].Group, Name) and (not OnlyDefaults or (nsDefault in Items[i].Style)) then
+    if SameText(Items[i].Group, Name) and (not OnlyDefaults or (nsDefault in Items[i].Style)) and (SessionActive or not (nsNeedSession in Items[i].Style)) then
     begin
       if (aDefault < 0) and (nsDefault in Items[i].Style) then
         aDefault := c;
@@ -419,12 +390,12 @@ end;}
 
 procedure TsqlvNode.Enum(Nodes: TsqlvNodes);
 begin
-  sqlvEngine.Enum(Name, Nodes);
+  sqlvEngine.Enum(Name, Nodes, sqlvEngine.Session.IsActive);
 end;
 
 procedure TsqlvNode.EnumDefaults(Nodes: TsqlvNodes);
 begin
-  sqlvEngine.Enum(Name, Nodes, True);
+  sqlvEngine.Enum(Name, Nodes, sqlvEngine.Session.IsActive, True);
 end;
 
 procedure TsqlvNode.EnumHeader(Header: TStringList);
@@ -450,76 +421,6 @@ end;
 
 procedure TsqlvNode.ShowProperty;
 begin
-end;
-
-{ TsqlvMenuItem }
-
-procedure TsqlvMenuItem.Click;
-begin
-  inherited;
-  //Node.Execute(MemberName);
-end;
-
-procedure FillPopupMenu(PopupMenu: TPopupMenu; Session: TsqlvSession; Node: TsqlvNode; MemberName: string);
-var
-  aNodes: TsqlvNodes;
-  aMenuItem: TsqlvMenuItem;
-  i: Integer;
-begin
-  if Node <> nil then
-  begin
-    aNodes := TsqlvNodes.Create;
-    try
-      if Node.CanExecute then
-      begin
-        aMenuItem := TsqlvMenuItem.Create(PopupMenu);
-        aMenuItem.Caption := 'Open';
-        aMenuItem.Node := Node;
-        aMenuItem.Default := True;
-        aMenuItem.MemberName := Node.Name;
-        aMenuItem.ImageIndex := Node.ImageIndex;
-        PopupMenu.Items.Add(aMenuItem);
-      end;
-
-      Node.Enum(aNodes);
-      for i := 0 to aNodes.Count - 1 do
-      begin
-        aMenuItem := TsqlvMenuItem.Create(PopupMenu);
-        aMenuItem.Caption := aNodes[i].Title;
-        aMenuItem.Node := aNodes[i];
-        aMenuItem.Default := (nsDefault in aMenuItem.Node.Style);
-        aMenuItem.MemberName := MemberName;
-        aMenuItem.ImageIndex := aMenuItem.Node.ImageIndex;
-        PopupMenu.Items.Add(aMenuItem);
-      end;
-    finally
-      aNodes.Free;
-    end;
-  end;
-end;
-
-procedure FillPopupMenu(PopupMenu: TPopupMenu; Session: TsqlvSession; Group: string; MemberName: string);
-var
-  aNodes: TsqlvNodes;
-  aMenuItem: TsqlvMenuItem;
-  i: Integer;
-begin
-  aNodes := TsqlvNodes.Create;
-  try
-    sqlvEngine.Enum(Group, aNodes);
-    for i := 0 to aNodes.Count - 1 do
-    begin
-      aMenuItem := TsqlvMenuItem.Create(PopupMenu);
-      aMenuItem.Caption := aNodes[i].Title;
-      aMenuItem.Node := aNodes[i];
-      aMenuItem.Default := nsDefault in aMenuItem.Node.Style;
-      aMenuItem.MemberName := MemberName;
-      aMenuItem.ImageIndex := aMenuItem.Node.ImageIndex;
-      PopupMenu.Items.Add(aMenuItem);
-    end;
-  finally
-    aNodes.Free;
-  end;
 end;
 
 procedure TsqlvEngine.Launch(Name: string; Group, MemberName: string; vSilent:Boolean); overload;
@@ -751,19 +652,6 @@ begin
     Index := FIndex - 1;
     Changed;
   end;
-end;
-
-{ TsqlvButton }
-
-function TsqlvButton.GetMemberName: string;
-begin
-  Result := '';
-end;
-
-procedure TsqlvButton.Click;
-begin
-  inherited Click;
-  Node.Execute(GetMemberName, TmncParams.Create([GroupInfo.Name], [GroupInfo.Value]));
 end;
 
 initialization
