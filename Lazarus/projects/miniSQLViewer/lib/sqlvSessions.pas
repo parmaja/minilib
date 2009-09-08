@@ -37,6 +37,8 @@ type
     FOnConnected: TsqlvOnNotifySession;
     FOnSessionStarted: TsqlvOnNotifySession;
     FOnSessionStoped: TsqlvOnNotifySession;
+    FExclusive: Boolean;
+    FVacuum: Boolean;
     procedure RunLoginSQL;
     procedure RunLogoutSQL;
     procedure ConnectionAfterConnect(Sender: TObject);
@@ -47,7 +49,7 @@ type
     constructor Create;
     destructor Destroy; override;
     procedure LoadSchema;
-    procedure Open(Name:string; vAutoCreate: Boolean);
+    procedure Open(Name:string; vAutoCreate, vExclusive, vVacuum: Boolean);
     procedure Close;
     function IsActive: Boolean;
     procedure Connected;
@@ -77,6 +79,9 @@ uses
 
 procedure TsqlvSession.Connected;
 begin
+  if FVacuum then
+    DBConnection.Execute('vacuum');
+  DBSession.Exclusive := FExclusive;
   DBSession.Start;
   LoadSchema;
   RunLoginSQL;
@@ -147,8 +152,10 @@ begin
   end;
 end;
 
-procedure TsqlvSession.Open(Name: string; vAutoCreate: Boolean);
+procedure TsqlvSession.Open(Name: string; vAutoCreate, vExclusive, vVacuum: Boolean);
 begin
+  FVacuum := vVacuum;
+  FExclusive := vExclusive;
   DBConnection.Resource := Name;
   DBConnection.AutoCreate := vAutoCreate;
   DBConnection.Connect;
@@ -164,7 +171,7 @@ end;
 
 function TsqlvSession.IsActive: Boolean;
 begin
-  Result := DBSession.Active;
+  Result := DBConnection.Active;
 end;
 
 procedure TsqlvSession.RunLoginSQL;

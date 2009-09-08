@@ -1,0 +1,21 @@
+Export to CSV file
+select a Table
+in Actions select "Select"
+now you have in SQL editor
+
+select * from groups
+
+in Actions select a Export, choose the file to export and your options, easy :)
+You can export any SQL result event complex one.
+
+How to import CSV file
+you need a SQL statemnt have params for example:
+select a Table
+in Actions select 'insert'
+insert into Genres(GnrID ,GnrName) values (?GnrID ,?GnrName)
+
+Not there is 2 params GnrID and GnrName
+CSV file must have this columns too
+now in SQL editor select from actions "Import"
+choose the file to import and your options
+

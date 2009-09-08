@@ -40,6 +40,7 @@ type
   public
     constructor Create;
     procedure Interrupt;
+    procedure Execute(SQL: string);
     property DBHandle: PSqlite3 read FDBHandle;
   end;
 
@@ -152,6 +153,12 @@ destructor TmncSQLiteSession.Destroy;
 begin
   inherited;
 end;
+
+procedure TmncSQLiteSession.Execute(SQL: string);
+begin
+  Connection.Execute(SQL);
+end;
+
 procedure TmncSQLiteSession.DoStart;
 begin
   Execute('BEGIN');
@@ -172,7 +179,7 @@ begin
   //Nothing to do
 end;
 
-procedure TmncSQLiteSession.Execute(SQL: string);
+procedure TmncSQLiteConnection.Execute(SQL: string);
 var
  lMsg  : PChar;
  s : Utf8String;
@@ -180,13 +187,13 @@ var
 begin
   lMSg := nil;
   s := SQL;
-  r := sqlite3_exec(Connection.FDBHandle, PChar(s), nil, nil, @lMsg);
+  r := sqlite3_exec(FDBHandle, PChar(s), nil, nil, @lMsg);
   if lMSg <> nil then
   begin
     s := lMsg;
     sqlite3_free(lMSg);
   end;
-  Connection.CheckError(r, s);
+  CheckError(r, s);
 end;
 
 function TmncSQLiteSession.GetLastInsertID: Int64;

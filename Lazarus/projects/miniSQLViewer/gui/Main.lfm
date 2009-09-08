@@ -150,6 +150,7 @@ object MainForm: TMainForm
         ParentFont = False
         TabOrder = 0
         BookMarkOptions.Xoffset = -18
+        BookMarkOptions.OnChange = nil
         Gutter.Width = 23
         Gutter.MouseActions = <        
           item
@@ -647,40 +648,49 @@ object MainForm: TMainForm
         end
       end
       object SQLLoadBtn: TButton
-        Left = 52
+        Left = 94
         Height = 19
         Top = 4
-        Width = 46
+        Width = 40
         Caption = '&Load'
         OnClick = SQLLoadBtnClick
         TabOrder = 1
       end
       object SQLSaveBtn: TButton
-        Left = 99
+        Left = 135
         Height = 19
         Top = 4
-        Width = 46
+        Width = 40
         Caption = '&Save'
         OnClick = SQLSaveBtnClick
         TabOrder = 2
       end
       object SQLSaveAsBtn: TButton
-        Left = 146
+        Left = 176
         Height = 19
         Top = 4
-        Width = 46
-        Caption = 'Save As'
+        Width = 40
+        Caption = 'As'
         OnClick = SQLSaveAsBtnClick
         TabOrder = 3
       end
       object SQLNewBtn: TButton
-        Left = 5
+        Left = 53
         Height = 19
         Top = 4
-        Width = 46
+        Width = 40
         Caption = '&New'
         OnClick = SQLNewBtnClick
         TabOrder = 4
+      end
+      object ExecuteBtn: TButton
+        Left = 4
+        Height = 19
+        Top = 4
+        Width = 48
+        Caption = 'Execute'
+        OnClick = ExecuteBtnClick
+        TabOrder = 5
       end
     end
     object ResultPanel: TPanel
@@ -852,6 +862,26 @@ object MainForm: TMainForm
         OnClick = RefreshBtnClick
         TabOrder = 7
       end
+      object ExclusiveChk: TCheckBox
+        Left = 9
+        Height = 17
+        Top = 183
+        Width = 91
+        BidiMode = bdRightToLeftReadingOnly
+        Caption = 'Open exclusive'
+        ParentBidiMode = False
+        TabOrder = 8
+      end
+      object VacuumChk: TCheckBox
+        Left = 9
+        Height = 17
+        Top = 203
+        Width = 125
+        BidiMode = bdRightToLeftReadingOnly
+        Caption = 'Vacuum when connect'
+        ParentBidiMode = False
+        TabOrder = 9
+      end
     end
     object GroupPanel: TPanel
       Left = 87
@@ -934,9 +964,9 @@ object MainForm: TMainForm
       end
     end
     object InfoPanel: TPanel
-      Left = 389
+      Left = 138
       Height = 123
-      Top = 187
+      Top = 174
       Width = 170
       BevelInner = bvLowered
       BevelOuter = bvNone
@@ -1052,16 +1082,6 @@ object MainForm: TMainForm
       OnClick = StartBtnClick
       TabOrder = 2
     end
-    object ExecuteBtn: TButton
-      Left = 354
-      Height = 20
-      Top = 2
-      Width = 50
-      Align = alLeft
-      Caption = 'Execute'
-      OnClick = ExecuteBtnClick
-      TabOrder = 3
-    end
     object ResultsBtn: TButton
       Left = 306
       Height = 20
@@ -1070,7 +1090,7 @@ object MainForm: TMainForm
       Align = alLeft
       Caption = 'Results'
       OnClick = ResultsBtnClick
-      TabOrder = 4
+      TabOrder = 3
     end
     object InfoBtn: TButton
       Left = 273
@@ -1080,7 +1100,7 @@ object MainForm: TMainForm
       Align = alLeft
       Caption = 'Info'
       OnClick = InfoBtnClick
-      TabOrder = 5
+      TabOrder = 4
     end
     object SchemaBtn: TButton
       Left = 224
@@ -1090,7 +1110,7 @@ object MainForm: TMainForm
       Align = alLeft
       Caption = 'Schema'
       OnClick = SchemaBtnClick
-      TabOrder = 6
+      TabOrder = 5
     end
     object SQLBtn: TButton
       Left = 193
@@ -1101,7 +1121,7 @@ object MainForm: TMainForm
       Align = alLeft
       Caption = 'SQL'
       OnClick = SQLBtnClick
-      TabOrder = 7
+      TabOrder = 6
     end
     object OpenBtn: TButton
       Left = 157
@@ -1111,7 +1131,7 @@ object MainForm: TMainForm
       Align = alLeft
       Caption = 'Open'
       OnClick = OpenBtnClick
-      TabOrder = 8
+      TabOrder = 7
     end
   end
   object MainMenu: TMainMenu

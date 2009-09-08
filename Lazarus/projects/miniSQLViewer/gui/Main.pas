@@ -14,9 +14,10 @@ unit Main;
 {todo: Auto complete: DONE}
 {todo: search for members: Done}
 {todo: More short cuts: Done}
+{todo: Export/Import As CSV: DONE}
+{todo: Ask for param when have params in normal execute sql script: DONE}
 
 {todo: Assoiate with *.sqlite}
-{todo: Export/Import As CSV}
 {todo: Extract the schema of whale database}
 {todo: Find and Replace}
 {todo: Blob access as PNG or JPG}
@@ -87,6 +88,9 @@ type
 
   TMainForm = class(TForm)
     ActionsPanel: TPanel;
+    CacheSchemaChk1: TCheckBox;
+    ExclusiveChk: TCheckBox;
+    VacuumChk: TCheckBox;
     ExecuteBtn: TButton;
     FirstBtn: TSpeedButton;
     GroupsList: TComboBox;
@@ -151,7 +155,6 @@ type
     procedure DataPathCboExit(Sender: TObject);
     procedure DisconnectBtnClick(Sender: TObject);
     procedure ExecuteBtnClick(Sender: TObject);
-    procedure ExportBtnClick(Sender: TObject);
     procedure FirstBtnClick(Sender: TObject);
     procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
     procedure FormCloseQuery(Sender: TObject; var CanClose: boolean);
@@ -248,7 +251,7 @@ var
 implementation
 
 uses
-  AboutForm, SynEditMiscProcs;
+  AboutForm, CSVIEForms, ParamsForms, SynEditMiscProcs;
 
 { TMainForm }
 
@@ -326,10 +329,6 @@ end;
 procedure TMainForm.ExecuteBtnClick(Sender: TObject);
 begin
   ExecuteScript(execNormal);
-end;
-
-procedure TMainForm.ExportBtnClick(Sender: TObject);
-begin
 end;
 
 procedure TMainForm.FirstBtnClick(Sender: TObject);
@@ -698,7 +697,7 @@ begin
   if not sqlvEngine.Session.IsActive then
   begin
     sqlvEngine.Setting.CacheSchemas := CacheSchemaChk.Checked;
-    sqlvEngine.Session.Open(GetDatabaseName, AutoCreateChk.Checked);
+    sqlvEngine.Session.Open(GetDatabaseName, AutoCreateChk.Checked, ExclusiveChk.Checked, VacuumChk.Checked);
     sqlvEngine.Launch('Database', 'Databases', DatabasesCbo.Text);
   end;
 end;
@@ -923,7 +922,6 @@ begin
   PanelsList.Add(RootPanel, SQLBtn, False);
   PanelsList.Add(RootPanel, SchemaBtn, True);
   PanelsList.Add(SQLPanel);
-  PanelsList.Add(SQLPanel, ExecuteBtn, True);
   PanelsList.Add(SQLPanel, ResultsBtn, True);
   PanelsList.Add(SQLPanel, SchemaBtn, True);
   PanelsList.Add(SQLPanel, InfoBtn, True);
@@ -1134,6 +1132,7 @@ var
   t: TDateTime;
   aExport: TmncCSVExport;
   aImport: TmncCSVImport;
+  aStream : TFileStream;
 begin
   try
     ResultEdit.Lines.Add('========= Execute ==========');
@@ -1143,16 +1142,21 @@ begin
         execNormal:
         begin
           t := NOW;
-         SQLCMD.Prepare;
+          SQLCMD.Prepare;
           ResultEdit.Lines.Add('Prepare time: ' + LogTime(t));
-{          if not ShowCMDParams(SQLCMD) then//that todo
-           begin
-             ResultEdit.Lines.Add('Canceled by user');
-             Abort;
-            end;}
-//      SQLCMD.NextOnExecute := False;
+
+          if (SQLCMD.Params.Count > 0) then
+            if not ShowSQLParams(SQLCMD) then
+            begin
+              SQLCMD.Close;
+              ResultEdit.Lines.Add('Canceled by user');
+              exit;
+            end;
+
           t := NOW;
+          Screen.Cursor := crHourGlass;
           SQLCMD.Execute;
+          Screen.Cursor := crDefault;
           ResultEdit.Lines.Add('Execute time: ' + LogTime(t));
           if ShowGrid then
           begin
@@ -1181,21 +1185,64 @@ begin
             OpenDialog.FileName := '*.csv';
             OpenDialog.DefaultExt := 'csv';
             OpenDialog.Filter := '*.csv';
-            if OpenDialog.Execute then
+            if OpenDialog.Execute and ShowCSVIEOptions('Export CSV', aExport) then
             begin
-              t := NOW;
-              aExport.Command := SQLCMD;
-              aExport.FileName := OpenDialog.FileName;
-              aExport.Execute;
-              ResultEdit.Lines.Add('Export time: ' + LogTime(t));
+              aStream := TFileStream.Create(OpenDialog.FileName, fmCreate);
+              try
+                aExport.Command := SQLCMD;
+                aExport.Stream := aStream;
+                Screen.Cursor := crHourGlass;
+                t := NOW;
+                aExport.Execute;
+                ResultEdit.Lines.Add('Export time: ' + LogTime(t));
+                ResultEdit.Lines.Add('Export count: ' + IntToStr(aExport.Count));
+                Screen.Cursor := crDefault;
+                State := sqlsInfo;
+                ShowMessage('Export count: '+IntToStr(aExport.Count));
+              finally
+                aStream.Free;
+              end;
             end;
-            ShowMessage('Export count: '+IntToStr(aExport.Count));
           finally
             aExport.Free;
           end;
         end;
+        execImport:
+        begin
+          SQLCMD.Prepare;
+          if (SQLCMD.Params.Count = 0) then
+          begin
+            ShowMessage('SQL statment must have params for import');
+            exit;
+          end;
+          aImport := TmncCSVImport.Create;
+          try
+            SaveDialog.FileName := '*.csv';
+            SaveDialog.DefaultExt := 'csv';
+            SaveDialog.Filter := '*.csv';
+            if SaveDialog.Execute and ShowCSVIEOptions('Import CSV', aImport) then
+            begin
+              aStream := TFileStream.Create(SaveDialog.FileName, fmOpenRead or fmShareDenyWrite);
+              try
+                aImport.Command := SQLCMD;
+                aImport.Stream := aStream;
+                Screen.Cursor := crHourGlass;
+                t := NOW;
+                aImport.Execute;
+                ResultEdit.Lines.Add('Import time: ' + LogTime(t));
+                ResultEdit.Lines.Add('Import count: ' + IntToStr(aImport.Count));
+                Screen.Cursor := crDefault;
+                State := sqlsInfo;
+                ShowMessage('Import count: '+ IntToStr(aImport.Count));
+              finally
+                aStream.Free;
+              end;
+            end;
+          finally
+            aImport.Free;
+          end;
+        end;
       end;
-
       ResultEdit.Lines.Add('Last Row ID: ' + IntToStr(SQLCMD.GetLastInsertID));
       ResultEdit.Lines.Add('Rows affected: ' + IntToStr(SQLCMD.GetRowsChanged));
     except
@@ -1211,19 +1258,15 @@ procedure TMainForm.ExecuteScript(ExecuteType: TExecuteType);
 var
   aStrings: TStringList;
   i: Integer;
-  SQLSession: TmncSQLiteSession;
   SQLCMD: TmncSQLiteCommand;
   aStart: Integer;
 begin
   sqlvEngine.SaveFile('recent.sql', SQLEdit.Lines);
-  SQLSession := TmncSQLiteSession.Create(sqlvEngine.Session.DBConnection);
-  SQLCMD := TmncSQLiteCommand.CreateBy(SQLSession);
+  SQLCMD := TmncSQLiteCommand.CreateBy(sqlvEngine.Session.DBSession);
   aStrings := TStringList.Create;
   try
     SqlBtn.Enabled := False;
-    Screen.Cursor := crHourGlass;
     try
-      SQLSession.Start;
       ResultEdit.Clear;
       AddRecentSQL;
       aStart := 0;
@@ -1240,11 +1283,11 @@ begin
       end;
       if aStrings.Count > 0 then
         Execute(ExecuteType, SQLCMD, aStrings, True);
-      SQLSession.Commit;
+      SQLCMD.Commit;
     except
       on E: Exception do
       begin
-        SQLSession.Rollback;
+        SQLCMD.Rollback;
         ResultEdit.Lines.Add(E.Message);
         SQLEdit.CaretX := 0;
         SQLEdit.CaretY := aStart + 1;//CaretY start from 1
@@ -1259,7 +1302,7 @@ begin
     SqlBtn.Enabled := True;
     aStrings.Free;
     SQLCMD.Free;
-    SQLSession.Free;
+    sqlvEngine.Session.DBSession.Active := True;
   end;
 end;
 

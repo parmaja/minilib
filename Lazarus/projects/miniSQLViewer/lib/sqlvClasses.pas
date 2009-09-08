@@ -14,7 +14,7 @@ interface
 uses
   SysUtils, Variants, Classes, Controls,
   mnXMLRttiProfile, mnXMLStreams,
-  Dialogs, Contnrs,
+  Dialogs, Contnrs, mncCSVExchanges,
   mncSchemas, mnUtils,
   sqlvConsts, sqlvSessions, ImgList;
 
@@ -42,8 +42,14 @@ type
     Value: string;
   end;
 
+  { TsqlvSetting }
+
   TsqlvSetting = class(TmnXMLProfile)
   private
+    FCSVANSIContents: Boolean;
+    FCSVDelimiterChar: Char;
+    FCSVHeader: TCSVIEHeader;
+    FCSVQuoteChar: Char;
     FOpenSaveDialogFilters: string;
     FCacheSchemas: Boolean;
     FLogoutSQL: string;
@@ -51,6 +57,7 @@ type
     FInternalLogoutSQL: string;
     FInternalLoginSQL: string;
   public
+    constructor Create;
     property InternalLoginSQL:string read FInternalLoginSQL write FInternalLoginSQL;
     property InternalLogoutSQL:string read FInternalLogoutSQL write FInternalLogoutSQL;
   published
@@ -58,6 +65,10 @@ type
     property OpenSaveDialogFilters:string read FOpenSaveDialogFilters write FOpenSaveDialogFilters;
     property LoginSQL:string read FLoginSQL write FLoginSQL;
     property LogoutSQL:string read FLogoutSQL write FLogoutSQL;
+    property CSVQuoteChar: Char read FCSVQuoteChar write FCSVQuoteChar default '"';
+    property CSVDelimiterChar: Char read FCSVDelimiterChar write FCSVDelimiterChar default ';';
+    property CSVHeader: TCSVIEHeader read FCSVHeader write FCSVHeader default hdrNone;
+    property CSVANSIContents: Boolean read FCSVANSIContents write FCSVANSIContents default False;
   end;
 
   TsqlvNodes = class;
@@ -652,6 +663,15 @@ begin
     Index := FIndex - 1;
     Changed;
   end;
+end;
+
+{ TsqlvSetting }
+
+constructor TsqlvSetting.Create;
+begin
+  inherited Create;
+  FCSVQuoteChar := '"';
+  FCSVDelimiterChar := ';';
 end;
 
 initialization

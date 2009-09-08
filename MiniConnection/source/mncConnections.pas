@@ -154,6 +154,7 @@ type
     function GetAsText: string;
     procedure SetAsText(const AValue: string);
 
+
     procedure SetAsNullString(const Value: string);
 
     function GetAsAnsiString: ansistring;
@@ -384,14 +385,17 @@ type
     property BufferAllocated: Boolean read GetBufferAllocated;
   end;
 
+  { TmncCustomParams }
+
   TmncCustomParams = class(TmncCustomRecord)
   private
   protected
     function GetParam(Index: string): TmncParamItem;
     function GetItem(Index: Integer): TmncParamItem;
+    function FindField(vName: string): TmncCustomField; override;
   public
     procedure Clear; override;
-    function FindField(vName: string): TmncCustomField; override;
+    function FindParam(vName: string): TmncParamItem;
     function ParamByName(vName: string): TmncParamItem;
     property Items[Index: Integer]: TmncParamItem read GetItem;
     property Param[Index: string]: TmncParamItem read GetParam; default;
@@ -1083,14 +1087,7 @@ begin
   inherited;
 end;
 
-function TmncCustomParams.ParamByName(vName: string): TmncParamItem;
-begin
-  Result := FindField(vName) as TmncParamItem;
-  if Result = nil then
-    raise EmncException.Create('Param ' + vName + ' not found');
-end;
-
-function TmncCustomParams.FindField(vName: string): TmncCustomField;
+function TmncCustomParams.FindParam(vName: string): TmncParamItem;
 var
   i: Integer;
 begin
@@ -1103,6 +1100,18 @@ begin
       break;
     end;
   end;
+end;
+
+function TmncCustomParams.ParamByName(vName: string): TmncParamItem;
+begin
+  Result := FindField(vName) as TmncParamItem;
+  if Result = nil then
+    raise EmncException.Create('Param ' + vName + ' not found');
+end;
+
+function TmncCustomParams.FindField(vName: string): TmncCustomField;
+begin
+  Result := FindParam(vName);
 end;
 
 function TmncCustomParams.GetParam(Index: string): TmncParamItem;
@@ -1419,7 +1428,10 @@ end;
 
 procedure TmncCustomField.SetAsText(const AValue: string);
 begin
-
+  if (IsBlob) and (BlobType = blobText) then
+    AsHex := AValue
+  else
+    AsString := AValue;
 end;
 
 procedure TmncCustomField.SetAsWideString(const Value: widestring);

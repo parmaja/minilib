@@ -1,58 +1,85 @@
 unit mncCSVExchanges;
-{-----------------------------------------------------------------------------
- Author:    zaher
- Purpose:
- History:
------------------------------------------------------------------------------}
+{**
+ *  This file is part of the "Mini Library"
+ *
+ * @license   modifiedLGPL (modified of http://www.gnu.org/licenses/lgpl.html)
+ *            See the file COPYING.MLGPL, included in this distribution,
+ * @author    Zaher Dirkey <zaher at parmaja dot com>
+ *}
 interface
+{$M+}
+{$H+}
+{$IFDEF FPC}
+{$MODE delphi}
+{$ENDIF}
 
 uses
   SysUtils, Variants, Classes, mncConnections, mnUtils;
 
 type
+{
+  hdrNone: There is no header in export and import files
+  hdrNormal: Header is the first line contain field names
+  hdrIgnore: Header found for import files but ignored, header not exported
+}
+  TCSVIEHeader = (hdrNone, hdrNormal, hdrIgnore);
 
   { TmncCSVIE }
 
   TmncCSVIE = class(TmncObject)
   private
+    FANSIContents: Boolean;
+    FCount: Integer;
     FEndOfLine: string;
-    FSeparator: Char;
+    FDelimiter: Char;
+    FEscapeChar: Char;
+    FHeader: TCSVIEHeader;
+    FLimit: Integer;
+    FQuoteChar: Char;
+    FCommand: TmncCommand;
+    FStream: TStream;
+    FActive: Boolean;
+    procedure SetCommand(const AValue: TmncCommand);
+    procedure SetHeader(const AValue: TCSVIEHeader);
+    procedure SetStream(const AValue: TStream);
+  protected
+    procedure DoExecute; virtual; abstract;
   public
     constructor Create;
+    procedure Execute;
     property EndOfLine: string read FEndOfLine write FEndOfLine;
-    property Separator: Char read FSeparator write FSeparator;
+    property Delimiter: Char read FDelimiter write FDelimiter;
+    property EscapeChar: Char read FEscapeChar write FEscapeChar default '\';
+    property QuoteChar: Char read FQuoteChar write FQuoteChar default #0;// or " or '
+    property Header: TCSVIEHeader read FHeader write SetHeader default hdrNormal;
+    property Limit: Integer read FLimit default 0; //Max count of rows to export or import
+    property Count: Integer read FCount; //count of rows was exported or imported
+    property Active: Boolean read FActive;
+    property ANSIContents: Boolean read FANSIContents write FANSIContents default False; //the stream is ANSI not UTF-8
+    property Command: TmncCommand read FCommand write SetCommand; //Requierd property
+    property Stream: TStream read FStream write SetStream;
   end;
 
   { TmncCSVExport }
 
+  //Commad must have result like 'select * from table'
   TmncCSVExport = class(TmncCSVIE)
   private
-    FCount: Integer;
-    FFileName: string;
-    procedure SetCommand(const AValue: TmncCommand);
   protected
-    FCommand: TmncCommand;
   public
-    constructor Create;
-    destructor Destroy; override;
-    procedure Execute;
-    //Commad must have result like 'select * from table'
-    property Command: TmncCommand read FCommand write SetCommand;
-    property FileName: string read FFileName write FFileName;
-    property Count: Integer read FCount;
+    procedure DoExecute; override;
   end;
+
+  { TmncCSVImport }
 
   TmncCSVImport = class(TmncCSVIE)
   private
-    FFileName: string;
+    FBufferSize: Integer;
   protected
-    FCommand: TmncCommand;
   public
     constructor Create;
-    destructor Destroy; override;
-    procedure Execute;
-    property Command: TmncCommand read FCommand;
-    property FileName: string read FFileName write FFileName;
+    procedure DoExecute; override;
+    property BufferSize: Integer read FBufferSize write FBufferSize;
   end;
 
 implementation
@@ -66,34 +93,24 @@ end;
 
 { TmncCSVImport }
 
-constructor TmncCSVImport.Create;
-begin
-  inherited;
-end;
-
-destructor TmncCSVImport.Destroy;
-begin
-  inherited;
-end;
-
 type
   TFieldInfo = record
     Name: string;
-    Ignored: Boolean;
-    Key: Boolean;
-    Attributes: string;
-    Field: TmncRecordField;
+    Param: TmncParamItem;
   end;
 
   TFieldsInfo = array of TFieldInfo;
 
-procedure TmncCSVImport.Execute;
-const
-  sBufferSize = 2048;
+constructor TmncCSVImport.Create;
+begin
+  inherited Create;
+  FBufferSize := 4096;
+end;
+
+procedure TmncCSVImport.DoExecute;
 var
   i: Integer;
   aEOL: Char;
-  aFile: TFileStream;
   aBuffer: PChar;
   aPos: PChar;
   aEnd: PChar;
@@ -102,7 +119,7 @@ var
     if not (aPos < aEnd) then
     begin
       aPos := aBuffer;
-      aEnd := aPos + aFile.read(aBuffer^, sBufferSize);
+      aEnd := aPos + FStream.read(aBuffer^, BufferSize);
     end;
     Result := not (aPos < aEnd);
   end;
@@ -123,19 +140,31 @@ var
   var
     P: PChar;
     i: Integer;
+    InQuote: Boolean;
   begin
     aColumn := '';
     Result := False;
+    InQuote := False;
     while not CheckEOF do
     begin
       P := aPos;
       while P < aEnd do
       begin
-        if P^ in [Separator, aEOL] then
+        if (QuoteChar <> #0) and (P^ = QuoteChar) then
+         InQuote := not InQuote
+        else if (not InQuote and (P^ = Delimiter)) or (P^ = aEOL) then
         begin
+          InQuote := False;//if EOL
           i := Length(aColumn);
           SetLength(aColumn, i + (P - aPos));
           CopyMemory(@aColumn[i + 1], aPos, P - aPos);
+          if QuoteChar <> #0 then
+            aColumn := DequoteStr(aColumn, QuoteChar);
+          if EscapeChar <> #0 then
+            if QuoteChar <> #0 then
+              aColumn := DescapeString(aColumn, EscapeChar, [#13, #10, #9 , #8, QuoteChar], ['r', 'n', 't', 'b', QuoteChar])
+            else
+              aColumn := DescapeString(aColumn, EscapeChar, [#13, #10, #9 , #8], ['r', 'n', 't', 'b']);
           aPos := P;
           if P^ = aEOL then
           begin
@@ -144,7 +173,7 @@ var
           end
           else
           begin
-            EatDelimiter(Separator);
+            EatDelimiter(Delimiter);
             Result := True;
           end;
           Exit;
@@ -157,14 +186,37 @@ var
       aPos := P;
     end;
   end;
+
+  procedure PassBOM;
+  var
+    P: PChar;
+    i: Integer;
+  begin
+    P := aPos;
+    i := 1;
+    while (P < aEnd) and (i < 3) do
+    begin
+      if P^ <> sUTF8BOM[i] then
+      begin
+        break;
+      end;
+      Inc(P);
+      Inc(i);
+    end;
+    if i = 3 then //BOM bytes founded
+    begin
+      Inc(P);
+      aPos := P;
+    end;
+  end;
+
 var
   s: string;
   EOL: Boolean;
   Fields: TFieldsInfo;
 begin
   aEOL := EndOfLine[1];
-  aFile := TFileStream.Create(FFileName, fmOpenRead or fmShareDenyWrite);
-  GetMem(aBuffer, sBufferSize);
+  GetMem(aBuffer, BufferSize);
   try
     aPos := aBuffer;
     aEnd := aBuffer;
@@ -173,92 +225,105 @@ begin
     {$ifdef FPC}
     s := '';
     {$endif}
-    while not EOL do
-    begin
-      EOL := not GetColumn(s);
-      SetLength(Fields, i + 1);
-      Fields[i].Name := s;
-      Inc(i);
-    end;
+    if not Command.Prepared then
+      Command.Prepare;
 
-    Command.Prepare;
-
-    for i := 0 to Length(Fields) - 1 do
+    if Header = hdrNormal then
     begin
-      Fields[i].Field := Command.Params.ParamByName(Fields[i].Name);
+      while not EOL do
+      begin
+        EOL := not GetColumn(s);
+        SetLength(Fields, i + 1);
+        Fields[i].Name := s;
+        Fields[i].Param := Command.Params.FindParam(s);
+        Inc(i);
+      end;
+    end
+    else
+    begin
+      if Header = hdrIgnore then //eating the first line, Hummm
+      begin
+        while not EOL do
+        begin
+          EOL := not GetColumn(s);
+          Inc(i);
+        end;
+      end;
+      SetLength(Fields, Command.Params.Count);
+      for i := 0 to Command.Params.Count - 1 do
+      begin
+        Fields[i].Name := Command.Params.Items[i].Name;
+        Fields[i].Param := Command.Params.Items[i]
+      end;
     end;
 
     try
+      if not CheckEOF and not ANSIContents then
+      begin
+        PassBOM;
+      end;
+
       while not CheckEOF do
       begin
+        //seek to skip BOM for first time
         EOL := False;
         i := 0;
         while not EOL do
         begin
           EOL := not GetColumn(s);
-          if s = '' then
-            Fields[i].Field.Clear
-          else
-            Fields[i].Field.AsText := s;
+          //Ignore extra columns found in CSV file
+          if (i < Length(Fields)) and (Fields[i].Param <> nil) then
+          begin
+            if s = '' then
+              Fields[i].Param.Clear
+            else
+            begin
+              if FANSIContents then
+                Fields[i].Param.AsText := AnsiToUtf8(s)
+              else
+                Fields[i].Param.AsText := s;
+            end;
+          end;
           Inc(i);
         end;
         FCommand.Execute;
+        Inc(FCount);
       end;
-      //Command.Session.Commit
     except
-      //Command.Session.Rollback;
       raise;
     end;
   finally
     FreeMem(aBuffer);
-    aFile.Free;
   end;
 end;
 
 { TmncCSVExport }
 
-procedure TmncCSVExport.SetCommand(const AValue: TmncCommand);
-begin
-  if FCommand <> AValue then
-  begin
-    if (FCommand <> nil) and FCommand.Active then
-      raise EmncException.Create('Export: Command is active');
-    FCommand := AValue;
-  end;
-end;
-
-constructor TmncCSVExport.Create;
-begin
-  inherited;
-end;
-
-destructor TmncCSVExport.Destroy;
-begin
-
-  inherited;
-end;
-
-procedure TmncCSVExport.Execute;
+procedure TmncCSVExport.DoExecute;
 var
   i: Integer;
-  aFile: TFileStream;
-  st: string;
+  s, st: string;
 begin
   FCount := 0;
-  aFile := TFileStream.Create(FFileName, fmCreate or fmShareExclusive);
   try
     Command.Execute;
     if not Command.NextOnExecute then
       Command.Next;
     st := '';
-    for i := 0 to Command.Current.Count - 1 do
+    if Header = hdrNormal then
     begin
-      if i > 0 then
-        st := st + Separator;
-      st := st + Command.Current.Fields[i].Name;
+      for i := 0 to Command.Current.Count - 1 do
+      begin
+        if i > 0 then
+          st := st + Delimiter;
+        s := Command.Current.Fields[i].Name;
+        if QuoteChar <> #0 then
+          s := QuoteStr(s, QuoteChar);
+        st := st + s;
+      end;
+      st := st + EndOfLine;
+      FStream.Write(st[1], Length(st));
     end;
-    st := st + EndOfLine;
-    aFile.Write(st[1], Length(st));
 
     while not Command.Eof do
     begin
@@ -267,25 +332,78 @@ begin
       for i := 0 to Command.Current.Count - 1 do
       begin
         if i > 0 then
-          st := st + Separator;
-        st := st + EscapeString(Command.Current.Items[i].AsText, '\', [#13, #10, #9 , #8, '"'], ['r', 'n', 't', 'b', '"']);
+          st := st + Delimiter;
+        s := Command.Current.Items[i].AsText;
+        if EscapeChar <> #0 then
+          if QuoteChar <> #0 then
+            s := EscapeString(s, EscapeChar, [#13, #10, #9 , #8, QuoteChar], ['r', 'n', 't', 'b', QuoteChar])
+          else
+            s := EscapeString(s, EscapeChar, [#13, #10, #9 , #8], ['r', 'n', 't', 'b']);
+        if QuoteChar <> #0 then
+          s := QuoteStr(s, QuoteChar);
+        st := st + s;
       end;
       st := st + EndOfLine;
-      aFile.Write(st[1], Length(st));
+      FStream.Write(st[1], Length(st));
       Command.Next;
     end;
   finally
-    aFile.Free;
   end;
 end;
 
 { TmncCSVIE }
 
+procedure TmncCSVIE.SetCommand(const AValue: TmncCommand);
+begin
+  if FCommand <> AValue then
+  begin
+    if (FCommand <> nil) and FCommand.Active then
+      raise EmncException.Create('Import/Export: Command is active');
+    FCommand := AValue;
+  end;
+end;
+
+procedure TmncCSVIE.SetHeader(const AValue: TCSVIEHeader);
+begin
+  if FHeader <> AValue then
+  begin
+    if Active then
+      raise EmncException.Create('Import/Export: Active, can not set Header property');
+    FHeader := AValue;
+  end;
+end;
+
+procedure TmncCSVIE.SetStream(const AValue: TStream);
+begin
+  if FStream <> AValue then
+  begin
+    if Active then
+      raise EmncException.Create('Import/Export: Active, can not set Stream property');
+    FStream := AValue;
+  end;
+end;
+
 constructor TmncCSVIE.Create;
 begin
   inherited Create;
   FEndOfLine := #13;
-  FSeparator := ';';
+  FDelimiter := ';';
+  FEscapeChar := '/';
+  FHeader := hdrNormal;
+end;
+
+procedure TmncCSVIE.Execute;
+begin
+  if FStream = nil then
+    raise EmncException.Create('Import/Export: Stream is not set');
+  if FCommand = nil then
+    raise EmncException.Create('Import/Export: Command is not');
+  FActive := True;
+  try
+    DoExecute;
+  finally
+    FActive := True;
+  end;
 end;
 
 initialization

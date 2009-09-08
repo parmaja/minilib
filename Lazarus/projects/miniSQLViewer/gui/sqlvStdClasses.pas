@@ -255,6 +255,14 @@ type
     procedure DoExecute(const Value: string; Params: TmncParams = nil); override;
   end;
 
+  { TsqlvImportSQL }
+
+  TsqlvImportSQL = class(TsqlvGuiNode)
+  public
+    constructor Create; override;
+    procedure DoExecute(const Value: string; Params: TmncParams = nil); override;
+  end;
+
 implementation
 
 uses
@@ -1157,9 +1165,29 @@ begin
     ExecuteScript(execExport);
 end;
 
+{ TsqlvImportSQL }
+
+constructor TsqlvImportSQL.Create;
+begin
+  inherited;
+  Group := 'GUI.SQL';
+  Name := 'ImportSQL';
+  Title := 'Import';
+  Kind := sokNone;
+  Style := [nsNeedSession, nsCommand];
+  ImageIndex := IMG_COMMAND;
+end;
+
+procedure TsqlvImportSQL.DoExecute(const Value: string; Params: TmncParams);
+begin
+  with MainForm do
+    ExecuteScript(execImport);
+end;
+
 initialization
   sqlvEngine.RegisterViewer([TsqlvDatabase]);
-  sqlvEngine.RegisterViewer([TsqlvTables, TsqlvTable, TsqlvTableFields, TsqlvEmptyTable, TsqlvDropTable, TsqlvSelectTable, TsqlvInsertTable]);
+  sqlvEngine.RegisterViewer([TsqlvTables, TsqlvTable, TsqlvTableFields, TsqlvExportSQL, TsqlvImportSQL]);
+  sqlvEngine.RegisterViewer([TsqlvEmptyTable, TsqlvDropTable, TsqlvSelectTable, TsqlvInsertTable]);
   sqlvEngine.RegisterViewer([TsqlvIndices, TsqlvTableIndices, TsqlvIndex, TsqlvDropIndex]);
   sqlvEngine.RegisterViewer([TsqlvDropField{, TsqlvNewField}]);
   sqlvEngine.RegisterViewer([TsqlvViews, TsqlvView]);
@@ -1167,6 +1195,5 @@ initialization
   //sqlvEngine.RegisterViewer([TsqlvDomains, TsqlvExceptions, TsqlvFunctions]);
   //sqlvEngine.RegisterViewer([TsqlvProcedures, TsqlvProcedure]);
   //sqlvEngine.RegisterViewer([TsqlvSequences]);
-  sqlvEngine.RegisterViewer([TsqlvExportSQL]);
 end.
 

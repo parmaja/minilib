@@ -17,7 +17,7 @@ uses
   Interfaces, // this includes the LCL widgetset
   Forms
   { you can add units after this }, Main, AboutForm, sqlvStdClasses,
-  sqlvClasses;
+  sqlvClasses, CSVIEForms;
 
 begin
   Application.Initialize;

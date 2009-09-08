@@ -8,7 +8,7 @@ object AboutForm: TAboutForm
   ClientWidth = 254
   OnCreate = FormCreate
   ParentBiDiMode = False
-  LCLVersion = '0.9.27'
+  LCLVersion = '0.9.29'
   object Label2: TLabel
     Left = 6
     Height = 14

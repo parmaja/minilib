@@ -4,7 +4,7 @@ LazarusResources.Add('TAboutForm','FORMDATA',[
   'TPF0'#10'TAboutForm'#9'AboutForm'#4'Left'#3#145#1#6'Height'#3#24#1#3'Top'#3
   +#150#0#5'Width'#3#254#0#7'Caption'#6#21'About Mini SQL Viewer'#12'ClientHeig'
   +'ht'#3#24#1#11'ClientWidth'#3#254#0#8'OnCreate'#7#10'FormCreate'#14'ParentBi'
-  +'DiMode'#8#10'LCLVersion'#6#6'0.9.27'#0#6'TLabel'#6'Label2'#4'Left'#2#6#6'He'
+  +'DiMode'#8#10'LCLVersion'#6#6'0.9.29'#0#6'TLabel'#6'Label2'#4'Left'#2#6#6'He'
   +'ight'#2#14#3'Top'#3#164#0#5'Width'#2'0'#7'Anchors'#11#6'akLeft'#8'akBottom'
   +#0#7'Caption'#6#9'Thanks to'#11'ParentColor'#8#0#0#6'TLabel'#6'Label3'#4'Lef'
   +'t'#2#9#6'Height'#2#14#3'Top'#3#181#0#5'Width'#3#156#0#7'Anchors'#11#6'akLef'

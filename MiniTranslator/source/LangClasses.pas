@@ -377,9 +377,6 @@ type
     property FilerClasses: TFilerClasses read FFilerClasses;
   end;
 
-const
-  sUTF8BOM: array[1..3] of char = (#$EF, #$BB, #$BF);
-
 function Languages: TLanguages;
 function LangOptions: TLangOptions;
 procedure InitLanguages(LanguagesClass: TLanguagesClass = nil);

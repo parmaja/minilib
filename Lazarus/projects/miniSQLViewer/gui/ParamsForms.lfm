@@ -1,0 +1,37 @@
+object ParamsForm: TParamsForm
+  Left = 296
+  Height = 72
+  Top = 251
+  Width = 369
+  BorderIcons = [biSystemMenu, biMinimize]
+  BorderStyle = bsSingle
+  Caption = 'Params'
+  ClientHeight = 72
+  ClientWidth = 369
+  Font.Height = -11
+  Font.Name = 'MS Sans Serif'
+  OnClose = FormClose
+  Position = poMainFormCenter
+  LCLVersion = '0.9.29'
+  object CancelBtn: TButton
+    Left = 81
+    Height = 22
+    Top = 46
+    Width = 72
+    Anchors = [akLeft, akBottom]
+    Caption = 'Cancel'
+    ModalResult = 2
+    TabOrder = 1
+  end
+  object OkBtn: TButton
+    Left = 6
+    Height = 22
+    Top = 46
+    Width = 72
+    Anchors = [akLeft, akBottom]
+    Caption = 'OK'
+    Default = True
+    ModalResult = 1
+    TabOrder = 0
+  end
+end
