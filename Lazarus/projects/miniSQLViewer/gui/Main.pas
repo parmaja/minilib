@@ -90,8 +90,18 @@ type
     ActionsPanel: TPanel;
     CacheSchemaChk1: TCheckBox;
     ExclusiveChk: TCheckBox;
-    VacuumChk: TCheckBox;
     ExecuteBtn: TButton;
+    FileMnu: TMenuItem;
+    ExitMnu: TMenuItem;
+    MenuItem1: TMenuItem;
+    MenuItem2: TMenuItem;
+    MenuItem3: TMenuItem;
+    HelpMnu: TMenuItem;
+    SaveMnu: TMenuItem;
+    SaveAsMnu: TMenuItem;
+    OpenMnu: TMenuItem;
+    StopBtn: TButton;
+    VacuumChk: TCheckBox;
     FirstBtn: TSpeedButton;
     GroupsList: TComboBox;
     ActionsList: TComboBox;
@@ -126,7 +136,6 @@ type
     AutoCreateChk: TCheckBox;
     SQLForwardBtn: TSpeedButton;
     MainMenu: TMainMenu;
-    ExitMnu: TMenuItem;
     AboutMnu: TMenuItem;
     MembersGrid: TStringGrid;
     SQLSaveBtn: TButton;
@@ -161,6 +170,7 @@ type
     procedure FormShortCut(var Msg: TLMKey; var Handled: Boolean);
     procedure GroupsListKeyPress(Sender: TObject; var Key: char);
     procedure GroupsListSelect(Sender: TObject);
+    procedure HelpMnuClick(Sender: TObject);
     procedure InfoBtnClick(Sender: TObject);
     procedure MembersGridClick(Sender: TObject);
     procedure MembersGridDblClick(Sender: TObject);
@@ -169,6 +179,10 @@ type
     procedure MembersGridKeyPress(Sender: TObject; var Key: char);
     procedure MembersGridUTF8KeyPress(Sender: TObject; var UTF8Key: TUTF8Char);
     procedure ExitMnuClick(Sender: TObject);
+    procedure MenuItem3Click(Sender: TObject);
+    procedure OpenMnuClick(Sender: TObject);
+    procedure SaveMnuClick(Sender: TObject);
+    procedure SaveAsMnuClick(Sender: TObject);
     procedure RecentsCboSelect(Sender: TObject);
     procedure RefreshBtnClick(Sender: TObject);
     procedure RemoveBtnClick(Sender: TObject);
@@ -186,6 +200,7 @@ type
     procedure SQLForwardBtnClick(Sender: TObject);
     procedure SQLLoadBtnClick(Sender: TObject);
     procedure SQLSaveBtnClick(Sender: TObject);
+    procedure StopBtnClick(Sender: TObject);
   private
     FSearching: Boolean;
     FFirstSearch: Boolean;
@@ -197,6 +212,7 @@ type
     Completion: TSynCompletion;
     FDataPath: string;
     FActions: array of TActionInfo;
+    procedure LoadSQLFile;
     procedure SaveAsSQLFile;
     procedure SaveLastSQLFile;
     procedure CheckSearch;
@@ -362,92 +378,106 @@ var
   ShiftState: TShiftState;
 begin
   ShiftState := KeyDataToShiftState(Msg.KeyData);
-  case State of
-    sqlsRoot:
-      case Msg.CharCode of
-        VK_F9:
-        begin
-          if ssShift in ShiftState then
-            Disconnect
-          else
-            Connect;
-          Handled := True;
-        end;
+  case Msg.CharCode of
+    VK_F7:
+    begin
+      State := sqlsInfo;
+      Handled := True;
+    end;
+    VK_F8:
+    begin
+      if State = sqlsSQL then
+      begin
+        State := sqlsMembers;
+        MembersGrid.SetFocus;
+      end
+      else
+      begin
+        State := sqlsSQL;
+        SQLEdit.SetFocus;
       end;
-    sqlsMembers:
-      case Msg.CharCode of
-        VK_F6:
-        begin
-          if MembersGrid.Focused then
-            GroupsList.SetFocus
-          else
-            MembersGrid.SetFocus;
-          Handled := True;
-        end;
-      end;
-    sqlsResults:
-      case Msg.CharCode of
-        VK_F6:
-        begin
-          State := sqlsSQL;
-          SQLEdit.SetFocus;
-          Handled := True;
-        end;
-        VK_F9:
-        begin
-          if sqlvEngine.Session.IsActive then
-          begin
-            ExecuteScript(execNormal);
-            Handled := True;
+      Handled := True;
+    end;
+    else
+    begin
+      case State of
+        sqlsRoot:
+          case Msg.CharCode of
+            VK_F9:
+            begin
+              if ssShift in ShiftState then
+                Disconnect
+              else
+                Connect;
+              Handled := True;
+            end;
           end;
-        end;
-      end;
-    sqlsInfo:
-      case Msg.CharCode of
-        VK_F6:
-        begin
-          State := sqlsSQL;
-          SQLEdit.SetFocus;
-          Handled := True;
-        end;
-        VK_F9:
-        begin
-          if sqlvEngine.Session.IsActive then
-          begin
-            ExecuteScript(execNormal);
-            Handled := True;
+        sqlsMembers:
+          case Msg.CharCode of
+            VK_F6:
+            begin
+              if MembersGrid.Focused then
+                GroupsList.SetFocus
+              else
+                MembersGrid.SetFocus;
+              Handled := True;
+            end;
           end;
-        end;
-      end;
-    sqlsSQL:
-      case Msg.CharCode of
-        Ord('S'):
-        begin
-          if ssCtrl in ShiftState then
-            SaveLastSQLFile;
-        end;
-        VK_F6:
-        begin
-          State := sqlsResults;
-          DataGrid.SetFocus;
-          Handled := True;
-        end;
-        VK_F7:
-        begin
-          State := sqlsInfo;
-          Handled := True;
-        end;
-        VK_F8:
-        begin
-          State := sqlsMembers;
-          Handled := True;
-        end;
-        VK_F9:
-        begin
-          if sqlvEngine.Session.IsActive then
-          begin
-            ExecuteScript(execNormal);
-            Handled := True;
+        sqlsResults:
+          case Msg.CharCode of
+            VK_F6:
+            begin
+              State := sqlsSQL;
+              SQLEdit.SetFocus;
+              Handled := True;
+            end;
+            VK_F9:
+            begin
+              if sqlvEngine.Session.IsActive then
+              begin
+                ExecuteScript(execNormal);
+                Handled := True;
+              end;
+            end;
+          end;
+        sqlsInfo:
+          case Msg.CharCode of
+            VK_F6:
+            begin
+              State := sqlsSQL;
+              SQLEdit.SetFocus;
+              Handled := True;
+            end;
+            VK_F9:
+            begin
+              if sqlvEngine.Session.IsActive then
+              begin
+                ExecuteScript(execNormal);
+                Handled := True;
+              end;
+            end;
+          end;
+        sqlsSQL:
+          case Msg.CharCode of
+            Ord('S'):
+            begin
+              if ssCtrl in ShiftState then
+                SaveLastSQLFile;
+            end;
+            VK_F6:
+            begin
+              State := sqlsResults;
+              DataGrid.SetFocus;
+              Handled := True;
+            end;
+            VK_F9:
+            begin
+              if sqlvEngine.Session.IsActive then
+              begin
+                ExecuteScript(execNormal);
+                Handled := True;
+              end;
+            end;
           end;
         end;
       end;
@@ -463,6 +493,19 @@ end;
 procedure TMainForm.GroupsListSelect(Sender: TObject);
 begin
   OpenGroup;
+end;
+
+procedure TMainForm.HelpMnuClick(Sender: TObject);
+begin
+  ResultEdit.Clear;
+  ResultEdit.Lines.Add('===Help===');
+  ResultEdit.Lines.Add('[Keys]');
+  ResultEdit.Lines.Add('F5 Refresh schema');
+  ResultEdit.Lines.Add('F6 Switch between Result and SQL editor');
+  ResultEdit.Lines.Add('F7 Switch to Info');
+  ResultEdit.Lines.Add('F8 Switch to SQL editor');
+  ResultEdit.Lines.Add('F9 to excecute sql sctipt');
+  State := sqlsInfo;
 end;
 
 procedure TMainForm.InfoBtnClick(Sender: TObject);
@@ -512,6 +555,26 @@ end;
 procedure TMainForm.ExitMnuClick(Sender: TObject);
 begin
   Close;
+end;
+
+procedure TMainForm.MenuItem3Click(Sender: TObject);
+begin
+  State := sqlsRoot;
+end;
+
+procedure TMainForm.OpenMnuClick(Sender: TObject);
+begin
+  LoadSQLFile;
+end;
+
+procedure TMainForm.SaveMnuClick(Sender: TObject);
+begin
+  SaveLastSQLFile;
+end;
+
+procedure TMainForm.SaveAsMnuClick(Sender: TObject);
+begin
+  SaveAsSQLFile;
 end;
 
 procedure TMainForm.RecentsCboSelect(Sender: TObject);
@@ -612,6 +675,22 @@ end;
 
 procedure TMainForm.SQLLoadBtnClick(Sender: TObject);
 begin
+  LoadSQLFile;
+end;
+
+procedure TMainForm.SQLSaveBtnClick(Sender: TObject);
+begin
+  SaveLastSQLFile;
+end;
+
+procedure TMainForm.StopBtnClick(Sender: TObject);
+begin
+  FCancel := True;
+end;
+
+procedure TMainForm.LoadSQLFile;
+begin
+  State := sqlsSQL;
   OpenDialog.FileName := '*.sql';
   OpenDialog.DefaultExt := 'sql';
   OpenDialog.Filter := '*.sql';
@@ -626,13 +705,9 @@ begin
   end;
 end;
 
-procedure TMainForm.SQLSaveBtnClick(Sender: TObject);
-begin
-  SaveLastSQLFile;
-end;
-
 procedure TMainForm.SaveAsSQLFile;
 begin
+  State := sqlsSQL;
   SaveDialog.FileName := LastSQLFile;
   SaveDialog.DefaultExt := 'sql';
   SAveDialog.Filter := '*.sql';
@@ -646,6 +721,7 @@ end;
 
 procedure TMainForm.SaveLastSQLFile;
 begin
+  State := sqlsSQL;
   if LastSQLFile = '' then
   begin
     SaveAsSQLFile;
@@ -1163,6 +1239,7 @@ begin
             if not SQLCMD.EOF then
             begin
               State := sqlsResults;
+              Application.ProcessMessages;
               DataGrid.SetFocus;
               t := NOW;
               if SQLCMD.Eof then
@@ -1182,12 +1259,12 @@ begin
         begin
           aExport := TmncCSVExport.Create;
           try
-            OpenDialog.FileName := '*.csv';
-            OpenDialog.DefaultExt := 'csv';
-            OpenDialog.Filter := '*.csv';
-            if OpenDialog.Execute and ShowCSVIEOptions('Export CSV', aExport) then
+            SaveDialog.FileName := '*.csv';
+            SaveDialog.DefaultExt := 'csv';
+            SaveDialog.Filter := '*.csv';
+            if SaveDialog.Execute and ShowCSVIEOptions('Export CSV', aExport) then
             begin
-              aStream := TFileStream.Create(OpenDialog.FileName, fmCreate);
+              aStream := TFileStream.Create(SaveDialog.FileName, fmCreate);
               try
                 aExport.Command := SQLCMD;
                 aExport.Stream := aStream;
@@ -1209,37 +1286,40 @@ begin
         end;
         execImport:
         begin
-          SQLCMD.Prepare;
-          if (SQLCMD.Params.Count = 0) then
+          OpenDialog.FileName := '*.csv';
+          OpenDialog.DefaultExt := 'csv';
+          OpenDialog.Filter := '*.csv';
+          if OpenDialog.Execute then
           begin
-            ShowMessage('SQL statment must have params for import');
-            exit;
-          end;
-          aImport := TmncCSVImport.Create;
-          try
-            SaveDialog.FileName := '*.csv';
-            SaveDialog.DefaultExt := 'csv';
-            SaveDialog.Filter := '*.csv';
-            if SaveDialog.Execute and ShowCSVIEOptions('Import CSV', aImport) then
+            SQLCMD.Prepare;
+            if (SQLCMD.Params.Count = 0) then
             begin
-              aStream := TFileStream.Create(SaveDialog.FileName, fmOpenRead or fmShareDenyWrite);
-              try
-                aImport.Command := SQLCMD;
-                aImport.Stream := aStream;
-                Screen.Cursor := crHourGlass;
-                t := NOW;
-                aImport.Execute;
-                ResultEdit.Lines.Add('Import time: ' + LogTime(t));
-                ResultEdit.Lines.Add('Import count: ' + IntToStr(aImport.Count));
-                Screen.Cursor := crDefault;
-                State := sqlsInfo;
-                ShowMessage('Import count: '+ IntToStr(aImport.Count));
-              finally
-                aStream.Free;
-              end;
+              ShowMessage('SQL statment must have params for import');
+              exit;
             end;
-          finally
-            aImport.Free;
+            aImport := TmncCSVImport.Create;
+            try
+              if ShowCSVIEOptions('Import CSV', aImport) then
+              begin
+                aStream := TFileStream.Create(OpenDialog.FileName, fmOpenRead or fmShareDenyWrite);
+                try
+                  aImport.Command := SQLCMD;
+                  aImport.Stream := aStream;
+                  Screen.Cursor := crHourGlass;
+                  t := NOW;
+                  aImport.Execute;
+                  ResultEdit.Lines.Add('Import time: ' + LogTime(t));
+                  ResultEdit.Lines.Add('Import count: ' + IntToStr(aImport.Count));
+                  Screen.Cursor := crDefault;
+                  State := sqlsInfo;
+                  ShowMessage('Import count: '+ IntToStr(aImport.Count));
+                finally
+                  aStream.Free;
+                end;
+              end;
+            finally
+              aImport.Free;
+            end;
           end;
         end;
       end;
@@ -1266,6 +1346,7 @@ begin
   aStrings := TStringList.Create;
   try
     SqlBtn.Enabled := False;
+    StopBtn.Visible := True;
     try
       ResultEdit.Clear;
       AddRecentSQL;
@@ -1300,6 +1381,7 @@ begin
     ResultEdit.Lines.Add('');
     Screen.Cursor := crDefault;
     SqlBtn.Enabled := True;
+    StopBtn.Visible := False;
     aStrings.Free;
     SQLCMD.Free;
     sqlvEngine.Session.DBSession.Active := True;
@@ -1335,57 +1417,66 @@ var
   s: string;
 begin
   FCancel := False;
-  DataGrid.ColCount := SQLCMD.Fields.Count + 1;
-  DataGrid.FixedCols := 1;
-  DataGrid.FixedRows := 1;
-  DataGrid.ColWidths[0] := 24;
-  DataGrid.Row := 1;
-  DataGrid.Col := 1;
-  DataGrid.Cells[0, 0] := '';
-  cw := GetCharWidth; //must calc from canvas
-  for i := 1 to DataGrid.ColCount - 1 do
-  begin
-    s := SQLCMD.Fields[i - 1].Name;
-    z := 10;//SQLCMD.Fields[i - 1].Size;
-    if z < 4 then
-      z := 4
-    else if z > 20 then
-      z := 20;
-    w := z * cw;
-    tw := GetTextWidth(s) + 12;
-    if tw > w then
-      w := tw;
-    tw := GetTextWidth(SQLCMD.Current.Items[i - 1].AsString) + 12;
-    if tw > w then
-      w := tw;
-    DataGrid.ColWidths[i] := w;
-    DataGrid.Cells[i, 0] := s;
-  end;
-
-  c := 1;
-  while not SQLCMD.EOF do
-  begin
-    DataGrid.RowCount := c + 1;
-    DataGrid.Cells[0, c] := IntToStr(c);
+  //DataGrid.BeginUpdate;
+  try
+    DataGrid.ColCount := SQLCMD.Fields.Count + 1;
+    DataGrid.FixedCols := 1;
+    DataGrid.FixedRows := 1;
+    DataGrid.RowCount := 1;
+    DataGrid.ColWidths[0] := 24;
+    DataGrid.Row := 1;
+    DataGrid.Col := 1;
+    DataGrid.Cells[0, 0] := '';
+    cw := GetCharWidth; //must calc from canvas
     for i := 1 to DataGrid.ColCount - 1 do
     begin
-      DataGrid.Cells[i, c] := SQLCMD.Current.Items[i - 1].AsString;
+      s := SQLCMD.Fields[i - 1].Name;
+      z := 10;//SQLCMD.Fields[i - 1].Size;
+      if z < 4 then
+        z := 4
+      else if z > 20 then
+        z := 20;
+      w := z * cw;
+      tw := GetTextWidth(s) + 12;
+      if tw > w then
+        w := tw;
+      tw := GetTextWidth(SQLCMD.Current.Items[i - 1].AsString) + 12;
+      if tw > w then
+        w := tw;
+      DataGrid.ColWidths[i] := w;
+      DataGrid.Cells[i, 0] := s;
     end;
-    Inc(c);
-    if Frac(c / 100) = 0 then
+    Application.ProcessMessages;
+
+    c := 1;
+    while not SQLCMD.EOF do
     begin
-      FetchCountLbl.Caption := IntToStr(c);
-      Application.ProcessMessages;
+      DataGrid.RowCount := c + 1;
+      DataGrid.Cells[0, c] := IntToStr(c);
+      for i := 1 to DataGrid.ColCount - 1 do
+      begin
+        DataGrid.Cells[i, c] := SQLCMD.Current.Items[i - 1].AsString;
+      end;
+      Inc(c);
+      //before 100 rows will see the grid row by row filled, cheeting the eyes of user
+      if (c < 100) or (Frac(c / 100) = 0) then
+      begin
+        FetchCountLbl.Caption := IntToStr(c);
+        Application.ProcessMessages;
+      end;
+      if FCancel then
+        break;
+      SQLCMD.Next;
     end;
-    if FCancel then
-      break;
-    SQLCMD.Next;
+    w := GetTextWidth(IntToStr(c)) + 12;
+    if w < 24 then
+      w := 24;
+    DataGrid.ColWidths[0] := w;
+    FetchCountLbl.Caption := IntToStr(c);
+  finally
+    Application.ProcessMessages;
+    //DataGrid.EndUpdate;
   end;
-  w := GetTextWidth(IntToStr(c)) + 12;
-  if w < 24 then
-    w := 24;
-  DataGrid.ColWidths[0] := w;
-  FetchCountLbl.Caption := IntToStr(c);
 end;
 
 function TMainForm.LogTime(Start: TDateTime): string;

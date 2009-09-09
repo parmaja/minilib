@@ -7,6 +7,12 @@ object CSVIEForm: TCSVIEForm
   Caption = 'CSV Export/Import'
   ClientHeight = 200
   ClientWidth = 189
+  Font.CharSet = ANSI_CHARSET
+  Font.Color = clBlack
+  Font.Height = -11
+  Font.Name = 'Tahoma'
+  Font.Pitch = fpVariable
+  Font.Quality = fqDraft
   OnCreate = FormCreate
   Position = poMainFormCenter
   LCLVersion = '0.9.29'

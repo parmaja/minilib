@@ -734,7 +734,7 @@ begin
   inherited;
   Group := 'Table';
   Name := 'EmptyTable';
-  Title := 'Empty Table';
+  Title := 'Empty';
   Kind := sokNone;
   Style := [nsCommand];
   ImageIndex := IMG_COMMAND;
@@ -1067,7 +1067,7 @@ begin
   inherited Create;
   Group := 'Table';
   Name := 'DropTable';
-  Title := 'Drop Table';
+  Title := 'Drop';
   Kind := sokTable;
   Style := Style + [nsCommand];
   ImageIndex := IMG_TABLE;
@@ -1187,7 +1187,7 @@ end;
 initialization
   sqlvEngine.RegisterViewer([TsqlvDatabase]);
   sqlvEngine.RegisterViewer([TsqlvTables, TsqlvTable, TsqlvTableFields, TsqlvExportSQL, TsqlvImportSQL]);
-  sqlvEngine.RegisterViewer([TsqlvEmptyTable, TsqlvDropTable, TsqlvSelectTable, TsqlvInsertTable]);
+  sqlvEngine.RegisterViewer([TsqlvSelectTable, TsqlvInsertTable, TsqlvEmptyTable, TsqlvDropTable]);
   sqlvEngine.RegisterViewer([TsqlvIndices, TsqlvTableIndices, TsqlvIndex, TsqlvDropIndex]);
   sqlvEngine.RegisterViewer([TsqlvDropField{, TsqlvNewField}]);
   sqlvEngine.RegisterViewer([TsqlvViews, TsqlvView]);

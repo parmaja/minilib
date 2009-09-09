@@ -6,6 +6,12 @@ object AboutForm: TAboutForm
   Caption = 'About Mini SQL Viewer'
   ClientHeight = 280
   ClientWidth = 254
+  Font.CharSet = ANSI_CHARSET
+  Font.Color = clBlack
+  Font.Height = -11
+  Font.Name = 'Tahoma'
+  Font.Pitch = fpVariable
+  Font.Quality = fqDraft
   OnCreate = FormCreate
   ParentBiDiMode = False
   LCLVersion = '0.9.29'
@@ -19,7 +25,7 @@ object AboutForm: TAboutForm
     ParentColor = False
   end
   object Label3: TLabel
-    Left = 9
+    Left = 16
     Height = 14
     Top = 181
     Width = 156
@@ -28,7 +34,7 @@ object AboutForm: TAboutForm
     ParentColor = False
   end
   object Label4: TLabel
-    Left = 9
+    Left = 16
     Height = 14
     Top = 197
     Width = 186
@@ -46,7 +52,7 @@ object AboutForm: TAboutForm
     ParentColor = False
   end
   object Label6: TLabel
-    Left = 14
+    Left = 21
     Height = 14
     Top = 232
     Width = 100

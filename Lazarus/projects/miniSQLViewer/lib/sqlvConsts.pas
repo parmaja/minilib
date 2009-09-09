@@ -16,7 +16,7 @@ const
   sSqliteFilter = 'Sqlite (*.sqlite)|*.sqlite';
   sAllFilesFilter = 'All files (*.*)|*.*';
   REG_sqlvSoftwareOptions = 'software\MiniSQLViewer\Options';
-  sqlvVersion = '0.1.5';
+  sqlvVersion = '0.1.6';
 
 implementation
 end.
