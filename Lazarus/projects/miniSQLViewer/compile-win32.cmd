@@ -1,7 +1,7 @@
 @echo off
 del bin\sqliteviewer.exe
 
-fpc gui\sqliteviewer.lpr @extra.cfg -obin\sqliteviewer.exe -d%1  -B -dLCL -FUunits\
+fpc gui\sqliteviewer.lpr @windows.cfg -obin\sqliteviewer.exe -B -dLCLwin32 -FUunits\
 if errorlevel 1 goto erroroccurred
 
 e:\utils\upx bin\sqliteviewer.exe

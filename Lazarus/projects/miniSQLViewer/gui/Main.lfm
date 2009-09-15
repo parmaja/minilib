@@ -813,7 +813,7 @@ object MainForm: TMainForm
         Text = '\'
       end
       object AutoCreateChk: TCheckBox
-        Left = 9
+        Left = 10
         Height = 17
         Top = 140
         Width = 110
@@ -874,7 +874,7 @@ object MainForm: TMainForm
         TabOrder = 7
       end
       object ExclusiveChk: TCheckBox
-        Left = 9
+        Left = 10
         Height = 17
         Top = 183
         Width = 91
@@ -884,7 +884,7 @@ object MainForm: TMainForm
         TabOrder = 8
       end
       object VacuumChk: TCheckBox
-        Left = 9
+        Left = 10
         Height = 17
         Top = 203
         Width = 125

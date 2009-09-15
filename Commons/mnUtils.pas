@@ -21,8 +21,8 @@ uses
 const
   sUTF8BOM: array[1..3] of Char = (#$EF, #$BB, #$BF);
 
-function DequoteStr(Str: string; QuoteChar: string): string;
-function DequoteStr(Str: string): string; //deqoute use both of ' and "
+function DequoteStr(Str: string; QuoteChar: string): string; overload;
+      function DequoteStr(Str: string): string; overload; //deqoute use both of ' and "
 function QuoteStr(Str: string; QuoteChar: string = '"'): string;
 function StrToStrings(Content: string; Strings: TStrings; Separators: TSysCharSet; WhiteSpace: TSysCharSet = [#0, #13, #10]; DequoteValues: Boolean = False; Quotes: TSysCharSet = ['''', '"']): Integer;
 function ExpandToPath(FileName: string; Path: string; Root:string = ''): string;

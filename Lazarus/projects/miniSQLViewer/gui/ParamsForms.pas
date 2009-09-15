@@ -1,4 +1,5 @@
 unit ParamsForms;
+{$mode objfpc}{$H+}
 {**
  *  This file is part of the "Mini Library"
  *
@@ -6,8 +7,6 @@ unit ParamsForms;
  *            See the file COPYING.MLGPL, included in this distribution,
  * @author    Zaher Dirkey <zaher at parmaja dot com>
  *}
-
-{$mode objfpc}{$H+}
 
 interface
 
@@ -19,10 +18,13 @@ uses
 
 type
 
+  { TParamsForm }
+
   TParamsForm = class(TForm)
     CancelBtn: TButton;
     OkBtn: TButton;
     procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
+    procedure FormCreate(Sender: TObject);
   private
     FEditList: TList;
   public
@@ -113,6 +115,10 @@ procedure TParamsForm.FormClose(Sender: TObject;
   var CloseAction: TCloseAction);
 begin
   CloseAction := caHide;
+end;
+
+procedure TParamsForm.FormCreate(Sender: TObject);
+begin
 end;
 
 { TsqlvParamEdit }

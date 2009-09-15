@@ -28,9 +28,9 @@ uses
   Classes, SysUtils, LResources, Forms, Controls, Graphics, Dialogs, Grids,
   dateutils, LCLType, LCLIntf, Types, mncConnections,
   contnrs, ExtCtrls, StdCtrls, SynEdit, FileUtil, Buttons, Menus,
-  SynHighlighterSqlite, sqlvSessions, mncCSV,
+  SynHighlighterSQLite, sqlvSessions, mncCSV,
   SynCompletion, SynEditAutoComplete, SynHighlighterHashEntries,
-  mnUtils, mncSQLite, mncSchemas, mncSqliteSchemas, mncCSVExchanges,
+  mnUtils, mncSQLite, mncSchemas, mncSQLiteSchemas, mncCSVExchanges,
   sqlvClasses, sqlvStdClasses, LMessages;
 
 type

@@ -1,22 +1,23 @@
 object ParamsForm: TParamsForm
-  Left = 296
-  Height = 72
-  Top = 251
+  Left = 408
+  Height = 57
+  Top = 286
   Width = 369
   BorderIcons = [biSystemMenu, biMinimize]
   BorderStyle = bsSingle
   Caption = 'Params'
-  ClientHeight = 72
+  ClientHeight = 57
   ClientWidth = 369
   Font.Height = -11
   Font.Name = 'MS Sans Serif'
   OnClose = FormClose
+  OnCreate = FormCreate
   Position = poMainFormCenter
   LCLVersion = '0.9.29'
   object CancelBtn: TButton
     Left = 81
     Height = 22
-    Top = 46
+    Top = 31
     Width = 72
     Anchors = [akLeft, akBottom]
     Caption = 'Cancel'
@@ -26,7 +27,7 @@ object ParamsForm: TParamsForm
   object OkBtn: TButton
     Left = 6
     Height = 22
-    Top = 46
+    Top = 31
     Width = 72
     Anchors = [akLeft, akBottom]
     Caption = 'OK'

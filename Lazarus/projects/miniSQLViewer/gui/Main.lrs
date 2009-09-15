@@ -212,9 +212,9 @@ LazarusResources.Add('TMainForm','FORMDATA',[
   +'F'#5'Width'#3#193#0#7'Anchors'#11#5'akTop'#6'akLeft'#7'akRight'#0#10'ItemHe'
   +'ight'#2#13#10'OnDropDown'#7#19'DataPathCboDropDown'#6'OnExit'#7#15'DataPath'
   +'CboExit'#8'TabOrder'#2#0#4'Text'#6#1'\'#0#0#9'TCheckBox'#13'AutoCreateChk'#4
-  +'Left'#2#9#6'Height'#2#17#3'Top'#3#140#0#5'Width'#2'n'#8'BidiMode'#7#24'bdRi'
-  +'ghtToLeftReadingOnly'#7'Caption'#6#20'Create if not exists'#14'ParentBidiMo'
-  +'de'#8#8'TabOrder'#2#2#0#0#9'TComboBox'#10'RecentsCbo'#4'Left'#2#5#6'Height'
+  +'Left'#2#10#6'Height'#2#17#3'Top'#3#140#0#5'Width'#2'n'#8'BidiMode'#7#24'bdR'
+  +'ightToLeftReadingOnly'#7'Caption'#6#20'Create if not exists'#14'ParentBidiM'
+  +'ode'#8#8'TabOrder'#2#2#0#0#9'TComboBox'#10'RecentsCbo'#4'Left'#2#5#6'Height'
   +#2#21#3'Top'#2#26#5'Width'#3#193#0#7'Anchors'#11#5'akTop'#6'akLeft'#7'akRigh'
   +'t'#0#10'ItemHeight'#2#13#8'OnSelect'#7#16'RecentsCboSelect'#5'Style'#7#14'c'
   +'sDropDownList'#8'TabOrder'#2#3#0#0#7'TButton'#9'BrowseBtn'#4'Left'#3#144#0#6
@@ -228,11 +228,11 @@ LazarusResources.Add('TMainForm','FORMDATA',[
   +'ParentBidiMode'#8#8'TabOrder'#2#6#0#0#7'TButton'#10'RefreshBtn'#4'Left'#3
   +#144#0#6'Height'#2#19#3'Top'#2']'#5'Width'#2'6'#7'Anchors'#11#5'akTop'#7'akR'
   +'ight'#0#7'Caption'#6#7'Refresh'#7'OnClick'#7#15'RefreshBtnClick'#8'TabOrder'
-  +#2#7#0#0#9'TCheckBox'#12'ExclusiveChk'#4'Left'#2#9#6'Height'#2#17#3'Top'#3
+  +#2#7#0#0#9'TCheckBox'#12'ExclusiveChk'#4'Left'#2#10#6'Height'#2#17#3'Top'#3
   +#183#0#5'Width'#2'['#8'BidiMode'#7#24'bdRightToLeftReadingOnly'#7'Caption'#6
   +#14'Open exclusive'#14'ParentBidiMode'#8#8'TabOrder'#2#8#0#0#9'TCheckBox'#9
-  +'VacuumChk'#4'Left'#2#9#6'Height'#2#17#3'Top'#3#203#0#5'Width'#2'}'#8'BidiMo'
-  +'de'#7#24'bdRightToLeftReadingOnly'#7'Caption'#6#19'Vacuum when connect'#14
+  +'VacuumChk'#4'Left'#2#10#6'Height'#2#17#3'Top'#3#203#0#5'Width'#2'}'#8'BidiM'
+  +'ode'#7#24'bdRightToLeftReadingOnly'#7'Caption'#6#19'Vacuum when connect'#14
   +'ParentBidiMode'#8#8'TabOrder'#2#9#0#0#0#6'TPanel'#10'GroupPanel'#4'Left'#2
   +'W'#6'Height'#3#153#0#3'Top'#2'`'#5'Width'#3#234#0#10'BevelOuter'#7#6'bvNone'
   +#11'BorderWidth'#2#2#12'ClientHeight'#3#153#0#11'ClientWidth'#3#234#0#8'TabO'
