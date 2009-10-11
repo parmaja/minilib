@@ -36,6 +36,7 @@ type
   TMainForm = class(TForm)
     ApplicationProperties: TApplicationProperties;
     EditCommentBtn: TButton;
+    EditCommentBtn1: TButton;
     HintLbl: TLabel;
     MainMenu: TMainMenu;
     ExitMnu: TMenuItem;

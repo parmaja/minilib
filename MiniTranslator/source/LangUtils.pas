@@ -19,9 +19,11 @@ uses
   LangClasses;
 
 procedure LoadLanguages(const vDefaultLanguage, vSource: string; vFilerClass: TLangFilerClass);
+procedure SaveLanguages(vSource: string; vFilerClass: TLangFilerClass; OnlyModified: Boolean);
 
 function _(const ID: string): string; overload;
 function _(const ID: string; Default: string): string; overload;
+function LangFindText(const ID: string; var Value: string): Boolean;
 function GetText(const ID: string): string; overload;
 
 implementation
@@ -37,7 +39,7 @@ var
   aFiler: TLangFiler;
 begin
   if vFilerClass = nil then
-    raise ELangException.Create('FilerClass is nul');
+    raise ELangException.Create('FilerClass is nil');
   try
     I := FindFirst(IncludeTrailingPathDelimiter(vSource) + '*.*', faDirectory, SearchRec);
     while I = 0 do
@@ -61,6 +63,29 @@ begin
   end;
   Languages.SetDefaultLanguage(vDefaultLanguage);
   Languages.SetCurrentLanguage(vDefaultLanguage);
+end;
+
+procedure SaveLanguages(vSource: string; vFilerClass: TLangFilerClass; OnlyModified: Boolean);
+var
+  i: Integer;
+  aFiler: TLangFiler;
+begin
+  if vFilerClass = nil then
+    raise ELangException.Create('FilerClass is nil');
+  try
+    for i := 0 to Languages.Count -1 do
+    if not OnlyModified or Languages[i].Modified then
+    begin
+      aFiler := vFilerClass.Create;
+      try
+        aFiler.SaveTo(vSource, Languages[i]);
+      finally
+        aFiler.Free;
+      end;
+    end;
+  except
+    raise;
+  end;
 end;
 
 function _(const ID: string): string;
@@ -91,6 +116,14 @@ begin
     Result := s
   else
     Result := ID;
+end;
+
+function LangFindText(const ID: string; var Value: string): Boolean;
+begin
+  if IsLanguagesInitialized then
+    Result := Languages.GetText(ID, Value)
+  else
+    Result := False;
 end;
 
 initialization

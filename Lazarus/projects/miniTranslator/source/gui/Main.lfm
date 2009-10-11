@@ -17,7 +17,7 @@ object MainForm: TMainForm
   OnCreate = FormCreate
   OnShow = FormShow
   ShowHint = True
-  LCLVersion = '0.9.27'
+  LCLVersion = '0.9.29'
   object LeftSplitter: TSplitter
     Left = 295
     Height = 209
@@ -201,12 +201,22 @@ object MainForm: TMainForm
         Left = 4
         Height = 21
         Top = 21
-        Width = 290
+        Width = 258
         Anchors = [akTop, akLeft, akRight, akBottom]
         ItemHeight = 13
         OnSelect = GroupsListSelect
         Style = csDropDownList
         TabOrder = 0
+      end
+      object EditCommentBtn1: TButton
+        Left = 263
+        Height = 22
+        Top = 20
+        Width = 31
+        Anchors = [akTop, akRight]
+        Caption = 'Prop'
+        OnClick = EditCommentBtnClick
+        TabOrder = 1
       end
     end
     object Panel4: TPanel

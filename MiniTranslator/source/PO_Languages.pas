@@ -8,7 +8,7 @@ unit PO_Languages;
  *}
 
 {$IFDEF FPC}
-{$MODE objfpc}
+{$MODE delphi}
 {$ENDIF}
 {$M+}{$H+}
 
@@ -104,7 +104,7 @@ const
 {$IFDEF WINDOWS}
   sOSEOL = #13#10;
 {$ELSE}
-  sOSEOL = #13;
+  sOSEOL = #10;
 {$ENDIF}
 
   sPOCommands: array[TPO_State] of string = (ssMsgStr, ssMsgId, ssMsgCtxt,
@@ -112,12 +112,12 @@ const
 
 function EscapePOString(s: string): string;
 begin
-  Result := EscapeString(s, '\', [#8, #9, #13, '\', '"'], ['b', 't', 'n', '\', '"']);
+  Result := EscapeString(s, '\', [#8, #9, #10, #13, '\', '"'], ['b', 't', 'n', 'r', '\', '"']);
 end;
 
 function DescapePOString(s: string): string;
 begin
-  Result := DescapeString(s, '\', [#8, #9, #13, '\', '"'], ['b', 't', 'n', '\', '"']);
+  Result := DescapeString(s, '\', [#8, #9, #10, #13, '\', '"'], ['b', 't', 'n', 'r', '\', '"']);
 end;
 
 function CutStrID(const ID, S: string; Dequote, Descape: Boolean): string;
@@ -140,6 +140,13 @@ procedure TPO_Parser.ParseLine(Number:Integer; ALine: string);
   var
     S: string;
     W: string;
+    function AppendIt(S1, S2, Comma:string): string;
+    begin
+      Result := S1;
+      if Result <> '' then
+        Result := Result + Comma +' ';
+      Result := Result + Trim(S2);
+    end;
   begin
     W := sPOCommands[vState];
     Result := Check(vLine, W);
@@ -154,8 +161,8 @@ procedure TPO_Parser.ParseLine(Number:Integer; ALine: string);
         poMsgStr: FLangItem.Text := FLangItem.Text + S;
         poMsgCtxt: FLangItem.Context := FLangItem.Context + S;
         poAutoComment: FLangItem.AutoComment := FLangItem.AutoComment + S;
-        poFlags: FLangItem.Flags := FLangItem.Flags + S;
-        poReference: FLangItem.Reference := FLangItem.Reference + S;
+        poFlags: FLangItem.Flags := AppendIt(FLangItem.Flags, S, ',');
+        poReference: FLangItem.Reference := AppendIt(FLangItem.Reference, S, #10);
         poPreviousID: FLangItem.PreviousID := FLangItem.PreviousID + S;
         poPreviousText: FLangItem.PreviousText := FLangItem.PreviousText + S;
         poComment: FLangItem.Comment := FLangItem.Comment + S;
@@ -218,10 +225,8 @@ var
   p: Integer;
   i: Integer;
   aList: TStringList;
-  ForceUTF8: Boolean;
   aItem: TLangItem;
 begin
-  ForceUTF8 := False;
   l := 0;
   while l < Strings.Count do
   begin
@@ -230,7 +235,7 @@ begin
     begin
       if (Length(s) > 0) and (Copy(s, 1, 3) = sUTF8BOM) then
       begin
-        ForceUTF8 := True;
+        Contents.BOMFlag := True;
         Delete(s, 1, 3);
       end;
     end;
@@ -242,7 +247,7 @@ begin
   if aItem <> nil then
   begin
     s := aItem.DisplayText;
-    ExtractStrings([#13], [' '], PChar(s), Contents.Attributes);
+    BreakToStrings(s, Contents.Attributes);
     for i := 0 to Contents.Attributes.Count - 1 do
     begin
       s := Trim(Contents.Attributes[i]);
@@ -276,7 +281,7 @@ begin
   end;
   Contents.IsRightToLeft := SameText(Trim(Contents.Attributes.Values['X-DIRECTION']), 'RTL');
 
-  if ForceUTF8 or SameText(Contents.Charset, 'utf-8') then
+  if Contents.BOMFlag or SameText(Contents.Charset, 'utf-8') then
     Contents.Encoding := lncUTF8
   else
     Contents.Encoding := lncAnsi;
@@ -307,38 +312,24 @@ begin
   end;
 end;}
 
+procedure BreakToStringsProc(S: string; vStrings: TStrings);
+begin
+  vStrings.Add(QuoteStr(EscapePOString(s)));
+end;
+
 procedure TPO_Parser.DoGenerate(Strings: TStringList);
   procedure WriteItem(Item: TLangItem);
     procedure WriteStrings(Ident, S: string; Force: Boolean);
-    var
-      aStrings: TStringList;
-      i: Integer;
-      function GetEOL: string;
-      begin
-        if i < (aStrings.Count - 1) then
-          Result := '\n'
-        else
-          Result := '';
-      end;
     begin
       if Force or (s <> '') then
       begin
-        aStrings := TStringList.Create;
-        try
-          aStrings.Text := s;
-          if (aStrings.Count <= 1) then
-            Strings.Add(Ident + ' ' +QuoteStr(EscapePOString(s)))
-          else
-          begin
-            Strings.Add(Ident + ' ""');
-            for i := 0 to aStrings.Count - 1 do
-            begin
-              Strings.Add(QuoteStr(EscapePOString(aStrings[i]) + GetEOL));
-            end
-          end;
-        finally
-          aStrings.Free;
-        end;
+        if (Pos(#10, s) > 0) or (Pos(#13, s) > 0) then
+        begin
+          Strings.Add(Ident + ' ""');
+          BreakToStrings(s, Strings, True, BreakToStringsProc);
+        end
+        else
+          Strings.Add(Ident + ' ' +QuoteStr(EscapePOString(s)));
       end;
     end;
 
@@ -351,11 +342,32 @@ procedure TPO_Parser.DoGenerate(Strings: TStringList);
       begin
         aStrings := TStringList.Create;
         try
-          ExtractStrings([#13], [], PChar(s), aStrings);
+          BreakToStrings(s, aStrings);
           for i := 0 to aStrings.Count - 1 do
           begin
             if aStrings[i] <> '' then
               Strings.Add(Ident + ' ' + aStrings[i]);
+          end;
+        finally
+          aStrings.Free;
+        end
+      end;
+    end;
+
+    procedure WriteReferences(Ident, s: string);
+    var
+      aStrings: TStringList;
+      i: Integer;
+    begin
+      if s <> '' then
+      begin
+        aStrings := TStringList.Create;
+        try
+          StrToStrings(S, aStrings, [#10], []);
+          for i := 0 to aStrings.Count - 1 do
+          begin
+            if aStrings[i] <> '' then
+              Strings.Add(Ident + ' ' + Trim(aStrings[i]));
           end;
         finally
           aStrings.Free;
@@ -368,7 +380,7 @@ procedure TPO_Parser.DoGenerate(Strings: TStringList);
     begin
       WriteComments(ssComment, Comment);
       WriteComments(ssAutoComment, AutoComment);
-      WriteComments(ssReference, Reference);
+      WriteReferences(ssReference, Reference);
       WriteComments(ssFlags, Flags);
       WriteComments(ssPreviousID, PreviousID);
       WriteComments(ssPreviousText, PreviousText);
@@ -443,6 +455,7 @@ end;
 
 procedure TPODirectoryFiler.DoSaveTo(vSource: string; vLanguage: TLanguage);
 begin
+  DefaultDirSaveTo(vSource, vLanguage);
 end;
 
 class function TPODirectoryFiler.GetName: string;
