@@ -12,7 +12,7 @@ unit FluxBB_Parser;
 }
 
 {$IFDEF FPC}
-{$MODE objfpc}
+{$MODE delphi}
 {$ENDIF}
 {$M+}{$H+}
 
@@ -44,7 +44,6 @@ type
     constructor Create;
     destructor Destroy; override;
     class function GetName: string; override;
-    class function GetExtension: string; override;
     class function GetTitle: string; override;
   end;
 
@@ -180,7 +179,6 @@ end;
 
 procedure TFluxBBParser.DoGenerate(Strings: TStringList);
 begin
-
 end;
 
 constructor TFluxBBParser.Create;
@@ -195,27 +193,21 @@ end;
 
 class function TFluxBBParser.GetName: string;
 begin
-  Result :=inherited GetName;
-end;
-
-class function TFluxBBParser.GetExtension: string;
-begin
-  Result :=inherited GetExtension;
+  Result := 'FluxBBParser';
 end;
 
 class function TFluxBBParser.GetTitle: string;
 begin
-  Result :=inherited GetTitle;
+  Result := 'FluxBB Parser';
 end;
 
 { TFluxBBFiler }
 
 procedure TFluxBBFiler.DoLoadFrom(vSource: string; vLanguage: TLanguage);
 begin
-  DefaultSingleLoadFrom(vSource, vLanguage);
+  DefaultLoadFrom(False, vSource, vLanguage);
   if vLanguage.Count > 0 then
     vLanguage.IsRightToLeft := SameText(vLanguage.GetText('lang_common', 'lang_direction') , 'rtl');
-  vLanguage.ID := 0;
 end;
 
 procedure TFluxBBFiler.DoSaveTo(vSource: string; vLanguage: TLanguage);

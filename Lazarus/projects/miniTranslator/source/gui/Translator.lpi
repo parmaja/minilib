@@ -8,7 +8,7 @@
       <TargetFileExt Value=".exe"/>
       <UseAppBundle Value="False"/>
       <Icon Value="0"/>
-      <ActiveEditorIndexAtStart Value="1"/>
+      <ActiveEditorIndexAtStart Value="0"/>
     </General>
     <VersionInfo>
       <ProjectVersion Value=""/>
@@ -36,7 +36,7 @@
         <IsPartOfProject Value="True"/>
         <CursorPos X="1" Y="1"/>
         <TopLine Value="1"/>
-        <UsageCount Value="91"/>
+        <UsageCount Value="93"/>
       </Unit0>
       <Unit1>
         <Filename Value="AboutForms.pas"/>
@@ -47,7 +47,7 @@
         <UnitName Value="AboutForms"/>
         <CursorPos X="1" Y="1"/>
         <TopLine Value="1"/>
-        <UsageCount Value="91"/>
+        <UsageCount Value="93"/>
       </Unit1>
       <Unit2>
         <Filename Value="LogForms.pas"/>
@@ -58,7 +58,7 @@
         <UnitName Value="LogForms"/>
         <CursorPos X="20" Y="50"/>
         <TopLine Value="9"/>
-        <UsageCount Value="91"/>
+        <UsageCount Value="93"/>
       </Unit2>
       <Unit3>
         <Filename Value="OptionForms.pas"/>
@@ -67,9 +67,11 @@
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="OptionForms"/>
-        <CursorPos X="1" Y="1"/>
+        <CursorPos X="51" Y="14"/>
         <TopLine Value="1"/>
-        <UsageCount Value="91"/>
+        <EditorIndex Value="4"/>
+        <UsageCount Value="93"/>
+        <Loaded Value="True"/>
       </Unit3>
       <Unit4>
         <Filename Value="Setups.pas"/>
@@ -80,7 +82,7 @@
         <UnitName Value="Setups"/>
         <CursorPos X="1" Y="1"/>
         <TopLine Value="1"/>
-        <UsageCount Value="64"/>
+        <UsageCount Value="66"/>
         <Bookmarks Count="1">
           <Item0 X="1" Y="75" ID="1"/>
         </Bookmarks>
@@ -102,12 +104,13 @@
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="Main"/>
-        <CursorPos X="52" Y="26"/>
-        <TopLine Value="1"/>
+        <CursorPos X="20" Y="1023"/>
+        <TopLine Value="1012"/>
         <EditorIndex Value="0"/>
-        <UsageCount Value="91"/>
-        <Bookmarks Count="1">
-          <Item0 X="3" Y="1188" ID="2"/>
+        <UsageCount Value="93"/>
+        <Bookmarks Count="2">
+          <Item0 X="5" Y="839" ID="1"/>
+          <Item1 X="3" Y="1193" ID="2"/>
         </Bookmarks>
         <Loaded Value="True"/>
       </Unit6>
@@ -177,10 +180,10 @@
       <Unit16>
         <Filename Value="..\..\..\..\..\MiniTranslator\source\LangClasses.pas"/>
         <UnitName Value="LangClasses"/>
-        <CursorPos X="36" Y="1083"/>
-        <TopLine Value="1076"/>
-        <EditorIndex Value="1"/>
-        <UsageCount Value="30"/>
+        <CursorPos X="1" Y="937"/>
+        <TopLine Value="920"/>
+        <EditorIndex Value="2"/>
+        <UsageCount Value="31"/>
         <Bookmarks Count="1">
           <Item0 X="5" Y="213" ID="3"/>
         </Bookmarks>
@@ -226,8 +229,8 @@
         <UnitName Value="PO_Languages"/>
         <CursorPos X="14" Y="10"/>
         <TopLine Value="1"/>
-        <EditorIndex Value="2"/>
-        <UsageCount Value="29"/>
+        <EditorIndex Value="5"/>
+        <UsageCount Value="30"/>
         <Loaded Value="True"/>
       </Unit22>
       <Unit23>
@@ -304,15 +307,17 @@
         <UnitName Value="NewProjectForms"/>
         <CursorPos X="15" Y="53"/>
         <TopLine Value="38"/>
-        <UsageCount Value="77"/>
+        <UsageCount Value="79"/>
       </Unit33>
       <Unit34>
         <Filename Value="..\lib\trsProjects.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="trsProjects"/>
-        <CursorPos X="1" Y="1"/>
-        <TopLine Value="1"/>
-        <UsageCount Value="83"/>
+        <CursorPos X="3" Y="215"/>
+        <TopLine Value="206"/>
+        <EditorIndex Value="1"/>
+        <UsageCount Value="85"/>
+        <Loaded Value="True"/>
       </Unit34>
       <Unit35>
         <Filename Value="..\lib\trsClasses.pas"/>
@@ -320,7 +325,7 @@
         <UnitName Value="trsClasses"/>
         <CursorPos X="59" Y="246"/>
         <TopLine Value="225"/>
-        <UsageCount Value="83"/>
+        <UsageCount Value="85"/>
       </Unit35>
       <Unit36>
         <Filename Value="..\..\..\..\..\..\..\..\..\programs\fpc\src\packages\fcl-base\src\contnrs.pp"/>
@@ -524,16 +529,16 @@
         <Filename Value="..\..\..\..\..\..\..\..\..\programs\fpc\src\rtl\objpas\sysutils\sysstrh.inc"/>
         <CursorPos X="1" Y="1"/>
         <TopLine Value="1"/>
-        <EditorIndex Value="4"/>
-        <UsageCount Value="13"/>
+        <EditorIndex Value="7"/>
+        <UsageCount Value="14"/>
         <Loaded Value="True"/>
       </Unit65>
       <Unit66>
         <Filename Value="..\..\..\..\..\..\..\..\..\programs\fpc\src\rtl\objpas\sysutils\sysstr.inc"/>
         <CursorPos X="1" Y="702"/>
         <TopLine Value="683"/>
-        <EditorIndex Value="3"/>
-        <UsageCount Value="11"/>
+        <EditorIndex Value="6"/>
+        <UsageCount Value="12"/>
         <Loaded Value="True"/>
       </Unit66>
       <Unit67>
@@ -636,12 +641,11 @@
       <Unit81>
         <Filename Value="..\lib\FluxBB_Parser.pas"/>
         <UnitName Value="FluxBB_Parser"/>
-        <CursorPos X="61" Y="127"/>
-        <TopLine Value="107"/>
+        <CursorPos X="14" Y="15"/>
+        <TopLine Value="1"/>
+        <EditorIndex Value="3"/>
         <UsageCount Value="14"/>
-        <Bookmarks Count="1">
-          <Item0 X="5" Y="217" ID="1"/>
-        </Bookmarks>
+        <Loaded Value="True"/>
       </Unit81>
       <Unit82>
         <Filename Value="..\..\..\oldTranslator\source\mnTranslatorClasses.pas"/>
@@ -723,8 +727,8 @@
         <UnitName Value="GDBMIDebugger"/>
         <CursorPos X="1" Y="1"/>
         <TopLine Value="1"/>
-        <EditorIndex Value="5"/>
-        <UsageCount Value="11"/>
+        <EditorIndex Value="8"/>
+        <UsageCount Value="12"/>
         <Loaded Value="True"/>
       </Unit93>
       <Unit94>
@@ -735,130 +739,130 @@
         <UnitName Value="SearchFrm"/>
         <CursorPos X="36" Y="557"/>
         <TopLine Value="532"/>
-        <EditorIndex Value="6"/>
-        <UsageCount Value="11"/>
+        <EditorIndex Value="9"/>
+        <UsageCount Value="12"/>
         <Loaded Value="True"/>
       </Unit94>
     </Units>
     <JumpHistory Count="30" HistoryIndex="29">
       <Position1>
-        <Filename Value="..\..\..\..\..\MiniTranslator\source\PO_Languages.pas"/>
-        <Caret Line="105" Column="15" TopLine="84"/>
+        <Filename Value="..\..\..\..\..\MiniTranslator\source\LangClasses.pas"/>
+        <Caret Line="1" Column="1" TopLine="1"/>
       </Position1>
       <Position2>
         <Filename Value="..\..\..\..\..\MiniTranslator\source\PO_Languages.pas"/>
-        <Caret Line="120" Column="51" TopLine="84"/>
+        <Caret Line="105" Column="18" TopLine="84"/>
       </Position2>
       <Position3>
         <Filename Value="..\..\..\..\..\MiniTranslator\source\PO_Languages.pas"/>
-        <Caret Line="336" Column="41" TopLine="315"/>
+        <Caret Line="331" Column="44" TopLine="310"/>
       </Position3>
       <Position4>
-        <Filename Value="..\..\..\..\..\MiniTranslator\source\PO_Languages.pas"/>
-        <Caret Line="363" Column="30" TopLine="342"/>
+        <Filename Value="..\..\..\..\..\MiniTranslator\source\LangClasses.pas"/>
+        <Caret Line="1" Column="1" TopLine="1"/>
       </Position4>
       <Position5>
-        <Filename Value="..\..\..\..\..\MiniTranslator\source\PO_Languages.pas"/>
-        <Caret Line="368" Column="35" TopLine="363"/>
+        <Filename Value="..\..\..\..\..\MiniTranslator\source\LangClasses.pas"/>
+        <Caret Line="1090" Column="19" TopLine="1076"/>
       </Position5>
       <Position6>
-        <Filename Value="..\..\..\..\..\MiniTranslator\source\PO_Languages.pas"/>
-        <Caret Line="334" Column="36" TopLine="318"/>
+        <Filename Value="Main.pas"/>
+        <Caret Line="26" Column="52" TopLine="1"/>
       </Position6>
       <Position7>
-        <Filename Value="..\..\..\..\..\MiniTranslator\source\PO_Languages.pas"/>
-        <Caret Line="1" Column="1" TopLine="1"/>
+        <Filename Value="Main.pas"/>
+        <Caret Line="372" Column="7" TopLine="370"/>
       </Position7>
       <Position8>
         <Filename Value="Main.pas"/>
-        <Caret Line="29" Column="5" TopLine="3"/>
+        <Caret Line="753" Column="24" TopLine="747"/>
       </Position8>
       <Position9>
         <Filename Value="Main.pas"/>
-        <Caret Line="1" Column="1" TopLine="1"/>
+        <Caret Line="201" Column="15" TopLine="180"/>
       </Position9>
       <Position10>
         <Filename Value="Main.pas"/>
-        <Caret Line="131" Column="8" TopLine="110"/>
+        <Caret Line="839" Column="11" TopLine="836"/>
       </Position10>
       <Position11>
         <Filename Value="Main.pas"/>
-        <Caret Line="774" Column="30" TopLine="752"/>
+        <Caret Line="940" Column="7" TopLine="915"/>
       </Position11>
       <Position12>
-        <Filename Value="Main.pas"/>
-        <Caret Line="797" Column="30" TopLine="775"/>
+        <Filename Value="..\..\..\..\..\MiniTranslator\source\LangClasses.pas"/>
+        <Caret Line="61" Column="22" TopLine="52"/>
       </Position12>
       <Position13>
-        <Filename Value="Main.pas"/>
-        <Caret Line="885" Column="38" TopLine="863"/>
+        <Filename Value="..\..\..\..\..\MiniTranslator\source\LangClasses.pas"/>
+        <Caret Line="1" Column="1" TopLine="1"/>
       </Position13>
       <Position14>
-        <Filename Value="Main.pas"/>
-        <Caret Line="887" Column="39" TopLine="863"/>
+        <Filename Value="..\..\..\..\..\MiniTranslator\source\LangClasses.pas"/>
+        <Caret Line="3" Column="62" TopLine="1"/>
       </Position14>
       <Position15>
-        <Filename Value="Main.pas"/>
-        <Caret Line="1" Column="1" TopLine="1"/>
+        <Filename Value="..\..\..\..\..\MiniTranslator\source\LangClasses.pas"/>
+        <Caret Line="148" Column="12" TopLine="127"/>
       </Position15>
       <Position16>
-        <Filename Value="Main.pas"/>
-        <Caret Line="1068" Column="15" TopLine="1048"/>
+        <Filename Value="..\..\..\..\..\MiniTranslator\source\LangClasses.pas"/>
+        <Caret Line="165" Column="55" TopLine="127"/>
       </Position16>
       <Position17>
-        <Filename Value="Main.pas"/>
-        <Caret Line="1069" Column="15" TopLine="1048"/>
+        <Filename Value="..\..\..\..\..\MiniTranslator\source\LangClasses.pas"/>
+        <Caret Line="209" Column="12" TopLine="188"/>
       </Position17>
       <Position18>
-        <Filename Value="Main.pas"/>
-        <Caret Line="26" Column="19" TopLine="1"/>
+        <Filename Value="..\..\..\..\..\MiniTranslator\source\LangClasses.pas"/>
+        <Caret Line="250" Column="55" TopLine="229"/>
       </Position18>
       <Position19>
-        <Filename Value="Main.pas"/>
-        <Caret Line="1" Column="1" TopLine="1"/>
+        <Filename Value="..\..\..\..\..\MiniTranslator\source\LangClasses.pas"/>
+        <Caret Line="1155" Column="9" TopLine="1145"/>
       </Position19>
       <Position20>
-        <Filename Value="Main.pas"/>
-        <Caret Line="15" Column="17" TopLine="1"/>
+        <Filename Value="..\..\..\..\..\MiniTranslator\source\LangClasses.pas"/>
+        <Caret Line="1224" Column="11" TopLine="1206"/>
       </Position20>
       <Position21>
-        <Filename Value="Main.pas"/>
-        <Caret Line="25" Column="28" TopLine="1"/>
+        <Filename Value="..\lib\FluxBB_Parser.pas"/>
+        <Caret Line="127" Column="61" TopLine="107"/>
       </Position21>
       <Position22>
-        <Filename Value="..\..\..\..\..\MiniTranslator\source\LangClasses.pas"/>
-        <Caret Line="759" Column="3" TopLine="754"/>
+        <Filename Value="..\lib\FluxBB_Parser.pas"/>
+        <Caret Line="34" Column="25" TopLine="30"/>
       </Position22>
       <Position23>
         <Filename Value="..\..\..\..\..\MiniTranslator\source\LangClasses.pas"/>
-        <Caret Line="1" Column="1" TopLine="1"/>
+        <Caret Line="314" Column="56" TopLine="288"/>
       </Position23>
       <Position24>
         <Filename Value="..\..\..\..\..\MiniTranslator\source\LangClasses.pas"/>
-        <Caret Line="1082" Column="36" TopLine="1062"/>
+        <Caret Line="909" Column="1" TopLine="909"/>
       </Position24>
       <Position25>
-        <Filename Value="..\..\..\..\..\MiniTranslator\source\LangClasses.pas"/>
-        <Caret Line="1095" Column="1" TopLine="1062"/>
+        <Filename Value="..\lib\FluxBB_Parser.pas"/>
+        <Caret Line="34" Column="25" TopLine="30"/>
       </Position25>
       <Position26>
-        <Filename Value="..\..\..\..\..\MiniTranslator\source\LangClasses.pas"/>
-        <Caret Line="1343" Column="1" TopLine="1301"/>
+        <Filename Value="..\lib\FluxBB_Parser.pas"/>
+        <Caret Line="203" Column="21" TopLine="180"/>
       </Position26>
       <Position27>
-        <Filename Value="..\..\..\..\..\MiniTranslator\source\LangClasses.pas"/>
-        <Caret Line="1" Column="1" TopLine="1"/>
+        <Filename Value="..\lib\FluxBB_Parser.pas"/>
+        <Caret Line="210" Column="1" TopLine="207"/>
       </Position27>
       <Position28>
-        <Filename Value="..\..\..\..\..\MiniTranslator\source\PO_Languages.pas"/>
-        <Caret Line="105" Column="18" TopLine="84"/>
+        <Filename Value="..\lib\FluxBB_Parser.pas"/>
+        <Caret Line="182" Column="1" TopLine="180"/>
       </Position28>
       <Position29>
-        <Filename Value="..\..\..\..\..\MiniTranslator\source\PO_Languages.pas"/>
-        <Caret Line="331" Column="44" TopLine="310"/>
+        <Filename Value="..\lib\FluxBB_Parser.pas"/>
+        <Caret Line="99" Column="69" TopLine="78"/>
       </Position29>
       <Position30>
-        <Filename Value="..\..\..\..\..\MiniTranslator\source\LangClasses.pas"/>
+        <Filename Value="Main.pas"/>
         <Caret Line="1" Column="1" TopLine="1"/>
       </Position30>
     </JumpHistory>

@@ -90,7 +90,7 @@ type
     property Modified: Boolean read FModified write SetModified default False;
 
     property DisplayText: string read GetDisplayText write SetDisplayText;
-    property DisplayID: string read GetDisplayID write SetDisplayID; //deprecated;
+    property DisplayID: string read GetDisplayID {write SetDisplayID}; //deprecated;
     //May be usfule for show it in translator editor
     property Line: Integer read FLine write SetLine;
   end;
@@ -234,19 +234,19 @@ type
     function FindID(const vID: string): TLangItem; overload;
     function FindID(vContents: string; const vID: string): TLangItem; overload;
     //Create or Update a LangItem in the named contents
-    function AppendText(vContents: string; const vID, vText: string; UpdateIfExists: Boolean): TLangItem;
+    function AddDisplayText(vContents: string; const vID, vText: string; UpdateIfExists: Boolean): TLangItem;
     //
     procedure BeginUpdate;
     procedure EndUpdate;
     property InUpdate: Boolean read GetInUpdate;
     procedure Clean; virtual; // set Modified = False for all objects
+    property Info: TLanguageInfo read FInfo write FInfo;
     property Modified: Boolean read FModified write SetModified;
     property Name: string read FInfo.LangName write FInfo.LangName;
     property LocalName: string read FInfo.LocalName write FInfo.LocalName;
     property ShortName: string read FInfo.ShortName write FInfo.ShortName;
     property IsRightToLeft: Boolean read FInfo.IsRightToLeft write FInfo.IsRightToLeft;
     property ID: Cardinal read FInfo.LangID write FInfo.LangID;
-    property Info: TLanguageInfo read FInfo write FInfo;
     property Source: string read FSource write FSource;
     property Items[Index: Integer]: TLangContents read GetItem; default;
     property Contents[Index: string]: TLangContents read GetContents;
@@ -309,11 +309,11 @@ type
     //Generate for save the language file to its syntax
     procedure Generate(Strings: TStringList);
     //GetName name of filer
-    class function GetName: string; virtual;
+    class function GetName: string; virtual; abstract;
     //GetTitle name of filer but for display it in front UI
-    class function GetTitle: string; virtual;
-    //GetExtension like 'PO' do not include dot '.'
-    class function GetExtension: string; virtual;
+    class function GetTitle: string; virtual; abstract;
+{    //GetExtension like 'PO' do not include dot '.'
+    class function GetExtension: string; virtual;}
     property Contents: TLangContents read FContents write SetContents;
   end;
 
@@ -334,11 +334,8 @@ type
   private
   protected
     //Default Load and Save you can used of make your own
-    procedure DefaultSingleLoadFrom(vSource: string; vLanguage: TLanguage);
-    procedure DefaultSingleSaveTo(vSource: string; vLanguage: TLanguage);
-
-    procedure DefaultDirLoadFrom(vSource: string; vLanguage: TLanguage);
-    procedure DefaultDirSaveTo(vSource: string; vLanguage: TLanguage);
+    procedure DefaultLoadFrom(IsDirectory: Boolean; vSource: string; vLanguage: TLanguage);
+    procedure DefaultSaveTo(IsDirectory: Boolean; vSource: string; vLanguage: TLanguage);
 
     procedure DoLoadFrom(vSource: string; vLanguage: TLanguage); virtual; abstract;
     procedure DoSaveTo(vSource: string; vLanguage: TLanguage); virtual; abstract;
@@ -347,6 +344,7 @@ type
     function CreateParser: TLangParser; virtual; abstract;
     procedure LoadFrom(vSource: string; vLanguage: TLanguage); //vName File or Directory
     procedure SaveTo(vSource: string; vLanguage: TLanguage);
+    function GetFileName(vPath, vName: string): string;
     class function GetName: string; virtual; //Name for enumrate
     class function GetTitle: string; virtual; //for UI application
     class function GetExtension: string; virtual;
@@ -388,11 +386,15 @@ function Languages: TLanguages;
 function LangOptions: TLangOptions;
 procedure InitLanguages(LanguagesClass: TLanguagesClass = nil);
 function IsLanguagesInitialized: Boolean;
+
+function ParseLanguage(Strings: TStringList; Language: TLanguage; Parser: TLangParser): TLangContents;
+procedure GenerateLanguage(Strings: TStringList; Contents: TLangContents; Parser: TLangParser);
+
 procedure ParseLanguageFile(FileName: string; Language: TLanguage; Parser: TLangParser);
 procedure GenerateLanguageFile(FileName: string; Contents: TLangContents; Parser: TLangParser);
 
 var
-  //default for Delphi or Lazarus
+  //Default for Delphi (ANSI)  or Lazarus
   SystemEncoding: TLangEncoding{$IFDEF LCL} = lncUTF8; {$ELSE} = lncAnsi; {$ENDIF}
 
 implementation
@@ -473,7 +475,7 @@ begin
   end;
 end;
 
-function TLanguage.AppendText(vContents: string; const vID, vText: string; UpdateIfExists: Boolean): TLangItem;
+function TLanguage.AddDisplayText(vContents: string; const vID, vText: string; UpdateIfExists: Boolean): TLangItem;
 var
   aContents: TLangContents;
 begin
@@ -482,16 +484,21 @@ begin
   begin
     aContents := CreateContents;
     aContents.Name := vContents;
+    if Count > 0 then //Steal a defaults from first contents
+    begin
+      aContents.Encoding := Items[0].Encoding;
+      aContents.BOMFlag := Items[0].BOMFlag;
+    end;
   end;
   Result := aContents.Find(vID);
   if Result = nil then
   begin
     Result := aContents.CreateLangItem;
     Result.ID := vID;
-    Result.Text := vText;
+    Result.DisplayText := vText;
   end
   else if UpdateIfExists then
-    Result.Text := vText;
+    Result.DisplayText := vText;
 end;
 
 function TLanguage.GetContents(Index: string): TLangContents;
@@ -894,15 +901,10 @@ begin
   inherited Create;
 end;
 
-class function TLangParser.GetExtension: string;
+{class function TLangParser.GetExtension: string;
 begin
   Result := '';
-end;
-
-class function TLangParser.GetTitle: string;
-begin
-  Result := '';
-end;
+end;}
 
 procedure TLangParser.SetContents(const Value: TLangContents);
 begin
@@ -928,13 +930,8 @@ procedure TLangParser.Generate(Strings: TStringList);
 begin
   CheckContents;
   DoGenerate(Strings);
-  if Contents.BOMFlag and (Strings.Count > 0) then //No not here :( 
+  if Contents.BOMFlag and (Strings.Count > 0) then //No not here :(
     Strings[0] := sUTF8BOM + Strings[0];
-end;
-
-class function TLangParser.GetName: string;
-begin
-  Result := '';
 end;
 
 { TLangOptions }
@@ -1009,36 +1006,47 @@ begin
   FFilerClasses.Add(FilerClass);
 end;
 
-procedure ParseLanguageFile(FileName: string; Language: TLanguage; Parser: TLangParser);
-var
-  Contents: TLangContents;
-  Strings: TStringList;
+function ParseLanguage(Strings: TStringList; Language: TLanguage; Parser: TLangParser): TLangContents;
 begin
-  Contents := Language.CreateContents; //this auto add the contents to Language
   if Parser = nil then
     raise ELangException.Create('There is no parser for TLanguage');
+  Result := Language.CreateContents; //this auto add the contents to Language
+  Parser.Contents := Result;
+  Parser.Parse(Strings);
+end;
+
+procedure ParseLanguageFile(FileName: string; Language: TLanguage; Parser: TLangParser);
+var
+  Strings: TStringList;
+begin
   Strings := TStringList.Create;
   try
-    Parser.Contents := Contents;
     Strings.LoadFromFile(FileName);
-    Contents.Name := ExtractFileName(FileName);
-    Contents.Source := FileName;
-    Parser.Parse(Strings);
+    with ParseLanguage(Strings, Language, Parser) do
+    begin
+      Source := FileName;
+      Name := ChangeFileExt(ExtractFileName(FileName), '');
+    end;
   finally
     Strings.Free;
   end;
+end;
+
+procedure GenerateLanguage(Strings: TStringList; Contents: TLangContents; Parser: TLangParser);
+begin
+  if Parser = nil then
+    raise ELangException.Create('There is no parser for TLanguage');
+  Parser.Contents := Contents;
+  Parser.Generate(Strings);
 end;
 
 procedure GenerateLanguageFile(FileName: string; Contents: TLangContents; Parser: TLangParser);
 var
   Strings: TStringList;
 begin
-  if Parser = nil then
-    raise ELangException.Create('There is no parser for TLanguage');
   Strings := TStringList.Create;
   try
-    Parser.Contents := Contents;
-    Parser.Generate(Strings);
+    GenerateLanguage(Strings, Contents, Parser);
     Strings.SaveToFile(FileName);
   finally
     Strings.Free;
@@ -1142,52 +1150,7 @@ end;
 
 { TLangFiler }
 
-procedure TLangFiler.DefaultSingleLoadFrom(vSource: string; vLanguage: TLanguage);
-var
-  aParser: TLangParser;
-begin
-  with vLanguage do
-  begin
-    try
-      Clear;
-      aParser := CreateParser;
-      try
-        ParseLanguageFile(vSource, vLanguage, aParser);
-      finally
-        aParser.Free;
-      end;
-    except
-      raise;
-    end;
-    Source := vSource;
-    Name := ExtractFileName(vSource);
-    ID := 0;
-  end;
-end;
-
-procedure TLangFiler.DefaultSingleSaveTo(vSource: string; vLanguage: TLanguage);
-var
-  aParser: TLangParser;
-begin
-  with vLanguage do
-  begin
-    try
-      aParser := CreateParser;
-      try
-        if vLanguage.Count > 0 then
-        begin
-          GenerateLanguageFile(vSource, vLanguage[0], aParser);
-        end;
-      finally
-        aParser.Free;
-      end;
-    except
-      raise;
-    end;
-  end;
-end;
-
-procedure TLangFiler.DefaultDirLoadFrom(vSource: string; vLanguage: TLanguage);
+procedure TLangFiler.DefaultLoadFrom(IsDirectory: Boolean; vSource: string; vLanguage: TLanguage);
 var
   I: Integer;
   SearchRec: TSearchRec;
@@ -1196,9 +1159,9 @@ var
 begin
   with vLanguage do
   begin
-    aPath := IncludeTrailingPathDelimiter(vSource);
-    try
-      Clear;
+    if IsDirectory then
+    begin
+      aPath := IncludeTrailingPathDelimiter(vSource);
       try
         I := FindFirst(aPath + '*.' + GetExtension, 0, SearchRec);
         while I = 0 do
@@ -1214,15 +1177,30 @@ begin
       finally
         FindClose(SearchRec);
       end;
-    except
-      raise;
+    end
+    else
+    begin
+      aPath := IncludeTrailingPathDelimiter(ExtractFilePath(vSource));
+      try
+        Clear;
+        aParser := CreateParser;
+        try
+          ParseLanguageFile(vSource, vLanguage, aParser);
+        finally
+          aParser.Free;
+        end;
+      except
+        raise;
+      end;
     end;
+    Source := aPath;
   end;
 end;
 
-procedure TLangFiler.DefaultDirSaveTo(vSource: string; vLanguage: TLanguage);
+procedure TLangFiler.DefaultSaveTo(IsDirectory: Boolean; vSource: string; vLanguage: TLanguage);
 var
   i: Integer;
+  aFileName: string;
   aParser: TLangParser;
 begin
   with vLanguage do
@@ -1232,7 +1210,23 @@ begin
       begin
         aParser := CreateParser;
         try
-          GenerateLanguageFile(IncludeTrailingPathDelimiter(IncludeTrailingPathDelimiter(vSource) + vLanguage.Name) + vLanguage[i].Name, vLanguage[i], aParser);
+          if vSource <> '' then
+          begin
+            if IsDirectory then
+              aFileName := GetFileName(IncludeTrailingPathDelimiter(vSource), vLanguage[i].Name)
+            else
+              aFileName := vSource
+          end
+          else
+          begin
+            aFileName := vLanguage[i].Source;
+            if aFileName = '' then
+            begin
+              aFileName := GetFileName(IncludeTrailingPathDelimiter(vLanguage.Source), vLanguage[i].Name);
+//              vLanguage[i].Source := aFileName;
+            end;
+          end;
+          GenerateLanguageFile(aFileName, vLanguage[i], aParser);
         finally
           aParser.Free;
         end;
@@ -1272,6 +1266,13 @@ end;
 class function TLangFiler.GetTitle: string;
 begin
   Result := '';
+end;
+
+function TLangFiler.GetFileName(vPath, vName: string): string;
+begin
+  Result := IncludeTrailingPathDelimiter(vPath) + vName;
+  if GetExtension <> '' then
+    Result := Result + '.' + GetExtension;
 end;
 
 class function TLangFiler.GetFlags: TLangFilerFlags;

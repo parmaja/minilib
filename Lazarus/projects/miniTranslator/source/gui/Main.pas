@@ -8,6 +8,7 @@ unit Main;
 
 {$mode objfpc}{$H+}
 
+{TODO: Make Original text not readonly }
 {TODO: Make it work :P }
 {TODO: Bookmarks}
 {TODO: Save Bookmarks in projects}
@@ -197,7 +198,7 @@ type
     procedure LoadProject(FileName: string; Upgrade: Boolean);
     procedure SaveProject(FileName: string; Force: Boolean);
     procedure LoadFile(FileName: string);
-    procedure SaveFile(FileName: string);
+    procedure SaveFile(FileName: string = '');
     procedure SaveAsProject;
     procedure JumpTo(Item: TLangItem);
     procedure ClearAll;
@@ -369,7 +370,7 @@ end;
 
 procedure TMainForm.SaveMnuClick(Sender: TObject);
 begin
-  SaveFile('');
+  SaveFile;
 end;
 
 procedure TMainForm.LoadValueFromList;
@@ -835,12 +836,17 @@ end;
 
 procedure TMainForm.SaveProjectMnuClick(Sender: TObject);
 begin
-  if Project.FileName <> '' then
-  begin
-    SaveProject(Project.FileName, False);
-  end
+  if Project.Internal then
+    SaveFile
   else
-    SaveAsProject;
+  begin
+    if Project.FileName <> '' then
+    begin
+      SaveProject(Project.FileName, False);
+    end
+    else
+      SaveAsProject;
+  end;
 end;
 
 procedure TMainForm.SaveAsProject;

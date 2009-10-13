@@ -4,13 +4,13 @@ object OptionsForm: TOptionsForm
   Top = 244
   Width = 493
   BorderStyle = bsDialog
-  Caption = 'Options'
+  Caption = 'Project Options'
   ClientHeight = 185
   ClientWidth = 493
   Font.Height = -11
   Font.Name = 'MS Sans Serif'
   Position = poMainFormCenter
-  LCLVersion = '0.9.27'
+  LCLVersion = '0.9.29'
   object LocalNameLbl: TLabel
     Left = 6
     Height = 14
@@ -75,7 +75,7 @@ object OptionsForm: TOptionsForm
   end
   object LocalNameEdit: TEdit
     Left = 96
-    Height = 23
+    Height = 21
     Top = 56
     Width = 310
     TabOrder = 2
@@ -91,7 +91,7 @@ object OptionsForm: TOptionsForm
   end
   object OriginalNameEdit: TEdit
     Left = 96
-    Height = 23
+    Height = 21
     Top = 81
     Width = 310
     TabOrder = 4
@@ -107,14 +107,14 @@ object OptionsForm: TOptionsForm
   end
   object NameEdit: TEdit
     Left = 96
-    Height = 23
+    Height = 21
     Top = 31
     Width = 160
     TabOrder = 6
   end
   object ProjectTypeEdit: TEdit
     Left = 96
-    Height = 23
+    Height = 21
     Top = 5
     Width = 311
     Color = clBtnFace

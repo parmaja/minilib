@@ -36,7 +36,6 @@ type
     procedure Clear;
     procedure ParseLine(Number:Integer; ALine: string);
     class function GetName: string; override;
-    class function GetExtension: string; override;
     class function GetTitle: string; override;
   end;
 
@@ -228,6 +227,7 @@ var
   aItem: TLangItem;
 begin
   l := 0;
+  Contents.BOMFlag := False;
   while l < Strings.Count do
   begin
     s := Strings[l];
@@ -411,11 +411,6 @@ begin
   Result := 'GetTextPOFiles';
 end;
 
-class function TPO_Parser.GetExtension: string;
-begin
-  Result := 'po'
-end;
-
 class function TPO_Parser.GetTitle: string;
 begin
   Result := 'GNU gettext po files'
@@ -448,14 +443,16 @@ end;
 
 procedure TPODirectoryFiler.DoLoadFrom(vSource: string; vLanguage: TLanguage);
 begin
-  DefaultDirLoadFrom(vSource, vLanguage);
+  DefaultLoadFrom(True, vSource, vLanguage);
   if vLanguage.Count > 0 then
+  begin
     vLanguage.IsRightToLeft := vLanguage[0].IsRightToLeft;
+  end;
 end;
 
 procedure TPODirectoryFiler.DoSaveTo(vSource: string; vLanguage: TLanguage);
 begin
-  DefaultDirSaveTo(vSource, vLanguage);
+  DefaultSaveTo(True, vSource, vLanguage);
 end;
 
 class function TPODirectoryFiler.GetName: string;
@@ -487,15 +484,16 @@ end;
 
 procedure TPOFileFiler.DoLoadFrom(vSource: string; vLanguage: TLanguage);
 begin
-  DefaultSingleLoadFrom(vSource, vLanguage);
+  DefaultLoadFrom(False, vSource, vLanguage);
   if vLanguage.Count > 0 then
+  begin
     vLanguage.IsRightToLeft := vLanguage[0].IsRightToLeft;
-  vLanguage.ID := 0;
+  end;
 end;
 
 procedure TPOFileFiler.DoSaveTo(vSource: string; vLanguage: TLanguage);
 begin
-  DefaultSingleSaveTo(vSource, vLanguage);
+  DefaultSaveTo(False, vSource, vLanguage);
 end;
 
 class function TPOFileFiler.GetName: string;
