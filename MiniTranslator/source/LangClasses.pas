@@ -106,6 +106,7 @@ type
     function GetItem(Index: Integer): TLangItem;
   public
     function Find(ID: string): TLangItem;
+    function FindForText(vText: string): TLangItem;
     property Items[Index: Integer]: TLangItem read GetItem; default;
     property Values[Index: string]: TLangItem read GetValues;
   end;
@@ -221,6 +222,7 @@ type
 
     function CreateContents: TLangContents;
     function Add(Contents: TLangContents): Integer;
+    function AddItem(vContentName, vID, vText: string): TLangItem;
     //FindText result empty string if ID not founded
     function FindText(vID: string; var Founded: Boolean; Default: string = ''): string; overload;
     function FindText(vContents, vID: string; var Founded: Boolean; Default: string = ''): string; overload;
@@ -233,9 +235,9 @@ type
     function Find(vName: string): TLangContents;
     function FindID(const vID: string): TLangItem; overload;
     function FindID(vContents: string; const vID: string): TLangItem; overload;
-    //Create or Update a LangItem in the named contents
-    function AddDisplayText(vContents: string; const vID, vText: string; UpdateIfExists: Boolean): TLangItem;
-    //
+    //Search for text in all contents
+    function FindForText(const vText: string): TLangItem; overload;
+
     procedure BeginUpdate;
     procedure EndUpdate;
     property InUpdate: Boolean read GetInUpdate;
@@ -278,6 +280,7 @@ type
     function FindLanguage(const Name: string): TLanguage;
     function IndexOfLanguage(const Name: string): Integer;
     function NextLanguageName: string;
+    property DefaultLanguage: TLanguage read FDefaultLanguage;
     property Current: TLanguage read GetCurrent;
     function GetText(const vID: string): string; overload;
     function GetText(const vID: string; var vText: string): Boolean; overload;
@@ -475,32 +478,6 @@ begin
   end;
 end;
 
-function TLanguage.AddDisplayText(vContents: string; const vID, vText: string; UpdateIfExists: Boolean): TLangItem;
-var
-  aContents: TLangContents;
-begin
-  aContents := Find(vContents);
-  if aContents = nil then
-  begin
-    aContents := CreateContents;
-    aContents.Name := vContents;
-    if Count > 0 then //Steal a defaults from first contents
-    begin
-      aContents.Encoding := Items[0].Encoding;
-      aContents.BOMFlag := Items[0].BOMFlag;
-    end;
-  end;
-  Result := aContents.Find(vID);
-  if Result = nil then
-  begin
-    Result := aContents.CreateLangItem;
-    Result.ID := vID;
-    Result.DisplayText := vText;
-  end
-  else if UpdateIfExists then
-    Result.DisplayText := vText;
-end;
-
 function TLanguage.GetContents(Index: string): TLangContents;
 begin
   Result := Find(Index);
@@ -581,6 +558,19 @@ begin
   end;
 end;
 
+function TLanguage.FindForText(const vText: string): TLangItem;
+var
+  i: Integer;
+begin
+  Result := nil;
+  for i := 0 to Count - 1 do
+  begin
+    Result := Items[i].FindForText(vText);
+    if Result <> nil then
+      Break;
+  end;
+end;
+
 function TLanguage.FindID(const vID: string): TLangItem;
 var
   i: Integer;
@@ -612,6 +602,32 @@ begin
   Result := aItem <> nil;
   if Result then
     Text := aItem.DisplayText;
+end;
+
+function TLanguage.AddItem(vContentName, vID, vText: string): TLangItem;
+var
+  aContents: TLangContents;
+  i: Integer;
+begin
+  aContents := Find(vContentName);
+  if aContents = nil then
+  begin
+    aContents := CreateContents;
+    aContents.Name := vContentName;
+    if Count > 0 then //Steal a defaults from first contents
+    begin
+      aContents.Encoding := Items[0].Encoding;
+      aContents.BOMFlag := Items[0].BOMFlag;
+    end;
+  end;
+  Result := aContents.Find(vID);
+  if Result = nil then
+  begin
+    Result := aContents.CreateLangItem;
+    Result.ID := vID;
+    if Languages[i] = Languages.DefaultLanguage then
+      Result.DisplayText := vText;
+  end;
 end;
 
 procedure TLanguage.BeginUpdate;
@@ -1314,6 +1330,21 @@ end;
 function TLangList.GetValues(Index: string): TLangItem;
 begin
   Result := Find(Index);
+end;
+
+function TLangList.FindForText(vText: string): TLangItem;
+var
+  i: Integer;
+begin
+  Result := nil;
+  for i := 0 to Count - 1 do
+  begin
+    if SameText(vText, Items[i].Text) then
+    begin
+      Result := Items[i];
+      break;
+    end
+  end;
 end;
 
 function TLangList.GetItem(Index: Integer): TLangItem;
