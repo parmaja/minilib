@@ -7,7 +7,6 @@
       <MainUnit Value="0"/>
       <TargetFileExt Value=".exe"/>
       <UseAppBundle Value="False"/>
-      <ActiveEditorIndexAtStart Value="0"/>
     </General>
     <VersionInfo>
       <ProjectVersion Value=""/>
@@ -33,7 +32,7 @@
         <PackageName Value="LCL"/>
       </Item2>
     </RequiredPackages>
-    <Units Count="208">
+    <Units Count="210">
       <Unit0>
         <Filename Value="SqliteViewer.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -49,7 +48,7 @@
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="Main"/>
         <CursorPos X="20" Y="31"/>
-        <TopLine Value="1"/>
+        <TopLine Value="6"/>
         <UsageCount Value="196"/>
         <Bookmarks Count="1">
           <Item0 X="8" Y="693" ID="1"/>
@@ -1480,10 +1479,25 @@
         <UnitName Value="janSQLDemo"/>
         <CursorPos X="1" Y="1"/>
         <TopLine Value="1"/>
-        <EditorIndex Value="0"/>
         <UsageCount Value="10"/>
-        <Loaded Value="True"/>
       </Unit207>
+      <Unit208>
+        <Filename Value="..\..\..\..\..\chops\lazarus\CurrencyEditor.lfm"/>
+        <CursorPos X="1" Y="1"/>
+        <TopLine Value="1"/>
+        <UsageCount Value="10"/>
+        <SyntaxHighlighter Value="LFM"/>
+      </Unit208>
+      <Unit209>
+        <Filename Value="..\..\..\..\..\chops\lazarus\CurrencyEditor.pas"/>
+        <ComponentName Value="CurrencyEditForm"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+        <UnitName Value="CurrencyEditor"/>
+        <CursorPos X="1" Y="1"/>
+        <TopLine Value="1"/>
+        <UsageCount Value="10"/>
+      </Unit209>
     </Units>
     <JumpHistory Count="0" HistoryIndex="-1"/>
   </ProjectOptions>

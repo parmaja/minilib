@@ -125,7 +125,7 @@ type
     procedure DoStart; virtual; abstract;
     procedure DoCommit; virtual; abstract;
     procedure DoRollback; virtual; abstract;
-    procedure DoStop; virtual; abstract;
+    procedure DoStop; virtual;
     property Commands: TmncLinks read FCommands;
   public
     constructor Create(vConnection: TmncConnection); virtual;
@@ -849,6 +849,10 @@ begin
 end;
 
 procedure TmncSession.DoInit;
+begin
+end;
+
+procedure TmncSession.DoStop;
 begin
 end;
 

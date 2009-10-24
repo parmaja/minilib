@@ -607,7 +607,6 @@ end;
 function TLanguage.AddItem(vContentName, vID, vText: string): TLangItem;
 var
   aContents: TLangContents;
-  i: Integer;
 begin
   aContents := Find(vContentName);
   if aContents = nil then
@@ -625,8 +624,7 @@ begin
   begin
     Result := aContents.CreateLangItem;
     Result.ID := vID;
-    if Languages[i] = Languages.DefaultLanguage then
-      Result.DisplayText := vText;
+    Result.DisplayText := vText;
   end;
 end;
 
