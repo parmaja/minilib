@@ -542,6 +542,10 @@ begin
       finally
         aStrings.Free;
       end;
+    end
+    else
+    begin
+      Name := aName;
     end;
   end;
 end;
