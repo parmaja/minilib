@@ -1,0 +1,97 @@
+<?xml version="1.0"?>
+<CONFIG>
+  <Package Version="3">
+    <PathDelim Value="\"/>
+    <Name Value="poslib"/>
+    <Author Value="Zaher Dirkey"/>
+    <AutoUpdate Value="Manually"/>
+    <CompilerOptions>
+      <Version Value="8"/>
+      <PathDelim Value="\"/>
+      <SearchPaths>
+        <OtherUnitFiles Value="units\i386-win32\;$(LazarusDir)\lcl\units\$(TargetCPU)-$(TargetOS)\;$(LazarusDir)\lcl\units\$(TargetCPU)-$(TargetOS)\$(LCLWidgetType)\"/>
+        <UnitOutputDirectory Value="units\$(TargetCPU)-$(TargetOS)"/>
+      </SearchPaths>
+      <Parsing>
+        <SyntaxOptions>
+          <SyntaxMode Value="Delphi"/>
+          <CStyleOperator Value="False"/>
+          <CStyleMacros Value="True"/>
+          <UseAnsiStrings Value="True"/>
+        </SyntaxOptions>
+      </Parsing>
+      <Linking>
+        <Debugging>
+          <GenerateDebugInfo Value="True"/>
+        </Debugging>
+      </Linking>
+      <Other>
+        <CompilerPath Value="$(CompPath)"/>
+      </Other>
+    </CompilerOptions>
+    <Description Value="POS, Point Of Sale controls
+Light controls (TposGrid, TposList, TposStuffs, TposKeyboard...)
+"/>
+    <License Value="MLGPL
+"/>
+    <Version Major="1" Build="1"/>
+    <Files Count="10">
+      <Item1>
+        <Filename Value="posButtons.pas"/>
+        <UnitName Value="posButtons"/>
+      </Item1>
+      <Item2>
+        <Filename Value="posControls.pas"/>
+        <UnitName Value="posControls"/>
+      </Item2>
+      <Item3>
+        <Filename Value="posEdits.pas"/>
+        <UnitName Value="posEdits"/>
+      </Item3>
+      <Item4>
+        <Filename Value="posGrids.pas"/>
+        <UnitName Value="posGrids"/>
+      </Item4>
+      <Item5>
+        <Filename Value="posKeyboards.pas"/>
+        <UnitName Value="posKeyboards"/>
+      </Item5>
+      <Item6>
+        <Filename Value="posLists.pas"/>
+        <UnitName Value="posLists"/>
+      </Item6>
+      <Item7>
+        <Filename Value="posRegCtrls.pas"/>
+        <HasRegisterProc Value="True"/>
+        <AddToUsesPkgSection Value="False"/>
+        <UnitName Value="posRegCtrls"/>
+      </Item7>
+      <Item8>
+        <Filename Value="posUtils.pas"/>
+        <UnitName Value="posUtils"/>
+      </Item8>
+      <Item9>
+        <Filename Value="posStuffs.pas"/>
+        <UnitName Value="posStuffs"/>
+      </Item9>
+      <Item10>
+        <Filename Value="poslib.lrs"/>
+        <Type Value="LRS"/>
+      </Item10>
+    </Files>
+    <Type Value="DesignTime"/>
+    <RequiredPkgs Count="1">
+      <Item1>
+        <PackageName Value="FCL"/>
+        <MinVersion Major="1" Valid="True"/>
+      </Item1>
+    </RequiredPkgs>
+    <UsageOptions>
+      <UnitPath Value="$(PkgOutDir)\"/>
+    </UsageOptions>
+    <PublishOptions>
+      <Version Value="2"/>
+      <IgnoreBinaries Value="False"/>
+    </PublishOptions>
+  </Package>
+</CONFIG>
