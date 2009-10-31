@@ -23,10 +23,12 @@
       <Item2>
         <Filename Value="ntvRegCtrls.pas"/>
         <HasRegisterProc Value="True"/>
+        <AddToUsesPkgSection Value="False"/>
         <UnitName Value="ntvRegCtrls"/>
       </Item2>
       <Item3>
         <Filename Value="ntvUtils.pas"/>
+        <AddToUsesPkgSection Value="False"/>
         <UnitName Value="ntvUtils"/>
       </Item3>
       <Item4>
