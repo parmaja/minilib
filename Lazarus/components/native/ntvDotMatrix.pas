@@ -13,55 +13,65 @@ unit ntvDotMatrix;
 interface
 
 uses
-  SysUtils, Classes, Graphics, Controls, Variants, 
+  Messages, LMessages, SysUtils, Classes, Graphics, Controls, Variants,
   LCLIntf, LCLType, IntfGraphics, FPimage, GraphType,
   Types;
 
 type
   TntvDisplayDotMode = (dmLED, dmLCD);
+  TntvDisplayDotTheme = (tdmCustom, tdmClassicLCD, tdmOrange, tdmGreenLED, tdmRedLED, tdmBlueLED);
 
   TDotMatrixInfo = record
     BackColor: TColor;
     ForeColor: TColor;
+    DimColor: TColor;
 
     DotSize: Integer;
     DotsSpace: Integer;
     CellWidth: Integer;
     CellHeight: Integer;
+    CellSpace: Integer;
     Mode: TntvDisplayDotMode;
     //
-    DimColor: TColor;
     LightColor: TColor;
-    DimLightColor: TColor;
   end;
 
   { TntvDisplayDots }
+  TntvDisplayDotsInfo = record
+    DimColor: TColor;
+    LightColor: TColor;
+    RawImage: TLazIntfImage;
+    Bitmap: TBitmap;
+    Matrix: TDotMatrixInfo;
+    Theme: TntvDisplayDotTheme;
+    Width: Integer;
+    Height: Integer;
+    RealWidth: Integer;
+    RealHeight: Integer;
+  end;
 
   TntvDisplayDots = class(TPersistent)
   private
-    FControl: TControl;
-    FRawImage: TLazIntfImage;
-    FBitmap: TBitmap;
-    FDisplayInfo: TDotMatrixInfo;
+    FInfo: TntvDisplayDotsInfo;
     FUpdateCount: Integer;
     FNeedUpdate: Boolean;
     FNeedToLoad: Boolean;
-    FWidth: Integer;
-    FHeight: Integer;
-    FRealWidth: Integer;
-    FRealHeight: Integer;
+    FOnRefresh: TNotifyEvent;
+    FOnUpdateDisplay: TNotifyEvent;
     procedure CanvasChanged(Sender: TObject);
     function GetCanvas: TCanvas;
+    procedure SetDimColor(const AValue: TColor);
     function GetPixel(x, y: integer): TColor;
     procedure SetCellHeight(const AValue: Integer);
     procedure SetCellWidth(const AValue: Integer);
     procedure SetDotsSpace(const Value: Integer);
     procedure SetDotSize(const Value: Integer);
+    procedure SetHeight(const AValue: Integer);
+    procedure SetTheme(const AValue: TntvDisplayDotTheme);
+    procedure SetWidth(const AValue: Integer);
     function GetInUpdating: Boolean;
     procedure InternalUpdate;
-    procedure SetHeight(const AValue: Integer);
     procedure SetPixel(x, y: integer; const AValue: TColor);
-    procedure SetWidth(const AValue: Integer);
     procedure UpdateColors;
     procedure UpdateBitmap;
     procedure SetBackColor(const Value: TColor);
@@ -69,7 +79,10 @@ type
     procedure SetMode(const Value: TntvDisplayDotMode);
   protected
     procedure Refresh; virtual;
+    procedure UpdateDisplay; virtual;
     procedure Update;
+    property RealWidth: Integer read FInfo.RealWidth;
+    property RealHeight: Integer read FInfo.RealHeight;
   public
     constructor Create; virtual;
     destructor Destroy; override;
@@ -78,24 +91,29 @@ type
     procedure BeginUpdate;
     procedure EndUpdate;
     procedure Clear; virtual;
+    procedure Assign(Source: TPersistent); override;
     property InUpdating: Boolean read GetInUpdating;
-    property RawImage: TLazIntfImage read FRawImage;
-    property Bitmap: TBitmap read FBitmap;
+    property RawImage: TLazIntfImage read FInfo.RawImage;
+    property Bitmap: TBitmap read FInfo.Bitmap;
     property Canvas: TCanvas read GetCanvas;
     property Pixels[x, y:integer] : TColor read GetPixel write SetPixel;
-    //set Control for auto refresh it when draw to Canvas
-    property Control: TControl read FControl write FControl;
-    property Width: Integer read FWidth write SetWidth;
-    property Height: Integer read FHeight write SetHeight;
+    //For auto refresh it when draw to Canvas
+    property OnRefresh: TNotifyEvent read FOnRefresh write FOnRefresh;
+    //Some control need to redraw bitmap after bitmap is clear
+    property OnUpdateDisplay: TNotifyEvent read FOnUpdateDisplay write FOnUpdateDisplay;
+    property Width: Integer read FInfo.Width write SetWidth;
+    property Height: Integer read FInfo.Height write SetHeight;
   published
-    property BackColor: TColor read FDisplayInfo.BackColor write SetBackColor;
-    property ForeColor: TColor read FDisplayInfo.ForeColor write SetForeColor;
-    property DotSize: Integer read FDisplayInfo.DotSize write SetDotSize default 2;
-    property DotsSpace: Integer read FDisplayInfo.DotsSpace write SetDotsSpace default 1;
+    property BackColor: TColor read FInfo.Matrix.BackColor write SetBackColor;
+    property ForeColor: TColor read FInfo.Matrix.ForeColor write SetForeColor;
+    property DimColor: TColor read FInfo.DimColor write SetDimColor;
+    property DotSize: Integer read FInfo.Matrix.DotSize write SetDotSize default 2;
+    property DotsSpace: Integer read FInfo.Matrix.DotsSpace write SetDotsSpace default 1;
     //Emulate characher in Display dot matrix
-    property CellHeight: Integer read FDisplayInfo.CellHeight write SetCellHeight default 0;
-    property CellWidth: Integer read FDisplayInfo.CellWidth write SetCellWidth default 0;
-    property Mode: TntvDisplayDotMode read FDisplayInfo.Mode write SetMode default dmLed;
+    property CellHeight: Integer read FInfo.Matrix.CellHeight write SetCellHeight default 0;
+    property CellWidth: Integer read FInfo.Matrix.CellWidth write SetCellWidth default 0;
+    property Mode: TntvDisplayDotMode read FInfo.Matrix.Mode write SetMode default dmLed;
+    property Theme: TntvDisplayDotTheme read FInfo.Theme write SetTheme stored false;
   end;
 
   { TDotMatrix }
@@ -103,9 +121,14 @@ type
   TDotMatrix = class(TCustomControl)
   private
     FDots: TntvDisplayDots;
+    procedure SetDots(const AValue: TntvDisplayDots);
   protected
     procedure Paint; override;
     procedure EraseBackground(DC: HDC); override;
+    procedure CMBiDiModeChanged(var Message: TLMessage); message CM_BIDIMODECHANGED;
+    procedure UpdateDisplay; virtual;
+    procedure DoRefresh(Sender: TObject);
+    procedure DoUpdateDisplay(Sender: TObject);
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -115,9 +138,10 @@ type
     procedure EndUpdate;
   published
     property Align;
+    property Anchors;
     property Color default clBlack;
     property BidiMode;
-    property Dots: TntvDisplayDots read FDots;
+    property Dots: TntvDisplayDots read FDots write SetDots;
     property Font;
     property ParentBidiMode;
     property ParentFont;
@@ -127,15 +151,24 @@ type
 
   TTextDotMatrix = class(TDotMatrix)
   private
+    FAlignment: TAlignment;
+    FMargin: Integer;
     FText: TCaption;
+    FWordWrap: Boolean;
+    procedure SetAlignment(AValue: TAlignment);
+    procedure SetMargin(const AValue: Integer);
     procedure SetText(const Value: TCaption);
+    procedure SetWordWrap(const AValue: Boolean);
   protected
-    procedure Resize; override;
-    procedure UpdateText;
+    procedure FontChanged(Sender: TObject); override;
+    procedure UpdateDisplay; override;
   public
-    procedure Loaded; override;
+    constructor Create(AOwner: TComponent); override;
   published
+    property Alignment: TAlignment read FAlignment write SetAlignment default taLeftJustify;
     property Text: TCaption read FText write SetText;
+    property WordWrap: Boolean read FWordWrap write SetWordWrap;
+    property Margin: Integer read FMargin write SetMargin default 0;
   end;
 
 procedure DrawDotMatrix(vCanvas: TCanvas; vRect: TRect; vInfo: TDotMatrixInfo; vDots: TntvDisplayDots);
@@ -188,8 +221,8 @@ var
 begin
   R.Left := x;
   R.Top := y;
-  R.Right := x + 2;
-  R.Bottom := Y + 2;
+  R.Right := x + vInfo.DotSize;
+  R.Bottom := Y + vInfo.DotSize;
   if v then
     Canvas.Brush.Color := vInfo.ForeColor
   else
@@ -197,12 +230,12 @@ begin
   Canvas.FillRect(R);
   R.Left := x;
   R.Top := y;
-  R.Right := x + 1;
-  R.Bottom := Y + 1;
+  R.Right := x + vInfo.DotSize div 2;
+  R.Bottom := Y + vInfo.DotSize div 2;
   if v then
     Canvas.Brush.Color := vInfo.LightColor
   else
-    Canvas.Brush.Color := vInfo.DimLightColor;
+    Canvas.Brush.Color := vInfo.DimColor;
   Canvas.FillRect(R);
 end;
 
@@ -211,15 +244,17 @@ var
   y, x, w, h: integer;
   aActive: Boolean;
 begin
+  vCanvas.Brush.Color := vInfo.BackColor;
+  vCanvas.FillRect(vRect);
   y := vRect.Top;
   h := 0;
-  while h < vDots.FRawImage.Height do
+  while h < vDots.RawImage.Height do
   begin
     x := vRect.Left;
     w := 0;
-    while w < vDots.FRawImage.Width do
+    while w < vDots.RawImage.Width do
     begin
-      aActive := vDots.FRawImage.TColors[w, h] <> clBlack;
+      aActive := vDots.RawImage.TColors[w, h] <> clWhite;
       DrawDot(vCanvas, x, y, aActive, vInfo);
       x := x + (vInfo.DotSize + vInfo.DotsSpace);
       Inc(w);
@@ -236,7 +271,8 @@ begin
   inherited;
   ControlStyle := ControlStyle + [csSetCaption, csDoubleClicks] - [csOpaque];
   FDots := TntvDisplayDots.Create;
-  FDots.Control := Self;
+  FDots.OnRefresh := @DoRefresh;
+  FDots.OnUpdateDisplay := @DoUpdateDisplay;
   Color := clBlack;
 end;
 
@@ -246,16 +282,45 @@ begin
   inherited;
 end;
 
+procedure TDotMatrix.SetDots(const AValue: TntvDisplayDots);
+begin
+  FDots.Assign(AValue);
+end;
+
 procedure TDotMatrix.Paint;
 begin
   inherited;
-  Canvas.Brush.Color := Color;
-  Canvas.FillRect(ClientRect);
   Dots.Draw(Canvas, ClientRect);
 end;
 
 procedure TDotMatrix.EraseBackground(DC: HDC);
 begin
+  //To reduce the flicker do not inherite
+end;
+
+procedure TDotMatrix.CMBiDiModeChanged(var Message: TLMessage);
+begin
+  BeginUpdate;
+  try
+    Inherited;
+    UpdateDisplay;
+  finally
+    EndUpdate;
+  end;
+end;
+
+procedure TDotMatrix.UpdateDisplay;
+begin
+end;
+
+procedure TDotMatrix.DoRefresh(Sender: TObject);
+begin
+  Refresh;
+end;
+
+procedure TDotMatrix.DoUpdateDisplay(Sender: TObject);
+begin
+  UpdateDisplay;
 end;
 
 procedure TDotMatrix.Resize;
@@ -264,15 +329,17 @@ begin
   if not (csLoading in ComponentState) then
   begin
     FDots.SetSize(ClientWidth, ClientHeight);
+    UpdateDisplay;
   end;
 end;
 
 procedure TDotMatrix.Loaded;
 begin
   inherited Loaded;
-  FDots.SetSize(ClientWidth, ClientHeight);
-  //FDots.Font.Assgin(Font);
   FDots.Canvas.Font.Assign(Font);
+  FDots.SetSize(ClientWidth, ClientHeight);
+  UpdateDisplay;
+  //FDots.Font.Assgin(Font);
 end;
 
 procedure TDotMatrix.BeginUpdate;
@@ -295,16 +362,20 @@ end;
 procedure TntvDisplayDots.Draw(Canvas: TCanvas; Rect: TRect);
 begin
   if FNeedToLoad then
-    FRawImage.LoadFromBitmap(FBitmap.BitmapHandle, FBitmap.MaskHandle);
+    RawImage.LoadFromBitmap(Bitmap.BitmapHandle, Bitmap.MaskHandle);
   FNeedToLoad := False;
-  DrawDotMatrix(Canvas, Rect, FDisplayInfo, Self);
+  DrawDotMatrix(Canvas, Rect, FInfo.Matrix, Self);
 end;
 
 procedure TntvDisplayDots.SetSize(const AWidth, AHeight: Integer);
 begin
-  FWidth := AWidth;
-  FHeight := AHeight;
-  UpdateBitmap;
+  if (Width <> AWidth) or (Height <> AHeight) then
+  begin
+    FInfo.Width := AWidth;
+    FInfo.Height := AHeight;
+    UpdateBitmap;
+    Update;
+  end;
 end;
 
 procedure TntvDisplayDots.EndUpdate;
@@ -320,6 +391,17 @@ end;
 procedure TntvDisplayDots.Clear;
 begin
   UpdateBitmap;
+  Update;
+end;
+
+procedure TntvDisplayDots.Assign(Source: TPersistent);
+begin
+  if Source is TntvDisplayDots then
+  begin
+    FInfo := (Source as TntvDisplayDots).FInfo;
+  end
+  else
+    inherited;
 end;
 
 function TntvDisplayDots.GetInUpdating: Boolean;
@@ -337,9 +419,10 @@ end;
 
 procedure TntvDisplayDots.SetDotsSpace(const Value: Integer);
 begin
-  if FDisplayInfo.DotsSpace <> Value then
+  if FInfo.Matrix.DotsSpace <> Value then
   begin
-    FDisplayInfo.DotsSpace := Value;
+    FInfo.Matrix.DotsSpace := Value;
+    UpdateBitmap;
     Update;
   end;
 end;
@@ -362,19 +445,30 @@ end;
 
 procedure TntvDisplayDots.SetCellHeight(const AValue: Integer);
 begin
-  if FDisplayInfo.CellHeight <> AValue then
+  if FInfo.Matrix.CellHeight <> AValue then
   begin
-    FDisplayInfo.CellHeight := AValue;
+    FInfo.Matrix.CellHeight := AValue;
+    UpdateBitmap;
     Update;
   end;
 end;
 
 procedure TntvDisplayDots.SetCellWidth(const AValue: Integer);
 begin
-  if FDisplayInfo.CellWidth <> AValue then
+  if FInfo.Matrix.CellWidth <> AValue then
   begin
-    FDisplayInfo.CellWidth := AValue;
+    Finfo.Matrix.CellWidth := AValue;
+    UpdateBitmap;
     Update;
+  end;
+end;
+
+procedure TntvDisplayDots.SetDimColor(const AValue: TColor);
+begin
+  if FInfo.DimColor <> AValue then
+  begin
+    FInfo.DimColor := AValue;
+    UpdateColors;
   end;
 end;
 
@@ -385,8 +479,60 @@ end;
 
 procedure TntvDisplayDots.SetHeight(const AValue: Integer);
 begin
-  FRawImage.Height := AValue;
-  UpdateBitmap;
+  if Finfo.RawImage.Height <> AValue then
+  begin
+    Finfo.RawImage.Height := AValue;
+    UpdateBitmap;
+    Update;
+  end;
+end;
+
+procedure TntvDisplayDots.SetTheme(const AValue: TntvDisplayDotTheme);
+begin
+  if Finfo.Theme = AValue then exit;
+  Finfo.Theme := AValue;
+  case Finfo.Theme of
+    tdmClassicLCD:
+    begin
+      Mode := dmLCD;
+      BackColor := $00C8DCDC;
+      DimColor := clDefault;
+      ForeColor := clBlack;
+      Update;
+    end;
+    tdmOrange:
+    begin
+      Mode := dmLED;
+      BackColor := clBlack;
+      DimColor := clDefault;
+      ForeColor := $0000C9FB;
+      Update;
+    end;
+    tdmGreenLED:
+    begin
+      Mode := dmLED;
+      BackColor := clBlack;
+      DimColor := clDefault;
+      ForeColor := $0032C850;
+      Update;
+    end;
+    tdmRedLED:
+    begin
+      Mode := dmLED;
+      BackColor := clBlack;
+      DimColor := clDefault;
+      ForeColor := $000000FF;
+      Update;
+    end;
+    tdmBlueLED:
+    begin
+      Mode := dmLED;
+      BackColor := clBlack;
+      DimColor := clDefault;
+      ForeColor := $00FF7850;
+      Update;
+    end;
+  end;
 end;
 
 procedure TntvDisplayDots.SetPixel(x, y: integer; const AValue: TColor);
@@ -397,108 +543,143 @@ end;
 
 procedure TntvDisplayDots.SetWidth(const AValue: Integer);
 begin
-  FRawImage.Width := AValue;
-  UpdateBitmap;
+  if FInfo.RawImage.Width <> AValue then
+  begin
+    FInfo.RawImage.Width := AValue;
+    UpdateBitmap;
+    Update;
+  end;
 end;
 
 constructor TntvDisplayDots.Create;
 begin
   inherited;
-  //FComponentStyle := FComponentStyle + [csSubComponent];
-  FRawImage := TLazIntfImage.Create(100, 100, [riqfMono]);
-  FBitmap := TBitmap.Create;
+  FInfo.RawImage := TLazIntfImage.Create(100, 100, [riqfMono]);
+  FInfo.Bitmap := TBitmap.Create;
   {$ifndef WINCE}
-  FBitmap.Monochrome := True;//maybe not work in WINCE
+  FInfo.Bitmap.Monochrome := True;//maybe not work in WINCE
   {$endif}
-  FBitmap.Canvas.OnChange := @CanvasChanged;
-  FDisplayInfo.BackColor := clBlack;
-  FDisplayInfo.ForeColor := clRed;
-  FDisplayInfo.DotSize := 2;
-  FDisplayInfo.DotsSpace := 1;
-  UpdateBitmap;
+  FInfo.Bitmap.Canvas.OnChange := @CanvasChanged;
+  FInfo.DimColor := clDefault;
+  FInfo.LightColor := clDefault;
+  FInfo.Matrix.BackColor := clBlack;
+  FInfo.Matrix.ForeColor := clRed;
+  FInfo.Matrix.DimColor := clDefault;
+  FInfo.Matrix.LightColor := clDefault;
+  FInfo.Matrix.DotSize := 2;
+  FInfo.Matrix.DotsSpace := 1;
   UpdateColors;
+  Clear;
   Update;
 end;
 
 procedure TntvDisplayDots.SetDotSize(const Value: Integer);
 begin
-  if FDisplayInfo.DotSize <> Value then
+  if FInfo.Matrix.DotSize <> Value then
   begin
-    FDisplayInfo.DotSize := Value;
+    FInfo.Matrix.DotSize := Value;
+    UpdateBitmap;
     Update;
   end;
 end;
 
 destructor TntvDisplayDots.Destroy;
 begin
-  FreeAndNil(FRawImage);
+  FreeAndNil(FInfo.RawImage);
   inherited;
 end;
 
 procedure TntvDisplayDots.SetBackColor(const Value: TColor);
 begin
-  if FDisplayInfo.BackColor <> Value then
+  if FInfo.Matrix.BackColor <> Value then
   begin
-    FDisplayInfo.BackColor := Value;
+    FInfo.Matrix.BackColor := Value;
     UpdateColors;
   end;
 end;
 
 procedure TntvDisplayDots.SetForeColor(const Value: TColor);
 begin
-  if FDisplayInfo.ForeColor <> Value then
+  if FInfo.Matrix.ForeColor <> Value then
   begin
-    FDisplayInfo.ForeColor := Value;
+    FInfo.Matrix.ForeColor := Value;
     UpdateColors;
   end;
 end;
 
 procedure TntvDisplayDots.UpdateColors;
 begin
-  if FDisplayInfo.Mode = dmLED then
+  FInfo.Matrix.DimColor := FInfo.DimColor;
+  FInfo.Matrix.LightColor := FInfo.LightColor;
+  if FInfo.Matrix.Mode = dmLED then
   begin
-    FDisplayInfo.DimColor := MixColors(FDisplayInfo.ForeColor, FDisplayInfo.BackColor, 90);
-    FDisplayInfo.LightColor := Lighten(FDisplayInfo.ForeColor, 120);
+    if FInfo.Matrix.DimColor = clDefault then
+      FInfo.Matrix.DimColor := MixColors(FInfo.Matrix.ForeColor, FInfo.Matrix.BackColor, 90);
+    if FInfo.Matrix.LightColor = clDefault then
+      FInfo.Matrix.LightColor := Lighten(FInfo.Matrix.ForeColor, 120);
   end
-  else
+  else //dmLCD
   begin
-    FDisplayInfo.DimColor := MixColors(FDisplayInfo.ForeColor, FDisplayInfo.BackColor, 30);
-    FDisplayInfo.LightColor := FDisplayInfo.ForeColor;
+    if FInfo.Matrix.DimColor = clDefault then
+      FInfo.Matrix.DimColor := MixColors(FInfo.Matrix.ForeColor, FInfo.Matrix.BackColor, 15);
+    if FInfo.Matrix.LightColor = clDefault then
+      FInfo.Matrix.LightColor := FInfo.Matrix.ForeColor;
   end;
-//  FDisplayInfo.DimLightColor := MixColors(FDisplayInfo.DimColor, clWhite, 200);
-  FDisplayInfo.DimLightColor := FDisplayInfo.DimColor;
   Update;
 end;
 
 procedure TntvDisplayDots.UpdateBitmap;
 begin
-  FRealWidth := FWidth div (DotSize + DotsSpace);
-  FRealHeight := FHeight div (DotSize + DotsSpace);
-  FRawImage.SetSize(FRealWidth, FRealHeight);
-  FRawImage.FillPixels(FPColor(0, 0, 0, 0));
-  FBitmap.SetSize(FRealWidth, FRealHeight);
-  FBitmap.Canvas.Brush.Color := clBlack;
-  FBitmap.Canvas.Pen.Color := clWhite;
-  FBitmap.Canvas.Font.Color := clWhite;
-  FBitmap.Canvas.FillRect(Rect(0, 0, Width, Height));
+  FInfo.RealWidth := Width div (DotSize + DotsSpace);
+  FInfo.RealHeight := Height div (DotSize + DotsSpace);
+  FInfo.RawImage.SetSize(FInfo.RealWidth, FInfo.RealHeight);
+  FInfo.RawImage.FillPixels(FPColor(0, 0, 0, 0));
+  FInfo.Bitmap.SetSize(FInfo.RealWidth, FInfo.RealHeight);
+  FInfo.Bitmap.Canvas.Brush.Color := clBlack;
+  FInfo.Bitmap.Canvas.Pen.Color := clWhite;
+  FInfo.Bitmap.Canvas.Font.Color := clWhite;
+  FInfo.Bitmap.Canvas.FillRect(Rect(0, 0, Width, Height));
+  UpdateDisplay;
 end;
 
 procedure TntvDisplayDots.SetMode(const Value: TntvDisplayDotMode);
 begin
-  if FDisplayInfo.Mode <> Value then
+  if FInfo.Matrix.Mode <> Value then
   begin
-    FDisplayInfo.Mode := Value;
+    FInfo.Matrix.Mode := Value;
     UpdateColors;
   end;
 end;
 
 procedure TntvDisplayDots.Refresh;
 begin
-  if Control <> nil then
-    Control.Refresh;
+  if Assigned(OnRefresh) then
+    OnRefresh(Self);
+end;
+
+procedure TntvDisplayDots.UpdateDisplay;
+begin
+  if Assigned(OnUpdateDisplay) then
+    OnUpdateDisplay(Self);
 end;
 
 { TTextDotMatrix }
+
+procedure TTextDotMatrix.SetAlignment(AValue: TAlignment);
+begin
+  if FAlignment <> AValue then
+  begin
+    FAlignment := AValue;
+    UpdateDisplay;
+  end;
+end;
+
+procedure TTextDotMatrix.SetMargin(const AValue: Integer);
+begin
+  if FMargin =AValue then exit;
+  FMargin :=AValue;
+  UpdateDisplay;
+end;
 
 procedure TTextDotMatrix.SetText(const Value: TCaption);
 begin
@@ -506,41 +687,61 @@ begin
   begin
     FText := Value;
     if not (csLoading in ComponentState) then
-      UpdateText;
+      UpdateDisplay;
   end;
 end;
 
-procedure TTextDotMatrix.Loaded;
+procedure TTextDotMatrix.SetWordWrap(const AValue: Boolean);
 begin
-  inherited Loaded;
-  UpdateText;
+  if FWordWrap =AValue then exit;
+  FWordWrap :=AValue;
+  UpdateDisplay;
 end;
 
-procedure TTextDotMatrix.Resize;
+procedure TTextDotMatrix.FontChanged(Sender: TObject);
 begin
-  inherited Resize;
-  if not (csLoading in ComponentState) then
-    UpdateText;
+  inherited FontChanged(Sender);
+  UpdateDisplay;
 end;
 
-procedure TTextDotMatrix.UpdateText;
+procedure TTextDotMatrix.UpdateDisplay;
 var
   aRect: TRect;
-//  y: Integer;
+  TR: TTextStyle;
 begin
   BeginUpdate;
   try
-    aRect := Rect(0 ,0, Dots.Width, Dots.Height);
+    aRect := Rect(0 ,0, Dots.RealWidth, Dots.RealHeight);
     Dots.Canvas.Font := Font;
-    Dots.Canvas.Font.Color := clWhite;
-    Dots.Canvas.Pen.Color := clWhite;
-    Dots.Canvas.Brush.Color := clBlack;
+    Dots.Canvas.Font.Color := clBlack;
+    Dots.Canvas.Pen.Color := clBlack;
+    Dots.Canvas.Brush.Color := clWhite;
     Dots.Canvas.FillRect(aRect);
-//    y := (Dots.Height - Dots.Canvas.TextHeight(Text)) div 2;
-    Dots.Canvas.TextRect(aRect, 0, 0, FText);
+
+    FillChar(TR,SizeOf(TR),0);
+    with TR do
+    begin
+      Alignment := BidiFlipAlignment(Self.Alignment, UseRightToLeftAlignment);
+      WordBreak := WordWrap;
+      SingleLine:= not WordWrap;// and not HasMultiLine;
+      Clipping := True;
+      ShowPrefix := False;
+      SystemFont := False;
+      RightToLeft := UseRightToLeftReading;
+      ExpandTabs := True;
+    end;
+
+    InflateRect(aRect, -Margin, -Margin);
+    Dots.Canvas.TextRect(aRect, aRect.Left, aRect.Top, FText, TR);
   finally
     EndUpdate;
   end;
+end;
+
+constructor TTextDotMatrix.Create(AOwner: TComponent);
+begin
+  inherited Create(AOwner);
+  FAlignment := taLeftJustify;
 end;
 
 end.
