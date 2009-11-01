@@ -13,22 +13,22 @@ LazarusResources.Add('TForm1','FORMDATA',[
   +'5.5654'#8'WordWrap'#9#0#0#5'TEdit'#5'Edit1'#4'Left'#2#9#6'Height'#2#21#3'To'
   +'p'#2'e'#5'Width'#3#193#0#7'Anchors'#11#6'akLeft'#8'akBottom'#0#8'OnChange'#7
   +#11'Edit1Change'#8'TabOrder'#2#1#4'Text'#6#4'TEST'#0#0#6'TImage'#6'Image1'#4
-  +'Left'#3'+'#2#6'Height'#2#22#3'Top'#2'g'#5'Width'#2#24#7'Anchors'#11#6'akLef'
-  +'t'#8'akBottom'#0#12'Picture.Data'#10#2#1#0#0#23'TPortableNetworkGraphic'#230
-  +#0#0#0#137'PNG'#13#10#26#10#0#0#0#13'IHDR'#0#0#0#15#0#0#0#14#8#2#0#0#0#127
-  +#232#209#184#0#0#0#1'sRGB'#0#174#206#28#233#0#0#0#4'gAMA'#0#0#177#143#11#252
-  +'a'#5#0#0#0' cHRM'#0#0'z&'#0#0#128#132#0#0#250#0#0#0#128#232#0#0'u0'#0#0#234
-  +'`'#0#0':'#152#0#0#23'p'#156#186'Q<'#0#0#0'dIDAT(S'#141'Q'#209#18#192' '#8
-  +#218#254#255#163'm'#157#29'2'#228'*'#159#10#193'Cy#'#226#185#175#143'-'#5#173
-  +'i1'#148'< '#242#157'.'#184#215#135#165#207#226#228#139'!'#235'm'#209#132'-N'
-  +#180'{'#28#204#130#233'ioC'#217#16'tY"'#192#215#190#245#255'_'#208#248#238
-  +#139#242#165#205#5'!'#184'MG"'#180#171'WN6H'#1#7#247'9'#213':'#26'P'#188#19#0
-  +#0#0#0'IEND'#174'B`'#130#0#0#7'TButton'#7'Button1'#4'Left'#3#217#1#6'Height'
-  +#2#30#3'Top'#2'c'#5'Width'#2'K'#7'Anchors'#11#6'akLeft'#8'akBottom'#0#7'Capt'
-  +'ion'#6#4'Draw'#7'OnClick'#7#12'Button1Click'#8'TabOrder'#2#2#0#0#9'TComboBo'
-  +'x'#9'ThemeList'#4'Left'#3#221#0#6'Height'#2#21#3'Top'#2'e'#5'Width'#2's'#10
-  +'ItemHeight'#2#13#8'OnSelect'#7#15'ThemeListSelect'#5'Style'#7#14'csDropDown'
-  +'List'#8'TabOrder'#2#3#0#0#9'TCheckBox'#9'CheckBox1'#4'Left'#3'Z'#1#6'Height'
-  +#2#17#3'Top'#2'h'#5'Width'#2'.'#7'Caption'#6#6'Bright'#8'OnChange'#7#15'Chec'
-  +'kBox1Change'#8'TabOrder'#2#4#0#0#0
+  +'Left'#3'+'#2#6'Height'#2#21#3'Top'#2'e'#5'Width'#2#24#7'Anchors'#11#6'akLef'
+  +'t'#8'akBottom'#0#6'Center'#9#12'Picture.Data'#10#2#1#0#0#23'TPortableNetwor'
+  +'kGraphic'#230#0#0#0#137'PNG'#13#10#26#10#0#0#0#13'IHDR'#0#0#0#15#0#0#0#14#8
+  +#2#0#0#0#127#232#209#184#0#0#0#1'sRGB'#0#174#206#28#233#0#0#0#4'gAMA'#0#0#177
+  +#143#11#252'a'#5#0#0#0' cHRM'#0#0'z&'#0#0#128#132#0#0#250#0#0#0#128#232#0#0
+  +'u0'#0#0#234'`'#0#0':'#152#0#0#23'p'#156#186'Q<'#0#0#0'dIDAT(S'#141'Q'#209#18
+  +#192' '#8#218#254#255#163'm'#157#29'2'#228'*'#159#10#193'Cy#'#226#185#175#143
+  +'-'#5#173'i1'#148'< '#242#157'.'#184#215#135#165#207#226#228#139'!'#235'm'
+  +#209#132'-N'#180'{'#28#204#130#233'ioC'#217#16'tY"'#192#215#190#245#255'_'
+  +#208#248#238#139#242#165#205#5'!'#184'MG"'#180#171'WN6H'#1#7#247'9'#213':'#26
+  +'P'#188#19#0#0#0#0'IEND'#174'B`'#130#0#0#7'TButton'#7'Button1'#4'Left'#3#217
+  +#1#6'Height'#2#26#3'Top'#2'c'#5'Width'#2'K'#7'Anchors'#11#6'akLeft'#8'akBott'
+  +'om'#0#7'Caption'#6#4'Draw'#7'OnClick'#7#12'Button1Click'#8'TabOrder'#2#2#0#0
+  +#9'TComboBox'#9'ThemeList'#4'Left'#3#221#0#6'Height'#2#21#3'Top'#2'e'#5'Widt'
+  +'h'#2's'#10'ItemHeight'#2#13#8'OnSelect'#7#15'ThemeListSelect'#5'Style'#7#14
+  +'csDropDownList'#8'TabOrder'#2#3#0#0#9'TCheckBox'#9'CheckBox1'#4'Left'#3'Z'#1
+  +#6'Height'#2#17#3'Top'#2'g'#5'Width'#2'.'#7'Caption'#6#6'Bright'#8'OnChange'
+  +#7#15'CheckBox1Change'#8'TabOrder'#2#4#0#0#0
 ]);

@@ -40,10 +40,11 @@ object Form1: TForm1
   end
   object Image1: TImage
     Left = 555
-    Height = 22
-    Top = 103
+    Height = 21
+    Top = 101
     Width = 24
     Anchors = [akLeft, akBottom]
+    Center = True
     Picture.Data = {
       1754506F727461626C654E6574776F726B47726170686963E600000089504E47
       0D0A1A0A0000000D494844520000000F0000000E08020000007FE8D1B8000000
@@ -58,7 +59,7 @@ object Form1: TForm1
   end
   object Button1: TButton
     Left = 473
-    Height = 30
+    Height = 26
     Top = 99
     Width = 75
     Anchors = [akLeft, akBottom]
@@ -79,7 +80,7 @@ object Form1: TForm1
   object CheckBox1: TCheckBox
     Left = 346
     Height = 17
-    Top = 104
+    Top = 103
     Width = 46
     Caption = 'Bright'
     OnChange = CheckBox1Change

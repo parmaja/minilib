@@ -29,6 +29,7 @@ type
     Image1: TImage;
     TextDotMatrix: TTextDotMatrix;
     procedure Button1Click(Sender: TObject);
+    procedure Button2Click(Sender: TObject);
     procedure CheckBox1Change(Sender: TObject);
     procedure Edit1Change(Sender: TObject);
     procedure FormCreate(Sender: TObject);
@@ -76,6 +77,11 @@ procedure TForm1.Button1Click(Sender: TObject);
 begin
   TextDotMatrix.Text := '';
   TextDotMatrix.Dots.Canvas.Draw(0, 0, Image1.Picture.Graphic);
+end;
+
+procedure TForm1.Button2Click(Sender: TObject);
+begin
+
 end;
 
 procedure TForm1.CheckBox1Change(Sender: TObject);

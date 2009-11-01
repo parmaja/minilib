@@ -54,6 +54,8 @@ type
   TntvDisplayDots = class(TPersistent)
   private
     FInfo: TntvDisplayDotsInfo;
+    FOffsetX: Integer;
+    FOffsetY: Integer;
     FUpdateCount: Integer;
     FNeedUpdate: Boolean;
     FNeedToLoad: Boolean;
@@ -71,6 +73,8 @@ type
     procedure SetDotsSpace(const Value: Integer);
     procedure SetDotSize(const Value: Integer);
     procedure SetHeight(const AValue: Integer);
+    procedure SetOffsetX(const AValue: Integer);
+    procedure SetOffsetY(const AValue: Integer);
     procedure SetTheme(const AValue: TntvDisplayDotTheme);
     procedure SetWidth(const AValue: Integer);
     function GetInUpdating: Boolean;
@@ -107,6 +111,8 @@ type
     property OnUpdateDisplay: TNotifyEvent read FOnUpdateDisplay write FOnUpdateDisplay;
     property Width: Integer read FInfo.Width write SetWidth;
     property Height: Integer read FInfo.Height write SetHeight;
+    property OffsetX: Integer read FOffsetX write SetOffsetX;
+    property OffsetY: Integer read FOffsetY write SetOffsetY;
   published
     property BackColor: TColor read FInfo.Matrix.BackColor write SetBackColor;
     property ForeColor: TColor read FInfo.Matrix.ForeColor write SetForeColor;
@@ -270,25 +276,33 @@ end;
 
 procedure TntvDisplayDots.DrawDotMatrix(vCanvas: TCanvas; vRect: TRect);
 var
-  y, x, w, h: integer;
+  x, y: integer;
+  ix, iy: integer;
+  ox, oy: integer;
   aActive: Boolean;
 begin
   vCanvas.Brush.Color := FInfo.Matrix.BackColor;
   vCanvas.FillRect(vRect);
   y := vRect.Top;
-  h := 0;
-  while h < RawImage.Height do
+  iy := 0;
+  while iy < RawImage.Height do
   begin
     x := vRect.Left;
-    w := 0;
-    while w < RawImage.Width do
+    ix := 0;
+    while ix < RawImage.Width do
     begin
-      aActive := RawImage.TColors[w, h] <> clWhite;
+      //
+      ox := ix + OffsetX;
+      oy := iy + OffsetY;
+      if (ox < RawImage.Width) and (oy < RawImage.Height) then
+        aActive := RawImage.TColors[ox, oy] <> clWhite
+      else
+        aActive := False;
       DrawDot(vCanvas, x, y, aActive, FInfo.Matrix);
       x := x + (FInfo.Matrix.DotSize + FInfo.Matrix.DotsSpace);
-      Inc(w);
+      Inc(ix);
     end;
-    Inc(h);
+    Inc(iy);
     y := y + (FInfo.Matrix.DotSize + FInfo.Matrix.DotsSpace);
   end;
 end;
@@ -532,6 +546,24 @@ begin
   begin
     Finfo.RawImage.Height := AValue;
     UpdateBitmap;
+    Update;
+  end;
+end;
+
+procedure TntvDisplayDots.SetOffsetX(const AValue: Integer);
+begin
+  if FOffsetX <> AValue then
+  begin
+    FOffsetX := AValue;
+    Update;
+  end;
+end;
+
+procedure TntvDisplayDots.SetOffsetY(const AValue: Integer);
+begin
+  if FOffsetY <> AValue then
+  begin
+    FOffsetY := AValue;
     Update;
   end;
 end;
