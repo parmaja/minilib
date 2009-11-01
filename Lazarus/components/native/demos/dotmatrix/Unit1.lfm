@@ -1,28 +1,88 @@
 object Form1: TForm1
-  Left = 415
-  Height = 300
-  Top = 126
-  Width = 400
-  ActiveControl = DrawBtn
+  Left = 350
+  Height = 135
+  Top = 149
+  Width = 590
   Caption = 'Form1'
-  ClientHeight = 300
-  ClientWidth = 400
-  LCLVersion = '0.9.27'
-  object DotMatrix1: TDotMatrix
-    Left = 24
-    Height = 85
-    Top = 32
-    Width = 328
-    Dots.ForeColor = clLime
-    Text = 'zaher'
+  ClientHeight = 135
+  ClientWidth = 590
+  OnCreate = FormCreate
+  LCLVersion = '0.9.29'
+  object TextDotMatrix: TTextDotMatrix
+    Left = 8
+    Height = 86
+    Top = 9
+    Width = 577
+    Anchors = [akTop, akLeft, akRight]
+    Dots.BackColor = clBlack
+    Dots.ForeColor = 51707
+    Dots.DimColor = clDefault
+    Dots.DotSize = 3
+    Font.CharSet = ANSI_CHARSET
+    Font.Color = clBlack
+    Font.Height = -11
+    Font.Name = 'Courier New'
+    Font.Pitch = fpFixed
+    Font.Quality = fqDraft
+    ParentFont = False
+    Text = '65465.5654'
+    WordWrap = True
   end
-  object DrawBtn: TButton
-    Left = 243
-    Height = 25
-    Top = 131
+  object Edit1: TEdit
+    Left = 9
+    Height = 21
+    Top = 101
+    Width = 193
+    Anchors = [akLeft, akBottom]
+    OnChange = Edit1Change
+    TabOrder = 1
+    Text = 'TEST'
+  end
+  object Image1: TImage
+    Left = 555
+    Height = 22
+    Top = 103
+    Width = 24
+    Anchors = [akLeft, akBottom]
+    Picture.Data = {
+      1754506F727461626C654E6574776F726B47726170686963E600000089504E47
+      0D0A1A0A0000000D494844520000000F0000000E08020000007FE8D1B8000000
+      017352474200AECE1CE90000000467414D410000B18F0BFC6105000000206348
+      524D00007A26000080840000FA00000080E8000075300000EA6000003A980000
+      17709CBA513C000000644944415428538D51D112C02008DAFEFFA36D9D1D32E4
+      2A9F0AC1437923E2B9AF8F2D05AD6931943C20F29D2EB8D787A5CFE2E48B21EB
+      6DD1842D4EB47B1CCC82E9696F43D910745922C0D7BEF5FF5FD0F8EE8BF2A5CD
+      0521B84D4722B4AB574E36480107F739D53A1A50BC130000000049454E44AE42
+      6082
+    }
+  end
+  object Button1: TButton
+    Left = 473
+    Height = 30
+    Top = 99
     Width = 75
+    Anchors = [akLeft, akBottom]
     Caption = 'Draw'
     OnClick = Button1Click
-    TabOrder = 0
+    TabOrder = 2
+  end
+  object ThemeList: TComboBox
+    Left = 221
+    Height = 21
+    Top = 101
+    Width = 115
+    ItemHeight = 13
+    OnSelect = ThemeListSelect
+    Style = csDropDownList
+    TabOrder = 3
+  end
+  object CheckBox1: TCheckBox
+    Left = 346
+    Height = 17
+    Top = 104
+    Width = 46
+    Caption = 'Bright'
+    OnChange = CheckBox1Change
+    TabOrder = 4
   end
 end

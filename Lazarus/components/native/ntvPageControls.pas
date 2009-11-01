@@ -14,7 +14,7 @@ unit ntvPageControls;
 interface
 
 uses
-  Classes, Messages, Controls, SysUtils, Math, Contnrs, Graphics, Forms,
+  Classes, Messages, Controls, SysUtils, Math, Contnrs, Graphics, Forms, StdCtrls,
   LCLType, LCLIntf, LMessages, LCLProc,
   ntvutils;
 
@@ -40,7 +40,6 @@ type
   protected
   public
     constructor Create(AOwner: TComponent); override;
-    procedure Paint; override;
   published
     property TabStop default False;
     property Align default alClient;
@@ -347,11 +346,6 @@ begin
   ControlStyle := ControlStyle + [csAcceptsControls];
   TabStop := False;
   Align := alClient;
-end;
-
-procedure TntvPage.Paint;
-begin
-  inherited Paint;
 end;
 
 { TntvPageControl }

@@ -3,6 +3,7 @@
   <Package Version="3">
     <PathDelim Value="\"/>
     <Name Value="NativeLib"/>
+    <AddToProjectUsesSection Value="False"/>
     <CompilerOptions>
       <Version Value="8"/>
       <PathDelim Value="\"/>
