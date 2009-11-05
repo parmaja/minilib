@@ -1,19 +1,19 @@
 object Form1: TForm1
-  Left = 350
-  Height = 135
-  Top = 149
+  Left = 328
+  Height = 113
+  Top = 168
   Width = 590
   Caption = 'Form1'
-  ClientHeight = 135
+  ClientHeight = 113
   ClientWidth = 590
   OnCreate = FormCreate
   LCLVersion = '0.9.29'
   object TextDotMatrix: TTextDotMatrix
     Left = 8
-    Height = 86
+    Height = 64
     Top = 9
     Width = 577
-    Anchors = [akTop, akLeft, akRight]
+    Anchors = [akTop, akLeft, akRight, akBottom]
     Dots.BackColor = clBlack
     Dots.ForeColor = 51707
     Dots.DimColor = clDefault
@@ -31,7 +31,7 @@ object Form1: TForm1
   object Edit1: TEdit
     Left = 9
     Height = 21
-    Top = 101
+    Top = 79
     Width = 193
     Anchors = [akLeft, akBottom]
     OnChange = Edit1Change
@@ -41,7 +41,7 @@ object Form1: TForm1
   object Image1: TImage
     Left = 555
     Height = 21
-    Top = 101
+    Top = 79
     Width = 24
     Anchors = [akLeft, akBottom]
     Center = True
@@ -58,9 +58,9 @@ object Form1: TForm1
     }
   end
   object Button1: TButton
-    Left = 473
-    Height = 26
-    Top = 99
+    Left = 478
+    Height = 25
+    Top = 77
     Width = 75
     Anchors = [akLeft, akBottom]
     Caption = 'Draw'
@@ -70,8 +70,9 @@ object Form1: TForm1
   object ThemeList: TComboBox
     Left = 221
     Height = 21
-    Top = 101
+    Top = 79
     Width = 115
+    Anchors = [akLeft, akBottom]
     ItemHeight = 13
     OnSelect = ThemeListSelect
     Style = csDropDownList
@@ -80,10 +81,28 @@ object Form1: TForm1
   object CheckBox1: TCheckBox
     Left = 346
     Height = 17
-    Top = 103
+    Top = 81
     Width = 46
+    Anchors = [akLeft, akBottom]
     Caption = 'Bright'
     OnChange = CheckBox1Change
     TabOrder = 4
+  end
+  object Button2: TButton
+    Left = 409
+    Height = 25
+    Top = 77
+    Width = 66
+    Anchors = [akLeft, akBottom]
+    Caption = 'Offset'
+    OnClick = Button2Click
+    TabOrder = 5
+  end
+  object Timer1: TTimer
+    Enabled = False
+    Interval = 20
+    OnTimer = Timer1Timer
+    left = 463
+    top = 15
   end
 end

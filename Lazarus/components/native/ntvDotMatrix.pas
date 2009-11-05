@@ -56,6 +56,7 @@ type
     FInfo: TntvDisplayDotsInfo;
     FOffsetX: Integer;
     FOffsetY: Integer;
+    FRotateOffset: Boolean;
     FUpdateCount: Integer;
     FNeedUpdate: Boolean;
     FNeedToLoad: Boolean;
@@ -75,6 +76,7 @@ type
     procedure SetHeight(const AValue: Integer);
     procedure SetOffsetX(const AValue: Integer);
     procedure SetOffsetY(const AValue: Integer);
+    procedure SetRotateOffset(const AValue: Boolean);
     procedure SetTheme(const AValue: TntvDisplayDotTheme);
     procedure SetWidth(const AValue: Integer);
     function GetInUpdating: Boolean;
@@ -99,6 +101,8 @@ type
     procedure BeginUpdate;
     procedure EndUpdate;
     procedure Clear; virtual;
+    procedure Reset; virtual;
+    procedure Scroll(x, y: Integer);
     procedure Assign(Source: TPersistent); override;
     property InUpdating: Boolean read GetInUpdating;
     property RawImage: TLazIntfImage read FInfo.RawImage;
@@ -111,8 +115,11 @@ type
     property OnUpdateDisplay: TNotifyEvent read FOnUpdateDisplay write FOnUpdateDisplay;
     property Width: Integer read FInfo.Width write SetWidth;
     property Height: Integer read FInfo.Height write SetHeight;
+    //Scroll the dots
     property OffsetX: Integer read FOffsetX write SetOffsetX;
     property OffsetY: Integer read FOffsetY write SetOffsetY;
+    //when the dots is out of canvas take the dot from the first, Rotate the dots one time only
+    property RotateOffset: Boolean read FRotateOffset write SetRotateOffset;
   published
     property BackColor: TColor read FInfo.Matrix.BackColor write SetBackColor;
     property ForeColor: TColor read FInfo.Matrix.ForeColor write SetForeColor;
@@ -294,6 +301,13 @@ begin
       //
       ox := ix + OffsetX;
       oy := iy + OffsetY;
+      if RotateOffset then
+      begin
+        if ox >= RawImage.Width then
+          ox := ox - RawImage.Width;
+        if oy >= RawImage.Width then
+          oy := oy - RawImage.Width;
+      end;
       if (ox < RawImage.Width) and (oy < RawImage.Height) then
         aActive := RawImage.TColors[ox, oy] <> clWhite
       else
@@ -437,6 +451,33 @@ begin
   Update;
 end;
 
+procedure TntvDisplayDots.Reset;
+begin
+  BeginUpdate;
+  try
+    OffsetX := 0;
+    OffsetY := 0;
+    Clear;
+  finally
+    EndUpdate;
+  end;
+end;
+
+procedure TntvDisplayDots.Scroll(x, y: Integer);
+begin
+  BeginUpdate;
+  try
+    FOffsetX := FOffsetX + x;
+    if Abs(FOffsetX) >= RealWidth then
+      FOffsetX := 0;
+    FOffsety := FOffsety + y;
+    if Abs(FOffsetY) >= RealHeight then
+      FOffsetY := 0;
+  finally
+    EndUpdate;
+  end;
+end;
+
 procedure TntvDisplayDots.Assign(Source: TPersistent);
 begin
   if Source is TntvDisplayDots then
@@ -566,6 +607,16 @@ begin
     FOffsetY := AValue;
     Update;
   end;
+end;
+
+procedure TntvDisplayDots.SetRotateOffset(const AValue: Boolean);
+begin
+  if FRotateOffset <> AValue then
+  begin
+    FRotateOffset :=AValue;
+    Update;
+  end;
+
 end;
 
 procedure TntvDisplayDots.SetTheme(const AValue: TntvDisplayDotTheme);

@@ -23,17 +23,20 @@ type
 
   TForm1 = class(TForm)
     Button1: TButton;
+    Button2: TButton;
     CheckBox1: TCheckBox;
     ThemeList: TComboBox;
     Edit1: TEdit;
     Image1: TImage;
     TextDotMatrix: TTextDotMatrix;
+    Timer1: TTimer;
     procedure Button1Click(Sender: TObject);
     procedure Button2Click(Sender: TObject);
     procedure CheckBox1Change(Sender: TObject);
     procedure Edit1Change(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure ThemeListSelect(Sender: TObject);
+    procedure Timer1Timer(Sender: TObject);
   private
     //DotMatrix: TDotMatrix;
   public
@@ -73,6 +76,11 @@ begin
   end
 end;
 
+procedure TForm1.Timer1Timer(Sender: TObject);
+begin
+  TextDotMatrix.Dots.Scroll(1, 0);
+end;
+
 procedure TForm1.Button1Click(Sender: TObject);
 begin
   TextDotMatrix.Text := '';
@@ -81,7 +89,8 @@ end;
 
 procedure TForm1.Button2Click(Sender: TObject);
 begin
-
+  TextDotMatrix.Dots.RotateOffset := True;
+  Timer1.Enabled := not Timer1.Enabled;
 end;
 
 procedure TForm1.CheckBox1Change(Sender: TObject);

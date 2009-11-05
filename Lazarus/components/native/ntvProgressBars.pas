@@ -33,7 +33,6 @@ type
     FProgressColor: TColor;
     FStep: integer;
     FShowProgress: boolean;
-
     procedure SetMax(const Value: integer);
     procedure SetMin(const Value: integer);
     procedure SetPosition(const Value: integer);
@@ -63,17 +62,9 @@ type
 
     property Align;
     property Anchors;
-    //property BevelEdges;
-    //property BevelInner;
-    //property BevelOuter;
-    //property BevelKind;
-    //property BevelWidth;
     property BorderWidth;
-    //property Ctl3D;
-
     property Color;
     property Font;
-
     property TabOrder;
     property TabStop;
     property Visible;
@@ -109,7 +100,6 @@ type
     FPaintStatus: TPaintStatusSet;
     FSubProgressColor: TColor;
     FSubHeight: integer;
-    //FBorderStyle: TItemBorderStyle;
     FFrameColor: TColor;
 
     procedure SetMax(Value: integer);
@@ -124,7 +114,6 @@ type
     procedure SetSubProgressColor(const Value: TColor);
     procedure SetSubHeight(Value: Integer);
     function GetSubHeight: integer;
-
     //procedure WMNCPaint(var Message: TMessage); message WM_NCPAINT;
     //procedure WMNCCalcSize(var Message: TWMNCCalcSize); message WM_NCCALCSIZE;
     //procedure SetBorderStyle(const Value: TItemBorderStyle);
@@ -134,14 +123,11 @@ type
     procedure EraseBackground(DC: HDC); override;
     procedure CreateParams(var Params: TCreateParams); override;
     function GetClientRect: TRect; override;
-
     function ProgressWidth(APos, AMax, AMin: integer): integer;
     function ProgressStep: integer;
-
     function MainRect: TRect;
     function SubRect: TRect;
     function RemainRect: TRect;
-
     procedure SetText(const S:string);
     procedure RedrawBorder(const Clip: HRGN);
   public
@@ -151,34 +137,26 @@ type
     procedure StepIt;
     procedure Reset;
     procedure StepBy(vStep: integer);
-
   published
     property Min: integer read FMin write SetMin default 0;
     property Max: integer read FMax write SetMax default 100;
     property Position: integer read FPosition write SetPosition default 0;
     property Step: integer read FStep write FStep default 1;
-
     property SubMin: integer read FSubMin write SetSubMin default 0;
     property SubMax: integer read FSubMax write SetSubMax default 100;
     property SubHeight: integer read FSubHeight write SetSubHeight default 0;
     property SubPosition: integer read FSubPosition write SetSubPosition default 0;
     property SubStep: integer read FSubStep write FSubStep default 1;
-
     property ShowProgress: boolean read FShowProgress write SetShowProgress default True;
     property ProgressColor: TColor read FProgressColor write SetProgressColor default clNavy;
     property SubProgressColor: TColor read FSubProgressColor write SetSubProgressColor default clRed;
-    //property BorderStyle: TItemBorderStyle read FBorderStyle write SetBorderStyle default ibsLightRaised;
     property FrameColor: TColor read FFrameColor write SetFrameColor default clBlack;
-
     property Align;
     property Anchors;
-    //property Ctl3D;
     property BiDiMode;
     property ParentBiDiMode;
-
     property Color;
     property Font;
-
     property TabOrder;
     property TabStop;
     property Visible;

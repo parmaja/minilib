@@ -55,8 +55,60 @@ begin
   inherited;
 end;
 
-procedure TposImage.PaintInner(vCanvas: TCanvas; const vRect: TRect;
-  vColor: TColor);
+procedure TposImage.PaintInner(vCanvas: TCanvas; const vRect: TRect; vColor: TColor);
+  function DestRect: TRect;
+  var
+    w, h, cw, ch: Integer;
+    xyaspect: Double;
+  begin
+    w := Picture.Width;
+    h := Picture.Height;
+    cw := InnerWidth;
+    ch := InnerHeight;
+    if ((w > cw) or (h > ch)) then
+    begin
+      if (w > 0) and (h > 0) then
+      begin
+        xyaspect := w / h;
+        if w > h then
+        begin
+          w := cw;
+          h := Trunc(cw / xyaspect);
+          if h > ch then  // woops, too big
+          begin
+            h := ch;
+            w := Trunc(ch * xyaspect);
+          end;
+        end
+        else
+        begin
+          h := ch;
+          w := Trunc(ch * xyaspect);
+          if w > cw then  // woops, too big
+          begin
+            w := cw;
+            h := Trunc(cw / xyaspect);
+          end;
+        end;
+      end
+      else
+      begin
+        w := cw;
+        h := ch;
+      end;
+    end;
+
+    with Result do
+    begin
+      Left := 0;
+      Top := 0;
+      Right := w;
+      Bottom := h;
+    end;
+
+    OffsetRect(Result, (cw - w) div 2, (ch - h) div 2);
+  end;
+
 var
   R : TRect;
 begin
@@ -73,9 +125,9 @@ begin
   begin
     vCanvas.FillRect(vRect);
   end;
-  R := Rect(0, 0, FPicture.Width, FPicture.Height);
-  CenterRect(R, vRect);
-  vCanvas.Draw(R.Left, R.Top, FPicture.Graphic);
+
+  R := DestRect;
+  vCanvas.StretchDraw(R, FPicture.Graphic);
   ExcludeClipRect(vCanvas, R);
 end;
 
