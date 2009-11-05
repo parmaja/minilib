@@ -26,9 +26,7 @@ type
     ByteIndex: Integer;// from 0 to 3;
     procedure LoadBlock;
     function GetKeyStream: u32;
-    function GetU32(var vPos: PChar; vEnd: PChar): u32;
     function GetByte: Byte;
-    function GetKeyStreamByte: Byte;
     procedure StreamBlock(const InBuffer; InCount: Integer; var OutBuffer; var OutCount: Integer); virtual;
     procedure LoadKey(Key: TSnowKey; KeySize: TSnowKeySize; IV3, IV2, IV1, IV0: u32);
   public
@@ -162,29 +160,6 @@ begin
   if Index > 15 then
     LoadBlock;
   Result := Block[Index];
-end;
-
-function TSnow2Cipher.GetKeyStreamByte: Byte;
-begin
-{  Inc()
-  Result := GetByte()}
-end;
-
-function TSnow2Cipher.GetU32(var vPos: PChar; vEnd: PChar): u32;
-var
-  i: Integer;
-begin
-  Result := 0;
-  if vPos<vEnd then
-  begin
-    for I := 0 to 3 do
-    begin
-      Result := (Result shl 8);
-      if vPos<vEnd then
-        Result := Result or Ord(vPos^);
-      Inc(vPos);
-    end;
-  end;
 end;
 
 procedure TSnow2Cipher.LoadBlock;
