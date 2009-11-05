@@ -40,9 +40,9 @@ type
   end;
 
 procedure SnowLoadkey(var Context: TSnowContext; Key: TSnowKey; KeySize: TSnowKeySize; IV3, IV2, IV1, IV0: u32);
-procedure SnowKeystreamBlock(var Context: TSnowContext; var Block: TSnowBlock);
+procedure SnowKeyStreamBlock(var Context: TSnowContext; var Block: TSnowBlock);
 
-function GetByte(n: Byte; w: u32): Byte;
+function SnowGetByte(n: Byte; w: u32): Byte;
 
 implementation
 
@@ -270,7 +270,7 @@ implementation
     $38F8C8C, $59F8A1A1, $9808989, $1A170D0D, $65DABFBF, $D731E6E6, $84C64242, $D0B86868,
     $82C34141, $29B09999, $5A772D2D, $1E110F0F, $7BCBB0B0, $A8FC5454, $6DD6BBBB, $2C3A1616);
 
-function GetByte(n: Byte; w: u32): Byte;
+function SnowGetByte(n: Byte; w: u32): Byte;
 begin
   Result := (((w) shr (n * 8)) and $FF);
 end;
@@ -390,103 +390,103 @@ begin
       outfrom_fsm := (r1 + s[15]) xor r2;
       s[0] := a_mul(s[0]) xor s[2] xor ainv_mul(s[11]) xor outfrom_fsm;
       fsmtmp := r2 + s[5];
-      r2 := TSnow_T0[GetByte(0, r1)] xor TSnow_T1[GetByte(1, r1)] xor TSnow_T2[GetByte(2, r1)] xor TSnow_T3[GetByte(3, r1)];
+      r2 := TSnow_T0[SnowGetByte(0, r1)] xor TSnow_T1[SnowGetByte(1, r1)] xor TSnow_T2[SnowGetByte(2, r1)] xor TSnow_T3[SnowGetByte(3, r1)];
       r1 := fsmtmp;
 
       outfrom_fsm := (r1 + s[0]) xor r2;
       s[1] := a_mul(s[1]) xor s[3] xor ainv_mul(s[12]) xor outfrom_fsm;
       fsmtmp := r2 + s[6];
-      r2 := TSnow_T0[GetByte(0, r1)] xor TSnow_T1[GetByte(1, r1)] xor TSnow_T2[GetByte(2, r1)] xor TSnow_T3[GetByte(3, r1)];
+      r2 := TSnow_T0[SnowGetByte(0, r1)] xor TSnow_T1[SnowGetByte(1, r1)] xor TSnow_T2[SnowGetByte(2, r1)] xor TSnow_T3[SnowGetByte(3, r1)];
       r1 := fsmtmp;
 
       outfrom_fsm := (r1 + s[1]) xor r2;
       s[2] := a_mul(s[2]) xor s[4] xor ainv_mul(s[13]) xor outfrom_fsm;
       fsmtmp := r2 + s[7];
-      r2 := TSnow_T0[GetByte(0, r1)] xor TSnow_T1[GetByte(1, r1)] xor TSnow_T2[GetByte(2, r1)] xor TSnow_T3[GetByte(3, r1)];
+      r2 := TSnow_T0[SnowGetByte(0, r1)] xor TSnow_T1[SnowGetByte(1, r1)] xor TSnow_T2[SnowGetByte(2, r1)] xor TSnow_T3[SnowGetByte(3, r1)];
       r1 := fsmtmp;
 
       outfrom_fsm := (r1 + s[2]) xor r2;
       s[3] := a_mul(s[3]) xor s[5] xor ainv_mul(s[14]) xor outfrom_fsm;
       fsmtmp := r2 + s[8];
-      r2 := TSnow_T0[GetByte(0, r1)] xor TSnow_T1[GetByte(1, r1)] xor TSnow_T2[GetByte(2, r1)] xor TSnow_T3[GetByte(3, r1)];
+      r2 := TSnow_T0[SnowGetByte(0, r1)] xor TSnow_T1[SnowGetByte(1, r1)] xor TSnow_T2[SnowGetByte(2, r1)] xor TSnow_T3[SnowGetByte(3, r1)];
       r1 := fsmtmp;
 
       outfrom_fsm := (r1 + s[3]) xor r2;
       s[4] := a_mul(s[4]) xor s[6] xor ainv_mul(s[15]) xor outfrom_fsm;
       fsmtmp := r2 + s[9];
-      r2 := TSnow_T0[GetByte(0, r1)] xor TSnow_T1[GetByte(1, r1)] xor TSnow_T2[GetByte(2, r1)] xor TSnow_T3[GetByte(3, r1)];
+      r2 := TSnow_T0[SnowGetByte(0, r1)] xor TSnow_T1[SnowGetByte(1, r1)] xor TSnow_T2[SnowGetByte(2, r1)] xor TSnow_T3[SnowGetByte(3, r1)];
       r1 := fsmtmp;
 
       outfrom_fsm := (r1 + s[4]) xor r2;
       s[5] := a_mul(s[5]) xor s[7] xor ainv_mul(s[0]) xor outfrom_fsm;
       fsmtmp := r2 + s[10];
-      r2 := TSnow_T0[GetByte(0, r1)] xor TSnow_T1[GetByte(1, r1)] xor TSnow_T2[GetByte(2, r1)] xor TSnow_T3[GetByte(3, r1)];
+      r2 := TSnow_T0[SnowGetByte(0, r1)] xor TSnow_T1[SnowGetByte(1, r1)] xor TSnow_T2[SnowGetByte(2, r1)] xor TSnow_T3[SnowGetByte(3, r1)];
       r1 := fsmtmp;
 
       outfrom_fsm := (r1 + s[5]) xor r2;
       s[6] := a_mul(s[6]) xor s[8] xor ainv_mul(s[1]) xor outfrom_fsm;
       fsmtmp := r2 + s[11];
-      r2 := TSnow_T0[GetByte(0, r1)] xor TSnow_T1[GetByte(1, r1)] xor TSnow_T2[GetByte(2, r1)] xor TSnow_T3[GetByte(3, r1)];
+      r2 := TSnow_T0[SnowGetByte(0, r1)] xor TSnow_T1[SnowGetByte(1, r1)] xor TSnow_T2[SnowGetByte(2, r1)] xor TSnow_T3[SnowGetByte(3, r1)];
       r1 := fsmtmp;
 
       outfrom_fsm := (r1 + s[6]) xor r2;
       s[7] := a_mul(s[7]) xor s[9] xor ainv_mul(s[2]) xor outfrom_fsm;
       fsmtmp := r2 + s[12];
-      r2 := TSnow_T0[GetByte(0, r1)] xor TSnow_T1[GetByte(1, r1)] xor TSnow_T2[GetByte(2, r1)] xor TSnow_T3[GetByte(3, r1)];
+      r2 := TSnow_T0[SnowGetByte(0, r1)] xor TSnow_T1[SnowGetByte(1, r1)] xor TSnow_T2[SnowGetByte(2, r1)] xor TSnow_T3[SnowGetByte(3, r1)];
       r1 := fsmtmp;
 
       outfrom_fsm := (r1 + s[7]) xor r2;
       s[8] := a_mul(s[8]) xor s[10] xor ainv_mul(s[3]) xor outfrom_fsm;
       fsmtmp := r2 + s[13];
-      r2 := TSnow_T0[GetByte(0, r1)] xor TSnow_T1[GetByte(1, r1)] xor TSnow_T2[GetByte(2, r1)] xor TSnow_T3[GetByte(3, r1)];
+      r2 := TSnow_T0[SnowGetByte(0, r1)] xor TSnow_T1[SnowGetByte(1, r1)] xor TSnow_T2[SnowGetByte(2, r1)] xor TSnow_T3[SnowGetByte(3, r1)];
       r1 := fsmtmp;
 
       outfrom_fsm := (r1 + s[8]) xor r2;
       s[9] := a_mul(s[9]) xor s[11] xor ainv_mul(s[4]) xor outfrom_fsm;
       fsmtmp := r2 + s[14];
-      r2 := TSnow_T0[GetByte(0, r1)] xor TSnow_T1[GetByte(1, r1)] xor TSnow_T2[GetByte(2, r1)] xor TSnow_T3[GetByte(3, r1)];
+      r2 := TSnow_T0[SnowGetByte(0, r1)] xor TSnow_T1[SnowGetByte(1, r1)] xor TSnow_T2[SnowGetByte(2, r1)] xor TSnow_T3[SnowGetByte(3, r1)];
       r1 := fsmtmp;
 
       outfrom_fsm := (r1 + s[9]) xor r2;
       s[10] := a_mul(s[10]) xor s[12] xor ainv_mul(s[5]) xor outfrom_fsm;
       fsmtmp := r2 + s[15];
-      r2 := TSnow_T0[GetByte(0, r1)] xor TSnow_T1[GetByte(1, r1)] xor TSnow_T2[GetByte(2, r1)] xor TSnow_T3[GetByte(3, r1)];
+      r2 := TSnow_T0[SnowGetByte(0, r1)] xor TSnow_T1[SnowGetByte(1, r1)] xor TSnow_T2[SnowGetByte(2, r1)] xor TSnow_T3[SnowGetByte(3, r1)];
       r1 := fsmtmp;
 
       outfrom_fsm := (r1 + s[10]) xor r2;
       s[11] := a_mul(s[11]) xor s[13] xor ainv_mul(s[6]) xor outfrom_fsm;
       fsmtmp := r2 + s[0];
-      r2 := TSnow_T0[GetByte(0, r1)] xor TSnow_T1[GetByte(1, r1)] xor TSnow_T2[GetByte(2, r1)] xor TSnow_T3[GetByte(3, r1)];
+      r2 := TSnow_T0[SnowGetByte(0, r1)] xor TSnow_T1[SnowGetByte(1, r1)] xor TSnow_T2[SnowGetByte(2, r1)] xor TSnow_T3[SnowGetByte(3, r1)];
       r1 := fsmtmp;
 
       outfrom_fsm := (r1 + s[11]) xor r2;
       s[12] := a_mul(s[12]) xor s[14] xor ainv_mul(s[7]) xor outfrom_fsm;
       fsmtmp := r2 + s[1];
-      r2 := TSnow_T0[GetByte(0, r1)] xor TSnow_T1[GetByte(1, r1)] xor TSnow_T2[GetByte(2, r1)] xor TSnow_T3[GetByte(3, r1)];
+      r2 := TSnow_T0[SnowGetByte(0, r1)] xor TSnow_T1[SnowGetByte(1, r1)] xor TSnow_T2[SnowGetByte(2, r1)] xor TSnow_T3[SnowGetByte(3, r1)];
       r1 := fsmtmp;
 
       outfrom_fsm := (r1 + s[12]) xor r2;
       s[13] := a_mul(s[13]) xor s[15] xor ainv_mul(s[8]) xor outfrom_fsm;
       fsmtmp := r2 + s[2];
-      r2 := TSnow_T0[GetByte(0, r1)] xor TSnow_T1[GetByte(1, r1)] xor TSnow_T2[GetByte(2, r1)] xor TSnow_T3[GetByte(3, r1)];
+      r2 := TSnow_T0[SnowGetByte(0, r1)] xor TSnow_T1[SnowGetByte(1, r1)] xor TSnow_T2[SnowGetByte(2, r1)] xor TSnow_T3[SnowGetByte(3, r1)];
       r1 := fsmtmp;
 
       outfrom_fsm := (r1 + s[13]) xor r2;
       s[14] := a_mul(s[14]) xor s[0] xor ainv_mul(s[9]) xor outfrom_fsm;
       fsmtmp := r2 + s[3];
-      r2 := TSnow_T0[GetByte(0, r1)] xor TSnow_T1[GetByte(1, r1)] xor TSnow_T2[GetByte(2, r1)] xor TSnow_T3[GetByte(3, r1)];
+      r2 := TSnow_T0[SnowGetByte(0, r1)] xor TSnow_T1[SnowGetByte(1, r1)] xor TSnow_T2[SnowGetByte(2, r1)] xor TSnow_T3[SnowGetByte(3, r1)];
       r1 := fsmtmp;
 
       outfrom_fsm := (r1 + s[14]) xor r2;
       s[15] := a_mul(s[15]) xor s[1] xor ainv_mul(s[10]) xor outfrom_fsm;
       fsmtmp := r2 + s[4];
-      r2 := TSnow_T0[GetByte(0, r1)] xor TSnow_T1[GetByte(1, r1)] xor TSnow_T2[GetByte(2, r1)] xor TSnow_T3[GetByte(3, r1)];
+      r2 := TSnow_T0[SnowGetByte(0, r1)] xor TSnow_T1[SnowGetByte(1, r1)] xor TSnow_T2[SnowGetByte(2, r1)] xor TSnow_T3[SnowGetByte(3, r1)];
       r1 := fsmtmp;
     end;
   end;
 end;
 
-procedure SnowKeystreamBlock(var Context: TSnowContext; var Block: TSnowBlock);
+procedure SnowKeyStreamBlock(var Context: TSnowContext; var Block: TSnowBlock);
 var
   fsmtmp: u32;
 begin
@@ -494,97 +494,97 @@ begin
   begin
     s[0] := a_mul(s[0]) xor s[2] xor ainv_mul(s[11]);
     fsmtmp := r2 + s[5];
-    r2 := TSnow_T0[GetByte(0, r1)] xor TSnow_T1[GetByte(1, r1)] xor TSnow_T2[GetByte(2, r1)] xor TSnow_T3[GetByte(3, r1)];
+    r2 := TSnow_T0[SnowGetByte(0, r1)] xor TSnow_T1[SnowGetByte(1, r1)] xor TSnow_T2[SnowGetByte(2, r1)] xor TSnow_T3[SnowGetByte(3, r1)];
     r1 := fsmtmp;
     Block[0] := (r1 + s[0]) xor r2 xor s[1];
 
     s[1] := a_mul(s[1]) xor s[3] xor ainv_mul(s[12]);
     fsmtmp := r2 + s[6];
-    r2 := TSnow_T0[GetByte(0, r1)] xor TSnow_T1[GetByte(1, r1)] xor TSnow_T2[GetByte(2, r1)] xor TSnow_T3[GetByte(3, r1)];
+    r2 := TSnow_T0[SnowGetByte(0, r1)] xor TSnow_T1[SnowGetByte(1, r1)] xor TSnow_T2[SnowGetByte(2, r1)] xor TSnow_T3[SnowGetByte(3, r1)];
     r1 := fsmtmp;
     Block[1] := (r1 + s[1]) xor r2 xor s[2];
 
     s[2] := a_mul(s[2]) xor s[4] xor ainv_mul(s[13]);
     fsmtmp := r2 + s[7];
-    r2 := TSnow_T0[GetByte(0, r1)] xor TSnow_T1[GetByte(1, r1)] xor TSnow_T2[GetByte(2, r1)] xor TSnow_T3[GetByte(3, r1)];
+    r2 := TSnow_T0[SnowGetByte(0, r1)] xor TSnow_T1[SnowGetByte(1, r1)] xor TSnow_T2[SnowGetByte(2, r1)] xor TSnow_T3[SnowGetByte(3, r1)];
     r1 := fsmtmp;
     Block[2] := (r1 + s[2]) xor r2 xor s[3];
 
     s[3] := a_mul(s[3]) xor s[5] xor ainv_mul(s[14]);
     fsmtmp := r2 + s[8];
-    r2 := TSnow_T0[GetByte(0, r1)] xor TSnow_T1[GetByte(1, r1)] xor TSnow_T2[GetByte(2, r1)] xor TSnow_T3[GetByte(3, r1)];
+    r2 := TSnow_T0[SnowGetByte(0, r1)] xor TSnow_T1[SnowGetByte(1, r1)] xor TSnow_T2[SnowGetByte(2, r1)] xor TSnow_T3[SnowGetByte(3, r1)];
     r1 := fsmtmp;
     Block[3] := (r1 + s[3]) xor r2 xor s[4];
 
     s[4] := a_mul(s[4]) xor s[6] xor ainv_mul(s[15]);
     fsmtmp := r2 + s[9];
-    r2 := TSnow_T0[GetByte(0, r1)] xor TSnow_T1[GetByte(1, r1)] xor TSnow_T2[GetByte(2, r1)] xor TSnow_T3[GetByte(3, r1)];
+    r2 := TSnow_T0[SnowGetByte(0, r1)] xor TSnow_T1[SnowGetByte(1, r1)] xor TSnow_T2[SnowGetByte(2, r1)] xor TSnow_T3[SnowGetByte(3, r1)];
     r1 := fsmtmp;
     Block[4] := (r1 + s[4]) xor r2 xor s[5];
 
     s[5] := a_mul(s[5]) xor s[7] xor ainv_mul(s[0]);
     fsmtmp := r2 + s[10];
-    r2 := TSnow_T0[GetByte(0, r1)] xor TSnow_T1[GetByte(1, r1)] xor TSnow_T2[GetByte(2, r1)] xor TSnow_T3[GetByte(3, r1)];
+    r2 := TSnow_T0[SnowGetByte(0, r1)] xor TSnow_T1[SnowGetByte(1, r1)] xor TSnow_T2[SnowGetByte(2, r1)] xor TSnow_T3[SnowGetByte(3, r1)];
     r1 := fsmtmp;
     Block[5] := (r1 + s[5]) xor r2 xor s[6];
 
     s[6] := a_mul(s[6]) xor s[8] xor ainv_mul(s[1]);
     fsmtmp := r2 + s[11];
-    r2 := TSnow_T0[GetByte(0, r1)] xor TSnow_T1[GetByte(1, r1)] xor TSnow_T2[GetByte(2, r1)] xor TSnow_T3[GetByte(3, r1)];
+    r2 := TSnow_T0[SnowGetByte(0, r1)] xor TSnow_T1[SnowGetByte(1, r1)] xor TSnow_T2[SnowGetByte(2, r1)] xor TSnow_T3[SnowGetByte(3, r1)];
     r1 := fsmtmp;
     Block[6] := (r1 + s[6]) xor r2 xor s[7];
 
     s[7] := a_mul(s[7]) xor s[9] xor ainv_mul(s[2]);
     fsmtmp := r2 + s[12];
-    r2 := TSnow_T0[GetByte(0, r1)] xor TSnow_T1[GetByte(1, r1)] xor TSnow_T2[GetByte(2, r1)] xor TSnow_T3[GetByte(3, r1)];
+    r2 := TSnow_T0[SnowGetByte(0, r1)] xor TSnow_T1[SnowGetByte(1, r1)] xor TSnow_T2[SnowGetByte(2, r1)] xor TSnow_T3[SnowGetByte(3, r1)];
     r1 := fsmtmp;
     Block[7] := (r1 + s[7]) xor r2 xor s[8];
 
     s[8] := a_mul(s[8]) xor s[10] xor ainv_mul(s[3]);
     fsmtmp := r2 + s[13];
-    r2 := TSnow_T0[GetByte(0, r1)] xor TSnow_T1[GetByte(1, r1)] xor TSnow_T2[GetByte(2, r1)] xor TSnow_T3[GetByte(3, r1)];
+    r2 := TSnow_T0[SnowGetByte(0, r1)] xor TSnow_T1[SnowGetByte(1, r1)] xor TSnow_T2[SnowGetByte(2, r1)] xor TSnow_T3[SnowGetByte(3, r1)];
     r1 := fsmtmp;
     Block[8] := (r1 + s[8]) xor r2 xor s[9];
 
     s[9] := a_mul(s[9]) xor s[11] xor ainv_mul(s[4]);
     fsmtmp := r2 + s[14];
-    r2 := TSnow_T0[GetByte(0, r1)] xor TSnow_T1[GetByte(1, r1)] xor TSnow_T2[GetByte(2, r1)] xor TSnow_T3[GetByte(3, r1)];
+    r2 := TSnow_T0[SnowGetByte(0, r1)] xor TSnow_T1[SnowGetByte(1, r1)] xor TSnow_T2[SnowGetByte(2, r1)] xor TSnow_T3[SnowGetByte(3, r1)];
     r1 := fsmtmp;
     Block[9] := (r1 + s[9]) xor r2 xor s[10];
 
     s[10] := a_mul(s[10]) xor s[12] xor ainv_mul(s[5]);
     fsmtmp := r2 + s[15];
-    r2 := TSnow_T0[GetByte(0, r1)] xor TSnow_T1[GetByte(1, r1)] xor TSnow_T2[GetByte(2, r1)] xor TSnow_T3[GetByte(3, r1)];
+    r2 := TSnow_T0[SnowGetByte(0, r1)] xor TSnow_T1[SnowGetByte(1, r1)] xor TSnow_T2[SnowGetByte(2, r1)] xor TSnow_T3[SnowGetByte(3, r1)];
     r1 := fsmtmp;
     Block[10] := (r1 + s[10]) xor r2 xor s[11];
 
     s[11] := a_mul(s[11]) xor s[13] xor ainv_mul(s[6]);
     fsmtmp := r2 + s[0];
-    r2 := TSnow_T0[GetByte(0, r1)] xor TSnow_T1[GetByte(1, r1)] xor TSnow_T2[GetByte(2, r1)] xor TSnow_T3[GetByte(3, r1)];
+    r2 := TSnow_T0[SnowGetByte(0, r1)] xor TSnow_T1[SnowGetByte(1, r1)] xor TSnow_T2[SnowGetByte(2, r1)] xor TSnow_T3[SnowGetByte(3, r1)];
     r1 := fsmtmp;
     Block[11] := (r1 + s[11]) xor r2 xor s[12];
 
     s[12] := a_mul(s[12]) xor s[14] xor ainv_mul(s[7]);
     fsmtmp := r2 + s[1];
-    r2 := TSnow_T0[GetByte(0, r1)] xor TSnow_T1[GetByte(1, r1)] xor TSnow_T2[GetByte(2, r1)] xor TSnow_T3[GetByte(3, r1)];
+    r2 := TSnow_T0[SnowGetByte(0, r1)] xor TSnow_T1[SnowGetByte(1, r1)] xor TSnow_T2[SnowGetByte(2, r1)] xor TSnow_T3[SnowGetByte(3, r1)];
     r1 := fsmtmp;
     Block[12] := (r1 + s[12]) xor r2 xor s[13];
 
     s[13] := a_mul(s[13]) xor s[15] xor ainv_mul(s[8]);
     fsmtmp := r2 + s[2];
-    r2 := TSnow_T0[GetByte(0, r1)] xor TSnow_T1[GetByte(1, r1)] xor TSnow_T2[GetByte(2, r1)] xor TSnow_T3[GetByte(3, r1)];
+    r2 := TSnow_T0[SnowGetByte(0, r1)] xor TSnow_T1[SnowGetByte(1, r1)] xor TSnow_T2[SnowGetByte(2, r1)] xor TSnow_T3[SnowGetByte(3, r1)];
     r1 := fsmtmp;
     Block[13] := (r1 + s[13]) xor r2 xor s[14];
 
     s[14] := a_mul(s[14]) xor s[0] xor ainv_mul(s[9]);
     fsmtmp := r2 + s[3];
-    r2 := TSnow_T0[GetByte(0, r1)] xor TSnow_T1[GetByte(1, r1)] xor TSnow_T2[GetByte(2, r1)] xor TSnow_T3[GetByte(3, r1)];
+    r2 := TSnow_T0[SnowGetByte(0, r1)] xor TSnow_T1[SnowGetByte(1, r1)] xor TSnow_T2[SnowGetByte(2, r1)] xor TSnow_T3[SnowGetByte(3, r1)];
     r1 := fsmtmp;
     Block[14] := (r1 + s[14]) xor r2 xor s[15];
 
     s[15] := a_mul(s[15]) xor s[1] xor ainv_mul(s[10]);
     fsmtmp := r2 + s[4];
-    r2 := TSnow_T0[GetByte(0, r1)] xor TSnow_T1[GetByte(1, r1)] xor TSnow_T2[GetByte(2, r1)] xor TSnow_T3[GetByte(3, r1)];
+    r2 := TSnow_T0[SnowGetByte(0, r1)] xor TSnow_T1[SnowGetByte(1, r1)] xor TSnow_T2[SnowGetByte(2, r1)] xor TSnow_T3[SnowGetByte(3, r1)];
     r1 := fsmtmp;
     Block[15] := (r1 + s[15]) xor r2 xor s[0];
   end;

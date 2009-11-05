@@ -45,10 +45,15 @@ type
     FCipher: TCipher;
     FWay: TCipherWay;
     FMode: TCipherMode;
-    procedure SetCipher(const Value: TCipher);
   protected
-    function DoCreateCipher: TCipher; virtual; 
-    function CreateCipher: TCipher; 
+    procedure SetCipher(const Value: TCipher);
+    function GetCipher: TCipher;
+
+    function DoCreateCipher: TCipher; virtual;
+    function CreateCipher: TCipher;
+
+    procedure Prepare; virtual; //prepare custom data
+    procedure Init; virtual; //init cipher
   public
     //if Owned = true, then AStream automatically destroyed by TCipherStream
     constructor Create(AStream: TStream; Way: TCipherWay; Mode: TCipherMode; Owned: Boolean = True);
@@ -57,7 +62,7 @@ type
     function Write(const Buffer; Count: Longint): Longint; override;
     property Way: TCipherWay read FWay;
     property Mode: TCipherMode read FMode;
-    property Cipher: TCipher read FCipher write SetCipher;
+    property Cipher: TCipher read GetCipher write SetCipher;
   end;
 
 implementation
@@ -74,11 +79,13 @@ begin
   FWay := Way;
   FMode := Mode;
   FCipher := CreateCipher;
+  Prepare;
+  Init;
 end;
 
 function TCipherStream.CreateCipher: TCipher;
 begin
-  Result := CreateCipher;
+  Result := DoCreateCipher;
   FCipherOwned := Result <> nil;
 end;
 
@@ -94,10 +101,26 @@ begin
   Result := nil;
 end;
 
+function TCipherStream.GetCipher: TCipher;
+begin
+  Result := FCipher;
+end;
+
+procedure TCipherStream.Init;
+begin
+
+end;
+
+procedure TCipherStream.Prepare;
+begin
+
+end;
+
 function TCipherStream.Read(var Buffer; Count: Integer): Longint;
 begin
   if FMode = cimWrite  then
     raise ECipherException.Create('Stream created for Read');
+  Result := FStream.Read(Buffer, Count);
 end;
 
 procedure TCipherStream.SetCipher(const Value: TCipher);
@@ -115,6 +138,7 @@ function TCipherStream.Write(const Buffer; Count: Integer): Longint;
 begin
   if FMode = cimRead  then
     raise ECipherException.Create('Stream created for Write');
+  Result := FStream.Write(Buffer, Count);
 end;
 
 end.
