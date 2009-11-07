@@ -44,7 +44,6 @@ begin
     s.Seek(0, soFromBeginning);
     scs := TMySnowCiphr.Create(s, cyEncrypt, cimRead, false);
     try
-      //EncryptMemo.Lines.LoadFromStream(scs);
       SetLength(st, 20);
       scs.read(st[1], 20);
       EncryptMemo.Text := st;
@@ -60,7 +59,6 @@ begin
     s.Seek(0, soFromBeginning);
     scs := TMySnowCiphr.Create(s, cyDecrypt, cimRead, false);
     try
-      //EncryptMemo.Lines.LoadFromStream(scs);
       SetLength(st, 20);
       scs.read(st[1], 20);
       DecryptMemo.Text := st;
