@@ -11,6 +11,7 @@ unit snow2cipher;
 {$MODE delphi}
 {$H+}
 {$ENDIF}
+{.$define testmode}
 
 interface
 
@@ -80,9 +81,12 @@ end;
 function TSnow2CipherStream.Read(var Buffer; Count: Integer): Integer;
 begin
   Result := inherited Read(Buffer, Count);
-  case Way of
-    cyEncrypt: Cipher.Encrypt(Buffer, Result, Buffer, Result);
-    cyDecrypt: Cipher.Decrypt(Buffer, Result, Buffer, Result);
+  if Result<>0 then
+  begin
+    case Way of
+      cyEncrypt: Cipher.Encrypt(Buffer, Result, Buffer, Result);
+      cyDecrypt: Cipher.Decrypt(Buffer, Result, Buffer, Result);
+    end;
   end;
 end;
 
@@ -141,14 +145,14 @@ var
   d, m: Integer;
   v: U32;
 begin
-  d := Index div 4; //block index
-  if d>SizeOf(TSnowBlock) then
+  d := Index div SizeOf(u32); //block index
+  if d>((SizeOf(TSnowBlock) div SizeOf(u32))-1) then
   begin
     LoadBlock;
     d := 0;
   end;
 
-  m := Index mod 4; //byte index
+  m := Index mod SizeOf(u32); //byte index
   v := Block[d];
   Result := SnowGetByte (m, v);
   Inc(Index);
@@ -163,17 +167,29 @@ begin
 end;
 
 procedure TSnow2Cipher.LoadBlock;
+{$ifdef testmode}
+var
+  f: TFileStream;
+{$endif}
 begin
   SnowKeyStreamBlock(Context, Block);
   Index := 0;
   ByteIndex := 0;
+{$ifdef testmode}
+  f := TFileStream.Create('c:\1.txt', fmOpenWrite);
+  try
+    f.Seek(0, soFromEnd);
+    f.Write(Block[0], SizeOf(Block));
+  finally
+    f.Free;
+  end;
+{$endif}
 end;
 
-procedure TSnow2Cipher.LoadKey(Key: TSnowKey; KeySize: TSnowKeySize; IV3,
-  IV2, IV1, IV0: u32);
+procedure TSnow2Cipher.LoadKey(Key: TSnowKey; KeySize: TSnowKeySize; IV3, IV2, IV1, IV0: u32);
 begin
   SnowLoadkey(Context, Key, KeySize, IV3, IV2, IV1, IV0);
-  SnowKeyStreamBlock(Context, Block);
+  LoadBlock;
 end;
 
 procedure TSnow2Cipher.StreamBlock(const InBuffer; InCount: Integer; var OutBuffer; var OutCount: Integer);
