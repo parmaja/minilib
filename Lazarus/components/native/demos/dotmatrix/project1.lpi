@@ -36,14 +36,14 @@
         <PackageName Value="LCL"/>
       </Item2>
     </RequiredPackages>
-    <Units Count="48">
+    <Units Count="58">
       <Unit0>
         <Filename Value="project1.lpr"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="project1"/>
         <CursorPos X="19" Y="10"/>
         <TopLine Value="1"/>
-        <UsageCount Value="51"/>
+        <UsageCount Value="59"/>
       </Unit0>
       <Unit1>
         <Filename Value="Unit1.pas"/>
@@ -51,10 +51,10 @@
         <ComponentName Value="Form1"/>
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="Unit1"/>
-        <CursorPos X="72" Y="16"/>
-        <TopLine Value="3"/>
+        <CursorPos X="25" Y="126"/>
+        <TopLine Value="121"/>
         <EditorIndex Value="0"/>
-        <UsageCount Value="51"/>
+        <UsageCount Value="59"/>
         <Loaded Value="True"/>
       </Unit1>
       <Unit2>
@@ -91,8 +91,8 @@
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="SourceEditor"/>
-        <CursorPos X="34" Y="2591"/>
-        <TopLine Value="2578"/>
+        <CursorPos X="1" Y="1"/>
+        <TopLine Value="1"/>
         <UsageCount Value="10"/>
       </Unit6>
       <Unit7>
@@ -105,13 +105,13 @@
       <Unit8>
         <Filename Value="..\..\ntvDotMatrix.pas"/>
         <UnitName Value="ntvDotMatrix"/>
-        <CursorPos X="24" Y="474"/>
-        <TopLine Value="466"/>
+        <CursorPos X="23" Y="460"/>
+        <TopLine Value="456"/>
         <EditorIndex Value="1"/>
-        <UsageCount Value="25"/>
+        <UsageCount Value="28"/>
         <Bookmarks Count="2">
-          <Item0 X="3" Y="291" ID="0"/>
-          <Item1 X="34" Y="312" ID="1"/>
+          <Item0 X="3" Y="299" ID="0"/>
+          <Item1 X="3" Y="462" ID="1"/>
         </Bookmarks>
         <Loaded Value="True"/>
       </Unit8>
@@ -143,8 +143,8 @@
       </Unit12>
       <Unit13>
         <Filename Value="..\..\..\..\..\..\..\..\..\programs\lazarus\lcl\include\control.inc"/>
-        <CursorPos X="3" Y="277"/>
-        <TopLine Value="275"/>
+        <CursorPos X="22" Y="3154"/>
+        <TopLine Value="3148"/>
         <UsageCount Value="14"/>
       </Unit13>
       <Unit14>
@@ -196,9 +196,7 @@
         <UnitName Value="ntvRegCtrls"/>
         <CursorPos X="1" Y="1"/>
         <TopLine Value="1"/>
-        <EditorIndex Value="2"/>
         <UsageCount Value="16"/>
-        <Loaded Value="True"/>
       </Unit21>
       <Unit22>
         <Filename Value="..\..\ntvPageControls.pas"/>
@@ -392,124 +390,197 @@
         <TopLine Value="1"/>
         <UsageCount Value="11"/>
       </Unit47>
+      <Unit48>
+        <Filename Value="..\..\..\..\..\..\..\..\..\programs\fpc\src\packages\paszlib\src\zstream.pp"/>
+        <UnitName Value="zstream"/>
+        <CursorPos X="20" Y="23"/>
+        <TopLine Value="10"/>
+        <UsageCount Value="10"/>
+      </Unit48>
+      <Unit49>
+        <Filename Value="..\..\..\..\..\..\..\..\..\programs\fpc\src\packages\paszlib\src\zcompres.pas"/>
+        <UnitName Value="zCompres"/>
+        <CursorPos X="29" Y="67"/>
+        <TopLine Value="67"/>
+        <UsageCount Value="10"/>
+      </Unit49>
+      <Unit50>
+        <Filename Value="..\..\..\..\..\..\..\..\..\programs\fpc\src\packages\paszlib\src\zip.pas"/>
+        <UnitName Value="zip"/>
+        <CursorPos X="30" Y="85"/>
+        <TopLine Value="85"/>
+        <UsageCount Value="10"/>
+      </Unit50>
+      <Unit51>
+        <Filename Value="..\..\..\..\..\..\..\..\..\programs\fpc\src\packages\zlib\src\zlib.pp"/>
+        <UnitName Value="zlib"/>
+        <CursorPos X="21" Y="101"/>
+        <TopLine Value="88"/>
+        <UsageCount Value="10"/>
+      </Unit51>
+      <Unit52>
+        <Filename Value="..\..\..\..\..\..\..\..\..\programs\fpc\src\packages\amunits\src\otherlibs\zlib.pas"/>
+        <UnitName Value="zlib"/>
+        <CursorPos X="13" Y="67"/>
+        <TopLine Value="67"/>
+        <UsageCount Value="10"/>
+      </Unit52>
+      <Unit53>
+        <Filename Value="..\..\..\..\..\..\..\..\..\programs\fpc\src\packages\paszlib\src\zinflate.pas"/>
+        <UnitName Value="zinflate"/>
+        <CursorPos X="50" Y="178"/>
+        <TopLine Value="178"/>
+        <UsageCount Value="10"/>
+      </Unit53>
+      <Unit54>
+        <Filename Value="..\..\..\..\..\..\..\..\..\programs\fpc\src\packages\paszlib\src\zipper.pp"/>
+        <UnitName Value="zipper"/>
+        <CursorPos X="63" Y="118"/>
+        <TopLine Value="118"/>
+        <UsageCount Value="10"/>
+      </Unit54>
+      <Unit55>
+        <Filename Value="..\..\..\..\..\..\..\..\..\programs\fpc\src\packages\paszlib\src\zconf.inc"/>
+        <CursorPos X="28" Y="14"/>
+        <TopLine Value="1"/>
+        <UsageCount Value="10"/>
+      </Unit55>
+      <Unit56>
+        <Filename Value="..\..\..\..\..\..\..\..\..\programs\fpc\src\packages\paszlib\src\adler.pas"/>
+        <UnitName Value="adler"/>
+        <CursorPos X="14" Y="4"/>
+        <TopLine Value="1"/>
+        <UsageCount Value="10"/>
+      </Unit56>
+      <Unit57>
+        <Filename Value="..\..\..\..\..\..\..\..\..\programs\fpc\src\packages\paszlib\src\zbase.pas"/>
+        <UnitName Value="zbase"/>
+        <CursorPos X="1" Y="1"/>
+        <TopLine Value="1"/>
+        <UsageCount Value="10"/>
+      </Unit57>
     </Units>
-    <JumpHistory Count="29" HistoryIndex="28">
+    <JumpHistory Count="30" HistoryIndex="29">
       <Position1>
         <Filename Value="..\..\ntvDotMatrix.pas"/>
-        <Caret Line="76" Column="24" TopLine="36"/>
+        <Caret Line="636" Column="16" TopLine="611"/>
       </Position1>
       <Position2>
         <Filename Value="..\..\ntvDotMatrix.pas"/>
-        <Caret Line="77" Column="24" TopLine="36"/>
+        <Caret Line="725" Column="14" TopLine="704"/>
       </Position2>
       <Position3>
         <Filename Value="..\..\ntvDotMatrix.pas"/>
-        <Caret Line="120" Column="5" TopLine="93"/>
+        <Caret Line="1" Column="1" TopLine="1"/>
       </Position3>
       <Position4>
         <Filename Value="..\..\ntvDotMatrix.pas"/>
-        <Caret Line="572" Column="12" TopLine="567"/>
+        <Caret Line="54" Column="10" TopLine="33"/>
       </Position4>
       <Position5>
         <Filename Value="..\..\ntvDotMatrix.pas"/>
-        <Caret Line="118" Column="61" TopLine="77"/>
+        <Caret Line="84" Column="23" TopLine="63"/>
       </Position5>
       <Position6>
         <Filename Value="..\..\ntvDotMatrix.pas"/>
-        <Caret Line="120" Column="61" TopLine="97"/>
+        <Caret Line="143" Column="60" TopLine="122"/>
       </Position6>
       <Position7>
         <Filename Value="..\..\ntvDotMatrix.pas"/>
-        <Caret Line="578" Column="11" TopLine="555"/>
+        <Caret Line="310" Column="21" TopLine="289"/>
       </Position7>
       <Position8>
         <Filename Value="..\..\ntvDotMatrix.pas"/>
-        <Caret Line="44" Column="34" TopLine="38"/>
+        <Caret Line="632" Column="35" TopLine="611"/>
       </Position8>
       <Position9>
         <Filename Value="Unit1.pas"/>
-        <Caret Line="86" Column="3" TopLine="86"/>
+        <Caret Line="79" Column="22" TopLine="70"/>
       </Position9>
       <Position10>
-        <Filename Value="Unit1.pas"/>
-        <Caret Line="87" Column="56" TopLine="65"/>
+        <Filename Value="..\..\ntvDotMatrix.pas"/>
+        <Caret Line="143" Column="52" TopLine="122"/>
       </Position10>
       <Position11>
-        <Filename Value="..\..\ntvDotMatrix.pas"/>
-        <Caret Line="1" Column="1" TopLine="1"/>
+        <Filename Value="Unit1.pas"/>
+        <Caret Line="79" Column="1" TopLine="70"/>
       </Position11>
       <Position12>
-        <Filename Value="..\..\ntvDotMatrix.pas"/>
-        <Caret Line="57" Column="13" TopLine="36"/>
+        <Filename Value="Unit1.pas"/>
+        <Caret Line="81" Column="1" TopLine="70"/>
       </Position12>
       <Position13>
-        <Filename Value="..\..\ntvDotMatrix.pas"/>
-        <Caret Line="77" Column="25" TopLine="36"/>
+        <Filename Value="Unit1.pas"/>
+        <Caret Line="143" Column="37" TopLine="132"/>
       </Position13>
       <Position14>
-        <Filename Value="..\..\ntvDotMatrix.pas"/>
-        <Caret Line="117" Column="61" TopLine="96"/>
+        <Filename Value="Unit1.pas"/>
+        <Caret Line="1" Column="1" TopLine="1"/>
       </Position14>
       <Position15>
         <Filename Value="Unit1.pas"/>
-        <Caret Line="1" Column="1" TopLine="1"/>
+        <Caret Line="97" Column="22" TopLine="76"/>
       </Position15>
       <Position16>
         <Filename Value="Unit1.pas"/>
-        <Caret Line="85" Column="22" TopLine="65"/>
+        <Caret Line="89" Column="22" TopLine="76"/>
       </Position16>
       <Position17>
         <Filename Value="..\..\ntvDotMatrix.pas"/>
-        <Caret Line="104" Column="20" TopLine="99"/>
+        <Caret Line="477" Column="26" TopLine="475"/>
       </Position17>
       <Position18>
-        <Filename Value="Unit1.pas"/>
-        <Caret Line="78" Column="22" TopLine="65"/>
+        <Filename Value="..\..\ntvDotMatrix.pas"/>
+        <Caret Line="148" Column="1" TopLine="148"/>
       </Position18>
       <Position19>
-        <Filename Value="Unit1.pas"/>
-        <Caret Line="85" Column="3" TopLine="83"/>
+        <Filename Value="..\..\ntvDotMatrix.pas"/>
+        <Caret Line="107" Column="15" TopLine="86"/>
       </Position19>
       <Position20>
-        <Filename Value="Unit1.pas"/>
-        <Caret Line="93" Column="26" TopLine="84"/>
+        <Filename Value="..\..\ntvDotMatrix.pas"/>
+        <Caret Line="1" Column="1" TopLine="1"/>
       </Position20>
       <Position21>
-        <Filename Value="Unit1.pas"/>
-        <Caret Line="81" Column="17" TopLine="73"/>
+        <Filename Value="..\..\ntvDotMatrix.pas"/>
+        <Caret Line="64" Column="13" TopLine="43"/>
       </Position21>
       <Position22>
         <Filename Value="..\..\ntvDotMatrix.pas"/>
-        <Caret Line="163" Column="20" TopLine="156"/>
+        <Caret Line="783" Column="26" TopLine="772"/>
       </Position22>
       <Position23>
         <Filename Value="..\..\ntvDotMatrix.pas"/>
-        <Caret Line="105" Column="28" TopLine="80"/>
+        <Caret Line="1" Column="1" TopLine="1"/>
       </Position23>
       <Position24>
-        <Filename Value="..\..\ntvDotMatrix.pas"/>
-        <Caret Line="470" Column="6" TopLine="466"/>
+        <Filename Value="Unit1.pas"/>
+        <Caret Line="113" Column="24" TopLine="100"/>
       </Position24>
       <Position25>
-        <Filename Value="..\..\ntvDotMatrix.pas"/>
-        <Caret Line="475" Column="34" TopLine="466"/>
+        <Filename Value="Unit1.pas"/>
+        <Caret Line="126" Column="25" TopLine="121"/>
       </Position25>
       <Position26>
         <Filename Value="..\..\ntvDotMatrix.pas"/>
-        <Caret Line="105" Column="26" TopLine="84"/>
+        <Caret Line="192" Column="15" TopLine="171"/>
       </Position26>
       <Position27>
-        <Filename Value="Unit1.pas"/>
-        <Caret Line="83" Column="17" TopLine="73"/>
+        <Filename Value="..\..\ntvDotMatrix.pas"/>
+        <Caret Line="458" Column="3" TopLine="440"/>
       </Position27>
       <Position28>
-        <Filename Value="Unit1.pas"/>
-        <Caret Line="97" Column="58" TopLine="73"/>
+        <Filename Value="..\..\ntvDotMatrix.pas"/>
+        <Caret Line="66" Column="16" TopLine="50"/>
       </Position28>
       <Position29>
-        <Filename Value="Unit1.pas"/>
-        <Caret Line="1" Column="1" TopLine="1"/>
+        <Filename Value="..\..\ntvDotMatrix.pas"/>
+        <Caret Line="429" Column="3" TopLine="408"/>
       </Position29>
+      <Position30>
+        <Filename Value="..\..\ntvDotMatrix.pas"/>
+        <Caret Line="1" Column="1" TopLine="1"/>
+      </Position30>
     </JumpHistory>
   </ProjectOptions>
   <CompilerOptions>

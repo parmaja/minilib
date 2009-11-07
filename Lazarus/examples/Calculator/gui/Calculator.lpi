@@ -11,6 +11,7 @@
       <TargetFileExt Value=".exe"/>
       <Icon Value="0"/>
       <UseXPManifest Value="True"/>
+      <ActiveEditorIndexAtStart Value="0"/>
     </General>
     <VersionInfo>
       <ProjectVersion Value=""/>
@@ -43,13 +44,15 @@
       </Unit0>
       <Unit1>
         <Filename Value="Main.pas"/>
-        <ComponentName Value="CalcForm"/>
         <IsPartOfProject Value="True"/>
+        <ComponentName Value="CalcForm"/>
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="Main"/>
         <CursorPos X="1" Y="1"/>
         <TopLine Value="1"/>
+        <EditorIndex Value="0"/>
         <UsageCount Value="32"/>
+        <Loaded Value="True"/>
       </Unit1>
       <Unit2>
         <Filename Value="FPCalculators.pas"/>

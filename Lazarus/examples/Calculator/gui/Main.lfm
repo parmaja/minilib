@@ -1,7 +1,7 @@
 object CalcForm: TCalcForm
-  Left = 514
+  Left = 362
   Height = 279
-  Top = 261
+  Top = 120
   Width = 240
   ActiveControl = LogList
   BorderIcons = [biSystemMenu, biMinimize]
@@ -23,8 +23,9 @@ object CalcForm: TCalcForm
   OnHide = FormHide
   OnKeyPress = FormKeyPress
   OnResize = FormResize
-  LCLVersion = '0.9.27'
+  LCLVersion = '0.9.29'
   object LogList: TListBox
+    Left = 0
     Height = 39
     Top = 37
     Width = 240
@@ -37,6 +38,7 @@ object CalcForm: TCalcForm
     Font.Name = 'Tahoma'
     Font.Pitch = fpVariable
     Font.Quality = fqDraft
+    ItemHeight = 0
     OnClick = LogListClick
     OnKeyPress = LogListKeyPress
     ParentFont = False
@@ -44,6 +46,7 @@ object CalcForm: TCalcForm
     TabStop = False
   end
   object Panel1: TPanel
+    Left = 0
     Height = 183
     Top = 76
     Width = 240
@@ -302,7 +305,9 @@ object CalcForm: TCalcForm
     end
   end
   object Panel2: TPanel
+    Left = 0
     Height = 37
+    Top = 0
     Width = 240
     Align = alTop
     BevelOuter = bvNone
@@ -358,8 +363,8 @@ object CalcForm: TCalcForm
     end
   end
   object MainMenu1: TMainMenu
-    left = 88
-    top = 16
+    left = 52
+    top = 43
     object MenuItem1: TMenuItem
       Caption = 'Exit'
       OnClick = MenuItem1Click

@@ -24,21 +24,34 @@ type
   TForm1 = class(TForm)
     Button1: TButton;
     Button2: TButton;
+    Button3: TButton;
+    Button4: TButton;
+    Button5: TButton;
+    Button6: TButton;
     CheckBox1: TCheckBox;
+    Label1: TLabel;
     ThemeList: TComboBox;
     Edit1: TEdit;
     Image1: TImage;
     TextDotMatrix: TTextDotMatrix;
-    Timer1: TTimer;
+    TimerX: TTimer;
+    DimTimer: TTimer;
+    TimerY: TTimer;
     procedure Button1Click(Sender: TObject);
     procedure Button2Click(Sender: TObject);
+    procedure Button3Click(Sender: TObject);
+    procedure Button4Click(Sender: TObject);
+    procedure Button5Click(Sender: TObject);
+    procedure Button6Click(Sender: TObject);
     procedure CheckBox1Change(Sender: TObject);
+    procedure DimTimerTimer(Sender: TObject);
     procedure Edit1Change(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure ThemeListSelect(Sender: TObject);
-    procedure Timer1Timer(Sender: TObject);
+    procedure TimerXTimer(Sender: TObject);
+    procedure TimerYTimer(Sender: TObject);
   private
-    //DotMatrix: TDotMatrix;
+    DimReverse: Boolean;
   public
     constructor Create(TheOwner: TComponent); override;
     destructor Destroy; override;
@@ -63,6 +76,9 @@ begin
   ThemeList.Items.Add('tdmGreenLED');
   ThemeList.Items.Add('tdmRedLED');
   ThemeList.Items.Add('tdmBlueLED');
+  TextDotMatrix.Dots.RotateOffset := True;
+  TextDotMatrix.Dots.Power := true;
+  TextDotMatrix.Text := Edit1.Text;
 end;
 
 procedure TForm1.ThemeListSelect(Sender: TObject);
@@ -76,9 +92,14 @@ begin
   end
 end;
 
-procedure TForm1.Timer1Timer(Sender: TObject);
+procedure TForm1.TimerXTimer(Sender: TObject);
 begin
-  TextDotMatrix.Dots.Scroll(1, 0);
+  TextDotMatrix.Dots.Scroll(2, 0);
+end;
+
+procedure TForm1.TimerYTimer(Sender: TObject);
+begin
+  TextDotMatrix.Dots.Scroll(0, 1);
 end;
 
 procedure TForm1.Button1Click(Sender: TObject);
@@ -89,13 +110,51 @@ end;
 
 procedure TForm1.Button2Click(Sender: TObject);
 begin
-  TextDotMatrix.Dots.RotateOffset := True;
-  Timer1.Enabled := not Timer1.Enabled;
+  TimerX.Enabled := not TimerX.Enabled;
+end;
+
+procedure TForm1.Button3Click(Sender: TObject);
+begin
+  DimTimer.Enabled := not DimTimer.Enabled;
+end;
+
+procedure TForm1.Button4Click(Sender: TObject);
+begin
+  TimerX.Enabled := False;
+  TimerY.Enabled := False;
+  DimTimer.Enabled := False;
+  TextDotMatrix.Dots.Reset;
+end;
+
+procedure TForm1.Button5Click(Sender: TObject);
+begin
+  TimerY.Enabled := not TimerY.Enabled;
+end;
+
+procedure TForm1.Button6Click(Sender: TObject);
+begin
+  TextDotMatrix.Dots.Power := not TextDotMatrix.Dots.Power;
 end;
 
 procedure TForm1.CheckBox1Change(Sender: TObject);
 begin
   TextDotMatrix.Dots.Bright := CheckBox1.Checked;
+end;
+
+procedure TForm1.DimTimerTimer(Sender: TObject);
+begin
+  if DimReverse then
+  begin
+    TextDotMatrix.Dots.Dim := TextDotMatrix.Dots.Dim - 10;
+    if TextDotMatrix.Dots.Dim <= 0 then
+      DimReverse := False;
+  end
+  else
+  begin
+    TextDotMatrix.Dots.Dim := TextDotMatrix.Dots.Dim + 10;
+    if TextDotMatrix.Dots.Dim >= 100 then
+      DimReverse := True;
+  end;
 end;
 
 constructor TForm1.Create(TheOwner: TComponent);
