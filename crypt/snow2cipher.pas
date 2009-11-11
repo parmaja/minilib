@@ -176,7 +176,7 @@ begin
   Index := 0;
   ByteIndex := 0;
 {$ifdef testmode}
-  f := TFileStream.Create('c:\1.txt', fmOpenWrite);
+  f := TFileStream.Create('c:\Key.Dat', fmOpenWrite);
   try
     f.Seek(0, soFromEnd);
     f.Write(Block[0], SizeOf(Block));

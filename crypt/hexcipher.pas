@@ -23,7 +23,12 @@ interface
 uses
   Classes, SysUtils, ciphers;
 
+const
+  cMaxBuffer = 255;
+
 type
+  TmnBuffer = array[0..cMaxBuffer] of Char;
+
   THexCipher = class(TCipher)
   protected
   public
@@ -33,14 +38,21 @@ type
 
   THexCipherStream = class(TCipherStream)
   private
-    FPriorByte: Byte;
-    FUsePriorByte: boolean;
+    FBuffer: TmnBuffer;
+    FPos: Integer;
+    FCount: Integer;
+
     function GetCipher: THexCipher;
     procedure SetCipher(const Value: THexCipher);
   protected
+    function ReadByte(var B: Byte): Boolean;
+    function ReadBuffer: Boolean;
+    function ReadOutBuffer(var Buffer; Count: Integer): Integer;
+
     function DoCreateCipher: TCipher; override;
     procedure Init; override;
     procedure Prepare; override;
+
   public
     destructor Destroy; override;
     function Read(var Buffer; Count: Integer): Integer; override;
@@ -57,25 +69,13 @@ uses
 
 procedure THexCipher.Decrypt(const InBuffer; InCount: Integer; var OutBuffer; var OutCount: Integer);
 var
-  i: Integer;
-  iP, oP: PByte;
+  iP, oP: PChar;
   s: AnsiString;
 begin
-  if @OutBuffer <> nil then
-    ECipherException.Create('HexCipher can not take a OutBuffer outside');
   OutCount := InCount div 2;
-  GetMem(Pointer(OutBuffer), OutCount);
-  iP := Pointer(InBuffer);
-  oP := Pointer(OutBuffer);
-  for i := 0 to InCount - 1 do
-  begin
-    s := IntToHex(iP^, 2);
-    oP^ := Byte(S[1]);
-    Inc(oP);
-    oP^ := Byte(S[2]);
-    Inc(oP);
-    Inc(iP);
-  end;
+  iP := @InBuffer;
+  oP := @OutBuffer;
+  HexToBin(ip, op, OutCount);
 end;
 
 procedure THexCipher.Encrypt(const InBuffer; InCount: Integer; var OutBuffer; var OutCount: Integer);
@@ -84,12 +84,9 @@ var
   iP, oP: PByte;
   s: AnsiString;
 begin
-  if @OutBuffer <> nil then
-    ECipherException.Create('HexCipher can not take a OutBuffer outside');
   OutCount := InCount * 2;
-  GetMem(Pointer(OutBuffer), OutCount);
-  iP := Pointer(InBuffer);
-  oP := Pointer(OutBuffer);
+  iP := @InBuffer;
+  oP := @OutBuffer;
   for i := 0 to InCount - 1 do
   begin
     s := IntToHex(iP^, 2);
@@ -115,44 +112,8 @@ begin
 end;
 
 function THexCipherStream.Read(var Buffer; Count: Integer): Integer;
-var
-  aIn, aOut: string;
-  i, c: Integer; 
 begin
-  case Way of
-    cyEncrypt:
-    begin
-      if FUsePriorByte then
-      begin
-        c := Floor(Count/2);
-      end
-      else
-      begin
-        c := Ceil(Count/2);
-      end;
-
-      SetLength(aIn, c);
-      Result := inherited Read(aIn[1], c);
-      SetLength(aIn, Result);
-
-      SetLength(aOut, Count);
-      if FUsePriorByte  then
-      begin
-        aOut[1] := CHR(FPriorByte);
-        //Cipher.Encrypt(aIn[1], c, aOut[2], Count-1);
-      end
-      else
-      begin
-        Cipher.Encrypt(aIn[1], c, aOut[1], Count);
-      end;
-
-      FUsePriorByte := (Count mod 2)<> 0;
-    end;
-    cyDecrypt: Cipher.Decrypt(Buffer, Result, Buffer, Result);
-  end;
-
-  SetLength(aIn, 0);
-  SetLength(aOut, 0);
+  Result := ReadOutBuffer(Buffer, Count);
 end;
 
 procedure THexCipherStream.SetCipher(const Value: THexCipher);
@@ -175,6 +136,76 @@ end;
 function THexCipherStream.DoCreateCipher: TCipher;
 begin
   Result := THexCipher.Create;
+end;
+
+function THexCipherStream.ReadBuffer: Boolean;
+var
+  aBuffer: string;
+  c, i: Integer;
+begin
+  if FPos<FCount then
+    Result := True
+  else
+  begin
+    FPos := 0;
+    FCount := 0;
+
+    case Way of
+      cyEncrypt:
+      begin
+        c := SizeOf(TmnBuffer) div 2;
+        SetLength(aBuffer, c);
+        FCount := inherited read(aBuffer[1], c);
+        SetLength(aBuffer, FCount);
+        if FCount<>0 then
+          Cipher.Encrypt(aBuffer[1], FCount, FBuffer[0], FCount);
+      end;
+      cyDecrypt:
+      begin
+        c := SizeOf(TmnBuffer) * 2;
+        SetLength(aBuffer, c);
+        FCount := inherited read(aBuffer[1], c);
+        SetLength(aBuffer, FCount);
+        if FCount<>0 then
+          Cipher.Decrypt(aBuffer[1], FCount, FBuffer[0], FCount);
+      end;
+    end;
+
+    SetLength(aBuffer, 0);
+    Result := FPos<FCount;
+  end;
+end;
+
+function THexCipherStream.ReadOutBuffer(var Buffer; Count: Integer): Integer;
+var
+  p: PChar;
+  b: Byte;
+  i: Integer;
+begin
+  Result := 0;
+  i := Count;
+  p := @Buffer;
+  while (i>0) and ReadByte(b) do
+  begin
+    p^ := Chr(b);
+    Inc(p);
+    Inc(Result);
+    Dec(i);
+  end;
+end;
+
+function THexCipherStream.ReadByte(var B: Byte): Boolean;
+var
+  p: PChar;
+begin
+  Result := ReadBuffer;
+  if Result then
+  begin
+    p := @FBuffer;
+    Inc(p, FPos);
+    B := Ord(p^);
+    Inc(FPos);
+  end;
 end;
 
 function THexCipherStream.GetCipher: THexCipher;

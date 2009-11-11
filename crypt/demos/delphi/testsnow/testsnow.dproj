@@ -30,60 +30,33 @@
     <Borland.ProjectType />
     <BorlandProject>
 <BorlandProject><Delphi.Personality><Parameters><Parameters Name="UseLauncher">False</Parameters><Parameters Name="LoadAllSymbols">True</Parameters><Parameters Name="LoadUnspecifiedSymbols">False</Parameters></Parameters><VersionInfo><VersionInfo Name="IncludeVerInfo">False</VersionInfo><VersionInfo Name="AutoIncBuild">False</VersionInfo><VersionInfo Name="MajorVer">1</VersionInfo><VersionInfo Name="MinorVer">0</VersionInfo><VersionInfo Name="Release">0</VersionInfo><VersionInfo Name="Build">0</VersionInfo><VersionInfo Name="Debug">False</VersionInfo><VersionInfo Name="PreRelease">False</VersionInfo><VersionInfo Name="Special">False</VersionInfo><VersionInfo Name="Private">False</VersionInfo><VersionInfo Name="DLL">False</VersionInfo><VersionInfo Name="Locale">10241</VersionInfo><VersionInfo Name="CodePage">1256</VersionInfo></VersionInfo><VersionInfoKeys><VersionInfoKeys Name="CompanyName"></VersionInfoKeys><VersionInfoKeys Name="FileDescription"></VersionInfoKeys><VersionInfoKeys Name="FileVersion">1.0.0.0</VersionInfoKeys><VersionInfoKeys Name="InternalName"></VersionInfoKeys><VersionInfoKeys Name="LegalCopyright"></VersionInfoKeys><VersionInfoKeys Name="LegalTrademarks"></VersionInfoKeys><VersionInfoKeys Name="OriginalFilename"></VersionInfoKeys><VersionInfoKeys Name="ProductName"></VersionInfoKeys><VersionInfoKeys Name="ProductVersion">1.0.0.0</VersionInfoKeys><VersionInfoKeys Name="Comments"></VersionInfoKeys></VersionInfoKeys><Excluded_Packages>
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      
-      <Excluded_Packages Name="D:\Work\system\MiniTranslator.bpl">MiniTranslator Localizer</Excluded_Packages>
-      <Excluded_Packages Name="D:\Work\system\tb97Suite100.bpl">Toolbar 97 writen by Jurdan Russel</Excluded_Packages>
-      <Excluded_Packages Name="D:\Work\system\exvDesign.bpl">Tacbord SQL Executive Reports Design</Excluded_Packages>
-      <Excluded_Packages Name="D:\Work\system\tcbReportsDesign.bpl">Tacbord Reports SQL</Excluded_Packages>
-      <Excluded_Packages Name="D:\Work\system\tcbReportEditors.bpl">tcb Report Editors</Excluded_Packages>
-      <Excluded_Packages Name="D:\Work\system\TacbordPDXSuite70.bpl">Tacbord PDX Suite</Excluded_Packages>
-      <Excluded_Packages Name="D:\Work\system\DenturesLib.bpl">Denture Lib</Excluded_Packages>
-      <Excluded_Packages Name="D:\Work\system\tcbMaintainDesign.bpl">tcb tcbMaintain design lib</Excluded_Packages>
-      <Excluded_Packages Name="D:\Work\system\SpecialReportsDesign.bpl">tcb SpecialReports design lib</Excluded_Packages>
-      <Excluded_Packages Name="D:\Work\system\TacbordPDXDesign70.bpl">Tacbord PDX Design Time</Excluded_Packages>
-      <Excluded_Packages Name="D:\Work\delphi\etc\FastReport 4\LibD10\dclfrxe10.bpl">FastReport 4.0 Exports</Excluded_Packages>
-      <Excluded_Packages Name="D:\Work\delphi\etc\FastReport 4\LibD10\dclfrx10.bpl">FastReport 4.0 Components</Excluded_Packages>
-      <Excluded_Packages Name="D:\Work\delphi\etc\FastReport 4\LibD10\dclfs10.bpl">FastScript 1.9 Components</Excluded_Packages>
-      <Excluded_Packages Name="D:\Work\delphi\etc\FastReport 4\LibD10\dclfsADO10.bpl">FastScript 1.9 ADO Components</Excluded_Packages>
-      <Excluded_Packages Name="D:\Work\delphi\etc\FastReport 4\LibD10\dclfsDB10.bpl">FastScript 1.9 DB Components</Excluded_Packages>
-      <Excluded_Packages Name="D:\Work\delphi\etc\FastReport 4\LibD10\dclfrxADO10.bpl">FastReport 4.0 ADO Components</Excluded_Packages>
-      <Excluded_Packages Name="D:\Work\delphi\etc\FastReport 4\LibD10\dclfrxBDE10.bpl">FastReport 4.0 BDE Components</Excluded_Packages>
-      <Excluded_Packages Name="D:\Work\delphi\etc\FastReport 4\LibD10\dclfrxDB10.bpl">FastReport 4.0 DB Components</Excluded_Packages>
-      <Excluded_Packages Name="D:\Work\delphi\etc\FastReport 4\LibD10\dclfrxIBX10.bpl">FastReport 4.0 IBX Components</Excluded_Packages>
-      <Excluded_Packages Name="D:\Work\delphi\etc\FastReport 4\LibD10\dclfsBDE10.bpl">FastScript 1.9 BDE Components</Excluded_Packages>
-      <Excluded_Packages Name="D:\Work\delphi\etc\FastReport 4\LibD10\dclfsIBX10.bpl">FastScript 1.9 IBX Components</Excluded_Packages>
+      <Excluded_Packages Name="w:\work\system\MiniTranslator.bpl">MiniTranslator Localizer</Excluded_Packages>
+      <Excluded_Packages Name="w:\work\system\tb97Suite100.bpl">Toolbar 97 writen by Jurdan Russel</Excluded_Packages>
+      <Excluded_Packages Name="w:\work\system\exvDesign.bpl">Tacbord SQL Executive Reports Design</Excluded_Packages>
+      <Excluded_Packages Name="w:\work\system\tcbReportsDesign.bpl">Tacbord Reports SQL</Excluded_Packages>
+      <Excluded_Packages Name="w:\work\system\tcbReportEditors.bpl">tcb Report Editors</Excluded_Packages>
+      <Excluded_Packages Name="w:\work\system\TacbordPDXSuite70.bpl">Tacbord PDX Suite</Excluded_Packages>
+      <Excluded_Packages Name="w:\work\system\DenturesLib.bpl">Denture Lib</Excluded_Packages>
+      <Excluded_Packages Name="w:\work\system\tcbMaintainDesign.bpl">tcb tcbMaintain design lib</Excluded_Packages>
+      <Excluded_Packages Name="w:\work\system\SpecialReportsDesign.bpl">tcb SpecialReports design lib</Excluded_Packages>
+      <Excluded_Packages Name="w:\work\system\TacbordPDXDesign70.bpl">Tacbord PDX Design Time</Excluded_Packages>
+      <Excluded_Packages Name="w:\work\delphi\etc\FastReport 4\LibD10\dclfrxe10.bpl">FastReport 4.0 Exports</Excluded_Packages>
+      <Excluded_Packages Name="w:\work\delphi\etc\FastReport 4\LibD10\dclfrx10.bpl">FastReport 4.0 Components</Excluded_Packages>
+      <Excluded_Packages Name="w:\work\delphi\etc\FastReport 4\LibD10\dclfs10.bpl">FastScript 1.9 Components</Excluded_Packages>
+      <Excluded_Packages Name="w:\work\delphi\etc\FastReport 4\LibD10\dclfsADO10.bpl">FastScript 1.9 ADO Components</Excluded_Packages>
+      <Excluded_Packages Name="w:\work\delphi\etc\FastReport 4\LibD10\dclfsDB10.bpl">FastScript 1.9 DB Components</Excluded_Packages>
+      <Excluded_Packages Name="w:\work\delphi\etc\FastReport 4\LibD10\dclfrxADO10.bpl">FastReport 4.0 ADO Components</Excluded_Packages>
+      <Excluded_Packages Name="w:\work\delphi\etc\FastReport 4\LibD10\dclfrxBDE10.bpl">FastReport 4.0 BDE Components</Excluded_Packages>
+      <Excluded_Packages Name="w:\work\delphi\etc\FastReport 4\LibD10\dclfrxDB10.bpl">FastReport 4.0 DB Components</Excluded_Packages>
+      <Excluded_Packages Name="w:\work\delphi\etc\FastReport 4\LibD10\dclfrxIBX10.bpl">FastReport 4.0 IBX Components</Excluded_Packages>
+      <Excluded_Packages Name="w:\work\delphi\etc\FastReport 4\LibD10\dclfsBDE10.bpl">FastScript 1.9 BDE Components</Excluded_Packages>
+      <Excluded_Packages Name="w:\work\delphi\etc\FastReport 4\LibD10\dclfsIBX10.bpl">FastScript 1.9 IBX Components</Excluded_Packages>
       <Excluded_Packages Name="$(BDS)\bin\dclofficexp100.bpl">Microsoft Office XP Sample Automation Server Wrapper Components</Excluded_Packages>
-      <Excluded_Packages Name="D:\Work\system\tcbDentalDesign.bpl">tcb Dental design lib</Excluded_Packages>
-      <Excluded_Packages Name="D:\Work\system\exvDesign70.bpl">File D:\Work\system\exvDesign70.bpl not found</Excluded_Packages>
-      <Excluded_Packages Name="D:\Work\system\MaintainSuite70.bpl">Tacbord Maintain Lib</Excluded_Packages>
-      <Excluded_Packages Name="D:\Work\system\ExReportsDesign70.bpl">Tacbord Executive Reports</Excluded_Packages>
-      <Excluded_Packages Name="D:\Work\system\dclIndy70.bpl">Internet Direct (Indy) for D7 Property and Component Editors</Excluded_Packages>
+      <Excluded_Packages Name="w:\work\system\tcbDentalDesign.bpl">tcb Dental design lib</Excluded_Packages>
+      <Excluded_Packages Name="w:\work\system\exvDesign70.bpl">File w:\work\system\exvDesign70.bpl not found</Excluded_Packages>
+      <Excluded_Packages Name="w:\work\system\MaintainSuite70.bpl">Tacbord Maintain Lib</Excluded_Packages>
+      <Excluded_Packages Name="w:\work\system\ExReportsDesign70.bpl">Tacbord Executive Reports</Excluded_Packages>
+      <Excluded_Packages Name="w:\work\system\dclIndy70.bpl">Internet Direct (Indy) for D7 Property and Component Editors</Excluded_Packages>
     </Excluded_Packages><Source><Source Name="MainSource">testsnow.dpr</Source></Source></Delphi.Personality></BorlandProject></BorlandProject>
   </ProjectExtensions>
   <Import Project="$(MSBuildBinPath)\Borland.Delphi.Targets" />
