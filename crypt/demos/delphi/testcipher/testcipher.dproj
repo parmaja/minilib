@@ -4,8 +4,8 @@
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
     <DCC_DCCCompiler>DCC32</DCC_DCCCompiler>
-    <DCC_DependencyCheckOutputName>testsnow.exe</DCC_DependencyCheckOutputName>
-    <MainSource>testsnow.dpr</MainSource>
+    <DCC_DependencyCheckOutputName>testcipher.exe</DCC_DependencyCheckOutputName>
+    <MainSource>testcipher.dpr</MainSource>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <Version>7.0</Version>
@@ -57,11 +57,11 @@
       <Excluded_Packages Name="w:\work\system\MaintainSuite70.bpl">Tacbord Maintain Lib</Excluded_Packages>
       <Excluded_Packages Name="w:\work\system\ExReportsDesign70.bpl">Tacbord Executive Reports</Excluded_Packages>
       <Excluded_Packages Name="w:\work\system\dclIndy70.bpl">Internet Direct (Indy) for D7 Property and Component Editors</Excluded_Packages>
-    </Excluded_Packages><Source><Source Name="MainSource">testsnow.dpr</Source></Source></Delphi.Personality></BorlandProject></BorlandProject>
+    </Excluded_Packages><Source><Source Name="MainSource">testcipher.dpr</Source></Source></Delphi.Personality></BorlandProject></BorlandProject>
   </ProjectExtensions>
   <Import Project="$(MSBuildBinPath)\Borland.Delphi.Targets" />
   <ItemGroup>
-    <DelphiCompile Include="testsnow.dpr">
+    <DelphiCompile Include="testcipher.dpr">
       <MainSource>MainSource</MainSource>
     </DelphiCompile>
     <DCCReference Include="main.pas">
