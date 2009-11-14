@@ -97,14 +97,19 @@ end;
 
 function TSnow2CipherStream.Write(const Buffer; Count: Integer): Integer;
 var
-  p: Pointer;
+  st: string;
 begin
-  p := @Buffer;
-  case Way of
-    cyEncrypt: Cipher.Encrypt(Buffer, Result, p, Result);
-    cyDecrypt: Cipher.Decrypt(Buffer, Result, p, Result);
+  Result := Count;
+  SetLength(st, Count);
+  try
+    case Way of
+      cyEncrypt: Cipher.Encrypt(Buffer, Result, st[1], Result);
+      cyDecrypt: Cipher.Decrypt(Buffer, Result, st[1], Result);
+    end;
+    Result := inherited Write(st[1], Count);
+  finally
+    SetLength(st, 0);
   end;
-  Result := inherited Write(p, Count);
 end;
 
 function TSnow2CipherStream.DoCreateCipher: TCipher;
