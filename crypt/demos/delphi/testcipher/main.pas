@@ -7,7 +7,7 @@ uses
   Dialogs, StdCtrls, snow2cipher, ciphers, hexcipher;
 
 const
-  cBufferSize = 1024;
+  cBufferSize = 1111;
 
 type
 
@@ -20,18 +20,26 @@ type
     SrcMemo: TMemo;
     DecryptMemo: TMemo;
     EncryptMemo: TMemo;
-    ExecuteBtn: TButton;
-    procedure ExecuteBtnClick(Sender: TObject);
+    TestReadBtn: TButton;
+    TestWriteBtn: TButton;
+    procedure TestReadBtnClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
+    procedure TestWriteBtnClick(Sender: TObject);
   private
     { Private declarations }
   public
     { Public declarations }
     function CreateCipherStraem(AStream: TStream; Way: TCipherWay; Mode: TCipherMode; Owned: Boolean = True): TCipherStream;
     procedure TestCipher;
-    procedure Test2Cipher;
-    procedure EncryptFile;
-    procedure DecryptFile;
+
+    procedure TestRead;
+    procedure TestWrite;
+
+    procedure ReadEncryptFile;
+    procedure ReadDecryptFile;
+
+    procedure WriteEncryptFile;
+    procedure WriteDecryptFile;
   end;
 
 var
@@ -43,11 +51,11 @@ implementation
 
 function TMainForm.CreateCipherStraem(AStream: TStream; Way: TCipherWay; Mode: TCipherMode; Owned: Boolean): TCipherStream;
 begin
-  //Result := TMySnowCiphr.Create(AStream, Way, Mode, Owned);
-  Result := THexCipherStream.Create(AStream, Way, Mode, Owned);
+  Result := TMySnowCiphr.Create(AStream, Way, Mode, Owned);
+  //Result := THexCipherStream.Create(AStream, Way, Mode, Owned);
 end;
 
-procedure TMainForm.DecryptFile;
+procedure TMainForm.ReadDecryptFile;
 var
   st: string;
   fi, fo: TFileStream;
@@ -76,7 +84,7 @@ begin
   end;
 end;
 
-procedure TMainForm.EncryptFile;
+procedure TMainForm.ReadEncryptFile;
 var
   st: string;
   fi, fo: TFileStream;
@@ -105,13 +113,72 @@ begin
   end;
 end;
 
-procedure TMainForm.ExecuteBtnClick(Sender: TObject);
+procedure TMainForm.WriteDecryptFile;
 var
-  t: Cardinal;
+  st: string;
+  fi, fo: TFileStream;
+  scs: TCipherStream;
   i: Integer;
 begin
+  fi := TFileStream.Create('c:\2.txt', fmOpenRead);
+  fo := TFileStream.Create('c:\3.txt', fmCreate or fmOpenWrite);
+  try
+    scs := CreateCipherStraem(fo, cyDecrypt, cimWrite, false);
+    try
+      SetLength(st, cBufferSize);
+      while True do
+      begin
+        i := fi.Read(st[1], cBufferSize);
+        if i=0 then Break;
+        SetLength(st, i);
+        scs.Write(st[1], i);
+      end;
+      SetLength(st, 0);
+    finally
+      scs.Free;
+    end;
+  finally
+    fi.Free;
+    fo.Free;
+  end;
+end;
+
+procedure TMainForm.WriteEncryptFile;
+var
+  st: string;
+  fi, fo: TFileStream;
+  scs: TCipherStream;
+  i: Integer;
+begin
+  fi := TFileStream.Create('c:\1.txt', fmOpenRead);
+  fo := TFileStream.Create('c:\2.txt', fmCreate or fmOpenWrite);
+  try
+    scs := CreateCipherStraem(fo, cyEncrypt, cimWrite, false);
+    try
+      SetLength(st, cBufferSize);
+      while True do
+      begin
+        i := fi.Read(st[1], cBufferSize);
+        if i=0 then Break;
+        SetLength(st, i);
+        scs.Write(st[1], i);
+      end;
+      SetLength(st, 0);
+    finally
+      scs.Free;
+    end;
+  finally
+    fi.Free;
+    fo.Free;
+  end;
+end;
+
+procedure TMainForm.TestReadBtnClick(Sender: TObject);
+var
+  t: Cardinal;
+begin
   t := GetTickCount;
-  Test2Cipher;
+  TestRead;
   ShowMessage(IntToStr(GetTickCount-t));
 end;
 
@@ -128,10 +195,25 @@ begin
   SrcMemo.Text := 'abcd';
 end;
 
-procedure TMainForm.Test2Cipher;
+procedure TMainForm.TestRead;
 begin
-  EncryptFile;
-  DecryptFile;
+  ReadEncryptFile;
+  ReadDecryptFile;
+end;
+
+procedure TMainForm.TestWrite;
+begin
+  WriteEncryptFile;
+  WriteDecryptFile;
+end;
+
+procedure TMainForm.TestWriteBtnClick(Sender: TObject);
+var
+  t: Cardinal;
+begin
+  t := GetTickCount;
+  TestWrite;
+  ShowMessage(IntToStr(GetTickCount-t));
 end;
 
 procedure TMainForm.TestCipher;

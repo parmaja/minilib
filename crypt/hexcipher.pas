@@ -46,8 +46,10 @@ type
     procedure SetCipher(const Value: THexCipher);
   protected
     function ReadByte(var B: Byte): Boolean;
-    function ReadBuffer: Boolean;
+    function ReadmnBuffer: Boolean;
     function ReadOutBuffer(var Buffer; Count: Integer): Integer;
+
+    function WritemnBuffer(const Buffer; Count: Integer): Integer;
 
     function DoCreateCipher: TCipher; override;
     procedure Init; override;
@@ -70,7 +72,6 @@ uses
 procedure THexCipher.Decrypt(const InBuffer; InCount: Integer; var OutBuffer; var OutCount: Integer);
 var
   iP, oP: PChar;
-  s: AnsiString;
 begin
   OutCount := InCount div 2;
   iP := @InBuffer;
@@ -122,15 +123,47 @@ begin
 end;
 
 function THexCipherStream.Write(const Buffer; Count: Integer): Integer;
-var
-  p: Pointer;
 begin
-  p := @Buffer;
+  Result := WritemnBuffer(Buffer, Count);
+end;
+
+function THexCipherStream.WritemnBuffer(const Buffer; Count: Integer): Integer;
+var
+  aBuffer, cBuffer: string;
+  c: Integer;
+begin
+  Result := 0;
   case Way of
-    cyEncrypt: Cipher.Encrypt(Buffer, Result, p, Result);
-    cyDecrypt: Cipher.Decrypt(Buffer, Result, p, Result);
+    cyEncrypt:
+    begin
+      Result := Count*2;
+      SetLength(aBuffer, Result);
+      Cipher.Encrypt(Buffer, Count, aBuffer[1], Result);
+      inherited Write(aBuffer[1], Result);
+      SetLength(aBuffer, 0);
+    end;
+    cyDecrypt:
+    begin
+      if FCount<>0 then
+      begin
+        SetLength(cBuffer, FCount);
+        Move(FBuffer[0], cBuffer[1], FCount);
+      end;
+      c := Count+FCount;
+      Result := c div 2;
+      SetLength(cBuffer, c);
+      Move(Buffer, cBuffer[FCount+1], Count);
+
+      SetLength(aBuffer, Result);
+      Cipher.Decrypt(cBuffer[1], c, aBuffer[1], Result);
+      inherited Write(aBuffer[1], Result);
+      FCount := c - (Result*2);
+      if FCount<>0 then
+        Move(cBuffer[Result*2+1], FBuffer[0], FCount);
+      SetLength(cBuffer, 0);
+      SetLength(aBuffer, 0);
+    end;
   end;
-  Result := inherited Write(p, Count);
 end;
 
 function THexCipherStream.DoCreateCipher: TCipher;
@@ -138,10 +171,10 @@ begin
   Result := THexCipher.Create;
 end;
 
-function THexCipherStream.ReadBuffer: Boolean;
+function THexCipherStream.ReadmnBuffer: Boolean;
 var
   aBuffer: string;
-  c, i: Integer;
+  c: Integer;
 begin
   if FPos<FCount then
     Result := True
@@ -198,7 +231,7 @@ function THexCipherStream.ReadByte(var B: Byte): Boolean;
 var
   p: PChar;
 begin
-  Result := ReadBuffer;
+  Result := ReadmnBuffer;
   if Result then
   begin
     p := @FBuffer;

@@ -37,13 +37,22 @@ object MainForm: TMainForm
     Height = 145
     TabOrder = 2
   end
-  object ExecuteBtn: TButton
+  object TestReadBtn: TButton
     Left = 570
     Top = 16
     Width = 75
     Height = 25
-    Caption = 'ExecuteBtn'
+    Caption = 'Test Read'
     TabOrder = 3
-    OnClick = ExecuteBtnClick
+    OnClick = TestReadBtnClick
+  end
+  object TestWriteBtn: TButton
+    Left = 570
+    Top = 48
+    Width = 75
+    Height = 25
+    Caption = 'Test Write'
+    TabOrder = 4
+    OnClick = TestWriteBtnClick
   end
 end
