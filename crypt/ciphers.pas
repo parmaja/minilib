@@ -18,6 +18,9 @@ uses
   Classes, SysUtils;
 
 type
+  TCipherStream = class;
+  TCipherStreamClass = class of TCipherStream;
+
   ECipherException = class(Exception);
 
   TCipher = class(TObject)
@@ -36,6 +39,7 @@ type
   //Create the stream fro Encrypt/Decrypt if mixed with Mode you will have 4 state for that stream
   //most of developer need only 2 state, Write+Encrypt and Read+Decrypt, but not for me :)
   TCipherWay = (cyEncrypt, cyDecrypt);
+
 
   TCipherStream = class(TStream)
   private
