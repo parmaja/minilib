@@ -178,6 +178,7 @@ begin
           if i=0 then Break;
           SetLength(st, i);
           fo.Write(st[1], i);
+          if i<cBufferSize then Break;
         end;
       finally
         scs.Free;
@@ -328,7 +329,7 @@ end;
 
 procedure TMainForm.FormCreate(Sender: TObject);
 begin
-  MethodBox.Items.AddObject('Snow Cipher', TObject(TSnow2CipherStream));
+  MethodBox.Items.AddObject('Snow2 Cipher', TObject(TSnow2CipherStream));
   MethodBox.Items.AddObject('Hex Cipher', TObject(THexCipherStream));
   MethodBox.ItemIndex := 0;
 

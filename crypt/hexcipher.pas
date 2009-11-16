@@ -26,6 +26,7 @@ uses
 const
   //cMaxBuffer = 524287;
   cMaxBuffer = 511;
+  //cMaxBuffer = 16*1024*1024-1;
 
 type
   TmnBuffer = array[0..cMaxBuffer] of Char;
@@ -63,7 +64,7 @@ type
   end;
 
 const
-  cCharToHexArr: array[Char] of string = (
+  cCharToHexArr: array[Char] of string[2] = (
    '00', '01', '02', '03', '04', '05', '06', '07', '08', '09', '0A', '0B', '0C', '0D', '0E', '0F',
    '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '1A', '1B', '1C', '1D', '1E', '1F',
    '20', '21', '22', '23', '24', '25', '26', '27', '28', '29', '2A', '2B', '2C', '2D', '2E', '2F',
@@ -229,19 +230,30 @@ end;
 function THexCipherStream.ReadOutBuffer(var Buffer; Count: Integer): Integer;
 var
   p: PChar;
-  i: Integer;
+  i, c: Integer;
 begin
   Result := 0;
   i := Count;
   p := @Buffer;
   while (i>0) and ReadmnBuffer do
   begin
+    c := Min(i, FCount);
+    Inc(p, Result);
+    Move(FBuffer, p^, c);
+    Inc(FPos, c);
+    Inc(Result, c);
+    Dec(i, c);
+  end;
+
+  {while (i>0) and ReadmnBuffer do
+  begin
     p^ := FBuffer[FPos];
     Inc(FPos);
     Inc(p);
     Inc(Result);
     Dec(i);
-  end;
+  end;}
+
   {while (i>0) and ReadChar(b) do
   begin
     p^ := b;
