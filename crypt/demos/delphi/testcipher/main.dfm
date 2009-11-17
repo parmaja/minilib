@@ -3,7 +3,7 @@ object MainForm: TMainForm
   Top = 0
   Caption = 'Crypto'
   ClientHeight = 266
-  ClientWidth = 585
+  ClientWidth = 664
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -14,7 +14,7 @@ object MainForm: TMainForm
   Position = poScreenCenter
   OnCreate = FormCreate
   DesignSize = (
-    585
+    664
     266)
   PixelsPerInch = 96
   TextHeight = 13
@@ -70,7 +70,7 @@ object MainForm: TMainForm
   object ResultLbl: TLabel
     Left = 0
     Top = 214
-    Width = 585
+    Width = 664
     Height = 33
     Align = alBottom
     Alignment = taCenter
@@ -87,32 +87,35 @@ object MainForm: TMainForm
   object SrcEdit: TEdit
     Left = 72
     Top = 135
-    Width = 509
+    Width = 588
     Height = 21
     Anchors = [akLeft, akTop, akRight]
     TabOrder = 5
     OnChange = SrcEditChange
+    ExplicitWidth = 509
   end
   object DecEdit: TEdit
     Left = 72
     Top = 189
-    Width = 509
+    Width = 588
     Height = 21
     Anchors = [akLeft, akTop, akRight]
     ReadOnly = True
     TabOrder = 7
+    ExplicitWidth = 509
   end
   object EncEdit: TEdit
     Left = 72
     Top = 162
-    Width = 509
+    Width = 588
     Height = 21
     Anchors = [akLeft, akTop, akRight]
     ReadOnly = True
     TabOrder = 6
+    ExplicitWidth = 509
   end
   object TestReadBtn: TButton
-    Left = 506
+    Left = 585
     Top = 72
     Width = 75
     Height = 25
@@ -120,9 +123,10 @@ object MainForm: TMainForm
     Caption = 'Test Read'
     TabOrder = 3
     OnClick = TestReadBtnClick
+    ExplicitLeft = 506
   end
   object TestWriteBtn: TButton
-    Left = 506
+    Left = 585
     Top = 103
     Width = 75
     Height = 25
@@ -130,18 +134,20 @@ object MainForm: TMainForm
     Caption = 'Test Write'
     TabOrder = 4
     OnClick = TestWriteBtnClick
+    ExplicitLeft = 506
   end
   object FileNameEdit: TEdit
     Left = 72
     Top = 45
-    Width = 465
+    Width = 544
     Height = 21
     Anchors = [akLeft, akTop, akRight]
     TabOrder = 1
     Text = 'FileNameEdit'
+    ExplicitWidth = 465
   end
   object SelectFileBtn: TButton
-    Left = 543
+    Left = 622
     Top = 45
     Width = 38
     Height = 21
@@ -149,22 +155,21 @@ object MainForm: TMainForm
     Caption = '...'
     TabOrder = 2
     OnClick = SelectFileBtnClick
+    ExplicitLeft = 543
   end
   object StatusBar: TStatusBar
     Left = 0
     Top = 247
-    Width = 585
+    Width = 664
     Height = 19
     Panels = <
       item
-        Width = 200
+        Width = 260
       end
       item
         Width = 50
       end>
-    ExplicitLeft = 296
-    ExplicitTop = 136
-    ExplicitWidth = 0
+    ExplicitWidth = 585
   end
   object MethodBox: TComboBox
     Left = 72
@@ -172,7 +177,7 @@ object MainForm: TMainForm
     Width = 209
     Height = 21
     Style = csDropDownList
-    ItemHeight = 0
+    ItemHeight = 13
     TabOrder = 0
     OnClick = MethodBoxClick
   end

@@ -103,16 +103,16 @@ end;
 procedure TMainForm.CalcSpeed(vTime, vSize: Cardinal);
 var
   s: string;
-  sp: Double;
-  t: Currency;
+  sp, sz: Double;
 begin
-  //note vTime in ms
+  sz := vSize / (1024*1024);
   if vTime=0 then
-    t := 1
+    s := Format('Time: 0 ms Size: %.4g MB Speed: ~ MB/S ', [sz])
   else
-    t := vTime;
-  sp := vSize / (t*1024*1024/1000);
-  s := Format('Time: %d ms;  Speed: %f MB/S ', [vTime, sp]);
+  begin
+    sp := vSize / (vTime*1024*1024/1000);
+    s := Format('Time: %d ms Size: %.4g MB Speed: %f MB/S ', [vTime, sz, sp]);
+  end;
   ShowInfo(s);
 end;
 
@@ -139,14 +139,14 @@ begin
     try
       scs := CreateCipherStraem(fi, cyDecrypt, cimRead, false);
       try
+        SetLength(st, cBufferSize);
         while True do
         begin
-          SetLength(st, cBufferSize);
           i := scs.read(st[1], cBufferSize);
           if i=0 then Break;
-          SetLength(st, i);
           fo.Write(st[1], i);
         end;
+        SetLength(st, 0);
       finally
         scs.Free;
       end;
@@ -171,15 +171,15 @@ begin
     try
       scs := CreateCipherStraem(fi, cyEncrypt, cimRead, false);
       try
+        SetLength(st, cBufferSize);
         while True do
         begin
-          SetLength(st, cBufferSize);
           i := scs.read(st[1], cBufferSize);
           if i=0 then Break;
-          SetLength(st, i);
           fo.Write(st[1], i);
           if i<cBufferSize then Break;
         end;
+        SetLength(st, 0);
       finally
         scs.Free;
       end;
@@ -258,7 +258,6 @@ begin
         begin
           i := fi.Read(st[1], cBufferSize);
           if i=0 then Break;
-          SetLength(st, i);
           scs.Write(st[1], i);
         end;
         SetLength(st, 0);
@@ -291,7 +290,6 @@ begin
         begin
           i := fi.Read(st[1], cBufferSize);
           if i=0 then Break;
-          SetLength(st, i);
           scs.Write(st[1], i);
         end;
         SetLength(st, 0);

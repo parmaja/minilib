@@ -200,14 +200,15 @@ end;
 procedure TSnow2Cipher.StreamBlock(const InBuffer; InCount: Integer; var OutBuffer; var OutCount: Integer);
 var
   i: Integer;
-  s, d: PChar;
+  s, d: PByte;
 begin
   OutCount := InCount;
   s := @InBuffer;
   d := @OutBuffer;
   for I := 0 to InCount-1 do
   begin
-    d^ := Chr(Ord(s^) xor GetByte);
+    //d^ := Chr(Ord(s^) xor GetByte);
+    d^ := s^ xor GetByte;
     Inc(s);
     Inc(d);
   end;
