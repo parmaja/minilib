@@ -136,7 +136,7 @@ type
 
   { TposStuffs }
 
-  TposStuffs = class(TposScrollFrame)
+  TposStuffs = class(TposCustomFrame)
   private
     FItems: IposStuffList;
     FDownItem: TposListStuffItem;
@@ -176,7 +176,7 @@ type
     procedure ChangeScale(M, D: Integer); override;
     function GetInnerRect: TRect; override;
     procedure PaintOuter(vCanvas: TCanvas; var vRect: TRect; vColor: TColor); override;
-    procedure PaintInner(vCanvas: TCanvas; const vRect: TRect; vColor: TColor); override;
+    procedure PaintInner(vCanvas: TCanvas; var vRect: TRect; vColor: TColor); override;
     function ProcessKey(var Key: Word; Shift: TShiftState): Boolean; virtual;
     procedure StuffClicked(Stuff: IposStuff);
   public
@@ -389,7 +389,7 @@ begin
   FStuffs.Invalidate;
 end;
 
-procedure TposStuffs.PaintInner(vCanvas: TCanvas; const vRect: TRect; vColor: TColor);
+procedure TposStuffs.PaintInner(vCanvas: TCanvas; var vRect: TRect; vColor: TColor);
 var
   i: Integer;
   aStates: TposDrawStates;

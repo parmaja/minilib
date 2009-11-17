@@ -26,7 +26,7 @@ type
     procedure SetPicture(const Value: TPicture);
   protected
     procedure PictureChanged(Sender: TObject); virtual;
-    procedure PaintInner(vCanvas: TCanvas; const vRect: TRect; vColor: TColor); override;
+    procedure PaintInner(vCanvas: TCanvas; var vRect: TRect; vColor: TColor); override;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -55,7 +55,7 @@ begin
   inherited;
 end;
 
-procedure TposImage.PaintInner(vCanvas: TCanvas; const vRect: TRect; vColor: TColor);
+procedure TposImage.PaintInner(vCanvas: TCanvas; var vRect: TRect; vColor: TColor);
   function DestRect: TRect;
   var
     w, h, cw, ch: Integer;

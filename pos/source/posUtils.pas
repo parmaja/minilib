@@ -52,8 +52,8 @@ function InflateRect(var Rect: TRect; dx, dy: Integer): TRect;
 {$ENDIF}
 
 type
-  TposOutline = (sinNone, sinLeft, sinRight, sinFirst, sinLast, sinUp, sinDown, sinEllipsis, sinPin,
-    sinClose, sinPlus, sinOK, sinCheck, sinMinus, sinCross, sinStar, sinDiv, sinPoint);
+  TposShape = (shpNone, shpLeft, shpRight, shpFirst, shpLast, shpUp, shpDown, shpEllipsis, shpPin,
+    shpClose, shpPlus, shpOK, shpCheck, shpMinus, shpCross, shpStar, shpDiv, shpPoint);
 
 // Center
 procedure CenterRect(var R1: TRect; R2: TRect);
@@ -74,8 +74,8 @@ procedure PaintText(Canvas: TCanvas; Text: string; vRect: TRect; Style: TTextSty
 procedure PaintTextButton(Canvas: TCanvas; Text: string; Rect: TRect; States: TposDrawStates);
 procedure PaintBorderButton(Canvas: TCanvas; Rect: TRect; Color, BorderColor: TColor; States: TposDrawStates);
 procedure PaintButton(Canvas: TCanvas; Caption: string; Rect: TRect; Color, BorderColor: TColor; States: TposDrawStates);
-procedure PaintOutline(Canvas: TCanvas; R: TRect; Outline: TposOutline; ADown, AEnabled: Boolean; Color: TColor = clBlack);
-procedure PaintCheckBox(Canvas: TCanvas; R: TRect; AState: TCheckBoxState; AEnabled: Boolean; Outline: TposOutline = sinCheck);
+procedure PaintShape(Canvas: TCanvas; R: TRect; Shape: TposShape; ADown, AEnabled: Boolean; Size:Integer; Color: TColor);
+procedure PaintCheckBox(Canvas: TCanvas; R: TRect; AState: TCheckBoxState; AEnabled: Boolean; Shape: TposShape = shpCheck);
 
 //Restaurant tables not Database table :)
 procedure PaintRect(Canvas: TCanvas; const vRect: TRect);
@@ -470,12 +470,16 @@ begin
 {$ENDIF}
 end;
 
-procedure PaintOutline(Canvas: TCanvas; R: TRect; Outline: TposOutline; ADown, AEnabled: Boolean; Color: TColor = clBlack);
+procedure PaintShape(Canvas: TCanvas; R: TRect; Shape: TposShape; ADown, AEnabled: Boolean; Size:Integer; Color: TColor);
 var
-  b, x, y: Integer;
+  x, y: Integer;
+  w, h: Integer;
+  z: Integer;
 begin
-  case Outline of
-    sinEllipsis:
+  w := (R.Right - R.Left);
+  h := (R.Bottom - R.Top);
+  case Shape of
+    shpEllipsis:
       begin
         x := (R.Right - R.Left) div 2 - 4 + R.Left;
         y := (R.Bottom - R.Top) div 2 - 1 + R.Top;
@@ -489,92 +493,91 @@ begin
         x := x + 3;
         Canvas.Rectangle(x, y, x + 2, y + 2);
       end;
-    sinDown, sinLast:
+    shpDown, shpLast:
       begin
-        x := (R.Right - R.Left) div 2 + R.Left;
-        y := (R.Bottom - R.Top) div 2 + R.Top - 1;
-        if AEnabled then
+        x := w div 2 + R.Left;
+        y := h div 2 + R.Top;
+        z := Size;
+        if z = 0 then
         begin
-          Canvas.Brush.Color := Color;
-          Canvas.Pen.Color := Color;
-          if ADown then
-          begin
-            Inc(x);
-            Inc(y);
-          end;
-          if Outline = sinLast then
-          begin
-            Canvas.Rectangle(x - 3, y + 6, x + 4, y + 4);
-          end;
-          Canvas.Polygon([Point(x, y + 2), Point(x + 3, y - 1), Point(x - 3, y - 1)]);
-        end
-        else
-        begin
-          Canvas.Brush.Color := clWhite;
-          Canvas.Pen.Color := clWhite;
-          if Outline = sinLast then
-          begin
-            Canvas.Rectangle(x - 3, y + 6, x + 4, y + 4);
-          end;
-          Inc(x);
-          Inc(y);
-          Canvas.Polygon([Point(x, y + 2), Point(x + 3, y - 1), Point(x - 3, y - 1)]);
-
-          Canvas.Brush.Color := clGray;
-          Canvas.Pen.Color := clGray;
-          Dec(x);
-          Dec(y);
-          Canvas.Polygon([Point(x, y + 2), Point(x + 3, y - 1), Point(x - 3, y - 1)]);
+          z := w div 4;
+          if z <= 0 then
+            z := 1;
         end;
-      end;
-    sinUp, sinFirst:
-      begin
-        x := (R.Right - R.Left) div 2 + R.Left;
-        y := (R.Bottom - R.Top) div 2 + R.Top + 1;
         if AEnabled then
-        begin
-          Canvas.Brush.Color := Color;
-          Canvas.Pen.Color := Color;
-          if ADown then
-          begin
-            Inc(x);
-            Inc(y);
-          end;
-          if Outline = sinFirst then
-          begin
-            Canvas.Rectangle(x - 3, y - 5, x + 4, y - 3);
-          end;
-          Canvas.Polygon([Point(x, y - 2), Point(x + 3, y + 1), Point(x - 3, y + 1)]);
-        end
+          Canvas.Brush.Style := bsClear
         else
-        begin
-          Canvas.Brush.Color := clWhite;
-          Canvas.Pen.Color := clWhite;
-          if Outline = sinFirst then
-          begin
-            Canvas.Rectangle(x - 3, y - 5, x + 4, y - 3);
-          end;
-          Inc(x);
-          Inc(y);
-          Canvas.Polygon([Point(x, y - 2), Point(x + 3, y + 1), Point(x - 3, y + 1)]);
-          Dec(x);
-          Dec(y);
-          Canvas.Brush.Color := clGray;
-          Canvas.Pen.Color := clGray;
-          Canvas.Polygon([Point(x, y - 2), Point(x + 3, y + 1), Point(x - 3, y + 1)]);
-        end;
-      end;
-    sinCross:
-      begin
-        x := (R.Right - R.Left) div 2 + R.Left;
-        y := (R.Bottom - R.Top) div 2 + R.Top;
+          Canvas.Brush.Style := bsSolid;
+        Canvas.Brush.Color := Color;
         Canvas.Pen.Color := Color;
-        Canvas.MoveTo(x - 3, y - 3);
-        Canvas.LineTo(x + 4, y + 4);
-        Canvas.MoveTo(x + 3, y - 3);
-        Canvas.LineTo(x - 4, y + 4);
+        if ADown then
+        begin
+          Inc(x);
+          Inc(y);
+        end;
+        if Shape = shpLast then
+        begin
+          Canvas.Rectangle(x - z * 2 + 1, y + 2 * z + 1, x + 2 * z, y + z + 1);
+          Dec(y, z);
+        end;
+        Canvas.Polygon([Point(x, y + z), Point(x + 2 * z - 1, y - z + 1), Point(x - 2 * z + 1, y - z + 1)]);
       end;
-    sinStar:
+    shpUp, shpFirst:
+      begin
+        x := w div 2 + R.Left;
+        y := h div 2 + R.Top;
+        z := Size;
+        if z = 0 then
+        begin
+          z := w div 4;
+          if z <= 0 then
+            z := 1;
+        end;
+        if AEnabled then
+          Canvas.Brush.Style := bsClear
+        else
+          Canvas.Brush.Style := bsSolid;
+        Canvas.Brush.Color := Color;
+        Canvas.Pen.Color := Color;
+        if Shape = shpFirst then
+        begin
+          Canvas.Rectangle(x - z * 2 + 1, y - 2 * z, x + 2 * z, y - z);
+          Inc(y, z);
+        end;
+        Canvas.Polygon([Point(x, y - z), Point(x + 2 * z - 1, y + z - 1), Point(x - 2 * z + 1, y + z - 1)]);
+      end;
+    shpCross:
+      begin
+        x := w div 2 + R.Left;
+        y := h div 2 + R.Top;
+        z := Size;
+        if z = 0 then
+        begin
+          z := w div 10;
+          if z <= 0 then
+            z := 1;
+        end;
+        if AEnabled then
+          Canvas.Brush.Style := bsClear
+        else
+          Canvas.Brush.Style := bsSolid;
+        Canvas.Brush.Color := Color;
+        Canvas.Pen.Color := Color;
+        if z = 1 then
+        begin
+          Canvas.MoveTo(x - 2, y - 2);
+          Canvas.LineTo(x + 3, y + 3);
+          Canvas.MoveTo(x + 2, y - 2);
+          Canvas.LineTo(x - 3, y + 3);
+        end
+        else
+        begin
+          z := z - 1;
+          Canvas.Polygon([Point(x + z * 2, y - z * 3), Point(x + z * 3, y - z * 2 ), Point(x - z * 2, y + z * 3), Point(x - 3 * z, y + z * 2)]);
+          Canvas.Polygon([Point(x - z * 2, y - z * 3), Point(x - z * 3, y - z * 2 ), Point(x + z * 2, y + z * 3), Point(x + 3 * z, y + z * 2)]);
+        end;
+      end;
+    shpStar:
       begin
         x := (R.Right - R.Left) div 2 + R.Left;
         y := (R.Bottom - R.Top) div 2 + R.Top;
@@ -590,20 +593,26 @@ begin
         Canvas.MoveTo(x - 2, y + 1);
         Canvas.LineTo(x, y - 1);
       end;
-    sinOK, sinCheck:
+    shpOK, shpCheck:
       begin
-        b := ((R.Right - R.Left) - 8) div 2;
-        x := R.Left + b;
-        b := ((R.Bottom - R.Top) - 8) div 2;
-        y := R.Top + b;
-        Canvas.Brush.Color := Color;
+        x := w div 2 + R.Left;
+        y := h div 2 + R.Top;
+        z := Size;
+        if z = 0 then
+        begin
+          z := w div 10;
+          if z <= 0 then
+            z := 1;
+        end;
         if AEnabled then
-          Canvas.Pen.Color := Color
+          Canvas.Brush.Style := bsClear
         else
-          Canvas.Pen.Color := clltGray;
-        Canvas.Polygon([Point(x + 1, y + 5), Point(x + 3, y + 7), Point(x + 7, y + 3), Point(x + 7, y + 1), Point(x + 3, y + 5), Point(x + 1, y + 3)]);
+          Canvas.Brush.Style := bsSolid;
+        Canvas.Pen.Color := Color;
+        Canvas.Brush.Color := Color;
+        Canvas.Polygon([Point(x - z * 3, y - z), Point(x - z * 3, y + z), Point(x - z, y + z * 3), Point(x + z * 3, y - z), Point(x + z * 3, y - z * 3), Point(x - z, y + z)]);
       end;
-    sinMinus:
+    shpMinus:
       begin
         x := (R.Right - R.Left) div 2 + R.Left;
         y := (R.Bottom - R.Top) div 2 + R.Top;
@@ -611,7 +620,7 @@ begin
         Canvas.MoveTo(x - 3, y);
         Canvas.LineTo(x + 4, y);
       end;
-    sinPlus:
+    shpPlus:
       begin
         x := (R.Right - R.Left) div 2 + R.Left;
         y := (R.Bottom - R.Top) div 2 + R.Top;
@@ -621,7 +630,7 @@ begin
         Canvas.MoveTo(x, y - 3);
         Canvas.LineTo(x, y + 4);
       end;
-    sinDiv:
+    shpDiv:
       begin
         x := (R.Right - R.Left) div 2 + R.Left;
         y := (R.Bottom - R.Top) div 2 + R.Top;
@@ -633,7 +642,7 @@ begin
         Canvas.MoveTo(x, y + 3);
         Canvas.LineTo(x, y + 1);
       end;
-    sinLeft:
+    shpLeft:
       begin
         x := (R.Right - R.Left) div 2 + R.Left;
         y := (R.Bottom - R.Top) div 2 + R.Top;
@@ -662,7 +671,7 @@ begin
           Canvas.Polygon([Point(x - 2, y), Point(x + 1, y - 3), Point(x + 1, y + 3)]);
         end;
       end;
-    sinRight:
+    shpRight:
       begin
         x := (R.Right - R.Left) div 2 + R.Left;
         y := (R.Bottom - R.Top) div 2 + R.Top;
@@ -691,7 +700,7 @@ begin
           Canvas.Polygon([Point(x + 2, y), Point(x - 1, y - 3), Point(x - 1, y + 3)]);
         end;
       end;
-    sinPoint:
+    shpPoint:
       begin
         x := (R.Right - R.Left) div 2 + R.Left;
         y := (R.Bottom - R.Top) div 2 + R.Top;
@@ -701,7 +710,7 @@ begin
         Canvas.Pen.Color := Color;
         Canvas.Ellipse(x - 2, y - 2, x + 3, y + 3);
       end;
-    sinClose:
+    shpClose:
       begin
         x := (R.Right - R.Left) div 2 + R.Left;
         y := (R.Bottom - R.Top) div 2 + R.Top;
@@ -719,7 +728,7 @@ begin
         Canvas.MoveTo(x + 3, y - 2);
         Canvas.LineTo(x - 3, y + 4);
       end;
-    sinPin:
+    shpPin:
       begin
         begin
           x := (R.Right - R.Left) div 2 + R.Left;
@@ -742,7 +751,7 @@ begin
   end;
 end;
 
-procedure PaintCheckBox(Canvas: TCanvas; R: TRect; AState: TCheckBoxState; AEnabled: Boolean; Outline: TposOutline);
+procedure PaintCheckBox(Canvas: TCanvas; R: TRect; AState: TCheckBoxState; AEnabled: Boolean; Shape: TposShape);
 var
   x, y, b: Integer;
   aColor: TColor;
@@ -773,7 +782,7 @@ begin
       else
         aColor := clGray;
       end;
-      PaintOutline(Canvas, R, Outline, False, True, aColor);
+      PaintShape(Canvas, R, Shape, False, True, 0, aColor);
     end;
   end;
 end;

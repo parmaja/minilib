@@ -174,9 +174,8 @@ type
     property Grid: TposVirtualGrid read FGrid;
   end;
 
-  TposGridHelper = class(TObject)
+  TposGridHelper = class(TposHelper)
   public
-    function FreeOnRelease:Boolean; virtual;
     procedure CreateColumns(Sender: TposVirtualGrid); virtual; abstract;
     procedure GetCell(Sender: TposVirtualGrid; ID, Row, Column: Integer; var Info: TposCellInfo); virtual; abstract;
     procedure GetCount(Sender: TposVirtualGrid; var Count: Integer); virtual; abstract;
@@ -191,15 +190,16 @@ type
     FOnGetItemIndex: TposOnGetItemIndex;
     FOnSetItemIndex: TposOnSetItemIndex;
     FOnItemIndexChanged:TNotifyEvent;
-    FHelper: TposGridHelper;
     function GetItems: TposVirtualRows;
+    function GetHelper: TposGridHelper;
     procedure SetHelper(const Value: TposGridHelper);
   protected
+    procedure HelperChanged; override;
     function DoCreateItems: TposItems; override;
     procedure GetCellInfo(Column:TposCustomColumn; Row: Integer; var Info: TposCellInfo); override;
   public
     destructor Destroy; override;
-    property Helper:TposGridHelper read FHelper write SetHelper;
+    property Helper:TposGridHelper read GetHelper write SetHelper;
     property Items: TposVirtualRows read GetItems;
   published
     property OnGetCell: TposOnGetCell read FOnGetCell write FOnGetCell;
@@ -825,8 +825,6 @@ end;
 
 destructor TposVirtualGrid.Destroy;
 begin
-  if (FHelper <> nil) and FHelper.FreeOnRelease then
-    FreeAndNil(FHelper);
   inherited;
 end;
 
@@ -838,10 +836,15 @@ end;
 
 procedure TposVirtualGrid.GetCellInfo(Column: TposCustomColumn; Row: Integer; var Info: TposCellInfo);
 begin
-  if FHelper <> nil then
-    FHelper.GetCell(Self, Column.ID, Row, 0, Info)
+  if Helper <> nil then
+    Helper.GetCell(Self, Column.ID, Row, 0, Info)
   else if Assigned(FOnGetCell) then
     FOnGetCell(Self, Column.ID, Row, 0, Info);
+end;
+
+function TposVirtualGrid.GetHelper: TposGridHelper;
+begin
+  Result := inherited Helper as TposGridHelper;
 end;
 
 function TposVirtualGrid.GetItems: TposVirtualRows;
@@ -849,16 +852,21 @@ begin
   Result := (inherited Items) as TposVirtualRows;
 end;
 
+procedure TposVirtualGrid.HelperChanged;
+begin
+  inherited;
+  Columns.Clear;
+  if Helper <> nil then
+  begin
+    Helper.CreateColumns(Self);
+  end;
+end;
+
 procedure TposVirtualGrid.SetHelper(const Value: TposGridHelper);
 begin
-  if FHelper <> Value then
+  if Helper <> Value then
   begin
-    FHelper := Value;
-    Columns.Clear;
-    if FHelper <> nil then
-    begin
-      FHelper.CreateColumns(Self);
-    end;
+    inherited Helper := Value;
   end;
 end;
 
@@ -872,8 +880,8 @@ end;
 function TposVirtualRows.GetCount: Integer;
 begin
   Result := 0;
-  if Grid.FHelper <> nil then
-    Grid.FHelper.GetCount(Grid, Result)
+  if Grid.Helper <> nil then
+    Grid.Helper.GetCount(Grid, Result)
   else if Assigned(Grid.FOnGetCount) then
     Grid.FOnGetCount(Self, Result);
 end;
@@ -950,13 +958,6 @@ constructor TposCell.Create;
 begin
   inherited Create;
   Info.Color := clDefault;
-end;
-
-{ TposGridHelper }
-
-function TposGridHelper.FreeOnRelease: Boolean;
-begin
-  Result := True;
 end;
 
 initialization

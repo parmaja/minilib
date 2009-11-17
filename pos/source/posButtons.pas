@@ -19,12 +19,12 @@ interface
 uses
   SysUtils, Classes, Graphics, Controls, Types,
   Forms,
-  posControls, posTypes, posStuffs;
+  posControls, posThemes, posTypes, posStuffs;
 
 type
   TposOnGetText = procedure(Sender:TObject; var S:string) of object;
 
-  TposButton = class(TposLabeledFrame)
+  TposButton = class(TposSybariteFrame)
   private
     FCaption: TCaption;
     FOnGetText: TposOnGetText;
@@ -36,7 +36,7 @@ type
     procedure MouseMove(Shift: TShiftState; X, Y: Integer); override;
     procedure MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: Integer); override;
     procedure GetCaption(var vCaption: string); virtual;
-    procedure PaintInner(vCanvas: TCanvas; const Rect: TRect; vColor: TColor); override;
+    procedure PaintInner(vCanvas: TCanvas; var vRect: TRect; vColor: TColor); override;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -68,15 +68,6 @@ type
     property OnGetText:TposOnGetText read FOnGetText write FOnGetText;
   end;
   
-  { TposLabeledButton }
-
-  TposLabeledButton = class(TposButton)
-  private
-  protected
-  public
-  published
-  end;
-
   TposButtonStuff = class(TInterfacedObject, IposStuff)
   private
     FSize: Integer;
@@ -166,7 +157,7 @@ begin
   inherited Destroy;
 end;
 
-procedure TposButton.PaintInner(vCanvas: TCanvas; const Rect: TRect; vColor: TColor);
+procedure TposButton.PaintInner(vCanvas: TCanvas; var vRect: TRect; vColor: TColor);
 var
   aCaption: string;
   aRect :TRect;
@@ -177,7 +168,7 @@ begin
     vColor := Lighten(vColor, 30)
   else if Down then
     vColor := Lighten(vColor, -15);
-  aRect := Rect;
+  aRect := vRect;
   vCanvas.Font := Self.Font;
   aCaption := '';
   GetCaption(aCaption);
@@ -207,7 +198,7 @@ begin
     if AutoActive then
       Active := not Active; 
   finally
-    PlayEffect('CLICK', True, True);
+    Themes.PlaySound('CLICK', True, True);
   end;
 end;
 

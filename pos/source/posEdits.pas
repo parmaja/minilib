@@ -11,7 +11,7 @@ unit posEdits;
 {$M+}
 {$H+}
 {$IFDEF FPC}
-{$mode delphi}
+{$MODE delphi}
 {$ENDIF}
 
 interface
@@ -21,7 +21,7 @@ uses
   posUtils, posControls;
 
 type
-  TposEdit = class(TposLabeledFrame)
+  TposEdit = class(TposSybariteFrame)
   private
     FText: TCaption;
     FMuliLine: Boolean;
@@ -42,7 +42,7 @@ type
     destructor Destroy; override;
     function GetTextStyle: TTextStyle; override;
     function GetInputs: TposFrameInputs; override;
-    procedure PaintInner(Canvas: TCanvas; const Rect: TRect; Color: TColor); override;
+    procedure PaintInner(Canvas: TCanvas; var vRect: TRect; vColor: TColor); override;
   published
     property Alignment: TAlignment read FAlignment write SetAlignment default taLeftJustify;
     property Layout: TTextLayout read FLayout write SetLayout default tlCenter;
@@ -50,7 +50,7 @@ type
     property MuliLine: Boolean read FMuliLine write FMuliLine default False;
     property ReadOnly: Boolean read FReadOnly write FReadOnly default False;
     property Text: TCaption read FText write SetText;
-    property Password:Boolean read FPassword write FPassword default False; 
+    property Password: Boolean read FPassword write FPassword default False;
   end;
 
 implementation
@@ -68,7 +68,7 @@ constructor TposEdit.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
   ControlStyle := ControlStyle + [csSetCaption] + [csOpaque];
-  Style := Style + [fsOpaque];
+  Style := Style + [fsOpaque]; // - [fsBorder];
   Width := 60;
   Height := 22;
   FTextMargin := 1;
@@ -120,7 +120,7 @@ begin
   end;
 end;
 
-procedure TposEdit.PaintInner(Canvas: TCanvas; const Rect: TRect; Color: TColor);
+procedure TposEdit.PaintInner(Canvas: TCanvas; var vRect: TRect; vColor: TColor);
 var
   aRect: TRect;
   aStyle: TTextStyle;
@@ -128,7 +128,7 @@ var
 begin
   inherited;
   aStyle := GetTextStyle;
-  aRect := Rect;
+  aRect := vRect;
   GetText(aText);
   if Password then
     aText := StringOfChar('*', Length(aText));

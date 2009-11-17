@@ -87,7 +87,7 @@ type
     function GetInnerRect:TRect; override;
 
     procedure PaintItems(Items:TposItems; Canvas: TCanvas; TopIndex, ItemIndex: Integer; Rect: TRect);
-    procedure PaintInner(Canvas: TCanvas; const Rect: TRect; Color: TColor); override;
+    procedure PaintInner(Canvas: TCanvas; var vRect: TRect; Color: TColor); override;
 
     procedure DoItemIndexChanged; virtual;
 
@@ -260,9 +260,9 @@ begin
   inherited;
 end;
 
-procedure TposAbstractList.PaintInner(Canvas: TCanvas; const Rect: TRect; Color: TColor);
+procedure TposAbstractList.PaintInner(Canvas: TCanvas; var vRect: TRect; Color: TColor);
 begin
-  PaintItems(Items, Canvas, TopIndex, ItemIndex, Rect);
+  PaintItems(Items, Canvas, TopIndex, ItemIndex, vRect);
 end;
 
 { TposCustomListItems }

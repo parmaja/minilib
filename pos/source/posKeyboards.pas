@@ -181,7 +181,7 @@ type
   protected
     FLangTR: Integer;
     procedure Resized; override;
-    procedure PaintInner(vCanvas: TCanvas; const vRect: TRect; vColor: TColor); override;
+    procedure PaintInner(vCanvas: TCanvas; var vRect: TRect; vColor: TColor); override;
     procedure CalcButtons;
     procedure Loaded; override;
     procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer); override;
@@ -434,7 +434,7 @@ begin
   FButtons := FNormalButtons;
 end;
 
-procedure TposKeyboard.PaintInner(vCanvas: TCanvas; const vRect: TRect; vColor: TColor);
+procedure TposKeyboard.PaintInner(vCanvas: TCanvas; var vRect: TRect; vColor: TColor);
 begin
   inherited;
   FButtons.Paint(vCanvas, vRect);
