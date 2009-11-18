@@ -11,18 +11,17 @@ unit posButtons;
 {$M+}
 {$H+}
 {$IFDEF FPC}
-{$mode delphi}
+{$MODE delphi}
 {$ENDIF}
 
 interface
 
 uses
-  SysUtils, Classes, Graphics, Controls, Types,
-  Forms,
+  SysUtils, Classes, Graphics, Controls, Types, Forms,
   posControls, posThemes, posTypes, posStuffs;
 
 type
-  TposOnGetText = procedure(Sender:TObject; var S:string) of object;
+  TposOnGetText = procedure(Sender: TObject; var S: string) of object;
 
   TposButton = class(TposSybariteFrame)
   private
@@ -65,9 +64,9 @@ type
     property OnMouseDown;
     property OnMouseMove;
     property OnMouseUp;
-    property OnGetText:TposOnGetText read FOnGetText write FOnGetText;
+    property OnGetText: TposOnGetText read FOnGetText write FOnGetText;
   end;
-  
+
   TposButtonStuff = class(TInterfacedObject, IposStuff)
   private
     FSize: Integer;
@@ -76,19 +75,19 @@ type
     FColor: TColor;
     FID: Integer;
   protected
-    function GetObject:TObject;
-    procedure SetStates(vStates:TposDrawStates); virtual;
-    function GetDrawSize:Integer;
-    function Draw(vCanvas:TCanvas; vRect:TRect; vColor:TColor; vStates:TposDrawStates):Boolean; virtual;
+    function GetObject: TObject;
+    procedure SetStates(vStates: TposDrawStates); virtual;
+    function GetDrawSize: Integer;
+    function Draw(vCanvas: TCanvas; vRect: TRect; vColor: TColor; vStates: TposDrawStates): Boolean; virtual;
     procedure Click; virtual;
   public
     constructor Create;
     destructor Destroy; override;
-    property Size:Integer read FSize write FSize;
-    property Color:TColor read FColor write FColor; 
-    property Caption:string read FCaption write FCaption;
-    property ID:Integer read FID write FID;
-    property States:TposDrawStates read FStates write FStates;
+    property Size: Integer read FSize write FSize;
+    property Color: TColor read FColor write FColor;
+    property Caption: string read FCaption write FCaption;
+    property ID: Integer read FID write FID;
+    property States: TposDrawStates read FStates write FStates;
   end;
 
 implementation
@@ -107,60 +106,37 @@ end;
 
 procedure TposButton.MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 begin
-  if Button = mbLeft then
-  try
-    inherited;
-    Down := True;
-  except
-    Down := False; 
-    raise;
-  end;
+  inherited;
 end;
 
 procedure TposButton.MouseMove(Shift: TShiftState; X, Y: Integer);
-var
-  PT: TPoint;
 begin
   inherited;
-  if MouseCapture then
-  begin
-    PT.X := X;
-    PT.Y := Y;
-    if PtInRect(ClientRect, PT) then
-      Down := True
-    else
-      Down := False;
-  end;
 end;
 
 procedure TposButton.MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 begin
-  if Button = mbLeft then
-  try
-    inherited;
-  finally
-    Down := False;
-  end;
+  inherited;
 end;
 
 constructor TposButton.Create(AOwner: TComponent);
 begin
   inherited;
   ControlStyle := ControlStyle + [csSetCaption];
-  Style := Style - [fsOpaque, fsBorder];
+  Style := Style - [fsOpaque, fsBorder] + [fsMouse];
   Width := 60;
   Height := 22;
 end;
 
 destructor TposButton.Destroy;
 begin
-  inherited Destroy;
+  inherited;
 end;
 
 procedure TposButton.PaintInner(vCanvas: TCanvas; var vRect: TRect; vColor: TColor);
 var
   aCaption: string;
-  aRect :TRect;
+  aRect: TRect;
 begin
   inherited;
   vColor := Color;
@@ -196,7 +172,7 @@ begin
   try
     inherited;
     if AutoActive then
-      Active := not Active; 
+      Active := not Active;
   finally
     Themes.PlaySound('CLICK', True, True);
   end;
@@ -221,7 +197,7 @@ begin
   inherited;
 end;
 
-function TposButtonStuff.Draw(vCanvas:TCanvas; vRect:TRect; vColor:TColor; vStates:TposDrawStates): Boolean;
+function TposButtonStuff.Draw(vCanvas: TCanvas; vRect: TRect; vColor: TColor; vStates: TposDrawStates): Boolean;
 begin
   if FColor <> clDefault then
     vColor := FColor;
@@ -245,3 +221,4 @@ begin
 end;
 
 end.
+

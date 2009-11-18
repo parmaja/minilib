@@ -90,7 +90,7 @@ type
   public
     Rect: TRect;
     Item: IposStuff;
-      Index: Integer;
+    Index: Integer;
     constructor Create;
     procedure Click;
   end;

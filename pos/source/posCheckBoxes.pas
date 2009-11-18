@@ -23,17 +23,17 @@ uses
   Windows,
   {$endif}
   SysUtils, Classes, Graphics, Controls, StdCtrls, Forms, Types,
-  posTypes, posUtils, posControls;
+  posTypes, posUtils, posDraws, posControls;
 
 type
   TposCheckSubFrame = class(TposSubFrame)
   private
-    FShape: TposShape;
+    FShape: TposShapeKind;
   published
   public
     function GetRect(var vRect: TRect): TRect; override;
     procedure Paint(vCanvas: TCanvas; var vRect: TRect; vColor: TColor); override;
-    property Shape: TposShape read FShape write FShape;
+    property Shape: TposShapeKind read FShape write FShape;
   end;
 
   TposCheckBox = class(TposWinFrame)
@@ -42,6 +42,7 @@ type
     FText: TCaption;
     FCheckFrame: TposCheckSubFrame;
     FTextMargin: Integer;
+    FReadOnly: Boolean;
     procedure SetChecked(const Value: Boolean);
     procedure SetText(const Value: TCaption);
     procedure SetTextMargin(const Value: Integer);
@@ -50,12 +51,15 @@ type
     procedure Click; override;
     procedure Resize; override;
     function DoKeyDown(var Key: Word; Shift: TShiftState): Boolean; override;
+    procedure Loaded; override;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
+    function GetInputs: TposFrameInputs; override;
   published
     property Checked: Boolean read FChecked write SetChecked default False;
     property Text: TCaption read FText write SetText;
+    property ReadOnly: Boolean read FReadOnly write FReadOnly default False;
     property TextMargin: Integer read FTextMargin write SetTextMargin default 1;
   end;
 
@@ -114,13 +118,14 @@ end;
 procedure TposCheckBox.Click;
 begin
   inherited;
-  Checked := not Checked;
+  if not ReadOnly then
+    Checked := not Checked;
 end;
 
 constructor TposCheckBox.Create(AOwner: TComponent);
 begin
   inherited;
-  ControlStyle := ControlStyle + [csSetCaption, csDoubleClicks] + [csOpaque];
+  ControlStyle := ControlStyle + [csSetCaption] + [csOpaque];
   Style := Style + [fsOpaque];
   FChecked := False;
   FCheckFrame := TposCheckSubFrame.Create(Self);
@@ -131,7 +136,6 @@ begin
   Width := 60;
   Height := 22;
   TabStop := True;
-  FCheckFrame.Width := InnerHeight;
 end;
 
 destructor TposCheckBox.Destroy;
@@ -143,7 +147,21 @@ function TposCheckBox.DoKeyDown(var Key: Word; Shift: TShiftState): Boolean;
 begin
   Result := inherited DoKeyDown(Key, Shift);
   if Key = VK_SPACE then
-    Checked := not Checked;
+    Click;
+end;
+
+function TposCheckBox.GetInputs: TposFrameInputs;
+begin
+  Result := inherited GetInputs;
+  Result := Result + [fiKeys];
+  if ReadOnly then
+    Result := Result - [fiFocus] + [fiReadOnly];
+end;
+
+procedure TposCheckBox.Loaded;
+begin
+  inherited;
+  FCheckFrame.Width := InnerHeight;
 end;
 
 { TposCheckSubFrame }
@@ -174,7 +192,7 @@ begin
   if Width > 0 then
   begin
     aRect := GetRect(vRect);
-    vCanvas.Brush.Color := Frame.Color;
+    vCanvas.Brush.Color := Lighten(Frame.Color, -25);
     vCanvas.FillRect(aRect);
     if Frame.UseRightToLeftAlignment then
     begin
@@ -184,7 +202,7 @@ begin
     begin
       aRect.Right := aRect.Right + 1;
     end;
-    PaintShape(vCanvas, aRect, Shape, False, True, 0, Frame.Font.Color);
+    DrawShape(vCanvas, aRect, Shape, False, True, 0, Frame.Font.Color);
   end;
 end;
 

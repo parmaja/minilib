@@ -26,7 +26,7 @@ uses
   Messages,
 {$ENDIF}
   Forms, StdCtrls, Contnrs, Types,
-  posUtils, posTypes;
+  posUtils, posDraws, posTypes;
 
 const
   sSnapGridSize = 2;
@@ -36,10 +36,10 @@ const
 type
   TposFrame = class;
 
-  TposFrameStyle = set of (fsBorder, fsOpaque, fsLatedOpaque);
+  TposFrameStyle = set of (fsMouse, fsBorder, fsOpaque, fsLatedOpaque);
   //fsLatedOpaque take with fsOpaque but the FillRect run after PaintInner
   //When use fsLatedOpaque you must clip all rects you painted
-  TposFrameInput = (fiText, fiTab, fiFocus, fiArrow, fiReadOnly);
+  TposFrameInput = (fiText, fiTab, fiFocus, fiArrow, fiKeys, fiReadOnly);
   TposFrameInputs = set of TposFrameInput;
 
   TposHelper = class(TObject)
@@ -179,24 +179,32 @@ type
   end;
 
   TposSubFramePlace = (sbpOuter, sbpInner);
+
+  TposWinFrame = class;
+  
   TposSubFrame = class(TObject)
   private
-    FFrame: TposFrame;
+    FFrame: TposWinFrame;
     FWidth: Integer;
     FHeight: Integer;
     FEnabled: Boolean;
     FVisible: Boolean;
     FPlace: TposSubFramePlace;
+    FInteractive: Boolean;
+  protected
+    procedure Click; virtual;
   public
-    constructor Create(AFrame: TposFrame); virtual;
+    constructor Create(AFrame: TposWinFrame); virtual;
     function GetRect(var vRect: TRect): TRect; virtual;
     procedure Paint(vCanvas: TCanvas; var vRect: TRect; vColor: TColor); virtual;
-    property Frame: TposFrame read FFrame write FFrame;
+    property Frame: TposWinFrame read FFrame write FFrame;
     property Width: Integer read FWidth write FWidth default 0;
     property Height: Integer read FHeight write FHeight default 0;
     property Visible: Boolean read FVisible write FVisible default True;
     property Enabled: Boolean read FEnabled write FEnabled default True;
     property Place: TposSubFramePlace read FPlace write FPlace;
+    //Interactive: take Keys and Mouse events, only outer subframes
+    property Interactive: Boolean read FInteractive write FInteractive default False;
   end;
 
   TposSubFrames = class(TObjectList)
@@ -206,6 +214,7 @@ type
   published
   public
     procedure Paint(vPlace: TposSubFramePlace; vCanvas: TCanvas; var Rect: TRect; vColor: TColor); virtual;
+    function GetByXY(vRect: TRect; X, Y: Integer): TposSubFrame;
     property Items[Index: Integer]: TposSubFrame read GetItem write SetItem; default;
   end;
 
@@ -219,23 +228,28 @@ type
     property Caption: TCaption read FCaption write FCaption;
   end;
 
-  TposHaftSubFrame = class(TposSubFrame)
+  TposShapeSubFrame = class(TposSubFrame)
   private
-    FShape: TposShape;
+    FShape: TposShapeKind;
   published
   public
     function GetRect(var vRect: TRect): TRect; override;
     procedure Paint(vCanvas: TCanvas; var vRect: TRect; vColor: TColor); override;
-    property Shape: TposShape read FShape write FShape;
+    property Shape: TposShapeKind read FShape write FShape;
   end;
 
   //WinFrame can have internal TposSubFrames
   TposWinFrame = class(TposFocusFrame)
   private
+    FActiveSubFrame: TposSubFrame;
+    FActiveSubFrameDown: Boolean;
     FSubFrames: TposSubFrames;
   protected
     procedure PaintOuter(vCanvas: TCanvas; var vRect: TRect; vColor: TColor); override;
     procedure PaintInner(vCanvas: TCanvas; var vRect: TRect; vColor: TColor); override;
+    procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer); override;
+    procedure MouseMove(Shift: TShiftState; X, Y: Integer); override;
+    procedure MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: Integer); override;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -243,17 +257,26 @@ type
   end;
 
   //TposSybariteFrame Have label and button
+  TposSybariteButtonSubFrame = class(TposShapeSubFrame)
+  protected
+    procedure Click; override;
+  public
+  end;
+
   TposSybariteFrame = class(TposWinFrame)
   private
     FLabelFrame: TposLabelSubFrame;
-    FHaftFrame: TposHaftSubFrame;
+    FButtonFrame: TposSybariteButtonSubFrame;
     FLabelMode: Boolean;
+    FOnButtonClick: TNotifyEvent;
     procedure SetLabelCaption(const Value: TCaption);
     procedure SetLabelWidth(const Value: Integer);
     function GetLabelCaption: TCaption;
     function GetLabelWidth: Integer;
-    procedure SetShowHaft(const Value: Boolean);
-    function GetShowHaft: Boolean;
+    procedure SetShowButton(const Value: Boolean);
+    function GetShowButton: Boolean;
+    function GetButtonShape: TposShapeKind;
+    procedure SetButtonShape(const Value: TposShapeKind);
   protected
     procedure ChangeScale(M, D: Integer); override;
     procedure Resize; override;
@@ -265,7 +288,9 @@ type
     property LabelWidth: Integer read GetLabelWidth write SetLabelWidth default 0;
     //LabelMode make it as TLabel not TEdit usefull for translating engine
     property LabelMode: Boolean read FLabelMode write FLabelMode default False;
-    property ShowHaft: Boolean read GetShowHaft write SetShowHaft default False;
+    property ShowButton: Boolean read GetShowButton write SetShowButton default False;
+    property ButtonShape: TposShapeKind read GetButtonShape write SetButtonShape default shpNone;
+    property OnButtonClick: TNotifyEvent read FOnButtonClick write FOnButtonClick; 
   end;
 
   TposCustomFrame = class(TposWinFrame)
@@ -402,7 +427,7 @@ begin
     aInputs := FocusedFrame.GetInputs;
     if (Key = #9) and not (fiTab in aInputs) then
       FocusNext
-    else if (fiText in aInputs) and not (fiReadOnly in aInputs) then
+    else if ((fiKeys in aInputs) or (fiText in aInputs)) and not (fiReadOnly in aInputs) then
       Result := FocusedFrame.KeyPress(Key);
   end;
 end;
@@ -724,6 +749,37 @@ begin
   inherited;
   MouseLeave;
 end;
+{$ENDIF}
+
+procedure TposWinFrame.MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+var
+  aRect, R: TRect;
+begin
+  if fsMouse in Style then
+  begin
+    if Button = mbLeft then
+    try
+      inherited;
+      FActiveSubFrame := FSubFrames.GetByXY(ClientRect, X, Y);
+      if FActiveSubFrame <> nil then
+      begin
+        FActiveSubFrameDown := True;
+        aRect := ClientRect;
+        R := FActiveSubFrame.GetRect(aRect);
+        InvalidateRect(R);
+      end
+      else
+        Down := True;
+    except
+      FActiveSubFrame := nil;
+      FActiveSubFrameDown := False;
+      Down := False;
+      raise;
+    end;
+  end
+  else
+    inherited;
+end;
 
 procedure TposFrame.MouseEnter;
 begin
@@ -733,7 +789,71 @@ procedure TposFrame.MouseLeave;
 begin
 end;
 
-{$ENDIF}
+procedure TposWinFrame.MouseMove(Shift: TShiftState; X, Y: Integer);
+var
+  aRect, R: TRect;
+  OldDown: Boolean;
+begin
+  if fsMouse in Style then
+  begin
+    if MouseCapture then
+    begin
+      if FActiveSubFrame <> nil then
+      begin
+        aRect := ClientRect;
+        OldDown := FActiveSubFrameDown;
+        R := FActiveSubFrame.GetRect(aRect);
+        if PtInRect(R, Point(X, Y)) then
+          FActiveSubFrameDown := True
+        else
+          FActiveSubFrameDown := False;
+        if OldDown <> FActiveSubFrameDown then
+          InvalidateRect(R);
+      end
+      else
+      begin
+        if PtInRect(ClientRect, Point(X, Y)) then
+          Down := True
+        else
+          Down := False;
+      end;
+    end;
+  end
+  else
+    inherited;
+end;
+
+procedure TposWinFrame.MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+var
+  aRect, R: TRect;
+begin
+  if fsMouse in Style then
+  begin
+    if Button = mbLeft then
+    try
+      if FActiveSubFrame = nil then
+        inherited;
+    finally
+      FActiveSubFrameDown := False;
+      if FActiveSubFrame <> nil then
+      begin
+        aRect := ClientRect;
+        R := FActiveSubFrame.GetRect(aRect);
+        InvalidateRect(R);
+        try
+          if PtInRect(R, Point(X, Y)) then
+            FActiveSubFrame.Click;
+        finally
+          FActiveSubFrame := nil;
+        end;
+      end
+      else
+        Down := False;
+    end;
+  end
+  else
+    inherited;
+end;
 
 procedure TposFrame.Snap;
   function SnapNow(x: Integer; Invert: Boolean = False): Integer;
@@ -950,6 +1070,15 @@ end;
 
 { TposSybariteFrame }
 
+procedure TposSybariteFrame.SetButtonShape(const Value: TposShapeKind);
+begin
+  if FButtonFrame.Shape <> Value then
+  begin
+    FButtonFrame.Shape := Value;
+    Invalidate;
+  end;
+end;
+
 procedure TposSybariteFrame.SetLabelCaption(const Value: TCaption);
 begin
   if FLabelFrame.Caption <> Value then
@@ -968,11 +1097,11 @@ begin
   end;
 end;
 
-procedure TposSybariteFrame.SetShowHaft(const Value: Boolean);
+procedure TposSybariteFrame.SetShowButton(const Value: Boolean);
 begin
-  if FHaftFrame.Visible <> Value then
+  if FButtonFrame.Visible <> Value then
   begin
-    FHaftFrame.Visible := Value;
+    FButtonFrame.Visible := Value;
     Invalidate;
   end;
 end;
@@ -980,7 +1109,7 @@ end;
 procedure TposSybariteFrame.Resize;
 begin
   inherited;
-  FHaftFrame.Width := InnerHeight;
+  FButtonFrame.Width := InnerHeight;
 end;
 
 procedure TposSybariteFrame.ChangeScale(M, D: Integer);
@@ -994,17 +1123,23 @@ begin
   inherited;
   FLabelFrame := TposLabelSubFrame.Create(Self);
   FLabelFrame.Place := sbpInner;
-  FHaftFrame := TposHaftSubFrame.Create(Self);
-  FHaftFrame.Place := sbpOuter;
-  FHaftFrame.Visible := False;
+  FButtonFrame := TposSybariteButtonSubFrame.Create(Self);
+  FButtonFrame.Place := sbpOuter;
+  FButtonFrame.Interactive := True;
+  FButtonFrame.Visible := False; 
   SubFrames.Add(FLabelFrame);
-  SubFrames.Add(FHaftFrame);
-  FHaftFrame.Width := InnerHeight;
+  SubFrames.Add(FButtonFrame);
+  FButtonFrame.Width := InnerHeight;
 end;
 
 destructor TposSybariteFrame.Destroy;
 begin
   inherited;
+end;
+
+function TposSybariteFrame.GetButtonShape: TposShapeKind;
+begin
+  Result := FButtonFrame.Shape;
 end;
 
 function TposSybariteFrame.GetLabelCaption: TCaption;
@@ -1017,9 +1152,9 @@ begin
   Result := FLabelFrame.Width;
 end;
 
-function TposSybariteFrame.GetShowHaft: Boolean;
+function TposSybariteFrame.GetShowButton: Boolean;
 begin
-  Result := FHaftFrame.Visible;
+  Result := FButtonFrame.Visible;
 end;
 
 {$IFDEF FPC}
@@ -1040,7 +1175,11 @@ end;
 
 { TposSubFrame }
 
-constructor TposSubFrame.Create(AFrame: TposFrame);
+procedure TposSubFrame.Click;
+begin
+end;
+
+constructor TposSubFrame.Create(AFrame: TposWinFrame);
 begin
   inherited Create;
   FFrame := AFrame;
@@ -1057,6 +1196,28 @@ begin
 end;
 
 { TposSubFrames }
+
+function TposSubFrames.GetByXY(vRect: TRect; X, Y: Integer): TposSubFrame;
+var
+  i: Integer;
+  R: TRect;
+  aItem: TposSubFrame;
+begin
+  Result := nil;
+  for i := 0 to Count -1 do
+  begin
+    aItem := Items[i];
+    if aItem.Interactive and (aItem.Place = sbpOuter) then
+    begin
+      R := aItem.GetRect(vRect);
+      if PtInRect(R, Point(X, Y)) then
+      begin
+        Result := aItem;
+        Break;
+      end;
+    end;
+  end;
+end;
 
 function TposSubFrames.GetItem(Index: Integer): TposSubFrame;
 begin
@@ -1110,8 +1271,8 @@ begin
     aRect := GetRect(vRect);
     aStyle := Frame.GetTextStyle;
     aStyle.Alignment := taCenter;
-    vColor := Lighten(Frame.Color, -25);
     vCanvas.Brush.Style := bsSolid;
+    vColor := Lighten(Frame.Color, -25);
     vCanvas.Brush.Color := vColor;
     vCanvas.FillRect(aRect);
     PaintText(vCanvas, Caption, aRect, aStyle);
@@ -1144,47 +1305,57 @@ begin
   inherited;
 end;
 
-{ TposHaftSubFrame }
+{ TposShapeSubFrame }
 
-function TposHaftSubFrame.GetRect(var vRect: TRect): TRect;
+function TposShapeSubFrame.GetRect(var vRect: TRect): TRect;
 begin
   Result := vRect;
   if Width > 0 then
   begin
     if Frame.UseRightToLeftAlignment then
     begin
-      Result.Right := Result.Left + Width;
+      Result.Right := Result.Left + Width + 1;
       vRect.Left := Result.Right;
     end
     else
     begin
-      Result.Left := Result.Right - Width;
+      Result.Left := Result.Right - Width - 1;
       vRect.Right := Result.Left;
     end;
   end;
 end;
 
-procedure TposHaftSubFrame.Paint(vCanvas: TCanvas; var vRect: TRect; vColor: TColor);
+procedure TposShapeSubFrame.Paint(vCanvas: TCanvas; var vRect: TRect; vColor: TColor);
 var
   aRect: TRect;
+  TR: TRect;
+  function IsDown:Boolean;
+  begin
+    Result := (Frame.FActiveSubFrame = Self) and Frame.FActiveSubFrameDown;
+  end;
 begin
   inherited;
   if Width > 0 then
   begin
     aRect := GetRect(vRect);
-    vCanvas.Brush.Color := Frame.Color;
-    vCanvas.FillRect(aRect);
+    TR := aRect;
     if Frame.UseRightToLeftAlignment then
     begin
       aRect.Right := aRect.Right - 1;
+      TR.Left := aRect.Right;
     end
     else
     begin
-      aRect.Right := aRect.Right + 1;
+      aRect.Left := aRect.Left + 1;
+      TR.Right := aRect.Left;
     end;
-    //ParentColor
-    PaintBorderButton(vCanvas, aRect, Frame.Color, clDefault, [pdsBorder]);
-    PaintShape(vCanvas, aRect, Shape, False, True, 0, Frame.Font.Color);
+    vCanvas.Brush.Color := Frame.GetParentColor;
+    vCanvas.FillRect(TR);
+    vCanvas.Brush.Color := Frame.Color;
+    vCanvas.FillRect(aRect);
+
+    PaintBorderButton(vCanvas, aRect, Frame.Color, clDefault, [pdsBorder], IsDown);
+    DrawShape(vCanvas, aRect, Shape, IsDown, True, 0, Frame.Font.Color);
   end;
 end;
 
@@ -1207,6 +1378,16 @@ end;
 function TposHelper.KeyPress(Sender: TposFrame; var Key: Char): Boolean;
 begin
   Result := False;
+end;
+
+{ TposSybariteButtonSubFrame }
+
+procedure TposSybariteButtonSubFrame.Click;
+begin
+  inherited;
+  if Frame is TposSybariteFrame then
+    if Assigned((Frame as TposSybariteFrame).OnButtonClick) then
+      (Frame as TposSybariteFrame).OnButtonClick(Frame);
 end;
 
 initialization

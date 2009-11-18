@@ -12,7 +12,7 @@ implementation
 
 procedure Register;
 begin
-  RegisterComponents('POS',[TposPanel, TposImage, TPOSButton, TPOSCheckBox, TposStuffs, TposSelectBox, TPOSKeyboard, TPOSFrame, TPOSEdit, TPOSVirtualGrid, TPOSList, TPOSGrid]);
+  RegisterComponents('POS',[TposPanel, TposImage, TposShape, TPOSButton, TPOSCheckBox, TposStuffs, TposSelectBox, TPOSKeyboard, TPOSFrame, TPOSEdit, TPOSVirtualGrid, TPOSList, TPOSGrid]);
 end;
 
 end.

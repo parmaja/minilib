@@ -17,7 +17,8 @@ unit posImages;
 interface
 
 uses
-  SysUtils, Classes, Graphics, Controls, StdCtrls, Forms, Types, posControls;
+  SysUtils, Classes, Graphics, Controls, StdCtrls, Forms, Types,
+  posControls, posDraws;
 
 type
   TposImage = class(TposFrame)
@@ -32,6 +33,19 @@ type
     destructor Destroy; override;
   published
     property Picture: TPicture read FPicture write SetPicture;
+  end;
+
+  TposShape = class(TposFrame)
+  private
+    FShape: TposShapeKind;
+    procedure SetShape(const Value: TposShapeKind);
+  protected
+    procedure PaintInner(vCanvas: TCanvas; var vRect: TRect; vColor: TColor); override;
+  public
+    constructor Create(AOwner: TComponent); override;
+    destructor Destroy; override;
+  published
+    property Shape: TposShapeKind read FShape write SetShape;
   end;
 
 implementation
@@ -141,6 +155,48 @@ begin
   if FPicture <> Value then
   begin
     FPicture.Assign(Value);
+  end;
+end;
+
+{ TposShape }
+
+constructor TposShape.Create(AOwner: TComponent);
+begin
+  inherited;
+
+end;
+
+destructor TposShape.Destroy;
+begin
+
+  inherited;
+end;
+
+procedure TposShape.PaintInner(vCanvas: TCanvas; var vRect: TRect;
+  vColor: TColor);
+begin
+  inherited;
+  vCanvas.Brush.Color := vColor;
+  if csDesigning in ComponentState then
+  begin
+    vCanvas.Pen.Color := Font.Color;
+    vCanvas.Pen.Style := psDot;
+    vCanvas.Pen.Width := 1;
+    vCanvas.Rectangle(vRect);
+  end
+  else
+  begin
+    vCanvas.FillRect(vRect);
+  end;
+  DrawShape(Canvas, vRect, Shape, False, True, 0, Font.Color);
+end;
+
+procedure TposShape.SetShape(const Value: TposShapeKind);
+begin
+  if FShape <> Value then
+  begin
+    FShape := Value;
+    Invalidate;
   end;
 end;
 

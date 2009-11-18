@@ -51,10 +51,6 @@ type
 function InflateRect(var Rect: TRect; dx, dy: Integer): TRect;
 {$ENDIF}
 
-type
-  TposShape = (shpNone, shpLeft, shpRight, shpFirst, shpLast, shpUp, shpDown, shpEllipsis, shpPin,
-    shpClose, shpPlus, shpOK, shpCheck, shpMinus, shpCross, shpStar, shpDiv, shpPoint);
-
 // Center
 procedure CenterRect(var R1: TRect; R2: TRect);
 function CollideRect(const R1, R2: TRect): Boolean;
@@ -72,15 +68,9 @@ function TextStyleToFormat(Style: TTextStyle): Longint;
 {$ENDIF}
 procedure PaintText(Canvas: TCanvas; Text: string; vRect: TRect; Style: TTextStyle);
 procedure PaintTextButton(Canvas: TCanvas; Text: string; Rect: TRect; States: TposDrawStates);
-procedure PaintBorderButton(Canvas: TCanvas; Rect: TRect; Color, BorderColor: TColor; States: TposDrawStates);
+procedure PaintBorderButton(Canvas: TCanvas; Rect: TRect; Color, BorderColor: TColor; States: TposDrawStates; Down:Boolean = False);
 procedure PaintButton(Canvas: TCanvas; Caption: string; Rect: TRect; Color, BorderColor: TColor; States: TposDrawStates);
-procedure PaintShape(Canvas: TCanvas; R: TRect; Shape: TposShape; ADown, AEnabled: Boolean; Size:Integer; Color: TColor);
-procedure PaintCheckBox(Canvas: TCanvas; R: TRect; AState: TCheckBoxState; AEnabled: Boolean; Shape: TposShape = shpCheck);
-
-//Restaurant tables not Database table :)
 procedure PaintRect(Canvas: TCanvas; const vRect: TRect);
-procedure PaintChair(Canvas: TCanvas; const vRect: TRect; UpDown: Boolean; Opaque: Boolean);
-procedure PaintBuffet(Canvas: TCanvas; const vRect: TRect; Chairs: Integer; Center, Opaque: Boolean);
 
 //
 procedure BidiAlignment(var Style:TTextStyle);
@@ -282,7 +272,7 @@ begin
   PaintText(Canvas, Text, Rect, aStyle);
 end;
 
-procedure PaintBorderButton(Canvas: TCanvas; Rect: TRect; Color, BorderColor: TColor; States: TposDrawStates);
+procedure PaintBorderButton(Canvas: TCanvas; Rect: TRect; Color, BorderColor: TColor; States: TposDrawStates; Down:Boolean);
 begin
   Canvas.Pen.Style := psSolid;
   Canvas.Pen.Width := 1;
@@ -290,7 +280,7 @@ begin
   if BorderColor = clDefault then
     BorderColor := Lighten(Color, 30);
 
-  if pdsDown in States then
+  if Down or (pdsDown in States) then
     Canvas.Pen.Color := Lighten(Color, 20)
   else
     Canvas.Pen.Color := BorderColor;
@@ -299,7 +289,7 @@ begin
   Canvas.LineTo(Rect.Right - 1, Rect.Bottom - 1);
   Canvas.LineTo(Rect.Left, Rect.Bottom - 1);
 
-  if pdsDown in States then
+  if Down or (pdsDown in States) then
     Canvas.Pen.Color := Lighten(BorderColor, -75)
   else
     Canvas.Pen.Color := BorderColor;
@@ -377,90 +367,6 @@ begin
   Canvas.LineTo(vRect.Left, vRect.Top);
 end;
 
-procedure PaintChair(Canvas: TCanvas; const vRect: TRect; UpDown: Boolean; Opaque: Boolean);
-var
-  r: TRect;
-begin
-  if UpDown then
-  begin
-    r := vRect;
-    r.Bottom := r.Top + 4;
-    r.Left := r.Left + 3;
-    r.Right := r.Right - 3;
-    Canvas.Rectangle(r);
-
-    r := vRect;
-    r.Bottom := r.Top + 2;
-    Canvas.Rectangle(r);
-
-    r := vRect;
-    r.Top := r.Top + 2;
-    InflateRect(r, -1, -1);
-    Canvas.Rectangle(r);
-  end
-  else
-  begin
-    r := vRect;
-    r.Top := r.Bottom - 4;
-    r.Left := r.Left + 3;
-    r.Right := r.Right - 3;
-    Canvas.Rectangle(r);
-
-    r := vRect;
-    r.Top := r.Bottom - 2;
-    Canvas.Rectangle(r);
-
-    r := vRect;
-    r.Bottom := r.Bottom - 2;
-    InflateRect(r, -1, -1);
-    Canvas.Rectangle(r);
-  end
-end;
-
-procedure PaintBuffet(Canvas: TCanvas; const vRect: TRect; Chairs: Integer; Center, Opaque: Boolean);
-var
-  i, x: Integer;
-  Parts: Integer;
-  r, rTable: TRect;
-const
-  cSpace = 2;
-  cChairHeight = 8;
-  cChairWidth = 8;
-  cWhale = cSpace + cChairWidth + cSpace;
-begin
-  Parts := Chairs div 2;
-  if (Chairs mod 2) > 0 then
-    Parts := Parts + 1;
-  rTable.Left := 0;
-  rTable.Top := 0;
-  rTable.Right := cSpace + Parts * (cSpace + cChairWidth);
-  rTable.Bottom := rTable.Top + cWhale;
-  if Center then
-    CenterRect(rTable, vRect)
-  else
-    OffsetRect(rTable, vRect.Left, vRect.Top + cWhale);
-  x := rTable.Left + cSpace;
-  for i := 1 to Chairs do
-  begin
-    r.Left := x;
-    r.Right := r.Left + cChairWidth;
-    if Odd(i) then
-    begin
-      r.Bottom := rTable.Top;
-      r.Top := r.Bottom - cChairHeight;
-      PaintChair(Canvas, r, True, Opaque);
-    end
-    else
-    begin
-      r.Top := rTable.Bottom;
-      r.Bottom := r.Top + cChairHeight;
-      PaintChair(Canvas, r, False, Opaque);
-      x := x + cSpace + cChairWidth;
-    end;
-  end;
-  Canvas.RoundRect(rTable.Left, rTable.Top, rTable.Right, rTable.Bottom, 5, 5);
-end;
-
 procedure ExcludeClipRect(vCanvas: TCanvas; vRect: TRect);
 begin
 {$IFDEF FPC}
@@ -468,323 +374,6 @@ begin
 {$ELSE}
   Windows.ExcludeClipRect(vCanvas.Handle, vRect.Left, vRect.Top, vRect.Right, vRect.Bottom);
 {$ENDIF}
-end;
-
-procedure PaintShape(Canvas: TCanvas; R: TRect; Shape: TposShape; ADown, AEnabled: Boolean; Size:Integer; Color: TColor);
-var
-  x, y: Integer;
-  w, h: Integer;
-  z: Integer;
-begin
-  w := (R.Right - R.Left);
-  h := (R.Bottom - R.Top);
-  case Shape of
-    shpEllipsis:
-      begin
-        x := (R.Right - R.Left) div 2 - 4 + R.Left;
-        y := (R.Bottom - R.Top) div 2 - 1 + R.Top;
-        if ADown then
-          Inc(y, 1);
-        Canvas.Brush.Color := Color;
-        Canvas.Pen.Color := Color;
-        Canvas.Rectangle(x, y, x + 2, y + 2);
-        x := x + 3;
-        Canvas.Rectangle(x, y, x + 2, y + 2);
-        x := x + 3;
-        Canvas.Rectangle(x, y, x + 2, y + 2);
-      end;
-    shpDown, shpLast:
-      begin
-        x := w div 2 + R.Left;
-        y := h div 2 + R.Top;
-        z := Size;
-        if z = 0 then
-        begin
-          z := w div 4;
-          if z <= 0 then
-            z := 1;
-        end;
-        if AEnabled then
-          Canvas.Brush.Style := bsClear
-        else
-          Canvas.Brush.Style := bsSolid;
-        Canvas.Brush.Color := Color;
-        Canvas.Pen.Color := Color;
-        if ADown then
-        begin
-          Inc(x);
-          Inc(y);
-        end;
-        if Shape = shpLast then
-        begin
-          Canvas.Rectangle(x - z * 2 + 1, y + 2 * z + 1, x + 2 * z, y + z + 1);
-          Dec(y, z);
-        end;
-        Canvas.Polygon([Point(x, y + z), Point(x + 2 * z - 1, y - z + 1), Point(x - 2 * z + 1, y - z + 1)]);
-      end;
-    shpUp, shpFirst:
-      begin
-        x := w div 2 + R.Left;
-        y := h div 2 + R.Top;
-        z := Size;
-        if z = 0 then
-        begin
-          z := w div 4;
-          if z <= 0 then
-            z := 1;
-        end;
-        if AEnabled then
-          Canvas.Brush.Style := bsClear
-        else
-          Canvas.Brush.Style := bsSolid;
-        Canvas.Brush.Color := Color;
-        Canvas.Pen.Color := Color;
-        if Shape = shpFirst then
-        begin
-          Canvas.Rectangle(x - z * 2 + 1, y - 2 * z, x + 2 * z, y - z);
-          Inc(y, z);
-        end;
-        Canvas.Polygon([Point(x, y - z), Point(x + 2 * z - 1, y + z - 1), Point(x - 2 * z + 1, y + z - 1)]);
-      end;
-    shpCross:
-      begin
-        x := w div 2 + R.Left;
-        y := h div 2 + R.Top;
-        z := Size;
-        if z = 0 then
-        begin
-          z := w div 10;
-          if z <= 0 then
-            z := 1;
-        end;
-        if AEnabled then
-          Canvas.Brush.Style := bsClear
-        else
-          Canvas.Brush.Style := bsSolid;
-        Canvas.Brush.Color := Color;
-        Canvas.Pen.Color := Color;
-        if z = 1 then
-        begin
-          Canvas.MoveTo(x - 2, y - 2);
-          Canvas.LineTo(x + 3, y + 3);
-          Canvas.MoveTo(x + 2, y - 2);
-          Canvas.LineTo(x - 3, y + 3);
-        end
-        else
-        begin
-          z := z - 1;
-          Canvas.Polygon([Point(x + z * 2, y - z * 3), Point(x + z * 3, y - z * 2 ), Point(x - z * 2, y + z * 3), Point(x - 3 * z, y + z * 2)]);
-          Canvas.Polygon([Point(x - z * 2, y - z * 3), Point(x - z * 3, y - z * 2 ), Point(x + z * 2, y + z * 3), Point(x + 3 * z, y + z * 2)]);
-        end;
-      end;
-    shpStar:
-      begin
-        x := (R.Right - R.Left) div 2 + R.Left;
-        y := (R.Bottom - R.Top) div 2 + R.Top;
-        Canvas.Pen.Color := Color;
-        Canvas.MoveTo(x, y - 2);
-        Canvas.LineTo(x, y + 3);
-        Canvas.MoveTo(x - 2, y - 1);
-        Canvas.LineTo(x, y + 1);
-        Canvas.MoveTo(x + 2, y - 1);
-        Canvas.LineTo(x, y + 1);
-        Canvas.MoveTo(x + 2, y + 1);
-        Canvas.LineTo(x, y - 1);
-        Canvas.MoveTo(x - 2, y + 1);
-        Canvas.LineTo(x, y - 1);
-      end;
-    shpOK, shpCheck:
-      begin
-        x := w div 2 + R.Left;
-        y := h div 2 + R.Top;
-        z := Size;
-        if z = 0 then
-        begin
-          z := w div 10;
-          if z <= 0 then
-            z := 1;
-        end;
-        if AEnabled then
-          Canvas.Brush.Style := bsClear
-        else
-          Canvas.Brush.Style := bsSolid;
-        Canvas.Pen.Color := Color;
-        Canvas.Brush.Color := Color;
-        Canvas.Polygon([Point(x - z * 3, y - z), Point(x - z * 3, y + z), Point(x - z, y + z * 3), Point(x + z * 3, y - z), Point(x + z * 3, y - z * 3), Point(x - z, y + z)]);
-      end;
-    shpMinus:
-      begin
-        x := (R.Right - R.Left) div 2 + R.Left;
-        y := (R.Bottom - R.Top) div 2 + R.Top;
-        Canvas.Pen.Color := Color;
-        Canvas.MoveTo(x - 3, y);
-        Canvas.LineTo(x + 4, y);
-      end;
-    shpPlus:
-      begin
-        x := (R.Right - R.Left) div 2 + R.Left;
-        y := (R.Bottom - R.Top) div 2 + R.Top;
-        Canvas.Pen.Color := Color;
-        Canvas.MoveTo(x - 3, y);
-        Canvas.LineTo(x + 4, y);
-        Canvas.MoveTo(x, y - 3);
-        Canvas.LineTo(x, y + 4);
-      end;
-    shpDiv:
-      begin
-        x := (R.Right - R.Left) div 2 + R.Left;
-        y := (R.Bottom - R.Top) div 2 + R.Top;
-        Canvas.Pen.Color := Color;
-        Canvas.MoveTo(x, y - 3);
-        Canvas.LineTo(x, y - 1);
-        Canvas.MoveTo(x - 3, y);
-        Canvas.LineTo(x + 4, y);
-        Canvas.MoveTo(x, y + 3);
-        Canvas.LineTo(x, y + 1);
-      end;
-    shpLeft:
-      begin
-        x := (R.Right - R.Left) div 2 + R.Left;
-        y := (R.Bottom - R.Top) div 2 + R.Top;
-        if AEnabled then
-        begin
-          Canvas.Brush.Color := Color;
-          Canvas.Pen.Color := Color;
-          if ADown then
-          begin
-            Inc(x);
-            Inc(y);
-          end;
-          Canvas.Polygon([Point(x - 2, y), Point(x + 1, y - 3), Point(x + 1, y + 3)]);
-        end
-        else
-        begin
-          Canvas.Brush.Color := clWhite;
-          Canvas.Pen.Color := clWhite;
-          Inc(x);
-          Inc(y);
-          Canvas.Polygon([Point(x - 2, y), Point(x + 1, y - 3), Point(x + 1, y + 3)]);
-          Canvas.Brush.Color := clGray;
-          Dec(x);
-          Dec(y);
-          Canvas.Pen.Color := clGray;
-          Canvas.Polygon([Point(x - 2, y), Point(x + 1, y - 3), Point(x + 1, y + 3)]);
-        end;
-      end;
-    shpRight:
-      begin
-        x := (R.Right - R.Left) div 2 + R.Left;
-        y := (R.Bottom - R.Top) div 2 + R.Top;
-        if AEnabled then
-        begin
-          Canvas.Brush.Color := Color;
-          Canvas.Pen.Color := Color;
-          if ADown then
-          begin
-            Inc(x);
-            Inc(y);
-          end;
-          Canvas.Polygon([Point(x + 2, y), Point(x - 1, y - 3), Point(x - 1, y + 3)]);
-        end
-        else
-        begin
-          Canvas.Brush.Color := clWhite;
-          Canvas.Pen.Color := clWhite;
-          Inc(x);
-          Inc(y);
-          Canvas.Polygon([Point(x + 2, y), Point(x - 1, y - 3), Point(x - 1, y + 3)]);
-          Canvas.Brush.Color := clGray;
-          Dec(x);
-          Dec(y);
-          Canvas.Pen.Color := clGray;
-          Canvas.Polygon([Point(x + 2, y), Point(x - 1, y - 3), Point(x - 1, y + 3)]);
-        end;
-      end;
-    shpPoint:
-      begin
-        x := (R.Right - R.Left) div 2 + R.Left;
-        y := (R.Bottom - R.Top) div 2 + R.Top;
-        if ADown then
-          Inc(y, 1);
-        Canvas.Brush.Color := Color;
-        Canvas.Pen.Color := Color;
-        Canvas.Ellipse(x - 2, y - 2, x + 3, y + 3);
-      end;
-    shpClose:
-      begin
-        x := (R.Right - R.Left) div 2 + R.Left;
-        y := (R.Bottom - R.Top) div 2 + R.Top;
-        Canvas.Pen.Color := Color;
-        Canvas.MoveTo(x - 3, y - 3);
-        Canvas.LineTo(x + 4, y + 4);
-        Canvas.MoveTo(x - 2, y - 3);
-        Canvas.LineTo(x + 4, y + 3);
-        Canvas.MoveTo(x - 3, y - 2);
-        Canvas.LineTo(x + 3, y + 4);
-        Canvas.MoveTo(x + 3, y - 3);
-        Canvas.LineTo(x - 4, y + 4);
-        Canvas.MoveTo(x + 2, y - 3);
-        Canvas.LineTo(x - 4, y + 3);
-        Canvas.MoveTo(x + 3, y - 2);
-        Canvas.LineTo(x - 3, y + 4);
-      end;
-    shpPin:
-      begin
-        begin
-          x := (R.Right - R.Left) div 2 + R.Left;
-          y := (R.Bottom - R.Top) div 2 + R.Top;
-          Canvas.Pen.Color := Color;
-          Canvas.MoveTo(x - 2, y - 2);
-          Canvas.LineTo(x + 3, y + 3);
-          Canvas.MoveTo(x - 1, y - 1);
-          Canvas.LineTo(x + 1, y - 3);
-          Canvas.LineTo(x + 3, y - 1);
-          Canvas.LineTo(x + 1, y + 1);
-          Canvas.MoveTo(x - 3, y + 3);
-          Canvas.LineTo(x, y);
-          Canvas.MoveTo(x - 2, y + 3);
-          Canvas.LineTo(x + 1, y);
-          Canvas.MoveTo(x - 3, y + 2);
-          Canvas.LineTo(x, y - 1);
-        end;
-      end;
-  end;
-end;
-
-procedure PaintCheckBox(Canvas: TCanvas; R: TRect; AState: TCheckBoxState; AEnabled: Boolean; Shape: TposShape);
-var
-  x, y, b: Integer;
-  aColor: TColor;
-begin
-  b := ((R.Right - R.Left) - 8) div 2;
-  x := R.Left + b;
-  b := ((R.Bottom - R.Top) - 8) div 2;
-  y := R.Top + b;
-  with Canvas do
-  begin
-    Pen.Color := clGray;
-    Brush.Color := clWhite;
-    Rectangle(x - 1, y - 1, x + 10, y + 10);
-    if AEnabled then
-      Pen.Color := clBlack
-    else
-      Pen.Color := clltGray;
-    if AState <> cbUnchecked then
-    begin
-      case AState of
-        cbChecked:
-          begin
-            if AEnabled then
-              aColor := clBlack
-            else
-              aColor := clLtGray;
-          end;
-      else
-        aColor := clGray;
-      end;
-      PaintShape(Canvas, R, Shape, False, True, 0, aColor);
-    end;
-  end;
 end;
 
 procedure BidiAlignment(var Style:TTextStyle);

@@ -68,7 +68,7 @@ constructor TposEdit.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
   ControlStyle := ControlStyle + [csSetCaption] + [csOpaque];
-  Style := Style + [fsOpaque]; // - [fsBorder];
+  Style := Style + [fsMouse, fsOpaque]; // - [fsBorder];
   Width := 60;
   Height := 22;
   FTextMargin := 1;

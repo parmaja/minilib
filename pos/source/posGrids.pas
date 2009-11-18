@@ -1,4 +1,4 @@
-unit posGrids; 
+unit posGrids;
 {**
  *  This file is part of the "Mini Library"
  *
@@ -18,7 +18,7 @@ interface
 
 uses
   SysUtils, Classes, Graphics, Controls, StdCtrls, Forms, Types, Contnrs,
-  posTypes, posLists, posControls;
+  posTypes, posDraws, posLists, posControls;
 
 type
   TposCustomColumn = class;
@@ -938,13 +938,10 @@ end;
 
 { TposCheckedColumn }
 
-procedure TposCheckedColumn.PaintCell(Canvas: TCanvas; ACell: TposCellInfo; Row: Integer; Rect: TRect; Color: TColor; LastCell:Boolean); 
-var
-  TextRect: TRect;
+procedure TposCheckedColumn.PaintCell(Canvas: TCanvas; ACell: TposCellInfo; Row: Integer; Rect: TRect; Color: TColor; LastCell:Boolean);
 begin
   inherited;
-  TextRect := Rect;
-  PaintCheckBox(Canvas, TextRect, cbChecked, True);
+  DrawShape(Canvas, Rect, shpCheck, False, True, 0, Color);
 end;
 
 function TposGridRowCells.GetItems(Index: Integer): TposCell;
