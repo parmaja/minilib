@@ -280,6 +280,7 @@ type
     function FindLanguage(const Name: string): TLanguage;
     function IndexOfLanguage(const Name: string): Integer;
     function NextLanguageName: string;
+    function NextLanguage: TLanguage;
     property DefaultLanguage: TLanguage read FDefaultLanguage;
     property Current: TLanguage read GetCurrent;
     function GetText(const vID: string): string; overload;
@@ -791,6 +792,16 @@ begin
   Result := S;
   if Assigned(FOnMacro) then
     FOnMacro(Result);
+end;
+
+function TLanguages.NextLanguage: TLanguage;
+var
+  i: Integer;
+begin
+  i := IndexOfLanguage(Current.Name) + 1;
+  if i >= Count then
+    i := 0;
+  Result := Items[i];
 end;
 
 function TLanguages.NextLanguageName: string;

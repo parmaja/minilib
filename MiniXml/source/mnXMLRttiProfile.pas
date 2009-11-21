@@ -101,7 +101,8 @@ type
     function GetOwnsObjects: Boolean;
     procedure SetOwnsObjects(const Value: Boolean);
   protected
-    function DoCreateItem(AClass: TmnXMLItemClass): TmnXMLItem; virtual; 
+    function DoCreateItem(AClass: TmnXMLItemClass): TmnXMLItem; virtual;
+    procedure Deleted(Index: Integer); virtual;
   public
     constructor Create(AOwnsObjects: Boolean = True);
     destructor Destroy; override;
@@ -535,7 +536,9 @@ end;
 
 function TmnXMLItems.Remove(AItem: TmnXMLItem): Integer;
 begin
-  Result := FList.Remove(AItem);
+  Result := IndexOf(AItem);
+  if Result >= 0 then
+    Delete(Result);
 end;
 
 procedure TmnXMLItems.SetCount(const Value: Integer);
@@ -589,6 +592,11 @@ end;
 procedure TmnXMLItems.Delete(Index: Integer);
 begin
   FList.Delete(Index);
+  Deleted(Index);
+end;
+
+procedure TmnXMLItems.Deleted(Index: Integer);
+begin
 end;
 
 destructor TmnXMLItems.Destroy;

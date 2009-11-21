@@ -18,7 +18,7 @@ interface
 
 uses
   {$ifdef fpc}
-  LCLTypes,
+  LCLType,
   {$else}
   Windows,
   {$endif}

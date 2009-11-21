@@ -174,14 +174,13 @@ type
     procedure Resize; override;
     procedure Loaded; override;
     procedure ChangeScale(M, D: Integer); override;
-    function GetInnerRect: TRect; override;
-    procedure PaintOuter(vCanvas: TCanvas; var vRect: TRect; vColor: TColor); override;
     procedure PaintInner(vCanvas: TCanvas; var vRect: TRect; vColor: TColor); override;
     function ProcessKey(var Key: Word; Shift: TShiftState): Boolean; virtual;
     procedure StuffClicked(Stuff: IposStuff);
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
+    function GetInnerRect: TRect; override;
     function GetInputs: TposFrameInputs; override;
     procedure Clear;
     procedure NextItem;
@@ -290,7 +289,7 @@ begin
     aItems := TposStuffLocator.Create(Self);
     try
       aItems.FResultRect := Rect(0, 0, 0, 0);
-      aItems.EnumStuffs(TopIndex, False, InnerRect, aItems.CalcRect);
+      aItems.EnumStuffs(TopIndex, False, GetInnerRect, aItems.CalcRect);
       Result := aItems.FResultRect.Bottom - aItems.FResultRect.Top; 
     finally
       aItems.Free;
@@ -330,7 +329,7 @@ begin
   begin
     aLocator := TposStuffLocator.Create(Self);
     try
-      if not aLocator.IndexFound(TopIndex, False, InnerRect, ItemIndex + 1) then
+      if not aLocator.IndexFound(TopIndex, False, GetInnerRect, ItemIndex + 1) then
         PageDown
       else
         ItemIndex := ItemIndex + 1;
@@ -448,6 +447,9 @@ begin
   if (Items <> nil) and (Shift = []) then
   begin
     case Key of
+      VK_LEFT: NextItem;
+      VK_RIGHT: PriorItem;
+      VK_RETURN: ClickItem;
 {      Vk_Home:
         ChangeItemIndex(0, True);
       Vk_End:
@@ -663,7 +665,7 @@ begin
   begin
     aItems := TposStuffLocator.Create(Self);
     try
-      aItem := aItems.CheckIndex(TopIndex, False, InnerRect, Index);
+      aItem := aItems.CheckIndex(TopIndex, False, GetInnerRect, Index);
       if aItem <> nil then
       begin
         vRect := aItem.Rect;
@@ -715,11 +717,6 @@ begin
   Result := FItems;
 end;
 
-procedure TposStuffs.PaintOuter(vCanvas: TCanvas; var vRect: TRect; vColor: TColor);
-begin
-  inherited;
-end;
-
 function TposStuffs.GetInputs: TposFrameInputs;
 begin
   Result := inherited GetInputs + [fiArrow];
@@ -735,7 +732,7 @@ begin
     aItems := TposStuffLocator.Create(Self);
     BeginUpdate;
     try
-      i := aItems.EnumStuffs(TopIndex, False, InnerRect, nil) + 1;
+      i := aItems.EnumStuffs(TopIndex, False, GetInnerRect, nil) + 1;
       if (i >= 0) and (i < Items.Count) then
       begin
         TopIndex := i;
@@ -759,7 +756,7 @@ begin
     begin
       aItems := TposStuffLocator.Create(Self);
       try
-        i := aItems.EnumStuffs(TopIndex - 1, True, InnerRect, nil);
+        i := aItems.EnumStuffs(TopIndex - 1, True, GetInnerRect, nil);
         if i >= 0 then
         begin
           BeginUpdate;

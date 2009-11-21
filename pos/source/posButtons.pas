@@ -40,6 +40,9 @@ type
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
   published
+    property LabelCaption;
+    property LabelWidth;
+    property LabelMode;
     property Align;
     property Anchors;
     property Caption: TCaption read FCaption write SetCaption;
@@ -93,7 +96,7 @@ type
 implementation
 
 uses
-  posUtils;
+  posUtils, posDraws;
 
 procedure TposButton.SetCaption(Value: TCaption);
 begin
@@ -148,7 +151,7 @@ begin
   vCanvas.Font := Self.Font;
   aCaption := '';
   GetCaption(aCaption);
-  PaintButton(vCanvas, aCaption, aRect, vColor, clDefault, States + [pdsBorder] + cRightToLeftStates[UseRightToLeftAlignment]);
+  PaintButton(vCanvas, aCaption, shpNone, aRect, vColor, clDefault, States + [pdsBorder] + cRightToLeftStates[UseRightToLeftAlignment]);
 end;
 
 procedure TposButton.GetCaption(var vCaption: string);
@@ -201,7 +204,7 @@ function TposButtonStuff.Draw(vCanvas: TCanvas; vRect: TRect; vColor: TColor; vS
 begin
   if FColor <> clDefault then
     vColor := FColor;
-  PaintButton(vCanvas, Caption, vRect, vColor, clDefault, vStates + FStates + [pdsBorder]);
+  PaintButton(vCanvas, Caption, shpNone, vRect, vColor, clDefault, vStates + FStates + [pdsBorder]);
   Result := True;
 end;
 

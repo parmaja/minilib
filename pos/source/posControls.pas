@@ -14,6 +14,27 @@ unit posControls;
 {$MODE delphi}
 {$ENDIF}
 
+{
+M Margin filled with parent color
+O Outer SubFrames
+B Border filled with border color
+P Padding filled with border color
+I Inner SubFrames
+"White space" + SubFrames: named ContentsRect
+"White space": named InnerRect
+
+MMMMMMMMMMMMMMMMMMMMMMMMMMMMM
+MOOOBBBBBBBBBBBBBBBBBBBBBOOOM
+MOOOBPPPPPPPPPPPPPPPPPPPBOOOM
+MOOOBPII             IIPBOOOM
+MOOOBPII             IIPBOOOM
+MOOOBPPPPPPPPPPPPPPPPPPPBOOOM
+MOOOBBBBBBBBBBBBBBBBBBBBBOOOM
+MMMMMMMMMMMMMMMMMMMMMMMMMMMMM
+
+SubFrame must fill its background
+}
+
 interface
 
 uses
@@ -56,7 +77,7 @@ type
 
   TposFrame = class(TGraphicControl)
   private
-    FFocused: boolean;
+    FFocused: Boolean;
     FOnFocused: TNotifyEvent;
     FStyle: TposFrameStyle;
     FBorderWidth: Integer;
@@ -98,7 +119,6 @@ type
     procedure Resized; virtual;
     procedure HelperChanged; virtual;
     procedure Resize; override;
-    function GetInnerRect: TRect; virtual;
     procedure PaintOuter(vCanvas: TCanvas; var vRect: TRect; vColor: TColor); virtual;
     procedure PaintInner(vCanvas: TCanvas; var vRect: TRect; vColor: TColor); virtual;
     procedure PaintBackground(vCanvas: TCanvas; vRect: TRect; vColor: TColor); virtual;
@@ -107,7 +127,6 @@ type
     procedure ChangeScale(M, D: Integer); override;
     procedure Snap; virtual;
     procedure InvalidateRect(vRect: TRect); virtual;
-    property InnerRect: TRect read GetInnerRect;
     property InnerHeight: Integer read GetInnerHeight;
     property InnerWidth: Integer read GetInnerWidth;
   public
@@ -116,6 +135,9 @@ type
     procedure Invalidate; override;
     procedure BeginUpdate;
     procedure EndUpdate;
+    function GetOuterRect: TRect; virtual;
+    function GetContentsRect: TRect; virtual;
+    function GetInnerRect: TRect; virtual;
     function GetParentColor: TColor;
     function GetTextStyle: TTextStyle; virtual; //in public to calc the style outside the control
     function GetInputs: TposFrameInputs; virtual;
@@ -215,6 +237,7 @@ type
   public
     procedure Paint(vPlace: TposSubFramePlace; vCanvas: TCanvas; var Rect: TRect; vColor: TColor); virtual;
     function GetByXY(vRect: TRect; X, Y: Integer): TposSubFrame;
+    procedure GetRect(vPlace: TposSubFramePlace; var vRect: TRect);
     property Items[Index: Integer]: TposSubFrame read GetItem write SetItem; default;
   end;
 
@@ -253,6 +276,9 @@ type
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
+    function GetOuterRect: TRect; override;
+    function GetContentsRect: TRect; override;
+    function GetInnerRect: TRect; override;
     property SubFrames: TposSubFrames read FSubFrames;
   end;
 
@@ -260,6 +286,12 @@ type
   TposSybariteButtonSubFrame = class(TposShapeSubFrame)
   protected
     procedure Click; override;
+  public
+  end;
+
+  TposSybariteHelper = class(TposHelper)
+  protected
+    procedure ButtonClick(Sender: TposFrame); virtual;
   public
   end;
 
@@ -273,24 +305,24 @@ type
     procedure SetLabelWidth(const Value: Integer);
     function GetLabelCaption: TCaption;
     function GetLabelWidth: Integer;
-    procedure SetShowButton(const Value: Boolean);
-    function GetShowButton: Boolean;
+    procedure SetButtonShow(const Value: Boolean);
+    function GetButtonShow: Boolean;
     function GetButtonShape: TposShapeKind;
     procedure SetButtonShape(const Value: TposShapeKind);
   protected
     procedure ChangeScale(M, D: Integer); override;
-    procedure Resize; override;
+    procedure DoButtonClick;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
-  published
     property LabelCaption: TCaption read GetLabelCaption write SetLabelCaption;
     property LabelWidth: Integer read GetLabelWidth write SetLabelWidth default 0;
     //LabelMode make it as TLabel not TEdit usefull for translating engine
     property LabelMode: Boolean read FLabelMode write FLabelMode default False;
-    property ShowButton: Boolean read GetShowButton write SetShowButton default False;
+    property ButtonShow: Boolean read GetButtonShow write SetButtonShow default False;
     property ButtonShape: TposShapeKind read GetButtonShape write SetButtonShape default shpNone;
-    property OnButtonClick: TNotifyEvent read FOnButtonClick write FOnButtonClick; 
+    property OnButtonClick: TNotifyEvent read FOnButtonClick write FOnButtonClick;
+  published
   end;
 
   TposCustomFrame = class(TposWinFrame)
@@ -462,50 +494,51 @@ end;
 procedure TposFrame.Paint;
 var
   aRect: TRect;
-  TmpRect: TRect;
+  aInnerRect: TRect;
   aColor: TColor;
+  procedure FrameRect(R: TRect; vSize: Integer; vColor:TColor);
+  begin
+    if (vSize > 0) then
+    begin
+      if vSize = 1 then
+      begin
+        Canvas.Brush.Style := bsClear;
+        Canvas.Pen.Style := psSolid;
+        Canvas.Pen.Color := vColor;
+        PaintRect(Canvas, R);
+        Canvas.Brush.Style := bsSolid;
+      end
+      else
+      begin
+        Canvas.Brush.Color := vColor;
+        Canvas.Brush.Style := bsSolid;
+        Canvas.FillRect(Rect(R.Left, R.Top, R.Right, R.Top + vSize));
+        Canvas.FillRect(Rect(R.Right - vSize, R.Top, R.Right, R.Bottom));
+        Canvas.FillRect(Rect(R.Left, R.Bottom - vSize, R.Right, R.Bottom));
+        Canvas.FillRect(Rect(R.Left, R.Top, R.Left + vSize, R.Bottom));
+      end;
+    end;
+  end;
+var
+  TmpRect: TRect;
 begin
   inherited;
-  if Parent <> nil then
-  begin
-    if ParentColor then
-      aColor := Parent.Brush.Color
-    else
-      aColor := Color;
-  end
-  else
-    aColor := clBtnFace;
-
+   aColor := Color;
   Canvas.Font := Self.Font;
   Canvas.Brush.Style := bsSolid;
   aRect := ClientRect;
-  if (Margin > 0) and (Parent <> nil) then
+  if (Margin > 0) then
   begin
-    if Margin = 1 then
-    begin
-      Canvas.Brush.Style := bsClear;
-      Canvas.Pen.Style := psSolid;
-      Canvas.Pen.Color := GetParentColor;
-      TmpRect := aRect;
-      PaintRect(Canvas, TmpRect);
-    end
-    else
-    begin
-      Canvas.Brush.Style := bsSolid;
-      Canvas.Brush.Color := GetParentColor;
-      Canvas.FillRect(Rect(aRect.Left, aRect.Top, aRect.Right, aRect.Top + Margin));
-      Canvas.FillRect(Rect(aRect.Right - Margin, aRect.Top, aRect.Right, aRect.Bottom));
-      Canvas.FillRect(Rect(aRect.Left, aRect.Bottom - Margin, aRect.Right, aRect.Bottom));
-      Canvas.FillRect(Rect(aRect.Left, aRect.Top, aRect.Left + Margin, aRect.Bottom));
-    end;
-    Canvas.Brush.Style := bsSolid;
+    FrameRect(aRect, Margin, GetParentColor);
+    InflateRect(aRect, -Margin, -Margin);
   end;
-  InflateRect(aRect, -Margin, -Margin);
+
   PaintOuter(Canvas, aRect, aColor);
+
   if fsBorder in Style then
   begin
     TmpRect := aRect;
-    InflateRect(aRect, -BorderWidth, -BorderWidth);
+//    InflateRect(aRect, -BorderWidth, -BorderWidth);
     if Focused then
       Canvas.Pen.Color := Lighten(aColor, 50)
     else
@@ -515,14 +548,18 @@ begin
     Canvas.Brush.Style := bsClear;
     PaintRect(Canvas, TmpRect);
     Canvas.Brush.Style := bsSolid;
+    InflateRect(aRect, -BorderWidth, -BorderWidth);
   end;
-  if (fsOpaque in Style) and not (fsLatedOpaque in Style) then
-    PaintBackground(Canvas, aRect, aColor);
+
+  FrameRect(aRect, Padding, aColor);
   InflateRect(aRect, -Padding, -Padding);
+
+  aInnerRect := GetInnerRect;
+  if (fsOpaque in Style) and not (fsLatedOpaque in Style) then
+    PaintBackground(Canvas, aInnerRect, aColor);
   PaintInner(Canvas, aRect, aColor);
-  InflateRect(aRect, +Padding, +Padding);
-  if (fsLatedOpaque in Style) then
-    PaintBackground(Canvas, aRect, aColor);
+  if (fsOpaque in Style) and  (fsLatedOpaque in Style) then
+    PaintBackground(Canvas, aInnerRect, aColor);
 end;
 
 procedure TposFrame.PaintBackground(vCanvas: TCanvas; vRect: TRect; vColor: TColor);
@@ -675,11 +712,19 @@ begin
   Result := pdsActive in FStates;
 end;
 
+function TposFrame.GetContentsRect: TRect;
+begin
+  Result := GetOuterRect;
+  if fsBorder in Style then
+    InflateRect(Result, -BorderWidth, -BorderWidth);
+  InflateRect(Result, -Padding, -Padding);
+end;
+
 constructor TposFrame.Create(AOwner: TComponent);
 begin
   inherited;
   FStyle := [fsBorder];
-  ControlStyle := ControlStyle + [csOpaque, csDoubleClicks];
+  ControlStyle := ControlStyle + [csOpaque, csDoubleClicks] - [csClickEvents];
   {$ifdef WINCE}
   //ControlStyle := ControlStyle - [csDoubleClicks];
   {$endif}
@@ -749,6 +794,7 @@ begin
   inherited;
   MouseLeave;
 end;
+
 {$ENDIF}
 
 procedure TposWinFrame.MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
@@ -781,6 +827,7 @@ begin
     inherited;
 end;
 
+{$IFNDEF FPC}
 procedure TposFrame.MouseEnter;
 begin
 end;
@@ -788,6 +835,7 @@ end;
 procedure TposFrame.MouseLeave;
 begin
 end;
+{$ENDIF}
 
 procedure TposWinFrame.MouseMove(Shift: TShiftState; X, Y: Integer);
 var
@@ -827,12 +875,16 @@ procedure TposWinFrame.MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: I
 var
   aRect, R: TRect;
 begin
+  inherited;
   if fsMouse in Style then
   begin
     if Button = mbLeft then
     try
       if FActiveSubFrame = nil then
-        inherited;
+      begin
+        if PtInRect(ClientRect, Point(X, Y)) then
+          Click;
+      end;
     finally
       FActiveSubFrameDown := False;
       if FActiveSubFrame <> nil then
@@ -851,8 +903,9 @@ begin
         Down := False;
     end;
   end
-  else
-    inherited;
+  else if Button = mbLeft then
+    if PtInRect(ClientRect, Point(X, Y)) then
+      Click;
 end;
 
 procedure TposFrame.Snap;
@@ -934,6 +987,12 @@ begin
   Result := FUpdateCount > 0;
 end;
 
+function TposFrame.GetOuterRect: TRect;
+begin
+  Result := ClientRect;
+  InflateRect(Result, -Margin, -Margin);
+end;
+
 procedure TposFrame.InvalidateRect(vRect: TRect);
 begin
   if InUpdating then
@@ -969,11 +1028,7 @@ end;
 
 function TposFrame.GetInnerRect: TRect;
 begin
-  Result := ClientRect;
-  InflateRect(Result, -Margin, -Margin);
-  InflateRect(Result, -Padding, -Padding);
-  if fsBorder in Style then
-    InflateRect(Result, -BorderWidth, -BorderWidth);
+  Result := GetContentsRect;
 end;
 
 function TposFrame.GetInnerHeight: Integer;
@@ -1097,19 +1152,13 @@ begin
   end;
 end;
 
-procedure TposSybariteFrame.SetShowButton(const Value: Boolean);
+procedure TposSybariteFrame.SetButtonShow(const Value: Boolean);
 begin
   if FButtonFrame.Visible <> Value then
   begin
     FButtonFrame.Visible := Value;
     Invalidate;
   end;
-end;
-
-procedure TposSybariteFrame.Resize;
-begin
-  inherited;
-  FButtonFrame.Width := InnerHeight;
 end;
 
 procedure TposSybariteFrame.ChangeScale(M, D: Integer);
@@ -1126,15 +1175,22 @@ begin
   FButtonFrame := TposSybariteButtonSubFrame.Create(Self);
   FButtonFrame.Place := sbpOuter;
   FButtonFrame.Interactive := True;
-  FButtonFrame.Visible := False; 
+  FButtonFrame.Visible := False;
   SubFrames.Add(FLabelFrame);
   SubFrames.Add(FButtonFrame);
-  FButtonFrame.Width := InnerHeight;
 end;
 
 destructor TposSybariteFrame.Destroy;
 begin
   inherited;
+end;
+
+procedure TposSybariteFrame.DoButtonClick;
+begin
+  if Assigned(OnButtonClick) then
+    OnButtonClick(Self);
+  if Helper is TposSybariteHelper then
+    (Helper as TposSybariteHelper).ButtonClick(self);
 end;
 
 function TposSybariteFrame.GetButtonShape: TposShapeKind;
@@ -1152,7 +1208,7 @@ begin
   Result := FLabelFrame.Width;
 end;
 
-function TposSybariteFrame.GetShowButton: Boolean;
+function TposSybariteFrame.GetButtonShow: Boolean;
 begin
   Result := FButtonFrame.Visible;
 end;
@@ -1189,6 +1245,7 @@ end;
 
 function TposSubFrame.GetRect(var vRect: TRect): TRect;
 begin
+  Result :=vRect;
 end;
 
 procedure TposSubFrame.Paint(vCanvas: TCanvas; var vRect: TRect; vColor: TColor);
@@ -1207,7 +1264,7 @@ begin
   for i := 0 to Count -1 do
   begin
     aItem := Items[i];
-    if aItem.Interactive and (aItem.Place = sbpOuter) then
+    if aItem.Visible and aItem.Interactive and (aItem.Place = sbpOuter) then
     begin
       R := aItem.GetRect(vRect);
       if PtInRect(R, Point(X, Y)) then
@@ -1222,6 +1279,17 @@ end;
 function TposSubFrames.GetItem(Index: Integer): TposSubFrame;
 begin
   Result := inherited Items[Index] as TposSubFrame;
+end;
+
+procedure TposSubFrames.GetRect(vPlace: TposSubFramePlace; var vRect: TRect);
+var
+  i: Integer;
+begin
+  for i :=0 to Count -1 do
+  begin
+    if Items[i].Visible and (Items[i].Place = vPlace) then
+      Items[i].GetRect(vRect);
+  end;
 end;
 
 procedure TposSubFrames.Paint(vPlace: TposSubFramePlace; vCanvas: TCanvas; var Rect: TRect; vColor: TColor);
@@ -1293,6 +1361,23 @@ begin
   inherited;
 end;
 
+function TposWinFrame.GetContentsRect: TRect;
+begin
+  Result := inherited GetContentsRect;
+end;
+
+function TposWinFrame.GetInnerRect: TRect;
+begin
+  Result := inherited GetInnerRect;
+  FSubFrames.GetRect(sbpInner, Result);
+end;
+
+function TposWinFrame.GetOuterRect: TRect;
+begin
+  Result := inherited GetOuterRect;
+  FSubFrames.GetRect(sbpOuter, Result);
+end;
+
 procedure TposWinFrame.PaintInner(vCanvas: TCanvas; var vRect: TRect; vColor: TColor);
 begin
   FSubFrames.Paint(sbpInner, vCanvas, vRect, vColor);
@@ -1310,16 +1395,16 @@ end;
 function TposShapeSubFrame.GetRect(var vRect: TRect): TRect;
 begin
   Result := vRect;
-  if Width > 0 then
+  if Visible then
   begin
     if Frame.UseRightToLeftAlignment then
     begin
-      Result.Right := Result.Left + Width + 1;
+      Result.Right := Result.Left + Frame.Height + 1;
       vRect.Left := Result.Right;
     end
     else
     begin
-      Result.Left := Result.Right - Width - 1;
+      Result.Left := Result.Right - Frame.Height - 1;
       vRect.Right := Result.Left;
     end;
   end;
@@ -1335,7 +1420,7 @@ var
   end;
 begin
   inherited;
-  if Width > 0 then
+  if Visible then
   begin
     aRect := GetRect(vRect);
     TR := aRect;
@@ -1386,8 +1471,13 @@ procedure TposSybariteButtonSubFrame.Click;
 begin
   inherited;
   if Frame is TposSybariteFrame then
-    if Assigned((Frame as TposSybariteFrame).OnButtonClick) then
-      (Frame as TposSybariteFrame).OnButtonClick(Frame);
+    (Frame as TposSybariteFrame).DoButtonClick;
+end;
+
+{ TposSybariteHelper }
+
+procedure TposSybariteHelper.ButtonClick(Sender: TposFrame);
+begin
 end;
 
 initialization

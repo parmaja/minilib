@@ -16,12 +16,14 @@ unit posUtils;
 interface
 
 uses
-  SysUtils, Classes, Graphics, Controls, StdCtrls, Forms, posTypes,
+  SysUtils, Classes, Graphics, Controls,
+  posTypes, posDraws,
 {$IFDEF FPC}
   LCLIntf,
   Types;
 {$ELSE}
   Windows,
+  StdCtrls,
   Messages;
 {$ENDIF}
 
@@ -69,7 +71,7 @@ function TextStyleToFormat(Style: TTextStyle): Longint;
 procedure PaintText(Canvas: TCanvas; Text: string; vRect: TRect; Style: TTextStyle);
 procedure PaintTextButton(Canvas: TCanvas; Text: string; Rect: TRect; States: TposDrawStates);
 procedure PaintBorderButton(Canvas: TCanvas; Rect: TRect; Color, BorderColor: TColor; States: TposDrawStates; Down:Boolean = False);
-procedure PaintButton(Canvas: TCanvas; Caption: string; Rect: TRect; Color, BorderColor: TColor; States: TposDrawStates);
+procedure PaintButton(Canvas: TCanvas; Caption: string; vShape:TposShapeKind; Rect: TRect; Color, BorderColor: TColor; States: TposDrawStates);
 procedure PaintRect(Canvas: TCanvas; const vRect: TRect);
 
 //
@@ -298,10 +300,10 @@ begin
   Canvas.LineTo(Rect.Right, Rect.Top);
 end;
 
-procedure PaintButton(Canvas: TCanvas; Caption: string; Rect: TRect; Color, BorderColor: TColor; States: TposDrawStates);
+procedure PaintButton(Canvas: TCanvas; Caption: string; vShape:TposShapeKind; Rect: TRect; Color, BorderColor: TColor; States: TposDrawStates);
 const
   cPending = 4;
-begin 
+begin
   if pdsActive in States then
     Color := Lighten(Color, 40);
   if Color <> clDefault then
@@ -331,11 +333,11 @@ begin
 
 {  if pdsBorder in States then
     InflateRect(Rect, 1, 1);}
+  if vShape <> shpNone then
+    DrawShape(Canvas, Rect, vShape, False, True, 0, Canvas.Font.Color);
 
   if Caption <> '' then
-  begin
     PaintTextButton(Canvas, Caption, Rect, States);
-  end;
 end;
 
 {procedure PaintChair(Canvas:TCanvas;const vRect:TRect; Opaque:Boolean);

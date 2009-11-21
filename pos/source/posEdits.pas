@@ -44,6 +44,13 @@ type
     function GetInputs: TposFrameInputs; override;
     procedure PaintInner(Canvas: TCanvas; var vRect: TRect; vColor: TColor); override;
   published
+    property LabelCaption;
+    property LabelWidth;
+    property LabelMode;
+    property ButtonShow;
+    property ButtonShape;
+    property OnButtonClick;
+
     property Alignment: TAlignment read FAlignment write SetAlignment default taLeftJustify;
     property Layout: TTextLayout read FLayout write SetLayout default tlCenter;
     property TextMargin: Integer read FTextMargin write SetTextMargin default 1;

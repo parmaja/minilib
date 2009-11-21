@@ -139,7 +139,8 @@ type
   protected
     procedure PaintHeader(Canvas: TCanvas; Rect: TRect; Color: TColor);
     procedure PaintRow(Canvas: TCanvas; Index: Integer; Rect: TRect; Color: TColor);
-    procedure PaintOuter(Canvas: TCanvas; var Rect: TRect; Color: TColor); override;
+    procedure PaintOuter(Canvas: TCanvas; var vRect: TRect; vColor: TColor); override;
+    procedure PaintInner(vCanvas: TCanvas; var vRect: TRect; vColor: TColor); override;
     procedure GetCellInfo(Column:TposCustomColumn; Row: Integer; var Info: TposCellInfo); virtual;
     function CreateColumns: TposCustomColumns; virtual;
     function CreateVisibleColumns: TposVisibleList; virtual;
@@ -770,19 +771,25 @@ begin
   Canvas.FillRect(aItemRect);
 end;
 
-procedure TposCustomGrid.PaintOuter(Canvas: TCanvas; var Rect: TRect; Color: TColor);
+procedure TposCustomGrid.PaintInner(vCanvas: TCanvas; var vRect: TRect;
+  vColor: TColor);
 var
   aRect: TRect;
 begin
-  inherited;
   if ShowHeader then
   begin
-    aRect := Rect;
+    aRect := vRect;
     aRect.Bottom := aRect.Top + ItemHeight;
     Canvas.Brush.Color := clRed;
     PaintHeader(Canvas, aRect, Lighten(Color, -50));
-    Rect.Top := aRect.Bottom;
+    vRect.Top := aRect.Bottom;
   end;
+  inherited;
+end;
+
+procedure TposCustomGrid.PaintOuter(Canvas: TCanvas; var vRect: TRect; vColor: TColor);
+begin
+  inherited;
 end;
 
 function TposGridRowCells.Add: TposCell;

@@ -23,6 +23,9 @@ uses
 {$ENDIF}
   posTypes, posControls, posButtons;
 
+const
+  cKeyboardButtonColor = $00AA8264;
+
 type
   TCtrlKey = (ckNone, ckTab, ckCtrl, ckAlt, ckSpace, ckLanguage, ckEscape, ckClear, ckEnter, ckShift, ckCapsLock, ckBackspace, ckPAD);
 
@@ -206,8 +209,8 @@ type
     property Kind: TposKeyboardKind read FKind write SetKind;
     property SizeFactor: Integer read FSizeFactor write FSizeFactor default 4;
     property BorderColor: TColor read FBorderColor write SetBorderColor default clDefault;
-    property ButtonColor: TColor read FButtonColor write SetButtonColor;
-    property PressedColor: TColor read FPressedColor write SetPressedColor;
+    property ButtonColor: TColor read FButtonColor write SetButtonColor default cKeyboardButtonColor;
+    property PressedColor: TColor read FPressedColor write SetPressedColor default clDefault;
     property CtrlFont: TFont read FCtrlFont write SetCtrlFont;
     property MultiPAD: Boolean read FMultiPAD write SetMultiPAD default True;
 // todo
@@ -249,14 +252,14 @@ type
     property OnButtonPress: TOnButtonPress read FOnButtonPress write FOnButtonPress;
   end;
 
-const
-  cSizeFactor = 4;
-  cDownDarker = -15;
-
 implementation
 
 uses
-  posUtils, Math;
+  posUtils, Math, posDraws;
+
+const
+  cSizeFactor = 4;
+  cDownDarker = -50;
 
 { TposKeyboard }
 
@@ -421,7 +424,7 @@ begin
   Style := Style - [fsBorder] + [fsOpaque];
   FSizeFactor := cSizeFactor;
   FBorderColor := clDefault;
-  FButtonColor := $00AA8264;
+  FButtonColor := cKeyboardButtonColor;
   FPressedColor := clDefault;
   FMultiPAD := True;
   FLanguages := TposKeyLanguages.Create;
@@ -1108,6 +1111,7 @@ var
   aButtonColor: TColor;
   s: string;
   aDown: Boolean;
+  aShape: TposShapeKind;
   aState : TposDrawStates;
 begin
   inherited;
@@ -1116,9 +1120,14 @@ begin
     Canvas.Font := Keyboard.CtrlFont;
     aState := [pdsBorder];
     aDown := FState or (Keyboard.FActiveButton = self);
-
+    aShape := shpNone;
     s := Name;
     case FCtrlKey of
+      ckBackspace:
+      begin
+        aShape := shpLeft;
+        s := '';
+      end;
       ckCapsLock:
         begin
           aDown := aDown or (pssCapsLock in Keyboard.ShiftState);
@@ -1151,8 +1160,7 @@ begin
     begin
       aButtonColor := Keyboard.ButtonColor;
     end;
-
-    PaintButton(Canvas, s, BoundsRect, aButtonColor, Keyboard.BorderColor, aState);
+    PaintButton(Canvas, s, aShape, BoundsRect, aButtonColor, Keyboard.BorderColor, aState);
   end;
 end;
 
@@ -1235,7 +1243,7 @@ begin
       else
         aCaption := aLangKey.ShiftCaption;
     end;
-    PaintButton(Canvas, aCaption, BoundsRect, aButtonColor, Keyboard.BorderColor, aState);
+    PaintButton(Canvas, aCaption, shpNone, BoundsRect, aButtonColor, Keyboard.BorderColor, aState);
   end;
 end;
 
@@ -1268,7 +1276,7 @@ begin
     begin
       aButtonColor := Keyboard.ButtonColor;
     end;
-    PaintButton(Canvas, Name, BoundsRect, aButtonColor, Keyboard.BorderColor, aState);
+    PaintButton(Canvas, Name, shpNone, BoundsRect, aButtonColor, Keyboard.BorderColor, aState);
   end;
 end;
 

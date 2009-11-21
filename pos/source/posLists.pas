@@ -11,18 +11,19 @@ unit posLists;
 {$M+}
 {$H+}
 {$IFDEF FPC}
-{$mode delphi}
+{$MODE delphi}
 {$ENDIF}
 
 interface
 
 uses
   Classes, Graphics, Controls, StdCtrls, Forms, Contnrs,
-  {$IFDEF FPC}
+{$IFDEF FPC}
   LCLType,
-  {$ELSE}
+{$ELSE}
   Windows,
-  {$ENDIF}
+{$ENDIF}
+  Math, 
   posControls, Types;
 
 type
@@ -84,9 +85,8 @@ type
     procedure MouseMove(Shift: TShiftState; X, Y: Integer); override;
     procedure MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: Integer); override;
     procedure ChangeScale(M, D: Integer); override;
-    function GetInnerRect:TRect; override;
 
-    procedure PaintItems(Items:TposItems; Canvas: TCanvas; TopIndex, ItemIndex: Integer; Rect: TRect);
+    procedure PaintItems(Items: TposItems; Canvas: TCanvas; TopIndex, ItemIndex: Integer; Rect: TRect);
     procedure PaintInner(Canvas: TCanvas; var vRect: TRect; Color: TColor); override;
 
     procedure DoItemIndexChanged; virtual;
@@ -106,9 +106,11 @@ type
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
-    function GetInputs:TposFrameInputs; override;
+    function GetInputs: TposFrameInputs; override;
     procedure ShowPageOfIndex(Index: Integer);
     function ShowItem(vItem: Integer): Boolean;
+    function GetContentsRect: TRect; override;
+    function GetInnerRect: TRect; override;
     function ProcessKey(var Key: Word; Shift: TShiftState): Boolean; virtual;
     procedure PageUp;
     procedure PageDown;
@@ -136,7 +138,7 @@ type
     function UseRightToLeftAlignment: Boolean; virtual;
     procedure SetParent(const Value: TposCustomListItems); virtual;
   public
-    procedure Paint(Canvas: TCanvas; Index:Integer; Rect: TRect; Color: TColor; RightToLeft: Boolean); virtual;
+    procedure Paint(Canvas: TCanvas; Index: Integer; Rect: TRect; Color: TColor; RightToLeft: Boolean); virtual;
     property Parent: TposCustomListItems read FParent write SetParent;
   end;
 
@@ -173,7 +175,7 @@ type
   protected
   public
     constructor Create;
-    procedure Paint(Canvas: TCanvas; Index:Integer; Rect: TRect; Color: TColor; RightToLeft: Boolean); override;
+    procedure Paint(Canvas: TCanvas; Index: Integer; Rect: TRect; Color: TColor; RightToLeft: Boolean); override;
     property Text: string read FText write FText;
     property Name: string read FName write FName;
     property Color: TColor read FColor write FColor;
@@ -218,7 +220,7 @@ begin
     i := PosToIndex(Y);
     if IsValidItem(i) then
       ItemIndex := i;
-    R := InnerRect;
+    R := GetInnerRect;
     if (i >= 0) and (GetItemRect(i, R)) then
     begin
 {      with Items[i] do
@@ -262,6 +264,7 @@ end;
 
 procedure TposAbstractList.PaintInner(Canvas: TCanvas; var vRect: TRect; Color: TColor);
 begin
+  inherited;
   PaintItems(Items, Canvas, TopIndex, ItemIndex, vRect);
 end;
 
@@ -348,14 +351,14 @@ begin
   Items[Index].Paint(Canvas, Index, Rect, Color, RightToLeft);
 end;
 
-procedure TposListItem.Paint(Canvas: TCanvas; Index:Integer; Rect: TRect; Color: TColor; RightToLeft: Boolean);
+procedure TposListItem.Paint(Canvas: TCanvas; Index: Integer; Rect: TRect; Color: TColor; RightToLeft: Boolean);
 var
   aStyle: TTextStyle;
-  aColor:TColor;
+  aColor: TColor;
 begin
   inherited;
   FillChar(aStyle, SizeOf(aStyle), #0);
-  aStyle.RightToLeft := RightToLeft;                                   
+  aStyle.RightToLeft := RightToLeft;
   aStyle.SingleLine := True;
   aStyle.Layout := tlCenter;
   if Odd(Index) then
@@ -370,7 +373,7 @@ begin
   PaintText(Canvas, Text, Rect, aStyle);
 end;
 
-procedure TposCustomListItem.Paint(Canvas: TCanvas; Index:Integer; Rect: TRect; Color: TColor; RightToLeft: Boolean);
+procedure TposCustomListItem.Paint(Canvas: TCanvas; Index: Integer; Rect: TRect; Color: TColor; RightToLeft: Boolean);
 begin
 end;
 
@@ -577,10 +580,10 @@ begin
 end;
 
 function TposAbstractList.PosToIndex(y: Integer): Integer;
-var                                  
-  r:TRect;
+var
+  r: TRect;
 begin
-  r:= InnerRect;
+  r := GetInnerRect;
   if y < r.Top then
     Result := -1
   else
@@ -600,8 +603,7 @@ begin
   Result := Items.ItemIndex
 end;
 
-function TposAbstractList.GetItemRect(vItem: Integer;
-  var vRect: TRect): Boolean;
+function TposAbstractList.GetItemRect(vItem: Integer; var vRect: TRect): Boolean;
 var
   wRect: TRect;
 begin
@@ -609,18 +611,24 @@ begin
   vItem := IndexToView(vItem);
   if vItem >= 0 then
   begin
-    wRect := InnerRect;
+    wRect := GetInnerRect;
     vRect := wRect;
-    vRect.Top := vRect.Top + vItem * FItemHeight; 
+    vRect.Top := vRect.Top + vItem * FItemHeight;
     vRect.Bottom := vRect.Top + FItemHeight;
     if vRect.Top <= wRect.Bottom then
-      GetItemRect := true;
+      GetItemRect := True;
   end;
 end;
 
 function TposAbstractList.GetDistinctItems(vHeight: Integer): Integer;
 begin
+//  Result := ceil(vHeight / FItemHeight);
   Result := vHeight div FItemHeight;
+end;
+
+function TposAbstractList.GetContentsRect: TRect;
+begin
+  Result := inherited GetContentsRect;
 end;
 
 function TposAbstractList.GetDistinctItems: Integer;
@@ -692,7 +700,7 @@ begin
   else
     Result := False;
 end;
-                          
+
 function TposAbstractList.ShowItem(vItem: Integer): Boolean;
 var
   v: integer;
@@ -718,7 +726,7 @@ end;
 
 function TposAbstractList.DoKeyDown(var Key: Word; Shift: TShiftState): Boolean;
 begin
-  Result:=ProcessKey(Key, Shift) or inherited DoKeyDown(Key, Shift);
+  Result := ProcessKey(Key, Shift) or inherited DoKeyDown(Key, Shift);
 end;
 
 function TposAbstractList.ProcessKey(var KEY: Word; Shift: TShiftState): Boolean;
@@ -727,7 +735,7 @@ begin
   if Shift = [] then
   begin
     case Key of
-      VK_RETURN: DblClick;//zaher: not good here
+      VK_RETURN: DblClick; //zaher: not good here
       Vk_Home:
         ChangeItemIndex(0, True);
       Vk_End:
@@ -773,7 +781,7 @@ var
   aItemRect: TRect;
   i: Integer;
   aColor: TColor;
-  aCount:Integer;
+  aCount: Integer;
 begin
   i := TopIndex;
   aCount := Items.Count;
@@ -784,9 +792,9 @@ begin
     Canvas.Font := Font;
     Canvas.Brush.Style := bsSolid;
     if ShowSelected and (ItemIndex = i) then
-    begin           
+    begin
       aColor := MixColors(SelectedColor, Color, 100);
-      Canvas.Font.Color := clHighlightText; 
+      Canvas.Font.Color := clHighlightText;
     end
     else if Odd(i) then
       aColor := MixColors(clWhite, Color, 10)

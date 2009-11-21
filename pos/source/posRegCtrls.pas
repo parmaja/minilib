@@ -26,7 +26,7 @@ implementation
 
 procedure Register;
 begin
-  RegisterComponents('POS',[TposPanel, TposImage, TPOSButton, TPOSLabeledButton, TposCheckBox, TposSelectBox, TposStuffs, TPOSKeyboard, TPOSEdit, TPOSVirtualGrid, TPOSList, TPOSGrid]);
+  RegisterComponents('POS',[TposPanel, TposImage, TPOSButton, TposCheckBox, TposSelectBox, TposStuffs, TPOSKeyboard, TPOSEdit, TPOSVirtualGrid, TPOSList, TPOSGrid]);
 end;
 
 initialization
