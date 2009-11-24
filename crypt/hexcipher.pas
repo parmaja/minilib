@@ -162,18 +162,16 @@ begin
     end;
     cyDecrypt:
     begin
-      if FCount<>0 then
-      begin
-        SetLength(cBuffer, FCount);
-        Move(FBuffer[0], cBuffer[1], FCount);
-      end;
       c := Count+FCount;
-      Result := c div 2;
       SetLength(cBuffer, c);
+      if FCount<>0 then
+        Move(FBuffer[0], cBuffer[1], FCount);
       Move(Buffer, cBuffer[FCount+1], Count);
 
+      Result := c div 2;
       SetLength(aBuffer, Result);
       Cipher.Decrypt(cBuffer[1], c, aBuffer[1], Result);
+
       inherited Write(aBuffer[1], Result);
       FCount := c - (Result*2);
       if FCount<>0 then

@@ -55,7 +55,7 @@ type
     { Private declarations }
   public
     { Public declarations }
-    function CreateCipherStraem(AStream: TStream; Way: TCipherWay; Mode: TCipherMode; Owned: Boolean = True): TCipherStream;
+    function CreateCipherStream(AStream: TStream; Way: TCipherWay; Mode: TCipherMode; Owned: Boolean = True): TCipherStream;
 
     procedure TestCipher;
 
@@ -116,7 +116,7 @@ begin
   ShowInfo(s);
 end;
 
-function TMainForm.CreateCipherStraem(AStream: TStream; Way: TCipherWay; Mode: TCipherMode; Owned: Boolean): TCipherStream;
+function TMainForm.CreateCipherStream(AStream: TStream; Way: TCipherWay; Mode: TCipherMode; Owned: Boolean): TCipherStream;
 begin
   if CipherClass<>nil then
     Result := CipherClass.Create(AStream, Way, Mode, Owned)
@@ -137,7 +137,7 @@ begin
     fi := TFileStream.Create(EncFileName, fmOpenRead);
     fo := TFileStream.Create(DecFileName, fmCreate or fmOpenWrite);
     try
-      scs := CreateCipherStraem(fi, cyDecrypt, cimRead, false);
+      scs := CreateCipherStream(fi, cyDecrypt, cimRead, false);
       try
         SetLength(st, cBufferSize);
         while True do
@@ -145,6 +145,7 @@ begin
           i := scs.read(st[1], cBufferSize);
           if i=0 then Break;
           fo.Write(st[1], i);
+          if i<cBufferSize then Break;          
         end;
         SetLength(st, 0);
       finally
@@ -169,7 +170,7 @@ begin
     fi := TFileStream.Create(FileName, fmOpenRead);
     fo := TFileStream.Create(EncFileName, fmCreate or fmOpenWrite);
     try
-      scs := CreateCipherStraem(fi, cyEncrypt, cimRead, false);
+      scs := CreateCipherStream(fi, cyEncrypt, cimRead, false);
       try
         SetLength(st, cBufferSize);
         while True do
@@ -251,7 +252,7 @@ begin
     fi := TFileStream.Create(EncFileName, fmOpenRead);
     fo := TFileStream.Create(DecFileName, fmCreate or fmOpenWrite);
     try
-      scs := CreateCipherStraem(fo, cyDecrypt, cimWrite, false);
+      scs := CreateCipherStream(fo, cyDecrypt, cimWrite, false);
       try
         SetLength(st, cBufferSize);
         while True do
@@ -283,7 +284,7 @@ begin
     fi := TFileStream.Create(FileName, fmOpenRead);
     fo := TFileStream.Create(EncFileName, fmCreate or fmOpenWrite);
     try
-      scs := CreateCipherStraem(fo, cyEncrypt, cimWrite, false);
+      scs := CreateCipherStream(fo, cyEncrypt, cimWrite, false);
       try
         SetLength(st, cBufferSize);
         while True do
@@ -435,7 +436,7 @@ begin
     try
       EncEdit.Clear;
       s.Seek(0, soFromBeginning);
-      scs := CreateCipherStraem(s, cyEncrypt, cimRead, false);
+      scs := CreateCipherStream(s, cyEncrypt, cimRead, false);
       try
         while True do
         begin
@@ -456,7 +457,7 @@ begin
     try
       DecEdit.Clear;
       s.Seek(0, soFromBeginning);
-      scs := CreateCipherStraem(s, cyDecrypt, cimRead, false);
+      scs := CreateCipherStream(s, cyDecrypt, cimRead, false);
       try
         while True do
         begin

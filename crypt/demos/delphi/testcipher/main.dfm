@@ -92,7 +92,6 @@ object MainForm: TMainForm
     Anchors = [akLeft, akTop, akRight]
     TabOrder = 5
     OnChange = SrcEditChange
-    ExplicitWidth = 509
   end
   object DecEdit: TEdit
     Left = 72
@@ -102,7 +101,6 @@ object MainForm: TMainForm
     Anchors = [akLeft, akTop, akRight]
     ReadOnly = True
     TabOrder = 7
-    ExplicitWidth = 509
   end
   object EncEdit: TEdit
     Left = 72
@@ -112,7 +110,6 @@ object MainForm: TMainForm
     Anchors = [akLeft, akTop, akRight]
     ReadOnly = True
     TabOrder = 6
-    ExplicitWidth = 509
   end
   object TestReadBtn: TButton
     Left = 585
@@ -123,7 +120,6 @@ object MainForm: TMainForm
     Caption = 'Test Read'
     TabOrder = 3
     OnClick = TestReadBtnClick
-    ExplicitLeft = 506
   end
   object TestWriteBtn: TButton
     Left = 585
@@ -134,7 +130,6 @@ object MainForm: TMainForm
     Caption = 'Test Write'
     TabOrder = 4
     OnClick = TestWriteBtnClick
-    ExplicitLeft = 506
   end
   object FileNameEdit: TEdit
     Left = 72
@@ -144,7 +139,6 @@ object MainForm: TMainForm
     Anchors = [akLeft, akTop, akRight]
     TabOrder = 1
     Text = 'FileNameEdit'
-    ExplicitWidth = 465
   end
   object SelectFileBtn: TButton
     Left = 622
@@ -155,7 +149,6 @@ object MainForm: TMainForm
     Caption = '...'
     TabOrder = 2
     OnClick = SelectFileBtnClick
-    ExplicitLeft = 543
   end
   object StatusBar: TStatusBar
     Left = 0
@@ -169,7 +162,6 @@ object MainForm: TMainForm
       item
         Width = 50
       end>
-    ExplicitWidth = 585
   end
   object MethodBox: TComboBox
     Left = 72

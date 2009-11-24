@@ -20,6 +20,7 @@ uses
 
 type
   TSnow2Cipher = class(TCipher)
+  private
   protected
     Context: TSnowContext;
     Block: TSnowBlock;
@@ -28,6 +29,7 @@ type
     procedure LoadBlock;
     function GetKeyStream: u32;
     function GetByte: Byte;
+    function GetByte2: Byte;
     procedure StreamBlock(const InBuffer; InCount: Integer; var OutBuffer; var OutCount: Integer); virtual;
     procedure LoadKey(Key: TSnowKey; KeySize: TSnowKeySize; IV3, IV2, IV1, IV0: u32);
   public
@@ -145,10 +147,22 @@ begin
   StreamBlock(InBuffer, InCount, OutBuffer, OutCount);
 end;
 
+function TSnow2Cipher.GetByte2: Byte;
+var
+  p: PByte;
+begin
+  if Index>(SizeOf(TSnowBlock)-1) then
+    LoadBlock;
+  p := @Block[0];
+  Inc(p, Index);
+  Result := p^;
+  Inc(Index);
+end;
+
 function TSnow2Cipher.GetByte: Byte;
 var
-  d, m: Integer;
-  v: U32;
+  d, m: Integer; //div mod gives block index and byte index .
+  v: U32; //value
 begin
   d := Index div SizeOf(u32); //block index
   if d>((SizeOf(TSnowBlock) div SizeOf(u32))-1) then
@@ -156,7 +170,6 @@ begin
     LoadBlock;
     d := 0;
   end;
-
   m := Index mod SizeOf(u32); //byte index
   v := Block[d];
   Result := SnowGetByte (m, v);
@@ -208,7 +221,7 @@ begin
   for I := 0 to InCount-1 do
   begin
     //d^ := Chr(Ord(s^) xor GetByte);
-    d^ := s^ xor GetByte;
+    d^ := s^ xor GetByte2;
     Inc(s);
     Inc(d);
   end;
