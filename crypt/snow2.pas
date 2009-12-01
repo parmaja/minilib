@@ -39,6 +39,9 @@ type
     r1, r2: u32;
   end;
 
+const
+  cSnowBlockSize = SizeOf(TSnowBlock);
+
 procedure SnowLoadkey(var Context: TSnowContext; Key: TSnowKey; KeySize: TSnowKeySize; IV3, IV2, IV1, IV0: u32);
 procedure SnowKeyStreamBlock(var Context: TSnowContext; var Block: TSnowBlock);
 

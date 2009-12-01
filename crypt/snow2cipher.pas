@@ -151,7 +151,7 @@ function TSnow2Cipher.GetByte2: Byte;
 var
   p: PByte;
 begin
-  if Index>(SizeOf(TSnowBlock)-1) then
+  if Index>(cSnowBlockSize-1) then
     LoadBlock;
   p := @Block[0];
   Inc(p, Index);
@@ -165,7 +165,7 @@ var
   v: U32; //value
 begin
   d := Index div SizeOf(u32); //block index
-  if d>((SizeOf(TSnowBlock) div SizeOf(u32))-1) then
+  if d>((cSnowBlockSize div SizeOf(u32))-1) then
   begin
     LoadBlock;
     d := 0;
@@ -197,7 +197,7 @@ begin
   f := TFileStream.Create('c:\Key.Dat', fmOpenWrite);
   try
     f.Seek(0, soFromEnd);
-    f.Write(Block[0], SizeOf(Block));
+    f.Write(Block[0], cSnowBlockSize);
   finally
     f.Free;
   end;
