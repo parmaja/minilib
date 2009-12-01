@@ -1,0 +1,176 @@
+object MainForm: TMainForm
+  Left = 556
+  Height = 266
+  Top = 311
+  Width = 539
+  Caption = 'Crypto'
+  ClientHeight = 266
+  ClientWidth = 539
+  Font.Height = -11
+  Font.Name = 'Tahoma'
+  OnCreate = FormCreate
+  Position = poScreenCenter
+  LCLVersion = '0.9.29'
+  object FileNameLbl: TLabel
+    Left = 19
+    Height = 14
+    Top = 48
+    Width = 47
+    Caption = 'File Name'
+    ParentColor = False
+  end
+  object EncFileNameLbl: TLabel
+    Left = 19
+    Height = 14
+    Top = 80
+    Width = 47
+    Caption = 'File Name'
+    ParentColor = False
+  end
+  object DecFileNameLbl: TLabel
+    Left = 19
+    Height = 14
+    Top = 104
+    Width = 47
+    Caption = 'File Name'
+    ParentColor = False
+  end
+  object SrcTextLbl: TLabel
+    Left = 7
+    Height = 14
+    Top = 138
+    Width = 59
+    Caption = 'Source Text'
+    ParentColor = False
+  end
+  object EncTextLbl: TLabel
+    Left = 3
+    Height = 14
+    Top = 165
+    Width = 63
+    Caption = 'Encrypt Text'
+    ParentColor = False
+  end
+  object DecTextLbl: TLabel
+    Left = 2
+    Height = 14
+    Top = 192
+    Width = 64
+    Caption = 'Decrypt Text'
+    ParentColor = False
+  end
+  object MethodLbl: TLabel
+    Left = 29
+    Height = 14
+    Top = 14
+    Width = 37
+    Caption = 'Method'
+    ParentColor = False
+  end
+  object ResultLbl: TLabel
+    Left = 0
+    Height = 34
+    Top = 212
+    Width = 539
+    Align = alBottom
+    Alignment = taCenter
+    Caption = 'Result:'
+    Font.Color = clGreen
+    Font.Height = -27
+    Font.Name = 'Tahoma'
+    Font.Style = [fsBold]
+    Layout = tlCenter
+    ParentColor = False
+    ParentFont = False
+  end
+  object SrcEdit: TEdit
+    Left = 72
+    Height = 21
+    Top = 135
+    Width = 463
+    Anchors = [akTop, akLeft, akRight]
+    OnChange = SrcEditChange
+    TabOrder = 5
+  end
+  object DecEdit: TEdit
+    Left = 72
+    Height = 21
+    Top = 189
+    Width = 463
+    Anchors = [akTop, akLeft, akRight]
+    ReadOnly = True
+    TabOrder = 7
+  end
+  object EncEdit: TEdit
+    Left = 72
+    Height = 21
+    Top = 162
+    Width = 463
+    Anchors = [akTop, akLeft, akRight]
+    ReadOnly = True
+    TabOrder = 6
+  end
+  object TestReadBtn: TButton
+    Left = 460
+    Height = 25
+    Top = 72
+    Width = 75
+    Anchors = [akTop, akRight]
+    Caption = 'Test Read'
+    OnClick = TestReadBtnClick
+    TabOrder = 3
+  end
+  object TestWriteBtn: TButton
+    Left = 460
+    Height = 25
+    Top = 103
+    Width = 75
+    Anchors = [akTop, akRight]
+    Caption = 'Test Write'
+    OnClick = TestWriteBtnClick
+    TabOrder = 4
+  end
+  object FileNameEdit: TEdit
+    Left = 72
+    Height = 21
+    Top = 45
+    Width = 419
+    Anchors = [akTop, akLeft, akRight]
+    TabOrder = 1
+    Text = 'FileNameEdit'
+  end
+  object SelectFileBtn: TButton
+    Left = 497
+    Height = 21
+    Top = 45
+    Width = 38
+    Anchors = [akTop, akRight]
+    Caption = '...'
+    OnClick = SelectFileBtnClick
+    TabOrder = 2
+  end
+  object StatusBar: TStatusBar
+    Left = 0
+    Height = 20
+    Top = 246
+    Width = 539
+    Panels = <    
+      item
+        Width = 260
+      end    
+      item
+        Width = 50
+      end>
+    SimplePanel = False
+  end
+  object MethodBox: TComboBox
+    Left = 72
+    Height = 21
+    Top = 8
+    Width = 209
+    ItemHeight = 13
+    OnClick = MethodBoxClick
+    Style = csDropDownList
+    TabOrder = 0
+  end
+end

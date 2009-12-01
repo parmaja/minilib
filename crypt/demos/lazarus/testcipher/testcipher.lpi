@@ -1,0 +1,295 @@
+<?xml version="1.0"?>
+<CONFIG>
+  <ProjectOptions>
+    <PathDelim Value="\"/>
+    <Version Value="7"/>
+    <General>
+      <MainUnit Value="0"/>
+      <TargetFileExt Value=".exe"/>
+      <Icon Value="0"/>
+      <UseXPManifest Value="True"/>
+      <ActiveEditorIndexAtStart Value="10"/>
+    </General>
+    <LazDoc Paths="..\..\..\"/>
+    <VersionInfo>
+      <ProjectVersion Value=""/>
+    </VersionInfo>
+    <PublishOptions>
+      <Version Value="2"/>
+      <IgnoreBinaries Value="False"/>
+      <IncludeFileFilter Value="*.(pas|pp|inc|lfm|lpr|lrs|lpi|lpk|sh|xml)"/>
+      <ExcludeFileFilter Value="*.(bak|ppu|ppw|o|so);*~;backup"/>
+    </PublishOptions>
+    <RunParams>
+      <local>
+        <FormatVersion Value="1"/>
+        <LaunchingApplication PathPlusParams="/usr/X11R6/bin/xterm -T 'Lazarus Run Output' -e $(LazarusDir)/tools/runwait.sh $(TargetCmdLine)"/>
+      </local>
+    </RunParams>
+    <RequiredPackages Count="1">
+      <Item1>
+        <PackageName Value="LCL"/>
+      </Item1>
+    </RequiredPackages>
+    <Units Count="12">
+      <Unit0>
+        <Filename Value="testcipher.lpr"/>
+        <IsPartOfProject Value="True"/>
+        <CursorPos X="1" Y="9"/>
+        <TopLine Value="1"/>
+        <EditorIndex Value="10"/>
+        <UsageCount Value="21"/>
+        <Loaded Value="True"/>
+      </Unit0>
+      <Unit1>
+        <Filename Value="main.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="MainForm"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+        <UnitName Value="main"/>
+        <CursorPos X="4" Y="236"/>
+        <TopLine Value="467"/>
+        <EditorIndex Value="0"/>
+        <UsageCount Value="21"/>
+        <Loaded Value="True"/>
+      </Unit1>
+      <Unit2>
+        <Filename Value="..\..\..\snow2cipher.pas"/>
+        <UnitName Value="snow2cipher"/>
+        <CursorPos X="1" Y="17"/>
+        <TopLine Value="17"/>
+        <EditorIndex Value="9"/>
+        <UsageCount Value="11"/>
+        <Loaded Value="True"/>
+      </Unit2>
+      <Unit3>
+        <Filename Value="..\..\..\..\..\..\..\..\Work\programs\fpc\2.2.4\src\rtl\objpas\sysutils\filutilh.inc"/>
+        <CursorPos X="1" Y="1"/>
+        <TopLine Value="1"/>
+        <EditorIndex Value="6"/>
+        <UsageCount Value="11"/>
+        <Loaded Value="True"/>
+      </Unit3>
+      <Unit4>
+        <Filename Value="..\..\..\..\..\..\..\..\Work\programs\fpc\2.2.4\src\rtl\objpas\sysutils\fina.inc"/>
+        <CursorPos X="3" Y="282"/>
+        <TopLine Value="246"/>
+        <EditorIndex Value="8"/>
+        <UsageCount Value="11"/>
+        <Loaded Value="True"/>
+      </Unit4>
+      <Unit5>
+        <Filename Value="..\..\..\..\..\..\..\..\Work\programs\fpc\2.2.4\src\rtl\win\sysutils.pp"/>
+        <UnitName Value="sysutils"/>
+        <CursorPos X="1" Y="1"/>
+        <TopLine Value="1"/>
+        <EditorIndex Value="7"/>
+        <UsageCount Value="11"/>
+        <Loaded Value="True"/>
+      </Unit5>
+      <Unit6>
+        <Filename Value="..\..\..\..\..\..\..\..\Work\programs\fpc\2.2.4\src\rtl\inc\systemh.inc"/>
+        <CursorPos X="11" Y="815"/>
+        <TopLine Value="793"/>
+        <EditorIndex Value="3"/>
+        <UsageCount Value="10"/>
+        <Loaded Value="True"/>
+      </Unit6>
+      <Unit7>
+        <Filename Value="..\..\..\..\..\..\..\..\Work\programs\fpc\2.2.4\src\rtl\inc\file.inc"/>
+        <CursorPos X="9" Y="307"/>
+        <TopLine Value="299"/>
+        <EditorIndex Value="4"/>
+        <UsageCount Value="10"/>
+        <Loaded Value="True"/>
+      </Unit7>
+      <Unit8>
+        <Filename Value="..\..\..\..\..\..\..\..\Work\programs\fpc\2.2.4\src\rtl\inc\filerec.inc"/>
+        <CursorPos X="3" Y="28"/>
+        <TopLine Value="1"/>
+        <EditorIndex Value="5"/>
+        <UsageCount Value="10"/>
+        <Loaded Value="True"/>
+      </Unit8>
+      <Unit9>
+        <Filename Value="..\..\..\..\..\..\..\..\Work\programs\lazarus\lcl\fileutil.pas"/>
+        <UnitName Value="FileUtil"/>
+        <CursorPos X="1" Y="24"/>
+        <TopLine Value="19"/>
+        <EditorIndex Value="1"/>
+        <UsageCount Value="10"/>
+        <Loaded Value="True"/>
+      </Unit9>
+      <Unit10>
+        <Filename Value="..\..\..\..\..\..\..\..\Work\programs\lazarus\lcl\include\fileutil.inc"/>
+        <CursorPos X="1" Y="9"/>
+        <TopLine Value="18"/>
+        <EditorIndex Value="2"/>
+        <UsageCount Value="10"/>
+        <Loaded Value="True"/>
+      </Unit10>
+      <Unit11>
+        <Filename Value="testcipher.lrs"/>
+        <CursorPos X="1" Y="1"/>
+        <TopLine Value="1"/>
+        <UsageCount Value="10"/>
+      </Unit11>
+    </Units>
+    <JumpHistory Count="28" HistoryIndex="27">
+      <Position1>
+        <Filename Value="main.pas"/>
+        <Caret Line="430" Column="1" TopLine="408"/>
+      </Position1>
+      <Position2>
+        <Filename Value="main.pas"/>
+        <Caret Line="235" Column="1" TopLine="213"/>
+      </Position2>
+      <Position3>
+        <Filename Value="main.pas"/>
+        <Caret Line="430" Column="1" TopLine="408"/>
+      </Position3>
+      <Position4>
+        <Filename Value="main.pas"/>
+        <Caret Line="235" Column="1" TopLine="213"/>
+      </Position4>
+      <Position5>
+        <Filename Value="main.pas"/>
+        <Caret Line="453" Column="1" TopLine="428"/>
+      </Position5>
+      <Position6>
+        <Filename Value="main.pas"/>
+        <Caret Line="235" Column="1" TopLine="213"/>
+      </Position6>
+      <Position7>
+        <Filename Value="main.pas"/>
+        <Caret Line="430" Column="1" TopLine="417"/>
+      </Position7>
+      <Position8>
+        <Filename Value="main.pas"/>
+        <Caret Line="454" Column="1" TopLine="426"/>
+      </Position8>
+      <Position9>
+        <Filename Value="main.pas"/>
+        <Caret Line="455" Column="1" TopLine="433"/>
+      </Position9>
+      <Position10>
+        <Filename Value="main.pas"/>
+        <Caret Line="456" Column="1" TopLine="434"/>
+      </Position10>
+      <Position11>
+        <Filename Value="main.pas"/>
+        <Caret Line="457" Column="1" TopLine="435"/>
+      </Position11>
+      <Position12>
+        <Filename Value="main.pas"/>
+        <Caret Line="458" Column="1" TopLine="436"/>
+      </Position12>
+      <Position13>
+        <Filename Value="main.pas"/>
+        <Caret Line="459" Column="1" TopLine="437"/>
+      </Position13>
+      <Position14>
+        <Filename Value="main.pas"/>
+        <Caret Line="462" Column="1" TopLine="438"/>
+      </Position14>
+      <Position15>
+        <Filename Value="main.pas"/>
+        <Caret Line="463" Column="1" TopLine="438"/>
+      </Position15>
+      <Position16>
+        <Filename Value="main.pas"/>
+        <Caret Line="464" Column="1" TopLine="438"/>
+      </Position16>
+      <Position17>
+        <Filename Value="main.pas"/>
+        <Caret Line="465" Column="1" TopLine="438"/>
+      </Position17>
+      <Position18>
+        <Filename Value="main.pas"/>
+        <Caret Line="235" Column="1" TopLine="213"/>
+      </Position18>
+      <Position19>
+        <Filename Value="main.pas"/>
+        <Caret Line="430" Column="1" TopLine="414"/>
+      </Position19>
+      <Position20>
+        <Filename Value="main.pas"/>
+        <Caret Line="454" Column="1" TopLine="432"/>
+      </Position20>
+      <Position21>
+        <Filename Value="main.pas"/>
+        <Caret Line="455" Column="1" TopLine="433"/>
+      </Position21>
+      <Position22>
+        <Filename Value="main.pas"/>
+        <Caret Line="456" Column="1" TopLine="434"/>
+      </Position22>
+      <Position23>
+        <Filename Value="main.pas"/>
+        <Caret Line="457" Column="1" TopLine="435"/>
+      </Position23>
+      <Position24>
+        <Filename Value="..\..\..\..\..\..\..\..\Work\programs\fpc\2.2.4\src\rtl\win\sysutils.pp"/>
+        <Caret Line="91" Column="16" TopLine="85"/>
+      </Position24>
+      <Position25>
+        <Filename Value="..\..\..\..\..\..\..\..\Work\programs\lazarus\lcl\include\fileutil.inc"/>
+        <Caret Line="858" Column="3" TopLine="839"/>
+      </Position25>
+      <Position26>
+        <Filename Value="..\..\..\..\..\..\..\..\Work\programs\lazarus\lcl\fileutil.pas"/>
+        <Caret Line="48" Column="36" TopLine="40"/>
+      </Position26>
+      <Position27>
+        <Filename Value="testcipher.lpr"/>
+        <Caret Line="5" Column="41" TopLine="1"/>
+      </Position27>
+      <Position28>
+        <Filename Value="testcipher.lpr"/>
+        <Caret Line="9" Column="50" TopLine="1"/>
+      </Position28>
+    </JumpHistory>
+  </ProjectOptions>
+  <CompilerOptions>
+    <Version Value="8"/>
+    <PathDelim Value="\"/>
+    <SearchPaths>
+      <IncludeFiles Value="$(ProjOutDir)\;W:\home\pascal\lib\minilib\crypt\"/>
+      <OtherUnitFiles Value="W:\home\pascal\lib\minilib\crypt\"/>
+    </SearchPaths>
+    <CodeGeneration>
+      <Optimizations>
+        <VariablesInRegisters Value="True"/>
+        <OptimizationLevel Value="3"/>
+      </Optimizations>
+    </CodeGeneration>
+    <Linking>
+      <Debugging>
+        <UseLineInfoUnit Value="False"/>
+        <StripSymbols Value="True"/>
+      </Debugging>
+      <Options>
+        <Win32>
+          <GraphicApplication Value="True"/>
+        </Win32>
+      </Options>
+    </Linking>
+    <Other>
+      <CompilerPath Value="$(CompPath)"/>
+    </Other>
+  </CompilerOptions>
+  <Debugging>
+    <Exceptions Count="3">
+      <Item1>
+        <Name Value="EAbort"/>
+      </Item1>
+      <Item2>
+        <Name Value="ECodetoolError"/>
+      </Item2>
+      <Item3>
+        <Name Value="EFOpenError"/>
+      </Item3>
+    </Exceptions>
+  </Debugging>
+</CONFIG>
