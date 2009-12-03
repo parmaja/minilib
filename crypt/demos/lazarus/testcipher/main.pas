@@ -20,7 +20,10 @@ type
     procedure Prepare; override;
   end;
 
+  { TMainForm }
+
   TMainForm = class(TForm)
+    LogBox: TListBox;
     SrcEdit: TEdit;
     EncEdit: TEdit;
     DecEdit: TEdit;
@@ -37,7 +40,6 @@ type
     StatusBar: TStatusBar;
     MethodBox: TComboBox;
     MethodLbl: TLabel;
-    ResultLbl: TLabel;
     procedure TestReadBtnClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure TestWriteBtnClick(Sender: TObject);
@@ -77,8 +79,9 @@ type
     property EncFileName: string read GetEncFileName;
     property DecFileName: string read GetDeccFileName;
     property TestResult: TTestResult read FTestResult write SetTestResult;
-    procedure CalcSpeed(vTime, vSize: Cardinal);
+    procedure CalcSpeed(vTime, vSize: Cardinal; vEncrypt: Boolean=False);
     procedure ShowInfo(const vInfo: string);
+    procedure AddLog(const vLog: string);
   end;
 
 const
@@ -95,20 +98,22 @@ begin
   Result := FileSize(FName);
 end;
 
-procedure TMainForm.CalcSpeed(vTime, vSize: Cardinal);
+procedure TMainForm.CalcSpeed(vTime, vSize: Cardinal; vEncrypt: Boolean);
+const
+  cEncName: array[Boolean] of string = ('Decrypt ', 'Encrypt ');
 var
   s: string;
   sp, sz: Double;
 begin
   sz := vSize / (1024*1024);
   if vTime=0 then
-    s := Format('Time: 0 ms Size: %.4g MB Speed: ~ MB/S ', [sz])
+    s := Format(cEncName[vEncrypt]+'Time: 0 ms Size: %.4g MB Speed: ~ MB/S ', [sz])
   else
   begin
     sp := vSize / (vTime*1024*1024/1000);
-    s := Format('Time: %d ms Size: %.4g MB Speed: %f MB/S ', [vTime, sz, sp]);
+    s := Format(cEncName[vEncrypt]+'Time: %d ms Size: %.4g MB Speed: %f MB/S ', [vTime, sz, sp]);
   end;
-  ShowInfo(s);
+  AddLog(s);
 end;
 
 function TMainForm.CreateCipherStream(AStream: TStream; Way: TCipherWay; Mode: TCipherMode; Owned: Boolean): TCipherStream;
@@ -218,9 +223,9 @@ begin
   if FTestResult <> Value then
   begin
     FTestResult := Value;
-    ResultLbl.Caption := cResultCaption[Value];
-    ResultLbl.Font.Color := cResultColor[Value];
-    Application.ProcessMessages;
+    if FTestResult=trUnknown then
+      LogBox.Clear;
+    ShowInfo(cResultCaption[Value]);
   end;
 end;
 
@@ -228,6 +233,15 @@ procedure TMainForm.ShowInfo(const vInfo: string);
 begin
   StatusBar.Panels[0].Text := vInfo;
   Application.ProcessMessages;
+end;
+
+procedure TMainForm.AddLog(const vLog: string);
+var
+  idx: Integer;
+begin
+  idx := LogBox.Items.Add(vLog);
+  //LogBox.TopIndex := idx-3;
+  LogBox.Selected[idx] := True;
 end;
 
 procedure TMainForm.SrcEditChange(Sender: TObject);
@@ -300,15 +314,11 @@ begin
 end;
 
 procedure TMainForm.TestReadBtnClick(Sender: TObject);
-var
-  t: Cardinal;
 begin
   if FileName<>'' then
   begin
     TestResult := trUnknown;
-    t := GetTickCount;
     TestRead;
-    CalcSpeed(GetTickCount-t, FileSize);
     TestResult := cTestResult[MD5Print(MD5File(FileName))=MD5Print(MD5File(DecFileName))];
   end;
 end;
@@ -377,33 +387,43 @@ begin
 end;
 
 procedure TMainForm.TestRead;
+var
+  t: Cardinal;
 begin
   if CipherClass<>nil then
   begin
+    t := GetTickCount;
     ReadEncryptFile;
+    CalcSpeed(GetTickCount-t, FileSize, True);
+
+    t := GetTickCount;
     ReadDecryptFile;
+    CalcSpeed(GetTickCount-t, FileSize);
   end;
 end;
 
 procedure TMainForm.TestWrite;
+var
+  t: Cardinal;
 begin
   if CipherClass<>nil then
   begin
+    t := GetTickCount;
     WriteEncryptFile;
+    CalcSpeed(GetTickCount-t, FileSize, True);
+
+    t := GetTickCount;
     WriteDecryptFile;
+    CalcSpeed(GetTickCount-t, FileSize);
   end;
 end;
 
 procedure TMainForm.TestWriteBtnClick(Sender: TObject);
-var
-  t: Cardinal;
 begin
   if FileName<>'' then
   begin
     TestResult := trUnknown;
-    t := GetTickCount;
     TestWrite;
-    CalcSpeed(GetTickCount-t, FileSize);
     TestResult := cTestResult[MD5Print(MD5File(FileName))=MD5Print(MD5File(DecFileName))];
   end;
 end;

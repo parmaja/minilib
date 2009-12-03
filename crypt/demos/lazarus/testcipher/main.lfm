@@ -1,10 +1,10 @@
 object MainForm: TMainForm
   Left = 556
-  Height = 266
+  Height = 363
   Top = 311
   Width = 539
   Caption = 'Crypto'
-  ClientHeight = 266
+  ClientHeight = 363
   ClientWidth = 539
   Font.Height = -11
   Font.Name = 'Tahoma'
@@ -66,22 +66,6 @@ object MainForm: TMainForm
     Width = 37
     Caption = 'Method'
     ParentColor = False
-  end
-  object ResultLbl: TLabel
-    Left = 0
-    Height = 34
-    Top = 212
-    Width = 539
-    Align = alBottom
-    Alignment = taCenter
-    Caption = 'Result:'
-    Font.Color = clGreen
-    Font.Height = -27
-    Font.Name = 'Tahoma'
-    Font.Style = [fsBold]
-    Layout = tlCenter
-    ParentColor = False
-    ParentFont = False
   end
   object SrcEdit: TEdit
     Left = 72
@@ -152,7 +136,7 @@ object MainForm: TMainForm
   object StatusBar: TStatusBar
     Left = 0
     Height = 20
-    Top = 246
+    Top = 343
     Width = 539
     Panels = <    
       item
@@ -172,5 +156,14 @@ object MainForm: TMainForm
     OnClick = MethodBoxClick
     Style = csDropDownList
     TabOrder = 0
+  end
+  object LogBox: TListBox
+    Left = 0
+    Height = 128
+    Top = 215
+    Width = 539
+    Align = alBottom
+    ItemHeight = 0
+    TabOrder = 9
   end
 end

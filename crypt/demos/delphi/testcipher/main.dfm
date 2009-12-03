@@ -2,7 +2,7 @@ object MainForm: TMainForm
   Left = 0
   Top = 0
   Caption = 'Crypto'
-  ClientHeight = 266
+  ClientHeight = 320
   ClientWidth = 664
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -15,7 +15,7 @@ object MainForm: TMainForm
   OnCreate = FormCreate
   DesignSize = (
     664
-    266)
+    320)
   PixelsPerInch = 96
   TextHeight = 13
   object FileNameLbl: TLabel
@@ -66,23 +66,6 @@ object MainForm: TMainForm
     Width = 36
     Height = 13
     Caption = 'Method'
-  end
-  object ResultLbl: TLabel
-    Left = 0
-    Top = 214
-    Width = 664
-    Height = 33
-    Align = alBottom
-    Alignment = taCenter
-    Caption = 'Result:'
-    Font.Charset = DEFAULT_CHARSET
-    Font.Color = clGreen
-    Font.Height = -27
-    Font.Name = 'Tahoma'
-    Font.Style = [fsBold]
-    ParentFont = False
-    Layout = tlCenter
-    ExplicitWidth = 96
   end
   object SrcEdit: TEdit
     Left = 72
@@ -152,7 +135,7 @@ object MainForm: TMainForm
   end
   object StatusBar: TStatusBar
     Left = 0
-    Top = 247
+    Top = 301
     Width = 664
     Height = 19
     Panels = <
@@ -162,6 +145,7 @@ object MainForm: TMainForm
       item
         Width = 50
       end>
+    ExplicitTop = 247
   end
   object MethodBox: TComboBox
     Left = 72
@@ -169,8 +153,17 @@ object MainForm: TMainForm
     Width = 209
     Height = 21
     Style = csDropDownList
-    ItemHeight = 0
+    ItemHeight = 13
     TabOrder = 0
     OnClick = MethodBoxClick
+  end
+  object LogBox: TListBox
+    Left = 0
+    Top = 216
+    Width = 664
+    Height = 85
+    Align = alBottom
+    ItemHeight = 13
+    TabOrder = 9
   end
 end
