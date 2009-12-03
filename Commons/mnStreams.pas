@@ -46,6 +46,7 @@ type
     FEOF: Boolean;
     FEndOfLine: string;
     procedure LoadBuffer;
+    procedure SetStream(const Value: TStream);
   protected
   public
     constructor Create(AStream: TStream; AEndOfLine:string; Owned: Boolean = True); overload; virtual; 
@@ -60,6 +61,8 @@ type
     function WriteStrings(const Value: TStrings): Cardinal;
     function WriteLn(const Value: string): Cardinal;
     procedure WriteCommand(const Command: string; const Params: string = '');
+    property Stream: TStream read FStream write SetStream;
+    property StreamOwned: Boolean read FStreamOwned write FStreamOwned default False;
     property EOF: Boolean read FEOF;
     property EndOfLine: string read FEndOfLine write FEndOfLine;
   end;
@@ -282,6 +285,17 @@ begin
     SetString(t, FPos, P - FPos);
     Result := Result + t;
     FPos := P;
+  end;
+end;
+
+procedure TmnStream.SetStream(const Value: TStream);
+begin
+  if FStream <> Value then
+  begin
+    if (FStream <> nil) and FStreamOwned then
+      FreeAndNil(FStream); 
+    FStream := Value;
+    FStreamOwned := False;
   end;
 end;
 

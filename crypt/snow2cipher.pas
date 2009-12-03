@@ -31,7 +31,7 @@ type
     function GetByte: Byte;
     function GetByte2: Byte;
     procedure StreamBlock(const InBuffer; InCount: Integer; var OutBuffer; var OutCount: Integer); virtual;
-    procedure LoadKey(Key: TSnowKey; KeySize: TSnowKeySize; IV3, IV2, IV1, IV0: u32);
+    procedure LoadKey(Key: TSnowKeyBuf; KeySize: TSnowKeyBufSize; IV3, IV2, IV1, IV0: u32);
   public
     constructor Create;
     procedure Encrypt(const InBuffer; InCount: Integer; var OutBuffer; var OutCount: Integer); override;
@@ -43,8 +43,8 @@ type
     function GetCipher: TSnow2Cipher;
     procedure SetCipher(const Value: TSnow2Cipher);
   protected
-    Key: TSnowKey;
-    KeySize: TSnowKeySize;
+    Key: TSnowKeyBuf;
+    KeySize: TSnowKeyBufSize;
     IV3, IV2, IV1, IV0: u32;
     function DoCreateCipher: TCipher; override;
     procedure Init; override;
@@ -204,7 +204,7 @@ begin
 {$endif}
 end;
 
-procedure TSnow2Cipher.LoadKey(Key: TSnowKey; KeySize: TSnowKeySize; IV3, IV2, IV1, IV0: u32);
+procedure TSnow2Cipher.LoadKey(Key: TSnowKeyBuf; KeySize: TSnowKeyBufSize; IV3, IV2, IV1, IV0: u32);
 begin
   SnowLoadkey(Context, Key, KeySize, IV3, IV2, IV1, IV0);
   LoadBlock;

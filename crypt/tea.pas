@@ -30,17 +30,17 @@ uses
   Classes, SysUtils;
   
 type
-  TTeaKey = array[0..3] of DWord;
+  TTeaKeyBuf = array[0..3] of DWord;
 
-procedure TeaEncrypt(var v: QWord; k: TTeaKey);
-procedure TeaDecrypt(var v: QWord; k: TTeaKey);
+procedure TeaEncrypt(var v: QWord; k: TTeaKeyBuf);
+procedure TeaDecrypt(var v: QWord; k: TTeaKeyBuf);
 
 implementation
 
 const
   TeaDelta32: DWord = $9e3779b9;
 
-procedure TeaEncrypt(var v: QWord; k: TTeaKey);
+procedure TeaEncrypt(var v: QWord; k: TTeaKeyBuf);
 var
   v0, v1: DWord;
   k0, k1, k2, k3: DWord;
@@ -63,7 +63,7 @@ begin
   v := (QWord(v1) shl 32) or v0;
 end;
 
-procedure TeaDecrypt(var v: QWord; k: TTeaKey);
+procedure TeaDecrypt(var v: QWord; k: TTeaKeyBuf);
 var
   v0, v1: DWord;
   k0, k1, k2, k3: DWord;

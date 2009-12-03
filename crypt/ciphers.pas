@@ -26,7 +26,7 @@ type
   TCipher = class(TObject)
   public
     {
-      Because the Encrypted size not same as the original size we 2 of buffer
+      Because the Encrypted size not same as the original size we make 2 of buffer
       Some Ciphers will create memory for out buffer if you passed nil to OutBuffer
       so it need to free it (OutBuffer) after calling this functions
     }
@@ -68,6 +68,11 @@ type
     property Mode: TCipherMode read FMode;
     property Cipher: TCipher read GetCipher write SetCipher;
   end;
+
+  TCipherKey = class(TObject)
+  public
+    constructor Create(KeyString: string); virtual;
+  end; 
 
 implementation
 
@@ -143,6 +148,13 @@ begin
   if FMode = cimRead  then
     raise ECipherException.Create('Stream created for Write');
   Result := FStream.Write(Buffer, Count);
+end;
+
+{ TCipherKey }
+
+constructor TCipherKey.Create(KeyString: string);
+begin
+  inherited Create;
 end;
 
 end.

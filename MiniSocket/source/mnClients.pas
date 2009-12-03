@@ -28,6 +28,19 @@ type
   TmnClient = class;
   TmnCaller = class;
 
+  TmnClientSocketStream = class(TmnSocketStream)
+  private
+    FAddress: string;
+    FPort: string;
+    procedure SetAddress(const Value: string);
+    procedure SetPort(const Value: string);
+  protected
+    function CreateSocket: TmnCustomSocket; override;
+  public
+    property Port: string read FPort write SetPort;
+    property Address: string read FAddress write SetAddress;
+  end;
+
   TmnClientStream = class(TmnConnectionStream)
   private
     FAddress: string;
@@ -456,6 +469,27 @@ begin
 end;
 
 procedure TmnClientStream.SetPort(const Value: string);
+begin
+  if Connected then
+    raise EmnException.Create('Can not change Port value when active');
+  FPort := Value;
+end;
+
+{ TmnClientSocketStream }
+
+function TmnClientSocketStream.CreateSocket: TmnCustomSocket;
+begin
+  Result := WallSocket.Connect([], Port, Address)
+end;
+
+procedure TmnClientSocketStream.SetAddress(const Value: string);
+begin
+  if Connected then
+    raise EmnException.Create('Can not change Port value when active');
+  FAddress := Value;
+end;
+
+procedure TmnClientSocketStream.SetPort(const Value: string);
 begin
   if Connected then
     raise EmnException.Create('Can not change Port value when active');

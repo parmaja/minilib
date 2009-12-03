@@ -30,8 +30,8 @@ type
   u32 = Cardinal;
   u8 = Byte;
 
-  TSnowKeySize = (key128, key256);
-  TSnowKey = array[0..255] of byte;
+  TSnowKeyBufSize = (key128, key256);
+  TSnowKeyBuf = array[0..255] of byte;
   TSnowBlock = array[0..15] of u32;
 
   TSnowContext = record
@@ -42,7 +42,7 @@ type
 const
   cSnowBlockSize = SizeOf(TSnowBlock);
 
-procedure SnowLoadkey(var Context: TSnowContext; Key: TSnowKey; KeySize: TSnowKeySize; IV3, IV2, IV1, IV0: u32);
+procedure SnowLoadkey(var Context: TSnowContext; Key: TSnowKeyBuf; KeySize: TSnowKeyBufSize; IV3, IV2, IV1, IV0: u32);
 procedure SnowKeyStreamBlock(var Context: TSnowContext; var Block: TSnowBlock);
 
 function SnowGetByte(n: Byte; w: u32): Byte;
@@ -318,7 +318,7 @@ end;
  *        Key[31]-> lsb of k_0
  *}
 
-procedure SnowLoadkey(var Context: TSnowContext; Key: TSnowKey; KeySize: TSnowKeySize; IV3, IV2, IV1, IV0: u32);
+procedure SnowLoadkey(var Context: TSnowContext; Key: TSnowKeyBuf; KeySize: TSnowKeyBufSize; IV3, IV2, IV1, IV0: u32);
 var
   i: Integer;
   fsmtmp, outfrom_fsm: u32;

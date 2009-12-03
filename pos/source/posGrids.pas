@@ -549,7 +549,7 @@ begin
   else
     Canvas.Brush.Color := Color;
   Canvas.Pen.Style := psSolid;
-  Canvas.Pen.Color := Lighten(Canvas.Brush.Color, -30);
+  Canvas.Pen.Color := Lighten(Canvas.Brush.Color, -25);
   Canvas.FillRect(TextRect);
 
   if Columns.Grid.UseRightToLeftAlignment then
@@ -781,7 +781,7 @@ begin
     aRect := vRect;
     aRect.Bottom := aRect.Top + ItemHeight;
     Canvas.Brush.Color := clRed;
-    PaintHeader(Canvas, aRect, Lighten(Color, -50));
+    PaintHeader(Canvas, aRect, Lighten(Color, -25));
     vRect.Top := aRect.Bottom;
   end;
   inherited;

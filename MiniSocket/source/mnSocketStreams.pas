@@ -62,10 +62,10 @@ type
   TmnConnectionStream = class(TmnSocketStream)
   private
     FBuffer: PChar;
-    FEOFOnError: Boolean;
     FPos: PChar;
     FEnd: PChar;
     FBufferSize: Cardinal;
+    FEOFOnError: Boolean;
     FEOF: Boolean;
     FEndOfLine: string;
   protected
@@ -461,7 +461,7 @@ end;
 
 function TmnSocketStream.CreateSocket: TmnCustomSocket;
 begin
-  Result := nil;//if server connect not need to create socket
+  Result := nil;//if server connect no need to create socket
 end;
 
 function TmnSocketStream.WaitToWrite(Timeout: Integer): Boolean;
