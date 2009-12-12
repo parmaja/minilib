@@ -42,7 +42,7 @@ type
     procedure DoError(S: string); virtual;
     function CreateSocket: TmnCustomSocket; virtual;
   public
-    constructor Create(vSocket: TmnCustomSocket); virtual;
+    constructor Create(vSocket: TmnCustomSocket = nil); virtual;
     destructor Destroy; override;
     procedure Connect;
     procedure Disconnect;

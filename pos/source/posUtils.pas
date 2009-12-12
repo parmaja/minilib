@@ -10,7 +10,7 @@ unit posUtils;
 
 {$H+}
 {$IFDEF FPC}
-{$mode delphi}
+{$MODE delphi}
 {$ENDIF}
 
 interface
@@ -71,7 +71,7 @@ function TextStyleToFormat(Style: TTextStyle): Longint;
 procedure PaintText(Canvas: TCanvas; Text: string; vRect: TRect; Style: TTextStyle);
 procedure PaintTextButton(Canvas: TCanvas; Text: string; Rect: TRect; States: TposDrawStates);
 procedure PaintBorderButton(Canvas: TCanvas; Rect: TRect; Color, BorderColor: TColor; States: TposDrawStates; Down:Boolean = False);
-procedure PaintButton(Canvas: TCanvas; Caption: string; vShape:TposShapeKind; Rect: TRect; Color, BorderColor: TColor; States: TposDrawStates);
+procedure PaintButton(Canvas: TCanvas; Caption: string; vShape: TposShapeKind; Rect: TRect; Color, BorderColor: TColor; States: TposDrawStates);
 procedure PaintRect(Canvas: TCanvas; const vRect: TRect);
 
 //

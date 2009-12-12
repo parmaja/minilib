@@ -22,7 +22,6 @@ uses
   mnStreams, mnCommClasses;
 
 type
-
   { TmnOSCommStream }
 
   TmnOSCommStream = class(TmnCustomCommStream)
@@ -97,6 +96,8 @@ begin
       RaiseLastOSError;
     end;}
 
+    FillChar(DCB, SizeOf(DCB), #0);
+
     DCB.DCBlength := SizeOf(TDCB);
     DCB.XonLim := BufferSize div 4;
     DCB.XoffLim := DCB.XonLim;
@@ -138,14 +139,14 @@ begin
         if Replace then
         begin
           DCB.Flags := DCB.Flags or dcb_ErrorChar;
-          DCB.ErrorChar := Char(ReplaceChar);
+          DCB.ErrorChar := AnsiChar(ReplaceChar);
         end;
       end;
 
     // apply settings
     if not SetCommState(FHandle, DCB) then
     begin
-      raise EComPort.Create('SetupComm');
+      raise EComPort.Create('Error in SetCommState '+ IntToStr(GetLastError));
 //      RaiseLastOSError;
     end;
 
@@ -157,7 +158,7 @@ begin
 
     if not SetCommTimeouts(FHandle, aTimeouts) then
     begin
-      raise EComPort.Create('SetupComm');
+      raise EComPort.Create('Error in SetCommTimeouts'+ IntToStr(GetLastError));
 //      RaiseLastOSError;
     end;
 
@@ -296,4 +297,3 @@ begin
 end;
 
 end.
-

@@ -184,6 +184,8 @@ type
     procedure SetItemIndex(Sender: TposVirtualGrid; vItemIndex: Integer); virtual; abstract;
   end;
 
+  TposGridHelperClass = class of TposGridHelper;
+
   TposVirtualGrid = class(TposCustomGrid)
   private
     FOnGetCell: TposOnGetCell;

@@ -43,14 +43,14 @@ type
     XonXoffIn: Boolean;
     DSRSensitivity: Boolean;
     TxContinueOnXoff: Boolean;
-    XonChar: Char;
-    XoffChar: Char;
+    XonChar: AnsiChar;
+    XoffChar: AnsiChar;
   end;
 
   TParityFlags = record
     Check: Boolean;
     Replace: Boolean;
-    ReplaceChar: Char;
+    ReplaceChar: AnsiChar;
   end;
 
   TComEvent = (evRxChar, evTxEmpty, evRxFlag, evRing, evBreak, evCTS, evDSR,
@@ -70,7 +70,7 @@ type
     FPort: string;
     FFlowControl: TFlowControl;
     FDataBits: TDataBits;
-    FEventChar: Char;
+    FEventChar: AnsiChar;
     FDiscardNull: Boolean;
     FBufferSize: Integer;
     FUseOverlapped: Boolean;
@@ -83,7 +83,7 @@ type
     FWriteTimeoutConst: Cardinal;
     FWaitMode: Boolean;
     FQueMode: Boolean;
-    procedure SetEventChar(const Value: Char);
+    procedure SetEventChar(const Value: AnsiChar);
     procedure SetDiscardNull(const Value: Boolean);
     procedure SetBufferSize(const Value: Integer);
     procedure SetTimeout(const Value: Cardinal);
@@ -122,7 +122,7 @@ type
     property Parity: TParityBits read FParity;
     property StopBits: TStopBits read FStopBits;
     property FlowControl: TFlowControl read FFlowControl write FFlowControl;
-    property EventChar: Char read FEventChar write SetEventChar default #0;
+    property EventChar: AnsiChar read FEventChar write SetEventChar default #0;
     property DiscardNull: Boolean read FDiscardNull write SetDiscardNull default False;
     property WriteThrough: Boolean read FWriteThrough write FWriteThrough;
     property BufferSize: Integer read FBufferSize write SetBufferSize;
@@ -308,7 +308,7 @@ begin
   FDiscardNull := Value;
 end;
 
-procedure TmnCustomCommStream.SetEventChar(const Value: Char);
+procedure TmnCustomCommStream.SetEventChar(const Value: AnsiChar);
 begin
   FEventChar := Value;
 end;

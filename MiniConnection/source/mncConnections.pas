@@ -209,6 +209,7 @@ type
     property AsNullString: string read GetAsString write SetAsNullString;
     property AsInteger: Integer read GetAsInteger write SetAsInteger;
     property AsInt64: Integer read GetAsInt64 write SetAsInt64;
+    property AsID: Integer read GetAsInt64 write SetAsInt64;
     property AsBoolean: Boolean read GetAsBoolean write SetAsBoolean;
     property AsCurrency: Currency read GetAsCurrency write SetAsCurrency;
     property AsDate: TDateTime read GetAsDate write SetAsDate;

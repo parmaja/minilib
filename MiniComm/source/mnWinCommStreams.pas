@@ -133,7 +133,7 @@ begin
         if Replace then
         begin
           DCB.Flags := DCB.Flags or dcb_ErrorChar;
-          DCB.ErrorChar := Char(ReplaceChar);
+          DCB.ErrorChar := AnsiChar(ReplaceChar);
         end;
       end;
 

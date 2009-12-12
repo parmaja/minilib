@@ -103,6 +103,7 @@ type
   protected
     function DoCreateItem(AClass: TmnXMLItemClass): TmnXMLItem; virtual;
     procedure Deleted(Index: Integer); virtual;
+    procedure Inserted(Index: Integer); virtual;
   public
     constructor Create(AOwnsObjects: Boolean = True);
     destructor Destroy; override;
@@ -527,6 +528,11 @@ end;
 procedure TmnXMLItems.Insert(Index: Integer; AItem: TmnXMLItem);
 begin
   FList.Insert(Index, AItem);
+  Inserted(Index);
+end;
+
+procedure TmnXMLItems.Inserted(Index: Integer);
+begin
 end;
 
 function TmnXMLItems.Last: TmnXMLItem;
