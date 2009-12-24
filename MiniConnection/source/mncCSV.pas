@@ -124,7 +124,7 @@ begin
   inherited;
   FHaveHeader := True;
   SpliteChar := #9; //TAB
-  EndOfLine := #13;
+  EndOfLine := sEndOfLine;
 end;
 
 { TmncCSVCommand }

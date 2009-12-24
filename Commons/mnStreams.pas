@@ -19,7 +19,10 @@ uses
   Classes, SysUtils, StrUtils;
 
 const
-  sEndOfLine = #$A;
+  sEndOfLine = #$0A;
+  sWinEndOfLine = #$0D#$0A;
+  sUnixEndOfLine = #$0A;
+  sMacEndOfLine = #$0D;
 
 type
   EmnStreamException = class(Exception);
@@ -56,6 +59,7 @@ type
     function Write(const Buffer; Count: Longint): Longint; override;
     procedure ReadUntil(const UntilStr: string; var Result: string; var Matched: Boolean);
     function ReadLn(var S: string; ExcludeEOL: Boolean = True): Boolean; overload;
+    function ReadLn: string; overload;
     procedure ReadStrings(Value: TStrings);
     procedure ReadCommand(var Command: string; var Params: string);
     function WriteStrings(const Value: TStrings): Cardinal;
@@ -138,6 +142,11 @@ begin
     Command := s;
     Params := '';
   end;
+end;
+
+function TmnStream.ReadLn: string;
+begin
+  ReadLn(Result);
 end;
 
 procedure TmnStream.WriteCommand(const Command, Params: string);

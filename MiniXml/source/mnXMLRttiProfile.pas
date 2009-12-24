@@ -110,6 +110,7 @@ type
     procedure Update; virtual;
     procedure Clear; override;
     procedure Delete(Index: Integer);
+    procedure Move(CurIndex, NewIndex: Integer);
     procedure Exchange(Index1, Index2: Integer);
     procedure Sort(Compare: TListSortCompare);
     function Add(AItem: TmnXMLItem): Integer;
@@ -538,6 +539,11 @@ end;
 function TmnXMLItems.Last: TmnXMLItem;
 begin
   Result := FList.Last as TmnXMLItem;
+end;
+
+procedure TmnXMLItems.Move(CurIndex, NewIndex: Integer);
+begin
+  FList.Move(CurIndex, NewIndex);
 end;
 
 function TmnXMLItems.Remove(AItem: TmnXMLItem): Integer;
