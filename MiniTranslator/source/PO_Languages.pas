@@ -130,24 +130,6 @@ end;
 
 procedure TPO_Parser.ParseLine(Number:Integer; ALine: string);
 
-  function Check(const vLine: string; const WithText: string): Boolean;
-    function _Same: Boolean;
-    var
-      i: Integer;
-    begin
-      Result := True;
-      for I := 1 to Length(WithText) do
-        if vLine[i]<>WithText[i] then
-        begin
-          Result := False;
-          Break;
-        end;
-    end;
-  begin
-    //Result := LeftStr(vLine, Length(WithText)) = WithText;
-    Result := (Length(WithText)<=Length(vLine)) and _Same;
-  end;
-
   function CheckAndAssign(vState: TPO_State; CreateNew, Convert: Boolean; const vLine: string): Boolean;
   var
     S: string;
@@ -161,7 +143,7 @@ procedure TPO_Parser.ParseLine(Number:Integer; ALine: string);
     end;
   begin
     W := sPOCommands[vState];
-    Result := Check(vLine, W);
+    Result := CompareLeftStr(vLine, w); // Check(vLine, W); same function in mnUtils
     if Result then
     begin
       if CreateNew then
