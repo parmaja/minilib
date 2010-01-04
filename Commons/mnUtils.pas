@@ -25,6 +25,7 @@ function DequoteStr(Str: string; QuoteChar: string): string; overload;
 function DequoteStr(Str: string): string; overload; //deqoute use both of ' and "
 function QuoteStr(Str: string; QuoteChar: string = '"'): string;
 function StrToStrings(Content: string; Strings: TStrings; Separators: TSysCharSet; WhiteSpace: TSysCharSet = [#0, #13, #10]; DequoteValues: Boolean = False; Quotes: TSysCharSet = ['''', '"']): Integer;
+function CompareLeftStr(const Str: string; const WithStr: string; Start: Integer=1): Boolean;
 
 {
   Break string to Strings list items at #10 or #13 or #13#10 
@@ -211,7 +212,7 @@ begin
   end;
 end;
 
-function cCompareStr(Start: Integer; const Str: string; const WithStr: string): Boolean;
+function CompareLeftStr(const Str: string; const WithStr: string; Start: Integer): Boolean;
 var
   i: Integer;
 begin
@@ -296,7 +297,7 @@ function DescapeString(const S: string; Esc: string; Chars: array of AnsiChar; E
     Result := -1;
     for i := 0 to Length(Escapes) - 1 do
     begin
-      if cCompareStr(Start, S, Escapes[i]) then
+      if CompareLeftStr(S, Escapes[i], Start) then
       begin
         Result := i;
         break;
@@ -316,7 +317,7 @@ begin
   i := 1;
   while i <= Length(S) do
   begin
-    if cCompareStr(i, S, Esc) then
+    if CompareLeftStr(S, Esc, i) then
     begin
       i := i + Length(Esc);
       p := InEscape(i);
@@ -339,7 +340,7 @@ begin
     i := 1;
     while i <= Length(S) do
     begin
-      if cCompareStr(i, S, Esc) then
+      if CompareLeftStr(S, Esc, i) then
       begin
         i := i + Length(Esc);
         p := InEscape(i);
