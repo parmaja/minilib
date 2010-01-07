@@ -430,21 +430,34 @@ begin
 end;
 
 function TposEngine.KeyDown(var Key: Word; Shift: TShiftState): Boolean;
+var
+  k: Char;
+  aInputs: TposFrameInputs;
 begin
   Result := (FocusedFrame <> nil) and FocusedFrame.KeyDown(Key, Shift);
   if not Result then
   begin
+    aInputs := FocusedFrame.GetInputs;
     if Shift = [] then
     begin
       case Key of
-        9: FocusNext;
+        VK_DELETE:
+        begin
+          k := #24;   
+          Result := KeyPress(k);//ahh stupid way
+        end;
+{        9:
+          if not (fiTab in aInputs) then
+            FocusNext;}
       end;
     end
     else if Shift = [ssShift] then
     begin
-      case Key of
-        9: FocusPrior;
-      end;
+{      case Key of
+        9:
+          if not (fiTab in aInputs) then
+            FocusPrior;
+      end;}
     end;
   end;
 end;
@@ -1087,12 +1100,6 @@ end;
 function TposFocusFrame.KeyDown(var Key: Word; Shift: TShiftState): Boolean;
 begin
   inherited KeyDown(Key, Shift);
-{  if not (fiTab in GetInputs) and (Key = 9) then
-  begin
-    posEngine.FocusNext;
-    Result := True;
-  end
-  else}
   if Visible then//it useful when try to disatch KeyDown to more than one controls
     Result := DoKeyDown(Key, Shift)
   else

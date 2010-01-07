@@ -164,6 +164,11 @@ end;
 function TposEdit.DoKeyPress(var Key: Char): Boolean;
 begin
   case Key of
+    #24: //CANCEL
+      begin
+        Text := '';
+        Result := True;
+      end;
     #8:
       begin
         Text := Copy(Text, 1, Length(Text) - 1);
