@@ -7,6 +7,7 @@
       <MainUnit Value="0"/>
       <TargetFileExt Value=".exe"/>
       <UseAppBundle Value="False"/>
+      <ActiveEditorIndexAtStart Value="1"/>
     </General>
     <VersionInfo>
       <ProjectVersion Value=""/>
@@ -47,12 +48,14 @@
         <ComponentName Value="MainForm"/>
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="Main"/>
-        <CursorPos X="20" Y="31"/>
-        <TopLine Value="6"/>
+        <CursorPos X="1" Y="1451"/>
+        <TopLine Value="1438"/>
+        <EditorIndex Value="0"/>
         <UsageCount Value="196"/>
         <Bookmarks Count="1">
           <Item0 X="8" Y="693" ID="1"/>
         </Bookmarks>
+        <Loaded Value="True"/>
       </Unit1>
       <Unit2>
         <Filename Value="..\..\lib\pos\source\posRegCtrls.pas"/>
@@ -620,9 +623,11 @@
       <Unit83>
         <Filename Value="..\..\..\..\MiniConnection\source\mncConnections.pas"/>
         <UnitName Value="mncConnections"/>
-        <CursorPos X="1" Y="912"/>
-        <TopLine Value="891"/>
+        <CursorPos X="26" Y="961"/>
+        <TopLine Value="936"/>
+        <EditorIndex Value="2"/>
         <UsageCount Value="34"/>
+        <Loaded Value="True"/>
       </Unit83>
       <Unit84>
         <Filename Value="..\..\..\..\..\..\..\..\programs\fpc\src\rtl\objpas\sysutils\sysutilh.inc"/>
@@ -737,9 +742,11 @@
       </Unit99>
       <Unit100>
         <Filename Value="..\..\..\..\..\..\..\..\programs\fpc\src\packages\sqlite\src\sqlite3.inc"/>
-        <CursorPos X="10" Y="22"/>
-        <TopLine Value="1"/>
-        <UsageCount Value="9"/>
+        <CursorPos X="56" Y="3423"/>
+        <TopLine Value="3402"/>
+        <EditorIndex Value="3"/>
+        <UsageCount Value="10"/>
+        <Loaded Value="True"/>
       </Unit100>
       <Unit101>
         <Filename Value="V:\dev\fpc\packages\sqlite\src\sqlite3.inc"/>
@@ -1332,10 +1339,12 @@
       </Unit186>
       <Unit187>
         <Filename Value="..\..\..\..\MiniConnection\db\sqlite\mncSQLite.pas"/>
-        <UnitName Value="mncSqlite"/>
-        <CursorPos X="3" Y="195"/>
-        <TopLine Value="169"/>
+        <UnitName Value="mncSQLite"/>
+        <CursorPos X="41" Y="451"/>
+        <TopLine Value="445"/>
+        <EditorIndex Value="1"/>
         <UsageCount Value="16"/>
+        <Loaded Value="True"/>
       </Unit187>
       <Unit188>
         <Filename Value="..\..\..\..\..\..\..\delphi\projects\LightPHPEdit\source\editor\EditorEngine.pas"/>
@@ -1499,7 +1508,128 @@
         <UsageCount Value="10"/>
       </Unit209>
     </Units>
-    <JumpHistory Count="0" HistoryIndex="-1"/>
+    <JumpHistory Count="30" HistoryIndex="29">
+      <Position1>
+        <Filename Value="..\..\..\..\MiniConnection\source\mncConnections.pas"/>
+        <Caret Line="1315" Column="1" TopLine="1294"/>
+      </Position1>
+      <Position2>
+        <Filename Value="..\..\..\..\MiniConnection\source\mncConnections.pas"/>
+        <Caret Line="1316" Column="1" TopLine="1295"/>
+      </Position2>
+      <Position3>
+        <Filename Value="..\..\..\..\MiniConnection\source\mncConnections.pas"/>
+        <Caret Line="1315" Column="1" TopLine="1294"/>
+      </Position3>
+      <Position4>
+        <Filename Value="..\..\..\..\MiniConnection\source\mncConnections.pas"/>
+        <Caret Line="1316" Column="1" TopLine="1295"/>
+      </Position4>
+      <Position5>
+        <Filename Value="Main.pas"/>
+        <Caret Line="1459" Column="1" TopLine="1438"/>
+      </Position5>
+      <Position6>
+        <Filename Value="..\..\..\..\MiniConnection\source\mncConnections.pas"/>
+        <Caret Line="1315" Column="1" TopLine="1294"/>
+      </Position6>
+      <Position7>
+        <Filename Value="..\..\..\..\MiniConnection\source\mncConnections.pas"/>
+        <Caret Line="1316" Column="1" TopLine="1295"/>
+      </Position7>
+      <Position8>
+        <Filename Value="..\..\..\..\MiniConnection\source\mncConnections.pas"/>
+        <Caret Line="1315" Column="1" TopLine="1294"/>
+      </Position8>
+      <Position9>
+        <Filename Value="..\..\..\..\MiniConnection\source\mncConnections.pas"/>
+        <Caret Line="1316" Column="1" TopLine="1295"/>
+      </Position9>
+      <Position10>
+        <Filename Value="..\..\..\..\MiniConnection\source\mncConnections.pas"/>
+        <Caret Line="1315" Column="1" TopLine="1294"/>
+      </Position10>
+      <Position11>
+        <Filename Value="..\..\..\..\MiniConnection\source\mncConnections.pas"/>
+        <Caret Line="1316" Column="1" TopLine="1295"/>
+      </Position11>
+      <Position12>
+        <Filename Value="..\..\..\..\MiniConnection\source\mncConnections.pas"/>
+        <Caret Line="1315" Column="1" TopLine="1294"/>
+      </Position12>
+      <Position13>
+        <Filename Value="..\..\..\..\MiniConnection\source\mncConnections.pas"/>
+        <Caret Line="1316" Column="1" TopLine="1295"/>
+      </Position13>
+      <Position14>
+        <Filename Value="..\..\..\..\MiniConnection\source\mncConnections.pas"/>
+        <Caret Line="1315" Column="1" TopLine="1294"/>
+      </Position14>
+      <Position15>
+        <Filename Value="..\..\..\..\MiniConnection\source\mncConnections.pas"/>
+        <Caret Line="1316" Column="1" TopLine="1295"/>
+      </Position15>
+      <Position16>
+        <Filename Value="..\..\..\..\MiniConnection\source\mncConnections.pas"/>
+        <Caret Line="1315" Column="1" TopLine="1294"/>
+      </Position16>
+      <Position17>
+        <Filename Value="..\..\..\..\MiniConnection\db\sqlite\mncSQLite.pas"/>
+        <Caret Line="488" Column="22" TopLine="452"/>
+      </Position17>
+      <Position18>
+        <Filename Value="..\..\..\..\MiniConnection\db\sqlite\mncSQLite.pas"/>
+        <Caret Line="489" Column="1" TopLine="466"/>
+      </Position18>
+      <Position19>
+        <Filename Value="..\..\..\..\MiniConnection\db\sqlite\mncSQLite.pas"/>
+        <Caret Line="493" Column="1" TopLine="466"/>
+      </Position19>
+      <Position20>
+        <Filename Value="..\..\..\..\MiniConnection\db\sqlite\mncSQLite.pas"/>
+        <Caret Line="489" Column="1" TopLine="466"/>
+      </Position20>
+      <Position21>
+        <Filename Value="..\..\..\..\MiniConnection\source\mncConnections.pas"/>
+        <Caret Line="955" Column="1" TopLine="934"/>
+      </Position21>
+      <Position22>
+        <Filename Value="..\..\..\..\MiniConnection\source\mncConnections.pas"/>
+        <Caret Line="956" Column="1" TopLine="935"/>
+      </Position22>
+      <Position23>
+        <Filename Value="..\..\..\..\MiniConnection\source\mncConnections.pas"/>
+        <Caret Line="1055" Column="1" TopLine="1034"/>
+      </Position23>
+      <Position24>
+        <Filename Value="..\..\..\..\MiniConnection\source\mncConnections.pas"/>
+        <Caret Line="1056" Column="1" TopLine="1035"/>
+      </Position24>
+      <Position25>
+        <Filename Value="..\..\..\..\MiniConnection\source\mncConnections.pas"/>
+        <Caret Line="947" Column="1" TopLine="926"/>
+      </Position25>
+      <Position26>
+        <Filename Value="..\..\..\..\MiniConnection\source\mncConnections.pas"/>
+        <Caret Line="948" Column="1" TopLine="927"/>
+      </Position26>
+      <Position27>
+        <Filename Value="..\..\..\..\MiniConnection\source\mncConnections.pas"/>
+        <Caret Line="949" Column="1" TopLine="928"/>
+      </Position27>
+      <Position28>
+        <Filename Value="..\..\..\..\MiniConnection\source\mncConnections.pas"/>
+        <Caret Line="950" Column="1" TopLine="929"/>
+      </Position28>
+      <Position29>
+        <Filename Value="..\..\..\..\MiniConnection\source\mncConnections.pas"/>
+        <Caret Line="951" Column="1" TopLine="930"/>
+      </Position29>
+      <Position30>
+        <Filename Value="..\..\..\..\MiniConnection\source\mncConnections.pas"/>
+        <Caret Line="952" Column="1" TopLine="931"/>
+      </Position30>
+    </JumpHistory>
   </ProjectOptions>
   <CompilerOptions>
     <Version Value="8"/>
@@ -1530,7 +1660,7 @@
     </Other>
   </CompilerOptions>
   <Debugging>
-    <BreakPoints Count="2">
+    <BreakPoints Count="3">
       <Item1>
         <Source Value="..\..\..\..\..\..\..\..\programs\lazarus\components\synedit\syncompletion.pas"/>
         <Line Value="537"/>
@@ -1539,6 +1669,10 @@
         <Source Value="..\..\..\..\..\..\..\..\programs\lazarus\components\synedit\syncompletion.pas"/>
         <Line Value="569"/>
       </Item2>
+      <Item3>
+        <Source Value="..\..\..\..\MiniConnection\db\sqlite\mncSQLite.pas"/>
+        <Line Value="493"/>
+      </Item3>
     </BreakPoints>
     <Exceptions Count="2">
       <Item1>

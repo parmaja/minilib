@@ -73,7 +73,7 @@ type
 
   TmncSQLiteCommand = class(TmncSQLCommand)
   private
-    FStatment: PPsqlite3_stmt;
+    FStatment: Psqlite3_stmt;
     FTail: pchar;
     FBOF: Boolean;
     FEOF: Boolean;
@@ -99,7 +99,7 @@ type
     procedure Clear; override;
     function GetRowsChanged: Integer; virtual;
     function GetLastInsertID: Int64;
-    property Statment: PPsqlite3_stmt read FStatment;
+    property Statment: Psqlite3_stmt read FStatment;
   end;
 
 implementation
@@ -453,7 +453,11 @@ var
   i: Integer;
   c: Integer;
   int:Int64;
-  str: Utf8String;
+{$ifdef fpc}
+  str: string;
+{$else}
+  str: utf8string;
+{$endif}
   flt: Double;
   aCurrent: TmncRecord;
   aType: Integer;

@@ -3,6 +3,8 @@ unit ucputils;
 {$IFDEF FPC}
 {$MODE delphi}
 {$ENDIF}
+{$H+}
+{$M+}
 
 interface
 
@@ -51,7 +53,7 @@ end;
 procedure ucpInstall(MBToWCProc: Tmbtowc_proc; WCtoMBProc: Twctomb_proc{$IFDEF FPC}; Hook: Boolean{$ENDIF});
 {$IFDEF FPC}
 var
-  Manager: TWideStringManager;
+  Manager: TUnicodeStringManager;
 {$ENDIF}
 begin
   FConverter.MBToWCProc := MBToWCProc;
@@ -103,8 +105,6 @@ begin
 end;
 
 function ucpUnicodeToAnsi(const S: WideString): AnsiString; overload;
-var
-  ico:Integer;
 begin
   Result := ucpUnicodeToAnsi(S, FConverter.WCToMBProc);
 end;

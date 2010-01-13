@@ -1415,6 +1415,7 @@ procedure TMainForm.FillGrid(SQLCMD: TmncSQLiteCommand);
 var
   i, z, c, cw, tw, w: Integer;
   s: string;
+  str: utf8string;
 begin
   FCancel := False;
   //DataGrid.BeginUpdate;
@@ -1455,7 +1456,8 @@ begin
       DataGrid.Cells[0, c] := IntToStr(c);
       for i := 1 to DataGrid.ColCount - 1 do
       begin
-        DataGrid.Cells[i, c] := SQLCMD.Current.Items[i - 1].AsString;
+        str := SQLCMD.Current.Items[i - 1].AsString;
+        DataGrid.Cells[i, c] := str;
       end;
       Inc(c);
       //before 100 rows will see the grid row by row filled, cheeting the eyes of user

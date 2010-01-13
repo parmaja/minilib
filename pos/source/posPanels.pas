@@ -34,13 +34,14 @@ type
 
   TposPanel = class(TCustomControl)
   private
-    {$IFDEF FPC}
-    procedure EraseBackground(DC: HDC); override;
-    {$ELSE}
+  protected
+    {$IFNDEF FPC}
     procedure WMEraseBkgnd(var Message: TWmEraseBkgnd); message WM_ERASEBKGND;
     {$ENDIF}
-  protected
   public
+    {$IFDEF FPC}
+    procedure EraseBackground(DC: HDC); override;
+    {$endif}
     constructor Create(AOwner: TComponent); override;
     procedure Paint; override;
   published

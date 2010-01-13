@@ -137,7 +137,7 @@ object MainForm: TMainForm
         Width = 1
         ParentColor = False
       end
-      object SQLEdit: TSynEdit
+      inline SQLEdit: TSynEdit
         Left = 5
         Height = 227
         Top = 38
@@ -626,7 +626,7 @@ object MainForm: TMainForm
         Options2 = [eoOverwriteBlock]
         BracketHighlightStyle = sbhsBoth
         TabWidth = 2
-        object TSynGutterPartList
+        inline TSynGutterPartList
           object TSynGutterLineNumber
             Width = 17
             MouseActions = <>
