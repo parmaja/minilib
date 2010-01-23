@@ -35,7 +35,7 @@ procedure Register;
   //  DefaultOIFavouriteProperties.Add(TOIFavouriteProperty.Create(ABaseClass,APropertyName,true));
   end;
 begin
-  RegisterComponents('Native', [TDotMatrix, TTextDotMatrix, TntvProgressBar, TntvGauge, TntvPageControl, TntvPage]);
+  RegisterComponents('Native', [TDotMatrix, TTextDotMatrix, TntvProgressBar, TntvPageControl, TntvPage]);
   RegisterComponentEditor(TntvPageControl, TntvPageControlEditor);
   AddFav(TntvPageControl, 'Items');
   //RegisterNoIcon([TntvPage]);

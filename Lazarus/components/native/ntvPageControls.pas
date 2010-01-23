@@ -147,13 +147,9 @@ type
     procedure CMFocusChanged(var Message: TMessage); message CM_FOCUSCHANGED; //belal
     procedure CMDialogKey(var Message: TCMDialogKey); message CM_DIALOGKEY;
     procedure CMControlChange(var Message: TCMControlChange); message CM_CONTROLCHANGE;
-    procedure EraseBackground(DC: HDC); override;
-    function ChildKey(var Message: TLMKey): boolean; override;
-    //procedure CMDesignHitTest(var Message: TCMDesignHitTest); message CM_DESIGNHITTEST;
+    procedure CMDesignHitTest(var Message: TLMMouse); message CM_DESIGNHITTEST;
     procedure CMHitTest(var Message: TCMHITTEST); message CM_HITTEST;
     procedure LMNCHitTest(var Message: TLMNCHITTEST); message LM_NCHITTEST;
-    function GetClientRect: TRect; virtual;
-    procedure FontChanged(Sender: TObject); override;
 
     procedure SetPageBorder(const Value: Integer);
     procedure SetActivePage(const Value: TWinControl);
@@ -173,6 +169,9 @@ type
     procedure SetImageList(const Value: TImageList);
     procedure AdjustTextRect(var vRect: TRect; vImageIndex: Integer);
   protected
+    function ChildKey(var Message: TLMKey): boolean; override;
+    function GetClientRect: TRect; override;
+    procedure FontChanged(Sender: TObject); override;
     procedure KeyDown(var Key: Word; Shift: TShiftState); override;
     procedure DefineProperties(Filer: TFiler); override;
     procedure Notification(AComponent: TComponent; Operation: TOperation); override;
@@ -222,12 +221,13 @@ type
     procedure InternalDrawBorder; virtual;
     procedure InternalDrawShadowedBorder; virtual;
     property UnderMouseIndex: Integer read FUnderMouseIndex write SetUnderMouseIndex;
-    class function GetControlClassDefaultSize: TPoint;
+    class function GetControlClassDefaultSize: TPoint; override;
     procedure WndProc(var TheMessage: TLMessage); override;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
     procedure Paint; override;
+    procedure EraseBackground(DC: HDC); override;
 
     procedure NextPage;
     procedure PriorPage;
@@ -245,7 +245,6 @@ type
     property ImageList: TImageList read FImageList write SetImageList;
 
     property Items: TntvPages read FItems write FItems;
-
     property OnPageChanged: TOnPageChanged read FOnPageChanged write FOnPageChanged;
     property OnSelectPage: TOnSelectPage read FOnSelectPage write FOnSelectPage;
 
@@ -525,9 +524,11 @@ end;
 procedure TntvPageControl.DrawTab(Index: Integer; var Rect: TRect);
 var
   R, aTextRect: TRect;
+  aTextStyle: TTextStyle;
 begin
   with Canvas do
   begin
+    aTextStyle := TextStyle;
     if (Index < 0) or (Index >= FPageList.Count) then
       Exit; //belal
     if PageIndex <> Index then
@@ -581,11 +582,11 @@ begin
     Brush.Style := bsClear;
     Canvas.Font.Assign(Self.Font);
 
-    TextStyle.Layout := tlCenter;
-    TextStyle.Alignment := taCenter;
+    aTextStyle.Layout := tlCenter;
+    aTextStyle.Alignment := taCenter;
     if UseRightToLeftAlignment then
-       TextStyle.RightToLeft := True;
-    TextRect(aTextRect, 0, 0, FPageList[Index].Caption);
+       aTextStyle.RightToLeft := True;
+    TextRect(aTextRect, 0, 0, FPageList[Index].Caption, aTextStyle);
   end;
 end;
 
@@ -820,7 +821,7 @@ begin
   //Result := Rect (0, 0, 0, 0);
 end;
 
-{procedure TntvPageControl.CMDesignHitTest(var Message: TCMDesignHitTest);
+procedure TntvPageControl.CMDesignHitTest(var Message: TLMMouse);
 var
   pt: TPoint;
   i: Integer;
@@ -841,7 +842,7 @@ begin
         Break;
       end;
   end;
-end;}
+end;
 
 procedure TntvPageControl.CMHitTest(var Message: TCMHITTEST);
 var
@@ -868,12 +869,13 @@ end;
 
 procedure TntvPageControl.LMNCHitTest(var Message: TLMNCHITTEST);
 begin
-  Message.Result := HTTRANSPARENT;
+  inherited;
+  //Message.Result := HTTRANSPARENT;
 end;
 
 function TntvPageControl.GetClientRect: TRect;
 begin
-  Result := GetClientRect;
+  Result := inherited GetClientRect;
   //Result.Top := Result.Top + HeaderHeight;
 end;
 
@@ -1447,7 +1449,6 @@ begin
     aCanvas.Brush.Color := Color;
     FillRect(DC, RW, aCanvas.Brush.Handle);
     //DrawFlatEdge(aCanvas,RW,Color,False);
-
   finally
     aCanvas.Handle := 0;
     ReleaseDC(Handle, DC);
@@ -1851,9 +1852,11 @@ end;
 procedure TntvPageControl.DrawNormalTab(Index: Integer; var Rect: TRect);
 var
   R, aTextRect: TRect;
+  aTextStyle: TTextStyle;
 begin
   with Canvas do
   begin
+    aTextStyle := TextStyle;
     if (Index < 0) or (Index >= FPageList.Count) then
       Exit; //belal
     if PageIndex <> Index then
@@ -1905,11 +1908,11 @@ begin
     Brush.Style := bsClear;
     Canvas.Font.Assign(Self.Font);
 
-    TextStyle.Layout := tlCenter;
-    TextStyle.Alignment := taCenter;
+    aTextStyle.Layout := tlCenter;
+    aTextStyle.Alignment := taCenter;
     if UseRightToLeftAlignment then
-       TextStyle.RightToLeft := True;
-    TextRect(aTextRect, 0, 0, FPageList[Index].Caption);
+       aTextStyle.RightToLeft := True;
+    TextRect(aTextRect, 0, 0, FPageList[Index].Caption, aTextStyle);
 
   end;
 end;

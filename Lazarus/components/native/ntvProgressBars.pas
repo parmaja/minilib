@@ -14,7 +14,7 @@ unit ntvProgressBars;
 interface
 
 uses
-  Classes, Messages, Controls, ExtCtrls, SysUtils, Math, Contnrs, Graphics, Forms,
+  Classes, Messages, Controls, ExtCtrls, SysUtils, Contnrs, Graphics, Forms,
   LCLType, LCLIntf, LMessages, LCLProc,
   ntvutils;
 
@@ -25,67 +25,6 @@ type
   { TntvProgressBar }
 
   TntvProgressBar = class(TCustomControl)
-  private
-    FMin: integer;
-    FMax: integer;
-    FPosition: integer;
-    FProgressWidth: integer;
-    FProgressColor: TColor;
-    FStep: integer;
-    FShowProgress: boolean;
-    procedure SetMax(const Value: integer);
-    procedure SetMin(const Value: integer);
-    procedure SetPosition(const Value: integer);
-    procedure SetProgressColor(const Value: TColor);
-    procedure SetShowProgress(const Value: boolean);
-  protected
-    procedure EraseBackground(DC: HDC); override;
-    procedure DoOnResize; override;
-
-    procedure CreateParams(var Params: TCreateParams); override;
-  public
-    constructor Create(AOwner: TComponent); override;
-    destructor Destroy; override;
-
-    procedure Paint; override;
-    procedure StepIt;
-    procedure Reset;
-    procedure StepBy(vStep: integer);
-  published
-    property Min: integer read FMin write SetMin default 0;
-    property Max: integer read FMax write SetMax default 100;
-    property Position: integer read FPosition write SetPosition default 0;
-    property Step: integer read FStep write FStep default 1;
-    property ShowProgress: boolean read FShowProgress write SetShowProgress;
-
-    property ProgressColor: TColor read FProgressColor write SetProgressColor default clNavy;
-
-    property Align;
-    property Anchors;
-    property BorderWidth;
-    property Color;
-    property Font;
-    property TabOrder;
-    property TabStop;
-    property Visible;
-    property OnContextPopup;
-    property OnDragDrop;
-    property OnDragOver;
-    property OnEndDock;
-    property OnEndDrag;
-    property OnEnter;
-    property OnExit;
-    property OnMouseDown;
-    property OnMouseMove;
-    property OnMouseUp;
-    property OnStartDock;
-    property OnStartDrag;
-  end;
-
-
-  { TntvGauge }
-
-  TntvGauge = class(TCustomControl)
   private
     FMin: integer;
     FMax: integer;
@@ -120,7 +59,6 @@ type
     procedure SetFrameColor(const Value: TColor);
   protected
     procedure DoOnResize; override;
-    procedure EraseBackground(DC: HDC); override;
     procedure CreateParams(var Params: TCreateParams); override;
     function GetClientRect: TRect; override;
     function ProgressWidth(APos, AMax, AMin: integer): integer;
@@ -133,6 +71,7 @@ type
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
+    procedure EraseBackground(DC: HDC); override;
     procedure Paint; override;
     procedure StepIt;
     procedure Reset;
@@ -183,159 +122,6 @@ uses Types;
 constructor TntvProgressBar.Create(AOwner: TComponent);
 begin
   inherited;
-  Width := 150;
-  Height := 16;
-
-	FMin := 0;
-  FMax := 100;
-  FPosition := 0;
-  FProgressWidth := 0;
-  FProgressColor := clNavy;
-  Color := clGray;
-  FStep := 1;
-  Font.Color := clWhite;
-  ControlStyle := ControlStyle - [csOpaque];
-  //BevelKind := bkSoft;
-end;
-
-procedure TntvProgressBar.CreateParams(var Params: TCreateParams);
-begin
-  inherited;
-  with Params do
-  begin
-  end;
-end;
-
-destructor TntvProgressBar.Destroy;
-begin
-
-  inherited;
-end;
-
-procedure TntvProgressBar.Paint;
-var
-  Tmp: string;
-begin
-  inherited;
-  with Canvas do
-  begin
-    if (FShowProgress) and (FPosition <> FMin) then
-    begin
-      Tmp := IntToStr(Round((FPosition - FMin) * 100 / (FMax - FMin))) + ' %';
-      Canvas.Font.Assign(Self.Font);
-      Brush.Color := clWhite;
-      //DrawString(Canvas, Tmp, ClientRect, [txtCenter, txtMiddle, txtClear]);
-
-    end;
-  end;
-end;
-
-procedure TntvProgressBar.Reset;
-begin
-  Position := 0;
-end;
-
-procedure TntvProgressBar.SetMax(const Value: integer);
-begin
-  if (FMax <> Value) and (Value > FMin) then
-  begin
-    FMax := Value;
-    SetPosition(Position);
-  end;
-end;
-
-procedure TntvProgressBar.SetMin(const Value: integer);
-begin
-  if (FMin <> Value) and (Value < FMax) then
-	begin
-    FMin := Value;
-    SetPosition(Position);
-  end;
-end;
-
-procedure TntvProgressBar.SetPosition(const Value: integer);
-var
-  aWidth: Integer;
-begin
-  if (Value > FMax) then FPosition := FMax else
-    if (Value < FMin) then FPosition := FMin else
-      FPosition := Value;
-
-  aWidth := MulDiv(Width, (FPosition - FMin), (FMax - FMin));
-  if aWidth <> FProgressWidth then
-  begin
-    FProgressWidth := aWidth;
-    //Invalidate;
-    //UpdateWindow(Handle);
-    //Update;
-    Refresh;
-  end;
-end;
-
-procedure TntvProgressBar.SetProgressColor(const Value: TColor);
-begin
-  if FProgressColor <> Value then
-	begin
-    FProgressColor := Value;
-    Invalidate;
-  end;
-end;
-
-procedure TntvProgressBar.SetShowProgress(const Value: boolean);
-begin
-  if FShowProgress <> Value then
-  begin
-    FShowProgress := Value;
-    Invalidate;
-  end;
-end;
-
-procedure TntvProgressBar.StepBy(vStep: integer);
-begin
-  Position := Position + vStep;
-end;
-
-procedure TntvProgressBar.StepIt;
-begin
-  Position := Position + FStep;
-end;
-
-procedure TntvProgressBar.EraseBackground(DC: HDC);
-var
-  aRect, ProgressRect: TRect;
-begin
-  if not (csLoading in ComponentState) then
-  begin
-    with Canvas do
-    begin
-      aRect := ClientRect;
-
-      ProgressRect := aRect;
-      //if (aRect.Left+FProgressWidth) <= aRect.Right then
-      aRect.Left := aRect.Left + FProgressWidth;
-      ProgressRect.Right := aRect.Left;
-
-      Brush.Color := FProgressColor;
-      //Windows.FillRect(Message.DC, ProgressRect, Canvas.Brush.Handle); belal
-      FillRect(ProgressRect);
-      Brush.Color := Color;
-      //Windows.FillRect(Message.DC, aRect, Canvas.Brush.Handle);
-      FillRect(aRect);
-    end;
-  end;
-end;
-
-procedure TntvProgressBar.DoOnResize;
-begin
-  inherited DoOnResize;
-	SetPosition(Position);
-end;
-
-{ TntvGauge }
-
-constructor TntvGauge.Create(AOwner: TComponent);
-begin
-  inherited;
   ControlStyle := [csCaptureMouse, csClickEvents, csSetCaption, csOpaque, csDoubleClicks];
 
   Width := 150;
@@ -366,7 +152,7 @@ begin
   FFrameColor := clBlack;
 end;
 
-procedure TntvGauge.CreateParams(var Params: TCreateParams);
+procedure TntvProgressBar.CreateParams(var Params: TCreateParams);
 begin
   inherited;
   with Params do
@@ -374,19 +160,19 @@ begin
   end;
 end;
 
-destructor TntvGauge.Destroy;
+destructor TntvProgressBar.Destroy;
 begin
 
   inherited;
 end;
 
-function TntvGauge.GetClientRect: TRect;
+function TntvProgressBar.GetClientRect: TRect;
 begin
   Result := inherited GetClientRect;
   //InflateRect(Result, -1, -1);
 end;
 
-function TntvGauge.GetSubHeight: integer;
+function TntvProgressBar.GetSubHeight: integer;
 begin
   if FSubHeight=0 then
     Result := Round(ClientHeight*0.30)
@@ -394,13 +180,13 @@ begin
     Result := FSubHeight;
 end;
 
-function TntvGauge.MainRect: TRect;
+function TntvProgressBar.MainRect: TRect;
 begin
   Result := ClientRect;
   Result.Right := ProgressWidth (Position, Max, Min);
 end;
 
-procedure TntvGauge.Paint;
+procedure TntvProgressBar.Paint;
 var
   Tmp: string;
   aRect: TRect;
@@ -434,17 +220,17 @@ begin
   end;
 end;
 
-function TntvGauge.ProgressStep: integer;
+function TntvProgressBar.ProgressStep: integer;
 begin
   Result := ClientWidth div 100;
 end;
 
-function TntvGauge.ProgressWidth(APos, AMax, AMin: Integer): integer;
+function TntvProgressBar.ProgressWidth(APos, AMax, AMin: Integer): integer;
 begin
   Result := MulDiv(ClientWidth, (APos - Min), (AMax - AMin));
 end;
 
-procedure TntvGauge.RedrawBorder(const Clip: HRGN);
+procedure TntvProgressBar.RedrawBorder(const Clip: HRGN);
 var
   DC: HDC;
   RW: TRect;
@@ -467,7 +253,7 @@ begin
 
 end;
 
-function TntvGauge.RemainRect: TRect;
+function TntvProgressBar.RemainRect: TRect;
 var
   w, mw, sw: Integer;
 begin
@@ -489,12 +275,12 @@ begin
 
 end;
 
-procedure TntvGauge.Reset;
+procedure TntvProgressBar.Reset;
 begin
   Position := 0;
 end;
 
-{procedure TntvGauge.SetBorderStyle(const Value: TItemBorderStyle);
+{procedure TntvProgressBar.SetBorderStyle(const Value: TItemBorderStyle);
 begin
   if FBorderStyle <> Value then
   begin
@@ -503,7 +289,7 @@ begin
   end;
 end;}
 
-procedure TntvGauge.SetFrameColor(const Value: TColor);
+procedure TntvProgressBar.SetFrameColor(const Value: TColor);
 begin
 	if FFrameColor<>Value then
 	begin
@@ -512,19 +298,19 @@ begin
 	end;
 end;
 
-procedure TntvGauge.DoOnResize;
+procedure TntvProgressBar.DoOnResize;
 begin
   inherited DoOnResize;
 	SetPosition(Position);
 end;
 
-procedure TntvGauge.EraseBackground(DC: HDC);
+procedure TntvProgressBar.EraseBackground(DC: HDC);
 begin
   FPaintStatus := [psAll];
   inherited EraseBackground(DC);
 end;
 
-procedure TntvGauge.SetMax(Value: integer);
+procedure TntvProgressBar.SetMax(Value: integer);
 begin
   if (FMax <> Value) and (Value > FMin) then
   begin
@@ -533,7 +319,7 @@ begin
   end;
 end;
 
-procedure TntvGauge.SetMin(Value: integer);
+procedure TntvProgressBar.SetMin(Value: integer);
 begin
   if (FMin <> Value) and (Value < FMax) then
 	begin
@@ -542,7 +328,7 @@ begin
   end;
 end;
 
-procedure TntvGauge.SetPosition(Value: integer);
+procedure TntvProgressBar.SetPosition(Value: integer);
 var
   aVal: Integer;
   OldWidth, NewWidth: integer;
@@ -570,7 +356,7 @@ begin
   end;
 end;
 
-procedure TntvGauge.SetProgressColor(const Value: TColor);
+procedure TntvProgressBar.SetProgressColor(const Value: TColor);
 begin
   if FProgressColor <> Value then
 	begin
@@ -579,7 +365,7 @@ begin
   end;
 end;
 
-procedure TntvGauge.SetShowProgress(Value: boolean);
+procedure TntvProgressBar.SetShowProgress(Value: boolean);
 begin
   if FShowProgress <> Value then
   begin
@@ -588,7 +374,7 @@ begin
   end;
 end;
 
-procedure TntvGauge.SetSubHeight(Value: integer);
+procedure TntvProgressBar.SetSubHeight(Value: integer);
 var
   aVal: Integer;
 begin
@@ -602,7 +388,7 @@ begin
   end;
 end;
 
-procedure TntvGauge.SetSubMax(Value: integer);
+procedure TntvProgressBar.SetSubMax(Value: integer);
 begin
   if (FSubMax <> Value) and (Value > FSubMin) then
   begin
@@ -611,7 +397,7 @@ begin
   end;
 end;
 
-procedure TntvGauge.SetSubMin(Value: integer);
+procedure TntvProgressBar.SetSubMin(Value: integer);
 begin
   if (FSubMin <> Value) and (Value < FSubMax) then
 	begin
@@ -620,7 +406,7 @@ begin
   end;
 end;
 
-procedure TntvGauge.SetSubPosition(Value: integer);
+procedure TntvProgressBar.SetSubPosition(Value: integer);
 var
   R: TRect;
   aVal: Integer;
@@ -657,7 +443,7 @@ begin
   end;
  end;
 
-procedure TntvGauge.SetSubProgressColor(const Value: TColor);
+procedure TntvProgressBar.SetSubProgressColor(const Value: TColor);
 begin
   if FSubProgressColor<>Value then
   begin
@@ -666,35 +452,35 @@ begin
   end;
 end;
 
-procedure TntvGauge.SetText(const S: string);
+procedure TntvProgressBar.SetText(const S: string);
 begin
   Exception.Create('not implement yet');
 end;
 
-procedure TntvGauge.StepBy(vStep: integer);
+procedure TntvProgressBar.StepBy(vStep: integer);
 begin
   Position := Position + vStep;
 end;
 
-procedure TntvGauge.StepIt;
+procedure TntvProgressBar.StepIt;
 begin
   Position := Position + FStep;
 end;
 
-function TntvGauge.SubRect: TRect;
+function TntvProgressBar.SubRect: TRect;
 begin
   Result := ClientRect;
   Result.Right := ProgressWidth (SubPosition, SubMax, SubMin);
   Result.Top := Result.Bottom-GetSubHeight;
 end;
 
-{procedure TntvGauge.WMNCCalcSize(var Message: TWMNCCalcSize);
+{procedure TntvProgressBar.WMNCCalcSize(var Message: TWMNCCalcSize);
 begin
   //if BorderStyle<>ibsNone then
     //InflateRect(Message.CalcSize_Params^.rgrc[0], -1, -1);
 end;}
 
-{procedure TntvGauge.WMNCPaint(var Message: TMessage);
+{procedure TntvProgressBar.WMNCPaint(var Message: TMessage);
 begin
   //if BorderStyle<>ibsNone then
     //RedrawBorder(HRGN(Message.WParam));

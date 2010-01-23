@@ -152,7 +152,6 @@ type
     procedure SetDots(const AValue: TntvDisplayDots);
   protected
     procedure Paint; override;
-    procedure EraseBackground(DC: HDC); override;
     procedure CMBiidModeChanged(var Message: TLMessage); message CM_BIDIMODECHANGED;
     procedure UpdateDisplay; virtual;
     procedure DoRefresh(Sender: TObject);
@@ -160,6 +159,7 @@ type
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
+    procedure EraseBackground(DC: HDC); override;
     procedure Resize; override;
     procedure Loaded; override;
     procedure BeginUpdate;

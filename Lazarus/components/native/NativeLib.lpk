@@ -11,7 +11,17 @@
         <OtherUnitFiles Value="$(LazarusDir)\ideintf\units\$(TargetCPU)-$(TargetOS)\"/>
         <UnitOutputDirectory Value="./units\$(TargetCPU)-$(TargetOS)"/>
       </SearchPaths>
+      <Parsing>
+        <SyntaxOptions>
+          <CStyleMacros Value="True"/>
+        </SyntaxOptions>
+      </Parsing>
       <Other>
+        <Verbosity>
+          <ShowNotes Value="False"/>
+          <ShowHints Value="False"/>
+          <ShowGenInfo Value="False"/>
+        </Verbosity>
         <CompilerPath Value="$(CompPath)"/>
         <CreateMakefileOnBuild Value="True"/>
       </Other>
