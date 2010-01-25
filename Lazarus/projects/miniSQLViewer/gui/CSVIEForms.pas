@@ -41,6 +41,8 @@ function ShowCSVIEOptions(Title: string; CSVIE: TmncCSVIE): Boolean;
 
 implementation
 
+{$R *.lfm}
+
 function ShowCSVIEOptions(Title: string; CSVIE: TmncCSVIE): Boolean;
 var
   s: string;
@@ -122,7 +124,5 @@ begin
   EOLCharList.ItemIndex := 0;
 end;
 
-initialization
-  {$I CSVIEForms.lrs}
 end.
 

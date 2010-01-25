@@ -34,6 +34,8 @@ function ShowSQLParams(Command: TmncCommand):Boolean;
 
 implementation
 
+{$R *.lfm}
+
 type
   TsqlvParamEdit = class(TCustomEdit)
   protected
@@ -129,7 +131,5 @@ begin
   CheckBox.Checked := True;
 end;
 
-initialization
-  {$i ParamsForms.lrs}
 end.
 

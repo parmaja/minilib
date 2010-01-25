@@ -1,7 +1,7 @@
 @echo off
 del bin\wince\sqliteviewer.exe
 
-fpc gui\sqliteviewer.lpr @windows.cfg -obin\wince\sqliteviewer.exe -B -Parm -Twince -XParm-wince- -dLCLwince -FUunits\wince
+fpc gui\sqliteviewer.lpr @extrafpc.cfg -B -d%1 -TWinCE -Parm
 if errorlevel 1 goto erroroccurred
 
 e:\utils\upx bin\wince\sqliteviewer.exe

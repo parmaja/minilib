@@ -29,6 +29,8 @@ type
 
 implementation
 
+{$R *.lfm}
+
 { TAboutForm }
 
 procedure TAboutForm.FormCreate(Sender: TObject);
@@ -36,6 +38,4 @@ begin
   VersionLbl.Caption := sqlvVersion;
 end;
 
-initialization
-  {$I AboutForm.lrs}
 end.

@@ -7,21 +7,20 @@ program SqliteViewer;
  * @author    Zaher Dirkey <zaher at parmaja dot com>
  *}
 
-
 {$mode objfpc}{$H+}
 
 uses
   {$IFDEF UNIX}{$IFDEF UseCThreads}
   cthreads,
   {$ENDIF}{$ENDIF}
-  Interfaces, // this includes the LCL widgetset
-  Forms
-  { you can add units after this }, Main, AboutForm, sqlvStdClasses,
+  Interfaces, Forms,
+  Main, AboutForm, sqlvStdClasses,
   sqlvClasses, CSVIEForms;
+
+{$R SqliteViewer.res}
 
 begin
   Application.Initialize;
-  Application.Title := 'SQLite viewer';
   Application.CreateForm(TMainForm, MainForm);
   Application.Run;
 end.

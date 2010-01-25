@@ -7,7 +7,6 @@ unit Main;
  * @author    Zaher Dirkey <zaher at parmaja dot com>
  *}
 
-
 {$mode objfpc}{$H+}
 
 {todo: Save/Load sql scripts: DONE}
@@ -265,6 +264,8 @@ var
   MainForm: TMainForm;
 
 implementation
+
+{$R *.lfm}
 
 uses
   AboutForm, CSVIEForms, ParamsForms, SynEditMiscProcs;
@@ -1534,7 +1535,5 @@ begin
   //FillNow('Exceptions', (Owner as TfbvSession).Exceptions);
 end;
 
-initialization
-  {$I Main.lrs}
 end.
 
