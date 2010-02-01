@@ -1,6 +1,7 @@
 @echo off
+rem set path=V:\programs\FPC\SVN\bin\i386-win32;%path%
 del bin\wince\sqliteviewer.exe
-
+ 
 fpc gui\sqliteviewer.lpr @extrafpc.cfg -B -d%1 -TWinCE -Parm
 if errorlevel 1 goto erroroccurred
 

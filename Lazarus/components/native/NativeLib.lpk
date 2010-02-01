@@ -8,7 +8,7 @@
       <Version Value="8"/>
       <PathDelim Value="\"/>
       <SearchPaths>
-        <OtherUnitFiles Value="$(LazarusDir)\ideintf\units\$(TargetCPU)-$(TargetOS)\"/>
+        <OtherUnitFiles Value="units\$(TargetCPU)-$(TargetOS)\;$(LazarusDir)\ideintf\units\$(TargetCPU)-$(TargetOS)\"/>
         <UnitOutputDirectory Value="./units\$(TargetCPU)-$(TargetOS)"/>
       </SearchPaths>
       <Parsing>
