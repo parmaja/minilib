@@ -36,7 +36,7 @@ begin
   end;
 end;
 
-{$IFDEF WINDOWS}{$R Calculator.rc}{$ENDIF}
+{$R Calculator.res}
 
 begin
   Run;

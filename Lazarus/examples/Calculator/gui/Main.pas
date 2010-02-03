@@ -81,6 +81,8 @@ var
 
 implementation
 
+{$R *.lfm}
+
 procedure TCalcForm.Button1Click(Sender: TObject);
 begin
   Process((Sender as TSpeedButton).Caption)
@@ -167,6 +169,5 @@ begin
 end;
 
 initialization
-  {$I Main.lrs}
 end.
 
