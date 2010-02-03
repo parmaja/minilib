@@ -9,9 +9,9 @@
       </Flags>
       <MainUnit Value="0"/>
       <TargetFileExt Value=".exe"/>
-      <Icon Value="0"/>
       <UseXPManifest Value="True"/>
-      <ActiveEditorIndexAtStart Value="0"/>
+      <Icon Value="0"/>
+      <ActiveEditorIndexAtStart Value="1"/>
     </General>
     <VersionInfo>
       <ProjectVersion Value=""/>
@@ -38,9 +38,11 @@
         <Filename Value="Calculator.lpr"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="Calculator"/>
-        <CursorPos X="1" Y="1"/>
-        <TopLine Value="1"/>
+        <CursorPos X="48" Y="27"/>
+        <TopLine Value="21"/>
+        <EditorIndex Value="1"/>
         <UsageCount Value="32"/>
+        <Loaded Value="True"/>
       </Unit0>
       <Unit1>
         <Filename Value="Main.pas"/>
@@ -48,8 +50,8 @@
         <ComponentName Value="CalcForm"/>
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="Main"/>
-        <CursorPos X="1" Y="1"/>
-        <TopLine Value="1"/>
+        <CursorPos X="12" Y="169"/>
+        <TopLine Value="149"/>
         <EditorIndex Value="0"/>
         <UsageCount Value="32"/>
         <Loaded Value="True"/>
@@ -153,7 +155,84 @@
         <UsageCount Value="10"/>
       </Unit15>
     </Units>
-    <JumpHistory Count="0" HistoryIndex="-1"/>
+    <JumpHistory Count="19" HistoryIndex="18">
+      <Position1>
+        <Filename Value="Main.pas"/>
+        <Caret Line="12" Column="33" TopLine="1"/>
+      </Position1>
+      <Position2>
+        <Filename Value="Main.pas"/>
+        <Caret Line="16" Column="16" TopLine="1"/>
+      </Position2>
+      <Position3>
+        <Filename Value="Main.pas"/>
+        <Caret Line="18" Column="14" TopLine="1"/>
+      </Position3>
+      <Position4>
+        <Filename Value="Main.pas"/>
+        <Caret Line="31" Column="34" TopLine="13"/>
+      </Position4>
+      <Position5>
+        <Filename Value="Main.pas"/>
+        <Caret Line="74" Column="24" TopLine="62"/>
+      </Position5>
+      <Position6>
+        <Filename Value="Main.pas"/>
+        <Caret Line="87" Column="14" TopLine="74"/>
+      </Position6>
+      <Position7>
+        <Filename Value="Main.pas"/>
+        <Caret Line="91" Column="23" TopLine="74"/>
+      </Position7>
+      <Position8>
+        <Filename Value="Main.pas"/>
+        <Caret Line="96" Column="12" TopLine="74"/>
+      </Position8>
+      <Position9>
+        <Filename Value="Main.pas"/>
+        <Caret Line="99" Column="30" TopLine="87"/>
+      </Position9>
+      <Position10>
+        <Filename Value="Main.pas"/>
+        <Caret Line="101" Column="31" TopLine="87"/>
+      </Position10>
+      <Position11>
+        <Filename Value="Main.pas"/>
+        <Caret Line="102" Column="37" TopLine="87"/>
+      </Position11>
+      <Position12>
+        <Filename Value="Main.pas"/>
+        <Caret Line="107" Column="12" TopLine="87"/>
+      </Position12>
+      <Position13>
+        <Filename Value="Main.pas"/>
+        <Caret Line="144" Column="12" TopLine="132"/>
+      </Position13>
+      <Position14>
+        <Filename Value="Main.pas"/>
+        <Caret Line="147" Column="14" TopLine="132"/>
+      </Position14>
+      <Position15>
+        <Filename Value="Main.pas"/>
+        <Caret Line="149" Column="22" TopLine="132"/>
+      </Position15>
+      <Position16>
+        <Filename Value="Main.pas"/>
+        <Caret Line="155" Column="22" TopLine="143"/>
+      </Position16>
+      <Position17>
+        <Filename Value="Main.pas"/>
+        <Caret Line="159" Column="19" TopLine="143"/>
+      </Position17>
+      <Position18>
+        <Filename Value="Main.pas"/>
+        <Caret Line="162" Column="44" TopLine="143"/>
+      </Position18>
+      <Position19>
+        <Filename Value="Calculator.lpr"/>
+        <Caret Line="1" Column="17" TopLine="1"/>
+      </Position19>
+    </JumpHistory>
   </ProjectOptions>
   <CompilerOptions>
     <Version Value="8"/>

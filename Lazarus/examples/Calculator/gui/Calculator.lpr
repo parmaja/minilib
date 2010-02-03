@@ -15,7 +15,6 @@ procedure Run;
 var
   hWnd:THandle;
 begin
-  Application.ApplicationType := atSmartphone;
   {$IFDEF WINDOWS}
   hWnd := FindWindow('Window', 'Lazarus Calculator');
   {$else}
