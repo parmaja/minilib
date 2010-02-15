@@ -250,6 +250,7 @@ implementation
 constructor TposStuffs.Create(AOwner: TComponent);
 begin
   inherited;
+  FItems := nil;
   ControlStyle := ControlStyle + [csSetCaption, csCaptureMouse];
   Style := Style - [fsBorder] + [fsLatedOpaque];
   FItemIndex := -1;
@@ -268,8 +269,10 @@ destructor TposStuffs.Destroy;
 begin
   FreeAndNil(FDownItem);
   if FItems <> nil then
-    FItems.Release;
-  FItems := nil;
+    if FItems.Release then
+      Pointer(FItems) := nil
+    else
+      FItems := nil;
   inherited;
 end;
 

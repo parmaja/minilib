@@ -59,7 +59,7 @@ begin
     Inc(y);
   end;
   z := Size;
-  if AEnabled then
+  if not AEnabled then
     Canvas.Brush.Style := bsClear
   else
     Canvas.Brush.Style := bsSolid;
@@ -108,8 +108,8 @@ begin
         else
         begin
           z := z - 1;
-          Canvas.Polygon([Point(x + z * 2, y - z * 3), Point(x + z * 3, y - z * 2 ), Point(x - z * 2, y + z * 3), Point(x - 3 * z, y + z * 2)]);
-          Canvas.Polygon([Point(x - z * 2, y - z * 3), Point(x - z * 3, y - z * 2 ), Point(x + z * 2, y + z * 3), Point(x + 3 * z, y + z * 2)]);
+          Canvas.Polygon([Point(x + z * 2, y - z * 3), Point(x + z * 3, y - z * 2), Point(x - z * 2, y + z * 3), Point(x - 3 * z, y + z * 2)]);
+          Canvas.Polygon([Point(x - z * 2, y - z * 3), Point(x - z * 3, y - z * 2), Point(x + z * 2, y + z * 3), Point(x + 3 * z, y + z * 2)]);
         end;
       end;
     shpStar:

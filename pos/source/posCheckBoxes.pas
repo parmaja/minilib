@@ -193,15 +193,12 @@ begin
   begin
     aRect := GetRect(vRect);
     vCanvas.Brush.Color := Lighten(Frame.Color, -25);
+    vCanvas.Brush.Style := bsSolid;
     vCanvas.FillRect(aRect);
     if Frame.UseRightToLeftAlignment then
-    begin
-      aRect.Right := aRect.Right - 1;
-    end
+      aRect.Right := aRect.Right - 1
     else
-    begin
       aRect.Right := aRect.Right + 1;
-    end;
     DrawShape(vCanvas, aRect, Shape, False, True, 0, Frame.Font.Color);
   end;
 end;

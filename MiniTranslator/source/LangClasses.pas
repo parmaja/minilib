@@ -498,6 +498,7 @@ function TLanguage.GetText(const vID: string): string;
 var
   Founded: Boolean;
 begin
+  Founded := False;
   Result := FindText(vID, Founded);
   if not Founded then
     Result := vID;
@@ -517,6 +518,7 @@ function TLanguage.FindText(vID: string): string;
 var
   Founded: Boolean;
 begin
+  Founded := False;
   Result := FindText(vID, Founded);
 end;
 
@@ -1017,7 +1019,7 @@ var
 begin
   for i := 0 to FNotifyObjects.Count - 1 do
   begin
-    ILanguageRead(FNotifyObjects[i]).LanguageChanged(LanguageInfo);
+    (FNotifyObjects[i] as ILanguageRead).LanguageChanged(LanguageInfo);
   end;
 end;
 
