@@ -250,6 +250,7 @@ type
   public
     function Add(AField: TmncCustomField): Integer; overload;
     function FieldByName(vName: string): TmncCustomField;
+    function IsExists(vName: string): Boolean;
     procedure Clean; virtual;
     property Items[Index: Integer]: TmncCustomField read GetItem;
   end;
@@ -982,6 +983,11 @@ begin
   Result := FindField(vName);
   if Result = nil then
     raise EmncException.Create('Field "' + vName + '" not found');
+end;
+
+function TmncCustomFields.IsExists(vName: string): Boolean;
+begin
+  Result := FindField(vName) <> nil;
 end;
 
 procedure TmncCustomFields.Clean;
