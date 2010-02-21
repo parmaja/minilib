@@ -4,7 +4,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, StdCtrls, snow2cipher, ciphers, hexcipher, ComCtrls, md5;
+  Dialogs, StdCtrls, snow2cipher, ciphers, hexcipher, ComCtrls, md5, ZLib;
 
 const
   cBufferSize = 1024;
@@ -36,12 +36,16 @@ type
     MethodBox: TComboBox;
     MethodLbl: TLabel;
     LogBox: TListBox;
+    TestZLibBtn: TButton;
+    TestZLibBufferBtn: TButton;
     procedure TestReadBtnClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure TestWriteBtnClick(Sender: TObject);
     procedure SelectFileBtnClick(Sender: TObject);
     procedure SrcEditChange(Sender: TObject);
     procedure MethodBoxClick(Sender: TObject);
+    procedure TestZLibBtnClick(Sender: TObject);
+    procedure TestZLibBufferBtnClick(Sender: TObject);
   private
     FFileName: string;
     FTestResult: TTestResult;
@@ -319,8 +323,6 @@ begin
 end;
 
 procedure TMainForm.TestReadBtnClick(Sender: TObject);
-var
-  t: Cardinal;
 begin
   if FileName<>'' then
   begin
@@ -432,6 +434,127 @@ begin
     TestResult := trUnknown;
     TestWrite;
     TestResult := cTestResult[MD5Print(MD5File(FileName))=MD5Print(MD5File(DecFileName))];
+  end;
+end;
+
+procedure TMainForm.TestZLibBtnClick(Sender: TObject);
+var
+  st: string;
+  fi, fo: TFileStream;
+  cos: TCompressionStream;
+  des: TDecompressionStream;
+  i: Integer;
+begin
+  if FileExists(FileName) then
+  begin
+    fi := TFileStream.Create(FileName, fmOpenRead);
+    fo := TFileStream.Create(EncFileName, fmCreate or fmOpenWrite);
+    try
+      cos := TCompressionStream.Create(clMax, fo);
+      try
+        SetLength(st, cBufferSize);
+        while True do
+        begin
+          i := fi.read(st[1], cBufferSize);
+          if i=0 then Break;
+          cos.Write(st[1], i);
+          if i<cBufferSize then Break;
+        end;
+        SetLength(st, 0);
+      finally
+        cos.Free;
+      end;
+    finally
+      fi.Free;
+      fo.Free;
+    end;
+  end;
+
+  if FileExists(EncFileName) then
+  begin
+    fi := TFileStream.Create(EncFileName, fmOpenRead);
+    fo := TFileStream.Create(DecFileName, fmCreate or fmOpenWrite);
+    try
+      des := TDecompressionStream.Create(fi);
+      try
+        SetLength(st, cBufferSize);
+        while True do
+        begin
+          i := des.read(st[1], cBufferSize);
+          if i=0 then Break;
+          fo.Write(st[1], i);
+          if i<cBufferSize then Break;
+        end;
+        SetLength(st, 0);
+      finally
+        des.Free;
+      end;
+    finally
+      fi.Free;
+      fo.Free;
+    end;
+  end;
+end;
+
+procedure TMainForm.TestZLibBufferBtnClick(Sender: TObject);
+var
+  st: string;
+  fi, fo: TFileStream;
+  des: TDecompressionStream;
+  i: Integer;
+
+  CompressedBytesRead: Integer;
+  OutBuff: Pointer;
+begin
+  if FileExists(FileName) then
+  begin
+    fi := TFileStream.Create(FileName, fmOpenRead);
+    fo := TFileStream.Create(EncFileName, fmCreate or fmOpenWrite);
+    try
+      SetLength(st, cBufferSize);
+      while True do
+      begin
+        i := fi.read(st[1], cBufferSize);
+        if i=0 then Break;
+        try
+          OutBuff := nil;
+          CompressBuf(PChar(st), i, OutBuff, CompressedBytesRead);
+          fo.Write(OutBuff, CompressedBytesRead);
+        finally
+          FreeMem(OutBuff);
+        end;
+        if i<cBufferSize then Break;
+      end;
+      SetLength(st, 0);
+    finally
+      fi.Free;
+      fo.Free;
+    end;
+  end;
+
+  if FileExists(EncFileName) then
+  begin
+    fi := TFileStream.Create(EncFileName, fmOpenRead);
+    fo := TFileStream.Create(DecFileName, fmCreate or fmOpenWrite);
+    try
+      des := TDecompressionStream.Create(fi);
+      try
+        SetLength(st, cBufferSize);
+        while True do
+        begin
+          i := des.read(st[1], cBufferSize);
+          if i=0 then Break;
+          fo.Write(st[1], i);
+          if i<cBufferSize then Break;
+        end;
+        SetLength(st, 0);
+      finally
+        des.Free;
+      end;
+    finally
+      fi.Free;
+      fo.Free;
+    end;
   end;
 end;
 

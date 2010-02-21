@@ -58,12 +58,16 @@ var
   Line: Integer;
 begin
   Line := 1;
-  while not Stream.EOF and not Completed do
-  begin
-    Text := '';
-    if Stream.ReadLn(Text, False) then
-      ParseLine(Text, Line);
-    Line := Line + 1;
+  try
+    while not Stream.EOF and not Completed do
+    begin
+      Text := '';
+      if Stream.ReadLn(Text, False) then
+        ParseLine(Text, Line);
+      Line := Line + 1;
+    end;
+  except
+    raise;
   end;
 {  if not Completed then
     raise EmnXMLParserException.Create('Not completed xml', Line, Column);}

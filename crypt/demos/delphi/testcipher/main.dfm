@@ -145,7 +145,6 @@ object MainForm: TMainForm
       item
         Width = 50
       end>
-    ExplicitTop = 247
   end
   object MethodBox: TComboBox
     Left = 72
@@ -153,7 +152,7 @@ object MainForm: TMainForm
     Width = 209
     Height = 21
     Style = csDropDownList
-    ItemHeight = 13
+    ItemHeight = 0
     TabOrder = 0
     OnClick = MethodBoxClick
   end
@@ -165,5 +164,25 @@ object MainForm: TMainForm
     Align = alBottom
     ItemHeight = 13
     TabOrder = 9
+  end
+  object TestZLibBtn: TButton
+    Left = 489
+    Top = 72
+    Width = 75
+    Height = 25
+    Anchors = [akTop, akRight]
+    Caption = 'Test ZLib'
+    TabOrder = 10
+    OnClick = TestZLibBtnClick
+  end
+  object TestZLibBufferBtn: TButton
+    Left = 489
+    Top = 103
+    Width = 75
+    Height = 25
+    Anchors = [akTop, akRight]
+    Caption = 'Test ZLib Buff'
+    TabOrder = 11
+    OnClick = TestZLibBufferBtnClick
   end
 end

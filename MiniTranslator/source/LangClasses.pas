@@ -386,6 +386,7 @@ type
     property FilerClasses: TFilerClasses read FFilerClasses;
   end;
 
+
 function Languages: TLanguages;
 function LangOptions: TLangOptions;
 procedure InitLanguages(LanguagesClass: TLanguagesClass = nil);
