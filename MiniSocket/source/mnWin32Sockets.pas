@@ -416,13 +416,15 @@ var
   aHandle: TSocket;
   aSockAddr: TSockAddr;
   aHostEnt: PHostEnt;
-  aAddr: array[0..3] of AnsiChar;
+  aAddr: PAnsiChar;
 begin
   aHandle := socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
   if aHandle = INVALID_SOCKET then
     raise EmnException.Create('Failed to create a socket, Error #' + Inttostr(WSAGetLastError));
 
   if soReuseAddr in Options then
+  {$message warn 'use keepalive'}
+  //http://support.microsoft.com/default.aspx?kbid=140325
 {$IFDEF FPC}
   {$IFNDEF WINCE}
     WinSock2.setsockopt(aHandle, SOL_SOCKET, SO_REUSEADDR, PChar(@SO_TRUE), SizeOf(SO_TRUE));
@@ -449,6 +451,7 @@ begin
         aSockAddr.sin_addr.S_un_b.s_b3 := aAddr[2];
         aSockAddr.sin_addr.S_un_b.s_b4 := aAddr[3];
         aSockAddr.sin_family := aHostEnt.h_addrtype;
+        {$Message Warn 'need free mem for aAddr.'}
       end;
     end;
   end;
@@ -510,6 +513,7 @@ begin
       aSockAddr.sin_addr.S_un_b.s_b3 := aAddr[2];
       aSockAddr.sin_addr.S_un_b.s_b4 := aAddr[3];
       aSockAddr.sin_family := aHostEnt.h_addrtype;
+      {$Message Warn 'need free mem for aAddr.'}
     end;
   end;
 {$IFDEF FPC}
