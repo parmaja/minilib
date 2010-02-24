@@ -514,6 +514,22 @@ begin
       aSockAddr.sin_addr.S_un_b.s_b4 := aAddr[3];
       aSockAddr.sin_family := aHostEnt.h_addrtype;
       {$Message Warn 'need free mem for aAddr.'}
+      //http://www.koders.com/delphi/fidC146863019DA6E42E1464F72FDF9652B4032DA6B.aspx?s=gethostbyname#L39
+      {
+        function resolveHostname(str : string) : string;
+        var phe : phostent;
+        begin
+         result := '';
+         phe := gethostbyname( pchar(str) );
+         if phe = nil then exit;
+         result := format('%d.%d.%d.%d',[
+           ord(phe^.h_addr^[0]),
+           ord(phe^.h_addr^[1]),
+           ord(phe^.h_addr^[2]),
+           ord(phe^.h_addr^[3])
+         ]);
+        end;
+      }
     end;
   end;
 {$IFDEF FPC}
