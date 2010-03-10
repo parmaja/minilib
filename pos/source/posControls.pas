@@ -513,30 +513,19 @@ var
   begin
     if (vSize > 0) then
     begin
-      if vSize = 1 then
-      begin
-        Canvas.Brush.Style := bsClear;
-        Canvas.Pen.Style := psSolid;
-        Canvas.Pen.Color := vColor;
-        PaintRect(Canvas, R);
-        Canvas.Brush.Style := bsSolid;
-      end
-      else
-      begin
-        Canvas.Brush.Color := vColor;
-        Canvas.Brush.Style := bsSolid;
-        Canvas.FillRect(Rect(R.Left, R.Top, R.Right, R.Top + vSize));
-        Canvas.FillRect(Rect(R.Right - vSize, R.Top, R.Right, R.Bottom));
-        Canvas.FillRect(Rect(R.Left, R.Bottom - vSize, R.Right, R.Bottom));
-        Canvas.FillRect(Rect(R.Left, R.Top, R.Left + vSize, R.Bottom));
-      end;
+      Canvas.Brush.Color := vColor;
+      Canvas.Brush.Style := bsSolid;
+      Canvas.FillRect(Rect(R.Left, R.Top, R.Right, R.Top + vSize));
+      Canvas.FillRect(Rect(R.Right - vSize, R.Top, R.Right, R.Bottom));
+      Canvas.FillRect(Rect(R.Left, R.Bottom - vSize, R.Right, R.Bottom));
+      Canvas.FillRect(Rect(R.Left, R.Top, R.Left + vSize, R.Bottom));
     end;
   end;
 var
   TmpRect: TRect;
 begin
   inherited;
-   aColor := Color;
+  aColor := Color;
   Canvas.Font := Self.Font;
   Canvas.Brush.Style := bsSolid;
   aRect := ClientRect;
@@ -551,7 +540,6 @@ begin
   if fsBorder in Style then
   begin
     TmpRect := aRect;
-//    InflateRect(aRect, -BorderWidth, -BorderWidth);
     if Focused then
       Canvas.Pen.Color := Lighten(aColor, 50)
     else
@@ -559,7 +547,7 @@ begin
     Canvas.Pen.Style := psSolid;
     Canvas.Pen.Width := BorderWidth;
     Canvas.Brush.Style := bsClear;
-    PaintRect(Canvas, TmpRect);
+    FrameRect(TmpRect, BorderWidth, Canvas.Pen.Color);
     Canvas.Brush.Style := bsSolid;
     InflateRect(aRect, -BorderWidth, -BorderWidth);
   end;

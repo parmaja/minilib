@@ -1102,12 +1102,12 @@ begin
       if i < Items.Count then
       begin
         if FRows > 0 then
-          aItemHeight := (vRect.Bottom - vRect.Top + SpaceSize - 1) div FRows - SpaceSize
+          aItemHeight := (vRect.Bottom - vRect.Top + SpaceSize) div FRows - SpaceSize
         else
           aItemHeight := ((Items.DrawSize * ItemHeight) div 100);
         aRow := 0;
         r.Bottom := r.Top + aItemHeight;
-        while (r.Bottom < vRect.Bottom) do
+        while (r.Bottom <= vRect.Bottom) do
         begin
           if aRow > 0 then
             r.Top := r.Top + SpaceSize;

@@ -241,7 +241,7 @@ begin
     SetBkMode(Canvas.Handle, Opaque)
   else
   begin
-    SetBKColor(Canvas.Handle, Canvas.Brush.Color);
+    SetBKColor(Canvas.Handle, ColorToRGB(Canvas.Brush.Color));
     SetBkMode(Canvas.Handle, TRANSPARENT);
   end;
   if Style.WordBreak and (Style.Layout = tlCenter) then
@@ -331,13 +331,14 @@ begin
     Canvas.LineTo(Rect.Right - cPending, Rect.Top + cPending);
   end;
 
-{  if pdsBorder in States then
-    InflateRect(Rect, 1, 1);}
-  if vShape <> shpNone then
-    DrawShape(Canvas, Rect, vShape, False, True, 0, Canvas.Font.Color);
-
   if Caption <> '' then
     PaintTextButton(Canvas, Caption, Rect, States);
+
+  if pdsBorder in States then
+    InflateRect(Rect, -1, -1);
+
+  if vShape <> shpNone then
+    DrawShape(Canvas, Rect, vShape, False, True, 0, Canvas.Font.Color);
 end;
 
 {procedure PaintChair(Canvas:TCanvas;const vRect:TRect; Opaque:Boolean);

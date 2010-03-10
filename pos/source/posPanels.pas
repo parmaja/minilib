@@ -104,12 +104,12 @@ constructor TposPanel.Create(AOwner: TComponent);
 begin
   inherited;
   ControlStyle := [csAcceptsControls, csCaptureMouse, csClickEvents,
-    csSetCaption, csOpaque, csDoubleClicks];//, csPannable
+    csSetCaption, {csOpaque, }csDoubleClicks];//, csPannable
 end;
 
 procedure TposPanel.Paint;
 begin
-  inherited;
+  //inherited;
   if csDesigning in ComponentState then
   begin
     Canvas.Pen.Color := Font.Color;

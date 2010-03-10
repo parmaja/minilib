@@ -416,14 +416,13 @@ var
   aHandle: TSocket;
   aSockAddr: TSockAddr;
   aHostEnt: PHostEnt;
-  aAddr: PAnsiChar;
 begin
   aHandle := socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
   if aHandle = INVALID_SOCKET then
     raise EmnException.Create('Failed to create a socket, Error #' + Inttostr(WSAGetLastError));
 
   if soReuseAddr in Options then
-  {$message warn 'use keepalive'}
+  {$message hint 'use keepalive'}
   //http://support.microsoft.com/default.aspx?kbid=140325
 {$IFDEF FPC}
   {$IFNDEF WINCE}
@@ -445,13 +444,11 @@ begin
       aHostEnt := gethostbyname(PAnsiChar(Address));
       if aHostEnt <> nil then
       begin
-        Move(aHostEnt.h_addr^, aAddr, aHostEnt.h_length);
-        aSockAddr.sin_addr.S_un_b.s_b1 := aAddr[0];
-        aSockAddr.sin_addr.S_un_b.s_b2 := aAddr[1];
-        aSockAddr.sin_addr.S_un_b.s_b3 := aAddr[2];
-        aSockAddr.sin_addr.S_un_b.s_b4 := aAddr[3];
+        aSockAddr.sin_addr.S_un_b.s_b1 := aHostEnt.h_addr^[0];
+        aSockAddr.sin_addr.S_un_b.s_b2 := aHostEnt.h_addr^[1];
+        aSockAddr.sin_addr.S_un_b.s_b3 := aHostEnt.h_addr^[2];
+        aSockAddr.sin_addr.S_un_b.s_b4 := aHostEnt.h_addr^[3];
         aSockAddr.sin_family := aHostEnt.h_addrtype;
-        {$Message Warn 'need free mem for aAddr.'}
       end;
     end;
   end;
@@ -492,7 +489,6 @@ var
   aHandle: TSocket;
   aSockAddr: TSockAddr;
   aHostEnt: PHostEnt;
-  aAddr: PAnsiChar;
 begin
   aHandle := socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
   if aHandle = INVALID_SOCKET then
@@ -507,29 +503,11 @@ begin
     aHostEnt := gethostbyname(PAnsiChar(Address));
     if aHostEnt <> nil then
     begin
-      Move(aHostEnt.h_addr^, aAddr, aHostEnt.h_length);
-      aSockAddr.sin_addr.S_un_b.s_b1 := aAddr[0];
-      aSockAddr.sin_addr.S_un_b.s_b2 := aAddr[1];
-      aSockAddr.sin_addr.S_un_b.s_b3 := aAddr[2];
-      aSockAddr.sin_addr.S_un_b.s_b4 := aAddr[3];
+      aSockAddr.sin_addr.S_un_b.s_b1 := aHostEnt.h_addr^[0];
+      aSockAddr.sin_addr.S_un_b.s_b2 := aHostEnt.h_addr^[1];
+      aSockAddr.sin_addr.S_un_b.s_b3 := aHostEnt.h_addr^[2];
+      aSockAddr.sin_addr.S_un_b.s_b4 := aHostEnt.h_addr^[3];
       aSockAddr.sin_family := aHostEnt.h_addrtype;
-      {$Message Warn 'need free mem for aAddr.'}
-      //http://www.koders.com/delphi/fidC146863019DA6E42E1464F72FDF9652B4032DA6B.aspx?s=gethostbyname#L39
-      {
-        function resolveHostname(str : string) : string;
-        var phe : phostent;
-        begin
-         result := '';
-         phe := gethostbyname( pchar(str) );
-         if phe = nil then exit;
-         result := format('%d.%d.%d.%d',[
-           ord(phe^.h_addr^[0]),
-           ord(phe^.h_addr^[1]),
-           ord(phe^.h_addr^[2]),
-           ord(phe^.h_addr^[3])
-         ]);
-        end;
-      }
     end;
   end;
 {$IFDEF FPC}

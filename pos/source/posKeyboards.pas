@@ -19,12 +19,16 @@ interface
 uses
   SysUtils, Classes, Graphics, Controls, StdCtrls, Forms, Types, Contnrs,
 {$IFDEF FPC}
+  LCLTypes,
   LConvEncoding,
+{$ELSe}
+  Windows,
 {$ENDIF}
   posTypes, posControls, posButtons;
 
 const
   cKeyboardButtonColor = $00AA8264;
+  VK_EQUALS = $bb;
 
 type
   TCtrlKey = (ckNone, ckTab, ckCtrl, ckAlt, ckSpace, ckLanguage, ckEscape, ckClear, ckEnter, ckShift, ckCapsLock, ckBackspace, ckPAD);
@@ -34,6 +38,10 @@ type
   TposKeyLanguages = class;
   TposKeyLanguage = class;
 
+  TposKeyInfo = record
+    VirtualKey: Word;
+  end;
+
   TposKeyLanguageItem = class(TObject)
   private
     FLanguage: TposKeyLanguage;
@@ -41,7 +49,7 @@ type
     FNormalCaption: string;
     FName: string;
   public
-    constructor Create(Language: TposKeyLanguage; Name, Normal, Shift: string);
+    constructor Create(Language: TposKeyLanguage; Name, Normal, Shift: string; VirtualKey: Word = 0);
     destructor Destroy; override;
     property Name: string read FName write FName;
     property NormalCaption: string read FNormalCaption write FNormalCaption;
@@ -76,7 +84,7 @@ type
     property Items[Index: Integer]: TposKeyLanguage read GetItem write SetItem; default;
   end;
 
-  TposCustomKeyboardButton = class(TObject)
+  TposCustomKeyboardKey = class(TObject)
   private
     FKeyboard: TposKeyboard;
     FSize: Integer;
@@ -85,6 +93,7 @@ type
     FVisible: Boolean;
     FState: Boolean;
     FName: string;
+    FVirtualKey: Word;
     procedure SetBoundsRect(const Value: TRect);
     procedure SetVisible(const Value: Boolean);
     procedure SetName(const Value: string);
@@ -94,6 +103,7 @@ type
     procedure Click; virtual;
     procedure Pressed;
     procedure Release;
+    property BoundsRect: TRect read FBoundsRect write SetBoundsRect;
   public
     constructor Create(AKeyboard: TposKeyboard);
     destructor Destroy; override;
@@ -101,11 +111,11 @@ type
     property Size: Integer read FSize write FSize;
     property Keyboard: TposKeyboard read FKeyboard;
     property Row: Integer read FRow write FRow;
-    property BoundsRect: TRect read FBoundsRect write SetBoundsRect;
     property Visible: Boolean read FVisible write SetVisible;
+    property VirtualKey: Word read FVirtualKey write FVirtualKey;
   end;
 
-  TposKeyboardButton = class(TposCustomKeyboardButton)
+  TposKeyboardKey = class(TposCustomKeyboardKey)
   private
     FLangKey: TposKeyLanguageItem;
     FLangTR: Integer;
@@ -116,7 +126,7 @@ type
   public
   end;
 
-  TposPADKeyboardButton = class(TposCustomKeyboardButton)
+  TposPADKeyboardKey = class(TposCustomKeyboardKey)
   private
   protected
     procedure Paint(Canvas: TCanvas; Rect: TRect); override;
@@ -124,7 +134,7 @@ type
   public
   end;
 
-  TposCtrlKeyboardButton = class(TposCustomKeyboardButton)
+  TposCtrlKeyboardKey = class(TposCustomKeyboardKey)
   private
     FCtrlKey: TCtrlKey;
   protected
@@ -136,18 +146,20 @@ type
 
   TKeyboardButtonList = class(TObjectList)
   private
-    function GetItem(Index: Integer): TposCustomKeyboardButton;
-    procedure SetItem(Index: Integer; const Value: TposCustomKeyboardButton);
+    function GetItem(Index: Integer): TposCustomKeyboardKey;
+    procedure SetItem(Index: Integer; const Value: TposCustomKeyboardKey);
   public
-    function InRect(X, Y: Integer): TposCustomKeyboardButton;
+    function InRect(X, Y: Integer): TposCustomKeyboardKey;
     procedure Paint(Canvas: TCanvas; Rect: TRect); virtual;
-    property Items[Index: Integer]: TposCustomKeyboardButton read GetItem write SetItem; default;
+    property Items[Index: Integer]: TposCustomKeyboardKey read GetItem write SetItem; default;
   end;
 
   TposShiftState = (pssShift, pssAlt, pssCtrl, pssCapsLock);
   TposShiftStates = set of TposShiftState;
 
   TOnButtonPress = procedure(Sender: TObject; Value: string) of object;
+//  TOnKeyPress = procedure(Sender: TObject; Value: string) of object;
+  TOnSendKey = procedure(Sender: TObject; Key: TposKeyInfo) of object;
 
   { TposKeyboard }
   TposKeyboardKind = (keyNormal, keyNumberPAD);
@@ -164,13 +176,14 @@ type
     FLanguages: TposKeyLanguages;
     FCurrentLanguage: string;
     FShiftState: TposShiftStates;
-    FActiveButton: TposCustomKeyboardButton;
+    FActiveButton: TposCustomKeyboardKey;
     FOnButtonPress: TOnButtonPress;
+    FOnSendKey: TOnSendKey;
     FKind: TposKeyboardKind;
     FButtons: TKeyboardButtonList;
     FPressedColor: TColor;
     FSizeFactor: Integer;
-    procedure SetActiveButton(const Value: TposCustomKeyboardButton);
+    procedure SetActiveButton(const Value: TposCustomKeyboardKey);
     procedure SetCtrlFont(const Value: TFont);
     procedure SetBorderColor(const Value: TColor);
     procedure SetButtonColor(const Value: TColor);
@@ -190,14 +203,15 @@ type
     procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer); override;
     procedure MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: Integer); override;
     procedure DoButtonPress(Value: string); virtual;
+    procedure DoSendKey(Key: TposKeyInfo); virtual;
     procedure InitLanguages;
     procedure CtrlFontChanged(Sender: TObject);
-    property ActiveButton: TposCustomKeyboardButton read FActiveButton write SetActiveButton;
+    property ActiveButton: TposCustomKeyboardKey read FActiveButton write SetActiveButton;
     property Buttons: TKeyboardButtonList read FButtons write SetButtons;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
-    procedure SendKey(Button: TposCtrlKeyboardButton);
+    procedure SendKey(Key: Word);
     function GetNextLanguage:string;
     procedure FlipCurrentLanguage;
     procedure ChooseLanguageByName(Name:string);
@@ -250,6 +264,7 @@ type
     property OnResize;
     property OnStartDrag;
     property OnButtonPress: TOnButtonPress read FOnButtonPress write FOnButtonPress;
+    property OnSendKey: TOnSendKey read FOnSendKey write FOnSendKey;
   end;
 
 implementation
@@ -266,43 +281,46 @@ const
 procedure TposKeyboard.CreatePads;
 var
   aRow: Integer;
-  procedure AddKey(List: TKeyboardButtonList; AName: string; ASize: Integer);
+  procedure AddKey(List: TKeyboardButtonList; AName: string; ASize: Integer; AVirtualKey: Word);
   var
-    aButton: TposKeyboardButton;
+    aButton: TposKeyboardKey;
   begin
-    aButton := TposKeyboardButton.Create(Self);
+    aButton := TposKeyboardKey.Create(Self);
     with aButton do
     begin
       Name := AName;
+      VirtualKey := AVirtualKey;
       FSize := ASize;
       Row := aRow;
     end;
     List.Add(aButton);
   end;
 
-  procedure AddPADKey(List:TKeyboardButtonList; AName: string; ASize: Integer);
+  procedure AddPADKey(List:TKeyboardButtonList; AName: string; ASize: Integer; AVirtualKey: Word);
   var
-    aButton: TposPADKeyboardButton;
+    aButton: TposPADKeyboardKey;
   begin
-    aButton := TposPADKeyboardButton.Create(Self);
+    aButton := TposPADKeyboardKey.Create(Self);
     with aButton do
     begin
       Name := AName;
+      VirtualKey := AVirtualKey;
       FSize := ASize;
       Row := aRow;
     end;
     List.Add(aButton);
   end;
 
-  procedure AddCtrlKey(List:TKeyboardButtonList; AName: string; ACtrlKey: TCtrlKey; ASize: Integer);
+  procedure AddCtrlKey(List:TKeyboardButtonList; AName: string; ACtrlKey: TCtrlKey; ASize: Integer; AVirtualKey: Word);
   var
-    aButton:TposCtrlKeyboardButton;
+    aButton:TposCtrlKeyboardKey;
   begin
-    aButton := TposCtrlKeyboardButton.Create(Self);
+    aButton := TposCtrlKeyboardKey.Create(Self);
     with aButton do
     begin
       FCtrlKey := ACtrlKey;
       Name := AName;
+      VirtualKey := AVirtualKey;
       FSize := ASize;
       Row := aRow;
     end;
@@ -313,104 +331,104 @@ begin
   FPADButtons.Clear;
 
   aRow := 0;
-  AddPADKey(FPADButtons, '7', 4);
-  AddPADKey(FPADButtons, '8', 4);
-  AddPADKey(FPADButtons, '9', 4);
-  AddPADKey(FPADButtons, '*', 4);
-  AddCtrlKey(FPADButtons, '<-', ckBackspace, 8);
+  AddPADKey(FPADButtons, '7', 4, Ord('7'));
+  AddPADKey(FPADButtons, '8', 4, Ord('8'));
+  AddPADKey(FPADButtons, '9', 4, Ord('9'));
+  AddPADKey(FPADButtons, '*', 4, VK_MULTIPLY);
+  AddCtrlKey(FPADButtons, '<-', ckBackspace, 8, VK_BACK);
   Inc(aRow);
-  AddPADKey(FPADButtons, '4', 4);
-  AddPADKey(FPADButtons, '5', 4);
-  AddPADKey(FPADButtons, '6', 4);
-  AddPADKey(FPADButtons, '/', 4);
+  AddPADKey(FPADButtons, '4', 4, Ord('4'));
+  AddPADKey(FPADButtons, '5', 4, Ord('5'));
+  AddPADKey(FPADButtons, '6', 4, Ord('6'));
+  AddPADKey(FPADButtons, '/', 4, VK_DIVIDE);
   if MultiPAD then
-    AddCtrlKey(FPADButtons, '123', ckPAD, 8)
+    AddCtrlKey(FPADButtons, '123', ckPAD, 8, 0)
   else
-    AddCtrlKey(FPADButtons, 'Clear', ckClear, 8);
+    AddCtrlKey(FPADButtons, 'Escape', ckEscape, 8, VK_Escape);
   Inc(aRow);
-  AddPADKey(FPADButtons, '1', 4);
-  AddPADKey(FPADButtons, '2', 4);
-  AddPADKey(FPADButtons, '3', 4);
-  AddPADKey(FPADButtons, '+', 4);
-  AddCtrlKey(FPADButtons, 'Tab', ckTab, 8);
+  AddPADKey(FPADButtons, '1', 4, Ord('1'));
+  AddPADKey(FPADButtons, '2', 4, Ord('2'));
+  AddPADKey(FPADButtons, '3', 4, Ord('3'));
+  AddPADKey(FPADButtons, '+', 4, VK_ADD);
+  AddCtrlKey(FPADButtons, 'Tab', ckTab, 8, VK_TAB);
   Inc(aRow);
-  AddPADKey(FPADButtons, '0', 4);
-  AddPADKey(FPADButtons, '.', 4);
-  AddPADKey(FPADButtons, '=', 4);
-  AddPADKey(FPADButtons, '-', 4);
-  AddCtrlKey(FPADButtons, 'Enter', ckEnter, 8);
+  AddPADKey(FPADButtons, '0', 4, Ord('0'));
+  AddPADKey(FPADButtons, '.', 4, VK_DECIMAL);
+  AddPADKey(FPADButtons, '=', 4, VK_EQUALS);
+  AddPADKey(FPADButtons, '-', 4, VK_SUBTRACT);
+  AddCtrlKey(FPADButtons, 'Enter', ckEnter, 8, VK_RETURN);
 
   aRow := 0;
 //  AddCtrlKey('ESC', #27, ckChar, 4);
-  AddKey(FNormalButtons, '`', 4);
-  AddKey(FNormalButtons, '1', 4);
-  AddKey(FNormalButtons, '2', 4);
-  AddKey(FNormalButtons, '3', 4);
-  AddKey(FNormalButtons, '4', 4);
-  AddKey(FNormalButtons, '5', 4);
-  AddKey(FNormalButtons, '6', 4);
-  AddKey(FNormalButtons, '7', 4);
-  AddKey(FNormalButtons, '8', 4);
-  AddKey(FNormalButtons, '9', 4);
-  AddKey(FNormalButtons, '0', 4);
-  AddKey(FNormalButtons, '-', 4);
-  AddKey(FNormalButtons, '=', 4);
-  AddKey(FNormalButtons, '\', 4);
-  AddCtrlKey(FNormalButtons, '<-', ckBackspace, 4);
+  AddKey(FNormalButtons, '`', 4, $C0);
+  AddKey(FNormalButtons, '1', 4, Ord('1'));
+  AddKey(FNormalButtons, '2', 4, Ord('2'));
+  AddKey(FNormalButtons, '3', 4, Ord('3'));
+  AddKey(FNormalButtons, '4', 4, Ord('4'));
+  AddKey(FNormalButtons, '5', 4, Ord('5'));
+  AddKey(FNormalButtons, '6', 4, Ord('6'));
+  AddKey(FNormalButtons, '7', 4, Ord('7'));
+  AddKey(FNormalButtons, '8', 4, Ord('8'));
+  AddKey(FNormalButtons, '9', 4, Ord('9'));
+  AddKey(FNormalButtons, '0', 4, Ord('0'));
+  AddKey(FNormalButtons, '-', 4, VK_SUBTRACT);
+  AddKey(FNormalButtons, '=', 4, VK_EQUALS);
+  AddKey(FNormalButtons, '\', 4, $DC);
+  AddCtrlKey(FNormalButtons, '<-', ckBackspace, 4, VK_BACK);
   Inc(aRow);
-  AddCtrlKey(FNormalButtons, 'Tab', ckTab, 6);
-  AddKey(FNormalButtons, 'Q', 4);
-  AddKey(FNormalButtons, 'W', 4);
-  AddKey(FNormalButtons, 'E', 4);
-  AddKey(FNormalButtons, 'R', 4);
-  AddKey(FNormalButtons, 'T', 4);
-  AddKey(FNormalButtons, 'Y', 4);
-  AddKey(FNormalButtons, 'U', 4);
-  AddKey(FNormalButtons, 'I', 4);
-  AddKey(FNormalButtons, 'O', 4);
-  AddKey(FNormalButtons, 'P', 4);
-  AddKey(FNormalButtons, '[', 4);
-  AddKey(FNormalButtons, ']', 4);
+  AddCtrlKey(FNormalButtons, 'Tab', ckTab, 6, VK_TAB);
+  AddKey(FNormalButtons, 'Q', 4, Ord('Q'));
+  AddKey(FNormalButtons, 'W', 4, Ord('W'));
+  AddKey(FNormalButtons, 'E', 4, Ord('E'));
+  AddKey(FNormalButtons, 'R', 4, Ord('R'));
+  AddKey(FNormalButtons, 'T', 4, Ord('T'));
+  AddKey(FNormalButtons, 'Y', 4, Ord('Y'));
+  AddKey(FNormalButtons, 'U', 4, Ord('U'));
+  AddKey(FNormalButtons, 'I', 4, Ord('I'));
+  AddKey(FNormalButtons, 'O', 4, Ord('O'));
+  AddKey(FNormalButtons, 'P', 4, Ord('P'));
+  AddKey(FNormalButtons, '[', 4, $DB);
+  AddKey(FNormalButtons, ']', 4, $DD);
   if MultiPAD then
-    AddCtrlKey(FNormalButtons, '123', ckPAD, 6)
+    AddCtrlKey(FNormalButtons, '123', ckPAD, 6, 0)
   else
-    AddCtrlKey(FNormalButtons, 'Clear', ckClear, 6);
+    AddCtrlKey(FNormalButtons, 'Escape', ckEscape, 6, VK_ESCAPE);
   Inc(aRow);
-  AddCtrlKey(FNormalButtons, 'Caps', ckCapsLock, 8);
-  AddKey(FNormalButtons, 'A', 4);
-  AddKey(FNormalButtons, 'S', 4);
-  AddKey(FNormalButtons, 'D', 4);
-  AddKey(FNormalButtons, 'F', 4);
-  AddKey(FNormalButtons, 'G', 4);
-  AddKey(FNormalButtons, 'H', 4);
-  AddKey(FNormalButtons, 'J', 4);
-  AddKey(FNormalButtons, 'K', 4);
-  AddKey(FNormalButtons, 'L', 4);
-  AddKey(FNormalButtons, ';', 4);
-  AddKey(FNormalButtons, '''', 4);
-  AddCtrlKey(FNormalButtons, 'Enter', ckEnter, 8);
+  AddCtrlKey(FNormalButtons, 'Caps', ckCapsLock, 8, VK_CAPITAL);
+  AddKey(FNormalButtons, 'A', 4, Ord('A'));
+  AddKey(FNormalButtons, 'S', 4, Ord('S'));
+  AddKey(FNormalButtons, 'D', 4, Ord('D'));
+  AddKey(FNormalButtons, 'F', 4, Ord('F'));
+  AddKey(FNormalButtons, 'G', 4, Ord('G'));
+  AddKey(FNormalButtons, 'H', 4, Ord('H'));
+  AddKey(FNormalButtons, 'J', 4, Ord('J'));
+  AddKey(FNormalButtons, 'K', 4, Ord('K'));
+  AddKey(FNormalButtons, 'L', 4, Ord('L'));
+  AddKey(FNormalButtons, ';', 4, $BA);
+  AddKey(FNormalButtons, '''', 4, $DE);
+  AddCtrlKey(FNormalButtons, 'Enter', ckEnter, 8, VK_RETURN);
   Inc(aRow);
-  AddCtrlKey(FNormalButtons, 'Shift', ckShift, 10);
-  AddKey(FNormalButtons, 'Z', 4);
-  AddKey(FNormalButtons, 'X', 4);
-  AddKey(FNormalButtons, 'C', 4);
-  AddKey(FNormalButtons, 'V', 4);
-  AddKey(FNormalButtons, 'B', 4);
-  AddKey(FNormalButtons, 'N', 4);
-  AddKey(FNormalButtons, 'M', 4);
-  AddKey(FNormalButtons, ',', 4);
-  AddKey(FNormalButtons, '.', 4);
-  AddKey(FNormalButtons, '/', 4);
-  AddCtrlKey(FNormalButtons, 'Shift', ckShift, 10);
+  AddCtrlKey(FNormalButtons, 'Shift', ckShift, 10, VK_SHIFT);
+  AddKey(FNormalButtons, 'Z', 4, Ord('Z'));
+  AddKey(FNormalButtons, 'X', 4, Ord('X'));
+  AddKey(FNormalButtons, 'C', 4, Ord('C'));
+  AddKey(FNormalButtons, 'V', 4, Ord('V'));
+  AddKey(FNormalButtons, 'B', 4, Ord('B'));
+  AddKey(FNormalButtons, 'N', 4, Ord('N'));
+  AddKey(FNormalButtons, 'M', 4, Ord('M'));
+  AddKey(FNormalButtons, ',', 4, $BC);
+  AddKey(FNormalButtons, '.', 4, VK_DECIMAL);
+  AddKey(FNormalButtons, '/', 4, VK_DIVIDE);
+  AddCtrlKey(FNormalButtons, 'Shift', ckShift, 10, VK_SHIFT);
   Inc(aRow);
 
-  AddCtrlKey(FNormalButtons, 'Ctrl', ckCtrl, 6);
-  AddCtrlKey(FNormalButtons, 'Lang', ckLanguage, 5);
-  AddCtrlKey(FNormalButtons, 'Alt', ckAlt, 6);
-  AddCtrlKey(FNormalButtons, ' ',  ckSpace, 26);
-  AddCtrlKey(FNormalButtons, 'Alt', ckAlt, 6);
-  AddCtrlKey(FNormalButtons, 'Lang', ckLanguage, 5);
-  AddCtrlKey(FNormalButtons, 'Ctrl', ckCtrl, 6);
+  AddCtrlKey(FNormalButtons, 'Ctrl', ckCtrl, 6, VK_CONTROL);
+  AddCtrlKey(FNormalButtons, 'Lang', ckLanguage, 5, 0);
+  AddCtrlKey(FNormalButtons, 'Alt', ckAlt, 6, VK_MENU);
+  AddCtrlKey(FNormalButtons, ' ',  ckSpace, 26, VK_SPACE);
+  AddCtrlKey(FNormalButtons, 'Alt', ckAlt, 6, VK_MENU);
+  AddCtrlKey(FNormalButtons, 'Lang', ckLanguage, 5, 0);
+  AddCtrlKey(FNormalButtons, 'Ctrl', ckCtrl, 6, VK_CONTROL);
 
   if not (csLoading in ComponentState) then
     CalcButtons
@@ -502,7 +520,7 @@ begin
   Invalidate;
 end;
 
-procedure TposKeyboard.SetActiveButton(const Value: TposCustomKeyboardButton);
+procedure TposKeyboard.SetActiveButton(const Value: TposCustomKeyboardKey);
 begin
   if FActiveButton <> Value then
   begin
@@ -532,11 +550,12 @@ begin
   inherited;
 end;
 
-procedure TposKeyboard.SendKey(Button: TposCtrlKeyboardButton);
+procedure TposKeyboard.SendKey(Key: Word);
+var
+  KeyInfo: TposKeyInfo;
 begin
-{  case Button.FCtrlKey of
-    ckNormal, ckChar: keybd_event(Byte(Button.FKey), 0, 0, 0);
-  end;}
+  KeyInfo.VirtualKey := Key;
+  DoSendKey(KeyInfo);
 end;
 
 procedure TposKeyboard.MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
@@ -707,6 +726,12 @@ begin
     FOnButtonPress(Self, Value);
 end;
 
+procedure TposKeyboard.DoSendKey(Key: TposKeyInfo);
+begin
+  if Assigned(FOnSendKey) then
+    FOnSendKey(Self, Key);
+end;
+
 procedure TposKeyboard.FlipCurrentLanguage;
 begin
   CurrentLanguage := GetNextLanguage;
@@ -788,7 +813,7 @@ begin
   end;
 end;
 
-{ TposCustomKeyboardButton }
+{ TposCustomKeyboardKey }
 
 procedure TposKeyboard.Loaded;
 begin
@@ -796,67 +821,67 @@ begin
   CalcButtons;
 end;
 
-{ TposCustomKeyboardButton }
+{ TposCustomKeyboardKey }
 
-procedure TposCustomKeyboardButton.Click;
+procedure TposCustomKeyboardKey.Click;
 begin
-
+  Keyboard.SendKey(VirtualKey);
 end;
 
-constructor TposCustomKeyboardButton.Create(AKeyboard: TposKeyboard);
+constructor TposCustomKeyboardKey.Create(AKeyboard: TposKeyboard);
 begin
   inherited Create;
   FKeyboard := AKeyboard;
 end;
 
-destructor TposCustomKeyboardButton.Destroy;
+destructor TposCustomKeyboardKey.Destroy;
 begin
   inherited;
 end;
 
-function TposCustomKeyboardButton.GetButtonColor: TColor;
+function TposCustomKeyboardKey.GetButtonColor: TColor;
 begin
   Result := Keyboard.ButtonColor;
 end;
 
-procedure TposCustomKeyboardButton.Paint(Canvas: TCanvas; Rect: TRect);
+procedure TposCustomKeyboardKey.Paint(Canvas: TCanvas; Rect: TRect);
 begin
 end;
 
-procedure TposCustomKeyboardButton.Pressed;
+procedure TposCustomKeyboardKey.Pressed;
 begin
   FState := True;
 end;
 
-procedure TposCustomKeyboardButton.Release;
+procedure TposCustomKeyboardKey.Release;
 begin
   FState := False;
 end;
 
-procedure TposCustomKeyboardButton.SetBoundsRect(const Value: TRect);
+procedure TposCustomKeyboardKey.SetBoundsRect(const Value: TRect);
 begin
   FBoundsRect := Value;
 end;
 
-procedure TposCustomKeyboardButton.SetName(const Value: string);
+procedure TposCustomKeyboardKey.SetName(const Value: string);
 begin
   FName := Value;
 end;
 
-procedure TposCustomKeyboardButton.SetVisible(const Value: Boolean);
+procedure TposCustomKeyboardKey.SetVisible(const Value: Boolean);
 begin
   FVisible := Value;
 end;
 
 { TKeyboardButtonList }
 
-function TKeyboardButtonList.GetItem(Index: Integer): TposCustomKeyboardButton;
+function TKeyboardButtonList.GetItem(Index: Integer): TposCustomKeyboardKey;
 begin
-  Result := inherited Items[Index] as TposCustomKeyboardButton;
+  Result := inherited Items[Index] as TposCustomKeyboardKey;
 end;
 
 function TKeyboardButtonList.InRect(X,
-  Y: Integer): TposCustomKeyboardButton;
+  Y: Integer): TposCustomKeyboardKey;
 var
   i: Integer;
   Pt: TPoint;
@@ -891,7 +916,7 @@ begin
 end;
 
 procedure TKeyboardButtonList.SetItem(Index: Integer;
-  const Value: TposCustomKeyboardButton);
+  const Value: TposCustomKeyboardKey);
 begin
   inherited Items[Index] := Value;
 end;
@@ -1014,7 +1039,7 @@ end;
 
 { TposKeyLanguageItem }
 
-constructor TposKeyLanguageItem.Create(Language: TposKeyLanguage; Name, Normal, Shift: string);
+constructor TposKeyLanguageItem.Create(Language: TposKeyLanguage; Name, Normal, Shift: string; VirtualKey: Word);
 begin
   inherited Create;
   Language.Add(Self);
@@ -1034,10 +1059,11 @@ begin
   inherited;
 end;
 
-{ TposCtrlKeyboardButton }
+{ TposCtrlKeyboardKey }
 
-procedure TposCtrlKeyboardButton.Click;
+procedure TposCtrlKeyboardKey.Click;
 begin
+  inherited;
   case FCtrlKey of
     ckEscape:
     begin
@@ -1106,17 +1132,19 @@ begin
   end;
 end;
 
-procedure TposCtrlKeyboardButton.Paint(Canvas: TCanvas; Rect: TRect);
+procedure TposCtrlKeyboardKey.Paint(Canvas: TCanvas; Rect: TRect);
 var
   aButtonColor: TColor;
   s: string;
   aDown: Boolean;
   aShape: TposShapeKind;
   aState : TposDrawStates;
+  aRect: TRect;
 begin
   inherited;
   if Visible then
   begin
+    aRect := BoundsRect;
     Canvas.Font := Keyboard.CtrlFont;
     aState := [pdsBorder];
     aDown := FState or (Keyboard.FActiveButton = self);
@@ -1160,13 +1188,13 @@ begin
     begin
       aButtonColor := Keyboard.ButtonColor;
     end;
-    PaintButton(Canvas, s, aShape, BoundsRect, aButtonColor, Keyboard.BorderColor, aState);
+    PaintButton(Canvas, s, aShape, aRect, aButtonColor, Keyboard.BorderColor, aState);
   end;
 end;
 
-{ TposKeyboardButton }
+{ TposKeyboardKey }
 
-procedure TposKeyboardButton.Click;
+procedure TposKeyboardKey.Click;
 var
   aLangKey: TposKeyLanguageItem;
   b: Boolean;
@@ -1190,7 +1218,7 @@ begin
   Keyboard.ShiftState := Keyboard.FShiftState - [pssShift, pssCtrl, pssAlt];
 end;
 
-function TposKeyboardButton.GetLangKey: TposKeyLanguageItem;
+function TposKeyboardKey.GetLangKey: TposKeyLanguageItem;
 var
   aLang: TposKeyLanguage;
 begin
@@ -1206,7 +1234,7 @@ begin
   Result := FLangKey;
 end;
 
-procedure TposKeyboardButton.Paint(Canvas: TCanvas; Rect: TRect);
+procedure TposKeyboardKey.Paint(Canvas: TCanvas; Rect: TRect);
 var
   aButtonColor: TColor;
   aCaption: string;
@@ -1247,15 +1275,15 @@ begin
   end;
 end;
 
-{ TposPADKeyboardButton }
+{ TposPADKeyboardKey }
 
-procedure TposPADKeyboardButton.Click;
+procedure TposPADKeyboardKey.Click;
 begin
   inherited;
   Keyboard.DoButtonPress(Name);
 end;
 
-procedure TposPADKeyboardButton.Paint(Canvas: TCanvas; Rect: TRect);
+procedure TposPADKeyboardKey.Paint(Canvas: TCanvas; Rect: TRect);
 var
   aButtonColor: TColor;
   aState: TposDrawStates;
