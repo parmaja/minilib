@@ -4,13 +4,14 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, mnrClasses, mnrLists, StdCtrls, DateUtils, Math;
+  Dialogs, StdCtrls, DateUtils, Math,
+  mnrClasses, mnrLists, mnrNodes;
   //dluxdetails
 
 const
   cMaxRows = 1000;
   cMaxCells = 10;
-  
+
 type
 
   TReport = class(TmnrCustomReport)
@@ -19,10 +20,11 @@ type
     procedure CreateSections; override;
     procedure DetailsFetch(var vParams: TmnrFetchParams);
   public
-    procedure RequestNumber(vLayout: TmnrLayout; vCell: TmnrCustomReportCell);
-    procedure RequestDate(vLayout: TmnrLayout; vCell: TmnrCustomReportCell);
-    procedure RequestName(vLayout: TmnrLayout; vCell: TmnrCustomReportCell);
-    procedure RequestCode(vLayout: TmnrLayout; vCell: TmnrCustomReportCell);
+    procedure RequestNumber(vCell: TmnrCustomReportCell);
+    procedure RequestDate(vCell: TmnrCustomReportCell);
+    procedure RequestName(vCell: TmnrCustomReportCell);
+    procedure RequestCode(vCell: TmnrCustomReportCell);
+    procedure RequestValue(vCell: TmnrCustomReportCell);
   end;
 
   TForm1 = class(TForm)
@@ -54,11 +56,13 @@ begin
   r := TReport.Create;
   try
     r.Generate;
-    r.ExportCSV('c:\1.txt');
+    r.ExportCSV('c:\1.csv');
+    ShowMessage('Create in '+IntToStr(GetTickCount-t));
+    t := GetTickCount;
   finally
     r.Free;
   end;
-  ShowMessage(IntToStr(GetTickCount-t));
+  ShowMessage('Free in '+IntToStr(GetTickCount-t));
 end;
 
 procedure TForm1.TestSpeedBtnClick(Sender: TObject);
@@ -147,13 +151,14 @@ begin
   sec := Sections.RegisterSection('Details', 'ÇáÊÞÑíÑ', sciDetails, ID_SECTION_DETAILS, DetailsFetch);
   with sec.LayoutsRows.Add do
   begin
-    CreateLayout(TmnrTextLayout, 'Number', RequestNumber);
-    CreateLayout(TmnrTextLayout, 'Data', RequestDate);
+    CreateLayout(TmnrIntegerLayout, 'Number', RequestNumber);
+    CreateLayout(TmnrDateTimeLayout, 'Data', RequestDate);
     CreateLayout(TmnrTextLayout, 'Name', RequestName);
   //end;
   //with sec.LayoutsRows.Add do
   //begin
     CreateLayout(TmnrTextLayout, 'Code', RequestCode);
+    CreateLayout(TmnrCurrencyLayout, 'Value', RequestValue);
   end;
 end;
 
@@ -165,32 +170,37 @@ begin
       SubPos := 0
     else
       Inc(SubPos);
-    if SubPos>40000 then
+    if SubPos>400 then
       Accepted := acmEof;
   end;
 end;
 
-procedure TReport.RequestNumber(vLayout: TmnrLayout; vCell: TmnrCustomReportCell);
+procedure TReport.RequestNumber(vCell: TmnrCustomReportCell);
 begin
-  vCell.AsString := IntToStr(SubPos);
+  vCell.AsInteger := SubPos;
 end;
 
-procedure TReport.RequestDate(vLayout: TmnrLayout; vCell: TmnrCustomReportCell);
+procedure TReport.RequestDate(vCell: TmnrCustomReportCell);
 begin
-  vCell.AsString := DateToStr(IncDay(Now, RandomRange(-100, 100)));
+  vCell.AsDateTime := IncDay(Now, RandomRange(-100, 100));
 end;
 
-procedure TReport.RequestName(vLayout: TmnrLayout; vCell: TmnrCustomReportCell);
+procedure TReport.RequestName(vCell: TmnrCustomReportCell);
 begin
   vCell.AsString := Format('Cell %d', [0]);
 end;
 
-procedure TReport.RequestCode(vLayout: TmnrLayout; vCell: TmnrCustomReportCell);
+procedure TReport.RequestCode(vCell: TmnrCustomReportCell);
 begin
-  vCell.AsString := Format('Row = %d    Col = %d', [vCell.Layout.Cells.Row.ID, 0]);
+  vCell.AsString := Format('Row = %d    Col = %d', [vCell.Row.ID, 0]);
+end;
+
+procedure TReport.RequestValue(vCell: TmnrCustomReportCell);
+begin
+  vCell.AsCurrency := RandomRange(1, 1000) / RandomRange(6, 66);
 end;
 
 initialization
   Randomize;
-
+  
 end.
