@@ -19,7 +19,7 @@ interface
 uses
   SysUtils, Classes, Graphics, Controls, StdCtrls, Forms, Types, Contnrs,
 {$IFDEF FPC}
-  LCLTypes,
+  LCLType,
   LConvEncoding,
 {$ELSe}
   Windows,
