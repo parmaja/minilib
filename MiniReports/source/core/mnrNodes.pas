@@ -8,7 +8,7 @@ unit mnrNodes;
 interface
 
 uses
-  SysUtils, Classes, Contnrs, mnrClasses;
+  SysUtils, Classes, mnrClasses;
 
 type
 

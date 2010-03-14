@@ -8,7 +8,7 @@ unit mnrClasses;
 interface
 
 uses
-  SysUtils, Classes, Contnrs, mnrLists;
+  SysUtils, Classes, mnrLists;
 
 const
   ID_SECTION_BASE           = 0;
