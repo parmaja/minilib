@@ -151,6 +151,8 @@ begin
   sec := Sections.RegisterSection('Details', '«· ﬁ—Ì—', sciDetails, ID_SECTION_DETAILS, DetailsFetch);
   with sec.LayoutsRows.Add do
   begin
+    sec.AppendDetailTotals := True;
+    
     CreateLayout(TmnrIntegerLayout, 'Number', RequestNumber);
     CreateLayout(TmnrDateTimeLayout, 'Data', RequestDate);
     CreateLayout(TmnrTextLayout, 'Name', RequestName);

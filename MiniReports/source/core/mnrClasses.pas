@@ -37,6 +37,8 @@ type
   TmnrReportCellClass = class of TmnrReportCell;
   TmnrLayoutClass = class of TmnrLayout;
 
+  TmnrNodesRowArray = array of TmnrNodesRow;
+
   TmnrSectionLoopWay = (slwSingle, slwMulti);
   TmnrFetchMode = (fmFirst, fmNext);
   TmnrAcceptMode = (acmAccept, acmSkip, acmSkipAll, acmRepeat, acmEof);
@@ -289,6 +291,7 @@ type
     FOnFetch: TOnFetch;
     FReferencesRows: TmnrReferencesRows;
     FItems: TmnrRowReferences;
+    FAppendDetailTotals: Boolean;
     function GetNext: TmnrSection;
     function GetNodes: TmnrSections;
     function GetPrior: TmnrSection;
@@ -312,6 +315,7 @@ type
     property LayoutsRows: TmnrLayoutsRows read FLayoutsRows;
     property ReferencesRows: TmnrReferencesRows read FReferencesRows;
     function NewReference: TmnrReferencesRow;
+    procedure AppendTotals(vSection: TmnrSection);
 
     property Name: string read FName;
     property ID: integer read FID;
@@ -321,6 +325,7 @@ type
     property OnFetch: TOnFetch read FOnFetch write FOnFetch; 
 
     procedure FillNow(vReference: TmnrReferencesRow);
+    property AppendDetailTotals: Boolean read FAppendDetailTotals write FAppendDetailTotals; 
   end;
 
   TmnrSections = class(TmnrLinkNodes)
@@ -344,12 +349,41 @@ type
 
     procedure Loop;
   end;
-  
+
+  TmnrIndexer = class
+  protected
+    procedure Compute(vReport: TmnrCustomReport); virtual;
+  public
+    constructor Create(vReport: TmnrCustomReport); virtual;
+    destructor Destroy; override;
+  end;
+
+  TmnrRowsListIndexer = class(TmnrIndexer)
+  private
+    FArray: TmnrNodesRowArray;
+    function GetItems(vIndex: Integer): TmnrNodesRow;
+  protected
+    procedure Compute(vReport: TmnrCustomReport); override;
+  public
+    property Items[vIndex: Integer]: TmnrNodesRow read GetItems;
+  end;
+
+  TmnrCustomReportDesigner = class
+  public
+    constructor Create; virtual;
+    destructor Destroy; override;
+    procedure DesignReport(vClass: TmnrCustomReport); virtual;
+  end;
+
   TmnrCustomReport = class
   private
     FCanceled: Boolean;
     FItems: TmnrNodesRows;
     FSections: TmnrSections;
+    FRowsListIndexer: TmnrRowsListIndexer;
+    FDetailTotals: TmnrSection;
+
+    function GetCells(Row, Column: Integer): TmnrCustomReportCell;
   protected
     function Canceled: Boolean;
     procedure HandleNewRow(vRow: TmnrRowNode); virtual;
@@ -364,10 +398,15 @@ type
 
     procedure Init; virtual;
     procedure Prepare; virtual;
+    procedure Start; virtual;
     procedure Finish; virtual;
     procedure Loop;
-    procedure Fetch(vSection: TmnrSection; var vParams: TmnrFetchParams); virtual;
     procedure Generate;
+
+    procedure Fetch(vSection: TmnrSection; var vParams: TmnrFetchParams); virtual;
+
+    property Cells[Row, Column: Integer]: TmnrCustomReportCell read GetCells;
+    property RowsListIndexer: TmnrRowsListIndexer read FRowsListIndexer;
 
     procedure ExportCSV(const vFile: TFileName); overload; //test purpose only
     procedure ExportCSV(const vStream: TStream); overload; //test purpose only
@@ -378,6 +417,8 @@ var
 
 implementation
 
+uses
+  mnrNodes;
 
 { TmnrCustomReport }
 
@@ -396,7 +437,10 @@ begin
   inherited Create;
   FSections := TmnrSections.Create(Self);
   FItems := TmnrNodesRows.Create;
+  FRowsListIndexer := nil;
+  FDetailTotals := TmnrSection.Create(nil);
   CreateSections;
+  Init;
 end;
 
 function TmnrCustomReport.CreateNewRow(vSection: TmnrSection): TmnrNodesRow;
@@ -410,8 +454,10 @@ end;
 
 destructor TmnrCustomReport.Destroy;
 begin
+  FDetailTotals.Free;
   FSections.Free;
   FItems.Free;
+  FRowsListIndexer.Free;
   inherited;
 end;
 
@@ -436,22 +482,6 @@ begin
         WriteStr(';');
     end;
 
-    if r=Items.Last then
-    begin
-      WriteStr(#13#10);
-      n := r.Cells.First;
-      while n<>nil do
-      begin
-        if n.Reference<>nil then
-        begin
-          WriteStr(CurrToStr(n.Reference.Total));
-          n := n.Next;
-          if n<>nil then
-            WriteStr(';');
-        end;
-      end;
-    end;
-
     r := r.Next;
     if r<>nil then
       WriteStr(#13#10);
@@ -472,17 +502,46 @@ end;
 
 procedure TmnrCustomReport.Fetch(vSection: TmnrSection; var vParams: TmnrFetchParams);
 begin
-
 end;
 
 procedure TmnrCustomReport.Finish;
 begin
-
+  FRowsListIndexer := TmnrRowsListIndexer.Create(Self);
 end;
 
 procedure TmnrCustomReport.Generate;
 begin
-  Loop;
+  Start;
+  try
+    Loop;
+  finally //handle safe finish ........
+    Finish;
+  end;
+end;
+
+function TmnrCustomReport.GetCells(Row, Column: Integer): TmnrCustomReportCell;
+var
+  r: TmnrNodesRow;
+  i: Integer;
+begin
+  if RowsListIndexer<>nil then
+  begin
+    r := RowsListIndexer.Items[Row];
+    if r<>nil then
+    begin
+      i := 0;
+      Result := r.Cells.First;
+      while (Result<>nil) and (i<Column) do
+      begin
+        Result := Result.Next;
+        Inc(i);
+      end;
+    end
+    else
+      Result := nil;
+  end
+  else
+    Result := nil;
 end;
 
 procedure TmnrCustomReport.HandleNewRow(vRow: TmnrRowNode);
@@ -501,6 +560,11 @@ begin
 end;
 
 procedure TmnrCustomReport.Prepare;
+begin
+
+end;
+
+procedure TmnrCustomReport.Start;
 begin
 
 end;
@@ -530,6 +594,62 @@ begin
 end;
 
 { TmnrSection }
+
+procedure TmnrSection.AppendTotals(vSection: TmnrSection);
+var
+  r: TmnrLayoutsRow;
+  l: TmnrLayout;
+  aRow: TmnrNodesRow;
+  f: Boolean; //first
+  c: TmnrCustomReportCell;
+begin
+  r := LayoutsRows.First;
+  if r<>nil then
+  begin
+    f := True;
+    while r<>nil do
+    begin
+      aRow := Report.CreateNewRow(vSection);
+      try
+        l := r.Cells.First;
+        while l<>nil do
+        begin
+          if f then
+          begin
+            f := False;
+            c := TmnrTextReportCell.Create(aRow.Cells);
+            c.AsString := '«·„Ã„Ê⁄';
+          end
+          else
+          begin
+            c := TmnrCurrencyReportCell.Create(aRow.Cells);
+            if l.Reference<>nil then
+              c.AsCurrency := l.Reference.Total;
+          end;
+          c.FRow := aRow;
+          c.FLayout := l;
+          c.FReference := l.Reference;
+
+
+          //c := l.NewCell(aRow);
+          //l.NewCell(aRow);
+          l := l.Next;
+        end;
+      except
+        aRow.Free;
+        raise;
+      end;
+      //todo make arow pass as var and if report handle row and free it then do nothing
+      Report.HandleNewRow(aRow);
+      with vSection.Items.Add do
+      begin
+        FRow := aRow;
+      end;
+
+      r := r.Next;
+    end;
+  end;
+end;
 
 constructor TmnrSection.Create(vNodes: TmnrNodes);
 begin
@@ -620,7 +740,10 @@ end;
 
 function TmnrSection.GetReport: TmnrCustomReport;
 begin
-  Result := Nodes.Report;
+  if Nodes<>nil then
+    Result := Nodes.Report
+  else
+    Result := nil;
 end;
 
 function TmnrSection.NewReference: TmnrReferencesRow;
@@ -699,7 +822,7 @@ end;
 procedure TmnrSections.Loop;
 var
   s: TmnrSection;
-  afParams: TmnrFetchParams;
+  fparams: TmnrFetchParams;
   r: TmnrReferencesRow;
 begin
   s := First;
@@ -708,9 +831,9 @@ begin
     case s.LoopWay of
       slwSingle:
       begin
-        afParams.Mode := fmFirst;
-        s.DoFetch(afParams);
-        if afParams.Accepted=acmAccept then
+        fparams.Mode := fmFirst;
+        s.DoFetch(fparams);
+        if fparams.Accepted=acmAccept then
         begin
           s.FillNow(nil);
           s.Sections.Loop;
@@ -718,25 +841,34 @@ begin
       end;
       slwMulti:
       begin
-        afParams.Mode := fmFirst;
-        afParams.Accepted := acmAccept;
+        fparams.Mode := fmFirst;
+        fparams.Accepted := acmAccept;
         r := nil;
-        while not Report.Canceled and (afParams.Accepted=acmAccept) do
+        while not Report.Canceled and (fparams.Accepted=acmAccept) do
         begin
-          s.DoFetch(afParams);
-          if (s.ClassID=sciDetails) and (afParams.Mode=fmFirst) then
+          s.DoFetch(fparams);
+          if (s.ClassID=sciDetails) and (fparams.Mode=fmFirst) then //improve add referance on first accepted ...
             r := s.NewReference;
 
-          if afParams.Mode=fmFirst then
-            afParams.Mode := fmNext;
-
-          if afParams.Accepted in [acmAccept, acmSkip] then
+          if fparams.Accepted = acmAccept then
           begin
-            //  s.add Reference row
-            //link all details rows to this reference row
             s.FillNow(r);
             s.Sections.Loop;
+          end
+          else if (fparams.Accepted = acmSkip) and (s.ClassID=sciHeaderDetails) then
+            s.Sections.Loop;
+
+          if (fparams.Accepted = acmEof) and (s.Items.Count<>0) then
+          begin
+            if (r<>nil) and s.AppendDetailTotals then
+            begin
+              s.AppendTotals(Report.FDetailTotals);
+            end;
           end;
+
+
+          if fparams.Mode=fmFirst then
+            fparams.Mode := fmNext;
         end;
       end;
     end;
@@ -1123,6 +1255,69 @@ end;
 procedure TmnrReference.SetNodes(const Value: TmnrReferences);
 begin
   inherited SetNodes(Value);
+end;
+
+{ TmnrRowsListIndexer }
+
+procedure TmnrRowsListIndexer.Compute(vReport: TmnrCustomReport);
+var
+  i: Integer;
+  r: TmnrNodesRow;
+begin
+  SetLength(FArray, vReport.Items.Count);
+  i := 0;
+  r := vReport.Items.First;
+  while r<>nil do
+  begin
+    FArray[i] := r;
+    Inc(i);
+    r := r.Next;
+  end;
+end;
+
+function TmnrRowsListIndexer.GetItems(vIndex: Integer): TmnrNodesRow;
+begin
+  if (vIndex>=0) and (vIndex<Length(FArray)) then
+    Result := FArray[vIndex]
+  else
+    Result := nil;
+end;
+
+{ TmnrCustomReportDesigner }
+
+constructor TmnrCustomReportDesigner.Create;
+begin
+  inherited Create;
+end;
+
+procedure TmnrCustomReportDesigner.DesignReport(vClass: TmnrCustomReport);
+begin
+  
+end;
+
+destructor TmnrCustomReportDesigner.Destroy;
+begin
+
+  inherited;
+end;
+
+{ TmnrIndexer }
+
+procedure TmnrIndexer.Compute(vReport: TmnrCustomReport);
+begin
+
+end;
+
+constructor TmnrIndexer.Create(vReport: TmnrCustomReport);
+begin
+  inherited Create;
+  Compute(vReport);
+end;
+
+destructor TmnrIndexer.Destroy;
+begin
+
+  inherited;
 end;
 
 end.
