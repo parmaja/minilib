@@ -30,6 +30,7 @@ type
   TmnrCustomReportCell = class;
   TmnrNodesRow = class;
   TmnrLayoutsRow = class;
+  TmnrLayoutsRows = class;
   TmnrReferencesRow = class;
   TmnrReferences = class;
   TmnrReference = class;
@@ -192,23 +193,28 @@ type
     function GetCells: TmnrLayouts;
     function GetNext: TmnrLayoutsRow;
     function GetPrior: TmnrLayoutsRow;
+    function GetLayoutsRows: TmnrLayoutsRows;
   protected
     function CreateCells: TmnrRowCells; override;
   public
     property Next: TmnrLayoutsRow read GetNext;
     property Prior: TmnrLayoutsRow read GetPrior;
     property Cells: TmnrLayouts read GetCells; //cells in row
-    procedure CreateLayout(vClass: TmnrLayoutClass; const vName: string; vRequest: TOnRequest=nil);
+    procedure CreateLayout(vClass: TmnrLayoutClass; const vName: string; vRequest: TOnRequest=nil);//check useful ?????????
+    property LayoutsRows: TmnrLayoutsRows read GetLayoutsRows;
   end;
 
   TmnrLayoutsRows = class(TmnrRowNodes)
   private
+    FSection: TmnrSection;
     function GetFirst: TmnrLayoutsRow;
     function GetLast: TmnrLayoutsRow;
   public
+    constructor Create(vSection: TmnrSection);
     function Add: TmnrLayoutsRow;
     property First: TmnrLayoutsRow read GetFirst;
     property Last: TmnrLayoutsRow read GetLast;
+    property Section: TmnrSection read FSection;
   end;
 
   TmnrRowReference = class(TmnrLinkNode)
@@ -655,7 +661,7 @@ constructor TmnrSection.Create(vNodes: TmnrNodes);
 begin
   inherited;
   FSections := TmnrSections.Create(Report);
-  FLayoutsRows := TmnrLayoutsRows.Create;
+  FLayoutsRows := TmnrLayoutsRows.Create(Self);
   FReferencesRows := TmnrReferencesRows.Create;
   FItems := TmnrRowReferences.Create;
 end;
@@ -911,6 +917,11 @@ begin
   Result := TmnrLayouts(inherited Cells);
 end;
 
+function TmnrLayoutsRow.GetLayoutsRows: TmnrLayoutsRows;
+begin
+  Result := TmnrLayoutsRows(Nodes);
+end;
+
 function TmnrLayoutsRow.GetNext: TmnrLayoutsRow;
 begin
   Result := TmnrLayoutsRow(inherited GetNext);
@@ -926,6 +937,12 @@ end;
 function TmnrLayoutsRows.Add: TmnrLayoutsRow;
 begin
   Result := TmnrLayoutsRow.Create(Self);
+end;
+
+constructor TmnrLayoutsRows.Create(vSection: TmnrSection);
+begin
+  inherited Create;
+  FSection := vSection;
 end;
 
 function TmnrLayoutsRows.GetFirst: TmnrLayoutsRow;
