@@ -6,7 +6,7 @@ uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, StdCtrls, DateUtils, Math,
   mnrClasses, mnrLists, mnrNodes;
-  //dluxdetails
+  //dluxdetails dluxdesign
 
 const
   cMaxRows = 1000;
@@ -14,12 +14,22 @@ const
 
 type
 
-  TReport = class(TmnrCustomReport)
-  protected
-    SubPos: Integer;
-    procedure CreateSections; override;
-    procedure DetailsFetch(var vParams: TmnrFetchParams);
+  TReportDesigner = class(TCustomReportDesigner)
   public
+    function CreateDesigner: TComponent; override;
+
+  end;
+
+  TSimpleDetailsReport = class(TmnrCustomReport)
+  protected
+    BigPos, SubPos: Integer;
+    HeaderDeatils, Details: TmnrSection;
+    procedure CreateSections(vSections: TmnrSections); override;
+    procedure CreateLayouts(vLayouts: TmnrLayouts); override;
+    procedure DetailsFetch(var vParams: TmnrFetchParams);
+    procedure HeadersFetch(var vParams: TmnrFetchParams);
+  public
+    procedure RequestMaster(vCell: TmnrCustomReportCell);
     procedure RequestNumber(vCell: TmnrCustomReportCell);
     procedure RequestDate(vCell: TmnrCustomReportCell);
     procedure RequestName(vCell: TmnrCustomReportCell);
@@ -31,9 +41,11 @@ type
     TestSpeedBtn: TButton;
     TestReportBtn: TButton;
     TestWriteBtn: TButton;
+    DesignReportBtn: TButton;
     procedure TestSpeedBtnClick(Sender: TObject);
     procedure TestReportBtnClick(Sender: TObject);
     procedure TestWriteBtnClick(Sender: TObject);
+    procedure DesignReportBtnClick(Sender: TObject);
   private
     { Private declarations }
   public
@@ -45,7 +57,15 @@ var
 
 implementation
 
+uses
+  designer;
+
 {$R *.dfm}
+
+procedure TForm1.DesignReportBtnClick(Sender: TObject);
+begin
+  DesignReport(TSimpleDetailsReport);
+end;
 
 procedure TForm1.TestReportBtnClick(Sender: TObject);
 var
@@ -53,7 +73,7 @@ var
   t: Cardinal;
 begin
   t := GetTickCount;
-  r := TReport.Create;
+  r := TSimpleDetailsReport.Create;
   try
     r.Generate;
     r.ExportCSV('c:\1.csv');
@@ -105,13 +125,13 @@ end;
 
 procedure TForm1.TestWriteBtnClick(Sender: TObject);
 var
-  rep: TReport;
+  rep: TSimpleDetailsReport;
   r: TmnrRowNode;
   i, j: Integer;
   t: Cardinal;
   idx: TmnrLinkNodesListIndex;
 begin
-  rep := TReport.Create;
+  rep := TSimpleDetailsReport.Create;
   t := GetTickCount;
   try
     for I := 0 to cMaxRows - 1 do
@@ -141,21 +161,41 @@ begin
   end;
 end;
 
-{ TReport }
+{ TSimpleDetailsReport }
 
-procedure TReport.CreateSections;
-var
-  sec: TmnrSection;
+procedure TSimpleDetailsReport.CreateLayouts(vLayouts: TmnrLayouts);
 begin
   inherited;
-  sec := Sections.RegisterSection('Details', 'ÇáÊÞÑíÑ', sciDetails, ID_SECTION_DETAILS, DetailsFetch);
-  with sec.LayoutsRows.Add do
+  with vLayouts do
   begin
-    sec.AppendDetailTotals := True;
-    
-    CreateLayout(TmnrIntegerLayout, 'Number', RequestNumber);
-    CreateLayout(TmnrDateTimeLayout, 'Data', RequestDate);
+    CreateLayout(TmnrIntegerLayout, 'Master', 'ÇáãÊÓáÓ');
+    CreateLayout(TmnrTextLayout, 'Name', 'ÇáÇÓã');
+    CreateLayout(TmnrIntegerLayout, 'Number', 'ÇáÑÞã');
+    CreateLayout(TmnrDateTimeLayout, 'Date', 'ÇáÊÇÑíÎ');
+    CreateLayout(TmnrTextLayout, 'Code', 'ÇáÑãÒ');
+    CreateLayout(TmnrCurrencyLayout, 'Value', 'ÇáÞíãÉ');
+  end;
+end;
+
+procedure TSimpleDetailsReport.CreateSections(vSections: TmnrSections);
+begin
+  inherited;
+  HeaderDeatils := vSections.RegisterSection('HeaderDetails', 'ÑÇÓ ÇáÊÞÑíÑ', sciHeaderDetails, ID_SECTION_HEADERREPORT, HeadersFetch);
+  Details := HeaderDeatils.Sections.RegisterSection('Details', 'ÇáÊÞÑíÑ', sciDetails, ID_SECTION_DETAILS, DetailsFetch);
+
+  with HeaderDeatils.LayoutsRows.Add do
+  begin
+    CreateLayout(TmnrIntegerLayout, 'Master', RequestMaster);
+  end;
+
+  with Details.LayoutsRows.Add do
+  begin
+    //Details.AppendTotals := True;
+    Details.AppendSummary := True;
+
     CreateLayout(TmnrTextLayout, 'Name', RequestName);
+    CreateLayout(TmnrIntegerLayout, 'Number', RequestNumber);
+    CreateLayout(TmnrDateTimeLayout, 'Date', RequestDate);
   //end;
   //with sec.LayoutsRows.Add do
   //begin
@@ -164,7 +204,7 @@ begin
   end;
 end;
 
-procedure TReport.DetailsFetch(var vParams: TmnrFetchParams);
+procedure TSimpleDetailsReport.DetailsFetch(var vParams: TmnrFetchParams);
 begin
   with vParams do
   begin
@@ -172,37 +212,68 @@ begin
       SubPos := 0
     else
       Inc(SubPos);
-    if SubPos>400 then
+    if SubPos>6 then
       Accepted := acmEof;
   end;
 end;
 
-procedure TReport.RequestNumber(vCell: TmnrCustomReportCell);
+procedure TSimpleDetailsReport.HeadersFetch(var vParams: TmnrFetchParams);
+begin
+  with vParams do
+  begin
+    if Mode=fmFirst then
+      BigPos := 0
+    else
+      Inc(BigPos);
+    if BigPos>3 then
+      Accepted := acmEof;
+  end;
+end;
+
+procedure TSimpleDetailsReport.RequestNumber(vCell: TmnrCustomReportCell);
 begin
   vCell.AsInteger := SubPos;
 end;
 
-procedure TReport.RequestDate(vCell: TmnrCustomReportCell);
+procedure TSimpleDetailsReport.RequestDate(vCell: TmnrCustomReportCell);
 begin
   vCell.AsDateTime := IncDay(Now, RandomRange(-100, 100));
 end;
 
-procedure TReport.RequestName(vCell: TmnrCustomReportCell);
+procedure TSimpleDetailsReport.RequestMaster(vCell: TmnrCustomReportCell);
+begin
+  vCell.AsInteger := BigPos;
+end;
+
+procedure TSimpleDetailsReport.RequestName(vCell: TmnrCustomReportCell);
 begin
   vCell.AsString := Format('Cell %d', [0]);
 end;
 
-procedure TReport.RequestCode(vCell: TmnrCustomReportCell);
+procedure TSimpleDetailsReport.RequestCode(vCell: TmnrCustomReportCell);
 begin
   vCell.AsString := Format('Row = %d    Col = %d', [vCell.Row.ID, 0]);
 end;
 
-procedure TReport.RequestValue(vCell: TmnrCustomReportCell);
+procedure TSimpleDetailsReport.RequestValue(vCell: TmnrCustomReportCell);
 begin
   vCell.AsCurrency := RandomRange(1, 1000) / RandomRange(6, 66);
 end;
 
+{ TReportDesigner }
+
+function TReportDesigner.CreateDesigner: TComponent;
+var
+  f: TDesignerForm;
+begin
+  f := TDesignerForm.Create(nil);
+  f.ReportDesigner := Self;
+  f.Show;
+  Result := f;
+end;
+
 initialization
   Randomize;
-  
+  SetReportDesignerClass(TReportDesigner);
+
 end.

@@ -40,4 +40,13 @@ object Form1: TForm1
     TabOrder = 2
     OnClick = TestWriteBtnClick
   end
+  object DesignReportBtn: TButton
+    Left = 397
+    Top = 129
+    Width = 75
+    Height = 25
+    Caption = 'Design Report'
+    TabOrder = 3
+    OnClick = DesignReportBtnClick
+  end
 end

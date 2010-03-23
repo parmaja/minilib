@@ -4,7 +4,8 @@ uses
   Forms,
   main in 'main.pas' {Form1},
   mnrLists in '..\..\..\source\core\mnrLists.pas',
-  mnrClasses in '..\..\..\source\core\mnrClasses.pas';
+  mnrClasses in '..\..\..\source\core\mnrClasses.pas',
+  designer in 'designer.pas' {DesignerForm};
 
 {$R *.res}
 
