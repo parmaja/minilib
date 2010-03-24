@@ -78,7 +78,7 @@ type
     FBOF: Boolean;
     FEOF: Boolean;
     function GetConnection: TmncSQLiteConnection;
-    procedure FetchFields;
+    procedure FetchColumns;
     procedure FetchValues;
     procedure ApplyParams;
     function GetSession: TmncSQLiteSession;
@@ -103,6 +103,20 @@ type
   end;
 
 implementation
+
+function SQLTypeToType(vType: Integer): TmncColumnType;
+begin
+  case vType of
+    SQLITE_INTEGER: Result := ftInteger;
+    SQLITE_FLOAT: Result := ftFloat;
+    SQLITE_BLOB: Result := ftBlob;
+    SQLITE_NULL: Result := ftNull;
+    SQLITE_TEXT: Result := ftString;
+    else
+      Result := ftUnkown;
+  end;
+end;
+
 
 procedure TmncSQLiteConnection.CheckError(Error:longint; const ExtraMsg: string);
 var
@@ -389,7 +403,7 @@ begin
   if (r = SQLITE_ROW) then
   begin
     if FBOF then
-      FetchFields;
+      FetchColumns;
     FetchValues;
     FEOF := False;
   end
@@ -432,19 +446,22 @@ begin
   Session.Commit;
 end;
 
-procedure TmncSQLiteCommand.FetchFields;
+procedure TmncSQLiteCommand.FetchColumns;
 var
   i: Integer;
   c: Integer;
   aName: string;
+  aType: Integer;
+  //aSize: Integer;
 begin
-  Fields.Clear;
+  Columns.Clear;
   c := sqlite3_column_count(FStatment);
   for i := 0 to c -1 do
   begin
 //    sqlite3_column_type
     aName :=  DequoteStr(sqlite3_column_name(FStatment, i));
-    Fields.Add(aName);
+    aType := sqlite3_column_type(FStatment, i);
+    Columns.Add(aName, SQLTypeToType(aType));
   end;
 end;
 
@@ -459,14 +476,14 @@ var
   str: utf8string;
 {$endif}
   flt: Double;
-  aCurrent: TmncRecord;
+  aCurrent: TmncFields;
   aType: Integer;
   //aSize: Integer;
 begin
   c := sqlite3_column_count(FStatment);
   if c > 0 then
   begin
-    aCurrent := TmncRecord.Create(Fields);
+    aCurrent := TmncFields.Create(Fields);
     for i := 0 to c - 1 do
     begin
 //    TStorageType = (stNone, stInteger, stFloat, stText, stBlob, stNull);

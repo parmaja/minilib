@@ -140,12 +140,14 @@ type
     property Params: TStrings read FParams write SetParams;
   end;
 
+  TmncColumnType = (ftUnkown, ftNull, ftString, ftInteger, ftFloat, ftMemo, ftBlob);
   TmncBlobType = (blobBinary, blobText);
 
-  { TmncCustomField }
+  { TmncCustomColumn }
 
-  TmncCustomField = class(TObject)
+  TmncCustomColumn = class(TObject)
   private
+    FColumnType: TmncColumnType;
     FBlobType: TmncBlobType;
     FIsBlob: Boolean;
     FName: string;
@@ -226,6 +228,7 @@ type
     property IsNull: Boolean read GetIsNull;
     property IsBlob: Boolean read FIsBlob write FIsBlob default false;
     property BlobType: TmncBlobType read FBlobType write FBlobType default blobBinary;
+    property ColumnType: TmncColumnType read FColumnType;
 {    procedure LoadFromFile(const FileName: string);
     procedure LoadFromStream(Stream: TStream);
     procedure LoadFromIStream(Stream: IStreamPersist);
@@ -238,26 +241,26 @@ type
     property Name: string read FName write FName;
   end;
 
-  TmncCustomFieldClass = class of TmncCustomField;
+  TmncCustomColumnClass = class of TmncCustomColumn;
 
-  { TmncCustomFields }
+  { TmncCustomColumns }
 
-  TmncCustomFields = class(TObjectList)
+  TmncCustomColumns = class(TObjectList)
   private
-    function GetItem(Index: Integer): TmncCustomField;
+    function GetItem(Index: Integer): TmncCustomColumn;
   protected
-    function FindField(vName: string): TmncCustomField; virtual; abstract;
+    function Find(vName: string): TmncCustomColumn; virtual; abstract;
   public
-    function Add(AField: TmncCustomField): Integer; overload;
-    function FieldByName(vName: string): TmncCustomField;
+    function Add(AColumn: TmncCustomColumn): Integer; overload;
+    function ByName(vName: string): TmncCustomColumn;
     function IsExists(vName: string): Boolean;
     procedure Clean; virtual;
-    property Items[Index: Integer]: TmncCustomField read GetItem;
+    property Items[Index: Integer]: TmncCustomColumn read GetItem;
   end;
 
-  { TmncField }
+  { TmncColumn }
 
-  TmncField = class(TmncCustomField)
+  TmncColumn = class(TmncCustomColumn)
   private
     FIndex: Integer;
 //    FSize: Integer;
@@ -269,24 +272,24 @@ type
     //property Size: Integer read FSize write FSize;//todo not yet
   end;
 
-  TmncFieldClass = class of TmncField;
+  TmncColumnClass = class of TmncColumn;
 
-  TmncFields = class(TmncCustomFields)
+  TmncColumns = class(TmncCustomColumns)
   private
-    function GetItem(Index: Integer): TmncField;
+    function GetItem(Index: Integer): TmncColumn;
   protected
-    function FindField(vName: string): TmncCustomField; override;
+    function Find(vName: string): TmncCustomColumn; override;
   public
-    function Add(Index: Integer; Name: string; FieldClass: TmncFieldClass = nil): TmncField; overload;
-    function Add(Name: string): TmncField; overload;
-    property Items[Index: Integer]: TmncField read GetItem; default;
+    function Add(vIndex: Integer; vName: string; vType: TmncColumnType; FieldClass: TmncColumnClass = nil): TmncColumn; overload;
+    function Add(vName: string; vType: TmncColumnType): TmncColumn; overload;
+    property Items[Index: Integer]: TmncColumn read GetItem; default;
   end;
 
 {
   Values
 }
 
-  TmncRecordField = class(TmncCustomField)
+  TmncCustomField = class(TmncCustomColumn)
   private
   protected
   public
@@ -315,54 +318,55 @@ type
 
   { TmncCustomRecord }
 
-  TmncCustomRecord = class(TmncCustomFields)
+  TmncCustomRecord = class(TmncCustomColumns)
   private
-    function GetItem(Index: Integer): TmncRecordField;
-    function GetField(Index: string): TmncRecordField;
+    function GetItem(Index: Integer): TmncCustomField;
+    function GetField(Index: string): TmncCustomField;
   public
-    property Items[Index: Integer]: TmncRecordField read GetItem;
-    property Field[Index: string]: TmncRecordField read GetField; default;
+    property Items[Index: Integer]: TmncCustomField read GetItem;
+    property Field[Index: string]: TmncCustomField read GetField; default;
   end;
 
 {
   Record
 }
 
-  TmncRecordItem = class(TmncRecordField)
+  TmncField = class(TmncCustomField)
   private
     FValue: Variant;
-    FField: TmncField;
+    FColumn: TmncColumn;
   protected
     function GetVariant: Variant; override;
     procedure SetVariant(const Value: Variant); override;
   public
-    constructor Create(vField: TmncField);
+    constructor Create(vColumn: TmncColumn);
   published
-    property Field: TmncField read FField write FField;
+    property Column: TmncColumn read FColumn write FColumn;
   end;
 
-  { TmncRecord }
+  { TmncFields }
 
-  TmncRecord = class(TmncCustomRecord)
+  TmncFields = class(TmncCustomRecord)
   private
-    FFields: TmncFields;
+    FColumns: TmncColumns;
     FRowID: Integer;
-    function GetItem(Index: Integer): TmncRecordItem;
-    function GetField(Index: string): TmncRecordItem;
+    function GetItem(Index: Integer): TmncField;
+    function GetField(Index: string): TmncField;
     function GetValue(Index: string): Variant;
     procedure SetValue(Index: string; const Value: Variant);
   protected
+    function Find(vName: string): TmncCustomColumn; override;
   public
-    constructor Create(vFields: TmncFields);
-    function FindField(vName: string): TmncCustomField; override;
-    function FieldByName(vName: string): TmncRecordItem;
-    function Add(Field: TmncField; Value: Variant): TmncRecordItem; overload;
-    function Add(Field: TmncField): TmncRecordItem; overload;
-    function Add(FieldIndex: Integer; Value: Variant): TmncRecordItem; overload;
-    property Fields: TmncFields read FFields;
+    constructor Create(vColumns: TmncColumns);
+    function FindField(vName: string): TmncField;
+    function FieldByName(vName: string): TmncField;
+    function Add(Column: TmncColumn; Value: Variant): TmncField; overload;
+    function Add(Column: TmncColumn): TmncField; overload;
+    function Add(Index: Integer; Value: Variant): TmncField; overload;
+    property Fields: TmncColumns read FColumns;
     property Value[Index: string]: Variant read GetValue write SetValue;
-    property Field[Index: string]: TmncRecordItem read GetField; default;
-    property Items[Index: Integer]: TmncRecordItem read GetItem;
+    property Field[Index: string]: TmncField read GetField; default;
+    property Items[Index: Integer]: TmncField read GetItem;
     property RowID: Integer read FRowID write FRowID default 0; //most of SQL engines have this value
   end;
 
@@ -370,7 +374,7 @@ type
   Params
 }
 
-  TmncParamItem = class(TmncRecordField)
+  TmncParam = class(TmncCustomField)
   private
     FValue: Variant;
     FBuffer: Pointer;
@@ -393,15 +397,15 @@ type
   TmncCustomParams = class(TmncCustomRecord)
   private
   protected
-    function GetParam(Index: string): TmncParamItem;
-    function GetItem(Index: Integer): TmncParamItem;
-    function FindField(vName: string): TmncCustomField; override;
+    function GetParam(Index: string): TmncParam;
+    function GetItem(Index: Integer): TmncParam;
+    function Find(vName: string): TmncCustomColumn; override;
   public
     procedure Clear; override;
-    function FindParam(vName: string): TmncParamItem;
-    function ParamByName(vName: string): TmncParamItem;
-    property Items[Index: Integer]: TmncParamItem read GetItem;
-    property Param[Index: string]: TmncParamItem read GetParam; default;
+    function FindParam(vName: string): TmncParam;
+    function ParamByName(vName: string): TmncParam;
+    property Items[Index: Integer]: TmncParam read GetItem;
+    property Param[Index: string]: TmncParam read GetParam; default;
   end;
 
   TmncParams = class(TmncCustomParams)
@@ -410,8 +414,8 @@ type
     procedure SetValue(Index: string; const Value: Variant);
   published
   public
-    function Add(Name: string): TmncParamItem;
-    function AddExists(Name: string): TmncParamItem;
+    function Add(Name: string): TmncParam;
+    function AddExists(Name: string): TmncParam;
     property Value[Index: string]: Variant read GetValue write SetValue; default;
   end;
 
@@ -442,18 +446,18 @@ type
 
   TmncCommand = class(TmncLinkObject)
   private
-    FCurrent: TmncRecord;
+    FColumns: TmncColumns;
+    FCurrent: TmncFields;
     FParams: TmncParams;
     FPrepared: Boolean;
     FNextOnExecute: Boolean;
-    FFields: TmncFields;
     FParamList: TmncParamList;
     procedure SetRequest(const Value: TStrings);
-    procedure SetFields(const Value: TmncFields);
-    procedure SetCurrent(const Value: TmncRecord);
+    procedure SetColumns(const Value: TmncColumns);
+    procedure SetCurrent(const Value: TmncFields);
     procedure SetParams(const Value: TmncParams);
-    function GetField(Index: string): TmncRecordItem;
-    function GetParam(Index: string): TmncParamItem;
+    function GetField(Index: string): TmncField;
+    function GetParam(Index: string): TmncParam;
   protected
     FRequest: TStrings;
     procedure SetActive(const Value: Boolean); override;
@@ -480,16 +484,17 @@ type
     procedure Clear; virtual;
     procedure Commit;
     procedure Rollback;
-    function ReleaseCurrent: TmncRecord;
+    function ReleaseCurrent: TmncFields;
     function ReleaseParams: TmncParams;
     function FieldIsExist(Name: string): Boolean;
     property NextOnExecute: Boolean read FNextOnExecute write FNextOnExecute default True;
     property Prepared: Boolean read FPrepared;
+    property Columns: TmncColumns read FColumns write SetColumns;
+    property Fields: TmncColumns read FColumns write SetColumns; //TODO Fields > Columns backward compatibility
+    property Current: TmncFields read FCurrent write SetCurrent; //TODO Current > Fields
     property Params: TmncParams read FParams write SetParams;
-    property Fields: TmncFields read FFields write SetFields;
-    property Current: TmncRecord read FCurrent write SetCurrent;
-    property Param[Index: string]: TmncParamItem read GetParam;
-    property Field[Index: string]: TmncRecordItem read GetField;
+    property Param[Index: string]: TmncParam read GetParam;
+    property Field[Index: string]: TmncField read GetField;
   end;
 
 function ConnectionLock: TCriticalSection;
@@ -584,7 +589,7 @@ begin
   FreeAndNil(FCurrent);
   FreeAndNil(FParamList);
   FreeAndNil(FParams);
-  FreeAndNil(FFields);
+  FreeAndNil(FColumns);
   inherited;
 end;
 
@@ -600,7 +605,7 @@ begin
   FRequest := TStringList.Create;
   (FRequest as TStringList).OnChange := DoRequestChanged;
 
-  FFields := TmncFields.Create;
+  FColumns := TmncColumns.Create;
   FParams := TmncParams.Create;
   FParamList := TmncParamList.Create;
   FNextOnExecute := True;
@@ -624,10 +629,10 @@ end;
 
 function TmncCommand.FieldIsExist(Name: string): Boolean;
 begin
-  Result := Fields.FindField(Name) <> nil;
+  Result := Fields.Find(Name) <> nil;
 end;
 
-function TmncCommand.GetField(Index: string): TmncRecordItem;
+function TmncCommand.GetField(Index: string): TmncField;
 begin
   if not Prepared then
     Prepare;
@@ -637,7 +642,7 @@ begin
     raise EmncException.Create('Current record not found');
 end;
 
-function TmncCommand.GetParam(Index: string): TmncParamItem;
+function TmncCommand.GetParam(Index: string): TmncParam;
 begin
   if not Prepared then
     Prepare;
@@ -680,7 +685,7 @@ begin
   FPrepared := True;
 end;
 
-function TmncCommand.ReleaseCurrent: TmncRecord;
+function TmncCommand.ReleaseCurrent: TmncFields;
 begin
   Result := FCurrent;
   FCurrent := nil;
@@ -710,7 +715,7 @@ begin
   end;
 end;
 
-procedure TmncCommand.SetCurrent(const Value: TmncRecord);
+procedure TmncCommand.SetCurrent(const Value: TmncFields);
 begin
   if FCurrent <> Value then
   begin
@@ -719,9 +724,9 @@ begin
   end;
 end;
 
-procedure TmncCommand.SetFields(const Value: TmncFields);
+procedure TmncCommand.SetColumns(const Value: TmncColumns);
 begin
-  FFields.Assign(Value);
+  FColumns.Assign(Value);
 end;
 
 procedure TmncCommand.SetParams(const Value: TmncParams);
@@ -945,52 +950,54 @@ begin
   DoStop;
 end;
 
-function TmncRecord.Add(Field: TmncField; Value: Variant): TmncRecordItem;
+function TmncFields.Add(Column: TmncColumn; Value: Variant): TmncField;
 begin
-  Result := TmncRecordItem.Create(Field);
+  Result := TmncField.Create(Column);
   Result.Value := Value;
-  Result.Field := Field;
+  Result.Column := Column;
   inherited Add(Result);
 end;
 
-function TmncRecord.Add(FieldIndex: Integer; Value: Variant): TmncRecordItem;
+function TmncFields.Add(Index: Integer; Value: Variant): TmncField;
 begin
-  Result := Add(Fields[FieldIndex], Value);
+  Result := Add(Fields[Index], Value);
 end;
 
-function TmncRecord.FieldByName(vName: string): TmncRecordItem;
-begin
-  Result := inherited FieldByName(vName) as TmncRecordItem;
-end;
-
-function TmncRecord.Add(Field: TmncField): TmncRecordItem;
-begin
-  Result := TmncRecordItem.Create(Field);
-  Result.Field := Field;
-  inherited Add(Result);
-end;
-
-constructor TmncRecord.Create(vFields: TmncFields);
-begin
-  inherited Create;
-  FFields := vFields;
-  if FFields = nil then
-    raise EmncException.Create('vFields must be not nil');
-end;
-
-function TmncCustomFields.FieldByName(vName: string): TmncCustomField;
+function TmncFields.FieldByName(vName: string): TmncField;
 begin
   Result := FindField(vName);
   if Result = nil then
-    raise EmncException.Create('Field "' + vName + '" not found');
+    raise EmncException.Create('Field ' + vName + ' not found');
 end;
 
-function TmncCustomFields.IsExists(vName: string): Boolean;
+function TmncFields.Add(Column: TmncColumn): TmncField;
 begin
-  Result := FindField(vName) <> nil;
+  Result := TmncField.Create(Column);
+  Result.Column:= Column;
+  inherited Add(Result);
 end;
 
-procedure TmncCustomFields.Clean;
+constructor TmncFields.Create(vColumns: TmncColumns);
+begin
+  inherited Create;
+  FColumns := vColumns;
+  if FColumns = nil then
+    raise EmncException.Create('vColumns must be not nil');
+end;
+
+function TmncCustomColumns.ByName(vName: string): TmncCustomColumn;
+begin
+  Result := Find(vName);
+  if Result = nil then
+    raise EmncException.Create('Column "' + vName + '" not found');
+end;
+
+function TmncCustomColumns.IsExists(vName: string): Boolean;
+begin
+  Result := Find(vName) <> nil;
+end;
+
+procedure TmncCustomColumns.Clean;
 var
   i: Integer;
 begin
@@ -1000,14 +1007,39 @@ begin
   end;
 end;
 
-function TmncRecord.FindField(vName: string): TmncCustomField;
+function TmncFields.FindField(vName: string): TmncField;
+begin
+  Result := Find(vName) as TmncField;
+end;
+
+function TmncFields.GetField(Index: string): TmncField;
+begin
+  Result := FieldByName(Index);
+end;
+
+function TmncFields.GetItem(Index: Integer): TmncField;
+begin
+  Result := (inherited Items[Index]) as TmncField;
+end;
+
+function TmncFields.GetValue(Index: string): Variant;
+begin
+  Result := Field[Index].Value;
+end;
+
+procedure TmncFields.SetValue(Index: string; const Value: Variant);
+begin
+  Field[Index].Value := Value;
+end;
+
+function TmncFields.Find(vName: string): TmncCustomColumn;
 var
   i: Integer;
 begin
   Result := nil;
   for i := 0 to Count - 1 do
   begin
-    if SameText(vName, Items[i].Field.Name) then
+    if SameText(vName, Items[i].Column.Name) then
     begin
       Result := Items[i];
       break;
@@ -1015,44 +1047,25 @@ begin
   end;
 end;
 
-function TmncRecord.GetField(Index: string): TmncRecordItem;
-begin
-  Result := FieldByName(Index);
-end;
+{ TmncColumns }
 
-function TmncRecord.GetItem(Index: Integer): TmncRecordItem;
-begin
-  Result := (inherited Items[Index]) as TmncRecordItem;
-end;
-
-function TmncRecord.GetValue(Index: string): Variant;
-begin
-  Result := Field[Index].Value;
-end;
-
-procedure TmncRecord.SetValue(Index: string; const Value: Variant);
-begin
-  Field[Index].Value := Value;
-end;
-
-{ TmncFields }
-
-function TmncFields.Add(Index: Integer; Name: string; FieldClass: TmncFieldClass): TmncField;
+function TmncColumns.Add(vIndex: Integer; vName: string; vType: TmncColumnType; FieldClass: TmncColumnClass): TmncColumn;
 begin
   if FieldClass = nil then
-    FieldClass := TmncField;
+    FieldClass := TmncColumn;
   Result := FieldClass.Create;
-  Result.Index := Index;
-  Result.Name := Name;
+  Result.Index := vIndex;
+  Result.Name := vName;
+  Result.FColumnType := vType;
   inherited Add(Result);
 end;
 
-function TmncFields.Add(Name: string): TmncField;
+function TmncColumns.Add(vName: string; vType: TmncColumnType): TmncColumn;
 begin
-  Result := Add(Count, Name);
+  Result := Add(Count, vName, vType);
 end;
 
-function TmncFields.FindField(vName: string): TmncCustomField;
+function TmncColumns.Find(vName: string): TmncCustomColumn;
 var
   i: Integer;
 begin
@@ -1067,29 +1080,29 @@ begin
   end;
 end;
 
-function TmncFields.GetItem(Index: Integer): TmncField;
+function TmncColumns.GetItem(Index: Integer): TmncColumn;
 begin
-  Result := inherited Items[Index] as TmncField;
+  Result := inherited Items[Index] as TmncColumn;
 end;
 
-{ TmncRecordItem }
+{ TmncField }
 
-constructor TmncRecordItem.Create(vField: TmncField);
+constructor TmncField.Create(vColumn: TmncColumn);
 begin
   inherited Create;
-  FField := vField;
+  FColumn := vColumn;
 end;
 
-function TmncParams.Add(Name: string): TmncParamItem;
+function TmncParams.Add(Name: string): TmncParam;
 begin
-  Result := TmncParamItem.Create;
+  Result := TmncParam.Create;
   Result.Name := Name;
   inherited Add(Result);
 end;
 
-function TmncParams.AddExists(Name: string): TmncParamItem;
+function TmncParams.AddExists(Name: string): TmncParam;
 begin
-  Result := FindField(Name) as TmncParamItem;
+  Result := FindParam(Name) as TmncParam;
   if Result = nil then
     Result := Add(Name);
 end;
@@ -1109,7 +1122,19 @@ begin
   inherited;
 end;
 
-function TmncCustomParams.FindParam(vName: string): TmncParamItem;
+function TmncCustomParams.FindParam(vName: string): TmncParam;
+begin
+  Result := Find(vName) as TmncParam;
+end;
+
+function TmncCustomParams.ParamByName(vName: string): TmncParam;
+begin
+  Result := FindParam(vName);
+  if Result = nil then
+    raise EmncException.Create('Param ' + vName + ' not found');
+end;
+
+function TmncCustomParams.Find(vName: string): TmncCustomColumn;
 var
   i: Integer;
 begin
@@ -1118,40 +1143,28 @@ begin
   begin
     if SameText(vName, Items[i].Name) then
     begin
-      Result := Items[i] as TmncParamItem;
+      Result := Items[i] as TmncParam;
       break;
     end;
   end;
 end;
 
-function TmncCustomParams.ParamByName(vName: string): TmncParamItem;
-begin
-  Result := FindField(vName) as TmncParamItem;
-  if Result = nil then
-    raise EmncException.Create('Param ' + vName + ' not found');
-end;
-
-function TmncCustomParams.FindField(vName: string): TmncCustomField;
-begin
-  Result := FindParam(vName);
-end;
-
-function TmncCustomParams.GetParam(Index: string): TmncParamItem;
+function TmncCustomParams.GetParam(Index: string): TmncParam;
 begin
   Result := ParamByName(Index);
 end;
 
-function TmncCustomParams.GetItem(Index: Integer): TmncParamItem;
+function TmncCustomParams.GetItem(Index: Integer): TmncParam;
 begin
-  Result := inherited Items[Index] as TmncParamItem;
+  Result := inherited Items[Index] as TmncParam;
 end;
 
-function TmncRecordItem.GetVariant: Variant;
+function TmncField.GetVariant: Variant;
 begin
   Result := FValue;
 end;
 
-procedure TmncRecordItem.SetVariant(const Value: Variant);
+procedure TmncField.SetVariant(const Value: Variant);
 begin
   FValue := Value;
 end;
@@ -1165,22 +1178,22 @@ end;
 
 { TCustomField }
 
-{ TmncField }
+{ TmncColumn }
 
-function TmncField.GetVariant: Variant;
+function TmncColumn.GetVariant: Variant;
 begin
   Result := null;
   raise EmncException.Create('Field have no value, You must not use it, try use Current!') {$ifdef fpc}at get_caller_addr(get_frame){$endif};
 end;
 
-procedure TmncField.SetVariant(const Value: Variant);
+procedure TmncColumn.SetVariant(const Value: Variant);
 begin
   raise EmncException.Create('Field have no value, You must not use it, try use Current!');
 end;
 
-{ TmncParamItem }
+{ TmncParam }
 
-procedure TmncParamItem.AllocBuffer(var P; Size: Integer);
+procedure TmncParam.AllocBuffer(var P; Size: Integer);
 begin
   FreeBuffer;
   FBufferSize := Size;
@@ -1191,30 +1204,30 @@ begin
   end;
 end;
 
-destructor TmncParamItem.Destroy;
+destructor TmncParam.Destroy;
 begin
   FreeBuffer;
   inherited;
 end;
 
-procedure TmncParamItem.FreeBuffer;
+procedure TmncParam.FreeBuffer;
 begin
   if FBuffer <> nil then
     FreeMem(FBuffer);
   FBuffer := nil;
 end;
 
-function TmncParamItem.GetBufferAllocated: Boolean;
+function TmncParam.GetBufferAllocated: Boolean;
 begin
   Result := Buffer <> nil;
 end;
 
-function TmncParamItem.GetVariant: Variant;
+function TmncParam.GetVariant: Variant;
 begin
   Result := FValue;
 end;
 
-procedure TmncParamItem.SetVariant(const Value: Variant);
+procedure TmncParam.SetVariant(const Value: Variant);
 begin
   FValue := Value;
 end;
@@ -1263,14 +1276,14 @@ begin
   inherited Items[Index] := Value;
 end;
 
-{ TmncCustomField }
+{ TmncCustomColumn }
 
-procedure TmncCustomField.Clear;
+procedure TmncCustomColumn.Clear;
 begin
   Value := Null;
 end;
 
-function TmncCustomField.GetAsBoolean: Boolean;
+function TmncCustomColumn.GetAsBoolean: Boolean;
 begin
   if IsEmpty then
     Result := False
@@ -1278,7 +1291,7 @@ begin
     Result := AsInteger <> 0;
 end;
 
-function TmncCustomField.GetAsCurrency: Currency;
+function TmncCustomColumn.GetAsCurrency: Currency;
 begin
   if IsEmpty or not VarIsNumeric(Value) then
     Result := 0
@@ -1286,7 +1299,7 @@ begin
     Result := Value;
 end;
 
-function TmncCustomField.GetAsDate: TDateTime;
+function TmncCustomColumn.GetAsDate: TDateTime;
 begin
   if IsEmpty then
     Result := 0
@@ -1297,7 +1310,7 @@ begin
   end;
 end;
 
-function TmncCustomField.GetAsDateTime: TDateTime;
+function TmncCustomColumn.GetAsDateTime: TDateTime;
 begin
   if IsEmpty then
     Result := 0
@@ -1305,7 +1318,7 @@ begin
     Result := Value;
 end;
 
-function TmncCustomField.GetAsInt64: Integer;
+function TmncCustomColumn.GetAsInt64: Integer;
 begin
   if IsEmpty then
     Result := 0
@@ -1313,7 +1326,7 @@ begin
     Result := Value;
 end;
 
-function TmncCustomField.GetAsInteger: Integer;
+function TmncCustomColumn.GetAsInteger: Integer;
 begin
   if IsEmpty then
     Result := 0
@@ -1321,7 +1334,7 @@ begin
     Result := Value;
 end;
 
-function TmncCustomField.GetAsString: string;
+function TmncCustomColumn.GetAsString: string;
 begin
   if IsEmpty then
     Result := ''
@@ -1329,7 +1342,7 @@ begin
     Result := Value;
 end;
 
-function TmncCustomField.GetAsTime: TDateTime;
+function TmncCustomColumn.GetAsTime: TDateTime;
 begin
   if IsEmpty then
     Result := 0
@@ -1340,22 +1353,22 @@ begin
   end;
 end;
 
-function TmncCustomField.GetAsTrimString: string;
+function TmncCustomColumn.GetAsTrimString: string;
 begin
   Result := Trim(AsString);
 end;
 
-function TmncCustomField.GetIsEmpty: Boolean;
+function TmncCustomColumn.GetIsEmpty: Boolean;
 begin
   Result := VarType(Value) in [varEmpty, varNull, varUnknown];
 end;
 
-function TmncCustomField.GetIsNull: Boolean;
+function TmncCustomColumn.GetIsNull: Boolean;
 begin
   Result := IsEmpty;
 end;
 
-function TmncCustomField.GetText: string;
+function TmncCustomColumn.GetText: string;
 begin
   if IsEmpty then
     Result := ''
@@ -1363,7 +1376,7 @@ begin
     Result := Value;
 end;
 
-procedure TmncCustomField.SetAsNullString(const Value: string);
+procedure TmncCustomColumn.SetAsNullString(const Value: string);
 begin
   if Value = '' then
     Clear
@@ -1371,7 +1384,7 @@ begin
     AsString := Value;
 end;
 
-function TmncCustomField.GetAsHex: string;
+function TmncCustomColumn.GetAsHex: string;
 var
   s: string;
 begin
@@ -1380,7 +1393,7 @@ begin
   BinToHex(PChar(s), @Result[1], Length(s));
 end;
 
-function TmncCustomField.GetAsText: string;
+function TmncCustomColumn.GetAsText: string;
 begin
   if (IsBlob) and (BlobType = blobText) then
     Result := AsHex
@@ -1388,7 +1401,7 @@ begin
     Result := AsString;
 end;
 
-procedure TmncCustomField.SetAsHex(const AValue: string);
+procedure TmncCustomColumn.SetAsHex(const AValue: string);
 var
   s: string;
 begin
@@ -1397,58 +1410,58 @@ begin
   AsString := s;
 end;
 
-procedure TmncCustomField.SetAsBoolean(const Value: Boolean);
+procedure TmncCustomColumn.SetAsBoolean(const Value: Boolean);
 begin
   AsInteger := Ord(Value);
 end;
 
-procedure TmncCustomField.SetAsCurrency(const Value: Currency);
+procedure TmncCustomColumn.SetAsCurrency(const Value: Currency);
 begin
   Self.Value := Value;
 end;
 
-procedure TmncCustomField.SetAsDate(const Value: TDateTime);
+procedure TmncCustomColumn.SetAsDate(const Value: TDateTime);
 begin
   Self.Value := DateOf(Value);
 end;
 
-procedure TmncCustomField.SetAsDateTime(const Value: TDateTime);
+procedure TmncCustomColumn.SetAsDateTime(const Value: TDateTime);
 begin
   Self.Value := Value;
 end;
 
-procedure TmncCustomField.SetAsInt64(const Value: Integer);
+procedure TmncCustomColumn.SetAsInt64(const Value: Integer);
 begin
   Self.Value := Value;
 end;
 
-procedure TmncCustomField.SetAsInteger(const Value: Integer);
+procedure TmncCustomColumn.SetAsInteger(const Value: Integer);
 begin
   Self.Value := Value;
 end;
 
-procedure TmncCustomField.SetAsString(const Value: string);
+procedure TmncCustomColumn.SetAsString(const Value: string);
 begin
   Self.Value := Value;
 end;
 
-function TmncCustomField.GetAsAnsiString: ansistring;
+function TmncCustomColumn.GetAsAnsiString: ansistring;
 begin
   Result := Utf8ToAnsi(GetAsString);
 end;
 
-procedure TmncCustomField.SetAsAnsiString(const Value: ansistring);
+procedure TmncCustomColumn.SetAsAnsiString(const Value: ansistring);
 begin
   //fpc not auto convert because string type it same with ansistring
   SetAsString(AnsiToUtf8(Value));
 end;
 
-function TmncCustomField.GetAsWideString: widestring;
+function TmncCustomColumn.GetAsWideString: widestring;
 begin
   Result := GetAsString;//the compiler will convert it
 end;
 
-procedure TmncCustomField.SetAsText(const AValue: string);
+procedure TmncCustomColumn.SetAsText(const AValue: string);
 begin
   if (IsBlob) and (BlobType = blobText) then
     AsHex := AValue
@@ -1456,53 +1469,53 @@ begin
     AsString := AValue;
 end;
 
-procedure TmncCustomField.SetAsWideString(const Value: widestring);
+procedure TmncCustomColumn.SetAsWideString(const Value: widestring);
 begin
   SetAsString(Value);
 end;
 
-function TmncCustomField.GetAsUtf8String: UTF8String;
+function TmncCustomColumn.GetAsUtf8String: UTF8String;
 begin
   Result := GetAsString;//the compiler will convert it
 end;
 
-procedure TmncCustomField.SetAsUtf8String(const Value: UTF8String);
+procedure TmncCustomColumn.SetAsUtf8String(const Value: UTF8String);
 begin
   SetAsString(Value);
 end;
 
-procedure TmncCustomField.SetAsTime(const Value: TDateTime);
+procedure TmncCustomColumn.SetAsTime(const Value: TDateTime);
 begin
   Self.Value := TimeOf(Value);
 end;
 
-procedure TmncCustomField.SetAsTrimString(const Value: string);
+procedure TmncCustomColumn.SetAsTrimString(const Value: string);
 begin
   AsString := Trim(Value);
 end;
 
-{ TmncCustomFields }
+{ TmncCustomColumns }
 
-function TmncCustomFields.GetItem(Index: Integer): TmncCustomField;
+function TmncCustomColumns.GetItem(Index: Integer): TmncCustomColumn;
 begin
-  Result := (inherited Items[Index]) as TmncCustomField;
+  Result := (inherited Items[Index]) as TmncCustomColumn;
 end;
 
-function TmncCustomFields.Add(AField: TmncCustomField): Integer;
+function TmncCustomColumns.Add(AColumn: TmncCustomColumn): Integer;
 begin
-  Result := inherited Add(AField);
+  Result := inherited Add(AColumn);
 end;
 
 { TmncCustomRecord }
 
-function TmncCustomRecord.GetItem(Index: Integer): TmncRecordField;
+function TmncCustomRecord.GetItem(Index: Integer): TmncCustomField;
 begin
-  Result := (inherited Items[Index]) as TmncRecordField;
+  Result := (inherited Items[Index]) as TmncCustomField;
 end;
 
-function TmncCustomRecord.GetField(Index: string): TmncRecordField;
+function TmncCustomRecord.GetField(Index: string): TmncCustomField;
 begin
-  Result := FieldByName(Index) as TmncRecordField;
+  Result := ByName(Index) as TmncCustomField;
 end;
 
 initialization

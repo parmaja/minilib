@@ -206,7 +206,7 @@ begin
     try
       for i := 0 to aStrings.Count - 1 do
       begin
-        Fields.Add(i, DequoteStr(aStrings[i]));
+        Fields.Add(i, DequoteStr(aStrings[i]), ftString);
       end;
     finally
       aStrings.Free;
@@ -219,12 +219,12 @@ end;
 procedure TmncCSVCommand.LoadRecord;
 var
   aStrings: TStringList;
-  aRecord: TmncRecord;
+  aRecord: TmncFields;
   i: Integer;
 begin
   if ReadLine(aStrings) then
   begin
-    aRecord := TmncRecord.Create(Fields);
+    aRecord := TmncFields.Create(Fields);
     i := 0;
     try
       while (i < aStrings.Count) and (i < Fields.Count) do
