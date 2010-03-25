@@ -104,7 +104,7 @@ type
 
 implementation
 
-function SQLTypeToType(vType: Integer): TmncColumnType;
+function SQLTypeToType(vType: Integer): TmncDataType;
 begin
   case vType of
     SQLITE_INTEGER: Result := ftInteger;
@@ -464,7 +464,7 @@ begin
     aType := sqlite3_column_type(FStatment, i);
     pType := sqlite3_column_decltype(FStatment, i);
     aColumn := Columns.Add(aName, SQLTypeToType(aType));
-    aColumn.DeclairType := pType;
+    aColumn.SchemaType := pType;
   end;
 end;
 

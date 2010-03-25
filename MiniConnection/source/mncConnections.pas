@@ -140,16 +140,16 @@ type
     property Params: TStrings read FParams write SetParams;
   end;
 
-  TmncColumnType = (ftUnkown, ftNull, ftString, ftInteger, ftCurrency, ftFloat, ftDate, ftTime, ftDateTime, ftMemo, ftBlob);
+  TmncDataType = (ftUnkown, ftNull, ftString, ftInteger, ftCurrency, ftFloat, ftDate, ftTime, ftDateTime, ftMemo, ftBlob);
   TmncBlobType = (blobBinary, blobText);
 
   { TmncCustomColumn }
 
   TmncCustomColumn = class(TObject)
   private
-    FColumnType: TmncColumnType;
+    FDataType: TmncDataType;
     FBlobType: TmncBlobType;
-    FDeclairType: string;
+    FSchemaType: string;
     FIsBlob: Boolean;
     FName: string;
     function GetAsHex: string;
@@ -229,8 +229,8 @@ type
     property IsNull: Boolean read GetIsNull;
     property IsBlob: Boolean read FIsBlob write FIsBlob default false;
     property BlobType: TmncBlobType read FBlobType write FBlobType default blobBinary;
-    property ColumnType: TmncColumnType read FColumnType default ftUnkown;
-    property DeclairType: string read FDeclairType write FDeclairType;
+    property DataType: TmncDataType read FDataType default ftUnkown;
+    property SchemaType: string read FSchemaType write FSchemaType;
     {    procedure LoadFromFile(const FileName: string);
     procedure LoadFromStream(Stream: TStream);
     procedure LoadFromIStream(Stream: IStreamPersist);
@@ -270,8 +270,8 @@ type
     procedure SetVariant(const Value: Variant); override;
   published
     property Index: Integer read FIndex write FIndex;
-    property ColumnType;
-    property DeclairType;
+    property DataType;
+    property SchemaType;
     //property Size: Integer read FSize write FSize;//todo not yet
   end;
 
@@ -283,8 +283,8 @@ type
   protected
     function Find(vName: string): TmncCustomColumn; override;
   public
-    function Add(vIndex: Integer; vName: string; vType: TmncColumnType; FieldClass: TmncColumnClass = nil): TmncColumn; overload;
-    function Add(vName: string; vType: TmncColumnType): TmncColumn; overload;
+    function Add(vIndex: Integer; vName: string; vType: TmncDataType; FieldClass: TmncColumnClass = nil): TmncColumn; overload;
+    function Add(vName: string; vType: TmncDataType): TmncColumn; overload;
     property Items[Index: Integer]: TmncColumn read GetItem; default;
   end;
 
@@ -1052,18 +1052,18 @@ end;
 
 { TmncColumns }
 
-function TmncColumns.Add(vIndex: Integer; vName: string; vType: TmncColumnType; FieldClass: TmncColumnClass): TmncColumn;
+function TmncColumns.Add(vIndex: Integer; vName: string; vType: TmncDataType; FieldClass: TmncColumnClass): TmncColumn;
 begin
   if FieldClass = nil then
     FieldClass := TmncColumn;
   Result := FieldClass.Create;
   Result.Index := vIndex;
   Result.Name := vName;
-  Result.FColumnType := vType;
+  Result.FDataType := vType;
   inherited Add(Result);
 end;
 
-function TmncColumns.Add(vName: string; vType: TmncColumnType): TmncColumn;
+function TmncColumns.Add(vName: string; vType: TmncDataType): TmncColumn;
 begin
   Result := Add(Count, vName, vType);
 end;
