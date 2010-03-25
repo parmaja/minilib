@@ -140,7 +140,7 @@ type
     property Params: TStrings read FParams write SetParams;
   end;
 
-  TmncColumnType = (ftUnkown, ftNull, ftString, ftInteger, ftFloat, ftMemo, ftBlob);
+  TmncColumnType = (ftUnkown, ftNull, ftString, ftInteger, ftCurrency, ftFloat, ftDate, ftTime, ftDateTime, ftMemo, ftBlob);
   TmncBlobType = (blobBinary, blobText);
 
   { TmncCustomColumn }
@@ -149,6 +149,7 @@ type
   private
     FColumnType: TmncColumnType;
     FBlobType: TmncBlobType;
+    FDeclairType: string;
     FIsBlob: Boolean;
     FName: string;
     function GetAsHex: string;
@@ -228,8 +229,9 @@ type
     property IsNull: Boolean read GetIsNull;
     property IsBlob: Boolean read FIsBlob write FIsBlob default false;
     property BlobType: TmncBlobType read FBlobType write FBlobType default blobBinary;
-    property ColumnType: TmncColumnType read FColumnType;
-{    procedure LoadFromFile(const FileName: string);
+    property ColumnType: TmncColumnType read FColumnType default ftUnkown;
+    property DeclairType: string read FDeclairType write FDeclairType;
+    {    procedure LoadFromFile(const FileName: string);
     procedure LoadFromStream(Stream: TStream);
     procedure LoadFromIStream(Stream: IStreamPersist);
     procedure SaveToFile(const FileName: string);
@@ -263,12 +265,13 @@ type
   TmncColumn = class(TmncCustomColumn)
   private
     FIndex: Integer;
-//    FSize: Integer;
   protected
     function GetVariant: Variant; override;
     procedure SetVariant(const Value: Variant); override;
   published
     property Index: Integer read FIndex write FIndex;
+    property ColumnType;
+    property DeclairType;
     //property Size: Integer read FSize write FSize;//todo not yet
   end;
 

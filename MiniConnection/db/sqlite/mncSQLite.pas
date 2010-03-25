@@ -452,16 +452,19 @@ var
   c: Integer;
   aName: string;
   aType: Integer;
+  pType: PChar;
+  aColumn: TmncColumn;
   //aSize: Integer;
 begin
   Columns.Clear;
   c := sqlite3_column_count(FStatment);
   for i := 0 to c -1 do
   begin
-//    sqlite3_column_type
     aName :=  DequoteStr(sqlite3_column_name(FStatment, i));
     aType := sqlite3_column_type(FStatment, i);
-    Columns.Add(aName, SQLTypeToType(aType));
+    pType := sqlite3_column_decltype(FStatment, i);
+    aColumn := Columns.Add(aName, SQLTypeToType(aType));
+    aColumn.DeclairType := pType;
   end;
 end;
 
