@@ -61,6 +61,7 @@ type
   published
   public
     constructor Create;
+    function SumWidth: Double;
     property Items[Index: Integer]: TposVisibleColumn read GetItem write SetItem; default;
   end;
 
@@ -657,7 +658,7 @@ procedure TposCustomGrid.PaintRow(Canvas: TCanvas; Index: Integer; Rect: TRect; 
 var
   i: Integer;
   aItemRect: TRect;
-  aWidth: Double;
+  aTotal, aWidth: Double;
   W: Integer;
   Visibles: TposVisibleList;
   ACell: TposCellInfo;
@@ -667,10 +668,12 @@ begin
   W := aItemRect.Right - aItemRect.Left;
   Visibles := CreateVisibleColumns;
   try
+    aTotal := Visibles.SumWidth;
     for i := 0 to Visibles.Count - 1 do
     begin
       aWidth := Visibles[i].Width;
-      aWidth := W * aWidth / 100;
+      //aWidth := W * aWidth / 100;
+      aWidth := W * aWidth / aTotal;
       if UseRightToLeftAlignment then
       begin
         aItemRect.Left := aItemRect.Right - Round(aWidth);
@@ -715,6 +718,7 @@ var
   i: Integer;
   aItemRect: TRect;
   aWidth: Double;
+  aTotal: Double;
   W: Integer;
   Visibles: TposVisibleList;
 begin
@@ -732,10 +736,13 @@ begin
       Canvas.FillRect(Rect)
     end
     else
+    begin
+      aTotal := Visibles.SumWidth;
       for i := 0 to Visibles.Count - 1 do
       begin
         aWidth := Visibles[i].Width;
-        aWidth := W * aWidth / 100;
+        //aWidth := W * aWidth / 100;
+        aWidth := W * aWidth / aTotal;
 
         if UseRightToLeftAlignment then
         begin
@@ -766,6 +773,7 @@ begin
         aItemRect.Left := aItemRect.Right;
         aItemRect.Right := Rect.Right;
       end;
+    end;
   finally
     Visibles.Free;
   end;
@@ -943,6 +951,15 @@ procedure TposVisibleList.SetItem(Index: Integer;
   const Value: TposVisibleColumn);
 begin
   inherited Items[Index] := Value;
+end;
+
+function TposVisibleList.SumWidth: Double;
+var
+  i: Integer;
+begin
+  Result := 0;
+  for I := 0 to Count - 1 do
+    Result := Result + Items[i].Width;
 end;
 
 { TposCheckedColumn }
