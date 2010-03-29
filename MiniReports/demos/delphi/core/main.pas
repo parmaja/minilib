@@ -6,7 +6,7 @@ uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, StdCtrls, DateUtils, Math,
   mnrClasses, mnrLists, mnrNodes;
-  //dluxdetails dluxdesign
+  //dluxdetails dluxdesign 
 
 const
   cMaxRows = 1000;
@@ -28,6 +28,8 @@ type
     procedure CreateLayouts(vLayouts: TmnrLayouts); override;
     procedure DetailsFetch(var vParams: TmnrFetchParams);
     procedure HeadersFetch(var vParams: TmnrFetchParams);
+    procedure BuildReport; override;
+
   public
     procedure RequestMaster(vCell: TmnrCustomReportCell);
     procedure RequestNumber(vCell: TmnrCustomReportCell);
@@ -35,6 +37,8 @@ type
     procedure RequestName(vCell: TmnrCustomReportCell);
     procedure RequestCode(vCell: TmnrCustomReportCell);
     procedure RequestValue(vCell: TmnrCustomReportCell);
+
+    procedure Start; override;
   end;
 
   TForm1 = class(TForm)
@@ -163,6 +167,25 @@ end;
 
 { TSimpleDetailsReport }
 
+procedure TSimpleDetailsReport.BuildReport;
+begin
+  with HeaderDeatils.DesignRows.Add do
+  begin
+    //CreateLayout();
+    TmnrDesignCell.AutoCreate(Cells, 'Master');
+  end;
+
+  with Details.DesignRows.Add do
+  begin
+    //CreateLayout();
+    TmnrDesignCell.AutoCreate(Cells, 'Number');
+    TmnrDesignCell.AutoCreate(Cells, 'Name');
+    TmnrDesignCell.AutoCreate(Cells, 'Date');
+    TmnrDesignCell.AutoCreate(Cells, 'Code');
+    TmnrDesignCell.AutoCreate(Cells, 'Value');
+  end;
+end;
+
 procedure TSimpleDetailsReport.CreateLayouts(vLayouts: TmnrLayouts);
 begin
   inherited;
@@ -183,25 +206,28 @@ begin
   HeaderDeatils := vSections.RegisterSection('HeaderDetails', '—«” «· ﬁ—Ì—', sciHeaderDetails, ID_SECTION_HEADERREPORT, HeadersFetch);
   Details := HeaderDeatils.Sections.RegisterSection('Details', '«· ﬁ—Ì—', sciDetails, ID_SECTION_DETAILS, DetailsFetch);
 
-  with HeaderDeatils.LayoutsRows.Add do
+  Details.AppendTotals := True;
+  Details.AppendSummary := True;
+
+  {with HeaderDeatils.DesignRows.Add do
   begin
-    CreateLayout(TmnrIntegerLayout, 'Master', RequestMaster);
+    //CreateLayout(TmnrIntegerLayout, 'Master');
   end;
 
-  with Details.LayoutsRows.Add do
+  with Details.DesignRows.Add do
   begin
     //Details.AppendTotals := True;
     Details.AppendSummary := True;
 
-    CreateLayout(TmnrTextLayout, 'Name', RequestName);
-    CreateLayout(TmnrIntegerLayout, 'Number', RequestNumber);
-    CreateLayout(TmnrDateTimeLayout, 'Date', RequestDate);
+    //CreateLayout(TmnrTextLayout, 'Name');
+    //CreateLayout(TmnrIntegerLayout, 'Number');
+    //CreateLayout(TmnrDateTimeLayout, 'Date');
   //end;
   //with sec.LayoutsRows.Add do
   //begin
-    CreateLayout(TmnrTextLayout, 'Code', RequestCode);
-    CreateLayout(TmnrCurrencyLayout, 'Value', RequestValue);
-  end;
+    //CreateLayout(TmnrTextLayout, 'Code');
+    //CreateLayout(TmnrCurrencyLayout, 'Value');
+  end;}
 end;
 
 procedure TSimpleDetailsReport.DetailsFetch(var vParams: TmnrFetchParams);
@@ -258,6 +284,17 @@ end;
 procedure TSimpleDetailsReport.RequestValue(vCell: TmnrCustomReportCell);
 begin
   vCell.AsCurrency := RandomRange(1, 1000) / RandomRange(6, 66);
+end;
+
+procedure TSimpleDetailsReport.Start;
+begin
+  inherited;
+  RegisterRequest('Master', RequestMaster);
+  RegisterRequest('Number', RequestNumber);
+  RegisterRequest('Date', RequestDate);
+  RegisterRequest('Name', RequestName);
+  RegisterRequest('Code', RequestCode);
+  RegisterRequest('Value', RequestValue);
 end;
 
 { TReportDesigner }
