@@ -4,9 +4,9 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, StdCtrls, DateUtils, Math,
+  Dialogs, StdCtrls, DateUtils, Math, IniFiles,
   mnrClasses, mnrLists, mnrNodes;
-  //dluxdetails dluxdesign 
+  //dluxdetails dluxdesign
 
 const
   cMaxRows = 1000;
@@ -14,10 +14,22 @@ const
 
 type
 
+  TSimpleProfiler = class(TmnrProfiler)
+  private
+    procedure SaveSection(vIni: TCustomIniFile; vSection: TmnrSection);
+    procedure SaveSectionRow(vIni: TCustomIniFile; vID: Integer; vRow: TmnrDesignRow);
+
+    procedure LoadSections(vIni: TCustomIniFile);
+
+    function FileName: string;
+  public
+    procedure SaveReport; override;
+    procedure LoadReport; override;
+  end;
+
   TReportDesigner = class(TCustomReportDesigner)
   public
     function CreateDesigner: TComponent; override;
-
   end;
 
   TSimpleDetailsReport = class(TmnrCustomReport)
@@ -28,7 +40,8 @@ type
     procedure CreateLayouts(vLayouts: TmnrLayouts); override;
     procedure DetailsFetch(var vParams: TmnrFetchParams);
     procedure HeadersFetch(var vParams: TmnrFetchParams);
-    procedure BuildReport; override;
+    procedure LoadReport; override;
+    function CreateProfiler: TmnrProfiler; override;
 
   public
     procedure RequestMaster(vCell: TmnrCustomReportCell);
@@ -80,7 +93,7 @@ begin
   r := TSimpleDetailsReport.Create;
   try
     r.Generate;
-    r.ExportCSV('c:\1.csv');
+    //r.ExportCSV('c:\1.csv');
     ShowMessage('Create in '+IntToStr(GetTickCount-t));
     t := GetTickCount;
   finally
@@ -167,9 +180,10 @@ end;
 
 { TSimpleDetailsReport }
 
-procedure TSimpleDetailsReport.BuildReport;
+procedure TSimpleDetailsReport.LoadReport;
 begin
-  with HeaderDeatils.DesignRows.Add do
+  inherited;
+  {with HeaderDeatils.DesignRows.Add do
   begin
     //CreateLayout();
     TmnrDesignCell.AutoCreate(Cells, 'Master');
@@ -183,7 +197,7 @@ begin
     TmnrDesignCell.AutoCreate(Cells, 'Date');
     TmnrDesignCell.AutoCreate(Cells, 'Code');
     TmnrDesignCell.AutoCreate(Cells, 'Value');
-  end;
+  end;}
 end;
 
 procedure TSimpleDetailsReport.CreateLayouts(vLayouts: TmnrLayouts);
@@ -191,13 +205,18 @@ begin
   inherited;
   with vLayouts do
   begin
-    CreateLayout(TmnrIntegerLayout, 'Master', 'ÇáãÊÓáÓ');
+    CreateLayout(TmnrIntegerLayout, 'Master', 'ÇáãÊÓáÓá');
     CreateLayout(TmnrTextLayout, 'Name', 'ÇáÇÓã');
     CreateLayout(TmnrIntegerLayout, 'Number', 'ÇáÑÞã');
     CreateLayout(TmnrDateTimeLayout, 'Date', 'ÇáÊÇÑíÎ');
     CreateLayout(TmnrTextLayout, 'Code', 'ÇáÑãÒ');
     CreateLayout(TmnrCurrencyLayout, 'Value', 'ÇáÞíãÉ');
   end;
+end;
+
+function TSimpleDetailsReport.CreateProfiler: TmnrProfiler;
+begin
+  Result := TSimpleProfiler.Create;
 end;
 
 procedure TSimpleDetailsReport.CreateSections(vSections: TmnrSections);
@@ -238,7 +257,7 @@ begin
       SubPos := 0
     else
       Inc(SubPos);
-    if SubPos>6 then
+    if SubPos>60000 then
       Accepted := acmEof;
   end;
 end;
@@ -251,7 +270,7 @@ begin
       BigPos := 0
     else
       Inc(BigPos);
-    if BigPos>3 then
+    if BigPos>30 then
       Accepted := acmEof;
   end;
 end;
@@ -263,7 +282,8 @@ end;
 
 procedure TSimpleDetailsReport.RequestDate(vCell: TmnrCustomReportCell);
 begin
-  vCell.AsDateTime := IncDay(Now, RandomRange(-100, 100));
+  //vCell.AsDateTime := IncDay(Now, RandomRange(-100, 100));
+  //vCell.AsDateTime := Now;
 end;
 
 procedure TSimpleDetailsReport.RequestMaster(vCell: TmnrCustomReportCell);
@@ -273,17 +293,19 @@ end;
 
 procedure TSimpleDetailsReport.RequestName(vCell: TmnrCustomReportCell);
 begin
-  vCell.AsString := Format('Cell %d', [0]);
+  //vCell.AsString := Format('Cell %d', [0]);
+  //vCell.AsString := 'Cell %d';
 end;
 
 procedure TSimpleDetailsReport.RequestCode(vCell: TmnrCustomReportCell);
 begin
-  vCell.AsString := Format('Row = %d    Col = %d', [vCell.Row.ID, 0]);
+  //vCell.AsString := Format('Row = %d    Col = %d', [vCell.Row.ID, 0]);
 end;
 
 procedure TSimpleDetailsReport.RequestValue(vCell: TmnrCustomReportCell);
 begin
-  vCell.AsCurrency := RandomRange(1, 1000) / RandomRange(6, 66);
+  //vCell.AsCurrency := RandomRange(1, 1000) / RandomRange(6, 66);
+  vCell.AsCurrency := 0;
 end;
 
 procedure TSimpleDetailsReport.Start;
@@ -300,13 +322,140 @@ end;
 { TReportDesigner }
 
 function TReportDesigner.CreateDesigner: TComponent;
-var
-  f: TDesignerForm;
 begin
-  f := TDesignerForm.Create(nil);
-  f.ReportDesigner := Self;
-  f.Show;
-  Result := f;
+  Result := TDesignerForm.Create(Application);
+end;
+
+{ TSimpleProfiler }
+
+function TSimpleProfiler.FileName: string;
+begin
+  Result := IncludeTrailingPathDelimiter( ExtractFilePath(Application.ExeName) )+ Report.ClassName +'.ini';
+end;
+
+procedure TSimpleProfiler.LoadReport;
+var
+  ini: TIniFile;
+begin
+  if FileExists(FileName) then
+  begin
+    ini := TIniFile.Create(FileName);
+    try
+      LoadSections(ini);
+    finally
+      ini.Free;
+    end;
+  end;
+end;
+
+procedure TSimpleProfiler.LoadSections(vIni: TCustomIniFile);
+var
+  st, cl: TStrings;
+  s: string;
+  i, j, k: Integer;
+  sec: TmnrSection;
+  c: TmnrDesignCell;
+
+begin
+  st := TStringList.Create;
+  cl := TStringList.Create;
+  try
+    vIni.ReadSection('Sections', st);
+    for I := 0 to st.Count - 1 do
+    begin
+      s := st[i];
+      sec := Report.FindSection(s);
+      if sec<>nil then
+      begin
+        sec.AppendTotals := vIni.ReadBool(sec.Name, 'AppendTotals', False);
+        sec.AppendSummary := vIni.ReadBool(sec.Name, 'AppendSummary', False);
+
+        j := 0;
+        while True do
+        begin
+          s := Format('%s.Row%d', [sec.Name, j]);
+          if not vIni.SectionExists(s) then
+            Break;
+          vIni.ReadSection(s, cl);
+          if cl.Count<>0 then
+          begin
+            with sec.DesignRows.Add do
+            begin
+              for k:= 0 to cl.Count - 1 do
+              begin
+                c := TmnrDesignCell.AutoCreate(Cells, cl[k]);
+                c.Width := vIni.ReadInteger(s, cl[k], -1);
+              end;
+            end;
+          end;
+          Inc(j);
+        end;
+      end;
+    end;
+  finally
+    st.Free;
+    cl.Free;
+  end;
+end;
+
+procedure TSimpleProfiler.SaveReport;
+var
+  ini: TIniFile;
+  s: TmnrSection;
+begin
+  if FileExists(FileName) then
+    DeleteFile(FileName);
+  ini := TIniFile.Create(FileName);
+  try
+    s := Report.Sections.First;
+    while s<>nil do
+    begin
+      SaveSection(ini, s);
+      s := s.Next;
+    end;
+  finally
+    ini.Free;
+  end;
+end;
+
+procedure TSimpleProfiler.SaveSection(vIni: TCustomIniFile; vSection: TmnrSection);
+var
+  s: TmnrSection;
+  r: TmnrDesignRow;
+  i: Integer;
+begin
+  vIni.WriteString('Sections', vSection.Name, vSection.Caption);
+  vIni.WriteBool(vSection.Name, 'AppendTotals', vSection.AppendTotals);
+  vIni.WriteBool(vSection.Name, 'AppendSummary', vSection.AppendSummary);
+
+  i := 0;
+  r := vSection.DesignRows.First;
+  while r<>nil do
+  begin
+    SaveSectionRow(vIni, i, r);
+    r := r.Next;
+  end;
+  
+  s := vSection.Sections.First;
+  while s<>nil do
+  begin
+    SaveSection(vIni, s);
+    s := s.Next;
+  end;
+end;
+
+procedure TSimpleProfiler.SaveSectionRow(vIni: TCustomIniFile; vID: Integer; vRow: TmnrDesignRow);
+var
+  sec: string;
+  c: TmnrDesignCell;
+begin
+  sec := Format('%s.Row%d', [vRow.Section.Name, vID]);
+  c := vRow.Cells.First;
+  while c<>nil do
+  begin
+    vIni.WriteInteger(Sec, c.Name, c.Width);
+    c := c.Next;
+  end;
 end;
 
 initialization

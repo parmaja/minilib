@@ -19,7 +19,7 @@ type
   TmnrRowNode = class;
   TmnrRowNodes = class;
 
-  TmnrNode = class
+  TmnrNode = class(TPersistent)
   private
     FNodes: TmnrNodes;
   protected
@@ -272,6 +272,9 @@ begin
     if Nodes.Last<>nil then Nodes.FLast.FNext := nil;
     Dec(Nodes.FCount);
   end;
+  if Prior<>nil then Prior.FNext := Next;
+  if Next<>nil then Next.FPrior := Prior;
+
   FNext := nil;
   FPrior := nil;
 end;

@@ -37,11 +37,13 @@ type
   TmnrDesignCells = class;
   TmnrDesignRow = class;
   TmnrDesignRows = class;
+  TmnrProfiler = class;
 
   TmnrReportCellClass = class of TmnrReportCell;
   TmnrLayoutClass = class of TmnrLayout;
   TmnrCustomReportClass = class of TmnrCustomReport;
   TCustomReportDesignerClass = class of TCustomReportDesigner;
+  TmnrProfilerClass = class of TmnrProfiler;
   
   TmnrNodesRowArray = array of TmnrNodesRow;
 
@@ -167,7 +169,6 @@ type
 
   TmnrLayout = class(TmnrLinkNode)
   private
-    FName: string;
     FOnRequest: TOnRequest;
     FReference: TmnrReference;
     FDesignerCell: TmnrDesignCell;
@@ -219,6 +220,7 @@ type
     function GetReport: TmnrCustomReport;
     function GetSection: TmnrSection;
     procedure SetName(const Value: string);
+    procedure SetWidth(const Value: Integer);
   public
     constructor Create(vNodes: TmnrNodes); override;
     constructor AutoCreate(vNodes: TmnrNodes; const vName: string; vWidth: Integer=100); virtual; 
@@ -226,7 +228,7 @@ type
 
     property Next: TmnrDesignCell read GetNext;
     property Prior: TmnrDesignCell read GetPrior;
-    property Width: Integer read FWidth write FWidth default 100;
+    property Width: Integer read FWidth write SetWidth default 100;
     property Layout: TmnrLayout read FLayout write FLayout;
     property Cells: TmnrDesignCells read GetCells;
     property Section: TmnrSection read GetSection;
@@ -395,11 +397,12 @@ type
     property ClassID: TmnrSectionClassID read FClassID;
     property Caption: string read FCaption;
     property LoopWay: TmnrSectionLoopWay read GetLoopWay;
-    property OnFetch: TOnFetch read FOnFetch write FOnFetch; 
+    property OnFetch: TOnFetch read FOnFetch write FOnFetch;
 
     procedure FillNow(vReference: TmnrReferencesRow);
-    property AppendTotals: Boolean read FAppendTotals write FAppendTotals; 
-    property AppendSummary: Boolean read FAppendSummary write FAppendSummary; 
+  published
+    property AppendTotals: Boolean read FAppendTotals write FAppendTotals;
+    property AppendSummary: Boolean read FAppendSummary write FAppendSummary;
   end;
 
   TmnrSections = class(TmnrLinkNodes)
@@ -417,6 +420,7 @@ type
     destructor Destroy; override;
     function RegisterSection(const vName, vCaption: string; const vClass: TmnrSectionClassID; const vID: Integer=0; vOnFetch: TOnFetch=nil): TmnrSection;
     property ByName[const vName: string]: TmnrSection read GetByName;
+    function Find(const vName: string): TmnrSection;
 
     property Report: TmnrCustomReport read GetReport;
     property First: TmnrSection read GetFirst;
@@ -452,29 +456,27 @@ type
     FDetailTotals: TmnrSection;
     FSummary: TmnrSection;
     FLayouts: TmnrLayouts;
-    FDesigner: TCustomReportDesigner;
-    FDesignCells: TmnrDesignCells;
+    //FDesignCells: TmnrDesignCells;
+    FProfiler: TmnrProfiler;
 
     function GetCells(Row, Column: Integer): TmnrCustomReportCell;
-    function GetDesignCells: TmnrDesignCells;
   protected
     function Canceled: Boolean;
     procedure HandleNewRow(vRow: TmnrRowNode); virtual;
     procedure CreateSections(vSections: TmnrSections); virtual;
     procedure CreateLayouts(vLayouts: TmnrLayouts); virtual;
     function CreateNewRow(vSection: TmnrSection): TmnrNodesRow; virtual;
+    function CreateProfiler: TmnrProfiler; virtual;
     procedure Loop;
-    procedure BuildReport; virtual;
-    procedure DesignReport; virtual;
-    function CreateDesignerCells: TmnrDesignCells; virtual;
+    procedure LoadReport; virtual;
   public
     constructor Create; virtual; //(vParams: TMiscParams);
     destructor Destroy; override;
     property Sections: TmnrSections read FSections;
     property Layouts: TmnrLayouts read FLayouts;
-    property Designer: TCustomReportDesigner read FDesigner;
     property Items: TmnrNodesRows read FItems;
     procedure Cancel;
+    function FindSection(const vName: string): TmnrSection;
 
     procedure Init; virtual; //after create
     procedure Prepare; virtual; //for design and generate
@@ -482,7 +484,7 @@ type
     procedure Finish; virtual; //
     procedure Generate;
     procedure Design;
-    property DesignCells: TmnrDesignCells read GetDesignCells;
+    property Profiler: TmnrProfiler read FProfiler;
 
     procedure Fetch(vSection: TmnrSection; var vParams: TmnrFetchParams); virtual;
     procedure RegisterRequest(const vName: string; vOnRequest: TOnRequest); virtual;
@@ -497,26 +499,35 @@ type
   TCustomReportDesigner = class(TComponent)
   private
     FReport: TmnrCustomReport;
-    FOwnsReport: Boolean;
     FDesignerWindow: TComponent;
-    FCells: TmnrDesignCells;
-    function GetCells: TmnrDesignCells;
   protected
     procedure Notification(AComponent: TComponent; Operation: TOperation); override;
     property DesignerWindow: TComponent read FDesignerWindow;
-    function CreateCells: TmnrDesignCells; virtual;
     procedure Init; virtual;
   public
     constructor AutoCreate(vClass: TmnrCustomReportClass); overload; virtual;
-    constructor AutoCreate(vReport: TmnrCustomReport; vOwnsReport: Boolean=False); overload; virtual;
     destructor Destroy; override;
 
-    property Cells: TmnrDesignCells read GetCells;
-    procedure BuildReport; virtual;
     procedure DesignReport; virtual;
     function CreateDesigner: TComponent; virtual;
     property Report: TmnrCustomReport read FReport;
   end;
+
+  TmnrProfiler = class
+  private
+    FCells: TmnrDesignCells;
+    FReport: TmnrCustomReport;
+    function GetCells: TmnrDesignCells;
+  protected
+    function CreateCells: TmnrDesignCells; virtual;
+  public
+    constructor Create; virtual;
+    procedure SaveReport; virtual;
+    procedure LoadReport; virtual;
+    property Cells: TmnrDesignCells read GetCells;
+    property Report: TmnrCustomReport read FReport;
+  end;
+  
 
 var
   DefaultCellClass: TmnrReportCellClass = nil; //test purpose
@@ -538,19 +549,15 @@ begin
 end;
 
 procedure DesignReport(vClass: TmnrCustomReportClass);
-var
-  r: TmnrCustomReport;
 begin
-  r := vClass.Create;
-  r.DesignReport;
+  ReportDesignerClass.AutoCreate(vClass);
 end;
 
 { TmnrCustomReport }
 
-procedure TmnrCustomReport.BuildReport;
+procedure TmnrCustomReport.LoadReport;
 begin
-  if Designer<>nil then
-    Designer.BuildReport;
+  Profiler.LoadReport;
 end;
 
 procedure TmnrCustomReport.Cancel;
@@ -566,7 +573,8 @@ end;
 constructor TmnrCustomReport.Create;
 begin
   inherited Create;
-  if ReportDesignerClass<>nil then FDesigner := ReportDesignerClass.AutoCreate(Self);
+  FProfiler := CreateProfiler;
+  FProfiler.FReport := Self;
   FSections := TmnrSections.Create(Self);
   FLayouts := TmnrLayouts.Create;
   FItems := TmnrNodesRows.Create;
@@ -576,18 +584,6 @@ begin
   CreateSections(FSections);
   CreateLayouts(FLayouts);
   Init;
-end;
-
-function TmnrCustomReport.CreateDesignerCells: TmnrDesignCells;
-var
-  d: TCustomReportDesigner;
-begin
-  d := ReportDesignerClass.Create(nil);
-  try
-    Result := d.CreateCells;
-  finally
-    d.Free;
-  end;
 end;
 
 procedure TmnrCustomReport.CreateLayouts(vLayouts: TmnrLayouts);
@@ -600,24 +596,23 @@ begin
   Result := TmnrNodesRow.Create(Items);
 end;
 
+function TmnrCustomReport.CreateProfiler: TmnrProfiler;
+begin
+  Result := TmnrProfiler.Create;
+end;
+
 procedure TmnrCustomReport.CreateSections(vSections: TmnrSections);
 begin
 end;
 
 procedure TmnrCustomReport.Design;
 begin
-  Prepare;
+  {Prepare;
   try
     DesignReport;
   finally //handle safe finish ........
     Finish;
-  end;
-end;
-
-procedure TmnrCustomReport.DesignReport;
-begin
-  if Designer<>nil then
-    Designer.DesignReport;
+  end;}
 end;
 
 destructor TmnrCustomReport.Destroy;
@@ -628,7 +623,7 @@ begin
   FSections.Free;
   FItems.Free;
   FRowsListIndexer.Free;
-  FreeAndNil(FDesigner);
+  FreeAndNil(FProfiler);
   inherited;
 end;
 
@@ -675,6 +670,11 @@ procedure TmnrCustomReport.Fetch(vSection: TmnrSection; var vParams: TmnrFetchPa
 begin
 end;
 
+function TmnrCustomReport.FindSection(const vName: string): TmnrSection;
+begin
+  Result := Sections.Find(vName);
+end;
+
 procedure TmnrCustomReport.Finish;
 begin
   FRowsListIndexer := TmnrRowsListIndexer.Create(Self);
@@ -684,7 +684,7 @@ procedure TmnrCustomReport.Generate;
 begin
   Prepare;
   try
-    BuildReport;
+    LoadReport;
     Start;
     Loop;
   finally //handle safe finish ........
@@ -715,11 +715,6 @@ begin
   end
   else
     Result := nil;
-end;
-
-function TmnrCustomReport.GetDesignCells: TmnrDesignCells;
-begin
-
 end;
 
 procedure TmnrCustomReport.HandleNewRow(vRow: TmnrRowNode);
@@ -1045,6 +1040,25 @@ begin
       s.DoAppendSummary(vSummarySection);
     s.Sections.DoAppendSummary(vSummarySection);
     s := s.Next;
+  end;
+end;
+
+function TmnrSections.Find(const vName: string): TmnrSection;
+var
+  p: TmnrSection;
+begin
+  Result := nil;
+  p := First;
+  while p<>nil do
+  begin
+    if SameText(p.Name, vName) then
+      Result := p
+    else
+      Result := p.Sections.Find(vName);
+    if Result<>nil then
+      Break
+    else
+      p := p.Next;
   end;
 end;
 
@@ -1501,32 +1515,14 @@ end;
 
 { TCustomReportDesigner }
 
-procedure TCustomReportDesigner.BuildReport;
-begin
-  with Report do
-  begin
-    //load design
-    //applay design to 
-  end;
-end;
-
 constructor TCustomReportDesigner.AutoCreate(vClass: TmnrCustomReportClass);
 begin
-  AutoCreate(vClass.Create, True);
-end;
-
-constructor TCustomReportDesigner.AutoCreate(vReport: TmnrCustomReport; vOwnsReport: Boolean);
-begin
   inherited Create(nil);
-  FReport := vReport;
-  FOwnsReport := vOwnsReport;
-  FCells := CreateCells;
-  Init; 
-end;
-
-function TCustomReportDesigner.CreateCells: TmnrDesignCells;
-begin
-  Result := TmnrDesignCells.Create;
+  FReport := vClass.Create;
+  FReport.Prepare;
+  FReport.LoadReport;
+  Init;
+  DesignReport;
 end;
 
 function TCustomReportDesigner.CreateDesigner: TComponent;
@@ -1543,21 +1539,16 @@ begin
   begin
     FDesignerWindow := c;
     c.FreeNotification(Self);
+    c.Tag := Integer(Report);
+    c.Name := Report.ClassName;
   end
 end;
 
 destructor TCustomReportDesigner.Destroy;
 begin
-  if FOwnsReport then
-    FreeAndNil(FReport);
-  if FCells<>nil then FreeAndNil(FCells);
-  
+  FReport.Finish;
+  FreeAndNil(FReport);
   inherited;
-end;
-
-function TCustomReportDesigner.GetCells: TmnrDesignCells;
-begin
-  Result := FCells;
 end;
 
 procedure TCustomReportDesigner.Init;
@@ -1692,6 +1683,14 @@ begin
   end;
 end;
 
+procedure TmnrDesignCell.SetWidth(const Value: Integer);
+begin
+  if Value<0 then
+    FWidth := 100
+  else
+    FWidth := Value;
+end;
+
 { TmnrDesignCells }
 
 function TmnrDesignCells.Add: TmnrDesignCell;
@@ -1788,6 +1787,33 @@ end;
 function TmnrDesignRows.GetLast: TmnrDesignRow;
 begin
   Result := TmnrDesignRow(inherited GetLast);
+end;
+
+{ TmnrProfiler }
+
+constructor TmnrProfiler.Create;
+begin
+  inherited Create;
+end;
+
+function TmnrProfiler.CreateCells: TmnrDesignCells;
+begin
+  Result := TmnrDesignCells.Create;
+end;
+
+function TmnrProfiler.GetCells: TmnrDesignCells;
+begin
+  Result := FCells;
+end;
+
+procedure TmnrProfiler.LoadReport;
+begin
+
+end;
+
+procedure TmnrProfiler.SaveReport;
+begin
+
 end;
 
 initialization
