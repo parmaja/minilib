@@ -140,7 +140,7 @@ type
     property Params: TStrings read FParams write SetParams;
   end;
 
-  TmncDataType = (ftUnkown, ftNull, ftString, ftInteger, ftCurrency, ftFloat, ftDate, ftTime, ftDateTime, ftMemo, ftBlob);
+  TmncDataType = (ftUnkown, ftString, ftInteger, ftCurrency, ftFloat, ftDate, ftTime, ftDateTime, ftMemo, ftBlob);
   TmncBlobType = (blobBinary, blobText);
 
   { TmncCustomColumn }
