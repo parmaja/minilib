@@ -9,7 +9,7 @@ uses
   //dluxdetails dluxdesign
 
 const
-  cMaxRows = 1000;
+  cMaxRows  = 1000;
   cMaxCells = 10;
 
 type
@@ -18,9 +18,7 @@ type
   private
     procedure SaveSection(vIni: TCustomIniFile; vSection: TmnrSection);
     procedure SaveSectionRow(vIni: TCustomIniFile; vID: Integer; vRow: TmnrDesignRow);
-
     procedure LoadSections(vIni: TCustomIniFile);
-
     function FileName: string;
   public
     procedure SaveReport; override;
@@ -42,7 +40,6 @@ type
     procedure HeadersFetch(var vParams: TmnrFetchParams);
     procedure LoadReport; override;
     function CreateProfiler: TmnrProfiler; override;
-
   public
     procedure RequestMaster(vCell: TmnrCustomReportCell);
     procedure RequestNumber(vCell: TmnrCustomReportCell);
@@ -257,7 +254,7 @@ begin
       SubPos := 0
     else
       Inc(SubPos);
-    if SubPos>60000 then
+    if SubPos>60 then
       Accepted := acmEof;
   end;
 end;
@@ -270,7 +267,7 @@ begin
       BigPos := 0
     else
       Inc(BigPos);
-    if BigPos>30 then
+    if BigPos>3 then
       Accepted := acmEof;
   end;
 end;
@@ -282,7 +279,7 @@ end;
 
 procedure TSimpleDetailsReport.RequestDate(vCell: TmnrCustomReportCell);
 begin
-  //vCell.AsDateTime := IncDay(Now, RandomRange(-100, 100));
+  vCell.AsDateTime := IncDay(Now, RandomRange(-100, 100));
   //vCell.AsDateTime := Now;
 end;
 
@@ -293,19 +290,18 @@ end;
 
 procedure TSimpleDetailsReport.RequestName(vCell: TmnrCustomReportCell);
 begin
-  //vCell.AsString := Format('Cell %d', [0]);
+  vCell.AsString := Format('Cell %d', [0]);
   //vCell.AsString := 'Cell %d';
 end;
 
 procedure TSimpleDetailsReport.RequestCode(vCell: TmnrCustomReportCell);
 begin
-  //vCell.AsString := Format('Row = %d    Col = %d', [vCell.Row.ID, 0]);
+  vCell.AsString := Format('Row = %d    Col = %d', [vCell.Row.ID, 0]);
 end;
 
 procedure TSimpleDetailsReport.RequestValue(vCell: TmnrCustomReportCell);
 begin
-  //vCell.AsCurrency := RandomRange(1, 1000) / RandomRange(6, 66);
-  vCell.AsCurrency := 0;
+  vCell.AsCurrency := RandomRange(1, 1000) / RandomRange(6, 66);
 end;
 
 procedure TSimpleDetailsReport.Start;

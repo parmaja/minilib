@@ -447,6 +447,37 @@ type
     property Items[vIndex: Integer]: TmnrNodesRow read GetItems;
   end;
 
+
+  TmnrReportParams = class(TStringList)
+  private
+    function GetAsString(const vName: string): string;
+    function GetAsInteger(const vName: string): Integer;
+    function GetAsCurrency(const vName: string): Currency;
+    function GetAsDate(const vName: string): TDateTime;
+    function GetAsDateTime(const vName: string): TDateTime;
+    function GetAsBoolean(const vName: string): Boolean;
+    function GetAsVariant(const vName: string): Variant;
+    function GetAsObject(const vName: string): TObject;
+
+    procedure SetAsString(const vName, Value: string);
+    procedure SetAsInteger(const vName: string; const Value: Integer);
+    procedure SetAsCurrency(const vName: string; const Value: Currency);
+    procedure SetAsDate(const vName: string; const Value: TDateTime);
+    procedure SetAsDateTime(const vName: string; const Value: TDateTime);
+    procedure SetAsBoolean(const vName: string; const Value: Boolean);
+    procedure SetAsVariant(const vName: string; const Value: Variant);
+    procedure SetAsObject(const vName: string; const Value: TObject);
+  public
+    property AsString[const vName: string]: string read GetAsString write SetAsString;
+    property AsInteger[const vName: string]: Integer read GetAsInteger write SetAsInteger;
+    property AsVariant[const vName: string]: Variant read GetAsVariant write SetAsVariant;
+    property AsCurrency[const vName: string]: Currency read GetAsCurrency write SetAsCurrency;
+    property AsDate[const vName: string]: TDateTime read GetAsDate write SetAsDate;
+    property AsDateTime[const vName: string]: TDateTime read GetAsDateTime write SetAsDateTime;
+    property AsBoolean[const vName: string]: Boolean read GetAsBoolean write SetAsBoolean;
+    property AsObject[const vName: string]: TObject read GetAsObject write SetAsObject;
+  end;
+
   TmnrCustomReport = class
   private
     FCanceled: Boolean;
@@ -458,6 +489,7 @@ type
     FLayouts: TmnrLayouts;
     //FDesignCells: TmnrDesignCells;
     FProfiler: TmnrProfiler;
+    FParams: TmnrReportParams;
 
     function GetCells(Row, Column: Integer): TmnrCustomReportCell;
   protected
@@ -469,9 +501,11 @@ type
     function CreateProfiler: TmnrProfiler; virtual;
     procedure Loop;
     procedure LoadReport; virtual;
+    procedure GatherReportParams(vParams: TmnrReportParams); virtual;
   public
-    constructor Create; virtual; //(vParams: TMiscParams);
+    constructor Create(vParams: TmnrReportParams=nil); virtual; //(vParams: TMiscParams); note: report responsible for free params
     destructor Destroy; override;
+    property Params: TmnrReportParams read FParams;
     property Sections: TmnrSections read FSections;
     property Layouts: TmnrLayouts read FLayouts;
     property Items: TmnrNodesRows read FItems;
@@ -535,6 +569,11 @@ var
 procedure SetReportDesignerClass(vClass: TCustomReportDesignerClass);
 procedure DesignReport(vClass: TmnrCustomReportClass);
 
+function MakemnrParams: TmnrReportParams; overload;
+function MakemnrParams(Strings: TStrings): TmnrReportParams; overload;
+function MakemnrParams(vText: string): TmnrReportParams; overload;
+function MakemnrParams(Keys: array of string; Values: array of Variant): TmnrReportParams; overload;
+
 implementation
 
 uses
@@ -551,6 +590,35 @@ end;
 procedure DesignReport(vClass: TmnrCustomReportClass);
 begin
   ReportDesignerClass.AutoCreate(vClass);
+end;
+
+function MakemnrParams: TmnrReportParams;
+begin
+  Result := TmnrReportParams.Create;
+end;
+
+function MakemnrParams(vText: string): TmnrReportParams; overload;
+begin
+  Result := MakemnrParams;
+  Result.Text := vText;
+end;
+
+function MakemnrParams(Strings: TStrings): TmnrReportParams; overload;
+begin
+  Result := MakemnrParams;
+  Result.Assign(Strings);
+end;
+
+function MakemnrParams(Keys: array of string; Values: array of Variant): TmnrReportParams;
+var
+  l, i: Integer;
+begin
+  Result := MakemnrParams;
+  l := Length(Keys);
+  if l > Length(Values) then
+    l := Length(Values);
+  for i := 0 to l - 1 do
+    Result.AsVariant[Keys[i]] := Values[i];
 end;
 
 { TmnrCustomReport }
@@ -570,9 +638,13 @@ begin
   Result := FCanceled;
 end;
 
-constructor TmnrCustomReport.Create;
+constructor TmnrCustomReport.Create(vParams: TmnrReportParams);
 begin
   inherited Create;
+  FParams := vParams;
+  if FParams=nil then
+    FParams := TmnrReportParams.Create;
+  
   FProfiler := CreateProfiler;
   FProfiler.FReport := Self;
   FSections := TmnrSections.Create(Self);
@@ -624,6 +696,7 @@ begin
   FItems.Free;
   FRowsListIndexer.Free;
   FreeAndNil(FProfiler);
+  FreeAndNil(FParams);
   inherited;
 end;
 
@@ -680,11 +753,17 @@ begin
   FRowsListIndexer := TmnrRowsListIndexer.Create(Self);
 end;
 
+procedure TmnrCustomReport.GatherReportParams(vParams: TmnrReportParams);
+begin
+
+end;
+
 procedure TmnrCustomReport.Generate;
 begin
   Prepare;
   try
     LoadReport;
+    GatherReportParams(Params);
     Start;
     Loop;
   finally //handle safe finish ........
@@ -1814,6 +1893,88 @@ end;
 procedure TmnrProfiler.SaveReport;
 begin
 
+end;
+
+{ TmnrReportParams }
+
+function TmnrReportParams.GetAsString(const vName: string): string;
+begin
+  Result := Values[vName];
+end;
+
+procedure TmnrReportParams.SetAsString(const vName, Value: string);
+begin
+  Values[vName] := Value;
+end;
+
+function TmnrReportParams.GetAsInteger(const vName: string): Integer;
+begin
+  Result := StrToIntDef(Values[vName], 0);
+end;
+
+procedure TmnrReportParams.SetAsInteger(const vName: string; const Value: Integer);
+begin
+  Values[vName] := IntToStr(Value);
+end;
+
+function TmnrReportParams.GetAsObject(const vName: string): TObject;
+begin
+  Result := TObject(AsInteger[vName]);
+end;
+
+procedure TmnrReportParams.SetAsObject(const vName: string; const Value: TObject);
+begin
+  AsInteger[vName] := Integer(Value);
+end;
+
+function TmnrReportParams.GetAsVariant(const vName: string): Variant;
+begin
+  Result := Values[vName];
+end;
+
+procedure TmnrReportParams.SetAsVariant(const vName: string; const Value: Variant);
+begin
+  Values[vName] := Value;
+end;
+
+function TmnrReportParams.GetAsBoolean(const vName: string): Boolean;
+begin
+  Result := StrToBoolDef(Values[vName], False);
+end;
+
+procedure TmnrReportParams.SetAsBoolean(const vName: string; const Value: Boolean);
+begin
+  Values[vName] := BoolToStr(Value);
+end;
+
+function TmnrReportParams.GetAsDate(const vName: string): TDateTime;
+begin
+  Result := AsInteger[vName];
+end;
+
+procedure TmnrReportParams.SetAsDate(const vName: string; const Value: TDateTime);
+begin
+  AsInteger[vName] := Trunc(Value);
+end;
+
+function TmnrReportParams.GetAsDateTime(const vName: string): TDateTime;
+begin
+  Result := AsCurrency[vName];
+end;
+
+procedure TmnrReportParams.SetAsDateTime(const vName: string; const Value: TDateTime);
+begin
+  AsCurrency[vName] := Value;
+end;
+
+function TmnrReportParams.GetAsCurrency(const vName: string): Currency;
+begin
+  Result := StrToCurrDef(Values[vName], 0);
+end;
+
+procedure TmnrReportParams.SetAsCurrency(const vName: string; const Value: Currency);
+begin
+  Values[vName] := CurrToStr(Value);
 end;
 
 initialization
