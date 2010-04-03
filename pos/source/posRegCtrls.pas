@@ -30,5 +30,6 @@ begin
 end;
 
 initialization
+  {.$r 'images/TposGrid.png'}
   {$i poslib.lrs}
 end.

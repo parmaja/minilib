@@ -319,9 +319,9 @@ type
     property AsHex;
   end;
 
-  { TmncCustomRecord }
+  { TmncCustomFields }
 
-  TmncCustomRecord = class(TmncCustomColumns)
+  TmncCustomFields = class(TmncCustomColumns)
   private
     function GetItem(Index: Integer): TmncCustomField;
     function GetField(Index: string): TmncCustomField;
@@ -349,7 +349,7 @@ type
 
   { TmncFields }
 
-  TmncFields = class(TmncCustomRecord)
+  TmncFields = class(TmncCustomFields)
   private
     FColumns: TmncColumns;
     FRowID: Integer;
@@ -397,7 +397,7 @@ type
 
   { TmncCustomParams }
 
-  TmncCustomParams = class(TmncCustomRecord)
+  TmncCustomParams = class(TmncCustomFields)
   private
   protected
     function GetParam(Index: string): TmncParam;
@@ -1509,14 +1509,14 @@ begin
   Result := inherited Add(AColumn);
 end;
 
-{ TmncCustomRecord }
+{ TmncCustomFields }
 
-function TmncCustomRecord.GetItem(Index: Integer): TmncCustomField;
+function TmncCustomFields.GetItem(Index: Integer): TmncCustomField;
 begin
   Result := (inherited Items[Index]) as TmncCustomField;
 end;
 
-function TmncCustomRecord.GetField(Index: string): TmncCustomField;
+function TmncCustomFields.GetField(Index: string): TmncCustomField;
 begin
   Result := ByName(Index) as TmncCustomField;
 end;

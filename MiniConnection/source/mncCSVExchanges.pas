@@ -96,7 +96,7 @@ end;
 type
   TFieldInfo = record
     Name: string;
-    Param: TmncParamItem;
+    Param: TmncCustomField;
   end;
 
   TFieldsInfo = array of TFieldInfo;

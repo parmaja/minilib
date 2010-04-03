@@ -1,13 +1,13 @@
 object MainForm: TMainForm
-  Left = 337
-  Height = 381
+  Left = 344
+  Height = 395
   Hint = 'Connect F9'
-  Top = 220
-  Width = 564
+  Top = 171
+  Width = 560
   ActiveControl = SQLEdit
   Caption = 'SQLite Viewer'
-  ClientHeight = 361
-  ClientWidth = 564
+  ClientHeight = 375
+  ClientWidth = 560
   Font.CharSet = ANSI_CHARSET
   Font.Color = clBlack
   Font.Height = -11
@@ -22,13 +22,13 @@ object MainForm: TMainForm
   LCLVersion = '0.9.29'
   object ClientPanel: TPanel
     Left = 0
-    Height = 337
+    Height = 351
     Top = 0
-    Width = 564
+    Width = 560
     Align = alClient
     BevelOuter = bvNone
-    ClientHeight = 337
-    ClientWidth = 564
+    ClientHeight = 351
+    ClientWidth = 560
     TabOrder = 0
     OnClick = ClientPanelClick
     object SQLPanel: TPanel
@@ -1020,13 +1020,13 @@ object MainForm: TMainForm
     object ActionsPanel: TPanel
       Left = 0
       Height = 24
-      Top = 313
-      Width = 564
+      Top = 327
+      Width = 560
       Align = alBottom
       BevelInner = bvSpace
       BevelOuter = bvSpace
       ClientHeight = 24
-      ClientWidth = 564
+      ClientWidth = 560
       TabOrder = 5
       object Label5: TLabel
         Left = 6
@@ -1040,7 +1040,7 @@ object MainForm: TMainForm
         Left = 50
         Height = 21
         Top = 2
-        Width = 511
+        Width = 507
         Anchors = [akTop, akLeft, akRight]
         ItemHeight = 13
         OnSelect = ActionsListSelect
@@ -1052,13 +1052,13 @@ object MainForm: TMainForm
   object TopPanel: TPanel
     Left = 0
     Height = 24
-    Top = 337
-    Width = 564
+    Top = 351
+    Width = 560
     Align = alBottom
     BevelInner = bvSpace
     BevelOuter = bvSpace
     ClientHeight = 24
-    ClientWidth = 564
+    ClientWidth = 560
     TabOrder = 1
     object DisconnectBtn: TButton
       Left = 94

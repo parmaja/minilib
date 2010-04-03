@@ -42,7 +42,7 @@ type
     procedure Change; override;
   public
     CheckBox: TCheckBox;
-    Param: TmncParamItem;
+    Param: TmncCustomField;
   end;
 
 function ShowSQLParams(Command: TmncCommand):Boolean;

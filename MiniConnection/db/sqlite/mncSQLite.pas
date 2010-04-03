@@ -110,7 +110,7 @@ begin
     SQLITE_INTEGER: Result := ftInteger;
     SQLITE_FLOAT: Result := ftFloat;
     SQLITE_BLOB: Result := ftBlob;
-    SQLITE_NULL: Result := ftNull;
+    SQLITE_NULL: Result := ftUnkown;
     SQLITE_TEXT: Result := ftString;
     else
       Result := ftUnkown;
