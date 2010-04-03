@@ -3,16 +3,17 @@ object Form1: TForm1
   Height = 263
   Top = 187
   Width = 334
+  ActiveControl = ToggleBox1
   Caption = 'Form1'
   ClientHeight = 263
   ClientWidth = 334
   OnCreate = FormCreate
-  LCLVersion = '0.9.27'
+  LCLVersion = '0.9.29'
   object ntvPageControl1: TntvPageControl
-    Left = 7
-    Height = 236
-    Top = 12
-    Width = 319
+    Left = 4
+    Height = 253
+    Top = 3
+    Width = 326
     StoreIndex = False
     TabStyle = tbTabs
     Items = <    
@@ -26,7 +27,9 @@ object Form1: TForm1
         Name = 'ntvPageControl1Page1'
         Enabled = False
       end>
+    BiDiMode = bdRightToLeft
     Caption = 'ntvPageControl1'
+    ParentBiDiMode = False
     TabOrder = 0
     OnClick = ntvPageControl1Click
     Pages = <    
@@ -38,27 +41,35 @@ object Form1: TForm1
       end>
     object ntvPage1: TntvPage
       Left = 3
-      Height = 208
+      Height = 225
       Top = 25
-      Width = 313
+      Width = 320
     end
     object ntvPage2: TntvPage
       Left = 3
-      Height = 208
+      Height = 225
       Top = 25
-      Width = 313
+      Width = 320
     end
     object ntvPageControl1Page1: TntvPage
       Left = 3
-      Height = 208
+      Height = 225
       Top = 25
-      Width = 313
+      Width = 320
     end
     object ntvPageControl1Page2: TntvPage
       Left = 3
-      Height = 208
+      Height = 225
       Top = 25
-      Width = 313
+      Width = 320
+      object ToggleBox1: TToggleBox
+        Left = 8
+        Height = 23
+        Top = 10
+        Width = 90
+        Caption = 'ToggleBox1'
+        TabOrder = 0
+      end
     end
   end
 end

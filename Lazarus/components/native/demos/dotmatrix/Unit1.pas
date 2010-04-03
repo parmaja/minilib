@@ -62,6 +62,8 @@ var
 
 implementation
 
+{$r '*.lfm'}
+
 { TForm1 }
 
 procedure TForm1.Edit1Change(Sender: TObject);
@@ -166,9 +168,6 @@ destructor TForm1.Destroy;
 begin
   inherited Destroy;
 end;
-
-initialization
-  {$I Unit1.lrs}
 
 end.
 

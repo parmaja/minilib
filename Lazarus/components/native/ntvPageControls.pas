@@ -144,12 +144,10 @@ type
     procedure SetFirstPage(const Value: Integer);
     function GetPageIndex: Integer;
     procedure WMGetDlgCode(var message: TWMGetDlgCode); message WM_GetDlgCode;
-    procedure CMFocusChanged(var Message: TMessage); message CM_FOCUSCHANGED; //belal
+    procedure CMFocusChanged(var Message: TMessage); message CM_FOCUSCHANGED;
     procedure CMDialogKey(var Message: TCMDialogKey); message CM_DIALOGKEY;
     procedure CMControlChange(var Message: TCMControlChange); message CM_CONTROLCHANGE;
     procedure CMDesignHitTest(var Message: TLMMouse); message CM_DESIGNHITTEST;
-    procedure CMHitTest(var Message: TCMHITTEST); message CM_HITTEST;
-    procedure LMNCHitTest(var Message: TLMNCHITTEST); message LM_NCHITTEST;
 
     procedure SetPageBorder(const Value: Integer);
     procedure SetActivePage(const Value: TWinControl);
@@ -844,34 +842,6 @@ begin
   end;
 end;
 
-procedure TntvPageControl.CMHitTest(var Message: TCMHITTEST);
-var
-  pt: TPoint;
-  i: Integer;
-begin
-  inherited;
-{  pt := SmallPointToPoint(Message.Pos);
-  if FPageList.Count = 0 then
-    Exit;
-  if PtInRect(GetControlTabRect, pt) then
-    Message.Result := 1
-  else
-  begin
-    for i := FirstPage to FPageList.Count - 1 do
-      if PtInRect(GetTabRect(i), pt) then
-      begin
-        if ActivePage <> FPageList[i].Page then
-          Message.Result := 1;
-        Break;
-      end;
-  end;}
-end;
-
-procedure TntvPageControl.LMNCHitTest(var Message: TLMNCHITTEST);
-begin
-  inherited;
-  //Message.Result := HTTRANSPARENT;
-end;
 
 function TntvPageControl.GetClientRect: TRect;
 begin

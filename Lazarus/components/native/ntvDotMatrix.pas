@@ -13,7 +13,7 @@ unit ntvDotMatrix;
 interface
 
 uses
-  Messages, LMessages, SysUtils, Classes, Graphics, Controls, Variants,
+  LMessages, SysUtils, Classes, Graphics, Controls, Variants,
   LCLIntf, LCLType, IntfGraphics, FPimage, GraphType,
   Types;
 
