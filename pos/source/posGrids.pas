@@ -152,6 +152,7 @@ type
     property Items: TposItems read GetItems;
     property StartColumn: Integer read FStartColumn write SetStartColumn;
     property CurrentColumn: Integer read FCurrentColumn write SetCurrentColumn;
+    function CurrentData: Integer;
   published
     property ShowHeader default True;
     property DualColor: Boolean read FDualColor write FDualColor default True;
@@ -652,6 +653,16 @@ begin
       Result[Result.Count - 1].Width := Result[Result.Count - 1].Width - (100 - sPrecent)
       //raise Exception.Create('There is an error here, check it!')
   end;
+end;
+
+function TposCustomGrid.CurrentData: Integer;
+var
+  aInfo: TposCellInfo;
+begin
+  FillChar(aInfo, SizeOf(TposCellInfo), #0);
+  if (Columns.Count>0) and (ItemIndex<>-1) then
+    GetCellInfo(Columns[0], ItemIndex, aInfo); //? need review
+  Result := aInfo.Data;
 end;
 
 procedure TposCustomGrid.PaintRow(Canvas: TCanvas; Index: Integer; Rect: TRect; Color: TColor);
