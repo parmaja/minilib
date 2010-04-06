@@ -825,20 +825,21 @@ var
   i: Integer;
 begin
   inherited;
-  pt := SmallPointToPoint(Message.Pos);
-  if FPageList.Count = 0 then
-    Exit;
-  if PtInRect(GetControlTabRect, pt) then
-    Message.Result := 1
-  else
+  if FPageList.Count > 0 then
   begin
-    for i := FirstPage to FPageList.Count - 1 do
-      if PtInRect(GetTabRect(i), pt) then
-      begin
-        if ActivePage <> FPageList[i].Page then
-          Message.Result := 1;
-        Break;
-      end;
+    pt := SmallPointToPoint(Message.Pos);
+    if PtInRect(GetControlTabRect, pt) then
+      Message.Result := 1
+    else
+    begin
+      for i := FirstPage to FPageList.Count - 1 do
+        if PtInRect(GetTabRect(i), pt) then
+        begin
+          if ActivePage <> FPageList[i].Page then
+            Message.Result := 1;
+          Break;
+        end;
+    end;
   end;
 end;
 

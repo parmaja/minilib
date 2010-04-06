@@ -715,8 +715,6 @@ end;
 
 function TposStuffs.GetItems: IposStuffList;
 begin
-{  if FItems = nil then
-    FItems := TposStuffItems.Create(Self);}
   Result := FItems;
 end;
 
@@ -893,7 +891,7 @@ function TposStuffItems._Release: Integer;
 begin
   Result := InterlockedDecrement(FRefCount);
   if Result = 0 then
-    Destroy;
+    Self.Destroy;
 end;
 
 { TposListStuffItems }
@@ -921,8 +919,6 @@ begin
 end;
 
 function TposStuffObject.QueryInterface(const IID: TGUID; out Obj): HResult;
-const
-  E_NOINTERFACE = HResult($80004002);
 begin
   if GetInterface(IID, Obj) then
     Result := 0

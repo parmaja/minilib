@@ -2,20 +2,18 @@
 
 LazarusResources.Add('TForm1','FORMDATA',[
   'TPF0'#6'TForm1'#5'Form1'#4'Left'#3#249#1#6'Height'#3#7#1#3'Top'#3#187#0#5'Wi'
-  +'dth'#3'N'#1#13'ActiveControl'#7#10'ToggleBox1'#7'Caption'#6#5'Form1'#12'Cli'
-  +'entHeight'#3#7#1#11'ClientWidth'#3'N'#1#8'OnCreate'#7#10'FormCreate'#10'LCL'
-  +'Version'#6#6'0.9.29'#0#15'TntvPageControl'#15'ntvPageControl1'#4'Left'#2#4#6
-  +'Height'#3#253#0#3'Top'#2#3#5'Width'#3'F'#1#10'StoreIndex'#8#8'TabStyle'#7#6
-  +'tbTabs'#5'Items'#14#1#7'Caption'#6#6'Page 1'#4'Name'#6#5'Page1'#7'Enabled'#8
-  +#0#1#7'Caption'#6#8'Page [1]'#4'Name'#6#20'ntvPageControl1Page1'#7'Enabled'#8
-  +#0#0#8'BiDiMode'#7#13'bdRightToLeft'#7'Caption'#6#15'ntvPageControl1'#14'Par'
-  +'entBiDiMode'#8#8'TabOrder'#2#0#7'OnClick'#7#20'ntvPageControl1Click'#5'Page'
-  +'s'#14#1#4'Page'#7#20'ntvPageControl1Page2'#0#1#4'Page'#7#20'ntvPageControl1'
-  +'Page1'#0#0#0#8'TntvPage'#8'ntvPage1'#4'Left'#2#3#6'Height'#3#225#0#3'Top'#2
-  +#25#5'Width'#3'@'#1#0#0#8'TntvPage'#8'ntvPage2'#4'Left'#2#3#6'Height'#3#225#0
-  +#3'Top'#2#25#5'Width'#3'@'#1#0#0#8'TntvPage'#20'ntvPageControl1Page1'#4'Left'
-  +#2#3#6'Height'#3#225#0#3'Top'#2#25#5'Width'#3'@'#1#0#0#8'TntvPage'#20'ntvPag'
-  +'eControl1Page2'#4'Left'#2#3#6'Height'#3#225#0#3'Top'#2#25#5'Width'#3'@'#1#0
-  +#10'TToggleBox'#10'ToggleBox1'#4'Left'#2#8#6'Height'#2#23#3'Top'#2#10#5'Widt'
-  +'h'#2'Z'#7'Caption'#6#10'ToggleBox1'#8'TabOrder'#2#0#0#0#0#0#0
+  +'dth'#3'N'#1#7'Caption'#6#5'Form1'#12'ClientHeight'#3#7#1#11'ClientWidth'#3
+  +'N'#1#8'OnCreate'#7#10'FormCreate'#10'LCLVersion'#6#6'0.9.29'#0#15'TntvPageC'
+  +'ontrol'#15'ntvPageControl1'#4'Left'#2#4#6'Height'#3#253#0#3'Top'#2#3#5'Widt'
+  +'h'#3'F'#1#10'StoreIndex'#8#8'TabStyle'#7#6'tbTabs'#5'Items'#14#1#7'Caption'
+  +#6#6'Page 1'#4'Name'#6#5'Page1'#7'Enabled'#8#0#1#7'Caption'#6#8'Page [1]'#4
+  +'Name'#6#20'ntvPageControl1Page1'#7'Enabled'#8#0#0#8'BiDiMode'#7#13'bdRightT'
+  +'oLeft'#7'Caption'#6#15'ntvPageControl1'#14'ParentBiDiMode'#8#8'TabOrder'#2#0
+  +#7'OnClick'#7#20'ntvPageControl1Click'#5'Pages'#14#1#4'Page'#7#20'ntvPageCon'
+  +'trol1Page2'#0#1#4'Page'#7#20'ntvPageControl1Page1'#0#0#0#8'TntvPage'#8'ntvP'
+  +'age1'#4'Left'#2#3#6'Height'#3#225#0#3'Top'#2#25#5'Width'#3'@'#1#0#0#8'TntvP'
+  +'age'#8'ntvPage2'#4'Left'#2#3#6'Height'#3#225#0#3'Top'#2#25#5'Width'#3'@'#1#0
+  +#0#8'TntvPage'#20'ntvPageControl1Page1'#4'Left'#2#3#6'Height'#3#225#0#3'Top'
+  +#2#25#5'Width'#3'@'#1#0#0#8'TntvPage'#20'ntvPageControl1Page2'#4'Left'#2#3#6
+  +'Height'#3#225#0#3'Top'#2#25#5'Width'#3'@'#1#0#0#0#0
 ]);

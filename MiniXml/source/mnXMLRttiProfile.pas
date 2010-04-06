@@ -226,10 +226,11 @@ begin
 end;
 
 function TmnXMLProfile.QueryInterface(const IID: TGUID; out Obj): HResult;
-const
-  E_NOINTERFACE = HResult($80004002);
 begin
-  if GetInterface(IID, Obj) then Result := 0 else Result := E_NOINTERFACE;
+  if GetInterface(IID, Obj) then
+    Result := 0
+  else
+    Result := E_NOINTERFACE;
 end;
 
 procedure TmnXMLProfile.Saved(Failed: Boolean);

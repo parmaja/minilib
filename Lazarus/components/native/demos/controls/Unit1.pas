@@ -26,7 +26,6 @@ type
     ntvPageControl1: TntvPageControl;
     ntvPageControl1Page1: TntvPage;
     ntvPageControl1Page2: TntvPage;
-    ToggleBox1: TToggleBox;
     procedure FormCreate(Sender: TObject);
     procedure ntvPageControl1Click(Sender: TObject);
     procedure PageControl1Change(Sender: TObject);
