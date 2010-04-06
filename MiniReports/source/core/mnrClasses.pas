@@ -54,8 +54,10 @@ type
   TmnrSectionClassIDs = set of TmnrSectionClassID;
 
   TmnrFetchParams = record
-    Mode: TmnrFetchMode;
-    Accepted: TmnrAcceptMode;
+    FetchMode: TmnrFetchMode;
+    AcceptMode: TmnrAcceptMode;
+    ID: Integer;
+    Number: Integer;
   end;
 
   TOnRequest = procedure(vCell: TmnrCustomReportCell) of object;
@@ -137,6 +139,8 @@ type
   TmnrNodesRow = class(TmnrRowNode)
   private
     FReferencesRow: TmnrReferencesRow;
+    FID: Integer;
+    FNumber: Integer;
     function GetCells: TmnrReportCells;
     function GetNext: TmnrNodesRow;
     function GetPrior: TmnrNodesRow;
@@ -148,6 +152,9 @@ type
     property Next: TmnrNodesRow read GetNext;
     property Prior: TmnrNodesRow read GetPrior;
     property ReferencesRow: TmnrReferencesRow read FReferencesRow write SetReferencesRow;
+
+    property ID: Integer read FID write FID;
+    property Number: Integer read FNumber write FNumber;
   end;
 
   TmnrNodesRows = class(TmnrRowNodes)
@@ -269,6 +276,7 @@ type
     property DesignRows: TmnrDesignRows read GetDesignRows;
     property Section: TmnrSection read GetSection;
     property Report: TmnrCustomReport read GetReport;
+    function SumWidth: Integer;
   end;
 
   TmnrDesignRows = class(TmnrRowNodes)
@@ -399,7 +407,7 @@ type
     property LoopWay: TmnrSectionLoopWay read GetLoopWay;
     property OnFetch: TOnFetch read FOnFetch write FOnFetch;
 
-    procedure FillNow(vReference: TmnrReferencesRow);
+    procedure FillNow(vParams: TmnrFetchParams; vReference: TmnrReferencesRow);
   published
     property AppendTotals: Boolean read FAppendTotals write FAppendTotals;
     property AppendSummary: Boolean read FAppendSummary write FAppendSummary;
@@ -993,7 +1001,7 @@ begin
     Report.Fetch(Self, vParams);
 end;
 
-procedure TmnrSection.FillNow(vReference: TmnrReferencesRow);
+procedure TmnrSection.FillNow(vParams: TmnrFetchParams; vReference: TmnrReferencesRow);
 var
   r: TmnrDesignRow;
   d: TmnrDesignCell;
@@ -1008,6 +1016,9 @@ begin
     begin
       aRow := Report.CreateNewRow(Self);
       try
+        aRow.ID := vParams.ID;
+        aRow.FNumber := vParams.Number;
+        
         d := r.Cells.First;
         while d<>nil do
         begin
@@ -1182,37 +1193,40 @@ begin
   s := First;
   while s<>nil do
   begin
+    fparams.ID := 0;
+    fparams.Number := 0;
     case s.LoopWay of
       slwSingle:
       begin
-        fparams.Mode := fmFirst;
+        fparams.AcceptMode := acmAccept;
+        fparams.FetchMode := fmFirst;
         s.DoFetch(fparams);
-        if fparams.Accepted=acmAccept then
+        if fparams.AcceptMode=acmAccept then
         begin
-          s.FillNow(nil);
+          s.FillNow(fparams, nil);
           s.Sections.Loop;
         end;
       end;
       slwMulti:
       begin
-        fparams.Mode := fmFirst;
-        fparams.Accepted := acmAccept;
+        fparams.FetchMode := fmFirst;
+        fparams.AcceptMode := acmAccept;
         r := nil;
-        while not Report.Canceled and (fparams.Accepted=acmAccept) do
+        while not Report.Canceled and (fparams.AcceptMode=acmAccept) do
         begin
           s.DoFetch(fparams);
-          if (s.ClassID=sciDetails) and (fparams.Mode=fmFirst) then //improve add referance on first accepted ...
+          if (s.ClassID=sciDetails) and (fparams.FetchMode=fmFirst) then //improve add referance on first accepted ...
             r := s.NewReference;
 
-          if fparams.Accepted = acmAccept then
+          if fparams.AcceptMode = acmAccept then
           begin
-            s.FillNow(r);
+            s.FillNow(fparams, r);
             s.Sections.Loop;
           end
-          else if (fparams.Accepted = acmSkip) and (s.ClassID=sciHeaderDetails) then
+          else if (fparams.AcceptMode = acmSkip) and (s.ClassID=sciHeaderDetails) then
             s.Sections.Loop;
 
-          if (fparams.Accepted = acmEof) and (s.Items.Count<>0) then
+          if (fparams.AcceptMode = acmEof) and (s.Items.Count<>0) then
           begin
             if (r<>nil) and s.AppendTotals then
             begin
@@ -1220,8 +1234,8 @@ begin
             end;
           end;
 
-          if fparams.Mode=fmFirst then
-            fparams.Mode := fmNext;
+          if fparams.FetchMode=fmFirst then
+            fparams.FetchMode := fmNext;
         end;
         
         //Summary
@@ -1843,6 +1857,19 @@ end;
 function TmnrDesignRow.GetSection: TmnrSection;
 begin
   Result := DesignRows.Section;
+end;
+
+function TmnrDesignRow.SumWidth: Integer;
+var
+  c: TmnrDesignCell;
+begin
+  Result := 0;
+  c := Cells.First;
+  while c<>nil do
+  begin
+    Inc(Result, c.Width);
+    c := c.Next;
+  end;
 end;
 
 { TmnrDesignRows }

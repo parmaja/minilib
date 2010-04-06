@@ -84,6 +84,7 @@ type
     FLast: TmnrLinkNode;
     FFirst: TmnrLinkNode;
     FCount: Integer;
+    function GetByIndex(vIndex: Integer): TmnrLinkNode;
   protected
     function GetHead: TmnrNode; override;
     function GetFirst: TmnrLinkNode;
@@ -94,6 +95,7 @@ type
     function Add: TmnrLinkNode;
     property First: TmnrLinkNode read GetFirst;
     property Last: TmnrLinkNode read GetLast;
+    property ByIndex[vIndex: Integer]: TmnrLinkNode read GetByIndex;
   end;
 
   TmnrNodeArray = array of TmnrLinkNode;
@@ -309,6 +311,19 @@ end;
 function TmnrLinkNodes.GetHead: TmnrNode;
 begin
   Result := First;
+end;
+
+function TmnrLinkNodes.GetByIndex(vIndex: Integer): TmnrLinkNode;
+var
+  i: Integer;
+begin
+  Result := First;
+  i := 0;
+  while (Result<>nil) and (i<vIndex) do
+  begin
+    Result := Result.Next;
+    Inc(i);
+  end;
 end;
 
 function TmnrLinkNodes.GetCount: Integer;
