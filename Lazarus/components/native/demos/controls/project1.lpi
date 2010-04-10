@@ -43,7 +43,7 @@
         <UnitName Value="project1"/>
         <TopLine Value="1"/>
         <CursorPos X="1" Y="1"/>
-        <UsageCount Value="51"/>
+        <UsageCount Value="52"/>
       </Unit0>
       <Unit1>
         <Filename Value="Unit1.pas"/>
@@ -55,8 +55,8 @@
         <EditorIndex Value="0"/>
         <WindowIndex Value="0"/>
         <TopLine Value="1"/>
-        <CursorPos X="42" Y="19"/>
-        <UsageCount Value="51"/>
+        <CursorPos X="16" Y="16"/>
+        <UsageCount Value="52"/>
         <Loaded Value="True"/>
       </Unit1>
       <Unit2>
@@ -863,7 +863,7 @@
         <UsageCount Value="10"/>
       </Unit110>
     </Units>
-    <JumpHistory Count="29" HistoryIndex="28">
+    <JumpHistory Count="30" HistoryIndex="29">
       <Position1>
         <Filename Value="W:\programs\lazarus\designer\designer.pp"/>
         <Caret Line="1472" Column="8" TopLine="1451"/>
@@ -980,6 +980,10 @@
         <Filename Value="Unit1.pas"/>
         <Caret Line="19" Column="42" TopLine="1"/>
       </Position29>
+      <Position30>
+        <Filename Value="Unit1.pas"/>
+        <Caret Line="16" Column="16" TopLine="1"/>
+      </Position30>
     </JumpHistory>
   </ProjectOptions>
   <CompilerOptions>

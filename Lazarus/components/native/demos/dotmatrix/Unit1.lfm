@@ -149,20 +149,20 @@ object Form1: TForm1
     Interval = 50
     OnTimer = TimerXTimer
     left = 343
-    top = 27
+    top = 23
   end
   object DimTimer: TTimer
     Enabled = False
     Interval = 25
     OnTimer = DimTimerTimer
     left = 418
-    top = 27
+    top = 23
   end
   object TimerY: TTimer
     Enabled = False
     Interval = 50
     OnTimer = TimerYTimer
     left = 488
-    top = 28
+    top = 23
   end
 end
