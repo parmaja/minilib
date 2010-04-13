@@ -770,8 +770,8 @@ procedure TmnrCustomReport.Generate;
 begin
   Prepare;
   try
-    LoadReport;
     GatherReportParams(Params);
+    LoadReport;
     Start;
     Loop;
   finally //handle safe finish ........
