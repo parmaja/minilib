@@ -7,7 +7,7 @@ uses
   Dialogs, StdCtrls, snow2cipher, ciphers, hexcipher, ComCtrls, md5, ZLib;
 
 const
-  cBufferSize = 1024;
+  cBufferSize = 127;
 
 type
 
@@ -38,6 +38,9 @@ type
     LogBox: TListBox;
     TestZLibBtn: TButton;
     TestZLibBufferBtn: TButton;
+    TestExCipherBtn: TButton;
+    TestExWriteBtn: TButton;
+    TextExReadBtn: TButton;
     procedure TestReadBtnClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure TestWriteBtnClick(Sender: TObject);
@@ -46,6 +49,9 @@ type
     procedure MethodBoxClick(Sender: TObject);
     procedure TestZLibBtnClick(Sender: TObject);
     procedure TestZLibBufferBtnClick(Sender: TObject);
+    procedure TestExCipherBtnClick(Sender: TObject);
+    procedure TestExWriteBtnClick(Sender: TObject);
+    procedure TextExReadBtnClick(Sender: TObject);
   private
     FFileName: string;
     FTestResult: TTestResult;
@@ -60,17 +66,27 @@ type
   public
     { Public declarations }
     function CreateCipherStream(AStream: TStream; Way: TCipherWay; Mode: TCipherMode; Owned: Boolean = True): TCipherStream;
+    function CreateExCipherStream(AStream: TStream; Way: TCipherWay; Mode: TCipherMode; Owned: Boolean = True): TExCipherStream;
 
     procedure TestCipher;
+    procedure TestExCipher;
 
     procedure TestRead;
+    procedure TestExRead;
+
     procedure TestWrite;
+    procedure TestExWrite;
 
     procedure ReadEncryptFile;
     procedure ReadDecryptFile;
 
+    procedure ReadExEncryptFile;
+    procedure ReadExDecryptFile;
+
     procedure WriteEncryptFile;
     procedure WriteDecryptFile;
+    procedure WriteExEncryptFile;
+    procedure WriteExDecryptFile;
     procedure UpdateInfo;
 
     property CipherClass: TCipherStreamClass read GetCipherClass;
@@ -91,6 +107,9 @@ var
   MainForm: TMainForm;
 
 implementation
+
+uses
+  zlibcipher;
 
 {$R *.dfm}
 
@@ -141,6 +160,13 @@ begin
   //Result := THexCipherStream.Create(AStream, Way, Mode, Owned);
 end;
 
+function TMainForm.CreateExCipherStream(AStream: TStream; Way: TCipherWay; Mode: TCipherMode; Owned: Boolean): TExCipherStream;
+begin
+  Result := THexExCipherStream.Create(AStream, Way, Mode, Owned)
+  //Result := TSnow2ExCipherStream.Create(AStream, Way, Mode, Owned)
+  //Result := THexExCipherStream.Create(AStream, Way, Mode, Owned);
+end;
+
 procedure TMainForm.ReadDecryptFile;
 var
   st: string;
@@ -187,6 +213,72 @@ begin
     fo := TFileStream.Create(EncFileName, fmCreate or fmOpenWrite);
     try
       scs := CreateCipherStream(fi, cyEncrypt, cimRead, false);
+      try
+        SetLength(st, cBufferSize);
+        while True do
+        begin
+          i := scs.read(st[1], cBufferSize);
+          if i=0 then Break;
+          fo.Write(st[1], i);
+          if i<cBufferSize then Break;
+        end;
+        SetLength(st, 0);
+      finally
+        scs.Free;
+      end;
+    finally
+      fi.Free;
+      fo.Free;
+    end;
+  end;
+end;
+
+procedure TMainForm.ReadExDecryptFile;
+var
+  st: string;
+  fi, fo: TFileStream;
+  scs: TExCipherStream;
+  i: Integer;
+begin
+  if FileExists(EncFileName) then
+  begin
+    fi := TFileStream.Create(EncFileName, fmOpenRead);
+    fo := TFileStream.Create(DecFileName, fmCreate or fmOpenWrite);
+    try
+      scs := CreateExCipherStream(fi, cyDecrypt, cimRead, false);
+      try
+        SetLength(st, cBufferSize);
+        while True do
+        begin
+          i := scs.read(st[1], cBufferSize);
+          if i=0 then Break;
+          fo.Write(st[1], i);
+          if i<cBufferSize then Break;
+        end;
+        SetLength(st, 0);
+      finally
+        scs.Free;
+      end;
+    finally
+      fi.Free;
+      fo.Free;
+    end;
+  end;
+end;
+
+procedure TMainForm.ReadExEncryptFile;
+var
+  st: string;
+  fi, fo: TFileStream;
+  scs: TExCipherStream;
+  i: Integer;
+begin
+  if FileName<>'' then
+  begin
+    fi := TFileStream.Create(FileName, fmOpenRead);
+    fo := TFileStream.Create(EncFileName, fmCreate or fmOpenWrite);
+    try
+      scs := CreateExCipherStream(fi, cyEncrypt, cimRead, false);
       try
         SetLength(st, cBufferSize);
         while True do
@@ -322,6 +414,70 @@ begin
   end;
 end;
 
+procedure TMainForm.WriteExDecryptFile;
+var
+  st: string;
+  fi, fo: TFileStream;
+  scs: TExCipherStream;
+  i: Integer;
+begin
+  if FileExists(EncFileName) then
+  begin
+    fi := TFileStream.Create(EncFileName, fmOpenRead);
+    fo := TFileStream.Create(DecFileName, fmCreate or fmOpenWrite);
+    try
+      scs := CreateExCipherStream(fo, cyDecrypt, cimWrite, false);
+      try
+        SetLength(st, cBufferSize);
+        while True do
+        begin
+          i := fi.Read(st[1], cBufferSize);
+          if i=0 then Break;
+          scs.Write(st[1], i);
+        end;
+        SetLength(st, 0);
+      finally
+        scs.Free;
+      end;
+    finally
+      fi.Free;
+      fo.Free;
+    end;
+  end;
+end;
+
+procedure TMainForm.WriteExEncryptFile;
+var
+  st: string;
+  fi, fo: TFileStream;
+  scs: TExCipherStream;
+  i: Integer;
+begin
+  if FileExists(FileName) then
+  begin
+    fi := TFileStream.Create(FileName, fmOpenRead);
+    fo := TFileStream.Create(EncFileName, fmCreate or fmOpenWrite);
+    try
+      scs := CreateExCipherStream(fo, cyEncrypt, cimWrite, false);
+      try
+        SetLength(st, cBufferSize);
+        while True do
+        begin
+          i := fi.Read(st[1], cBufferSize);
+          if i=0 then Break;
+          scs.Write(st[1], i);
+        end;
+        SetLength(st, 0);
+      finally
+        scs.Free;
+      end;
+    finally
+      fi.Free;
+      fo.Free;
+    end;
+  end;
+end;
+
 procedure TMainForm.TestReadBtnClick(Sender: TObject);
 begin
   if FileName<>'' then
@@ -344,9 +500,10 @@ procedure TMainForm.FormCreate(Sender: TObject);
 begin
   MethodBox.Items.AddObject('Snow2 Cipher', TObject(TSnow2CipherStream));
   MethodBox.Items.AddObject('Hex Cipher', TObject(THexCipherStream));
+  MethodBox.Items.AddObject('ZLib Cipher', TObject(TZLibCipherStream));
   MethodBox.ItemIndex := 0;
 
-  SrcEdit.Text := 'abcd';
+  SrcEdit.Text := 'abcdefghijklmnopqrsstuvwxyzabcdef';
   FileName := 'c:\1.txt';
 end;
 
@@ -411,6 +568,22 @@ begin
   end;
 end;
 
+procedure TMainForm.TestExRead;
+var
+  t: Cardinal;
+begin
+  if CipherClass<>nil then
+  begin
+    t := GetTickCount;
+    ReadExEncryptFile;
+    CalcSpeed(GetTickCount-t, FileSize, True);
+
+    t := GetTickCount;
+    ReadExDecryptFile;
+    CalcSpeed(GetTickCount-t, FileSize);
+  end;
+end;
+
 procedure TMainForm.TestWrite;
 var
   t: Cardinal;
@@ -427,12 +600,38 @@ begin
   end;
 end;
 
+procedure TMainForm.TestExWrite;
+var
+  t: Cardinal;
+begin
+  if CipherClass<>nil then
+  begin
+    t := GetTickCount;
+    WriteExEncryptFile;
+    CalcSpeed(GetTickCount-t, FileSize, True);
+
+    t := GetTickCount;
+    WriteExDecryptFile;
+    CalcSpeed(GetTickCount-t, FileSize);
+  end;
+end;
+
 procedure TMainForm.TestWriteBtnClick(Sender: TObject);
 begin
   if FileName<>'' then
   begin
     TestResult := trUnknown;
     TestWrite;
+    TestResult := cTestResult[MD5Print(MD5File(FileName))=MD5Print(MD5File(DecFileName))];
+  end;
+end;
+
+procedure TMainForm.TestExWriteBtnClick(Sender: TObject);
+begin
+  if FileName<>'' then
+  begin
+    TestResult := trUnknown;
+    TestExWrite;
     TestResult := cTestResult[MD5Print(MD5File(FileName))=MD5Print(MD5File(DecFileName))];
   end;
 end;
@@ -558,6 +757,16 @@ begin
   end;
 end;
 
+procedure TMainForm.TextExReadBtnClick(Sender: TObject);
+begin
+  if FileName<>'' then
+  begin
+    TestResult := trUnknown;
+    TestExRead;
+    TestResult := cTestResult[MD5Print(MD5File(FileName))=MD5Print(MD5File(DecFileName))];
+  end;
+end;
+
 procedure TMainForm.UpdateInfo;
 begin
   FileNameEdit.Text := FileName;
@@ -620,6 +829,65 @@ begin
     end;
     TestResult := cTestResult[SrcEdit.Text = DecEdit.Text];
   end;
+end;
+
+procedure TMainForm.TestExCipher;
+var
+  st: string;
+  s: TStringStream;
+  scs: TExCipherStream;
+  i: Integer;
+begin
+  //if ExCipherClass<>nil then
+  begin
+    s := TStringStream.Create(SrcEdit.Text);
+    try
+      EncEdit.Clear;
+      s.Seek(0, soFromBeginning);
+      scs := CreateExCipherStream(s, cyEncrypt, cimRead, false);
+      try
+        while True do
+        begin
+          SetLength(st, cBufferSize);
+          i := scs.read(st[1], cBufferSize);
+          SetLength(st, i);
+          EncEdit.Text := EncEdit.Text + st;
+          if i=0 then Break;
+        end;
+      finally
+        scs.Free;
+      end;
+    finally
+      s.Free;
+    end;
+
+    s := TStringStream.Create(EncEdit.Text);
+    try
+      DecEdit.Clear;
+      s.Seek(0, soFromBeginning);
+      scs := CreateExCipherStream(s, cyDecrypt, cimRead, false);
+      try
+        while True do
+        begin
+          SetLength(st, cBufferSize);
+          i := scs.read(st[1], cBufferSize);
+          SetLength(st, i);
+          DecEdit.Text := DecEdit.Text + st;
+          if i=0 then Break;
+        end;
+      finally
+        scs.Free;
+      end;
+    finally
+      s.Free;
+    end;
+    TestResult := cTestResult[SrcEdit.Text = DecEdit.Text];
+  end;
+end;
+
+procedure TMainForm.TestExCipherBtnClick(Sender: TObject);
+begin
+  TestExCipher;
 end;
 
 end.

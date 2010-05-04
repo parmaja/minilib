@@ -152,7 +152,7 @@ object MainForm: TMainForm
     Width = 209
     Height = 21
     Style = csDropDownList
-    ItemHeight = 0
+    ItemHeight = 13
     TabOrder = 0
     OnClick = MethodBoxClick
   end
@@ -184,5 +184,34 @@ object MainForm: TMainForm
     Caption = 'Test ZLib Buff'
     TabOrder = 11
     OnClick = TestZLibBufferBtnClick
+  end
+  object TestExCipherBtn: TButton
+    Left = 312
+    Top = 104
+    Width = 75
+    Height = 25
+    Caption = 'Test Ex'
+    TabOrder = 12
+    OnClick = TestExCipherBtnClick
+  end
+  object TestExWriteBtn: TButton
+    Left = 393
+    Top = 104
+    Width = 75
+    Height = 25
+    Anchors = [akTop, akRight]
+    Caption = 'Test ExWrite'
+    TabOrder = 13
+    OnClick = TestExWriteBtnClick
+  end
+  object TextExReadBtn: TButton
+    Left = 393
+    Top = 72
+    Width = 75
+    Height = 25
+    Anchors = [akTop, akRight]
+    Caption = 'Test ExRead'
+    TabOrder = 14
+    OnClick = TextExReadBtnClick
   end
 end

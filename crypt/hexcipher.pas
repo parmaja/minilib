@@ -31,6 +31,18 @@ const
 type
   TmnBuffer = array[0..cMaxBuffer] of Char;
 
+  TExHexCipher = class(TExStreamCipher)
+  protected
+    function Encrypt: Integer; override;
+    function Decrypt: Integer; override;
+  end;
+
+  THexExCipherStream = class(TExCipherStream)
+  protected
+    function DoCreateCipher: TExStreamCipher; override;
+  end;
+
+
   THexCipher = class(TCipher)
   protected
   public
@@ -198,7 +210,6 @@ begin
   begin
     FPos := 0;
     FCount := 0;
-
     case Way of
       cyEncrypt:
       begin
@@ -282,6 +293,46 @@ begin
 end;
 
 
+
+{ TExHexCipher }
+
+function TExHexCipher.Decrypt: Integer;
+var
+  iP, oP: PChar;
+begin
+  Result := ExDataBuffer.Count div 2;
+  SetBufferSize(Result);
+  iP := ExDataBuffer.Buffer;
+  oP := ExBuffer.Buffer;
+  HexToBin(ip, op, Result);
+  Result := Result * 2;
+end;
+
+function TExHexCipher.Encrypt: Integer;
+var
+  i: Integer;
+  iP, oP: PChar;
+begin
+  Result := ExDataBuffer.Count;
+  SetBufferSize(Result * 2);
+  iP := ExDataBuffer.Buffer;
+  oP := ExBuffer.Buffer;
+  for i := 0 to Result - 1 do
+  begin
+    oP^ := cCharToHexArr[ip^][1];
+    Inc(oP);
+    oP^ := cCharToHexArr[ip^][2];
+    Inc(oP);
+    Inc(iP);
+  end;
+end;
+
+{ THexExCipherStream }
+
+function THexExCipherStream.DoCreateCipher: TExStreamCipher;
+begin
+  Result := TExHexCipher.Create(Stream, Way, Mode);
+end;
 
 end.
 

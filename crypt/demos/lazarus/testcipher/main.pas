@@ -6,7 +6,7 @@ interface
 
 uses
   LCLIntf, Messages, SysUtils, Classes, Graphics, Controls, Forms, fileutil,
-  Dialogs, StdCtrls, snow2cipher, ciphers, hexcipher, ComCtrls, LResources, md5;
+  Dialogs, StdCtrls, snow2cipher, ciphers, hexcipher, ComCtrls, LResources, md5, zLib;
 
 const
   cBufferSize = 1024;
