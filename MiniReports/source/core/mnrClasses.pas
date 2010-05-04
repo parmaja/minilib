@@ -230,7 +230,7 @@ type
     procedure SetWidth(const Value: Integer);
   public
     constructor Create(vNodes: TmnrNodes); override;
-    constructor AutoCreate(vNodes: TmnrNodes; const vName: string; vWidth: Integer=100); virtual; 
+    constructor AutoCreate(vNodes: TmnrNodes; const vName: string; vWidth: Integer=100); virtual;
     destructor Destroy; override;
 
     property Next: TmnrDesignCell read GetNext;
@@ -569,7 +569,7 @@ type
     property Cells: TmnrDesignCells read GetCells;
     property Report: TmnrCustomReport read FReport;
   end;
-  
+
 
 var
   DefaultCellClass: TmnrReportCellClass = nil; //test purpose
