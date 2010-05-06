@@ -30,8 +30,8 @@ type
     procedure LoadKey(Key: TSnowKeyBuf; KeySize: TSnowKeyBufSize; IV3, IV2, IV1, IV0: u32);
     procedure StreamBlock; virtual;
 
-    function Encrypt: Integer; override;
-    function Decrypt: Integer; override;
+    procedure Encrypt(var ReadCount, WriteCount: Integer); override;
+    procedure Decrypt(var ReadCount, WriteCount: Integer); override;
   end;
 
   TSnow2ExCipherStream = class(TExCipherStream)
@@ -294,17 +294,19 @@ end;
 
 { TExSnow2Cipher }
 
-function TExSnow2Cipher.Decrypt: Integer;
+procedure TExSnow2Cipher.Decrypt(var ReadCount, WriteCount: Integer);
 begin
-  Result := ExDataBuffer.Size;
-  SetBufferSize(Result);
+  ReadCount := ExDataBuffer.Size;
+  WriteCount := ReadCount;
+  SetBufferSize(WriteCount);
   StreamBlock;
 end;
 
-function TExSnow2Cipher.Encrypt: Integer;
+procedure TExSnow2Cipher.Encrypt(var ReadCount, WriteCount: Integer);
 begin
-  Result := ExDataBuffer.Size;
-  SetBufferSize(Result);
+  ReadCount := ExDataBuffer.Size;
+  WriteCount := ReadCount;
+  SetBufferSize(WriteCount);
   StreamBlock;
 end;
 

@@ -33,8 +33,8 @@ type
 
   TExHexCipher = class(TExStreamCipher)
   protected
-    function Encrypt: Integer; override;
-    function Decrypt: Integer; override;
+    procedure Encrypt(var ReadCount, WriteCount: Integer); override;
+    procedure Decrypt(var ReadCount, WriteCount: Integer); override;
   end;
 
   THexExCipherStream = class(TExCipherStream)
@@ -296,33 +296,37 @@ end;
 
 { TExHexCipher }
 
-function TExHexCipher.Decrypt: Integer;
+procedure TExHexCipher.Decrypt(var ReadCount, WriteCount: Integer);
 var
   iP, oP: PChar;
 begin
-  Result := ExDataBuffer.Count div 2;
-  SetBufferSize(Result);
+  ReadCount := (ExDataBuffer.Count div 2)*2;
+  WriteCount := ReadCount div 2;
+  SetBufferSize(WriteCount);
   iP := ExDataBuffer.Buffer;
   oP := ExBuffer.Buffer;
-  HexToBin(ip, op, Result);
-  Result := Result * 2;
+  HexToBin(ip, op, WriteCount);
 end;
 
-function TExHexCipher.Encrypt: Integer;
+procedure TExHexCipher.Encrypt(var ReadCount, WriteCount: Integer);
 var
   i: Integer;
   iP, oP: PChar;
 begin
-  Result := ExDataBuffer.Count;
-  SetBufferSize(Result * 2);
+  ReadCount := ExDataBuffer.Count;
+  WriteCount := ReadCount * 2;
+  
+  SetBufferSize(WriteCount);
   iP := ExDataBuffer.Buffer;
   oP := ExBuffer.Buffer;
-  for i := 0 to Result - 1 do
+  for i := 0 to ReadCount - 1 do
   begin
-    oP^ := cCharToHexArr[ip^][1];
-    Inc(oP);
-    oP^ := cCharToHexArr[ip^][2];
-    Inc(oP);
+    //ExBuffer.PutChar(cCharToHexArr[ip^][1]);
+    //ExBuffer.PutChar(cCharToHexArr[ip^][2]);
+    op^ := cCharToHexArr[ip^][1];
+    Inc(op);
+    op^ := cCharToHexArr[ip^][2];
+    Inc(op);
     Inc(iP);
   end;
 end;
