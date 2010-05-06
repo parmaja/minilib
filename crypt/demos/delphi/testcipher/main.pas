@@ -7,7 +7,7 @@ uses
   Dialogs, StdCtrls, snow2cipher, ciphers, hexcipher, ComCtrls, md5, ZLib;
 
 const
-  cBufferSize = 512;
+  cBufferSize = 1024;
 
 type
 
