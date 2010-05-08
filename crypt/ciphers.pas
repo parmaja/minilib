@@ -18,7 +18,8 @@ uses
   Classes, SysUtils, Math;
 
 const
-  cBufferSize = 512;
+  cBufferSize = 1023;
+  cDefaultAlloc = cBufferSize div 2;
 
 type
   TCipherStream = class;
@@ -517,13 +518,11 @@ begin
   Result := Cipher.Write(vBuffer, vCount);
 end;
 
-const
-  cDefaultAlloc = 2048;
 
 procedure TCipherBuffer.DeleteReaded(vCount: Integer);
 var
   t: PChar;
-  c: Integer;
+  i, c: Integer;
 begin
   if vCount=Count then
     FPosition := FBuffer

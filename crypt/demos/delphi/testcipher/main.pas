@@ -6,9 +6,6 @@ uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, StdCtrls, snow2cipher, ciphers, hexcipher, ComCtrls, md5, ZLib;
 
-const
-  cBufferSize = 1024;
-
 type
 
   TTestResult = (trUnknown, trError, trOK);
