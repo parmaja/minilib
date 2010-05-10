@@ -508,7 +508,6 @@ type
     function CreateNewRow(vSection: TmnrSection): TmnrNodesRow; virtual;
     function CreateProfiler: TmnrProfiler; virtual;
     procedure Loop;
-    procedure LoadReport; virtual;
     procedure GatherReportParams(vParams: TmnrReportParams); virtual;
   public
     constructor Create(vParams: TmnrReportParams=nil); virtual; //(vParams: TMiscParams); note: report responsible for free params
@@ -517,6 +516,7 @@ type
     property Sections: TmnrSections read FSections;
     property Layouts: TmnrLayouts read FLayouts;
     property Items: TmnrNodesRows read FItems;
+    procedure LoadReport; virtual;
     procedure Cancel;
     function FindSection(const vName: string): TmnrSection;
 
