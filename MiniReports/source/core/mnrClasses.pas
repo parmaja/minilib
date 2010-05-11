@@ -509,6 +509,7 @@ type
     function CreateProfiler: TmnrProfiler; virtual;
     procedure Loop;
     procedure GatherReportParams(vParams: TmnrReportParams); virtual;
+    function SumString: string; virtual;
   public
     constructor Create(vParams: TmnrReportParams=nil); virtual; //(vParams: TMiscParams); note: report responsible for free params
     destructor Destroy; override;
@@ -838,6 +839,11 @@ begin
 
 end;
 
+function TmnrCustomReport.SumString: string;
+begin
+  Result := '«·„Ã„Ê⁄';
+end;
+
 { TmnrCustomReportRowNode }
 
 function TmnrNodesRow.CreateCells: TmnrRowCells;
@@ -889,7 +895,7 @@ begin
           begin
             f := False;
             c := TmnrTextReportCell.Create(aRow.Cells);
-            c.AsString := '«·„Ã„Ê⁄';
+            c.AsString := Report.SumString;
           end
           else
           begin
@@ -944,7 +950,7 @@ begin
           begin
             f := False;
             c := TmnrTextReportCell.Create(aRow.Cells);
-            c.AsString := '«·„Ã„Ê⁄';
+            c.AsString := Report.SumString;
           end
           else
           begin
