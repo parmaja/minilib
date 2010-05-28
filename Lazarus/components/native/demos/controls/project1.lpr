@@ -7,7 +7,7 @@ uses
   cthreads,
   {$ENDIF}{$ENDIF}
   Interfaces, // this includes the LCL widgetset
-  Forms, Unit1, NativeLib, LResources;
+  Forms, Unit1, NativeLib, LResources, ntvTabs;
 
 {$IFDEF WINDOWS}{$R project1.rc}{$ENDIF}
 

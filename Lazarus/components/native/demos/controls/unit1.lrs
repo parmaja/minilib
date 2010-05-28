@@ -1,19 +1,12 @@
 { This is an automatically generated lazarus resource file }
 
 LazarusResources.Add('TForm1','FORMDATA',[
-  'TPF0'#6'TForm1'#5'Form1'#4'Left'#3'2'#1#6'Height'#3#7#1#3'Top'#3#175#0#5'Wid'
-  +'th'#3'N'#1#7'Caption'#6#5'Form1'#12'ClientHeight'#3#7#1#11'ClientWidth'#3'N'
-  +#1#8'OnCreate'#7#10'FormCreate'#10'LCLVersion'#6#6'0.9.29'#0#15'TntvPageCont'
-  +'rol'#15'ntvPageControl1'#4'Left'#2#4#6'Height'#3#253#0#3'Top'#2#3#5'Width'#3
-  +'F'#1#10'StoreIndex'#8#8'TabStyle'#7#6'tbTabs'#5'Items'#14#1#7'Caption'#6#6
-  +'Page 1'#4'Name'#6#5'Page1'#7'Enabled'#8#0#1#7'Caption'#6#8'Page [1]'#4'Name'
-  +#6#20'ntvPageControl1Page1'#7'Enabled'#8#0#0#8'BiDiMode'#7#13'bdRightToLeft'
-  +#7'Caption'#6#15'ntvPageControl1'#14'ParentBiDiMode'#8#8'TabOrder'#2#0#7'OnC'
-  +'lick'#7#20'ntvPageControl1Click'#5'Pages'#14#1#4'Page'#7#20'ntvPageControl1'
-  +'Page2'#0#1#4'Page'#7#20'ntvPageControl1Page1'#0#0#0#8'TntvPage'#8'ntvPage1'
-  +#4'Left'#2#3#6'Height'#3#225#0#3'Top'#2#25#5'Width'#3'@'#1#0#0#8'TntvPage'#8
-  +'ntvPage2'#4'Left'#2#3#6'Height'#3#225#0#3'Top'#2#25#5'Width'#3'@'#1#0#0#8'T'
-  +'ntvPage'#20'ntvPageControl1Page1'#4'Left'#2#3#6'Height'#3#225#0#3'Top'#2#25
-  +#5'Width'#3'@'#1#0#0#8'TntvPage'#20'ntvPageControl1Page2'#4'Left'#2#3#6'Heig'
-  +'ht'#3#225#0#3'Top'#2#25#5'Width'#3'@'#1#0#0#0#0
+  'TPF0'#6'TForm1'#5'Form1'#4'Left'#3#15#1#6'Height'#3'O'#1#3'Top'#3#167#0#5'Wi'
+  +'dth'#3#162#1#7'Caption'#6#5'Form1'#12'ClientHeight'#3'O'#1#11'ClientWidth'#3
+  +#162#1#8'OnCreate'#7#10'FormCreate'#10'LCLVersion'#6#6'0.9.29'#0#7'TButton'#7
+  +'Button1'#4'Left'#2#7#6'Height'#2#25#3'Top'#3'.'#1#5'Width'#2'K'#7'Anchors'
+  +#11#6'akLeft'#8'akBottom'#0#7'Caption'#6#6'Create'#7'OnClick'#7#12'Button1Cl'
+  +'ick'#8'TabOrder'#2#0#0#0#7'TButton'#7'Button2'#4'Left'#2'_'#6'Height'#2#25#3
+  +'Top'#3'.'#1#5'Width'#2'K'#7'Caption'#6#3'Add'#7'OnClick'#7#12'Button2Click'
+  +#8'TabOrder'#2#1#0#0#0
 ]);

@@ -1,66 +1,30 @@
 object Form1: TForm1
-  Left = 306
-  Height = 263
-  Top = 175
-  Width = 334
+  Left = 271
+  Height = 335
+  Top = 167
+  Width = 418
   Caption = 'Form1'
-  ClientHeight = 263
-  ClientWidth = 334
+  ClientHeight = 335
+  ClientWidth = 418
   OnCreate = FormCreate
   LCLVersion = '0.9.29'
-  object ntvPageControl1: TntvPageControl
-    Left = 4
-    Height = 253
-    Top = 3
-    Width = 326
-    StoreIndex = False
-    TabStyle = tbTabs
-    Items = <    
-      item
-        Caption = 'Page 1'
-        Name = 'Page1'
-        Enabled = False
-      end    
-      item
-        Caption = 'Page [1]'
-        Name = 'ntvPageControl1Page1'
-        Enabled = False
-      end>
-    BiDiMode = bdRightToLeft
-    Caption = 'ntvPageControl1'
-    ParentBiDiMode = False
+  object Button1: TButton
+    Left = 7
+    Height = 25
+    Top = 302
+    Width = 75
+    Anchors = [akLeft, akBottom]
+    Caption = 'Create'
+    OnClick = Button1Click
     TabOrder = 0
-    OnClick = ntvPageControl1Click
-    Pages = <    
-      item
-        Page = ntvPageControl1Page2
-      end    
-      item
-        Page = ntvPageControl1Page1
-      end>
-    object ntvPage1: TntvPage
-      Left = 3
-      Height = 225
-      Top = 25
-      Width = 320
-    end
-    object ntvPage2: TntvPage
-      Left = 3
-      Height = 225
-      Top = 25
-      Width = 320
-    end
-    object ntvPageControl1Page1: TntvPage
-      Left = 3
-      Height = 225
-      Top = 25
-      Width = 320
-    end
-    object ntvPageControl1Page2: TntvPage
-      Left = 3
-      Height = 225
-      Top = 25
-      Width = 320
-    end
+  end
+  object Button2: TButton
+    Left = 95
+    Height = 25
+    Top = 302
+    Width = 75
+    Caption = 'Add'
+    OnClick = Button2Click
+    TabOrder = 1
   end
 end
