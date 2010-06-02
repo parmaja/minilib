@@ -14,20 +14,19 @@ interface
 
 uses
   Classes, Messages, Controls, SysUtils, Math, Contnrs, Graphics, Forms, StdCtrls, Types,
-  LCLType, LCLIntf, LMessages, LCLProc,
+  LMessages, LCLType, LCLIntf, LCLProc,
   ntvTabs, ntvUtils;
 
 const
-  ControlTabWidth = 35;
   cHeaderHeightMargin = 10;
-  nMixFlag = 75;
 
 type
-  TOnSelectPage = procedure(Sender: TObject; OldPage: TWinControl; NewPage: TWinControl; var CanSelect: boolean) of object;
-  TOnPageChanged = procedure(Sender: TObject; OldPage: TWinControl; NewPage: TWinControl) of object;
-
   TntvPageControl = class;
   TntvPageItem = class;
+
+  TOnSelectPage = procedure(Sender: TObject; OldPage, NewPage: TntvPageItem; var CanSelect: boolean) of object;
+  TOnPageChanged = procedure(Sender: TObject; OldPage, NewPage: TntvPageItem) of object;
+
   { TntvPage }
 
   TntvPage = class(TCustomControl)
@@ -50,7 +49,6 @@ type
     procedure SetVisible(const Value: Boolean);
   protected
     procedure SetIndex(Value: Integer); override;
-    procedure Update; override;
   public
     constructor Create(vCollection: TCollection); override;
     destructor Destroy; override;
@@ -71,7 +69,8 @@ type
     procedure SetItem(Index: Integer; Value: TntvPageItem);
   protected
     procedure Update(Item: TCollectionItem); override;
-    procedure CalcTabWidth;
+    procedure Invalidate; override;
+    procedure UpdateCanvas(vCanvas: TCanvas); override;
   public
     constructor Create(APageControl: TntvPageControl);
     destructor Destroy; override;
@@ -111,12 +110,13 @@ type
     procedure CMDialogKey(var Message: TCMDialogKey); message CM_DIALOGKEY;
     procedure CMControlChange(var Message: TCMControlChange); message CM_CONTROLCHANGE;
     procedure CMDesignHitTest(var Message: TLMMouse); message CM_DESIGNHITTEST;
+    procedure WMEraseBkgnd(var Message: TLMEraseBkgnd); message LM_ERASEBKGND;
 
     procedure SetPageBorder(const Value: Integer);
     procedure SetActiveControl(const Value: TWinControl);
     function GetActiveControl: TWinControl;
     procedure SetShowButtons(const Value: Boolean);
-    procedure DoPageChanged(OldPage, NewPage: TWinControl);
+    procedure DoPageChanged(OldItem, NewItem: TntvPageItem);
     function GetPageItem(vControl: TWinControl): TntvPageItem;
     procedure SetShowTabs(const Value: Boolean);
     function GetHeaderHeight: Integer;
@@ -147,7 +147,7 @@ type
     function GetInnerRect: TRect; virtual;
     function GetPageRect: TRect; virtual;
 
-    procedure DrawBorder; virtual;
+    procedure BringControl(vControl: TWinControl; vSetFocus: Boolean);
     procedure ShowPage(Index: Integer; Force: Boolean = False; vSetfocus: Boolean = True);
     function SelectPage(Index: Integer; Force: Boolean = False): Boolean;
     function LeftMouseDown(Point: TPoint): boolean;
@@ -158,25 +158,22 @@ type
 
     property TopIndex: Integer read GetTopIndex write SetTopIndex;
     property HeaderHeight: Integer read GetHeaderHeight;
-    function PageFromIndex(Index: Integer): TWinControl;
     procedure Loaded; override;
 
     procedure DrawImage(var vRect: TRect; vImageIndex: Integer);
 
     procedure DrawNormalTab(Index: Integer; var Rect: TRect); virtual;
     class function GetControlClassDefaultSize: TSize; override;
-    procedure WndProc(var TheMessage: TLMessage); override;
     function GetFlags: TntvFlags;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
-    procedure Paint; override;
     procedure EraseBackground(DC: HDC); override;
+    procedure Paint; override;
 
     procedure NextPage;
     procedure PriorPage;
     property ActiveControl: TWinControl read GetActiveControl write SetActiveControl;
-    procedure UpdatePagesList;
     procedure Clear;
     property PageItem[Control: TWinControl]: TntvPageItem read GetPageItem;
   published
@@ -371,64 +368,58 @@ begin
     Canvas.Font.Assign(Self.Font);
     if Items.Visibles.Count = 0 then
     begin
-      Rect := ClientRect;
-      Brush.Color := Color;
-      Brush.Style := bsSolid;
-      FillRect(ClientRect);
-      DrawBorder;
       Exit;
     end
     else
     begin
-      Rect := GetPageRect;
-      ExcludeClipRect(Handle, Rect.Left, Rect.Top, Rect.Right, Rect.Bottom);
-      Rect := ClientRect;
-      Brush.Color := Color;
-      Brush.Style := bsSolid;
-      Inc(Rect.Top, HeaderHeight - 1);
-      InflateRect(Rect, -1, -1);
-      FillRect(Rect);
     end;
 
     if ShowTabs then
     begin
       Items.Paint(Canvas, GetTabsRect, GetFlags);
     end;
-    DrawBorder;
   end;
 end;
 
-procedure TntvPageControl.DrawBorder;
+procedure TntvPageControl.BringControl(vControl: TWinControl; vSetFocus: Boolean);
+var
+  ParentForm: TCustomForm;
+  aList: TFPList;
+  i: Integer;
 begin
-  with Canvas do
-  begin
-    if ShowTabs then
+  if vControl <> nil then
+    with vControl do
     begin
-      Pen.Color := clBtnHighlight;
-      MoveTo(0, ClientHeight - 1);
-      LineTo(0, HeaderHeight - 1);
-      LineTo(ClientWidth - 1, HeaderHeight - 1);
-      Pen.Color := clBtnShadow;
-      LineTo(ClientWidth - 1, ClientHeight - 1);
-      LineTo(0, ClientHeight - 1);
-      Brush.Style := bsSolid;
-      Brush.Color := Color;
-      FillRect(Rect(0, 0, ClientWidth, HeaderHeight - 1));
-    end
-    else
-    begin
-      Pen.Color := clBlack;
-      MoveTo(0, ClientHeight - 1);
-      LineTo(0, 1);
-      LineTo(ClientWidth - 1, 1);
-      Pen.Color := clBtnShadow;
-      LineTo(ClientWidth - 1, ClientHeight - 1);
-      LineTo(0, ClientHeight - 1);
-      Brush.Style := bsSolid;
-      Brush.Color := Color;
-      FillRect(Rect(0, 0, ClientWidth, 1));
+      BringToFront;
+      Visible := True;
+      Align := alClient;
+      if not (csLoading in ComponentState) and (vSetFocus) and (not Self.Focused) then
+      begin
+        ParentForm := GetParentForm(Self);
+        if ParentForm <> nil then
+        begin
+          if TabStop and (vControl.CanFocus) then
+            ParentForm.ActiveControl := vControl
+          else
+          begin
+            aList := TFPList.Create;
+            try
+              vControl.GetTabOrderList(aList);
+              for i := 0 to aList.Count - 1 do
+              begin
+                if TWinControl(aList[i]).CanFocus and TWinControl(aList[i]).TabStop then
+                begin
+                  ParentForm.ActiveControl := TWinControl(aList[i]);
+                  break;
+                end;
+              end;
+            finally
+              aList.Free;
+            end;
+          end;
+        end;
+      end;
     end;
-  end;
 end;
 
 procedure TntvPageControl.MouseDown(Button: TMouseButton;
@@ -456,7 +447,7 @@ begin
   begin
     Result := True;
     if not Force and Assigned(FOnSelectPage) then
-      FOnSelectPage(Self, PageFromIndex(ItemIndex), PageFromIndex(Index), Result);
+      FOnSelectPage(Self, Items.Visibles[ItemIndex] as TntvPageItem, Items.Visibles[Index] as TntvPageItem, Result);
     if Result then
       ShowPage(Index, True);
   end
@@ -475,12 +466,20 @@ begin
     else
       Break;
   TPageWrappers(FWrapper).Clear;
-  Items.CalcTabWidth;
-  UpdatePagesList;
   if StoreIndex then
     ShowPage(Items.ItemIndex, True, False)
   else
     ShowPage(0, True, False);
+end;
+
+procedure TntvPageControl.DrawImage(var vRect: TRect; vImageIndex: Integer);
+begin
+
+end;
+
+procedure TntvPageControl.DrawNormalTab(Index: Integer; var Rect: TRect);
+begin
+
 end;
 
 {procedure TntvPageControl.CMFontChanged(var Message: TMessage);
@@ -548,21 +547,13 @@ end;
 
 function TntvPageControl.GetTabsRect: TRect;
 begin
-  if UseRightToLeftAlignment then
-  begin
-    if not ShowButtons then
-      Result := Rect(0, 0, 0, 0)
-    else
-      Result := Rect(0, 0, ControlTabWidth, HeaderHeight)
-  end
+  if not ShowTabs then
+    Result := Rect(0, 0, 0, 0)
   else
   begin
-    if not ShowButtons then
-      Result := Rect(ClientWidth, 0, ClientWidth, 0)
-    else
-      Result := Rect(ClientWidth - ControlTabWidth, 0, ClientWidth, HeaderHeight);
+    Result := ClientRect;
+    Result.Bottom := Result.Top + HeaderHeight;
   end;
-  //Result := Rect (0, 0, 0, 0);
 end;
 
 procedure TntvPageControl.CMDesignHitTest(var Message: TLMMouse);
@@ -585,6 +576,11 @@ begin
       end;
     end;
   end;
+end;
+
+procedure TntvPageControl.WMEraseBkgnd(var Message: TLMEraseBkgnd);
+begin
+
 end;
 
 
@@ -635,10 +631,8 @@ procedure TntvPageControl.ShowPage(Index: Integer; Force: Boolean; vSetfocus: Bo
 var
   R: TRect;
   aTopIndex: Integer;
-  ParentForm: TCustomForm;
   i: Integer;
   OldIndex: Integer;
-  aList: TFPList;
   w: Integer;
 begin
 //  if HandleAllocated then
@@ -663,70 +657,8 @@ begin
         TopIndex := Items.ItemIndex;
       if Items.ItemIndex >= 0 then
       begin
-        R := GetTabRect(Items.ItemIndex);
-        aTopIndex := TopIndex;
-        if UseRightToLeftAlignment then
-        begin
-          w := 0;
-          if R.Left < w then
-          begin
-            while (R.Left < w) and (aTopIndex < Items.ItemIndex) do
-            begin
-              aTopIndex := aTopIndex + 1;
-              R := GetTabRect(aTopIndex, Items.ItemIndex);
-            end;
-          end;
-        end
-        else
-        begin
-          w := ClientWidth;
-          if R.Right > w then
-          begin
-            while (R.Right > w) and (aTopIndex < Items.ItemIndex) do
-            begin
-              aTopIndex := aTopIndex + 1;
-              R := GetTabRect(aTopIndex, Items.ItemIndex);
-            end;
-          end;
-        end;
-
-        Items.TopIndex := aTopIndex;
         Invalidate;
-        if FPageList[Items.ItemIndex].Control <> nil then
-        begin
-          with FPageList[Items.ItemIndex].Control do
-          begin
-            BringToFront;
-            Visible := True;
-            Align := alClient;
-            if (vSetFocus) and {not (csDesigning in ComponentState) and }not (csLoading in ComponentState) and (not Self.Focused) then
-            begin
-              ParentForm := GetParentForm(Self);
-              if ParentForm <> nil then
-              begin
-                if TabStop and (FPageList[Items.ItemIndex].Control.CanFocus) then
-                  ParentForm.ActiveControl := FPageList[Items.ItemIndex].Control
-                else
-                begin
-                  aList := TFPList.Create;
-                  try
-                    FPageList[Items.ItemIndex].Control.GetTabOrderList(aList);
-                    for i := 0 to aList.Count - 1 do
-                    begin
-                      if TWinControl(aList[i]).CanFocus and TWinControl(aList[i]).TabStop then
-                      begin
-                        ParentForm.ActiveControl := TWinControl(aList[i]);
-                        break;
-                      end;
-                    end;
-                  finally
-                    aList.Free;
-                  end;
-                end;
-              end;
-            end;
-          end;
-        end;
+        BringControl((Items.Visibles[Items.ItemIndex] as TntvPageItem).Control, vSetfocus);
       end
       else if Items.ItemIndex < 0 then
       begin
@@ -734,17 +666,17 @@ begin
         Invalidate;
       end;
 
-      if ((OldIndex <> -1) and (OldIndex < FPageList.Count)) then
+      if ((OldIndex <> -1) and (OldIndex < Items.Visibles.Count)) then
       begin
-        if ((Index <> -1) and (Index < FPageList.Count)) then
-          DoPageChanged(FPageList[OldIndex].Control, FPageList[Index].Control)
+        if ((Index <> -1) and (Index < Items.Visibles.Count)) then
+          DoPageChanged((Items.Visibles[OldIndex] as TntvPageItem), (Items.Visibles[Index] as TntvPageItem))
         else
-          DoPageChanged(FPageList[OldIndex].Control, nil)
+          DoPageChanged((Items.Visibles[OldIndex] as TntvPageItem), nil)
       end
       else
       begin
-        if ((Index <> -1) and (Index < FPageList.Count)) then
-          DoPageChanged(nil, FPageList[Index].Control)
+        if ((Index <> -1) and (Index < Items.Visibles.Count)) then
+          DoPageChanged(nil, Items.Visibles[Index] as TntvPageItem)
         else
           DoPageChanged(nil, nil)
       end;
@@ -761,26 +693,11 @@ begin
 end;
 
 procedure TntvPageControl.NextPageBtnClick;
-var
-  R: TRect;
 begin
-  R := GetTabRect(FPageList.Count - 1);
-  if UseRightToLeftAlignment then
-  begin
-    if R.Left < ControlTabWidth then
-      TopIndex := TopIndex + 1;
-  end
-  else
-  begin
-    if R.Right > (ClientWidth - ControlTabWidth) then
-      TopIndex := TopIndex + 1;
-  end;
 end;
 
 procedure TntvPageControl.PriorPageBtnClick;
 begin
-  if TopIndex > 0 then
-    TopIndex := TopIndex - 1;
 end;
 
 function TntvPageControl.GetInnerRect: TRect;
@@ -822,7 +739,7 @@ end;
 
 procedure TntvPageControl.EraseBackground(DC: HDC);
 begin
-  //inherited EraseBackground(DC);
+  //inherited;
 end;
 
 function TntvPageControl.ChildKey(var Message: TLMKey): boolean;
@@ -836,7 +753,7 @@ begin
     begin
       if Message.CharCode = VK_NEXT then
       begin
-        if ItemIndex <> FPageList.Count - 1 then
+        if ItemIndex <> Items.Visibles.Count - 1 then
           SelectPage(ItemIndex + 1)
         else
           SelectPage(0);
@@ -844,7 +761,7 @@ begin
       else
       begin
         if ItemIndex = 0 then
-          SelectPage(FPageList.Count - 1)
+          SelectPage(Items.Visibles.Count - 1)
         else
           SelectPage(ItemIndex - 1);
       end;
@@ -875,7 +792,7 @@ begin
     if GetKeyState(VK_SHIFT) >= 0 then
     begin
       //nextpage
-      if ItemIndex <> FPageList.Count - 1 then
+      if ItemIndex <> Items.Visibles.Count - 1 then
         SelectPage(ItemIndex + 1)
       else
         SelectPage(0);
@@ -883,7 +800,7 @@ begin
     else
     begin
       if ItemIndex = 0 then
-        SelectPage(FPageList.Count - 1)
+        SelectPage(Items.Visibles.Count - 1)
       else
         SelectPage(ItemIndex - 1);
     end;
@@ -975,9 +892,9 @@ procedure TntvPageControl.SetActiveControl(const Value: TWinControl);
 var
   i: Integer;
 begin
-  for i := 0 to FPageList.Count - 1 do
+  for i := 0 to Items.Visibles.Count - 1 do
   begin
-    if FPageList[i].Control = Value then
+    if (Items.Visibles[i] as TntvPageItem).Control = Value then
     begin
       SelectPage(i, True);
       Break;
@@ -987,8 +904,8 @@ end;
 
 function TntvPageControl.GetActiveControl: TWinControl;
 begin
-  if (ItemIndex >= 0) and (ItemIndex < FPageList.Count) then
-    Result := FPageList[ItemIndex].Control
+  if (ItemIndex >= 0) and (ItemIndex < Items.Visibles.Count) then
+    Result := (Items.Visibles[ItemIndex] as TntvPageItem).Control
   else
     Result := nil;
 end;
@@ -1006,7 +923,6 @@ begin
   inherited;
   if (vCollection <> nil) then
   begin
-    PageControl.UpdatePagesList; //belal  حدوث خطا عند حذف آخر صفحة
     if not (csLoading in PageControl.ComponentState) then
     begin
       Caption := Format('Control [%d]', [Index]);
@@ -1017,7 +933,6 @@ begin
       FControl.Parent := PageControl;
       FControl.Show;
     end;
-    PageControl.UpdatePagesList;
   end;
 end;
 
@@ -1054,20 +969,10 @@ begin
   end;
 end;
 
-procedure TntvPageControl.DoPageChanged(OldPage, NewPage: TWinControl);
+procedure TntvPageControl.DoPageChanged(OldItem, NewItem: TntvPageItem);
 begin
-  if (OldPage <> NewPage) and Assigned(FOnPageChanged) then
-    FOnPageChanged(Self, OldPage, NewPage);
-end;
-
-procedure TntvPageControl.UpdatePagesList;
-var
-  i: Integer;
-begin
-  FPageList.Clear;
-  for i := 0 to Items.Count - 1 do
-    if (csDesigning in ComponentState) or (Items[i].Visible) then
-      FPageList.Add(Items[i]);
+  if Assigned(FOnPageChanged) then
+    FOnPageChanged(Self, OldItem, NewItem);
 end;
 
 function TntvPageControl.GetPageItem(vControl: TWinControl): TntvPageItem;
@@ -1102,17 +1007,9 @@ begin
     Result := 0;
 end;
 
-function TntvPageControl.PageFromIndex(Index: Integer): TWinControl;
-begin
-  if (Index < FPageList.Count) and (Index > -1) then
-    Result := FPageList[Index].Control
-  else
-    Result := nil;
-end;
-
 procedure TntvPageControl.Clear;
 begin
-  FPageList.Clear;
+  Items.Clear;
   while Items.Count > 0 do
   begin
     Items[Items.Count - 1].Free;
@@ -1165,9 +1062,6 @@ begin
   if (Items.Images <> Value) then
   begin
     Items.Images := Value;
-    Items.CalcTabWidth;
-    if HandleAllocated then
-      Invalidate;
   end;
 end;
 
@@ -1175,11 +1069,6 @@ class function TntvPageControl.GetControlClassDefaultSize: TSize;
 begin
   Result.cx := 200;
   Result.cy := 240;
-end;
-
-procedure TntvPageControl.WndProc(var TheMessage: TLMessage);
-begin
-  inherited;
 end;
 
 function TntvPageControl.GetFlags: TntvFlags;
@@ -1211,22 +1100,21 @@ begin
       with Result do
       begin
         Control := vControl;
-        Control.Name := Control.Name;
-        Size := Control.GetTextLen; {Get length of string in Edit1}
-        Inc(Size); {Add room for null character}
-        GetMem(Buffer, Size); {Creates Buffer dynamic variable}
+        Name := Control.Name;
+        Size := Control.GetTextLen;
+        Inc(Size);
+        GetMem(Buffer, Size);
         try
-          Control.GetTextBuf(Buffer, Size); {Puts Edit1.Text into Buffer}
-          Caption := StrPas(Buffer); {Converts Buffer to a Pascal-style string}
+          Control.GetTextBuf(Buffer, Size);
+          Caption := StrPas(Buffer);
         finally
-          FreeMem(Buffer, Size); {Frees memory allocated to Buffer}
+          FreeMem(Buffer, Size);
         end;
         Control.Parent := FPageControl;
         //LclType.SetParent(Control.Handle, FPageControl.Handle);
         Control.FreeNotification(FPageControl);
-        Collection := Self;
+        Collection := Self; //Add to Pages list
         Control.Align := alClient;
-        FPageControl.UpdatePagesList;
         Control.Show; //zaher
       end;
     finally
@@ -1237,29 +1125,18 @@ begin
     Result := nil;
 end;
 
-procedure TntvPages.CalcTabWidth;
-var
-  TmpCanvas: TCanvas;
-  i: Integer;
+procedure TntvPages.Invalidate;
 begin
-  if not (csLoading in FPageControl.ComponentState) then
+  if (FPageControl <> nil) and not (csLoading in FPageControl.ComponentState) and FPageControl.HandleAllocated then
   begin
-    TmpCanvas := TCanvas.Create;
-    try
-      TmpCanvas.Handle := GetDC(0);
-      TmpCanvas.Font.Assign(FPageControl.Font);
-      for i := 0 to Count - 1 do
-      begin
-        Items[i].Width := TmpCanvas.TextWidth(Items[i].Caption) + 20;
-        if (FPageControl.ImageList <> nil) and (Items[I].ImageIndex > -1) then
-          Items[i].Width := Items[i].Width + FPageControl.ImageList.Width - 8;
-      end;
-    finally
-      ReleaseDC(0, TmpCanvas.Handle);
-      TmpCanvas.Free;
-    end;
     FPageControl.Invalidate;
   end;
+end;
+
+procedure TntvPages.UpdateCanvas(vCanvas: TCanvas);
+begin
+  inherited;
+  vCanvas.Font.Assign(FPageControl.Font);
 end;
 
 constructor TntvPages.Create(APageControl: TntvPageControl);
@@ -1286,7 +1163,6 @@ begin
       Delete(i);
       if not (csDestroying in FPageControl.ComponentState) then
       begin
-        FPageControl.UpdatePagesList;
         FPageControl.ShowPage(i - 1)
       end;
       Break;
@@ -1304,11 +1180,6 @@ begin
       Result := Items[i];
       Break;
     end;
-end;
-
-function TntvPages.GetVisibles(Index: Integer): TntvPageItem;
-begin
-  Result := inherited Visibles[Index];
 end;
 
 function TntvPages.GetItem(Index: Integer): TntvPageItem;
@@ -1329,13 +1200,6 @@ end;
 procedure TntvPages.Update(Item: TCollectionItem);
 begin
   inherited;
-  if (FPageControl <> nil) and not (csLoading in FPageControl.ComponentState) then
-  begin
-    CalcTabWidth;
-    //FPageControl.ShowPage(FPageControl.ItemIndex,True);
-    FPageControl.UpdatePagesList;
-    FPageControl.Invalidate;
-  end;
 end;
 
 { TPageWrappers }
@@ -1380,13 +1244,15 @@ begin
 end;
 
 function TntvPages.IndexOf(vControl: TWinControl): Integer;
+var
+  i: Integer;
 begin
   Result := -1;
   for i := 0 to Count -1 do
   begin
-    if Items.[i].Control = vControl then
+    if Items[i].Control = vControl then
     begin
-      Result := i
+      Result := i;
       break;
     end;
   end;
@@ -1405,7 +1271,6 @@ begin
 
   if PageControl <> nil then
   begin
-    PageControl.UpdatePagesList;
     if ShowSelf then
     begin
       PageControl.ShowPage(Index, True);
@@ -1413,11 +1278,6 @@ begin
     else
       PageControl.ShowPage(PageControl.ItemIndex, True);
   end;
-end;
-
-procedure TntvPageItem.Update;
-begin
-
 end;
 
 initialization

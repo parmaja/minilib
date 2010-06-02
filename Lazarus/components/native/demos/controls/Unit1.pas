@@ -14,8 +14,8 @@ unit Unit1;
 interface
 
 uses
-  LResources, Forms, SysUtils, ComCtrls, StdCtrls, ntvPageControls,
-  Controls, ExtCtrls, Classes, ntvRegCtrls;
+  LResources, Forms, SysUtils, ComCtrls, StdCtrls, ntvPageControls, LMessages,
+  LCLType, Controls, ExtCtrls, Classes, ntvRegCtrls;
 
 type
   { TForm1 }
@@ -36,6 +36,9 @@ type
   private
     FCount: Integer;
     FPageControl: TntvPageControl;
+    procedure WMEraseBkgnd(var Message: TLMEraseBkgnd); message LM_ERASEBKGND;
+    procedure EraseBackground(DC: HDC); override;
+    procedure Paint; override;
   public
   end;
 
@@ -56,6 +59,18 @@ begin
 
 end;
 
+procedure TForm1.WMEraseBkgnd(var Message: TLMEraseBkgnd);
+begin
+end;
+
+procedure TForm1.EraseBackground(DC: HDC);
+begin
+end;
+
+procedure TForm1.Paint;
+begin
+end;
+
 procedure TForm1.FormCreate(Sender: TObject);
 begin
 
@@ -70,6 +85,7 @@ begin
     FPageControl.Top := 50;
     FPageControl.Parent := Self;
     FPageControl.Visible := True;
+    FPageControl.ShowTabs := True;
   end;
 end;
 

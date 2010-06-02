@@ -12,7 +12,12 @@ unit ntvTabs;
 interface
 
 uses
-  Classes, SysUtils, Graphics, Controls, Contnrs, Types;
+  Classes, SysUtils, Graphics, Controls, Contnrs, Types,
+  LMessages, LCLType, LCLIntf, LCLProc;
+
+const
+  cMinWidth = 10;
+  cImageMargin = 8;
 
 type
   TTabStyle = (tbDefault, tbNormal, tbSheets);
@@ -37,9 +42,8 @@ type
   protected
     function GetDisplayName: string; override;
     procedure SetIndex(Value: Integer); override;
-    procedure VisibleChanged;
-    procedure Changed;
-    procedure Update; virtual;
+    procedure Update;
+    procedure Invalidate;
   public
     constructor Create(vCollection: TCollection); override;
     destructor Destroy; override;
@@ -75,19 +79,27 @@ type
   private
     FImages: TImageList;
     FItemIndex: Integer;
+    FShowAll: Boolean;
     FShowButtons: Boolean;
     FTabStyle: TTabStyle;
     FTopIndex: Integer;
     FVisibles: TntvTabList;
+    FUpdateItems: Boolean;
+    procedure SetImages(const AValue: TImageList);
   protected
     function GetItem(Index: Integer): TntvTabItem;
     procedure SetItem(Index: Integer; Value: TntvTabItem);
     procedure Update(Item: TCollectionItem); override;
-    procedure UpdateItems(vCanvas: TCanvas);
+    procedure DoShowTab(Item:TntvTabItem); virtual;
+    procedure UpdateCanvas(vCanvas: TCanvas); virtual;
+    procedure UpdateItems;
     procedure VisibleChanged;
-
+    procedure CheckUpdateItems;
+    procedure Invalidate; virtual;
     procedure DrawButtons(Canvas: TCanvas; var vRect: TRect; vFlags: TntvFlags);
     procedure DrawTab(Canvas: TCanvas; Index: Integer; vRect: TRect; vFlags: TntvFlags);
+    //ShowAll for DesignMode or special states
+    property ShowAll: Boolean read FShowAll write FShowAll;
   public
     constructor Create(AItemClass: TCollectionItemClass);
     destructor Destroy; override;
@@ -100,9 +112,10 @@ type
     function GetTabRect(const vRect:TRect; Index: Integer; var vTabRect: TRect; vFlags: TntvFlags): Boolean; overload; virtual;
     function GetTabOffset(Index: Integer): Integer;
 
+    function ShowTab(const vRect:TRect; Index: Integer; vFlags: TntvFlags): Boolean;
     property Items[Index: Integer]: TntvTabItem read GetItem write SetItem stored False; default;
     property Visibles: TntvTabList read FVisibles write FVisibles;
-    property Images: TImageList read FImages write FImages;
+    property Images: TImageList read FImages write SetImages;
     property TabStyle: TTabStyle read FTabStyle write FTabStyle;
     property ItemIndex: Integer read FItemIndex write FItemIndex;
     property TopIndex: Integer read FTopIndex write FTopIndex;
@@ -119,8 +132,8 @@ begin
   if FCaption <> Value then
   begin
     FCaption := Value;
-    Changed;
     Update;
+    Invalidate;
   end;
 end;
 
@@ -129,15 +142,17 @@ begin
   if FEnabled <> AValue then
   begin
     FEnabled := AValue;
-    VisibleChanged;
-    Update;
+    Invalidate;
   end;
 end;
 
 procedure TntvTabItem.SetWidth(const Value: Integer);
 begin
-  FWidth := Value;
-  Changed;
+  if FWidth <> Value then
+  begin
+    Update;
+    Invalidate;
+  end;
 end;
 
 procedure TntvTabItem.SetImageIndex(const AValue: Integer);
@@ -162,8 +177,6 @@ begin
   if FVisible <> Value then
   begin
     FVisible := Value;
-    VisibleChanged;
-    Changed;
     Update;
   end;
 end;
@@ -176,21 +189,19 @@ end;
 procedure TntvTabItem.SetIndex(Value: Integer);
 begin
   inherited SetIndex(Value);
-  VisibleChanged;
-end;
-
-procedure TntvTabItem.VisibleChanged;
-begin
-  (Collection as TntvTabs).VisibleChanged;
-end;
-
-procedure TntvTabItem.Changed;
-begin
-
+  Update;
 end;
 
 procedure TntvTabItem.Update;
 begin
+  if Collection <> nil then
+    (Collection as TntvTabs).Update(Self);
+end;
+
+procedure TntvTabItem.Invalidate;
+begin
+  if Collection <> nil then
+    (Collection as TntvTabs).Invalidate;
 end;
 
 constructor TntvTabItem.Create(vCollection: TCollection);
@@ -227,6 +238,15 @@ begin
   inherited SetItem(Index, Value);
 end;
 
+procedure TntvTabs.SetImages(const AValue: TImageList);
+begin
+  if FImages <> AValue then
+  begin
+    FImages := AValue;
+
+  end;
+end;
+
 function TntvTabs.GetItem(Index: Integer): TntvTabItem;
 begin
   Result := (inherited GetItem(Index) as TntvTabItem);
@@ -235,28 +255,75 @@ end;
 procedure TntvTabs.Update(Item: TCollectionItem);
 begin
   inherited;
+  FUpdateItems := True;
+  VisibleChanged;
+  Invalidate;
 end;
 
-procedure TntvTabs.UpdateItems(vCanvas: TCanvas);
+procedure TntvTabs.DoShowTab(Item: TntvTabItem);
 begin
 
+end;
+
+procedure TntvTabs.UpdateCanvas(vCanvas: TCanvas);
+begin
+end;
+
+procedure TntvTabs.UpdateItems;
+var
+  TmpCanvas: TCanvas;
+  i, w: Integer;
+begin
+  TmpCanvas := TCanvas.Create;
+  try
+    TmpCanvas.Handle := GetDC(0);
+    UpdateCanvas(TmpCanvas);
+    for i := 0 to Count - 1 do
+    begin
+      w := TmpCanvas.TextWidth(Items[i].Caption);
+      Items[i].FWidth := w;
+      if (Images <> nil) and (Items[I].ImageIndex > -1) then
+        w := w + Images.Width - cImageMargin;
+      if w < cMinWidth then
+        w := cMinWidth;
+      Items[i].FWidth := w;
+    end;
+  finally
+    ReleaseDC(0, TmpCanvas.Handle);
+    TmpCanvas.Free;
+  end;
+  FUpdateItems := False;
 end;
 
 procedure TntvTabs.VisibleChanged;
 var
   i: Integer;
 begin
+  FVisibles.Clear;
   for i := 0 to Count -1 do
   begin
-    if Items[i].Visible then
+    if ShowAll or Items[i].Visible then
       FVisibles.Add(Items[i]);
   end;
+end;
+
+procedure TntvTabs.CheckUpdateItems;
+begin
+  if FUpdateItems then
+  begin
+    UpdateItems;
+  end;
+end;
+
+procedure TntvTabs.Invalidate;
+begin
 end;
 
 constructor TntvTabs.Create(AItemClass: TCollectionItemClass);
 begin
   inherited Create(TntvTabItem);
   FVisibles := TntvTabList.create(False);
+  FUpdateItems := True;
 end;
 
 destructor TntvTabs.Destroy;
@@ -291,28 +358,18 @@ var
   aRect: TRect;
   i: Integer;
 begin
-  if ShowButtons then
-  begin
-    DrawButtons(Canvas, vRect, vFlags);
-  end;
-  GetTabRect(vRect, ItemIndex, aRect, vFlags);
-  DrawTab(Canvas, ItemIndex, aRect, vFlags);
-  //ExcludeClipRect(Handle, aRect.Left, aRect.Top, aRect.Right, aRect.Bottom);
   for i := TopIndex to Visibles.Count - 1 do
   begin
-    if i = ItemIndex then
-      Continue;
     if GetTabRect(vRect, i, aRect, vFlags) then
       DrawTab(Canvas, i, aRect, vFlags);
-    //ExcludeClipRect(Handle, Rect.Left, Rect.Top, Rect.Right, Rect.Bottom);
     if tbfUseRightToLeft in vFlags then
     begin
-      if aRect.Left < vRect.Right then
+      if aRect.Left < vRect.Left then
         Break;
     end
     else
     begin
-      if aRect.Right > vRect.Left then
+      if aRect.Right > vRect.Right then
         Break;
     end;
   end;
@@ -323,6 +380,7 @@ var
   R: Trect;
   i, x: Integer;
 begin
+  CheckUpdateItems;
   vTabRect := Rect(0, 0, 0, 0);
   Result := False;
   if (Index < FVisibles.Count) and (Index > -1) then
@@ -331,7 +389,7 @@ begin
     for i := TopIndex to Index do
       x := x + FVisibles[i].Width;
     R := Rect(0, vRect.Top, 0, vRect.Bottom);
-    if tbfUseRightToLeft in TntvFlags then
+    if tbfUseRightToLeft in vFlags then
     begin
       x := vRect.Right - x;
       R.Left := x;
@@ -365,57 +423,17 @@ var
 begin
   with Canvas do
   begin
-    aTextStyle := TextStyle;
-    if ItemIndex <> Index then
-    begin
-      Dec(vRect.Bottom);
-    end
-    else if Index > TopIndex then
-      InflateRect(vRect, 1, 0)
-    else
-    begin
-      if tbfUseRightToLeft in TntvFlags then
-        Dec(vRect.Left)
-      else
-        Inc(vRect.Right);
-    end;
-    R := vRect;
-    Brush.Style := bsSolid;
-    Brush.Color := clWhite;
-    FillRect(R);
-    Inc(R.Top, 2);
-    if Index <> ItemIndex then
-    begin
-      Inc(R.Top, 2);
-    end;
-    Brush.Color := clBtnFace;
-    Pen.Color := clBtnHighlight;
-    MoveTo(R.Left, R.Bottom - 1);
-    LineTo(R.Left, R.Top);
-
-    LineTo(R.Left + 1, R.Top - 1);
-    LineTo(R.Right - 2, R.Top - 1);
-    LineTo(R.Right - 1, R.Top);
-
-    Pen.Color := clGray;
-    LineTo(R.Right - 1, R.Bottom);
-
-    aTextRect := R;
+    Brush.Color := clRed;
+    FillRect(vRect);
+    aTextRect := vRect;
     if Index = ItemIndex then
     begin
-      MoveTo(R.Right - 2, R.Bottom);
-      Pen.Color := clBtnFace;
-      LineTo(R.Left, R.Bottom);
-      InflateRect(R, -3, -1);
-      if tbfFocused in TntvFlags then
+      if tbfFocused in vFlags then
         DrawFocusRect(R);
-      OffsetRect(aTextRect, 0, -2);
     end;
-    Brush.Style := bsClear;
-    Brush.Style := bsClear;
     aTextStyle.Layout := tlCenter;
     aTextStyle.Alignment := taCenter;
-    if tbfUseRightToLeft in TntvFlags then
+    if tbfUseRightToLeft in vFlags then
        aTextStyle.RightToLeft := True;
     TextRect(aTextRect, 0, 0, Visibles[Index].Caption, aTextStyle);
   end;
@@ -433,6 +451,42 @@ begin
   Result := 0;
   for i := Index - 1 downto TopIndex do
     Result := Result + FVisibles[index].Width;
+end;
+
+function TntvTabs.ShowTab(const vRect:TRect; Index: Integer; vFlags: TntvFlags): Boolean;
+var
+  R: TRect;
+  aTopIndex: Integer;
+  w: Integer;
+begin
+  //DoShowTab();
+  GetTabRect(vRect, ItemIndex, R, vFLags);
+  aTopIndex := TopIndex;
+  if tbfUseRightToLeft in vFlags then
+  begin
+    w := 0;
+    if R.Left < w then
+    begin
+      while (R.Left < w) and (aTopIndex < ItemIndex) do
+      begin
+        aTopIndex := aTopIndex + 1;
+        GetTabRect(vRect, aTopIndex, ItemIndex, R, vFLags);
+      end;
+    end;
+  end
+  else
+  begin
+    w := 0;
+    if R.Right > w then
+    begin
+      while (R.Right > w) and (aTopIndex < ItemIndex) do
+      begin
+        aTopIndex := aTopIndex + 1;
+        GetTabRect(vRect, aTopIndex, ItemIndex, R, vFLags);
+      end;
+    end;
+  end;
+  TopIndex := aTopIndex;
 end;
 
 { TntvTabList }
