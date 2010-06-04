@@ -15,10 +15,7 @@ interface
 uses
   Classes, Messages, Controls, SysUtils, Math, Contnrs, Graphics, Forms, StdCtrls, Types,
   LMessages, LCLType, LCLIntf, LCLProc,
-  ntvTabs, ntvUtils;
-
-const
-  cHeaderHeightMargin = 10;
+  ntvTabs, ntvTabSets, ntvUtils;
 
 type
   TntvPageControl = class;
@@ -93,7 +90,6 @@ type
     FOnPageChanged: TOnPageChanged;
     FOnSelectPage: TOnSelectPage;
     FStoreIndex: Boolean;
-    FTabStyle: TTabStyle;
     FWrapper: TObject;
     FPageBorder: Integer;
     FShowTabs: Boolean;
@@ -120,8 +116,6 @@ type
     function GetPageItem(vControl: TWinControl): TntvPageItem;
     procedure SetShowTabs(const Value: Boolean);
     function GetHeaderHeight: Integer;
-
-    procedure SetTabStyle(const Value: TTabStyle);
     procedure SetImageList(const Value: TImageList);
     procedure AdjustTextRect(var vRect: TRect; vImageIndex: Integer);
   protected
@@ -135,13 +129,10 @@ type
     procedure ShowControl(AControl: TControl); override;
     procedure AlignControls(AControl: TControl; var Rect: TRect); override;
 
-    procedure CalcHeaderRect;
+    procedure UpdateHeaderRect;
 
-    function NextPageBtnRect: TRect;
-    function PriorPageBtnRect: TRect;
-
-    procedure NextPageBtnClick;
-    procedure PriorPageBtnClick;
+    procedure NextClick;
+    procedure PriorClick;
 
     function GetTabsRect: TRect; virtual;
     function GetInnerRect: TRect; virtual;
@@ -171,8 +162,8 @@ type
     procedure EraseBackground(DC: HDC); override;
     procedure Paint; override;
 
-    procedure NextPage;
-    procedure PriorPage;
+    procedure Next;
+    procedure Prior;
     property ActiveControl: TWinControl read GetActiveControl write SetActiveControl;
     procedure Clear;
     property PageItem[Control: TWinControl]: TntvPageItem read GetPageItem;
@@ -182,7 +173,6 @@ type
     property ShowTabs: Boolean read FShowTabs write SetShowTabs default True;
     property ItemIndex: Integer read GetItemIndex write SetItemIndex stored FStoreIndex default 0;
     property PageBorder: Integer read FPageBorder write SetPageBorder default 3;
-    property TabStyle: TTabStyle read FTabStyle write SetTabStyle default tbDefault;
     property ImageList: TImageList read GetImageList write SetImageList;
 
     property Items: TntvPages read FItems write FItems;
@@ -300,9 +290,8 @@ begin
   Height := 150;
   Items.ItemIndex := -1;
   Items.TopIndex := 0;
-  CalcHeaderRect;
+  UpdateHeaderRect;
   FShowTabs := True;
-  FTabStyle := tbDefault;
   SetInitialBounds(0, 0, GetControlClassDefaultSize.cx, GetControlClassDefaultSize.cy);
 end;
 
@@ -488,7 +477,7 @@ begin
   Invalidate;
 end;}
 
-procedure TntvPageControl.CalcHeaderRect;
+procedure TntvPageControl.UpdateHeaderRect;
 var
   TmpCanvas: TCanvas;
 begin
@@ -527,22 +516,6 @@ begin
     Items.TopIndex := Value;
     Invalidate;
   end;
-end;
-
-function TntvPageControl.NextPageBtnRect: TRect;
-begin
-  if UseRightToLeftAlignment then
-    Result := Rect(5, 5, 15, 15)
-  else
-    Result := Rect(ClientWidth - 15, 5, ClientWidth - 5, 15);
-end;
-
-function TntvPageControl.PriorPageBtnRect: TRect;
-begin
-  if UseRightToLeftAlignment then
-    Result := Rect(20, 5, 30, 15)
-  else
-    Result := Rect(ClientWidth - 30, 5, ClientWidth - 20, 15);
 end;
 
 function TntvPageControl.GetTabsRect: TRect;
@@ -614,12 +587,12 @@ begin
         end;
         htNext:
         begin
-          NextPageBtnClick;
+          NextClick;
           Result := True;
         end;
         htPrior:
         begin
-          PriorPageBtnClick;
+          PriorClick;
           Result := True;
         end;
       end;
@@ -692,11 +665,11 @@ begin
   end;
 end;
 
-procedure TntvPageControl.NextPageBtnClick;
+procedure TntvPageControl.NextClick;
 begin
 end;
 
-procedure TntvPageControl.PriorPageBtnClick;
+procedure TntvPageControl.PriorClick;
 begin
 end;
 
@@ -791,7 +764,7 @@ begin
   begin
     if GetKeyState(VK_SHIFT) >= 0 then
     begin
-      //nextpage
+      //Next
       if ItemIndex <> Items.Visibles.Count - 1 then
         SelectPage(ItemIndex + 1)
       else
@@ -810,8 +783,8 @@ begin
   begin
     inherited;
     case Message.CharCode of
-      VK_NEXT: NextPage;
-      VK_PRIOR: PriorPage;
+      VK_NEXT: Next;
+      VK_PRIOR: Prior;
     end;
   end;
 end;
@@ -861,12 +834,12 @@ begin
   Invalidate;
 end;
 
-procedure TntvPageControl.NextPage;
+procedure TntvPageControl.Next;
 begin
   ItemIndex := ItemIndex + 1;
 end;
 
-procedure TntvPageControl.PriorPage;
+procedure TntvPageControl.Prior;
 begin
   ItemIndex := ItemIndex - 1;
 end;
@@ -1031,29 +1004,18 @@ begin
       VK_LEFT:
         begin
           if UseRightToLeftAlignment then
-            NextPage
+            Next
           else
-            PriorPage;
+            Prior;
         end;
       VK_RIGHT:
         begin
           if UseRightToLeftAlignment then
-            PriorPage
+            Prior
           else
-            NextPage;
+            Next;
         end;
     end;
-  end;
-end;
-
-//<Ayman>
-
-procedure TntvPageControl.SetTabStyle(const Value: TTabStyle);
-begin
-  if FTabStyle <> Value then
-  begin
-    FTabStyle := Value;
-    Invalidate;
   end;
 end;
 

@@ -20,7 +20,28 @@ const
   cImageMargin = 8;
 
 type
-  TTabStyle = (tbDefault, tbNormal, tbSheets);
+  TntvhtTabHitTest = (htNone, htTab, htNext, htPrior, htClose);
+  TntvFlag = (tbfUseRightToLeft, tbfFocused);
+  TntvFlags = set of TntvFlag;
+
+  TntvTabItem = class;
+
+  TTabDrawState = (tdsFirst, tdsNormal, tdsActive, tdsLast);
+  TTabDrawStates = set of TTabDrawState;
+
+  TntvTabDraw = class(TObject)
+  public
+    function GetWidth(State: TTabDrawStates; Width: Integer): Integer; virtual; abstract;
+    function Paint(vItem: TntvTabItem; State: TTabDrawStates ; var vRect:TRect; Canvas:TCanvas; vFlags: TntvFlags): Boolean; virtual; abstract;
+  end;
+
+  { TTabDrawSheet }
+
+  TTabDrawSheet = class(TntvTabDraw)
+  public
+    function GetWidth(State: TTabDrawStates; Width: Integer): Integer; override;
+    function Paint(vItem: TntvTabItem; State: TTabDrawStates; var vRect:TRect; Canvas:TCanvas; vFlags: TntvFlags): Boolean; override;
+  end;
 
   { TntvTabItem }
 
@@ -48,6 +69,7 @@ type
     constructor Create(vCollection: TCollection); override;
     destructor Destroy; override;
     procedure Assign(Source: TPersistent); override;
+    //Caption width
     property Width: Integer read FWidth write SetWidth;
   published
     property Caption: string read FCaption write SetCaption;
@@ -69,10 +91,6 @@ type
     property Items[Index: Integer]: TntvTabItem read GetItem write SetItem; default;
   end;
 
-  TntvhtTabHitTest = (htNone, htTab, htNext, htPrior, htClose);
-  TntvFlag = (tbfUseRightToLeft, tbfFocused);
-  TntvFlags = set of TntvFlag;
-
   { TntvTabs }
 
   TntvTabs = class(TCollection)
@@ -81,7 +99,6 @@ type
     FItemIndex: Integer;
     FShowAll: Boolean;
     FShowButtons: Boolean;
-    FTabStyle: TTabStyle;
     FTopIndex: Integer;
     FVisibles: TntvTabList;
     FUpdateItems: Boolean;
@@ -96,6 +113,8 @@ type
     procedure VisibleChanged;
     procedure CheckUpdateItems;
     procedure Invalidate; virtual;
+    function IndexToState(Index: Integer): TTabDrawStates;
+    function CreateTabDraw: TntvTabDraw;
     procedure DrawButtons(Canvas: TCanvas; var vRect: TRect; vFlags: TntvFlags);
     procedure DrawTab(Canvas: TCanvas; Index: Integer; vRect: TRect; vFlags: TntvFlags);
     //ShowAll for DesignMode or special states
@@ -116,7 +135,6 @@ type
     property Items[Index: Integer]: TntvTabItem read GetItem write SetItem stored False; default;
     property Visibles: TntvTabList read FVisibles write FVisibles;
     property Images: TImageList read FImages write SetImages;
-    property TabStyle: TTabStyle read FTabStyle write FTabStyle;
     property ItemIndex: Integer read FItemIndex write FItemIndex;
     property TopIndex: Integer read FTopIndex write FTopIndex;
     property ShowButtons: Boolean read FShowButtons write FShowButtons;
@@ -319,6 +337,22 @@ procedure TntvTabs.Invalidate;
 begin
 end;
 
+function TntvTabs.IndexToState(Index: Integer): TTabDrawStates;
+begin
+ Result := [];
+ if (Index = ItemIndex) then
+   Result := Result + [tdsActive];
+  if (Index - TopIndex) = 0 then
+    Result := Result + [tdsFirst];
+  if Index = Visibles.Count - 1 then //need to review
+    Result := Result + [tdsLast];
+end;
+
+function TntvTabs.CreateTabDraw: TntvTabDraw;
+begin
+  Result := TTabDrawSheet.Create;
+end;
+
 constructor TntvTabs.Create(AItemClass: TCollectionItemClass);
 begin
   inherited Create(TntvTabItem);
@@ -349,6 +383,8 @@ begin
     if GetTabRect(vRect, i, R, vFlags) and PtInRect(R, vPoint) then
     begin
       Result := htTab;
+      vIndex := i;
+      break;
     end;
   end;
 end;
@@ -378,8 +414,14 @@ end;
 function TntvTabs.GetTabRect(const vRect:TRect; TopIndex, Index: Integer; var vTabRect: TRect; vFlags: TntvFlags): Boolean;
 var
   R: Trect;
-  i, x: Integer;
+  w, i, x: Integer;
+  TabDraw: TntvTabDraw;
+  function GetW(i: Integer): Integer;
+  begin
+    Result := TabDraw.GetWidth(IndexToState(i), FVisibles[i].Width);
+  end;
 begin
+  TabDraw := CreateTabDraw;
   CheckUpdateItems;
   vTabRect := Rect(0, 0, 0, 0);
   Result := False;
@@ -387,18 +429,19 @@ begin
   begin
     x := 0;
     for i := TopIndex to Index do
-      x := x + FVisibles[i].Width;
+      x := x + GetW(i);
     R := Rect(0, vRect.Top, 0, vRect.Bottom);
+    w := GetW(Index);
     if tbfUseRightToLeft in vFlags then
     begin
       x := vRect.Right - x;
       R.Left := x;
-      R.Right := x + FVisibles[Index].Width;
+      R.Right := x + w;
     end
     else
     begin
-      R.Right := x;
-      R.Left := x - FVisibles[Index].Width;
+      R.Right := x - 1;
+      R.Left := x - w;
     end;
     vTabRect := R;
     Result := True;
@@ -418,25 +461,10 @@ end;
 
 procedure TntvTabs.DrawTab(Canvas: TCanvas; Index: Integer; vRect: TRect; vFlags: TntvFlags);
 var
-  R, aTextRect: TRect;
-  aTextStyle: TTextStyle;
+  TabDraw: TntvTabDraw;
 begin
-  with Canvas do
-  begin
-    Brush.Color := clRed;
-    FillRect(vRect);
-    aTextRect := vRect;
-    if Index = ItemIndex then
-    begin
-      if tbfFocused in vFlags then
-        DrawFocusRect(R);
-    end;
-    aTextStyle.Layout := tlCenter;
-    aTextStyle.Alignment := taCenter;
-    if tbfUseRightToLeft in vFlags then
-       aTextStyle.RightToLeft := True;
-    TextRect(aTextRect, 0, 0, Visibles[Index].Caption, aTextStyle);
-  end;
+  TabDraw := CreateTabDraw;
+  TabDraw.Paint(Visibles[Index], IndexToState(Index), vRect, Canvas, vFlags);
 end;
 
 function TntvTabs.GetTabRect(const vRect:TRect; Index: Integer; var vTabRect: TRect; vFlags: TntvFlags): Boolean;
@@ -501,5 +529,60 @@ begin
   inherited SetItem(Index, Value)
 end;
 
+{ TTabDrawSheet }
+
+function TTabDrawSheet.GetWidth(State: TTabDrawStates; Width: Integer): Integer;
+begin
+  Result := Width + 1; //margin
+  if tdsFirst in State then
+    Result := Result + 1;
+end;
+
+function TTabDrawSheet.Paint(vItem: TntvTabItem; State: TTabDrawStates; var vRect: TRect; Canvas: TCanvas; vFlags: TntvFlags): Boolean;
+var
+  R, aTextRect: TRect;
+  aTextStyle: TTextStyle;
+begin
+  with Canvas do
+  begin
+    Brush.Style := bsSolid;
+    if tdsActive in State then
+      Brush.Color := clBtnFace
+    else
+      Brush.Color := clWhite;
+    FillRect(vRect);
+
+    aTextRect := vRect;
+    if (tdsFirst in State) then
+    begin
+      Inc(aTextRect.Left);
+    end;
+    //Dec(aTextRect.Right);
+    aTextStyle.Layout := tlCenter;
+    aTextStyle.Alignment := taCenter;
+    if tbfUseRightToLeft in vFlags then
+       aTextStyle.RightToLeft := True;
+    Font.Color := clBlack;
+    TextRect(aTextRect, 0, 0, vItem.Caption, aTextStyle);
+
+    Pen.Style := psSolid;
+    Pen.Color := clBlack;
+    MoveTo(vRect.Right, vRect.Bottom);
+    LineTo(vRect.Right, vRect.Top);
+    if (tdsFirst in State) then
+    begin
+      LineTo(vRect.Left, vRect.Top);
+      LineTo(vRect.Left, vRect.Bottom);
+    end
+    else
+      LineTo(vRect.Left - 1, vRect.Top);
+
+    if tdsActive in State then
+    begin
+      if tbfFocused in vFlags then
+        DrawFocusRect(R);
+    end;
+  end;
+end;
 end.
 

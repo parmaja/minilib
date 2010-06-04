@@ -28,4 +28,14 @@ object Form1: TForm1
     OnClick = Button2Click
     TabOrder = 1
   end
+  object Button3: TButton
+    Left = 336
+    Height = 25
+    Top = 332
+    Width = 75
+    Anchors = [akLeft, akBottom]
+    Caption = 'Create all'
+    OnClick = Button3Click
+    TabOrder = 2
+  end
 end

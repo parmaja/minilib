@@ -59,8 +59,8 @@ procedure TntvPageControlEditor.ExecuteVerb(Index: Integer);
 begin
   case Index of
     0: Edit;
-    1: (Component as TntvPageControl).NextPage;
-    2: (Component as TntvPageControl).PriorPage;
+    1: (Component as TntvPageControl).Next;
+    2: (Component as TntvPageControl).Prior;
   end;
 end;
 

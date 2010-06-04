@@ -14,7 +14,7 @@ unit Unit1;
 interface
 
 uses
-  LResources, Forms, SysUtils, ComCtrls, StdCtrls, ntvPageControls, LMessages,
+  LResources, Forms, SysUtils, ComCtrls, StdCtrls, ntvPageControls, ntvTabSets, LMessages,
   LCLType, Controls, ExtCtrls, Classes, ntvRegCtrls;
 
 type
@@ -23,6 +23,7 @@ type
   TForm1 = class(TForm)
     Button1: TButton;
     Button2: TButton;
+    Button3: TButton;
     ntvPage1: TntvPage;
     ntvPage2: TntvPage;
     ntvPageControl1: TntvPageControl;
@@ -30,12 +31,14 @@ type
     ntvPageControl1Page2: TntvPage;
     procedure Button1Click(Sender: TObject);
     procedure Button2Click(Sender: TObject);
+    procedure Button3Click(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure ntvPageControl1Click(Sender: TObject);
     procedure PageControl1Change(Sender: TObject);
   private
     FCount: Integer;
     FPageControl: TntvPageControl;
+    procedure CreatePageControl;
     procedure WMEraseBkgnd(var Message: TLMEraseBkgnd); message LM_ERASEBKGND;
     procedure EraseBackground(DC: HDC); override;
     procedure Paint; override;
@@ -57,6 +60,21 @@ end;
 procedure TForm1.PageControl1Change(Sender: TObject);
 begin
 
+end;
+
+procedure TForm1.CreatePageControl;
+var
+  aPanel: TPanel;
+begin
+  if FPageControl = nil then
+  begin
+    FPageControl := TntvPageControl.Create(Self);
+    FPageControl.Left := 50;
+    FPageControl.Top := 50;
+    FPageControl.Parent := Self;
+    FPageControl.Visible := True;
+    FPageControl.ShowTabs := True;
+  end;
 end;
 
 procedure TForm1.WMEraseBkgnd(var Message: TLMEraseBkgnd);
@@ -90,17 +108,31 @@ begin
 end;
 
 procedure TForm1.Button2Click(Sender: TObject);
+begin
+  CreatePageControl;
+end;
+
+procedure TForm1.Button3Click(Sender: TObject);
 var
   aPanel: TPanel;
 begin
-  if FPageControl <> nil then
-  begin
-    aPanel:=TPanel.Create(Self);
-    aPanel.Caption := 'Panel' + IntToStr(FCount);
-    aPanel.Name := 'Panel' + IntToStr(FCount);
-    aPanel.Parent := FPageControl;
-    Inc(FCount);
-  end;
+  CreatePageControl;
+  aPanel:=TPanel.Create(Self);
+  aPanel.Caption := 'Panel ' + IntToStr(FCount);
+  aPanel.Name := 'Panel' + IntToStr(FCount);
+  aPanel.Parent := FPageControl;
+  FPageControl.ItemIndex := 0;
+  Inc(FCount);
+  aPanel:=TPanel.Create(Self);
+  aPanel.Caption := 'Panel ' + IntToStr(FCount);
+  aPanel.Name := 'Panel' + IntToStr(FCount);
+  aPanel.Parent := FPageControl;
+  Inc(FCount);
+  aPanel:=TPanel.Create(Self);
+  aPanel.Caption := 'Panel ' + IntToStr(FCount);
+  aPanel.Name := 'Panel' + IntToStr(FCount);
+  aPanel.Parent := FPageControl;
+  Inc(FCount);
 end;
 
 initialization
