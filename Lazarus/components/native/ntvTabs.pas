@@ -31,16 +31,16 @@ type
 
   TntvTabDraw = class(TObject)
   public
-    function GetWidth(State: TTabDrawStates; Width: Integer): Integer; virtual; abstract;
-    function Paint(vItem: TntvTabItem; State: TTabDrawStates ; var vRect:TRect; Canvas:TCanvas; vFlags: TntvFlags): Boolean; virtual; abstract;
+    function GetWidth(State: TTabDrawStates; vTabsRect: TRect; Width: Integer): Integer; virtual; abstract;
+    function Paint(vItem: TntvTabItem; State: TTabDrawStates ; vRect:TRect; Canvas:TCanvas; vFlags: TntvFlags): Boolean; virtual; abstract;
   end;
 
   { TTabDrawSheet }
 
   TTabDrawSheet = class(TntvTabDraw)
   public
-    function GetWidth(State: TTabDrawStates; Width: Integer): Integer; override;
-    function Paint(vItem: TntvTabItem; State: TTabDrawStates; var vRect:TRect; Canvas:TCanvas; vFlags: TntvFlags): Boolean; override;
+    function GetWidth(State: TTabDrawStates; vTabsRect: TRect; Width: Integer): Integer; override;
+    function Paint(vItem: TntvTabItem; State: TTabDrawStates; vRect:TRect; Canvas:TCanvas; vFlags: TntvFlags): Boolean; override;
   end;
 
   { TntvTabItem }
@@ -127,8 +127,8 @@ type
     function HitTest(vPoint: TPoint; vRect:TRect; var vIndex: Integer; vFlags: TntvFlags): TntvhtTabHitTest;
     procedure Paint(Canvas: TCanvas; vRect:TRect; vFlags: TntvFlags);
 
-    function GetTabRect(const vRect:TRect; TopIndex, Index: Integer; var vTabRect: TRect; vFlags: TntvFlags): Boolean; overload;
-    function GetTabRect(const vRect:TRect; Index: Integer; var vTabRect: TRect; vFlags: TntvFlags): Boolean; overload; virtual;
+    function GetTabRect(const vTabsRect:TRect; TopIndex, Index: Integer; var vTabRect: TRect; vFlags: TntvFlags): Boolean; overload;
+    function GetTabRect(const vTabsRect:TRect; Index: Integer; var vTabRect: TRect; vFlags: TntvFlags): Boolean; overload; virtual;
     function GetTabOffset(Index: Integer): Integer;
 
     function ShowTab(const vRect:TRect; Index: Integer; vFlags: TntvFlags): Boolean;
@@ -411,14 +411,14 @@ begin
   end;
 end;
 
-function TntvTabs.GetTabRect(const vRect:TRect; TopIndex, Index: Integer; var vTabRect: TRect; vFlags: TntvFlags): Boolean;
+function TntvTabs.GetTabRect(const vTabsRect:TRect; TopIndex, Index: Integer; var vTabRect: TRect; vFlags: TntvFlags): Boolean;
 var
   R: Trect;
   w, i, x: Integer;
   TabDraw: TntvTabDraw;
   function GetW(i: Integer): Integer;
   begin
-    Result := TabDraw.GetWidth(IndexToState(i), FVisibles[i].Width);
+    Result := TabDraw.GetWidth(IndexToState(i), vTabsRect, FVisibles[i].Width);
   end;
 begin
   TabDraw := CreateTabDraw;
@@ -430,11 +430,11 @@ begin
     x := 0;
     for i := TopIndex to Index do
       x := x + GetW(i);
-    R := Rect(0, vRect.Top, 0, vRect.Bottom);
+    R := Rect(0, vTabsRect.Top, 0, vTabsRect.Bottom);
     w := GetW(Index);
     if tbfUseRightToLeft in vFlags then
     begin
-      x := vRect.Right - x;
+      x := vTabsRect.Right - x;
       R.Left := x;
       R.Right := x + w;
     end
@@ -467,9 +467,9 @@ begin
   TabDraw.Paint(Visibles[Index], IndexToState(Index), vRect, Canvas, vFlags);
 end;
 
-function TntvTabs.GetTabRect(const vRect:TRect; Index: Integer; var vTabRect: TRect; vFlags: TntvFlags): Boolean;
+function TntvTabs.GetTabRect(const vTabsRect:TRect; Index: Integer; var vTabRect: TRect; vFlags: TntvFlags): Boolean;
 begin
-  Result := GetTabRect(vRect, TopIndex, Index, vTabRect, vFlags);
+  Result := GetTabRect(vTabsRect, TopIndex, Index, vTabRect, vFlags);
 end;
 
 function TntvTabs.GetTabOffset(Index: Integer): Integer;
@@ -531,14 +531,17 @@ end;
 
 { TTabDrawSheet }
 
-function TTabDrawSheet.GetWidth(State: TTabDrawStates; Width: Integer): Integer;
+function TTabDrawSheet.GetWidth(State: TTabDrawStates; vTabsRect: TRect; Width: Integer): Integer;
+var
+  w: Integer;
 begin
-  Result := Width + 1; //margin
+  w := vTabsRect.Bottom - vTabsRect.Top;
+  Result := Width + w; //margin
   if tdsFirst in State then
-    Result := Result + 1;
+    Result := Result + w;
 end;
 
-function TTabDrawSheet.Paint(vItem: TntvTabItem; State: TTabDrawStates; var vRect: TRect; Canvas: TCanvas; vFlags: TntvFlags): Boolean;
+function TTabDrawSheet.Paint(vItem: TntvTabItem; State: TTabDrawStates; vRect: TRect; Canvas: TCanvas; vFlags: TntvFlags): Boolean;
 var
   R, aTextRect: TRect;
   aTextStyle: TTextStyle;

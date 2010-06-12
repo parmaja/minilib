@@ -26,7 +26,7 @@ type
   TOnSelectTab = procedure(Sender: TObject; OldTab, NewTab: TntvTabItem; var CanSelect: boolean) of object;
   TOnTabChanged = procedure(Sender: TObject; OldTab, NewTab: TntvTabItem) of object;
 
-  { TntvPageControl }
+  { TntvCustomTabSet }
 
   TntvCustomTabSet = class(TCustomControl)
   private
@@ -46,29 +46,26 @@ type
     procedure CMFocusChanged(var Message: TMessage); message CM_FOCUSCHANGED;
     procedure CMDialogKey(var Message: TCMDialogKey); message CM_DIALOGKEY;
     procedure CMDesignHitTest(var Message: TLMMouse); message CM_DESIGNHITTEST;
-    procedure WMEraseBkgnd(var Message: TLMEraseBkgnd); message LM_ERASEBKGND;
 
     procedure SetShowButtons(const Value: Boolean);
     procedure DoTabChanged(OldItem, NewItem: TntvTabItem);
     procedure SetShowTabs(const Value: Boolean);
     function GetHeaderHeight: Integer;
     procedure SetImageList(const Value: TImageList);
-    procedure AdjustTextRect(var vRect: TRect; vImageIndex: Integer);
   protected
     function ChildKey(var Message: TLMKey): boolean; override;
-    function GetClientRect: TRect; override;
     procedure FontChanged(Sender: TObject); override;
     procedure KeyDown(var Key: Word; Shift: TShiftState); override;
-    procedure CreateParams(var Params: TCreateParams); override;
     procedure UpdateHeaderRect;
 
     procedure NextClick;
     procedure PriorClick;
 
     function GetTabsRect: TRect; virtual;
-    function GetInnerRect: TRect; virtual;
 
-    procedure DoShowTab(Index: Integer; Force: Boolean = False; vSetfocus: Boolean = True); virtual;
+    procedure DoTabShow(Index: Integer; vSetfocus: Boolean); virtual;
+    procedure DoTabShowed(Index: Integer; vSetfocus: Boolean); virtual;
+
     procedure ShowTab(Index: Integer; Force: Boolean = False; vSetfocus: Boolean = True);
     function SelectTab(Index: Integer; Force: Boolean = False): Boolean;
     function LeftMouseDown(Point: TPoint): boolean;
@@ -82,6 +79,7 @@ type
     procedure Loaded; override;
     class function GetControlClassDefaultSize: TSize; override;
     function GetFlags: TntvFlags;
+    function CreateTabs: TntvTabs; virtual;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -224,9 +222,7 @@ constructor TntvCustomTabSet.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
   ControlStyle := [csDesignInteractive, csClickEvents, csAcceptsControls, csSetCaption, csOpaque, csDoubleClicks];
-  FItems := TntvTabs.Create(TntvTabItem);
-  Width := 250;
-  Height := 150;
+  FItems := CreateTabs;
   Items.ItemIndex := -1;
   Items.TopIndex := 0;
   UpdateHeaderRect;
@@ -238,16 +234,6 @@ destructor TntvCustomTabSet.Destroy;
 begin
   FItems.Free;
   inherited Destroy;
-end;
-
-procedure TntvCustomTabSet.CreateParams(var Params: TCreateParams);
-begin
-  inherited CreateParams(Params);
-  with Params do
-  begin
-    Style := Style or WS_CLIPCHILDREN;
-    WindowClass.style := WindowClass.style or (CS_HREDRAW or CS_VREDRAW);
-  end;
 end;
 
 procedure TntvCustomTabSet.SetItemIndex(Value: Integer);
@@ -264,24 +250,33 @@ end;
 procedure TntvCustomTabSet.Paint;
 var
   i: Integer;
-  Rect: TRect;
-  NavRect: TRect;
+  R: TRect;
+  aTabsRect: TRect;
 begin
-  //inherited; do not inherited
+  inherited; //do not inherited
   with Canvas do
   begin
-    Canvas.Font.Assign(Self.Font);
-    if Items.Visibles.Count = 0 then
+    Font.Assign(Self.Font);
+    if not ShowTabs or (Items.Visibles.Count = 0) then
     begin
-      Exit;
+
     end
     else
     begin
-    end;
-
-    if ShowTabs then
-    begin
-      Items.Paint(Canvas, GetTabsRect, GetFlags);
+      if ShowTabs then
+      begin
+        Items.Paint(Canvas, GetTabsRect, GetFlags);
+        aTabsRect := GetTabsRect;
+        Items.GetTabRect(aTabsRect, ItemIndex, R, GetFlags);
+        Pen.Style := psSolid;
+        Pen.Color := clRed;
+        MoveTo(R.Left, aTabsRect.Bottom);
+        LineTo(ClientRect.Left, aTabsRect.Bottom);
+        LineTo(ClientRect.Left, ClientRect.Bottom - 1);
+        LineTo(ClientRect.Right -1 , ClientRect.Bottom - 1);
+        LineTo(ClientRect.Right - 1, aTabsRect.Bottom);
+        LineTo(R.Right - 1, aTabsRect.Bottom);
+      end;
     end;
   end;
 end;
@@ -345,23 +340,6 @@ begin
   end;
 end;
 
-procedure TntvCustomTabSet.AdjustTextRect(var vRect: TRect; vImageIndex: Integer);
-begin
-  if (ImageList <> nil) and (vImageIndex > -1) then
-  begin
-    if IsRightToLeft then
-    begin
-      vRect.Left := vRect.Left + 3;
-      vRect.Right := vRect.Right - ImageList.Width - 3;
-    end
-    else
-    begin
-      vRect.Left := vRect.Left + 6;
-      vRect.Left := vRect.Left + ImageList.Width;
-    end;
-  end;
-end;
-
 procedure TntvCustomTabSet.SetTopIndex(const Value: Integer);
 begin
   if (Value >= 0) and (Value < Items.Visibles.Count) then
@@ -404,18 +382,6 @@ begin
   end;
 end;
 
-procedure TntvCustomTabSet.WMEraseBkgnd(var Message: TLMEraseBkgnd);
-begin
-
-end;
-
-
-function TntvCustomTabSet.GetClientRect: TRect;
-begin
-  Result := inherited GetClientRect;
-  //Result.Top := Result.Top + HeaderHeight;
-end;
-
 function TntvCustomTabSet.LeftMouseDown(Point: TPoint): boolean;
 var
   i: Integer;
@@ -452,14 +418,18 @@ begin
     end;
   end;
 end;
-procedure TntvCustomTabSet.DoShowTab(Index: Integer; Force: Boolean = False; vSetfocus: Boolean = True);
+
+procedure TntvCustomTabSet.DoTabShow(Index: Integer; vSetfocus: Boolean);
+begin
+end;
+
+procedure TntvCustomTabSet.DoTabShowed(Index: Integer; vSetfocus: Boolean);
 begin
 end;
 
 procedure TntvCustomTabSet.ShowTab(Index: Integer; Force: Boolean; vSetfocus: Boolean);
 var
   R: TRect;
-  aTopIndex: Integer;
   i: Integer;
   OldIndex: Integer;
   w: Integer;
@@ -469,7 +439,7 @@ begin
     if ((Index <> Items.ItemIndex) or Force) and (Index < Items.Visibles.Count) then
     begin
       OldIndex := Items.ItemIndex;
-      DoShowTab(Index, Force, vSetfocus);
+      DoTabShow(Index, vSetfocus);
       //and (Items[Index].Control.Enabled)
 
       Items.ItemIndex := Index;
@@ -483,6 +453,7 @@ begin
       if Items.ItemIndex >= 0 then
       begin
         Invalidate;
+        DoTabShowed(Index, vSetfocus);
       end
       else if Items.ItemIndex < 0 then
       begin
@@ -516,13 +487,6 @@ procedure TntvCustomTabSet.PriorClick;
 begin
 end;
 
-function TntvCustomTabSet.GetInnerRect: TRect;
-begin
-  Result := ClientRect;
-  if ShowTabs then
-    Inc(Result.Top, HeaderHeight);
-end;
-
 function TntvCustomTabSet.GetItemIndex: Integer;
 begin
   Result := Items.ItemIndex;
@@ -530,7 +494,7 @@ end;
 
 procedure TntvCustomTabSet.EraseBackground(DC: HDC);
 begin
-  //inherited;
+  inherited;
 end;
 
 function TntvCustomTabSet.ChildKey(var Message: TLMKey): boolean;
@@ -731,6 +695,11 @@ begin
     Result := Result + [tbfUseRightToLeft];
   if Focused then
     Result := Result + [tbfFocused];
+end;
+
+function TntvCustomTabSet.CreateTabs: TntvTabs;
+begin
+  Result := TntvTabs.Create(TntvTabItem);
 end;
 
 initialization

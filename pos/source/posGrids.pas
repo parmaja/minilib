@@ -11,7 +11,7 @@ unit posGrids;
 {$M+}
 {$H+}
 {$IFDEF FPC}
-{$mode delphi}
+{$MODE delphi}
 {$ENDIF}
 
 interface
@@ -79,12 +79,12 @@ type
     procedure SetVisible(const Value: Boolean);
     procedure SetTitle(const Value: string);
   protected
-    procedure PaintHeader(Canvas: TCanvas; Rect: TRect; Color: TColor; LastCell:Boolean); virtual;
-    procedure PaintCell(Canvas: TCanvas; ACell: TposCellInfo; Row: Integer; Rect: TRect; Color: TColor; LastCell:Boolean); virtual;
+    procedure PaintHeader(Canvas: TCanvas; Rect: TRect; Color: TColor; LastCell: Boolean); virtual;
+    procedure PaintCell(Canvas: TCanvas; ACell: TposCellInfo; Row: Integer; Rect: TRect; Color: TColor; LastCell: Boolean); virtual;
   public
     constructor Create(AColumns: TposCustomColumns);
     property Columns: TposCustomColumns read FColumns;
-    property Index:Integer read FIndex;//read only used for access data 
+    property Index: Integer read FIndex; //read only used for access data
     property ID: Integer read FID write FID;
     property Name: string read FName write FName;
     property Title: string read FTitle write SetTitle;
@@ -112,12 +112,12 @@ type
 
   TposTextColumn = class(TposCustomColumn)
   public
-    procedure PaintCell(Canvas: TCanvas; ACell: TposCellInfo; Row: Integer; Rect: TRect; Color: TColor; LastCell:Boolean); override;
+    procedure PaintCell(Canvas: TCanvas; ACell: TposCellInfo; Row: Integer; Rect: TRect; Color: TColor; LastCell: Boolean); override;
   end;
 
   TposCheckedColumn = class(TposCustomColumn)
   public
-    procedure PaintCell(Canvas: TCanvas; ACell: TposCellInfo; Row: Integer; Rect: TRect; Color: TColor; LastCell:Boolean); override;
+    procedure PaintCell(Canvas: TCanvas; ACell: TposCellInfo; Row: Integer; Rect: TRect; Color: TColor; LastCell: Boolean); override;
   end;
 
   TposColumns = class(TposCustomColumns)
@@ -142,7 +142,7 @@ type
     procedure PaintRow(Canvas: TCanvas; Index: Integer; Rect: TRect; Color: TColor);
     procedure PaintOuter(Canvas: TCanvas; var vRect: TRect; vColor: TColor); override;
     procedure PaintInner(vCanvas: TCanvas; var vRect: TRect; vColor: TColor); override;
-    procedure GetCellInfo(Column:TposCustomColumn; Row: Integer; var Info: TposCellInfo); virtual;
+    procedure GetCellInfo(Column: TposCustomColumn; Row: Integer; var Info: TposCellInfo); virtual;
     function CreateColumns: TposCustomColumns; virtual;
     function CreateVisibleColumns: TposVisibleList; virtual;
   public
@@ -152,7 +152,7 @@ type
     property Items: TposItems read GetItems;
     property StartColumn: Integer read FStartColumn write SetStartColumn;
     property CurrentColumn: Integer read FCurrentColumn write SetCurrentColumn;
-    function CurrentData: Integer;
+    function CurrentData: Integer; deprecated;
   published
     property ShowHeader default True;
     property DualColor: Boolean read FDualColor write FDualColor default True;
@@ -162,7 +162,7 @@ type
 { Virtual Grid}
 
   TposVirtualGrid = class;
-  
+
   TposVirtualRows = class(TposItems)
   private
   protected
@@ -194,24 +194,24 @@ type
     FOnGetCount: TposOnGetCount;
     FOnGetItemIndex: TposOnGetItemIndex;
     FOnSetItemIndex: TposOnSetItemIndex;
-    FOnItemIndexChanged:TNotifyEvent;
+    FOnItemIndexChanged: TNotifyEvent;
     function GetItems: TposVirtualRows;
     function GetHelper: TposGridHelper;
     procedure SetHelper(const Value: TposGridHelper);
   protected
-    procedure HelperChanged; override;
     function DoCreateItems: TposItems; override;
-    procedure GetCellInfo(Column:TposCustomColumn; Row: Integer; var Info: TposCellInfo); override;
+    procedure GetCellInfo(Column: TposCustomColumn; Row: Integer; var Info: TposCellInfo); override;
   public
     destructor Destroy; override;
-    property Helper:TposGridHelper read GetHelper write SetHelper;
+    procedure HelperChanged; override;
+    property Helper: TposGridHelper read GetHelper write SetHelper;
     property Items: TposVirtualRows read GetItems;
   published
     property OnGetCell: TposOnGetCell read FOnGetCell write FOnGetCell;
     property OnGetCount: TposOnGetCount read FOnGetCount write FOnGetCount;
     property OnGetItemIndex: TposOnGetItemIndex read FOnGetItemIndex write FOnGetItemIndex;
     property OnSetItemIndex: TposOnSetItemIndex read FOnSetItemIndex write FOnSetItemIndex;
-    property OnItemIndexChanged:TNotifyEvent read FOnItemIndexChanged write FOnItemIndexChanged;
+    property OnItemIndexChanged: TNotifyEvent read FOnItemIndexChanged write FOnItemIndexChanged;
   end;
 
 //------------------------
@@ -220,7 +220,7 @@ type
 
   TposCell = class(TObject)
   private
-    FParent :TposGridRowCells;
+    FParent: TposGridRowCells;
     Info: TposCellInfo;
   public
     constructor Create;
@@ -239,7 +239,7 @@ type
     function Add: TposCell; overload;
     function Add(AValue: Variant): TposCell; overload;
     property Row: TposGridRow read FRow;
-    property Items[Index:Integer]:TposCell read GetItems; default;
+    property Items[Index: Integer]: TposCell read GetItems; default;
   end;
 
 //---------
@@ -250,7 +250,7 @@ type
     function GetRows: TposGridRows;
   public
     constructor Create; virtual;
-    procedure Paint(Canvas: TCanvas; Index:Integer; Rect: TRect; Color: TColor; RightToLeft: Boolean); override;
+    procedure Paint(Canvas: TCanvas; Index: Integer; Rect: TRect; Color: TColor; RightToLeft: Boolean); override;
     property Rows: TposGridRows read GetRows;
     property Items: TposGridRowCells read FItems;
   end;
@@ -273,7 +273,7 @@ type
   private
     function GetItems: TposGridRows;
   protected
-    procedure GetCellInfo(Column:TposCustomColumn; Row: Integer; var Info: TposCellInfo); override;
+    procedure GetCellInfo(Column: TposCustomColumn; Row: Integer; var Info: TposCellInfo); override;
     function DoCreateItems: TposItems; override;
   public
     property Items: TposGridRows read GetItems;
@@ -336,7 +336,7 @@ begin
   Result := Parent as TposGridRows;
 end;
 
-procedure TposGridRow.Paint(Canvas: TCanvas; Index:Integer; Rect: TRect; Color: TColor; RightToLeft: Boolean);
+procedure TposGridRow.Paint(Canvas: TCanvas; Index: Integer; Rect: TRect; Color: TColor; RightToLeft: Boolean);
 begin
   Rows.Grid.PaintRow(Canvas, Index, Rect, Color);
 end;
@@ -353,7 +353,7 @@ end;
 
 procedure TposGrid.GetCellInfo(Column: TposCustomColumn; Row: Integer; var Info: TposCellInfo);
 var
-  aCell:TposCell;
+  aCell: TposCell;
 begin
   if Row < Items.Count then
   begin
@@ -441,11 +441,11 @@ end;
 
 { TposCustomColumn }
 
-procedure TposTextColumn.PaintCell(Canvas: TCanvas; ACell: TposCellInfo; Row: Integer; Rect: TRect; Color: TColor; LastCell:Boolean); 
+procedure TposTextColumn.PaintCell(Canvas: TCanvas; ACell: TposCellInfo; Row: Integer; Rect: TRect; Color: TColor; LastCell: Boolean);
 var
   R, TextRect: TRect;
   aStyle: TTextStyle;
-  aRightToLeft:Boolean;
+  aRightToLeft: Boolean;
 begin
   inherited;
   FillChar(aStyle, SizeOf(aStyle), #0);
@@ -492,7 +492,7 @@ end;
 
 { TposCustomColumn }
 
-procedure TposCustomColumn.PaintHeader(Canvas: TCanvas; Rect: TRect; Color: TColor; LastCell:Boolean);
+procedure TposCustomColumn.PaintHeader(Canvas: TCanvas; Rect: TRect; Color: TColor; LastCell: Boolean);
 var
   R, TextRect: TRect;
   aStyle: TTextStyle;
@@ -543,7 +543,7 @@ begin
   PaintText(Canvas, Title, R, aStyle);
 end;
 
-procedure TposCustomColumn.PaintCell(Canvas: TCanvas; ACell: TposCellInfo; Row: Integer; Rect: TRect; Color: TColor; LastCell:Boolean);
+procedure TposCustomColumn.PaintCell(Canvas: TCanvas; ACell: TposCellInfo; Row: Integer; Rect: TRect; Color: TColor; LastCell: Boolean);
 var
   TextRect: TRect;
 begin
@@ -609,7 +609,7 @@ begin
   inherited;
 end;
 
-procedure TposCustomGrid.GetCellInfo(Column:TposCustomColumn; Row: Integer; var Info: TposCellInfo);
+procedure TposCustomGrid.GetCellInfo(Column: TposCustomColumn; Row: Integer; var Info: TposCellInfo);
 begin
 end;
 
@@ -660,7 +660,7 @@ var
   aInfo: TposCellInfo;
 begin
   FillChar(aInfo, SizeOf(TposCellInfo), #0);
-  if (Columns.Count>0) and (ItemIndex<>-1) then
+  if (Columns.Count > 0) and (ItemIndex <> -1) then
     GetCellInfo(Columns[0], ItemIndex, aInfo); //? need review
   Result := aInfo.Data;
 end;
@@ -937,7 +937,7 @@ var
   OldIndex: Integer;
 begin
   inherited;
-  OldIndex := GetItemIndex; 
+  OldIndex := GetItemIndex;
   if Grid.Helper <> nil then
     Grid.Helper.SetItemIndex(Grid, Value)
   else if Assigned(Grid.FOnSetItemIndex) then
@@ -975,7 +975,7 @@ end;
 
 { TposCheckedColumn }
 
-procedure TposCheckedColumn.PaintCell(Canvas: TCanvas; ACell: TposCellInfo; Row: Integer; Rect: TRect; Color: TColor; LastCell:Boolean);
+procedure TposCheckedColumn.PaintCell(Canvas: TCanvas; ACell: TposCellInfo; Row: Integer; Rect: TRect; Color: TColor; LastCell: Boolean);
 begin
   inherited;
   DrawShape(Canvas, Rect, shpCheck, False, True, 0, Color);

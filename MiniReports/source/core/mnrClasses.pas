@@ -11,14 +11,14 @@ uses
   SysUtils, Classes, mnrLists;
 
 const
-  ID_SECTION_BASE           = 0;
-  ID_SECTION_REPORT   = ID_SECTION_BASE + 1;
-  ID_SECTION_HEADERREPORT   = ID_SECTION_BASE + 2;
-  ID_SECTION_FOOTERREPORT   = ID_SECTION_BASE + 3;
-  ID_SECTION_HEADERPAGE     = ID_SECTION_BASE + 4;
-  ID_SECTION_FOOTERPAGE     = ID_SECTION_BASE + 5;
-  ID_SECTION_HEADERDETAILS  = ID_SECTION_BASE + 6;
-  ID_SECTION_DETAILS        = ID_SECTION_BASE + 7;
+  ID_SECTION_BASE = 0;
+  ID_SECTION_REPORT = ID_SECTION_BASE + 1;
+  ID_SECTION_HEADERREPORT = ID_SECTION_BASE + 2;
+  ID_SECTION_FOOTERREPORT = ID_SECTION_BASE + 3;
+  ID_SECTION_HEADERPAGE = ID_SECTION_BASE + 4;
+  ID_SECTION_FOOTERPAGE = ID_SECTION_BASE + 5;
+  ID_SECTION_HEADERDETAILS = ID_SECTION_BASE + 6;
+  ID_SECTION_DETAILS = ID_SECTION_BASE + 7;
 
 
 type
@@ -28,7 +28,7 @@ type
   TmnrLayout = class;
   TmnrLayouts = class;
   TmnrCustomReportCell = class;
-  TmnrNodesRow = class;
+  TmnrRow = class;
   TmnrReferencesRow = class;
   TmnrReferences = class;
   TmnrReference = class;
@@ -44,8 +44,8 @@ type
   TmnrCustomReportClass = class of TmnrCustomReport;
   TCustomReportDesignerClass = class of TCustomReportDesigner;
   TmnrProfilerClass = class of TmnrProfiler;
-  
-  TmnrNodesRowArray = array of TmnrNodesRow;
+
+  TmnrRowArray = array of TmnrRow;
 
   TmnrSectionLoopWay = (slwSingle, slwMulti);
   TmnrFetchMode = (fmFirst, fmNext);
@@ -65,7 +65,7 @@ type
 
   TmnrCustomReportCell = class(TmnrLinkNode)
   private
-    FRow: TmnrNodesRow;
+    FRow: TmnrRow;
     FReference: TmnrReference;
     FLayout: TmnrLayout;
     function GetNext: TmnrCustomReportCell;
@@ -100,7 +100,7 @@ type
     property Value: Variant read GetAsVariant write SetAsVariant;
 
     property Layout: TmnrLayout read FLayout;
-    property Row: TmnrNodesRow read FRow;
+    property Row: TmnrRow read FRow;
     property Next: TmnrCustomReportCell read GetNext;
     property Prior: TmnrCustomReportCell read GetPrior;
     property Reference: TmnrReference read FReference;
@@ -136,35 +136,35 @@ type
     property Last: TmnrReportCell read GetLast;
   end;
 
-  TmnrNodesRow = class(TmnrRowNode)
+  TmnrRow = class(TmnrRowNode)
   private
     FReferencesRow: TmnrReferencesRow;
-    FID: Integer;
+    FID: Int64;
     FNumber: Integer;
     function GetCells: TmnrReportCells;
-    function GetNext: TmnrNodesRow;
-    function GetPrior: TmnrNodesRow;
+    function GetNext: TmnrRow;
+    function GetPrior: TmnrRow;
     procedure SetReferencesRow(const Value: TmnrReferencesRow);
   protected
     function CreateCells: TmnrRowCells; override;
   public
     property Cells: TmnrReportCells read GetCells; //cells in row
-    property Next: TmnrNodesRow read GetNext;
-    property Prior: TmnrNodesRow read GetPrior;
+    property Next: TmnrRow read GetNext;
+    property Prior: TmnrRow read GetPrior;
     property ReferencesRow: TmnrReferencesRow read FReferencesRow write SetReferencesRow;
 
-    property ID: Integer read FID write FID;
+    property ID: Int64 read FID write FID;
     property Number: Integer read FNumber write FNumber;
   end;
 
-  TmnrNodesRows = class(TmnrRowNodes)
+  TmnrRows = class(TmnrRowNodes)
   private
-    function GetFirst: TmnrNodesRow;
-    function GetLast: TmnrNodesRow;
+    function GetFirst: TmnrRow;
+    function GetLast: TmnrRow;
   public
-    function Add: TmnrNodesRow;
-    property First: TmnrNodesRow read GetFirst;
-    property Last: TmnrNodesRow read GetLast;
+    function Add: TmnrRow;
+    property First: TmnrRow read GetFirst;
+    property Last: TmnrRow read GetLast;
   end;
 
   TmnrLayoutInfo = record
@@ -197,7 +197,7 @@ type
     property ExcludeSections: TmnrSectionClassIDs read Info.ExcludeSections;
     procedure Request(vCell: TmnrCustomReportCell);
     property OnRequest: TOnRequest read FOnRequest write FOnRequest;
-    function NewCell(vRow: TmnrNodesRow): TmnrCustomReportCell;
+    function NewCell(vRow: TmnrRow): TmnrCustomReportCell;
     property Reference: TmnrReference read FReference;
     property DesignerCell: TmnrDesignCell read FDesignerCell write FDesignerCell;
     property Total: Double read GetTotal;
@@ -230,7 +230,7 @@ type
     procedure SetWidth(const Value: Integer);
   public
     constructor Create(vNodes: TmnrNodes); override;
-    constructor AutoCreate(vNodes: TmnrNodes; const vName: string; vWidth: Integer=100); virtual;
+    constructor AutoCreate(vNodes: TmnrNodes; const vName: string; vWidth: Integer = 100); virtual;
     destructor Destroy; override;
 
     property Next: TmnrDesignCell read GetNext;
@@ -416,7 +416,6 @@ type
   TmnrSections = class(TmnrLinkNodes)
   private
     FReport: TmnrCustomReport;
-
     function GetFirst: TmnrSection;
     function GetLast: TmnrSection;
     function GetByName(const vName: string): TmnrSection;
@@ -426,7 +425,7 @@ type
   public
     constructor Create(vReport: TmnrCustomReport); virtual;
     destructor Destroy; override;
-    function RegisterSection(const vName, vCaption: string; const vClass: TmnrSectionClassID; const vID: Integer=0; vOnFetch: TOnFetch=nil): TmnrSection;
+    function RegisterSection(const vName, vCaption: string; const vClass: TmnrSectionClassID; const vID: Integer = 0; vOnFetch: TOnFetch = nil): TmnrSection;
     property ByName[const vName: string]: TmnrSection read GetByName;
     function Find(const vName: string): TmnrSection;
 
@@ -447,12 +446,12 @@ type
 
   TmnrRowsListIndexer = class(TmnrIndexer)
   private
-    FArray: TmnrNodesRowArray;
-    function GetItems(vIndex: Integer): TmnrNodesRow;
+    FArray: TmnrRowArray;
+    function GetItems(vIndex: Integer): TmnrRow;
   protected
     procedure Compute(vReport: TmnrCustomReport); override;
   public
-    property Items[vIndex: Integer]: TmnrNodesRow read GetItems;
+    property Items[vIndex: Integer]: TmnrRow read GetItems;
   end;
 
 
@@ -486,10 +485,10 @@ type
     property AsObject[const vName: string]: TObject read GetAsObject write SetAsObject;
   end;
 
-  TmnrCustomReport = class
+  TmnrCustomReport = class(TObject)
   private
     FCanceled: Boolean;
-    FItems: TmnrNodesRows;
+    FItems: TmnrRows;
     FSections: TmnrSections;
     FRowsListIndexer: TmnrRowsListIndexer;
     FDetailTotals: TmnrSection;
@@ -500,23 +499,24 @@ type
     FParams: TmnrReportParams;
 
     function GetCells(Row, Column: Integer): TmnrCustomReportCell;
+    function GetRows(Row: Integer): TmnrRow;
   protected
     function Canceled: Boolean;
     procedure HandleNewRow(vRow: TmnrRowNode); virtual;
     procedure CreateSections(vSections: TmnrSections); virtual;
     procedure CreateLayouts(vLayouts: TmnrLayouts); virtual;
-    function CreateNewRow(vSection: TmnrSection): TmnrNodesRow; virtual;
+    function CreateNewRow(vSection: TmnrSection): TmnrRow; virtual;
     function CreateProfiler: TmnrProfiler; virtual;
     procedure Loop;
     procedure GatherReportParams(vParams: TmnrReportParams); virtual;
     function SumString: string; virtual;
   public
-    constructor Create(vParams: TmnrReportParams=nil); virtual; //(vParams: TMiscParams); note: report responsible for free params
+    constructor Create(vParams: TmnrReportParams = nil); virtual; //(vParams: TMiscParams); note: report responsible for free params
     destructor Destroy; override;
     property Params: TmnrReportParams read FParams;
     property Sections: TmnrSections read FSections;
     property Layouts: TmnrLayouts read FLayouts;
-    property Items: TmnrNodesRows read FItems;
+    property Items: TmnrRows read FItems;
     procedure LoadReport; virtual;
     procedure Cancel;
     function FindSection(const vName: string): TmnrSection;
@@ -532,8 +532,9 @@ type
     procedure Fetch(vSection: TmnrSection; var vParams: TmnrFetchParams); virtual;
     procedure RegisterRequest(const vName: string; vOnRequest: TOnRequest); virtual;
 
+    property RowsIndexer: TmnrRowsListIndexer read FRowsListIndexer;
+    property Rows[Row: Integer]: TmnrRow read GetRows;
     property Cells[Row, Column: Integer]: TmnrCustomReportCell read GetCells;
-    property RowsListIndexer: TmnrRowsListIndexer read FRowsListIndexer;
 
     procedure ExportCSV(const vFile: TFileName); overload; //test purpose only
     procedure ExportCSV(const vStream: TStream); overload; //test purpose only
@@ -651,14 +652,14 @@ constructor TmnrCustomReport.Create(vParams: TmnrReportParams);
 begin
   inherited Create;
   FParams := vParams;
-  if FParams=nil then
+  if FParams = nil then
     FParams := TmnrReportParams.Create;
-  
+
   FProfiler := CreateProfiler;
   FProfiler.FReport := Self;
   FSections := TmnrSections.Create(Self);
   FLayouts := TmnrLayouts.Create;
-  FItems := TmnrNodesRows.Create;
+  FItems := TmnrRows.Create;
   FRowsListIndexer := nil;
   FDetailTotals := TmnrSection.Create(nil);
   FSummary := TmnrSection.Create(nil);
@@ -672,9 +673,9 @@ begin
 
 end;
 
-function TmnrCustomReport.CreateNewRow(vSection: TmnrSection): TmnrNodesRow;
+function TmnrCustomReport.CreateNewRow(vSection: TmnrSection): TmnrRow;
 begin
-  Result := TmnrNodesRow.Create(Items);
+  Result := TmnrRow.Create(Items);
 end;
 
 function TmnrCustomReport.CreateProfiler: TmnrProfiler;
@@ -715,23 +716,23 @@ procedure TmnrCustomReport.ExportCSV(const vStream: TStream);
     vStream.Write(vStr[1], Length(vStr));
   end;
 var
-  r: TmnrNodesRow;
+  r: TmnrRow;
   n: TmnrCustomReportCell;
 begin
   r := Items.First;
-  while r<>nil do
+  while r <> nil do
   begin
     n := r.Cells.First;
-    while n<>nil do
+    while n <> nil do
     begin
       WriteStr(n.AsString);
       n := n.Next;
-      if n<>nil then
+      if n <> nil then
         WriteStr(';');
     end;
 
     r := r.Next;
-    if r<>nil then
+    if r <> nil then
       WriteStr(#13#10);
   end;
 end;
@@ -782,17 +783,17 @@ end;
 
 function TmnrCustomReport.GetCells(Row, Column: Integer): TmnrCustomReportCell;
 var
-  r: TmnrNodesRow;
+  r: TmnrRow;
   i: Integer;
 begin
-  if RowsListIndexer<>nil then
+  if RowsIndexer <> nil then
   begin
-    r := RowsListIndexer.Items[Row];
-    if r<>nil then
+    r := RowsIndexer.Items[Row];
+    if r <> nil then
     begin
       i := 0;
       Result := r.Cells.First;
-      while (Result<>nil) and (i<Column) do
+      while (Result <> nil) and (i < Column) do
       begin
         Result := Result.Next;
         Inc(i);
@@ -801,6 +802,14 @@ begin
     else
       Result := nil;
   end
+  else
+    Result := nil;
+end;
+
+function TmnrCustomReport.GetRows(Row: Integer): TmnrRow;
+begin
+  if RowsIndexer <> nil then
+    Result := RowsIndexer.Items[Row]
   else
     Result := nil;
 end;
@@ -830,7 +839,7 @@ var
   l: TmnrLayout;
 begin
   l := Layouts.Find(vName);
-  if l<>nil then
+  if l <> nil then
     l.OnRequest := vOnRequest;
 end;
 
@@ -846,26 +855,26 @@ end;
 
 { TmnrCustomReportRowNode }
 
-function TmnrNodesRow.CreateCells: TmnrRowCells;
+function TmnrRow.CreateCells: TmnrRowCells;
 begin
   Result := TmnrReportCells.Create;
 end;
 
-{ TmnrNodesRows }
+{ TmnrRows }
 
-function TmnrNodesRows.Add: TmnrNodesRow;
+function TmnrRows.Add: TmnrRow;
 begin
-  Result := TmnrNodesRow.Create(Self);
+  Result := TmnrRow.Create(Self);
 end;
 
-function TmnrNodesRows.GetFirst: TmnrNodesRow;
+function TmnrRows.GetFirst: TmnrRow;
 begin
-  Result := TmnrNodesRow(inherited First);
+  Result := TmnrRow(inherited First);
 end;
 
-function TmnrNodesRows.GetLast: TmnrNodesRow;
+function TmnrRows.GetLast: TmnrRow;
 begin
-  Result := TmnrNodesRow(inherited Last);
+  Result := TmnrRow(inherited Last);
 end;
 
 { TmnrSection }
@@ -875,20 +884,20 @@ var
   r: TmnrDesignRow;
   d: TmnrDesignCell;
   l: TmnrLayout;
-  aRow: TmnrNodesRow;
+  aRow: TmnrRow;
   f: Boolean; //first
   c: TmnrCustomReportCell;
 begin
   r := DesignRows.First;
-  if r<>nil then
+  if r <> nil then
   begin
     f := True;
-    while r<>nil do
+    while r <> nil do
     begin
       aRow := Report.CreateNewRow(vTotalSection);
       try
         d := r.Cells.First;
-        while d<>nil do
+        while d <> nil do
         begin
           l := d.Layout;
           if f then
@@ -900,12 +909,12 @@ begin
           else
           begin
             c := TmnrCurrencyReportCell.Create(aRow.Cells);
-            if (l<>nil) and (l.Reference<>nil) then
+            if (l <> nil) and (l.Reference <> nil) then
               c.AsCurrency := l.Reference.Total;
           end;
           c.FRow := aRow;
           c.FLayout := l;
-          if l<>nil then c.FReference := l.Reference;
+          if l <> nil then c.FReference := l.Reference;
 
           d := d.Next;
         end;
@@ -930,20 +939,20 @@ var
   r: TmnrDesignRow;
   d: TmnrDesignCell;
   l: TmnrLayout;
-  aRow: TmnrNodesRow;
+  aRow: TmnrRow;
   f: Boolean; //first
   c: TmnrCustomReportCell;
 begin
   r := DesignRows.First;
-  if r<>nil then
+  if r <> nil then
   begin
     f := True;
-    while r<>nil do
+    while r <> nil do
     begin
       aRow := Report.CreateNewRow(vSummarySection);
       try
         d := r.Cells.First;
-        while d<>nil do
+        while d <> nil do
         begin
           l := d.Layout;
           if f then
@@ -955,12 +964,12 @@ begin
           else
           begin
             c := TmnrCurrencyReportCell.Create(aRow.Cells);
-            if l<>nil then
+            if l <> nil then
               c.AsCurrency := l.Total;
           end;
           c.FRow := aRow;
           c.FLayout := l;
-          if l<>nil then c.FReference := l.Reference;
+          if l <> nil then c.FReference := l.Reference;
 
           d := d.Next;
         end;
@@ -1012,25 +1021,25 @@ var
   r: TmnrDesignRow;
   d: TmnrDesignCell;
   l: TmnrLayout;
-  aRow: TmnrNodesRow;
+  aRow: TmnrRow;
   //c: TmnrCustomReportCell;
 begin
   r := DesignRows.First;
-  if r<>nil then
+  if r <> nil then
   begin
-    while r<>nil do
+    while r <> nil do
     begin
       aRow := Report.CreateNewRow(Self);
       try
         aRow.ID := vParams.ID;
         aRow.FNumber := vParams.Number;
-        
+
         d := r.Cells.First;
-        while d<>nil do
+        while d <> nil do
         begin
           l := d.Layout;
           //c := l.NewCell(aRow);
-          if l<>nil then
+          if l <> nil then
             l.NewCell(aRow);
           d := d.Next;
         end;
@@ -1055,7 +1064,7 @@ begin
   if ClassID in [sciHeaderDetails, sciDetails] then
     Result := slwMulti
   else
-    Result := slwSingle;  
+    Result := slwSingle;
 end;
 
 function TmnrSection.GetNext: TmnrSection;
@@ -1075,7 +1084,7 @@ end;
 
 function TmnrSection.GetReport: TmnrCustomReport;
 begin
-  if Nodes<>nil then
+  if Nodes <> nil then
     Result := Nodes.Report
   else
     Result := nil;
@@ -1089,15 +1098,15 @@ var
 begin
   Result := ReferencesRows.Add;
   r := DesignRows.First;
-  if r<>nil then
+  if r <> nil then
   begin
-    while r<>nil do
+    while r <> nil do
     begin
       d := r.Cells.First;
-      while d<>nil do
+      while d <> nil do
       begin
         l := d.Layout;
-        if l<>nil then
+        if l <> nil then
           l.FReference := Result.Cells.Add;
         d := d.Next;
       end;
@@ -1130,7 +1139,7 @@ var
   s: TmnrSection;
 begin
   s := First;
-  while s<>nil do
+  while s <> nil do
   begin
     if s.AppendSummary then
       s.DoAppendSummary(vSummarySection);
@@ -1145,13 +1154,13 @@ var
 begin
   Result := nil;
   p := First;
-  while p<>nil do
+  while p <> nil do
   begin
     if SameText(p.Name, vName) then
       Result := p
     else
       Result := p.Sections.Find(vName);
-    if Result<>nil then
+    if Result <> nil then
       Break
     else
       p := p.Next;
@@ -1164,7 +1173,7 @@ var
 begin
   Result := nil;
   p := First;
-  while p<>nil do
+  while p <> nil do
   begin
     if SameText(p.Name, vName) then
     begin
@@ -1197,60 +1206,60 @@ var
   r: TmnrReferencesRow;
 begin
   s := First;
-  while s<>nil do
+  while s <> nil do
   begin
     fparams.ID := 0;
     fparams.Number := 0;
     case s.LoopWay of
       slwSingle:
-      begin
-        fparams.AcceptMode := acmAccept;
-        fparams.FetchMode := fmFirst;
-        s.DoFetch(fparams);
-        if fparams.AcceptMode=acmAccept then
         begin
-          s.FillNow(fparams, nil);
-          s.Sections.Loop;
-        end;
-      end;
-      slwMulti:
-      begin
-        fparams.FetchMode := fmFirst;
-        fparams.AcceptMode := acmAccept;
-        r := nil;
-        while not Report.Canceled and (fparams.AcceptMode=acmAccept) do
-        begin
+          fparams.AcceptMode := acmAccept;
+          fparams.FetchMode := fmFirst;
           s.DoFetch(fparams);
-          if (s.ClassID=sciDetails) and (fparams.FetchMode=fmFirst) then //improve add referance on first accepted ...
-            r := s.NewReference;
-
           if fparams.AcceptMode = acmAccept then
           begin
-            s.FillNow(fparams, r);
+            s.FillNow(fparams, nil);
             s.Sections.Loop;
-          end
-          else if (fparams.AcceptMode = acmSkip) and (s.ClassID=sciHeaderDetails) then
-            s.Sections.Loop;
-
-          if (fparams.AcceptMode = acmEof) and (s.Items.Count<>0) then
+          end;
+        end;
+      slwMulti:
+        begin
+          fparams.FetchMode := fmFirst;
+          fparams.AcceptMode := acmAccept;
+          r := nil;
+          while not Report.Canceled and (fparams.AcceptMode = acmAccept) do
           begin
-            if (r<>nil) and s.AppendTotals then
+            s.DoFetch(fparams);
+            if (s.ClassID = sciDetails) and (fparams.FetchMode = fmFirst) then //improve add referance on first accepted ...
+              r := s.NewReference;
+
+            if fparams.AcceptMode = acmAccept then
             begin
-              s.DoAppendTotals(Report.FDetailTotals);
+              s.FillNow(fparams, r);
+              s.Sections.Loop;
+            end
+            else if (fparams.AcceptMode = acmSkip) and (s.ClassID = sciHeaderDetails) then
+              s.Sections.Loop;
+
+            if (fparams.AcceptMode = acmEof) and (s.Items.Count <> 0) then
+            begin
+              if (r <> nil) and s.AppendTotals then
+              begin
+                s.DoAppendTotals(Report.FDetailTotals);
+              end;
             end;
+
+            if fparams.FetchMode = fmFirst then
+              fparams.FetchMode := fmNext;
           end;
 
-          if fparams.FetchMode=fmFirst then
-            fparams.FetchMode := fmNext;
-        end;
-        
         //Summary
-        if (s.ClassID=sciHeaderDetails) then
-        begin
-          s.Sections.DoAppendSummary(Report.FSummary);
-        end;
+          if (s.ClassID = sciHeaderDetails) then
+          begin
+            s.Sections.DoAppendSummary(Report.FSummary);
+          end;
 
-      end; //case slwMulti:
+        end; //case slwMulti:
     end;
     s := s.Next;
   end;
@@ -1263,29 +1272,29 @@ begin
   Result.FClassID := vClass;
   Result.OnFetch := vOnFetch;
   Result.FCaption := vCaption;
-  if vID=0 then
+  if vID = 0 then
     Result.FID := Ord(vClass)
   else
     Result.FID := vID;
   //Result.FLoopWay := vLoopWay;
 end;
 
-function TmnrNodesRow.GetCells: TmnrReportCells;
+function TmnrRow.GetCells: TmnrReportCells;
 begin
   Result := TmnrReportCells(inherited Cells);
 end;
 
-function TmnrNodesRow.GetNext: TmnrNodesRow;
+function TmnrRow.GetNext: TmnrRow;
 begin
-  Result := TmnrNodesRow(inherited GetNext);
+  Result := TmnrRow(inherited GetNext);
 end;
 
-function TmnrNodesRow.GetPrior: TmnrNodesRow;
+function TmnrRow.GetPrior: TmnrRow;
 begin
-  Result := TmnrNodesRow(inherited GetPrior);
+  Result := TmnrRow(inherited GetPrior);
 end;
 
-procedure TmnrNodesRow.SetReferencesRow(const Value: TmnrReferencesRow);
+procedure TmnrRow.SetReferencesRow(const Value: TmnrReferencesRow);
 begin
   FReferencesRow := Value;
 end;
@@ -1318,10 +1327,10 @@ begin
   Result := 0;
 end;
 
-function TmnrLayout.NewCell(vRow: TmnrNodesRow): TmnrCustomReportCell;
+function TmnrLayout.NewCell(vRow: TmnrRow): TmnrCustomReportCell;
 begin
   Result := CreateCell(vRow.Cells);
-  if Result<>nil then
+  if Result <> nil then
   begin
     try
       Result.FReference := Reference;
@@ -1387,7 +1396,7 @@ end;
 
 function TmnrReportCell.GetIsNull: Boolean;
 begin
-  Result := AsString='';
+  Result := AsString = '';
 end;
 
 procedure TmnrReportCell.SetAsBoolean(const Value: Boolean);
@@ -1429,7 +1438,7 @@ end;
 
 function TmnrReportCells.Add: TmnrReportCell;
 begin
-  if DefaultCellClass<>nil then
+  if DefaultCellClass <> nil then
     Result := DefaultCellClass.Create(Self)
   else
     Result := nil;
@@ -1572,12 +1581,12 @@ end;
 procedure TmnrRowsListIndexer.Compute(vReport: TmnrCustomReport);
 var
   i: Integer;
-  r: TmnrNodesRow;
+  r: TmnrRow;
 begin
   SetLength(FArray, vReport.Items.Count);
   i := 0;
   r := vReport.Items.First;
-  while r<>nil do
+  while r <> nil do
   begin
     FArray[i] := r;
     Inc(i);
@@ -1585,9 +1594,9 @@ begin
   end;
 end;
 
-function TmnrRowsListIndexer.GetItems(vIndex: Integer): TmnrNodesRow;
+function TmnrRowsListIndexer.GetItems(vIndex: Integer): TmnrRow;
 begin
-  if (vIndex>=0) and (vIndex<Length(FArray)) then
+  if (vIndex >= 0) and (vIndex < Length(FArray)) then
     Result := FArray[vIndex]
   else
     Result := nil;
@@ -1634,7 +1643,7 @@ var
   c: TComponent;
 begin
   c := CreateDesigner;
-  if c<>nil then
+  if c <> nil then
   begin
     FDesignerWindow := c;
     c.FreeNotification(Self);
@@ -1685,12 +1694,12 @@ end;
 
 function TmnrLayouts.Find(const vName: string): TmnrLayout;
 begin
-  if vName='' then
+  if vName = '' then
     Result := nil
   else
   begin
     Result := First;
-    while Result<>nil do
+    while Result <> nil do
       if SameText(Result.Name, vName) then
         Break
       else
@@ -1757,7 +1766,7 @@ end;
 
 function TmnrDesignCell.GetReport: TmnrCustomReport;
 begin
-  if Cells<>nil then
+  if Cells <> nil then
     Result := Cells.Report
   else
     Result := nil;
@@ -1765,7 +1774,7 @@ end;
 
 function TmnrDesignCell.GetSection: TmnrSection;
 begin
-  if Cells<>nil then
+  if Cells <> nil then
     Result := Cells.Section
   else
     Result := nil;
@@ -1776,15 +1785,15 @@ begin
   if FName <> Value then
   begin
     FName := Value;
-    if FLayout<>nil then FLayout.FDesignerCell := nil;
+    if FLayout <> nil then FLayout.FDesignerCell := nil;
     FLayout := Report.Layouts.Find(Value);
-    if FLayout<>nil then FLayout.FDesignerCell := Self
+    if FLayout <> nil then FLayout.FDesignerCell := Self
   end;
 end;
 
 procedure TmnrDesignCell.SetWidth(const Value: Integer);
 begin
-  if Value<0 then
+  if Value < 0 then
     FWidth := 100
   else
     FWidth := Value;
@@ -1809,7 +1818,7 @@ end;
 
 function TmnrDesignCells.GetReport: TmnrCustomReport;
 begin
-  if Row<>nil then
+  if Row <> nil then
     Result := Row.Report
   else
     Result := nil;
@@ -1822,7 +1831,7 @@ end;
 
 function TmnrDesignCells.GetSection: TmnrSection;
 begin
-  if Row<>nil then
+  if Row <> nil then
     Result := Row.Section
   else
     Result := nil;
@@ -1871,7 +1880,7 @@ var
 begin
   Result := 0;
   c := Cells.First;
-  while c<>nil do
+  while c <> nil do
   begin
     Inc(Result, c.Width);
     c := c.Next;
@@ -2015,3 +2024,4 @@ initialization
 finalization
 
 end.
+

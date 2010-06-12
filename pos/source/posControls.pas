@@ -117,7 +117,6 @@ type
 {$ELSE}
 {$ENDIF}
     procedure Resized; virtual;
-    procedure HelperChanged; virtual;
     procedure Resize; override;
     procedure PaintOuter(vCanvas: TCanvas; var vRect: TRect; vColor: TColor); virtual;
     procedure PaintInner(vCanvas: TCanvas; var vRect: TRect; vColor: TColor); virtual;
@@ -125,6 +124,7 @@ type
     procedure Paint; override;
     procedure Loaded; override;
     procedure ChangeScale(M, D: Integer); override;
+    procedure HelperChanged; virtual;
     procedure Snap; virtual;
     procedure InvalidateRect(vRect: TRect); virtual;
     property InnerHeight: Integer read GetInnerHeight;
@@ -957,7 +957,6 @@ end;
 
 procedure TposFrame.HelperChanged;
 begin
-
 end;
 
 procedure TposFrame.Invalidate;

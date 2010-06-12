@@ -6,14 +6,14 @@ interface
 
 uses
   Classes, SysUtils, Menus, LResources, TypInfo, LCLProc, Forms, Controls,
-  ntvDotMatrix, ntvCtrls, ntvProgressBars, ntvPageControls,
-  ComponentEditors, PropEdits{, OIFavouriteProperties};
+  ntvDotMatrix, ntvCtrls, ntvProgressBars, ntvTabSets, ntvPageControls,
+  ComponentEditors, PropEdits;
 
 type
 
-  { TntvPageControlEditor }
+  { TntvTabSetEditor }
 
-  TntvPageControlEditor = class(TDefaultComponentEditor)
+  TntvTabSetEditor = class(TDefaultComponentEditor)
   protected
   public
     constructor Create(AComponent: TComponent; ADesigner: TComponentEditorDesigner); override;
@@ -24,61 +24,54 @@ type
     procedure PrepareItem(Index: Integer; const AnItem: TMenuItem); override;
   end;
 
-
 procedure Register;
 
 implementation
 
 procedure Register;
-  procedure AddFav(ABaseClass: TPersistentClass; const APropertyName: string);
-  begin
-  //  DefaultOIFavouriteProperties.Add(TOIFavouriteProperty.Create(ABaseClass,APropertyName,true));
-  end;
 begin
-  RegisterComponents('Native', [TDotMatrix, TTextDotMatrix, TntvProgressBar, TntvPageControl, TntvPage]);
-  RegisterComponentEditor(TntvPageControl, TntvPageControlEditor);
-  AddFav(TntvPageControl, 'Items');
-  //RegisterNoIcon([TntvPage]);
+  RegisterComponents('Native', [TDotMatrix, TTextDotMatrix, TntvProgressBar, TntvTabSet, TntvPageControl, TntvPage]);
+  RegisterComponentEditor(TntvTabSet, TntvTabSetEditor);
 end;
 
-{ TntvPageControlEditor }
+{ TntvTabSetEditor }
 
-constructor TntvPageControlEditor.Create(AComponent: TComponent;
+constructor TntvTabSetEditor.Create(AComponent: TComponent;
   ADesigner: TComponentEditorDesigner);
 begin
   inherited Create(AComponent, ADesigner);
   BestEditEvent := 'Items';
 end;
 
-procedure TntvPageControlEditor.Edit;
+procedure TntvTabSetEditor.Edit;
 begin
-  EditCollection(Component, (Component as TntvPageControl).Items, 'Items');
+  EditCollection(Component, (Component as TntvTabSet).Items, 'Items');
 end;
 
-procedure TntvPageControlEditor.ExecuteVerb(Index: Integer);
+procedure TntvTabSetEditor.ExecuteVerb(Index: Integer);
 begin
   case Index of
     0: Edit;
-    1: (Component as TntvPageControl).Next;
-    2: (Component as TntvPageControl).Prior;
+    1: (Component as TntvTabSet).Next;
+    2: (Component as TntvTabSet).Prior;
   end;
 end;
 
-function TntvPageControlEditor.GetVerb(Index: Integer): string;
+function TntvTabSetEditor.GetVerb(Index: Integer): string;
 begin
   case Index of
-    0: Result := 'Pages';
+    0: Result := 'Tabs';
     1: Result := 'Next';
     2: Result := 'Prior';
   end;
 end;
 
-function TntvPageControlEditor.GetVerbCount: Integer;
+function TntvTabSetEditor.GetVerbCount: Integer;
 begin
   Result := 3;
 end;
 
-procedure TntvPageControlEditor.PrepareItem(Index: Integer; const AnItem: TMenuItem);
+procedure TntvTabSetEditor.PrepareItem(Index: Integer; const AnItem: TMenuItem);
 begin
   inherited;
 end;
