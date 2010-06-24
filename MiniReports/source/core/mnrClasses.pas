@@ -5,6 +5,15 @@ unit mnrClasses;
 {$H+}
 {$ENDIF}
 
+{
+[DONE]
+Rename Init to Created
+
+[TODO]
+Rename AcceptMode to Resume
+
+}
+
 interface
 
 uses
@@ -19,7 +28,7 @@ const
   ID_SECTION_FOOTERPAGE = ID_SECTION_BASE + 5;
   ID_SECTION_HEADERDETAILS = ID_SECTION_BASE + 6;
   ID_SECTION_DETAILS = ID_SECTION_BASE + 7;
-
+  ID_SECTION_LAST = ID_SECTION_BASE + 8;
 
 type
   TmnrSection = class;
@@ -27,7 +36,7 @@ type
   TmnrCustomReport = class;
   TmnrLayout = class;
   TmnrLayouts = class;
-  TmnrCustomReportCell = class;
+  TmnrCustomCell = class;
   TmnrRow = class;
   TmnrReferencesRow = class;
   TmnrReferences = class;
@@ -60,16 +69,16 @@ type
     Number: Integer;
   end;
 
-  TOnRequest = procedure(vCell: TmnrCustomReportCell) of object;
+  TOnRequest = procedure(vCell: TmnrCustomCell) of object;
   TOnFetch = procedure(var vParams: TmnrFetchParams) of object;
 
-  TmnrCustomReportCell = class(TmnrLinkNode)
+  TmnrCustomCell = class(TmnrLinkNode)
   private
     FRow: TmnrRow;
     FReference: TmnrReference;
     FLayout: TmnrLayout;
-    function GetNext: TmnrCustomReportCell;
-    function GetPrior: TmnrCustomReportCell;
+    function GetNext: TmnrCustomCell;
+    function GetPrior: TmnrCustomCell;
   protected
 
     function GetAsBoolean: Boolean; virtual; abstract;
@@ -101,12 +110,12 @@ type
 
     property Layout: TmnrLayout read FLayout;
     property Row: TmnrRow read FRow;
-    property Next: TmnrCustomReportCell read GetNext;
-    property Prior: TmnrCustomReportCell read GetPrior;
+    property Next: TmnrCustomCell read GetNext;
+    property Prior: TmnrCustomCell read GetPrior;
     property Reference: TmnrReference read FReference;
   end;
 
-  TmnrReportCell = class(TmnrCustomReportCell)
+  TmnrReportCell = class(TmnrCustomCell)
   protected
     function GetAsBoolean: Boolean; override;
     function GetAsCurrency: Currency; override;
@@ -182,9 +191,9 @@ type
     function GetNext: TmnrLayout;
     function GetPrior: TmnrLayout;
   protected
-    procedure DoRequest(vCell: TmnrCustomReportCell); virtual;
+    procedure DoRequest(vCell: TmnrCustomCell); virtual;
     function CreateCell(vCells: TmnrReportCells): TmnrReportCell; virtual;
-    procedure ScaleCell(vCell: TmnrCustomReportCell); virtual;
+    procedure ScaleCell(vCell: TmnrCustomCell); virtual;
     function GetTotal: Double; virtual;
   public
     Info: TmnrLayoutInfo;
@@ -195,9 +204,9 @@ type
     property Title: string read Info.Title;
     property IncludeSections: TmnrSectionClassIDs read Info.IncludeSections;
     property ExcludeSections: TmnrSectionClassIDs read Info.ExcludeSections;
-    procedure Request(vCell: TmnrCustomReportCell);
+    procedure Request(vCell: TmnrCustomCell);
     property OnRequest: TOnRequest read FOnRequest write FOnRequest;
-    function NewCell(vRow: TmnrRow): TmnrCustomReportCell;
+    function NewCell(vRow: TmnrRow): TmnrCustomCell;
     property Reference: TmnrReference read FReference;
     property DesignerCell: TmnrDesignCell read FDesignerCell write FDesignerCell;
     property Total: Double read GetTotal;
@@ -444,7 +453,7 @@ type
     destructor Destroy; override;
   end;
 
-  TmnrRowsListIndexer = class(TmnrIndexer)
+  TmnrRowsIndexer = class(TmnrIndexer)
   private
     FArray: TmnrRowArray;
     function GetItems(vIndex: Integer): TmnrRow;
@@ -454,8 +463,7 @@ type
     property Items[vIndex: Integer]: TmnrRow read GetItems;
   end;
 
-
-  TmnrReportParams = class(TStringList)
+  TmnrParams = class(TStringList)
   private
     function GetAsString(const vName: string): string;
     function GetAsInteger(const vName: string): Integer;
@@ -490,15 +498,15 @@ type
     FCanceled: Boolean;
     FItems: TmnrRows;
     FSections: TmnrSections;
-    FRowsListIndexer: TmnrRowsListIndexer;
+    FRowsListIndexer: TmnrRowsIndexer;
     FDetailTotals: TmnrSection;
     FSummary: TmnrSection;
     FLayouts: TmnrLayouts;
     //FDesignCells: TmnrDesignCells;
     FProfiler: TmnrProfiler;
-    FParams: TmnrReportParams;
+    FParams: TmnrParams;
 
-    function GetCells(Row, Column: Integer): TmnrCustomReportCell;
+    function GetCells(Row, Column: Integer): TmnrCustomCell;
     function GetRows(Row: Integer): TmnrRow;
   protected
     function Canceled: Boolean;
@@ -508,12 +516,16 @@ type
     function CreateNewRow(vSection: TmnrSection): TmnrRow; virtual;
     function CreateProfiler: TmnrProfiler; virtual;
     procedure Loop;
-    procedure GatherReportParams(vParams: TmnrReportParams); virtual;
+    procedure GatherReportParams(vParams: TmnrParams); virtual;
     function SumString: string; virtual;
+
+    procedure Created; virtual; //after create
+    procedure Start; virtual; //after build report only in generate
+    procedure Finish; virtual; //
   public
-    constructor Create(vParams: TmnrReportParams = nil); virtual; //(vParams: TMiscParams); note: report responsible for free params
+    constructor Create(vParams: TmnrParams = nil); virtual; //(vParams: TMiscParams); note: report responsible for free params
     destructor Destroy; override;
-    property Params: TmnrReportParams read FParams;
+    property Params: TmnrParams read FParams;
     property Sections: TmnrSections read FSections;
     property Layouts: TmnrLayouts read FLayouts;
     property Items: TmnrRows read FItems;
@@ -521,10 +533,7 @@ type
     procedure Cancel;
     function FindSection(const vName: string): TmnrSection;
 
-    procedure Init; virtual; //after create
     procedure Prepare; virtual; //for design and generate
-    procedure Start; virtual; //after build report only in generate
-    procedure Finish; virtual; //
     procedure Generate;
     procedure Design;
     property Profiler: TmnrProfiler read FProfiler;
@@ -532,9 +541,9 @@ type
     procedure Fetch(vSection: TmnrSection; var vParams: TmnrFetchParams); virtual;
     procedure RegisterRequest(const vName: string; vOnRequest: TOnRequest); virtual;
 
-    property RowsIndexer: TmnrRowsListIndexer read FRowsListIndexer;
+    property RowsIndexer: TmnrRowsIndexer read FRowsListIndexer;
     property Rows[Row: Integer]: TmnrRow read GetRows;
-    property Cells[Row, Column: Integer]: TmnrCustomReportCell read GetCells;
+    property Cells[Row, Column: Integer]: TmnrCustomCell read GetCells;
 
     procedure ExportCSV(const vFile: TFileName); overload; //test purpose only
     procedure ExportCSV(const vStream: TStream); overload; //test purpose only
@@ -547,7 +556,7 @@ type
   protected
     procedure Notification(AComponent: TComponent; Operation: TOperation); override;
     property DesignerWindow: TComponent read FDesignerWindow;
-    procedure Init; virtual;
+    procedure Created; virtual;
   public
     constructor AutoCreate(vClass: TmnrCustomReportClass); overload; virtual;
     destructor Destroy; override;
@@ -579,10 +588,10 @@ var
 procedure SetReportDesignerClass(vClass: TCustomReportDesignerClass);
 procedure DesignReport(vClass: TmnrCustomReportClass);
 
-function MakemnrParams: TmnrReportParams; overload;
-function MakemnrParams(Strings: TStrings): TmnrReportParams; overload;
-function MakemnrParams(vText: string): TmnrReportParams; overload;
-function MakemnrParams(Keys: array of string; Values: array of Variant): TmnrReportParams; overload;
+function MakemnrParams: TmnrParams; overload;
+function MakemnrParams(Strings: TStrings): TmnrParams; overload;
+function MakemnrParams(vText: string): TmnrParams; overload;
+function MakemnrParams(Keys: array of string; Values: array of Variant): TmnrParams; overload;
 
 implementation
 
@@ -602,24 +611,24 @@ begin
   ReportDesignerClass.AutoCreate(vClass);
 end;
 
-function MakemnrParams: TmnrReportParams;
+function MakemnrParams: TmnrParams;
 begin
-  Result := TmnrReportParams.Create;
+  Result := TmnrParams.Create;
 end;
 
-function MakemnrParams(vText: string): TmnrReportParams; overload;
+function MakemnrParams(vText: string): TmnrParams; overload;
 begin
   Result := MakemnrParams;
   Result.Text := vText;
 end;
 
-function MakemnrParams(Strings: TStrings): TmnrReportParams; overload;
+function MakemnrParams(Strings: TStrings): TmnrParams; overload;
 begin
   Result := MakemnrParams;
   Result.Assign(Strings);
 end;
 
-function MakemnrParams(Keys: array of string; Values: array of Variant): TmnrReportParams;
+function MakemnrParams(Keys: array of string; Values: array of Variant): TmnrParams;
 var
   l, i: Integer;
 begin
@@ -648,12 +657,12 @@ begin
   Result := FCanceled;
 end;
 
-constructor TmnrCustomReport.Create(vParams: TmnrReportParams);
+constructor TmnrCustomReport.Create(vParams: TmnrParams);
 begin
   inherited Create;
   FParams := vParams;
   if FParams = nil then
-    FParams := TmnrReportParams.Create;
+    FParams := TmnrParams.Create;
 
   FProfiler := CreateProfiler;
   FProfiler.FReport := Self;
@@ -665,7 +674,7 @@ begin
   FSummary := TmnrSection.Create(nil);
   CreateSections(FSections);
   CreateLayouts(FLayouts);
-  Init;
+  Created;
 end;
 
 procedure TmnrCustomReport.CreateLayouts(vLayouts: TmnrLayouts);
@@ -717,7 +726,7 @@ procedure TmnrCustomReport.ExportCSV(const vStream: TStream);
   end;
 var
   r: TmnrRow;
-  n: TmnrCustomReportCell;
+  n: TmnrCustomCell;
 begin
   r := Items.First;
   while r <> nil do
@@ -760,10 +769,10 @@ end;
 
 procedure TmnrCustomReport.Finish;
 begin
-  FRowsListIndexer := TmnrRowsListIndexer.Create(Self);
+  FRowsListIndexer := TmnrRowsIndexer.Create(Self);
 end;
 
-procedure TmnrCustomReport.GatherReportParams(vParams: TmnrReportParams);
+procedure TmnrCustomReport.GatherReportParams(vParams: TmnrParams);
 begin
 
 end;
@@ -781,7 +790,7 @@ begin
   end;
 end;
 
-function TmnrCustomReport.GetCells(Row, Column: Integer): TmnrCustomReportCell;
+function TmnrCustomReport.GetCells(Row, Column: Integer): TmnrCustomCell;
 var
   r: TmnrRow;
   i: Integer;
@@ -818,7 +827,7 @@ procedure TmnrCustomReport.HandleNewRow(vRow: TmnrRowNode);
 begin
 end;
 
-procedure TmnrCustomReport.Init;
+procedure TmnrCustomReport.Created;
 begin
 
 end;
@@ -886,7 +895,7 @@ var
   l: TmnrLayout;
   aRow: TmnrRow;
   f: Boolean; //first
-  c: TmnrCustomReportCell;
+  c: TmnrCustomCell;
 begin
   r := DesignRows.First;
   if r <> nil then
@@ -941,7 +950,7 @@ var
   l: TmnrLayout;
   aRow: TmnrRow;
   f: Boolean; //first
-  c: TmnrCustomReportCell;
+  c: TmnrCustomCell;
 begin
   r := DesignRows.First;
   if r <> nil then
@@ -1022,7 +1031,7 @@ var
   d: TmnrDesignCell;
   l: TmnrLayout;
   aRow: TmnrRow;
-  //c: TmnrCustomReportCell;
+  //c: TmnrCustomCell;
 begin
   r := DesignRows.First;
   if r <> nil then
@@ -1306,7 +1315,7 @@ begin
   Result := nil;
 end;
 
-procedure TmnrLayout.DoRequest(vCell: TmnrCustomReportCell);
+procedure TmnrLayout.DoRequest(vCell: TmnrCustomCell);
 begin
   if Assigned(FOnRequest) then
     FOnRequest(vCell);
@@ -1327,7 +1336,7 @@ begin
   Result := 0;
 end;
 
-function TmnrLayout.NewCell(vRow: TmnrRow): TmnrCustomReportCell;
+function TmnrLayout.NewCell(vRow: TmnrRow): TmnrCustomCell;
 begin
   Result := CreateCell(vRow.Cells);
   if Result <> nil then
@@ -1347,12 +1356,12 @@ begin
     raise Exception.Create(Format('Error Creating Cell for %s', [Name]));
 end;
 
-procedure TmnrLayout.Request(vCell: TmnrCustomReportCell);
+procedure TmnrLayout.Request(vCell: TmnrCustomCell);
 begin
   DoRequest(vCell);
 end;
 
-procedure TmnrLayout.ScaleCell(vCell: TmnrCustomReportCell);
+procedure TmnrLayout.ScaleCell(vCell: TmnrCustomCell);
 begin
 
 end;
@@ -1454,16 +1463,16 @@ begin
   Result := TmnrReportCell(inherited GetLast);
 end;
 
-{ TmnrCustomReportCell }
+{ TmnrCustomCell }
 
-function TmnrCustomReportCell.GetNext: TmnrCustomReportCell;
+function TmnrCustomCell.GetNext: TmnrCustomCell;
 begin
-  Result := TmnrCustomReportCell(inherited GetNext);
+  Result := TmnrCustomCell(inherited GetNext);
 end;
 
-function TmnrCustomReportCell.GetPrior: TmnrCustomReportCell;
+function TmnrCustomCell.GetPrior: TmnrCustomCell;
 begin
-  Result := TmnrCustomReportCell(inherited GetPrior);
+  Result := TmnrCustomCell(inherited GetPrior);
 end;
 
 { TmnrReferences }
@@ -1576,9 +1585,9 @@ begin
   inherited SetNodes(Value);
 end;
 
-{ TmnrRowsListIndexer }
+{ TmnrRowsIndexer }
 
-procedure TmnrRowsListIndexer.Compute(vReport: TmnrCustomReport);
+procedure TmnrRowsIndexer.Compute(vReport: TmnrCustomReport);
 var
   i: Integer;
   r: TmnrRow;
@@ -1594,7 +1603,7 @@ begin
   end;
 end;
 
-function TmnrRowsListIndexer.GetItems(vIndex: Integer): TmnrRow;
+function TmnrRowsIndexer.GetItems(vIndex: Integer): TmnrRow;
 begin
   if (vIndex >= 0) and (vIndex < Length(FArray)) then
     Result := FArray[vIndex]
@@ -1629,7 +1638,7 @@ begin
   FReport := vClass.Create;
   FReport.Prepare;
   FReport.LoadReport;
-  Init;
+  Created;
   DesignReport;
 end;
 
@@ -1659,7 +1668,7 @@ begin
   inherited;
 end;
 
-procedure TCustomReportDesigner.Init;
+procedure TCustomReportDesigner.Created;
 begin
 
 end;
@@ -1937,84 +1946,84 @@ begin
 
 end;
 
-{ TmnrReportParams }
+{ TmnrParams }
 
-function TmnrReportParams.GetAsString(const vName: string): string;
+function TmnrParams.GetAsString(const vName: string): string;
 begin
   Result := Values[vName];
 end;
 
-procedure TmnrReportParams.SetAsString(const vName, Value: string);
+procedure TmnrParams.SetAsString(const vName, Value: string);
 begin
   Values[vName] := Value;
 end;
 
-function TmnrReportParams.GetAsInteger(const vName: string): Integer;
+function TmnrParams.GetAsInteger(const vName: string): Integer;
 begin
   Result := StrToIntDef(Values[vName], 0);
 end;
 
-procedure TmnrReportParams.SetAsInteger(const vName: string; const Value: Integer);
+procedure TmnrParams.SetAsInteger(const vName: string; const Value: Integer);
 begin
   Values[vName] := IntToStr(Value);
 end;
 
-function TmnrReportParams.GetAsObject(const vName: string): TObject;
+function TmnrParams.GetAsObject(const vName: string): TObject;
 begin
   Result := TObject(AsInteger[vName]);
 end;
 
-procedure TmnrReportParams.SetAsObject(const vName: string; const Value: TObject);
+procedure TmnrParams.SetAsObject(const vName: string; const Value: TObject);
 begin
   AsInteger[vName] := Integer(Value);
 end;
 
-function TmnrReportParams.GetAsVariant(const vName: string): Variant;
+function TmnrParams.GetAsVariant(const vName: string): Variant;
 begin
   Result := Values[vName];
 end;
 
-procedure TmnrReportParams.SetAsVariant(const vName: string; const Value: Variant);
+procedure TmnrParams.SetAsVariant(const vName: string; const Value: Variant);
 begin
   Values[vName] := Value;
 end;
 
-function TmnrReportParams.GetAsBoolean(const vName: string): Boolean;
+function TmnrParams.GetAsBoolean(const vName: string): Boolean;
 begin
   Result := StrToBoolDef(Values[vName], False);
 end;
 
-procedure TmnrReportParams.SetAsBoolean(const vName: string; const Value: Boolean);
+procedure TmnrParams.SetAsBoolean(const vName: string; const Value: Boolean);
 begin
   Values[vName] := BoolToStr(Value);
 end;
 
-function TmnrReportParams.GetAsDate(const vName: string): TDateTime;
+function TmnrParams.GetAsDate(const vName: string): TDateTime;
 begin
   Result := AsInteger[vName];
 end;
 
-procedure TmnrReportParams.SetAsDate(const vName: string; const Value: TDateTime);
+procedure TmnrParams.SetAsDate(const vName: string; const Value: TDateTime);
 begin
   AsInteger[vName] := Trunc(Value);
 end;
 
-function TmnrReportParams.GetAsDateTime(const vName: string): TDateTime;
+function TmnrParams.GetAsDateTime(const vName: string): TDateTime;
 begin
   Result := AsCurrency[vName];
 end;
 
-procedure TmnrReportParams.SetAsDateTime(const vName: string; const Value: TDateTime);
+procedure TmnrParams.SetAsDateTime(const vName: string; const Value: TDateTime);
 begin
   AsCurrency[vName] := Value;
 end;
 
-function TmnrReportParams.GetAsCurrency(const vName: string): Currency;
+function TmnrParams.GetAsCurrency(const vName: string): Currency;
 begin
   Result := StrToCurrDef(Values[vName], 0);
 end;
 
-procedure TmnrReportParams.SetAsCurrency(const vName: string; const Value: Currency);
+procedure TmnrParams.SetAsCurrency(const vName: string; const Value: Currency);
 begin
   Values[vName] := CurrToStr(Value);
 end;

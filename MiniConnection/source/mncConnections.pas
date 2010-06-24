@@ -16,7 +16,8 @@ unit mncConnections;
 interface
 
 uses
-  Classes, SysUtils, DateUtils, Variants, Contnrs, syncobjs;
+  Classes, SysUtils, DateUtils, Variants, Contnrs, SyncObjs,
+  mnFields, mnParams;
 
 type
   EmncException = class(Exception)
@@ -145,109 +146,29 @@ type
 
   { TmncCustomColumn }
 
-  TmncCustomColumn = class(TObject)
+  TmncCustomColumn = class(TmnCustomField)
   private
     FDataType: TmncDataType;
     FBlobType: TmncBlobType;
     FSchemaType: string;
     FIsBlob: Boolean;
-    FName: string;
-    function GetAsHex: string;
-    procedure SetAsHex(const AValue: string);
-    function GetAsText: string;
-    procedure SetAsText(const AValue: string);
-
-
-    procedure SetAsNullString(const Value: string);
-
-    function GetAsAnsiString: ansistring;
-    procedure SetAsAnsiString(const Value: ansistring);
-
-    function GetAsWideString: widestring;
-    procedure SetAsWideString(const Value: widestring);
-
-    function GetAsUtf8String: UTF8String;
-    procedure SetAsUtf8String(const Value: UTF8String);
   protected
-    function GetVariant: Variant; virtual; abstract;
-    procedure SetVariant(const Value: Variant); virtual; abstract;
-
-    function GetAsString: string; virtual;
-    procedure SetAsString(const Value: string); virtual;
-
-    function GetAsInteger: Integer; virtual;
-    procedure SetAsInteger(const Value: Integer); virtual;
-
-    function GetAsInt64: Integer; virtual;
-    procedure SetAsInt64(const Value: Integer); virtual;
-
-    function GetAsBoolean: Boolean; virtual;
-    procedure SetAsBoolean(const Value: Boolean); virtual;
-
-    function GetAsCurrency: Currency; virtual;
-    procedure SetAsCurrency(const Value: Currency); virtual;
-
-    function GetAsDate: TDateTime; virtual; //zaher must use trunc
-    procedure SetAsDate(const Value: TDateTime); virtual;
-
-    function GetAsDateTime: TDateTime; virtual;
-    procedure SetAsDateTime(const Value: TDateTime); virtual;
-
-    function GetAsTime: TDateTime; virtual;
-    procedure SetAsTime(const Value: TDateTime); virtual;
-
-
-    function GetAsTrimString: string;
-    procedure SetAsTrimString(const Value: string);
-
-    property Value: Variant read GetVariant write SetVariant;
-    property AsVariant: Variant read GetVariant write SetVariant;
-    //AsAnsiString: Convert strign to utf8 it is special for Lazarus
-    property AsAnsiString: ansistring read GetAsAnsiString write SetAsAnsiString;
-
-    property AsWideString: widestring read GetAsWideString write SetAsWideString;
-    property AsUtf8String: Utf8String read GetAsUtf8String write SetAsUtf8String;
-    property AsString: string read GetAsString write SetAsString;
-    property AsTrimString: string read GetAsTrimString write SetAsTrimString;
-    property AsNullString: string read GetAsString write SetAsNullString;
-    property AsInteger: Integer read GetAsInteger write SetAsInteger;
-    property AsInt64: Integer read GetAsInt64 write SetAsInt64;
-    property AsID: Integer read GetAsInt64 write SetAsInt64;
-    property AsBoolean: Boolean read GetAsBoolean write SetAsBoolean;
-    property AsCurrency: Currency read GetAsCurrency write SetAsCurrency;
-    property AsDate: TDateTime read GetAsDate write SetAsDate;
-    property AsTime: TDateTime read GetAsTime write SetAsTime;
-    property AsDateTime: TDateTime read GetAsDateTime write SetAsDateTime;
-    property AsHex: string read GetAsHex write SetAsHex;
-    property AsText: string read GetAsText write SetAsText; //binary text blob convert to hex
-
-    function GetIsNull: Boolean;
-    function GetIsEmpty: Boolean; virtual;
-    function GetText: string; virtual;
-    property Text: string read GetText;
-    property IsEmpty: Boolean read GetIsEmpty;
-    property IsNull: Boolean read GetIsNull;
+    function GetAsText: string; override;
+    procedure SetAsText(const AValue: string); override;
     property IsBlob: Boolean read FIsBlob write FIsBlob default false;
     property BlobType: TmncBlobType read FBlobType write FBlobType default blobBinary;
     property DataType: TmncDataType read FDataType default ftUnkown;
     property SchemaType: string read FSchemaType write FSchemaType;
-    {    procedure LoadFromFile(const FileName: string);
-    procedure LoadFromStream(Stream: TStream);
-    procedure LoadFromIStream(Stream: IStreamPersist);
-    procedure SaveToFile(const FileName: string);
-    procedure SaveToStream(Stream: TStream);
-    procedure SaveToIStream(Stream: IStreamPersist);}
   public
-    procedure Clear;//make value null
   published
-    property Name: string read FName write FName;
+    property Name;
   end;
 
   TmncCustomColumnClass = class of TmncCustomColumn;
 
   { TmncCustomColumns }
 
-  TmncCustomColumns = class(TObjectList)
+  TmncCustomColumns = class(TmnCustomFields)
   private
     function GetItem(Index: Integer): TmncCustomColumn;
   protected
@@ -266,8 +187,8 @@ type
   private
     FIndex: Integer;
   protected
-    function GetVariant: Variant; override;
-    procedure SetVariant(const Value: Variant); override;
+    function GetValue: Variant; override;
+    procedure SetValue(const Value: Variant); override;
   published
     property Index: Integer read FIndex write FIndex;
     property DataType;
@@ -339,8 +260,8 @@ type
     FValue: Variant;
     FColumn: TmncColumn;
   protected
-    function GetVariant: Variant; override;
-    procedure SetVariant(const Value: Variant); override;
+    function GetValue: Variant; override;
+    procedure SetValue(const Value: Variant); override;
   public
     constructor Create(vColumn: TmncColumn);
   published
@@ -384,8 +305,8 @@ type
     FBufferSize: Integer;
     function GetBufferAllocated: Boolean;
   protected
-    function GetVariant: Variant; override;
-    procedure SetVariant(const Value: Variant); override;
+    function GetValue: Variant; override;
+    procedure SetValue(const Value: Variant); override;
   public
     destructor Destroy; override;
     procedure AllocBuffer(var P; Size: Integer);
@@ -988,28 +909,6 @@ begin
     raise EmncException.Create('vColumns must be not nil');
 end;
 
-function TmncCustomColumns.ByName(vName: string): TmncCustomColumn;
-begin
-  Result := Find(vName);
-  if Result = nil then
-    raise EmncException.Create('Column "' + vName + '" not found');
-end;
-
-function TmncCustomColumns.IsExists(vName: string): Boolean;
-begin
-  Result := Find(vName) <> nil;
-end;
-
-procedure TmncCustomColumns.Clean;
-var
-  i: Integer;
-begin
-  for i := 0 to Count - 1 do
-  begin
-    Items[i].Clear;
-  end;
-end;
-
 function TmncFields.FindField(vName: string): TmncField;
 begin
   Result := Find(vName) as TmncField;
@@ -1162,12 +1061,12 @@ begin
   Result := inherited Items[Index] as TmncParam;
 end;
 
-function TmncField.GetVariant: Variant;
+function TmncField.GetValue: Variant;
 begin
   Result := FValue;
 end;
 
-procedure TmncField.SetVariant(const Value: Variant);
+procedure TmncField.SetValue(const Value: Variant);
 begin
   FValue := Value;
 end;
@@ -1183,13 +1082,13 @@ end;
 
 { TmncColumn }
 
-function TmncColumn.GetVariant: Variant;
+function TmncColumn.GetValue: Variant;
 begin
   Result := null;
   raise EmncException.Create('Field have no value, You must not use it, try use Current!') {$ifdef fpc}at get_caller_addr(get_frame){$endif};
 end;
 
-procedure TmncColumn.SetVariant(const Value: Variant);
+procedure TmncColumn.SetValue(const Value: Variant);
 begin
   raise EmncException.Create('Field have no value, You must not use it, try use Current!');
 end;
@@ -1225,12 +1124,12 @@ begin
   Result := Buffer <> nil;
 end;
 
-function TmncParam.GetVariant: Variant;
+function TmncParam.GetValue: Variant;
 begin
   Result := FValue;
 end;
 
-procedure TmncParam.SetVariant(const Value: Variant);
+procedure TmncParam.SetValue(const Value: Variant);
 begin
   FValue := Value;
 end;
@@ -1279,189 +1178,26 @@ begin
   inherited Items[Index] := Value;
 end;
 
+{ TmncCustomFields }
+
+function TmncCustomFields.GetItem(Index: Integer): TmncCustomField;
+begin
+  Result := (inherited Items[Index]) as TmncCustomField;
+end;
+
+function TmncCustomFields.GetField(Index: string): TmncCustomField;
+begin
+  Result := ByName(Index) as TmncCustomField;
+end;
+
 { TmncCustomColumn }
-
-procedure TmncCustomColumn.Clear;
-begin
-  Value := Null;
-end;
-
-function TmncCustomColumn.GetAsBoolean: Boolean;
-begin
-  if IsEmpty then
-    Result := False
-  else
-    Result := AsInteger <> 0;
-end;
-
-function TmncCustomColumn.GetAsCurrency: Currency;
-begin
-  if IsEmpty or not VarIsNumeric(Value) then
-    Result := 0
-  else
-    Result := Value;
-end;
-
-function TmncCustomColumn.GetAsDate: TDateTime;
-begin
-  if IsEmpty then
-    Result := 0
-  else
-  begin
-    Result := Value;
-    Result := DateOf(Result);
-  end;
-end;
-
-function TmncCustomColumn.GetAsDateTime: TDateTime;
-begin
-  if IsEmpty then
-    Result := 0
-  else
-    Result := Value;
-end;
-
-function TmncCustomColumn.GetAsInt64: Integer;
-begin
-  if IsEmpty then
-    Result := 0
-  else
-    Result := Value;
-end;
-
-function TmncCustomColumn.GetAsInteger: Integer;
-begin
-  if IsEmpty then
-    Result := 0
-  else
-    Result := Value;
-end;
-
-function TmncCustomColumn.GetAsString: string;
-begin
-  if IsEmpty then
-    Result := ''
-  else
-    Result := Value;
-end;
-
-function TmncCustomColumn.GetAsTime: TDateTime;
-begin
-  if IsEmpty then
-    Result := 0
-  else
-  begin
-    Result := Value;
-    Result := TimeOf(Result);
-  end;
-end;
-
-function TmncCustomColumn.GetAsTrimString: string;
-begin
-  Result := Trim(AsString);
-end;
-
-function TmncCustomColumn.GetIsEmpty: Boolean;
-begin
-  Result := VarType(Value) in [varEmpty, varNull, varUnknown];
-end;
-
-function TmncCustomColumn.GetIsNull: Boolean;
-begin
-  Result := IsEmpty;
-end;
-
-function TmncCustomColumn.GetText: string;
-begin
-  if IsEmpty then
-    Result := ''
-  else
-    Result := Value;
-end;
-
-procedure TmncCustomColumn.SetAsNullString(const Value: string);
-begin
-  if Value = '' then
-    Clear
-  else
-    AsString := Value;
-end;
-
-function TmncCustomColumn.GetAsHex: string;
-var
-  s: string;
-begin
-  s := GetAsString;
-  SetLength(Result, Length(s) * 2);
-  BinToHex(PChar(s), @Result[1], Length(s));
-end;
 
 function TmncCustomColumn.GetAsText: string;
 begin
   if (IsBlob) and (BlobType = blobText) then
     Result := AsHex
   else
-    Result := AsString;
-end;
-
-procedure TmncCustomColumn.SetAsHex(const AValue: string);
-var
-  s: string;
-begin
-  SetLength(s, Length(Value) div 2);
-  HexToBin(PChar(AValue), @s[1], Length(s));
-  AsString := s;
-end;
-
-procedure TmncCustomColumn.SetAsBoolean(const Value: Boolean);
-begin
-  AsInteger := Ord(Value);
-end;
-
-procedure TmncCustomColumn.SetAsCurrency(const Value: Currency);
-begin
-  Self.Value := Value;
-end;
-
-procedure TmncCustomColumn.SetAsDate(const Value: TDateTime);
-begin
-  Self.Value := DateOf(Value);
-end;
-
-procedure TmncCustomColumn.SetAsDateTime(const Value: TDateTime);
-begin
-  Self.Value := Value;
-end;
-
-procedure TmncCustomColumn.SetAsInt64(const Value: Integer);
-begin
-  Self.Value := Value;
-end;
-
-procedure TmncCustomColumn.SetAsInteger(const Value: Integer);
-begin
-  Self.Value := Value;
-end;
-
-procedure TmncCustomColumn.SetAsString(const Value: string);
-begin
-  Self.Value := Value;
-end;
-
-function TmncCustomColumn.GetAsAnsiString: ansistring;
-begin
-  Result := Utf8ToAnsi(GetAsString);
-end;
-
-procedure TmncCustomColumn.SetAsAnsiString(const Value: ansistring);
-begin
-  //fpc not auto convert because string type it same with ansistring
-  SetAsString(AnsiToUtf8(Value));
-end;
-
-function TmncCustomColumn.GetAsWideString: widestring;
-begin
-  Result := GetAsString;//the compiler will convert it
+    Result := inherited GetAsText;
 end;
 
 procedure TmncCustomColumn.SetAsText(const AValue: string);
@@ -1469,32 +1205,7 @@ begin
   if (IsBlob) and (BlobType = blobText) then
     AsHex := AValue
   else
-    AsString := AValue;
-end;
-
-procedure TmncCustomColumn.SetAsWideString(const Value: widestring);
-begin
-  SetAsString(Value);
-end;
-
-function TmncCustomColumn.GetAsUtf8String: UTF8String;
-begin
-  Result := GetAsString;//the compiler will convert it
-end;
-
-procedure TmncCustomColumn.SetAsUtf8String(const Value: UTF8String);
-begin
-  SetAsString(Value);
-end;
-
-procedure TmncCustomColumn.SetAsTime(const Value: TDateTime);
-begin
-  Self.Value := TimeOf(Value);
-end;
-
-procedure TmncCustomColumn.SetAsTrimString(const Value: string);
-begin
-  AsString := Trim(Value);
+    inherited SetAsText(AValue);
 end;
 
 { TmncCustomColumns }
@@ -1509,16 +1220,26 @@ begin
   Result := inherited Add(AColumn);
 end;
 
-{ TmncCustomFields }
-
-function TmncCustomFields.GetItem(Index: Integer): TmncCustomField;
+function TmncCustomColumns.ByName(vName: string): TmncCustomColumn;
 begin
-  Result := (inherited Items[Index]) as TmncCustomField;
+  Result := Find(vName);
+  if Result = nil then
+    raise Exception.Create('Field "' + vName + '" not found');
 end;
 
-function TmncCustomFields.GetField(Index: string): TmncCustomField;
+function TmncCustomColumns.IsExists(vName: string): Boolean;
 begin
-  Result := ByName(Index) as TmncCustomField;
+  Result := Find(vName) <> nil;
+end;
+
+procedure TmncCustomColumns.Clean;
+var
+  i: Integer;
+begin
+  for i := 0 to Count - 1 do
+  begin
+    Items[i].Clear;
+  end;
 end;
 
 initialization
