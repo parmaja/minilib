@@ -17,7 +17,9 @@ Rename AcceptMode to Resume
 interface
 
 uses
-  SysUtils, Classes, mnrLists;
+  SysUtils, Classes,
+  mnFields,
+  mnrLists;
 
 const
   ID_SECTION_BASE = 0;
@@ -445,7 +447,7 @@ type
     procedure Loop;
   end;
 
-  TmnrIndexer = class
+  TmnrIndex = class
   protected
     procedure Compute(vReport: TmnrCustomReport); virtual;
   public
@@ -453,7 +455,7 @@ type
     destructor Destroy; override;
   end;
 
-  TmnrRowsIndexer = class(TmnrIndexer)
+  TmnrRowsIndex = class(TmnrIndex)
   private
     FArray: TmnrRowArray;
     function GetItems(vIndex: Integer): TmnrRow;
@@ -463,34 +465,11 @@ type
     property Items[vIndex: Integer]: TmnrRow read GetItems;
   end;
 
-  TmnrParams = class(TStringList)
+  TmnrParams = class(TmnFields)
   private
-    function GetAsString(const vName: string): string;
-    function GetAsInteger(const vName: string): Integer;
-    function GetAsCurrency(const vName: string): Currency;
-    function GetAsDate(const vName: string): TDateTime;
-    function GetAsDateTime(const vName: string): TDateTime;
-    function GetAsBoolean(const vName: string): Boolean;
-    function GetAsVariant(const vName: string): Variant;
-    function GetAsObject(const vName: string): TObject;
-
-    procedure SetAsString(const vName, Value: string);
-    procedure SetAsInteger(const vName: string; const Value: Integer);
-    procedure SetAsCurrency(const vName: string; const Value: Currency);
-    procedure SetAsDate(const vName: string; const Value: TDateTime);
-    procedure SetAsDateTime(const vName: string; const Value: TDateTime);
-    procedure SetAsBoolean(const vName: string; const Value: Boolean);
-    procedure SetAsVariant(const vName: string; const Value: Variant);
-    procedure SetAsObject(const vName: string; const Value: TObject);
+    function GetField(Index: string): TmnField;
   public
-    property AsString[const vName: string]: string read GetAsString write SetAsString;
-    property AsInteger[const vName: string]: Integer read GetAsInteger write SetAsInteger;
-    property AsVariant[const vName: string]: Variant read GetAsVariant write SetAsVariant;
-    property AsCurrency[const vName: string]: Currency read GetAsCurrency write SetAsCurrency;
-    property AsDate[const vName: string]: TDateTime read GetAsDate write SetAsDate;
-    property AsDateTime[const vName: string]: TDateTime read GetAsDateTime write SetAsDateTime;
-    property AsBoolean[const vName: string]: Boolean read GetAsBoolean write SetAsBoolean;
-    property AsObject[const vName: string]: TObject read GetAsObject write SetAsObject;
+    property Field[Index: string]: TmnField read GetField; default;
   end;
 
   TmnrCustomReport = class(TObject)
@@ -498,7 +477,7 @@ type
     FCanceled: Boolean;
     FItems: TmnrRows;
     FSections: TmnrSections;
-    FRowsListIndexer: TmnrRowsIndexer;
+    FRowsListIndex: TmnrRowsIndex;
     FDetailTotals: TmnrSection;
     FSummary: TmnrSection;
     FLayouts: TmnrLayouts;
@@ -541,7 +520,7 @@ type
     procedure Fetch(vSection: TmnrSection; var vParams: TmnrFetchParams); virtual;
     procedure RegisterRequest(const vName: string; vOnRequest: TOnRequest); virtual;
 
-    property RowsIndexer: TmnrRowsIndexer read FRowsListIndexer;
+    property RowsIndex: TmnrRowsIndex read FRowsListIndex;
     property Rows[Row: Integer]: TmnrRow read GetRows;
     property Cells[Row, Column: Integer]: TmnrCustomCell read GetCells;
 
@@ -588,10 +567,10 @@ var
 procedure SetReportDesignerClass(vClass: TCustomReportDesignerClass);
 procedure DesignReport(vClass: TmnrCustomReportClass);
 
-function MakemnrParams: TmnrParams; overload;
-function MakemnrParams(Strings: TStrings): TmnrParams; overload;
-function MakemnrParams(vText: string): TmnrParams; overload;
-function MakemnrParams(Keys: array of string; Values: array of Variant): TmnrParams; overload;
+function NewParams: TmnrParams; overload;
+//function NewParams(Strings: TStrings): TmnrParams; overload;
+//function NewParams(vText: string): TmnrParams; overload;
+function NewParams(Keys: array of string; Values: array of Variant): TmnrParams; overload;
 
 implementation
 
@@ -611,33 +590,33 @@ begin
   ReportDesignerClass.AutoCreate(vClass);
 end;
 
-function MakemnrParams: TmnrParams;
+function NewParams: TmnrParams;
 begin
   Result := TmnrParams.Create;
 end;
 
-function MakemnrParams(vText: string): TmnrParams; overload;
+{function NewParams(vText: string): TmnrParams; overload;
 begin
-  Result := MakemnrParams;
+  Result := NewParams;
   Result.Text := vText;
-end;
+end;}
 
-function MakemnrParams(Strings: TStrings): TmnrParams; overload;
+{function NewParams(Strings: TStrings): TmnrParams; overload;
 begin
-  Result := MakemnrParams;
-  Result.Assign(Strings);
-end;
+  Result := NewParams;
+//  Result.Assign(Strings);
+end;}
 
-function MakemnrParams(Keys: array of string; Values: array of Variant): TmnrParams;
+function NewParams(Keys: array of string; Values: array of Variant): TmnrParams;
 var
   l, i: Integer;
 begin
-  Result := MakemnrParams;
+  Result := NewParams;
   l := Length(Keys);
   if l > Length(Values) then
     l := Length(Values);
   for i := 0 to l - 1 do
-    Result.AsVariant[Keys[i]] := Values[i];
+    Result.Field[Keys[i]].AsVariant := Values[i];
 end;
 
 { TmnrCustomReport }
@@ -669,7 +648,7 @@ begin
   FSections := TmnrSections.Create(Self);
   FLayouts := TmnrLayouts.Create;
   FItems := TmnrRows.Create;
-  FRowsListIndexer := nil;
+  FRowsListIndex := nil;
   FDetailTotals := TmnrSection.Create(nil);
   FSummary := TmnrSection.Create(nil);
   CreateSections(FSections);
@@ -713,7 +692,7 @@ begin
   FLayouts.Free;
   FSections.Free;
   FItems.Free;
-  FRowsListIndexer.Free;
+  FRowsListIndex.Free;
   FreeAndNil(FProfiler);
   FreeAndNil(FParams);
   inherited;
@@ -769,7 +748,7 @@ end;
 
 procedure TmnrCustomReport.Finish;
 begin
-  FRowsListIndexer := TmnrRowsIndexer.Create(Self);
+  FRowsListIndex := TmnrRowsIndex.Create(Self);
 end;
 
 procedure TmnrCustomReport.GatherReportParams(vParams: TmnrParams);
@@ -795,9 +774,9 @@ var
   r: TmnrRow;
   i: Integer;
 begin
-  if RowsIndexer <> nil then
+  if RowsIndex <> nil then
   begin
-    r := RowsIndexer.Items[Row];
+    r := RowsIndex.Items[Row];
     if r <> nil then
     begin
       i := 0;
@@ -817,8 +796,8 @@ end;
 
 function TmnrCustomReport.GetRows(Row: Integer): TmnrRow;
 begin
-  if RowsIndexer <> nil then
-    Result := RowsIndexer.Items[Row]
+  if RowsIndex <> nil then
+    Result := RowsIndex.Items[Row]
   else
     Result := nil;
 end;
@@ -1585,9 +1564,9 @@ begin
   inherited SetNodes(Value);
 end;
 
-{ TmnrRowsIndexer }
+{ TmnrRowsIndex }
 
-procedure TmnrRowsIndexer.Compute(vReport: TmnrCustomReport);
+procedure TmnrRowsIndex.Compute(vReport: TmnrCustomReport);
 var
   i: Integer;
   r: TmnrRow;
@@ -1603,7 +1582,7 @@ begin
   end;
 end;
 
-function TmnrRowsIndexer.GetItems(vIndex: Integer): TmnrRow;
+function TmnrRowsIndex.GetItems(vIndex: Integer): TmnrRow;
 begin
   if (vIndex >= 0) and (vIndex < Length(FArray)) then
     Result := FArray[vIndex]
@@ -1611,20 +1590,20 @@ begin
     Result := nil;
 end;
 
-{ TmnrIndexer }
+{ TmnrIndex }
 
-procedure TmnrIndexer.Compute(vReport: TmnrCustomReport);
+procedure TmnrIndex.Compute(vReport: TmnrCustomReport);
 begin
 
 end;
 
-constructor TmnrIndexer.Create(vReport: TmnrCustomReport);
+constructor TmnrIndex.Create(vReport: TmnrCustomReport);
 begin
   inherited Create;
   Compute(vReport);
 end;
 
-destructor TmnrIndexer.Destroy;
+destructor TmnrIndex.Destroy;
 begin
 
   inherited;
@@ -1948,84 +1927,9 @@ end;
 
 { TmnrParams }
 
-function TmnrParams.GetAsString(const vName: string): string;
+function TmnrParams.GetField(Index: string): TmnField;
 begin
-  Result := Values[vName];
-end;
-
-procedure TmnrParams.SetAsString(const vName, Value: string);
-begin
-  Values[vName] := Value;
-end;
-
-function TmnrParams.GetAsInteger(const vName: string): Integer;
-begin
-  Result := StrToIntDef(Values[vName], 0);
-end;
-
-procedure TmnrParams.SetAsInteger(const vName: string; const Value: Integer);
-begin
-  Values[vName] := IntToStr(Value);
-end;
-
-function TmnrParams.GetAsObject(const vName: string): TObject;
-begin
-  Result := TObject(AsInteger[vName]);
-end;
-
-procedure TmnrParams.SetAsObject(const vName: string; const Value: TObject);
-begin
-  AsInteger[vName] := Integer(Value);
-end;
-
-function TmnrParams.GetAsVariant(const vName: string): Variant;
-begin
-  Result := Values[vName];
-end;
-
-procedure TmnrParams.SetAsVariant(const vName: string; const Value: Variant);
-begin
-  Values[vName] := Value;
-end;
-
-function TmnrParams.GetAsBoolean(const vName: string): Boolean;
-begin
-  Result := StrToBoolDef(Values[vName], False);
-end;
-
-procedure TmnrParams.SetAsBoolean(const vName: string; const Value: Boolean);
-begin
-  Values[vName] := BoolToStr(Value);
-end;
-
-function TmnrParams.GetAsDate(const vName: string): TDateTime;
-begin
-  Result := AsInteger[vName];
-end;
-
-procedure TmnrParams.SetAsDate(const vName: string; const Value: TDateTime);
-begin
-  AsInteger[vName] := Trunc(Value);
-end;
-
-function TmnrParams.GetAsDateTime(const vName: string): TDateTime;
-begin
-  Result := AsCurrency[vName];
-end;
-
-procedure TmnrParams.SetAsDateTime(const vName: string; const Value: TDateTime);
-begin
-  AsCurrency[vName] := Value;
-end;
-
-function TmnrParams.GetAsCurrency(const vName: string): Currency;
-begin
-  Result := StrToCurrDef(Values[vName], 0);
-end;
-
-procedure TmnrParams.SetAsCurrency(const vName: string; const Value: Currency);
-begin
-  Values[vName] := CurrToStr(Value);
+  Result := Find(Index);
 end;
 
 initialization
