@@ -72,6 +72,8 @@ type
     procedure WriteAsDateTime(const AValue: TDateTime);
     function ReadAsTime: TDateTime;
     procedure WriteAsTime(const AValue: TDateTime);
+    function ReadIsEmpty: Boolean;
+    function ReadIsNull: Boolean;
   protected
     function GetValue: Variant; virtual; abstract;
     procedure SetValue(const AValue: Variant); virtual; abstract;
@@ -95,6 +97,9 @@ type
     function GetAsTime: TDateTime; virtual;
     procedure SetAsTime(const AValue: TDateTime); virtual;
 
+    function GetIsNull: Boolean; virtual;   
+    function GetIsEmpty: Boolean; virtual;
+
     property Value: Variant read GetValue write SetValue;
     property AsVariant: Variant read GetValue write SetValue;
     //* AsAnsiString: Convert strign to utf8 it is special for Lazarus
@@ -116,8 +121,8 @@ type
     property AsDateTime: TDateTime read ReadAsDateTime write WriteAsDateTime;
     property AsText: string read ReadAsText write WriteAsText; //binary text blob convert to hex
 
-    function GetIsNull: Boolean;
-    function GetIsEmpty: Boolean; virtual;
+    property IsEmpty: Boolean read ReadIsEmpty;
+    property IsNull: Boolean read ReadIsNull;
 
     procedure LoadFromStream(Stream: TStream); virtual;
     procedure SaveToStream(Stream: TStream); virtual;
@@ -127,8 +132,6 @@ type
     procedure LoadFromIStream(Stream: IStreamPersist);
     procedure SaveToIStream(Stream: IStreamPersist);
     }
-    property IsEmpty: Boolean read GetIsEmpty;
-    property IsNull: Boolean read GetIsNull;
   public
     procedure Clear;//make value null
     procedure Empty;//make value empty
@@ -284,12 +287,12 @@ end;
 
 function TmnCustomField.GetIsEmpty: Boolean;
 begin
-  Result := (Self = nil) or (VarType(Value) in [varEmpty, varNull, varUnknown]);
+  Result := (VarType(Value) in [varEmpty, varNull, varUnknown]);
 end;
 
 function TmnCustomField.GetIsNull: Boolean;
 begin
-  Result := IsEmpty;
+  Result := (VarType(Value) in [varNull]);
 end;
 
 procedure TmnCustomField.LoadFromFile(const FileName: string);
@@ -483,6 +486,22 @@ end;
 function TmnCustomField.ReadAsWideString: widestring;
 begin
   Result := GetAsString;//the compiler will convert it
+end;
+
+function TmnCustomField.ReadIsEmpty: Boolean;
+begin
+  if Self <> nil then
+    Result := GetIsEmpty
+  else
+    Result := True;
+end;
+
+function TmnCustomField.ReadIsNull: Boolean;
+begin
+  if Self <> nil then
+    Result := GetIsNull
+  else
+    Result := True;
 end;
 
 procedure TmnCustomField.SetAsText(const AValue: string);
