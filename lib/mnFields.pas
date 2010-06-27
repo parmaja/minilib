@@ -8,6 +8,8 @@ unit mnFields;
 {$IFDEF fpc}
 {$MODE delphi}{$H+}
 {.$INTERFACES CORBA}
+{$ELSE}
+{$M+}
 {$ENDIF}
 
 interface
@@ -18,84 +20,104 @@ uses
 type
   IField = interface(IStreamPersist)
     function GetAsInteger: Integer;
-    procedure SetAsInteger(const Value: Integer);
+    procedure SetAsInteger(const AValue: Integer);
     function GetAsBoolean: Boolean;
-    procedure SetAsBoolean(const Value: Boolean);
+    procedure SetAsBoolean(const AValue: Boolean);
     function GetAsString: string;
-    procedure SetAsString(const Value: string);
+    procedure SetAsString(const AValue: string);
     function GetAsCurrency: Currency;
-    procedure SetAsCurrency(const Value: Currency);
+    procedure SetAsCurrency(const AValue: Currency);
     function GetAsDateTime: TDateTime;
-    procedure SetAsDateTime(const Value: TDateTime);
+    procedure SetAsDateTime(const AValue: TDateTime);
     function GetValue: Variant;
-    procedure SetValue(const Value: Variant);
+    procedure SetValue(const AValue: Variant);
   end;
 
   IFields = interface(IStreamPersist)
     function GetValues(Index: string): Variant;
-    property Values[Index: string]: Variant read GetValues; 
+    property Values[Index: string]: Variant read GetValues;   
   end;
 
   TmnCustomField = class(TInterfacedObject, IField)
   private
     FName: string;
-    function GetAsHex: string;
-    procedure SetAsHex(const AValue: string);
-    procedure SetAsNullString(const Value: string);
-    function GetAsAnsiString: ansistring;
-    procedure SetAsAnsiString(const Value: ansistring);
-    function GetAsWideString: widestring;
-    procedure SetAsWideString(const Value: widestring);
-    function GetAsUtf8String: UTF8String;
-    procedure SetAsUtf8String(const Value: UTF8String);
+    procedure CheckIsNil;
+    function ReadAsHex: string;
+    procedure WriteAsHex(const AValue: string);
+    procedure WriteAsNullString(const AValue: string);
+    function ReadAsAnsiString: ansistring;
+    procedure WriteAsAnsiString(const AValue: ansistring);
+    function ReadAsWideString: widestring;
+    procedure WriteAsWideString(const AValue: widestring);
+    function ReadAsUtf8String: UTF8String;
+    procedure WriteAsUtf8String(const AValue: UTF8String);
+    function ReadAsTrimString: string;
+    procedure WriteAsTrimString(const AValue: string);
+
+    function ReadAsText: string;
+    procedure WriteAsText(const AValue: string);
+    function ReadAsString: string;
+    procedure WriteAsString(const AValue: string);
+    function ReadAsInteger: Integer;
+    procedure WriteAsInteger(const AValue: Integer);
+    function ReadAsInt64: Integer;
+    procedure WriteAsInt64(const AValue: Integer);
+    function ReadAsBoolean: Boolean;
+    procedure WriteAsBoolean(const AValue: Boolean);
+    function ReadAsCurrency: Currency;
+    procedure WriteAsCurrency(const AValue: Currency);
+    function ReadAsDate: TDateTime;  //zaher must use trunc
+    procedure WriteAsDate(const AValue: TDateTime);
+    function ReadAsDateTime: TDateTime;
+    procedure WriteAsDateTime(const AValue: TDateTime);
+    function ReadAsTime: TDateTime;
+    procedure WriteAsTime(const AValue: TDateTime);
   protected
+    function GetValue: Variant; virtual; abstract;
+    procedure SetValue(const AValue: Variant); virtual; abstract;
+
     function GetAsText: string; virtual;
     procedure SetAsText(const AValue: string); virtual;
-    function GetValue: Variant; virtual; abstract;
-    procedure SetValue(const Value: Variant); virtual; abstract;
     function GetAsString: string; virtual;
-    procedure SetAsString(const Value: string); virtual;
+    procedure SetAsString(const AValue: string); virtual;
     function GetAsInteger: Integer; virtual;
-    procedure SetAsInteger(const Value: Integer); virtual;
+    procedure SetAsInteger(const AValue: Integer); virtual;
     function GetAsInt64: Integer; virtual;
-    procedure SetAsInt64(const Value: Integer); virtual;
+    procedure SetAsInt64(const AValue: Integer); virtual;
     function GetAsBoolean: Boolean; virtual;
-    procedure SetAsBoolean(const Value: Boolean); virtual;
+    procedure SetAsBoolean(const AValue: Boolean); virtual;
     function GetAsCurrency: Currency; virtual;
-    procedure SetAsCurrency(const Value: Currency); virtual;
-    function GetAsDate: TDateTime; virtual; //zaher must use trunc
-    procedure SetAsDate(const Value: TDateTime); virtual;
+    procedure SetAsCurrency(const AValue: Currency); virtual;
+    function GetAsDate: TDateTime; virtual; 
+    procedure SetAsDate(const AValue: TDateTime); virtual;
     function GetAsDateTime: TDateTime; virtual;
-    procedure SetAsDateTime(const Value: TDateTime); virtual;
+    procedure SetAsDateTime(const AValue: TDateTime); virtual;
     function GetAsTime: TDateTime; virtual;
-    procedure SetAsTime(const Value: TDateTime); virtual;
-    function GetAsTrimString: string;
-    procedure SetAsTrimString(const Value: string);
+    procedure SetAsTime(const AValue: TDateTime); virtual;
 
     property Value: Variant read GetValue write SetValue;
     property AsVariant: Variant read GetValue write SetValue;
-    //AsAnsiString: Convert strign to utf8 it is special for Lazarus
-    property AsAnsiString: ansistring read GetAsAnsiString write SetAsAnsiString;
+    //* AsAnsiString: Convert strign to utf8 it is special for Lazarus
+    property AsAnsiString: ansistring read ReadAsAnsiString write WriteAsAnsiString;
+    property AsWideString: widestring read ReadAsWideString write WriteAsWideString;
+    property AsUtf8String: Utf8String read ReadAsUtf8String write WriteAsUtf8String;
+    property AsTrimString: string read ReadAsTrimString write WriteAsTrimString;
+    property AsNullString: string read ReadAsString write WriteAsNullString;
+    property AsHex: string read ReadAsHex write WriteAsHex;
 
-    property AsWideString: widestring read GetAsWideString write SetAsWideString;
-    property AsUtf8String: Utf8String read GetAsUtf8String write SetAsUtf8String;
-    property AsString: string read GetAsString write SetAsString;
-    property AsTrimString: string read GetAsTrimString write SetAsTrimString;
-    property AsNullString: string read GetAsString write SetAsNullString;
-    property AsInteger: Integer read GetAsInteger write SetAsInteger;
-    property AsInt64: Integer read GetAsInt64 write SetAsInt64;
-    property AsID: Integer read GetAsInt64 write SetAsInt64;
-    property AsBoolean: Boolean read GetAsBoolean write SetAsBoolean;
-    property AsCurrency: Currency read GetAsCurrency write SetAsCurrency;
-    property AsDate: TDateTime read GetAsDate write SetAsDate;
-    property AsTime: TDateTime read GetAsTime write SetAsTime;
-    property AsDateTime: TDateTime read GetAsDateTime write SetAsDateTime;
-    property AsHex: string read GetAsHex write SetAsHex;
-    property AsText: string read GetAsText write SetAsText; //binary text blob convert to hex
+    property AsString: string read ReadAsString write WriteAsString;
+    property AsInteger: Integer read ReadAsInteger write WriteAsInteger;
+    property AsInt64: Integer read ReadAsInt64 write WriteAsInt64;
+    property AsID: Integer read ReadAsInt64 write WriteAsInt64;
+    property AsBoolean: Boolean read ReadAsBoolean write WriteAsBoolean;
+    property AsCurrency: Currency read ReadAsCurrency write WriteAsCurrency;
+    property AsDate: TDateTime read ReadAsDate write WriteAsDate;
+    property AsTime: TDateTime read ReadAsTime write WriteAsTime;
+    property AsDateTime: TDateTime read ReadAsDateTime write WriteAsDateTime;
+    property AsText: string read ReadAsText write WriteAsText; //binary text blob convert to hex
 
     function GetIsNull: Boolean;
     function GetIsEmpty: Boolean; virtual;
-    function GetText: string; virtual;
 
     procedure LoadFromStream(Stream: TStream); virtual;
     procedure SaveToStream(Stream: TStream); virtual;
@@ -105,8 +127,6 @@ type
     procedure LoadFromIStream(Stream: IStreamPersist);
     procedure SaveToIStream(Stream: IStreamPersist);
     }
-
-    property Text: string read GetText;
     property IsEmpty: Boolean read GetIsEmpty;
     property IsNull: Boolean read GetIsNull;
   public
@@ -126,20 +146,64 @@ type
     property Items[Index: Integer]: TmnCustomField read GetItem;
   end;
 
-  TmnFields = class(TmnCustomFields)
+  TmnField = class(TmnCustomField)
   private
+    FValue: Variant;
   protected
-    function Find(vName: string): TmnCustomField; virtual;
+    function GetValue: Variant; override;
+    procedure SetValue(const AValue: Variant); override;
   public
-    function Add(AColumn: TmnCustomField): Integer; overload;
-    function ByName(vName: string): TmnCustomField;
+  published
+    property Value;
+    property IsEmpty;
+    property IsNull;
+    
+    property AsVariant;
+    property AsString;
+    property AsAnsiString;
+    property AsTrimString;
+    property AsNullString;
+    property AsInteger;
+    property AsInt64;
+    property AsBoolean;
+    property AsCurrency;
+    property AsDate;
+    property AsTime;
+    property AsDateTime;
+    property AsText; 
+    property AsHex;
+  end;
+
+  TmnFields = class(TmnCustomFields, IFields)
+  private
+    function _AddRef: Integer; stdcall;
+    function _Release: Integer; stdcall;
+  protected
+    procedure SetValues(Index: string; const AValue: Variant);
+    function GetValues(Index: string): Variant;
+    function Find(vName: string): TmnField; virtual;
+  public
+    function QueryInterface(const IID: TGUID; out Obj): HResult; virtual; stdcall;
+    procedure LoadFromStream(Stream: TStream); virtual;
+    procedure SaveToStream(Stream: TStream); virtual;
+    procedure LoadFromFile(const FileName: string);
+    procedure SaveToFile(const FileName: string);
+    function Add(AField: TmnField): Integer; overload;
+    function ByName(vName: string): TmnField;
     function IsExists(vName: string): Boolean;
     procedure Clean; virtual;
+    property Values[Index: string]: Variant read GetValues write SetValues;
   end;
 
 implementation
 
 { TmnCustomField }
+
+procedure TmnCustomField.CheckIsNil;
+begin
+  if Self = nil then
+    raise Exception.Create('Field is nil');
+end;
 
 procedure TmnCustomField.Clear;
 begin
@@ -199,10 +263,7 @@ end;
 
 function TmnCustomField.GetAsString: string;
 begin
-  if IsEmpty then
-    Result := ''
-  else
-    Result := Value;
+  Result := Value;
 end;
 
 function TmnCustomField.GetAsTime: TDateTime;
@@ -216,27 +277,19 @@ begin
   end;
 end;
 
-function TmnCustomField.GetAsTrimString: string;
+function TmnCustomField.ReadAsTrimString: string;
 begin
   Result := Trim(AsString);
 end;
 
 function TmnCustomField.GetIsEmpty: Boolean;
 begin
-  Result := VarType(Value) in [varEmpty, varNull, varUnknown];
+  Result := (Self = nil) or (VarType(Value) in [varEmpty, varNull, varUnknown]);
 end;
 
 function TmnCustomField.GetIsNull: Boolean;
 begin
   Result := IsEmpty;
-end;
-
-function TmnCustomField.GetText: string;
-begin
-  if IsEmpty then
-    Result := ''
-  else
-    Result := Value;
 end;
 
 procedure TmnCustomField.LoadFromFile(const FileName: string);
@@ -256,7 +309,79 @@ begin
   raise Exception.Create('Not implemented yet');
 end;
 
-procedure TmnCustomField.SetAsNullString(const Value: string);
+function TmnCustomField.ReadAsBoolean: Boolean;
+begin
+  if IsEmpty then
+    Result := False
+  else
+    Result := GetAsBoolean;
+end;
+
+function TmnCustomField.ReadAsCurrency: Currency;
+begin
+  if IsEmpty then
+    Result := 0
+  else
+    Result := GetAsCurrency;
+end;
+
+function TmnCustomField.ReadAsDate: TDateTime;
+begin
+  if IsEmpty then
+    Result := 0
+  else
+    Result := GetAsDate;
+end;
+
+function TmnCustomField.ReadAsDateTime: TDateTime;
+begin
+  if IsEmpty then
+    Result := 0
+  else
+    Result := GetAsDateTime;
+end;
+
+function TmnCustomField.ReadAsInt64: Integer;
+begin
+  if IsEmpty then
+    Result := 0
+  else
+    Result := GetAsInt64;
+end;
+
+function TmnCustomField.ReadAsInteger: Integer;
+begin
+  if IsEmpty then
+    Result := 0
+  else
+    Result := GetAsInteger;
+end;
+
+function TmnCustomField.ReadAsString: string;
+begin
+  if IsEmpty then
+    Result := ''
+  else
+    Result := GetAsString;
+end;
+
+function TmnCustomField.ReadAsText: string;
+begin
+  if IsEmpty then
+    Result := ''
+  else
+    Result := GetAsText;
+end;
+
+function TmnCustomField.ReadAsTime: TDateTime;
+begin
+  if IsEmpty then
+    Result := 0
+  else
+    Result := GetAsTime;
+end;
+
+procedure TmnCustomField.WriteAsNullString(const AValue: string);
 begin
   if Value = '' then
     Clear
@@ -264,7 +389,7 @@ begin
     AsString := Value;
 end;
 
-function TmnCustomField.GetAsHex: string;
+function TmnCustomField.ReadAsHex: string;
 var
   s: string;
 begin
@@ -278,7 +403,7 @@ begin
   Result := AsString;
 end;
 
-procedure TmnCustomField.SetAsHex(const AValue: string);
+procedure TmnCustomField.WriteAsHex(const AValue: string);
 var
   s: string;
 begin
@@ -287,37 +412,37 @@ begin
   AsString := s;
 end;
 
-procedure TmnCustomField.SetAsBoolean(const Value: Boolean);
+procedure TmnCustomField.SetAsBoolean(const AValue: Boolean);
 begin
-  AsInteger := Ord(Value);
+  AsInteger := Ord(AValue);
 end;
 
-procedure TmnCustomField.SetAsCurrency(const Value: Currency);
+procedure TmnCustomField.SetAsCurrency(const AValue: Currency);
 begin
-  Self.Value := Value;
+  Self.Value := AValue;
 end;
 
-procedure TmnCustomField.SetAsDate(const Value: TDateTime);
+procedure TmnCustomField.SetAsDate(const AValue: TDateTime);
 begin
-  Self.Value := DateOf(Value);
+  Self.Value := DateOf(AValue);
 end;
 
-procedure TmnCustomField.SetAsDateTime(const Value: TDateTime);
+procedure TmnCustomField.SetAsDateTime(const AValue: TDateTime);
 begin
-  Self.Value := Value;
+  Self.Value := AValue;
 end;
 
-procedure TmnCustomField.SetAsInt64(const Value: Integer);
-begin
-  Self.Value := Value;
-end;
-
-procedure TmnCustomField.SetAsInteger(const Value: Integer);
+procedure TmnCustomField.SetAsInt64(const AValue: Integer);
 begin
   Self.Value := Value;
 end;
 
-procedure TmnCustomField.SetAsString(const Value: string);
+procedure TmnCustomField.SetAsInteger(const AValue: Integer);
+begin
+  Self.Value := Value;
+end;
+
+procedure TmnCustomField.SetAsString(const AValue: string);
 begin
   Self.Value := Value;
 end;
@@ -327,7 +452,7 @@ begin
   Value := Unassigned;
 end;
 
-function TmnCustomField.GetAsAnsiString: ansistring;
+function TmnCustomField.ReadAsAnsiString: ansistring;
 begin
   Result := Utf8ToAnsi(GetAsString);
 end;
@@ -349,13 +474,13 @@ begin
   raise Exception.Create('Not implemented yet');
 end;
 
-procedure TmnCustomField.SetAsAnsiString(const Value: ansistring);
+procedure TmnCustomField.WriteAsAnsiString(const AValue: ansistring);
 begin
   //fpc not auto convert because string type it same with ansistring
   SetAsString(AnsiToUtf8(Value));
 end;
 
-function TmnCustomField.GetAsWideString: widestring;
+function TmnCustomField.ReadAsWideString: widestring;
 begin
   Result := GetAsString;//the compiler will convert it
 end;
@@ -365,27 +490,81 @@ begin
   AsString := AValue;
 end;
 
-procedure TmnCustomField.SetAsWideString(const Value: widestring);
+procedure TmnCustomField.WriteAsWideString(const AValue: widestring);
 begin
   SetAsString(Value);
 end;
 
-function TmnCustomField.GetAsUtf8String: UTF8String;
+procedure TmnCustomField.WriteAsBoolean(const AValue: Boolean);
+begin
+  CheckIsNil;
+  SetAsBoolean(AValue);
+end;
+
+procedure TmnCustomField.WriteAsCurrency(const AValue: Currency);
+begin
+  CheckIsNil;
+  SetAsCurrency(AValue);
+end;
+
+procedure TmnCustomField.WriteAsDate(const AValue: TDateTime);
+begin
+  CheckIsNil;
+  SetAsDate(AValue);
+end;
+
+procedure TmnCustomField.WriteAsDateTime(const AValue: TDateTime);
+begin
+  CheckIsNil;
+  SetAsDateTime(AValue);
+end;
+
+procedure TmnCustomField.WriteAsInt64(const AValue: Integer);
+begin
+  CheckIsNil;
+  SetAsInt64(AValue);
+end;
+
+procedure TmnCustomField.WriteAsInteger(const AValue: Integer);
+begin
+  CheckIsNil;
+  SetAsInteger(AValue);
+end;
+
+procedure TmnCustomField.WriteAsString(const AValue: string);
+begin
+  CheckIsNil;
+  SetAsString(AValue);
+end;
+
+procedure TmnCustomField.WriteAsText(const AValue: string);
+begin
+  CheckIsNil;
+  SetAsText(AValue);
+end;
+
+procedure TmnCustomField.WriteAsTime(const AValue: TDateTime);
+begin
+  CheckIsNil;
+  SetAsTime(AValue);
+end;
+
+function TmnCustomField.ReadAsUtf8String: UTF8String;
 begin
   Result := GetAsString;//the compiler will convert it
 end;
 
-procedure TmnCustomField.SetAsUtf8String(const Value: UTF8String);
+procedure TmnCustomField.WriteAsUtf8String(const AValue: UTF8String);
 begin
   SetAsString(Value);
 end;
 
-procedure TmnCustomField.SetAsTime(const Value: TDateTime);
+procedure TmnCustomField.SetAsTime(const AValue: TDateTime);
 begin
   Self.Value := TimeOf(Value);
 end;
 
-procedure TmnCustomField.SetAsTrimString(const Value: string);
+procedure TmnCustomField.WriteAsTrimString(const AValue: string);
 begin
   AsString := Trim(Value);
 end;
@@ -397,12 +576,12 @@ begin
   Result := (inherited Items[Index]) as TmnCustomField;
 end;
 
-function TmnFields.Add(AColumn: TmnCustomField): Integer;
+function TmnFields.Add(AField: TmnField): Integer;
 begin
-  Result := inherited Add(AColumn);
+  Result := inherited Add(AField);
 end;
 
-function TmnFields.ByName(vName: string): TmnCustomField;
+function TmnFields.ByName(vName: string): TmnField;
 begin
   Result := Find(vName);
   if Result = nil then
@@ -412,6 +591,73 @@ end;
 function TmnFields.IsExists(vName: string): Boolean;
 begin
   Result := Find(vName) <> nil;
+end;
+
+procedure TmnFields.LoadFromFile(const FileName: string);
+var
+  Stream: TStream;
+begin
+  Stream := TFileStream.Create(FileName, fmOpenRead or fmShareDenyWrite);
+  try
+    LoadFromStream(Stream);
+  finally
+    Stream.Free;
+  end;
+end;
+
+
+procedure TmnFields.LoadFromStream(Stream: TStream);
+begin
+  raise Exception.Create('Not implemented yet');
+end;
+
+function TmnFields.QueryInterface(const IID: TGUID; out Obj): HResult;
+begin
+  if GetInterface(IID, Obj) then
+    Result := 0
+  else
+    Result := E_NOINTERFACE;
+end;
+
+procedure TmnFields.SaveToFile(const FileName: string);
+var
+  Stream: TStream;
+begin
+  Stream := TFileStream.Create(FileName, fmCreate);
+  try
+    SaveToStream(Stream);
+  finally
+    Stream.Free;
+  end;
+end;
+
+procedure TmnFields.SaveToStream(Stream: TStream);
+begin
+  raise Exception.Create('Not implemented yet');
+end;
+
+procedure TmnFields.SetValues(Index: string; const AValue: Variant);
+var
+  F: TmnField;
+begin
+  F := Find(Index);
+  if F = nil then
+  begin
+    F := TmnField.Create;
+    F.Name := Index;
+    Add(F);
+  end;
+  F.Value := AValue;
+end;
+
+function TmnFields._AddRef: Integer;
+begin
+  Result := 0;
+end;
+
+function TmnFields._Release: Integer;
+begin
+  Result := 0;
 end;
 
 procedure TmnFields.Clean;
@@ -424,7 +670,7 @@ begin
   end;
 end;
 
-function TmnFields.Find(vName: string): TmnCustomField;
+function TmnFields.Find(vName: string): TmnField;
 var
   i: Integer;
 begin
@@ -433,10 +679,39 @@ begin
   begin
     if SameText(vName, Items[i].Name) then
     begin
-      Result := Items[i];
+      Result := Items[i] as TmnField;
       break;
     end;
   end;
+end;
+
+function TmnFields.GetValues(Index: string): Variant;
+var
+  F: TmnField;
+begin
+  F := Find(Index);
+  if F <> nil then
+    Result := F.Value
+  else
+    Result := Unassigned;
+end;
+
+{ TmnField }
+
+function TmnField.GetValue: Variant;
+begin
+  if Self <> nil then
+    Result := FValue
+  else
+    Result := Unassigned;
+end;
+
+procedure TmnField.SetValue(const AValue: Variant);
+begin
+  if Self <> nil then
+    FValue := Value
+  else
+    raise Exception.Create('Can not assign value');
 end;
 
 end.
