@@ -728,7 +728,7 @@ end;
 procedure TmnField.SetValue(const AValue: Variant);
 begin
   if Self <> nil then
-    FValue := Value
+    FValue := AValue
   else
     raise Exception.Create('Can not assign value');
 end;

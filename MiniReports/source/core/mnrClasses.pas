@@ -38,7 +38,7 @@ type
   TmnrCustomReport = class;
   TmnrLayout = class;
   TmnrLayouts = class;
-  TmnrCustomCell = class;
+  TmnrCell = class;
   TmnrRow = class;
   TmnrReferencesRow = class;
   TmnrReferences = class;
@@ -64,23 +64,23 @@ type
   TmnrSectionClassID = (sciReport, sciHeaderReport, sciHeaderPage, sciHeaderDetails, sciDetails, sciFooterDetails, sciFooterPage, sciFooterReport);
   TmnrSectionClassIDs = set of TmnrSectionClassID;
 
-  TmnrFetchParams = record
+  TmnrFetch = record
     FetchMode: TmnrFetchMode;
     AcceptMode: TmnrAcceptMode;
     ID: Integer;
     Number: Integer;
   end;
 
-  TOnRequest = procedure(vCell: TmnrCustomCell) of object;
-  TOnFetch = procedure(var vParams: TmnrFetchParams) of object;
+  TOnRequest = procedure(vCell: TmnrCell) of object;
+  TOnFetch = procedure(var vParams: TmnrFetch) of object;
 
-  TmnrCustomCell = class(TmnrLinkNode)
+  TmnrCell = class(TmnrLinkNode)
   private
     FRow: TmnrRow;
     FReference: TmnrReference;
     FLayout: TmnrLayout;
-    function GetNext: TmnrCustomCell;
-    function GetPrior: TmnrCustomCell;
+    function GetNext: TmnrCell;
+    function GetPrior: TmnrCell;
   protected
 
     function GetAsBoolean: Boolean; virtual; abstract;
@@ -112,12 +112,12 @@ type
 
     property Layout: TmnrLayout read FLayout;
     property Row: TmnrRow read FRow;
-    property Next: TmnrCustomCell read GetNext;
-    property Prior: TmnrCustomCell read GetPrior;
+    property Next: TmnrCell read GetNext;
+    property Prior: TmnrCell read GetPrior;
     property Reference: TmnrReference read FReference;
   end;
 
-  TmnrReportCell = class(TmnrCustomCell)
+  TmnrReportCell = class(TmnrCell)
   protected
     function GetAsBoolean: Boolean; override;
     function GetAsCurrency: Currency; override;
@@ -159,6 +159,7 @@ type
   protected
     function CreateCells: TmnrRowCells; override;
   public
+    function GetCellByIndex(I: Integer): TmnrCell;
     property Cells: TmnrReportCells read GetCells; //cells in row
     property Next: TmnrRow read GetNext;
     property Prior: TmnrRow read GetPrior;
@@ -193,9 +194,9 @@ type
     function GetNext: TmnrLayout;
     function GetPrior: TmnrLayout;
   protected
-    procedure DoRequest(vCell: TmnrCustomCell); virtual;
+    procedure DoRequest(vCell: TmnrCell); virtual;
     function CreateCell(vCells: TmnrReportCells): TmnrReportCell; virtual;
-    procedure ScaleCell(vCell: TmnrCustomCell); virtual;
+    procedure ScaleCell(vCell: TmnrCell); virtual;
     function GetTotal: Double; virtual;
   public
     Info: TmnrLayoutInfo;
@@ -206,9 +207,9 @@ type
     property Title: string read Info.Title;
     property IncludeSections: TmnrSectionClassIDs read Info.IncludeSections;
     property ExcludeSections: TmnrSectionClassIDs read Info.ExcludeSections;
-    procedure Request(vCell: TmnrCustomCell);
+    procedure Request(vCell: TmnrCell);
     property OnRequest: TOnRequest read FOnRequest write FOnRequest;
-    function NewCell(vRow: TmnrRow): TmnrCustomCell;
+    function NewCell(vRow: TmnrRow): TmnrCell;
     property Reference: TmnrReference read FReference;
     property DesignerCell: TmnrDesignCell read FDesignerCell write FDesignerCell;
     property Total: Double read GetTotal;
@@ -392,7 +393,7 @@ type
     function GetReport: TmnrCustomReport;
     function GetLoopWay: TmnrSectionLoopWay;
   protected
-    function DoFetch(var vParams: TmnrFetchParams): TmnrAcceptMode; virtual;
+    function DoFetch(var vParams: TmnrFetch): TmnrAcceptMode; virtual;
     procedure DoAppendTotals(vTotalSection: TmnrSection);
     procedure DoAppendSummary(vSummarySection: TmnrSection);
   public
@@ -418,7 +419,7 @@ type
     property LoopWay: TmnrSectionLoopWay read GetLoopWay;
     property OnFetch: TOnFetch read FOnFetch write FOnFetch;
 
-    procedure FillNow(vParams: TmnrFetchParams; vReference: TmnrReferencesRow);
+    procedure FillNow(vParams: TmnrFetch; vReference: TmnrReferencesRow);
   published
     property AppendTotals: Boolean read FAppendTotals write FAppendTotals;
     property AppendSummary: Boolean read FAppendSummary write FAppendSummary;
@@ -447,7 +448,7 @@ type
     procedure Loop;
   end;
 
-  TmnrIndex = class
+  TmnrIndex = class(TObject)
   protected
     procedure Compute(vReport: TmnrCustomReport); virtual;
   public
@@ -459,16 +460,20 @@ type
   private
     FArray: TmnrRowArray;
     function GetItems(vIndex: Integer): TmnrRow;
+    function GetCount: Integer;
   protected
     procedure Compute(vReport: TmnrCustomReport); override;
   public
-    property Items[vIndex: Integer]: TmnrRow read GetItems;
+    property Items[vIndex: Integer]: TmnrRow read GetItems; default;
+    property Count: Integer read GetCount;
   end;
 
   TmnrParams = class(TmnFields)
   private
+    FID: Int64;
     function GetField(Index: string): TmnField;
   public
+    property ID: Int64 read FID write FID;
     property Field[Index: string]: TmnField read GetField; default;
   end;
 
@@ -485,7 +490,7 @@ type
     FProfiler: TmnrProfiler;
     FParams: TmnrParams;
 
-    function GetCells(Row, Column: Integer): TmnrCustomCell;
+    function GetCells(Row, Column: Integer): TmnrCell;
     function GetRows(Row: Integer): TmnrRow;
   protected
     function Canceled: Boolean;
@@ -495,7 +500,10 @@ type
     function CreateNewRow(vSection: TmnrSection): TmnrRow; virtual;
     function CreateProfiler: TmnrProfiler; virtual;
     procedure Loop;
-    procedure GatherReportParams(vParams: TmnrParams); virtual;
+    //Apply param to report to use it in Queries or assign it to Variables
+    procedure SetParams(vParams: TmnrParams); virtual;
+    //Collect params from current record in report to send it to another report
+    procedure CollectParams(vParams: TmnrParams); virtual;
     function SumString: string; virtual;
 
     procedure Created; virtual; //after create
@@ -508,7 +516,7 @@ type
     property Sections: TmnrSections read FSections;
     property Layouts: TmnrLayouts read FLayouts;
     property Items: TmnrRows read FItems;
-    procedure LoadReport; virtual;
+    procedure Load; virtual;
     procedure Cancel;
     function FindSection(const vName: string): TmnrSection;
 
@@ -517,12 +525,12 @@ type
     procedure Design;
     property Profiler: TmnrProfiler read FProfiler;
 
-    procedure Fetch(vSection: TmnrSection; var vParams: TmnrFetchParams); virtual;
+    procedure Fetch(vSection: TmnrSection; var vParams: TmnrFetch); virtual;
     procedure RegisterRequest(const vName: string; vOnRequest: TOnRequest); virtual;
 
     property RowsIndex: TmnrRowsIndex read FRowsListIndex;
     property Rows[Row: Integer]: TmnrRow read GetRows;
-    property Cells[Row, Column: Integer]: TmnrCustomCell read GetCells;
+    property Cells[Row, Column: Integer]: TmnrCell read GetCells;
 
     procedure ExportCSV(const vFile: TFileName); overload; //test purpose only
     procedure ExportCSV(const vStream: TStream); overload; //test purpose only
@@ -621,7 +629,7 @@ end;
 
 { TmnrCustomReport }
 
-procedure TmnrCustomReport.LoadReport;
+procedure TmnrCustomReport.Load;
 begin
   Profiler.LoadReport;
 end;
@@ -634,6 +642,10 @@ end;
 function TmnrCustomReport.Canceled: Boolean;
 begin
   Result := FCanceled;
+end;
+
+procedure TmnrCustomReport.CollectParams(vParams: TmnrParams);
+begin
 end;
 
 constructor TmnrCustomReport.Create(vParams: TmnrParams);
@@ -705,7 +717,7 @@ procedure TmnrCustomReport.ExportCSV(const vStream: TStream);
   end;
 var
   r: TmnrRow;
-  n: TmnrCustomCell;
+  n: TmnrCell;
 begin
   r := Items.First;
   while r <> nil do
@@ -737,7 +749,7 @@ begin
   end;
 end;
 
-procedure TmnrCustomReport.Fetch(vSection: TmnrSection; var vParams: TmnrFetchParams);
+procedure TmnrCustomReport.Fetch(vSection: TmnrSection; var vParams: TmnrFetch);
 begin
 end;
 
@@ -751,17 +763,16 @@ begin
   FRowsListIndex := TmnrRowsIndex.Create(Self);
 end;
 
-procedure TmnrCustomReport.GatherReportParams(vParams: TmnrParams);
+procedure TmnrCustomReport.SetParams(vParams: TmnrParams);
 begin
-
 end;
 
 procedure TmnrCustomReport.Generate;
 begin
   Prepare;
   try
-    GatherReportParams(Params);
-    LoadReport;
+    SetParams(Params);
+    Load;
     Start;
     Loop;
   finally //handle safe finish ........
@@ -769,7 +780,7 @@ begin
   end;
 end;
 
-function TmnrCustomReport.GetCells(Row, Column: Integer): TmnrCustomCell;
+function TmnrCustomReport.GetCells(Row, Column: Integer): TmnrCell;
 var
   r: TmnrRow;
   i: Integer;
@@ -874,7 +885,7 @@ var
   l: TmnrLayout;
   aRow: TmnrRow;
   f: Boolean; //first
-  c: TmnrCustomCell;
+  c: TmnrCell;
 begin
   r := DesignRows.First;
   if r <> nil then
@@ -929,7 +940,7 @@ var
   l: TmnrLayout;
   aRow: TmnrRow;
   f: Boolean; //first
-  c: TmnrCustomCell;
+  c: TmnrCell;
 begin
   r := DesignRows.First;
   if r <> nil then
@@ -995,7 +1006,7 @@ begin
   inherited;
 end;
 
-function TmnrSection.DoFetch(var vParams: TmnrFetchParams): TmnrAcceptMode;
+function TmnrSection.DoFetch(var vParams: TmnrFetch): TmnrAcceptMode;
 begin
   Result := acmAccept;
   if Assigned(FOnFetch) then
@@ -1004,13 +1015,13 @@ begin
     Report.Fetch(Self, vParams);
 end;
 
-procedure TmnrSection.FillNow(vParams: TmnrFetchParams; vReference: TmnrReferencesRow);
+procedure TmnrSection.FillNow(vParams: TmnrFetch; vReference: TmnrReferencesRow);
 var
   r: TmnrDesignRow;
   d: TmnrDesignCell;
   l: TmnrLayout;
   aRow: TmnrRow;
-  //c: TmnrCustomCell;
+  //c: TmnrCell;
 begin
   r := DesignRows.First;
   if r <> nil then
@@ -1190,14 +1201,14 @@ end;
 procedure TmnrSections.Loop;
 var
   s: TmnrSection;
-  fparams: TmnrFetchParams;
+  fParams: TmnrFetch;
   r: TmnrReferencesRow;
 begin
   s := First;
   while s <> nil do
   begin
-    fparams.ID := 0;
-    fparams.Number := 0;
+    fParams.ID := 0;
+    fParams.Number := 0;
     case s.LoopWay of
       slwSingle:
         begin
@@ -1267,6 +1278,19 @@ begin
   //Result.FLoopWay := vLoopWay;
 end;
 
+function TmnrRow.GetCellByIndex(I: Integer): TmnrCell;
+var
+  c: Integer;
+begin
+  Result := Cells.First;
+  c := 0;
+  while (Result <> nil) and (c < i) do
+  begin
+    Result := Result.Next;
+    Inc(c);
+  end;
+end;
+
 function TmnrRow.GetCells: TmnrReportCells;
 begin
   Result := TmnrReportCells(inherited Cells);
@@ -1294,7 +1318,7 @@ begin
   Result := nil;
 end;
 
-procedure TmnrLayout.DoRequest(vCell: TmnrCustomCell);
+procedure TmnrLayout.DoRequest(vCell: TmnrCell);
 begin
   if Assigned(FOnRequest) then
     FOnRequest(vCell);
@@ -1315,7 +1339,7 @@ begin
   Result := 0;
 end;
 
-function TmnrLayout.NewCell(vRow: TmnrRow): TmnrCustomCell;
+function TmnrLayout.NewCell(vRow: TmnrRow): TmnrCell;
 begin
   Result := CreateCell(vRow.Cells);
   if Result <> nil then
@@ -1335,12 +1359,12 @@ begin
     raise Exception.Create(Format('Error Creating Cell for %s', [Name]));
 end;
 
-procedure TmnrLayout.Request(vCell: TmnrCustomCell);
+procedure TmnrLayout.Request(vCell: TmnrCell);
 begin
   DoRequest(vCell);
 end;
 
-procedure TmnrLayout.ScaleCell(vCell: TmnrCustomCell);
+procedure TmnrLayout.ScaleCell(vCell: TmnrCell);
 begin
 
 end;
@@ -1442,16 +1466,16 @@ begin
   Result := TmnrReportCell(inherited GetLast);
 end;
 
-{ TmnrCustomCell }
+{ TmnrCell }
 
-function TmnrCustomCell.GetNext: TmnrCustomCell;
+function TmnrCell.GetNext: TmnrCell;
 begin
-  Result := TmnrCustomCell(inherited GetNext);
+  Result := TmnrCell(inherited GetNext);
 end;
 
-function TmnrCustomCell.GetPrior: TmnrCustomCell;
+function TmnrCell.GetPrior: TmnrCell;
 begin
-  Result := TmnrCustomCell(inherited GetPrior);
+  Result := TmnrCell(inherited GetPrior);
 end;
 
 { TmnrReferences }
@@ -1582,6 +1606,11 @@ begin
   end;
 end;
 
+function TmnrRowsIndex.GetCount: Integer;
+begin
+  Result := Length(FArray); 
+end;
+
 function TmnrRowsIndex.GetItems(vIndex: Integer): TmnrRow;
 begin
   if (vIndex >= 0) and (vIndex < Length(FArray)) then
@@ -1616,7 +1645,7 @@ begin
   inherited Create(nil);
   FReport := vClass.Create;
   FReport.Prepare;
-  FReport.LoadReport;
+  FReport.Load;
   Created;
   DesignReport;
 end;

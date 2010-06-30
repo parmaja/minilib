@@ -64,7 +64,7 @@ type
   TmnrIntegerLayout = class(TmnrLayout)
   protected
     FTotal: Double;
-    procedure ScaleCell(vCell: TmnrCustomCell); override;
+    procedure ScaleCell(vCell: TmnrCell); override;
     function GetTotal: Double; override;
   protected
     function CreateCell(vCells: TmnrReportCells): TmnrReportCell; override;
@@ -277,7 +277,7 @@ begin
   Result := FTotal;
 end;
 
-procedure TmnrIntegerLayout.ScaleCell(vCell: TmnrCustomCell);
+procedure TmnrIntegerLayout.ScaleCell(vCell: TmnrCell);
 begin
   inherited;
   FTotal := FTotal + vCell.AsFloat;
