@@ -536,6 +536,8 @@ type
     procedure ExportCSV(const vStream: TStream); overload; //test purpose only
   end;
 
+  TmnrReportClass = class of TmnrCustomReport;
+
   TCustomReportDesigner = class(TComponent)
   private
     FReport: TmnrCustomReport;

@@ -35,7 +35,7 @@ type
 
   IFields = interface(IStreamPersist)
     function GetValues(Index: string): Variant;
-    property Values[Index: string]: Variant read GetValues;   
+    property Values[Index: string]: Variant read GetValues;
   end;
 
   TmnCustomField = class(TInterfacedObject, IField)
@@ -215,53 +215,33 @@ end;
 
 function TmnCustomField.GetAsBoolean: Boolean;
 begin
-  if IsEmpty then
-    Result := False
-  else
-    Result := AsInteger <> 0;
+  Result := AsInteger <> 0;
 end;
 
 function TmnCustomField.GetAsCurrency: Currency;
 begin
-  if IsEmpty or not VarIsNumeric(Value) then
-    Result := 0
-  else
-    Result := Value;
+  Result := Value;
 end;
 
 function TmnCustomField.GetAsDate: TDateTime;
 begin
-  if IsEmpty then
-    Result := 0
-  else
-  begin
-    Result := Value;
-    Result := DateOf(Result);
-  end;
+  Result := Value;
+  Result := DateOf(Result);
 end;
 
 function TmnCustomField.GetAsDateTime: TDateTime;
 begin
-  if IsEmpty then
-    Result := 0
-  else
-    Result := Value;
+  Result := Value;
 end;
 
 function TmnCustomField.GetAsInt64: Integer;
 begin
-  if IsEmpty then
-    Result := 0
-  else
-    Result := Value;
+  Result := Value;
 end;
 
 function TmnCustomField.GetAsInteger: Integer;
 begin
-  if IsEmpty then
-    Result := 0
-  else
-    Result := Value;
+  Result := Value;
 end;
 
 function TmnCustomField.GetAsString: string;
@@ -271,13 +251,8 @@ end;
 
 function TmnCustomField.GetAsTime: TDateTime;
 begin
-  if IsEmpty then
-    Result := 0
-  else
-  begin
-    Result := Value;
-    Result := TimeOf(Result);
-  end;
+  Result := Value;
+  Result := TimeOf(Result);
 end;
 
 function TmnCustomField.ReadAsTrimString: string;
@@ -317,7 +292,14 @@ begin
   if IsEmpty then
     Result := False
   else
-    Result := GetAsBoolean;
+    try
+      Result := GetAsBoolean;
+    except
+      on E: EVariantError do
+        Result := False;
+      else
+        raise;
+    end;
 end;
 
 function TmnCustomField.ReadAsCurrency: Currency;
@@ -325,7 +307,14 @@ begin
   if IsEmpty then
     Result := 0
   else
-    Result := GetAsCurrency;
+    try
+      Result := GetAsCurrency;
+    except
+      on E: EVariantError do
+        Result := 0;
+      else
+        raise;
+    end;
 end;
 
 function TmnCustomField.ReadAsDate: TDateTime;
@@ -333,7 +322,14 @@ begin
   if IsEmpty then
     Result := 0
   else
-    Result := GetAsDate;
+    try
+      Result := GetAsDate;
+    except
+      on E: EVariantError do
+        Result := 0;
+      else
+        raise;
+    end;
 end;
 
 function TmnCustomField.ReadAsDateTime: TDateTime;
@@ -341,7 +337,14 @@ begin
   if IsEmpty then
     Result := 0
   else
-    Result := GetAsDateTime;
+    try
+      Result := GetAsDateTime;
+    except
+      on E: EVariantError do
+        Result := 0;
+      else
+        raise;
+    end;
 end;
 
 function TmnCustomField.ReadAsInt64: Integer;
@@ -349,7 +352,14 @@ begin
   if IsEmpty then
     Result := 0
   else
-    Result := GetAsInt64;
+    try
+      Result := GetAsInt64;
+    except
+      on E: EVariantError do
+        Result := 0;
+      else
+        raise;
+    end;
 end;
 
 function TmnCustomField.ReadAsInteger: Integer;
@@ -357,7 +367,14 @@ begin
   if IsEmpty then
     Result := 0
   else
-    Result := GetAsInteger;
+    try
+      Result := GetAsInteger;
+    except
+      on E: EVariantError do
+        Result := 0;
+      else
+        raise;
+    end;
 end;
 
 function TmnCustomField.ReadAsString: string;
@@ -365,7 +382,14 @@ begin
   if IsEmpty then
     Result := ''
   else
-    Result := GetAsString;
+    try
+      Result := GetAsString;
+    except
+      on E: EVariantError do
+        Result := '';
+      else
+        raise;
+    end;
 end;
 
 function TmnCustomField.ReadAsText: string;
@@ -373,7 +397,14 @@ begin
   if IsEmpty then
     Result := ''
   else
-    Result := GetAsText;
+    try
+      Result := GetAsText;
+    except
+      on E: EVariantError do
+        Result := '';
+      else
+        raise;
+    end;
 end;
 
 function TmnCustomField.ReadAsTime: TDateTime;
@@ -381,15 +412,22 @@ begin
   if IsEmpty then
     Result := 0
   else
-    Result := GetAsTime;
+    try
+      Result := GetAsTime;
+    except
+      on E: EVariantError do
+        Result := 0;
+      else
+        raise;
+    end;
 end;
 
 procedure TmnCustomField.WriteAsNullString(const AValue: string);
 begin
-  if Value = '' then
+  if AValue = '' then
     Clear
   else
-    AsString := Value;
+    AsString := AValue;
 end;
 
 function TmnCustomField.ReadAsHex: string;
@@ -410,7 +448,7 @@ procedure TmnCustomField.WriteAsHex(const AValue: string);
 var
   s: string;
 begin
-  SetLength(s, Length(Value) div 2);
+  SetLength(s, Length(AValue) div 2);
   HexToBin(PChar(AValue), @s[1], Length(s));
   AsString := s;
 end;
@@ -427,27 +465,27 @@ end;
 
 procedure TmnCustomField.SetAsDate(const AValue: TDateTime);
 begin
-  Self.Value := DateOf(AValue);
+  Value := DateOf(AValue);
 end;
 
 procedure TmnCustomField.SetAsDateTime(const AValue: TDateTime);
 begin
-  Self.Value := AValue;
+  Value := AValue;
 end;
 
 procedure TmnCustomField.SetAsInt64(const AValue: Integer);
 begin
-  Self.Value := Value;
+  Value := AValue;
 end;
 
 procedure TmnCustomField.SetAsInteger(const AValue: Integer);
 begin
-  Self.Value := Value;
+  Value := AValue;
 end;
 
 procedure TmnCustomField.SetAsString(const AValue: string);
 begin
-  Self.Value := Value;
+  Value := AValue;
 end;
 
 procedure TmnCustomField.Empty;
@@ -480,7 +518,7 @@ end;
 procedure TmnCustomField.WriteAsAnsiString(const AValue: ansistring);
 begin
   //fpc not auto convert because string type it same with ansistring
-  SetAsString(AnsiToUtf8(Value));
+  SetAsString(AnsiToUtf8(AValue));
 end;
 
 function TmnCustomField.ReadAsWideString: widestring;
@@ -511,7 +549,7 @@ end;
 
 procedure TmnCustomField.WriteAsWideString(const AValue: widestring);
 begin
-  SetAsString(Value);
+  SetAsString(AValue);
 end;
 
 procedure TmnCustomField.WriteAsBoolean(const AValue: Boolean);
@@ -575,17 +613,17 @@ end;
 
 procedure TmnCustomField.WriteAsUtf8String(const AValue: UTF8String);
 begin
-  SetAsString(Value);
+  SetAsString(AValue);
 end;
 
 procedure TmnCustomField.SetAsTime(const AValue: TDateTime);
 begin
-  Self.Value := TimeOf(Value);
+  Value := TimeOf(AValue);
 end;
 
 procedure TmnCustomField.WriteAsTrimString(const AValue: string);
 begin
-  AsString := Trim(Value);
+  AsString := Trim(AValue);
 end;
 
 { TmnFields }
