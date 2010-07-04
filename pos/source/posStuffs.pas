@@ -494,7 +494,7 @@ begin
     try
       FDownItem.Item := aItem;
       if Interactive then
-        FDownItem.Click;
+        DownItem.Click;
       if FDownItem <> nil then
         StuffClicked(aItem);
     finally
