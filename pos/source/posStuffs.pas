@@ -256,6 +256,7 @@ begin
   ControlStyle := ControlStyle + [csSetCaption, csCaptureMouse];
   Style := Style - [fsBorder] + [fsLatedOpaque];
   FItemIndex := -1;
+  FInteractive := True;
   FSpaceSize := cSpaceSize;
   FItemHeight := cStuffsItemHeight;
   FButtonColor := clBtnFace;

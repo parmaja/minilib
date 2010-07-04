@@ -2,7 +2,7 @@
 #
 #   Makefile.fpc for NativeLib 0.0
 #
-#   This file was generated on 2010-04-03
+#   This file was generated on 2010-07-04
 
 [package]
 name=nativelib
@@ -21,6 +21,8 @@ units=NativeLib.pas
 files=$(wildcard $(COMPILER_UNITTARGETDIR)/*$(OEXT)) \
       $(wildcard $(COMPILER_UNITTARGETDIR)/*$(PPUEXT)) \
       $(wildcard $(COMPILER_UNITTARGETDIR)/*$(RSTEXT)) \
+      $(wildcard $(COMPILER_UNITTARGETDIR)/*.lfm) \
+      $(wildcard $(COMPILER_UNITTARGETDIR)/*.res) \
       $(wildcard $(COMPILER_UNITTARGETDIR)/*.compiled) \
       $(wildcard *$(OEXT)) $(wildcard *$(PPUEXT)) $(wildcard *$(RSTEXT))
 [prerules]

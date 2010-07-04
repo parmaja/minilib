@@ -16,7 +16,7 @@ type
 
   { TIParam }
 
-  TIParam = class(TObject{$IFDEF FPC}, IField{$ENDIF})
+  TIParam = class(TInterfacedObject, IField)
   private
     FName: string;
     FValue: Variant;
@@ -37,6 +37,8 @@ type
     function GetAsObject: TObject;
     procedure SetAsObject(const Value: TObject);
   protected
+    procedure LoadFromStream(Stream: TStream);
+    procedure SaveToStream(Stream: TStream);
   public
     property Name: string read FName write FName;
     property Value: Variant read GetValue write SetValue;
@@ -86,9 +88,6 @@ function NewParams(Text: string; Name: string = ''): IParams; overload;
 function NewParams(Keys: array of string; Values: array of Variant; Name: string = ''): IParams; overload;
 function NewParams(Strings: TStringList; Name: string = ''): IParams; overload;
 function NewParams(Params: IParams; Name: string = ''): IParams; overload;
-
-function ProcessCommand(Command: string; NameValueSeparator: Char = ':'; AQuote: Char = '"'): IParams; overload;
-function ProcessCommandLine(NameValueSeparator: Char = ':'; AQuote: Char = '"'): IParams; overload;
 
 implementation
 
@@ -350,6 +349,14 @@ begin
   FValue := Integer(Value);
 end;
 
+procedure TIParam.LoadFromStream(Stream: TStream);
+begin
+end;
+
+procedure TIParam.SaveToStream(Stream: TStream);
+begin
+end;
+
 procedure TIParam.SetAsString(const Value: string);
 begin
   FValue := Value
@@ -458,39 +465,6 @@ begin
       Param[Copy(a, 1, P - 1)].Value := Copy(a, P + 1, MaxInt)
     end;
   end;
-end;
-
-function ProcessCommandLine(NameValueSeparator: Char; AQuote: Char): IParams;
-begin
-  //Result := ProcessCommand(GetCommandLine, NameValueSeparator, AQuote);
-end;
-
-function ProcessCommand(Command: string; NameValueSeparator: Char; AQuote: Char): IParams;
-{var
-  S: string;
-  C: string;
-  N, V: string;
-  P: Integer;}
-begin
-  {Result := NewParams;
-  C := Command;
-  P := 1;
-  while SpliteStr(S, C, P, ' ', AQuote) do
-  begin
-    if (S <> '') and (S[1] in ['-', '/']) then
-    begin
-      S[1] := '-';
-      SpliteStr(N, S, 0, NameValueSeparator, AQuote);
-      SpliteStr(V, S, 1, NameValueSeparator, AQuote);
-      if V <> '' then
-        Result.Param[N].Value := AnsiDequotedStr(V, AQuote)
-      else
-        Result.Param[N].Value := Unassigned;
-    end
-    else
-      Result.Param[''].Value := S;
-    Inc(P);
-  end;}
 end;
 
 procedure TIParams.Clear;

@@ -53,8 +53,8 @@ end;
 procedure ucpInstall(MBToWCProc: Tmbtowc_proc; WCtoMBProc: Twctomb_proc{$IFDEF FPC}; Hook: Boolean{$ENDIF});
 {$IFDEF FPC}
 var
-  Manager: TWideStringManager;
-  //Manager: TUnicodeStringManager;
+  //Manager: TWideStringManager;
+  Manager: TUnicodeStringManager;
 {$ENDIF}
 begin
   FConverter.MBToWCProc := MBToWCProc;
