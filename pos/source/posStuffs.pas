@@ -153,6 +153,7 @@ type
     FReadOnly: Boolean;
     FMouseInDown: Boolean;
     FRefreshMode: TRefreshMode;
+    FInteractive: Boolean;
     function GetCount: Integer;
     function GetSelected: IposStuff;
     procedure SetItemHeight(const Value: Integer);
@@ -232,7 +233,6 @@ type
     property OnStartDrag;
     property RefreshMode: TRefreshMode read FRefreshMode write FRefreshMode default rfrNormal;
     property AutoSelect: Boolean read FAutoSelect write FAutoSelect stored False default False;
-    property OnStuffClick: TOnStuffClick read FOnStuffClick write FOnStuffClick;
     property ItemHeight: Integer read FItemHeight write SetItemHeight default cStuffsItemHeight;
     property ReadOnly: Boolean read FReadOnly write FReadOnly default False;
     property Columns: Integer read FColumns write FColumns default 0;
@@ -240,7 +240,9 @@ type
     property ButtonColor: TColor read FButtonColor write FButtonColor default clBtnFace;
     property ButtonWidth: Integer read FButtonWidth write FButtonWidth default cDefaultStuffWidth;
     property SpaceSize: Integer read FSpaceSize write FSpaceSize default cSpaceSize;
-
+    //Interactive call Click method of Item clicked
+    property Interactive: Boolean read FInteractive write FInteractive default True;
+    property OnStuffClick: TOnStuffClick read FOnStuffClick write FOnStuffClick;
   end;
 
 implementation
@@ -491,7 +493,8 @@ begin
     FDownItem := TposListStuffItem.Create;
     try
       FDownItem.Item := aItem;
-      FDownItem.Click;
+      if Interactive then
+        FDownItem.Click;
       if FDownItem <> nil then
         StuffClicked(aItem);
     finally
@@ -582,7 +585,8 @@ begin
           FItemIndex := DownItem.Index;
           if not ReadOnly then
           begin
-            DownItem.Click; // Click here can free DownItem
+            if Interactive then
+              DownItem.Click; // Click here can be free DownItem
             if (DownItem <> nil) then //may be prior Click change the Items of Stuffs
               StuffClicked(DownItem.Item);
           end;
