@@ -36,17 +36,17 @@ type
     HeaderDeatils, Details: TmnrSection;
     procedure CreateSections(vSections: TmnrSections); override;
     procedure CreateLayouts(vLayouts: TmnrLayouts); override;
-    procedure DetailsFetch(var vParams: TmnrFetchParams);
-    procedure HeadersFetch(var vParams: TmnrFetchParams);
-    procedure LoadReport; override;
+    procedure DetailsFetch(var vParams: TmnrFetch);
+    procedure HeadersFetch(var vParams: TmnrFetch);
+    procedure Load; override;
     function CreateProfiler: TmnrProfiler; override;
   public
-    procedure RequestMaster(vCell: TmnrCustomReportCell);
-    procedure RequestNumber(vCell: TmnrCustomReportCell);
-    procedure RequestDate(vCell: TmnrCustomReportCell);
-    procedure RequestName(vCell: TmnrCustomReportCell);
-    procedure RequestCode(vCell: TmnrCustomReportCell);
-    procedure RequestValue(vCell: TmnrCustomReportCell);
+    procedure RequestMaster(vCell: TmnrCell);
+    procedure RequestNumber(vCell: TmnrCell);
+    procedure RequestDate(vCell: TmnrCell);
+    procedure RequestName(vCell: TmnrCell);
+    procedure RequestCode(vCell: TmnrCell);
+    procedure RequestValue(vCell: TmnrCell);
 
     procedure Start; override;
   end;
@@ -177,7 +177,7 @@ end;
 
 { TSimpleDetailsReport }
 
-procedure TSimpleDetailsReport.LoadReport;
+procedure TSimpleDetailsReport.Load;
 begin
   inherited;
   {with HeaderDeatils.DesignRows.Add do
@@ -246,60 +246,60 @@ begin
   end;}
 end;
 
-procedure TSimpleDetailsReport.DetailsFetch(var vParams: TmnrFetchParams);
+procedure TSimpleDetailsReport.DetailsFetch(var vParams: TmnrFetch);
 begin
   with vParams do
   begin
-    if Mode=fmFirst then
+    if FetchMode=fmFirst then
       SubPos := 0
     else
       Inc(SubPos);
     if SubPos>60 then
-      Accepted := acmEof;
+      AcceptMode := acmEof;
   end;
 end;
 
-procedure TSimpleDetailsReport.HeadersFetch(var vParams: TmnrFetchParams);
+procedure TSimpleDetailsReport.HeadersFetch(var vParams: TmnrFetch);
 begin
   with vParams do
   begin
-    if Mode=fmFirst then
+    if FetchMode=fmFirst then
       BigPos := 0
     else
       Inc(BigPos);
     if BigPos>3 then
-      Accepted := acmEof;
+      AcceptMode := acmEof;
   end;
 end;
 
-procedure TSimpleDetailsReport.RequestNumber(vCell: TmnrCustomReportCell);
+procedure TSimpleDetailsReport.RequestNumber(vCell: TmnrCell);
 begin
   vCell.AsInteger := SubPos;
 end;
 
-procedure TSimpleDetailsReport.RequestDate(vCell: TmnrCustomReportCell);
+procedure TSimpleDetailsReport.RequestDate(vCell: TmnrCell);
 begin
   vCell.AsDateTime := IncDay(Now, RandomRange(-100, 100));
   //vCell.AsDateTime := Now;
 end;
 
-procedure TSimpleDetailsReport.RequestMaster(vCell: TmnrCustomReportCell);
+procedure TSimpleDetailsReport.RequestMaster(vCell: TmnrCell);
 begin
   vCell.AsInteger := BigPos;
 end;
 
-procedure TSimpleDetailsReport.RequestName(vCell: TmnrCustomReportCell);
+procedure TSimpleDetailsReport.RequestName(vCell: TmnrCell);
 begin
   vCell.AsString := Format('Cell %d', [0]);
   //vCell.AsString := 'Cell %d';
 end;
 
-procedure TSimpleDetailsReport.RequestCode(vCell: TmnrCustomReportCell);
+procedure TSimpleDetailsReport.RequestCode(vCell: TmnrCell);
 begin
   vCell.AsString := Format('Row = %d    Col = %d', [vCell.Row.ID, 0]);
 end;
 
-procedure TSimpleDetailsReport.RequestValue(vCell: TmnrCustomReportCell);
+procedure TSimpleDetailsReport.RequestValue(vCell: TmnrCell);
 begin
   vCell.AsCurrency := RandomRange(1, 1000) / RandomRange(6, 66);
 end;
