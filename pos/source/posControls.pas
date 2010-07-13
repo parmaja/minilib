@@ -44,6 +44,7 @@ uses
   LCLType,
 {$ELSE}
   Windows,
+  StdCtrls,
   Messages,
 {$ENDIF}
   Forms, Contnrs, Types,
