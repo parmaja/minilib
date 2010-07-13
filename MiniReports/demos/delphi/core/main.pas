@@ -9,8 +9,8 @@ uses
   //dluxdetails dluxdesign
 
 const
-  cMaxRows  = 1000;
-  cMaxCells = 10;
+  cMaxRows  = 10000;
+  cMaxCells = 100;
 
 type
 
@@ -36,8 +36,8 @@ type
     HeaderDeatils, Details: TmnrSection;
     procedure CreateSections(vSections: TmnrSections); override;
     procedure CreateLayouts(vLayouts: TmnrLayouts); override;
-    procedure DetailsFetch(var vParams: TmnrFetch);
     procedure HeadersFetch(var vParams: TmnrFetch);
+    procedure DetailsFetch(var vParams: TmnrFetch);
     procedure Load; override;
     function CreateProfiler: TmnrProfiler; override;
   public
@@ -90,7 +90,7 @@ begin
   r := TSimpleDetailsReport.Create;
   try
     r.Generate;
-    //r.ExportCSV('c:\1.csv');
+    r.ExportCSV('c:\1.csv');
     ShowMessage('Create in '+IntToStr(GetTickCount-t));
     t := GetTickCount;
   finally
@@ -119,6 +119,7 @@ begin
       end;
     end;
     ShowMessage(Format('Create %d node in %d ms', [cMaxRows*cMaxCells, GetTickCount-t]));
+
 
     t := GetTickCount;
     idx := TmnrLinkNodesListIndex.Create(rs);
@@ -254,7 +255,7 @@ begin
       SubPos := 0
     else
       Inc(SubPos);
-    if SubPos>60 then
+    if SubPos>6000 then
       AcceptMode := acmEof;
   end;
 end;
@@ -267,7 +268,7 @@ begin
       BigPos := 0
     else
       Inc(BigPos);
-    if BigPos>3 then
+    if BigPos>30 then
       AcceptMode := acmEof;
   end;
 end;

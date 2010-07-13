@@ -33,7 +33,7 @@ object Form1: TForm1
   end
   object TestWriteBtn: TButton
     Left = 397
-    Top = 72
+    Top = 71
     Width = 75
     Height = 25
     Caption = 'Test Write'
