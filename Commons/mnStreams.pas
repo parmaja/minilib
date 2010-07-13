@@ -173,12 +173,15 @@ end;
 
 procedure TmnStream.ReadStrings(Value: TStrings);
 var
-  s:string;
+  s: string;
 begin
   while not EOF do
   begin
-    if ReadLn(S) then
-      Value.Add(S);
+    {$ifdef FPC}
+    s := '';
+    {$endif}
+    if ReadLn(s) then
+      Value.Add(s);
   end;
 end;
 

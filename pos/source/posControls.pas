@@ -46,7 +46,7 @@ uses
   Windows,
   Messages,
 {$ENDIF}
-  Forms, StdCtrls, Contnrs, Types,
+  Forms, Contnrs, Types,
   posUtils, posDraws, posTypes;
 
 const

@@ -40,7 +40,6 @@ type
 
   TmnCustomField = class(TInterfacedObject, IField)
   private
-    FName: string;
     procedure CheckIsNil;
     function ReadAsHex: string;
     procedure WriteAsHex(const AValue: string);
@@ -135,7 +134,6 @@ type
   public
     procedure Clear;//make value null
     procedure Empty;//make value empty
-    property Name: string read FName write FName;
   end;
 
   TmnCustomFieldClass = class of TmnCustomField;
@@ -151,6 +149,7 @@ type
 
   TmnField = class(TmnCustomField)
   private
+    FName: string;
     FValue: Variant;
   protected
     function GetValue: Variant; override;
@@ -175,6 +174,7 @@ type
     property AsDateTime;
     property AsText; 
     property AsHex;
+    property Name: string read FName write FName;
   end;
 
   TmnFields = class(TmnCustomFields, IFields)
@@ -734,7 +734,7 @@ begin
   Result := nil;
   for i := 0 to Count - 1 do
   begin
-    if SameText(vName, Items[i].Name) then
+    if SameText(vName, (Items[i] as TmnField).Name) then
     begin
       Result := Items[i] as TmnField;
       break;
