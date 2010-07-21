@@ -1,4 +1,4 @@
-unit mncRecordsets;
+unit mncSQLUtils;
 {**
  *  This file is part of the "Mini Connections"
  *
@@ -28,10 +28,12 @@ type
   private
     FMode: TSQLMode;
     FQuoteNames: Boolean;
-    FSQL: string;
+    FText: string;
     procedure SetMode(const AValue: TSQLMode);
   protected
   public
+    constructor Init(AMode: TSQLMode = sqlmPlan; AQuoteNames: Boolean = False);
+    //destructor Done; virtual;
     function SQLName(const Name: string): string;
     function SQLBool(Value: Boolean): string;
     function SQLDate(vDate: TDateTime): string;
@@ -57,29 +59,29 @@ type
     procedure AddIntBool(const vFieldName: string; Value: Boolean; vEqual: string = '='; vAndOr: string = 'and');
 
 
-    class function ForSelect(Table: string; Fields: array of string; Keys: array of string; ExtraFields: array of string): string; overload;
-    class function ForSelect(Table: string; Fields: array of string; Keys: array of string): string; overload;
-    class function ForUpdate(Table: string; Fields: array of string; Keys: array of string; ExtraFields: array of string): string; overload;
-    class function ForUpdate(Table: string; Fields: array of string; Keys: array of string): string; overload;
-    class function ForInsert(Table: string; Fields: array of string; ExtraFields: array of string): string; overload;
-    class function ForInsert(Table: string; Fields: array of string): string; overload;
-    class function ForUpdateOrInsert(Updating, Returning:Boolean; Table: string; Fields: array of string; Keys: array of string): string; overload;
-    class function ForDelete(Table: string; Keys: array of string): string; overload;
+    function ForSelect(Table: string; Fields: array of string; Keys: array of string; ExtraFields: array of string): string; overload;
+    function ForSelect(Table: string; Fields: array of string; Keys: array of string): string; overload;
+    function ForUpdate(Table: string; Fields: array of string; Keys: array of string; ExtraFields: array of string): string; overload;
+    function ForUpdate(Table: string; Fields: array of string; Keys: array of string): string; overload;
+    function ForInsert(Table: string; Fields: array of string; ExtraFields: array of string): string; overload;
+    function ForInsert(Table: string; Fields: array of string): string; overload;
+    function ForUpdateOrInsert(Updating, Returning:Boolean; Table: string; Fields: array of string; Keys: array of string): string; overload;
+    function ForDelete(Table: string; Keys: array of string): string; overload;
 
     function MergeArray(S: TArrayFieldNames; A: array of string): TArrayFieldNames;
 
     procedure AddWhere; overload;
-    procedure AddWhere(vWhere: string; Brackets: Boolean = True);
+    procedure AddWhere(vWhere: string; Brackets: Boolean = True); overload;
     function ExtractOperator(var Value: string): string;
     property QuoteNames: Boolean read FQuoteNames write FQuoteNames default False;
-    property Mode:TSQLMode read FMode write SetMode default sqlmPlan;
-    property SQL: string read FSQL write FSQL;
+    property Mode: TSQLMode read FMode write SetMode default sqlmPlan;
+    property Text: string read FText write FText;
   end;
 
 implementation
 
 uses
-  Variants;
+  StrUtils, Variants;
 
 const
   SQLMode_Quoted: array[TSQLMode] of string = (
@@ -110,6 +112,17 @@ begin
   if FMode =AValue then exit;
   FMode :=AValue;
 end;
+
+constructor TSQLObject.Init(AMode: TSQLMode; AQuoteNames: Boolean);
+begin
+  FMode := AMode;
+  FQuoteNames := AQuoteNames;
+end;
+
+{destructor TSQLObject.Done;
+begin
+
+end;}
 
 function TSQLObject.SQLDate(vDate: TDateTime): string;
 begin
@@ -147,9 +160,9 @@ procedure TSQLObject.AddText(const vFieldName, Value: string; vAndOr: string);
 begin
   if Value <> '' then
   begin
-    if (FSQL <> '') then
-      FSQL := FSQL + ' ' + vAndOr;
-    FSQL := FSQL + ' (' + SQLName(vFieldName) + ' = ''' + Value + ''')'#13;
+    if (FText <> '') then
+      FText := FText + ' ' + vAndOr;
+    FText := FText + ' (' + SQLName(vFieldName) + ' = ''' + Value + ''')'#13;
   end;
 end;
 
@@ -157,22 +170,22 @@ procedure TSQLObject.AddLike(const vFieldName: string; Value: string; vAndOr: st
 var
   e: string;
 begin
-  if (vAndOr <> '') and (FSQL <> '') then
-    FSQL := FSQL + ' ' + vAndOr + ' ';
+  if (vAndOr <> '') and (FText <> '') then
+    FText := FText + ' ' + vAndOr + ' ';
   e := ExtractOperator(Value);
   if e = '=' then
-    FSQL := FSQL + '(' + SQLName(vFieldName) + ' like ''%' + Value + '%'')'
+    FText := FText + '(' + SQLName(vFieldName) + ' like ''%' + Value + '%'')'
   else if e = '<>' then
-    FSQL := FSQL + '( not ' + SQLName(vFieldName) + 'like ''%' + Value + '%'')';
+    FText := FText + '( not ' + SQLName(vFieldName) + 'like ''%' + Value + '%'')';
 end;
 
 procedure TSQLObject.AddLeftLike(const vFieldName, Value: string; vAndOr: string);
 begin
   if Value <> '' then
   begin
-    if (FSQL <> '') then
-      FSQL := FSQL + ' ' + vAndOr;
-    FSQL := FSQL + ' (' + SQLName(vFieldName) + ' like ''' + Value + '%'')'#13;
+    if (FText <> '') then
+      FText := FText + ' ' + vAndOr;
+    FText := FText + ' (' + SQLName(vFieldName) + ' like ''' + Value + '%'')'#13;
   end;
 end;
 
@@ -180,9 +193,9 @@ procedure TSQLObject.AddNotLike(const vFieldName, Value: string; vAndOr: string)
 begin
   if Value <> '' then
   begin
-    if (FSQL <> '') then
-      FSQL := FSQL + ' ' + vAndOr;
-    FSQL := FSQL + ' (' + SQLName(vFieldName) + ' not like ''%' + Value + '%'')'#13;
+    if (FText <> '') then
+      FText := FText + ' ' + vAndOr;
+    FText := FText + ' (' + SQLName(vFieldName) + ' not like ''%' + Value + '%'')'#13;
   end;
 end;
 
@@ -190,9 +203,9 @@ procedure TSQLObject.AddDate(const vFieldName: string; vDate: TDateTime; vEqual:
 begin
   if (vDate <> 0) then
   begin
-    if (FSQL <> '') then
-      FSQL := FSQL + ' ' + vAndOr;
-    FSQL := FSQL + ' (' + SQLName(vFieldName) + vEqual + SQLDate(vDate) + ')'#13;
+    if (FText <> '') then
+      FText := FText + ' ' + vAndOr;
+    FText := FText + ' (' + SQLName(vFieldName) + vEqual + SQLDate(vDate) + ')'#13;
   end;
 end;
 
@@ -214,9 +227,9 @@ begin
     S := '(' + SQLName(vFieldName) + '<=' + IntToStr(vTo) + ')'#13;
   if (S <> '') then
   begin
-    if (FSQL <> '') then
-      FSQL := FSQL + ' ' + vAndOr;
-    FSQL := FSQL + ' ' + S;
+    if (FText <> '') then
+      FText := FText + ' ' + vAndOr;
+    FText := FText + ' ' + S;
   end;
 end;
 
@@ -232,9 +245,9 @@ begin
     S := '(' + SQLName(vFieldName) + '<=' + SQLDate(vToDate) + ')'#13;
   if (S <> '') then
   begin
-    if (FSQL <> '') then
-      FSQL := FSQL + ' ' + vAndOr;
-    FSQL := FSQL + ' ' + S;
+    if (FText <> '') then
+      FText := FText + ' ' + vAndOr;
+    FText := FText + ' ' + S;
   end;
 end;
 
@@ -250,9 +263,9 @@ begin
     S := '(' + SQLName(vFieldName) + '>' + SQLDate(vToDate) + ')'#13;
   if (S <> '') then
   begin
-    if (FSQL <> '') then
-      FSQL := FSQL + ' ' + vAndOr;
-    FSQL := FSQL + ' ' + S;
+    if (FText <> '') then
+      FText := FText + ' ' + vAndOr;
+    FText := FText + ' ' + S;
   end;
 end;
 
@@ -260,12 +273,12 @@ procedure TSQLObject.AddNumber(const vFieldName: string; vNumber: Int64; vEqual:
 var
   Str: string;
 begin
-  if (vAndOr <> '') and (FSQL <> '') then
-    FSQL := FSQL + ' ' + vAndOr;
+  if (vAndOr <> '') and (FText <> '') then
+    FText := FText + ' ' + vAndOr;
   if vEqual = '' then
     vEqual := '=';
   Str := IntToStr(vNumber);
-  FSQL := FSQL + ' (' + SQLName(vFieldName) + vEqual + Str + ')'#13;
+  FText := FText + ' (' + SQLName(vFieldName) + vEqual + Str + ')'#13;
 end;
 
 procedure TSQLObject.AddRangeNumber(const vFieldName: string; vFromNumber, vToNumber: Integer);
@@ -284,9 +297,9 @@ procedure TSQLObject.AddCustom(const vCustStr: string; vAndOr: string; vConditio
 begin
   if vCondition and (vCustStr <> '') then
   begin
-    if (FSQL <> '') then
-      FSQL := FSQL + ' ' + vAndOr;
-    FSQL := FSQL + ' (' + vCustStr + ')' + #13;
+    if (FText <> '') then
+      FText := FText + ' ' + vAndOr;
+    FText := FText + ' (' + vCustStr + ')' + #13;
   end;
 end;
 
@@ -294,11 +307,11 @@ procedure TSQLObject.AddStr(const vFieldName: string; Value: string; vEqual: str
 begin
   if Value > '' then
   begin
-    if (FSQL <> '') then
-      FSQL := FSQL + ' ' + vAndOr;
+    if (FText <> '') then
+      FText := FText + ' ' + vAndOr;
     if vEqual = '' then
       vEqual := '=';
-    FSQL := FSQL + ' (' + SQLName(vFieldName) + vEqual + Value + ')' + #13;
+    FText := FText + ' (' + SQLName(vFieldName) + vEqual + Value + ')' + #13;
   end;
 end;
 
@@ -309,11 +322,11 @@ begin
   aStr := VarToStr(Value);
   if aStr <> '' then
   begin
-    if (FSQL <> '') then
-      FSQL := FSQL + ' ' + vAndOr;
+    if (FText <> '') then
+      FText := FText + ' ' + vAndOr;
     if vEqual = '' then
       vEqual := '=';
-    FSQL := FSQL + ' (' + SQLName(vFieldName) + vEqual + aStr + ')' + #13;
+    FText := FText + ' (' + SQLName(vFieldName) + vEqual + aStr + ')' + #13;
   end;
 end;
 
@@ -323,12 +336,12 @@ var
 begin
   if (Value <> 0) then
   begin
-    if (FSQL <> '') then
-      FSQL := FSQL + ' ' + vAndOr;
+    if (FText <> '') then
+      FText := FText + ' ' + vAndOr;
     if vEqual = '' then
       vEqual := '=';
     aStr := IntToStr(Value);
-    FSQL := FSQL + ' (' + SQLName(vFieldName) + vEqual + aStr + ')'#13;
+    FText := FText + ' (' + SQLName(vFieldName) + vEqual + aStr + ')'#13;
   end;
 end;
 
@@ -336,46 +349,46 @@ procedure TSQLObject.AddBool(const vFieldName: string; Value: Boolean; vEqual: s
 var
   aStr: string;
 begin
-  if (FSQL <> '') then
-    FSQL := FSQL + ' ' + vAndOr;
+  if (FText <> '') then
+    FText := FText + ' ' + vAndOr;
   aStr := SQLBool(Value);
-  FSQL := FSQL + ' (' + SQLName(vFieldName) + vEqual + aStr + ')' + #13;
+  FText := FText + ' (' + SQLName(vFieldName) + vEqual + aStr + ')' + #13;
 end;
 
 procedure TSQLObject.AddIntBool(const vFieldName: string; Value: Boolean; vEqual: string; vAndOr: string);
 var
   aStr: string;
 begin
-  if (FSQL <> '') then
-    FSQL := FSQL + ' ' + vAndOr;
+  if (FText <> '') then
+    FText := FText + ' ' + vAndOr;
   if Value then
     aStr := '1'
   else
     aStr := '0';
-  FSQL := FSQL + ' (' + SQLName(vFieldName) + vEqual + aStr + ')' + #13;
+  FText := FText + ' (' + SQLName(vFieldName) + vEqual + aStr + ')' + #13;
 end;
 
 procedure TSQLObject.AddWhere(vWhere: string; Brackets: Boolean);
 begin
   if vWhere <> '' then
   begin
-    if FSQL <> '' then
-      FSQL := FSQL + ' and'
+    if FText <> '' then
+      FText := FText + ' and'
     else
-      FSQL := 'where';
+      FText := 'where';
     if not (vWhere[1] in [' ', #13]) then
-      FSQL := FSQL + ' ';
+      FText := FText + ' ';
     if Brackets then
-      FSQL := FSQL + '(' + vWhere + ')'
+      FText := FText + '(' + vWhere + ')'
     else
-      FSQL := FSQL + vWhere;
+      FText := FText + vWhere;
   end;
 end;
 
 procedure TSQLObject.AddWhere;
 begin
-  if FSQL <> '' then
-    FSQL := #13'where ' + FSQL;
+  if FText <> '' then
+    FText := #13'where ' + FText;
 end;
 
 function TSQLObject.ExtractOperator(var Value: string): string;
@@ -404,13 +417,13 @@ procedure TSQLObject.AddAndOr(const S: string; vAndOr: string);
 begin
   if S <> '' then
   begin
-    if FSQL <> '' then
-      FSQL := FSQL + ' ' + vAndOr;
-    FSQL := FSQL + '(' + S + ')';
+    if FText <> '' then
+      FText := FText + ' ' + vAndOr;
+    FText := FText + '(' + S + ')';
   end;
 end;
 
-class function TSQLObject.ForSelect(Table: string; Fields: array of string; Keys: array of string; ExtraFields: array of string): string;
+function TSQLObject.ForSelect(Table: string; Fields: array of string; Keys: array of string; ExtraFields: array of string): string;
 var
   i: Integer;
   b: Boolean;
@@ -444,12 +457,12 @@ begin
   end;
 end;
 
-class function TSQLObject.ForSelect(Table: string; Fields: array of string; Keys: array of string): string;
+function TSQLObject.ForSelect(Table: string; Fields: array of string; Keys: array of string): string;
 begin
   Result := ForSelect(Table, Fields, Keys, []);
 end;
 
-class function TSQLObject.ForUpdate(Table: string; Fields: array of string; Keys: array of string; ExtraFields: array of string): string;
+function TSQLObject.ForUpdate(Table: string; Fields: array of string; Keys: array of string; ExtraFields: array of string): string;
 var
   i: Integer;
   b: Boolean;
@@ -482,12 +495,12 @@ begin
   end;
 end;
 
-class function TSQLObject.ForUpdate(Table: string; Fields: array of string; Keys: array of string): string; overload;
+function TSQLObject.ForUpdate(Table: string; Fields: array of string; Keys: array of string): string;
 begin
   Result := ForUpdate(Table, Fields, Keys, []);
 end;
 
-class function TSQLObject.ForInsert(Table: string; Fields: array of string; ExtraFields: array of string): string;
+function TSQLObject.ForInsert(Table: string; Fields: array of string; ExtraFields: array of string): string;
 var
   i: Integer;
   b: Boolean;
@@ -531,12 +544,12 @@ begin
   Result := Result + ')';
 end;
 
-class function TSQLObject.ForInsert(Table: string; Fields: array of string): string; overload;
+function TSQLObject.ForInsert(Table: string; Fields: array of string): string;
 begin
   Result := ForInsert(Table, Fields, []);
 end;
 
-class function TSQLObject.ForUpdateOrInsert(Updating, Returning:Boolean; Table: string; Fields: array of string; Keys: array of string): string; overload;
+function TSQLObject.ForUpdateOrInsert(Updating, Returning:Boolean; Table: string; Fields: array of string; Keys: array of string): string;
 var
   i:Integer;
   b:Boolean;
@@ -565,7 +578,7 @@ begin
   end;
 end;
 
-class function TSQLObject.ForDelete(Table: string; Keys: array of string): string; overload;
+function TSQLObject.ForDelete(Table: string; Keys: array of string): string;
 var
   i: Integer;
 begin

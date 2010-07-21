@@ -131,7 +131,7 @@ end;
 
 constructor TmncCSVCommand.Create(vSession: TmncSession; vStream: TStream; vMode: TmncCSVMode);
 begin
-  inherited CreateBy(vSession);
+  CreateBy(vSession);
   FMode := vMode;
   FStream := vStream;
 end;

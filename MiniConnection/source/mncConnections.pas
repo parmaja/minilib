@@ -194,7 +194,7 @@ type
     FSchemaType: string;
   protected
     function GetValue: Variant; override;
-    procedure SetValue(const Value: Variant); override;
+    procedure SetValue(const AValue: Variant); override;
   published
     property Index: Integer read FIndex write FIndex;
     property DataType;
@@ -352,7 +352,7 @@ type
     procedure SetSession(const Value: TmncSession);
   protected
     function GetActive: Boolean; virtual;
-    procedure SetActive(const Value: Boolean); virtual;
+    procedure SetActive(const AValue: Boolean); virtual;
   public
     constructor Create; virtual;
     constructor CreateBy(vSession: TmncSession);
@@ -680,7 +680,7 @@ begin
   Result := False;
 end;
 
-procedure TmncLinkObject.SetActive(const Value: Boolean);
+procedure TmncLinkObject.SetActive(const AValue: Boolean);
 begin
 end;
 
@@ -1053,7 +1053,7 @@ begin
   raise EmncException.Create('Field have no value, You must not use it, try use Current!') {$ifdef fpc}at get_caller_addr(get_frame){$endif};
 end;
 
-procedure TmncColumn.SetValue(const Value: Variant);
+procedure TmncColumn.SetValue(const AValue: Variant);
 begin
   raise EmncException.Create('Field have no value, You must not use it, try use Current!');
 end;
