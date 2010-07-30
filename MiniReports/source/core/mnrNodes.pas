@@ -97,6 +97,33 @@ type
     function CreateCell(vCells: TmnrReportCells): TmnrReportCell; override;
   end;
 
+  TmnrTimeReportCell = class(TmnrReportCell)
+  private
+    FValue: TDateTime;
+  protected
+    function GetAsBoolean: Boolean; override;
+    function GetAsCurrency: Currency; override;
+    function GetAsDateTime: TDateTime; override;
+    function GetAsFloat: Double; override;
+    function GetAsInteger: Longint; override;
+    function GetAsString: string; override;
+    function GetAsVariant: Variant; override;
+    function GetIsNull: Boolean; override;
+
+    procedure SetAsBoolean(const Value: Boolean); override;
+    procedure SetAsCurrency(const Value: Currency); override;
+    procedure SetAsDateTime(const Value: TDateTime); override;
+    procedure SetAsFloat(const Value: Double); override;
+    procedure SetAsInteger(const Value: Longint); override;
+    procedure SetAsString(const Value: string); override;
+    procedure SetAsVariant(const Value: Variant); override;
+  end;
+
+  TmnrTimeLayout = class(TmnrLayout)
+  protected
+    function CreateCell(vCells: TmnrReportCells): TmnrReportCell; override;
+  end;
+
   TmnrCurrencyReportCell = class(TmnrReportCell)
   private
     FValue: Currency;
@@ -220,7 +247,7 @@ end;
 
 function TmnrTextReportCell.GetIsNull: Boolean;
 begin
-  Result := FValue<>'';
+  Result := FValue <> '';
 end;
 
 procedure TmnrTextReportCell.SetAsBoolean(const Value: Boolean);
@@ -281,7 +308,7 @@ procedure TmnrIntegerLayout.ScaleCell(vCell: TmnrCell);
 begin
   inherited;
   FTotal := FTotal + vCell.AsFloat;
-  if vCell.Reference<>nil then
+  if vCell.Reference <> nil then
   begin
     vCell.Reference.Total := vCell.Reference.Total + vCell.AsFloat;
   end;
@@ -291,7 +318,7 @@ end;
 
 function TmnrIntegerReportCell.GetAsBoolean: Boolean;
 begin
-  Result := AsInteger<>0;
+  Result := AsInteger <> 0;
 end;
 
 function TmnrIntegerReportCell.GetAsCurrency: Currency;
@@ -410,7 +437,7 @@ end;
 
 function TmnrDateTimeReportCell.GetIsNull: Boolean;
 begin
-  Result := FValue<>0;
+  Result := FValue <> 0;
 end;
 
 procedure TmnrDateTimeReportCell.SetAsBoolean(const Value: Boolean);
@@ -459,7 +486,7 @@ end;
 
 function TmnrCurrencyReportCell.GetAsBoolean: Boolean;
 begin
-  Result := AsCurrency<>0;
+  Result := AsCurrency <> 0;
 end;
 
 function TmnrCurrencyReportCell.GetAsCurrency: Currency;
@@ -543,7 +570,7 @@ end;
 
 function TmnrDoubleReportCell.GetAsBoolean: Boolean;
 begin
-  Result := AsFloat<>0;
+  Result := AsFloat <> 0;
 end;
 
 function TmnrDoubleReportCell.GetAsCurrency: Currency;
@@ -672,22 +699,22 @@ end;
 
 procedure TmnrBooleanReportCell.SetAsCurrency(const Value: Currency);
 begin
-  FValue := Value<>0;
+  FValue := Value <> 0;
 end;
 
 procedure TmnrBooleanReportCell.SetAsDateTime(const Value: TDateTime);
 begin
-  FValue := Value<>0;
+  FValue := Value <> 0;
 end;
 
 procedure TmnrBooleanReportCell.SetAsFloat(const Value: Double);
 begin
-  FValue := Value<>0;
+  FValue := Value <> 0;
 end;
 
 procedure TmnrBooleanReportCell.SetAsInteger(const Value: Integer);
 begin
-  FValue := Value<>0;
+  FValue := Value <> 0;
 end;
 
 procedure TmnrBooleanReportCell.SetAsString(const Value: string);
@@ -700,7 +727,92 @@ begin
   FValue := Value;
 end;
 
+{ TmnrTimeLayout }
+
+function TmnrTimeLayout.CreateCell(vCells: TmnrReportCells): TmnrReportCell;
+begin
+  Result := TmnrTimeReportCell.Create(vCells);
+end;
+
+{ TmnrTimeReportCell }
+
+function TmnrTimeReportCell.GetAsBoolean: Boolean;
+begin
+  Result := AsDateTime <> 0;
+end;
+
+function TmnrTimeReportCell.GetAsCurrency: Currency;
+begin
+  Result := AsDateTime;
+end;
+
+function TmnrTimeReportCell.GetAsDateTime: TDateTime;
+begin
+  Result := FValue;
+end;
+
+function TmnrTimeReportCell.GetAsFloat: Double;
+begin
+  Result := FValue;
+end;
+
+function TmnrTimeReportCell.GetAsInteger: Longint;
+begin
+  Result := Trunc(AsDateTime); //TODO not trunc
+end;
+
+function TmnrTimeReportCell.GetAsString: string;
+begin
+  Result := TimeToStr(AsDateTime);
+end;
+
+function TmnrTimeReportCell.GetAsVariant: Variant;
+begin
+  Result := FValue;
+end;
+
+function TmnrTimeReportCell.GetIsNull: Boolean;
+begin
+  Result := FValue <> 0;
+end;
+
+procedure TmnrTimeReportCell.SetAsBoolean(const Value: Boolean);
+begin
+  FValue := Ord(Value);
+end;
+
+procedure TmnrTimeReportCell.SetAsCurrency(const Value: Currency);
+begin
+  FValue := Value;
+end;
+
+procedure TmnrTimeReportCell.SetAsDateTime(const Value: TDateTime);
+begin
+  FValue := Value;
+end;
+
+procedure TmnrTimeReportCell.SetAsFloat(const Value: Double);
+begin
+  FValue := Value;
+end;
+
+procedure TmnrTimeReportCell.SetAsInteger(const Value: Integer);
+begin
+  FValue := Value;
+end;
+
+procedure TmnrTimeReportCell.SetAsString(const Value: string);
+begin
+  FValue := StrToTimeDef(Value, 0);
+end;
+
+procedure TmnrTimeReportCell.SetAsVariant(const Value: Variant);
+begin
+  FValue := Value;
+end;
+
 initialization
   DefaultCellClass := TmnrTextReportCell;
 
 end.
+
