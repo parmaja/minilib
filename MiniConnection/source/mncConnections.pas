@@ -104,7 +104,7 @@ type
     property OnDisconnected: TNotifyEvent read FOnDisconnected write FOnDisconnected;
   end;
 
-  //Session it branch/clone of Connection but usefull for take a special params, it like Transactions.
+  //Session it is branch/clone of Connection but usefull for take a special params, it is like Transactions.
   TmncSessionAction = (sdaCommit, sdaRollback);
 
   { TmncSession }
@@ -170,16 +170,16 @@ type
 
   TmncCustomColumnClass = class of TmncItem;
 
-  { TmncCustomColumns }
+  { TmncItems }
 
   TmncItems = class(TmnCustomFields)
   private
-    function GetItem(Index: Integer): TmncItem;
+    function GetItem(Index: Integer): TmncItem; overload;
   protected
     function Find(vName: string): TmncItem; virtual; abstract;
   public
     function Add(AColumn: TmncItem): Integer; overload;
-    function ByName(vName: string): TmncItem;
+    function ItemByName(vName: string): TmncItem;
     function IsExists(vName: string): Boolean;
     procedure Clean; virtual;
     property Items[Index: Integer]: TmncItem read GetItem;
@@ -226,11 +226,10 @@ type
     procedure SetValue(const AValue: Variant); override;
   public
   published
-    property IsEmpty;
-    property IsNull;
     //property IsBlob;
     //property BlobType;
-
+    property IsEmpty;
+    property IsNull;
     property Value;
     property AsVariant;
     property AsString;
@@ -260,6 +259,13 @@ type
     property Values[Index: string]: Variant read GetValue write SetValue;
   end;
 
+  TmncRecord = class(TmncCustomFields)
+  private
+    function GetItemByName(Index: string): TmncCustomField;
+  public
+    property Item[Index: string]: TmncCustomField read GetItemByName; default;
+  end;
+
   { TmncField }
 
   TmncField = class(TmncCustomField)
@@ -274,7 +280,7 @@ type
 
   { TmncFields }
 
-  TmncFields = class(TmncCustomFields)
+  TmncFields = class(TmncRecord)
   private
     FColumns: TmncColumns;
     FRowID: Integer;
@@ -316,7 +322,7 @@ type
 
   { TmncCustomParams }
 
-  TmncCustomParams = class(TmncCustomFields)
+  TmncCustomParams = class(TmncRecord)
   private
   protected
     function GetParam(Index: string): TmncParam;
@@ -1140,14 +1146,19 @@ begin
   Result := (inherited Items[Index]) as TmncCustomField;
 end;
 
+function TmncRecord.GetItemByName(Index: string): TmncCustomField;
+begin
+  Result := ItemByName(Index) as TmncCustomField;
+end;
+
 function TmncCustomFields.GetValue(Index: string): Variant;
 begin
-  Result := ByName(Index).Value;
+  Result := ItemByName(Index).Value;
 end;
 
 procedure TmncCustomFields.SetValue(Index: string; const Value: Variant);
 begin
-  ByName(Index).Value := Value;
+  ItemByName(Index).Value := Value;
 end;
 
 
@@ -1181,7 +1192,7 @@ begin
   Result := inherited Add(AColumn);
 end;
 
-function TmncItems.ByName(vName: string): TmncItem;
+function TmncItems.ItemByName(vName: string): TmncItem;
 begin
   Result := Find(vName);
   if Result = nil then
