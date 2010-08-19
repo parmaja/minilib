@@ -413,7 +413,7 @@ begin
   end
   else
   begin
-    aUpdateRect := vCanvas.ClipRect;
+    aUpdateRect := Canvas.ClipRect;
     aItems := TposStuffLocator.Create(Self);
     try
       aItems.CreateList(TopIndex, False, vRect);
@@ -422,7 +422,7 @@ begin
       for i := 0 to aItems.Count - 1 do
       begin
         aStates := States;
-        if CollideRect(aItems[i].Rect, aUpdateRect) then
+        //if CollideRect(aItems[i].Rect, aUpdateRect) then
         begin
           aStates := aStates - [pdsDown];
           if (FDownItem <> nil) then
@@ -1126,7 +1126,7 @@ begin
                 aBidiRect.Left := vRect.Right - R.Right + vRect.Left;
               end;
               if not Proc(i, aBidiRect, Items[i]) then
-                Exit; // I hate using Exit;
+                Exit;
             end;
 
             Result := i;

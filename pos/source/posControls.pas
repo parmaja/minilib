@@ -128,6 +128,7 @@ type
     procedure HelperChanged; virtual;
     procedure Snap; virtual;
     procedure InvalidateRect(vRect: TRect); virtual;
+    procedure ExcludeClipRect(vCanvas: TCanvas; vRect: TRect); virtual;
     property InnerHeight: Integer read GetInnerHeight;
     property InnerWidth: Integer read GetInnerWidth;
   public
@@ -727,9 +728,6 @@ begin
   inherited;
   FStyle := [fsBorder];
   ControlStyle := ControlStyle + [csOpaque, csDoubleClicks] - [csClickEvents];
-  {$ifdef WINCE}
-  //ControlStyle := ControlStyle - [csDoubleClicks];
-  {$endif}
   FMargin := cMargin;
   FBorderWidth := 1;
   FAutoActive := False;
@@ -1000,7 +998,7 @@ begin
     Inc(FInvalidateCount)
   else if Parent <> nil then
   begin
-    OffsetRect(vRect, Left, Top);
+    OffsetRect(vRect, Left, Top); //Because it use the Canvas of parent
 {$IFDEF FPC}
     LCLIntf.InvalidateRect(Parent.Handle, @vRect, False);
 {$ELSE}
@@ -1009,6 +1007,17 @@ begin
   end
   else
     Invalidate;
+end;
+
+procedure TposFrame.ExcludeClipRect(vCanvas: TCanvas; vRect: TRect);
+begin
+  if Parent <> nil then
+  begin
+    {$ifdef WINCE}
+    OffsetRect(vRect, Left, Top);
+    {$ENDIF}
+    posUtils.ExcludeClipRect(vCanvas, vRect);
+  end;
 end;
 
 function TposFrame.KeyDown(var Key: Word; Shift: TShiftState): Boolean;

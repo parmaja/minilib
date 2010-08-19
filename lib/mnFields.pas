@@ -262,7 +262,7 @@ end;
 
 function TmnCustomField.GetIsEmpty: Boolean;
 begin
-  Result := (VarType(Value) in [varEmpty, varNull, varUnknown]);
+  Result := VarIsClear(Value) or (VarType(Value) in [varEmpty, varNull, varUnknown]);
 end;
 
 function TmnCustomField.GetIsNull: Boolean;

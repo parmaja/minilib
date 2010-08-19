@@ -21,7 +21,7 @@ uses
 {$IFDEF FPC}
   LCLType,
   LConvEncoding,
-{$ELSe}
+{$ELSE}
   Windows,
 {$ENDIF}
   posTypes, posControls, posButtons;
@@ -150,7 +150,7 @@ type
     procedure SetItem(Index: Integer; const Value: TposCustomKeyboardKey);
   public
     function InRect(X, Y: Integer): TposCustomKeyboardKey;
-    procedure Paint(Canvas: TCanvas; Rect: TRect); virtual;
+    procedure Paint(Canvas: TCanvas; vRect: TRect); virtual;
     property Items[Index: Integer]: TposCustomKeyboardKey read GetItem write SetItem; default;
   end;
 
@@ -899,7 +899,7 @@ begin
   end;
 end;
 
-procedure TKeyboardButtonList.Paint(Canvas: TCanvas; Rect: TRect);
+procedure TKeyboardButtonList.Paint(Canvas: TCanvas; vRect: TRect);
 var
   i: Integer;
   aUpdateRect: TRect;
@@ -909,7 +909,7 @@ begin
   begin
     if CollideRect(Items[i].BoundsRect, aUpdateRect) then
     begin
-      Items[i].Paint(Canvas, Rect);
+      Items[i].Paint(Canvas, vRect);
       ExcludeClipRect(Canvas, Items[i].BoundsRect);
     end;
   end;

@@ -507,6 +507,11 @@ begin
           flt := sqlite3_column_double(FStatment, i);
           aCurrent.Add(i, flt);
         end;
+        SQLITE_TEXT:
+        begin
+          str := sqlite3_column_text(FStatment, i);
+          aCurrent.Add(i, str);
+        end
         else
         begin
           str := sqlite3_column_text(FStatment, i);
