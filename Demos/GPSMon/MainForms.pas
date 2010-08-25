@@ -12,6 +12,7 @@ uses
 type
   { TForm1 }
   TForm1 = class(TForm)
+    PortEdit: TComboBox;
     ConvertBtn1: TButton;
     DecimalEdit: TEdit;
     DMEdit: TEdit;
@@ -24,7 +25,6 @@ type
     MenuItem2: TMenuItem;
     MenuItem3: TMenuItem;
     MenuItem4: TMenuItem;
-    PortEdit: TPanel;
     BaudRateEdit: TPanel;
     StartBtn: TButton;
     Label1: TLabel;

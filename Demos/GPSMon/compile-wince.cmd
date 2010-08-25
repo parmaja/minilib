@@ -1,5 +1,5 @@
 @echo off
-fpc GPSMon.lpr -oGPSMon-ARM.exe -Parm -Twince -XParm-wince- -dLCL -dLCLwince -FUunits\arm-wince -B
+fpc GPSMon.lpr @extrafpc.cfg -oGPSMon-ARM.exe -Parm -Twince -XParm-wince- -dLCL -dLCLwince -FUunits\arm-wince -B
 if errorlevel 1 goto erroroccurred
 
 e:\utils\upx -9 GPSMon-ARM.exe

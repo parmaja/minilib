@@ -62,17 +62,17 @@ type
     LastAccess: TDateTime;
   end;
 
-function GPSDecimalToDMS(Value:Extended; D, M, S:string):string; overload;//you can call with (v, '°','''','"')
-function GPSDecimalToDMS(Value:Extended):string; overload;
-function GPSDecimalToDM(Value:Extended; D, M:string): string; overload;
-function GPSDecimalToDM(Value:Extended):string; overload;
-function GPSToMAP(Info: TGPSDecimalInfo):string; overload;
-function GPSToMAP(Latitude: Extended; Longitude: Extended) :string; overload;
+function GPSDecimalToDMS(Value: Extended; D, M, S:string): string; overload;//you can call with (v, '°','''','"')
+function GPSDecimalToDMS(Value: Extended): string; overload;
+function GPSDecimalToDM(Value: Extended; D, M:string): string; overload;
+function GPSDecimalToDM(Value: Extended): string; overload;
+function GPSToMAP(Info: TGPSDecimalInfo): string; overload;
+function GPSToMAP(Latitude: Extended; Longitude: Extended): string; overload;
 function GPSPrase(Command:string; var Info:TGPSInfo):Boolean;
 
-function GPSInfo:TGPSInfo;
+function GPSInfo: TGPSInfo;
 procedure SetGPSInfo(Info: TGPSInfo);
-function GPSLock:TCriticalSection;
+function GPSLock: TCriticalSection;
 
 implementation
 

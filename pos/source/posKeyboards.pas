@@ -196,6 +196,7 @@ type
     procedure CreatePads; virtual;
   protected
     FLangTR: Integer;
+    procedure ChangeScale(M, D: Integer); override;
     procedure Resized; override;
     procedure PaintInner(vCanvas: TCanvas; var vRect: TRect; vColor: TColor); override;
     procedure CalcButtons;
@@ -432,6 +433,12 @@ begin
 
   if not (csLoading in ComponentState) then
     CalcButtons
+end;
+
+procedure TposKeyboard.ChangeScale(M, D: Integer);
+begin
+  inherited;
+  CtrlFont.Size := MulDiv(CtrlFont.Size, M, D);
 end;
 
 constructor TposKeyboard.Create(AOwner: TComponent);

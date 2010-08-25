@@ -78,6 +78,7 @@ type
 
   TposFrame = class(TGraphicControl)
   private
+    FDownSize: Integer;
     FFocused: Boolean;
     FOnFocused: TNotifyEvent;
     FStyle: TposFrameStyle;
@@ -147,6 +148,7 @@ type
     property Style: TposFrameStyle read FStyle write FStyle default [fsBorder];
     property States: TposDrawStates read FStates write FStates;
     property Down: Boolean read GetDown write SetDown;
+    property DownSize: Integer read FDownSize write FDownSize default 1;
     property Focused: Boolean read GetFocused write SetFocused;
     property Pending: Boolean read GetPending write SetPending;
     property Active: Boolean read GetActive write SetActive;
@@ -331,15 +333,22 @@ type
   public
   end;
 
+  TScaleSize = record
+    Multiplier, Divider: Integer
+  end;
+
   { TposEngine }
 
   TposEngine = class(TObject)
   private
+    FAutoScale: Boolean;
     FFocusedFrame: TposFocusFrame;
+    FScaleSize: TScaleSize;
     FSnapToGrid: Boolean;
     FGridSize: Integer;
     procedure SetFocusedFrame(const Value: TposFocusFrame);
   protected
+    property ScaleSize: TScaleSize read FScaleSize write FScaleSize;
   public
     constructor Create;
     destructor Destroy; override;
@@ -352,7 +361,11 @@ type
 {$ENDIF}
     procedure FocusPrior;
     procedure FocusNext;
-  //published
+    //Scale function
+    property AutoScale: Boolean read FAutoScale write FAutoScale default False;
+    procedure SetScale(Multiplier, Divider: Integer);
+    function Scale(Size: Integer): Integer;
+    //published
     property SnapToGrid: Boolean read FSnapToGrid write FSnapToGrid default True;
     property GridSize: Integer read FGridSize write FGridSize default sSnapGridSize;
     property FocusedFrame: TposFocusFrame read FFocusedFrame write SetFocusedFrame;
@@ -383,6 +396,8 @@ begin
   inherited;
   FSnapToGrid := True;
   FGridSize := sSnapGridSize;
+  FScaleSize.Multiplier := 1;
+  FScaleSize.Divider := 1;
 end;
 
 destructor TposEngine.Destroy;
@@ -426,9 +441,20 @@ begin
   end;
 end;
 
+procedure TposEngine.SetScale(Multiplier, Divider: Integer);
+begin
+  FScaleSize.Multiplier := Multiplier;
+  FScaleSize.Divider := Divider;
+  FAutoScale := True;
+end;
+
+function TposEngine.Scale(Size: Integer): Integer;
+begin
+  Result := MulDiv(Size, ScaleSize.Multiplier, ScaleSize.Divider);
+end;
+
 procedure TposEngine.FocusPrior;
 begin
-
 end;
 
 function TposEngine.KeyDown(var Key: Word; Shift: TShiftState): Boolean;
@@ -730,6 +756,7 @@ begin
   ControlStyle := ControlStyle + [csOpaque, csDoubleClicks] - [csClickEvents];
   FMargin := cMargin;
   FBorderWidth := 1;
+  FDownSize := 1;
   FAutoActive := False;
 end;
 
@@ -778,7 +805,10 @@ procedure TposFrame.ChangeScale(M, D: Integer);
 begin
   Snap;
   inherited;
-//  BorderWidth := MulDiv(BorderWidth, M, D);
+  {$ifdef FPC}
+  BorderWidth := MulDiv(BorderWidth, M, D);
+  FDownSize := MulDiv(FDownSize, M, D);
+  {$endif}
 end;
 
 {$IFNDEF FPC}
@@ -1013,9 +1043,6 @@ procedure TposFrame.ExcludeClipRect(vCanvas: TCanvas; vRect: TRect);
 begin
   if Parent <> nil then
   begin
-    {$ifdef WINCE}
-    OffsetRect(vRect, Left, Top);
-    {$ENDIF}
     posUtils.ExcludeClipRect(vCanvas, vRect);
   end;
 end;

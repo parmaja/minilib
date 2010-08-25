@@ -2,12 +2,12 @@ object Form1: TForm1
   Left = 329
   Height = 276
   Top = 99
-  Width = 392
+  Width = 343
   HorzScrollBar.Page = 391
   VertScrollBar.Page = 256
   Caption = 'GPS Mon'
-  ClientHeight = 257
-  ClientWidth = 392
+  ClientHeight = 256
+  ClientWidth = 343
   Font.CharSet = ANSI_CHARSET
   Font.Color = clBlack
   Font.Height = -11
@@ -17,6 +17,7 @@ object Form1: TForm1
   OnClose = FormClose
   OnCreate = FormCreate
   OnDestroy = FormDestroy
+  LCLVersion = '0.9.29'
   object Label1: TLabel
     Left = 15
     Height = 14
@@ -24,7 +25,6 @@ object Form1: TForm1
     Width = 24
     Caption = 'COM'
     ParentColor = False
-    ParentFont = True
   end
   object Label3: TLabel
     Left = 14
@@ -33,21 +33,20 @@ object Form1: TForm1
     Width = 25
     Caption = 'Baud'
     ParentColor = False
-    ParentFont = True
   end
   object Label2: TLabel
-    Left = 14
+    Left = 6
     Height = 14
-    Top = 211
+    Top = 210
     Width = 37
     Anchors = [akLeft, akBottom]
     Caption = 'Decmial'
     ParentColor = False
   end
   object DMLbl: TLabel
-    Left = 19
+    Left = 11
     Height = 14
-    Top = 237
+    Top = 236
     Width = 16
     Anchors = [akLeft, akBottom]
     Caption = 'DM'
@@ -60,7 +59,6 @@ object Form1: TForm1
     Width = 75
     Caption = 'Start'
     OnClick = StartBtnClick
-    ParentFont = True
     TabOrder = 0
   end
   object StopBtn: TButton
@@ -70,79 +68,82 @@ object Form1: TForm1
     Width = 75
     Caption = 'Stop'
     OnClick = StopBtnClick
-    ParentFont = True
     TabOrder = 1
   end
   object ListBox1: TListBox
     Left = 3
-    Height = 103
+    Height = 102
     Top = 98
-    Width = 386
+    Width = 337
     Anchors = [akTop, akLeft, akRight, akBottom]
-    ParentFont = True
+    ItemHeight = 0
     TabOrder = 2
-  end
-  object PortEdit: TPanel
-    Left = 43
-    Height = 23
-    Top = 8
-    Width = 192
-    Alignment = taLeftJustify
-    BevelOuter = bvNone
-    BevelWidth = 3
-    BorderStyle = bsSingle
-    ParentFont = True
-    TabOrder = 3
   end
   object BaudRateEdit: TPanel
     Left = 43
     Height = 23
     Top = 36
-    Width = 192
+    Width = 153
     Alignment = taLeftJustify
     BevelOuter = bvNone
     BevelWidth = 3
     BorderStyle = bsSingle
-    ParentFont = True
-    TabOrder = 4
+    TabOrder = 3
   end
   object ConvertBtn: TButton
-    Left = 264
+    Left = 261
     Height = 25
-    Top = 231
+    Top = 230
     Width = 75
-    Anchors = [akLeft, akBottom]
+    Anchors = [akRight, akBottom]
     Caption = 'Convert'
     OnClick = ConvertBtnClick
-    ParentFont = True
-    TabOrder = 5
+    TabOrder = 4
   end
   object DecimalEdit: TEdit
-    Left = 56
-    Height = 23
-    Top = 206
-    Width = 203
-    Anchors = [akLeft, akBottom]
-    TabOrder = 6
+    Left = 45
+    Height = 21
+    Top = 205
+    Width = 213
+    Anchors = [akLeft, akRight, akBottom]
+    TabOrder = 5
   end
   object DMEdit: TEdit
-    Left = 56
-    Height = 23
-    Top = 232
-    Width = 203
-    Anchors = [akLeft, akBottom]
-    TabOrder = 7
+    Left = 45
+    Height = 21
+    Top = 231
+    Width = 213
+    Anchors = [akLeft, akRight, akBottom]
+    TabOrder = 6
   end
   object ConvertBtn1: TButton
-    Left = 264
+    Left = 261
     Height = 25
-    Top = 205
+    Top = 204
     Width = 75
-    Anchors = [akLeft, akBottom]
+    Anchors = [akRight, akBottom]
     Caption = 'Test'
     OnClick = ConvertBtn1Click
-    ParentFont = True
+    TabOrder = 7
+  end
+  object PortEdit: TComboBox
+    Left = 43
+    Height = 21
+    Top = 8
+    Width = 153
+    ItemHeight = 13
+    ItemIndex = 1
+    Items.Strings = (
+      'COM0'
+      'COM1'
+      'COM2'
+      'COM3'
+      'COM4'
+      'COM5'
+      'COM6'
+    )
     TabOrder = 8
+    Text = 'COM1'
   end
   object MainMenu1: TMainMenu
     left = 108
@@ -160,6 +161,6 @@ object Form1: TForm1
     Interval = 500
     OnTimer = GPSTimerTimer
     left = 40
-    top = 128
+    top = 124
   end
 end

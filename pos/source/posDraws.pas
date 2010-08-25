@@ -43,7 +43,10 @@ var
   begin
     if z = 0 then
     begin
-      z := w div DivTo;
+      if w > h then
+        z := h div DivTo
+      else
+        z := w div DivTo;
       if z <= 0 then
         z := 1;
     end;

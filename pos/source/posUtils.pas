@@ -62,7 +62,10 @@ procedure ExcludeClipRect(vCanvas: TCanvas; vRect: TRect);
 function RGBToColor(R, G, B: Byte): TColor;
 function Lighten(Color: TColor; Amount: Integer): TColor;
 function MixColors(Color1, Color2: TColor; W1: Integer): TColor;
-function Blend(Color1, Color2: TColor; W1: Integer): TColor;
+function BlendColor(Color1, Color2: TColor; W1: Integer): TColor;
+function InverseColor(Color: TColor): TColor;
+function GrayLevelColor(const Color: TColor): Integer;
+function OppositeColor(const Color: TColor): TColor;
 
 {$IFDEF FPC}
 {$ELSE}
@@ -148,7 +151,7 @@ begin
     (C2 and $00FF00) * W2) and $00FF0000) shr 8;
 end;
 
-function Blend(Color1, Color2: TColor; W1: Integer): TColor;
+function BlendColor(Color1, Color2: TColor; W1: Integer): TColor;
 var
   C1, C2: Cardinal;
   W2, A1, A2, D, F, G: Integer;
@@ -178,6 +181,26 @@ begin
   A1 := (C1 and $FF) * Cardinal(W1);
   G := (A1 + A2 + F) div D and $FF;
   Result := Result or G;
+end;
+
+function InverseColor(Color: TColor): TColor;
+begin
+  Color := ColorToRGB(Color);
+	Result :=  RGBToColor(255 - Red(Color), 255 - Green(Color), 255 - Blue(Color)) ;
+end;
+
+//Taked from http://www.delphigroups.info/2/10/314913.html
+function GrayLevelColor(const Color: TColor): Integer;
+begin
+  Result := (77 * (Color and $FF) + 151 * (Color shr 8 and $FF) + 28 * (Color shr 16 and $FF)) shr 8;
+end;
+
+function OppositeColor(const Color: TColor): TColor;
+begin
+  if GrayLevelColor(Color) < 128 then
+    Result := clWhite
+  else
+    Result := clBlack;
 end;
 
 function RGBToColor(R, G, B: Byte): TColor;

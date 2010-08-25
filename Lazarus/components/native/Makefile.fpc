@@ -2,7 +2,7 @@
 #
 #   Makefile.fpc for NativeLib 0.0
 #
-#   This file was generated on 2010-07-04
+#   This file was generated on 8/22/2010
 
 [package]
 name=nativelib
@@ -10,7 +10,7 @@ version=0.0
 
 [compiler]
 unittargetdir=./units/$(CPU_TARGET)-$(OS_TARGET)
-unitdir=units/$(CPU_TARGET)-$(OS_TARGET)/ w:/programs/lazarus/ideintf/units/$(CPU_TARGET)-$(OS_TARGET)/ w:/programs/lazarus/lcl/units/$(CPU_TARGET)-$(OS_TARGET)/ w:/programs/lazarus/lcl/units/$(CPU_TARGET)-$(OS_TARGET)/$(LCL_PLATFORM)/ w:/programs/lazarus/packager/units/$(CPU_TARGET)-$(OS_TARGET)/ ./
+unitdir=units/$(CPU_TARGET)-$(OS_TARGET)/ ../../../../../../../programs/lazarus/ideintf/units/$(CPU_TARGET)-$(OS_TARGET)/ ../../../../../../../programs/lazarus/lcl/units/$(CPU_TARGET)-$(OS_TARGET)/ ../../../../../../../programs/lazarus/lcl/units/$(CPU_TARGET)-$(OS_TARGET)/$(LCL_PLATFORM)/ ../../../../../../../programs/lazarus/packager/units/$(CPU_TARGET)-$(OS_TARGET)/ ./
 includedir=./
 options=-dLCL -dLCL$(LCL_PLATFORM) -MObjFPC -Scgim
 
@@ -21,8 +21,6 @@ units=NativeLib.pas
 files=$(wildcard $(COMPILER_UNITTARGETDIR)/*$(OEXT)) \
       $(wildcard $(COMPILER_UNITTARGETDIR)/*$(PPUEXT)) \
       $(wildcard $(COMPILER_UNITTARGETDIR)/*$(RSTEXT)) \
-      $(wildcard $(COMPILER_UNITTARGETDIR)/*.lfm) \
-      $(wildcard $(COMPILER_UNITTARGETDIR)/*.res) \
       $(wildcard $(COMPILER_UNITTARGETDIR)/*.compiled) \
       $(wildcard *$(OEXT)) $(wildcard *$(PPUEXT)) $(wildcard *$(RSTEXT))
 [prerules]

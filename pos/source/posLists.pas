@@ -456,7 +456,9 @@ end;
 procedure TposAbstractList.ChangeScale(M, D: Integer);
 begin
   inherited;
-//  ItemHeight := MulDiv(ItemHeight, M, D)
+{$ifdef FPC}
+  ItemHeight := MulDiv(ItemHeight, M, D)
+{$endif}
 end;
 
 function TposItems.GetUpdating: Boolean;
@@ -794,7 +796,7 @@ begin
     if ShowSelected and (ItemIndex = i) then
     begin
       aColor := MixColors(SelectedColor, Color, 100);
-      Canvas.Font.Color := clHighlightText;
+      Canvas.Font.Color := OppositeColor(aColor);
     end
     else if Odd(i) then
       aColor := MixColors(clWhite, Color, 10)

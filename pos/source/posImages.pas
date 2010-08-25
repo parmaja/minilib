@@ -75,8 +75,8 @@ procedure TposImage.PaintInner(vCanvas: TCanvas; var vRect: TRect; vColor: TColo
     w, h, cw, ch: Integer;
     xyaspect: Double;
   begin
-    w := Picture.Width;
-    h := Picture.Height;
+    w := posEngine.Scale(Picture.Width);
+    h := posEngine.Scale(Picture.Height);
     cw := InnerWidth;
     ch := InnerHeight;
     if ((w > cw) or (h > ch)) then
