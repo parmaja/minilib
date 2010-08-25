@@ -69,6 +69,9 @@ function OppositeColor(const Color: TColor): TColor;
 
 {$IFDEF FPC}
 {$ELSE}
+function Red(RGBColor:TColor): Byte;
+function Green(RGBColor:TColor): Byte;
+function Blue(RGBColor:TColor): Byte;
 function TextStyleToFormat(Style: TTextStyle): Longint;
 {$ENDIF}
 procedure PaintText(Canvas: TCanvas; Text: string; vRect: TRect; Style: TTextStyle);
@@ -214,6 +217,21 @@ end;
 
 {$IFDEF FPC}
 {$ELSE}
+function Red(RGBColor:TColor): Byte;
+begin
+  Result := GetRValue(RGBColor);
+end;
+
+function Green(RGBColor:TColor): Byte;
+begin
+  Result := GetGValue(RGBColor);
+end;
+
+function Blue(RGBColor:TColor): Byte;
+begin
+  Result := GetBValue(RGBColor);
+end;
+
 function TextStyleToFormat(Style: TTextStyle): Longint;
 begin
   Result := 0;
