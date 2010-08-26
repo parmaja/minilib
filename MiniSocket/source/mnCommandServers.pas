@@ -175,12 +175,12 @@ begin
     p := Pos(' ', aCMD);
     if p > 0 then
     begin
-      aCommand := Copy(aCmd, 1, p - 1);
-      aParams := Copy(aCmd, p + 1, MaxInt);
+      aCommand := Trim(Copy(aCmd, 1, p - 1));
+      aParams := Trim(Copy(aCmd, p + 1, MaxInt));
     end
     else
     begin
-      aCommand := aCmd;
+      aCommand := Trim(aCmd);
       aParams := '';
     end;
 
