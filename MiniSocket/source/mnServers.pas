@@ -255,9 +255,12 @@ end;
 
 procedure TmnListener.Connect;
 begin
-  FSocket := WallSocket.Bind(FOptions, FPort, FAddress);
-  if Connected then
-    Socket.Listen;
+  if not Terminated then
+  begin
+    FSocket := WallSocket.Bind(FOptions, FPort, FAddress);
+    if Connected then
+      Socket.Listen;
+  end;
 end;
 
 constructor TmnListener.Create;
@@ -456,9 +459,12 @@ begin
   Enter;
   try
     Terminate;
-    Socket.Cancel;
-//    Socket.Shutdown(sdBoth); //if thread in accept()
-    Socket.Close; //if thread in accept()
+    if Socket <> nil then
+    begin
+      Socket.Cancel;
+//      Socket.Shutdown(sdBoth); //if thread in accept()
+      Socket.Close; //if thread in accept()
+    end;
   finally
     Leave;
   end;

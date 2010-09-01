@@ -18,6 +18,7 @@ uses
   sqlvClasses, CSVIEForms;
 
 {$R SqliteViewer.res}
+{.$R ceux.rc}
 
 begin
   Application.Initialize;

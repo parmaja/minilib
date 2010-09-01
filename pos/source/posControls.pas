@@ -450,7 +450,10 @@ end;
 
 function TposEngine.Scale(Size: Integer): Integer;
 begin
-  Result := MulDiv(Size, ScaleSize.Multiplier, ScaleSize.Divider);
+  if AutoScale then
+    Result := MulDiv(Size, ScaleSize.Multiplier, ScaleSize.Divider)
+  else
+    Result := Size;
 end;
 
 procedure TposEngine.FocusPrior;

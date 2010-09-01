@@ -316,7 +316,7 @@ begin
       begin
         if i > 0 then
           st := st + Delimiter;
-        s := Command.Current.Fields[i].Name;
+        s := Command.Current.Items[i].GetName;
         if QuoteChar <> #0 then
           s := QuoteStr(s, QuoteChar);
         st := st + s;

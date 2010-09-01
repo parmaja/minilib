@@ -2,7 +2,7 @@ package MiniCommonsLib;
 
 {$R *.res}
 {$ALIGN 8}
-{$ASSERTIONS OFF}
+{$ASSERTIONS ON}
 {$BOOLEVAL OFF}
 {$DEBUGINFO OFF}
 {$EXTENDEDSYNTAX ON}
@@ -25,6 +25,7 @@ package MiniCommonsLib;
 {$DESCRIPTION 'Mini Commons Lib'}
 {$RUNONLY}
 {$IMPLICITBUILD OFF}
+{$DEFINE RELEASE}
 
 requires
   rtl,

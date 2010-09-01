@@ -274,6 +274,7 @@ type
   protected
   public
     constructor Create(vColumn: TmncColumn);
+    function GetName: string;
   published
     property Column: TmncColumn read FColumn write FColumn;
   end;
@@ -984,6 +985,14 @@ constructor TmncField.Create(vColumn: TmncColumn);
 begin
   inherited Create;
   FColumn := vColumn;
+end;
+
+function TmncField.GetName: string;
+begin
+  if Column = nil then
+    Result := ''
+  else
+    Result := Column.Name;
 end;
 
 function TmncParams.Add(Name: string): TmncParam;

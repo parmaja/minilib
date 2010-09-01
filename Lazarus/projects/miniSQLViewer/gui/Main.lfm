@@ -4,7 +4,6 @@ object MainForm: TMainForm
   Hint = 'Connect F9'
   Top = 171
   Width = 560
-  ActiveControl = SQLEdit
   Caption = 'SQLite Viewer'
   ClientHeight = 375
   ClientWidth = 560
@@ -132,7 +131,7 @@ object MainForm: TMainForm
       end
       object FileNameLbl: TLabel
         Left = 32
-        Height = 14
+        Height = 1
         Top = 24
         Width = 1
         ParentColor = False
@@ -153,6 +152,30 @@ object MainForm: TMainForm
         BookMarkOptions.Xoffset = -18
         Gutter.Width = 23
         Gutter.MouseActions = <        
+          item
+            Shift = []
+            ShiftMask = []
+            Button = mbLeft
+            ClickCount = ccAny
+            ClickDir = cdDown
+            Command = 13
+            MoveCaret = False
+            Option = 0
+            Priority = 0
+          end        
+          item
+            Shift = []
+            ShiftMask = []
+            Button = mbRight
+            ClickCount = ccSingle
+            ClickDir = cdUp
+            Command = 12
+            MoveCaret = False
+            Option = 0
+            Priority = 0
+          end>
+        RightGutter.Width = 0
+        RightGutter.MouseActions = <        
           item
             Shift = []
             ShiftMask = []
@@ -646,6 +669,8 @@ object MainForm: TMainForm
             Width = 2
           end
         end
+        inline SynRightGutterPartList1: TSynRightGutterPartList
+        end
       end
       object SQLLoadBtn: TButton
         Left = 88
@@ -886,7 +911,7 @@ object MainForm: TMainForm
       object VacuumChk: TCheckBox
         Left = 10
         Height = 17
-        Top = 203
+        Top = 204
         Width = 125
         BidiMode = bdRightToLeftReadingOnly
         Caption = 'Vacuum when connect'

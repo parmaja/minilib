@@ -44,14 +44,18 @@ type
     property DBHandle: PSqlite3 read FDBHandle;
   end;
 
+  TJournalMode = (jrmDefault, jrmDelete, jrmTruncate, jrmPersist, jrmMemory, jrmWal, jrmOff);
+
   { TmncSQLiteSession }
 
   TmncSQLiteSession = class(TmncSession)
   private
     FExclusive: Boolean;
+    FJournalMode: TJournalMode;
     function GetConnection: TmncSQLiteConnection;
     procedure SetConnection(const AValue: TmncSQLiteConnection);
     procedure SetExclusive(const AValue: Boolean);
+    procedure SetJournalMode(const AValue: TJournalMode);
   protected
     procedure DoInit; override;
     procedure DoStart; override;
@@ -66,6 +70,7 @@ type
     function GetLastInsertID: Int64;
     function GetRowsChanged: Integer;
     property Exclusive: Boolean read FExclusive write SetExclusive;
+    property JournalMode:TJournalMode read FJournalMode write SetJournalMode default jrmDefault;
     property Connection: TmncSQLiteConnection read GetConnection write SetConnection;
   end;
 
@@ -102,7 +107,27 @@ type
     property Statment: Psqlite3_stmt read FStatment;
   end;
 
+function SQLiteJournalModeToStr(JournalMode: TJournalMode): string;
+
 implementation
+
+function SQLiteJournalModeToStr(JournalMode: TJournalMode): string;
+begin
+  case JournalMode of
+    jrmDefault:
+    {$ifdef WINCE}
+      Result := 'TRUNCATE'; //or MEMORY
+    {$else}
+      Result := 'DELETE';
+    {$endif}
+    jrmDelete: Result := 'DELETE';
+    jrmTruncate: Result := 'TRUNCATE';
+    jrmPersist: Result := 'PERSIST';
+    jrmMemory: Result := 'MEMORY';
+    jrmWal: Result := 'WAL';
+    jrmOff: Result := 'OFF';
+  end;
+end;
 
 function SQLTypeToType(vType: Integer): TmncDataType;
 begin
@@ -257,16 +282,27 @@ begin
   end;
 end;
 
+procedure TmncSQLiteSession.SetJournalMode(const AValue: TJournalMode);
+begin
+  if FJournalMode <> AValue then
+  begin
+    FJournalMode := AValue;
+    if Active then
+      raise EmncException.Create('You can not set Exclusive when session active');
+  end;
+end;
+
 procedure TmncSQLiteSession.DoInit;
 begin
-  Execute('PRAGMA TEMP_STORE=MEMORY');//for WINCE
-  Execute('PRAGMA full_column_names=0');
-  Execute('PRAGMA short_column_names=1');
+  Execute('PRAGMA full_column_names = 0');
+  Execute('PRAGMA short_column_names = 1');
   Execute('PRAGMA encoding = "UTF-8"');
+  Execute('PRAGMA TEMP_STORE = MEMORY'); //for WINCE
   if Exclusive then
     Execute('PRAGMA locking_mode = EXCLUSIVE')
   else
     Execute('PRAGMA locking_mode = NORMAL');
+  Execute('PRAGMA journal_mode = '+ SQLiteJournalModeToStr(FJournalMode));
 end;
 
 { TmncSQLiteCommand }
