@@ -208,6 +208,8 @@ type
 
   TposWinFrame = class;
   
+  { TposSubFrame }
+
   TposSubFrame = class(TObject)
   private
     FFrame: TposWinFrame;
@@ -219,6 +221,7 @@ type
     FInteractive: Boolean;
   protected
     procedure Click; virtual;
+    function UseRightToLeft: Boolean; virtual;
   public
     constructor Create(AFrame: TposWinFrame); virtual;
     function GetRect(var vRect: TRect): TRect; virtual;
@@ -315,7 +318,7 @@ type
     procedure SetButtonShape(const Value: TposShapeKind);
   protected
     procedure ChangeScale(M, D: Integer); override;
-    procedure DoButtonClick;
+    procedure DoButtonClick; virtual;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -1269,6 +1272,14 @@ procedure TposSubFrame.Click;
 begin
 end;
 
+function TposSubFrame.UseRightToLeft: Boolean;
+begin
+  if FFrame <> nil then
+    Result := FFrame.UseRightToLeftAlignment
+  else
+    Result := False;
+end;
+
 constructor TposSubFrame.Create(AFrame: TposWinFrame);
 begin
   inherited Create;
@@ -1474,7 +1485,7 @@ begin
     vCanvas.FillRect(aRect);
 
     PaintBorderButton(vCanvas, aRect, Frame.Color, clDefault, [pdsBorder], IsDown);
-    DrawShape(vCanvas, aRect, Shape, IsDown, True, 0, Frame.Font.Color);
+    DrawShape(vCanvas, aRect, Shape, IsDown, True, UseRightToLeft, 0, Frame.Font.Color);
   end;
 end;
 

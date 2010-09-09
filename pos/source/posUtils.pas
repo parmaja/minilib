@@ -379,7 +379,7 @@ begin
     InflateRect(Rect, -1, -1);
 
   if vShape <> shpNone then
-    DrawShape(Canvas, Rect, vShape, False, True, 0, Canvas.Font.Color);
+    DrawShape(Canvas, Rect, vShape, False, True, (pdsRightToLeft in States), 0, Canvas.Font.Color);
 end;
 
 {procedure PaintChair(Canvas:TCanvas;const vRect:TRect; Opaque:Boolean);

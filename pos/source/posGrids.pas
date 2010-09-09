@@ -65,6 +65,8 @@ type
     property Items[Index: Integer]: TposVisibleColumn read GetItem write SetItem; default;
   end;
 
+  { TposCustomColumn }
+
   TposCustomColumn = class(TObject)
   private
     FColumns: TposCustomColumns;
@@ -81,6 +83,7 @@ type
   protected
     procedure PaintHeader(Canvas: TCanvas; Rect: TRect; Color: TColor; LastCell: Boolean); virtual;
     procedure PaintCell(Canvas: TCanvas; ACell: TposCellInfo; Row: Integer; Rect: TRect; Color: TColor; LastCell: Boolean); virtual;
+    function UseRightToLeft: Boolean; virtual;
   public
     constructor Create(AColumns: TposCustomColumns);
     property Columns: TposCustomColumns read FColumns;
@@ -445,18 +448,15 @@ procedure TposTextColumn.PaintCell(Canvas: TCanvas; ACell: TposCellInfo; Row: In
 var
   R, TextRect: TRect;
   aStyle: TTextStyle;
-  aRightToLeft: Boolean;
 begin
   inherited;
   FillChar(aStyle, SizeOf(aStyle), #0);
   TextRect := Rect;
 
-  aRightToLeft := RTLModeToRTL(Columns.Grid.UseRightToLeftAlignment, RightToLeftMode);
-
   aStyle.Layout := tlCenter;
   aStyle.SingleLine := True;
   aStyle.Opaque := False;
-  aStyle.RightToLeft := aRightToLeft;
+  aStyle.RightToLeft := UseRightToLeft;
   aStyle.Alignment := Alignment;
   aStyle.Clipping := True;
   BidiAlignment(aStyle);
@@ -584,6 +584,11 @@ begin
       Canvas.LineTo(TextRect.Left, TextRect.Bottom - 1);
     end;
   end;
+end;
+
+function TposCustomColumn.UseRightToLeft: Boolean;
+begin
+  Result := RTLModeToRTL(Columns.Grid.UseRightToLeftAlignment, RightToLeftMode);
 end;
 
 { TposCustomGrid }
@@ -978,7 +983,7 @@ end;
 procedure TposCheckedColumn.PaintCell(Canvas: TCanvas; ACell: TposCellInfo; Row: Integer; Rect: TRect; Color: TColor; LastCell: Boolean);
 begin
   inherited;
-  DrawShape(Canvas, Rect, shpCheck, False, True, 0, Color);
+  DrawShape(Canvas, Rect, shpCheck, False, True, UseRightToLeft, 0, Color);
 end;
 
 function TposGridRowCells.GetItems(Index: Integer): TposCell;

@@ -25,7 +25,7 @@ uses
 {$ELSE}
   Windows,
 {$ENDIF}
-  posControls, posUtils, posTypes;
+  posThemes, posControls, posUtils, posTypes;
 
 const
   cStuffsItemHeight = 36;
@@ -479,7 +479,6 @@ begin
   try
     inherited;
   finally
-//    PlayEffect('CLICK', True, True);
   end;
 end;
 
@@ -590,6 +589,7 @@ begin
               DownItem.Click; // Click here can be free DownItem
             if (DownItem <> nil) then //may be prior Click change the Items of Stuffs
               StuffClicked(DownItem.Item);
+            Themes.PlaySound('CLICK', True, True);
           end;
           if not ReadOnly and (RefreshMode = rfrControl) then
             Invalidate

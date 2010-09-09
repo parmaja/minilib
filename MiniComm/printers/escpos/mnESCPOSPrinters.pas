@@ -38,7 +38,7 @@ type
     procedure PrintCanvasAsRasterBitImage(Canvas: TCanvas);
     procedure PrintCanvasAsRasterBitImageChunks(Canvas: TCanvas);
   public
-    constructor Create(Printer: TmnCustomPrinter); override;
+    constructor Create(Printer: TmnPrinter); override;
     destructor Destroy; override;
     procedure SaveToFile(FileName:string); override;
     procedure PrintCanvas(Canvas: TCanvas); override;
@@ -46,7 +46,7 @@ type
 
   { TmnESCPOSPrinter }
 
-  TmnESCPOSPrinter = class(TmnCustomPrinter)
+  TmnESCPOSPrinter = class(TmnPrinter)
   private
   protected
     procedure PrintPage(vPage:TmnCustomPage); override;
@@ -64,6 +64,9 @@ type
     procedure GetInitRasterBitImageCommands(var S:string); virtual;
   public
     constructor Create(Style: TmnPrintStyle; Stream: TStream); override;
+    class function PrinterTitle: string; override;
+    class function PrinterName: string; override;
+
     procedure Reset;
     procedure LineFeed;
     procedure Return;
@@ -116,6 +119,16 @@ end;
 constructor TmnESCPOSPrinter.Create(Style: TmnPrintStyle; Stream: TStream);
 begin
   inherited;
+end;
+
+class function TmnESCPOSPrinter.PrinterTitle: string;
+begin
+  Result := 'ESCPOS Standard';
+end;
+
+class function TmnESCPOSPrinter.PrinterName: string;
+begin
+  Result := 'ESCPOSStandard';
 end;
 
 procedure TmnESCPOSPrinter.Reset;
@@ -253,7 +266,8 @@ begin
 
     ExtraCommands := '';
     aPrinter.GetInitBitImageCommands(ExtraCommands);
-    aPrinter.Print(ExtraCommands);
+    if ExtraCommands <> '' then
+      aPrinter.Print(ExtraCommands);
 
     while l < Height do
     begin
@@ -463,7 +477,7 @@ begin
   Result := FBitmap.Canvas;
 end;
 
-constructor TmnESCPOSPage.Create(Printer: TmnCustomPrinter);
+constructor TmnESCPOSPage.Create(Printer: TmnPrinter);
 begin
   inherited;
   Width := Printer.DefaultWidth;
@@ -483,5 +497,7 @@ begin
     FBitmap.SaveToFile(FileName);
 end;
 
+initialization
+  mnRegisteredPrinters.Add(TmnESCPOSPrinter);
 end.
 

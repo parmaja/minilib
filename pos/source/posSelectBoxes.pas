@@ -17,31 +17,43 @@ unit posSelectBoxes;
 interface
 
 uses
-  SysUtils, Classes, Graphics, Controls, StdCtrls, Forms, Types,
+  SysUtils, Classes, Graphics, Controls, Forms, Types,
   posTypes, posUtils, posControls, posEdits;
 
 type
+
+  { TposSelectBox }
+
   TposSelectBox = class(TposEdit)
   private
+    FAllowEdit: Boolean;
     FItemIndex: Integer;
     FAllowNull: Boolean;
     FItems: TStrings;
+    function GetItemText: string;
+    procedure SetAllowEdit(const AValue: Boolean);
+    procedure SetItemText(const AValue: string);
     procedure SetItemIndex(const Value: Integer);
     procedure SetItems(const Value: TStrings);
     procedure SetAllowNull(const Value: Boolean);
     function GetItemIndexStored: Boolean;
   protected
+    procedure ItemSelected; virtual;
     procedure SelectNext;
     procedure Changed; virtual;
+    function GetInputs: TposFrameInputs; override;
     procedure Click; override;
     procedure GetText(var vText: string); override;
     function DoKeyPress(var Key: Char): Boolean; override;
+    procedure DoButtonClick; override;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
     procedure Loaded; override;
+    property ItemText: string read GetItemText write SetItemText;
   published
     property AllowNull: Boolean read FAllowNull write SetAllowNull default True;
+    property AllowEdit: Boolean read FAllowEdit write SetAllowEdit default True;
     property ItemIndex: Integer read FItemIndex write SetItemIndex stored GetItemIndexStored;
     property Items: TStrings read FItems write SetItems; 
   end;
@@ -67,6 +79,7 @@ begin
     ItemIndex := i;
     Changed;
   end;
+  ItemSelected;
 end;
 
 procedure TposSelectBox.SetAllowNull(const Value: Boolean);
@@ -95,23 +108,52 @@ begin
         raise Exception.Create('ItemIndex out of bounds');
     end;
     FItemIndex := Value;
+    ItemSelected;
     Invalidate;
   end;
 end;
 
+function TposSelectBox.GetItemText: string;
+begin
+  Result := Text;
+end;
+
+procedure TposSelectBox.SetAllowEdit(const AValue: Boolean);
+begin
+  if FAllowEdit =AValue then exit;
+  FAllowEdit :=AValue;
+end;
+
 procedure TposSelectBox.SetItems(const Value: TStrings);
 begin
-  FItems.Assign(Value);
+  BeginUpdate;
+  try
+    FItems.Assign(Value);
+    ItemSelected;
+  finally
+    EndUpdate;
+  end;
 end;
 
 procedure TposSelectBox.Changed;
 begin
+  inherited;
+end;
+
+function TposSelectBox.GetInputs: TposFrameInputs;
+begin
+  Result :=inherited GetInputs;
+  if FAllowEdit then
+    Result := Result + [fiText]
+  else
+    Result := Result - [fiText];
 end;
 
 procedure TposSelectBox.Click;
 begin
   inherited;
-  SelectNext;
+  if not ButtonShow then
+    SelectNext;
 end;
 
 constructor TposSelectBox.Create(AOwner: TComponent);
@@ -125,6 +167,7 @@ begin
   FItems := TStringList.Create;
   FItemIndex := -1;
   FAllowNull := True;
+  FAllowEdit := True;
 end;
 
 destructor TposSelectBox.Destroy;
@@ -136,8 +179,15 @@ end;
 function TposSelectBox.DoKeyPress(var Key: Char): Boolean;
 begin
   Result := Inherited DoKeyPress(Key);
-  if (Key = ' ') then
-    SelectNext;
+  if not ButtonShow then
+    if (Key = ' ') then
+      SelectNext;
+end;
+
+procedure TposSelectBox.DoButtonClick;
+begin
+  inherited;
+  SelectNext;
 end;
 
 function TposSelectBox.GetItemIndexStored: Boolean;
@@ -145,13 +195,33 @@ begin
   Result := (ItemIndex > 0) or (AllowNull and (ItemIndex = 0)) or (not AllowNull and (ItemIndex = -1)); 
 end;
 
+procedure TposSelectBox.SetItemText(const AValue: string);
+var
+  i: Integer;
+begin
+  i := Items.IndexOf(AValue);
+  ItemIndex := i;
+  if i >=0 then
+    ItemSelected
+  else
+    Text := AValue;
+end;
+
+procedure TposSelectBox.ItemSelected;
+begin
+  if (ItemIndex < 0) or (ItemIndex >= Items.Count) then
+    Text := ''
+  else
+    Text := Items[ItemIndex];
+end;
+
 procedure TposSelectBox.GetText(var vText: string);
 begin
   inherited;
-  if (ItemIndex < 0) or (ItemIndex >= Items.Count) then
+  {if (ItemIndex < 0) or (ItemIndex >= Items.Count) then
     vText := ''
   else
-    vText := Items[ItemIndex];
+    vText := Items[ItemIndex];}
 end;
 
 procedure TposSelectBox.Loaded;

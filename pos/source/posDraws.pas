@@ -19,7 +19,7 @@ uses
   SysUtils, Classes, Graphics, Types;
 
 type
-  TposShapeKind = (shpNone, shpLeft, shpRight, shpFirst, shpLast, shpUp, shpDown, shpEllipsis, shpPin,
+  TposShapeKind = (shpNone, shpNext, shpLeft, shpRight, shpFirst, shpLast, shpUp, shpDown, shpEllipsis, shpPin,
     shpPlus, shpOK, shpCheck, shpMinus, shpCross, shpStar, shpDiv, shpPoint);
   
 //Restaurant tables not Database table :)
@@ -27,14 +27,14 @@ type
 procedure DrawChair(Canvas: TCanvas; const vRect: TRect; UpDown: Boolean; Opaque: Boolean);
 procedure DrawTable(Canvas: TCanvas; const vRect: TRect; Chairs: Integer; Center, Opaque: Boolean);
 
-procedure DrawShape(Canvas: TCanvas; R: TRect; Shape: TposShapeKind; ADown, AEnabled: Boolean; Size:Integer; Color: TColor);
+procedure DrawShape(Canvas: TCanvas; R: TRect; Shape: TposShapeKind; ADown, AEnabled, UseRightToLeft: Boolean; Size:Integer; Color: TColor);
   
 implementation
 
 uses
   posUtils;
 
-procedure DrawShape(Canvas: TCanvas; R: TRect; Shape: TposShapeKind; ADown, AEnabled: Boolean; Size:Integer; Color: TColor);
+procedure DrawShape(Canvas: TCanvas; R: TRect; Shape: TposShapeKind; ADown, AEnabled, UseRightToLeft: Boolean; Size:Integer; Color: TColor);
 var
   x, y: Integer;
   w, h: Integer;
@@ -171,14 +171,27 @@ begin
         Canvas.MoveTo(x, y + 3);
         Canvas.LineTo(x, y + 1);
       end;
+    shpNext:
+      begin
+        if UseRightToLeft then
+        begin
+          CalcZ(9);
+          Canvas.Polygon([Point(x - z * 2, y), Point(x + z, y - z * 3), Point(x + z, y + z * 3)]);
+        end
+        else
+        begin
+          CalcZ(9);
+          Canvas.Polygon([Point(x + 2, y), Point(x - 1, y - 3), Point(x - 1, y + 3)]);
+        end;
+      end;
     shpLeft:
       begin
-        CalcZ(10);
+        CalcZ(9);
         Canvas.Polygon([Point(x - z * 2, y), Point(x + z, y - z * 3), Point(x + z, y + z * 3)]);
       end;
     shpRight:
       begin
-        CalcZ(10);
+        CalcZ(9);
         Canvas.Polygon([Point(x + 2, y), Point(x - 1, y - 3), Point(x - 1, y + 3)]);
       end;
     shpPoint:

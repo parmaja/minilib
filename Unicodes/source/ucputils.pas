@@ -38,7 +38,6 @@ var
   FConverter: TucpConverter;
 
 {$IFDEF FPC}
-
 procedure Ansi2WideMove(source: pAnsiChar; var dest: widestring; len: SizeInt);
 begin
   dest := ucpAnsiToUnicode(source);
@@ -48,12 +47,21 @@ procedure Wide2AnsiMove(source: pwidechar; var dest: ansistring; len: SizeInt);
 begin
   dest := ucpUnicodeToAnsi(source);
 end;
+
+procedure Ansi2UnicodeMove(source: pAnsiChar; var dest: unicodestring; len: SizeInt);
+begin
+  dest := ucpAnsiToUnicode(source);
+end;
+
+procedure Unicode2AnsiMove(source: pUnicodeChar; var dest: ansistring; len: SizeInt);
+begin
+  dest := ucpUnicodeToAnsi(source);
+end;
 {$ENDIF}
 
 procedure ucpInstall(MBToWCProc: Tmbtowc_proc; WCtoMBProc: Twctomb_proc{$IFDEF FPC}; Hook: Boolean{$ENDIF});
 {$IFDEF FPC}
 var
-  //Manager: TWideStringManager;
   Manager: TUnicodeStringManager;
 {$ENDIF}
 begin
@@ -65,6 +73,8 @@ begin
     GetWideStringManager(Manager);
     Manager.Ansi2WideMoveProc := Ansi2WideMove;
     Manager.Wide2AnsiMoveProc := Wide2AnsiMove;
+    Manager.Ansi2UnicodeMoveProc := Ansi2UnicodeMove;
+    Manager.Unicode2AnsiMoveProc := Unicode2AnsiMove;
     SetWideStringManager(Manager);
   end;
 {$ENDIF}

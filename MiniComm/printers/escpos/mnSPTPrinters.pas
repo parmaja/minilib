@@ -32,6 +32,9 @@ type
     procedure GetInitBitImageCommands(var S: string); override;
   public
     constructor Create(Style: TmnPrintStyle; Stream: TStream); override;
+    class function PrinterTitle: string; override;
+    class function PrinterName: string; override;
+    procedure PrintEject; override;
   end;
 
   { TmnSPT8Page }
@@ -51,6 +54,8 @@ type
   public
     procedure BeginDocument; override;
     constructor Create(Style: TmnPrintStyle; Stream: TStream); override;
+    class function PrinterTitle: string; override;
+    class function PrinterName: string; override;
   end;
 
 implementation
@@ -58,7 +63,7 @@ implementation
 
 { TSPTIIIPrinter }
 
-procedure TSPTIIIPrinter.GetInitBitImageCommands(var S:string);
+procedure TSPTIIIPrinter.GetInitBitImageCommands(var S: string);
 begin
   inherited;
   S := S + seqSetLeftMargin + chr(0) + chr(0);
@@ -68,6 +73,26 @@ constructor TSPTIIIPrinter.Create(Style: TmnPrintStyle; Stream: TStream);
 begin
   inherited Create(Style, Stream);
   DefaultWidth := 380;
+end;
+
+class function TSPTIIIPrinter.PrinterTitle: string;
+begin
+  Result := 'SPT III';
+end;
+
+class function TSPTIIIPrinter.PrinterName: string;
+begin
+  Result := 'SPTIII';
+end;
+
+procedure TSPTIIIPrinter.PrintEject;
+begin
+  inherited;
+  PrintLn('');
+  PrintLn('');
+  PrintLn('');
+  PrintLn('');
+  PrintLn('');
 end;
 
 { TSPT8Printer }
@@ -97,6 +122,16 @@ begin
   DefaultWidth := 520;
 end;
 
+class function TSPT8Printer.PrinterTitle: string;
+begin
+  Result := 'SPT 8P';
+end;
+
+class function TSPT8Printer.PrinterName: string;
+begin
+  Result := 'SPT8P';
+end;
+
 { TmnSPT8Page }
 
 procedure TmnSPT8Page.PrintCanvas(Canvas: TCanvas);
@@ -104,5 +139,8 @@ begin
   PrintCanvasAsRasterBitImageChunks(Canvas);
 end;
 
+initialization
+  mnRegisteredPrinters.Add(TSPTIIIPrinter);
+  mnRegisteredPrinters.Add(TSPT8Printer);
 end.
 

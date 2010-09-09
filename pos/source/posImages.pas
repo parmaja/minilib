@@ -188,7 +188,7 @@ begin
   begin
     vCanvas.FillRect(vRect);
   end;
-  DrawShape(Canvas, vRect, Shape, False, True, 0, Font.Color);
+  DrawShape(Canvas, vRect, Shape, False, True, UseRightToLeftAlignment,0, Font.Color);
 end;
 
 procedure TposShape.SetShape(const Value: TposShapeKind);

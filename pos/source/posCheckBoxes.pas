@@ -199,7 +199,7 @@ begin
       aRect.Right := aRect.Right - 1
     else
       aRect.Right := aRect.Right + 1;
-    DrawShape(vCanvas, aRect, Shape, False, True, 0, Frame.Font.Color);
+    DrawShape(vCanvas, aRect, Shape, False, True, UseRightToLeft,0, Frame.Font.Color);
   end;
 end;
 

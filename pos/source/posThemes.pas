@@ -20,6 +20,9 @@ uses
   SysUtils, Classes, Graphics, Controls, StdCtrls, Forms,
   Contnrs, Types,
 {$IFDEF FPC}
+{$ifdef WINCE}
+  WinCEmf,
+{$endif}
   LCLIntf,
   LCLType,
 {$ELSE}
@@ -44,11 +47,10 @@ function Themes: TposThemes;
 
 implementation
 
-{$IFDEF FPC}
-{$ELSE}
+{$ifdef WINDOWS}
 uses
   MMSystem;
-{$ENDIF}
+{$endif}
 
 var
   FThemes: TposThemes = nil;
@@ -69,25 +71,35 @@ begin
 end;
 
 procedure TposThemes.PlaySound(Sound: string; NoStop, Async: Boolean);
-{$IFDEF FPC}
-begin
-  //not yet
-end;
-{$ELSE}
 var
+  f: string;
   c: Cardinal;
 begin
   if PlaySounds then
   begin
-    c := SND_FILENAME or SND_NODEFAULT;
-    if NoStop then
-      c := c or SND_NOSTOP;
-    if Async then
-      c := c or SND_ASYNC;
-    MMSystem.PlaySound(PChar(IncludeTrailingPathDelimiter(SoundDirectory) + Sound + '.WAV'), 0, c);
+    f := ExpandFileName(IncludeTrailingPathDelimiter(SoundDirectory) + Sound + '.WAV');
+    if FileExists(f) then
+    begin
+     {$ifdef WINCE}
+      c := SND_FILENAME or SND_NODEFAULT;
+      if NoStop then
+        c := c or SND_NOSTOP;
+      if Async then
+        c := c or SND_ASYNC;
+      PlaySoundW(PWideChar(UTF8Decode(f)), 0, c);
+    {$else}
+    {$ifdef Windows}
+      c := SND_FILENAME or SND_NODEFAULT;
+      if NoStop then
+        c := c or SND_NOSTOP;
+      if Async then
+        c := c or SND_ASYNC;
+      MMSystem.PlaySound(PChar(f), 0, c);
+    {$endif}
+    {$endif}
+    end;
   end;
 end;
-{$ENDIF}
 
 end.
 
