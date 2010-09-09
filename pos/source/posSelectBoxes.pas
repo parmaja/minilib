@@ -41,7 +41,6 @@ type
     procedure ItemSelected; virtual;
     procedure SelectNext;
     procedure Changed; virtual;
-    function GetInputs: TposFrameInputs; override;
     procedure Click; override;
     procedure GetText(var vText: string); override;
     function DoKeyPress(var Key: Char): Boolean; override;
@@ -50,6 +49,7 @@ type
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
     procedure Loaded; override;
+    function GetInputs: TposFrameInputs; override;
     property ItemText: string read GetItemText write SetItemText;
   published
     property AllowNull: Boolean read FAllowNull write SetAllowNull default True;

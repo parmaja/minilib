@@ -60,8 +60,8 @@ type
     function GetDensityBytes: Integer; virtual;
     function GetLineSpacing: Integer; virtual;
     //
-    procedure GetInitBitImageCommands(var S:string); virtual;
-    procedure GetInitRasterBitImageCommands(var S:string); virtual;
+    procedure GetInitBitImageCommands(var S: string); virtual;
+    procedure GetInitRasterBitImageCommands(var S: string); virtual;
   public
     constructor Create(Style: TmnPrintStyle; Stream: TStream); override;
     class function PrinterTitle: string; override;
@@ -455,6 +455,7 @@ begin
 //  Result.PixelFormat:= pf8bit;
   Result.Width := Width;
   Result.Height := Height;
+  Result.Canvas.Font.Quality := fqNonAntialiased;
   Result.Canvas.Brush.Color := clWhite;
   Result.Canvas.FillRect(Rect(0, 0, Width, Height));
 end;

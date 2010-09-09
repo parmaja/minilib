@@ -31,15 +31,20 @@ uses
   posControls, posUtils, posTypes;
 
 type
+
+  { TposThemes }
+
   TposThemes = class(TObject)
   private
     FSoundDirectory: string;
     FPlaySounds: Boolean;
+    FSoundExt: string;
   published
   public
     constructor Create;
     procedure PlaySound(Sound: string; NoStop: Boolean = False; Async: Boolean = False);
     property PlaySounds: Boolean read FPlaySounds write FPlaySounds default False;
+    property SoundExt: string read FSoundExt write FSoundExt;
     property SoundDirectory: string read FSoundDirectory write FSoundDirectory;
   end;
 
@@ -68,6 +73,7 @@ constructor TposThemes.Create;
 begin
   inherited;
   FPlaySounds := True;
+  FSoundExt := '.wav';
 end;
 
 procedure TposThemes.PlaySound(Sound: string; NoStop, Async: Boolean);
@@ -77,7 +83,7 @@ var
 begin
   if PlaySounds then
   begin
-    f := ExpandFileName(IncludeTrailingPathDelimiter(SoundDirectory) + Sound + '.WAV');
+    f := ExpandFileName(IncludeTrailingPathDelimiter(SoundDirectory) + Sound + SoundExt);
     if FileExists(f) then
     begin
      {$ifdef WINCE}

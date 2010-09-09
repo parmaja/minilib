@@ -172,12 +172,12 @@ end;
 
 procedure TposButton.Click;
 begin
+  Themes.PlaySound('CLICK', True, True);
   try
     inherited;
     if AutoActive then
       Active := not Active;
   finally
-    Themes.PlaySound('CLICK', True, True);
   end;
 end;
 

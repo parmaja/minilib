@@ -11,6 +11,8 @@ unit posUtils;
 {$H+}
 {$IFDEF FPC}
 {$MODE delphi}
+{$else}
+{$define WINDOWS}
 {$ENDIF}
 
 interface
@@ -18,11 +20,14 @@ interface
 uses
   SysUtils, Classes, Graphics, Controls,
   posTypes, posDraws,
+{$ifdef WINDOWS}
+  Windows,
+{$endif}
+
 {$IFDEF FPC}
   LCLIntf,
   Types;
 {$ELSE}
-  Windows,
   StdCtrls,
   Messages;
 {$ENDIF}
@@ -49,9 +54,7 @@ type
     SystemFont: Boolean; // Use the system font instead of Canvas Font
     RightToLeft: Boolean; //For RightToLeft text reading (Text Direction)
   end;
-
-function InflateRect(var Rect: TRect; dx, dy: Integer): TRect;
-{$ENDIF}
+{$endif}
 
 // Center
 procedure CenterRect(var R1: TRect; R2: TRect);
@@ -69,11 +72,14 @@ function OppositeColor(const Color: TColor): TColor;
 
 {$IFDEF FPC}
 {$ELSE}
+function InflateRect(var Rect: TRect; dx, dy: Integer): TRect;
 function Red(RGBColor:TColor): Byte;
 function Green(RGBColor:TColor): Byte;
 function Blue(RGBColor:TColor): Byte;
-function TextStyleToFormat(Style: TTextStyle): Longint;
 {$ENDIF}
+{$ifdef WINDOWS}
+function TextStyleToFormat(Style: TTextStyle): Longint;
+{$endif}
 procedure PaintText(Canvas: TCanvas; Text: string; vRect: TRect; Style: TTextStyle);
 procedure PaintTextButton(Canvas: TCanvas; Text: string; Rect: TRect; States: TposDrawStates);
 procedure PaintBorderButton(Canvas: TCanvas; Rect: TRect; Color, BorderColor: TColor; States: TposDrawStates; Down:Boolean = False);
@@ -82,11 +88,13 @@ procedure PaintRect(Canvas: TCanvas; const vRect: TRect);
 
 //
 procedure BidiAlignment(var Style:TTextStyle);
- 
+
 implementation
 
-{$IFNDEF FPC}
+uses
+  posThemes, posControls;
 
+{$IFNDEF FPC}
 function InflateRect(var Rect: TRect; dx, dy: Integer): TRect;
 begin
   Windows.InflateRect(Rect, dx, dy);
@@ -231,7 +239,9 @@ function Blue(RGBColor:TColor): Byte;
 begin
   Result := GetBValue(RGBColor);
 end;
+{$endif}
 
+{$ifdef WINDOWS}
 function TextStyleToFormat(Style: TTextStyle): Longint;
 begin
   Result := 0;
@@ -261,39 +271,44 @@ end;
 {$ENDIF}
 
 procedure PaintText(Canvas: TCanvas; Text: string; vRect: TRect; Style: TTextStyle);
-{$IFDEF FPC}
+{$IFNDEF WINDOWS}
 {$ELSE}
 var
   aFormat: Longint;
   R: TRect;
+{$ifdef FPC}
+  u: WideString;
+{$endif}
 {$ENDIF}
 begin
-{$IFDEF WINCE}
-  {$IFDEF DisableWindowsUnicodeSupport}
-  Text := AnsiToUtf8(Text);
-  {$ENDIF}
-{$ENDIF}
-
-{$IFDEF FPC}
-  Canvas.TextRect(vRect, vRect.Left, vRect.Top, Text, Style);
-{$ELSE}
+  if Style.Wordbreak then
+    Style.SingleLine := False;
+{$IFDEF WINDOWS}
   aFormat := TextStyleToFormat(Style);
   if Style.Opaque then
-    SetBkMode(Canvas.Handle, Opaque)
+    SetBkMode(Canvas.Handle, Windows.OPAQUE)
   else
   begin
     SetBKColor(Canvas.Handle, ColorToRGB(Canvas.Brush.Color));
-    SetBkMode(Canvas.Handle, TRANSPARENT);
+    SetBkMode(Canvas.Handle, Windows.TRANSPARENT);
   end;
   if Style.WordBreak and (Style.Layout = tlCenter) then
   begin
     R := vRect;
     OffsetRect(R, -R.Left, -R.Top);
-    DrawText(Canvas.Handle, PChar(Text), Length(Text), R, aFormat or DT_CALCRECT and not DT_VCENTER);
+    DrawText(Canvas.Handle, PChar(Text), Length(Text), R, aFormat or DT_CALCRECT and not DT_VCENTER and not DT_CENTER);
     CenterRect(R, vRect);
     vRect := R;
+    aFormat := aFormat and not DT_VCENTER;
   end;
-  DrawText(Canvas.Handle, PChar(Text), Length(Text), vRect, aFormat);
+  {$ifdef FPC}
+    u := UTF8Decode(Text);
+    Windows.DrawTextW(Canvas.Handle, PWideChar(u), Length(u), vRect, aFormat);
+  {$else}
+    Windows.DrawText(Canvas.Handle, PChar(Text), Length(Text), vRect, aFormat);
+  {$endif}
+{$ELSE}
+  Canvas.TextRect(vRect, vRect.Left, vRect.Top, Text, Style);
 {$ENDIF}
 end;
 
@@ -303,15 +318,15 @@ var
 begin
   FillChar(aStyle, SizeOf(aStyle), #0);
 
-  aStyle.SingleLine := not (pdsMultiLine in States);
-  aStyle.Wordbreak := not aStyle.SingleLine;
+  aStyle.Wordbreak := (pdsMultiLine in States);
+  aStyle.SingleLine := not aStyle.Wordbreak;
   aStyle.Alignment := taCenter;
   aStyle.Layout := tlCenter;
   aStyle.RightToLeft := pdsRightToLeft in States;
   Rect.Right := Rect.Right - 1;
   Rect.Bottom := Rect.Bottom - 1;
   if pdsDown in States then
-    OffsetRect(Rect, 1, 1);
+    OffsetRect(Rect, posEngine.Scale(1), posEngine.Scale(1));
   PaintText(Canvas, Text, Rect, aStyle);
 end;
 

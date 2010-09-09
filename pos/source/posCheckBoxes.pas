@@ -23,7 +23,7 @@ uses
   Windows,
   {$endif}
   SysUtils, Classes, Graphics, Controls, StdCtrls, Forms, Types,
-  posTypes, posUtils, posDraws, posControls;
+  posTypes, posUtils, posDraws, posThemes, posControls;
 
 type
   TposCheckSubFrame = class(TposSubFrame)
@@ -119,7 +119,10 @@ procedure TposCheckBox.Click;
 begin
   inherited;
   if not ReadOnly then
+  begin
+    Themes.PlaySound('CLICK', True, True);
     Checked := not Checked;
+  end;
 end;
 
 constructor TposCheckBox.Create(AOwner: TComponent);

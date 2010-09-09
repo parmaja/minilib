@@ -48,7 +48,7 @@ uses
   Messages,
 {$ENDIF}
   Forms, Contnrs, Types,
-  posUtils, posDraws, posTypes;
+  posDraws, posUtils, posTypes;
 
 const
   sSnapGridSize = 2;
@@ -378,11 +378,12 @@ function posEngine: TposEngine;
 
 implementation
 
+uses
 {$IFDEF FPC}
 {$ELSE}
-uses
-  MMSystem;
+  MMSystem,
 {$ENDIF}
+  posThemes;
 
 var
   FposEngine: TposEngine = nil;
@@ -1270,6 +1271,7 @@ end;
 
 procedure TposSubFrame.Click;
 begin
+  Themes.PlaySound('CLICK', True, True);
 end;
 
 function TposSubFrame.UseRightToLeft: Boolean;
