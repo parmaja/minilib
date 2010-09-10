@@ -277,14 +277,15 @@ var
   aFormat: Longint;
   R: TRect;
 {$ifdef FPC}
-  u: WideString;
+  s: WideString;
+{$else}
+  s: string;
 {$endif}
 {$ENDIF}
 begin
   if Style.Wordbreak then
     Style.SingleLine := False;
 {$IFDEF WINDOWS}
-  aFormat := TextStyleToFormat(Style);
   if Style.Opaque then
     SetBkMode(Canvas.Handle, Windows.OPAQUE)
   else
@@ -292,20 +293,31 @@ begin
     SetBKColor(Canvas.Handle, ColorToRGB(Canvas.Brush.Color));
     SetBkMode(Canvas.Handle, Windows.TRANSPARENT);
   end;
-  if Style.WordBreak and (Style.Layout = tlCenter) then
+
+  aFormat := TextStyleToFormat(Style) and not DT_VCENTER;
+  {$ifdef FPC}
+  s := UTF8Decode(Text);
+  {$else}
+  s := Text;
+  {$endif}
+  if (Style.Layout = tlCenter) then
   begin
     R := vRect;
     OffsetRect(R, -R.Left, -R.Top);
-    DrawText(Canvas.Handle, PChar(Text), Length(Text), R, aFormat or DT_CALCRECT and not DT_VCENTER and not DT_CENTER);
+    {$ifdef FPC}
+    Windows.DrawTextW(Canvas.Handle, PWideChar(s), Length(s), R, aFormat or DT_CALCRECT);
+    {$else}
+    Windows.DrawText(Canvas.Handle, PChar(s), Length(s), R, aFormat or DT_CALCRECT);
+    {$endif}
     CenterRect(R, vRect);
     vRect := R;
-    aFormat := aFormat and not DT_VCENTER;
+    //Canvas.Brush.Style := bsClear;
+    //Canvas.Rectangle(vRect);
   end;
   {$ifdef FPC}
-    u := UTF8Decode(Text);
-    Windows.DrawTextW(Canvas.Handle, PWideChar(u), Length(u), vRect, aFormat);
+    Windows.DrawTextW(Canvas.Handle, PWideChar(s), Length(s), vRect, aFormat);
   {$else}
-    Windows.DrawText(Canvas.Handle, PChar(Text), Length(Text), vRect, aFormat);
+    Windows.DrawText(Canvas.Handle, PChar(s), Length(s), vRect, aFormat);
   {$endif}
 {$ELSE}
   Canvas.TextRect(vRect, vRect.Left, vRect.Top, Text, Style);
@@ -356,7 +368,7 @@ begin
   Canvas.LineTo(Rect.Right, Rect.Top);
 end;
 
-procedure PaintButton(Canvas: TCanvas; Caption: string; vShape:TposShapeKind; Rect: TRect; Color, BorderColor: TColor; States: TposDrawStates);
+procedure PaintButton(Canvas: TCanvas; Caption: string; vShape: TposShapeKind; Rect: TRect; Color, BorderColor: TColor; States: TposDrawStates);
 const
   cPending = 4;
 begin
