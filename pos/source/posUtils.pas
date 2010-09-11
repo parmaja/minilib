@@ -58,6 +58,7 @@ type
 
 // Center
 procedure CenterRect(var R1: TRect; R2: TRect);
+procedure AlignRect(var R: TRect; ToRect: TRect; Alignment: TAlignment; Layout: TTextLayout);
 function CollideRect(const R1, R2: TRect): Boolean;
 
 procedure ExcludeClipRect(vCanvas: TCanvas; vRect: TRect);
@@ -92,7 +93,7 @@ procedure BidiAlignment(var Style:TTextStyle);
 implementation
 
 uses
-  posThemes, posControls;
+  posControls;
 
 {$IFNDEF FPC}
 function InflateRect(var Rect: TRect; dx, dy: Integer): TRect;
@@ -104,6 +105,26 @@ end;
 procedure CenterRect(var R1: TRect; R2: TRect);
 begin
   OffsetRect(R1, ((R2.Right - R2.Left) div 2) - ((R1.Right - R1.Left) div 2) + (R2.Left - R1.Left), ((R2.Bottom - R2.Top) div 2) - ((R1.Bottom - R1.Top) div 2) + (R2.Top - R1.Top));
+end;
+
+procedure AlignRect(var R: TRect; ToRect: TRect; Alignment: TAlignment; Layout: TTextLayout);
+var
+  ox, oy: Integer;
+begin
+  ox := 0;
+  oy := 0;
+  case Alignment of
+    taLeftJustify: ox := ToRect.Left - R.Left;
+    taCenter: ox := (ToRect.Left - R.Left + ToRect.Right - R.Right) div 2;
+    taRightJustify: ox := ToRect.Right - R.Right
+  end;
+
+  case Layout of
+    tlTop: oy := ToRect.Top - R.Top;
+    tlCenter: oy := (ToRect.Top - R.Top + ToRect.Bottom - R.Bottom) div 2;
+    tlBottom: oy := ToRect.Bottom - R.Bottom;
+  end;
+  OffsetRect(R, ox, oy);
 end;
 
 function CollideRect(const R1, R2: TRect): Boolean;
@@ -246,6 +267,7 @@ function TextStyleToFormat(Style: TTextStyle): Longint;
 begin
   Result := 0;
   case Style.Alignment of
+    taLeftJustify: Result := DT_LEFT;
     taRightJustify: Result := DT_RIGHT;
     taCenter: Result := DT_CENTER;
   end;
@@ -271,16 +293,33 @@ end;
 {$ENDIF}
 
 procedure PaintText(Canvas: TCanvas; Text: string; vRect: TRect; Style: TTextStyle);
+  procedure DrawText(var R: TRect; Format: Integer);
+  var
+  {$ifdef FPC}
+    s: WideString;
+  {$else}
+    s: string;
+  {$endif}
+  begin
+    {$ifdef WINDOWS}
+      {$ifdef FPC}
+      s := UTF8Decode(Text);
+      {$else}
+      s := Text;
+      {$endif}       {$ifdef FPC}
+      Windows.DrawTextW(Canvas.Handle, PWideChar(s), Length(s), R, Format);
+      {$else}
+      Windows.DrawText(Canvas.Handle, PChar(s), Length(s), R, Format);
+      {$endif}
+    {$else}
+      Canvas.TextRect(R, vRect.Left, vRect.Top, Text, Style);
+    {$endif}
+  end;
 {$IFNDEF WINDOWS}
 {$ELSE}
 var
   aFormat: Longint;
   R: TRect;
-{$ifdef FPC}
-  s: WideString;
-{$else}
-  s: string;
-{$endif}
 {$ENDIF}
 begin
   if Style.Wordbreak then
@@ -294,33 +333,23 @@ begin
     SetBkMode(Canvas.Handle, Windows.TRANSPARENT);
   end;
 
-  aFormat := TextStyleToFormat(Style) and not DT_VCENTER;
-  {$ifdef FPC}
-  s := UTF8Decode(Text);
-  {$else}
-  s := Text;
-  {$endif}
-  if (Style.Layout = tlCenter) then
+  aFormat := TextStyleToFormat(Style);
+  if Style.Wordbreak then //for now only Wordbreak
   begin
+    aFormat := TextStyleToFormat(Style) and not DT_VCENTER and not DT_BOTTOM;
     R := vRect;
     OffsetRect(R, -R.Left, -R.Top);
-    {$ifdef FPC}
-    Windows.DrawTextW(Canvas.Handle, PWideChar(s), Length(s), R, aFormat or DT_CALCRECT);
-    {$else}
-    Windows.DrawText(Canvas.Handle, PChar(s), Length(s), R, aFormat or DT_CALCRECT);
-    {$endif}
-    CenterRect(R, vRect);
+    DrawText(R, aFormat or DT_CALCRECT);
+    AlignRect(R, vRect, Style.Alignment, Style.Layout);
     vRect := R;
-    //Canvas.Brush.Style := bsClear;
-    //Canvas.Rectangle(vRect);
   end;
   {$ifdef FPC}
-    Windows.DrawTextW(Canvas.Handle, PWideChar(s), Length(s), vRect, aFormat);
+    DrawText(vRect, aFormat);
   {$else}
-    Windows.DrawText(Canvas.Handle, PChar(s), Length(s), vRect, aFormat);
+    DrawText(vRect, aFormat);
   {$endif}
 {$ELSE}
-  Canvas.TextRect(vRect, vRect.Left, vRect.Top, Text, Style);
+  DrawText(vRect, aFormat);
 {$ENDIF}
 end;
 
