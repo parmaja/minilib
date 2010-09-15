@@ -325,15 +325,17 @@ begin
   if Style.Wordbreak then
     Style.SingleLine := False;
 {$IFDEF WINDOWS}
-  if Style.Opaque then
+{  if Style.Opaque then
     SetBkMode(Canvas.Handle, Windows.OPAQUE)
   else
-  begin
+  begin}
     SetBKColor(Canvas.Handle, ColorToRGB(Canvas.Brush.Color));
     SetBkMode(Canvas.Handle, Windows.TRANSPARENT);
-  end;
+//  end;
 
   aFormat := TextStyleToFormat(Style);
+  if Style.Opaque then
+    Canvas.FillRect(vRect);
   if Style.Wordbreak then //for now only Wordbreak
   begin
     aFormat := TextStyleToFormat(Style) and not DT_VCENTER and not DT_BOTTOM;

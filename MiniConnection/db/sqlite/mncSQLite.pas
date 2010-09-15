@@ -41,6 +41,9 @@ type
     constructor Create;
     procedure Interrupt;
     procedure Execute(SQL: string);
+    {TODO
+      ANALYZE
+    }
     property DBHandle: PSqlite3 read FDBHandle;
   end;
 
@@ -297,12 +300,21 @@ begin
   Execute('PRAGMA full_column_names = 0');
   Execute('PRAGMA short_column_names = 1');
   Execute('PRAGMA encoding = "UTF-8"');
+  Execute('PRAGMA foreign_keys = ON');
   Execute('PRAGMA TEMP_STORE = MEMORY'); //for WINCE
   if Exclusive then
     Execute('PRAGMA locking_mode = EXCLUSIVE')
   else
     Execute('PRAGMA locking_mode = NORMAL');
   Execute('PRAGMA journal_mode = '+ SQLiteJournalModeToStr(FJournalMode));
+  {TODO
+  sqlite3_enable_shared_cache()
+  secure_delete
+  synchronous
+  case_sensitive_like //to be compatiple with firebird
+  temp_store_directory
+  read_uncommitted
+  }
 end;
 
 { TmncSQLiteCommand }
