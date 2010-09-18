@@ -1,0 +1,120 @@
+object MainForm: TMainForm
+  Left = 326
+  Height = 312
+  Top = 144
+  Width = 320
+  Caption = 'Sqlite speed test'
+  ClientHeight = 312
+  ClientWidth = 320
+  LCLVersion = '0.9.29'
+  object Button1: TButton
+    Left = 11
+    Height = 25
+    Top = 277
+    Width = 75
+    Caption = 'Start'
+    OnClick = Button1Click
+    TabOrder = 0
+  end
+  object LogEdit: TMemo
+    Left = 4
+    Height = 110
+    Top = 158
+    Width = 311
+    Anchors = [akTop, akLeft, akRight, akBottom]
+    TabOrder = 1
+  end
+  object TempStoreCbo: TComboBox
+    Left = 74
+    Height = 21
+    Top = 47
+    Width = 156
+    ItemHeight = 13
+    ItemIndex = 0
+    Items.Strings = (
+      'Default'
+      'FILE'
+      'MEMORY'
+    )
+    Style = csDropDownList
+    TabOrder = 2
+    Text = 'Default'
+  end
+  object Label1: TLabel
+    Left = 7
+    Height = 14
+    Top = 51
+    Width = 56
+    Caption = 'Temp Store'
+    ParentColor = False
+  end
+  object JournalModeCbo: TComboBox
+    Left = 74
+    Height = 21
+    Top = 70
+    Width = 156
+    ItemHeight = 13
+    ItemIndex = 0
+    Items.Strings = (
+      'Default'
+      'DELETE'
+      'TRUNCATE'
+      'PERSIST'
+      'MEMORY'
+      'WAL'
+      'OFF'
+    )
+    Style = csDropDownList
+    TabOrder = 3
+    Text = 'Default'
+  end
+  object Label2: TLabel
+    Left = 7
+    Height = 14
+    Top = 74
+    Width = 65
+    Caption = 'Journal Mode'
+    ParentColor = False
+  end
+  object ExclusiveChk: TCheckBox
+    Left = 7
+    Height = 17
+    Top = 7
+    Width = 62
+    Caption = 'Exclusive'
+    TabOrder = 4
+  end
+  object SynchronousCbo: TComboBox
+    Left = 74
+    Height = 21
+    Top = 92
+    Width = 156
+    ItemHeight = 13
+    ItemIndex = 0
+    Items.Strings = (
+      'Default'
+      'Off'
+      'Normal'
+      'Full'
+    )
+    Style = csDropDownList
+    TabOrder = 5
+    Text = 'Default'
+  end
+  object Label3: TLabel
+    Left = 7
+    Height = 14
+    Top = 96
+    Width = 63
+    Caption = 'Synchronous'
+    ParentColor = False
+  end
+  object CommitChk: TCheckBox
+    Left = 7
+    Height = 17
+    Top = 131
+    Width = 53
+    Caption = 'Commit'
+    TabOrder = 6
+  end
+end

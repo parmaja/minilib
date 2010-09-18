@@ -16,13 +16,13 @@ unit mncSQLite;
 interface
 
 uses
-  Classes, SysUtils, Variants, StrUtils,
+  Classes, SysUtils, Variants,
   {$ifdef FPC}
-  sqlite3,
+  sqlite3dyn,
   {$else}
   mncSQLiteHeader,
   {$endif}
-  mnUtils, mnStreams, mncConnections, mncSQL;
+  mnUtils, mncConnections, mncSQL;
 
 type
 
@@ -47,18 +47,22 @@ type
     property DBHandle: PSqlite3 read FDBHandle;
   end;
 
-  TJournalMode = (jrmDefault, jrmDelete, jrmTruncate, jrmPersist, jrmMemory, jrmWal, jrmOff);
-
+  TmncTempStore = (tmpDefault, tmpFile, tmpMemory);
+  TmncJournalMode = (jrmDefault, jrmDelete, jrmTruncate, jrmPersist, jrmMemory, jrmWal, jrmOff);
+  TmncSynchronous = (syncDefault, syncOFF, syncNormal,  syncFull);
   { TmncSQLiteSession }
 
   TmncSQLiteSession = class(TmncSession)
   private
     FExclusive: Boolean;
-    FJournalMode: TJournalMode;
+    FJournalMode: TmncJournalMode;
+    FSynchronous: TmncSynchronous;
+    FTempStore: TmncTempStore;
     function GetConnection: TmncSQLiteConnection;
     procedure SetConnection(const AValue: TmncSQLiteConnection);
     procedure SetExclusive(const AValue: Boolean);
-    procedure SetJournalMode(const AValue: TJournalMode);
+    procedure SetJournalMode(const AValue: TmncJournalMode);
+    procedure SetTempStore(const AValue: TmncTempStore);
   protected
     procedure DoInit; override;
     procedure DoStart; override;
@@ -73,7 +77,9 @@ type
     function GetLastInsertID: Int64;
     function GetRowsChanged: Integer;
     property Exclusive: Boolean read FExclusive write SetExclusive;
-    property JournalMode:TJournalMode read FJournalMode write SetJournalMode default jrmDefault;
+    property Synchronous: TmncSynchronous read FSynchronous write FSynchronous default syncDefault;
+    property JournalMode: TmncJournalMode read FJournalMode write SetJournalMode default jrmDefault;
+    property TempStore: TmncTempStore read FTempStore write SetTempStore default tmpDefault;
     property Connection: TmncSQLiteConnection read GetConnection write SetConnection;
   end;
 
@@ -110,11 +116,14 @@ type
     property Statment: Psqlite3_stmt read FStatment;
   end;
 
-function SQLiteJournalModeToStr(JournalMode: TJournalMode): string;
+function SQLiteJournalModeToStr(JournalMode: TmncJournalMode): string;
+function SQLiteTempStoreToStr(TempStore: TmncTempStore): string;
+function SQLiteSynchronousToStr(Synchronous: TmncSynchronous): string;
+
 
 implementation
 
-function SQLiteJournalModeToStr(JournalMode: TJournalMode): string;
+function SQLiteJournalModeToStr(JournalMode: TmncJournalMode): string;
 begin
   case JournalMode of
     jrmDefault:
@@ -130,6 +139,36 @@ begin
     jrmWal: Result := 'WAL';
     jrmOff: Result := 'OFF';
   end;
+end;
+
+function SQLiteTempStoreToStr(TempStore: TmncTempStore): string;
+begin
+  case TempStore of
+    tmpDefault:
+    {$ifdef WINCE}
+      Result := 'MEMORY'; //or MEMORY
+    {$else}
+      Result := 'DEFAULT';
+    {$endif}
+    tmpFile: Result := 'FILE';
+    tmpMemory: Result := 'MEMORY';
+  end;
+end;
+
+function SQLiteSynchronousToStr(Synchronous: TmncSynchronous): string;
+begin
+  case Synchronous of
+    syncDefault:
+    {$ifdef WINCE}
+      Result := 'NORMAL'; //or MEMORY
+    {$else}
+      Result := 'FULL';
+    {$endif}
+    syncOFF: Result := 'OFF';
+    syncNormal: Result := 'NORMAL';
+    syncFull: Result := 'FULL';
+  end;
+
 end;
 
 function SQLTypeToType(vType: Integer): TmncDataType;
@@ -173,8 +212,11 @@ end;
 
 procedure TmncSQLiteConnection.DoConnect;
 begin
+  InitialiseSQLite;
   if not AutoCreate and not FileExists(Resource) then
     raise EmncException.Create('Database not exist: "' + Resource + '"');
+  if SQLiteLibraryHandle = 0 then
+    raise EmncException.Create('SQlite3 not loaded');
   CheckError(sqlite3_open(PChar(Resource), @FDBHandle), Resource);
 end;
 
@@ -187,6 +229,7 @@ procedure TmncSQLiteConnection.DoDisconnect;
 begin
   CheckError(sqlite3_close(FDBHandle));
   FDBHandle := nil;
+  ReleaseSQLite;
 end;
 
 { TmncSQLiteSession }
@@ -285,35 +328,47 @@ begin
   end;
 end;
 
-procedure TmncSQLiteSession.SetJournalMode(const AValue: TJournalMode);
+procedure TmncSQLiteSession.SetJournalMode(const AValue: TmncJournalMode);
 begin
   if FJournalMode <> AValue then
   begin
     FJournalMode := AValue;
     if Active then
-      raise EmncException.Create('You can not set Exclusive when session active');
+      raise EmncException.Create('You can not set JournalMode when session active');
+  end;
+end;
+
+procedure TmncSQLiteSession.SetTempStore(const AValue: TmncTempStore);
+begin
+  if FTempStore <> AValue then
+  begin
+    FTempStore := AValue;
+    if Active then
+      raise EmncException.Create('You can not set TempStore when session active');
   end;
 end;
 
 procedure TmncSQLiteSession.DoInit;
 begin
-  Execute('PRAGMA full_column_names = 0');
-  Execute('PRAGMA short_column_names = 1');
-  Execute('PRAGMA encoding = "UTF-8"');
-  Execute('PRAGMA foreign_keys = ON');
-  Execute('PRAGMA TEMP_STORE = MEMORY'); //for WINCE
+  Execute('PRAGMA full_column_names=0');
+  Execute('PRAGMA short_column_names=1');
+  Execute('PRAGMA encoding="UTF-8"');
+  Execute('PRAGMA foreign_keys=ON');
+
   if Exclusive then
-    Execute('PRAGMA locking_mode = EXCLUSIVE')
+    Execute('PRAGMA locking_mode=EXCLUSIVE')
   else
-    Execute('PRAGMA locking_mode = NORMAL');
-  Execute('PRAGMA journal_mode = '+ SQLiteJournalModeToStr(FJournalMode));
+    Execute('PRAGMA locking_mode=NORMAL');
+  Execute('PRAGMA TEMP_STORE=' + SQLiteTempStoreToStr(FTempStore));
+  Execute('PRAGMA journal_mode=' + SQLiteJournalModeToStr(FJournalMode));
+  Execute('PRAGMA synchronous=' + SQLiteSynchronousToStr(Synchronous));
   {TODO
-  sqlite3_enable_shared_cache()
-  secure_delete
-  synchronous
-  case_sensitive_like //to be compatiple with firebird
-  temp_store_directory
-  read_uncommitted
+    sqlite3_enable_shared_cache()
+    secure_delete
+    synchronous
+    case_sensitive_like //to be compatiple with firebird
+    temp_store_directory
+    read_uncommitted
   }
 end;
 
