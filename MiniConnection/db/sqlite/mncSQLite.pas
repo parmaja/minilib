@@ -262,7 +262,9 @@ procedure TmncSQLiteConnection.DoDisconnect;
 begin
   CheckError(sqlite3_close(FDBHandle));
   FDBHandle := nil;
+  {$ifdef FPC}
   ReleaseSQLite;
+  {$endif}
 end;
 
 { TmncSQLiteSession }

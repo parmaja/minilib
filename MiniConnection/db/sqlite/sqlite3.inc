@@ -115,6 +115,19 @@ const
   SQLITE_DENY = 1;   
   SQLITE_IGNORE = 2;   
 
+  SQLITE_OPEN_READONLY         = $00000001;
+  SQLITE_OPEN_READWRITE        = $00000002;
+  SQLITE_OPEN_CREATE           = $00000004;
+  SQLITE_OPEN_DELETEONCLOSE    = $00000008;
+  SQLITE_OPEN_EXCLUSIVE        = $00000010;
+  SQLITE_OPEN_MAIN_DB          = $00000100;
+  SQLITE_OPEN_TEMP_DB          = $00000200;
+  SQLITE_OPEN_TRANSIENT_DB     = $00000400;
+  SQLITE_OPEN_MAIN_JOURNAL     = $00000800;
+  SQLITE_OPEN_TEMP_JOURNAL     = $00001000;
+  SQLITE_OPEN_SUBJOURNAL       = $00002000;
+  SQLITE_OPEN_MASTER_JOURNAL   = $00004000;
+
 // Original from sqlite3.h: 
 //#define SQLITE_STATIC      ((void(*)(void *))0)
 //#define SQLITE_TRANSIENT   ((void(*)(void *))-1)
@@ -186,6 +199,7 @@ procedure sqlite3_progress_handler(_para1:Psqlite3; _para2:longint; _para3:sqlit
 function sqlite3_commit_hook(_para1:Psqlite3; _para2:sqlite3_commit_hook_func; _para3:pointer):pointer;cdecl; external Sqlite3Lib name 'sqlite3_commit_hook';
 function sqlite3_open(filename:Pchar; ppDb:PPsqlite3):longint;cdecl; external Sqlite3Lib name 'sqlite3_open';
 function sqlite3_open16(filename:pointer; ppDb:PPsqlite3):longint;cdecl; external Sqlite3Lib name 'sqlite3_open16';
+function sqlite3_open_v2(filename: pchar; ppDb: PPsqlite3; flags: longint; zVfs: pchar):longint;cdecl; external Sqlite3Lib name 'sqlite3_open_v2';
 function sqlite3_errcode(db:Psqlite3):longint;cdecl; external Sqlite3Lib name 'sqlite3_errcode';
 function sqlite3_errmsg(_para1:Psqlite3):Pchar;cdecl; external Sqlite3Lib name 'sqlite3_errmsg';
 function sqlite3_errmsg16(_para1:Psqlite3):pointer;cdecl; external Sqlite3Lib name 'sqlite3_errmsg16';
