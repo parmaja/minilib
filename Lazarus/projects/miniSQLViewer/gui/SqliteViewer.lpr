@@ -22,6 +22,7 @@ uses
 
 begin
   Application.Initialize;
+  Application.ApplicationType := atPDA;
   Application.CreateForm(TMainForm, MainForm);
   Application.Run;
 end.

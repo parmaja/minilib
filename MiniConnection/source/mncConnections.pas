@@ -116,6 +116,7 @@ type
     FCommands: TmncLinks;
     FStartCount: Integer;
     FAction: TmncSessionAction;
+    FIsInit: Boolean;
     procedure SetParams(const Value: TStrings);
     procedure SetConnection(const Value: TmncConnection);
     procedure SetActive(const Value: Boolean);
@@ -446,6 +447,8 @@ end;
 
 procedure TmncConnection.Connect;
 begin
+  if Connected then
+    raise EmncException.Create('Connection already connected');
   DoConnect;
   if Assigned(OnConnected) then
     OnConnected(Self);
@@ -470,6 +473,8 @@ end;
 
 procedure TmncConnection.Disconnect;
 begin
+  if not Connected then
+    raise EmncException.Create('Connection not connected');
   DoDisconnect;
   if Assigned(OnDisconnected) then
     OnDisconnected(Self);
@@ -851,7 +856,11 @@ procedure TmncSession.Start;
 begin
   if (Connection.Mode <> smNone) and (Active) then
     raise EmncException.Create('Session is already active.');
-  DoInit;
+  if not FIsInit then
+  begin
+    DoInit;
+    FIsInit := True;
+  end;
   case Connection.Mode of
     smMultiTransaction: DoStart;
     smSingleTransaction,

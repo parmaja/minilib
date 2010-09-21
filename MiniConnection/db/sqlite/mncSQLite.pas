@@ -24,6 +24,12 @@ uses
   {$endif}
   mnUtils, mncConnections, mncSQL;
 
+const
+  SQLITE_OPEN_FULLMUTEX        = $00010000;
+  SQLITE_OPEN_SHAREDCACHE      = $00020000;
+  SQLITE_OPEN_PRIVATECACHE     = $00040000;
+  SQLITE_OPEN_WAL              = $00080000;
+
 type
 
   { TmncSQLiteConnection }
@@ -40,6 +46,7 @@ type
   public
     constructor Create;
     procedure Interrupt;
+    function GetVersion: string;
     procedure Execute(SQL: string);
     {TODO
       ANALYZE
@@ -56,12 +63,14 @@ type
   private
     FExclusive: Boolean;
     FJournalMode: TmncJournalMode;
+    FReadCommited: Boolean;
     FSynchronous: TmncSynchronous;
     FTempStore: TmncTempStore;
     function GetConnection: TmncSQLiteConnection;
     procedure SetConnection(const AValue: TmncSQLiteConnection);
     procedure SetExclusive(const AValue: Boolean);
     procedure SetJournalMode(const AValue: TmncJournalMode);
+    procedure SetReadCommited(const AValue: Boolean);
     procedure SetTempStore(const AValue: TmncTempStore);
   protected
     procedure DoInit; override;
@@ -77,6 +86,7 @@ type
     function GetLastInsertID: Int64;
     function GetRowsChanged: Integer;
     property Exclusive: Boolean read FExclusive write SetExclusive;
+    property ReadCommited: Boolean read FReadCommited write SetReadCommited;
     property Synchronous: TmncSynchronous read FSynchronous write FSynchronous default syncDefault;
     property JournalMode: TmncJournalMode read FJournalMode write SetJournalMode default jrmDefault;
     property TempStore: TmncTempStore read FTempStore write SetTempStore default tmpDefault;
@@ -128,7 +138,7 @@ begin
   case JournalMode of
     jrmDefault:
     {$ifdef WINCE}
-      Result := 'TRUNCATE'; //or MEMORY
+      Result := 'MEMORY'; //or MEMORY
     {$else}
       Result := 'DELETE';
     {$endif}
@@ -210,14 +220,37 @@ begin
   sqlite3_interrupt(DBHandle);
 end;
 
-procedure TmncSQLiteConnection.DoConnect;
+function TmncSQLiteConnection.GetVersion: string;
+var
+  p: PChar;
 begin
+  p := sqlite3_version();
+  if p <> nil then
+    Result := p
+  else
+    Result := '';
+end;
+
+procedure TmncSQLiteConnection.DoConnect;
+var
+  f: Integer;
+begin
+  {$ifdef FPC}
   InitialiseSQLite;
-  if not AutoCreate and not FileExists(Resource) then
-    raise EmncException.Create('Database not exist: "' + Resource + '"');
   if SQLiteLibraryHandle = 0 then
     raise EmncException.Create('SQlite3 not loaded');
-  CheckError(sqlite3_open(PChar(Resource), @FDBHandle), Resource);
+  {$endif}
+
+  f := SQLITE_OPEN_READWRITE or SQLITE_OPEN_SHAREDCACHE;
+  if not FileExists(Resource) then
+  begin
+    if AutoCreate then
+      f := f or SQLITE_OPEN_CREATE
+    else
+      raise EmncException.Create('Database not exist: "' + Resource + '"');
+  end;
+  //  CheckError(sqlite3_enable_shared_cache(1));
+  CheckError(sqlite3_open_v2(PChar(Resource), @FDBHandle, f, nil), Resource);
 end;
 
 function TmncSQLiteConnection.GetConnected: Boolean;
@@ -322,9 +355,9 @@ procedure TmncSQLiteSession.SetExclusive(const AValue: Boolean);
 begin
   if FExclusive <> AValue then
   begin
-    FExclusive := AValue;
     if Active then
       raise EmncException.Create('You can not set Exclusive when session active');
+    FExclusive := AValue;
   end;
 end;
 
@@ -332,9 +365,19 @@ procedure TmncSQLiteSession.SetJournalMode(const AValue: TmncJournalMode);
 begin
   if FJournalMode <> AValue then
   begin
-    FJournalMode := AValue;
     if Active then
       raise EmncException.Create('You can not set JournalMode when session active');
+    FJournalMode := AValue;
+  end;
+end;
+
+procedure TmncSQLiteSession.SetReadCommited(const AValue: Boolean);
+begin
+  if FReadCommited <> AValue then
+  begin
+    if Active then
+      raise EmncException.Create('You can not set ReadCommited when session active');
+    FReadCommited := AValue;
   end;
 end;
 
@@ -359,16 +402,15 @@ begin
     Execute('PRAGMA locking_mode=EXCLUSIVE')
   else
     Execute('PRAGMA locking_mode=NORMAL');
+  if Exclusive then
   Execute('PRAGMA TEMP_STORE=' + SQLiteTempStoreToStr(FTempStore));
   Execute('PRAGMA journal_mode=' + SQLiteJournalModeToStr(FJournalMode));
   Execute('PRAGMA synchronous=' + SQLiteSynchronousToStr(Synchronous));
   {TODO
-    sqlite3_enable_shared_cache()
     secure_delete
-    synchronous
     case_sensitive_like //to be compatiple with firebird
     temp_store_directory
-    read_uncommitted
+    read_uncommitted nop
   }
 end;
 

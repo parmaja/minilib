@@ -585,7 +585,7 @@ begin
           FItemIndex := DownItem.Index;
           if not ReadOnly then
           begin
-            Themes.PlaySound('CLICK', True, True);
+            Themes.PlaySound('CLICK', False, False);
             if Interactive then
               DownItem.Click; // Click here can be free DownItem
             if (DownItem <> nil) then //may be prior Click change the Items of Stuffs

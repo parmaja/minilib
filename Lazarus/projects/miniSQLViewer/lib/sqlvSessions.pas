@@ -166,7 +166,8 @@ end;
 procedure TsqlvSession.Close;
 begin
   DBSession.Stop;
-  DBConnection.Disconnect;
+  if DBConnection.Connected then
+    DBConnection.Disconnect;
 end;
 
 function TsqlvSession.IsActive: Boolean;

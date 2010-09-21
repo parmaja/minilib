@@ -1,34 +1,34 @@
 object MainForm: TMainForm
   Left = 326
-  Height = 312
+  Height = 311
   Top = 144
-  Width = 320
+  Width = 335
   Caption = 'Sqlite speed test'
-  ClientHeight = 312
-  ClientWidth = 320
+  ClientHeight = 311
+  ClientWidth = 335
+  Font.CharSet = ANSI_CHARSET
+  Font.Color = clBlack
+  Font.Height = -11
+  Font.Name = 'Tahoma'
+  Font.Pitch = fpVariable
+  Font.Quality = fqDraft
   LCLVersion = '0.9.29'
   object Button1: TButton
-    Left = 11
+    Left = 6
     Height = 25
-    Top = 277
+    Top = 280
     Width = 75
+    Anchors = [akLeft, akBottom]
     Caption = 'Start'
     OnClick = Button1Click
     TabOrder = 0
   end
-  object LogEdit: TMemo
-    Left = 4
-    Height = 110
-    Top = 158
-    Width = 311
-    Anchors = [akTop, akLeft, akRight, akBottom]
-    TabOrder = 1
-  end
   object TempStoreCbo: TComboBox
-    Left = 74
+    Left = 79
     Height = 21
-    Top = 47
-    Width = 156
+    Top = 49
+    Width = 250
+    Anchors = [akTop, akLeft, akRight]
     ItemHeight = 13
     ItemIndex = 0
     Items.Strings = (
@@ -37,22 +37,23 @@ object MainForm: TMainForm
       'MEMORY'
     )
     Style = csDropDownList
-    TabOrder = 2
+    TabOrder = 1
     Text = 'Default'
   end
   object Label1: TLabel
     Left = 7
     Height = 14
-    Top = 51
+    Top = 53
     Width = 56
     Caption = 'Temp Store'
     ParentColor = False
   end
   object JournalModeCbo: TComboBox
-    Left = 74
+    Left = 79
     Height = 21
-    Top = 70
-    Width = 156
+    Top = 72
+    Width = 250
+    Anchors = [akTop, akLeft, akRight]
     ItemHeight = 13
     ItemIndex = 0
     Items.Strings = (
@@ -65,13 +66,13 @@ object MainForm: TMainForm
       'OFF'
     )
     Style = csDropDownList
-    TabOrder = 3
+    TabOrder = 2
     Text = 'Default'
   end
   object Label2: TLabel
     Left = 7
     Height = 14
-    Top = 74
+    Top = 76
     Width = 65
     Caption = 'Journal Mode'
     ParentColor = False
@@ -82,13 +83,14 @@ object MainForm: TMainForm
     Top = 7
     Width = 62
     Caption = 'Exclusive'
-    TabOrder = 4
+    TabOrder = 3
   end
   object SynchronousCbo: TComboBox
-    Left = 74
+    Left = 79
     Height = 21
-    Top = 92
-    Width = 156
+    Top = 94
+    Width = 250
+    Anchors = [akTop, akLeft, akRight]
     ItemHeight = 13
     ItemIndex = 0
     Items.Strings = (
@@ -98,13 +100,13 @@ object MainForm: TMainForm
       'Full'
     )
     Style = csDropDownList
-    TabOrder = 5
+    TabOrder = 4
     Text = 'Default'
   end
   object Label3: TLabel
     Left = 7
     Height = 14
-    Top = 96
+    Top = 98
     Width = 63
     Caption = 'Synchronous'
     ParentColor = False
@@ -112,9 +114,35 @@ object MainForm: TMainForm
   object CommitChk: TCheckBox
     Left = 7
     Height = 17
-    Top = 131
+    Top = 124
     Width = 53
     Caption = 'Commit'
+    TabOrder = 5
+  end
+  object Label4: TLabel
+    Left = 7
+    Height = 14
+    Top = 165
+    Width = 23
+    Caption = 'Time'
+    ParentColor = False
+  end
+  object ResultLabel: TLabel
+    Left = 58
+    Height = 14
+    Top = 165
+    Width = 7
+    Caption = '0'
+    ParentColor = False
+  end
+  object DeleteFileChk: TCheckBox
+    Left = 7
+    Height = 17
+    Top = 28
+    Width = 68
+    Caption = 'Delete File'
+    Checked = True
+    State = cbChecked
     TabOrder = 6
   end
 end

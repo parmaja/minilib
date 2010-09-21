@@ -17,12 +17,14 @@ type
     Button1: TButton;
     ExclusiveChk: TCheckBox;
     CommitChk: TCheckBox;
+    DeleteFileChk: TCheckBox;
+    Label4: TLabel;
+    ResultLabel: TLabel;
     SynchronousCbo: TComboBox;
     Label2: TLabel;
     Label3: TLabel;
     TempStoreCbo: TComboBox;
     Label1: TLabel;
-    LogEdit: TMemo;
     JournalModeCbo: TComboBox;
     procedure Button1Click(Sender: TObject);
   private
@@ -42,6 +44,9 @@ implementation
 
 {$R *.lfm}
 
+const
+  cMax = 1000;
+
 { TMainForm }
 
 procedure TMainForm.Button1Click(Sender: TObject);
@@ -58,7 +63,8 @@ begin
   FCONN := TmncSQLiteConnection.Create;
   FCONN.AutoCreate := True;
   f := Application.Location + 'data.sqlite';
-  DeleteFile(f);
+  if DeleteFileChk.Checked then
+    DeleteFile(f);
   FCONN.Resource := f;
   nc := not FileExists(f);
   FCONN.Connect;
@@ -92,9 +98,6 @@ begin
   FreeAndNil(FCONN);
 end;
 
-const
-  cMax = 10000;
-
 procedure TMainForm.Start;
 var
   i: Integer;
@@ -104,33 +107,38 @@ var
   aCommit: Boolean;
 begin
   aCommit := CommitChk.Checked;
-  Open;
-  cmd :=TmncSQLiteCommand.Create;
+  Screen.Cursor := crHourGlass;
   try
-    cmd.Session := FSESS;
-    c := GetTickCount;
-    FSESS.Start;
-    cmd.SQL.Text := 'insert into Names';
-    cmd.SQL.Add('(Name)');
-    cmd.SQL.Add('values (?Name)');
+    Open;
+    cmd :=TmncSQLiteCommand.Create;
+    try
+      cmd.Session := FSESS;
+      c := GetTickCount;
+      FSESS.Start;
+      cmd.SQL.Text := 'insert into Names';
+      cmd.SQL.Add('(Name)');
+      cmd.SQL.Add('values (?Name)');
 
-    cmd.Prepare;
-    s := FormatDateTime('yyyy-mm-dd,hh:nn:ss', Now);
-    for i:=0 to cMax -1 do
-    begin
-      cmd.Param['Name'].AsString := s + IntToStr(i);
-      cmd.Execute;
+      cmd.Prepare;
+      s := FormatDateTime('yyyy-mm-dd,hh:nn:ss', Now);
+      for i:=0 to cMax -1 do
+      begin
+        cmd.Param['Name'].AsString := s + IntToStr(i);
+        cmd.Execute;
+      end;
+      if aCommit then
+        FSESS.Commit;
+      c := GetTickCount - c;
+      ResultLabel.Caption := IntToStr(c);
+      if not aCommit then
+        FSESS.Commit;
+    finally
+      FreeAndNil(cmd);
+      Close;
     end;
-    if aCommit then
-      FSESS.Commit;
-    c := GetTickCount - c;
-    LogEdit.Lines.Add('Insert Time: ' + IntToStr(c));
-    if not aCommit then
-      FSESS.Commit;
   finally
-    FreeAndNil(cmd);
+    Screen.Cursor := crDefault;
   end;
-  Close;
 end;
 
 end.

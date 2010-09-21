@@ -42,7 +42,7 @@ type
   published
   public
     constructor Create;
-    procedure PlaySound(Sound: string; NoStop: Boolean = False; Async: Boolean = False);
+    procedure PlaySound(Sound: string; StopPrevious: Boolean = False; Wait: Boolean = False);
     property PlaySounds: Boolean read FPlaySounds write FPlaySounds default False;
     property SoundExt: string read FSoundExt write FSoundExt;
     property SoundDirectory: string read FSoundDirectory write FSoundDirectory;
@@ -76,7 +76,7 @@ begin
   FSoundExt := '.wav';
 end;
 
-procedure TposThemes.PlaySound(Sound: string; NoStop, Async: Boolean);
+procedure TposThemes.PlaySound(Sound: string; StopPrevious, Wait: Boolean);
 var
   f: string;
   c: Cardinal;
@@ -86,22 +86,20 @@ begin
     f := ExpandFileName(IncludeTrailingPathDelimiter(SoundDirectory) + Sound + SoundExt);
     if FileExists(f) then
     begin
+     {$ifdef Windows}
+     c := SND_FILENAME or SND_NODEFAULT;
+     if not StopPrevious then
+       c := c or SND_NOSTOP;
+     if Wait then
+       c := c or SND_SYNC
+     else
+       c := c or SND_ASYNC;
      {$ifdef WINCE}
-      c := SND_FILENAME or SND_NODEFAULT;
-      if NoStop then
-        c := c or SND_NOSTOP;
-      if Async then
-        c := c or SND_ASYNC;
       PlaySoundW(PWideChar(UTF8Decode(f)), 0, c);
     {$else}
-    {$ifdef Windows}
-      c := SND_FILENAME or SND_NODEFAULT;
-      if NoStop then
-        c := c or SND_NOSTOP;
-      if Async then
-        c := c or SND_ASYNC;
       MMSystem.PlaySound(PChar(f), 0, c);
     {$endif}
+    {$else}
     {$endif}
     end;
   end;

@@ -86,8 +86,8 @@
       <Filename Value="..\bin\SqliteViewer.exe"/>
     </Target>
     <SearchPaths>
-      <IncludeFiles Value="$(ProjOutDir)\"/>
-      <OtherUnitFiles Value="..\lib\;W:\home\pascal\lib\minilib\Commons\;W:\home\pascal\lib\minilib\lib\;W:\home\pascal\lib\minilib\MiniConnection\source\;W:\home\pascal\lib\minilib\MiniConnection\db\;W:\home\pascal\lib\minilib\MiniConnection\db\sqlite\;W:\home\pascal\lib\minilib\MiniXml\source\;W:\programs\lazarus\components\synedit\"/>
+      <IncludeFiles Value="$(ProjOutDir)"/>
+      <OtherUnitFiles Value="..\lib;W:\home\pascal\lib\minilib\Commons\;W:\home\pascal\lib\minilib\lib\;W:\home\pascal\lib\minilib\MiniConnection\source\;W:\home\pascal\lib\minilib\MiniConnection\db\;W:\home\pascal\lib\minilib\MiniConnection\db\sqlite\;W:\home\pascal\lib\minilib\MiniXml\source\;W:\programs\lazarus\components\synedit\"/>
       <UnitOutputDirectory Value="..\units"/>
     </SearchPaths>
     <Parsing>
