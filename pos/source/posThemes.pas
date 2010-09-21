@@ -12,6 +12,8 @@ unit posThemes;
 {$H+}
 {$IFDEF FPC}
 {$MODE delphi}
+{$ELSE}
+{$DEFINE WINDOWS}
 {$ENDIF}
 
 interface
