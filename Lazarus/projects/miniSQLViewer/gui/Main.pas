@@ -156,7 +156,6 @@ type
     procedure AboutMnuClick(Sender: TObject);
     procedure ActionsListSelect(Sender: TObject);
     procedure BrowseBtnClick(Sender: TObject);
-    procedure ClientPanelClick(Sender: TObject);
     procedure ConnectBtnClick(Sender: TObject);
     procedure DatabasesCboDropDown(Sender: TObject);
     procedure DataPathCboDropDown(Sender: TObject);
@@ -292,11 +291,6 @@ begin
   begin
     SetRealDataPath(OpenDialog.FileName);
   end;
-end;
-
-procedure TMainForm.ClientPanelClick(Sender: TObject);
-begin
-
 end;
 
 procedure TMainForm.AboutMnuClick(Sender: TObject);

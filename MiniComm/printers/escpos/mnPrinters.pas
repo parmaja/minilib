@@ -85,7 +85,10 @@ type
     procedure NewPage; virtual;
     procedure EndPage; virtual;
     //Print line feed until paper ejected
-    procedure PrintEject; virtual;
+    procedure Eject; virtual;
+    procedure Cut; virtual;
+    procedure OpenDraw; virtual;
+    procedure CloseDraw; virtual;
     procedure CancelPage; virtual;
     procedure AbortDocument; virtual;
     procedure Print(S: AnsiString);
@@ -213,7 +216,19 @@ begin
   FPage := nil;
 end;
 
-procedure TmnPrinter.PrintEject;
+procedure TmnPrinter.Eject;
+begin
+end;
+
+procedure TmnPrinter.Cut;
+begin
+end;
+
+procedure TmnPrinter.OpenDraw;
+begin
+end;
+
+procedure TmnPrinter.CloseDraw;
 begin
 end;
 

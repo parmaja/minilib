@@ -80,6 +80,8 @@ type
     function Release: Boolean;
     function QueryInterface(const IID: TGUID; out Obj): HResult; virtual; stdcall;
     procedure Clear; override;
+    procedure ItemClick(Sender: TObject); virtual;
+    procedure ItemStates(Sender: TObject; var vStates: TposDrawStates); virtual;
     property Items[Index: Integer]: TposStuffItem read GetItem write SetItem; default;
   end;
 
@@ -280,9 +282,17 @@ begin
 end;
 
 procedure TposStuffs.StuffClicked(Stuff: IposStuff);
+var
+  o: TObject;
 begin
-  if Assigned(FOnStuffClick) then
-    FOnStuffClick(Stuff.GetObject);
+  o := Stuff.GetObject;
+  if o <> nil then
+  begin
+    if FItems <> nil then
+      FItems.ItemClick(o);
+    if Assigned(FOnStuffClick) then
+      FOnStuffClick(o);
+  end;
 end;
 
 function TposStuffs.CalcHeight: Integer;
@@ -435,6 +445,8 @@ begin
           if UseRightToLeftReading then
             aStates := aStates + [pdsRightToLeft];
           vCanvas.Font.Assign(Font);
+          if (FItems <> nil) and (aItems[i].Item <> nil) then
+            FItems.ItemStates(aItems[i].Item.GetObject, aStates);
           aItems[i].Item.Draw(vCanvas, aItems[i].Rect, ButtonColor, aStates);
           ExcludeClipRect(vCanvas, aItems[i].Rect);
         end;
@@ -866,6 +878,14 @@ end;
 function TposStuffItems.GetItems(Index: Integer): IposStuff;
 begin
   Result := Items[Index];
+end;
+
+procedure TposStuffItems.ItemClick(Sender: TObject);
+begin
+end;
+
+procedure TposStuffItems.ItemStates(Sender: TObject; var vStates: TposDrawStates);
+begin
 end;
 
 function TposStuffItems.QueryInterface(const IID: TGUID; out Obj): HResult;

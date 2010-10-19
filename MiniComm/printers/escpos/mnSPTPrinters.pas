@@ -34,7 +34,7 @@ type
     constructor Create(Style: TmnPrintStyle; Stream: TStream); override;
     class function PrinterTitle: string; override;
     class function PrinterName: string; override;
-    procedure PrintEject; override;
+    procedure Eject; override;
   end;
 
   { TmnSPT8Page }
@@ -85,7 +85,7 @@ begin
   Result := 'SPTIII';
 end;
 
-procedure TSPTIIIPrinter.PrintEject;
+procedure TSPTIIIPrinter.Eject;
 begin
   inherited;
   PrintLn('');

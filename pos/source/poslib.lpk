@@ -9,7 +9,7 @@
       <Version Value="9"/>
       <PathDelim Value="\"/>
       <SearchPaths>
-        <OtherUnitFiles Value="units\$(TargetCPU)-$(TargetOS)\;$(LazarusDir)\lcl\units\$(TargetCPU)-$(TargetOS)\;$(LazarusDir)\lcl\units\$(TargetCPU)-$(TargetOS)\$(LCLWidgetType)\;$(LazarusDir)\components\codetools\units\$(TargetCPU)-$(TargetOS)\;$(LazarusDir)\packager\units\$(TargetCPU)-$(TargetOS)\"/>
+        <OtherUnitFiles Value="units\$(TargetCPU)-$(TargetOS);$(LazarusDir)\lcl\units\$(TargetCPU)-$(TargetOS);$(LazarusDir)\lcl\units\$(TargetCPU)-$(TargetOS)\$(LCLWidgetType);$(LazarusDir)\components\codetools\units\$(TargetCPU)-$(TargetOS);$(LazarusDir)\packager\units\$(TargetCPU)-$(TargetOS)"/>
         <UnitOutputDirectory Value="units\$(TargetCPU)-$(TargetOS)"/>
       </SearchPaths>
       <Parsing>
@@ -91,7 +91,7 @@ Light controls (TposGrid, TposList, TposStuffs, TposKeyboard...)
       </Item1>
     </RequiredPkgs>
     <UsageOptions>
-      <UnitPath Value="$(PkgOutDir)\"/>
+      <UnitPath Value="$(PkgOutDir)"/>
     </UsageOptions>
     <PublishOptions>
       <Version Value="2"/>

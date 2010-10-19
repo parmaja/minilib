@@ -36,11 +36,11 @@ type
 
   IposStuff = interface(ImnInterface)
     ['{3A4A43BE-C02C-4D6A-A603-84A44B95F539}']
-    function GetDrawSize: Integer;
-    function Draw(vCanvas: TCanvas; vRect: TRect; vColor: TColor; vStates: TposDrawStates): Boolean;
-    procedure Click;
     function GetObject: TObject;
     procedure SetStates(vStates: TposDrawStates);
+    procedure Click;
+    function GetDrawSize: Integer;
+    function Draw(vCanvas: TCanvas; vRect: TRect; vColor: TColor; vStates: TposDrawStates): Boolean;
     property DrawSize: Integer read GetDrawSize;
   end;
 
@@ -51,6 +51,8 @@ type
     function Release: Boolean;
     function GetDrawSize: Integer;
     procedure Clear;
+    procedure ItemClick(Sender: TObject);
+    procedure ItemStates(Sender: TObject; var vStates: TposDrawStates); 
     property Count: Integer read GetCount;
     property DrawSize: Integer read GetDrawSize;
     property Items[Index: Integer]: IposStuff read GetItems; default;

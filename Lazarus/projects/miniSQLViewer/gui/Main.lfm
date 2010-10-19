@@ -30,7 +30,6 @@ object MainForm: TMainForm
     ClientHeight = 351
     ClientWidth = 560
     TabOrder = 0
-    OnClick = ClientPanelClick
     object SQLPanel: TPanel
       Left = 8
       Height = 270
@@ -144,7 +143,7 @@ object MainForm: TMainForm
         Width = 274
         Anchors = [akTop, akLeft, akRight, akBottom]
         Font.Height = -13
-        Font.Name = 'Courier New'
+        Font.Name = 'Courier'
         Font.Pitch = fpFixed
         Font.Quality = fqNonAntialiased
         ParentColor = False
@@ -1220,14 +1219,14 @@ object MainForm: TMainForm
     FileName = '*.sql'
     Filter = '*.sql'
     InitialDir = '\'
-    left = 292
+    left = 279
     top = 62
   end
   object SaveDialog: TSaveDialog
     DefaultExt = '.sql'
     FileName = '*.sql'
     Filter = '*.sql'
-    left = 336
-    top = 7
+    left = 377
+    top = 18
   end
 end

@@ -72,7 +72,7 @@ type
     procedure Return;
     procedure Bell;
     procedure CarriageReturn;
-    procedure PrintBarcode(Barcode: AnsiString; PrintHRI:Boolean = True);
+    procedure PrintBarcode(Barcode: AnsiString; PrintHRI:Boolean = True); virtual;
   end;
 
 const
@@ -97,7 +97,8 @@ const
   seqRasterBitImage = seqGS + 'v0';
   seqSetBarcodeHeight = seqGS + 'k';
   seqSelectHRICharacter = seqGS + 'H';
-  seqPrintBarcode = seqGS + #$6B;
+  seqPrintBarcode = seqGS + 'k';
+  seqSelectCharacter= seqESC + 't';
 
   seqEAN13 = #$02;
   seqEAN8 = #$03;
