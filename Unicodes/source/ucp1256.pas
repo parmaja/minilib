@@ -34,13 +34,13 @@ unit ucp1256;
 
 interface
 
-procedure cp1256_mbtowc(S:AnsiChar; var R: WideChar);
-procedure cp1256_wctomb(S:WideChar;var R: AnsiChar);
+procedure cp1256_mbtowc(S: AnsiChar; var R: WideChar);
+procedure cp1256_wctomb(S: WideChar;var R: AnsiChar);
 
 implementation
 
 const
-  cp1256_2uni:array[0..128 - 1] of WideChar = (
+  cp1256_2uni: array[0..128 - 1] of WideChar = (
   {* #$80 *}
   #$20ac, #$067e, #$201a, #$0192, #$201e, #$2026, #$2020, #$2021,
   #$02c6, #$2030, #$0679, #$2039, #$0152, #$0686, #$0698, #$0688,
@@ -67,7 +67,7 @@ const
   #$0651, #$00f9, #$0652, #$00fb, #$00fc, #$200e, #$200f, #$06d2
 );
 
-  cp1256_page00:array[0..96 - 1] of Char = (
+  cp1256_page00:array[0..96 - 1] of AnsiChar = (
   #$a0, #$00, #$a2, #$a3, #$a4, #$a5, #$a6, #$a7, {* #$a0-$a7 *}
   #$a8, #$a9, #$00, #$ab, #$ac, #$ad, #$ae, #$af, {* #$a8-$af *}
   #$b0, #$b1, #$b2, #$b3, #$b4, #$b5, #$b6, #$b7, {* #$b0-$b7 *}
@@ -82,7 +82,7 @@ const
   #$00, #$f9, #$00, #$fb, #$fc, #$00, #$00, #$00 {* #$f8-$ff *}
 );
 
-  cp1256_page01:array[0..72 - 1] of Char = (
+  cp1256_page01:array[0..72 - 1] of AnsiChar = (
   #$00, #$00, #$8c, #$9c, #$00, #$00, #$00, #$00, {* #$50-$57 *}
   #$00, #$00, #$00, #$00, #$00, #$00, #$00, #$00, {* #$58-$5f *}
   #$00, #$00, #$00, #$00, #$00, #$00, #$00, #$00, {* #$60-$67 *}
@@ -94,7 +94,7 @@ const
   #$00, #$00, #$83, #$00, #$00, #$00, #$00, #$00 {* #$90-$97 *}
 );
 
-  cp1256_page06:array[0..208 - 1] of Char = (
+  cp1256_page06:array[0..208 - 1] of AnsiChar = (
   #$00, #$00, #$00, #$00, #$a1, #$00, #$00, #$00, {* #$08-$0f *}
   #$00, #$00, #$00, #$00, #$00, #$00, #$00, #$00, {* #$10-$17 *}
   #$00, #$00, #$00, #$ba, #$00, #$00, #$00, #$bf, {* #$18-$1f *}
@@ -123,7 +123,7 @@ const
   #$00, #$00, #$ff, #$00, #$00, #$00, #$00, #$00 {* #$d0-$d7 *}
 );
 
-  cp1256_page20:array[0..56 - 1] of Char = (
+  cp1256_page20:array[0..56 - 1] of AnsiChar = (
   #$00, #$00, #$00, #$00, #$9d, #$9e, #$fd, #$fe, {* #$08-$0f *}
   #$00, #$00, #$00, #$96, #$97, #$00, #$00, #$00, {* #$10-$17 *}
   #$91, #$92, #$82, #$00, #$93, #$94, #$84, #$00, {* #$18-$1f *}
@@ -133,7 +133,7 @@ const
   #$00, #$8b, #$9b, #$00, #$00, #$00, #$00, #$00 {* #$38-$3f *}
 );
 
-procedure cp1256_mbtowc(S:AnsiChar; var R: WideChar);
+procedure cp1256_mbtowc(S: AnsiChar; var R: WideChar);
 begin
   if (S < #$80) then
     Word(R) := Word(S)
@@ -141,15 +141,13 @@ begin
     R := cp1256_2uni[Ord(S) - Ord(#$80)];
 end;
 
-procedure cp1256_wctomb(S:WideChar; var R: AnsiChar);
+procedure cp1256_wctomb(S: WideChar; var R: AnsiChar);
 var
   c: AnsiChar;
 begin
   c := '?';
   if (S < #$0080) then
-  begin
-    Byte(c) := Byte(S);
-  end
+    Byte(c) := Byte(S)
   else if (S >= #$00a0) and (S < #$0100) then
     c := cp1256_page00[Ord(S) - $00a0]
   else if (S >= #$0150) and (S < #$0198) then
