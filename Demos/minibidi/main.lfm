@@ -1,0 +1,49 @@
+object Form1: TForm1
+  Left = 335
+  Height = 231
+  Top = 160
+  Width = 625
+  Caption = 'Form1'
+  ClientHeight = 231
+  ClientWidth = 625
+  LCLVersion = '0.9.29'
+  object Button1: TButton
+    Left = 542
+    Height = 21
+    Top = 194
+    Width = 74
+    Anchors = [akRight]
+    Caption = 'Draw'
+    Default = True
+    OnClick = Button1Click
+    TabOrder = 1
+  end
+  object Panel1: TPanel
+    Left = 9
+    Height = 180
+    Top = 6
+    Width = 607
+    Anchors = [akTop, akLeft, akRight, akBottom]
+    BevelOuter = bvNone
+    BorderStyle = bsSingle
+    Font.CharSet = ARABIC_CHARSET
+    Font.Color = clBlack
+    Font.Height = -21
+    Font.Name = 'Tahoma'
+    Font.Pitch = fpVariable
+    Font.Quality = fqDraft
+    ParentFont = False
+    TabOrder = 2
+  end
+  object Edit1: TEdit
+    Left = 11
+    Height = 21
+    Top = 194
+    Width = 526
+    Anchors = [akLeft, akRight, akBottom]
+    BidiMode = bdRightToLeft
+    ParentBidiMode = False
+    TabOrder = 0
+    Text = 'بسم'
+  end
+end
