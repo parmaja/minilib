@@ -1,3 +1,4 @@
+
 unit minibidi;
 {$MODE objfpc}{$H+} //Only FreePascal
 (************************************************************************
@@ -107,6 +108,11 @@ implementation
 {$I minibidi.inc}
 
 { Returns the first odd/even value greater than x }
+
+function even(x: Integer): Boolean;
+begin
+  Result := not Odd(x);
+end;
 
 function LeastGreaterOdd(x: Integer): Integer;
 begin
@@ -220,7 +226,7 @@ end;
 
 procedure FlipThisRun(Line: PWideChar; Levels: PLevel; Max, Count: Integer);
 var
-  i, j, c, k: Integer;
+  i, j, k: Integer;
   Level: TLevel;
   temp: WideChar;
 begin
@@ -440,7 +446,7 @@ begin
               i := j;
               ligFlag := 0;
             end;
-          end; //if (Line[i] = #$0644) then
+          end; //end of {if (Line[i] = #$0644) then}
 
           if ((prevTemp = stSD) or (prevTemp = stSC)) then
           begin
@@ -615,6 +621,7 @@ var
   it: Integer;
   fX, fAL, fET, fNSM: Boolean;
   ShapeTo: PWideChar;
+  NewCount: Integer;
 begin
   Result := 0;
 
@@ -686,8 +693,12 @@ begin
       * Here, they're converted to BN.
       }
 
-    Count := DoTypes(Line, ParagraphLevel, Types, Levels, Count, fX);
-    //Line[Count] := #0;
+    NewCount := DoTypes(Line, ParagraphLevel, Types, Levels, Count, fX);
+    if NewCount < Count then
+    begin
+      Count := NewCount;
+      Line[Count] := #0;
+    end;
 
      { Rule (W1)
       * W1. Examine each non-spacing mark (NSM) in the level run, and change
@@ -898,7 +909,7 @@ begin
     begin
       if (Types[i] = ctON) then
       begin
-        if ((Levels[i] div 2) = 0) then
+        if even(Levels[i]) then
           Types[i] := ctL
         else
           Types[i] := ctR;
@@ -912,7 +923,7 @@ begin
       }
     for i := 0 to Count - 1 do
     begin
-      if ((Levels[i] div 2) = 0) then
+      if even(Levels[i]) then
       begin
         if (Types[i] = ctR) then
           Levels[i] := Levels[i] + 1
@@ -934,7 +945,7 @@ begin
 
     for i := 0 to Count - 1 do
     begin
-      if ((Levels[i] div 2) = 1) then
+      if odd(Levels[i]) then
       begin
         if (Types[i] = ctL) or (Types[i] = ctEN) or (Types[i] = ctAN) then
           Levels[i] := Levels[i] + 1;
@@ -996,7 +1007,7 @@ begin
 
     for i := 0 to Count - 1 do
     begin
-      if (Levels[i] div 2) = 1 then
+      if odd(Levels[i]) then
         DoMirror(Line[i]);
     end;
 
@@ -1099,7 +1110,6 @@ begin
     Freemem(Levels);
     Freemem(ShapeTo);
   end;
-
   Result := Count;
 end;
 
