@@ -36,6 +36,16 @@ interface
 uses
   Classes, SysUtils;
 
+type
+  TBidiParagraph = (bdpDefault, bdpLeftToRight, bdpRightToLeft);
+  TBidiNumbers = (bdnContext, bdnLatin, bdnArabic); //TODO or Latin =Arabic, and Arabic =Hindi, but for me it names Arabic1, Arabic2 it is not Hindi
+
+function BidiString(var ws: widestring; ApplyShape: Boolean = True; ReorderCombining: Boolean = False; Numbers: TBidiNumbers = bdnContext; Start: TBidiParagraph = bdpDefault): Integer;
+
+function DoBidi(Line: PWideChar; Count: Integer; ApplyShape: Boolean = True; ReorderCombining: Boolean = False; Numbers: TBidiNumbers = bdnContext; Start: TBidiParagraph = bdpDefault): Integer;
+
+implementation
+
 const
   MAX_STACK = 60;
 
@@ -45,11 +55,6 @@ const
   OISR =	$40;	{ Override is R }
 
 type
-  TBidiChar = record
-      origwc, wc: WideChar;
-      index: ShortInt;
-  end;
-
 
   { character Types }
   TCharacterType =
@@ -84,28 +89,29 @@ type
 
   TShapeType =
     (
-    stSL, { Left-Joining, doesnt exist in U+0600 - U+06FF }
-    stSR, { Right-Joining, ie has Isolated, Final }
-    stSD, { Dual-Joining, ie has Isolated, Final, Initial, Medial }
-    stSU, { Non-Joining }
-    stSC { Join-Causing, like U+0640 (TATWEEL) }
+      stSL, { Left-Joining, doesnt exist in U+0600 - U+06FF }
+      stSR, { Right-Joining, ie has Isolated, Final }
+      stSD, { Dual-Joining, ie has Isolated, Final, Initial, Medial }
+      stSU, { Non-Joining }
+      stSC { Join-Causing, like U+0640 (TATWEEL) }
     );
 
-  PShapeType = ^TShapeType;
-
-  TShapeNode = record
-    ST: TShapeType; //ShapeType
-    CH: WideChar;
-  end;
+//  PShapeType = ^TShapeType;
 
   TLevel = Integer;
   PLevel = ^TLevel;
 
-function DoBidi(Line: PWideChar; Count: Integer; ApplyShape: Boolean = True; ReorderCombining: Boolean = False): Integer;
-
-implementation
-
 {$I minibidi.inc}
+
+function BidiString(var ws: widestring; ApplyShape: Boolean = True; ReorderCombining: Boolean = False; Numbers: TBidiNumbers = bdnContext; Start: TBidiParagraph = bdpDefault): Integer;
+begin
+  Result := DoBidi(PWideChar(ws), Length(ws), ApplyShape, ReorderCombining, Numbers, Start);
+  SetLength(ws, Result);
+end;
+
+{
+from here minibidi.c
+}
 
 { Returns the first odd/even value greater than x }
 
@@ -609,7 +615,7 @@ end;
  * the Bidirectional algorithm to.
  }
 
-function DoBidi(Line: PWideChar; Count: Integer; ApplyShape: Boolean; ReorderCombining: Boolean): Integer;
+function DoBidi(Line: PWideChar; Count: Integer; ApplyShape: Boolean; ReorderCombining: Boolean; Numbers: TBidiNumbers; Start: TBidiParagraph): Integer;
 var
   Types: PCharacterType;
   Levels: PLevel;
@@ -668,7 +674,14 @@ begin
       * P3. If a character is found in P2 and it is of type AL or R, then set
       * the paragraph embedding level to one; otherwise, set it to zero.
       }
-    ParagraphLevel := GetParagraphLevel(Line, Count);
+    case Start of
+      bdpDefault:
+        ParagraphLevel := GetParagraphLevel(Line, Count);
+      bdpLeftToRight:
+        ParagraphLevel := 0;
+      bdpRightToLeft:
+        ParagraphLevel := 1;
+    end;
 
      { Rule (X1), (X2), (X3), (X4), (X5), (X6), (X7), (X8), (X9)
       * X1. Begin by setting the current embedding level to the paragraph

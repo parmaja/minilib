@@ -99,6 +99,7 @@ const
   seqSelectHRICharacter = seqGS + 'H';
   seqPrintBarcode = seqGS + 'k';
   seqSelectCharacter= seqESC + 't';
+  seqPrintImage = #$1C + #$70 + #$01 + #$03;//Print loaded image
 
   seqEAN13 = #$02;
   seqEAN8 = #$03;

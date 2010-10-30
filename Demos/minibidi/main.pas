@@ -35,18 +35,15 @@ implementation
 procedure TForm1.Button1Click(Sender: TObject);
 var
   w: widestring;
-  pw: PWideChar;
 begin
   Panel1.Canvas.Clear;
   w := UTF8Decode(Edit1.Text);
-  pw := PWideChar(w);
-  DoBidi(pw, Length(w), false, true);
+  BidiString(w, true, false, bdnContext, bdpRightToLeft);
   Draw(w);
 end;
 
 procedure TForm1.Draw(s: WideString);
 var
-  c: WideChar;
   t: widestring;
   u: utf8string;
   i: Integer;
@@ -55,7 +52,7 @@ var
 begin
   x := 0;
   y := 50;
-  FillChar(st, SizeOf(st),#0);
+  FillChar(st, SizeOf(st), #0);
   for i := 1 to Length(s) do
   begin
     t := s[i];

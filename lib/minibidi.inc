@@ -1,13 +1,19 @@
 { Kept near the actual table, for verification. }
 const
   SHAPE_FIRST = #$0621;
-  SHAPE_LAST = #$064A;
+  SHAPE_LAST = #$064A; //need to add new set
 
   {
     very bad Memory alignment for 32-bit machines
     could split it to 2 arrays or promote type to 2 bytes type
   }
 
+type
+  TShapeNode = record
+    ST: TShapeType; CH: WideChar;
+  end;
+
+const
   ShapeTypes: array[0..41] of TShapeNode = (  //177
   { index, Typ, Iso }
   { 621 }(ST: stSU; CH: #$FE80),
@@ -76,6 +82,7 @@ const
   { 65D } (ST: stSU; CH: #$0),
   { 65E } (ST: stSU; CH: #$0),
   { 65F } (ST: stSU; CH: #$0),
+
   { 660 } (ST: stSU; CH: #$0),
   { 661 } (ST: stSU; CH: #$0),
   { 662 } (ST: stSU; CH: #$0),
@@ -86,6 +93,7 @@ const
   { 667 } (ST: stSU; CH: #$0),
   { 668 } (ST: stSU; CH: #$0),
   { 669 } (ST: stSU; CH: #$0),
+
   { 66A } (ST: stSU; CH: #$0),
   { 66B } (ST: stSU; CH: #$0),
   { 66C } (ST: stSU; CH: #$0),
@@ -197,8 +205,7 @@ const
 
 type
   TCharLookupInfo = record
-    Fr, Lt: WideChar;
-    CT: TCharacterType;
+    Fr, Lt: WideChar; CT: TCharacterType;
   end;
 
 const
