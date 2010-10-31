@@ -39,6 +39,7 @@ uses
 type
   TBidiParagraph = (bdpDefault, bdpLeftToRight, bdpRightToLeft);
   TBidiNumbers = (bdnContext, bdnLatin, bdnArabic); //TODO or Latin =Arabic, and Arabic =Hindi, but for me it names Arabic1, Arabic2 it is not Hindi
+  TBidiLigatures = (bdlDefault, bdlNone, bdlSimple, bdlComplex); //TODO Complex
 
 function BidiString(var ws: widestring; ApplyShape: Boolean = True; ReorderCombining: Boolean = False; Numbers: TBidiNumbers = bdnContext; Start: TBidiParagraph = bdpDefault): Integer;
 
@@ -347,11 +348,11 @@ end;
 function DoShape(Line: PWideChar; var cTo: PWideChar; From: Integer; Count: Integer): Integer;
 var
   i, j: Integer;
-  ligFlag: Integer; //* Boolean
+  ligFlag: Boolean;
   prevTemp, nextTemp: TShapeType;
   tempChar: WideChar;
 begin
-  ligFlag := 0;
+  ligFlag := False;
   prevTemp := stSU;
   nextTemp := stSU;
   i := From;
@@ -398,7 +399,7 @@ begin
       stSD:
         begin
         { Make Ligatures }
-          if (Line[i] = #$0644) then //the char is LAM
+          if (Line[i] = #$0644) then //{LAM}
           begin
             j := i;
             while (j < Count) do
@@ -412,49 +413,48 @@ begin
             end;
 
             case (tempChar) of
-              #$0622:
+              #$0622: //{ALEF WITH MADDA ABOVE}
                 begin
-                  ligFlag := 1;
+                  ligFlag := True;
                   if (prevTemp = stSD) or (prevTemp = stSC) then
                     cTo[i] := #$FEF6
                   else
                     cTo[i] := #$FEF5;
                 end;
-              #$623:
+              #$623://{ALEF WITH HAMZA ABOVE}
                 begin
-                  ligFlag := 1;
+                  ligFlag := True;
                   if (prevTemp = stSD) or (prevTemp = stSC) then
                     cTo[i] := #$FEF8
                   else
                     cTo[i] := #$FEF7;
                 end;
-              #$625:
+              #$625:{ALEF WITH HAMZA BELOW}
                 begin
-                  ligFlag := 1;
+                  ligFlag := True;
                   if (prevTemp = stSD) or (prevTemp = stSC) then
                     cTo[i] := #$FEFA
                   else
                     cTo[i] := #$FEF9;
                 end;
-              #$627:
+              #$627://{ALEF}
                 begin
-                  ligFlag := 1;
+                  ligFlag := True;
                   if (prevTemp = stSD) or (prevTemp = stSC) then
                     cTo[i] := #$FEFC
                   else
                     cTo[i] := #$FEFB;
                 end;
             end;
-
-            if (ligFlag = 1) then
-            begin
-              cTo[j] := #$20;
-              i := j;
-              ligFlag := 0;
-            end;
           end; //end of {if (Line[i] = #$0644) then}
 
-          if ((prevTemp = stSD) or (prevTemp = stSC)) then
+          if ligFlag then
+          begin
+            cTo[j] := #$20;
+            i := j;
+            ligFlag := False;
+          end
+          else if ((prevTemp = stSD) or (prevTemp = stSC)) then
           begin
             if (nextTemp = stSR) or (nextTemp = stSD) or (nextTemp = stSC) then
               cTo[i] := SMEDIAL(SISOLATED(Line[i]))
@@ -473,7 +473,7 @@ begin
     nextTemp := stSU;
     Inc(i);
   end;
-  Result := 1;
+  Result := i;
 end;
 
 {

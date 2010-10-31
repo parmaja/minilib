@@ -217,8 +217,7 @@ begin
     c := #$fe
   else if (S >= #$fe78) and (S < #$ff00) then
   begin
-    t := Ord(S) - $fe78;
-    c := cp864_pagefe[t];
+    c := cp864_pagefe[Ord(S) - $fe78];
   end;
   R := c;
 end;
