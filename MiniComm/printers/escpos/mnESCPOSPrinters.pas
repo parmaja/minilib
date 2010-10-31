@@ -93,6 +93,10 @@ const
   seqSetCharacterSpacing = seqESC + ' '; //n
   seqSetAbsolutePosition = seqESC + '$';
   seqSetRelativePosition = seqESC + '\';
+  seqSetAlignment = seqESC + 'a';
+  seqSetLeftAlignment = seqESC + 'a' + #0;
+  seqSetCenterAlignment = seqESC + 'a' + #1;
+  seqSetRightAlignment = seqESC + 'a' + #2;
   seqBitImage = seqESC + '*';
   seqRasterBitImage = seqGS + 'v0';
   seqSetBarcodeHeight = seqGS + 'k';
