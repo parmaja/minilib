@@ -1,4 +1,3 @@
-
 unit minibidi;
 {$MODE objfpc}{$H+} //Only FreePascal
 (************************************************************************
@@ -20,7 +19,11 @@ unit minibidi;
 
 http://cvs.arabeyes.org/viewcvs/projects/adawat/minibidi
 http://svn.tartarus.org/sgt/putty/minibidi.c?r1=8097&view=log
-http://portaputty.googlecode.com/svn-history/r6/trunk/minibidi.c
+///http://portaputty.googlecode.com/svn-history/r6/trunk/minibidi.c
+
+http://www.unicode.org/Public/PROGRAMS/BidiReferenceCpp/
+
+http://unicode.org/cldr/utility/bidi.jsp
 
 Ported to Pascal by Zaher Dirkey, zaher at parmaja.com
 
@@ -291,7 +294,6 @@ function getCAPRtl(ch: WideChar): TCharacterType;
 const
   cTypesFromChar: array[0..127] of TCharacterType =
   (
-//0   1   2   3   4   5   6   7   8   9   a   b   c   d   e   f
     ctON, ctON, ctON, ctON, ctL, ctR, ctON, ctON, ctON, ctON, ctON, ctON, ctON, ctB, ctRLO, ctRLE, { 00-0f }
     ctLRO, ctLRE, ctPDF, ctWS, ctON, ctON, ctON, ctON, ctON, ctON, ctON, ctON, ctON, ctON, ctON, ctON, { 10-1f }
     ctWS, ctON, ctON, ctON, ctET, ctON, ctON, ctON, ctON, ctON, ctON, ctET, ctCS, ctON, ctES, ctES, { 20-2f }
@@ -842,7 +844,7 @@ begin
       * the first strong type (R, L, or sor) is found. If an L is found,
       * then change the type of the European number to L.
       }
-
+   //TODO
     for i := 0 to Count - 1 do
     begin
       if (Types[i] = ctEN) then
@@ -899,7 +901,7 @@ begin
             tempTypeSec := ctL;
         end;
 
-        if (((tempTypeSec = ctL) or (tempTypeSec = ctLRE)) and (tempType = ctL)) or //zaher
+        if (((tempTypeSec = ctL) or (tempTypeSec = ctLRE)) and (tempType = ctL)) or
           (((tempTypeSec = ctR) or (tempTypeSec = ctEN) or (tempTypeSec = ctAN)) and (tempType = ctR)) then
         begin
           while (i < j) do
@@ -1118,6 +1120,15 @@ begin
       FlipThisRun(Line, Levels, tempLevel, Count);
       Dec(tempLevel);
     end;
+
+  {* Rule (L3) NOT IMPLEMENTED
+   * L3. Combining marks applied to a right-to-left base character will at
+   * this point precede their base character. If the rendering engine
+   * expects them to follow the base characters in the final display
+   * process, then the ordering of the marks and the base character must
+   * be reversed.
+   *}
+
   finally
     Freemem(Types);
     Freemem(Levels);
