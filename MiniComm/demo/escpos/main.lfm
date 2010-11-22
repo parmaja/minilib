@@ -1,0 +1,115 @@
+object Form1: TForm1
+  Left = 342
+  Height = 251
+  Top = 176
+  Width = 390
+  Caption = 'Form1'
+  ClientHeight = 251
+  ClientWidth = 390
+  OnCreate = FormCreate
+  LCLVersion = '0.9.29'
+  object Button1: TButton
+    Left = 10
+    Height = 25
+    Top = 222
+    Width = 75
+    Caption = 'Print'
+    OnClick = Button1Click
+    TabOrder = 0
+  end
+  object Memo1: TMemo
+    Left = 10
+    Height = 133
+    Top = 51
+    Width = 211
+    Lines.Strings = (
+      'Hi all'
+      'I am printing on ESCPOS printer'
+    )
+    TabOrder = 1
+  end
+  object PrintToFileChk: TCheckBox
+    Left = 97
+    Height = 17
+    Top = 226
+    Width = 68
+    Caption = 'PrintToFile'
+    TabOrder = 2
+  end
+  object PortCbo: TComboBox
+    Left = 52
+    Height = 21
+    Top = 27
+    Width = 109
+    ItemHeight = 13
+    ItemIndex = 0
+    Items.Strings = (
+      'COM1'
+      'COM2'
+      'COM3'
+    )
+    TabOrder = 3
+    Text = 'COM1'
+  end
+  object PrintersCbo: TComboBox
+    Left = 52
+    Height = 21
+    Top = 4
+    Width = 171
+    ItemHeight = 13
+    Style = csDropDownList
+    TabOrder = 4
+  end
+  object Label1: TLabel
+    Left = 14
+    Height = 14
+    Top = 9
+    Width = 33
+    Caption = 'Printer'
+    ParentColor = False
+  end
+  object Label2: TLabel
+    Left = 14
+    Height = 14
+    Top = 30
+    Width = 21
+    Caption = 'Port'
+    ParentColor = False
+  end
+  object Button2: TButton
+    Left = 186
+    Height = 25
+    Top = 221
+    Width = 75
+    Caption = 'Direct Print'
+    OnClick = Button2Click
+    TabOrder = 5
+  end
+  object Button3: TButton
+    Left = 236
+    Height = 25
+    Top = 114
+    Width = 75
+    Caption = 'Test'
+    OnClick = Button3Click
+    TabOrder = 6
+  end
+  object Label3: TLabel
+    Left = 234
+    Height = 14
+    Top = 30
+    Width = 20
+    Caption = 'Hex'
+    ParentColor = False
+  end
+  object Memo2: TMemo
+    Left = 229
+    Height = 60
+    Top = 52
+    Width = 145
+    Lines.Strings = (
+      'Memo2'
+    )
+    TabOrder = 7
+  end
+end
