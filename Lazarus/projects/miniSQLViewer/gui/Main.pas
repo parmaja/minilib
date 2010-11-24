@@ -977,7 +977,7 @@ begin
   inherited Create(TheOwner);
   {$ifdef WINCE}
   SQLEdit.Font.Size := 8;
-  //ScaleBy(PixelsPerInch, 96);
+  ScaleBy(PixelsPerInch, 96);
   {$endif}
   GroupsNames := TStringList.Create;
   sqlvEngine.WorkPath := Application.Location;

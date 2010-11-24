@@ -48,7 +48,6 @@ object MainForm: TMainForm
         Top = 4
         Width = 20
         Anchors = [akTop, akRight]
-        Color = clBtnFace
         Glyph.Data = {
           46030000424D460300000000000036000000280000000E0000000E0000000100
           2000000000001003000064000000640000000000000000000000000000000000
@@ -88,7 +87,6 @@ object MainForm: TMainForm
         Top = 4
         Width = 20
         Anchors = [akTop, akRight]
-        Color = clBtnFace
         Glyph.Data = {
           46030000424D460300000000000036000000280000000E0000000E0000000100
           2000000000001003000064000000640000000000000000000000000000000000
@@ -669,8 +667,6 @@ object MainForm: TMainForm
             Width = 2
           end
         end
-        inline SynRightGutterPartList1: TSynRightGutterPartList
-        end
       end
       object SQLLoadBtn: TButton
         Left = 88
@@ -981,7 +977,6 @@ object MainForm: TMainForm
           Width = 32
           Anchors = [akTop, akRight]
           Caption = 'Top'
-          Color = clBtnFace
           NumGlyphs = 0
           OnClick = FirstBtnClick
         end

@@ -81,7 +81,6 @@ procedure TsqlvSession.Connected;
 begin
   if FVacuum then
     DBConnection.Execute('vacuum');
-  DBSession.Exclusive := FExclusive;
   DBSession.Start;
   LoadSchema;
   RunLoginSQL;
@@ -158,6 +157,7 @@ begin
   FExclusive := vExclusive;
   DBConnection.Resource := Name;
   DBConnection.AutoCreate := vAutoCreate;
+  DBConnection.Exclusive := FExclusive;
   DBConnection.Connect;
   sqlvEngine.AddRecent(Name);
   sqlvEngine.SaveRecents;

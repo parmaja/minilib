@@ -76,6 +76,7 @@ type
     FAutoCreate: Boolean;
     FSessions: TmncSessions;
     FStartCount: Integer;
+    FIsInit: Boolean;
     procedure SetConnected(const Value: Boolean);
   protected
     procedure DoConnect; virtual; abstract;
@@ -83,6 +84,8 @@ type
     function GetConnected: Boolean; virtual; abstract;
     property Sessions: TmncSessions read FSessions;
     class function GetMode: TmncTransactionMode; virtual;
+    procedure DoInit; virtual;
+    procedure Init;
   public
     constructor Create;
     destructor Destroy; override;
@@ -128,6 +131,7 @@ type
     procedure DoCommit; virtual; abstract;
     procedure DoRollback; virtual; abstract;
     procedure DoStop; virtual;
+    procedure Init;
     property Commands: TmncLinks read FCommands;
   public
     constructor Create(vConnection: TmncConnection); virtual;
@@ -501,6 +505,19 @@ begin
   Result := smNone;
 end;
 
+procedure TmncConnection.DoInit;
+begin
+end;
+
+procedure TmncConnection.Init;
+begin
+  if not FIsInit then
+  begin
+    DoInit;
+    FIsInit := True;
+  end;
+end;
+
 { TmncCommand }
 
 procedure TmncCommand.Clear;
@@ -797,6 +814,15 @@ procedure TmncSession.DoStop;
 begin
 end;
 
+procedure TmncSession.Init;
+begin
+  if not FIsInit then
+  begin
+    DoInit;
+    FIsInit := True;
+  end;
+end;
+
 procedure TmncSession.Rollback;
 begin
   if not Active then
@@ -856,11 +882,8 @@ procedure TmncSession.Start;
 begin
   if (Connection.Mode <> smNone) and (Active) then
     raise EmncException.Create('Session is already active.');
-  if not FIsInit then
-  begin
-    DoInit;
-    FIsInit := True;
-  end;
+  Connection.Init;
+  Init;
   case Connection.Mode of
     smMultiTransaction: DoStart;
     smSingleTransaction,

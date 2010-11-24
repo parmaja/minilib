@@ -31,47 +31,53 @@ const
   SQLITE_OPEN_WAL              = $00080000;
 
 type
+  TmncTempStore = (tmpDefault, tmpFile, tmpMemory);
+  TmncJournalMode = (jrmDefault, jrmDelete, jrmTruncate, jrmPersist, jrmMemory, jrmWal, jrmOff);
+  TmncSynchronous = (syncDefault, syncOFF, syncNormal,  syncFull);
 
   { TmncSQLiteConnection }
 
   TmncSQLiteConnection = class(TmncConnection)
   private
     FDBHandle: PSqlite3;
+    FExclusive: Boolean;
+    FJournalMode: TmncJournalMode;
+    FReadCommited: Boolean;
+    FSynchronous: TmncSynchronous;
+    FTempStore: TmncTempStore;
+    procedure SetExclusive(const AValue: Boolean);
+    procedure SetJournalMode(const AValue: TmncJournalMode);
+    procedure SetReadCommited(const AValue: Boolean);
+    procedure SetTempStore(const AValue: TmncTempStore);
   protected
     procedure DoConnect; override;
     procedure DoDisconnect; override;
     function GetConnected:Boolean; override;
     class function GetMode:TmncTransactionMode; override;
     procedure CheckError(Error: Integer; const ExtraMsg: string = '');
+    procedure DoInit; override;
   public
     constructor Create;
     procedure Interrupt;
     function GetVersion: string;
     procedure Execute(SQL: string);
+    property Exclusive: Boolean read FExclusive write SetExclusive;
+    property ReadCommited: Boolean read FReadCommited write SetReadCommited;
+    property Synchronous: TmncSynchronous read FSynchronous write FSynchronous default syncDefault;
+    property JournalMode: TmncJournalMode read FJournalMode write SetJournalMode default jrmDefault;
+    property TempStore: TmncTempStore read FTempStore write SetTempStore default tmpDefault;
     {TODO
       ANALYZE
     }
     property DBHandle: PSqlite3 read FDBHandle;
   end;
 
-  TmncTempStore = (tmpDefault, tmpFile, tmpMemory);
-  TmncJournalMode = (jrmDefault, jrmDelete, jrmTruncate, jrmPersist, jrmMemory, jrmWal, jrmOff);
-  TmncSynchronous = (syncDefault, syncOFF, syncNormal,  syncFull);
   { TmncSQLiteSession }
 
   TmncSQLiteSession = class(TmncSession)
   private
-    FExclusive: Boolean;
-    FJournalMode: TmncJournalMode;
-    FReadCommited: Boolean;
-    FSynchronous: TmncSynchronous;
-    FTempStore: TmncTempStore;
     function GetConnection: TmncSQLiteConnection;
     procedure SetConnection(const AValue: TmncSQLiteConnection);
-    procedure SetExclusive(const AValue: Boolean);
-    procedure SetJournalMode(const AValue: TmncJournalMode);
-    procedure SetReadCommited(const AValue: Boolean);
-    procedure SetTempStore(const AValue: TmncTempStore);
   protected
     procedure DoInit; override;
     procedure DoStart; override;
@@ -85,11 +91,6 @@ type
     procedure Execute(SQL: string);
     function GetLastInsertID: Int64;
     function GetRowsChanged: Integer;
-    property Exclusive: Boolean read FExclusive write SetExclusive;
-    property ReadCommited: Boolean read FReadCommited write SetReadCommited;
-    property Synchronous: TmncSynchronous read FSynchronous write FSynchronous default syncDefault;
-    property JournalMode: TmncJournalMode read FJournalMode write SetJournalMode default jrmDefault;
-    property TempStore: TmncTempStore read FTempStore write SetTempStore default tmpDefault;
     property Connection: TmncSQLiteConnection read GetConnection write SetConnection;
   end;
 
@@ -348,52 +349,7 @@ begin
   Result := smEmulateTransaction;
 end;
 
-procedure TmncSQLiteSession.SetConnection(const AValue: TmncSQLiteConnection);
-begin
-  inherited Connection := AValue;
-end;
-
-procedure TmncSQLiteSession.SetExclusive(const AValue: Boolean);
-begin
-  if FExclusive <> AValue then
-  begin
-    if Active then
-      raise EmncException.Create('You can not set Exclusive when session active');
-    FExclusive := AValue;
-  end;
-end;
-
-procedure TmncSQLiteSession.SetJournalMode(const AValue: TmncJournalMode);
-begin
-  if FJournalMode <> AValue then
-  begin
-    if Active then
-      raise EmncException.Create('You can not set JournalMode when session active');
-    FJournalMode := AValue;
-  end;
-end;
-
-procedure TmncSQLiteSession.SetReadCommited(const AValue: Boolean);
-begin
-  if FReadCommited <> AValue then
-  begin
-    if Active then
-      raise EmncException.Create('You can not set ReadCommited when session active');
-    FReadCommited := AValue;
-  end;
-end;
-
-procedure TmncSQLiteSession.SetTempStore(const AValue: TmncTempStore);
-begin
-  if FTempStore <> AValue then
-  begin
-    FTempStore := AValue;
-    if Active then
-      raise EmncException.Create('You can not set TempStore when session active');
-  end;
-end;
-
-procedure TmncSQLiteSession.DoInit;
+procedure TmncSQLiteConnection.DoInit;
 begin
   Execute('PRAGMA full_column_names=0');
   Execute('PRAGMA short_column_names=1');
@@ -414,6 +370,55 @@ begin
     temp_store_directory
     read_uncommitted nop
   }
+end;
+
+procedure TmncSQLiteSession.SetConnection(const AValue: TmncSQLiteConnection);
+begin
+  inherited Connection := AValue;
+end;
+
+procedure TmncSQLiteConnection.SetExclusive(const AValue: Boolean);
+begin
+  if FExclusive <> AValue then
+  begin
+    if Active then
+      raise EmncException.Create('You can not set Exclusive when session active');
+    FExclusive := AValue;
+  end;
+end;
+
+procedure TmncSQLiteConnection.SetJournalMode(const AValue: TmncJournalMode);
+begin
+  if FJournalMode <> AValue then
+  begin
+    if Active then
+      raise EmncException.Create('You can not set JournalMode when session active');
+    FJournalMode := AValue;
+  end;
+end;
+
+procedure TmncSQLiteConnection.SetReadCommited(const AValue: Boolean);
+begin
+  if FReadCommited <> AValue then
+  begin
+    if Active then
+      raise EmncException.Create('You can not set ReadCommited when session active');
+    FReadCommited := AValue;
+  end;
+end;
+
+procedure TmncSQLiteConnection.SetTempStore(const AValue: TmncTempStore);
+begin
+  if FTempStore <> AValue then
+  begin
+    FTempStore := AValue;
+    if Active then
+      raise EmncException.Create('You can not set TempStore when session active');
+  end;
+end;
+
+procedure TmncSQLiteSession.DoInit;
+begin
 end;
 
 { TmncSQLiteCommand }

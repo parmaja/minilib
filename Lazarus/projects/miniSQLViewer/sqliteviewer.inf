@@ -1,0 +1,37 @@
+[CEStrings]
+AppName="SQLite Viewer"
+InstallDir=%CE1%\%SQLiteViewer%
+
+[Strings]
+CompanyName="PARMAJA"
+
+[Version]
+Signature="$Windows NT$"
+CESignature="$Windows CE$"
+Provider=%CompanyName%
+
+[SourceDisksNames]
+1 = ,"Autre",,".\bin\wince\"
+2 = ,"Autre",,".\data\"
+
+[SourceDisksFiles]
+sqliteviewer.exe = 1
+sqlite3.dll = 1
+plants.sql = 2
+
+[DestinationDirs]
+Shortcuts=,%CE2%\Desktop
+BIN=,%InstallDir%
+
+[DefaultInstall]
+CEShortcuts=Shortcuts
+CopyFiles=BIN
+
+[BIN]
+sqliteviewer.exe
+sqlite3.dll
+plants.sql
+
+[Shortcuts]
+"%AppName%", 0, "sqliteviewer.exe", %CE11% ; (\Windows\Programs)
+"%AppName%", 0, "sqliteviewer.exe", %CE3% ; (\Windows\Desktop)
