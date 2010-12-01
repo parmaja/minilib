@@ -53,7 +53,7 @@ type
     procedure DoConnect; override;
     procedure DoDisconnect; override;
     function GetConnected:Boolean; override;
-    class function GetMode:TmncTransactionMode; override;
+    class function GetMode: TmncSessionMode; override;
     procedure CheckError(Error: Integer; const ExtraMsg: string = '');
     procedure DoInit; override;
   public
@@ -81,9 +81,7 @@ type
   protected
     procedure DoInit; override;
     procedure DoStart; override;
-    procedure DoCommit; override;
-    procedure DoRollback; override;
-    procedure DoStop; override;
+    procedure DoStop(How: TmncSessionAction; Retaining: Boolean); override;
     function GetActive: Boolean; override;
   public
     constructor Create(vConnection: TmncConnection); override;
@@ -130,7 +128,6 @@ type
 function SQLiteJournalModeToStr(JournalMode: TmncJournalMode): string;
 function SQLiteTempStoreToStr(TempStore: TmncTempStore): string;
 function SQLiteSynchronousToStr(Synchronous: TmncSynchronous): string;
-
 
 implementation
 
@@ -285,19 +282,14 @@ begin
   Execute('BEGIN');
 end;
 
-procedure TmncSQLiteSession.DoCommit;
+procedure TmncSQLiteSession.DoStop(How: TmncSessionAction; Retaining: Boolean);
 begin
-  Execute('COMMIT');
-end;
-
-procedure TmncSQLiteSession.DoRollback;
-begin
-  Execute('ROLLBACK');
-end;
-
-procedure TmncSQLiteSession.DoStop;
-begin
-  //Nothing to do
+  case How of
+    sdaCommit: Execute('COMMIT');
+    sdaRollback: Execute('ROLLBACK');
+  end;
+  if Retaining then
+    Execute('BEGIN');
 end;
 
 procedure TmncSQLiteConnection.Execute(SQL: string);
@@ -344,9 +336,9 @@ begin
   Result := inherited Connection as TmncSQLiteConnection;
 end;
 
-class function TmncSQLiteConnection.GetMode: TmncTransactionMode;
+class function TmncSQLiteConnection.GetMode: TmncSessionMode;
 begin
-  Result := smEmulateTransaction;
+  Result := smEmulate;
 end;
 
 procedure TmncSQLiteConnection.DoInit;
