@@ -90,7 +90,6 @@ type
     procedure DoConnect; virtual; abstract;
     procedure DoDisconnect; virtual; abstract;
     function GetConnected: Boolean; virtual; abstract;
-    property Sessions: TmncSessions read FSessions;
     class function GetMode: TmncSessionMode; virtual;
     procedure DoInit; virtual;
     procedure Init;
@@ -102,6 +101,7 @@ type
     procedure Disconnect;
     procedure Open; //Alias for Connect
     procedure Close; //Alias for Disonnect;
+    property Sessions: TmncSessions read FSessions;
     property Mode: TmncSessionMode read GetMode;
     property AutoStart: Boolean read FAutoStart write FAutoStart; //AutoStart the Session when created
     property Connected: Boolean read GetConnected write SetConnected;
@@ -144,7 +144,6 @@ type
     procedure DoStart; virtual; abstract;
     procedure DoStop(How: TmncSessionAction; Retaining: Boolean); virtual; abstract;
     procedure Init;
-    property Commands: TmncLinks read FCommands;
     procedure InternalStop(How: TmncSessionAction; Retaining: Boolean = False);
     property ParamsChanged: Boolean read FParamsChanged write FParamsChanged;
   public
@@ -154,6 +153,7 @@ type
     procedure Commit;
     procedure Rollback;
     procedure Stop;
+    property Commands: TmncLinks read FCommands;
     property Action: TmncSessionAction read FAction write FAction;
     property Connection: TmncConnection read FConnection write SetConnection;
     property Active: Boolean read GetActive write SetActive;
@@ -332,7 +332,7 @@ type
   protected
   public
     destructor Destroy; override;
-    procedure AllocBuffer(var P; Size: Integer);
+    procedure AllocBuffer(var P; Size: Integer); virtual;
     procedure FreeBuffer;
     property Buffer: Pointer read FBuffer;
     property BufferSize: Integer read FBufferSize;
@@ -411,6 +411,7 @@ type
     procedure CheckStarted; //Check the session is started
     function GetEOF: Boolean; virtual; abstract;
     procedure DoPrepare; virtual; abstract;
+    procedure DoUnprepare; virtual;
     procedure DoExecute; virtual; abstract; //Here apply the ParamList and execute the sql
     procedure DoNext; virtual; abstract;
     procedure DoClose; virtual; abstract;
@@ -475,7 +476,7 @@ end;
 constructor TmncConnection.Create;
 begin
   inherited Create;
-  FParams := TStrings.Create;
+  FParams := TStringList.Create;
   FParamsChanged := True;
   TStringList(FParams).OnChange := ParamsChange;
   TStringList(FParams).OnChanging := ParamsChanging;
@@ -665,6 +666,10 @@ begin
     raise EmncException.Create('Session is not active/started');
 end;
 
+procedure TmncCommand.DoUnprepare;
+begin
+end;
+
 procedure TmncCommand.DoCommit;
 begin
 end;
@@ -794,6 +799,7 @@ procedure TmncCommand.Close;
 begin
   if not Active then
     raise EmncException.Create('Command already Closed');
+  DoUnprepare;
   DoClose;
   FPrepared := False;
 end;
@@ -808,6 +814,7 @@ end;
 constructor TmncSession.Create(vConnection: TmncConnection);
 begin
   inherited Create;
+  FParams := TStringList.Create;
   FParamsChanged := True;
   TStringList(FParams).OnChange := ParamsChange;
   TStringList(FParams).OnChanging := ParamsChanging;

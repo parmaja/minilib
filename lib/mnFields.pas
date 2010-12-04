@@ -18,6 +18,9 @@ uses
   Classes, SysUtils, DateUtils, Variants, Contnrs;
 
 type
+
+  { IField }
+
   IField = interface(IStreamPersist)
     function GetAsInteger: Integer;
     procedure SetAsInteger(const AValue: Integer);
@@ -37,6 +40,8 @@ type
     function GetValues(Index: string): Variant;
     property Values[Index: string]: Variant read GetValues;
   end;
+
+  { TmnCustomField }
 
   TmnCustomField = class(TInterfacedObject, IField)
   private
@@ -59,8 +64,10 @@ type
     procedure WriteAsString(const AValue: string);
     function ReadAsInteger: Integer;
     procedure WriteAsInteger(const AValue: Integer);
-    function ReadAsInt64: Integer;
-    procedure WriteAsInt64(const AValue: Integer);
+    function ReadAsInt64: Int64;
+    procedure WriteAsInt64(const AValue: Int64);
+    function ReadAsDouble: Double;
+    procedure WriteAsDouble(const AValue: Double);
     function ReadAsBoolean: Boolean;
     procedure WriteAsBoolean(const AValue: Boolean);
     function ReadAsCurrency: Currency;
@@ -73,6 +80,7 @@ type
     procedure WriteAsTime(const AValue: TDateTime);
     function ReadIsEmpty: Boolean;
     function ReadIsNull: Boolean;
+    procedure WriteIsNull(const AValue: Boolean);
   protected
     function GetValue: Variant; virtual; abstract;
     procedure SetValue(const AValue: Variant); virtual; abstract;
@@ -83,8 +91,10 @@ type
     procedure SetAsString(const AValue: string); virtual;
     function GetAsInteger: Integer; virtual;
     procedure SetAsInteger(const AValue: Integer); virtual;
-    function GetAsInt64: Integer; virtual;
-    procedure SetAsInt64(const AValue: Integer); virtual;
+    function GetAsInt64: Int64; virtual;
+    procedure SetAsInt64(const AValue: Int64); virtual;
+    function GetAsDouble: Double; virtual;
+    procedure SetAsDouble(const AValue: Double); virtual;
     function GetAsBoolean: Boolean; virtual;
     procedure SetAsBoolean(const AValue: Boolean); virtual;
     function GetAsCurrency: Currency; virtual;
@@ -96,7 +106,8 @@ type
     function GetAsTime: TDateTime; virtual;
     procedure SetAsTime(const AValue: TDateTime); virtual;
 
-    function GetIsNull: Boolean; virtual;   
+    function GetIsNull: Boolean; virtual;
+    procedure SetIsNull(const AValue: Boolean); virtual;
     function GetIsEmpty: Boolean; virtual;
 
     property Value: Variant read GetValue write SetValue;
@@ -111,8 +122,9 @@ type
 
     property AsString: string read ReadAsString write WriteAsString;
     property AsInteger: Integer read ReadAsInteger write WriteAsInteger;
-    property AsInt64: Integer read ReadAsInt64 write WriteAsInt64;
-    property AsID: Integer read ReadAsInt64 write WriteAsInt64;
+    property AsInt64: Int64 read ReadAsInt64 write WriteAsInt64;
+    property AsDouble: Double read ReadAsDouble write WriteAsDouble;
+    property AsID: Int64 read ReadAsInt64 write WriteAsInt64;
     property AsBoolean: Boolean read ReadAsBoolean write WriteAsBoolean;
     property AsCurrency: Currency read ReadAsCurrency write WriteAsCurrency;
     property AsDate: TDateTime read ReadAsDate write WriteAsDate;
@@ -120,8 +132,8 @@ type
     property AsDateTime: TDateTime read ReadAsDateTime write WriteAsDateTime;
     property AsText: string read ReadAsText write WriteAsText; //binary text blob convert to hex
 
+    property IsNull: Boolean read ReadIsNull write WriteIsNull;
     property IsEmpty: Boolean read ReadIsEmpty;
-    property IsNull: Boolean read ReadIsNull;
 
     procedure LoadFromStream(Stream: TStream); virtual;
     procedure SaveToStream(Stream: TStream); virtual;
@@ -132,8 +144,8 @@ type
     procedure SaveToIStream(Stream: IStreamPersist);
     }
   public
-    procedure Clear;//make value null
-    procedure Empty;//make value empty
+    procedure Clear; virtual;//make value null
+    procedure Empty; virtual;//make value empty
   end;
 
   TmnCustomFieldClass = class of TmnCustomField;
@@ -146,6 +158,8 @@ type
   public
     property Items[Index: Integer]: TmnCustomField read GetItem;
   end;
+
+  { TmnField }
 
   TmnField = class(TmnCustomField)
   private
@@ -167,6 +181,7 @@ type
     property AsNullString;
     property AsInteger;
     property AsInt64;
+    property AsDouble;
     property AsBoolean;
     property AsCurrency;
     property AsDate;
@@ -176,6 +191,8 @@ type
     property AsHex;
     property Name: string read FName write FName;
   end;
+
+  { TmnFields }
 
   TmnFields = class(TmnCustomFields, IFields)
   private
@@ -234,7 +251,7 @@ begin
   Result := Value;
 end;
 
-function TmnCustomField.GetAsInt64: Integer;
+function TmnCustomField.GetAsInt64: Int64;
 begin
   Result := Value;
 end;
@@ -268,6 +285,12 @@ end;
 function TmnCustomField.GetIsNull: Boolean;
 begin
   Result := (VarType(Value) in [varNull]);
+end;
+
+procedure TmnCustomField.SetIsNull(const AValue: Boolean);
+begin
+  if AValue then
+    Clear;
 end;
 
 procedure TmnCustomField.LoadFromFile(const FileName: string);
@@ -347,7 +370,7 @@ begin
     end;
 end;
 
-function TmnCustomField.ReadAsInt64: Integer;
+function TmnCustomField.ReadAsInt64: Int64;
 begin
   if IsEmpty then
     Result := 0
@@ -439,6 +462,12 @@ begin
   BinToHex(PChar(s), @Result[1], Length(s));
 end;
 
+procedure TmnCustomField.WriteIsNull(const AValue: Boolean);
+begin
+  CheckIsNil;
+  SetIsNull(AValue);
+end;
+
 function TmnCustomField.GetAsText: string;
 begin
   Result := AsString;
@@ -473,7 +502,17 @@ begin
   Value := AValue;
 end;
 
-procedure TmnCustomField.SetAsInt64(const AValue: Integer);
+procedure TmnCustomField.SetAsInt64(const AValue: Int64);
+begin
+  Value := AValue;
+end;
+
+function TmnCustomField.GetAsDouble: Double;
+begin
+  Result := Value;
+end;
+
+procedure TmnCustomField.SetAsDouble(const AValue: Double);
 begin
   Value := AValue;
 end;
@@ -576,10 +615,31 @@ begin
   SetAsDateTime(AValue);
 end;
 
-procedure TmnCustomField.WriteAsInt64(const AValue: Integer);
+procedure TmnCustomField.WriteAsInt64(const AValue: Int64);
 begin
   CheckIsNil;
   SetAsInt64(AValue);
+end;
+
+function TmnCustomField.ReadAsDouble: Double;
+begin
+  if IsEmpty then
+    Result := 0
+  else
+    try
+      Result := GetAsDouble;
+    except
+      on E: EVariantError do
+        Result := 0;
+      else
+        raise;
+    end;
+end;
+
+procedure TmnCustomField.WriteAsDouble(const AValue: Double);
+begin
+  CheckIsNil;
+  SetAsDouble(AValue);
 end;
 
 procedure TmnCustomField.WriteAsInteger(const AValue: Integer);

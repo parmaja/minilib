@@ -140,10 +140,12 @@ object MainForm: TMainForm
         Top = 38
         Width = 274
         Anchors = [akTop, akLeft, akRight, akBottom]
+        Font.CharSet = ARABIC_CHARSET
+        Font.Color = clBlack
         Font.Height = -13
         Font.Name = 'Courier'
         Font.Pitch = fpFixed
-        Font.Quality = fqNonAntialiased
+        Font.Quality = fqDraft
         ParentColor = False
         ParentFont = False
         TabOrder = 0

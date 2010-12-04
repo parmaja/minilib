@@ -39,8 +39,7 @@ type
     FSpliteChar: Char;
   protected
     procedure DoStart; override;
-    procedure DoCommit; override;
-    procedure DoRollback; override;
+    procedure DoStop(How: TmncSessionAction; Retaining: Boolean); override;
   public
     constructor Create(vConnection: TmncConnection); override;
     property SpliteChar: Char read FSpliteChar write FSpliteChar default #9;
@@ -111,11 +110,7 @@ procedure TmncCSVSession.DoStart;
 begin
 end;
 
-procedure TmncCSVSession.DoCommit;
-begin
-end;
-
-procedure TmncCSVSession.DoRollback;
+procedure TmncCSVSession.DoStop(How: TmncSessionAction; Retaining: Boolean);
 begin
 end;
 

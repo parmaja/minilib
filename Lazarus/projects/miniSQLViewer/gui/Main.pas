@@ -976,8 +976,12 @@ var
 begin
   inherited Create(TheOwner);
   {$ifdef WINCE}
+  SQLEdit.Font.Name := 'Courier';
   SQLEdit.Font.Size := 8;
-  ScaleBy(PixelsPerInch, 96);
+  ScaleBy(Screen.PixelsPerInch, 96);
+  {$else}
+  SQLEdit.Font.Name := 'Courier New';
+  SQLEdit.Font.Size := 11;
   {$endif}
   GroupsNames := TStringList.Create;
   sqlvEngine.WorkPath := Application.Location;
