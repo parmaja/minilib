@@ -18,7 +18,7 @@ uses
   Classes, SysUtils,
   LangClasses;
 
-procedure LoadLanguages(const vDefaultLanguage, vSource: string; vFilerClass: TLangFilerClass);
+procedure LoadLanguages(const vDefaultLanguage, vSource, vFilter: string; vFilerClass: TLangFilerClass);
 procedure SaveLanguages(vSource: string; vFilerClass: TLangFilerClass; OnlyModified: Boolean);
 
 function _(const ID: string): string; overload;
@@ -31,7 +31,7 @@ implementation
 uses
   IniFiles, PO_Languages;
   
-procedure LoadLanguages(const vDefaultLanguage, vSource: string; vFilerClass: TLangFilerClass);
+procedure LoadLanguages(const vDefaultLanguage, vSource, vFilter: string; vFilerClass: TLangFilerClass);
 var
   I: Integer;
   SearchRec: TSearchRec;
@@ -50,7 +50,7 @@ begin
         Languages.Add(aLanguage);
         aFiler := vFilerClass.Create;
         try
-          aFiler.LoadFrom(IncludeTrailingPathDelimiter(vSource) + SearchRec.Name, aLanguage);
+          aFiler.LoadFrom(IncludeTrailingPathDelimiter(vSource) + SearchRec.Name, vFilter, aLanguage);
         finally
           aFiler.Free;
         end;

@@ -338,15 +338,15 @@ type
   private
   protected
     //Default Load and Save you can used of make your own
-    procedure DefaultLoadFrom(IsDirectory: Boolean; vSource: string; vLanguage: TLanguage);
+    procedure DefaultLoadFrom(IsDirectory: Boolean; vSource, vFilter: string; vLanguage: TLanguage);
     procedure DefaultSaveTo(IsDirectory: Boolean; vSource: string; vLanguage: TLanguage);
 
-    procedure DoLoadFrom(vSource: string; vLanguage: TLanguage); virtual; abstract;
+    procedure DoLoadFrom(vSource, vFilter: string; vLanguage: TLanguage); virtual; abstract;
     procedure DoSaveTo(vSource: string; vLanguage: TLanguage); virtual; abstract;
   public
     constructor Create; virtual;
     function CreateParser: TLangParser; virtual; abstract;
-    procedure LoadFrom(vSource: string; vLanguage: TLanguage); //vName File or Directory
+    procedure LoadFrom(vSource, vFilter: string; vLanguage: TLanguage); //vName File or Directory
     procedure SaveTo(vSource: string; vLanguage: TLanguage);
     function GetFileName(vPath, vName: string): string;
     class function GetName: string; virtual; //Name for enumrate
@@ -1178,7 +1178,7 @@ end;
 
 { TLangFiler }
 
-procedure TLangFiler.DefaultLoadFrom(IsDirectory: Boolean; vSource: string; vLanguage: TLanguage);
+procedure TLangFiler.DefaultLoadFrom(IsDirectory: Boolean; vSource, vFilter: string; vLanguage: TLanguage);
 var
   I: Integer;
   SearchRec: TSearchRec;
@@ -1191,7 +1191,7 @@ begin
     begin
       aPath := IncludeTrailingPathDelimiter(vSource);
       try
-        I := FindFirst(aPath + '*.' + GetExtension, 0, SearchRec);
+        I := FindFirst(aPath + vFilter + '*.' + GetExtension, 0, SearchRec);
         while I = 0 do
         begin
           aParser := CreateParser;
@@ -1270,11 +1270,11 @@ begin
   inherited Create;
 end;
 
-procedure TLangFiler.LoadFrom(vSource: string; vLanguage: TLanguage);
+procedure TLangFiler.LoadFrom(vSource, vFilter: string; vLanguage: TLanguage);
 begin
   vLanguage.BeginUpdate;
   try
-    DoLoadFrom(vSource, vLanguage);
+    DoLoadFrom(vSource, vFilter, vLanguage);
   finally
     vLanguage.EndUpdate;
   end;
