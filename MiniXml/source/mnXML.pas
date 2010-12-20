@@ -45,7 +45,15 @@ type
   public
     property Name: string read FName write FName;
     property Value: string read FValue write FValue;
+    function DiffLen: Integer;
   end;
+
+  TmneReplaceRec = record
+    Index: Integer; //index of item
+    Pos: PChar; //pos in string;
+  end;
+  TmneReplaceArr = array of TmneReplaceRec;
+  TEntityRenderWay = (erwEncode, erwDecode);
 
   TmnXMLEntities = class(TCollection)
   private
@@ -62,6 +70,9 @@ type
     function Decode(const Name: string): string;
     property Items[Index: Integer]: TmnXMLEntity read GetItem write SetItem;
     property Entity[Index: string]: TmnXMLEntity read GetEntity; default;
+    //belal
+    function CreateReplaceArr(const Value: string; vWay: TEntityRenderWay): TmneReplaceArr;
+    function RenderText(const vText: string; vWay: TEntityRenderWay): string;
   end;
 
   TmnXMLStack = class;
@@ -185,11 +196,17 @@ end;
 
 procedure TmnXMLFiler.DeclareEntities;
 begin
-  Entities.Add('amp', '&'); //must be first
+  Entities.Add('&amp;', '&'); //must be first //belal add & and ; to name
+  Entities.Add('&lt;', '<');
+  Entities.Add('&gt;', '>');
+  Entities.Add('&apos;', '''');
+  Entities.Add('&quot;', '"');
+
+{  Entities.Add('amp', '&'); //must be first
   Entities.Add('lt', '<');
   Entities.Add('gt', '>');
   Entities.Add('apos', '''');
-  Entities.Add('quot', '"');
+  Entities.Add('quot', '"');}
 end;
 
 destructor TmnXMLFiler.Destroy;
@@ -222,12 +239,13 @@ begin
 end;
 
 function TmnXMLFiler.EntityEncode(const Value: string): string;
-var
-  i: Integer;
+//var
+  //i: Integer;
 begin
-  Result := Value;
-  for i := 0 to Entities.Count - 1 do
-    Result := StringReplace(Result, Entities.Items[i].Value, '&' + Entities.Items[i].Name + ';', [rfReplaceAll]);
+  Result := Entities.RenderText(Value, erwEncode);
+  //Result := Value; belal
+  //for i := 0 to Entities.Count - 1 do
+    //Result := StringReplace(Result, Entities.Items[i].Value, '&' + Entities.Items[i].Name + ';', [rfReplaceAll]);
 end;
 
 { TmnXMLEntities }
@@ -259,6 +277,196 @@ begin
   else
     raise EmnXMLException.Create('Entity '+ Name+ ' not found');
 end;
+
+function TmnXMLEntities.RenderText(const vText: string; vWay: TEntityRenderWay): string;
+var
+  arr: TmneReplaceArr;
+  I, t: Integer;
+  v, r, e: PChar;
+  lv, ln: Integer;
+begin
+  arr := CreateReplaceArr(vText, vWay);
+  if arr=nil then
+    Result := vText
+  else
+  begin
+    t := Length(vText);
+    for I := 0 to Length(arr) - 1 do
+      case vWay of
+        erwEncode: Inc(t, Items[arr[i].Index].DiffLen);
+        erwDecode: Inc(t, -Items[arr[i].Index].DiffLen);
+      end;
+
+
+    SetLength(Result, t);//add if t<>0 ???
+    v := PChar(vText);
+    r := PChar(Result);
+
+    for I := 0 to Length(arr) - 1 do
+    begin
+      StrLCopy(r, v, arr[i].Pos-v);
+      lv := Length(Items[arr[i].Index].Value);
+      ln := Length(Items[arr[i].Index].Name);
+      Inc(r, arr[i].Pos-v);
+      case vWay of
+        erwEncode:
+        begin
+          Inc(v, arr[i].Pos-v+lv);
+          e := PChar(Items[arr[i].Index].Name);
+          StrLCopy(r, e, ln);
+          Inc(r, ln);
+        end;
+        erwDecode:
+        begin
+          Inc(v, arr[i].Pos-v+ln);
+          e := PChar(Items[arr[i].Index].Value);
+          StrLCopy(r, e, lv);
+          Inc(r, lv);
+        end;
+      end; //case
+    end; //for
+    StrLCopy(r, v, MaxInt);
+  end; //else
+end;
+
+function TmnXMLEntities.CreateReplaceArr(const Value: string; vWay: TEntityRenderWay): TmneReplaceArr;
+  procedure _Add(vPos, vIndex: Integer; vChar: PChar);
+  var
+    l: Integer;
+  begin
+    l := Length(Result);
+    if vPos=l then
+      SetLength(Result, vPos+10000);
+    Result[vPos].Index := vIndex;
+    Result[vPos].Pos := vChar;
+  end;
+
+  procedure _QuickSort(iLo, iHi: Integer);
+
+    procedure Swap(I, J: Integer);
+    var
+      rec: TmneReplaceRec;
+    begin
+      rec := Result[i];
+      Result[i] := Result[j];
+      Result[j] := rec;
+    end;
+
+    function CallProc(Idx1, Idx2: Integer; vArr: TmneReplaceArr): Integer;
+    var
+      p: PChar;
+    begin
+      //Result := vProc(List[Idx1], List[Idx2]);
+      p := PChar(Value);
+      Result := (vArr[Idx1].Pos-p)-(vArr[Idx2].Pos-p);
+    end;
+
+  var
+    Lo, Hi: integer;
+    Mid: Integer;
+  begin
+    Lo := iLo;
+    Hi := iHi;
+    Mid := ((Lo + Hi) div 2);
+    repeat
+      while CallProc(Lo, Mid, Result) < 0 do
+        Inc(Lo);
+      while CallProc(Hi, Mid, Result) > 0 do
+        Dec(Hi);
+      if Lo <= Hi then
+      begin
+        if CallProc(Hi, Lo, Result) <> 0 then
+          Swap(Lo, Hi);
+        Inc(Lo);
+        Dec(Hi);
+      end;
+    until Lo > Hi;
+    if Hi > iLo then
+      _QuickSort(iLo, Hi);
+    if Lo < iHi then
+      _QuickSort(Lo, iHi);
+  end;
+
+  function GetMatchItemIndex(p: PChar; vLen: Integer): Integer;
+  var
+    i, j, l: Integer;
+    v, t: PChar;
+    aSame: Boolean;
+  begin
+    Result := -1;
+    for I := 0 to Count - 1 do
+    begin
+      case vWay of
+        erwEncode:
+        begin
+          v := PChar(Items[i].Value);
+          l := Length(Items[i].Value);
+        end;
+        erwDecode:
+        begin
+          v := PChar(Items[i].Name);
+          l := Length(Items[i].Name);
+        end;
+        else
+        begin
+          v := nil;
+          l := MaxInt;
+        end;
+      end;
+      if l<=vLen then
+      begin
+        aSame := True;
+        t := p;
+        for j := 0 to l-1 do
+        begin
+          if t^<>v^ then
+          begin
+            aSame := False;
+            Break;
+          end;
+          Inc(t);
+          Inc(v);
+        end;
+        if aSame then
+        begin
+          Result := i;
+          Break;
+        end;
+      end;
+    end;
+  end;
+var
+  i, c: Integer;
+  p, e: PChar;
+begin
+  Result := nil;
+  c := 0;
+  p := PChar(Value);
+  e := p;
+  Inc(e, Length(Value));
+
+  while (e-p)>0 do
+  begin
+    i := GetMatchItemIndex(p, e-p);
+    if i<>-1 then
+    begin
+      _Add(c, i, p);
+      Inc(c);
+      case vWay of
+        erwEncode: Inc(p, Length(Items[i].Value));
+        erwDecode: Inc(p, Length(Items[i].Name));
+      end;
+    end
+    else
+      Inc(p);
+  end;
+
+  SetLength(Result, c);
+  //if c<>0 then
+    //_QuickSort(0, c-1);
+
+end;
+
 
 destructor TmnXMLEntities.Destroy;
 begin
@@ -478,10 +686,11 @@ begin
 end;
 
 function TmnXMLFiler.EntityDecode(const Value: string): string;
-var
-  i, l, cBegin, cStart, cEnd: integer;
+//var
+  //i, l, cBegin, cStart, cEnd: integer;
 begin
-  i := 1;
+  Result := Entities.RenderText(Value, erwDecode);
+  {i := 1;
   cBegin := 1;
   l := Length(Value);
   Result := '';
@@ -507,7 +716,14 @@ begin
     end;
     Inc(i);
   end;
-  Result := Result + Copy(Value, cBegin, MaxInt);
+  Result := Result + Copy(Value, cBegin, MaxInt);}
+end;
+
+{ TmnXMLEntity }
+
+function TmnXMLEntity.DiffLen: Integer;
+begin
+  Result := Length(Name)-Length(Value);
 end;
 
 end.
