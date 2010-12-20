@@ -18,7 +18,7 @@ interface
 
 uses
   SysUtils, Classes, Graphics, Controls, Types, Forms,
-  posControls, posThemes, posTypes, posStuffs;
+  posDraws, posControls, posThemes, posTypes, posStuffs;
 
 type
   TposOnGetText = procedure(Sender: TObject; var S: string) of object;
@@ -70,8 +70,11 @@ type
     property OnGetText: TposOnGetText read FOnGetText write FOnGetText;
   end;
 
+  { TposButtonStuff }
+
   TposButtonStuff = class(TInterfacedObject, IposStuff)
   private
+    FShape: TposShapeKind;
     FSize: Integer;
     FCaption: string;
     FStates: TposDrawStates;
@@ -90,13 +93,14 @@ type
     property Color: TColor read FColor write FColor;
     property Caption: string read FCaption write FCaption;
     property ID: Integer read FID write FID;
+    property Shape: TposShapeKind read FShape write FShape;
     property States: TposDrawStates read FStates write FStates;
   end;
 
 implementation
 
 uses
-  posUtils, posDraws;
+  posUtils;
 
 procedure TposButton.SetCaption(Value: TCaption);
 begin
@@ -204,7 +208,7 @@ function TposButtonStuff.Draw(vCanvas: TCanvas; vRect: TRect; vColor: TColor; vS
 begin
   if FColor <> clDefault then
     vColor := FColor;
-  PaintButton(vCanvas, Caption, shpNone, vRect, vColor, clDefault, vStates + FStates + [pdsBorder]);
+  PaintButton(vCanvas, Caption, Shape, vRect, vColor, clDefault, vStates + FStates + [pdsBorder]);
   Result := True;
 end;
 

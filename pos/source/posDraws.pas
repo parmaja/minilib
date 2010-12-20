@@ -133,12 +133,14 @@ begin
       end;
     shpOK, shpCheck:
       begin
-        if z = 0 then
+        CalcZ(9);
+       {
+       if z = 0 then
         begin
           z := w div 9;
           if z <= 0 then
             z := 1;
-        end;
+        end;  }
         Canvas.Polygon([Point(x - z * 3, y - z), Point(x - z * 3, y + z), Point(x - z, y + z * 3), Point(x + z * 3, y - z), Point(x + z * 3, y - z * 3), Point(x - z, y + z)]);
       end;
     shpMinus:
@@ -192,7 +194,7 @@ begin
     shpRight:
       begin
         CalcZ(9);
-        Canvas.Polygon([Point(x + 2, y), Point(x - 1, y - 3), Point(x - 1, y + 3)]);
+        Canvas.Polygon([Point(x + z * 2, y), Point(x - z, y - z * 3), Point(x - z, y + z * 3)]);
       end;
     shpPoint:
       begin

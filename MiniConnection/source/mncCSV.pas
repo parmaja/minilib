@@ -22,6 +22,7 @@ uses
 type
   TmncCSVConnection = class(TmncConnection)
   private
+    FConnected: Boolean;
   protected
     procedure DoConnect; override;
     procedure DoDisconnect; override;
@@ -93,15 +94,17 @@ end;
 
 procedure TmncCSVConnection.DoConnect;
 begin
+  FConnected := True;
 end;
 
 function TmncCSVConnection.GetConnected: Boolean;
 begin
-  Result := True;
+  Result := FConnected;
 end;
 
 procedure TmncCSVConnection.DoDisconnect;
 begin
+  FConnected := False;
 end;
 
 { TmncCSVSession }
