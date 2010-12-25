@@ -338,15 +338,15 @@ type
   private
   protected
     //Default Load and Save you can used of make your own
-    procedure DefaultLoadFrom(IsDirectory: Boolean; vSource, vFilter: string; vLanguage: TLanguage);
+    procedure DefaultLoadFrom(IsDirectory: Boolean; vSource: string; vLanguage: TLanguage; vFiles: TStrings = nil);
     procedure DefaultSaveTo(IsDirectory: Boolean; vSource: string; vLanguage: TLanguage);
 
-    procedure DoLoadFrom(vSource, vFilter: string; vLanguage: TLanguage); virtual; abstract;
+    procedure DoLoadFrom(vSource: string; vLanguage: TLanguage; vFiles: TStrings = nil); virtual; abstract;
     procedure DoSaveTo(vSource: string; vLanguage: TLanguage); virtual; abstract;
   public
     constructor Create; virtual;
     function CreateParser: TLangParser; virtual; abstract;
-    procedure LoadFrom(vSource, vFilter: string; vLanguage: TLanguage); //vName File or Directory
+    procedure LoadFrom(vSource: string; vLanguage: TLanguage; vFiles: TStrings = nil); //vName File or Directory
     procedure SaveTo(vSource: string; vLanguage: TLanguage);
     function GetFileName(vPath, vName: string): string;
     class function GetName: string; virtual; //Name for enumrate
@@ -1178,12 +1178,16 @@ end;
 
 { TLangFiler }
 
-procedure TLangFiler.DefaultLoadFrom(IsDirectory: Boolean; vSource, vFilter: string; vLanguage: TLanguage);
+procedure TLangFiler.DefaultLoadFrom(IsDirectory: Boolean; vSource: string; vLanguage: TLanguage; vFiles: TStrings = nil);
 var
   I: Integer;
   SearchRec: TSearchRec;
   aPath: string;
   aParser: TLangParser;
+  function InFiles(FileName: string): Boolean;
+  begin
+    Result := (vFiles = nil) or (vFiles.IndexOf(FileName) >= 0);
+  end;
 begin
   with vLanguage do
   begin
@@ -1191,14 +1195,17 @@ begin
     begin
       aPath := IncludeTrailingPathDelimiter(vSource);
       try
-        I := FindFirst(aPath + vFilter + '*.' + GetExtension, 0, SearchRec);
+        I := FindFirst(aPath + '*.' + GetExtension, 0, SearchRec);
         while I = 0 do
         begin
-          aParser := CreateParser;
-          try
-            ParseLanguageFile(aPath + SearchRec.Name, vLanguage, aParser);
-          finally
-            aParser.Free;
+          if InFiles(SearchRec.Name) then
+          begin
+            aParser := CreateParser;
+            try
+              ParseLanguageFile(aPath + SearchRec.Name, vLanguage, aParser);
+            finally
+              aParser.Free;
+            end;
           end;
           I := FindNext(SearchRec);
         end;
@@ -1270,11 +1277,11 @@ begin
   inherited Create;
 end;
 
-procedure TLangFiler.LoadFrom(vSource, vFilter: string; vLanguage: TLanguage);
+procedure TLangFiler.LoadFrom(vSource: string; vLanguage: TLanguage; vFiles: TStrings);
 begin
   vLanguage.BeginUpdate;
   try
-    DoLoadFrom(vSource, vFilter, vLanguage);
+    DoLoadFrom(vSource, vLanguage, vFiles);
   finally
     vLanguage.EndUpdate;
   end;

@@ -74,6 +74,7 @@ type
 
   TposButtonStuff = class(TInterfacedObject, IposStuff)
   private
+    FMargin: Integer;
     FShape: TposShapeKind;
     FSize: Integer;
     FCaption: string;
@@ -94,6 +95,7 @@ type
     property Caption: string read FCaption write FCaption;
     property ID: Integer read FID write FID;
     property Shape: TposShapeKind read FShape write FShape;
+    property Margin: Integer read FMargin write FMargin default 0;
     property States: TposDrawStates read FStates write FStates;
   end;
 
@@ -205,10 +207,14 @@ begin
 end;
 
 function TposButtonStuff.Draw(vCanvas: TCanvas; vRect: TRect; vColor: TColor; vStates: TposDrawStates): Boolean;
+var
+  aTextRect: TRect;
 begin
   if FColor <> clDefault then
     vColor := FColor;
-  PaintButton(vCanvas, Caption, Shape, vRect, vColor, clDefault, vStates + FStates + [pdsBorder]);
+  aTextRect := vRect;
+  InflateRect(aTextRect, -Margin, -Margin);
+  PaintButton(vCanvas, Caption, Shape, vRect, aTextRect, vColor, clDefault, vStates + FStates + [pdsBorder]);
   Result := True;
 end;
 

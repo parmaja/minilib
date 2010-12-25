@@ -84,7 +84,8 @@ function TextStyleToFormat(Style: TTextStyle): Longint;
 procedure PaintText(Canvas: TCanvas; Text: string; vRect: TRect; Style: TTextStyle);
 procedure PaintTextButton(Canvas: TCanvas; Text: string; Rect: TRect; States: TposDrawStates);
 procedure PaintBorderButton(Canvas: TCanvas; Rect: TRect; Color, BorderColor: TColor; States: TposDrawStates; Down:Boolean = False);
-procedure PaintButton(Canvas: TCanvas; Caption: string; vShape: TposShapeKind; Rect: TRect; Color, BorderColor: TColor; States: TposDrawStates);
+procedure PaintButton(Canvas: TCanvas; Caption: string; vShape: TposShapeKind; Rect: TRect; Color, BorderColor: TColor; States: TposDrawStates); overload;
+procedure PaintButton(Canvas: TCanvas; Caption: string; vShape: TposShapeKind; Rect, TextRect: TRect; Color, BorderColor: TColor; States: TposDrawStates); overload;
 procedure PaintRect(Canvas: TCanvas; const vRect: TRect);
 
 //
@@ -400,6 +401,11 @@ begin
 end;
 
 procedure PaintButton(Canvas: TCanvas; Caption: string; vShape: TposShapeKind; Rect: TRect; Color, BorderColor: TColor; States: TposDrawStates);
+begin
+  PaintButton(Canvas, Caption, vShape, Rect, Rect, Color, BorderColor, States);
+end;
+
+procedure PaintButton(Canvas: TCanvas; Caption: string; vShape: TposShapeKind; Rect, TextRect: TRect; Color, BorderColor: TColor; States: TposDrawStates);
 const
   cPending = 4;
 begin
@@ -431,13 +437,13 @@ begin
   end;
 
   if Caption <> '' then
-    PaintTextButton(Canvas, Caption, Rect, States);
+    PaintTextButton(Canvas, Caption, TextRect, States);
 
   if pdsBorder in States then
     InflateRect(Rect, -1, -1);
 
   if vShape <> shpNone then
-    DrawShape(Canvas, Rect, vShape, False, True, (pdsRightToLeft in States), 0, Canvas.Font.Color);
+    DrawShape(Canvas, TextRect, vShape, False, True, (pdsRightToLeft in States), 0, Canvas.Font.Color);
 end;
 
 {procedure PaintChair(Canvas:TCanvas;const vRect:TRect; Opaque:Boolean);

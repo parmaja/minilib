@@ -136,7 +136,7 @@ begin
       //You can create the printer class by name
       aPrinter := mnRegisteredPrinters.CreateByName(mnRegisteredPrinters[Integer(PrintersCbo.Items.Objects[PrintersCbo.ItemIndex])].Name, mnpsCanvas, aStream) as TmnESCPOSPrinter;
       try
-        aPrinter.Print(seqSelectCharacter + #22);
+        aPrinter.Print(seqSelectCharacter + #22);    //22 is the number of codepage Arabic cp864
         aPrinter.Print(seqSetRightAlignment);
         for i := 0 to Memo1.Lines.Count -1 do
         begin
@@ -147,7 +147,7 @@ begin
         end;
         aPrinter.Eject;
         //aPrinter.Cut;
-        (aPrinter as TmnESCPOSPrinter).PrintBarcode('123456789');
+        //(aPrinter as TmnESCPOSPrinter).PrintBarcode('123456789');
         if PrintToFileChk.Checked then
           (aStream as TmnCommStream).Close;
       finally

@@ -18,7 +18,7 @@ uses
   Classes, SysUtils,
   LangClasses;
 
-procedure LoadLanguages(const vDefaultLanguage, vSource, vFilter: string; vFilerClass: TLangFilerClass);
+procedure LoadLanguages(const vDefaultLanguage, vSource: string; vFilerClass: TLangFilerClass; vModuleName: string = '');
 procedure SaveLanguages(vSource: string; vFilerClass: TLangFilerClass; OnlyModified: Boolean);
 
 function _(const ID: string): string; overload;
@@ -30,17 +30,25 @@ implementation
 
 uses
   IniFiles, PO_Languages;
-  
-procedure LoadLanguages(const vDefaultLanguage, vSource, vFilter: string; vFilerClass: TLangFilerClass);
+
+procedure LoadLanguages(const vDefaultLanguage, vSource: string; vFilerClass: TLangFilerClass; vModuleName: string);
 var
   I: Integer;
   SearchRec: TSearchRec;
   aLanguage: TLanguage;
   aFiler: TLangFiler;
+  aFiles: TStringList;
 begin
   if vFilerClass = nil then
     raise ELangException.Create('FilerClass is nil');
   try
+    if (vModuleName <> '') and (FileExists(vSource + vModuleName)) then
+    begin
+      aFiles := TStringList.Create;
+      aFiles.LoadFromFile(vSource + vModuleName)
+    end
+    else
+      aFiles := nil;
     I := FindFirst(IncludeTrailingPathDelimiter(vSource) + '*.*', faDirectory, SearchRec);
     while I = 0 do
     begin
@@ -50,13 +58,14 @@ begin
         Languages.Add(aLanguage);
         aFiler := vFilerClass.Create;
         try
-          aFiler.LoadFrom(IncludeTrailingPathDelimiter(vSource) + SearchRec.Name, vFilter, aLanguage);
+          aFiler.LoadFrom(IncludeTrailingPathDelimiter(vSource) + SearchRec.Name, aLanguage, aFiles);
         finally
           aFiler.Free;
         end;
       end;
       I := FindNext(SearchRec);
     end;
+    FreeAndNil(aFiles);
     FindClose(SearchRec);
   except
     raise;

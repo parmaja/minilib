@@ -457,8 +457,8 @@ end;
 function TmnESCPOSPage.CreateBitmap: TBitmap;
 begin
   Result := TBitmap.Create;
-//  Result.Monochrome := True;//not work in WinCE
-//  Result.PixelFormat:= pf8bit;
+  //Result.Monochrome := True;//not work in WinCE
+  //Result.PixelFormat:= pf1bit;
   Result.Width := Width;
   Result.Height := Height;
   Result.Canvas.Font.Quality := fqNonAntialiased;

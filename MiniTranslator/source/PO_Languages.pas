@@ -43,7 +43,7 @@ type
 
   TPOFileFiler = class(TLangFiler)
   protected
-    procedure DoLoadFrom(vSource, vFilter: string; vLanguage: TLanguage); override;
+    procedure DoLoadFrom(vSource: string; vLanguage: TLanguage; vFiles: TStrings = nil); override;
     procedure DoSaveTo(vSource: string; vLanguage: TLanguage); override;
   public
     function CreateParser: TLangParser; override;
@@ -59,7 +59,7 @@ type
 }
   TPODirectoryFiler = class(TLangFiler)
   protected
-    procedure DoLoadFrom(vSource, vFilter: string; vLanguage: TLanguage); override;
+    procedure DoLoadFrom(vSource: string; vLanguage: TLanguage; vFiles: TStrings = nil); override;
     procedure DoSaveTo(vSource: string; vLanguage: TLanguage); override;
   public
     constructor Create; override;
@@ -74,7 +74,7 @@ type
 
   TPODirectoryExFiler = class(TPODirectoryFiler) //with setting.ini
   protected
-    procedure DoLoadFrom(vSource, vFilter: string; vLanguage: TLanguage); override;
+    procedure DoLoadFrom(vSource: string; vLanguage: TLanguage; vFiles: TStrings = nil); override;
   public
     class function GetName: string; override;
     class function GetTitle: string; override;
@@ -436,9 +436,9 @@ begin
   Result := TPO_Parser.Create;
 end;
 
-procedure TPODirectoryFiler.DoLoadFrom(vSource, vFilter: string; vLanguage: TLanguage);
+procedure TPODirectoryFiler.DoLoadFrom(vSource: string; vLanguage: TLanguage; vFiles: TStrings = nil);
 begin
-  DefaultLoadFrom(True, vSource, vFilter, vLanguage);
+  DefaultLoadFrom(True, vSource, vLanguage, vFiles);
   if vLanguage.Count > 0 then
   begin
     vLanguage.IsRightToLeft := vLanguage[0].IsRightToLeft;
@@ -477,9 +477,9 @@ begin
   Result := TPO_Parser.Create;
 end;
 
-procedure TPOFileFiler.DoLoadFrom(vSource, vFilter: string; vLanguage: TLanguage);
+procedure TPOFileFiler.DoLoadFrom(vSource: string; vLanguage: TLanguage; vFiles: TStrings);
 begin
-  DefaultLoadFrom(False, vSource, vFilter, vLanguage);
+  DefaultLoadFrom(False, vSource, vLanguage);
   if vLanguage.Count > 0 then
   begin
     vLanguage.IsRightToLeft := vLanguage[0].IsRightToLeft;
@@ -513,7 +513,7 @@ end;
 
 { TPODirectoryExFiler }
 
-procedure TPODirectoryExFiler.DoLoadFrom(vSource, vFilter: string; vLanguage: TLanguage);
+procedure TPODirectoryExFiler.DoLoadFrom(vSource: string; vLanguage: TLanguage; vFiles: TStrings);
 var
   aPath, aName, aFile: string;
   aStrings: TStringList;
