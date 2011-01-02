@@ -1184,28 +1184,38 @@ var
   SearchRec: TSearchRec;
   aPath: string;
   aParser: TLangParser;
-  function InFiles(FileName: string): Boolean;
-  begin
-    Result := (vFiles = nil) or (vFiles.IndexOf(FileName) >= 0);
-  end;
 begin
   with vLanguage do
   begin
     if IsDirectory then
     begin
       aPath := IncludeTrailingPathDelimiter(vSource);
+      if (vFiles <> nil) and (vFiles.Count <> 0) then
+      begin
+        try
+          for I := 0 to vFiles.Count -1 do
+          begin
+            aParser := CreateParser;
+            try
+              if FileExists(aPath + vFiles[i]) then
+                ParseLanguageFile(aPath + vFiles[i], vLanguage, aParser);
+            finally
+              aParser.Free;
+            end;
+          end;
+        finally
+        end;
+      end
+      else
       try
         I := FindFirst(aPath + '*.' + GetExtension, 0, SearchRec);
         while I = 0 do
         begin
-          if InFiles(SearchRec.Name) then
-          begin
-            aParser := CreateParser;
-            try
-              ParseLanguageFile(aPath + SearchRec.Name, vLanguage, aParser);
-            finally
-              aParser.Free;
-            end;
+          aParser := CreateParser;
+          try
+            ParseLanguageFile(aPath + SearchRec.Name, vLanguage, aParser);
+          finally
+            aParser.Free;
           end;
           I := FindNext(SearchRec);
         end;
