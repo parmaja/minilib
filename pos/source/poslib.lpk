@@ -39,7 +39,7 @@ Light controls (TposGrid, TposList, TposStuffs, TposKeyboard...)
     <License Value="MLGPL
 "/>
     <Version Major="1" Build="1"/>
-    <Files Count="10">
+    <Files Count="11">
       <Item1>
         <Filename Value="posButtons.pas"/>
         <UnitName Value="posButtons"/>
@@ -82,6 +82,10 @@ Light controls (TposGrid, TposList, TposStuffs, TposKeyboard...)
         <Filename Value="poslib.lrs"/>
         <Type Value="LRS"/>
       </Item10>
+      <Item11>
+        <Filename Value="images\TposButton.png"/>
+        <Type Value="Binary"/>
+      </Item11>
     </Files>
     <Type Value="DesignTime"/>
     <RequiredPkgs Count="1">

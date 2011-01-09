@@ -7,7 +7,7 @@ object Form1: TForm1
   ClientHeight = 362
   ClientWidth = 418
   OnCreate = FormCreate
-  LCLVersion = '0.9.29'
+  LCLVersion = '0.9.31'
   object Button1: TButton
     Left = 7
     Height = 25
@@ -37,5 +37,23 @@ object Form1: TForm1
     Caption = 'Create all'
     OnClick = Button3Click
     TabOrder = 2
+  end
+  object Button4: TButton
+    Left = 18
+    Height = 25
+    Top = 67
+    Width = 75
+    Caption = 'Draw Tabs'
+    OnClick = Button4Click
+    TabOrder = 3
+  end
+  object TestPanel: TPanel
+    Left = 10
+    Height = 42
+    Top = 17
+    Width = 395
+    Anchors = [akTop, akLeft, akRight]
+    Caption = 'TestPanel'
+    TabOrder = 4
   end
 end

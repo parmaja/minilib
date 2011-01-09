@@ -24,13 +24,16 @@ type
     Button1: TButton;
     Button2: TButton;
     Button3: TButton;
+    Button4: TButton;
     ntvPage1: TntvPage;
     ntvPage2: TntvPage;
     ntvPageControl1Page1: TntvPage;
     ntvPageControl1Page2: TntvPage;
+    TestPanel: TPanel;
     procedure Button1Click(Sender: TObject);
     procedure Button2Click(Sender: TObject);
     procedure Button3Click(Sender: TObject);
+    procedure Button4Click(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure ntvPageControl1Click(Sender: TObject);
     procedure PageControl1Change(Sender: TObject);
@@ -49,6 +52,11 @@ var
   Form1: TForm1; 
 
 implementation
+
+uses
+  ntvTabs;
+
+{$r *.lfm}
 
 { TForm1 }
 
@@ -137,7 +145,29 @@ begin
   Inc(FCount);
 end;
 
-initialization
-  {$I unit1.lrs}
+procedure TForm1.Button4Click(Sender: TObject);
+var
+  Tabs: TntvTabs;
+  aTab: TntvTabItem;
+begin
+  Tabs := TntvTabs.Create(TntvTabItem);
+  try
+    Tabs.BeginUpdate;
+    try
+      aTab := Tabs.Add;
+      aTab.Caption := 'Test' + IntToStr(aTab.Index);
+
+      aTab := Tabs.Add;
+      aTab.Caption := 'Test' + IntToStr(aTab.Index);
+    finally
+      Tabs.EndUpdate;
+    end;
+
+    Tabs.Paint(TestPanel.Canvas, TestPanel.ClientRect, []);
+  finally
+    Tabs.Free;
+  end;
+end;
+
 end.
 

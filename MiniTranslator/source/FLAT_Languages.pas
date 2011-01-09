@@ -18,7 +18,6 @@ uses
   Windows, Messages, 
   SysUtils, Variants, Classes, Contnrs, 
 
-
 implementation
 
 initialization

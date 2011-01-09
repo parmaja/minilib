@@ -15,7 +15,7 @@ interface
 uses
   Classes, Messages, Controls, SysUtils, Math, Contnrs, Graphics, Forms, StdCtrls, Types,
   LMessages, LCLType, LCLIntf, LCLProc,
-  ntvTabs, ntvUtils;
+  ntvTabs, ntvUtils, ntvThemes;
 
 const
   cHeaderHeightMargin = 1;
@@ -373,7 +373,7 @@ begin
     pt := SmallPointToPoint(Message.Pos);
     if PtInRect(GetTabsRect, pt) then
     begin
-      ht := Items.HitTest(pt, GetTabsRect, i, GetFlags);
+      ht := Items.HitTest(Canvas, pt, GetTabsRect, i, GetFlags);
       if (ht <> htNone) and (i <> Items.ItemIndex) then
       begin
         Message.Result := 1;
@@ -390,7 +390,7 @@ begin
   Result := False;
   if (Items.Visibles.Count > 0) and PtInRect(GetTabsRect, Point) then
   begin
-    ht := Items.HitTest(Point, GetTabsRect, i, GetFlags);
+    ht := Items.HitTest(Canvas, Point, GetTabsRect, i, GetFlags);
     if (ht <> htNone) then
     begin
       case ht of
@@ -692,7 +692,7 @@ function TntvCustomTabSet.GetFlags: TntvFlags;
 begin
   Result := [];
   if UseRightToLeftAlignment then
-    Result := Result + [tbfUseRightToLeft];
+    Result := Result + [tbfRightToLeft];
   if Focused then
     Result := Result + [tbfFocused];
 end;
