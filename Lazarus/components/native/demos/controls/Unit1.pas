@@ -27,6 +27,7 @@ type
     Button4: TButton;
     Button5: TButton;
     ntvPageControl1: TntvPageControl;
+    ntvTabSet1: TntvTabSet;
     Panel1: TPanel;
     Panel2: TPanel;
     TestPanel: TPanel;

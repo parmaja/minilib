@@ -261,6 +261,13 @@ end;
 procedure TntvCustomTabSet.MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 begin
   inherited;
+  //bug, http://bugs.freepascal.org/view.php?id=18458
+  if (csDesigning in ComponentState) and (Parent <> nil) then
+  begin
+    x := x - Left;
+    y := y - Top;
+  end;
+  //end bug
   if Button = mbLeft then
     LeftMouseDown(Point(x, y));
 end;
@@ -344,12 +351,16 @@ var
   ht: TntvhtTabHitTest;
 begin
   inherited;
-  //need to fix bug
-  //http://bugs.freepascal.org/view.php?id=18458
   if Items.Visibles.Count > 0 then
   begin
-    Message.Result := 1;
     pt := SmallPointToPoint(Message.Pos);
+    //bug, http://bugs.freepascal.org/view.php?id=18458
+    if (csDesigning in ComponentState) and (Parent <> nil) then
+    begin
+      pt.x := pt.x - Left;
+      pt.y := pt.y - Top;
+    end;
+    //end bug
     if PtInRect(GetTabsRect, pt) then
     begin
       ht := Items.HitTest(Canvas, pt, GetTabsRect, i, GetFlags);
