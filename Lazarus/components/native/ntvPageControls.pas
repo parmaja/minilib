@@ -21,18 +21,6 @@ type
   TntvPageControl = class;
   TntvPageItem = class;
 
-  { TntvPage }
-
-  TntvPage = class(TCustomControl)
-  private
-  protected
-  public
-    constructor Create(AOwner: TComponent); override;
-  published
-    property TabStop default False;
-    property Align default alClient;
-  end;
-
   { TntvPageItem }
 
   TntvPageItem = class(TntvTabItem)
@@ -194,17 +182,6 @@ type
     property Items[Index: Integer]: TPageWrapperItem read GetItem write SetItem; default;
   published
   end;
-
-{ TntvPage }
-
-
-constructor TntvPage.Create(AOwner: TComponent);
-begin
-  inherited Create(AOwner);
-  ControlStyle := ControlStyle + [csClickEvents, csCaptureMouse, csAcceptsControls];
-  TabStop := False;
-  Align := alClient;
-end;
 
 { TntvPageControl }
 
@@ -449,11 +426,6 @@ begin
     begin
       Caption := Format('Control [%d]', [Index]);
       Name := Format(PageControl.Name + 'Control%d', [Index]);
-      FControl := TntvPage.Create(PageControl.Owner);
-//      (FControl as TntvPage).Item := Self;
-      FControl.Name := Name;
-      FControl.Parent := PageControl;
-      FControl.Show;
     end;
   end;
 end;
@@ -713,7 +685,5 @@ begin
   end;
 end;
 
-initialization
-  RegisterClasses([TntvPage]);
 end.
 

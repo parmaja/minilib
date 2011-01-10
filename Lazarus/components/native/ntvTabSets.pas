@@ -525,7 +525,7 @@ begin
   begin
     if GetKeyState(VK_SHIFT) >= 0 then
     begin
-      //nextpage
+      //nexttab
       if ItemIndex <> Items.Visibles.Count - 1 then
         SelectTab(ItemIndex + 1)
       else
