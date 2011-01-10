@@ -9,6 +9,10 @@ unit ntvTabs;
  * @author    Belal Alhamed <belalhamed at gmail dot com>
  * @author    Zaher Dirkey <zaher at parmaja dot com>
  *}
+
+{
+  ntvTabs object to manage and draw tab controls, it is not a control, it can be used inside another controls.
+}
 interface
 
 uses
@@ -16,7 +20,8 @@ uses
   LMessages, LCLType, LCLIntf, LCLProc;
 
 const
-  cMinWidth = 10;
+  cMinTabWidth = 10;
+  cHeaderHeightMargin = 3;
   cImageMargin = 3;
 
 type
@@ -319,8 +324,8 @@ begin
       w := vCanvas.TextWidth(Items[i].Caption);
       if (Images <> nil) and (Items[I].ImageIndex > -1) then
         w := w + Images.Width - cImageMargin;
-      if w < cMinWidth then
-        w := cMinWidth;
+      if w < cMinTabWidth then
+        w := cMinTabWidth;
       Items[i].FWidth := w;
     end;
   FUpdateItems := False;
@@ -363,7 +368,7 @@ end;
 
 constructor TntvTabs.Create(AItemClass: TCollectionItemClass);
 begin
-  inherited Create(TntvTabItem);
+  inherited Create(AItemClass);
   FVisibles := TntvTabList.create(False);
   FUpdateItems := True;
 end;

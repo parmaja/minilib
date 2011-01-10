@@ -1,7 +1,7 @@
 object Form1: TForm1
-  Left = 336
+  Left = 255
   Height = 362
-  Top = 117
+  Top = 105
   Width = 418
   Caption = 'Form1'
   ClientHeight = 362
@@ -55,5 +55,62 @@ object Form1: TForm1
     Anchors = [akTop, akLeft, akRight]
     Caption = 'TestPanel'
     TabOrder = 4
+  end
+  object Button5: TButton
+    Left = 238
+    Height = 25
+    Top = 326
+    Width = 75
+    Caption = 'Button5'
+    OnClick = Button5Click
+    TabOrder = 5
+  end
+  object ntvPageControl1: TntvPageControl
+    Left = 135
+    Height = 192
+    Top = 97
+    Width = 200
+    StoreIndex = False
+    ShowButtons = False
+    Items = <    
+      item
+        Caption = 'Panel1'
+        Name = 'Panel1'
+        Enabled = False
+        AutoWidth = True
+      end    
+      item
+        Caption = 'Panel2'
+        Name = 'Panel2'
+        Enabled = False
+        AutoWidth = True
+      end>
+    Caption = 'ntvPageControl1'
+    TabOrder = 6
+    Pages = <    
+      item
+        Control = Panel1
+      end    
+      item
+        Control = Panel2
+      end>
+    object Panel2: TPanel
+      Left = 3
+      Height = 170
+      Top = 19
+      Width = 194
+      Align = alClient
+      Caption = 'Panel2'
+      TabOrder = 1
+    end
+    object Panel1: TPanel
+      Left = 3
+      Height = 170
+      Top = 19
+      Width = 194
+      Align = alClient
+      Caption = 'Panel1'
+      TabOrder = 0
+    end
   end
 end

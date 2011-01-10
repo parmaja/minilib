@@ -171,26 +171,6 @@ type
 
 implementation
 
-uses
-  WSControls, WSLCLClasses;
-
-type
-  { TntvWSPageControl }
-
-  TntvWSPageControl = class(TWSWinControl)
-  protected
-  published
-    class function GetDesignInteractive(const AWinControl: TWinControl; AClientPos: TPoint): Boolean; override;
-  end;
-
-{ TntvWSPageControl }
-
-class function TntvWSPageControl.GetDesignInteractive(
-  const AWinControl: TWinControl; AClientPos: TPoint): Boolean;
-begin
-  Result := False;
-end;
-
 type
   TPageWrapperItem = class(TCollectionItem)
   private
@@ -221,7 +201,7 @@ type
 constructor TntvPage.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
-  ControlStyle := ControlStyle + [csAcceptsControls];
+  ControlStyle := ControlStyle + [csClickEvents, csCaptureMouse, csAcceptsControls];
   TabStop := False;
   Align := alClient;
 end;
@@ -231,7 +211,7 @@ end;
 constructor TntvPageControl.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
-  ControlStyle := [csDesignInteractive, csClickEvents, csAcceptsControls, csSetCaption, csOpaque, csDoubleClicks];
+  ControlStyle := [csDesignInteractive, csCaptureMouse, csClickEvents, csAcceptsControls, csSetCaption, csOpaque, csDoubleClicks];
   FMargin := 3;
   FWrapper := TPageWrappers.Create(Self);
   //FItems := TntvPages.Create(Self);
@@ -325,10 +305,14 @@ end;
 procedure TntvPageControl.Loaded;
 var
   i: Integer;
+  aControl: TWinControl;
 begin
   for i := 0 to TPageWrappers(FWrapper).Count - 1 do
     if i < Items.Count then
-      Items[i].Control := TPageWrappers(FWrapper)[i].Control
+    begin
+      aControl := TPageWrappers(FWrapper)[i].Control;
+      Items[i].Control := aControl;
+    end
     else
       Break;
   TPageWrappers(FWrapper).Clear;
@@ -633,7 +617,7 @@ end;
 
 function TntvPages.GetItem(Index: Integer): TntvPageItem;
 begin
-  Result := (inherited GetItem(Index) as TntvPageItem);
+  Result := (inherited Items[Index] as TntvPageItem);
 end;
 
 function TntvPages.GetOwner: TPersistent;

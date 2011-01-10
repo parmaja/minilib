@@ -17,9 +17,6 @@ uses
   LMessages, LCLType, LCLIntf, LCLProc,
   ntvTabs, ntvUtils, ntvThemes;
 
-const
-  cHeaderHeightMargin = 1;
-
 type
   TntvCustomTabSet = class;
 
@@ -42,7 +39,7 @@ type
     procedure SetItemIndex(Value: Integer);
     procedure SetTopIndex(const Value: Integer);
     function GetItemIndex: Integer;
-    procedure WMGetDlgCode(var message: TWMGetDlgCode); message WM_GetDlgCode;
+    procedure WMGetDlgCode(var message: TWMGetDlgCode); message WM_GETDLGCODE;
     procedure CMFocusChanged(var Message: TMessage); message CM_FOCUSCHANGED;
     procedure CMDialogKey(var Message: TCMDialogKey); message CM_DIALOGKEY;
     procedure CMDesignHitTest(var Message: TLMMouse); message CM_DESIGNHITTEST;
@@ -196,32 +193,12 @@ type
 
 implementation
 
-uses
-  WSControls, WSLCLClasses;
-
-type
-  { TntvWSPageControl }
-
-  TntvWSPageControl = class(TWSWinControl)
-  protected
-  published
-    class function GetDesignInteractive(const AWinControl: TWinControl; AClientPos: TPoint): Boolean; override;
-  end;
-
-{ TntvWSPageControl }
-
-class function TntvWSPageControl.GetDesignInteractive(
-  const AWinControl: TWinControl; AClientPos: TPoint): Boolean;
-begin
-  Result := False;
-end;
-
-{ TntvCustomTabSet }
+  { TntvCustomTabSet }
 
 constructor TntvCustomTabSet.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
-  ControlStyle := [csDesignInteractive, csClickEvents, csAcceptsControls, csSetCaption, csOpaque, csDoubleClicks];
+  ControlStyle := [csDesignInteractive, csCaptureMouse, csClickEvents, csAcceptsControls, csSetCaption, csOpaque, csDoubleClicks];
   FItems := CreateTabs;
   Items.ItemIndex := -1;
   Items.TopIndex := 0;
@@ -281,8 +258,7 @@ begin
   end;
 end;
 
-procedure TntvCustomTabSet.MouseDown(Button: TMouseButton;
-  Shift: TShiftState; X, Y: Integer);
+procedure TntvCustomTabSet.MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 begin
   inherited;
   if Button = mbLeft then
@@ -368,8 +344,11 @@ var
   ht: TntvhtTabHitTest;
 begin
   inherited;
+  //need to fix bug
+  //http://bugs.freepascal.org/view.php?id=18458
   if Items.Visibles.Count > 0 then
   begin
+    Message.Result := 1;
     pt := SmallPointToPoint(Message.Pos);
     if PtInRect(GetTabsRect, pt) then
     begin
@@ -647,7 +626,7 @@ end;
 procedure TntvCustomTabSet.WMGetDlgCode(var message: TWMGetDlgCode);
 begin
   inherited;
-  message.Result := message.Result or DLGC_WANTARROWS; //or DLGC_WANTTAB or DLGC_WANTMESSAGE or DLGC_WANTALLKEYS;
+  message.Result := message.Result or DLGC_WANTARROWS;
 end;
 
 procedure TntvCustomTabSet.KeyDown(var Key: Word; Shift: TShiftState);
@@ -702,6 +681,5 @@ begin
   Result := TntvTabs.Create(TntvTabItem);
 end;
 
-initialization
 end.
 

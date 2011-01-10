@@ -25,15 +25,20 @@ type
     Button2: TButton;
     Button3: TButton;
     Button4: TButton;
+    Button5: TButton;
     ntvPage1: TntvPage;
     ntvPage2: TntvPage;
+    ntvPageControl1: TntvPageControl;
     ntvPageControl1Page1: TntvPage;
     ntvPageControl1Page2: TntvPage;
+    Panel1: TPanel;
+    Panel2: TPanel;
     TestPanel: TPanel;
     procedure Button1Click(Sender: TObject);
     procedure Button2Click(Sender: TObject);
     procedure Button3Click(Sender: TObject);
     procedure Button4Click(Sender: TObject);
+    procedure Button5Click(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure ntvPageControl1Click(Sender: TObject);
     procedure PageControl1Change(Sender: TObject);
@@ -77,6 +82,7 @@ begin
     FPageControl := TntvPageControl.Create(Self);
     FPageControl.Left := 50;
     FPageControl.Top := 50;
+    //FPageControl.HeaderHeight := 30;
     FPageControl.Parent := Self;
     FPageControl.Visible := True;
     FPageControl.ShowTabs := True;
@@ -167,6 +173,11 @@ begin
   finally
     Tabs.Free;
   end;
+end;
+
+procedure TForm1.Button5Click(Sender: TObject);
+begin
+  FreeAndNil(FPageControl);
 end;
 
 end.
