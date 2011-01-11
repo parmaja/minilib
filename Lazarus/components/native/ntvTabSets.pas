@@ -236,7 +236,18 @@ begin
     Font.Assign(Self.Font);
     if not ShowTabs or (Items.Visibles.Count = 0) then
     begin
-
+      if (csDesigning in ComponentState) and (Items.Visibles.Count = 0) then
+      begin
+        Pen.Style := psSolid;
+        Pen.Color := clDkGray;
+        aTabsRect := GetClientRect;
+        MoveTo(R.Left, aTabsRect.Bottom);
+        LineTo(ClientRect.Left, aTabsRect.Bottom);
+        LineTo(ClientRect.Left, ClientRect.Bottom - 1);
+        LineTo(ClientRect.Right -1 , ClientRect.Bottom - 1);
+        LineTo(ClientRect.Right - 1, aTabsRect.Bottom);
+        LineTo(R.Right - 1, aTabsRect.Bottom);
+      end
     end
     else
     begin

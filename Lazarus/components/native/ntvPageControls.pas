@@ -25,8 +25,8 @@ type
 
   TntvPageItem = class(TntvTabItem)
   private
-    FControl: TWinControl;
-    procedure SetControl(const Value: TWinControl);
+    FControl: TControl;
+    procedure SetControl(const Value: TControl);
     function GetPageControl: TntvPageControl;
     procedure SetVisible(const Value: Boolean);
   protected
@@ -36,8 +36,8 @@ type
     destructor Destroy; override;
     procedure Assign(Source: TPersistent); override;
     property PageControl: TntvPageControl read GetPageControl;
-    property Control: TWinControl read FControl write SetControl;
   published
+    property Control: TControl read FControl write SetControl;
   end;
 
   TntvPageItemClass = class of TntvPageItem;
@@ -58,10 +58,10 @@ type
     destructor Destroy; override;
     function GetOwner: TPersistent; override;
     function Add: TntvPageItem;
-    function FindControl(vControl: TWinControl): TntvPageItem;
-    function IndexOf(vControl: TWinControl): Integer;
-    function AddControl(vControl: TWinControl): TntvPageItem;
-    function ExtractControl(vControl: TWinControl): TWinControl;
+    function FindControl(vControl: TControl): TntvPageItem;
+    function IndexOf(vControl: TControl): Integer;
+    function AddControl(vControl: TControl): TntvPageItem;
+    function ExtractControl(vControl: TControl): TControl;
     property Items[Index: Integer]: TntvPageItem read GetItem write SetItem stored False; default;
   published
   end;
@@ -70,20 +70,15 @@ type
 
   TntvPageControl = class(TntvCustomTabSet)
   private
-    FWrapper: TObject;
     FMargin: Integer;
-    procedure ReadWrapper(Reader: TReader);
-    procedure WriteWrapper(Writer: TWriter);
     procedure CMControlChange(var Message: TCMControlChange); message CM_CONTROLCHANGE;
-
     procedure SetMargin(const Value: Integer);
-    procedure SetActiveControl(const Value: TWinControl);
-    function GetActiveControl: TWinControl;
+    procedure SetActiveControl(const Value: TControl);
+    function GetActiveControl: TControl;
     function GetItems: TntvPages;
     procedure SetItems(Value: TntvPages);
-    function GetPageItem(vControl: TWinControl): TntvPageItem;
+    function GetPageItem(vControl: TControl): TntvPageItem;
   protected
-    procedure DefineProperties(Filer: TFiler); override;
     procedure Notification(AComponent: TComponent; Operation: TOperation); override;
     procedure CreateParams(var Params: TCreateParams); override;
     function CreateTabs: TntvTabs; override;
@@ -93,7 +88,7 @@ type
     function GetInnerRect: TRect; virtual;
     function GetPageRect: TRect; virtual;
 
-    procedure BringControl(vControl: TWinControl; vSetFocus: Boolean);
+    procedure BringControl(vControl: TControl; vSetFocus: Boolean);
 
     procedure Loaded; override;
     procedure DoTabShow(Index: Integer; vSetfocus: Boolean); override;
@@ -102,8 +97,8 @@ type
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
-    property ActiveControl: TWinControl read GetActiveControl write SetActiveControl;
-    property PageItem[Control: TWinControl]: TntvPageItem read GetPageItem;
+    property ActiveControl: TControl read GetActiveControl write SetActiveControl;
+    property PageItem[Control: TControl]: TntvPageItem read GetPageItem;
   published
     property Margin: Integer read FMargin write SetMargin default 3;
     property StoreIndex;
@@ -159,30 +154,6 @@ type
 
 implementation
 
-type
-  TPageWrapperItem = class(TCollectionItem)
-  private
-    FControl: TWinControl;
-  public
-    constructor Create(vCollection: TCollection); override;
-    destructor Destroy; override;
-  published
-    property Control: TWinControl read FControl write FControl;
-  end;
-
-  TPageWrappers = class(TCollection)
-  private
-    FPageControl: TntvPageControl;
-  protected
-    function GetItem(Index: Integer): TPageWrapperItem;
-    procedure SetItem(Index: Integer; Value: TPageWrapperItem);
-  public
-    constructor Create(APageControl: TntvPageControl);
-    function Add: TPageWrapperItem;
-    property Items[Index: Integer]: TPageWrapperItem read GetItem write SetItem; default;
-  published
-  end;
-
 { TntvPageControl }
 
 constructor TntvPageControl.Create(AOwner: TComponent);
@@ -190,14 +161,11 @@ begin
   inherited Create(AOwner);
   ControlStyle := [csDesignInteractive, csCaptureMouse, csClickEvents, csAcceptsControls, csSetCaption, csOpaque, csDoubleClicks];
   FMargin := 3;
-  FWrapper := TPageWrappers.Create(Self);
-  //FItems := TntvPages.Create(Self);
   SetInitialBounds(0, 0, GetControlClassDefaultSize.cx, GetControlClassDefaultSize.cy);
 end;
 
 destructor TntvPageControl.Destroy;
 begin
-  FreeAndNil(FWrapper);
   inherited Destroy;
 end;
 
@@ -220,9 +188,9 @@ procedure TntvPageControl.ShowControl(AControl: TControl);
 var
   i: Integer;
 begin
-  if (AControl <> nil) and (AControl is TWinControl) then
+  if (AControl <> nil) and (AControl is TControl) then
   begin
-    i := Items.IndexOf(AControl as TWinControl);
+    i := Items.IndexOf(AControl as TControl);
     if i >=0 then
     begin
       SelectTab(I);
@@ -238,7 +206,7 @@ begin
   inherited;
 end;
 
-procedure TntvPageControl.BringControl(vControl: TWinControl; vSetFocus: Boolean);
+procedure TntvPageControl.BringControl(vControl: TControl; vSetFocus: Boolean);
 var
   ParentForm: TCustomForm;
   aList: TFPList;
@@ -250,23 +218,23 @@ begin
       BringToFront;
       Visible := True;
       Align := alClient;
-      if not (csLoading in ComponentState) and (vSetFocus) and (not Self.Focused) then
+      if not (csLoading in ComponentState) and (vSetFocus) and (not Self.Focused) and (vControl is TWinControl) then
       begin
         ParentForm := GetParentForm(Self);
         if ParentForm <> nil then
         begin
-          if TabStop and (vControl.CanFocus) then
-            ParentForm.ActiveControl := vControl
+          if TabStop and ((vControl as TWinControl).CanFocus) then
+            ParentForm.ActiveControl := vControl as TWinControl
           else
-          begin
+          begin if ((vControl as TWinControl).CanFocus) then
             aList := TFPList.Create;
             try
-              vControl.GetTabOrderList(aList);
+              (vControl as TWinControl).GetTabOrderList(aList);
               for i := 0 to aList.Count - 1 do
               begin
-                if TWinControl(aList[i]).CanFocus and TWinControl(aList[i]).TabStop then
+                if (TControl(aList[i]) as TWinControl).CanFocus and (TControl(aList[i]) as TWinControl).TabStop then
                 begin
-                  ParentForm.ActiveControl := TWinControl(aList[i]);
+                  ParentForm.ActiveControl := TControl(aList[i]) as TWinControl;
                   break;
                 end;
               end;
@@ -280,20 +248,8 @@ begin
 end;
 
 procedure TntvPageControl.Loaded;
-var
-  i: Integer;
-  aControl: TWinControl;
 begin
-  for i := 0 to TPageWrappers(FWrapper).Count - 1 do
-    if i < Items.Count then
-    begin
-      aControl := TPageWrappers(FWrapper)[i].Control;
-      Items[i].Control := aControl;
-    end
-    else
-      Break;
-  TPageWrappers(FWrapper).Clear;
-  inherited;//zaher look
+  inherited;
 end;
 
 procedure TntvPageControl.DoTabShow(Index: Integer; vSetfocus: Boolean);
@@ -325,10 +281,10 @@ procedure TntvPageControl.Notification(AComponent: TComponent;
   Operation: TOperation);
 begin
   inherited;
-  if (Operation = opRemove) and (AComponent <> Self) and (AComponent.Owner <> Self)
-    and (AComponent is TWinControl) and (Items.FindControl((AComponent as TWinControl)) <> nil) then
+  if (Operation = opRemove) and (AComponent <> Self)
+    and (Items.FindControl((AComponent as TControl)) <> nil) then
   begin
-    Items.ExtractControl(AComponent as TWinControl);
+    Items.ExtractControl(AComponent as TControl);
   end;
 end;
 
@@ -338,36 +294,13 @@ begin
   with Message do
   begin
     if not (csLoading in ComponentState) then
-      if Inserting and (Control is TWinControl) then
+      if Inserting and (Control is TControl) then
       begin
-        Items.AddControl(Control as TWinControl);
-        ShowControl(Control as TWinControl);
+        Items.AddControl(Control as TControl);
+        ShowControl(Control as TControl);
         Result := 1;
       end
   end;
-end;
-
-procedure TntvPageControl.DefineProperties(Filer: TFiler);
-begin
-  Filer.DefineProperty('Pages', @ReadWrapper, @WriteWrapper, True);
-end;
-
-procedure TntvPageControl.ReadWrapper(Reader: TReader);
-begin
-  TPageWrappers(FWrapper).Clear;
-  Reader.ReadValue;
-  Reader.ReadCollection(TPageWrappers(FWrapper));
-end;
-
-procedure TntvPageControl.WriteWrapper(Writer: TWriter);
-var
-  i: Integer;
-begin
-  (FWrapper as TPageWrappers).Clear;
-  for i := 0 to Items.Count - 1 do
-    with (FWrapper as TPageWrappers).Add do
-      Control := Items[i].Control;
-  Writer.WriteCollection((FWrapper as TPageWrappers));
 end;
 
 procedure TntvPageControl.SetMargin(const Value: Integer);
@@ -387,7 +320,7 @@ begin
   InflateRect(Result, -FMargin, -FMargin);
 end;
 
-procedure TntvPageControl.SetActiveControl(const Value: TWinControl);
+procedure TntvPageControl.SetActiveControl(const Value: TControl);
 var
   i: Integer;
 begin
@@ -401,7 +334,7 @@ begin
   end;
 end;
 
-function TntvPageControl.GetActiveControl: TWinControl;
+function TntvPageControl.GetActiveControl: TControl;
 begin
   if (ItemIndex >= 0) and (ItemIndex < Items.Visibles.Count) then
     Result := (Items.Visibles[ItemIndex] as TntvPageItem).Control
@@ -424,8 +357,8 @@ begin
   begin
     if not (csLoading in PageControl.ComponentState) then
     begin
-      Caption := Format('Control [%d]', [Index]);
-      Name := Format(PageControl.Name + 'Control%d', [Index]);
+      Name := Format(PageControl.Name + '_Item%d', [Index]);
+      Caption := Name;
     end;
   end;
 end;
@@ -444,7 +377,7 @@ begin
 end;
 
 
-procedure TntvPageItem.SetControl(const Value: TWinControl);
+procedure TntvPageItem.SetControl(const Value: TControl);
 begin
   if (FControl <> Value) then
   begin
@@ -454,7 +387,7 @@ begin
   end;
 end;
 
-function TntvPageControl.GetPageItem(vControl: TWinControl): TntvPageItem;
+function TntvPageControl.GetPageItem(vControl: TControl): TntvPageItem;
 var
   i: Integer;
 begin
@@ -491,10 +424,7 @@ begin
   Result := TntvPageItem(inherited Add);
 end;
 
-function TntvPages.AddControl(vControl: TWinControl): TntvPageItem;
-var
-  Buffer: PChar;
-  Size: Byte;
+function TntvPages.AddControl(vControl: TControl): TntvPageItem;
 begin
   if vControl <> nil then
   begin
@@ -505,20 +435,13 @@ begin
       begin
         Control := vControl;
         Name := Control.Name;
-        Size := Control.GetTextLen;
-        Inc(Size);
-        GetMem(Buffer, Size);
-        try
-          Control.GetTextBuf(Buffer, Size);
-          Caption := StrPas(Buffer);
-        finally
-          FreeMem(Buffer, Size);
-        end;
-        Control.Parent := FPageControl;
+        Caption := Name;
+        //Control.Parent := FPageControl;
         //LclType.SetParent(Control.Handle, FPageControl.Handle);
         Control.FreeNotification(FPageControl);
         Collection := Self; //Add to Pages list
-        Control.Align := alClient;
+        if Control is TWinControl then
+          Control.Align := alClient;
         if not (csDesigning in Control.ComponentState) then
           Control.Show
       end;
@@ -555,9 +478,10 @@ begin
   inherited;
 end;
 
-function TntvPages.ExtractControl(vControl: TWinControl): TWinControl;
+function TntvPages.ExtractControl(vControl: TControl): TControl;
 var
   i: Integer;
+  c: Integer;
 begin
   Result := nil;
   for i := 0 to Count - 1 do
@@ -568,13 +492,16 @@ begin
       Delete(i);
       if not (csDestroying in FPageControl.ComponentState) then
       begin
-        FPageControl.ShowTab(i - 1)
+        c := i;
+        if c > 0 then
+          c := c - 1;
+        FPageControl.ShowTab(c);
       end;
       Break;
     end;
 end;
 
-function TntvPages.FindControl(vControl: TWinControl): TntvPageItem;
+function TntvPages.FindControl(vControl: TControl): TntvPageItem;
 var
   i: Integer;
 begin
@@ -607,48 +534,11 @@ begin
   inherited;
 end;
 
-{ TPageWrappers }
-
-function TPageWrappers.Add: TPageWrapperItem;
-begin
-  Result := TPageWrapperItem(inherited Add);
-end;
-
-constructor TPageWrappers.Create(APageControl: TntvPageControl);
-begin
-  inherited Create(TPageWrapperItem);
-  FPageControl := APageControl;
-end;
-
-function TPageWrappers.GetItem(Index: Integer): TPageWrapperItem;
-begin
-  Result := TPageWrapperItem(inherited GetItem(Index));
-end;
-
-procedure TPageWrappers.SetItem(Index: Integer; Value: TPageWrapperItem);
-begin
-  inherited SetItem(Index, Value);
-end;
-
-{ TPageWrapperItem }
-
-constructor TPageWrapperItem.Create(vCollection: TCollection);
-begin
-  inherited;
-
-end;
-
-destructor TPageWrapperItem.Destroy;
-begin
-  FControl := nil;
-  inherited;
-end;
-
 procedure TntvPageItem.SetVisible(const Value: Boolean);
 begin
 end;
 
-function TntvPages.IndexOf(vControl: TWinControl): Integer;
+function TntvPages.IndexOf(vControl: TControl): Integer;
 var
   i: Integer;
 begin

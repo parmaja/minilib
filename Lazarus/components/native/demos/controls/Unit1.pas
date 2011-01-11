@@ -16,7 +16,7 @@ interface
 uses
   LResources, Forms, Classes, SysUtils, ComCtrls, StdCtrls, ntvPageControls, ntvTabSets, LMessages,
   ntvRegCtrls,
-  LCLType, Controls, ExtCtrls;
+  LCLType, Controls, ExtCtrls, ExtendedNotebook, DividerBevel;
 
 type
   { TForm1 }
@@ -27,7 +27,9 @@ type
     Button3: TButton;
     Button4: TButton;
     Button5: TButton;
-    Memo1: TMemo;
+    Edit1: TEdit;
+    Edit2: TEdit;
+    Image1: TImage;
     ntvPageControl1: TntvPageControl;
     ntvTabSet1: TntvTabSet;
     Panel1: TPanel;
