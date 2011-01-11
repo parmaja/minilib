@@ -14,7 +14,7 @@ interface
 
 uses
   Classes, Messages, Controls, SysUtils, Math, Contnrs, Graphics, Forms, StdCtrls, Types,
-  LMessages, LCLType, LCLIntf, LCLProc,
+  LMessages, LCLType, LCLIntf, LCLProc, //Dialogs,
   ntvTabs, ntvUtils, ntvThemes;
 
 type
@@ -246,7 +246,7 @@ begin
         aTabsRect := GetTabsRect;
         Items.GetTabRect(aTabsRect, ItemIndex, R, GetFlags);
         Pen.Style := psSolid;
-        Pen.Color := clRed;
+        Pen.Color := clDkGray;
         MoveTo(R.Left, aTabsRect.Bottom);
         LineTo(ClientRect.Left, aTabsRect.Bottom);
         LineTo(ClientRect.Left, ClientRect.Bottom - 1);
@@ -262,11 +262,8 @@ procedure TntvCustomTabSet.MouseDown(Button: TMouseButton; Shift: TShiftState; X
 begin
   inherited;
   //bug, http://bugs.freepascal.org/view.php?id=18458
-  if (csDesigning in ComponentState) and (Parent <> nil) then
-  begin
-    x := x - Left;
-    y := y - Top;
-  end;
+  if (csDesigning in ComponentState) then
+    MapPoint(GetParentForm(Self), Self, X, Y);
   //end bug
   if Button = mbLeft then
     LeftMouseDown(Point(x, y));
@@ -355,11 +352,9 @@ begin
   begin
     pt := SmallPointToPoint(Message.Pos);
     //bug, http://bugs.freepascal.org/view.php?id=18458
-    if (csDesigning in ComponentState) and (Parent <> nil) then
-    begin
-      pt.x := pt.x - Left;
-      pt.y := pt.y - Top;
-    end;
+    if (csDesigning in ComponentState) then
+      pt := MapPoint(GetParentForm(Self), Self, pt);
+    //ShowMessage(IntToStr(pt.x)+', ' + IntToStr(pt.y));
     //end bug
     if PtInRect(GetTabsRect, pt) then
     begin

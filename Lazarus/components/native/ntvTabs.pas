@@ -587,7 +587,7 @@ begin
     TextRect(aTextRect, 0, 0, vItem.Caption, aTextStyle);
 
     Pen.Style := psSolid;
-    Pen.Color := clBlack;
+    Pen.Color := clDkGray;
     MoveTo(vRect.Right, vRect.Bottom);
     LineTo(vRect.Right, vRect.Top);
     if (tdsFirst in State) then

@@ -16,53 +16,21 @@ uses
   Dialogs, Classes, Messages, Controls, ExtCtrls, SysUtils, Math, Contnrs, Graphics,
   LCLType, Forms, LCLIntf;
 
-procedure ExcludeRect (Canvas: TCanvas; Rect: TRect);
+procedure ExcludeClipRect(Canvas: TCanvas; Rect: TRect);
 function WidthOf(R: TRect): Integer;
 function HeightOf(R: TRect): Integer;
 
-function MixColors(C1, C2: TColor; W1: Integer): TColor;
-procedure ntvMapWindowRect(vFrom, vTo: THandle; var R: TRect);
+function MapPoint(vFrom, vTo: TControl; vPoint: TPoint): TPoint;
+procedure MapPoint(vFrom, vTo: TControl; var X, Y: Integer);
 
 implementation
 
 uses
   Types;
 
-procedure ntvMapWindowRect(vFrom, vTo: THandle; var R: TRect);
-var
-  tl, br: TPoint;
+procedure ExcludeClipRect(Canvas: TCanvas; Rect: TRect);
 begin
-  tl := R.TopLeft;
-  br := R.BottomRight;
-  ClientToScreen(vFrom, tl);
-  ClientToScreen(vFrom, br);
-  ScreenToClient(vTo, tl);
-  ScreenToClient(vTo, br);
-
-  R.TopLeft := tl;
-  R.BottomRight := br;
-end;
-
-function MixColors(C1, C2: TColor; W1: Integer): TColor;
-var
-  W2: Cardinal;
-begin
-  Assert(W1 in [0..255]);
-  W2 := W1 xor 255;
-  if Integer(C1) < 0 then
-    C1 := GetSysColor(C1 and $000000FF);
-  if Integer(C2) < 0 then
-    C2 := GetSysColor(C2 and $000000FF);
-  Result := Integer(
-    ((Cardinal(C1) and $FF00FF) * Cardinal(W1) +
-    (Cardinal(C2) and $FF00FF) * W2) and $FF00FF00 +
-    ((Cardinal(C1) and $00FF00) * Cardinal(W1) +
-    (Cardinal(C2) and $00FF00) * W2) and $00FF0000) shr 8;
-end;
-
-procedure ExcludeRect (Canvas: TCanvas; Rect: TRect);
-begin
-  ExcludeClipRect(Canvas.Handle, Rect.Left, Rect.Top, Rect.Right, Rect.Bottom);
+  LCLIntf.ExcludeClipRect(Canvas.Handle, Rect.Left, Rect.Top, Rect.Right, Rect.Bottom);
 end;
 
 function WidthOf(R: TRect): Integer;
@@ -73,6 +41,30 @@ end;
 function HeightOf(R: TRect): Integer;
 begin
   Result := R.Bottom - R.Top;
+end;
+
+function MapPoint(vFrom, vTo: TControl; vPoint: TPoint): TPoint;
+var
+  o1, o2: TPoint;
+begin
+  if vTo = nil then
+    Result := vPoint
+  else
+  begin
+    o1 := vFrom.ClientOrigin;
+    o2 := vTo.ClientOrigin;
+    Result.X := vPoint.X + (o1.X - o2.X);
+    Result.Y := vPoint.Y + (o1.Y - o2.Y);
+  end;
+end;
+
+procedure MapPoint(vFrom, vTo: TControl; var X, Y: Integer);
+var
+  p: TPoint;
+begin
+  p := MapPoint(vFrom, vTo, Point(X,Y));
+  X := p.x;
+  Y := p.y;
 end;
 
 end.

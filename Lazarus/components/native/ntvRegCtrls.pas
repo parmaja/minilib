@@ -31,7 +31,7 @@ implementation
 procedure Register;
 begin
   RegisterComponents('Native', [TDotMatrix, TTextDotMatrix, TntvProgressBar, TntvTabSet, TntvPageControl]);
-  RegisterComponentEditor(TntvTabSet, TntvTabSetEditor);
+  RegisterComponentEditor(TntvCustomTabSet, TntvTabSetEditor);
 end;
 
 { TntvTabSetEditor }
@@ -45,15 +45,15 @@ end;
 
 procedure TntvTabSetEditor.Edit;
 begin
-  EditCollection(Component, (Component as TntvTabSet).Items, 'Items');
+  EditCollection(Component, (Component as TntvCustomTabSet).Items, 'Items');
 end;
 
 procedure TntvTabSetEditor.ExecuteVerb(Index: Integer);
 begin
   case Index of
     0: Edit;
-    1: (Component as TntvTabSet).Next;
-    2: (Component as TntvTabSet).Prior;
+    1: (Component as TntvCustomTabSet).Next;
+    2: (Component as TntvCustomTabSet).Prior;
   end;
 end;
 

@@ -1,8 +1,9 @@
 object Form1: TForm1
-  Left = 255
+  Left = 394
   Height = 362
-  Top = 105
+  Top = 169
   Width = 418
+  ActiveControl = Memo1
   Caption = 'Form1'
   ClientHeight = 362
   ClientWidth = 418
@@ -29,9 +30,9 @@ object Form1: TForm1
     TabOrder = 1
   end
   object Button3: TButton
-    Left = 336
+    Left = 326
     Height = 25
-    Top = 330
+    Top = 326
     Width = 75
     Anchors = [akLeft, akBottom]
     Caption = 'Create all'
@@ -48,10 +49,10 @@ object Form1: TForm1
     TabOrder = 3
   end
   object TestPanel: TPanel
-    Left = 10
+    Left = 20
     Height = 42
-    Top = 17
-    Width = 395
+    Top = 20
+    Width = 314
     Anchors = [akTop, akLeft, akRight]
     Caption = 'TestPanel'
     TabOrder = 4
@@ -66,9 +67,9 @@ object Form1: TForm1
     TabOrder = 5
   end
   object ntvPageControl1: TntvPageControl
-    Left = 124
-    Height = 192
-    Top = 107
+    Left = 176
+    Height = 119
+    Top = 105
     Width = 200
     StoreIndex = False
     ShowButtons = False
@@ -80,8 +81,8 @@ object Form1: TForm1
         AutoWidth = True
       end    
       item
-        Caption = 'Panel2'
-        Name = 'Panel2'
+        Caption = 'Test'
+        Name = 'Memo1'
         Enabled = False
         AutoWidth = True
       end>
@@ -92,25 +93,35 @@ object Form1: TForm1
         Control = Panel1
       end    
       item
-        Control = Panel2
+        Control = Memo1
       end>
-    object Panel2: TPanel
+    object Memo1: TMemo
       Left = 3
-      Height = 170
+      Height = 97
       Top = 19
       Width = 194
       Align = alClient
-      Caption = 'Panel2'
+      Lines.Strings = (
+        'Memo1'
+      )
       TabOrder = 1
     end
     object Panel1: TPanel
       Left = 3
-      Height = 170
+      Height = 97
       Top = 19
       Width = 194
       Align = alClient
       Caption = 'Panel1'
       TabOrder = 0
     end
+  end
+  object Panel2: TPanel
+    Left = 16
+    Height = 132
+    Top = 178
+    Width = 250
+    Caption = 'Panel2'
+    TabOrder = 7
   end
 end

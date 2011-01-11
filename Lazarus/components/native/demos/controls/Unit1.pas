@@ -15,6 +15,7 @@ interface
 
 uses
   LResources, Forms, Classes, SysUtils, ComCtrls, StdCtrls, ntvPageControls, ntvTabSets, LMessages,
+  ntvRegCtrls,
   LCLType, Controls, ExtCtrls;
 
 type
@@ -26,6 +27,7 @@ type
     Button3: TButton;
     Button4: TButton;
     Button5: TButton;
+    Memo1: TMemo;
     ntvPageControl1: TntvPageControl;
     ntvTabSet1: TntvTabSet;
     Panel1: TPanel;
@@ -38,6 +40,7 @@ type
     procedure Button5Click(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure ntvPageControl1Click(Sender: TObject);
+    procedure ntvPageControl2Click(Sender: TObject);
     procedure PageControl1Change(Sender: TObject);
   private
     FCount: Integer;
@@ -56,13 +59,18 @@ var
 implementation
 
 uses
-  ntvTabs;
+  ntvTabs, ntvUtils;
 
 {$r *.lfm}
 
 { TForm1 }
 
 procedure TForm1.ntvPageControl1Click(Sender: TObject);
+begin
+
+end;
+
+procedure TForm1.ntvPageControl2Click(Sender: TObject);
 begin
 
 end;

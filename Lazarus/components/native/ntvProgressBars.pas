@@ -198,7 +198,7 @@ begin
       Brush.Color := SubProgressColor;
       aRect := SubRect;
       FillRect(aRect);
-      ExcludeRect (Canvas, aRect);
+      ExcludeClipRect(Canvas, aRect);
     end;
 
     if (psMain in FPaintStatus)or(psAll in FPaintStatus) then
