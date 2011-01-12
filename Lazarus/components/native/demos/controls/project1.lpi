@@ -42,7 +42,7 @@
         <PackageName Value="LCL"/>
       </Item3>
     </RequiredPackages>
-    <Units Count="146">
+    <Units Count="148">
       <Unit0>
         <Filename Value="project1.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -50,7 +50,7 @@
         <WindowIndex Value="0"/>
         <TopLine Value="1"/>
         <CursorPos X="1" Y="1"/>
-        <UsageCount Value="119"/>
+        <UsageCount Value="121"/>
       </Unit0>
       <Unit1>
         <Filename Value="Unit1.pas"/>
@@ -58,11 +58,12 @@
         <ComponentName Value="Form1"/>
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="Unit1"/>
-        <EditorIndex Value="5"/>
+        <IsVisibleTab Value="True"/>
+        <EditorIndex Value="0"/>
         <WindowIndex Value="0"/>
-        <TopLine Value="27"/>
-        <CursorPos X="1" Y="43"/>
-        <UsageCount Value="119"/>
+        <TopLine Value="1"/>
+        <CursorPos X="42" Y="7"/>
+        <UsageCount Value="121"/>
         <Loaded Value="True"/>
         <LoadedDesigner Value="True"/>
       </Unit1>
@@ -76,12 +77,10 @@
       <Unit3>
         <Filename Value="..\..\ntvUtils.pas"/>
         <UnitName Value="ntvUtils"/>
-        <EditorIndex Value="2"/>
         <WindowIndex Value="0"/>
-        <TopLine Value="29"/>
-        <CursorPos X="3" Y="47"/>
-        <UsageCount Value="13"/>
-        <Loaded Value="True"/>
+        <TopLine Value="1"/>
+        <CursorPos X="1" Y="1"/>
+        <UsageCount Value="14"/>
       </Unit3>
       <Unit4>
         <Filename Value="..\..\ntvRegCtrls.pas"/>
@@ -94,12 +93,14 @@
       <Unit5>
         <Filename Value="..\..\ntvPageControls.pas"/>
         <UnitName Value="ntvPageControls"/>
-        <IsVisibleTab Value="True"/>
-        <EditorIndex Value="6"/>
+        <EditorIndex Value="1"/>
         <WindowIndex Value="0"/>
-        <TopLine Value="294"/>
-        <CursorPos X="22" Y="327"/>
-        <UsageCount Value="44"/>
+        <TopLine Value="425"/>
+        <CursorPos X="37" Y="445"/>
+        <UsageCount Value="45"/>
+        <Bookmarks Count="1">
+          <Item0 X="7" Y="221" ID="1"/>
+        </Bookmarks>
         <Loaded Value="True"/>
       </Unit5>
       <Unit6>
@@ -112,12 +113,10 @@
       <Unit7>
         <Filename Value="..\..\ntvProgressBars.pas"/>
         <UnitName Value="ntvProgressBars"/>
-        <EditorIndex Value="3"/>
         <WindowIndex Value="0"/>
         <TopLine Value="180"/>
         <CursorPos X="30" Y="188"/>
-        <UsageCount Value="13"/>
-        <Loaded Value="True"/>
+        <UsageCount Value="14"/>
       </Unit7>
       <Unit8>
         <Filename Value="..\..\ntvDotMatrix.pas"/>
@@ -171,8 +170,8 @@
       <Unit15>
         <Filename Value="W:\programs\lazarus\lcl\include\winapih.inc"/>
         <WindowIndex Value="0"/>
-        <TopLine Value="92"/>
-        <CursorPos X="10" Y="102"/>
+        <TopLine Value="316"/>
+        <CursorPos X="19" Y="346"/>
         <UsageCount Value="14"/>
       </Unit15>
       <Unit16>
@@ -185,21 +184,20 @@
       <Unit17>
         <Filename Value="W:\programs\lazarus\lcl\controls.pp"/>
         <UnitName Value="Controls"/>
-        <EditorIndex Value="8"/>
         <WindowIndex Value="0"/>
-        <TopLine Value="1145"/>
-        <CursorPos X="15" Y="1166"/>
-        <UsageCount Value="21"/>
-        <Loaded Value="True"/>
+        <TopLine Value="3858"/>
+        <CursorPos X="5" Y="3880"/>
+        <UsageCount Value="22"/>
       </Unit17>
       <Unit18>
         <Filename Value="W:\programs\lazarus\lcl\include\control.inc"/>
-        <EditorIndex Value="9"/>
         <WindowIndex Value="0"/>
-        <TopLine Value="3156"/>
-        <CursorPos X="3" Y="3161"/>
-        <UsageCount Value="14"/>
-        <Loaded Value="True"/>
+        <TopLine Value="1148"/>
+        <CursorPos X="1" Y="1162"/>
+        <UsageCount Value="15"/>
+        <Bookmarks Count="1">
+          <Item0 X="1" Y="425" ID="2"/>
+        </Bookmarks>
       </Unit18>
       <Unit19>
         <Filename Value="W:\programs\lazarus\lcl\include\docktree.inc"/>
@@ -474,9 +472,9 @@
         <Filename Value="W:\programs\lazarus\lcl\lmessages.pp"/>
         <UnitName Value="LMessages"/>
         <WindowIndex Value="0"/>
-        <TopLine Value="232"/>
-        <CursorPos X="3" Y="242"/>
-        <UsageCount Value="12"/>
+        <TopLine Value="1"/>
+        <CursorPos X="1" Y="1"/>
+        <UsageCount Value="13"/>
       </Unit57>
       <Unit58>
         <Filename Value="W:\programs\lazarus\lcl\widgetset\wscalendar.pp"/>
@@ -605,6 +603,9 @@
         <TopLine Value="1"/>
         <CursorPos X="1" Y="1"/>
         <UsageCount Value="16"/>
+        <Bookmarks Count="1">
+          <Item0 X="37" Y="1781" ID="1"/>
+        </Bookmarks>
       </Unit74>
       <Unit75>
         <Filename Value="W:\programs\lazarus\ideintf\componenteditors.pas"/>
@@ -617,12 +618,10 @@
       <Unit76>
         <Filename Value="W:\programs\lazarus\lcl\forms.pp"/>
         <UnitName Value="Forms"/>
-        <EditorIndex Value="7"/>
         <WindowIndex Value="0"/>
         <TopLine Value="607"/>
         <CursorPos X="14" Y="628"/>
-        <UsageCount Value="11"/>
-        <Loaded Value="True"/>
+        <UsageCount Value="12"/>
       </Unit76>
       <Unit77>
         <Filename Value="W:\programs\lazarus\ideintf\maskpropedit.pas"/>
@@ -815,9 +814,10 @@
       <Unit103>
         <Filename Value="W:\programs\lazarus\lcl\lclproc.pas"/>
         <UnitName Value="LCLProc"/>
-        <TopLine Value="1491"/>
-        <CursorPos X="1" Y="1491"/>
-        <UsageCount Value="8"/>
+        <WindowIndex Value="0"/>
+        <TopLine Value="1"/>
+        <CursorPos X="1" Y="1"/>
+        <UsageCount Value="10"/>
       </Unit103>
       <Unit104>
         <Filename Value="W:\programs\lazarus\lcl\lclintf.pas"/>
@@ -869,8 +869,8 @@
         <Filename Value="W:\programs\lazarus\designer\designerprocs.pas"/>
         <UnitName Value="DesignerProcs"/>
         <WindowIndex Value="0"/>
-        <TopLine Value="362"/>
-        <CursorPos X="61" Y="376"/>
+        <TopLine Value="113"/>
+        <CursorPos X="1" Y="114"/>
         <UsageCount Value="13"/>
       </Unit110>
       <Unit111>
@@ -885,12 +885,10 @@
         <Filename Value="..\..\ntvTabs.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="ntvTabs"/>
-        <EditorIndex Value="0"/>
         <WindowIndex Value="0"/>
-        <TopLine Value="532"/>
-        <CursorPos X="1" Y="542"/>
-        <UsageCount Value="87"/>
-        <Loaded Value="True"/>
+        <TopLine Value="1"/>
+        <CursorPos X="1" Y="1"/>
+        <UsageCount Value="89"/>
       </Unit112>
       <Unit113>
         <Filename Value="V:\programs\FPC\2.4\src\rtl\objpas\classes\classesh.inc"/>
@@ -930,9 +928,9 @@
       <Unit118>
         <Filename Value="W:\programs\lazarus\lcl\include\winapi.inc"/>
         <WindowIndex Value="0"/>
-        <TopLine Value="364"/>
-        <CursorPos X="3" Y="366"/>
-        <UsageCount Value="9"/>
+        <TopLine Value="1664"/>
+        <CursorPos X="1" Y="1679"/>
+        <UsageCount Value="10"/>
       </Unit118>
       <Unit119>
         <Filename Value="W:\programs\lazarus\lcl\include\canvas.inc"/>
@@ -953,16 +951,13 @@
         <Filename Value="..\..\ntvTabSets.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="ntvTabSets"/>
-        <EditorIndex Value="1"/>
         <WindowIndex Value="0"/>
-        <TopLine Value="227"/>
-        <CursorPos X="24" Y="242"/>
-        <UsageCount Value="52"/>
-        <Bookmarks Count="2">
-          <Item0 X="1" Y="18" ID="3"/>
-          <Item1 X="19" Y="451" ID="1"/>
+        <TopLine Value="1"/>
+        <CursorPos X="1" Y="1"/>
+        <UsageCount Value="54"/>
+        <Bookmarks Count="1">
+          <Item0 X="1" Y="24" ID="3"/>
         </Bookmarks>
-        <Loaded Value="True"/>
       </Unit121>
       <Unit122>
         <Filename Value="W:\programs\lazarus\ide\lazarus.pp"/>
@@ -1053,8 +1048,8 @@
       <Unit132>
         <Filename Value="P:\programs\fpc\2.4\src\rtl\objpas\classes\classesh.inc"/>
         <WindowIndex Value="0"/>
-        <TopLine Value="20"/>
-        <CursorPos X="26" Y="41"/>
+        <TopLine Value="1869"/>
+        <CursorPos X="10" Y="1890"/>
         <UsageCount Value="12"/>
       </Unit132>
       <Unit133>
@@ -1154,135 +1149,149 @@
       <Unit145>
         <Filename Value="..\..\..\..\..\pos\source\posImages.pas"/>
         <UnitName Value="posImages"/>
-        <EditorIndex Value="4"/>
         <WindowIndex Value="0"/>
         <TopLine Value="135"/>
         <CursorPos X="16" Y="145"/>
-        <UsageCount Value="13"/>
-        <Loaded Value="True"/>
+        <UsageCount Value="14"/>
         <DefaultSyntaxHighlighter Value="Delphi"/>
       </Unit145>
+      <Unit146>
+        <Filename Value="W:\programs\lazarus\components\lazcontrols\lazcontrols.pas"/>
+        <UnitName Value="LazControls"/>
+        <WindowIndex Value="0"/>
+        <TopLine Value="1"/>
+        <CursorPos X="1" Y="1"/>
+        <UsageCount Value="10"/>
+      </Unit146>
+      <Unit147>
+        <Filename Value="W:\programs\lazarus\components\lazcontrols\dividerbevel.pas"/>
+        <UnitName Value="DividerBevel"/>
+        <WindowIndex Value="0"/>
+        <TopLine Value="1"/>
+        <CursorPos X="80" Y="21"/>
+        <UsageCount Value="10"/>
+      </Unit147>
     </Units>
     <JumpHistory Count="30" HistoryIndex="29">
       <Position1>
-        <Filename Value="Unit1.pas"/>
-        <Caret Line="189" Column="15" TopLine="173"/>
+        <Filename Value="..\..\ntvPageControls.pas"/>
+        <Caret Line="203" Column="32" TopLine="168"/>
       </Position1>
       <Position2>
-        <Filename Value="Unit1.pas"/>
-        <Caret Line="188" Column="15" TopLine="172"/>
+        <Filename Value="..\..\ntvPageControls.pas"/>
+        <Caret Line="220" Column="12" TopLine="185"/>
       </Position2>
       <Position3>
         <Filename Value="..\..\ntvPageControls.pas"/>
-        <Caret Line="496" Column="33" TopLine="484"/>
+        <Caret Line="301" Column="52" TopLine="267"/>
       </Position3>
       <Position4>
-        <Filename Value="..\..\ntvTabSets.pas"/>
-        <Caret Line="419" Column="19" TopLine="419"/>
+        <Filename Value="..\..\ntvPageControls.pas"/>
+        <Caret Line="302" Column="38" TopLine="267"/>
       </Position4>
       <Position5>
-        <Filename Value="..\..\ntvTabSets.pas"/>
-        <Caret Line="1" Column="1" TopLine="1"/>
+        <Filename Value="..\..\ntvPageControls.pas"/>
+        <Caret Line="313" Column="12" TopLine="278"/>
       </Position5>
       <Position6>
-        <Filename Value="Unit1.pas"/>
-        <Caret Line="167" Column="31" TopLine="150"/>
+        <Filename Value="..\..\ntvPageControls.pas"/>
+        <Caret Line="387" Column="48" TopLine="353"/>
       </Position6>
       <Position7>
-        <Filename Value="Unit1.pas"/>
-        <Caret Line="154" Column="37" TopLine="150"/>
+        <Filename Value="..\..\ntvPageControls.pas"/>
+        <Caret Line="388" Column="21" TopLine="353"/>
       </Position7>
       <Position8>
-        <Filename Value="Unit1.pas"/>
-        <Caret Line="186" Column="1" TopLine="167"/>
+        <Filename Value="..\..\ntvPageControls.pas"/>
+        <Caret Line="445" Column="62" TopLine="411"/>
       </Position8>
       <Position9>
-        <Filename Value="Unit1.pas"/>
-        <Caret Line="185" Column="1" TopLine="166"/>
+        <Filename Value="..\..\ntvPageControls.pas"/>
+        <Caret Line="446" Column="24" TopLine="411"/>
       </Position9>
       <Position10>
-        <Filename Value="Unit1.pas"/>
-        <Caret Line="37" Column="1" TopLine="27"/>
+        <Filename Value="..\..\ntvPageControls.pas"/>
+        <Caret Line="1" Column="1" TopLine="1"/>
       </Position10>
       <Position11>
         <Filename Value="..\..\ntvPageControls.pas"/>
-        <Caret Line="14" Column="41" TopLine="1"/>
+        <Caret Line="86" Column="20" TopLine="51"/>
       </Position11>
       <Position12>
         <Filename Value="..\..\ntvPageControls.pas"/>
-        <Caret Line="31" Column="25" TopLine="1"/>
+        <Caret Line="114" Column="19" TopLine="79"/>
       </Position12>
       <Position13>
         <Filename Value="..\..\ntvPageControls.pas"/>
-        <Caret Line="134" Column="21" TopLine="99"/>
+        <Caret Line="203" Column="32" TopLine="168"/>
       </Position13>
       <Position14>
         <Filename Value="..\..\ntvPageControls.pas"/>
-        <Caret Line="219" Column="14" TopLine="184"/>
+        <Caret Line="240" Column="9" TopLine="198"/>
       </Position14>
       <Position15>
         <Filename Value="..\..\ntvPageControls.pas"/>
-        <Caret Line="261" Column="32" TopLine="226"/>
+        <Caret Line="304" Column="38" TopLine="268"/>
       </Position15>
       <Position16>
         <Filename Value="..\..\ntvPageControls.pas"/>
-        <Caret Line="263" Column="24" TopLine="228"/>
+        <Caret Line="315" Column="12" TopLine="279"/>
       </Position16>
       <Position17>
         <Filename Value="..\..\ntvPageControls.pas"/>
-        <Caret Line="264" Column="60" TopLine="229"/>
+        <Caret Line="389" Column="21" TopLine="354"/>
       </Position17>
       <Position18>
         <Filename Value="..\..\ntvPageControls.pas"/>
-        <Caret Line="270" Column="30" TopLine="235"/>
+        <Caret Line="447" Column="24" TopLine="412"/>
       </Position18>
       <Position19>
         <Filename Value="..\..\ntvPageControls.pas"/>
-        <Caret Line="327" Column="30" TopLine="292"/>
+        <Caret Line="1" Column="1" TopLine="1"/>
       </Position19>
       <Position20>
         <Filename Value="..\..\ntvPageControls.pas"/>
-        <Caret Line="329" Column="22" TopLine="294"/>
+        <Caret Line="86" Column="20" TopLine="51"/>
       </Position20>
       <Position21>
         <Filename Value="..\..\ntvPageControls.pas"/>
-        <Caret Line="339" Column="53" TopLine="304"/>
+        <Caret Line="114" Column="19" TopLine="79"/>
       </Position21>
       <Position22>
         <Filename Value="..\..\ntvPageControls.pas"/>
-        <Caret Line="1" Column="1" TopLine="1"/>
+        <Caret Line="203" Column="32" TopLine="168"/>
       </Position22>
       <Position23>
         <Filename Value="..\..\ntvPageControls.pas"/>
-        <Caret Line="31" Column="25" TopLine="1"/>
+        <Caret Line="221" Column="14" TopLine="186"/>
       </Position23>
       <Position24>
         <Filename Value="..\..\ntvPageControls.pas"/>
-        <Caret Line="134" Column="21" TopLine="99"/>
+        <Caret Line="303" Column="38" TopLine="268"/>
       </Position24>
       <Position25>
         <Filename Value="..\..\ntvPageControls.pas"/>
-        <Caret Line="219" Column="14" TopLine="184"/>
+        <Caret Line="314" Column="12" TopLine="279"/>
       </Position25>
       <Position26>
         <Filename Value="..\..\ntvPageControls.pas"/>
-        <Caret Line="261" Column="32" TopLine="226"/>
+        <Caret Line="389" Column="21" TopLine="354"/>
       </Position26>
       <Position27>
         <Filename Value="..\..\ntvPageControls.pas"/>
-        <Caret Line="263" Column="24" TopLine="228"/>
+        <Caret Line="446" Column="24" TopLine="412"/>
       </Position27>
       <Position28>
         <Filename Value="..\..\ntvPageControls.pas"/>
-        <Caret Line="264" Column="60" TopLine="229"/>
+        <Caret Line="388" Column="43" TopLine="363"/>
       </Position28>
       <Position29>
-        <Filename Value="..\..\ntvPageControls.pas"/>
-        <Caret Line="270" Column="30" TopLine="235"/>
+        <Filename Value="Unit1.pas"/>
+        <Caret Line="1" Column="1" TopLine="1"/>
       </Position29>
       <Position30>
-        <Filename Value="..\..\ntvPageControls.pas"/>
-        <Caret Line="327" Column="30" TopLine="292"/>
+        <Filename Value="Unit1.pas"/>
+        <Caret Line="7" Column="42" TopLine="1"/>
       </Position30>
     </JumpHistory>
   </ProjectOptions>

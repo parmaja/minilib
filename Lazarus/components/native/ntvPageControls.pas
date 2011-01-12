@@ -217,7 +217,8 @@ begin
     begin
       BringToFront;
       Visible := True;
-      Align := alClient;
+      if vControl.Parent = Self then
+        Align := alClient;
       if not (csLoading in ComponentState) and (vSetFocus) and (not Self.Focused) and (vControl is TWinControl) then
       begin
         ParentForm := GetParentForm(Self);
@@ -298,6 +299,8 @@ begin
       begin
         Items.AddControl(Control as TControl);
         ShowControl(Control as TControl);
+        if (Control as TControl).Parent = Self then
+          (Control as TControl).Align := alClient;
         Result := 1;
       end
   end;
@@ -382,7 +385,7 @@ begin
   if (FControl <> Value) then
   begin
     FControl := Value;
-    if Value <> nil then
+    if (Value <> nil) and (Value.Parent = PageControl) then
       FControl.Align := alClient;
   end;
 end;
@@ -436,11 +439,9 @@ begin
         Control := vControl;
         Name := Control.Name;
         Caption := Name;
-        //Control.Parent := FPageControl;
-        //LclType.SetParent(Control.Handle, FPageControl.Handle);
         Control.FreeNotification(FPageControl);
         Collection := Self; //Add to Pages list
-        if Control is TWinControl then
+        if Control is TWinControl and (Control.Parent = PageControl) then
           Control.Align := alClient;
         if not (csDesigning in Control.ComponentState) then
           Control.Show

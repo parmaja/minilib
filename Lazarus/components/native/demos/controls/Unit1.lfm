@@ -1,9 +1,9 @@
 object Form1: TForm1
-  Left = 295
+  Left = 463
   Height = 362
-  Top = 327
+  Top = 387
   Width = 418
-  ActiveControl = Edit2
+  ActiveControl = Edit1
   Caption = 'Form1'
   ClientHeight = 362
   ClientWidth = 418
@@ -67,10 +67,10 @@ object Form1: TForm1
     TabOrder = 4
   end
   object ntvPageControl1: TntvPageControl
-    Left = 20
+    Left = 147
     Height = 165
-    Top = 108
-    Width = 200
+    Top = 105
+    Width = 253
     StoreIndex = False
     ShowButtons = False
     Items = <    
@@ -101,33 +101,40 @@ object Form1: TForm1
       Left = 3
       Height = 143
       Top = 19
-      Width = 194
+      Width = 247
       Align = alClient
       Caption = 'Panel2'
       ClientHeight = 143
-      ClientWidth = 194
+      ClientWidth = 247
       TabOrder = 1
       object Edit1: TEdit
-        Left = 36
+        Left = 11
         Height = 21
-        Top = 26
+        Top = 11
         Width = 80
         TabOrder = 0
         Text = 'Edit1'
       end
     end
+    object Image1: TImage
+      Left = 3
+      Height = 143
+      Top = 19
+      Width = 247
+      Align = alClient
+    end
     object Panel1: TPanel
       Left = 3
       Height = 143
       Top = 19
-      Width = 194
+      Width = 247
       Align = alClient
       Caption = 'Panel1'
       ClientHeight = 143
-      ClientWidth = 194
+      ClientWidth = 247
       TabOrder = 0
       object Edit2: TEdit
-        Left = 107
+        Left = 46
         Height = 21
         Top = 12
         Width = 80
@@ -135,12 +142,74 @@ object Form1: TForm1
         Text = 'Edit2'
       end
     end
-    object Image1: TImage
-      Left = 3
-      Height = 143
-      Top = 19
-      Width = 194
-      Align = alClient
-    end
+  end
+  object ntvProgressBar1: TntvProgressBar
+    Left = 134
+    Height = 16
+    Top = 77
+    Width = 150
+    Position = 30
+    SubPosition = 5
+    Color = clGray
+    Font.Color = clWhite
+    TabOrder = 7
+  end
+  object Label1: TLabel
+    Left = 8
+    Height = 14
+    Top = 102
+    Width = 32
+    Caption = 'Label1'
+    FocusControl = Edit3
+    ParentColor = False
+  end
+  object Edit3: TEdit
+    Left = 46
+    Height = 21
+    Top = 98
+    Width = 80
+    TabOrder = 8
+    Text = 'Edit3'
+  end
+  object ntvPageControl2: TntvPageControl
+    Left = 21
+    Height = 22
+    Top = 127
+    Width = 321
+    StoreIndex = False
+    ShowButtons = False
+    Items = <    
+      item
+        Caption = 'ntvPageControl2_Item0'
+        Name = 'ntvPageControl2_Item0'
+        Enabled = False
+        AutoWidth = True
+        Control = Panel3
+      end    
+      item
+        Caption = 'ntvPageControl2_Item1'
+        Name = 'ntvPageControl2_Item1'
+        Enabled = False
+        AutoWidth = True
+        Control = Panel4
+      end>
+    Caption = 'ntvPageControl2'
+    TabOrder = 9
+  end
+  object Panel3: TPanel
+    Left = 32
+    Height = 50
+    Top = 202
+    Width = 170
+    Caption = 'Panel3'
+    TabOrder = 10
+  end
+  object Panel4: TPanel
+    Left = 108
+    Height = 50
+    Top = 180
+    Width = 170
+    Caption = 'Panel4'
+    TabOrder = 11
   end
 end

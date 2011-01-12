@@ -15,7 +15,7 @@ interface
 
 uses
   LResources, Forms, Classes, SysUtils, ComCtrls, StdCtrls, ntvPageControls, ntvTabSets, LMessages,
-  ntvRegCtrls,
+  ntvRegCtrls, ntvProgressBars,
   LCLType, Controls, ExtCtrls, ExtendedNotebook, DividerBevel;
 
 type
@@ -29,11 +29,17 @@ type
     Button5: TButton;
     Edit1: TEdit;
     Edit2: TEdit;
+    Edit3: TEdit;
     Image1: TImage;
+    Label1: TLabel;
     ntvPageControl1: TntvPageControl;
+    ntvPageControl2: TntvPageControl;
+    ntvProgressBar1: TntvProgressBar;
     ntvTabSet1: TntvTabSet;
     Panel1: TPanel;
     Panel2: TPanel;
+    Panel3: TPanel;
+    Panel4: TPanel;
     TestPanel: TPanel;
     procedure Button1Click(Sender: TObject);
     procedure Button2Click(Sender: TObject);

@@ -8,13 +8,19 @@ unit ntvTabSets;
  * @author    Belal Alhamed <belalhamed at gmail dot com>
  * @author    Zaher Dirkey <zaher at parmaja dot com>
  *}
+
+{
+  You must apply the patch in this bug tracker
+  http://bugs.freepascal.org/view.php?id=18458
+}
+
 {$mode objfpc}{$H+}
 
 interface
 
 uses
   Classes, Messages, Controls, SysUtils, Math, Contnrs, Graphics, Forms, StdCtrls, Types,
-  LMessages, LCLType, LCLIntf, LCLProc, //Dialogs,
+  LMessages, LCLType, LCLIntf, LCLProc,
   ntvTabs, ntvUtils, ntvThemes;
 
 type
@@ -272,10 +278,6 @@ end;
 procedure TntvCustomTabSet.MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 begin
   inherited;
-  //bug, http://bugs.freepascal.org/view.php?id=18458
-  if (csDesigning in ComponentState) then
-    MapPoint(GetParentForm(Self), Self, X, Y);
-  //end bug
   if Button = mbLeft then
     LeftMouseDown(Point(x, y));
 end;
@@ -362,18 +364,11 @@ begin
   if Items.Visibles.Count > 0 then
   begin
     pt := SmallPointToPoint(Message.Pos);
-    //bug, http://bugs.freepascal.org/view.php?id=18458
-    if (csDesigning in ComponentState) then
-      pt := MapPoint(GetParentForm(Self), Self, pt);
-    //ShowMessage(IntToStr(pt.x)+', ' + IntToStr(pt.y));
-    //end bug
     if PtInRect(GetTabsRect, pt) then
     begin
       ht := Items.HitTest(Canvas, pt, GetTabsRect, i, GetFlags);
       if (ht <> htNone) and (i <> Items.ItemIndex) then
-      begin
         Message.Result := 1;
-      end;
     end;
   end;
 end;

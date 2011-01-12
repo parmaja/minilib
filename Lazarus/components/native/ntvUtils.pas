@@ -20,9 +20,6 @@ procedure ExcludeClipRect(Canvas: TCanvas; Rect: TRect);
 function WidthOf(R: TRect): Integer;
 function HeightOf(R: TRect): Integer;
 
-function MapPoint(vFrom, vTo: TControl; vPoint: TPoint): TPoint;
-procedure MapPoint(vFrom, vTo: TControl; var X, Y: Integer);
-
 implementation
 
 uses
@@ -41,30 +38,6 @@ end;
 function HeightOf(R: TRect): Integer;
 begin
   Result := R.Bottom - R.Top;
-end;
-
-function MapPoint(vFrom, vTo: TControl; vPoint: TPoint): TPoint;
-var
-  o1, o2: TPoint;
-begin
-  if vTo = nil then
-    Result := vPoint
-  else
-  begin
-    o1 := vFrom.ClientOrigin;
-    o2 := vTo.ClientOrigin;
-    Result.X := vPoint.X + (o1.X - o2.X);
-    Result.Y := vPoint.Y + (o1.Y - o2.Y);
-  end;
-end;
-
-procedure MapPoint(vFrom, vTo: TControl; var X, Y: Integer);
-var
-  p: TPoint;
-begin
-  p := MapPoint(vFrom, vTo, Point(X,Y));
-  X := p.x;
-  Y := p.y;
 end;
 
 end.
