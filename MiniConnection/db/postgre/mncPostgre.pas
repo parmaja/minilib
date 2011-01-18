@@ -103,7 +103,7 @@ type
     procedure DoNext; override;
     function GetEOF: Boolean; override;
     function GetActive: Boolean; override;
-1    procedure DoClose; override;
+    procedure DoClose; override;
     procedure DoCommit; override;
     procedure DoRollback; override;
     property Connection: TmncPGConnection read GetConnection;
