@@ -108,8 +108,8 @@ type
     property ImageList;
 
     property Items: TntvPages read GetItems write SetItems;
-    property OnTabChanged;
-    property OnSelectTab;
+    property OnTabSelected;
+    property OnTabSelect;
 
     property Align;
     property Anchors;
@@ -282,8 +282,7 @@ procedure TntvPageControl.Notification(AComponent: TComponent;
   Operation: TOperation);
 begin
   inherited;
-  if (Operation = opRemove) and (AComponent <> Self)
-    and (Items.FindControl((AComponent as TControl)) <> nil) then
+  if (Operation = opRemove) and (AComponent <> Self) and (AComponent is TControl) and (Items.FindControl((AComponent as TControl)) <> nil) then
   begin
     Items.ExtractControl(AComponent as TControl);
   end;

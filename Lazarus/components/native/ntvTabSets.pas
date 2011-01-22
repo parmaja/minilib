@@ -26,8 +26,8 @@ uses
 type
   TntvCustomTabSet = class;
 
-  TOnSelectTab = procedure(Sender: TObject; OldTab, NewTab: TntvTabItem; var CanSelect: boolean) of object;
-  TOnTabChanged = procedure(Sender: TObject; OldTab, NewTab: TntvTabItem) of object;
+  TOnTabSelect = procedure(Sender: TObject; OldTab, NewTab: TntvTabItem; var CanSelect: boolean) of object;
+  TOnTabSelected = procedure(Sender: TObject; OldTab, NewTab: TntvTabItem) of object;
 
   { TntvCustomTabSet }
 
@@ -35,8 +35,8 @@ type
   private
     FItems: TntvTabs;
     FHeaderHeight: Integer;
-    FOnTabChanged: TOnTabChanged;
-    FOnSelectTab: TOnSelectTab;
+    FOnTabSelected: TOnTabSelected;
+    FOnTabSelect: TOnTabSelect;
     FStoreIndex: Boolean;
     FShowTabs: Boolean;
     function GetImageList: TImageList;
@@ -100,8 +100,8 @@ type
     property ImageList: TImageList read GetImageList write SetImageList;
 
     property Items: TntvTabs read FItems write FItems;
-    property OnTabChanged: TOnTabChanged read FOnTabChanged write FOnTabChanged;
-    property OnSelectTab: TOnSelectTab read FOnSelectTab write FOnSelectTab;
+    property OnTabSelected: TOnTabSelected read FOnTabSelected write FOnTabSelected;
+    property OnTabSelect: TOnTabSelect read FOnTabSelect write FOnTabSelect;
 
     property Align;
     property Anchors;
@@ -153,8 +153,8 @@ type
     property ImageList;
 
     property Items;
-    property OnTabChanged;
-    property OnSelectTab;
+    property OnTabSelect;
+    property OnTabSelected;
 
     property Align;
     property Anchors;
@@ -298,8 +298,8 @@ begin
   if (Index < Items.Visibles.Count) and (Index <> ItemIndex) and (Index > -1) then
   begin
     Result := True;
-    if not Force and Assigned(FOnSelectTab) then
-      FOnSelectTab(Self, Items.Visibles[ItemIndex], Items.Visibles[Index], Result);
+    if not Force and Assigned(FOnTabSelect) then
+      OnTabSelect(Self, Items.Visibles[ItemIndex], Items.Visibles[Index], Result);
     if Result then
       ShowTab(Index, True);
   end
@@ -604,8 +604,8 @@ end;
 
 procedure TntvCustomTabSet.DoTabChanged(OldItem, NewItem: TntvTabItem);
 begin
-  if Assigned(FOnTabChanged) then
-    FOnTabChanged(Self, OldItem, NewItem);
+  if Assigned(FOnTabSelected) then
+    FOnTabSelected(Self, OldItem, NewItem);
 end;
 
 procedure TntvCustomTabSet.SetShowTabs(const Value: Boolean);

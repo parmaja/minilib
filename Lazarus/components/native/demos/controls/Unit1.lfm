@@ -3,7 +3,7 @@ object Form1: TForm1
   Height = 362
   Top = 387
   Width = 418
-  ActiveControl = Edit1
+  ActiveControl = Edit2
   Caption = 'Form1'
   ClientHeight = 362
   ClientWidth = 418
@@ -49,9 +49,9 @@ object Form1: TForm1
     TabOrder = 2
   end
   object TestPanel: TPanel
-    Left = 20
+    Left = 9
     Height = 42
-    Top = 20
+    Top = 13
     Width = 314
     Anchors = [akTop, akLeft, akRight]
     Caption = 'TestPanel'
@@ -97,6 +97,13 @@ object Form1: TForm1
       end>
     Caption = 'ntvPageControl1'
     TabOrder = 6
+    object Image1: TImage
+      Left = 3
+      Height = 143
+      Top = 19
+      Width = 247
+      Align = alClient
+    end
     object Panel2: TPanel
       Left = 3
       Height = 143
@@ -115,13 +122,6 @@ object Form1: TForm1
         TabOrder = 0
         Text = 'Edit1'
       end
-    end
-    object Image1: TImage
-      Left = 3
-      Height = 143
-      Top = 19
-      Width = 247
-      Align = alClient
     end
     object Panel1: TPanel
       Left = 3
@@ -174,42 +174,12 @@ object Form1: TForm1
   object ntvPageControl2: TntvPageControl
     Left = 21
     Height = 22
-    Top = 127
+    Top = 221
     Width = 321
     StoreIndex = False
     ShowButtons = False
-    Items = <    
-      item
-        Caption = 'ntvPageControl2_Item0'
-        Name = 'ntvPageControl2_Item0'
-        Enabled = False
-        AutoWidth = True
-        Control = Panel3
-      end    
-      item
-        Caption = 'ntvPageControl2_Item1'
-        Name = 'ntvPageControl2_Item1'
-        Enabled = False
-        AutoWidth = True
-        Control = Panel4
-      end>
+    Items = <>
     Caption = 'ntvPageControl2'
     TabOrder = 9
-  end
-  object Panel3: TPanel
-    Left = 32
-    Height = 50
-    Top = 202
-    Width = 170
-    Caption = 'Panel3'
-    TabOrder = 10
-  end
-  object Panel4: TPanel
-    Left = 108
-    Height = 50
-    Top = 180
-    Width = 170
-    Caption = 'Panel4'
-    TabOrder = 11
   end
 end

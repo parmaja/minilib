@@ -52,11 +52,11 @@ type
 
   TntvTabItem = class(TCollectionItem)
   private
-    FAutoWidth: Boolean;
+    FName: string;
     FCaption: string;
     FWidth: Integer;
     FImageIndex: Integer;
-    FName: string;
+    FAutoWidth: Boolean;
     FEnabled: Boolean;
     FVisible: Boolean;
     procedure SetAutoWidth(const AValue: Boolean);
@@ -82,7 +82,7 @@ type
     property Caption: string read FCaption write SetCaption;
     property ImageIndex: Integer read FImageIndex write SetImageIndex default -1;
     property Name: string read GetName write SetName;
-    property Enabled: Boolean read FEnabled write SetEnabled;
+    property Enabled: Boolean read FEnabled write SetEnabled default True;
     property AutoWidth: Boolean read FAutoWidth write SetAutoWidth;
     property Visible: Boolean read FVisible write SetVisible default True;
   end;
@@ -129,6 +129,7 @@ type
     constructor Create(AItemClass: TCollectionItemClass);
     destructor Destroy; override;
     function Add: TntvTabItem;
+    function AddItem(vName, vCaption: string): TntvTabItem;
     //Control functions
     function HitTest(vCanvas: TCanvas; vPoint: TPoint; vRect:TRect; var vIndex: Integer; vFlags: TntvFlags): TntvhtTabHitTest;
     procedure Paint(Canvas: TCanvas; vRect:TRect; vFlags: TntvFlags = []);
@@ -248,6 +249,7 @@ begin
   inherited Create(vCollection);
   FAutoWidth := True;
   FVisible := True;
+  FEnabled := True;
   FImageIndex := -1;
 end;
 
@@ -382,6 +384,18 @@ end;
 function TntvTabs.Add: TntvTabItem;
 begin
   Result := inherited Add as TntvTabItem;
+end;
+
+function TntvTabs.AddItem(vName, vCaption: string): TntvTabItem;
+begin
+  BeginUpdate;
+  try
+    Result := Add;
+    Result.FName := vName;
+    Result.FCaption := vCaption;
+  finally
+    EndUpdate;
+  end;
 end;
 
 function TntvTabs.HitTest(vCanvas: TCanvas; vPoint: TPoint; vRect:TRect; var vIndex: Integer; vFlags: TntvFlags): TntvhtTabHitTest;

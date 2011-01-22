@@ -38,8 +38,6 @@ type
     ntvTabSet1: TntvTabSet;
     Panel1: TPanel;
     Panel2: TPanel;
-    Panel3: TPanel;
-    Panel4: TPanel;
     TestPanel: TPanel;
     procedure Button1Click(Sender: TObject);
     procedure Button2Click(Sender: TObject);
