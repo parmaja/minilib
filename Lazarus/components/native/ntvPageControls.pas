@@ -275,7 +275,7 @@ function TntvPageControl.GetInnerRect: TRect;
 begin
   Result := ClientRect;
   if ShowTabs then
-    Inc(Result.Top, HeaderHeight);
+    Inc(Result.Top, GetHeaderHeight);
 end;
 
 procedure TntvPageControl.Notification(AComponent: TComponent;
@@ -318,7 +318,7 @@ function TntvPageControl.GetPageRect: TRect;
 begin
   Result := ClientRect;
   if ShowTabs then
-    Inc(Result.Top, HeaderHeight);
+    Inc(Result.Top, GetHeaderHeight);
   InflateRect(Result, -FMargin, -FMargin);
 end;
 

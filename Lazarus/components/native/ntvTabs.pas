@@ -21,7 +21,7 @@ uses
 
 const
   cMinTabWidth = 10;
-  cHeaderHeightMargin = 3;
+  cHeaderHeightMargin = 5;
   cImageMargin = 3;
 
 type
@@ -133,6 +133,7 @@ type
     //Control functions
     function HitTest(vCanvas: TCanvas; vPoint: TPoint; vRect:TRect; var vIndex: Integer; vFlags: TntvFlags): TntvhtTabHitTest;
     procedure Paint(Canvas: TCanvas; vRect:TRect; vFlags: TntvFlags = []);
+    function ShowTab(Canvas: TCanvas; const vRect:TRect; Index: Integer; vFlags: TntvFlags): Boolean;
 
     //Check function
     procedure UpdateItems(vCanvas: TCanvas); //call it before use next functions direclty
@@ -140,8 +141,6 @@ type
     function GetTabRect(const vTabsRect:TRect; Index: Integer; var vTabRect: TRect; vFlags: TntvFlags): Boolean; overload; virtual;
     function GetTabOffset(Index: Integer): Integer;
 
-    //Tab functions
-    function ShowTab(const vRect:TRect; Index: Integer; vFlags: TntvFlags): Boolean;
     //Items
     property Items[Index: Integer]: TntvTabItem read GetItem write SetItem stored False; default;
     //Properites
@@ -513,14 +512,15 @@ begin
     Result := Result + FVisibles[index].Width;
 end;
 
-function TntvTabs.ShowTab(const vRect:TRect; Index: Integer; vFlags: TntvFlags): Boolean;
+function TntvTabs.ShowTab(Canvas: TCanvas; const vRect:TRect; Index: Integer; vFlags: TntvFlags): Boolean;
 var
   R: TRect;
   aTopIndex: Integer;
   w: Integer;
 begin
-  //DoShowTab();
-  GetTabRect(vRect, ItemIndex, R, vFLags);
+  if FUpdateItems then
+    UpdateItems(Canvas);
+  GetTabRect(vRect, ItemIndex, R, vFlags);
   aTopIndex := TopIndex;
   if tbfRightToLeft in vFlags then
   begin
@@ -530,7 +530,7 @@ begin
       while (R.Left < w) and (aTopIndex < ItemIndex) do
       begin
         aTopIndex := aTopIndex + 1;
-        GetTabRect(vRect, aTopIndex, ItemIndex, R, vFLags);
+        GetTabRect(vRect, aTopIndex, ItemIndex, R, vFlags);
       end;
     end;
   end
@@ -542,7 +542,7 @@ begin
       while (R.Right > w) and (aTopIndex < ItemIndex) do
       begin
         aTopIndex := aTopIndex + 1;
-        GetTabRect(vRect, aTopIndex, ItemIndex, R, vFLags);
+        GetTabRect(vRect, aTopIndex, ItemIndex, R, vFlags);
       end;
     end;
   end;

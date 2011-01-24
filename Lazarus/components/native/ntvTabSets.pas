@@ -35,14 +35,17 @@ type
   private
     FItems: TntvTabs;
     FHeaderHeight: Integer;
+    FInternalHeaderHeight: Integer;
     FOnTabSelected: TOnTabSelected;
     FOnTabSelect: TOnTabSelect;
+    FShowBorder: Boolean;
     FStoreIndex: Boolean;
     FShowTabs: Boolean;
     function GetImageList: TImageList;
     function GetShowButtons: Boolean;
     function GetTopIndex: Integer;
     procedure SetItemIndex(Value: Integer);
+    procedure SetShowBorder(const AValue: Boolean);
     procedure SetTopIndex(const Value: Integer);
     function GetItemIndex: Integer;
     procedure WMGetDlgCode(var message: TWMGetDlgCode); message WM_GETDLGCODE;
@@ -53,13 +56,13 @@ type
     procedure SetShowButtons(const Value: Boolean);
     procedure DoTabChanged(OldItem, NewItem: TntvTabItem);
     procedure SetShowTabs(const Value: Boolean);
-    function GetHeaderHeight: Integer;
     procedure SetImageList(const Value: TImageList);
   protected
     function ChildKey(var Message: TLMKey): boolean; override;
     procedure FontChanged(Sender: TObject); override;
     procedure KeyDown(var Key: Word; Shift: TShiftState); override;
     procedure UpdateHeaderRect;
+    function GetHeaderHeight: Integer;
 
     procedure NextClick;
     procedure PriorClick;
@@ -78,7 +81,6 @@ type
     procedure MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: Integer); override;
 
     property TopIndex: Integer read GetTopIndex write SetTopIndex;
-    property HeaderHeight: Integer read GetHeaderHeight;
     procedure Loaded; override;
     class function GetControlClassDefaultSize: TSize; override;
     function GetFlags: TntvFlags;
@@ -96,6 +98,8 @@ type
     property StoreIndex: Boolean read FStoreIndex write FStoreIndex;
     property ShowButtons: Boolean read GetShowButtons write SetShowButtons default True;
     property ShowTabs: Boolean read FShowTabs write SetShowTabs default True;
+    property ShowBorder: Boolean read FShowBorder write SetShowBorder default True;
+    property HeaderHeight: Integer read FHeaderHeight write FHeaderHeight;
     property ItemIndex: Integer read GetItemIndex write SetItemIndex stored FStoreIndex default 0;
     property ImageList: TImageList read GetImageList write SetImageList;
 
@@ -230,6 +234,13 @@ begin
   end;
 end;
 
+procedure TntvCustomTabSet.SetShowBorder(const AValue: Boolean);
+begin
+  if FShowBorder =AValue then exit;
+  FShowBorder :=AValue;
+  Invalidate;
+end;
+
 procedure TntvCustomTabSet.Paint;
 var
   i: Integer;
@@ -242,8 +253,12 @@ begin
     Font.Assign(Self.Font);
     if not ShowTabs or (Items.Visibles.Count = 0) then
     begin
-      if (csDesigning in ComponentState) and (Items.Visibles.Count = 0) then
+      if (csDesigning in ComponentState) then
       begin
+        Pen.Style := psDot;
+        Pen.Color := clDkGray;
+        Canvas.Brush.Style := bsClear;
+        Canvas.Rectangle(GetTabsRect);
         Pen.Style := psSolid;
         Pen.Color := clDkGray;
         aTabsRect := GetClientRect;
@@ -262,14 +277,22 @@ begin
         Items.Paint(Canvas, GetTabsRect, GetFlags);
         aTabsRect := GetTabsRect;
         Items.GetTabRect(aTabsRect, ItemIndex, R, GetFlags);
+
         Pen.Style := psSolid;
         Pen.Color := clDkGray;
-        MoveTo(R.Left, aTabsRect.Bottom);
-        LineTo(ClientRect.Left, aTabsRect.Bottom);
-        LineTo(ClientRect.Left, ClientRect.Bottom - 1);
-        LineTo(ClientRect.Right -1 , ClientRect.Bottom - 1);
-        LineTo(ClientRect.Right - 1, aTabsRect.Bottom);
-        LineTo(R.Right - 1, aTabsRect.Bottom);
+
+        MoveTo(ClientRect.Left, aTabsRect.Bottom);
+        LineTo(R.Left, aTabsRect.Bottom);
+
+        MoveTo(R.Right, aTabsRect.Bottom);
+        LineTo(ClientRect.Right, aTabsRect.Bottom);
+
+        if ShowBorder then
+        begin
+          LineTo(ClientRect.Left, ClientRect.Bottom - 1);
+          LineTo(ClientRect.Right, ClientRect.Bottom - 1);
+          LineTo(ClientRect.Right, aTabsRect.Bottom - 1);
+        end;
       end;
     end;
   end;
@@ -326,7 +349,10 @@ begin
   try
     TmpCanvas.Handle := GetDC(0);
     TmpCanvas.Font.Assign(Font);
-    FHeaderHeight := TmpCanvas.TextHeight('A') + cHeaderHeightMargin;
+    if FHeaderHeight = 0 then
+      FInternalHeaderHeight := TmpCanvas.TextHeight('A') + cHeaderHeightMargin
+    else
+      FInternalHeaderHeight := FHeaderHeight;
   finally
     ReleaseDC(0, TmpCanvas.Handle);
     TmpCanvas.Free;
@@ -349,7 +375,7 @@ begin
   else
   begin
     Result := ClientRect;
-    Result.Bottom := Result.Top + HeaderHeight;
+    Result.Bottom := Result.Top + GetHeaderHeight;
   end;
 end;
 
@@ -432,7 +458,6 @@ begin
       OldIndex := Items.ItemIndex;
       DoTabShow(Index, vSetfocus);
       //and (Items[Index].Control.Enabled)
-
       Items.ItemIndex := Index;
 
       if (Items.ItemIndex < 0) and (Items.Visibles.Count > 0) then
@@ -440,7 +465,9 @@ begin
       else if (Items.ItemIndex > Items.Visibles.Count - 1) then
         Items.ItemIndex := Items.Visibles.Count - 1;
       if Items.ItemIndex < TopIndex then
-        TopIndex := Items.ItemIndex;
+        TopIndex := Items.ItemIndex
+      else
+        Items.ShowTab(Canvas, GetTabsRect, ItemIndex, GetFlags);
       if Items.ItemIndex >= 0 then
       begin
         Invalidate;
@@ -621,7 +648,7 @@ end;
 function TntvCustomTabSet.GetHeaderHeight: Integer;
 begin
   if ShowTabs then
-    Result := FHeaderHeight
+    Result := FInternalHeaderHeight
   else
     Result := 0;
 end;
