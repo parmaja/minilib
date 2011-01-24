@@ -516,7 +516,6 @@ function TntvTabs.ShowTab(Canvas: TCanvas; const vRect:TRect; Index: Integer; vF
 var
   R: TRect;
   aTopIndex: Integer;
-  w: Integer;
 begin
   if FUpdateItems then
     UpdateItems(Canvas);
@@ -524,10 +523,9 @@ begin
   aTopIndex := TopIndex;
   if tbfRightToLeft in vFlags then
   begin
-    w := 0;
-    if R.Left < w then
+    if R.Left < vRect.Left then
     begin
-      while (R.Left < w) and (aTopIndex < ItemIndex) do
+      while (R.Left < vRect.Left) and (aTopIndex < ItemIndex) do
       begin
         aTopIndex := aTopIndex + 1;
         GetTabRect(vRect, aTopIndex, ItemIndex, R, vFlags);
@@ -536,10 +534,9 @@ begin
   end
   else
   begin
-    w := 0;
-    if R.Right > w then
+    if R.Right > vRect.Right then
     begin
-      while (R.Right > w) and (aTopIndex < ItemIndex) do
+      while (R.Right > vRect.Right) and (aTopIndex < ItemIndex) do
       begin
         aTopIndex := aTopIndex + 1;
         GetTabRect(vRect, aTopIndex, ItemIndex, R, vFlags);
