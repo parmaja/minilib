@@ -1867,7 +1867,7 @@ const
   isc_tpb_read = 8;
   isc_tpb_write = 9;
   isc_tpb_lock_read = 10;
-  isc_tpb_lock_write = 11;
+  isc_tpb_lock_write = 11; //it must pass the table name
   isc_tpb_verb_time = 12;
   isc_tpb_commit_time = 13;
   isc_tpb_ignore_limbo = 14;

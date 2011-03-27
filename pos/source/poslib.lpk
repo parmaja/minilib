@@ -3,10 +3,10 @@
   <Package Version="3">
     <PathDelim Value="\"/>
     <Name Value="poslib"/>
+    <AddToProjectUsesSection Value="False"/>
     <Author Value="Zaher Dirkey"/>
-    <AutoUpdate Value="Manually"/>
     <CompilerOptions>
-      <Version Value="9"/>
+      <Version Value="10"/>
       <PathDelim Value="\"/>
       <SearchPaths>
         <OtherUnitFiles Value="units\$(TargetCPU)-$(TargetOS);$(LazarusDir)\lcl\units\$(TargetCPU)-$(TargetOS);$(LazarusDir)\lcl\units\$(TargetCPU)-$(TargetOS)\$(LCLWidgetType);$(LazarusDir)\components\codetools\units\$(TargetCPU)-$(TargetOS);$(LazarusDir)\packager\units\$(TargetCPU)-$(TargetOS)"/>
@@ -87,12 +87,16 @@ Light controls (TposGrid, TposList, TposStuffs, TposKeyboard...)
         <Type Value="Binary"/>
       </Item11>
     </Files>
-    <Type Value="DesignTime"/>
-    <RequiredPkgs Count="1">
+    <Type Value="RunAndDesignTime"/>
+    <RequiredPkgs Count="2">
       <Item1>
-        <PackageName Value="FCL"/>
+        <PackageName Value="LCL"/>
         <MinVersion Major="1" Valid="True"/>
       </Item1>
+      <Item2>
+        <PackageName Value="FCL"/>
+        <MinVersion Major="1" Valid="True"/>
+      </Item2>
     </RequiredPkgs>
     <UsageOptions>
       <UnitPath Value="$(PkgOutDir)"/>

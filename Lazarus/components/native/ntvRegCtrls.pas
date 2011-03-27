@@ -16,12 +16,13 @@ type
   TntvTabSetEditor = class(TDefaultComponentEditor)
   protected
   public
-    constructor Create(AComponent: TComponent; ADesigner: TComponentEditorDesigner); override;
+    constructor Create(AComponent: TComponent; ADesigner: TComponentEditorDesigner);
+      override;
     procedure Edit; override;
-    procedure ExecuteVerb(Index: Integer); override;
-    function GetVerb(Index: Integer): string; override;
-    function GetVerbCount: Integer; override;
-    procedure PrepareItem(Index: Integer; const AnItem: TMenuItem); override;
+    procedure ExecuteVerb(Index: integer); override;
+    function GetVerb(Index: integer): string; override;
+    function GetVerbCount: integer; override;
+    procedure PrepareItem(Index: integer; const AnItem: TMenuItem); override;
   end;
 
 procedure Register;
@@ -30,7 +31,8 @@ implementation
 
 procedure Register;
 begin
-  RegisterComponents('Native', [TDotMatrix, TTextDotMatrix, TntvProgressBar, TntvTabSet, TntvPageControl]);
+  RegisterComponents('Native', [TDotMatrix, TTextDotMatrix, TntvProgressBar,
+    TntvTabSet, TntvPageControl]);
   RegisterComponentEditor(TntvCustomTabSet, TntvTabSetEditor);
 end;
 
@@ -48,7 +50,7 @@ begin
   EditCollection(Component, (Component as TntvCustomTabSet).Items, 'Items');
 end;
 
-procedure TntvTabSetEditor.ExecuteVerb(Index: Integer);
+procedure TntvTabSetEditor.ExecuteVerb(Index: integer);
 begin
   case Index of
     0: Edit;
@@ -57,7 +59,7 @@ begin
   end;
 end;
 
-function TntvTabSetEditor.GetVerb(Index: Integer): string;
+function TntvTabSetEditor.GetVerb(Index: integer): string;
 begin
   case Index of
     0: Result := 'Tabs';
@@ -66,16 +68,15 @@ begin
   end;
 end;
 
-function TntvTabSetEditor.GetVerbCount: Integer;
+function TntvTabSetEditor.GetVerbCount: integer;
 begin
   Result := 3;
 end;
 
-procedure TntvTabSetEditor.PrepareItem(Index: Integer; const AnItem: TMenuItem);
+procedure TntvTabSetEditor.PrepareItem(Index: integer; const AnItem: TMenuItem);
 begin
   inherited;
 end;
 
-initialization
 end.
 

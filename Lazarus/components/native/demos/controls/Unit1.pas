@@ -30,7 +30,6 @@ type
     Edit1: TEdit;
     Edit2: TEdit;
     Edit3: TEdit;
-    Image1: TImage;
     Label1: TLabel;
     ntvPageControl1: TntvPageControl;
     ntvPageControl2: TntvPageControl;

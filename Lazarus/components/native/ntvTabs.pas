@@ -517,6 +517,7 @@ var
   R: TRect;
   aTopIndex: Integer;
 begin
+  Result := True;//must be false if can not show the Tab
   if FUpdateItems then
     UpdateItems(Canvas);
   GetTabRect(vRect, ItemIndex, R, vFlags);

@@ -262,12 +262,11 @@ begin
         Pen.Style := psSolid;
         Pen.Color := clDkGray;
         aTabsRect := GetClientRect;
-        MoveTo(R.Left, aTabsRect.Bottom);
-        LineTo(ClientRect.Left, aTabsRect.Bottom);
+        MoveTo(ClientRect.Left, aTabsRect.Bottom);
         LineTo(ClientRect.Left, ClientRect.Bottom - 1);
         LineTo(ClientRect.Right -1 , ClientRect.Bottom - 1);
         LineTo(ClientRect.Right - 1, aTabsRect.Bottom);
-        LineTo(R.Right - 1, aTabsRect.Bottom);
+        LineTo(ClientRect.Left, aTabsRect.Bottom);
       end
     end
     else
@@ -381,7 +380,6 @@ end;
 
 procedure TntvCustomTabSet.CMDesignHitTest(var Message: TLMMouse);
 var
-  R: TRect;
   pt: TPoint;
   i: Integer;
   ht: TntvhtTabHitTest;
@@ -446,7 +444,6 @@ end;
 
 procedure TntvCustomTabSet.ShowTab(Index: Integer; Force: Boolean; vSetfocus: Boolean);
 var
-  R: TRect;
   i: Integer;
   OldIndex: Integer;
   w: Integer;
