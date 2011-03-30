@@ -1,7 +1,8 @@
 unit SynHighlighterHTMLPHP;
+
 {$mode delphi}
 {**
- *  Light PHP Edit project
+ *  MiniLib project
  *
  *  This file is part of the "Mini Library"
  *
@@ -31,10 +32,10 @@ type
   TProcTableProc = procedure of object;
 
   PIdentifierTable = ^TIdentifierTable;
-  TIdentifierTable = array[Char] of ByteBool;
+  TIdentifierTable = array[char] of bytebool;
 
   PHashTable = ^THashTable;
-  THashTable = array[Char] of Integer;
+  THashTable = array[char] of integer;
 
   TSynHTMLPHPSyn = class;
 
@@ -42,19 +43,19 @@ type
   private
     FKeywords: TSynHashEntryList;
     FName: string;
-    FIndex: Integer;
+    FIndex: integer;
     FParent: TSynHTMLPHPSyn;
-    function KeyComp(const aKey: string): Boolean;
+    function KeyComp(const aKey: string): boolean;
   protected
     procedure DoAddKeyword(AKeyword: string; AKind: integer);
     function GetIdentChars: TSynIdentChars; virtual;
     procedure ResetRange; virtual;
-    function GetRange: Byte; virtual;
-    procedure SetRange(Value: Byte); virtual;
-    function KeyHash(ToHash: PChar): Integer; virtual;
+    function GetRange: byte; virtual;
+    procedure SetRange(Value: byte); virtual;
+    function KeyHash(ToHash: PChar): integer; virtual;
     function IdentKind(MayBe: PChar): TtkTokenKind; virtual;
   public
-    FStringLen: Integer;
+    FStringLen: integer;
     FToIdent: PChar;
     Identifiers: TIdentifierTable;
     HashTable: THashTable;
@@ -67,7 +68,7 @@ type
     procedure MakeMethodTables; virtual;
     property Parent: TSynHTMLPHPSyn read FParent;
     property Name: string read FName write FName;
-    property Index: Integer read FIndex;
+    property Index: integer read FIndex;
   end;
 
   TSynProcessors = class(TObjectList)
@@ -76,25 +77,25 @@ type
     FMainProcessor: string;
     FDefaultProcessor: string;
     FPlainProcessor: string;
-    function GetItem(Index: Integer): TSynProcessor;
-    procedure SetItem(Index: Integer; const Value: TSynProcessor);
+    function GetItem(Index: integer): TSynProcessor;
+    procedure SetItem(Index: integer; const Value: TSynProcessor);
     function GetMain: TSynProcessor;
     procedure SetCurrent(Value: TSynProcessor);
   public
-    function Add(AProcessor: TSynProcessor): Integer;
+    function Add(AProcessor: TSynProcessor): integer;
     function Find(const Name: string): TSynProcessor;
-    function IndexOf(const Name: string): Integer;
+    function IndexOf(const Name: string): integer;
     procedure Switch(const Name: string); overload;
-    procedure Switch(Index: Integer); overload;
+    procedure Switch(Index: integer); overload;
     property Current: TSynProcessor read FCurrent;
     property Main: TSynProcessor read GetMain;
     property MainProcessor: string read FMainProcessor write FMainProcessor;
     property DefaultProcessor: string read FDefaultProcessor write FDefaultProcessor;
     property PlainProcessor: string read FPlainProcessor write FPlainProcessor;
-    property Items[Index: Integer]: TSynProcessor read GetItem write SetItem; default;
+    property Items[Index: integer]: TSynProcessor read GetItem write SetItem; default;
   end;
 
-//Unkown Processor
+  //Unkown Processor
   TPlainProcessor = class(TSynProcessor)
   public
     procedure NullProc;
@@ -103,7 +104,7 @@ type
     procedure Next; override;
   end;
 
-//SynEdit
+  //SynEdit
 
   { TSynHTMLPHPSyn }
 
@@ -134,15 +135,15 @@ type
     property Processors: TSynProcessors read FProcessors;
     class function GetLanguageName: string; override;
   public
-    Run: LongInt;
-    FLineNumber: Integer;
-    FTokenPos: Integer;
+    Run: longint;
+    FLineNumber: integer;
+    FTokenPos: integer;
     FLine: PChar;
     FTokenID: TtkTokenKind;
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
     function GetDefaultAttribute(Index: integer): TSynHighlighterAttributes; override;
-    function GetEOL: Boolean; override;
+    function GetEOL: boolean; override;
     function GetRange: Pointer; override;
     procedure SetRange(Value: Pointer); override;
     procedure ResetRange; override;
@@ -151,24 +152,24 @@ type
     function GetTokenAttribute: TSynHighlighterAttributes; override;
     function GetTokenID: TtkTokenKind;
     function GetTokenKind: integer; override;
-    function GetTokenPos: Integer; override;
+    function GetTokenPos: integer; override;
     function IsKeyword(const AKeyword: string): boolean; override;
     procedure Next; override;
-    procedure SetLine(const NewValue: string; LineNumber: Integer); override;
+    procedure SetLine(const NewValue: string; LineNumber: integer); override;
   published
-    property CommentAttri: TSynHighlighterAttributes read fCommentAttri write fCommentAttri;
-    property ValueAttri: TSynHighlighterAttributes read fValueAttri write fValueAttri;
+    property CommentAttri: TSynHighlighterAttributes read FCommentAttri write FCommentAttri;
+    property ValueAttri: TSynHighlighterAttributes read FValueAttri write FValueAttri;
     property FunctionAttri: TSynHighlighterAttributes read FFunctionAttri write FFunctionAttri;
-    property IdentifierAttri: TSynHighlighterAttributes read fIdentifierAttri write fIdentifierAttri;
-    property HtmlAttri: TSynHighlighterAttributes read fHtmlAttri write fHtmlAttri;
-    property TextAttri: TSynHighlighterAttributes read fTextAttri write fTextAttri;
-    property KeywordAttri: TSynHighlighterAttributes read fKeywordAttri write fKeywordAttri;
-    property NumberAttri: TSynHighlighterAttributes read fNumberAttri write fNumberAttri;
-    property SpaceAttri: TSynHighlighterAttributes read fSpaceAttri write fSpaceAttri;
-    property StringAttri: TSynHighlighterAttributes read fStringAttri write fStringAttri;
-    property SymbolAttri: TSynHighlighterAttributes read fSymbolAttri write fSymbolAttri;
+    property IdentifierAttri: TSynHighlighterAttributes read FIdentifierAttri write FIdentifierAttri;
+    property HtmlAttri: TSynHighlighterAttributes read FHtmlAttri write FHtmlAttri;
+    property TextAttri: TSynHighlighterAttributes read FTextAttri write FTextAttri;
+    property KeywordAttri: TSynHighlighterAttributes read FKeywordAttri write FKeywordAttri;
+    property NumberAttri: TSynHighlighterAttributes read FNumberAttri write FNumberAttri;
+    property SpaceAttri: TSynHighlighterAttributes read FSpaceAttri write FSpaceAttri;
+    property StringAttri: TSynHighlighterAttributes read FStringAttri write FStringAttri;
+    property SymbolAttri: TSynHighlighterAttributes read FSymbolAttri write FSymbolAttri;
     property BracketsAttri: TSynHighlighterAttributes read FBracketsAttri write FBracketsAttri;
-    property VariableAttri: TSynHighlighterAttributes read fVariableAttri write fVariableAttri;
+    property VariableAttri: TSynHighlighterAttributes read FVariableAttri write FVariableAttri;
     property ProcessorAttri: TSynHighlighterAttributes read fProcessorAttri write fProcessorAttri;
   end;
 
@@ -179,42 +180,36 @@ const
   SYNS_LangHTMLPHP = 'HTML/PHP';
 
 //range mix Main processor as byte and Current processor as byte and index Byte
-function RangeToProcessor(Range: Pointer): Byte;
-function MixRange(Index, Main, Current: Byte): Cardinal;
-procedure SplitRange(Range: Cardinal; var Index, Main, Current: Byte);
+function RangeToProcessor(Range: Pointer): byte;
+function MixRange(Index, Main, Current: byte): cardinal;
+procedure SplitRange(Range: cardinal; var Index, Main, Current: byte);
 
-function GetWordAtRowColEx(SynEdit: TCustomSynEdit; XY: TPoint; IdentChars: TSynIdentChars; Select:Boolean): string;
-function GetHighlighterAttriAtRowColEx2(SynEdit: TCustomSynEdit; const XY: TPoint;
-  var Token: string; var TokenType, Start: Integer;
-  var Attri: TSynHighlighterAttributes;
-  var Range: Pointer): boolean;
+function GetWordAtRowColEx(SynEdit: TCustomSynEdit; XY: TPoint; IdentChars: TSynIdentChars; Select: boolean): string;
+function GetHighlighterAttriAtRowColEx2(SynEdit: TCustomSynEdit; const XY: TPoint; var Token: string; var TokenType, Start: integer; var Attri: TSynHighlighterAttributes; var Range: Pointer): boolean;
 
 implementation
 
 uses
   SynEditStrConst, PHPProcessor, HTMLProcessor, VarUtils;
 
-function RangeToProcessor(Range: Pointer): Byte;
+function RangeToProcessor(Range: Pointer): byte;
 begin
-  Result := Integer(Range) and $FF;
+  Result := integer(Range) and $FF;
 end;
 
-function MixRange(Index, Main, Current: Byte): Cardinal;
+function MixRange(Index, Main, Current: byte): cardinal;
 begin
   Result := Index or Main shl 8 or Current shl 16;
 end;
 
-procedure SplitRange(Range: Cardinal; var Index, Main, Current: Byte);
+procedure SplitRange(Range: cardinal; var Index, Main, Current: byte);
 begin
   Index := Range and $FF;
   Main := Range shr 8 and $FF;
   Current := Range shr 16 and $FF;
 end;
 
-function GetHighlighterAttriAtRowColEx2(SynEdit: TCustomSynEdit; const XY: TPoint;
-  var Token: string; var TokenType, Start: Integer;
-  var Attri: TSynHighlighterAttributes;
-  var Range: Pointer): boolean;
+function GetHighlighterAttriAtRowColEx2(SynEdit: TCustomSynEdit; const XY: TPoint; var Token: string; var TokenType, Start: integer; var Attri: TSynHighlighterAttributes; var Range: Pointer): boolean;
 var
   PosX, PosY: integer;
   Line: string;
@@ -225,7 +220,7 @@ begin
     TokenType := 0;
     Token := '';
     Attri := nil;
-    Result := FALSE;
+    Result := False;
     PosY := XY.Y - 1;
     if Assigned(Highlighter) and (PosY >= 0) and (PosY < Lines.Count) then
     begin
@@ -248,7 +243,7 @@ begin
             Attri := Highlighter.GetTokenAttribute;
             TokenType := Highlighter.GetTokenKind;
             Token := aToken;
-            Result := TRUE;
+            Result := True;
             exit;
           end;
           Highlighter.Next;
@@ -257,7 +252,7 @@ begin
   end;
 end;
 
-function GetWordAtRowColEx(SynEdit: TCustomSynEdit; XY: TPoint; IdentChars: TSynIdentChars; Select:Boolean): string;
+function GetWordAtRowColEx(SynEdit: TCustomSynEdit; XY: TPoint; IdentChars: TSynIdentChars; Select: boolean): string;
 var
   Line: string;
   Len, Stop: integer;
@@ -270,7 +265,7 @@ begin
     if Len <> 0 then
     begin
       if (XY.X > 1) and (XY.X <= Len + 1) and not (Line[XY.X] in IdentChars) then
-        XY.X :=XY.X - 1;
+        XY.X := XY.X - 1;
       if (XY.X >= 1) and (XY.X <= Len + 1) and (Line[XY.X] in IdentChars) then
       begin
         Stop := XY.X;
@@ -284,7 +279,8 @@ begin
           if Select then
           begin
             SynEdit.CaretXY := XY;
-            SynEdit.SelEnd := XY.x + Length(Result);
+            SynEdit.BlockBegin := XY;
+            SynEdit.BlockEnd := Point(XY.x + Length(Result), XY.y);
           end;
         end;
       end;
@@ -292,24 +288,24 @@ begin
   end;
 end;
 
-function TSynProcessor.KeyHash(ToHash: PChar): Integer;
+function TSynProcessor.KeyHash(ToHash: PChar): integer;
 begin
   Result := 0;
 end;
 
-function TSynProcessor.KeyComp(const aKey: string): Boolean;
+function TSynProcessor.KeyComp(const aKey: string): boolean;
 var
   i: integer;
   pKey1, pKey2: PChar;
 begin
   pKey1 := fToIdent;
-  // Note: fStringLen is always > 0 !
+  // Note: FStringLen is always > 0 !
   pKey2 := pointer(aKey);
   for i := 1 to fStringLen do
   begin
     if HashTable[pKey1^] <> HashTable[pKey2^] then
     begin
-      Result := FALSE;
+      Result := False;
       exit;
     end;
     Inc(pKey1);
@@ -349,7 +345,7 @@ end;
 
 procedure TSynHTMLPHPSyn.MakeMethodTables;
 var
-  i: Integer;
+  i: integer;
 begin
   for i := 0 to Processors.Count - 1 do
     Processors[i].MakeMethodTables;
@@ -357,7 +353,7 @@ end;
 
 procedure TSynHTMLPHPSyn.MakeIdentTable;
 var
-  i: Integer;
+  i: integer;
 begin
   for i := 0 to Processors.Count - 1 do
     Processors[i].MakeIdentTable;
@@ -378,21 +374,21 @@ begin
 
   MakeIdentTable;
 
-  fSpaceAttri := TSynHighlighterAttributes.Create(SYNS_AttrSpace);
-  fSpaceAttri.Foreground := clSilver;
+  FSpaceAttri := TSynHighlighterAttributes.Create(SYNS_AttrSpace);
+  FSpaceAttri.Foreground := clSilver;
   AddAttribute(fSpaceAttri);
 
-  fCommentAttri := TSynHighlighterAttributes.Create(SYNS_AttrComment);
-  fCommentAttri.Foreground := $000069D2;
+  FCommentAttri := TSynHighlighterAttributes.Create(SYNS_AttrComment);
+  FCommentAttri.Foreground := $000069D2;
   AddAttribute(fCommentAttri);
 
-  fValueAttri := TSynHighlighterAttributes.Create(SYNS_AttrValue);
-  fValueAttri.Style := [fsBold];
-  fValueAttri.Foreground := $00985A89;
+  FValueAttri := TSynHighlighterAttributes.Create(SYNS_AttrValue);
+  FValueAttri.Style := [fsBold];
+  FValueAttri.Foreground := $00985A89;
   AddAttribute(fValueAttri);
 
-  fIdentifierAttri := TSynHighlighterAttributes.Create(SYNS_AttrIdentifier);
-  fIdentifierAttri.Foreground := $00A35949;
+  FIdentifierAttri := TSynHighlighterAttributes.Create(SYNS_AttrIdentifier);
+  FIdentifierAttri.Foreground := $00A35949;
   AddAttribute(fIdentifierAttri);
 
   FFunctionAttri := TSynHighlighterAttributes.Create(SYNS_AttrFunction);
@@ -400,24 +396,24 @@ begin
   FFunctionAttri.Foreground := $00926221;
   AddAttribute(FFunctionAttri);
 
-  fHtmlAttri := TSynHighlighterAttributes.Create('HTML');
-  fHtmlAttri.Style := [fsBold];
-  fHtmlAttri.Foreground := $00AD655A;
+  FHtmlAttri := TSynHighlighterAttributes.Create('HTML');
+  FHtmlAttri.Style := [fsBold];
+  FHtmlAttri.Foreground := $00AD655A;
   AddAttribute(fHtmlAttri);
 
-  fTextAttri := TSynHighlighterAttributes.Create('Text');
+  FTextAttri := TSynHighlighterAttributes.Create('Text');
   AddAttribute(fTextAttri);
 
-  fKeywordAttri := TSynHighlighterAttributes.Create('Keyword');
-  fKeywordAttri.Foreground := clGreen;
+  FKeywordAttri := TSynHighlighterAttributes.Create('Keyword');
+  FKeywordAttri.Foreground := clGreen;
   AddAttribute(fKeywordAttri);
 
-  fNumberAttri := TSynHighlighterAttributes.Create(SYNS_AttrNumber);
-  fNumberAttri.Foreground := $00006F00;
-  fNumberAttri.Style := [fsBold];
+  FNumberAttri := TSynHighlighterAttributes.Create(SYNS_AttrNumber);
+  FNumberAttri.Foreground := $00006F00;
+  FNumberAttri.Style := [fsBold];
   AddAttribute(fNumberAttri);
 
-  fStringAttri := TSynHighlighterAttributes.Create(SYNS_AttrString);
+  FStringAttri := TSynHighlighterAttributes.Create(SYNS_AttrString);
   StringAttri.Foreground := $002F2FC6;
   AddAttribute(StringAttri);
 
@@ -428,18 +424,18 @@ begin
   FBracketsAttri.Background := $00E1D3BD;
   AddAttribute(FBracketsAttri);
 
-  fVariableAttri := TSynHighlighterAttributes.Create(SYNS_AttrVariable);
-  fVariableAttri.Style := [fsBold];
+  FVariableAttri := TSynHighlighterAttributes.Create(SYNS_AttrVariable);
+  FVariableAttri.Style := [fsBold];
   AddAttribute(fVariableAttri);
 
-  fProcessorAttri := TSynHighlighterAttributes.Create('Processor');
-  fProcessorAttri.Style := [fsBold];
+  FProcessorAttri := TSynHighlighterAttributes.Create('Processor');
+  FProcessorAttri.Style := [fsBold];
   AddAttribute(fProcessorAttri);
 
   SetAttributesOnChange(DefHighlightChange);
   InitIdent;
   MakeMethodTables;
-  fDefaultFilter := SYNS_FilterHTMLPHP;
+  FDefaultFilter := SYNS_FilterHTMLPHP;
 end;
 
 destructor TSynHTMLPHPSyn.Destroy;
@@ -448,7 +444,7 @@ begin
   inherited;
 end;
 
-procedure TSynHTMLPHPSyn.SetLine(const NewValue: string; LineNumber: Integer);
+procedure TSynHTMLPHPSyn.SetLine(const NewValue: string; LineNumber: integer);
 begin
   FLine := PChar(NewValue);
   FLineNumber := LineNumber;
@@ -469,8 +465,7 @@ begin
   Processors.Current.Next;
 end;
 
-function TSynHTMLPHPSyn.GetDefaultAttribute(Index: integer):
-  TSynHighlighterAttributes;
+function TSynHTMLPHPSyn.GetDefaultAttribute(Index: integer): TSynHighlighterAttributes;
 begin
   case Index of
     SYN_ATTR_COMMENT: Result := fCommentAttri;
@@ -479,12 +474,12 @@ begin
     SYN_ATTR_STRING: Result := fStringAttri;
     SYN_ATTR_WHITESPACE: Result := fSpaceAttri;
     SYN_ATTR_SYMBOL: Result := FSymbolAttri;
-  else
-    Result := nil;
+    else
+      Result := nil;
   end;
 end;
 
-function TSynHTMLPHPSyn.GetEOL: Boolean;
+function TSynHTMLPHPSyn.GetEOL: boolean;
 begin
   Result := FTokenID = tkNull;
 end;
@@ -496,7 +491,7 @@ end;
 
 function TSynHTMLPHPSyn.GetToken: string;
 var
-  Len: LongInt;
+  Len: longint;
 begin
   Len := Run - FTokenPos;
   SetString(Result, (FLine + FTokenPos), Len);
@@ -530,8 +525,8 @@ begin
     tkVariable: Result := fVariableAttri;
     tkProcessor: Result := fProcessorAttri;
     tkUnknown: Result := fTextAttri;
-  else
-    Result := nil;
+    else
+      Result := nil;
   end;
 end;
 
@@ -540,14 +535,14 @@ begin
   Result := Ord(FTokenID);
 end;
 
-function TSynHTMLPHPSyn.GetTokenPos: Integer;
+function TSynHTMLPHPSyn.GetTokenPos: integer;
 begin
   Result := FTokenPos;
 end;
 
 procedure TSynHTMLPHPSyn.ResetRange;
 var
-  i: Integer;
+  i: integer;
 begin
   for i := 0 to Processors.Count - 1 do
     Processors[i].ResetRange;
@@ -556,16 +551,16 @@ end;
 
 procedure TSynHTMLPHPSyn.SetRange(Value: Pointer);
 var
-  aIndex, aMain, aCurrent: Byte;
-  i:Integer;
+  aIndex, aMain, aCurrent: byte;
+  i: integer;
 begin
   inherited;
-  SplitRange(Cardinal(Value), aIndex, aMain, aCurrent);
+  SplitRange(cardinal(Value), aIndex, aMain, aCurrent);
   Processors.Switch(aIndex);
   Processors.Main.SetRange(aMain);
   if aIndex = 0 then
   begin
-    for i := 1 to Processors.Count -1 do
+    for i := 1 to Processors.Count - 1 do
       Processors[i].ResetRange;
   end
   else
@@ -574,7 +569,7 @@ end;
 
 function TSynHTMLPHPSyn.GetIdentChars: TSynIdentChars;
 begin
-//  Result := TSynValidStringChars + ['&', '#', ';', '$'];
+  //  Result := TSynValidStringChars + ['&', '#', ';', '$'];
   Result := TSynValidStringChars + ['&', '#', '$'];
 end;
 
@@ -641,12 +636,12 @@ procedure TSynProcessor.ResetRange;
 begin
 end;
 
-function TSynProcessor.GetRange: Byte;
+function TSynProcessor.GetRange: byte;
 begin
   Result := 0;
 end;
 
-procedure TSynProcessor.SetRange(Value: Byte);
+procedure TSynProcessor.SetRange(Value: byte);
 begin
 end;
 
@@ -672,7 +667,7 @@ end;
 procedure TPlainProcessor.LFProc;
 begin
   Parent.FTokenID := tkSpace;
-  inc(Parent.Run);
+  Inc(Parent.Run);
 end;
 
 procedure TPlainProcessor.Next;
@@ -682,7 +677,7 @@ begin
     #0: NullProc;
     #10: LFProc;
     #13: CRProc;
-  else
+    else
     begin
       Parent.FTokenID := tkUnknown;
       repeat
@@ -705,7 +700,7 @@ end;
 
 { TSynProcessors }
 
-function TSynProcessors.Add(AProcessor: TSynProcessor): Integer;
+function TSynProcessors.Add(AProcessor: TSynProcessor): integer;
 begin
   AProcessor.FIndex := inherited Add(AProcessor);
   Result := AProcessor.Index;
@@ -713,7 +708,7 @@ end;
 
 function TSynProcessors.Find(const Name: string): TSynProcessor;
 var
-  i: Integer;
+  i: integer;
 begin
   Result := nil;
   for i := 0 to Count - 1 do
@@ -726,7 +721,7 @@ begin
   end;
 end;
 
-function TSynProcessors.GetItem(Index: Integer): TSynProcessor;
+function TSynProcessors.GetItem(Index: integer): TSynProcessor;
 begin
   Result := inherited Items[Index] as TSynProcessor;
 end;
@@ -736,9 +731,9 @@ begin
   Result := Items[0];
 end;
 
-function TSynProcessors.IndexOf(const Name: string): Integer;
+function TSynProcessors.IndexOf(const Name: string): integer;
 var
-  i: Integer;
+  i: integer;
 begin
   Result := -1;
   for i := 0 to Count - 1 do
@@ -759,7 +754,7 @@ begin
   end;
 end;
 
-procedure TSynProcessors.SetItem(Index: Integer; const Value: TSynProcessor);
+procedure TSynProcessors.SetItem(Index: integer; const Value: TSynProcessor);
 begin
   inherited Items[Index] := Value;
 end;
@@ -778,14 +773,14 @@ begin
   SetCurrent(aProcessor);
 end;
 
-procedure TSynProcessors.Switch(Index: Integer);
+procedure TSynProcessors.Switch(Index: integer);
 begin
   SetCurrent(Items[Index]);
 end;
 
 procedure TSynHTMLPHPSyn.InitIdent;
 var
-  i: Integer;
+  i: integer;
 begin
   for i := 0 to Processors.Count - 1 do
     Processors[i].InitIdent;
