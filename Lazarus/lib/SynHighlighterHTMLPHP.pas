@@ -375,7 +375,7 @@ begin
   MakeIdentTable;
 
   FSpaceAttri := TSynHighlighterAttributes.Create(SYNS_AttrSpace);
-  FSpaceAttri.Foreground := clSilver;
+  FSpaceAttri.Foreground := clBlack;
   AddAttribute(fSpaceAttri);
 
   FCommentAttri := TSynHighlighterAttributes.Create(SYNS_AttrComment);
@@ -430,6 +430,7 @@ begin
 
   FProcessorAttri := TSynHighlighterAttributes.Create('Processor');
   FProcessorAttri.Style := [fsBold];
+  FProcessorAttri.Foreground := $0000006C;
   AddAttribute(fProcessorAttri);
 
   SetAttributesOnChange(DefHighlightChange);
