@@ -13,7 +13,7 @@ unit HTMLProcessor;
 interface
 
 uses
-  SysUtils, Windows, Messages, Graphics, Registry, Controls,
+  SysUtils, Messages, Graphics, Registry, Controls,
   SynEdit, SynEditTextBuffer, SynHighlighterHTMLPHP, Contnrs, Classes, SynEditTypes, SynEditHighlighter, SynHighlighterHashEntries;
 
 type
@@ -715,4 +715,4 @@ begin
 end;
 
 end.
-
+

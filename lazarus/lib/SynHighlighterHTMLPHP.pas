@@ -17,7 +17,7 @@ unit SynHighlighterHTMLPHP;
 interface
 
 uses
-  SysUtils, Windows, Messages, Graphics, Registry, Controls,
+  SysUtils, Messages, Graphics, Registry, Controls,
   SynEdit, SynEditTextBuffer, Contnrs, Classes, SynEditTypes, SynEditHighlighter, SynHighlighterHashEntries;
 
 type
@@ -788,4 +788,4 @@ begin
 end;
 
 end.
-
+

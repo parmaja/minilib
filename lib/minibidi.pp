@@ -26,6 +26,7 @@ http://www.unicode.org/Public/PROGRAMS/BidiReferenceCpp/
 http://unicode.org/cldr/utility/bidi.jsp
 
 Ported to Pascal by Zaher Dirkey, zaher at parmaja.com
+License under MIT license
 
 ***********************************************************************}
 

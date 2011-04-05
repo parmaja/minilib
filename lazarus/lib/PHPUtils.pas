@@ -13,7 +13,7 @@ unit PHPUtils;
 interface
 
 uses
-  Windows, SysUtils, StrUtils, Classes, Contnrs, Dialogs, IniFiles;
+  SysUtils, StrUtils, Classes, Contnrs, Dialogs, IniFiles;
 
 type
   TPHPStrings = class(THashedStringList)
@@ -501,4 +501,4 @@ begin
   end;
 end;
 
-end.
+end.
