@@ -1,5 +1,5 @@
 unit SynHighlighterApache;
-{$mode delphi}
+{$mode objfpc}{$H+}
 {**
  *  Light PHP Edit project
  *
@@ -64,6 +64,7 @@ type
     function IsFilterStored: Boolean; override;
   public
     class function GetLanguageName: string; override;
+    //procedure DoAddKeyword(AKeyword: string; AKind: integer);
   public
     constructor Create(AOwner: TComponent); override;
     function GetDefaultAttribute(Index: integer): TSynHighlighterAttributes;   
@@ -101,35 +102,14 @@ type
 
 const
   sApacheKeywords =
-    'break,'+
-    'case,'+
-    'continue,'+
-    'default,'+
-    'do,'+
-    'else,'+
-    'elseif,'+
-    'endfor,'+
-    'endif,'+
-    'endswitch,'+
-    'endwhile,'+
-    'for,'+
-    'foreach,'+
-    'function,'+
-    'if,'+
-    'include,'+
-    'require,'+
-    'return,'+
-    'switch,'+
-    'while';
-  
+    'IfModule,'+
+    'Include,'+
+    'ServerRoot';
+
 implementation
 
 uses
-{$IFDEF SYN_CLX}
-  QSynEditStrConst;
-{$ELSE}
   SynEditStrConst;
-{$ENDIF}
 
 procedure TSynApacheSyn.MakeMethodTables;
 var
@@ -137,18 +117,18 @@ var
 begin
   for i := #0 to #255 do
     case i of
-      #0      : fProcTable[i] := NullProc;
-      #10 {LF}: fProcTable[i] := LFProc;
-      #13 {CR}: fProcTable[i] := CRProc;
-      #34 {"} : fProcTable[i] := StringProc;
-      #39 {'} : fProcTable[i] := StringProc1;
-      '0'..'9': fProcTable[i] := NumberProc;
-      '#' {#} : fProcTable[i] := CommentProc;
-      #61 {=} : fProcTable[i] := EqualProc;
-      #91 {[} : fProcTable[i] := SectionOpenProc;
-      #1..#9, #11, #12, #14..#32: fProcTable[i] := SpaceProc;
+      #0      : fProcTable[i] := @NullProc;
+      #10 {LF}: fProcTable[i] := @LFProc;
+      #13 {CR}: fProcTable[i] := @CRProc;
+      #34 {"} : fProcTable[i] := @StringProc;
+      #39 {'} : fProcTable[i] := @StringProc1;
+      '0'..'9': fProcTable[i] := @NumberProc;
+      '#' {#} : fProcTable[i] := @CommentProc;
+      #61 {=} : fProcTable[i] := @EqualProc;
+      #91 {[} : fProcTable[i] := @SectionOpenProc;
+      #1..#9, #11, #12, #14..#32: FProcTable[i] := @SpaceProc;
     else
-      fProcTable[i] := TextProc;
+      fProcTable[i] := @TextProc;
     end;
 end;
 
@@ -174,9 +154,10 @@ begin
   AddAttribute(fStringAttri);
   fSymbolAttri             := TSynHighlighterAttributes.Create(SYNS_AttrSymbol);
   AddAttribute(fSymbolAttri);
-  SetAttributesOnChange(DefHighlightChange);
+  SetAttributesOnChange(@DefHighlightChange);
 
   fDefaultFilter := SYNS_FilterINI;
+  //EnumerateKeywords(Ord(tkKeyword), sApacheKeywords, TSynValidStringChars, DoAddKeyword);
   MakeMethodTables;
 end; { Create }
 
@@ -415,6 +396,14 @@ class function TSynApacheSyn.GetLanguageName: string;
 begin
   Result := 'Apache';
 end;
+
+{procedure TSynApacheSyn.DoAddKeyword(AKeyword: string; AKind: integer);
+var
+  HashValue: integer;
+begin
+  HashValue := KeyHash(PChar(AKeyword));
+  FKeywords[HashValue] := TSynHashEntry.Create(AKeyword, AKind);
+end;}
 
 function TSynApacheSyn.GetSampleSource: String;
 begin

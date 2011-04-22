@@ -1,6 +1,6 @@
 unit SynHighlighterHTMLPHP;
 
-{$mode delphi}
+{$mode objfpc}{$H+}
 {**
  *  MiniLib project
  *
@@ -121,7 +121,6 @@ type
     fSpaceAttri: TSynHighlighterAttributes;
     fStringAttri: TSynHighlighterAttributes;
     fSymbolAttri: TSynHighlighterAttributes;
-    FBracketsAttri: TSynHighlighterAttributes;
     fVariableAttri: TSynHighlighterAttributes;
     fProcessorAttri: TSynHighlighterAttributes;
     procedure InitIdent;
@@ -168,7 +167,6 @@ type
     property SpaceAttri: TSynHighlighterAttributes read FSpaceAttri write FSpaceAttri;
     property StringAttri: TSynHighlighterAttributes read FStringAttri write FStringAttri;
     property SymbolAttri: TSynHighlighterAttributes read FSymbolAttri write FSymbolAttri;
-    property BracketsAttri: TSynHighlighterAttributes read FBracketsAttri write FBracketsAttri;
     property VariableAttri: TSynHighlighterAttributes read FVariableAttri write FVariableAttri;
     property ProcessorAttri: TSynHighlighterAttributes read fProcessorAttri write fProcessorAttri;
   end;
@@ -194,7 +192,7 @@ uses
 
 function RangeToProcessor(Range: Pointer): byte;
 begin
-  Result := integer(Range) and $FF;
+  Result := PtrUInt(Range) and $FF;
 end;
 
 function MixRange(Index, Main, Current: byte): cardinal;
@@ -420,10 +418,6 @@ begin
   FSymbolAttri := TSynHighlighterAttributes.Create(SYNS_AttrSymbol);
   AddAttribute(FSymbolAttri);
 
-  FBracketsAttri := TSynHighlighterAttributes.Create('Brackets');
-  FBracketsAttri.Background := $00E1D3BD;
-  AddAttribute(FBracketsAttri);
-
   FVariableAttri := TSynHighlighterAttributes.Create(SYNS_AttrVariable);
   FVariableAttri.Style := [fsBold];
   AddAttribute(fVariableAttri);
@@ -433,7 +427,7 @@ begin
   FProcessorAttri.Foreground := $0000006C;
   AddAttribute(fProcessorAttri);
 
-  SetAttributesOnChange(DefHighlightChange);
+  SetAttributesOnChange(@DefHighlightChange);
   InitIdent;
   MakeMethodTables;
   FDefaultFilter := SYNS_FilterHTMLPHP;
@@ -494,6 +488,7 @@ function TSynHTMLPHPSyn.GetToken: string;
 var
   Len: longint;
 begin
+  Result := '';
   Len := Run - FTokenPos;
   SetString(Result, (FLine + FTokenPos), Len);
 end;
@@ -556,7 +551,7 @@ var
   i: integer;
 begin
   inherited;
-  SplitRange(cardinal(Value), aIndex, aMain, aCurrent);
+  SplitRange(PtrUInt(Value), aIndex, aMain, aCurrent);
   Processors.Switch(aIndex);
   Processors.Main.SetRange(aMain);
   if aIndex = 0 then
@@ -788,4 +783,4 @@ begin
 end;
 
 end.
-
+
