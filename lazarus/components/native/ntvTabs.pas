@@ -452,30 +452,34 @@ var
   end;
 begin
   TabDraw := CreateTabDraw;
-  if FUpdateItems then
-    raise Exception.Create('You can not GetTabRect directly after changed');
-  vTabRect := Rect(0, 0, 0, 0);
-  Result := False;
-  if (Index < FVisibles.Count) and (Index > -1) then
-  begin
-    x := 0;
-    for i := TopIndex to Index do
-      x := x + GetW(i);
-    R := Rect(0, vTabsRect.Top, 0, vTabsRect.Bottom);
-    w := GetW(Index);
-    if tbfRightToLeft in vFlags then
+  try
+    if FUpdateItems then
+      raise Exception.Create('You can not GetTabRect directly after changed');
+    vTabRect := Rect(0, 0, 0, 0);
+    Result := False;
+    if (Index < FVisibles.Count) and (Index > -1) then
     begin
-      x := vTabsRect.Right - x;
-      R.Left := x;
-      R.Right := x + w;
-    end
-    else
-    begin
-      R.Right := x - 1;
-      R.Left := x - w;
+      x := 0;
+      for i := TopIndex to Index do
+        x := x + GetW(i);
+      R := Rect(0, vTabsRect.Top, 0, vTabsRect.Bottom);
+      w := GetW(Index);
+      if tbfRightToLeft in vFlags then
+      begin
+        x := vTabsRect.Right - x;
+        R.Left := x;
+        R.Right := x + w;
+      end
+      else
+      begin
+        R.Right := x - 1;
+        R.Left := x - w;
+      end;
+      vTabRect := R;
+      Result := True;
     end;
-    vTabRect := R;
-    Result := True;
+  finally
+    FreeAndNil(TabDraw)
   end;
 end;
 
@@ -495,7 +499,11 @@ var
   TabDraw: TntvTabDraw;
 begin
   TabDraw := CreateTabDraw;
-  TabDraw.Paint(Visibles[Index], IndexToState(Index), vRect, Canvas, vFlags);
+  try
+    TabDraw.Paint(Visibles[Index], IndexToState(Index), vRect, Canvas, vFlags);
+  finally
+    FreeAndNil(TabDraw)
+  end;
 end;
 
 function TntvTabs.GetTabRect(const vTabsRect:TRect; Index: Integer; var vTabRect: TRect; vFlags: TntvFlags): Boolean;
