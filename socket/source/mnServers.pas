@@ -78,6 +78,8 @@ type
     property OnLog: TmnOnLog read FOnLog write FOnLog;
   end;
 
+  { TmnServer }
+
   TmnServer = class(TComponent)
   private
     FPort: string;
@@ -103,6 +105,8 @@ type
     procedure DoAfterOpen; virtual;
     procedure DoBeforeClose; virtual;
     procedure DoAfterClose; virtual;
+    procedure DoStart; virtual;
+    procedure DoStop; virtual;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -443,6 +447,7 @@ begin
         FListener.FPort := FPort;
         FListener.FAddress := Address;
         FListener.Start;
+        DoStart;
         FActive := True;
       except
         FreeAndNil(FListener);
@@ -478,6 +483,7 @@ begin
     FListener.Stop;
     FListener.WaitFor;
     FreeAndNil(FListener);
+    DoStop;
     FActive := False;
     DoAfterClose;
   end;
@@ -518,6 +524,14 @@ begin
     if Assigned(FOnAfterClose) then
       FOnAfterClose(Self);
   end;
+end;
+
+procedure TmnServer.DoStart;
+begin
+end;
+
+procedure TmnServer.DoStop;
+begin
 end;
 
 procedure TmnServer.Close;
