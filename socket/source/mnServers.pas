@@ -435,7 +435,7 @@ end;
 
 procedure TmnServer.Start;
 begin
-//  CheckInactive;
+  DoStart;
   if (FListener = nil) then // if its already active, dont start again
   begin
     try
@@ -447,7 +447,6 @@ begin
         FListener.FPort := FPort;
         FListener.FAddress := Address;
         FListener.Start;
-        DoStart;
         FActive := True;
       except
         FreeAndNil(FListener);
@@ -483,10 +482,10 @@ begin
     FListener.Stop;
     FListener.WaitFor;
     FreeAndNil(FListener);
-    DoStop;
     FActive := False;
     DoAfterClose;
   end;
+  DoStop;
 end;
 
 function TmnServer.CreateListener: TmnListener;
