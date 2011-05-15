@@ -37,7 +37,7 @@ type
   TntvTabDraw = class(TObject)
   public
     function GetWidth(State: TTabDrawStates; vTabsRect: TRect; Width: Integer): Integer; virtual; abstract;
-    function Paint(vItem: TntvTabItem; State: TTabDrawStates ; vRect:TRect; Canvas:TCanvas; vFlags: TntvFlags): Boolean; virtual; abstract;
+    procedure Paint(vItem: TntvTabItem; State: TTabDrawStates ; vRect:TRect; Canvas:TCanvas; vFlags: TntvFlags); virtual; abstract;
   end;
 
   { TTabDrawSheet }
@@ -45,7 +45,7 @@ type
   TTabDrawSheet = class(TntvTabDraw)
   public
     function GetWidth(State: TTabDrawStates; vTabsRect: TRect; Width: Integer): Integer; override;
-    function Paint(vItem: TntvTabItem; State: TTabDrawStates; vRect:TRect; Canvas:TCanvas; vFlags: TntvFlags): Boolean; override;
+    procedure Paint(vItem: TntvTabItem; State: TTabDrawStates; vRect:TRect; Canvas:TCanvas; vFlags: TntvFlags); override;
   end;
 
   { TntvTabItem }
@@ -579,9 +579,9 @@ begin
     Result := Result + w;}
 end;
 
-function TTabDrawSheet.Paint(vItem: TntvTabItem; State: TTabDrawStates; vRect: TRect; Canvas: TCanvas; vFlags: TntvFlags): Boolean;
+procedure TTabDrawSheet.Paint(vItem: TntvTabItem; State: TTabDrawStates; vRect: TRect; Canvas: TCanvas; vFlags: TntvFlags);
 var
-  R, aTextRect: TRect;
+  aTextRect: TRect;
   aTextStyle: TTextStyle;
 begin
   with Canvas do
@@ -621,7 +621,7 @@ begin
     if tdsActive in State then
     begin
       if tbfFocused in vFlags then
-        DrawFocusRect(R);
+        DrawFocusRect(aTextRect);
     end;
   end;
 end;
