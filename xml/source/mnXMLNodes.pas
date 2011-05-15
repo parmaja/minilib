@@ -131,7 +131,7 @@ begin
   inherited Create;
   FNodes := Nodes;
   FParent := Parent;
-  FAttributes := TmnXMLAttributes.Create;
+  FAttributes := TmnXMLAttributes.Create(True);
   FItems := TmnXMLNodesList.Create;
 end;
 
