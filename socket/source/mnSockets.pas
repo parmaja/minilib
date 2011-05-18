@@ -25,7 +25,6 @@ type
   TmnError = (erNone, erTimout, erFail, erClosed, erInvalid);
   TSelectCheck = (slRead, slWrite);
 
-{  TmnState = (ssInvalidState, ssOpened, ssBound, ssConnecting, ssConnected, ssAccepting, ssListening, ssClosed); }
   TmnOption = (soBroadcast, soDebug, soDontLinger, soDontRoute, soKeepAlive, soOOBInLine, soReuseAddr, soNoDelay, soBlocking, soAcceptConn);
   TmnOptions = set of TmnOption;
 
@@ -40,7 +39,6 @@ type
     function DoSelect(Timeout: Int64; Check: TSelectCheck): TmnError; virtual; abstract;
   public
     destructor Destroy; override;
-    function RecvLength: Cardinal; virtual; abstract;
     procedure Terminate;
     procedure Close; virtual; abstract;
     function Shutdown(How: TmnShutdown): TmnError; virtual; abstract;
@@ -49,7 +47,6 @@ type
     function Select(Timeout: Int64; Check: TSelectCheck): TmnError;
     function Listen: TmnError; virtual; abstract;
     function Accept: TmnCustomSocket; virtual; abstract;
-    procedure Cancel; virtual; abstract;
     property Active: Boolean read GetActive;
     function GetLocalAddress: ansistring; virtual; abstract;
     function GetRemoteAddress: ansistring; virtual; abstract;

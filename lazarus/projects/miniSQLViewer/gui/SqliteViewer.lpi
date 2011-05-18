@@ -91,7 +91,7 @@
     </Target>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)"/>
-      <OtherUnitFiles Value="..\lib;W:\home\pascal\lib\minilib\lib\;W:\home\pascal\lib\minilib\connection\source\;W:\home\pascal\lib\minilib\connection\db\;W:\home\pascal\lib\minilib\connection\db\sqlite\;W:\home\pascal\lib\minilib\xml\source\;W:\programs\lazarus\components\synedit\"/>
+      <OtherUnitFiles Value="..\lib;W:\home\pascal\lib\minilib\lib\;W:\home\pascal\lib\minilib\lazarus\lib\;W:\home\pascal\lib\minilib\connection\source\;W:\home\pascal\lib\minilib\connection\db\;W:\home\pascal\lib\minilib\connection\db\sqlite\;W:\home\pascal\lib\minilib\xml\source\;W:\programs\lazarus\components\synedit\"/>
       <UnitOutputDirectory Value="..\units"/>
     </SearchPaths>
     <Parsing>

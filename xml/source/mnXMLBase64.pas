@@ -11,7 +11,7 @@
 {$mode delphi}
 {$ENDIF}
 
-unit mnXMlBase64;
+unit mnXMLBase64;
 
 interface
 
@@ -278,4 +278,4 @@ end;
 *)
 
 end.
-
+

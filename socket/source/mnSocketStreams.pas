@@ -138,8 +138,6 @@ begin
     DoError('SocketStream not connected')
   else
   begin
-    if (Count = -1) then
-      Count := Socket.RecvLength;
     if WaitToRead(FTimeout) then
     begin
       if (Socket = nil) or (Socket.Receive(Buffer, Count) >= erClosed) then

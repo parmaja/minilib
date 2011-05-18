@@ -207,6 +207,9 @@ begin
   Current := Range shr 16 and $FF;
 end;
 
+type
+  TSynCustomHighlighterHack = class(TSynCustomHighlighter);
+
 function GetHighlighterAttriAtRowColEx2(SynEdit: TCustomSynEdit; const XY: TPoint; var Token: string; var TokenType, Start: integer; var Attri: TSynHighlighterAttributes; var Range: Pointer): boolean;
 var
   PosX, PosY: integer;
@@ -226,7 +229,7 @@ begin
       if PosY = 0 then
         Highlighter.ResetRange
       else
-        Highlighter.SetRange(TSynEditStringList(Lines).Ranges[Pointer(PosY - 1)]);
+        Highlighter.SetRange(TSynCustomHighlighterHack(Highlighter).CurrentRanges.Range[PosY - 1]);
       Highlighter.SetLine(Line, PosY);
       PosX := XY.X;
       Range := Highlighter.GetRange;

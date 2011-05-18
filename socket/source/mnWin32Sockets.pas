@@ -18,7 +18,6 @@ interface
 uses
   Classes,
   SysUtils,
-  //mnWinSock2,
 {$IFDEF FPC}
 {$IFDEF WINDOWS}
   WinSock2,
@@ -42,10 +41,8 @@ type
     function DoSelect(Timeout: Int64; Check: TSelectCheck): TmnError; override;
   public
     constructor Create(Handle: TSocket);
-    function RecvLength: Cardinal; override;
     procedure Close; override;
     function Accept: TmnCustomSocket; override;
-    procedure Cancel; override;
     function Receive(var Buffer; var Count: Longint): TmnError; override;
     function Send(const Buffer; var Count: Longint): TmnError; override;
     function Shutdown(How: TmnShutdown): TmnError; override;
@@ -201,25 +198,6 @@ begin
     WinSock.Closesocket(FHandle);
   {$ENDIF}
     FHandle := INVALID_SOCKET;
-  end;
-end;
-
-function TmnWinSocket.RecvLength: Cardinal;
-var
-  i: Integer;
-{$IFDEF FPC}
-  l:DWORD;
-{$ELSE}
- l:Longint;
-{$ENDIF}
-begin
-  CheckActive;
-  l := 0;
-  i := ioctlsocket(FHandle, FIONREAD, L);
-  Result := l;
-  if (i = SOCKET_ERROR) then
-  begin
-    Error;
   end;
 end;
 
@@ -380,17 +358,6 @@ begin
 {$ENDIF}
   s := PAnsiChar(s);
   Result := s;
-end;
-
-procedure TmnWinSocket.Cancel;
-begin
-{$IFDEF FPC}
-  {$IFNDEF WINCE}
-    WinSock2.WSACancelBlockingCall;
-  {$ENDIF}
-{$ELSE}
-  WinSock.WSACancelBlockingCall;
-{$ENDIF}
 end;
 
 { TmnWinWallSocket }
