@@ -55,9 +55,11 @@ type
     constructor Create(AStream: TStream; AEndOfLine:string; Owned: Boolean = True); overload; virtual; 
     constructor Create(AStream: TStream; Owned: Boolean = True); overload;
     destructor Destroy; override;
+
     function Read(var Buffer; Count: Longint): Longint; override;
-    function Write(const Buffer; Count: Longint): Longint; override;
     procedure ReadUntil(const UntilStr: string; var Result: string; var Matched: Boolean);
+    function Write(const Buffer; Count: Longint): Longint; override;
+    
     function ReadLn(var S: string; ExcludeEOL: Boolean = True): Boolean; overload;
     function ReadLn: string; overload;
     procedure ReadStrings(Value: TStrings);

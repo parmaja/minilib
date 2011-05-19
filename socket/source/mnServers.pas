@@ -465,10 +465,7 @@ begin
     Terminate;
     if Socket <> nil then
     begin
-      //Socket.Cancel;
-//      Socket.Shutdown(sdReceive); //if thread in accept()
-//      Socket.Shutdown(sdBoth); //if thread in accept()
-      Socket.Close; //if thread in accept()
+      Socket.Close;
     end;
   finally
     Leave;

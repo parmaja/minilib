@@ -279,7 +279,7 @@ begin
     FRequestUserAgent := '';
     FRequestHost := '';
     FRequestConnection := '';
-    ln := Stream.ReadLn;
+    ln := Stream.ReadLn(#13);
     while ln <> '' do
     begin
       FRequestHeader.Add(ln);

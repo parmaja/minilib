@@ -74,8 +74,11 @@ type
     constructor Create(vSocket: TmnCustomSocket = nil); override;
     destructor Destroy; override;
     procedure LoadBuffer;
+
     function Read(var Buffer; Count: Longint): Longint; override;
     procedure ReadUntil(const UntilStr: string; var Result: string; var Matched: Boolean);
+//    function Write(const Buffer; Count: Longint): Longint;
+
     function ReadLn(const EOL: string): string; overload;
     function ReadLn: string; overload;
     procedure ReadCommand(var Command: string; var Params: string);
@@ -275,6 +278,11 @@ begin
       Value.Add(S);
   end;
 end;
+
+{function TmnConnectionStream.Write(const Buffer; Count: Integer): Longint;
+begin
+  Result := inherited Write(Buffer, Count);
+end;}
 
 procedure TmnConnectionStream.WriteCommand(const Command, Params: string);
 begin
