@@ -187,7 +187,7 @@ end;
 constructor TPHPIniFile.Create(const AFileName: string;
   AEscapeLineFeeds: Boolean);
 begin
-  inherited Create(FileName);
+  inherited Create(AFileName);
   FSections := TPHPStrings.Create;
 //  FSections.CaseSensitive := True;
   LoadValues;

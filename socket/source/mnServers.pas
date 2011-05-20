@@ -7,12 +7,12 @@ unit mnServers;
  * @author    Zaher Dirkey <zaher at parmaja dot com>
  *}
 
+{$define NoSynchronize}
 {$M+}
 {$H+}
 {$IFDEF FPC}
 {$MODE delphi}
 {$ELSE}
-{$define NoSynchronize}
 {$ENDIF}
 
 interface
@@ -315,10 +315,11 @@ begin
         aSocket := Socket.Accept;
         Enter;
         try
+
         finally
           Leave;
         end;
-        if not Terminated and Connected then
+        if not Terminated then
         begin
           if (aSocket = nil) then
           begin
@@ -576,4 +577,4 @@ end;
 initialization
 finalization
 end.
-
+

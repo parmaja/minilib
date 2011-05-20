@@ -11,41 +11,8 @@
     <VersionInfo>
       <StringTable ProductVersion=""/>
     </VersionInfo>
-    <BuildModes Count="2">
+    <BuildModes Count="1">
       <Item1 Name="Windows" Default="True"/>
-      <Item2 Name="Linux">
-        <CompilerOptions>
-          <Version Value="10"/>
-          <PathDelim Value="\"/>
-          <SearchPaths>
-            <OtherUnitFiles Value="..\..\..\source;\usr\ws\dev\home\pascal\lib\minilib\lib;\usr\ws\dev\home\pascal\lib\minilib\socket\source"/>
-          </SearchPaths>
-          <Parsing>
-            <SyntaxOptions>
-              <IncludeAssertionCode Value="True"/>
-              <CStyleMacros Value="True"/>
-              <UseAnsiStrings Value="False"/>
-            </SyntaxOptions>
-          </Parsing>
-          <Linking>
-            <Debugging>
-              <UseLineInfoUnit Value="False"/>
-              <GenerateDwarf Value="True"/>
-            </Debugging>
-            <Options>
-              <Win32>
-                <GraphicApplication Value="True"/>
-              </Win32>
-            </Options>
-          </Linking>
-          <Other>
-            <CompilerMessages>
-              <UseMsgFile Value="True"/>
-            </CompilerMessages>
-            <CompilerPath Value="$(CompPath)"/>
-          </Other>
-        </CompilerOptions>
-      </Item2>
     </BuildModes>
     <PublishOptions>
       <Version Value="2"/>
@@ -84,7 +51,7 @@
     <PathDelim Value="\"/>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)"/>
-      <OtherUnitFiles Value="..\..\..\source;W:\home\pascal\lib\minilib\lib\;W:\home\pascal\lib\minilib\socket\source\"/>
+      <OtherUnitFiles Value="..\..\..\source;W:\home\pascal\lib\minilib\lib;W:\home\pascal\lib\minilib\socket\source"/>
     </SearchPaths>
     <Parsing>
       <SyntaxOptions>
@@ -115,4 +82,4 @@
       </Item2>
     </Exceptions>
   </Debugging>
-</CONFIG>
+</CONFIG>
