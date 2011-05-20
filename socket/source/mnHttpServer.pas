@@ -326,7 +326,7 @@ begin
     ProcessHead
   else
     Answer404;
-  Listener.Log(Self, FDocument); //when i put this line first not work in WinCE!!!
+  Listener.Log(FDocument); //when i put this line first not work in WinCE!!!
 end;
 
 procedure THttpConnection.ProcessPost;
@@ -471,4 +471,4 @@ begin
 end;
 
 end.
-
+

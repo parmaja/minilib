@@ -203,7 +203,7 @@ end;
 
 function TmnWinSocket.DoShutdown(How: TmnShutdown): TmnError;
 const
-  cHow: array[TmnShutdown] of Integer = (SD_RECEIVE, SD_SEND, SD_BOTH);
+  cHow: array[TmnShutdown] of Integer = (0, SD_RECEIVE, SD_SEND, SD_BOTH);
 var
   c: Integer;
 begin
@@ -216,7 +216,7 @@ begin
   if c = SOCKET_ERROR then
   begin
     Result := erFail;
-    //RaiseLastOSError;
+    RaiseLastOSError;
   end
   else
     Result := erNone;

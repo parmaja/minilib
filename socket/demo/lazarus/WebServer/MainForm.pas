@@ -50,7 +50,7 @@ type
     procedure WebServerBeforeOpen(Sender: TObject);
     procedure WebServerAfterClose(Sender: TObject);
     procedure WebServerChanged(Listener: TmnListener);
-    procedure WebServerLog(Connection: TmnConnection; const S: String);
+    procedure WebServerLog(const S: String);
   public
   end;
 
@@ -59,6 +59,7 @@ var
 
 implementation
 
+{$R *.lfm}
 
 procedure TMain.StartBtnClick(Sender: TObject);
 begin
@@ -207,12 +208,10 @@ begin
   MaxOfThreads.Caption:=IntToStr(FMax);
 end;
 
-procedure TMain.WebServerLog(Connection: TmnConnection; const S: String);
+procedure TMain.WebServerLog(const S: String);
 begin
   Memo.Lines.Add(s);
 end;
 
-initialization
-  {$i MainForm.lrs}
 end.
 

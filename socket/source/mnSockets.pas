@@ -21,7 +21,7 @@ uses
 
 type
   EmnException = class(Exception);
-  TmnShutdown = (sdReceive, sdSend, sdBoth);
+  TmnShutdown = (sdNone, sdReceive, sdSend, sdBoth);
   TmnError = (erNone, erTimout, erFail, erClosed, erInvalid);
   TSelectCheck = (slRead, slWrite);
 
@@ -34,6 +34,7 @@ type
   private
     FClosing: Boolean;
     FShutdownState: TmnShutdown;
+    function GetConnected: Boolean;
   protected
     procedure FatalError(const Msg: string);
     procedure Error;
@@ -53,6 +54,7 @@ type
     function Listen: TmnError; virtual; abstract;
     function Accept: TmnCustomSocket; virtual; abstract;
     property Active: Boolean read GetActive;
+    property Connected: Boolean read GetConnected;
     function GetLocalAddress: ansistring; virtual; abstract;
     function GetRemoteAddress: ansistring; virtual; abstract;
     function GetLocalName: string; virtual; abstract;
@@ -132,6 +134,11 @@ begin
   Close;
 end;
 
+function TmnCustomSocket.GetConnected: Boolean;
+begin
+  Result := Active and (FShutdownState = sdNone)
+end;
+
 procedure TmnCustomSocket.FatalError(const Msg: string);
 begin
   Close;
@@ -154,12 +161,15 @@ end;
 
 function TmnCustomSocket.Shutdown(How: TmnShutdown): TmnError;
 begin
-  Result := DoShutdown(How);
-  if Result = erNone then
-    FShutdownState := How;
+  if How > sdNone then
+  begin
+    Result := DoShutdown(How);
+    if Result = erNone then
+      FShutdownState := How;
+  end;
 end;
 
 initialization
 finalization
   FreeAndNil(FmnWallSocket);
-end.
+end.

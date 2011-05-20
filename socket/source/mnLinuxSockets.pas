@@ -140,6 +140,7 @@ begin
   if Timeout = -1 then
     Timeout := 0;
   c := fpselect(FHandle + 1, PSetRead, PSetWrite, PSetRead, Timeout); {$hint 'why FHandle + 1 not 1'}
+  //c := fpselect(0, PSetRead, PSetWrite, PSetRead, Timeout);
   if (c = 0) or (c = SOCKET_ERROR) then
   begin
     Error;
@@ -172,7 +173,7 @@ end;
 
 function TmnLinuxSocket.DoShutdown(How: TmnShutdown): TmnError;
 const
-  cHow: array[TmnShutdown] of Integer = (SHUT_RD, SHUT_WR, SHUT_RDWR);
+  cHow: array[TmnShutdown] of Integer = (0, SHUT_RD, SHUT_WR, SHUT_RDWR);
 var
   c: Integer;
 begin
@@ -365,4 +366,4 @@ initialization
   RegisterWallSocket(TmnLinuxWallSocket.Create);
 end.
 
-//StrToHostAddr
+//StrToHostAddr

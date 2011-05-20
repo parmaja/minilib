@@ -11,6 +11,8 @@ unit mnServers;
 {$H+}
 {$IFDEF FPC}
 {$MODE delphi}
+{$ELSE}
+{$define NoSynchronize}
 {$ENDIF}
 
 interface
@@ -39,7 +41,7 @@ type
 
   TmnServerConnectionClass = class of TmnServerConnection;
 
-  TmnOnLog = procedure(Connection: TmnConnection; const S: string) of object;
+  TmnOnLog = procedure(const S: string) of object;
   TmnOnListenerNotify = procedure(Listener: TmnListener) of object;
 
   TmnListener = class(TmnLockThread) // thread to watch for incoming requests
@@ -57,9 +59,12 @@ type
     function GetCount: Integer;
   protected
     FOptions: TmnOptions;
+    FLogMessage: string;
+    procedure SyncLog;
+    procedure SyncChanged;
     function CreateConnection(Socket: TmnCustomSocket): TmnServerConnection; virtual;
     procedure Prepare; virtual; // called before add a new connection
-    procedure Shutdown; virtual;
+    procedure DropConnections; virtual;
     procedure Execute; override;
     procedure Changed; virtual;
     procedure Remove(Connection: TmnServerConnection); virtual;
@@ -69,7 +74,7 @@ type
     destructor Destroy; override;
     procedure Start;
     procedure Stop;
-    procedure Log(Connection: TmnConnection; S: string);
+    procedure Log(S: string);
     property Server: TmnServer read FServer;
     property Connected: Boolean read GetConnected;
     property Socket: TmnCustomSocket read FSocket;
@@ -253,8 +258,11 @@ end;
 
 procedure TmnListener.Changed;
 begin
-  if FServer <> nil then
-    FServer.DoChanged(Self);
+  {$ifdef NoSynchronize}
+  SyncChanged;
+  {$else}
+  Synchronize(Self, SyncChanged);
+  {$endif}
 end;
 
 procedure TmnListener.Connect;
@@ -305,42 +313,50 @@ begin
     try
       begin
         aSocket := Socket.Accept;
-        if (aSocket = nil) then
+        Enter;
+        try
+        finally
+          Leave;
+        end;
+        if not Terminated and Connected then
         begin
-          //must attempt for new socket 3 times
-          if not Terminated then
+          if (aSocket = nil) then
           begin
-            if FAttempt > 0 then
+            //must attempt for new socket 3 times
+            if not Terminated then
             begin
-              FAttempt := FAttempt - 1;
-              Connect;
-            end
-            else
-              Socket.Shutdown(sdBoth);
-          end;
-        end
-        else
-        begin
-          try
-            Enter; //because we add connection to a thread list
-            try
-              Prepare;
-              aConnection := CreateConnection(aSocket);
-              aConnection.Listener := Self;
-//              aConnection.Start;
-            finally
-              Leave;
+              if FAttempt > 0 then
+              begin
+                FAttempt := FAttempt - 1;
+                Connect;
+              end
+              else if Socket.Active then
+                Socket.Shutdown(sdBoth);
             end;
-            aConnection.Start; //moved here need some test
-          finally
+          end
+          else
+          begin
+            try
+              Enter; //because we add connection to a thread list
+              try
+                Prepare;
+                aConnection := CreateConnection(aSocket);
+                aConnection.Listener := Self;
+              finally
+                Leave;
+              end;
+              aConnection.Start; //moved here need some test
+            finally
+            end;
           end;
         end;
       end
     finally
     end;
   end;
-  Shutdown;
+  DropConnections;
   Disconnect;
+  Changed;
 end;
 
 function TmnListener.GetConnected: Boolean;
@@ -353,17 +369,14 @@ begin
   Result := FList.Count;
 end;
 
-procedure TmnListener.Log(Connection: TmnConnection; S: string);
+procedure TmnListener.Log(S: string);
 begin
-  if Assigned(FOnLog) then
-  begin
-//    Enter;
-    try
-      FOnLog(Connection, S);
-    finally
-//      Leave;
-    end;
-  end;
+  FLogMessage := S;
+  {$ifdef NoSynchronize}
+  SyncLog;
+  {$else}
+  Synchronize(Self, SyncLog);
+  {$endif}
 end;
 
 procedure TmnListener.Prepare;
@@ -389,7 +402,7 @@ begin
   Resume;
 end;
 
-procedure TmnListener.Shutdown;
+procedure TmnListener.DropConnections;
 var
   i: Integer;
 begin
@@ -410,7 +423,6 @@ begin
       FList[0].Free;
       FList.Delete(0);
     end;
-    Changed;
   finally
   end;
 end;
@@ -465,13 +477,30 @@ begin
     Terminate;
     if Socket <> nil then
     begin
-      {$ifdef WINDOWS}
+      {$ifdef FPC}
+      {$ifndef WINDOWS}
+      {$hint 'Why need to Shutdown to stop Accept?'}
       Socket.Shutdown(sdBoth); //stop the accept from waiting
+      {$endif}
       {$endif}
       Socket.Close;
     end;
   finally
     Leave;
+  end;
+end;
+
+procedure TmnListener.SyncChanged;
+begin
+  if FServer <> nil then
+    FServer.DoChanged(Self);
+end;
+
+procedure TmnListener.SyncLog;
+begin
+  if Assigned(FOnLog) then
+  begin
+    FOnLog(FLogMessage);
   end;
 end;
 

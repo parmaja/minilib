@@ -182,8 +182,8 @@ end;
 
 procedure TmnSocketStream.Disconnect;
 begin
-  if (Socket <> nil) and Socket.Active then
-    Shutdown;//may be not but in slow matchine disconnect to take as effects as need (POS in 98)
+  if (Socket <> nil) and Socket.Connected then
+    Shutdown; //may be not but in slow matchine disconnect to take as effects as need (POS in 98)
   FreeSocket;
 end;
 
@@ -491,4 +491,4 @@ begin
 end;
 
 end.
-
+
