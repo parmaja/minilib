@@ -28,8 +28,6 @@ const
   cBufferSize = 1024;
 
 type
-  EmnStreamException = class(Exception);
-  
   { TmnSocketStream }
 
   TmnSocketStream = class(TStream)
@@ -184,7 +182,8 @@ end;
 
 procedure TmnSocketStream.Disconnect;
 begin
-  Shutdown;//may be not but in slow matchine disconnect to take as effects as need (POS in 98) 
+  if (Socket <> nil) and Socket.Active then
+    Shutdown;//may be not but in slow matchine disconnect to take as effects as need (POS in 98)
   FreeSocket;
 end;
 
@@ -273,7 +272,7 @@ var
 begin
   while Connected do
   begin
-    S := ReadLn;
+    S := ReadLn(EOL);
     if S <> '' then
       Value.Add(S);
   end;
@@ -492,4 +491,4 @@ begin
 end;
 
 end.
-
+

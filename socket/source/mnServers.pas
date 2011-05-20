@@ -465,6 +465,9 @@ begin
     Terminate;
     if Socket <> nil then
     begin
+      {$ifdef WINDOWS}
+      Socket.Shutdown(sdBoth); //stop the accept from waiting
+      {$endif}
       Socket.Close;
     end;
   finally

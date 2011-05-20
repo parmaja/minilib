@@ -13,7 +13,7 @@ interface
 
 uses
   LCLIntf, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
-  Registry, StdCtrls, ExtCtrls, mnWin32Sockets, mnConnections, mnSockets, mnServers, mnHttpServer,
+  Registry, StdCtrls, ExtCtrls, mnConnections, mnSockets, mnServers, mnHttpServer,
   LResources, Buttons, Menus;
 
 type
@@ -97,7 +97,7 @@ begin
   StartBtn.Enabled := False;
   StopBtn.Enabled := True;
   aRoot := RootEdit.Text;
-  if LeftStr(aRoot, 2)='.\' then
+  if (LeftStr(aRoot, 2)='.\') or (LeftStr(aRoot, 2)='./') then
     aRoot := ExtractFilePath(Application.ExeName) + Copy(aRoot, 3, MaxInt);
   WebServer.DocumentRoot := aRoot;
   WebServer.Port := PortEdit.Text;
@@ -209,7 +209,7 @@ end;
 
 procedure TMain.WebServerLog(Connection: TmnConnection; const S: String);
 begin
-  Memo.Lines.Add(Connection.Stream.Socket.GetRemoteAddress +': '+ s);
+  Memo.Lines.Add(s);
 end;
 
 initialization

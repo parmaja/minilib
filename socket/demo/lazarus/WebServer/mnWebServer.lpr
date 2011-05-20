@@ -10,6 +10,9 @@ program mnWebServer;
 
 
 uses
+  {$ifndef WINDOWS}
+  cthreads,
+  {$endif}
   Interfaces,
   Forms,
   LCLIntf,
@@ -24,4 +27,4 @@ begin
   end;
   Application.CreateForm(TMain, Main);
   Application.Run;
-end.
+end.

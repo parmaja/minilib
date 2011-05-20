@@ -23,21 +23,19 @@ type
   TmnLinuxSocket = class(TmnCustomSocket)
   private
     FHandle: TSocket;
-    FAddress: TSockAddr;
+    FAddress: TINetSockAddr;
   protected
     function Valid(Value: Integer; WithZero: Boolean = False): Boolean;
     function Check(Value: Integer; WithZero: Boolean = False): Boolean;
     function GetActive: Boolean; override;
     function DoSelect(Timeout: Int64; Check: TSelectCheck): TmnError; override;
+    function DoShutdown(How: TmnShutdown): TmnError; override;
   public
     constructor Create(Handle: TSocket);
-    function RecvLength: Cardinal; override;
     procedure Close; override;
     function Accept: TmnCustomSocket; override;
-    procedure Cancel; override;
     function Receive(var Buffer; var Count: Longint): TmnError; override;
     function Send(const Buffer; var Count: Longint): TmnError; override;
-    function Shutdown(How: TmnShutdown): TmnError; override;
     function Listen: TmnError; override;
     function GetLocalAddress: ansistring; override;
     function GetRemoteAddress: ansistring; override;
@@ -123,12 +121,11 @@ function TmnLinuxSocket.DoSelect(Timeout: Int64; Check: TSelectCheck): TmnError;
 var
   FSet: TFDSet;
   PSetRead, PSetWrite: PFDSet;
-  TimeVal: TTimeVal;
   c: Integer;
 begin
   CheckActive;
-  fpFD_ZERO(FSet);
-  fpFD_SET(FHandle, FSet);
+  fpfd_zero(FSet);
+  fpfd_set(FHandle, FSet);
   if Check = slRead then
   begin
     PSetRead := @FSet;
@@ -139,16 +136,10 @@ begin
     PSetRead := nil;
     PSetWrite := @FSet;
   end;
+
   if Timeout = -1 then
-  begin
-    c := fpselect(0, PSetRead, PSetWrite, nil, nil)
-  end
-  else
-  begin
-    TimeVal.tv_sec := Timeout div 1000;
-    TimeVal.tv_usec := (Timeout mod 1000) * 1000;
-    c := fpselect(0, PSetRead, PSetWrite, nil, @TimeVal);
-  end;
+    Timeout := 0;
+  c := fpselect(FHandle + 1, PSetRead, PSetWrite, PSetRead, Timeout); {$hint 'why FHandle + 1 not 1'}
   if (c = 0) or (c = SOCKET_ERROR) then
   begin
     Error;
@@ -179,12 +170,7 @@ begin
   end;
 end;
 
-function TmnLinuxSocket.RecvLength: Cardinal;
-begin
-  Result := 0;
-end;
-
-function TmnLinuxSocket.Shutdown(How: TmnShutdown): TmnError;
+function TmnLinuxSocket.DoShutdown(How: TmnShutdown): TmnError;
 const
   cHow: array[TmnShutdown] of Integer = (SHUT_RD, SHUT_WR, SHUT_RDWR);
 var
@@ -204,17 +190,15 @@ end;
 function TmnLinuxSocket.Accept: TmnCustomSocket;
 var
   aHandle: TSocket;
-  AddrSize: Integer;
+  aSize: Integer;
 begin
   CheckActive;
-  AddrSize := SizeOf(FAddress);
-  aHandle := fpaccept(FHandle, @FAddress, @AddrSize);
-  if aHandle = INVALID_SOCKET then
+  aSize := SizeOf(FAddress);
+  aHandle := fpaccept(FHandle, @FAddress, @aSize);
+  if aHandle < 0 then
     Result := nil
   else
-  begin
     Result := TmnLinuxSocket.Create(aHandle);
-  end;
 end;
 
 constructor TmnLinuxSocket.Create(Handle: TSocket);
@@ -251,7 +235,7 @@ begin
   CheckActive;
   aSize := SizeOf(SockAddr);
   if fpGetPeerName(FHandle, @SockAddr, @aSize) = 0 then
-     {todo}
+//    Result := NetAddrToStr(SockAddr.in_addr)
   else
     Result := '';
 end;
@@ -266,6 +250,7 @@ begin
   Size := SizeOf(SockAddr);
   if fpgetpeername(FHandle, @SockAddr, @Size) = 0 then
   begin
+    s := '';//temp
     //gethostbyaddr(@SockAddr.sin_addr.s_addr, 4, PF_INET);
   end
   else
@@ -280,8 +265,8 @@ var
 begin
   CheckActive;
   aSize := SizeOf(SockAddr);
-  if fpGetSockName(FHandle, @Result, @aSize) = 0 then
-    {todo}
+  if fpGetSockName(FHandle, @SockAddr, @aSize) = 0 then
+//    Result := NetAddrToStr(SockAddr)
   else
     Result := '';
 end;
@@ -293,12 +278,8 @@ begin
   CheckActive;
   SetLength(s, 250);
 //  fpgethostname(PChar(s), Length(s));
-  s := PAnsiChar(s);
+  s := '';//temp
   Result := s;
-end;
-
-procedure TmnLinuxSocket.Cancel;
-begin
 end;
 
 { TmnLinuxWallSocket }
@@ -320,11 +301,9 @@ const
 function TmnLinuxWallSocket.Bind(Options: TmnOptions; const Port: ansistring; const Address: ansistring): TmnCustomSocket;
 var
   aHandle: TSocket;
-  aSockAddr: TSockAddr;
   aAddr : TINetSockAddr;
-  l: integer;
 begin
-  aHandle := fpsocket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+  aHandle := fpsocket(PF_INET, SOCK_STREAM, 0);
   if aHandle = INVALID_SOCKET then
     raise EmnException.Create('Failed to create a socket');
 
@@ -354,8 +333,6 @@ begin
 end;
 
 procedure TmnLinuxWallSocket.Startup;
-var
-  e: Integer;
 begin
   if FCount = 0 then
   begin

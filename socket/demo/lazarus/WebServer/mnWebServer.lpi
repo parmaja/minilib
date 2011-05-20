@@ -13,8 +13,41 @@
     <VersionInfo>
       <StringTable ProductVersion=""/>
     </VersionInfo>
-    <BuildModes Count="1">
-      <Item1 Name="default" Default="True"/>
+    <BuildModes Count="2" Active="Windows">
+      <Item1 Name="Windows" Default="True"/>
+      <Item2 Name="Linux">
+        <CompilerOptions>
+          <Version Value="10"/>
+          <PathDelim Value="\"/>
+          <SearchPaths>
+            <OtherUnitFiles Value="..\..\..\source;\usr\ws\dev\home\pascal\lib\minilib\lib;\usr\ws\dev\home\pascal\lib\minilib\socket\source"/>
+          </SearchPaths>
+          <Parsing>
+            <SyntaxOptions>
+              <IncludeAssertionCode Value="True"/>
+              <CStyleMacros Value="True"/>
+              <UseAnsiStrings Value="False"/>
+            </SyntaxOptions>
+          </Parsing>
+          <Linking>
+            <Debugging>
+              <UseLineInfoUnit Value="False"/>
+              <GenerateDwarf Value="True"/>
+            </Debugging>
+            <Options>
+              <Win32>
+                <GraphicApplication Value="True"/>
+              </Win32>
+            </Options>
+          </Linking>
+          <Other>
+            <CompilerMessages>
+              <UseMsgFile Value="True"/>
+            </CompilerMessages>
+            <CompilerPath Value="$(CompPath)"/>
+          </Other>
+        </CompilerOptions>
+      </Item2>
     </BuildModes>
     <PublishOptions>
       <Version Value="2"/>
@@ -25,7 +58,7 @@
     <RunParams>
       <local>
         <FormatVersion Value="1"/>
-        <LaunchingApplication PathPlusParams="/usr/X11R6/bin/xterm -T 'Lazarus Run Output' -e $(LazarusDir)/tools/runwait.sh $(TargetCmdLine)"/>
+        <LaunchingApplication PathPlusParams="\usr\X11R6\bin\xterm -T 'Lazarus Run Output' -e $(LazarusDir)\tools\runwait.sh $(TargetCmdLine)"/>
       </local>
     </RunParams>
     <RequiredPackages Count="1">
@@ -33,17 +66,16 @@
         <PackageName Value="LCL"/>
       </Item1>
     </RequiredPackages>
-    <Units Count="44">
+    <Units Count="69">
       <Unit0>
         <Filename Value="mnWebServer.lpr"/>
         <IsPartOfProject Value="True"/>
-        <EditorIndex Value="2"/>
+        <EditorIndex Value="9"/>
         <WindowIndex Value="0"/>
         <TopLine Value="1"/>
-        <CursorPos X="59" Y="19"/>
-        <UsageCount Value="35"/>
+        <CursorPos X="1" Y="22"/>
+        <UsageCount Value="48"/>
         <Loaded Value="True"/>
-        <LoadedDesigner Value="True"/>
       </Unit0>
       <Unit1>
         <Filename Value="..\..\..\source\mnStreams.pas"/>
@@ -55,9 +87,10 @@
       <Unit2>
         <Filename Value="..\..\..\source\mnConnections.pas"/>
         <UnitName Value="mnConnections"/>
-        <TopLine Value="29"/>
-        <CursorPos X="3" Y="44"/>
-        <UsageCount Value="10"/>
+        <WindowIndex Value="0"/>
+        <TopLine Value="1"/>
+        <CursorPos X="12" Y="23"/>
+        <UsageCount Value="16"/>
       </Unit2>
       <Unit3>
         <Filename Value="MainForm.pas"/>
@@ -66,11 +99,11 @@
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="MainForm"/>
-        <EditorIndex Value="0"/>
+        <EditorIndex Value="8"/>
         <WindowIndex Value="0"/>
-        <TopLine Value="130"/>
-        <CursorPos X="1" Y="161"/>
-        <UsageCount Value="34"/>
+        <TopLine Value="187"/>
+        <CursorPos X="52" Y="207"/>
+        <UsageCount Value="47"/>
         <Loaded Value="True"/>
         <LoadedDesigner Value="True"/>
       </Unit3>
@@ -91,26 +124,35 @@
       <Unit6>
         <Filename Value="..\..\..\source\mnSockets.pas"/>
         <UnitName Value="mnSockets"/>
-        <TopLine Value="37"/>
-        <CursorPos X="15" Y="65"/>
-        <UsageCount Value="14"/>
+        <EditorIndex Value="6"/>
+        <WindowIndex Value="0"/>
+        <TopLine Value="17"/>
+        <CursorPos X="41" Y="43"/>
+        <UsageCount Value="21"/>
+        <Loaded Value="True"/>
       </Unit6>
       <Unit7>
         <Filename Value="..\..\..\source\mnServers.pas"/>
         <UnitName Value="mnServers"/>
-        <TopLine Value="317"/>
-        <CursorPos X="3" Y="324"/>
-        <UsageCount Value="11"/>
+        <IsVisibleTab Value="True"/>
+        <EditorIndex Value="7"/>
+        <WindowIndex Value="0"/>
+        <TopLine Value="442"/>
+        <CursorPos X="32" Y="470"/>
+        <UsageCount Value="18"/>
+        <Bookmarks Count="1">
+          <Item0 X="14" Y="469" ID="2"/>
+        </Bookmarks>
+        <Loaded Value="True"/>
       </Unit7>
       <Unit8>
         <Filename Value="..\..\..\source\mnHttpServer.pas"/>
         <UnitName Value="mnHttpServer"/>
-        <IsVisibleTab Value="True"/>
-        <EditorIndex Value="1"/>
+        <EditorIndex Value="10"/>
         <WindowIndex Value="0"/>
-        <TopLine Value="270"/>
-        <CursorPos X="28" Y="283"/>
-        <UsageCount Value="14"/>
+        <TopLine Value="265"/>
+        <CursorPos X="1" Y="293"/>
+        <UsageCount Value="22"/>
         <Loaded Value="True"/>
       </Unit8>
       <Unit9>
@@ -129,11 +171,14 @@
       <Unit11>
         <Filename Value="..\..\..\source\mnWin32Sockets.pas"/>
         <UnitName Value="mnWin32Sockets"/>
-        <EditorIndex Value="6"/>
+        <EditorIndex Value="1"/>
         <WindowIndex Value="0"/>
-        <TopLine Value="129"/>
-        <CursorPos X="15" Y="143"/>
-        <UsageCount Value="11"/>
+        <TopLine Value="203"/>
+        <CursorPos X="35" Y="219"/>
+        <UsageCount Value="13"/>
+        <Bookmarks Count="1">
+          <Item0 X="35" Y="219" ID="1"/>
+        </Bookmarks>
         <Loaded Value="True"/>
       </Unit11>
       <Unit12>
@@ -322,12 +367,10 @@
       </Unit38>
       <Unit39>
         <Filename Value="compile-wince.cmd"/>
-        <EditorIndex Value="3"/>
         <WindowIndex Value="0"/>
         <TopLine Value="1"/>
         <CursorPos X="46" Y="2"/>
-        <UsageCount Value="10"/>
-        <Loaded Value="True"/>
+        <UsageCount Value="11"/>
         <DefaultSyntaxHighlighter Value="None"/>
       </Unit39>
       <Unit40>
@@ -336,17 +379,14 @@
         <TopLine Value="1"/>
         <CursorPos X="1" Y="17"/>
         <UsageCount Value="10"/>
-        <LoadedDesigner Value="True"/>
         <DefaultSyntaxHighlighter Value="None"/>
       </Unit40>
       <Unit41>
         <Filename Value="extrafpc.cfg"/>
-        <EditorIndex Value="4"/>
         <WindowIndex Value="0"/>
         <TopLine Value="1"/>
         <CursorPos X="75" Y="12"/>
-        <UsageCount Value="10"/>
-        <Loaded Value="True"/>
+        <UsageCount Value="11"/>
         <DefaultSyntaxHighlighter Value="None"/>
       </Unit41>
       <Unit42>
@@ -355,7 +395,6 @@
         <TopLine Value="21"/>
         <CursorPos X="1" Y="45"/>
         <UsageCount Value="10"/>
-        <LoadedDesigner Value="True"/>
         <DefaultSyntaxHighlighter Value="None"/>
       </Unit42>
       <Unit43>
@@ -363,132 +402,330 @@
         <UnitName Value="mnSocketStreams"/>
         <EditorIndex Value="5"/>
         <WindowIndex Value="0"/>
-        <TopLine Value="67"/>
-        <CursorPos X="20" Y="82"/>
-        <UsageCount Value="10"/>
+        <TopLine Value="6"/>
+        <CursorPos X="3" Y="22"/>
+        <UsageCount Value="15"/>
         <Loaded Value="True"/>
       </Unit43>
+      <Unit44>
+        <Filename Value="..\..\..\source\mnLinuxSockets.pas"/>
+        <UnitName Value="mnLinuxSockets"/>
+        <EditorIndex Value="0"/>
+        <WindowIndex Value="0"/>
+        <TopLine Value="173"/>
+        <CursorPos X="1" Y="180"/>
+        <UsageCount Value="17"/>
+        <Loaded Value="True"/>
+      </Unit44>
+      <Unit45>
+        <Filename Value="W:\prog\programs\fpc\2.4\src\rtl\inc\socketsh.inc"/>
+        <WindowIndex Value="0"/>
+        <TopLine Value="59"/>
+        <CursorPos X="28" Y="79"/>
+        <UsageCount Value="10"/>
+      </Unit45>
+      <Unit46>
+        <Filename Value="W:\prog\programs\fpc\2.4\src\rtl\linux\i386\stat.inc"/>
+        <WindowIndex Value="0"/>
+        <TopLine Value="1"/>
+        <CursorPos X="32" Y="19"/>
+        <UsageCount Value="10"/>
+      </Unit46>
+      <Unit47>
+        <Filename Value="W:\prog\programs\fpc\2.4\src\rtl\unix\bunxovl.inc"/>
+        <WindowIndex Value="0"/>
+        <TopLine Value="1"/>
+        <CursorPos X="33" Y="48"/>
+        <UsageCount Value="10"/>
+      </Unit47>
+      <Unit48>
+        <Filename Value="..\..\..\..\lib\mnStreams.pas"/>
+        <UnitName Value="mnStreams"/>
+        <WindowIndex Value="0"/>
+        <TopLine Value="16"/>
+        <CursorPos X="3" Y="28"/>
+        <UsageCount Value="12"/>
+      </Unit48>
+      <Unit49>
+        <Filename Value="W:\prog\programs\fpc\2.4\src\packages\fcl-net\src\ssockets.pp"/>
+        <UnitName Value="ssockets"/>
+        <WindowIndex Value="0"/>
+        <TopLine Value="539"/>
+        <CursorPos X="90" Y="565"/>
+        <UsageCount Value="10"/>
+      </Unit49>
+      <Unit50>
+        <Filename Value="P:\programs\fpc\2.4\src\rtl\inc\socketsh.inc"/>
+        <EditorIndex Value="4"/>
+        <WindowIndex Value="0"/>
+        <TopLine Value="63"/>
+        <CursorPos X="28" Y="79"/>
+        <UsageCount Value="12"/>
+        <Loaded Value="True"/>
+      </Unit50>
+      <Unit51>
+        <Filename Value="W:\prog\programs\fpc\2.4\src\rtl\objpas\classes\classesh.inc"/>
+        <WindowIndex Value="0"/>
+        <TopLine Value="1492"/>
+        <CursorPos X="14" Y="1512"/>
+        <UsageCount Value="10"/>
+      </Unit51>
+      <Unit52>
+        <Filename Value="W:\prog\programs\fpc\2.4\src\rtl\unix\tthread.inc"/>
+        <WindowIndex Value="0"/>
+        <TopLine Value="46"/>
+        <CursorPos X="25" Y="53"/>
+        <UsageCount Value="10"/>
+      </Unit52>
+      <Unit53>
+        <Filename Value="W:\prog\programs\fpc\2.4\src\demo\freebsd\sysmousetest.pas"/>
+        <UnitName Value="Sysmousetest"/>
+        <WindowIndex Value="0"/>
+        <TopLine Value="182"/>
+        <CursorPos X="14" Y="198"/>
+        <UsageCount Value="11"/>
+      </Unit53>
+      <Unit54>
+        <Filename Value="W:\prog\programs\fpc\2.4\src\demo\unix\daemon.pp"/>
+        <UnitName Value="Daemon"/>
+        <WindowIndex Value="0"/>
+        <TopLine Value="107"/>
+        <CursorPos X="22" Y="127"/>
+        <UsageCount Value="11"/>
+      </Unit54>
+      <Unit55>
+        <Filename Value="W:\prog\programs\fpc\2.4\src\fpcdocs\bunixex\ex33.pp"/>
+        <UnitName Value="Example33"/>
+        <WindowIndex Value="0"/>
+        <TopLine Value="1"/>
+        <CursorPos X="6" Y="20"/>
+        <UsageCount Value="11"/>
+      </Unit55>
+      <Unit56>
+        <Filename Value="W:\prog\programs\fpc\2.4\src\packages\fcl-net\src\netdb.pp"/>
+        <UnitName Value="netdb"/>
+        <WindowIndex Value="0"/>
+        <TopLine Value="739"/>
+        <CursorPos X="13" Y="739"/>
+        <UsageCount Value="11"/>
+      </Unit56>
+      <Unit57>
+        <Filename Value="W:\prog\programs\fpc\2.4\src\packages\fcl-process\src\unix\simpleipc.inc"/>
+        <WindowIndex Value="0"/>
+        <TopLine Value="135"/>
+        <CursorPos X="11" Y="152"/>
+        <UsageCount Value="11"/>
+      </Unit57>
+      <Unit58>
+        <Filename Value="W:\prog\programs\fpc\2.4\src\packages\ncurses\src\ncrt.inc"/>
+        <WindowIndex Value="0"/>
+        <TopLine Value="781"/>
+        <CursorPos X="3" Y="798"/>
+        <UsageCount Value="11"/>
+      </Unit58>
+      <Unit59>
+        <Filename Value="W:\prog\programs\fpc\2.4\src\packages\ncurses\src\ocrt.pp"/>
+        <UnitName Value="oCrt"/>
+        <WindowIndex Value="0"/>
+        <TopLine Value="1254"/>
+        <CursorPos X="7" Y="1265"/>
+        <UsageCount Value="11"/>
+      </Unit59>
+      <Unit60>
+        <Filename Value="..\..\..\..\..\..\ext\synapse\source\lib\ssfpc.pas"/>
+        <UnitName Value="ssfpc"/>
+        <WindowIndex Value="0"/>
+        <TopLine Value="370"/>
+        <CursorPos X="12" Y="390"/>
+        <UsageCount Value="11"/>
+      </Unit60>
+      <Unit61>
+        <Filename Value="..\..\..\..\..\..\ext\synapse\source\lib\blcksock.pas"/>
+        <UnitName Value="blcksock"/>
+        <WindowIndex Value="0"/>
+        <TopLine Value="3106"/>
+        <CursorPos X="53" Y="2747"/>
+        <UsageCount Value="11"/>
+      </Unit61>
+      <Unit62>
+        <Filename Value="W:\programs\lazarus\debugger\cmdlinedebugger.pp"/>
+        <UnitName Value="CmdLineDebugger"/>
+        <WindowIndex Value="0"/>
+        <TopLine Value="229"/>
+        <CursorPos X="33" Y="248"/>
+        <UsageCount Value="11"/>
+      </Unit62>
+      <Unit63>
+        <Filename Value="W:\media\VOLUMES\dev\fpc\packages\fcl-web\src\base\custfcgi.pp"/>
+        <UnitName Value="custfcgi"/>
+        <WindowIndex Value="0"/>
+        <TopLine Value="623"/>
+        <CursorPos X="48" Y="637"/>
+        <UsageCount Value="11"/>
+      </Unit63>
+      <Unit64>
+        <Filename Value="W:\prog\programs\fpc\2.4\src\rtl\objpas\sysutils\finah.inc"/>
+        <WindowIndex Value="0"/>
+        <TopLine Value="5"/>
+        <CursorPos X="11" Y="38"/>
+        <UsageCount Value="10"/>
+      </Unit64>
+      <Unit65>
+        <Filename Value="W:\prog\programs\fpc\2.4\src\rtl\objpas\sysutils\fina.inc"/>
+        <WindowIndex Value="0"/>
+        <TopLine Value="194"/>
+        <CursorPos X="20" Y="201"/>
+        <UsageCount Value="10"/>
+      </Unit65>
+      <Unit66>
+        <Filename Value="P:\programs\fpc\2.4\src\rtl\win\winsock2.pp"/>
+        <UnitName Value="WinSock2"/>
+        <WindowIndex Value="0"/>
+        <TopLine Value="1"/>
+        <CursorPos X="1" Y="1"/>
+        <UsageCount Value="10"/>
+      </Unit66>
+      <Unit67>
+        <Filename Value="V:\dev\fpc\packages\fcl-web\src\base\fphttpserver.pp"/>
+        <UnitName Value="fphttpserver"/>
+        <EditorIndex Value="2"/>
+        <WindowIndex Value="0"/>
+        <TopLine Value="1"/>
+        <CursorPos X="1" Y="1"/>
+        <UsageCount Value="11"/>
+        <Loaded Value="True"/>
+      </Unit67>
+      <Unit68>
+        <Filename Value="P:\programs\fpc\2.4\src\packages\fcl-net\src\ssockets.pp"/>
+        <UnitName Value="ssockets"/>
+        <EditorIndex Value="3"/>
+        <WindowIndex Value="0"/>
+        <TopLine Value="327"/>
+        <CursorPos X="20" Y="345"/>
+        <UsageCount Value="11"/>
+        <Loaded Value="True"/>
+      </Unit68>
     </Units>
-    <JumpHistory Count="30" HistoryIndex="28">
+    <JumpHistory Count="30" HistoryIndex="29">
       <Position1>
-        <Filename Value="..\..\..\source\mnHttpServer.pas"/>
-        <Caret Line="399" Column="1" TopLine="382"/>
+        <Filename Value="MainForm.pas"/>
+        <Caret Line="209" Column="35" TopLine="187"/>
       </Position1>
       <Position2>
-        <Filename Value="..\..\..\source\mnHttpServer.pas"/>
-        <Caret Line="266" Column="1" TopLine="250"/>
+        <Filename Value="..\..\..\source\mnSockets.pas"/>
+        <Caret Line="157" Column="1" TopLine="134"/>
       </Position2>
       <Position3>
-        <Filename Value="..\..\..\source\mnHttpServer.pas"/>
-        <Caret Line="267" Column="1" TopLine="250"/>
+        <Filename Value="..\..\..\source\mnSockets.pas"/>
+        <Caret Line="1" Column="1" TopLine="1"/>
       </Position3>
       <Position4>
-        <Filename Value="..\..\..\source\mnHttpServer.pas"/>
-        <Caret Line="271" Column="1" TopLine="250"/>
+        <Filename Value="..\..\..\source\mnSockets.pas"/>
+        <Caret Line="24" Column="14" TopLine="1"/>
       </Position4>
       <Position5>
-        <Filename Value="..\..\..\source\mnHttpServer.pas"/>
-        <Caret Line="273" Column="1" TopLine="250"/>
+        <Filename Value="..\..\..\source\mnSockets.pas"/>
+        <Caret Line="36" Column="14" TopLine="10"/>
       </Position5>
       <Position6>
-        <Filename Value="..\..\..\source\mnHttpServer.pas"/>
-        <Caret Line="274" Column="1" TopLine="250"/>
+        <Filename Value="..\..\..\source\mnSockets.pas"/>
+        <Caret Line="52" Column="32" TopLine="26"/>
       </Position6>
       <Position7>
-        <Filename Value="..\..\..\source\mnHttpServer.pas"/>
-        <Caret Line="275" Column="1" TopLine="250"/>
+        <Filename Value="..\..\..\source\mnSockets.pas"/>
+        <Caret Line="151" Column="11" TopLine="125"/>
       </Position7>
       <Position8>
-        <Filename Value="..\..\..\source\mnHttpServer.pas"/>
-        <Caret Line="276" Column="1" TopLine="250"/>
+        <Filename Value="..\..\..\source\mnSockets.pas"/>
+        <Caret Line="155" Column="34" TopLine="129"/>
       </Position8>
       <Position9>
-        <Filename Value="..\..\..\source\mnHttpServer.pas"/>
-        <Caret Line="277" Column="1" TopLine="251"/>
+        <Filename Value="..\..\..\source\mnSockets.pas"/>
+        <Caret Line="1" Column="1" TopLine="1"/>
       </Position9>
       <Position10>
-        <Filename Value="..\..\..\source\mnHttpServer.pas"/>
-        <Caret Line="278" Column="1" TopLine="252"/>
+        <Filename Value="..\..\..\source\mnSockets.pas"/>
+        <Caret Line="24" Column="14" TopLine="1"/>
       </Position10>
       <Position11>
-        <Filename Value="..\..\..\source\mnHttpServer.pas"/>
-        <Caret Line="279" Column="1" TopLine="253"/>
+        <Filename Value="..\..\..\source\mnSockets.pas"/>
+        <Caret Line="36" Column="32" TopLine="10"/>
       </Position11>
       <Position12>
-        <Filename Value="..\..\..\source\mnHttpServer.pas"/>
-        <Caret Line="280" Column="1" TopLine="254"/>
+        <Filename Value="..\..\..\source\mnSockets.pas"/>
+        <Caret Line="43" Column="24" TopLine="17"/>
       </Position12>
       <Position13>
-        <Filename Value="..\..\..\source\mnHttpServer.pas"/>
-        <Caret Line="281" Column="1" TopLine="270"/>
+        <Filename Value="..\..\..\source\mnSockets.pas"/>
+        <Caret Line="59" Column="41" TopLine="33"/>
       </Position13>
       <Position14>
-        <Filename Value="..\..\..\source\mnHttpServer.pas"/>
-        <Caret Line="282" Column="1" TopLine="270"/>
+        <Filename Value="..\..\..\source\mnSockets.pas"/>
+        <Caret Line="158" Column="11" TopLine="130"/>
       </Position14>
       <Position15>
-        <Filename Value="..\..\..\source\mnHttpServer.pas"/>
-        <Caret Line="283" Column="1" TopLine="270"/>
+        <Filename Value="..\..\..\source\mnSockets.pas"/>
+        <Caret Line="1" Column="1" TopLine="1"/>
       </Position15>
       <Position16>
-        <Filename Value="..\..\..\source\mnHttpServer.pas"/>
-        <Caret Line="285" Column="1" TopLine="270"/>
+        <Filename Value="..\..\..\source\mnSockets.pas"/>
+        <Caret Line="24" Column="14" TopLine="1"/>
       </Position16>
       <Position17>
-        <Filename Value="..\..\..\source\mnHttpServer.pas"/>
-        <Caret Line="286" Column="1" TopLine="270"/>
+        <Filename Value="..\..\..\source\mnSockets.pas"/>
+        <Caret Line="36" Column="32" TopLine="10"/>
       </Position17>
       <Position18>
-        <Filename Value="..\..\..\source\mnHttpServer.pas"/>
-        <Caret Line="285" Column="1" TopLine="270"/>
+        <Filename Value="..\..\..\source\mnSockets.pas"/>
+        <Caret Line="43" Column="24" TopLine="17"/>
       </Position18>
       <Position19>
-        <Filename Value="..\..\..\source\mnHttpServer.pas"/>
-        <Caret Line="286" Column="1" TopLine="270"/>
+        <Filename Value="..\..\..\source\mnServers.pas"/>
+        <Caret Line="468" Column="9" TopLine="442"/>
       </Position19>
       <Position20>
-        <Filename Value="..\..\..\source\mnHttpServer.pas"/>
-        <Caret Line="285" Column="1" TopLine="270"/>
+        <Filename Value="..\..\..\source\mnServers.pas"/>
+        <Caret Line="1" Column="1" TopLine="1"/>
       </Position20>
       <Position21>
-        <Filename Value="..\..\..\source\mnHttpServer.pas"/>
-        <Caret Line="286" Column="1" TopLine="270"/>
+        <Filename Value="..\..\..\source\mnServers.pas"/>
+        <Caret Line="62" Column="23" TopLine="36"/>
       </Position21>
       <Position22>
-        <Filename Value="..\..\..\source\mnHttpServer.pas"/>
-        <Caret Line="285" Column="1" TopLine="270"/>
+        <Filename Value="..\..\..\source\mnServers.pas"/>
+        <Caret Line="319" Column="30" TopLine="293"/>
       </Position22>
       <Position23>
-        <Filename Value="..\..\..\source\mnHttpServer.pas"/>
-        <Caret Line="286" Column="1" TopLine="270"/>
+        <Filename Value="..\..\..\source\mnServers.pas"/>
+        <Caret Line="342" Column="11" TopLine="316"/>
       </Position23>
       <Position24>
-        <Filename Value="..\..\..\source\mnHttpServer.pas"/>
-        <Caret Line="285" Column="1" TopLine="270"/>
+        <Filename Value="..\..\..\source\mnServers.pas"/>
+        <Caret Line="392" Column="31" TopLine="366"/>
       </Position24>
       <Position25>
-        <Filename Value="..\..\..\source\mnHttpServer.pas"/>
-        <Caret Line="286" Column="1" TopLine="270"/>
+        <Filename Value="..\..\..\source\mnServers.pas"/>
+        <Caret Line="1" Column="1" TopLine="1"/>
       </Position25>
       <Position26>
-        <Filename Value="..\..\..\source\mnHttpServer.pas"/>
-        <Caret Line="285" Column="12" TopLine="270"/>
+        <Filename Value="..\..\..\source\mnServers.pas"/>
+        <Caret Line="62" Column="23" TopLine="36"/>
       </Position26>
       <Position27>
-        <Filename Value="..\..\..\source\mnHttpServer.pas"/>
-        <Caret Line="288" Column="1" TopLine="270"/>
+        <Filename Value="..\..\..\source\mnServers.pas"/>
+        <Caret Line="319" Column="30" TopLine="293"/>
       </Position27>
       <Position28>
-        <Filename Value="..\..\..\source\mnHttpServer.pas"/>
-        <Caret Line="282" Column="20" TopLine="270"/>
+        <Filename Value="..\..\..\source\mnServers.pas"/>
+        <Caret Line="342" Column="11" TopLine="316"/>
       </Position28>
       <Position29>
-        <Filename Value="..\..\..\source\mnSocketStreams.pas"/>
-        <Caret Line="267" Column="20" TopLine="265"/>
+        <Filename Value="..\..\..\source\mnServers.pas"/>
+        <Caret Line="397" Column="31" TopLine="380"/>
       </Position29>
       <Position30>
-        <Filename Value="..\..\..\source\mnSocketStreams.pas"/>
-        <Caret Line="99" Column="14" TopLine="83"/>
+        <Filename Value="..\..\..\source\mnWin32Sockets.pas"/>
+        <Caret Line="219" Column="35" TopLine="195"/>
       </Position30>
     </JumpHistory>
   </ProjectOptions>
@@ -518,7 +755,7 @@
     </Other>
   </CompilerOptions>
   <Debugging>
-    <BreakPoints Count="7">
+    <BreakPoints Count="3">
       <Item1>
         <Kind Value="bpkSource"/>
         <Source Value="..\..\..\..\..\..\wince\lazarus\fpc\2.0.4\source\fcl\inc\inifiles.pp"/>
@@ -534,28 +771,8 @@
         <Source Value="C:\lazarus\fpc\2.1.3\source\packages\fcl-db\src\db.pas"/>
         <Line Value="1944"/>
       </Item3>
-      <Item4>
-        <Kind Value="bpkSource"/>
-        <Source Value="..\..\..\source\mnHttpServer.pas"/>
-        <Line Value="398"/>
-      </Item4>
-      <Item5>
-        <Kind Value="bpkSource"/>
-        <Source Value="..\..\..\source\mnHttpServer.pas"/>
-        <Line Value="152"/>
-      </Item5>
-      <Item6>
-        <Kind Value="bpkSource"/>
-        <Source Value="..\..\..\source\mnHttpServer.pas"/>
-        <Line Value="288"/>
-      </Item6>
-      <Item7>
-        <Kind Value="bpkSource"/>
-        <Source Value="..\..\..\source\mnHttpServer.pas"/>
-        <Line Value="285"/>
-      </Item7>
     </BreakPoints>
-    <Watches Count="5">
+    <Watches Count="6">
       <Item1>
         <Expression Value="w"/>
       </Item1>
@@ -571,6 +788,9 @@
       <Item5>
         <Expression Value="Value"/>
       </Item5>
+      <Item6>
+        <Expression Value="self"/>
+      </Item6>
     </Watches>
     <Exceptions Count="2">
       <Item1>

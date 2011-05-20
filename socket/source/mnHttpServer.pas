@@ -309,13 +309,13 @@ procedure THttpConnection.ProcessRequest;
 begin
   FDocument := ExcludeTrailingPathDelimiter(FDocumentRoot);
   if FProxyRequest then
-    FDocument := FDocument + '\' + FRequestHost + '\' + FPath
+    FDocument := IncludeTrailingPathDelimiter(FDocument) + IncludeTrailingPathDelimiter(FRequestHost) + FPath
   else
-    FDocument := FDocument + '\' + FPath;
+    FDocument := IncludeTrailingPathDelimiter(FDocument) + FPath;
 
-  FDocument := StringReplace(FDocument, '/', '\', [rfReplaceAll]);
+  FDocument := StringReplace(FDocument, '/', DirectorySeparator, [rfReplaceAll]);
 
-  if FDocument[Length(FDocument)] = '\' then
+  if FDocument[Length(FDocument)] = DirectorySeparator then
     FDocument := GetDocument(FDocument);
 
   if FMethod = 'GET' then
@@ -471,4 +471,4 @@ begin
 end;
 
 end.
-
+

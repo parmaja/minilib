@@ -39,14 +39,14 @@ type
     function Check(Value: Integer; WithZero: Boolean = False): Boolean;
     function GetActive: Boolean; override;
     function DoSelect(Timeout: Int64; Check: TSelectCheck): TmnError; override;
+    function DoShutdown(How: TmnShutdown): TmnError; override;
   public
     constructor Create(Handle: TSocket);
     procedure Close; override;
     function Accept: TmnCustomSocket; override;
+    function Listen: TmnError; override;
     function Receive(var Buffer; var Count: Longint): TmnError; override;
     function Send(const Buffer; var Count: Longint): TmnError; override;
-    function Shutdown(How: TmnShutdown): TmnError; override;
-    function Listen: TmnError; override;
     function GetLocalAddress: ansistring; override;
     function GetRemoteAddress: ansistring; override;
     function GetLocalName: string; override;
@@ -201,7 +201,7 @@ begin
   end;
 end;
 
-function TmnWinSocket.Shutdown(How: TmnShutdown): TmnError;
+function TmnWinSocket.DoShutdown(How: TmnShutdown): TmnError;
 const
   cHow: array[TmnShutdown] of Integer = (SD_RECEIVE, SD_SEND, SD_BOTH);
 var
@@ -216,7 +216,7 @@ begin
   if c = SOCKET_ERROR then
   begin
     Result := erFail;
-    RaiseLastOSError;
+    //RaiseLastOSError;
   end
   else
     Result := erNone;

@@ -28,20 +28,25 @@ type
   TmnOption = (soBroadcast, soDebug, soDontLinger, soDontRoute, soKeepAlive, soOOBInLine, soReuseAddr, soNoDelay, soBlocking, soAcceptConn);
   TmnOptions = set of TmnOption;
 
+  { TmnCustomSocket }
+
   TmnCustomSocket = class(TObject)
   private
     FClosing: Boolean;
+    FShutdownState: TmnShutdown;
   protected
     procedure FatalError(const Msg: string);
     procedure Error;
     function GetActive: Boolean; virtual; abstract;
     procedure CheckActive;
     function DoSelect(Timeout: Int64; Check: TSelectCheck): TmnError; virtual; abstract;
+    function DoShutdown(How: TmnShutdown): TmnError; virtual; abstract;
+    property ShutdownState: TmnShutdown read FShutdownState;
   public
     destructor Destroy; override;
     procedure Terminate;
+    function Shutdown(How: TmnShutdown): TmnError;
     procedure Close; virtual; abstract;
-    function Shutdown(How: TmnShutdown): TmnError; virtual; abstract;
     function Send(const Buffer; var Count: Longint): TmnError; virtual; abstract;
     function Receive(var Buffer; var Count: Longint): TmnError; virtual; abstract;
     function Select(Timeout: Int64; Check: TSelectCheck): TmnError;
@@ -133,8 +138,7 @@ begin
   raise EmnException.Create(Msg);
 end;
 
-function TmnCustomSocket.Select(Timeout: Int64;
-  Check: TSelectCheck): TmnError;
+function TmnCustomSocket.Select(Timeout: Int64; Check: TSelectCheck): TmnError;
 begin
   Result := DoSelect(Timeout, Check);
   if (Result = erNone) and FClosing then
@@ -148,8 +152,14 @@ begin
   Close;
 end;
 
+function TmnCustomSocket.Shutdown(How: TmnShutdown): TmnError;
+begin
+  Result := DoShutdown(How);
+  if Result = erNone then
+    FShutdownState := How;
+end;
+
 initialization
 finalization
   FreeAndNil(FmnWallSocket);
-end.
-
+end.
