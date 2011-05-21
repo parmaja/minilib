@@ -166,7 +166,9 @@ begin
     Result := DoShutdown(How);
     if Result = erNone then
       FShutdownState := How;
-  end;
+  end
+  else
+    Result := erNone;
 end;
 
 initialization
