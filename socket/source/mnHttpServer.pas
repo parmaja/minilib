@@ -313,9 +313,10 @@ begin
   else
     FDocument := IncludeTrailingPathDelimiter(FDocument) + FPath;
 
-  FDocument := StringReplace(FDocument, '/', DirectorySeparator, [rfReplaceAll]);
+  PathDelim
+  FDocument := StringReplace(FDocument, '/', PathDelim, [rfReplaceAll]);
 
-  if FDocument[Length(FDocument)] = DirectorySeparator then
+  if FDocument[Length(FDocument)] = PathDelim then
     FDocument := GetDocument(FDocument);
 
   if FMethod = 'GET' then
