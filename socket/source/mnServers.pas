@@ -7,13 +7,15 @@ unit mnServers;
  * @author    Zaher Dirkey <zaher at parmaja dot com>
  *}
 
-{$define NoSynchronize}
 {$M+}
 {$H+}
 {$IFDEF FPC}
 {$MODE delphi}
 {$ELSE}
 {$ENDIF}
+
+{$define NoSynchronize}
+{$define NoLog}
 
 interface
 
@@ -81,6 +83,8 @@ type
     property Count: Integer read GetCount;
     property Options: TmnOptions read FOptions;
     property OnLog: TmnOnLog read FOnLog write FOnLog;
+    //if listener connection down by network it reconnect again
+    property Attempt: Integer read FAttempt write FAttempt;
   end;
 
   { TmnServer }
@@ -258,10 +262,12 @@ end;
 
 procedure TmnListener.Changed;
 begin
+  {$ifndef NoLog}
   {$ifdef NoSynchronize}
   SyncChanged;
   {$else}
   Synchronize(Self, SyncChanged);
+  {$endif}
   {$endif}
 end;
 
@@ -279,7 +285,7 @@ constructor TmnListener.Create;
 begin
   inherited;
   FList := TmnConnectionList.Create;
-  FAttempt := 3; // 3 times
+  FAttempt := 0; // 3 times
 end;
 
 function TmnListener.CreateConnection(Socket: TmnCustomSocket): TmnServerConnection;
@@ -315,7 +321,7 @@ begin
         aSocket := Socket.Accept;
         Enter;
         try
-
+          //Just a stop to finish proc outside
         finally
           Leave;
         end;
@@ -324,15 +330,10 @@ begin
           if (aSocket = nil) then
           begin
             //must attempt for new socket 3 times
-            if not Terminated then
+            if (FAttempt > 0) and (not Socket.Active) then
             begin
-              if FAttempt > 0 then
-              begin
-                FAttempt := FAttempt - 1;
-                Connect;
-              end
-              else if Socket.Active then
-                Socket.Shutdown(sdBoth);
+              FAttempt := FAttempt - 1;
+              Connect;
             end;
           end
           else
@@ -372,11 +373,13 @@ end;
 
 procedure TmnListener.Log(S: string);
 begin
+  {$ifndef NoLog}
   FLogMessage := S;
   {$ifdef NoSynchronize}
   SyncLog;
   {$else}
   Synchronize(Self, SyncLog);
+  {$endif}
   {$endif}
 end;
 

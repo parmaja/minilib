@@ -72,7 +72,7 @@ var
   c: Integer;
 begin
   CheckActive;
-  c := fprecv(FHandle, @Buffer, Count, 0);
+  c := fprecv(FHandle, @Buffer, Count, MSG_NOSIGNAL);
   if c = 0 then
   begin
     Count := 0;
@@ -97,7 +97,7 @@ var
   c: Integer;
 begin
   CheckActive;
-  c := fpsend(FHandle, @Buffer, Count, 0);
+  c := fpsend(FHandle, @Buffer, Count, MSG_NOSIGNAL);
   if c = 0 then
   begin
     Result := erClosed;
@@ -140,7 +140,6 @@ begin
   if Timeout = -1 then
     Timeout := 0;
   c := fpselect(FHandle + 1, PSetRead, PSetWrite, PSetRead, Timeout); {$hint 'why FHandle + 1 not 1'}
-  //c := fpselect(0, PSetRead, PSetWrite, PSetRead, Timeout);
   if (c = 0) or (c = SOCKET_ERROR) then
   begin
     Error;
@@ -182,7 +181,7 @@ begin
   if c = SOCKET_ERROR then
   begin
     Result := erFail;
-    RaiseLastOSError;
+//    RaiseLastOSError; do not raise an error, matbe it is disconnected by the other side
   end
   else
     Result := erNone;
@@ -252,7 +251,7 @@ begin
   if fpgetpeername(FHandle, @SockAddr, @Size) = 0 then
   begin
     s := '';//temp
-    //gethostbyaddr(@SockAddr.sin_addr.s_addr, 4, PF_INET);
+    //gethostbyaddr(@SockAddr.sin_addr.s_addr, 4, AF_INET);
   end
   else
     s := '';
@@ -304,13 +303,17 @@ var
   aHandle: TSocket;
   aAddr : TINetSockAddr;
 begin
-  aHandle := fpsocket(PF_INET, SOCK_STREAM, 0);
+  aHandle := fpsocket(AF_INET, SOCK_STREAM, 0{IPPROTO_TCP});
   if aHandle = INVALID_SOCKET then
     raise EmnException.Create('Failed to create a socket');
 
   if soReuseAddr in Options then
-  {$message hint 'use keepalive'}
     fpsetsockopt(aHandle, SOL_SOCKET, SO_REUSEADDR, PChar(@SO_TRUE), SizeOf(SO_TRUE));
+
+  if soKeepAlive in Options then
+    fpsetsockopt(aHandle, SOL_SOCKET, SO_KEEPALIVE, PChar(@SO_TRUE), SizeOf(SO_TRUE));
+
+//  fpsetsockopt(aHandle, SOL_SOCKET, SO_NOSIGPIPE, PChar(@SO_TRUE), SizeOf(SO_TRUE));
 
   aAddr.sin_family := AF_INET;
   aAddr.sin_port := ShortHostToNet(StrToIntDef(Port, 0));
@@ -347,9 +350,11 @@ var
   aHandle: TSocket;
   aAddr : TINetSockAddr;
 begin
-  aHandle := fpsocket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
+  aHandle := fpsocket(AF_INET, SOCK_STREAM, 0{IPPROTO_TCP});
   if aHandle = INVALID_SOCKET then
     raise EmnException.Create('Failed to connect socket');
+
+//  fpsetsockopt(aHandle, SOL_SOCKET, SO_NOSIGPIPE, PChar(@SO_TRUE), SizeOf(SO_TRUE));
 
   aAddr.sin_family := AF_INET;
   aAddr.sin_port := ShortHostToNet(StrToIntDef(Port, 0));
@@ -366,4 +371,4 @@ initialization
   RegisterWallSocket(TmnLinuxWallSocket.Create);
 end.
 
-//StrToHostAddr
+//StrToHostAddr
