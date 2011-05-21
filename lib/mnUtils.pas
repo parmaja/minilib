@@ -126,7 +126,8 @@ end;
 
 function StrToStrings(Content: string; Strings: TStrings; Separators, WhiteSpace: TSysCharSet; DequoteValues: Boolean; Quotes: TSysCharSet): Integer;
 var
-  Head, Tail, P: Integer;
+  Head, Tail: Integer;
+  //P: Integer;
   InQuote: Boolean;
   QuoteChar: Char;
   S: string;
@@ -168,9 +169,10 @@ begin
             S := Copy(Content, Head, Tail - Head);
             if DequoteValues then
             begin
-              P := Pos('=', S);
+              {P := Pos('=', S);
               if P > 0 then
-                S := Copy(S, 1, P) + DequoteStr(Copy(S, P + 1, MaxInt));
+                S := Copy(S, 1, P) + DequoteStr(Copy(S, P + 1, MaxInt));}
+              S := DequoteStr(S);//need review //todo must use Quotes in DequoteStr
             end;
             Strings.Add(S);
           end;

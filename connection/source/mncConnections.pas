@@ -985,7 +985,7 @@ function TmncFields.FieldByName(vName: string): TmncField;
 begin
   Result := FindField(vName);
   if Result = nil then
-    raise EmncException.Create('Field ' + vName + ' not found');
+    raise EmncException.Create('Field "' + vName + '" not found');
 end;
 
 function TmncFields.Add(Column: TmncColumn): TmncField;
