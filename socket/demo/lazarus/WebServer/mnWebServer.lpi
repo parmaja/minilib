@@ -51,7 +51,7 @@
     <PathDelim Value="\"/>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)"/>
-      <OtherUnitFiles Value="..\..\..\source;W:\home\pascal\lib\minilib\lib;W:\home\pascal\lib\minilib\socket\source"/>
+      <OtherUnitFiles Value="..\..\..\source;W:\home\pascal\lib\minilib\lib\;W:\home\pascal\lib\minilib\socket\source\"/>
     </SearchPaths>
     <Parsing>
       <SyntaxOptions>
@@ -82,4 +82,4 @@
       </Item2>
     </Exceptions>
   </Debugging>
-</CONFIG>
+</CONFIG>

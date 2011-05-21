@@ -14,8 +14,8 @@ unit mnServers;
 {$ELSE}
 {$ENDIF}
 
-{$define NoSynchronize}
-{$define NoLog}
+{.$define Synchronize}
+{.$define NoLog}
 
 interface
 
@@ -263,10 +263,10 @@ end;
 procedure TmnListener.Changed;
 begin
   {$ifndef NoLog}
-  {$ifdef NoSynchronize}
-  SyncChanged;
-  {$else}
+  {$ifdef Synchronize}
   Synchronize(Self, SyncChanged);
+  {$else}
+  SyncChanged;
   {$endif}
   {$endif}
 end;
@@ -375,10 +375,10 @@ procedure TmnListener.Log(S: string);
 begin
   {$ifndef NoLog}
   FLogMessage := S;
-  {$ifdef NoSynchronize}
-  SyncLog;
-  {$else}
+  {$ifdef Synchronize}
   Synchronize(Self, SyncLog);
+  {$else}
+  SyncLog;
   {$endif}
   {$endif}
 end;
@@ -580,4 +580,4 @@ end;
 initialization
 finalization
 end.
-
+
