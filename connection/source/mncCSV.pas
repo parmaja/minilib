@@ -47,16 +47,18 @@ type
     property EndOfLine: string read FEndOfLine write FEndOfLine;
     property HaveHeader: Boolean read FHaveHeader write FHaveHeader default True;
   end;
+
   TmncCSVMode = (csvmRead, csvmWrite);
+  TmncEmptyLine = (elFetch, elSkip, elEOF);
 
   { TmncCSVCommand }
 
   TmncCSVCommand = class(TmncCommand)
   private
     FCSVStream: TmnStream;
+    FEmptyLine: TmncEmptyLine;
     FStream: TStream;
     FMode: TmncCSVMode;
-    FEOFOnEmpty: Boolean;
     function GetConnection: TmncCSVConnection;
     function GetSession: TmncCSVSession;
   protected
@@ -80,7 +82,7 @@ type
     destructor Destroy; override;
     property Mode: TmncCSVMode read FMode;
     //EOFOnEmpty: when True make EOF when read empty line  
-    property EOFOnEmpty: Boolean read FEOFOnEmpty write FEOFOnEmpty;
+    property EmptyLine: TmncEmptyLine read FEmptyLine write FEmptyLine;
   end;
 
 implementation
@@ -253,12 +255,17 @@ end;
 function TmncCSVCommand.ReadLine(var Strings: TStringList): Boolean;
 var
   s: string;
+  e: Boolean;//eof
 begin
   s := '';
   Strings := TStringList.Create;
-  FCSVStream.ReadLn(s);
-  s := Trim(s);
-  Result := (s <> '') or not (EOFOnEmpty);
+
+  repeat
+    Result := FCSVStream.ReadLn(s);
+    s := Trim(s);
+  until not Result or not ((s = '') and (EmptyLine = elSkip));
+
+  Result := Result and not ((s = '') and (EmptyLine = elEOF));
   if Result then
     StrToStrings(s, Strings, [Session.SpliteChar], [#0, #13, #10], False, ['"']);
 end;

@@ -1463,7 +1463,7 @@ begin
       //before 100 rows will see the grid row by row filled, cheeting the eyes of user
       if (c < 100) or (Frac(c / 100) = 0) then
       begin
-        FetchCountLbl.Caption := IntToStr(c);
+        FetchCountLbl.Caption := IntToStr(c - 1);
         Application.ProcessMessages;
       end;
       if FCancel then
@@ -1474,7 +1474,7 @@ begin
     if w < 24 then
       w := 24;
     DataGrid.ColWidths[0] := w;
-    FetchCountLbl.Caption := IntToStr(c);
+    FetchCountLbl.Caption := IntToStr(c - 1);
   finally
     Application.ProcessMessages;
     //DataGrid.EndUpdate;
