@@ -124,10 +124,17 @@ begin
   end;
 end;
 
+{
+for example 4 fields
+f1,f2,f3,f4
+f1,f2,f3,
+f1,f2,,f4
+,f2,f3,f4
+}
+
 function StrToStrings(Content: string; Strings: TStrings; Separators, WhiteSpace: TSysCharSet; DequoteValues: Boolean; Quotes: TSysCharSet): Integer;
 var
-  Head, Tail: Integer;
-  //P: Integer;
+  Start, Cur, P: Integer;
   InQuote: Boolean;
   QuoteChar: Char;
   S: string;
@@ -137,49 +144,53 @@ begin
     raise Exception.Create('StrToStrings: Strings is nil');
   if (Content <> '') then
   begin
-    Tail := 1;
+    Cur := 1;
     InQuote := False;
     QuoteChar := #0;
     Strings.BeginUpdate;
     try
       repeat
-        while (Tail <= Length(Content)) and (Content[Tail] in WhiteSpace) do
-          Tail := Tail + 1;
-        Head := Tail;
+        //bypass white spaces
+        while (Cur <= Length(Content)) and (Content[Cur] in WhiteSpace) do
+          Cur := Cur + 1;
+
+        //start from the first char
+        Start := Cur - 1;
         while True do
         begin
-          while (Tail <= Length(Content)) and ((InQuote and not (Content[Tail] <> QuoteChar)) or (not (Content[Tail] in Separators))) do
-            Tail := Tail + 1;
-          if (Tail <= Length(Content)) and (Content[Tail] in Quotes) then
+          //seek until the separator and skip the separator if inside quoting
+          while (Cur <= Length(Content)) and ((InQuote and not (Content[Cur] <> QuoteChar)) or (not (Content[Cur] in Separators))) do
+            Cur := Cur + 1;
+          if (Cur <= Length(Content)) and (Content[Cur] in Quotes) then
           begin
-            if (QuoteChar <> #0) and (QuoteChar = Content[Tail]) then
+            if (QuoteChar <> #0) and (QuoteChar = Content[Cur]) then
               QuoteChar := #0
             else if QuoteChar = #0 then
-              QuoteChar := Content[Tail];
+              QuoteChar := Content[Cur];
             InQuote := QuoteChar <> #0;
-            Tail := Tail + 1;
+            Cur := Cur + 1;
           end
           else
             Break;
         end;
-        if (Tail <> Head) then
+
+        if (Cur >= Start) then
         begin
           if Strings <> nil then
           begin
-            S := Copy(Content, Head, Tail - Head);
+            S := Copy(Content, Start + 1, Cur - Start - 1);
             if DequoteValues then
             begin
-              {P := Pos('=', S);
+              P := Pos('=', S);
               if P > 0 then
-                S := Copy(S, 1, P) + DequoteStr(Copy(S, P + 1, MaxInt));}
-              S := DequoteStr(S);//need review //todo must use Quotes in DequoteStr
+                S := Copy(S, 1, P) + DequoteStr(Copy(S, P + 1, MaxInt));
             end;
             Strings.Add(S);
           end;
           Inc(Result);
         end;
-        Tail := Tail + 1;
-      until Tail > Length(Content);
+        Cur := Cur + 1;
+      until Cur > Length(Content) + 1;
     finally
       Strings.EndUpdate;
     end;

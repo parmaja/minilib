@@ -179,11 +179,17 @@ begin
 
 end;
 
-function SQLTypeToType(vType: Integer): TmncDataType;
+function SQLTypeToType(vType: Integer; const SchemaType: string): TmncDataType;
 begin
   case vType of
     SQLITE_INTEGER: Result := ftInteger;
-    SQLITE_FLOAT: Result := ftFloat;
+    SQLITE_FLOAT:
+    begin
+{      if SameText(SchemaType, 'date') then
+        Result := ftDate
+      else}//not yet
+        Result := ftFloat;
+    end;
     SQLITE_BLOB: Result := ftBlob;
     SQLITE_NULL: Result := ftUnkown;
     SQLITE_TEXT: Result := ftString;
@@ -607,8 +613,9 @@ begin
     aName :=  DequoteStr(sqlite3_column_name(FStatment, i));
     aType := sqlite3_column_type(FStatment, i);
     pType := sqlite3_column_decltype(FStatment, i);
-    aColumn := Columns.Add(aName, SQLTypeToType(aType));
+    aColumn := Columns.Add(aName, SQLTypeToType(aType, pType));
     aColumn.SchemaType := pType;
+    //aColumn.DataType
   end;
 end;
 

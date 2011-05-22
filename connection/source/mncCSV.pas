@@ -260,7 +260,7 @@ begin
   s := Trim(s);
   Result := (s <> '') or not (EOFOnEmpty);
   if Result then
-    StrToStrings(s, Strings, [Session.SpliteChar], [#0, #13, #10], True, ['"']);
+    StrToStrings(s, Strings, [Session.SpliteChar], [#0, #13, #10], False, ['"']);
 end;
 
 procedure TmncCSVCommand.SaveHeader;

@@ -1,8 +1,8 @@
 object MainForm: TMainForm
-  Left = 279
+  Left = 519
   Height = 395
   Hint = 'Connect F9'
-  Top = 75
+  Top = 112
   Width = 560
   Caption = 'SQLite Viewer'
   ClientHeight = 375
@@ -19,7 +19,7 @@ object MainForm: TMainForm
   OnShortCut = FormShortCut
   Position = poDefault
   ShowHint = True
-  LCLVersion = '0.9.29'
+  LCLVersion = '0.9.31'
   object ClientPanel: TPanel
     Left = 0
     Height = 351
