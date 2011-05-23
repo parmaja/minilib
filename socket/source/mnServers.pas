@@ -64,7 +64,7 @@ type
     FLogMessage: string;
     procedure SyncLog;
     procedure SyncChanged;
-    function CreateConnection(Socket: TmnCustomSocket): TmnServerConnection; virtual;
+    function CreateConnection(vSocket: TmnCustomSocket): TmnServerConnection; virtual;
     procedure Prepare; virtual; // called before add a new connection
     procedure DropConnections; virtual;
     procedure Execute; override;
@@ -108,8 +108,8 @@ type
     function GetCount: Integer;
   protected
     function CreateListener: TmnListener; virtual;
-    procedure DoChanged(Listener: TmnListener); virtual;
-    procedure DoPrepare(Listener: TmnListener); virtual;
+    procedure DoChanged(vListener: TmnListener); virtual;
+    procedure DoPrepare(vListener: TmnListener); virtual;
     procedure DoBeforeOpen; virtual;
     procedure DoAfterOpen; virtual;
     procedure DoBeforeClose; virtual;
@@ -203,21 +203,21 @@ begin
   end;
 end;
 
-procedure TmnServer.DoChanged(Listener: TmnListener);
+procedure TmnServer.DoChanged(vListener: TmnListener);
 begin
   if not (csDestroying in ComponentState) then
   begin
     if Assigned(FOnChanged) then
-      FOnChanged(Listener);
+      FOnChanged(vListener);
   end;
 end;
 
-procedure TmnServer.DoPrepare(Listener: TmnListener);
+procedure TmnServer.DoPrepare(vListener: TmnListener);
 begin
   if not (csDestroying in ComponentState) then
   begin
     if Assigned(FOnPrepare) then
-      FOnPrepare(Listener);
+      FOnPrepare(vListener);
   end;
 end;
 
@@ -288,9 +288,9 @@ begin
   FAttempt := 0; // 3 times
 end;
 
-function TmnListener.CreateConnection(Socket: TmnCustomSocket): TmnServerConnection;
+function TmnListener.CreateConnection(vSocket: TmnCustomSocket): TmnServerConnection;
 begin
-  Result := TmnServerConnection.Create(Socket);
+  Result := TmnServerConnection.Create(vSocket);
 end;
 
 destructor TmnListener.Destroy;
