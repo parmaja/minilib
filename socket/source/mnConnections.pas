@@ -66,7 +66,9 @@ type
     procedure Disconnect; virtual;
     procedure Open; virtual;
     procedure Close; virtual;
-    procedure Start; virtual;
+    {$ifndef FPC} //already found in FPC 2.4.4
+    procedure Start;
+    {$endif}
     procedure Stop; virtual;
     property KeepAlive: Boolean read FKeepAlive write FKeepAlive;
     property Connected: Boolean read GetConnected write SetConnected;
@@ -180,13 +182,15 @@ end;
 
 procedure TmnConnection.Open;
 begin
-  Disconnect;
+  Connect;
 end;
 
+{$ifndef FPC}
 procedure TmnConnection.Start;
 begin
   Resume;
 end;
+{$endif}
 
 procedure TmnConnection.Stop;
 begin

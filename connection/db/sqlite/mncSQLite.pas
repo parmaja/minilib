@@ -182,12 +182,16 @@ end;
 function SQLTypeToType(vType: Integer; const SchemaType: string): TmncDataType;
 begin
   case vType of
-    SQLITE_INTEGER: Result := ftInteger;
+    SQLITE_INTEGER:
+      if SameText(SchemaType, 'date') then
+        Result := ftDate
+      else//not yet
+        Result := ftInteger;
     SQLITE_FLOAT:
     begin
-{      if SameText(SchemaType, 'date') then
-        Result := ftDate
-      else}//not yet
+      if SameText(SchemaType, 'date') then
+        Result := ftDateTime
+      else//not yet
         Result := ftFloat;
     end;
     SQLITE_BLOB: Result := ftBlob;
@@ -499,7 +503,7 @@ begin
       case VarType(ParamList.Items[i].Value) of
         varDate:
         begin
-          d := ParamList.Items[i].Value;
+          d := ParamList.Items[i].Value;// - UnixDateDelta; todo
           CheckError(sqlite3_bind_double(FStatment, i + 1, d));
         end;
         varInteger:
@@ -615,7 +619,6 @@ begin
     pType := sqlite3_column_decltype(FStatment, i);
     aColumn := Columns.Add(aName, SQLTypeToType(aType, pType));
     aColumn.SchemaType := pType;
-    //aColumn.DataType
   end;
 end;
 
@@ -632,6 +635,7 @@ var
   flt: Double;
   aCurrent: TmncFields;
   aType: Integer;
+  aColumn: TmncColumn;
   //aSize: Integer;
 begin
   c := sqlite3_column_count(FStatment);
@@ -641,8 +645,9 @@ begin
     for i := 0 to c - 1 do
     begin
 //    TStorageType = (stNone, stInteger, stFloat, stText, stBlob, stNull);
-      aType := sqlite3_column_type(FStatment, i);
       //aSize := sqlite3_column_bytes(FStatment, i);
+      aType := sqlite3_column_type(FStatment, i);
+      aColumn := Fields[i];
       case aType of
         SQLITE_NULL:
         begin
@@ -651,6 +656,8 @@ begin
         SQLITE_INTEGER:
         begin
           int := sqlite3_column_int(FStatment, i);
+{          if aColumn.DataType = ftDate then //todo
+            int := int - 1;}
           aCurrent.Add(i, int);
         end;
         SQLITE_FLOAT:

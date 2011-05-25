@@ -74,7 +74,9 @@ type
   public
     constructor Create; virtual;
     destructor Destroy; override;
+    {$ifndef FPC} //already found in FPC 2.4.4
     procedure Start;
+    {$endif}
     procedure Stop;
     procedure Log(S: string);
     property Server: TmnServer read FServer;
@@ -401,10 +403,12 @@ begin
   end;
 end;
 
+{$ifndef FPC} //already found in FPC 2.4.4
 procedure TmnListener.Start;
 begin
   Resume;
 end;
+{$endif}
 
 procedure TmnListener.DropConnections;
 var

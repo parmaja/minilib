@@ -93,7 +93,9 @@ type
   public
     constructor Create; virtual;
     destructor Destroy; override;
+    {$ifndef FPC} //already found in FPC 2.4.4
     procedure Start;
+    {$endif}
     procedure Stop;
     procedure Log(Connection: TmnConnection; S: string);
     function AddConnection(vPort: string; vAddress: string): TmnClientConnection;
@@ -267,7 +269,7 @@ end;
 procedure TmnCaller.Execute;
 begin
   Connect;
-  Suspend;
+//  Suspend; deprecated in FPC 2.4.4
   Shutdown;
   Disconnect;
 end;
@@ -307,15 +309,17 @@ begin
   end;
 end;
 
+{$ifndef FPC} //already found in FPC 2.4.4
 procedure TmnCaller.Start;
 begin
   Resume;
 end;
+{$endif}
 
 procedure TmnCaller.Stop;
 begin
   Terminate;
-  Resume;
+//  Resume; deprecated
 end;
 
 procedure TmnCaller.Shutdown;
