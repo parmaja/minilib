@@ -313,7 +313,6 @@ begin
   else
     FDocument := IncludeTrailingPathDelimiter(FDocument) + FPath;
 
-  PathDelim
   FDocument := StringReplace(FDocument, '/', PathDelim, [rfReplaceAll]);
 
   if FDocument[Length(FDocument)] = PathDelim then
