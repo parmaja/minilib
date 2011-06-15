@@ -1,0 +1,64 @@
+<?xml version="1.0"?>
+<CONFIG>
+  <Package Version="3">
+    <Name Value="MiniLazarusLib"/>
+    <CompilerOptions>
+      <Version Value="10"/>
+      <SearchPaths>
+        <UnitOutputDirectory Value="lib/$(TargetCPU)-$(TargetOS)"/>
+      </SearchPaths>
+      <Other>
+        <CompilerPath Value="$(CompPath)"/>
+      </Other>
+    </CompilerOptions>
+    <Files Count="7">
+      <Item1>
+        <Filename Value="HTMLProcessor.pas"/>
+        <UnitName Value="HTMLProcessor"/>
+      </Item1>
+      <Item2>
+        <Filename Value="PHPKeywords.inc"/>
+        <Type Value="Include"/>
+      </Item2>
+      <Item3>
+        <Filename Value="PHPProcessor.pas"/>
+        <UnitName Value="PHPProcessor"/>
+      </Item3>
+      <Item4>
+        <Filename Value="PHPUtils.pas"/>
+        <UnitName Value="PHPUtils"/>
+      </Item4>
+      <Item5>
+        <Filename Value="SynHighlighterApache.pas"/>
+        <UnitName Value="SynHighlighterApache"/>
+      </Item5>
+      <Item6>
+        <Filename Value="SynHighlighterHTMLPHP.pas"/>
+        <UnitName Value="SynHighlighterHTMLPHP"/>
+      </Item6>
+      <Item7>
+        <Filename Value="SynHighlighterSQLite.pas"/>
+        <UnitName Value="SynHighlighterSQLite"/>
+      </Item7>
+    </Files>
+    <Type Value="RunAndDesignTime"/>
+    <RequiredPkgs Count="3">
+      <Item1>
+        <PackageName Value="SynEdit"/>
+      </Item1>
+      <Item2>
+        <PackageName Value="LCL"/>
+      </Item2>
+      <Item3>
+        <PackageName Value="FCL"/>
+        <MinVersion Major="1" Release="1" Valid="True"/>
+      </Item3>
+    </RequiredPkgs>
+    <UsageOptions>
+      <UnitPath Value="$(PkgOutDir)"/>
+    </UsageOptions>
+    <PublishOptions>
+      <Version Value="2"/>
+    </PublishOptions>
+  </Package>
+</CONFIG>

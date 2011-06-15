@@ -1,10 +1,10 @@
 <?xml version="1.0"?>
 <CONFIG>
-  <Package Version="2">
+  <Package Version="3">
     <PathDelim Value="\"/>
     <Name Value="MiniXML"/>
     <CompilerOptions>
-      <Version Value="5"/>
+      <Version Value="10"/>
       <PathDelim Value="\"/>
       <SearchPaths>
         <OtherUnitFiles Value="."/>
@@ -12,13 +12,11 @@
       </SearchPaths>
       <Parsing>
         <SyntaxOptions>
+          <SyntaxMode Value="Delphi"/>
           <IncludeAssertionCode Value="True"/>
-          <DelphiCompat Value="True"/>
+          <UseAnsiStrings Value="False"/>
         </SyntaxOptions>
       </Parsing>
-      <CodeGeneration>
-        <Generate Value="Faster"/>
-      </CodeGeneration>
       <Linking>
         <Debugging>
           <UseLineInfoUnit Value="False"/>
@@ -90,11 +88,14 @@
       </Item14>
     </Files>
     <Type Value="RunAndDesignTime"/>
-    <RequiredPkgs Count="1">
+    <RequiredPkgs Count="2">
       <Item1>
+        <PackageName Value="MiniBaseLib"/>
+      </Item1>
+      <Item2>
         <PackageName Value="FCL"/>
         <MinVersion Major="1" Valid="True"/>
-      </Item1>
+      </Item2>
     </RequiredPkgs>
     <UsageOptions>
       <LinkerOptions Value="
@@ -106,4 +107,4 @@
       <IgnoreBinaries Value="False"/>
     </PublishOptions>
   </Package>
-</CONFIG>
+</CONFIG>

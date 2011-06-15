@@ -4,15 +4,17 @@
     <PathDelim Value="\"/>
     <Name Value="MiniConnectionsLib"/>
     <CompilerOptions>
-      <Version Value="5"/>
+      <Version Value="10"/>
       <PathDelim Value="\"/>
       <SearchPaths>
-        <OtherUnitFiles Value="W:\home\pascal\lib\minilib\Commons\;W:\home\pascal\lib\minilib\MiniConnection\extend\;W:\home\pascal\lib\minilib\MiniConnection\extend\"/>
+        <OtherUnitFiles Value="W:\home\pascal\lib\minilib\Commons;W:\home\pascal\lib\minilib\MiniConnection\extend"/>
         <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
       </SearchPaths>
-      <CodeGeneration>
-        <Generate Value="Faster"/>
-      </CodeGeneration>
+      <Parsing>
+        <SyntaxOptions>
+          <UseAnsiStrings Value="False"/>
+        </SyntaxOptions>
+      </Parsing>
       <Other>
         <CompilerPath Value="$(CompPath)"/>
       </Other>
@@ -28,11 +30,14 @@
       </Item2>
     </Files>
     <Type Value="RunAndDesignTime"/>
-    <RequiredPkgs Count="1">
+    <RequiredPkgs Count="2">
       <Item1>
+        <PackageName Value="MiniBaseLib"/>
+      </Item1>
+      <Item2>
         <PackageName Value="FCL"/>
         <MinVersion Major="1" Valid="True"/>
-      </Item1>
+      </Item2>
     </RequiredPkgs>
     <UsageOptions>
       <UnitPath Value="$(PkgOutDir)"/>

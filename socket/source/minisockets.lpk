@@ -1,29 +1,27 @@
 <?xml version="1.0"?>
 <CONFIG>
-  <Package Version="2">
+  <Package Version="3">
     <PathDelim Value="\"/>
     <Name Value="minisockets"/>
     <CompilerOptions>
-      <Version Value="5"/>
+      <Version Value="10"/>
       <PathDelim Value="\"/>
       <SearchPaths>
-        <OtherUnitFiles Value="$(TargetOS)\"/>
+        <OtherUnitFiles Value="$(TargetOS);\home\felipe\Programas\minilib\lib\"/>
         <UnitOutputDirectory Value="..\units\$(TargetCPU)-$(TargetOS)"/>
       </SearchPaths>
       <Parsing>
         <SyntaxOptions>
-          <DelphiCompat Value="True"/>
+          <SyntaxMode Value="Delphi"/>
+          <UseAnsiStrings Value="False"/>
         </SyntaxOptions>
       </Parsing>
-      <CodeGeneration>
-        <Generate Value="Faster"/>
-      </CodeGeneration>
       <Other>
         <CompilerPath Value="$(CompPath)"/>
       </Other>
     </CompilerOptions>
     <Version Major="1" Build="1"/>
-    <Files Count="9">
+    <Files Count="7">
       <Item1>
         <Filename Value="mnClients.pas"/>
         <UnitName Value="mnClients"/>
@@ -41,32 +39,27 @@
         <UnitName Value="mnConnections"/>
       </Item4>
       <Item5>
-        <Filename Value="mnConsts.pas"/>
-        <UnitName Value="mnConsts"/>
-      </Item5>
-      <Item6>
         <Filename Value="mnHttpServer.pas"/>
         <UnitName Value="mnHttpServer"/>
-      </Item6>
-      <Item7>
+      </Item5>
+      <Item6>
         <Filename Value="mnServers.pas"/>
         <UnitName Value="mnServers"/>
-      </Item7>
-      <Item8>
+      </Item6>
+      <Item7>
         <Filename Value="mnSockets.pas"/>
         <UnitName Value="mnSockets"/>
-      </Item8>
-      <Item9>
-        <Filename Value="mnStreams.pas"/>
-        <UnitName Value="mnStreams"/>
-      </Item9>
+      </Item7>
     </Files>
     <Type Value="RunAndDesignTime"/>
-    <RequiredPkgs Count="1">
+    <RequiredPkgs Count="2">
       <Item1>
+        <PackageName Value="MiniBaseLib"/>
+      </Item1>
+      <Item2>
         <PackageName Value="FCL"/>
         <MinVersion Major="1" Valid="True"/>
-      </Item1>
+      </Item2>
     </RequiredPkgs>
     <UsageOptions>
       <UnitPath Value="$(PkgOutDir)\"/>
