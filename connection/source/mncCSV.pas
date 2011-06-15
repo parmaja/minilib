@@ -143,7 +143,7 @@ end;
 
 function TmncCSVCommand.GetEOF: Boolean;
 begin
-  Result := (FCSVStream = nil) or (Mode = csvmWrite) or (FCSVStream.EOF);
+  Result := (Mode = csvmWrite) or (FCSVStream = nil);// do not check (FCSVStream.EOF) last line will not loaded;
 end;
 
 procedure TmncCSVCommand.DoExecute;
@@ -257,17 +257,21 @@ var
   s: string;
   e: Boolean;//eof
 begin
-  s := '';
-  Strings := TStringList.Create;
-
-  repeat
-    Result := FCSVStream.ReadLn(s);
-    s := Trim(s);
-  until not Result or not ((s = '') and (EmptyLine = elSkip));
-
-  Result := Result and not ((s = '') and (EmptyLine = elEOF));
+  Result := (FCSVStream <> nil) and not FCSVStream.EOF;
   if Result then
-    StrToStrings(s, Strings, [Session.SpliteChar], [#0, #13, #10], False, ['"']);
+  begin
+    s := '';
+    Strings := TStringList.Create;
+
+    repeat
+      Result := FCSVStream.ReadLn(s);
+      s := Trim(s);
+    until not Result or not ((s = '') and (EmptyLine = elSkip));
+
+    Result := Result and not ((s = '') and (EmptyLine = elEOF));
+    if Result then
+      StrToStrings(s, Strings, [Session.SpliteChar], [#0, #13, #10], False, ['"']);
+  end;
 end;
 
 procedure TmncCSVCommand.SaveHeader;

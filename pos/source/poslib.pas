@@ -7,7 +7,7 @@ unit poslib;
 interface
 
 uses
-    posButtons, posControls, posEdits, posGrids, posKeyboards, posLists, 
+  posButtons, posControls, posEdits, posGrids, posKeyboards, posLists, 
   posRegCtrls, posUtils, posStuffs, LazarusPackageIntf;
 
 implementation

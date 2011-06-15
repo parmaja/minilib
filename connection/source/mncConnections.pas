@@ -623,7 +623,7 @@ end;
 
 function TmncCommand.FieldIsExist(Name: string): Boolean;
 begin
-  Result := Fields.Find(Name) <> nil;
+  Result := Current.Find(Name) <> nil;
 end;
 
 function TmncCommand.GetField(Index: string): TmncField;
