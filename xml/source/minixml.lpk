@@ -26,6 +26,9 @@
         <Verbosity>
           <ShoLineNum Value="True"/>
         </Verbosity>
+        <CompilerMessages>
+          <UseMsgFile Value="True"/>
+        </CompilerMessages>
         <CompilerPath Value="$(CompPath)"/>
       </Other>
     </CompilerOptions>
@@ -98,13 +101,11 @@
       </Item2>
     </RequiredPkgs>
     <UsageOptions>
-      <LinkerOptions Value="
-"/>
-      <UnitPath Value="$(PkgOutDir)\"/>
+      <UnitPath Value="$(PkgOutDir)"/>
     </UsageOptions>
     <PublishOptions>
       <Version Value="2"/>
       <IgnoreBinaries Value="False"/>
     </PublishOptions>
   </Package>
-</CONFIG>
+</CONFIG>
