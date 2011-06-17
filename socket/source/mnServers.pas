@@ -270,7 +270,7 @@ begin
   {$else}
   SyncChanged;
   {$endif}
-  {$endif}
+  {$endif NoLog}
 end;
 
 procedure TmnListener.Connect;
@@ -382,7 +382,7 @@ begin
   {$else}
   SyncLog;
   {$endif}
-  {$endif}
+  {$endif NoLog}
 end;
 
 procedure TmnListener.Prepare;
@@ -507,9 +507,7 @@ end;
 procedure TmnListener.SyncLog;
 begin
   if Assigned(FOnLog) then
-  begin
     FOnLog(FLogMessage);
-  end;
 end;
 
 procedure TmnServer.Stop;

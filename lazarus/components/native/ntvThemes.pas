@@ -80,14 +80,17 @@ end;
 
 constructor TntvThemeEngine.Create;
 begin
+  inherited;
 end;
 
 function TntvThemeEngine.Switch(NewPainter: TntvThemePainter): Boolean;
 begin
+  Result := False;
 end;
 
 function TntvThemeEngine.Switch(NewPainter: string): Boolean;
 begin
+  Result := False;
 end;
 
 end.

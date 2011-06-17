@@ -2,16 +2,16 @@
 #
 #   Makefile.fpc for NativeLib 1.0.1.1
 #
-#   This file was generated on 09/06/11
+#   This file was generated on 17/06/2011
 
 [package]
 name=nativelib
 version=1.0.1.1
 
 [compiler]
-unittargetdir=units/$(CPU_TARGET)-$(OS_TARGET)
-unitdir=../../../../lazarus/ideintf/units/$(CPU_TARGET)-$(OS_TARGET) ../../../../lazarus/lcl/units/$(CPU_TARGET)-$(OS_TARGET)/$(LCL_PLATFORM) ../../../../lazarus/lcl/units/$(CPU_TARGET)-$(OS_TARGET) ../../../../lazarus/packager/units/$(CPU_TARGET)-$(OS_TARGET) .
-options= -MObjFPC -Scgim -O1 -gl -vew -l -dLCL -dLCL$(LCL_PLATFORM) -dUseStatusItem
+unittargetdir=./units/$(CPU_TARGET)-$(OS_TARGET)
+unitdir=../../../lib/units/$(CPU_TARGET)-$(OS_TARGET) ../../lib/units/$(CPU_TARGET)-$(OS_TARGET) w:/programs/lazarus/components/synedit/units/$(CPU_TARGET)-$(OS_TARGET) w:/programs/lazarus/ideintf/units/$(CPU_TARGET)-$(OS_TARGET) w:/programs/lazarus/lcl/units/$(CPU_TARGET)-$(OS_TARGET)/$(LCL_PLATFORM) w:/programs/lazarus/lcl/units/$(CPU_TARGET)-$(OS_TARGET) w:/programs/lazarus/packager/units/$(CPU_TARGET)-$(OS_TARGET) .
+options= -MObjFPC -Scgim -O1 -gl -vew -l -dLCL -dLCL$(LCL_PLATFORM)
 
 [target]
 units=NativeLib.pas
@@ -52,4 +52,4 @@ cleartarget:
 compiled:
         $(COPY) Makefile.compiled $(COMPILER_UNITTARGETDIR)/NativeLib.compiled
 
-all: cleartarget $(COMPILER_UNITTARGETDIR) nativelib$(PPUEXT) compiled
+all: cleartarget $(COMPILER_UNITTARGETDIR) nativelib$(PPUEXT) compiled

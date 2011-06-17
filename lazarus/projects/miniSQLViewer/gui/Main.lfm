@@ -17,7 +17,7 @@ object MainForm: TMainForm
   OnClose = FormClose
   OnCloseQuery = FormCloseQuery
   OnShortCut = FormShortCut
-  Position = poDefault
+  Position = poDefaultPosOnly
   ShowHint = True
   LCLVersion = '0.9.31'
   object ClientPanel: TPanel
