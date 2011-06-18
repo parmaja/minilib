@@ -2,7 +2,7 @@
   This source is only used to compile and install the package.
  }
 
-unit minisockets; 
+unit MiniSockets;
 
 interface
 
@@ -17,5 +17,5 @@ begin
 end; 
 
 initialization
-  RegisterPackage('minisockets', @Register); 
+  RegisterPackage('MiniSockets', @Register); 
 end.
