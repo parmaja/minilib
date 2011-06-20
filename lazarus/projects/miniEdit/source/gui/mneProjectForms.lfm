@@ -1,0 +1,157 @@
+object ManageProjectsForm: TManageProjectsForm
+  Left = 80
+  Height = 335
+  Top = 183
+  Width = 477
+  BorderStyle = bsDialog
+  Caption = 'Manage Projects'
+  ClientHeight = 335
+  ClientWidth = 477
+  Font.Height = -11
+  Font.Name = 'MS Sans Serif'
+  OnCreate = FormCreate
+  Position = poMainFormCenter
+  LCLVersion = '0.9.31'
+  object PageControl: TPageControl
+    Left = 5
+    Height = 298
+    Top = 3
+    Width = 468
+    ActivePage = TabSheet3
+    Anchors = [akTop, akLeft, akRight, akBottom]
+    TabIndex = 2
+    TabOrder = 0
+    object TabSheet1: TTabSheet
+      Caption = 'Projects'
+      ClientHeight = 272
+      ClientWidth = 460
+      object ProjectsList: TListBox
+        Left = 1
+        Height = 236
+        Top = 2
+        Width = 463
+        Anchors = [akTop, akLeft, akRight, akBottom]
+        ItemHeight = 18
+        OnDblClick = ProjectsListDblClick
+        Style = lbOwnerDrawFixed
+        TabOrder = 0
+      end
+      object Button1: TButton
+        Left = 80
+        Height = 25
+        Top = 242
+        Width = 75
+        Anchors = [akLeft, akBottom]
+        Caption = 'Add'
+        OnClick = Button1Click
+        TabOrder = 1
+      end
+      object Button3: TButton
+        Left = 3
+        Height = 25
+        Top = 242
+        Width = 75
+        Anchors = [akLeft, akBottom]
+        Caption = 'New'
+        OnClick = Button3Click
+        TabOrder = 2
+      end
+      object MoveDownBtn: TButton
+        Left = 386
+        Height = 25
+        Top = 242
+        Width = 75
+        Anchors = [akLeft, akBottom]
+        Caption = 'Move Down'
+        OnClick = MoveDownBtnClick
+        TabOrder = 3
+      end
+      object MoveUpBtn: TButton
+        Left = 309
+        Height = 25
+        Top = 242
+        Width = 75
+        Anchors = [akLeft, akBottom]
+        Caption = 'Move Up'
+        OnClick = MoveUpBtnClick
+        TabOrder = 4
+      end
+    end
+    object TabSheet2: TTabSheet
+      Caption = 'Recent Projects'
+      ClientHeight = 272
+      ClientWidth = 460
+      ImageIndex = 1
+      object RProjectsList: TListBox
+        Left = 1
+        Height = 263
+        Top = 4
+        Width = 456
+        Anchors = [akTop, akLeft, akRight, akBottom]
+        ItemHeight = 18
+        OnDblClick = ProjectsListDblClick
+        PopupMenu = PopupMnu
+        Style = lbOwnerDrawFixed
+        TabOrder = 0
+      end
+    end
+    object TabSheet3: TTabSheet
+      Caption = 'Recent files'
+      ClientHeight = 272
+      ClientWidth = 460
+      ImageIndex = 2
+      object RFilesList: TListBox
+        Left = 1
+        Height = 263
+        Top = 4
+        Width = 456
+        Anchors = [akTop, akLeft, akRight, akBottom]
+        ItemHeight = 18
+        OnDblClick = ProjectsListDblClick
+        Style = lbOwnerDrawFixed
+        TabOrder = 0
+      end
+    end
+  end
+  object OpenBtn: TButton
+    Left = 319
+    Height = 26
+    Top = 306
+    Width = 75
+    Anchors = [akRight, akBottom]
+    Caption = '&Open'
+    Default = True
+    ModalResult = 1
+    OnClick = OpenBtnClick
+    TabOrder = 1
+  end
+  object CloseBtn: TButton
+    Left = 396
+    Height = 26
+    Top = 306
+    Width = 75
+    Anchors = [akRight, akBottom]
+    Cancel = True
+    Caption = '&Close'
+    ModalResult = 2
+    TabOrder = 2
+  end
+  object Button2: TButton
+    Left = 5
+    Height = 26
+    Top = 306
+    Width = 75
+    Anchors = [akLeft, akBottom]
+    Caption = 'Remove'
+    OnClick = Button2Click
+    TabOrder = 3
+  end
+  object PopupMnu: TPopupMenu
+    left = 172
+    top = 174
+    object AddtoProjects1: TMenuItem
+      Caption = 'Add to Projects'
+      OnClick = AddtoProjects1Click
+    end
+  end
+end

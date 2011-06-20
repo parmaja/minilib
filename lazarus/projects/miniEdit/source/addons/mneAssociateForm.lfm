@@ -1,0 +1,76 @@
+object AssociateForm: TAssociateForm
+  Left = 521
+  Height = 143
+  Top = 241
+  Width = 268
+  BorderStyle = bsDialog
+  Caption = 'Associate'
+  ClientHeight = 143
+  ClientWidth = 268
+  Font.Height = -11
+  Font.Name = 'MS Sans Serif'
+  OnCreate = FormCreate
+  Position = poMainFormCenter
+  LCLVersion = '0.9.31'
+  object Label1: TLabel
+    Left = 10
+    Height = 14
+    Top = 8
+    Width = 27
+    Caption = 'Open'
+    ParentColor = False
+  end
+  object Bevel1: TBevel
+    Left = 4
+    Height = 2
+    Top = 68
+    Width = 259
+  end
+  object PHPChk: TCheckBox
+    Left = 14
+    Height = 17
+    Top = 26
+    Width = 39
+    Caption = '.php'
+    TabOrder = 0
+  end
+  object CSSChk: TCheckBox
+    Left = 14
+    Height = 17
+    Top = 44
+    Width = 37
+    Caption = '.css'
+    TabOrder = 1
+  end
+  object EditAssociateSupportedChk: TCheckBox
+    Left = 14
+    Height = 17
+    Top = 79
+    Width = 201
+    Caption = 'Associate "Edit" with all supported files'
+    TabOrder = 2
+  end
+  object OkBtn: TButton
+    Left = 106
+    Height = 25
+    Top = 111
+    Width = 75
+    Anchors = [akRight, akBottom]
+    Caption = '&Ok'
+    Default = True
+    ModalResult = 1
+    OnClick = OkBtnClick
+    TabOrder = 3
+  end
+  object CancelBtn: TButton
+    Left = 184
+    Height = 25
+    Top = 111
+    Width = 75
+    Anchors = [akRight, akBottom]
+    Cancel = True
+    Caption = '&Cancel'
+    ModalResult = 2
+    TabOrder = 4
+  end
+end

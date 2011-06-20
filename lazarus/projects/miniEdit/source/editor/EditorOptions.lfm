@@ -1,0 +1,1088 @@
+object EditorOptionsForm: TEditorOptionsForm
+  Left = 368
+  Height = 416
+  Top = 116
+  Width = 369
+  BorderStyle = bsDialog
+  Caption = 'Editor Options'
+  ClientHeight = 416
+  ClientWidth = 369
+  Font.Height = -11
+  Font.Name = 'MS Sans Serif'
+  OnCreate = FormCreate
+  OnShow = FormShow
+  Position = poScreenCenter
+  LCLVersion = '0.9.31'
+  object PageControl: TPageControl
+    Left = 4
+    Height = 379
+    Top = 4
+    Width = 362
+    ActivePage = GutterTab
+    TabIndex = 1
+    TabOrder = 0
+    OnChange = PageControlChange
+    object OptionsTab: TTabSheet
+      Caption = 'Options'
+      ClientHeight = 353
+      ClientWidth = 354
+      object OptionsGrp: TGroupBox
+        Left = 4
+        Height = 273
+        Top = 2
+        Width = 345
+        Caption = 'Options'
+        ClientHeight = 255
+        ClientWidth = 341
+        TabOrder = 0
+        object AutoIndentChk: TCheckBox
+          Left = 9
+          Height = 17
+          Hint = 'Will indent the caret on new lines with the same amount of leading white space as the preceding line'
+          Top = 24
+          Width = 72
+          Caption = 'Auto indent'
+          TabOrder = 1
+        end
+        object DragAndDropEditingChk: TCheckBox
+          Left = 9
+          Height = 17
+          Hint = 'Allows you to select a block of text and drag it within the document to another location'
+          Top = 62
+          Width = 120
+          Caption = 'Drag and drop editing'
+          TabOrder = 3
+        end
+        object AutoSizeMaxWidthChk: TCheckBox
+          Left = 9
+          Height = 17
+          Hint = 'Allows the editor accept OLE file drops'
+          Top = 43
+          Width = 116
+          Caption = 'Auto size scroll width'
+          TabOrder = 2
+        end
+        object HalfPageScrollChk: TCheckBox
+          Left = 176
+          Height = 17
+          Hint = 'When scrolling with page-up and page-down commands, only scroll a half page at a time'
+          Top = 43
+          Width = 91
+          Caption = 'Half page scroll'
+          TabOrder = 15
+        end
+        object EnhanceEndKeyChk: TCheckBox
+          Left = 9
+          Height = 17
+          Hint = 'Makes it so the caret is never visible'
+          Top = 212
+          Width = 104
+          Caption = 'Enhance End Key'
+          TabOrder = 11
+        end
+        object ScrollByOneLessChk: TCheckBox
+          Left = 176
+          Height = 17
+          Hint = 'Forces scrolling to be one less'
+          Top = 62
+          Width = 100
+          Caption = 'Scroll by one less'
+          TabOrder = 16
+        end
+        object ScrollPastEOFChk: TCheckBox
+          Left = 176
+          Height = 17
+          Hint = 'Allows the cursor to go past the end of file marker'
+          Top = 81
+          Width = 116
+          Caption = 'Scroll past end of file'
+          TabOrder = 17
+        end
+        object ScrollPastEOLChk: TCheckBox
+          Left = 176
+          Height = 17
+          Hint = 'Allows the cursor to go past the last character into the white space at the end of a line'
+          Top = 100
+          Width = 119
+          Caption = 'Scroll past end of line'
+          TabOrder = 18
+        end
+        object ShowScrollHintChk: TCheckBox
+          Left = 176
+          Height = 17
+          Hint = 'Shows a hint of the visible line numbers when scrolling vertically'
+          Top = 119
+          Width = 92
+          Caption = 'Show scroll hint'
+          TabOrder = 19
+        end
+        object SmartTabsChk: TCheckBox
+          Left = 9
+          Height = 17
+          Hint = 'When tabbing, the cursor will go to the next non-white space character of the previous line'
+          Top = 138
+          Width = 68
+          Caption = 'Smart tabs'
+          TabOrder = 7
+        end
+        object TabsToSpacesChk: TCheckBox
+          Left = 9
+          Height = 17
+          Hint = 'Converts a tab character to the number of spaces in Tab Width'
+          Top = 119
+          Width = 91
+          Caption = 'Tabs to spaces'
+          TabOrder = 6
+        end
+        object TrimTrailingSpacesChk: TCheckBox
+          Left = 176
+          Height = 17
+          Hint = 'Spaces at the end of lines will be trimmed and not saved'
+          Top = 157
+          Width = 108
+          Caption = 'Trim trailing spaces'
+          TabOrder = 21
+        end
+        object AltSetsColumnModeChk: TCheckBox
+          Left = 9
+          Height = 17
+          Hint = 'Holding down the Alt Key will put the selection mode into columnar format'
+          Top = 81
+          Width = 118
+          Caption = 'Alt sets column mode'
+          TabOrder = 4
+        end
+        object KeepCaretXChk: TCheckBox
+          Left = 9
+          Height = 17
+          Hint = 'When moving through lines the X position will always stay the same'
+          Top = 100
+          Width = 122
+          Caption = 'Maintain caret column'
+          TabOrder = 5
+        end
+        object ScrollHintFollowsChk: TCheckBox
+          Left = 176
+          Height = 17
+          Hint = 'The scroll hint follows the mouse when scrolling vertically'
+          Top = 138
+          Width = 133
+          Caption = 'Scroll hint follows mouse'
+          TabOrder = 20
+        end
+        object GroupUndoChk: TCheckBox
+          Left = 176
+          Height = 17
+          Hint = 'When undoing/redoing actions, handle all continous changes of the same kind in one call instead undoing/redoing each command separately'
+          Top = 175
+          Width = 74
+          Caption = 'Group undo'
+          TabOrder = 22
+        end
+        object SmartTabDeleteChk: TCheckBox
+          Left = 9
+          Height = 17
+          Hint = 'similar to Smart Tabs, but when you delete characters'
+          Top = 157
+          Width = 95
+          Caption = 'Smart tab delete'
+          TabOrder = 8
+        end
+        object EnhanceHomeKeyChk: TCheckBox
+          Left = 9
+          Height = 17
+          Hint = 'enhances home key positioning, similar to visual studio'
+          Top = 193
+          Width = 113
+          Caption = 'Enhance Home Key'
+          TabOrder = 10
+        end
+        object HideShowScrollbarsChk: TCheckBox
+          Left = 176
+          Height = 17
+          Hint = 'if enabled, then the scrollbars will only show when necessary.  If you have ScrollPastEOL, then it the horizontal bar will always be there (it uses MaxLength instead)'
+          Top = 2
+          Width = 152
+          Caption = 'Hide scrollbars as necessary'
+          TabOrder = 13
+        end
+        object DisableScrollArrowsChk: TCheckBox
+          Left = 176
+          Height = 17
+          Hint = 'Disables the scroll bar arrow buttons when you can''t scroll in that direction any more'
+          Top = 23
+          Width = 114
+          Caption = 'Disable scroll arrows'
+          TabOrder = 14
+        end
+        object ShowSpecialCharsChk: TCheckBox
+          Left = 176
+          Height = 17
+          Hint = 'Shows linebreaks, spaces and tabs using special symbols'
+          Top = 212
+          Width = 110
+          Caption = 'Show special chars'
+          TabOrder = 24
+        end
+        object RightMouseMovesChk: TCheckBox
+          Left = 176
+          Height = 17
+          Hint = 'When clicking with the right mouse for a popup menu, move the cursor to that location'
+          Top = 193
+          Width = 143
+          Caption = 'Right mouse moves cursor'
+          TabOrder = 23
+        end
+        object InsertModeChk: TCheckBox
+          Left = 9
+          Height = 17
+          Hint = 'Insert mode'
+          Top = 4
+          Width = 74
+          Caption = 'Insert Mode'
+          TabOrder = 0
+        end
+        object TabIndentChk: TCheckBox
+          Left = 9
+          Height = 17
+          Hint = 'When active <Tab> and <Shift><Tab> act as block indent, unindent when text is selected'
+          Top = 175
+          Width = 70
+          Caption = 'Tab Indent'
+          TabOrder = 9
+        end
+        object WordWrapChk: TCheckBox
+          Left = 9
+          Height = 17
+          Hint = 'if enabled, then the scrollbars will only show when necessary.  If you have ScrollPastEOL, then it the horizontal bar will always be there (it uses MaxLength instead)'
+          Top = 231
+          Width = 73
+          Caption = 'Word Wrap'
+          TabOrder = 12
+        end
+        object BracketHighlightChk: TCheckBox
+          Left = 176
+          Height = 17
+          Hint = 'Shows linebreaks, spaces and tabs using special symbols'
+          Top = 231
+          Width = 97
+          Caption = 'Bracket highlight'
+          TabOrder = 25
+        end
+      end
+      object CaretGrp: TGroupBox
+        Left = 3
+        Height = 67
+        Top = 279
+        Width = 345
+        Caption = 'Caret'
+        ClientHeight = 49
+        ClientWidth = 341
+        TabOrder = 1
+        object Label2: TLabel
+          Left = 16
+          Height = 14
+          Top = 5
+          Width = 57
+          Caption = 'Insert caret:'
+          ParentColor = False
+        end
+        object Label4: TLabel
+          Left = 16
+          Height = 14
+          Top = 29
+          Width = 76
+          Caption = 'Overwrite caret:'
+          ParentColor = False
+        end
+        object InsertCaretCbo: TComboBox
+          Left = 120
+          Height = 21
+          Top = 1
+          Width = 186
+          ItemHeight = 13
+          Items.Strings = (
+            'Vertical Line'
+            'Horizontal Line'
+            'Half Block'
+            'Block'
+          )
+          Style = csDropDownList
+          TabOrder = 0
+        end
+        object OverwriteCaretCbo: TComboBox
+          Left = 120
+          Height = 21
+          Top = 25
+          Width = 186
+          ItemHeight = 13
+          Items.Strings = (
+            'Vertical Line'
+            'Horizontal Line'
+            'Half Block'
+            'Block'
+          )
+          Style = csDropDownList
+          TabOrder = 1
+        end
+      end
+    end
+    object GutterTab: TTabSheet
+      Caption = 'Display'
+      ClientHeight = 353
+      ClientWidth = 354
+      object RightEdgeGrp: TGroupBox
+        Left = 7
+        Height = 100
+        Top = 216
+        Width = 165
+        Caption = 'Right Edge'
+        ClientHeight = 82
+        ClientWidth = 161
+        TabOrder = 1
+        object Label3: TLabel
+          Left = 9
+          Height = 14
+          Top = 33
+          Width = 55
+          Caption = 'Edge color:'
+          ParentColor = False
+        end
+        object Label10: TLabel
+          Left = 9
+          Height = 14
+          Top = 9
+          Width = 67
+          Caption = 'Edge Column:'
+          ParentColor = False
+        end
+        object RightEdgeEdit: TEdit
+          Left = 82
+          Height = 21
+          Top = 6
+          Width = 51
+          TabOrder = 0
+          Text = '0'
+        end
+        object RightEdgeColorCbo: TColorBox
+          Left = 7
+          Height = 22
+          Top = 52
+          Width = 145
+          Style = [cbStandardColors, cbExtendedColors, cbSystemColors, cbIncludeNone, cbIncludeDefault, cbCustomColor, cbPrettyNames]
+          ItemHeight = 16
+          TabOrder = 1
+        end
+      end
+      object GutterGrp: TGroupBox
+        Left = 7
+        Height = 195
+        Top = 8
+        Width = 341
+        Caption = 'Gutter'
+        ClientHeight = 177
+        ClientWidth = 337
+        TabOrder = 0
+        object Label1: TLabel
+          Left = 129
+          Height = 14
+          Top = 29
+          Width = 52
+          Caption = 'Backcolor:'
+          ParentColor = False
+        end
+        object GutterAutosizeChk: TCheckBox
+          Left = 9
+          Height = 17
+          Top = 22
+          Width = 58
+          Caption = 'Autosize'
+          TabOrder = 1
+        end
+        object GutterShowLineNumbersChk: TCheckBox
+          Left = 9
+          Height = 17
+          Top = 41
+          Width = 107
+          Caption = 'Show line numbers'
+          TabOrder = 2
+        end
+        object GutterShowLeaderZerosChk: TCheckBox
+          Left = 9
+          Height = 17
+          Top = 79
+          Width = 110
+          Caption = 'Show leading zeros'
+          TabOrder = 4
+        end
+        object GutterStartAtZeroChk: TCheckBox
+          Left = 9
+          Height = 17
+          Top = 60
+          Width = 75
+          Caption = 'Start at zero'
+          TabOrder = 3
+        end
+        object GutterVisibleChk: TCheckBox
+          Left = 9
+          Height = 17
+          Top = 3
+          Width = 48
+          Caption = 'Visible'
+          Checked = True
+          State = cbChecked
+          TabOrder = 0
+        end
+        object GutterBackcolorCbo: TColorBox
+          Left = 184
+          Height = 22
+          Top = 25
+          Width = 145
+          Style = [cbStandardColors, cbExtendedColors, cbSystemColors, cbIncludeNone, cbIncludeDefault, cbCustomColor, cbPrettyNames]
+          ItemHeight = 16
+          TabOrder = 5
+        end
+        object Label5: TLabel
+          Left = 129
+          Height = 14
+          Top = 2
+          Width = 51
+          Caption = 'Frontcolor:'
+          ParentColor = False
+        end
+        object GutterForecolorCbo: TColorBox
+          Left = 185
+          Height = 22
+          Top = -2
+          Width = 145
+          Style = [cbStandardColors, cbExtendedColors, cbSystemColors, cbIncludeNone, cbIncludeDefault, cbCustomColor, cbPrettyNames]
+          ItemHeight = 16
+          TabOrder = 6
+        end
+        object SeparatorColorCbo: TColorBox
+          Left = 184
+          Height = 22
+          Top = 74
+          Width = 145
+          Style = [cbStandardColors, cbExtendedColors, cbSystemColors, cbIncludeNone, cbIncludeDefault, cbCustomColor, cbPrettyNames]
+          ItemHeight = 16
+          TabOrder = 7
+        end
+        object Label6: TLabel
+          Left = 129
+          Height = 14
+          Top = 78
+          Width = 50
+          Caption = 'Separator:'
+          ParentColor = False
+        end
+        object ShowSeparatorChk: TCheckBox
+          Left = 132
+          Height = 17
+          Top = 55
+          Width = 94
+          Caption = 'Show Separator'
+          TabOrder = 8
+        end
+        object SavedColorCbo: TColorBox
+          Left = 185
+          Height = 22
+          Top = 124
+          Width = 145
+          Style = [cbStandardColors, cbExtendedColors, cbSystemColors, cbIncludeNone, cbIncludeDefault, cbCustomColor, cbPrettyNames]
+          ItemHeight = 16
+          TabOrder = 9
+        end
+        object Label7: TLabel
+          Left = 129
+          Height = 14
+          Top = 129
+          Width = 32
+          Caption = 'Saved'
+          ParentColor = False
+        end
+        object ShowModifiedLinesChk: TCheckBox
+          Left = 132
+          Height = 17
+          Top = 101
+          Width = 88
+          Caption = 'Show Modified'
+          TabOrder = 10
+        end
+        object UnsavedColorCbo: TColorBox
+          Left = 185
+          Height = 22
+          Top = 150
+          Width = 145
+          Style = [cbStandardColors, cbExtendedColors, cbSystemColors, cbIncludeNone, cbIncludeDefault, cbCustomColor, cbPrettyNames]
+          ItemHeight = 16
+          TabOrder = 11
+        end
+        object Label15: TLabel
+          Left = 129
+          Height = 14
+          Top = 153
+          Width = 44
+          Caption = 'Unsaved'
+          ParentColor = False
+        end
+      end
+      object LineSpacingGrp: TGroupBox
+        Left = 183
+        Height = 100
+        Top = 216
+        Width = 165
+        Caption = 'Line spacing / Tab spacing'
+        ClientHeight = 82
+        ClientWidth = 161
+        TabOrder = 2
+        object Label8: TLabel
+          Left = 9
+          Height = 14
+          Top = 9
+          Width = 56
+          Caption = 'Extra Lines:'
+          ParentColor = False
+        end
+        object Label9: TLabel
+          Left = 9
+          Height = 14
+          Top = 39
+          Width = 54
+          Caption = 'Tab Width:'
+          ParentColor = False
+        end
+        object LineSpacingEdit: TEdit
+          Left = 80
+          Height = 21
+          Top = 6
+          Width = 52
+          TabOrder = 0
+          Text = '0'
+        end
+        object TabWidthEdit: TEdit
+          Left = 80
+          Height = 21
+          Top = 36
+          Width = 52
+          TabOrder = 1
+          Text = '8'
+        end
+      end
+    end
+    object ColorTab: TTabSheet
+      Caption = 'Color'
+      ClientHeight = 353
+      ClientWidth = 354
+      ImageIndex = 3
+      object Label11: TLabel
+        Left = 5
+        Height = 14
+        Top = 64
+        Width = 42
+        Caption = '&Element:'
+        ParentColor = False
+      end
+      object Label12: TLabel
+        Left = 5
+        Height = 14
+        Top = 38
+        Width = 28
+        Caption = '&Type:'
+        ParentColor = False
+      end
+      inline SampleEdit: TSynEdit
+        Left = 3
+        Height = 151
+        Top = 198
+        Width = 344
+        Anchors = [akTop, akLeft, akRight, akBottom]
+        Font.Height = -13
+        Font.Name = 'Courier New'
+        Font.Pitch = fpFixed
+        Font.Quality = fqNonAntialiased
+        ParentColor = False
+        ParentFont = False
+        TabOrder = 6
+        OnMouseUp = SampleEditMouseUp
+        Gutter.Visible = False
+        Gutter.Width = 57
+        Gutter.MouseActions = <        
+          item
+            Shift = []
+            ShiftMask = []
+            Button = mbLeft
+            ClickCount = ccAny
+            ClickDir = cdDown
+            Command = 13
+            MoveCaret = False
+            Option = 0
+            Priority = 0
+          end        
+          item
+            Shift = []
+            ShiftMask = []
+            Button = mbRight
+            ClickCount = ccSingle
+            ClickDir = cdUp
+            Command = 12
+            MoveCaret = False
+            Option = 0
+            Priority = 0
+          end>
+        RightGutter.Width = 0
+        RightGutter.MouseActions = <        
+          item
+            Shift = []
+            ShiftMask = []
+            Button = mbLeft
+            ClickCount = ccAny
+            ClickDir = cdDown
+            Command = 13
+            MoveCaret = False
+            Option = 0
+            Priority = 0
+          end        
+          item
+            Shift = []
+            ShiftMask = []
+            Button = mbRight
+            ClickCount = ccSingle
+            ClickDir = cdUp
+            Command = 12
+            MoveCaret = False
+            Option = 0
+            Priority = 0
+          end>
+        Keystrokes = <>
+        MouseActions = <        
+          item
+            Shift = []
+            ShiftMask = [ssShift, ssAlt]
+            Button = mbLeft
+            ClickCount = ccSingle
+            ClickDir = cdDown
+            Command = 1
+            MoveCaret = True
+            Option = 0
+            Priority = 0
+          end        
+          item
+            Shift = [ssShift]
+            ShiftMask = [ssShift, ssAlt]
+            Button = mbLeft
+            ClickCount = ccSingle
+            ClickDir = cdDown
+            Command = 1
+            MoveCaret = True
+            Option = 1
+            Priority = 0
+          end        
+          item
+            Shift = [ssAlt]
+            ShiftMask = [ssShift, ssAlt]
+            Button = mbLeft
+            ClickCount = ccSingle
+            ClickDir = cdDown
+            Command = 3
+            MoveCaret = True
+            Option = 0
+            Priority = 0
+          end        
+          item
+            Shift = [ssShift, ssAlt]
+            ShiftMask = [ssShift, ssAlt]
+            Button = mbLeft
+            ClickCount = ccSingle
+            ClickDir = cdDown
+            Command = 3
+            MoveCaret = True
+            Option = 1
+            Priority = 0
+          end        
+          item
+            Shift = []
+            ShiftMask = []
+            Button = mbRight
+            ClickCount = ccSingle
+            ClickDir = cdUp
+            Command = 12
+            MoveCaret = False
+            Option = 0
+            Priority = 0
+          end        
+          item
+            Shift = []
+            ShiftMask = []
+            Button = mbLeft
+            ClickCount = ccDouble
+            ClickDir = cdDown
+            Command = 6
+            MoveCaret = True
+            Option = 0
+            Priority = 0
+          end        
+          item
+            Shift = []
+            ShiftMask = []
+            Button = mbLeft
+            ClickCount = ccTriple
+            ClickDir = cdDown
+            Command = 7
+            MoveCaret = True
+            Option = 0
+            Priority = 0
+          end        
+          item
+            Shift = []
+            ShiftMask = []
+            Button = mbLeft
+            ClickCount = ccQuad
+            ClickDir = cdDown
+            Command = 8
+            MoveCaret = True
+            Option = 0
+            Priority = 0
+          end        
+          item
+            Shift = []
+            ShiftMask = []
+            Button = mbMiddle
+            ClickCount = ccSingle
+            ClickDir = cdDown
+            Command = 10
+            MoveCaret = True
+            Option = 0
+            Priority = 0
+          end        
+          item
+            Shift = [ssCtrl]
+            ShiftMask = [ssShift, ssAlt, ssCtrl]
+            Button = mbLeft
+            ClickCount = ccSingle
+            ClickDir = cdUp
+            Command = 11
+            MoveCaret = False
+            Option = 0
+            Priority = 0
+          end>
+        MouseSelActions = <        
+          item
+            Shift = []
+            ShiftMask = []
+            Button = mbLeft
+            ClickCount = ccSingle
+            ClickDir = cdDown
+            Command = 9
+            MoveCaret = False
+            Option = 0
+            Priority = 0
+          end>
+        ReadOnly = True
+        BracketHighlightStyle = sbhsBoth
+        inline SynGutterPartList1: TSynGutterPartList
+          object SynGutterMarks1: TSynGutterMarks
+            Width = 24
+          end
+          object SynGutterLineNumber1: TSynGutterLineNumber
+            Width = 17
+            MouseActions = <>
+            MarkupInfo.Background = clBtnFace
+            MarkupInfo.Foreground = clNone
+            DigitCount = 2
+            ShowOnlyLineNumbersMultiplesOf = 1
+            ZeroStart = False
+            LeadingZeros = False
+          end
+          object SynGutterChanges1: TSynGutterChanges
+            Width = 4
+            ModifiedColor = 59900
+            SavedColor = clGreen
+          end
+          object SynGutterSeparator1: TSynGutterSeparator
+            Width = 2
+          end
+          object SynGutterCodeFolding1: TSynGutterCodeFolding
+            MouseActions = <            
+              item
+                Shift = []
+                ShiftMask = []
+                Button = mbRight
+                ClickCount = ccSingle
+                ClickDir = cdUp
+                Command = 16
+                MoveCaret = False
+                Option = 0
+                Priority = 0
+              end            
+              item
+                Shift = []
+                ShiftMask = [ssShift]
+                Button = mbMiddle
+                ClickCount = ccAny
+                ClickDir = cdDown
+                Command = 14
+                MoveCaret = False
+                Option = 0
+                Priority = 0
+              end            
+              item
+                Shift = [ssShift]
+                ShiftMask = [ssShift]
+                Button = mbMiddle
+                ClickCount = ccAny
+                ClickDir = cdDown
+                Command = 14
+                MoveCaret = False
+                Option = 1
+                Priority = 0
+              end            
+              item
+                Shift = []
+                ShiftMask = []
+                Button = mbLeft
+                ClickCount = ccAny
+                ClickDir = cdDown
+                Command = 0
+                MoveCaret = False
+                Option = 0
+                Priority = 0
+              end>
+            MarkupInfo.Background = clNone
+            MarkupInfo.Foreground = clGray
+            MouseActionsExpanded = <            
+              item
+                Shift = []
+                ShiftMask = []
+                Button = mbLeft
+                ClickCount = ccAny
+                ClickDir = cdDown
+                Command = 14
+                MoveCaret = False
+                Option = 0
+                Priority = 0
+              end>
+            MouseActionsCollapsed = <            
+              item
+                Shift = [ssCtrl]
+                ShiftMask = [ssCtrl]
+                Button = mbLeft
+                ClickCount = ccAny
+                ClickDir = cdDown
+                Command = 15
+                MoveCaret = False
+                Option = 0
+                Priority = 0
+              end            
+              item
+                Shift = []
+                ShiftMask = [ssCtrl]
+                Button = mbLeft
+                ClickCount = ccAny
+                ClickDir = cdDown
+                Command = 15
+                MoveCaret = False
+                Option = 1
+                Priority = 0
+              end>
+          end
+        end
+      end
+      object BackgroundCbo: TColorBox
+        Left = 89
+        Height = 22
+        Top = 117
+        Width = 100
+        DefaultColorColor = clWhite
+        NoneColorColor = clWhite
+        Selected = clWhite
+        Style = [cbStandardColors, cbExtendedColors, cbSystemColors, cbCustomColor, cbPrettyNames]
+        ItemHeight = 16
+        OnSelect = BackgroundCboSelect
+        TabOrder = 5
+      end
+      object ForegroundCbo: TColorBox
+        Left = 89
+        Height = 22
+        Top = 90
+        Width = 100
+        Style = [cbStandardColors, cbExtendedColors, cbSystemColors, cbCustomColor, cbPrettyNames]
+        ItemHeight = 16
+        OnSelect = ForegroundCboSelect
+        TabOrder = 3
+      end
+      object ElementCbo: TComboBox
+        Left = 71
+        Height = 21
+        Top = 60
+        Width = 274
+        ItemHeight = 13
+        OnSelect = ElementCboSelect
+        Style = csDropDownList
+        TabOrder = 1
+      end
+      object BackgroundChk: TCheckBox
+        Left = 3
+        Height = 17
+        Top = 121
+        Width = 76
+        Caption = 'Background'
+        OnClick = BoldChkClick
+        TabOrder = 4
+      end
+      object ForegroundChk: TCheckBox
+        Left = 3
+        Height = 17
+        Top = 92
+        Width = 72
+        Caption = 'Foreground'
+        OnClick = BoldChkClick
+        TabOrder = 2
+      end
+      object GroupCbo: TComboBox
+        Left = 71
+        Height = 21
+        Top = 34
+        Width = 274
+        ItemHeight = 13
+        OnSelect = GroupCboSelect
+        Style = csDropDownList
+        TabOrder = 0
+      end
+      object FontLbl: TLabel
+        Left = 10
+        Height = 17
+        Top = 171
+        Width = 129
+        Caption = 'Courier New 10pt'
+        Font.Height = -13
+        Font.Name = 'Courier New'
+        ParentColor = False
+        ParentFont = False
+      end
+      object FontBtn: TButton
+        Left = 293
+        Height = 25
+        Top = 168
+        Width = 54
+        Caption = 'Font'
+        OnClick = FontBtnClick
+        TabOrder = 7
+      end
+      object BoldChk: TCheckBox
+        Left = 200
+        Height = 17
+        Top = 115
+        Width = 39
+        Caption = '&Bold'
+        OnClick = BoldChkClick
+        TabOrder = 8
+      end
+      object ItalicChk: TCheckBox
+        Left = 200
+        Height = 17
+        Top = 136
+        Width = 40
+        Caption = '&Italic'
+        OnClick = BoldChkClick
+        TabOrder = 9
+      end
+      object UnderlineChk: TCheckBox
+        Left = 200
+        Height = 17
+        Top = 94
+        Width = 63
+        Caption = '&Underline'
+        OnClick = BoldChkClick
+        TabOrder = 10
+      end
+      object DefBackgroundCbo: TColorBox
+        Left = 245
+        Height = 22
+        Top = 6
+        Width = 100
+        DefaultColorColor = clWhite
+        NoneColorColor = clWhite
+        Selected = clWhite
+        Style = [cbStandardColors, cbExtendedColors, cbSystemColors, cbCustomColor, cbPrettyNames]
+        ItemHeight = 16
+        OnSelect = BackgroundCboSelect
+        TabOrder = 11
+      end
+      object DefForegroundCbo: TColorBox
+        Left = 71
+        Height = 22
+        Top = 6
+        Width = 100
+        Style = [cbStandardColors, cbExtendedColors, cbSystemColors, cbCustomColor, cbPrettyNames]
+        ItemHeight = 16
+        OnSelect = ForegroundCboSelect
+        TabOrder = 12
+      end
+      object Label13: TLabel
+        Left = 5
+        Height = 14
+        Top = 11
+        Width = 55
+        Caption = 'Foreground'
+        ParentColor = False
+      end
+      object Label14: TLabel
+        Left = 182
+        Height = 14
+        Top = 10
+        Width = 59
+        Caption = 'Background'
+        ParentColor = False
+      end
+      object Bevel1: TBevel
+        Left = 3
+        Height = 26
+        Top = 167
+        Width = 283
+      end
+    end
+  end
+  object OkBtn: TButton
+    Left = 124
+    Height = 25
+    Top = 386
+    Width = 75
+    Anchors = [akRight, akBottom]
+    Caption = '&OK'
+    Default = True
+    ModalResult = 1
+    OnClick = OkBtnClick
+    TabOrder = 1
+  end
+  object CancelBtn: TButton
+    Left = 204
+    Height = 25
+    Top = 386
+    Width = 75
+    Anchors = [akRight, akBottom]
+    Cancel = True
+    Caption = '&Cancel'
+    ModalResult = 2
+    TabOrder = 2
+  end
+  object ResetBtn: TButton
+    Left = 283
+    Height = 25
+    Top = 386
+    Width = 78
+    Anchors = [akRight, akBottom]
+    Caption = 'Reset'
+    OnClick = ResetBtnClick
+    TabOrder = 3
+  end
+  object FontDialog: TFontDialog
+    Font.Height = -11
+    Font.Name = 'MS Sans Serif'
+    MinFontSize = 0
+    MaxFontSize = 0
+    Options = [fdEffects, fdFixedPitchOnly]
+    left = 73
+    top = 300
+  end
+end

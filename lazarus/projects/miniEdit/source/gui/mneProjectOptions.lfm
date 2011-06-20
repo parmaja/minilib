@@ -1,0 +1,146 @@
+object ProjectForm: TProjectForm
+  Left = 247
+  Height = 230
+  Top = 165
+  Width = 398
+  BorderStyle = bsDialog
+  Caption = 'Project Options'
+  ClientHeight = 230
+  ClientWidth = 398
+  Font.Height = -11
+  Font.Name = 'MS Sans Serif'
+  OnClose = FormClose
+  OnCreate = FormCreate
+  Position = poMainFormCenter
+  LCLVersion = '0.9.31'
+  object Label3: TLabel
+    Left = 12
+    Height = 14
+    Top = 11
+    Width = 65
+    Caption = 'Project &Name'
+    FocusControl = NameEdit
+    ParentColor = False
+  end
+  object Label4: TLabel
+    Left = 12
+    Height = 14
+    Top = 35
+    Width = 54
+    Caption = '&Description'
+    FocusControl = DescriptionEdit
+    ParentColor = False
+  end
+  object Label1: TLabel
+    Left = 6
+    Height = 14
+    Top = 117
+    Width = 271
+    Caption = 'Roo&t path of your project usefull when enumrate your files'
+    ParentColor = False
+  end
+  object Label2: TLabel
+    Left = 6
+    Height = 14
+    Top = 158
+    Width = 129
+    Caption = '&Url for run it in http web site'
+    ParentColor = False
+  end
+  object Label6: TLabel
+    Left = 11
+    Height = 14
+    Top = 94
+    Width = 51
+    Caption = '&Run Mode'
+    FocusControl = RunModeCbo
+    ParentColor = False
+  end
+  object Bevel1: TBevel
+    Left = 4
+    Height = 2
+    Top = 82
+    Width = 384
+  end
+  object OkBtn: TButton
+    Left = 238
+    Height = 25
+    Top = 201
+    Width = 75
+    Anchors = [akLeft, akBottom]
+    Caption = '&Ok'
+    Default = True
+    ModalResult = 1
+    OnClick = OkBtnClick
+    TabOrder = 7
+  end
+  object CancelBtn: TButton
+    Left = 318
+    Height = 25
+    Top = 201
+    Width = 75
+    Anchors = [akLeft, akBottom]
+    Cancel = True
+    Caption = '&Cancel'
+    ModalResult = 2
+    TabOrder = 8
+  end
+  object NameEdit: TEdit
+    Left = 89
+    Height = 21
+    Top = 8
+    Width = 303
+    TabOrder = 0
+  end
+  object DescriptionEdit: TEdit
+    Left = 89
+    Height = 21
+    Top = 32
+    Width = 303
+    TabOrder = 1
+  end
+  object SaveDesktopChk: TCheckBox
+    Left = 12
+    Height = 17
+    Top = 60
+    Width = 268
+    Caption = 'Save Desktop, &Reopen last opend files in this project'
+    TabOrder = 2
+  end
+  object RootDirEdit: TEdit
+    Left = 6
+    Height = 21
+    Top = 134
+    Width = 352
+    TabOrder = 4
+  end
+  object Button3: TButton
+    Left = 360
+    Height = 20
+    Top = 135
+    Width = 22
+    Caption = '...'
+    OnClick = Button3Click
+    TabOrder = 5
+  end
+  object RootUrlEdit: TEdit
+    Left = 6
+    Height = 21
+    Top = 175
+    Width = 375
+    TabOrder = 6
+  end
+  object RunModeCbo: TComboBox
+    Left = 76
+    Height = 21
+    Top = 90
+    Width = 166
+    ItemHeight = 13
+    Style = csDropDownList
+    TabOrder = 3
+  end
+  object OpenDialog: TOpenDialog
+    left = 320
+    top = 57
+  end
+end

@@ -1,0 +1,1893 @@
+object MainForm: TMainForm
+  Left = 376
+  Height = 518
+  Top = 172
+  Width = 876
+  AllowDropFiles = True
+  Caption = 'Mini Edit'
+  ClientHeight = 498
+  ClientWidth = 876
+  Font.Height = -11
+  Font.Name = 'MS Sans Serif'
+  Menu = MainMenu
+  OnClose = FormClose
+  OnCloseQuery = FormCloseQuery
+  OnCreate = FormCreate
+  OnDestroy = FormDestroy
+  OnDropFiles = FormDropFiles
+  Position = poDefaultPosOnly
+  ShowHint = True
+  LCLVersion = '0.9.31'
+  object MessagesSpl: TSplitter
+    Cursor = crVSplit
+    Left = 0
+    Height = 7
+    Top = 342
+    Width = 876
+    Align = alBottom
+    AutoSnap = False
+    MinSize = 50
+    ResizeAnchor = akBottom
+  end
+  object FoldersSpl: TSplitter
+    Left = 200
+    Height = 313
+    Top = 29
+    Width = 6
+  end
+  object TopCoolBar: TToolBar
+    Left = 0
+    Height = 29
+    Top = 0
+    Width = 876
+    AutoSize = True
+    EdgeBorders = [ebTop, ebBottom]
+    Images = EditorResource.ToolbarImageList
+    TabOrder = 5
+    object MainBar: TToolBar
+      Left = 1
+      Height = 23
+      Top = 2
+      Width = 875
+      AutoSize = True
+      ButtonHeight = 23
+      ButtonWidth = 75
+      EdgeBorders = []
+      Images = EditorResource.ToolbarImageList
+      List = True
+      ShowCaptions = True
+      TabOrder = 0
+      Transparent = True
+      Wrapable = False
+      object ToolButton3: TToolButton
+        Left = 151
+        Top = 0
+        Action = ManageAct
+      end
+      object BackBtn: TToolButton
+        Left = 1
+        Top = 0
+        Action = NewAct
+      end
+      object ForwardBtn: TToolButton
+        Left = 76
+        Top = 0
+        Action = OpenAct
+      end
+      object StopBtn: TToolButton
+        Left = 226
+        Top = 0
+        Action = SaveAct
+      end
+      object ToolButton1: TToolButton
+        Left = 301
+        Top = 0
+        Action = SaveAllAct
+      end
+      object ToolButton6: TToolButton
+        Left = 376
+        Top = 0
+        Action = RunAct
+      end
+      object ToolButton7: TToolButton
+        Left = 451
+        Top = 0
+        Width = 10
+        Caption = 'ToolButton7'
+        ImageIndex = 28
+        Style = tbsSeparator
+      end
+      object FoldersBtn: TToolButton
+        Left = 461
+        Top = 0
+        Action = FoldersAct
+        Style = tbsCheck
+      end
+      object ToolButton2: TToolButton
+        Left = 536
+        Top = 0
+        Action = MessagesAct
+        Style = tbsCheck
+      end
+      object ToolButton8: TToolButton
+        Left = 611
+        Top = 0
+        Action = OutputAct
+        Style = tbsCheck
+      end
+    end
+  end
+  object FoldersPnl: TPanel
+    Left = 0
+    Height = 313
+    Top = 29
+    Width = 200
+    Align = alLeft
+    BevelOuter = bvNone
+    BorderWidth = 5
+    ClientHeight = 313
+    ClientWidth = 200
+    TabOrder = 0
+    object FolderPanel: TPanel
+      Left = 5
+      Height = 19
+      Top = 5
+      Width = 190
+      Align = alTop
+      Alignment = taLeftJustify
+      BevelOuter = bvNone
+      ClientHeight = 19
+      ClientWidth = 190
+      Font.Height = -11
+      Font.Name = 'MS Sans Serif'
+      ParentFont = False
+      TabOrder = 0
+      object FolderCloseBtn: TSpeedButton
+        Left = 171
+        Height = 16
+        Top = 2
+        Width = 16
+        Anchors = [akTop, akRight, akBottom]
+        Flat = True
+        Font.CharSet = SYMBOL_CHARSET
+        Font.Height = -11
+        Font.Name = 'Webdings'
+        Glyph.Data = {
+          76010000424D760100000000000036000000280000000A0000000A0000000100
+          1800000000004001000000000000000000000000000000000000FF00FFFF00FF
+          FF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FF0000FF00FF000000
+          000000FF00FFFF00FFFF00FFFF00FF000000000000FF00FF0000FF00FF000000
+          000000000000FF00FFFF00FF000000000000000000FF00FF0000FF00FFFF00FF
+          000000000000000000000000000000000000FF00FFFF00FF0000FF00FFFF00FF
+          FF00FF000000000000000000000000FF00FFFF00FFFF00FF0000FF00FFFF00FF
+          FF00FF000000000000000000000000FF00FFFF00FFFF00FF0000FF00FFFF00FF
+          000000000000000000000000000000000000FF00FFFF00FF0000FF00FF000000
+          000000000000FF00FFFF00FF000000000000000000FF00FF0000FF00FF000000
+          000000FF00FFFF00FFFF00FFFF00FF000000000000FF00FF0000FF00FFFF00FF
+          FF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FF0000
+        }
+        Layout = blGlyphTop
+        NumGlyphs = 0
+        OnClick = FolderCloseBtnClick
+        ParentFont = False
+      end
+      object Label1: TLabel
+        Left = 5
+        Height = 14
+        Top = 2
+        Width = 30
+        Caption = 'Folder'
+        ParentColor = False
+      end
+      object FolderBtn: TSpeedButton
+        Left = 155
+        Height = 16
+        Top = 2
+        Width = 16
+        Anchors = [akTop, akRight]
+        Flat = True
+        Font.CharSet = ARABIC_CHARSET
+        Font.Height = -11
+        Font.Name = 'Tahoma'
+        Glyph.Data = {
+          36030000424D3603000000000000360000002800000010000000100000000100
+          1800000000000003000000000000000000000000000000000000FF00FFFF00FF
+          FF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00
+          FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF
+          00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FF
+          FF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00
+          FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF
+          00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FF
+          FF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00
+          FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF
+          00FFFF00FF000000000000FF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FF
+          FF00FFFF00FFFF00FFFF00FFFF00FFFF00FF000000000000000000000000FF00
+          FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FF00
+          0000000000000000000000000000000000FF00FFFF00FFFF00FFFF00FFFF00FF
+          FF00FFFF00FFFF00FFFF00FF0000000000000000000000000000000000000000
+          00000000FF00FFFF00FFFF00FFFF00FF00000000000000000000000000000000
+          0000000000000000000000000000000000000000FF00FFFF00FFFF00FFFF00FF
+          000000FF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00
+          FF000000FF00FFFF00FFFF00FFFF00FF000000FF00FF00000000000000000000
+          0000000000000000FF00FFFF00FFFF00FF000000FF00FFFF00FFFF00FFFF00FF
+          000000FF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00
+          FF000000FF00FFFF00FFFF00FFFF00FF00000000000000000000000000000000
+          0000000000000000000000000000000000000000FF00FFFF00FFFF00FFFF00FF
+          FF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00
+          FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF
+          00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FF
+        }
+        Layout = blGlyphBottom
+        NumGlyphs = 0
+        OnClick = FolderBtnClick
+        ParentFont = False
+        PopupMenu = FolderMenu
+      end
+    end
+    object FileList: TListView
+      Left = 5
+      Height = 284
+      Top = 24
+      Width = 190
+      Align = alClient
+      Columns = <      
+        item
+          AutoSize = True
+          Caption = 'File Name'
+          Width = 186
+        end>
+      HideSelection = False
+      PopupMenu = FolderMenu
+      ReadOnly = True
+      RowSelect = True
+      ShowColumnHeaders = False
+      SmallImages = EditorResource.SmallImages
+      TabOrder = 1
+      ViewStyle = vsReport
+      OnDblClick = FileListDblClick
+      OnKeyDown = FileListKeyDown
+      OnKeyPress = FileListKeyPress
+    end
+  end
+  object ClientPnl: TPanel
+    Left = 206
+    Height = 313
+    Top = 29
+    Width = 670
+    Align = alClient
+    BevelOuter = bvNone
+    ClientHeight = 313
+    ClientWidth = 670
+    TabOrder = 2
+    object OutputSpl: TSplitter
+      Cursor = crVSplit
+      Left = 0
+      Height = 3
+      Top = 158
+      Width = 670
+      Align = alBottom
+      AutoSnap = False
+      MinSize = 50
+      ResizeAnchor = akBottom
+      Visible = False
+    end
+    object EditorsPnl: TPanel
+      Left = 0
+      Height = 158
+      Top = 0
+      Width = 670
+      Align = alClient
+      BevelOuter = bvNone
+      ClientHeight = 158
+      ClientWidth = 670
+      FullRepaint = False
+      TabOrder = 0
+      OnClick = EditorsPnlClick
+      object FileHeaderPanel: TPanel
+        Left = 0
+        Height = 19
+        Top = 0
+        Width = 670
+        Align = alTop
+        Alignment = taLeftJustify
+        BevelOuter = bvNone
+        ClientHeight = 19
+        ClientWidth = 670
+        Color = 13027052
+        Font.Height = -11
+        Font.Name = 'MS Sans Serif'
+        ParentColor = False
+        ParentFont = False
+        TabOrder = 0
+        Visible = False
+        object FileCloseBtn: TSpeedButton
+          Left = 654
+          Height = 17
+          Hint = 'Close file'
+          Top = 1
+          Width = 16
+          Anchors = [akTop, akRight, akBottom]
+          Flat = True
+          Font.CharSet = SYMBOL_CHARSET
+          Font.Color = clWhite
+          Font.Height = -11
+          Font.Name = 'Webdings'
+          Glyph.Data = {
+            76010000424D760100000000000036000000280000000A0000000A0000000100
+            1800000000004001000000000000000000000000000000000000FF00FFFF00FF
+            FF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FF0000FF00FF000000
+            000000FF00FFFF00FFFF00FFFF00FF000000000000FF00FF0000FF00FF000000
+            000000000000FF00FFFF00FF000000000000000000FF00FF0000FF00FFFF00FF
+            000000000000000000000000000000000000FF00FFFF00FF0000FF00FFFF00FF
+            FF00FF000000000000000000000000FF00FFFF00FFFF00FF0000FF00FFFF00FF
+            FF00FF000000000000000000000000FF00FFFF00FFFF00FF0000FF00FFFF00FF
+            000000000000000000000000000000000000FF00FFFF00FF0000FF00FF000000
+            000000000000FF00FFFF00FF000000000000000000FF00FF0000FF00FF000000
+            000000FF00FFFF00FFFF00FFFF00FF000000000000FF00FF0000FF00FFFF00FF
+            FF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FF0000
+          }
+          Layout = blGlyphTop
+          NumGlyphs = 0
+          OnClick = FileCloseBtnClick
+          ParentFont = False
+        end
+        object FileNameLbl: TLabel
+          Left = 81
+          Height = 14
+          Hint = 'File name'
+          Top = 2
+          Width = 46
+          Caption = 'File name'
+          Layout = tlCenter
+          ParentColor = False
+          PopupMenu = FilePopupMenu
+        end
+        object FileModeBtn: TSpeedButton
+          Left = 0
+          Height = 19
+          Top = 0
+          Width = 72
+          Caption = 'Widnows'
+          Flat = True
+          NumGlyphs = 0
+          Transparent = False
+          OnClick = FileModeBtnClick
+          PopupMenu = FileModeMenu
+        end
+      end
+      object QuickFindPnl: TPanel
+        Left = 0
+        Height = 29
+        Top = 129
+        Width = 670
+        Align = alBottom
+        BevelInner = bvSpace
+        BevelOuter = bvLowered
+        ClientHeight = 29
+        ClientWidth = 670
+        TabOrder = 1
+        Visible = False
+        object Label2: TLabel
+          Left = 32
+          Height = 14
+          Top = 8
+          Width = 24
+          Caption = 'Find:'
+          ParentColor = False
+        end
+        object CloseQuickSearchBtn: TSpeedButton
+          Left = 7
+          Height = 15
+          Top = 7
+          Width = 16
+          Flat = True
+          Glyph.Data = {
+            76010000424D760100000000000036000000280000000A0000000A0000000100
+            1800000000004001000000000000000000000000000000000000FF00FFFF00FF
+            FF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FF0000FF00FF000000
+            000000FF00FFFF00FFFF00FFFF00FF000000000000FF00FF0000FF00FF000000
+            000000000000FF00FFFF00FF000000000000000000FF00FF0000FF00FFFF00FF
+            000000000000000000000000000000000000FF00FFFF00FF0000FF00FFFF00FF
+            FF00FF000000000000000000000000FF00FFFF00FFFF00FF0000FF00FFFF00FF
+            FF00FF000000000000000000000000FF00FFFF00FFFF00FF0000FF00FFFF00FF
+            000000000000000000000000000000000000FF00FFFF00FF0000FF00FF000000
+            000000000000FF00FFFF00FF000000000000000000FF00FF0000FF00FF000000
+            000000FF00FFFF00FFFF00FFFF00FF000000000000FF00FF0000FF00FFFF00FF
+            FF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FF0000
+          }
+          Layout = blGlyphBottom
+          NumGlyphs = 0
+          OnClick = CloseQuickSearchBtnClick
+        end
+        object QuickSearchNextBtn: TBitBtn
+          Left = 310
+          Height = 23
+          Top = 3
+          Width = 72
+          Caption = 'Next'
+          Glyph.Data = {
+            86010000424D86010000000000003600000028000000080000000E0000000100
+            1800000000005001000000000000000000000000000000000000FF00FFFF00FF
+            FF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FF800000FF00FFFF00FFFF00
+            FFFF00FFFF00FFFF00FFFF00FF800000800000FF00FFFF00FFFF00FFFF00FFFF
+            00FFFF00FF800000FF0000800000FF00FFFF00FFFF00FFFF00FFFF00FF800000
+            FF8000FF0000800000FF00FFFF00FFFF00FFFF00FF800000FF8000FF8000FF00
+            00800000FF00FFFF00FFFF00FF800000FFC184FF8000FF8000FF0000800000FF
+            00FFFF00FF800000FF8000FF8000FF8000FF0000800000FF00FFFF00FF800000
+            FFC184FF8000FFC184800000FF00FFFF00FFFF00FF800000FF8000FFC1848000
+            00FF00FFFF00FFFF00FFFF00FF800000FFC184800000FF00FFFF00FFFF00FFFF
+            00FFFF00FF800000800000FF00FFFF00FFFF00FFFF00FFFF00FFFF00FF800000
+            FF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00
+            FFFF00FFFF00FFFF00FF
+          }
+          Layout = blGlyphRight
+          Margin = 8
+          OnClick = QuickSearchNextBtnClick
+          TabOrder = 1
+        end
+        object QuickSearchPrevBtn: TBitBtn
+          Left = 236
+          Height = 23
+          Top = 3
+          Width = 72
+          Caption = 'Previous'
+          Glyph.Data = {
+            86010000424D86010000000000003600000028000000080000000E0000000100
+            1800000000005001000000000000000000000000000000000000FF00FFFF00FF
+            FF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00
+            FFFF00FF800000FF00FFFF00FFFF00FFFF00FFFF00FFFF00FF800000800000FF
+            00FFFF00FFFF00FFFF00FFFF00FF800000FF0000800000FF00FFFF00FFFF00FF
+            FF00FF800000FF0000FF8000800000FF00FFFF00FFFF00FF800000FF0000FF80
+            00FF8000800000FF00FFFF00FF800000FF0000FF8000FF8000FFC184800000FF
+            00FFFF00FF800000FF0000FF8000FF8000FF8000800000FF00FFFF00FFFF00FF
+            800000FFC184FF8000FFC184800000FF00FFFF00FFFF00FFFF00FF800000FFC1
+            84FF8000800000FF00FFFF00FFFF00FFFF00FFFF00FF800000FFC184800000FF
+            00FFFF00FFFF00FFFF00FFFF00FFFF00FF800000800000FF00FFFF00FFFF00FF
+            FF00FFFF00FFFF00FFFF00FF800000FF00FFFF00FFFF00FFFF00FFFF00FFFF00
+            FFFF00FFFF00FFFF00FF
+          }
+          Margin = 8
+          OnClick = QuickSearchPrevBtnClick
+          TabOrder = 2
+        end
+        object QuickSearchEdit: TEdit
+          Left = 60
+          Height = 21
+          Top = 4
+          Width = 173
+          OnChange = QuickSearchEditChange
+          OnKeyPress = QuickSearchEditKeyPress
+          TabOrder = 0
+        end
+      end
+      object FileSet: TntvTabSet
+        Left = 0
+        Height = 19
+        Top = 19
+        Width = 670
+        StoreIndex = False
+        ShowButtons = False
+        Items = <>
+        OnTabSelected = FileSetTabSelected
+        Align = alTop
+        Caption = 'Files'
+        TabOrder = 2
+      end
+    end
+    inline OutputEdit: TSynEdit
+      Left = 0
+      Height = 152
+      Top = 161
+      Width = 670
+      Align = alBottom
+      Font.Height = -13
+      Font.Name = 'Courier New'
+      Font.Pitch = fpFixed
+      Font.Quality = fqNonAntialiased
+      ParentColor = False
+      ParentFont = False
+      PopupMenu = OutputPopup
+      TabOrder = 1
+      TabStop = False
+      Visible = False
+      Gutter.Width = 19
+      Gutter.MouseActions = <      
+        item
+          Shift = []
+          ShiftMask = []
+          Button = mbLeft
+          ClickCount = ccAny
+          ClickDir = cdDown
+          Command = 13
+          MoveCaret = False
+          Option = 0
+          Priority = 0
+        end      
+        item
+          Shift = []
+          ShiftMask = []
+          Button = mbRight
+          ClickCount = ccSingle
+          ClickDir = cdUp
+          Command = 12
+          MoveCaret = False
+          Option = 0
+          Priority = 0
+        end>
+      RightGutter.Visible = False
+      RightGutter.Width = 0
+      RightGutter.MouseActions = <      
+        item
+          Shift = []
+          ShiftMask = []
+          Button = mbLeft
+          ClickCount = ccAny
+          ClickDir = cdDown
+          Command = 13
+          MoveCaret = False
+          Option = 0
+          Priority = 0
+        end      
+        item
+          Shift = []
+          ShiftMask = []
+          Button = mbRight
+          ClickCount = ccSingle
+          ClickDir = cdUp
+          Command = 12
+          MoveCaret = False
+          Option = 0
+          Priority = 0
+        end>
+      Keystrokes = <>
+      MouseActions = <      
+        item
+          Shift = []
+          ShiftMask = [ssShift, ssAlt]
+          Button = mbLeft
+          ClickCount = ccSingle
+          ClickDir = cdDown
+          Command = 1
+          MoveCaret = True
+          Option = 0
+          Priority = 0
+        end      
+        item
+          Shift = [ssShift]
+          ShiftMask = [ssShift, ssAlt]
+          Button = mbLeft
+          ClickCount = ccSingle
+          ClickDir = cdDown
+          Command = 1
+          MoveCaret = True
+          Option = 1
+          Priority = 0
+        end      
+        item
+          Shift = [ssAlt]
+          ShiftMask = [ssShift, ssAlt]
+          Button = mbLeft
+          ClickCount = ccSingle
+          ClickDir = cdDown
+          Command = 3
+          MoveCaret = True
+          Option = 0
+          Priority = 0
+        end      
+        item
+          Shift = [ssShift, ssAlt]
+          ShiftMask = [ssShift, ssAlt]
+          Button = mbLeft
+          ClickCount = ccSingle
+          ClickDir = cdDown
+          Command = 3
+          MoveCaret = True
+          Option = 1
+          Priority = 0
+        end      
+        item
+          Shift = []
+          ShiftMask = []
+          Button = mbRight
+          ClickCount = ccSingle
+          ClickDir = cdUp
+          Command = 12
+          MoveCaret = False
+          Option = 0
+          Priority = 0
+        end      
+        item
+          Shift = []
+          ShiftMask = []
+          Button = mbLeft
+          ClickCount = ccDouble
+          ClickDir = cdDown
+          Command = 6
+          MoveCaret = True
+          Option = 0
+          Priority = 0
+        end      
+        item
+          Shift = []
+          ShiftMask = []
+          Button = mbLeft
+          ClickCount = ccTriple
+          ClickDir = cdDown
+          Command = 7
+          MoveCaret = True
+          Option = 0
+          Priority = 0
+        end      
+        item
+          Shift = []
+          ShiftMask = []
+          Button = mbLeft
+          ClickCount = ccQuad
+          ClickDir = cdDown
+          Command = 8
+          MoveCaret = True
+          Option = 0
+          Priority = 0
+        end      
+        item
+          Shift = []
+          ShiftMask = []
+          Button = mbMiddle
+          ClickCount = ccSingle
+          ClickDir = cdDown
+          Command = 10
+          MoveCaret = True
+          Option = 0
+          Priority = 0
+        end      
+        item
+          Shift = [ssCtrl]
+          ShiftMask = [ssShift, ssAlt, ssCtrl]
+          Button = mbLeft
+          ClickCount = ccSingle
+          ClickDir = cdUp
+          Command = 11
+          MoveCaret = False
+          Option = 0
+          Priority = 0
+        end>
+      MouseSelActions = <      
+        item
+          Shift = []
+          ShiftMask = []
+          Button = mbLeft
+          ClickCount = ccSingle
+          ClickDir = cdDown
+          Command = 9
+          MoveCaret = False
+          Option = 0
+          Priority = 0
+        end>
+      ReadOnly = True
+      BracketHighlightStyle = sbhsBoth
+      TabWidth = 2
+      inline SynGutterPartList1: TSynGutterPartList
+        object SynGutterLineNumber1: TSynGutterLineNumber
+          Width = 17
+          MouseActions = <>
+          MarkupInfo.Background = clBtnFace
+          MarkupInfo.Foreground = clNone
+          DigitCount = 2
+          ShowOnlyLineNumbersMultiplesOf = 1
+          ZeroStart = False
+          LeadingZeros = False
+        end
+        object SynGutterSeparator1: TSynGutterSeparator
+          Width = 2
+        end
+      end
+    end
+  end
+  object StatusPanel: TPanel
+    Left = 0
+    Height = 22
+    Top = 476
+    Width = 876
+    Align = alBottom
+    BevelOuter = bvNone
+    ClientHeight = 22
+    ClientWidth = 876
+    TabOrder = 3
+    object MessagePnl: TPanel
+      Left = 1
+      Height = 19
+      Hint = 'Message'
+      Top = 3
+      Width = 667
+      Alignment = taLeftJustify
+      Anchors = [akLeft, akRight, akBottom]
+      BevelOuter = bvLowered
+      BorderWidth = 2
+      TabOrder = 0
+    end
+    object DebugPnl: TPanel
+      Left = 774
+      Height = 19
+      Hint = 'Debug Session'
+      Top = 2
+      Width = 100
+      Alignment = taLeftJustify
+      Anchors = [akRight, akBottom]
+      BevelOuter = bvLowered
+      BorderWidth = 2
+      TabOrder = 1
+    end
+    object CursorPnl: TPanel
+      Left = 692
+      Height = 19
+      Hint = 'Caret Position'
+      Top = 2
+      Width = 80
+      Anchors = [akRight, akBottom]
+      BevelOuter = bvLowered
+      BorderWidth = 2
+      TabOrder = 2
+    end
+    object StatePnl: TPanel
+      Left = 670
+      Height = 19
+      Hint = 'State'
+      Top = 2
+      Width = 20
+      Anchors = [akRight, akBottom]
+      BevelOuter = bvLowered
+      BorderWidth = 2
+      TabOrder = 3
+    end
+  end
+  object MessagesTabs: TntvPageControl
+    Left = 0
+    Height = 127
+    Top = 349
+    Width = 876
+    StoreIndex = False
+    ShowButtons = False
+    Items = <    
+      item
+        Caption = 'Search'
+        Name = 'SearchTab'
+        Enabled = False
+        AutoWidth = True
+        Control = SearchList
+      end    
+      item
+        Caption = 'Messages'
+        Name = 'MessagesTab'
+        Enabled = False
+        AutoWidth = True
+        Control = MessageList
+      end    
+      item
+        Caption = 'Watches'
+        Name = 'WatchesTab'
+        Enabled = False
+        AutoWidth = True
+        Control = WatchList
+      end>
+    Align = alBottom
+    TabOrder = 6
+    object WatchList: TListView
+      Left = 3
+      Height = 103
+      Top = 21
+      Width = 870
+      Align = alClient
+      Columns = <      
+        item
+          Caption = 'Variable'
+          Width = 200
+        end      
+        item
+          Caption = 'Type'
+          Width = 100
+        end      
+        item
+          AutoSize = True
+          Caption = 'Value'
+          Width = 566
+        end>
+      ColumnClick = False
+      Font.CharSet = ARABIC_CHARSET
+      Font.Height = -12
+      Font.Name = 'Courier New'
+      ParentFont = False
+      PopupMenu = WatchesPopupMenu
+      ReadOnly = True
+      RowSelect = True
+      TabStop = False
+      TabOrder = 2
+      ViewStyle = vsReport
+      OnKeyDown = WatchListKeyDown
+    end
+    object MessageList: TListView
+      Left = 3
+      Height = 103
+      Top = 21
+      Width = 870
+      Align = alClient
+      Columns = <      
+        item
+          Caption = 'Type'
+          Width = 100
+        end      
+        item
+          AutoSize = True
+          Caption = 'Message'
+          Width = 766
+        end      
+        item
+          Caption = 'File'
+          Width = 300
+        end      
+        item
+          Caption = 'Line'
+          Width = 387
+        end>
+      ColumnClick = False
+      Font.CharSet = ARABIC_CHARSET
+      Font.Height = -12
+      Font.Name = 'Courier New'
+      ParentFont = False
+      PopupMenu = MessagesPopup
+      ReadOnly = True
+      RowSelect = True
+      TabStop = False
+      TabOrder = 1
+      ViewStyle = vsReport
+      OnDblClick = MessageListDblClick
+      OnKeyDown = WatchListKeyDown
+    end
+    object SearchList: TListView
+      Left = 3
+      Height = 103
+      Top = 21
+      Width = 870
+      Align = alClient
+      Columns = <      
+        item
+          Caption = 'File'
+          Width = 300
+        end      
+        item
+          Caption = 'Line'
+          Width = 80
+        end      
+        item
+          AutoSize = True
+          Caption = 'Result'
+          Width = 486
+        end>
+      ColumnClick = False
+      Font.CharSet = ARABIC_CHARSET
+      Font.Height = -13
+      Font.Name = 'Courier New'
+      HideSelection = False
+      ParentFont = False
+      PopupMenu = MessagesPopup
+      ReadOnly = True
+      RowSelect = True
+      TabStop = False
+      TabOrder = 0
+      ViewStyle = vsReport
+      OnCustomDrawSubItem = SearchListCustomDrawSubItem
+      OnDblClick = SearchListDblClick
+    end
+  end
+  object MainMenu: TMainMenu
+    Images = EditorResource.ToolbarImageList
+    left = 84
+    top = 71
+    object file1: TMenuItem
+      Caption = '&File'
+      Hint = 'Exit|Quits the application'
+      object NewMnu: TMenuItem
+        Action = NewAct
+        OnClick = NewActExecute
+      end
+      object OpenMnu: TMenuItem
+        Action = OpenAct
+        OnClick = OpenActExecute
+      end
+      object ReopenMnu: TMenuItem
+        Caption = 'Reopen'
+      end
+      object SaveMnu: TMenuItem
+        Action = SaveAct
+        OnClick = SaveActExecute
+      end
+      object Saveas1: TMenuItem
+        Action = SaveAsAct
+        OnClick = SaveAsActExecute
+      end
+      object Revert1: TMenuItem
+        Action = RevertAct
+        OnClick = RevertActExecute
+      end
+      object Close1: TMenuItem
+        Action = CloseAllAct
+        OnClick = CloseAllActExecute
+      end
+      object OpenFolder1: TMenuItem
+        Action = OpenFolderAct
+        OnClick = OpenFolderActExecute
+      end
+      object N1: TMenuItem
+        Caption = '-'
+      end
+      object Exit1: TMenuItem
+        Action = ExitAct
+      end
+    end
+    object ProjectMnu: TMenuItem
+      Caption = 'Project'
+      object New2: TMenuItem
+        Action = NewProjectAct
+        OnClick = NewProjectActExecute
+      end
+      object Open1: TMenuItem
+        Action = OpenProjectAct
+        OnClick = OpenProjectActExecute
+      end
+      object ReopenProjectMnu: TMenuItem
+        Caption = 'Reopen'
+      end
+      object Save1: TMenuItem
+        Action = SaveProjectAct
+        OnClick = SaveProjectActExecute
+      end
+      object SaveAs2: TMenuItem
+        Action = SaveAsProjectAct
+        OnClick = SaveAsProjectActExecute
+      end
+      object CloseProject1: TMenuItem
+        Action = CloseProjectAct
+        OnClick = CloseProjectActExecute
+      end
+      object Manage1: TMenuItem
+        Action = ManageAct
+        OnClick = ManageActExecute
+      end
+      object OpenFolder2: TMenuItem
+        Action = ProjectOpenFolderAct
+        OnClick = ProjectOpenFolderActExecute
+      end
+      object N4: TMenuItem
+        Caption = '-'
+      end
+      object SelectFile1: TMenuItem
+        Action = SelectFileAct
+        OnClick = SelectFileActExecute
+      end
+      object AddFile1: TMenuItem
+        Action = AddFileToProjectAct
+      end
+      object N7: TMenuItem
+        Caption = '-'
+      end
+      object ProjectOptionsMnu: TMenuItem
+        Action = ProjectOptionsAct
+        OnClick = ProjectOptionsActExecute
+      end
+    end
+    object veiw1: TMenuItem
+      Caption = '&View'
+      object New1: TMenuItem
+        Action = NextAct
+        OnClick = NextActExecute
+      end
+      object Prior1: TMenuItem
+        Action = PriorAct
+        OnClick = PriorActExecute
+      end
+      object N2: TMenuItem
+        Caption = '-'
+      end
+      object NextMessage1: TMenuItem
+        Action = NextMessageAct
+        OnClick = NextMessageActExecute
+      end
+      object PriorMessage1: TMenuItem
+        Action = PriorMessageAct
+        OnClick = PriorMessageActExecute
+      end
+      object N15: TMenuItem
+        Caption = '-'
+      end
+      object ShowTree1: TMenuItem
+        Action = FoldersAct
+        AutoCheck = True
+        OnClick = FoldersActExecute
+      end
+      object Messages1: TMenuItem
+        Action = MessagesAct
+        AutoCheck = True
+        OnClick = MessagesActExecute
+      end
+      object Output1: TMenuItem
+        Action = OutputAct
+        AutoCheck = True
+        OnClick = OutputActExecute
+      end
+      object N16: TMenuItem
+        Caption = '-'
+      end
+      object SwitchFocus1: TMenuItem
+        Action = SwitchFocusAct
+        OnClick = SwitchFocusActExecute
+      end
+    end
+    object Edit1: TMenuItem
+      Caption = 'Edit'
+      object OpenInclude1: TMenuItem
+        Action = OpenIncludeAct
+        OnClick = OpenIncludeActExecute
+      end
+      object Open2: TMenuItem
+        Action = OpenColorAct
+        OnClick = OpenColorActExecute
+      end
+      object Find1: TMenuItem
+        Action = FindAct
+        OnClick = FindActExecute
+      end
+      object Findnext1: TMenuItem
+        Action = FindNextAct
+        OnClick = FindNextActExecute
+      end
+      object QuickSearch1: TMenuItem
+        Action = QuickFindAct
+        AutoCheck = True
+        OnClick = QuickFindActExecute
+      end
+      object Replace1: TMenuItem
+        Action = ReplaceAct
+        OnClick = ReplaceActExecute
+      end
+      object FindinFiles1: TMenuItem
+        Action = FindInFilesAct
+        OnClick = FindInFilesActExecute
+      end
+      object GotoLine1: TMenuItem
+        Action = GotoLineAct
+        OnClick = GotoLineActExecute
+      end
+      object N3: TMenuItem
+        Caption = '-'
+      end
+      object Cut1: TMenuItem
+        Action = CutAct
+        OnClick = CutActExecute
+      end
+      object Copy1: TMenuItem
+        Action = CopyAct
+        OnClick = CopyActExecute
+      end
+      object Paste1: TMenuItem
+        Action = PasteAct
+        OnClick = PasteActExecute
+      end
+      object SelectAll1: TMenuItem
+        Action = SelectAllAct
+        OnClick = SelectAllActExecute
+      end
+      object N8: TMenuItem
+        Caption = '-'
+      end
+      object EditorOptions1: TMenuItem
+        Action = EditorOptionsAct
+        OnClick = EditorOptionsActExecute
+      end
+    end
+    object SVN1: TMenuItem
+      Caption = 'SVN'
+      Visible = False
+      object Commit1: TMenuItem
+        Action = SVNCommitAct
+        Bitmap.Data = {
+          36040000424D3604000000000000360000002800000010000000100000000100
+          2000000000000004000064000000640000000000000000000000FF00FF00FF00
+          FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+          FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+          FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+          FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+          FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+          FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+          FF00C6C6C6FF7B7B7BFFFF00FF00FF00FF004A4A4AFF292929FF181818FFFF00
+          FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF006363
+          63FF393939FFDEDEDEFFFF00FF00212121FFCE9C84FFCE9C84FF313131FF4A4A
+          4AFF525252FFDEDEDEFFFF00FF00FF00FF00FF00FF00FF00FF00FF00FF008484
+          84FFCE9C84FFCEAD94FF8C8C8CFF212121FF101010FF313131FF101010FF1818
+          18FF393939FF212121FFFF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+          FF00393939FF181818FF313131FF737373FF5A5A5AFF181818FF181818FF1010
+          10FF101010FF9C9C9CFFFF00FF00FF00FF00FF00FF00FF00FF00FF00FF003131
+          31FF212121FF313131FFCEA58CFFCE9C84FFCE9C84FFCE9C84FFCE9C84FFCE9C
+          84FF212121FFCE9C84FF7B7B7BFFEFEFEFFFFF00FF00FF00FF00181818FFBDBD
+          BDFFFF00FF00CE9C84FFCE9C84FFCE9C84FFCE9C84FFCE9C84FFCE9C84FFCE9C
+          84FF181818FFCE9C84FFCE9C84FF4A4A4AFF6B6B6BFF424242FFFF00FF00FF00
+          FF00FF00FF00FF00FF00CEA58CFFCE9C84FFCE9C84FFCE9C84FFCE9C84FFCE9C
+          84FF393939FFE7E7E7FF292929FFCE9C84FF313131FF525252FFFF00FF00FF00
+          FF00FF00FF00FF00FF00FF00FF00E7CEBDFFCE9C84FFCE9C84FFCE9C84FFE7CE
+          BDFFFF00FF00FF00FF00CECECEFF737373FFFFFFFFFFA5A5A5FFFF00FF00FF00
+          FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+          FF00FF00FF00FF00FF00FF00FF007B7B7BFF4A4A4AFFB5B5B5FFFF00FF00FF00
+          FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+          FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+          FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+          FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+          FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+          FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+          FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+          FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
+        }
+        OnClick = SVNCommitActExecute
+      end
+      object CommitFIle1: TMenuItem
+        Action = SVNCommitFileAct
+        OnClick = SVNCommitFileActExecute
+      end
+      object Update1: TMenuItem
+        Action = SVNUpdateAct
+        OnClick = SVNUpdateActExecute
+      end
+      object UpdateFile1: TMenuItem
+        Action = SVNUpdateFileAct
+        OnClick = SVNUpdateFileActExecute
+      end
+      object Diff1: TMenuItem
+        Action = SVNDiffFileAct
+        OnClick = SVNDiffFileActExecute
+      end
+      object Revert2: TMenuItem
+        Action = SVNRevertAct
+        OnClick = SVNRevertActExecute
+      end
+      object CompareTo1: TMenuItem
+        Action = SVNCompareToAct
+        OnClick = SVNCompareToActExecute
+      end
+    end
+    object About3: TMenuItem
+      Caption = 'Debug'
+      object StartServer1: TMenuItem
+        Action = DBGStartServerAct
+        OnClick = DBGStartServerActExecute
+      end
+      object DBGStopServerAct1: TMenuItem
+        Action = DBGStopServerAct
+        OnClick = DBGStopServerActExecute
+      end
+      object N12: TMenuItem
+        Caption = '-'
+      end
+      object Run2: TMenuItem
+        Action = RunAct
+        OnClick = RunActExecute
+      end
+      object Check1: TMenuItem
+        Action = CheckAct
+        OnClick = CheckActExecute
+      end
+      object StepInto1: TMenuItem
+        Action = DBGStepIntoAct
+        OnClick = DBGStepIntoActExecute
+      end
+      object StepOver1: TMenuItem
+        Action = DBGStepOverAct
+        OnClick = DBGStepOverActExecute
+      end
+      object DBGStepOutAct1: TMenuItem
+        Action = DBGStepOutAct
+        OnClick = DBGStepOutActExecute
+      end
+      object RunToCursor1: TMenuItem
+        Action = DBGRunToCursor
+        OnClick = RunToCursor1Click
+      end
+      object Reset2: TMenuItem
+        Action = DBGResetAct
+        OnClick = DBGResetActExecute
+      end
+      object ResumeMnu: TMenuItem
+        Action = DBGResumeAct
+        Hint = 'Run and without debug'
+        OnClick = DBGResumeActExecute
+      end
+      object N14: TMenuItem
+        Caption = '-'
+      end
+      object AddWatch2: TMenuItem
+        Action = DBGAddWatchAct
+        OnClick = DBGAddWatchActExecute
+      end
+      object DBGToggleBreakpoint1: TMenuItem
+        Action = DBGToggleBreakpoint
+        OnClick = DBGToggleBreakpointExecute
+      end
+      object Breakpoints1: TMenuItem
+        Action = DBGBreakpointsAct
+        OnClick = DBGBreakpointsActExecute
+      end
+    end
+    object ToolsMnu: TMenuItem
+      Caption = 'Tools'
+      object OptionsMnu: TMenuItem
+        Action = SettingAct
+        OnClick = SettingActExecute
+      end
+      object N6: TMenuItem
+        Caption = '-'
+      end
+      object Extractkeywords: TMenuItem
+        Caption = 'Extract keywords'
+        Visible = False
+        OnClick = ExtractkeywordsClick
+      end
+    end
+    object Help1: TMenuItem
+      Caption = '&Help'
+      object HelpIndex1: TMenuItem
+        Action = HelpIndexAct
+        OnClick = HelpIndexActExecute
+      end
+      object PHPKeyword1: TMenuItem
+        Action = KeywordAct
+        OnClick = KeywordActExecute
+      end
+      object About2: TMenuItem
+        Caption = '-'
+      end
+      object About1: TMenuItem
+        Action = AboutAct
+        OnClick = AboutActExecute
+      end
+    end
+  end
+  object ActionList: TActionList
+    Images = EditorResource.ToolbarImageList
+    left = 25
+    top = 71
+    object PasteAct: TAction
+      Category = 'Edit'
+      Caption = 'Paste'
+      OnExecute = PasteActExecute
+      OnUpdate = PasteActUpdate
+      ShortCut = 16470
+    end
+    object CopyAct: TAction
+      Category = 'Edit'
+      Caption = 'Copy'
+      OnExecute = CopyActExecute
+      OnUpdate = CopyActUpdate
+      ShortCut = 16451
+    end
+    object OpenIncludeAct: TAction
+      Category = 'Edit'
+      Caption = 'Open Include'
+      OnExecute = OpenIncludeActExecute
+      OnUpdate = OpenIncludeActUpdate
+      ShortCut = 16397
+    end
+    object FolderOpenAct: TAction
+      Category = 'Folder'
+      Caption = 'Open'
+      ImageIndex = 1
+      OnExecute = FolderOpenActExecute
+    end
+    object SelectAllAct: TAction
+      Category = 'Edit'
+      Caption = 'Select All'
+      OnExecute = SelectAllActExecute
+      OnUpdate = SelectAllActUpdate
+      ShortCut = 16449
+    end
+    object KeywordAct: TAction
+      Category = 'Help'
+      Caption = 'PHP Keyword'
+      OnExecute = KeywordActExecute
+    end
+    object OutputAct: TAction
+      Category = 'View'
+      AutoCheck = True
+      Caption = 'Output'
+      Checked = True
+      ImageIndex = 17
+      OnExecute = OutputActExecute
+      ShortCut = 16469
+    end
+    object HelpIndexAct: TAction
+      Category = 'Help'
+      Caption = 'Help Index'
+      OnExecute = HelpIndexActExecute
+    end
+    object SaveAllAct: TAction
+      Category = 'File'
+      Caption = 'Save all'
+      Hint = 'Save all changed files'
+      ImageIndex = 3
+      OnExecute = SaveAllActExecute
+    end
+    object CutAct: TAction
+      Category = 'Edit'
+      Caption = 'Cut'
+      OnExecute = CutActExecute
+      OnUpdate = CutActUpdate
+      ShortCut = 16472
+    end
+    object SaveAsAct: TAction
+      Category = 'File'
+      Caption = 'Save as'
+      Hint = 'Save current file as new file'
+      OnExecute = SaveAsActExecute
+    end
+    object NewAct: TAction
+      Category = 'File'
+      Caption = 'New'
+      Hint = 'New file'
+      ImageIndex = 0
+      OnExecute = NewActExecute
+    end
+    object OpenAct: TAction
+      Category = 'File'
+      Caption = '&Open'
+      Hint = 'Open exist file'
+      ImageIndex = 1
+      OnExecute = OpenActExecute
+      ShortCut = 16463
+    end
+    object SaveAct: TAction
+      Category = 'File'
+      Caption = 'Save'
+      Hint = 'Save current file'
+      ImageIndex = 2
+      OnExecute = SaveActExecute
+      ShortCut = 16467
+    end
+    object CloseAllAct: TAction
+      Category = 'File'
+      Caption = 'Close All'
+      Hint = 'Close file'
+      OnExecute = CloseAllActExecute
+    end
+    object SettingAct: TAction
+      Category = 'View'
+      Caption = 'Setting'
+      ImageIndex = 13
+      OnExecute = SettingActExecute
+    end
+    object FoldersAct: TAction
+      Category = 'View'
+      AutoCheck = True
+      Caption = 'Folder'
+      Checked = True
+      ImageIndex = 28
+      OnExecute = FoldersActExecute
+      ShortCut = 16452
+    end
+    object NextAct: TAction
+      Category = 'View'
+      Caption = 'Next Window'
+      OnExecute = NextActExecute
+      SecondaryShortCuts.Strings = (
+        'Ctrl+PgDn'
+      )
+      ShortCut = 16393
+    end
+    object PriorAct: TAction
+      Category = 'View'
+      Caption = 'Prior Window'
+      OnExecute = PriorActExecute
+      SecondaryShortCuts.Strings = (
+        'Ctrl+PgUp'
+      )
+      ShortCut = 24585
+    end
+    object CloseAct: TAction
+      Category = 'View'
+      Caption = 'Close'
+      OnExecute = CloseActExecute
+      ShortCut = 16499
+    end
+    object ExitAct: TFileExit
+      Category = 'File'
+      Caption = 'E&xit'
+      Hint = 'Exit|Quits the application'
+      ImageIndex = 32
+    end
+    object AboutAct: TAction
+      Category = 'Help'
+      Caption = 'About'
+      OnExecute = AboutActExecute
+    end
+    object RunAct: TAction
+      Category = 'Project'
+      Caption = 'Run'
+      ImageIndex = 36
+      OnExecute = RunActExecute
+      ShortCut = 120
+    end
+    object CheckAct: TAction
+      Category = 'Project'
+      Caption = 'Check'
+      OnExecute = CheckActExecute
+      ShortCut = 16504
+    end
+    object AssociateAct: TAction
+      Category = 'Tools'
+      Caption = 'Associate'
+    end
+    object FolderOpenAllAct: TAction
+      Category = 'Folder'
+      Caption = 'Open All'
+      OnExecute = FolderOpenAllActExecute
+    end
+    object FindAct: TAction
+      Category = 'Edit'
+      Caption = 'Find'
+      OnExecute = FindActExecute
+      SecondaryShortCuts.Strings = (
+        'Ctrl+F'
+      )
+      ShortCut = 16498
+    end
+    object FindNextAct: TAction
+      Category = 'Edit'
+      Caption = 'Find next'
+      OnExecute = FindNextActExecute
+      ShortCut = 114
+    end
+    object EditorOptionsAct: TAction
+      Category = 'Edit'
+      Caption = 'Editor Options'
+      OnExecute = EditorOptionsActExecute
+    end
+    object ProjectOptionsAct: TAction
+      Category = 'Project'
+      Caption = 'Project Options'
+      OnExecute = ProjectOptionsActExecute
+      ShortCut = 24698
+    end
+    object NewProjectAct: TAction
+      Category = 'Project'
+      Caption = 'New'
+      OnExecute = NewProjectActExecute
+    end
+    object OpenProjectAct: TAction
+      Category = 'Project'
+      Caption = 'Open'
+      OnExecute = OpenProjectActExecute
+    end
+    object SaveProjectAct: TAction
+      Category = 'Project'
+      Caption = 'Save'
+      OnExecute = SaveProjectActExecute
+    end
+    object SaveAsProjectAct: TAction
+      Category = 'Project'
+      Caption = 'Save As'
+      OnExecute = SaveAsProjectActExecute
+    end
+    object SelectFileAct: TAction
+      Category = 'Project'
+      Caption = 'Select File'
+      OnExecute = SelectFileActExecute
+      ShortCut = 16507
+    end
+    object AddFileToProjectAct: TAction
+      Category = 'Project'
+      Caption = 'Add File'
+      ShortCut = 8314
+    end
+    object CloseProjectAct: TAction
+      Category = 'Project'
+      Caption = 'Close Project'
+      OnExecute = CloseProjectActExecute
+    end
+    object OpenFolderAct: TAction
+      Category = 'File'
+      Caption = 'Open Folder'
+      Hint = 'Open the folder of current file in Exeplorer '
+      OnExecute = OpenFolderActExecute
+    end
+    object MessagesAct: TAction
+      Category = 'View'
+      AutoCheck = True
+      Caption = 'Messages'
+      Checked = True
+      ImageIndex = 34
+      OnExecute = MessagesActExecute
+      ShortCut = 16461
+    end
+    object ManageAct: TAction
+      Category = 'Project'
+      Caption = 'Manage'
+      Hint = 'Open manage projects and recent files dialog'
+      ImageIndex = 16
+      OnExecute = ManageActExecute
+      ShortCut = 49274
+    end
+    object ProjectOpenFolderAct: TAction
+      Category = 'Project'
+      Caption = 'Open Folder'
+      OnExecute = ProjectOpenFolderActExecute
+    end
+    object GotoLineAct: TAction
+      Category = 'Edit'
+      Caption = 'Go to Line'
+      OnExecute = GotoLineActExecute
+      OnUpdate = GotoLineActUpdate
+      SecondaryShortCuts.Strings = (
+        'Alt+G'
+      )
+      ShortCut = 16455
+    end
+    object ReplaceAct: TAction
+      Category = 'Edit'
+      Caption = 'Replace'
+      OnExecute = ReplaceActExecute
+      SecondaryShortCuts.Strings = (
+        'CTRL+H'
+      )
+      ShortCut = 16466
+    end
+    object RevertAct: TAction
+      Category = 'File'
+      Caption = 'Revert'
+      Hint = 'Reload file and descard the changes'
+      OnExecute = RevertActExecute
+    end
+    object OpenColorAct: TAction
+      Category = 'Edit'
+      Caption = 'Edit Color'
+      OnExecute = OpenColorActExecute
+      OnUpdate = OpenColorActUpdate
+      ShortCut = 32781
+    end
+    object SVNCommitAct: TAction
+      Category = 'TSVN'
+      Caption = 'Commit'
+      ImageIndex = 35
+      OnExecute = SVNCommitActExecute
+    end
+    object SVNDiffFileAct: TAction
+      Category = 'TSVN'
+      Caption = 'Diff File'
+      OnExecute = SVNDiffFileActExecute
+      ShortCut = 24644
+    end
+    object SVNCommitFileAct: TAction
+      Category = 'TSVN'
+      Caption = 'Commit File'
+      OnExecute = SVNCommitFileActExecute
+    end
+    object SVNUpdateFileAct: TAction
+      Category = 'TSVN'
+      Caption = 'Update File'
+      OnExecute = SVNUpdateFileActExecute
+    end
+    object SVNRevertAct: TAction
+      Category = 'TSVN'
+      Caption = 'Revert'
+      OnExecute = SVNRevertActExecute
+    end
+    object SVNUpdateAct: TAction
+      Category = 'TSVN'
+      Caption = 'Update'
+      OnExecute = SVNUpdateActExecute
+    end
+    object DBGStartServerAct: TAction
+      Category = 'Debug'
+      Caption = 'Start Server'
+      Hint = 'Start XDebug server'
+      ImageIndex = 33
+      OnExecute = DBGStartServerActExecute
+      OnUpdate = DBGStartServerActUpdate
+    end
+    object DBGStopServerAct: TAction
+      Category = 'Debug'
+      Caption = 'Stop Server'
+      Hint = 'Stop XDebug Server'
+      OnExecute = DBGStopServerActExecute
+      OnUpdate = DBGStopServerActUpdate
+    end
+    object DBGStepIntoAct: TAction
+      Category = 'Debug'
+      Caption = 'Step Into'
+      Hint = 'Step into'
+      ImageIndex = 39
+      OnExecute = DBGStepIntoActExecute
+      ShortCut = 118
+    end
+    object DBGStepOverAct: TAction
+      Category = 'Debug'
+      Caption = 'Step Over'
+      Hint = 'Step over'
+      ImageIndex = 37
+      OnExecute = DBGStepOverActExecute
+      ShortCut = 119
+    end
+    object DBGResetAct: TAction
+      Category = 'Debug'
+      Caption = 'Reset'
+      Hint = 'Reset or break executing'
+      ImageIndex = 29
+      OnExecute = DBGResetActExecute
+      ShortCut = 16497
+    end
+    object DBGActiveServerAct: TAction
+      Category = 'Debug'
+      Caption = 'Debug'
+      Hint = 'XDebug Server Run'
+      ImageIndex = 33
+      OnExecute = DBGActiveServerActExecute
+      OnUpdate = DBGActiveServerActUpdate
+    end
+    object DBGResumeAct: TAction
+      Category = 'Debug'
+      Caption = 'Resume'
+      Hint = 'Run php without debug'
+      OnExecute = DBGResumeActExecute
+      ShortCut = 8305
+    end
+    object DBGStepOutAct: TAction
+      Category = 'Debug'
+      Caption = 'Step Out'
+      Hint = 'Step out'
+      ImageIndex = 38
+      OnExecute = DBGStepOutActExecute
+      ShortCut = 8310
+    end
+    object PHPIniConfigAct: TAction
+      Category = 'Tools'
+      Caption = 'PHP INI Config'
+    end
+    object DBGToggleBreakpoint: TAction
+      Category = 'Debug'
+      Caption = 'Toggle Breakpoint'
+      Hint = 'Toggle point at line and currrent file'
+      ImageIndex = 40
+      OnExecute = DBGToggleBreakpointExecute
+      ShortCut = 116
+    end
+    object DBGRunToCursor: TAction
+      Category = 'Debug'
+      Caption = 'Run To Cursor'
+      ShortCut = 115
+    end
+    object DBGBreakpointsAct: TAction
+      Category = 'Debug'
+      Caption = 'Breakpoints'
+      OnExecute = DBGBreakpointsActExecute
+      ShortCut = 49218
+    end
+    object CopyFileNameAct: TAction
+      Category = 'File'
+      Caption = 'Copy file name'
+      OnExecute = CopyFileNameActExecute
+    end
+    object DBGAddWatchAct: TAction
+      Category = 'Debug'
+      Caption = 'Add Watch'
+      ImageIndex = 41
+      OnExecute = DBGAddWatchActExecute
+      ShortCut = 16500
+    end
+    object FolderHomeAct: TAction
+      Category = 'Folder'
+      Caption = 'Home'
+      OnExecute = FolderHomeActExecute
+    end
+    object FindInFilesAct: TAction
+      Category = 'Edit'
+      Caption = 'Find in Files'
+      OnExecute = FindInFilesActExecute
+      ShortCut = 16457
+    end
+    object NextMessageAct: TAction
+      Category = 'View'
+      Caption = 'Next Message'
+      OnExecute = NextMessageActExecute
+      ShortCut = 32887
+    end
+    object PriorMessageAct: TAction
+      Category = 'View'
+      Caption = 'Prior Message'
+      OnExecute = PriorMessageActExecute
+      ShortCut = 32886
+    end
+    object SVNCompareToAct: TAction
+      Category = 'TSVN'
+      Caption = 'Compare To'
+      OnExecute = SVNCompareToActExecute
+    end
+    object SwitchFocusAct: TAction
+      Category = 'View'
+      Caption = 'Switch Focus'
+      OnExecute = SwitchFocusActExecute
+      ShortCut = 117
+    end
+    object QuickFindAct: TAction
+      Category = 'Edit'
+      AutoCheck = True
+      Caption = 'Quick Search'
+      OnExecute = QuickFindActExecute
+      OnUpdate = QuickFindActUpdate
+      ShortCut = 16465
+    end
+  end
+  object FolderMenu: TPopupMenu
+    left = 25
+    top = 136
+    object Home1: TMenuItem
+      Action = FolderHomeAct
+      OnClick = FolderHomeActExecute
+    end
+    object FolderOpenAct1: TMenuItem
+      Action = FolderOpenAct
+      OnClick = FolderOpenActExecute
+    end
+    object OpenAll1: TMenuItem
+      Action = FolderOpenAllAct
+      OnClick = FolderOpenAllActExecute
+    end
+    object GotoFolder1: TMenuItem
+      Caption = 'Go to Folder'
+      OnClick = GotoFolder1Click
+    end
+    object FileFolder1: TMenuItem
+      Caption = 'File Folder'
+      OnClick = FileFolder1Click
+    end
+  end
+  object FileModeMenu: TPopupMenu
+    left = 240
+    top = 117
+    object UnixMnu: TMenuItem
+      Caption = 'Unix'
+      OnClick = UnixMnuClick
+    end
+    object WindowsMnu: TMenuItem
+      Caption = 'Windows'
+      OnClick = WindowsMnuClick
+    end
+    object MacMnu: TMenuItem
+      Caption = 'Mac'
+      OnClick = MacMnuClick
+    end
+  end
+  object EditorPopupMenu: TPopupMenu
+    TrackButton = tbLeftButton
+    left = 529
+    top = 118
+    object OpenInclude2: TMenuItem
+      Action = OpenIncludeAct
+      OnClick = OpenIncludeActExecute
+    end
+    object OpenColor1: TMenuItem
+      Action = OpenColorAct
+      OnClick = OpenColorActExecute
+    end
+    object N11: TMenuItem
+      Caption = '-'
+    end
+    object Find2: TMenuItem
+      Action = FindAct
+      OnClick = FindActExecute
+    end
+    object Findnext2: TMenuItem
+      Action = FindNextAct
+      OnClick = FindNextActExecute
+    end
+    object N9: TMenuItem
+      Caption = '-'
+    end
+    object Cut2: TMenuItem
+      Action = CutAct
+      OnClick = CutActExecute
+    end
+    object Copy2: TMenuItem
+      Action = CopyAct
+      OnClick = CopyActExecute
+    end
+    object Paste2: TMenuItem
+      Action = PasteAct
+      OnClick = PasteActExecute
+    end
+    object SelectAll2: TMenuItem
+      Action = SelectAllAct
+      OnClick = SelectAllActExecute
+    end
+    object N5: TMenuItem
+      Caption = '-'
+    end
+    object oggleBreakpoint1: TMenuItem
+      Action = DBGToggleBreakpoint
+      OnClick = DBGToggleBreakpointExecute
+    end
+    object ShowValue1: TMenuItem
+      Caption = 'Show Value'
+      OnClick = ShowValue1Click
+    end
+    object AddWatch1: TMenuItem
+      Action = DBGAddWatchAct
+      OnClick = DBGAddWatchActExecute
+    end
+    object N10: TMenuItem
+      Caption = '-'
+    end
+    object EditorOptions2: TMenuItem
+      Action = EditorOptionsAct
+      OnClick = EditorOptionsActExecute
+    end
+  end
+  object WatchesPopupMenu: TPopupMenu
+    left = 204
+    top = 400
+    object Add1: TMenuItem
+      Caption = 'Add'
+      OnClick = Add1Click
+    end
+    object Delete1: TMenuItem
+      Caption = 'Delete'
+      OnClick = Delete1Click
+    end
+    object N13: TMenuItem
+      Caption = '-'
+    end
+    object Refresh1: TMenuItem
+      Caption = 'Refresh'
+    end
+  end
+  object FilePopupMenu: TPopupMenu
+    left = 344
+    top = 117
+    object Copyfilename1: TMenuItem
+      Action = CopyFileNameAct
+      OnClick = CopyFileNameActExecute
+    end
+    object OpenFolder3: TMenuItem
+      Action = OpenFolderAct
+      OnClick = OpenFolderActExecute
+    end
+  end
+  object StatusTimer: TTimer
+    Enabled = False
+    Interval = 5000
+    OnTimer = StatusTimerTimer
+    left = 436
+    top = 118
+  end
+  object MessagesPopup: TPopupMenu
+    left = 83
+    top = 399
+    object Clear1: TMenuItem
+      Caption = 'Clear'
+      OnClick = Clear1Click
+    end
+  end
+  object OutputPopup: TPopupMenu
+    left = 619
+    top = 117
+    object MenuItem1: TMenuItem
+      Caption = 'Clear'
+      OnClick = MenuItem1Click
+    end
+  end
+  object IPCServer: TSimpleIPCServer
+    Active = False
+    ServerID = 'Parmaja.MiniEdit'
+    Global = True
+    OnMessage = IPCServerMessage
+    left = 712
+    top = 117
+  end
+  object ApplicationProperties: TApplicationProperties
+    OnShowHint = ApplicationPropertiesShowHint
+    left = 83
+    top = 215
+  end
+end

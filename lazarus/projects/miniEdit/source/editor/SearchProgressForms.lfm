@@ -1,0 +1,61 @@
+object SearchProgressForm: TSearchProgressForm
+  Left = 281
+  Height = 99
+  Top = 296
+  Width = 426
+  BorderStyle = bsToolWindow
+  Caption = 'Search Progress'
+  ClientHeight = 99
+  ClientWidth = 426
+  Font.Height = -11
+  Font.Name = 'MS Sans Serif'
+  FormStyle = fsStayOnTop
+  Position = poMainFormCenter
+  LCLVersion = '0.9.29'
+  object FileNameLbl: TLabel
+    Left = 8
+    Height = 13
+    Top = 27
+    Width = 413
+    Anchors = [akTop, akLeft, akRight]
+    AutoSize = False
+    ParentColor = False
+    WordWrap = True
+  end
+  object Label1: TLabel
+    Left = 8
+    Height = 14
+    Top = 9
+    Width = 57
+    Caption = 'Current File:'
+    ParentColor = False
+  end
+  object Label2: TLabel
+    Left = 8
+    Height = 14
+    Top = 42
+    Width = 34
+    Caption = 'Found:'
+    ParentColor = False
+  end
+  object FoundLbl: TLabel
+    Left = 50
+    Height = 13
+    Top = 43
+    Width = 62
+    AutoSize = False
+    ParentColor = False
+    WordWrap = True
+  end
+  object CancelBtn: TButton
+    Left = 177
+    Height = 26
+    Top = 67
+    Width = 75
+    Anchors = [akBottom]
+    Cancel = True
+    Caption = '&Cancel'
+    OnClick = CancelBtnClick
+    TabOrder = 0
+  end
+end
