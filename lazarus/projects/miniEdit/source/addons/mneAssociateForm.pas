@@ -10,7 +10,7 @@ unit mneAssociateForm;
 interface
 
 uses
-  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
+  Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
   Dialogs, StdCtrls, ExtCtrls, IAddons;
 
 type
@@ -37,7 +37,7 @@ implementation
 {$R *.lfm}
 
 uses
-  Registry, ShlObj, EditorEngine;
+  {$ifdef Windows}Windows, Registry, ShlObj,{$endif} EditorEngine;
 
 procedure TAssociateForm.Apply;
 var
@@ -69,11 +69,14 @@ begin
     end;
   end;
 
+  {$ifdef Windows}
   SHChangeNotify(SHCNE_ASSOCCHANGED, SHCNF_IDLIST, nil, nil);
 //  SendMessageTimeout(HWND_BROADCAST, WM_SETTINGCHANGE, 0, LPARAM(PChar('Environment')), SMTO_ABORTIFHUNG, 5000, MsgResult);
+  {$endif}
 end;
 
 procedure TAssociateForm.AssociateNow(Cmd, Ext, FileType, WithApplication, Description, Mime: string; WithDDE: Boolean);
+{$ifdef Windows}
 var
   aReg: TRegistry;
 begin
@@ -115,8 +118,13 @@ begin
     aReg.Free;
   end;
 end;
+{$else}
+begin
+end;
+{$endif}
 
 function TAssociateForm.GetAssociated(Cmd, FileType, Ext: string): Boolean;
+{$ifdef Windows}
 var
   aReg: TRegistry;
 begin
@@ -133,6 +141,10 @@ begin
     aReg.Free;
   end;
 end;
+{$else}
+begin
+end;
+{$endif}
 
 procedure TAssociateForm.Retrive;
 begin
@@ -175,4 +187,4 @@ type
 initialization
   Addons.Add('File', 'Associate', TAssociateAddon);
 end.
-
+

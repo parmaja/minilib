@@ -25,7 +25,7 @@
           </Target>
           <SearchPaths>
             <IncludeFiles Value="$(ProjOutDir)"/>
-            <OtherUnitFiles Value="..\editor;..\lib;\usr\ws\dev\home\pascal\lib\minilib\xml\source;\usr\ws\dev\home\pascal\lib\minilib\lib;\usr\ws\dev\home\pascal\lib\minilib\lazarus\lib;\usr\ws\dev\home\pascal\lib\minilib\socket\source;$(LazarusDir)\lcl\units\$(TargetCPU)-$(TargetOS);$(LazarusDir)\lcl\units\$(TargetCPU)-$(TargetOS)\$(LCLWidgetType)"/>
+            <OtherUnitFiles Value="..\editor;..\lib;\usr\ws\dev\home\pascal\lib\minilib\xml\source\;\usr\ws\dev\home\pascal\lib\minilib\lib\;\usr\ws\dev\home\pascal\lib\minilib\lazarus\lib\;\usr\ws\dev\home\pascal\lib\minilib\socket\source\;$(LazarusDir)\lcl\units\$(TargetCPU)-$(TargetOS);$(LazarusDir)\lcl\units\$(TargetCPU)-$(TargetOS)\$(LCLWidgetType)"/>
             <UnitOutputDirectory Value="..\..\units"/>
           </SearchPaths>
           <Linking>
@@ -69,18 +69,22 @@
       <Item1>
         <PackageName Value="MiniXML"/>
         <MinVersion Valid="True"/>
+        <DefaultFilename Value="..\..\..\..\..\xml\source\MiniXML.lpk" Prefer="True"/>
       </Item1>
       <Item2>
         <PackageName Value="minisockets"/>
         <MinVersion Valid="True"/>
+        <DefaultFilename Value="..\..\..\..\..\socket\source\MiniSockets.lpk" Prefer="True"/>
       </Item2>
       <Item3>
         <PackageName Value="minilib"/>
         <MinVersion Valid="True"/>
+        <DefaultFilename Value="..\..\..\..\lib\MiniLib.lpk" Prefer="True"/>
       </Item3>
       <Item4>
         <PackageName Value="MiniBaseLib"/>
         <MinVersion Valid="True"/>
+        <DefaultFilename Value="..\..\..\..\..\lib\MiniBaseLib.lpk" Prefer="True"/>
       </Item4>
       <Item5>
         <PackageName Value="FCL"/>
@@ -303,7 +307,7 @@
       <Filename Value="..\..\bin\mne.exe"/>
     </Target>
     <SearchPaths>
-      <IncludeFiles Value="W:\home\pascal\projects\LPE\source\editor\;W:\home\pascal\projects\LPE\source\lib\;$(ProjOutDir)"/>
+      <IncludeFiles Value="W:\home\pascal\projects\LPE\source\editor;W:\home\pascal\projects\LPE\source\lib;$(ProjOutDir)"/>
       <OtherUnitFiles Value="..\editor;..\lib;..\addons;$(LazarusDir)\lcl\units\$(TargetCPU)-$(TargetOS);$(LazarusDir)\lcl\units\$(TargetCPU)-$(TargetOS)\$(LCLWidgetType)"/>
       <UnitOutputDirectory Value="..\..\units"/>
     </SearchPaths>
@@ -348,4 +352,4 @@
       </Item3>
     </Exceptions>
   </Debugging>
-</CONFIG>
+</CONFIG>
