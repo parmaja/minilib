@@ -25,7 +25,6 @@ type
   TphpFile = class(TEditorFile)
   protected
     procedure NewSource; override;
-    //procedure EditorPaintTransient(Sender: TObject; Canvas: TCanvas; TransientType: TTransientType); override;
   public
   end;
 
@@ -61,7 +60,6 @@ type
   public
     procedure NewSource; override;
   end;
-  //
 
   { TPASFile }
 
@@ -135,25 +133,20 @@ type
   public
   end;
 
-  { TPHPProject }
+  { TPHPPerspective }
 
-  { TPHPClasp }
-
-  TPHPClasp = class(TEditorClasp)
+  TPHPPerspective = class(TEditorPerspective)
   public
-    function ShowConfig: boolean; override;
   end;
 
-  { TPascalProject }
+  { TPascalPerspective }
 
-  { TPascalClasp }
-
-  TPascalClasp = class(TEditorClasp)
+  TPascalPerspective = class(TEditorPerspective)
   public
-    function ShowConfig: boolean; override;
   end;
 
-  //
+  { TmneEngine }
+
   TmneEngine = class(TEditorEngine)
   protected
   public
@@ -164,12 +157,11 @@ function ColorToRGBHex(Color: TColor): string;
 function RGBHexToColor(Value: string): TColor;
 
 const
-  sSoftwareRegKey = 'Software\LightPHPEdit\';
+  sSoftwareRegKey = 'Software\miniEdit\';
 {$ifdef WINDOWS}
   SysPlatform = 'WINDOWS';
 {$else}
   SysPlatform = 'LINUX';
-
 {$endif}
 
 function GetFileImageIndex(const FileName: string): integer;
@@ -237,20 +229,6 @@ begin
   end;
 end;
 
-{ TPascalClasp }
-
-function TPascalClasp.ShowConfig: boolean;
-begin
-  Result := False;
-end;
-
-{ TPHPClasp }
-
-function TPHPClasp.ShowConfig: boolean;
-begin
-  Result := False;
-end;
-
 { TPASFileCategory }
 
 function TPASFileCategory.CreateHighlighter: TSynCustomHighlighter;
@@ -263,20 +241,33 @@ end;
 procedure TPASFile.NewSource;
 begin
   inherited NewSource;
+  SynEdit.Text := 'unit ';
+  SynEdit.Lines.Add('');
+  SynEdit.Lines.Add('interface');
+  SynEdit.Lines.Add('');
+  SynEdit.Lines.Add('uses');
+  SynEdit.Lines.Add('  SysUtils;');
+  SynEdit.Lines.Add('');
+  SynEdit.Lines.Add('implementation');
+  SynEdit.Lines.Add('');
+  SynEdit.Lines.Add('end.');
+  SynEdit.CaretY := 1;
+  SynEdit.CaretX := 5;
 end;
 
 constructor TmneEngine.Create;
 begin
   inherited;
+  //Categories.Add('', TTXTFile, TTXTFileCategory);
+  Categories.Add('TXT', TTXTFile, TTXTFileCategory);
   Categories.Add('HTML/PHP', TphpFile, TPHPFileCategory, [fckPublish]);
   Categories.Add('CSS', TCssFile, TCSSFileCategory, [fckPublish]);
   Categories.Add('JS', TJSFile, TJSFileCategory, [fckPublish]);
   Categories.Add('htaccess', TApacheFile, TApacheFileCategory, []);
   Categories.Add('SQL', TSQLFile, TSQLFileCategory);
   Categories.Add('INI', TINIFile, TINIFileCategory);
-  Categories.Add('TXT', TTXTFile, TTXTFileCategory);
   Categories.Add('XML', TXMLFile, TXMLFileCategory);
-  Categories.Add('XML', TPASFile, TPASFileCategory);
+  Categories.Add('PAS', TPASFile, TPASFileCategory);
 
   Groups.Add('PHP Files', 'php', 'HTML/PHP', ['php'], [fgkExecutable, fgkPublish, fgkBrowsable, fgkMainIcon]);
   Groups.Add('PHPX Files', 'phpx', 'HTML/PHP', ['phpx'], [fgkExecutable, fgkPublish, fgkBrowsable, fgkMainIcon]);
@@ -288,6 +279,10 @@ begin
   Groups.Add('XML files', 'XML', 'XML', ['xml'], [fgkPublish, fgkBrowsable]);
   Groups.Add('INI files', 'ini', 'ini', ['ini'], []);
   Groups.Add('TXT files', 'TXT', 'TXT', ['txt'], []);
+
+  Perspectives.Add('Pascal', TPascalPerspective);
+  Perspectives.Add('PHP', TPHPPerspective);
+
   Extenstion := 'mne-project';
 end;
 

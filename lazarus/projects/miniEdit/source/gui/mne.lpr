@@ -7,6 +7,7 @@ program mne;
  *
  * @license    GPL 2 (http://www.gnu.org/licenses/gpl.html)
  * @author    Zaher Dirkey <zaher at parmaja dot com>
+ * @url       http://sourceforge.net/projects/minilib
  *}
 
 uses
