@@ -83,8 +83,18 @@ type
     it must choosed by user when create a new project
   }
 
+  TPerspectiveAttributes = record
+    Name: string;
+    Title: string;
+    Description: string;
+    ImageIndex: Integer;
+  end;
+
+  { TEditorPerspective }
+
   TEditorPerspective = class(TPersistent)
   public
+    class procedure GetAttributes(var PerspectiveAttributes: TPerspectiveAttributes); virtual;
   end;
 
   TEditorPerspectiveClass = class of TEditorPerspective;
@@ -415,7 +425,7 @@ type
   public
     constructor Create(AEngine: TEditorEngine);
     function Find(vName: string): TPerspectiveItem;
-    procedure Add(const Name: string; vEditorPerspective: TEditorPerspectiveClass);
+    procedure Add(vEditorPerspective: TEditorPerspectiveClass);
     property Items[Index: integer]: TPerspectiveItem read GetItem; default;
     property Engine: TEditorEngine read FEngine;
   end;
@@ -642,6 +652,15 @@ begin
   end;
 end;
 
+{ TEditorPerspective }
+
+class procedure TEditorPerspective.GetAttributes(var PerspectiveAttributes: TPerspectiveAttributes);
+begin
+  PerspectiveAttributes.Title := 'Default project type';
+  PerspectiveAttributes.Name := 'Default';
+  PerspectiveAttributes.ImageIndex := -1;
+end;
+
 { TPerspectiveList }
 
 function TPerspectiveList.GetItem(Index: integer): TPerspectiveItem;
@@ -671,12 +690,14 @@ begin
     end;
 end;
 
-procedure TPerspectiveList.Add(const Name: string; vEditorPerspective: TEditorPerspectiveClass);
+procedure TPerspectiveList.Add(vEditorPerspective: TEditorPerspectiveClass);
 var
   aItem: TPerspectiveItem;
+  Attrib: TPerspectiveAttributes;
 begin
+  vEditorPerspective.GetAttributes(Attrib);
   aItem := TPerspectiveItem.Create;
-  aItem.FName := Name;
+  aItem.FName := Attrib.Name;
   aItem.FItemClass := vEditorPerspective;
   inherited Add(aItem);
 end;

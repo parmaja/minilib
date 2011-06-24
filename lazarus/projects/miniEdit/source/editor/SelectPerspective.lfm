@@ -1,80 +1,61 @@
-object SelectFileForm: TSelectFileForm
-  Left = 502
-  Height = 348
-  Top = 206
+object SelectPerspectiveForm: TSelectPerspectiveForm
+  Left = 535
+  Height = 267
+  Top = 177
   Width = 289
   BorderIcons = [biSystemMenu]
-  Caption = 'Select file'
-  ClientHeight = 348
+  Caption = 'Select Project type'
+  ClientHeight = 267
   ClientWidth = 289
   Font.Height = -11
   Font.Name = 'MS Sans Serif'
-  OnCreate = FormCreate
-  OnDestroy = FormDestroy
   Position = poMainFormCenter
   LCLVersion = '0.9.31'
-  object FilesList: TListView
+  object ItemsList: TListView
     Left = 3
-    Height = 287
-    Top = 29
+    Height = 231
+    Top = 4
     Width = 282
     Anchors = [akTop, akLeft, akRight, akBottom]
     Columns = <    
       item
-        Caption = 'File Name'
-        Width = 200
+        Caption = 'Project'
+        Width = 100
       end    
       item
         AutoSize = True
-        Caption = 'Path'
-        Width = 78
+        Caption = 'Description'
+        Width = 178
       end>
     HideSelection = False
     ReadOnly = True
     RowSelect = True
     SmallImages = EditorResource.SmallImages
     SortType = stText
-    TabOrder = 1
+    TabOrder = 0
     ViewStyle = vsReport
-    OnDblClick = FilesListDblClick
+    OnDblClick = ItemsListDblClick
   end
   object OkBtn: TButton
     Left = 4
     Height = 26
-    Top = 318
+    Top = 237
     Width = 75
     Anchors = [akLeft, akBottom]
     Caption = '&Ok'
     Default = True
     OnClick = OkBtnClick
-    TabOrder = 2
+    TabOrder = 1
   end
   object CancelBtn: TButton
     Left = 79
     Height = 26
-    Top = 318
+    Top = 237
     Width = 75
     Anchors = [akLeft, akBottom]
     Cancel = True
     Caption = '&Cancel'
     ModalResult = 2
-    TabOrder = 3
-  end
-  object FilterEdit: TEdit
-    Left = 3
-    Height = 21
-    Top = 5
-    Width = 282
-    Anchors = [akTop, akLeft, akRight]
-    OnChange = FilterEditChange
-    OnKeyDown = FilterEditKeyDown
-    TabOrder = 0
-  end
-  object Timer: TTimer
-    Enabled = False
-    Interval = 500
-    OnTimer = TimerTimer
-    left = 96
-    top = 79
+    TabOrder = 2
   end
 end

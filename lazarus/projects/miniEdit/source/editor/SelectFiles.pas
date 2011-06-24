@@ -88,8 +88,8 @@ begin
   if Pos('*', s) = 0 then
     s := s + '*';
   FilesList.Items.BeginUpdate;
-  FilesList.Clear;
   try
+    FilesList.Clear;
     for i := 0 to FFiles.Count - 1 do
     begin
       aFileName := ExtractFileName(FFiles[i]);
