@@ -51,6 +51,8 @@ uses
   SynHighlighterApache in '..\lib\SynHighlighterApache.pas',
   IniFiles,
   mneAddons, mneAssociateForm,
+  mnePHPClasses,
+  mnePASClasses,
   PHPUtils in '..\lib\PHPUtils.pas';
 
 {$R *.res}

@@ -93,7 +93,9 @@ type
   { TEditorPerspective }
 
   TEditorPerspective = class(TPersistent)
+  private
   public
+    constructor Create; virtual;
     class procedure GetAttributes(var PerspectiveAttributes: TPerspectiveAttributes); virtual;
   end;
 
@@ -263,10 +265,13 @@ type
 
   TOnEngineChanged = procedure of object;
 
+  { TEditorOptions }
+
   TEditorOptions = class(TmnXMLProfile)
   private
     FFileName: string;
     FEngine: TEditorEngine;
+    FPerspective: TEditorPerspective;
     FShowFolder: boolean;
     FWindowMaxmized: boolean;
     FBoundRect: TRect;
@@ -303,6 +308,7 @@ type
     property Engine: TEditorEngine read FEngine;
     property FileName: string read FFileName write FFileName;
     property BoundRect: TRect read FBoundRect write FBoundRect; //not saved yet
+    procedure SetDefaultPerspective(vPerspective: TEditorPerspective);
   published
     property CompilerFolder: string read FCompilerFolder write FCompilerFolder;
     property HelpFiles: TStringList read FHelpFiles write FHelpFiles;
@@ -325,21 +331,25 @@ type
     property RecentFiles: TStringList read FRecentFiles write SetRecentFiles;
     property RecentProjects: TStringList read FRecentProjects write SetRecentProjects;
     property Projects: TStringList read FProjects write SetProjects;
+    property Perspective: TEditorPerspective read FPerspective write FPerspective default nil;
   end;
 
   TFileCategoryKind = (fckPublish);
   TFileCategoryKinds = set of TFileCategoryKind;
+
+  { TFileCategory }
 
   TFileCategory = class(TObject)
   private
     FName: string;
     FEditorFileClass: TEditorFileClass;
     FHighlighter: TSynCustomHighlighter;
-    FCompletion: TSynCompletion;
     FKind: TFileCategoryKinds;
   protected
+    FCompletion: TSynCompletion;
     procedure OnExecuteCompletion(Sender: TObject); virtual;
     function CreateHighlighter: TSynCustomHighlighter; virtual;
+    procedure InitCompletion(vSynEdit: TCustomSynEdit); virtual;
   public
     constructor Create; virtual;
     destructor Destroy; override;
@@ -494,6 +504,7 @@ type
 
   TEditorEngine = class(TObject)
   private
+    FDefaultGroup: string;
     FOnChoosePerspective: TOnChoosePerspective;
     FPerspectives: TPerspectiveList;
     FSCM: TEditorSCM;
@@ -513,6 +524,7 @@ type
     FBrowseFolder: string;
     //FMacroRecorder: TSynMacroRecorder;
     FWorkSpace: string;
+    function GetPerspective: TEditorPerspective;
     function GetRoot: string;
     function GetUpdating: boolean;
     procedure SetBrowseFolder(const Value: string);
@@ -544,8 +556,10 @@ type
     procedure UpdateState(State: TEditorChangeState);
     property Updating: boolean read GetUpdating;
     procedure EndUpdate;
+
     function ExpandFileName(FileName: string): string;
     property Extenstion: string read FExtenstion write FExtenstion;
+    property DefaultGroup: string read FDefaultGroup write FDefaultGroup;
     property Root: string read GetRoot;
     property WorkSpace: string read GetWorkSpace write FWorkSpace;
 
@@ -579,8 +593,7 @@ procedure SaveAsMode(const FileName: string; Mode: TEditorFileMode; Strings: TSt
 function DetectFileMode(const Contents: string): TEditorFileMode;
 function ChangeTabsToSpace(const Contents: string; TabWidth: integer): string;
 
-var
-  Engine: TEditorEngine = nil;
+function Engine: TEditorEngine;
 
 implementation
 
@@ -588,6 +601,16 @@ uses
   SynHighlighterApache, SynHighlighterHTMLPHP, SynHighlighterHashEntries, SynGutterCodeFolding,
   Registry, SearchForms, SynEditTextBuffer,
   mneResources;
+
+var
+  FEngine: TEditorEngine = nil;
+
+function Engine: TEditorEngine;
+begin
+  if FEngine = nil then
+    FEngine := TEditorEngine.Create;
+  Result := FEngine;
+end;
 
 function SelectFolder(const Caption: string; const Root: WideString; var Directory: string): boolean;
 begin
@@ -657,6 +680,11 @@ begin
 end;
 
 { TEditorPerspective }
+
+constructor TEditorPerspective.Create;
+begin
+  inherited;
+end;
 
 class procedure TEditorPerspective.GetAttributes(var PerspectiveAttributes: TPerspectiveAttributes);
 begin
@@ -799,7 +827,8 @@ var
 begin
   for i := 0 to Engine.Categories.Count - 1 do
   begin
-    //    Engine.Categories[i].Completion.Font := Profile.Font;
+    //check if Engine.Categories[i].Completion = nil
+    //Engine.Categories[i].Completion.Font := Profile.Font;
     //Engine.Categories[i].Completion.Options := Engine.Categories[i].Completion.Options + [scoTitleIsCentered];
     if Engine.Categories[i].Highlighter <> nil then
     begin
@@ -880,6 +909,7 @@ begin
   FSession.FEngine := Self;
   FDebug := CreateDebugger;
   FSCM := CreateSCM;
+  Extenstion := 'mne-project';
 end;
 
 function TEditorEngine.CreateEditorFile(Group: string): TEditorFile;
@@ -914,7 +944,8 @@ begin
   FreeAndNil(FOptions);
   //FreeAndNil(FMacroRecorder);
   FreeAndNil(FMessagesList);
-  Engine := nil;
+  Engine.OnChangedState := nil;
+  Engine.OnChoosePerspective := nil;
   inherited;
 end;
 
@@ -1075,6 +1106,11 @@ begin
     Result := ExpandToPath(Session.Project.RootDir, s);
 end;
 
+function TEditorEngine.GetPerspective: TEditorPerspective;
+begin
+  Result := TEditorPerspective.Create;
+end;
+
 function TEditorFiles.InternalOpenFile(FileName: string; AppendToRecent: boolean): TEditorFile;
 begin
   {$ifdef windows}
@@ -1125,9 +1161,14 @@ end;
 function TEditorFiles.New: TEditorFile;
 var
   aGroup: TFileGroup;
+  S: string;
 begin
-  aGroup := Engine.Groups[0];
-  Result := Engine.CreateEditorFile(aGroup.Name);
+  aGroup := Engine.Groups.Find(Engine.DefaultGroup);
+  if aGroup <> nil then
+    S := aGroup.Name
+  else
+    S := '';
+  Result := Engine.CreateEditorFile(S);
   Result.NewSource;
   Result.Edit;
   Current := Result;
@@ -1774,7 +1815,7 @@ begin
     if FGroup <> nil then
     begin
       FSynEdit.Highlighter := FGroup.Category.Highlighter;
-      FGroup.Category.Completion.AddEditor(FSynEdit);
+      FGroup.Category.InitCompletion(FSynEdit);
       if fgkExecutable in FGroup.Kind then
         with TSynDebugMarksPart.Create(FSynEdit.Gutter.Parts) do
         begin
@@ -1978,6 +2019,12 @@ begin
   inherited;
 end;
 
+procedure TEditorOptions.SetDefaultPerspective(vPerspective: TEditorPerspective);
+begin
+  FreeAndNil(FPerspective);
+  FPerspective:=vPerspective;
+end;
+
 procedure TEditorOptions.SetProjects(const Value: TStringList);
 begin
   if FRecentProjects <> Value then
@@ -2122,13 +2169,6 @@ constructor TFileCategory.Create;
 begin
   inherited;
   FHighlighter := CreateHighlighter;
-  FCompletion := TSynCompletion.Create(nil);
-  FCompletion.Width := 340;
-  FCompletion.EndOfTokenChr := '{}()[].<>/\:!$&*+-=%';
-  FCompletion.OnExecute := @OnExecuteCompletion;
-  FCompletion.ShortCut := scCtrl + VK_SPACE;
-  //FCompletion.Options := [scoLimitToMatchedText, {scoCaseSensitive, }scoUseInsertList, scoUsePrettyText, scoEndCharCompletion, scoCompleteWithTab, scoCompleteWithEnter];
-  //FCompletion.DefaultType := ctCode;
 end;
 
 function TFileCategory.CreateEditorFile(Files: TEditorFiles): TEditorFile;
@@ -2139,6 +2179,10 @@ end;
 function TFileCategory.CreateHighlighter: TSynCustomHighlighter;
 begin
   Result := nil;
+end;
+
+procedure TFileCategory.InitCompletion(vSynEdit: TCustomSynEdit);
+begin
 end;
 
 destructor TFileCategory.Destroy;

@@ -500,7 +500,6 @@ begin
   finally
     aIniFile.Free;
   end;
-  Engine := TmneEngine.Create;
   Engine.Workspace := aWorkspace;
   Engine.Window := EditorsPnl;
   //FileSet.Align := alClient;
