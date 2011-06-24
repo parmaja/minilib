@@ -137,12 +137,14 @@ type
 
   TPHPPerspective = class(TEditorPerspective)
   public
+    class procedure GetAttributes(var PerspectiveAttributes: TPerspectiveAttributes); override;
   end;
 
   { TPascalPerspective }
 
   TPascalPerspective = class(TEditorPerspective)
   public
+    class procedure GetAttributes(var PerspectiveAttributes: TPerspectiveAttributes); override;
   end;
 
   { TmneEngine }
@@ -229,6 +231,26 @@ begin
   end;
 end;
 
+{ TPascalPerspective }
+
+class procedure TPascalPerspective.GetAttributes(var PerspectiveAttributes: TPerspectiveAttributes);
+begin
+  PerspectiveAttributes.Title := 'Pascal project';
+  PerspectiveAttributes.Description := 'Pascal/FPC/Lazarus Files, *.pas, *.pp *.inc';
+  PerspectiveAttributes.Name := 'Pascal';
+  PerspectiveAttributes.ImageIndex := -1;
+end;
+
+{ TPHPPerspective }
+
+class procedure TPHPPerspective.GetAttributes(var PerspectiveAttributes: TPerspectiveAttributes);
+begin
+  PerspectiveAttributes.Title := 'PHP project';
+  PerspectiveAttributes.Description := 'PHP Files, *.php, *.inc';
+  PerspectiveAttributes.Name := 'PHP';
+  PerspectiveAttributes.ImageIndex := -1;
+end;
+
 { TPASFileCategory }
 
 function TPASFileCategory.CreateHighlighter: TSynCustomHighlighter;
@@ -280,8 +302,8 @@ begin
   Groups.Add('INI files', 'ini', 'ini', ['ini'], []);
   Groups.Add('TXT files', 'TXT', 'TXT', ['txt'], []);
 
-  Perspectives.Add('Pascal', TPascalPerspective);
-  Perspectives.Add('PHP', TPHPPerspective);
+  Perspectives.Add(TPascalPerspective);
+  Perspectives.Add(TPHPPerspective);
 
   Extenstion := 'mne-project';
 end;

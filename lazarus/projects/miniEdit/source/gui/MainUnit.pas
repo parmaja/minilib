@@ -425,6 +425,7 @@ type
     function CanOpenInclude: boolean;
     procedure UpdateFileHeaderPanel;
     procedure EditorChangeState(State: TEditorChangeState);
+    procedure ChoosePerspective(var vPerspective: TEditorPerspective);
     procedure EngineChanged;
     procedure UpdateWatches;
     procedure EngineDebug;
@@ -487,7 +488,7 @@ uses
   SelectFiles, mneSettings, mneConsts,
   SynEditTypes, AboutForms, mneProjectForms, GotoForms, Types,
   mneBreakpoints,
-  SearchInFilesForms, SynHighlighterHTMLPHP;
+  SearchInFilesForms, SelectPerspective, SynHighlighterHTMLPHP;
 
 {$R *.lfm}
 
@@ -509,6 +510,7 @@ begin
   Engine.Window := EditorsPnl;
   //FileSet.Align := alClient;
   Engine.OnChangedState := @EditorChangeState;
+  Engine.OnChoosePerspective := @ChoosePerspective;
   //  Engine.OnSynEditReplaceText:= OnSynEditReplaceText;
   if (aWorkspace <> '') then
   begin
@@ -1440,6 +1442,21 @@ begin
     EngineProjectLoaded;
   if ecsState in State then
     EngineState;
+end;
+
+procedure TMainForm.ChoosePerspective(var vPerspective: TEditorPerspective);
+var
+  aName: string;
+  a: TPerspectiveAttributes;
+begin
+  if (vPerspective <> nil) then
+  begin
+    vPerspective.GetAttributes(a);
+    aName := a.Name;
+  end
+  else
+    aName := '';
+  ShowSelectPerspective(aName);
 end;
 
 procedure TMainForm.EngineProjectLoaded;
