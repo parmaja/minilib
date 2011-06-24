@@ -26,8 +26,8 @@ uses
   LMessages, lCLType, LCLIntf, LCLProc, IAddons, EditorDebugger,
   Dialogs, StdCtrls, Math, ComCtrls, ExtCtrls, ImgList, Menus, ToolWin,
   Buttons, FileCtrl, ShellCtrls, ActnList, EditorEngine, mneClasses, StdActns,
-  PairSplitter, SynEditHighlighter, SynHighlighterPHP, SynHighlighterApache,
-  ntvTabSets, mneRun, Registry, SynEdit, SynEditPlugins,
+  PairSplitter, SynEditHighlighter, SynEdit,
+  ntvTabSets, mneRun, Registry, SynEditPlugins,
   //Addons
   {$ifdef Windows}
   mneAssociateForm,
@@ -93,14 +93,13 @@ type
     SaveAllAct: TAction;
     AboutAct: TAction;
     KeywordAct: TAction;
-    PHPKeyword1: TMenuItem;
+    KeywordMnu: TMenuItem;
     About2: TMenuItem;
     RunAct: TAction;
     CheckAct: TAction;
     ProjectMnu: TMenuItem;
     Run2: TMenuItem;
     Check1: TMenuItem;
-    AssociateAct: TAction;
     ToolsMnu: TMenuItem;
     FolderMenu: TPopupMenu;
     FolderOpenAllAct: TAction;
@@ -225,7 +224,6 @@ type
     DBGStepOutAct: TAction;
     DBGStepOutAct1: TMenuItem;
     ToolButton6: TToolButton;
-    PHPIniConfigAct: TAction;
     N5: TMenuItem;
     AddWatch1: TMenuItem;
     WatchesPopupMenu: TPopupMenu;
@@ -307,7 +305,6 @@ type
     procedure FileCloseBtnClick(Sender: TObject);
     procedure FileSetClick(Sender: TObject);
     procedure NextActExecute(Sender: TObject);
-    procedure OpenPHPiniAct1Click(Sender: TObject);
     procedure PriorActExecute(Sender: TObject);
     procedure CloseActExecute(Sender: TObject);
     procedure FileListDblClick(Sender: TObject);
@@ -335,11 +332,9 @@ type
     procedure CloseProjectActExecute(Sender: TObject);
     procedure OpenFolderActExecute(Sender: TObject);
     procedure MessagesActExecute(Sender: TObject);
-    procedure psvPHPBeforeExecute(Sender: TObject);
     procedure UnixMnuClick(Sender: TObject);
     procedure WindowsMnuClick(Sender: TObject);
     procedure MacMnuClick(Sender: TObject);
-    procedure ExtractkeywordsClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure CheckActExecute(Sender: TObject);
     procedure AboutActExecute(Sender: TObject);
@@ -454,8 +449,8 @@ type
     LastGotoLine: integer;
     //
 
-    procedure PHPScriptError(Sender: TObject; AText: string; AType: TRunErrorType; AFileName: string; ALineNo: integer);
-    procedure PHPLogMessage(Sender: TObject; AText: string);
+    procedure ScriptError(Sender: TObject; AText: string; AType: TRunErrorType; AFileName: string; ALineNo: integer);
+    procedure LogMessage(Sender: TObject; AText: string);
 
     procedure RunTerminated(Sender: TObject);
     procedure RunScript;
@@ -488,7 +483,7 @@ uses
   SelectFiles, mneSettings, mneConsts,
   SynEditTypes, AboutForms, mneProjectForms, GotoForms, Types,
   mneBreakpoints,
-  SearchInFilesForms, SelectPerspective, SynHighlighterHTMLPHP;
+  SearchInFilesForms, SelectPerspective;
 
 {$R *.lfm}
 
@@ -715,11 +710,6 @@ end;
 procedure TMainForm.NextActExecute(Sender: TObject);
 begin
   Engine.Files.Next;
-end;
-
-procedure TMainForm.OpenPHPiniAct1Click(Sender: TObject);
-begin
-
 end;
 
 procedure TMainForm.PriorActExecute(Sender: TObject);
@@ -1069,11 +1059,6 @@ begin
   UpdateMessagesPnl;
 end;
 
-procedure TMainForm.psvPHPBeforeExecute(Sender: TObject);
-begin
-  MessageList.Items.Clear;
-end;
-
 procedure TMainForm.UnixMnuClick(Sender: TObject);
 begin
   Engine.Files.Current.Mode := efmUnix;
@@ -1087,53 +1072,6 @@ end;
 procedure TMainForm.MacMnuClick(Sender: TObject);
 begin
   Engine.Files.Current.Mode := efmMac;
-end;
-
-procedure TMainForm.ExtractkeywordsClick(Sender: TObject);
-var
-  aList: TStringList;
-
-  procedure ExtractKeywordsNow(const vName, vKeywords: string);
-  var
-    aStrings: TStringList;
-    i: integer;
-    s: string;
-  begin
-    aStrings := TStringList.Create;
-    try
-      ExtractStrings([','], [], PChar(vKeywords), aStrings);
-      aStrings.Sort;
-      for i := 0 to aStrings.Count - 1 do
-      begin
-        s := '    ''' + aStrings[i];
-        if i < aStrings.Count - 1 then
-          s := s + ',';
-        s := s + '''';
-        if i >= aStrings.Count - 1 then
-          s := s + ';'
-        else
-          s := s + '+';
-        aStrings[i] := s;
-      end;
-      aStrings.Insert(0, '  ' + vName + ' =');
-      aStrings.Add('');
-      aList.AddStrings(aStrings);
-    finally
-      aStrings.Free;
-    end;
-  end;
-
-begin
-  aList := TStringList.Create;
-  ExtractKeywordsNow('sPHPControls', sPHPControls);
-  ExtractKeywordsNow('sPHPKeywords', sPHPKeywords);
-  ExtractKeywordsNow('sPHPFunctions', sPHPFunctions);
-  ExtractKeywordsNow('sPHPConstants', sPHPConstants);
-  ExtractKeywordsNow('sPHPVariables', sPHPVariables);
-  ExtractKeywordsNow('sHTMLKeywords', sHTMLKeywords);
-  ExtractKeywordsNow('sSQLKeywords', sSQLKeywords);
-  aList.SaveToFile(Application.Location + 'PHPKeywords.inc.new');
-  aList.Free;
 end;
 
 procedure TMainForm.FormCreate(Sender: TObject);
@@ -1223,40 +1161,9 @@ begin
 end;
 
 procedure TMainForm.OpenIncludeActExecute(Sender: TObject);
-var
-  P: TPoint;
-  Attri: TSynHighlighterAttributes;
-  aToken: string;
-  aTokenType: integer;
-  aStart: integer;
-
-  function TryOpen: boolean;
-  begin
-    aToken := Engine.ExpandFileName(aToken);
-    Result := FileExists(aToken);
-    if Result then
-      Engine.Files.OpenFile(aToken);
-  end;
-
 begin
   if Engine.Files.Current <> nil then
-  begin
-    if Engine.Files.Current.Group.Category.Name = 'HTML/PHP' then
-    begin
-      P := Engine.Files.Current.SynEdit.CaretXY;
-      Engine.Files.Current.SynEdit.GetHighlighterAttriAtRowColEx(P, aToken, aTokenType, aStart, Attri);
-      aToken := DequoteStr(aToken);
-      if (aToken <> '') and (TtkTokenKind(aTokenType) = tkString) then
-      begin
-        aToken := StringReplace(aToken, '/', '\', [rfReplaceAll, rfIgnoreCase]);
-        if not TryOpen then
-        begin
-          aToken := ExtractFileName(aToken);
-          TryOpen;
-        end;
-      end;
-    end;
-  end;
+    Engine.Files.Current.OpenInclude;
 end;
 
 procedure TMainForm.CopyActUpdate(Sender: TObject);
@@ -1296,28 +1203,13 @@ end;
 
 procedure TMainForm.SelectAllActExecute(Sender: TObject);
 begin
-  Engine.Files.Current.SynEdit.SelectAll;
+  if Engine.Files.Current <> nil then
+    Engine.Files.Current.SynEdit.SelectAll;
 end;
 
-function TMainForm.CanOpenInclude: boolean;
-var
-  P: TPoint;
-  Attri: TSynHighlighterAttributes;
-  aToken: string;
-  aTokenType: integer;
-  aStart: integer;
+function TMainForm.CanOpenInclude: Boolean;
 begin
-  Result := False;
-  if (Engine.Files.Current <> nil) and (Engine.Files.Current.Group <> nil) then
-  begin
-    if Engine.Files.Current.Group.Category.Name = 'HTML/PHP' then
-    begin
-      P := Engine.Files.Current.SynEdit.CaretXY;
-      aToken := '';
-      Engine.Files.Current.SynEdit.GetHighlighterAttriAtRowColEx(P, aToken, aTokenType, aStart, Attri);
-      Result := (aToken <> '') and (TtkTokenKind(aTokenType) = tkString);
-    end;
-  end;
+  Result := (Engine.Files.Current <> nil) and Engine.Files.Current.CanOpenInclude;
 end;
 
 procedure TMainForm.OpenIncludeActUpdate(Sender: TObject);
@@ -1940,48 +1832,11 @@ begin
 end;
 
 procedure TMainForm.RunScript;
-var
-  aFile: string;
-  aRoot: string;
-  aUrlMode: TRunMode;
 begin
   if (Engine.Files.Current <> nil) and (fgkExecutable in Engine.Files.Current.Group.Kind) then
   begin
     SaveAllAct.Execute;
-    aFile := Engine.Files.Current.Name;
-    if (Engine.Session.IsOpened) then
-    begin
-      aFile := ExpandToPath(aFile, Engine.Session.Project.RootDir);
-      aUrlMode := Engine.Session.Project.RunMode;
-    end
-    else
-    begin
-      aUrlMode := prunNone;
-    end;
-
-    case aUrlMode of
-      prunUrl:
-      begin
-        if Engine.Session.IsOpened then
-        begin
-          aRoot := IncludeTrailingPathDelimiter(Engine.Session.Project.RootDir);
-          if SameText((Copy(aFile, 1, Length(aRoot))), aRoot) then
-          begin
-            aFile := Copy(aFile, Length(aRoot) + 1, MaxInt);
-            aFile := IncludeSlash(Engine.Session.Project.RootUrl) + aFile;
-            //ShellExecute(0, 'open', PChar(aFile), '', PChar(ExtractFilePath(aFile)), SW_SHOWNOACTIVATE);//TODO Jihad
-          end;
-        end;
-      end;
-      prunConsole:
-      begin
-        if Engine.Options.CompilerFolder <> '' then
-          aRoot := IncludeTrailingPathDelimiter(Engine.Options.CompilerFolder) + 'php.exe'
-        else
-          aRoot := 'php.exe';
-        //        ShellExecute(0, '', PChar(aRoot), PChar(aFile), PChar(ExtractFilePath(aFile)), SW_SHOWNOACTIVATE);
-      end;
-    end;
+    Engine.Files.Current.Run;
   end;
 end;
 
@@ -2339,12 +2194,12 @@ begin
   end;
 end;
 
-procedure TMainForm.PHPScriptError(Sender: TObject; AText: string; AType: TRunErrorType; AFileName: string; ALineNo: integer);
+procedure TMainForm.ScriptError(Sender: TObject; AText: string; AType: TRunErrorType; AFileName: string; ALineNo: integer);
 begin
   Log(0, RunErrorTypes[AType], AText, AFileName, ALineNo);
 end;
 
-procedure TMainForm.PHPLogMessage(Sender: TObject; AText: string);
+procedure TMainForm.LogMessage(Sender: TObject; AText: string);
 begin
   Log('Message', AText);
 end;

@@ -192,7 +192,11 @@ type
     procedure Reload;
     procedure Show;
     procedure Close;
+    procedure OpenInclude; virtual;
+    function CanOpenInclude: Boolean; virtual;
     function CheckChanged: boolean;
+    //run the file or run the project depend on the project type (perspective)
+    function Run: Boolean; virtual;
     property Mode: TEditorFileMode read FMode write SetMode default efmUnix;
     property ModeAsText: string read GetModeAsText;
     property Name: string read FName write FName;
@@ -1551,6 +1555,16 @@ begin
   aParent.UpdateState([ecsChanged, ecsState, ecsRefresh]);
 end;
 
+procedure TEditorFile.OpenInclude;
+begin
+
+end;
+
+function TEditorFile.CanOpenInclude: Boolean;
+begin
+  Result := False;
+end;
+
 constructor TEditorFile.Create(ACollection: TCollection);
 var
   cf: TSynGutterCodeFolding;
@@ -1730,6 +1744,11 @@ begin
     if mr = mrCancel then
       Result := False;
   end;
+end;
+
+function TEditorFile.Run: Boolean;
+begin
+  Result := False;
 end;
 
 procedure TEditorFile.UpdateAge;

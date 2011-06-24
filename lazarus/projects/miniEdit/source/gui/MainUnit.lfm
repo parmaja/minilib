@@ -1225,7 +1225,6 @@ object MainForm: TMainForm
       object Extractkeywords: TMenuItem
         Caption = 'Extract keywords'
         Visible = False
-        OnClick = ExtractkeywordsClick
       end
     end
     object Help1: TMenuItem
@@ -1234,7 +1233,7 @@ object MainForm: TMainForm
         Action = HelpIndexAct
         OnClick = HelpIndexActExecute
       end
-      object PHPKeyword1: TMenuItem
+      object KeywordMnu: TMenuItem
         Action = KeywordAct
         OnClick = KeywordActExecute
       end
@@ -1287,7 +1286,7 @@ object MainForm: TMainForm
     end
     object KeywordAct: TAction
       Category = 'Help'
-      Caption = 'PHP Keyword'
+      Caption = 'Keyword'
       OnExecute = KeywordActExecute
     end
     object OutputAct: TAction
@@ -1415,10 +1414,6 @@ object MainForm: TMainForm
       Caption = 'Check'
       OnExecute = CheckActExecute
       ShortCut = 16504
-    end
-    object AssociateAct: TAction
-      Category = 'Tools'
-      Caption = 'Associate'
     end
     object FolderOpenAllAct: TAction
       Category = 'Folder'
@@ -1640,10 +1635,6 @@ object MainForm: TMainForm
       ImageIndex = 38
       OnExecute = DBGStepOutActExecute
       ShortCut = 8310
-    end
-    object PHPIniConfigAct: TAction
-      Category = 'Tools'
-      Caption = 'PHP INI Config'
     end
     object DBGToggleBreakpoint: TAction
       Category = 'Debug'

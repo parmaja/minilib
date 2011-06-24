@@ -22,10 +22,16 @@ uses
   SynHighlighterJScript, SynHighlighterHTMLPHP, SynHighlighterPas;
 
 type
+
+  { TphpFile }
+
   TphpFile = class(TEditorFile)
   protected
     procedure NewSource; override;
   public
+    procedure OpenInclude; override;
+    function CanOpenInclude: Boolean; override;
+    function Run: Boolean; override;
   end;
 
   TCssFile = class(TEditorFile)
@@ -168,10 +174,13 @@ const
 
 function GetFileImageIndex(const FileName: string): integer;
 
+function GetWordAtRowColEx(SynEdit: TCustomSynEdit; XY: TPoint; IdentChars: TSynIdentChars; Select: boolean): string;
+function GetHighlighterAttriAtRowColEx2(SynEdit: TCustomSynEdit; const XY: TPoint; var Token: string; var TokenType, Start: integer; var Attri: TSynHighlighterAttributes; var Range: Pointer): boolean;
+
 implementation
 
 uses
-  IniFiles, mnXMLStreams;
+  IniFiles, mnXMLStreams, mnUtils;
 
 function ColorToRGBHex(Color: TColor): string;
 var
@@ -206,6 +215,88 @@ begin
   end
   else
     Result := clBlack;
+end;
+
+type
+  TSynCustomHighlighterHack = class(TSynCustomHighlighter);
+
+function GetHighlighterAttriAtRowColEx2(SynEdit: TCustomSynEdit; const XY: TPoint; var Token: string; var TokenType, Start: integer; var Attri: TSynHighlighterAttributes; var Range: Pointer): boolean;
+var
+  PosX, PosY: integer;
+  Line: string;
+  aToken: string;
+begin
+  with SynEdit do
+  begin
+    TokenType := 0;
+    Token := '';
+    Attri := nil;
+    Result := False;
+    PosY := XY.Y - 1;
+    if Assigned(Highlighter) and (PosY >= 0) and (PosY < Lines.Count) then
+    begin
+      Line := Lines[PosY];
+      if PosY = 0 then
+        Highlighter.ResetRange
+      else
+        Highlighter.SetRange(TSynCustomHighlighterHack(Highlighter).CurrentRanges.Range[PosY - 1]);
+      Highlighter.SetLine(Line, PosY);
+      PosX := XY.X;
+      Range := Highlighter.GetRange;
+      if PosX > 0 then
+        while not Highlighter.GetEol do
+        begin
+          Start := Highlighter.GetTokenPos + 1;
+          aToken := Highlighter.GetToken;
+          Range := Highlighter.GetRange;
+          if (PosX >= Start) and (PosX < Start + Length(aToken)) then
+          begin
+            Attri := Highlighter.GetTokenAttribute;
+            TokenType := Highlighter.GetTokenKind;
+            Token := aToken;
+            Result := True;
+            exit;
+          end;
+          Highlighter.Next;
+        end;
+    end;
+  end;
+end;
+
+function GetWordAtRowColEx(SynEdit: TCustomSynEdit; XY: TPoint; IdentChars: TSynIdentChars; Select: boolean): string;
+var
+  Line: string;
+  Len, Stop: integer;
+begin
+  Result := '';
+  if (XY.Y >= 1) and (XY.Y <= SynEdit.Lines.Count) then
+  begin
+    Line := SynEdit.Lines[XY.Y - 1];
+    Len := Length(Line);
+    if Len <> 0 then
+    begin
+      if (XY.X > 1) and (XY.X <= Len + 1) and not (Line[XY.X] in IdentChars) then
+        XY.X := XY.X - 1;
+      if (XY.X >= 1) and (XY.X <= Len + 1) and (Line[XY.X] in IdentChars) then
+      begin
+        Stop := XY.X;
+        while (Stop <= Len) and (Line[Stop] in IdentChars) do
+          Inc(Stop);
+        while (XY.X > 1) and (Line[XY.X - 1] in IdentChars) do
+          Dec(XY.X);
+        if Stop > XY.X then
+        begin
+          Result := Copy(Line, XY.X, Stop - XY.X);
+          if Select then
+          begin
+            SynEdit.CaretXY := XY;
+            SynEdit.BlockBegin := XY;
+            SynEdit.BlockEnd := Point(XY.x + Length(Result), XY.y);
+          end;
+        end;
+      end;
+    end;
+  end;
 end;
 
 { TmneEngine }
@@ -317,6 +408,110 @@ begin
   SynEdit.Lines.Add('?>');
   SynEdit.CaretY := 2;
   SynEdit.CaretX := 3;
+end;
+
+procedure TphpFile.OpenInclude;
+var
+  P: TPoint;
+  Attri: TSynHighlighterAttributes;
+  aToken: string;
+  aTokenType: integer;
+  aStart: integer;
+
+  function TryOpen: boolean;
+  begin
+    aToken := Engine.ExpandFileName(aToken);
+    Result := FileExists(aToken);
+    if Result then
+      Engine.Files.OpenFile(aToken);
+  end;
+
+begin
+  inherited;
+  if Engine.Files.Current <> nil then
+  begin
+    if Engine.Files.Current.Group.Category.Name = 'HTML/PHP' then
+    begin
+      P := Engine.Files.Current.SynEdit.CaretXY;
+      Engine.Files.Current.SynEdit.GetHighlighterAttriAtRowColEx(P, aToken, aTokenType, aStart, Attri);
+      aToken := DequoteStr(aToken);
+      if (aToken <> '') and (TtkTokenKind(aTokenType) = tkString) then
+      begin
+        aToken := StringReplace(aToken, '/', '\', [rfReplaceAll, rfIgnoreCase]);
+        if not TryOpen then
+        begin
+          aToken := ExtractFileName(aToken);
+          TryOpen;
+        end;
+      end;
+    end;
+  end;
+end;
+
+function TphpFile.CanOpenInclude: Boolean;
+var
+  P: TPoint;
+  Attri: TSynHighlighterAttributes;
+  aToken: string;
+  aTokenType: integer;
+  aStart: integer;
+begin
+  Result := False;
+  if (Group <> nil) then
+  begin
+    if Group.Category.Name = 'HTML/PHP' then
+    begin
+      P := SynEdit.CaretXY;
+      aToken := '';
+      SynEdit.GetHighlighterAttriAtRowColEx(P, aToken, aTokenType, aStart, Attri);
+      Result := (aToken <> '') and (TtkTokenKind(aTokenType) = tkString);
+    end;
+  end;
+end;
+
+function TphpFile.Run: Boolean;
+var
+  aFile: string;
+  aRoot: string;
+  aUrlMode: TRunMode;
+begin
+  Result := False;
+  aFile := Name;
+  if (Engine.Session.IsOpened) then
+  begin
+    aFile := ExpandToPath(aFile, Engine.Session.Project.RootDir);
+    aUrlMode := Engine.Session.Project.RunMode;
+  end
+  else
+  begin
+    aUrlMode := prunNone;
+  end;
+
+  case aUrlMode of
+    prunUrl:
+    begin
+      if Engine.Session.IsOpened then
+      begin
+        aRoot := IncludeTrailingPathDelimiter(Engine.Session.Project.RootDir);
+        if SameText((Copy(aFile, 1, Length(aRoot))), aRoot) then
+        begin
+          aFile := Copy(aFile, Length(aRoot) + 1, MaxInt);
+          aFile := IncludeSlash(Engine.Session.Project.RootUrl) + aFile;
+          //ShellExecute(0, 'open', PChar(aFile), '', PChar(ExtractFilePath(aFile)), SW_SHOWNOACTIVATE);//TODO Jihad
+          Result := True;
+        end;
+      end;
+    end;
+    prunConsole:
+    begin
+      if Engine.Options.CompilerFolder <> '' then
+        aRoot := IncludeTrailingPathDelimiter(Engine.Options.CompilerFolder) + 'php.exe'
+      else
+        aRoot := 'php.exe';
+      Result := True;
+      //        ShellExecute(0, '', PChar(aRoot), PChar(aFile), PChar(ExtractFilePath(aFile)), SW_SHOWNOACTIVATE);
+    end;
+  end;
 end;
 
 { TCSSFileCategory }
