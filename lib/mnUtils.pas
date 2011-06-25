@@ -20,6 +20,10 @@ uses
 
 const
   sUTF8BOM: array[1..3] of Char = (#$EF, #$BB, #$BF);
+{
+  StrHave: test the string if it have Separators
+}
+function StrHave(S:string; Separators: TSysCharSet): Boolean;
 
 function DequoteStr(Str: string; QuoteChar: string): string; overload;
 function DequoteStr(Str: string): string; overload; //deqoute use both of ' and "
@@ -59,6 +63,21 @@ function EscapeString(const S: string; Esc: string; Chars: array of AnsiChar; Es
 function DescapeString(const S: string; Esc: string; Chars: array of AnsiChar; Escapes: array of string): string;
 
 implementation
+
+function StrHave(S:string; Separators: TSysCharSet): Boolean;
+var
+  i: Integer;
+begin
+  Result := False;
+  for i := 1 to Length(S) do
+  begin
+     if S[i] in Separators then
+     begin
+       Result := True;
+       Break; 
+     end;
+  end;
+end;
 
 function QuoteStr(Str, QuoteChar: string): string;
 begin

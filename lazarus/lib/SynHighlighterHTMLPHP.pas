@@ -182,9 +182,6 @@ function RangeToProcessor(Range: Pointer): byte;
 function MixRange(Index, Main, Current: byte): cardinal;
 procedure SplitRange(Range: cardinal; var Index, Main, Current: byte);
 
-function GetWordAtRowColEx(SynEdit: TCustomSynEdit; XY: TPoint; IdentChars: TSynIdentChars; Select: boolean): string;
-function GetHighlighterAttriAtRowColEx2(SynEdit: TCustomSynEdit; const XY: TPoint; var Token: string; var TokenType, Start: integer; var Attri: TSynHighlighterAttributes; var Range: Pointer): boolean;
-
 implementation
 
 uses
@@ -205,88 +202,6 @@ begin
   Index := Range and $FF;
   Main := Range shr 8 and $FF;
   Current := Range shr 16 and $FF;
-end;
-
-type
-  TSynCustomHighlighterHack = class(TSynCustomHighlighter);
-
-function GetHighlighterAttriAtRowColEx2(SynEdit: TCustomSynEdit; const XY: TPoint; var Token: string; var TokenType, Start: integer; var Attri: TSynHighlighterAttributes; var Range: Pointer): boolean;
-var
-  PosX, PosY: integer;
-  Line: string;
-  aToken: string;
-begin
-  with SynEdit do
-  begin
-    TokenType := 0;
-    Token := '';
-    Attri := nil;
-    Result := False;
-    PosY := XY.Y - 1;
-    if Assigned(Highlighter) and (PosY >= 0) and (PosY < Lines.Count) then
-    begin
-      Line := Lines[PosY];
-      if PosY = 0 then
-        Highlighter.ResetRange
-      else
-        Highlighter.SetRange(TSynCustomHighlighterHack(Highlighter).CurrentRanges.Range[PosY - 1]);
-      Highlighter.SetLine(Line, PosY);
-      PosX := XY.X;
-      Range := Highlighter.GetRange;
-      if PosX > 0 then
-        while not Highlighter.GetEol do
-        begin
-          Start := Highlighter.GetTokenPos + 1;
-          aToken := Highlighter.GetToken;
-          Range := Highlighter.GetRange;
-          if (PosX >= Start) and (PosX < Start + Length(aToken)) then
-          begin
-            Attri := Highlighter.GetTokenAttribute;
-            TokenType := Highlighter.GetTokenKind;
-            Token := aToken;
-            Result := True;
-            exit;
-          end;
-          Highlighter.Next;
-        end;
-    end;
-  end;
-end;
-
-function GetWordAtRowColEx(SynEdit: TCustomSynEdit; XY: TPoint; IdentChars: TSynIdentChars; Select: boolean): string;
-var
-  Line: string;
-  Len, Stop: integer;
-begin
-  Result := '';
-  if (XY.Y >= 1) and (XY.Y <= SynEdit.Lines.Count) then
-  begin
-    Line := SynEdit.Lines[XY.Y - 1];
-    Len := Length(Line);
-    if Len <> 0 then
-    begin
-      if (XY.X > 1) and (XY.X <= Len + 1) and not (Line[XY.X] in IdentChars) then
-        XY.X := XY.X - 1;
-      if (XY.X >= 1) and (XY.X <= Len + 1) and (Line[XY.X] in IdentChars) then
-      begin
-        Stop := XY.X;
-        while (Stop <= Len) and (Line[Stop] in IdentChars) do
-          Inc(Stop);
-        while (XY.X > 1) and (Line[XY.X - 1] in IdentChars) do
-          Dec(XY.X);
-        if Stop > XY.X then
-        begin
-          Result := Copy(Line, XY.X, Stop - XY.X);
-          if Select then
-          begin
-            SynEdit.CaretXY := XY;
-            SynEdit.BlockBegin := XY;
-            SynEdit.BlockEnd := Point(XY.x + Length(Result), XY.y);
-          end;
-        end;
-      end;
-    end;
-  end;
 end;
 
 function TSynProcessor.KeyHash(ToHash: PChar): integer;
