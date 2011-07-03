@@ -53,7 +53,7 @@ uses
   mneAddons, mneAssociateForm,
   mnePHPClasses,
   mnePASClasses,
-  PHPUtils in '..\lib\PHPUtils.pas';
+  PHPUtils in '..\lib\PHPUtils.pas', mnePHPConfigForms;
 
 {$R *.res}
 

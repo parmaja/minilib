@@ -65,7 +65,6 @@ var
   s: string;
   i, c, t: Integer;
   aItem: TListItem;
-  Attrib: TPerspectiveAttributes;
 begin
   ItemsList.Items.BeginUpdate;
   with Engine do
@@ -75,14 +74,13 @@ begin
     t := 0;
     for i := 0 to Perspectives.Count - 1 do
     begin
-      Perspectives[i].ItemClass.GetAttributes(Attrib);
       aItem := ItemsList.Items.Add;
-      aItem.Caption := Attrib.Title;
-      aItem.SubItems.Add(Attrib.Description);
-      aItem.ImageIndex := Attrib.ImageIndex;
+      aItem.Caption := Perspectives[i].Title;
+      aItem.SubItems.Add(Perspectives[i].Description);
+      aItem.ImageIndex := Perspectives[i].ImageIndex;
       SetLength(Items, c + 1);
-      Items[c] := Attrib.Name;
-      if SameText(vSelect, Attrib.Name) then
+      Items[c] := Perspectives[i].Name;
+      if SameText(vSelect, Perspectives[i].Name) then
         t := c;
       inc(c);
     end;

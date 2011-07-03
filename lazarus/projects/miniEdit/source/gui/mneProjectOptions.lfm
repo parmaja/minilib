@@ -1,7 +1,7 @@
 object ProjectForm: TProjectForm
-  Left = 247
+  Left = 276
   Height = 230
-  Top = 165
+  Top = 186
   Width = 398
   BorderStyle = bsDialog
   Caption = 'Project Options'
@@ -63,11 +63,11 @@ object ProjectForm: TProjectForm
     Width = 384
   end
   object OkBtn: TButton
-    Left = 238
+    Left = 6
     Height = 25
     Top = 201
     Width = 75
-    Anchors = [akLeft, akBottom]
+    Anchors = [akRight, akBottom]
     Caption = '&Ok'
     Default = True
     ModalResult = 1
@@ -75,11 +75,11 @@ object ProjectForm: TProjectForm
     TabOrder = 7
   end
   object CancelBtn: TButton
-    Left = 318
+    Left = 86
     Height = 25
     Top = 201
     Width = 75
-    Anchors = [akLeft, akBottom]
+    Anchors = [akRight, akBottom]
     Cancel = True
     Caption = '&Cancel'
     ModalResult = 2

@@ -77,26 +77,34 @@ type
 
   TRunMode = (prunNone, prunConsole, prunUrl);
 
+  TEditorProjectOptions = class(TPersistent)
+  public
+  end;
+
   {
-    TProjectPerspective
+    TEditorPerspective
     Collect file groups and have special properties
     it must choosed by user when create a new project
   }
 
-  TPerspectiveAttributes = record
-    Name: string;
-    Title: string;
-    Description: string;
-    ImageIndex: Integer;
-  end;
-
   { TEditorPerspective }
 
-  TEditorPerspective = class(TPersistent)
+  TEditorPerspective = class(TmnXMLProfile)
   private
+  protected
+    FOSDepended: Boolean;
+    FImageIndex: integer;
+    FName: string;
+    FTitle: string;
+    FDescription: string;
   public
     constructor Create; virtual;
-    class procedure GetAttributes(var PerspectiveAttributes: TPerspectiveAttributes); virtual;
+    property Title: string read FTitle;
+    property Description: string read FDescription;
+    property Name: string read FName;
+    property ImageIndex: integer read FImageIndex;
+    //OSDepended: When save to file, the filename changed depend on the os system
+    property OSDepended: Boolean read FOSDepended;
   end;
 
   TEditorPerspectiveClass = class of TEditorPerspective;
@@ -105,6 +113,7 @@ type
 
   TEditorProject = class(TmnXMLProfile)
   private
+    FOptions: TEditorProjectOptions;
     FRunMode: TRunMode;
     FDescription: string;
     FRootUrl: string;
@@ -114,10 +123,11 @@ type
     FName: string;
     FSaveDesktop: boolean;
     FDesktop: TEditorDesktop;
-    FPerspective: TEditorPerspective;
     FCachedIdentifiers: THashedStringList;
     FCachedVariables: THashedStringList;
     FCachedAge: DWORD;
+    FPerspective: TEditorPerspective;
+    function GetPerspective: TEditorPerspective;
   protected
     procedure Loaded(Failed: boolean); override;
     procedure Saving; override;
@@ -131,6 +141,7 @@ type
     property CachedVariables: THashedStringList read FCachedVariables;
     property CachedIdentifiers: THashedStringList read FCachedIdentifiers;
     property CachedAge: cardinal read FCachedAge write FCachedAge;
+    property Perspective: TEditorPerspective read GetPerspective default nil;
   published
     property Name: string read FName write FName;
     property Description: string read FDescription write FDescription;
@@ -139,7 +150,8 @@ type
     property RunMode: TRunMode read FRunMode write FRunMode default prunUrl;
     property SaveDesktop: boolean read FSaveDesktop write FSaveDesktop default True;
     property Desktop: TEditorDesktop read FDesktop;
-    property Perspective: TEditorPerspective read FPerspective write FPerspective default nil;
+    //This is custom options depend on choosed perspective maybe have nil value
+    property Options: TEditorProjectOptions read FOptions write FOptions default nil;
   end;
 
   { TDebugMarksPart }
@@ -195,10 +207,10 @@ type
     procedure Show;
     procedure Close;
     procedure OpenInclude; virtual;
-    function CanOpenInclude: Boolean; virtual;
+    function CanOpenInclude: boolean; virtual;
     function CheckChanged: boolean;
     //run the file or run the project depend on the project type (perspective)
-    function Run: Boolean; virtual;
+    function Run: boolean; virtual;
     property Mode: TEditorFileMode read FMode write SetMode default efmUnix;
     property ModeAsText: string read GetModeAsText;
     property Name: string read FName write FName;
@@ -414,33 +426,43 @@ type
     property Engine: TEditorEngine read FEngine;
   end;
 
-  { TPerspectiveItem }
-
-  {
-    TPerspectiveItem registerd project Perspective
-  }
-
-  TPerspectiveItem = class(TObject)
-  private
-    FItemClass: TEditorPerspectiveClass;
-    FName: string;
-  protected
-  public
-    property Name: string read FName;
-    property ItemClass: TEditorPerspectiveClass read FItemClass;
-  end;
-
   { TPerspectives }
 
-  TPerspectiveList = class(TObjectList)
+  TPerspectives = class(TObjectList)
   private
     FEngine: TEditorEngine;
-    function GetItem(Index: integer): TPerspectiveItem;
+    function GetItem(Index: integer): TEditorPerspective;
   public
     constructor Create(AEngine: TEditorEngine);
-    function Find(vName: string): TPerspectiveItem;
+    function Find(vName: string): TEditorPerspective;
     procedure Add(vEditorPerspective: TEditorPerspectiveClass);
-    property Items[Index: integer]: TPerspectiveItem read GetItem; default;
+    property Items[Index: integer]: TEditorPerspective read GetItem; default;
+    property Engine: TEditorEngine read FEngine;
+  end;
+
+  { TEditorFormItem }
+
+  TEditorFormItem = class(TObject)
+  private
+    FObjectClass: TClass;
+    FItemClass: TCustomFormClass;
+  protected
+  public
+    property ObjectClass: TClass read FObjectClass;
+    property ItemClass: TCustomFormClass read FItemClass;
+  end;
+
+  { TEditorFormList }
+
+  TEditorFormList = class(TObjectList)
+  private
+    FEngine: TEditorEngine;
+    function GetItem(Index: integer): TEditorFormItem;
+  public
+    constructor Create(AEngine: TEditorEngine);
+    function Find(ObjectClass: TClass): TEditorFormItem;
+    procedure Add(vObjectClass: TClass; vFormClass: TCustomFormClass);
+    property Items[Index: integer]: TEditorFormItem read GetItem; default;
     property Engine: TEditorEngine read FEngine;
   end;
 
@@ -505,13 +527,14 @@ type
   TEditorEngine = class(TObject)
   private
     FDefaultGroup: string;
+    FForms: TEditorFormList;
     FOnChoosePerspective: TOnChoosePerspective;
-    FPerspectives: TPerspectiveList;
+    FPerspectives: TPerspectives;
     FSCM: TEditorSCM;
     FUpdateState: TEditorChangeState;
     FUpdateCount: integer;
     FFiles: TEditorFiles;
-    FWindow: TWinControl;
+    FFilesControl: TWinControl;
     FOptions: TEditorOptions;
     FSearchEngine: TSynEditSearch;
     FCategories: TFileCategories;
@@ -552,6 +575,9 @@ type
     procedure ProcessProject(const FileName: string);
     procedure RemoveProject(const FileName: string);
 
+    procedure LoadOptions;
+    procedure SaveOptions;
+
     procedure BeginUpdate;
     procedure UpdateState(State: TEditorChangeState);
     property Updating: boolean read GetUpdating;
@@ -565,7 +591,8 @@ type
 
     property Categories: TFileCategories read FCategories;
     property Groups: TFileGroups read FGroups;
-    property Perspectives: TPerspectiveList read FPerspectives;
+    property Perspectives: TPerspectives read FPerspectives;
+    property Forms: TEditorFormList read FForms;
     //
     property Files: TEditorFiles read FFiles;
     property Session: TEditorSession read FSession;
@@ -573,11 +600,11 @@ type
     property Debug: TEditorDebugger read FDebug;
     property SCM: TEditorSCM read FSCM;
     property MessagesList: TEditorMessagesList read FMessagesList;
-    property Window: TWinControl read FWindow write FWindow;
+    property FilesControl: TWinControl read FFilesControl write FFilesControl;
     property BrowseFolder: string read FBrowseFolder write SetBrowseFolder;
     //property MacroRecorder: TSynMacroRecorder read FMacroRecorder;
     property OnChangedState: TOnEditorChangeState read FOnChangedState write FOnChangedState;
-    property OnChoosePerspective:TOnChoosePerspective read FOnChoosePerspective write FOnChoosePerspective;
+    property OnChoosePerspective: TOnChoosePerspective read FOnChoosePerspective write FOnChoosePerspective;
     //debugger
   published
   end;
@@ -594,6 +621,13 @@ function DetectFileMode(const Contents: string): TEditorFileMode;
 function ChangeTabsToSpace(const Contents: string; TabWidth: integer): string;
 
 function Engine: TEditorEngine;
+
+const
+{$ifdef WINDOWS}
+  SysPlatform = 'WINDOWS';
+{$else}
+  SysPlatform = 'LINUX';
+{$endif}
 
 implementation
 
@@ -679,34 +713,68 @@ begin
   end;
 end;
 
-{ TEditorPerspective }
+{ TEditorFormList }
 
-constructor TEditorPerspective.Create;
+function TEditorFormList.GetItem(Index: integer): TEditorFormItem;
 begin
-  inherited;
+  Result := inherited Items[Index] as TEditorFormItem;
 end;
 
-class procedure TEditorPerspective.GetAttributes(var PerspectiveAttributes: TPerspectiveAttributes);
-begin
-  PerspectiveAttributes.Title := 'Default project type';
-  PerspectiveAttributes.Name := 'Default';
-  PerspectiveAttributes.ImageIndex := -1;
-end;
-
-{ TPerspectiveList }
-
-function TPerspectiveList.GetItem(Index: integer): TPerspectiveItem;
-begin
-  Result := inherited Items[Index] as TPerspectiveItem;
-end;
-
-constructor TPerspectiveList.Create(AEngine: TEditorEngine);
+constructor TEditorFormList.Create(AEngine: TEditorEngine);
 begin
   inherited Create;
   FEngine := AEngine;
 end;
 
-function TPerspectiveList.Find(vName: string): TPerspectiveItem;
+function TEditorFormList.Find(ObjectClass: TClass): TEditorFormItem;
+var
+  i: integer;
+begin
+  Result := nil;
+  for i := 0 to Count - 1 do
+  begin
+    if ObjectClass.InheritsFrom(Items[i].ObjectClass) then
+    begin
+      Result := Items[i] as TEditorFormItem;
+      break;
+    end;
+  end;
+end;
+
+procedure TEditorFormList.Add(vObjectClass: TClass; vFormClass: TCustomFormClass);
+var
+  aItem: TEditorFormItem;
+begin
+  aItem := TEditorFormItem.Create;
+  aItem.FObjectClass := vObjectClass;
+  aItem.FItemClass := vFormClass;
+  inherited Add(aItem);
+end;
+
+{ TEditorPerspective }
+
+constructor TEditorPerspective.Create;
+begin
+  inherited;
+  FTitle := 'Default project type';
+  FName := 'Default';
+  FImageIndex := -1;
+end;
+
+{ TPerspectives }
+
+function TPerspectives.GetItem(Index: integer): TEditorPerspective;
+begin
+  Result := inherited Items[Index] as TEditorPerspective;
+end;
+
+constructor TPerspectives.Create(AEngine: TEditorEngine);
+begin
+  inherited Create;
+  FEngine := AEngine;
+end;
+
+function TPerspectives.Find(vName: string): TEditorPerspective;
 var
   i: integer;
 begin
@@ -716,21 +784,17 @@ begin
     begin
       if SameText(Items[i].Name, vName) then
       begin
-        Result := Items[i] as TPerspectiveItem;
+        Result := Items[i] as TEditorPerspective;
         break;
       end;
     end;
 end;
 
-procedure TPerspectiveList.Add(vEditorPerspective: TEditorPerspectiveClass);
+procedure TPerspectives.Add(vEditorPerspective: TEditorPerspectiveClass);
 var
-  aItem: TPerspectiveItem;
-  Attrib: TPerspectiveAttributes;
+  aItem: TEditorPerspective;
 begin
-  vEditorPerspective.GetAttributes(Attrib);
-  aItem := TPerspectiveItem.Create;
-  aItem.FName := Attrib.Name;
-  aItem.FItemClass := vEditorPerspective;
+  aItem := vEditorPerspective.Create;
   inherited Add(aItem);
 end;
 
@@ -898,10 +962,11 @@ begin
   FMessagesList := TEditorMessagesList.Create;
   //FMacroRecorder := TSynMacroRecorder.Create(nil);
   //FMacroRecorder.OnStateChange := DoMacroStateChange;
+  FForms:=TEditorFormList.Create(Self);
   FOptions := TEditorOptions.Create(Self);
   FCategories := TFileCategories.Create(Self);
   FGroups := TFileGroups.Create(Self);
-  FPerspectives := TPerspectiveList.Create(Self);
+  FPerspectives := TPerspectives.Create(Self);
   FSearchEngine := TSynEditSearch.Create;
   FFiles := TEditorFiles.Create(TEditorFile);
   FFiles.FEngine := Self;
@@ -927,7 +992,6 @@ end;
 function TEditorEngine.CreateEditorProject: TEditorProject;
 begin
   Result := TEditorProject.Create(Self);
-  Result.Perspective := ChoosePerspective;
 end;
 
 destructor TEditorEngine.Destroy;
@@ -946,6 +1010,7 @@ begin
   FreeAndNil(FMessagesList);
   Engine.OnChangedState := nil;
   Engine.OnChoosePerspective := nil;
+  FreeAndNil(FForms);
   inherited;
 end;
 
@@ -1425,6 +1490,36 @@ begin
     Options.Projects.Delete(i);
 end;
 
+procedure TEditorEngine.LoadOptions;
+var
+  aFile: string;
+  i: Integer;
+begin
+  Options.Load(Workspace + 'mne-options.xml');
+  for i := 0 to Perspectives.Count - 1 do
+  begin
+    if Perspectives[i].OSDepended then
+      Perspectives[i].SafeLoadFromFile(LowerCase(Workspace + 'mne-' + SysPlatform + '-'+ Perspectives[i].Name + '.xml'))
+    else
+      Perspectives[i].SafeLoadFromFile(LowerCase(Workspace + 'mne-' + Perspectives[i].Name + '.xml'));
+  end;
+end;
+
+procedure TEditorEngine.SaveOptions;
+var
+  aFile: string;
+  i: Integer;
+begin
+  Options.Save;
+  for i := 0 to Perspectives.Count - 1 do
+  begin
+    if Perspectives[i].OSDepended then
+      Perspectives[i].SaveToFile(LowerCase(Workspace + 'mne-' + SysPlatform + '-'+ Perspectives[i].Name + '.xml'))
+    else
+      Perspectives[i].SaveToFile(LowerCase(Workspace + 'mne-' + Perspectives[i].Name + '.xml'));
+  end;
+end;
+
 procedure TEditorEngine.RemoveRecentProject(const FileName: string);
 var
   i: integer;
@@ -1601,7 +1696,7 @@ begin
 
 end;
 
-function TEditorFile.CanOpenInclude: Boolean;
+function TEditorFile.CanOpenInclude: boolean;
 begin
   Result := False;
 end;
@@ -1612,7 +1707,7 @@ var
 begin
   inherited;
   { There is more assigns in SetGroup }
-  FSynEdit := TSynEdit.Create(Engine.Window);
+  FSynEdit := TSynEdit.Create(Engine.FilesControl);
   FSynEdit.OnChange := @DoEdit;
   FSynEdit.OnStatusChange := @DoStatusChange;
   FSynEdit.OnGutterClick := @DoGutterClickEvent;
@@ -1627,14 +1722,14 @@ begin
     cf.Visible := False; //I hate code folding
   end;
   FSynEdit.TrimSpaceType := settLeaveLine;
-  FSynEdit.BoundsRect := Engine.Window.ClientRect;
+  FSynEdit.BoundsRect := Engine.FilesControl.ClientRect;
   FSynEdit.BorderStyle := bsNone;
   FSynEdit.ShowHint := True;
   FSynEdit.Visible := False;
   FSynEdit.Align := alClient;
   FSynEdit.Realign;
   FSynEdit.WantTabs := True;
-  FSynEdit.Parent := Engine.Window;
+  FSynEdit.Parent := Engine.FilesControl;
 end;
 
 destructor TEditorFile.Destroy;
@@ -1718,7 +1813,7 @@ begin
   SynEdit.Visible := True;
   SynEdit.Show;
   SynEdit.BringToFront;
-  (Engine.Window.Owner as TCustomForm).ActiveControl := SynEdit;
+  (Engine.FilesControl.Owner as TCustomForm).ActiveControl := SynEdit;
 end;
 
 procedure TEditorFile.SaveFile(AsNewFile: boolean);
@@ -1787,7 +1882,7 @@ begin
   end;
 end;
 
-function TEditorFile.Run: Boolean;
+function TEditorFile.Run: boolean;
 begin
   Result := False;
 end;
@@ -2022,7 +2117,7 @@ end;
 procedure TEditorOptions.SetDefaultPerspective(vPerspective: TEditorPerspective);
 begin
   FreeAndNil(FPerspective);
-  FPerspective:=vPerspective;
+  FPerspective := vPerspective;
 end;
 
 procedure TEditorOptions.SetProjects(const Value: TStringList);
@@ -2217,6 +2312,12 @@ begin
   FCachedVariables.Free;
   FCachedIdentifiers.Free;
   inherited;
+end;
+
+function TEditorProject.GetPerspective: TEditorPerspective;
+begin
+  Result := FPerspective;
+  //TODO
 end;
 
 procedure TEditorProject.Loaded(Failed: boolean);
@@ -2620,4 +2721,3 @@ begin
 end;
 
 end.
-

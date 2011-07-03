@@ -43,7 +43,7 @@ type
 
   TPascalPerspective = class(TEditorPerspective)
   public
-    class procedure GetAttributes(var PerspectiveAttributes: TPerspectiveAttributes); override;
+    constructor Create; override;
   end;
 
 implementation
@@ -53,12 +53,13 @@ uses
 
 { TPascalPerspective }
 
-class procedure TPascalPerspective.GetAttributes(var PerspectiveAttributes: TPerspectiveAttributes);
+constructor TPascalPerspective.Create;
 begin
-  PerspectiveAttributes.Title := 'Pascal project';
-  PerspectiveAttributes.Description := 'Pascal/FPC/Lazarus Files, *.pas, *.pp *.inc';
-  PerspectiveAttributes.Name := 'Pascal';
-  PerspectiveAttributes.ImageIndex := -1;
+  inherited Create;
+  FName := 'Pascal';
+  FTitle := 'Pascal project';
+  FDescription := 'Pascal/FPC/Lazarus Files, *.pas, *.pp *.inc';
+  FImageIndex := -1;
 end;
 
 { TPASFileCategory }

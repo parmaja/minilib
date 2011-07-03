@@ -501,15 +501,14 @@ begin
     aIniFile.Free;
   end;
   Engine.Workspace := aWorkspace;
-  Engine.Window := EditorsPnl;
+  Engine.FilesControl := EditorsPnl;
   //FileSet.Align := alClient;
   Engine.OnChangedState := @EditorChangeState;
   Engine.OnChoosePerspective := @ChoosePerspective;
   //  Engine.OnSynEditReplaceText:= OnSynEditReplaceText;
   if (aWorkspace <> '') then
   begin
-    aEngineFile := aWorkspace + 'mne-options.xml';
-    Engine.Options.Load(aEngineFile);
+    Engine.LoadOptions;
   end;
   FoldersAct.Checked := Engine.Options.ShowFolder;
   MessagesAct.Checked := Engine.Options.ShowMessages;
@@ -809,7 +808,7 @@ begin
   Engine.Options.WindowMaxmized := WindowState = wsMaximized;
   Engine.Options.BoundRect := BoundsRect;
   Engine.Session.Close;
-  Engine.Options.Save;
+  Engine.SaveOptions;
   if FRunProject <> nil then
     FRunProject.Terminate;
   Engine.OnChangedState := nil;
@@ -1338,12 +1337,10 @@ end;
 procedure TMainForm.ChoosePerspective(var vPerspective: TEditorPerspective);
 var
   aName: string;
-  a: TPerspectiveAttributes;
 begin
   if (vPerspective <> nil) then
   begin
-    vPerspective.GetAttributes(a);
-    aName := a.Name;
+    aName := vPerspective.Name;
   end
   else
     aName := '';
@@ -2209,4 +2206,3 @@ begin
 end;
 
 end.
-

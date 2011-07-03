@@ -116,6 +116,11 @@ type
     procedure ShowSetup;
   end;
 
+  IConfigFormAddon = interface(IAddon)
+    ['{4949B2E5-E8F6-41F5-94A0-0E5243352154}']
+    procedure SetSender(Sender: TObject);
+  end;
+
   IDebugAddon = interface(IAddon)
     ['{FB4CD381-EE59-4259-8A04-0F80F161710E}']
     procedure Reset;
