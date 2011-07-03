@@ -14,7 +14,7 @@ interface
 
 uses
   SysUtils, Messages, Graphics, Registry, Controls,
-  SynEdit, SynEditTextBuffer, SynHighlighterHTMLPHP, Contnrs, Classes, SynEditTypes, SynEditHighlighter, SynHighlighterHashEntries;
+  SynEdit, SynEditTextBuffer, SynHighlighterXHTML, Contnrs, Classes, SynEditTypes, SynEditHighlighter, SynHighlighterHashEntries;
 
 type
   TPHPRangeState = (rsphpUnknown, rsphpComment, rsphpStringSQ, rsphpStringDQ, rsphpVarExpansion);
@@ -591,4 +591,4 @@ begin
 end;
 
 end.
-
+

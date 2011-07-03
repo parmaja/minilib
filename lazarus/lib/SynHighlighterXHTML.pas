@@ -37,14 +37,14 @@ type
   PHashTable = ^THashTable;
   THashTable = array[char] of integer;
 
-  TSynHTMLPHPSyn = class;
+  TSynXHTMLSyn = class;
 
   TSynProcessor = class(TObject)
   private
     FKeywords: TSynHashEntryList;
     FName: string;
     FIndex: integer;
-    FParent: TSynHTMLPHPSyn;
+    FParent: TSynXHTMLSyn;
     function KeyComp(const aKey: string): boolean;
   protected
     procedure DoAddKeyword(AKeyword: string; AKind: integer);
@@ -60,13 +60,13 @@ type
     Identifiers: TIdentifierTable;
     HashTable: THashTable;
     ProcTable: array[#0..#255] of TProcTableProc;
-    constructor Create(AParent: TSynHTMLPHPSyn; Name: string); virtual;
+    constructor Create(AParent: TSynXHTMLSyn; Name: string); virtual;
     destructor Destroy; override;
     procedure Next; virtual;
     procedure InitIdent; virtual;
     procedure MakeIdentTable; virtual;
     procedure MakeMethodTables; virtual;
-    property Parent: TSynHTMLPHPSyn read FParent;
+    property Parent: TSynXHTMLSyn read FParent;
     property Name: string read FName write FName;
     property Index: integer read FIndex;
   end;
@@ -106,9 +106,9 @@ type
 
   //SynEdit
 
-  { TSynHTMLPHPSyn }
+  { TSynXHTMLSyn }
 
-  TSynHTMLPHPSyn = class(TSynCustomHighlighter)
+  TSynXHTMLSyn = class(TSynCustomHighlighter)
   private
     fCommentAttri: TSynHighlighterAttributes;
     fValueAttri: TSynHighlighterAttributes;
@@ -174,8 +174,8 @@ type
 const
 {$INCLUDE 'PHPKeywords.inc'}
 
-  SYNS_FilterHTMLPHP = 'PHP Files (*.php;*.php3;*.phtml;*.inc)|*.php;*.php3;*.phtml;*.inc';
-  SYNS_LangHTMLPHP = 'HTML/PHP';
+  SYNS_FilterXHTML = 'PHP Files (*.php;*.php3;*.phtml;*.inc)|*.php;*.php3;*.phtml;*.inc';
+  SYNS_LangXHTML = 'HTML/PHP';
 
 //range mix Main processor as byte and Current processor as byte and index Byte
 function RangeToProcessor(Range: cardinal): byte;
@@ -259,7 +259,7 @@ begin
   FKeywords[HashValue] := TSynHashEntry.Create(AKeyword, AKind);
 end;
 
-procedure TSynHTMLPHPSyn.MakeMethodTables;
+procedure TSynXHTMLSyn.MakeMethodTables;
 var
   i: integer;
 begin
@@ -267,7 +267,7 @@ begin
     Processors[i].MakeMethodTables;
 end;
 
-procedure TSynHTMLPHPSyn.MakeIdentTable;
+procedure TSynXHTMLSyn.MakeIdentTable;
 var
   i: integer;
 begin
@@ -275,7 +275,7 @@ begin
     Processors[i].MakeIdentTable;
 end;
 
-constructor TSynHTMLPHPSyn.Create(AOwner: TComponent);
+constructor TSynXHTMLSyn.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
   FProcessors := TSynProcessors.Create;
@@ -348,16 +348,16 @@ begin
   SetAttributesOnChange(@DefHighlightChange);
   InitIdent;
   MakeMethodTables;
-  FDefaultFilter := SYNS_FilterHTMLPHP;
+  FDefaultFilter := SYNS_FilterXHTML;
 end;
 
-destructor TSynHTMLPHPSyn.Destroy;
+destructor TSynXHTMLSyn.Destroy;
 begin
   FProcessors.Free;
   inherited;
 end;
 
-procedure TSynHTMLPHPSyn.SetLine(const NewValue: string; LineNumber: integer);
+procedure TSynXHTMLSyn.SetLine(const NewValue: string; LineNumber: integer);
 begin
   FLine := PChar(NewValue);
   FLineNumber := LineNumber;
@@ -365,7 +365,7 @@ begin
   Next;
 end;
 
-function TSynHTMLPHPSyn.IsKeyword(const AKeyword: string): boolean;
+function TSynXHTMLSyn.IsKeyword(const AKeyword: string): boolean;
 var
   tk: TtkTokenKind;
 begin
@@ -373,12 +373,12 @@ begin
   Result := tk in [tkFunction, tkKeyword, tkHTML];
 end;
 
-procedure TSynHTMLPHPSyn.Next;
+procedure TSynXHTMLSyn.Next;
 begin
   Processors.Current.Next;
 end;
 
-function TSynHTMLPHPSyn.GetDefaultAttribute(Index: integer): TSynHighlighterAttributes;
+function TSynXHTMLSyn.GetDefaultAttribute(Index: integer): TSynHighlighterAttributes;
 begin
   case Index of
     SYN_ATTR_COMMENT: Result := fCommentAttri;
@@ -392,17 +392,17 @@ begin
   end;
 end;
 
-function TSynHTMLPHPSyn.GetEOL: boolean;
+function TSynXHTMLSyn.GetEOL: boolean;
 begin
   Result := FTokenID = tkNull;
 end;
 
-function TSynHTMLPHPSyn.GetRange: Pointer;
+function TSynXHTMLSyn.GetRange: Pointer;
 begin
   Result := Pointer(MixRange(Processors.Current.Index, Processors.Main.GetRange, Processors.Current.GetRange));
 end;
 
-function TSynHTMLPHPSyn.GetToken: string;
+function TSynXHTMLSyn.GetToken: string;
 var
   Len: longint;
 begin
@@ -411,18 +411,18 @@ begin
   SetString(Result, (FLine + FTokenPos), Len);
 end;
 
-procedure TSynHTMLPHPSyn.GetTokenEx(out TokenStart: PChar; out TokenLength: integer);
+procedure TSynXHTMLSyn.GetTokenEx(out TokenStart: PChar; out TokenLength: integer);
 begin
   TokenLength := Run - FTokenPos;
   TokenStart := FLine + FTokenPos;
 end;
 
-function TSynHTMLPHPSyn.GetTokenID: TtkTokenKind;
+function TSynXHTMLSyn.GetTokenID: TtkTokenKind;
 begin
   Result := FTokenID;
 end;
 
-function TSynHTMLPHPSyn.GetTokenAttribute: TSynHighlighterAttributes;
+function TSynXHTMLSyn.GetTokenAttribute: TSynHighlighterAttributes;
 begin
   case GetTokenID of
     tkComment: Result := fCommentAttri;
@@ -444,17 +444,17 @@ begin
   end;
 end;
 
-function TSynHTMLPHPSyn.GetTokenKind: integer;
+function TSynXHTMLSyn.GetTokenKind: integer;
 begin
   Result := Ord(FTokenID);
 end;
 
-function TSynHTMLPHPSyn.GetTokenPos: integer;
+function TSynXHTMLSyn.GetTokenPos: integer;
 begin
   Result := FTokenPos;
 end;
 
-procedure TSynHTMLPHPSyn.ResetRange;
+procedure TSynXHTMLSyn.ResetRange;
 var
   i: integer;
 begin
@@ -463,7 +463,7 @@ begin
   Processors.Switch(Processors.MainProcessor);
 end;
 
-procedure TSynHTMLPHPSyn.SetRange(Value: Pointer);
+procedure TSynXHTMLSyn.SetRange(Value: Pointer);
 var
   aIndex, aMain, aCurrent: byte;
   i: integer;
@@ -481,18 +481,18 @@ begin
     Processors.Current.SetRange(aCurrent);
 end;
 
-function TSynHTMLPHPSyn.GetIdentChars: TSynIdentChars;
+function TSynXHTMLSyn.GetIdentChars: TSynIdentChars;
 begin
   //  Result := TSynValidStringChars + ['&', '#', ';', '$'];
   Result := TSynValidStringChars + ['&', '#', '$'];
 end;
 
-class function TSynHTMLPHPSyn.GetLanguageName: string;
+class function TSynXHTMLSyn.GetLanguageName: string;
 begin
-  Result := SYNS_LangHTMLPHP;
+  Result := SYNS_LangXHTML;
 end;
 
-function TSynHTMLPHPSyn.GetSampleSource: string;
+function TSynXHTMLSyn.GetSampleSource: string;
 begin
   Result := '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">'#13#10 +
     '<html dir="ltr">'#13#10 +
@@ -532,7 +532,7 @@ procedure TSynProcessor.Next;
 begin
 end;
 
-constructor TSynProcessor.Create(AParent: TSynHTMLPHPSyn; Name: string);
+constructor TSynProcessor.Create(AParent: TSynXHTMLSyn; Name: string);
 begin
   inherited Create;
   FName := Name;
@@ -692,7 +692,7 @@ begin
   SetCurrent(Items[Index]);
 end;
 
-procedure TSynHTMLPHPSyn.InitIdent;
+procedure TSynXHTMLSyn.InitIdent;
 var
   i: integer;
 begin

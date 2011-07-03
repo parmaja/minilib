@@ -19,7 +19,7 @@ uses
   Registry, EditorEngine, mnXMLRttiProfile, mnXMLUtils,
   SynEditTypes, SynCompletion, SynHighlighterHashEntries, EditorProfiles,
   SynHighlighterCSS, SynHighlighterSQL, SynHighlighterXML, SynHighlighterApache,
-  SynHighlighterJScript, SynHighlighterHTMLPHP, SynHighlighterPas;
+  SynHighlighterJScript, SynHighlighterXHTML, SynHighlighterPas;
 
 type
   { TPASFile }

@@ -19,7 +19,7 @@ uses
   Registry, EditorEngine, mnXMLRttiProfile, mnXMLUtils,
   SynEditTypes, SynCompletion, SynHighlighterHashEntries, EditorProfiles,
   SynHighlighterCSS, SynHighlighterSQL, SynHighlighterXML, SynHighlighterApache,
-  SynHighlighterJScript, SynHighlighterHTMLPHP, SynHighlighterPas,
+  SynHighlighterJScript, SynHighlighterXHTML, SynHighlighterPas,
   mneClasses;
 
 type
@@ -227,7 +227,7 @@ end;
 
 function TPHPFileCategory.CreateHighlighter: TSynCustomHighlighter;
 begin
-  Result := TSynHTMLPHPSyn.Create(nil);
+  Result := TSynXHTMLSyn.Create(nil);
 end;
 
 procedure TPHPFileCategory.DoAddCompletion(AKeyword: string; AKind: integer);
@@ -255,10 +255,10 @@ begin
   try
     Completion.ItemList.Clear;
     aSynEdit := (Sender as TSynCompletion).TheForm.CurrentEditor as TCustomSynEdit;
-    if (aSynEdit <> nil) and (Highlighter is TSynHTMLPHPSyn) then
+    if (aSynEdit <> nil) and (Highlighter is TSynXHTMLSyn) then
     begin
-      aPHPProcessor := (Highlighter as TSynHTMLPHPSyn).Processors.IndexOf('php');
-      aHTMLProcessor := (Highlighter as TSynHTMLPHPSyn).Processors.IndexOf('html');
+      aPHPProcessor := (Highlighter as TSynXHTMLSyn).Processors.IndexOf('php');
+      aHTMLProcessor := (Highlighter as TSynXHTMLSyn).Processors.IndexOf('html');
       P := aSynEdit.CaretXY;
       GetHighlighterAttriAtRowColEx2(aSynEdit, P, S, aTokenType, aStart, Attri, aRange);
       aProcessor := RangeToProcessor(PtrUInt(aRange));
@@ -380,9 +380,9 @@ var
   s: string;
   i, f: integer;
   aPHPProcessor: integer;
-  aHighlighter: TSynHTMLPHPSyn;
+  aHighlighter: TSynXHTMLSyn;
 begin
-  aHighlighter := TSynHTMLPHPSyn.Create(nil);
+  aHighlighter := TSynXHTMLSyn.Create(nil);
   aFile := TStringList.Create;
   try
     aPHPProcessor := aHighlighter.Processors.Find('php').Index;

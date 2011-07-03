@@ -598,7 +598,7 @@ function Engine: TEditorEngine;
 implementation
 
 uses
-  SynHighlighterApache, SynHighlighterHTMLPHP, SynHighlighterHashEntries, SynGutterCodeFolding,
+  SynHighlighterApache, SynHighlighterXHTML, SynHighlighterHashEntries, SynGutterCodeFolding,
   Registry, SearchForms, SynEditTextBuffer,
   mneResources;
 

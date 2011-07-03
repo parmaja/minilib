@@ -14,7 +14,7 @@ interface
 
 uses
   SysUtils, Messages, Graphics, Registry, Controls,
-  SynEdit, SynEditTextBuffer, SynHighlighterHTMLPHP, Classes, SynEditTypes, SynEditHighlighter, SynHighlighterHashEntries;
+  SynEdit, SynEditTextBuffer, SynHighlighterXHTML, Classes, SynEditTypes, SynEditHighlighter, SynHighlighterHashEntries;
 
 type
   THTMLRangeState = (rshtmlText, rshtmlAmpersand, rshtmlComment, rshtmlKeyword, rshtmlParam,

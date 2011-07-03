@@ -32,7 +32,7 @@ uses
   mneResources in 'mneResources.pas' {EditorResource: TDataModule},
   SelectFiles in '..\editor\SelectFiles.pas' {SelectFileForm},
   mneSettings in 'mneSettings.pas' {EditorSettingForm},
-  SynHighlighterHTMLPHP in '..\lib\SynHighlighterHTMLPHP.pas',
+  SynHighlighterXHTML in '..\lib\SynHighlighterXHTML.pas',
   mneClasses in 'mneClasses.pas',
   mneConsts in 'mneConsts.pas',
   AboutForms in 'AboutForms.pas' {AboutForm},
