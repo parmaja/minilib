@@ -178,7 +178,7 @@ const
   SYNS_LangHTMLPHP = 'HTML/PHP';
 
 //range mix Main processor as byte and Current processor as byte and index Byte
-function RangeToProcessor(Range: Pointer): byte;
+function RangeToProcessor(Range: cardinal): byte;
 function MixRange(Index, Main, Current: byte): cardinal;
 procedure SplitRange(Range: cardinal; var Index, Main, Current: byte);
 
@@ -187,9 +187,9 @@ implementation
 uses
   SynEditStrConst, PHPProcessor, HTMLProcessor, VarUtils;
 
-function RangeToProcessor(Range: Pointer): byte;
+function RangeToProcessor(Range: cardinal): byte;
 begin
-  Result := PtrUInt(Range) and $FF;
+  Result := Range and $FF;
 end;
 
 function MixRange(Index, Main, Current: byte): cardinal;

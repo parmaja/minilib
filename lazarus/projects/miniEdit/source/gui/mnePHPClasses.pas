@@ -261,7 +261,7 @@ begin
       aHTMLProcessor := (Highlighter as TSynHTMLPHPSyn).Processors.IndexOf('html');
       P := aSynEdit.CaretXY;
       GetHighlighterAttriAtRowColEx2(aSynEdit, P, S, aTokenType, aStart, Attri, aRange);
-      aProcessor := RangeToProcessor(aRange);
+      aProcessor := RangeToProcessor(PtrUInt(aRange));
       if aTokenType = Ord(tkProcessor) then
         Abort
       //CanExecute := False
@@ -329,7 +329,7 @@ begin
               Highlighter.SetLine(aSynEdit.Lines[i], 1);
               while not Highlighter.GetEol do
               begin
-                if (Highlighter.GetTokenPos <> (aStart - 1)) and (RangeToProcessor(Highlighter.GetRange) = aPHPProcessor) then
+                if (Highlighter.GetTokenPos <> (aStart - 1)) and (RangeToProcessor(PtrUInt(Highlighter.GetRange)) = aPHPProcessor) then
                 begin
                   if (Highlighter.GetTokenKind = Ord(tkVariable)) then
                   begin
@@ -395,7 +395,7 @@ begin
         aHighlighter.SetLine(aFile[i], 1);
         while not aHighlighter.GetEol do
         begin
-          if (RangeToProcessor(aHighlighter.GetRange) = aPHPProcessor) then
+          if (RangeToProcessor(PtrUInt(aHighlighter.GetRange)) = aPHPProcessor) then
           begin
             if (aHighlighter.GetTokenKind = Ord(tkVariable)) then
             begin
