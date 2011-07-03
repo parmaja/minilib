@@ -8,7 +8,7 @@ interface
 
 uses
   HTMLProcessor, PHPProcessor, PHPUtils, SynHighlighterApache, 
-  SynHighlighterHTMLPHP, SynHighlighterSQLite, LazarusPackageIntf;
+  SynHighlighterXHTML, SynHighlighterSQLite, LazarusPackageIntf;
 
 implementation
 

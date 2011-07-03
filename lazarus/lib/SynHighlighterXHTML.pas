@@ -1,4 +1,4 @@
-unit SynHighlighterHTMLPHP;
+unit SynHighlighterXHTML;
 
 {$mode objfpc}{$H+}
 {**

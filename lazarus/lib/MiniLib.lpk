@@ -38,8 +38,8 @@
         <UnitName Value="SynHighlighterApache"/>
       </Item5>
       <Item6>
-        <Filename Value="SynHighlighterHTMLPHP.pas"/>
-        <UnitName Value="SynHighlighterHTMLPHP"/>
+        <Filename Value="SynHighlighterXHTML.pas"/>
+        <UnitName Value="SynHighlighterXHTML"/>
       </Item6>
       <Item7>
         <Filename Value="SynHighlighterSQLite.pas"/>
