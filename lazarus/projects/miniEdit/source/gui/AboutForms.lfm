@@ -2,11 +2,11 @@ object AboutForm: TAboutForm
   Left = 425
   Height = 330
   Top = 160
-  Width = 532
+  Width = 467
   BorderStyle = bsDialog
   Caption = 'About'
   ClientHeight = 330
-  ClientWidth = 532
+  ClientWidth = 467
   Font.Height = -11
   Font.Name = 'MS Sans Serif'
   OnClose = FormClose
@@ -264,8 +264,8 @@ object AboutForm: TAboutForm
     Left = 72
     Height = 14
     Top = 50
-    Width = 229
-    Caption = 'http://www.parmaja.com/projects/LightPHPEdit'
+    Width = 193
+    Caption = 'http://www.github.com/parmaja/miniedit'
     Font.Color = clBlue
     Font.Height = -11
     Font.Name = 'MS Sans Serif'
@@ -282,11 +282,11 @@ object AboutForm: TAboutForm
     ParentColor = False
   end
   object Label6: TLabel
-    Left = 415
+    Left = 350
     Height = 14
     Top = 311
     Width = 113
-    Anchors = [akLeft, akBottom]
+    Anchors = [akRight, akBottom]
     Caption = 'Writen by: Zaher Dirkey'
     ParentColor = False
   end
@@ -410,7 +410,7 @@ object AboutForm: TAboutForm
     Left = 2
     Height = 123
     Top = 70
-    Width = 527
+    Width = 462
     Anchors = [akTop, akLeft, akRight, akBottom]
     Font.CharSet = ARABIC_CHARSET
     Font.Height = -12

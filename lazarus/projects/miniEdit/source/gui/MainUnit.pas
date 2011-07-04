@@ -443,7 +443,7 @@ type
     function GetFolder: string;
     procedure DeleteCurrentWatch;
     procedure MoveListIndex(vForward: boolean);
-    procedure OnSynEditReplaceText(Sender: TObject; const ASearch, AReplace: string; Line, Column: integer; var ReplaceAction: TSynReplaceAction);
+    procedure OnReplaceText(Sender: TObject; const ASearch, AReplace: string; Line, Column: integer; var ReplaceAction: TSynReplaceAction);
   protected
     FRunProject: TRunProject;
     LastGotoLine: integer;
@@ -505,7 +505,7 @@ begin
   //FileSet.Align := alClient;
   Engine.OnChangedState := @EditorChangeState;
   Engine.OnChoosePerspective := @ChoosePerspective;
-  //  Engine.OnSynEditReplaceText:= OnSynEditReplaceText;
+  Engine.OnReplaceText:= @OnReplaceText;
   if (aWorkspace <> '') then
   begin
     Engine.LoadOptions;
@@ -2180,7 +2180,7 @@ begin
   QuickFindAct.Checked := QuickFindPnl.Visible;
 end;
 
-procedure TMainForm.OnSynEditReplaceText(Sender: TObject; const ASearch, AReplace: string; Line, Column: integer; var ReplaceAction: TSynReplaceAction);
+procedure TMainForm.OnReplaceText(Sender: TObject; const ASearch, AReplace: string; Line, Column: integer; var ReplaceAction: TSynReplaceAction);
 begin
   case MessageDlg(Format('Replace this ocurrence of "%s" with "%s"?', [ASearch, AReplace]), mtConfirmation, [mbYes, mbNo, mbAll, mbCancel], 0) of
     mrYes: ReplaceAction := raReplace;

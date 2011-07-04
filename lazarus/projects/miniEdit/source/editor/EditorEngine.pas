@@ -547,6 +547,7 @@ type
     FBrowseFolder: string;
     //FMacroRecorder: TSynMacroRecorder;
     FWorkSpace: string;
+    FOnReplaceText: TReplaceTextEvent;
     function GetPerspective: TEditorPerspective;
     function GetRoot: string;
     function GetUpdating: boolean;
@@ -562,10 +563,11 @@ type
     function CreateDebugger: TEditorDebugger;
     function CreateSCM: TEditorSCM;
     function ChoosePerspective: TEditorPerspective;
+    procedure DoReplaceText(Sender: TObject; const ASearch, AReplace: string; Line, Column: integer; var ReplaceAction: TSynReplaceAction);
   public
     constructor Create; virtual;
     destructor Destroy; override;
-    //
+    //I used it for search in files
     function SearchReplace(const FileName: string; const ALines: TStringList; const ASearch, AReplace: string; OnFoundEvent: TOnFoundEvent; AOptions: TSynSearchOptions): integer;
     //Recent
     procedure ProcessRecentFile(const FileName: string);
@@ -605,6 +607,7 @@ type
     //property MacroRecorder: TSynMacroRecorder read FMacroRecorder;
     property OnChangedState: TOnEditorChangeState read FOnChangedState write FOnChangedState;
     property OnChoosePerspective: TOnChoosePerspective read FOnChoosePerspective write FOnChoosePerspective;
+    property OnReplaceText: TReplaceTextEvent read FOnReplaceText write FOnReplaceText;
     //debugger
   published
   end;
@@ -864,7 +867,7 @@ begin
 
         if (ssoReplace in AOptions) then
         begin
-          //aReplaceText := SearchEngine.Replace(ASearch, AReplace);
+          //aReplaceText := SearchEngine.Replace(ASearch, AReplace);//need to review
           nReplaceLen := Length(aReplaceText);
           aLine := Copy(aLine, 1, nChar - 1) + aReplaceText + Copy(aLine, nChar + nSearchLen, MaxInt);
           if (nSearchLen <> nReplaceLen) then
@@ -1120,6 +1123,12 @@ begin
     FOnChoosePerspective(Result);
   if Result = nil then
     Result := TEditorPerspective.Create;
+end;
+
+procedure TEditorEngine.DoReplaceText(Sender: TObject; const ASearch, AReplace: string; Line, Column: integer; var ReplaceAction: TSynReplaceAction);
+begin
+  if Assigned(FOnReplaceText) then
+    FOnReplaceText(Sender, ASearch, AReplace, Line, Column, ReplaceAction);
 end;
 
 function TEditorFiles.FindFile(const vFileName: string): TEditorFile;
@@ -1713,6 +1722,7 @@ begin
   FSynEdit.OnGutterClick := @DoGutterClickEvent;
   FSynEdit.OnSpecialLineMarkup := @DoSpecialLineMarkup;
   FSynEdit.BookMarkOptions.BookmarkImages := EditorResource.BookmarkImages;
+  FSynEdit.OnReplaceText := @Engine.DoReplaceText;
   //  FSynEdit.Gutter.MarksPart(0).DebugMarksImageIndex := 0;
   //FSynEdit.Gutter.MarksPart.DebugMarksImageIndex := 0;
   //FSynEdit.Gutter.Parts.Add(TSynBreakPointItem.Create(FSynEdit.Gutter.Parts));
