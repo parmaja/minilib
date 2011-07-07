@@ -38,11 +38,8 @@ type
     procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
     procedure FormCreate(Sender: TObject);
     procedure SiteLblClick(Sender: TObject);
-    procedure TabControl1Changing(Sender: TObject; var AllowChange: Boolean);
   private
-    { Private declarations }
   public
-    { Public declarations }
   end;
 
 implementation
@@ -51,7 +48,7 @@ implementation
 
 procedure TAboutForm.FormClose(Sender: TObject; var CloseAction: TCloseAction);
 begin
-  CloseAction := caHide;
+  CloseAction := caFree;
 end;
 
 procedure TAboutForm.FormCreate(Sender: TObject);
@@ -62,12 +59,6 @@ end;
 procedure TAboutForm.SiteLblClick(Sender: TObject);
 begin
   openurl((Sender as TLabel).Caption);
-end;
-
-procedure TAboutForm.TabControl1Changing(Sender: TObject;
-  var AllowChange: Boolean);
-begin
-
 end;
 
 end.

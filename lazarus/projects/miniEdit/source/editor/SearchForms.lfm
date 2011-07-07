@@ -1,16 +1,16 @@
 object SearchForm: TSearchForm
   Left = 256
-  Height = 216
+  Height = 230
   Top = 77
   Width = 332
   BorderStyle = bsDialog
   Caption = 'Search Text'
-  ClientHeight = 216
+  ClientHeight = 230
   ClientWidth = 332
   Font.Height = -11
   Font.Name = 'MS Sans Serif'
   Position = poMainFormCenter
-  LCLVersion = '0.9.29'
+  LCLVersion = '0.9.31'
   object Label1: TLabel
     Left = 11
     Height = 14
@@ -33,58 +33,67 @@ object SearchForm: TSearchForm
     Top = 62
     Width = 154
     Caption = 'Options'
-    ClientHeight = 101
-    ClientWidth = 150
-    TabOrder = 3
-    object SearchCaseSensitiveChk: TCheckBox
-      Left = 8
-      Height = 17
-      Top = 9
-      Width = 90
-      Caption = 'C&ase sensitivity'
-      TabOrder = 0
-    end
-    object SearchWholeWordsChk: TCheckBox
-      Left = 8
-      Height = 17
-      Top = 29
-      Width = 102
-      Caption = '&Whole words only'
-      TabOrder = 1
-    end
-    object SearchFromCursorChk: TCheckBox
-      Left = 8
-      Height = 17
-      Top = 49
-      Width = 108
-      Caption = 'Search from &Cursor'
-      TabOrder = 2
-    end
-    object SearchSelectedOnlyChk: TCheckBox
-      Left = 8
-      Height = 17
-      Top = 70
-      Width = 102
-      Caption = '&Selected text only'
-      TabOrder = 3
-    end
-  end
-  object SearchDirectionGrp: TRadioGroup
-    Left = 168
-    Height = 56
-    Top = 62
-    Width = 154
-    AutoFill = True
-    Caption = 'Direction'
-    ChildSizing.LeftRightSpacing = 6
-    ChildSizing.TopBottomSpacing = 6
+    ChildSizing.LeftRightSpacing = 5
+    ChildSizing.TopBottomSpacing = 2
+    ChildSizing.HorizontalSpacing = 5
     ChildSizing.EnlargeHorizontal = crsHomogenousChildResize
     ChildSizing.EnlargeVertical = crsHomogenousChildResize
     ChildSizing.ShrinkHorizontal = crsScaleChilds
     ChildSizing.ShrinkVertical = crsScaleChilds
     ChildSizing.Layout = cclLeftToRightThenTopToBottom
     ChildSizing.ControlsPerLine = 1
-    ClientHeight = 38
+    ClientHeight = 101
+    ClientWidth = 150
+    TabOrder = 3
+    object SearchCaseSensitiveChk: TCheckBox
+      Left = 5
+      Height = 25
+      Top = 2
+      Width = 140
+      Caption = 'C&ase sensitivity'
+      TabOrder = 0
+    end
+    object SearchWholeWordsChk: TCheckBox
+      Left = 5
+      Height = 25
+      Top = 27
+      Width = 140
+      Caption = '&Whole words only'
+      TabOrder = 1
+    end
+    object SearchFromCursorChk: TCheckBox
+      Left = 5
+      Height = 25
+      Top = 52
+      Width = 140
+      Caption = 'Search from &Cursor'
+      TabOrder = 2
+    end
+    object SearchSelectedOnlyChk: TCheckBox
+      Left = 5
+      Height = 22
+      Top = 77
+      Width = 140
+      Caption = '&Selected text only'
+      TabOrder = 3
+    end
+  end
+  object SearchDirectionGrp: TRadioGroup
+    Left = 169
+    Height = 69
+    Top = 62
+    Width = 154
+    AutoFill = True
+    Caption = 'Direction'
+    ChildSizing.LeftRightSpacing = 6
+    ChildSizing.TopBottomSpacing = 2
+    ChildSizing.EnlargeHorizontal = crsHomogenousChildResize
+    ChildSizing.EnlargeVertical = crsHomogenousChildResize
+    ChildSizing.ShrinkHorizontal = crsScaleChilds
+    ChildSizing.ShrinkVertical = crsScaleChilds
+    ChildSizing.Layout = cclLeftToRightThenTopToBottom
+    ChildSizing.ControlsPerLine = 1
+    ClientHeight = 51
     ClientWidth = 150
     ItemIndex = 0
     Items.Strings = (
@@ -96,7 +105,7 @@ object SearchForm: TSearchForm
   object OKBtn: TButton
     Left = 8
     Height = 26
-    Top = 186
+    Top = 200
     Width = 75
     Anchors = [akLeft, akBottom]
     Caption = 'OK'
@@ -107,7 +116,7 @@ object SearchForm: TSearchForm
   object CancelBtn: TButton
     Left = 87
     Height = 26
-    Top = 186
+    Top = 200
     Width = 75
     Anchors = [akLeft, akBottom]
     Cancel = True
@@ -134,29 +143,38 @@ object SearchForm: TSearchForm
     TabOrder = 1
   end
   object ReplaceGrp: TGroupBox
-    Left = 168
-    Height = 60
-    Top = 121
-    Width = 152
+    Left = 169
+    Height = 71
+    Top = 132
+    Width = 154
     Caption = 'Replace'
-    ClientHeight = 42
-    ClientWidth = 148
+    ChildSizing.LeftRightSpacing = 5
+    ChildSizing.TopBottomSpacing = 2
+    ChildSizing.HorizontalSpacing = 5
+    ChildSizing.EnlargeHorizontal = crsHomogenousChildResize
+    ChildSizing.EnlargeVertical = crsHomogenousChildResize
+    ChildSizing.ShrinkHorizontal = crsScaleChilds
+    ChildSizing.ShrinkVertical = crsScaleChilds
+    ChildSizing.Layout = cclLeftToRightThenTopToBottom
+    ChildSizing.ControlsPerLine = 1
+    ClientHeight = 53
+    ClientWidth = 150
     TabOrder = 7
     object ReplaceAllChk: TCheckBox
-      Left = 8
-      Height = 17
+      Left = 5
+      Height = 25
       Top = 2
-      Width = 72
+      Width = 140
       Caption = 'Replace &All'
       Checked = True
       State = cbChecked
       TabOrder = 0
     end
     object PromptOnReplaceChk: TCheckBox
-      Left = 8
-      Height = 17
-      Top = 21
-      Width = 104
+      Left = 5
+      Height = 24
+      Top = 27
+      Width = 140
       Caption = '&Prompt on replace'
       Checked = True
       State = cbChecked

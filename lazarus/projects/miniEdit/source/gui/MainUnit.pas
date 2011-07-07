@@ -500,7 +500,7 @@ begin
   finally
     aIniFile.Free;
   end;
-  Engine.Workspace := aWorkspace;
+  Engine.Workspace := ExpandToPath(aWorkspace, Application.Location);
   Engine.FilesControl := EditorsPnl;
   //FileSet.Align := alClient;
   Engine.OnChangedState := @EditorChangeState;
@@ -876,8 +876,6 @@ end;
 
 procedure TMainForm.HelpIndexActExecute(Sender: TObject);
 begin
-  Engine.Files.Current.SynEdit.Modified := True;
-  Engine.Files.Current.SynEdit.Modified := False;
 end;
 
 procedure TMainForm.EditorOptionsActExecute(Sender: TObject);

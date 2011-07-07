@@ -95,4 +95,3 @@ initialization
     Perspectives.Add(TPascalPerspective);
   end;
 end.
-
