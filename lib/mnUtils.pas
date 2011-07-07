@@ -25,11 +25,12 @@ const
 }
 function StrHave(S:string; Separators: TSysCharSet): Boolean;
 
-function DequoteStr(Str: string; QuoteChar: string): string; overload;
-function DequoteStr(Str: string): string; overload; //deqoute use both of ' and "
 function QuoteStr(Str: string; QuoteChar: string = '"'): string;
 function StrToStrings(Content: string; Strings: TStrings; Separators: TSysCharSet; WhiteSpace: TSysCharSet = [#0, #13, #10]; DequoteValues: Boolean = False; Quotes: TSysCharSet = ['''', '"']): Integer;
 function CompareLeftStr(const Str: string; const WithStr: string; Start: Integer=1): Boolean;
+function PeriodToString(vPeriod: Double; WithSeconds:Boolean): string;
+function DequoteStr(Str: string; QuoteChar: string): string; overload;
+function DequoteStr(Str: string): string; overload; //deqoute use both of ' and "
 
 {
   Break string to Strings list items at #10 or #13 or #13#10 
@@ -61,6 +62,13 @@ function ExpandToPath(FileName: string; Path: string; Root: string = ''): string
 
 function EscapeString(const S: string; Esc: string; Chars: array of AnsiChar; Escapes: array of string): string;
 function DescapeString(const S: string; Esc: string; Chars: array of AnsiChar; Escapes: array of string): string;
+
+{$ifndef FPC}
+type
+  SizeInt = Longint;
+{$endif}
+
+procedure InitMemory(var v; count:SizeInt);
 
 implementation
 
@@ -435,6 +443,48 @@ begin
     t := MidStr(S, j, l - j + 1);
     AddIt;
   end;
+end;
+
+function PeriodToString(vPeriod: Double; WithSeconds:Boolean): string;
+var
+  h, m, s: integer;
+  d: Integer;
+  g: Boolean;
+  function LeadToRight(const vStr: string; Count: integer; vChar: Char): string;
+  var
+    l: integer;
+  begin
+    l := Length(vStr);
+    if l < Count then
+    begin
+      Result := StringOfChar(vChar, Count - l) + vStr;
+    end
+    else
+      Result := vStr;
+  end;
+begin
+  g := vPeriod < 0;
+  vPeriod := abs(vPeriod);
+  d := trunc(vPeriod * SecsPerDay);
+  h := d div 3600;
+  d := (d  - (h *  3600));
+  m := d div 60;
+  s := (d  - (m *  60));
+  Result := LeadToRight(IntToStr(h), 2, '0') + TimeSeparator + LeadToRight(IntToStr(m), 2, '0');
+  if WithSeconds then
+  begin
+    if s = 0 then
+      Result := Result + TimeSeparator + '00'
+    else
+      Result := Result + TimeSeparator + LeadToRight(IntToStr(s), 2, '0');
+  end;
+  if g then
+    Result := '-' + Result;
+end;
+
+procedure InitMemory(var v; count:SizeInt);
+begin
+  FillChar(v, count, #0);
 end;
 
 end.

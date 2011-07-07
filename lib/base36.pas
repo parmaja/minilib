@@ -88,7 +88,7 @@ var
   end;
 begin
   Result := '';
-  for i := 0 to Length(D) div 4 do
+  for i := 0 to (Length(D) div 4) - 1 do
   begin
     if i > 0 then
       Result := Result + Dash;
@@ -111,7 +111,7 @@ var
   end;
 begin
   Result := '';
-  for i := 0 to Length(D) div 4 do
+  for i := 0 to (Length(D) div 4) - 1 do
   begin
     if i > 0 then
       Result := Result + Dash;
