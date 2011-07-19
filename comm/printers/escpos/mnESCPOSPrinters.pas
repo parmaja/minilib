@@ -102,6 +102,8 @@ const
   seqSetBarcodeHeight = seqGS + 'k';
   seqSelectHRICharacter = seqGS + 'H';
   seqPrintBarcode = seqGS + 'k';
+  seqPrintCutPaper = seqESC + 'i'; 
+  // or seqPrintCutPaper = seqESC + 'm'; 
   seqSelectCharacter= seqESC + 't';
   seqPrintImage = #$1C + #$70 + #$01 + #$03;//Print loaded image
 
