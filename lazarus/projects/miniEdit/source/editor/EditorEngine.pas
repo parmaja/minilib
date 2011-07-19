@@ -1186,20 +1186,24 @@ begin
 end;
 
 function TEditorFiles.InternalOpenFile(FileName: string; AppendToRecent: boolean): TEditorFile;
+var
+  lFileName: string;
 begin
   {$ifdef windows}
-  FileName := ExpandFileName(FileName);
+  lFileName := ExpandFileName(FileName);
   {$else}
-  FileName := '/' + FileName;  //todo huh
+  if ExtractFilePath(FileName) = '' then
+    lFileName := IncludeTrailingPathDelimiter(SysUtils.GetCurrentDir()) + FileName
+  else lFileName := FileName;
   {$endif}
-  Result := FindFile(FileName);
+  Result := FindFile(lFileName);
   if Result = nil then
   begin
-    Result := Engine.CreateEditorFile(Engine.FindExtensionCategoryName(ExtractFileExt(FileName)));
-    Result.Load(FileName);
+    Result := Engine.CreateEditorFile(Engine.FindExtensionCategoryName(ExtractFileExt(lFileName)));
+    Result.Load(lFileName);
   end;
   if AppendToRecent then
-    Engine.ProcessRecentFile(FileName);
+    Engine.ProcessRecentFile(lFileName);
 end;
 
 procedure TEditorOptions.Load(vFileName: string);
@@ -2730,4 +2734,4 @@ begin
     end;
 end;
 
-end.
+end.

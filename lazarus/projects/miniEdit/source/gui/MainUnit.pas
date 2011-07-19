@@ -490,7 +490,7 @@ uses
 constructor TMainForm.Create(AOwner: TComponent);
 var
   aIniFile: TIniFile;
-  aEngineFile: string;
+  aEngineFile, lFilePath: string;
   aWorkspace: string;
 begin
   inherited;
@@ -525,10 +525,14 @@ begin
     WindowState := wsMaximized;
 {  else
     BoundsRect := Engine.Options.BoundRect;}
+
+  // Open any files passed in the command line
   if (ParamCount > 0) and not (SameText(ParamStr(1), '/dde')) then
   begin
-    Engine.Files.OpenFile(DequoteStr(ParamStr(1)));
-    Folder := ExtractFilePath(DequoteStr(ParamStr(1)));
+    lFilePath := DequoteStr(ParamStr(1));
+    Folder := ExtractFilePath(lFilePath);
+    // The filename is expanded, if necessary, in EditorEngine.TEditorFiles.InternalOpenFile
+    Engine.Files.OpenFile(lFilePath);
   end;
   if Engine.Options.AutoStartDebugServer then
     DBGStartServerAct.Execute;
@@ -2203,4 +2207,4 @@ begin
   Log(0, ACaption, AMsg, '', 0);
 end;
 
-end.
+end.
