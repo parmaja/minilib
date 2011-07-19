@@ -1,0 +1,62 @@
+object PHPConfigForm: TPHPConfigForm
+  Left = 287
+  Height = 325
+  Top = 170
+  Width = 398
+  BorderStyle = bsSingle
+  Caption = 'PHP Config'
+  ClientHeight = 325
+  ClientWidth = 398
+  OnClose = FormClose
+  LCLVersion = '0.9.31'
+  object PHPDirEdit: TEdit
+    Left = 11
+    Height = 21
+    Top = 28
+    Width = 352
+    TabOrder = 0
+  end
+  object Button3: TButton
+    Left = 365
+    Height = 20
+    Top = 29
+    Width = 22
+    Caption = '...'
+    OnClick = Button3Click
+    TabOrder = 1
+  end
+  object Label1: TLabel
+    Left = 11
+    Height = 14
+    Top = 11
+    Width = 45
+    Caption = 'PHP path'
+    ParentColor = False
+  end
+  object OkBtn: TButton
+    Left = 5
+    Height = 25
+    Top = 294
+    Width = 75
+    Anchors = [akLeft, akBottom]
+    Caption = '&Ok'
+    Default = True
+    ModalResult = 1
+    TabOrder = 2
+  end
+  object CancelBtn: TButton
+    Left = 81
+    Height = 25
+    Top = 294
+    Width = 75
+    Anchors = [akLeft, akBottom]
+    Cancel = True
+    Caption = '&Cancel'
+    ModalResult = 2
+    TabOrder = 3
+  end
+  object OpenDialog: TOpenDialog
+    left = 290
+    top = 246
+  end
+end
