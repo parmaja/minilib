@@ -1,7 +1,7 @@
 object MainForm: TMainForm
-  Left = 368
+  Left = 480
   Height = 518
-  Top = 148
+  Top = 104
   Width = 876
   AllowDropFiles = True
   Caption = 'Mini Edit'
@@ -22,7 +22,7 @@ object MainForm: TMainForm
     Cursor = crVSplit
     Left = 0
     Height = 7
-    Top = 342
+    Top = 343
     Width = 876
     Align = alBottom
     AutoSnap = False
@@ -31,7 +31,7 @@ object MainForm: TMainForm
   end
   object FoldersSpl: TSplitter
     Left = 200
-    Height = 313
+    Height = 314
     Top = 29
     Width = 6
   end
@@ -119,13 +119,13 @@ object MainForm: TMainForm
   end
   object FoldersPnl: TPanel
     Left = 0
-    Height = 313
+    Height = 314
     Top = 29
     Width = 200
     Align = alLeft
     BevelOuter = bvNone
     BorderWidth = 5
-    ClientHeight = 313
+    ClientHeight = 314
     ClientWidth = 200
     TabOrder = 0
     object FolderPanel: TPanel
@@ -226,7 +226,7 @@ object MainForm: TMainForm
     end
     object FileList: TListView
       Left = 5
-      Height = 284
+      Height = 285
       Top = 24
       Width = 190
       Align = alClient
@@ -251,19 +251,19 @@ object MainForm: TMainForm
   end
   object ClientPnl: TPanel
     Left = 206
-    Height = 313
+    Height = 314
     Top = 29
     Width = 670
     Align = alClient
     BevelOuter = bvNone
-    ClientHeight = 313
+    ClientHeight = 314
     ClientWidth = 670
     TabOrder = 2
     object OutputSpl: TSplitter
       Cursor = crVSplit
       Left = 0
       Height = 3
-      Top = 158
+      Top = 159
       Width = 670
       Align = alBottom
       AutoSnap = False
@@ -273,12 +273,12 @@ object MainForm: TMainForm
     end
     object EditorsPnl: TPanel
       Left = 0
-      Height = 158
+      Height = 159
       Top = 0
       Width = 670
       Align = alClient
       BevelOuter = bvNone
-      ClientHeight = 158
+      ClientHeight = 159
       ClientWidth = 670
       FullRepaint = False
       TabOrder = 0
@@ -358,7 +358,7 @@ object MainForm: TMainForm
       object QuickFindPnl: TPanel
         Left = 0
         Height = 29
-        Top = 129
+        Top = 130
         Width = 670
         Align = alBottom
         BevelInner = bvSpace
@@ -477,7 +477,7 @@ object MainForm: TMainForm
     inline OutputEdit: TSynEdit
       Left = 0
       Height = 152
-      Top = 161
+      Top = 162
       Width = 670
       Align = alBottom
       Font.Height = -13
@@ -685,20 +685,20 @@ object MainForm: TMainForm
   end
   object StatusPanel: TPanel
     Left = 0
-    Height = 22
-    Top = 476
+    Height = 21
+    Top = 477
     Width = 876
     Align = alBottom
     BevelOuter = bvNone
-    ClientHeight = 22
+    ClientHeight = 21
     ClientWidth = 876
     TabOrder = 3
     object MessagePnl: TPanel
-      Left = 1
+      Left = 80
       Height = 19
       Hint = 'Message'
-      Top = 3
-      Width = 667
+      Top = 1
+      Width = 588
       Alignment = taLeftJustify
       Anchors = [akLeft, akRight, akBottom]
       BevelOuter = bvLowered
@@ -709,7 +709,7 @@ object MainForm: TMainForm
       Left = 774
       Height = 19
       Hint = 'Debug Session'
-      Top = 2
+      Top = 1
       Width = 100
       Alignment = taLeftJustify
       Anchors = [akRight, akBottom]
@@ -721,7 +721,7 @@ object MainForm: TMainForm
       Left = 692
       Height = 19
       Hint = 'Caret Position'
-      Top = 2
+      Top = 1
       Width = 80
       Anchors = [akRight, akBottom]
       BevelOuter = bvLowered
@@ -732,18 +732,29 @@ object MainForm: TMainForm
       Left = 670
       Height = 19
       Hint = 'State'
-      Top = 2
+      Top = 1
       Width = 20
       Anchors = [akRight, akBottom]
       BevelOuter = bvLowered
       BorderWidth = 2
       TabOrder = 3
     end
+    object TypePnl: TPanel
+      Left = 2
+      Height = 19
+      Hint = 'Project Type'
+      Top = 1
+      Width = 76
+      Anchors = [akLeft, akBottom]
+      BevelOuter = bvLowered
+      BorderWidth = 2
+      TabOrder = 4
+    end
   end
   object MessagesTabs: TntvPageControl
     Left = 0
     Height = 127
-    Top = 349
+    Top = 350
     Width = 876
     StoreIndex = False
     ShowButtons = False
@@ -973,6 +984,9 @@ object MainForm: TMainForm
         Action = ProjectOptionsAct
         OnClick = ProjectOptionsActExecute
       end
+      object ProjectTypeMnu: TMenuItem
+        Action = ProjectTypeAct
+      end
     end
     object veiw1: TMenuItem
       Caption = '&View'
@@ -1024,6 +1038,9 @@ object MainForm: TMainForm
       end
       object MenuItem7: TMenuItem
         Action = ShowAllAct
+      end
+      object MenuItem10: TMenuItem
+        Action = RefreshFilesAct
       end
       object N16: TMenuItem
         Caption = '-'
@@ -1095,11 +1112,11 @@ object MainForm: TMainForm
         OnClick = EditorOptionsActExecute
       end
     end
-    object SVN1: TMenuItem
-      Caption = 'SVN'
+    object SCMMnu: TMenuItem
+      Caption = 'SCM'
       Visible = False
-      object Commit1: TMenuItem
-        Action = SVNCommitAct
+      object CommitMnu: TMenuItem
+        Action = SCMCommitAct
         Bitmap.Data = {
           36040000424D3604000000000000360000002800000010000000100000000100
           2000000000000004000064000000640000000000000000000000FF00FF00FF00
@@ -1136,34 +1153,34 @@ object MainForm: TMainForm
           FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
           FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00FF00
         }
-        OnClick = SVNCommitActExecute
+        OnClick = SCMCommitActExecute
       end
-      object CommitFIle1: TMenuItem
-        Action = SVNCommitFileAct
-        OnClick = SVNCommitFileActExecute
+      object CommitFileMnu: TMenuItem
+        Action = SCMCommitFileAct
+        OnClick = SCMCommitFileActExecute
       end
-      object Update1: TMenuItem
-        Action = SVNUpdateAct
-        OnClick = SVNUpdateActExecute
+      object UpdateMnu: TMenuItem
+        Action = SCMUpdateAct
+        OnClick = SCMUpdateActExecute
       end
-      object UpdateFile1: TMenuItem
-        Action = SVNUpdateFileAct
-        OnClick = SVNUpdateFileActExecute
+      object UpdateFileMnu: TMenuItem
+        Action = SCMUpdateFileAct
+        OnClick = SCMUpdateFileActExecute
       end
-      object Diff1: TMenuItem
-        Action = SVNDiffFileAct
-        OnClick = SVNDiffFileActExecute
+      object DiffMnu: TMenuItem
+        Action = SCMDiffFileAct
+        OnClick = SCMDiffFileActExecute
       end
-      object Revert2: TMenuItem
-        Action = SVNRevertAct
-        OnClick = SVNRevertActExecute
+      object RevertMnu: TMenuItem
+        Action = SCMRevertAct
+        OnClick = SCMRevertActExecute
       end
-      object CompareTo1: TMenuItem
-        Action = SVNCompareToAct
-        OnClick = SVNCompareToActExecute
+      object CompareToMnu: TMenuItem
+        Action = SCMCompareToAct
+        OnClick = SCMCompareToActExecute
       end
     end
-    object About3: TMenuItem
+    object DebugMnu: TMenuItem
       Caption = 'Debug'
       object StartServer1: TMenuItem
         Action = DBGStartServerAct
@@ -1198,7 +1215,6 @@ object MainForm: TMainForm
       end
       object RunToCursor1: TMenuItem
         Action = DBGRunToCursor
-        OnClick = RunToCursor1Click
       end
       object Reset2: TMenuItem
         Action = DBGResetAct
@@ -1554,37 +1570,37 @@ object MainForm: TMainForm
       OnUpdate = OpenColorActUpdate
       ShortCut = 32781
     end
-    object SVNCommitAct: TAction
-      Category = 'TSVN'
+    object SCMCommitAct: TAction
+      Category = 'SCM'
       Caption = 'Commit'
       ImageIndex = 35
-      OnExecute = SVNCommitActExecute
+      OnExecute = SCMCommitActExecute
     end
-    object SVNDiffFileAct: TAction
-      Category = 'TSVN'
+    object SCMDiffFileAct: TAction
+      Category = 'SCM'
       Caption = 'Diff File'
-      OnExecute = SVNDiffFileActExecute
+      OnExecute = SCMDiffFileActExecute
       ShortCut = 24644
     end
-    object SVNCommitFileAct: TAction
-      Category = 'TSVN'
+    object SCMCommitFileAct: TAction
+      Category = 'SCM'
       Caption = 'Commit File'
-      OnExecute = SVNCommitFileActExecute
+      OnExecute = SCMCommitFileActExecute
     end
-    object SVNUpdateFileAct: TAction
-      Category = 'TSVN'
+    object SCMUpdateFileAct: TAction
+      Category = 'SCM'
       Caption = 'Update File'
-      OnExecute = SVNUpdateFileActExecute
+      OnExecute = SCMUpdateFileActExecute
     end
-    object SVNRevertAct: TAction
-      Category = 'TSVN'
+    object SCMRevertAct: TAction
+      Category = 'SCM'
       Caption = 'Revert'
-      OnExecute = SVNRevertActExecute
+      OnExecute = SCMRevertActExecute
     end
-    object SVNUpdateAct: TAction
-      Category = 'TSVN'
+    object SCMUpdateAct: TAction
+      Category = 'SCM'
       Caption = 'Update'
-      OnExecute = SVNUpdateActExecute
+      OnExecute = SCMUpdateActExecute
     end
     object DBGStartServerAct: TAction
       Category = 'Debug'
@@ -1702,10 +1718,10 @@ object MainForm: TMainForm
       OnExecute = PriorMessageActExecute
       ShortCut = 32886
     end
-    object SVNCompareToAct: TAction
-      Category = 'TSVN'
+    object SCMCompareToAct: TAction
+      Category = 'SCM'
       Caption = 'Compare To'
-      OnExecute = SVNCompareToActExecute
+      OnExecute = SCMCompareToActExecute
     end
     object SwitchFocusAct: TAction
       Category = 'View'
@@ -1739,6 +1755,16 @@ object MainForm: TMainForm
       Caption = 'Show All'
       GroupIndex = 5
       OnExecute = ShowAllActExecute
+    end
+    object RefreshFilesAct: TAction
+      Category = 'Files'
+      Caption = 'Refresh'
+      OnExecute = RefreshFilesActExecute
+    end
+    object ProjectTypeAct: TAction
+      Category = 'Project'
+      Caption = 'Project Type'
+      OnExecute = ProjectTypeActExecute
     end
   end
   object FolderMenu: TPopupMenu
@@ -1775,6 +1801,12 @@ object MainForm: TMainForm
     end
     object MenuItem4: TMenuItem
       Action = ShowAllAct
+    end
+    object MenuItem11: TMenuItem
+      Caption = '-'
+    end
+    object MenuItem12: TMenuItem
+      Action = RefreshFilesAct
     end
   end
   object FileModeMenu: TPopupMenu

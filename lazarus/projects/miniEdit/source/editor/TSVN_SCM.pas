@@ -1,5 +1,5 @@
 unit TSVN_SCM;
-{$mode delphi}
+{$mode objfpc}{$H+}
 {**
  * Mini Edit
  *
@@ -14,18 +14,19 @@ interface
 
 uses
   SysUtils, Forms, StrUtils, Variants, Classes, Controls, Graphics, Contnrs,
-  EditorAddons, SynEdit;
+  SynEdit, EditorEngine;
 
 type
 
   { TTSVN_SCM }
 
-  TTSVN_SCM = class(TObject)
+  TTSVN_SCM = class(TEditorSCM)
   private
   protected
     function GetTortoiseProc: string;
     function GetTortoiseMerge: string;
   public
+    constructor Create; override;
     procedure CommitDirectory(Directory: string); override;
     procedure CommitFile(FileName: string); override;
     procedure UpdateDirectory(Directory: string); override;
@@ -44,49 +45,41 @@ implementation
 
 procedure TTSVN_SCM.CommitDirectory(Directory: string);
 begin
-  inherited;
-  ShellExec(TortoiseProc, '/command:commit /path:"' + Directory + '" /notempfile /closeonend');
+  ExecuteProcess(TortoiseProc, '/command:commit /path:"' + Directory + '" /notempfile /closeonend');
 end;
 
 procedure TTSVN_SCM.CommitFile(FileName: string);
 begin
-  inherited;
-  ShellExec(Engine.Options.TortoiseProc, '/command:commit /path:"' + FileName + '" /notempfile /closeonend');
+  ExecuteProcess(TortoiseProc, '/command:commit /path:"' + FileName + '" /notempfile /closeonend');
 end;
 
 procedure TTSVN_SCM.UpdateDirectory(Directory: string);
 begin
-  inherited;
-  ShellExec(Engine.Options.TortoiseProc, '/command:update /path:"' + Directory + '" /notempfile /closeonend');
+  ExecuteProcess(TortoiseProc, '/command:update /path:"' + Directory + '" /notempfile /closeonend');
 end;
 
 procedure TTSVN_SCM.UpdateFile(FileName: string);
 begin
-  inherited;
-  ShellExec(Engine.Options.TortoiseProc, '/command:update /path:"' + FileName + '" /notempfile /closeonend');
+  ExecuteProcess(TortoiseProc, '/command:update /path:"' + FileName + '" /notempfile /closeonend');
 end;
 
 procedure TTSVN_SCM.RevertDirectory(Directory: string);
 begin
-  inherited;
-  ShellExec(Engine.Options.TortoiseProc, '/command:revert /path:"' + Folder + '" /notempfile /closeonend');
+  ExecuteProcess(TortoiseProc, '/command:revert /path:"' + Directory + '" /notempfile /closeonend');
 end;
 
 procedure TTSVN_SCM.RevertFile(FileName: string);
 begin
-  inherited RevertFile(FileName);
 end;
 
 procedure TTSVN_SCM.DiffFile(FileName: string);
 begin
-  inherited;
-  ShellExec(Engine.Options.TortoiseProc, '/command:diff /path:"' + FileName + '" /notempfile /closeonend');
+  ExecuteProcess(TortoiseProc, '/command:diff /path:"' + FileName + '" /notempfile /closeonend');
 end;
 
 procedure TTSVN_SCM.DiffToFile(FileName, ToFileName: string);
 begin
-  inherited;
-  ShellExec(Engine.Options.TortoiseMerge, '/base:"' + aDialog.FileName + '" /mine:' + Engine.Files.Current.Name);
+  ExecuteProcess(TortoiseMerge, '/base:"' + FileName + '" /mine:' + ToFileName);
 end;
 
 function TTSVN_SCM.GetTortoiseProc: string;
@@ -123,5 +116,18 @@ begin
     Result := '"' + s + 'bin\TortoiseMerge.exe"';
 end;
 
+constructor TTSVN_SCM.Create;
+begin
+  inherited Create;
+  FName := 'TSVN_WIN';
+  FName := 'Tortoise Subversion';
+  FDescription := 'Tortoise Subversion for windows';
+end;
+
+initialization
+  with Engine do
+  begin
+    SourceManagements.Add(TTSVN_SCM);
+  end;
 end.
 

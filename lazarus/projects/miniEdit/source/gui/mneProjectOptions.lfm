@@ -1,11 +1,11 @@
 object ProjectForm: TProjectForm
-  Left = 276
-  Height = 230
-  Top = 186
+  Left = 461
+  Height = 273
+  Top = 184
   Width = 398
   BorderStyle = bsDialog
   Caption = 'Project Options'
-  ClientHeight = 230
+  ClientHeight = 273
   ClientWidth = 398
   Font.Height = -11
   Font.Name = 'MS Sans Serif'
@@ -34,7 +34,7 @@ object ProjectForm: TProjectForm
   object Label1: TLabel
     Left = 6
     Height = 14
-    Top = 117
+    Top = 161
     Width = 271
     Caption = 'Roo&t path of your project usefull when enumrate your files'
     ParentColor = False
@@ -42,7 +42,7 @@ object ProjectForm: TProjectForm
   object Label2: TLabel
     Left = 6
     Height = 14
-    Top = 158
+    Top = 202
     Width = 129
     Caption = '&Url for run it in http web site'
     ParentColor = False
@@ -50,7 +50,7 @@ object ProjectForm: TProjectForm
   object Label6: TLabel
     Left = 11
     Height = 14
-    Top = 94
+    Top = 138
     Width = 51
     Caption = '&Run Mode'
     FocusControl = RunModeCbo
@@ -59,13 +59,13 @@ object ProjectForm: TProjectForm
   object Bevel1: TBevel
     Left = 4
     Height = 2
-    Top = 82
+    Top = 126
     Width = 384
   end
   object OkBtn: TButton
     Left = 6
     Height = 25
-    Top = 201
+    Top = 244
     Width = 75
     Anchors = [akRight, akBottom]
     Caption = '&Ok'
@@ -77,7 +77,7 @@ object ProjectForm: TProjectForm
   object CancelBtn: TButton
     Left = 86
     Height = 25
-    Top = 201
+    Top = 244
     Width = 75
     Anchors = [akRight, akBottom]
     Cancel = True
@@ -102,7 +102,7 @@ object ProjectForm: TProjectForm
   object SaveDesktopChk: TCheckBox
     Left = 12
     Height = 17
-    Top = 60
+    Top = 104
     Width = 268
     Caption = 'Save Desktop, &Reopen last opend files in this project'
     TabOrder = 2
@@ -110,14 +110,14 @@ object ProjectForm: TProjectForm
   object RootDirEdit: TEdit
     Left = 6
     Height = 21
-    Top = 134
+    Top = 178
     Width = 352
     TabOrder = 4
   end
   object Button3: TButton
     Left = 360
     Height = 20
-    Top = 135
+    Top = 179
     Width = 22
     Caption = '...'
     OnClick = Button3Click
@@ -126,21 +126,39 @@ object ProjectForm: TProjectForm
   object RootUrlEdit: TEdit
     Left = 6
     Height = 21
-    Top = 175
+    Top = 219
     Width = 375
     TabOrder = 6
   end
   object RunModeCbo: TComboBox
     Left = 76
     Height = 21
-    Top = 90
+    Top = 134
     Width = 166
     ItemHeight = 13
     Style = csDropDownList
     TabOrder = 3
   end
+  object PerspectiveCbo: TComboBox
+    Left = 89
+    Height = 21
+    Top = 56
+    Width = 303
+    ItemHeight = 13
+    Style = csDropDownList
+    TabOrder = 9
+  end
+  object Label7: TLabel
+    Left = 12
+    Height = 14
+    Top = 60
+    Width = 61
+    Caption = 'Project Type'
+    FocusControl = RunModeCbo
+    ParentColor = False
+  end
   object OpenDialog: TOpenDialog
     left = 320
-    top = 57
+    top = 101
   end
 end

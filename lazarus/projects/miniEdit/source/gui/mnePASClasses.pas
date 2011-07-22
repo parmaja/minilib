@@ -10,8 +10,6 @@ unit mnePASClasses;
 
 interface
 
-{$DEFINE SYN_HEREDOC}
-
 uses
   Messages, Forms, SysUtils, StrUtils, Variants, Classes, Controls, Graphics, Contnrs,
   LCLintf, LCLType,
@@ -60,7 +58,9 @@ begin
   FTitle := 'Pascal project';
   FDescription := 'Pascal/FPC/Lazarus Files, *.pas, *.pp *.inc';
   FImageIndex := -1;
-  Groups.Add('PAS');
+  FDefaultFileGroup := 'PAS';
+  AddGroup('PAS');
+  AddGroup('PPR');
 end;
 
 { TPASFileCategory }
@@ -93,7 +93,7 @@ initialization
   with Engine do
   begin
     Categories.Add('PASCAL', TPASFile, TPASFileCategory);
-    Groups.Add('PAS_PROJECT', 'Pascal Project Files', 'PASCAL', ['lpr', 'dpr'], [fgkExecutable, fgkPublish, fgkBrowsable]);
+    Groups.Add('PPR', 'Pascal Project Files', 'PASCAL', ['ppr', 'lpr', 'dpr'], [fgkExecutable, fgkPublish, fgkBrowsable]);//PPR meant Pascal project
     Groups.Add('PAS', 'Pascal Files', 'PASCAL', ['pas', 'pp', 'p'], [fgkExecutable, fgkPublish, fgkBrowsable]);
     Perspectives.Add(TPascalPerspective);
   end;

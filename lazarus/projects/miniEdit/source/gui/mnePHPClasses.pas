@@ -10,8 +10,6 @@ unit mnePHPClasses;
 
 interface
 
-{$DEFINE SYN_HEREDOC}
-
 uses
   Messages, Forms, SysUtils, StrUtils, Variants, Classes, Controls, Graphics, Contnrs,
   LCLintf, LCLType,
@@ -20,6 +18,7 @@ uses
   SynEditTypes, SynCompletion, SynHighlighterHashEntries, EditorProfiles,
   SynHighlighterCSS, SynHighlighterSQL, SynHighlighterXML, SynHighlighterApache,
   SynHighlighterJScript, SynHighlighterXHTML, SynHighlighterPas,
+  EditorDebugger, PHP_xDebug,
   mneClasses;
 
 type
@@ -90,6 +89,8 @@ type
     FHTMLHelpFile: string;
     FPHPHelpFile: string;
     FPHPPath: string;
+  protected
+    function CreateDebugger: TEditorDebugger; override;
   public
     constructor Create; override;
     property PHPPath: string read FPHPPath write FPHPPath;
@@ -104,17 +105,23 @@ uses
 
 { TPHPPerspective }
 
+function TPHPPerspective.CreateDebugger: TEditorDebugger;
+begin
+  Result := TPHP_xDebug.Create;
+end;
+
 constructor TPHPPerspective.Create;
 begin
   inherited;
   FTitle := 'PHP project';
   FDescription := 'PHP Files, *.php, *.inc';
   FName := 'PHP';
+  FDefaultFileGroup := 'PHP';
   FImageIndex := -1;
-  Groups.Add('PHP');
-  Groups.Add('HTML');
-  Groups.Add('CSS');
-  Groups.Add('JS');
+  AddGroup('PHP');
+  AddGroup('HTML');
+  AddGroup('CSS');
+  AddGroup('JS');
 end;
 
 { TphpFile }
@@ -470,7 +477,6 @@ initialization
     Groups.Add('CSS', 'CSS Files', 'CSS', ['css'], [fgkPublish, fgkBrowsable]);
     Groups.Add('JS', 'Java Script Files', 'JS', ['js'], [fgkPublish, fgkBrowsable]);
     Perspectives.Add(TPHPPerspective);
-    DefaultGroup := 'PHP';
   end;
 end.
 

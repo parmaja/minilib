@@ -46,9 +46,7 @@ begin
       ShowItems(vName);
       Result := (ShowModal = mrOK) and (ItemsList.Selected <> nil);
       if Result then
-      begin
         vName := Items[ItemsList.ItemIndex];
-      end;
       Free;
     finally
     end;
@@ -65,6 +63,15 @@ var
   s: string;
   i, c, t: Integer;
   aItem: TListItem;
+  procedure AddItem(Name, Title, Description: string; ImageIndex: Integer);
+  begin
+     aItem := ItemsList.Items.Add;
+     aItem.Caption := Title;
+     aItem.SubItems.Add(Description);
+     aItem.ImageIndex := ImageIndex;
+     SetLength(Items, c + 1);
+     Items[c] := Name;
+  end;
 begin
   ItemsList.Items.BeginUpdate;
   with Engine do
@@ -72,14 +79,10 @@ begin
     ItemsList.Clear;
     c := 0;
     t := 0;
+//    AddItem('Default', 'No type', '', -1);
     for i := 0 to Perspectives.Count - 1 do
     begin
-      aItem := ItemsList.Items.Add;
-      aItem.Caption := Perspectives[i].Title;
-      aItem.SubItems.Add(Perspectives[i].Description);
-      aItem.ImageIndex := Perspectives[i].ImageIndex;
-      SetLength(Items, c + 1);
-      Items[c] := Perspectives[i].Name;
+      AddItem(Perspectives[i].Name, Perspectives[i].Title, Perspectives[i].Description, Perspectives[i].ImageIndex);
       if SameText(vSelect, Perspectives[i].Name) then
         t := c;
       inc(c);

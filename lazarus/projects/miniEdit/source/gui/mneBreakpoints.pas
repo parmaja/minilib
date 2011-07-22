@@ -50,11 +50,11 @@ end;
 
 procedure TBreakpointsForm.FormCreate(Sender: TObject);
 begin
-  Engine.Debug.Lock;
+  Engine.Perspective.Debug.Lock;
   try
     Reload;
   finally
-    Engine.Debug.Unlock;
+    Engine.Perspective.Debug.Unlock;
   end;
 end;
 
@@ -64,13 +64,13 @@ var
   aItem: TListItem;
 begin
   BreakpointList.Clear;
-  for i := 0 to Engine.Debug.Breakpoints.Count - 1 do
+  for i := 0 to Engine.Perspective.Debug.Breakpoints.Count - 1 do
   begin
     aItem := BreakpointList.Items.Add;
     aItem.ImageIndex := 40;
-    aItem.Data := Pointer(Engine.Debug.Breakpoints[i].Handle);
-    aItem.Caption := Engine.Debug.Breakpoints[i].FileName;
-    aItem.SubItems.Add(IntToStr(Engine.Debug.Breakpoints[i].Line));
+    aItem.Data := Pointer(Engine.Perspective.Debug.Breakpoints[i].Handle);
+    aItem.Caption := Engine.Perspective.Debug.Breakpoints[i].FileName;
+    aItem.SubItems.Add(IntToStr(Engine.Perspective.Debug.Breakpoints[i].Line));
   end;
 end;
 
@@ -78,26 +78,26 @@ procedure TBreakpointsForm.Button2Click(Sender: TObject);
 begin
   if BreakpointList.Selected <> nil then
   begin
-    Engine.Debug.Lock;
+    Engine.Perspective.Debug.Lock;
     try
-      Engine.Debug.Breakpoints.Remove(Integer(BreakpointList.Selected.Data));
+      Engine.Perspective.Debug.Breakpoints.Remove(Integer(BreakpointList.Selected.Data));
       Reload;
       Engine.UpdateState([ecsDebug]);
     finally
-      Engine.Debug.Unlock;
+      Engine.Perspective.Debug.Unlock;
     end;
   end;
 end;
 
 procedure TBreakpointsForm.Button1Click(Sender: TObject);
 begin
-  Engine.Debug.Lock;
+  Engine.Perspective.Debug.Lock;
   try
-    Engine.Debug.Breakpoints.Clear;
+    Engine.Perspective.Debug.Breakpoints.Clear;
     Reload;
     Engine.UpdateState([ecsDebug]);
   finally
-    Engine.Debug.Unlock;
+    Engine.Perspective.Debug.Unlock;
   end;
 end;
 

@@ -6,10 +6,12 @@ unit EditorDebugger;
  * @license   GPL 2 (http://www.gnu.org/licenses/gpl.html)
  * @author    Zaher Dirkey <zaher at parmaja dot com>
  *}
+
 interface
 
 uses
-  SysUtils, Forms, StrUtils, Variants, Classes, Controls, Graphics, Contnrs, IAddons, SynEdit;
+  SysUtils, Forms, StrUtils, Variants, Classes, Controls, Graphics, Contnrs,
+  SynEdit;
 
 type
   TEditBreakpoint = record
@@ -26,7 +28,7 @@ type
 
   { TEditorElements }
 
-  TEditorElements = class(TObject)
+  TEditorItem = class(TObject)
   protected
     function GetCount: integer; virtual; abstract;
   public
@@ -36,7 +38,7 @@ type
 
   { TEditorBreakPoints }
 
-  TEditorBreakPoints = class(TEditorElements)
+  TEditorBreakPoints = class(TEditorItem)
   protected
     function GetItems(Index: integer): TEditBreakpoint; virtual; abstract;
   public
@@ -51,7 +53,7 @@ type
 
   { TEditorWatches }
 
-  TEditorWatches = class(TEditorElements)
+  TEditorWatches = class(TEditorItem)
   private
   protected
     function GetItems(Index: integer): TEditWatch; virtual; abstract;
@@ -79,7 +81,7 @@ type
 
   { TEditorDebugger }
 
-  TEditorDebugger = class(TAddon, IMenuAddon, IClickAddon, IDebugAddon)
+  TEditorDebugger = class(TObject)
   private
     FBreakpoints: TEditorBreakPoints;
     FWatches: TEditorWatches;

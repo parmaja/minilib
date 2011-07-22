@@ -13,18 +13,20 @@ uses
   Messages, SysUtils, Forms, StrUtils, Dialogs, Variants, Classes, Controls, Graphics, Contnrs, Types,
   IniFiles, EditorOptions, EditorProfiles, SynEditMarks, SynCompletion, SynEditTypes,
   SynEditMiscClasses, SynEditHighlighter, SynEditKeyCmds, SynEditMarkupBracket, SynEditSearch, SynEdit,
-  SynEditTextTrimmer, SynTextDrawer, EditorDebugger, EditorSCM, IAddons, SynGutterBase,
+  SynEditTextTrimmer, SynTextDrawer, EditorDebugger, SynGutterBase,
   dbgpServers, PHP_xDebug,
   mnXMLRttiProfile, mnXMLUtils, mnUtils, LCLType;
 
 type
-  TEditorChangeState = set of (ecsChanged, ecsState, ecsRefresh, ecsDebug, ecsShow, ecsEdit, ecsFolder, ecsProjectLoaded); //ecsShow bring to front
+  TEditorChangeState = set of (ecsChanged, ecsState, ecsRefresh, ecsDebug, ecsShow, ecsEdit, ecsFolder, ecsProject); //ecsShow bring to front
   TSynCompletionType = (ctCode, ctHint, ctParams);
 
   TEditorEngine = class;
   TFileCategory = class;
   TFileGroup = class;
+  TFileGroups = class;
   TEditorFile = class;
+  TEditorProject = class;
 
   EEditorException = class(Exception)
   private
@@ -79,6 +81,21 @@ type
   public
   end;
 
+  { TEditorElement }
+
+  TEditorElement = class(TmnXMLProfile)
+  private
+  protected
+    FName: string;
+    FTitle: string;
+    FDescription: string;
+  public
+    constructor Create; virtual;
+    property Title: string read FTitle;
+    property Name: string read FName;
+    property Description: string read FDescription;
+  end;
+
   {
     TEditorPerspective
     Collect file groups and have special properties
@@ -87,35 +104,65 @@ type
 
   { TEditorPerspective }
 
-  TEditorPerspective = class(TmnXMLProfile)
+  TEditorPerspective = class(TEditorElement)
   private
-    FGroups: TStringList;
-    procedure SetGroups(AValue: TStringList);
+    FGroups: TFileGroups;
+    FDebug: TEditorDebugger;
   protected
     FOSDepended: Boolean;
     FImageIndex: integer;
-    FName: string;
-    FTitle: string;
-    FDescription: string;
+    FDefaultFileGroup: string;
+    procedure AddGroup(vName: string);
+    function CreateDebugger: TEditorDebugger; virtual;
   public
-    constructor Create; virtual;
+    constructor Create; override;
     destructor Destroy; override;
-    property Title: string read FTitle;
-    property Description: string read FDescription;
-    property Name: string read FName;
+    procedure EnumExtensions(vExtensions: TStringList); virtual;
+    function CreateEditorFile(Group: string): TEditorFile; virtual;
+    function CreateEditorProject: TEditorProject; virtual;
     property ImageIndex: integer read FImageIndex;
-    //OSDepended: When save to file, the filename changed depend on the os system
+    //OSDepended: When save to file, the filename changed depend on the os system name
     property OSDepended: Boolean read FOSDepended;
-    property Groups: TStringList read FGroups write SetGroups;
+    property Groups: TFileGroups read FGroups;
+    property DefaultFileGroup: string read FDefaultFileGroup;
+
+    property Debug: TEditorDebugger read FDebug;//todo
   end;
 
   TEditorPerspectiveClass = class of TEditorPerspective;
+
+  { TDefaultPerspective }
+  {
+    used only if no perspective defined
+  }
+
+  TDefaultPerspective = class(TEditorPerspective)
+  public
+    procedure EnumExtensions(vExtensions: TStringList); override;
+  end;
+
+  TEditorSCM = class(TEditorElement)
+  private
+  protected
+  public
+    procedure CommitDirectory(Directory: string); virtual; abstract;
+    procedure CommitFile(FileName: string); virtual; abstract;
+    procedure UpdateDirectory(Directory: string); virtual; abstract;
+    procedure UpdateFile(FileName: string); virtual; abstract;
+    procedure RevertDirectory(Directory: string); virtual; abstract;
+    procedure RevertFile(FileName: string); virtual; abstract;
+    procedure DiffFile(FileName: string); virtual; abstract;
+    procedure DiffToFile(FileName, ToFileName: string); virtual; abstract;
+  end;
+
+  TEditorSCMClass = class of TEditorSCM;
 
   { TEditorProject }
 
   TEditorProject = class(TmnXMLProfile)
   private
     FOptions: TEditorProjectOptions;
+    FPerspectiveName: string;
     FRunMode: TRunMode;
     FDescription: string;
     FRootUrl: string;
@@ -128,7 +175,7 @@ type
     FCachedVariables: THashedStringList;
     FCachedAge: DWORD;
     FPerspective: TEditorPerspective;
-    function GetPerspective: TEditorPerspective;
+    procedure SetPerspectiveName(AValue: string);
   protected
     procedure Loaded(Failed: Boolean); override;
     procedure Saving; override;
@@ -141,9 +188,10 @@ type
     property CachedVariables: THashedStringList read FCachedVariables;
     property CachedIdentifiers: THashedStringList read FCachedIdentifiers;
     property CachedAge: Cardinal read FCachedAge write FCachedAge;
-    property Perspective: TEditorPerspective read GetPerspective default nil;
+    property Perspective: TEditorPerspective read FPerspective default nil;
   published
     property Name: string read FName write FName;
+    property PerspectiveName: string read FPerspectiveName write SetPerspectiveName;
     property Description: string read FDescription write FDescription;
     property RootDir: string read FRootDir write FRootDir;
     property RootUrl: string read FRootUrl write FRootUrl;
@@ -278,8 +326,9 @@ type
 
   TEditorOptions = class(TmnXMLProfile)
   private
+    FDefaultPerspective: string;
+    FDefaultSCM: string;
     FFileName: string;
-    FPerspective: TEditorPerspective;
     FShowFolder: Boolean;
     FShowFolderFiles: TShowFolderFiles;
     FWindowMaxmized: Boolean;
@@ -315,7 +364,6 @@ type
     procedure Show;
     property FileName: string read FFileName write FFileName;
     property BoundRect: TRect read FBoundRect write FBoundRect; //not saved yet
-    procedure SetDefaultPerspective(vPerspective: TEditorPerspective);
   published
     property ExtraExtensions: TStringList read FExtraExtensions write FExtraExtensions;
     property CollectAutoComplete: Boolean read FCollectAutoComplete write FCollectAutoComplete default False;
@@ -337,7 +385,8 @@ type
     property RecentFiles: TStringList read FRecentFiles write SetRecentFiles;
     property RecentProjects: TStringList read FRecentProjects write SetRecentProjects;
     property Projects: TStringList read FProjects write SetProjects;
-    property Perspective: TEditorPerspective read FPerspective write FPerspective default nil;
+    property DefaultPerspective: string read FDefaultPerspective write FDefaultPerspective;
+    property DefaultSCM: string read FDefaultSCM write FDefaultSCM;
   end;
 
   TFileCategoryKind = (fckPublish);
@@ -407,6 +456,8 @@ type
     property DisplayName: string read FDisplayName write FDisplayName;
   end;
 
+  { TFileGroups }
+
   TFileGroups = class(TObjectList)
   private
     function GetItem(Index: integer): TFileGroup;
@@ -415,6 +466,7 @@ type
     procedure EnumExtensions(vExtensions: TStringList);
     function FindExtension(vExtension: string): TFileGroup;
     function CreateFilter(vGroup: TFileGroup = nil): string;
+    procedure Add(vGroup: TFileGroup);
     procedure Add(const Name, DisplayName: string; Category: string; Extensions: array of string; Kind: TFileGroupKinds = []);
     property Items[Index: integer]: TFileGroup read GetItem; default;
   end;
@@ -426,8 +478,21 @@ type
     function GetItem(Index: integer): TEditorPerspective;
   public
     function Find(vName: string): TEditorPerspective;
+    function IndexOf(vName: string): Integer;
     procedure Add(vEditorPerspective: TEditorPerspectiveClass);
+    procedure Add(vEditorPerspective: TEditorPerspective);
     property Items[Index: integer]: TEditorPerspective read GetItem; default;
+  end;
+
+  { TSourceManagements }
+
+  TSourceManagements = class(TObjectList)
+  private
+    function GetItem(Index: integer): TEditorSCM;
+  public
+    function Find(vName: string): TEditorSCM;
+    procedure Add(vEditorSCM: TEditorSCMClass);
+    property Items[Index: Integer]: TEditorSCM read GetItem; default;
   end;
 
   { TEditorFormItem }
@@ -505,17 +570,20 @@ type
 
   TOnFoundEvent = procedure(FileName: string; const Line: string; LineNo, Column, FoundLength: integer) of object;
   TOnEditorChangeState = procedure(State: TEditorChangeState) of object;
-  TOnChoosePerspective = procedure(var vPerspective: TEditorPerspective) of object;
+  TOnChoosePerspective = procedure(var Resumed: Boolean; var vPerspective: TEditorPerspective) of object;
 
   { TEditorEngine }
 
   TEditorEngine = class(TObject)
   private
-    FDefaultGroup: string;
+    //if the project not defined any perspective this is the default one
+    FDefaultPerspective: TEditorPerspective;
+    //FInternalPerspective used only there is no any default Perspective defined, it is mean simple editor without any project type
+    FInternalPerspective: TDefaultPerspective;
     FForms: TEditorFormList;
     FOnChoosePerspective: TOnChoosePerspective;
     FPerspectives: TPerspectives;
-    FSCM: TEditorSCM;
+    FSourceManagements: TSourceManagements;
     FUpdateState: TEditorChangeState;
     FUpdateCount: integer;
     FFiles: TEditorFiles;
@@ -527,7 +595,6 @@ type
     FExtenstion: string;
     FOnChangedState: TOnEditorChangeState;
     FSession: TEditorSession;
-    FDebug: TEditorDebugger;
     FMessagesList: TEditorMessagesList;
     FBrowseFolder: string;
     //FMacroRecorder: TSynMacroRecorder;
@@ -535,19 +602,16 @@ type
     FOnReplaceText: TReplaceTextEvent;
     function GetPerspective: TEditorPerspective;
     function GetRoot: string;
+    function GetSCM: TEditorSCM;
     function GetUpdating: Boolean;
     procedure SetBrowseFolder(const Value: string);
     function GetWorkSpace: string;
+    procedure SetDefaultPerspective(AValue: TEditorPerspective);
   protected
     property SearchEngine: TSynEditSearch read FSearchEngine;
     procedure DoChangedState(State: TEditorChangeState); virtual;
     procedure DoMacroStateChange(Sender: TObject);
-    function CreateEditorFile(Group: string): TEditorFile; virtual;
-    function CreateEditorProject: TEditorProject;
     function FindExtensionCategoryName(Extension: string): string;
-    function CreateDebugger: TEditorDebugger;
-    function CreateSCM: TEditorSCM;
-    function ChoosePerspective: TEditorPerspective;
     procedure DoReplaceText(Sender: TObject; const ASearch, AReplace: string; Line, Column: integer; var ReplaceAction: TSynReplaceAction);
   public
     constructor Create; virtual;
@@ -564,6 +628,9 @@ type
 
     procedure LoadOptions;
     procedure SaveOptions;
+    procedure Shutdown;
+
+    function ChoosePerspective(var vPerspective: TEditorPerspective): Boolean;
 
     procedure BeginUpdate;
     procedure UpdateState(State: TEditorChangeState);
@@ -572,23 +639,26 @@ type
 
     function ExpandFileName(FileName: string): string;
     property Extenstion: string read FExtenstion write FExtenstion;
-    property DefaultGroup: string read FDefaultGroup write FDefaultGroup;
     property Root: string read GetRoot;
     property WorkSpace: string read GetWorkSpace write FWorkSpace;
 
     property Categories: TFileCategories read FCategories;
     property Groups: TFileGroups read FGroups;
     property Perspectives: TPerspectives read FPerspectives;
+    property SourceManagements: TSourceManagements read FSourceManagements;
     property Forms: TEditorFormList read FForms;
     //
     property Files: TEditorFiles read FFiles;
     property Session: TEditorSession read FSession;
     property Options: TEditorOptions read FOptions;
-    property Debug: TEditorDebugger read FDebug;
-    property SCM: TEditorSCM read FSCM;
     property MessagesList: TEditorMessagesList read FMessagesList;
+    //FilesControl is a panel or any wincontrol that the editor SynEdit put on it
     property FilesControl: TWinControl read FFilesControl write FFilesControl;
     property BrowseFolder: string read FBrowseFolder write SetBrowseFolder;
+    procedure SetDefaultPerspective(vName: string);
+    property DefaultPerspective: TEditorPerspective read FDefaultPerspective write SetDefaultPerspective;
+    property Perspective: TEditorPerspective read GetPerspective;
+    property SCM: TEditorSCM read GetSCM;
     //property MacroRecorder: TSynMacroRecorder read FMacroRecorder;
     property OnChangedState: TOnEditorChangeState read FOnChangedState write FOnChangedState;
     property OnChoosePerspective: TOnChoosePerspective read FOnChoosePerspective write FOnChoosePerspective;
@@ -704,6 +774,52 @@ begin
   end;
 end;
 
+{ TSourceManagements }
+
+function TSourceManagements.GetItem(Index: integer): TEditorSCM;
+begin
+  Result := inherited Items[Index] as TEditorSCM;
+end;
+
+function TSourceManagements.Find(vName: string): TEditorSCM;
+var
+  i: integer;
+begin
+  Result := nil;
+  if vName <> '' then
+    for i := 0 to Count - 1 do
+    begin
+      if SameText(Items[i].Name, vName) then
+      begin
+        Result := Items[i] as TEditorSCM;
+        break;
+      end;
+    end;
+end;
+
+procedure TSourceManagements.Add(vEditorSCM: TEditorSCMClass);
+var
+  aItem: TEditorSCM;
+begin
+  aItem := vEditorSCM.Create;
+  inherited Add(aItem);
+end;
+
+{ TEditorElement }
+
+constructor TEditorElement.Create;
+begin
+  inherited Create;
+end;
+
+{ TDefaultPerspective }
+
+procedure TDefaultPerspective.EnumExtensions(vExtensions: TStringList);
+begin
+  inherited;
+  Engine.Groups.EnumExtensions(vExtensions);
+end;
+
 { TEditorFormList }
 
 function TEditorFormList.GetItem(Index: integer): TEditorFormItem;
@@ -738,24 +854,59 @@ end;
 
 { TEditorPerspective }
 
-procedure TEditorPerspective.SetGroups(AValue: TStringList);
+procedure TEditorPerspective.AddGroup(vName: string);
+var
+  G: TFileGroup;
 begin
-  FGroups.Assign(AValue);
+  G := Engine.Groups.Find(vName);
+  if G = nil then
+    raise Exception.Create(vName + ' file group not found');
+  Groups.Add(G);
+end;
+
+function TEditorPerspective.CreateDebugger: TEditorDebugger;
+begin
+  Result := nil;
 end;
 
 constructor TEditorPerspective.Create;
 begin
   inherited;
-  FGroups := TStringList.Create;
-  FTitle := 'Default project type';
+  FGroups := TFileGroups.Create(False);//it already owned by Engine.Groups
+  FTitle := 'Default';
   FName := 'Default';
+  FDescription := 'Default project type';
   FImageIndex := -1;
+  FDefaultFileGroup := 'TXT';
 end;
 
 destructor TEditorPerspective.Destroy;
 begin
-  FGroups.Free;
+  FreeAndNil(FDebug);
+  FreeAndNil(FGroups);
   inherited;
+end;
+
+procedure TEditorPerspective.EnumExtensions(vExtensions: TStringList);
+begin
+
+end;
+
+function TEditorPerspective.CreateEditorFile(Group: string): TEditorFile;
+var
+  aGroup: TFileGroup;
+begin
+  aGroup := Engine.Groups.Find(Group);
+  if aGroup <> nil then
+    Result := aGroup.Category.CreateEditorFile(Engine.Files)
+  else
+    Result := TEditorFile.Create(Engine.Files);
+  Result.Group := aGroup;
+end;
+
+function TEditorPerspective.CreateEditorProject: TEditorProject;
+begin
+  Result := TEditorProject.Create;
 end;
 
 { TPerspectives }
@@ -781,12 +932,33 @@ begin
     end;
 end;
 
+function TPerspectives.IndexOf(vName: string): Integer;
+var
+  i: integer;
+begin
+  Result := -1;
+  if vName <> '' then
+    for i := 0 to Count - 1 do
+    begin
+      if SameText(Items[i].Name, vName) then
+      begin
+        Result := i;
+        break;
+      end;
+    end;
+end;
+
 procedure TPerspectives.Add(vEditorPerspective: TEditorPerspectiveClass);
 var
   aItem: TEditorPerspective;
 begin
   aItem := vEditorPerspective.Create;
-  inherited Add(aItem);
+  Add(aItem);
+end;
+
+procedure TPerspectives.Add(vEditorPerspective: TEditorPerspective);
+begin
+  inherited Add(vEditorPerspective);
 end;
 
 { TSynDebugMarksPart }
@@ -953,41 +1125,24 @@ begin
   FMessagesList := TEditorMessagesList.Create;
   //FMacroRecorder := TSynMacroRecorder.Create(nil);
   //FMacroRecorder.OnStateChange := DoMacroStateChange;
+  FInternalPerspective := TDefaultPerspective.Create;
   FForms := TEditorFormList.Create(True);
   FOptions := TEditorOptions.Create;
   FCategories := TFileCategories.Create(True);
   FGroups := TFileGroups.Create(True);
   FPerspectives := TPerspectives.Create(True);
+  FSourceManagements := TSourceManagements.Create(True);
   FSearchEngine := TSynEditSearch.Create;
   FFiles := TEditorFiles.Create(TEditorFile);
   FSession := TEditorSession.Create;
-  FDebug := CreateDebugger;
-  FSCM := CreateSCM;
   Extenstion := 'mne-project';
-end;
-
-function TEditorEngine.CreateEditorFile(Group: string): TEditorFile;
-var
-  aGroup: TFileGroup;
-begin
-  aGroup := Groups.Find(Group);
-  if aGroup <> nil then
-    Result := aGroup.Category.CreateEditorFile(Files)
-  else
-    Result := TEditorFile.Create(Files);
-  Result.Group := aGroup;
-end;
-
-function TEditorEngine.CreateEditorProject: TEditorProject;
-begin
-  Result := TEditorProject.Create
+  Perspectives.Add(FInternalPerspective);
 end;
 
 destructor TEditorEngine.Destroy;
 begin
-  FDebug.Stop;
-  FreeAndNil(FDebug);
-  FreeAndNil(FSCM);
+  if not FEngineShutdown then
+    Shutdown;
   FreeAndNil(FFiles);
   FreeAndNil(FSession);
   FreeAndNil(FCategories);
@@ -999,24 +1154,26 @@ begin
   FreeAndNil(FMessagesList);
   FOnChangedState := nil;
   FOnChoosePerspective := nil;
+  FInternalPerspective := nil;
+//  FreeAndNil(FInternalPerspective);
   FreeAndNil(FForms);
   inherited;
 end;
 
 procedure EnumFiles(Folder, Filter: string; FileList: TStringList);
 var
-  Rslt: integer;
+  R: integer;
   SearchRec: TSearchRec;
 begin
   Folder := IncludeTrailingPathDelimiter(Folder);
-  Rslt := FindFirst(Folder + Filter, faAnyFile, SearchRec);
-  while Rslt = 0 do
+  R := FindFirst(Folder + Filter, faAnyFile, SearchRec);
+  while R = 0 do
   begin
     if (SearchRec.Name <> '.') and (SearchRec.Name <> '..') then
     begin
       FileList.Add(SearchRec.Name);
     end;
-    Rslt := FindNext(SearchRec);
+    R := FindNext(SearchRec);
   end;
   FindClose(SearchRec);
 end;
@@ -1092,23 +1249,11 @@ begin
     Result := '';
 end;
 
-function TEditorEngine.CreateDebugger: TEditorDebugger;
+function TEditorEngine.ChoosePerspective(var vPerspective: TEditorPerspective): Boolean;
 begin
-  Result := TPHP_xDebug.Create;
-end;
-
-function TEditorEngine.CreateSCM: TEditorSCM;
-begin
-  Result := TEditorSCM.Create;
-end;
-
-function TEditorEngine.ChoosePerspective: TEditorPerspective;
-begin
-  Result := nil;
+  Result := False;
   if Assigned(FOnChoosePerspective) then
-    FOnChoosePerspective(Result);
-  if Result = nil then
-    Result := TEditorPerspective.Create;
+    FOnChoosePerspective(Result, vPerspective);
 end;
 
 procedure TEditorEngine.DoReplaceText(Sender: TObject; const ASearch, AReplace: string; Line, Column: integer; var ReplaceAction: TSynReplaceAction);
@@ -1166,9 +1311,19 @@ begin
     Result := ExpandToPath(Session.Project.RootDir, s);
 end;
 
+function TEditorEngine.GetSCM: TEditorSCM;
+begin
+  Result := nil;
+end;
+
 function TEditorEngine.GetPerspective: TEditorPerspective;
 begin
-  Result := TEditorPerspective.Create;
+  if (Session <> nil) and (Session.Project <> nil) and (Session.Project.Perspective <> nil) then
+    Result := Session.Project.Perspective
+  else if DefaultPerspective <> nil then
+    Result := FDefaultPerspective
+  else
+    Result := FInternalPerspective;
 end;
 
 function TEditorFiles.InternalOpenFile(FileName: string; AppendToRecent: Boolean): TEditorFile;
@@ -1185,7 +1340,7 @@ begin
   Result := FindFile(lFileName);
   if Result = nil then
   begin
-    Result := Engine.CreateEditorFile(Engine.FindExtensionCategoryName(ExtractFileExt(lFileName)));
+    Result := Engine.Perspective.CreateEditorFile(Engine.FindExtensionCategoryName(ExtractFileExt(lFileName)));
     Result.Load(lFileName);
   end;
   if AppendToRecent then
@@ -1216,7 +1371,7 @@ begin
     end;
     Project := aProject;
     Engine.ProcessRecentProject(FileName);
-    Engine.UpdateState([ecsChanged, ecsState, ecsRefresh, ecsProjectLoaded]);
+    Engine.UpdateState([ecsChanged, ecsState, ecsRefresh, ecsProject]);
   finally
     Engine.EndUpdate;
   end;
@@ -1227,12 +1382,12 @@ var
   aGroup: TFileGroup;
   S: string;
 begin
-  aGroup := Engine.Groups.Find(Engine.DefaultGroup);
+  aGroup := Engine.Groups.Find(Engine.Perspective.DefaultFileGroup);
   if aGroup <> nil then
     S := aGroup.Name
   else
     S := '';
-  Result := Engine.CreateEditorFile(S);
+  Result := Engine.Perspective.CreateEditorFile(S);
   Result.NewSource;
   Result.Edit;
   Current := Result;
@@ -1241,7 +1396,7 @@ end;
 
 function TEditorFiles.New(Category, Name, Related: string; ReadOnly, Executable: Boolean): TEditorFile;
 begin
-  Result := Engine.CreateEditorFile(Category);
+  Result := Engine.Perspective.CreateEditorFile(Category);
   Result.ReadOnly := ReadOnly;
   Result.Name := Name;
   Result.Related := Related;
@@ -1251,7 +1406,7 @@ end;
 
 function TEditorSession.New: TEditorProject;
 begin
-  Result := Engine.CreateEditorProject;
+  Result := Engine.Perspective.CreateEditorProject;
 end;
 
 procedure TEditorFiles.Next;
@@ -1495,6 +1650,7 @@ var
   i: Integer;
 begin
   Options.Load(Workspace + 'mne-options.xml');
+  SetDefaultPerspective(Options.DefaultPerspective);
   for i := 0 to Perspectives.Count - 1 do
   begin
     if Perspectives[i].OSDepended then
@@ -1517,6 +1673,14 @@ begin
     else
       Perspectives[i].SaveToFile(LowerCase(Workspace + 'mne-' + Perspectives[i].Name + '.xml'));
   end;
+end;
+
+procedure TEditorEngine.Shutdown;
+begin
+  FEngineShutdown := True;
+  if Perspective.Debug <> nil then
+    Perspective.Debug.Stop;
+  Files.Clear;
 end;
 
 procedure TEditorEngine.RemoveRecentProject(const FileName: string);
@@ -1549,6 +1713,13 @@ begin
     Result := ExpandToPath(FileName, ExtractFilePath(Files.Current.Name))
   else
     Result := FileName;
+end;
+
+procedure TEditorEngine.SetDefaultPerspective(vName: string);
+begin
+  FDefaultPerspective := Perspectives.Find(vName);
+  if FDefaultPerspective = nil then
+    FDefaultPerspective := FInternalPerspective;
 end;
 
 procedure TEditorEngine.DoChangedState(State: TEditorChangeState);
@@ -1606,6 +1777,15 @@ begin
   Result := IncludeTrailingPathDelimiter(FWorkSpace);
 end;
 
+procedure TEditorEngine.SetDefaultPerspective(AValue: TEditorPerspective);
+begin
+  if FDefaultPerspective =AValue then exit;
+  FDefaultPerspective :=AValue;
+  if FDefaultPerspective <> nil then
+    Options.DefaultPerspective := FDefaultPerspective.Name;
+  Engine.UpdateState([ecsChanged, ecsProject]);
+end;
+
 { TEditorFiles }
 
 function TEditorFiles.GetItems(Index: integer): TEditorFile;
@@ -1627,7 +1807,7 @@ end;
 
 destructor TEditorFiles.Destroy;
 begin
-  inherited Destroy;
+  inherited;
 end;
 
 function TEditorFiles.ShowFile(vFileName: string): TEditorFile;
@@ -2038,9 +2218,9 @@ end;
 
 procedure TEditorFile.DoSpecialLineMarkup(Sender: TObject; Line: integer; var Special: Boolean; Markup: TSynSelectedColor);
 begin
-  if Engine.Debug.ExecutedEdit = Sender then
+  if (Engine.Perspective.Debug <> nil) and (Engine.Perspective.Debug.ExecutedEdit = Sender) then
   begin
-    if Engine.Debug.ExecutedLine = Line then
+    if Engine.Perspective.Debug.ExecutedLine = Line then
     begin
       Special := True;
       Markup.Background := clNavy;
@@ -2056,11 +2236,11 @@ begin
   if fgkExecutable in Group.Kind then
   begin
     aLine := SynEdit.PixelsToRowColumn(Point(X, Y)).y;
-    Engine.Debug.Lock;
+    Engine.Perspective.Debug.Lock;
     try
-      Engine.Debug.Breakpoints.Toggle(Name, aLine);
+      Engine.Perspective.Debug.Breakpoints.Toggle(Name, aLine);
     finally
-      Engine.Debug.Unlock;
+      Engine.Perspective.Debug.Unlock;
     end;
     SynEdit.InvalidateLine(aLine);
   end;
@@ -2104,12 +2284,6 @@ begin
   FRecentProjects.Free;
   FProjects.Free;
   inherited;
-end;
-
-procedure TEditorOptions.SetDefaultPerspective(vPerspective: TEditorPerspective);
-begin
-  FreeAndNil(FPerspective);
-  FPerspective := vPerspective;
 end;
 
 procedure TEditorOptions.SetProjects(const Value: TStringList);
@@ -2185,6 +2359,11 @@ begin
   if Result <> '' then
     Result := Result + '|';
   Result := Result + 'Any file (*.*)|*.*';
+end;
+
+procedure TFileGroups.Add(vGroup: TFileGroup);
+begin
+  inherited Add(vGroup);
 end;
 
 function TFileCategories.Find(vName: string): TFileCategory;
@@ -2313,10 +2492,18 @@ begin
   inherited;
 end;
 
-function TEditorProject.GetPerspective: TEditorPerspective;
+procedure TEditorProject.SetPerspectiveName(AValue: string);
 begin
-  Result := FPerspective;
-  //TODO
+  if FPerspectiveName <> AValue then
+  begin
+    FPerspectiveName :=AValue;
+    FPerspective := nil;
+    if FPerspectiveName <> '' then
+      FPerspective := Engine.Perspectives.Find(PerspectiveName);
+    if FPerspective = nil then
+      FPerspective := Engine.DefaultPerspective;
+    Engine.UpdateState([ecsChanged, ecsProject]);
+  end;
 end;
 
 procedure TEditorProject.Loaded(Failed: Boolean);
@@ -2393,9 +2580,10 @@ end;
 procedure TFileGroup.EnumExtensions(vExtensions: TStringList);
   procedure AddIt(E: string);
   begin
-    if not vExtensions.IndexOf(E) < 0 then
+    if vExtensions.IndexOf(E) < 0 then
       vExtensions.Add(E);
   end;
+
   procedure AddStrings(E: TStringList);
   var
     i: Integer;
@@ -2568,22 +2756,25 @@ var
 
 begin
   //inherited;
-  lh := TSynEdit(SynEdit).LineHeight;
-  iw := EditorResource.DebugImages.Width;
+  if Engine.Perspective.Debug <> nil then
+  begin
+    lh := TSynEdit(SynEdit).LineHeight;
+    iw := EditorResource.DebugImages.Width;
 
-  Engine.Debug.Lock;
-  try
-    for i := 0 to Engine.Debug.Breakpoints.Count - 1 do
-    begin
-      if SameText(Engine.Debug.Breakpoints[i].FileName, FEditorFile.Name) then//need improve
-        DrawIndicator(Engine.Debug.Breakpoints[i].Line, DEBUG_IMAGE_BREAKPOINT);
+    Engine.Perspective.Debug.Lock;
+    try
+      for i := 0 to Engine.Perspective.Debug.Breakpoints.Count - 1 do
+      begin
+        if SameText(Engine.Perspective.Debug.Breakpoints[i].FileName, FEditorFile.Name) then//need improve
+          DrawIndicator(Engine.Perspective.Debug.Breakpoints[i].Line, DEBUG_IMAGE_BREAKPOINT);
+      end;
+    finally
+      Engine.Perspective.Debug.Unlock;
     end;
-  finally
-    Engine.Debug.Unlock;
-  end;
 
-  if (Engine.Debug.ExecutedEdit = SynEdit) and (Engine.Debug.ExecutedLine >= 0) then
-    DrawIndicator(Engine.Debug.ExecutedLine, DEBUG_IMAGE_EXECUTE);
+    if (Engine.Perspective.Debug.ExecutedEdit = SynEdit) and (Engine.Perspective.Debug.ExecutedLine >= 0) then
+      DrawIndicator(Engine.Perspective.Debug.ExecutedLine, DEBUG_IMAGE_EXECUTE);
+  end;
 end;
 
 { TEditorDesktop }
@@ -2608,23 +2799,26 @@ var
 begin
   Engine.BeginUpdate;
   try
-    Engine.Debug.Lock;
-    try
-{      Engine.Debug.BreakpointsClear;
-      for i := 0 to Breakpoints.Count - 1 do
-      begin
-        Engine.Debug.Breakpoints.Add(Breakpoints[i].FileName, Breakpoints[i].Line);
-      end;
+    if Engine.Perspective.Debug <> nil then
+    begin
+      Engine.Perspective.Debug.Lock;
+      try
+  {      Engine.Perspective.Debug.BreakpointsClear;
+        for i := 0 to Breakpoints.Count - 1 do
+        begin
+          Engine.Perspective.Debug.Breakpoints.Add(Breakpoints[i].FileName, Breakpoints[i].Line);
+        end;
 
-      Engine.Debug.Watches.Clear;
-      for i := 0 to Watches.Count - 1 do
-      begin
-        Engine.Debug.Watches.Add(Watches[i].VariableName, Watches[i].Value);
-      end;}
-    finally
-      Engine.Debug.Unlock;
+        Engine.Perspective.Debug.Watches.Clear;
+        for i := 0 to Watches.Count - 1 do
+        begin
+          Engine.Perspective.Debug.Watches.Add(Watches[i].VariableName, Watches[i].Value);
+        end;}
+      finally
+        Engine.Perspective.Debug.Unlock;
+      end;
+      Engine.UpdateState([ecsDebug]);
     end;
-    Engine.UpdateState([ecsDebug]);
 
     Engine.Files.CloseAll;
     for i := 0 to Files.Count - 1 do
@@ -2656,19 +2850,19 @@ var
 begin
 {  Breakpoints.Clear;
   Watches.Clear;
-  Engine.Debug.Lock;
+  Engine.Perspective.Debug.Lock;
   try
-    for i := 0 to Engine.Debug.Breakpoints.Count - 1 do
+    for i := 0 to Engine.Perspective.Debug.Breakpoints.Count - 1 do
     begin
-      Breakpoints.Add(Engine.Debug.Breakpoints[i].FileName, Engine.Debug.Breakpoints[i].Line);
+      Breakpoints.Add(Engine.Perspective.Debug.Breakpoints[i].FileName, Engine.Perspective.Debug.Breakpoints[i].Line);
     end;
 
-    for i := 0 to Engine.Debug.Watches.Count - 1 do
+    for i := 0 to Engine.Perspective.Debug.Watches.Count - 1 do
     begin
-      Watches.Add(Engine.Debug.Watches[i].VariableName, Engine.Debug.Watches[i].Value);
+      Watches.Add(Engine.Perspective.Debug.Watches[i].VariableName, Engine.Perspective.Debug.Watches[i].Value);
     end;
   finally
-    Engine.Debug.Unlock;
+    Engine.Perspective.Debug.Unlock;
   end;}
 
   Files.Clear;
@@ -2746,6 +2940,5 @@ begin
 end;
 
 finalization
-  FEngineShutdown := True;
   FreeAndNil(FEngine);
 end.

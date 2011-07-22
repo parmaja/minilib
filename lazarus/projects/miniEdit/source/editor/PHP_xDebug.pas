@@ -11,7 +11,7 @@ interface
 uses
   SysUtils, Forms, StrUtils, Variants, Classes, Controls, Graphics, Contnrs, syncobjs,
   mnServers, dbgpServers,
-  SynEdit, IAddons,
+  SynEdit,
   EditorDebugger;
 
 type
@@ -88,9 +88,6 @@ type
   end;
 
 implementation
-
-uses
-  Dialogs;
 
 { TPHP_xDebugWatches }
 
@@ -371,4 +368,4 @@ end;
 initialization
 //  Addons.Add('Debug', 'XDebug', TPHP_xDebug);//most not created /??!!!
 end.
-
+

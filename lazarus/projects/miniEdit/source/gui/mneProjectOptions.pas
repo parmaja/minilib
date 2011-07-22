@@ -14,7 +14,11 @@ uses
   EditorEngine, mneClasses, Dialogs, StdCtrls, ExtCtrls, ComCtrls;
 
 type
+
+  { TProjectForm }
+
   TProjectForm = class(TForm)
+    Label7: TLabel;
     OkBtn: TButton;
     CancelBtn: TButton;
     OpenDialog: TOpenDialog;
@@ -22,6 +26,7 @@ type
     Label3: TLabel;
     DescriptionEdit: TEdit;
     Label4: TLabel;
+    PerspectiveCbo: TComboBox;
     SaveDesktopChk: TCheckBox;
     Label1: TLabel;
     Label2: TLabel;
@@ -80,6 +85,7 @@ begin
   FProject.RootUrl := RootUrlEdit.Text;
   FProject.RunMode := TRunMode(RunModeCbo.ItemIndex);
   FProject.SaveDesktop := SaveDesktopChk.Checked;
+  FProject.PerspectiveName := Engine.Perspectives[PerspectiveCbo.ItemIndex].Name;
 end;
 
 procedure TProjectForm.Retrive;
@@ -90,6 +96,7 @@ begin
   RootUrlEdit.Text := FProject.RootUrl;
   RunModeCbo.ItemIndex := Ord(FProject.RunMode);
   SaveDesktopChk.Checked := FProject.SaveDesktop;
+  PerspectiveCbo.ItemIndex := Engine.Perspectives.IndexOf(FProject.PerspectiveName);
 end;
 
 procedure TProjectForm.Button2Click(Sender: TObject);
@@ -117,10 +124,21 @@ begin
 end;
 
 procedure TProjectForm.FormCreate(Sender: TObject);
+var
+  i:Integer;
 begin
   RunModeCbo.Items.Add('None');
   RunModeCbo.Items.Add('Console');
   RunModeCbo.Items.Add('HTTP URL');
+  PerspectiveCbo.Items.BeginUpdate;
+  try
+    for i := 0 to Engine.Perspectives.Count -1 do
+    begin
+      PerspectiveCbo.Items.Add(Engine.Perspectives[i].Title);
+    end;
+  finally
+    PerspectiveCbo.Items.EndUpdate;
+  end;
 end;
 
 end.
