@@ -1,7 +1,7 @@
 object MainForm: TMainForm
-  Left = 376
+  Left = 368
   Height = 518
-  Top = 172
+  Top = 148
   Width = 876
   AllowDropFiles = True
   Caption = 'Mini Edit'
@@ -1013,6 +1013,18 @@ object MainForm: TMainForm
         AutoCheck = True
         OnClick = OutputActExecute
       end
+      object MenuItem6: TMenuItem
+        Caption = '-'
+      end
+      object MenuItem9: TMenuItem
+        Action = ShowRelatedAct
+      end
+      object MenuItem8: TMenuItem
+        Action = ShowKnownAct
+      end
+      object MenuItem7: TMenuItem
+        Action = ShowAllAct
+      end
       object N16: TMenuItem
         Caption = '-'
       end
@@ -1248,7 +1260,7 @@ object MainForm: TMainForm
   end
   object ActionList: TActionList
     Images = EditorResource.ToolbarImageList
-    left = 25
+    left = 32
     top = 71
     object PasteAct: TAction
       Category = 'Edit'
@@ -1709,10 +1721,29 @@ object MainForm: TMainForm
       OnUpdate = QuickFindActUpdate
       ShortCut = 16465
     end
+    object ShowRelatedAct: TAction
+      Category = 'Files'
+      Caption = 'Show Related'
+      Checked = True
+      GroupIndex = 5
+      OnExecute = ShowRelatedActExecute
+    end
+    object ShowKnownAct: TAction
+      Category = 'Files'
+      Caption = 'Show Known'
+      GroupIndex = 5
+      OnExecute = ShowKnownActExecute
+    end
+    object ShowAllAct: TAction
+      Category = 'Files'
+      Caption = 'Show All'
+      GroupIndex = 5
+      OnExecute = ShowAllActExecute
+    end
   end
   object FolderMenu: TPopupMenu
-    left = 25
-    top = 136
+    left = 84
+    top = 223
     object Home1: TMenuItem
       Action = FolderHomeAct
       OnClick = FolderHomeActExecute
@@ -1732,6 +1763,18 @@ object MainForm: TMainForm
     object FileFolder1: TMenuItem
       Caption = 'File Folder'
       OnClick = FileFolder1Click
+    end
+    object MenuItem2: TMenuItem
+      Caption = '-'
+    end
+    object MenuItem5: TMenuItem
+      Action = ShowRelatedAct
+    end
+    object MenuItem3: TMenuItem
+      Action = ShowKnownAct
+    end
+    object MenuItem4: TMenuItem
+      Action = ShowAllAct
     end
   end
   object FileModeMenu: TPopupMenu
@@ -1879,6 +1922,6 @@ object MainForm: TMainForm
   object ApplicationProperties: TApplicationProperties
     OnShowHint = ApplicationPropertiesShowHint
     left = 83
-    top = 215
+    top = 138
   end
 end

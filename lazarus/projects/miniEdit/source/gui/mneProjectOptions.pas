@@ -108,8 +108,8 @@ var
   aFolder: string;
 begin
   aFolder := RootDirEdit.Text;
-  if (aFolder = '') and (FProject.Engine.Files.Current <> nil) then
-    aFolder := ExtractFilePath(FProject.Engine.Files.Current.Name);
+  if (aFolder = '') and (Engine.Files.Current <> nil) then
+    aFolder := ExtractFilePath(Engine.Files.Current.Name);
   if SelectFolder('Select root directory for your project', '', aFolder) then
   begin
     RootDirEdit.Text := aFolder;

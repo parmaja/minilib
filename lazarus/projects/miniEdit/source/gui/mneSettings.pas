@@ -18,37 +18,24 @@ type
   { TEditorSettingForm }
 
   TEditorSettingForm = class(TForm)
+    Label4: TLabel;
     OkBtn: TButton;
     CancelBtn: TButton;
-    OpenDialog: TOpenDialog;
     PageControl: TPageControl;
-    TabSheet1: TTabSheet;
     TabSheet2: TTabSheet;
-    Label1: TLabel;
-    PHPFolderEdit: TEdit;
-    Button3: TButton;
     Label3: TLabel;
-    Label4: TLabel;
     CollectTimeoutEdit: TEdit;
     CollectTimeoutSpn: TUpDown;
     CollectAutoCompleteChk: TCheckBox;
     SendOutputToNewFileChk: TCheckBox;
     AutoStartDebugServerChk: TCheckBox;
-    TabSheet3: TTabSheet;
     PHPManualEdit: TEdit;
     Label2: TLabel;
     Button1: TButton;
-    HTMLManualEdit: TEdit;
-    Label8: TLabel;
-    Button5: TButton;
     TabSheet4: TTabSheet;
     Label9: TLabel;
     ExtensionsGrid: TStringGrid;
     Label10: TLabel;
-    procedure Button3Click(Sender: TObject);
-    procedure Button1Click(Sender: TObject);
-    procedure Button4Click(Sender: TObject);
-    procedure Button5Click(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
     procedure INIEditChange(Sender: TObject);
@@ -85,42 +72,10 @@ begin
   end;
 end;
 
-procedure TEditorSettingForm.Button3Click(Sender: TObject);
-var
-  aFolder: string;
-begin
-  aFolder := IncludeTrailingPathDelimiter(PHPFolderEdit.Text);
-  if SelectFolder('PHP path', '', aFolder) then
-  begin
-    PHPFolderEdit.Text := aFolder;
-  end;
-end;
-
-procedure TEditorSettingForm.Button1Click(Sender: TObject);
-begin
-  OpenDialog.Title := 'select PHP Help file "php_manual_en.chm"';
-  OpenDialog.Filter := 'Help files|*.chm|All files|*.*';
-  OpenDialog.FileName := PHPManualEdit.Text;
-  OpenDialog.InitialDir := ExtractFilePath(PHPManualEdit.Text);
-  if OpenDialog.Execute then
-  begin
-    PHPManualEdit.Text := OpenDialog.FileName;
-  end;
-end;
-
-procedure TEditorSettingForm.Button4Click(Sender: TObject);
-begin
-
-end;
-
 procedure TEditorSettingForm.Apply;
 var
   i, c: Integer;
 begin
-  FEngine.Options.HelpFiles.Clear;
-  FEngine.Options.HelpFiles.Values['php'] := PHPManualEdit.Text;
-  FEngine.Options.HelpFiles.Values['html'] := HTMLManualEdit.Text;
-  FEngine.Options.CompilerFolder := PHPFolderEdit.Text;
   FEngine.Options.CollectAutoComplete := CollectAutoCompleteChk.Checked;
   FEngine.Options.CollectTimeout := CollectTimeoutSpn.Position;
   FEngine.Options.SendOutputToNewFile := SendOutputToNewFileChk.Checked;
@@ -140,9 +95,6 @@ procedure TEditorSettingForm.Retrive;
 var
   i, c: Integer;
 begin
-  PHPManualEdit.Text := FEngine.Options.HelpFiles.Values['php'];
-  HTMLManualEdit.Text := FEngine.Options.HelpFiles.Values['html'];
-  PHPFolderEdit.Text := FEngine.Options.CompilerFolder;
   CollectAutoCompleteChk.Checked := FEngine.Options.CollectAutoComplete;
   CollectTimeoutSpn.Position := FEngine.Options.CollectTimeout;
   SendOutputToNewFileChk.Checked := FEngine.Options.SendOutputToNewFile;
@@ -164,17 +116,6 @@ begin
   end;
 end;
 
-procedure TEditorSettingForm.Button5Click(Sender: TObject);
-begin
-  OpenDialog.Title := 'select HTML Help file';
-  OpenDialog.Filter := 'Help files|*.chm|All files|*.*';
-  OpenDialog.FileName := HTMLManualEdit.Text;
-  OpenDialog.InitialDir := ExtractFilePath(HTMLManualEdit.Text);
-  if OpenDialog.Execute then
-  begin
-    HTMLManualEdit.Text := OpenDialog.FileName;
-  end;
-end;
 
 procedure TEditorSettingForm.FormCreate(Sender: TObject);
 begin

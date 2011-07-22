@@ -1,25 +1,25 @@
 object PHPConfigForm: TPHPConfigForm
   Left = 287
-  Height = 325
+  Height = 180
   Top = 170
   Width = 398
   BorderStyle = bsSingle
   Caption = 'PHP Config'
-  ClientHeight = 325
+  ClientHeight = 180
   ClientWidth = 398
   OnClose = FormClose
   LCLVersion = '0.9.31'
-  object PHPDirEdit: TEdit
+  object PHPPathEdit: TEdit
     Left = 11
     Height = 21
     Top = 28
-    Width = 352
+    Width = 360
     TabOrder = 0
   end
   object Button3: TButton
-    Left = 365
-    Height = 20
-    Top = 29
+    Left = 371
+    Height = 21
+    Top = 28
     Width = 22
     Caption = '...'
     OnClick = Button3Click
@@ -36,7 +36,7 @@ object PHPConfigForm: TPHPConfigForm
   object OkBtn: TButton
     Left = 5
     Height = 25
-    Top = 294
+    Top = 149
     Width = 75
     Anchors = [akLeft, akBottom]
     Caption = '&Ok'
@@ -47,7 +47,7 @@ object PHPConfigForm: TPHPConfigForm
   object CancelBtn: TButton
     Left = 81
     Height = 25
-    Top = 294
+    Top = 149
     Width = 75
     Anchors = [akLeft, akBottom]
     Cancel = True
@@ -55,8 +55,56 @@ object PHPConfigForm: TPHPConfigForm
     ModalResult = 2
     TabOrder = 3
   end
+  object Label2: TLabel
+    Left = 12
+    Height = 14
+    Top = 54
+    Width = 212
+    Caption = 'Select a PHP Help file "php_manual_en.chm"'
+    ParentColor = False
+  end
+  object PHPManualEdit: TEdit
+    Left = 11
+    Height = 21
+    Top = 73
+    Width = 360
+    TabOrder = 4
+  end
+  object Button1: TButton
+    Left = 371
+    Height = 22
+    Top = 72
+    Width = 22
+    Caption = '...'
+    OnClick = Button1Click
+    TabOrder = 5
+  end
+  object Label8: TLabel
+    Left = 11
+    Height = 14
+    Top = 98
+    Width = 177
+    Caption = 'Select a HTML Help file "htmlref.chm"'
+    ParentColor = False
+  end
+  object HTMLManualEdit: TEdit
+    Left = 11
+    Height = 21
+    Top = 117
+    Width = 360
+    TabOrder = 6
+  end
+  object Button5: TButton
+    Left = 371
+    Height = 22
+    Top = 116
+    Width = 22
+    Caption = '...'
+    OnClick = Button5Click
+    TabOrder = 7
+  end
   object OpenDialog: TOpenDialog
-    left = 290
-    top = 246
+    left = 239
+    top = 112
   end
 end

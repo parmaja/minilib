@@ -282,16 +282,16 @@ initialization
   begin
     //Categories.Add('', TTXTFile, TTXTFileCategory);
     Categories.Add('TXT', TTXTFile, TTXTFileCategory);
-    Categories.Add('htaccess', TApacheFile, TApacheFileCategory, []);
+    Categories.Add('APACHE', TApacheFile, TApacheFileCategory, []);
     Categories.Add('SQL', TSQLFile, TSQLFileCategory);
     Categories.Add('INI', TINIFile, TINIFileCategory);
     Categories.Add('XML', TXMLFile, TXMLFileCategory);
 
-    Groups.Add('SQL files', 'sql', 'SQL', ['sql'], [fgkPublish, fgkBrowsable]);
-    Groups.Add('htaccess files', 'Apache', 'htaccess', ['htaccess', 'conf'], [fgkBrowsable]);
-    Groups.Add('XML files', 'XML', 'XML', ['xml'], [fgkPublish, fgkBrowsable]);
-    Groups.Add('INI files', 'ini', 'ini', ['ini'], []);
-    Groups.Add('TXT files', 'TXT', 'TXT', ['txt'], []);
+    Groups.Add('SQL', 'SQL files', 'SQL', ['sql'], [fgkPublish, fgkBrowsable]);
+    Groups.Add('APACHE', 'htaccess files', 'APACHE', ['htaccess', 'conf'], [fgkBrowsable]);
+    Groups.Add('XML', 'XML files', 'XML', ['xml'], [fgkPublish, fgkBrowsable]);
+    Groups.Add('INI', 'INI files', 'INI', ['ini'], []);
+    Groups.Add('TXT', 'TXT files', 'TXT', ['txt'], []);
   end;
 end.
 

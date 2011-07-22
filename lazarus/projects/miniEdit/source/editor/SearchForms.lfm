@@ -1,11 +1,11 @@
 object SearchForm: TSearchForm
   Left = 256
-  Height = 230
+  Height = 216
   Top = 77
   Width = 332
   BorderStyle = bsDialog
   Caption = 'Search Text'
-  ClientHeight = 230
+  ClientHeight = 216
   ClientWidth = 332
   Font.Height = -11
   Font.Name = 'MS Sans Serif'
@@ -105,7 +105,7 @@ object SearchForm: TSearchForm
   object OKBtn: TButton
     Left = 8
     Height = 26
-    Top = 200
+    Top = 186
     Width = 75
     Anchors = [akLeft, akBottom]
     Caption = 'OK'
@@ -116,7 +116,7 @@ object SearchForm: TSearchForm
   object CancelBtn: TButton
     Left = 87
     Height = 26
-    Top = 200
+    Top = 186
     Width = 75
     Anchors = [akLeft, akBottom]
     Cancel = True

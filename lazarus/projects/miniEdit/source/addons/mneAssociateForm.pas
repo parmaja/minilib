@@ -48,8 +48,7 @@ begin
   begin
     AssociateNow('Open', '.php', 'phpfile', Application.ExeName, 'PHP script file', 'text/plain', False);
     AssociateNow('Edit', '.phpx', 'phpxfile', Application.ExeName, 'PHPX script file', 'text/plain', False);
-    if Engine.Options.CompilerFolder <> '' then
-      AssociateNow('Open', '.phpx', 'phpxfile', IncludeTrailingPathDelimiter(Engine.Options.CompilerFolder) + 'php.exe', 'PHP executable script file', 'text/plain', False);
+{      AssociateNow('Open', '.phpx', 'phpxfile', IncludeTrailingPathDelimiter(Engine.Options.CompilerFolder) + 'php.exe', 'PHP executable script file', 'text/plain', False);}
   end;
 
   AssociateNow('Open', '.mne-project', 'mne-project', Application.ExeName, 'Mini Edit project file', 'application/miniedit', True);
@@ -187,4 +186,4 @@ type
 initialization
   Addons.Add('File', 'Associate', TAssociateAddon);
 end.
-
+

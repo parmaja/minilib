@@ -86,8 +86,15 @@ type
   { TPHPPerspective }
 
   TPHPPerspective = class(TEditorPerspective)
+  private
+    FHTMLHelpFile: string;
+    FPHPHelpFile: string;
+    FPHPPath: string;
   public
     constructor Create; override;
+    property PHPPath: string read FPHPPath write FPHPPath;
+    property PHPHelpFile: string read FPHPHelpFile write FPHPHelpFile;
+    property HTMLHelpFile: string read FHTMLHelpFile write FHTMLHelpFile;
   end;
 
 implementation
@@ -104,6 +111,10 @@ begin
   FDescription := 'PHP Files, *.php, *.inc';
   FName := 'PHP';
   FImageIndex := -1;
+  Groups.Add('PHP');
+  Groups.Add('HTML');
+  Groups.Add('CSS');
+  Groups.Add('JS');
 end;
 
 { TphpFile }
@@ -183,6 +194,7 @@ var
   aUrlMode: TRunMode;
 begin
   Result := False;
+  //todo move to Perspective
   aFile := Name;
   if (Engine.Session.IsOpened) then
   begin
@@ -211,10 +223,10 @@ begin
     end;
     prunConsole:
     begin
-      if Engine.Options.CompilerFolder <> '' then
+      {if Engine.Options.CompilerFolder <> '' then
         aRoot := IncludeTrailingPathDelimiter(Engine.Options.CompilerFolder) + 'php.exe'
       else
-        aRoot := 'php.exe';
+        aRoot := 'php.exe';}
       Result := True;
       //        ShellExecute(0, '', PChar(aRoot), PChar(aFile), PChar(ExtractFilePath(aFile)), SW_SHOWNOACTIVATE);
     end;
@@ -448,14 +460,15 @@ end;
 initialization
   with Engine do
   begin
-    Categories.Add('HTML/PHP', TphpFile, TPHPFileCategory, [fckPublish]);
+    Categories.Add('PHP', TphpFile, TPHPFileCategory, [fckPublish]);
+    Categories.Add('HTML', TphpFile, TPHPFileCategory, [fckPublish]);
     Categories.Add('CSS', TCssFile, TCSSFileCategory, [fckPublish]);
     Categories.Add('JS', TJSFile, TJSFileCategory, [fckPublish]);
-    Groups.Add('PHP Files', 'php', 'HTML/PHP', ['php'], [fgkExecutable, fgkPublish, fgkBrowsable, fgkMainIcon]);
-    Groups.Add('PHPX Files', 'phpx', 'HTML/PHP', ['phpx'], [fgkExecutable, fgkPublish, fgkBrowsable, fgkMainIcon]);
-    Groups.Add('HTML Files', 'html', 'HTML/PHP', ['html', 'tpl'], [fgkPublish, fgkBrowsable]);
-    Groups.Add('CSS Files', 'css', 'CSS', ['css'], [fgkPublish, fgkBrowsable]);
-    Groups.Add('Java Script Files', 'js', 'JS', ['js'], [fgkPublish, fgkBrowsable]);
+    Groups.Add('PHP', 'PHP Files', 'PHP', ['php'], [fgkExecutable, fgkPublish, fgkBrowsable, fgkMainIcon]);
+    //Groups.Add('PHPX', 'PHPX Files', 'PHP', ['phpx'], [fgkExecutable, fgkPublish, fgkBrowsable, fgkMainIcon]);
+    Groups.Add('HTML', 'HTML Files', 'HTML', ['html', 'htm', 'tpl'], [fgkPublish, fgkBrowsable]);
+    Groups.Add('CSS', 'CSS Files', 'CSS', ['css'], [fgkPublish, fgkBrowsable]);
+    Groups.Add('JS', 'Java Script Files', 'JS', ['js'], [fgkPublish, fgkBrowsable]);
     Perspectives.Add(TPHPPerspective);
     DefaultGroup := 'PHP';
   end;

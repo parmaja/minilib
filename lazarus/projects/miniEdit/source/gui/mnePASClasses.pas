@@ -60,6 +60,7 @@ begin
   FTitle := 'Pascal project';
   FDescription := 'Pascal/FPC/Lazarus Files, *.pas, *.pp *.inc';
   FImageIndex := -1;
+  Groups.Add('PAS');
 end;
 
 { TPASFileCategory }
@@ -91,7 +92,9 @@ end;
 initialization
   with Engine do
   begin
-    Categories.Add('PAS', TPASFile, TPASFileCategory);
+    Categories.Add('PASCAL', TPASFile, TPASFileCategory);
+    Groups.Add('PAS_PROJECT', 'Pascal Project Files', 'PASCAL', ['lpr', 'dpr'], [fgkExecutable, fgkPublish, fgkBrowsable]);
+    Groups.Add('PAS', 'Pascal Files', 'PASCAL', ['pas', 'pp', 'p'], [fgkExecutable, fgkPublish, fgkBrowsable]);
     Perspectives.Add(TPascalPerspective);
   end;
 end.
