@@ -1117,6 +1117,7 @@ end;
 procedure TEditorSession.Close;
 begin
   FProject := nil;
+  Engine.UpdateState([ecsChanged, ecsState, ecsRefresh, ecsProject]);
 end;
 
 constructor TEditorEngine.Create;
