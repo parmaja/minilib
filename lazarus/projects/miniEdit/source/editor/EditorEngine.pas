@@ -878,6 +878,7 @@ begin
   FDescription := 'Default project type';
   FImageIndex := -1;
   FDefaultFileGroup := 'TXT';
+  FDebug := CreateDebugger;
 end;
 
 destructor TEditorPerspective.Destroy;
