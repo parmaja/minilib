@@ -900,6 +900,9 @@ object MainForm: TMainForm
         Action = NewAct
         OnClick = NewActExecute
       end
+      object NewAsMnu: TMenuItem
+        Action = NewAsAct
+      end
       object OpenMnu: TMenuItem
         Action = OpenAct
         OnClick = OpenActExecute
@@ -1284,6 +1287,7 @@ object MainForm: TMainForm
     object PasteAct: TAction
       Category = 'Edit'
       Caption = 'Paste'
+      ImageIndex = 12
       OnExecute = PasteActExecute
       OnUpdate = PasteActUpdate
       ShortCut = 16470
@@ -1291,6 +1295,7 @@ object MainForm: TMainForm
     object CopyAct: TAction
       Category = 'Edit'
       Caption = 'Copy'
+      ImageIndex = 11
       OnExecute = CopyActExecute
       OnUpdate = CopyActUpdate
       ShortCut = 16451
@@ -1344,6 +1349,7 @@ object MainForm: TMainForm
     object CutAct: TAction
       Category = 'Edit'
       Caption = 'Cut'
+      ImageIndex = 10
       OnExecute = CutActExecute
       OnUpdate = CutActUpdate
       ShortCut = 16472
@@ -1454,6 +1460,7 @@ object MainForm: TMainForm
     object FindAct: TAction
       Category = 'Edit'
       Caption = 'Find'
+      ImageIndex = 4
       OnExecute = FindActExecute
       SecondaryShortCuts.Strings = (
         'Ctrl+F'
@@ -1469,6 +1476,7 @@ object MainForm: TMainForm
     object EditorOptionsAct: TAction
       Category = 'Edit'
       Caption = 'Editor Options'
+      ImageIndex = 13
       OnExecute = EditorOptionsActExecute
     end
     object ProjectOptionsAct: TAction
@@ -1480,16 +1488,19 @@ object MainForm: TMainForm
     object NewProjectAct: TAction
       Category = 'Project'
       Caption = 'New'
+      ImageIndex = 0
       OnExecute = NewProjectActExecute
     end
     object OpenProjectAct: TAction
       Category = 'Project'
       Caption = 'Open'
+      ImageIndex = 1
       OnExecute = OpenProjectActExecute
     end
     object SaveProjectAct: TAction
       Category = 'Project'
       Caption = 'Save'
+      ImageIndex = 2
       OnExecute = SaveProjectActExecute
     end
     object SaveAsProjectAct: TAction
@@ -1500,6 +1511,7 @@ object MainForm: TMainForm
     object SelectFileAct: TAction
       Category = 'Project'
       Caption = 'Select File'
+      ImageIndex = 11
       OnExecute = SelectFileActExecute
       ShortCut = 16507
     end
@@ -1774,6 +1786,11 @@ object MainForm: TMainForm
       Caption = 'SCM Type'
       Hint = 'Source control managment type'
       OnExecute = SCMTypeActExecute
+    end
+    object NewAsAct: TAction
+      Category = 'File'
+      Caption = 'New as'
+      OnExecute = NewAsActExecute
     end
   end
   object FolderMenu: TPopupMenu

@@ -6,10 +6,11 @@ unit TSVN_SCM;
  * @license    GPL 2 (http://www.gnu.org/licenses/gpl.html)
  * @author    Zaher Dirkey <zaher at parmaja dot com>
  *}
+{$ifndef WINDOWS}
+{$ERROR 'This unit only for Windows'}
+{ you can build one for Linux with same name to work}
+{$endif}
 
-{
-  Link to SCM manager like TSVN and TGIT
-}
 interface
 
 uses

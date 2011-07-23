@@ -66,10 +66,15 @@ var
   i, c, t: Integer;
   aItem: TListItem;
   procedure AddItem(Name, Title, Description: string; ImageIndex: Integer);
+  var
+    s: string;
   begin
      aItem := ItemsList.Items.Add;
      aItem.Caption := Title;
-     aItem.SubItems.Add(Description);
+     s := Description;
+     if s = '' then
+        s := Title;
+     aItem.SubItems.Add(s);
      aItem.ImageIndex := ImageIndex;
      SetLength(Items, c + 1);
      Items[c] := Name;

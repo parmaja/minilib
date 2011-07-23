@@ -20,13 +20,13 @@ object SelectListForm: TSelectListForm
     Anchors = [akTop, akLeft, akRight, akBottom]
     Columns = <    
       item
-        Caption = 'Project'
+        Caption = 'Type'
         Width = 100
       end    
       item
         AutoSize = True
         Caption = 'Description'
-        Width = 178
+        Width = 345
       end>
     HideSelection = False
     ReadOnly = True

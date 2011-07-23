@@ -83,19 +83,21 @@ type
 
   { TEditorElement }
 
-  TEditorElement = class(TmnXMLProfile)
+  TEditorElement = class(TPersistent)
   private
   protected
     FName: string;
     FTitle: string;
     FDescription: string;
     FImageIndex: integer;
+    function GetDescription: string; virtual;
   public
     constructor Create; virtual;
-    property Title: string read FTitle;
-    property Name: string read FName;
-    property Description: string read FDescription;
-    property ImageIndex: integer read FImageIndex;
+
+    property Name: string read FName write FName;
+    property Title: string read FTitle write FTitle;
+    property Description: string read GetDescription write FDescription;
+    property ImageIndex: integer read FImageIndex write FImageIndex;
   end;
 
   { TEditorElements }
@@ -129,6 +131,7 @@ type
     constructor Create; override;
     destructor Destroy; override;
     procedure EnumExtensions(vExtensions: TStringList); virtual;
+    procedure EnumExtensions(vExtensions: TEditorElements);
     function CreateEditorFile(Group: string): TEditorFile; virtual;
     function CreateEditorProject: TEditorProject; virtual;
     //OSDepended: When save to file, the filename changed depend on the os system name
@@ -309,7 +312,7 @@ type
     function ShowFile(const FileName: string; Line: integer): TEditorFile; overload;
     function OpenFile(vFileName: string): TEditorFile;
     procedure SetCurrentIndex(Index: integer; vRefresh: Boolean);
-    function New: TEditorFile; overload;
+    function New(vGroupName: string = ''): TEditorFile; overload;
     function New(Category, Name, Related: string; ReadOnly, Executable: Boolean): TEditorFile; overload;
     procedure Open;
     procedure Save;
@@ -461,34 +464,32 @@ type
 
   { TFileGroup }
 
-  TFileGroup = class(TObject)
+  TFileGroup = class(TEditorElement)
   private
-    FName: string;
-    FTitle: string;
     FExtensions: TStringList;
     FKind: TFileGroupKinds;
     FCategory: TFileCategory;
     procedure SetCategory(AValue: TFileCategory);
   protected
   public
-    constructor Create; virtual;
+    constructor Create; override;
     destructor Destroy; override;
     procedure EnumExtensions(vExtensions: TStringList);
+    procedure EnumExtensions(vExtensions: TEditorElements);
     property Category: TFileCategory read FCategory write SetCategory;
     property Extensions: TStringList read FExtensions;
-    property Name: string read FName write FName;
     property Kind: TFileGroupKinds read FKind write FKind;
-    property Title: string read FTitle write FTitle;
   end;
 
   { TFileGroups }
 
-  TFileGroups = class(TObjectList)
+  TFileGroups = class(TEditorElements)
   private
     function GetItem(Index: integer): TFileGroup;
   public
     function Find(vName: string): TFileGroup;
     procedure EnumExtensions(vExtensions: TStringList);
+    procedure EnumExtensions(vExtensions: TEditorElements);
     function FindExtension(vExtension: string): TFileGroup;
     function CreateFilter(vGroup: TFileGroup = nil): string;
     procedure Add(vGroup: TFileGroup);
@@ -872,9 +873,15 @@ end;
 
 { TEditorElement }
 
+function TEditorElement.GetDescription: string;
+begin
+  Result := FDescription;
+end;
+
 constructor TEditorElement.Create;
 begin
   inherited Create;
+  FImageIndex := -1;
 end;
 
 { TDefaultPerspective }
@@ -941,7 +948,6 @@ begin
   FTitle := 'Default';
   FName := 'Default';
   FDescription := 'Default project type';
-  FImageIndex := -1;
   FDefaultFileGroup := 'TXT';
   FDebug := CreateDebugger;
 end;
@@ -956,6 +962,11 @@ end;
 procedure TEditorPerspective.EnumExtensions(vExtensions: TStringList);
 begin
 
+end;
+
+procedure TEditorPerspective.EnumExtensions(vExtensions: TEditorElements);
+begin
+  Groups.EnumExtensions(vExtensions);
 end;
 
 function TEditorPerspective.CreateEditorFile(Group: string): TEditorFile;
@@ -1414,12 +1425,14 @@ begin
   end;
 end;
 
-function TEditorFiles.New: TEditorFile;
+function TEditorFiles.New(vGroupName: string): TEditorFile;
 var
   aGroup: TFileGroup;
   S: string;
 begin
-  aGroup := Engine.Groups.Find(Engine.Perspective.DefaultFileGroup);
+  if vGroupName = '' then
+    vGroupName := Engine.Perspective.DefaultFileGroup;
+  aGroup := Engine.Groups.Find(vGroupName);
   if aGroup <> nil then
     S := aGroup.Name
   else
@@ -1693,9 +1706,11 @@ begin
     for i := 0 to Perspectives.Count - 1 do
     begin
       if Perspectives[i].OSDepended then
-        Perspectives[i].SafeLoadFromFile(LowerCase(Workspace + 'mne-' + SysPlatform + '-' + Perspectives[i].Name + '.xml'))
+        aFile := LowerCase(Workspace + 'mne-' + SysPlatform + '-' + Perspectives[i].Name + '.xml')
       else
-        Perspectives[i].SafeLoadFromFile(LowerCase(Workspace + 'mne-' + Perspectives[i].Name + '.xml'));
+        aFile := LowerCase(Workspace + 'mne-' + Perspectives[i].Name + '.xml');
+      if FileExists(aFile) then
+        XMLReadObjectFile(Perspectives[i], aFile);
     end;
     SetDefaultPerspective(Session.Options.DefaultPerspective);
     SetDefaultSCM(Session.Options.DefaultSCM);
@@ -1714,9 +1729,11 @@ begin
   for i := 0 to Perspectives.Count - 1 do
   begin
     if Perspectives[i].OSDepended then
-      Perspectives[i].SaveToFile(LowerCase(Workspace + 'mne-' + SysPlatform + '-' + Perspectives[i].Name + '.xml'))
+      aFile := LowerCase(Workspace + 'mne-' + SysPlatform + '-' + Perspectives[i].Name + '.xml')
     else
-      Perspectives[i].SaveToFile(LowerCase(Workspace + 'mne-' + Perspectives[i].Name + '.xml'));
+      aFile := LowerCase(Workspace + 'mne-' + Perspectives[i].Name + '.xml');
+    if FileExists(aFile) then
+      XMLWriteObjectFile(Perspectives[i], aFile);
   end;
 end;
 
@@ -2694,6 +2711,28 @@ begin
   end;
 end;
 
+procedure TFileGroup.EnumExtensions(vExtensions: TEditorElements);
+var
+  lList:TStringList;
+  i: Integer;
+  lItem: TEditorElement;
+begin
+  lList := TStringList.Create;
+  try
+    EnumExtensions(lList);
+    for i := 0 to lList.Count -1 do
+    begin
+      lItem := TEditorElement.Create;
+      lItem.Name := lList[i];
+      lItem.Title := lList[i];
+      lItem.Description := Title;
+      vExtensions.Add(lItem);
+    end;
+  finally
+    lList.Free;
+  end;
+end;
+
 destructor TFileGroup.Destroy;
 begin
   FExtensions.Free;
@@ -2764,6 +2803,16 @@ begin
 end;
 
 procedure TFileGroups.EnumExtensions(vExtensions: TStringList);
+var
+  i: integer;
+begin
+  for i := 0 to Count - 1 do
+  begin
+    Items[i].EnumExtensions(vExtensions);
+  end;
+end;
+
+procedure TFileGroups.EnumExtensions(vExtensions: TEditorElements);
 var
   i: integer;
 begin

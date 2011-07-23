@@ -16,8 +16,7 @@ uses
   Dialogs, EditorOptions, SynEditHighlighter, SynEditSearch, SynEdit,
   Registry, EditorEngine, mnXMLRttiProfile, mnXMLUtils,
   SynEditTypes, SynCompletion, SynHighlighterHashEntries, EditorProfiles,
-  SynHighlighterCSS, SynHighlighterSQL, SynHighlighterXML, SynHighlighterApache,
-  SynHighlighterJScript, SynHighlighterXHTML, SynHighlighterPas;
+  SynHighlighterPas, SynHighlighterLFM;
 
 type
   { TPASFile }
@@ -28,9 +27,24 @@ type
   public
   end;
 
+  TLFMFile = class(TEditorFile)
+  protected
+    //procedure NewSource; override;
+  public
+  end;
+
   { TPASFileCategory }
 
   TPASFileCategory = class(TFileCategory)
+  private
+  protected
+    function CreateHighlighter: TSynCustomHighlighter; override;
+  public
+  end;
+
+  { TLFMFileCategory }
+
+  TLFMFileCategory = class(TFileCategory)
   private
   protected
     function CreateHighlighter: TSynCustomHighlighter; override;
@@ -48,6 +62,13 @@ implementation
 
 uses
   IniFiles, mnXMLStreams, mnUtils;
+
+{ TLFMFileCategory }
+
+function TLFMFileCategory.CreateHighlighter: TSynCustomHighlighter;
+begin
+  Result := TSynLFMSyn.Create(nil);
+end;
 
 { TPascalPerspective }
 
@@ -93,8 +114,11 @@ initialization
   with Engine do
   begin
     Categories.Add('PASCAL', TPASFile, TPASFileCategory);
+    Categories.Add('LFM', TLFMFile, TLFMFileCategory);
     Groups.Add('PPR', 'Pascal Project Files', 'PASCAL', ['ppr', 'lpr', 'dpr'], [fgkExecutable, fgkPublish, fgkBrowsable]);//PPR meant Pascal project
     Groups.Add('PAS', 'Pascal Files', 'PASCAL', ['pas', 'pp', 'p'], [fgkExecutable, fgkPublish, fgkBrowsable]);
+    Groups.Add('LFM', 'Lazarus Form Files', 'LFM', ['lfm'], [fgkPublish, fgkBrowsable]);
+
     Perspectives.Add(TPascalPerspective);
   end;
 end.

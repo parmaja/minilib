@@ -48,6 +48,8 @@ type
   { TMainForm }
 
   TMainForm = class(TForm)
+    NewAsMnu: TMenuItem;
+    NewAsAct: TAction;
     MenuItem13: TMenuItem;
     SCMTypeAct: TAction;
     TypePnl: TPanel;
@@ -321,6 +323,7 @@ type
     procedure FoldersActExecute(Sender: TObject);
     procedure FormDropFiles(Sender: TObject; const FileNames: array of string);
     procedure IPCServerMessage(Sender: TObject);
+    procedure NewAsActExecute(Sender: TObject);
     procedure OpenActExecute(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure FileCloseBtnClick(Sender: TObject);
@@ -664,6 +667,26 @@ begin
   end;
 end;
 
+procedure TMainForm.NewAsActExecute(Sender: TObject);
+var
+  //AExtensions: TEditorElements;
+  G: TFileGroups;
+  E: string;
+begin
+  //AExtensions := TEditorElements.Create;
+  try
+    if Engine.Perspective is TDefaultPerspective then
+      G := Engine.Groups
+    else
+      G := Engine.Perspective.Groups;
+    //Engine.Perspective.EnumExtensions(AExtensions);
+    if ShowSelectList('Select file type', G, False, E) then
+      Engine.Files.New(E);
+  finally
+    //AExtensions.Free;
+  end;
+end;
+
 procedure TMainForm.OpenActExecute(Sender: TObject);
 begin
   Engine.Files.Open;
@@ -679,7 +702,7 @@ begin
     for i := 0 to Engine.Files.Count - 1 do
     begin
       if Engine.Files[i].Name = '' then
-        FileSet.Items.AddItem('No name', 'No Name')
+        FileSet.Items.AddItem(Engine.Files[i].Group.Name, '*' + Engine.Files[i].Group.Name + '*')
       else
         FileSet.Items.AddItem(ExtractFileName(Engine.Files[i].Name), ExtractFileName(Engine.Files[i].Name));
     end;

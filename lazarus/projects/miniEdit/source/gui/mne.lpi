@@ -109,7 +109,7 @@
         <PackageName Value="LCL"/>
       </Item10>
     </RequiredPackages>
-    <Units Count="27">
+    <Units Count="28">
       <Unit0>
         <Filename Value="mne.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -294,6 +294,11 @@
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="SelectList"/>
       </Unit26>
+      <Unit27>
+        <Filename Value="mnePASClasses.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="mnePASClasses"/>
+      </Unit27>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
