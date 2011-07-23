@@ -1,4 +1,4 @@
-unit SelectPerspective;
+unit SelectList;
 {$mode objfpc}{$H+}
 
 {**
@@ -14,7 +14,7 @@ uses
   Match, EditorEngine, Dialogs, ComCtrls, StdCtrls, ExtCtrls;
 
 type
-  TSelectPerspectiveForm = class(TForm)
+  TSelectListForm = class(TForm)
     ItemsList: TListView;
     OkBtn: TButton;
     CancelBtn: TButton;
@@ -24,25 +24,25 @@ type
     procedure FilterEditChange(Sender: TObject);
     procedure OkBtnClick(Sender: TObject);
   private
-    Items: array of string;
   public
-    procedure ShowItems(vSelect:string);
+    Elements: TEditorElements;
+    Items: array of string;
+    procedure ShowItems(vSelect: string);
   end;
 
-function ShowSelectPerspective(var vName: string): Boolean;
+function ShowSelectList(vElements: TEditorElements; var vName: string): Boolean;
 
 implementation
 
 uses
   mneResources, mneClasses;
 
-{$R *.lfm}
-
-function ShowSelectPerspective(var vName: string): Boolean;
+function ShowSelectList(vElements: TEditorElements; var vName: string): Boolean;
 begin
-  with TSelectPerspectiveForm.Create(Application) do
+  with TSelectListForm.Create(Application) do
   begin
     try
+      Elements := vElements;
       ShowItems(vName);
       Result := (ShowModal = mrOK) and (ItemsList.Selected <> nil);
       if Result then
@@ -53,12 +53,14 @@ begin
   end;
 end;
 
-procedure TSelectPerspectiveForm.ItemsListDblClick(Sender: TObject);
+{$R *.lfm}
+
+procedure TSelectListForm.ItemsListDblClick(Sender: TObject);
 begin
   ModalResult := mrOK;
 end;
 
-procedure TSelectPerspectiveForm.ShowItems(vSelect: string);
+procedure TSelectListForm.ShowItems(vSelect: string);
 var
   s: string;
   i, c, t: Integer;
@@ -80,10 +82,10 @@ begin
     c := 0;
     t := 0;
 //    AddItem('Default', 'No type', '', -1);
-    for i := 0 to Perspectives.Count - 1 do
+    for i := 0 to Elements.Count - 1 do
     begin
-      AddItem(Perspectives[i].Name, Perspectives[i].Title, Perspectives[i].Description, Perspectives[i].ImageIndex);
-      if SameText(vSelect, Perspectives[i].Name) then
+      AddItem(Elements[i].Name, Elements[i].Title, Elements[i].Description, Elements[i].ImageIndex);
+      if SameText(vSelect, Elements[i].Name) then
         t := c;
       inc(c);
     end;
@@ -96,13 +98,13 @@ begin
   end;
 end;
 
-procedure TSelectPerspectiveForm.FilterEditChange(Sender: TObject);
+procedure TSelectListForm.FilterEditChange(Sender: TObject);
 begin
   Timer.Enabled := False;
   Timer.Enabled := True;
 end;
 
-procedure TSelectPerspectiveForm.OkBtnClick(Sender: TObject);
+procedure TSelectListForm.OkBtnClick(Sender: TObject);
 begin
  ModalResult := mrOK
 end;

@@ -445,7 +445,7 @@ type
     procedure SetShowFolderFiles(AValue: TShowFolderFiles);
     procedure UpdateFileHeaderPanel;
     procedure EditorChangeState(State: TEditorChangeState);
-    procedure ChoosePerspective(var Resumed: Boolean; var vPerspective: TEditorPerspective);
+    function ChoosePerspective(var vPerspective: TEditorPerspective): Boolean;
 
     procedure EngineChanged;
     procedure UpdateWatches;
@@ -511,7 +511,7 @@ uses
   SelectFiles, mneSettings, mneConsts,
   SynEditTypes, AboutForms, mneProjectForms, GotoForms, Types,
   mneBreakpoints,
-  SearchInFilesForms, SelectPerspective;
+  SearchInFilesForms, SelectList;
 
 {$R *.lfm}
 
@@ -532,7 +532,6 @@ begin
   Engine.FilesControl := EditorsPnl;
   //FileSet.Align := alClient;
   Engine.OnChangedState := @EditorChangeState;
-  Engine.OnChoosePerspective := @ChoosePerspective;
   Engine.OnReplaceText:= @OnReplaceText;
   if (aWorkspace <> '') then
   begin
@@ -804,13 +803,13 @@ begin
   if Engine.Session.IsOpened then
   begin
     lPerspective := Engine.Session.Project.Perspective;
-    if Engine.ChoosePerspective(lPerspective) then
+    if ChoosePerspective(lPerspective) then
       Engine.Session.Project.PerspectiveName := lPerspective.Name;
   end
   else
   begin
     lPerspective := Engine.DefaultPerspective;
-    if Engine.ChoosePerspective(lPerspective) then
+    if ChoosePerspective(lPerspective) then
       Engine.DefaultPerspective := lPerspective;
   end;
 end;
@@ -1433,7 +1432,7 @@ begin
     EngineState;
 end;
 
-procedure TMainForm.ChoosePerspective(var Resumed: Boolean; var vPerspective: TEditorPerspective);
+function TMainForm.ChoosePerspective(var vPerspective: TEditorPerspective): Boolean;
 var
   aName: string;
 begin
@@ -1443,7 +1442,7 @@ begin
   end
   else
     aName := '';
-  Resumed := ShowSelectPerspective(aName);
+  Result := ShowSelectList(Engine.Perspectives, aName);
   vPerspective := Engine.Perspectives.Find(aName);
 end;
 

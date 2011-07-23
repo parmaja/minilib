@@ -19,6 +19,7 @@ type
 
   TProjectForm = class(TForm)
     Label7: TLabel;
+    Label8: TLabel;
     OkBtn: TButton;
     CancelBtn: TButton;
     OpenDialog: TOpenDialog;
@@ -27,6 +28,7 @@ type
     DescriptionEdit: TEdit;
     Label4: TLabel;
     PerspectiveCbo: TComboBox;
+    SCMCbo: TComboBox;
     SaveDesktopChk: TCheckBox;
     Label1: TLabel;
     Label2: TLabel;
@@ -36,6 +38,7 @@ type
     RootUrlEdit: TEdit;
     RunModeCbo: TComboBox;
     Bevel1: TBevel;
+    procedure Label3Click(Sender: TObject);
     procedure OkBtnClick(Sender: TObject);
     procedure FormClose(Sender: TObject; var CloseAction: TCloseAction);
     procedure Button2Click(Sender: TObject);
@@ -72,6 +75,11 @@ begin
   Apply;
 end;
 
+procedure TProjectForm.Label3Click(Sender: TObject);
+begin
+
+end;
+
 procedure TProjectForm.FormClose(Sender: TObject; var CloseAction: TCloseAction);
 begin
   CloseAction := caFree;
@@ -85,7 +93,8 @@ begin
   FProject.RootUrl := RootUrlEdit.Text;
   FProject.RunMode := TRunMode(RunModeCbo.ItemIndex);
   FProject.SaveDesktop := SaveDesktopChk.Checked;
-  FProject.PerspectiveName := Engine.Perspectives[PerspectiveCbo.ItemIndex].Name;
+  FProject.PerspectiveName := TEditorPerspective(PerspectiveCbo.Items.Objects[PerspectiveCbo.ItemIndex]).Name;
+  FProject.SetSCMClass(TEditorSCMClass(TEditorSCM(SCMCbo.Items.Objects[SCMCbo.ItemIndex]).ClassType));
 end;
 
 procedure TProjectForm.Retrive;
@@ -97,6 +106,10 @@ begin
   RunModeCbo.ItemIndex := Ord(FProject.RunMode);
   SaveDesktopChk.Checked := FProject.SaveDesktop;
   PerspectiveCbo.ItemIndex := Engine.Perspectives.IndexOf(FProject.PerspectiveName);
+  if FProject.SCM <> nil then
+    SCMCbo.ItemIndex := Engine.SourceManagements.IndexOf(FProject.SCM.Name)
+  else
+    SCMCbo.ItemIndex := 0;
 end;
 
 procedure TProjectForm.Button2Click(Sender: TObject);
@@ -134,10 +147,21 @@ begin
   try
     for i := 0 to Engine.Perspectives.Count -1 do
     begin
-      PerspectiveCbo.Items.Add(Engine.Perspectives[i].Title);
+      PerspectiveCbo.Items.AddObject(Engine.Perspectives[i].Title, Engine.Perspectives[i]);
     end;
   finally
     PerspectiveCbo.Items.EndUpdate;
+  end;
+
+  SCMCbo.Items.BeginUpdate;
+  try
+    SCMCbo.Items.Add('None');
+    for i := 0 to Engine.SourceManagements.Count -1 do
+    begin
+      SCMCbo.Items.AddObject(Engine.SourceManagements[i].Title, Engine.SourceManagements[i]);
+    end;
+  finally
+    SCMCbo.Items.EndUpdate;
   end;
 end;
 

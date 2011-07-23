@@ -1,4 +1,4 @@
-object SelectPerspectiveForm: TSelectPerspectiveForm
+object SelectListForm: TSelectListForm
   Left = 535
   Height = 267
   Top = 177

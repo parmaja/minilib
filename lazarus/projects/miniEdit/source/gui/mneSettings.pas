@@ -107,7 +107,7 @@ begin
     if fgkPublish in FEngine.Groups[i].Kind then
     begin
       ExtensionsGrid.RowCount := c + 1;
-      ExtensionsGrid.Cells[0, c] := FEngine.Groups[i].DisplayName;
+      ExtensionsGrid.Cells[0, c] := FEngine.Groups[i].Title;
       ExtensionsGrid.Cells[1, c] := FEngine.Options.ExtraExtensions.Values[FEngine.Groups[i].Name];
       SetLength(FExtraExtensions, c);
       FExtraExtensions[c - 1] := FEngine.Groups[i].Name;

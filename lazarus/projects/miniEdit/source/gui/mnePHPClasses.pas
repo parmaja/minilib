@@ -155,7 +155,7 @@ begin
   inherited;
   if Engine.Files.Current <> nil then
   begin
-    if Engine.Files.Current.Group.Category.Name = 'HTML/PHP' then
+    if Engine.Files.Current.Group.Category is TPHPFileCategory then
     begin
       P := Engine.Files.Current.SynEdit.CaretXY;
       Engine.Files.Current.SynEdit.GetHighlighterAttriAtRowColEx(P, aToken, aTokenType, aStart, Attri);
@@ -184,7 +184,7 @@ begin
   Result := False;
   if (Group <> nil) then
   begin
-    if Group.Category.Name = 'HTML/PHP' then
+    if Group.Category is TPHPFileCategory then
     begin
       P := SynEdit.CaretXY;
       aToken := '';
@@ -467,12 +467,12 @@ end;
 initialization
   with Engine do
   begin
-    Categories.Add('PHP', TphpFile, TPHPFileCategory, [fckPublish]);
     Categories.Add('HTML', TphpFile, TPHPFileCategory, [fckPublish]);
+    //Categories.Add('HTML', TphpFile, TPHPFileCategory, [fckPublish]);
     Categories.Add('CSS', TCssFile, TCSSFileCategory, [fckPublish]);
     Categories.Add('JS', TJSFile, TJSFileCategory, [fckPublish]);
-    Groups.Add('PHP', 'PHP Files', 'PHP', ['php'], [fgkExecutable, fgkPublish, fgkBrowsable, fgkMainIcon]);
-    //Groups.Add('PHPX', 'PHPX Files', 'PHP', ['phpx'], [fgkExecutable, fgkPublish, fgkBrowsable, fgkMainIcon]);
+    Groups.Add('PHP', 'PHP Files', 'HTML', ['php'], [fgkExecutable, fgkPublish, fgkBrowsable, fgkProject]);
+    //Groups.Add('PHPX', 'PHPX Files', 'PHP', ['phpx'], [fgkExecutable, fgkPublish, fgkBrowsable, fgkProject]);
     Groups.Add('HTML', 'HTML Files', 'HTML', ['html', 'htm', 'tpl'], [fgkPublish, fgkBrowsable]);
     Groups.Add('CSS', 'CSS Files', 'CSS', ['css'], [fgkPublish, fgkBrowsable]);
     Groups.Add('JS', 'Java Script Files', 'JS', ['js'], [fgkPublish, fgkBrowsable]);

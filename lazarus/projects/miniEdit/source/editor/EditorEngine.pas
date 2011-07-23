@@ -89,17 +89,29 @@ type
     FName: string;
     FTitle: string;
     FDescription: string;
+    FImageIndex: integer;
   public
     constructor Create; virtual;
     property Title: string read FTitle;
     property Name: string read FName;
     property Description: string read FDescription;
+    property ImageIndex: integer read FImageIndex;
+  end;
+
+  { TEditorElements }
+
+  TEditorElements = class(TObjectList)
+  private
+    function GetItem(Index: integer): TEditorElement;
+  public
+    function Find(vName: string): TEditorElement;
+    function IndexOf(vName: string): Integer;
+    property Items[Index: integer]: TEditorElement read GetItem; default;
   end;
 
   {
     TEditorPerspective
-    Collect file groups and have special properties
-    it must choosed by user when create a new project
+    Run, Compile, Collect file groups and have special properties
   }
 
   { TEditorPerspective }
@@ -110,7 +122,6 @@ type
     FDebug: TEditorDebugger;
   protected
     FOSDepended: Boolean;
-    FImageIndex: integer;
     FDefaultFileGroup: string;
     procedure AddGroup(vName: string);
     function CreateDebugger: TEditorDebugger; virtual;
@@ -120,7 +131,6 @@ type
     procedure EnumExtensions(vExtensions: TStringList); virtual;
     function CreateEditorFile(Group: string): TEditorFile; virtual;
     function CreateEditorProject: TEditorProject; virtual;
-    property ImageIndex: integer read FImageIndex;
     //OSDepended: When save to file, the filename changed depend on the os system name
     property OSDepended: Boolean read FOSDepended;
     property Groups: TFileGroups read FGroups;
@@ -175,7 +185,9 @@ type
     FCachedVariables: THashedStringList;
     FCachedAge: DWORD;
     FPerspective: TEditorPerspective;
+    FSCM: TEditorSCM;
     procedure SetPerspectiveName(AValue: string);
+    procedure SetSCM(AValue: TEditorSCM);
   protected
     procedure Loaded(Failed: Boolean); override;
     procedure Saving; override;
@@ -185,20 +197,24 @@ type
     property FileName: string read FFileName write FFileName;
     function Save: Boolean;
     function SaveAs: Boolean;
+    procedure SetSCMClass(SCMClass: TEditorSCMClass);
     property CachedVariables: THashedStringList read FCachedVariables;
     property CachedIdentifiers: THashedStringList read FCachedIdentifiers;
     property CachedAge: Cardinal read FCachedAge write FCachedAge;
+    //Perspective here point to one of Engine.Perspectives so it is not owned by project
     property Perspective: TEditorPerspective read FPerspective default nil;
   published
     property Name: string read FName write FName;
     property PerspectiveName: string read FPerspectiveName write SetPerspectiveName;
+    //SCM now owned by project and saved or loaded with it, the SCM object so assigned to will be freed with the project
+    property SCM: TEditorSCM read FSCM write SetSCM;
+
     property Description: string read FDescription write FDescription;
     property RootDir: string read FRootDir write FRootDir;
     property RootUrl: string read FRootUrl write FRootUrl;
     property RunMode: TRunMode read FRunMode write FRunMode default prunUrl;
     property SaveDesktop: Boolean read FSaveDesktop write FSaveDesktop default True;
     property Desktop: TEditorDesktop read FDesktop;
-    //This is custom options depend on choosed perspective maybe have nil value
     property Options: TEditorProjectOptions read FOptions write FOptions default nil;
   end;
 
@@ -326,8 +342,6 @@ type
 
   TEditorOptions = class(TmnXMLProfile)
   private
-    FDefaultPerspective: string;
-    FDefaultSCM: string;
     FFileName: string;
     FShowFolder: Boolean;
     FShowFolderFiles: TShowFolderFiles;
@@ -385,6 +399,13 @@ type
     property RecentFiles: TStringList read FRecentFiles write SetRecentFiles;
     property RecentProjects: TStringList read FRecentProjects write SetRecentProjects;
     property Projects: TStringList read FProjects write SetProjects;
+  end;
+
+  TEditorSessionOptions = class(TmnXMLProfile)
+  private
+    FDefaultPerspective: string;
+    FDefaultSCM: string;
+  public
     property DefaultPerspective: string read FDefaultPerspective write FDefaultPerspective;
     property DefaultSCM: string read FDefaultSCM write FDefaultSCM;
   end;
@@ -431,7 +452,7 @@ type
     property Items[Index: integer]: TFileCategory read GetItem write SetItem; default;
   end;
 
-  TFileGroupKind = (fgkExecutable, fgkMainIcon, fgkBrowsable, fgkPublish);
+  TFileGroupKind = (fgkExecutable, fgkProject, fgkBrowsable, fgkPublish);
   TFileGroupKinds = set of TFileGroupKind;
 
   { TFileGroup }
@@ -439,7 +460,7 @@ type
   TFileGroup = class(TObject)
   private
     FName: string;
-    FDisplayName: string;
+    FTitle: string;
     FExtensions: TStringList;
     FKind: TFileGroupKinds;
     FCategory: TFileCategory;
@@ -453,7 +474,7 @@ type
     property Extensions: TStringList read FExtensions;
     property Name: string read FName write FName;
     property Kind: TFileGroupKinds read FKind write FKind;
-    property DisplayName: string read FDisplayName write FDisplayName;
+    property Title: string read FTitle write FTitle;
   end;
 
   { TFileGroups }
@@ -467,18 +488,17 @@ type
     function FindExtension(vExtension: string): TFileGroup;
     function CreateFilter(vGroup: TFileGroup = nil): string;
     procedure Add(vGroup: TFileGroup);
-    procedure Add(const Name, DisplayName: string; Category: string; Extensions: array of string; Kind: TFileGroupKinds = []);
+    procedure Add(const Name, Title: string; Category: string; Extensions: array of string; Kind: TFileGroupKinds = []);
     property Items[Index: integer]: TFileGroup read GetItem; default;
   end;
 
   { TPerspectives }
 
-  TPerspectives = class(TObjectList)
+  TPerspectives = class(TEditorElements)
   private
     function GetItem(Index: integer): TEditorPerspective;
   public
     function Find(vName: string): TEditorPerspective;
-    function IndexOf(vName: string): Integer;
     procedure Add(vEditorPerspective: TEditorPerspectiveClass);
     procedure Add(vEditorPerspective: TEditorPerspective);
     property Items[Index: integer]: TEditorPerspective read GetItem; default;
@@ -486,7 +506,7 @@ type
 
   { TSourceManagements }
 
-  TSourceManagements = class(TObjectList)
+  TSourceManagements = class(TEditorElements)
   private
     function GetItem(Index: integer): TEditorSCM;
   public
@@ -522,20 +542,27 @@ type
     Session object to manage the current opened project, only one project can open.
   }
 
+  { TEditorSession }
+
   TEditorSession = class(TObject)
   private
+    FOptions: TEditorSessionOptions;
     FProject: TEditorProject;
     procedure SetProject(const Value: TEditorProject);
     function GetIsOpened: Boolean;
   public
+    constructor Create;
     destructor Destroy; override;
     procedure Load(FileName: string);
     function New: TEditorProject;
     procedure Close;
     procedure Open;
+    //Is project opened
     property IsOpened: Boolean read GetIsOpened;
     //Current is the opened project if it is nil it is mean not opened any project.
     property Project: TEditorProject read FProject write SetProject;
+    //Session Options is depend on the system used not shared between OSs
+    property Options: TEditorSessionOptions read FOptions;
   end;
 
   TEditorMessagesList = class;
@@ -570,7 +597,6 @@ type
 
   TOnFoundEvent = procedure(FileName: string; const Line: string; LineNo, Column, FoundLength: integer) of object;
   TOnEditorChangeState = procedure(State: TEditorChangeState) of object;
-  TOnChoosePerspective = procedure(var Resumed: Boolean; var vPerspective: TEditorPerspective) of object;
 
   { TEditorEngine }
 
@@ -578,10 +604,10 @@ type
   private
     //if the project not defined any perspective this is the default one
     FDefaultPerspective: TEditorPerspective;
+    FDefaultSCM: TEditorSCM;
     //FInternalPerspective used only there is no any default Perspective defined, it is mean simple editor without any project type
     FInternalPerspective: TDefaultPerspective;
     FForms: TEditorFormList;
-    FOnChoosePerspective: TOnChoosePerspective;
     FPerspectives: TPerspectives;
     FSourceManagements: TSourceManagements;
     FUpdateState: TEditorChangeState;
@@ -607,6 +633,7 @@ type
     procedure SetBrowseFolder(const Value: string);
     function GetWorkSpace: string;
     procedure SetDefaultPerspective(AValue: TEditorPerspective);
+    procedure SetDefaultSCM(AValue: TEditorSCM);
   protected
     property SearchEngine: TSynEditSearch read FSearchEngine;
     procedure DoChangedState(State: TEditorChangeState); virtual;
@@ -629,8 +656,6 @@ type
     procedure LoadOptions;
     procedure SaveOptions;
     procedure Shutdown;
-
-    function ChoosePerspective(var vPerspective: TEditorPerspective): Boolean;
 
     procedure BeginUpdate;
     procedure UpdateState(State: TEditorChangeState);
@@ -657,11 +682,11 @@ type
     property BrowseFolder: string read FBrowseFolder write SetBrowseFolder;
     procedure SetDefaultPerspective(vName: string);
     property DefaultPerspective: TEditorPerspective read FDefaultPerspective write SetDefaultPerspective;
+    property DefaultSCM: TEditorSCM read FDefaultSCM write SetDefaultSCM;
     property Perspective: TEditorPerspective read GetPerspective;
     property SCM: TEditorSCM read GetSCM;
     //property MacroRecorder: TSynMacroRecorder read FMacroRecorder;
     property OnChangedState: TOnEditorChangeState read FOnChangedState write FOnChangedState;
-    property OnChoosePerspective: TOnChoosePerspective read FOnChoosePerspective write FOnChoosePerspective;
     property OnReplaceText: TReplaceTextEvent read FOnReplaceText write FOnReplaceText;
     //debugger
   published
@@ -774,14 +799,14 @@ begin
   end;
 end;
 
-{ TSourceManagements }
+{ TEditorElements }
 
-function TSourceManagements.GetItem(Index: integer): TEditorSCM;
+function TEditorElements.GetItem(Index: integer): TEditorElement;
 begin
-  Result := inherited Items[Index] as TEditorSCM;
+  Result := inherited Items[Index] as TEditorElement;
 end;
 
-function TSourceManagements.Find(vName: string): TEditorSCM;
+function TEditorElements.Find(vName: string): TEditorElement;
 var
   i: integer;
 begin
@@ -791,10 +816,38 @@ begin
     begin
       if SameText(Items[i].Name, vName) then
       begin
-        Result := Items[i] as TEditorSCM;
+        Result := Items[i];
         break;
       end;
     end;
+end;
+
+function TEditorElements.IndexOf(vName: string): Integer;
+var
+  i: integer;
+begin
+  Result := -1;
+  if vName <> '' then
+    for i := 0 to Count - 1 do
+    begin
+      if SameText(Items[i].Name, vName) then
+      begin
+        Result := i;
+        break;
+      end;
+    end;
+end;
+
+{ TSourceManagements }
+
+function TSourceManagements.GetItem(Index: integer): TEditorSCM;
+begin
+  Result := inherited Items[Index] as TEditorSCM;
+end;
+
+function TSourceManagements.Find(vName: string): TEditorSCM;
+begin
+  Result := inherited Find(vName) as TEditorSCM;
 end;
 
 procedure TSourceManagements.Add(vEditorSCM: TEditorSCMClass);
@@ -918,35 +971,8 @@ begin
 end;
 
 function TPerspectives.Find(vName: string): TEditorPerspective;
-var
-  i: integer;
 begin
-  Result := nil;
-  if vName <> '' then
-    for i := 0 to Count - 1 do
-    begin
-      if SameText(Items[i].Name, vName) then
-      begin
-        Result := Items[i] as TEditorPerspective;
-        break;
-      end;
-    end;
-end;
-
-function TPerspectives.IndexOf(vName: string): Integer;
-var
-  i: integer;
-begin
-  Result := -1;
-  if vName <> '' then
-    for i := 0 to Count - 1 do
-    begin
-      if SameText(Items[i].Name, vName) then
-      begin
-        Result := i;
-        break;
-      end;
-    end;
+  Result := inherited Find(vName) as TEditorPerspective;
 end;
 
 procedure TPerspectives.Add(vEditorPerspective: TEditorPerspectiveClass);
@@ -1155,7 +1181,6 @@ begin
   //FreeAndNil(FMacroRecorder);
   FreeAndNil(FMessagesList);
   FOnChangedState := nil;
-  FOnChoosePerspective := nil;
   FInternalPerspective := nil;
 //  FreeAndNil(FInternalPerspective);
   FreeAndNil(FForms);
@@ -1249,13 +1274,6 @@ begin
     Result := aGroup.Name
   else
     Result := '';
-end;
-
-function TEditorEngine.ChoosePerspective(var vPerspective: TEditorPerspective): Boolean;
-begin
-  Result := False;
-  if Assigned(FOnChoosePerspective) then
-    FOnChoosePerspective(Result, vPerspective);
 end;
 
 procedure TEditorEngine.DoReplaceText(Sender: TObject; const ASearch, AReplace: string; Line, Column: integer; var ReplaceAction: TSynReplaceAction);
@@ -1652,7 +1670,7 @@ var
   i: Integer;
 begin
   Options.Load(Workspace + 'mne-options.xml');
-  SetDefaultPerspective(Options.DefaultPerspective);
+  Session.Options.SafeLoadFromFile(LowerCase(Workspace + 'mne-' + SysPlatform + '-options.xml'));
   for i := 0 to Perspectives.Count - 1 do
   begin
     if Perspectives[i].OSDepended then
@@ -1660,6 +1678,7 @@ begin
     else
       Perspectives[i].SafeLoadFromFile(LowerCase(Workspace + 'mne-' + Perspectives[i].Name + '.xml'));
   end;
+  SetDefaultPerspective(Session.Options.DefaultPerspective);
 end;
 
 procedure TEditorEngine.SaveOptions;
@@ -1668,6 +1687,7 @@ var
   i: integer;
 begin
   Options.Save;
+  Session.Options.SaveToFile(LowerCase(Workspace + 'mne-' + SysPlatform + '-options.xml'));
   for i := 0 to Perspectives.Count - 1 do
   begin
     if Perspectives[i].OSDepended then
@@ -1784,7 +1804,16 @@ begin
   if FDefaultPerspective =AValue then exit;
   FDefaultPerspective :=AValue;
   if FDefaultPerspective <> nil then
-    Options.DefaultPerspective := FDefaultPerspective.Name;
+    Session.Options.DefaultPerspective := FDefaultPerspective.Name;
+  Engine.UpdateState([ecsChanged, ecsProject]);
+end;
+
+procedure TEditorEngine.SetDefaultSCM(AValue: TEditorSCM);
+begin
+  if FDefaultSCM =AValue then exit;
+  FDefaultSCM :=AValue;
+  if FDefaultSCM <> nil then
+    Session.Options.DefaultSCM := FDefaultSCM.Name;
   Engine.UpdateState([ecsChanged, ecsProject]);
 end;
 
@@ -2348,7 +2377,7 @@ begin
               aSupported := aSupported + ';';
             aSupported := aSupported + '*.' + AExtensions[j];
           end;
-          Result := Result + Items[i].DisplayName + ' (' + s + ')|' + s;
+          Result := Result + Items[i].Title + ' (' + s + ')|' + s;
         end;
     end;
   finally
@@ -2508,6 +2537,13 @@ begin
   end;
 end;
 
+procedure TEditorProject.SetSCM(AValue: TEditorSCM);
+begin
+  if FSCM =AValue then exit;
+  FreeAndNil(FSCM);
+  FSCM :=AValue;
+end;
+
 procedure TEditorProject.Loaded(Failed: Boolean);
 begin
   inherited;
@@ -2549,6 +2585,14 @@ begin
   finally
     aDialog.Free;
   end;
+end;
+
+procedure TEditorProject.SetSCMClass(SCMClass: TEditorSCMClass);
+begin
+  if (SCMClass = nil) or not(SCM is SCMClass) then
+    SCM := nil;
+  if (SCMClass <> nil) then
+    SCM := SCMClass.Create;
 end;
 
 procedure TEditorProject.Saving;
@@ -2624,7 +2668,7 @@ end;
 
 { TFileGroups }
 
-procedure TFileGroups.Add(const Name, DisplayName:string; Category: string; Extensions: array of string; Kind: TFileGroupKinds);
+procedure TFileGroups.Add(const Name, Title:string; Category: string; Extensions: array of string; Kind: TFileGroupKinds);
 var
   aCategory: TFileCategory;
   aGroup: TFileGroup;
@@ -2637,7 +2681,7 @@ begin
   if aGroup <> nil then
     raise Exception.Create(Name + ' already exists');
   aGroup := TFileGroup.Create;
-  aGroup.FDisplayName := DisplayName;
+  aGroup.FTitle := Title;
   aGroup.FName := Name;
   aGroup.FKind := Kind;
   for i := 0 to Length(Extensions) - 1 do
@@ -2670,12 +2714,19 @@ end;
 destructor TEditorSession.Destroy;
 begin
   FProject := nil;
+  FreeAndNil(FOptions);
   inherited;
 end;
 
 function TEditorSession.GetIsOpened: Boolean;
 begin
   Result := FProject <> nil;
+end;
+
+constructor TEditorSession.Create;
+begin
+  inherited;
+  FOptions := TEditorSessionOptions.Create;
 end;
 
 procedure TFileGroups.EnumExtensions(vExtensions: TStringList);

@@ -18,10 +18,11 @@ object EditorOptionsForm: TEditorOptionsForm
     Height = 379
     Top = 4
     Width = 362
-    ActivePage = GutterTab
-    TabIndex = 1
+    ActivePage = ColorTab
+    TabIndex = 2
     TabOrder = 0
     OnChange = PageControlChange
+    OnPageChanged = PageControlChange
     object OptionsTab: TTabSheet
       Caption = 'Options'
       ClientHeight = 353

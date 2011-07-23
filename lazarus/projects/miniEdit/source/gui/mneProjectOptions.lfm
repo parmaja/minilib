@@ -21,6 +21,7 @@ object ProjectForm: TProjectForm
     Caption = 'Project &Name'
     FocusControl = NameEdit
     ParentColor = False
+    OnClick = Label3Click
   end
   object Label4: TLabel
     Left = 12
@@ -156,6 +157,24 @@ object ProjectForm: TProjectForm
     Caption = 'Project Type'
     FocusControl = RunModeCbo
     ParentColor = False
+  end
+  object Label8: TLabel
+    Left = 12
+    Height = 14
+    Top = 83
+    Width = 71
+    Caption = 'Source Control'
+    FocusControl = RunModeCbo
+    ParentColor = False
+  end
+  object SCMCbo: TComboBox
+    Left = 89
+    Height = 21
+    Top = 80
+    Width = 303
+    ItemHeight = 13
+    Style = csDropDownList
+    TabOrder = 10
   end
   object OpenDialog: TOpenDialog
     left = 320
