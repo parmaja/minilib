@@ -109,7 +109,7 @@
         <PackageName Value="LCL"/>
       </Item10>
     </RequiredPackages>
-    <Units Count="28">
+    <Units Count="29">
       <Unit0>
         <Filename Value="mne.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -299,6 +299,11 @@
         <IsPartOfProject Value="True"/>
         <UnitName Value="mnePASClasses"/>
       </Unit27>
+      <Unit28>
+        <Filename Value="mnePHPClasses.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="mnePHPClasses"/>
+      </Unit28>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

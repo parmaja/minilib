@@ -113,11 +113,13 @@ end;
 initialization
   with Engine do
   begin
-    Categories.Add('PASCAL', TPASFile, TPASFileCategory);
-    Categories.Add('LFM', TLFMFile, TLFMFileCategory);
-    Groups.Add('PPR', 'Pascal Project Files', 'PASCAL', ['ppr', 'lpr', 'dpr'], [fgkExecutable, fgkPublish, fgkBrowsable]);//PPR meant Pascal project
-    Groups.Add('PAS', 'Pascal Files', 'PASCAL', ['pas', 'pp', 'p'], [fgkExecutable, fgkPublish, fgkBrowsable]);
-    Groups.Add('LFM', 'Lazarus Form Files', 'LFM', ['lfm'], [fgkPublish, fgkBrowsable]);
+    Categories.Add('pascal', TPASFile, TPASFileCategory);
+    Categories.Add('lfm', TLFMFile, TLFMFileCategory);
+    Groups.Add('ppr', 'Pascal Project Files', 'pascal', ['ppr'], [fgkExecutable, fgkPublish, fgkBrowsable]);//PPR meant Pascal project
+    Groups.Add('lpr', 'Lazarus Project Files', 'pascal', ['lpr'], [fgkExecutable, fgkPublish, fgkBrowsable]);//PPR meant Pascal project
+    Groups.Add('dpr', 'Delphi Project Files', 'pascal', ['dpr'], [fgkExecutable, fgkPublish, fgkBrowsable]);//PPR meant Pascal project
+    Groups.Add('pas', 'Pascal Files', 'pascal', ['pas', 'pp', 'p'], [fgkExecutable, fgkPublish, fgkBrowsable]);
+    Groups.Add('lfm', 'Lazarus Form Files', 'lfm', ['lfm'], [fgkPublish, fgkBrowsable]);
 
     Perspectives.Add(TPascalPerspective);
   end;

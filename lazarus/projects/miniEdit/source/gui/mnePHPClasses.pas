@@ -467,15 +467,15 @@ end;
 initialization
   with Engine do
   begin
-    Categories.Add('HTML', TphpFile, TPHPFileCategory, [fckPublish]);
-    //Categories.Add('HTML', TphpFile, TPHPFileCategory, [fckPublish]);
-    Categories.Add('CSS', TCssFile, TCSSFileCategory, [fckPublish]);
-    Categories.Add('JS', TJSFile, TJSFileCategory, [fckPublish]);
-    Groups.Add('PHP', 'PHP Files', 'HTML', ['php'], [fgkExecutable, fgkPublish, fgkBrowsable, fgkProject]);
+    Categories.Add('html', TphpFile, TPHPFileCategory, [fckPublish]);
+    //Categories.Add('html', TphpFile, TPHPFileCategory, [fckPublish]);
+    Categories.Add('css', TCssFile, TCSSFileCategory, [fckPublish]);
+    Categories.Add('js', TJSFile, TJSFileCategory, [fckPublish]);
+    Groups.Add('php', 'PHP Files', 'html', ['php'], [fgkExecutable, fgkPublish, fgkBrowsable, fgkProject]);
     //Groups.Add('PHPX', 'PHPX Files', 'PHP', ['phpx'], [fgkExecutable, fgkPublish, fgkBrowsable, fgkProject]);
-    Groups.Add('HTML', 'HTML Files', 'HTML', ['html', 'htm', 'tpl'], [fgkPublish, fgkBrowsable]);
-    Groups.Add('CSS', 'CSS Files', 'CSS', ['css'], [fgkPublish, fgkBrowsable]);
-    Groups.Add('JS', 'Java Script Files', 'JS', ['js'], [fgkPublish, fgkBrowsable]);
+    Groups.Add('html', 'HTML Files', 'html', ['html', 'htm', 'tpl'], [fgkPublish, fgkBrowsable]);
+    Groups.Add('css', 'CSS Files', 'css', ['css'], [fgkPublish, fgkBrowsable]);
+    Groups.Add('js', 'Java Script Files', 'js', ['js'], [fgkPublish, fgkBrowsable]);
     Perspectives.Add(TPHPPerspective);
   end;
 end.

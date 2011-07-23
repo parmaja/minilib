@@ -14,6 +14,9 @@ uses
   Match, EditorEngine, Dialogs, ComCtrls, StdCtrls, ExtCtrls;
 
 type
+  TSelectListFormStyle = set of (slfIncludeNone, slfUseNameTitle);
+  //slfUseNameTitle instead if Title/Description
+
   TSelectListForm = class(TForm)
     ItemsList: TListView;
     OkBtn: TButton;
@@ -21,14 +24,14 @@ type
     procedure ItemsListDblClick(Sender: TObject);
     procedure OkBtnClick(Sender: TObject);
   private
-    FIncludeNone: Boolean;
+    FStyle: TSelectListFormStyle;
   public
     Elements: TEditorElements;
     Items: array of string;
     procedure ShowItems(vSelect: string);
   end;
 
-function ShowSelectList(ACaption: string; vElements: TEditorElements; IncludeNone: Boolean; var vName: string): Boolean;
+function ShowSelectList(ACaption: string; vElements: TEditorElements; Style: TSelectListFormStyle; var vName: string): Boolean;
 
 implementation
 
@@ -37,13 +40,13 @@ uses
 
 {$R *.lfm}
 
-function ShowSelectList(ACaption: string; vElements: TEditorElements; IncludeNone: Boolean; var vName: string): Boolean;
+function ShowSelectList(ACaption: string; vElements: TEditorElements; Style: TSelectListFormStyle; var vName: string): Boolean;
 begin
   with TSelectListForm.Create(Application) do
   begin
     try
       Caption := ACaption;
-      FIncludeNone := IncludeNone;
+      FStyle := Style;
       Elements := vElements;
       ShowItems(vName);
       Result := (ShowModal = mrOK) and (ItemsList.Selected <> nil);
@@ -69,18 +72,25 @@ var
   var
     s: string;
   begin
-     aItem := ItemsList.Items.Add;
-     aItem.Caption := Title;
-     s := Description;
-     if s = '' then
-        s := Title;
-     aItem.SubItems.Add(s);
-     aItem.ImageIndex := ImageIndex;
-     SetLength(Items, c + 1);
-     Items[c] := Name;
-     if SameText(vSelect, Name) then
-       t := c;
-     inc(c);
+    aItem := ItemsList.Items.Add;
+
+    if slfUseNameTitle in FStyle then
+    begin
+      aItem.Caption := Name;
+      aItem.SubItems.Add(Title);
+    end
+    else
+    begin
+      aItem.Caption := Title;
+      aItem.SubItems.Add(Description);
+    end;
+
+    aItem.ImageIndex := ImageIndex;
+    SetLength(Items, c + 1);
+    Items[c] := Name;
+    if SameText(vSelect, Name) then
+      t := c;
+    inc(c);
   end;
 begin
   ItemsList.Items.BeginUpdate;
@@ -89,7 +99,7 @@ begin
     ItemsList.Clear;
     c := 0;
     t := 0;
-    if FIncludeNone then
+    if slfIncludeNone in FStyle then
       AddItem('', 'None', '', -1);
     for i := 0 to Elements.Count - 1 do
       AddItem(Elements[i].Name, Elements[i].Title, Elements[i].Description, Elements[i].ImageIndex);

@@ -680,7 +680,7 @@ begin
     else
       G := Engine.Perspective.Groups;
     //Engine.Perspective.EnumExtensions(AExtensions);
-    if ShowSelectList('Select file type', G, False, E) then
+    if ShowSelectList('Select file type', G, [slfUseNameTitle], E) then
       Engine.Files.New(E);
   finally
     //AExtensions.Free;
@@ -1487,7 +1487,7 @@ begin
     aName := vPerspective.Name
   else
     aName := '';
-  Result := ShowSelectList('Select project type', Engine.Perspectives, False, aName);
+  Result := ShowSelectList('Select project type', Engine.Perspectives, [], aName);
   vPerspective := Engine.Perspectives.Find(aName);
 end;
 
@@ -1499,7 +1499,7 @@ begin
     aName := vSCM.Name
   else
     aName := '';
-  Result := ShowSelectList('Select SCM type', Engine.SourceManagements, True, aName);
+  Result := ShowSelectList('Select SCM type', Engine.SourceManagements, [slfIncludeNone], aName);
   vSCM := Engine.SourceManagements.Find(aName);
 end;
 
