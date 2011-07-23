@@ -1,7 +1,7 @@
 object MainForm: TMainForm
-  Left = 480
+  Left = 294
   Height = 518
-  Top = 104
+  Top = 118
   Width = 876
   AllowDropFiles = True
   Caption = 'Mini Edit'
@@ -987,6 +987,9 @@ object MainForm: TMainForm
       object ProjectTypeMnu: TMenuItem
         Action = ProjectTypeAct
       end
+      object MenuItem13: TMenuItem
+        Action = SCMTypeAct
+      end
     end
     object veiw1: TMenuItem
       Caption = '&View'
@@ -1765,6 +1768,12 @@ object MainForm: TMainForm
       Category = 'Project'
       Caption = 'Project Type'
       OnExecute = ProjectTypeActExecute
+    end
+    object SCMTypeAct: TAction
+      Category = 'Project'
+      Caption = 'SCM Type'
+      Hint = 'Source control managment type'
+      OnExecute = SCMTypeActExecute
     end
   end
   object FolderMenu: TPopupMenu

@@ -1,21 +1,22 @@
 object SelectListForm: TSelectListForm
-  Left = 535
-  Height = 267
-  Top = 177
-  Width = 289
+  Left = 415
+  Height = 256
+  Top = 219
+  Width = 456
+  ActiveControl = ItemsList
   BorderIcons = [biSystemMenu]
-  Caption = 'Select Project type'
-  ClientHeight = 267
-  ClientWidth = 289
+  Caption = 'Select item'
+  ClientHeight = 256
+  ClientWidth = 456
   Font.Height = -11
   Font.Name = 'MS Sans Serif'
   Position = poMainFormCenter
   LCLVersion = '0.9.31'
   object ItemsList: TListView
     Left = 3
-    Height = 231
+    Height = 220
     Top = 4
-    Width = 282
+    Width = 449
     Anchors = [akTop, akLeft, akRight, akBottom]
     Columns = <    
       item
@@ -39,7 +40,7 @@ object SelectListForm: TSelectListForm
   object OkBtn: TButton
     Left = 4
     Height = 26
-    Top = 237
+    Top = 226
     Width = 75
     Anchors = [akLeft, akBottom]
     Caption = '&Ok'
@@ -50,7 +51,7 @@ object SelectListForm: TSelectListForm
   object CancelBtn: TButton
     Left = 79
     Height = 26
-    Top = 237
+    Top = 226
     Width = 75
     Anchors = [akLeft, akBottom]
     Cancel = True

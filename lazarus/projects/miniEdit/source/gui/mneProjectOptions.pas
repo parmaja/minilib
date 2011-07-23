@@ -94,7 +94,7 @@ begin
   FProject.RunMode := TRunMode(RunModeCbo.ItemIndex);
   FProject.SaveDesktop := SaveDesktopChk.Checked;
   FProject.PerspectiveName := TEditorPerspective(PerspectiveCbo.Items.Objects[PerspectiveCbo.ItemIndex]).Name;
-  FProject.SetSCMClass(TEditorSCMClass(TEditorSCM(SCMCbo.Items.Objects[SCMCbo.ItemIndex]).ClassType));
+  FProject.SetSCMClass(TEditorSCM(SCMCbo.Items.Objects[SCMCbo.ItemIndex]));
 end;
 
 procedure TProjectForm.Retrive;

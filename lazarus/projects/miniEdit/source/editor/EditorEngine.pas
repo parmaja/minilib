@@ -151,10 +151,13 @@ type
     procedure EnumExtensions(vExtensions: TStringList); override;
   end;
 
+  { TEditorSCM }
+
   TEditorSCM = class(TEditorElement)
   private
   protected
   public
+    constructor Create; override;
     procedure CommitDirectory(Directory: string); virtual; abstract;
     procedure CommitFile(FileName: string); virtual; abstract;
     procedure UpdateDirectory(Directory: string); virtual; abstract;
@@ -197,7 +200,7 @@ type
     property FileName: string read FFileName write FFileName;
     function Save: Boolean;
     function SaveAs: Boolean;
-    procedure SetSCMClass(SCMClass: TEditorSCMClass);
+    procedure SetSCMClass(SCMClass: TEditorSCM);
     property CachedVariables: THashedStringList read FCachedVariables;
     property CachedIdentifiers: THashedStringList read FCachedIdentifiers;
     property CachedAge: Cardinal read FCachedAge write FCachedAge;
@@ -406,6 +409,7 @@ type
     FDefaultPerspective: string;
     FDefaultSCM: string;
   public
+  published
     property DefaultPerspective: string read FDefaultPerspective write FDefaultPerspective;
     property DefaultSCM: string read FDefaultSCM write FDefaultSCM;
   end;
@@ -627,8 +631,8 @@ type
     FWorkSpace: string;
     FOnReplaceText: TReplaceTextEvent;
     function GetPerspective: TEditorPerspective;
-    function GetRoot: string;
     function GetSCM: TEditorSCM;
+    function GetRoot: string;
     function GetUpdating: Boolean;
     procedure SetBrowseFolder(const Value: string);
     function GetWorkSpace: string;
@@ -681,6 +685,7 @@ type
     property FilesControl: TWinControl read FFilesControl write FFilesControl;
     property BrowseFolder: string read FBrowseFolder write SetBrowseFolder;
     procedure SetDefaultPerspective(vName: string);
+    procedure SetDefaultSCM(vName: string);
     property DefaultPerspective: TEditorPerspective read FDefaultPerspective write SetDefaultPerspective;
     property DefaultSCM: TEditorSCM read FDefaultSCM write SetDefaultSCM;
     property Perspective: TEditorPerspective read GetPerspective;
@@ -797,6 +802,13 @@ begin
       S := S + #$D;
     Stream.WriteBuffer(Pointer(S)^, Length(S));
   end;
+end;
+
+{ TEditorSCM }
+
+constructor TEditorSCM.Create;
+begin
+  inherited Create;
 end;
 
 { TEditorElements }
@@ -1333,7 +1345,12 @@ end;
 
 function TEditorEngine.GetSCM: TEditorSCM;
 begin
-  Result := nil;
+  if (Session <> nil) and (Session.Project <> nil) and (Session.Project.SCM <> nil) then
+    Result := Session.Project.SCM
+  else if DefaultSCM <> nil then
+    Result := DefaultSCM
+  else
+    Result := nil;
 end;
 
 function TEditorEngine.GetPerspective: TEditorPerspective;
@@ -1669,16 +1686,22 @@ var
   aFile: string;
   i: Integer;
 begin
-  Options.Load(Workspace + 'mne-options.xml');
-  Session.Options.SafeLoadFromFile(LowerCase(Workspace + 'mne-' + SysPlatform + '-options.xml'));
-  for i := 0 to Perspectives.Count - 1 do
-  begin
-    if Perspectives[i].OSDepended then
-      Perspectives[i].SafeLoadFromFile(LowerCase(Workspace + 'mne-' + SysPlatform + '-' + Perspectives[i].Name + '.xml'))
-    else
-      Perspectives[i].SafeLoadFromFile(LowerCase(Workspace + 'mne-' + Perspectives[i].Name + '.xml'));
+  BeginUpdate;
+  try
+    Options.Load(Workspace + 'mne-options.xml');
+    Session.Options.SafeLoadFromFile(LowerCase(Workspace + 'mne-' + SysPlatform + '-options.xml'));
+    for i := 0 to Perspectives.Count - 1 do
+    begin
+      if Perspectives[i].OSDepended then
+        Perspectives[i].SafeLoadFromFile(LowerCase(Workspace + 'mne-' + SysPlatform + '-' + Perspectives[i].Name + '.xml'))
+      else
+        Perspectives[i].SafeLoadFromFile(LowerCase(Workspace + 'mne-' + Perspectives[i].Name + '.xml'));
+    end;
+    SetDefaultPerspective(Session.Options.DefaultPerspective);
+    SetDefaultSCM(Session.Options.DefaultSCM);
+  finally
+    EndUpdate;
   end;
-  SetDefaultPerspective(Session.Options.DefaultPerspective);
 end;
 
 procedure TEditorEngine.SaveOptions;
@@ -1738,10 +1761,18 @@ begin
 end;
 
 procedure TEditorEngine.SetDefaultPerspective(vName: string);
+var
+  P: TEditorPerspective;
 begin
-  FDefaultPerspective := Perspectives.Find(vName);
-  if FDefaultPerspective = nil then
-    FDefaultPerspective := FInternalPerspective;
+  P := Perspectives.Find(vName);
+  if P = nil then
+    P := FInternalPerspective;
+  DefaultPerspective := P;
+end;
+
+procedure TEditorEngine.SetDefaultSCM(vName: string);
+begin
+  DefaultSCM := SourceManagements.Find(vName);
 end;
 
 procedure TEditorEngine.DoChangedState(State: TEditorChangeState);
@@ -1801,8 +1832,9 @@ end;
 
 procedure TEditorEngine.SetDefaultPerspective(AValue: TEditorPerspective);
 begin
-  if FDefaultPerspective =AValue then exit;
-  FDefaultPerspective :=AValue;
+  if FDefaultPerspective = AValue then
+    exit;
+  FDefaultPerspective := AValue;
   if FDefaultPerspective <> nil then
     Session.Options.DefaultPerspective := FDefaultPerspective.Name;
   Engine.UpdateState([ecsChanged, ecsProject]);
@@ -1810,7 +1842,8 @@ end;
 
 procedure TEditorEngine.SetDefaultSCM(AValue: TEditorSCM);
 begin
-  if FDefaultSCM =AValue then exit;
+  if FDefaultSCM =AValue then
+    exit;
   FDefaultSCM :=AValue;
   if FDefaultSCM <> nil then
     Session.Options.DefaultSCM := FDefaultSCM.Name;
@@ -2542,6 +2575,7 @@ begin
   if FSCM =AValue then exit;
   FreeAndNil(FSCM);
   FSCM :=AValue;
+  Engine.UpdateState([ecsChanged, ecsProject]);
 end;
 
 procedure TEditorProject.Loaded(Failed: Boolean);
@@ -2587,12 +2621,12 @@ begin
   end;
 end;
 
-procedure TEditorProject.SetSCMClass(SCMClass: TEditorSCMClass);
+procedure TEditorProject.SetSCMClass(SCMClass: TEditorSCM);
 begin
-  if (SCMClass = nil) or not(SCM is SCMClass) then
+  if (SCMClass = nil) or not(SCM.ClassType = SCMClass.ClassType) then
     SCM := nil;
   if (SCMClass <> nil) then
-    SCM := SCMClass.Create;
+    SCM := TEditorSCMClass(SCMClass.ClassType).Create;
 end;
 
 procedure TEditorProject.Saving;

@@ -289,7 +289,9 @@
       <Unit26>
         <Filename Value="..\editor\SelectList.pas"/>
         <IsPartOfProject Value="True"/>
+        <ComponentName Value="SelectListForm"/>
         <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
         <UnitName Value="SelectList"/>
       </Unit26>
     </Units>

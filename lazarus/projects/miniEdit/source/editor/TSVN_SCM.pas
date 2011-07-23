@@ -119,7 +119,7 @@ end;
 constructor TTSVN_SCM.Create;
 begin
   inherited Create;
-  FName := 'TSVN_WIN';
+  FName := 'TSVN';
   FTitle := 'Tortoise Subversion';
   FDescription := 'Tortoise Subversion for windows';
 end;

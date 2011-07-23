@@ -48,6 +48,8 @@ type
   { TMainForm }
 
   TMainForm = class(TForm)
+    MenuItem13: TMenuItem;
+    SCMTypeAct: TAction;
     TypePnl: TPanel;
     ProjectTypeMnu: TMenuItem;
     ProjectTypeAct: TAction;
@@ -342,6 +344,7 @@ type
     procedure KeywordActExecute(Sender: TObject);
     procedure HelpIndexActExecute(Sender: TObject);
     procedure EditorOptionsActExecute(Sender: TObject);
+    procedure SCMTypeActExecute(Sender: TObject);
     procedure SettingActExecute(Sender: TObject);
     procedure RunActExecute(Sender: TObject);
     procedure ProjectOptionsActExecute(Sender: TObject);
@@ -446,6 +449,7 @@ type
     procedure UpdateFileHeaderPanel;
     procedure EditorChangeState(State: TEditorChangeState);
     function ChoosePerspective(var vPerspective: TEditorPerspective): Boolean;
+    function ChooseSCM(var vSCM: TEditorSCM): Boolean;
 
     procedure EngineChanged;
     procedure UpdateWatches;
@@ -934,6 +938,24 @@ begin
   Engine.Options.Show;
 end;
 
+procedure TMainForm.SCMTypeActExecute(Sender: TObject);
+var
+  lSCM: TEditorSCM;
+begin
+  if Engine.Session.IsOpened then
+  begin
+    lSCM := Engine.Session.Project.SCM;
+    if ChooseSCM(lSCM) then
+      Engine.Session.Project.SetSCMClass(lSCM);
+  end
+  else
+  begin
+    lSCM := Engine.DefaultSCM;
+    if ChooseSCM(lSCM) then
+      Engine.DefaultSCM := lSCM;
+  end;
+end;
+
 procedure TMainForm.SettingActExecute(Sender: TObject);
 begin
   ShowSettingForm(Engine);
@@ -1197,7 +1219,9 @@ begin
   AddFileToProjectAct.Enabled := b;
   CloseProjectAct.Enabled := b;
   ProjectOpenFolderAct.Enabled := b;
-  //SCMMnu.Visible := Engine.SCM <> nil;
+  SCMMnu.Visible := Engine.SCM <> nil;
+  if Engine.SCM <> nil then
+    SCMMnu.Caption := Engine.SCM.Name;
   DebugMnu.Visible := Engine.Perspective.Debug <> nil;
   TypePnl.Caption := Engine.Perspective.Name;
 end;
@@ -1437,13 +1461,23 @@ var
   aName: string;
 begin
   if (vPerspective <> nil) then
-  begin
-    aName := vPerspective.Name;
-  end
+    aName := vPerspective.Name
   else
     aName := '';
-  Result := ShowSelectList(Engine.Perspectives, aName);
+  Result := ShowSelectList('Select project type', Engine.Perspectives, False, aName);
   vPerspective := Engine.Perspectives.Find(aName);
+end;
+
+function TMainForm.ChooseSCM(var vSCM: TEditorSCM): Boolean;
+var
+  aName: string;
+begin
+  if (vSCM <> nil) then
+    aName := vSCM.Name
+  else
+    aName := '';
+  Result := ShowSelectList('Select SCM type', Engine.SourceManagements, True, aName);
+  vSCM := Engine.SourceManagements.Find(aName);
 end;
 
 procedure TMainForm.ProjectLoaded;
