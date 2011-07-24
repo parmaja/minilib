@@ -782,7 +782,7 @@ object MainForm: TMainForm
       end>
     Align = alBottom
     TabOrder = 6
-    object WatchList: TListView
+    object SearchList: TListView
       Left = 3
       Height = 103
       Top = 21
@@ -790,30 +790,32 @@ object MainForm: TMainForm
       Align = alClient
       Columns = <      
         item
-          Caption = 'Variable'
-          Width = 200
+          Caption = 'File'
+          Width = 300
         end      
         item
-          Caption = 'Type'
-          Width = 100
+          Caption = 'Line'
+          Width = 80
         end      
         item
           AutoSize = True
-          Caption = 'Value'
-          Width = 566
+          Caption = 'Result'
+          Width = 486
         end>
       ColumnClick = False
       Font.CharSet = ARABIC_CHARSET
-      Font.Height = -12
+      Font.Height = -13
       Font.Name = 'Courier New'
+      HideSelection = False
       ParentFont = False
-      PopupMenu = WatchesPopupMenu
+      PopupMenu = MessagesPopup
       ReadOnly = True
       RowSelect = True
       TabStop = False
-      TabOrder = 2
+      TabOrder = 0
       ViewStyle = vsReport
-      OnKeyDown = WatchListKeyDown
+      OnCustomDrawSubItem = SearchListCustomDrawSubItem
+      OnDblClick = SearchListDblClick
     end
     object MessageList: TListView
       Left = 3
@@ -853,7 +855,7 @@ object MainForm: TMainForm
       OnDblClick = MessageListDblClick
       OnKeyDown = WatchListKeyDown
     end
-    object SearchList: TListView
+    object WatchList: TListView
       Left = 3
       Height = 103
       Top = 21
@@ -861,32 +863,30 @@ object MainForm: TMainForm
       Align = alClient
       Columns = <      
         item
-          Caption = 'File'
-          Width = 300
+          Caption = 'Variable'
+          Width = 200
         end      
         item
-          Caption = 'Line'
-          Width = 80
+          Caption = 'Type'
+          Width = 100
         end      
         item
           AutoSize = True
-          Caption = 'Result'
-          Width = 486
+          Caption = 'Value'
+          Width = 566
         end>
       ColumnClick = False
       Font.CharSet = ARABIC_CHARSET
-      Font.Height = -13
+      Font.Height = -12
       Font.Name = 'Courier New'
-      HideSelection = False
       ParentFont = False
-      PopupMenu = MessagesPopup
+      PopupMenu = WatchesPopupMenu
       ReadOnly = True
       RowSelect = True
       TabStop = False
-      TabOrder = 0
+      TabOrder = 2
       ViewStyle = vsReport
-      OnCustomDrawSubItem = SearchListCustomDrawSubItem
-      OnDblClick = SearchListDblClick
+      OnKeyDown = WatchListKeyDown
     end
   end
   object MainMenu: TMainMenu

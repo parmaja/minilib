@@ -124,21 +124,21 @@ type
     FDebug: TEditorDebugger;
   protected
     FOSDepended: Boolean;
-    FDefaultFileGroup: string;
-    procedure AddGroup(vName: string);
+    procedure AddGroup(vName, vCategory: string);
     function CreateDebugger: TEditorDebugger; virtual;
+    function GetGroups: TFileGroups; virtual;
+    procedure Init; virtual; abstract;
   public
     constructor Create; override;
     destructor Destroy; override;
-    procedure EnumExtensions(vExtensions: TStringList); virtual;
-    procedure EnumExtensions(vExtensions: TEditorElements);
-    function CreateEditorFile(Group: string): TEditorFile; virtual;
+    function FindExtension(vExtension: string): TFileGroup;
+    function CreateEditorFile(vGroup: string): TEditorFile; virtual;
+    function CreateEditorFile(vGroup: TFileGroup): TEditorFile; virtual;
     function CreateEditorProject: TEditorProject; virtual;
+    function GetDefaultGroup: TFileGroup; virtual;
     //OSDepended: When save to file, the filename changed depend on the os system name
     property OSDepended: Boolean read FOSDepended;
-    property Groups: TFileGroups read FGroups;
-    property DefaultFileGroup: string read FDefaultFileGroup;
-
+    property Groups: TFileGroups read GetGroups;
     property Debug: TEditorDebugger read FDebug;//todo
   end;
 
@@ -150,8 +150,11 @@ type
   }
 
   TDefaultPerspective = class(TEditorPerspective)
+  protected
+    procedure Init; override;
+    function GetGroups: TFileGroups; override;
   public
-    procedure EnumExtensions(vExtensions: TStringList); override;
+    function GetDefaultGroup: TFileGroup; override;
   end;
 
   { TEditorSCM }
@@ -422,7 +425,7 @@ type
 
   { TFileCategory }
 
-  TFileCategory = class(TObjectList)
+  TFileCategory = class(TEditorElements)
   private
     FName: string;
     FEditorFileClass: TEditorFileClass;
@@ -437,9 +440,10 @@ type
   public
     constructor Create; virtual;
     destructor Destroy; override;
+    property Name: string read FName write FName;
+    function Find(vName: string): TFileGroup;
     function CreateEditorFile(Files: TEditorFiles): TEditorFile; virtual;
     procedure EnumExtensions(vExtensions: TStringList);
-    property Name: string read FName write FName;
     property EditorFileClass: TEditorFileClass read FEditorFileClass;
     property Highlighter: TSynCustomHighlighter read FHighlighter;
     property Completion: TSynCompletion read FCompletion;
@@ -459,7 +463,12 @@ type
     property Items[Index: integer]: TFileCategory read GetItem write SetItem; default;
   end;
 
-  TFileGroupKind = (fgkExecutable, fgkProject, fgkBrowsable, fgkPublish);
+  TFileGroupKind = (
+    fgkExecutable,//You can guess what is it :P
+    fgkProject,//this can be the main file for project
+    fgkMember,//a member of project php, inc are memver, c,h,cpp members, pas,pp, p , inc also members, ini,txt not member of any project
+    fgkBrowsable//When open file show it in the extension list
+  );
   TFileGroupKinds = set of TFileGroupKind;
 
   { TFileGroup }
@@ -488,6 +497,7 @@ type
     function GetItem(Index: integer): TFileGroup;
   public
     function Find(vName: string): TFileGroup;
+    function Find(vName, vCategory: string): TFileGroup;
     procedure EnumExtensions(vExtensions: TStringList);
     procedure EnumExtensions(vExtensions: TEditorElements);
     function FindExtension(vExtension: string): TFileGroup;
@@ -643,7 +653,6 @@ type
     property SearchEngine: TSynEditSearch read FSearchEngine;
     procedure DoChangedState(State: TEditorChangeState); virtual;
     procedure DoMacroStateChange(Sender: TObject);
-    function FindExtensionCategoryName(Extension: string): string;
     procedure DoReplaceText(Sender: TObject; const ASearch, AReplace: string; Line, Column: integer; var ReplaceAction: TSynReplaceAction);
   public
     constructor Create; virtual;
@@ -886,10 +895,21 @@ end;
 
 { TDefaultPerspective }
 
-procedure TDefaultPerspective.EnumExtensions(vExtensions: TStringList);
+procedure TDefaultPerspective.Init;
 begin
-  inherited;
-  Engine.Groups.EnumExtensions(vExtensions);
+  FTitle := 'Default';
+  FName := 'Default';
+  FDescription := 'Default project type';
+end;
+
+function TDefaultPerspective.GetGroups: TFileGroups;
+begin
+  Result := Engine.Groups;
+end;
+
+function TDefaultPerspective.GetDefaultGroup: TFileGroup;
+begin
+  Result := Groups.Find('txt');
 end;
 
 { TEditorFormList }
@@ -926,11 +946,25 @@ end;
 
 { TEditorPerspective }
 
-procedure TEditorPerspective.AddGroup(vName: string);
+function TEditorPerspective.GetGroups: TFileGroups;
+begin
+  Result := FGroups;
+end;
+
+procedure TEditorPerspective.AddGroup(vName, vCategory: string);
 var
   G: TFileGroup;
+  C: TFileCategory;
 begin
-  G := Engine.Groups.Find(vName);
+  if vCategory = '' then
+    C := nil
+  else
+    C := Engine.Categories.Find(vName);
+  if C = nil then
+    G := Engine.Groups.Find(vName)
+  else
+    G := C.Find(vName);
+
   if G = nil then
     raise Exception.Create(vName + ' file group not found');
   Groups.Add(G);
@@ -945,11 +979,10 @@ constructor TEditorPerspective.Create;
 begin
   inherited;
   FGroups := TFileGroups.Create(False);//it already owned by Engine.Groups
-  FTitle := 'Default';
-  FName := 'Default';
-  FDescription := 'Default project type';
-  FDefaultFileGroup := 'TXT';
   FDebug := CreateDebugger;
+  Init;
+{  if Groups.Count = 0 then
+    raise Exception.Create('You must add groups in Init method');}//removed DefaultPerspective has no groups
 end;
 
 destructor TEditorPerspective.Destroy;
@@ -959,31 +992,45 @@ begin
   inherited;
 end;
 
-procedure TEditorPerspective.EnumExtensions(vExtensions: TStringList);
+function TEditorPerspective.FindExtension(vExtension: string): TFileGroup;
 begin
-
+  if LeftStr(vExtension, 1) = '.' then
+    vExtension := Copy(vExtension, 2, MaxInt);
+  Result := Groups.FindExtension(vExtension);
+  if Result = nil then
+    Result := Engine.Groups.FindExtension(vExtension)
 end;
 
-procedure TEditorPerspective.EnumExtensions(vExtensions: TEditorElements);
-begin
-  Groups.EnumExtensions(vExtensions);
-end;
-
-function TEditorPerspective.CreateEditorFile(Group: string): TEditorFile;
+function TEditorPerspective.CreateEditorFile(vGroup: string): TEditorFile;
 var
-  aGroup: TFileGroup;
+  G: TFileGroup;
 begin
-  aGroup := Engine.Groups.Find(Group);
-  if aGroup <> nil then
-    Result := aGroup.Category.CreateEditorFile(Engine.Files)
+  G := Groups.Find(vGroup);
+  if G = nil then
+    G := Engine.Groups.Find(vGroup);
+  Result := CreateEditorFile(G);
+end;
+
+function TEditorPerspective.CreateEditorFile(vGroup: TFileGroup): TEditorFile;
+begin
+  if vGroup <> nil then
+    Result := vGroup.Category.CreateEditorFile(Engine.Files)
   else
     Result := TEditorFile.Create(Engine.Files);
-  Result.Group := aGroup;
+  Result.Group := vGroup;
 end;
 
 function TEditorPerspective.CreateEditorProject: TEditorProject;
 begin
   Result := TEditorProject.Create;
+end;
+
+function TEditorPerspective.GetDefaultGroup: TFileGroup;
+begin
+  if Groups.Count > 0 then
+    Result := Groups[0]
+  else
+    Result := Engine.Groups[0];//first group in all groups, naah
 end;
 
 { TPerspectives }
@@ -1286,19 +1333,6 @@ begin
     ShowSearchForm(Current.SynEdit, Engine.Options.SearchHistory, Engine.Options.ReplaceHistory, False);
 end;
 
-function TEditorEngine.FindExtensionCategoryName(Extension: string): string;
-var
-  aGroup: TFileGroup;
-begin
-  if LeftStr(Extension, 1) = '.' then
-    Extension := Copy(Extension, 2, MaxInt);
-  aGroup := Groups.FindExtension(Extension);
-  if aGroup <> nil then
-    Result := aGroup.Name
-  else
-    Result := '';
-end;
-
 procedure TEditorEngine.DoReplaceText(Sender: TObject; const ASearch, AReplace: string; Line, Column: integer; var ReplaceAction: TSynReplaceAction);
 begin
   if Assigned(FOnReplaceText) then
@@ -1388,7 +1422,7 @@ begin
   Result := FindFile(lFileName);
   if Result = nil then
   begin
-    Result := Engine.Perspective.CreateEditorFile(Engine.FindExtensionCategoryName(ExtractFileExt(lFileName)));
+    Result := Engine.Perspective.CreateEditorFile(Engine.Perspective.FindExtension(ExtractFileExt(lFileName)));
     Result.Load(lFileName);
   end;
   if AppendToRecent then
@@ -1428,20 +1462,21 @@ end;
 function TEditorFiles.New(vGroupName: string): TEditorFile;
 var
   aGroup: TFileGroup;
-  S: string;
 begin
-  if vGroupName = '' then
-    vGroupName := Engine.Perspective.DefaultFileGroup;
-  aGroup := Engine.Groups.Find(vGroupName);
-  if aGroup <> nil then
-    S := aGroup.Name
-  else
-    S := '';
-  Result := Engine.Perspective.CreateEditorFile(S);
-  Result.NewSource;
-  Result.Edit;
-  Current := Result;
-  Engine.UpdateState([ecsChanged, ecsState, ecsRefresh]);
+  BeginUpdate;
+  try
+    if vGroupName = '' then
+      aGroup := Engine.Perspective.GetDefaultGroup
+    else
+      aGroup := Engine.Groups.Find(vGroupName);
+    Result := Engine.Perspective.CreateEditorFile(aGroup);
+    Result.NewSource;
+    Result.Edit;
+    Current := Result;
+    Engine.UpdateState([ecsChanged, ecsState, ecsRefresh]);
+  finally
+    EndUpdate;
+  end;
 end;
 
 function TEditorFiles.New(Category, Name, Related: string; ReadOnly, Executable: Boolean): TEditorFile;
@@ -1484,7 +1519,7 @@ begin
     aDialog.Options := aDialog.Options + [ofAllowMultiSelect];
     aDialog.Filter := Engine.Groups.CreateFilter;
     aDialog.InitialDir := Engine.BrowseFolder;
-    aDialog.DefaultExt := Engine.Groups[0].Extensions[0];
+    aDialog.DefaultExt := Engine.Perspective.GetDefaultGroup.Extensions[0];
     aDialog.FileName := '*' + aDialog.DefaultExt;
     if aDialog.Execute then
     begin
@@ -2089,7 +2124,7 @@ begin
     if Group <> nil then
       aDialog.DefaultExt := Group.Extensions[0]
     else
-      aDialog.DefaultExt := Engine.Groups[0].Extensions[0];
+      aDialog.DefaultExt := Engine.Perspective.GetDefaultGroup.Extensions[0];
     aDialog.FileName := '*' + aDialog.DefaultExt;
 
 
@@ -2543,6 +2578,11 @@ begin
   inherited;
 end;
 
+function TFileCategory.Find(vName: string): TFileGroup;
+begin
+  Result := inherited Find(vName) as TFileGroup;
+end;
+
 function TFileCategory.GetItem(Index: Integer): TFileGroup;
 begin
   Result := inherited Items[Index] as TFileGroup;
@@ -2764,6 +2804,11 @@ begin
 end;
 
 function TFileGroups.Find(vName: string): TFileGroup;
+begin
+  Result := inherited Find(vName) as TFileGroup;
+end;
+
+function TFileGroups.Find(vName, vCategory: string): TFileGroup;
 var
   i: integer;
 begin
@@ -2771,9 +2816,9 @@ begin
   if vName <> '' then
     for i := 0 to Count - 1 do
     begin
-      if SameText(Items[i].Name, vName) then
+      if SameText(Items[i].Name, vName) and (Items[i].Category.Name = vCategory) then
       begin
-        Result := Items[i] as TFileGroup;
+        Result := Items[i];
         break;
       end;
     end;

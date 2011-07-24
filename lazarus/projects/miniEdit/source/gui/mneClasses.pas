@@ -208,7 +208,7 @@ end;
 
 { TmneEngine }
 
-function GetFileImageIndex(const FileName: string): integer;
+function GetFileImageIndex(const FileName: string): Integer;
 var
   AExtensions: TStringList;
   s: string;
@@ -219,7 +219,7 @@ begin
 
   AExtensions := TStringList.Create;
   try
-    Engine.Groups[0].EnumExtensions(AExtensions);
+    Engine.Perspective.Groups[0].EnumExtensions(AExtensions);
     if AExtensions.IndexOf(s) >= 0 then
       Result := 2
     else
@@ -285,9 +285,9 @@ initialization
     Categories.Add('ini', TINIFile, TINIFileCategory);
     Categories.Add('xml', TXMLFile, TXMLFileCategory);
 
-    Groups.Add('sql', 'SQL files', 'SQL', ['sql'], [fgkPublish, fgkBrowsable]);
+    Groups.Add('sql', 'SQL files', 'SQL', ['sql'], [fgkMember, fgkBrowsable]);
     Groups.Add('htaccess', 'htaccess files', 'apache', ['htaccess', 'conf'], [fgkBrowsable]);
-    Groups.Add('xml', 'XML files', 'xml', ['xml'], [fgkPublish, fgkBrowsable]);
+    Groups.Add('xml', 'XML files', 'xml', ['xml'], [fgkMember, fgkBrowsable]);
     Groups.Add('ini', 'INI files', 'ini', ['ini'], []);
     Groups.Add('txt', 'TXT files', 'txt', ['txt'], []);
   end;

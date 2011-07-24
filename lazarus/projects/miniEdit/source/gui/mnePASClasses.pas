@@ -54,8 +54,9 @@ type
   { TPascalPerspective }
 
   TPascalPerspective = class(TEditorPerspective)
+  protected
+    procedure Init; override;
   public
-    constructor Create; override;
   end;
 
 implementation
@@ -72,16 +73,18 @@ end;
 
 { TPascalPerspective }
 
-constructor TPascalPerspective.Create;
+procedure TPascalPerspective.Init;
 begin
-  inherited Create;
   FName := 'Pascal';
   FTitle := 'Pascal project';
   FDescription := 'Pascal/FPC/Lazarus Files, *.pas, *.pp *.inc';
   FImageIndex := -1;
-  FDefaultFileGroup := 'PAS';
-  AddGroup('PAS');
-  AddGroup('PPR');
+  AddGroup('pas', 'pas');
+  AddGroup('dpr', 'pas');
+  AddGroup('lpr', 'pas');
+  AddGroup('ppr', 'pas');
+  AddGroup('lfm', 'lfm');
+  //AddGroup('inc');
 end;
 
 { TPASFileCategory }
@@ -113,13 +116,13 @@ end;
 initialization
   with Engine do
   begin
-    Categories.Add('pascal', TPASFile, TPASFileCategory);
+    Categories.Add('pas', TPASFile, TPASFileCategory);
     Categories.Add('lfm', TLFMFile, TLFMFileCategory);
-    Groups.Add('ppr', 'Pascal Project Files', 'pascal', ['ppr'], [fgkExecutable, fgkPublish, fgkBrowsable]);//PPR meant Pascal project
-    Groups.Add('lpr', 'Lazarus Project Files', 'pascal', ['lpr'], [fgkExecutable, fgkPublish, fgkBrowsable]);//PPR meant Pascal project
-    Groups.Add('dpr', 'Delphi Project Files', 'pascal', ['dpr'], [fgkExecutable, fgkPublish, fgkBrowsable]);//PPR meant Pascal project
-    Groups.Add('pas', 'Pascal Files', 'pascal', ['pas', 'pp', 'p'], [fgkExecutable, fgkPublish, fgkBrowsable]);
-    Groups.Add('lfm', 'Lazarus Form Files', 'lfm', ['lfm'], [fgkPublish, fgkBrowsable]);
+    Groups.Add('ppr', 'Pascal Project Files', 'pas', ['ppr'], [fgkExecutable, fgkMember, fgkBrowsable]);//PPR meant Pascal project
+    Groups.Add('lpr', 'Lazarus Project Files', 'pas', ['lpr'], [fgkExecutable, fgkMember, fgkBrowsable]);
+    Groups.Add('dpr', 'Delphi Project Files', 'pas', ['dpr'], [fgkExecutable, fgkMember, fgkBrowsable]);
+    Groups.Add('pas', 'Pascal Files', 'pas', ['pas', 'pp', 'p', 'inc'], [fgkExecutable, fgkMember, fgkBrowsable]);
+    Groups.Add('lfm', 'Lazarus Form Files', 'lfm', ['lfm'], [fgkMember, fgkBrowsable]);
 
     Perspectives.Add(TPascalPerspective);
   end;

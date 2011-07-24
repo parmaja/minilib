@@ -23,9 +23,9 @@ uses
 
 type
 
-  { TphpFile }
+  { TXHTMLFile }
 
-  TphpFile = class(TEditorFile)
+  TXHTMLFile = class(TEditorFile)
   protected
     procedure NewSource; override;
   public
@@ -52,9 +52,9 @@ type
   public
   end;
 
-  { TPHPFileCategory }
+  { TXHTMLFileCategory }
 
-  TPHPFileCategory = class(TFileCategory)
+  TXHTMLFileCategory = class(TFileCategory)
   private
     procedure ExtractKeywords(Files, Variables, Identifiers: TStringList);
   protected
@@ -91,8 +91,8 @@ type
     FPHPPath: string;
   protected
     function CreateDebugger: TEditorDebugger; override;
+    procedure Init; override;
   public
-    constructor Create; override;
     property PHPPath: string read FPHPPath write FPHPPath;
     property PHPHelpFile: string read FPHPHelpFile write FPHPHelpFile;
     property HTMLHelpFile: string read FHTMLHelpFile write FHTMLHelpFile;
@@ -110,23 +110,21 @@ begin
   Result := TPHP_xDebug.Create;
 end;
 
-constructor TPHPPerspective.Create;
+procedure TPHPPerspective.Init;
 begin
-  inherited;
   FTitle := 'PHP project';
   FDescription := 'PHP Files, *.php, *.inc';
   FName := 'PHP';
-  FDefaultFileGroup := 'PHP';
   FImageIndex := -1;
-  AddGroup('PHP');
-  AddGroup('HTML');
-  AddGroup('CSS');
-  AddGroup('JS');
+  AddGroup('php', 'html');
+  AddGroup('html', 'html');
+  AddGroup('css', 'css');
+  AddGroup('js', 'js');
 end;
 
-{ TphpFile }
+{ TXHTMLFile }
 
-procedure TphpFile.NewSource;
+procedure TXHTMLFile.NewSource;
 begin
   SynEdit.Text := '<?php';
   SynEdit.Lines.Add('');
@@ -135,7 +133,7 @@ begin
   SynEdit.CaretX := 3;
 end;
 
-procedure TphpFile.OpenInclude;
+procedure TXHTMLFile.OpenInclude;
 var
   P: TPoint;
   Attri: TSynHighlighterAttributes;
@@ -155,7 +153,7 @@ begin
   inherited;
   if Engine.Files.Current <> nil then
   begin
-    if Engine.Files.Current.Group.Category is TPHPFileCategory then
+    if Engine.Files.Current.Group.Category is TXHTMLFileCategory then
     begin
       P := Engine.Files.Current.SynEdit.CaretXY;
       Engine.Files.Current.SynEdit.GetHighlighterAttriAtRowColEx(P, aToken, aTokenType, aStart, Attri);
@@ -173,7 +171,7 @@ begin
   end;
 end;
 
-function TphpFile.CanOpenInclude: Boolean;
+function TXHTMLFile.CanOpenInclude: Boolean;
 var
   P: TPoint;
   Attri: TSynHighlighterAttributes;
@@ -184,7 +182,7 @@ begin
   Result := False;
   if (Group <> nil) then
   begin
-    if Group.Category is TPHPFileCategory then
+    if Group.Category is TXHTMLFileCategory then
     begin
       P := SynEdit.CaretXY;
       aToken := '';
@@ -194,7 +192,7 @@ begin
   end;
 end;
 
-function TphpFile.Run: Boolean;
+function TXHTMLFile.Run: Boolean;
 var
   aFile: string;
   aRoot: string;
@@ -247,19 +245,19 @@ begin
   Result := TSynCSSSyn.Create(nil);
 end;
 
-{ TPHPFileCategory }
+{ TXHTMLFileCategory }
 
-function TPHPFileCategory.CreateHighlighter: TSynCustomHighlighter;
+function TXHTMLFileCategory.CreateHighlighter: TSynCustomHighlighter;
 begin
   Result := TSynXHTMLSyn.Create(nil);
 end;
 
-procedure TPHPFileCategory.DoAddCompletion(AKeyword: string; AKind: integer);
+procedure TXHTMLFileCategory.DoAddCompletion(AKeyword: string; AKind: integer);
 begin
   Completion.ItemList.Add(AKeyword);
 end;
 
-procedure TPHPFileCategory.OnExecuteCompletion(Sender: TObject);
+procedure TXHTMLFileCategory.OnExecuteCompletion(Sender: TObject);
 var
   aVariables: THashedStringList;
   aIdentifiers: THashedStringList;
@@ -393,12 +391,12 @@ begin
   end;
 end;
 
-constructor TPHPFileCategory.Create;
+constructor TXHTMLFileCategory.Create;
 begin
   inherited Create;
 end;
 
-procedure TPHPFileCategory.ExtractKeywords(Files, Variables, Identifiers: TStringList);
+procedure TXHTMLFileCategory.ExtractKeywords(Files, Variables, Identifiers: TStringList);
 var
   aFile: TStringList;
   s: string;
@@ -444,7 +442,7 @@ begin
   end;
 end;
 
-procedure TPHPFileCategory.InitCompletion(vSynEdit: TCustomSynEdit);
+procedure TXHTMLFileCategory.InitCompletion(vSynEdit: TCustomSynEdit);
 begin
   FCompletion := TSynCompletion.Create(nil);
   FCompletion.Width := 340;
@@ -467,15 +465,15 @@ end;
 initialization
   with Engine do
   begin
-    Categories.Add('html', TphpFile, TPHPFileCategory, [fckPublish]);
-    //Categories.Add('html', TphpFile, TPHPFileCategory, [fckPublish]);
+    Categories.Add('html', TXHTMLFile, TXHTMLFileCategory, [fckPublish]);
     Categories.Add('css', TCssFile, TCSSFileCategory, [fckPublish]);
     Categories.Add('js', TJSFile, TJSFileCategory, [fckPublish]);
-    Groups.Add('php', 'PHP Files', 'html', ['php'], [fgkExecutable, fgkPublish, fgkBrowsable, fgkProject]);
-    //Groups.Add('PHPX', 'PHPX Files', 'PHP', ['phpx'], [fgkExecutable, fgkPublish, fgkBrowsable, fgkProject]);
-    Groups.Add('html', 'HTML Files', 'html', ['html', 'htm', 'tpl'], [fgkPublish, fgkBrowsable]);
-    Groups.Add('css', 'CSS Files', 'css', ['css'], [fgkPublish, fgkBrowsable]);
-    Groups.Add('js', 'Java Script Files', 'js', ['js'], [fgkPublish, fgkBrowsable]);
+
+    Groups.Add('php', 'PHP Files', 'html', ['php', 'inc'], [fgkExecutable, fgkMember, fgkBrowsable, fgkProject]);
+    Groups.Add('html', 'HTML Files', 'html', ['html', 'xhtml', 'htm', 'tpl'], [fgkMember, fgkBrowsable]);
+    Groups.Add('css', 'CSS Files', 'css', ['css'], [fgkMember, fgkBrowsable]);
+    Groups.Add('js', 'Java Script Files', 'js', ['js'], [fgkMember, fgkBrowsable]);
+
     Perspectives.Add(TPHPPerspective);
   end;
 end.

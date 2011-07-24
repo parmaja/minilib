@@ -1396,7 +1396,7 @@ begin
     AExtensions := TStringList.Create;
     try
       case ShowFolderFiles of
-        sffRelated: Engine.Perspective.EnumExtensions(AExtensions);
+        sffRelated: Engine.Perspective.Groups.EnumExtensions(AExtensions);
         sffKnown: Engine.Groups.EnumExtensions(AExtensions);
         sffAll: All := True;
       end;
