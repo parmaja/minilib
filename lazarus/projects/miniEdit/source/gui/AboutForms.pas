@@ -19,6 +19,7 @@ type
 
   TAboutForm = class(TForm)
     Button1: TButton;
+    Image2: TImage;
     Label1: TLabel;
     Image1: TImage;
     Memo1: TMemo;
