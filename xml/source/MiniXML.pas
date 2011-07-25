@@ -7,9 +7,9 @@ unit MiniXML;
 interface
 
 uses
-  mnXML, mnXMLBase64, mnXMLFPClasses, mnXMLNodes, mnXMLReader, mnXMLRtti, 
-  mnXMLRttiProfile, mnXMLRttiReader, mnXMLRttiStdClasses, mnXMLRttiWriter, 
-  mnXMLScanner, mnXMLStreams, mnXMLUtils, mnXMLWriter, LazarusPackageIntf;
+  mnXML, mnXMLBase64, mnXMLNodes, mnXMLReader, mnXMLRtti, mnXMLRttiProfile, 
+  mnXMLRttiReader, mnXMLRttiStdClasses, mnXMLRttiWriter, mnXMLScanner, 
+  mnXMLStreams, mnXMLUtils, mnXMLWriter, LazarusPackageIntf;
 
 implementation
 

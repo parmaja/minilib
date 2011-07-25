@@ -1,8 +1,9 @@
 <?xml version="1.0"?>
 <CONFIG>
-  <Package Version="3">
+  <Package Version="4">
     <PathDelim Value="\"/>
     <Name Value="MiniXML"/>
+    <AddToProjectUsesSection Value="True"/>
     <CompilerOptions>
       <Version Value="10"/>
       <PathDelim Value="\"/>
@@ -32,7 +33,7 @@
         <CompilerPath Value="$(CompPath)"/>
       </Other>
     </CompilerOptions>
-    <Files Count="14">
+    <Files Count="13">
       <Item1>
         <Filename Value="mnXML.pas"/>
         <UnitName Value="mnXML"/>
@@ -42,53 +43,49 @@
         <UnitName Value="mnXMlBase64"/>
       </Item2>
       <Item3>
-        <Filename Value="mnXMLFPClasses.pas"/>
-        <UnitName Value="mnXMLFPClasses"/>
-      </Item3>
-      <Item4>
         <Filename Value="mnXMLNodes.pas"/>
         <UnitName Value="mnXMLNodes"/>
-      </Item4>
-      <Item5>
+      </Item3>
+      <Item4>
         <Filename Value="mnXMLReader.pas"/>
         <UnitName Value="mnXMLReader"/>
-      </Item5>
-      <Item6>
+      </Item4>
+      <Item5>
         <Filename Value="mnXMLRtti.pas"/>
         <UnitName Value="mnXMLRtti"/>
-      </Item6>
-      <Item7>
+      </Item5>
+      <Item6>
         <Filename Value="mnXMLRttiProfile.pas"/>
         <UnitName Value="mnXMLRttiProfile"/>
-      </Item7>
-      <Item8>
+      </Item6>
+      <Item7>
         <Filename Value="mnXMLRttiReader.pas"/>
         <UnitName Value="mnXMLRttiReader"/>
-      </Item8>
-      <Item9>
+      </Item7>
+      <Item8>
         <Filename Value="mnXMLRttiStdClasses.pas"/>
         <UnitName Value="mnXMLRttiStdClasses"/>
-      </Item9>
-      <Item10>
+      </Item8>
+      <Item9>
         <Filename Value="mnXMLRttiWriter.pas"/>
         <UnitName Value="mnXMLRttiWriter"/>
-      </Item10>
-      <Item11>
+      </Item9>
+      <Item10>
         <Filename Value="mnXMLScanner.pas"/>
         <UnitName Value="mnXMLScanner"/>
-      </Item11>
-      <Item12>
+      </Item10>
+      <Item11>
         <Filename Value="mnXMLStreams.pas"/>
         <UnitName Value="mnXMLStreams"/>
-      </Item12>
-      <Item13>
+      </Item11>
+      <Item12>
         <Filename Value="mnXMLUtils.pas"/>
         <UnitName Value="mnXMLUtils"/>
-      </Item13>
-      <Item14>
+      </Item12>
+      <Item13>
         <Filename Value="mnXMLWriter.pas"/>
         <UnitName Value="mnXMLWriter"/>
-      </Item14>
+      </Item13>
     </Files>
     <Type Value="RunAndDesignTime"/>
     <RequiredPkgs Count="2">

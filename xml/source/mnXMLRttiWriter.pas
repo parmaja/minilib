@@ -312,7 +312,9 @@ var
     else
     begin
       if (Value is TComponent) and ((Value as TComponent).Name <> '') then
-        WriteAttributes('ID="' + (Value as TComponent).Name + '"');
+        WriteAttributes('ID="' + (Value as TComponent).Name + '"')
+      else if (Value is TPersistent) and (IsStoredProp(Instance, PropInfo)) then //just more info
+        WriteAttributes('Type="' + (Value as TPersistent).ClassName + '"');
       WriteStopTag;
       WriteProperties(PropInfo^.Name, Value, False);
     end;

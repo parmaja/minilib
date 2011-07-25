@@ -228,7 +228,7 @@ begin
     begin
       if PropInfo^.PropType^.Kind in [tkClass, tkInterface] then
       begin
-        if PropInfo^.PropType^.Kind = tkInterface then//use this way more safe when build in packages for delphi projects 
+        if PropInfo^.PropType^.Kind = tkInterface then //use this way more safe when build in packages for delphi projects
           aInstance := Pointer(GetInterfaceProp(TObject(Instance), Name))
         else
           aInstance := Pointer(GetObjectProp(TObject(Instance), Name));
@@ -386,25 +386,25 @@ var
 
   procedure ReadObjectProp;
   var
-    Data: TObject;
+    aObject: TObject;
   begin
-    Data := TObject(GetOrdProp(Instance, PropInfo));
-    if (Data <> nil) and (Data is TComponent) and not (csSubComponent in (Data as TComponent).ComponentStyle) then
+    aObject := TObject(GetOrdProp(Instance, PropInfo));
+    if (aObject <> nil) and (aObject is TComponent) and not (csSubComponent in (aObject as TComponent).ComponentStyle) then
     begin
       //not now there is long story
     end
     else
     begin
-      (Owner as TmnXMLRttiReader).Stack.Push((Owner as TmnXMLRttiReader).CreateFiler(PropInfo^.Name, Data, False));
+      (Owner as TmnXMLRttiReader).Stack.Push((Owner as TmnXMLRttiReader).CreateFiler(PropInfo^.Name, aObject, False));
     end;
   end;
 
   procedure ReadInterfaceProp;
   var
-    Data: TObject;
+    aObject: TObject;
   begin
-    Data := TObject(GetOrdProp(Instance, PropInfo));
-    (Owner as TmnXMLRttiReader).Stack.Push((Owner as TmnXMLRttiReader).CreateFiler(PropInfo^.Name, Data, True));
+    aObject := TObject(GetOrdProp(Instance, PropInfo));
+    (Owner as TmnXMLRttiReader).Stack.Push((Owner as TmnXMLRttiReader).CreateFiler(PropInfo^.Name, aObject, True));
   end;
 begin
   PropType := GetPropType(PropInfo);
@@ -529,7 +529,7 @@ begin
       TComponent(Result).Name := Name;
     end
     else
-      Result := aClass.Create;//zaher wrong create idea
+      Result := aClass.Create;//zaher: wrong create idea
   end
   else
     Result := nil;
