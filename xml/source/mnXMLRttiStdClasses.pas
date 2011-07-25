@@ -180,9 +180,9 @@ begin
 end;
 
 initialization
-  PermanentRegister.RegisterClassProperty('', TStrings, 'Strings', TmnXMLRttiStrings);
-  PermanentRegister.RegisterClassProperty('', TCollection, 'Items', TmnXMLRttiCollection);
-  PermanentRegister.RegisterClassProperty('', TmnXMLItems, 'Objects', TmnXMLRttiProfileItems);
+  RttiFilers.RegisterClassProperty('', TStrings, 'Strings', TmnXMLRttiStrings);
+  RttiFilers.RegisterClassProperty('', TCollection, 'Items', TmnXMLRttiCollection);
+  RttiFilers.RegisterClassProperty('', TmnXMLItems, 'Objects', TmnXMLRttiProfileItems);
 finalization
 end.
 

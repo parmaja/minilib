@@ -177,7 +177,7 @@ begin
     Count := List.Count;
   end;
 
-  IsEmpty := (Count = 0) and not (Instance is TComponent) and not (PermanentRegister.HaveClassProperties(Name, Self, Instance));
+  IsEmpty := (Count = 0) and not (Instance is TComponent) and not (RttiFilers.HaveClassProperties(Name, Self, Instance));
 
   if not IsEmpty then
   begin
@@ -193,7 +193,7 @@ begin
     FreeAndNil(List);
   end;
 
-  PermanentRegister.WriteClassProperties(Name, Self, Instance);
+  RttiFilers.WriteClassProperties(Name, Self, Instance);
 
   if (Instance is TComponent) then
     THackComponent(Instance).GetChildren(WriteComponent, FRoot);
@@ -326,7 +326,7 @@ var
   begin
     Value := Pointer(GetInterfaceProp(Instance, PropInfo));
     WriteStopTag;
-    PermanentRegister.WriteInterface(PropInfo^.Name, Self, Value);
+    RttiFilers.WriteInterface(PropInfo^.Name, Self, Value);
   end;
 
 begin

@@ -85,7 +85,7 @@ type
 
   TmnXMLRttiFilerClass = class of TmnXMLRttiFiler;
 
-  TmnXMLRttiRegisterItem = class(TObject)
+  TmnXMLRttiFilerItem = class(TObject)
   public
     PropertyClassName:string;
     PropertyName: string;
@@ -95,12 +95,12 @@ type
     FilerClass: TmnXMLRttiFilerClass;
   end;
 
-  TmnRttiRegister = class(TObjectList)
+  TmnRttiFilers = class(TObjectList)
   private
-    function GetItem(Index: Integer): TmnXMLRttiRegisterItem;
-    procedure SetItem(Index: Integer; const Value: TmnXMLRttiRegisterItem);
-    function FindFilerClass(const PropertyName: string; Instance: TObject): TmnXMLRttiRegisterItem;
-    function FindFilerInterface(const PropertyName: string; Instance: Pointer): TmnXMLRttiRegisterItem;
+    function GetItem(Index: Integer): TmnXMLRttiFilerItem;
+    procedure SetItem(Index: Integer; const Value: TmnXMLRttiFilerItem);
+    function FindFilerClass(const PropertyName: string; Instance: TObject): TmnXMLRttiFilerItem;
+    function FindFilerInterface(const PropertyName: string; Instance: Pointer): TmnXMLRttiFilerItem;
   public
     //register functions
     procedure RegisterClassProperty(PropertyClassName:string; PropertyClass: TClass; PropertyName: string; FilerClass: TmnXMLRttiFilerClass);
@@ -110,13 +110,10 @@ type
     function HaveClassProperties(const PropertyClassName: string; Writer: TmnXMLRttiCustomWriter; Instance: Pointer):Boolean;
     procedure WriteClassProperties(const PropertyClassName: string; Writer: TmnXMLRttiCustomWriter; Instance: Pointer);
     procedure WriteInterface(const PropertyName: string; Writer: TmnXMLRttiCustomWriter; Instance: Pointer);
-    property Items[Index: Integer]: TmnXMLRttiRegisterItem read GetItem write SetItem; default;
+    property Items[Index: Integer]: TmnXMLRttiFilerItem read GetItem write SetItem; default;
   end;
 
-  TmnPermanentRegister = class(TmnRttiRegister)
-  end;
-
-function PermanentRegister: TmnPermanentRegister;
+function RttiFilers: TmnRttiFilers;
 
 implementation
 
@@ -134,13 +131,13 @@ begin
 end;
 
 var
-  FPermanentRegister: TmnPermanentRegister = nil;
+  FRttiFilers: TmnRttiFilers = nil;
 
-function PermanentRegister: TmnPermanentRegister;
+function RttiFilers: TmnRttiFilers;
 begin
-  if FPermanentRegister = nil then
-    FPermanentRegister := TmnPermanentRegister.Create;
-  Result := FPermanentRegister;
+  if FRttiFilers = nil then
+    FRttiFilers := TmnRttiFilers.Create;
+  Result := FRttiFilers;
 end;
 
 destructor TmnXMLRttiFiler.Destroy;
@@ -157,9 +154,9 @@ procedure TmnXMLRttiFiler.ReadFinish;
 begin
 end;
 
-{ TmnRttiRegister }
+{ TmnRttiFilers }
 
-procedure TmnRttiRegister.WriteClassProperties(const PropertyClassName: string; Writer: TmnXMLRttiCustomWriter; Instance: Pointer);
+procedure TmnRttiFilers.WriteClassProperties(const PropertyClassName: string; Writer: TmnXMLRttiCustomWriter; Instance: Pointer);
 var
   i:Integer;
   aFiler: TmnXMLRttiFiler;
@@ -178,12 +175,12 @@ begin
   end;
 end;
 
-function TmnRttiRegister.GetItem(Index: Integer): TmnXMLRttiRegisterItem;
+function TmnRttiFilers.GetItem(Index: Integer): TmnXMLRttiFilerItem;
 begin
-  Result := inherited Items[Index] as TmnXMLRttiRegisterItem;
+  Result := inherited Items[Index] as TmnXMLRttiFilerItem;
 end;
 
-function TmnRttiRegister.HaveClassProperties(const PropertyClassName: string;
+function TmnRttiFilers.HaveClassProperties(const PropertyClassName: string;
   Writer: TmnXMLRttiCustomWriter; Instance: Pointer): Boolean;
 var
   i:Integer;
@@ -199,13 +196,13 @@ begin
   end;
 end;
 
-procedure TmnRttiRegister.RegisterClassProperty(PropertyClassName:string; PropertyClass: TClass; PropertyName: string; FilerClass: TmnXMLRttiFilerClass);
+procedure TmnRttiFilers.RegisterClassProperty(PropertyClassName:string; PropertyClass: TClass; PropertyName: string; FilerClass: TmnXMLRttiFilerClass);
 var
-  aObject: TmnXMLRttiRegisterItem;
+  aObject: TmnXMLRttiFilerItem;
 begin
   if PropertyName = '' then
     raise EmnXMLException.Create('PropertyName not defined');
-  aObject := TmnXMLRttiRegisterItem.Create;
+  aObject := TmnXMLRttiFilerItem.Create;
   aObject.PropertyClassName := PropertyClassName; 
   aObject.PropertyName := PropertyName;
   aObject.PropertyClass := PropertyClass;
@@ -213,12 +210,12 @@ begin
   Add(aObject);
 end;
 
-procedure TmnRttiRegister.SetItem(Index: Integer; const Value: TmnXMLRttiRegisterItem);
+procedure TmnRttiFilers.SetItem(Index: Integer; const Value: TmnXMLRttiFilerItem);
 begin
   inherited Items[Index] := Value;
 end;
 
-function TmnRttiRegister.FindFilerClass(const PropertyName: string; Instance: TObject): TmnXMLRttiRegisterItem;
+function TmnRttiFilers.FindFilerClass(const PropertyName: string; Instance: TObject): TmnXMLRttiFilerItem;
 var
   i: Integer;
 begin
@@ -237,8 +234,8 @@ begin
   end;
 end;
 
-function TmnRttiRegister.FindFilerInterface(const PropertyName: string;
-  Instance: Pointer): TmnXMLRttiRegisterItem;
+function TmnRttiFilers.FindFilerInterface(const PropertyName: string;
+  Instance: Pointer): TmnXMLRttiFilerItem;
 var
   i: Integer;
 begin
@@ -253,10 +250,10 @@ begin
   end;
 end;
 
-function TmnRttiRegister.CreateFiler(Owner: TObject; const PropertyName: string;
+function TmnRttiFilers.CreateFiler(Owner: TObject; const PropertyName: string;
   Instance: Pointer; IsInterface:Boolean; DefaultFiler: TmnXMLRttiFilerClass): TmnXMLRttiFiler;
 var
-  aItem: TmnXMLRttiRegisterItem;
+  aItem: TmnXMLRttiFilerItem;
 begin
   if IsInterface then
     aItem := FindFilerInterface(PropertyName, Instance)
@@ -306,13 +303,13 @@ begin
   Filer.ReadStart;
 end;
 
-procedure TmnRttiRegister.RegisterInterfaceProperty(PropertyName: string; PropertyInterface:TGUID; FilerClass: TmnXMLRttiFilerClass);
+procedure TmnRttiFilers.RegisterInterfaceProperty(PropertyName: string; PropertyInterface:TGUID; FilerClass: TmnXMLRttiFilerClass);
 var
-  aObject: TmnXMLRttiRegisterItem;
+  aObject: TmnXMLRttiFilerItem;
 begin
   if PropertyName = '' then
     raise EmnXMLException.Create('PropertyName not defined');
-  aObject := TmnXMLRttiRegisterItem.Create;
+  aObject := TmnXMLRttiFilerItem.Create;
   aObject.PropertyName := PropertyName;
   aObject.PropertyInterface := PropertyInterface;
   aObject.IsInterface := True;
@@ -320,7 +317,7 @@ begin
   Add(aObject);
 end;
 
-procedure TmnRttiRegister.WriteInterface(const PropertyName: string; Writer: TmnXMLRttiCustomWriter; Instance: Pointer);
+procedure TmnRttiFilers.WriteInterface(const PropertyName: string; Writer: TmnXMLRttiCustomWriter; Instance: Pointer);
 var
   i: Integer;
   aFiler: TmnXMLRttiFiler;
@@ -369,6 +366,6 @@ end;
 
 initialization
 finalization
-  FreeAndNil(FPermanentRegister);
+  FreeAndNil(FRttiFilers);
 end.
 

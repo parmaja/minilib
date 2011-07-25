@@ -237,7 +237,7 @@ begin
     end
     else
     begin
-      aFiler := PermanentRegister.CreateFiler(Owner, Name, Instance, False);
+      aFiler := RttiFilers.CreateFiler(Owner, Name, Instance, False);
       if aFiler <> nil then
         (Owner as TmnXMLRttiReader).Stack.Push(aFiler)
       else
@@ -454,7 +454,7 @@ end;
 
 function TmnXMLRttiReader.CreateFiler(const PropertyName: string; Instance: Pointer; IsInterface:Boolean): TmnXMLRttiFiler;
 begin
-  Result := PermanentRegister.CreateFiler(Self, PropertyName, Instance, IsInterface, TmnXMLRttiObjectFiler)
+  Result := RttiFilers.CreateFiler(Self, PropertyName, Instance, IsInterface, TmnXMLRttiObjectFiler)
 end;
 
 procedure TmnXMLRttiObjectFiler.ReadClose(const Name: string);
