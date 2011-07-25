@@ -1023,6 +1023,7 @@ end;
 function TEditorPerspective.CreateEditorProject: TEditorProject;
 begin
   Result := TEditorProject.Create;
+  Result.PerspectiveName := Name;
 end;
 
 function TEditorPerspective.GetDefaultGroup: TFileGroup;
@@ -2662,11 +2663,10 @@ begin
   aDialog := TSaveDialog.Create(nil);
   try
     aDialog.Title := 'Save project';
-    aDialog.FileName := Name;
     aDialog.DefaultExt := Engine.Extenstion;
     aDialog.Filter := 'Project files (*.' + Engine.Extenstion + ')|*.' + Engine.Extenstion + '|All files|*.*';
     aDialog.InitialDir := Engine.BrowseFolder;
-    aDialog.FileName := '*' + aDialog.DefaultExt;
+    aDialog.FileName := Name + aDialog.DefaultExt;
     Result := aDialog.Execute;
     if Result then
     begin
@@ -2680,7 +2680,7 @@ end;
 
 procedure TEditorProject.SetSCMClass(SCMClass: TEditorSCM);
 begin
-  if (SCMClass = nil) or not(SCM.ClassType = SCMClass.ClassType) then
+  if (SCMClass = nil) or not((SCM <> nil) and (SCM.ClassType = SCMClass.ClassType)) then
     SCM := nil;
   if (SCMClass <> nil) then
     SCM := TEditorSCMClass(SCMClass.ClassType).Create;

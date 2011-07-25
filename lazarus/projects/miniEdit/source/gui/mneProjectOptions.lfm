@@ -73,7 +73,7 @@ object ProjectForm: TProjectForm
     Default = True
     ModalResult = 1
     OnClick = OkBtnClick
-    TabOrder = 7
+    TabOrder = 9
   end
   object CancelBtn: TButton
     Left = 86
@@ -84,7 +84,7 @@ object ProjectForm: TProjectForm
     Cancel = True
     Caption = '&Cancel'
     ModalResult = 2
-    TabOrder = 8
+    TabOrder = 10
   end
   object NameEdit: TEdit
     Left = 89
@@ -106,14 +106,14 @@ object ProjectForm: TProjectForm
     Top = 104
     Width = 268
     Caption = 'Save Desktop, &Reopen last opend files in this project'
-    TabOrder = 2
+    TabOrder = 4
   end
   object RootDirEdit: TEdit
     Left = 6
     Height = 21
     Top = 178
     Width = 352
-    TabOrder = 4
+    TabOrder = 6
   end
   object Button3: TButton
     Left = 360
@@ -122,14 +122,14 @@ object ProjectForm: TProjectForm
     Width = 22
     Caption = '...'
     OnClick = Button3Click
-    TabOrder = 5
+    TabOrder = 7
   end
   object RootUrlEdit: TEdit
     Left = 6
     Height = 21
     Top = 219
     Width = 375
-    TabOrder = 6
+    TabOrder = 8
   end
   object RunModeCbo: TComboBox
     Left = 76
@@ -138,7 +138,7 @@ object ProjectForm: TProjectForm
     Width = 166
     ItemHeight = 13
     Style = csDropDownList
-    TabOrder = 3
+    TabOrder = 5
   end
   object PerspectiveCbo: TComboBox
     Left = 89
@@ -147,7 +147,7 @@ object ProjectForm: TProjectForm
     Width = 303
     ItemHeight = 13
     Style = csDropDownList
-    TabOrder = 9
+    TabOrder = 2
   end
   object Label7: TLabel
     Left = 12
@@ -174,7 +174,7 @@ object ProjectForm: TProjectForm
     Width = 303
     ItemHeight = 13
     Style = csDropDownList
-    TabOrder = 10
+    TabOrder = 3
   end
   object OpenDialog: TOpenDialog
     left = 320

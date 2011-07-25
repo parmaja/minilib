@@ -93,7 +93,8 @@ begin
   FProject.RootUrl := RootUrlEdit.Text;
   FProject.RunMode := TRunMode(RunModeCbo.ItemIndex);
   FProject.SaveDesktop := SaveDesktopChk.Checked;
-  FProject.PerspectiveName := TEditorPerspective(PerspectiveCbo.Items.Objects[PerspectiveCbo.ItemIndex]).Name;
+  if PerspectiveCbo.ItemIndex >= 0 then
+    FProject.PerspectiveName := TEditorPerspective(PerspectiveCbo.Items.Objects[PerspectiveCbo.ItemIndex]).Name;
   FProject.SetSCMClass(TEditorSCM(SCMCbo.Items.Objects[SCMCbo.ItemIndex]));
 end;
 
@@ -143,12 +144,15 @@ begin
   RunModeCbo.Items.Add('None');
   RunModeCbo.Items.Add('Console');
   RunModeCbo.Items.Add('HTTP URL');
+  RunModeCbo.ItemIndex := 0;
+
   PerspectiveCbo.Items.BeginUpdate;
   try
     for i := 0 to Engine.Perspectives.Count -1 do
     begin
       PerspectiveCbo.Items.AddObject(Engine.Perspectives[i].Title, Engine.Perspectives[i]);
     end;
+    PerspectiveCbo.ItemIndex := 0;
   finally
     PerspectiveCbo.Items.EndUpdate;
   end;
@@ -160,6 +164,7 @@ begin
     begin
       SCMCbo.Items.AddObject(Engine.SourceManagements[i].Title, Engine.SourceManagements[i]);
     end;
+    SCMCbo.ItemIndex := 0;
   finally
     SCMCbo.Items.EndUpdate;
   end;
