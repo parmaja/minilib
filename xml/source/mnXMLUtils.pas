@@ -59,9 +59,6 @@ function RightSubStr(S, Separator: string): string;
 implementation
 
 uses
-{$IFDEF FPC}
-  mnXMLFPClasses,
-{$ENDIF}
   StrUtils;
 
 function RepeatString(const Str: string; Count: Integer): string;

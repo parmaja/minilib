@@ -17,7 +17,7 @@ interface
 
 uses
   Classes, SysUtils, TypInfo, 
-  mnXML, mnXMLRtti, mnXMLFPClasses;
+  mnXML, mnXMLRtti;
 
 type
   TmnXMLRttiObjectFiler = class(TmnXMLRttiFiler)

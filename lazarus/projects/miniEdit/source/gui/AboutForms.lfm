@@ -407,10 +407,10 @@ object AboutForm: TAboutForm
     TabOrder = 0
   end
   object Memo1: TMemo
-    Left = 2
+    Left = 3
     Height = 123
     Top = 70
-    Width = 462
+    Width = 461
     Anchors = [akTop, akLeft, akRight, akBottom]
     Font.CharSet = ARABIC_CHARSET
     Font.Height = -12

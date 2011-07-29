@@ -17,7 +17,7 @@ interface
 
 uses
   Classes, SysUtils, TypInfo,
-  mnXMLRtti, mnXMLFPClasses, Variants;
+  mnXMLRtti, Variants;
 
 type
   TmnXMLRttiWriter = class(TmnXMLRttiCustomWriter)
