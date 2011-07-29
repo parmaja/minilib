@@ -199,14 +199,14 @@ var
   aStrings: TStringList;
   i: Integer;
 begin
-  Fields.Clear;
+  Columns.Clear;
   aStrings := nil;
   if ReadLine(aStrings) then
   begin
     try
       for i := 0 to aStrings.Count - 1 do
       begin
-        Fields.Add(i, DequoteStr(aStrings[i]), ftString);
+        Columns.Add(i, DequoteStr(aStrings[i]), ftString);
       end;
     finally
       aStrings.Free;
@@ -224,10 +224,10 @@ var
 begin
   if ReadLine(aStrings) then
   begin
-    aRecord := TmncFields.Create(Fields);
+    aRecord := TmncFields.Create(Columns);
     i := 0;
     try
-      while (i < aStrings.Count) and (i < Fields.Count) do
+      while (i < aStrings.Count) and (i < Columns.Count) do
       begin
         aRecord.Add(i, DequoteStr(aStrings[i]));
         Inc(i); 
@@ -235,7 +235,7 @@ begin
     finally
       aStrings.Free;
     end;
-    Current := aRecord;
+    Fields := aRecord;
   end
   else
     FreeAndNil(FCSVStream);//close it for make EOF
@@ -247,8 +247,8 @@ var
   aParams: TmncParams;
 begin
   aParams := TmncParams.Create;
-  for i := 0 to Fields.Count - 1 do
-    aParams.Add(Fields[i].Name);
+  for i := 0 to Columns.Count - 1 do
+    aParams.Add(Columns[i].Name);
   Params := aParams;
 end;
 
@@ -264,7 +264,7 @@ begin
     Strings := TStringList.Create;
 
     repeat
-      Result := FCSVStream.ReadLn(s);
+      Result := FCSVStream.ReadLn(s, False);
       s := Trim(s);
     until not Result or not ((s = '') and (EmptyLine = elSkip));
 
@@ -280,11 +280,11 @@ var
   s: string;
 begin
   s := '';
-  for i := 0 to Fields.Count - 1 do
+  for i := 0 to Columns.Count - 1 do
   begin
     if s <> '' then
       s := s + #9;
-    s := s + Fields[i].Name;
+    s := s + Columns[i].Name;
   end;
   WriteLine(s);
 end;

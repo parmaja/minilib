@@ -312,11 +312,11 @@ begin
     st := '';
     if Header = hdrNormal then
     begin
-      for i := 0 to Command.Current.Count - 1 do
+      for i := 0 to Command.Fields.Count - 1 do
       begin
         if i > 0 then
           st := st + Delimiter;
-        s := Command.Current.Items[i].GetName;
+        s := Command.Fields.Items[i].GetName;
         if QuoteChar <> #0 then
           s := QuoteStr(s, QuoteChar);
         st := st + s;
@@ -329,11 +329,11 @@ begin
     begin
       Inc(FCount);
       st := '';
-      for i := 0 to Command.Current.Count - 1 do
+      for i := 0 to Command.Fields.Count - 1 do
       begin
         if i > 0 then
           st := st + Delimiter;
-        s := Command.Current.Items[i].AsText;
+        s := Command.Fields.Items[i].AsText;
         if EscapeChar <> #0 then
           if QuoteChar <> #0 then
             s := EscapeString(s, EscapeChar, [#13, #10, #9 , #8, QuoteChar], ['r', 'n', 't', 'b', QuoteChar])

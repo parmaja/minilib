@@ -392,14 +392,14 @@ type
   TmncCommand = class(TmncLinkObject)
   private
     FColumns: TmncColumns;
-    FCurrent: TmncFields;
+    FFields: TmncFields;
     FParams: TmncParams;
     FPrepared: Boolean;
     FNextOnExecute: Boolean;
     FParamList: TmncParamList;
     procedure SetRequest(const Value: TStrings);
     procedure SetColumns(const Value: TmncColumns);
-    procedure SetCurrent(const Value: TmncFields);
+    procedure SetFields(const Value: TmncFields);
     procedure SetParams(const Value: TmncParams);
     function GetField(Index: string): TmncField;
     function GetParam(Index: string): TmncParam;
@@ -431,17 +431,16 @@ type
     procedure Clear; virtual;
     procedure Commit;
     procedure Rollback;
-    function ReleaseCurrent: TmncFields;
+    function ReleaseFields: TmncFields;
     function ReleaseParams: TmncParams;
     function FieldIsExist(Name: string): Boolean;
     property NextOnExecute: Boolean read FNextOnExecute write FNextOnExecute default True;
     property Prepared: Boolean read FPrepared;
     property Columns: TmncColumns read FColumns write SetColumns;
-    property Fields: TmncColumns read FColumns write SetColumns; //TODO Fields > Columns backward compatibility
-    property Current: TmncFields read FCurrent write SetCurrent; //TODO Current > Fields
+    property Fields: TmncFields read FFields write SetFields; //Current record loaded in memory
+    property Field[Index: string]: TmncField read GetField;
     property Params: TmncParams read FParams write SetParams;
     property Param[Index: string]: TmncParam read GetParam;
-    property Field[Index: string]: TmncField read GetField;
   end;
 
 function ConnectionLock: TCriticalSection;
@@ -580,7 +579,7 @@ begin
   Active := False;
   Session := nil;//already in Linked but must be sure before free other objects
   FreeAndNil(FRequest);
-  FreeAndNil(FCurrent);
+  FreeAndNil(FFields);
   FreeAndNil(FParamList);
   FreeAndNil(FParams);
   FreeAndNil(FColumns);
@@ -623,15 +622,15 @@ end;
 
 function TmncCommand.FieldIsExist(Name: string): Boolean;
 begin
-  Result := Current.Find(Name) <> nil;
+  Result := Fields.Find(Name) <> nil;
 end;
 
 function TmncCommand.GetField(Index: string): TmncField;
 begin
   if not Prepared then
     Prepare;
-  if Current <> nil then
-    Result := Current.Field[Index]
+  if Fields <> nil then
+    Result := Fields.Field[Index]
   else
     raise EmncException.Create('Current record not found');
 end;
@@ -691,10 +690,10 @@ begin
   FPrepared := True;
 end;
 
-function TmncCommand.ReleaseCurrent: TmncFields;
+function TmncCommand.ReleaseFields: TmncFields;
 begin
-  Result := FCurrent;
-  FCurrent := nil;
+  Result := FFields;
+  FFields := nil;
 end;
 
 function TmncCommand.ReleaseParams: TmncParams;
@@ -721,12 +720,12 @@ begin
   end;
 end;
 
-procedure TmncCommand.SetCurrent(const Value: TmncFields);
+procedure TmncCommand.SetFields(const Value: TmncFields);
 begin
-  if FCurrent <> Value then
+  if FFields <> Value then
   begin
-    FreeAndNil(FCurrent);
-    FCurrent := Value;
+    FreeAndNil(FFields);
+    FFields := Value;
   end;
 end;
 
@@ -1157,12 +1156,12 @@ end;
 function TmncColumn.GetValue: Variant;
 begin
   Result := null;
-  raise EmncException.Create('Field have no value, You must not use it, try use Current!') {$ifdef fpc}at get_caller_addr(get_frame){$endif};
+  raise EmncException.Create('Field have no value, You must not use it, try use Fields!') {$ifdef fpc}at get_caller_addr(get_frame){$endif};
 end;
 
 procedure TmncColumn.SetValue(const AValue: Variant);
 begin
-  raise EmncException.Create('Field have no value, You must not use it, try use Current!');
+  raise EmncException.Create('Field have no value, You must not use it, try use Fields!');
 end;
 
 { TmncParam }

@@ -168,7 +168,9 @@ begin
   begin
     aMatched := False;
     ReadUntil(EndOfLine, S, aMatched);
-    if ExcludeEOL and aMatched and (S <> '') then
+    if not aMatched and EOF and (S = '') then
+      Result := False
+    else if aMatched and ExcludeEOL and (S <> '') then
       S := LeftStr(S, Length(S) - Length(EndOfLine));
   end;
 end;

@@ -641,13 +641,13 @@ begin
   c := sqlite3_column_count(FStatment);
   if c > 0 then
   begin
-    aCurrent := TmncFields.Create(Fields);
+    aCurrent := TmncFields.Create(Columns);
     for i := 0 to c - 1 do
     begin
 //    TStorageType = (stNone, stInteger, stFloat, stText, stBlob, stNull);
       //aSize := sqlite3_column_bytes(FStatment, i);
       aType := sqlite3_column_type(FStatment, i);
-      aColumn := Fields[i];
+      aColumn := Columns[i];
       case aType of
         SQLITE_NULL:
         begin
@@ -677,7 +677,7 @@ begin
         end;
       end;
     end;
-    Current := aCurrent;
+    Fields := aCurrent;
   end;
 end;
 

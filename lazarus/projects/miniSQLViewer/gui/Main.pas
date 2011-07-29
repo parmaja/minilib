@@ -1420,7 +1420,7 @@ begin
   FCancel := False;
   //DataGrid.BeginUpdate;
   try
-    DataGrid.ColCount := SQLCMD.Fields.Count + 1;
+    DataGrid.ColCount := SQLCMD.Columns.Count + 1;
     DataGrid.FixedCols := 1;
     DataGrid.FixedRows := 1;
     DataGrid.RowCount := 1;
@@ -1431,7 +1431,7 @@ begin
     cw := GetCharWidth; //must calc from canvas
     for i := 1 to DataGrid.ColCount - 1 do
     begin
-      s := SQLCMD.Fields[i - 1].Name;
+      s := SQLCMD.Columns[i - 1].Name;
       z := 10;//SQLCMD.Fields[i - 1].Size;
       if z < 4 then
         z := 4
