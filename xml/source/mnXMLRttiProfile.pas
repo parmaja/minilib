@@ -29,7 +29,7 @@ type
 
   { TmnXMLProfile }
   
-  TmnXMLProfile = class(TPersistent, IStreamPersist, IRttiFiler)
+  TmnXMLProfile = class(TPersistent, IStreamPersist{$ifdef FPC}, IRttiFiler{$endif})
   private
     FAge: TDateTime;
     FProfileState: TmnXMLProfileStates;
@@ -41,7 +41,9 @@ type
     procedure LoadDefault; virtual;
     function _AddRef: Integer; stdcall;
     function _Release: Integer; stdcall;
+    {$ifdef FPC}
     procedure RttiCreateObject(var vObject: TObject; vInstance: TObject; vObjectClass:TClass; const vClassName, vName: string); virtual;
+    {$endif}
   public
     constructor Create;
     procedure Clear; virtual;
@@ -300,9 +302,11 @@ begin
   Result := 0;
 end;
 
+{$ifdef FPC}
 procedure TmnXMLProfile.RttiCreateObject(var vObject: TObject; vInstance: TObject; vObjectClass:TClass; const vClassName, vName: string);
 begin
 end;
+{$endif}
 
 procedure XMLReadObjectStream(Instance: TObject; Stream: TStream);
 var

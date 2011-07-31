@@ -199,16 +199,15 @@ var
   aObject: TObject;
   aFiler: TmnXMLRttiFiler;
   aInstance: Pointer;
-  aClassName: string;
-  aName: string;
+  {$ifdef FPC}
+  aClass:string;
+  {$endif}
 begin
   CurrentTag := Name;
-  aClassName := Attributes.Values['Class'];
-  aName := Attributes.Values['Name'];
 
   if Name = 'Object' then
   begin
-    aObject := CreateObject(Instance, aClassName, aName);
+    aObject := CreateObject(Instance, Attributes['Type'], Attributes['Name']);
     if aObject <> nil then
     begin
 {        if aObject is TComponent then
@@ -233,9 +232,10 @@ begin
         begin
           aInstance := Pointer(GetObjectProp(TObject(Instance), Name));
           {$ifdef FPC}
-          if (aClassName <> '') and (aInstance = nil) and (IsStoredProp(Instance, PropInfo)) then
+          aClass := Attributes['Class'];
+          if (aClass <> '') and (aInstance = nil) and (IsStoredProp(Instance, PropInfo)) then
           begin
-            aObject := CreateObject(Instance, aClassName, aName);
+            aObject := CreateObject(Instance, aClass, Attributes['Name']);
             SetObjectProp(TObject(Instance), Name, aInstance);
           end;
           {$endif}

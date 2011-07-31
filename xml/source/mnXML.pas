@@ -642,10 +642,12 @@ var
   P: Integer;
   aName, aValue:string;
 begin
+  if S = '' then
+    exit;
   P := Pos('=', S);
   if P > 0 then
   begin
-    aName := Copy(S, 1, P);
+    aName := Copy(S, 1, P - 1);
     aValue := DequoteStr(Copy(S, P + 1, MaxInt))
   end
   else
@@ -655,12 +657,14 @@ end;
 
 procedure StrToAttributesCallbackProc(Sender: Pointer; S: string);
 begin
+  if S = '' then
+    exit;
   TmnXMLAttributes(Sender).Add(S);
 end;
 
 procedure TmnXMLAttributes.Append(vAttributes: string);
 begin
-  StrToStringsCallback(Self, @StrToAttributesCallbackProc, vAttributes, [' '], [#0, #13, #10], True);
+  StrToStringsCallback(Self, @StrToAttributesCallbackProc, vAttributes, [' '], [#0, #13, #10]);
 end;
 
 function TmnXMLAttributes.GetItem(Index: Integer): TmnXMLAttribute;
