@@ -23,9 +23,14 @@ const
 {
   StrHave: test the string if it have Separators
 }
-function StrHave(S:string; Separators: TSysCharSet): Boolean;
+function StrHave(S: string; Separators: TSysCharSet): Boolean;
 
 function QuoteStr(Str: string; QuoteChar: string = '"'): string;
+
+type
+  TStrToStringsCallbackProc = procedure(Sender: Pointer; S: string);
+
+function StrToStringsCallback(Sender: Pointer; Proc: TStrToStringsCallbackProc; Content: string; Separators: TSysCharSet; WhiteSpace: TSysCharSet = [#0, #13, #10]; DequoteValues: Boolean = False; Quotes: TSysCharSet = ['''', '"']): Integer;
 function StrToStrings(Content: string; Strings: TStrings; Separators: TSysCharSet; WhiteSpace: TSysCharSet = [#0, #13, #10]; DequoteValues: Boolean = False; Quotes: TSysCharSet = ['''', '"']): Integer;
 function CompareLeftStr(const Str: string; const WithStr: string; Start: Integer=1): Boolean;
 function PeriodToString(vPeriod: Double; WithSeconds:Boolean): string;
@@ -159,7 +164,7 @@ f1,f2,,f4
 ,f2,f3,f4
 }
 
-function StrToStrings(Content: string; Strings: TStrings; Separators, WhiteSpace: TSysCharSet; DequoteValues: Boolean; Quotes: TSysCharSet): Integer;
+function StrToStringsCallback(Sender: Pointer; Proc: TStrToStringsCallbackProc; Content: string; Separators, WhiteSpace: TSysCharSet; DequoteValues: Boolean; Quotes: TSysCharSet): Integer;
 var
   Start, Cur, P: Integer;
   InQuote: Boolean;
@@ -167,60 +172,69 @@ var
   S: string;
 begin
   Result := 0;
-  if (Strings = nil) then
-    raise Exception.Create('StrToStrings: Strings is nil');
+  if (@Proc = nil) then
+    raise Exception.Create('StrToStrings: Proc is nil');
   if (Content <> '') then
   begin
     Cur := 1;
     InQuote := False;
     QuoteChar := #0;
-    Strings.BeginUpdate;
-    try
-      repeat
-        //bypass white spaces
-        while (Cur <= Length(Content)) and (Content[Cur] in WhiteSpace) do
-          Cur := Cur + 1;
-
-        //start from the first char
-        Start := Cur - 1;
-        while True do
-        begin
-          //seek until the separator and skip the separator if inside quoting
-          while (Cur <= Length(Content)) and ((InQuote and not (Content[Cur] <> QuoteChar)) or (not (Content[Cur] in Separators))) do
-            Cur := Cur + 1;
-          if (Cur <= Length(Content)) and (Content[Cur] in Quotes) then
-          begin
-            if (QuoteChar <> #0) and (QuoteChar = Content[Cur]) then
-              QuoteChar := #0
-            else if QuoteChar = #0 then
-              QuoteChar := Content[Cur];
-            InQuote := QuoteChar <> #0;
-            Cur := Cur + 1;
-          end
-          else
-            Break;
-        end;
-
-        if (Cur >= Start) then
-        begin
-          if Strings <> nil then
-          begin
-            S := Copy(Content, Start + 1, Cur - Start - 1);
-            if DequoteValues then
-            begin
-              P := Pos('=', S);
-              if P > 0 then
-                S := Copy(S, 1, P) + DequoteStr(Copy(S, P + 1, MaxInt));
-            end;
-            Strings.Add(S);
-          end;
-          Inc(Result);
-        end;
+    repeat
+      //bypass white spaces
+      while (Cur <= Length(Content)) and (Content[Cur] in WhiteSpace) do
         Cur := Cur + 1;
-      until Cur > Length(Content) + 1;
-    finally
-      Strings.EndUpdate;
-    end;
+
+      //start from the first char
+      Start := Cur - 1;
+      while True do
+      begin
+        //seek until the separator and skip the separator if inside quoting
+        while (Cur <= Length(Content)) and ((InQuote and not (Content[Cur] <> QuoteChar)) or (not (Content[Cur] in Separators))) do
+          Cur := Cur + 1;
+        if (Cur <= Length(Content)) and (Content[Cur] in Quotes) then
+        begin
+          if (QuoteChar <> #0) and (QuoteChar = Content[Cur]) then
+            QuoteChar := #0
+          else if QuoteChar = #0 then
+            QuoteChar := Content[Cur];
+          InQuote := QuoteChar <> #0;
+          Cur := Cur + 1;
+        end
+        else
+          Break;
+      end;
+
+      if (Cur >= Start) then
+      begin
+        S := Copy(Content, Start + 1, Cur - Start - 1);
+        if DequoteValues then
+        begin
+          P := Pos('=', S);
+          if P > 0 then
+            S := Copy(S, 1, P) + DequoteStr(Copy(S, P + 1, MaxInt));
+        end;
+        Proc(Sender, S);
+        Inc(Result);
+      end;
+      Cur := Cur + 1;
+    until Cur > Length(Content) + 1;
+  end;
+end;
+
+procedure StrToStringsCallbackProc(Sender: Pointer; S: string);
+begin
+  TStrings(Sender).Add(S); //Be sure sender is TStrings
+end;
+
+function StrToStrings(Content: string; Strings: TStrings; Separators: TSysCharSet; WhiteSpace: TSysCharSet = [#0, #13, #10]; DequoteValues: Boolean = False; Quotes: TSysCharSet = ['''', '"']): Integer;
+begin
+  if (Strings = nil) then
+    raise Exception.Create('StrToStrings: Strings is nil');
+  Strings.BeginUpdate;
+  try
+    Result := StrToStringsCallback(Strings, @StrToStringsCallbackProc, Content, Separators, WhiteSpace, DequoteValues, Quotes);
+  finally
+    Strings.EndUpdate;
   end;
 end;
 
