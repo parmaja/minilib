@@ -132,12 +132,15 @@ begin
     raise EmnXMLException.Create('not support this class');
   with Writer do
   begin
-    WriteOpenTag('Items');
-    for I := 0 to (TObject(Instance) as TCollection).Count - 1 do
+    if (TObject(Instance) as TCollection).Count > 0 then
     begin
-      Writer.WriteObject((TObject(Instance) as TCollection).Items[I]);
+      WriteOpenTag('Items');
+      for I := 0 to (TObject(Instance) as TCollection).Count - 1 do
+      begin
+        Writer.WriteObject((TObject(Instance) as TCollection).Items[I]);
+      end;
+      WriteCloseTag('Items');
     end;
-    WriteCloseTag('Items');
   end;
 end;
 
