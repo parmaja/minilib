@@ -20,7 +20,8 @@
       </Parsing>
       <Linking>
         <Debugging>
-          <UseLineInfoUnit Value="False"/>
+          <GenerateDebugInfo Value="True"/>
+          <GenerateDwarf Value="True"/>
         </Debugging>
       </Linking>
       <Other>

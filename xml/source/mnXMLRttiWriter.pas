@@ -28,10 +28,10 @@ type
   protected
     procedure DoStart; override;
     procedure WriteProperty(Instance: TObject; PropInfo: PPropInfo);
-    procedure WriteProperties(Name:string; Instance: TObject; WithInitTag: Boolean);
+    procedure WriteProperties(Name: string; Instance: TObject; WithInitTag: Boolean);
     procedure WriteComponent(Component: TComponent);
-    procedure WriteValue(Value:string; ValueType: string = '');
-    procedure WriteVariant(Value:Variant);
+    procedure WriteValue(Value: string; ValueType: string = '');
+    procedure WriteVariant(Value: Variant);
   public
     constructor Create; override;
     procedure WriteObject(Instance: TObject); override;
@@ -136,7 +136,7 @@ begin
   end;
 end;
 
-procedure TmnXMLRttiWriter.WriteProperties(Name:string; Instance: TObject; WithInitTag: Boolean);
+procedure TmnXMLRttiWriter.WriteProperties(Name: string; Instance: TObject; WithInitTag: Boolean);
 var
   I, Count: Integer;
   IsEmpty: Boolean;
@@ -206,7 +206,7 @@ end;
 procedure TmnXMLRttiWriter.WriteProperty(Instance: TObject; PropInfo: PPropInfo);
 var
   PropType: PTypeInfo;
-//  TypeData: PTypeData;
+
   procedure WriteIntegerProp;
   var
     S: string;
@@ -312,9 +312,9 @@ var
     else
     begin
       if (Value is TComponent) and ((Value as TComponent).Name <> '') then
-        WriteAttributes('ID="' + (Value as TComponent).Name + '"')
-      else if (Value is TPersistent) and (IsStoredProp(Instance, PropInfo)) then //just more info
-        WriteAttributes('Type="' + (Value as TPersistent).ClassName + '"');
+        WriteAttributes('ID="' + (Value as TComponent).Name + '"');
+      if (IsStoredProp(Instance, PropInfo)) then //just more info
+        WriteAttributes('Class="' + (Value as TPersistent).ClassName + '"');
       WriteStopTag;
       WriteProperties(PropInfo^.Name, Value, False);
     end;
@@ -332,8 +332,7 @@ var
 begin
   if not IsDefaultValue(Instance, PropInfo) then
   begin
-    PropType := GetPropType(PropInfo);
-//    TypeData := GetTypeData(PropType);
+    PropType := GetPropTypeInfo(PropInfo);
     if not (PropType^.Kind in [tkUnknown, tkMethod, tkRecord, tkArray, {$IFDEF FPC}tkObject, tkWChar, tkQWord, tkInterfaceRaw, {$ENDIF}tkDynArray]) then
     begin
       WriteStartTag(PropInfo^.Name);
@@ -363,10 +362,10 @@ begin
         tkInterface:
           WriteInterfaceProp;
         {$IFDEF FPC}
-          tkAString:
-            WriteStringProp;
-          tkBool:
-            WriteBoolProp;
+        tkAString:
+          WriteStringProp;
+        tkBool:
+          WriteBoolProp;
         {$ENDIF}
       end;
       if TagStarted then

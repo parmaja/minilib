@@ -20,7 +20,7 @@ uses
   Windows,
 {$ENDIF}
   SysUtils, Variants, Classes, Contnrs,
-  mnXMLStreams, mnXMLRttiReader, mnXMLRttiWriter;
+  mnXMLStreams, mnXMLRtti, mnXMLRttiReader, mnXMLRttiWriter;
 
 type
   EmnProfileException = class(Exception);
@@ -29,7 +29,7 @@ type
 
   { TmnXMLProfile }
   
-  TmnXMLProfile = class(TPersistent, IStreamPersist)
+  TmnXMLProfile = class(TPersistent, IStreamPersist, IRttiFiler)
   private
     FAge: TDateTime;
     FProfileState: TmnXMLProfileStates;
@@ -41,6 +41,7 @@ type
     procedure LoadDefault; virtual;
     function _AddRef: Integer; stdcall;
     function _Release: Integer; stdcall;
+    procedure RttiCreateObject(var vObject: TObject; vInstance: TObject; vObjectClass:TClass; const vClassName, vName: string); virtual;
   public
     constructor Create;
     procedure Clear; virtual;
@@ -297,6 +298,10 @@ end;
 function TmnXMLProfile._Release: Integer;
 begin
   Result := 0;
+end;
+
+procedure TmnXMLProfile.RttiCreateObject(var vObject: TObject; vInstance: TObject; vObjectClass:TClass; const vClassName, vName: string);
+begin
 end;
 
 procedure XMLReadObjectStream(Instance: TObject; Stream: TStream);

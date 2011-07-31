@@ -110,6 +110,8 @@ type
     property Value: string read GetValue write FValue;
   end;
 
+  { TmnXMLAttributes }
+
   TmnXMLAttributes = class(TObjectList)
   private
     function GetItem(Index: Integer): TmnXMLAttribute;
@@ -117,8 +119,13 @@ type
     function GetValue(Index: string): string;
     procedure SetValue(Index: string; const Value: string);
   public
+    constructor Create(vAttributes: string = ''); virtual;
     procedure SetText(Value: string);
     function Find(const Name: string): TmnXMLAttribute;
+    procedure Add(vItem: TmnXMLAttribute); overload;
+    procedure Add(vName, vValue: string); overload;
+    procedure Add(S: string); overload; //"Name = Value"
+    procedure Append(vAttributes: string); overload; // multiple attributes
     property Items[Index: Integer]: TmnXMLAttribute read GetItem write SetItem;
     property Values[Index: string]: string read GetValue write SetValue; default;
   end;
@@ -615,6 +622,47 @@ begin
   end;
 end;
 
+procedure TmnXMLAttributes.Add(vItem: TmnXMLAttribute);
+begin
+  inherited Add(vItem);
+end;
+
+procedure TmnXMLAttributes.Add(vName, vValue: string);
+var
+  lItem: TmnXMLAttribute;
+begin
+  lItem := TmnXMLAttribute.Create;
+  lItem.FName := vName;
+  lItem.FValue := vValue;
+  Add(lItem);
+end;
+
+procedure TmnXMLAttributes.Add(S: string);
+var
+  P: Integer;
+  aName, aValue:string;
+begin
+  P := Pos('=', S);
+  if P > 0 then
+  begin
+    aName := Copy(S, 1, P);
+    aValue := DequoteStr(Copy(S, P + 1, MaxInt))
+  end
+  else
+    aName := S;
+  Add(aName, aValue);
+end;
+
+procedure StrToAttributesCallbackProc(Sender: Pointer; S: string);
+begin
+  TmnXMLAttributes(Sender).Add(S);
+end;
+
+procedure TmnXMLAttributes.Append(vAttributes: string);
+begin
+  StrToStringsCallback(Self, @StrToAttributesCallbackProc, vAttributes, [' '], [#0, #13, #10], True);
+end;
+
 function TmnXMLAttributes.GetItem(Index: Integer): TmnXMLAttribute;
 begin
   Result := inherited Items[Index] as TmnXMLAttribute;
@@ -648,6 +696,12 @@ begin
     Add(aAttribute);
   end;
   aAttribute.FValue := Value
+end;
+
+constructor TmnXMLAttributes.Create(vAttributes: string);
+begin
+  inherited Create;
+  Append(vAttributes);
 end;
 
 procedure TmnXMLAttributes.SetText(Value: string);

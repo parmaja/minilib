@@ -38,8 +38,10 @@ const
   cRttiVersion = '1.0';
   cRttiAuthor = 'MiniXML';
 
-function GetPropType(PropInfo: PPropInfo): PTypeInfo;
+function GetPropTypeInfo(PropInfo: PPropInfo): PTypeInfo;
+Function PropType(PropInfo: PPropInfo): TTypeKind; //need to move to FPC typeinfo.pp
 function IsDefaultValue(Instance: TObject; PropInfo: PPropInfo): Boolean;
+
 function RepeatString(const Str: string; Count: Integer): string;
 function RemoveEncloses(S, Left, Right: string): string;
 function Enclose(S, Left: string; Right: string = ''): string;
@@ -48,6 +50,7 @@ function ScanIdentifier(const s: string; Start: Integer): Integer;
 function ScanQuoted(SubStr, Text: string): Integer;
 function CreateAttStrings(const Attributes: string): TStrings;
 procedure ReadAttStrings(Strings: TStrings; const Attributes: string);
+
 function CutStr(const ID, S: string; Dequote: Boolean = False): string;
 function StringsToString(Strings: TStrings; LineBreak: string = sLineBreak): string;
 function URIToFileName(const URI: string): string;
@@ -250,13 +253,18 @@ begin
     Result := s;
 end;
 
-function GetPropType(PropInfo: PPropInfo): PTypeInfo;
+function GetPropTypeInfo(PropInfo: PPropInfo): PTypeInfo;
 begin
 {$IFDEF FPC}
   Result := PropInfo^.PropType
 {$ELSE}
   Result := PropInfo^.PropType^
 {$ENDIF}
+end;
+
+function PropType(PropInfo: PPropInfo): TTypeKind;
+begin
+  Result := PropInfo^.PropType^.Kind;
 end;
 
 function IsDefaultValue(Instance: TObject; PropInfo: PPropInfo): Boolean;
@@ -342,7 +350,7 @@ begin
   Result := True; // not default for default :P
   if (PropInfo^.GetProc <> nil) and ((PropInfo^.SetProc <> nil) or (PropInfo^.PropType^.Kind = tkClass) or (PropInfo^.PropType^.Kind = tkInterface)) then
   begin
-    PropType := GetPropType(PropInfo);
+    PropType := GetPropTypeInfo(PropInfo);
     case PropType^.Kind of
       tkInteger, tkChar, tkEnumeration, tkSet:
         Result := IsDefaultOrdProp;

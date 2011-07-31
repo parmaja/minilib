@@ -10,6 +10,7 @@ unit mnXMLRtti;
 {$M+}
 {$H+}
 {$IFDEF FPC}
+{$INTERFACES CORBA}
 {$mode delphi}
 {$ENDIF}
 
@@ -22,6 +23,14 @@ uses
 type
   TmnXMLRttiFiler = class;
   TmnXMLStackFilers = class;
+
+  {$IFDEF FPC}
+  IRttiFiler = interface
+    ['{C4A6967C-0166-4B6A-BBCC-573FB622B1F6}'] //@FPC why i need a guid to check by Support function
+    procedure RttiCreateObject(var vObject: TObject; vInstance: TObject; vObjectClass:TClass; const vClassName, vName: string); //Instance who have this object
+  end;
+  {$ENDIF}
+
 
   TmnXMLRttiCustomWriter = class(TmnXMLWriter)
   public
@@ -55,7 +64,7 @@ type
     Depth: Integer;
     Instance: Pointer;
     Owner: TObject;
-    Attributes: TStrings;
+    Attributes: TmnXMLAttributes;
     constructor Create(Owner: TObject; Instance: Pointer);
     destructor Destroy; override;
     procedure ReadStart; virtual;
@@ -125,7 +134,7 @@ uses
 constructor TmnXMLRttiFiler.Create(Owner: TObject; Instance: Pointer);
 begin
   inherited Create;
-  Attributes := TStringList.Create;
+  Attributes := TmnXMLAttributes.Create;
   Self.Instance := Instance;
   Self.Owner := Owner;
 end;

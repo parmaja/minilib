@@ -10,6 +10,7 @@ unit mnXMLRttiReader;
 {$M+}
 {$H+}
 {$IFDEF FPC}
+{$INTERFACES CORBA}
 {$mode delphi}
 {$ENDIF}
 
@@ -121,17 +122,10 @@ type
 { TmnXMLRttiReader }
 
 procedure TmnXMLRttiReader.ReadAttributes(const Text: string);
-var
-  aAttributes: TStrings;
 begin
   inherited;
-  aAttributes := CreateAttStrings(Text);
-  try
-    Stack.Current.Attributes.Assign(aAttributes);
-    Stack.Current.ReadOpen(CurrentTag);
-  finally
-    aAttributes.Free;
-  end;
+  Stack.Current.Attributes.Append(Text);
+  Stack.Current.ReadOpen(CurrentTag);
   Inc(Stack.Current.Depth);
 end;
 
@@ -205,11 +199,16 @@ var
   aObject: TObject;
   aFiler: TmnXMLRttiFiler;
   aInstance: Pointer;
+  aClassName: string;
+  aName: string;
 begin
   CurrentTag := Name;
+  aClassName := Attributes.Values['Class'];
+  aName := Attributes.Values['Name'];
+
   if Name = 'Object' then
   begin
-    aObject := CreateObject(Instance, Attributes.Values['Type'], Attributes.Values['Name']);
+    aObject := CreateObject(Instance, aClassName, aName);
     if aObject <> nil then
     begin
 {        if aObject is TComponent then
@@ -231,7 +230,16 @@ begin
         if PropInfo^.PropType^.Kind = tkInterface then //use this way more safe when build in packages for delphi projects
           aInstance := Pointer(GetInterfaceProp(TObject(Instance), Name))
         else
+        begin
           aInstance := Pointer(GetObjectProp(TObject(Instance), Name));
+          {$ifdef FPC}
+          if (aClassName <> '') and (aInstance = nil) and (IsStoredProp(Instance, PropInfo)) then
+          begin
+            aObject := CreateObject(Instance, aClassName, aName);
+            SetObjectProp(TObject(Instance), Name, aInstance);
+          end;
+          {$endif}
+        end;
         (Owner as TmnXMLRttiReader).Stack.Push((Owner as TmnXMLRttiReader).CreateFiler(Name, aInstance, PropInfo^.PropType^.Kind = tkInterface));
       end
     end
@@ -407,7 +415,7 @@ var
     (Owner as TmnXMLRttiReader).Stack.Push((Owner as TmnXMLRttiReader).CreateFiler(PropInfo^.Name, aObject, True));
   end;
 begin
-  PropType := GetPropType(PropInfo);
+  PropType := GetPropTypeInfo(PropInfo);
   TypeData := GetTypeData(PropType);
   case PropType^.Kind of
     tkInteger:
@@ -528,8 +536,17 @@ begin
         Result := TComponentClass(aClass).Create(nil);
       TComponent(Result).Name := Name;
     end
+    {$ifdef FPC}
+    else if Supports(Instance, IRttiFiler) then
+    //else if Instance is IRttiFiler then //@FPC why not easy like that
+    begin
+      Result := nil;
+      (Instance as IRttiFiler).RttiCreateObject(Result, Instance, aClass, ClassName, Name);
+    end
+    {$endif}
     else
-      Result := aClass.Create;//zaher: wrong create idea
+      Result := nil;
+      //Result := aClass.Create;//zaher: wrong create idea
   end
   else
     Result := nil;
@@ -569,4 +586,3 @@ begin
 end;
 
 end.
-

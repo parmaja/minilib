@@ -16,7 +16,7 @@ unit mnXMLRttiStdClasses;
 interface
 
 uses
-  Classes, SysUtils, Contnrs, TypInfo,
+  Classes, SysUtils, TypInfo,
   mnXML, mnXMLRttiProfile, mnXMLRttiReader, mnXMLRtti;
 
 type
@@ -83,17 +83,15 @@ end;
 procedure TmnXMLRttiStrings.Write(Writer: TmnXMLRttiCustomWriter; Instance: Pointer);
 var
   i: Integer;
-  st: TStrings;
 begin
   if not (TObject(Instance) is TStrings) then
     raise EmnXMLException.Create('not support this class');
-  st := TStrings(Instance);
-  if st.Count>0 then //belal for not writing OpenTag & CloseTag
+  if TStrings(Instance).Count > 0 then
     with Writer do
     begin
       WriteOpenTag('Strings');
-      for i := 0 to st.Count - 1 do
-        Write('Line', st[i]);
+      for i := 0 to TStrings(Instance).Count - 1 do
+        Write('Line', TStrings(Instance)[i]);
       WriteCloseTag('Strings');
     end;
 end;
@@ -130,18 +128,14 @@ var
 begin
   if not (TObject(Instance) is TCollection) then
     raise EmnXMLException.Create('not support this class');
-  with Writer do
-  begin
-    if (TObject(Instance) as TCollection).Count > 0 then
+  if (TObject(Instance) as TCollection).Count > 0 then
+    with Writer do
     begin
       WriteOpenTag('Items');
       for I := 0 to (TObject(Instance) as TCollection).Count - 1 do
-      begin
         Writer.WriteObject((TObject(Instance) as TCollection).Items[I]);
-      end;
       WriteCloseTag('Items');
     end;
-  end;
 end;
 
 { TmnXMLRttiProfileItems }
@@ -170,16 +164,16 @@ var
 begin
   if not (TObject(Instance) is TmnXMLItems) then
     raise EmnXMLException.Create('Not support this class');
-  with Writer do
   if TmnXMLItems(Instance).Count > 0 then
-  begin
-    WriteOpenTag('Objects');
-    for I := 0 to TmnXMLItems(Instance).Count - 1 do
+    with Writer do
     begin
-      Writer.WriteObject(TmnXMLItems(Instance).Items[I]);
+      WriteOpenTag('Objects');
+      for I := 0 to TmnXMLItems(Instance).Count - 1 do
+      begin
+        Writer.WriteObject(TmnXMLItems(Instance).Items[I]);
+      end;
+      WriteCloseTag('Objects');
     end;
-    WriteCloseTag('Objects');
-  end;
 end;
 
 initialization
