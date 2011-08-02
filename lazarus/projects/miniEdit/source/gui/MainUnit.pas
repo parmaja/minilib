@@ -1704,7 +1704,8 @@ end;
 
 procedure TMainForm.DBGStopServerActUpdate(Sender: TObject);
 begin
-  DBGStopServerAct.Enabled := Engine.Perspective.Debug.Active;
+  if Engine.Perspective.Debug <> nil then
+    DBGStopServerAct.Enabled := Engine.Perspective.Debug.Active;
 end;
 
 procedure TMainForm.DBGStartServerActUpdate(Sender: TObject);

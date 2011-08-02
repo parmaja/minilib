@@ -115,7 +115,6 @@ type
   TmnXMLAttributes = class(TObjectList)
   private
     function GetItem(Index: Integer): TmnXMLAttribute;
-    procedure SetItem(Index: Integer; const Value: TmnXMLAttribute);
     function GetValue(Index: string): string;
     procedure SetValue(Index: string; const Value: string);
   public
@@ -126,7 +125,8 @@ type
     procedure Add(vName, vValue: string); overload;
     procedure Add(S: string); overload; //"Name = Value"
     procedure Append(vAttributes: string); overload; // multiple attributes
-    property Items[Index: Integer]: TmnXMLAttribute read GetItem write SetItem;
+    procedure AssignFrom(vAttributes: string); overload; // multiple attributes
+    property Items[Index: Integer]: TmnXMLAttribute read GetItem;
     property Values[Index: string]: string read GetValue write SetValue; default;
   end;
 
@@ -667,6 +667,12 @@ begin
   StrToStringsCallback(Self, @StrToAttributesCallbackProc, vAttributes, [' '], [#0, #13, #10]);
 end;
 
+procedure TmnXMLAttributes.AssignFrom(vAttributes: string);
+begin
+  Clear;
+  Append(vAttributes);
+end;
+
 function TmnXMLAttributes.GetItem(Index: Integer): TmnXMLAttribute;
 begin
   Result := inherited Items[Index] as TmnXMLAttribute;
@@ -681,12 +687,6 @@ begin
     Result := aAttribute.FValue
   else
     Result := '';
-end;
-
-procedure TmnXMLAttributes.SetItem(Index: Integer;
-  const Value: TmnXMLAttribute);
-begin
-  inherited Items[Index] := Value;
 end;
 
 procedure TmnXMLAttributes.SetValue(Index: string; const Value: string);

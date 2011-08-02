@@ -124,9 +124,12 @@ type
 procedure TmnXMLRttiReader.ReadAttributes(const Text: string);
 begin
   inherited;
-  Stack.Current.Attributes.Append(Text);
-  Stack.Current.ReadOpen(CurrentTag);
-  Inc(Stack.Current.Depth);
+  if Stack.Current <> nil then
+  begin
+    Stack.Current.Attributes.AssignFrom(Text);
+    Stack.Current.ReadOpen(CurrentTag);
+    Inc(Stack.Current.Depth);
+  end;
 end;
 
 procedure TmnXMLRttiReader.ReadCDATA(const Text: string);
@@ -235,7 +238,7 @@ begin
           aClass := Attributes['Class'];
           if (aClass <> '') and (aInstance = nil) and (IsStoredProp(Instance, PropInfo)) then
           begin
-            aObject := CreateObject(Instance, aClass, Attributes['Name']);
+            aInstance := CreateObject(Instance, aClass, Attributes['Name']);
             SetObjectProp(TObject(Instance), Name, aInstance);
           end;
           {$endif}

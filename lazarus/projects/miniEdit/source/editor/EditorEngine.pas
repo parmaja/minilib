@@ -198,6 +198,7 @@ type
     procedure SetPerspectiveName(AValue: string);
     procedure SetSCM(AValue: TEditorSCM);
   protected
+    procedure RttiCreateObject(var vObject: TObject; vInstance: TObject; vObjectClass: TClass; const vClassName, vName: string); override;
     procedure Loaded(Failed: Boolean); override;
     procedure Saving; override;
   public
@@ -223,7 +224,7 @@ type
     property RootUrl: string read FRootUrl write FRootUrl;
     property RunMode: TRunMode read FRunMode write FRunMode default prunUrl;
     property SaveDesktop: Boolean read FSaveDesktop write FSaveDesktop default True;
-    property Desktop: TEditorDesktop read FDesktop;
+    property Desktop: TEditorDesktop read FDesktop stored FSaveDesktop;
     property Options: TEditorProjectOptions read FOptions write FOptions default nil;
   end;
 
@@ -437,6 +438,7 @@ type
     procedure OnExecuteCompletion(Sender: TObject); virtual;
     function CreateHighlighter: TSynCustomHighlighter; virtual;
     procedure InitCompletion(vSynEdit: TCustomSynEdit); virtual;
+    procedure InitEdit(vSynEdit: TCustomSynEdit); virtual;
   public
     constructor Create; virtual;
     destructor Destroy; override;
@@ -471,6 +473,12 @@ type
   );
   TFileGroupKinds = set of TFileGroupKind;
 
+  TFileGroupStyle = (
+    fgsFolding
+  );
+
+  TFileGroupStyles = set of TFileGroupStyle;
+
   { TFileGroup }
 
   TFileGroup = class(TEditorElement)
@@ -478,6 +486,7 @@ type
     FExtensions: TStringList;
     FKind: TFileGroupKinds;
     FCategory: TFileCategory;
+    FStyle: TFileGroupStyles;
     procedure SetCategory(AValue: TFileCategory);
   protected
   public
@@ -488,6 +497,7 @@ type
     property Category: TFileCategory read FCategory write SetCategory;
     property Extensions: TStringList read FExtensions;
     property Kind: TFileGroupKinds read FKind write FKind;
+    property Style: TFileGroupStyles read FStyle write FStyle;
   end;
 
   { TFileGroups }
@@ -503,7 +513,7 @@ type
     function FindExtension(vExtension: string): TFileGroup;
     function CreateFilter(vGroup: TFileGroup = nil): string;
     procedure Add(vGroup: TFileGroup);
-    procedure Add(const Name, Title: string; Category: string; Extensions: array of string; Kind: TFileGroupKinds = []);
+    procedure Add(const Name, Title: string; Category: string; Extensions: array of string; Kind: TFileGroupKinds = []; Style: TFileGroupStyles = []);
     property Items[Index: integer]: TFileGroup read GetItem; default;
   end;
 
@@ -876,6 +886,7 @@ procedure TSourceManagements.Add(vEditorSCM: TEditorSCMClass);
 var
   aItem: TEditorSCM;
 begin
+  RegisterClass(vEditorSCM);
   aItem := vEditorSCM.Create;
   inherited Add(aItem);
 end;
@@ -1050,6 +1061,7 @@ procedure TPerspectives.Add(vEditorPerspective: TEditorPerspectiveClass);
 var
   aItem: TEditorPerspective;
 begin
+  RegisterClass(vEditorPerspective);
   aItem := vEditorPerspective.Create;
   Add(aItem);
 end;
@@ -1998,8 +2010,6 @@ begin
 end;
 
 constructor TEditorFile.Create(ACollection: TCollection);
-var
-  cf: TSynGutterCodeFolding;
 begin
   inherited;
   { There is more assigns in SetGroup }
@@ -2013,11 +2023,7 @@ begin
   //  FSynEdit.Gutter.MarksPart(0).DebugMarksImageIndex := 0;
   //FSynEdit.Gutter.MarksPart.DebugMarksImageIndex := 0;
   //FSynEdit.Gutter.Parts.Add(TSynBreakPointItem.Create(FSynEdit.Gutter.Parts));
-  cf := FSynEdit.Gutter.Parts.ByClass[TSynGutterCodeFolding, 0] as TSynGutterCodeFolding;
-  if cf <> nil then
-  begin
-    cf.Visible := False; //I hate code folding
-  end;
+
   FSynEdit.TrimSpaceType := settLeaveLine;
   FSynEdit.BoundsRect := Engine.FilesControl.ClientRect;
   FSynEdit.BorderStyle := bsNone;
@@ -2195,6 +2201,8 @@ begin
 end;
 
 procedure TEditorFile.SetGroup(const Value: TFileGroup);
+var
+  cf: TSynGutterCodeFolding;
 begin
   if FGroup <> Value then
   begin
@@ -2203,14 +2211,26 @@ begin
     begin
       FSynEdit.Highlighter := FGroup.Category.Highlighter;
       FGroup.Category.InitCompletion(FSynEdit);
-      if fgkExecutable in FGroup.Kind then
+
+      if (fgkExecutable in FGroup.Kind) then
         with TSynDebugMarksPart.Create(FSynEdit.Gutter.Parts) do
         begin
           FEditorFile := Self;
           AutoSize := False;
           Width := EditorResource.DebugImages.Width + DEBUG_IMAGE_MARGINES;
         end;
+
+      if not (fgsFolding in FGroup.Style) then//TODO: Check the Options
+      begin
+        cf := FSynEdit.Gutter.Parts.ByClass[TSynGutterCodeFolding, 0] as TSynGutterCodeFolding;
+        if cf <> nil then
+        begin
+          cf.Visible := False;
+        end;
+      end;
       FSynEdit.Gutter.SeparatorPart(0).Index := FSynEdit.Gutter.Parts.Count - 1;
+
+      FGroup.Category.InitEdit(FSynEdit);
       //Engine.MacroRecorder.AddEditor(FSynEdit);
     end;
     Engine.Options.Profile.AssignTo(FSynEdit);
@@ -2350,7 +2370,7 @@ procedure TEditorFile.DoGutterClickEvent(Sender: TObject; X, Y, Line: integer; M
 var
   aLine: integer;
 begin
-  if fgkExecutable in Group.Kind then
+  if (Engine.Perspective.Debug <> nil) and (fgkExecutable in Group.Kind) then
   begin
     aLine := SynEdit.PixelsToRowColumn(Point(X, Y)).y;
     Engine.Perspective.Debug.Lock;
@@ -2572,6 +2592,10 @@ procedure TFileCategory.InitCompletion(vSynEdit: TCustomSynEdit);
 begin
 end;
 
+procedure TFileCategory.InitEdit(vSynEdit: TCustomSynEdit);
+begin
+end;
+
 destructor TFileCategory.Destroy;
 begin
   FreeAndNil(FHighlighter);
@@ -2634,6 +2658,13 @@ begin
   FreeAndNil(FSCM);
   FSCM :=AValue;
   Engine.UpdateState([ecsChanged, ecsProject]);
+end;
+
+procedure TEditorProject.RttiCreateObject(var vObject: TObject; vInstance: TObject; vObjectClass:TClass; const vClassName, vName: string);
+begin
+  inherited;
+  if vObjectClass.InheritsFrom(vObjectClass) then
+    vObject := TEditorSCMClass(vObjectClass).Create;
 end;
 
 procedure TEditorProject.Loaded(Failed: Boolean);
@@ -2781,7 +2812,7 @@ end;
 
 { TFileGroups }
 
-procedure TFileGroups.Add(const Name, Title:string; Category: string; Extensions: array of string; Kind: TFileGroupKinds);
+procedure TFileGroups.Add(const Name, Title:string; Category: string; Extensions: array of string; Kind: TFileGroupKinds; Style: TFileGroupStyles);
 var
   aCategory: TFileCategory;
   aGroup: TFileGroup;
@@ -2797,6 +2828,7 @@ begin
   aGroup.FTitle := Title;
   aGroup.FName := Name;
   aGroup.FKind := Kind;
+  aGroup.FStyle := Style;
   for i := 0 to Length(Extensions) - 1 do
     aGroup.Extensions.Add(Extensions[i]);
   aGroup.Category := aCategory;
