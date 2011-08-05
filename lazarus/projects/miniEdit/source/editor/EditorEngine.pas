@@ -1265,7 +1265,6 @@ begin
   FreeAndNil(FMessagesList);
   FOnChangedState := nil;
   FInternalPerspective := nil;
-//  FreeAndNil(FInternalPerspective);
   FreeAndNil(FForms);
   inherited;
 end;
@@ -1787,10 +1786,10 @@ end;
 
 procedure TEditorEngine.Shutdown;
 begin
-  FEngineShutdown := True;
   if Perspective.Debug <> nil then
     Perspective.Debug.Stop;
   Files.Clear;
+  FEngineShutdown := True;
 end;
 
 procedure TEditorEngine.RemoveRecentProject(const FileName: string);

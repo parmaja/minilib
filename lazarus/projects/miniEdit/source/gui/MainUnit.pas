@@ -27,7 +27,7 @@ uses
   Dialogs, StdCtrls, Math, ComCtrls, ExtCtrls, ImgList, Menus, ToolWin,
   Buttons, FileCtrl, ShellCtrls, ActnList, EditorEngine, mneClasses, StdActns,
   PairSplitter, SynEditHighlighter, SynEdit, IAddons,
-  TSVN_SCM,
+  TSVN_SCM, TGIT_SCM,
   ntvTabSets, mneRun, Registry, SynEditPlugins,
   //Addons
   {$ifdef Windows}

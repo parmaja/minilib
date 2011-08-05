@@ -277,8 +277,13 @@ var
   aFile: TEditorFile;
 begin
   inherited;
-  aFile := Engine.Files.ShowFile(FileName);
-  SetExecuted(Key, aFile.SynEdit, Line);
+  if FileName <> '' then
+  begin
+    aFile := Engine.Files.ShowFile(FileName);
+    SetExecuted(Key, aFile.SynEdit, Line);
+  end
+  else
+    SetExecuted(Key, nil, -1);
 end;
 
 procedure TEditorDebugLink.SetExecutedExit(const AValue: TCustomSynEdit);

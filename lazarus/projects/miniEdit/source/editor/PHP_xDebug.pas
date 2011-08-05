@@ -348,16 +348,9 @@ begin
   Result := FServer.Key;
 end;
 
-{procedure TPHP_xDebugServer.ShowFile(const Key, FileName: string; Line: integer);
-begin
-  //FDebug.SetExecuted(Key, FileName, Line);
-end;}
-
 procedure TPHP_xDebugServer.DoChanged(vListener: TmnListener);
 begin
   inherited;
-{  if vListener.Count = 0 then
-    FDebug.SetExecuted('', nil, -1);}
 end;
 
 destructor TPHP_xDebugServer.Destroy;

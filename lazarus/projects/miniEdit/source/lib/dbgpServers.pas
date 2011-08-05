@@ -208,6 +208,8 @@ type
     procedure Process(Respond: TdbgpRespond); override;
   end;
 
+  { TdbgpConnection }
+
   TdbgpConnection = class(TmnServerConnection)
   private
     FLocalSpool: TdbgpConnectionSpool;
@@ -215,6 +217,7 @@ type
     function GetServer: TdbgpServer;
   public
     FTransactionID: integer;
+    procedure Reset;
   protected
     //
     function NewTransactionID: integer;
@@ -226,6 +229,7 @@ type
     function SendCommand(Command: string): integer;
     procedure Prepare; override;
     procedure Process; override;
+    procedure Unprepare; override;
   public
     constructor Create(Socket: TmnCustomSocket); override;
     destructor Destroy; override;
@@ -361,7 +365,7 @@ type
     Event: TEvent;
     constructor Create;
     destructor Destroy; override;
-    procedure ShowFile(const Key, FileName: string; Line: integer);
+    procedure ShowFile(const Key, FileName: string; Line: integer = -1);
     property OnShowFile: TdbgpOnShowFile read FOnShowFile write FOnShowFile;
   end;
 
@@ -515,6 +519,12 @@ begin
   end;
 end;
 
+procedure TdbgpConnection.Unprepare;
+begin
+  inherited Unprepare;
+  Synchronize(@Reset);
+end;
+
 { TdbgpSocketServer }
 
 function TdbgpServer.CreateListener: TmnListener;
@@ -616,6 +626,11 @@ end;
 function TdbgpConnection.GetServer: TdbgpServer;
 begin
   Result := (Listener.Server as TdbgpServer);
+end;
+
+procedure TdbgpConnection.Reset;
+begin
+  DBGP.ShowFile(FKey, '');
 end;
 
 function TdbgpConnection.PopAction: TdbgpAction;
@@ -1390,4 +1405,4 @@ initialization
 finalization
   FreeAndNil(FDBGP);
 end.
-
+
