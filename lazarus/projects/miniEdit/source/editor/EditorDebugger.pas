@@ -268,8 +268,8 @@ begin
       ExecutedEdit.CaretX := 1;
       ExecutedEdit.InvalidateLine(FLink.ExecutedLine);
     end;
+    Engine.UpdateState([ecsDebug, ecsShow]);
   end;
-  Engine.UpdateState([ecsDebug, ecsShow]);
 end;
 
 procedure TEditorDebugger.SetExecuted(Key: string; FileName: string; const Line: integer);

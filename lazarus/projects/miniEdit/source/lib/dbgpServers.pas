@@ -217,9 +217,7 @@ type
     function GetServer: TdbgpServer;
   public
     FTransactionID: integer;
-    procedure Reset;
   protected
-    //
     function NewTransactionID: integer;
 {$IFDEF SAVELOG}
     procedure SaveLog(s: string);
@@ -228,6 +226,7 @@ type
     function PopAction: TdbgpAction;
     function SendCommand(Command: string): integer;
     procedure Prepare; override;
+    procedure DoProcess;
     procedure Process; override;
     procedure Unprepare; override;
   public
@@ -327,6 +326,7 @@ type
 
   TdbgpServer = class(TmnServer)
   private
+    FBreakOnFirstLine: Boolean;
     FSpool: TdbgpSpool;
     FWatches: TdbgpWatches;
     FBreakpoints: TdbgpBreakpoints;
@@ -352,6 +352,7 @@ type
     property IsRuning: Boolean read GetIsRuning;
     property Watches: TdbgpWatches read FWatches;
     property Breakpoints: TdbgpBreakpoints read FBreakpoints;
+    property BreakOnFirstLine: Boolean read FBreakOnFirstLine write FBreakOnFirstLine default True;
   published
   end;
 
@@ -414,6 +415,7 @@ begin
   FWatches.FServer := Self;
   FBreakpoints := TdbgpBreakpoints.Create;
   FBreakpoints.FServer := Self;
+  FBreakOnFirstLine := True;
 end;
 
 destructor TdbgpServer.Destroy;
@@ -462,7 +464,7 @@ begin
   DBGP.ShowFile(FCurKey, FCurFile, FCurLine);
 end;
 
-procedure TdbgpConnection.Process;
+procedure TdbgpConnection.DoProcess;
 var
   aAction: TdbgpAction;
   aRespond: TdbgpRespond;
@@ -522,7 +524,6 @@ end;
 procedure TdbgpConnection.Unprepare;
 begin
   inherited Unprepare;
-  Synchronize(@Reset);
 end;
 
 { TdbgpSocketServer }
@@ -628,11 +629,6 @@ begin
   Result := (Listener.Server as TdbgpServer);
 end;
 
-procedure TdbgpConnection.Reset;
-begin
-  DBGP.ShowFile(FKey, '');
-end;
-
 function TdbgpConnection.PopAction: TdbgpAction;
 var
   aAction: TdbgpAction;
@@ -672,11 +668,24 @@ begin
   inherited;
   FLocalSpool.Add(TdbgpInit.Create);
   FLocalSpool.Add(TdbgpSetBreakpoints.Create);
-  //if break at first line
-  FLocalSpool.Add(TdbgpStepInto.Create);
-  //else
-  //FSpool.Add(TdbgpRun.Create);
-  FLocalSpool.Add(TdbgpGetCurrent.Create);//try to remove it
+  if Server.BreakOnFirstLine then
+  begin
+    FLocalSpool.Add(TdbgpStepInto.Create);
+    FLocalSpool.Add(TdbgpGetCurrent.Create);
+  end
+  else
+    FLocalSpool.Add(TdbgpRun.Create);
+end;
+
+procedure TdbgpConnection.Process;
+begin
+  //Allow one connection to process
+  //Listener.Enter;
+  try
+    DoProcess;
+  finally
+    //Listener.Leave;
+  end;
 end;
 
 procedure TdbgpConnection.Stop;
@@ -719,6 +728,8 @@ end;
 procedure TdbgpServer.DoChanged(vListener: TmnListener);
 begin
   inherited;
+  if vListener.Count = 0 then //TODO: i am not sure in Linux
+    DBGP.ShowFile('', '');
 end;
 
 { TdbgpAction }

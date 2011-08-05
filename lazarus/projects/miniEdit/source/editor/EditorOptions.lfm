@@ -202,7 +202,7 @@ object EditorOptionsForm: TEditorOptionsForm
           Left = 176
           Height = 17
           Hint = 'if enabled, then the scrollbars will only show when necessary.  If you have ScrollPastEOL, then it the horizontal bar will always be there (it uses MaxLength instead)'
-          Top = 2
+          Top = 4
           Width = 152
           Caption = 'Hide scrollbars as necessary'
           TabOrder = 13
@@ -211,7 +211,7 @@ object EditorOptionsForm: TEditorOptionsForm
           Left = 176
           Height = 17
           Hint = 'Disables the scroll bar arrow buttons when you can''t scroll in that direction any more'
-          Top = 23
+          Top = 24
           Width = 114
           Caption = 'Disable scroll arrows'
           TabOrder = 14
@@ -1083,7 +1083,7 @@ object EditorOptionsForm: TEditorOptionsForm
     MinFontSize = 0
     MaxFontSize = 0
     Options = [fdEffects, fdFixedPitchOnly]
-    left = 73
-    top = 300
+    left = 24
+    top = 371
   end
 end

@@ -11,6 +11,7 @@
       <XPManifest>
         <DpiAware Value="True"/>
       </XPManifest>
+      <Icon Value="0"/>
     </General>
     <VersionInfo>
       <Language Value=""/>

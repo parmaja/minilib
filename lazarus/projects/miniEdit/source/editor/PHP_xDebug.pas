@@ -6,6 +6,23 @@ unit PHP_xDebug;
  * @license    GPL 2 (http://www.gnu.org/licenses/gpl.html)
  * @author    Zaher Dirkey <zaher at parmaja dot com>
  *}
+
+{
+#Put it in php.ini
+
+zend_extension = ext/php_xdebug.dll
+xdebug.remote_handler = dbgp
+xdebug.remote_mode = req
+xdebug.remote_enable = On
+
+
+xdebug.remote_autostart = On
+
+xdebug.remote_port = 9000
+xdebug.remote_connect_back = Off
+xdebug.idekey = "XDEBUG"
+#xdebug.extended_info = On
+}
 interface
 
 uses
