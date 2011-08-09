@@ -47,6 +47,8 @@ type
     procedure Leave;
   end;
 
+  { TmnConnection }
+
   TmnConnection = class(TmnThread)
   private
     FStream: TmnConnectionStream;
@@ -70,6 +72,7 @@ type
     procedure Start;
     {$endif}
     procedure Stop; virtual;
+    //KeepAlive: do not disconnect when finish process
     property KeepAlive: Boolean read FKeepAlive write FKeepAlive;
     property Connected: Boolean read GetConnected write SetConnected;
     property Stream: TmnConnectionStream read FStream;
