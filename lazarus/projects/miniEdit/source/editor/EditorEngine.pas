@@ -432,6 +432,7 @@ type
     FEditorFileClass: TEditorFileClass;
     FHighlighter: TSynCustomHighlighter;
     FKind: TFileCategoryKinds;
+    function GetHighlighter: TSynCustomHighlighter;
     function GetItem(Index: Integer): TFileGroup;
   protected
     FCompletion: TSynCompletion;
@@ -447,7 +448,7 @@ type
     function CreateEditorFile(Files: TEditorFiles): TEditorFile; virtual;
     procedure EnumExtensions(vExtensions: TStringList);
     property EditorFileClass: TEditorFileClass read FEditorFileClass;
-    property Highlighter: TSynCustomHighlighter read FHighlighter;
+    property Highlighter: TSynCustomHighlighter read GetHighlighter;
     property Completion: TSynCompletion read FCompletion;
     property Kind: TFileCategoryKinds read FKind;
     property Items[Index: Integer]: TFileGroup read GetItem; default;
@@ -455,12 +456,27 @@ type
 
   TFileCategoryClass = class of TFileCategory;
 
+
+  { TCustomFileCategory
+    to add instant category, we will not add new Category class for every highlighter
+  }
+
+  TCustomFileCategory = class(TFileCategory)
+  protected
+    FHighlighterClass: TSynCustomHighlighterClass;
+    function CreateHighlighter: TSynCustomHighlighter; override;
+  public
+  end;
+
+  { TFileCategories }
+
   TFileCategories = class(TObjectList)
   private
     function GetItem(Index: integer): TFileCategory;
     procedure SetItem(Index: integer; AObject: TFileCategory);
   public
     function Find(vName: string): TFileCategory;
+    function Add(vFileCategory: TFileCategory): Integer;
     procedure Add(const Name: string; EditorFileClass: TEditorFileClass; CategoryClass: TFileCategoryClass; Kind: TFileCategoryKinds = []);
     property Items[Index: integer]: TFileCategory read GetItem write SetItem; default;
   end;
@@ -691,6 +707,8 @@ type
     property Root: string read GetRoot;
     property WorkSpace: string read GetWorkSpace write FWorkSpace;
 
+    //AddInstant: Create category and file group for highlighter
+    procedure AddInstant(vName: string; vExtensions: array of string; vHighlighterClass: TSynCustomHighlighterClass; vKind: TFileCategoryKinds);
     property Categories: TFileCategories read FCategories;
     property Groups: TFileGroups read FGroups;
     property Perspectives: TPerspectives read FPerspectives;
@@ -822,6 +840,13 @@ begin
       S := S + #$D;
     Stream.WriteBuffer(Pointer(S)^, Length(S));
   end;
+end;
+
+{ TCustomFileCategory }
+
+function TCustomFileCategory.CreateHighlighter: TSynCustomHighlighter;
+begin
+  Result := FHighlighterClass.Create(nil);
 end;
 
 { TEditorSCM }
@@ -1824,6 +1849,19 @@ begin
     Result := FileName;
 end;
 
+procedure TEditorEngine.AddInstant(vName:string; vExtensions: array of string; vHighlighterClass: TSynCustomHighlighterClass; vKind: TFileCategoryKinds);
+var
+  aFC: TCustomFileCategory;
+begin
+  aFC := TCustomFileCategory.Create;
+  aFC.Name := vName;
+  aFC.FHighlighterClass := vHighlighterClass;
+  aFC.FEditorFileClass := TEditorFile;
+  aFC.FKind := vKind;
+  Categories.Add(aFC);
+  Groups.Add(vExtensions[0], vName + ' files', vName, vExtensions, []);
+end;
+
 procedure TEditorEngine.SetDefaultPerspective(vName: string);
 var
   P: TEditorPerspective;
@@ -2450,7 +2488,7 @@ begin
   aFC.FName := Name;
   aFC.FEditorFileClass := EditorFileClass;
   aFC.FKind := Kind;
-  inherited Add(aFC);
+  Add(aFC);
 end;
 
 function TFileGroups.CreateFilter(vGroup: TFileGroup): string;
@@ -2518,6 +2556,11 @@ begin
     end;
 end;
 
+function TFileCategories.Add(vFileCategory: TFileCategory): Integer;
+begin
+  Result := inherited Add(vFileCategory);
+end;
+
 function TFileGroups.FindExtension(vExtension: string): TFileGroup;
 var
   i, j: integer;
@@ -2564,7 +2607,6 @@ end;
 constructor TFileCategory.Create;
 begin
   inherited Create(False);//childs is groups and already added to Groups and freed by it
-  FHighlighter := CreateHighlighter;
 end;
 
 function TFileCategory.CreateEditorFile(Files: TEditorFiles): TEditorFile;
@@ -2610,6 +2652,13 @@ end;
 function TFileCategory.GetItem(Index: Integer): TFileGroup;
 begin
   Result := inherited Items[Index] as TFileGroup;
+end;
+
+function TFileCategory.GetHighlighter: TSynCustomHighlighter;
+begin
+  if FHighlighter = nil then
+    FHighlighter := CreateHighlighter;
+  Result := FHighlighter;
 end;
 
 procedure TFileCategory.OnExecuteCompletion(Sender: TObject);

@@ -16,8 +16,8 @@ uses
   Dialogs, EditorOptions, SynEditHighlighter, SynEditSearch, SynEdit,
   Registry, EditorEngine, mnXMLRttiProfile, mnXMLUtils,
   SynEditTypes, SynCompletion, SynHighlighterHashEntries, EditorProfiles,
-  SynHighlighterCSS, SynHighlighterSQL, SynHighlighterXML, SynHighlighterApache,
-  SynHighlighterJScript, SynHighlighterXHTML, SynHighlighterPas;
+  SynHighlighterSQL, SynHighlighterXML, SynHighlighterApache,
+  SynHighlighterPython;
 
 type
   TSQLFile = class(TEditorFile)
@@ -291,4 +291,5 @@ initialization
     Groups.Add('ini', 'INI files', 'ini', ['ini'], []);
     Groups.Add('txt', 'TXT files', 'txt', ['txt'], []);
   end;
+  Engine.AddInstant('Python', ['py'], TSynPythonSyn, []);
 end.
