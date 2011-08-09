@@ -38,7 +38,6 @@ contains
   mnXMLStreams in '..\source\mnXMLStreams.pas',
   mnXMLUtils in '..\source\mnXMLUtils.pas',
   mnXML in '..\source\mnXML.pas',
-  mnXMLFPClasses in '..\source\mnXMLFPClasses.pas',
   mnXMLNodes in '..\source\mnXMLNodes.pas',
   mnXMLReader in '..\source\mnXMLReader.pas',
   mnXMLRtti in '..\source\mnXMLRtti.pas',
