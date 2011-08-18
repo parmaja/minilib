@@ -16,7 +16,7 @@ unit mnUtils;
 interface
 
 uses
-  Classes, SysUtils, StrUtils;
+  Classes, SysUtils, StrUtils, DateUtils;
 
 const
   sUTF8BOM: array[1..3] of Char = (#$EF, #$BB, #$BF);
@@ -33,6 +33,10 @@ type
 function StrToStringsCallback(Sender: Pointer; Proc: TStrToStringsCallbackProc; Content: string; Separators: TSysCharSet; WhiteSpace: TSysCharSet = [#0, #13, #10]; DequoteValues: Boolean = False; Quotes: TSysCharSet = ['''', '"']): Integer;
 function StrToStrings(Content: string; Strings: TStrings; Separators: TSysCharSet; WhiteSpace: TSysCharSet = [#0, #13, #10]; DequoteValues: Boolean = False; Quotes: TSysCharSet = ['''', '"']): Integer;
 function CompareLeftStr(const Str: string; const WithStr: string; Start: Integer=1): Boolean;
+//Index started from 1
+function SubStr(const Str: String; vSeperator: Char; vIndex: Integer = 1): String; overload;
+function SubStr(const Str: String; vSeperator: Char; vFromIndex, vToIndex: Integer): String; overload;
+
 function PeriodToString(vPeriod: Double; WithSeconds:Boolean): string;
 function DequoteStr(Str: string; QuoteChar: string): string; overload;
 function DequoteStr(Str: string): string; overload; //deqoute use both of ' and "
@@ -74,6 +78,15 @@ type
 {$endif}
 
 procedure InitMemory(var v; count:SizeInt);
+
+{ Date }
+{
+ TimeDivider can be ' ' or 'T' or #0
+ TimeDivider = #0 = AutoDetect
+}
+
+function ISOStrToDate(ISODate: String; TimeDivider: AnsiChar = #0; UseDefault: Boolean = False): TDateTime;
+function ISODateToStr(vDate:TDateTime; TimeDivider: AnsiChar = ' '; WithTime: Boolean = False): string;
 
 implementation
 
@@ -499,6 +512,87 @@ end;
 procedure InitMemory(var v; count:SizeInt);
 begin
   FillChar(v, count, #0);
+end;
+
+{
+  ISOStrToDate
+  2011-08-18 13:25:59
+
+  not yet
+  2011-08-18T13:25:59+00:00
+}
+function ISOStrToDate(ISODate: String; TimeDivider:AnsiChar; UseDefault: Boolean): TDateTime;
+var
+  T: String;
+  Y, M, D, H, N, S: Word;
+begin
+  try
+    if TimeDivider = #0 then
+    begin
+      if Pos('T', ISODate) > 0 then
+        TimeDivider := 'T'
+      else
+        TimeDivider := ' ';
+    end;
+    
+    if UseDefault then
+      DecodeDate(Now, Y, M, D)
+    else
+      DecodeDate(0, Y, M, D);
+    T := SubStr(ISODate, TimeDivider, 1);//skip the time text
+    Y := StrToIntDef(SubStr(T, '-', 1), Y);
+    M := StrToIntDef(SubStr(T, '-', 2), M);
+    D := StrToIntDef(SubStr(T, '-', 3), D);
+
+    T := SubStr(ISODate, TimeDivider, 2);//skip the date text
+    T := SubStr(T, '+', 1);//skip the date text
+    H := StrToIntDef(SubStr(T, ':', 1), 0);
+    N := StrToIntDef(SubStr(T, ':', 2), 0);
+    S := StrToIntDef(SubStr(T, ':', 3), 0);
+    Result := EncodeDateTime(Y, M, D, H, N, S, 0);
+  except
+    raise Exception.Create('Not valid DateTime');
+  end;
+end;
+
+function ISODateToStr(vDate:TDateTime; TimeDivider: AnsiChar; WithTime: Boolean): string;
+var
+  f: string;
+begin
+  f := 'YYYY-MM-DD';
+  if WithTime then
+   f := f + TimeDivider+ 'TT:NN:SS';
+  Result := FormatDateTime(f, vDate);
+end;
+
+function SubStr(const Str: String; vSeperator: Char; vFromIndex, vToIndex: Integer): String;
+var
+  Index, B, E: Integer;
+begin
+  Result := '';
+  Index := 0;
+  B := 1;
+  for E := 1 to Length(Str) do
+  begin
+    if Str[E] = vSeperator then
+    begin
+      Inc(Index);
+      if Index = vFromIndex - 1 then
+        B := E + 1;
+    end;
+
+    if Index = vToIndex then
+    begin
+      Result := Copy(Str, B, E - B);
+      exit;
+    end;
+  end;
+  Result := Copy(Str, B, MaxInt);
+end;
+
+function SubStr(const Str: String; vSeperator: Char; vIndex: Integer): String;
+begin
+  Result := SubStr(Str, vSeperator, vIndex, vIndex);
 end;
 
 end.
