@@ -75,6 +75,7 @@ type
   protected
     procedure Notification(AComponent: TComponent; Operation: TOperation); override;
   public
+    constructor Create(AOwner: TComponent); override;
     property ExecutedLine: Integer read FExecutedLine write FExecutedLine;
     property ExecutedEdit: TCustomSynEdit read FExecutedEdit write SetExecutedExit;
   end;
@@ -276,7 +277,6 @@ procedure TEditorDebugger.SetExecuted(Key: string; FileName: string; const Line:
 var
   aFile: TEditorFile;
 begin
-  inherited;
   if FileName <> '' then
   begin
     aFile := Engine.Files.ShowFile(FileName);
@@ -306,6 +306,12 @@ begin
     FExecutedEdit := nil;
     FExecutedLine := 0;
   end;
+end;
+
+constructor TEditorDebugLink.Create(AOwner: TComponent);
+begin
+  inherited Create(AOwner);
+  FExecutedLine := -1;
 end;
 
 end.

@@ -352,7 +352,7 @@ type
     property IsRuning: Boolean read GetIsRuning;
     property Watches: TdbgpWatches read FWatches;
     property Breakpoints: TdbgpBreakpoints read FBreakpoints;
-    property BreakOnFirstLine: Boolean read FBreakOnFirstLine write FBreakOnFirstLine default True;
+    property BreakOnFirstLine: Boolean read FBreakOnFirstLine write FBreakOnFirstLine default False;
   published
   end;
 
@@ -415,7 +415,7 @@ begin
   FWatches.FServer := Self;
   FBreakpoints := TdbgpBreakpoints.Create;
   FBreakpoints.FServer := Self;
-  FBreakOnFirstLine := True;
+  FBreakOnFirstLine := False;
 end;
 
 destructor TdbgpServer.Destroy;
@@ -674,7 +674,11 @@ begin
     FLocalSpool.Add(TdbgpGetCurrent.Create);
   end
   else
+  begin
     FLocalSpool.Add(TdbgpRun.Create);
+    FLocalSpool.Add(TdbgpGetWatches.Create);
+    FLocalSpool.Add(TdbgpGetCurrent.Create);
+end;
 end;
 
 procedure TdbgpConnection.Process;

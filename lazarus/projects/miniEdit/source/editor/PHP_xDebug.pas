@@ -27,7 +27,8 @@ interface
 
 uses
   SysUtils, Forms, StrUtils, Variants, Classes, Controls, Graphics, Contnrs, syncobjs,
-  mnServers, dbgpServers,
+  mnServers,
+  dbgpServers,
   SynEdit,
   EditorDebugger;
 
@@ -157,7 +158,7 @@ begin
     begin
       AddAction(aAction);
       Resume;
-      aAction.Event.WaitFor(INFINITE);
+      aAction.Event.WaitFor(30000);
       begin
         vValue := aAction.VariableValue;
         vType := aAction.VariableType;
@@ -284,11 +285,13 @@ var
 begin
   if IsRuning then
   begin
+    FServer.Clear;
     aAction := TdbgpDetach.Create;
     aAction.CreateEvent;
     FServer.AddAction(aAction);
     FServer.Resume;
-    aAction.Event.WaitFor(INFINITE);
+    aAction.Event.WaitFor(30000);
+    FServer.ExtractAction(aAction);
     aAction.Free;
   end;
   FServer.Stop;
@@ -376,6 +379,6 @@ begin
 end;
 
 initialization
-//  Addons.Add('Debug', 'XDebug', TPHP_xDebug);//most not created /??!!!
+//  Addons.Add('Debug', 'XDebug', TPHP_xDebug);//must not created /??!!!
 end.
 

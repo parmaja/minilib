@@ -397,10 +397,10 @@ begin
   try
     if Connection.FreeOnTerminate then
       FList.Remove(Connection);
-    Changed;
   finally
     Leave;
   end;
+  Changed;
 end;
 
 {$ifndef FPC} //already found in FPC 2.4.4
