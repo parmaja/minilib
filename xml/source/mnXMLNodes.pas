@@ -343,7 +343,15 @@ end;
 
 function TmnXMLNodes.GetItems(Index: string): TmnXMLNode;
 begin
-  Result := FRoot.Items.Find(Index);
+  if FRoot <> nil then
+  begin
+    if SameText(FRoot.Name, Index) then
+      Result := FRoot
+    else
+      Result := FRoot.Items.Find(Index);
+  end
+  else
+    Result := nil;
 end;
 
 function TmnXMLNodes.Open(Name: string): TmnXMLNode;
