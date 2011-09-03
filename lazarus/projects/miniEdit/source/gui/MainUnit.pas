@@ -1083,7 +1083,7 @@ begin
     v := Trim(Engine.Files.Current.SynEdit.GetWordAtRowCol(Engine.Files.Current.SynEdit.CaretXY))
   else
     v := Engine.Files.Current.SynEdit.SelText;
-  Result := Engine.Perspective.Debug.Watches.GetValue(v, l, t) and (v <> '');
+  Result := (v <> '') and Engine.Perspective.Debug.Watches.GetValue(v, l, t, False);
   s := l;
 end;
 
@@ -1097,7 +1097,7 @@ begin
       v := Trim(Engine.Files.Current.SynEdit.GetWordAtRowCol(Engine.Files.Current.SynEdit.PixelsToRowColumn(p)))
     else
       v := Engine.Files.Current.SynEdit.SelText;
-    Result := Engine.Perspective.Debug.Watches.GetValue(v, l, t) and (v <> '');
+    Result := (v <> '') and Engine.Perspective.Debug.Watches.GetValue(v, l, t, False);
     s := l;
   end
   else
@@ -1470,7 +1470,11 @@ begin
   if ecsDebug in State then
     EngineDebug;
   if ecsShow in State then
+  begin
     BringToFront;
+    {SetWindowPos(handle, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE or SWP_NOSIZE);
+    SetWindowPos(handle, HWND_TOP, 0, 0, 0, 0, SWP_NOMOVE or SWP_NOSIZE);}
+  end;
   if ecsEdit in State then
     EngineEdited;
   if ecsProject in State then
@@ -1861,8 +1865,11 @@ procedure TMainForm.ShowValue1Click(Sender: TObject);
 var
   s, v, t: string;
 begin
-  if GetWatchByCursor(v, s, t) then
-    ShowMessage(v + ':' + t + '=' + #13 + s);
+  if (Engine.Files.Current <> nil) then
+  begin
+    if GetWatchByCursor(v, s, t) then
+      ShowMessage(v + ':' + t + '=' + #13 + s);
+  end;
 end;
 
 procedure TMainForm.ShowMessagesList;

@@ -73,7 +73,7 @@ type
     procedure Clear; override;
     procedure Add(vName: string); override;
     procedure Remove(vName: string); override;
-    function GetValue(vName: string; var vValue: variant; var vType: string): boolean; override;
+    function GetValue(vName: string; var vValue: variant; var vType: string; EvalIt: Boolean): boolean; override;
   end;
 
   { TPHP_xDebug }
@@ -144,14 +144,17 @@ begin
     Watches.RemoveWatch(vName);
 end;
 
-function TPHP_xDebugWatches.GetValue(vName: string; var vValue: variant; var vType: string): boolean;
+function TPHP_xDebugWatches.GetValue(vName: string; var vValue: variant; var vType: string; EvalIt: Boolean): boolean;
 var
-  aAction: TdbgpGetWatchInstance;
+  aAction: TdbgpCustomGet;
 begin
   Result := False;
   if FDebug.IsRuning then   //there is a connection from XDebug
   begin
-    aAction := TdbgpGetWatchInstance.Create;
+    if EvalIt then
+      aAction := TdbgpEval.Create
+    else
+      aAction := TdbgpGetWatchInstance.Create;
     aAction.CreateEvent;
     aAction.VariableName := vName;
     with FDebug.FServer do

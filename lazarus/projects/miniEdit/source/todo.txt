@@ -1,4 +1,5 @@
 [DONE]
+open read only file when we can not open for write
 Open PHP ini as addon
 Open Folder not worked in Linux
 Make Assoiate as Addon tool

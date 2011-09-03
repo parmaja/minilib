@@ -48,6 +48,7 @@ type
     FTransactionID: integer;
     procedure CheckError(Respond: TdbgpRespond);
     function GetCommand: string; virtual;
+    function GetData: string; virtual;
     procedure Process(Respond: TdbgpRespond); virtual;
     procedure Created; virtual; //after create it
     procedure Prepare; virtual; //after pop from spool
@@ -88,6 +89,18 @@ type
   protected
     procedure Created; override;
   public
+    function GetCommand: string; override;
+    procedure Process(Respond: TdbgpRespond); override;
+  end;
+
+  { TdbgpFeatureSet }
+
+  TdbgpFeatureSet = class(TdbgpAction)
+  protected
+    FName: string;
+    FValue: string;
+  public
+    constructor CreateBy(vName, vValue: string);
     function GetCommand: string; override;
     procedure Process(Respond: TdbgpRespond); override;
   end;
@@ -143,14 +156,17 @@ type
     procedure Process(Respond: TdbgpRespond); override;
   end;
 
-  // Watches
-
-  TdbgpCustomGetWatch = class(TdbgpAction)
-  protected
+  TdbgpCustomGet = class(TdbgpAction)
   public
     VariableType: string;
     VariableName: string;
     VariableValue: variant;
+  end;
+  // Watches
+
+  TdbgpCustomGetWatch = class(TdbgpCustomGet)
+  protected
+  public
     function GetCommand: string; override;
     procedure Process(Respond: TdbgpRespond); override;
   end;
@@ -159,6 +175,16 @@ type
   protected
   public
     Index: integer;
+    procedure Process(Respond: TdbgpRespond); override;
+  end;
+
+  { TdbgpEval }
+
+  TdbgpEval = class(TdbgpCustomGet)
+  protected
+  public
+    function GetCommand: string; override;
+    function GetData: string; override;
     procedure Process(Respond: TdbgpRespond); override;
   end;
 
@@ -224,7 +250,7 @@ type
 {$ENDIF}
     function ReadRespond: TdbgpRespond;
     function PopAction: TdbgpAction;
-    function SendCommand(Command: string): integer;
+    function SendCommand(Command: string; Data: string): integer;
     procedure Prepare; override;
     procedure DoProcess;
     procedure Process; override;
@@ -384,6 +410,43 @@ begin
   Result := FDBGP;
 end;
 
+{ TdbgpEval }
+
+function TdbgpEval.GetCommand: string;
+begin
+  Result := 'eval';
+end;
+
+function TdbgpEval.GetData: string;
+begin
+  Result := 'echo ' + VariableName;
+end;
+
+procedure TdbgpEval.Process(Respond: TdbgpRespond);
+begin
+  inherited Process(Respond);
+end;
+
+{ TdbgpFeatureSet }
+
+constructor TdbgpFeatureSet.CreateBy(vName, vValue: string);
+begin
+  Create;
+  FName := vName;
+  FValue:= vValue;
+end;
+
+function TdbgpFeatureSet.GetCommand: string;
+begin
+  //Result := 'feature_set -n show_hidden -v 1';
+  Result := 'feature_set -n ' + FName + ' -v '+ FValue;
+end;
+
+procedure TdbgpFeatureSet.Process(Respond: TdbgpRespond);
+begin
+  inherited Process(Respond);
+end;
+
 { TdbgpManager }
 
 constructor TdbgpManager.Create;
@@ -480,7 +543,7 @@ begin
       try
         aCommand := aAction.GetCommand;
         if (dbgpafSend in aAction.Flags) and (aCommand <> '') then
-          aAction.FTransactionID := SendCommand(aCommand);
+          aAction.FTransactionID := SendCommand(aCommand, aAction.GetData);
         if aAction.Accept and Connected then
         begin
           aRespond := ReadRespond;
@@ -564,15 +627,15 @@ begin
     Result := TdbgpRespond.Create;
     Stream.ReadUntil(#0, s, aMatched);
     s := Trim(s);
+    {$IFDEF SAVELOG}
+    SaveLog(s);
+    {$ENDIF}
     Result.Source := s;
     Reader := TmnXMLNodeReader.Create;
     try
       Reader.Start;
       Reader.Nodes := Result;
       Reader.ParseLine(s, 0);
-{$IFDEF SAVELOG}
-      SaveLog(s);
-{$ENDIF}
     finally
       Reader.Free;
     end;
@@ -612,12 +675,14 @@ end;
 
 {$ENDIF}
 
-function TdbgpConnection.SendCommand(Command: string): integer;
+function TdbgpConnection.SendCommand(Command: string; Data: string): integer;
 var
   s: string;
 begin
   Result := NewTransactionID;
   s := Command + ' -i ' + IntToStr(Result);
+  if Data <> '' then
+    s := s + ' -- ' + Data;
   Stream.WriteLn(s, #0);
 {$IFDEF SAVELOG}
   SaveLog(s);
@@ -667,6 +732,9 @@ procedure TdbgpConnection.Prepare;
 begin
   inherited;
   FLocalSpool.Add(TdbgpInit.Create);
+  FLocalSpool.Add(TdbgpFeatureSet.CreateBy('show_hidden', '1'));
+  FLocalSpool.Add(TdbgpFeatureSet.CreateBy('max_depth', '1'));
+  FLocalSpool.Add(TdbgpFeatureSet.CreateBy('max_children', '1'));
   FLocalSpool.Add(TdbgpSetBreakpoints.Create);
   if Server.BreakOnFirstLine then
   begin
@@ -739,6 +807,11 @@ end;
 { TdbgpAction }
 
 function TdbgpAction.GetCommand: string;
+begin
+  Result := '';
+end;
+
+function TdbgpAction.GetData: string;
 begin
   Result := '';
 end;
@@ -1394,20 +1467,24 @@ end;
 
 function TdbgpCustomGetWatch.GetCommand: string;
 begin
-  Result := 'property_get -n ' + VariableName + ' -m 128';
+  Result := 'property_value -n "' + VariableName + '" -m 1024';
+  //Result := 'property_get -n "' + VariableName + '" -m 1024';
 end;
 
 procedure TdbgpCustomGetWatch.Process(Respond: TdbgpRespond);
+const
+  //sCmd = 'property';
+  sCmd = 'response';
 begin
   inherited;
-  if Respond['property'] <> nil then
+  if Respond[sCmd] <> nil then
   begin
-    if Respond['property'].Attributes['encoding'] = 'base64' then
-      VariableValue := Base64Decode(Respond['property'].Value)
+    if Respond[sCmd].Attributes['encoding'] = 'base64' then
+      VariableValue := Base64Decode(Respond[sCmd].Value)
     else
-      VariableValue := Respond['property'].Value;
+      VariableValue := Respond[sCmd].Value;
 
-    VariableType := Respond['property'].Attributes['type'];
+    VariableType := Respond[sCmd].Attributes['type'];
   end
   else
   begin

@@ -60,7 +60,7 @@ type
   public
     procedure Add(vName: string); virtual; abstract;
     procedure Remove(vName: string); virtual; abstract;
-    function GetValue(vName: string; var vValue: Variant; var vType: string): boolean; virtual; abstract;
+    function GetValue(vName: string; var vValue: Variant; var vType: string; EvalIt: Boolean): boolean; virtual; abstract;
     property Items[Index: integer]: TEditWatch read GetItems; default;
   end;
 
