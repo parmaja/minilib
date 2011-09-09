@@ -1441,7 +1441,7 @@ begin
       tw := GetTextWidth(s) + 12;
       if tw > w then
         w := tw;
-      tw := GetTextWidth(SQLCMD.Current.Items[i - 1].AsString) + 12;
+      tw := GetTextWidth(SQLCMD.Fields.Items[i - 1].AsString) + 12;
       if tw > w then
         w := tw;
       DataGrid.ColWidths[i] := w;
@@ -1456,7 +1456,7 @@ begin
       DataGrid.Cells[0, c] := IntToStr(c);
       for i := 1 to DataGrid.ColCount - 1 do
       begin
-        str := SQLCMD.Current.Items[i - 1].AsString;
+        str := SQLCMD.Fields.Items[i - 1].AsString;
         DataGrid.Cells[i, c] := str;
       end;
       Inc(c);
