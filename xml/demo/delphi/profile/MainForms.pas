@@ -17,6 +17,7 @@ type
   private
     FName: string;
     FChilds: TMyItems;
+    FSingle: Boolean;
     function GetChildsStored: Boolean;
   public
     constructor Create;
@@ -24,6 +25,7 @@ type
   published
     property Name:string read FName write FName;
     property Childs:TMyItems read FChilds write FChilds stored GetChildsStored;
+    property Single: Boolean read FSingle write FSingle default True; 
   end;
 
   TMyItems = class(TmnXMLItems)
@@ -159,7 +161,9 @@ end;
 
 constructor TMyItem.Create;
 begin
+  inherited;
   FChilds := TMyItems.Create;
+  FSingle := True;
 end;
 
 destructor TMyItem.Destroy;

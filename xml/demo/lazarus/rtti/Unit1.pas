@@ -6,19 +6,32 @@ unit Unit1;
  *            See the file COPYING.MLGPL, included in this distribution,
  * @author    Zaher Dirkey <zaher at parmaja dot com>
  *}
+
+{$M+}
+{$H+}
+{$IFDEF FPC}
+{$mode delphi}
+{$ENDIF}
+
 interface
 
 uses
-  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
+  LCLIntf, Messages, SysUtils, Classes, Graphics, Controls, Forms,
   mnXMLStreams, mnXML, mnXMLWriter, mnXMLReader, mnXMLScanner, mnXMLUtils, Dialogs, StdCtrls,
-  mnXMLRttiProfile, mnXMLRttiWriter, mnXMLRttiReader, ExtCtrls, Grids, DBGrids, Menus;
+  mnXMLRttiWriter, mnXMLRttiReader, mnXMLRttiProfile, ExtCtrls, Grids, DBGrids, Menus, LResources;
 
 type
+
+  { TForm1 }
+
   TForm1 = class(TForm)
     Button1: TButton;
     Button2: TButton;
     Button3: TButton;
     Button4: TButton;
+    Button5: TButton;
+    Button6: TButton;
+    CheckBox1: TCheckBox;
     Image1: TImage;
     DBGrid1: TDBGrid;
     PopupMenu1: TPopupMenu;
@@ -49,20 +62,19 @@ type
     Undo1: TMenuItem;
     PopupMenu2: TPopupMenu;
     Memo1: TMemo;
-    Button5: TButton;
-    Button6: TButton;
-    CheckBox1: TCheckBox;
     procedure Button1Click(Sender: TObject);
     procedure Button4Click(Sender: TObject);
     procedure Button3Click(Sender: TObject);
-    procedure Image1Click(Sender: TObject);
     procedure Button5Click(Sender: TObject);
     procedure Button6Click(Sender: TObject);
+    procedure Image1Click(Sender: TObject);
   private
     { Private declarations }
   public
     { Public declarations }
   end;
+
+  { TSetting }
 
   TSetting = class(TmnXMLProfile)
   private
@@ -76,7 +88,7 @@ type
     property Port:string read FPort write FPort;
     property Offline:Boolean read FOffline write FOffline default True;
   end;
-  
+
 var
   Form1: TForm1;
 
@@ -84,11 +96,46 @@ implementation
 
 uses mnXMLNodes;
 
-{$R *.dfm}
+{$r *.lfm}
+
+{ TSetting }
+
+constructor TSetting.Create;
+begin
+  inherited Create;
+  FOffline := True;
+end;
 
 procedure TForm1.Button4Click(Sender: TObject);
 begin
   Close;
+end;
+
+procedure TForm1.Button1Click(Sender: TObject);
+var
+  XMLWriter: TmnXMLRttiWriter;
+begin
+  XMLWriter := TmnXMLRttiWriter.Create(TmnXMLStream.Create(TFileStream.Create(ExtractFilePath(Application.ExeName) + '1.xml', fmCreate)));
+  try
+    XMLWriter.Smart := True;
+    XMLWriter.WriteTypes := False;
+    XMLWriter.WriteRoot(Self);
+    XMLWriter.Stop;
+  finally
+    XMLWriter.Free;
+  end;
+end;
+
+procedure TForm1.Button3Click(Sender: TObject);
+var
+  XMLReader: TmnXMLRttiReader;
+begin
+  XMLReader := TmnXMLRttiReader.Create(ExtractFilePath(Application.ExeName) + '1.xml');
+  try
+    XMLReader.ReadRoot(Memo1);
+  finally
+    XMLReader.Free;
+  end;
 end;
 
 procedure TForm1.Button5Click(Sender: TObject);
@@ -111,44 +158,9 @@ begin
   lSetting.Free;
 end;
 
-procedure TForm1.Button1Click(Sender: TObject);
-var
-  XMLWriter: TmnXMLRttiWriter;
-begin
-  XMLWriter := TmnXMLRttiWriter.Create(TmnXMLStream.Create(TFileStream.Create('1.xml', fmCreate)));
-  try
-    XMLWriter.Smart := True;
-    XMLWriter.WriteTypes := False;
-    XMLWriter.WriteRoot(Memo1);
-    XMLWriter.Stop;
-  finally
-    XMLWriter.Free;
-  end;
-end;
-
-procedure TForm1.Button3Click(Sender: TObject);
-var
-  XMLReader: TmnXMLRttiReader;
-begin
-  XMLReader := TmnXMLRttiReader.Create(TmnXMLStream.Create(TFileStream.Create('1.xml', fmOpenRead)));
-  try
-    XMLReader.ReadRoot(Memo1);
-  finally
-    XMLReader.Free;
-  end;
-end;
-
 procedure TForm1.Image1Click(Sender: TObject);
 begin
   beep;
-end;
-
-{ TSetting }
-
-constructor TSetting.Create;
-begin
-  inherited Create;
-  FOffline := True;
 end;
 
 end.

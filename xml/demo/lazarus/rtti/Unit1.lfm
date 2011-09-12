@@ -1,24 +1,24 @@
 object Form1: TForm1
   Left = 191
+  Height = 348
   Top = 103
-  Caption = #1601#1608#1585#1605
-  ClientHeight = 314
-  ClientWidth = 476
-  Color = clBtnFace
-  Font.Charset = DEFAULT_CHARSET
-  Font.Color = clWindowText
+  Width = 484
+  HorzScrollBar.Page = 483
+  VertScrollBar.Page = 347
+  ActiveControl = Button1
+  Caption = 'Test RTTI'
+  ClientHeight = 348
+  ClientWidth = 484
   Font.Height = -11
   Font.Name = 'MS Sans Serif'
-  Font.Style = []
-  OldCreateOrder = False
-  PixelsPerInch = 96
-  TextHeight = 13
+  LCLVersion = '0.9.31'
   object Image1: TImage
     Left = 114
+    Height = 100
     Top = 18
-    Width = 51
-    Height = 45
+    Width = 54
     Constraints.MaxHeight = 100
+    OnClick = Image1Click
     Picture.Data = {
       07544269746D61700E060000424D0E0600000000000036000000280000001600
       0000160000000100180000000000D8050000C40E0000C40E0000000000000000
@@ -68,113 +68,117 @@ object Form1: TForm1
       FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF
       00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FF0000FF00FFFF00FFFF00FFFF
       00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FF
-      FF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FF0000}
+      FF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FFFF00FF0000
+    }
     PopupMenu = PopupMenu2
-    Transparent = True
-    OnClick = Image1Click
   end
   object Button1: TButton
     Left = 5
+    Height = 25
     Top = 6
     Width = 75
-    Height = 25
+    BorderSpacing.InnerBorder = 4
     Caption = 'Write XML'
-    TabOrder = 0
     OnClick = Button1Click
+    TabOrder = 0
   end
   object Button2: TButton
     Left = 5
-    Top = 104
-    Width = 75
     Height = 25
+    Top = 105
+    Width = 75
+    BorderSpacing.InnerBorder = 4
     Caption = 'Manual Read'
     TabOrder = 2
   end
   object Button3: TButton
-    Left = 5
+    Left = 3
+    Height = 25
     Top = 34
     Width = 75
-    Height = 25
+    BorderSpacing.InnerBorder = 4
     Caption = 'Read XML'
-    TabOrder = 1
     OnClick = Button3Click
+    TabOrder = 1
   end
   object Button4: TButton
-    Left = 5
-    Top = 284
-    Width = 75
+    Left = 3
     Height = 25
+    Top = 253
+    Width = 75
+    BorderSpacing.InnerBorder = 4
     Cancel = True
     Caption = 'Close'
-    TabOrder = 3
     OnClick = Button4Click
+    TabOrder = 3
   end
   object DBGrid1: TDBGrid
-    Left = 133
+    Left = 94
+    Height = 120
     Top = 158
-    Width = 97
-    Height = 102
+    Width = 100
+    Color = clWindow
+    Columns = <    
+      item
+        Title.Caption = 'Title'
+        Title.PrefixOption = poNone
+      end    
+      item
+        Title.Caption = 'Title'
+        Title.PrefixOption = poNone
+      end>
     Constraints.MaxWidth = 100
     DefaultDrawing = False
     FixedColor = clActiveBorder
     Options = [dgEditing, dgIndicator, dgColLines, dgTabs, dgCancelOnExit]
     TabOrder = 4
-    TitleFont.Charset = DEFAULT_CHARSET
-    TitleFont.Color = clWindowText
     TitleFont.Height = -11
     TitleFont.Name = 'MS Sans Serif'
-    TitleFont.Style = []
-    Columns = <
-      item
-        Expanded = False
-        Visible = True
-      end
-      item
-        Expanded = False
-        Visible = True
-      end>
   end
   object Memo1: TMemo
-    Left = 237
-    Top = 158
-    Width = 224
-    Height = 100
+    Left = 254
+    Height = 89
+    Top = 178
+    Width = 185
     Constraints.MaxHeight = 100
     Lines.Strings = (
       'line1'
       'line2'
-      'line3')
+      'line3'
+    )
     TabOrder = 5
   end
-  object Button5: TButton
-    Left = 7
-    Top = 182
-    Width = 75
-    Height = 25
-    Caption = 'Save Settings'
+  object CheckBox1: TCheckBox
+    Left = 217
+    Height = 17
+    Top = 26
+    Width = 73
+    Caption = 'CheckBox1'
     TabOrder = 6
+  end
+  object Button5: TButton
+    Left = 219
+    Height = 25
+    Top = 59
+    Width = 75
+    BorderSpacing.InnerBorder = 4
+    Caption = 'Save Setting'
     OnClick = Button5Click
+    TabOrder = 7
   end
   object Button6: TButton
-    Left = 7
-    Top = 210
-    Width = 75
+    Left = 219
     Height = 25
-    Caption = 'Load Settings'
-    TabOrder = 7
+    Top = 86
+    Width = 75
+    BorderSpacing.InnerBorder = 4
+    Caption = 'Load Setting'
     OnClick = Button6Click
-  end
-  object CheckBox1: TCheckBox
-    Left = 10
-    Top = 157
-    Width = 97
-    Height = 17
-    Caption = 'CheckBox1'
     TabOrder = 8
   end
   object PopupMenu1: TPopupMenu
-    Left = 375
-    Top = 34
+    left = 375
+    top = 34
     object Edit1: TMenuItem
       Caption = '&Edit'
       object Undo1: TMenuItem
@@ -256,7 +260,7 @@ object Form1: TForm1
     end
   end
   object PopupMenu2: TPopupMenu
-    Left = 281
-    Top = 32
+    left = 375
+    top = 93
   end
 end
