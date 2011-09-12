@@ -1,8 +1,8 @@
 object MainForm: TMainForm
-  Left = 519
+  Left = 872
   Height = 395
   Hint = 'Connect F9'
-  Top = 112
+  Top = 168
   Width = 560
   Caption = 'SQLite Viewer'
   ClientHeight = 375

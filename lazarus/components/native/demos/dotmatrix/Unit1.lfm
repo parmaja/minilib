@@ -1,13 +1,13 @@
 object Form1: TForm1
-  Left = 328
+  Left = 236
   Height = 119
-  Top = 168
+  Top = 63
   Width = 590
   Caption = 'Form1'
   ClientHeight = 119
   ClientWidth = 590
   OnCreate = FormCreate
-  LCLVersion = '0.9.29'
+  LCLVersion = '0.9.31'
   object TextDotMatrix: TTextDotMatrix
     Left = 8
     Height = 61
@@ -16,7 +16,6 @@ object Form1: TForm1
     Anchors = [akTop, akLeft, akRight, akBottom]
     Dots.ForeColor = 30715
     Dots.DotSize = 3
-    Dots.Power = False
     Font.CharSet = ARABIC_CHARSET
     Font.Color = clBlack
     Font.Height = -12

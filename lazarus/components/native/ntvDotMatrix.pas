@@ -31,11 +31,11 @@ type
     CellWidth: Integer;
     CellHeight: Integer;
     CellSpace: Integer;
-    Bright: Boolean;
+    Glow: Boolean;
     Mode: TntvDisplayDotMode;
     //
     LightColor: TColor;
-    BrightColor: TColor;
+    GlowColor: TColor;
   end;
 
   { TntvDisplayDots }
@@ -69,7 +69,7 @@ type
     procedure CanvasChanged(Sender: TObject);
     procedure DrawDotMatrix(vCanvas: TCanvas; vRect: TRect);
     function GetCanvas: TCanvas;
-    procedure SetBright(const AValue: Boolean);
+    procedure SetGlow(const AValue: Boolean);
     procedure SetCellSpace(const AValue: Integer);
     procedure SetDim(const AValue: Integer);
     procedure SetOffColor(const AValue: TColor);
@@ -137,7 +137,7 @@ type
     property CellWidth: Integer read FInfo.Matrix.CellWidth write SetCellWidth default 0;
     property CellSpace: Integer read FInfo.Matrix.CellSpace write SetCellSpace default 0;
     //Add antialiasing to Dot, it slow down the render
-    property Bright: Boolean read FInfo.Matrix.Bright write SetBright default False;
+    property Glow: Boolean read FInfo.Matrix.Glow write SetGlow default False;
     property Mode: TntvDisplayDotMode read FInfo.Matrix.Mode write SetMode default dmLed;
     property Theme: TntvDisplayDotTheme read FInfo.Theme write SetTheme stored false;
     property Power: Boolean read FInfo.Power write SetPower default true;
@@ -253,12 +253,12 @@ begin
 
   if v then
   begin
-    if (vInfo.Bright) then
+    if (vInfo.Glow) then
     begin
       if (vInfo.Mode = dmLED) then
       begin
         T := R;
-        Canvas.Brush.Color := vInfo.BrightColor;
+        Canvas.Brush.Color := vInfo.GlowColor;
         InflateRect(T, vInfo.DotsSpace, 0);
         Canvas.FillRect(T);
         T := R;
@@ -268,7 +268,7 @@ begin
       else if (vInfo.Mode = dmLCD) then
       begin
         T := R;
-        Canvas.Brush.Color := vInfo.BrightColor;
+        Canvas.Brush.Color := vInfo.GlowColor;
         OffsetRect(T, vInfo.DotsSpace, vInfo.DotsSpace);
         Canvas.FillRect(T);
       end;
@@ -533,11 +533,11 @@ begin
   Result := Bitmap.Canvas;
 end;
 
-procedure TntvDisplayDots.SetBright(const AValue: Boolean);
+procedure TntvDisplayDots.SetGlow(const AValue: Boolean);
 begin
-  if FInfo.Matrix.Bright <> AValue then
+  if FInfo.Matrix.Glow <> AValue then
   begin
-    FInfo.Matrix.Bright := AValue;
+    FInfo.Matrix.Glow := AValue;
     UpdateColors;
     Update;
   end;
@@ -792,7 +792,7 @@ begin
       FInfo.Matrix.LightColor := Lighten(FInfo.Matrix._ForeColor, 120)
     else
       FInfo.Matrix.LightColor := FInfo.Matrix._ForeColor;
-    FInfo.Matrix.BrightColor := MixColors(FInfo.Matrix._ForeColor, FInfo.BackColor, 150);
+    FInfo.Matrix.GlowColor := MixColors(FInfo.Matrix._ForeColor, FInfo.BackColor, 150);
   end
   else //dmLCD
   begin
@@ -800,7 +800,7 @@ begin
       FInfo.Matrix._OffColor := MixColors(FInfo.ForeColor, FInfo.BackColor, 15);
     CalcForeColor;
     FInfo.Matrix.LightColor := FInfo.Matrix._ForeColor;
-    FInfo.Matrix.BrightColor := MixColors(FInfo.Matrix._ForeColor, FInfo.BackColor, 50);
+    FInfo.Matrix.GlowColor := MixColors(FInfo.Matrix._ForeColor, FInfo.BackColor, 50);
   end;
 end;
 

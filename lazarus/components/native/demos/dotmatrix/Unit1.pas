@@ -140,7 +140,7 @@ end;
 
 procedure TForm1.CheckBox1Change(Sender: TObject);
 begin
-  TextDotMatrix.Dots.Bright := CheckBox1.Checked;
+  TextDotMatrix.Dots.Glow := CheckBox1.Checked;
 end;
 
 procedure TForm1.DimTimerTimer(Sender: TObject);

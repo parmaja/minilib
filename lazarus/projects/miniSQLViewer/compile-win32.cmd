@@ -4,7 +4,7 @@ del bin\sqliteviewer.exe
 fpc gui\sqliteviewer.lpr @extrafpc.cfg -B -d%1
 if errorlevel 1 goto erroroccurred
 
-e:\utils\upx bin\win32\sqliteviewer.exe
+upx bin\win32\sqliteviewer.exe
 if errorlevel 1 goto erroroccurred
 
 goto noerrors

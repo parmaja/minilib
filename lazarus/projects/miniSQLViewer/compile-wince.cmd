@@ -4,7 +4,7 @@ del bin\wince\sqliteviewer.exe
 fpc gui\sqliteviewer.lpr @extrafpc.cfg -B -d%1 -TWinCE -Parm
 if errorlevel 1 goto erroroccurred
 
-e:\utils\upx bin\wince\sqliteviewer.exe
+Upx bin\wince\sqliteviewer.exe
 if errorlevel 1 goto erroroccurred
 
 call copy-pocketpc.cmd

@@ -35,14 +35,20 @@
         <LaunchingApplication PathPlusParams="/usr/X11R6/bin/xterm -T 'Lazarus Run Output' -e $(LazarusDir)/tools/runwait.sh $(TargetCmdLine)"/>
       </local>
     </RunParams>
-    <RequiredPackages Count="2">
+    <RequiredPackages Count="4">
       <Item1>
-        <PackageName Value="SynEdit"/>
-        <MinVersion Major="1" Valid="True"/>
+        <PackageName Value="MiniLib"/>
       </Item1>
       <Item2>
-        <PackageName Value="LCL"/>
+        <PackageName Value="MiniBaseLib"/>
       </Item2>
+      <Item3>
+        <PackageName Value="SynEdit"/>
+        <MinVersion Major="1" Valid="True"/>
+      </Item3>
+      <Item4>
+        <PackageName Value="LCL"/>
+      </Item4>
     </RequiredPackages>
     <Units Count="6">
       <Unit0>
@@ -91,7 +97,7 @@
     </Target>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)"/>
-      <OtherUnitFiles Value="..\lib;W:\home\pascal\lib\minilib\lib\;W:\home\pascal\lib\minilib\lazarus\lib\;W:\home\pascal\lib\minilib\connection\source\;W:\home\pascal\lib\minilib\connection\db\;W:\home\pascal\lib\minilib\connection\db\sqlite\;W:\home\pascal\lib\minilib\xml\source\;W:\programs\lazarus\components\synedit\"/>
+      <OtherUnitFiles Value="..\lib"/>
       <UnitOutputDirectory Value="..\units"/>
     </SearchPaths>
     <Parsing>
