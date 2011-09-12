@@ -33,7 +33,7 @@ type
     ThemeList: TComboBox;
     Edit1: TEdit;
     Image1: TImage;
-    TextDotMatrix: TTextDotMatrix;
+    TextDotMatrix: TntvTextDotMatrix;
     TimerX: TTimer;
     DimTimer: TTimer;
     TimerY: TTimer;

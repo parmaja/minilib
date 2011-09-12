@@ -31,7 +31,7 @@ implementation
 
 procedure Register;
 begin
-  RegisterComponents('Native', [TDotMatrix, TTextDotMatrix, TntvProgressBar,
+  RegisterComponents('Native', [TntvDotMatrix, TntvTextDotMatrix, TntvProgressBar,
     TntvTabSet, TntvPageControl]);
   RegisterComponentEditor(TntvCustomTabSet, TntvTabSetEditor);
 end;
@@ -78,5 +78,7 @@ begin
   inherited;
 end;
 
+initialization
+  {$i ntvCtrlsLib.lrs}
 end.
 

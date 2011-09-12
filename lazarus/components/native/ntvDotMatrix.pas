@@ -144,9 +144,9 @@ type
     property Dim: Integer read FInfo.Dim write SetDim default 0;
   end;
 
-  { TDotMatrix }
+  { TntvDotMatrix }
 
-  TDotMatrix = class(TCustomControl)
+  TntvDotMatrix = class(TCustomControl)
   private
     FDots: TntvDisplayDots;
     procedure SetDots(const AValue: TntvDisplayDots);
@@ -175,9 +175,9 @@ type
     property ParentFont;
   end;
 
-  { TTextDotMatrix }
+  { TntvTextDotMatrix }
 
-  TTextDotMatrix = class(TDotMatrix)
+  TntvTextDotMatrix = class(TntvDotMatrix)
   private
     FAlignment: TAlignment;
     FMargin: Integer;
@@ -330,9 +330,9 @@ begin
   end;
 end;
 
-{ TDotMatrix }
+{ TntvDotMatrix }
 
-constructor TDotMatrix.Create(AOwner: TComponent);
+constructor TntvDotMatrix.Create(AOwner: TComponent);
 begin
   inherited;
   ControlStyle := ControlStyle + [csSetCaption, csDoubleClicks] - [csOpaque];
@@ -342,29 +342,29 @@ begin
   Color := clBlack;
 end;
 
-destructor TDotMatrix.Destroy;
+destructor TntvDotMatrix.Destroy;
 begin
   FreeAndNil(FDots);
   inherited;
 end;
 
-procedure TDotMatrix.SetDots(const AValue: TntvDisplayDots);
+procedure TntvDotMatrix.SetDots(const AValue: TntvDisplayDots);
 begin
   FDots.Assign(AValue);
 end;
 
-procedure TDotMatrix.Paint;
+procedure TntvDotMatrix.Paint;
 begin
   inherited;
   Dots.Draw(Canvas, ClientRect);
 end;
 
-procedure TDotMatrix.EraseBackground(DC: HDC);
+procedure TntvDotMatrix.EraseBackground(DC: HDC);
 begin
   //To reduce the flicker do not inherite
 end;
 
-procedure TDotMatrix.CMBiidModeChanged(var Message: TLMessage);
+procedure TntvDotMatrix.CMBiidModeChanged(var Message: TLMessage);
 begin
   BeginUpdate;
   try
@@ -375,21 +375,21 @@ begin
   end;
 end;
 
-procedure TDotMatrix.UpdateDisplay;
+procedure TntvDotMatrix.UpdateDisplay;
 begin
 end;
 
-procedure TDotMatrix.DoRefresh(Sender: TObject);
+procedure TntvDotMatrix.DoRefresh(Sender: TObject);
 begin
   Refresh;
 end;
 
-procedure TDotMatrix.DoUpdateDisplay(Sender: TObject);
+procedure TntvDotMatrix.DoUpdateDisplay(Sender: TObject);
 begin
   UpdateDisplay;
 end;
 
-procedure TDotMatrix.Resize;
+procedure TntvDotMatrix.Resize;
 begin
   inherited Resize;
   if not (csLoading in ComponentState) then
@@ -399,7 +399,7 @@ begin
   end;
 end;
 
-procedure TDotMatrix.Loaded;
+procedure TntvDotMatrix.Loaded;
 begin
   inherited Loaded;
   FDots.Canvas.Font.Assign(Font);
@@ -407,12 +407,12 @@ begin
   UpdateDisplay;
 end;
 
-procedure TDotMatrix.BeginUpdate;
+procedure TntvDotMatrix.BeginUpdate;
 begin
   Dots.BeginUpdate;
 end;
 
-procedure TDotMatrix.EndUpdate;
+procedure TntvDotMatrix.EndUpdate;
 begin
   Dots.EndUpdate;
 end;
@@ -840,9 +840,9 @@ begin
     OnUpdateDisplay(Self);
 end;
 
-{ TTextDotMatrix }
+{ TntvTextDotMatrix }
 
-procedure TTextDotMatrix.SetAlignment(AValue: TAlignment);
+procedure TntvTextDotMatrix.SetAlignment(AValue: TAlignment);
 begin
   if FAlignment <> AValue then
   begin
@@ -851,14 +851,14 @@ begin
   end;
 end;
 
-procedure TTextDotMatrix.SetMargin(const AValue: Integer);
+procedure TntvTextDotMatrix.SetMargin(const AValue: Integer);
 begin
   if FMargin =AValue then exit;
   FMargin :=AValue;
   UpdateDisplay;
 end;
 
-procedure TTextDotMatrix.SetText(const Value: TCaption);
+procedure TntvTextDotMatrix.SetText(const Value: TCaption);
 begin
   if (FText <> Value) then
   begin
@@ -868,20 +868,20 @@ begin
   end;
 end;
 
-procedure TTextDotMatrix.SetWordWrap(const AValue: Boolean);
+procedure TntvTextDotMatrix.SetWordWrap(const AValue: Boolean);
 begin
   if FWordWrap =AValue then exit;
   FWordWrap :=AValue;
   UpdateDisplay;
 end;
 
-procedure TTextDotMatrix.FontChanged(Sender: TObject);
+procedure TntvTextDotMatrix.FontChanged(Sender: TObject);
 begin
   inherited FontChanged(Sender);
   UpdateDisplay;
 end;
 
-procedure TTextDotMatrix.UpdateDisplay;
+procedure TntvTextDotMatrix.UpdateDisplay;
 var
   aRect: TRect;
   TR: TTextStyle;
@@ -915,7 +915,7 @@ begin
   end;
 end;
 
-constructor TTextDotMatrix.Create(AOwner: TComponent);
+constructor TntvTextDotMatrix.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
   FAlignment := taLeftJustify;

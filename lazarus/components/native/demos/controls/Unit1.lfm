@@ -1,7 +1,7 @@
 object Form1: TForm1
-  Left = 463
+  Left = 243
   Height = 362
-  Top = 387
+  Top = 238
   Width = 418
   ActiveControl = Edit1
   Caption = 'Form1'
@@ -90,25 +90,6 @@ object Form1: TForm1
       end>
     Caption = 'ntvPageControl1'
     TabOrder = 6
-    object Panel1: TPanel
-      Left = 3
-      Height = 127
-      Top = 21
-      Width = 247
-      Align = alClient
-      Caption = 'Panel1'
-      ClientHeight = 127
-      ClientWidth = 247
-      TabOrder = 0
-      object Edit2: TEdit
-        Left = 46
-        Height = 21
-        Top = 12
-        Width = 80
-        TabOrder = 0
-        Text = 'Edit2'
-      end
-    end
     object Panel2: TPanel
       Left = 3
       Height = 127
@@ -126,6 +107,25 @@ object Form1: TForm1
         Width = 80
         TabOrder = 0
         Text = 'Edit1'
+      end
+    end
+    object Panel1: TPanel
+      Left = 3
+      Height = 127
+      Top = 21
+      Width = 247
+      Align = alClient
+      Caption = 'Panel1'
+      ClientHeight = 127
+      ClientWidth = 247
+      TabOrder = 0
+      object Edit2: TEdit
+        Left = 46
+        Height = 21
+        Top = 12
+        Width = 80
+        TabOrder = 0
+        Text = 'Edit2'
       end
     end
   end
