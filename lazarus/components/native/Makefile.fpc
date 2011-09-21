@@ -2,7 +2,7 @@
 #
 #   Makefile.fpc for NativeLib 1.0.1.1
 #
-#   This file was generated on 17/06/2011
+#   This file was generated on 21/09/2011
 
 [package]
 name=nativelib
@@ -11,7 +11,7 @@ version=1.0.1.1
 [compiler]
 unittargetdir=./units/$(CPU_TARGET)-$(OS_TARGET)
 unitdir=../../../lib/units/$(CPU_TARGET)-$(OS_TARGET) ../../lib/units/$(CPU_TARGET)-$(OS_TARGET) w:/programs/lazarus/components/synedit/units/$(CPU_TARGET)-$(OS_TARGET) w:/programs/lazarus/ideintf/units/$(CPU_TARGET)-$(OS_TARGET) w:/programs/lazarus/lcl/units/$(CPU_TARGET)-$(OS_TARGET)/$(LCL_PLATFORM) w:/programs/lazarus/lcl/units/$(CPU_TARGET)-$(OS_TARGET) w:/programs/lazarus/packager/units/$(CPU_TARGET)-$(OS_TARGET) .
-options= -MObjFPC -Scgim -O1 -gl -vew -l -dLCL -dLCL$(LCL_PLATFORM)
+options= -MObjFPC -Scgim -O1 -gw2 -godwarfsets -gl -vew -l -dLCL -dLCL$(LCL_PLATFORM)
 
 [target]
 units=NativeLib.pas

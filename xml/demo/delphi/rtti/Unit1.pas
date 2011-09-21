@@ -115,11 +115,12 @@ procedure TForm1.Button1Click(Sender: TObject);
 var
   XMLWriter: TmnXMLRttiWriter;
 begin
+  Constraints
   XMLWriter := TmnXMLRttiWriter.Create(TmnXMLStream.Create(TFileStream.Create('1.xml', fmCreate)));
   try
     XMLWriter.Smart := True;
     XMLWriter.WriteTypes := False;
-    XMLWriter.WriteRoot(Memo1);
+    XMLWriter.WriteRoot(Self);
     XMLWriter.Stop;
   finally
     XMLWriter.Free;
