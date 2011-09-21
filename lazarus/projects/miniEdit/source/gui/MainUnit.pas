@@ -27,7 +27,9 @@ uses
   Dialogs, StdCtrls, Math, ComCtrls, ExtCtrls, ImgList, Menus, ToolWin,
   Buttons, FileCtrl, ShellCtrls, ActnList, EditorEngine, mneClasses, StdActns,
   PairSplitter, SynEditHighlighter, SynEdit, IAddons,
+  {$ifdef WINDOWS}
   TSVN_SCM, TGIT_SCM,
+  {$endif}
   ntvTabSets, mneRun, Registry, SynEditPlugins,
   //Addons
   {$ifdef Windows}
@@ -2389,4 +2391,4 @@ begin
   Log(0, ACaption, AMsg, '', 0);
 end;
 
-end.
+end.

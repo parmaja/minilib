@@ -35,6 +35,7 @@
           <Linking>
             <Debugging>
               <GenerateDebugInfo Value="True"/>
+              <DebugInfoType Value="dsStabs"/>
               <UseExternalDbgSyms Value="True"/>
             </Debugging>
             <Options>
@@ -88,11 +89,11 @@
       </Item4>
       <Item5>
         <PackageName Value="FCL"/>
-        <MinVersion Major="1" Release="1" Valid="True"/>
+        <MinVersion Major="1" Valid="True" Release="1"/>
       </Item5>
       <Item6>
         <PackageName Value="LCLBase"/>
-        <MinVersion Major="1" Release="1" Valid="True"/>
+        <MinVersion Major="1" Valid="True" Release="1"/>
       </Item6>
       <Item7>
         <PackageName Value="LazControls"/>
@@ -329,7 +330,7 @@
     <Linking>
       <Debugging>
         <GenerateDebugInfo Value="True"/>
-        <GenerateDwarf Value="True"/>
+        <DebugInfoType Value="dsDwarf2Set"/>
       </Debugging>
       <Options>
         <Win32>

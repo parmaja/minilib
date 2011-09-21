@@ -75,6 +75,7 @@ procedure TEditorSetupForm.FormCreate(Sender: TObject);
 var
   aIniFile: TIniFile;
 begin
+  WorkspaceEdit.Items.Add('.');
   {$ifdef windows}
   WorkspaceEdit.Items.Add('C:\workspace');
   if DirectoryExists('D:\') then
@@ -92,4 +93,4 @@ begin
   end;
 end;
 
-end.
+end.

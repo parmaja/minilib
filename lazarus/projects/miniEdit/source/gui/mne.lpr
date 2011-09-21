@@ -46,7 +46,7 @@ uses
   mneBreakpoints in 'mneBreakpoints.pas' {BreakpointsForm},
   SearchInFilesForms in '..\editor\SearchInFilesForms.pas' {SearchInFilesForm},
   SearchProgressForms in '..\editor\SearchProgressForms.pas',
-  EditorDebugger, TSVN_SCM, PHP_xDebug, SelectList,
+  EditorDebugger, PHP_xDebug, SelectList,
   SynHighlighterApache in '..\lib\SynHighlighterApache.pas',
   IniFiles,
   mneAddons, mneAssociateForm,
@@ -128,4 +128,4 @@ begin
       Application.Run;
     end;
   end;
-end.
+end.
