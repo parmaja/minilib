@@ -28,32 +28,32 @@ object AssociateForm: TAssociateForm
   end
   object PHPChk: TCheckBox
     Left = 14
-    Height = 17
+    Height = 22
     Top = 26
-    Width = 39
+    Width = 45
     Caption = '.php'
     TabOrder = 0
   end
   object CSSChk: TCheckBox
     Left = 14
-    Height = 17
+    Height = 22
     Top = 44
-    Width = 37
+    Width = 45
     Caption = '.css'
     TabOrder = 1
   end
   object EditAssociateSupportedChk: TCheckBox
     Left = 14
-    Height = 17
+    Height = 22
     Top = 79
-    Width = 201
+    Width = 213
     Caption = 'Associate "Edit" with all supported files'
     TabOrder = 2
   end
   object OkBtn: TButton
-    Left = 106
+    Left = 188
     Height = 25
-    Top = 111
+    Top = 112
     Width = 75
     Anchors = [akRight, akBottom]
     Caption = '&Ok'
@@ -63,9 +63,9 @@ object AssociateForm: TAssociateForm
     TabOrder = 3
   end
   object CancelBtn: TButton
-    Left = 184
+    Left = 113
     Height = 25
-    Top = 111
+    Top = 112
     Width = 75
     Anchors = [akRight, akBottom]
     Cancel = True
@@ -73,4 +73,4 @@ object AssociateForm: TAssociateForm
     ModalResult = 2
     TabOrder = 4
   end
-end
+end

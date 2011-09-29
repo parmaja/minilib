@@ -14,9 +14,9 @@ object EditorSettingForm: TEditorSettingForm
   Position = poMainFormCenter
   LCLVersion = '0.9.31'
   object OkBtn: TButton
-    Left = 266
+    Left = 347
     Height = 26
-    Top = 246
+    Top = 247
     Width = 75
     Anchors = [akRight, akBottom]
     Caption = '&Ok'
@@ -25,9 +25,9 @@ object EditorSettingForm: TEditorSettingForm
     TabOrder = 0
   end
   object CancelBtn: TButton
-    Left = 344
+    Left = 270
     Height = 26
-    Top = 246
+    Top = 247
     Width = 75
     Anchors = [akRight, akBottom]
     Cancel = True
@@ -45,20 +45,20 @@ object EditorSettingForm: TEditorSettingForm
     TabOrder = 2
     object TabSheet2: TTabSheet
       Caption = 'Options'
-      ClientHeight = 212
-      ClientWidth = 411
+      ClientHeight = 204
+      ClientWidth = 413
       ImageIndex = 1
       object Label3: TLabel
         Left = 7
         Height = 14
         Top = 80
-        Width = 215
+        Width = 223
         Caption = 'This words will be cached and updated every'
         ParentColor = False
       end
       object CollectTimeoutEdit: TEdit
         Left = 224
-        Height = 21
+        Height = 23
         Top = 77
         Width = 61
         TabOrder = 0
@@ -66,7 +66,7 @@ object EditorSettingForm: TEditorSettingForm
       end
       object CollectTimeoutSpn: TUpDown
         Left = 285
-        Height = 21
+        Height = 23
         Top = 77
         Width = 15
         Associate = CollectTimeoutEdit
@@ -78,25 +78,25 @@ object EditorSettingForm: TEditorSettingForm
       end
       object CollectAutoCompleteChk: TCheckBox
         Left = 7
-        Height = 17
+        Height = 22
         Top = 53
-        Width = 305
+        Width = 322
         Caption = 'Auto complete variables and identifiers in whole project folder'
         TabOrder = 2
       end
       object SendOutputToNewFileChk: TCheckBox
         Left = 7
-        Height = 17
+        Height = 22
         Top = 30
-        Width = 127
+        Width = 136
         Caption = 'Send output to new file'
         TabOrder = 3
       end
       object AutoStartDebugServerChk: TCheckBox
         Left = 7
-        Height = 17
+        Height = 22
         Top = 9
-        Width = 189
+        Width = 202
         Caption = 'Auto start debug mode when startup'
         TabOrder = 4
       end
@@ -104,15 +104,15 @@ object EditorSettingForm: TEditorSettingForm
         Left = 7
         Height = 14
         Top = 100
-        Width = 327
+        Width = 338
         Caption = 'You must have a project and define the root folder to use this feature.'
         ParentColor = False
       end
     end
     object TabSheet4: TTabSheet
       Caption = 'Extensions'
-      ClientHeight = 212
-      ClientWidth = 411
+      ClientHeight = 204
+      ClientWidth = 413
       ImageIndex = 3
       object Label9: TLabel
         Left = 5
@@ -150,4 +150,4 @@ object EditorSettingForm: TEditorSettingForm
       end
     end
   end
-end
+end

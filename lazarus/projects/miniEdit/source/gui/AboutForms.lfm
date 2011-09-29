@@ -17,7 +17,7 @@ object AboutForm: TAboutForm
     Left = 51
     Height = 14
     Top = 19
-    Width = 41
+    Width = 39
     Caption = 'Mini Edit'
     ParentColor = False
   end
@@ -264,7 +264,7 @@ object AboutForm: TAboutForm
     Left = 72
     Height = 14
     Top = 50
-    Width = 193
+    Width = 192
     Caption = 'http://www.github.com/parmaja/miniedit'
     Font.Color = clBlue
     Font.Height = -11
@@ -277,15 +277,15 @@ object AboutForm: TAboutForm
     Left = 126
     Height = 14
     Top = 19
-    Width = 35
+    Width = 37
     Caption = 'version'
     ParentColor = False
   end
   object Label6: TLabel
-    Left = 350
+    Left = 18
     Height = 14
-    Top = 311
-    Width = 113
+    Top = 304
+    Width = 115
     Anchors = [akRight, akBottom]
     Caption = 'Writen by: Zaher Dirkey'
     ParentColor = False
@@ -294,7 +294,7 @@ object AboutForm: TAboutForm
     Left = 14
     Height = 14
     Top = 50
-    Width = 53
+    Width = 54
     Caption = 'Project site'
     ParentColor = False
   end
@@ -302,7 +302,7 @@ object AboutForm: TAboutForm
     Left = 9
     Height = 14
     Top = 198
-    Width = 39
+    Width = 40
     Caption = 'Portions'
     ParentColor = False
   end
@@ -311,7 +311,7 @@ object AboutForm: TAboutForm
     Left = 91
     Height = 14
     Top = 216
-    Width = 162
+    Width = 171
     Caption = 'http://www.lazarus.freepascal.org'
     Font.Color = clBlue
     Font.Height = -11
@@ -324,7 +324,7 @@ object AboutForm: TAboutForm
     Left = 18
     Height = 14
     Top = 216
-    Width = 38
+    Width = 41
     Caption = 'Lazarus'
     ParentColor = False
   end
@@ -332,7 +332,7 @@ object AboutForm: TAboutForm
     Left = 18
     Height = 14
     Top = 277
-    Width = 50
+    Width = 49
     Caption = 'InnoSetup'
     ParentColor = False
   end
@@ -341,7 +341,7 @@ object AboutForm: TAboutForm
     Left = 91
     Height = 14
     Top = 277
-    Width = 127
+    Width = 134
     Caption = 'http://www.jrsoftware.org/'
     Font.Color = clBlue
     Font.Height = -11
@@ -355,7 +355,7 @@ object AboutForm: TAboutForm
     Left = 91
     Height = 14
     Top = 256
-    Width = 112
+    Width = 116
     Caption = 'http://www.xdebug.org'
     Font.Color = clBlue
     Font.Height = -11
@@ -368,7 +368,7 @@ object AboutForm: TAboutForm
     Left = 18
     Height = 14
     Top = 256
-    Width = 40
+    Width = 39
     Caption = 'XDebug'
     ParentColor = False
   end
@@ -377,7 +377,7 @@ object AboutForm: TAboutForm
     Left = 91
     Height = 14
     Top = 236
-    Width = 126
+    Width = 132
     Caption = 'http://www.freepascal.org'
     Font.Color = clBlue
     Font.Height = -11
@@ -390,12 +390,12 @@ object AboutForm: TAboutForm
     Left = 18
     Height = 14
     Top = 236
-    Width = 53
+    Width = 55
     Caption = 'Freepascal'
     ParentColor = False
   end
   object Button1: TButton
-    Left = 5
+    Left = 389
     Height = 23
     Top = 302
     Width = 75
@@ -932,4 +932,4 @@ object AboutForm: TAboutForm
       601FA0DFE12030072230FF07FDED7251DFB43BA10000000049454E44AE426082
     }
   end
-end
+end

@@ -21,7 +21,7 @@ object EditorSetupForm: TEditorSetupForm
     ParentColor = False
   end
   object Label2: TLabel
-    Left = 24
+    Left = 17
     Height = 14
     Top = 54
     Width = 89
@@ -29,16 +29,16 @@ object EditorSetupForm: TEditorSetupForm
     ParentColor = False
   end
   object Button1: TButton
-    Left = 447
-    Height = 20
-    Top = 75
-    Width = 22
-    Caption = '...'
+    Left = 400
+    Height = 27
+    Top = 104
+    Width = 75
+    Caption = 'Browse'
     OnClick = Button1Click
     TabOrder = 1
   end
   object OkBtn: TButton
-    Left = 321
+    Left = 403
     Height = 26
     Top = 248
     Width = 75
@@ -49,7 +49,7 @@ object EditorSetupForm: TEditorSetupForm
     TabOrder = 2
   end
   object CancelBtn: TButton
-    Left = 400
+    Left = 326
     Height = 26
     Top = 248
     Width = 75
@@ -59,10 +59,10 @@ object EditorSetupForm: TEditorSetupForm
     TabOrder = 3
   end
   object WorkspaceEdit: TComboBox
-    Left = 24
+    Left = 23
     Height = 27
     Top = 74
-    Width = 420
+    Width = 455
     ItemHeight = 0
     TabOrder = 0
   end

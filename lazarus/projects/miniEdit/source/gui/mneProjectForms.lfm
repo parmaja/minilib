@@ -23,23 +23,25 @@ object ManageProjectsForm: TManageProjectsForm
     TabOrder = 0
     object TabSheet1: TTabSheet
       Caption = 'Projects'
-      ClientHeight = 272
-      ClientWidth = 460
+      ClientHeight = 264
+      ClientWidth = 462
       object ProjectsList: TListBox
         Left = 1
-        Height = 236
+        Height = 228
         Top = 2
-        Width = 463
+        Width = 465
         Anchors = [akTop, akLeft, akRight, akBottom]
         ItemHeight = 18
         OnDblClick = ProjectsListDblClick
+        ScrollWidth = 463
         Style = lbOwnerDrawFixed
         TabOrder = 0
+        TopIndex = -1
       end
       object Button1: TButton
         Left = 80
         Height = 25
-        Top = 242
+        Top = 234
         Width = 75
         Anchors = [akLeft, akBottom]
         Caption = 'Add'
@@ -49,7 +51,7 @@ object ManageProjectsForm: TManageProjectsForm
       object Button3: TButton
         Left = 3
         Height = 25
-        Top = 242
+        Top = 234
         Width = 75
         Anchors = [akLeft, akBottom]
         Caption = 'New'
@@ -59,7 +61,7 @@ object ManageProjectsForm: TManageProjectsForm
       object MoveDownBtn: TButton
         Left = 386
         Height = 25
-        Top = 242
+        Top = 234
         Width = 75
         Anchors = [akLeft, akBottom]
         Caption = 'Move Down'
@@ -69,7 +71,7 @@ object ManageProjectsForm: TManageProjectsForm
       object MoveUpBtn: TButton
         Left = 309
         Height = 25
-        Top = 242
+        Top = 234
         Width = 75
         Anchors = [akLeft, akBottom]
         Caption = 'Move Up'
@@ -79,42 +81,46 @@ object ManageProjectsForm: TManageProjectsForm
     end
     object TabSheet2: TTabSheet
       Caption = 'Recent Projects'
-      ClientHeight = 272
-      ClientWidth = 460
+      ClientHeight = 264
+      ClientWidth = 462
       ImageIndex = 1
       object RProjectsList: TListBox
         Left = 1
-        Height = 263
+        Height = 255
         Top = 4
-        Width = 456
+        Width = 458
         Anchors = [akTop, akLeft, akRight, akBottom]
         ItemHeight = 18
         OnDblClick = ProjectsListDblClick
         PopupMenu = PopupMnu
+        ScrollWidth = 456
         Style = lbOwnerDrawFixed
         TabOrder = 0
+        TopIndex = -1
       end
     end
     object TabSheet3: TTabSheet
       Caption = 'Recent files'
-      ClientHeight = 272
-      ClientWidth = 460
+      ClientHeight = 264
+      ClientWidth = 462
       ImageIndex = 2
       object RFilesList: TListBox
         Left = 1
-        Height = 263
+        Height = 255
         Top = 4
-        Width = 456
+        Width = 458
         Anchors = [akTop, akLeft, akRight, akBottom]
         ItemHeight = 18
         OnDblClick = ProjectsListDblClick
+        ScrollWidth = 456
         Style = lbOwnerDrawFixed
         TabOrder = 0
+        TopIndex = -1
       end
     end
   end
   object OpenBtn: TButton
-    Left = 319
+    Left = 398
     Height = 26
     Top = 306
     Width = 75
@@ -126,7 +132,7 @@ object ManageProjectsForm: TManageProjectsForm
     TabOrder = 1
   end
   object CloseBtn: TButton
-    Left = 396
+    Left = 321
     Height = 26
     Top = 306
     Width = 75
@@ -154,4 +160,4 @@ object ManageProjectsForm: TManageProjectsForm
       OnClick = AddtoProjects1Click
     end
   end
-end
+end

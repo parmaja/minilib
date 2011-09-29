@@ -1,11 +1,11 @@
 object SearchForm: TSearchForm
   Left = 256
-  Height = 216
+  Height = 240
   Top = 77
   Width = 332
   BorderStyle = bsDialog
   Caption = 'Search Text'
-  ClientHeight = 216
+  ClientHeight = 240
   ClientWidth = 332
   Font.Height = -11
   Font.Name = 'MS Sans Serif'
@@ -14,22 +14,22 @@ object SearchForm: TSearchForm
   object Label1: TLabel
     Left = 11
     Height = 14
-    Top = 11
-    Width = 73
+    Top = 12
+    Width = 77
     Caption = '&Search for text:'
     ParentColor = False
   end
   object SearchTextEdit: TComboBox
     Left = 109
-    Height = 21
-    Top = 8
+    Height = 27
+    Top = 5
     Width = 214
-    ItemHeight = 13
+    ItemHeight = 0
     TabOrder = 0
   end
   object SearchOptionsGrp: TGroupBox
     Left = 8
-    Height = 119
+    Height = 141
     Top = 62
     Width = 154
     Caption = 'Options'
@@ -42,12 +42,12 @@ object SearchForm: TSearchForm
     ChildSizing.ShrinkVertical = crsScaleChilds
     ChildSizing.Layout = cclLeftToRightThenTopToBottom
     ChildSizing.ControlsPerLine = 1
-    ClientHeight = 101
+    ClientHeight = 126
     ClientWidth = 150
     TabOrder = 3
     object SearchCaseSensitiveChk: TCheckBox
       Left = 5
-      Height = 25
+      Height = 31
       Top = 2
       Width = 140
       Caption = 'C&ase sensitivity'
@@ -55,24 +55,24 @@ object SearchForm: TSearchForm
     end
     object SearchWholeWordsChk: TCheckBox
       Left = 5
-      Height = 25
-      Top = 27
+      Height = 31
+      Top = 33
       Width = 140
       Caption = '&Whole words only'
       TabOrder = 1
     end
     object SearchFromCursorChk: TCheckBox
       Left = 5
-      Height = 25
-      Top = 52
+      Height = 31
+      Top = 64
       Width = 140
       Caption = 'Search from &Cursor'
       TabOrder = 2
     end
     object SearchSelectedOnlyChk: TCheckBox
       Left = 5
-      Height = 22
-      Top = 77
+      Height = 29
+      Top = 95
       Width = 140
       Caption = '&Selected text only'
       TabOrder = 3
@@ -93,7 +93,7 @@ object SearchForm: TSearchForm
     ChildSizing.ShrinkVertical = crsScaleChilds
     ChildSizing.Layout = cclLeftToRightThenTopToBottom
     ChildSizing.ControlsPerLine = 1
-    ClientHeight = 51
+    ClientHeight = 54
     ClientWidth = 150
     ItemIndex = 0
     Items.Strings = (
@@ -103,22 +103,22 @@ object SearchForm: TSearchForm
     TabOrder = 4
   end
   object OKBtn: TButton
-    Left = 8
-    Height = 26
-    Top = 186
+    Left = 248
+    Height = 27
+    Top = 210
     Width = 75
-    Anchors = [akLeft, akBottom]
+    Anchors = [akRight, akBottom]
     Caption = 'OK'
     Default = True
     ModalResult = 1
     TabOrder = 5
   end
   object CancelBtn: TButton
-    Left = 87
-    Height = 26
-    Top = 186
+    Left = 171
+    Height = 27
+    Top = 210
     Width = 75
-    Anchors = [akLeft, akBottom]
+    Anchors = [akRight, akBottom]
     Cancel = True
     Caption = 'Cancel'
     ModalResult = 2
@@ -126,18 +126,18 @@ object SearchForm: TSearchForm
   end
   object ReplaceWithEdit: TComboBox
     Left = 109
-    Height = 21
+    Height = 27
     Top = 34
     Width = 214
     Color = clBtnFace
-    ItemHeight = 13
+    ItemHeight = 0
     TabOrder = 2
   end
   object ReplaceWithChk: TCheckBox
     Left = 10
-    Height = 17
-    Top = 36
-    Width = 86
+    Height = 22
+    Top = 37
+    Width = 90
     Caption = '&Replace With:'
     OnClick = ReplaceWithChkClick
     TabOrder = 1
@@ -157,12 +157,12 @@ object SearchForm: TSearchForm
     ChildSizing.ShrinkVertical = crsScaleChilds
     ChildSizing.Layout = cclLeftToRightThenTopToBottom
     ChildSizing.ControlsPerLine = 1
-    ClientHeight = 53
+    ClientHeight = 56
     ClientWidth = 150
     TabOrder = 7
     object ReplaceAllChk: TCheckBox
       Left = 5
-      Height = 25
+      Height = 26
       Top = 2
       Width = 140
       Caption = 'Replace &All'
@@ -172,8 +172,8 @@ object SearchForm: TSearchForm
     end
     object PromptOnReplaceChk: TCheckBox
       Left = 5
-      Height = 24
-      Top = 27
+      Height = 26
+      Top = 28
       Width = 140
       Caption = '&Prompt on replace'
       Checked = True
@@ -181,4 +181,4 @@ object SearchForm: TSearchForm
       TabOrder = 1
     end
   end
-end
+end

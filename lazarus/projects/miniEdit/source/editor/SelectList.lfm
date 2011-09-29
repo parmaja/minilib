@@ -26,7 +26,7 @@ object SelectListForm: TSelectListForm
       item
         AutoSize = True
         Caption = 'Description'
-        Width = 345
+        Width = 329
       end>
     HideSelection = False
     ReadOnly = True
@@ -38,25 +38,25 @@ object SelectListForm: TSelectListForm
     OnDblClick = ItemsListDblClick
   end
   object OkBtn: TButton
-    Left = 4
+    Left = 377
     Height = 26
     Top = 226
     Width = 75
-    Anchors = [akLeft, akBottom]
+    Anchors = [akRight, akBottom]
     Caption = '&Ok'
     Default = True
     OnClick = OkBtnClick
     TabOrder = 1
   end
   object CancelBtn: TButton
-    Left = 79
+    Left = 299
     Height = 26
     Top = 226
     Width = 75
-    Anchors = [akLeft, akBottom]
+    Anchors = [akRight, akBottom]
     Cancel = True
     Caption = '&Cancel'
     ModalResult = 2
     TabOrder = 2
   end
-end
+end

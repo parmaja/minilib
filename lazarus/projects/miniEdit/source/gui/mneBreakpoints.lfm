@@ -14,19 +14,19 @@ object BreakpointsForm: TBreakpointsForm
   LCLVersion = '0.9.31'
   object BreakpointList: TListView
     Left = 2
-    Height = 184
+    Height = 188
     Top = 4
-    Width = 616
+    Width = 623
     Anchors = [akTop, akLeft, akRight, akBottom]
     Columns = <    
       item
         AutoSize = True
         Caption = 'File'
-        Width = 612
+        Width = 31
       end    
       item
         Caption = 'Line'
-        Width = 100
+        Width = 572
       end>
     ColumnClick = False
     HideSelection = False
@@ -39,9 +39,9 @@ object BreakpointsForm: TBreakpointsForm
     OnDblClick = BreakpointListDblClick
   end
   object CloseBtn: TButton
-    Left = 540
+    Left = 549
     Height = 25
-    Top = 193
+    Top = 196
     Width = 75
     Anchors = [akRight, akBottom]
     Caption = '&Close'
@@ -53,7 +53,7 @@ object BreakpointsForm: TBreakpointsForm
   object Button1: TButton
     Left = 5
     Height = 25
-    Top = 193
+    Top = 196
     Width = 75
     Anchors = [akLeft, akBottom]
     Caption = 'Clear'
@@ -63,7 +63,7 @@ object BreakpointsForm: TBreakpointsForm
   object Button2: TButton
     Left = 82
     Height = 25
-    Top = 193
+    Top = 196
     Width = 75
     Anchors = [akLeft, akBottom]
     Caption = 'Remove'
@@ -73,11 +73,11 @@ object BreakpointsForm: TBreakpointsForm
   object Button3: TButton
     Left = 159
     Height = 25
-    Top = 193
+    Top = 196
     Width = 75
     Anchors = [akLeft, akBottom]
     Caption = 'Goto'
     OnClick = Button3Click
     TabOrder = 4
   end
-end
+end

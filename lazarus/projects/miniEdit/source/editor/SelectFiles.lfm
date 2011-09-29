@@ -27,7 +27,7 @@ object SelectFileForm: TSelectFileForm
       item
         AutoSize = True
         Caption = 'Path'
-        Width = 78
+        Width = 62
       end>
     HideSelection = False
     ReadOnly = True
@@ -39,9 +39,9 @@ object SelectFileForm: TSelectFileForm
     OnDblClick = FilesListDblClick
   end
   object OkBtn: TButton
-    Left = 4
+    Left = 210
     Height = 26
-    Top = 318
+    Top = 319
     Width = 75
     Anchors = [akLeft, akBottom]
     Caption = '&Ok'
@@ -50,9 +50,9 @@ object SelectFileForm: TSelectFileForm
     TabOrder = 2
   end
   object CancelBtn: TButton
-    Left = 79
+    Left = 134
     Height = 26
-    Top = 318
+    Top = 319
     Width = 75
     Anchors = [akLeft, akBottom]
     Cancel = True
@@ -62,7 +62,7 @@ object SelectFileForm: TSelectFileForm
   end
   object FilterEdit: TEdit
     Left = 3
-    Height = 21
+    Height = 23
     Top = 5
     Width = 282
     Anchors = [akTop, akLeft, akRight]
@@ -77,4 +77,4 @@ object SelectFileForm: TSelectFileForm
     left = 96
     top = 79
   end
-end
+end

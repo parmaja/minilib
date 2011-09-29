@@ -17,15 +17,15 @@ object PHPIniForm: TPHPIniForm
     Left = 12
     Height = 14
     Top = 9
-    Width = 59
+    Width = 53
     Caption = 'PHP INI File'
     ParentColor = False
   end
   object Label3: TLabel
-    Left = 168
+    Left = 4
     Height = 14
     Top = 291
-    Width = 227
+    Width = 238
     Caption = '* You must restart Apache server to take effects'
     ParentColor = False
   end
@@ -40,13 +40,13 @@ object PHPIniForm: TPHPIniForm
     TabOrder = 0
     object TabSheet1: TTabSheet
       Caption = 'PHP'
-      ClientHeight = 226
-      ClientWidth = 513
+      ClientHeight = 218
+      ClientWidth = 515
       object Label4: TLabel
         Left = 11
         Height = 14
         Top = 10
-        Width = 61
+        Width = 63
         Caption = 'Extension dir'
         ParentColor = False
       end
@@ -54,61 +54,61 @@ object PHPIniForm: TPHPIniForm
         Left = 11
         Height = 14
         Top = 39
-        Width = 100
+        Width = 99
         Caption = 'Max  Execution Time'
         ParentColor = False
       end
       object ExtensionDirEdit: TEdit
         Left = 116
-        Height = 21
+        Height = 23
         Top = 7
         Width = 320
         TabOrder = 0
       end
       object RegisterGlobalsChk: TCheckBox
         Left = 16
-        Height = 17
+        Height = 22
         Top = 74
-        Width = 95
+        Width = 103
         Caption = 'Register Globals'
         TabOrder = 1
       end
       object ErrorReportingAllChk: TCheckBox
         Left = 16
-        Height = 17
+        Height = 22
         Top = 116
-        Width = 103
+        Width = 112
         Caption = 'Error Reporting All'
         TabOrder = 2
       end
       object MaxExecutionTimeEdit: TEdit
         Left = 116
-        Height = 21
+        Height = 23
         Top = 34
         Width = 320
         TabOrder = 3
       end
       object DisplayErrorsChk: TCheckBox
         Left = 16
-        Height = 17
+        Height = 22
         Top = 138
-        Width = 82
+        Width = 92
         Caption = 'Display Errors'
         TabOrder = 4
       end
       object DisplayStartupErrorsChk: TCheckBox
         Left = 16
-        Height = 17
+        Height = 22
         Top = 160
-        Width = 119
+        Width = 130
         Caption = 'Display Startup Errors'
         TabOrder = 5
       end
     end
     object TabSheet2: TTabSheet
       Caption = 'XDebug'
-      ClientHeight = 222
-      ClientWidth = 513
+      ClientHeight = 218
+      ClientWidth = 515
       ImageIndex = 1
       object Label2: TLabel
         Left = 31
@@ -179,7 +179,7 @@ object PHPIniForm: TPHPIniForm
   end
   object PHPIniFileEdit: TEdit
     Left = 84
-    Height = 21
+    Height = 23
     Top = 5
     Width = 413
     TabOrder = 1
@@ -194,9 +194,9 @@ object PHPIniForm: TPHPIniForm
     TabOrder = 2
   end
   object OkBtn: TButton
-    Left = 4
+    Left = 445
     Height = 25
-    Top = 285
+    Top = 287
     Width = 75
     Anchors = [akLeft, akBottom]
     Caption = '&Ok'
@@ -205,9 +205,9 @@ object PHPIniForm: TPHPIniForm
     TabOrder = 3
   end
   object CancelBtn: TButton
-    Left = 84
+    Left = 369
     Height = 25
-    Top = 285
+    Top = 287
     Width = 75
     Anchors = [akLeft, akBottom]
     Cancel = True
@@ -219,4 +219,4 @@ object PHPIniForm: TPHPIniForm
     left = 244
     top = 159
   end
-end
+end

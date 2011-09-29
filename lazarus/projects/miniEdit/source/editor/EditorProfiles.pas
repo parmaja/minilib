@@ -226,6 +226,8 @@ begin
     THackCustomSynEdit(Dest).Gutter.Assign(Self.Gutter);
     THackCustomSynEdit(Dest).SelectedColor.Assign(Self.SelectedColor);
 
+    THackCustomSynEdit(Dest).Font.Quality := fqNonAntialiased; //not work
+
     THackCustomSynEdit(Dest).Options := Self.Options;
     THackCustomSynEdit(Dest).ExtraLineSpacing := Self.ExtraLineSpacing;
     THackCustomSynEdit(Dest).InsertCaret := Self.InsertCaret;
@@ -615,4 +617,4 @@ begin
 end;
 
 end.
-
+

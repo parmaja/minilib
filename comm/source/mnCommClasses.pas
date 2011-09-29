@@ -23,7 +23,7 @@ const
   cTimeout = 30000;
 
 type
-  EComPort = class(Exception)
+  ECommError = class(Exception)
   end;
 
   TDataBits = (dbFive, dbSix, dbSeven, dbEight);
@@ -98,6 +98,7 @@ type
     function GetParityFlags: TParityFlags; virtual;
     function DoRead(var Buffer; Count: Integer): Integer; virtual; abstract;
     function DoWrite(const Buffer; Count: Integer): Integer; virtual; abstract;
+    procedure Created; virtual;
   public
     constructor Create(Suspend: Boolean; Port: string; BaudRate: Int64; DataBits: TDataBits = dbEight; Parity: TParityBits = prNone; StopBits: TStopBits = sbOneStopBit; FlowControl: TFlowControl = fcHardware; UseOverlapped: Boolean = False); overload;
     constructor Create(Params: string); overload;
@@ -108,8 +109,7 @@ type
     procedure Close; //Alias for Disconnect
     procedure Flush; virtual;
     procedure Purge; virtual;
-    procedure Reset; virtual;
-    procedure Cancel; virtual;
+    procedure Cancel; virtual; deprecated;//TODO: Move it to WinComm
     function GetInQue: Integer; virtual;
     function ReadString: string;
     function WaitEvent(const Events: TComEvents): TComEvents; virtual;
@@ -131,7 +131,7 @@ type
     property ConnectMode: TmnCommConnectMode read FConnectMode write FConnectMode;
     //WaitMode: Make WaitEvent before read buffer
     property WaitMode: Boolean read FWaitMode write FWaitMode;
-    property QueMode: Boolean read FQueMode write FQueMode;
+    property QueMode: Boolean read FQueMode write FQueMode; deprecated;
     property Timeout: Cardinal read FTimeout write SetTimeout default cTimeout;
     //FailTimeout: raise an exception when timeout accord
     property FailTimeout: Boolean read FFailTimeout write FFailTimeout default True;
@@ -178,6 +178,7 @@ begin
   FStopBits := StopBits;
   FFlowControl := FlowControl;
   FUseOverlapped := UseOverlapped;
+  Created;
   if not Suspend then
     Open;
 end;
@@ -246,10 +247,14 @@ begin
   Result.ReplaceChar := #0;
 end;
 
+procedure TmnCustomCommStream.Created;
+begin
+end;
+
 procedure TmnCustomCommStream.Open;
 begin
   if Connected then
-    raise EComPort.Create('Already connected');
+    raise ECommError.Create('Already connected');
   Connect;
 end;
 
@@ -289,10 +294,6 @@ begin
   SetLength(Result, c);
 end;
 
-procedure TmnCustomCommStream.Reset;
-begin
-end;
-
 procedure TmnCustomCommStream.SetBufferSize(const Value: Integer);
 begin
   FBufferSize := Value;
@@ -323,7 +324,7 @@ begin
   if FUseOverlapped <> Value then
   begin
     if Connected then
-      raise EComPort.Create('Already connected');
+      raise ECommError.Create('Already connected');
     FUseOverlapped := Value;
   end;
 end;
@@ -344,4 +345,4 @@ begin
 end;
 
 end.
-
+

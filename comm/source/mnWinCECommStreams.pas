@@ -27,7 +27,6 @@ type
   TmnOSCommStream = class(TmnCustomCommStream)
   private
     FHandle: THandle;
-    FCancelEvent: THandle;
   protected
     procedure DoConnect; override;
     procedure DoDisconnect; override;
@@ -40,24 +39,12 @@ type
     function GetInQue: Integer; override;
     procedure Flush; override;
     procedure Purge; override;
-    procedure Reset; override;
-    procedure Cancel; override;
   end;
 
 implementation
 
 uses
   mnWinCommTypes;
-
-procedure TmnOSCommStream.Cancel;
-begin
-  inherited;
-  if FCancelEvent <> 0 then
-  begin
-    SetEvent(FCancelEvent);
-    Sleep(0);
-  end;
-end;
 
 procedure TmnOSCommStream.DoConnect;
 var
@@ -68,11 +55,7 @@ var
   aMode: Cardinal;
   aShare: Cardinal;
 begin
-  {$ifdef WINCE}
   P := PWideChar(UTF8Decode((Port+':')));
-  {$else}
-  P := PChar('\\.\' + Port);
-  {$endif}
 
   aMode := 0;
   case ConnectMode of
@@ -178,11 +161,6 @@ begin
   finally
     FHandle := 0;
   end;
-  if FCancelEvent <> 0 then
-  begin
-    CloseHandle(FCancelEvent);
-    FCancelEvent := 0;
-  end;
 end;
 
 procedure TmnOSCommStream.Flush;
@@ -217,12 +195,6 @@ begin
     RaiseLastOSError;
 end;
 
-
-procedure TmnOSCommStream.Reset;
-begin
-  inherited;
-end;
-
 function TmnOSCommStream.WaitEvent(const Events: TComEvents): TComEvents;
 var
   Mask: DWord;
@@ -236,7 +208,7 @@ begin
     if not E then
     begin
       Result := [];
-      //raise EComPort.Create('Wait Failed');
+      //raise ECommError.Create('Wait Failed');
     end;
       Result := IntToEvents(Mask);
   finally
@@ -296,4 +268,4 @@ begin
   end;
 end;
 
-end.
+end.

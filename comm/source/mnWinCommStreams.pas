@@ -67,12 +67,8 @@ begin
   if UseOverlapped then
     FCancelEvent := CreateEvent(nil, True, False, nil);
 
-  {$ifdef WINCE}
-  P := PWideChar(UTF8Decode(Port+':'));
-  {$else}
   P := PChar('\\.\' + Port);
-  {$endif}
-  
+
   aMode := 0;
   case ConnectMode of
     ccmReadWrite: aMode := GENERIC_READ or GENERIC_WRITE;
@@ -384,4 +380,4 @@ begin
 end;
 
 end.
-
+
