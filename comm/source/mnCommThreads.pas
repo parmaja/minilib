@@ -17,7 +17,7 @@ interface
 
 uses
   Classes, SysUtils,
-  mnStreams, mnCommClasses;
+  mnCommClasses;
 
 type
 
@@ -73,7 +73,7 @@ procedure TmnCommThread.DoTerminate;
 begin
   if FCommStream <> nil then
   begin
-    FCommStream.Cancel;
+    //FCommStream.Cancel;
     if FreeOnTerminate then
       FCommStream.Close;
   end;
@@ -104,12 +104,11 @@ end;
 
 { TmnCommStreamThread }
 
-constructor TmnCommStreamThread.Create(CreateSuspended: Boolean;
-  CommStream: TmnCustomCommStream);
+constructor TmnCommStreamThread.Create(CreateSuspended: Boolean; CommStream: TmnCustomCommStream);
 begin
   inherited Create(CreateSuspended, CommStream);
-  if CommStream.ReadTimeout = 0 then //We will use QueMode
-    CommStream.QueMode := True;
+{  if CommStream.ReadTimeout = 0 then //We will use QueMode
+    CommStream.QueMode := True;}
 end;
 
 procedure TmnCommStreamThread.DoStringArrived(S: string);

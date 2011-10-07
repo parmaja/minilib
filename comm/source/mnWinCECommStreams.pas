@@ -5,7 +5,7 @@ unit mnWinCECommStreams;
  * @license   modifiedLGPL (modified of http://www.gnu.org/licenses/lgpl.html)
  *            See the file COPYING.MLGPL, included in this distribution,
  * @author    Zaher Dirkey <zaher at parmaja dot com>
- * Some function ported from ComPort at sourceforge thanks for them
+ *
  *}
 
 {$M+}
@@ -128,10 +128,7 @@ begin
 
     // apply settings
     if not SetCommState(FHandle, DCB) then
-    begin
-      raise EComPort.Create('Error in SetCommState '+ IntToStr(GetLastError));
-//      RaiseLastOSError;
-    end;
+      raise ECommError.Create('Error in SetCommState '+ IntToStr(GetLastError));
 
     aTimeouts.ReadIntervalTimeout := MAXWORD;
     aTimeouts.ReadTotalTimeoutMultiplier := ReadTimeout;
@@ -140,10 +137,7 @@ begin
     aTimeouts.WriteTotalTimeoutConstant := WriteTimeoutConst;
 
     if not SetCommTimeouts(FHandle, aTimeouts) then
-    begin
-      raise EComPort.Create('Error in SetCommTimeouts'+ IntToStr(GetLastError));
-//      RaiseLastOSError;
-    end;
+      raise ECommError.Create('Error in SetCommTimeouts'+ IntToStr(GetLastError));
 
   except
     if FHandle <> 0 then
@@ -180,9 +174,14 @@ var
   Errors: DWORD;
   ComStat: TComStat;
 begin
-  if not ClearCommError(FHandle, Errors, @ComStat) then
-    raise EComPort.Create('Clear Com Failed');
-  Result := ComStat.cbInQue;
+  if Connected then
+  begin
+    if not ClearCommError(FHandle, Errors, @ComStat) then
+      raise ECommError.Create('Clear Com Failed');
+    Result := ComStat.cbInQue;
+  end
+  else
+    Result := 0;
 end;
 
 procedure TmnOSCommStream.Purge;
@@ -210,7 +209,7 @@ begin
       Result := [];
       //raise ECommError.Create('Wait Failed');
     end;
-      Result := IntToEvents(Mask);
+    Result := IntToEvents(Mask);
   finally
     SetCommMask(FHandle, 0);
   end;
@@ -268,4 +267,4 @@ begin
   end;
 end;
 
-end.
+end.

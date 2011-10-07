@@ -73,7 +73,6 @@ type
     FEventChar: AnsiChar;
     FDiscardNull: Boolean;
     FBufferSize: Integer;
-    FUseOverlapped: Boolean;
     FTimeout: Cardinal;
     FReadTimeout: Cardinal;
     FWriteThrough: Boolean;
@@ -82,12 +81,10 @@ type
     FReadTimeoutConst: Cardinal;
     FWriteTimeoutConst: Cardinal;
     FWaitMode: Boolean;
-    FQueMode: Boolean;
     procedure SetEventChar(const Value: AnsiChar);
     procedure SetDiscardNull(const Value: Boolean);
     procedure SetBufferSize(const Value: Integer);
     procedure SetTimeout(const Value: Cardinal);
-    procedure SetUseOverlapped(const Value: Boolean);
     procedure SetReadTimeout(const Value: Cardinal);
     procedure SetWriteTimeout(const Value: Cardinal);
   protected
@@ -100,7 +97,7 @@ type
     function DoWrite(const Buffer; Count: Integer): Integer; virtual; abstract;
     procedure Created; virtual;
   public
-    constructor Create(Suspend: Boolean; Port: string; BaudRate: Int64; DataBits: TDataBits = dbEight; Parity: TParityBits = prNone; StopBits: TStopBits = sbOneStopBit; FlowControl: TFlowControl = fcHardware; UseOverlapped: Boolean = False); overload;
+    constructor Create(Suspend: Boolean; Port: string; BaudRate: Int64; DataBits: TDataBits = dbEight; Parity: TParityBits = prNone; StopBits: TStopBits = sbOneStopBit; FlowControl: TFlowControl = fcHardware); overload;
     constructor Create(Params: string); overload;
     destructor Destroy; override;
     procedure Connect;
@@ -109,8 +106,6 @@ type
     procedure Close; //Alias for Disconnect
     procedure Flush; virtual;
     procedure Purge; virtual;
-    procedure Cancel; virtual; deprecated;//TODO: Move it to WinComm
-    function GetInQue: Integer; virtual;
     function ReadString: string;
     function WaitEvent(const Events: TComEvents): TComEvents; virtual;
     function Read(var Buffer; Count: Integer): Integer; override;
@@ -127,11 +122,9 @@ type
     property WriteThrough: Boolean read FWriteThrough write FWriteThrough;
     property BufferSize: Integer read FBufferSize write SetBufferSize;
 
-    property UseOverlapped: Boolean read FUseOverlapped write SetUseOverlapped;
     property ConnectMode: TmnCommConnectMode read FConnectMode write FConnectMode;
     //WaitMode: Make WaitEvent before read buffer
     property WaitMode: Boolean read FWaitMode write FWaitMode;
-    property QueMode: Boolean read FQueMode write FQueMode; deprecated;
     property Timeout: Cardinal read FTimeout write SetTimeout default cTimeout;
     //FailTimeout: raise an exception when timeout accord
     property FailTimeout: Boolean read FFailTimeout write FFailTimeout default True;
@@ -151,18 +144,13 @@ implementation
 
 { TmnCustomCommStream }
 
-procedure TmnCustomCommStream.Cancel;
-begin
-end;
-
 procedure TmnCustomCommStream.Close;
 begin
   Disconnect;
 end;
 
 constructor TmnCustomCommStream.Create(Suspend: Boolean; Port: string; BaudRate: Int64;
-  DataBits: TDataBits; Parity: TParityBits; StopBits: TStopBits;
-  FlowControl: TFlowControl; UseOverlapped: Boolean);
+  DataBits: TDataBits; Parity: TParityBits; StopBits: TStopBits; FlowControl: TFlowControl);
 begin
   inherited Create;
   FReadTimeout := 0;
@@ -177,7 +165,6 @@ begin
   FParity := Parity;
   FStopBits := StopBits;
   FFlowControl := FlowControl;
-  FUseOverlapped := UseOverlapped;
   Created;
   if not Suspend then
     Open;
@@ -235,11 +222,6 @@ begin
   end;
 end;
 
-function TmnCustomCommStream.GetInQue: Integer;
-begin
-  Result := 0;
-end;
-
 function TmnCustomCommStream.GetParityFlags: TParityFlags;
 begin
   Result.Check := False;
@@ -268,8 +250,6 @@ begin
   begin
     if WaitEvent([evRxChar, evRxFlag]) <> [] then
     begin
-      if QueMode then
-        Count := GetInQue;
       if Connected then
         Result := DoRead(Buffer, Count)
     end
@@ -278,8 +258,6 @@ begin
   end
   else
   begin
-    if QueMode then
-      Count := GetInQue;
     Result := DoRead(Buffer, Count);
   end;
 end;
@@ -319,16 +297,6 @@ begin
   FTimeout := Value;
 end;
 
-procedure TmnCustomCommStream.SetUseOverlapped(const Value: Boolean);
-begin
-  if FUseOverlapped <> Value then
-  begin
-    if Connected then
-      raise ECommError.Create('Already connected');
-    FUseOverlapped := Value;
-  end;
-end;
-
 procedure TmnCustomCommStream.SetWriteTimeout(const Value: Cardinal);
 begin
   FWriteTimeout := Value;
@@ -345,4 +313,4 @@ begin
 end;
 
 end.
-
+

@@ -22,23 +22,29 @@ uses
   mnStreams, mnCommClasses;
 
 type
+
+  { TmnOSCommStream }
+
   TmnOSCommStream = class(TmnCustomCommStream)
   private
     FHandle: THandle;
     FCancelEvent: THandle;
+    FUseOverlapped: Boolean;
+    procedure SetUseOverlapped(const Value: Boolean);
   protected
     procedure DoConnect; override;
     procedure DoDisconnect; override;
     function GetConnected: Boolean; override;
     function DoWrite(const Buffer; Count: Integer): Integer; override;
     function DoRead(var Buffer; Count: Integer): Integer; override;
+    procedure Created; override;
   public
     function WaitEvent(const Events: TComEvents): TComEvents; override;
-    function GetInQue: Integer; override;
     procedure Flush; override;
     procedure Purge; override;
-    procedure Reset; override;
-    procedure Cancel; override;
+    function GetInQue: Integer;
+    procedure Cancel;
+    property UseOverlapped: Boolean read FUseOverlapped write SetUseOverlapped;
   end;
 
 implementation
@@ -53,6 +59,16 @@ begin
   begin
     SetEvent(FCancelEvent);
     Sleep(0);
+  end;
+end;
+
+procedure TmnOSCommStream.SetUseOverlapped(const Value: Boolean);
+begin
+  if FUseOverlapped <> Value then
+  begin
+    if Connected then
+      raise ECommError.Create('Already connected');
+    FUseOverlapped := Value;
   end;
 end;
 
@@ -189,7 +205,7 @@ begin
   if Connected then
   begin
     if not ClearCommError(FHandle, Errors, @ComStat) then
-      raise EComPort.Create('Clear Com Failed');
+      raise ECommError.Create('Clear Com Failed');
     Result := ComStat.cbInQue;
   end
   else
@@ -204,12 +220,6 @@ begin
   F := PURGE_TXCLEAR or PURGE_TXABORT or PURGE_RXABORT or PURGE_RXCLEAR;
   if not PurgeComm(FHandle, F) then
     RaiseLastOSError;
-end;
-
-
-procedure TmnOSCommStream.Reset;
-begin
-  inherited;
 end;
 
 function TmnOSCommStream.WaitEvent(const Events: TComEvents): TComEvents;
@@ -252,7 +262,7 @@ begin
 
     if not E then
     begin
-      raise EComPort.Create('Wait Failed');
+      raise ECommError.Create('Wait Failed');
     end;
   finally
     CloseHandle(Overlapped.hEvent);
@@ -296,7 +306,7 @@ begin
       if R = WAIT_TIMEOUT then
       begin
         if FailTimeout then
-          raise EComPort.Create('Read Timeout')
+          raise ECommError.Create('Read Timeout')
         else
           Result := 0;
       end
@@ -317,6 +327,11 @@ begin
     if P <> nil then //it is Overlapped
       CloseHandle(Overlapped.hEvent);
   end;
+end;
+
+procedure TmnOSCommStream.Created;
+begin
+  inherited;
 end;
 
 function TmnOSCommStream.DoWrite(const Buffer; Count: Integer): Integer;
@@ -356,7 +371,7 @@ begin
       if R = WAIT_TIMEOUT then
       begin
         if FailTimeout then
-          raise EComPort.Create('Read Timeout')
+          raise ECommError.Create('Read Timeout')
         else
           Result := 0;
       end
@@ -380,4 +395,4 @@ begin
 end;
 
 end.
-
+
