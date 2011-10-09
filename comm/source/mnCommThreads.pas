@@ -26,7 +26,7 @@ type
   TmnCommThread = class(TThread)
   private
     FCommStream: TmnCustomCommStream;
-    FUseWaitEvent: Boolean;
+    FUseWait: Boolean;
   protected
     procedure DoTerminate; override;
     procedure StringArrived(S: string); virtual;
@@ -34,7 +34,7 @@ type
   public
     constructor Create(CreateSuspended: Boolean; CommStream: TmnCustomCommStream);
     destructor Destroy; override;
-    property UseWaitEvent: Boolean read FUseWaitEvent write FUseWaitEvent;
+    property UseWait: Boolean read FUseWait write FUseWait;
     property CommStream: TmnCustomCommStream read FCommStream;
   end;
 
@@ -86,7 +86,7 @@ begin
     // You muse have EventChar and QueMode
     while not Terminated and FCommStream.Connected do
     begin
-      if not UseWaitEvent or (FCommStream.WaitEvent([evError, evRxFlag]) <> []) then;
+      if not UseWait or (FCommStream.Wait) then;
       begin
         if not Terminated and FCommStream.Connected then
         begin

@@ -71,6 +71,24 @@ const
      DTR_CONTROL_ENABLE shl 4,
      DTR_CONTROL_HANDSHAKE shl 4);
 
+type
+  TComEvent = (evRxChar, evTxEmpty, evRxFlag, evRing, evBreak, evCTS, evDSR,
+    evError, evRLSD, evRx80Full);
+  TComEvents = set of TComEvent;
+
+  { TmnWinCustomCommStream }
+
+  TmnWinCustomCommStream = class(TmnCustomCommStream)
+  private
+  protected
+    FHandle: THandle;
+  public
+    function WaitEvent(const Events: TComEvents): TComEvents; virtual;
+  end;
+
+const
+  AllComEvents: TComEvents = [Low(TComEvent)..High(TComEvent)];
+
 function EventsToInt(const Events: TComEvents): Integer;
 function IntToEvents(Mask: Integer): TComEvents;
 
@@ -124,6 +142,13 @@ begin
     Result := Result + [evError];
   if (EV_RX80FULL and Mask) <> 0 then
     Result := Result + [evRx80Full];
+end;
+
+{ TmnWinCustomCommStream }
+
+function TmnWinCustomCommStream.WaitEvent(const Events: TComEvents): TComEvents;
+begin
+  Result := [];
 end;
 
 end.

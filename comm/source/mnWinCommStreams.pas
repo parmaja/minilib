@@ -19,13 +19,13 @@ interface
 uses
   Windows,
   Classes, SysUtils,
-  mnStreams, mnCommClasses;
+  mnWinCommTypes, mnStreams, mnCommClasses;
 
 type
 
   { TmnOSCommStream }
 
-  TmnOSCommStream = class(TmnCustomCommStream)
+  TmnOSCommStream = class(TmnWinCustomCommStream)
   private
     FHandle: THandle;
     FCancelEvent: THandle;
@@ -39,6 +39,7 @@ type
     function DoRead(var Buffer; Count: Integer): Integer; override;
     procedure Created; override;
   public
+    function Wait: Boolean; override;
     function WaitEvent(const Events: TComEvents): TComEvents; override;
     procedure Flush; override;
     procedure Purge; override;
@@ -48,9 +49,6 @@ type
   end;
 
 implementation
-
-uses
-  mnWinCommTypes;
 
 procedure TmnOSCommStream.Cancel;
 begin
@@ -204,6 +202,7 @@ var
 begin
   if Connected then
   begin
+    Errors := 0;
     if not ClearCommError(FHandle, Errors, @ComStat) then
       raise ECommError.Create('Clear Com Failed');
     Result := ComStat.cbInQue;
@@ -332,6 +331,11 @@ end;
 procedure TmnOSCommStream.Created;
 begin
   inherited;
+end;
+
+function TmnOSCommStream.Wait: Boolean;
+begin
+  Result := WaitEvent([evRxChar]) = [evRxChar];
 end;
 
 function TmnOSCommStream.DoWrite(const Buffer; Count: Integer): Integer;

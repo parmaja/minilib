@@ -6,6 +6,9 @@ unit mnLinuxCommStreams;
  *            See the file COPYING.MLGPL, included in this distribution,
  * @author    Zaher Dirkey <zaher at parmaja dot com>
  * Some function ported from ComPort at sourceforge thanks for them
+
+ http://forum.kernelnewbies.org/read.php?12,213
+ search for break_ctl();
  *}
 
 {$M+}
@@ -40,8 +43,8 @@ type
     function Check(R: Integer): Boolean;
     procedure Created; override;
   public
-    function WaitEvent(const Events: TComEvents): TComEvents; override;
-    function GetInQue: Integer;
+    function Wait: Boolean; override;
+    function GetInQue: Integer;//TODO
     procedure Flush; override;
     procedure Purge; override;
   end;
@@ -55,7 +58,8 @@ var
    P: string;
    aMode: Integer;
 begin
-  P := '/dev/' + Port;//TODO we need convertor COM to TTY more flixeble :P
+  //P := '/dev/' + Port;//TODO we need convertor COM to TTY more flixeble :P
+  P := Port;
   aMode := O_SYNC;
   case ConnectMode of
     ccmReadWrite: aMode := O_RDWR;
@@ -110,7 +114,7 @@ begin
   FHandle := INVALID_HANDLE;
 end;
 
-function TmnOSCommStream.WaitEvent(const Events: TComEvents): TComEvents;
+function TmnOSCommStream.Wait: Boolean;
 var
   FDSet: TFDSet;
   T: TTimeVal;
@@ -129,10 +133,7 @@ begin
   FD_SET(integer(FHandle), FDSet);
   R := select(integer(FHandle) + 1, @FDSet, nil, nil, P);
   Check(R);
-  if R > 0 then
-    Result := [evRxFlag]
-  else
-    Result := [];
+  Result := R > 0;
 end;
 
 function TmnOSCommStream.GetInQue: Integer;

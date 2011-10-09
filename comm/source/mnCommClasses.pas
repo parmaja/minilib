@@ -53,10 +53,6 @@ type
     ReplaceChar: AnsiChar;
   end;
 
-  TComEvent = (evRxChar, evTxEmpty, evRxFlag, evRing, evBreak, evCTS, evDSR,
-    evError, evRLSD, evRx80Full);
-  TComEvents = set of TComEvent;
-
   TmnCommConnectMode = (ccmReadWrite, ccmRead, ccmWrite);
 
   { TmnCustomCommStream }
@@ -107,7 +103,7 @@ type
     procedure Flush; virtual;
     procedure Purge; virtual;
     function ReadString: string;
-    function WaitEvent(const Events: TComEvents): TComEvents; virtual;
+    function Wait: Boolean; virtual;
     function Read(var Buffer; Count: Integer): Integer; override;
     function Write(const Buffer; Count: Integer): Integer; override;
     property Connected: Boolean read GetConnected;
@@ -136,9 +132,6 @@ type
     property WriteTimeout: Cardinal read FWriteTimeout write SetWriteTimeout default 1000;
     property WriteTimeoutConst: Cardinal read FWriteTimeoutConst write FWriteTimeoutConst default 10;
   end;
-
-const
-  AllComEvents: TComEvents = [Low(TComEvent)..High(TComEvent)];
 
 implementation
 
@@ -248,7 +241,7 @@ function TmnCustomCommStream.Read(var Buffer; Count: Integer): Integer;
 begin
   if WaitMode then
   begin
-    if WaitEvent([evRxChar, evRxFlag]) <> [] then
+    if Wait then
     begin
       if Connected then
         Result := DoRead(Buffer, Count)
@@ -270,6 +263,11 @@ begin
   SetLength(Result, c);
   c := Read(Result[1], c);
   SetLength(Result, c);
+end;
+
+function TmnCustomCommStream.Wait: Boolean;
+begin
+  Result := False;
 end;
 
 procedure TmnCustomCommStream.SetBufferSize(const Value: Integer);
@@ -300,11 +298,6 @@ end;
 procedure TmnCustomCommStream.SetWriteTimeout(const Value: Cardinal);
 begin
   FWriteTimeout := Value;
-end;
-
-function TmnCustomCommStream.WaitEvent(const Events: TComEvents): TComEvents;
-begin
-  Result := [];
 end;
 
 function TmnCustomCommStream.Write(const Buffer; Count: Integer): Integer;

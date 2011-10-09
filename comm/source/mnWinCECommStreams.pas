@@ -19,12 +19,12 @@ interface
 uses
   Windows,
   Classes, SysUtils,
-  mnStreams, mnCommClasses;
+  mnWinCommTypes, mnStreams, mnCommClasses;
 
 type
   { TmnOSCommStream }
 
-  TmnOSCommStream = class(TmnCustomCommStream)
+  TmnOSCommStream = class(TmnWinCustomCommStream)
   private
     FHandle: THandle;
   protected
@@ -35,16 +35,14 @@ type
     function DoRead(var Buffer; Count: Integer): Integer; override;
     function GetFlowControlFlags: TFlowControlFlags; override;
   public
+    function Wait: Boolean; override;
     function WaitEvent(const Events: TComEvents): TComEvents; override;
-    function GetInQue: Integer; override;
+    function GetInQue: Integer;
     procedure Flush; override;
     procedure Purge; override;
   end;
 
 implementation
-
-uses
-  mnWinCommTypes;
 
 procedure TmnOSCommStream.DoConnect;
 var
@@ -53,7 +51,6 @@ var
   aTimeouts: TCommTimeouts;
   P:Pointer;
   aMode: Cardinal;
-  aShare: Cardinal;
 begin
   P := PWideChar(UTF8Decode((Port+':')));
 
@@ -65,7 +62,6 @@ begin
   end;
 
   f := CreateFile(P, aMode, FILE_SHARE_READ or FILE_SHARE_WRITE, nil, OPEN_EXISTING, 0, 0);
-//  cWriteThrough[WriteThrough]
 
   if (f = INVALID_HANDLE_VALUE) then
   begin
@@ -219,6 +215,11 @@ function TmnOSCommStream.GetFlowControlFlags: TFlowControlFlags;
 begin
   Result := inherited GetFlowControlFlags;
   //Result.ControlDTR := dtrEnable;
+end;
+
+function TmnOSCommStream.Wait: Boolean;
+begin
+  Result := WaitEvent([evRxChar]) = [evRxChar];
 end;
 
 function TmnOSCommStream.DoRead(var Buffer; Count: Integer): Integer;
