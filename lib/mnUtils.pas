@@ -72,12 +72,8 @@ function ExpandToPath(FileName: string; Path: string; Root: string = ''): string
 function EscapeString(const S: string; Esc: string; Chars: array of AnsiChar; Escapes: array of string): string;
 function DescapeString(const S: string; Esc: string; Chars: array of AnsiChar; Escapes: array of string): string;
 
-{$ifndef FPC}
-type
-  SizeInt = Longint;
-{$endif}
-
-procedure InitMemory(var v; count:SizeInt);
+//Similer to ZeroMemory
+procedure InitMemory(var v; Count: Longint);
 
 { Date }
 {
@@ -87,6 +83,15 @@ procedure InitMemory(var v; count:SizeInt);
 
 function ISOStrToDate(ISODate: String; TimeDivider: AnsiChar = #0; UseDefault: Boolean = False): TDateTime;
 function ISODateToStr(vDate:TDateTime; TimeDivider: AnsiChar = ' '; WithTime: Boolean = False): string;
+
+{$ifndef FPC}
+const
+{$ifdef WINDOWS}
+  DirectorySeparator: string = '\';
+{$else}
+  DirectorySeparator: string = '/';
+{$endif}
+{$endif}
 
 implementation
 
@@ -509,9 +514,9 @@ begin
     Result := '-' + Result;
 end;
 
-procedure InitMemory(var v; count:SizeInt);
+procedure InitMemory(var v; Count: Longint);
 begin
-  FillChar(v, count, #0);
+  FillChar(v, Count, #0);
 end;
 
 {
