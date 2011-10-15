@@ -3,13 +3,12 @@
   <Package Version="4">
     <PathDelim Value="\"/>
     <Name Value="MiniConnections"/>
-    <AddToProjectUsesSection Value="True"/>
     <CompilerOptions>
       <Version Value="10"/>
       <PathDelim Value="\"/>
       <SearchPaths>
-        <OtherUnitFiles Value="W:\home\pascal\lib\minilib\Commons;W:\home\pascal\lib\minilib\MiniConnection\extend;\usr\ws\dev\home\pascal\lib\minilib\connection\db\;\usr\ws\dev\home\pascal\lib\minilib\connection\db\sqlite\"/>
-        <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
+        <OtherUnitFiles Value=".;..\db;..\db\sqlite"/>
+        <UnitOutputDirectory Value="units\$(TargetCPU)-$(TargetOS)"/>
       </SearchPaths>
       <Parsing>
         <SyntaxOptions>
@@ -23,38 +22,46 @@
         </Debugging>
       </Linking>
       <Other>
+        <CompilerMessages>
+          <UseMsgFile Value="True"/>
+        </CompilerMessages>
         <CompilerPath Value="$(CompPath)"/>
       </Other>
     </CompilerOptions>
-    <Files Count="7">
+    <Version Major="1" Release="1"/>
+    <Files Count="8">
       <Item1>
-        <Filename Value="mncCSV.pas"/>
-        <UnitName Value="mncCSV"/>
-      </Item1>
-      <Item2>
         <Filename Value="mncConnections.pas"/>
         <UnitName Value="mncConnections"/>
+      </Item1>
+      <Item2>
+        <Filename Value="mncCSV.pas"/>
+        <UnitName Value="mncCSV"/>
       </Item2>
       <Item3>
-        <Filename Value="..\db\mncSchemas.pas"/>
-        <UnitName Value="mncSchemas"/>
+        <Filename Value="mncCSVExchanges.pas"/>
+        <UnitName Value="mncCSVExchanges"/>
       </Item3>
       <Item4>
-        <Filename Value="..\db\mncSQL.pas"/>
-        <UnitName Value="mncSQL"/>
+        <Filename Value="..\db\mncSchemas.pas"/>
+        <UnitName Value="mncSchemas"/>
       </Item4>
       <Item5>
-        <Filename Value="..\db\mncSQLUtils.pas"/>
-        <UnitName Value="mncSQLUtils"/>
+        <Filename Value="..\db\mncSQL.pas"/>
+        <UnitName Value="mncSQL"/>
       </Item5>
       <Item6>
-        <Filename Value="..\db\sqlite\mncSQLite.pas"/>
-        <UnitName Value="mncSQLite"/>
+        <Filename Value="..\db\mncSQLUtils.pas"/>
+        <UnitName Value="mncSQLUtils"/>
       </Item6>
       <Item7>
+        <Filename Value="..\db\sqlite\mncSQLite.pas"/>
+        <UnitName Value="mncSQLite"/>
+      </Item7>
+      <Item8>
         <Filename Value="..\db\sqlite\mncSQLiteSchemas.pas"/>
         <UnitName Value="mncSQLiteSchemas"/>
-      </Item7>
+      </Item8>
     </Files>
     <Type Value="RunAndDesignTime"/>
     <RequiredPkgs Count="2">

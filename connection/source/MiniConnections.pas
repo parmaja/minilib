@@ -7,8 +7,8 @@ unit MiniConnections;
 interface
 
 uses
-  mncCSV, mncConnections, mncSchemas, mncSQL, mncSQLUtils, mncSQLite, 
-  mncSQLiteSchemas, LazarusPackageIntf;
+  mncConnections, mncCSV, mncCSVExchanges, mncSchemas, mncSQL, mncSQLUtils, 
+  mncSQLite, mncSQLiteSchemas, LazarusPackageIntf;
 
 implementation
 

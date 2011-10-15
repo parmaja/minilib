@@ -7,7 +7,6 @@
       <Version Value="10"/>
       <PathDelim Value="\"/>
       <SearchPaths>
-        <OtherUnitFiles Value="$(TargetOS);\home\felipe\Programas\minilib\lib"/>
         <UnitOutputDirectory Value="..\units\$(TargetCPU)-$(TargetOS)"/>
       </SearchPaths>
       <Parsing>
@@ -19,6 +18,7 @@
       <Linking>
         <Debugging>
           <GenerateDebugInfo Value="True"/>
+          <DebugInfoType Value="dsStabs"/>
         </Debugging>
       </Linking>
       <Other>
@@ -28,8 +28,8 @@
         <CompilerPath Value="$(CompPath)"/>
       </Other>
     </CompilerOptions>
-    <Version Major="1" Build="1"/>
-    <Files Count="7">
+    <Version Build="1" Major="1"/>
+    <Files Count="8">
       <Item1>
         <Filename Value="mnClients.pas"/>
         <UnitName Value="mnClients"/>
@@ -58,6 +58,10 @@
         <Filename Value="mnSockets.pas"/>
         <UnitName Value="mnSockets"/>
       </Item7>
+      <Item8>
+        <Filename Value="mnSocketStreams.pas"/>
+        <UnitName Value="mnSocketStreams"/>
+      </Item8>
     </Files>
     <Type Value="RunAndDesignTime"/>
     <RequiredPkgs Count="2">

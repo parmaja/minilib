@@ -3,7 +3,6 @@
   <Package Version="4">
     <PathDelim Value="\"/>
     <Name Value="MiniXML"/>
-    <AddToProjectUsesSection Value="True"/>
     <CompilerOptions>
       <Version Value="10"/>
       <PathDelim Value="\"/>
@@ -21,7 +20,7 @@
       <Linking>
         <Debugging>
           <GenerateDebugInfo Value="True"/>
-          <GenerateDwarf Value="True"/>
+          <DebugInfoType Value="dsDwarf2Set"/>
         </Debugging>
       </Linking>
       <Other>

@@ -319,9 +319,10 @@ procedure PaintText(Canvas: TCanvas; Text: string; vRect: TRect; Style: TTextSty
 {$IFNDEF WINDOWS}
 {$ELSE}
 var
-  aFormat: Longint;
   R: TRect;
 {$ENDIF}
+var
+  aFormat: Longint;
 begin
   if Style.Wordbreak then
     Style.SingleLine := False;
@@ -496,4 +497,4 @@ end;
 initialization
 finalization
 end.
-
+

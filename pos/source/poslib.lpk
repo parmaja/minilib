@@ -1,15 +1,13 @@
 <?xml version="1.0"?>
 <CONFIG>
-  <Package Version="3">
+  <Package Version="4">
     <PathDelim Value="\"/>
     <Name Value="poslib"/>
-    <AddToProjectUsesSection Value="False"/>
     <Author Value="Zaher Dirkey"/>
     <CompilerOptions>
       <Version Value="10"/>
       <PathDelim Value="\"/>
       <SearchPaths>
-        <OtherUnitFiles Value="units\$(TargetCPU)-$(TargetOS);$(LazarusDir)\lcl\units\$(TargetCPU)-$(TargetOS);$(LazarusDir)\lcl\units\$(TargetCPU)-$(TargetOS)\$(LCLWidgetType);$(LazarusDir)\components\codetools\units\$(TargetCPU)-$(TargetOS);$(LazarusDir)\packager\units\$(TargetCPU)-$(TargetOS)"/>
         <UnitOutputDirectory Value="units\$(TargetCPU)-$(TargetOS)"/>
       </SearchPaths>
       <Parsing>
@@ -27,9 +25,13 @@
       <Linking>
         <Debugging>
           <GenerateDebugInfo Value="True"/>
+          <DebugInfoType Value="dsStabs"/>
         </Debugging>
       </Linking>
       <Other>
+        <CompilerMessages>
+          <UseMsgFile Value="True"/>
+        </CompilerMessages>
         <CompilerPath Value="$(CompPath)"/>
       </Other>
     </CompilerOptions>
@@ -38,8 +40,8 @@ Light controls (TposGrid, TposList, TposStuffs, TposKeyboard...)
 "/>
     <License Value="MLGPL
 "/>
-    <Version Major="1" Build="1"/>
-    <Files Count="11">
+    <Version Build="1" Major="1"/>
+    <Files Count="10">
       <Item1>
         <Filename Value="posButtons.pas"/>
         <UnitName Value="posButtons"/>
@@ -82,21 +84,19 @@ Light controls (TposGrid, TposList, TposStuffs, TposKeyboard...)
         <Filename Value="poslib.lrs"/>
         <Type Value="LRS"/>
       </Item10>
-      <Item11>
-        <Filename Value="images\TposButton.png"/>
-        <Type Value="Binary"/>
-      </Item11>
     </Files>
     <Type Value="RunAndDesignTime"/>
-    <RequiredPkgs Count="2">
+    <RequiredPkgs Count="3">
       <Item1>
-        <PackageName Value="LCL"/>
-        <MinVersion Major="1" Valid="True"/>
+        <PackageName Value="MiniLib"/>
       </Item1>
       <Item2>
+        <PackageName Value="LCL"/>
+      </Item2>
+      <Item3>
         <PackageName Value="FCL"/>
         <MinVersion Major="1" Valid="True"/>
-      </Item2>
+      </Item3>
     </RequiredPkgs>
     <UsageOptions>
       <UnitPath Value="$(PkgOutDir)"/>

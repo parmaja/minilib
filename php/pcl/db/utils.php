@@ -24,6 +24,8 @@ function db_insert($table_name, $params, $key_field = null) {
 
 function db_update($table_name, $params, $keys) {
  
+	$w = '';
+  $f = '';
   foreach ($keys as $key => $value) {
     if (!empty($w))
       $w  = $w . ",";

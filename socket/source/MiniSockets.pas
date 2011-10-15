@@ -8,7 +8,7 @@ interface
 
 uses
   mnClients, mnCommandClients, mnCommandServers, mnConnections, mnHttpServer, 
-  mnServers, mnSockets, LazarusPackageIntf;
+  mnServers, mnSockets, mnSocketStreams, LazarusPackageIntf;
 
 implementation
 
