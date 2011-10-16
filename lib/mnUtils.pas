@@ -40,6 +40,10 @@ function SubStr(const Str: String; vSeperator: Char; vFromIndex, vToIndex: Integ
 function PeriodToString(vPeriod: Double; WithSeconds:Boolean): string;
 function DequoteStr(Str: string; QuoteChar: string): string; overload;
 function DequoteStr(Str: string): string; overload; //deqoute use both of ' and "
+function LeadLeft(const vStr: string; Count: Integer; vChar: Char): string; overload;
+function LeadRight(const vStr: string; Count: integer; vChar: Char): string; overload;
+function LeadLeft(const I: Integer; Count: Integer; vChar: Char): string; overload;
+function LeadRight(const I: Integer; Count: integer; vChar: Char): string; overload;
 
 {
   Break string to Strings list items at #10 or #13 or #13#10 
@@ -75,14 +79,6 @@ function DescapeString(const S: string; Esc: string; Chars: array of AnsiChar; E
 //Similer to ZeroMemory
 procedure InitMemory(var v; Count: Longint);
 
-{ Date }
-{
- TimeDivider can be ' ' or 'T' or #0
- TimeDivider = #0 = AutoDetect
-}
-
-function ISOStrToDate(ISODate: String; TimeDivider: AnsiChar = #0; UseDefault: Boolean = False): TDateTime;
-function ISODateToStr(vDate:TDateTime; TimeDivider: AnsiChar = ' '; WithTime: Boolean = False): string;
 
 {$ifndef FPC}
 const
@@ -154,6 +150,38 @@ begin
     else
       Result := Str;
   end;
+end;
+
+function LeadLeft(const vStr: string; Count: Integer; vChar: Char): string;
+var
+  l: integer;
+begin
+  l := Length(vStr);
+  if l < Count then
+    Result := vStr + StringOfChar(vChar, Count  - l)
+  else
+    Result := vStr;
+end;
+
+function LeadRight(const vStr: string; Count: integer; vChar: Char): string;
+var
+  l: integer;
+begin
+  l := Length(vStr);
+  if l < Count then
+    Result := StringOfChar(vChar, Count - l) + vStr
+  else
+    Result := vStr;
+end;
+
+function LeadLeft(const I: Integer; Count: Integer; vChar: Char): string;
+begin
+  Result := LeadLeft(IntToStr(I), Count, vChar);
+end;
+
+function LeadRight(const I: Integer; Count: integer; vChar: Char): string;
+begin
+  Result := LeadRight(IntToStr(I), Count, vChar);
 end;
 
 function DequoteStr(Str: string; QuoteChar: string): string;
@@ -517,57 +545,6 @@ end;
 procedure InitMemory(var v; Count: Longint);
 begin
   FillChar(v, Count, #0);
-end;
-
-{
-  ISOStrToDate
-  2011-08-18 13:25:59
-
-  not yet
-  2011-08-18T13:25:59+00:00
-}
-function ISOStrToDate(ISODate: String; TimeDivider:AnsiChar; UseDefault: Boolean): TDateTime;
-var
-  T: String;
-  Y, M, D, H, N, S: Word;
-begin
-  try
-    if TimeDivider = #0 then
-    begin
-      if Pos('T', ISODate) > 0 then
-        TimeDivider := 'T'
-      else
-        TimeDivider := ' ';
-    end;
-    
-    if UseDefault then
-      DecodeDate(Now, Y, M, D)
-    else
-      DecodeDate(0, Y, M, D);
-    T := SubStr(ISODate, TimeDivider, 1);//skip the time text
-    Y := StrToIntDef(SubStr(T, '-', 1), Y);
-    M := StrToIntDef(SubStr(T, '-', 2), M);
-    D := StrToIntDef(SubStr(T, '-', 3), D);
-
-    T := SubStr(ISODate, TimeDivider, 2);//skip the date text
-    T := SubStr(T, '+', 1);//skip the date text
-    H := StrToIntDef(SubStr(T, ':', 1), 0);
-    N := StrToIntDef(SubStr(T, ':', 2), 0);
-    S := StrToIntDef(SubStr(T, ':', 3), 0);
-    Result := EncodeDateTime(Y, M, D, H, N, S, 0);
-  except
-    raise Exception.Create('Not valid DateTime');
-  end;
-end;
-
-function ISODateToStr(vDate:TDateTime; TimeDivider: AnsiChar; WithTime: Boolean): string;
-var
-  f: string;
-begin
-  f := 'YYYY-MM-DD';
-  if WithTime then
-   f := f + TimeDivider+ 'TT:NN:SS';
-  Result := FormatDateTime(f, vDate);
 end;
 
 function SubStr(const Str: String; vSeperator: Char; vFromIndex, vToIndex: Integer): String;

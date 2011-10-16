@@ -1,0 +1,71 @@
+object Form1: TForm1
+  Left = 461
+  Height = 240
+  Top = 91
+  Width = 481
+  Caption = 'Form1'
+  ClientHeight = 240
+  ClientWidth = 481
+  OnCreate = FormCreate
+  LCLVersion = '0.9.31'
+  object FromEdit: TEdit
+    Left = 7
+    Height = 21
+    Top = 37
+    Width = 157
+    TabOrder = 0
+    Text = '1971-10-19'
+  end
+  object ToEdit: TEdit
+    Left = 8
+    Height = 21
+    Top = 89
+    Width = 156
+    TabOrder = 1
+  end
+  object Button1: TButton
+    Left = 9
+    Height = 25
+    Top = 118
+    Width = 75
+    Caption = 'Convert'
+    OnClick = Button1Click
+    TabOrder = 2
+  end
+  object ToCbo: TComboBox
+    Left = 7
+    Height = 21
+    Top = 63
+    Width = 157
+    ItemHeight = 13
+    Style = csDropDownList
+    TabOrder = 3
+  end
+  object Memo1: TMemo
+    Left = 173
+    Height = 191
+    Top = 8
+    Width = 302
+    ScrollBars = ssVertical
+    TabOrder = 4
+    WordWrap = False
+  end
+  object Button3: TButton
+    Left = 175
+    Height = 25
+    Top = 204
+    Width = 75
+    Caption = 'Test'
+    OnClick = Button3Click
+    TabOrder = 5
+  end
+  object FromCbo: TComboBox
+    Left = 7
+    Height = 21
+    Top = 11
+    Width = 157
+    ItemHeight = 13
+    Style = csDropDownList
+    TabOrder = 6
+  end
+end

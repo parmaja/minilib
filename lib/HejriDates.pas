@@ -43,8 +43,14 @@ interface
 uses
   Classes, SysUtils, DateUtils, Math, StrUtils;
 
-const
-  HejriMonthEnglish: array[1..12] of string =
+{$ifndef FPC}
+type
+  TMonthNameArray = array[1..12] of string;
+  TWeekNameArray = array[1..7] of string;
+{$endif}  
+
+var
+  HejriMonthEnglish: TMonthNameArray =
   (
     'Muharram',
     'Safar',
@@ -60,7 +66,7 @@ const
     'Zul Hijjah'
     );
 
-  HejriMonthArabic: array[1..12] of string =
+  HejriMonthArabic: TMonthNameArray =
   (
     '„Õ—„',
     '’›—',
@@ -76,9 +82,10 @@ const
     '–Ê «·ÕÃ…'
     );
 
-function Hejri_MonthDays(Year, Month: Word): Word;
+function Hejri_MonthDays(Year, Month: Word): Word; overload;
+function Hejri_MonthDays(DateTime: TDateTime): Word; overload;
 function Hejri_EncodeDate(Y, M, D: Word): TDateTime;
-procedure Hejri_DecodeDate(vDate: TDateTime; var Y, M, D: Word);
+procedure Hejri_DecodeDate(vDate: TDateTime; out Y, M, D: Word);
 
 implementation
 
@@ -160,8 +167,8 @@ end;
 {$else not HEJRI_COMPLEX}
 //This functions ported from Motaz Abd alazeem, Abu Eyas
 const
-  HejriMonthDays = 29.530588;
-  HejriYearDays: Double = 354.367056; //365.2425;
+  HejriMonthDays: Double = 29.530588;
+  HejriYearDays: Double = 354.367056;
   HejriStart = -466582; // EncodeDate(622, 7, 16), the first day in the hijra date system, it is the day when the prohpet went to Madena.
 
 function Hejri_MonthDays(Year, Month: Word): Word;
@@ -175,12 +182,20 @@ begin
     Result:= 29;
 end;
 
+function Hejri_MonthDays(DateTime: TDateTime): Word;
+var
+  Y, M, D: Word;
+begin
+  Hejri_DecodeDate(DateTime, Y, M, D);
+  Result := Hejri_MonthDays(Y, M);
+end;
+
 function Hejri_EncodeDate(Y, M, D: Word): TDateTime;
 begin
   Result:= (Y - 1) * HejriYearDays + (HejriStart - 0) + (M - 1) * HejriMonthDays + D + 1;
 end;
 
-procedure Hejri_DecodeDate(vDate: TDateTime; var Y, M, D: Word);
+procedure Hejri_DecodeDate(vDate: TDateTime; out Y, M, D: Word);
 var
   HejriY: Double;
   Days: Double;
@@ -195,7 +210,7 @@ begin
   RDay:= (Frac(HejriMonth) * HejriMonthDays) + 1;
   D:= Trunc(RDay);
 end;
-
+
 {$endif not HEJRI_COMPLEX}
 
 initialization
