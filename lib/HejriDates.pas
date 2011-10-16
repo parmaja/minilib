@@ -1,4 +1,5 @@
 unit HejriDates;
+
 {-----------------------------------------------------------------------------
  Title: Universal Date utils
  Authors: Zaher Dirkey <zaherdirkey at yahoo.com> *COMPLEX*
@@ -33,59 +34,31 @@ unit HejriDates;
     http://www.marefa.org/index.php/%D8%A7%D9%84%D8%AA%D9%82%D9%88%D9%8A%D9%85_%D8%A7%D9%84%D9%87%D8%AC%D8%B1%D9%8A
     http://www.staff.science.uu.nl/~gent0113/islam/ummalqura.htm
     http://onaizah.net/majlis/t116882.html
-    
+
   tester:
     http://www.adma1.com/5dmat/Date-Convert.html
 }
 
-interface      
+interface
 
 uses
-  Classes, SysUtils, DateUtils, Math, StrUtils;
+  Classes, SysUtils, DateUtils;
 
 {$ifndef FPC}
 type
-  TMonthNameArray = array[1..12] of string;
-  TWeekNameArray = array[1..7] of string;
-{$endif}  
+  TMonthNameArray = array[1..12] of String;
+  TWeekNameArray = array[1..7] of String;
+{$endif}
 
 var
-  HejriMonthEnglish: TMonthNameArray =
-  (
-    'Muharram',
-    'Safar',
-    'Rabi Al awwal',
-    'Rabi Al thani',
-    'Jumada Al ula',
-    'Jumada Al ukhra',
-    'Rajab',
-    'Shaban',
-    'Ramadan',
-    'Shawwal',
-    'Zul Qadah',
-    'Zul Hijjah'
-    );
+  HejriMonthEnglish: TMonthNameArray = ('Muharram', 'Safar', 'Rabi Al awwal', 'Rabi Al thani', 'Jumada Al ula', 'Jumada Al ukhra', 'Rajab', 'Shaban', 'Ramadan', 'Shawwal', 'Zul Qadah', 'Zul Hijjah');
 
-  HejriMonthArabic: TMonthNameArray =
-  (
-    'ãÍÑã',
-    'ÕÝÑ',
-    'ÑÈíÚ ÇáÃæá',
-    'ÑÈíÚ ÇáËÇäí',
-    'ÌãÇÏì ÇáÃæá',
-    'ÌãÇÏì ÇáÃÎÑì',
-    'ÑÌÈ',
-    'ÔÚÈÇä',
-    'ÑãÖÇä',
-    'ÔæÇá',
-    'Ðæ ÇáÞÚÏÉ',
-    'Ðæ ÇáÍÌÉ'
-    );
+  HejriMonthArabic: TMonthNameArray = ('ãÍÑã', 'ÕÝÑ', 'ÑÈíÚ ÇáÃæá', 'ÑÈíÚ ÇáËÇäí', 'ÌãÇÏì ÇáÃæá', 'ÌãÇÏì ÇáÃÎÑì', 'ÑÌÈ', 'ÔÚÈÇä', 'ÑãÖÇä', 'ÔæÇá', 'Ðæ ÇáÞÚÏÉ', 'Ðæ ÇáÍÌÉ');
 
 function Hejri_MonthDays(Year, Month: Word): Word; overload;
 function Hejri_MonthDays(DateTime: TDateTime): Word; overload;
 function Hejri_EncodeDate(Y, M, D: Word): TDateTime;
-procedure Hejri_DecodeDate(vDate: TDateTime; out Y, M, D: Word);
+procedure Hejri_DecodeDate(DateTime: TDateTime; out Y, M, D: Word);
 
 implementation
 
@@ -94,7 +67,7 @@ const
   HejriMonthDays: Double = 29.530587962963;
   HejriYearDays: Double = 354.367056; //365.2425;
   HejriDiff: Double = 1948437.7759375;
-  HejriStart = -466582; // EncodeDate(622, 7, 16), the first day in the hijra date system, it is the day when the prohpet went to Madena.
+  HejriStart = -466578; // EncodeDate(622, 7, 20), the first day in the hijra date system, it is the day when the prohpet went to Madena.
 
 function Hejri_MonthDays(Year, Month: Word): Word;
 begin
@@ -122,11 +95,11 @@ begin
   end;
 
   Multiples := Floor(Abs(Dif / HejriYearDays) / 400) * 400;
-  inc(Year, Multiples);
+  Inc(Year, Multiples);
   Count := Count + (Multiples * HejriYearDays);
   while (Abs(dif) >= Count + 365 + Leap) do
   begin
-    inc(Year);
+    Inc(Year);
     Count := Count + (365 + Leap);
     Leap := Floor(Floor(Year / 4) / (Year / 4)) -
       Floor(Floor(Year / 100) / (Year / 100)) + Floor(Floor(Year / 400) / (Year / 400));
@@ -159,7 +132,7 @@ begin
   Result := EncodeDate(Year, Round(Month), Round(Day));
 end;
 
-procedure Hejri_DecodeDate(vDate: TDateTime; var Y, M, D: Word);
+procedure Hejri_DecodeDate(DateTime: TDateTime; var Y, M, D: Word);
 begin
   //not yet
 end;
@@ -167,8 +140,8 @@ end;
 {$else not HEJRI_COMPLEX}
 //This functions ported from Motaz Abd alazeem, Abu Eyas
 const
-  HejriMonthDays: Double = 29.530588;
-  HejriYearDays: Double = 354.367056;
+  HejriMonthDays: Extended = 29.530588;
+  HejriYearDays: Extended = 354.367056;
   HejriStart = -466582; // EncodeDate(622, 7, 16), the first day in the hijra date system, it is the day when the prohpet went to Madena.
 
 function Hejri_MonthDays(Year, Month: Word): Word;
@@ -177,9 +150,9 @@ var
 begin
   Hejri_DecodeDate(Hejri_EncodeDate(Year, Month, 29) + 1, HYear, HMonth, HDay);
   if HDay = 30 then
-    Result:= 30
+    Result := 30
   else
-    Result:= 29;
+    Result := 29;
 end;
 
 function Hejri_MonthDays(DateTime: TDateTime): Word;
@@ -192,26 +165,47 @@ end;
 
 function Hejri_EncodeDate(Y, M, D: Word): TDateTime;
 begin
-  Result:= (Y - 1) * HejriYearDays + (HejriStart - 0) + (M - 1) * HejriMonthDays + D + 1;
+  Result := (Y - 1) * HejriYearDays + (M - 1) * HejriMonthDays + D;
+  Result := Result + HejriStart;
 end;
 
-procedure Hejri_DecodeDate(vDate: TDateTime; out Y, M, D: Word);
+{procedure Hejri_DecodeDate(DateTime: TDateTime; out Y, M, D: Word);
 var
   HejriY: Double;
   Days: Double;
   HejriMonth: Double;
   RDay: Double;
 begin
-  HejriY:= ((Trunc(vDate) - HejriStart - 1) / HejriYearDays);
-  Days:= Frac(HejriY);
+  DateTime := Trunc(DateTime); //Days only
+  HejriY := ((DateTime - HejriStart - 1) / HejriYearDays);
+  Days := Frac(HejriY);
   Y := Trunc(HejriY) + 1;
   HejriMonth := ((Days * HejriYearDays) / HejriMonthDays);
-  M:= Trunc(HejriMonth) + 1;
-  RDay:= (Frac(HejriMonth) * HejriMonthDays) + 1;
-  D:= Trunc(RDay);
+  M := Trunc(HejriMonth) + 1;
+  RDay := (Frac(HejriMonth) * HejriMonthDays) + 1;
+  D := Trunc(RDay);
+end;}
+
+procedure Hejri_DecodeDate(DateTime: TDateTime; out Y, M, D: Word);
+var
+  fY: Extended; //Float number of years
+  fM: Extended; //Float number of months
+  fD: Extended; //Frac Days
+  S: Integer;
+begin
+  S := Trunc(DateTime) - HejriStart - 1; //Days only
+
+  fY := S / HejriYearDays;
+  fD := Frac(fY);
+  Y := Trunc(fY) + 1;
+  fM := ((fD * HejriYearDays) / HejriMonthDays);
+  M := Trunc(fM) + 1;
+  D := Trunc((Frac(fM) * HejriMonthDays) + 1);
 end;
+
 
 {$endif not HEJRI_COMPLEX}
 
 initialization
 end.
+

@@ -43,29 +43,53 @@ begin
   UniDate.EnumItems(FromCbo.Items);
   UniDate.EnumItems(ToCbo.Items);
   FromCbo.ItemIndex := 0;
-  ToCbo.ItemIndex := 0;
+  if ToCbo.Items.Count > 1 then
+    ToCbo.ItemIndex := 1;
 end;
 
 procedure TForm1.Button3Click(Sender: TObject);
 var
   i: Integer;
-  dt, dt2: TDateTime;
+  st, dt, old_dt, dt2: TDateTime;
   y, m, d: word;
   y2, m2, d2: word;
+  c, c2, old_y, old_m: Integer;
 begin
-  dt := Trunc(Now);
-  for i := 0 to 1000 - 1 do
+  Memo1.Clear;
+  old_m := 0;
+  old_y := 0;
+  old_dt := 0;
+  dt := HejriEncodeDate(1,1,1);
+  for i := Trunc(dt) to Trunc(Now) do
   begin
     Hejri_DecodeDate(dt, y, m, d);
+    if (old_y <> y) or (old_m <> m) then
+    begin
+      if (old_m <> 0) then
+      begin
+        c := trunc(dt) - trunc(old_dt);
+        c2 := Hejri_MonthDays(old_y, old_m);
+        if c <> c2 then
+        begin
+          memo1.Lines.Add(FormatDateTime('YYYY-MM-DD', dt2) + ' -> '+ IntToStr(y) +'-'+ IntToStr(m)+'-'+IntToStr(d) + ' <> '+ IntToStr(y) +'-'+ IntToStr(m)+'-'+IntToStr(d) + ' C=' + IntToStr(c) + ' C2=' + IntToStr(c2));
+          //exit;
+        end;
+      end;
+      old_m := m;
+      old_y := y;
+      old_dt := dt;
+    end;
+
     y2:=y;
     m2:=m;
     d2:=d;
     dt2 := Trunc(Hejri_EncodeDate(y, m, d));
     if dt2 <> dt then
     begin
-       memo1.Lines.Add(FormatDateTime('YYYY-MM-DD', dt2) + ' -> '+ IntToStr(y) +'-'+ IntToStr(m)+'-'+IntToStr(d) + ' <> '+ IntToStr(y) +'-'+ IntToStr(m)+'-'+IntToStr(d));
+      memo1.Lines.Add(FormatDateTime('YYYY-MM-DD', dt2) + ' -> '+ IntToStr(y) +'-'+ IntToStr(m)+'-'+IntToStr(d) + ' <> '+ IntToStr(y) +'-'+ IntToStr(m)+'-'+IntToStr(d));
+      //exit;
     end;
-    dt := dt - 1;
+    dt := dt + 1;
   end;
 end;
 
