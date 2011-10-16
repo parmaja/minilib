@@ -15,6 +15,7 @@ type
   TForm1 = class(TForm)
     Button1: TButton;
     Button3: TButton;
+    Button4: TButton;
     ToCbo: TComboBox;
     FromCbo: TComboBox;
     FromEdit: TEdit;
@@ -22,6 +23,7 @@ type
     Memo1: TMemo;
     procedure Button1Click(Sender: TObject);
     procedure Button3Click(Sender: TObject);
+    procedure Button4Click(Sender: TObject);
     procedure FormCreate(Sender: TObject);
   private
     { private declarations }
@@ -72,7 +74,7 @@ begin
         if c <> c2 then
         begin
           memo1.Lines.Add(FormatDateTime('YYYY-MM-DD', dt2) + ' -> '+ IntToStr(y) +'-'+ IntToStr(m)+'-'+IntToStr(d) + ' <> '+ IntToStr(y) +'-'+ IntToStr(m)+'-'+IntToStr(d) + ' C=' + IntToStr(c) + ' C2=' + IntToStr(c2));
-          //exit;
+          exit;
         end;
       end;
       old_m := m;
@@ -83,14 +85,25 @@ begin
     y2:=y;
     m2:=m;
     d2:=d;
-    dt2 := Trunc(Hejri_EncodeDate(y, m, d));
+    dt2 := Hejri_EncodeDate(y, m, d);
     if dt2 <> dt then
     begin
       memo1.Lines.Add(FormatDateTime('YYYY-MM-DD', dt2) + ' -> '+ IntToStr(y) +'-'+ IntToStr(m)+'-'+IntToStr(d) + ' <> '+ IntToStr(y) +'-'+ IntToStr(m)+'-'+IntToStr(d));
-      //exit;
+      exit;
     end;
     dt := dt + 1;
   end;
+  memo1.Lines.Add('Test Finished');
+end;
+
+procedure TForm1.Button4Click(Sender: TObject);
+var
+  dt: TDateTime;
+  y, m, d: word;
+begin
+  dt := Hejri_EncodeDate(1317, 8, 28);
+  dt := Hejri_EncodeDate(1317, 8, 29);
+  dt := Hejri_EncodeDate(1317, 8, 30);
 end;
 
 procedure TForm1.Button1Click(Sender: TObject);

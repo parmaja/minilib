@@ -68,4 +68,13 @@ object Form1: TForm1
     Style = csDropDownList
     TabOrder = 6
   end
+  object Button4: TButton
+    Left = 400
+    Height = 25
+    Top = 203
+    Width = 75
+    Caption = 'Test Func'
+    OnClick = Button4Click
+    TabOrder = 7
+  end
 end

@@ -3,7 +3,7 @@ unit HejriDates;
 {-----------------------------------------------------------------------------
  Title: Universal Date utils
  Authors: Zaher Dirkey <zaherdirkey at yahoo.com> *COMPLEX*
-          Motaz Abdel Azeem <motaz at code.sd> *SIMPLE*
+          Motaz Abdel Azeem <motaz at code.sd> *SIMPLE* with modifications
           http://code.sd/
           HejriUtils.pas
 
@@ -138,11 +138,11 @@ begin
 end;
 
 {$else not HEJRI_COMPLEX}
-//This functions ported from Motaz Abd alazeem, Abu Eyas
+//This functions ported from Motaz Abd alazeem, Abu Eyas with modifications
 const
-  HejriMonthDays: Extended = 29.530588;
   HejriYearDays: Extended = 354.367056;
-  HejriStart = -466582; // EncodeDate(622, 7, 16), the first day in the hijra date system, it is the day when the prohpet went to Madena.
+  HejriMonthDays: Extended = 29.530588;
+  HejriStart = -466582; // EncodeDate(622, 7, 16+1), the first day in the hijra date system, it is the day when the prohpet went to Madena.
 
 function Hejri_MonthDays(Year, Month: Word): Word;
 var
@@ -167,24 +167,10 @@ function Hejri_EncodeDate(Y, M, D: Word): TDateTime;
 begin
   Result := (Y - 1) * HejriYearDays + (M - 1) * HejriMonthDays + D;
   Result := Result + HejriStart;
+  if Result > 0 then
+    Result := Result + 1;//the problem between trunc of -0.25 = trunc of +0.75 while the diff is 1
+  Result := Trunc(Result);
 end;
-
-{procedure Hejri_DecodeDate(DateTime: TDateTime; out Y, M, D: Word);
-var
-  HejriY: Double;
-  Days: Double;
-  HejriMonth: Double;
-  RDay: Double;
-begin
-  DateTime := Trunc(DateTime); //Days only
-  HejriY := ((DateTime - HejriStart - 1) / HejriYearDays);
-  Days := Frac(HejriY);
-  Y := Trunc(HejriY) + 1;
-  HejriMonth := ((Days * HejriYearDays) / HejriMonthDays);
-  M := Trunc(HejriMonth) + 1;
-  RDay := (Frac(HejriMonth) * HejriMonthDays) + 1;
-  D := Trunc(RDay);
-end;}
 
 procedure Hejri_DecodeDate(DateTime: TDateTime; out Y, M, D: Word);
 var
@@ -193,7 +179,7 @@ var
   fD: Extended; //Frac Days
   S: Integer;
 begin
-  S := Trunc(DateTime) - HejriStart - 1; //Days only
+  S := Trunc(DateTime - HejriStart) - 1; //Days only
 
   fY := S / HejriYearDays;
   fD := Frac(fY);
