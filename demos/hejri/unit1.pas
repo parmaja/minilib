@@ -49,6 +49,10 @@ begin
     ToCbo.ItemIndex := 1;
 end;
 
+{
+  This important test the formula of Hejri functions date convert
+  It test Days in Month and convert back to TDateTime days.
+}
 procedure TForm1.Button3Click(Sender: TObject);
 var
   i: Integer;
