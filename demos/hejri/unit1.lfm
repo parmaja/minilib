@@ -29,6 +29,7 @@ object Form1: TForm1
     Top = 118
     Width = 75
     Caption = 'Convert'
+    Default = True
     OnClick = Button1Click
     TabOrder = 2
   end

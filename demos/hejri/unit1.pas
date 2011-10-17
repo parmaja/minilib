@@ -56,9 +56,8 @@ end;
 procedure TForm1.Button3Click(Sender: TObject);
 var
   i: Integer;
-  st, dt, old_dt, dt2: TDateTime;
+  dt, old_dt, dt2: TDateTime;
   y, m, d: word;
-  y2, m2, d2: word;
   c, c2, old_y, old_m: Integer;
 begin
   Memo1.Clear;
@@ -77,7 +76,7 @@ begin
         c2 := Hejri_MonthDays(old_y, old_m);
         if c <> c2 then
         begin
-          memo1.Lines.Add(FormatDateTime('YYYY-MM-DD', dt2) + ' -> '+ IntToStr(y) +'-'+ IntToStr(m)+'-'+IntToStr(d) + ' <> '+ IntToStr(y) +'-'+ IntToStr(m)+'-'+IntToStr(d) + ' C=' + IntToStr(c) + ' C2=' + IntToStr(c2));
+          memo1.Lines.Add(FormatDateTime('YYYY-MM-DD', dt) + ' -> '+ IntToStr(y) +'-'+ IntToStr(m)+'-'+IntToStr(d) + ' <> '+ IntToStr(y) +'-'+ IntToStr(m)+'-'+IntToStr(d) + ' C=' + IntToStr(c) + ' C2=' + IntToStr(c2));
           exit;
         end;
       end;
@@ -86,13 +85,10 @@ begin
       old_dt := dt;
     end;
 
-    y2:=y;
-    m2:=m;
-    d2:=d;
     dt2 := Hejri_EncodeDate(y, m, d);
     if dt2 <> dt then
     begin
-      memo1.Lines.Add(FormatDateTime('YYYY-MM-DD', dt2) + ' -> '+ IntToStr(y) +'-'+ IntToStr(m)+'-'+IntToStr(d) + ' <> '+ IntToStr(y) +'-'+ IntToStr(m)+'-'+IntToStr(d));
+      memo1.Lines.Add(FormatDateTime('YYYY-MM-DD', dt) + ' -> '+ IntToStr(y) +'-'+ IntToStr(m)+'-'+IntToStr(d) + ' <> '+ IntToStr(y) +'-'+ IntToStr(m)+'-'+IntToStr(d));
       exit;
     end;
     dt := dt + 1;
@@ -103,7 +99,6 @@ end;
 procedure TForm1.Button4Click(Sender: TObject);
 var
   dt: TDateTime;
-  y, m, d: word;
 begin
   dt := Hejri_EncodeDate(1317, 8, 28);
   dt := Hejri_EncodeDate(1317, 8, 29);

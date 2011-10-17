@@ -1,5 +1,4 @@
 unit UniDates;
-
 {-----------------------------------------------------------------------------
  Title: Universal Date utils
  Author:    Zaher <zaherdirkey at yahoo.com>
@@ -15,7 +14,6 @@ unit UniDates;
   Gregorian
   Hejri in HejriUtils
 }
-
 
 interface
 
@@ -90,22 +88,14 @@ procedure udtDecodeDate(const DateTime: TDateTime; out Year, Month, Day: Word); 
 function udtEncodeDate(Year, Month, Day: Word): TDateTime; overload;
 
 
-function udtDateToStr(DateTime: TDateTime): String;
-function udtDateToString(DateTime: TDateTime; Options: TUniviersalDateFlags = []): String; overload;
-function udtStringToDate(vStr: String): TDateTime;
-function udtTimeToString(vTime: TDateTime): String;
-function udtPeriodToString(vPeriod: Double; WithSeconds: Boolean): String;
-function udtHourPeriodToString(vPeriod: Double): String;
-function udtStringToTime(vStr: String): TDateTime;
-function udtStringToPeriod(S: String): Double;
 function udtMonthName(Month: Word): String; overload;
 function udtStartOfTheMonth(const AValue: TDateTime): TDateTime;
 function udtEndOfTheMonth(const AValue: TDateTime): TDateTime;
 function udtDaysInMonth(const AValue: TDateTime): Word; overload;
 function udtDaysInMonth(const Year, Month: Word): Word; overload;
 function udtRecodeDay(AValue: TDateTime; Day: Word): TDateTime;
-procedure udtIncAMonth(out Year, Month, Day: Word; NumberOfMonths: Integer = 1);
-function udtIncMonth(const DateTime: TDateTime; NumberOfMonths: Integer): TDateTime;
+procedure udtIncMonth(var Year, Month, Day: Word; NumberOfMonths: Integer = 1); overload;
+function udtIncMonth(const DateTime: TDateTime; NumberOfMonths: Integer): TDateTime; overload;
 function udtIncYear(const AValue: TDateTime; const ANumberOfYears: Integer): TDateTime;
 function udtYearOf(const AValue: TDateTime): Word;
 function udtMonthOf(const AValue: TDateTime): Word;
@@ -118,11 +108,22 @@ function udtIncDay(const AValue: TDateTime; const ANumberOfDays: Integer = 1): T
 function udtCorrectYear(y: Integer): Integer;
 function udtCurrentMonth: Word;
 function SeasonOfDate(Date: TDateTime): Integer;
-procedure CorrectRangeDate(out FromDate, ToDate: TDateTime);
 function ExtractDateTimeString(S: String): String;
 function CorrectDateStr(S: String): String;
 function CorrectTimeStr(S: String): String;
 function CompleteDateStr(S: String): String;
+
+//Date and Time strings
+
+function udtTimeToString(vTime: TDateTime): String;
+function udtStringToTime(vStr: String): TDateTime;
+
+function udtPeriodToString(vPeriod: Double; WithSeconds: Boolean): String;
+function udtStringToPeriod(S: String): Double;
+function udtHourPeriodToString(vPeriod: Double): String;
+
+function udtDateToString(DateTime: TDateTime; Options: TUniviersalDateFlags = []): String; overload; deprecated;
+function udtStringToDate(vStr: String): TDateTime; deprecated;
 
 procedure udtISOStrToDate(ISODate: String; out Y, M, D, H, N, S: Word; TimeDivider: AnsiChar = #0; UseDefault: Boolean = False); overload;
 function udtISOStrToDate(UDS: TUniviersalDateSystem; ISODate: String; TimeDivider: AnsiChar = #0; UseDefault: Boolean = False): TDateTime; overload;
@@ -157,12 +158,6 @@ end;
 function SeasonOfDate(Date: TDateTime): Integer;
 begin
   Result := MonthOf(Date) div 4;
-end;
-
-procedure CorrectRangeDate(out FromDate, ToDate: TDateTime);
-begin
-  if ToDate = 0 then
-    ToDate := FinalDate;
 end;
 
 function udtCurrentMonth: Word;
@@ -227,11 +222,6 @@ begin
     else
       Result := Now;
   end;
-end;
-
-function udtDateToStr(DateTime: TDateTime): String;
-begin
-  Result := udtDateToString(DateTime, [udtfUseDayName]);
 end;
 
 function udtDateToString(DateTime: TDateTime; Options: TUniviersalDateFlags = []): String;
@@ -372,18 +362,6 @@ end;
 function udtMonthName(Month: Word): String;
 begin
   Result := UniDate.Current.MonthName(Month);
-{  case CalendarType of
-    udtGreg:
-      if AltDate then
-        Result := HijriMonthArabic[Month]
-      else
-        Result := LongMonthNames[Month];
-    udtHijri:
-      if AltDate then
-        Result := LongMonthNames[Month]
-      else
-        Result := HijriMonthArabic[Month];
-  end;}
 end;
 
 function udtStartOfTheMonth(const AValue: TDateTime): TDateTime;
@@ -419,7 +397,7 @@ begin
   Result := udtDaysInMonth(lYear, lMonth);
 end;
 
-procedure udtIncAMonth(out Year, Month, Day: Word; NumberOfMonths: Integer = 1);
+procedure udtIncMonth(var Year, Month, Day: Word; NumberOfMonths: Integer = 1);
 var
   Sign: Integer;
   aDaysInMonth: Integer;
@@ -446,7 +424,7 @@ var
   Year, Month, Day: Word;
 begin
   udtDecodeDate(DateTime, Year, Month, Day);
-  udtIncAMonth(Year, Month, Day, NumberOfMonths);
+  udtIncMonth(Year, Month, Day, NumberOfMonths);
   Result := udtEncodeDate(Year, Month, Day);
   ReplaceTime(Result, DateTime);
 end;
