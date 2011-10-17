@@ -1,0 +1,61 @@
+object Form1: TForm1
+  Left = 437
+  Height = 240
+  Top = 187
+  Width = 320
+  Caption = 'Form1'
+  ClientHeight = 240
+  ClientWidth = 320
+  LCLVersion = '0.9.31'
+  object Button1: TButton
+    Left = 19
+    Height = 25
+    Top = 50
+    Width = 75
+    Caption = 'MSG Cancel'
+    OnClick = Button1Click
+    TabOrder = 0
+  end
+  object Button2: TButton
+    Left = 19
+    Height = 25
+    Top = 21
+    Width = 75
+    Caption = 'MSG OK'
+    OnClick = Button2Click
+    TabOrder = 1
+  end
+  object Button3: TButton
+    Left = 19
+    Height = 25
+    Top = 80
+    Width = 75
+    Caption = 'MSG Yes'
+    OnClick = Button3Click
+    TabOrder = 2
+  end
+  object Button4: TButton
+    Left = 169
+    Height = 25
+    Top = 21
+    Width = 75
+    Caption = 'MSG Input'
+    OnClick = Button4Click
+    TabOrder = 3
+  end
+  object Button5: TButton
+    Left = 169
+    Height = 25
+    Top = 49
+    Width = 75
+    Caption = 'MSG Status'
+    OnClick = Button5Click
+    TabOrder = 4
+  end
+  object Timer1: TTimer
+    Interval = 10000
+    OnTimer = Timer1Timer
+    left = 128
+    top = 132
+  end
+end
