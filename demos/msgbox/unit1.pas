@@ -51,7 +51,7 @@ end;
 
 procedure TForm1.Button3Click(Sender: TObject);
 begin
-  Msg.Yes('Yes or No');
+  Msg.Yes('Do you want to exit, are you sure to exit from this program!!!'#13'Please tell me'#13'Yes or No');
 end;
 
 procedure TForm1.Button4Click(Sender: TObject);
@@ -77,4 +77,4 @@ begin
 end;
 
 end.
-
+

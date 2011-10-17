@@ -1,7 +1,7 @@
 object Form1: TForm1
-  Left = 437
+  Left = 414
   Height = 240
-  Top = 187
+  Top = 260
   Width = 320
   Caption = 'Form1'
   ClientHeight = 240
@@ -11,7 +11,7 @@ object Form1: TForm1
     Left = 19
     Height = 25
     Top = 50
-    Width = 75
+    Width = 97
     Caption = 'MSG Cancel'
     OnClick = Button1Click
     TabOrder = 0
@@ -20,7 +20,7 @@ object Form1: TForm1
     Left = 19
     Height = 25
     Top = 21
-    Width = 75
+    Width = 97
     Caption = 'MSG OK'
     OnClick = Button2Click
     TabOrder = 1
@@ -29,7 +29,7 @@ object Form1: TForm1
     Left = 19
     Height = 25
     Top = 80
-    Width = 75
+    Width = 97
     Caption = 'MSG Yes'
     OnClick = Button3Click
     TabOrder = 2
@@ -38,7 +38,7 @@ object Form1: TForm1
     Left = 169
     Height = 25
     Top = 21
-    Width = 75
+    Width = 90
     Caption = 'MSG Input'
     OnClick = Button4Click
     TabOrder = 3
@@ -47,7 +47,7 @@ object Form1: TForm1
     Left = 169
     Height = 25
     Top = 49
-    Width = 75
+    Width = 90
     Caption = 'MSG Status'
     OnClick = Button5Click
     TabOrder = 4
@@ -58,4 +58,4 @@ object Form1: TForm1
     left = 128
     top = 132
   end
-end
+end

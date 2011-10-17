@@ -9,7 +9,7 @@ interface
 
 uses
   Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, StdCtrls, MsgBox,
+  Dialogs, StdCtrls, MsgBox, Clipbrd,
   LCLType, LCLProc, LCLIntf,
   Imglist, Contnrs,  ExtCtrls;
 
@@ -23,7 +23,6 @@ type
     TextBox: TEdit;
     LabelMsg: TLabel;
     procedure CustomKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
-    procedure WriteToClipBoard(vText: string);
     procedure WMGetDlgCode(var Message: TWMGetDlgCode); message WM_GETDLGCODE;
     function ShowNow: TModalResult;
     procedure DoClose(var CloseAction: TCloseAction); override;
@@ -53,7 +52,6 @@ type
     function FindSender(Sender: TObject): Integer;
     procedure CreateFormObjects(vForm: TMsgForm; const vMsg, vTitle: string; Choices: TChoices; DefaultChoice, CancelChoice: TChoice); virtual;
   public
-    Beeping: Boolean;
     constructor Create; override;
     destructor Destroy; override;
     property MinButtonWidth: Integer read FMinButtonWidth write FMinButtonWidth;
@@ -83,7 +81,6 @@ begin
   inherited CreateNew(AOwner);
   FMsgKind := vMsgKind;
   Position := poMainFormCenter;
-//  FormStyle := fsStayOnTop;
   KeyPreview := True;
   OnKeyDown := @CustomKeyDown;
 end;
@@ -98,14 +95,18 @@ const
 
 procedure TGUIMsgBox.CreateFormObjects(vForm: TMsgForm; const vMsg, vTitle: string; Choices: TChoices; DefaultChoice: TChoice; CancelChoice: TChoice);
 const
-  cHorzMargin = 4;
-  cVertMargin = 4;
+  cHorzMargin = 5;
+  cVertMargin = 5;
 
-  cHorzSpacing = 4;
-  cVertSpacing = 4;
-  cButtonHeight = 22;
-  cButtonSpacing = 3;
+  cHorzSpacing = 5;
+  cVertSpacing = 5;
+  cButtonHeight = 28;
+  cButtonSpacing = 5;
+  {$ifdef LINUX}
+  cIconSize = 48;
+  {$else}
   cIconSize = 32;
+  {$endif}
   procedure FlipRect(var Rect: TRect; Width: Integer);
   begin
     OffsetRect(Rect, Width - Rect.Right - Rect.Left, 0);
@@ -197,6 +198,7 @@ begin
       WordWrap := True;
       Caption := vMsg;
       AutoSize := False;
+      Layout := tlCenter;
       if (vMsg <> '') and (UpperCase(vMsg[1]) >= 'A') and (UpperCase(vMsg[1]) <= 'Z') then
         BiDiMode := bdLeftToRight
       else
@@ -212,7 +214,8 @@ begin
         aRect.Bottom := aRect.Top + aClientHeight - cVertMargin - cVertMargin;
       end
       else
-        aRect.Bottom := aRect.Top + TextRect.Bottom;
+        aRect.Bottom := aRect.Top + aClientHeight;
+        //aRect.Bottom := aRect.Top + TextRect.Bottom;//if not layout = center
       if vForm.UseRightToLeftAlignment then
         FlipRect(aRect, aClientWidth);
       BoundsRect := aRect;
@@ -255,6 +258,8 @@ begin
           BiDiMode := vForm.BiDiMode;
           TabOrder := 0;
         end;
+        if ButtonCount <> 0 then
+          aClientHeight := aClientHeight + cHorzSpacing;
       end;
 
       if ButtonCount <> 0 then
@@ -344,45 +349,15 @@ end;
 procedure TMsgForm.CustomKeyDown(Sender: TObject; var Key: Word;
   Shift: TShiftState);
 begin
-  if (Shift = [ssCtrl]) and (Key = Word('C')) then
+  if ((Shift = [ssCtrl]) and (Key = Word('C'))) or (((Shift = [ssCtrl]) and (Key = VK_INSERT))) then
   begin
-    WriteToClipBoard(LabelMsg.Caption);
+    Clipboard.AsText := LabelMsg.Caption;
   end;
 end;
 
 procedure TMsgForm.WMGetDlgCode(var Message: TWMGetDlgCode);
 begin
   inherited;
-end;
-
-procedure TMsgForm.WriteToClipBoard(vText: string);
-var
-  Data: THandle;
-  DataPtr: Pointer;
-begin
-  {if OpenClipBoard(0) then
-  begin
-    try
-      Data := GlobalAlloc(GMEM_MOVEABLE + GMEM_DDESHARE, Length(vText) + 1);
-      try
-        DataPtr := GlobalLock(Data);
-        try
-          Move(PChar(vText)^, DataPtr^, Length(vText) + 1);
-          EmptyClipBoard;
-          SetClipboardData(CF_TEXT, Data);
-        finally
-          GlobalUnlock(Data);
-        end;
-      except
-        GlobalFree(Data);
-        raise;
-      end;
-    finally
-      CloseClipBoard;
-    end;
-  end
-  else
-    raise Exception.CreateRes(@SCannotOpenClipboard);}
 end;
 
 procedure TGUIMsgBox.HideStatus(Sender: TObject);
@@ -422,7 +397,7 @@ begin
     end;
     CreateFormObjects(aMsgForm, Msg, Application.Title, [], mbOK, mbCancel);
     if not aMsgForm.Visible then
-      aMsgForm.Show;
+      aMsgForm.Show; //need to make it kind of modal
       //ShowWindow(aMsgForm.Handle, SW_SHOWNOACTIVATE);
     Application.ProcessMessages;
   finally
@@ -431,7 +406,6 @@ end;
 
 procedure TGUIMsgBox.UpdateStatus(Msg: string; Sender: TObject);
 begin
-
 end;
 
 procedure TMsgForm.DoHide;
@@ -513,4 +487,4 @@ initialization
   Msg.Register(TGUIMsgBox, True);
 finalization
 end.
-
+
