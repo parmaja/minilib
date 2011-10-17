@@ -41,16 +41,17 @@ type
     FMinButtonWidth: Integer;
     FStatusForms: TObjectList;
   protected
-    function OutMsg(const Msg: string; Choices: TChoices; DefaultChoice: TChoice; CancelChoice: TChoice; Kind: TMsgKind): TModalResult; override;
-    function InputMsg(var vResult: string; const Msg: string; Choices: TChoices; DefaultChoice: TChoice; CancelChoice: TChoice; Kind: TMsgKind): TModalResult; override;
-    procedure ShowStatus(Msg: string; Sender: TObject = nil); override;
-    procedure UpdateStatus(Msg: string; Sender: TObject = nil); override;
+    function OutMsg(const Text: string; Choices: TChoices; DefaultChoice: TChoice; CancelChoice: TChoice; Kind: TMsgKind): TModalResult; override;
+    function InputMsg(var vResult: string; const Text: string; Choices: TChoices; DefaultChoice: TChoice; CancelChoice: TChoice; Kind: TMsgKind): TModalResult; override;
+    procedure ShowStatus(Text: string; Sender: TObject = nil); override;
+    procedure UpdateStatus(Text: string; Sender: TObject = nil); override;
     procedure HideStatus(Sender: TObject); override;
 
     function CreateButton(AOwner: TComponent; Choice: TChoice): TButton; virtual;
     function CreateForm(Kind: TMsgKind): TMsgForm; virtual;
     function FindSender(Sender: TObject): Integer;
     procedure CreateFormObjects(vForm: TMsgForm; const vMsg, vTitle: string; Choices: TChoices; DefaultChoice, CancelChoice: TChoice); virtual;
+    procedure Created; override;
   public
     constructor Create; override;
     destructor Destroy; override;
@@ -243,7 +244,7 @@ begin
 
       if FMsgKind = msgkInput then
       begin
-        aClientHeight := aClientHeight + cHorzSpacing;
+        //aClientHeight := aClientHeight + cHorzSpacing;
 
         TextBox := TEdit.Create(FOwnerControls);
         with TextBox do
@@ -258,8 +259,10 @@ begin
           BiDiMode := vForm.BiDiMode;
           TabOrder := 0;
         end;
+        {$ifdef LINUX}
         if ButtonCount <> 0 then
           aClientHeight := aClientHeight + cHorzSpacing;
+        {$endif}
       end;
 
       if ButtonCount <> 0 then
@@ -375,7 +378,7 @@ begin
   end;
 end;
 
-procedure TGUIMsgBox.ShowStatus(Msg: string; Sender: TObject);
+procedure TGUIMsgBox.ShowStatus(Text: string; Sender: TObject);
 var
   aMsgForm: TMsgForm;
   i: Integer;
@@ -395,7 +398,7 @@ begin
       aMsgForm.FormStyle := fsStayOnTop;
       FStatusForms.Add(aMsgForm);
     end;
-    CreateFormObjects(aMsgForm, Msg, Application.Title, [], mbOK, mbCancel);
+    CreateFormObjects(aMsgForm, Text, Application.Title, [], mbOK, mbCancel);
     if not aMsgForm.Visible then
       aMsgForm.Show; //need to make it kind of modal
       //ShowWindow(aMsgForm.Handle, SW_SHOWNOACTIVATE);
@@ -404,7 +407,7 @@ begin
   end;
 end;
 
-procedure TGUIMsgBox.UpdateStatus(Msg: string; Sender: TObject);
+procedure TGUIMsgBox.UpdateStatus(Text: string; Sender: TObject);
 begin
 end;
 
@@ -429,12 +432,12 @@ begin
   end;
 end;
 
-function TGUIMsgBox.OutMsg(const Msg: string; Choices: TChoices; DefaultChoice: TChoice; CancelChoice: TChoice; Kind: TMsgKind): TModalResult;
+function TGUIMsgBox.OutMsg(const Text: string; Choices: TChoices; DefaultChoice: TChoice; CancelChoice: TChoice; Kind: TMsgKind): TModalResult;
 var
   aMsgForm: TMsgForm;
 begin
   aMsgForm := CreateForm(Kind);
-  CreateFormObjects(aMsgForm, Msg, Application.Title, Choices, DefaultChoice, CancelChoice);
+  CreateFormObjects(aMsgForm, Text, Application.Title, Choices, DefaultChoice, CancelChoice);
   with aMsgForm do
   try
     Position := poScreenCenter;
@@ -444,12 +447,12 @@ begin
   end;
 end;
 
-function TGUIMsgBox.InputMsg(var vResult: string; const Msg: string; Choices: TChoices; DefaultChoice: TChoice; CancelChoice: TChoice; Kind: TMsgKind): TModalResult;
+function TGUIMsgBox.InputMsg(var vResult: string; const Text: string; Choices: TChoices; DefaultChoice: TChoice; CancelChoice: TChoice; Kind: TMsgKind): TModalResult;
 var
   aMsgForm: TMsgForm;
 begin
   aMsgForm := CreateForm(msgkInput);
-  CreateFormObjects(aMsgForm, Msg, Application.Title, Choices, DefaultChoice, CancelChoice);
+  CreateFormObjects(aMsgForm, Text, Application.Title, Choices, DefaultChoice, CancelChoice);
   with aMsgForm do
   try
     TextBox.Text := vResult;
@@ -477,6 +480,12 @@ begin
   end;
 end;
 
+procedure TGUIMsgBox.Created;
+begin
+  FName := 'GUI';
+  FTitle := 'GUI Messages';
+end;
+
 procedure TMsgForm.DoShow;
 begin
   inherited; 
@@ -487,4 +496,4 @@ initialization
   Msg.Register(TGUIMsgBox, True);
 finalization
 end.
-
+

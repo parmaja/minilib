@@ -69,7 +69,7 @@
         <PackageName Value="LCL"/>
       </Item1>
     </RequiredPackages>
-    <Units Count="44">
+    <Units Count="43">
       <Unit0>
         <Filename Value="project1.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -87,8 +87,8 @@
         <UnitName Value="unit1"/>
         <EditorIndex Value="0"/>
         <WindowIndex Value="0"/>
-        <TopLine Value="36"/>
-        <CursorPos X="36" Y="47"/>
+        <TopLine Value="1"/>
+        <CursorPos X="1" Y="1"/>
         <UsageCount Value="32"/>
         <Loaded Value="True"/>
         <LoadedDesigner Value="True"/>
@@ -351,11 +351,11 @@
         <IsVisibleTab Value="True"/>
         <EditorIndex Value="1"/>
         <WindowIndex Value="0"/>
-        <TopLine Value="317"/>
-        <CursorPos X="93" Y="353"/>
+        <TopLine Value="242"/>
+        <CursorPos X="58" Y="263"/>
         <UsageCount Value="10"/>
         <Bookmarks Count="1">
-          <Item0 X="1" Y="363" ID="1"/>
+          <Item0 X="1" Y="364" ID="1"/>
         </Bookmarks>
         <Loaded Value="True"/>
       </Unit34>
@@ -370,10 +370,10 @@
       <Unit36>
         <Filename Value="..\..\lib\MsgBox.pp"/>
         <UnitName Value="MsgBox"/>
-        <EditorIndex Value="5"/>
+        <EditorIndex Value="4"/>
         <WindowIndex Value="0"/>
-        <TopLine Value="72"/>
-        <CursorPos X="17" Y="81"/>
+        <TopLine Value="368"/>
+        <CursorPos X="4" Y="386"/>
         <UsageCount Value="10"/>
         <Loaded Value="True"/>
       </Unit36>
@@ -399,7 +399,7 @@
         <UsageCount Value="10"/>
       </Unit39>
       <Unit40>
-        <Filename Value="..\..\..\..\..\..\..\prog\programs\fpc\2.4\src\packages\fcl-image\src\clipping.pp"/>
+        <Filename Value="W:\prog\programs\fpc\2.4\src\packages\fcl-image\src\clipping.pp"/>
         <UnitName Value="Clipping"/>
         <WindowIndex Value="0"/>
         <TopLine Value="1"/>
@@ -407,9 +407,9 @@
         <UsageCount Value="10"/>
       </Unit40>
       <Unit41>
-        <Filename Value="..\..\..\..\..\..\programs\lazarus\lcl\clipbrd.pp"/>
+        <Filename Value="W:\programs\lazarus\lcl\clipbrd.pp"/>
         <UnitName Value="Clipbrd"/>
-        <EditorIndex Value="4"/>
+        <EditorIndex Value="3"/>
         <WindowIndex Value="0"/>
         <TopLine Value="220"/>
         <CursorPos X="19" Y="236"/>
@@ -417,30 +417,20 @@
         <Loaded Value="True"/>
       </Unit41>
       <Unit42>
-        <Filename Value="..\..\..\..\..\..\programs\lazarus\lcl\stdctrls.pp"/>
-        <UnitName Value="StdCtrls"/>
-        <EditorIndex Value="2"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="1459"/>
-        <CursorPos X="14" Y="1481"/>
-        <UsageCount Value="10"/>
-        <Loaded Value="True"/>
-      </Unit42>
-      <Unit43>
-        <Filename Value="..\..\..\..\..\..\programs\lazarus\lcl\graphics.pp"/>
+        <Filename Value="W:\programs\lazarus\lcl\graphics.pp"/>
         <UnitName Value="Graphics"/>
-        <EditorIndex Value="3"/>
+        <EditorIndex Value="2"/>
         <WindowIndex Value="0"/>
         <TopLine Value="72"/>
         <CursorPos X="33" Y="94"/>
         <UsageCount Value="10"/>
         <Loaded Value="True"/>
-      </Unit43>
+      </Unit42>
     </Units>
     <JumpHistory Count="30" HistoryIndex="29">
       <Position1>
         <Filename Value="..\..\lazarus\lib\GUIMsgBox.pp"/>
-        <Caret Line="281" Column="1" TopLine="265"/>
+        <Caret Line="55" Column="12" TopLine="43"/>
       </Position1>
       <Position2>
         <Filename Value="..\..\lazarus\lib\GUIMsgBox.pp"/>
@@ -448,107 +438,107 @@
       </Position2>
       <Position3>
         <Filename Value="..\..\lazarus\lib\GUIMsgBox.pp"/>
-        <Caret Line="23" Column="19" TopLine="1"/>
+        <Caret Line="41" Column="20" TopLine="18"/>
       </Position3>
       <Position4>
         <Filename Value="..\..\lazarus\lib\GUIMsgBox.pp"/>
-        <Caret Line="264" Column="42" TopLine="240"/>
+        <Caret Line="57" Column="80" TopLine="20"/>
       </Position4>
       <Position5>
         <Filename Value="..\..\lazarus\lib\GUIMsgBox.pp"/>
-        <Caret Line="103" Column="15" TopLine="81"/>
+        <Caret Line="324" Column="18" TopLine="287"/>
       </Position5>
       <Position6>
         <Filename Value="..\..\lazarus\lib\GUIMsgBox.pp"/>
-        <Caret Line="154" Column="60" TopLine="117"/>
+        <Caret Line="1" Column="1" TopLine="1"/>
       </Position6>
       <Position7>
         <Filename Value="..\..\lazarus\lib\GUIMsgBox.pp"/>
-        <Caret Line="162" Column="50" TopLine="125"/>
+        <Caret Line="41" Column="20" TopLine="4"/>
       </Position7>
       <Position8>
         <Filename Value="..\..\lazarus\lib\GUIMsgBox.pp"/>
-        <Caret Line="246" Column="54" TopLine="209"/>
+        <Caret Line="57" Column="80" TopLine="20"/>
       </Position8>
       <Position9>
         <Filename Value="..\..\lazarus\lib\GUIMsgBox.pp"/>
-        <Caret Line="102" Column="18" TopLine="95"/>
+        <Caret Line="163" Column="34" TopLine="126"/>
       </Position9>
       <Position10>
         <Filename Value="..\..\lazarus\lib\GUIMsgBox.pp"/>
-        <Caret Line="203" Column="13" TopLine="184"/>
+        <Caret Line="324" Column="18" TopLine="287"/>
       </Position10>
       <Position11>
         <Filename Value="..\..\lazarus\lib\GUIMsgBox.pp"/>
-        <Caret Line="222" Column="21" TopLine="197"/>
+        <Caret Line="1" Column="1" TopLine="1"/>
       </Position11>
       <Position12>
         <Filename Value="..\..\lazarus\lib\GUIMsgBox.pp"/>
-        <Caret Line="221" Column="14" TopLine="197"/>
+        <Caret Line="41" Column="20" TopLine="4"/>
       </Position12>
       <Position13>
         <Filename Value="..\..\lazarus\lib\GUIMsgBox.pp"/>
-        <Caret Line="1" Column="1" TopLine="1"/>
+        <Caret Line="217" Column="1" TopLine="199"/>
       </Position13>
       <Position14>
         <Filename Value="..\..\lazarus\lib\GUIMsgBox.pp"/>
-        <Caret Line="203" Column="13" TopLine="166"/>
+        <Caret Line="1" Column="1" TopLine="1"/>
       </Position14>
       <Position15>
-        <Filename Value="unit1.pas"/>
-        <Caret Line="77" Column="24" TopLine="36"/>
+        <Filename Value="..\..\lazarus\lib\GUIMsgBox.pp"/>
+        <Caret Line="12" Column="34" TopLine="1"/>
       </Position15>
       <Position16>
-        <Filename Value="..\..\lazarus\lib\GUIMsgBox.pp"/>
-        <Caret Line="55" Column="12" TopLine="43"/>
+        <Filename Value="unit1.pas"/>
+        <Caret Line="47" Column="36" TopLine="35"/>
       </Position16>
       <Position17>
-        <Filename Value="..\..\lazarus\lib\GUIMsgBox.pp"/>
-        <Caret Line="1" Column="1" TopLine="1"/>
+        <Filename Value="unit1.pas"/>
+        <Caret Line="57" Column="1" TopLine="36"/>
       </Position17>
       <Position18>
         <Filename Value="..\..\lazarus\lib\GUIMsgBox.pp"/>
-        <Caret Line="41" Column="20" TopLine="18"/>
+        <Caret Line="346" Column="93" TopLine="318"/>
       </Position18>
       <Position19>
         <Filename Value="..\..\lazarus\lib\GUIMsgBox.pp"/>
-        <Caret Line="57" Column="80" TopLine="20"/>
+        <Caret Line="39" Column="22" TopLine="22"/>
       </Position19>
       <Position20>
         <Filename Value="..\..\lazarus\lib\GUIMsgBox.pp"/>
-        <Caret Line="324" Column="18" TopLine="287"/>
+        <Caret Line="54" Column="33" TopLine="22"/>
       </Position20>
       <Position21>
         <Filename Value="..\..\lazarus\lib\GUIMsgBox.pp"/>
-        <Caret Line="1" Column="1" TopLine="1"/>
+        <Caret Line="483" Column="1" TopLine="454"/>
       </Position21>
       <Position22>
         <Filename Value="..\..\lazarus\lib\GUIMsgBox.pp"/>
-        <Caret Line="41" Column="20" TopLine="4"/>
+        <Caret Line="54" Column="15" TopLine="33"/>
       </Position22>
       <Position23>
         <Filename Value="..\..\lazarus\lib\GUIMsgBox.pp"/>
-        <Caret Line="57" Column="80" TopLine="20"/>
+        <Caret Line="483" Column="1" TopLine="454"/>
       </Position23>
       <Position24>
-        <Filename Value="..\..\lazarus\lib\GUIMsgBox.pp"/>
-        <Caret Line="163" Column="34" TopLine="126"/>
+        <Filename Value="..\..\lib\MsgBox.pp"/>
+        <Caret Line="137" Column="33" TopLine="111"/>
       </Position24>
       <Position25>
         <Filename Value="..\..\lazarus\lib\GUIMsgBox.pp"/>
-        <Caret Line="324" Column="18" TopLine="287"/>
+        <Caret Line="54" Column="5" TopLine="33"/>
       </Position25>
       <Position26>
-        <Filename Value="..\..\lazarus\lib\GUIMsgBox.pp"/>
-        <Caret Line="1" Column="1" TopLine="1"/>
+        <Filename Value="..\..\lib\MsgBox.pp"/>
+        <Caret Line="391" Column="18" TopLine="387"/>
       </Position26>
       <Position27>
-        <Filename Value="..\..\lazarus\lib\GUIMsgBox.pp"/>
-        <Caret Line="41" Column="20" TopLine="4"/>
+        <Filename Value="..\..\lib\MsgBox.pp"/>
+        <Caret Line="389" Column="7" TopLine="368"/>
       </Position27>
       <Position28>
         <Filename Value="..\..\lazarus\lib\GUIMsgBox.pp"/>
-        <Caret Line="217" Column="1" TopLine="199"/>
+        <Caret Line="473" Column="4" TopLine="455"/>
       </Position28>
       <Position29>
         <Filename Value="..\..\lazarus\lib\GUIMsgBox.pp"/>
@@ -556,7 +546,7 @@
       </Position29>
       <Position30>
         <Filename Value="..\..\lazarus\lib\GUIMsgBox.pp"/>
-        <Caret Line="12" Column="34" TopLine="1"/>
+        <Caret Line="23" Column="19" TopLine="1"/>
       </Position30>
     </JumpHistory>
   </ProjectOptions>
@@ -568,7 +558,7 @@
     </Target>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)"/>
-      <OtherUnitFiles Value="W:\home\pascal\lib\minilib\lib;W:\home\pascal\lib\minilib\lazarus\lib"/>
+      <OtherUnitFiles Value="W:\home\pascal\lib\minilib\lib\;W:\home\pascal\lib\minilib\lazarus\lib\"/>
       <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>
     <Linking>

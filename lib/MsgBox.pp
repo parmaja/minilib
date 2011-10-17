@@ -23,14 +23,15 @@ type
 
   TMsgPrompt = class(TObject)
   private
+  protected
     FName: String;
     FTitle: String;
-  protected
     function OutMsg(const Msg: string; Choices: TChoices; DefaultChoice: TChoice; CancelChoice: TChoice; Kind: TMsgKind): Integer; virtual; abstract;
     function InputMsg(var vResult: string; const Msg: string; Choices: TChoices; DefaultChoice: TChoice; CancelChoice: TChoice; Kind: TMsgKind): Integer; virtual; abstract;
     procedure ShowStatus(Msg: string; Sender: TObject = nil); virtual; abstract;
     procedure UpdateStatus(Msg: string; Sender: TObject = nil); virtual; abstract;
     procedure HideStatus(Sender: TObject); virtual; abstract;
+    procedure Created; virtual; abstract;
     property Name: String read FName;
     property Title: String read FTitle write FTitle;
   public
@@ -123,6 +124,9 @@ var
 
 }
 type
+
+  { TMsgConsole }
+
   TMsgConsole = class(TMsgPrompt)
   private
   protected
@@ -130,6 +134,7 @@ type
     function InputMsg(var vResult: string; const Msg: string; Choices: TChoices; DefaultChoice: TChoice; CancelChoice: TChoice; Kind: TMsgKind): Integer; override;
     procedure ShowStatus(Msg: string; Sender: TObject = nil); override;
     procedure HideStatus(Sender: TObject = nil); override;
+    procedure Created; override;
   public
     constructor Create; override;
     destructor Destroy; override;
@@ -377,6 +382,12 @@ end;
 procedure TMsgConsole.HideStatus(Sender: TObject);
 begin
   //TODO
+end;
+
+procedure TMsgConsole.Created;
+begin
+  FName := 'CONSOLE';
+  FTitle := 'Console Messages';
 end;
 
 procedure TMsgConsole.ShowStatus(Msg: string; Sender: TObject);

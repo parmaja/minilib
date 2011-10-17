@@ -46,7 +46,7 @@ end;
 
 procedure TForm1.Button2Click(Sender: TObject);
 begin
-  Msg.Ok('Ok fine');
+  Msg.Ok('Do you want to save?');
 end;
 
 procedure TForm1.Button3Click(Sender: TObject);
