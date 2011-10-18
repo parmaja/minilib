@@ -68,21 +68,12 @@ type
     FDataBits: TDataBits;
     FEventChar: AnsiChar;
     FDiscardNull: Boolean;
-    FBufferSize: Integer;
     FTimeout: Cardinal;
-    FReadTimeout: Cardinal;
-    FWriteThrough: Boolean;
-    FWriteTimeout: Cardinal;
     FFailTimeout: Boolean;
-    FReadTimeoutConst: Cardinal;
-    FWriteTimeoutConst: Cardinal;
     FWaitMode: Boolean;
     procedure SetEventChar(const Value: AnsiChar);
     procedure SetDiscardNull(const Value: Boolean);
-    procedure SetBufferSize(const Value: Integer);
     procedure SetTimeout(const Value: Cardinal);
-    procedure SetReadTimeout(const Value: Cardinal);
-    procedure SetWriteTimeout(const Value: Cardinal);
   protected
     procedure DoConnect; virtual; abstract;
     procedure DoDisconnect; virtual; abstract;
@@ -91,10 +82,10 @@ type
     function GetParityFlags: TParityFlags; virtual;
     function DoRead(var Buffer; Count: Integer): Integer; virtual; abstract;
     function DoWrite(const Buffer; Count: Integer): Integer; virtual; abstract;
+    procedure CheckConnected;
     procedure Created; virtual;
   public
     constructor Create(Suspend: Boolean; Port: string; BaudRate: Int64; DataBits: TDataBits = dbEight; Parity: TParityBits = prNone; StopBits: TStopBits = sbOneStopBit; FlowControl: TFlowControl = fcHardware); overload;
-    constructor Create(Params: string); overload;
     destructor Destroy; override;
     procedure Connect;
     procedure Disconnect;
@@ -103,7 +94,8 @@ type
     procedure Flush; virtual;
     procedure Purge; virtual;
     function ReadString: string;
-    function Wait: Boolean; virtual;
+    function WaitRead: Boolean; virtual;
+    function WaitWrite: Boolean; virtual;
     function Read(var Buffer; Count: Integer): Integer; override;
     function Write(const Buffer; Count: Integer): Integer; override;
     property Connected: Boolean read GetConnected;
@@ -113,10 +105,8 @@ type
     property Parity: TParityBits read FParity;
     property StopBits: TStopBits read FStopBits;
     property FlowControl: TFlowControl read FFlowControl write FFlowControl;
-    property EventChar: AnsiChar read FEventChar write SetEventChar default #0;
+    property EventChar: AnsiChar read FEventChar write SetEventChar default #13;
     property DiscardNull: Boolean read FDiscardNull write SetDiscardNull default False;
-    property WriteThrough: Boolean read FWriteThrough write FWriteThrough;
-    property BufferSize: Integer read FBufferSize write SetBufferSize;
 
     property ConnectMode: TmnCommConnectMode read FConnectMode write FConnectMode;
     //WaitMode: Make WaitEvent before read buffer
@@ -124,13 +114,6 @@ type
     property Timeout: Cardinal read FTimeout write SetTimeout default cTimeout;
     //FailTimeout: raise an exception when timeout accord
     property FailTimeout: Boolean read FFailTimeout write FFailTimeout default True;
-    //ReadTimeout: for internal timeout while reading COM will return in this with buffered chars
-    //When ReadTimeout = 0 it not return until the whale buffer requested read
-    property ReadTimeout: Cardinal read FReadTimeout write SetReadTimeout default 0;
-    property ReadTimeoutConst: Cardinal read FReadTimeoutConst write FReadTimeoutConst default 10;
-    //When WriteTimeout = 0 it not return until the whale buffer requested writen
-    property WriteTimeout: Cardinal read FWriteTimeout write SetWriteTimeout default 1000;
-    property WriteTimeoutConst: Cardinal read FWriteTimeoutConst write FWriteTimeoutConst default 10;
   end;
 
 implementation
@@ -146,10 +129,6 @@ constructor TmnCustomCommStream.Create(Suspend: Boolean; Port: string; BaudRate:
   DataBits: TDataBits; Parity: TParityBits; StopBits: TStopBits; FlowControl: TFlowControl);
 begin
   inherited Create;
-  FReadTimeout := 0;
-  FReadTimeoutConst := 10;
-  FWriteTimeout := 100;
-  FWriteTimeoutConst := 10;
   FTimeout := cTimeout;
   FFailTimeout := True;
   FPort := Port;
@@ -158,6 +137,7 @@ begin
   FParity := Parity;
   FStopBits := StopBits;
   FFlowControl := FlowControl;
+  FEventChar := #13;
   Created;
   if not Suspend then
     Open;
@@ -166,11 +146,6 @@ end;
 procedure TmnCustomCommStream.Connect;
 begin
   DoConnect;
-end;
-
-constructor TmnCustomCommStream.Create(Params: string);
-begin
-
 end;
 
 destructor TmnCustomCommStream.Destroy;
@@ -222,6 +197,12 @@ begin
   Result.ReplaceChar := #0;
 end;
 
+procedure TmnCustomCommStream.CheckConnected;
+begin
+  if not Connected then
+    raise ECommError.Create('Port to ' + Port + ' not connected');
+end;
+
 procedure TmnCustomCommStream.Created;
 begin
 end;
@@ -239,20 +220,16 @@ end;
 
 function TmnCustomCommStream.Read(var Buffer; Count: Integer): Integer;
 begin
+  CheckConnected;
   if WaitMode then
   begin
-    if Wait then
-    begin
-      if Connected then
-        Result := DoRead(Buffer, Count)
-    end
+    if WaitRead then
+      Result := DoRead(Buffer, Count)
     else
       Result := 0;
   end
   else
-  begin
     Result := DoRead(Buffer, Count);
-  end;
 end;
 
 function TmnCustomCommStream.ReadString: string;
@@ -265,19 +242,14 @@ begin
   SetLength(Result, c);
 end;
 
-function TmnCustomCommStream.Wait: Boolean;
+function TmnCustomCommStream.WaitRead: Boolean;
 begin
   Result := False;
 end;
 
-procedure TmnCustomCommStream.SetBufferSize(const Value: Integer);
+function TmnCustomCommStream.WaitWrite: Boolean;
 begin
-  FBufferSize := Value;
-end;
-
-procedure TmnCustomCommStream.SetReadTimeout(const Value: Cardinal);
-begin
-  FReadTimeout := Value;
+  Result := False;
 end;
 
 procedure TmnCustomCommStream.SetDiscardNull(const Value: Boolean);
@@ -293,11 +265,6 @@ end;
 procedure TmnCustomCommStream.SetTimeout(const Value: Cardinal);
 begin
   FTimeout := Value;
-end;
-
-procedure TmnCustomCommStream.SetWriteTimeout(const Value: Cardinal);
-begin
-  FWriteTimeout := Value;
 end;
 
 function TmnCustomCommStream.Write(const Buffer; Count: Integer): Integer;

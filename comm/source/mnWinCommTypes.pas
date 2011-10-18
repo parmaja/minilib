@@ -26,7 +26,7 @@ interface
 uses
   Windows,
   Classes, SysUtils,
-  mnStreams, mnCommClasses;
+  mnCommClasses;
 
 
 const
@@ -60,13 +60,13 @@ const
      
   cDataBits: array[TDataBits] of Integer = (5, 6, 7, 8);
 
-  cControlRTS: array[TRTSFlowControl] of Integer =
+  cControlRTS: array[TRTSFlowControl] of DWORD =
     (RTS_CONTROL_DISABLE shl 12,
      RTS_CONTROL_ENABLE shl 12,
      RTS_CONTROL_HANDSHAKE shl 12,
      RTS_CONTROL_TOGGLE shl 12);
      
-  cControlDTR: array[TDTRFlowControl] of Integer =
+  cControlDTR: array[TDTRFlowControl] of DWORD =
     (DTR_CONTROL_DISABLE shl 4,
      DTR_CONTROL_ENABLE shl 4,
      DTR_CONTROL_HANDSHAKE shl 4);
@@ -80,10 +80,23 @@ type
 
   TmnWinCustomCommStream = class(TmnCustomCommStream)
   private
+    FReceiveBuffer: Integer;
+    FReadTimeout: Cardinal;
+    FWriteTimeout: Cardinal;
+    procedure SetReceiveBuffer(AValue: Integer);
+    procedure SetReadTimeout(const Value: Cardinal);
+    procedure SetWriteTimeout(const Value: Cardinal);
   protected
     FHandle: THandle;
+    procedure Created; override;
   public
     function WaitEvent(const Events: TComEvents): TComEvents; virtual;
+    property ReceiveBuffer: Integer read FReceiveBuffer write SetReceiveBuffer;
+    //ReadTimeout: for internal timeout while reading COM will return in this with buffered chars
+    //When ReadTimeout = 0 it not return until the whale buffer requested read
+    property ReadTimeout: Cardinal read FReadTimeout write SetReadTimeout;
+    //When WriteTimeout = 0 it not return until the whale buffer requested writen
+    property WriteTimeout: Cardinal read FWriteTimeout write SetWriteTimeout;
   end;
 
 const
@@ -146,9 +159,35 @@ end;
 
 { TmnWinCustomCommStream }
 
+procedure TmnWinCustomCommStream.SetReceiveBuffer(AValue: Integer);
+begin
+  if FReceiveBuffer <> AValue then
+  begin
+    FReceiveBuffer := AValue;
+  end;
+end;
+
+procedure TmnWinCustomCommStream.Created;
+begin
+  inherited Created;
+  FReceiveBuffer := 4096;
+  FReadTimeout := 100;
+  FWriteTimeout := 1000;
+end;
+
 function TmnWinCustomCommStream.WaitEvent(const Events: TComEvents): TComEvents;
 begin
   Result := [];
+end;
+
+procedure TmnWinCustomCommStream.SetReadTimeout(const Value: Cardinal);
+begin
+  FReadTimeout := Value;
+end;
+
+procedure TmnWinCustomCommStream.SetWriteTimeout(const Value: Cardinal);
+begin
+  FWriteTimeout := Value;
 end;
 
 end.

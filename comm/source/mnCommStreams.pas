@@ -16,7 +16,7 @@ unit mnCommStreams;
 interface
 
 uses
-  Classes, SysUtils,
+  Classes,
   {$ifdef Linux}
   mnLinuxCommStreams,
   {$else}
@@ -26,7 +26,7 @@ uses
   mnWinCommStreams,
   {$endif}
   {$endif}
-  mnCommClasses;
+  SysUtils;
 
 
 type

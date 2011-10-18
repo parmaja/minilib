@@ -19,7 +19,7 @@ interface
 uses
   Windows,
   Classes, SysUtils,
-  mnWinCommTypes, mnStreams, mnCommClasses;
+  mnWinCommTypes, mnCommClasses;
 
 type
 
@@ -30,6 +30,7 @@ type
     FHandle: THandle;
     FCancelEvent: THandle;
     FUseOverlapped: Boolean;
+    FWriteThrough: Boolean;
     procedure SetUseOverlapped(const Value: Boolean);
   protected
     procedure DoConnect; override;
@@ -39,12 +40,14 @@ type
     function DoRead(var Buffer; Count: Integer): Integer; override;
     procedure Created; override;
   public
-    function Wait: Boolean; override;
+    function WaitRead: Boolean; override;
+    function WaitWrite: Boolean; override;
     function WaitEvent(const Events: TComEvents): TComEvents; override;
     procedure Flush; override;
     procedure Purge; override;
     function GetInQue: Integer;
     procedure Cancel;
+    property WriteThrough: Boolean read FWriteThrough write FWriteThrough;
     property UseOverlapped: Boolean read FUseOverlapped write SetUseOverlapped;
   end;
 
@@ -93,17 +96,15 @@ begin
   f := CreateFile(P, aMode, 0, nil, OPEN_EXISTING, cWriteThrough[WriteThrough] or cOverlapped[UseOverlapped], 0);
 
   if (f = INVALID_HANDLE_VALUE) then
-  begin
     RaiseLastOSError;
-  end;
 
   FHandle := f;
   try
-    if not SetupComm(FHandle, BufferSize, BufferSize) then
+    if (ReceiveBuffer > 0) and not SetupComm(FHandle, ReceiveBuffer, 0) then
       RaiseLastOSError;
 
     DCB.DCBlength := SizeOf(TDCB);
-    DCB.XonLim := BufferSize div 4;
+    DCB.XonLim := ReceiveBuffer div 4;
     DCB.XoffLim := DCB.XonLim;
     DCB.EvtChar := EventChar;
 
@@ -147,15 +148,15 @@ begin
         end;
       end;
 
-    // apply settings
+    //Apply settings
     if not SetCommState(FHandle, DCB) then
       RaiseLastOSError;
 
     aTimeouts.ReadIntervalTimeout := MAXWORD;
-    aTimeouts.ReadTotalTimeoutMultiplier := ReadTimeout;
-    aTimeouts.ReadTotalTimeoutConstant := ReadTimeoutConst;
-    aTimeouts.WriteTotalTimeoutMultiplier := WriteTimeout;
-    aTimeouts.WriteTotalTimeoutConstant := WriteTimeoutConst;
+    aTimeouts.ReadTotalTimeoutMultiplier := 0;
+    aTimeouts.ReadTotalTimeoutConstant := ReadTimeout;
+    aTimeouts.WriteTotalTimeoutMultiplier := 0;
+    aTimeouts.WriteTotalTimeoutConstant := WriteTimeout;
 
     if not SetCommTimeouts(FHandle, aTimeouts) then
       RaiseLastOSError;
@@ -224,6 +225,7 @@ end;
 function TmnOSCommStream.WaitEvent(const Events: TComEvents): TComEvents;
 var
   Overlapped: TOverlapped;
+  P: POverlapped;
   EventHandles: array[0..1] of THandle;
   Mask: DWord;
   Count: Integer;
@@ -231,40 +233,53 @@ var
   R: Integer;
 begin
   Result := [];
-  FillChar(Overlapped, SizeOf(TOverlapped), 0);
-  Overlapped.hEvent := CreateEvent(nil, True, False, nil);
-  EventHandles[0] := Overlapped.hEvent;
-  if FCancelEvent <> 0 then
+  if UseOverlapped then
   begin
-    EventHandles[1] := FCancelEvent;
-    Count := 2;
+    FillChar(Overlapped, SizeOf(TOverlapped), 0);
+    Overlapped.hEvent := CreateEvent(nil, True, False, nil);
+    EventHandles[0] := Overlapped.hEvent;
+    if FCancelEvent <> 0 then
+    begin
+      EventHandles[1] := FCancelEvent;
+      Count := 2;
+    end
+    else
+      Count := 1;
+    P := @Overlapped;
   end
   else
-    Count := 1;
+    P := nil;
 
   try
     Mask := EventsToInt(Events);
     SetCommMask(FHandle, Mask);
-    E := WaitCommEvent(FHandle, Mask, @Overlapped);
-    if (E) or (GetLastError = ERROR_IO_PENDING) then
+    Mask := 0;
+    E := WaitCommEvent(FHandle, Mask, P);
+    if UseOverlapped then
     begin
-      R := WaitForMultipleObjects(Count, @EventHandles,  False, Timeout);
-      if (R = WAIT_OBJECT_0) then
+      if E or (GetLastError = ERROR_IO_PENDING) then
       begin
-        GetOverlappedResult(FHandle, Overlapped, Mask, False);
-        Result := IntToEvents(Mask);
+        R := WaitForMultipleObjects(Count, @EventHandles,  False, Timeout);
+        if (R = WAIT_OBJECT_0) then
+        begin
+          GetOverlappedResult(FHandle, Overlapped, Mask, False);
+          Result := IntToEvents(Mask);
+        end;
+        E := (R = WAIT_OBJECT_0) or (R = WAIT_OBJECT_0 + 1) or (R = WAIT_TIMEOUT);
+        SetCommMask(FHandle, 0);
       end;
-      E := (R = WAIT_OBJECT_0)
-        or (R = WAIT_OBJECT_0 + 1) or (R = WAIT_TIMEOUT);
-      SetCommMask(FHandle, 0);
-    end;
-
-    if not E then
+      if not E then
+        raise ECommError.Create('Wait Failed');
+    end
+    else
     begin
-      raise ECommError.Create('Wait Failed');
+      if not E then
+        raise ECommError.Create('Wait Failed');
+      Result := IntToEvents(Mask);
     end;
   finally
-    CloseHandle(Overlapped.hEvent);
+    if UseOverlapped then
+      CloseHandle(Overlapped.hEvent);
   end;
 end;
 
@@ -293,9 +308,7 @@ begin
       P := nil;
 
     if ReadFile(FHandle, Buffer, Count, Bytes, P) then
-    begin
-      E := 0;
-    end
+      E := 0
     else
       E := GetLastError;
 
@@ -333,9 +346,20 @@ begin
   inherited;
 end;
 
-function TmnOSCommStream.Wait: Boolean;
+function TmnOSCommStream.WaitRead: Boolean;
+var
+  Ev: TComEvents;
 begin
-  Result := WaitEvent([evRxChar]) = [evRxChar];
+  Ev := WaitEvent([evRxChar]);
+  Result := Ev = [evRxChar];
+end;
+
+function TmnOSCommStream.WaitWrite: Boolean;
+var
+  Ev: TComEvents;
+begin
+  Ev := WaitEvent([evTxEmpty]);
+  Result := Ev = [evTxEmpty];
 end;
 
 function TmnOSCommStream.DoWrite(const Buffer; Count: Integer): Integer;

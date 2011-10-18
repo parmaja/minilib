@@ -35,7 +35,8 @@ type
     function DoRead(var Buffer; Count: Integer): Integer; override;
     function GetFlowControlFlags: TFlowControlFlags; override;
   public
-    function Wait: Boolean; override;
+    function WaitRead: Boolean; override;
+    function WaitWrite: Boolean; override;
     function WaitEvent(const Events: TComEvents): TComEvents; override;
     function GetInQue: Integer;
     procedure Flush; override;
@@ -64,21 +65,17 @@ begin
   f := CreateFile(P, aMode, FILE_SHARE_READ or FILE_SHARE_WRITE, nil, OPEN_EXISTING, 0, 0);
 
   if (f = INVALID_HANDLE_VALUE) then
-  begin
     RaiseLastOSError;
-  end;
 
   FHandle := f;
   try
-{    if not SetupComm(FHandle, BufferSize, BufferSize) then //some devices may not support this API.
-    begin
-      RaiseLastOSError;
-    end;}
+{    if not SetupComm(FHandle, ReceiveBuffer, 0) then //some devices may not support this API.
+      RaiseLastOSError;}
 
     FillChar(DCB, SizeOf(DCB), #0);
 
     DCB.DCBlength := SizeOf(TDCB);
-    DCB.XonLim := BufferSize div 4;
+    DCB.XonLim := ReceiveBuffer div 4;
     DCB.XoffLim := DCB.XonLim;
     DCB.EvtChar := EventChar;
 
@@ -127,10 +124,10 @@ begin
       raise ECommError.Create('Error in SetCommState '+ IntToStr(GetLastError));
 
     aTimeouts.ReadIntervalTimeout := MAXWORD;
-    aTimeouts.ReadTotalTimeoutMultiplier := ReadTimeout;
-    aTimeouts.ReadTotalTimeoutConstant := ReadTimeoutConst;
-    aTimeouts.WriteTotalTimeoutMultiplier := WriteTimeout;
-    aTimeouts.WriteTotalTimeoutConstant := WriteTimeoutConst;
+    aTimeouts.ReadTotalTimeoutMultiplier := 0;
+    aTimeouts.ReadTotalTimeoutConstant := ReadTimeout;
+    aTimeouts.WriteTotalTimeoutMultiplier := 0;
+    aTimeouts.WriteTotalTimeoutConstant := WriteTimeout;
 
     if not SetCommTimeouts(FHandle, aTimeouts) then
       raise ECommError.Create('Error in SetCommTimeouts'+ IntToStr(GetLastError));
@@ -147,6 +144,7 @@ procedure TmnOSCommStream.DoDisconnect;
 begin
   if FHandle <> 0 then
   try
+    SetCommMask (FHandle, 0);//Cancel the WaitCommEvent in WINCE
     FileClose(FHandle);
   finally
     FHandle := 0;
@@ -197,12 +195,12 @@ var
 begin
   Result := [];
   try
-    SetCommMask(FHandle, EventsToInt(Events));
+    Mask := EventsToInt(Events);
+    SetCommMask(FHandle, Mask);
     Mask := 0;
     E := WaitCommEvent(FHandle, Mask, nil);
     if not E then
     begin
-      Result := [];
       //raise ECommError.Create('Wait Failed');
     end;
     Result := IntToEvents(Mask);
@@ -217,9 +215,20 @@ begin
   //Result.ControlDTR := dtrEnable;
 end;
 
-function TmnOSCommStream.Wait: Boolean;
+function TmnOSCommStream.WaitRead: Boolean;
+var
+  Ev: TComEvents;
 begin
-  Result := WaitEvent([evRxChar]) = [evRxChar];
+  Ev := WaitEvent([evRxChar]);
+  Result := Ev = [evRxChar];
+end;
+
+function TmnOSCommStream.WaitWrite: Boolean;
+var
+  Ev: TComEvents;
+begin
+  Ev := WaitEvent([evTxEmpty]);
+  Result := Ev = [evTxEmpty];
 end;
 
 function TmnOSCommStream.DoRead(var Buffer; Count: Integer): Integer;
@@ -231,9 +240,7 @@ begin
   Result := 0;
   try
     if ReadFile(FHandle, Buffer, Count, Bytes, nil) then
-    begin
-      E := 0;
-    end
+      E := 0
     else
       E := GetLastError;
 

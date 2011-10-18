@@ -83,15 +83,12 @@ end;
 procedure TmnCommThread.Execute;
 begin
   try
-    // You muse have EventChar and QueMode
     while not Terminated and FCommStream.Connected do
     begin
-      if not UseWait or (FCommStream.Wait) then;
+      if not UseWait or (FCommStream.WaitRead) then;
       begin
         if not Terminated and FCommStream.Connected then
-        begin
           StringArrived(FCommStream.ReadString);
-        end;
       end;
     end;
   finally
@@ -107,8 +104,6 @@ end;
 constructor TmnCommStreamThread.Create(CreateSuspended: Boolean; CommStream: TmnCustomCommStream);
 begin
   inherited Create(CreateSuspended, CommStream);
-{  if CommStream.ReadTimeout = 0 then //We will use QueMode
-    CommStream.QueMode := True;}
 end;
 
 procedure TmnCommStreamThread.DoStringArrived(S: string);
