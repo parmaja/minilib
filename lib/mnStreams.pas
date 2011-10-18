@@ -36,30 +36,28 @@ type
     function WriteStream(Source: TStream): Longint;
     property BufferSize: Cardinal read FBufferSize write FBufferSize;
   end;
-  
-  { TmnStream }
 
-  TmnStream = class(TmnCustomStream)
-  private
-    FStreamOwned: Boolean;
-    FStream: TStream;
+  { TmnBufferStream }
+
+  TmnBufferStream = class(TmnCustomStream)
+  strict private
     FBuffer: PChar;
     FPos: PChar;
     FEnd: PChar;
     FEOF: Boolean;
     FEndOfLine: string;
     procedure LoadBuffer;
-    procedure SetStream(const Value: TStream);
   protected
+    function InternalRead(var Buffer; Count: Longint): Longint; virtual;
+    function InternalWrite(const Buffer; Count: Longint): Longint; virtual;
   public
-    constructor Create(AStream: TStream; AEndOfLine:string; Owned: Boolean = True); overload; virtual; 
-    constructor Create(AStream: TStream; Owned: Boolean = True); overload;
+    constructor Create(AEndOfLine:string);
     destructor Destroy; override;
 
     function Read(var Buffer; Count: Longint): Longint; override;
-    procedure ReadUntil(const UntilStr: string; var Result: string; var Matched: Boolean);
     function Write(const Buffer; Count: Longint): Longint; override;
-    
+
+    procedure ReadUntil(const UntilStr: string; var Result: string; var Matched: Boolean);
     function ReadLn(var S: string; ExcludeEOL: Boolean = True): Boolean; overload;
     function ReadLn: string; overload;
     procedure ReadStrings(Value: TStrings);
@@ -67,10 +65,26 @@ type
     function WriteStrings(const Value: TStrings): Cardinal;
     function WriteLn(const Value: string): Cardinal;
     procedure WriteCommand(const Command: string; const Params: string = '');
-    property Stream: TStream read FStream write SetStream;
-    property StreamOwned: Boolean read FStreamOwned write FStreamOwned default False;
     property EOF: Boolean read FEOF;
     property EndOfLine: string read FEndOfLine write FEndOfLine;
+  end;
+
+  { TmnStream }
+
+  TmnStream = class(TmnBufferStream)
+  strict private
+    FStreamOwned: Boolean;
+    FStream: TStream;
+    procedure SetStream(const Value: TStream);
+  protected
+    function InternalRead(var Buffer; Count: Longint): Longint; override;
+    function InternalWrite(const Buffer; Count: Longint): Longint; override;
+  public
+    constructor Create(AStream: TStream; AEndOfLine:string; Owned: Boolean = True); overload; virtual;
+    constructor Create(AStream: TStream; Owned: Boolean = True); overload;
+    destructor Destroy; override;
+    property StreamOwned: Boolean read FStreamOwned write FStreamOwned default False;
+    property Stream: TStream read FStream write SetStream;
   end;
 
 implementation
@@ -78,7 +92,7 @@ implementation
 const
   cBufferSize = 2048;
 
-{ TmnStream }
+{ TmnBufferStream }
 
 function TmnCustomStream.WriteString(const Value: string): Cardinal;
 begin
@@ -107,12 +121,12 @@ begin
   end;
 end;
 
-function TmnStream.WriteLn(const Value: string): Cardinal;
+function TmnBufferStream.WriteLn(const Value: string): Cardinal;
 begin
   Result := WriteString(Value + EndOfLine);
 end;
 
-function TmnStream.WriteStrings(const Value: TStrings): Cardinal;
+function TmnBufferStream.WriteStrings(const Value: TStrings): Cardinal;
 var
   i: Integer;
 begin
@@ -124,7 +138,7 @@ begin
   end;
 end;
 
-procedure TmnStream.ReadCommand(var Command, Params: string);
+procedure TmnBufferStream.ReadCommand(var Command, Params: string);
 var
   s: string;
   p: Integer;
@@ -146,12 +160,12 @@ begin
   end;
 end;
 
-function TmnStream.ReadLn: string;
+function TmnBufferStream.ReadLn: string;
 begin
   ReadLn(Result);
 end;
 
-procedure TmnStream.WriteCommand(const Command, Params: string);
+procedure TmnBufferStream.WriteCommand(const Command, Params: string);
 begin
   if Params <> '' then
     WriteLn(Command + ' ' + Params)
@@ -159,7 +173,7 @@ begin
     WriteLn(Command);
 end;
 
-function TmnStream.ReadLn(var S: string; ExcludeEOL: Boolean = True): Boolean;
+function TmnBufferStream.ReadLn(var S: string; ExcludeEOL: Boolean = True): Boolean;
 var
   aMatched: Boolean;
 begin
@@ -175,7 +189,7 @@ begin
   end;
 end;
 
-procedure TmnStream.ReadStrings(Value: TStrings);
+procedure TmnBufferStream.ReadStrings(Value: TStrings);
 var
   s: string;
 begin
@@ -189,55 +203,54 @@ begin
   end;
 end;
 
-function TmnStream.Write(const Buffer; Count: Integer): Longint;
+function TmnBufferStream.Write(const Buffer; Count: Integer): Longint;
 begin
-  Result := FStream.Write(Buffer, Count);
+  Result := InternalWrite(Buffer, Count);//TODO must be buffered
 end;
 
-{ TmnStream }
+{ TmnBufferStream }
 
-constructor TmnStream.Create(AStream: TStream; AEndOfLine:string; Owned: Boolean = True);
+destructor TmnBufferStream.Destroy;
 begin
-  inherited Create;
-  if AStream = nil then
-    raise EmnStreamException.Create('Stream = nil');
-  FStreamOwned := Owned;
-  FStream := AStream;
-  FBufferSize := cBufferSize;
-  GetMem(FBuffer, FBufferSize);
-  FPos := FBuffer;
-  FEnd := FBuffer;
-  FEndOfLine := AEndOfLine;
-end;
-
-constructor TmnStream.Create(AStream: TStream; Owned: Boolean);
-begin
-  Create(AStream, sEndOfLine, Owned);
-end;
-
-destructor TmnStream.Destroy;
-begin
-  if FStreamOwned then
-    FStream.Free;
   FreeMem(FBuffer, FBufferSize);
   FBuffer := nil;
   inherited;
 end;
 
-procedure TmnStream.LoadBuffer;
+function TmnBufferStream.InternalRead(var Buffer; Count: Longint): Longint;
+begin
+  Result := inherited Read(Buffer, Count);
+end;
+
+function TmnBufferStream.InternalWrite(const Buffer; Count: Longint): Longint;
+begin
+  Result := inherited Write(Buffer, Count);
+end;
+
+constructor TmnBufferStream.Create(AEndOfLine: string);
+begin
+  inherited Create;
+  FPos := FBuffer;
+  FEnd := FBuffer;
+  FBufferSize := cBufferSize;
+  GetMem(FBuffer, FBufferSize);
+  FEndOfLine := AEndOfLine;
+end;
+
+procedure TmnBufferStream.LoadBuffer;
 var
   aSize: Cardinal;
 begin
   if FPos < FEnd then
     raise EmnStreamException.Create('Buffer is not empty to load');
   FPos := FBuffer;
-  aSize := FStream.Read(FBuffer^, FBufferSize);
+  aSize := InternalRead(FBuffer^, FBufferSize);
   FEnd := FPos + aSize;
   if aSize = 0 then
     FEOF := True;
 end;
 
-function TmnStream.Read(var Buffer; Count: Integer): Longint;
+function TmnBufferStream.Read(var Buffer; Count: Integer): Longint;
 var
   c, aCount: Longint;
   P: PChar;
@@ -263,7 +276,7 @@ begin
   Result := aCount;
 end;
 
-procedure TmnStream.ReadUntil(const UntilStr: string; var Result: string; var Matched: Boolean);
+procedure TmnBufferStream.ReadUntil(const UntilStr: string; var Result: string; var Matched: Boolean);
 var
   P: PChar;
   function CheckBuffer: Boolean;
@@ -309,10 +322,41 @@ begin
   if FStream <> Value then
   begin
     if (FStream <> nil) and FStreamOwned then
-      FreeAndNil(FStream); 
+      FreeAndNil(FStream);
     FStream := Value;
     FStreamOwned := False;
   end;
+end;
+
+function TmnStream.InternalRead(var Buffer; Count: Longint): Longint;
+begin
+  Result := FStream.Read(Buffer, Count);
+end;
+
+function TmnStream.InternalWrite(const Buffer; Count: Longint): Longint;
+begin
+  Result := FStream.Write(Buffer, Count);//TODO must be buffered
+end;
+
+constructor TmnStream.Create(AStream: TStream; AEndOfLine:string; Owned: Boolean = True);
+begin
+  inherited Create(AEndOfLine);
+  if AStream = nil then
+    raise EmnStreamException.Create('Stream = nil');
+  FStreamOwned := Owned;
+  FStream := AStream;
+end;
+
+constructor TmnStream.Create(AStream: TStream; Owned: Boolean);
+begin
+  Create(AStream, sEndOfLine, Owned);
+end;
+
+destructor TmnStream.Destroy;
+begin
+  if FStreamOwned then
+      FStream.Free;
+  inherited;
 end;
 
 end.
