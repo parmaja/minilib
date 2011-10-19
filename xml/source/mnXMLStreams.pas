@@ -23,7 +23,7 @@ type
 
   { TmnXMLStream }
 
-  TmnXMLStream = class(TmnStream)
+  TmnXMLStream = class(TmnWrapperStream)
   public
   end;
 

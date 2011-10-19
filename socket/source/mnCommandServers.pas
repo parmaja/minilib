@@ -32,7 +32,7 @@ type
   public
   protected
     procedure Process; override;
-    function CreateStream(Socket: TmnCustomSocket): TmnConnectionStream; override;
+    function CreateStream(Socket: TmnCustomSocket): TmnSocketStream; override;
   public
     constructor Create(Socket: TmnCustomSocket); override;
     destructor Destroy; override;
@@ -146,7 +146,7 @@ begin
   KeepAlive := True;
 end;
 
-function TmnCommandConnection.CreateStream(Socket: TmnCustomSocket): TmnConnectionStream;
+function TmnCommandConnection.CreateStream(Socket: TmnCustomSocket): TmnSocketStream;
 begin
   Result := inherited CreateStream(Socket);
   Result.Timeout := -1;

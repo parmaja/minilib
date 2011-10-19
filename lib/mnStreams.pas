@@ -46,39 +46,57 @@ type
     FEnd: PChar;
     FEOF: Boolean;
     FEndOfLine: string;
+    FEOFOnError: Boolean;
     procedure LoadBuffer;
   protected
-    function InternalRead(var Buffer; Count: Longint): Longint; virtual;
-    function InternalWrite(const Buffer; Count: Longint): Longint; virtual;
+    procedure DoError(S: string); virtual;
+    function IsActive: Boolean; virtual;
+    function DoRead(var Buffer; Count: Longint): Longint; virtual;
+    function DoWrite(const Buffer; Count: Longint): Longint; virtual;
   public
-    constructor Create(AEndOfLine:string);
+    constructor Create(AEndOfLine: string = sUnixEndOfLine);
     destructor Destroy; override;
 
-    function Read(var Buffer; Count: Longint): Longint; override;
-    function Write(const Buffer; Count: Longint): Longint; override;
+    function Read(var Buffer; Count: Longint): Longint; override; final;
+    function Write(const Buffer; Count: Longint): Longint; override; final;
 
     procedure ReadUntil(const UntilStr: string; var Result: string; var Matched: Boolean);
-    function ReadLn(var S: string; ExcludeEOL: Boolean = True): Boolean; overload;
+    function ReadLine(var S: string; const vEOL: string; vExcludeEOL: Boolean = True): Boolean; overload;
+    function ReadLine(const vEOL: string): string; overload;
     function ReadLn: string; overload;
-    procedure ReadStrings(Value: TStrings);
+    function ReadLn(var S: string; ExcludeEOL: Boolean = True): Boolean; overload;
+    function WriteLine(const S: string; const vEOL: string): Cardinal;
+    function WriteLn(const S: string): Cardinal;
+
     procedure ReadCommand(var Command: string; var Params: string);
-    function WriteStrings(const Value: TStrings): Cardinal;
-    function WriteLn(const Value: string): Cardinal;
     procedure WriteCommand(const Command: string; const Params: string = '');
+
+    function WriteEOL(EOL: string): Cardinal; overload;
+    function WriteEOL: Cardinal; overload;
+
+    procedure ReadStrings(Value: TStrings; const vEOL: string); overload;
+    procedure ReadStrings(Value: TStrings); overload;
+    function WriteStrings(const Value: TStrings; const vEOL: string): Cardinal; overload;
+    function WriteStrings(const Value: TStrings): Cardinal; overload;
+
+    function ReadStream(Dest: TStream): Longint;
+    function WriteStream(Source: TStream): Longint;
+
     property EOF: Boolean read FEOF;
     property EndOfLine: string read FEndOfLine write FEndOfLine;
+    property EOFOnError: Boolean read FEOFOnError write FEOFOnError default False;
   end;
 
-  { TmnStream }
+  { TmnWrapperStream }
 
-  TmnStream = class(TmnBufferStream)
+  TmnWrapperStream = class(TmnBufferStream)
   strict private
     FStreamOwned: Boolean;
     FStream: TStream;
     procedure SetStream(const Value: TStream);
   protected
-    function InternalRead(var Buffer; Count: Longint): Longint; override;
-    function InternalWrite(const Buffer; Count: Longint): Longint; override;
+    function DoRead(var Buffer; Count: Longint): Longint; override;
+    function DoWrite(const Buffer; Count: Longint): Longint; override;
   public
     constructor Create(AStream: TStream; AEndOfLine:string; Owned: Boolean = True); overload; virtual;
     constructor Create(AStream: TStream; Owned: Boolean = True); overload;
@@ -86,6 +104,9 @@ type
     property StreamOwned: Boolean read FStreamOwned write FStreamOwned default False;
     property Stream: TStream read FStream write SetStream;
   end;
+
+  TmnStream = class(TmnWrapperStream) //Alias for backward compatibility
+  end deprecated;
 
 implementation
 
@@ -120,13 +141,22 @@ begin
     FreeMem(aBuffer, BufferSize);
   end;
 end;
-
-function TmnBufferStream.WriteLn(const Value: string): Cardinal;
+function TmnBufferStream.WriteLine(const S: string; const vEOL: string): Cardinal;
 begin
-  Result := WriteString(Value + EndOfLine);
+  Result := WriteString(S + vEOL);
+end;
+
+function TmnBufferStream.WriteLn(const S: string): Cardinal;
+begin
+  Result := WriteLine(S, EndOfLine);
 end;
 
 function TmnBufferStream.WriteStrings(const Value: TStrings): Cardinal;
+begin
+  Result := WriteStrings(Value, EndOfLine);
+end;
+
+function TmnBufferStream.WriteStrings(const Value: TStrings; const vEOL: string): Cardinal;
 var
   i: Integer;
 begin
@@ -134,7 +164,7 @@ begin
   for i := 0 to Value.Count - 1 do
   begin
     if Value[i] <> '' then //stupid delphi always add empty line in last of TStringList
-      Result := Result + WriteLn(Value[i]);
+      Result := Result + WriteLine(Value[i], vEOL);
   end;
 end;
 
@@ -165,15 +195,7 @@ begin
   ReadLn(Result);
 end;
 
-procedure TmnBufferStream.WriteCommand(const Command, Params: string);
-begin
-  if Params <> '' then
-    WriteLn(Command + ' ' + Params)
-  else
-    WriteLn(Command);
-end;
-
-function TmnBufferStream.ReadLn(var S: string; ExcludeEOL: Boolean = True): Boolean;
+function TmnBufferStream.ReadLine(var S: string; const vEOL: string; vExcludeEOL: Boolean = True): Boolean;
 var
   aMatched: Boolean;
 begin
@@ -181,15 +203,43 @@ begin
   if Result then
   begin
     aMatched := False;
-    ReadUntil(EndOfLine, S, aMatched);
+    ReadUntil(vEOL, S, aMatched);
     if not aMatched and EOF and (S = '') then
       Result := False
-    else if aMatched and ExcludeEOL and (S <> '') then
-      S := LeftStr(S, Length(S) - Length(EndOfLine));
+    else if aMatched and vExcludeEOL and (S <> '') then
+      S := LeftStr(S, Length(S) - Length(vEOL));
   end;
 end;
 
-procedure TmnBufferStream.ReadStrings(Value: TStrings);
+function TmnBufferStream.ReadLine(const vEOL: string): string; 
+begin
+  ReadLine(Result, vEOL);
+end;
+
+procedure TmnBufferStream.WriteCommand(const Command, Params: string);
+begin
+  if Params <> '' then
+    WriteLine(Command + ' ' + Params, EndOfLine)
+  else
+    WriteLine(Command, EndOfLine);
+end;
+
+function TmnBufferStream.WriteEOL(EOL: string): Cardinal;
+begin
+  Result := WriteString(EOL);
+end;
+
+function TmnBufferStream.WriteEOL: Cardinal;
+begin
+  Result := WriteEOL(EndOfLine);
+end;
+
+function TmnBufferStream.ReadLn(var S: string; ExcludeEOL: Boolean = True): Boolean;
+begin
+  Result := ReadLine(S, EndOfLine, ExcludeEOL);
+end;
+
+procedure TmnBufferStream.ReadStrings(Value: TStrings; const vEOL: string);
 var
   s: string;
 begin
@@ -198,14 +248,19 @@ begin
     {$ifdef FPC}
     s := '';
     {$endif}
-    if ReadLn(s) then
+    if ReadLine(s, vEOL) then
       Value.Add(s);
   end;
 end;
 
+procedure TmnBufferStream.ReadStrings(Value: TStrings);
+begin
+  ReadStrings(Value, EndOfLine);
+end;
+
 function TmnBufferStream.Write(const Buffer; Count: Integer): Longint;
 begin
-  Result := InternalWrite(Buffer, Count);//TODO must be buffered
+  Result := DoWrite(Buffer, Count);//TODO must be buffered
 end;
 
 { TmnBufferStream }
@@ -217,12 +272,12 @@ begin
   inherited;
 end;
 
-function TmnBufferStream.InternalRead(var Buffer; Count: Longint): Longint;
+function TmnBufferStream.DoRead(var Buffer; Count: Longint): Longint;
 begin
   Result := inherited Read(Buffer, Count);
 end;
 
-function TmnBufferStream.InternalWrite(const Buffer; Count: Longint): Longint;
+function TmnBufferStream.DoWrite(const Buffer; Count: Longint): Longint;
 begin
   Result := inherited Write(Buffer, Count);
 end;
@@ -244,10 +299,23 @@ begin
   if FPos < FEnd then
     raise EmnStreamException.Create('Buffer is not empty to load');
   FPos := FBuffer;
-  aSize := InternalRead(FBuffer^, FBufferSize);
+  aSize := DoRead(FBuffer^, FBufferSize);
   FEnd := FPos + aSize;
   if aSize = 0 then
     FEOF := True;
+end;
+
+procedure TmnBufferStream.DoError(S: string);
+begin
+  if FEOFOnError then
+    FEOF := True
+  else
+    raise EmnStreamException.Create(S);
+end;
+
+function TmnBufferStream.IsActive: Boolean;
+begin
+  Result := True;
 end;
 
 function TmnBufferStream.Read(var Buffer; Count: Integer): Longint;
@@ -317,7 +385,52 @@ begin
   end;
 end;
 
-procedure TmnStream.SetStream(const Value: TStream);
+function TmnBufferStream.WriteStream(Source: TStream): Longint;
+const
+  BufferSize = 4 * 1024;
+var
+  aBuffer: pchar;
+  n: Integer;
+begin
+  GetMem(aBuffer, BufferSize);
+  Result := 0;
+  try
+    repeat
+      n := Source.Read(aBuffer^, BufferSize);
+      if n > 0 then
+        Write(aBuffer^, n);
+      Inc(Result, n);
+    until (n < BufferSize) or not IsActive;
+  finally
+    FreeMem(aBuffer, BufferSize);
+  end;
+end;
+
+function TmnBufferStream.ReadStream(Dest: TStream): Longint;
+const
+  BufferSize = 4 * 1024;
+var
+  aBuffer: pchar;
+  n: Integer;
+begin
+  {$ifdef FPC} //less hint in fpc
+  aBuffer := nil;
+  {$endif}
+  GetMem(aBuffer, BufferSize);
+  Result := 0;
+  try
+    repeat
+      n := Read(aBuffer^, BufferSize);
+      if n > 0 then
+        Dest.Write(aBuffer^, n);
+      Inc(Result, n);
+    until (n < BufferSize) or not IsActive;
+  finally
+    FreeMem(aBuffer, BufferSize);
+  end;
+end;
+
+procedure TmnWrapperStream.SetStream(const Value: TStream);
 begin
   if FStream <> Value then
   begin
@@ -328,17 +441,17 @@ begin
   end;
 end;
 
-function TmnStream.InternalRead(var Buffer; Count: Longint): Longint;
+function TmnWrapperStream.DoRead(var Buffer; Count: Longint): Longint;
 begin
   Result := FStream.Read(Buffer, Count);
 end;
 
-function TmnStream.InternalWrite(const Buffer; Count: Longint): Longint;
+function TmnWrapperStream.DoWrite(const Buffer; Count: Longint): Longint;
 begin
   Result := FStream.Write(Buffer, Count);//TODO must be buffered
 end;
 
-constructor TmnStream.Create(AStream: TStream; AEndOfLine:string; Owned: Boolean = True);
+constructor TmnWrapperStream.Create(AStream: TStream; AEndOfLine:string; Owned: Boolean = True);
 begin
   inherited Create(AEndOfLine);
   if AStream = nil then
@@ -347,12 +460,12 @@ begin
   FStream := AStream;
 end;
 
-constructor TmnStream.Create(AStream: TStream; Owned: Boolean);
+constructor TmnWrapperStream.Create(AStream: TStream; Owned: Boolean);
 begin
   Create(AStream, sEndOfLine, Owned);
 end;
 
-destructor TmnStream.Destroy;
+destructor TmnWrapperStream.Destroy;
 begin
   if FStreamOwned then
       FStream.Free;

@@ -41,7 +41,7 @@ type
     property Address: string read FAddress write SetAddress;
   end;
 
-  TmnClientStream = class(TmnConnectionStream)
+  TmnClientStream = class(TmnSocketStream)
   private
     FAddress: string;
     FPort: string;

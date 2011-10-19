@@ -255,7 +255,6 @@ end;
 function TmncCSVCommand.ReadLine(var Strings: TStringList): Boolean;
 var
   s: string;
-  e: Boolean;//eof
 begin
   Result := (FCSVStream <> nil) and not FCSVStream.EOF;
   if Result then

@@ -51,7 +51,7 @@ type
 
   TmnConnection = class(TmnThread)
   private
-    FStream: TmnConnectionStream;
+    FStream: TmnSocketStream;
     FKeepAlive: Boolean;
     function GetConnected: Boolean;
     procedure SetConnected(const Value: Boolean);
@@ -60,7 +60,7 @@ type
     procedure Process; virtual;
     procedure Execute; override;
     procedure Unprepare; virtual;
-    function CreateStream(Socket: TmnCustomSocket): TmnConnectionStream; virtual;
+    function CreateStream(Socket: TmnCustomSocket): TmnSocketStream; virtual;
   public
     constructor Create(Socket: TmnCustomSocket); virtual;
     destructor Destroy; override;
@@ -75,7 +75,7 @@ type
     //KeepAlive: do not disconnect when finish process
     property KeepAlive: Boolean read FKeepAlive write FKeepAlive;
     property Connected: Boolean read GetConnected write SetConnected;
-    property Stream: TmnConnectionStream read FStream;
+    property Stream: TmnSocketStream read FStream;
   end;
 
   TmnConnectionList = class(TList)
@@ -224,9 +224,9 @@ procedure TmnConnection.Connect;
 begin
 end;
 
-function TmnConnection.CreateStream(Socket: TmnCustomSocket): TmnConnectionStream;
+function TmnConnection.CreateStream(Socket: TmnCustomSocket): TmnSocketStream;
 begin
-  Result := TmnConnectionStream.Create(Socket);
+  Result := TmnSocketStream.Create(Socket);
 end;
 
 procedure TmnConnection.Prepare;
