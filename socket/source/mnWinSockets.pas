@@ -63,8 +63,8 @@ type
     destructor Destroy; override;
     function Bind(Options: TmnOptions; const Port: ansistring; const Address: ansistring = ''): TmnCustomSocket; override;
     function Connect(Options: TmnOptions; const Port: ansistring; const Address: ansistring = ''): TmnCustomSocket; override;
-    procedure Startup; override;
-    procedure Cleanup; override;
+    procedure Startup;
+    procedure Cleanup;
   end;
 
 implementation
@@ -372,6 +372,7 @@ end;
 constructor TmnWallSocket.Create;
 begin
   inherited;
+  Startup;
 end;
 
 const
@@ -431,6 +432,7 @@ end;
 destructor TmnWallSocket.Destroy;
 begin
   inherited;
+  Cleanup;
 end;
 
 function TmnWallSocket.LookupPort(Port: string): Word;

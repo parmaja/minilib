@@ -52,8 +52,6 @@ type
     destructor Destroy; override;
     function Bind(Options: TmnOptions; const Port: ansistring; const Address: ansistring = ''): TmnCustomSocket; override;
     function Connect(Options: TmnOptions; const Port: ansistring; const Address: ansistring = ''): TmnCustomSocket; override;
-    procedure Startup; override;
-    procedure Cleanup; override;
   end;
 
 implementation
@@ -369,4 +367,4 @@ end;
 
 end.
 
-//StrToHostAddr
+//StrToHostAddr

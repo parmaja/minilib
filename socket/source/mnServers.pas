@@ -441,15 +441,11 @@ constructor TmnServer.Create(AOwner: TComponent);
 begin
   inherited;
   FAddress := '0.0.0.0';
-  if not (csDesigning in ComponentState) then
-    WallSocket.Startup;
 end;
 
 destructor TmnServer.Destroy;
 begin
   Stop;
-  if not (csDesigning in ComponentState) then
-    WallSocket.Cleanup;
   inherited;
 end;
 

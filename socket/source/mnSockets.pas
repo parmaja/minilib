@@ -68,8 +68,6 @@ type
     destructor Destroy; override;
     function Bind(Options: TmnOptions; const Port: ansistring; const Address: ansistring = ''): TmnCustomSocket; virtual; abstract;
     function Connect(Options: TmnOptions; const Port: ansistring; const Address: ansistring = ''): TmnCustomSocket; virtual; abstract;
-    procedure Startup; virtual; abstract;
-    procedure Cleanup; virtual; abstract;
   end;
 
 function WallSocket: TmnCustomWallSocket;
