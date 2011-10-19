@@ -30,9 +30,11 @@ type
   TmnCustomStream = class(TStream)
   private
     FBufferSize: Cardinal;
-  published
+  protected
+    function IsActive: Boolean; virtual;
   public
     function WriteString(const Value: string): Cardinal;
+    function ReadStream(Dest: TStream): Longint;
     function WriteStream(Source: TStream): Longint;
     property BufferSize: Cardinal read FBufferSize write FBufferSize;
   end;
@@ -50,15 +52,14 @@ type
     procedure LoadBuffer;
   protected
     procedure DoError(S: string); virtual;
-    function IsActive: Boolean; virtual;
-    function DoRead(var Buffer; Count: Longint): Longint; virtual;
-    function DoWrite(const Buffer; Count: Longint): Longint; virtual;
+    function DoRead(var Buffer; Count: Longint): Longint; virtual; abstract;
+    function DoWrite(const Buffer; Count: Longint): Longint; virtual; abstract;
   public
     constructor Create(AEndOfLine: string = sUnixEndOfLine);
     destructor Destroy; override;
 
-    function Read(var Buffer; Count: Longint): Longint; override; final;
-    function Write(const Buffer; Count: Longint): Longint; override; final;
+    function Read(var Buffer; Count: Longint): Longint; override; {$ifdef FPC}final;{$endif}
+    function Write(const Buffer; Count: Longint): Longint; override; {$ifdef FPC}final;{$endif}
 
     procedure ReadUntil(const UntilStr: string; var Result: string; var Matched: Boolean);
     function ReadLine(var S: string; const vEOL: string; vExcludeEOL: Boolean = True): Boolean; overload;
@@ -78,9 +79,6 @@ type
     procedure ReadStrings(Value: TStrings); overload;
     function WriteStrings(const Value: TStrings; const vEOL: string): Cardinal; overload;
     function WriteStrings(const Value: TStrings): Cardinal; overload;
-
-    function ReadStream(Dest: TStream): Longint;
-    function WriteStream(Source: TStream): Longint;
 
     property EOF: Boolean read FEOF;
     property EndOfLine: string read FEndOfLine write FEndOfLine;
@@ -122,10 +120,37 @@ begin
   Result := Write(Pointer(Value)^, Length(Value));
 end;
 
+function TmnCustomStream.IsActive: Boolean;
+begin
+  Result := True;
+end;
+
+function TmnCustomStream.ReadStream(Dest: TStream): Longint;
+var
+  aBuffer: pchar;
+  n: Cardinal;
+begin
+  {$ifdef FPC} //less hint in fpc
+  aBuffer := nil;
+  {$endif}
+  GetMem(aBuffer, BufferSize);
+  Result := 0;
+  try
+    repeat
+      n := Read(aBuffer^, BufferSize);
+      if n > 0 then
+        Dest.Write(aBuffer^, n);
+      Inc(Result, n);
+    until (n < BufferSize) or not IsActive;
+  finally
+    FreeMem(aBuffer, BufferSize);
+  end;
+end;
+
 function TmnCustomStream.WriteStream(Source: TStream): Longint;
 var
   aBuffer: pchar;
-  n: cardinal;
+  n: Cardinal;
 begin
   {$IFDEF FPC}
   aBuffer := nil;
@@ -138,11 +163,12 @@ begin
       if n > 0 then
         Write(aBuffer^, n);
       Inc(Result, n);
-    until (n < BufferSize);
+    until (n < BufferSize) or not IsActive;
   finally
     FreeMem(aBuffer, BufferSize);
   end;
 end;
+
 function TmnBufferStream.WriteLine(const S: string; const vEOL: string): Cardinal;
 begin
   Result := WriteString(S + vEOL);
@@ -274,16 +300,6 @@ begin
   inherited;
 end;
 
-function TmnBufferStream.DoRead(var Buffer; Count: Longint): Longint;
-begin
-  Result := inherited Read(Buffer, Count);
-end;
-
-function TmnBufferStream.DoWrite(const Buffer; Count: Longint): Longint;
-begin
-  Result := inherited Write(Buffer, Count);
-end;
-
 constructor TmnBufferStream.Create(AEndOfLine: string);
 begin
   inherited Create;
@@ -313,11 +329,6 @@ begin
     FEOF := True
   else
     raise EmnStreamException.Create(S);
-end;
-
-function TmnBufferStream.IsActive: Boolean;
-begin
-  Result := True;
 end;
 
 function TmnBufferStream.Read(var Buffer; Count: Integer): Longint;
@@ -384,51 +395,6 @@ begin
     SetString(t, FPos, P - FPos);
     Result := Result + t;
     FPos := P;
-  end;
-end;
-
-function TmnBufferStream.WriteStream(Source: TStream): Longint;
-const
-  BufferSize = 4 * 1024;
-var
-  aBuffer: pchar;
-  n: Integer;
-begin
-  GetMem(aBuffer, BufferSize);
-  Result := 0;
-  try
-    repeat
-      n := Source.Read(aBuffer^, BufferSize);
-      if n > 0 then
-        Write(aBuffer^, n);
-      Inc(Result, n);
-    until (n < BufferSize) or not IsActive;
-  finally
-    FreeMem(aBuffer, BufferSize);
-  end;
-end;
-
-function TmnBufferStream.ReadStream(Dest: TStream): Longint;
-const
-  BufferSize = 4 * 1024;
-var
-  aBuffer: pchar;
-  n: Integer;
-begin
-  {$ifdef FPC} //less hint in fpc
-  aBuffer := nil;
-  {$endif}
-  GetMem(aBuffer, BufferSize);
-  Result := 0;
-  try
-    repeat
-      n := Read(aBuffer^, BufferSize);
-      if n > 0 then
-        Dest.Write(aBuffer^, n);
-      Inc(Result, n);
-    until (n < BufferSize) or not IsActive;
-  finally
-    FreeMem(aBuffer, BufferSize);
   end;
 end;
 

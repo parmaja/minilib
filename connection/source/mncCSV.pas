@@ -55,7 +55,7 @@ type
 
   TmncCSVCommand = class(TmncCommand)
   private
-    FCSVStream: TmnStream;
+    FCSVStream: TmnWrapperStream;
     FEmptyLine: TmncEmptyLine;
     FStream: TStream;
     FMode: TmncCSVMode;
@@ -162,7 +162,7 @@ end;
 
 procedure TmncCSVCommand.DoPrepare;
 begin
-  FCSVStream := TmnStream.Create(FStream, False);
+  FCSVStream := TmnWrapperStream.Create(FStream, False);
   FCSVStream.EndOfLine := Session.EndOfLine;
   if Session.HaveHeader then
   begin

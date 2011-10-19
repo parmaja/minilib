@@ -32,6 +32,7 @@ requires
   vcl;
 
 contains
+  UniDates in '..\UniDates.pas',
   mnStreams in '..\mnStreams.pas',
   mnUtils in '..\mnUtils.pas',
   base36  in '..\base36.pas';

@@ -6,7 +6,7 @@ unit UniDates;
  History:
 -----------------------------------------------------------------------------}
 {$IFDEF FPC}
-{$MODE objfpc}
+{$MODE delphi}
 {$ENDIF}
 {$M+}{$H+}
 {
@@ -107,11 +107,9 @@ function udtIncDay(const AValue: TDateTime; const ANumberOfDays: Integer = 1): T
 
 function udtCorrectYear(y: Integer): Integer;
 function udtCurrentMonth: Word;
-function SeasonOfDate(Date: TDateTime): Integer;
-function ExtractDateTimeString(S: String): String;
-function CorrectDateStr(S: String): String;
-function CorrectTimeStr(S: String): String;
-function CompleteDateStr(S: String): String;
+function udtSeasonOfDate(Date: TDateTime): Integer;
+function udtExtractDateTimeString(S: String): String;
+function udtCompleteDateStr(S: String): String;
 
 //Date and Time strings
 
@@ -129,8 +127,8 @@ procedure udtISOStrToDate(ISODate: String; out Y, M, D, H, N, S: Word; TimeDivid
 function udtISOStrToDate(UDS: TUniviersalDateSystem; ISODate: String; TimeDivider: AnsiChar = #0; UseDefault: Boolean = False): TDateTime; overload;
 function udtISOStrToDate(ISODate: String; TimeDivider: AnsiChar = #0; UseDefault: Boolean = False): TDateTime; overload;
 
-function udtISODateToStr(DateTime: TDateTime; TimeDivider: AnsiChar = ' '; WithTime: Boolean = False): String;
-function udtISODateToStr(UDS: TUniviersalDateSystem; DateTime: TDateTime; TimeDivider: AnsiChar = ' '; WithTime: Boolean = False): String;
+function udtISODateToStr(DateTime: TDateTime; TimeDivider: AnsiChar = ' '; WithTime: Boolean = False): String; overload;
+function udtISODateToStr(UDS: TUniviersalDateSystem; DateTime: TDateTime; TimeDivider: AnsiChar = ' '; WithTime: Boolean = False): String; overload;
 
 var
   CompatibleWith: String = 'Compatible';
@@ -155,9 +153,9 @@ begin
   Result := FUniDate;
 end;
 
-function SeasonOfDate(Date: TDateTime): Integer;
+function udtSeasonOfDate(Date: TDateTime): Integer;
 begin
-  Result := MonthOf(Date) div 4;
+  Result := udtMonthOf(Date) div 4;
 end;
 
 function udtCurrentMonth: Word;
@@ -192,7 +190,7 @@ begin
     Result := Now
   else
   begin
-    t := ExtractDateTimeString(vStr);
+    t := udtExtractDateTimeString(vStr);
     udtDecodeDate(Now, y, m, d);
     y1 := y;
     m1 := m;
@@ -503,20 +501,6 @@ begin
   Result := udtEncodeDate(LYear, LMonth, Day);
 end;
 
-function CorrectDateStr(S: String): String;
-var
-  i, b: Integer;
-begin
-  b := 0;
-  for i := 1 to Length(S) do
-    if S[i] in ['0'..'9'] then
-    begin
-      b := i;
-      break;
-    end;
-  Result := Copy(S, 1, b - 1) + udtDateToString(udtStringToDate((Copy(S, b, MaxInt))));
-end;
-
 function CorrectTimeStr(S: String): String;
 var
   i, b: Integer;
@@ -536,7 +520,7 @@ begin
   Result := UniDate.Current.CorrectYear(Y);
 end;
 
-function CompleteDateStr(S: String): String;
+function udtCompleteDateStr(S: String): String;
 
   function ToInt(const s: String; Default: Integer): Integer;
   begin
@@ -562,7 +546,7 @@ begin
   aPrefix := Copy(S, 1, b - 1);
   S := Copy(S, b, MaxInt);
 
-  t := ExtractDateTimeString(S);
+  t := udtExtractDateTimeString(S);
   udtDecodeDate(Now, y, m, d);
   y1 := y;
   m1 := m;
@@ -587,7 +571,7 @@ begin
   Result := aPrefix + IntToStr(d) + DateSeparator + IntToStr(m) + DateSeparator + IntToStr(y);
 end;
 
-function ExtractDateTimeString(S: String): String;
+function udtExtractDateTimeString(S: String): String;
 var
   i, b: Integer;
 begin

@@ -75,13 +75,17 @@ function WallSocket: TmnCustomWallSocket;
 implementation
 
 uses
-  {$ifdef MSWINDOWS} //Win32 and WinCE
-   mnWinSockets
+  {$ifdef FPC}
+    {$ifdef WINDOWS} //Win32 and WinCE
+     mnWinSockets
+    {$else}
+    {$ifdef LINUX}
+     mnLinuxSockets
+    {$endif}
+    {$endif};
   {$else}
-  {$ifdef LINUX}
-   mnLinuxSockets
+    mnWinSockets; //delphi is only Win32
   {$endif}
-  {$endif};
 
 var
   FmnWallSocket: TmnCustomWallSocket = nil;
