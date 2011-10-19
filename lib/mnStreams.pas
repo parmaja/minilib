@@ -105,6 +105,8 @@ type
     property Stream: TStream read FStream write SetStream;
   end;
 
+  TmnWrapperStreamClass = class of TmnWrapperStream;
+
   TmnStream = class(TmnWrapperStream) //Alias for backward compatibility
   end deprecated;
 

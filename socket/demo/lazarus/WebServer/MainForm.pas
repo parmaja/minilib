@@ -13,7 +13,7 @@ interface
 
 uses
   LCLIntf, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
-  Registry, StdCtrls, ExtCtrls, mnConnections, mnSockets, mnServers, mnHttpServer,
+  Registry, StdCtrls, ExtCtrls, mnSockets, mnServers, mnHttpServer,
   LResources, Buttons, Menus;
 
 type

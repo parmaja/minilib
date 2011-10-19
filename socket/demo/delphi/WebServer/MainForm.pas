@@ -10,7 +10,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
-  Registry, StdCtrls, ExtCtrls, mnWin32Sockets, mnConnections, mnSockets, mnServers,
+  Registry, StdCtrls, ExtCtrls, mnConnections, mnSockets, mnServers,
   mnHttpServer;
 
 type

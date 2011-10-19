@@ -262,7 +262,6 @@ procedure TmnCaller.Disconnect;
 begin
   if Connected then
   begin
-    WallSocket.Cleanup;
   end;
 end;
 
@@ -369,14 +368,10 @@ constructor TmnClient.Create(AOwner: TComponent);
 begin
   inherited;
   FAddress := '0.0.0.0';
-  if not (csDesigning in ComponentState) then
-    WallSocket.Startup;
 end;
 
 destructor TmnClient.Destroy;
 begin
-  if not (csDesigning in ComponentState) then
-    WallSocket.Cleanup;
   inherited;
 end;
 
@@ -397,7 +392,6 @@ begin
         FActive := True;
       except
         FreeAndNil(FCaller);
-        WallSocket.Cleanup;
         raise;
       end
     finally

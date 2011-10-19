@@ -32,7 +32,7 @@ requires
   MiniCommonsLib;
 
 contains
-  mnWin32Sockets in '..\source\mnWin32Sockets.pas',
+  mnWinSockets in '..\source\mnWinSockets.pas',
   mnSockets in '..\source\mnSockets.pas',
   //mnHttpServer in '..\source\mnHttpServer.pas',
   mnSocketStreams in '..\source\mnSocketStreams.pas',
