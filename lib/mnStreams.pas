@@ -27,12 +27,15 @@ const
 type
   EmnStreamException = class(Exception);
 
+  { TmnCustomStream }
+
   TmnCustomStream = class(TStream)
   private
     FBufferSize: Cardinal;
   protected
     function IsActive: Boolean; virtual;
   public
+    function ReadString(Count: Longint = 255): string;
     function WriteString(const Value: string): Cardinal;
     function ReadStream(Dest: TStream): Longint;
     function WriteStream(Source: TStream): Longint;
@@ -58,8 +61,8 @@ type
     constructor Create(AEndOfLine: string = sUnixEndOfLine);
     destructor Destroy; override;
 
-    function Read(var Buffer; Count: Longint): Longint; override; {$ifdef FPC}final;{$endif}
-    function Write(const Buffer; Count: Longint): Longint; override; {$ifdef FPC}final;{$endif}
+    function Read(var Buffer; Count: Longint): Longint; override; final;
+    function Write(const Buffer; Count: Longint): Longint; override; final;
 
     procedure ReadUntil(const UntilStr: string; var Result: string; var Matched: Boolean);
     function ReadLine(var S: string; const vEOL: string; vExcludeEOL: Boolean = True): Boolean; overload;
@@ -123,6 +126,15 @@ end;
 function TmnCustomStream.IsActive: Boolean;
 begin
   Result := True;
+end;
+
+function TmnCustomStream.ReadString(Count: Longint): string;
+var
+  l : Longint;
+begin
+  SetLength(Result, Count);
+  l := Read(Pointer(Result)^, Count);
+  SetLength(Result, l);
 end;
 
 function TmnCustomStream.ReadStream(Dest: TStream): Longint;

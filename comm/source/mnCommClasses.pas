@@ -80,24 +80,23 @@ type
     function GetConnected: Boolean; virtual; abstract;
     function GetFlowControlFlags: TFlowControlFlags; virtual;
     function GetParityFlags: TParityFlags; virtual;
-    function DoRead(var Buffer; Count: Integer): Integer; virtual; abstract;
-    function DoWrite(const Buffer; Count: Integer): Integer; virtual; abstract;
     procedure CheckConnected;
     procedure Created; virtual;
+    function InternalRead(var Buffer; Count: Integer): Integer; virtual; abstract;
+    function InternalWrite(const Buffer; Count: Integer): Integer; virtual; abstract;
   public
     constructor Create(Suspend: Boolean; Port: string; BaudRate: Int64; DataBits: TDataBits = dbEight; Parity: TParityBits = prNone; StopBits: TStopBits = sbOneStopBit; FlowControl: TFlowControl = fcHardware); overload;
     destructor Destroy; override;
+    function Read(var Buffer; Count: Integer): Integer; override; final;
+    function Write(const Buffer; Count: Integer): Integer; override; final;
     procedure Connect;
     procedure Disconnect;
     procedure Open; //Alias for Connect
     procedure Close; //Alias for Disconnect
     procedure Flush; virtual;
     procedure Purge; virtual;
-    function ReadString: string;
     function WaitRead: Boolean; virtual;
     function WaitWrite: Boolean; virtual;
-    function Read(var Buffer; Count: Integer): Integer; override;
-    function Write(const Buffer; Count: Integer): Integer; override;
     property Connected: Boolean read GetConnected;
     property Port: string read FPort;
     property BaudRate: Int64 read FBaudRate;
@@ -224,22 +223,18 @@ begin
   if WaitMode then
   begin
     if WaitRead then
-      Result := DoRead(Buffer, Count)
+      Result := InternalRead(Buffer, Count)
     else
       Result := 0;
   end
   else
-    Result := DoRead(Buffer, Count);
+    Result := InternalRead(Buffer, Count);
 end;
 
-function TmnCustomCommStream.ReadString: string;
-var
-  c: Integer;
+function TmnCustomCommStream.Write(const Buffer; Count: Integer): Integer;
 begin
-  c := 255;
-  SetLength(Result, c);
-  c := Read(Result[1], c);
-  SetLength(Result, c);
+  CheckConnected;
+  Result := InternalWrite(Buffer, Count);
 end;
 
 function TmnCustomCommStream.WaitRead: Boolean;
@@ -265,11 +260,6 @@ end;
 procedure TmnCustomCommStream.SetTimeout(const Value: Cardinal);
 begin
   FTimeout := Value;
-end;
-
-function TmnCustomCommStream.Write(const Buffer; Count: Integer): Integer;
-begin
-  Result := DoWrite(Buffer, Count);
 end;
 
 end.

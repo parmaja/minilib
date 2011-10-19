@@ -49,9 +49,7 @@ type
     constructor Create(CreateSuspended: Boolean; CommStream: TmnCustomCommStream);
   end;
 
-  
 implementation
-
 
 { TmnCommThread }
 

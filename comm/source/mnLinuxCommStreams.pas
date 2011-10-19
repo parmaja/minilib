@@ -37,8 +37,8 @@ type
     procedure DoConnect; override;
     procedure DoDisconnect; override;
     function GetConnected: Boolean; override;
-    function DoWrite(const Buffer; Count: Integer): Integer; override;
-    function DoRead(var Buffer; Count: Integer): Integer; override;
+    function InternalWrite(const Buffer; Count: Integer): Integer; override;
+    function InternalRead(var Buffer; Count: Integer): Integer; override;
 
     function Check(R: Integer): Boolean;
     procedure Created; override;
@@ -81,7 +81,7 @@ begin
   Result := FHandle <> INVALID_HANDLE;
 end;
 
-function TmnOSCommStream.DoWrite(const Buffer; Count: Integer): Integer;
+function TmnOSCommStream.InternalWrite(const Buffer; Count: Integer): Integer;
 var
   Bytes: DWORD;
   E: Cardinal;
@@ -90,7 +90,7 @@ begin
   Check(Result);//Error if -1
 end;
 
-function TmnOSCommStream.DoRead(var Buffer; Count: Integer): Integer;
+function TmnOSCommStream.InternalRead(var Buffer; Count: Integer): Integer;
 begin
   Result := FileRead(FHandle, Buffer, Count);
   Check(Result);

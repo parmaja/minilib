@@ -6,6 +6,9 @@ unit mnWinCommStreams;
  *            See the file COPYING.MLGPL, included in this distribution,
  * @author    Zaher Dirkey <zaher at parmaja dot com>
  * Some function ported from ComPort at sourceforge thanks for them
+
+   http://www.codeproject.com/KB/system/SerialPortComm.aspx
+
  *}
 
 {$M+}
@@ -36,8 +39,8 @@ type
     procedure DoConnect; override;
     procedure DoDisconnect; override;
     function GetConnected: Boolean; override;
-    function DoWrite(const Buffer; Count: Integer): Integer; override;
-    function DoRead(var Buffer; Count: Integer): Integer; override;
+    function InternalWrite(const Buffer; Count: Integer): Integer; override;
+    function InternalRead(var Buffer; Count: Integer): Integer; override;
     procedure Created; override;
   public
     function WaitRead: Boolean; override;
@@ -100,8 +103,9 @@ begin
 
   FHandle := f;
   try
-    if (ReceiveBuffer > 0) and not SetupComm(FHandle, ReceiveBuffer, 0) then
-      RaiseLastOSError;
+    if (ReceiveBuffer > 0) then
+      if not SetupComm(FHandle, ReceiveBuffer, 0) then
+        RaiseLastOSError;
 
     DCB.DCBlength := SizeOf(TDCB);
     DCB.XonLim := ReceiveBuffer div 4;
@@ -187,7 +191,7 @@ end;
 procedure TmnOSCommStream.Flush;
 begin
   inherited;
-  if not Flushfilebuffers(FHandle) then
+  if not FlushFileBuffers(FHandle) then
     RaiseLastOSError;
 end;
 
@@ -283,7 +287,7 @@ begin
   end;
 end;
 
-function TmnOSCommStream.DoRead(var Buffer; Count: Integer): Integer;
+function TmnOSCommStream.InternalRead(var Buffer; Count: Integer): Integer;
 var
   Bytes: DWORD;
   Overlapped: TOverlapped;
@@ -351,7 +355,7 @@ var
   Ev: TComEvents;
 begin
   Ev := WaitEvent([evRxChar]);
-  Result := Ev = [evRxChar];
+  Result := (Ev = [evRxChar]) or (Ev = [evTxEmpty]);
 end;
 
 function TmnOSCommStream.WaitWrite: Boolean;
@@ -362,7 +366,7 @@ begin
   Result := Ev = [evTxEmpty];
 end;
 
-function TmnOSCommStream.DoWrite(const Buffer; Count: Integer): Integer;
+function TmnOSCommStream.InternalWrite(const Buffer; Count: Integer): Integer;
 var
   Bytes: DWORD;
   Overlapped: TOverlapped;
@@ -370,6 +374,8 @@ var
   P: POverlapped;
   E: Cardinal;
   R: Integer;
+{  Errors: DWORD;
+  ComStat: TComStat;}
 begin
   Bytes := 0;
   Result := 0;
@@ -389,6 +395,9 @@ begin
     if WriteFile(FHandle, Buffer, Count, Bytes, P) then
     begin
       E := 0;
+{      Errors := 0;
+      if not ClearCommError(FHandle, Errors, @ComStat) then
+        raise ECommError.Create('Clear Com Failed');}
     end
     else
       E := GetLastError;
