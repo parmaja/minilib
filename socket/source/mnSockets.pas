@@ -73,31 +73,26 @@ type
   end;
 
 function WallSocket: TmnCustomWallSocket;
-function IsWallSocketRegistered: Boolean;
-procedure RegisterWallSocket(WallSocket: TmnCustomWallSocket);
 
 implementation
+
+uses
+  {$ifdef MSWINDOWS} //Win32 and WinCE
+   mnWinSockets
+  {$else}
+  {$ifdef LINUX}
+   mnLinuxSockets
+  {$endif}
+  {$endif};
 
 var
   FmnWallSocket: TmnCustomWallSocket = nil;
 
-function IsWallSocketRegistered: Boolean;
-begin
-  Result := FmnWallSocket <> nil;
-end;
-
 function WallSocket: TmnCustomWallSocket;
 begin
   if FmnWallSocket = nil then
-    raise EmnException.Create('no WallSocket registerd');
+    FmnWallSocket := TmnWallSocket.Create;
   Result := FmnWallSocket;
-end;
-
-procedure RegisterWallSocket(WallSocket: TmnCustomWallSocket);
-begin
-  if FmnWallSocket <> nil then
-    raise EmnException.Create('Already a WallSocket registerd');
-  FmnWallSocket := WallSocket;
 end;
 
 { TmnCustomWallSocket }

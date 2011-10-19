@@ -20,7 +20,7 @@ uses
   mnSockets;
 
 type
-  TmnLinuxSocket = class(TmnCustomSocket)
+  TmnSocket = class(TmnCustomSocket)
   private
     FHandle: TSocket;
     FAddress: TINetSockAddr;
@@ -43,7 +43,7 @@ type
     function GetRemoteName: string; override;
   end;
 
-  TmnLinuxWallSocket = class(TmnCustomWallSocket)
+  TmnWallSocket = class(TmnCustomWallSocket)
   private
     FCount: Integer;
     function LookupPort(Port: string): Word;
@@ -65,9 +65,9 @@ const
   INVALID_SOCKET		= TSocket(NOT(0));
   SOCKET_ERROR			= -1;
 
-{ TmnLinuxSocket }
+{ TmnSocket }
 
-function TmnLinuxSocket.Receive(var Buffer; var Count: Integer): TmnError;
+function TmnSocket.Receive(var Buffer; var Count: Integer): TmnError;
 var
   c: Integer;
 begin
@@ -92,7 +92,7 @@ begin
   end;
 end;
 
-function TmnLinuxSocket.Send(const Buffer; var Count: Integer): TmnError;
+function TmnSocket.Send(const Buffer; var Count: Integer): TmnError;
 var
   c: Integer;
 begin
@@ -117,7 +117,7 @@ begin
   end;
 end;
 
-function TmnLinuxSocket.DoSelect(Timeout: Int64; Check: TSelectCheck): TmnError;
+function TmnSocket.DoSelect(Timeout: Int64; Check: TSelectCheck): TmnError;
 var
   FSet: TFDSet;
   PSetRead, PSetWrite: PFDSet;
@@ -149,19 +149,19 @@ begin
     Result := erNone;
 end;
 
-function TmnLinuxSocket.Valid(Value: Integer; WithZero: Boolean): Boolean;
+function TmnSocket.Valid(Value: Integer; WithZero: Boolean): Boolean;
 begin
   Result := Check(Value, WithZero);
   if not Result then
     Error;
 end;
 
-function TmnLinuxSocket.GetActive: Boolean;
+function TmnSocket.GetActive: Boolean;
 begin
   Result := FHandle <> INVALID_SOCKET;
 end;
 
-procedure TmnLinuxSocket.Close;
+procedure TmnSocket.Close;
 begin
   if Active then
   begin
@@ -170,7 +170,7 @@ begin
   end;
 end;
 
-function TmnLinuxSocket.DoShutdown(How: TmnShutdown): TmnError;
+function TmnSocket.DoShutdown(How: TmnShutdown): TmnError;
 const
   cHow: array[TmnShutdown] of Integer = (0, SHUT_RD, SHUT_WR, SHUT_RDWR);
 var
@@ -187,7 +187,7 @@ begin
     Result := erNone;
 end;
 
-function TmnLinuxSocket.Accept: TmnCustomSocket;
+function TmnSocket.Accept: TmnCustomSocket;
 var
   aHandle: TSocket;
   aSize: Integer;
@@ -198,16 +198,16 @@ begin
   if aHandle < 0 then
     Result := nil
   else
-    Result := TmnLinuxSocket.Create(aHandle);
+    Result := TmnSocket.Create(aHandle);
 end;
 
-constructor TmnLinuxSocket.Create(Handle: TSocket);
+constructor TmnSocket.Create(Handle: TSocket);
 begin
   inherited Create;
   FHandle := Handle;
 end;
 
-function TmnLinuxSocket.Listen: TmnError;
+function TmnSocket.Listen: TmnError;
 var
   c: Integer;
 begin
@@ -222,12 +222,12 @@ begin
     Result := erNone;
 end;
 
-function TmnLinuxSocket.Check(Value: Integer; WithZero: Boolean): Boolean;
+function TmnSocket.Check(Value: Integer; WithZero: Boolean): Boolean;
 begin
   Result := not ((Value = SOCKET_ERROR) or (WithZero and (Value = 0)));
 end;
 
-function TmnLinuxSocket.GetRemoteAddress: ansistring;
+function TmnSocket.GetRemoteAddress: ansistring;
 var
   SockAddr: TSockAddr;
   aSize: Integer;
@@ -240,7 +240,7 @@ begin
     Result := '';
 end;
 
-function TmnLinuxSocket.GetRemoteName: string;
+function TmnSocket.GetRemoteName: string;
 var
   SockAddr: TSockAddr;
   Size: Integer;
@@ -258,7 +258,7 @@ begin
   Result := s;
 end;
 
-function TmnLinuxSocket.GetLocalAddress: ansistring;
+function TmnSocket.GetLocalAddress: ansistring;
 var
   SockAddr: TSockAddr;
   aSize: Integer;
@@ -271,7 +271,7 @@ begin
     Result := '';
 end;
 
-function TmnLinuxSocket.GetLocalName: string;
+function TmnSocket.GetLocalName: string;
 var
   s: ansistring;
 begin
@@ -282,14 +282,14 @@ begin
   Result := s;
 end;
 
-{ TmnLinuxWallSocket }
+{ TmnWallSocket }
 
-procedure TmnLinuxWallSocket.Cleanup;
+procedure TmnWallSocket.Cleanup;
 begin
   Dec(FCount);
 end;
 
-constructor TmnLinuxWallSocket.Create;
+constructor TmnWallSocket.Create;
 begin
   inherited;
 end;
@@ -298,7 +298,7 @@ const
   SO_TRUE:Longbool=True;
   SO_FALSE:Longbool=False;
 
-function TmnLinuxWallSocket.Bind(Options: TmnOptions; const Port: ansistring; const Address: ansistring): TmnCustomSocket;
+function TmnWallSocket.Bind(Options: TmnOptions; const Port: ansistring; const Address: ansistring): TmnCustomSocket;
 var
   aHandle: TSocket;
   aAddr : TINetSockAddr;
@@ -323,20 +323,20 @@ begin
     aAddr.sin_addr := StrToNetAddr(Address);
   If  fpbind(aHandle,@aAddr, Sizeof(aAddr)) <> 0 then
     raise EmnException.Create('failed to bind the socket, maybe another server is already use the same port (' + Port + ').');
-  Result := TmnLinuxSocket.Create(aHandle);
+  Result := TmnSocket.Create(aHandle);
 end;
 
-destructor TmnLinuxWallSocket.Destroy;
+destructor TmnWallSocket.Destroy;
 begin
   inherited;
 end;
 
-function TmnLinuxWallSocket.LookupPort(Port: string): Word;
+function TmnWallSocket.LookupPort(Port: string): Word;
 begin
   Result := StrToIntDef(Port, 0);
 end;
 
-procedure TmnLinuxWallSocket.Startup;
+procedure TmnWallSocket.Startup;
 begin
   if FCount = 0 then
   begin
@@ -345,7 +345,7 @@ begin
   Inc(FCount)
 end;
 
-function TmnLinuxWallSocket.Connect(Options: TmnOptions; const Port, Address: ansistring): TmnCustomSocket;
+function TmnWallSocket.Connect(Options: TmnOptions; const Port, Address: ansistring): TmnCustomSocket;
 var
   aHandle: TSocket;
   aAddr : TINetSockAddr;
@@ -364,11 +364,9 @@ begin
     aAddr.sin_addr := StrToNetAddr(Address);
   if fpconnect(aHandle, @aAddr, SizeOf(aAddr)) <> 0 then
     raise EmnException.Create('Failed to connect the socket, Address "' + Address +'" Port "' + Port + '".');
-  Result := TmnLinuxSocket.Create(aHandle)
+  Result := TmnSocket.Create(aHandle)
 end;
 
-initialization                                                                                                  
-  RegisterWallSocket(TmnLinuxWallSocket.Create);
 end.
 
 //StrToHostAddr

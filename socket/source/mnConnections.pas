@@ -19,13 +19,6 @@ uses
   Classes,
   SysUtils,
   SyncObjs,
-{$ifdef WINDOWS}
-  mnWin32Sockets,
-{$else}
-{$ifdef LINUX}
-  mnLinuxSockets,
-{$endif}
-{$endif}
   mnSockets,
   mnSocketStreams;
 

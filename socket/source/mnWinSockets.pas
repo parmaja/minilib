@@ -1,4 +1,4 @@
-unit mnWin32Sockets;
+unit mnWinSockets;
 {**
  *  This file is part of the "Mini Library"
  *
@@ -30,7 +30,7 @@ uses
   mnSockets;
 
 type
-  TmnWinSocket = class(TmnCustomSocket)
+  TmnSocket = class(TmnCustomSocket)
   private
     FHandle: TSocket;
     FAddress: TSockAddr;
@@ -53,7 +53,7 @@ type
     function GetRemoteName: string; override;
   end;
 
-  TmnWinWallSocket = class(TmnCustomWallSocket)
+  TmnWallSocket = class(TmnCustomWallSocket)
   private
     FWSAData: TWSAData;
     FCount: Integer;
@@ -69,9 +69,9 @@ type
 
 implementation
 
-{ TmnWinSocket }
+{ TmnSocket }
 
-function TmnWinSocket.Receive(var Buffer; var Count: Integer): TmnError;
+function TmnSocket.Receive(var Buffer; var Count: Integer): TmnError;
 var
   c: Integer;
 begin
@@ -100,7 +100,7 @@ begin
   end;
 end;
 
-function TmnWinSocket.Send(const Buffer; var Count: Integer): TmnError;
+function TmnSocket.Send(const Buffer; var Count: Integer): TmnError;
 var
   c: Integer;
 begin
@@ -129,7 +129,7 @@ begin
   end;
 end;
 
-function TmnWinSocket.DoSelect(Timeout: Int64; Check: TSelectCheck): TmnError;
+function TmnSocket.DoSelect(Timeout: Int64; Check: TSelectCheck): TmnError;
 var
   FSet: TFDSet;
   PSetRead, PSetWrite: PFDSet;
@@ -176,19 +176,19 @@ begin
     Result := erNone;
 end;
 
-function TmnWinSocket.Valid(Value: Integer; WithZero: Boolean): Boolean;
+function TmnSocket.Valid(Value: Integer; WithZero: Boolean): Boolean;
 begin
   Result := Check(Value, WithZero);
   if not Result then
     Error;
 end;
 
-function TmnWinSocket.GetActive: Boolean;
+function TmnSocket.GetActive: Boolean;
 begin
   Result := FHandle <> INVALID_SOCKET;
 end;
 
-procedure TmnWinSocket.Close;
+procedure TmnSocket.Close;
 begin
   if Active then
   begin
@@ -201,7 +201,7 @@ begin
   end;
 end;
 
-function TmnWinSocket.DoShutdown(How: TmnShutdown): TmnError;
+function TmnSocket.DoShutdown(How: TmnShutdown): TmnError;
 const
   cHow: array[TmnShutdown] of Integer = (0, SD_RECEIVE, SD_SEND, SD_BOTH);
 var
@@ -222,7 +222,7 @@ begin
     Result := erNone;
 end;
 
-function TmnWinSocket.Accept: TmnCustomSocket;
+function TmnSocket.Accept: TmnCustomSocket;
 var
   aHandle: TSocket;
   AddrSize: Integer;
@@ -238,17 +238,17 @@ begin
     Result := nil
   else
   begin
-    Result := TmnWinSocket.Create(aHandle);
+    Result := TmnSocket.Create(aHandle);
   end;
 end;
 
-constructor TmnWinSocket.Create(Handle: TSocket);
+constructor TmnSocket.Create(Handle: TSocket);
 begin
   inherited Create;
   FHandle := Handle;
 end;
 
-function TmnWinSocket.Listen: TmnError;
+function TmnSocket.Listen: TmnError;
 var
   c: Integer;
 begin
@@ -267,12 +267,12 @@ begin
     Result := erNone;
 end;
 
-function TmnWinSocket.Check(Value: Integer; WithZero: Boolean): Boolean;
+function TmnSocket.Check(Value: Integer; WithZero: Boolean): Boolean;
 begin
   Result := not ((Value = SOCKET_ERROR) or (WithZero and (Value = 0)));
 end;
 
-function TmnWinSocket.GetRemoteAddress: ansistring;
+function TmnSocket.GetRemoteAddress: ansistring;
 var
   SockAddrIn: TSockAddrIn;
   Size: Integer;
@@ -285,7 +285,7 @@ begin
     Result := '';
 end;
 
-function TmnWinSocket.GetRemoteName: string;
+function TmnSocket.GetRemoteName: string;
 var
   SockAddrIn: TSockAddrIn;
   Size: Integer;
@@ -307,7 +307,7 @@ begin
   Result := s;
 end;
 
-function TmnWinSocket.GetLocalAddress: ansistring;
+function TmnSocket.GetLocalAddress: ansistring;
 var
   aName: AnsiString;
   aAddr: PAnsiChar;
@@ -345,7 +345,7 @@ begin
     Result := '';
 end;
 
-function TmnWinSocket.GetLocalName: string;
+function TmnSocket.GetLocalName: string;
 var
   s: ansistring;
 begin
@@ -360,16 +360,16 @@ begin
   Result := s;
 end;
 
-{ TmnWinWallSocket }
+{ TmnWallSocket }
 
-procedure TmnWinWallSocket.Cleanup;
+procedure TmnWallSocket.Cleanup;
 begin
   Dec(FCount);
   if FCount = 0 then
     WSACleanup;
 end;
 
-constructor TmnWinWallSocket.Create;
+constructor TmnWallSocket.Create;
 begin
   inherited;
 end;
@@ -378,7 +378,7 @@ const
   SO_TRUE:Longbool=True;
   SO_FALSE:Longbool=False;
 
-function TmnWinWallSocket.Bind(Options: TmnOptions; const Port: ansistring; const Address: ansistring): TmnCustomSocket;
+function TmnWallSocket.Bind(Options: TmnOptions; const Port: ansistring; const Address: ansistring): TmnCustomSocket;
 var
   aHandle: TSocket;
   aSockAddr: TSockAddr;
@@ -425,20 +425,20 @@ begin
   if WinSock.bind(aHandle, aSockAddr, SizeOf(aSockAddr)) = SOCKET_ERROR then
 {$ENDIF}
     raise EmnException.Create('failed to bind the socket, error #' + IntToStr(WSAGetLastError) + '.'#13#13'another server is already use the same port (' + Port + ').');
-  Result := TmnWinSocket.Create(aHandle);
+  Result := TmnSocket.Create(aHandle);
 end;
 
-destructor TmnWinWallSocket.Destroy;
+destructor TmnWallSocket.Destroy;
 begin
   inherited;
 end;
 
-function TmnWinWallSocket.LookupPort(Port: string): Word;
+function TmnWallSocket.LookupPort(Port: string): Word;
 begin
   Result := StrToIntDef(Port, 0);
 end;
 
-procedure TmnWinWallSocket.Startup;
+procedure TmnWallSocket.Startup;
 var
   e: Integer;
 begin
@@ -451,7 +451,7 @@ begin
   Inc(FCount)
 end;
 
-function TmnWinWallSocket.Connect(Options: TmnOptions; const Port, Address: ansistring): TmnCustomSocket;
+function TmnWallSocket.Connect(Options: TmnOptions; const Port, Address: ansistring): TmnCustomSocket;
 var
   aHandle: TSocket;
   aSockAddr: TSockAddr;
@@ -483,9 +483,7 @@ begin
   if WinSock.connect(aHandle, aSockAddr, SizeOf(aSockAddr)) = SOCKET_ERROR then
 {$ENDIF}
       raise EmnException.Create('Failed to connect the socket, error #' + IntToStr(WSAGetLastError) + '.'#13'Address "' + Address +'" Port "' + Port + '".');
-  Result := TmnWinSocket.Create(aHandle)
+  Result := TmnSocket.Create(aHandle)
 end;
 
-initialization                                                                                                  
-  RegisterWallSocket(TmnWinWallSocket.Create);
 end.
