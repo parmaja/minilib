@@ -42,9 +42,9 @@ type
     function InternalWrite(const Buffer; Count: Integer): Integer; override;
     function InternalRead(var Buffer; Count: Integer): Integer; override;
     procedure Created; override;
+    function DoWaitRead: Boolean; override;
+    function DoWaitWrite: Boolean; override;
   public
-    function WaitRead: Boolean; override;
-    function WaitWrite: Boolean; override;
     function WaitEvent(const Events: TComEvents): TComEvents; override;
     procedure Flush; override;
     procedure Purge; override;
@@ -158,9 +158,9 @@ begin
 
     aTimeouts.ReadIntervalTimeout := MAXWORD;
     aTimeouts.ReadTotalTimeoutMultiplier := 0;
-    aTimeouts.ReadTotalTimeoutConstant := ReadTimeout;
+    aTimeouts.ReadTotalTimeoutConstant := Timeout;
     aTimeouts.WriteTotalTimeoutMultiplier := 0;
-    aTimeouts.WriteTotalTimeoutConstant := WriteTimeout;
+    aTimeouts.WriteTotalTimeoutConstant := Timeout;
 
     if not SetCommTimeouts(FHandle, aTimeouts) then
       RaiseLastOSError;
@@ -350,15 +350,15 @@ begin
   inherited;
 end;
 
-function TmnOSCommStream.WaitRead: Boolean;
+function TmnOSCommStream.DoWaitRead: Boolean;
 var
   Ev: TComEvents;
 begin
   Ev := WaitEvent([evRxChar]);
-  Result := Ev <> [];//(Ev = [evRxChar]) or (Ev = [evTxEmpty]);
+  Result := (Ev = [evRxChar]) or (Ev = [evTxEmpty]);
 end;
 
-function TmnOSCommStream.WaitWrite: Boolean;
+function TmnOSCommStream.DoWaitWrite: Boolean;
 var
   Ev: TComEvents;
 begin

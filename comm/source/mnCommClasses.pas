@@ -58,6 +58,8 @@ type
     procedure Created; virtual;
     function InternalRead(var Buffer; Count: Integer): Integer; virtual; abstract;
     function InternalWrite(const Buffer; Count: Integer): Integer; virtual; abstract;
+    function DoWaitRead: Boolean; virtual; abstract;
+    function DoWaitWrite: Boolean; virtual; abstract;
   public
     constructor Create(Suspend: Boolean; Port: string; BaudRate: Int64; DataBits: TDataBits = dbEight; Parity: TParityBits = prNone; StopBits: TStopBits = sbOneStopBit; FlowControl: TFlowControl = fcHardware); overload;
     destructor Destroy; override;
@@ -69,8 +71,8 @@ type
     procedure Close; //Alias for Disconnect
     procedure Flush; virtual;
     procedure Purge; virtual;
-    function WaitRead: Boolean; virtual;
-    function WaitWrite: Boolean; virtual;
+    function WaitRead: Boolean;
+    function WaitWrite: Boolean;
     property Connected: Boolean read GetConnected;
     property Port: string read FPort;
     property BaudRate: Int64 read FBaudRate;
@@ -181,12 +183,12 @@ end;
 
 function TmnCustomCommStream.WaitRead: Boolean;
 begin
-  Result := False;
+  Result := DoWaitRead;
 end;
 
 function TmnCustomCommStream.WaitWrite: Boolean;
 begin
-  Result := False;
+  Result := DoWaitWrite;
 end;
 
 procedure TmnCustomCommStream.SetTimeout(const Value: Cardinal);

@@ -34,9 +34,9 @@ type
     function InternalWrite(const Buffer; Count: Integer): Integer; override;
     function InternalRead(var Buffer; Count: Integer): Integer; override;
     function GetFlowControlFlags: TFlowControlFlags; override;
+    function DoWaitRead: Boolean; override;
+    function DoWaitWrite: Boolean; override;
   public
-    function WaitRead: Boolean; override;
-    function WaitWrite: Boolean; override;
     function WaitEvent(const Events: TComEvents): TComEvents; override;
     function GetInQue: Integer;
     procedure Flush; override;
@@ -214,7 +214,7 @@ begin
   //Result.ControlDTR := dtrEnable;
 end;
 
-function TmnOSCommStream.WaitRead: Boolean;
+function TmnOSCommStream.DoWaitRead: Boolean;
 var
   Ev: TComEvents;
 begin
@@ -222,7 +222,7 @@ begin
   Result := Ev = [evRxChar];
 end;
 
-function TmnOSCommStream.WaitWrite: Boolean;
+function TmnOSCommStream.DoWaitWrite: Boolean;
 var
   Ev: TComEvents;
 begin
@@ -274,4 +274,4 @@ begin
   end;
 end;
 
-end.
+end.

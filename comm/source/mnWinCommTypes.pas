@@ -106,8 +106,6 @@ type
     FReadTimeout: Cardinal;
     FWriteTimeout: Cardinal;
     procedure SetReceiveBuffer(AValue: Integer);
-    procedure SetReadTimeout(const Value: Cardinal);
-    procedure SetWriteTimeout(const Value: Cardinal);
   protected
     FHandle: THandle;
     procedure Created; override;
@@ -116,11 +114,6 @@ type
   public
     function WaitEvent(const Events: TComEvents): TComEvents; virtual;
     property ReceiveBuffer: Integer read FReceiveBuffer write SetReceiveBuffer;
-    //ReadTimeout: for internal timeout while reading COM will return in this with buffered chars
-    //When ReadTimeout = 0 it not return until the whale buffer requested read
-    property ReadTimeout: Cardinal read FReadTimeout write SetReadTimeout;
-    //When WriteTimeout = 0 it not return until the whale buffer requested writen
-    property WriteTimeout: Cardinal read FWriteTimeout write SetWriteTimeout;
   end;
 
 const
@@ -202,16 +195,6 @@ end;
 function TmnWinCustomCommStream.WaitEvent(const Events: TComEvents): TComEvents;
 begin
   Result := [];
-end;
-
-procedure TmnWinCustomCommStream.SetReadTimeout(const Value: Cardinal);
-begin
-  FReadTimeout := Value;
-end;
-
-procedure TmnWinCustomCommStream.SetWriteTimeout(const Value: Cardinal);
-begin
-  FWriteTimeout := Value;
 end;
 
 function TmnWinCustomCommStream.GetFlowControlFlags: TFlowControlFlags;
