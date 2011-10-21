@@ -42,8 +42,9 @@ type
 
     function Check(R: Integer): Boolean;
     procedure Created; override;
+    function DoWaitRead: Boolean; override;
+    function DoWaitWrite: Boolean; override;
   public
-    function WaitRead: Boolean; override;
     function GetInQue: Integer;//TODO
     procedure Flush; override;
     procedure Purge; override;
@@ -57,7 +58,9 @@ procedure TmnOSCommStream.DoConnect;
 var
   P: string;
   aMode: Integer;
-  t: termios;
+  tio: termios;
+  aBaudRate: Integer;
+  mcs: Integer;
 begin
   P := Port; //you must add full path e.g. '/dev/ttyUSB0'
   aMode := O_NOCTTY or O_SYNC;//O_NOCTTY or O_NDELAY;//O_SYNC;
@@ -69,53 +72,108 @@ begin
   FHandle := THandle(libc.open(pchar(P), aMode));
   Check(FHandle);
 
-  cfmakeraw(t);
-  term.c_cflag := term.c_cflag or CREAD;
-  term.c_cflag := term.c_cflag or CLOCAL;
-  term.c_cflag := term.c_cflag or HUPCL;
+  tcflush(FHandle, TCIOFLUSH);
 
-  with GetFlowControlFlags do
-  begin
-    //hardware handshake
+  cfmakeraw(tio);
+  //ported from moserial/SerialConnection.vala
 
-    if (dcb.flags and dcb_RtsControlHandshake) > 0 then
-      term.c_cflag := term.c_cflag or CRTSCTS
-    else
-      term.c_cflag := term.c_cflag and (not CRTSCTS);
-    //software handshake
-    if (dcb.flags and dcb_OutX) > 0 then
-      term.c_iflag := term.c_iflag or IXON or IXOFF or IXANY
-    else
-      term.c_iflag := term.c_iflag and (not (IXON or IXOFF or IXANY));
-    //size of byte
-    term.c_cflag := term.c_cflag and (not CSIZE);
-    case dcb.bytesize of
-      5:
-        term.c_cflag := term.c_cflag or CS5;
-      6:
-        term.c_cflag := term.c_cflag or CS6;
-      7:
-        term.c_cflag := term.c_cflag or CS7fix;
-      8:
-        term.c_cflag := term.c_cflag or CS8;
-    end;
-    //parity
-    if (dcb.flags and dcb_ParityCheck) > 0 then
-      term.c_cflag := term.c_cflag or PARENB
-    else
-      term.c_cflag := term.c_cflag and (not PARENB);
-    case dcb.parity of
-      1: //'O'
-        term.c_cflag := term.c_cflag or PARODD;
-      2: //'E'
-        term.c_cflag := term.c_cflag and (not PARODD);
-    end;
-    //stop bits
-    if dcb.stopbits > 0 then
-      term.c_cflag := term.c_cflag or CSTOPB
-    else
-      term.c_cflag := term.c_cflag and (not CSTOPB);
+  case BaudRate of
+    300:
+      aBaudRate:=B300;
+    600:
+      aBaudRate:=B600;
+    1200:
+      aBaudRate:=B1200;
+    2400:
+      aBaudRate:=B2400;
+    4800:
+      aBaudRate:=B4800;
+    9600:
+      aBaudRate:=B9600;
+    19200:
+      aBaudRate:=B19200;
+    38400:
+      aBaudRate:=B38400;
+    57600:
+      aBaudRate:=B57600;
+    115200:
+      aBaudRate:=B115200;
+    230400:
+      aBaudRate:=B230400;
+    460800:
+      aBaudRate:=B460800;
+    576000:
+      aBaudRate:=B576000;
+    921600:
+      aBaudRate:=B921600;
+    1000000:
+      aBaudRate:=B1000000;
+    2000000:
+      aBaudRate:=B2000000;
   end;
+  cfsetospeed(tio, aBaudRate);
+  cfsetispeed(tio, aBaudRate);
+
+{  // We generate mark and space parity
+  if (settings.dataBits == 7 && (settings.parity==Settings.Parity.MARK || settings.parity==Settings.Parity.SPACE))
+          dataBits=8;}
+
+  case (DataBits) of
+  dbFive:
+     tio.c_cflag := (tio.c_cflag and not CSIZE) or CS5;
+  dbSix:
+    tio.c_cflag := (tio.c_cflag and not CSIZE) or CS6;
+  dbSeven:
+    tio.c_cflag := (tio.c_cflag and not CSIZE) or CS7;
+  dbEight:
+  else
+    tio.c_cflag := (tio.c_cflag and not CSIZE) or CS8;
+  end;
+  tio.c_cflag := tio.c_cflag or CLOCAL or CREAD;
+
+  //Parity
+  tio.c_cflag := tio.c_cflag and not (PARENB or PARODD);
+
+  if (Parity = prEven) then
+    tio.c_cflag := tio.c_cflag or PARENB
+  else if (Parity = prOdd) then
+    tio.c_cflag := tio.c_cflag or (PARENB or PARODD);
+
+  tio.c_cflag := tio.c_cflag and CRTSCTS;
+
+  //Stop Bits
+  if (StopBits = sbTwoStopBits) then
+    tio.c_cflag := tio.c_cflag or CSTOPB
+  else
+    tio.c_cflag := tio.c_cflag and not CSTOPB;
+
+  //Input Settings
+  tio.c_iflag := IGNBRK;
+
+  //Handshake
+  if (Handshake = hsSoftware) or (Handshake = hsBoth) then
+    tio.c_iflag := tio.c_iflag or IXON or IXOFF
+  else
+    tio.c_iflag := tio.c_iflag and not (IXON or IXOFF or IXANY);
+
+  if (Handshake = hsHARDWARE) or (Handshake = hsBoth) then
+    tio.c_cflag := tio.c_cflag or CRTSCTS
+  else
+    tio.c_cflag := tio.c_cflag and not CRTSCTS;
+
+  tio.c_lflag := 0;
+  tio.c_oflag := 0;
+
+  tio.c_cc[VTIME] := Char(1); //Timeout
+  tio.c_cc[VMIN] := Char(1);
+
+  tio.c_lflag := tio.c_lflag and not (ECHONL or NOFLSH);
+
+  ioctl(FHandle, TIOCMGET, mcs);
+  mcs := mcs or TIOCM_RTS;
+  ioctl(FHandle, TIOCMSET, mcs);
+
+  Check(tcsetattr(FHandle, TCSANOW, @tio));
 end;
 
 procedure TmnOSCommStream.DoDisconnect;
@@ -162,7 +220,12 @@ begin
   FHandle := INVALID_HANDLE;
 end;
 
-function TmnOSCommStream.WaitRead: Boolean;
+function TmnOSCommStream.DoWaitWrite: Boolean;
+begin
+  Result := True;
+end;
+
+function TmnOSCommStream.DoWaitRead: Boolean;
 var
   FDSet: TFDSet;
   T: TTimeVal;
@@ -194,8 +257,15 @@ begin
 end;
 
 function TmnOSCommStream.GetInQue: Integer;
+var
+  C: Integer;
+  R: Integer;
 begin
-  Result := 0;
+  //Check if there is a Data
+  C := 0;
+  R := ioctl(integer(FHandle), FIONREAD, @C);
+  Check(R);
+  Result := C;
 end;
 
 procedure TmnOSCommStream.Flush;

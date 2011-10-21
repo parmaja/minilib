@@ -29,7 +29,7 @@ type
   TDataBits = (dbFive, dbSix, dbSeven, dbEight);
   TParityBits = (prNone, prOdd, prEven, prMark, prSpace);
   TStopBits = (sbOneStopBit, sbOneAndHalfStopBits, sbTwoStopBits);
-  TFlowControl = (fcHardware, fcXonXoff, fcNone);
+  THandshake = (hsNone, hsHardware, hsSoftware, hsBoth);
 
   TmnCommConnectMode = (ccmReadWrite, ccmRead, ccmWrite);
 
@@ -42,7 +42,7 @@ type
     FParity: TParityBits;
     FStopBits: TStopBits;
     FPort: string;
-    FFlowControl: TFlowControl;
+    FHandshake: THandshake;
     FDataBits: TDataBits;
     FEventChar: AnsiChar;
     FDiscardNull: Boolean;
@@ -61,7 +61,7 @@ type
     function DoWaitRead: Boolean; virtual; abstract;
     function DoWaitWrite: Boolean; virtual; abstract;
   public
-    constructor Create(Suspend: Boolean; Port: string; BaudRate: Int64; DataBits: TDataBits = dbEight; Parity: TParityBits = prNone; StopBits: TStopBits = sbOneStopBit; FlowControl: TFlowControl = fcHardware); overload;
+    constructor Create(Suspend: Boolean; Port: string; BaudRate: Int64; DataBits: TDataBits = dbEight; Parity: TParityBits = prNone; StopBits: TStopBits = sbOneStopBit; Handshake: THandshake = hsHardware); overload;
     destructor Destroy; override;
     function Read(var Buffer; Count: Integer): Integer; override; final;
     function Write(const Buffer; Count: Integer): Integer; override; final;
@@ -79,7 +79,7 @@ type
     property DataBits: TDataBits read FDataBits;
     property Parity: TParityBits read FParity;
     property StopBits: TStopBits read FStopBits;
-    property FlowControl: TFlowControl read FFlowControl write FFlowControl;
+    property Handshake: THandshake read FHandshake write FHandshake;
 
     property EventChar: AnsiChar read FEventChar write FEventChar default #13;
     property DiscardNull: Boolean read FDiscardNull write FDiscardNull default False;
@@ -102,7 +102,7 @@ begin
 end;
 
 constructor TmnCustomCommStream.Create(Suspend: Boolean; Port: string; BaudRate: Int64;
-  DataBits: TDataBits; Parity: TParityBits; StopBits: TStopBits; FlowControl: TFlowControl);
+  DataBits: TDataBits; Parity: TParityBits; StopBits: TStopBits; Handshake: THandshake);
 begin
   inherited Create;
   FTimeout := cTimeout;
@@ -112,7 +112,7 @@ begin
   FDataBits := DataBits;
   FParity := Parity;
   FStopBits := StopBits;
-  FFlowControl := FlowControl;
+  FHandshake := Handshake;
   FEventChar := #13;
   Created;
   if not Suspend then
@@ -197,4 +197,4 @@ begin
 end;
 
 end.
-
+
