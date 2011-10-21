@@ -29,29 +29,7 @@ type
   TDataBits = (dbFive, dbSix, dbSeven, dbEight);
   TParityBits = (prNone, prOdd, prEven, prMark, prSpace);
   TStopBits = (sbOneStopBit, sbOneAndHalfStopBits, sbTwoStopBits);
-  TFlowControl = (fcHardware, fcSoftware, fcNone, fcCustom);
-
-  TDTRFlowControl = (dtrDisable, dtrEnable, dtrHandshake);
-  TRTSFlowControl = (rtsDisable, rtsEnable, rtsHandshake, rtsToggle);
-
-  TFlowControlFlags = record
-    OutCTSFlow: Boolean;
-    OutDSRFlow: Boolean;
-    ControlDTR: TDTRFlowControl;
-    ControlRTS: TRTSFlowControl;
-    XonXoffOut: Boolean;
-    XonXoffIn: Boolean;
-    DSRSensitivity: Boolean;
-    TxContinueOnXoff: Boolean;
-    XonChar: AnsiChar;
-    XoffChar: AnsiChar;
-  end;
-
-  TParityFlags = record
-    Check: Boolean;
-    Replace: Boolean;
-    ReplaceChar: AnsiChar;
-  end;
+  TFlowControl = (fcHardware, fcXonXoff, fcNone);
 
   TmnCommConnectMode = (ccmReadWrite, ccmRead, ccmWrite);
 
@@ -71,15 +49,11 @@ type
     FTimeout: Cardinal;
     FFailTimeout: Boolean;
     FWaitMode: Boolean;
-    procedure SetEventChar(const Value: AnsiChar);
-    procedure SetDiscardNull(const Value: Boolean);
     procedure SetTimeout(const Value: Cardinal);
   protected
     procedure DoConnect; virtual; abstract;
     procedure DoDisconnect; virtual; abstract;
     function GetConnected: Boolean; virtual; abstract;
-    function GetFlowControlFlags: TFlowControlFlags; virtual;
-    function GetParityFlags: TParityFlags; virtual;
     procedure CheckConnected;
     procedure Created; virtual;
     function InternalRead(var Buffer; Count: Integer): Integer; virtual; abstract;
@@ -104,8 +78,9 @@ type
     property Parity: TParityBits read FParity;
     property StopBits: TStopBits read FStopBits;
     property FlowControl: TFlowControl read FFlowControl write FFlowControl;
-    property EventChar: AnsiChar read FEventChar write SetEventChar default #13;
-    property DiscardNull: Boolean read FDiscardNull write SetDiscardNull default False;
+
+    property EventChar: AnsiChar read FEventChar write FEventChar default #13;
+    property DiscardNull: Boolean read FDiscardNull write FDiscardNull default False;
 
     property ConnectMode: TmnCommConnectMode read FConnectMode write FConnectMode;
     //WaitMode: Make WaitEvent before read buffer
@@ -163,39 +138,6 @@ procedure TmnCustomCommStream.Flush;
 begin
 end;
 
-function TmnCustomCommStream.GetFlowControlFlags: TFlowControlFlags;
-begin
-  Result.XonChar := #17;
-  Result.XoffChar := #19;
-  Result.DSRSensitivity := False;
-  Result.ControlRTS := rtsDisable;
-  Result.ControlDTR := dtrDisable;//or enable like as Synaser
-  Result.TxContinueOnXoff := False;
-  Result.OutCTSFlow := False;
-  Result.OutDSRFlow := False;
-  Result.XonXoffIn := False;
-  Result.XonXoffOut := False;
-  case FlowControl of
-    fcHardware:
-      begin
-        Result.ControlRTS := rtsHandshake;
-        Result.OutCTSFlow := True;
-      end;
-    fcSoftware:
-      begin
-        Result.XonXoffIn := True;
-        Result.XonXoffOut := True;
-      end;
-  end;
-end;
-
-function TmnCustomCommStream.GetParityFlags: TParityFlags;
-begin
-  Result.Check := False;
-  Result.Replace := False;
-  Result.ReplaceChar := #0;
-end;
-
 procedure TmnCustomCommStream.CheckConnected;
 begin
   if not Connected then
@@ -245,16 +187,6 @@ end;
 function TmnCustomCommStream.WaitWrite: Boolean;
 begin
   Result := False;
-end;
-
-procedure TmnCustomCommStream.SetDiscardNull(const Value: Boolean);
-begin
-  FDiscardNull := Value;
-end;
-
-procedure TmnCustomCommStream.SetEventChar(const Value: AnsiChar);
-begin
-  FEventChar := Value;
 end;
 
 procedure TmnCustomCommStream.SetTimeout(const Value: Cardinal);

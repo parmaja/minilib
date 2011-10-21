@@ -28,6 +28,32 @@ uses
   Classes, SysUtils,
   mnCommClasses;
 
+type
+  TComEvent = (evRxChar, evTxEmpty, evRxFlag, evRing, evBreak, evCTS, evDSR,
+    evError, evRLSD, evRx80Full);
+  TComEvents = set of TComEvent;
+
+  TDTRFlowControl = (dtrDisable, dtrEnable, dtrHandshake);
+  TRTSFlowControl = (rtsDisable, rtsEnable, rtsHandshake, rtsToggle);
+
+  TFlowControlFlags = record
+    OutCTSFlow: Boolean;
+    OutDSRFlow: Boolean;
+    ControlDTR: TDTRFlowControl;
+    ControlRTS: TRTSFlowControl;
+    XonXoffOut: Boolean;
+    XonXoffIn: Boolean;
+    DSRSensitivity: Boolean;
+    TxContinueOnXoff: Boolean;
+    XonChar: AnsiChar;
+    XoffChar: AnsiChar;
+  end;
+
+  TParityFlags = record
+    Check: Boolean;
+    Replace: Boolean;
+    ReplaceChar: AnsiChar;
+  end;
 
 const
   // auxilary constants used not defined in windows.pas
@@ -71,13 +97,9 @@ const
      DTR_CONTROL_ENABLE shl 4,
      DTR_CONTROL_HANDSHAKE shl 4);
 
-type
-  TComEvent = (evRxChar, evTxEmpty, evRxFlag, evRing, evBreak, evCTS, evDSR,
-    evError, evRLSD, evRx80Full);
-  TComEvents = set of TComEvent;
-
   { TmnWinCustomCommStream }
 
+type
   TmnWinCustomCommStream = class(TmnCustomCommStream)
   private
     FReceiveBuffer: Integer;
@@ -89,6 +111,8 @@ type
   protected
     FHandle: THandle;
     procedure Created; override;
+    function GetFlowControlFlags: TFlowControlFlags; virtual;
+    function GetParityFlags: TParityFlags; virtual;
   public
     function WaitEvent(const Events: TComEvents): TComEvents; virtual;
     property ReceiveBuffer: Integer read FReceiveBuffer write SetReceiveBuffer;
@@ -188,6 +212,39 @@ end;
 procedure TmnWinCustomCommStream.SetWriteTimeout(const Value: Cardinal);
 begin
   FWriteTimeout := Value;
+end;
+
+function TmnWinCustomCommStream.GetFlowControlFlags: TFlowControlFlags;
+begin
+  Result.XonChar := #17;
+  Result.XoffChar := #19;
+  Result.DSRSensitivity := False;
+  Result.ControlRTS := rtsDisable;
+  Result.ControlDTR := dtrDisable;//or enable like as Synaser
+  Result.TxContinueOnXoff := False;
+  Result.OutCTSFlow := False;
+  Result.OutDSRFlow := False;
+  Result.XonXoffIn := False;
+  Result.XonXoffOut := False;
+  case FlowControl of
+    fcHardware:
+      begin
+        Result.ControlRTS := rtsHandshake;
+        Result.OutCTSFlow := True;
+      end;
+    fcXonXoff:
+      begin
+        Result.XonXoffIn := True;
+        Result.XonXoffOut := True;
+      end;
+  end;
+end;
+
+function TmnWinCustomCommStream.GetParityFlags: TParityFlags;
+begin
+  Result.Check := False;
+  Result.Replace := False;
+  Result.ReplaceChar := #0;
 end;
 
 end.

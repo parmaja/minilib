@@ -91,8 +91,7 @@ begin
         DCB.Flags := DCB.Flags or dcb_OutxCTSFlow;
       if OutDSRFlow then
         DCB.Flags := DCB.Flags or dcb_OutxDSRFlow;
-      DCB.Flags := DCB.Flags or CControlDTR[ControlDTR]
-        or CControlRTS[ControlRTS];
+      DCB.Flags := DCB.Flags or cControlDTR[ControlDTR] or cControlRTS[ControlRTS];
       if XonXoffOut then
         DCB.Flags := DCB.Flags or dcb_OutX;
       if XonXoffIn then
@@ -275,4 +274,4 @@ begin
   end;
 end;
 
-end.
+end.

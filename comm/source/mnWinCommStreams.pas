@@ -355,7 +355,7 @@ var
   Ev: TComEvents;
 begin
   Ev := WaitEvent([evRxChar]);
-  Result := (Ev = [evRxChar]) or (Ev = [evTxEmpty]);
+  Result := Ev <> [];//(Ev = [evRxChar]) or (Ev = [evTxEmpty]);
 end;
 
 function TmnOSCommStream.WaitWrite: Boolean;

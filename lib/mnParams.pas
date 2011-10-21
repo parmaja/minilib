@@ -351,10 +351,12 @@ end;
 
 procedure TIParam.LoadFromStream(Stream: TStream);
 begin
+  //TODO
 end;
 
 procedure TIParam.SaveToStream(Stream: TStream);
 begin
+  //TODO
 end;
 
 procedure TIParam.SetAsString(const Value: string);
