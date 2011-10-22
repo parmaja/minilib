@@ -61,7 +61,7 @@ type
     function DoWaitRead: Boolean; virtual; abstract;
     function DoWaitWrite: Boolean; virtual; abstract;
   public
-    constructor Create(Suspend: Boolean; Port: string; BaudRate: Int64; DataBits: TDataBits = dbEight; Parity: TParityBits = prNone; StopBits: TStopBits = sbOneStopBit; Handshake: THandshake = hsHardware); overload;
+    constructor Create(Suspend: Boolean; vPort: string; vBaudRate: Int64; vDataBits: TDataBits = dbEight; vParity: TParityBits = prNone; vStopBits: TStopBits = sbOneStopBit; vHandshake: THandshake = hsHardware); overload;
     destructor Destroy; override;
     function Read(var Buffer; Count: Integer): Integer; override; final;
     function Write(const Buffer; Count: Integer): Integer; override; final;
@@ -79,7 +79,7 @@ type
     property DataBits: TDataBits read FDataBits;
     property Parity: TParityBits read FParity;
     property StopBits: TStopBits read FStopBits;
-    property Handshake: THandshake read FHandshake write FHandshake;
+    property Handshake: THandshake read FHandshake write FHandshake default hsHardware;
 
     property EventChar: AnsiChar read FEventChar write FEventChar default #13;
     property DiscardNull: Boolean read FDiscardNull write FDiscardNull default False;
@@ -101,18 +101,17 @@ begin
   Disconnect;
 end;
 
-constructor TmnCustomCommStream.Create(Suspend: Boolean; Port: string; BaudRate: Int64;
-  DataBits: TDataBits; Parity: TParityBits; StopBits: TStopBits; Handshake: THandshake);
+constructor TmnCustomCommStream.Create(Suspend: Boolean; vPort: string; vBaudRate: Int64; vDataBits: TDataBits = dbEight; vParity: TParityBits = prNone; vStopBits: TStopBits = sbOneStopBit; vHandshake: THandshake = hsHardware); overload;
 begin
   inherited Create;
   FTimeout := cTimeout;
   FFailTimeout := True;
-  FPort := Port;
-  FBaudRate := BaudRate;
-  FDataBits := DataBits;
-  FParity := Parity;
-  FStopBits := StopBits;
-  FHandshake := Handshake;
+  FPort := vPort;
+  FBaudRate := vBaudRate;
+  FDataBits := vDataBits;
+  FParity := vParity;
+  FStopBits := vStopBits;
+  FHandshake := vHandshake;
   FEventChar := #13;
   Created;
   if not Suspend then
@@ -197,4 +196,4 @@ begin
 end;
 
 end.
-
+

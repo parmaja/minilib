@@ -209,14 +209,21 @@ begin
   Result.OutDSRFlow := False;
   Result.XonXoffIn := False;
   Result.XonXoffOut := False;
-  case FlowControl of
-    fcHardware:
+  case Handshake of
+    hsHardware:
       begin
         Result.ControlRTS := rtsHandshake;
         Result.OutCTSFlow := True;
       end;
-    fcXonXoff:
+    hsSoftware:
       begin
+        Result.XonXoffIn := True;
+        Result.XonXoffOut := True;
+      end;
+    hsBoth:
+      begin
+        Result.ControlRTS := rtsHandshake;
+        Result.OutCTSFlow := True;
         Result.XonXoffIn := True;
         Result.XonXoffOut := True;
       end;
