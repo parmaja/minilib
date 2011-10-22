@@ -74,7 +74,7 @@ begin
 
   tcflush(FHandle, TCIOFLUSH);
 
-  cfmakeraw(tio);
+  cfmakeraw(@tio);
   //ported from moserial/SerialConnection.vala
 
   case BaudRate of
@@ -111,8 +111,8 @@ begin
     2000000:
       aBaudRate:=B2000000;
   end;
-  cfsetospeed(tio, aBaudRate);
-  cfsetispeed(tio, aBaudRate);
+  cfsetospeed(@tio, aBaudRate);
+  cfsetispeed(@tio, aBaudRate);
 
 {  // We generate mark and space parity
   if (settings.dataBits == 7 && (settings.parity==Settings.Parity.MARK || settings.parity==Settings.Parity.SPACE))
@@ -169,9 +169,9 @@ begin
 
   tio.c_lflag := tio.c_lflag and not (ECHONL or NOFLSH);
 
-  ioctl(FHandle, TIOCMGET, mcs);
+  ioctl(FHandle, TIOCMGET, @mcs);
   mcs := mcs or TIOCM_RTS;
-  ioctl(FHandle, TIOCMSET, mcs);
+  ioctl(FHandle, TIOCMSET, @mcs);
 
   Check(tcsetattr(FHandle, TCSANOW, @tio));
 end;
