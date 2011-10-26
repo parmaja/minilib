@@ -1,4 +1,5 @@
 unit mnLinuxCommStreams;
+
 {**
  *  This file is part of the "Mini Comm"
  *
@@ -56,7 +57,7 @@ implementation
 
 procedure TmnOSCommStream.DoConnect;
 var
-  P: string;
+  P: String;
   aMode: Integer;
   tio: termios;
   aBaudRate: Integer;
@@ -69,7 +70,7 @@ begin
     ccmRead: aMode := aMode or O_RDONLY;
     ccmWrite: aMode := aMode or O_WRONLY;
   end;
-  FHandle := THandle(libc.open(pchar(P), aMode));
+  FHandle := THandle(libc.Open(PChar(P), aMode));
   Check(FHandle);
 
   tcflush(FHandle, TCIOFLUSH);
@@ -79,37 +80,37 @@ begin
 
   case BaudRate of
     300:
-      aBaudRate:=B300;
+      aBaudRate := B300;
     600:
-      aBaudRate:=B600;
+      aBaudRate := B600;
     1200:
-      aBaudRate:=B1200;
+      aBaudRate := B1200;
     2400:
-      aBaudRate:=B2400;
+      aBaudRate := B2400;
     4800:
-      aBaudRate:=B4800;
+      aBaudRate := B4800;
     9600:
-      aBaudRate:=B9600;
+      aBaudRate := B9600;
     19200:
-      aBaudRate:=B19200;
+      aBaudRate := B19200;
     38400:
-      aBaudRate:=B38400;
+      aBaudRate := B38400;
     57600:
-      aBaudRate:=B57600;
+      aBaudRate := B57600;
     115200:
-      aBaudRate:=B115200;
+      aBaudRate := B115200;
     230400:
-      aBaudRate:=B230400;
+      aBaudRate := B230400;
     460800:
-      aBaudRate:=B460800;
+      aBaudRate := B460800;
     576000:
-      aBaudRate:=B576000;
+      aBaudRate := B576000;
     921600:
-      aBaudRate:=B921600;
+      aBaudRate := B921600;
     1000000:
-      aBaudRate:=B1000000;
+      aBaudRate := B1000000;
     2000000:
-      aBaudRate:=B2000000;
+      aBaudRate := B2000000;
   end;
   cfsetospeed(@tio, aBaudRate);
   cfsetispeed(@tio, aBaudRate);
@@ -119,15 +120,15 @@ begin
           dataBits=8;}
 
   case (DataBits) of
-  dbFive:
-     tio.c_cflag := (tio.c_cflag and not CSIZE) or CS5;
-  dbSix:
-    tio.c_cflag := (tio.c_cflag and not CSIZE) or CS6;
-  dbSeven:
-    tio.c_cflag := (tio.c_cflag and not CSIZE) or CS7;
-  dbEight:
-  else
-    tio.c_cflag := (tio.c_cflag and not CSIZE) or CS8;
+    dbFive:
+      tio.c_cflag := (tio.c_cflag and not CSIZE) or CS5;
+    dbSix:
+      tio.c_cflag := (tio.c_cflag and not CSIZE) or CS6;
+    dbSeven:
+      tio.c_cflag := (tio.c_cflag and not CSIZE) or CS7;
+    dbEight:
+    else
+      tio.c_cflag := (tio.c_cflag and not CSIZE) or CS8;
   end;
   tio.c_cflag := tio.c_cflag or CLOCAL or CREAD;
 
@@ -210,7 +211,7 @@ begin
   if Result then
   begin
     E := __errno_location^;
-    Raise ECommError.Create('Error ' + IntToStr(E));
+    raise ECommError.Create('Error ' + IntToStr(E));
   end;
 end;
 
@@ -235,7 +236,7 @@ var
 begin
   //Check if there is a Data
   C := 0;
-  R := ioctl(integer(FHandle), FIONREAD, @C);
+  R := ioctl(Integer(FHandle), FIONREAD, @C);
   Check(R);
   Result := C > 0;
   if not Result then
@@ -249,8 +250,8 @@ begin
       P := @T;
     end;
     FD_ZERO(FDSet);
-    FD_SET(integer(FHandle), FDSet);
-    R := select(integer(FHandle) + 1, @FDSet, nil, nil, P);
+    FD_SET(Integer(FHandle), FDSet);
+    R := select(Integer(FHandle) + 1, @FDSet, nil, nil, P);
     Check(R);
     Result := R > 0;
   end;
@@ -263,7 +264,7 @@ var
 begin
   //Check if there is a Data
   C := 0;
-  R := ioctl(integer(FHandle), FIONREAD, @C);
+  R := ioctl(Integer(FHandle), FIONREAD, @C);
   Check(R);
   Result := C;
 end;

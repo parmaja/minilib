@@ -61,7 +61,7 @@ begin
         aStream := TFileStream.Create(Application.Location + 'test.prn', fmCreate)
       else
       begin
-        aStream := TmnCommStream.Create(True, PortCbo.Text, 9600, dbEight, prNone, sbOneStopBit, fcHardware, False);
+        aStream := TmnCommStream.Create(True, PortCbo.Text, 9600, dbEight, prNone, sbOneStopBit, hsHardware);
         (aStream as TmnCommStream).Open;
       end;
       //You can create the printer class by name
@@ -94,7 +94,7 @@ begin
         aPrinter.EndPage;
         aPrinter.EndDocument;
         aPrinter.Eject;
-        //aPrinter.Cut;
+        aPrinter.Cut;
         (aPrinter as TmnESCPOSPrinter).PrintBarcode('123456789');
         if PrintToFileChk.Checked then
           (aStream as TmnCommStream).Close;
@@ -130,7 +130,7 @@ begin
         aStream := TFileStream.Create(Application.Location + 'test.prn', fmCreate)
       else
       begin
-        aStream := TmnCommStream.Create(True, PortCbo.Text, 9600, dbEight, prNone, sbOneStopBit, fcHardware, False);
+        aStream := TmnCommStream.Create(True, PortCbo.Text, 9600, dbEight, prNone, sbOneStopBit, hsHardware);
         (aStream as TmnCommStream).Open;
       end;
       //You can create the printer class by name
