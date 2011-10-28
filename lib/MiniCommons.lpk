@@ -1,12 +1,18 @@
 <?xml version="1.0"?>
 <CONFIG>
   <Package Version="4">
-    <Name Value="MiniBaseLib"/>
+    <Name Value="MiniCommons"/>
     <CompilerOptions>
       <Version Value="10"/>
       <SearchPaths>
         <UnitOutputDirectory Value="units/$(TargetCPU)-$(TargetOS)"/>
       </SearchPaths>
+      <Linking>
+        <Debugging>
+          <GenerateDebugInfo Value="True"/>
+          <DebugInfoType Value="dsAuto"/>
+        </Debugging>
+      </Linking>
       <Other>
         <CompilerMessages>
           <UseMsgFile Value="True"/>
@@ -44,7 +50,7 @@
     <RequiredPkgs Count="1">
       <Item1>
         <PackageName Value="FCL"/>
-        <MinVersion Major="1" Release="1" Valid="True"/>
+        <MinVersion Major="1" Valid="True" Release="1"/>
       </Item1>
     </RequiredPkgs>
     <UsageOptions>

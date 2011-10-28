@@ -2,7 +2,7 @@
   This source is only used to compile and install the package.
  }
 
-unit MiniBaseLib; 
+unit MiniCommons; 
 
 interface
 
@@ -16,5 +16,5 @@ begin
 end; 
 
 initialization
-  RegisterPackage('MiniBaseLib', @Register); 
+  RegisterPackage('MiniCommons', @Register); 
 end.

@@ -38,7 +38,7 @@
     <Type Value="RunAndDesignTime"/>
     <RequiredPkgs Count="2">
       <Item1>
-        <PackageName Value="MiniBaseLib"/>
+        <PackageName Value="MiniCommons"/>
       </Item1>
       <Item2>
         <PackageName Value="FCL"/>

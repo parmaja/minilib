@@ -15,6 +15,12 @@
           <UseAnsiStrings Value="False"/>
         </SyntaxOptions>
       </Parsing>
+      <Linking>
+        <Debugging>
+          <GenerateDebugInfo Value="True"/>
+          <DebugInfoType Value="dsAuto"/>
+        </Debugging>
+      </Linking>
       <Other>
         <Verbosity>
           <ShowNotes Value="False"/>
@@ -28,10 +34,11 @@
         <CreateMakefileOnBuild Value="True"/>
       </Other>
     </CompilerOptions>
-    <Version Major="1" Release="1" Build="1"/>
+    <Version Build="1" Major="1" Release="1"/>
     <Files Count="8">
       <Item1>
         <Filename Value="ntvCtrls.pas"/>
+        <AddToUsesPkgSection Value="False"/>
         <UnitName Value="ntvCtrls"/>
       </Item1>
       <Item2>
@@ -67,25 +74,22 @@
       </Item8>
     </Files>
     <Type Value="RunAndDesignTime"/>
-    <RequiredPkgs Count="5">
+    <RequiredPkgs Count="4">
       <Item1>
-        <PackageName Value="minilib"/>
+        <PackageName Value="MiniCommons"/>
       </Item1>
       <Item2>
-        <PackageName Value="MiniBaseLib"/>
+        <PackageName Value="IDEIntf"/>
+        <MinVersion Major="1" Valid="True"/>
       </Item2>
       <Item3>
-        <PackageName Value="IDEIntf"/>
+        <PackageName Value="LCL"/>
         <MinVersion Major="1" Valid="True"/>
       </Item3>
       <Item4>
-        <PackageName Value="LCL"/>
-        <MinVersion Major="1" Valid="True"/>
-      </Item4>
-      <Item5>
         <PackageName Value="FCL"/>
         <MinVersion Major="1" Valid="True"/>
-      </Item5>
+      </Item4>
     </RequiredPkgs>
     <UsageOptions>
       <UnitPath Value="$(PkgOutDir)"/>

@@ -7,8 +7,8 @@ unit NativeLib;
 interface
 
 uses
-    ntvCtrls, ntvRegCtrls, ntvPageControls, ntvProgressBars, ntvDotMatrix,
-  ntvTabSets, ntvTabs, LazarusPackageIntf;
+  ntvRegCtrls, ntvPageControls, ntvProgressBars, ntvDotMatrix, ntvTabSets, 
+  ntvTabs, LazarusPackageIntf;
 
 implementation
 
