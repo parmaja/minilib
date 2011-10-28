@@ -28,7 +28,7 @@
         <CompilerPath Value="$(CompPath)"/>
       </Other>
     </CompilerOptions>
-    <Version Build="1" Major="1"/>
+    <Version Build="1" Major="1" Release="1"/>
     <Files Count="8">
       <Item1>
         <Filename Value="mnClients.pas"/>

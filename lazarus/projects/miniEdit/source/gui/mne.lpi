@@ -70,46 +70,39 @@
         <Display Value=":1"/>
       </local>
     </RunParams>
-    <RequiredPackages Count="10">
+    <RequiredPackages Count="9">
       <Item1>
-        <PackageName Value="MiniXML"/>
-        <MinVersion Valid="True"/>
+        <PackageName Value="MiniLib"/>
       </Item1>
       <Item2>
-        <PackageName Value="minisockets"/>
-        <MinVersion Valid="True"/>
+        <PackageName Value="MiniCommons"/>
       </Item2>
       <Item3>
-        <PackageName Value="minilib"/>
-        <MinVersion Valid="True"/>
+        <PackageName Value="MiniSockets"/>
       </Item3>
       <Item4>
-        <PackageName Value="MiniBaseLib"/>
+        <PackageName Value="MiniXML"/>
         <MinVersion Valid="True"/>
       </Item4>
       <Item5>
-        <PackageName Value="FCL"/>
-        <MinVersion Major="1" Valid="True" Release="1"/>
-      </Item5>
-      <Item6>
-        <PackageName Value="LCLBase"/>
-        <MinVersion Major="1" Valid="True" Release="1"/>
-      </Item6>
-      <Item7>
-        <PackageName Value="LazControls"/>
-        <MinVersion Valid="True"/>
-      </Item7>
-      <Item8>
         <PackageName Value="NativeLib"/>
         <MinVersion Valid="True"/>
-      </Item8>
-      <Item9>
+      </Item5>
+      <Item6>
         <PackageName Value="SynEdit"/>
         <MinVersion Major="1" Valid="True"/>
-      </Item9>
-      <Item10>
+      </Item6>
+      <Item7>
+        <PackageName Value="FCL"/>
+        <MinVersion Major="1" Valid="True" Release="1"/>
+      </Item7>
+      <Item8>
+        <PackageName Value="LCLBase"/>
+        <MinVersion Major="1" Valid="True" Release="1"/>
+      </Item8>
+      <Item9>
         <PackageName Value="LCL"/>
-      </Item10>
+      </Item9>
     </RequiredPackages>
     <Units Count="30">
       <Unit0>

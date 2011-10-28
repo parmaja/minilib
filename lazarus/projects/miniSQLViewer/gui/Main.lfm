@@ -1,8 +1,8 @@
 object MainForm: TMainForm
-  Left = 872
+  Left = 93
   Height = 395
   Hint = 'Connect F9'
-  Top = 168
+  Top = 125
   Width = 560
   Caption = 'SQLite Viewer'
   ClientHeight = 375
@@ -647,6 +647,7 @@ object MainForm: TMainForm
         )
         Options = [eoAutoIndent, eoGroupUndo, eoScrollPastEol, eoTabIndent, eoTabsToSpaces, eoTrimTrailingSpaces, eoBracketHighlight]
         Options2 = [eoOverwriteBlock]
+        VisibleSpecialChars = [vscSpace, vscTabAtLast]
         BracketHighlightStyle = sbhsBoth
         TabWidth = 2
         inline TSynGutterPartList

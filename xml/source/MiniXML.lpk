@@ -33,6 +33,7 @@
         <CompilerPath Value="$(CompPath)"/>
       </Other>
     </CompilerOptions>
+    <Version Major="1" Release="1"/>
     <Files Count="13">
       <Item1>
         <Filename Value="mnXML.pas"/>
@@ -90,7 +91,7 @@
     <Type Value="RunAndDesignTime"/>
     <RequiredPkgs Count="2">
       <Item1>
-        <PackageName Value="MiniBaseLib"/>
+        <PackageName Value="MiniCommons"/>
       </Item1>
       <Item2>
         <PackageName Value="FCL"/>
