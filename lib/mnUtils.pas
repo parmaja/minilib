@@ -77,8 +77,7 @@ function EscapeString(const S: string; Esc: string; Chars: array of AnsiChar; Es
 function DescapeString(const S: string; Esc: string; Chars: array of AnsiChar; Escapes: array of string): string;
 
 //Similer to ZeroMemory
-procedure InitMemory(var v; Count: Longint);
-
+procedure InitMemory(out V; Count: {$ifdef FPC}SizeInt{$else}Longint{$endif});
 
 {$ifndef FPC}
 const
@@ -542,9 +541,16 @@ begin
     Result := '-' + Result;
 end;
 
-procedure InitMemory(var v; Count: Longint);
+procedure InitMemory(out V; Count: {$ifdef FPC}SizeInt{$else}Longint{$endif});
 begin
-  FillChar(v, Count, #0);
+  {$ifdef FPC}
+  {$PUSH}
+  {$HINTS OFF}
+  {$endif}
+  FillChar(V, Count, #0);
+  {$ifdef FPC}
+  {$POP}
+  {$endif}
 end;
 
 function SubStr(const Str: String; vSeperator: Char; vFromIndex, vToIndex: Integer): String;

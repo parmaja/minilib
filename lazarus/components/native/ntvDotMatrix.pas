@@ -14,7 +14,7 @@ interface
 
 uses
   LMessages, SysUtils, Classes, Graphics, Controls, Variants,
-  LCLIntf, LCLType, IntfGraphics, FPimage, GraphType,
+  LCLIntf, LCLType, IntfGraphics, FPimage, GraphType, mnUtils,
   Types;
 
 type
@@ -895,7 +895,7 @@ begin
     Dots.Canvas.Brush.Color := clWhite;
     Dots.Canvas.FillRect(aRect);
 
-    FillChar(TR,SizeOf(TR),0);
+    InitMemory(TR, SizeOf(TR));
     with TR do
     begin
       Alignment := BidiFlipAlignment(Self.Alignment, UseRightToLeftAlignment);

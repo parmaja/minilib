@@ -1,4 +1,12 @@
 unit ntvRegCtrls;
+{**
+ *  This file is part of the "Mini Library"
+ *
+ * @url       http://www.sourceforge.net/projects/minilib
+ * @license   modifiedLGPL (modified of http://www.gnu.org/licenses/lgpl.html)
+ *            See the file COPYING.MLGPL, included in this distribution,
+ * @author    Zaher Dirkey <zaher at parmaja dot com>
+ *}
 
 {$mode objfpc}{$H+}
 
@@ -16,8 +24,7 @@ type
   TntvTabSetEditor = class(TDefaultComponentEditor)
   protected
   public
-    constructor Create(AComponent: TComponent; ADesigner: TComponentEditorDesigner);
-      override;
+    constructor Create(AComponent: TComponent; ADesigner: TComponentEditorDesigner);  override;
     procedure Edit; override;
     procedure ExecuteVerb(Index: integer); override;
     function GetVerb(Index: integer): string; override;

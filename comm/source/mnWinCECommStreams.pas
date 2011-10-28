@@ -45,6 +45,9 @@ type
 
 implementation
 
+uses
+  mnUtils;
+
 procedure TmnOSCommStream.DoConnect;
 var
   f: THandle;
@@ -72,7 +75,7 @@ begin
 {    if not SetupComm(FHandle, ReceiveBuffer, 0) then //some devices may not support this API.
       RaiseLastOSError;}
 
-    FillChar(DCB, SizeOf(DCB), #0);
+    InitMemory(DCB, SizeOf(DCB));
 
     DCB.DCBlength := SizeOf(TDCB);
     DCB.XonLim := ReceiveBuffer div 4;

@@ -6,8 +6,7 @@ interface
 
 uses
   Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, StdCtrls,
-  ExtCtrls,
-  minibidi;
+  ExtCtrls,  minibidi;
 
 type
 
@@ -27,6 +26,9 @@ var
   Form1: TForm1; 
 
 implementation
+
+uses
+  mnUtils;
 
 {$R *.lfm}
 
@@ -52,7 +54,7 @@ var
 begin
   x := 0;
   y := 50;
-  FillChar(st, SizeOf(st), #0);
+  InitMemory(st, SizeOf(st));
   for i := 1 to Length(s) do
   begin
     t := s[i];

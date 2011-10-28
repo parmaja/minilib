@@ -34,7 +34,7 @@ function Base64Encode(const S: string): string;
 var
   i: integer;
   InBuf: array[0..2] of byte;
-  OutBuf: array[0..3] of char;
+  OutBuf: array[0..3] of AnsiChar;
 begin
   SetLength(Result, ((Length(S) + 2) div 3) * 4);
   for i := 1 to ((Length(S) + 2) div 3) do
@@ -278,4 +278,4 @@ end;
 *)
 
 end.
-
+

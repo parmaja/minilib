@@ -36,7 +36,7 @@ type
     procedure SetLayout(const Value: TTextLayout);
   protected
     function DoKeyPress(var Key: Char): Boolean; override;
-    procedure GetText(var vText: string); virtual;
+    procedure GetText(out vText: string); virtual;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -88,7 +88,7 @@ begin
   inherited Destroy;
 end;
 
-procedure TposEdit.GetText(var vText: string);
+procedure TposEdit.GetText(out vText: string);
 begin
   vText := FText;
 end;

@@ -7,15 +7,12 @@ unit SynHighlighterSQLite;
  * @author    Zaher Dirkey <zaher at parmaja dot com>
  *}
 
-{$mode delphi}{$H+}
+{$mode objfpc}{$H+}
 
 interface
 
 uses
-{$ifndef FPC}
-  Windows, Messages,
-{$endif}
-  SysUtils, Graphics, Controls,
+  SysUtils, Controls, Graphics,
   Classes, SynEditTypes, SynEditHighlighter, SynHighlighterHashEntries;
 
 type
@@ -29,10 +26,10 @@ type
 
 type
   PIdentifierTable = ^TIdentifierTable;
-  TIdentifierTable = array[Char] of ByteBool;
+  TIdentifierTable = array[AnsiChar] of ByteBool;
 
-  PHashTable = ^THashTable;
-  THashTable = array[Char] of Integer;
+  PHashCharTable = ^THashCharTable;
+  THashCharTable = array[AnsiChar] of Integer;
 
 type
 
@@ -166,20 +163,20 @@ const
 implementation
 
 uses
-  SynEditStrConst;
+  mnUtils, SynEditStrConst;
 
 resourcestring
   SYNS_AttrObjects = 'Objects';
 
 var
   Identifiers: TIdentifierTable;
-  mHashTable: THashTable;
+  mHashCharTable: THashCharTable;
 
 procedure MakeIdentTable;
 var
   c: char;
 begin
-  FillChar(Identifiers, SizeOf(Identifiers), 0);
+  InitMemory(Identifiers, SizeOf(Identifiers));
   for c := 'a' to 'z' do
     Identifiers[c] := True;
   for c := 'A' to 'Z' do
@@ -190,14 +187,14 @@ begin
   Identifiers[':'] := True;
   Identifiers['"'] := True;
 
-  FillChar(mHashTable, SizeOf(mHashTable), 0);
-  mHashTable['_'] := 1;
+  FillChar(mHashCharTable, SizeOf(mHashCharTable), 0);
+  mHashCharTable['_'] := 1;
   for c := 'a' to 'z' do
-    mHashTable[c] := 2 + Ord(c) - Ord('a');
+    mHashCharTable[c] := 2 + Ord(c) - Ord('a');
   for c := 'A' to 'Z' do
-    mHashTable[c] := 2 + Ord(c) - Ord('A');
-  mHashTable[':'] := mHashTable['Z'] + 1;
-  mHashTable['"'] := mHashTable['Z'] + 1;
+    mHashCharTable[c] := 2 + Ord(c) - Ord('A');
+  mHashCharTable[':'] := mHashCharTable['Z'] + 1;
+  mHashCharTable['"'] := mHashCharTable['Z'] + 1;
 end;
 
 function TSynSqliteSyn.KeyHash(ToHash: PChar): Integer;
@@ -206,9 +203,9 @@ begin
   while Identifiers[ToHash^] do
   begin
 {$IFOPT Q-}
-    Result := 2 * Result + mHashTable[ToHash^];
+    Result := 2 * Result + mHashCharTable[ToHash^];
 {$ELSE}
-    Result := (2 * Result + mHashTable[ToHash^]) and $FFFFFF;
+    Result := (2 * Result + mHashCharTable[ToHash^]) and $FFFFFF;
 {$ENDIF}
     inc(ToHash);
   end;
@@ -226,7 +223,7 @@ begin
   pKey2 := pointer(aKey);
   for i := 1 to fStringLen do
   begin
-    if mHashTable[pKey1^] <> mHashTable[pKey2^] then
+    if mHashCharTable[pKey1^] <> mHashCharTable[pKey2^] then
     begin
       Result := FALSE;
       exit;
@@ -264,32 +261,32 @@ var
 begin
   for I := #0 to #255 do
     case I of
-      #0: fProcTable[I] := NullProc;
-      #10: fProcTable[I] := LFProc;
-      #13: fProcTable[I] := CRProc;
-      '=': fProcTable[I] := EqualProc;
-      '>': fProcTable[I] := GreaterProc;
-      '<': fProcTable[I] := LowerProc;
-      '-': fProcTable[I] := MinusProc;
-      '|': fProcTable[I] := OrSymbolProc;
-      '+': fProcTable[I] := PlusProc;
-      '/': fProcTable[I] := SlashProc;
-      '&': fProcTable[I] := AndSymbolProc;
-      #39: fProcTable[I] := StringProc;
-      '"': fProcTable[I] := ObjectProc;
-      ':': fProcTable[I] := VariableProc;
+      #0: fProcTable[I] := @NullProc;
+      #10: fProcTable[I] := @LFProc;
+      #13: fProcTable[I] := @CRProc;
+      '=': fProcTable[I] := @EqualProc;
+      '>': fProcTable[I] := @GreaterProc;
+      '<': fProcTable[I] := @LowerProc;
+      '-': fProcTable[I] := @MinusProc;
+      '|': fProcTable[I] := @OrSymbolProc;
+      '+': fProcTable[I] := @PlusProc;
+      '/': fProcTable[I] := @SlashProc;
+      '&': fProcTable[I] := @AndSymbolProc;
+      #39: fProcTable[I] := @StringProc;
+      '"': fProcTable[I] := @ObjectProc;
+      ':': fProcTable[I] := @VariableProc;
       'A'..'Z', 'a'..'z', '_':
-        fProcTable[I] := IdentProc;
+        fProcTable[I] := @IdentProc;
       '0'..'9':
-        fProcTable[I] := NumberProc;
+        fProcTable[I] := @NumberProc;
       #1..#9, #11, #12, #14..#32:
-        fProcTable[I] := SpaceProc;
+        fProcTable[I] := @SpaceProc;
       '^', '%', '*', '!':
-        fProcTable[I] := SymbolAssignProc;
+        fProcTable[I] := @SymbolAssignProc;
       '{', '}', '.', ',', ';', '?', '(', ')', '[', ']', '~':
-        fProcTable[I] := SymbolProc;
+        fProcTable[I] := @SymbolProc;
     else
-      fProcTable[I] := UnknownProc;
+      fProcTable[I] := @UnknownProc;
     end;
 end;
 
@@ -329,10 +326,10 @@ begin
   AddAttribute(FSymbolAttri);
   FVariableAttri := TSynHighlighterAttributes.Create(SYNS_AttrVariable);
   AddAttribute(fVariableAttri);
-  SetAttributesOnChange(DefHighlightChange);
-  EnumerateKeywords(Ord(tkDatatype), SqliteTypes, IdentChars, DoAddKeyword);
-  EnumerateKeywords(Ord(tkFunction), SqliteFunctions, IdentChars, DoAddKeyword);
-  EnumerateKeywords(Ord(tkKey), SqliteKeywords, IdentChars, DoAddKeyword);
+  SetAttributesOnChange(@DefHighlightChange);
+  EnumerateKeywords(Ord(tkDatatype), SqliteTypes, IdentChars, @DoAddKeyword);
+  EnumerateKeywords(Ord(tkFunction), SqliteFunctions, IdentChars, @DoAddKeyword);
+  EnumerateKeywords(Ord(tkKey), SqliteKeywords, IdentChars, @DoAddKeyword);
   MakeMethodTables;
   FDefaultFilter := SYNS_FilterSQL;
   FRange := rsUnknown;

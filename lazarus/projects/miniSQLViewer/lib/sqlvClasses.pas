@@ -61,10 +61,10 @@ type
     property InternalLoginSQL:string read FInternalLoginSQL write FInternalLoginSQL;
     property InternalLogoutSQL:string read FInternalLogoutSQL write FInternalLogoutSQL;
   published
-    property CacheSchemas:Boolean read FCacheSchemas write FCacheSchemas default False;
+    property CacheSchemas: Boolean read FCacheSchemas write FCacheSchemas default False;
     property OpenSaveDialogFilters:string read FOpenSaveDialogFilters write FOpenSaveDialogFilters;
-    property LoginSQL:string read FLoginSQL write FLoginSQL;
-    property LogoutSQL:string read FLogoutSQL write FLogoutSQL;
+    property LoginSQL: string read FLoginSQL write FLoginSQL;
+    property LogoutSQL: string read FLogoutSQL write FLogoutSQL;
     property CSVQuoteChar: Char read FCSVQuoteChar write FCSVQuoteChar default '"';
     property CSVDelimiterChar: Char read FCSVDelimiterChar write FCSVDelimiterChar default ';';
     property CSVHeader: TCSVIEHeader read FCSVHeader write FCSVHeader default hdrNone;

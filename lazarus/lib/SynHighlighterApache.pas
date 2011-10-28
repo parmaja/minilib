@@ -13,10 +13,9 @@ unit SynHighlighterApache;
 interface
 
 uses
-  Graphics,
-  SynEditTypes,
-  SynEditHighlighter, SynHighlighterHashEntries,
-  Classes;
+  Classes, Graphics,
+  {SynHighlighterHashEntries,} SynEditTypes, SynEditHighlighter;
+
 
 type
   TtkTokenKind = (tkComment, tkText, tkSection, tkKey, tkNull, tkNumber,

@@ -1,5 +1,4 @@
 unit EditorEngine;
-
 {$mode objfpc}{$H+}
 {**
  * Mini Edit
@@ -3202,4 +3201,4 @@ end;
 
 finalization
   FreeAndNil(FEngine);
-end.
+end.

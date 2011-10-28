@@ -17,7 +17,7 @@ unit posGrids;
 interface
 
 uses
-  SysUtils, Classes, Graphics, Controls, StdCtrls, Forms, Types, Contnrs,
+  SysUtils, Classes, Graphics, Controls, Forms, Types, Contnrs, StdCtrls,
   posTypes, posDraws, posLists, posControls;
 
 type
@@ -286,7 +286,7 @@ type
 implementation
 
 uses
-  posUtils, Variants;
+  mnUtils, posUtils, Variants;
 
 { TposGridRows }
 
@@ -450,7 +450,7 @@ var
   aStyle: TTextStyle;
 begin
   inherited;
-  FillChar(aStyle, SizeOf(aStyle), #0);
+  InitMemory(aStyle, SizeOf(aStyle));
   TextRect := Rect;
 
   aStyle.Layout := tlCenter;
@@ -498,7 +498,7 @@ var
   aStyle: TTextStyle;
   aRightToLeft: Boolean;
 begin
-  FillChar(aStyle, SizeOf(aStyle), #0);
+  InitMemory(aStyle, SizeOf(aStyle));
   TextRect := Rect;
   aRightToLeft := Columns.Grid.UseRightToLeftAlignment;
   Canvas.Pen.Style := psSolid;
@@ -664,7 +664,7 @@ function TposCustomGrid.CurrentData: Integer;
 var
   aInfo: TposCellInfo;
 begin
-  FillChar(aInfo, SizeOf(TposCellInfo), #0);
+  InitMemory(aInfo, SizeOf(TposCellInfo));
   if (Columns.Count > 0) and (ItemIndex <> -1) then
     GetCellInfo(Columns[0], ItemIndex, aInfo); //? need review
   Result := aInfo.Data;
@@ -702,6 +702,7 @@ begin
         if aItemRect.Right > Rect.Right then
           aItemRect.Right := Rect.Right;
       end;
+      InitMemory(ACell, SizeOf(ACell));
       VarClear(ACell.Value);
       ACell.Color := Color;
       ACell.Data := 0;
@@ -941,7 +942,6 @@ procedure TposVirtualRows.SetItemIndex(const Value: Integer);
 var
   OldIndex: Integer;
 begin
-  inherited;
   OldIndex := GetItemIndex;
   if Grid.Helper <> nil then
     Grid.Helper.SetItemIndex(Grid, Value)

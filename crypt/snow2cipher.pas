@@ -16,7 +16,7 @@ unit snow2cipher;
 interface
 
 uses
-  Classes, SysUtils, ciphers, snow2;
+  Classes, SysUtils, mnUtils, ciphers, snow2;
 
 type
   TExSnow2Cipher = class(TExStreamCipher)
@@ -103,7 +103,7 @@ end;
 procedure TSnow2CipherStream.Prepare;
 begin
   inherited;
-  FillChar(Key, SizeOf(Key), #0);
+  InitMemory(Key, SizeOf(Key));
   IV3 := 0;
   IV2 := 0;
   IV1 := 0;
@@ -279,7 +279,7 @@ end;
 procedure TSnow2ExCipherStream.Prepare;
 begin
   inherited;
-  FillChar(Key, SizeOf(Key), #0);
+  InitMemory(Key, SizeOf(Key));
   IV3 := 0;
   IV2 := 0;
   IV1 := 0;

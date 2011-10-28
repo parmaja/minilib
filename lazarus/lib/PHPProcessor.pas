@@ -1,5 +1,5 @@
 unit PHPProcessor;
-{$mode delphi}
+{$mode objfpc}{$H+}
 {**
  *  Light PHP Edit project
  *
@@ -13,13 +13,14 @@ unit PHPProcessor;
 interface
 
 uses
-  SysUtils, Messages, Graphics, Registry, Controls,
-  SynEdit, SynEditTextBuffer, SynHighlighterXHTML, Contnrs, Classes, SynEditTypes, SynEditHighlighter, SynHighlighterHashEntries;
+  Classes, SysUtils,
+  SynEdit, SynEditTypes,
+  SynEditHighlighter, SynHighlighterHashEntries, SynHighlighterXHTML;
 
 type
   TPHPRangeState = (rsphpUnknown, rsphpComment, rsphpStringSQ, rsphpStringDQ, rsphpVarExpansion);
 
-//PHP Processor
+  { TPHPProcessor }
 
   TPHPProcessor = class(TSynProcessor)
   protected
@@ -65,13 +66,13 @@ type
 implementation
 
 uses
-  SynEditStrConst, VarUtils;
+  mnUtils;
 
 procedure TPHPProcessor.MakeIdentTable;
 var
   c: char;
 begin
-  FillChar(Identifiers, SizeOf(Identifiers), 0);
+  InitMemory(Identifiers, SizeOf(Identifiers));
   for c := 'a' to 'z' do
     Identifiers[c] := True;
   for c := 'A' to 'Z' do
@@ -80,12 +81,12 @@ begin
     Identifiers[c] := True;
   Identifiers['_'] := True;
 
-  FillChar(HashTable, SizeOf(HashTable), 0);
-  HashTable['_'] := 1;
+  InitMemory(HashCharTable, SizeOf(HashCharTable));
+  HashCharTable['_'] := 1;
   for c := 'a' to 'z' do
-    HashTable[c] := 2 + Ord(c) - Ord('a');
+    HashCharTable[c] := 2 + Ord(c) - Ord('a');
   for c := 'A' to 'Z' do
-    HashTable[c] := 2 + Ord(c) - Ord('A');
+    HashCharTable[c] := 2 + Ord(c) - Ord('A');
 end;
 
 procedure TPHPProcessor.AndSymbolProc;
@@ -355,34 +356,34 @@ var
 begin
   for I := #0 to #255 do
     case I of
-      #0: ProcTable[I] := NullProc;
-      #10: ProcTable[I] := LFProc;
-      #13: ProcTable[I] := CRProc;
-      '?': ProcTable[I] := QuestionProc;
-      '''': ProcTable[I] := StringSQProc;
-      '"': ProcTable[I] := StringDQProc;
-      '#': ProcTable[I] := LineCommentProc;
-      '/': ProcTable[I] := SlashProc;
-      '=': ProcTable[I] := EqualProc;
-      '>': ProcTable[I] := GreaterProc;
-      '<': ProcTable[I] := LowerProc;
-      '-': ProcTable[I] := MinusProc;
-      '|': ProcTable[I] := OrSymbolProc;
-      '+': ProcTable[I] := PlusProc;
-      '&': ProcTable[I] := AndSymbolProc;
-      '$': ProcTable[I] := VariableProc;
+      #0: ProcTable[I] := @NullProc;
+      #10: ProcTable[I] := @LFProc;
+      #13: ProcTable[I] := @CRProc;
+      '?': ProcTable[I] := @QuestionProc;
+      '''': ProcTable[I] := @StringSQProc;
+      '"': ProcTable[I] := @StringDQProc;
+      '#': ProcTable[I] := @LineCommentProc;
+      '/': ProcTable[I] := @SlashProc;
+      '=': ProcTable[I] := @EqualProc;
+      '>': ProcTable[I] := @GreaterProc;
+      '<': ProcTable[I] := @LowerProc;
+      '-': ProcTable[I] := @MinusProc;
+      '|': ProcTable[I] := @OrSymbolProc;
+      '+': ProcTable[I] := @PlusProc;
+      '&': ProcTable[I] := @AndSymbolProc;
+      '$': ProcTable[I] := @VariableProc;
       'A'..'Z', 'a'..'z', '_':
-        ProcTable[I] := IdentProc;
+        ProcTable[I] := @IdentProc;
       '0'..'9':
-        ProcTable[I] := NumberProc;
+        ProcTable[I] := @NumberProc;
       #1..#9, #11, #12, #14..#32:
-        ProcTable[I] := SpaceProc;
+        ProcTable[I] := @SpaceProc;
       '^', '%', '*', '!':
-        ProcTable[I] := SymbolAssignProc;
+        ProcTable[I] := @SymbolAssignProc;
       '{', '}', '.', ',', ';', '(', ')', '[', ']', '~':
-        ProcTable[I] := SymbolProc;
+        ProcTable[I] := @SymbolProc;
     else
-      ProcTable[I] := UnknownProc;
+      ProcTable[I] := @UnknownProc;
     end;
 end;
 
@@ -438,7 +439,7 @@ begin
   if Parent.FLine[Parent.Run] = '{' then
   begin
     iSyntax := esComplex;
-    Inc(Parent.Run, 2); { skips '{$' }
+    Inc(Parent.Run, 2); // skips '{$'
   end
   else
   begin
@@ -557,11 +558,11 @@ end;
 procedure TPHPProcessor.InitIdent;
 begin
   inherited;
-  EnumerateKeywords(Ord(tkKeyword), sPHPControls, TSynValidStringChars, DoAddKeyword);
-  EnumerateKeywords(Ord(tkKeyword), sPHPKeywords, TSynValidStringChars, DoAddKeyword);
-  EnumerateKeywords(Ord(tkFunction), sPHPFunctions, TSynValidStringChars, DoAddKeyword);
-  EnumerateKeywords(Ord(tkValue), sPHPConstants, TSynValidStringChars, DoAddKeyword);
-  EnumerateKeywords(Ord(tkVariable), sPHPVariables, TSynValidStringChars, DoAddKeyword);
+  EnumerateKeywords(Ord(tkKeyword), sPHPControls, TSynValidStringChars, @DoAddKeyword);
+  EnumerateKeywords(Ord(tkKeyword), sPHPKeywords, TSynValidStringChars, @DoAddKeyword);
+  EnumerateKeywords(Ord(tkFunction), sPHPFunctions, TSynValidStringChars, @DoAddKeyword);
+  EnumerateKeywords(Ord(tkValue), sPHPConstants, TSynValidStringChars, @DoAddKeyword);
+  EnumerateKeywords(Ord(tkVariable), sPHPVariables, TSynValidStringChars, @DoAddKeyword);
   FRange := rsphpUnknown;
 end;
 
@@ -570,7 +571,7 @@ begin
   Result := 0;
   while ToHash^ in ['_', '0'..'9', 'a'..'z', 'A'..'Z'] do
   begin
-    inc(Result, HashTable[ToHash^]);
+    inc(Result, HashCharTable[ToHash^]);
     inc(ToHash);
   end;
   fStringLen := ToHash - fToIdent;

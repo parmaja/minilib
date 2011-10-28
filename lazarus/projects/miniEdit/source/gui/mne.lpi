@@ -72,10 +72,10 @@
     </RunParams>
     <RequiredPackages Count="9">
       <Item1>
-        <PackageName Value="MiniLib"/>
+        <PackageName Value="MiniCommons"/>
       </Item1>
       <Item2>
-        <PackageName Value="MiniCommons"/>
+        <PackageName Value="MiniLib"/>
       </Item2>
       <Item3>
         <PackageName Value="MiniSockets"/>

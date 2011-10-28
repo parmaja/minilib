@@ -13,7 +13,7 @@ unit PHPUtils;
 interface
 
 uses
-  SysUtils, StrUtils, Classes, Contnrs, Dialogs, IniFiles;
+  SysUtils, Classes, Dialogs, IniFiles;
 
 type
   TPHPStrings = class(THashedStringList)
@@ -167,13 +167,11 @@ end;
 function TPHPStrings.SetSplitValue(S, Value: string): string;
 var
   P: Integer;
-  T: string;
 begin
   P := AnsiPos(NameValueSeparator, S);
   if (P <> 0) then
   begin
     Result := Trim(Copy(S, 1, P - 1));
-    T := Copy(S, P + 1, MaxInt);
     P := AnsiPos(';', S);
     if P > 0 then
       Result := Result + ' = ' + Value + Copy(S, P, MaxInt)
@@ -501,4 +499,4 @@ begin
   end;
 end;
 
-end.
+end.

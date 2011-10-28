@@ -37,15 +37,15 @@
     <Version Build="1" Major="1" Release="1"/>
     <Files Count="8">
       <Item1>
-        <Filename Value="ntvCtrls.pas"/>
-        <AddToUsesPkgSection Value="False"/>
-        <UnitName Value="ntvCtrls"/>
-      </Item1>
-      <Item2>
         <Filename Value="ntvRegCtrls.pas"/>
         <HasRegisterProc Value="True"/>
         <AddToUsesPkgSection Value="False"/>
         <UnitName Value="ntvRegCtrls"/>
+      </Item1>
+      <Item2>
+        <Filename Value="ntvCtrls.pas"/>
+        <AddToUsesPkgSection Value="False"/>
+        <UnitName Value="ntvCtrls"/>
       </Item2>
       <Item3>
         <Filename Value="ntvUtils.pas"/>

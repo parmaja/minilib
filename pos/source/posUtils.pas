@@ -94,7 +94,7 @@ procedure BidiAlignment(var Style:TTextStyle);
 implementation
 
 uses
-  posControls;
+  mnUtils, posControls;
 
 {$IFNDEF FPC}
 function InflateRect(var Rect: TRect; dx, dy: Integer): TRect;
@@ -361,7 +361,7 @@ procedure PaintTextButton(Canvas: TCanvas; Text: string; Rect: TRect; States: Tp
 var
   aStyle: TTextStyle;
 begin
-  FillChar(aStyle, SizeOf(aStyle), #0);
+  InitMemory(aStyle, SizeOf(aStyle));
 
   aStyle.Wordbreak := (pdsMultiLine in States);
   aStyle.SingleLine := not aStyle.Wordbreak;
@@ -497,4 +497,4 @@ end;
 initialization
 finalization
 end.
-
+

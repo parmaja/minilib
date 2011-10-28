@@ -18,7 +18,7 @@ interface
 
 uses
   SysUtils, Classes, Graphics, Controls, Forms, Types,
-  posTypes, posUtils, posControls, posEdits;
+ posTypes, posUtils, posControls, posEdits;
 
 type
 
@@ -42,7 +42,7 @@ type
     procedure SelectNext;
     procedure Changed; virtual;
     procedure Click; override;
-    procedure GetText(var vText: string); override;
+    procedure GetText(out vText: string); override;
     function DoKeyPress(var Key: Char): Boolean; override;
     procedure DoButtonClick; override;
   public
@@ -215,7 +215,7 @@ begin
     Text := Items[ItemIndex];
 end;
 
-procedure TposSelectBox.GetText(var vText: string);
+procedure TposSelectBox.GetText(out vText: string);
 begin
   inherited;
   {if (ItemIndex < 0) or (ItemIndex >= Items.Count) then

@@ -1,5 +1,5 @@
 unit HTMLProcessor;
-{$mode delphi}
+{$mode objfpc}{$H+}
 {**
  *  Light PHP Edit project
  *
@@ -13,14 +13,14 @@ unit HTMLProcessor;
 interface
 
 uses
-  SysUtils, Messages, Graphics, Registry, Controls,
-  SynEdit, SynEditTextBuffer, SynHighlighterXHTML, Classes, SynEditTypes, SynEditHighlighter, SynHighlighterHashEntries;
+  SysUtils, Graphics, Controls,
+  SynEdit, SynHighlighterXHTML, Classes, SynEditTypes, SynEditHighlighter, SynHighlighterHashEntries;
 
 type
   THTMLRangeState = (rshtmlText, rshtmlAmpersand, rshtmlComment, rshtmlKeyword, rshtmlParam,
     rshtmlValue, rshtmlStringSQ, rshtmlStringDQ);
 
-//HTML Processor
+  { THTMLProcessor }
 
   THTMLProcessor = class(TSynProcessor)
   protected
@@ -310,9 +310,6 @@ const
 
 implementation
 
-uses
-  SynEditStrConst, VarUtils;
-
 { THTMLProcessor }
 
 procedure THTMLProcessor.MakeMethodTables;
@@ -322,17 +319,17 @@ begin
   for I := #0 to #255 do
   begin
     case I of
-      #0: ProcTable[I] := NullProc;
-      #10: ProcTable[I] := LFProc;
-      #13: ProcTable[I] := CRProc;
-      #1..#9, #11, #12, #14..#32: ProcTable[I] := SpaceProc;
-      '&': ProcTable[I] := AmpersandProc;
-      '"', '''': ProcTable[I] := StringProc;
-      '<': ProcTable[I] := BraceOpenProc;
-      '>': ProcTable[I] := BraceCloseProc;
-      '=': ProcTable[I] := EqualProc;
+      #0: ProcTable[I] := @NullProc;
+      #10: ProcTable[I] := @LFProc;
+      #13: ProcTable[I] := @CRProc;
+      #1..#9, #11, #12, #14..#32: ProcTable[I] := @SpaceProc;
+      '&': ProcTable[I] := @AmpersandProc;
+      '"', '''': ProcTable[I] := @StringProc;
+      '<': ProcTable[I] := @BraceOpenProc;
+      '>': ProcTable[I] := @BraceCloseProc;
+      '=': ProcTable[I] := @EqualProc;
     else
-      ProcTable[I] := IdentProc;
+      ProcTable[I] := @IdentProc;
     end;
   end;
 end;
@@ -362,13 +359,13 @@ begin
   for i := #0 to #255 do
     case i of
       'a'..'z', 'A'..'Z':
-        HashTable[i] := (Ord(UpCase(i)) - 64);
+        HashCharTable[i] := (Ord(UpCase(i)) - 64);
       '!':
-        HashTable[i] := $7B;
+        HashCharTable[i] := $7B;
 {      '/':
-       HashTable[i] := $7A;}
+       HashCharTable[i] := $7A;}
     else
-      HashTable[Char(i)] := 0;
+      HashCharTable[Char(i)] := 0;
     end;
 end;
 
@@ -680,7 +677,7 @@ end;
 procedure THTMLProcessor.InitIdent;
 begin
   inherited;
-  EnumerateKeywords(Ord(tkHTML), sHTMLKeywords, TSynValidStringChars, DoAddKeyword);
+  EnumerateKeywords(Ord(tkHTML), sHTMLKeywords, TSynValidStringChars, @DoAddKeyword);
   FRange := rshtmlText;
   FAndCode := -1;
 end;
@@ -690,7 +687,7 @@ begin
   Result := 0;
   while ToHash^ in ['!', '_', '0'..'9', 'a'..'z', 'A'..'Z'] do
   begin
-    inc(Result, HashTable[ToHash^]);
+    inc(Result, HashCharTable[ToHash^]);
     inc(ToHash);
   end;
   fStringLen := ToHash - fToIdent;
@@ -698,7 +695,7 @@ begin
 {  Result := 0;
   while (ToHash^ in ['a'..'z', 'A'..'Z', '!', '/']) do
   begin
-    Inc(Result, HashTable[ToHash^]);
+    Inc(Result, HashCharTable[ToHash^]);
     Inc(ToHash);
   end;
   while (ToHash^ in ['0'..'9']) do

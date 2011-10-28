@@ -93,7 +93,7 @@ type
 
     //Correct: when user make arrow or PageUp/Down
     function ChangeItemIndex(Value: Integer; Correct: Boolean = False): Boolean;
-    function GetItemRect(vItem: Integer; var vRect: TRect): Boolean;
+    function GetItemRect(vItem: Integer; out vRect: TRect): Boolean;
     function InvalidateItem(vItem: Integer): boolean;
     procedure ItemsScroll(vItems: Integer);
     function GetDistinctItems(vHeight: Integer): Integer; overload;
@@ -206,7 +206,7 @@ type
 implementation
 
 uses
-  posUtils;
+  mnUtils, posUtils;
 
 procedure TposAbstractList.MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 var
@@ -357,7 +357,7 @@ var
   aColor: TColor;
 begin
   inherited;
-  FillChar(aStyle, SizeOf(aStyle), #0);
+  InitMemory(aStyle, SizeOf(aStyle));
   aStyle.RightToLeft := RightToLeft;
   aStyle.SingleLine := True;
   aStyle.Layout := tlCenter;
@@ -605,11 +605,11 @@ begin
   Result := Items.ItemIndex
 end;
 
-function TposAbstractList.GetItemRect(vItem: Integer; var vRect: TRect): Boolean;
+function TposAbstractList.GetItemRect(vItem: Integer; out vRect: TRect): Boolean;
 var
   wRect: TRect;
 begin
-  Result := false;
+  Result := False;
   vItem := IndexToView(vItem);
   if vItem >= 0 then
   begin

@@ -16,7 +16,7 @@ unit mnXMLStreams;
 interface
 
 uses
-  Classes, SysUtils, StrUtils,
+  Classes, SysUtils,
   mnStreams;
 
 type

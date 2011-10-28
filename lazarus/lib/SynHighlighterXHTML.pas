@@ -1,5 +1,4 @@
 unit SynHighlighterXHTML;
-
 {$mode objfpc}{$H+}
 {**
  *  MiniLib project
@@ -17,25 +16,20 @@ unit SynHighlighterXHTML;
 interface
 
 uses
-  SysUtils, Messages, Graphics, Registry, Controls,
-  SynEdit, SynEditTextBuffer, Contnrs, Classes, SynEditTypes, SynEditHighlighter, SynHighlighterHashEntries;
+  Classes, Contnrs, SysUtils, Controls, Graphics,
+  SynEdit, SynEditTypes, SynEditHighlighter, SynHighlighterHashEntries;
 
 type
   TtkTokenKind = (tkUnknown, tkNull, tkSpace, tkComment, tkIdentifier, tkSymbol, tkNumber,
     tkString, tkText, tkValue, tkHTML, tkKeyword, tkFunction, tkVariable, tkSQL, tkProcessor);
 
-  THTMLRangeState = (rshtmlText, rshtmlAmpersand, rshtmlComment, rshtmlKeyword, rshtmlParam,
-    rshtmlValue, rshtmlStringSQ, rshtmlStringDQ);
-
-  TPHPRangeState = (rsphpUnknown, rsphpComment, rsphpStringDQ, rsphpStringSQ, rsphpVarExpansion);
-
   TProcTableProc = procedure of object;
 
   PIdentifierTable = ^TIdentifierTable;
-  TIdentifierTable = array[char] of bytebool;
+  TIdentifierTable = array[AnsiChar] of bytebool;
 
-  PHashTable = ^THashTable;
-  THashTable = array[char] of integer;
+  PHashCharTable = ^THashCharTable;
+  THashCharTable = array[AnsiChar] of Integer;
 
   TSynXHTMLSyn = class;
 
@@ -50,17 +44,17 @@ type
     procedure DoAddKeyword(AKeyword: string; AKind: integer);
     function GetIdentChars: TSynIdentChars; virtual;
     procedure ResetRange; virtual;
-    function GetRange: byte; virtual;
-    procedure SetRange(Value: byte); virtual;
+    function GetRange: Byte; virtual;
+    procedure SetRange(Value: Byte); virtual;
     function KeyHash(ToHash: PChar): integer; virtual;
     function IdentKind(MayBe: PChar): TtkTokenKind; virtual;
   public
     FStringLen: integer;
     FToIdent: PChar;
     Identifiers: TIdentifierTable;
-    HashTable: THashTable;
+    HashCharTable: THashCharTable;
     ProcTable: array[#0..#255] of TProcTableProc;
-    constructor Create(AParent: TSynXHTMLSyn; Name: string); virtual;
+    constructor Create(AParent: TSynXHTMLSyn; AName: string); virtual;
     destructor Destroy; override;
     procedure Next; virtual;
     procedure InitIdent; virtual;
@@ -179,25 +173,25 @@ const
 
 //range mix Main processor as byte and Current processor as byte and index Byte
 function RangeToProcessor(Range: cardinal): byte;
-function MixRange(Index, Main, Current: byte): cardinal;
-procedure SplitRange(Range: cardinal; var Index, Main, Current: byte);
+function MixRange(Index, Main, Current: byte): PtrUInt;
+procedure SplitRange(Range: cardinal; out Index, Main, Current: byte);
 
 implementation
 
 uses
-  SynEditStrConst, PHPProcessor, HTMLProcessor, VarUtils;
+  SynEditStrConst, PHPProcessor, HTMLProcessor;
 
 function RangeToProcessor(Range: cardinal): byte;
 begin
   Result := Range and $FF;
 end;
 
-function MixRange(Index, Main, Current: byte): cardinal;
+function MixRange(Index, Main, Current: byte): PtrUInt;
 begin
   Result := Index or Main shl 8 or Current shl 16;
 end;
 
-procedure SplitRange(Range: cardinal; var Index, Main, Current: byte);
+procedure SplitRange(Range: cardinal; out Index, Main, Current: byte);
 begin
   Index := Range and $FF;
   Main := Range shr 8 and $FF;
@@ -219,7 +213,7 @@ begin
   pKey2 := pointer(aKey);
   for i := 1 to fStringLen do
   begin
-    if HashTable[pKey1^] <> HashTable[pKey2^] then
+    if HashCharTable[pKey1^] <> HashCharTable[pKey2^] then
     begin
       Result := False;
       exit;
@@ -399,7 +393,7 @@ end;
 
 function TSynXHTMLSyn.GetRange: Pointer;
 begin
-  Result := Pointer(MixRange(Processors.Current.Index, Processors.Main.GetRange, Processors.Current.GetRange));
+  Result := Pointer(Integer(MixRange(Processors.Current.Index, Processors.Main.GetRange, Processors.Current.GetRange)));
 end;
 
 function TSynXHTMLSyn.GetToken: string;
@@ -532,10 +526,10 @@ procedure TSynProcessor.Next;
 begin
 end;
 
-constructor TSynProcessor.Create(AParent: TSynXHTMLSyn; Name: string);
+constructor TSynProcessor.Create(AParent: TSynXHTMLSyn; AName: string);
 begin
   inherited Create;
-  FName := Name;
+  FName := AName;
   FParent := AParent;
   FKeywords := TSynHashEntryList.Create;
 end;

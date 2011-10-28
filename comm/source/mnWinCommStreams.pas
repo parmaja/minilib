@@ -56,6 +56,9 @@ type
 
 implementation
 
+uses
+  mnUtils;
+
 procedure TmnOSCommStream.Cancel;
 begin
   inherited;
@@ -239,7 +242,7 @@ begin
   Result := [];
   if UseOverlapped then
   begin
-    FillChar(Overlapped, SizeOf(TOverlapped), 0);
+    InitMemory(Overlapped, SizeOf(TOverlapped));
     Overlapped.hEvent := CreateEvent(nil, True, False, nil);
     EventHandles[0] := Overlapped.hEvent;
     if FCancelEvent <> 0 then
@@ -302,7 +305,7 @@ begin
   try
     if UseOverlapped then
     begin
-      FillChar(Overlapped, Sizeof(Overlapped), 0);
+      InitMemory(Overlapped, Sizeof(Overlapped));
       Overlapped.hEvent := CreateEvent(nil, True, True, nil);
       EventHandles[0] := Overlapped.hEvent;
       EventHandles[1] := FCancelEvent;
@@ -383,7 +386,7 @@ begin
   try
     if UseOverlapped then
     begin
-      FillChar(Overlapped, Sizeof(Overlapped), 0);
+      InitMemory(Overlapped, Sizeof(Overlapped));
       Overlapped.hEvent := CreateEvent(nil, True, True, nil);
       EventHandles[0] := Overlapped.hEvent;
       EventHandles[1] := FCancelEvent;

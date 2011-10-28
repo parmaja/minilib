@@ -379,6 +379,7 @@ function posEngine: TposEngine;
 implementation
 
 uses
+  mnUtils,
 {$IFDEF FPC}
 {$ELSE}
   MMSystem,
@@ -467,12 +468,12 @@ end;
 function TposEngine.KeyDown(var Key: Word; Shift: TShiftState): Boolean;
 var
   k: Char;
-  aInputs: TposFrameInputs;
+  //aInputs: TposFrameInputs;
 begin
   Result := (FocusedFrame <> nil) and FocusedFrame.KeyDown(Key, Shift);
   if not Result then
   begin
-    aInputs := FocusedFrame.GetInputs;
+    //aInputs := FocusedFrame.GetInputs;
     if Shift = [] then
     begin
       case Key of
@@ -981,7 +982,7 @@ end;
 
 function TposFrame.GetTextStyle: TTextStyle;
 begin
-  FillChar(Result, Sizeof(Result), #0);
+  InitMemory(Result, Sizeof(Result));
   Result.SingleLine := True;
   Result.Opaque := False;
   Result.Clipping := False;
