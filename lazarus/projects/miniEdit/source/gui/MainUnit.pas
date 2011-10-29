@@ -520,7 +520,7 @@ uses
   SelectFiles, mneSettings, mneConsts,
   SynEditTypes, AboutForms, mneProjectForms, GotoForms, Types,
   mneBreakpoints,
-  SearchInFilesForms, SelectList;
+  SearchInFilesForms, SelectList, MsgBox;
 
 {$R *.lfm}
 
@@ -807,7 +807,7 @@ var
 begin
   if Engine.Files.GetEditedCount > 0 then
   begin
-    mr := Application.MessageBox('There a files changed but not saved'#13'Save it all?', 'Save before exit', MB_YESNOCANCEL);
+    mr := MsgBox.Msg.YesNoCancel('There a files changed but not saved'#13'Save it all?');
     if mr = mrCancel then
       CanClose := False
     else if mr = mrYes then
@@ -817,7 +817,7 @@ begin
   if (Engine.Session.IsOpened) then
     if (Engine.Session.Project.FileName = '') then
     begin
-      mr := Application.MessageBox(PChar('Save project ' + Engine.Session.Project.Name + ' before close?'), 'Save', MB_YESNOCANCEL);
+      mr := MsgBox.Msg.YesNoCancel('Save project ' + Engine.Session.Project.Name + ' before close?');
       if mr = mrCancel then
         CanClose := False
       else if mr = mrYes then
@@ -1943,11 +1943,11 @@ end;
 
 procedure TMainForm.Add1Click(Sender: TObject);
 var
-  s: string;
+  S: string;
 begin
-  s := InputBox('Add Watch', 'Enter variable name', '');
-  if s <> '' then
-    AddWatch(s);
+  if MsgBox.Msg.Input(S, 'Add Watch, Enter variable name') then
+    if S <> '' then
+      AddWatch(S);
 end;
 
 procedure TMainForm.AddWatch(s: string);
@@ -2368,7 +2368,7 @@ end;
 
 procedure TMainForm.OnReplaceText(Sender: TObject; const ASearch, AReplace: string; Line, Column: integer; var ReplaceAction: TSynReplaceAction);
 begin
-  case MessageDlg(Format('Replace this ocurrence of "%s" with "%s"?', [ASearch, AReplace]), mtConfirmation, [mbYes, mbNo, mbAll, mbCancel], 0) of
+  case MsgBox.Msg.Ask(Format('Replace this ocurrence of "%s" with "%s"?', [ASearch, AReplace]), [mbYes, mbNo, mbAll, mbCancel], mbYes, mbCancel, msgkConfirmation) of
     mrYes: ReplaceAction := raReplace;
     mrNo: ReplaceAction := raSkip;
     mrAll: ReplaceAction := raReplaceAll;
@@ -2391,4 +2391,4 @@ begin
   Log(0, ACaption, AMsg, '', 0);
 end;
 
-end.
+end.

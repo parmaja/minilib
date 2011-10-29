@@ -759,7 +759,7 @@ implementation
 uses
   SynHighlighterApache, SynHighlighterXHTML, SynHighlighterHashEntries, SynGutterCodeFolding,
   Registry, SearchForms, SynEditTextBuffer,
-  mneResources;
+  mneResources, MsgBox, GUIMsgBox;
 
 var
   FEngineShutdown: Boolean  = False;
@@ -1909,7 +1909,7 @@ procedure TEditorFiles.Revert;
 begin
   if Current <> nil then
   begin
-    if Application.MessageBox(PChar('Revert file ' + Current.Name), 'Save', MB_YESNO) = mrYes then
+    if MsgBox.Msg.Yes('Revert file ' + Current.Name) then
       Current.Load(Current.Name);
   end;
 end;
@@ -2019,7 +2019,7 @@ var
 begin
   if Edited then
   begin
-    mr := Application.MessageBox(PChar('Save file ' + Name + ' before close?'), 'Save', MB_YESNOCANCEL);
+    mr := MsgBox.Msg.YesNoCancel('Save file ' + Name + ' before close?');
     if mr = mrCancel then
       Abort
     else if mr = mrYes then
@@ -2206,7 +2206,7 @@ begin
   Result := True;
   if (FileExists(Name)) and (FFileAge <> FileAge(Name)) then
   begin
-    mr := Application.MessageBox(PChar(Name + #13' was changed, update it?'), 'Update', MB_YESNOCANCEL);
+    mr := MsgBox.Msg.YesNoCancel(Name + #13' was changed, update it?');
     if mr = mrYes then
       Reload
     else

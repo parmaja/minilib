@@ -663,6 +663,7 @@ object MainForm: TMainForm
           Option = 0
           Priority = 0
         end>
+      VisibleSpecialChars = [vscSpace, vscTabAtLast]
       ReadOnly = True
       BracketHighlightStyle = sbhsBoth
       TabWidth = 2
