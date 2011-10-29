@@ -9,7 +9,7 @@ interface
 
 uses
   Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, StdCtrls, MsgBox, Clipbrd,
+  Dialogs, StdCtrls, MsgBox, Clipbrd, Buttons,
   LCLType, LCLProc, LCLIntf,
   Imglist, Contnrs,  ExtCtrls;
 
@@ -47,7 +47,7 @@ type
     procedure UpdateStatus(Text: string; Sender: TObject = nil); override;
     procedure HideStatus(Sender: TObject); override;
 
-    function CreateButton(AOwner: TComponent; Choice: TChoice): TButton; virtual;
+    function CreateButton(AOwner: TComponent; Choice: TChoice): TCustomButton; virtual;
     function CreateForm(Kind: TMsgKind): TMsgForm; virtual;
     function FindSender(Sender: TObject): Integer;
     procedure CreateFormObjects(vForm: TMsgForm; const vMsg, vTitle: string; Choices: TChoices; DefaultChoice, CancelChoice: TChoice); virtual;
@@ -57,6 +57,12 @@ type
     destructor Destroy; override;
     property MinButtonWidth: Integer read FMinButtonWidth write FMinButtonWidth;
   end;
+
+
+const
+  ChoiceGlyphKind: array[TChoice] of TBitBtnKind = (
+    bkYes, bkNo, bkOK, bkCancel, bkAbort, bkRetry, bkIgnore, bkAll, bkNo,
+    bkYes, bkHelp);
 
 implementation
 
@@ -119,7 +125,7 @@ var
   IconID: Integer;
   aRect: TRect;
   TextRect: TRect;
-  aButton: TButton;
+  aButton: TCustomButton;
   aClientWidth: Integer;
   aClientHeight: Integer;
   aIcon: TCustomBitmap;
@@ -343,9 +349,10 @@ begin
   Result := ShowModal;
 end;
 
-function TGUIMsgBox.CreateButton(AOwner: TComponent; Choice: TChoice): TButton;
+function TGUIMsgBox.CreateButton(AOwner: TComponent; Choice: TChoice): TCustomButton;
 begin
-  Result := TButton.Create(AOwner);
+  Result := TBitBtn.Create(AOwner);
+  (Result as TBitBtn).Kind := ChoiceGlyphKind[Choice];
   Result.Caption := ChoiceCaptions[Choice];
 end;
 

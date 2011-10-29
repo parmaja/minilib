@@ -64,11 +64,11 @@ type
     procedure Register(MsgPromptClass: TMsgPromptClass; SwitchToCurrent: Boolean = False);
     function Switch(vName: String): TMsgPrompt;
     procedure EnumItems(vItems: TStrings);
-    property Items[Index: Integer]: TMsgPrompt read GetItem; default;
+    property Items[Index: Integer]: TMsgPrompt read GetItem;
 
     function Input(var vResult: string; const vMsg: string): boolean;
     function Password(var vResult: string; const vMsg: string): boolean;
-    function Custom(const Msg: string; Choices: TChoices; DefaultChoice: TChoice; CancelChoice: TChoice; Kind: TMsgKind = msgkNormal): Integer;
+    function Ask(const Msg: string; Choices: TChoices; DefaultChoice: TChoice; CancelChoice: TChoice; Kind: TMsgKind = msgkNormal): Integer;
 
     //OK/Cancel the default OK
     function Ok(const vStr: string): boolean;
@@ -78,6 +78,7 @@ type
     function Yes(const vStr: string): boolean;
     //Yes/No the default No
     function No(const vStr: string): boolean;
+    function YesNoCancel(const vStr: string): Integer;
 
     function Error(const vStr: string): boolean;
     function Warning(const vStr: string): boolean;
@@ -86,7 +87,7 @@ type
     procedure Show(vVar: Variant);
     procedure List(Strings: TStringList; Kind: TMsgKind);
 
-    procedure ShowStatus(Sender: TObject; const Msg: string);
+    procedure ShowStatus(Sender: TObject; const vMsg: string);
     procedure HideStatus(Sender: TObject);
 
     property Locked: Boolean read GetLocked write SetLocked;
@@ -246,6 +247,11 @@ begin
   Result := DoOutMsg(vStr, [mbYes, mbNo], mbNo, mbNo, msgkConfirmation) in [mrCancel, mrNo];
 end;
 
+function TMsgBox.YesNoCancel(const vStr: string): Integer;
+begin
+  Result := DoOutMsg(vStr, [mbYes, mbNo, mbCancel], mbYes, mbCancel, msgkConfirmation);
+end;
+
 function TMsgBox.Error(const vStr: string): boolean;
 begin
   Result := DoOutMsg(vStr, [mbOK], mbOK, mbOk, msgkError) = mrOK
@@ -291,9 +297,9 @@ begin
   DoHideStatus(Sender);
 end;
 
-procedure TMsgBox.ShowStatus(Sender: TObject; const Msg: string);
+procedure TMsgBox.ShowStatus(Sender: TObject; const vMsg: string);
 begin
-  DoShowStatus(Msg, Sender);
+  DoShowStatus(vMsg, Sender);
 end;
 
 function TMsgBox.DoInputMsg(var vResult: string; const Msg: string; Choices: TChoices; DefaultChoice, CancelChoice: TChoice; Kind: TMsgKind): Integer;
@@ -363,11 +369,10 @@ begin
     Dec(FLockCount);
 end;
 
-function TMsgBox.Custom(const Msg: string; Choices: TChoices; DefaultChoice, CancelChoice: TChoice; Kind: TMsgKind): Integer;
+function TMsgBox.Ask(const Msg: string; Choices: TChoices; DefaultChoice, CancelChoice: TChoice; Kind: TMsgKind): Integer;
 begin
   Result := DoOutMsg(Msg, Choices, DefaultChoice, CancelChoice, Kind);  
 end;
-
 
 constructor TMsgConsole.Create;
 begin
