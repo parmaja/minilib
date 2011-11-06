@@ -28,7 +28,8 @@ package POSLib;
 
 requires
   rtl,
-  vcl;
+  vcl,
+  MiniCommonsLib;
 
 contains
   RegPOSCtrls in 'RegPOSCtrls.pas',

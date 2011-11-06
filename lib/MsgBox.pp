@@ -27,6 +27,7 @@ type
     FName: String;
     FTitle: String;
     function OutMsg(const Msg: string; Choices: TChoices; DefaultChoice: TChoice; CancelChoice: TChoice; Kind: TMsgKind): Integer; virtual; abstract;
+    //function MsgOut(const Msg: string; Choices: array of string; DefaultChoice: Integer; CancelChoice: Integer; Kind: TMsgKind): Integer; virtual; abstract;
     function InputMsg(var vResult: string; const Msg: string; Choices: TChoices; DefaultChoice: TChoice; CancelChoice: TChoice; Kind: TMsgKind): Integer; virtual; abstract;
     procedure ShowStatus(Msg: string; Sender: TObject = nil); virtual; abstract;
     procedure UpdateStatus(Msg: string; Sender: TObject = nil); virtual; abstract;
@@ -69,6 +70,7 @@ type
     function Input(var vResult: string; const vMsg: string): boolean;
     function Password(var vResult: string; const vMsg: string): boolean;
     function Ask(const Msg: string; Choices: TChoices; DefaultChoice: TChoice; CancelChoice: TChoice; Kind: TMsgKind = msgkNormal): Integer;
+    function Ask(const Msg: string; Choices: array of string; DefaultChoice: Integer; CancelChoice: Integer; Kind: TMsgKind = msgkNormal): Integer;
 
     //OK/Cancel the default OK
     function Ok(const vStr: string): boolean;
@@ -372,6 +374,11 @@ end;
 function TMsgBox.Ask(const Msg: string; Choices: TChoices; DefaultChoice, CancelChoice: TChoice; Kind: TMsgKind): Integer;
 begin
   Result := DoOutMsg(Msg, Choices, DefaultChoice, CancelChoice, Kind);  
+end;
+
+function TMsgBox.Ask(const Msg: string; Choices: array of string; DefaultChoice: Integer; CancelChoice: Integer; Kind: TMsgKind = msgkNormal): Integer;
+begin
+  //Result := DoOutMsg(Msg, Choices, DefaultChoice, CancelChoice, Kind);
 end;
 
 constructor TMsgConsole.Create;

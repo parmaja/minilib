@@ -23,7 +23,7 @@ interface
 
 uses
   Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  LMessages, lCLType, LCLIntf, LCLProc, EditorDebugger,
+  LMessages, lCLType, LCLIntf, LCLProc, EditorDebugger, FileUtil,
   Dialogs, StdCtrls, Math, ComCtrls, ExtCtrls, ImgList, Menus, ToolWin,
   Buttons, FileCtrl, ShellCtrls, ActnList, EditorEngine, mneClasses, StdActns,
   PairSplitter, SynEditHighlighter, SynEdit, IAddons,
@@ -641,7 +641,7 @@ begin
     for i := 0 to Length(FileNames) - 1 do
     begin
       A := FileNames[i];
-      if DirectoryExists(A) and (i = 0) then
+      if DirectoryExistsUTF8(A) and (i = 0) then
         aFolder := A
       else if FileExists(A) then
         Engine.Files.OpenFile(A);
@@ -1404,9 +1404,9 @@ begin
       end;
 
       //Folders
-      if (Folder <> '') and DirectoryExists(Folder) then
+      if (Folder <> '') and DirectoryExistsUTF8(Folder) then
       begin
-        r := FindFirst(Folder + '*.*', faAnyFile or faDirectory, SearchRec);
+        r := FindFirstUTF8(Folder + '*.*', faAnyFile or faDirectory, SearchRec);
         while r = 0 do
         begin
           if (SearchRec.Name <> '.') then
@@ -1419,12 +1419,12 @@ begin
               aItem.ImageIndex := 0;
             end;
           end;
-          r := FindNext(SearchRec);
+          r := FindNextUTF8(SearchRec);
         end;
-        FindClose(SearchRec);
+        FindCloseUTF8(SearchRec);
 
         //Files
-        r := FindFirst(Folder + '*.*', faAnyFile, SearchRec);
+        r := FindFirstUTF8(Folder + '*.*', faAnyFile, SearchRec);
         while r = 0 do
         begin
           //if (SearchRec.Name <> '.') and (SearchRec.Name <> '..') then
@@ -1438,9 +1438,9 @@ begin
               aItem.ImageIndex := GetFileImageIndex(SearchRec.Name);
             end;
           end;
-          r := FindNext(SearchRec);
+          r := FindNextUTF8(SearchRec);
         end;
-        FindClose(SearchRec);
+        FindCloseUTF8(SearchRec);
       end;
     finally
       AExtensions.Free;

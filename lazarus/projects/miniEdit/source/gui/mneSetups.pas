@@ -11,7 +11,7 @@ interface
 
 uses
   Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  mneClasses, Dialogs, StdCtrls, IniFiles;
+  mneClasses, Dialogs, StdCtrls, FileUtil, IniFiles;
 
 type
   TEditorSetupForm = class(TForm)
@@ -78,7 +78,7 @@ begin
   WorkspaceEdit.Items.Add('.');
   {$ifdef windows}
   WorkspaceEdit.Items.Add('C:\workspace');
-  if DirectoryExists('D:\') then
+  if DirectoryExistsUTF8('D:\') then
     WorkspaceEdit.Items.Add('D:\workspace');
   WorkspaceEdit.Items.Add('\workspace');
   {$else}

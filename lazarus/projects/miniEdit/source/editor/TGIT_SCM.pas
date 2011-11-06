@@ -14,7 +14,7 @@ unit TGIT_SCM;
 interface
 
 uses
-  SysUtils, Forms, StrUtils, Variants, Classes, Controls, Graphics, Contnrs,
+  SysUtils, Forms, StrUtils, Variants, Classes, Controls, Graphics, Contnrs, FileUtil,
   SynEdit, EditorEngine;
 
 type
@@ -88,7 +88,7 @@ var
   s: string;
 begin
   s := '';
-  if (s = '') and DirectoryExists('C:\Program Files\TortoiseGIT') then
+  if (s = '') and DirectoryExistsUTF8('C:\Program Files\TortoiseGIT') then
     s := 'C:\Program Files\TortoiseGIT';
   if s <> '' then
     s := IncludeTrailingPathDelimiter(s);
@@ -105,7 +105,7 @@ var
   s: string;
 begin
   s := '';
-  if (s = '') and DirectoryExists('C:\Program Files\TortoiseGIT') then
+  if (s = '') and DirectoryExistsUTF8('C:\Program Files\TortoiseGIT') then
     s := 'C:\Program Files\TortoiseGIT';
   if s <> '' then
     s := IncludeTrailingPathDelimiter(s);

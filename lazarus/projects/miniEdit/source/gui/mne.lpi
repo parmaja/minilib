@@ -22,7 +22,7 @@
       <Item1 Name="windows" Default="True"/>
       <Item2 Name="linux">
         <CompilerOptions>
-          <Version Value="10"/>
+          <Version Value="11"/>
           <PathDelim Value="\"/>
           <Target>
             <Filename Value="..\..\bin\mne"/>
@@ -34,7 +34,6 @@
           </SearchPaths>
           <Linking>
             <Debugging>
-              <GenerateDebugInfo Value="True"/>
               <DebugInfoType Value="dsStabs"/>
               <UseExternalDbgSyms Value="True"/>
             </Debugging>
@@ -310,7 +309,7 @@
     </Units>
   </ProjectOptions>
   <CompilerOptions>
-    <Version Value="10"/>
+    <Version Value="11"/>
     <PathDelim Value="\"/>
     <Target>
       <Filename Value="..\..\bin\mne.exe"/>
@@ -322,7 +321,6 @@
     </SearchPaths>
     <Linking>
       <Debugging>
-        <GenerateDebugInfo Value="True"/>
         <DebugInfoType Value="dsDwarf2Set"/>
       </Debugging>
       <Options>

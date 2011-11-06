@@ -13,7 +13,7 @@ uses
   IniFiles, EditorOptions, EditorProfiles, SynEditMarks, SynCompletion, SynEditTypes,
   SynEditMiscClasses, SynEditHighlighter, SynEditKeyCmds, SynEditMarkupBracket, SynEditSearch, SynEdit,
   SynEditTextTrimmer, SynTextDrawer, EditorDebugger, SynGutterBase,
-  dbgpServers, PHP_xDebug,
+  dbgpServers, PHP_xDebug, FileUtil,
   mnXMLRttiProfile, mnXMLUtils, mnUtils, LCLType;
 
 type
@@ -1685,7 +1685,7 @@ end;
 
 procedure TEditorOptions.Save;
 begin
-  if (FileName <> '') and DirectoryExists(ExtractFilePath(FileName)) then
+  if (FileName <> '') and DirectoryExistsUTF8(ExtractFilePath(FileName)) then
   begin
     SaveToFile(FileName);
     Engine.UpdateState([ecsFolder]);
