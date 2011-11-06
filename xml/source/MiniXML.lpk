@@ -3,8 +3,9 @@
   <Package Version="4">
     <PathDelim Value="\"/>
     <Name Value="MiniXML"/>
+    <Author Value="Zaher Dirkey"/>
     <CompilerOptions>
-      <Version Value="10"/>
+      <Version Value="11"/>
       <PathDelim Value="\"/>
       <SearchPaths>
         <OtherUnitFiles Value="."/>
@@ -14,13 +15,14 @@
         <SyntaxOptions>
           <SyntaxMode Value="Delphi"/>
           <IncludeAssertionCode Value="True"/>
+          <AllowLabel Value="False"/>
           <UseAnsiStrings Value="False"/>
         </SyntaxOptions>
       </Parsing>
       <Linking>
         <Debugging>
-          <GenerateDebugInfo Value="True"/>
           <DebugInfoType Value="dsDwarf2Set"/>
+          <UseExternalDbgSyms Value="True"/>
         </Debugging>
       </Linking>
       <Other>
@@ -33,8 +35,10 @@
         <CompilerPath Value="$(CompPath)"/>
       </Other>
     </CompilerOptions>
+    <Description Value="MiniLib XML reader/writer, rtti profiler"/>
+    <License Value="ModifiedLGPL"/>
     <Version Major="1" Release="1"/>
-    <Files Count="13">
+    <Files Count="12">
       <Item1>
         <Filename Value="mnXML.pas"/>
         <UnitName Value="mnXML"/>
@@ -76,17 +80,13 @@
         <UnitName Value="mnXMLScanner"/>
       </Item10>
       <Item11>
-        <Filename Value="mnXMLStreams.pas"/>
-        <UnitName Value="mnXMLStreams"/>
-      </Item11>
-      <Item12>
         <Filename Value="mnXMLUtils.pas"/>
         <UnitName Value="mnXMLUtils"/>
-      </Item12>
-      <Item13>
+      </Item11>
+      <Item12>
         <Filename Value="mnXMLWriter.pas"/>
         <UnitName Value="mnXMLWriter"/>
-      </Item13>
+      </Item12>
     </Files>
     <Type Value="RunAndDesignTime"/>
     <RequiredPkgs Count="2">

@@ -115,7 +115,7 @@ procedure TForm1.Button1Click(Sender: TObject);
 var
   XMLWriter: TmnXMLRttiWriter;
 begin
-  XMLWriter := TmnXMLRttiWriter.Create(TmnXMLStream.Create(TFileStream.Create(ExtractFilePath(Application.ExeName) + '1.xml', fmCreate)));
+  XMLWriter := TmnXMLRttiWriter.Create(TmnWrapperStream.Create(TFileStream.Create(ExtractFilePath(Application.ExeName) + '1.xml', fmCreate)));
   try
     XMLWriter.Smart := True;
     XMLWriter.WriteTypes := False;

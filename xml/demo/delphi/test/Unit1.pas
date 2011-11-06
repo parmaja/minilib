@@ -55,7 +55,7 @@ procedure TForm1.Button1Click(Sender: TObject);
 var
   XMLWriter: TmnXMLWriter;
 begin
-  XMLWriter := TmnXMLWriter.Create(TmnXMLStream.Create(TFileStream.Create('c:\1.xml', fmCreate)));
+  XMLWriter := TmnXMLWriter.Create(TmnWrapperStream.Create(TFileStream.Create('c:\1.xml', fmCreate)));
 //  XMLWriter.Header.Add('myprop="myxml"');
   XMLWriter.Smart := True;
   XMLWriter.Start;
@@ -88,7 +88,7 @@ procedure TForm1.Button3Click(Sender: TObject);
 var
   XMLScanner: TMyXMLScanner;
 begin
-  XMLScanner := TMyXMLScanner.Create(TmnXMLStream.Create(TFileStream.Create('extern.xml', fmOpenRead)));
+  XMLScanner := TMyXMLScanner.Create(TmnWrapperStream.Create(TFileStream.Create('extern.xml', fmOpenRead)));
   XMLScanner.Memo := Memo;
   try
     XMLScanner.Start;

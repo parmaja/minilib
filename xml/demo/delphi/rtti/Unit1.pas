@@ -116,7 +116,7 @@ var
   XMLWriter: TmnXMLRttiWriter;
 begin
   Constraints
-  XMLWriter := TmnXMLRttiWriter.Create(TmnXMLStream.Create(TFileStream.Create('1.xml', fmCreate)));
+  XMLWriter := TmnXMLRttiWriter.Create(TmnWrapperStream.Create(TFileStream.Create('1.xml', fmCreate)));
   try
     XMLWriter.Smart := True;
     XMLWriter.WriteTypes := False;
@@ -131,7 +131,7 @@ procedure TForm1.Button3Click(Sender: TObject);
 var
   XMLReader: TmnXMLRttiReader;
 begin
-  XMLReader := TmnXMLRttiReader.Create(TmnXMLStream.Create(TFileStream.Create('1.xml', fmOpenRead)));
+  XMLReader := TmnXMLRttiReader.Create(TmnWrapperStream.Create(TFileStream.Create('1.xml', fmOpenRead)));
   try
     XMLReader.ReadRoot(Memo1);
   finally

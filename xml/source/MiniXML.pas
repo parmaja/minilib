@@ -9,7 +9,7 @@ interface
 uses
   mnXML, mnXMLBase64, mnXMLNodes, mnXMLReader, mnXMLRtti, mnXMLRttiProfile, 
   mnXMLRttiReader, mnXMLRttiStdClasses, mnXMLRttiWriter, mnXMLScanner, 
-  mnXMLStreams, mnXMLUtils, mnXMLWriter, LazarusPackageIntf;
+  mnXMLUtils, mnXMLWriter, LazarusPackageIntf;
 
 implementation
 

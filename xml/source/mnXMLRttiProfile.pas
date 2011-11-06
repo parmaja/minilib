@@ -192,7 +192,7 @@ begin
   FProfileState := FProfileState + [psLoading];
   Loading;
   try
-    aReader := TmnXMLRttiReader.Create(TmnXMLStream.Create(Stream, False));
+    aReader := TmnXMLRttiReader.Create(TmnWrapperStream.Create(Stream, False));
     try
       aReader.ReadRoot(Self);
       aReader.Stop;
@@ -271,7 +271,7 @@ begin
   FProfileState := FProfileState + [psSaving];
   Saving;
   try
-    aWriter := TmnXMLRttiWriter.Create(TmnXMLStream.Create(Stream, False));
+    aWriter := TmnXMLRttiWriter.Create(TmnWrapperStream.Create(Stream, False));
     aWriter.Smart := True;
     aWriter.WriteTypes := False;
     try
@@ -312,7 +312,7 @@ procedure XMLReadObjectStream(Instance: TObject; Stream: TStream);
 var
   aReader: TmnXMLRttiReader;
 begin
-  aReader := TmnXMLRttiReader.Create(TmnXMLStream.Create(Stream, False));
+  aReader := TmnXMLRttiReader.Create(TmnWrapperStream.Create(Stream, False));
   try
     aReader.ReadRoot(Instance);
     aReader.Stop;
@@ -325,7 +325,7 @@ procedure XMLWriteObjectStream(Instance: TObject; Stream: TStream);
 var
   aWriter: TmnXMLRttiWriter;
 begin
-  aWriter := TmnXMLRttiWriter.Create(TmnXMLStream.Create(Stream, False));
+  aWriter := TmnXMLRttiWriter.Create(TmnWrapperStream.Create(Stream, False));
   aWriter.Smart := True;
   aWriter.WriteTypes := False;
   try
@@ -436,7 +436,7 @@ var
   aReader: TmnXMLRttiReader;
 begin
   Loading;
-  aReader := TmnXMLRttiReader.Create(TmnXMLStream.Create(Stream, False));
+  aReader := TmnXMLRttiReader.Create(TmnWrapperStream.Create(Stream, False));
   try
     aReader.ReadRoot(Self);
     aReader.Stop;
@@ -482,7 +482,7 @@ var
   aWriter: TmnXMLRttiWriter;
 begin
   Saving;
-  aWriter := TmnXMLRttiWriter.Create(TmnXMLStream.Create(Stream, False));
+  aWriter := TmnXMLRttiWriter.Create(TmnWrapperStream.Create(Stream, False));
   aWriter.Smart := True;
   aWriter.WriteTypes := False;
   try

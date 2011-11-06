@@ -137,7 +137,7 @@ type
     FActive: Boolean;
     FOwned: Boolean;
     FVersion: string;
-    FStream: TmnXMLStream;
+    FStream: TmnWrapperStream;
     FHeader: TStringList;
     FCharset: string;
     FEntities: TmnXMLEntities;
@@ -150,13 +150,13 @@ type
     function EntityDecode(const Value: string): string;
   public
     constructor Create; overload; virtual;
-    constructor Create(Stream: TmnXMLStream; Owned: Boolean = True); overload;
+    constructor Create(Stream: TmnWrapperStream; Owned: Boolean = True); overload;
     constructor Create(const FileName:string); overload;
     destructor Destroy; override;
     procedure Start;
     procedure Stop;
     property Active: Boolean read FActive write FActive;
-    property Stream: TmnXMLStream read FStream;
+    property Stream: TmnWrapperStream read FStream;
     property Header: TStringList read FHeader write FHeader;
     property Standalone: TmnBoolean read FStandalone write FStandalone;
     property Version: string read FVersion write FVersion;
@@ -174,7 +174,7 @@ begin
   FActive := False;
 end;
 
-constructor TmnXMLFiler.Create(Stream: TmnXMLStream; Owned: Boolean);
+constructor TmnXMLFiler.Create(Stream: TmnWrapperStream; Owned: Boolean);
 begin
   Create;
   if Stream = nil then
@@ -185,7 +185,7 @@ end;
 
 constructor TmnXMLFiler.Create(const FileName: string);
 begin
-  Create(TmnXMLStream.Create(TFileStream.Create(FileName, fmOpenRead)));
+  Create(TmnWrapperStream.Create(TFileStream.Create(FileName, fmOpenRead)));
 end;
 
 constructor TmnXMLFiler.Create;

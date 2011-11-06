@@ -2,17 +2,12 @@
 <CONFIG>
   <Package Version="4">
     <Name Value="MiniCommons"/>
+    <Author Value="Zaher Dirkey"/>
     <CompilerOptions>
-      <Version Value="10"/>
+      <Version Value="11"/>
       <SearchPaths>
         <UnitOutputDirectory Value="units/$(TargetCPU)-$(TargetOS)"/>
       </SearchPaths>
-      <Linking>
-        <Debugging>
-          <GenerateDebugInfo Value="True"/>
-          <DebugInfoType Value="dsAuto"/>
-        </Debugging>
-      </Linking>
       <Other>
         <CompilerMessages>
           <UseMsgFile Value="True"/>
@@ -20,6 +15,8 @@
         <CompilerPath Value="$(CompPath)"/>
       </Other>
     </CompilerOptions>
+    <Description Value="MiniLib common units"/>
+    <License Value="ModifiedLGPL"/>
     <Version Major="1" Release="1"/>
     <Files Count="6">
       <Item1>
