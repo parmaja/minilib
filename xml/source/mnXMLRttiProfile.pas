@@ -20,7 +20,7 @@ uses
   Windows,
 {$ENDIF}
   SysUtils, Variants, Classes, Contnrs,
-  mnXMLStreams, mnXMLRtti, mnXMLRttiReader, mnXMLRttiWriter;
+  mnStreams, mnXMLRtti, mnXMLRttiReader, mnXMLRttiWriter;
 
 type
   EmnProfileException = class(Exception);

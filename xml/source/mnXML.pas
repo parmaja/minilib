@@ -7,17 +7,16 @@ unit mnXML;
  * @author    Zaher Dirkey <zaher at parmaja dot com>
  *}
 
-{$M+}
-{$H+}
 {$IFDEF FPC}
 {$mode delphi}
 {$ENDIF}
+{$H+}{$M+}
 
 interface
 
 uses
   Classes, SysUtils, Contnrs,
-  mnXMLStreams, mnXMLUtils, mnUtils;
+  mnStreams, mnXMLUtils, mnUtils;
 
 type
   TmnBoolean = (Default, Yes, No);

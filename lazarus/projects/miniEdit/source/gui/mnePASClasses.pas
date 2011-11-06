@@ -70,7 +70,7 @@ type
 implementation
 
 uses
-  IniFiles, mnXMLStreams, mnUtils;
+  IniFiles, mnStreams, mnUtils;
 
 { TmneSynPASSyn }
 

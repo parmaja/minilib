@@ -87,7 +87,7 @@ function GetHighlighterAttriAtRowColEx2(SynEdit: TCustomSynEdit; const XY: TPoin
 implementation
 
 uses
-  IniFiles, mnXMLStreams, mnUtils;
+  IniFiles, mnStreams, mnUtils;
 
 function ColorToRGBHex(Color: TColor): string;
 var

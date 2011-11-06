@@ -8,6 +8,16 @@
       <SearchPaths>
         <UnitOutputDirectory Value="units/$(TargetCPU)-$(TargetOS)"/>
       </SearchPaths>
+      <Parsing>
+        <SyntaxOptions>
+          <AllowLabel Value="False"/>
+        </SyntaxOptions>
+      </Parsing>
+      <Linking>
+        <Debugging>
+          <UseExternalDbgSyms Value="True"/>
+        </Debugging>
+      </Linking>
       <Other>
         <CompilerMessages>
           <UseMsgFile Value="True"/>
@@ -48,7 +58,7 @@
     <RequiredPkgs Count="1">
       <Item1>
         <PackageName Value="FCL"/>
-        <MinVersion Major="1" Valid="True" Release="1"/>
+        <MinVersion Major="1" Release="1"/>
       </Item1>
     </RequiredPkgs>
     <UsageOptions>

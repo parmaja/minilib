@@ -40,16 +40,16 @@
     </RunParams>
     <RequiredPackages Count="6">
       <Item1>
-        <PackageName Value="MiniXML"/>
+        <PackageName Value="MiniCommons"/>
       </Item1>
       <Item2>
-        <PackageName Value="MiniConnections"/>
+        <PackageName Value="MiniLib"/>
       </Item2>
       <Item3>
-        <PackageName Value="MiniCommons"/>
+        <PackageName Value="MiniXML"/>
       </Item3>
       <Item4>
-        <PackageName Value="MiniLib"/>
+        <PackageName Value="MiniConnections"/>
       </Item4>
       <Item5>
         <PackageName Value="SynEdit"/>
@@ -59,7 +59,7 @@
         <PackageName Value="LCL"/>
       </Item6>
     </RequiredPackages>
-    <Units Count="6">
+    <Units Count="5">
       <Unit0>
         <Filename Value="SqliteViewer.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -73,29 +73,24 @@
         <UnitName Value="Main"/>
       </Unit1>
       <Unit2>
-        <Filename Value="..\lib\sqlvClasses.pas"/>
-        <IsPartOfProject Value="True"/>
-        <UnitName Value="sqlvClasses"/>
-      </Unit2>
-      <Unit3>
         <Filename Value="sqlvStdClasses.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="sqlvStdClasses"/>
-      </Unit3>
-      <Unit4>
+      </Unit2>
+      <Unit3>
         <Filename Value="AboutForm.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="AboutForm"/>
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="AboutForm"/>
-      </Unit4>
-      <Unit5>
+      </Unit3>
+      <Unit4>
         <Filename Value="CSVIEForms.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="CSVIEForm"/>
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="CSVIEForms"/>
-      </Unit5>
+      </Unit4>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

@@ -8,15 +8,12 @@
       <Version Value="11"/>
       <PathDelim Value="\"/>
       <SearchPaths>
-        <OtherUnitFiles Value="."/>
         <UnitOutputDirectory Value="..\units\$(TargetCPU)-$(TargetOS)"/>
       </SearchPaths>
       <Parsing>
         <SyntaxOptions>
           <SyntaxMode Value="Delphi"/>
-          <IncludeAssertionCode Value="True"/>
           <AllowLabel Value="False"/>
-          <UseAnsiStrings Value="False"/>
         </SyntaxOptions>
       </Parsing>
       <Linking>
@@ -95,7 +92,7 @@
       </Item1>
       <Item2>
         <PackageName Value="FCL"/>
-        <MinVersion Major="1" Valid="True"/>
+        <MinVersion Major="1"/>
       </Item2>
     </RequiredPkgs>
     <UsageOptions>

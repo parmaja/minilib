@@ -7,11 +7,10 @@ unit mnUtils;
  * @author    Zaher Dirkey <zaher at parmaja dot com>
  *}
 
-{$M+}
-{$H+}
 {$IFDEF FPC}
 {$MODE delphi}
 {$ENDIF}
+{$M+}{$H+}
 
 interface
 
