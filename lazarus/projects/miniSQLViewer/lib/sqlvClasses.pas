@@ -12,9 +12,8 @@ interface
 {$mode objfpc}{$H+}
 
 uses
-  SysUtils, Variants, Classes, Controls,
-  mnXMLRttiProfile, mnXMLStreams,
-  Dialogs, Contnrs, mncCSVExchanges,
+  SysUtils, Variants, Classes, Controls, Dialogs, Contnrs,
+  mnXMLRttiProfile, mncCSVExchanges,
   mncSchemas, mnUtils,
   sqlvConsts, sqlvSessions, ImgList;
 

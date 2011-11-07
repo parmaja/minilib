@@ -18,7 +18,6 @@
       </Parsing>
       <Linking>
         <Debugging>
-          <DebugInfoType Value="dsDwarf2Set"/>
           <UseExternalDbgSyms Value="True"/>
         </Debugging>
       </Linking>

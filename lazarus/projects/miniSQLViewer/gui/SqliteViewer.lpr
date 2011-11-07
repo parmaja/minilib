@@ -14,7 +14,7 @@ uses
   cthreads,
   {$ENDIF}{$ENDIF}
   Interfaces, Forms,
-  Main, AboutForm, sqlvStdClasses, CSVIEForms;
+  Main, AboutForm, CSVIEForms;
 
 {$R SqliteViewer.res}
 {.$R ceux.rc}
