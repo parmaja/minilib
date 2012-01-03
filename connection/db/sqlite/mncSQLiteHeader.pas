@@ -17,7 +17,7 @@ unit mncSQLiteHeader;
 }
 
 {$IFDEF fpc}
-{$MODE objfpc}
+{$MODE Delphi}
 {$ELSE}
 {$DEFINE WINDOWS}
 {$ENDIF}
@@ -30,14 +30,19 @@ unit mncSQLiteHeader;
 interface
 
 uses
-{$IFNDEF FPC}
+{$ifdef FPC}
+  dynlibs,
+{$else }
   Windows,
-{$ENDIF}
+{$endif}
   SysUtils;
 
-{$IFDEF FPC}
+{$ifdef FPC}
 {$PACKRECORDS C}
-{$ENDIF}
+{$else DELPHI}
+type
+  TLibHandle = System.THandle;
+{$endif}
 
 const
 {$IFDEF WINDOWS}
@@ -295,12 +300,13 @@ var
 //  sqlite3_expired : function (_para1:Psqlite3_stmt):longint;cdecl;
 //function sqlite3_global_recover:longint;cdecl;
 
-procedure LoadSQLiteLibrary; overload;
-procedure LoadSQLiteLibrary(LibraryName: string); overload;
-procedure ReleaseSQLiteLibrary;
+function TryInitializeSqlite(const LibraryName: string): Integer;
+function InitializeSqlite(LibraryName: string = ''): Integer;
+function IsInitializeSqlite: Boolean;
+procedure ReleaseSQLite;
 
 var
-  SQLiteLibraryHandle: THandle;
+  SQLiteLibraryHandle: TLibHandle;
   DefaultLibrary: string = Sqlite3Lib;
 
 implementation
@@ -313,7 +319,14 @@ var
   RefCount: integer = 0;
   LoadedLibrary: string;
 
-procedure LoadAddresses(LibHandle: THandle);
+{$ifdef FPC}
+{$else}
+function LoadLibrary(LibraryName: string):TLibHandle;
+begin
+  Result := Windows.LoadLibrary(PChar(LibraryName));
+end;
+{$endif}
+procedure LoadAddresses(LibHandle: TLibHandle);
 begin
   @sqlite3_close := GetProcAddress(LibHandle, 'sqlite3_close');
   @sqlite3_exec := GetProcAddress(LibHandle, 'sqlite3_exec');
@@ -429,47 +442,50 @@ begin
 // function sqlite3_global_recover:longint;cdecl;
 end;
 
-function TryInitialiseSqlite(const LibraryName: string): Boolean;
+function TryInitializeSqlite(const LibraryName: string): Integer;
 begin
-  if (RefCount = 0) then
+  Result := InterlockedIncrement(RefCount);
+  if Result  = 1 then
   begin
-    SQLiteLibraryHandle := LoadLibrary(PChar(LibraryName));
-    Result := (SQLiteLibraryHandle <> 0);
-    if not Result then
-      Exit;
-    inc(RefCount);
+    SQLiteLibraryHandle := LoadLibrary(LibraryName);
+    if (SQLiteLibraryHandle = 0) then
+    begin
+      RefCount := 0;
+      Result := -1;
+      exit;
+    end;
     LoadedLibrary := LibraryName;
     LoadAddresses(SQLiteLibraryHandle);
-  end
-  else
-  begin
-    if (LoadedLibrary <> LibraryName) then
-      raise EInoutError.CreateFmt(SErrAlreadyLoaded, [LoadedLibrary]);
-    inc(RefCount);
-    Result := True;
   end;
 end;
 
-procedure LoadSQLiteLibrary;
+function IsInitializeSqlite: Boolean;
 begin
-  LoadSQLiteLibrary(DefaultLibrary);
+  Result := SQLiteLibraryHandle <> 0;
 end;
 
-procedure LoadSQLiteLibrary(LibraryName: string);
+function InitializeSQLite(LibraryName: string) :integer;
 begin
-  if not TryInitialiseSQLIte(LibraryName) then
-    raise EInOutError.CreateFmt(SErrLoadFailed, [LibraryName]);
+  if LibraryName = '' then
+    LibraryName := Sqlite3Lib;
+
+  if (LoadedLibrary <> '') and (LoadedLibrary <> LibraryName) then
+    raise EInoutError.CreateFmt(SErrAlreadyLoaded,[LoadedLibrary]);
+
+  Result := TryInitializeSQLite(LibraryName);
+  if Result = -1 then
+    raise EInOutError.CreateFmt(SErrLoadFailed,[LibraryName]);
 end;
 
-procedure ReleaseSQLiteLibrary;
+procedure ReleaseSQLite;
 begin
-  if RefCount > 1 then
-    Dec(RefCount)
-  else if FreeLibrary(SQLITELibraryHandle) then
+  if InterlockedDecrement(RefCount) <= 0 then
   begin
-    Dec(RefCount);
-    SQLITELibraryHandle := 0;
+    if SQLiteLibraryHandle <> 0 then
+      FreeLibrary(SQLiteLibraryHandle);
+    SQLiteLibraryHandle := 0;
     LoadedLibrary := '';
+    RefCount := 0;
   end;
 end;
 

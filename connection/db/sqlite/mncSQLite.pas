@@ -17,11 +17,7 @@ interface
 
 uses
   Classes, SysUtils, Variants,
-  {$ifdef FPC}
-  sqlite3dyn,
-  {$else}
   mncSQLiteHeader,
-  {$endif}
   mnUtils, mncConnections, mncSQL;
 
 const
@@ -243,11 +239,8 @@ procedure TmncSQLiteConnection.DoConnect;
 var
   f: Integer;
 begin
-  {$ifdef FPC}
-  InitialiseSQLite;
-  if SQLiteLibraryHandle = 0 then
-    raise EmncException.Create('SQlite3 not loaded');
-  {$endif}
+  if not IsInitializeSqlite then
+    InitializeSQLite();
 
   f := SQLITE_OPEN_READWRITE or SQLITE_OPEN_SHAREDCACHE;
   if not FileExists(Resource) then
