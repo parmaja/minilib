@@ -4,6 +4,9 @@ del bin\wince\sqliteviewer-arm.exe
 lazbuild --build-mode=wince gui\sqliteviewer.lpr -r -B
 if errorlevel 1 goto erroroccurred
 
+strip bin\sqliteviewer-arm.exe
+if errorlevel 1 goto erroroccurred
+
 upx bin\sqliteviewer-arm.exe
 if errorlevel 1 goto erroroccurred
 

@@ -35,7 +35,6 @@ requires
 contains
   mnXMLWriter in '..\source\mnXMLWriter.pas',
   mnXMLScanner in '..\source\mnXMLScanner.pas',
-  mnXMLStreams in '..\source\mnXMLStreams.pas',
   mnXMLUtils in '..\source\mnXMLUtils.pas',
   mnXML in '..\source\mnXML.pas',
   mnXMLNodes in '..\source\mnXMLNodes.pas',

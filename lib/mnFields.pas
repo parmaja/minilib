@@ -203,7 +203,8 @@ type
     function GetValues(Index: string): Variant;
     function Find(vName: string): TmnField; virtual;
   public
-    function QueryInterface(const IID: TGUID; out Obj): HResult; virtual; stdcall;
+    //function QueryInterface(const IID: TGUID; out Obj): longint; stdcall; //HResult
+    function QueryInterface({$ifdef FPC}constref{$else}const{$endif} iid : TGuid; out Obj) : longint; stdcall;
     procedure LoadFromStream(Stream: TStream); virtual;
     procedure SaveToStream(Stream: TStream); virtual;
     procedure LoadFromFile(const FileName: string);
@@ -728,7 +729,7 @@ begin
   raise Exception.Create('Not implemented yet');
 end;
 
-function TmnFields.QueryInterface(const IID: TGUID; out Obj): HResult;
+function TmnFields.QueryInterface({$ifdef FPC}constref{$else}const{$endif} IID: TGUID; out Obj): longint;
 begin
   if GetInterface(IID, Obj) then
     Result := 0

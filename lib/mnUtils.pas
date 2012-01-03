@@ -15,7 +15,7 @@ unit mnUtils;
 interface
 
 uses
-  Classes, SysUtils, StrUtils, DateUtils;
+  Classes, SysUtils, StrUtils, DateUtils, Types;
 
 const
   sUTF8BOM: array[1..3] of Char = (#$EF, #$BB, #$BF);
@@ -77,6 +77,9 @@ function DescapeString(const S: string; Esc: string; Chars: array of AnsiChar; E
 
 //Similer to ZeroMemory
 procedure InitMemory(out V; Count: {$ifdef FPC}SizeInt{$else}Longint{$endif});
+
+//Rect functions
+procedure CenterRect(var R1: TRect; R2: TRect);
 
 {$ifndef FPC}
 const
@@ -520,7 +523,14 @@ var
     else
       Result := vStr;
   end;
+{$ifdef FPC}
+var
+  TimeSeparator: char;
+{$endif}
 begin
+  {$ifdef FPC}
+  TimeSeparator := DefaultFormatSettings.TimeSeparator;
+  {$endif}
   g := vPeriod < 0;
   vPeriod := abs(vPeriod);
   d := trunc(vPeriod * SecsPerDay);
@@ -580,6 +590,11 @@ end;
 function SubStr(const Str: String; vSeperator: Char; vIndex: Integer): String;
 begin
   Result := SubStr(Str, vSeperator, vIndex, vIndex);
+end;
+
+procedure CenterRect(var R1: TRect; R2: TRect);
+begin
+  OffsetRect(R1, ((R2.Right - R2.Left) div 2) - ((R1.Right - R1.Left) div 2) + (R2.Left - R1.Left), ((R2.Bottom - R2.Top) div 2) - ((R1.Bottom - R1.Top) div 2) + (R2.Top - R1.Top));
 end;
 
 end.

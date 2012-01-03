@@ -56,8 +56,6 @@ type
   end;
 {$endif}
 
-// Center
-procedure CenterRect(var R1: TRect; R2: TRect);
 procedure AlignRect(var R: TRect; ToRect: TRect; Alignment: TAlignment; Layout: TTextLayout);
 function CollideRect(const R1, R2: TRect): Boolean;
 
@@ -102,11 +100,6 @@ begin
   Windows.InflateRect(Rect, dx, dy);
 end;
 {$ENDIF}
-
-procedure CenterRect(var R1: TRect; R2: TRect);
-begin
-  OffsetRect(R1, ((R2.Right - R2.Left) div 2) - ((R1.Right - R1.Left) div 2) + (R2.Left - R1.Left), ((R2.Bottom - R2.Top) div 2) - ((R1.Bottom - R1.Top) div 2) + (R2.Top - R1.Top));
-end;
 
 procedure AlignRect(var R: TRect; ToRect: TRect; Alignment: TAlignment; Layout: TTextLayout);
 var
@@ -494,7 +487,5 @@ begin
         Style.Alignment := taLeftJustify;
 end;
 
-initialization
-finalization
 end.
 

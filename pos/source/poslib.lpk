@@ -5,7 +5,7 @@
     <Name Value="poslib"/>
     <Author Value="Zaher Dirkey"/>
     <CompilerOptions>
-      <Version Value="10"/>
+      <Version Value="11"/>
       <PathDelim Value="\"/>
       <SearchPaths>
         <UnitOutputDirectory Value="units\$(TargetCPU)-$(TargetOS)"/>
@@ -13,19 +13,13 @@
       <Parsing>
         <SyntaxOptions>
           <SyntaxMode Value="Delphi"/>
-          <CStyleOperator Value="False"/>
+          <AllowLabel Value="False"/>
           <CStyleMacros Value="True"/>
         </SyntaxOptions>
       </Parsing>
-      <CodeGeneration>
-        <Optimizations>
-          <OptimizationLevel Value="0"/>
-        </Optimizations>
-      </CodeGeneration>
       <Linking>
         <Debugging>
-          <GenerateDebugInfo Value="True"/>
-          <DebugInfoType Value="dsStabs"/>
+          <UseLineInfoUnit Value="False"/>
         </Debugging>
       </Linking>
       <Other>
@@ -43,46 +37,46 @@ Light controls (TposGrid, TposList, TposStuffs, TposKeyboard...)
     <Version Build="1" Major="1"/>
     <Files Count="10">
       <Item1>
-        <Filename Value="posButtons.pas"/>
-        <UnitName Value="posButtons"/>
+        <Filename Value="posUtils.pas"/>
+        <UnitName Value="posUtils"/>
       </Item1>
       <Item2>
-        <Filename Value="posControls.pas"/>
-        <UnitName Value="posControls"/>
+        <Filename Value="posButtons.pas"/>
+        <UnitName Value="posButtons"/>
       </Item2>
       <Item3>
-        <Filename Value="posEdits.pas"/>
-        <UnitName Value="posEdits"/>
+        <Filename Value="posControls.pas"/>
+        <UnitName Value="posControls"/>
       </Item3>
       <Item4>
-        <Filename Value="posGrids.pas"/>
-        <UnitName Value="posGrids"/>
+        <Filename Value="posEdits.pas"/>
+        <UnitName Value="posEdits"/>
       </Item4>
       <Item5>
-        <Filename Value="posKeyboards.pas"/>
-        <UnitName Value="posKeyboards"/>
+        <Filename Value="posGrids.pas"/>
+        <UnitName Value="posGrids"/>
       </Item5>
       <Item6>
-        <Filename Value="posLists.pas"/>
-        <UnitName Value="posLists"/>
+        <Filename Value="posKeyboards.pas"/>
+        <UnitName Value="posKeyboards"/>
       </Item6>
       <Item7>
+        <Filename Value="posLists.pas"/>
+        <UnitName Value="posLists"/>
+      </Item7>
+      <Item8>
+        <Filename Value="posStuffs.pas"/>
+        <UnitName Value="posStuffs"/>
+      </Item8>
+      <Item9>
+        <Filename Value="poslib.lrs"/>
+        <Type Value="LRS"/>
+      </Item9>
+      <Item10>
         <Filename Value="posRegCtrls.pas"/>
         <HasRegisterProc Value="True"/>
         <AddToUsesPkgSection Value="False"/>
         <UnitName Value="posRegCtrls"/>
-      </Item7>
-      <Item8>
-        <Filename Value="posUtils.pas"/>
-        <UnitName Value="posUtils"/>
-      </Item8>
-      <Item9>
-        <Filename Value="posStuffs.pas"/>
-        <UnitName Value="posStuffs"/>
-      </Item9>
-      <Item10>
-        <Filename Value="poslib.lrs"/>
-        <Type Value="LRS"/>
       </Item10>
     </Files>
     <Type Value="RunAndDesignTime"/>

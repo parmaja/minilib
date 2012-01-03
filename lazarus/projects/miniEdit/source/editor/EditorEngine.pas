@@ -1111,7 +1111,7 @@ end;
 
 destructor TSynDebugMarksPart.Destroy;
 begin
-  FreeAndNil(FMouseActions);
+//  FreeAndNil(FMouseActions);
   inherited;
 end;
 

@@ -19,7 +19,7 @@ interface
 uses
   Windows,
   Classes, SysUtils,
-  mnWinCommTypes, mnStreams, mnCommClasses;
+  mnWinCommTypes, mnCommClasses;
 
 type
   { TmnOSCommStream }
@@ -127,9 +127,9 @@ begin
 
     aTimeouts.ReadIntervalTimeout := MAXWORD;
     aTimeouts.ReadTotalTimeoutMultiplier := 0;
-    aTimeouts.ReadTotalTimeoutConstant := ReadTimeout;
+    aTimeouts.ReadTotalTimeoutConstant := Timeout;
     aTimeouts.WriteTotalTimeoutMultiplier := 0;
-    aTimeouts.WriteTotalTimeoutConstant := WriteTimeout;
+    aTimeouts.WriteTotalTimeoutConstant := Timeout;
 
     if not SetCommTimeouts(FHandle, aTimeouts) then
       raise ECommError.Create('Error in SetCommTimeouts'+ IntToStr(GetLastError));
@@ -172,6 +172,7 @@ var
 begin
   if Connected then
   begin
+    Errors := 0;
     if not ClearCommError(FHandle, Errors, @ComStat) then
       raise ECommError.Create('Clear Com Failed');
     Result := ComStat.cbInQue;

@@ -40,7 +40,7 @@ type
     function _AddRef: Integer; stdcall;
     function _Release: Integer; stdcall;
   public
-    function QueryInterface(const IID: TGUID; out Obj): HResult; virtual; stdcall;
+    function QueryInterface({$ifdef FPC}constref{$else}const{$endif FPC} IID: TGUID; out Obj): HResult; virtual; stdcall;
   end;
 
   TposStuffs = class;
@@ -78,7 +78,7 @@ type
     procedure Add(Stuff: IposStuff);
     function GetDrawSize: Integer; virtual;
     function Release: Boolean;
-    function QueryInterface(const IID: TGUID; out Obj): HResult; virtual; stdcall;
+    function QueryInterface({$ifdef FPC}constref{$else}const{$endif FPC} IID: TGUID; out Obj): HResult; virtual; stdcall;
     procedure Clear; override;
     procedure ItemClick(Sender: TObject); virtual;
     procedure ItemStates(Sender: TObject; var vStates: TposDrawStates); virtual;
@@ -888,7 +888,7 @@ procedure TposStuffItems.ItemStates(Sender: TObject; var vStates: TposDrawStates
 begin
 end;
 
-function TposStuffItems.QueryInterface(const IID: TGUID; out Obj): HResult;
+function TposStuffItems.QueryInterface({$ifdef FPC}constref{$else}const{$endif FPC} IID: TGUID; out Obj): HResult;
 begin
   if GetInterface(IID, Obj) then
     Result := 0
@@ -943,7 +943,7 @@ begin
   Result := 0;
 end;
 
-function TposStuffObject.QueryInterface(const IID: TGUID; out Obj): HResult;
+function TposStuffObject.QueryInterface({$ifdef FPC}constref{$else}const{$endif FPC} IID: TGUID; out Obj): HResult;
 begin
   if GetInterface(IID, Obj) then
     Result := 0

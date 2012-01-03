@@ -64,11 +64,11 @@ var
   Ln, s: string;
   d, m, y: Word;
   aDate: TDateTime;
-  aStream: TmnStream;
+  aStream: TmnWrapperStream;
 begin
   if FileExists(vFileName) then
   begin
-    aStream := TmnStream.Create(TFileStream.Create(vFileName, fmOpenRead or fmShareDenyWrite), sWinEndOfLine);
+    aStream := TmnWrapperStream.Create(TFileStream.Create(vFileName, fmOpenRead or fmShareDenyWrite), sWinEndOfLine);
     try
       aDate := HejriItems.StartDate;
       i := 0;
@@ -124,9 +124,9 @@ var
   i: Integer;
   Ln: string;
   d, m, y: word;
-  aStream: TmnStream;
+  aStream: TmnWrapperStream;
 begin
-  aStream := TmnStream.Create(TFileStream.Create(vFileName, fmCreate), sWinEndOfLine);
+  aStream := TmnWrapperStream.Create(TFileStream.Create(vFileName, fmCreate), sWinEndOfLine);
   try
     aStream.WriteLn('# Hejri file date is csv file');
     aStream.WriteLn('#---------------------------------');

@@ -29,7 +29,7 @@ type
     FUseWait: Boolean;
   protected
     procedure DoTerminate; override;
-    procedure StringArrived(S: string); virtual;
+    procedure StringArrived(const S: string); virtual;
     procedure Execute; override;
   public
     constructor Create(CreateSuspended: Boolean; CommStream: TmnCustomCommStream);
@@ -43,8 +43,8 @@ type
     procedure InternalStringArrived; 
   protected
     FBuffer: string;
-    procedure StringArrived(S: string); override;
-    procedure DoStringArrived(S: string); virtual;
+    procedure StringArrived(const S: string); override;
+    procedure DoStringArrived(const S: string); virtual;
   public
     constructor Create(CreateSuspended: Boolean; CommStream: TmnCustomCommStream);
   end;
@@ -93,7 +93,7 @@ begin
   end;
 end;
 
-procedure TmnCommThread.StringArrived(S: string);
+procedure TmnCommThread.StringArrived(const S: string);
 begin
 end;
 
@@ -104,7 +104,7 @@ begin
   inherited Create(CreateSuspended, CommStream);
 end;
 
-procedure TmnCommStreamThread.DoStringArrived(S: string);
+procedure TmnCommStreamThread.DoStringArrived(const S: string);
 begin
 end;
 
@@ -113,7 +113,7 @@ begin
   DoStringArrived(FBuffer);
 end;
 
-procedure TmnCommStreamThread.StringArrived(S: string);
+procedure TmnCommStreamThread.StringArrived(const S: string);
 begin
   FBuffer := S;
   InternalStringArrived;

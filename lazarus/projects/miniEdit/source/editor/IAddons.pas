@@ -35,7 +35,7 @@ type
     function _Release: integer; stdcall;
   public
     function GetObject: TObject;
-    function QueryInterface(const IID: TGUID; out Obj): HResult; virtual; stdcall;
+    function QueryInterface({$ifdef FPC}constref{$else}const{$endif} IID: TGUID; out Obj): HResult; virtual; stdcall;
     destructor Destroy; override;
   end;
 
@@ -208,7 +208,7 @@ begin
   Result := Self;
 end;
 
-function TAddonObject.QueryInterface(const IID: TGUID; out Obj): HResult; stdcall;
+function TAddonObject.QueryInterface({$ifdef FPC}constref{$else}const{$endif} IID: TGUID; out Obj): HResult; stdcall;
 begin
   if GetInterface(IID, Obj) then
     Result := 0

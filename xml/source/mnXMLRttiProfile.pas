@@ -47,7 +47,7 @@ type
   public
     constructor Create;
     procedure Clear; virtual;
-    function QueryInterface(const IID: TGUID; out Obj): HResult; virtual; stdcall;
+    function QueryInterface({$ifdef FPC}constref{$else}const{$endif FPC} IID: TGUID; out Obj): HResult; virtual; stdcall;
     procedure LoadFromStream(Stream: TStream); virtual;
     procedure SaveToStream(Stream: TStream); virtual;
     procedure LoadFromFile(FileName: string);
@@ -228,7 +228,7 @@ procedure TmnXMLProfile.Loading;
 begin
 end;
 
-function TmnXMLProfile.QueryInterface(const IID: TGUID; out Obj): HResult;
+function TmnXMLProfile.QueryInterface({$ifdef FPC}constref{$else}const{$endif FPC} IID: TGUID; out Obj): HResult;
 begin
   if GetInterface(IID, Obj) then
     Result := 0

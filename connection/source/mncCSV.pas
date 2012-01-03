@@ -39,6 +39,8 @@ type
     FHaveHeader: Boolean;
     FSpliteChar: Char;
   protected
+    procedure DoStart; override;
+    procedure DoStop(How: TmncSessionAction; Retaining: Boolean); override;
   public
     constructor Create(vConnection: TmncConnection); override;
     property SpliteChar: Char read FSpliteChar write FSpliteChar default #9;
@@ -108,6 +110,14 @@ begin
 end;
 
 { TmncCSVSession }
+
+procedure TmncCSVSession.DoStart;
+begin
+end;
+
+procedure TmncCSVSession.DoStop(How: TmncSessionAction; Retaining: Boolean);
+begin
+end;
 
 constructor TmncCSVSession.Create(vConnection: TmncConnection);
 begin

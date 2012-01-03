@@ -22,9 +22,6 @@ uses
   SysUtils, Classes, Graphics, Controls, StdCtrls, Forms,
   Contnrs, Types,
 {$IFDEF FPC}
-{$ifdef WINCE}
-  WinCEmf,
-{$endif}
   LCLIntf,
   LCLType,
 {$ELSE}

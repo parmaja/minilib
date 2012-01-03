@@ -1,4 +1,5 @@
 unit posDraws;
+
 {**
  *  This file is part of the "Mini Library"
  *
@@ -21,24 +22,25 @@ uses
 type
   TposShapeKind = (shpNone, shpNext, shpLeft, shpRight, shpFirst, shpLast, shpUp, shpDown, shpEllipsis, shpPin,
     shpPlus, shpOK, shpCheck, shpMinus, shpCross, shpStar, shpDiv, shpPoint);
-  
+
 //Restaurant tables not Database table :)
 
 procedure DrawChair(Canvas: TCanvas; const vRect: TRect; UpDown: Boolean; Opaque: Boolean);
 procedure DrawTable(Canvas: TCanvas; const vRect: TRect; Chairs: Integer; Center, Opaque: Boolean);
 
-procedure DrawShape(Canvas: TCanvas; R: TRect; Shape: TposShapeKind; ADown, AEnabled, UseRightToLeft: Boolean; Size:Integer; Color: TColor);
-  
+procedure DrawShape(Canvas: TCanvas; R: TRect; Shape: TposShapeKind; ADown, AEnabled, UseRightToLeft: Boolean; Size: Integer; Color: TColor);
+
 implementation
 
 uses
-  posUtils;
+  mnUtils, posUtils;
 
-procedure DrawShape(Canvas: TCanvas; R: TRect; Shape: TposShapeKind; ADown, AEnabled, UseRightToLeft: Boolean; Size:Integer; Color: TColor);
+procedure DrawShape(Canvas: TCanvas; R: TRect; Shape: TposShapeKind; ADown, AEnabled, UseRightToLeft: Boolean; Size: Integer; Color: TColor);
 var
   x, y: Integer;
   w, h: Integer;
   z: Integer;
+
   procedure CalcZ(DivTo: Integer);
   begin
     if z = 0 then
@@ -51,6 +53,7 @@ var
         z := 1;
     end;
   end;
+
 begin
   w := (R.Right - R.Left);
   h := (R.Bottom - R.Top);
@@ -70,149 +73,149 @@ begin
   Canvas.Pen.Color := Color;
   case Shape of
     shpEllipsis:
-      begin
-        CalcZ(8);
-        Canvas.Rectangle(x, y, x + z * 2, y + z * 2);
-        x := x + 3;
-        Canvas.Rectangle(x, y, x + z * 2, y + 2);
-        x := x + 3;
-        Canvas.Rectangle(x, y, x + z * 2, y + z * 2);
-      end;
+    begin
+      CalcZ(8);
+      Canvas.Rectangle(x, y, x + z * 2, y + z * 2);
+      x := x + 3;
+      Canvas.Rectangle(x, y, x + z * 2, y + 2);
+      x := x + 3;
+      Canvas.Rectangle(x, y, x + z * 2, y + z * 2);
+    end;
     shpDown, shpLast:
+    begin
+      CalcZ(8);
+      if Shape = shpLast then
       begin
-        CalcZ(8);
-        if Shape = shpLast then
-        begin
-          Canvas.Rectangle(x - z * 2 + 1, y + 2 * z + 1, x + 2 * z, y + z + 1);
-          Dec(y, z);
-        end;
-        Canvas.Polygon([Point(x, y + z), Point(x + 2 * z - 1, y - z + 1), Point(x - 2 * z + 1, y - z + 1)]);
+        Canvas.Rectangle(x - z * 2 + 1, y + 2 * z + 1, x + 2 * z, y + z + 1);
+        Dec(y, z);
       end;
+      Canvas.Polygon([Point(x, y + z), Point(x + 2 * z - 1, y - z + 1), Point(x - 2 * z + 1, y - z + 1)]);
+    end;
     shpUp, shpFirst:
+    begin
+      CalcZ(8);
+      if Shape = shpFirst then
       begin
-        CalcZ(8);
-        if Shape = shpFirst then
-        begin
-          Canvas.Rectangle(x - z * 2 + 1, y - 2 * z, x + 2 * z, y - z);
-          Inc(y, z);
-        end;
-        Canvas.Polygon([Point(x, y - z), Point(x + 2 * z - 1, y + z - 1), Point(x - 2 * z + 1, y + z - 1)]);
+        Canvas.Rectangle(x - z * 2 + 1, y - 2 * z, x + 2 * z, y - z);
+        Inc(y, z);
       end;
+      Canvas.Polygon([Point(x, y - z), Point(x + 2 * z - 1, y + z - 1), Point(x - 2 * z + 1, y + z - 1)]);
+    end;
     shpCross:
+    begin
+      CalcZ(8);
+      if z = 1 then
       begin
-        CalcZ(8);
-        if z = 1 then
-        begin
-          Canvas.MoveTo(x - 2, y - 2);
-          Canvas.LineTo(x + 3, y + 3);
-          Canvas.MoveTo(x + 2, y - 2);
-          Canvas.LineTo(x - 3, y + 3);
-        end
-        else
-        begin
-          z := z - 1;
-          Canvas.Polygon([Point(x + z * 2, y - z * 3), Point(x + z * 3, y - z * 2), Point(x - z * 2, y + z * 3), Point(x - 3 * z, y + z * 2)]);
-          Canvas.Polygon([Point(x - z * 2, y - z * 3), Point(x - z * 3, y - z * 2), Point(x + z * 2, y + z * 3), Point(x + 3 * z, y + z * 2)]);
-        end;
+        Canvas.MoveTo(x - 2, y - 2);
+        Canvas.LineTo(x + 3, y + 3);
+        Canvas.MoveTo(x + 2, y - 2);
+        Canvas.LineTo(x - 3, y + 3);
+      end
+      else
+      begin
+        z := z - 1;
+        Canvas.Polygon([Point(x + z * 2, y - z * 3), Point(x + z * 3, y - z * 2), Point(x - z * 2, y + z * 3), Point(x - 3 * z, y + z * 2)]);
+        Canvas.Polygon([Point(x - z * 2, y - z * 3), Point(x - z * 3, y - z * 2), Point(x + z * 2, y + z * 3), Point(x + 3 * z, y + z * 2)]);
       end;
+    end;
     shpStar:
-      begin
-        x := (R.Right - R.Left) div 2 + R.Left;
-        y := (R.Bottom - R.Top) div 2 + R.Top;
-        Canvas.Pen.Color := Color;
-        Canvas.MoveTo(x, y - 2);
-        Canvas.LineTo(x, y + 3);
-        Canvas.MoveTo(x - 2, y - 1);
-        Canvas.LineTo(x, y + 1);
-        Canvas.MoveTo(x + 2, y - 1);
-        Canvas.LineTo(x, y + 1);
-        Canvas.MoveTo(x + 2, y + 1);
-        Canvas.LineTo(x, y - 1);
-        Canvas.MoveTo(x - 2, y + 1);
-        Canvas.LineTo(x, y - 1);
-      end;
+    begin
+      x := (R.Right - R.Left) div 2 + R.Left;
+      y := (R.Bottom - R.Top) div 2 + R.Top;
+      Canvas.Pen.Color := Color;
+      Canvas.MoveTo(x, y - 2);
+      Canvas.LineTo(x, y + 3);
+      Canvas.MoveTo(x - 2, y - 1);
+      Canvas.LineTo(x, y + 1);
+      Canvas.MoveTo(x + 2, y - 1);
+      Canvas.LineTo(x, y + 1);
+      Canvas.MoveTo(x + 2, y + 1);
+      Canvas.LineTo(x, y - 1);
+      Canvas.MoveTo(x - 2, y + 1);
+      Canvas.LineTo(x, y - 1);
+    end;
     shpOK, shpCheck:
-      begin
-        CalcZ(9);
-        Canvas.Polygon([Point(x - z * 3, y - z), Point(x - z * 3, y + z), Point(x - z, y + z * 3), Point(x + z * 3, y - z), Point(x + z * 3, y - z * 3), Point(x - z, y + z)]);
-      end;
+    begin
+      CalcZ(9);
+      Canvas.Polygon([Point(x - z * 3, y - z), Point(x - z * 3, y + z), Point(x - z, y + z * 3), Point(x + z * 3, y - z), Point(x + z * 3, y - z * 3), Point(x - z, y + z)]);
+    end;
     shpMinus:
-      begin
-        x := (R.Right - R.Left) div 2 + R.Left;
-        y := (R.Bottom - R.Top) div 2 + R.Top;
-        Canvas.Pen.Color := Color;
-        Canvas.MoveTo(x - 3, y);
-        Canvas.LineTo(x + 4, y);
-      end;
+    begin
+      x := (R.Right - R.Left) div 2 + R.Left;
+      y := (R.Bottom - R.Top) div 2 + R.Top;
+      Canvas.Pen.Color := Color;
+      Canvas.MoveTo(x - 3, y);
+      Canvas.LineTo(x + 4, y);
+    end;
     shpPlus:
-      begin
-        x := (R.Right - R.Left) div 2 + R.Left;
-        y := (R.Bottom - R.Top) div 2 + R.Top;
-        Canvas.Pen.Color := Color;
-        Canvas.MoveTo(x - 3, y);
-        Canvas.LineTo(x + 4, y);
-        Canvas.MoveTo(x, y - 3);
-        Canvas.LineTo(x, y + 4);
-      end;
+    begin
+      x := (R.Right - R.Left) div 2 + R.Left;
+      y := (R.Bottom - R.Top) div 2 + R.Top;
+      Canvas.Pen.Color := Color;
+      Canvas.MoveTo(x - 3, y);
+      Canvas.LineTo(x + 4, y);
+      Canvas.MoveTo(x, y - 3);
+      Canvas.LineTo(x, y + 4);
+    end;
     shpDiv:
-      begin
-        x := (R.Right - R.Left) div 2 + R.Left;
-        y := (R.Bottom - R.Top) div 2 + R.Top;
-        Canvas.Pen.Color := Color;
-        Canvas.MoveTo(x, y - 3);
-        Canvas.LineTo(x, y - 1);
-        Canvas.MoveTo(x - 3, y);
-        Canvas.LineTo(x + 4, y);
-        Canvas.MoveTo(x, y + 3);
-        Canvas.LineTo(x, y + 1);
-      end;
+    begin
+      x := (R.Right - R.Left) div 2 + R.Left;
+      y := (R.Bottom - R.Top) div 2 + R.Top;
+      Canvas.Pen.Color := Color;
+      Canvas.MoveTo(x, y - 3);
+      Canvas.LineTo(x, y - 1);
+      Canvas.MoveTo(x - 3, y);
+      Canvas.LineTo(x + 4, y);
+      Canvas.MoveTo(x, y + 3);
+      Canvas.LineTo(x, y + 1);
+    end;
     shpNext:
-      begin
-        if UseRightToLeft then
-        begin
-          CalcZ(9);
-          Canvas.Polygon([Point(x - z * 2, y), Point(x + z, y - z * 3), Point(x + z, y + z * 3)]);
-        end
-        else
-        begin
-          CalcZ(9);
-          Canvas.Polygon([Point(x + 2, y), Point(x - 1, y - 3), Point(x - 1, y + 3)]);
-        end;
-      end;
-    shpLeft:
+    begin
+      if UseRightToLeft then
       begin
         CalcZ(9);
         Canvas.Polygon([Point(x - z * 2, y), Point(x + z, y - z * 3), Point(x + z, y + z * 3)]);
-      end;
-    shpRight:
+      end
+      else
       begin
         CalcZ(9);
-        Canvas.Polygon([Point(x + z * 2, y), Point(x - z, y - z * 3), Point(x - z, y + z * 3)]);
+        Canvas.Polygon([Point(x + 2, y), Point(x - 1, y - 3), Point(x - 1, y + 3)]);
       end;
+    end;
+    shpLeft:
+    begin
+      CalcZ(9);
+      Canvas.Polygon([Point(x - z * 2, y), Point(x + z, y - z * 3), Point(x + z, y + z * 3)]);
+    end;
+    shpRight:
+    begin
+      CalcZ(9);
+      Canvas.Polygon([Point(x + z * 2, y), Point(x - z, y - z * 3), Point(x - z, y + z * 3)]);
+    end;
     shpPoint:
-      begin
-        CalcZ(6);
-        Canvas.Ellipse(x - z * 2, y - z * 2, x + z * 3, y + z * 3);
-      end;
+    begin
+      CalcZ(6);
+      Canvas.Ellipse(x - z * 2, y - z * 2, x + z * 3, y + z * 3);
+    end;
     shpPin:
+    begin
       begin
-        begin
-          CalcZ(8);
-          Canvas.Pen.Color := Color;
-          Canvas.MoveTo(x - z * 2, y - z * 2);
-          Canvas.LineTo(x + z * 3, y + z * 3);
-          Canvas.MoveTo(x - z * 1, y - z * 1);
-          Canvas.LineTo(x + z * 1, y - z * 3);
-          Canvas.LineTo(x + z * 3, y - z * 1);
-          Canvas.LineTo(x + z * 1, y + z * 1);
-          Canvas.MoveTo(x - z * 3, y + z * 3);
-          Canvas.LineTo(x, y);
-          Canvas.MoveTo(x - z * 2, y + z * 3);
-          Canvas.LineTo(x + z * 1, y);
-          Canvas.MoveTo(x - z * 3, y + z * 2);
-          Canvas.LineTo(x, y - z * 1);
-        end;
+        CalcZ(8);
+        Canvas.Pen.Color := Color;
+        Canvas.MoveTo(x - z * 2, y - z * 2);
+        Canvas.LineTo(x + z * 3, y + z * 3);
+        Canvas.MoveTo(x - z * 1, y - z * 1);
+        Canvas.LineTo(x + z * 1, y - z * 3);
+        Canvas.LineTo(x + z * 3, y - z * 1);
+        Canvas.LineTo(x + z * 1, y + z * 1);
+        Canvas.MoveTo(x - z * 3, y + z * 3);
+        Canvas.LineTo(x, y);
+        Canvas.MoveTo(x - z * 2, y + z * 3);
+        Canvas.LineTo(x + z * 1, y);
+        Canvas.MoveTo(x - z * 3, y + z * 2);
+        Canvas.LineTo(x, y - z * 1);
       end;
+    end;
   end;
 end;
 
@@ -253,7 +256,7 @@ begin
     r.Bottom := r.Bottom - 2;
     InflateRect(r, -1, -1);
     Canvas.Rectangle(r);
-  end
+  end;
 end;
 
 procedure DrawTable(Canvas: TCanvas; const vRect: TRect; Chairs: Integer; Center, Opaque: Boolean);
