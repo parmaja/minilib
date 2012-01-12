@@ -30,7 +30,8 @@ const
   ID_SECTION_FOOTERPAGE = ID_SECTION_BASE + 5;
   ID_SECTION_HEADERDETAILS = ID_SECTION_BASE + 6;
   ID_SECTION_DETAILS = ID_SECTION_BASE + 7;
-  ID_SECTION_LAST = ID_SECTION_BASE + 8;
+  ID_SECTION_FOOTERDETAILS = ID_SECTION_BASE + 8;
+  ID_SECTION_LAST = ID_SECTION_BASE + 9;
 
 type
   TmnrSection = class;
@@ -240,6 +241,7 @@ type
     function GetSection: TmnrSection;
     procedure SetName(const Value: string);
     procedure SetWidth(const Value: Integer);
+    procedure SetLayout(const Value: TmnrLayout);
   public
     constructor Create(vNodes: TmnrNodes); override;
     constructor AutoCreate(vNodes: TmnrNodes; const vName: string; vWidth: Integer = 100); virtual;
@@ -248,7 +250,7 @@ type
     property Next: TmnrDesignCell read GetNext;
     property Prior: TmnrDesignCell read GetPrior;
     property Width: Integer read FWidth write SetWidth default 100;
-    property Layout: TmnrLayout read FLayout write FLayout;
+    property Layout: TmnrLayout read FLayout write SetLayout;
     property Cells: TmnrDesignCells read GetCells;
     property Section: TmnrSection read GetSection;
     property Report: TmnrCustomReport read GetReport;
@@ -665,6 +667,7 @@ begin
   FRowsListIndex := nil;
   FDetailTotals := TmnrSection.Create(nil);
   FSummary := TmnrSection.Create(nil);
+
   CreateSections(FSections);
   CreateLayouts(FLayouts);
   Created;
@@ -1213,54 +1216,54 @@ begin
     fParams.Number := 0;
     case s.LoopWay of
       slwSingle:
+      begin
+        fparams.AcceptMode := acmAccept;
+        fparams.FetchMode := fmFirst;
+        s.DoFetch(fparams);
+        if fparams.AcceptMode = acmAccept then
         begin
-          fparams.AcceptMode := acmAccept;
-          fparams.FetchMode := fmFirst;
+          s.FillNow(fparams, nil);
+          s.Sections.Loop;
+        end;
+      end;
+      slwMulti:
+      begin
+        fparams.FetchMode := fmFirst;
+        fparams.AcceptMode := acmAccept;
+        r := nil;
+        while not Report.Canceled and (fparams.AcceptMode = acmAccept) do
+        begin
           s.DoFetch(fparams);
+          if (s.ClassID = sciDetails) and (fparams.FetchMode = fmFirst) then //improve add referance on first accepted ...
+            r := s.NewReference;
+
           if fparams.AcceptMode = acmAccept then
           begin
-            s.FillNow(fparams, nil);
+            s.FillNow(fparams, r);
             s.Sections.Loop;
-          end;
-        end;
-      slwMulti:
-        begin
-          fparams.FetchMode := fmFirst;
-          fparams.AcceptMode := acmAccept;
-          r := nil;
-          while not Report.Canceled and (fparams.AcceptMode = acmAccept) do
+          end
+          else if (fparams.AcceptMode = acmSkip) and (s.ClassID = sciHeaderDetails) then
+            s.Sections.Loop;
+
+          if (fparams.AcceptMode = acmEof) and (s.Items.Count <> 0) then
           begin
-            s.DoFetch(fparams);
-            if (s.ClassID = sciDetails) and (fparams.FetchMode = fmFirst) then //improve add referance on first accepted ...
-              r := s.NewReference;
-
-            if fparams.AcceptMode = acmAccept then
+            if (r <> nil) and s.AppendTotals then
             begin
-              s.FillNow(fparams, r);
-              s.Sections.Loop;
-            end
-            else if (fparams.AcceptMode = acmSkip) and (s.ClassID = sciHeaderDetails) then
-              s.Sections.Loop;
-
-            if (fparams.AcceptMode = acmEof) and (s.Items.Count <> 0) then
-            begin
-              if (r <> nil) and s.AppendTotals then
-              begin
-                s.DoAppendTotals(Report.FDetailTotals);
-              end;
+              s.DoAppendTotals(Report.FDetailTotals);
             end;
-
-            if fparams.FetchMode = fmFirst then
-              fparams.FetchMode := fmNext;
           end;
 
-        //Summary
-          if (s.ClassID = sciHeaderDetails) then
-          begin
-            s.Sections.DoAppendSummary(Report.FSummary);
-          end;
+          if fparams.FetchMode = fmFirst then
+            fparams.FetchMode := fmNext;
+        end;
 
-        end; //case slwMulti:
+      //Summary
+        if (s.ClassID = sciHeaderDetails) then
+        begin
+          s.Sections.DoAppendSummary(Report.FSummary);
+        end;
+
+      end; //case slwMulti:
     end;
     s := s.Next;
   end;
@@ -1799,14 +1802,19 @@ begin
     Result := nil;
 end;
 
+procedure TmnrDesignCell.SetLayout(const Value: TmnrLayout);
+begin
+  FLayout := Value;
+end;
+
 procedure TmnrDesignCell.SetName(const Value: string);
 begin
   if FName <> Value then
   begin
     FName := Value;
-    if FLayout <> nil then FLayout.FDesignerCell := nil;
-    FLayout := Report.Layouts.Find(Value);
-    if FLayout <> nil then FLayout.FDesignerCell := Self
+    if Layout <> nil then Layout.FDesignerCell := nil;
+    Layout := Report.Layouts.Find(Value);
+    if Layout <> nil then Layout.FDesignerCell := Self
   end;
 end;
 

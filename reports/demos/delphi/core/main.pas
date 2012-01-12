@@ -33,11 +33,12 @@ type
   TSimpleDetailsReport = class(TmnrCustomReport)
   protected
     BigPos, SubPos: Integer;
-    HeaderDeatils, Details: TmnrSection;
+    HeaderDeatils, Details, FooterDetails: TmnrSection;
     procedure CreateSections(vSections: TmnrSections); override;
     procedure CreateLayouts(vLayouts: TmnrLayouts); override;
     procedure HeadersFetch(var vParams: TmnrFetch);
     procedure DetailsFetch(var vParams: TmnrFetch);
+    procedure FooterDetailsFetch(var vParams: TmnrFetch);
     procedure Load; override;
     function CreateProfiler: TmnrProfiler; override;
   public
@@ -222,6 +223,7 @@ begin
   inherited;
   HeaderDeatils := vSections.RegisterSection('HeaderDetails', 'ÑÇÓ ÇáÊÞÑíÑ', sciHeaderDetails, ID_SECTION_HEADERREPORT, HeadersFetch);
   Details := HeaderDeatils.Sections.RegisterSection('Details', 'ÇáÊÞÑíÑ', sciDetails, ID_SECTION_DETAILS, DetailsFetch);
+  FooterDetails := HeaderDeatils.Sections.RegisterSection('FooterDetails', 'ÇÓÝá ÇáÊÞÑíÑ', sciDetails, ID_SECTION_FOOTERDETAILS, FooterDetailsFetch);
 
   Details.AppendTotals := True;
   Details.AppendSummary := True;
@@ -255,7 +257,16 @@ begin
       SubPos := 0
     else
       Inc(SubPos);
-    if SubPos>6000 then
+    if SubPos>60 then
+      AcceptMode := acmEof;
+  end;
+end;
+
+procedure TSimpleDetailsReport.FooterDetailsFetch(var vParams: TmnrFetch);
+begin
+  with vParams do
+  begin
+    if FetchMode<>fmFirst then
       AcceptMode := acmEof;
   end;
 end;
