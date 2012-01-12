@@ -42,7 +42,7 @@ const
 { #define SQLITE_TEXT  3  // See below  }
   SQLITE_BLOB = 4;   
   SQLITE_NULL = 5;   
-  SQLITE_TEXT = 3;   
+  SQLITE_TEXT = 3;
   SQLITE3_TEXT = 3;   
   SQLITE_UTF8 = 1;       
   SQLITE_UTF16LE = 2;       
@@ -86,7 +86,7 @@ const
    SQLITE_COPY = 0;   
    SQLITE_CREATE_INDEX = 1;   
    SQLITE_CREATE_TABLE = 2;   
-   SQLITE_CREATE_TEMP_INDEX = 3;   
+   SQLITE_CREATE_TEMP_INDEX = 3;
    SQLITE_CREATE_TEMP_TABLE = 4;   
    SQLITE_CREATE_TEMP_TRIGGER = 5;   
    SQLITE_CREATE_TEMP_VIEW = 6;   

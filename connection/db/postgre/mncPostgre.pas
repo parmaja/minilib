@@ -40,7 +40,6 @@ type
     procedure DoConnect; override;
     procedure DoDisconnect; override;
     function GetConnected:Boolean; override;
-    class function GetMode:TmncTransactionMode; override;
   protected
     procedure RaiseError(Error: Boolean; const ExtraMsg: string = '');
   public
@@ -60,12 +59,11 @@ type
     function GetConnection: TmncPGConnection;
     procedure SetConnection(const AValue: TmncPGConnection);
     procedure SetExclusive(const AValue: Boolean);
+    function GetDBHandle: PPGconn;
   protected
     function NewToken: string;//used for new command name
     procedure DoStart; override;
-    procedure DoCommit; override;
-    procedure DoRollback; override;
-    procedure DoStop; override;
+    procedure DoStop(How: TmncSessionAction; Retaining: Boolean); override;
     function GetActive: Boolean; override;
   public
     constructor Create(vConnection: TmncConnection); override;
@@ -73,7 +71,7 @@ type
     procedure Execute(SQL: string);
     property Exclusive: Boolean read FExclusive write SetExclusive;
     property Connection: TmncPGConnection read GetConnection write SetConnection;
-    property DBHandle: PPGconn read FDBHandle;
+    property DBHandle: PPGconn read GetDBHandle;
   end;
 
   TArrayOfPChar = array of PChar;
@@ -109,7 +107,7 @@ type
     property Connection: TmncPGConnection read GetConnection;
     property Session: TmncPGSession read GetSession write SetSession;
   public
-    constructor Create(vSession:TmncSession);
+    constructor Create(vSession:TmncPGSession);
     destructor Destroy; override;
     procedure Clear; override;
     function GetRowsChanged: Integer;
@@ -121,28 +119,6 @@ type
 
 implementation
 
-const
-  Oid_Bool     = 16;
-  Oid_Bytea    = 17;
-  Oid_Text     = 25;
-  Oid_Oid      = 26;
-  Oid_Name     = 19;
-  Oid_Int8     = 20;
-  Oid_int2     = 21;
-  Oid_Int4     = 23;
-  Oid_Float4   = 700;
-  Oid_Money    = 790;
-  Oid_Float8   = 701;
-  Oid_Unknown  = 705;
-  Oid_bpchar   = 1042;
-  Oid_varchar  = 1043;
-  Oid_timestamp = 1114;
-  oid_date      = 1082;
-  oid_time      = 1083;
-  oid_numeric   = 1700;
-
-var
-  IsPostgresInitialised: Boolean = False;
 
 procedure TmncPGConnection.RaiseError(Error: Boolean; const ExtraMsg: string);
 var
@@ -174,15 +150,8 @@ var
   PGOptions, PGtty: Pchar;
   aPort: string;
 begin
-  if not IsPostgresInitialised then
-  begin
-    InitialisePostgres3;
-    IsPostgresInitialised := True;
-    if not Assigned(PQsetdbLogin) then
-      raise EmncException.Create('PQsetdbLogin not found in libpq');
-    if not Assigned(PQprepare) then
-      raise EmncException.Create('PQprepare not found in libpq');
-  end;
+  if not Assigned(PQsetdbLogin) then
+    raise EmncException.Create('PQsetdbLogin not assigned');
   PGOptions := nil;
   PGtty := nil;
   if Port <> '' then
@@ -234,18 +203,10 @@ begin
   Execute('BEGIN');
 end;
 
-procedure TmncPGSession.DoCommit;
+procedure TmncPGSession.DoStop(How: TmncSessionAction; Retaining: Boolean);
 begin
-  Execute('COMMIT');
-end;
-
-procedure TmncPGSession.DoRollback;
-begin
-  Execute('ROLLBACK');
-end;
-
-procedure TmncPGSession.DoStop;
-begin
+  //Execute('COMMIT');
+  //Execute('ROLLBACK');
   if FDBHandle <> nil then
     Connection.InternalDisconnect(FDBHandle);
 end;
@@ -287,9 +248,12 @@ begin
   Result := inherited Connection as TmncPGConnection;
 end;
 
-class function TmncPGConnection.GetMode: TmncTransactionMode;
+function TmncPGSession.GetDBHandle: PPGconn;
 begin
-  Result := smMultiTransactions;
+  if Connection<>nil then
+    Result := Connection.Handle
+  else
+    Result := nil;
 end;
 
 procedure TmncPGSession.SetConnection(const AValue: TmncPGConnection);
@@ -383,9 +347,10 @@ begin
   FBOF := True;
 end;
 
-constructor TmncPGCommand.Create(vSession:TmncSession);
+constructor TmncPGCommand.Create(vSession:TmncPGSession);
 begin
-  inherited Create(vSession);
+  inherited Create;
+  Session := vSession;
   FHandle := Session.NewToken;
 end;
 
@@ -420,8 +385,9 @@ begin
     end
     else
       p := nil;
-    FF := 1;//format as binnary.
+    FF :=   1;//format as binnary.
     FStatment := PQexecPrepared(Session.DBHandle, PChar(FHandle), Params.Count, P, nil, nil, FF);
+    //FStatment := PQexec(Session.DBHandle, PChar(SQL.Text));
   finally
     FreeParamValues(Values);
   end;
@@ -494,13 +460,18 @@ var
   aName: string;
   r: PPGresult;
 begin
-  Fields.Clear;
+  //Fields.Clear;
   c := PQnfields(FStatment);
   for i := 0 to c - 1 do
   begin
     aName :=  DequoteStr(PQfname(FStatment, i));
-    Fields.Add(aName);
+    Columns.Add(aName, ftUnkown);
   end;
+end;
+
+function BEtoN(Val: Integer): Integer;
+begin
+  Result := Val;
 end;
 
 procedure TmncPGCommand.FetchValues;
@@ -514,12 +485,12 @@ var
   p: PChar;
   i: Integer;
   c: Integer;
-  aCurrent: TmncRecord;
+  aCurrent: TmncFields;
 begin
   c := PQnfields(FStatment);
   if c > 0 then
   begin
-    aCurrent := TmncRecord.Create(Fields);
+    aCurrent := TmncFields.Create(Columns);
     for i := 0 to c - 1 do
     begin
       if PQgetisnull(Statment, FTuple, i) <> 0 then
@@ -550,7 +521,8 @@ begin
           Oid_TimeStamp:
           begin
             t := BEtoN(pint64(p)^);
-            v := TDateTime(t);//todo
+            //v := TDateTime(t);//todo
+            v := t;//todo
           end;
           Oid_Bool:
              v := (p[0] <> #0);
@@ -561,7 +533,7 @@ begin
         aCurrent.Add(i, v);
       end;
     end;
-    Current := aCurrent;
+    Fields := aCurrent;
   end;
 end;
 
