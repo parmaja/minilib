@@ -18,12 +18,14 @@ type
     Button3: TButton;
     Button4: TButton;
     Button5: TButton;
+    Button6: TButton;
     Timer1: TTimer;
     procedure Button1Click(Sender: TObject);
     procedure Button2Click(Sender: TObject);
     procedure Button3Click(Sender: TObject);
     procedure Button4Click(Sender: TObject);
     procedure Button5Click(Sender: TObject);
+    procedure Button6Click(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
   private    { private declarations }
   public
@@ -70,6 +72,12 @@ begin
   Timer1.Enabled := True;
 end;
 
+procedure TForm1.Button6Click(Sender: TObject);
+begin
+  Msg.Ask('Before Exit', ['Save', 'Discard', 'Dont close'], 0);
+  Msg.Ask('Again Before Exit', [MsgB('Save', mbCancel), MsgB('Discard'), MsgB('Dont close')], 0);
+end;
+
 procedure TForm1.Timer1Timer(Sender: TObject);
 begin
   Timer1.Enabled := False;
@@ -77,4 +85,4 @@ begin
 end;
 
 end.
-
+
