@@ -7,7 +7,7 @@ unit mncSQLiteHeader;
  *            See the file COPYING.MLGPL, included in this distribution,
  *
  * @author FPC Team
- *         Zaher Dirkey <zaher at parmaja dot com>
+ *         modified by Zaher Dirkey <zaher at parmaja dot com>
  *
  *  This file ported from FPC sqlite3.inc, just to be compatiple in both Delphi and FPC
  *}
@@ -48,7 +48,7 @@ const
 {$IFDEF WINDOWS}
   Sqlite3Lib = 'sqlite3.dll';
 {$ELSE}
-  Sqlite3Lib = 'libsqlite3.so';
+  Sqlite3Lib = 'libsqlite3.'+sharedsuffix;
 {$ENDIF}
 
   SQLITE_INTEGER = 1;
@@ -439,7 +439,7 @@ begin
 //  @(sqlite3_rekey) := GetProcAddress(LibHandle,'sqlite3_rekey');
 //  @(sqlite3_sleep) := GetProcAddress(LibHandle,'sqlite3_sleep');
 //  @(sqlite3_expired) := GetProcAddress(LibHandle,'sqlite3_expired');
-// function sqlite3_global_recover:longint;cdecl;
+//  function sqlite3_global_recover:longint;cdecl;
 end;
 
 function TryInitializeSqlite(const LibraryName: string): Integer;
