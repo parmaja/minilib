@@ -420,6 +420,8 @@ type
     property DefaultSCM: string read FDefaultSCM write FDefaultSCM;
   end;
 
+  TmneSynCompletion = class;
+
   TFileCategoryKind = (fckPublish);
   TFileCategoryKinds = set of TFileCategoryKind;
 
@@ -434,7 +436,7 @@ type
     function GetHighlighter: TSynCustomHighlighter;
     function GetItem(Index: Integer): TFileGroup;
   protected
-    FCompletion: TSynCompletion;
+    FCompletion: TmneSynCompletion;
     procedure OnExecuteCompletion(Sender: TObject); virtual;
     function CreateHighlighter: TSynCustomHighlighter; virtual;
     procedure InitCompletion(vSynEdit: TCustomSynEdit); virtual;
@@ -448,7 +450,7 @@ type
     procedure EnumExtensions(vExtensions: TStringList);
     property EditorFileClass: TEditorFileClass read FEditorFileClass;
     property Highlighter: TSynCustomHighlighter read GetHighlighter;
-    property Completion: TSynCompletion read FCompletion;
+    property Completion: TmneSynCompletion read FCompletion;
     property Kind: TFileCategoryKinds read FKind;
     property Items[Index: Integer]: TFileGroup read GetItem; default;
   end;
@@ -734,6 +736,14 @@ type
   published
   end;
 
+  { TmneSynCompletion }
+
+  TmneSynCompletion = class(TSynCompletion)
+  protected
+    function OwnedByEditor: Boolean; override;
+  public
+  end;
+
 function SelectFolder(const Caption: string; const Root: WideString; var Directory: string): Boolean;
 procedure SpliteStr(S, Separator: string; var Name, Value: string);
 procedure EnumFiles(Folder, Filter: string; FileList: TStringList);
@@ -839,6 +849,13 @@ begin
       S := S + #$D;
     Stream.WriteBuffer(Pointer(S)^, Length(S));
   end;
+end;
+
+{ TmneSynCompletion }
+
+function TmneSynCompletion.OwnedByEditor: Boolean;
+begin
+  Result := False;
 end;
 
 { TCustomFileCategory }

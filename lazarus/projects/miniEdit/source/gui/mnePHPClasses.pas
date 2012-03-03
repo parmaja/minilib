@@ -444,7 +444,7 @@ end;
 
 procedure TXHTMLFileCategory.InitCompletion(vSynEdit: TCustomSynEdit);
 begin
-  FCompletion := TSynCompletion.Create(nil);
+  FCompletion := TmneSynCompletion.Create(nil);
   FCompletion.Width := 340;
   FCompletion.EndOfTokenChr := '{}()[].<>/\:!$&*+-=%';
   FCompletion.OnExecute := @OnExecuteCompletion;
