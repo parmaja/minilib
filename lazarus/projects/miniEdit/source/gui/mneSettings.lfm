@@ -40,25 +40,25 @@ object EditorSettingForm: TEditorSettingForm
     Height = 238
     Top = 3
     Width = 419
-    ActivePage = TabSheet2
-    TabIndex = 0
+    ActivePage = TabSheet4
+    TabIndex = 1
     TabOrder = 2
     object TabSheet2: TTabSheet
       Caption = 'Options'
-      ClientHeight = 204
-      ClientWidth = 413
+      ClientHeight = 212
+      ClientWidth = 411
       ImageIndex = 1
       object Label3: TLabel
         Left = 7
         Height = 14
         Top = 80
-        Width = 223
+        Width = 215
         Caption = 'This words will be cached and updated every'
         ParentColor = False
       end
       object CollectTimeoutEdit: TEdit
         Left = 224
-        Height = 23
+        Height = 21
         Top = 77
         Width = 61
         TabOrder = 0
@@ -66,7 +66,7 @@ object EditorSettingForm: TEditorSettingForm
       end
       object CollectTimeoutSpn: TUpDown
         Left = 285
-        Height = 23
+        Height = 21
         Top = 77
         Width = 15
         Associate = CollectTimeoutEdit
@@ -78,25 +78,25 @@ object EditorSettingForm: TEditorSettingForm
       end
       object CollectAutoCompleteChk: TCheckBox
         Left = 7
-        Height = 22
+        Height = 17
         Top = 53
-        Width = 322
+        Width = 305
         Caption = 'Auto complete variables and identifiers in whole project folder'
         TabOrder = 2
       end
       object SendOutputToNewFileChk: TCheckBox
         Left = 7
-        Height = 22
+        Height = 17
         Top = 30
-        Width = 136
+        Width = 127
         Caption = 'Send output to new file'
         TabOrder = 3
       end
       object AutoStartDebugServerChk: TCheckBox
         Left = 7
-        Height = 22
+        Height = 17
         Top = 9
-        Width = 202
+        Width = 189
         Caption = 'Auto start debug mode when startup'
         TabOrder = 4
       end
@@ -104,15 +104,15 @@ object EditorSettingForm: TEditorSettingForm
         Left = 7
         Height = 14
         Top = 100
-        Width = 338
+        Width = 327
         Caption = 'You must have a project and define the root folder to use this feature.'
         ParentColor = False
       end
     end
     object TabSheet4: TTabSheet
       Caption = 'Extensions'
-      ClientHeight = 204
-      ClientWidth = 413
+      ClientHeight = 212
+      ClientWidth = 411
       ImageIndex = 3
       object Label9: TLabel
         Left = 5
@@ -132,22 +132,23 @@ object EditorSettingForm: TEditorSettingForm
       end
       object ExtensionsGrid: TStringGrid
         Left = 2
-        Height = 173
+        Height = 166
         Top = 41
-        Width = 404
+        Width = 402
         Anchors = [akTop, akLeft, akRight, akBottom]
+        AutoFillColumns = True
         ColCount = 2
         DefaultRowHeight = 18
-        Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goDrawFocusSelected, goColSizing, goEditing, goAlwaysShowEditor, goThumbTracking]
+        Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goDrawFocusSelected, goColSizing, goEditing, goThumbTracking]
         RowCount = 3
         TabOrder = 0
         TitleFont.Height = -11
         TitleFont.Name = 'MS Sans Serif'
         ColWidths = (
           129
-          219
+          269
         )
       end
     end
   end
-end
+end

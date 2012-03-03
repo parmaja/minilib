@@ -21,13 +21,14 @@ uses
   {$else}
   Windows,
   {$endif}
+  mnDrivers,
   contnrs,
   Classes,
   Graphics,
   SysUtils;
 
 type
-  EmnPriner = class(Exception);
+  EmnPrinter = class(Exception);
 
   TmnPrintStyle = (mnpsLines, mnpsCanvas, mnpsStreamCanvas);
   TmnDensity = (mndHi, mndMedium, mndLow);
@@ -321,7 +322,8 @@ begin
   Result.Name := vPrinterClass.PrinterName;
   Result.Title := vPrinterClass.PrinterTitle;
   Result.PrinterClass := vPrinterClass;
-  Inherited Add(Result);
+  inherited Add(Result);
+  mnRegisteredDrivers.Add('SerialPrinters', vPrinterClass);
 end;
 
 function TmnRegisteredPrinters.Find(vName: string): TmnRegisteredPrinter;
@@ -363,7 +365,7 @@ begin
   if P <> nil then
     Result := P.PrinterClass.Create(vStyle, vStream)
   else
-    raise EmnPriner.Create('Printer ' + vName + ' not found');
+    raise EmnPritner.Create('Printer ' + vName + ' not found');
 end;
 
 end.
