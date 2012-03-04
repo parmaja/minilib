@@ -92,18 +92,18 @@
         <MinVersion Major="1" Valid="True"/>
       </Item6>
       <Item7>
-        <PackageName Value="FCL"/>
-        <MinVersion Major="1" Release="1" Valid="True"/>
+        <PackageName Value="LCL"/>
       </Item7>
       <Item8>
         <PackageName Value="LCLBase"/>
         <MinVersion Major="1" Release="1" Valid="True"/>
       </Item8>
       <Item9>
-        <PackageName Value="LCL"/>
+        <PackageName Value="FCL"/>
+        <MinVersion Major="1" Release="1" Valid="True"/>
       </Item9>
     </RequiredPackages>
-    <Units Count="22">
+    <Units Count="23">
       <Unit0>
         <Filename Value="mne.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -257,6 +257,11 @@
         <ResourceBaseClass Value="DataModule"/>
         <UnitName Value="mneResources"/>
       </Unit21>
+      <Unit22>
+        <Filename Value="..\editor\EditorEngine.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="EditorEngine"/>
+      </Unit22>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
@@ -266,14 +271,11 @@
       <Filename Value="..\..\bin\mne.exe"/>
     </Target>
     <SearchPaths>
-      <IncludeFiles Value="W:\home\pascal\projects\LPE\source\editor\;W:\home\pascal\projects\LPE\source\lib\;$(ProjOutDir)"/>
-      <OtherUnitFiles Value="..\editor;..\lib;..\addons;..\..\..\..\lib;..\..\..\..\..\lib;$(LazarusDir)\lcl\units\$(TargetCPU)-$(TargetOS);$(LazarusDir)\lcl\units\$(TargetCPU)-$(TargetOS)\$(LCLWidgetType)"/>
+      <IncludeFiles Value="$(ProjOutDir)"/>
+      <OtherUnitFiles Value="..\editor;..\lib;..\addons;..\..\..\..\lib;..\..\..\..\..\lib"/>
       <UnitOutputDirectory Value="..\..\units"/>
     </SearchPaths>
     <Linking>
-      <Debugging>
-        <DebugInfoType Value="dsDwarf2Set"/>
-      </Debugging>
       <Options>
         <Win32>
           <GraphicApplication Value="True"/>

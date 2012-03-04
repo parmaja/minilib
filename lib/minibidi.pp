@@ -1,7 +1,11 @@
 unit minibidi;
-{$MODE objfpc}{$H+} //Only FreePascal
+{$ifdef FPC}
+{$MODE objfpc}
+{$else}
+{$endif}
+{$H+}
+
 (************************************************************************
-* $Id: minibidi.c,v 1.22 2005/04/23 23:34:40 khalifa Exp $
 *
 * ------------
 * Description:
@@ -30,11 +34,6 @@ License under MIT license
 
 ***********************************************************************}
 
-{
-while(i++ < c
-while(++i <c
-}
-
 interface
 
 uses
@@ -52,6 +51,10 @@ function DoBidi(Line: PWideChar; Count: Integer; ApplyShape: Boolean = True; Reo
 implementation
 
 const
+  {$ifdef FPC}
+  {$else}
+  cMAX = MaxInt div sizeof(Integer) - 1;
+  {$endif}
   MAX_STACK = 60;
 
   LMASK	= $3F;	{ Embedding Level mask }
@@ -88,7 +91,12 @@ type
     ctON { Other Neutrals }
     );
 
+  {$ifdef FPC}
   PCharacterType = ^TCharacterType;
+  {$else}
+  TCharacterTypeArray = array[0..cMAX] of TCharacterType;
+  PCharacterType = ^TCharacterTypeArray;
+  {$endif}
 
   { Shaping Types }
 
@@ -104,7 +112,12 @@ type
 //  PShapeType = ^TShapeType;
 
   TLevel = Integer;
+  {$ifdef FPC}
   PLevel = ^TLevel;
+  {$else}
+  TLevelArray = array[0..cMAX] of TLevel;
+  PLevel = ^TLevelArray;
+  {$endif}
 
 {$I minibidi.inc}
 
