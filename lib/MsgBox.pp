@@ -34,7 +34,7 @@ type
     FTitle: String;
     //Return an index of Choise/Button
     function ShowMessage(const vText: string; Choices: array of TmsgSelect; DefaultChoice: Integer; CancelChoice: Integer; Kind: TmsgKind): Integer; virtual; abstract;
-    function ShowMessage(var Answer: string; const Text: string; Choices: array of TmsgSelect; DefaultChoice: Integer; CancelChoice: Integer; Kind: TmsgKind): Integer; virtual; abstract;
+    function ShowMessage(var Answer: string; const vText: string; Choices: array of TmsgSelect; DefaultChoice: Integer; CancelChoice: Integer; Kind: TmsgKind): Integer; virtual; abstract;
     //Short style of message
     function ShowMessage(const vText: string; Choices: TmsgChoices; DefaultChoice: TmsgChoice; CancelChoice: TmsgChoice; Kind: TmsgKind): TmsgChoice;
     function ShowMessage(var Answer: string; const vText: string; Choices: TmsgChoices; DefaultChoice: TmsgChoice; CancelChoice: TmsgChoice; Kind: TmsgKind): TmsgChoice;
@@ -128,8 +128,8 @@ type
   TMsgConsole = class(TMsgPrompt)
   private
   protected
-    //function ShowMessage(const vText: string; Choices: TmsgChoices; DefaultChoice: TmsgChoice; CancelChoice: TmsgChoice; Kind: TmsgKind): Integer; override;
-    //function ShowMessage(var Answer: string; const vText: string; Choices: TmsgChoices; DefaultChoice: TmsgChoice; CancelChoice: TmsgChoice; Kind: TmsgKind): Integer; override;
+    function ShowMessage(const vText: string; Choices: array of TmsgSelect; DefaultChoice: Integer; CancelChoice: Integer; Kind: TmsgKind): Integer; override;
+    function ShowMessage(var Answer: string; const vText: string; Choices: array of TmsgSelect; DefaultChoice: Integer; CancelChoice: Integer; Kind: TmsgKind): Integer; override;
     procedure ShowStatus(vText: string; Sender: TObject = nil); override;
     procedure HideStatus(Sender: TObject = nil); override;
     procedure Created; override;
@@ -479,7 +479,7 @@ begin
   WriteLn(vText);
 end;
 
-{function TMsgConsole.ShowMessage(const vText: string; Choices: TmsgChoices; DefaultChoice: TmsgChoice; CancelChoice: TmsgChoice; Kind: TmsgKind): Integer;
+function TMsgConsole.ShowMessage(const vText: string; Choices: array of TmsgSelect; DefaultChoice: Integer; CancelChoice: Integer; Kind: TmsgKind): Integer;
 var
   B: TmsgChoice;
   i, p: Integer;
@@ -487,54 +487,50 @@ var
   ch: Char;
 begin
   //SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), FOREGROUND_RED or FOREGROUND_GREEN or FOREGROUND_BLUE);
-  Write(Msg + ' [');
-  i := 0;
-  for B := Low(TmsgChoice) to High(TmsgChoice) do
-    if B in Choices then
+  Write(vText + ' [');
+  for i := 0 to Length(Choices)-1 do
+  begin
+    if i > 0 then
+      write(',');
+    s := Choices[i].Caption;
+    p := Pos('&', s);
+    if p > 0 then
     begin
-      if i > 0 then
-        write(',');
-      s := ChoiceCaptions[B];
-      p := Pos('&', s);
-      if p > 0 then
-      begin
-        write(Copy(s, 1, p - 1));
-        //SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), FOREGROUND_RED or FOREGROUND_GREEN or FOREGROUND_BLUE or FOREGROUND_INTENSITY);
-        write(Copy(s, p + 1, 1));
-        //SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), FOREGROUND_RED or FOREGROUND_GREEN or FOREGROUND_BLUE);
-        write(Copy(s, p + 2, MaxInt));
-      end
-      else
-      begin
-        write(s);
-      end;
-      Inc(i);
+      write(Copy(s, 1, p - 1));
+      //SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), FOREGROUND_RED or FOREGROUND_GREEN or FOREGROUND_BLUE or FOREGROUND_INTENSITY);
+      write(Copy(s, p + 1, 1));
+      //SetConsoleTextAttribute(GetStdHandle(STD_OUTPUT_HANDLE), FOREGROUND_RED or FOREGROUND_GREEN or FOREGROUND_BLUE);
+      write(Copy(s, p + 2, MaxInt));
+    end
+    else
+    begin
+      write(s);
     end;
+  end;
   write('] : ');
   ReadLn(ch);
   if ch = '' then
-    Result := ModalResults[DefaultChoice]
+    Result := DefaultChoice
   else
   begin
-    Result := mrNone;
-    for B := Low(TmsgChoice) to High(TmsgChoice) do
-      if B in Choices then
+    Result := 0;
+    for i := 0 to Length(Choices)-1 do
+    begin
+      s := Choices[i].Caption;
+      p := Pos('&', s);
+      if p > 0 then
       begin
-        s := ChoiceCaptions[B];
-        p := Pos('&', s);
-        if p > 0 then
+        if UpperCase(ch) = UpperCase(s[p + 1]) then
         begin
-          if UpperCase(ch) = UpperCase(s[p + 1]) then
-          begin
-            Result := ModalResults[B];
-            break;
-          end;
+          Result := i;
+          break;
         end;
       end;
+    end;
   end;
-end;}
+end;
 
-{function TMsgConsole.ShowMessage(var Answer: string; const vText: string; Choices: TmsgChoices; DefaultChoice: TmsgChoice; CancelChoice: TmsgChoice; Kind: TmsgKind): Integer;
+function TMsgConsole.ShowMessage(var Answer: string; const vText: string; Choices: array of TmsgSelect; DefaultChoice: Integer; CancelChoice: Integer; Kind: TmsgKind): Integer;
 var
   OldMode: Cardinal;
 begin
@@ -543,15 +539,15 @@ begin
 //    GetConsoleMode(GetStdHandle(STD_Input_HANDLE), OldMode);
 //    SetConsoleMode(GetStdHandle(STD_Input_HANDLE), OldMode and not ENABLE_ECHO_INPUT);
   end;
-  Write(Msg + ': ');
+  Write(vText + ': ');
   ReadLn(Answer);
   if Kind = msgkPassword then
   begin
     WriteLn('');
 //    SetConsoleMode(GetStdHandle(STD_Input_HANDLE), OldMode);
   end;
-  Result := mrOK;
-end;}
+  Result := 0;
+end;
 
 initialization
   Msg.Register(TMsgConsole);
