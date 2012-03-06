@@ -31,7 +31,6 @@ uses
   EditorEngine in '..\editor\EditorEngine.pas',
   mneResources in 'mneResources.pas' {EditorResource: TDataModule},
   SelectFiles in '..\editor\SelectFiles.pas' {SelectFileForm},
-  mneSettings in 'mneSettings.pas' {EditorSettingForm},
   SynHighlighterXHTML in '..\lib\SynHighlighterXHTML.pas',
   mneClasses in 'mneClasses.pas',
   mneConsts in 'mneConsts.pas',

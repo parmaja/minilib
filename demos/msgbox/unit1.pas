@@ -75,7 +75,7 @@ end;
 procedure TForm1.Button6Click(Sender: TObject);
 begin
   Msg.Ask('Before Exit', ['Save', 'Discard', 'Dont close'], 0);
-  Msg.Ask('Again Before Exit', [MsgB('Save', mbCancel), MsgB('Discard'), MsgB('Dont close')], 0);
+  Msg.Ask('Again Before Exit', [Choice('Save', msgcOK), Choice('Discard', msgcDiscard), Choice('Dont close', msgcCancel)], 0);
 end;
 
 procedure TForm1.Timer1Timer(Sender: TObject);

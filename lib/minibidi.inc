@@ -1,7 +1,7 @@
 { Kept near the actual table, for verification. }
 const
-  SHAPE_FIRST = #$0621;
-  SHAPE_LAST = #$064A; //need to add new set
+  SHAPE_FIRST: WideChar = #$0621;
+  SHAPE_LAST: WideChar = #$064A; //need to add new set
 
   {
     very bad Memory alignment for 32-bit machines

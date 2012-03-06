@@ -2032,14 +2032,14 @@ procedure TEditorFile.Close;
 var
   aParent: TEditorEngine;
   i: integer;
-  mr: integer;
+  mr: TmsgChoice;
 begin
   if Edited then
   begin
     mr := MsgBox.Msg.YesNoCancel('Save file ' + Name + ' before close?');
-    if mr = mrCancel then
+    if mr = msgcCancel then
       Abort
-    else if mr = mrYes then
+    else if mr = msgcYes then
       SaveFile;
   end;
 
@@ -2218,17 +2218,17 @@ end;
 
 function TEditorFile.CheckChanged: Boolean;
 var
-  mr: integer;
+  mr: TmsgChoice;
 begin
   Result := True;
   if (FileExists(Name)) and (FFileAge <> FileAge(Name)) then
   begin
     mr := MsgBox.Msg.YesNoCancel(Name + #13' was changed, update it?');
-    if mr = mrYes then
+    if mr = msgcYes then
       Reload
     else
       UpdateAge;
-    if mr = mrCancel then
+    if mr = msgcCancel then
       Result := False;
   end;
 end;

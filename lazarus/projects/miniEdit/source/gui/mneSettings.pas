@@ -129,7 +129,6 @@ end;
 
 procedure TEditorSettingForm.INIEditChange(Sender: TObject);
 begin
-
 end;
 
 end.

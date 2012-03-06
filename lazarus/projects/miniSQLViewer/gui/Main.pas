@@ -232,8 +232,9 @@ type
     procedure ClearGrid;
     procedure DoAddKeyword(AKeyword: string; AKind: integer);
     procedure Execute(ExecuteType: TExecuteType; SQLCMD: TmncSQLiteCommand; SQL:TStringList; ShowGrid:Boolean);
+    procedure OnExecuteCompletion(Sender: TObject);
     procedure FillGrid(SQLCMD: TmncSQLiteCommand);
-    procedure LoadCompletion;
+    procedure UpdateCompletion;
     function LogTime(Start: TDateTime): string;
     procedure RefreshSQLHistory(Sender: TObject);
     procedure SetLastSQLFile(const AValue: string);
@@ -847,13 +848,13 @@ end;
 
 procedure TMainForm.Connected;
 begin
-  LoadCompletion;
+  UpdateCompletion;
   RecentsCbo.Items.Assign(sqlvEngine.Recents);
 end;
 
 procedure TMainForm.Disconnected;
 begin
-  FreeAndNil(Completion);
+  UpdateCompletion;
 end;
 
 procedure TMainForm.SessionStarted;
@@ -1042,8 +1043,7 @@ begin
   end;
   RecentsCbo.Items.Assign(sqlvEngine.Recents);
   StateChanged;
-  if not sqlvEngine.Session.IsActive then //already loaded in connect
-    LoadCompletion;
+  UpdateCompletion;
 end;
 
 destructor TMainForm.Destroy;
@@ -1334,6 +1334,10 @@ begin
   end;
 end;
 
+procedure TMainForm.OnExecuteCompletion(Sender: TObject);
+begin
+end;
+
 procedure TMainForm.ExecuteScript(ExecuteType: TExecuteType);
 var
   aStrings: TStringList;
@@ -1499,7 +1503,7 @@ begin
   Completion.ItemList.Add(AKeyword);
 end;
 
-procedure TMainForm.LoadCompletion;
+procedure TMainForm.UpdateCompletion;
   procedure FillNow(Name: string; SchemaItems: TmncSchemaItems);
   var
     i: Integer;
@@ -1508,14 +1512,17 @@ procedure TMainForm.LoadCompletion;
       Completion.ItemList.Add(SchemaItems[i].Name);
   end;
 begin
-{  FreeAndNil(Completion);
-  Completion := TSynCompletion.Create(nil);} //there is bug in TSynCompletion when remove editor
   if Completion = nil then
   begin
     Completion := TSynCompletion.Create(nil);
-    Completion.AddEditor(SQLEdit);
-    Completion.TheForm.Font.Assign(SQLEdit.Font);
+    Completion.Width := 340;
+    Completion.EndOfTokenChr := '{}()[].<>/\:!$&*+-=%;';
+    Completion.ShortCut := scCtrl + VK_SPACE;
     Completion.CaseSensitive := False;
+
+    Completion.OnExecute := @OnExecuteCompletion;
+    Completion.AddEditor(SQLEdit);
+    //Completion.TheForm.Font.Assign(SQLEdit.Font);
   end
   else
     Completion.ItemList.Clear;

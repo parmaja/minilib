@@ -14,7 +14,7 @@ object AboutForm: TAboutForm
   Font.Quality = fqDraft
   OnCreate = FormCreate
   ParentBiDiMode = False
-  LCLVersion = '0.9.29'
+  LCLVersion = '0.9.31'
   object Label2: TLabel
     Left = 6
     Height = 14
@@ -61,7 +61,7 @@ object AboutForm: TAboutForm
     ParentColor = False
   end
   object VersionLbl: TLabel
-    Left = 9
+    Left = 7
     Height = 14
     Top = 5
     Width = 36

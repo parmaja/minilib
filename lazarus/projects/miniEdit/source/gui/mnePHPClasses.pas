@@ -6,6 +6,7 @@ unit mnePHPClasses;
  *
  * @license    GPL 2 (http://www.gnu.org/licenses/gpl.html)
  * @author    Zaher Dirkey <zaher at parmaja dot com>
+ *
  *}
 
 interface
@@ -446,7 +447,7 @@ procedure TXHTMLFileCategory.InitCompletion(vSynEdit: TCustomSynEdit);
 begin
   FCompletion := TmneSynCompletion.Create(nil);
   FCompletion.Width := 340;
-  FCompletion.EndOfTokenChr := '{}()[].<>/\:!$&*+-=%';
+  FCompletion.EndOfTokenChr := '{}()[].<>/\:!$&*+-=%;';
   FCompletion.OnExecute := @OnExecuteCompletion;
   FCompletion.ShortCut := scCtrl + VK_SPACE;
   FCompletion.CaseSensitive := False;
@@ -477,4 +478,3 @@ initialization
     Perspectives.Add(TPHPPerspective);
   end;
 end.
-

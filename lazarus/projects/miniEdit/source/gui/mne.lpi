@@ -103,7 +103,7 @@
         <MinVersion Major="1" Release="1" Valid="True"/>
       </Item9>
     </RequiredPackages>
-    <Units Count="23">
+    <Units Count="20">
       <Unit0>
         <Filename Value="mne.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -180,88 +180,70 @@
         <UnitName Value="mneBreakpoints"/>
       </Unit10>
       <Unit11>
-        <Filename Value="mneConsts.pas"/>
-        <IsPartOfProject Value="True"/>
-        <UnitName Value="mneConsts"/>
-      </Unit11>
-      <Unit12>
         <Filename Value="mnePHPIniForm.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="PHPIniForm"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="mnePHPIniForm"/>
-      </Unit12>
-      <Unit13>
+      </Unit11>
+      <Unit12>
         <Filename Value="mneProjectForms.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="ManageProjectsForm"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="mneProjectForms"/>
-      </Unit13>
-      <Unit14>
+      </Unit12>
+      <Unit13>
         <Filename Value="mneProjectOptions.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="ProjectForm"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="mneProjectOptions"/>
-      </Unit14>
-      <Unit15>
-        <Filename Value="mneSettings.pas"/>
-        <IsPartOfProject Value="True"/>
-        <ComponentName Value="EditorSettingForm"/>
-        <HasResources Value="True"/>
-        <ResourceBaseClass Value="Form"/>
-        <UnitName Value="mneSettings"/>
-      </Unit15>
-      <Unit16>
+      </Unit13>
+      <Unit14>
         <Filename Value="..\editor\EditorDebugger.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="EditorDebugger"/>
-      </Unit16>
-      <Unit17>
+      </Unit14>
+      <Unit15>
         <Filename Value="..\addons\mneAssociateForm.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="AssociateForm"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="mneAssociateForm"/>
-      </Unit17>
-      <Unit18>
+      </Unit15>
+      <Unit16>
         <Filename Value="mnePHPConfigForms.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="PHPConfigForm"/>
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="mnePHPConfigForms"/>
-      </Unit18>
-      <Unit19>
+      </Unit16>
+      <Unit17>
         <Filename Value="..\editor\PHP_xDebug.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="PHP_xDebug"/>
-      </Unit19>
-      <Unit20>
+      </Unit17>
+      <Unit18>
         <Filename Value="..\editor\SelectList.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="SelectListForm"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="SelectList"/>
-      </Unit20>
-      <Unit21>
+      </Unit18>
+      <Unit19>
         <Filename Value="mneResources.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="EditorResource"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="DataModule"/>
         <UnitName Value="mneResources"/>
-      </Unit21>
-      <Unit22>
-        <Filename Value="..\editor\EditorEngine.pas"/>
-        <IsPartOfProject Value="True"/>
-        <UnitName Value="EditorEngine"/>
-      </Unit22>
+      </Unit19>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

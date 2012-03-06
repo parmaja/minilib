@@ -803,14 +803,14 @@ end;
 
 procedure TMainForm.FormCloseQuery(Sender: TObject; var CanClose: boolean);
 var
-  mr: integer;
+  mr: TmsgChoice;
 begin
   if Engine.Files.GetEditedCount > 0 then
   begin
     mr := MsgBox.Msg.YesNoCancel('There a files changed but not saved'#13'Save it all?');
-    if mr = mrCancel then
+    if mr = msgcCancel then
       CanClose := False
-    else if mr = mrYes then
+    else if mr = msgcYes then
       Engine.Files.SaveAll;
   end;
 
@@ -818,9 +818,9 @@ begin
     if (Engine.Session.Project.FileName = '') then
     begin
       mr := MsgBox.Msg.YesNoCancel('Save project ' + Engine.Session.Project.Name + ' before close?');
-      if mr = mrCancel then
+      if mr = msgcCancel then
         CanClose := False
-      else if mr = mrYes then
+      else if mr = msgcYes then
         Engine.Session.Project.Save;
     end;
 end;
@@ -2368,11 +2368,12 @@ end;
 
 procedure TMainForm.OnReplaceText(Sender: TObject; const ASearch, AReplace: string; Line, Column: integer; var ReplaceAction: TSynReplaceAction);
 begin
-  case MsgBox.Msg.Ask(Format('Replace this ocurrence of "%s" with "%s"?', [ASearch, AReplace]), [mbYes, mbNo, mbAll, mbCancel], mbYes, mbCancel, msgkConfirmation) of
-    mrYes: ReplaceAction := raReplace;
-    mrNo: ReplaceAction := raSkip;
-    mrAll: ReplaceAction := raReplaceAll;
-    mrCancel: ReplaceAction := raCancel;
+  case MsgBox.Msg.Ask(Format('Replace this ocurrence of "%s" with "%s"?', [ASearch, AReplace]), [msgcYes, msgcNo, msgcAll, msgcCancel], msgcYes, msgcCancel, msgkConfirmation) of
+    msgcYes: ReplaceAction := raReplace;
+    msgcNo: ReplaceAction := raSkip;
+    msgcAll: ReplaceAction := raReplaceAll;
+    else //msgcCancel
+      ReplaceAction := raCancel;
   end;
 end;
 

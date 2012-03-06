@@ -1,4 +1,5 @@
 unit main;
+
 {$codepage utf8}
 {$mode objfpc}{$H+}
 
@@ -6,7 +7,7 @@ interface
 
 uses
   Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, StdCtrls,
-  ExtCtrls,  minibidi;
+  ExtCtrls, minibidi;
 
 type
 
@@ -23,7 +24,7 @@ type
   end;
 
 var
-  Form1: TForm1; 
+  Form1: TForm1;
 
 implementation
 
@@ -36,17 +37,17 @@ uses
 
 procedure TForm1.Button1Click(Sender: TObject);
 var
-  w: widestring;
+  w: WideString;
 begin
   Panel1.Canvas.Clear;
   w := UTF8Decode(Edit1.Text);
-  BidiString(w, true, false, bdnContext, bdpRightToLeft);
+  BidiString(w, True, False, bdnContext, bdpRightToLeft);
   Draw(w);
 end;
 
 procedure TForm1.Draw(s: WideString);
 var
-  t: widestring;
+  t: WideString;
   u: utf8string;
   i: Integer;
   x, y, w: Integer;
@@ -66,4 +67,3 @@ begin
 end;
 
 end.
-

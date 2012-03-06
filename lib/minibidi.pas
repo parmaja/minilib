@@ -1,8 +1,8 @@
 unit minibidi;
-{$ifdef FPC}
+{$IFDEF FPC}
 {$MODE objfpc}
-{$else}
-{$endif}
+{$ELSE}
+{$ENDIF}
 {$H+}
 
 (************************************************************************
@@ -51,16 +51,16 @@ function DoBidi(Line: PWideChar; Count: Integer; ApplyShape: Boolean = True; Reo
 implementation
 
 const
-  {$ifdef FPC}
-  {$else}
+{$IFDEF FPC}
+{$ELSE}
   cMAX = MaxInt div sizeof(Integer) - 1;
-  {$endif}
+{$ENDIF}
   MAX_STACK = 60;
 
-  LMASK	= $3F;	{ Embedding Level mask }
-  OMASK =	$C0;	{ Override mask }
-  OISL =	$80;	{ Override is L }
-  OISR =	$40;	{ Override is R }
+  LMASK = $3F; { Embedding Level mask }
+  OMASK = $C0; { Override mask }
+  OISL = $80; { Override is L }
+  OISR = $40; { Override is R }
 
 type
 
@@ -91,33 +91,33 @@ type
     ctON { Other Neutrals }
     );
 
-  {$ifdef FPC}
+{$IFDEF FPC}
   PCharacterType = ^TCharacterType;
-  {$else}
+{$ELSE}
   TCharacterTypeArray = array[0..cMAX] of TCharacterType;
   PCharacterType = ^TCharacterTypeArray;
-  {$endif}
+{$ENDIF}
 
   { Shaping Types }
 
   TShapeType =
     (
-      stSL, { Left-Joining, doesnt exist in U+0600 - U+06FF }
-      stSR, { Right-Joining, ie has Isolated, Final }
-      stSD, { Dual-Joining, ie has Isolated, Final, Initial, Medial }
-      stSU, { Non-Joining }
-      stSC { Join-Causing, like U+0640 (TATWEEL) }
+    stSL, { Left-Joining, doesnt exist in U+0600 - U+06FF }
+    stSR, { Right-Joining, ie has Isolated, Final }
+    stSD, { Dual-Joining, ie has Isolated, Final, Initial, Medial }
+    stSU, { Non-Joining }
+    stSC { Join-Causing, like U+0640 (TATWEEL) }
     );
 
 //  PShapeType = ^TShapeType;
 
   TLevel = Integer;
-  {$ifdef FPC}
+{$IFDEF FPC}
   PLevel = ^TLevel;
-  {$else}
+{$ELSE}
   TLevelArray = array[0..cMAX] of TLevel;
   PLevel = ^TLevelArray;
-  {$endif}
+{$ENDIF}
 
 {$I minibidi.inc}
 
@@ -166,7 +166,7 @@ end;
 
 function SISOLATED(xh: WideChar): WideChar;
 begin
-  Result := ShapeTypes[Ord(xh - SHAPE_FIRST)].CH;
+  Result := ShapeTypes[Ord(xh) - ord(SHAPE_FIRST)].CH;
 end;
 
 function SFINAL(xh: WideChar): WideChar;
@@ -267,14 +267,14 @@ begin
       Inc(i);
 
     k := i - 1;
-  	while (k > j) do
+    while (k > j) do
     begin
-  	  temp := Line[k];
-  	  Line[k] := Line[j];
-  	  Line[j] := temp;
+      temp := Line[k];
+      Line[k] := Line[j];
+      Line[j] := temp;
       Dec(k);
       Inc(j);
-  	end;
+    end;
   end;
 end;
 
@@ -331,7 +331,7 @@ end;
  * having a mirror glyph, and replaced on the spot
 }
 
-procedure DoMirror(var ch: WideChar);
+procedure DoMirror(ch: PWideChar);
 var
   i, j, k: Integer;
 begin
@@ -340,14 +340,14 @@ begin
   while (j - i > 1) do
   begin
     k := (i + j) div 2;
-    if (ch < MirrorLookup[k].Idx) then
+    if (ch^ < MirrorLookup[k].Idx) then
       j := k
-    else if (ch > MirrorLookup[k].Idx) then
+    else if (ch^ > MirrorLookup[k].Idx) then
       i := k
-    else if (ch = MirrorLookup[k].Idx) then
+    else if (ch^ = MirrorLookup[k].Idx) then
     begin
-	    ch := MirrorLookup[k].Mr;
-  	  exit;
+      ch^ := MirrorLookup[k].Mr;
+      exit;
     end;
   end;
 end;
@@ -366,7 +366,7 @@ var
   i, j: Integer;
   ligFlag: Boolean;
   prevTemp, nextTemp: TShapeType;
-  tempChar: WideChar;
+  nWC: WideChar;//Next wide char
 begin
   ligFlag := False;
   prevTemp := stSU;
@@ -417,18 +417,19 @@ begin
         { Make Ligatures }
           if (Line[i] = #$0644) then //{LAM}
           begin
+            nWC:=#0; //TODO check if ctNSM not found
             j := i;
             while (j < Count) do
             begin
               Inc(j);
               if (GetType(Line[j]) <> ctNSM) then
               begin
-                tempChar := Line[j];
+                nWC := Line[j];
                 break;
               end;
             end;
 
-            case (tempChar) of
+            case (nWC) of
               #$0622: //{ALEF WITH MADDA ABOVE}
                 begin
                   ligFlag := True;
@@ -437,7 +438,7 @@ begin
                   else
                     cTo[i] := #$FEF5;
                 end;
-              #$623://{ALEF WITH HAMZA ABOVE}
+              #$623: //{ALEF WITH HAMZA ABOVE}
                 begin
                   ligFlag := True;
                   if (prevTemp = stSD) or (prevTemp = stSC) then
@@ -445,7 +446,7 @@ begin
                   else
                     cTo[i] := #$FEF7;
                 end;
-              #$625:{ALEF WITH HAMZA BELOW}
+              #$625: {ALEF WITH HAMZA BELOW}
                 begin
                   ligFlag := True;
                   if (prevTemp = stSD) or (prevTemp = stSC) then
@@ -453,7 +454,7 @@ begin
                   else
                     cTo[i] := #$FEF9;
                 end;
-              #$627://{ALEF}
+              #$627: //{ALEF}
                 begin
                   ligFlag := True;
                   if (prevTemp = stSD) or (prevTemp = stSC) then
@@ -615,7 +616,6 @@ procedure DoALtoR(Types: PCharacterType; Count: integer);
 var
   i: Integer;
 begin
-  i := 0;
   for i := 0 to Count - 1 do
   begin
     if (Types[i] = ctAL) then
@@ -671,10 +671,10 @@ begin
   end;
 
    { Initialize Types, Levels }
-  Types := GetMem(SizeOf(TCharacterType) * Count);
-  Levels := GetMem(SizeOf(TLevel) * Count);
+  Types := AllocMem(SizeOf(TCharacterType) * Count);
+  Levels := AllocMem(SizeOf(TLevel) * Count);
   if (ApplyShape) then
-    ShapeTo := GetMem(SizeOf(WideChar) * Count)
+    ShapeTo := AllocMem(SizeOf(WideChar) * Count)
   else
     ShapeTo := nil;
   try
@@ -691,12 +691,12 @@ begin
       * the paragraph embedding level to one; otherwise, set it to zero.
       }
     case Start of
-      bdpDefault:
-        ParagraphLevel := GetParagraphLevel(Line, Count);
       bdpLeftToRight:
         ParagraphLevel := 0;
       bdpRightToLeft:
         ParagraphLevel := 1;
+      else
+        ParagraphLevel := GetParagraphLevel(Line, Count);
     end;
 
      { Rule (X1), (X2), (X3), (X4), (X5), (X6), (X7), (X8), (X9)
@@ -898,6 +898,9 @@ begin
           tempType := ctR
         else
           tempType := ctL;
+
+        tempTypeSec := ctL;
+        
         j := i;
         while (j < Count) do
         begin
@@ -907,6 +910,7 @@ begin
           else
             break;
         end;
+
         if (j = Count) then
         begin
           if odd(ParagraphLevel) then
@@ -1037,7 +1041,7 @@ begin
     for i := 0 to Count - 1 do
     begin
       if odd(Levels[i]) then
-        DoMirror(Line[i]);
+        DoMirror(@Line[i]);
     end;
 
      { Rule (L3)
@@ -1101,15 +1105,13 @@ begin
               Inc(i);
             DoShape(Line, ShapeTo, j, i);
             j := i;
-            tempLevel := Levels[j];
+//            tempLevel := Levels[j]; ????
           end
         end;
         Inc(j);
       end;
       for i := 0 to Count - 1 do
-      begin
         Line[i] := ShapeTo[i];
-      end;
     end;
 
   { Rule (L2)
