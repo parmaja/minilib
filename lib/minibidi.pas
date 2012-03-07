@@ -89,7 +89,7 @@ type
     ctB, { Paragraph Separator }
     ctS, { Segment Separator }
     ctWS, { Whitespace }
-    ctON, { Other Neutrals }
+    ctON { Other Neutrals }
     );
 
 {$IFDEF FPC}

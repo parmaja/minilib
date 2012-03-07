@@ -35,6 +35,7 @@ contains
   UniDates in '..\UniDates.pas',
   mnStreams in '..\mnStreams.pas',
   mnUtils in '..\mnUtils.pas',
+  mnDrivers in '..\mnDrivers.pas',
   base36  in '..\base36.pas';
   
 end.
