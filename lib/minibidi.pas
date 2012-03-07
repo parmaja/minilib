@@ -42,11 +42,12 @@ uses
 type
   TBidiParagraph = (bdpDefault, bdpLeftToRight, bdpRightToLeft);
   TBidiNumbers = (bdnContext, bdnLatin, bdnArabic); //TODO or Latin =Arabic, and Arabic =Hindi, but for me it names Arabic1, Arabic2 it is not Hindi
-  TBidiLigatures = (bdlDefault, bdlNone, bdlSimple, bdlComplex); //TODO Complex
+  TBidiOptions = set of (bdoApplyShape, bdoReorderCombining);
+  TBidiLigatures = (bdlSimple, bdlComplex, bdlNone); //TODO Complex
 
-function BidiString(var ws: widestring; ApplyShape: Boolean = True; ReorderCombining: Boolean = False; Numbers: TBidiNumbers = bdnContext; Start: TBidiParagraph = bdpDefault): Integer;
+function BidiString(var ws: widestring; Options: TBidiOptions = [bdoApplyShape]; Numbers: TBidiNumbers = bdnContext; Start: TBidiParagraph = bdpDefault; Ligatures: TBidiLigatures = bdlSimple): Integer;
 
-function DoBidi(Line: PWideChar; Count: Integer; ApplyShape: Boolean = True; ReorderCombining: Boolean = False; Numbers: TBidiNumbers = bdnContext; Start: TBidiParagraph = bdpDefault): Integer;
+function DoBidi(Line: PWideChar; var Count: Integer; Options: TBidiOptions = [bdoApplyShape]; Numbers: TBidiNumbers = bdnContext; Start: TBidiParagraph = bdpDefault; Ligatures: TBidiLigatures = bdlSimple): Integer;
 
 implementation
 
@@ -88,14 +89,14 @@ type
     ctB, { Paragraph Separator }
     ctS, { Segment Separator }
     ctWS, { Whitespace }
-    ctON { Other Neutrals }
+    ctON, { Other Neutrals }
     );
 
 {$IFDEF FPC}
   PCharacterType = ^TCharacterType;
 {$ELSE}
-  TCharacterTypeArray = array[0..cMAX] of TCharacterType;
-  PCharacterType = ^TCharacterTypeArray;
+  TCharacterTypes = array[0..cMAX] of TCharacterType;
+  PCharacterType = ^TCharacterTypes;
 {$ENDIF}
 
   { Shaping Types }
@@ -115,15 +116,18 @@ type
 {$IFDEF FPC}
   PLevel = ^TLevel;
 {$ELSE}
-  TLevelArray = array[0..cMAX] of TLevel;
-  PLevel = ^TLevelArray;
+  TLevels = array[0..cMAX] of TLevel;
+  PLevel = ^TLevels;
 {$ENDIF}
 
 {$I minibidi.inc}
 
-function BidiString(var ws: widestring; ApplyShape: Boolean = True; ReorderCombining: Boolean = False; Numbers: TBidiNumbers = bdnContext; Start: TBidiParagraph = bdpDefault): Integer;
+function BidiString(var ws: widestring; Options: TBidiOptions; Numbers: TBidiNumbers; Start: TBidiParagraph; Ligatures: TBidiLigatures): Integer;
+var
+  c: Integer;
 begin
-  Result := DoBidi(PWideChar(ws), Length(ws), ApplyShape, ReorderCombining, Numbers, Start);
+  c := Length(ws);
+  Result := DoBidi(PWideChar(ws), c, Options, Numbers, Start, Ligatures);
   SetLength(ws, Result);
 end;
 
@@ -185,7 +189,7 @@ begin
 end;
 
 { function GetType
-* Return the type of char using CharLooup array
+* Return the type of char using CharLookup array
 }
 
 function GetType(ch: WideChar): TCharacterType;
@@ -356,12 +360,12 @@ end;
  * by the outside world.
  *
  * Line: buffer to apply shaping to. this must be passed by doBidi() first
- * to: output buffer for the shaped data
+ * ToLine: output buffer for the shaped data
  * from: start bidi at this index
  * Count: number of characters in Line
  *}
 
-function DoShape(Line: PWideChar; var cTo: PWideChar; From: Integer; Count: Integer): Integer;
+function DoShape(Line: PWideChar; var ToLine: PWideChar; From: Integer; Count: Integer): Integer;
 var
   i, j: Integer;
   ligFlag: Boolean;
@@ -406,18 +410,18 @@ begin
 
     case (ShapeType(Line[i])) of
       stSC, stSU:
-        cTo[i] := Line[i];
+        ToLine[i] := Line[i];
       stSR:
         if (prevTemp = stSD) or (prevTemp = stSC) then
-          cTo[i] := SFINAL(SISOLATED(Line[i]))
+          ToLine[i] := SFINAL(SISOLATED(Line[i]))
         else
-          cTo[i] := SISOLATED(Line[i]);
+          ToLine[i] := SISOLATED(Line[i]);
       stSD:
         begin
         { Make Ligatures }
           if (Line[i] = #$0644) then //{LAM}
           begin
-            nWC:=#0; //TODO check if ctNSM not found
+            nWC := #0; //TODO check if ctNSM not found
             j := i;
             while (j < Count) do
             begin
@@ -434,56 +438,59 @@ begin
                 begin
                   ligFlag := True;
                   if (prevTemp = stSD) or (prevTemp = stSC) then
-                    cTo[i] := #$FEF6
+                    ToLine[i] := #$FEF6
                   else
-                    cTo[i] := #$FEF5;
+                    ToLine[i] := #$FEF5;
                 end;
               #$623: //{ALEF WITH HAMZA ABOVE}
                 begin
                   ligFlag := True;
                   if (prevTemp = stSD) or (prevTemp = stSC) then
-                    cTo[i] := #$FEF8
+                    ToLine[i] := #$FEF8
                   else
-                    cTo[i] := #$FEF7;
+                    ToLine[i] := #$FEF7;
                 end;
               #$625: {ALEF WITH HAMZA BELOW}
                 begin
                   ligFlag := True;
                   if (prevTemp = stSD) or (prevTemp = stSC) then
-                    cTo[i] := #$FEFA
+                    ToLine[i] := #$FEFA
                   else
-                    cTo[i] := #$FEF9;
+                    ToLine[i] := #$FEF9;
                 end;
               #$627: //{ALEF}
                 begin
                   ligFlag := True;
                   if (prevTemp = stSD) or (prevTemp = stSC) then
-                    cTo[i] := #$FEFC
+                    ToLine[i] := #$FEFC
                   else
-                    cTo[i] := #$FEFB;
+                    ToLine[i] := #$FEFB;
                 end;
             end;
           end; //end of {if (Line[i] = #$0644) then}
 
           if ligFlag then
           begin
-            cTo[j] := #$20;
+            ToLine[j] := #$20;//dead char
             i := j;
+            {buggey}
+
+            {/buggey}
             ligFlag := False;
           end
           else if ((prevTemp = stSD) or (prevTemp = stSC)) then
           begin
             if (nextTemp = stSR) or (nextTemp = stSD) or (nextTemp = stSC) then
-              cTo[i] := SMEDIAL(SISOLATED(Line[i]))
+              ToLine[i] := SMEDIAL(SISOLATED(Line[i]))
             else
-              cTo[i] := SFINAL(SISOLATED(Line[i]));
+              ToLine[i] := SFINAL(SISOLATED(Line[i]));
           end
           else
           begin
             if (nextTemp = stSR) or (nextTemp = stSD) or (nextTemp = stSC) then
-              cTo[i] := SINITIAL(SISOLATED(Line[i]))
+              ToLine[i] := SINITIAL(SISOLATED(Line[i]))
             else
-              cTo[i] := SISOLATED(Line[i]);
+              ToLine[i] := SISOLATED(Line[i]);
           end;
         end;
     end; //case ShapeType
@@ -631,7 +638,7 @@ end;
  * the Bidirectional algorithm to.
  }
 
-function DoBidi(Line: PWideChar; Count: Integer; ApplyShape: Boolean; ReorderCombining: Boolean; Numbers: TBidiNumbers; Start: TBidiParagraph): Integer;
+function DoBidi(Line: PWideChar; var Count: Integer; Options: TBidiOptions; Numbers: TBidiNumbers; Start: TBidiParagraph; Ligatures: TBidiLigatures): Integer;
 var
   Types: PCharacterType;
   Levels: PLevel;
@@ -673,10 +680,6 @@ begin
    { Initialize Types, Levels }
   Types := AllocMem(SizeOf(TCharacterType) * Count);
   Levels := AllocMem(SizeOf(TLevel) * Count);
-  if (ApplyShape) then
-    ShapeTo := AllocMem(SizeOf(WideChar) * Count)
-  else
-    ShapeTo := nil;
   try
 
      { Rule (P1)  NOT IMPLEMENTED
@@ -1054,7 +1057,7 @@ begin
       * odd level.
       }
 
-    if (fNSM and ReorderCombining) then
+    if (fNSM and (bdoReorderCombining in Options)) then
     begin
       i := 0;
       while i < Count do
@@ -1086,32 +1089,37 @@ begin
   * Shaping is Applied to each run of Levels separately....
   }
 
-    if (ApplyShape) then
+    if (bdoApplyShape in Options) then
     begin
-      for i := 0 to Count - 1 do
-        ShapeTo[i] := Line[i];
+      GetMem(ShapeTo, SizeOf(WideChar) * Count);
+      try
+        for i := 0 to Count - 1 do
+          ShapeTo[i] := Line[i];
 
-      j := 0;
-      i := 0;
-      while (j < Count) do
-      begin
-        if (GetType(Line[j]) = ctAL) then
+        j := 0;
+        i := 0;
+        while (j < Count) do
         begin
-          if (j < Count) and (j >= i) then
+          if (GetType(Line[j]) = ctAL) then
           begin
-            tempLevel := Levels[j];
-            i := j;
-            while (i < Count) and (Levels[i] = tempLevel) do
-              Inc(i);
-            DoShape(Line, ShapeTo, j, i);
-            j := i;
-//            tempLevel := Levels[j]; ????
-          end
+            if (j < Count) and (j >= i) then
+            begin
+              tempLevel := Levels[j];
+              i := j;
+              while (i < Count) and (Levels[i] = tempLevel) do
+                Inc(i);
+              DoShape(Line, ShapeTo, j, i);
+              j := i;
+  //            tempLevel := Levels[j]; ????
+            end
+          end;
+          Inc(j);
         end;
-        Inc(j);
+        for i := 0 to Count - 1 do
+          Line[i] := ShapeTo[i];
+      finally
+        Freemem(ShapeTo);
       end;
-      for i := 0 to Count - 1 do
-        Line[i] := ShapeTo[i];
     end;
 
   { Rule (L2)
@@ -1148,10 +1156,8 @@ begin
   finally
     Freemem(Types);
     Freemem(Levels);
-    Freemem(ShapeTo);
   end;
   Result := Count;
 end;
 
 end.
-

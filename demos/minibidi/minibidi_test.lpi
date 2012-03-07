@@ -74,7 +74,7 @@
         <Filename Value="minibidi_test.lpr"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="minibidi_test"/>
-        <UsageCount Value="115"/>
+        <UsageCount Value="119"/>
       </Unit0>
       <Unit1>
         <Filename Value="main.pas"/>
@@ -84,9 +84,9 @@
         <UnitName Value="main"/>
         <EditorIndex Value="0"/>
         <WindowIndex Value="0"/>
-        <TopLine Value="1"/>
-        <CursorPos X="37" Y="4"/>
-        <UsageCount Value="115"/>
+        <TopLine Value="31"/>
+        <CursorPos X="34" Y="44"/>
+        <UsageCount Value="119"/>
         <Loaded Value="True"/>
         <LoadedDesigner Value="True"/>
       </Unit1>
@@ -100,17 +100,20 @@
       <Unit3>
         <Filename Value="..\..\lib\minibidi.pas"/>
         <UnitName Value="minibidi"/>
+        <IsVisibleTab Value="True"/>
+        <EditorIndex Value="1"/>
         <WindowIndex Value="0"/>
-        <TopLine Value="52"/>
-        <CursorPos X="112" Y="68"/>
-        <UsageCount Value="55"/>
+        <TopLine Value="353"/>
+        <CursorPos X="15" Y="368"/>
+        <UsageCount Value="57"/>
         <Bookmarks Count="5">
-          <Item0 X="1" Y="624" ID="0"/>
-          <Item1 X="17" Y="857" ID="8"/>
-          <Item2 X="6" Y="970" ID="7"/>
-          <Item3 X="1" Y="448" ID="2"/>
-          <Item4 X="19" Y="930" ID="1"/>
+          <Item0 X="1" Y="631" ID="0"/>
+          <Item1 X="17" Y="860" ID="8"/>
+          <Item2 X="6" Y="973" ID="7"/>
+          <Item3 X="1" Y="188" ID="2"/>
+          <Item4 X="16" Y="473" ID="1"/>
         </Bookmarks>
+        <Loaded Value="True"/>
       </Unit3>
       <Unit4>
         <Filename Value="W:\programs\lazarus\lcl\include\customlistbox.inc"/>
@@ -314,10 +317,12 @@
       </Unit29>
       <Unit30>
         <Filename Value="P:\programs\fpc\2.6\src\rtl\inc\systemh.inc"/>
+        <EditorIndex Value="3"/>
         <WindowIndex Value="0"/>
-        <TopLine Value="88"/>
-        <CursorPos X="30" Y="92"/>
-        <UsageCount Value="12"/>
+        <TopLine Value="339"/>
+        <CursorPos X="3" Y="352"/>
+        <UsageCount Value="13"/>
+        <Loaded Value="True"/>
       </Unit30>
       <Unit31>
         <Filename Value="C:\Temp\curr.pas"/>
@@ -336,24 +341,135 @@
       </Unit32>
       <Unit33>
         <Filename Value="..\..\lib\minibidi.inc"/>
-        <IsVisibleTab Value="True"/>
-        <EditorIndex Value="1"/>
+        <EditorIndex Value="2"/>
         <WindowIndex Value="0"/>
-        <TopLine Value="31"/>
-        <CursorPos X="43" Y="40"/>
-        <UsageCount Value="10"/>
+        <TopLine Value="199"/>
+        <CursorPos X="3" Y="212"/>
+        <UsageCount Value="11"/>
         <Loaded Value="True"/>
       </Unit33>
     </Units>
-    <JumpHistory Count="2" HistoryIndex="1">
+    <JumpHistory Count="30" HistoryIndex="29">
       <Position1>
-        <Filename Value="main.pas"/>
-        <Caret Line="69" Column="27" TopLine="44"/>
+        <Filename Value="..\..\lib\minibidi.pas"/>
+        <Caret Line="97" Column="35" TopLine="76"/>
       </Position1>
       <Position2>
-        <Filename Value="main.pas"/>
-        <Caret Line="13" Column="46" TopLine="1"/>
+        <Filename Value="..\..\lib\minibidi.pas"/>
+        <Caret Line="99" Column="53" TopLine="78"/>
       </Position2>
+      <Position3>
+        <Filename Value="..\..\lib\minibidi.pas"/>
+        <Caret Line="189" Column="1" TopLine="184"/>
+      </Position3>
+      <Position4>
+        <Filename Value="..\..\lib\minibidi.pas"/>
+        <Caret Line="1157" Column="7" TopLine="1136"/>
+      </Position4>
+      <Position5>
+        <Filename Value="..\..\lib\minibidi.pas"/>
+        <Caret Line="641" Column="8" TopLine="628"/>
+      </Position5>
+      <Position6>
+        <Filename Value="..\..\lib\minibidi.pas"/>
+        <Caret Line="678" Column="3" TopLine="658"/>
+      </Position6>
+      <Position7>
+        <Filename Value="..\..\lib\minibidi.pas"/>
+        <Caret Line="27" Column="1" TopLine="27"/>
+      </Position7>
+      <Position8>
+        <Filename Value="..\..\lib\minibidi.pas"/>
+        <Caret Line="412" Column="17" TopLine="411"/>
+      </Position8>
+      <Position9>
+        <Filename Value="..\..\lib\minibidi.pas"/>
+        <Caret Line="401" Column="11" TopLine="398"/>
+      </Position9>
+      <Position10>
+        <Filename Value="..\..\lib\minibidi.pas"/>
+        <Caret Line="1155" Column="15" TopLine="1136"/>
+      </Position10>
+      <Position11>
+        <Filename Value="..\..\lib\minibidi.pas"/>
+        <Caret Line="641" Column="8" TopLine="628"/>
+      </Position11>
+      <Position12>
+        <Filename Value="..\..\lib\minibidi.pas"/>
+        <Caret Line="678" Column="22" TopLine="657"/>
+      </Position12>
+      <Position13>
+        <Filename Value="..\..\lib\minibidi.pas"/>
+        <Caret Line="679" Column="8" TopLine="658"/>
+      </Position13>
+      <Position14>
+        <Filename Value="..\..\lib\minibidi.pas"/>
+        <Caret Line="710" Column="26" TopLine="689"/>
+      </Position14>
+      <Position15>
+        <Filename Value="..\..\lib\minibidi.pas"/>
+        <Caret Line="784" Column="52" TopLine="759"/>
+      </Position15>
+      <Position16>
+        <Filename Value="..\..\lib\minibidi.pas"/>
+        <Caret Line="789" Column="20" TopLine="767"/>
+      </Position16>
+      <Position17>
+        <Filename Value="..\..\lib\minibidi.pas"/>
+        <Caret Line="907" Column="16" TopLine="882"/>
+      </Position17>
+      <Position18>
+        <Filename Value="..\..\lib\minibidi.pas"/>
+        <Caret Line="1" Column="1" TopLine="1"/>
+      </Position18>
+      <Position19>
+        <Filename Value="..\..\lib\minibidi.pas"/>
+        <Caret Line="369" Column="17" TopLine="348"/>
+      </Position19>
+      <Position20>
+        <Filename Value="..\..\lib\minibidi.pas"/>
+        <Caret Line="1142" Column="1" TopLine="1120"/>
+      </Position20>
+      <Position21>
+        <Filename Value="..\..\lib\minibidi.pas"/>
+        <Caret Line="40" Column="1" TopLine="40"/>
+      </Position21>
+      <Position22>
+        <Filename Value="..\..\lib\minibidi.pas"/>
+        <Caret Line="1" Column="1" TopLine="1"/>
+      </Position22>
+      <Position23>
+        <Filename Value="..\..\lib\minibidi.pas"/>
+        <Caret Line="108" Column="1" TopLine="83"/>
+      </Position23>
+      <Position24>
+        <Filename Value="..\..\lib\minibidi.pas"/>
+        <Caret Line="476" Column="30" TopLine="459"/>
+      </Position24>
+      <Position25>
+        <Filename Value="..\..\lib\minibidi.pas"/>
+        <Caret Line="424" Column="40" TopLine="420"/>
+      </Position25>
+      <Position26>
+        <Filename Value="..\..\lib\minibidi.pas"/>
+        <Caret Line="472" Column="17" TopLine="468"/>
+      </Position26>
+      <Position27>
+        <Filename Value="..\..\lib\minibidi.pas"/>
+        <Caret Line="856" Column="1" TopLine="845"/>
+      </Position27>
+      <Position28>
+        <Filename Value="..\..\lib\minibidi.pas"/>
+        <Caret Line="1" Column="1" TopLine="1"/>
+      </Position28>
+      <Position29>
+        <Filename Value="..\..\lib\minibidi.pas"/>
+        <Caret Line="455" Column="16" TopLine="447"/>
+      </Position29>
+      <Position30>
+        <Filename Value="..\..\lib\minibidi.pas"/>
+        <Caret Line="1" Column="1" TopLine="1"/>
+      </Position30>
     </JumpHistory>
   </ProjectOptions>
   <CompilerOptions>
