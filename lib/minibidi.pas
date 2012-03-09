@@ -41,7 +41,7 @@ uses
 
 type
   TBidiParagraph = (bdpDefault, bdpLeftToRight, bdpRightToLeft);
-  TBidiNumbers = (bdnContext, bdnLatin, bdnArabic); //TODO or Latin =Arabic, and Arabic =Hindi, but for me it names Arabic1, Arabic2 it is not Hindi
+  TBidiNumbers = (bdnContext, bdnLatin, bdnArabic); //TODO or Latin =Arabic, and Arabic =Hindi, but for me it names Arabic1, Arabic2 it is not Hindi, need to extended mirror
   TBidiOptions = set of (bdoApplyShape, bdoReorderCombining);
   TBidiLigatures = (bdlComplex, bdlSimple, bdlNone);
 

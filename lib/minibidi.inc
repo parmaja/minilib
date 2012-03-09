@@ -839,13 +839,15 @@ type
   end;
 
 const
-  MirrorLookup: array[0..332] of TMirrorLookupInfo =
+  MirrorLookup: array[0..334] of TMirrorLookupInfo =
   (
     (Idx: #$0028; Mr: #$0029),
     (Idx: #$0029; Mr: #$0028),
+    (Idx: #$002C; Mr: #$060C),//, ،  //todo move to extended mirror
     (Idx: #$003C; Mr: #$003E),
+    (Idx: #$003B; Mr: #$061B),//; ؛  //todo move to extended mirror
     (Idx: #$003E; Mr: #$003C),
-    (Idx: #$003F; Mr: #$061F), //? ؟
+    (Idx: #$003F; Mr: #$061F), //? ؟ //todo move to extended mirror
     (Idx: #$005B; Mr: #$005D),
     (Idx: #$005D; Mr: #$005B),
     (Idx: #$007B; Mr: #$007D),
