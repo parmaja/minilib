@@ -15,10 +15,14 @@ type
 
   TForm1 = class(TForm)
     Button1: TButton;
+    TemplatesCbo: TComboBox;
     Edit1: TEdit;
     Panel1: TPanel;
     procedure Button1Click(Sender: TObject);
+    procedure TemplatesCboClick(Sender: TObject);
+    procedure TemplatesCboSelect(Sender: TObject);
   private
+    procedure DrawNow;
   public
     procedure Draw(s: WideString);
   end;
@@ -36,6 +40,11 @@ uses
 { TForm1 }
 
 procedure TForm1.Button1Click(Sender: TObject);
+begin
+  DrawNow;
+end;
+
+procedure TForm1.DrawNow;
 var
   w: WideString;
 begin
@@ -43,6 +52,19 @@ begin
   w := UTF8Decode(Edit1.Text);
   BidiString(w, [bdoApplyShape], bdnContext, bdpRightToLeft);
   Draw(w);
+end;
+
+procedure TForm1.TemplatesCboClick(Sender: TObject);
+begin
+end;
+
+procedure TForm1.TemplatesCboSelect(Sender: TObject);
+begin
+  if TemplatesCbo.ItemIndex >= 0 then
+  begin
+    Edit1.Text := TemplatesCbo.Items[TemplatesCbo.ItemIndex];
+    DrawNow;
+  end;
 end;
 
 procedure TForm1.Draw(s: WideString);

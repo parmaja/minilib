@@ -1,16 +1,16 @@
 object Form1: TForm1
   Left = 335
-  Height = 231
+  Height = 260
   Top = 160
   Width = 625
   Caption = 'Form1'
-  ClientHeight = 231
+  ClientHeight = 260
   ClientWidth = 625
   LCLVersion = '0.9.31'
   object Button1: TButton
     Left = 542
     Height = 21
-    Top = 194
+    Top = 228
     Width = 74
     Anchors = [akRight]
     Caption = 'Draw'
@@ -20,7 +20,7 @@ object Form1: TForm1
   end
   object Panel1: TPanel
     Left = 9
-    Height = 180
+    Height = 187
     Top = 6
     Width = 607
     Anchors = [akTop, akLeft, akRight, akBottom]
@@ -36,14 +36,33 @@ object Form1: TForm1
     TabOrder = 2
   end
   object Edit1: TEdit
-    Left = 11
+    Left = 9
     Height = 21
-    Top = 194
-    Width = 526
+    Top = 228
+    Width = 528
     Anchors = [akLeft, akRight, akBottom]
     BidiMode = bdRightToLeft
     ParentBidiMode = False
     TabOrder = 0
-    Text = 'بسم'
+    Text = 'لامست? في البيت My home?'
+  end
+  object TemplatesCbo: TComboBox
+    Left = 9
+    Height = 21
+    Top = 203
+    Width = 528
+    BidiMode = bdRightToLeft
+    ItemHeight = 13
+    Items.Strings = (
+      'بسم الله الرحمن الرحيم'
+      'لا إله إلا الله'
+      'أبجد هوز حطي كلمن'
+      'محمد زاهر ديركي'
+    )
+    OnClick = TemplatesCboClick
+    OnSelect = TemplatesCboSelect
+    ParentBidiMode = False
+    Style = csDropDownList
+    TabOrder = 3
   end
 end

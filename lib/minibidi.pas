@@ -43,11 +43,11 @@ type
   TBidiParagraph = (bdpDefault, bdpLeftToRight, bdpRightToLeft);
   TBidiNumbers = (bdnContext, bdnLatin, bdnArabic); //TODO or Latin =Arabic, and Arabic =Hindi, but for me it names Arabic1, Arabic2 it is not Hindi
   TBidiOptions = set of (bdoApplyShape, bdoReorderCombining);
-  TBidiLigatures = (bdlSimple, bdlComplex, bdlNone); //TODO Complex
+  TBidiLigatures = (bdlComplex, bdlSimple, bdlNone);
 
-function BidiString(var ws: widestring; Options: TBidiOptions = [bdoApplyShape]; Numbers: TBidiNumbers = bdnContext; Start: TBidiParagraph = bdpDefault; Ligatures: TBidiLigatures = bdlSimple): Integer;
+function BidiString(var ws: widestring; Options: TBidiOptions = [bdoApplyShape]; Numbers: TBidiNumbers = bdnContext; Start: TBidiParagraph = bdpDefault; Ligatures: TBidiLigatures = bdlComplex): Integer;
 
-function DoBidi(Line: PWideChar; var Count: Integer; Options: TBidiOptions = [bdoApplyShape]; Numbers: TBidiNumbers = bdnContext; Start: TBidiParagraph = bdpDefault; Ligatures: TBidiLigatures = bdlSimple): Integer;
+function DoBidi(Line: PWideChar; Count: Integer; Options: TBidiOptions = [bdoApplyShape]; Numbers: TBidiNumbers = bdnContext; Start: TBidiParagraph = bdpDefault; Ligatures: TBidiLigatures = bdlComplex): Integer;
 
 implementation
 
@@ -64,6 +64,16 @@ const
   OISR = $40; { Override is R }
 
 type
+    { Shaping Types }
+
+    TShapeType =
+      (
+      stSL, { Left-Joining, doesnt exist in U+0600 - U+06FF }
+      stSR, { Right-Joining, ie has Isolated, Final }
+      stSD, { Dual-Joining, ie has Isolated, Final, Initial, Medial }
+      stSU, { Non-Joining }
+      stSC { Join-Causing, like U+0640 (TATWEEL) }
+      );
 
   { character Types }
   TCharacterType =
@@ -99,17 +109,6 @@ type
   PCharacterType = ^TCharacterTypes;
 {$ENDIF}
 
-  { Shaping Types }
-
-  TShapeType =
-    (
-    stSL, { Left-Joining, doesnt exist in U+0600 - U+06FF }
-    stSR, { Right-Joining, ie has Isolated, Final }
-    stSD, { Dual-Joining, ie has Isolated, Final, Initial, Medial }
-    stSU, { Non-Joining }
-    stSC { Join-Causing, like U+0640 (TATWEEL) }
-    );
-
 //  PShapeType = ^TShapeType;
 
   TLevel = Integer;
@@ -123,11 +122,8 @@ type
 {$I minibidi.inc}
 
 function BidiString(var ws: widestring; Options: TBidiOptions; Numbers: TBidiNumbers; Start: TBidiParagraph; Ligatures: TBidiLigatures): Integer;
-var
-  c: Integer;
 begin
-  c := Length(ws);
-  Result := DoBidi(PWideChar(ws), c, Options, Numbers, Start, Ligatures);
+  Result := DoBidi(PWideChar(ws), Length(ws), Options, Numbers, Start, Ligatures);
   SetLength(ws, Result);
 end;
 
@@ -335,7 +331,7 @@ end;
  * having a mirror glyph, and replaced on the spot
 }
 
-procedure DoMirror(ch: PWideChar);
+procedure DoMirror(var ch: WideChar);
 var
   i, j, k: Integer;
 begin
@@ -344,13 +340,13 @@ begin
   while (j - i > 1) do
   begin
     k := (i + j) div 2;
-    if (ch^ < MirrorLookup[k].Idx) then
+    if (ch < MirrorLookup[k].Idx) then
       j := k
-    else if (ch^ > MirrorLookup[k].Idx) then
+    else if (ch > MirrorLookup[k].Idx) then
       i := k
-    else if (ch^ = MirrorLookup[k].Idx) then
+    else if (ch = MirrorLookup[k].Idx) then
     begin
-      ch^ := MirrorLookup[k].Mr;
+      ch := MirrorLookup[k].Mr;
       exit;
     end;
   end;
@@ -365,7 +361,7 @@ end;
  * Count: number of characters in Line
  *}
 
-function DoShape(Line: PWideChar; var ToLine: PWideChar; From: Integer; Count: Integer): Integer;
+function DoShape(Line: PWideChar; var ToLine: PWideChar; From: Integer; Count: Integer; Ligatures: TBidiLigatures): Integer;
 var
   i, j: Integer;
   ligFlag: Boolean;
@@ -471,11 +467,11 @@ begin
 
           if ligFlag then
           begin
-            ToLine[j] := #$20;//dead char
+            if Ligatures = bdlSimple then
+              ToLine[j] := #$20
+            else
+              ToLine[j] := #$0; //dead char for delete
             i := j;
-            {buggey}
-
-            {/buggey}
             ligFlag := False;
           end
           else if ((prevTemp = stSD) or (prevTemp = stSC)) then
@@ -638,7 +634,7 @@ end;
  * the Bidirectional algorithm to.
  }
 
-function DoBidi(Line: PWideChar; var Count: Integer; Options: TBidiOptions; Numbers: TBidiNumbers; Start: TBidiParagraph; Ligatures: TBidiLigatures): Integer;
+function DoBidi(Line: PWideChar; Count: Integer; Options: TBidiOptions; Numbers: TBidiNumbers; Start: TBidiParagraph; Ligatures: TBidiLigatures): Integer;
 var
   Types: PCharacterType;
   Levels: PLevel;
@@ -674,7 +670,8 @@ begin
 
   if (not fAL) and (not fX) then
   begin
-    exit;
+    Result := Count;
+    exit; //nothing todo
   end;
 
    { Initialize Types, Levels }
@@ -727,10 +724,7 @@ begin
 
     NewCount := DoTypes(Line, ParagraphLevel, Types, Levels, Count, fX);
     if NewCount < Count then
-    begin
       Count := NewCount;
-      Line[Count] := #0;
-    end;
 
      { Rule (W1)
       * W1. Examine each non-spacing mark (NSM) in the level run, and change
@@ -1044,7 +1038,7 @@ begin
     for i := 0 to Count - 1 do
     begin
       if odd(Levels[i]) then
-        DoMirror(@Line[i]);
+        DoMirror(Line[i]);
     end;
 
      { Rule (L3)
@@ -1108,15 +1102,30 @@ begin
               i := j;
               while (i < Count) and (Levels[i] = tempLevel) do
                 Inc(i);
-              DoShape(Line, ShapeTo, j, i);
+              DoShape(Line, ShapeTo, j, i, Ligatures);
               j := i;
   //            tempLevel := Levels[j]; ????
             end
           end;
           Inc(j);
         end;
-        for i := 0 to Count - 1 do
-          Line[i] := ShapeTo[i];
+
+        i := 0;
+        j := 0;
+        NewCount := Count;
+        while i < Count do
+        begin
+          if (Ligatures = bdlComplex) and (ShapeTo[i] = #$0) then //remove deleted char
+            NewCount := NewCount - 1
+          else
+          begin
+            Levels[j] := Levels[i];
+            Line[j] := ShapeTo[i];
+            j := j + 1;
+          end;
+          i := i + 1;
+        end;
+        Count := NewCount;
       finally
         Freemem(ShapeTo);
       end;
@@ -1157,6 +1166,7 @@ begin
     Freemem(Types);
     Freemem(Levels);
   end;
+  Line[Count] := #0;
   Result := Count;
 end;
 

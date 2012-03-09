@@ -839,12 +839,13 @@ type
   end;
 
 const
-  MirrorLookup: array[0..331] of TMirrorLookupInfo =
+  MirrorLookup: array[0..332] of TMirrorLookupInfo =
   (
     (Idx: #$0028; Mr: #$0029),
     (Idx: #$0029; Mr: #$0028),
     (Idx: #$003C; Mr: #$003E),
     (Idx: #$003E; Mr: #$003C),
+    (Idx: #$003F; Mr: #$061F), //? ؟
     (Idx: #$005B; Mr: #$005D),
     (Idx: #$005D; Mr: #$005B),
     (Idx: #$007B; Mr: #$007D),

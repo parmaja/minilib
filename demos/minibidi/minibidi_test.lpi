@@ -69,12 +69,15 @@
         <PackageName Value="LCL"/>
       </Item1>
     </RequiredPackages>
-    <Units Count="34">
+    <Units Count="44">
       <Unit0>
         <Filename Value="minibidi_test.lpr"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="minibidi_test"/>
-        <UsageCount Value="119"/>
+        <WindowIndex Value="0"/>
+        <TopLine Value="1"/>
+        <CursorPos X="40" Y="7"/>
+        <UsageCount Value="129"/>
       </Unit0>
       <Unit1>
         <Filename Value="main.pas"/>
@@ -84,11 +87,10 @@
         <UnitName Value="main"/>
         <EditorIndex Value="0"/>
         <WindowIndex Value="0"/>
-        <TopLine Value="31"/>
-        <CursorPos X="34" Y="44"/>
-        <UsageCount Value="119"/>
+        <TopLine Value="33"/>
+        <CursorPos X="1" Y="54"/>
+        <UsageCount Value="129"/>
         <Loaded Value="True"/>
-        <LoadedDesigner Value="True"/>
       </Unit1>
       <Unit2>
         <Filename Value="V:\programs\FPC\2.4\src\rtl\inc\wstringh.inc"/>
@@ -100,18 +102,18 @@
       <Unit3>
         <Filename Value="..\..\lib\minibidi.pas"/>
         <UnitName Value="minibidi"/>
-        <IsVisibleTab Value="True"/>
         <EditorIndex Value="1"/>
         <WindowIndex Value="0"/>
-        <TopLine Value="353"/>
-        <CursorPos X="15" Y="368"/>
-        <UsageCount Value="57"/>
+        <TopLine Value="1011"/>
+        <CursorPos X="77" Y="1032"/>
+        <ExtraEditorCount Value="1"/>
+        <UsageCount Value="62"/>
         <Bookmarks Count="5">
-          <Item0 X="1" Y="631" ID="0"/>
-          <Item1 X="17" Y="860" ID="8"/>
-          <Item2 X="6" Y="973" ID="7"/>
-          <Item3 X="1" Y="188" ID="2"/>
-          <Item4 X="16" Y="473" ID="1"/>
+          <Item0 X="1" Y="626" ID="0"/>
+          <Item1 X="1" Y="853" ID="8"/>
+          <Item2 X="1" Y="966" ID="7"/>
+          <Item3 X="1" Y="184" ID="2"/>
+          <Item4 X="16" Y="346" ID="1"/>
         </Bookmarks>
         <Loaded Value="True"/>
       </Unit3>
@@ -132,8 +134,8 @@
       <Unit6>
         <Filename Value="..\..\lib\doc\minibidi.c"/>
         <WindowIndex Value="0"/>
-        <TopLine Value="1231"/>
-        <CursorPos X="1" Y="1246"/>
+        <TopLine Value="1578"/>
+        <CursorPos X="79" Y="1589"/>
         <UsageCount Value="54"/>
         <DefaultSyntaxHighlighter Value="C++"/>
       </Unit6>
@@ -317,11 +319,11 @@
       </Unit29>
       <Unit30>
         <Filename Value="P:\programs\fpc\2.6\src\rtl\inc\systemh.inc"/>
-        <EditorIndex Value="3"/>
+        <EditorIndex Value="7"/>
         <WindowIndex Value="0"/>
-        <TopLine Value="339"/>
-        <CursorPos X="3" Y="352"/>
-        <UsageCount Value="13"/>
+        <TopLine Value="360"/>
+        <CursorPos X="3" Y="372"/>
+        <UsageCount Value="18"/>
         <Loaded Value="True"/>
       </Unit30>
       <Unit31>
@@ -341,133 +343,233 @@
       </Unit32>
       <Unit33>
         <Filename Value="..\..\lib\minibidi.inc"/>
-        <EditorIndex Value="2"/>
+        <IsVisibleTab Value="True"/>
+        <EditorIndex Value="5"/>
         <WindowIndex Value="0"/>
-        <TopLine Value="199"/>
-        <CursorPos X="3" Y="212"/>
-        <UsageCount Value="11"/>
+        <TopLine Value="841"/>
+        <CursorPos X="85" Y="863"/>
+        <UsageCount Value="16"/>
+        <Bookmarks Count="1">
+          <Item0 X="5" Y="846" ID="9"/>
+        </Bookmarks>
         <Loaded Value="True"/>
       </Unit33>
+      <Unit34>
+        <Filename Value="..\..\unicodes\doc\bidiassist.c"/>
+        <EditorIndex Value="6"/>
+        <WindowIndex Value="0"/>
+        <TopLine Value="415"/>
+        <CursorPos X="1" Y="457"/>
+        <UsageCount Value="11"/>
+        <Loaded Value="True"/>
+        <DefaultSyntaxHighlighter Value="C++"/>
+      </Unit34>
+      <Unit35>
+        <Filename Value="..\..\lib\doc\unicode\readme.txt"/>
+        <EditorIndex Value="2"/>
+        <WindowIndex Value="0"/>
+        <TopLine Value="1"/>
+        <CursorPos X="1" Y="1"/>
+        <UsageCount Value="10"/>
+        <Loaded Value="True"/>
+        <DefaultSyntaxHighlighter Value="None"/>
+      </Unit35>
+      <Unit36>
+        <Filename Value="..\..\lib\doc\unicode\bidi.cpp"/>
+        <EditorIndex Value="3"/>
+        <WindowIndex Value="0"/>
+        <TopLine Value="1438"/>
+        <CursorPos X="41" Y="1453"/>
+        <UsageCount Value="10"/>
+        <Loaded Value="True"/>
+        <DefaultSyntaxHighlighter Value="C++"/>
+      </Unit36>
+      <Unit37>
+        <Filename Value="..\..\lib\doc\minibidi\scripts\mini_mirror.pl"/>
+        <EditorIndex Value="4"/>
+        <WindowIndex Value="0"/>
+        <TopLine Value="1"/>
+        <CursorPos X="23" Y="26"/>
+        <UsageCount Value="10"/>
+        <Loaded Value="True"/>
+        <DefaultSyntaxHighlighter Value="Perl"/>
+      </Unit37>
+      <Unit38>
+        <Filename Value="..\..\lib\doc\minibidi\scripts\mini_condense.pl"/>
+        <WindowIndex Value="0"/>
+        <TopLine Value="161"/>
+        <CursorPos X="14" Y="203"/>
+        <UsageCount Value="10"/>
+        <DefaultSyntaxHighlighter Value="Perl"/>
+      </Unit38>
+      <Unit39>
+        <Filename Value="..\..\lib\doc\minibidi\minitests.txt"/>
+        <WindowIndex Value="0"/>
+        <TopLine Value="1"/>
+        <CursorPos X="1" Y="1"/>
+        <UsageCount Value="10"/>
+        <DefaultSyntaxHighlighter Value="None"/>
+      </Unit39>
+      <Unit40>
+        <Filename Value="..\..\lib\doc\fribidi\fribidi_mirroring.c"/>
+        <EditorIndex Value="8"/>
+        <WindowIndex Value="0"/>
+        <TopLine Value="26"/>
+        <CursorPos X="1" Y="32"/>
+        <UsageCount Value="10"/>
+        <Loaded Value="True"/>
+        <DefaultSyntaxHighlighter Value="C++"/>
+      </Unit40>
+      <Unit41>
+        <Filename Value="..\..\lib\doc\fribidi\fribidi_tab_mirroring.i"/>
+        <EditorIndex Value="11"/>
+        <WindowIndex Value="0"/>
+        <TopLine Value="350"/>
+        <CursorPos X="26" Y="392"/>
+        <UsageCount Value="10"/>
+        <Loaded Value="True"/>
+        <DefaultSyntaxHighlighter Value="None"/>
+      </Unit41>
+      <Unit42>
+        <Filename Value="..\..\lib\doc\fribidi\fribidi_create_mirroring.c"/>
+        <EditorIndex Value="9"/>
+        <WindowIndex Value="0"/>
+        <TopLine Value="99"/>
+        <CursorPos X="1" Y="141"/>
+        <UsageCount Value="10"/>
+        <Loaded Value="True"/>
+        <DefaultSyntaxHighlighter Value="C++"/>
+      </Unit42>
+      <Unit43>
+        <Filename Value="..\..\lib\doc\fribidi\fribidi_char_sets_iso8859_6.c"/>
+        <EditorIndex Value="10"/>
+        <WindowIndex Value="0"/>
+        <TopLine Value="34"/>
+        <CursorPos X="19" Y="69"/>
+        <UsageCount Value="10"/>
+        <Loaded Value="True"/>
+        <DefaultSyntaxHighlighter Value="C++"/>
+      </Unit43>
     </Units>
     <JumpHistory Count="30" HistoryIndex="29">
       <Position1>
         <Filename Value="..\..\lib\minibidi.pas"/>
-        <Caret Line="97" Column="35" TopLine="76"/>
+        <Caret Line="342" Column="1" TopLine="317"/>
       </Position1>
       <Position2>
         <Filename Value="..\..\lib\minibidi.pas"/>
-        <Caret Line="99" Column="53" TopLine="78"/>
+        <Caret Line="343" Column="1" TopLine="317"/>
       </Position2>
       <Position3>
         <Filename Value="..\..\lib\minibidi.pas"/>
-        <Caret Line="189" Column="1" TopLine="184"/>
+        <Caret Line="345" Column="1" TopLine="317"/>
       </Position3>
       <Position4>
         <Filename Value="..\..\lib\minibidi.pas"/>
-        <Caret Line="1157" Column="7" TopLine="1136"/>
+        <Caret Line="346" Column="1" TopLine="317"/>
       </Position4>
       <Position5>
         <Filename Value="..\..\lib\minibidi.pas"/>
-        <Caret Line="641" Column="8" TopLine="628"/>
+        <Caret Line="342" Column="1" TopLine="317"/>
       </Position5>
       <Position6>
         <Filename Value="..\..\lib\minibidi.pas"/>
-        <Caret Line="678" Column="3" TopLine="658"/>
+        <Caret Line="343" Column="1" TopLine="317"/>
       </Position6>
       <Position7>
         <Filename Value="..\..\lib\minibidi.pas"/>
-        <Caret Line="27" Column="1" TopLine="27"/>
+        <Caret Line="345" Column="1" TopLine="317"/>
       </Position7>
       <Position8>
         <Filename Value="..\..\lib\minibidi.pas"/>
-        <Caret Line="412" Column="17" TopLine="411"/>
+        <Caret Line="346" Column="1" TopLine="317"/>
       </Position8>
       <Position9>
         <Filename Value="..\..\lib\minibidi.pas"/>
-        <Caret Line="401" Column="11" TopLine="398"/>
+        <Caret Line="353" Column="1" TopLine="318"/>
       </Position9>
       <Position10>
         <Filename Value="..\..\lib\minibidi.pas"/>
-        <Caret Line="1155" Column="15" TopLine="1136"/>
+        <Caret Line="1059" Column="1" TopLine="1038"/>
       </Position10>
       <Position11>
         <Filename Value="..\..\lib\minibidi.pas"/>
-        <Caret Line="641" Column="8" TopLine="628"/>
+        <Caret Line="1091" Column="1" TopLine="1070"/>
       </Position11>
       <Position12>
         <Filename Value="..\..\lib\minibidi.pas"/>
-        <Caret Line="678" Column="22" TopLine="657"/>
+        <Caret Line="1042" Column="1" TopLine="1021"/>
       </Position12>
       <Position13>
         <Filename Value="..\..\lib\minibidi.pas"/>
-        <Caret Line="679" Column="8" TopLine="658"/>
+        <Caret Line="1042" Column="7" TopLine="1021"/>
       </Position13>
       <Position14>
         <Filename Value="..\..\lib\minibidi.pas"/>
-        <Caret Line="710" Column="26" TopLine="689"/>
+        <Caret Line="1040" Column="1" TopLine="1021"/>
       </Position14>
       <Position15>
         <Filename Value="..\..\lib\minibidi.pas"/>
-        <Caret Line="784" Column="52" TopLine="759"/>
+        <Caret Line="126" Column="1" TopLine="105"/>
       </Position15>
       <Position16>
-        <Filename Value="..\..\lib\minibidi.pas"/>
-        <Caret Line="789" Column="20" TopLine="767"/>
+        <Filename Value="main.pas"/>
+        <Caret Line="54" Column="1" TopLine="33"/>
       </Position16>
       <Position17>
         <Filename Value="..\..\lib\minibidi.pas"/>
-        <Caret Line="907" Column="16" TopLine="882"/>
+        <Caret Line="1041" Column="9" TopLine="1019"/>
       </Position17>
       <Position18>
         <Filename Value="..\..\lib\minibidi.pas"/>
-        <Caret Line="1" Column="1" TopLine="1"/>
+        <Caret Line="342" Column="33" TopLine="313"/>
       </Position18>
       <Position19>
         <Filename Value="..\..\lib\minibidi.pas"/>
-        <Caret Line="369" Column="17" TopLine="348"/>
+        <Caret Line="343" Column="18" TopLine="313"/>
       </Position19>
       <Position20>
         <Filename Value="..\..\lib\minibidi.pas"/>
-        <Caret Line="1142" Column="1" TopLine="1120"/>
+        <Caret Line="345" Column="23" TopLine="313"/>
       </Position20>
       <Position21>
         <Filename Value="..\..\lib\minibidi.pas"/>
-        <Caret Line="40" Column="1" TopLine="40"/>
+        <Caret Line="347" Column="23" TopLine="313"/>
       </Position21>
       <Position22>
         <Filename Value="..\..\lib\minibidi.pas"/>
-        <Caret Line="1" Column="1" TopLine="1"/>
+        <Caret Line="349" Column="17" TopLine="314"/>
       </Position22>
       <Position23>
         <Filename Value="..\..\lib\minibidi.pas"/>
-        <Caret Line="108" Column="1" TopLine="83"/>
+        <Caret Line="1032" Column="48" TopLine="997"/>
       </Position23>
       <Position24>
         <Filename Value="..\..\lib\minibidi.pas"/>
-        <Caret Line="476" Column="30" TopLine="459"/>
+        <Caret Line="1033" Column="26" TopLine="998"/>
       </Position24>
       <Position25>
         <Filename Value="..\..\lib\minibidi.pas"/>
-        <Caret Line="424" Column="40" TopLine="420"/>
+        <Caret Line="1041" Column="9" TopLine="1011"/>
       </Position25>
       <Position26>
-        <Filename Value="..\..\lib\minibidi.pas"/>
-        <Caret Line="472" Column="17" TopLine="468"/>
+        <Filename Value="..\..\lib\doc\unicode\bidi.cpp"/>
+        <Caret Line="2183" Column="35" TopLine="2141"/>
       </Position26>
       <Position27>
-        <Filename Value="..\..\lib\minibidi.pas"/>
-        <Caret Line="856" Column="1" TopLine="845"/>
+        <Filename Value="..\..\lib\doc\unicode\bidi.cpp"/>
+        <Caret Line="1" Column="1" TopLine="1"/>
       </Position27>
       <Position28>
-        <Filename Value="..\..\lib\minibidi.pas"/>
+        <Filename Value="..\..\lib\doc\minibidi\scripts\mini_mirror.pl"/>
         <Caret Line="1" Column="1" TopLine="1"/>
       </Position28>
       <Position29>
-        <Filename Value="..\..\lib\minibidi.pas"/>
-        <Caret Line="455" Column="16" TopLine="447"/>
+        <Filename Value="..\..\lib\doc\fribidi\fribidi_tab_mirroring.i"/>
+        <Caret Line="392" Column="8" TopLine="350"/>
       </Position29>
       <Position30>
-        <Filename Value="..\..\lib\minibidi.pas"/>
+        <Filename Value="..\..\lib\doc\fribidi\fribidi_char_sets_iso8859_6.c"/>
         <Caret Line="1" Column="1" TopLine="1"/>
       </Position30>
     </JumpHistory>
@@ -506,6 +608,22 @@
     </Other>
   </CompilerOptions>
   <Debugging>
+    <BreakPoints Count="2">
+      <Item1>
+        <Kind Value="bpkSource"/>
+        <WatchScope Value="wpsLocal"/>
+        <WatchKind Value="wpkWrite"/>
+        <Source Value="..\..\lib\minibidi.pas"/>
+        <Line Value="349"/>
+      </Item1>
+      <Item2>
+        <Kind Value="bpkSource"/>
+        <WatchScope Value="wpsLocal"/>
+        <WatchKind Value="wpkWrite"/>
+        <Source Value="..\..\lib\minibidi.pas"/>
+        <Line Value="338"/>
+      </Item2>
+    </BreakPoints>
     <Watches Count="3">
       <Item1>
         <Expression Value="Levels[0]"/>
