@@ -1,4 +1,4 @@
-unit minibidi;
+﻿unit minibidi;
 {$IFDEF FPC}
 {$MODE objfpc}
 {$ELSE}
@@ -33,6 +33,16 @@ Ported to Pascal by Zaher Dirkey, zaher at parmaja.com
 License under MIT license
 
 ***********************************************************************}
+
+{
+  Bugs
+* 'arabic words #13#10'
+  when Start is Default or RightToLeft, converted to:
+  '#13#10 words arabic'
+   the problem the control chars moved to the first
+* search for '- 1]' for Types[i - 1], there is no -1 element, it is give range check error 
+
+}
 
 interface
 
@@ -648,7 +658,7 @@ var
   ShapeTo: PWideChar;
   NewCount: Integer;
 begin
-  Result := 0;
+//  Result := 0;
 
   fX := False;
   fAL := False;
@@ -891,7 +901,7 @@ begin
     begin
       if (Types[i] = ctON) then
       begin
-        if (Types[i - 1] = ctR) or (Types[i - 1] = ctEN) or (Types[i - 1] = ctAN) then
+        if (Types[i - 1] = ctR) or (Types[i - 1] = ctEN) or (Types[i - 1] = ctAN) then//bug '- 1]'
           tempType := ctR
         else
           tempType := ctL;
@@ -1038,7 +1048,11 @@ begin
     for i := 0 to Count - 1 do
     begin
       if odd(Levels[i]) then
-        DoMirror(Line[i]);
+      begin
+        temp := Line[i];
+        DoMirror(temp);
+        Line[i] := temp;
+      end;;
     end;
 
      { Rule (L3)

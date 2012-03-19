@@ -41,6 +41,7 @@ type
   public
     function Find(const vCategory: string; const vName: string): TmnDriverItem; overload;
     function Find(const vName: string): TmnDriverItem; overload;
+    function IndexOf(const vName: string): Integer; overload;
     function FindClass(const vName: string): TClass; overload;
     procedure Enum(vStrings: TStrings); overload;
     procedure EnumCategory(const Category:string; vStrings: TStrings); overload;
@@ -75,6 +76,21 @@ end;
 function TmnDriversItems.GetItems(Index: Integer): TmnDriverItem;
 begin
   Result := inherited Items[Index] as TmnDriverItem;
+end;
+
+function TmnDriversItems.IndexOf(const vName: string): Integer;
+var
+  i: Integer;
+begin
+  Result := -1;
+  for i := 0 to Count -1 do
+  begin
+    if SameText(vName, Items[i].Name) then
+    begin
+      Result := i;
+      break;
+    end;
+  end;
 end;
 
 function TmnDriversClasses.Add(const Category, Name, Title: string; vDriverClass: TClass): TmnDriverItem;
