@@ -27,107 +27,104 @@ type
 
   TmnDriverOption = (mndLiveDriver);
 
-  TmnDriverOptions = set of TmnDriverOption;
-
-  TmnDriver = class(TObject)
-  private
-  protected
-    FDriverOptions: TmnDriverOptions;
-    function GetName: string; virtual;
-{$ifdef WI}
-    function GetIObject:ImnDriver;
-{$endif}
-  public
-    constructor Create; virtual;
-    destructor Destroy; override;
-    class function DriverTitle: string; virtual;
-    class function DriverName: string; virtual;
-    property DriverOptions:TmnDriverOptions read FDriverOptions;
-    property Name:string read GetName;
-  end;
-
-  TmnDriverClass = class of TmnDriver;
-
-  TmnRegisteredDriver = class(TObject)
+  TmnDriverItem = class(TObject)
   public
     Category: string;
     Name: string;
     Title: string;
-    DriverClass: TmnDriverClass;
+    DriverClass: TClass;
   end;
 
-  { TmnRegisteredDrivers }
-
-  TmnRegisteredDrivers = class(TObjectList)
+  TmnDriversItems = class(TObjectList)
   private
-    function GetItems(Index: Integer): TmnRegisteredDriver;
+    function GetItems(Index: Integer): TmnDriverItem;
   public
-    function Add(Category: string; vDriverClass: TmnDriverClass): TmnRegisteredDriver;
-    function Find(vCategory: string; vName: string): TmnRegisteredDriver; overload;
-    function Find(vName: string): TmnRegisteredDriver; overload;
-    function CreateByName(vCategory: string; vName: string): TmnDriver;
-    property Items[Index:Integer]: TmnRegisteredDriver read GetItems; default;
+    function Find(const vCategory: string; const vName: string): TmnDriverItem; overload;
+    function Find(const vName: string): TmnDriverItem; overload;
+    function FindClass(const vName: string): TClass; overload;
+    procedure Enum(vStrings: TStrings); overload;
+    procedure EnumCategory(const Category:string; vStrings: TStrings); overload;
+    //You need to free the result list
+    function EnumCategory(const Category:string): TmnDriversItems; overload;
+    property Items[Index:Integer]: TmnDriverItem read GetItems; default;
   end;
 
-function mnRegisteredDrivers: TmnRegisteredDrivers;
+  { TmnDriversClasses }
+
+  TmnDriversClasses = class(TmnDriversItems)
+  private
+  public
+    function Add(const Category, Name, Title: string; vDriverClass: TClass): TmnDriverItem;
+  end;
+
+function mnDriversClasses: TmnDriversClasses;
 
 implementation
 
 var
-  FmnRegisteredDrivers: TmnRegisteredDrivers = nil;
+  FmnDriversClasses: TmnDriversClasses = nil;
 
-function mnRegisteredDrivers: TmnRegisteredDrivers;
+function mnDriversClasses: TmnDriversClasses;
 begin
-  if FmnRegisteredDrivers = nil then
-    FmnRegisteredDrivers := TmnRegisteredDrivers.Create;
-  Result := FmnRegisteredDrivers;
+  if FmnDriversClasses = nil then
+    FmnDriversClasses := TmnDriversClasses.Create;
+  Result := FmnDriversClasses;
+end;
+{ TmnDriversClasses }
+
+function TmnDriversItems.GetItems(Index: Integer): TmnDriverItem;
+begin
+  Result := inherited Items[Index] as TmnDriverItem;
 end;
 
-{ TmnDriver }
-
-constructor TmnDriver.Create;
+function TmnDriversClasses.Add(const Category, Name, Title: string; vDriverClass: TClass): TmnDriverItem;
 begin
-  inherited Create;
-end;
-
-function TmnDriver.GetName: string;
-begin
-  Result := '';
-end;
-
-destructor TmnDriver.Destroy;
-begin
-  inherited;
-end;
-
-class function TmnDriver.DriverTitle: string;
-begin
-  Result := '';
-end;
-
-class function TmnDriver.DriverName: string;
-begin
-  Result := '';
-end;
-
-{ TmnRegisteredDrivers }
-
-function TmnRegisteredDrivers.GetItems(Index: Integer): TmnRegisteredDriver;
-begin
-  Result := inherited Items[Index] as TmnRegisteredDriver;
-end;
-
-function TmnRegisteredDrivers.Add(Category: string; vDriverClass: TmnDriverClass): TmnRegisteredDriver;
-begin
-  Result := TmnRegisteredDriver.Create;
+  Result := TmnDriverItem.Create;
   Result.Category := Category; 
-  Result.Name := vDriverClass.DriverName;
-  Result.Title := vDriverClass.DriverTitle;
+  Result.Name := Name;
+  Result.Title := Title;
   Result.DriverClass := vDriverClass;
   Inherited Add(Result);
 end;
 
-function TmnRegisteredDrivers.Find(vName: string): TmnRegisteredDriver;
+procedure TmnDriversItems.EnumCategory(const Category: string; vStrings: TStrings);
+var
+  i: Integer;
+begin
+  for i := 0 to Count -1 do
+  begin
+    if SameText(Category, Items[i].Category) then
+    begin
+      vStrings.AddObject(Items[i].Title, Items[i]);
+    end;
+  end;
+end;
+
+procedure TmnDriversItems.Enum(vStrings: TStrings);
+var
+  i: Integer;
+begin
+  for i := 0 to Count -1 do
+  begin
+    vStrings.AddObject(Items[i].Title, Items[i]);
+  end;
+end;
+
+function TmnDriversItems.EnumCategory(const Category: string): TmnDriversItems;
+var
+  i: Integer;
+begin
+  Result := TmnDriversItems.Create(False);
+  for i := 0 to Count -1 do
+  begin
+    if SameText(Category, Items[i].Category) then
+    begin
+      Result.Add(Items[i]);
+    end;
+  end;
+end;
+
+function TmnDriversItems.Find(const vName: string): TmnDriverItem;
 var
   i: Integer;
 begin
@@ -142,19 +139,22 @@ begin
   end;
 end;
 
-function TmnRegisteredDrivers.CreateByName(vCategory: string; vName: string): TmnDriver;
+function TmnDriversItems.FindClass(const vName: string): TClass;
 var
-  P: TmnRegisteredDriver;
+  i: Integer;
 begin
-  //Result := nil;
-  P := Find(vCategory, vName);
-  if P <> nil then
-    Result := P.DriverClass.Create
-  else
-    raise EmnDriver.Create('Driver ' + vName + ' not found');
+  Result := nil;
+  for i := 0 to Count -1 do
+  begin
+    if SameText(vName, Items[i].Name) then
+    begin
+      Result := Items[i].DriverClass;
+      break;
+    end;
+  end;
 end;
 
-function TmnRegisteredDrivers.Find(vCategory, vName: string): TmnRegisteredDriver;
+function TmnDriversItems.Find(const vCategory, vName: string): TmnDriverItem;
 var
   i: Integer;
 begin
