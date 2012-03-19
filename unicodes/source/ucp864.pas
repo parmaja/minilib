@@ -1,4 +1,4 @@
-unit ucp864;
+﻿unit ucp864;
 {*
  * Copyright (C) 1999-2001 Free Software Foundation, Inc.
  * This file is part of the GNU LIBICONV Library.
@@ -194,11 +194,14 @@ var
 begin
   c := '?';
   if (S < #$0020) then
-    Byte(R) := Byte(S)
+  begin
+    Byte(R) := Byte(S);
+    exit;
+  end
   else if (S >= #$0020) and (S < #$0028) then
     c := cp864_page00[Ord(S) - $0020]
   else if (S >= #$0028) and (S < #$0080) then
-    c := S
+    c := Char(S)
   else if (S >= #$00a0) and (S < #$00f8) then
     c := cp864_page00_1[Ord(S) - $00a0]
   else if (S = #$03b2) then

@@ -134,7 +134,10 @@ var
 begin
   c := '?';
   if (S < #$0080) then
-    Byte(c) := Byte(S)
+  begin
+    Byte(c) := Byte(S);
+    exit;
+  end
   else if (S >= #$00a0) and (S < #$0180) then
     c := cp1250_page00[Ord(S) - $00a0]
   else if (S >= #$02c0) and (S < #$02e0) then
