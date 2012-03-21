@@ -78,8 +78,6 @@ const
 );
 
 procedure cp1252_mbtowc(S:AnsiChar; var R: WideChar);
-var
-  wc: Cardinal;
 begin
   if (S < #$80) or (S >= #$a0) then
     Word(R) := Word(S)

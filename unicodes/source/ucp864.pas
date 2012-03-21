@@ -190,7 +190,6 @@ end;
 procedure cp864_wctomb(S: WideChar; var R: AnsiChar);
 var
   c: AnsiChar;
-  t: Integer;
 begin
   c := '?';
   if (S < #$0020) then
