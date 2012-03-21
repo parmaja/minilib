@@ -36,6 +36,10 @@ contains
   mnStreams in '..\mnStreams.pas',
   mnUtils in '..\mnUtils.pas',
   mnDrivers in '..\mnDrivers.pas',
-  base36  in '..\base36.pas';
-  
+  base36  in '..\base36.pas',
+  ucp864 in '..\..\unicodes\source\ucp864.pas';
+  ucp1250 in '..\..\unicodes\source\ucp1250.pas';
+  ucp1252 in '..\..\unicodes\source\ucp1252.pas';
+  ucp1256 in '..\..\unicodes\source\ucp1256.pas';
+  ucputils in '..\..\unicodes\source\ucputils.pas';
 end.
