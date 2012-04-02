@@ -30,6 +30,7 @@ type
   TposCellInfo = record
     Value: Variant;
     Color: TColor;
+    StrikeThrough: Boolean;
     Data: Integer;
     AnObject: TObject;
   end;
@@ -675,7 +676,7 @@ var
   i: Integer;
   aItemRect: TRect;
   aTotal, aWidth: Double;
-  W: Integer;
+  W, H: Integer;
   Visibles: TposVisibleList;
   ACell: TposCellInfo;
 begin
@@ -709,6 +710,12 @@ begin
       ACell.AnObject := nil;
       GetCellInfo(Visibles[i].Column, Index, ACell);
       Visibles[i].Column.PaintCell(Canvas, ACell, Index, aItemRect, Color, (i >= Visibles.Count - 1));
+      if ACell.StrikeThrough then
+      begin
+        H := aItemRect.Top + (aItemRect.Bottom - aItemRect.Top) div 2;
+        Canvas.MoveTo(aItemRect.Left + 2, H);
+        Canvas.LineTo(aItemRect.Right - 2, H);
+      end;
       if UseRightToLeftAlignment then
         aItemRect.Right := aItemRect.Left
       else

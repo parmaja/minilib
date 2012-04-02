@@ -131,7 +131,7 @@ function udtISODateToStr(DateTime: TDateTime; TimeDivider: AnsiChar = ' '; WithT
 function udtISODateToStr(UDS: TUniviersalDateSystem; DateTime: TDateTime; TimeDivider: AnsiChar = ' '; WithTime: Boolean = False): String; overload;
 
 var
-  CompatibleWith: String = 'Compatible';
+  CompatibleWith: String = 'Compatible'; //new words 'substitute' or 'equivalent'
 
 function UniDate: TUniviersalDateSystems;
 

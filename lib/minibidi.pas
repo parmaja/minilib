@@ -42,6 +42,7 @@ License under MIT license
    the problem the control chars moved to the first
 * search for '- 1]' for Types[i - 1], there is no -1 element, it is give range check error 
 
+test ET chars
 }
 
 interface
@@ -745,7 +746,7 @@ begin
     if (fNSM) then
     begin
       if (Types[0] = ctNSM) then
-        Types[0] := TCharacterType(ParagraphLevel); //* zaher
+        Types[0] := TCharacterType(ParagraphLevel); //TODO: wrong assign
 
       for i := 1 to Count - 1 do //*
       begin
@@ -798,7 +799,9 @@ begin
       * to a European number. A single common separator between two numbers
       * of the same type changes to that type.
       }
-    for i := 0 to Count - 2 do //-2 to use [i + 1]
+
+    //TODO: what if is the last char and after european number?
+    for i := 1 to Count - 2 do //1..count-2 for use [i - 1] [i + 1]
     begin
       if (Types[i] = ctES) then
       begin
@@ -825,24 +828,22 @@ begin
       begin
         if (Types[i] = ctET) then
         begin
-          if (Types[i - 1] = ctEN) then
+          if (i > 0) and (Types[i - 1] = ctEN) then
           begin
             Types[i] := ctEN;
-            continue;
+            //continue;//do we need it?
           end
-          else if (Types[i + 1] = ctEN) then
+          else if (i < Count - 2) and (Types[i + 1] = ctEN) then
           begin
             Types[i] := ctEN;
-            continue;
+            //continue;//do we need it?
           end
-          else if (Types[i + 1] = ctET) then
+          else if (i < Count - 2) and (Types[i + 1] = ctET) then
           begin
-            j := i;
+            j := i + 1;
             while (j < Count) and (Types[j] = ctET) do
-            begin
               Inc(j);
-            end;
-            if (Types[j] = ctEN) then
+            if (j < Count) and (Types[j] = ctEN) then
               Types[i] := ctEN;
           end
         end
@@ -882,9 +883,7 @@ begin
           end
           else
             if (Types[j] = ctR) or (Types[j] = ctAL) then
-            begin
               break;
-            end;
           Dec(j);
         end
       end
@@ -901,7 +900,9 @@ begin
     begin
       if (Types[i] = ctON) then
       begin
-        if (Types[i - 1] = ctR) or (Types[i - 1] = ctEN) or (Types[i - 1] = ctAN) then//bug '- 1]'
+        if i = 0 then
+          tempType := ctR
+        else if (Types[i - 1] = ctR) or (Types[i - 1] = ctEN) or (Types[i - 1] = ctAN) then//TODO: bug '- 1]'
           tempType := ctR
         else
           tempType := ctL;

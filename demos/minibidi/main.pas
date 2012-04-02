@@ -84,7 +84,7 @@ begin
     u := UTF8Encode(t);
     w := Panel1.Canvas.TextWidth(u);
     //st.Wordbreak := true;
-    st.Alignment := taRightJustify;
+    st.Alignment := taLeftJustify;
     Panel1.Canvas.TextRect(Panel1.ClientRect, x, y, u, st);
     x := x + w;
   end;
