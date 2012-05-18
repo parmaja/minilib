@@ -323,7 +323,7 @@ begin
   Result.Title := vPrinterClass.PrinterTitle;
   Result.PrinterClass := vPrinterClass;
   inherited Add(Result);
-  mnRegisteredDrivers.Add('SerialPrinters', vPrinterClass);
+  mnDriversClasses.Add('Printers', 'SerialPrinters', 'Serial Printer', vPrinterClass);
 end;
 
 function TmnRegisteredPrinters.Find(vName: string): TmnRegisteredPrinter;
@@ -365,7 +365,7 @@ begin
   if P <> nil then
     Result := P.PrinterClass.Create(vStyle, vStream)
   else
-    raise EmnPritner.Create('Printer ' + vName + ' not found');
+    raise EmnPrinter.Create('Printer ' + vName + ' not found');
 end;
 
 end.

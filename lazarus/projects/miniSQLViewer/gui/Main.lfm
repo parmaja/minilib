@@ -19,7 +19,7 @@ object MainForm: TMainForm
   OnShortCut = FormShortCut
   Position = poDefaultPosOnly
   ShowHint = True
-  LCLVersion = '0.9.31'
+  LCLVersion = '1.1'
   object ClientPanel: TPanel
     Left = 0
     Height = 351

@@ -31,6 +31,7 @@ interface
 uses
   SysUtils, Classes, Variants,
   mnFields,
+  mncConnections,
   mncFBHeader, mncFBTypes, mncFBUtils, mncFBErrors, mncFBStrings, mncFBClient, mncFBBlob;
 
 type
@@ -86,19 +87,12 @@ type
     property AliasName: string read GetAliasName write SetAliasName;
   end;
 
-  TFBSQLVARList = class;
-
   { TFBSQLVAR }
 
-  TFBSQLVAR = class(TmnCustomField)
+  TFBSQLVAR = class(TmncField)
   private
-    FClones: TFBSQLVARList;
-    FCloned: Boolean;
     function GetXSQLVAR: PXSQLVAR;
   private
-    FDBHandle: PISC_DB_HANDLE; //Handles used to load and save to Blobs
-    FTRHandle: PISC_TR_HANDLE;
-
     FIndex: Integer;
     FModified: Boolean;
     FName: string;
@@ -146,28 +140,23 @@ type
     procedure SetModified(const AValue: Boolean);
     function GetAsText: string;
     procedure SetAsText(const AValue: string);
-    procedure Clone(FBCSQLVAR: TFBSQLVAR);
-    procedure AddClone(FBCSQLVAR: TFBSQLVAR);
-    procedure ApplyClones;
     procedure SetAsNullString(const AValue: string);
-    property Clones: TFBSQLVARList read FClones; //this property can be nil if there is no clones
     function Call(ErrCode: ISC_STATUS; const StatusVector: TStatusVector; RaiseError: Boolean): ISC_STATUS;
   public
-    constructor Create(DBHandle: PISC_DB_HANDLE; TRHandle: PISC_TR_HANDLE);
+    constructor Create(vColumn: TmncColumn); override;
     destructor Destroy; override;
 
-    procedure Assign(Source: TFBSQLVAR);
+    procedure Assign(DBHandle: PISC_DB_HANDLE; TRHandle: PISC_TR_HANDLE; Source: TFBSQLVAR);
     procedure SetBuffer(Buffer: Pointer; Size: Integer); //zaher
-    procedure LoadFromFile(const FileName: string);
+    {procedure LoadFromFile(const FileName: string);
     procedure LoadFromStream(Stream: TStream);
     procedure LoadFromIStream(Stream: IStreamPersist);
     procedure SaveToFile(const FileName: string);
-    function CreateReadBlobSteam: TFBBlobStream;
-    function CreateWriteBlobSteam: TFBBlobStream;
     procedure SaveToStream(Stream: TStream);
-    procedure SaveToIStream(Stream: IStreamPersist);
+    procedure SaveToIStream(Stream: IStreamPersist);}
+    function CreateReadBlobSteam(DBHandle: PISC_DB_HANDLE; TRHandle: PISC_TR_HANDLE): TFBBlobStream;
+    function CreateWriteBlobSteam(DBHandle: PISC_DB_HANDLE; TRHandle: PISC_TR_HANDLE): TFBBlobStream;
     procedure Clear; override;
-    property Cloned: Boolean read FCloned;
 
     property AsDouble: Double read GetAsDouble write SetAsDouble;
     property AsFloat: Double read GetAsFloat write SetAsFloat;
@@ -188,83 +177,55 @@ type
     property Modified: Boolean read FModified write SetModified;
     property Size: Integer read GetSize;
     property SQLType: Integer read GetSQLType;
-    property Name: string read FName write SetName;
+    property Name: string read FName write SetName; deprecated;
   end;
 
   { TFBSQLDA }
   //List of TFBSQLVAR and buffer of params and fields
 
-  TFBSQLDA = class(TObject)
+  TFBSQLDA = class(TmncFields)
   private
     function GetItem(Index: Integer): TFBSQLVAR;
     procedure SetItem(Index: Integer; const AValue: TFBSQLVAR);
-    function GetCount: Integer;
-    procedure SetCount(const AValue: Integer);
     function GetField(Index: string): TFBSQLVAR;
+    //procedure ChangeCount(const AValue: Integer);
   protected
-    FDBHandle: PISC_DB_HANDLE;
-    FTRHandle: PISC_TR_HANDLE;
     FData: PXSQLDA;
-    FList: TList;
     function GetModified: Boolean;
     function GetNames: string;
     function GetRecordSize: Integer;
-    function GetXSQLDA: PXSQLDA;
-    procedure FindClones;
-    procedure ApplyClones;
   public
-    CaseSensitive: Boolean;{TODO}
-    constructor Create(DBHandle: PISC_DB_HANDLE; TRHandle: PISC_TR_HANDLE);
+    constructor Create(vColumns: TmncColumns);
     destructor Destroy; override;
-    procedure Clear;
+    procedure Clear; override;
     procedure Clean;
     procedure Initialize;
-    function IsExists(Idx: string): Boolean;
-    function Clone(Source: TFBSQLDA): TFBSQLVARList;
-    function GetSQLVARByName(Idx: string): TFBSQLVAR;
-    function ByName(Idx: string): TFBSQLVAR;
-    property AsXSQLDA: PXSQLDA read GetXSQLDA;
     property Modified: Boolean read GetModified;
     property Names: string read GetNames;
     property RecordSize: Integer read GetRecordSize;
-    property Count: Integer read GetCount write SetCount;
-    property Items[Index: Integer]: TFBSQLVAR read GetItem write SetItem; default;
-    property Field[Index: string]: TFBSQLVAR read GetField;
+    property Field[Index: string]: TFBSQLVAR read GetField; default;
+    property Items[Index: Integer]: TFBSQLVAR read GetItem write SetItem;
     property Data: PXSQLDA read FData;
   end;
 
   TFBDSQLTypes = (SQLUnknown, SQLSelect, SQLInsert, SQLUpdate, SQLDelete,
     SQLDDL, SQLGetSegment, SQLPutSegment,
     SQLExecProcedure, SQLStartTransaction, SQLCommit, SQLRollback,
-    SQLSelectForUpdate, SQLSetGenerator, SQLSavePoint);
-
-  { TFBSQLVARList }
-
-  TFBSQLVARList = class(TList)
-  private
-    function GetItem(Index: Integer): TFBSQLVAR;
-    procedure SetItem(Index: Integer; const AValue: TFBSQLVAR);
-  public
-    function Add(Item: TFBSQLVAR): Integer;
-    procedure Assign(Source: TFBSQLVARList);
-    property Items[Index: Integer]: TFBSQLVAR read GetItem write SetItem; default;
-  end;
+    SQLSelectForUpdate, SQLSetSequence, SQLSavePoint);
 
 implementation
 
 { TFBSQLVAR }
 
-constructor TFBSQLVAR.Create(DBHandle: PISC_DB_HANDLE; TRHandle: PISC_TR_HANDLE);
+constructor TFBSQLVAR.Create(vColumn: TmncColumn);
 begin
-  inherited Create;
-  FDBHandle:= DBHandle;
-  FTRHandle:= TRHandle;
+  inherited Create(vColumn);
   FSQLVAR := TSQLVAR.Create;
 end;
 
-function TFBSQLVAR.CreateReadBlobSteam: TFBBlobStream;
+function TFBSQLVAR.CreateReadBlobSteam(DBHandle: PISC_DB_HANDLE; TRHandle: PISC_TR_HANDLE): TFBBlobStream;
 begin
-  Result := TFBBlobStream.Create(FDBHandle ,FTRHandle);
+  Result := TFBBlobStream.Create(DBHandle, TRHandle);
   try
     Result.Mode := bmRead;
     Result.BlobID := AsQuad;
@@ -274,9 +235,9 @@ begin
   end;
 end;
 
-function TFBSQLVAR.CreateWriteBlobSteam: TFBBlobStream;
+function TFBSQLVAR.CreateWriteBlobSteam(DBHandle: PISC_DB_HANDLE; TRHandle: PISC_TR_HANDLE): TFBBlobStream;
 begin
-  Result := TFBBlobStream.Create(FDBHandle, FTRHandle);
+  Result := TFBBlobStream.Create(DBHandle, TRHandle);
   try
     Result.Mode := bmWrite;
   except
@@ -285,7 +246,7 @@ begin
   end;
 end;
 
-procedure TFBSQLVAR.Assign(Source: TFBSQLVAR);
+procedure TFBSQLVAR.Assign(DBHandle: PISC_DB_HANDLE; TRHandle: PISC_TR_HANDLE; Source: TFBSQLVAR);
 var
   szBuff: PAnsiChar;
   s_bhandle, d_bhandle: TISC_BLOB_HANDLE;
@@ -333,8 +294,7 @@ begin
       if bSourceBlob then
       begin
         { read the blob }
-        Call(FBClient.isc_open_blob2(@StatusVector, FDBHandle,
-          FTRHandle, @s_bhandle, PISC_QUAD(Source.FSQLVAR.sqldata),
+        Call(FBClient.isc_open_blob2(@StatusVector, DBHandle, TRHandle, @s_bhandle, PISC_QUAD(Source.FSQLVAR.sqldata),
           0, nil), StatusVector, True);
         try
           FBGetBlobInfo(@s_bhandle, iSegs, iMaxSeg, iSize, iBlobType);
@@ -349,8 +309,7 @@ begin
       if bDestBlob then
       begin
         { write the blob }
-        Call(FBClient.isc_create_blob2(@StatusVector, FDBHandle,
-          FTRHandle, @d_bhandle, PISC_QUAD(FSQLVAR.sqldata),
+        Call(FBClient.isc_create_blob2(@StatusVector, DBHandle, TRHandle, @d_bhandle, PISC_QUAD(FSQLVAR.sqldata),
           0, nil), StatusVector, True);
         try
           FBWriteBlob(@d_bhandle, szBuff, iSize);
@@ -739,6 +698,35 @@ begin
   Result := (FSQLVAR.sqltype and 1 = 1);
 end;
 
+{procedure TFBSQLVAR.SaveToIStream(Stream: IStreamPersist);
+var
+  bs: TFBBlobStream;
+begin
+  bs := TFBBlobStream.Create(FDBHandle ,FTRHandle);
+  try
+    bs.Mode := bmRead;
+    bs.BlobID := AsQuad;
+    Stream.LoadFromStream(bs);
+  finally
+    bs.Free;
+  end;
+end;
+
+procedure TFBSQLVAR.LoadFromIStream(Stream: IStreamPersist);
+var
+  bs: TFBBlobStream;
+begin
+  bs := TFBBlobStream.Create(FDBHandle ,FTRHandle);
+  try
+    bs.Mode := bmWrite;
+    Stream.SaveToStream(bs);
+    bs.Finalize;
+    AsQuad := bs.BlobID;
+  finally
+    bs.Free;
+  end;
+end;
+
 procedure TFBSQLVAR.LoadFromFile(const FileName: string);
 var
   fs: TFileStream;
@@ -791,7 +779,7 @@ begin
   finally
     bs.Free;
   end;
-end;
+end;}
 
 function TFBSQLVAR.GetSize: Integer;
 begin
@@ -1188,7 +1176,6 @@ begin
   FreeMem(FSQLVAR.sqldata);
   FreeMem(FSQLVAR.sqlind);
   FreeAndNil(FSQLVAR);
-  FreeAndNil(FClones);
   inherited;
 end;
 
@@ -1199,7 +1186,6 @@ end;
 
 procedure TFBSQLVAR.SetModified(const AValue: Boolean);
 begin
-  FCloned := False;
   FModified := AValue;
 end;
 
@@ -1247,72 +1233,16 @@ begin
 
 end;
 
-procedure TFBSQLVAR.AddClone(FBCSQLVAR: TFBSQLVAR);
-begin
-  if FClones = nil then
-    FClones := TFBSQLVARList.Create;
-  FBCSQLVAR.FCloned := True;
-  Clones.Add(FBCSQLVAR);
-end;
-
-procedure TFBSQLVAR.ApplyClones;
-var
-  i: Integer;
-begin
-  if (Clones <> nil) and (not Cloned) then
-    for i := 0 to Clones.Count - 1 do
-    begin
-      Clones[i].Clone(Self);
-    end;
-end;
-
-procedure TFBSQLVAR.Clone(FBCSQLVAR: TFBSQLVAR);
-begin
-  Value := FBCSQLVAR.Value;
-end;
-
 function TFBSQLVAR.GetXSQLVAR: PXSQLVAR;
 begin
   Result := FSQLVar.XSQLVar;
 end;
 
-procedure TFBSQLVAR.SaveToIStream(Stream: IStreamPersist);
-var
-  bs: TFBBlobStream;
-begin
-  bs := TFBBlobStream.Create(FDBHandle ,FTRHandle);
-  try
-    bs.Mode := bmRead;
-    bs.BlobID := AsQuad;
-    Stream.LoadFromStream(bs);
-  finally
-    bs.Free;
-  end;
-end;
-
-procedure TFBSQLVAR.LoadFromIStream(Stream: IStreamPersist);
-var
-  bs: TFBBlobStream;
-begin
-  bs := TFBBlobStream.Create(FDBHandle ,FTRHandle);
-  try
-    bs.Mode := bmWrite;
-    Stream.SaveToStream(bs);
-    bs.Finalize;
-    AsQuad := bs.BlobID;
-  finally
-    bs.Free;
-  end;
-end;
-
 { TFBSQLDA }
 
-constructor TFBSQLDA.Create(DBHandle: PISC_DB_HANDLE; TRHandle: PISC_TR_HANDLE);
+constructor TFBSQLDA.Create(vColumns: TmncColumns);
 begin
-  inherited Create;
-  FDBHandle:= DBHandle;
-  FTRHandle:= TRHandle;
-  FList := TList.Create;
+  inherited Create(vColumns);
   FBAlloc(FData, 0, XSQLDA_LENGTH(0));
   FData.version := SQLDA_VERSION1;
 end;
@@ -1325,7 +1255,6 @@ begin
     FreeMem(FData);
     FData := nil;
   end;
-  FList.Free;
   inherited;
 end;
 
@@ -1358,48 +1287,6 @@ end;
 function TFBSQLDA.GetRecordSize: Integer;
 begin
   Result := SizeOf(TFBSQLDA) + XSQLDA_LENGTH(Count);
-end;
-
-function TFBSQLDA.GetXSQLDA: PXSQLDA;
-begin
-  Result := FData;
-end;
-
-function TFBSQLDA.ByName(Idx: string): TFBSQLVAR;
-begin
-  Result := GetSQLVARByName(Idx);
-  if Result = nil then
-    FBRaiseError(fbceFieldNotFound, [Idx]);
-end;
-
-function TFBSQLDA.GetSQLVARByName(Idx: string): TFBSQLVAR;
-var
-  i: Integer;
-begin
-  Result := nil;
-  if CaseSensitive then
-  begin
-    for i := 0 to Count - 1 do
-    begin
-      if (Items[i].FName = Idx) then
-      begin
-        Result := Items[i];
-        break;
-      end;
-    end;
-  end
-  else
-  begin
-    Idx := UpperCase(FBDequoteName(Idx));
-    for i := 0 to Count - 1 do
-    begin
-      if (UpperCase(Items[i].FName) = Idx) then
-      begin
-        Result := Items[i];
-        break;
-      end;
-    end;
-  end;
 end;
 
 procedure TFBSQLDA.Initialize;
@@ -1451,12 +1338,7 @@ begin
   end;
 end;
 
-function TFBSQLDA.IsExists(Idx: string): Boolean;
-begin
-  Result := GetSQLVARByName(Idx) <> nil;
-end;
-
-procedure TFBSQLDA.SetCount(const AValue: Integer);
+{procedure TFBSQLDA.ChangeCount(const AValue: Integer);
 var
   i: Integer;
   XSQLVar_Size: Integer;
@@ -1477,7 +1359,7 @@ begin
       end;
       FBAlloc(FData, XSQLDA_LENGTH(Count), XSQLDA_LENGTH(AValue));
     end;
-    FList.Count := AValue;
+    ChangeCount(AValue);
     FData.version := SQLDA_VERSION1;
     XSQLVar_Size := sizeof(TXSQLVAR);
     p := @FData^.sqlvar[0];
@@ -1485,7 +1367,7 @@ begin
     begin
       if i >= OldCount then
       begin
-        Items[i] := TFBSQLVAR.Create(FDBHandle, FTRHandle);
+        Items[i] := TFBSQLVAR.Create(Columns);
         Items[i].FIndex := i;
         Items[i].FSQLVAR.XSqlVar := p;
         Items[i].Clear;
@@ -1500,16 +1382,16 @@ begin
       FData^.sqld := AValue;
     end;
   end;
-end;
+end;}
 
 function TFBSQLDA.GetItem(Index: Integer): TFBSQLVAR;
 begin
-  Result := TFBSQLVAR(FList[Index]);
+  Result := (inherited Items[Index]) as TFBSQLVAR;
 end;
 
 procedure TFBSQLDA.SetItem(Index: Integer; const AValue: TFBSQLVAR);
 begin
-  FList[Index] := AValue;
+  (inherited Items[Index]) := AValue;
 end;
 
 procedure TFBSQLDA.Clear;
@@ -1520,18 +1402,12 @@ begin
   begin
     Items[i].Free;
   end;
-  FList.Clear;
   inherited;
-end;
-
-function TFBSQLDA.GetCount: Integer;
-begin
-  Result := FList.Count;
 end;
 
 function TFBSQLDA.GetField(Index: string): TFBSQLVAR;
 begin
-  Result := ByName(Index);
+  Result := (inherited Field[Index]) as TFBSQLVAR;
 end;
 
 procedure TFBSQLDA.Clean;
@@ -1542,48 +1418,6 @@ begin
   begin
     Items[i].Clear;
   end;
-end;
-
-function TFBSQLDA.Clone(Source: TFBSQLDA): TFBSQLVARList;
-var
-  i: Integer;
-  aVAR: TFBSQLVAR;
-begin
-  Result := TFBSQLVARList.Create;
-  for i := 0 to Count - 1 do
-  begin
-    aVAR := Source.ByName(Items[i].Name);
-    if aVAR <> nil then
-    begin
-      Result.Add(Items[i]);
-    end;
-  end;
-end;
-
-procedure TFBSQLDA.FindClones;
-var
-  i, j: Integer;
-  aItem: TFBSQLVAR;
-begin
-  for i := 0 to Count - 1 do
-  begin
-    aItem := Items[i];
-    FreeAndNil(aItem.FClones);
-    if not aItem.Cloned then
-      for j := i + 1 to Count - 1 do
-      begin
-        if (aItem.Name = Items[j].Name) then
-          aItem.AddClone(Items[j]);
-      end;
-  end;
-end;
-
-procedure TFBSQLDA.ApplyClones;
-var
-  i: Integer;
-begin
-  for i := 0 to Count - 1 do
-    Items[i].ApplyClones;
 end;
 
 function TSQLVAR.GetAliasName: string;
@@ -1743,34 +1577,6 @@ end;
 function TSQLVAR.GetSqlDef: Short;
 begin
   Result := SqlType and (not 1);
-end;
-
-{ TFBSQLVARList }
-
-function TFBSQLVARList.Add(Item: TFBSQLVAR): Integer;
-begin
-  Result := inherited Add(Item);
-end;
-
-procedure TFBSQLVARList.Assign(Source: TFBSQLVARList);
-var
-  i: Integer;
-begin
-  i := 0;
-  while (i < Count) and (i < Source.Count) do
-  begin
-    Items[i].Assign(Source[i]);
-  end;
-end;
-
-function TFBSQLVARList.GetItem(Index: Integer): TFBSQLVAR;
-begin
-  Result := inherited Items[Index];
-end;
-
-procedure TFBSQLVARList.SetItem(Index: Integer; const AValue: TFBSQLVAR);
-begin
-  inherited Items[Index] := AValue;
 end;
 
 end.

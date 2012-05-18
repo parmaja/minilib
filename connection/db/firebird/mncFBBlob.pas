@@ -211,8 +211,8 @@ end;
 constructor TFBBlobStream.Create;
 begin
   inherited Create;
-  FDBHandle:= DBHandle;
-  FTRHandle:= TRHandle;
+  FDBHandle := DBHandle;
+  FTRHandle := TRHandle;
   FBuffer := nil;
   FBlobSize := 0;
 end;

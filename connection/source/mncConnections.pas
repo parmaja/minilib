@@ -13,6 +13,15 @@ unit mncConnections;
 {$MODE delphi}
 {$ENDIF}
 
+{
+  We Columns Fields and Params
+  Columns has info about Fields, like Name, Size, Type etc...,
+  while Fields have only the values, the idea, is you can use one Columns with multiple records,
+  record here is the Fields
+
+  Params not need that technique.
+}
+
 interface
 
 uses
@@ -292,7 +301,7 @@ type
     FColumn: TmncColumn;
   protected
   public
-    constructor Create(vColumn: TmncColumn);
+    constructor Create(vColumn: TmncColumn); virtual;
     function GetName: string;
   published
     property Column: TmncColumn read FColumn write FColumn;
@@ -309,7 +318,7 @@ type
   protected
     function Find(vName: string): TmncItem; override;
   public
-    constructor Create(vColumns: TmncColumns);
+    constructor Create(vColumns: TmncColumns); virtual;
     function FindField(vName: string): TmncField;
     function FieldByName(vName: string): TmncField;
     function Add(Column: TmncColumn; Value: Variant): TmncField; overload;
@@ -337,6 +346,7 @@ type
     property Buffer: Pointer read FBuffer;
     property BufferSize: Integer read FBufferSize;
     property BufferAllocated: Boolean read GetBufferAllocated;
+
     property Name: string read FName write FName;
   end;
 
@@ -394,9 +404,9 @@ type
     FColumns: TmncColumns;
     FFields: TmncFields;
     FParams: TmncParams;
+    FParamList: TmncParamList;
     FPrepared: Boolean;
     FNextOnExecute: Boolean;
-    FParamList: TmncParamList;
     procedure SetRequest(const Value: TStrings);
     procedure SetColumns(const Value: TmncColumns);
     procedure SetFields(const Value: TmncFields);
@@ -418,6 +428,8 @@ type
     procedure DoCommit; virtual; //some time we need make commit with command or session
     procedure DoRollback; virtual;
     procedure DoRequestChanged(Sender: TObject); virtual;
+    function CreateFields(vColumns: TmncColumns): TmncFields; virtual;
+    function CreateParams: TmncParams; virtual;
     property Request: TStrings read FRequest write SetRequest;
     property ParamList: TmncParamList read FParamList; //for Dublicated names when pass the params when execute
   public
@@ -592,6 +604,16 @@ begin
     Close;
 end;
 
+function TmncCommand.CreateFields(vColumns: TmncColumns): TmncFields;
+begin
+  Result := TmncFields.Create(vColumns);
+end;
+
+function TmncCommand.CreateParams: TmncParams;
+begin
+  Result := TmncParams.Create;
+end;
+
 constructor TmncCommand.Create;
 begin
   inherited;
@@ -599,7 +621,7 @@ begin
   (FRequest as TStringList).OnChange := DoRequestChanged;
 
   FColumns := TmncColumns.Create;
-  FParams := TmncParams.Create;
+  FParams := CreateParams;
   FParamList := TmncParamList.Create;
   FNextOnExecute := True;
 end;

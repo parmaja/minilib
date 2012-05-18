@@ -634,7 +634,7 @@ begin
   c := sqlite3_column_count(FStatment);
   if c > 0 then
   begin
-    aCurrent := TmncFields.Create(Columns);
+    aCurrent := CreateFields(Columns);
     for i := 0 to c - 1 do
     begin
 //    TStorageType = (stNone, stInteger, stFloat, stText, stBlob, stNull);

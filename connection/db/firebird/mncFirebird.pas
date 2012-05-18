@@ -26,7 +26,7 @@ uses
   mncSQLDA;
 
 const
-  USE_DIALECT = 3;
+  FB_DIALECT = 3;
 
 type
 
@@ -88,7 +88,6 @@ type
     constructor Create(vConnection: TmncConnection); override;
     destructor Destroy; override;
     procedure Execute(SQL: string);
-    function GetLastInsertID: Int64;
     function GetRowsChanged: Integer;
     property Handle: TISC_TR_HANDLE read FHandle;
     property TPB: PChar read FTPB;
@@ -114,12 +113,10 @@ type
     FRecordCount: Integer;
     FParsedSQL: string;
     function GetConnection: TmncFBConnection;
-    function GetDBHandle: PISC_DB_HANDLE;
     function GetSession: TmncFBSession;
-    function GetTRHandle: PISC_TR_HANDLE;
     procedure SetSession(const AValue: TmncFBSession);
     procedure FreeHandle;
-    procedure InternalPrepare(Full: Boolean);
+    procedure InternalPrepare;
   protected
     function Call(ErrCode: ISC_STATUS; StatusVector: TStatusVector; RaiseError: Boolean): ISC_STATUS;
     procedure ValidStatement;
@@ -132,13 +129,10 @@ type
     procedure DoClose; override;
     procedure DoCommit; override;
     procedure DoRollback; override;
+    function CreateFields(vColumns: TmncColumns): TmncFields; override;
     property Connection: TmncFBConnection read GetConnection;
     property Session: TmncFBSession read GetSession write SetSession;
-//    property Transaction: TmncFBSession read GetSession write SetSession;// Alias
-    property TRHandle: PISC_TR_HANDLE read GetTRHandle;
-    property DBHandle: PISC_DB_HANDLE read GetDBHandle;
   public
-
     procedure Clear; override;
     function GetRowsChanged: Integer; virtual;
     property SQLType: TFBDSQLTypes read FSQLType;
@@ -244,12 +238,12 @@ procedure TmncFBConnection.DoConnect;
 var
   DPB: string;
   i: Integer;
-  aDatabaseName: string;
+  aDatabaseName: AnsiString;
   aParams: TStringList;
   StatusVector: TStatusVector;
 begin
-  FDialect := USE_DIALECT;
-  { Generate a new DPB if necessary }
+  FDialect := FB_DIALECT;
+
   aParams := TStringList.Create;
   try
     aParams.Assign(Params);
@@ -268,8 +262,8 @@ begin
     FBRaiseError(StatusVector);
   end;
   FDialect := GetDBSQLDialect;
-  if (FDialect < USE_DIALECT) then
-    raise EFBError.Create(-1, 'This database not dialect ' + IntToStr(USE_DIALECT))
+  if (FDialect < FB_DIALECT) then
+    raise EFBError.Create(-1, 'This database not dialect ' + IntToStr(FB_DIALECT))
 
 {    for i := 0 to FEventNotifiers.Count - 1 do
       if IFBEventNotifier(FEventNotifiers[i]).GetAutoRegister then
@@ -292,7 +286,7 @@ begin
     FBRaiseError(StatusVector)
   else
     FHandle := nil;
-  FDialect := USE_DIALECT;
+  FDialect := FB_DIALECT;
 end;
 
 { TmncFBSession }
@@ -385,16 +379,11 @@ var
 begin
   tr_handle := nil;
   try
-    Call(FBClient.isc_dsql_execute_immediate(@StatusVector, @FHandle, @tr_handle, 0, PChar(SQL), USE_DIALECT, nil), StatusVector, True);
+    Call(FBClient.isc_dsql_execute_immediate(@StatusVector, @FHandle, @tr_handle, 0, PChar(SQL), FB_DIALECT, nil), StatusVector, True);
   finally
   end;
 end;
 
-
-function TmncFBSession.GetLastInsertID: Int64;
-begin
-  CheckActive;
-end;
 
 function TmncFBSession.GetRowsChanged: Integer;
 begin
@@ -451,11 +440,6 @@ end;
 function TmncFBCommand.GetSession: TmncFBSession;
 begin
   Result := inherited Session as TmncFBSession;
-end;
-
-function TmncFBCommand.GetTRHandle: PISC_TR_HANDLE;
-begin
-
 end;
 
 procedure TmncFBCommand.SetSession(const AValue: TmncFBSession);
@@ -515,11 +499,9 @@ begin
     SQLSelect:
       begin
         Call(FBClient.isc_dsql_execute2(@StatusVector,
-          TRHandle,
-          @FHandle,
-          USE_DIALECT,
-          FSQLParams.AsXSQLDA,
-          nil), StatusVector, True);
+          @Session.Handle, @FHandle,
+          FB_DIALECT,
+          FSQLParams.Data, nil), StatusVector, True);
 
         Call(FBClient.isc_dsql_set_cursor_name(@StatusVector, @FHandle, PAnsiChar(FCursor), 0), StatusVector, True);
         FActive := True;
@@ -532,12 +514,9 @@ begin
     SQLExecProcedure:
       begin
         fetch_res := Call(FBClient.isc_dsql_execute2(@StatusVector,
-          TRHandle,
-          @FHandle,
-          USE_DIALECT,
-          FSQLParams.AsXSQLDA,
-          FSQLCurrent.AsXSQLDA), StatusVector, False);
-        if (fetch_res <> 0) then
+          @Session.Handle, @FHandle, FB_DIALECT,
+          FSQLParams.Data, FSQLCurrent.Data), StatusVector, False);
+(*        if (fetch_res <> 0) then
         begin
           if (fetch_res <> isc_lock_conflict) then
           begin
@@ -546,25 +525,22 @@ begin
              to work around the problem simply by "retrying". This
              need to be reproduced and fixed.
            }
-            FBClient.isc_dsql_prepare(@StatusVector, TRHandle, @FHandle, 0,
-              PAnsiChar(FParsedSQL), USE_Dialect, nil);
+            FBClient.isc_dsql_prepare(@StatusVector, @Session.Handle, @FHandle, 0,
+              PAnsiChar(FParsedSQL), FB_DIALECT, nil);
             Call(FBClient.isc_dsql_execute2(@StatusVector,
-              TRHandle,
-              @FHandle,
-              USE_Dialect,
-              FSQLParams.AsXSQLDA,
-              FSQLCurrent.AsXSQLDA), StatusVector, True);
+              @Session.Handle, @FHandle, FB_DIALECT,
+              FSQLParams.Data, FSQLCurrent.Data), StatusVector, True);
           end
-          else
+          else*)
             FBRaiseError(StatusVector); // go ahead and raise the lock conflict
-        end;
+//        end;
       end
   else
     Call(FBClient.isc_dsql_execute(@StatusVector,
-      TRHandle,
+      @Session.Handle,
       @FHandle,
-      USE_Dialect,
-      FSQLParams.AsXSQLDA), StatusVector, True)
+      FB_DIALECT,
+      FSQLParams.Data), StatusVector, True)
   end;
 end;
 
@@ -574,12 +550,17 @@ end;
 
 procedure TmncFBCommand.DoPrepare;
 begin
-  InternalPrepare(True);
+  InternalPrepare;
 end;
 
 procedure TmncFBCommand.DoRollback;
 begin
   Session.Rollback;
+end;
+
+function TmncFBCommand.CreateFields(vColumns: TmncColumns): TmncFields;
+begin
+  Result := TFBSQLDA.Create(vColumns);
 end;
 
 procedure TmncFBCommand.DoClose;
@@ -598,11 +579,6 @@ end;
 function TmncFBCommand.GetConnection: TmncFBConnection;
 begin
   Result := Session.Connection as TmncFBConnection;
-end;
-
-function TmncFBCommand.GetDBHandle: PISC_DB_HANDLE;
-begin
-  //Result := Session.Connection.Handle;
 end;
 
 procedure TmncFBCommand.ValidStatement;
@@ -627,7 +603,7 @@ begin
     FBRaiseError(StatusVector);
 end;
 
-procedure TmncFBCommand.InternalPrepare(Full: Boolean);
+procedure TmncFBCommand.InternalPrepare;
 var
   res_buffer: array[0..7] of Char;
   type_item: Char;
@@ -642,8 +618,8 @@ begin
     if (FParsedSQL = '') then
       FBRaiseError(fbceEmptyQuery, [nil]);
     try
-      Call(FBClient.isc_dsql_alloc_statement2(@StatusVector, DBHandle, @FHandle), StatusVector, True);
-      Call(FBClient.isc_dsql_prepare(@StatusVector, TRHandle, @FHandle, 0, PAnsiChar(FParsedSQL), USE_DIALECT, nil), StatusVector, True);
+      Call(FBClient.isc_dsql_alloc_statement2(@StatusVector, @Connection.Handle, @FHandle), StatusVector, True);
+      Call(FBClient.isc_dsql_prepare(@StatusVector, @Session.Handle, @FHandle, 0, PAnsiChar(FParsedSQL), FB_DIALECT, nil), StatusVector, True);
       { After preparing the statement, query the stmt type and possibly
         create a FSQLCurrent "holder" }
       { Get the type of the statement }
@@ -662,28 +638,29 @@ begin
             FreeHandle;
             FBRaiseError(fbceNotPermitted, [nil]);
           end;
-        SQLCommit,
-          SQLRollback,
-          SQLDDL, SQLSetGenerator,
-          SQLInsert, SQLUpdate, SQLDelete, SQLSelect, SQLSelectForUpdate,
+        SQLCommit, SQLRollback,
+          SQLDDL, SQLSetSequence,
+          SQLSelect, SQLInsert, SQLUpdate, SQLDelete, SQLSelectForUpdate,
           SQLExecProcedure:
           begin
-          { We already know how many inputs there are, so... }
+            { here we must save the old values of params }
+            { Fetch params info int SQLDA}
             if (FSQLParams.Data <> nil) and
-              (Call(FBClient.isc_dsql_describe_bind(@StatusVector, @FHandle, USE_DIALECT, FSQLParams.Data), StatusVector, True) > 0) then
+              (Call(FBClient.isc_dsql_describe_bind(@StatusVector, @FHandle, FB_DIALECT, FSQLParams.Data), StatusVector, True) > 0) then
               FBRaiseError(StatusVector);
             FSQLParams.Initialize;
-            if Full and (FSQLType in [SQLSelect, SQLSelectForUpdate, SQLExecProcedure]) then
+
+            if (FSQLType in [SQLSelect, SQLSelectForUpdate, SQLExecProcedure]) then
             begin
             { Allocate an initial output descriptor (with one column) }
               FSQLCurrent.Clear;
               FSQLCurrent.Count := 1;
             { Using isc_dsql_describe, get the right size for the columns... }
-              Call(FBClient.isc_dsql_describe(@StatusVector, @FHandle, USE_DIALECT, FSQLCurrent.Data), StatusVector, True);
+              Call(FBClient.isc_dsql_describe(@StatusVector, @FHandle, FB_DIALECT, FSQLCurrent.Data), StatusVector, True);
               if FSQLCurrent.Data^.sqld > FSQLCurrent.Data^.sqln then
               begin
                 FSQLCurrent.Count := FSQLCurrent.Data^.sqld;
-                Call(FBClient.isc_dsql_describe(@StatusVector, @FHandle, USE_DIALECT, FSQLCurrent.Data), StatusVector, True);
+                Call(FBClient.isc_dsql_describe(@StatusVector, @FHandle, FB_DIALECT, FSQLCurrent.Data), StatusVector, True);
               end
               else if FSQLCurrent.Data^.sqld = 0 then
                 FSQLCurrent.Clear;
