@@ -173,6 +173,30 @@ type
     property Name: string read FName write SetName; deprecated;
   end;
 
+  { TFBSQLDA }
+
+  TFBSQLDA = class(TmnFields)
+  private
+    function GetItem(Index: Integer): TFBSQLVAR;
+    procedure SetItem(Index: Integer; const AValue: TFBSQLVAR);
+    function GetField(Index: string): TFBSQLVAR;
+    //procedure ChangeCount(const AValue: Integer);
+  protected
+    FData: PXSQLDA;
+    function GetModified: Boolean;
+    function GetNames: string;
+    function GetRecordSize: Integer;
+  public
+    constructor Create;
+    destructor Destroy; override;
+    procedure Initialize;
+    property Modified: Boolean read GetModified;
+    property Names: string read GetNames;
+    property RecordSize: Integer read GetRecordSize;
+    property Field[Index: string]: TFBSQLVAR read GetField; default;
+    property Items[Index: Integer]: TFBSQLVAR read GetItem write SetItem;
+    property Data: PXSQLDA read FData;
+  end;
 
   TFBSQLField = class(TmncField)
   end;
@@ -200,31 +224,6 @@ type
   protected
     constructor Create; override;
     destructor Destroy; override;
-  end;
-
-  { TFBSQLDA }
-
-  TFBSQLDA = class(TmnFields)
-  private
-    function GetItem(Index: Integer): TFBSQLVAR;
-    procedure SetItem(Index: Integer; const AValue: TFBSQLVAR);
-    function GetField(Index: string): TFBSQLVAR;
-    //procedure ChangeCount(const AValue: Integer);
-  protected
-    FData: PXSQLDA;
-    function GetModified: Boolean;
-    function GetNames: string;
-    function GetRecordSize: Integer;
-  public
-    constructor Create;
-    destructor Destroy; override;
-    procedure Initialize;
-    property Modified: Boolean read GetModified;
-    property Names: string read GetNames;
-    property RecordSize: Integer read GetRecordSize;
-    property Field[Index: string]: TFBSQLVAR read GetField; default;
-    property Items[Index: Integer]: TFBSQLVAR read GetItem write SetItem;
-    property Data: PXSQLDA read FData;
   end;
 
 implementation

@@ -4,7 +4,7 @@
     <PathDelim Value="\"/>
     <Name Value="MiniConnections"/>
     <CompilerOptions>
-      <Version Value="10"/>
+      <Version Value="11"/>
       <PathDelim Value="\"/>
       <SearchPaths>
         <OtherUnitFiles Value=".;..\db;..\db\sqlite"/>
@@ -15,14 +15,9 @@
           <UseAnsiStrings Value="False"/>
         </SyntaxOptions>
       </Parsing>
-      <Linking>
-        <Debugging>
-          <GenerateDebugInfo Value="True"/>
-          <DebugInfoType Value="dsAuto"/>
-        </Debugging>
-      </Linking>
       <Other>
         <CompilerMessages>
+          <IgnoredMessages idx5024="True"/>
           <UseMsgFile Value="True"/>
         </CompilerMessages>
         <CompilerPath Value="$(CompPath)"/>

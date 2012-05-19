@@ -170,6 +170,7 @@
       </Verbosity>
       <WriteFPCLogo Value="False"/>
       <CompilerMessages>
+        <IgnoredMessages idx5024="True"/>
         <UseMsgFile Value="True"/>
       </CompilerMessages>
       <CompilerPath Value="$(CompPath)"/>
