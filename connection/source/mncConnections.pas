@@ -248,10 +248,7 @@ type
 
   TmncCustomField = class(TmncItem)
   private
-    FValue: Variant;
   protected
-    function GetValue: Variant; override;
-    procedure SetValue(const AValue: Variant); override;
   public
   published
     //property IsBlob;
@@ -282,6 +279,7 @@ type
     function GetItem(Index: Integer): TmncCustomField;
     function GetValue(Index: string): Variant;
     procedure SetValue(Index: string; const Value: Variant);
+  protected
   public
     property Items[Index: Integer]: TmncCustomField read GetItem;
     property Values[Index: string]: Variant read GetValue write SetValue;
@@ -317,6 +315,7 @@ type
     function GetField(Index: string): TmncField;
   protected
     function Find(vName: string): TmncItem; override;
+    function CreateField(vColumn: TmncColumn): TmncCustomField; virtual;
   public
     constructor Create(vColumns: TmncColumns); virtual;
     function FindField(vName: string): TmncField;
@@ -370,7 +369,8 @@ type
 
   TmncParams = class(TmncCustomParams)
   private
-  published
+  protected
+    function CreateParam: TmncCustomField; virtual;
   public
     constructor Create; virtual;
     function Add(Name: string): TmncParam;
@@ -431,8 +431,8 @@ type
     procedure DoCommit; virtual; //some time we need make commit with command or session
     procedure DoRollback; virtual;
     procedure DoRequestChanged(Sender: TObject); virtual;
-    function CreateFields(vColumns: TmncColumns): TmncFields; virtual;
-    function CreateParams: TmncParams; virtual;
+    function CreateFields(vColumns: TmncColumns): TmncFields; virtual; abstract;
+    function CreateParams: TmncParams; virtual; abstract;
     property Request: TStrings read FRequest write SetRequest;
     property ParamList: TmncParamList read FParamList; //for Dublicated names when pass the params when execute
   public
@@ -605,16 +605,6 @@ procedure TmncCommand.DoRequestChanged(Sender: TObject);
 begin
   if Active then
     Close;
-end;
-
-function TmncCommand.CreateFields(vColumns: TmncColumns): TmncFields;
-begin
-  Result := TmncFields.Create(vColumns);
-end;
-
-function TmncCommand.CreateParams: TmncParams;
-begin
-  Result := TmncParams.Create;
 end;
 
 constructor TmncCommand.Create;
@@ -994,7 +984,7 @@ end;
 
 function TmncFields.Add(Column: TmncColumn; Value: Variant): TmncField;
 begin
-  Result := TmncField.Create(Column);
+  Result := CreateField(Column) as TmncField;
   Result.Value := Value;
   Result.Column := Column;
   inherited Add(Result);
@@ -1014,7 +1004,7 @@ end;
 
 function TmncFields.Add(Column: TmncColumn): TmncField;
 begin
-  Result := TmncField.Create(Column);
+  Result := CreateField(Column) as TmncField;
   Result.Column:= Column;
   inherited Add(Result);
 end;
@@ -1055,6 +1045,11 @@ begin
       break;
     end;
   end;
+end;
+
+function TmncFields.CreateField(vColumn: TmncColumn): TmncCustomField;
+begin
+  Result := TmncField.Create(vColumn);
 end;
 
 { TmncColumns }
@@ -1111,6 +1106,11 @@ begin
     Result := Column.Name;
 end;
 
+function TmncParams.CreateParam: TmncCustomField;
+begin
+  Result := TmncParam.Create;
+end;
+
 constructor TmncParams.Create;
 begin
   inherited;
@@ -1118,7 +1118,7 @@ end;
 
 function TmncParams.Add(Name: string): TmncParam;
 begin
-  Result := TmncParam.Create;
+  Result := CreateParam as TmncParam;
   Result.Name := Name;
   inherited Add(Result);
 end;
@@ -1342,18 +1342,6 @@ begin
   begin
     Items[i].Clear;
   end;
-end;
-
-{ TmncCustomField }
-
-function TmncCustomField.GetValue: Variant;
-begin
-  Result := FValue;
-end;
-
-procedure TmncCustomField.SetValue(const AValue: Variant);
-begin
-  FValue := AValue;
 end;
 
 initialization

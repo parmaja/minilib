@@ -88,6 +88,40 @@ type
     property Connection: TmncSQLiteConnection read GetConnection write SetConnection;
   end;
 
+  { TmncSQLiteField }
+
+  TmncSQLiteField = class(TmncField)
+  private
+    FValue: Variant;
+  protected
+    function GetValue: Variant; override;
+    procedure SetValue(const AValue: Variant); override;
+  end;
+
+  { TmncSQLiteParam }
+
+  TmncSQLiteParam = class(TmncParam)
+  private
+    FValue: Variant;
+  protected
+    function GetValue: Variant; override;
+    procedure SetValue(const AValue: Variant); override;
+  end;
+
+  { TmncSQLiteFields }
+
+  TmncSQLiteFields = class(TmncFields)
+  protected
+    function CreateField(vColumn: TmncColumn): TmncCustomField; override;
+  end;
+
+  { TmncSQLiteParams }
+
+  TmncSQLiteParams = class(TmncParams)
+  protected
+    function CreateParam: TmncCustomField; override;
+  end;
+
   { TmncSQLiteCommand }
 
   TmncSQLiteCommand = class(TmncSQLCommand)
@@ -112,6 +146,8 @@ type
     procedure DoClose; override;
     procedure DoCommit; override;
     procedure DoRollback; override;
+    function CreateFields(vColumns: TmncColumns): TmncFields; override;
+    function CreateParams: TmncParams; override;
     property Connection:TmncSQLiteConnection read GetConnection;
     property Session: TmncSQLiteSession read GetSession write SetSession;
   public
@@ -198,6 +234,41 @@ begin
   end;
 end;
 
+{ TmncSQLiteParam }
+
+function TmncSQLiteParam.GetValue: Variant;
+begin
+  Result := FValue;
+end;
+
+procedure TmncSQLiteParam.SetValue(const AValue: Variant);
+begin
+  FValue := AValue;
+end;
+
+function TmncSQLiteField.GetValue: Variant;
+begin
+  Result := FValue;
+end;
+
+procedure TmncSQLiteField.SetValue(const AValue: Variant);
+begin
+  FValue := AValue;
+end;
+
+{ TmncSQLiteFields }
+
+function TmncSQLiteFields.CreateField(vColumn: TmncColumn): TmncCustomField;
+begin
+  Result := TmncSQLiteField.Create(vColumn);
+end;
+
+{ TmncSQLiteParams }
+
+function TmncSQLiteParams.CreateParam: TmncCustomField;
+begin
+  Result := TmncSQLiteParam.Create;
+end;
 
 procedure TmncSQLiteConnection.CheckError(Error:longint; const ExtraMsg: string);
 var
@@ -579,6 +650,16 @@ end;
 procedure TmncSQLiteCommand.DoRollback;
 begin
   Session.Rollback;
+end;
+
+function TmncSQLiteCommand.CreateFields(vColumns: TmncColumns): TmncFields;
+begin
+  Result := TmncSQLiteFields.Create(vColumns);
+end;
+
+function TmncSQLiteCommand.CreateParams: TmncParams;
+begin
+  Result := TmncSQLiteParams.Create;
 end;
 
 procedure TmncSQLiteCommand.DoClose;

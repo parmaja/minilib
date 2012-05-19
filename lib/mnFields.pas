@@ -144,6 +144,7 @@ type
     procedure SaveToIStream(Stream: IStreamPersist);
     }
   public
+    constructor Create;
     procedure Clear; virtual;//make value null
     procedure Empty; virtual;//make value empty
   end;
@@ -550,6 +551,11 @@ begin
   end;
 end;
 
+constructor TmnCustomField.Create;
+begin
+  inherited Create;
+end;
+
 procedure TmnCustomField.SaveToStream(Stream: TStream);
 begin
   raise Exception.Create('Not implemented yet');
@@ -669,7 +675,7 @@ end;
 
 function TmnCustomField.ReadAsUtf8String: UTF8String;
 begin
-  Result := GetAsString;//the compiler will convert it
+  Result := GetAsString; //the compiler will convert it
 end;
 
 procedure TmnCustomField.WriteAsUtf8String(const AValue: UTF8String);
