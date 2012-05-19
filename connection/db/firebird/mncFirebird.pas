@@ -107,7 +107,6 @@ type
     FEOF: Boolean;
     FCursor: string; { Cursor name }
     FSQLParams: TFBSQLDA; { Params }
-    FSQLCurrent: TFBSQLDA; { The current record }
     FSQLType: TFBDSQLTypes;
     FGenerateParamNames: Boolean;
     FRecordCount: Integer;
@@ -483,17 +482,9 @@ end;
 
 procedure TmncFBCommand.DoExecute;
 var
-  fetch_res: ISC_STATUS;
   i: Integer;
   StatusVector: TStatusVector;
 begin
-  {if (FXParams <> nil) and (FXParams.Count > 0) and (Params.Count > 0) then
-  begin
-    for i := 0 to Params.Count - 1 do
-      if FXParams.IsExist(Params[i].Name) then
-        Params[i].Value := FXParams[Params[i].Name];
-  end;}
-  //Params.ApplyClones;
   ValidStatement;
   case FSQLType of
     SQLSelect:
@@ -513,27 +504,9 @@ begin
       end;
     SQLExecProcedure:
       begin
-        fetch_res := Call(FBClient.isc_dsql_execute2(@StatusVector,
+ {       Call(FBClient.isc_dsql_execute2(@StatusVector,
           @Session.Handle, @FHandle, FB_DIALECT,
-          FSQLParams.Data, FSQLCurrent.Data), StatusVector, False);
-(*        if (fetch_res <> 0) then
-        begin
-          if (fetch_res <> isc_lock_conflict) then
-          begin
-           { Sometimes a prepared stored procedure appears to get
-             off sync on the server ....This code is meant to try
-             to work around the problem simply by "retrying". This
-             need to be reproduced and fixed.
-           }
-            FBClient.isc_dsql_prepare(@StatusVector, @Session.Handle, @FHandle, 0,
-              PAnsiChar(FParsedSQL), FB_DIALECT, nil);
-            Call(FBClient.isc_dsql_execute2(@StatusVector,
-              @Session.Handle, @FHandle, FB_DIALECT,
-              FSQLParams.Data, FSQLCurrent.Data), StatusVector, True);
-          end
-          else*)
-            FBRaiseError(StatusVector); // go ahead and raise the lock conflict
-//        end;
+          FSQLParams.Data, FSQLCurrent.Data), StatusVector, True);}//todo
       end
   else
     Call(FBClient.isc_dsql_execute(@StatusVector,
@@ -560,7 +533,7 @@ end;
 
 function TmncFBCommand.CreateFields(vColumns: TmncColumns): TmncFields;
 begin
-  Result := TFBSQLDA.Create(vColumns);
+  Result := TFBSQLFields.Create(vColumns);
 end;
 
 procedure TmncFBCommand.DoClose;
@@ -645,17 +618,17 @@ begin
           begin
             { here we must save the old values of params }
             { Fetch params info int SQLDA}
-            if (FSQLParams.Data <> nil) and
+            {if (FSQLParams.Data <> nil) and
               (Call(FBClient.isc_dsql_describe_bind(@StatusVector, @FHandle, FB_DIALECT, FSQLParams.Data), StatusVector, True) > 0) then
               FBRaiseError(StatusVector);
-            FSQLParams.Initialize;
-
+            FSQLParams.Initialize;}
+(*
             if (FSQLType in [SQLSelect, SQLSelectForUpdate, SQLExecProcedure]) then
             begin
             { Allocate an initial output descriptor (with one column) }
               FSQLCurrent.Clear;
               FSQLCurrent.Count := 1;
-            { Using isc_dsql_describe, get the right size for the columns... }
+            { Get Size of columns }
               Call(FBClient.isc_dsql_describe(@StatusVector, @FHandle, FB_DIALECT, FSQLCurrent.Data), StatusVector, True);
               if FSQLCurrent.Data^.sqld > FSQLCurrent.Data^.sqln then
               begin
@@ -665,7 +638,7 @@ begin
               else if FSQLCurrent.Data^.sqld = 0 then
                 FSQLCurrent.Clear;
               FSQLCurrent.Initialize;
-            end;
+            end;*)
           end;
       end;
     except

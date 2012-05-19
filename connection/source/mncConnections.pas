@@ -366,10 +366,13 @@ type
     property Param[Index: string]: TmncParam read GetParam; default;
   end;
 
+  { TmncParams }
+
   TmncParams = class(TmncCustomParams)
   private
   published
   public
+    constructor Create; virtual;
     function Add(Name: string): TmncParam;
     function AddExists(Name: string): TmncParam;
   end;
@@ -1106,6 +1109,11 @@ begin
     Result := ''
   else
     Result := Column.Name;
+end;
+
+constructor TmncParams.Create;
+begin
+  inherited;
 end;
 
 function TmncParams.Add(Name: string): TmncParam;
