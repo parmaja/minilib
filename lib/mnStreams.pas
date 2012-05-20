@@ -20,6 +20,7 @@ uses
 
 const
   sEndOfLine = #$0A;
+
   sWinEndOfLine = #$0D#$0A;
   sUnixEndOfLine = #$0A;
   sMacEndOfLine = #$0D;

@@ -106,7 +106,6 @@ type
     FBOF: Boolean;
     FEOF: Boolean;
     FCursor: string; { Cursor name }
-    FSQLParams: TFBSQLDA; { Params }
     FSQLType: TFBDSQLTypes;
     FGenerateParamNames: Boolean;
     FRecordCount: Integer;
@@ -129,6 +128,7 @@ type
     procedure DoCommit; override;
     procedure DoRollback; override;
     function CreateFields(vColumns: TmncColumns): TmncFields; override;
+    function CreateParams: TmncParams; override;
     property Connection: TmncFBConnection read GetConnection;
     property Session: TmncFBSession read GetSession write SetSession;
   public
@@ -492,7 +492,7 @@ begin
         Call(FBClient.isc_dsql_execute2(@StatusVector,
           @Session.Handle, @FHandle,
           FB_DIALECT,
-          FSQLParams.Data, nil), StatusVector, True);
+          (Params as TFBSQLParams).Data, nil), StatusVector, True);
 
         Call(FBClient.isc_dsql_set_cursor_name(@StatusVector, @FHandle, PAnsiChar(FCursor), 0), StatusVector, True);
         FActive := True;
@@ -513,7 +513,7 @@ begin
       @Session.Handle,
       @FHandle,
       FB_DIALECT,
-      FSQLParams.Data), StatusVector, True)
+      (Params as TFBSQLParams).Data), StatusVector, True)
   end;
 end;
 
@@ -534,6 +534,11 @@ end;
 function TmncFBCommand.CreateFields(vColumns: TmncColumns): TmncFields;
 begin
   Result := TFBSQLFields.Create(vColumns);
+end;
+
+function TmncFBCommand.CreateParams: TmncParams;
+begin
+  Result := TFBSQLParams.Create;
 end;
 
 procedure TmncFBCommand.DoClose;

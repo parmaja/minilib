@@ -339,6 +339,7 @@ type
     function GetBufferAllocated: Boolean;
   protected
   public
+    constructor Create; virtual;
     destructor Destroy; override;
     procedure AllocBuffer(var P; Size: Integer); virtual;
     procedure FreeBuffer;
@@ -1225,6 +1226,11 @@ begin
   Result := Buffer <> nil;
 end;
 
+constructor TmncParam.Create;
+begin
+  inherited;
+end;
+
 { TmncLinks }
 
 procedure TmncLinks.Close;
@@ -1290,7 +1296,6 @@ procedure TmncCustomFields.SetValue(Index: string; const Value: Variant);
 begin
   ItemByName(Index).Value := Value;
 end;
-
 
 { TmncItem }
 

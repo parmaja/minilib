@@ -41,8 +41,6 @@ type
     SQLExecProcedure, SQLStartTransaction, SQLCommit, SQLRollback,
     SQLSelectForUpdate, SQLSetSequence, SQLSavePoint);
 
-  TFBSQLDA = class;
-
   TFBSQLVAR = class(TmnCustomField) //Object to store pointer of Fields elements
   private
     FIndex: Integer;
@@ -93,7 +91,6 @@ type
     property OwnName: string read GetOwnName write SetOwnName;
     property AliasName: string read GetAliasName write SetAliasName;
 
-
   protected
     function GetAsCurrency: Currency; override;
     function GetAsInt64: Int64; override;
@@ -106,6 +103,7 @@ type
     function GetAsShort: Short;
     function GetAsString: string; override;
     function GetAsVariant: Variant;
+    function GetAsBoolean: Boolean; override;
     function GetIsNull: Boolean; override;
     function GetIsNullable: Boolean;
 
@@ -116,20 +114,20 @@ type
     procedure SetAsTime(const AValue: TDateTime); override;
     procedure SetAsDateTime(const AValue: TDateTime); override;
     procedure SetAsDouble(const AValue: Double); override;
+    procedure SetAsString(const AValue: string); override;
+    procedure SetAsBoolean(const AValue: Boolean); override;
+
     procedure SetAsFloat(const AValue: Double);
     procedure SetAsLong(const AValue: Long);
     procedure SetAsPointer(const AValue: Pointer);
     procedure SetAsQuad(const AValue: TISC_QUAD);
     procedure SetAsShort(const AValue: Short);
-    procedure SetAsString(const AValue: string); override;
 
     procedure SetAsVariant(const AValue: Variant);
     procedure SetIsNull(const AValue: Boolean); override;
     procedure SetIsNullable(const AValue: Boolean);
     procedure SetAsStrip(const AValue: string);
     function GetAsStrip: string;
-    function GetAsBoolean: Boolean; override;
-    procedure SetAsBoolean(const AValue: Boolean); override;
     procedure SetName(const AValue: string);
     procedure SetSQLVAR(const AValue: TFBSQLVAR);
     function GetAsGUID: TGUID;
@@ -154,7 +152,6 @@ type
     function CreateWriteBlobSteam(DBHandle: PISC_DB_HANDLE; TRHandle: PISC_TR_HANDLE): TFBBlobStream;
     procedure Clear; override;
 
-    property AsDouble: Double read GetAsDouble write SetAsDouble;
     property AsFloat: Double read GetAsFloat write SetAsFloat;
 
     property AsID: Int64 read GetAsInt64 write SetAsInt64; //More flixable names
@@ -175,58 +172,86 @@ type
 
   { TFBSQLDA }
 
-  TFBSQLDA = class(TmnFields)
-  private
-    function GetItem(Index: Integer): TFBSQLVAR;
-    procedure SetItem(Index: Integer; const AValue: TFBSQLVAR);
-    function GetField(Index: string): TFBSQLVAR;
-    //procedure ChangeCount(const AValue: Integer);
-  protected
-    FData: PXSQLDA;
-    function GetModified: Boolean;
-    function GetNames: string;
-    function GetRecordSize: Integer;
-  public
-    constructor Create;
-    destructor Destroy; override;
-    procedure Initialize;
-    property Modified: Boolean read GetModified;
-    property Names: string read GetNames;
-    property RecordSize: Integer read GetRecordSize;
-    property Field[Index: string]: TFBSQLVAR read GetField; default;
-    property Items[Index: Integer]: TFBSQLVAR read GetItem write SetItem;
-    property Data: PXSQLDA read FData;
-  end;
+  { TFBSQLField }
 
   TFBSQLField = class(TmncField)
+  private
+    FSQLVAR: TFBSQLVAR;
+  public
+    constructor Create(vColumn: TmncColumn); override;
+    destructor Destroy; override;
+    property SQLVAR: TFBSQLVAR read FSQLVAR write FSQLVAR;
   end;
 
+  { TFBSQLParam }
+
   TFBSQLParam = class(TmncParam)
+  private
+    FSQLVAR: TFBSQLVAR;
+  public
+    constructor Create; override;
+    destructor Destroy; override;
+    property SQLVAR: TFBSQLVAR read FSQLVAR write FSQLVAR;
   end;
 
   { TFBSQLFields }
 
   TFBSQLFields = class(TmncFields)
   private
+    FData: PXSQLDA;
     function GetItem(Index: Integer): TFBSQLField;
-    procedure SetItem(Index: Integer; const AValue: TFBSQLField);
   protected
+    function GetModified: Boolean;
+    function GetNames: string;
+  public
     constructor Create(vColumns: TmncColumns); override;
     destructor Destroy; override;
+    property Items[Index: Integer]: TFBSQLField read GetItem;
+    property Data: PXSQLDA read FData;
   end;
 
   { TFBSQLParams }
 
   TFBSQLParams = class(TmncParams)
   private
+    FData: PXSQLDA;
     function GetItem(Index: Integer): TFBSQLParam;
-    procedure SetItem(Index: Integer; const AValue: TFBSQLParam);
   protected
+    function GetModified: Boolean;
+    function GetNames: string;
+    function GetRecordSize: Integer;
+  public
     constructor Create; override;
     destructor Destroy; override;
+    property Items[Index: Integer]: TFBSQLParam read GetItem;
+    property Data: PXSQLDA read FData;
   end;
 
 implementation
+
+{ TFBSQLParam }
+
+constructor TFBSQLParam.Create;
+begin
+  inherited;
+end;
+
+destructor TFBSQLParam.Destroy;
+begin
+  inherited;
+end;
+
+{ TFBSQLField }
+
+constructor TFBSQLField.Create(vColumn: TmncColumn);
+begin
+  inherited;
+end;
+
+destructor TFBSQLField.Destroy;
+begin
+  inherited;
+end;
 
 { TFieldHelper }
 
@@ -238,19 +263,53 @@ begin
   Result := (inherited Items[Index]) as TFBSQLParam;
 end;
 
-procedure TFBSQLParams.SetItem(Index: Integer; const AValue: TFBSQLParam);
+function TFBSQLParams.GetModified: Boolean;
+var
+  i: Integer;
 begin
-  (inherited Items[Index]) := AValue;
+  Result := False;
+  for i := 0 to Count - 1 do
+    if Items[i].SQLVAR.Modified then
+    begin
+      Result := True;
+      break;
+    end;
+end;
+
+function TFBSQLParams.GetNames: string;
+var
+  i: Integer;
+begin
+  Result := '';
+  for i := 0 to Count - 1 do
+  begin
+    if Result <> '' then
+      Result := Result + sLineFeed;
+    Result := Result + Items[i].SQLVAR.FName;
+  end;
+end;
+
+function TFBSQLParams.GetRecordSize: Integer;
+begin
+  Result := SizeOf(PXSQLDA) + XSQLDA_LENGTH(Count);
 end;
 
 constructor TFBSQLParams.Create;
 begin
   inherited;
+  FBAlloc(FData, 0, XSQLDA_LENGTH(0));
+  FData.version := SQLDA_VERSION1;
 end;
 
 destructor TFBSQLParams.Destroy;
 begin
-  inherited Destroy;
+  Clear;
+  if FData <> nil then
+  begin
+    FreeMem(FData);
+    FData := nil;
+  end;
+  inherited;
 end;
 
 { TFBSQLFields }
@@ -260,19 +319,48 @@ begin
   Result := (inherited Items[Index]) as TFBSQLField;
 end;
 
-procedure TFBSQLFields.SetItem(Index: Integer; const AValue: TFBSQLField);
+function TFBSQLFields.GetModified: Boolean;
+var
+  i: Integer;
 begin
-  (inherited Items[Index]) := AValue;
+  Result := False;
+  for i := 0 to Count - 1 do
+    if Items[i].SQLVAR.Modified then
+    begin
+      Result := True;
+      break;
+    end;
+end;
+
+function TFBSQLFields.GetNames: string;
+var
+  i: Integer;
+begin
+  Result := '';
+  for i := 0 to Count - 1 do
+  begin
+    if Result <> '' then
+      Result := Result + sLineFeed;
+    Result := Result + Items[i].SQLVAR.FName;
+  end;
 end;
 
 constructor TFBSQLFields.Create(vColumns: TmncColumns);
 begin
   inherited;
+  FBAlloc(FData, 0, XSQLDA_LENGTH(0));
+  FData.version := SQLDA_VERSION1;
 end;
 
 destructor TFBSQLFields.Destroy;
 begin
-  inherited Destroy;
+  Clear;
+  if FData <> nil then
+  begin
+    FreeMem(FData);
+    FData := nil;
+  end;
+  inherited;
 end;
 
 { TFBSQLVAR }
@@ -1282,57 +1370,7 @@ begin
 
 end;
 
-{ TFBSQLDA }
-
-constructor TFBSQLDA.Create;
-begin
-  inherited;
-  FBAlloc(FData, 0, XSQLDA_LENGTH(0));
-  FData.version := SQLDA_VERSION1;
-end;
-
-destructor TFBSQLDA.Destroy;
-begin
-  Clear;
-  if FData <> nil then
-  begin
-    FreeMem(FData);
-    FData := nil;
-  end;
-  inherited;
-end;
-
-function TFBSQLDA.GetModified: Boolean;
-var
-  i: Integer;
-begin
-  Result := False;
-  for i := 0 to Count - 1 do
-    if Items[i].Modified then
-    begin
-      Result := True;
-      break;
-    end;
-end;
-
-function TFBSQLDA.GetNames: string;
-var
-  i: Integer;
-begin
-  Result := '';
-  for i := 0 to Count - 1 do
-  begin
-    if Result <> '' then
-      Result := Result + sLineFeed;
-    Result := Result + Items[i].FName;
-  end;
-end;
-
-function TFBSQLDA.GetRecordSize: Integer;
-begin
-  Result := SizeOf(TFBSQLDA) + XSQLDA_LENGTH(Count);
-end;
-
+(*
 procedure TFBSQLDA.Initialize;
 var
   i: Integer;
@@ -1425,22 +1463,8 @@ begin
     end;
   end;
 end;}
+*)
 
-function TFBSQLDA.GetItem(Index: Integer): TFBSQLVAR;
-begin
-  Result := (inherited Items[Index]) as TFBSQLVAR;
-end;
-
-procedure TFBSQLDA.SetItem(Index: Integer; const AValue: TFBSQLVAR);
-begin
-  (inherited Items[Index]) := AValue;
-end;
-
-
-function TFBSQLDA.GetField(Index: string): TFBSQLVAR;
-begin
-  //Result := (inherited Field[Index]) as TFBSQLVAR;
-end;
 
 function TFBSQLVAR.GetAliasName: string;
 begin
