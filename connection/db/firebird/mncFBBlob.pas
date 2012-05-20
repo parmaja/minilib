@@ -84,7 +84,7 @@ function getb(p: PBSTREAM): Char;
 function putb(x: Char; p: PBSTREAM): Int;
 function putbx(x: Char; p: PBSTREAM): Int;
 
-procedure FBGetBlobInfo(hBlobHandle: PISC_BLOB_HANDLE; out NumSegments, MaxSegmentSize, TotalSize: Long; var BlobType: Short);
+procedure FBGetBlobInfo(hBlobHandle: PISC_BLOB_HANDLE; out NumSegments, MaxSegmentSize, TotalSize: Long; out BlobType: Short);
 procedure FBReadBlob(hBlobHandle: PISC_BLOB_HANDLE; Buffer: PChar; BlobSize: Long);
 procedure FBWriteBlob(hBlobHandle: PISC_BLOB_HANDLE; Buffer: PChar; BlobSize: Long);
 
@@ -95,7 +95,7 @@ implementation
 uses
   mncFBUtils;
 
-procedure FBGetBlobInfo(hBlobHandle: PISC_BLOB_HANDLE; out NumSegments, MaxSegmentSize, TotalSize: Long; var BlobType: Short);
+procedure FBGetBlobInfo(hBlobHandle: PISC_BLOB_HANDLE; out NumSegments, MaxSegmentSize, TotalSize: Long; out BlobType: Short);
 var
   items: array[0..3] of Char;
   results: array[0..99] of Char;

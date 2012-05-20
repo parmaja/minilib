@@ -7,7 +7,7 @@
  *}
 
 {$IFDEF FPC}
-{$mode objfpc}
+{$mode delphi}
 {$ENDIF}
 {$M+}
 {$H+}
@@ -30,8 +30,6 @@ interface
 
 uses
   SysUtils, Classes, Variants,
-  mnFields,
-  mncConnections,
   mncFBHeader, mncFBTypes, mncFBUtils, mncFBErrors, mncFBStrings, mncFBClient, mncFBBlob;
 
 type
@@ -94,7 +92,7 @@ type
 
   { TmncFBSQLVAR }
 
-  TmncFBSQLVAR = class(TObject{, IStreamPersist})
+  TmncFBSQLVAR = class(TObject, IStreamPersist)
   private
     FIndex: Integer;
     FModified: Boolean;
@@ -149,8 +147,8 @@ type
     function GetAsChar: Char;
     procedure SetAsChar(const AValue: Char);
   protected
-    FDBHandle: TISC_DB_HANDLE;
-    FTRHandle: TISC_TR_HANDLE;
+    FDBHandle: PISC_DB_HANDLE;
+    FTRHandle: PISC_TR_HANDLE;
     procedure CheckHandles;
   public
     constructor Create;
@@ -162,14 +160,14 @@ type
 
     procedure Assign(Source: TmncFBSQLVAR);
     procedure SetBuffer(Buffer: Pointer; Size: Integer); //zaher
-    (*procedure LoadFromFile(const FileName: string);
-    procedure LoadFromStream(Stream: TStream);
-    procedure LoadFromIStream(Stream: IStreamPersist);
-    procedure SaveToFile(const FileName: string);
     function CreateReadBlobSteam: TFBBlobStream;
     function CreateWriteBlobSteam: TFBBlobStream;
+    procedure LoadFromIStream(Stream: IStreamPersist);
+    procedure SaveToIStream(Stream: IStreamPersist);
+    procedure LoadFromStream(Stream: TStream);
     procedure SaveToStream(Stream: TStream);
-    procedure SaveToIStream(Stream: IStreamPersist);*)
+    procedure LoadFromFile(const FileName: string);
+    procedure SaveToFile(const FileName: string);
     procedure Clear;
     property AsBoolean: Boolean read GetAsBoolean write SetAsBoolean;
     property AsDate: TDateTime read GetAsDateTime write SetAsDate;
@@ -364,13 +362,12 @@ begin
 end;
 
 { TmncFBSQLVAR }
-(*
+
 function TmncFBSQLVAR.CreateReadBlobSteam: TFBBlobStream;
 begin
-  Result := TFBBlobStream.Create;
+  Result := TFBBlobStream.Create(FDBHandle, FTRHandle);
   try
     Result.Mode := bmRead;
-    Result.Transaction := FSQL.Transaction;
     Result.BlobID := AsQuad;
   except
     FreeAndNil(Result);
@@ -380,10 +377,9 @@ end;
 
 function TmncFBSQLVAR.CreateWriteBlobSteam: TFBBlobStream;
 begin
-  Result := TFBBlobStream.Create;
+  Result := TFBBlobStream.Create(FDBHandle, FTRHandle);
   try
     Result.Mode := bmWrite;
-    Result.Transaction := FSQL.Transaction;
   except
     FreeAndNil(Result);
     raise;
@@ -394,10 +390,10 @@ procedure TmncFBSQLVAR.LoadFromStream(Stream: TStream);
 var
   bs: TFBBlobStream;
 begin
-  bs := TFBBlobStream.Create;
+  CheckHandles;
+  bs := TFBBlobStream.Create(FDBHandle, FTRHandle);
   try
     bs.Mode := bmWrite;
-    bs.Transaction := FSQL.Transaction;
 //    Stream.Seek(0, soFromBeginning);//not all stream support seek
     bs.LoadFromStream(Stream);
     bs.Finalize;
@@ -411,6 +407,7 @@ procedure TmncFBSQLVAR.SaveToFile(const FileName: string);
 var
   fs: TFileStream;
 begin
+  CheckHandles;
   fs := TFileStream.Create(FileName, fmCreate or fmShareExclusive);
   try
     SaveToStream(fs);
@@ -423,10 +420,10 @@ procedure TmncFBSQLVAR.SaveToStream(Stream: TStream);
 var
   bs: TFBBlobStream;
 begin
-  bs := TFBBlobStream.Create;
+  CheckHandles;
+  bs := TFBBlobStream.Create(FDBHandle, FTRHandle);
   try
     bs.Mode := bmRead;
-    bs.Transaction := FSQL.Transaction;
     bs.BlobID := AsQuad;
     bs.SaveToStream(Stream);
   finally
@@ -438,10 +435,10 @@ procedure TmncFBSQLVAR.SaveToIStream(Stream: IStreamPersist);
 var
   bs: TFBBlobStream;
 begin
-  bs := TFBBlobStream.Create;
+  CheckHandles;
+  bs := TFBBlobStream.Create(FDBHandle, FTRHandle);
   try
     bs.Mode := bmRead;
-    bs.Transaction := FSQL.Transaction;
     bs.BlobID := AsQuad;
     Stream.LoadFromStream(bs);
   finally
@@ -453,10 +450,10 @@ procedure TmncFBSQLVAR.LoadFromIStream(Stream: IStreamPersist);
 var
   bs: TFBBlobStream;
 begin
-  bs := TFBBlobStream.Create;
+  CheckHandles;
+  bs := TFBBlobStream.Create(FDBHandle, FTRHandle);
   try
     bs.Mode := bmWrite;
-    bs.Transaction := FSQL.Transaction;
     Stream.SaveToStream(bs);
     bs.Finalize;
     AsQuad := bs.BlobID;
@@ -470,6 +467,7 @@ procedure TmncFBSQLVAR.LoadFromFile(const FileName: string);
 var
   fs: TFileStream;
 begin
+  CheckHandles;
   fs := TFileStream.Create(FileName, fmOpenRead or fmShareDenyWrite);
   try
     LoadFromStream(fs);
@@ -477,8 +475,6 @@ begin
     fs.Free;
   end;
 end;
-
-*)
 
 procedure TmncFBSQLVAR.Assign(Source: TmncFBSQLVAR);
 var
@@ -533,8 +529,7 @@ begin
         FBCall(FBClient.isc_open_blob2(@StatusVector, @FDBHandle, @FTRHandle, @s_bhandle, PISC_QUAD(Source.FSQLVAR.sqldata),
           0, nil), StatusVector, True);
         try
-          FBGetBlobInfo(@s_bhandle, iSegs, iMaxSeg, iSize,
-            iBlobType);
+          FBGetBlobInfo(@s_bhandle, iSegs, iMaxSeg, iSize, iBlobType);
           szBuff := nil;
           FBAlloc(szBuff, 0, iSize);
           FBReadBlob(@s_bhandle, szBuff, iSize);
@@ -843,7 +838,7 @@ begin
         begin
           ss := TStringStream.Create('');
           try
-            //SaveToStream(ss);//TODO
+            SaveToStream(ss);//TODO not work witout handles
             Result := ss.DataString;
           finally
             ss.Free;
@@ -1190,7 +1185,7 @@ begin
       begin
         ss := TStringStream.Create(AValue);
         try
-          //LoadFromStream(ss);//TODO
+          LoadFromStream(ss);//TODO not work without handles
         finally
           ss.Free;
         end;
