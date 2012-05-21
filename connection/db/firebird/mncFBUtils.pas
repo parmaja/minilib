@@ -18,7 +18,6 @@ interface
 
 uses
   SysUtils, Classes,
-  mnUtils,
   mncFBClient, mncFBTypes, mncFBHeader, mncFBErrors, mncFBStrings;
 
 const
@@ -66,8 +65,8 @@ function GetAliasFile(AliasName: string): string;
 procedure SetAliasFile(AliasName, FileName: string);
 
 procedure FBHostInfo(const Host, UserName, Password, Role, CharacterSet: string; vParams: TStrings; CachedPasswords: Boolean);
-procedure GenerateDPB(sl: TStrings; var DPB: AnsiString; var DPBLength: Short);
-procedure GenerateTPB(sl: TStrings; var TPB: AnsiString; var TPBLength: Short);
+procedure GenerateDPB(sl: TStrings; out DPB: AnsiString; var DPBLength: Short);
+procedure GenerateTPB(sl: TStrings; out TPB: AnsiString; var TPBLength: Short);
 
 function FBComposeConnectionString(DatabaseName, Host, Port: string; IsEmbed: Boolean; Protocol: TFBProtocol = dpTCP): string;
 procedure FBDecomposeConnectionString(DatabaseName: string; var Host, FileName: string; var Protocol: TFBProtocol);
@@ -708,7 +707,7 @@ begin
     vParams.Values[DPBConstantNames[isc_dpb_password]] := 'masterkey';
 end;
 
-procedure GenerateDPB(sl: TStrings; var DPB: AnsiString; var DPBLength: Short);
+procedure GenerateDPB(sl: TStrings; out DPB: AnsiString; var DPBLength: Short);
 var
   i, j, pval: Integer;
   DPBVal: UShort;
@@ -817,7 +816,7 @@ end;
   parameter buffer, and return it and its length in
   TPB and TPBLength, respectively. }
 
-procedure GenerateTPB(sl: TStrings; var TPB: AnsiString; var TPBLength: Short);
+procedure GenerateTPB(sl: TStrings; out TPB: AnsiString; var TPBLength: Short);
 var
   i, j, TPBVal, ParamLength: Integer;
   ParamName, ParamValue: AnsiString;

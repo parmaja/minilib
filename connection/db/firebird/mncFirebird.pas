@@ -97,16 +97,16 @@ type
 
   TmncFBTransaction = TmncFBSession;
 
-  { TFBSQLField }
+  { TmncFBField }
 
-  TFBSQLField = class(TmncField)
+  TmncFBField = class(TmncField)
   private
     FSQLVAR: TmncFBSQLVAR;
   protected
-{    function GetValue: Variant; override;
+    function GetValue: Variant; override;
     procedure SetValue(const AValue: Variant); override;
 
-{    function GetAsText: string; override;
+    function GetAsText: string; override;
     procedure SetAsText(const AValue: string); override;
     function GetAsString: string; override;
     procedure SetAsString(const AValue: string); override;
@@ -129,7 +129,7 @@ type
 
     function GetIsNull: Boolean; override;
     procedure SetIsNull(const AValue: Boolean); override;
-    function GetIsEmpty: Boolean; override;}
+    function GetIsEmpty: Boolean; override;
   public
     constructor Create(vColumn: TmncColumn); override;
     destructor Destroy; override;
@@ -138,37 +138,66 @@ type
 
   { TFBSQLParam }
 
-  TFBSQLParam = class(TmncParam)
+  TmncFBParam = class(TmncParam)
   private
     FSQLVAR: TmncFBSQLVAR;
+  protected
+    function GetValue: Variant; override;
+    procedure SetValue(const AValue: Variant); override;
+
+    function GetAsText: string; override;
+    procedure SetAsText(const AValue: string); override;
+    function GetAsString: string; override;
+    procedure SetAsString(const AValue: string); override;
+    function GetAsInteger: Integer; override;
+    procedure SetAsInteger(const AValue: Integer); override;
+    function GetAsInt64: Int64; override;
+    procedure SetAsInt64(const AValue: Int64); override;
+    function GetAsDouble: Double; override;
+    procedure SetAsDouble(const AValue: Double); override;
+    function GetAsBoolean: Boolean; override;
+    procedure SetAsBoolean(const AValue: Boolean); override;
+    function GetAsCurrency: Currency; override;
+    procedure SetAsCurrency(const AValue: Currency); override;
+    function GetAsDate: TDateTime; override;
+    procedure SetAsDate(const AValue: TDateTime); override;
+    function GetAsDateTime: TDateTime; override;
+    procedure SetAsDateTime(const AValue: TDateTime); override;
+    function GetAsTime: TDateTime; override;
+    procedure SetAsTime(const AValue: TDateTime); override;
+
+    function GetIsNull: Boolean; override;
+    procedure SetIsNull(const AValue: Boolean); override;
+    function GetIsEmpty: Boolean; override;
   public
     constructor Create; override;
     destructor Destroy; override;
     property SQLVAR: TmncFBSQLVAR read FSQLVAR write FSQLVAR;
   end;
 
-  { TFBSQLFields }
+  { TmncFBFields }
 
-  TFBSQLFields = class(TmncFields)
+  TmncFBFields = class(TmncFields)
   private
     FData: PXSQLDA;
-    function GetItem(Index: Integer): TFBSQLField;
+    function GetItem(Index: Integer): TmncFBField;
   protected
     function GetModified: Boolean;
     function GetNames: string;
   public
+    procedure Prepare(NewCount: integer);
     constructor Create(vColumns: TmncColumns); override;
     destructor Destroy; override;
-    property Items[Index: Integer]: TFBSQLField read GetItem;
+    property Items[Index: Integer]: TmncFBField read GetItem;
     property Data: PXSQLDA read FData;
   end;
 
-  { TFBSQLParams }
+  { TmncFBParams }
 
-  TFBSQLParams = class(TmncParams)
+  TmncFBParams = class(TmncParams)
   private
     FData: PXSQLDA;
-    function GetItem(Index: Integer): TFBSQLParam;
+    function GetItem(Index: Integer): TmncFBParam;
   protected
     function GetModified: Boolean;
     function GetNames: string;
@@ -176,7 +205,7 @@ type
   public
     constructor Create; override;
     destructor Destroy; override;
-    property Items[Index: Integer]: TFBSQLParam read GetItem;
+    property Items[Index: Integer]: TmncFBParam read GetItem;
     property Data: PXSQLDA read FData;
   end;
 
@@ -222,6 +251,8 @@ type
   end;
 
 implementation
+
+procedure ChangeFields(Fields: TmncCustomFields; NewCount:Integer); forward;
 
 { TmncFBConnection }
 
@@ -319,7 +350,7 @@ end;
 procedure TmncFBConnection.DoConnect;
 var
   DPB: string;
-  i: Integer;
+  //i: Integer;
   aDatabaseName: AnsiString;
   aParams: TStringList;
   StatusVector: TStatusVector;
@@ -359,7 +390,7 @@ end;
 
 procedure TmncFBConnection.DoDisconnect;
 var
-  i: Integer;
+//  i: Integer;
   StatusVector: TStatusVector;
 begin
 {  for i := 0 to FEventNotifiers.Count - 1 do
@@ -517,41 +548,170 @@ procedure TmncFBSession.DoInit;
 begin
 end;
 
-{ TFBSQLParam }
+{ TmncFBParam }
 
-constructor TFBSQLParam.Create;
+constructor TmncFBParam.Create;
 begin
+  inherited;
+  FSQLVAR := TmncFBSQLVAR.Create;
+end;
+
+destructor TmncFBParam.Destroy;
+begin
+  FreeAndNil(FSQLVAR);
   inherited;
 end;
 
-destructor TFBSQLParam.Destroy;
+{ TmncFBField }
+
+function TmncFBField.GetValue: Variant;
 begin
-  inherited;
+  Result := FSQLVAR.AsVariant;
 end;
 
-{ TFBSQLField }
-
-constructor TFBSQLField.Create(vColumn: TmncColumn);
+procedure TmncFBField.SetValue(const AValue: Variant);
 begin
-  inherited;
+  FSQLVAR.AsVariant := AValue;
 end;
 
-destructor TFBSQLField.Destroy;
+function TmncFBField.GetAsText: string;
 begin
+  Result := FSQLVAR.AsText;
+end;
+
+procedure TmncFBField.SetAsText(const AValue: string);
+begin
+  FSQLVAR.AsText := AValue;
+end;
+
+function TmncFBField.GetAsString: string;
+begin
+  Result := FSQLVAR.AsString;
+end;
+
+procedure TmncFBField.SetAsString(const AValue: string);
+begin
+  FSQLVAR.AsString := AValue;
+end;
+
+function TmncFBField.GetAsInteger: Integer;
+begin
+  Result := FSQLVAR.AsInteger;
+end;
+
+procedure TmncFBField.SetAsInteger(const AValue: Integer);
+begin
+  FSQLVAR.AsInteger := AValue;
+end;
+
+function TmncFBField.GetAsInt64: Int64;
+begin
+  Result := FSQLVAR.AsInt64
+end;
+
+procedure TmncFBField.SetAsInt64(const AValue: Int64);
+begin
+  FSQLVAR.AsInt64 := AValue;
+end;
+
+function TmncFBField.GetAsDouble: Double;
+begin
+  Result := FSQLVAR.AsDouble;
+end;
+
+procedure TmncFBField.SetAsDouble(const AValue: Double);
+begin
+  FSQLVAR.AsDouble := AValue;
+end;
+
+function TmncFBField.GetAsBoolean: Boolean;
+begin
+  Result := FSQLVAR.AsBoolean;
+end;
+
+procedure TmncFBField.SetAsBoolean(const AValue: Boolean);
+begin
+  FSQLVAR.AsBoolean := AValue;
+end;
+
+function TmncFBField.GetAsCurrency: Currency;
+begin
+  Result := FSQLVAR.AsCurrency;
+end;
+
+procedure TmncFBField.SetAsCurrency(const AValue: Currency);
+begin
+  FSQLVAR.AsCurrency := AValue;
+end;
+
+function TmncFBField.GetAsDate: TDateTime;
+begin
+  Result := FSQLVAR.AsDate;
+end;
+
+procedure TmncFBField.SetAsDate(const AValue: TDateTime);
+begin
+  FSQLVAR.AsDate := AValue;
+end;
+
+function TmncFBField.GetAsDateTime: TDateTime;
+begin
+  Result := FSQLVAR.AsDateTime;
+end;
+
+procedure TmncFBField.SetAsDateTime(const AValue: TDateTime);
+begin
+  FSQLVAR.AsDateTime := AValue;
+end;
+
+function TmncFBField.GetAsTime: TDateTime;
+begin
+  Result := FSQLVAR.AsTime;
+end;
+
+procedure TmncFBField.SetAsTime(const AValue: TDateTime);
+begin
+  FSQLVAR.AsTime := AValue;
+end;
+
+function TmncFBField.GetIsNull: Boolean;
+begin
+  Result := FSQLVAR.IsNull;
+end;
+
+procedure TmncFBField.SetIsNull(const AValue: Boolean);
+begin
+  FSQLVAR.IsNull := AValue;
+end;
+
+function TmncFBField.GetIsEmpty: Boolean;
+begin
+  Result := FSQLVAR.IsNull;
+end;
+
+constructor TmncFBField.Create(vColumn: TmncColumn);
+begin
+  inherited;
+  FSQLVAR := TmncFBSQLVAR.Create;
+end;
+
+destructor TmncFBField.Destroy;
+begin
+  FreeAndNil(FSQLVAR);
   inherited;
 end;
 
 { TFieldHelper }
 
 
-{ TFBSQLParams }
+{ TmncFBParams }
 
-function TFBSQLParams.GetItem(Index: Integer): TFBSQLParam;
+function TmncFBParams.GetItem(Index: Integer): TmncFBParam;
 begin
-  Result := (inherited Items[Index]) as TFBSQLParam;
+  Result := (inherited Items[Index]) as TmncFBParam;
 end;
 
-function TFBSQLParams.GetModified: Boolean;
+function TmncFBParams.GetModified: Boolean;
 var
   i: Integer;
 begin
@@ -564,7 +724,7 @@ begin
     end;
 end;
 
-function TFBSQLParams.GetNames: string;
+function TmncFBParams.GetNames: string;
 var
   i: Integer;
 begin
@@ -577,19 +737,19 @@ begin
   end;
 end;
 
-function TFBSQLParams.GetRecordSize: Integer;
+function TmncFBParams.GetRecordSize: Integer;
 begin
   Result := SizeOf(PXSQLDA) + XSQLDA_LENGTH(Count);
 end;
 
-constructor TFBSQLParams.Create;
+constructor TmncFBParams.Create;
 begin
   inherited;
   FBAlloc(FData, 0, XSQLDA_LENGTH(0));
   FData.version := SQLDA_VERSION1;
 end;
 
-destructor TFBSQLParams.Destroy;
+destructor TmncFBParams.Destroy;
 begin
   Clear;
   if FData <> nil then
@@ -600,14 +760,141 @@ begin
   inherited;
 end;
 
-{ TFBSQLFields }
+{ TmncFBParam }
 
-function TFBSQLFields.GetItem(Index: Integer): TFBSQLField;
+function TmncFBParam.GetValue: Variant;
 begin
-  Result := (inherited Items[Index]) as TFBSQLField;
+  Result := FSQLVAR.AsVariant;
 end;
 
-function TFBSQLFields.GetModified: Boolean;
+procedure TmncFBParam.SetValue(const AValue: Variant);
+begin
+  FSQLVAR.AsVariant := AValue;
+end;
+
+function TmncFBParam.GetAsText: string;
+begin
+  Result := FSQLVAR.AsText;
+end;
+
+procedure TmncFBParam.SetAsText(const AValue: string);
+begin
+  FSQLVAR.AsText := AValue;
+end;
+
+function TmncFBParam.GetAsString: string;
+begin
+  Result := FSQLVAR.AsString;
+end;
+
+procedure TmncFBParam.SetAsString(const AValue: string);
+begin
+  FSQLVAR.AsString := AValue;
+end;
+
+function TmncFBParam.GetAsInteger: Integer;
+begin
+  Result := FSQLVAR.AsInteger;
+end;
+
+procedure TmncFBParam.SetAsInteger(const AValue: Integer);
+begin
+  FSQLVAR.AsInteger := AValue;
+end;
+
+function TmncFBParam.GetAsInt64: Int64;
+begin
+  Result := FSQLVAR.AsInt64
+end;
+
+procedure TmncFBParam.SetAsInt64(const AValue: Int64);
+begin
+  FSQLVAR.AsInt64 := AValue;
+end;
+
+function TmncFBParam.GetAsDouble: Double;
+begin
+  Result := FSQLVAR.AsDouble;
+end;
+
+procedure TmncFBParam.SetAsDouble(const AValue: Double);
+begin
+  FSQLVAR.AsDouble := AValue;
+end;
+
+function TmncFBParam.GetAsBoolean: Boolean;
+begin
+  Result := FSQLVAR.AsBoolean;
+end;
+
+procedure TmncFBParam.SetAsBoolean(const AValue: Boolean);
+begin
+  FSQLVAR.AsBoolean := AValue;
+end;
+
+function TmncFBParam.GetAsCurrency: Currency;
+begin
+  Result := FSQLVAR.AsCurrency;
+end;
+
+procedure TmncFBParam.SetAsCurrency(const AValue: Currency);
+begin
+  FSQLVAR.AsCurrency := AValue;
+end;
+
+function TmncFBParam.GetAsDate: TDateTime;
+begin
+  Result := FSQLVAR.AsDate;
+end;
+
+procedure TmncFBParam.SetAsDate(const AValue: TDateTime);
+begin
+  FSQLVAR.AsDate := AValue;
+end;
+
+function TmncFBParam.GetAsDateTime: TDateTime;
+begin
+  Result := FSQLVAR.AsDateTime;
+end;
+
+procedure TmncFBParam.SetAsDateTime(const AValue: TDateTime);
+begin
+  FSQLVAR.AsDateTime := AValue;
+end;
+
+function TmncFBParam.GetAsTime: TDateTime;
+begin
+  Result := FSQLVAR.AsTime;
+end;
+
+procedure TmncFBParam.SetAsTime(const AValue: TDateTime);
+begin
+  FSQLVAR.AsTime := AValue;
+end;
+
+function TmncFBParam.GetIsNull: Boolean;
+begin
+  Result := FSQLVAR.IsNull;
+end;
+
+procedure TmncFBParam.SetIsNull(const AValue: Boolean);
+begin
+  FSQLVAR.IsNull := AValue;
+end;
+
+function TmncFBParam.GetIsEmpty: Boolean;
+begin
+  Result := FSQLVAR.IsNull;
+end;
+
+{ TmncFBFields }
+
+function TmncFBFields.GetItem(Index: Integer): TmncFBField;
+begin
+  Result := (inherited Items[Index]) as TmncFBField;
+end;
+
+function TmncFBFields.GetModified: Boolean;
 var
   i: Integer;
 begin
@@ -620,7 +907,7 @@ begin
     end;
 end;
 
-function TFBSQLFields.GetNames: string;
+function TmncFBFields.GetNames: string;
 var
   i: Integer;
 begin
@@ -633,14 +920,66 @@ begin
   end;
 end;
 
-constructor TFBSQLFields.Create(vColumns: TmncColumns);
+procedure TmncFBFields.Prepare(NewCount: integer);
+var
+  i: Integer;
+  aVarSize: Integer;
+  p: Pointer;
+  OldCount: Integer;
+  aColumn: TmncColumn;
+  aField: TmncFBField;
+begin
+  OldCount := Count;
+
+  if NewCount <> Count then
+  begin
+    if NewCount < Count then
+    begin
+      for i := NewCount to Count - 1 do
+      begin
+        Items[i].Free;
+      end;
+    end;
+    FBAlloc(FData, XSQLDA_LENGTH(Count), XSQLDA_LENGTH(NewCount));
+  end;
+
+  Count := NewCount;
+
+  Data.version := SQLDA_VERSION1;
+  aVarSize := sizeof(TXSQLVAR);
+
+  p := @Data^.sqlvar[0];
+  for i := 0 to Count - 1 do
+  begin
+    if i >= OldCount then
+    begin
+          //aColumn := Columns.Add('')
+          //aField := Add(aColumn);
+
+//            Items[i].FSQLVAR.XSqlVar := p;
+    end;
+
+    Items[i].SQLVAR.SQLVar := p;
+    //            Items[i].Clear;
+
+    p := Pointer(PAnsiChar(p) + aVarSize);
+  end;
+
+  if Count > 0 then
+  begin
+    Data^.sqln := NewCount;
+    Data^.sqld := NewCount;
+  end;
+end;
+
+constructor TmncFBFields.Create(vColumns: TmncColumns);
 begin
   inherited;
   FBAlloc(FData, 0, XSQLDA_LENGTH(0));
   FData.version := SQLDA_VERSION1;
 end;
 
-destructor TFBSQLFields.Destroy;
+destructor TmncFBFields.Destroy;
 begin
   Clear;
   if FData <> nil then
@@ -709,7 +1048,7 @@ begin
         Call(FBClient.isc_dsql_execute2(@StatusVector,
           @Session.Handle, @FHandle,
           FB_DIALECT,
-          (Params as TFBSQLParams).Data, nil), StatusVector, True);
+          (Params as TmncFBParams).Data, nil), StatusVector, True);
 
         Call(FBClient.isc_dsql_set_cursor_name(@StatusVector, @FHandle, PAnsiChar(FCursor), 0), StatusVector, True);
         FActive := True;
@@ -730,7 +1069,7 @@ begin
       @Session.Handle,
       @FHandle,
       FB_DIALECT,
-      (Params as TFBSQLParams).Data), StatusVector, True)
+      (Params as TmncFBParams).Data), StatusVector, True)
   end;
 end;
 
@@ -750,12 +1089,12 @@ end;
 
 function TmncFBCommand.CreateFields(vColumns: TmncColumns): TmncFields;
 begin
-  Result := TFBSQLFields.Create(vColumns);
+  Result := TmncFBFields.Create(vColumns);
 end;
 
 function TmncFBCommand.CreateParams: TmncParams;
 begin
-  Result := TFBSQLParams.Create;
+  Result := TmncFBParams.Create;
 end;
 
 procedure TmncFBCommand.DoClose;
@@ -804,6 +1143,7 @@ var
   type_item: Char;
   sql_type:Integer;
   StatusVector: TStatusVector;
+  Data: PXSQLDA;
 begin
   if not Prepared then
   begin
@@ -844,23 +1184,26 @@ begin
               (Call(FBClient.isc_dsql_describe_bind(@StatusVector, @FHandle, FB_DIALECT, FSQLParams.Data), StatusVector, True) > 0) then
               FBRaiseError(StatusVector);
             FSQLParams.Initialize;}
-(*
+
             if (FSQLType in [SQLSelect, SQLSelectForUpdate, SQLExecProcedure]) then
             begin
+              Data := (Fields as TmncFBFields).Data;
             { Allocate an initial output descriptor (with one column) }
-              FSQLCurrent.Clear;
-              FSQLCurrent.Count := 1;
-            { Get Size of columns }
-              Call(FBClient.isc_dsql_describe(@StatusVector, @FHandle, FB_DIALECT, FSQLCurrent.Data), StatusVector, True);
-              if FSQLCurrent.Data^.sqld > FSQLCurrent.Data^.sqln then
+              Fields.Clear;
+              Fields.Count := 1;
+            { Get count of columns }
+              Call(FBClient.isc_dsql_describe(@StatusVector, @FHandle, FB_DIALECT, Data), StatusVector, True);
+              if Data^.sqld > Data^.sqln then
               begin
-                FSQLCurrent.Count := FSQLCurrent.Data^.sqld;
-                Call(FBClient.isc_dsql_describe(@StatusVector, @FHandle, FB_DIALECT, FSQLCurrent.Data), StatusVector, True);
+                //Fields.Count := Data^.sqld;
+                //ChangeFields(Fields, Data^.sqld);
+                (Fields as TmncFBFields).Prepare(Data^.sqld);
+                Call(FBClient.isc_dsql_describe(@StatusVector, @FHandle, FB_DIALECT, Data), StatusVector, True);
               end
-              else if FSQLCurrent.Data^.sqld = 0 then
-                FSQLCurrent.Clear;
-              FSQLCurrent.Initialize;
-            end;*)
+              else if Data^.sqld = 0 then
+                Fields.Clear;
+              //FSQLCurrent.Initialize;
+            end;
           end;
       end;
     except
@@ -870,6 +1213,129 @@ begin
           FreeHandle;
         raise;
       end;
+    end;
+  end;
+end;
+
+procedure ChangeFields(Fields: TmncCustomFields; NewCount:Integer);
+var
+  i: Integer;
+  XSQLVar_Size: Integer;
+  p: Pointer;
+  OldCount: Integer;
+  Data: PXSQLDA;
+  aColumn: TmncColumn;
+  aField: TmncFBField;
+  aParam: TmncFBParam;
+begin
+  if Fields is TmncFBFields then
+    Data := (Fields as TmncFBFields).Data
+  else if Fields is TmncFBParams then
+    Data := (Fields as TmncFBParams).Data
+  else
+    EFBExceptionError.Create('Fields is not Firebird SQL Fields');
+
+  OldCount := Fields.Count;
+  if NewCount <> 0 then
+  begin
+    if NewCount <> Fields.Count then
+    begin
+      if NewCount < Fields.Count then
+      begin
+        for i := NewCount to Fields.Count - 1 do
+        begin
+          Fields.Items[i].Free;
+        end;
+      end;
+      FBAlloc(Data, XSQLDA_LENGTH(Fields.Count), XSQLDA_LENGTH(NewCount));
+    end;
+    Fields.Count := NewCount;
+    Data.version := SQLDA_VERSION1;
+    XSQLVar_Size := sizeof(TXSQLVAR);
+    p := @Data^.sqlvar[0];
+    for i := 0 to Fields.Count - 1 do
+    begin
+      if i >= OldCount then
+      begin
+        if Fields is TmncFBFields then
+        begin
+          with Fields as TmncFBFields do
+          begin
+            //aColumn := Columns.Add('')
+            //aField := Add(aColumn);
+
+//            Items[i].FSQLVAR.XSqlVar := p;
+          end;
+        end
+        else
+        begin
+          with Fields as TmncFBParams do
+          begin
+          end;
+        end;
+      end;
+
+      if Fields is TmncFBFields then
+        (Fields as TmncFBFields).Items[i].SQLVAR.SQLVar := p
+      else
+        (Fields as TmncFBParams).Items[i].SQLVAR.SQLVar := p;
+      //            Items[i].Clear;
+
+      p := Pointer(PAnsiChar(p) + XSQLVar_Size);
+    end;
+    if Fields.Count > 0 then
+    begin
+      Data^.sqln := NewCount;
+      Data^.sqld := NewCount;
+    end;
+  end;
+end;
+end.
+procedure InitializeSQLDA(Fields);
+var
+  i: Integer;
+begin
+  for i := 0 to Count - 1 do
+  begin
+    with Items[i].Data do
+    begin
+      if Items[i].Name = '' then
+      begin
+        if AliasName = '' then
+          AliasName := 'F_' + IntToStr(i);
+        Items[i].Name := FBDequoteName(aliasname);
+      end;
+
+      if (SqlDef = SQL_TEXT) or
+        (SqlDef = SQL_VARYING) then
+        Items[i].FMaxLen := sqllen
+      else
+        Items[i].FMaxLen := 0;
+
+      if FXSQLVAR^.sqldata = nil then
+        case SqlDef of
+          SQL_TEXT, SQL_TYPE_DATE, SQL_TYPE_TIME, SQL_TIMESTAMP,
+            SQL_BLOB, SQL_ARRAY, SQL_QUAD, SQL_SHORT,
+            SQL_LONG, SQL_INT64, SQL_DOUBLE, SQL_FLOAT, SQL_D_FLOAT, SQL_BOOLEAN:
+            begin
+              if (sqllen = 0) then
+              { Make sure you get a valid pointer anyway
+               select '' from foo }
+                SetDataSize(0, 1)
+              else
+                SetDataSize(0, sqllen)
+            end;
+          SQL_VARYING:
+            begin
+              SetDataSize(0, sqllen + 2);
+            end;
+        else
+          FBError(fbceUnknownSQLDataType, [SqlDef])
+        end;
+      if (sqltype and 1 = 1) then
+        SetIndSize(0, SizeOf(Short))
+      else if (sqlind <> nil) then
+        SetIndSize(0, 0);
     end;
   end;
 end;
