@@ -1127,6 +1127,8 @@ begin
   Result := nil;
   for i := 0 to Count - 1 do
   begin
+    if Items[i].Column = nil then
+      raise EmncException.Create('Field item not have Column');
     if SameText(vName, Items[i].Column.Name) then
     begin
       Result := Items[i];
