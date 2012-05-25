@@ -62,6 +62,8 @@ type
     function GetConnection: TmncCSVConnection;
     function GetSession: TmncCSVSession;
   protected
+    function CreateFields(vColumns: TmncColumns): TmncFields; override;
+    function CreateParams: TmncParams; override;
     procedure PrepareParams;
     procedure LoadHeader;
     procedure SaveHeader;
@@ -194,6 +196,16 @@ begin
   Result := (Inherited Session) as TmncCSVSession;
 end;
 
+function TmncCSVCommand.CreateFields(vColumns: TmncColumns): TmncFields;
+begin
+  Result := TmncVariantFields.Create(vColumns);
+end;
+
+function TmncCSVCommand.CreateParams: TmncParams;
+begin
+  Result := TmncVariantParams.Create;
+end;
+
 procedure TmncCSVCommand.LoadHeader;
 var
   aStrings: TStringList;
@@ -225,7 +237,7 @@ begin
   aStrings := nil;
   if ReadLine(aStrings) then
   begin
-    aRecord := TmncFields.Create(Columns);
+    aRecord := CreateFields(Columns);
     i := 0;
     try
       while (i < aStrings.Count) and (i < Columns.Count) do
@@ -247,7 +259,7 @@ var
   i: Integer;
   aParams: TmncParams;
 begin
-  aParams := TmncParams.Create;
+  aParams := CreateParams;
   for i := 0 to Columns.Count - 1 do
     aParams.Add(Columns[i].Name);
   Params := aParams;

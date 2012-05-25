@@ -285,6 +285,8 @@ type
     function GetValue(Index: string): Variant;
     procedure SetValue(Index: string; const Value: Variant);
   protected
+    //Called before reelase it, good to deattach the handles
+    procedure Detach; virtual;
   public
     property Items[Index: Integer]: TmncCustomField read GetItem;
     property Values[Index: string]: Variant read GetValue write SetValue;
@@ -320,7 +322,7 @@ type
     function GetField(Index: string): TmncField;
   protected
     function Find(vName: string): TmncItem; override;
-    function CreateField(vColumn: TmncColumn): TmncCustomField; virtual;
+    function CreateField(vColumn: TmncColumn): TmncCustomField; virtual; abstract;
   public
     constructor Create(vColumns: TmncColumns); virtual;
     function FindField(vName: string): TmncField;
@@ -376,7 +378,7 @@ type
   TmncParams = class(TmncCustomParams)
   private
   protected
-    function CreateParam: TmncCustomField; virtual;
+    function CreateParam: TmncCustomField; virtual; abstract;
   public
     constructor Create; virtual;
     function Add(Name: string): TmncParam;
@@ -452,8 +454,8 @@ type
     procedure Clear; virtual;
     procedure Commit;
     procedure Rollback;
-    function ReleaseFields: TmncFields;
-    function ReleaseParams: TmncParams;
+    function DetachFields: TmncFields;
+    function DetachParams: TmncParams;
     function FieldIsExist(Name: string): Boolean;
     property NextOnExecute: Boolean read FNextOnExecute write FNextOnExecute default True;
     property Prepared: Boolean read FPrepared;
@@ -462,6 +464,47 @@ type
     property Field[Index: string]: TmncField read GetField;
     property Params: TmncParams read FParams write SetParams;
     property Param[Index: string]: TmncParam read GetParam;
+  end;
+
+{ Simple classes usful for rapid implmetation }
+
+  { TmncVariantField }
+
+  TmncVariantField = class(TmncField)
+  private
+    FValue: Variant;
+  protected
+    function GetValue: Variant; override;
+    procedure SetValue(const AValue: Variant); override;
+  public
+  end;
+
+  { TmncVariantParam }
+
+  TmncVariantParam = class(TmncParam)
+  private
+    FValue: Variant;
+  protected
+    function GetValue: Variant; override;
+    procedure SetValue(const AValue: Variant); override;
+  public
+  end;
+
+
+  { TmncVariantFields }
+
+  TmncVariantFields = class(TmncFields)
+  protected
+    function CreateField(vColumn: TmncColumn): TmncCustomField; override;
+  public
+  end;
+
+  { TmncVariantParams }
+
+  TmncVariantParams = class(TmncParams)
+  protected
+    function CreateParam: TmncCustomField; override;
+  public
   end;
 
 function ConnectionLock: TCriticalSection;
@@ -476,6 +519,44 @@ begin
   if FConnectionLock = nil then
     FConnectionLock := TCriticalSection.Create;
   Result := FConnectionLock;
+end;
+
+{ TmncVariantParams }
+
+function TmncVariantParams.CreateParam: TmncCustomField;
+begin
+  Result := TmncVariantParam.Create;
+end;
+
+{ TmncVariantFields }
+
+function TmncVariantFields.CreateField(vColumn: TmncColumn): TmncCustomField;
+begin
+  Result := TmncVariantField.Create(vColumn);
+end;
+
+{ TmncVariantParam }
+
+function TmncVariantParam.GetValue: Variant;
+begin
+  Result := FValue;
+end;
+
+procedure TmncVariantParam.SetValue(const AValue: Variant);
+begin
+  FValue := AValue;
+end;
+
+{ TmncVarianField }
+
+function TmncVariantField.GetValue: Variant;
+begin
+  Result := FValue;
+end;
+
+procedure TmncVariantField.SetValue(const AValue: Variant);
+begin
+  FValue := AValue;
 end;
 
 { TmncConnection }
@@ -711,13 +792,14 @@ begin
   FPrepared := True;
 end;
 
-function TmncCommand.ReleaseFields: TmncFields;
+function TmncCommand.DetachFields: TmncFields;
 begin
+  FFields.Detach;
   Result := FFields;
   FFields := nil;
 end;
 
-function TmncCommand.ReleaseParams: TmncParams;
+function TmncCommand.DetachParams: TmncParams;
 begin
   Result := FParams;
   FParams := nil;
@@ -1053,11 +1135,6 @@ begin
   end;
 end;
 
-function TmncFields.CreateField(vColumn: TmncColumn): TmncCustomField;
-begin
-  Result := TmncField.Create(vColumn);
-end;
-
 { TmncColumns }
 
 function TmncColumns.Add(vIndex: Integer; vName: string; vType: TmncDataType; FieldClass: TmncColumnClass): TmncColumn;
@@ -1110,11 +1187,6 @@ begin
     Result := ''
   else
     Result := Column.Name;
-end;
-
-function TmncParams.CreateParam: TmncCustomField;
-begin
-  Result := TmncParam.Create;
 end;
 
 constructor TmncParams.Create;
@@ -1306,6 +1378,10 @@ end;
 procedure TmncCustomFields.SetValue(Index: string; const Value: Variant);
 begin
   ItemByName(Index).Value := Value;
+end;
+
+procedure TmncCustomFields.Detach;
+begin
 end;
 
 { TmncItem }

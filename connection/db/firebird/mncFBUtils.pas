@@ -54,8 +54,8 @@ function ExtractIdentifier(Dialect: Integer; Value: string): string;
 
 function FindTokenReq(Buffer: PChar; Flag: Byte): PChar;
 function GetInfoReqRecord(Buffer: PChar; Flag: Byte): Integer;
-function GetInfoReqString(Buffer: PChar; Flag: Byte; var Value: string): Boolean;
-function GetInfoReqInteger(Buffer: PChar; Flag: Byte; var Value: Integer): Boolean;
+function GetInfoReqString(Buffer: PChar; Flag: Byte; out Value: string): Boolean;
+function GetInfoReqInteger(Buffer: PChar; Flag: Byte; out Value: Integer): Boolean;
 
 procedure SetFBDataBaseErrorMessages(Value: TFBDataBaseErrorMessages);
 function GetFBDataBaseErrorMessages: TFBDataBaseErrorMessages;
@@ -530,7 +530,7 @@ begin
   end;
 end;
 
-function GetInfoReqString(Buffer: PChar; Flag: Byte; var Value: string): Boolean;
+function GetInfoReqString(Buffer: PChar; Flag: Byte; out Value: string): Boolean;
 var
   p: PChar;
   l: Integer;
@@ -546,7 +546,7 @@ begin
   end;
 end;
 
-function GetInfoReqInteger(Buffer: PChar; Flag: Byte; var Value: Integer): Boolean;
+function GetInfoReqInteger(Buffer: PChar; Flag: Byte; out Value: Integer): Boolean;
 var
   p: PChar;
 begin

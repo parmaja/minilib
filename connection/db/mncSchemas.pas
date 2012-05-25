@@ -166,11 +166,13 @@ procedure TmncSchemaItems.SetItem(Index: Integer; const Value: TmncSchemaItem);
 begin
   inherited Items[Index] := Value;
 end;
-
+{TODO: delete it
 const
   NEWLINE = #13#10;
   TERM = ';';
   ProcTerm = '^';
+
+  }
 
 { TmncSchema }
 

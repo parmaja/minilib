@@ -45,7 +45,6 @@ type
   private
     FXSQLVAR: PXSQLVAR;
     FIgnored: Boolean;
-    FIndex: Integer;
     FModified: Boolean;
     FMaxLen: Short;
     function GetSqlDef: Short;
@@ -150,6 +149,8 @@ type
     function _AddRef : longint;{$IFNDEF WINDOWS}cdecl{$ELSE}stdcall{$ENDIF};
     function _Release : longint;{$IFNDEF WINDOWS}cdecl{$ELSE}stdcall{$ENDIF};
 
+    procedure Attach(vDBHandle: PISC_DB_HANDLE; vTRHandle: PISC_TR_HANDLE);
+    procedure Detach;
     procedure Assign(Source: TmncSQLVAR);
     procedure Prepare;
     procedure SetBuffer(Buffer: Pointer; Size: Integer); //zaher
@@ -189,7 +190,6 @@ type
 
     property IsNull: Boolean read GetIsNull write SetIsNull;
     property IsNullable: Boolean read GetIsNullable write SetIsNullable;
-    property Index: Integer read FIndex;
     property Modified: Boolean read FModified write SetModified;
     property Size: Integer read GetSize;
     property MaxLen: Short read FMaxLen write FMaxLen;
@@ -991,6 +991,18 @@ procedure TmncSQLVAR.CheckHandles;
 begin
   if (FDBHandle = nil) or (FTRHandle = nil) then
     raise EFBClientError.Create('Handles not opened');
+end;
+
+procedure TmncSQLVAR.Detach;
+begin
+  FDBHandle := nil;
+  FTRHandle := nil;
+end;
+
+procedure TmncSQLVAR.Attach(vDBHandle: PISC_DB_HANDLE; vTRHandle: PISC_TR_HANDLE);
+begin
+  FDBHandle := vDBHandle;
+  FTRHandle := vTRHandle;
 end;
 
 procedure TmncSQLVAR.SetAsCurrency(AValue: Currency);

@@ -2963,7 +2963,10 @@ const
   
 (** XSQLDA_LENGTH is defined in C as a macro, but in Pascal we must defined it
    as a function... **)
+
+
   XSQLVAR_SIZE = sizeof(TXSQLVAR);
+
 function XSQLDA_LENGTH(n: Long): Long;
 
 (*
