@@ -39,10 +39,15 @@ type
     SQLExecProcedure, SQLStartTransaction, SQLCommit, SQLRollback,
     SQLSelectForUpdate, SQLSetSequence, SQLSavePoint);
 
+  { TmncSQLVAR }
+
   TmncSQLVAR = class(TObject)
   private
     FXSQLVAR: PXSQLVAR;
     FIgnored: Boolean;
+    FIndex: Integer;
+    FModified: Boolean;
+    FMaxLen: Short;
     function GetSqlDef: Short;
   protected
     function GetSQLVAR: PXSQLVAR;
@@ -89,12 +94,6 @@ type
     property AliasName: string read GetAliasName write SetAliasName;
     property Ignored: Boolean read FIgnored write FIgnored; //used to manual Ignored blob fields
   private
-    FIndex: Integer;
-    FModified: Boolean;
-    FName: string;
-    FSQLVAR: TmncSQLVAR;
-    FMaxLen: Short;
-
     function GetAsCurrency: Currency;
     function GetAsInt64: Int64;
     function GetAsDateTime: TDateTime;
@@ -132,7 +131,6 @@ type
     function GetAsGUID: TGUID;
     procedure SetAsGUID(const AValue: TGUID);
     procedure SetModified(const AValue: Boolean);
-    procedure SetName(const AValue: string);
     function GetAsHex: string;
     procedure SetAsHex(const AValue: string);
     function GetAsText: string;
@@ -153,6 +151,7 @@ type
     function _Release : longint;{$IFNDEF WINDOWS}cdecl{$ELSE}stdcall{$ENDIF};
 
     procedure Assign(Source: TmncSQLVAR);
+    procedure Prepare;
     procedure SetBuffer(Buffer: Pointer; Size: Integer); //zaher
     function CreateReadBlobSteam: TFBBlobStream;
     function CreateWriteBlobSteam: TFBBlobStream;
@@ -192,8 +191,8 @@ type
     property IsNullable: Boolean read GetIsNullable write SetIsNullable;
     property Index: Integer read FIndex;
     property Modified: Boolean read FModified write SetModified;
-    property Name: string read FName write SetName;
     property Size: Integer read GetSize;
+    property MaxLen: Short read FMaxLen write FMaxLen;
   end;
 
 implementation
@@ -350,6 +349,7 @@ end;
 procedure TmncSQLVAR.SetSQLVAR(const AValue: PXSQLVAR);
 begin
   FXSQLVAR := AValue;
+  //TODO Prepare
 end;
 
 { TmncSQLVAR }
@@ -487,37 +487,37 @@ begin
     begin
       IsNull := True;
     end
-    else if (FSQLVAR.SqlDef = SQL_ARRAY) or (Source.FSQLVAR.SqlDef = SQL_ARRAY) then
+    else if (SqlDef = SQL_ARRAY) or (Source.SqlDef = SQL_ARRAY) then
       { arrays not supported }
-    else if (FSQLVAR.sqlDef <> SQL_BLOB) and (Source.FSQLVAR.SqlDef <> SQL_BLOB) then
+    else if (sqlDef <> SQL_BLOB) and (Source.SqlDef <> SQL_BLOB) then
     begin
       AValue := Source.AValue;
     end
     else
     begin
-      if (Source.FSQLVAR.SqlDef <> SQL_BLOB) then
+      if (Source.SqlDef <> SQL_BLOB) then
       begin
         szBuff := nil;
-        FBAlloc(szBuff, 0, Source.FSQLVAR.sqllen);
-        if (Source.FSQLVAR.SqlDef = SQL_TEXT) or (Source.FSQLVAR.SqlDef = SQL_VARYING) then
+        FBAlloc(szBuff, 0, Source.sqllen);
+        if (Source.SqlDef = SQL_TEXT) or (Source.SqlDef = SQL_VARYING) then
         begin
-          iSize := FBClient.isc_vax_integer(Source.FSQLVAR.sqldata, 2);
-          Move(Source.FSQLVAR.sqldata[2], szBuff[0], iSize)
+          iSize := FBClient.isc_vax_integer(Source.sqldata, 2);
+          Move(Source.sqldata[2], szBuff[0], iSize)
         end
         else
         begin
-          iSize := Source.FSQLVAR.sqllen;
-          Move(Source.FSQLVAR.sqldata[0], szBuff[0], iSize);
+          iSize := Source.sqllen;
+          Move(Source.sqldata[0], szBuff[0], iSize);
         end;
         bSourceBlob := False;
       end
-      else if (FSQLVAR.SqlDef <> SQL_BLOB) then
+      else if (SqlDef <> SQL_BLOB) then
         bDestBlob := False;
 
       if bSourceBlob then
       begin
         { read the blob }
-        FBCall(FBClient.isc_open_blob2(@StatusVector, @FDBHandle, @FTRHandle, @s_bhandle, PISC_QUAD(Source.FSQLVAR.sqldata),
+        FBCall(FBClient.isc_open_blob2(@StatusVector, @FDBHandle, @FTRHandle, @s_bhandle, PISC_QUAD(Source.sqldata),
           0, nil), StatusVector, True);
         try
           FBGetBlobInfo(@s_bhandle, iSegs, iMaxSeg, iSize, iBlobType);
@@ -532,7 +532,7 @@ begin
       if bDestBlob then
       begin
         { write the blob }
-        FBCall(FBClient.isc_create_blob2(@StatusVector, @FDBHandle, @FTRHandle, @d_bhandle, PISC_QUAD(FSQLVAR.sqldata),
+        FBCall(FBClient.isc_create_blob2(@StatusVector, @FDBHandle, @FTRHandle, @d_bhandle, PISC_QUAD(sqldata),
           0, nil), StatusVector, True);
         try
           FBWriteBlob(@d_bhandle, szBuff, iSize);
@@ -544,19 +544,59 @@ begin
       else
       begin
         { just copy the buffer }
-        FSQLVAR.sqltype := SQL_TEXT;
-        oldSize := FSQLVAR.sqllen;
+        sqltype := SQL_TEXT;
+        oldSize := sqllen;
         if iSize  > FMaxLen then
-          FSQLVAR.sqllen := FMaxLen
+          sqllen := FMaxLen
         else
-          FSQLVAR.sqllen := iSize;
-        FSQLVAR.SetDataSize(oldSize, FSQLVAR.sqllen + 1);
-        Move(szBuff[0], FSQLVAR.sqldata[0], FSQLVAR.sqllen);
+          sqllen := iSize;
+        SetDataSize(oldSize, sqllen + 1);
+        Move(szBuff[0], sqldata[0], sqllen);
       end;
     end;
   finally
     FreeMem(szBuff);
   end;
+end;
+
+procedure TmncSQLVAR.Prepare;
+begin
+  {if Items[i].Name = '' then
+  begin
+    if AliasName = '' then
+      AliasName := 'F_' + IntToStr(i);
+    Items[i].Name := FBDequoteName(aliasname);
+  end;}
+
+  if (SqlDef = SQL_VARYING) or (SqlDef = SQL_TEXT) then
+    FMaxLen := sqllen
+  else
+    FMaxLen := 0;
+
+  if FXSQLVAR^.sqldata = nil then
+    case SqlDef of
+      SQL_TEXT, SQL_TYPE_DATE, SQL_TYPE_TIME, SQL_TIMESTAMP,
+        SQL_BLOB, SQL_ARRAY, SQL_QUAD, SQL_SHORT,
+        SQL_LONG, SQL_INT64, SQL_DOUBLE, SQL_FLOAT, SQL_D_FLOAT, SQL_BOOLEAN:
+        begin
+          if (sqllen = 0) then
+          { Make sure you get a valid pointer anyway
+           select '' from foo }
+            SetDataSize(0, 1)
+          else
+            SetDataSize(0, sqllen)
+        end;
+      SQL_VARYING:
+        begin
+          SetDataSize(0, sqllen + 2);
+        end;
+    else
+      FBRaiseError(fbceUnknownSQLDataType, [SqlDef])
+    end;
+  if (sqltype and 1 = 1) then
+    SetIndSize(0, SizeOf(Short))
+  else if (sqlind <> nil) then
+    SetIndSize(0, 0);
 end;
 
 function TmncSQLVAR.GetAsChar: Char;
@@ -574,7 +614,7 @@ function TmncSQLVAR.GetAsCurrency: Currency;
 begin
   Result := 0;
   if not IsNull then
-    case FSQLVAR.SqlDef of
+    case SqlDef of
       SQL_TEXT, SQL_VARYING:
         begin
           try
@@ -585,11 +625,11 @@ begin
           end;
         end;
       SQL_SHORT:
-        Result := FBScaleCurrency(Int64(PShort(FSQLVAR.sqldata)^), FSQLVAR.sqlscale);
+        Result := FBScaleCurrency(Int64(PShort(sqldata)^), sqlscale);
       SQL_LONG:
-        Result := FBScaleCurrency(Int64(PLong(FSQLVAR.sqldata)^), FSQLVAR.sqlscale);
+        Result := FBScaleCurrency(Int64(PLong(sqldata)^), sqlscale);
       SQL_INT64:
-        Result := FBScaleCurrency(PInt64(FSQLVAR.sqldata)^, FSQLVAR.sqlscale);
+        Result := FBScaleCurrency(PInt64(sqldata)^, sqlscale);
       SQL_DOUBLE, SQL_FLOAT, SQL_D_FLOAT:
         Result := GetAsDouble;
     else
@@ -601,7 +641,7 @@ function TmncSQLVAR.GetAsInt64: Int64;
 begin
   Result := 0;
   if not IsNull then
-    case FSQLVAR.SqlDef of
+    case SqlDef of
       SQL_TEXT, SQL_VARYING:
         begin
           try
@@ -612,18 +652,18 @@ begin
           end;
         end;
       SQL_SHORT:
-        Result := FBScaleInt64(Int64(PShort(FSQLVAR.sqldata)^),
-          FSQLVAR.sqlscale);
+        Result := FBScaleInt64(Int64(PShort(sqldata)^),
+          sqlscale);
       SQL_LONG:
-        Result := FBScaleInt64(Int64(PLong(FSQLVAR.sqldata)^),
-          FSQLVAR.sqlscale);
+        Result := FBScaleInt64(Int64(PLong(sqldata)^),
+          sqlscale);
       SQL_INT64:
-        Result := FBScaleInt64(PInt64(FSQLVAR.sqldata)^,
-          FSQLVAR.sqlscale);
+        Result := FBScaleInt64(PInt64(sqldata)^,
+          sqlscale);
       SQL_DOUBLE, SQL_FLOAT, SQL_D_FLOAT:
         Result := Trunc(AsDouble);
       SQL_BOOLEAN:
-        case PShort(FSQLVAR.sqldata)^ of
+        case PShort(sqldata)^ of
           ISC_TRUE: Result := 1;
           ISC_FALSE: Result := 0;
         end;
@@ -638,7 +678,7 @@ var
 begin
   Result := 0;
   if not IsNull then
-    case FSQLVAR.SqlDef of
+    case SqlDef of
       SQL_TEXT, SQL_VARYING:
         begin
           try
@@ -650,7 +690,7 @@ begin
         end;
       SQL_TYPE_DATE:
         begin
-          FBClient.isc_decode_sql_date(PISC_DATE(FSQLVAR.sqldata), @tm_date);
+          FBClient.isc_decode_sql_date(PISC_DATE(sqldata), @tm_date);
           try
             Result := EncodeDate(Word(tm_date.tm_year + 1900), Word(tm_date.tm_mon + 1),
               Word(tm_date.tm_mday));
@@ -663,7 +703,7 @@ begin
         end;
       SQL_TYPE_TIME:
         begin
-          FBClient.isc_decode_sql_time(PISC_TIME(FSQLVAR.sqldata), @tm_date);
+          FBClient.isc_decode_sql_time(PISC_TIME(sqldata), @tm_date);
           try
             Result := EncodeTime(Word(tm_date.tm_hour), Word(tm_date.tm_min),
               Word(tm_date.tm_sec), 0)
@@ -676,7 +716,7 @@ begin
         end;
       SQL_TIMESTAMP:
         begin
-          FBClient.isc_decode_date(PISC_QUAD(FSQLVAR.sqldata), @tm_date);
+          FBClient.isc_decode_date(PISC_QUAD(sqldata), @tm_date);
           try
             Result := EncodeDate(Word(tm_date.tm_year + 1900), Word(tm_date.tm_mon + 1),
               Word(tm_date.tm_mday));
@@ -703,7 +743,7 @@ begin
   Result := 0;
   if not IsNull then
   begin
-    case FSQLVAR.SqlDef of
+    case SqlDef of
       SQL_TEXT, SQL_VARYING:
         begin
           try
@@ -714,17 +754,17 @@ begin
           end;
         end;
       SQL_SHORT:
-        Result := FBScaleDouble(Int64(PShort(FSQLVAR.sqldata)^), FSQLVAR.sqlscale);
+        Result := FBScaleDouble(Int64(PShort(sqldata)^), sqlscale);
       SQL_LONG:
-        Result := FBScaleDouble(Int64(PLong(FSQLVAR.sqldata)^), FSQLVAR.sqlscale);
+        Result := FBScaleDouble(Int64(PLong(sqldata)^), sqlscale);
       SQL_INT64:
-        Result := FBScaleDouble(PInt64(FSQLVAR.sqldata)^, FSQLVAR.sqlscale);
+        Result := FBScaleDouble(PInt64(sqldata)^, sqlscale);
       SQL_FLOAT:
-        Result := PFloat(FSQLVAR.sqldata)^;
+        Result := PFloat(sqldata)^;
       SQL_DOUBLE, SQL_D_FLOAT:
-        Result := PDouble(FSQLVAR.sqldata)^;
+        Result := PDouble(sqldata)^;
       SQL_BOOLEAN:
-        case PShort(FSQLVAR.sqldata)^ of
+        case PShort(sqldata)^ of
           ISC_TRUE: Result := 1;
           ISC_FALSE: Result := 0;
         end;
@@ -751,7 +791,7 @@ function TmncSQLVAR.GetAsLong: Long;
 begin
   Result := 0;
   if not IsNull then
-    case FSQLVAR.SqlDef of
+    case SqlDef of
       SQL_TEXT, SQL_VARYING:
         begin
           try
@@ -762,17 +802,17 @@ begin
           end;
         end;
       SQL_SHORT:
-        Result := Trunc(FBScaleDouble(Int64(PShort(FSQLVAR.sqldata)^),
-          FSQLVAR.sqlscale));
+        Result := Trunc(FBScaleDouble(Int64(PShort(sqldata)^),
+          sqlscale));
       SQL_TYPE_DATE, SQL_TYPE_TIME, SQL_TIMESTAMP, SQL_LONG:
-        Result := Trunc(FBScaleDouble(Int64(PLong(FSQLVAR.sqldata)^),
-          FSQLVAR.sqlscale));
+        Result := Trunc(FBScaleDouble(Int64(PLong(sqldata)^),
+          sqlscale));
       SQL_INT64:
-        Result := Trunc(FBScaleDouble(PInt64(FSQLVAR.sqldata)^, FSQLVAR.sqlscale));
+        Result := Trunc(FBScaleDouble(PInt64(sqldata)^, sqlscale));
       SQL_DOUBLE, SQL_FLOAT, SQL_D_FLOAT:
         Result := Trunc(AsDouble);
       SQL_BOOLEAN:
-        case PShort(FSQLVAR.sqldata)^ of
+        case PShort(sqldata)^ of
           ISC_TRUE: Result := 1;
           ISC_FALSE: Result := 0;
         end;
@@ -784,7 +824,7 @@ end;
 function TmncSQLVAR.GetAsPointer: Pointer;
 begin
   if not IsNull then
-    Result := FSQLVAR.sqldata
+    Result := sqldata
   else
     Result := nil;
 end;
@@ -794,9 +834,9 @@ begin
   Result.gds_quad_high := 0;
   Result.gds_quad_low := 0;
   if not IsNull then
-    case FSQLVAR.SqlDef of
+    case SqlDef of
       SQL_BLOB, SQL_ARRAY, SQL_QUAD:
-        Result := PISC_QUAD(FSQLVAR.sqldata)^;
+        Result := PISC_QUAD(sqldata)^;
     else
       FBRaiseError(fbceInvalidDataConversion, [nil]);
     end;
@@ -822,7 +862,7 @@ begin
   Result := '';
   { Check null, if so return a default string }
   if not IsNull then
-    case FSQLVAR.SqlDef of
+    case SqlDef of
       SQL_ARRAY:
         Result := '(Array)';
       SQL_BLOB:
@@ -837,12 +877,12 @@ begin
         end;
       SQL_TEXT, SQL_VARYING:
         begin
-          sz := FSQLVAR.sqldata;
-          if (FSQLVAR.SqlDef = SQL_TEXT) then
-            str_len := FSQLVAR.sqllen
+          sz := sqldata;
+          if (SqlDef = SQL_TEXT) then
+            str_len := sqllen
           else
           begin
-            str_len := FBClient.isc_vax_integer(FSQLVAR.sqldata, 2);
+            str_len := FBClient.isc_vax_integer(sqldata, 2);
             Inc(sz, 2);
           end;
           SetString(Result, sz, str_len);
@@ -854,16 +894,16 @@ begin
       SQL_TIMESTAMP:
         Result := DateTimeToStr(AsDateTime);
       SQL_SHORT, SQL_LONG:
-        if FSQLVAR.sqlscale = 0 then
+        if sqlscale = 0 then
           Result := IntToStr(AsLong)
-        else if FSQLVAR.sqlscale >= (-4) then
+        else if sqlscale >= (-4) then
           Result := CurrToStr(AsCurrency)
         else
           Result := FloatToStr(AsDouble);
       SQL_INT64:
-        if FSQLVAR.sqlscale = 0 then
+        if sqlscale = 0 then
           Result := IntToStr(AsInt64)
-        else if FSQLVAR.sqlscale >= (-4) then
+        else if sqlscale >= (-4) then
           Result := CurrToStr(AsCurrency)
         else
           Result := FloatToStr(AsDouble);
@@ -885,12 +925,12 @@ begin
     Result := NULL
   { Check null, if so return a default string }
   else
-    case FSQLVAR.SqlDef of
+    case SqlDef of
       SQL_ARRAY:
         Result := '(Array)';
       SQL_BLOB:
         begin
-          if FSQLVAR.SqlSubtype = 1 then
+          if SqlSubtype = 1 then
             Result := AsString
           else
             Result := '(Blob)';
@@ -900,16 +940,16 @@ begin
       SQL_TIMESTAMP, SQL_TYPE_DATE, SQL_TYPE_TIME:
         Result := AsDateTime;
       SQL_SHORT, SQL_LONG:
-        if FSQLVAR.sqlscale = 0 then
+        if sqlscale = 0 then
           Result := AsLong
-        else if FSQLVAR.sqlscale >= (-4) then
+        else if sqlscale >= (-4) then
           Result := AsCurrency
         else
           Result := AsDouble;
       SQL_INT64:
-        if FSQLVAR.sqlscale = 0 then
+        if sqlscale = 0 then
           Result := AsINT64
-        else if FSQLVAR.sqlscale >= (-4) then
+        else if sqlscale >= (-4) then
           Result := AsCurrency
         else
           Result := AsDouble;
@@ -924,17 +964,17 @@ end;
 
 function TmncSQLVAR.GetIsNull: Boolean;
 begin
-  Result := IsNullable and (FSQLVAR.sqlind^ = -1);
+  Result := IsNullable and (sqlind^ = -1);
 end;
 
 function TmncSQLVAR.GetIsNullable: Boolean;
 begin
-  Result := (FSQLVAR.sqltype and 1 = 1);
+  Result := (sqltype and 1 = 1);
 end;
 
 function TmncSQLVAR.GetSize: Integer;
 begin
-  Result := FSQLVAR.sqllen;
+  Result := sqllen;
 end;
 
 procedure TmncSQLVAR.SetAsChar(const AValue: Char);
@@ -945,7 +985,6 @@ end;
 constructor TmncSQLVAR.Create;
 begin
   inherited;
-  FSQLVAR := TmncSQLVAR.Create;
 end;
 
 procedure TmncSQLVAR.CheckHandles;
@@ -958,11 +997,11 @@ procedure TmncSQLVAR.SetAsCurrency(AValue: Currency);
 begin
   if IsNullable then
     IsNull := False;
-  FSQLVAR.sqltype := SQL_INT64 or (FSQLVAR.sqltype and 1);
-  FSQLVAR.sqlscale := -4;
-  FSQLVAR.sqllen := SizeOf(Int64);
-  FSQLVAR.SetDataSize(0, FSQLVAR.sqllen);
-  PCurrency(FSQLVAR.sqldata)^ := AValue;
+  sqltype := SQL_INT64 or (sqltype and 1);
+  sqlscale := -4;
+  sqllen := SizeOf(Int64);
+  SetDataSize(0, sqllen);
+  PCurrency(sqldata)^ := AValue;
   Modified := True;
 end;
 
@@ -970,11 +1009,11 @@ procedure TmncSQLVAR.SetAsInt64(AValue: Int64);
 begin
   if IsNullable then
     IsNull := False;
-  FSQLVAR.sqltype := SQL_INT64 or (FSQLVAR.sqltype and 1);
-  FSQLVAR.sqlscale := 0;
-  FSQLVAR.sqllen := SizeOf(Int64);
-  FSQLVAR.SetDataSize(0, FSQLVAR.sqllen);
-  PInt64(FSQLVAR.sqldata)^ := AValue;
+  sqltype := SQL_INT64 or (sqltype and 1);
+  sqlscale := 0;
+  sqllen := SizeOf(Int64);
+  SetDataSize(0, sqllen);
+  PInt64(sqldata)^ := AValue;
   Modified := True;
 end;
 
@@ -985,7 +1024,7 @@ var
 begin
   if IsNullable then
     IsNull := False;
-  FSQLVAR.sqltype := SQL_TYPE_DATE or (FSQLVAR.sqltype and 1);
+  sqltype := SQL_TYPE_DATE or (sqltype and 1);
   DecodeDate(AValue, Yr, Mn, Dy);
   with tm_date do
   begin
@@ -996,21 +1035,21 @@ begin
     tm_mon := Mn - 1;
     tm_year := Yr - 1900;
   end;
-  FSQLVAR.sqllen := SizeOf(ISC_DATE);
-  FSQLVAR.SetDataSize(0, FSQLVAR.sqllen);
-  FBClient.isc_encode_sql_date(@tm_date, PISC_DATE(FSQLVAR.sqldata));
+  sqllen := SizeOf(ISC_DATE);
+  SetDataSize(0, sqllen);
+  FBClient.isc_encode_sql_date(@tm_date, PISC_DATE(sqldata));
   Modified := True;
 end;
 
-procedure TmncSQLVAR.SetAsLong(AValue: Long);
+procedure TmncSQLVAR.SetAsLong(AValue: Integer);
 begin
   if IsNullable then
     IsNull := False;
-  FSQLVAR.sqltype := SQL_LONG or (FSQLVAR.sqltype and 1);
-  FSQLVAR.sqllen := SizeOf(Long);
-  FSQLVAR.sqlscale := 0;
-  FSQLVAR.SetDataSize(0, FSQLVAR.sqllen);
-  PLong(FSQLVAR.sqldata)^ := AValue;
+  sqltype := SQL_LONG or (sqltype and 1);
+  sqllen := SizeOf(Long);
+  sqlscale := 0;
+  SetDataSize(0, sqllen);
+  PLong(sqldata)^ := AValue;
   Modified := True;
 end;
 
@@ -1021,7 +1060,7 @@ var
 begin
   if IsNullable then
     IsNull := False;
-  FSQLVAR.sqltype := SQL_TYPE_TIME or (FSQLVAR.sqltype and 1);
+  sqltype := SQL_TYPE_TIME or (sqltype and 1);
   DecodeTime(AValue, Hr, Mt, S, Ms);
   with tm_date do
   begin
@@ -1032,9 +1071,9 @@ begin
     tm_mon := 0;
     tm_year := 0;
   end;
-  FSQLVAR.sqllen := SizeOf(ISC_TIME);
-  FSQLVAR.SetDataSize(0, FSQLVAR.sqllen);
-  FBClient.isc_encode_sql_time(@tm_date, PISC_TIME(FSQLVAR.sqldata));
+  sqllen := SizeOf(ISC_TIME);
+  SetDataSize(0, sqllen);
+  FBClient.isc_encode_sql_time(@tm_date, PISC_TIME(sqldata));
   Modified := True;
 end;
 
@@ -1045,7 +1084,7 @@ var
 begin
   if IsNullable then
     IsNull := False;
-  FSQLVAR.sqltype := SQL_TIMESTAMP or (FSQLVAR.sqltype and 1);
+  sqltype := SQL_TIMESTAMP or (sqltype and 1);
   DecodeDate(AValue, Yr, Mn, Dy);
   DecodeTime(AValue, Hr, Mt, S, Ms);
   with tm_date do
@@ -1057,9 +1096,9 @@ begin
     tm_mon := Mn - 1;
     tm_year := Yr - 1900;
   end;
-  FSQLVAR.sqllen := SizeOf(TISC_QUAD);
-  FSQLVAR.SetDataSize(0, FSQLVAR.sqllen);
-  FBClient.isc_encode_date(@tm_date, PISC_QUAD(FSQLVAR.sqldata));
+  sqllen := SizeOf(TISC_QUAD);
+  SetDataSize(0, sqllen);
+  FBClient.isc_encode_date(@tm_date, PISC_QUAD(sqldata));
   Modified := True;
 end;
 
@@ -1067,11 +1106,11 @@ procedure TmncSQLVAR.SetAsDouble(AValue: Double);
 begin
   if IsNullable then
     IsNull := False;
-  FSQLVAR.sqltype := SQL_DOUBLE or (FSQLVAR.sqltype and 1);
-  FSQLVAR.sqllen := SizeOf(Double);
-  FSQLVAR.sqlscale := 0;
-  FSQLVAR.SetDataSize(0, FSQLVAR.sqllen);
-  PDouble(FSQLVAR.sqldata)^ := AValue;
+  sqltype := SQL_DOUBLE or (sqltype and 1);
+  sqllen := SizeOf(Double);
+  sqlscale := 0;
+  SetDataSize(0, sqllen);
+  PDouble(sqldata)^ := AValue;
   Modified := True;
 end;
 
@@ -1079,11 +1118,11 @@ procedure TmncSQLVAR.SetAsFloat(AValue: Double);
 begin
   if IsNullable then
     IsNull := False;
-  FSQLVAR.sqltype := SQL_FLOAT or (FSQLVAR.sqltype and 1);
-  FSQLVAR.sqllen := SizeOf(Float);
-  FSQLVAR.sqlscale := 0;
-  FSQLVAR.SetDataSize(0, FSQLVAR.sqllen);
-  PSingle(FSQLVAR.sqldata)^ := AValue;
+  sqltype := SQL_FLOAT or (sqltype and 1);
+  sqllen := SizeOf(Float);
+  sqlscale := 0;
+  SetDataSize(0, sqllen);
+  PSingle(sqldata)^ := AValue;
   Modified := True;
 end;
 
@@ -1102,8 +1141,8 @@ begin
   else
   begin
     IsNull := False;
-    FSQLVAR.sqltype := SQL_TEXT or (FSQLVAR.sqltype and 1);
-    Move(AValue^, FSQLVAR.sqldata^, FSQLVAR.sqllen);
+    sqltype := SQL_TEXT or (sqltype and 1);
+    Move(AValue^, sqldata^, sqllen);
     Modified := True;
   end;
 end;
@@ -1112,12 +1151,12 @@ procedure TmncSQLVAR.SetAsQuad(AValue: TISC_QUAD);
 begin
   if IsNullable then
     IsNull := False;
-  if (FSQLVAR.SqlDef <> SQL_BLOB) and
-    (FSQLVAR.SqlDef <> SQL_ARRAY) then
+  if (SqlDef <> SQL_BLOB) and
+    (SqlDef <> SQL_ARRAY) then
     FBRaiseError(fbceInvalidDataConversion, [nil]);
-  FSQLVAR.sqllen := SizeOf(TISC_QUAD);
-  FSQLVAR.SetDataSize(0, FSQLVAR.sqllen);
-  PISC_QUAD(FSQLVAR.sqldata)^ := AValue;
+  sqllen := SizeOf(TISC_QUAD);
+  SetDataSize(0, sqllen);
+  PISC_QUAD(sqldata)^ := AValue;
   Modified := True;
 end;
 
@@ -1125,11 +1164,11 @@ procedure TmncSQLVAR.SetAsShort(AValue: Short);
 begin
   if IsNullable then
     IsNull := False;
-  FSQLVAR.sqltype := SQL_SHORT or (FSQLVAR.sqltype and 1);
-  FSQLVAR.sqllen := SizeOf(Short);
-  FSQLVAR.sqlscale := 0;
-  FSQLVAR.SetDataSize(0, FSQLVAR.sqllen);
-  PShort(FSQLVAR.sqldata)^ := AValue;
+  sqltype := SQL_SHORT or (sqltype and 1);
+  sqllen := SizeOf(Short);
+  sqlscale := 0;
+  SetDataSize(0, sqllen);
+  PShort(sqldata)^ := AValue;
   Modified := True;
 end;
 
@@ -1140,25 +1179,25 @@ var
 
   procedure SetStringValue;
   begin
-    if (FSQLVAR.sqlname = 'DB_KEY') or
-      (FSQLVAR.sqlname = 'RDB$DB_KEY') then
-      Move(AValue[1], FSQLVAR.sqldata^, FSQLVAR.sqllen)
+    if (sqlname = 'DB_KEY') or
+      (sqlname = 'RDB$DB_KEY') then
+      Move(AValue[1], sqldata^, sqllen)
     else
     begin
-      FSQLVAR.sqltype := SQL_TEXT or (FSQLVAR.sqltype and 1);
+      sqltype := SQL_TEXT or (sqltype and 1);
       if (FMaxLen > 0) and (Length(AValue) > FMaxLen) then
         AValue := Copy(AValue, 1, FMaxLen);
-      FSQLVAR.sqllen := Length(AValue);
-      FSQLVAR.SetDataSize(0, FSQLVAR.sqllen + 1);
+      sqllen := Length(AValue);
+      SetDataSize(0, sqllen + 1);
       if (Length(AValue) > 0) then
-        Move(AValue[1], FSQLVAR.sqldata^, FSQLVAR.sqllen);
+        Move(AValue[1], sqldata^, sqllen);
     end;
     Modified := True;
   end;
 begin
   if IsNullable then
     IsNull := False;
-  stype := FSQLVAR.SqlDef;
+  stype := SqlDef;
   if (stype = SQL_TEXT) or (stype = SQL_VARYING) then
     SetStringValue
   else
@@ -1227,14 +1266,14 @@ begin
   begin
     if not IsNullable then
       IsNullable := True;
-    if Assigned(FSQLVAR.sqlind) then
-      FSQLVAR.sqlind^ := -1;
+    if Assigned(sqlind) then
+      sqlind^ := -1;
     Modified := True;
   end
   else if ((not AValue) and IsNullable) then
   begin
-    if Assigned(FSQLVAR.sqlind) then
-      FSQLVAR.sqlind^ := 0;
+    if Assigned(sqlind) then
+      sqlind^ := 0;
     Modified := True;
   end;
 end;
@@ -1245,13 +1284,13 @@ begin
   begin
     if AValue then
     begin
-      FSQLVAR.sqltype := FSQLVAR.sqltype or 1;
-      FSQLVAR.SetIndSize(0, SizeOf(Short));
+      sqltype := sqltype or 1;
+      SetIndSize(0, SizeOf(Short));
     end
     else
     begin
-      FSQLVAR.sqltype := FSQLVAR.SqlDef;
-      FSQLVAR.SetIndSize(0, 0);
+      sqltype := SqlDef;
+      SetIndSize(0, 0);
     end;
   end;
 end;
@@ -1278,11 +1317,11 @@ function TmncSQLVAR.GetAsBoolean: Boolean;
 begin
   Result := false;
   if not IsNull then
-    case FSQLVAR.SqlDef of
-      SQL_INT64: Result := PInt64(FSQLVAR.sqldata)^ <> ISC_FALSE;
-      SQL_LONG: Result := PLong(FSQLVAR.sqldata)^ <> ISC_FALSE;
+    case SqlDef of
+      SQL_INT64: Result := PInt64(sqldata)^ <> ISC_FALSE;
+      SQL_LONG: Result := PLong(sqldata)^ <> ISC_FALSE;
       SQL_SHORT, SQL_BOOLEAN:
-        Result := PShort(FSQLVAR.sqldata)^ <> ISC_FALSE
+        Result := PShort(sqldata)^ <> ISC_FALSE
     else
       FBRaiseError(fbceInvalidDataConversion, [nil]);
     end;
@@ -1293,9 +1332,9 @@ begin
   if IsNullable then
     IsNull := False;
   if AValue then
-    PShort(FSQLVAR.sqldata)^ := ISC_TRUE
+    PShort(sqldata)^ := ISC_TRUE
   else
-    PShort(FSQLVAR.sqldata)^ := ISC_FALSE;
+    PShort(sqldata)^ := ISC_FALSE;
 end;
 
 {procedure TmncSQLVAR.SetSQLVAR(const AValue: TmncSQLVAR);
@@ -1304,45 +1343,39 @@ var
   local_sqldata: PAnsiChar;
   local_sqllen: Integer;
 begin
-  local_sqlind := FSQLVAR.sqlind;
-  local_sqldata := FSQLVAR.sqldata;
+  local_sqlind := sqlind;
+  local_sqldata := sqldata;
   move(TmncSQLVAR(AValue).FXSQLVAR^, TmncSQLVAR(FSQLVAR).FXSQLVAR^, sizeof(TXSQLVAR));
-  FSQLVAR.sqlind := local_sqlind;
-  FSQLVAR.sqldata := local_sqldata;
+  sqlind := local_sqlind;
+  sqldata := local_sqldata;
   if (AValue.sqltype and 1 = 1) then
   begin
-    if (FSQLVAR.sqlind = nil) then
-      FSQLVAR.SetIndSize(0, SizeOf(Short));
-    FSQLVAR.sqlind^ := AValue.sqlind^;
+    if (sqlind = nil) then
+      SetIndSize(0, SizeOf(Short));
+    sqlind^ := AValue.sqlind^;
   end
-  else if (FSQLVAR.sqlind <> nil) then
-    FSQLVAR.SetIndSize(0, 0);
-  if ((FSQLVAR.SqlDef) = SQL_VARYING) then
-    local_sqllen := FSQLVAR.sqllen + 2
+  else if (sqlind <> nil) then
+    SetIndSize(0, 0);
+  if ((SqlDef) = SQL_VARYING) then
+    local_sqllen := sqllen + 2
   else
-    local_sqllen := FSQLVAR.sqllen;
-  FSQLVAR.sqlscale := AValue.sqlscale;
-  FSQLVAR.SetDataSize(0, local_sqllen);
-  Move(AValue.sqldata[0], FSQLVAR.sqldata[0], local_sqllen);
+    local_sqllen := sqllen;
+  sqlscale := AValue.sqlscale;
+  SetDataSize(0, local_sqllen);
+  Move(AValue.sqldata[0], sqldata[0], local_sqllen);
   Modified := True;
 end;}
 
 destructor TmncSQLVAR.Destroy;
 begin
-  FreeMem(FSQLVAR.sqldata);
-  FreeMem(FSQLVAR.sqlind);
-  FreeAndNil(FSQLVAR);
+  FreeMem(sqldata);
+  FreeMem(sqlind);
   inherited;
 end;
 
 procedure TmncSQLVAR.SetModified(const AValue: Boolean);
 begin
   FModified := AValue;
-end;
-
-procedure TmncSQLVAR.SetName(const AValue: string);
-begin
-  FName := AValue
 end;
 
 function TmncSQLVAR.GetAsHex: string;
@@ -1384,12 +1417,12 @@ var
   sz: PAnsiChar;
   len: Integer;
 begin
-  sz := FSQLVAR.sqldata;
-  if (FSQLVAR.SqlDef = SQL_TEXT) then
-    len := FSQLVAR.sqllen
+  sz := sqldata;
+  if (SqlDef = SQL_TEXT) then
+    len := sqllen
   else
   begin
-    len := FBClient.isc_vax_integer(FSQLVAR.sqldata, 2);
+    len := FBClient.isc_vax_integer(sqldata, 2);
     Inc(sz, 2);
   end;
   if (Size <> 0) and (len > Size) then

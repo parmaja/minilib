@@ -217,8 +217,9 @@ type
 
   TmncColumn = class(TmncItem)
   private
-    FIndex: Integer;
     FName: string;
+    FIndex: Integer;
+    FMaxSize: Integer;
     FSchemaType: string;
     FSize: Int64;
   protected
@@ -232,6 +233,7 @@ type
     property SchemaType: string read FSchemaType write FSchemaType;
     //Size, in sqlite every value have own length not depends on the Schema
     property Size: Int64 read FSize write SetSize; //TODO: I am thinking to move it to TmncItem
+    property MaxSize: Integer read FMaxSize write FMaxSize;
   end;
 
   TmncColumnClass = class of TmncColumn;

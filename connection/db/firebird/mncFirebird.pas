@@ -183,8 +183,8 @@ type
     function GetItem(Index: Integer): TmncFBField;
   protected
     function GetModified: Boolean;
-    function GetNames: string;
     procedure SetData(FData: PXSQLDA);
+    function CreateField(vColumn: TmncColumn): TmncCustomField; override;
   public
     procedure Prepare(NewCount: integer);
     constructor Create(vColumns: TmncColumns); override;
@@ -201,7 +201,7 @@ type
     function GetItem(Index: Integer): TmncFBParam;
   protected
     function GetModified: Boolean;
-    function GetNames: string;
+    function CreateParam: TmncCustomField; override;
   public
     constructor Create; override;
     destructor Destroy; override;
@@ -251,8 +251,6 @@ type
   end;
 
 implementation
-
-procedure ChangeFields(Fields: TmncCustomFields; NewCount:short); forward;
 
 procedure InitSQLDA(var Data: PXSQLDA; New: Integer);
 var
@@ -744,17 +742,9 @@ begin
     end;
 end;
 
-function TmncFBParams.GetNames: string;
-var
-  i: Integer;
+function TmncFBParams.CreateParam: TmncCustomField;
 begin
-  Result := '';
-  for i := 0 to Count - 1 do
-  begin
-    if Result <> '' then
-      Result := Result + sLineFeed;
-    Result := Result + Items[i].SQLVAR.Name;
-  end;
+  Result := TmncFBParam.Create;
 end;
 
 constructor TmncFBParams.Create;
@@ -922,7 +912,7 @@ begin
     end;
 end;
 
-function TmncFBFields.GetNames: string;
+{function TmncFBFields.GetNames: string;
 var
   i: Integer;
 begin
@@ -931,14 +921,19 @@ begin
   begin
     if Result <> '' then
       Result := Result + sLineFeed;
-    Result := Result + Items[i].SQLVAR.Name;
+    Result := Result + Items[i].Name;
   end;
-end;
+end;}
 
 procedure TmncFBFields.SetData(FData: PXSQLDA);
 begin
   FreeSQLDA(FData);
   FData := FData;
+end;
+
+function TmncFBFields.CreateField(vColumn: TmncColumn): TmncCustomField;
+begin
+  Result := TmncFBField.Create(vColumn);
 end;
 
 procedure TmncFBFields.Prepare(NewCount: integer);
@@ -1166,12 +1161,12 @@ var
   i: Integer;
   function Fields: TmncFBFields;
   begin
-    Result := (Fields as TmncFBFields);
+    Result := (Self.Fields as TmncFBFields);
   end;
 
   function Params: TmncFBParams;
   begin
-    Result := (Params as TmncFBParams);
+    Result := (Self.Params as TmncFBParams);
   end;
 var
   aColumn: TmncColumn;
@@ -1249,11 +1244,13 @@ begin
                 for i := 0 to Fields.Data^.sqld - 1 do
                 begin
                   aColumn := Columns.Add(p^.aliasname, SQLTypeToDataType(p^.sqltype));
+                  //aColumn.Name := FBDequoteName(aColumn.Name);
                   aField := Fields.Add(aColumn) as TmncFBField;
-                  //aField.SQLVAR.SqlVar := p;
+                  aField.SQLVAR.XSQLVar := p;
+                  aField.SQLVAR.Prepare;
+
                   p := Pointer(PAnsiChar(p) + XSQLVar_Size);
                 end;
-                //FSQLCurrent.Initialize;
               end;
             end;
           end;
@@ -1265,130 +1262,6 @@ begin
           FreeHandle;
         raise;
       end;
-    end;
-  end;
-end;
-
-procedure ChangeFields(Fields: TmncCustomFields; NewCount:short);
-var
-  i: Integer;
-  p: Pointer;
-  OldCount: Integer;
-  Data: PXSQLDA;
-  aColumn: TmncColumn;
-  aField: TmncFBField;
-  aParam: TmncFBParam;
-begin
-  if Fields is TmncFBFields then
-    Data := (Fields as TmncFBFields).Data
-  else if Fields is TmncFBParams then
-    Data := (Fields as TmncFBParams).Data
-  else
-    EFBExceptionError.Create('Fields is not Firebird SQL Fields');
-
-  OldCount := Fields.Count;
-  if NewCount <> 0 then
-  begin
-    if NewCount <> Fields.Count then
-    begin
-      if NewCount < Fields.Count then
-      begin
-        for i := NewCount to Fields.Count - 1 do
-        begin
-          Fields.Items[i].Free;
-        end;
-      end;
-    end;
-
-    Fields.Count := NewCount;
-    InitSQLDA(Data, NewCount);
-
-    p := @Data^.sqlvar[0];
-    for i := 0 to Fields.Count - 1 do
-    begin
-      if i >= OldCount then
-      begin
-        if Fields is TmncFBFields then
-        begin
-          with Fields as TmncFBFields do
-          begin
-            //aColumn := Columns.Add('')
-            //aField := Add(aColumn);
-
-//            Items[i].FSQLVAR.XSqlVar := p;
-          end;
-        end
-        else
-        begin
-          with Fields as TmncFBParams do
-          begin
-          end;
-        end;
-      end;
-
-      if Fields is TmncFBFields then
-        (Fields as TmncFBFields).Items[i].SQLVAR.XSQLVar := p
-      else
-        (Fields as TmncFBParams).Items[i].SQLVAR.XSQLVar := p;
-      //            Items[i].Clear;
-
-      p := Pointer(PAnsiChar(p) + XSQLVar_Size);
-    end;
-    if Fields.Count > 0 then
-    begin
-      Data^.sqln := NewCount;
-      Data^.sqld := NewCount;
-    end;
-  end;
-end;
-
-end.
-
-procedure InitializeSQLDA(Fields);
-var
-  i: Integer;
-begin
-  for i := 0 to Count - 1 do
-  begin
-    with Items[i].Data do
-    begin
-      if Items[i].Name = '' then
-      begin
-        if AliasName = '' then
-          AliasName := 'F_' + IntToStr(i);
-        Items[i].Name := FBDequoteName(aliasname);
-      end;
-
-      if (SqlDef = SQL_TEXT) or
-        (SqlDef = SQL_VARYING) then
-        Items[i].FMaxLen := sqllen
-      else
-        Items[i].FMaxLen := 0;
-
-      if FXSQLVAR^.sqldata = nil then
-        case SqlDef of
-          SQL_TEXT, SQL_TYPE_DATE, SQL_TYPE_TIME, SQL_TIMESTAMP,
-            SQL_BLOB, SQL_ARRAY, SQL_QUAD, SQL_SHORT,
-            SQL_LONG, SQL_INT64, SQL_DOUBLE, SQL_FLOAT, SQL_D_FLOAT, SQL_BOOLEAN:
-            begin
-              if (sqllen = 0) then
-              { Make sure you get a valid pointer anyway
-               select '' from foo }
-                SetDataSize(0, 1)
-              else
-                SetDataSize(0, sqllen)
-            end;
-          SQL_VARYING:
-            begin
-              SetDataSize(0, sqllen + 2);
-            end;
-        else
-          FBError(fbceUnknownSQLDataType, [SqlDef])
-        end;
-      if (sqltype and 1 = 1) then
-        SetIndSize(0, SizeOf(Short))
-      else if (sqlind <> nil) then
-        SetIndSize(0, 0);
     end;
   end;
 end;
