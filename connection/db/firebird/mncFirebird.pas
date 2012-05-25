@@ -101,7 +101,7 @@ type
 
   TmncFBField = class(TmncField)
   private
-    FSQLVAR: TmncFBSQLVAR;
+    FSQLVAR: TmncSQLVAR;
   protected
     function GetValue: Variant; override;
     procedure SetValue(const AValue: Variant); override;
@@ -133,14 +133,14 @@ type
   public
     constructor Create(vColumn: TmncColumn); override;
     destructor Destroy; override;
-    property SQLVAR: TmncFBSQLVAR read FSQLVAR write FSQLVAR;
+    property SQLVAR: TmncSQLVAR read FSQLVAR write FSQLVAR;
   end;
 
   { TFBSQLParam }
 
   TmncFBParam = class(TmncParam)
   private
-    FSQLVAR: TmncFBSQLVAR;
+    FSQLVAR: TmncSQLVAR;
   protected
     function GetValue: Variant; override;
     procedure SetValue(const AValue: Variant); override;
@@ -172,7 +172,7 @@ type
   public
     constructor Create; override;
     destructor Destroy; override;
-    property SQLVAR: TmncFBSQLVAR read FSQLVAR write FSQLVAR;
+    property SQLVAR: TmncSQLVAR read FSQLVAR write FSQLVAR;
   end;
 
   { TmncFBFields }
@@ -573,7 +573,7 @@ end;
 constructor TmncFBParam.Create;
 begin
   inherited;
-  FSQLVAR := TmncFBSQLVAR.Create;
+  FSQLVAR := TmncSQLVAR.Create;
 end;
 
 destructor TmncFBParam.Destroy;
@@ -712,7 +712,7 @@ end;
 constructor TmncFBField.Create(vColumn: TmncColumn);
 begin
   inherited;
-  FSQLVAR := TmncFBSQLVAR.Create;
+  FSQLVAR := TmncSQLVAR.Create;
 end;
 
 destructor TmncFBField.Destroy;
@@ -980,7 +980,7 @@ begin
 //            Items[i].FSQLVAR.XSqlVar := p;
     end;
 
-    Items[i].SQLVAR.SQLVar := p;
+    Items[i].SQLVAR := p;
     //            Items[i].Clear;
 
     p := Pointer(PAnsiChar(p) + aVarSize);
@@ -1327,9 +1327,9 @@ begin
       end;
 
       if Fields is TmncFBFields then
-        (Fields as TmncFBFields).Items[i].SQLVAR.SQLVar := p
+        (Fields as TmncFBFields).Items[i].SQLVAR.XSQLVar := p
       else
-        (Fields as TmncFBParams).Items[i].SQLVAR.SQLVar := p;
+        (Fields as TmncFBParams).Items[i].SQLVAR.XSQLVar := p;
       //            Items[i].Clear;
 
       p := Pointer(PAnsiChar(p) + XSQLVar_Size);

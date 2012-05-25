@@ -39,7 +39,7 @@ type
     SQLExecProcedure, SQLStartTransaction, SQLCommit, SQLRollback,
     SQLSelectForUpdate, SQLSetSequence, SQLSavePoint);
 
-  TSQLVAR = class(TObject)
+  TmncSQLVAR = class(TObject)
   private
     FXSQLVAR: PXSQLVAR;
     FIgnored: Boolean;
@@ -88,16 +88,11 @@ type
     property OwnName: string read GetOwnName write SetOwnName;
     property AliasName: string read GetAliasName write SetAliasName;
     property Ignored: Boolean read FIgnored write FIgnored; //used to manual Ignored blob fields
-  end;
-
-  { TmncFBSQLVAR }
-
-  TmncFBSQLVAR = class(TObject, IStreamPersist)
   private
     FIndex: Integer;
     FModified: Boolean;
     FName: string;
-    FSQLVAR: TSQLVAR;
+    FSQLVAR: TmncSQLVAR;
     FMaxLen: Short;
 
     function GetAsCurrency: Currency;
@@ -114,7 +109,6 @@ type
     function GetIsNull: Boolean;
     function GetIsNullable: Boolean;
     function GetSize: Integer;
-    function GetSQLDef: Integer;
     procedure SetAsCurrency(AValue: Currency);
     procedure SetAsInt64(AValue: Int64);
     procedure SetAsDate(AValue: TDateTime);
@@ -134,7 +128,7 @@ type
     function GetAsStrip: string;
     function GetAsBoolean: Boolean;
     procedure SetAsBoolean(const AValue: Boolean);
-    procedure SetSQLVAR(const AValue: TSQLVAR);
+    //procedure SetSQLVAR(const AValue: TmncSQLVAR);
     function GetAsGUID: TGUID;
     procedure SetAsGUID(const AValue: TGUID);
     procedure SetModified(const AValue: Boolean);
@@ -158,7 +152,7 @@ type
     function _AddRef : longint;{$IFNDEF WINDOWS}cdecl{$ELSE}stdcall{$ENDIF};
     function _Release : longint;{$IFNDEF WINDOWS}cdecl{$ELSE}stdcall{$ENDIF};
 
-    procedure Assign(Source: TmncFBSQLVAR);
+    procedure Assign(Source: TmncSQLVAR);
     procedure SetBuffer(Buffer: Pointer; Size: Integer); //zaher
     function CreateReadBlobSteam: TFBBlobStream;
     function CreateWriteBlobSteam: TFBBlobStream;
@@ -194,61 +188,58 @@ type
     property AValue: Variant read GetAsVariant write SetAsVariant;
     property AsGUID: TGUID read GetAsGUID write SetAsGUID;
 
-    property SQLVar: TSQLVAR read FSQLVAR write SetSQLVAR;
-    property Data: TSQLVAR read FSQLVAR write FSQLVAR;
     property IsNull: Boolean read GetIsNull write SetIsNull;
     property IsNullable: Boolean read GetIsNullable write SetIsNullable;
     property Index: Integer read FIndex;
     property Modified: Boolean read FModified write SetModified;
     property Name: string read FName write SetName;
     property Size: Integer read GetSize;
-    property SQLDef: Integer read GetSQLDef;
   end;
 
 implementation
 
-{ TSQLVAR }
+{ TmncSQLVAR }
 
-function TSQLVAR.GetAliasName: string;
+function TmncSQLVAR.GetAliasName: string;
 begin
   Result := '';
   SetString(Result, FXSQLVAR^.aliasname, FXSQLVAR^.aliasname_length);
 end;
 
-function TSQLVAR.GetOwnName: string;
+function TmncSQLVAR.GetOwnName: string;
 begin
   Result := '';
   SetString(Result, FXSQLVAR^.ownname, FXSQLVAR^.ownname_length);
 end;
 
-function TSQLVAR.GetRelName: string;
+function TmncSQLVAR.GetRelName: string;
 begin
   Result := '';
   SetString(Result, FXSQLVAR^.relname, FXSQLVAR^.relname_length);
 end;
 
-function TSQLVAR.GetSqlData: PAnsiChar;
+function TmncSQLVAR.GetSqlData: PAnsiChar;
 begin
   Result := FXSQLVAR^.sqldata;
 end;
 
-function TSQLVAR.GetSqlInd: PShort;
+function TmncSQLVAR.GetSqlInd: PShort;
 begin
   Result := FXSQLVAR^.sqlind;
 end;
 
-function TSQLVAR.GetSqlLen: Short;
+function TmncSQLVAR.GetSqlLen: Short;
 begin
   Result := FXSQLVAR^.sqllen;
 end;
 
-function TSQLVAR.GetSqlName: string;
+function TmncSQLVAR.GetSqlName: string;
 begin
   Result := '';
   SetString(Result, FXSQLVAR^.sqlname, FXSQLVAR^.sqlname_length);
 end;
 
-function TSQLVAR.GetSqlPrecision: Short;
+function TmncSQLVAR.GetSqlPrecision: Short;
 begin
   case sqltype and not 1 of
     SQL_SHORT:
@@ -262,108 +253,108 @@ begin
   end;
 end;
 
-function TSQLVAR.GetSqlScale: Short;
+function TmncSQLVAR.GetSqlScale: Short;
 begin
   Result := FXSQLVAR^.sqlscale;
 end;
 
-function TSQLVAR.GetSqlSubtype: Short;
+function TmncSQLVAR.GetSqlSubtype: Short;
 begin
   Result := FXSQLVAR^.sqlsubtype;
 end;
 
-function TSQLVAR.GetSqlType: Short;
+function TmncSQLVAR.GetSqlType: Short;
 begin
   Result := FXSQLVAR^.sqltype;
 end;
 
-function TSQLVAR.GetSqlDef: Short;
+function TmncSQLVAR.GetSqlDef: Short;
 begin
   Result := SqlType and (not 1);
 end;
 
-function TSQLVAR.GetSQLVAR: PXSQLVAR;
+function TmncSQLVAR.GetSQLVAR: PXSQLVAR;
 begin
   Result := FXSQLVAR;
 end;
 
-procedure TSQLVAR.SetAliasName(const AValue: string);
+procedure TmncSQLVAR.SetAliasName(const AValue: string);
 begin
   StrPCopy(FXSQLVAR^.aliasname, AValue);
   FXSQLVAR^.aliasname_length := Length(AValue);
 end;
 
-procedure TSQLVAR.SetDataSize(oldsize, newsize: Integer);
+procedure TmncSQLVAR.SetDataSize(oldsize, newsize: Integer);
 begin
   FBAlloc(FXSQLVAR^.sqldata, oldsize, newsize);
 end;
 
-procedure TSQLVAR.SetIndSize(oldsize, newsize: Integer);
+procedure TmncSQLVAR.SetIndSize(oldsize, newsize: Integer);
 begin
   FBAlloc(FXSQLVAR^.sqlind, oldsize, newsize);
 end;
 
-procedure TSQLVAR.SetOwnName(const AValue: string);
+procedure TmncSQLVAR.SetOwnName(const AValue: string);
 begin
   StrPCopy(FXSQLVAR^.ownname, AValue);
   FXSQLVAR^.ownname_length := Length(AValue);
 end;
 
-procedure TSQLVAR.SetRelName(const AValue: string);
+procedure TmncSQLVAR.SetRelName(const AValue: string);
 begin
   StrPCopy(FXSQLVAR^.relname, AValue);
   FXSQLVAR^.relname_length := Length(AValue);
 end;
 
-procedure TSQLVAR.SetSqlData(const AValue: PAnsiChar);
+procedure TmncSQLVAR.SetSqlData(const AValue: PAnsiChar);
 begin
   FXSQLVAR^.sqldata := AValue;
 end;
 
-procedure TSQLVAR.SetSqlInd(const AValue: PShort);
+procedure TmncSQLVAR.SetSqlInd(const AValue: PShort);
 begin
   FXSQLVAR^.sqlInd := AValue
 end;
 
-procedure TSQLVAR.SetSqlLen(const AValue: Short);
+procedure TmncSQLVAR.SetSqlLen(const AValue: Short);
 begin
   FXSQLVAR^.sqlLen := AValue
 end;
 
-procedure TSQLVAR.SetSqlName(const AValue: string);
+procedure TmncSQLVAR.SetSqlName(const AValue: string);
 begin
   StrPCopy(FXSQLVAR^.sqlname, AValue);
   FXSQLVAR^.sqlname_length := Length(AValue);
 end;
 
-procedure TSQLVAR.SetSqlPrecision(const AValue: Short);
+procedure TmncSQLVAR.SetSqlPrecision(const AValue: Short);
 begin
   FBRaiseError(fbceNotSupported, []);
 end;
 
-procedure TSQLVAR.SetSqlScale(const AValue: Short);
+procedure TmncSQLVAR.SetSqlScale(const AValue: Short);
 begin
   FXSQLVAR^.sqlscale := AValue
 end;
 
-procedure TSQLVAR.SetSqlSubtype(const AValue: Short);
+procedure TmncSQLVAR.SetSqlSubtype(const AValue: Short);
 begin
   FXSQLVAR^.sqlsubtype := AValue
 end;
 
-procedure TSQLVAR.SetSqlType(const AValue: Short);
+procedure TmncSQLVAR.SetSqlType(const AValue: Short);
 begin
   FXSQLVAR^.sqltype := AValue
 end;
 
-procedure TSQLVAR.SetSQLVAR(const AValue: PXSQLVAR);
+procedure TmncSQLVAR.SetSQLVAR(const AValue: PXSQLVAR);
 begin
   FXSQLVAR := AValue;
 end;
 
-{ TmncFBSQLVAR }
+{ TmncSQLVAR }
 
-function TmncFBSQLVAR.CreateReadBlobSteam: TFBBlobStream;
+function TmncSQLVAR.CreateReadBlobSteam: TFBBlobStream;
 begin
   Result := TFBBlobStream.Create(FDBHandle, FTRHandle);
   try
@@ -375,7 +366,7 @@ begin
   end;
 end;
 
-function TmncFBSQLVAR.CreateWriteBlobSteam: TFBBlobStream;
+function TmncSQLVAR.CreateWriteBlobSteam: TFBBlobStream;
 begin
   Result := TFBBlobStream.Create(FDBHandle, FTRHandle);
   try
@@ -386,7 +377,7 @@ begin
   end;
 end;
 
-procedure TmncFBSQLVAR.LoadFromStream(Stream: TStream);
+procedure TmncSQLVAR.LoadFromStream(Stream: TStream);
 var
   bs: TFBBlobStream;
 begin
@@ -403,7 +394,7 @@ begin
   end;
 end;
 
-procedure TmncFBSQLVAR.SaveToFile(const FileName: string);
+procedure TmncSQLVAR.SaveToFile(const FileName: string);
 var
   fs: TFileStream;
 begin
@@ -416,7 +407,7 @@ begin
   end;
 end;
 
-procedure TmncFBSQLVAR.SaveToStream(Stream: TStream);
+procedure TmncSQLVAR.SaveToStream(Stream: TStream);
 var
   bs: TFBBlobStream;
 begin
@@ -431,7 +422,7 @@ begin
   end;
 end;
 
-procedure TmncFBSQLVAR.SaveToIStream(Stream: IStreamPersist);
+procedure TmncSQLVAR.SaveToIStream(Stream: IStreamPersist);
 var
   bs: TFBBlobStream;
 begin
@@ -446,7 +437,7 @@ begin
   end;
 end;
 
-procedure TmncFBSQLVAR.LoadFromIStream(Stream: IStreamPersist);
+procedure TmncSQLVAR.LoadFromIStream(Stream: IStreamPersist);
 var
   bs: TFBBlobStream;
 begin
@@ -463,7 +454,7 @@ begin
 end;
 
 
-procedure TmncFBSQLVAR.LoadFromFile(const FileName: string);
+procedure TmncSQLVAR.LoadFromFile(const FileName: string);
 var
   fs: TFileStream;
 begin
@@ -476,7 +467,7 @@ begin
   end;
 end;
 
-procedure TmncFBSQLVAR.Assign(Source: TmncFBSQLVAR);
+procedure TmncSQLVAR.Assign(Source: TmncSQLVAR);
 var
   szBuff: PAnsiChar;
   s_bhandle, d_bhandle: TISC_BLOB_HANDLE;
@@ -568,7 +559,7 @@ begin
   end;
 end;
 
-function TmncFBSQLVAR.GetAsChar: Char;
+function TmncSQLVAR.GetAsChar: Char;
 var
   s: string;
 begin
@@ -579,7 +570,7 @@ begin
     Result := #0;
 end;
 
-function TmncFBSQLVAR.GetAsCurrency: Currency;
+function TmncSQLVAR.GetAsCurrency: Currency;
 begin
   Result := 0;
   if not IsNull then
@@ -606,7 +597,7 @@ begin
     end;
 end;
 
-function TmncFBSQLVAR.GetAsInt64: Int64;
+function TmncSQLVAR.GetAsInt64: Int64;
 begin
   Result := 0;
   if not IsNull then
@@ -641,7 +632,7 @@ begin
     end;
 end;
 
-function TmncFBSQLVAR.GetAsDateTime: TDateTime;
+function TmncSQLVAR.GetAsDateTime: TDateTime;
 var
   tm_date: TCTimeStructure;
 begin
@@ -707,7 +698,7 @@ begin
     end;
 end;
 
-function TmncFBSQLVAR.GetAsDouble: Double;
+function TmncSQLVAR.GetAsDouble: Double;
 begin
   Result := 0;
   if not IsNull then
@@ -743,7 +734,7 @@ begin
   end;
 end;
 
-function TmncFBSQLVAR.GetAsFloat: Double;
+function TmncSQLVAR.GetAsFloat: Double;
 begin
   Result := 0;
   try
@@ -756,7 +747,7 @@ begin
   end;
 end;
 
-function TmncFBSQLVAR.GetAsLong: Long;
+function TmncSQLVAR.GetAsLong: Long;
 begin
   Result := 0;
   if not IsNull then
@@ -790,7 +781,7 @@ begin
     end;
 end;
 
-function TmncFBSQLVAR.GetAsPointer: Pointer;
+function TmncSQLVAR.GetAsPointer: Pointer;
 begin
   if not IsNull then
     Result := FSQLVAR.sqldata
@@ -798,7 +789,7 @@ begin
     Result := nil;
 end;
 
-function TmncFBSQLVAR.GetAsQuad: TISC_QUAD;
+function TmncSQLVAR.GetAsQuad: TISC_QUAD;
 begin
   Result.gds_quad_high := 0;
   Result.gds_quad_low := 0;
@@ -811,7 +802,7 @@ begin
     end;
 end;
 
-function TmncFBSQLVAR.GetAsShort: Short;
+function TmncSQLVAR.GetAsShort: Short;
 begin
   Result := 0;
   try
@@ -822,7 +813,7 @@ begin
   end;
 end;
 
-function TmncFBSQLVAR.GetAsString: string;
+function TmncSQLVAR.GetAsString: string;
 var
   sz: PAnsiChar;
   str_len: Integer;
@@ -888,7 +879,7 @@ begin
     end;
 end;
 
-function TmncFBSQLVAR.GetAsVariant: Variant;
+function TmncSQLVAR.GetAsVariant: Variant;
 begin
   if IsNull then
     Result := NULL
@@ -931,44 +922,39 @@ begin
     end;
 end;
 
-function TmncFBSQLVAR.GetIsNull: Boolean;
+function TmncSQLVAR.GetIsNull: Boolean;
 begin
   Result := IsNullable and (FSQLVAR.sqlind^ = -1);
 end;
 
-function TmncFBSQLVAR.GetIsNullable: Boolean;
+function TmncSQLVAR.GetIsNullable: Boolean;
 begin
   Result := (FSQLVAR.sqltype and 1 = 1);
 end;
 
-function TmncFBSQLVAR.GetSize: Integer;
+function TmncSQLVAR.GetSize: Integer;
 begin
   Result := FSQLVAR.sqllen;
 end;
 
-function TmncFBSQLVAR.GetSQLDef: Integer;
-begin
-  Result := FSQLVAR.SqlDef;
-end;
-
-procedure TmncFBSQLVAR.SetAsChar(const AValue: Char);
+procedure TmncSQLVAR.SetAsChar(const AValue: Char);
 begin
   AsString := AValue;
 end;
 
-constructor TmncFBSQLVAR.Create;
+constructor TmncSQLVAR.Create;
 begin
   inherited;
-  FSQLVAR := TSQLVAR.Create;
+  FSQLVAR := TmncSQLVAR.Create;
 end;
 
-procedure TmncFBSQLVAR.CheckHandles;
+procedure TmncSQLVAR.CheckHandles;
 begin
   if (FDBHandle = nil) or (FTRHandle = nil) then
     raise EFBClientError.Create('Handles not opened');
 end;
 
-procedure TmncFBSQLVAR.SetAsCurrency(AValue: Currency);
+procedure TmncSQLVAR.SetAsCurrency(AValue: Currency);
 begin
   if IsNullable then
     IsNull := False;
@@ -980,7 +966,7 @@ begin
   Modified := True;
 end;
 
-procedure TmncFBSQLVAR.SetAsInt64(AValue: Int64);
+procedure TmncSQLVAR.SetAsInt64(AValue: Int64);
 begin
   if IsNullable then
     IsNull := False;
@@ -992,7 +978,7 @@ begin
   Modified := True;
 end;
 
-procedure TmncFBSQLVAR.SetAsDate(AValue: TDateTime);
+procedure TmncSQLVAR.SetAsDate(AValue: TDateTime);
 var
   tm_date: TCTimeStructure;
   Yr, Mn, Dy: Word;
@@ -1016,7 +1002,7 @@ begin
   Modified := True;
 end;
 
-procedure TmncFBSQLVAR.SetAsLong(AValue: Long);
+procedure TmncSQLVAR.SetAsLong(AValue: Long);
 begin
   if IsNullable then
     IsNull := False;
@@ -1028,7 +1014,7 @@ begin
   Modified := True;
 end;
 
-procedure TmncFBSQLVAR.SetAsTime(AValue: TDateTime);
+procedure TmncSQLVAR.SetAsTime(AValue: TDateTime);
 var
   tm_date: TCTimeStructure;
   Hr, Mt, S, Ms: Word;
@@ -1052,7 +1038,7 @@ begin
   Modified := True;
 end;
 
-procedure TmncFBSQLVAR.SetAsDateTime(AValue: TDateTime);
+procedure TmncSQLVAR.SetAsDateTime(AValue: TDateTime);
 var
   tm_date: TCTimeStructure;
   Yr, Mn, Dy, Hr, Mt, S, Ms: Word;
@@ -1077,7 +1063,7 @@ begin
   Modified := True;
 end;
 
-procedure TmncFBSQLVAR.SetAsDouble(AValue: Double);
+procedure TmncSQLVAR.SetAsDouble(AValue: Double);
 begin
   if IsNullable then
     IsNull := False;
@@ -1089,7 +1075,7 @@ begin
   Modified := True;
 end;
 
-procedure TmncFBSQLVAR.SetAsFloat(AValue: Double);
+procedure TmncSQLVAR.SetAsFloat(AValue: Double);
 begin
   if IsNullable then
     IsNull := False;
@@ -1101,7 +1087,7 @@ begin
   Modified := True;
 end;
 
-procedure TmncFBSQLVAR.SetAsNullString(const AValue: string);
+procedure TmncSQLVAR.SetAsNullString(const AValue: string);
 begin
   if AValue = '' then
     Clear
@@ -1109,7 +1095,7 @@ begin
     AsString := AValue;
 end;
 
-procedure TmncFBSQLVAR.SetAsPointer(AValue: Pointer);
+procedure TmncSQLVAR.SetAsPointer(AValue: Pointer);
 begin
   if IsNullable and (AValue = nil) then
     IsNull := True
@@ -1122,7 +1108,7 @@ begin
   end;
 end;
 
-procedure TmncFBSQLVAR.SetAsQuad(AValue: TISC_QUAD);
+procedure TmncSQLVAR.SetAsQuad(AValue: TISC_QUAD);
 begin
   if IsNullable then
     IsNull := False;
@@ -1135,7 +1121,7 @@ begin
   Modified := True;
 end;
 
-procedure TmncFBSQLVAR.SetAsShort(AValue: Short);
+procedure TmncSQLVAR.SetAsShort(AValue: Short);
 begin
   if IsNullable then
     IsNull := False;
@@ -1147,7 +1133,7 @@ begin
   Modified := True;
 end;
 
-procedure TmncFBSQLVAR.SetAsString(AValue: string);
+procedure TmncSQLVAR.SetAsString(AValue: string);
 var
   stype: Integer;
   ss: TStringStream;
@@ -1201,7 +1187,7 @@ begin
   end;
 end;
 
-procedure TmncFBSQLVAR.SetAsVariant(AValue: Variant);
+procedure TmncSQLVAR.SetAsVariant(AValue: Variant);
 begin
   if VarIsNull(AValue) then
     IsNull := True
@@ -1235,7 +1221,7 @@ begin
     end;
 end;
 
-procedure TmncFBSQLVAR.SetIsNull(AValue: Boolean);
+procedure TmncSQLVAR.SetIsNull(AValue: Boolean);
 begin
   if AValue then
   begin
@@ -1253,7 +1239,7 @@ begin
   end;
 end;
 
-procedure TmncFBSQLVAR.SetIsNullable(AValue: Boolean);
+procedure TmncSQLVAR.SetIsNullable(AValue: Boolean);
 begin
   if (AValue <> IsNullable) then
   begin
@@ -1270,12 +1256,12 @@ begin
   end;
 end;
 
-procedure TmncFBSQLVAR.Clear;
+procedure TmncSQLVAR.Clear;
 begin
   IsNull := True;
 end;
 
-procedure TmncFBSQLVAR.SetAsStrip(const AValue: string);
+procedure TmncSQLVAR.SetAsStrip(const AValue: string);
 begin
   if AValue = '' then
     Clear
@@ -1283,12 +1269,12 @@ begin
     SetAsString(TrimRight(AValue));
 end;
 
-function TmncFBSQLVAR.GetAsStrip: string;
+function TmncSQLVAR.GetAsStrip: string;
 begin
   Result := TrimRight(GetAsString);
 end;
 
-function TmncFBSQLVAR.GetAsBoolean: Boolean;
+function TmncSQLVAR.GetAsBoolean: Boolean;
 begin
   Result := false;
   if not IsNull then
@@ -1302,7 +1288,7 @@ begin
     end;
 end;
 
-procedure TmncFBSQLVAR.SetAsBoolean(const AValue: Boolean);
+procedure TmncSQLVAR.SetAsBoolean(const AValue: Boolean);
 begin
   if IsNullable then
     IsNull := False;
@@ -1312,7 +1298,7 @@ begin
     PShort(FSQLVAR.sqldata)^ := ISC_FALSE;
 end;
 
-procedure TmncFBSQLVAR.SetSQLVAR(const AValue: TSQLVAR);
+{procedure TmncSQLVAR.SetSQLVAR(const AValue: TmncSQLVAR);
 var
   local_sqlind: PShort;
   local_sqldata: PAnsiChar;
@@ -1320,7 +1306,7 @@ var
 begin
   local_sqlind := FSQLVAR.sqlind;
   local_sqldata := FSQLVAR.sqldata;
-  move(TSQLVAR(AValue).FXSQLVAR^, TSQLVAR(FSQLVAR).FXSQLVAR^, sizeof(TXSQLVAR));
+  move(TmncSQLVAR(AValue).FXSQLVAR^, TmncSQLVAR(FSQLVAR).FXSQLVAR^, sizeof(TXSQLVAR));
   FSQLVAR.sqlind := local_sqlind;
   FSQLVAR.sqldata := local_sqldata;
   if (AValue.sqltype and 1 = 1) then
@@ -1339,9 +1325,9 @@ begin
   FSQLVAR.SetDataSize(0, local_sqllen);
   Move(AValue.sqldata[0], FSQLVAR.sqldata[0], local_sqllen);
   Modified := True;
-end;
+end;}
 
-destructor TmncFBSQLVAR.Destroy;
+destructor TmncSQLVAR.Destroy;
 begin
   FreeMem(FSQLVAR.sqldata);
   FreeMem(FSQLVAR.sqlind);
@@ -1349,17 +1335,17 @@ begin
   inherited;
 end;
 
-procedure TmncFBSQLVAR.SetModified(const AValue: Boolean);
+procedure TmncSQLVAR.SetModified(const AValue: Boolean);
 begin
   FModified := AValue;
 end;
 
-procedure TmncFBSQLVAR.SetName(const AValue: string);
+procedure TmncSQLVAR.SetName(const AValue: string);
 begin
   FName := AValue
 end;
 
-function TmncFBSQLVAR.GetAsHex: string;
+function TmncSQLVAR.GetAsHex: string;
 var
   s: string;
 begin
@@ -1368,7 +1354,7 @@ begin
   BinToHex(PChar(s), @Result[1], Length(s));
 end;
 
-procedure TmncFBSQLVAR.SetAsHex(const AValue: string);
+procedure TmncSQLVAR.SetAsHex(const AValue: string);
 var
   s: string;
 begin
@@ -1377,23 +1363,23 @@ begin
   AsString := s;
 end;
 
-function TmncFBSQLVAR.GetAsText: string;
+function TmncSQLVAR.GetAsText: string;
 begin
-  if (SqlVar.SqlDef = SQL_BLOB) and (SqlVar.SqlSubtype <> 1) then
+  if (SqlDef = SQL_BLOB) and (SqlSubtype <> 1) then
     Result := AsHex
   else
     Result := AsString;
 end;
 
-procedure TmncFBSQLVAR.SetAsText(const AValue: string);
+procedure TmncSQLVAR.SetAsText(const AValue: string);
 begin
-  if (SqlVar.SqlDef = SQL_BLOB) and (SqlVar.SqlSubtype <> 1) then
+  if (SqlDef = SQL_BLOB) and (SqlSubtype <> 1) then
     AsHex := AValue
   else
     AsString := AValue;
 end;
 
-procedure TmncFBSQLVAR.SetBuffer(Buffer: Pointer; Size: Integer);
+procedure TmncSQLVAR.SetBuffer(Buffer: Pointer; Size: Integer);
 var
   sz: PAnsiChar;
   len: Integer;
@@ -1411,25 +1397,25 @@ begin
   Move(sz^, Buffer^, len);
 end;
 
-function TmncFBSQLVAR.GetAsGUID: TGUID;
+function TmncSQLVAR.GetAsGUID: TGUID;
 begin
 end;
 
-procedure TmncFBSQLVAR.SetAsGUID(const AValue: TGUID);
+procedure TmncSQLVAR.SetAsGUID(const AValue: TGUID);
 begin
 end;
 
-function TmncFBSQLVAR._AddRef: longint; stdcall;
+function TmncSQLVAR._AddRef: longint; stdcall;
 begin
   Result := -1;
 end;
 
-function TmncFBSQLVAR._Release: longint; stdcall;
+function TmncSQLVAR._Release: longint; stdcall;
 begin
   Result := -1
 end;
 
-function TmncFBSQLVAR.QueryInterface({$IFDEF FPC_HAS_CONSTREF}constref{$ELSE}const{$ENDIF} iid : tguid;out obj) : longint;{$IFNDEF WINDOWS}cdecl{$ELSE}stdcall{$ENDIF};
+function TmncSQLVAR.QueryInterface({$IFDEF FPC_HAS_CONSTREF}constref{$ELSE}const{$ENDIF} iid : tguid;out obj) : longint;{$IFNDEF WINDOWS}cdecl{$ELSE}stdcall{$ENDIF};
 begin
   if GetInterface(IID, Obj) then
     Result := S_OK
