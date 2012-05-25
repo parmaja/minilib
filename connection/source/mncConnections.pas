@@ -169,7 +169,7 @@ type
     property Params: TStrings read FParams write SetParams;
   end;
 
-  TmncDataType = (ftUnkown, ftString, ftInteger, ftCurrency, ftFloat, ftDate, ftTime, ftDateTime, ftMemo, ftBlob);
+  TmncDataType = (ftUnkown, ftString, ftBoolean, ftInteger, ftCurrency, ftFloat, ftDate, ftTime, ftDateTime, ftMemo, ftBlob);
   TmncBlobType = (blobBinary, blobText);
 
 {
@@ -220,15 +220,18 @@ type
     FIndex: Integer;
     FName: string;
     FSchemaType: string;
+    FSize: Int64;
   protected
     function GetValue: Variant; override;
     procedure SetValue(const AValue: Variant); override;
+    procedure SetSize(AValue: Int64); virtual;
   published
     property Index: Integer read FIndex write FIndex;
+    property Name: string read FName write FName;
     property DataType;
     property SchemaType: string read FSchemaType write FSchemaType;
-    property Name: string read FName write FName;
-    //property Size: Integer read FSize write FSize;//todo not yet in sqlite every value have own length not depends on the Schema
+    //Size, in sqlite every value have own length not depends on the Schema
+    property Size: Int64 read FSize write SetSize; //TODO: I am thinking to move it to TmncItem
   end;
 
   TmncColumnClass = class of TmncColumn;
@@ -1183,6 +1186,12 @@ end;
 { TCustomField }
 
 { TmncColumn }
+
+procedure TmncColumn.SetSize(AValue: Int64);
+begin
+  if FSize =AValue then Exit;
+  FSize :=AValue;
+end;
 
 function TmncColumn.GetValue: Variant;
 begin

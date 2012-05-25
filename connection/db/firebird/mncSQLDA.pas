@@ -114,7 +114,7 @@ type
     function GetIsNull: Boolean;
     function GetIsNullable: Boolean;
     function GetSize: Integer;
-    function GetSQLType: Integer;
+    function GetSQLDef: Integer;
     procedure SetAsCurrency(AValue: Currency);
     procedure SetAsInt64(AValue: Int64);
     procedure SetAsDate(AValue: TDateTime);
@@ -202,7 +202,7 @@ type
     property Modified: Boolean read FModified write SetModified;
     property Name: string read FName write SetName;
     property Size: Integer read GetSize;
-    property SQLType: Integer read GetSQLType;
+    property SQLDef: Integer read GetSQLDef;
   end;
 
 implementation
@@ -946,7 +946,7 @@ begin
   Result := FSQLVAR.sqllen;
 end;
 
-function TmncFBSQLVAR.GetSQLType: Integer;
+function TmncFBSQLVAR.GetSQLDef: Integer;
 begin
   Result := FSQLVAR.SqlDef;
 end;

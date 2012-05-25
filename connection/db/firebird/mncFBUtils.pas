@@ -18,6 +18,7 @@ interface
 
 uses
   SysUtils, Classes,
+  mncConnections,
   mncFBClient, mncFBTypes, mncFBHeader, mncFBErrors, mncFBStrings;
 
 const
@@ -70,6 +71,8 @@ procedure GenerateTPB(sl: TStrings; out TPB: AnsiString; var TPBLength: Short);
 
 function FBComposeConnectionString(DatabaseName, Host, Port: string; IsEmbed: Boolean; Protocol: TFBProtocol = dpTCP): string;
 procedure FBDecomposeConnectionString(DatabaseName: string; var Host, FileName: string; var Protocol: TFBProtocol);
+
+function SQLTypeToDataType(SQLType: Integer):TmncDataType;
 
 implementation
 
@@ -946,6 +949,31 @@ begin
         FileName := Copy(DatabaseName, Idx2 + 1, Length(DatabaseName));
       end;
     end;
+  end;
+end;
+
+function SQLTypeToDataType(SQLType: Integer):TmncDataType;
+begin
+  case SQLType of
+    SQL_TEXT: Result := ftString;
+    SQL_DOUBLE: Result := ftFloat;
+    SQL_FLOAT: Result := ftFloat;
+    SQL_LONG: Result := ftInteger;
+    SQL_SHORT: Result := ftInteger;
+    SQL_TIMESTAMP: Result := ftDateTime;
+    SQL_BLOB: Result := ftBlob;
+    SQL_D_FLOAT: Result := ftFloat;
+    SQL_ARRAY: Result := ftUnkown;
+    SQL_QUAD: Result := ftBlob;
+    SQL_TYPE_TIME: Result := ftTime;
+    SQL_TYPE_DATE: Result := ftDate;
+    SQL_INT64: Result := ftInteger;
+    SQL_NULL: Result := ftUnkown;
+    //SQL_DATE: Result := ftDateTime;
+    SQL_BOOLEAN: Result := ftBoolean;
+    else
+      Result := ftUnkown;
+
   end;
 end;
 

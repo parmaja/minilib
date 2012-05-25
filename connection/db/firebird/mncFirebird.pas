@@ -184,6 +184,7 @@ type
   protected
     function GetModified: Boolean;
     function GetNames: string;
+    procedure SetData(FData: PXSQLDA);
   public
     procedure Prepare(NewCount: integer);
     constructor Create(vColumns: TmncColumns); override;
@@ -201,7 +202,6 @@ type
   protected
     function GetModified: Boolean;
     function GetNames: string;
-    function GetRecordSize: Integer;
   public
     constructor Create; override;
     destructor Destroy; override;
@@ -252,7 +252,27 @@ type
 
 implementation
 
-procedure ChangeFields(Fields: TmncCustomFields; NewCount:Integer); forward;
+procedure ChangeFields(Fields: TmncCustomFields; NewCount:short); forward;
+
+procedure InitSQLDA(var Data: PXSQLDA; New: Integer);
+var
+  old: Integer;
+begin
+  if Data = nil then
+    old := 0
+  else
+    old := Data^.sqln;
+  FBAlloc(Data, XSQLDA_LENGTH(old), XSQLDA_LENGTH(new));
+  Data^.version := SQLDA_VERSION1;
+  Data^.sqln := New;
+end;
+
+procedure FreeSQLDA(var Data: PXSQLDA);
+begin
+  if Data <> nil then
+    FreeMem(Data);
+  Data := nil;
+end;
 
 { TmncFBConnection }
 
@@ -737,11 +757,6 @@ begin
   end;
 end;
 
-function TmncFBParams.GetRecordSize: Integer;
-begin
-  Result := SizeOf(PXSQLDA) + XSQLDA_LENGTH(Count);
-end;
-
 constructor TmncFBParams.Create;
 begin
   inherited;
@@ -920,6 +935,12 @@ begin
   end;
 end;
 
+procedure TmncFBFields.SetData(FData: PXSQLDA);
+begin
+  FreeSQLDA(FData);
+  FData := FData;
+end;
+
 procedure TmncFBFields.Prepare(NewCount: integer);
 var
   i: Integer;
@@ -982,11 +1003,7 @@ end;
 destructor TmncFBFields.Destroy;
 begin
   Clear;
-  if FData <> nil then
-  begin
-    FreeMem(FData);
-    FData := nil;
-  end;
+  FreeSQLDA(FData);
   inherited;
 end;
 
@@ -1143,7 +1160,23 @@ var
   type_item: Char;
   sql_type:Integer;
   StatusVector: TStatusVector;
-  Data: PXSQLDA;
+  aData: PXSQLDA;
+  p: PXSQLVAR;
+  c: Integer;
+  i: Integer;
+  function Fields: TmncFBFields;
+  begin
+    Result := (Fields as TmncFBFields);
+  end;
+
+  function Params: TmncFBParams;
+  begin
+    Result := (Params as TmncFBParams);
+  end;
+var
+  aColumn: TmncColumn;
+  aField: TmncFBField;
+  aParam: TmncFBParam;
 begin
   if not Prepared then
   begin
@@ -1166,9 +1199,7 @@ begin
 
       { Done getting the type }
       case FSQLType of
-        SQLGetSegment,
-          SQLPutSegment,
-          SQLStartTransaction:
+        SQLGetSegment, SQLPutSegment, SQLStartTransaction:
           begin
             FreeHandle;
             FBRaiseError(fbceNotPermitted, [nil]);
@@ -1185,27 +1216,48 @@ begin
               FBRaiseError(StatusVector);
             FSQLParams.Initialize;}
 
-            if (FSQLType in [SQLSelect, SQLSelectForUpdate, SQLExecProcedure]) then
+            //if (FSQLType in [SQLSelect, SQLSelectForUpdate, SQLExecProcedure]) then
             begin
-              Data := (Fields as TmncFBFields).Data;
-            { Allocate an initial output descriptor (with one column) }
-              Fields.Clear;
-              Fields.Count := 1;
-            { Get count of columns }
-              Call(FBClient.isc_dsql_describe(@StatusVector, @FHandle, FB_DIALECT, Data), StatusVector, True);
-              if Data^.sqld > Data^.sqln then
+              //Check if there is a result data
+              aData := nil;
+              InitSQLDA(aData, 0);
+              try
+                Call(FBClient.isc_dsql_describe(@StatusVector, @FHandle, FB_DIALECT, aData), StatusVector, True);
+                c := aData^.sqld;
+              finally
+                FreeSQLDA(aData);
+              end;
+
+              if c = 0 then
               begin
-                //Fields.Count := Data^.sqld;
-                //ChangeFields(Fields, Data^.sqld);
-                (Fields as TmncFBFields).Prepare(Data^.sqld);
-                Call(FBClient.isc_dsql_describe(@StatusVector, @FHandle, FB_DIALECT, Data), StatusVector, True);
+                Columns.Clear;
+                if Fields <> nil then
+                  Fields.Clear;
               end
-              else if Data^.sqld = 0 then
-                Fields.Clear;
-              //FSQLCurrent.Initialize;
+              else
+              begin
+                //Now we load a columns for it
+                if Self.Fields = nil then
+                  Self.Fields := CreateFields(Columns); //need to create Fields becuase it have SQLDA buffer
+                Fields.Count := c;
+
+                InitSQLDA(Fields.FData, c);
+
+              { Get count of columns }
+                Call(FBClient.isc_dsql_describe(@StatusVector, @FHandle, FB_DIALECT, Fields.Data), StatusVector, True);
+                p := @Fields.Data^.sqlvar[0];
+                for i := 0 to Fields.Data^.sqld - 1 do
+                begin
+                  aColumn := Columns.Add(p^.aliasname, SQLTypeToDataType(p^.sqltype));
+                  aField := Fields.Add(aColumn) as TmncFBField;
+                  //aField.SQLVAR.SqlVar := p;
+                  p := Pointer(PAnsiChar(p) + XSQLVar_Size);
+                end;
+                //FSQLCurrent.Initialize;
+              end;
             end;
           end;
-      end;
+       end;
     except
       on E: Exception do
       begin
@@ -1217,10 +1269,9 @@ begin
   end;
 end;
 
-procedure ChangeFields(Fields: TmncCustomFields; NewCount:Integer);
+procedure ChangeFields(Fields: TmncCustomFields; NewCount:short);
 var
   i: Integer;
-  XSQLVar_Size: Integer;
   p: Pointer;
   OldCount: Integer;
   Data: PXSQLDA;
@@ -1247,11 +1298,11 @@ begin
           Fields.Items[i].Free;
         end;
       end;
-      FBAlloc(Data, XSQLDA_LENGTH(Fields.Count), XSQLDA_LENGTH(NewCount));
     end;
+
     Fields.Count := NewCount;
-    Data.version := SQLDA_VERSION1;
-    XSQLVar_Size := sizeof(TXSQLVAR);
+    InitSQLDA(Data, NewCount);
+
     p := @Data^.sqlvar[0];
     for i := 0 to Fields.Count - 1 do
     begin
@@ -1290,7 +1341,9 @@ begin
     end;
   end;
 end;
+
 end.
+
 procedure InitializeSQLDA(Fields);
 var
   i: Integer;

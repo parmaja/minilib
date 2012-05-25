@@ -156,6 +156,7 @@ type
   TmnCustomFields = class(TObjectList)
   private
     function GetItem(Index: Integer): TmnCustomField;
+  protected
   public
     property Items[Index: Integer]: TmnCustomField read GetItem;
   end;
