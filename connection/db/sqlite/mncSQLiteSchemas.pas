@@ -16,8 +16,8 @@ unit mncSQLiteSchemas;
 interface
 
 uses
-  SysUtils, Classes, contnrs,
-  mncSQL, mncSchemas, mncConnections, mncSQLite;
+  SysUtils, Classes,
+  mncSchemas, mncConnections, mncSQLite;
 
 type
   { TmncSQLiteSchema }

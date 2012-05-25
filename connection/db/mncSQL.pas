@@ -190,11 +190,11 @@ begin
       Inc(i);
     end;
     Params.Clear; 
-    ParamList.Clear;
+    Binds.Clear;
     for i := 0 to slNames.Count - 1 do
     begin
-      aParam := Params.AddExists(slNames[i]);
-      ParamList.Add(aParam);
+      aParam := Params.Found(slNames[i]);
+      Binds.Add(aParam);
     end;
     Result := sProcessedSQL;
   finally

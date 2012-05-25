@@ -106,20 +106,52 @@ type
   protected
     function GetValue: Variant; override;
     procedure SetValue(const AValue: Variant); override;
+  public
+    constructor Create; override;
+    destructor Destroy; override;
   end;
 
   { TmncSQLiteFields }
 
   TmncSQLiteFields = class(TmncFields)
   protected
-    function CreateField(vColumn: TmncColumn): TmncCustomField; override;
+    function CreateField(vColumn: TmncColumn): TmncField; override;
   end;
 
   { TmncSQLiteParams }
 
   TmncSQLiteParams = class(TmncParams)
   protected
-    function CreateParam: TmncCustomField; override;
+    function CreateParam: TmncParam; override;
+  end;
+
+
+  { TmncSQLiteBind }
+
+  TmncSQLiteBind = class(TmncBind)
+  private
+    FBuffer: Pointer;
+    FBufferSize: Integer;
+    function GetBufferAllocated: Boolean;
+  protected
+    procedure AllocBuffer(var P; Size: Integer); virtual;
+    procedure FreeBuffer;
+    property Buffer: Pointer read FBuffer;
+    property BufferSize: Integer read FBufferSize;
+    property BufferAllocated: Boolean read GetBufferAllocated;
+  public
+    destructor Destroy; override;
+  end;
+
+  { TmncSQLiteBinds }
+
+  TmncSQLiteBinds = class(TmncBinds)
+  private
+    function GetItem(Index: Integer): TmncSQLiteBind;
+  protected
+    function CreateBind: TmncBind; override;
+  public
+    property Items[Index: Integer]: TmncSQLiteBind read GetItem; default;
   end;
 
   { TmncSQLiteCommand }
@@ -130,6 +162,7 @@ type
     FTail: pchar;
     FBOF: Boolean;
     FEOF: Boolean;
+    function GetBinds: TmncSQLiteBinds;
     function GetConnection: TmncSQLiteConnection;
     procedure FetchColumns;
     procedure FetchValues;
@@ -148,6 +181,8 @@ type
     procedure DoRollback; override;
     function CreateFields(vColumns: TmncColumns): TmncFields; override;
     function CreateParams: TmncParams; override;
+    function CreateBinds: TmncBinds; override;
+    property Binds: TmncSQLiteBinds read GetBinds;
     property Connection:TmncSQLiteConnection read GetConnection;
     property Session: TmncSQLiteSession read GetSession write SetSession;
   public
@@ -234,7 +269,17 @@ begin
   end;
 end;
 
-{ TmncSQLiteParam }
+{ TmncSQLiteBinds }
+
+function TmncSQLiteBinds.GetItem(Index: Integer): TmncSQLiteBind;
+begin
+  Result := inherited Items[Index] as TmncSQLiteBind;
+end;
+
+function TmncSQLiteBinds.CreateBind: TmncBind;
+begin
+  Result := TmncSQLiteBind.Create;
+end;
 
 function TmncSQLiteParam.GetValue: Variant;
 begin
@@ -244,6 +289,45 @@ end;
 procedure TmncSQLiteParam.SetValue(const AValue: Variant);
 begin
   FValue := AValue;
+end;
+
+function TmncSQLiteBind.GetBufferAllocated: Boolean;
+begin
+  Result := Buffer <> nil;
+end;
+
+procedure TmncSQLiteBind.AllocBuffer(var P; Size: Integer);
+begin
+  FreeBuffer;
+  FBufferSize := Size;
+  if Size > 0 then
+  begin
+    FBuffer := AllocMem(FBufferSize);
+    Move(P, FBuffer^, Size);
+  end;
+end;
+
+procedure TmncSQLiteBind.FreeBuffer;
+begin
+  if FBuffer <> nil then
+    FreeMem(FBuffer);
+  FBuffer := nil;
+end;
+
+destructor TmncSQLiteBind.Destroy;
+begin
+  FreeBuffer;
+  inherited;
+end;
+
+constructor TmncSQLiteParam.Create;
+begin
+  inherited;
+end;
+
+destructor TmncSQLiteParam.Destroy;
+begin
+  inherited;
 end;
 
 function TmncSQLiteField.GetValue: Variant;
@@ -258,14 +342,14 @@ end;
 
 { TmncSQLiteFields }
 
-function TmncSQLiteFields.CreateField(vColumn: TmncColumn): TmncCustomField;
+function TmncSQLiteFields.CreateField(vColumn: TmncColumn): TmncField;
 begin
   Result := TmncSQLiteField.Create(vColumn);
 end;
 
 { TmncSQLiteParams }
 
-function TmncSQLiteParams.CreateParam: TmncCustomField;
+function TmncSQLiteParams.CreateParam: TmncParam;
 begin
   Result := TmncSQLiteParam.Create;
 end;
@@ -547,57 +631,63 @@ end;
 procedure TmncSQLiteCommand.ApplyParams;
 var
   s: UTF8String;
+  b: boolean;
   i: Integer;
   d: Double;
   c: Currency;
   t: Integer;
   t64: Int64;
 begin
-  for i := 0 to ParamList.Count - 1 do
+  for i := 0 to Binds.Count - 1 do
   begin
-    ParamList.Items[i].FreeBuffer;
+    Binds[i].FreeBuffer;
   end;
 
-  for i := 0 to ParamList.Count - 1 do
+  for i := 0 to Binds.Count - 1 do
   begin
-    if ParamList.Items[i].IsEmpty then
+    if Binds[i].Param.IsEmpty then
       CheckError(sqlite3_bind_null(FStatment, i + 1))
     else
     begin
-      case VarType(ParamList.Items[i].Value) of
+      case VarType(Binds[i].Param.Value) of
         varDate:
         begin
-          d := ParamList.Items[i].Value;// - UnixDateDelta; todo
+          d := Binds[i].Param.Value;// - UnixDateDelta; todo
           CheckError(sqlite3_bind_double(FStatment, i + 1, d));
+        end;
+        varBoolean:
+        begin
+          b := Binds[i].Param.Value;
+          CheckError(sqlite3_bind_int(FStatment, i + 1, ord(b)));
         end;
         varInteger:
         begin
-          t := ParamList.Items[i].Value;
+          t := Binds[i].Param.Value;
           CheckError(sqlite3_bind_int(FStatment, i + 1, t));
         end;
         varint64:
         begin
-          t64 := ParamList.Items[i].Value;
+          t64 := Binds[i].Param.Value;
           CheckError(sqlite3_bind_int64(FStatment, i + 1, t64));
         end;
         varCurrency:
         begin
-          c := ParamList.Items[i].Value;
+          c := Binds[i].Param.Value;
           CheckError(sqlite3_bind_double(FStatment, i + 1, c));
         end;
         varDouble:
         begin
-          d := ParamList.Items[i].Value;
+          d := Binds[i].Param.Value;
           CheckError(sqlite3_bind_double(FStatment, i + 1, d));
         end;
-        else
+        else //String type
         begin
-          if not ParamList.Items[i].BufferAllocated then
+          if not Binds[i].BufferAllocated then //TODO test after  remove this line, i think it is not useful
           begin
-            s := VarToStrDef(ParamList.Items[i].Value, '');
-            ParamList.Items[i].AllocBuffer(PChar(s)^, Length(s));
+            s := VarToStrDef(Binds[i].Param.Value, '');
+            Binds[i].AllocBuffer(PChar(s)^, Length(s));
           end;
-          CheckError(sqlite3_bind_text(FStatment, i + 1, PChar(ParamList.Items[i].Buffer), ParamList.Items[i].BufferSize, nil));
+          CheckError(sqlite3_bind_text(FStatment, i + 1, PChar(Binds[i].Buffer), Binds[i].BufferSize, nil));
         end;
       end;
     end;
@@ -660,6 +750,11 @@ end;
 function TmncSQLiteCommand.CreateParams: TmncParams;
 begin
   Result := TmncSQLiteParams.Create;
+end;
+
+function TmncSQLiteCommand.CreateBinds: TmncBinds;
+begin
+  Result := TmncSQLiteBinds.Create;
 end;
 
 procedure TmncSQLiteCommand.DoClose;
@@ -763,6 +858,11 @@ end;
 function TmncSQLiteCommand.GetConnection: TmncSQLiteConnection;
 begin
   Result := Session.Connection as TmncSQLiteConnection;
+end;
+
+function TmncSQLiteCommand.GetBinds: TmncSQLiteBinds;
+begin
+  Result := inherited Binds as TmncSQLiteBinds;
 end;
 
 end.

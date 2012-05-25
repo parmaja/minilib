@@ -73,7 +73,6 @@ type
   TmncFBSession = class(TmncSession)
   private
     FHandle: TISC_TR_HANDLE;
-    FStreamedActive: Boolean;
     FTPB: PChar;
     FTPBLength: Short;
     function GetConnection: TmncFBConnection;
@@ -88,7 +87,6 @@ type
     constructor Create(vConnection: TmncConnection); override;
     destructor Destroy; override;
     procedure Execute(SQL: string);
-    function GetRowsChanged: Integer;
     property Handle: TISC_TR_HANDLE read FHandle;
     property TPB: PChar read FTPB;
     property TPBLength: Short read FTPBLength;
@@ -219,10 +217,10 @@ type
     FEOF: Boolean;
     FCursor: string; { Cursor name }
     FSQLType: TFBDSQLTypes;
-    FGenerateParamNames: Boolean;
     FParsedSQL: string;
     function GetConnection: TmncFBConnection;
     function GetSession: TmncFBSession;
+    procedure SetCursor(AValue: string);
     procedure SetSession(const AValue: TmncFBSession);
     procedure FreeHandle;
     procedure InternalPrepare;
@@ -249,6 +247,15 @@ type
     function GetRowsChanged: Integer; virtual;
     property SQLType: TFBDSQLTypes read FSQLType;
     property Handle: TISC_STMT_HANDLE read FHandle;
+    { Cursor name
+      Optional you can use it
+
+      UPDATE ... WHERE CURRENT OF MyCursor;
+      DELETE FROM ... WHERE CURRENT OF MyCursor;
+
+      http://tech.groups.yahoo.com/group/firebird-support/messages/65692?threaded=1&m=e&var=1&tidx=1
+    }
+    property Cursor: string read FCursor write SetCursor;
   end;
 
 implementation
@@ -514,12 +521,6 @@ begin
     Call(FBClient.isc_dsql_execute_immediate(@StatusVector, @FHandle, @tr_handle, 0, PChar(SQL), FB_DIALECT, nil), StatusVector, True);
   finally
   end;
-end;
-
-
-function TmncFBSession.GetRowsChanged: Integer;
-begin
-  CheckActive;
 end;
 
 function TmncFBSession.GetActive: Boolean;
@@ -961,6 +962,13 @@ begin
   Result := inherited Session as TmncFBSession;
 end;
 
+procedure TmncFBCommand.SetCursor(AValue: string);
+begin
+  if FCursor =AValue then Exit;
+  CheckInactive;
+  FCursor :=AValue;
+end;
+
 procedure TmncFBCommand.SetSession(const AValue: TmncFBSession);
 begin
   inherited Session := AValue;
@@ -1036,12 +1044,11 @@ begin
         Call(FBClient.isc_dsql_execute2(@StatusVector,  @Session.Handle, @FHandle,  FB_DIALECT,
           (Params as TmncFBParams).Data, nil), StatusVector, True);
 
-        //Call(FBClient.isc_dsql_set_cursor_name(@StatusVector, @FHandle, PAnsiChar(FCursor), 0), StatusVector, True);
+        if FCursor <> '' then
+          Call(FBClient.isc_dsql_set_cursor_name(@StatusVector, @FHandle, PAnsiChar(FCursor), 0), StatusVector, True);
         FActive := True;
         FBOF := True;
         FEOF := False;
-        if NextOnExecute then
-          Next;
       end;
     SQLExecProcedure:
       begin
@@ -1220,6 +1227,8 @@ begin
           SQLExecProcedure:
           begin
             //Params is already created and have the items
+            InitSQLDA(Params.FData, Params.Count);
+
             Call(FBClient.isc_dsql_describe_bind(@StatusVector, @FHandle, FB_DIALECT, Params.Data), StatusVector, True);
 
             p := @Params.Data^.sqlvar[0];
@@ -1256,7 +1265,7 @@ begin
               begin
                 //Now we load a columns for it
                 if Self.Fields = nil then
-                  Self.Fields := CreateFields(Columns) //need to create Fields becuase it have SQLDA buffer
+                  Self.Fields := CreateFields(Columns) //need to create Fields because it have SQLDA buffer
                 else
                   Fields.Clear;
 

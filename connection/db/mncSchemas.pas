@@ -17,7 +17,7 @@ interface
 
 uses
   SysUtils, Classes, contnrs,
-  mncSQL, mncConnections;
+  mncConnections;
 
 type
   TschmKind = (sokNone, sokDatabase, sokDomains, sokTable, sokIndex, sokView,

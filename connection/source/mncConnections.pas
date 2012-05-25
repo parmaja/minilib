@@ -26,7 +26,7 @@ interface
 
 uses
   Classes, SysUtils, DateUtils, Variants, Contnrs, SyncObjs,
-  mnFields, mnParams;
+  mnFields;
 
 type
   EmncException = class(Exception)
@@ -322,7 +322,7 @@ type
     function GetField(Index: string): TmncField;
   protected
     function Find(vName: string): TmncItem; override;
-    function CreateField(vColumn: TmncColumn): TmncCustomField; virtual; abstract;
+    function CreateField(vColumn: TmncColumn): TmncField; virtual; abstract;
   public
     constructor Create(vColumns: TmncColumns); virtual;
     function FindField(vName: string): TmncField;
@@ -340,20 +340,11 @@ type
 
   TmncParam = class(TmncCustomField)
   private
-    FBuffer: Pointer;
-    FBufferSize: Integer;
     FName: string;
-    function GetBufferAllocated: Boolean;
   protected
   public
     constructor Create; virtual;
     destructor Destroy; override;
-    procedure AllocBuffer(var P; Size: Integer); virtual;
-    procedure FreeBuffer;
-    property Buffer: Pointer read FBuffer;
-    property BufferSize: Integer read FBufferSize;
-    property BufferAllocated: Boolean read GetBufferAllocated;
-
     property Name: string read FName write FName;
   end;
 
@@ -378,17 +369,35 @@ type
   TmncParams = class(TmncCustomParams)
   private
   protected
-    function CreateParam: TmncCustomField; virtual; abstract;
+    function CreateParam: TmncParam; virtual; abstract;
   public
     constructor Create; virtual;
     function Add(Name: string): TmncParam;
-    function AddExists(Name: string): TmncParam;
+    //Add it if not exists
+    function Found(Name: string): TmncParam;
   end;
 
-  TmncParamList = class(TmncCustomParams)
+  { TmncBind }
+
+  TmncBind = class(TObject)
   private
+    FParam: TmncParam;
   public
-    constructor Create;
+    property Param: TmncParam read FParam write FParam;
+  end;
+
+  { TmncBinds }
+
+  TmncBinds = class(TObjectList)
+  private
+    function GetItem(Index: Integer): TmncBind;
+  protected
+    function CreateBind: TmncBind; virtual;
+  public
+    constructor Create; virtual;
+    function Add(ABind: TmncBind): Integer; overload;
+    function Add(AParam: TmncParam): Integer; overload;
+    property Items[Index: Integer]: TmncBind read GetItem; default;
   end;
 
   { TmncLinkObject }
@@ -408,6 +417,23 @@ type
     property Active: Boolean read GetActive write SetActive;
   end;
 
+  {
+    Look at
+      Columns: Fields header, have Name, Size and Type of the field
+      Fields: Only contain value of field, and refrenced to Column
+
+      Params: Have Name, Size and Type and also the Value
+      Binds: Referenced to Params but can be dublicate the param more than one
+      Why Binds
+      e.g:
+
+      select * from Employee
+      where EMP_NO = ?EMP_NO or EMP_NO = ?EMP_NO
+
+      here in example EMP_NO found 2 times in Binds but on in Param,
+      when you change the value of Param['EMP_NO'].AsInteger:=10,
+      it will send as 2 of params by Binds
+  }
   { TmncCommand }
 
   TmncCommand = class(TmncLinkObject)
@@ -415,7 +441,7 @@ type
     FColumns: TmncColumns;
     FFields: TmncFields;
     FParams: TmncParams;
-    FParamList: TmncParamList;
+    FBinds: TmncBinds;
     FPrepared: Boolean;
     FNextOnExecute: Boolean;
     procedure SetRequest(const Value: TStrings);
@@ -433,16 +459,18 @@ type
     function GetEOF: Boolean; virtual; abstract;
     procedure DoPrepare; virtual; abstract;
     procedure DoUnprepare; virtual;
-    procedure DoExecute; virtual; abstract; //Here apply the ParamList and execute the sql
+    procedure DoExecute; virtual; abstract; //Here apply the Binds and execute the sql
     procedure DoNext; virtual; abstract;
     procedure DoClose; virtual; abstract;
     procedure DoCommit; virtual; //some time we need make commit with command or session
     procedure DoRollback; virtual;
     procedure DoRequestChanged(Sender: TObject); virtual;
     function CreateFields(vColumns: TmncColumns): TmncFields; virtual; abstract;
+    function CreateColumns: TmncColumns; virtual;
     function CreateParams: TmncParams; virtual; abstract;
+    function CreateBinds: TmncBinds; virtual;
     property Request: TStrings read FRequest write SetRequest;
-    property ParamList: TmncParamList read FParamList; //for Dublicated names when pass the params when execute
+    property Binds: TmncBinds read FBinds; //for Dublicated names when pass the params when execute
   public
     constructor Create; override;
     destructor Destroy; override;
@@ -495,7 +523,7 @@ type
 
   TmncVariantFields = class(TmncFields)
   protected
-    function CreateField(vColumn: TmncColumn): TmncCustomField; override;
+    function CreateField(vColumn: TmncColumn): TmncField; override;
   public
   end;
 
@@ -503,7 +531,7 @@ type
 
   TmncVariantParams = class(TmncParams)
   protected
-    function CreateParam: TmncCustomField; override;
+    function CreateParam: TmncParam; override;
   public
   end;
 
@@ -523,14 +551,14 @@ end;
 
 { TmncVariantParams }
 
-function TmncVariantParams.CreateParam: TmncCustomField;
+function TmncVariantParams.CreateParam: TmncParam;
 begin
   Result := TmncVariantParam.Create;
 end;
 
 { TmncVariantFields }
 
-function TmncVariantFields.CreateField(vColumn: TmncColumn): TmncCustomField;
+function TmncVariantFields.CreateField(vColumn: TmncColumn): TmncField;
 begin
   Result := TmncVariantField.Create(vColumn);
 end;
@@ -673,7 +701,7 @@ begin
   FRequest.Clear;
   if FParams <> nil then
     FParams.Clear;
-  FParamList.Clear;
+  FBinds.Clear;
 end;
 
 destructor TmncCommand.Destroy;
@@ -682,7 +710,7 @@ begin
   Session := nil;//already in Linked but must be sure before free other objects
   FreeAndNil(FRequest);
   FreeAndNil(FFields);
-  FreeAndNil(FParamList);
+  FreeAndNil(FBinds);
   FreeAndNil(FParams);
   FreeAndNil(FColumns);
   inherited;
@@ -694,15 +722,25 @@ begin
     Close;
 end;
 
+function TmncCommand.CreateColumns: TmncColumns;
+begin
+  Result := TmncColumns.Create;
+end;
+
+function TmncCommand.CreateBinds: TmncBinds;
+begin
+  Result := TmncBinds.Create;
+end;
+
 constructor TmncCommand.Create;
 begin
   inherited;
   FRequest := TStringList.Create;
   (FRequest as TStringList).OnChange := DoRequestChanged;
 
-  FColumns := TmncColumns.Create;
+  FColumns := CreateColumns;
   FParams := CreateParams;
-  FParamList := TmncParamList.Create;
+  FBinds := CreateBinds;
   FNextOnExecute := True;
 end;
 
@@ -755,7 +793,7 @@ end;
 
 procedure TmncCommand.CheckInactive;
 begin
-  if not Active then
+  if Active then
     raise EmncException.Create('Command is active/opened');
 end;
 
@@ -1203,7 +1241,7 @@ begin
   inherited Add(Result);
 end;
 
-function TmncParams.AddExists(Name: string): TmncParam;
+function TmncParams.Found(Name: string): TmncParam;
 begin
   Result := FindParam(Name) as TmncParam;
   if Result = nil then
@@ -1252,11 +1290,35 @@ begin
   Result := inherited Items[Index] as TmncParam;
 end;
 
-{ TmncParamList }
+{ TmncBinds }
 
-constructor TmncParamList.Create;
+function TmncBinds.GetItem(Index: Integer): TmncBind;
 begin
-  inherited Create(False);
+  Result := (inherited Items[Index]) as TmncBind;
+end;
+
+function TmncBinds.CreateBind: TmncBind;
+begin
+  Result := TmncBind.Create;
+end;
+
+constructor TmncBinds.Create;
+begin
+  inherited Create(True);
+end;
+
+function TmncBinds.Add(ABind: TmncBind): Integer;
+begin
+  Result := inherited Add(ABind);
+end;
+
+function TmncBinds.Add(AParam: TmncParam): Integer;
+var
+  aItem: TmncBind;
+begin
+  aItem := CreateBind;
+  aItem.Param := AParam;
+  Result := Add(aItem);
 end;
 
 { TCustomField }
@@ -1282,33 +1344,9 @@ end;
 
 { TmncParam }
 
-procedure TmncParam.AllocBuffer(var P; Size: Integer);
-begin
-  FreeBuffer;
-  FBufferSize := Size;
-  if Size > 0 then
-  begin
-    FBuffer := AllocMem(FBufferSize);
-    Move(P, FBuffer^, Size);
-  end;
-end;
-
 destructor TmncParam.Destroy;
 begin
-  FreeBuffer;
   inherited;
-end;
-
-procedure TmncParam.FreeBuffer;
-begin
-  if FBuffer <> nil then
-    FreeMem(FBuffer);
-  FBuffer := nil;
-end;
-
-function TmncParam.GetBufferAllocated: Boolean;
-begin
-  Result := Buffer <> nil;
 end;
 
 constructor TmncParam.Create;
