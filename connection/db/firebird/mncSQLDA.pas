@@ -74,8 +74,8 @@ type
     procedure SetSqlSubtype(const AValue: Short);
     procedure SetSqlType(const AValue: Short);
   public
-    procedure SetDataSize(oldsize, newsize: Integer);
-    procedure SetIndSize(oldsize, newsize: Integer);
+    procedure UpdateData(OldSize, NewSize: Integer);
+    procedure UpdateSQLInd;
     property XSQLVar: PXSQLVAR read GetSQLVAR write SetSQLVAR;
 
     property SqlType: Short read GetSqlType write SetSqlType;
@@ -126,7 +126,6 @@ type
     function GetAsStrip: string;
     function GetAsBoolean: Boolean;
     procedure SetAsBoolean(const AValue: Boolean);
-    //procedure SetSQLVAR(const AValue: TmncSQLVAR);
     function GetAsGUID: TGUID;
     procedure SetAsGUID(const AValue: TGUID);
     procedure SetModified(const AValue: Boolean);
@@ -153,7 +152,10 @@ type
     procedure Detach;
     procedure Assign(Source: TmncSQLVAR);
     procedure Prepare;
-    procedure SetBuffer(Buffer: Pointer; Size: Integer); //zaher
+    procedure Clear;
+    procedure SetBuffer(Buffer: Pointer; Size: Integer); //TODO check if used
+    procedure CopySQLVAR(const AValue: TmncSQLVAR);
+
     function CreateReadBlobSteam: TFBBlobStream;
     function CreateWriteBlobSteam: TFBBlobStream;
     procedure LoadFromIStream(Stream: IStreamPersist);
@@ -162,7 +164,11 @@ type
     procedure SaveToStream(Stream: TStream);
     procedure LoadFromFile(const FileName: string);
     procedure SaveToFile(const FileName: string);
-    procedure Clear;
+
+    property Modified: Boolean read FModified write SetModified;
+    property Size: Integer read GetSize;
+    property MaxLen: Short read FMaxLen write FMaxLen;
+
     property AsBoolean: Boolean read GetAsBoolean write SetAsBoolean;
     property AsDate: TDateTime read GetAsDateTime write SetAsDate;
     property AsTime: TDateTime read GetAsDateTime write SetAsTime;
@@ -190,9 +196,7 @@ type
 
     property IsNull: Boolean read GetIsNull write SetIsNull;
     property IsNullable: Boolean read GetIsNullable write SetIsNullable;
-    property Modified: Boolean read FModified write SetModified;
-    property Size: Integer read GetSize;
-    property MaxLen: Short read FMaxLen write FMaxLen;
+
   end;
 
 implementation
@@ -283,14 +287,23 @@ begin
   FXSQLVAR^.aliasname_length := Length(AValue);
 end;
 
-procedure TmncSQLVAR.SetDataSize(oldsize, newsize: Integer);
+procedure TmncSQLVAR.UpdateData(OldSize, NewSize: Integer);
 begin
-  FBAlloc(FXSQLVAR^.sqldata, oldsize, newsize);
+  if NewSize = 0 then
+    FBFree(FXSQLVAR^.sqldata)
+  else
+    FBAlloc(FXSQLVAR^.sqldata, OldSize, NewSize);
 end;
 
-procedure TmncSQLVAR.SetIndSize(oldsize, newsize: Integer);
+procedure TmncSQLVAR.UpdateSQLInd;
 begin
-  FBAlloc(FXSQLVAR^.sqlind, oldsize, newsize);
+  if IsNullable then
+  begin
+    if not Assigned(FXSQLVAR^.sqlind) then
+      FBAlloc(FXSQLVAR^.sqlind, 0, SizeOf(Short))
+  end
+  else if Assigned(FXSQLVAR^.sqlind) then
+    FBFree(FXSQLVAR^.sqlind);
 end;
 
 procedure TmncSQLVAR.SetOwnName(const AValue: string);
@@ -550,7 +563,7 @@ begin
           sqllen := FMaxLen
         else
           sqllen := iSize;
-        SetDataSize(oldSize, sqllen + 1);
+        UpdateData(OldSize, sqllen + 1);
         Move(szBuff[0], sqldata[0], sqllen);
       end;
     end;
@@ -582,21 +595,18 @@ begin
           if (sqllen = 0) then
           { Make sure you get a valid pointer anyway
            select '' from foo }
-            SetDataSize(0, 1)
+            UpdateData(0, 1)
           else
-            SetDataSize(0, sqllen)
+            UpdateData(0, sqllen)
         end;
       SQL_VARYING:
         begin
-          SetDataSize(0, sqllen + 2);
+          UpdateData(0, sqllen + 2);
         end;
     else
       FBRaiseError(fbceUnknownSQLDataType, [SqlDef])
     end;
-  if (sqltype and 1 = 1) then
-    SetIndSize(0, SizeOf(Short))
-  else if (sqlind <> nil) then
-    SetIndSize(0, 0);
+  UpdateSQLInd;
 end;
 
 function TmncSQLVAR.GetAsChar: Char;
@@ -964,7 +974,7 @@ end;
 
 function TmncSQLVAR.GetIsNull: Boolean;
 begin
-  Result := IsNullable and (sqlind^ = -1);
+  Result := IsNullable and Assigned(sqlind) and (sqlind^ = -1);
 end;
 
 function TmncSQLVAR.GetIsNullable: Boolean;
@@ -1012,7 +1022,7 @@ begin
   sqltype := SQL_INT64 or (sqltype and 1);
   sqlscale := -4;
   sqllen := SizeOf(Int64);
-  SetDataSize(0, sqllen);
+  UpdateData(0, sqllen);
   PCurrency(sqldata)^ := AValue;
   Modified := True;
 end;
@@ -1024,7 +1034,7 @@ begin
   sqltype := SQL_INT64 or (sqltype and 1);
   sqlscale := 0;
   sqllen := SizeOf(Int64);
-  SetDataSize(0, sqllen);
+  UpdateData(0, sqllen);
   PInt64(sqldata)^ := AValue;
   Modified := True;
 end;
@@ -1048,7 +1058,7 @@ begin
     tm_year := Yr - 1900;
   end;
   sqllen := SizeOf(ISC_DATE);
-  SetDataSize(0, sqllen);
+  UpdateData(0, sqllen);
   FBClient.isc_encode_sql_date(@tm_date, PISC_DATE(sqldata));
   Modified := True;
 end;
@@ -1060,7 +1070,7 @@ begin
   sqltype := SQL_LONG or (sqltype and 1);
   sqllen := SizeOf(Long);
   sqlscale := 0;
-  SetDataSize(0, sqllen);
+  UpdateData(0, sqllen);
   PLong(sqldata)^ := AValue;
   Modified := True;
 end;
@@ -1084,7 +1094,7 @@ begin
     tm_year := 0;
   end;
   sqllen := SizeOf(ISC_TIME);
-  SetDataSize(0, sqllen);
+  UpdateData(0, sqllen);
   FBClient.isc_encode_sql_time(@tm_date, PISC_TIME(sqldata));
   Modified := True;
 end;
@@ -1109,7 +1119,7 @@ begin
     tm_year := Yr - 1900;
   end;
   sqllen := SizeOf(TISC_QUAD);
-  SetDataSize(0, sqllen);
+  UpdateData(0, sqllen);
   FBClient.isc_encode_date(@tm_date, PISC_QUAD(sqldata));
   Modified := True;
 end;
@@ -1121,7 +1131,7 @@ begin
   sqltype := SQL_DOUBLE or (sqltype and 1);
   sqllen := SizeOf(Double);
   sqlscale := 0;
-  SetDataSize(0, sqllen);
+  UpdateData(0, sqllen);
   PDouble(sqldata)^ := AValue;
   Modified := True;
 end;
@@ -1133,7 +1143,7 @@ begin
   sqltype := SQL_FLOAT or (sqltype and 1);
   sqllen := SizeOf(Float);
   sqlscale := 0;
-  SetDataSize(0, sqllen);
+  UpdateData(0, sqllen);
   PSingle(sqldata)^ := AValue;
   Modified := True;
 end;
@@ -1167,7 +1177,7 @@ begin
     (SqlDef <> SQL_ARRAY) then
     FBRaiseError(fbceInvalidDataConversion, [nil]);
   sqllen := SizeOf(TISC_QUAD);
-  SetDataSize(0, sqllen);
+  UpdateData(0, sqllen);
   PISC_QUAD(sqldata)^ := AValue;
   Modified := True;
 end;
@@ -1179,7 +1189,7 @@ begin
   sqltype := SQL_SHORT or (sqltype and 1);
   sqllen := SizeOf(Short);
   sqlscale := 0;
-  SetDataSize(0, sqllen);
+  UpdateData(0, sqllen);
   PShort(sqldata)^ := AValue;
   Modified := True;
 end;
@@ -1200,7 +1210,7 @@ var
       if (FMaxLen > 0) and (Length(AValue) > FMaxLen) then
         AValue := Copy(AValue, 1, FMaxLen);
       sqllen := Length(AValue);
-      SetDataSize(0, sqllen + 1);
+      UpdateData(0, sqllen + 1);
       if (Length(AValue) > 0) then
         Move(AValue[1], sqldata^, sqllen);
     end;
@@ -1297,12 +1307,12 @@ begin
     if AValue then
     begin
       sqltype := sqltype or 1;
-      SetIndSize(0, SizeOf(Short));
+      UpdateSQLInd;
     end
     else
     begin
       sqltype := SqlDef;
-      SetIndSize(0, 0);
+      UpdateSQLInd;
     end;
   end;
 end;
@@ -1349,7 +1359,7 @@ begin
     PShort(sqldata)^ := ISC_FALSE;
 end;
 
-{procedure TmncSQLVAR.SetSQLVAR(const AValue: TmncSQLVAR);
+procedure TmncSQLVAR.CopySQLVAR(const AValue: TmncSQLVAR);
 var
   local_sqlind: PShort;
   local_sqldata: PAnsiChar;
@@ -1357,31 +1367,30 @@ var
 begin
   local_sqlind := sqlind;
   local_sqldata := sqldata;
-  move(TmncSQLVAR(AValue).FXSQLVAR^, TmncSQLVAR(FSQLVAR).FXSQLVAR^, sizeof(TXSQLVAR));
+  move(AValue.FXSQLVAR^, FXSQLVAR^, sizeof(TXSQLVAR));
+  //Now make new value
   sqlind := local_sqlind;
   sqldata := local_sqldata;
   if (AValue.sqltype and 1 = 1) then
   begin
     if (sqlind = nil) then
-      SetIndSize(0, SizeOf(Short));
+      FBAlloc(FXSQLVAR.sqlind, 0, SizeOf(Short));
     sqlind^ := AValue.sqlind^;
   end
   else if (sqlind <> nil) then
-    SetIndSize(0, 0);
+    FBFree(FXSQLVAR.sqlind);
   if ((SqlDef) = SQL_VARYING) then
     local_sqllen := sqllen + 2
   else
     local_sqllen := sqllen;
   sqlscale := AValue.sqlscale;
-  SetDataSize(0, local_sqllen);
+  UpdateData(0, local_sqllen);
   Move(AValue.sqldata[0], sqldata[0], local_sqllen);
   Modified := True;
-end;}
+end;
 
 destructor TmncSQLVAR.Destroy;
 begin
-  FreeMem(sqldata);
-  FreeMem(sqlind);
   inherited;
 end;
 

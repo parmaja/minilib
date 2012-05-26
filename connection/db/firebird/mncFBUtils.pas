@@ -31,11 +31,12 @@ procedure FBRaiseError(const StatusVector: TStatusVector); overload;
 function FBCall(ErrCode: ISC_STATUS; const StatusVector: TStatusVector; RaiseError: Boolean): ISC_STATUS;
 
 function CheckStatusVector(const StatusVector: TStatusVector; ErrorCodes: array of ISC_STATUS): Boolean;
-function GetStatusErrorNumber(const StatusVector: TStatusVector; Index: Integer; var Value: Integer): Boolean;
-function GetStatusErrorMsg(const StatusVector: TStatusVector; Index: Integer; var Value: string): Boolean;
+function GetStatusErrorNumber(const StatusVector: TStatusVector; Index: Integer; out Value: Integer): Boolean;
+function GetStatusErrorMsg(const StatusVector: TStatusVector; Index: Integer; out Value: string): Boolean;
 function StatusVectorAsText(const StatusVector: TStatusVector): string;
 
 procedure FBAlloc(var P; OldSize, NewSize: Integer; ZeroInit: Boolean = True);
+procedure FBFree(var P);
 
 function FBMax(n1, n2: Integer): Integer;
 function FBMin(n1, n2: Integer): Integer;
@@ -303,7 +304,7 @@ begin
   begin
     StatusVectorWalk := @StatusVector;
 //    while (FBClient.fb_interpret(local_buffer, FBLocalBufferLength, StatusVectorWalk,) > 0) do
-    while (FBClient.isc_interprete(local_buffer, StatusVectorWalk) > 0) do
+    while (FBClient.isc_interprete(local_buffer, StatusVectorWalk) > 0) do//TODO use fb_interpret
     begin
       AddMsg(string(local_buffer));
     end;
@@ -367,7 +368,7 @@ begin
     end;
 end;
 
-function GetStatusErrorNumber(const StatusVector: TStatusVector; Index: Integer; var Value: Integer): Boolean;
+function GetStatusErrorNumber(const StatusVector: TStatusVector; Index: Integer; out Value: Integer): Boolean;
 var
   p: PISC_STATUS;
   procedure NextP(i: Integer);
@@ -401,7 +402,7 @@ begin
     end;
 end;
 
-function GetStatusErrorMsg(const StatusVector: TStatusVector; Index: Integer; var Value: string): Boolean;
+function GetStatusErrorMsg(const StatusVector: TStatusVector; Index: Integer; out Value: string): Boolean;
 var
   p: PISC_STATUS;
   function NextP(i: Integer): PISC_STATUS;
@@ -425,7 +426,7 @@ begin
           Result := c >= Index;
           if Result then
           begin
-            Value := PChar(P^);
+            Value := PChar(P)^;
             break;
           end;
           NextP(1);
@@ -471,9 +472,14 @@ begin
     ReallocMem(Pointer(P), NewSize)
   else
     GetMem(Pointer(P), NewSize);
-  if ZeroInit then
+  if ZeroInit and (NewSize > 0) then
     for i := OldSize to NewSize - 1 do
       PChar(P)[i] := #0;
+end;
+
+procedure FBFree(var P);
+begin
+  FreeMem(Pointer(P));
 end;
 
 function GetInfoReqRecord(Buffer: PChar; Flag: Byte): Integer;

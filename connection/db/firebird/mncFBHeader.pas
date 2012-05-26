@@ -216,7 +216,7 @@ type
     sqlsubtype: Short; (** datatype subtype - BLOBs **)
           (** & text types only **)
     sqllen: Short; (** length of data area **)
-    sqldata: PChar; (** address of data **)
+    sqldata: Pointer; (** address of data **)
     sqlind: PShort; (** address of indicator **)
                                              (** variable **)
     sqlname_length: Short; (** length of sqlname field **)

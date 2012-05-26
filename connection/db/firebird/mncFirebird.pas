@@ -177,34 +177,34 @@ type
 
   TmncFBFields = class(TmncFields)
   private
-    FData: PXSQLDA;
+    FSQLDA: PXSQLDA;
     function GetItem(Index: Integer): TmncFBField;
   protected
     function GetModified: Boolean;
-    function CreateField(vColumn: TmncColumn): TmncCustomField; override;
+    function CreateField(vColumn: TmncColumn): TmncField; override;
     procedure Detach; override;
   public
     constructor Create(vColumns: TmncColumns); override;
     destructor Destroy; override;
     property Items[Index: Integer]: TmncFBField read GetItem;
-    property Data: PXSQLDA read FData;
+    property SQLDA: PXSQLDA read FSQLDA;
   end;
 
   { TmncFBParams }
 
   TmncFBParams = class(TmncParams)
   private
-    FData: PXSQLDA;
+    FSQLDA: PXSQLDA;
     function GetItem(Index: Integer): TmncFBParam;
   protected
     function GetModified: Boolean;
-    function CreateParam: TmncCustomField; override;
+    function CreateParam: TmncParam; override;
     procedure Detach; override;
   public
     constructor Create; override;
     destructor Destroy; override;
     property Items[Index: Integer]: TmncFBParam read GetItem;
-    property Data: PXSQLDA read FData;
+    property SQLDA: PXSQLDA read FSQLDA;
   end;
 
   { TmncFBCommand }
@@ -215,7 +215,7 @@ type
     FActive: Boolean;
     FBOF: Boolean;
     FEOF: Boolean;
-    FCursor: string; { Cursor name }
+    FCursor: string;
     FSQLType: TFBDSQLTypes;
     FParsedSQL: string;
     function GetConnection: TmncFBConnection;
@@ -226,7 +226,8 @@ type
     procedure InternalPrepare;
   protected
     function Call(ErrCode: ISC_STATUS; StatusVector: TStatusVector; RaiseError: Boolean): ISC_STATUS;
-    procedure ValidStatement;
+    procedure CheckHandle;//TODO remove it
+    procedure ApplyParams(var XSQLDA: PXSQLDA);
     procedure DoUnprepare; override;
     procedure DoPrepare; override;
     procedure DoExecute; override;
@@ -744,7 +745,7 @@ begin
     end;
 end;
 
-function TmncFBParams.CreateParam: TmncCustomField;
+function TmncFBParams.CreateParam: TmncParam;
 begin
   Result := TmncFBParam.Create;
 end;
@@ -763,18 +764,13 @@ end;
 constructor TmncFBParams.Create;
 begin
   inherited;
-  FBAlloc(FData, 0, XSQLDA_LENGTH(0));
-  FData.version := SQLDA_VERSION1;
+  InitSQLDA(FSQLDA, 0);
 end;
 
 destructor TmncFBParams.Destroy;
 begin
   Clear;
-  if FData <> nil then
-  begin
-    FreeMem(FData);
-    FData := nil;
-  end;
+  FreeSQLDA(FSQLDA);
   inherited;
 end;
 
@@ -925,7 +921,7 @@ begin
     end;
 end;
 
-function TmncFBFields.CreateField(vColumn: TmncColumn): TmncCustomField;
+function TmncFBFields.CreateField(vColumn: TmncColumn): TmncField;
 begin
   Result := TmncFBField.Create(vColumn);
 end;
@@ -944,14 +940,13 @@ end;
 constructor TmncFBFields.Create(vColumns: TmncColumns);
 begin
   inherited;
-  FBAlloc(FData, 0, XSQLDA_LENGTH(0));
-  FData.version := SQLDA_VERSION1;
+  InitSQLDA(FSQLDA, 0);
 end;
 
 destructor TmncFBFields.Destroy;
 begin
   Clear;
-  FreeSQLDA(FData);
+  FreeSQLDA(FSQLDA);
   inherited;
 end;
 
@@ -1037,12 +1032,12 @@ var
   i: Integer;
   StatusVector: TStatusVector;
 begin
-  ValidStatement;
+  CheckHandle;
   case FSQLType of
     SQLSelect:
       begin
         Call(FBClient.isc_dsql_execute2(@StatusVector,  @Session.Handle, @FHandle,  FB_DIALECT,
-          (Params as TmncFBParams).Data, nil), StatusVector, True);
+          (Params as TmncFBParams).FSQLDA, nil), StatusVector, True);
 
         if FCursor <> '' then
           Call(FBClient.isc_dsql_set_cursor_name(@StatusVector, @FHandle, PAnsiChar(FCursor), 0), StatusVector, True);
@@ -1059,7 +1054,7 @@ begin
   else
     Call(FBClient.isc_dsql_execute(@StatusVector,
       @Session.Handle, @FHandle, FB_DIALECT,
-      (Params as TmncFBParams).Data), StatusVector, True)
+      (Params as TmncFBParams).FSQLDA), StatusVector, True)
   end;
 end;
 
@@ -1069,7 +1064,7 @@ var
   StatusVector: TStatusVector;
 begin
   //TODO: check of fields created??
-  fetch_res := Call(FBClient.isc_dsql_fetch(@StatusVector, @FHandle, FB_DIALECT, (Fields as TmncFBFields).Data), StatusVector, False);
+  fetch_res := Call(FBClient.isc_dsql_fetch(@StatusVector, @FHandle, FB_DIALECT, (Fields as TmncFBFields).FSQLDA), StatusVector, False);
   if (fetch_res = 100) or (CheckStatusVector(StatusVector, [isc_dsql_cursor_err])) then
   begin
     FEOF := True;
@@ -1152,11 +1147,25 @@ begin
   Result := Session.Connection as TmncFBConnection;
 end;
 
-procedure TmncFBCommand.ValidStatement;
+procedure TmncFBCommand.CheckHandle;
 begin
   //CheckTransaction;
   if (FHandle = nil) then
     FBRaiseError(fbceInvalidStatementHandle, [nil]);
+end;
+
+procedure TmncFBCommand.ApplyParams(var XSQLDA: PXSQLDA);
+var
+  i: Integer;
+begin
+  XSQLDA := nil;
+  if Binds.Count > 0 then
+  begin
+    InitSQLDA(XSQLDA, Binds.Count);
+    for i :=0 to Binds.Count -1 do
+    begin
+    end;
+  end;
 end;
 
 procedure TmncFBCommand.DoUnprepare;
@@ -1227,11 +1236,11 @@ begin
           SQLExecProcedure:
           begin
             //Params is already created and have the items
-            InitSQLDA(Params.FData, Params.Count);
+            InitSQLDA(Params.FSQLDA, Params.Count);
 
-            Call(FBClient.isc_dsql_describe_bind(@StatusVector, @FHandle, FB_DIALECT, Params.Data), StatusVector, True);
+            Call(FBClient.isc_dsql_describe_bind(@StatusVector, @FHandle, FB_DIALECT, Params.FSQLDA), StatusVector, True);
 
-            p := @Params.Data^.sqlvar[0];
+            p := @Params.FSQLDA^.sqlvar[0];
             for i := 0 to Params.Count - 1 do
             begin
               aParam := (Params.Items[i] as TmncFBParam);
@@ -1269,11 +1278,11 @@ begin
                 else
                   Fields.Clear;
 
-                InitSQLDA(Fields.FData, c);
+                InitSQLDA(Fields.FSQLDA, c);
 
-                Call(FBClient.isc_dsql_describe(@StatusVector, @FHandle, FB_DIALECT, Fields.Data), StatusVector, True);
-                p := @Fields.Data^.sqlvar[0];
-                for i := 0 to Fields.Data^.sqld - 1 do
+                Call(FBClient.isc_dsql_describe(@StatusVector, @FHandle, FB_DIALECT, Fields.SQLDA), StatusVector, True);
+                p := @Fields.SQLDA^.sqlvar[0];
+                for i := 0 to Fields.SQLDA^.sqld - 1 do
                 begin
                   aColumn := Columns.Add(p^.aliasname, SQLTypeToDataType(p^.sqltype));
                   //aColumn.Name := FBDequoteName(aColumn.Name);
