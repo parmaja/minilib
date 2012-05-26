@@ -36,7 +36,7 @@ function GetStatusErrorMsg(const StatusVector: TStatusVector; Index: Integer; ou
 function StatusVectorAsText(const StatusVector: TStatusVector): string;
 
 procedure FBAlloc(var P; OldSize, NewSize: Integer; ZeroInit: Boolean = True);
-procedure FBFree(var P);
+procedure FBFree(var P: Pointer);
 
 function FBMax(n1, n2: Integer): Integer;
 function FBMin(n1, n2: Integer): Integer;
@@ -477,9 +477,10 @@ begin
       PChar(P)[i] := #0;
 end;
 
-procedure FBFree(var P);
+procedure FBFree(var P: Pointer);
 begin
-  FreeMem(Pointer(P));
+  FreeMem(P);
+  P := nil;
 end;
 
 function GetInfoReqRecord(Buffer: PChar; Flag: Byte): Integer;

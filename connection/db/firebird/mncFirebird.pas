@@ -223,11 +223,13 @@ type
     procedure SetCursor(AValue: string);
     procedure SetSession(const AValue: TmncFBSession);
     procedure FreeHandle;
+    //ApplyParams Very dangrouse function, be sure not free it with SQLVAR sqldata and sqlind, becuase it is shared with params sqldata
+    procedure AllocateBinds(var XSQLDA: PXSQLDA);
+    procedure DeallocateBinds(var XSQLDA: PXSQLDA);
     procedure InternalPrepare;
   protected
     function Call(ErrCode: ISC_STATUS; StatusVector: TStatusVector; RaiseError: Boolean): ISC_STATUS;
     procedure CheckHandle;//TODO remove it
-    procedure ApplyParams(var XSQLDA: PXSQLDA);
     procedure DoUnprepare; override;
     procedure DoPrepare; override;
     procedure DoExecute; override;
@@ -261,7 +263,7 @@ type
 
 implementation
 
-procedure InitSQLDA(var Data: PXSQLDA; New: Integer);
+procedure InitSQLDA(var Data: PXSQLDA; New: Integer; Clean: Boolean = True);
 var
   old: Integer;
 var
@@ -273,7 +275,8 @@ begin
   else
     old := Data^.sqln;
 
-  if new < old then
+
+  if Clean and (new < old) then
   begin
     p := @Data^.sqlvar[new];
     for i := new to old - 1 do
@@ -289,23 +292,25 @@ begin
   Data^.sqln := New;
 end;
 
-procedure FreeSQLDA(var Data: PXSQLDA);
+procedure FreeSQLDA(var Data: PXSQLDA; Clean: Boolean = True);
 var
   p: PXSQLVAR;
   i: Integer;
 begin
   if Data <> nil then
   begin
-    p := @Data^.sqlvar[0];
-    for i := 0 to Data.sqln - 1 do
+    if Clean then
     begin
-      FBFree(p^.sqldata);
-      FBFree(p^.sqlind);
-      p := Pointer(PAnsiChar(p) + XSQLVar_Size);
+      p := @Data^.sqlvar[0];
+      for i := 0 to Data.sqln - 1 do
+      begin
+        FBFree(p^.sqldata);
+        FBFree(p^.sqlind);
+        p := Pointer(PAnsiChar(p) + XSQLVar_Size);
+      end;
     end;
-    FreeMem(Data);
+    FBFree(Data);
   end;
-  Data := nil;
 end;
 
 { TmncFBConnection }
@@ -1058,30 +1063,36 @@ procedure TmncFBCommand.DoExecute;
 var
   i: Integer;
   StatusVector: TStatusVector;
+  BindsData: PXSQLDA;
 begin
   CheckHandle;
-  case FSQLType of
-    SQLSelect:
-      begin
-        Call(FBClient.isc_dsql_execute2(@StatusVector,  @Session.Handle, @FHandle,  FB_DIALECT,
-          (Params as TmncFBParams).FSQLDA, nil), StatusVector, True);
+  AllocateBinds(BindsData);
+  try
+    case FSQLType of
+      SQLSelect:
+        begin
+          Call(FBClient.isc_dsql_execute2(@StatusVector,  @Session.Handle, @FHandle,
+            FB_DIALECT, BindsData, nil), StatusVector, True);
 
-        if FCursor <> '' then
-          Call(FBClient.isc_dsql_set_cursor_name(@StatusVector, @FHandle, PAnsiChar(FCursor), 0), StatusVector, True);
-        FActive := True;
-        FBOF := True;
-        FEOF := False;
-      end;
-    SQLExecProcedure:
-      begin
- {       Call(FBClient.isc_dsql_execute2(@StatusVector,
-          Session.Handle, FHandle, FB_DIALECT,
-          FSQLParams.Data, FSQLCurrent.Data), StatusVector, True);}//todo
-      end
-  else
-    Call(FBClient.isc_dsql_execute(@StatusVector,
-      @Session.Handle, @FHandle, FB_DIALECT,
-      (Params as TmncFBParams).FSQLDA), StatusVector, True)
+          if FCursor <> '' then
+            Call(FBClient.isc_dsql_set_cursor_name(@StatusVector, @FHandle, PAnsiChar(FCursor), 0), StatusVector, True);
+          FActive := True;
+          FBOF := True;
+          FEOF := False;
+        end;
+      SQLExecProcedure:
+        begin
+          Call(FBClient.isc_dsql_execute2(@StatusVector,
+            @Session.Handle, @FHandle, FB_DIALECT,
+            BindsData, (Params as TmncFBParams).SQLDA), StatusVector, True);
+        end
+    else
+      Call(FBClient.isc_dsql_execute(@StatusVector,
+        @Session.Handle, @FHandle, FB_DIALECT,
+        BindsData), StatusVector, True)
+    end;
+  finally
+    DeallocateBinds(BindsData);
   end;
 end;
 
@@ -1181,18 +1192,31 @@ begin
     FBRaiseError(fbceInvalidStatementHandle, [nil]);
 end;
 
-procedure TmncFBCommand.ApplyParams(var XSQLDA: PXSQLDA);
+procedure TmncFBCommand.AllocateBinds(var XSQLDA: PXSQLDA);
 var
   i: Integer;
+  p: PXSQLVAR;
+  x: PXSQLDA;
 begin
   XSQLDA := nil;
-  if Binds.Count > 0 then
+  if (Binds.Count > 0) then
   begin
+    x := (Params as TmncFBParams).SQLDA;
+
     InitSQLDA(XSQLDA, Binds.Count);
+    move(x^, XSQLDA^, sizeof(TXSQLDA) - Sizeof(TXSQLVAR)); //minus first value because it is included with the size of TXSQLDA
+    p := @XSQLDA^.sqlvar[0];
     for i :=0 to Binds.Count -1 do
     begin
+      move((Binds[i].Param as TmncFBParam).FSQLVAR.XSQLVar^, p^, sizeof(TXSQLVAR));
+      p := Pointer(PAnsiChar(p) + XSQLVar_Size);
     end;
   end;
+end;
+
+procedure TmncFBCommand.DeallocateBinds(var XSQLDA: PXSQLDA);
+begin
+  FreeSQLDA(XSQLDA, False);
 end;
 
 procedure TmncFBCommand.DoUnprepare;
