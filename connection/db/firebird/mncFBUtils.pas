@@ -66,7 +66,7 @@ function GetAliasName(FileName: string): string;
 function GetAliasFile(AliasName: string): string;
 procedure SetAliasFile(AliasName, FileName: string);
 
-procedure FBHostInfo(const Host, UserName, Password, Role, CharacterSet: string; vParams: TStrings; CachedPasswords: Boolean);
+procedure FBHostInfo(const Host, UserName, Password, Role, CharacterSet: string; vParams: TStrings);
 procedure GenerateDPB(sl: TStrings; out DPB: AnsiString; var DPBLength: Short);
 procedure GenerateTPB(sl: TStrings; out TPB: AnsiString; var TPBLength: Short);
 
@@ -692,15 +692,8 @@ begin
   end;
 end;
 
-procedure FBHostInfo(const Host, UserName, Password, Role, CharacterSet: string; vParams: TStrings; CachedPasswords: Boolean);
+procedure FBHostInfo(const Host, UserName, Password, Role, CharacterSet: string; vParams: TStrings);
 begin
-{  if CachedPasswords and (FBConfig[Host] <> nil) then
-  begin
-    if (vParams.IndexOfName(DPBConstantNames[isc_dpb_user_name]) < 0) and (FBConfig[Host].UserName <> '') then
-      vParams.Values[DPBConstantNames[isc_dpb_user_name]] := FBConfig[Host].UserName;
-    if (vParams.IndexOfName(DPBConstantNames[isc_dpb_password]) < 0) and (FBConfig[Host].Password <> '') then
-      vParams.Values[DPBConstantNames[isc_dpb_password]] := FBConfig[Host].Password;
-  end;}
   if (vParams.IndexOfName(DPBConstantNames[isc_dpb_user_name]) < 0) or (UserName <> '') then
     vParams.Values[DPBConstantNames[isc_dpb_user_name]] := UserName;
   if (vParams.IndexOfName(DPBConstantNames[isc_dpb_password]) < 0) or (Password <> '') then

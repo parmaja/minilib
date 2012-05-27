@@ -35,8 +35,6 @@ type
   TmncFBConnection = class(TmncConnection)
   private
     FHandle: TISC_DB_HANDLE;
-    FDialect: Integer;
-    FCachedPasswords: Boolean;
     FCharacterSet: string;
     FRole: string;
     FDPB: PChar;
@@ -58,7 +56,6 @@ type
     constructor Create;
     function GetVersion: string;
     procedure Execute(SQL: string);
-    property CachedPasswords:Boolean read FCachedPasswords write FCachedPasswords default False;
     property Role: string read FRole write FRole;
     property CharacterSet: string read FCharacterSet write FCharacterSet;
     property Handle: TISC_DB_HANDLE read FHandle;
@@ -405,12 +402,10 @@ var
   aParams: TStringList;
   StatusVector: TStatusVector;
 begin
-  FDialect := FB_DIALECT;
-
   aParams := TStringList.Create;
   try
     aParams.Assign(Params);
-    FBHostInfo(Host, UserName, Password, Role, CharacterSet, aParams, CachedPasswords);
+    FBHostInfo(Host, UserName, Password, Role, CharacterSet, aParams);
     GenerateDPB(aParams, DPB, FDPBLength);
   finally
     aParams.Free;
@@ -424,9 +419,8 @@ begin
     FHandle := nil;
     FBRaiseError(StatusVector);
   end;
-  FDialect := GetDBSQLDialect;
-  if (FDialect < FB_DIALECT) then
-    raise EFBError.Create(-1, 'This database not dialect ' + IntToStr(FB_DIALECT))
+  if (GetDBSQLDialect < FB_DIALECT) then
+    raise EFBError.Create(-1, 'This database not dialect 3, other dialects not supported')
 
 {    for i := 0 to FEventNotifiers.Count - 1 do
       if IFBEventNotifier(FEventNotifiers[i]).GetAutoRegister then
@@ -449,7 +443,6 @@ begin
     FBRaiseError(StatusVector)
   else
     FHandle := nil;
-  FDialect := FB_DIALECT;
 end;
 
 { TmncFBSession }
