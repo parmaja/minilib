@@ -70,8 +70,8 @@ procedure FBHostInfo(const Host, UserName, Password, Role, CharacterSet: string;
 procedure GenerateDPB(sl: TStrings; out DPB: AnsiString; var DPBLength: Short);
 procedure GenerateTPB(sl: TStrings; out TPB: AnsiString; var TPBLength: Short);
 
-function FBComposeConnectionString(DatabaseName, Host, Port: string; IsEmbed: Boolean; Protocol: TFBProtocol = dpTCP): string;
-procedure FBDecomposeConnectionString(DatabaseName: string; var Host, FileName: string; var Protocol: TFBProtocol);
+function FBComposeConnectionString(DatabaseName, Host, Port: string; IsEmbed: Boolean): string;
+procedure FBDecomposeConnectionString(DatabaseName: string; var Host, FileName: string);
 
 function SQLTypeToDataType(SQLType: Integer):TmncDataType;
 
@@ -892,70 +892,37 @@ begin
   end;
 end;
 
-function FBComposeConnectionString(DatabaseName, Host, Port: string; IsEmbed: Boolean; Protocol: TFBProtocol = dpTCP): string;
+function FBComposeConnectionString(DatabaseName, Host, Port: string; IsEmbed: Boolean): string;
+var
+  IsLocal: Boolean;
 begin
-  if IsEmbed and (Host = '') then
+  IsLocal := IsEmbed and (Host = '');
+
+  if not IsLocal and (Host <> '') then
   begin
-    Protocol := dpLocal;
-  end;
-
-  if not IsEmbed and (Protocol <> dpLocal) and (Host = '') then
-    Host := 'localhost';
-
-  if (Port <> '') and (Host <> '') and (AnsiPos('/', Host) = 0) then
-    Host := Host + '/' + Port;
-
-  case Protocol of
-    dpTCP: Result := Host + ':' + DatabaseName;
-    dpNamedPipe: Result := '\\' + Host + '\' + DatabaseName;
-    dpSPX: Result := Host + '@' + DatabaseName;
-    dpLocal: Result := DatabaseName;
-  end;
+    if (Port <> '') and (AnsiPos('/', Host) = 0) then
+      Host := Host + '/' + Port;
+    Result := Host + ':' + DatabaseName;
+  end
+  else
+    Result := DatabaseName;
 end;
 
-procedure FBDecomposeConnectionString(DatabaseName: string; var Host, FileName: string; var Protocol: TFBProtocol);
+procedure FBDecomposeConnectionString(DatabaseName: string; var Host, FileName: string);
 var
-  Idx1, Idx2: Integer;
+  p: Integer;
   st: string;
 begin
-  if Pos('\\', DatabaseName) <> 0 then
+  p := Pos(':', DatabaseName);
+  if (p = 0) {$ifdef Windows}or (p = 2){$endif} then  //filename 'c:\blababa'
   begin
-    Protocol := dpNamedPipe;
-    st := Copy(DatabaseName, 3, Length(DatabaseName));
-    Idx1 := Pos('\', st);
-    if Idx1 = 0 then
-      FBRaiseError(fbceUnknownError, [nil])
-    else
-    begin
-      Host := Copy(st, 1, Idx1 - 1);
-      FileName := Copy(st, Idx1 + 1, Length(st));
-    end;
+    FileName := DatabaseName;
+    Host := '';
   end
   else
   begin
-    Idx1 := Pos(':', DatabaseName);
-    if (Idx1 = 0) or (Idx1 = 2) then
-    begin
-      FileName := DatabaseName;
-      Host := '';
-      Protocol := dpTCP;
-    end
-    else
-    begin
-      Idx2 := Pos('@', DatabaseName);
-      if Idx2 = 0 then
-      begin
-        Protocol := dpTCP;
-        Host := Copy(DatabaseName, 1, Idx1 - 1);
-        FileName := Copy(DatabaseName, Idx1 + 1, Length(DatabaseName));
-      end
-      else
-      begin
-        Protocol := dpSPX;
-        Host := Copy(DatabaseName, 1, Idx2 - 1);
-        FileName := Copy(DatabaseName, Idx2 + 1, Length(DatabaseName));
-      end;
-    end;
+    Host := Copy(DatabaseName, 1, p - 1);
+    FileName := Copy(DatabaseName, p + 1, Length(DatabaseName));
   end;
 end;
 

@@ -399,7 +399,7 @@ type
 
   Tisc_encode_timestamp = procedure(tm_date: PCTimeStructure; ib_timestamp: PISC_TIMESTAMP); isc_export;
 
-  Tisc_event_block = function(event_buffer: PPChar; result_buffer: PPChar; id_count: UShort; const event_list: array of PChar): ISC_LONG; isc_export_vararg;
+  Tisc_event_block = function(event_buffer: PPChar; result_buffer: PPChar; id_count: UShort; var event_list: array of PChar): ISC_LONG; isc_export_vararg;
 
   Tisc_event_block_a = function(event_buffer: PPChar; result_buffer: PPChar; id_count: UShort; event_list: PPChar): ISC_LONG; isc_export;
 

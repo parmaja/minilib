@@ -38,12 +38,10 @@ type
     FDialect: Integer;
     FCachedPasswords: Boolean;
     FCharacterSet: string;
-    FProtocol: TFBProtocol;
     FRole: string;
     FDPB: PChar;
     FDPBLength: Short;
     function GetIsReadOnly: Boolean;
-    procedure SetProtocol(const AValue: TFBProtocol);
   protected
     function GetBaseLevel: Long;
     function GetDBSQLDialect: Integer;
@@ -63,7 +61,6 @@ type
     property CachedPasswords:Boolean read FCachedPasswords write FCachedPasswords default False;
     property Role: string read FRole write FRole;
     property CharacterSet: string read FCharacterSet write FCharacterSet;
-    property Protocol: TFBProtocol read FProtocol write SetProtocol default dpTCP;
     property Handle: TISC_DB_HANDLE read FHandle;
     property IsReadOnly: Boolean read GetIsReadOnly;
   end;
@@ -333,12 +330,6 @@ begin
   Result := String(PChar(@local_buffer[5]));
 end;
 
-procedure TmncFBConnection.SetProtocol(const AValue: TFBProtocol);
-begin
-  if FProtocol =AValue then exit;
-  FProtocol :=AValue;
-end;
-
 function TmncFBConnection.GetLongDatabaseInfo(Command: Integer): Integer;
 var
   l: Integer;
@@ -426,7 +417,7 @@ begin
   end;
   FBAlloc(FDPB, 0, FDPBLength);
   Move(DPB[1], FDPB[0], FDPBLength);
-  aDatabaseName := FBComposeConnectionString(Resource, Host, Port, FBClient.IsEmbed, Protocol);
+  aDatabaseName := FBComposeConnectionString(Resource, Host, Port, FBClient.IsEmbed);
   if Call(FBClient.isc_attach_database(@StatusVector, Length(aDatabaseName),
     PChar(aDatabaseName), @FHandle, FDPBLength, FDPB), StatusVector, False) > 0 then
   begin

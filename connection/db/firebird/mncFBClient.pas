@@ -25,8 +25,6 @@ type
   EFBClientError = class(Exception)
   end;
 
-  TFBProtocol = (dpTCP, dpNamedPipe, dpSPX, dpLocal);
-
   TCustomFBClient = class(TObject)
   private
     FLibrary: THandle;
@@ -39,7 +37,7 @@ type
     Fisc_sqlcode: Tisc_sqlcode;
     Fisc_sql_interprete: Tisc_sql_interprete;
     Ffb_interpret: Tfb_interpret;
-    Fisc_interprete:Tisc_interprete;
+    Fisc_interprete: Tisc_interprete;
     Fisc_vax_integer: Tisc_vax_integer;
     Fisc_portable_integer: Tisc_portable_integer;
     Fisc_blob_info: Tisc_blob_info;
@@ -228,11 +226,9 @@ type
       event_function: TISC_EVENT_CALLBACK; event_function_arg: PVoid): ISC_STATUS;
     function isc_rollback_retaining(status_vector: PISC_STATUS; tran_handle: PISC_TR_HANDLE): ISC_STATUS;
     function isc_rollback_transaction(status_vector: PISC_STATUS; tran_handle: PISC_TR_HANDLE): ISC_STATUS;
-    function isc_start_multiple(status_vector: PISC_STATUS; tran_handle: PISC_TR_HANDLE;
-      db_handle_count: Short; teb_vector_address: PISC_TEB): ISC_STATUS;
+    function isc_start_multiple(status_vector: PISC_STATUS; tran_handle: PISC_TR_HANDLE; db_handle_count: Short; teb_vector_address: PISC_TEB): ISC_STATUS;
     function isc_sqlcode(status_vector: PISC_STATUS): ISC_LONG;
-    procedure isc_sql_interprete(sqlcode: Short; buffer: PAnsiChar;
-      buffer_length: Short);
+    procedure isc_sql_interprete(sqlcode: Short; buffer: PAnsiChar; buffer_length: Short);
     function isc_vax_integer(buffer: PAnsiChar; length: Short): ISC_LONG;
     function isc_portable_integer(buffer: PAnsiChar; length: Short): ISC_INT64;
     // Security Functions
