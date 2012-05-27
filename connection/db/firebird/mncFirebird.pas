@@ -22,7 +22,7 @@ interface
 uses
   Classes, SysUtils, Variants,
   mncConnections, mncSQL,
-  mncFBTypes, mncFBHeader, mncFBErrors, mncFBUtils, mncFBClient, mncFBStrings,
+  mncFBTypes, mncFBHeader, mncFBErrors, mncFBUtils, mncFBClient,
   mncSQLDA;
 
 const
@@ -510,15 +510,8 @@ end;
 
 procedure TmncFBSession.DoStop(How: TmncSessionAction; Retaining: Boolean);
 var
-  status: ISC_STATUS;
   StatusVector: TStatusVector;
 begin
-  if not Retaining then
-  try
-    //EndSQLObjects;
-  finally
-  end;
-
   case How of
     sdaCommit:
     begin
@@ -535,13 +528,6 @@ begin
         Call(FBClient.isc_rollback_retaining(@StatusVector, @FHandle), StatusVector, True);
     end;
   end;
-{  if ((Force) and (status > 0)) then
-    status := Call(FBClient.isc_rollback_transaction(@StatusVector, FHandle), StatusVector, True);
-    if not Retaining and Force then
-      FHandle := nil
-    if (status > 0) then
-    FBRaiseError(StatusVector);
-}
 end;
 
 procedure TmncFBConnection.Execute(SQL: string);
@@ -1061,11 +1047,11 @@ end;
 
 procedure TmncFBCommand.DoExecute;
 var
-  i: Integer;
   StatusVector: TStatusVector;
   BindsData: PXSQLDA;
 begin
   CheckHandle;
+  BindsData := nil;
   AllocateBinds(BindsData);
   try
     case FSQLType of

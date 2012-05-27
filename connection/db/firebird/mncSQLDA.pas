@@ -30,7 +30,7 @@ interface
 
 uses
   SysUtils, Classes, Variants,
-  mncFBHeader, mncFBTypes, mncFBUtils, mncFBErrors, mncFBStrings, mncFBClient, mncFBBlob;
+  mncFBHeader, mncFBTypes, mncFBUtils, mncFBErrors, mncFBClient, mncFBBlob;
 
 type
 

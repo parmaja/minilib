@@ -1,3 +1,4 @@
+unit mncFBBlob;
 {**
  *  This file is part of the "Mini Connections"
  *
@@ -6,14 +7,10 @@
  * @author    Zaher Dirkey <zaher at parmaja dot com>
  *}
 
-{$M+}
-{$H+}
+{$M+}{$H+}
 {$IFDEF FPC}
-{$mode delphi}
+{$mode objfpc}
 {$ENDIF}
-
-unit mncFBBlob;
-
 interface
 
 uses
@@ -186,7 +183,7 @@ begin
     bStream := Bopen(BlobID, DBHandle, TRHandle, @s[1]);
     try
       p := nil;
-      while bStream.bstr_cnt>0 do
+      while bStream^.bstr_cnt>0 do
       begin
         if aPos>=aSize then
         begin
@@ -208,7 +205,7 @@ end;
 
 { TFBBlobStream }
 
-constructor TFBBlobStream.Create;
+constructor TFBBlobStream.Create(DBHandle: PISC_DB_HANDLE; TRHandle: PISC_TR_HANDLE);
 begin
   inherited Create;
   FDBHandle := DBHandle;
@@ -473,10 +470,10 @@ begin
 end;
 
 function putb(x: Char; p: PBSTREAM): Int;
-(*  The C-macro reads like this:
+{  The C-macro reads like this:
    putb(x,p) ((x == '\n' || (!(--(p)->bstr_cnt))) ?      // then
      BLOB_put (x,p) :                                    // else
-     ((int) (*(p)->bstr_ptr++ = (unsigned) (x)))) *)
+     ((int) (*(p)->bstr_ptr++ = (unsigned) (x)))) }
 begin
   Dec(p^.bstr_cnt);
   if (x = Chr(Int('n') - Int('a'))) or (p^.bstr_cnt = 0) then
@@ -490,10 +487,10 @@ begin
 end;
 
 function putbx(x: Char; p: PBSTREAM): Int;
-(*  The C-macro reads like this:
+{  The C-macro reads like this:
    putbx(x,p) ((!(--(p)->bstr_cnt)) ?    // then
      BLOB_put (x,p) :                    // else
-     ((int) (*(p)->bstr_ptr++ = (unsigned) (x)))) *)
+     ((int) (*(p)->bstr_ptr++ = (unsigned) (x)))) }
 begin
   Dec(p^.bstr_cnt);
   if (p^.bstr_cnt = 0) then

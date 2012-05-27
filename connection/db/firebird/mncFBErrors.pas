@@ -1,3 +1,4 @@
+unit mncFBErrors;
 {**
  *  This file is part of the "Mini Connections"
  *
@@ -6,13 +7,10 @@
  * @author    Zaher Dirkey <zaher at parmaja dot com>
  *}
 
-{$M+}
-{$H+}
+{$M+}{$H+}
 {$IFDEF FPC}
-{$mode delphi}
+{$mode objfpc}
 {$ENDIF}
-
-unit mncFBErrors;
 
 interface
 

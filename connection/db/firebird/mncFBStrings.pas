@@ -1,3 +1,4 @@
+unit mncFBStrings;
 {**
  *  This file is part of the "Mini Connections"
  *
@@ -6,18 +7,14 @@
  * @author    Zaher Dirkey <zaher at parmaja dot com>
  *}
 
-{$M+}
-{$H+}
+{$M+}{$H+}
 {$IFDEF FPC}
-{$mode delphi}
+{$mode objfpc}
 {$ENDIF}
-
-unit mncFBStrings;
-
 interface
 
 uses
-  mncFBTypes, mncFBHeader;
+  mncFBHeader;
 
 const
   sCRLF = #13#10;

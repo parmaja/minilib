@@ -13,7 +13,7 @@ unit mncFBHeader;
  *}
 
 {$M+}{$H+}
-{$mode delphi}
+{$mode objfpc}
 {$macro on}
 {$ifdef WINDOWS}
   {$define isc_export:=stdcall}
@@ -705,46 +705,6 @@ type
   Tisc_get_client_major_version = function: Integer; isc_export;
   Tisc_get_client_minor_version = function: Integer; isc_export;
 
-(*********************************)
-(** Forms functions             **)
-(*********************************)
-
-  Tisc_compile_map = function(status_vector: PISC_STATUS; form_handle: PISC_FORM_HANDLE; request_handle: PISC_REQ_HANDLE; isc_arg4: PShort; isc_arg5: PChar): ISC_STATUS; isc_export;
-
-  Tisc_compile_menu = function(status_vector: PISC_STATUS; form_handle: PISC_FORM_HANDLE; request_handle: PISC_REQ_HANDLE; isc_arg4: PShort; isc_arg5: PChar): ISC_STATUS; isc_export;
-
-  Tisc_compile_sub_map = function(status_vector: PISC_STATUS; win_handle: PISC_WIN_HANDLE; request_handle: PISC_REQ_HANDLE; isc_arg4: PShort; isc_arg5: PChar): ISC_STATUS; isc_export;
-
-  Tisc_create_window = function(status_vector: PISC_STATUS; win_handle: PISC_WIN_HANDLE; isc_arg3: PShort; isc_arg4: PChar; isc_arg5: PShort; isc_arg6: PShort): ISC_STATUS; isc_export;
-
-  Tisc_delete_window = function(status_vector: PISC_STATUS; win_handle: PISC_WIN_HANDLE): ISC_STATUS; isc_export;
-
-  Tisc_drive_form = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; tran_handle: PISC_TR_HANDLE; win_handle: PISC_WIN_HANDLE; request_handle: PISC_REQ_HANDLE; isc_arg6: PUChar; isc_arg7: PUChar): ISC_STATUS; isc_export;
-
-  Tisc_drive_menu = function(status_vector: PISC_STATUS; win_handle: PISC_WIN_HANDLE; request_handle: PISC_REQ_HANDLE; isc_arg4: PShort; isc_arg5: PChar; isc_arg6: PShort; isc_arg7: PChar; isc_arg8: PShort; isc_arg9: PShort; isc_arg10: PChar; isc_arg11: PISC_LONG): ISC_STATUS; isc_export;
-
-  Tisc_form_delete = function(status_vector: PISC_STATUS; form_handle: PISC_FORM_HANDLE): ISC_STATUS; isc_export;
-
-  Tisc_form_fetch = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; tran_handle: PISC_TR_HANDLE; request_handle: PISC_REQ_HANDLE; isc_arg5: PUChar): ISC_STATUS; isc_export;
-
-  Tisc_form_insert = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; tran_handle: PISC_TR_HANDLE; request_handle: PISC_REQ_HANDLE; isc_arg5: PUChar): ISC_STATUS; isc_export;
-
-  Tisc_get_entree = function(status_vector: PISC_STATUS; request_handle: PISC_REQ_HANDLE; isc_arg3: PShort; isc_arg4: PChar; isc_arg5: PISC_LONG; isc_arg6: PShort): ISC_STATUS; isc_export;
-
-  Tisc_initialize_menu = function(status_vector: PISC_STATUS; request_handle: PISC_REQ_HANDLE): ISC_STATUS; isc_export;
-
-  Tisc_menu = function(status_vector: PISC_STATUS; win_handle: PISC_WIN_HANDLE; request_handle: PISC_REQ_HANDLE; isc_arg4: PShort; isc_arg5: PChar): ISC_STATUS; isc_export;
-
-  Tisc_load_form = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; tran_handle: PISC_TR_HANDLE; form_handle: PISC_FORM_HANDLE; isc_arg5: PShort; isc_arg6: PChar): ISC_STATUS; isc_export;
-
-  Tisc_pop_window = function(status_vector: PISC_STATUS; win_handle: PISC_WIN_HANDLE): ISC_STATUS; isc_export;
-
-  Tisc_put_entree = function(status_vector: PISC_STATUS; request_handle: PISC_REQ_HANDLE; isc_arg3: PShort; isc_arg4: PChar; isc_arg5: PISC_LONG): ISC_STATUS; isc_export;
-
-  Tisc_reset_form = function(status_vector: PISC_STATUS; request_handle: PISC_REQ_HANDLE): ISC_STATUS; isc_export;
-
-  Tisc_suspend_window = function(status_vector: PISC_STATUS; win_handle: PISC_WIN_HANDLE): ISC_STATUS; isc_export;
-
 (*****************************************************)
 (** Actions to pass to the blob filter (ctl_source) **)
 (*****************************************************)
@@ -1321,6 +1281,612 @@ const
   isc_spb_lic_id               = 6;
   isc_spb_lic_desc             = 7;
 
+(*****************************************)
+(* Parameters for isc_action_svc_backup  *)
+(*****************************************)
+
+  isc_spb_bkp_file = 5;
+  isc_spb_bkp_factor = 6;
+  isc_spb_bkp_length = 7;
+  isc_spb_bkp_ignore_checksums = $01;
+  isc_spb_bkp_ignore_limbo = $02;
+  isc_spb_bkp_metadata_only = $04;
+  isc_spb_bkp_no_garbage_collect = $08;
+  isc_spb_bkp_old_descriptions = $10;
+  isc_spb_bkp_non_transportable = $20;
+  isc_spb_bkp_convert = $40;
+  isc_spb_bkp_expand = $80;
+  isc_spb_bkp_no_triggers = $8000;
+
+(*****************************************)
+(* Parameters for isc_action_svc_properties *)
+(*****************************************)
+
+  isc_spb_prp_page_buffers = 5;
+  isc_spb_prp_sweep_interval = 6;
+  isc_spb_prp_shutdown_db = 7;
+  isc_spb_prp_deny_new_attachments = 9;
+  isc_spb_prp_deny_new_transactions = 10;
+  isc_spb_prp_reserve_space = 11;
+  isc_spb_prp_write_mode = 12;
+  isc_spb_prp_access_mode = 13;
+  isc_spb_prp_set_sql_dialect = 14;
+  isc_spb_prp_activate = $0100;
+  isc_spb_prp_db_online = $0200;
+  isc_spb_prp_force_shutdown            =  41;
+  isc_spb_prp_attachments_shutdown      =  42;
+  isc_spb_prp_transactions_shutdown     =  43;
+  isc_spb_prp_shutdown_mode             =  44;
+  isc_spb_prp_online_mode                = 45;
+
+  isc_spb_prp_sm_normal          = 0;
+  isc_spb_prp_sm_multi           = 1;
+  isc_spb_prp_sm_single          = 2;
+  isc_spb_prp_sm_full            = 3;
+
+  isc_spb_prp_res_use_full = 35;
+  isc_spb_prp_res = 36;
+
+(*****************************************)
+(* Parameters for isc_spb_prp_write_mode  *)
+(*****************************************)
+
+  isc_spb_prp_wm_async = 37;
+  isc_spb_prp_wm_sync = 38;
+
+(*****************************************)
+(* Parameters for isc_spb_prp_access_mode *)
+(*****************************************)
+
+  isc_spb_prp_am_readonly = 39;
+  isc_spb_prp_am_readwrite = 40;
+
+(*****************************************)
+(* Parameters for isc_action_svc_repair  *)
+(*****************************************)
+
+  isc_spb_rpr_commit_trans = 15;
+  isc_spb_rpr_rollback_trans = 34;
+  isc_spb_rpr_recover_two_phase = 17;
+  isc_spb_tra_id = 18;
+  isc_spb_single_tra_id = 19;
+  isc_spb_multi_tra_id = 20;
+  isc_spb_tra_state = 21;
+  isc_spb_tra_state_limbo = 22;
+  isc_spb_tra_state_commit = 23;
+  isc_spb_tra_state_rollback = 24;
+  isc_spb_tra_state_unknown = 25;
+  isc_spb_tra_host_site = 26;
+  isc_spb_tra_remote_site = 27;
+  isc_spb_tra_db_path = 28;
+  isc_spb_tra_advise = 29;
+  isc_spb_tra_advise_commit = 30;
+  isc_spb_tra_advise_rollback = 31;
+  isc_spb_tra_advise_unknown = 33;
+  isc_spb_rpr_validate_db = $01;
+  isc_spb_rpr_sweep_db = $02;
+  isc_spb_rpr_mend_db = $04;
+  isc_spb_rpr_list_limbo_trans = $08;
+  isc_spb_rpr_check_db = $10;
+  isc_spb_rpr_ignore_checksum = $20;
+  isc_spb_rpr_kill_shadows = $40;
+  isc_spb_rpr_full = $80;
+
+(*****************************************)
+(* Parameters for isc_action_svc_restore  *)
+(*****************************************)
+
+  isc_spb_res_buffers = 9;
+  isc_spb_res_page_size = 10;
+  isc_spb_res_length = 11;
+  isc_spb_res_access_mode = 12;
+  isc_spb_res_fix_fss_data = 13;
+  isc_spb_res_fix_fss_metadata = 14;
+  isc_spb_res_metadata_only = isc_spb_bkp_metadata_only;
+  isc_spb_res_deactivate_idx = $0100;
+  isc_spb_res_no_shadow = $0200;
+  isc_spb_res_no_validity = $0400;
+  isc_spb_res_one_at_a_time = $0800;
+  isc_spb_res_replace = $1000;
+  isc_spb_res_create = $2000;
+  isc_spb_res_use_all_space = $4000;
+
+(*****************************************)
+(* Parameters for isc_spb_res_access_mode  *)
+(*****************************************)
+
+  isc_spb_res_am_readonly = isc_spb_prp_am_readonly;
+  isc_spb_res_am_readwrite = isc_spb_prp_am_readwrite;
+
+(*****************************************)
+(* Parameters for isc_info_svc_svr_db_info *)
+(*****************************************)
+
+  isc_spb_num_att = 5;
+  isc_spb_num_db = 6;
+
+(*****************************************)
+(* Parameters for isc_info_svc_db_stats  *)
+(*****************************************)
+
+  isc_spb_sts_data_pages = $01;
+  isc_spb_sts_db_log = $02;
+  isc_spb_sts_hdr_pages = $04;
+  isc_spb_sts_idx_pages = $08;
+  isc_spb_sts_sys_relations = $10;
+  isc_spb_sts_record_versions = $20;
+  isc_spb_sts_table = $40;
+  isc_spb_sts_nocreation = $80;
+
+  isc_spb_nbk_level = 5;
+  isc_spb_nbk_file = 6;
+  isc_spb_nbk_direct = 7;
+  isc_spb_nbk_no_triggers = $01;
+
+  isc_spb_trc_id = 1;
+  isc_spb_trc_name = 2;
+  isc_spb_trc_cfg = 3;
+
+(************************************************)
+(** Dynamic Data Definition Language operators **)
+(************************************************)
+
+(********************)
+(** Version number **)
+(********************)
+
+  isc_dyn_version_1 = 1;
+  isc_dyn_eoc = 255;
+
+(********************************)
+(** Operations (may be nested) **)
+(********************************)
+
+  isc_dyn_begin = 2;
+  isc_dyn_end = 3;
+  isc_dyn_if = 4;
+  isc_dyn_def_database = 5;
+  isc_dyn_def_global_fld = 6;
+  isc_dyn_def_local_fld = 7;
+  isc_dyn_def_idx = 8;
+  isc_dyn_def_rel = 9;
+  isc_dyn_def_sql_fld = 10;
+  isc_dyn_def_view = 12;
+  isc_dyn_def_trigger = 15;
+  isc_dyn_def_security_class = 120;
+  isc_dyn_def_dimension = 140;
+  isc_dyn_def_generator = 24;
+  isc_dyn_def_function = 25;
+  isc_dyn_def_filter = 26;
+  isc_dyn_def_function_arg = 27;
+  isc_dyn_def_shadow = 34;
+  isc_dyn_def_trigger_msg = 17;
+  isc_dyn_def_file = 36;
+  isc_dyn_mod_database = 39;
+  isc_dyn_mod_rel = 11;
+  isc_dyn_mod_global_fld = 13;
+  isc_dyn_mod_idx = 102;
+  isc_dyn_mod_local_fld = 14;
+  isc_dyn_mod_sql_fld = 216;
+  isc_dyn_mod_view = 16;
+  isc_dyn_mod_security_class = 122;
+  isc_dyn_mod_trigger = 113;
+  isc_dyn_mod_trigger_msg = 28;
+  isc_dyn_delete_database = 18;
+  isc_dyn_delete_rel = 19;
+  isc_dyn_delete_global_fld = 20;
+  isc_dyn_delete_local_fld = 21;
+  isc_dyn_delete_idx = 22;
+  isc_dyn_delete_security_class = 123;
+  isc_dyn_delete_dimensions = 143;
+  isc_dyn_delete_trigger = 23;
+  isc_dyn_delete_trigger_msg = 29;
+  isc_dyn_delete_filter = 32;
+  isc_dyn_delete_function = 33;
+  isc_dyn_delete_shadow = 35;
+  isc_dyn_grant = 30;
+  isc_dyn_revoke = 31;
+  isc_dyn_def_primary_key = 37;
+  isc_dyn_def_foreign_key = 38;
+  isc_dyn_def_unique = 40;
+  isc_dyn_def_procedure = 164;
+  isc_dyn_delete_procedure = 165;
+  isc_dyn_def_parameter = 135;
+  isc_dyn_delete_parameter = 136;
+
+  isc_dyn_mod_procedure = 175;
+
+  isc_dyn_def_exception = 181;
+  isc_dyn_mod_exception = 182;
+  isc_dyn_del_exception = 183;
+
+  isc_dyn_def_difference =           220;
+  isc_dyn_drop_difference =          221;
+  isc_dyn_begin_backup =             222;
+  isc_dyn_end_backup =               223;
+  isc_dyn_debug_info =               240;
+
+  isc_dyn_view_blr = 43;
+  isc_dyn_view_source = 44;
+  isc_dyn_view_relation = 45;
+  isc_dyn_view_context = 46;
+  isc_dyn_view_context_name = 47;
+
+(************************)
+(** Generic attributes **)
+(************************)
+
+  isc_dyn_rel_name = 50;
+  isc_dyn_fld_name = 51;
+  isc_dyn_new_fld_name = 215;
+  isc_dyn_idx_name = 52;
+  isc_dyn_description = 53;
+  isc_dyn_security_class = 54;
+  isc_dyn_system_flag = 55;
+  isc_dyn_update_flag = 56;
+  isc_dyn_prc_name = 166;
+  isc_dyn_prm_name = 137;
+  isc_dyn_sql_object = 196;
+  isc_dyn_fld_character_set_name = 174;
+
+(**********************************)
+(** Relation specific attributes **)
+(**********************************)
+
+  isc_dyn_rel_dbkey_length = 61;
+  isc_dyn_rel_store_trig = 62;
+  isc_dyn_rel_modify_trig = 63;
+  isc_dyn_rel_erase_trig = 64;
+  isc_dyn_rel_store_trig_source = 65;
+  isc_dyn_rel_modify_trig_source = 66;
+  isc_dyn_rel_erase_trig_source = 67;
+  isc_dyn_rel_ext_file = 68;
+  isc_dyn_rel_sql_protection = 69;
+  isc_dyn_rel_constraint = 162;
+  isc_dyn_delete_rel_constraint = 163;
+
+(**************************************)
+(** Global field specific attributes **)
+(**************************************)
+
+  isc_dyn_fld_type = 70;
+  isc_dyn_fld_length = 71;
+  isc_dyn_fld_scale = 72;
+  isc_dyn_fld_sub_type = 73;
+  isc_dyn_fld_segment_length = 74;
+  isc_dyn_fld_query_header = 75;
+  isc_dyn_fld_edit_string = 76;
+  isc_dyn_fld_validation_blr = 77;
+  isc_dyn_fld_validation_source = 78;
+  isc_dyn_fld_computed_blr = 79;
+  isc_dyn_fld_computed_source = 80;
+  isc_dyn_fld_missing_value = 81;
+  isc_dyn_fld_default_value = 82;
+  isc_dyn_fld_query_name = 83;
+  isc_dyn_fld_dimensions = 84;
+  isc_dyn_fld_not_null = 85;
+  isc_dyn_fld_precision = 86;
+  isc_dyn_fld_char_length = 172;
+  isc_dyn_fld_collation = 173;
+  isc_dyn_fld_default_source = 193;
+  isc_dyn_del_default = 197;
+  isc_dyn_del_validation = 198;
+  isc_dyn_single_validation = 199;
+  isc_dyn_fld_character_set = 203;
+  isc_dyn_del_computed = 242;
+
+(*************************************)
+(** Local field specific attributes **)
+(*************************************)
+
+  isc_dyn_fld_source = 90;
+  isc_dyn_fld_base_fld = 91;
+  isc_dyn_fld_position = 92;
+  isc_dyn_fld_update_flag = 93;
+
+(*******************************)
+(** Index specific attributes **)
+(*******************************)
+
+  isc_dyn_idx_unique = 100;
+  isc_dyn_idx_inactive = 101;
+  isc_dyn_idx_type = 103;
+  isc_dyn_idx_foreign_key = 104;
+  isc_dyn_idx_ref_column = 105;
+  isc_dyn_idx_statistic = 204;
+
+(*********************************)
+(** Trigger specific attributes **)
+(*********************************)
+
+  isc_dyn_trg_type = 110;
+  isc_dyn_trg_blr = 111;
+  isc_dyn_trg_source = 112;
+  isc_dyn_trg_name = 114;
+  isc_dyn_trg_sequence = 115;
+  isc_dyn_trg_inactive = 116;
+  isc_dyn_trg_msg_number = 117;
+  isc_dyn_trg_msg = 118;
+
+(****************************************)
+(** Security Class specific attributes **)
+(****************************************)
+
+  isc_dyn_scl_acl = 121;
+  isc_dyn_grant_user = 130;
+  isc_dyn_grant_proc = 186;
+  isc_dyn_grant_trig = 187;
+  isc_dyn_grant_view = 188;
+  isc_dyn_grant_options = 132;
+  isc_dyn_grant_user_group = 205;
+  isc_dyn_grant_role = 218;
+  isc_dyn_grant_grantor = 245;
+
+(************************************)
+(** Dimension specific information **)
+(************************************)
+
+  isc_dyn_dim_lower = 141;
+  isc_dyn_dim_upper = 142;
+
+(******************************)
+(** File specific attributes **)
+(******************************)
+
+  isc_dyn_file_name = 125;
+  isc_dyn_file_start = 126;
+  isc_dyn_file_length = 127;
+  isc_dyn_shadow_number = 128;
+  isc_dyn_shadow_man_auto = 129;
+  isc_dyn_shadow_conditional = 130;
+
+
+(**********************************)
+(** Function specific attributes **)
+(**********************************)
+
+  isc_dyn_function_name = 145;
+  isc_dyn_function_type = 146;
+  isc_dyn_func_module_name = 147;
+  isc_dyn_func_entry_point = 148;
+  isc_dyn_func_return_argument = 149;
+  isc_dyn_func_arg_position = 150;
+  isc_dyn_func_mechanism = 151;
+  isc_dyn_filter_in_subtype = 152;
+  isc_dyn_filter_out_subtype = 153;
+
+  isc_dyn_description2 = 154;
+  isc_dyn_fld_computed_source2 = 155;
+  isc_dyn_fld_edit_string2 = 156;
+  isc_dyn_fld_query_header2 = 157;
+  isc_dyn_fld_validation_source2 = 158;
+  isc_dyn_trg_msg2 = 159;
+  isc_dyn_trg_source2 = 160;
+  isc_dyn_view_source2 = 161;
+  isc_dyn_xcp_msg2 = 184;
+
+(***********************************)
+(** Generator specific attributes **)
+(***********************************)
+
+  isc_dyn_generator_name = 95;
+  isc_dyn_generator_id = 96;
+
+(***********************************)
+(** Procedure specific attributes **)
+(***********************************)
+
+  isc_dyn_prc_inputs = 167;
+  isc_dyn_prc_outputs = 168;
+  isc_dyn_prc_source = 169;
+  isc_dyn_prc_blr = 170;
+  isc_dyn_prc_source2 = 171;
+  isc_dyn_prc_type = 239;
+
+  isc_dyn_prc_t_selectable        =  1;
+  isc_dyn_prc_t_executable        =  2;
+
+(***********************************)
+(** Parameter specific attributes **)
+(***********************************)
+
+  isc_dyn_prm_number = 138;
+  isc_dyn_prm_type = 139;
+  isc_dyn_prm_mechanism = 241;
+
+(**********************************)
+(** Relation specific attributes **)
+(**********************************)
+
+  isc_dyn_xcp_msg = 185;
+
+(************************************************)
+(** Cascading referential integrity values     **)
+(************************************************)
+  isc_dyn_foreign_key_update = 205;
+  isc_dyn_foreign_key_delete = 206;
+  isc_dyn_foreign_key_cascade = 207;
+  isc_dyn_foreign_key_default = 208;
+  isc_dyn_foreign_key_null = 209;
+  isc_dyn_foreign_key_none = 210;
+
+(*************************)
+(** SQL role values     **)
+(*************************)
+
+  isc_dyn_def_sql_role = 211;
+  isc_dyn_sql_role_name = 212;
+  isc_dyn_grant_admin_options = 213;
+  isc_dyn_del_sql_role = 214;
+
+(**********************************************)
+(* Generators again                           *)
+(**********************************************)
+
+  isc_dyn_delete_generator         = 217;
+
+  isc_dyn_mod_function             = 224;
+  isc_dyn_mod_filter               = 225;
+  isc_dyn_mod_generator            = 226;
+  isc_dyn_mod_sql_role             = 227;
+  isc_dyn_mod_charset              = 228;
+  isc_dyn_mod_collation            = 229;
+  isc_dyn_mod_prc_parameter        = 230;
+
+(***********************)
+(* collation values    *)
+(***********************)
+
+  isc_dyn_def_collation					 = 231;
+  isc_dyn_coll_for_charset				 = 232;
+  isc_dyn_coll_from						 = 233;
+  isc_dyn_coll_attribute					 = 234;
+  isc_dyn_coll_specific_attributes_charset = 235;
+  isc_dyn_coll_specific_attributes		 = 236;
+  isc_dyn_del_collation					 = 237;
+
+  isc_dyn_mapping = 243;
+  isc_dyn_map_role = 1;
+  isc_dyn_unmap_role = 2;
+  isc_dyn_map_user = 3;
+  isc_dyn_unmap_user = 4;
+  isc_dyn_automap_role = 5;
+  isc_dyn_autounmap_role = 6;
+
+  isc_dyn_user = 244;
+  isc_dyn_user_add = 1;
+  isc_dyn_user_mod = 2;
+  isc_dyn_user_del = 3;
+  isc_dyn_user_passwd = 4;
+  isc_dyn_user_first = 5;
+  isc_dyn_user_middle = 6;
+  isc_dyn_user_last = 7;
+  isc_dyn_user_admin = 8;
+  isc_user_end = 0;
+
+  isc_dyn_last_dyn_value           = 247;
+
+(********************************************)
+(** Array slice description language (SDL) **)
+(********************************************)
+
+  isc_sdl_version1 = 1;
+  isc_sdl_eoc = -1;
+  isc_sdl_relation = 2;
+  isc_sdl_rid = 3;
+  isc_sdl_field = 4;
+  isc_sdl_fid = 5;
+  isc_sdl_struct = 6;
+  isc_sdl_variable = 7;
+  isc_sdl_scalar = 8;
+  isc_sdl_tiny_integer = 9;
+  isc_sdl_short_integer = 10;
+  isc_sdl_long_integer = 11;
+  isc_sdl_literal = 12;
+  isc_sdl_add = 13;
+  isc_sdl_subtract = 14;
+  isc_sdl_multiply = 15;
+  isc_sdl_divide = 16;
+  isc_sdl_negate = 17;
+  isc_sdl_eql = 18;
+  isc_sdl_neq = 19;
+  isc_sdl_gtr = 20;
+  isc_sdl_geq = 21;
+  isc_sdl_lss = 22;
+  isc_sdl_leq = 23;
+  isc_sdl_and = 24;
+  isc_sdl_or = 25;
+  isc_sdl_not = 26;
+  isc_sdl_while = 27;
+  isc_sdl_assignment = 28;
+  isc_sdl_label = 29;
+  isc_sdl_leave = 30;
+  isc_sdl_begin = 31;
+  isc_sdl_end = 32;
+  isc_sdl_do3 = 33;
+  isc_sdl_do2 = 34;
+  isc_sdl_do1 = 35;
+  isc_sdl_element = 36;
+
+(**********************************************)
+(** International text interpretation values **)
+(**********************************************)
+
+  isc_interp_eng_ascii = 0;
+  isc_interp_jpn_sjis = 5;
+  isc_interp_jpn_euc = 6;
+
+(*******************)
+(** Blob Subtypes **)
+(*******************)
+
+(** types less than zero are reserved for customer use **)
+
+  isc_blob_untyped = 0;
+
+(** internal subtypes **)
+
+  isc_blob_text = 1;
+  isc_blob_blr = 2;
+  isc_blob_acl = 3;
+  isc_blob_ranges = 4;
+  isc_blob_summary = 5;
+  isc_blob_format = 6;
+  isc_blob_tra = 7;
+  isc_blob_extfile = 8;
+  isc_blob_debug_info = 9;
+  isc_blob_max_predefined_subtype   = 10;
+
+(** the range 20-30 is reserved for dBASE and Paradox types **)
+
+  isc_blob_formatted_memo = 20;
+  isc_blob_paradox_ole = 21;
+  isc_blob_graphic = 22;
+  isc_blob_dbase_ole = 23;
+  isc_blob_typed_binary = 24;
+
+  isc_info_db_SQL_dialect = 62;
+  isc_info_db_read_only = 63;
+  isc_info_db_size_in_pages = 64;
+
+  fb_shut_confirmation                     = 1;
+  fb_shut_preproviders                     = 2;
+  fb_shut_postproviders                    = 4;
+  fb_shut_finish                                   = 8;
+
+  fb_shutrsn_svc_stopped                    =-1;
+  fb_shutrsn_no_connection                  =-2;
+  fb_shutrsn_app_stopped                    =-3;
+  fb_shutrsn_device_removed                 =-4;
+  fb_shutrsn_signal                                 =-5;
+  fb_shutrsn_services                               =-6;
+  fb_shutrsn_exit_called                    =-7;
+
+  fb_cancel_disable                                = 1;
+  fb_cancel_enable                                 = 2;
+  fb_cancel_raise                                  = 3;
+  fb_cancel_abort = 4;
+
+  fb_dbg_version = 1;
+  fb_dbg_end = 255;
+  fb_dbg_map_src2blr = 2;
+  fb_dbg_map_varname = 3;
+  fb_dbg_map_argument = 4;
+
+  fb_dbg_arg_input = 0;
+  fb_dbg_arg_output = 1;
+
+{*********************************}
+{  Information call declarations  }
+{*********************************}
+
+  isc_info_end = 1;
+  isc_info_truncated = 2;
+  isc_info_error = 3;
+  isc_info_data_not_ready = 4;
+  isc_info_length = 126;
+  isc_info_flag_end = 127;
+
 (********************************)
 (** Database information items **)
 (********************************)
@@ -1365,6 +1931,7 @@ const
   isc_info_num_wal_buffers = 38;
   isc_info_wal_buffer_size = 39;
   isc_info_wal_ckpt_length = 40;
+
   isc_info_wal_cur_ckpt_interval = 41;
   isc_info_wal_prv_ckpt_fname = 42;
   isc_info_wal_prv_ckpt_poffset = 43;
@@ -1385,10 +1952,6 @@ const
   isc_info_ppage_errors = 59;
   isc_info_tpage_errors = 60;
   isc_info_set_page_buffers = 61;
-
-  isc_info_db_SQL_dialect = 62;
-  isc_info_db_read_only = 63;
-  isc_info_db_size_in_pages = 64;
 
   frb_info_att_charset = 101;
   isc_info_db_class = 102;
@@ -1662,140 +2225,8 @@ const
   isc_info_sql_stmt_set_generator = 13;
   isc_info_sql_stmt_savepoint = 14;
 
-(*****************************************)
-(* Parameters for isc_action_svc_backup  *)
-(*****************************************)
 
-  isc_spb_bkp_file = 5;
-  isc_spb_bkp_factor = 6;
-  isc_spb_bkp_length = 7;
-  isc_spb_bkp_ignore_checksums = $01;
-  isc_spb_bkp_ignore_limbo = $02;
-  isc_spb_bkp_metadata_only = $04;
-  isc_spb_bkp_no_garbage_collect = $08;
-  isc_spb_bkp_old_descriptions = $10;
-  isc_spb_bkp_non_transportable = $20;
-  isc_spb_bkp_convert = $40;
-  isc_spb_bkp_expand = $80;
-
-(*****************************************)
-(* Parameters for isc_action_svc_properties *)
-(*****************************************)
-
-  isc_spb_prp_page_buffers = 5;
-  isc_spb_prp_sweep_interval = 6;
-  isc_spb_prp_shutdown_db = 7;
-  isc_spb_prp_deny_new_attachments = 9;
-  isc_spb_prp_deny_new_transactions = 10;
-  isc_spb_prp_reserve_space = 11;
-  isc_spb_prp_write_mode = 12;
-  isc_spb_prp_access_mode = 13;
-  isc_spb_prp_set_sql_dialect = 14;
-  isc_spb_prp_activate = $0100;
-  isc_spb_prp_db_online = $0200;
-
-(*****************************************)
-(* Parameters for isc_spb_prp_reserve_space *)
-(*****************************************)
-
-  isc_spb_prp_res_use_full = 35;
-  isc_spb_prp_res = 36;
-
-(*****************************************)
-(* Parameters for isc_spb_prp_write_mode  *)
-(*****************************************)
-
-  isc_spb_prp_wm_async = 37;
-  isc_spb_prp_wm_sync = 38;
-
-(*****************************************)
-(* Parameters for isc_spb_prp_access_mode *)
-(*****************************************)
-
-  isc_spb_prp_am_readonly = 39;
-  isc_spb_prp_am_readwrite = 40;
-
-(*****************************************)
-(* Parameters for isc_action_svc_repair  *)
-(*****************************************)
-
-  isc_spb_rpr_commit_trans = 15;
-  isc_spb_rpr_rollback_trans = 34;
-  isc_spb_rpr_recover_two_phase = 17;
-  isc_spb_tra_id = 18;
-  isc_spb_single_tra_id = 19;
-  isc_spb_multi_tra_id = 20;
-  isc_spb_tra_state = 21;
-  isc_spb_tra_state_limbo = 22;
-  isc_spb_tra_state_commit = 23;
-  isc_spb_tra_state_rollback = 24;
-  isc_spb_tra_state_unknown = 25;
-  isc_spb_tra_host_site = 26;
-  isc_spb_tra_remote_site = 27;
-  isc_spb_tra_db_path = 28;
-  isc_spb_tra_advise = 29;
-  isc_spb_tra_advise_commit = 30;
-  isc_spb_tra_advise_rollback = 31;
-  isc_spb_tra_advise_unknown = 33;
-  isc_spb_rpr_validate_db = $01;
-  isc_spb_rpr_sweep_db = $02;
-  isc_spb_rpr_mend_db = $04;
-  isc_spb_rpr_list_limbo_trans = $08;
-  isc_spb_rpr_check_db = $10;
-  isc_spb_rpr_ignore_checksum = $20;
-  isc_spb_rpr_kill_shadows = $40;
-  isc_spb_rpr_full = $80;
-
-(*****************************************)
-(* Parameters for isc_action_svc_restore  *)
-(*****************************************)
-
-  isc_spb_res_buffers = 9;
-  isc_spb_res_page_size = 10;
-  isc_spb_res_length = 11;
-  isc_spb_res_access_mode = 12;
-  isc_spb_res_deactivate_idx = $0100;
-  isc_spb_res_no_shadow = $0200;
-  isc_spb_res_no_validity = $0400;
-  isc_spb_res_one_at_a_time = $0800;
-  isc_spb_res_replace = $1000;
-  isc_spb_res_create = $2000;
-  isc_spb_res_use_all_space = $4000;
-
-(*****************************************)
-(* Parameters for isc_spb_res_access_mode  *)
-(*****************************************)
-
-  isc_spb_res_am_readonly = isc_spb_prp_am_readonly;
-  isc_spb_res_am_readwrite = isc_spb_prp_am_readwrite;
-
-(*****************************************)
-(* Parameters for isc_info_svc_svr_db_info *)
-(*****************************************)
-
-  isc_spb_num_att = 5;
-  isc_spb_num_db = 6;
-
-(*****************************************)
-(* Parameters for isc_info_svc_db_stats  *)
-(*****************************************)
-
-  isc_spb_sts_data_pages = $01;
-  isc_spb_sts_db_log = $02;
-  isc_spb_sts_hdr_pages = $04;
-  isc_spb_sts_idx_pages = $08;
-  isc_spb_sts_sys_relations = $10;
-  isc_spb_sts_record_versions = $20;
-  isc_spb_sts_table = $40;
-  isc_spb_sts_nocreation = $80;
-
-(*************************************)
-(*  Server configuration key values  *)
-(*************************************)
-
-(*****************)
-(** Error codes **)
-(*****************)
+{ Error codes from  }
 
   isc_facility = 20;
   isc_err_base = 335544320;
@@ -1816,471 +2247,7 @@ const
   isc_arg_netware = 16;
   isc_arg_win32 = 17;
   isc_arg_warning = 18;
-
-(************************************************)
-(** Dynamic Data Definition Language operators **)
-(************************************************)
-
-(********************)
-(** Version number **)
-(********************)
-
-  isc_dyn_version_1 = 1;
-  isc_dyn_eoc = 255;
-
-(********************************)
-(** Operations (may be nested) **)
-(********************************)
-
-  isc_dyn_begin = 2;
-  isc_dyn_end = 3;
-  isc_dyn_if = 4;
-  isc_dyn_def_database = 5;
-  isc_dyn_def_global_fld = 6;
-  isc_dyn_def_local_fld = 7;
-  isc_dyn_def_idx = 8;
-  isc_dyn_def_rel = 9;
-  isc_dyn_def_sql_fld = 10;
-  isc_dyn_def_view = 12;
-  isc_dyn_def_trigger = 15;
-  isc_dyn_def_security_class = 120;
-  isc_dyn_def_dimension = 140;
-  isc_dyn_def_generator = 24;
-  isc_dyn_def_function = 25;
-  isc_dyn_def_filter = 26;
-  isc_dyn_def_function_arg = 27;
-  isc_dyn_def_shadow = 34;
-  isc_dyn_def_trigger_msg = 17;
-  isc_dyn_def_file = 36;
-  isc_dyn_mod_database = 39;
-  isc_dyn_mod_rel = 11;
-  isc_dyn_mod_global_fld = 13;
-  isc_dyn_mod_idx = 102;
-  isc_dyn_mod_local_fld = 14;
-  isc_dyn_mod_sql_fld = 216;
-  isc_dyn_mod_view = 16;
-  isc_dyn_mod_security_class = 122;
-  isc_dyn_mod_trigger = 113;
-  isc_dyn_mod_trigger_msg = 28;
-  isc_dyn_delete_database = 18;
-  isc_dyn_delete_rel = 19;
-  isc_dyn_delete_global_fld = 20;
-  isc_dyn_delete_local_fld = 21;
-  isc_dyn_delete_idx = 22;
-  isc_dyn_delete_security_class = 123;
-  isc_dyn_delete_dimensions = 143;
-  isc_dyn_delete_trigger = 23;
-  isc_dyn_delete_trigger_msg = 29;
-  isc_dyn_delete_filter = 32;
-  isc_dyn_delete_function = 33;
-  isc_dyn_delete_shadow = 35;
-  isc_dyn_grant = 30;
-  isc_dyn_revoke = 31;
-  isc_dyn_def_primary_key = 37;
-  isc_dyn_def_foreign_key = 38;
-  isc_dyn_def_unique = 40;
-  isc_dyn_def_procedure = 164;
-  isc_dyn_delete_procedure = 165;
-  isc_dyn_def_parameter = 135;
-  isc_dyn_delete_parameter = 136;
-
-  isc_dyn_mod_procedure = 175;
-{ Deprecated.
-  isc_dyn_def_log_file = 176;
-  isc_dyn_def_cache_file = 180;
-}  
-  isc_dyn_def_exception = 181;
-  isc_dyn_mod_exception = 182;
-  isc_dyn_del_exception = 183;
-{ Deprecated.
-//  isc_dyn_drop_log = 194;
-//  isc_dyn_drop_cache = 195;
-//  isc_dyn_def_default_log = 202;
-}
-
-  isc_dyn_def_difference =           220;
-  isc_dyn_drop_difference =          221;
-  isc_dyn_begin_backup =             222;
-  isc_dyn_end_backup =               223;
-  isc_dyn_debug_info =               240;
-
-
-(*************************)
-(** View specific stuff **)
-(*************************)
-
-  isc_dyn_view_blr = 43;
-  isc_dyn_view_source = 44;
-  isc_dyn_view_relation = 45;
-  isc_dyn_view_context = 46;
-  isc_dyn_view_context_name = 47;
-
-(************************)
-(** Generic attributes **)
-(************************)
-
-  isc_dyn_rel_name = 50;
-  isc_dyn_fld_name = 51;
-  isc_dyn_new_fld_name = 215;
-  isc_dyn_idx_name = 52;
-  isc_dyn_description = 53;
-  isc_dyn_security_class = 54;
-  isc_dyn_system_flag = 55;
-  isc_dyn_update_flag = 56;
-  isc_dyn_prc_name = 166;
-  isc_dyn_prm_name = 137;
-  isc_dyn_sql_object = 196;
-  isc_dyn_fld_character_set_name = 174;
-
-(**********************************)
-(** Relation specific attributes **)
-(**********************************)
-
-  isc_dyn_rel_dbkey_length = 61;
-  isc_dyn_rel_store_trig = 62;
-  isc_dyn_rel_modify_trig = 63;
-  isc_dyn_rel_erase_trig = 64;
-  isc_dyn_rel_store_trig_source = 65;
-  isc_dyn_rel_modify_trig_source = 66;
-  isc_dyn_rel_erase_trig_source = 67;
-  isc_dyn_rel_ext_file = 68;
-  isc_dyn_rel_sql_protection = 69;
-  isc_dyn_rel_constraint = 162;
-  isc_dyn_delete_rel_constraint = 163;
-
-(**************************************)
-(** Global field specific attributes **)
-(**************************************)
-
-  isc_dyn_fld_type = 70;
-  isc_dyn_fld_length = 71;
-  isc_dyn_fld_scale = 72;
-  isc_dyn_fld_sub_type = 73;
-  isc_dyn_fld_segment_length = 74;
-  isc_dyn_fld_query_header = 75;
-  isc_dyn_fld_edit_string = 76;
-  isc_dyn_fld_validation_blr = 77;
-  isc_dyn_fld_validation_source = 78;
-  isc_dyn_fld_computed_blr = 79;
-  isc_dyn_fld_computed_source = 80;
-  isc_dyn_fld_missing_value = 81;
-  isc_dyn_fld_default_value = 82;
-  isc_dyn_fld_query_name = 83;
-  isc_dyn_fld_dimensions = 84;
-  isc_dyn_fld_not_null = 85;
-  isc_dyn_fld_precision = 86;
-  isc_dyn_fld_char_length = 172;
-  isc_dyn_fld_collation = 173;
-  isc_dyn_fld_default_source = 193;
-  isc_dyn_del_default = 197;
-  isc_dyn_del_validation = 198;
-  isc_dyn_single_validation = 199;
-  isc_dyn_fld_character_set = 203;
-
-(*************************************)
-(** Local field specific attributes **)
-(*************************************)
-
-  isc_dyn_fld_source = 90;
-  isc_dyn_fld_base_fld = 91;
-  isc_dyn_fld_position = 92;
-  isc_dyn_fld_update_flag = 93;
-
-(*******************************)
-(** Index specific attributes **)
-(*******************************)
-
-  isc_dyn_idx_unique = 100;
-  isc_dyn_idx_inactive = 101;
-  isc_dyn_idx_type = 103;
-  isc_dyn_idx_foreign_key = 104;
-  isc_dyn_idx_ref_column = 105;
-  isc_dyn_idx_statistic = 204;
-
-(*********************************)
-(** Trigger specific attributes **)
-(*********************************)
-
-  isc_dyn_trg_type = 110;
-  isc_dyn_trg_blr = 111;
-  isc_dyn_trg_source = 112;
-  isc_dyn_trg_name = 114;
-  isc_dyn_trg_sequence = 115;
-  isc_dyn_trg_inactive = 116;
-  isc_dyn_trg_msg_number = 117;
-  isc_dyn_trg_msg = 118;
-
-(****************************************)
-(** Security Class specific attributes **)
-(****************************************)
-
-  isc_dyn_scl_acl = 121;
-  isc_dyn_grant_user = 130;
-  isc_dyn_grant_proc = 186;
-  isc_dyn_grant_trig = 187;
-  isc_dyn_grant_view = 188;
-  isc_dyn_grant_options = 132;
-  isc_dyn_grant_user_group = 205;
-  isc_dyn_grant_role = 218;
-
-(************************************)
-(** Dimension specific information **)
-(************************************)
-
-  isc_dyn_dim_lower = 141;
-  isc_dyn_dim_upper = 142;
-
-(******************************)
-(** File specific attributes **)
-(******************************)
-
-  isc_dyn_file_name = 125;
-  isc_dyn_file_start = 126;
-  isc_dyn_file_length = 127;
-  isc_dyn_shadow_number = 128;
-  isc_dyn_shadow_man_auto = 129;
-  isc_dyn_shadow_conditional = 130;
-
-
-(**********************************)
-(** Function specific attributes **)
-(**********************************)
-
-  isc_dyn_function_name = 145;
-  isc_dyn_function_type = 146;
-  isc_dyn_func_module_name = 147;
-  isc_dyn_func_entry_point = 148;
-  isc_dyn_func_return_argument = 149;
-  isc_dyn_func_arg_position = 150;
-  isc_dyn_func_mechanism = 151;
-  isc_dyn_filter_in_subtype = 152;
-  isc_dyn_filter_out_subtype = 153;
-
-  isc_dyn_description2 = 154;
-  isc_dyn_fld_computed_source2 = 155;
-  isc_dyn_fld_edit_string2 = 156;
-  isc_dyn_fld_query_header2 = 157;
-  isc_dyn_fld_validation_source2 = 158;
-  isc_dyn_trg_msg2 = 159;
-  isc_dyn_trg_source2 = 160;
-  isc_dyn_view_source2 = 161;
-  isc_dyn_xcp_msg2 = 184;
-
-(***********************************)
-(** Generator specific attributes **)
-(***********************************)
-
-  isc_dyn_generator_name = 95;
-  isc_dyn_generator_id = 96;
-
-(***********************************)
-(** Procedure specific attributes **)
-(***********************************)
-
-  isc_dyn_prc_inputs = 167;
-  isc_dyn_prc_outputs = 168;
-  isc_dyn_prc_source = 169;
-  isc_dyn_prc_blr = 170;
-  isc_dyn_prc_source2 = 171;
-
-(***********************************)
-(** Parameter specific attributes **)
-(***********************************)
-
-  isc_dyn_prm_number = 138;
-  isc_dyn_prm_type = 139;
-
-(**********************************)
-(** Relation specific attributes **)
-(**********************************)
-
-  isc_dyn_xcp_msg = 185;
-
-(************************************************)
-(** Cascading referential integrity values     **)
-(************************************************)
-  isc_dyn_foreign_key_update = 205;
-  isc_dyn_foreign_key_delete = 206;
-  isc_dyn_foreign_key_cascade = 207;
-  isc_dyn_foreign_key_default = 208;
-  isc_dyn_foreign_key_null = 209;
-  isc_dyn_foreign_key_none = 210;
-
-(*************************)
-(** SQL role values     **)
-(*************************)
-  isc_dyn_def_sql_role = 211;
-  isc_dyn_sql_role_name = 212;
-  isc_dyn_grant_admin_options = 213;
-  isc_dyn_del_sql_role = 214;
-// 215 & 216 are used some lines above.
-
-(**********************************************)
-(* Generators again                           *)
-(**********************************************)
-
-  isc_dyn_delete_generator         = 217;
-
-// New for comments in objects.
-  isc_dyn_mod_function             = 224;//2.0
-  isc_dyn_mod_filter               = 225;
-  isc_dyn_mod_generator            = 226;
-  isc_dyn_mod_sql_role             = 227;
-  isc_dyn_mod_charset              = 228;
-  isc_dyn_mod_collation            = 229;
-  isc_dyn_mod_prc_parameter        = 230;
-
-(***********************)
-(* collation values    *)
-(***********************)
-
-  isc_dyn_def_collation					 = 231;
-  isc_dyn_coll_for_charset				 = 232;
-  isc_dyn_coll_from						 = 233;
-  isc_dyn_coll_attribute					 = 234;
-  isc_dyn_coll_specific_attributes_charset = 235;
-  isc_dyn_coll_specific_attributes		 = 236;
-  isc_dyn_del_collation					 = 237;
-
-
-  isc_dyn_mapping = 243;
-  isc_dyn_map_role = 1;
-  isc_dyn_unmap_role = 2;
-  isc_dyn_map_user = 3;
-  isc_dyn_unmap_user = 4;
-  isc_dyn_automap_role = 5;
-  isc_dyn_autounmap_role = 6;
-
-  isc_dyn_user = 244;
-  isc_dyn_user_add = 1;
-  isc_dyn_user_mod = 2;
-  isc_dyn_user_del = 3;
-  isc_dyn_user_passwd = 4;
-  isc_dyn_user_first = 5;
-  isc_dyn_user_middle = 6;
-  isc_dyn_user_last = 7;
-  isc_dyn_user_admin = 8;
-  isc_user_end = 0;
-
-  isc_dyn_last_dyn_value           = 247;
-
-(********************************************)
-(** Array slice description language (SDL) **)
-(********************************************)
-
-  isc_sdl_version1 = 1;
-  isc_sdl_eoc = -1;
-  isc_sdl_relation = 2;
-  isc_sdl_rid = 3;
-  isc_sdl_field = 4;
-  isc_sdl_fid = 5;
-  isc_sdl_struct = 6;
-  isc_sdl_variable = 7;
-  isc_sdl_scalar = 8;
-  isc_sdl_tiny_integer = 9;
-  isc_sdl_short_integer = 10;
-  isc_sdl_long_integer = 11;
-  isc_sdl_literal = 12;
-  isc_sdl_add = 13;
-  isc_sdl_subtract = 14;
-  isc_sdl_multiply = 15;
-  isc_sdl_divide = 16;
-  isc_sdl_negate = 17;
-  isc_sdl_eql = 18;
-  isc_sdl_neq = 19;
-  isc_sdl_gtr = 20;
-  isc_sdl_geq = 21;
-  isc_sdl_lss = 22;
-  isc_sdl_leq = 23;
-  isc_sdl_and = 24;
-  isc_sdl_or = 25;
-  isc_sdl_not = 26;
-  isc_sdl_while = 27;
-  isc_sdl_assignment = 28;
-  isc_sdl_label = 29;
-  isc_sdl_leave = 30;
-  isc_sdl_begin = 31;
-  isc_sdl_end = 32;
-  isc_sdl_do3 = 33;
-  isc_sdl_do2 = 34;
-  isc_sdl_do1 = 35;
-  isc_sdl_element = 36;
-
-(**********************************************)
-(** International text interpretation values **)
-(**********************************************)
-
-  isc_interp_eng_ascii = 0;
-  isc_interp_jpn_sjis = 5;
-  isc_interp_jpn_euc = 6;
-
-(*******************)
-(** Blob Subtypes **)
-(*******************)
-
-(** types less than zero are reserved for customer use **)
-
-  isc_blob_untyped = 0;
-
-(** internal subtypes **)
-
-  isc_blob_text = 1;
-  isc_blob_blr = 2;
-  isc_blob_acl = 3;
-  isc_blob_ranges = 4;
-  isc_blob_summary = 5;
-  isc_blob_format = 6;
-  isc_blob_tra = 7;
-  isc_blob_extfile = 8;
-  isc_blob_debug_info = 9;
-  isc_blob_max_predefined_subtype   = 10;
-
-(** the range 20-30 is reserved for dBASE and Paradox types **)
-
-  isc_blob_formatted_memo = 20;
-  isc_blob_paradox_ole = 21;
-  isc_blob_graphic = 22;
-  isc_blob_dbase_ole = 23;
-  isc_blob_typed_binary = 24;
-
-
-  fb_shut_confirmation                     = 1;
-  fb_shut_preproviders                     = 2;
-  fb_shut_postproviders                    = 4;
-  fb_shut_finish                                   = 8;
-
-  fb_shutrsn_svc_stopped                    =-1;
-  fb_shutrsn_no_connection                  =-2;
-  fb_shutrsn_app_stopped                    =-3;
-  fb_shutrsn_device_removed                 =-4;
-  fb_shutrsn_signal                                 =-5;
-  fb_shutrsn_services                               =-6;
-  fb_shutrsn_exit_called                    =-7;
-
-  fb_cancel_disable                                = 1;
-  fb_cancel_enable                                 = 2;
-  fb_cancel_raise                                  = 3;
-  fb_cancel_abort = 4;
-
-  fb_dbg_version = 1;
-  fb_dbg_end = 255;
-  fb_dbg_map_src2blr = 2;
-  fb_dbg_map_varname = 3;
-  fb_dbg_map_argument = 4;
-
-  fb_dbg_arg_input = 0;
-  fb_dbg_arg_output = 1;
-
-{*********************************}
-{  Information call declarations  }
-{*********************************}
-
-  isc_info_end = 1;
-  isc_info_truncated = 2;
-  isc_info_error = 3;
-  isc_info_data_not_ready = 4;
-  isc_info_length = 126;
-  isc_info_flag_end = 127;
+  isc_arg_sql_state		= 19;
 
   XSQLVAR_SIZE = sizeof(TXSQLVAR);
 
@@ -2304,7 +2271,7 @@ function XSQLDA_LENGTH(n: Long): Long;
 (*  The C-macro reads like this:
    XSQLDA_LENGTH(n)	(sizeof (XSQLDA) + (n-1) * sizeof (XSQLVAR)) *)
 begin
-  result := SizeOf(TXSQLDA) + ((n - 1) * SizeOf(TXSQLVAR));
+  Result := SizeOf(TXSQLDA) + ((n - 1) * SizeOf(TXSQLVAR));
 end;
 
 (*******************************************)

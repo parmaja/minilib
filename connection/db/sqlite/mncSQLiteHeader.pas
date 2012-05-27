@@ -13,7 +13,7 @@ unit mncSQLiteHeader;
  *}
 {
   TODO:
-  * Improve the header to catch last sqlite version.
+  * Improve the header to reach last sqlite version.
 }
 
 {$IFDEF fpc}
