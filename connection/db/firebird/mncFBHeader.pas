@@ -1,30 +1,38 @@
+unit mncFBHeader;
 {**
  *  This file is part of the "Mini Connections"
+ *
+ *
  *
  * @license   modifiedLGPL (modified of http://www.gnu.org/licenses/lgpl.html)
  *            See the file COPYING.MLGPL, included in this distribution,
  * @author    Zaher Dirkey <zaher at parmaja dot com>
+ *
+ *  Initial ported from IBX, Ibase
+ *
  *}
 
-{$M+}
-{$H+}
-{$IFDEF FPC}
+{$M+}{$H+}
 {$mode delphi}
-{$ENDIF}
-
-unit mncFBHeader;
+{$macro on}
+{$ifdef WINDOWS}
+  {$define isc_export:=stdcall}
+  {$define isc_export_vararg:=cdecl}
+{$else}
+  {$define isc_export:=cdecl}
+  {$define isc_export_vararg:=cdecl}
+{$endif}
 
 interface
 
 uses
   mncFBTypes;
 
-{$define FB_API_VER 20}
 {$define FB_API_VER 25}
 {$define isc_version4}
 
 const
-  FB_Version = 2.5;
+  FB_Version = 25;
 
   ISC_TRUE = 1;
   ISC_FALSE = 0;
@@ -38,15 +46,20 @@ const
   {$ifdef WINDOWS}
   FBClient_DLL = 'fbclient.dll';
   FBEmbed_DLL = 'fbembed.dll';
+
+  REGSTR_PATH_FB='Software\Firebird Project\Firebird Server';
+
   {$else}
-  FBClient_DLL = 'fbclient.so';
-  FBEmbed_DLL = 'fbembed.so';
+  FBClient_DLL = 'fbclient.'+sharedsuffix;;
+  FBEmbed_DLL = 'fbembed.'+sharedsuffix;;
   {$endif}
 
   FB_DefaultInstance = 'DefaultInstance';
-  REGSTR_PATH_FB='Software\Firebird Project\Firebird Server';
 
 type
+  //typedef int (*FB_SHUTDOWN_CALLBACK)(const int reason, const int mask, void* arg);
+  TFB_SHUTDOWN_CALLBACK = function(Reason: Integer; Mask: Integer; Arg: Pointer): Integer;
+
   (**********************************)
   (** Firebird Handle Definitions **)
   (**********************************)
@@ -100,6 +113,7 @@ type
     gds_quad_high: ISC_LONG;
     gds_quad_low: UISC_LONG;
   end;
+
   TGDS__QUAD = TGDS_QUAD;
   TISC_QUAD = TGDS_QUAD;
   PGDS_QUAD = ^TGDS_QUAD;
@@ -110,6 +124,7 @@ type
     array_bound_lower: Short;
     array_bound_upper: Short;
   end;
+
   PISC_ARRAY_BOUND = ^TISC_ARRAY_BOUND;
   
   TISC_ARRAY_DESC = record
@@ -264,9 +279,8 @@ const
   SQL_TYPE_TIME = 560;
   SQL_TYPE_DATE = 570;
   SQL_INT64 = 580;
+  SQL_BOOLEAN = 590; //zaher huh
   SQL_NULL = 32766;
-  SQL_DATE = SQL_TIMESTAMP;
-  SQL_BOOLEAN = 590; //zaher huh        
 
   SQLDA_VERSION1 = 1;
   
@@ -303,467 +317,149 @@ type
 (** OSRI database functions **)
 (*****************************)
 
-  Tisc_attach_database = function(status_vector: PISC_STATUS;
-    db_name_length: Short;
-    db_name: PChar;
-    db_handle: PISC_DB_HANDLE;
-    parm_buffer_length: Short;
-    parm_buffer: PChar): ISC_STATUS;
-  stdcall;
-
-  Tisc_array_gen_sdl = function(status_vector: PISC_STATUS;
-    isc_array_desc: PISC_ARRAY_DESC;
-    isc_arg3: PShort;
-    isc_arg4: PChar;
-    isc_arg5: PShort): ISC_STATUS;
-  stdcall;
-
-  Tisc_array_get_slice = function(status_vector: PISC_STATUS;
-    db_handle: PISC_DB_HANDLE;
-    trans_handle: PISC_TR_HANDLE;
-    array_id: PISC_QUAD;
-    descriptor: PISC_ARRAY_DESC;
-    dest_array: PVoid;
-    slice_length: ISC_LONG): ISC_STATUS;
-  stdcall;
-
-  Tisc_array_lookup_bounds = function(status_vector: PISC_STATUS;
-    db_handle: PISC_DB_HANDLE;
-    trans_handle: PISC_TR_HANDLE;
-    table_name,
-    column_name: PChar;
-    descriptor: PISC_ARRAY_DESC): ISC_STATUS;
-  stdcall;
-
-  Tisc_array_lookup_desc = function(status_vector: PISC_STATUS;
-    db_handle: PISC_DB_HANDLE;
-    trans_handle: PISC_TR_HANDLE;
-    table_name,
-    column_name: PChar;
-    descriptor: PISC_ARRAY_DESC): ISC_STATUS;
-  stdcall;
-
-  Tisc_array_set_desc = function(status_vector: PISC_STATUS;
-    table_name: PChar;
-    column_name: PChar;
-    sql_dtype,
-    sql_length,
-    sql_dimensions: PShort;
-    descriptor: PISC_ARRAY_DESC): ISC_STATUS;
-  stdcall;
-
-  Tisc_array_put_slice = function(status_vector: PISC_STATUS;
-    db_handle: PISC_DB_HANDLE;
-    trans_handle: PISC_TR_HANDLE;
-    array_id: PISC_QUAD;
-    descriptor: PISC_ARRAY_DESC;
-    source_array: PVoid;
-    slice_length: PISC_LONG): ISC_STATUS;
-  stdcall;
-
-  Tisc_blob_default_desc = procedure(descriptor: PISC_BLOB_DESC;
-    table_name: PUChar;
-    column_name: PUChar);
-  stdcall;
-
-  Tisc_blob_gen_bpb = function(status_vector: PISC_STATUS;
-    to_descriptor,
-    from_descriptor: PISC_BLOB_DESC;
-    bpb_buffer_length: UShort;
-    bpb_buffer: PUChar;
-    bpb_length: PUShort): ISC_STATUS;
-  stdcall;
-
-  Tisc_blob_info = function(status_vector: PISC_STATUS;
-    blob_handle: PISC_BLOB_HANDLE;
-    item_list_buffer_length: Short;
-    item_list_buffer: PChar;
-    result_buffer_length: Short;
-    result_buffer: PChar): ISC_STATUS;
-  stdcall;
-
-  Tisc_blob_lookup_desc = function(status_vector: PISC_STATUS;
-    db_handle: PISC_DB_HANDLE;
-    trans_handle: PISC_TR_HANDLE;
-    table_name,
-    column_name: PChar;
-    descriptor: PISC_BLOB_DESC;
-    global: PUChar): ISC_STATUS;
-  stdcall;
-
-  Tisc_blob_set_desc = function(status_vector: PISC_STATUS;
-    table_name,
-    column_name: PChar;
-    subtype,
-    charset,
-    segment_size: Short;
-    descriptor: PISC_BLOB_DESC): ISC_STATUS;
-  stdcall;
-
-  Tisc_cancel_blob = function(status_vector: PISC_STATUS;
-    blob_handle: PISC_BLOB_HANDLE): ISC_STATUS;
-  stdcall;
-
-  Tisc_cancel_events = function(status_vector: PISC_STATUS;
-    db_handle: PISC_DB_HANDLE;
-    event_id: PISC_LONG): ISC_STATUS;
-  stdcall;
-
-  Tisc_close_blob = function(status_vector: PISC_STATUS;
-    blob_handle: PISC_BLOB_HANDLE): ISC_STATUS;
-  stdcall;
-
-  Tisc_commit_retaining = function(status_vector: PISC_STATUS;
-    tran_handle: PISC_TR_HANDLE): ISC_STATUS;
-  stdcall;
-
-  Tisc_commit_transaction = function(status_vector: PISC_STATUS;
-    tran_handle: PISC_TR_HANDLE): ISC_STATUS;
-  stdcall;
-
-  Tisc_create_blob = function(status_vector: PISC_STATUS;
-    db_handle: PISC_DB_HANDLE;
-    tran_handle: PISC_TR_HANDLE;
-    blob_handle: PISC_BLOB_HANDLE;
-    blob_id: PISC_QUAD): ISC_STATUS;
-  stdcall;
-
-  Tisc_create_blob2 = function(status_vector: PISC_STATUS;
-    db_handle: PISC_DB_HANDLE;
-    tran_handle: PISC_TR_HANDLE;
-    blob_handle: PISC_BLOB_HANDLE;
-    blob_id: PISC_QUAD;
-    bpb_length: Short;
-    bpb_address: PChar): ISC_STATUS;
-  stdcall;
-
-  Tisc_create_database = function(status_vector: PISC_STATUS;
-    isc_arg2: Short;
-    isc_arg3: PChar;
-    db_handle: PISC_DB_HANDLE;
-    isc_arg5: Short;
-    isc_arg6: PChar;
-    isc_arg7: Short): ISC_STATUS;
-  stdcall;
-
-  Tisc_database_info = function(status_vector: PISC_STATUS;
-    db_handle: PISC_DB_HANDLE;
-    item_list_buffer_length: Short;
-    item_list_buffer: PChar;
-    result_buffer_length: Short;
-    result_buffer: PChar): ISC_STATUS;
-  stdcall;
-
-  Tisc_decode_date = procedure(ib_date: PISC_QUAD;
-    tm_date: PCTimeStructure);
-  stdcall;
-
-  Tisc_decode_sql_date = procedure(ib_date: PISC_DATE;
-    tm_date: PCTimeStructure);
-  stdcall;
-
-  Tisc_decode_sql_time = procedure(ib_time: PISC_TIME;
-    tm_date: PCTimeStructure);
-  stdcall;
-
-  Tisc_decode_timestamp = procedure(ib_timestamp: PISC_TIMESTAMP;
-    tm_date: PCTimeStructure);
-  stdcall;
-
-  Tisc_detach_database = function(status_vector: PISC_STATUS;
-    db_handle: PISC_DB_HANDLE): ISC_STATUS;
-  stdcall;
-
-  Tisc_drop_database = function(status_vector: PISC_STATUS;
-    db_handle: PISC_DB_HANDLE): ISC_STATUS;
-  stdcall;
-
-  Tisc_dsql_allocate_statement = function(status_vector: PISC_STATUS;
-    db_handle: PISC_DB_HANDLE;
-    stmt_handle: PISC_STMT_HANDLE): ISC_STATUS;
-  stdcall;
-
-  Tisc_dsql_alloc_statement2 = function(status_vector: PISC_STATUS;
-    db_handle: PISC_DB_HANDLE;
-    stmt_handle: PISC_STMT_HANDLE): ISC_STATUS;
-  stdcall;
-
-  Tisc_dsql_describe = function(status_vector: PISC_STATUS;
-    stmt_handle: PISC_STMT_HANDLE;
-    dialect: UShort;
-    xsqlda: PXSQLDA): ISC_STATUS;
-  stdcall;
-
-  Tisc_dsql_describe_bind = function(status_vector: PISC_STATUS;
-    stmt_handle: PISC_STMT_HANDLE;
-    dialect: UShort;
-    xsqlda: PXSQLDA): ISC_STATUS;
-  stdcall;
-
-  Tisc_dsql_exec_immed2 = function(status_vector: PISC_STATUS;
-    db_handle: PISC_DB_HANDLE;
-    tran_handle: PISC_TR_HANDLE;
-    length: UShort;
-    statement: PChar;
-    dialect: UShort;
-    in_xsqlda,
-    out_xsqlda: PXSQLDA): ISC_STATUS;
-  stdcall;
-
-  Tisc_dsql_execute = function(status_vector: PISC_STATUS;
-    tran_handle: PISC_TR_HANDLE;
-    stmt_handle: PISC_STMT_HANDLE;
-    dialect: UShort;
-    xsqlda: PXSQLDA): ISC_STATUS;
-  stdcall;
-
-  Tisc_dsql_execute2 = function(status_vector: PISC_STATUS;
-    tran_handle: PISC_TR_HANDLE;
-    stmt_handle: PISC_STMT_HANDLE;
-    dialect: UShort;
-    in_xsqlda,
-    out_xsqlda: PXSQLDA): ISC_STATUS;
-  stdcall;
-
-  Tisc_dsql_execute_immediate = function(status_vector: PISC_STATUS;
-    db_handle: PISC_DB_HANDLE;
-    tran_handle: PISC_TR_HANDLE;
-    length: UShort;
-    statement: PChar;
-    dialect: UShort;
-    xsqlda: PXSQLDA): ISC_STATUS;
-  stdcall;
-
-  Tisc_dsql_fetch = function(status_vector: PISC_STATUS;
-    stmt_handle: PISC_STMT_HANDLE;
-    dialect: UShort;
-    xsqlda: PXSQLDA): ISC_STATUS;
-  stdcall;
-
-  Tisc_dsql_finish = function(db_handle: PISC_DB_HANDLE): ISC_STATUS;
-  stdcall;
-
-  Tisc_dsql_free_statement = function(status_vector: PISC_STATUS;
-    stmt_handle: PISC_STMT_HANDLE;
-    options: UShort): ISC_STATUS;
-  stdcall;
-
-  Tisc_dsql_insert = function(status_vector: PISC_STATUS;
-    stmt_handle: PISC_STMT_HANDLE;
-    arg3: UShort;
-    xsqlda: PXSQLDA): ISC_STATUS;
-  stdcall;
-
-  Tisc_dsql_prepare = function(status_vector: PISC_STATUS;
-    tran_handle: PISC_TR_HANDLE;
-    stmt_handle: PISC_STMT_HANDLE;
-    length: UShort;
-    statement: PChar;
-    dialect: UShort;
-    xsqlda: PXSQLDA): ISC_STATUS;
-  stdcall;
-
-  Tisc_dsql_set_cursor_name = function(status_vector: PISC_STATUS;
-    stmt_handle: PISC_STMT_HANDLE;
-    cursor_name: PChar;
-    _type: UShort): ISC_STATUS;
-  stdcall;
-
-  Tisc_dsql_sql_info = function(status_vector: PISC_STATUS;
-    stmt_handle: PISC_STMT_HANDLE;
-    item_length: Short;
-    items: PChar;
-    buffer_length: Short;
-    buffer: PChar): ISC_STATUS;
-  stdcall;
-
-  Tisc_encode_date = procedure(tm_date: PCTimeStructure;
-    ib_date: PISC_QUAD);
-  stdcall;
-
-  Tisc_encode_sql_date = procedure(tm_date: PCTimeStructure;
-    ib_date: PISC_DATE);
-  stdcall;
-
-  Tisc_encode_sql_time = procedure(tm_date: PCTimeStructure;
-    ib_time: PISC_TIME);
-  stdcall;
-
-  Tisc_encode_timestamp = procedure(tm_date: PCTimeStructure;
-    ib_timestamp: PISC_TIMESTAMP);
-  stdcall;
-
-  Tisc_event_block = function(event_buffer: PPChar;
-    result_buffer: PPChar;
-    id_count: UShort;
-    event_list: array of PChar): ISC_LONG;
-  stdcall;
-
-  Tisc_event_counts = procedure(status_vector: PISC_STATUS;
-    buffer_length: Short;
-    event_buffer: PChar;
-    result_buffer: PChar);
-  stdcall;
-
-  Tisc_modify_dpb = function(dpb: PPChar;
-    isc_arg2,
-    isc_arg3: PShort;
-    isc_arg4: UShort;
-    isc_arg5: PChar;
-    isc_arg6: Short): Int;
-  stdcall;
-
-  Tisc_free = function(isc_arg1: PChar): ISC_LONG;
-  stdcall;
-
-  Tisc_get_segment = function(status_vector: PISC_STATUS;
-    blob_handle: PISC_BLOB_HANDLE;
-    actual_seg_length: PUShort;
-    seg_buffer_length: UShort;
-    seg_buffer: PChar): ISC_STATUS;
-  stdcall;
-
-  Tisc_get_slice = function(status_vector: PISC_STATUS;
-    db_handle: PISC_DB_HANDLE;
-    tran_handle: PISC_TR_HANDLE;
-    isc_arg4: PISC_QUAD;
-    isc_arg5: Short;
-    isc_arg6: PChar;
-    isc_arg7: Short;
-    isc_arg8: PISC_LONG;
-    isc_arg9: ISC_LONG;
-    isc_arg10: PVoid;
-    isc_arg11: PISC_LONG): ISC_STATUS;
-  stdcall;
-
-  Tisc_interprete = function(buffer: PChar; status_vector: PPISC_STATUS): ISC_STATUS; stdcall; //deprecated;  
-
-  Tfb_interpret = function(buffer: PChar; length:short; const status_vector: PPISC_STATUS): ISC_STATUS; stdcall;
-
-  Tisc_open_blob = function(status_vector: PISC_STATUS;
-    db_handle: PISC_DB_HANDLE;
-    tran_handle: PISC_TR_HANDLE;
-    blob_handle: PISC_BLOB_HANDLE;
-    blob_id: PISC_QUAD): ISC_STATUS;
-  stdcall;
-
-  Tisc_open_blob2 = function(status_vector: PISC_STATUS;
-    db_handle: PISC_DB_HANDLE;
-    tran_handle: PISC_TR_HANDLE;
-    blob_handle: PISC_BLOB_HANDLE;
-    blob_id: PISC_QUAD;
-    bpb_length: Short;
-    bpb_buffer: PChar): ISC_STATUS;
-  stdcall;
-
-  Tisc_prepare_transaction2 = function(status_vector: PISC_STATUS;
-    tran_handle: PISC_TR_HANDLE;
-    msg_length: Short;
-    msg: PChar): ISC_STATUS;
-  stdcall;
-
-  Tisc_print_sqlerror = procedure(sqlcode: Short; status_vector: PISC_STATUS); stdcall;
-
-  Tisc_print_status = function(status_vector: PISC_STATUS): ISC_STATUS; stdcall;
-
-  Tisc_put_segment = function(status_vector: PISC_STATUS;
-    blob_handle: PISC_BLOB_HANDLE;
-    seg_buffer_len: UShort;
-    seg_buffer: PChar): ISC_STATUS;
-  stdcall;
-
-  Tisc_put_slice = function(status_vector: PISC_STATUS;
-    db_handle: PISC_DB_HANDLE;
-    tran_handle: PISC_TR_HANDLE;
-    isc_arg4: PISC_QUAD;
-    isc_arg5: Short;
-    isc_arg6: PChar;
-    isc_arg7: Short;
-    isc_arg8: PISC_LONG;
-    isc_arg9: ISC_LONG;
-    isc_arg10: PVoid): ISC_STATUS;
-  stdcall;
-
-  Tisc_que_events = function(
-    status_vector: PISC_STATUS;
-    db_handle: PISC_DB_HANDLE;
-    event_id: PISC_LONG;
-    length: Short;
-    event_buffer: PChar;
-    event_function: TISC_EVENT_CALLBACK;
-    event_function_arg: PVoid): ISC_STATUS;
-  stdcall;
-
-  Tisc_release_savepoint = function(status_vector: PISC_STATUS;
-    tran_handle: PISC_TR_HANDLE;
-    tran_name: PChar): ISC_STATUS;
-  stdcall;
-
-  Tisc_rollback_retaining = function(status_vector: PISC_STATUS;
-    tran_handle: PISC_TR_HANDLE): ISC_STATUS;
-  stdcall;
-
-  Tisc_rollback_savepoint = function(status_vector: PISC_STATUS;
-    tran_handle: PISC_TR_HANDLE;
-    tran_name: PChar;
-    Option: UShort): ISC_STATUS;
-  stdcall;
-
-  Tisc_rollback_transaction = function(status_vector: PISC_STATUS;
-    tran_handle: PISC_TR_HANDLE): ISC_STATUS;
-  stdcall;
-
-  Tisc_start_multiple = function(status_vector: PISC_STATUS;
-    tran_handle: PISC_TR_HANDLE;
-    db_handle_count: Short;
-    teb_vector_address: PISC_TEB): ISC_STATUS;
-  stdcall;
-
-  Tisc_start_savepoint = function(status_vector: PISC_STATUS;
-    tran_handle: PISC_TR_HANDLE;
-    tran_name: PChar): ISC_STATUS;
-  stdcall;
-
-  Tisc_start_transaction = function(status_vector: PISC_STATUS;
-    tran_handle: PISC_TR_HANDLE;
-    db_handle_count: Short;
-    db_handle: PISC_DB_HANDLE;
-    tpb_length: UShort;
-    tpb_address: PChar): ISC_STATUS;
-  stdcall;
-
-  Tisc_sqlcode = function(status_vector: PISC_STATUS): ISC_LONG;
-  stdcall;
-
-  Tisc_sql_interprete = procedure(sqlcode: Short;
-    buffer: PChar;
-    buffer_length: Short);
-  stdcall;
-
-  Tisc_transaction_info = function(status_vector: PISC_STATUS;
-    tran_handle: PISC_TR_HANDLE;
-    item_list_buffer_length: Short;
-    item_list_buffer: PChar;
-    result_buffer_length: Short;
-    result_buffer: PChar): ISC_STATUS;
-  stdcall;
-
-  Tisc_transact_request = function(status_vector: PISC_STATUS;
-    db_handle: PISC_DB_HANDLE;
-    tran_handle: PISC_TR_HANDLE;
-    isc_arg4: UShort;
-    isc_arg5: PChar;
-    isc_arg6: UShort;
-    isc_arg7: PChar;
-    isc_arg8: UShort;
-    isc_arg9: PChar): ISC_STATUS;
-  stdcall;
-
-  Tisc_vax_integer = function(buffer: PChar;
-    length: Short): ISC_LONG;
-  stdcall;
-
-  Tisc_portable_integer = function(buffer: PChar; length: Short): ISC_INT64; stdcall;
+  Tisc_attach_database = function(status_vector: PISC_STATUS; db_name_length: Short; db_name: PChar;  db_handle: PISC_DB_HANDLE; parm_buffer_length: Short; parm_buffer: PChar): ISC_STATUS; isc_export;
+
+  Tisc_array_gen_sdl = function(status_vector: PISC_STATUS; isc_array_desc: PISC_ARRAY_DESC; isc_arg3: PShort; isc_arg4: PChar; isc_arg5: PShort): ISC_STATUS; isc_export;
+
+  Tisc_array_get_slice = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; trans_handle: PISC_TR_HANDLE; array_id: PISC_QUAD; descriptor: PISC_ARRAY_DESC; dest_array: PVoid; slice_length: ISC_LONG): ISC_STATUS; isc_export;
+
+  Tisc_array_lookup_bounds = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; trans_handle: PISC_TR_HANDLE; table_name, column_name: PChar; descriptor: PISC_ARRAY_DESC): ISC_STATUS; isc_export;
+
+  Tisc_array_lookup_desc = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; trans_handle: PISC_TR_HANDLE; table_name, column_name: PChar; descriptor: PISC_ARRAY_DESC): ISC_STATUS; isc_export;
+
+  Tisc_array_set_desc = function(status_vector: PISC_STATUS; table_name: PChar; column_name: PChar; sql_dtype, sql_length, sql_dimensions: PShort; descriptor: PISC_ARRAY_DESC): ISC_STATUS; isc_export;
+
+  Tisc_array_put_slice = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; trans_handle: PISC_TR_HANDLE; array_id: PISC_QUAD; descriptor: PISC_ARRAY_DESC; source_array: PVoid; slice_length: PISC_LONG): ISC_STATUS; isc_export;
+
+  Tisc_blob_default_desc = procedure(descriptor: PISC_BLOB_DESC; table_name: PUChar; column_name: PUChar); isc_export;
+
+  Tisc_blob_gen_bpb = function(status_vector: PISC_STATUS; to_descriptor, from_descriptor: PISC_BLOB_DESC; bpb_buffer_length: UShort; bpb_buffer: PUChar; bpb_length: PUShort): ISC_STATUS; isc_export;
+
+  Tisc_blob_info = function(status_vector: PISC_STATUS; blob_handle: PISC_BLOB_HANDLE; item_list_buffer_length: Short; item_list_buffer: PChar; result_buffer_length: Short; result_buffer: PChar): ISC_STATUS; isc_export;
+
+  Tisc_blob_lookup_desc = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; trans_handle: PISC_TR_HANDLE; table_name, column_name: PChar; descriptor: PISC_BLOB_DESC; global: PUChar): ISC_STATUS; isc_export;
+
+  Tisc_blob_set_desc = function(status_vector: PISC_STATUS; table_name, column_name: PChar; subtype, charset, segment_size: Short; descriptor: PISC_BLOB_DESC): ISC_STATUS; isc_export;
+
+  Tisc_cancel_blob = function(status_vector: PISC_STATUS; blob_handle: PISC_BLOB_HANDLE): ISC_STATUS; isc_export; Tisc_cancel_events = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; event_id: PISC_LONG): ISC_STATUS; isc_export;
+
+  Tisc_close_blob = function(status_vector: PISC_STATUS; blob_handle: PISC_BLOB_HANDLE): ISC_STATUS; isc_export; Tisc_commit_retaining = function(status_vector: PISC_STATUS; tran_handle: PISC_TR_HANDLE): ISC_STATUS; isc_export;
+
+  Tisc_commit_transaction = function(status_vector: PISC_STATUS; tran_handle: PISC_TR_HANDLE): ISC_STATUS; isc_export; Tisc_create_blob = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; tran_handle: PISC_TR_HANDLE; blob_handle: PISC_BLOB_HANDLE; blob_id: PISC_QUAD): ISC_STATUS; isc_export;
+
+  Tisc_create_blob2 = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; tran_handle: PISC_TR_HANDLE; blob_handle: PISC_BLOB_HANDLE; blob_id: PISC_QUAD; bpb_length: Short; bpb_address: PChar): ISC_STATUS; isc_export;
+
+  Tisc_create_database = function(status_vector: PISC_STATUS; isc_arg2: Short; isc_arg3: PChar; db_handle: PISC_DB_HANDLE; isc_arg5: Short; isc_arg6: PChar; isc_arg7: Short): ISC_STATUS; isc_export;
+
+  Tisc_database_info = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; item_list_buffer_length: Short; item_list_buffer: PChar; result_buffer_length: Short; result_buffer: PChar): ISC_STATUS; isc_export;
+
+  Tisc_decode_date = procedure(ib_date: PISC_QUAD; tm_date: PCTimeStructure); isc_export; Tisc_decode_sql_date = procedure(ib_date: PISC_DATE; tm_date: PCTimeStructure); isc_export;
+
+  Tisc_decode_sql_time = procedure(ib_time: PISC_TIME; tm_date: PCTimeStructure); isc_export;
+
+  Tisc_decode_timestamp = procedure(ib_timestamp: PISC_TIMESTAMP; tm_date: PCTimeStructure); isc_export;
+
+  Tisc_detach_database = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE): ISC_STATUS; isc_export;
+
+  Tisc_drop_database = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE): ISC_STATUS; isc_export;
+
+  Tisc_dsql_allocate_statement = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; stmt_handle: PISC_STMT_HANDLE): ISC_STATUS; isc_export;
+
+  Tisc_dsql_alloc_statement2 = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; stmt_handle: PISC_STMT_HANDLE): ISC_STATUS; isc_export;
+
+  Tisc_dsql_describe = function(status_vector: PISC_STATUS; stmt_handle: PISC_STMT_HANDLE; dialect: UShort; xsqlda: PXSQLDA): ISC_STATUS; isc_export;
+
+  Tisc_dsql_describe_bind = function(status_vector: PISC_STATUS; stmt_handle: PISC_STMT_HANDLE; dialect: UShort; xsqlda: PXSQLDA): ISC_STATUS; isc_export;
+
+  Tisc_dsql_exec_immed2 = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; tran_handle: PISC_TR_HANDLE; length: UShort; statement: PChar; dialect: UShort; in_xsqlda, out_xsqlda: PXSQLDA): ISC_STATUS; isc_export;
+
+  Tisc_dsql_execute = function(status_vector: PISC_STATUS; tran_handle: PISC_TR_HANDLE; stmt_handle: PISC_STMT_HANDLE; dialect: UShort; xsqlda: PXSQLDA): ISC_STATUS; isc_export;
+
+  Tisc_dsql_execute2 = function(status_vector: PISC_STATUS; tran_handle: PISC_TR_HANDLE; stmt_handle: PISC_STMT_HANDLE; dialect: UShort; in_xsqlda, out_xsqlda: PXSQLDA): ISC_STATUS; isc_export;
+
+  Tisc_dsql_execute_immediate = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; tran_handle: PISC_TR_HANDLE; length: UShort; statement: PChar; dialect: UShort; xsqlda: PXSQLDA): ISC_STATUS; isc_export;
+
+  Tisc_dsql_fetch = function(status_vector: PISC_STATUS; stmt_handle: PISC_STMT_HANDLE; dialect: UShort; xsqlda: PXSQLDA): ISC_STATUS; isc_export; Tisc_dsql_finish = function(db_handle: PISC_DB_HANDLE): ISC_STATUS; isc_export;
+
+  Tisc_dsql_free_statement = function(status_vector: PISC_STATUS; stmt_handle: PISC_STMT_HANDLE; options: UShort): ISC_STATUS; isc_export;
+
+  Tisc_dsql_insert = function(status_vector: PISC_STATUS; stmt_handle: PISC_STMT_HANDLE; arg3: UShort; xsqlda: PXSQLDA): ISC_STATUS; isc_export;
+
+  Tisc_dsql_prepare = function(status_vector: PISC_STATUS; tran_handle: PISC_TR_HANDLE; stmt_handle: PISC_STMT_HANDLE; length: UShort; statement: PChar; dialect: UShort; xsqlda: PXSQLDA): ISC_STATUS; isc_export;
+
+  Tisc_dsql_set_cursor_name = function(status_vector: PISC_STATUS; stmt_handle: PISC_STMT_HANDLE; cursor_name: PChar; _type: UShort): ISC_STATUS; isc_export;
+
+  Tisc_dsql_sql_info = function(status_vector: PISC_STATUS; stmt_handle: PISC_STMT_HANDLE; item_length: Short; items: PChar; buffer_length: Short; buffer: PChar): ISC_STATUS; isc_export;
+
+  Tisc_encode_date = procedure(tm_date: PCTimeStructure; ib_date: PISC_QUAD); isc_export;
+
+  Tisc_encode_sql_date = procedure(tm_date: PCTimeStructure; ib_date: PISC_DATE); isc_export;
+
+  Tisc_encode_sql_time = procedure(tm_date: PCTimeStructure; ib_time: PISC_TIME); isc_export;
+
+  Tisc_encode_timestamp = procedure(tm_date: PCTimeStructure; ib_timestamp: PISC_TIMESTAMP); isc_export;
+
+  Tisc_event_block = function(event_buffer: PPChar; result_buffer: PPChar; id_count: UShort; const event_list: array of PChar): ISC_LONG; isc_export_vararg;
+
+  Tisc_event_block_a = function(event_buffer: PPChar; result_buffer: PPChar; id_count: UShort; event_list: PPChar): ISC_LONG; isc_export;
+
+  Tisc_event_block_s = function(event_buffer: PPChar; result_buffer: PPChar; id_count: UShort; event_list: PPChar; arg1: PUShort): ISC_LONG; isc_export;
+
+  Tisc_event_counts = procedure(status_vector: PISC_STATUS; buffer_length: Short; event_buffer: PChar; result_buffer: PChar); isc_export;
+
+  Tisc_modify_dpb = function(dpb: PPChar; isc_arg2, isc_arg3: PShort; isc_arg4: UShort; isc_arg5: PChar; isc_arg6: Short): Int; isc_export;
+
+  Tisc_free = function(isc_arg1: PChar): ISC_LONG; isc_export;
+
+  Tisc_get_segment = function(status_vector: PISC_STATUS; blob_handle: PISC_BLOB_HANDLE; actual_seg_length: PUShort; seg_buffer_length: UShort; seg_buffer: PChar): ISC_STATUS; isc_export;
+
+  Tisc_get_slice = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; tran_handle: PISC_TR_HANDLE; isc_arg4: PISC_QUAD; isc_arg5: Short; isc_arg6: PChar; isc_arg7: Short; isc_arg8: PISC_LONG; isc_arg9: ISC_LONG; isc_arg10: PVoid; isc_arg11: PISC_LONG): ISC_STATUS; isc_export;
+
+  Tisc_interprete = function(buffer: PChar; status_vector: PPISC_STATUS): ISC_STATUS; isc_export; deprecated;
+
+  Tfb_interpret = function(buffer: PChar; length:short; const status_vector: PPISC_STATUS): ISC_STATUS; isc_export;
+
+  Tisc_open_blob = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; tran_handle: PISC_TR_HANDLE; blob_handle: PISC_BLOB_HANDLE; blob_id: PISC_QUAD): ISC_STATUS; isc_export;
+
+  Tisc_open_blob2 = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; tran_handle: PISC_TR_HANDLE; blob_handle: PISC_BLOB_HANDLE; blob_id: PISC_QUAD; bpb_length: Short; bpb_buffer: PChar): ISC_STATUS; isc_export;
+
+  Tisc_prepare_transaction2 = function(status_vector: PISC_STATUS; tran_handle: PISC_TR_HANDLE; msg_length: Short; msg: PChar): ISC_STATUS; isc_export;
+
+  Tisc_print_sqlerror = procedure(sqlcode: Short; status_vector: PISC_STATUS); isc_export;
+
+  Tisc_print_status = function(status_vector: PISC_STATUS): ISC_STATUS; isc_export;
+
+  Tisc_put_segment = function(status_vector: PISC_STATUS; blob_handle: PISC_BLOB_HANDLE; seg_buffer_len: UShort; seg_buffer: PChar): ISC_STATUS; isc_export;
+
+  Tisc_put_slice = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; tran_handle: PISC_TR_HANDLE; isc_arg4: PISC_QUAD; isc_arg5: Short; isc_arg6: PChar; isc_arg7: Short; isc_arg8: PISC_LONG; isc_arg9: ISC_LONG; isc_arg10: PVoid): ISC_STATUS; isc_export;
+
+  Tisc_que_events = function( status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; event_id: PISC_LONG; length: Short; event_buffer: PChar; event_function: TISC_EVENT_CALLBACK; event_function_arg: PVoid): ISC_STATUS; isc_export;
+
+  Tisc_release_savepoint = function(status_vector: PISC_STATUS; tran_handle: PISC_TR_HANDLE; tran_name: PChar): ISC_STATUS; isc_export;
+
+  Tisc_rollback_retaining = function(status_vector: PISC_STATUS; tran_handle: PISC_TR_HANDLE): ISC_STATUS; isc_export;
+
+  Tisc_rollback_savepoint = function(status_vector: PISC_STATUS; tran_handle: PISC_TR_HANDLE; tran_name: PChar; Option: UShort): ISC_STATUS; isc_export;
+
+  Tisc_rollback_transaction = function(status_vector: PISC_STATUS; tran_handle: PISC_TR_HANDLE): ISC_STATUS; isc_export;
+
+  Tisc_start_multiple = function(status_vector: PISC_STATUS; tran_handle: PISC_TR_HANDLE; db_handle_count: Short; teb_vector_address: PISC_TEB): ISC_STATUS; isc_export;
+
+  Tisc_start_savepoint = function(status_vector: PISC_STATUS; tran_handle: PISC_TR_HANDLE; tran_name: PChar): ISC_STATUS; isc_export;
+
+  Tisc_start_transaction = function(status_vector: PISC_STATUS; tran_handle: PISC_TR_HANDLE; db_handle_count: Short; db_handle: PISC_DB_HANDLE; tpb_length: UShort; tpb_address: PChar): ISC_STATUS; isc_export_vararg;
+
+  Tisc_sqlcode = function(status_vector: PISC_STATUS): ISC_LONG; isc_export;
+
+  Tisc_sqlcode_s = function(status_vector: PISC_STATUS; arg1: PULong): ISC_LONG; isc_export;
+
+  Tisc_sql_interprete = procedure(sqlcode: Short; buffer: PChar; buffer_length: Short); isc_export;
+
+  Tisc_transaction_info = function(status_vector: PISC_STATUS; tran_handle: PISC_TR_HANDLE; item_list_buffer_length: Short; item_list_buffer: PChar; result_buffer_length: Short; result_buffer: PChar): ISC_STATUS; isc_export;
+
+  Tisc_transact_request = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; tran_handle: PISC_TR_HANDLE; isc_arg4: UShort; isc_arg5: PChar; isc_arg6: UShort; isc_arg7: PChar; isc_arg8: UShort; isc_arg9: PChar): ISC_STATUS; isc_export;
+
+  Tisc_vax_integer = function(buffer: PChar; length: Short): ISC_LONG; isc_export; Tisc_portable_integer = function(buffer: PChar; length: Short): ISC_INT64; isc_export;
 
 (***************************************)
 (** Security Functions and structures **)
@@ -804,640 +500,251 @@ type
   end;
   PUserSecData = ^TUserSecData;
 
-  Tisc_add_user = function(status_vector: PISC_STATUS;
-    user_sec_data: PUserSecData): ISC_STATUS;
-  stdcall;
+  Tisc_add_user = function(status_vector: PISC_STATUS; user_sec_data: PUserSecData): ISC_STATUS; isc_export;
 
-  Tisc_delete_user = function(status_vector: PISC_STATUS;
-    user_sec_data: PUserSecData): ISC_STATUS;
-  stdcall;
+  Tisc_delete_user = function(status_vector: PISC_STATUS; user_sec_data: PUserSecData): ISC_STATUS; isc_export;
 
-  Tisc_modify_user = function(status_vector: PISC_STATUS;
-    user_sec_data: PUserSecData): ISC_STATUS;
-  stdcall;
+  Tisc_modify_user = function(status_vector: PISC_STATUS; user_sec_data: PUserSecData): ISC_STATUS; isc_export;
 
 (************************************)
 (**  Other OSRI functions          **)
 (************************************)
 
-  Tisc_compile_request = function(status_vector: PISC_STATUS;
-    db_handle: PISC_DB_HANDLE;
-    request_handle: PISC_REQ_HANDLE;
-    isc_arg4: Short;
-    isc_arg5: PChar): ISC_STATUS;
-  stdcall;
+  Tisc_compile_request = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; request_handle: PISC_REQ_HANDLE; isc_arg4: Short; isc_arg5: PChar): ISC_STATUS; isc_export;
 
-  Tisc_compile_request2 = function(status_vector: PISC_STATUS;
-    db_handle: PISC_DB_HANDLE;
-    request_handle: PISC_REQ_HANDLE;
-    isc_arg4: Short;
-    isc_arg5: PChar): ISC_STATUS;
-  stdcall;
+  Tisc_compile_request2 = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; request_handle: PISC_REQ_HANDLE; isc_arg4: Short; isc_arg5: PChar): ISC_STATUS; isc_export;
 
-  Tisc_ddl = function(status_vector: PISC_STATUS;
-    db_handle: PISC_DB_HANDLE;
-    tran_handle: PISC_TR_HANDLE;
-    isc_arg4: Short;
-    isc_arg5: PChar): ISC_STATUS;
-  stdcall;
+  Tisc_ddl = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; tran_handle: PISC_TR_HANDLE; isc_arg4: Short; isc_arg5: PChar): ISC_STATUS; isc_export;
 
-  Tisc_prepare_transaction = function(status_vector: PISC_STATUS;
-    tran_handle: PISC_TR_HANDLE): ISC_STATUS;
-  stdcall;
+  Tisc_prepare_transaction = function(status_vector: PISC_STATUS; tran_handle: PISC_TR_HANDLE): ISC_STATUS; isc_export;
 
-  Tisc_receive = function(status_vector: PISC_STATUS;
-    request_handle: PISC_REQ_HANDLE;
-    isc_arg3,
-    isc_arg4: Short;
-    isc_arg5: PVoid;
-    isc_arg6: Short): ISC_STATUS;
-  stdcall;
+  Tisc_receive = function(status_vector: PISC_STATUS; request_handle: PISC_REQ_HANDLE; isc_arg3, isc_arg4: Short; isc_arg5: PVoid; isc_arg6: Short): ISC_STATUS; isc_export;
 
-  Tisc_receive2 = function(status_vector: PISC_STATUS;
-    request_handle: PISC_REQ_HANDLE;
-    isc_arg3,
-    isc_arg4: Short;
-    isc_arg5: PVoid;
-    isc_arg6,
-    isc_arg7: Short;
-    isc_arg8: Long): ISC_STATUS;
-  stdcall;
+  Tisc_receive2 = function(status_vector: PISC_STATUS; request_handle: PISC_REQ_HANDLE; isc_arg3, isc_arg4: Short; isc_arg5: PVoid; isc_arg6, isc_arg7: Short; isc_arg8: Long): ISC_STATUS; isc_export;
 
-  Tisc_reconnect_transaction = function(status_vector: PISC_STATUS;
-    db_handle: PISC_DB_HANDLE;
-    tran_handle: PISC_TR_HANDLE;
-    isc_arg4: Short;
-    isc_arg5: PChar): ISC_STATUS;
-  stdcall;
+  Tisc_reconnect_transaction = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; tran_handle: PISC_TR_HANDLE; isc_arg4: Short; isc_arg5: PChar): ISC_STATUS; isc_export;
 
-  Tisc_release_request = function(status_vector: PISC_STATUS;
-    request_handle: PISC_REQ_HANDLE): ISC_STATUS;
-  stdcall;
+  Tisc_release_request = function(status_vector: PISC_STATUS; request_handle: PISC_REQ_HANDLE): ISC_STATUS; isc_export;
 
-  Tisc_request_info = function(status_vector: PISC_STATUS;
-    request_handle: PISC_REQ_HANDLE;
-    isc_arg3: Short;
-    isc_arg4: Short;
-    isc_arg5: PChar;
-    isc_arg6: Short;
-    isc_arg7: PChar): ISC_STATUS;
-  stdcall;
+  Tisc_request_info = function(status_vector: PISC_STATUS; request_handle: PISC_REQ_HANDLE; isc_arg3: Short; isc_arg4: Short; isc_arg5: PChar; isc_arg6: Short; isc_arg7: PChar): ISC_STATUS; isc_export;
 
-  Tisc_seek_blob = function(status_vector: PISC_STATUS;
-    blob_handle: PISC_BLOB_HANDLE;
-    isc_arg3: Short;
-    isc_arg4: ISC_LONG;
-    isc_arg5: PISC_LONG): ISC_STATUS;
-  stdcall;
+  Tisc_seek_blob = function(status_vector: PISC_STATUS; blob_handle: PISC_BLOB_HANDLE; isc_arg3: Short; isc_arg4: ISC_LONG; isc_arg5: PISC_LONG): ISC_STATUS; isc_export;
 
-  Tisc_send = function(status_vector: PISC_STATUS;
-    request_handle: PISC_REQ_HANDLE;
-    isc_arg3,
-    isc_arg4: Short;
-    isc_arg5: PVoid;
-    isc_arg6: Short): ISC_STATUS;
-  stdcall;
+  Tisc_send = function(status_vector: PISC_STATUS; request_handle: PISC_REQ_HANDLE; isc_arg3, isc_arg4: Short; isc_arg5: PVoid; isc_arg6: Short): ISC_STATUS; isc_export;
 
-  Tisc_start_and_send = function(status_vector: PISC_STATUS;
-    request_handle: PISC_REQ_HANDLE;
-    tran_handle: PISC_TR_HANDLE;
-    isc_arg4,
-    isc_arg5: Short;
-    isc_arg6: PVoid;
-    isc_arg7: Short): ISC_STATUS;
-  stdcall;
+  Tisc_start_and_send = function(status_vector: PISC_STATUS; request_handle: PISC_REQ_HANDLE; tran_handle: PISC_TR_HANDLE; isc_arg4, isc_arg5: Short; isc_arg6: PVoid; isc_arg7: Short): ISC_STATUS; isc_export;
 
-  Tisc_start_request = function(status_vector: PISC_STATUS;
-    request_handle: PISC_REQ_HANDLE;
-    tran_handle: PISC_TR_HANDLE;
-    isc_arg4: Short): ISC_STATUS;
-  stdcall;
+  Tisc_start_request = function(status_vector: PISC_STATUS; request_handle: PISC_REQ_HANDLE; tran_handle: PISC_TR_HANDLE; isc_arg4: Short): ISC_STATUS; isc_export;
 
-  Tisc_unwind_request = function(status_vector: PISC_STATUS;
-    tran_handle: PISC_TR_HANDLE;
-    isc_arg3: Short): ISC_STATUS;
-  stdcall;
+  Tisc_unwind_request = function(status_vector: PISC_STATUS; tran_handle: PISC_TR_HANDLE; isc_arg3: Short): ISC_STATUS; isc_export;
 
-  Tisc_wait_for_event = function(status_vector: PISC_STATUS;
-    db_handle: PISC_DB_HANDLE;
-    length: Short;
-    event_buffer,
-    result_buffer: PChar): ISC_STATUS;
-  stdcall;
+  Tisc_wait_for_event = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; length: Short; event_buffer, result_buffer: PChar): ISC_STATUS; isc_export;
 
 (*******************************)
 (** Other Sql functions       **)
 (*******************************)
 
-  Tisc_close = function(status_vector: PISC_STATUS;
-    isc_arg2: PChar): ISC_STATUS;
-  stdcall;
+  Tisc_close = function(status_vector: PISC_STATUS; isc_arg2: PChar): ISC_STATUS; isc_export;
 
-  Tisc_declare = function(status_vector: PISC_STATUS;
-    isc_arg2,
-    isc_arg3: PChar): ISC_STATUS;
-  stdcall;
+  Tisc_declare = function(status_vector: PISC_STATUS; isc_arg2, isc_arg3: PChar): ISC_STATUS; isc_export;
 
-  Tisc_describe = function(status_vector: PISC_STATUS;
-    isc_arg2: PChar;
-    isc_arg3: PXSQLDA): ISC_STATUS;
-  stdcall;
+  Tisc_describe = function(status_vector: PISC_STATUS; isc_arg2: PChar; isc_arg3: PXSQLDA): ISC_STATUS; isc_export;
 
-  Tisc_describe_bind = function(status_vector: PISC_STATUS;
-    isc_arg2: PChar;
-    isc_arg3: PXSQLDA): ISC_STATUS;
-  stdcall;
+  Tisc_describe_bind = function(status_vector: PISC_STATUS; isc_arg2: PChar; isc_arg3: PXSQLDA): ISC_STATUS; isc_export;
 
-  Tisc_execute = function(status_vector: PISC_STATUS;
-    tran_handle: PISC_TR_HANDLE;
-    isc_arg3: PChar;
-    isc_arg4: PXSQLDA): ISC_STATUS;
-  stdcall;
+  Tisc_execute = function(status_vector: PISC_STATUS; tran_handle: PISC_TR_HANDLE; isc_arg3: PChar; isc_arg4: PXSQLDA): ISC_STATUS; isc_export;
 
-  Tisc_execute_immediate = function(status_vector: PISC_STATUS;
-    db_handle: PISC_DB_HANDLE;
-    tran_handle: PISC_TR_HANDLE;
-    isc_arg4: PShort;
-    isc_arg5: PChar): ISC_STATUS;
-  stdcall;
+  Tisc_execute_immediate = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; tran_handle: PISC_TR_HANDLE; isc_arg4: PShort; isc_arg5: PChar): ISC_STATUS; isc_export;
 
-  Tisc_fetch = function(status_vector: PISC_STATUS;
-    isc_arg2: PChar;
-    isc_arg3: PXSQLDA): ISC_STATUS;
-  stdcall;
+  Tisc_fetch = function(status_vector: PISC_STATUS; isc_arg2: PChar; isc_arg3: PXSQLDA): ISC_STATUS; isc_export;
 
-  Tisc_open = function(status_vector: PISC_STATUS;
-    tran_handle: PISC_TR_HANDLE;
-    isc_arg3: PChar;
-    isc_arg4: PXSQLDA): ISC_STATUS;
-  stdcall;
+  Tisc_open = function(status_vector: PISC_STATUS; tran_handle: PISC_TR_HANDLE; isc_arg3: PChar; isc_arg4: PXSQLDA): ISC_STATUS; isc_export;
 
-  Tisc_prepare = function(status_vector: PISC_STATUS;
-    db_handle: PISC_DB_HANDLE;
-    tran_handle: PISC_TR_HANDLE;
-    isc_arg4: PChar;
-    isc_arg5: PShort;
-    isc_arg6: PChar;
-    isc_arg7: PXSQLDA): ISC_STATUS;
-  stdcall;
+  Tisc_prepare = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; tran_handle: PISC_TR_HANDLE; isc_arg4: PChar; isc_arg5: PShort; isc_arg6: PChar; isc_arg7: PXSQLDA): ISC_STATUS; isc_export;
 
 (***************************************)
 (** Other Dynamic sql functions       **)
 (***************************************)
 
-  Tisc_dsql_execute_m = function(status_vector: PISC_STATUS;
-    tran_handle: PISC_TR_HANDLE;
-    statement_handle: PISC_STMT_HANDLE;
-    isc_arg4: UShort;
-    isc_arg5: PChar;
-    isc_arg6: UShort;
-    isc_arg7: UShort;
-    isc_arg8: PChar): ISC_STATUS;
-  stdcall;
+  Tisc_dsql_execute_m = function(status_vector: PISC_STATUS; tran_handle: PISC_TR_HANDLE; statement_handle: PISC_STMT_HANDLE; isc_arg4: UShort; isc_arg5: PChar; isc_arg6: UShort; isc_arg7: UShort; isc_arg8: PChar): ISC_STATUS; isc_export;
 
-  Tisc_dsql_execute2_m = function(status_vector: PISC_STATUS;
-    tran_handle: PISC_TR_HANDLE;
-    statement_handle: PISC_STMT_HANDLE;
-    isc_arg4: UShort;
-    isc_arg5: PChar;
-    isc_arg6: UShort;
-    isc_arg7: UShort;
-    isc_arg8: PChar;
-    isc_arg9: UShort;
-    isc_arg10: PChar;
-    isc_arg11: UShort;
-    isc_arg12: UShort;
-    isc_arg13: PChar): ISC_STATUS;
-  stdcall;
+  Tisc_dsql_execute2_m = function(status_vector: PISC_STATUS; tran_handle: PISC_TR_HANDLE; statement_handle: PISC_STMT_HANDLE;
+                                  isc_arg4: UShort; isc_arg5: PChar; isc_arg6: UShort; isc_arg7: UShort; isc_arg8: PChar; isc_arg9: UShort; isc_arg10: PChar;
+                                  isc_arg11: UShort; isc_arg12: UShort; isc_arg13: PChar): ISC_STATUS; isc_export;
 
-  Tisc_dsql_execute_immediate_m = function(status_vector: PISC_STATUS;
-    db_handle: PISC_DB_HANDLE;
-    tran_handle: PISC_TR_HANDLE;
-    isc_arg4: UShort;
-    isc_arg5: PChar;
-    isc_arg6: UShort;
-    isc_arg7: UShort;
-    isc_arg8: PChar;
-    isc_arg9: UShort;
-    isc_arg10: UShort;
-    isc_arg11: PChar): ISC_STATUS;
-  stdcall;
+  Tisc_dsql_execute_immediate_m = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; tran_handle: PISC_TR_HANDLE;
+                                            isc_arg4: UShort; isc_arg5: PChar; isc_arg6: UShort; isc_arg7: UShort; isc_arg8: PChar; isc_arg9: UShort; isc_arg10: UShort;
+                                            isc_arg11: PChar): ISC_STATUS; isc_export;
 
-  Tisc_dsql_exec_immed3_m = function(status_vector: PISC_STATUS;
-    db_handle: PISC_DB_HANDLE;
-    tran_handle: PISC_TR_HANDLE;
-    isc_arg4: UShort;
-    isc_arg5: PChar;
-    isc_arg6: UShort;
-    isc_arg7: UShort;
-    isc_arg8: PChar;
-    isc_arg9: UShort;
-    isc_arg10: UShort;
-    isc_arg11: PChar;
-    isc_arg12: UShort;
-    isc_arg13: PChar;
-    isc_arg14: UShort;
-    isc_arg15: UShort;
-    isc_arg16: PChar): ISC_STATUS;
-  stdcall;
+  Tisc_dsql_exec_immed3_m = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; tran_handle: PISC_TR_HANDLE;
+                                     isc_arg4: UShort; isc_arg5: PChar; isc_arg6: UShort; isc_arg7: UShort; isc_arg8: PChar; isc_arg9: UShort;
+                                     isc_arg10: UShort; isc_arg11: PChar; isc_arg12: UShort; isc_arg13: PChar; isc_arg14: UShort;
+                                     isc_arg15: UShort; isc_arg16: PChar): ISC_STATUS; isc_export;
 
-  Tisc_dsql_fetch_m = function(status_vector: PISC_STATUS;
-    statement_handle: PISC_STMT_HANDLE;
-    isc_arg3: UShort;
-    isc_arg4: PChar;
-    isc_arg5: UShort;
-    isc_arg6: UShort;
-    isc_arg7: PChar): ISC_STATUS;
-  stdcall;
+  Tisc_dsql_fetch_m = function(status_vector: PISC_STATUS; statement_handle: PISC_STMT_HANDLE; isc_arg3: UShort; isc_arg4: PChar; isc_arg5: UShort; isc_arg6: UShort; isc_arg7: PChar): ISC_STATUS; isc_export;
 
-  Tisc_dsql_insert_m = function(status_vector: PISC_STATUS;
-    statement_handle: PISC_STMT_HANDLE;
-    isc_arg3: UShort;
-    isc_arg4: PChar;
-    isc_arg5: UShort;
-    isc_arg6: UShort;
-    isc_arg7: PChar): ISC_STATUS;
-  stdcall;
+  Tisc_dsql_insert_m = function(status_vector: PISC_STATUS; statement_handle: PISC_STMT_HANDLE; isc_arg3: UShort; isc_arg4: PChar; isc_arg5: UShort; isc_arg6: UShort; isc_arg7: PChar): ISC_STATUS; isc_export;
 
-  Tisc_dsql_prepare_m = function(status_vector: PISC_STATUS;
-    tran_handle: PISC_TR_HANDLE;
-    statement_handle: PISC_STMT_HANDLE;
-    isc_arg4: UShort;
-    isc_arg5: PChar;
-    isc_arg6: UShort;
-    isc_arg7: UShort;
-    isc_arg8: PChar;
-    isc_arg9: UShort;
-    isc_arg10: PChar): ISC_STATUS;
-  stdcall;
+  Tisc_dsql_prepare_m = function(status_vector: PISC_STATUS; tran_handle: PISC_TR_HANDLE; statement_handle: PISC_STMT_HANDLE; isc_arg4: UShort; isc_arg5: PChar; isc_arg6: UShort; isc_arg7: UShort; isc_arg8: PChar; isc_arg9: UShort; isc_arg10: PChar): ISC_STATUS; isc_export;
 
-  Tisc_dsql_release = function(status_vector: PISC_STATUS;
-    isc_arg2: PChar): ISC_STATUS;
-  stdcall;
+  Tisc_dsql_release = function(status_vector: PISC_STATUS; isc_arg2: PChar): ISC_STATUS; isc_export;
 
-  Tisc_embed_dsql_close = function(status_vector: PISC_STATUS;
-    isc_arg2: PChar): ISC_STATUS;
-  stdcall;
+  Tisc_embed_dsql_close = function(status_vector: PISC_STATUS; isc_arg2: PChar): ISC_STATUS; isc_export;
 
-  Tisc_embed_dsql_declare = function(status_vector: PISC_STATUS;
-    isc_arg2: PChar;
-    isc_arg3: PChar): ISC_STATUS;
-  stdcall;
+  Tisc_embed_dsql_declare = function(status_vector: PISC_STATUS; isc_arg2: PChar; isc_arg3: PChar): ISC_STATUS; isc_export;
 
-  Tisc_embed_dsql_describe = function(status_vector: PISC_STATUS;
-    isc_arg2: PChar;
-    isc_arg3: UShort;
-    isc_arg4: PXSQLDA): ISC_STATUS;
-  stdcall;
+  Tisc_embed_dsql_describe = function(status_vector: PISC_STATUS; isc_arg2: PChar; isc_arg3: UShort; isc_arg4: PXSQLDA): ISC_STATUS; isc_export;
 
-  Tisc_embed_dsql_describe_bind = function(status_vector: PISC_STATUS;
-    isc_arg2: PChar;
-    isc_arg3: UShort;
-    isc_arg4: PXSQLDA): ISC_STATUS;
-  stdcall;
+  Tisc_embed_dsql_describe_bind = function(status_vector: PISC_STATUS; isc_arg2: PChar; isc_arg3: UShort; isc_arg4: PXSQLDA): ISC_STATUS; isc_export;
 
-  Tisc_embed_dsql_execute = function(status_vector: PISC_STATUS;
-    tran_handle: PISC_TR_HANDLE;
-    isc_arg3: PChar;
-    isc_arg4: UShort;
-    isc_arg5: PXSQLDA): ISC_STATUS;
-  stdcall;
+  Tisc_embed_dsql_execute = function(status_vector: PISC_STATUS; tran_handle: PISC_TR_HANDLE; isc_arg3: PChar; isc_arg4: UShort; isc_arg5: PXSQLDA): ISC_STATUS; isc_export;
 
-  Tisc_embed_dsql_execute2 = function(status_vector: PISC_STATUS;
-    tran_handle: PISC_TR_HANDLE;
-    isc_arg3: PChar;
-    isc_arg4: UShort;
-    isc_arg5: PXSQLDA;
-    isc_arg6: PXSQLDA): ISC_STATUS;
-  stdcall;
+  Tisc_embed_dsql_execute2 = function(status_vector: PISC_STATUS; tran_handle: PISC_TR_HANDLE; isc_arg3: PChar; isc_arg4: UShort; isc_arg5: PXSQLDA; isc_arg6: PXSQLDA): ISC_STATUS; isc_export;
 
-  Tisc_embed_dsql_execute_immed = function(status_vector: PISC_STATUS;
-    db_handle: PISC_DB_HANDLE;
-    tran_handle: PISC_TR_HANDLE;
-    isc_arg4: UShort;
-    isc_arg5: PChar;
-    isc_arg6: UShort;
-    isc_arg7: PXSQLDA): ISC_STATUS;
-  stdcall;
+  Tisc_embed_dsql_execute_immed = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; tran_handle: PISC_TR_HANDLE; isc_arg4: UShort; isc_arg5: PChar; isc_arg6: UShort; isc_arg7: PXSQLDA): ISC_STATUS; isc_export;
 
-  Tisc_embed_dsql_fetch = function(status_vector: PISC_STATUS;
-    isc_arg2: PChar;
-    isc_arg3: UShort;
-    isc_arg4: PXSQLDA): ISC_STATUS;
-  stdcall;
+  Tisc_embed_dsql_fetch = function(status_vector: PISC_STATUS; isc_arg2: PChar; isc_arg3: UShort; isc_arg4: PXSQLDA): ISC_STATUS; isc_export;
 
-(*$ifdef SCROLLABLE_CURSORS*)
-  Tisc_embed_dsql_fetch2 = function(status_vector: PISC_STATUS;
-    isc_arg2: PChar;
-    isc_arg3: UShort;
-    isc_arg4: PXSQLDA;
-    isc_arg5: UShort;
-    isc_arg6: Long): ISC_STATUS;
-  stdcall;
-(*$endif*)
+  Tisc_embed_dsql_fetch_a = function(status_vector: PISC_STATUS; isc_arg2: PInt; isc_arg3: PChar; isc_arg4: UShort; isc_arg5: PXSQLDA): ISC_STATUS; isc_export;
 
-  Tisc_embed_dsql_open = function(status_vector: PISC_STATUS;
-    tran_handle: PISC_TR_HANDLE;
-    isc_arg3: PChar;
-    isc_arg4: UShort;
-    isc_arg5: PXSQLDA): ISC_STATUS;
-  stdcall;
+  Tisc_embed_dsql_length = procedure(arg1: PChar; arg2: PUShort); isc_export; Tisc_embed_dsql_open = function(status_vector: PISC_STATUS; tran_handle: PISC_TR_HANDLE; isc_arg3: PChar; isc_arg4: UShort; isc_arg5: PXSQLDA): ISC_STATUS; isc_export;
 
-  Tisc_embed_dsql_open2 = function(status_vector: PISC_STATUS;
-    tran_handle: PISC_TR_HANDLE;
-    isc_arg3: PChar;
-    isc_arg4: UShort;
-    isc_arg5: PXSQLDA;
-    isc_arg6: PXSQLDA): ISC_STATUS;
-  stdcall;
+  Tisc_embed_dsql_open2 = function(status_vector: PISC_STATUS; tran_handle: PISC_TR_HANDLE; isc_arg3: PChar; isc_arg4: UShort; isc_arg5: PXSQLDA; isc_arg6: PXSQLDA): ISC_STATUS; isc_export;
 
-  Tisc_embed_dsql_insert = function(status_vector: PISC_STATUS;
-    isc_arg2: PChar;
-    isc_arg3: UShort;
-    isc_arg4: PXSQLDA): ISC_STATUS;
-  stdcall;
+  Tisc_embed_dsql_insert = function(status_vector: PISC_STATUS; isc_arg2: PChar; isc_arg3: UShort; isc_arg4: PXSQLDA): ISC_STATUS; isc_export;
 
-  Tisc_embed_dsql_prepare = function(status_vector: PISC_STATUS;
-    db_handle: PISC_DB_HANDLE;
-    tran_handle: PISC_TR_HANDLE;
-    isc_arg4: PChar;
-    isc_arg5: UShort;
-    isc_arg6: PChar;
-    isc_arg7: UShort;
-    isc_arg8: PXSQLDA): ISC_STATUS;
-  stdcall;
+  Tisc_embed_dsql_prepare = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; tran_handle: PISC_TR_HANDLE; isc_arg4: PChar; isc_arg5: UShort; isc_arg6: PChar; isc_arg7: UShort; isc_arg8: PXSQLDA): ISC_STATUS; isc_export;
 
-  Tisc_embed_dsql_release = function(status_vector: PISC_STATUS;
-    isc_arg2: PChar): ISC_STATUS;
-  stdcall;
+  Tisc_embed_dsql_release = function(status_vector: PISC_STATUS; isc_arg2: PChar): ISC_STATUS; isc_export;
 
 (********************************)
 (** Other Blob functions       **)
 (********************************)
 
-  TBLOB_open = function(blob_handle: TISC_BLOB_HANDLE;
-    isc_arg2: PChar;
-    isc_arg3: int): PBSTREAM;
-  stdcall;
+  TBLOB_open = function(blob_handle: TISC_BLOB_HANDLE; isc_arg2: PChar; isc_arg3: int): PBSTREAM; isc_export;
 
-  TBLOB_put = function(isc_arg1: char;
-    isc_arg2: PBSTREAM): Int;
-  stdcall;
+  TBLOB_put = function(isc_arg1: char; isc_arg2: PBSTREAM): Int; isc_export;
 
-  TBLOB_close = function(isc_arg1: PBSTREAM): Int;
-  stdcall;
+  TBLOB_close = function(isc_arg1: PBSTREAM): Int; isc_export;
 
-  TBLOB_get = function(isc_arg1: PBSTREAM): Int;
-  stdcall;
+  TBLOB_get = function(isc_arg1: PBSTREAM): Int; isc_export;
 
-  TBLOB_display = function(isc_arg1: PISC_QUAD;
-    db_handle: TISC_DB_HANDLE;
-    tran_handle: TISC_TR_HANDLE;
-    isc_arg4: PChar): Int;
-  stdcall;
+  TBLOB_display = function(isc_arg1: PISC_QUAD; db_handle: TISC_DB_HANDLE; tran_handle: TISC_TR_HANDLE; isc_arg4: PChar): Int; isc_export;
 
-  TBLOB_dump = function(isc_arg1: PISC_QUAD;
-    db_handle: TISC_DB_HANDLE;
-    tran_handle: TISC_TR_HANDLE;
-    isc_arg4: PChar): Int;
-  stdcall;
+  TBLOB_dump = function(isc_arg1: PISC_QUAD; db_handle: TISC_DB_HANDLE; tran_handle: TISC_TR_HANDLE; isc_arg4: PChar): Int; isc_export;
 
-  TBLOB_edit = function(isc_arg1: PISC_QUAD;
-    db_handle: TISC_DB_HANDLE;
-    tran_handle: TISC_TR_HANDLE;
-    isc_arg4: PChar): Int;
-  stdcall;
+  TBLOB_edit = function(isc_arg1: PISC_QUAD; db_handle: TISC_DB_HANDLE; tran_handle: TISC_TR_HANDLE; isc_arg4: PChar): Int; isc_export;
 
-  TBLOB_load = function(isc_arg1: PISC_QUAD;
-    db_handle: TISC_DB_HANDLE;
-    tran_handle: TISC_TR_HANDLE;
-    isc_arg4: PChar): Int;
-  stdcall;
+  TBLOB_load = function(isc_arg1: PISC_QUAD; db_handle: TISC_DB_HANDLE; tran_handle: TISC_TR_HANDLE; isc_arg4: PChar): Int; isc_export;
 
-  TBLOB_text_dump = function(isc_arg1: PISC_QUAD;
-    db_handle: TISC_DB_HANDLE;
-    tran_handle: TISC_TR_HANDLE;
-    isc_arg4: PChar): Int;
-  stdcall;
+  TBLOB_text_dump = function(isc_arg1: PISC_QUAD; db_handle: TISC_DB_HANDLE; tran_handle: TISC_TR_HANDLE; isc_arg4: PChar): Int; isc_export;
 
-  TBLOB_text_load = function(isc_arg1: PISC_QUAD;
-    db_handle: TISC_DB_HANDLE;
-    tran_handle: TISC_TR_HANDLE;
-    isc_arg4: PChar): Int;
-  stdcall;
+  TBLOB_text_load = function(isc_arg1: PISC_QUAD; db_handle: TISC_DB_HANDLE; tran_handle: TISC_TR_HANDLE; isc_arg4: PChar): Int; isc_export;
 
-  TBopen = function(blob_id: PISC_QUAD;
-    db_handle: TISC_DB_HANDLE;
-    tran_handle: TISC_TR_HANDLE;
-    mode: PChar): PBSTREAM;
-  stdcall;
+  TBopen = function(blob_id: PISC_QUAD; db_handle: TISC_DB_HANDLE; tran_handle: TISC_TR_HANDLE; mode: PChar): PBSTREAM; isc_export;
 
-  TBclose = function(Stream: PBSTREAM): PISC_STATUS; stdcall;
+  TBclose = function(Stream: PBSTREAM): PISC_STATUS; isc_export;
 
 (********************************)
 (** Other Misc functions       **)
 (********************************)
 
-  Tisc_ftof = function(isc_arg1: PChar;
-    isc_arg2: UShort;
-    isc_arg3: PChar;
-    isc_arg4: UShort): ISC_LONG;
-  stdcall;
+  Tisc_ftof = function(isc_arg1: PChar; isc_arg2: UShort; isc_arg3: PChar; isc_arg4: UShort): ISC_LONG; isc_export;
 
-  Tisc_print_blr = function(isc_arg1: PChar;
-    isc_arg2: TISC_PRINT_CALLBACK;
-    isc_arg3: PVoid;
-    isc_arg4: Short): ISC_STATUS; stdcall;
+  Tisc_print_blr = function(isc_arg1: PChar; isc_arg2: TISC_PRINT_CALLBACK; isc_arg3: PVoid; isc_arg4: Short): ISC_STATUS; isc_export;
 
-  Tisc_set_debug = procedure(isc_arg1: Int); stdcall;
+  Tisc_set_debug = procedure(isc_arg1: Int); isc_export;
 
-  Tisc_qtoq = procedure(isc_arg1: PISC_QUAD;
-    isc_arg2: PISC_QUAD);
-  stdcall;
+  Tisc_qtoq = procedure(isc_arg1: PISC_QUAD; isc_arg2: PISC_QUAD); isc_export;
 
-  Tisc_vtof = procedure(isc_arg1: PChar;
-    isc_arg2: PChar;
-    isc_arg3: UShort);
-  stdcall;
+  Tisc_vtof = procedure(isc_arg1: PChar; isc_arg2: PChar; isc_arg3: UShort); isc_export;
 
-  Tisc_vtov = procedure(isc_arg1: PChar;
-    isc_arg2: PChar;
-    isc_arg3: Short);
-  stdcall;
+  Tisc_vtov = procedure(isc_arg1: PChar; isc_arg2: PChar; isc_arg3: Short); isc_export;
 
-  Tisc_version = function(db_handle: PISC_DB_HANDLE;
-    isc_arg2: TISC_VERSION_CALLBACK;
-    isc_arg3: PVoid): Int;
-  stdcall;
+  Tisc_version = function(db_handle: PISC_DB_HANDLE; isc_arg2: TISC_VERSION_CALLBACK; isc_arg3: PVoid): Int; isc_export;
 
-  Tisc_reset_fpe = function(isc_arg1: UShort): ISC_LONG;
-  stdcall;
+  Tisc_reset_fpe = function(isc_arg1: UShort): ISC_LONG; isc_export;
+
+  Tisc_baddress = function(isc_arg1: PChar): uintptr_t; isc_export;
+
+  Tisc_baddress_s = procedure(isc_arg1: PChar; isc_arg2: uintptr_t); isc_export;
 
 (*******************************************)
 (** Service manager functions             **)
 (*******************************************)
 
-  Tisc_service_attach = function(status_vector: PISC_STATUS;
-    isc_arg2: UShort;
-    isc_arg3: PChar;
-    service_handle: PISC_SVC_HANDLE;
-    isc_arg5: UShort;
-    isc_arg6: PChar): ISC_STATUS;
-  stdcall;
+  Tisc_service_attach = function(status_vector: PISC_STATUS; isc_arg2: UShort; isc_arg3: PChar; service_handle: PISC_SVC_HANDLE; isc_arg5: UShort; isc_arg6: PChar): ISC_STATUS; isc_export;
 
-  Tisc_service_detach = function(status_vector: PISC_STATUS;
-    service_handle: PISC_SVC_HANDLE): ISC_STATUS;
-  stdcall;
+  Tisc_service_detach = function(status_vector: PISC_STATUS; service_handle: PISC_SVC_HANDLE): ISC_STATUS; isc_export;
 
-  Tisc_service_query = function(status_vector: PISC_STATUS;
-    service_handle: PISC_SVC_HANDLE;
-    recv_handle: PISC_SVC_HANDLE;
-    isc_arg4: UShort;
-    isc_arg5: PChar;
-    isc_arg6: UShort;
-    isc_arg7: PChar;
-    isc_arg8: UShort;
-    isc_arg9: PChar): ISC_STATUS;
-  stdcall;
+  Tisc_service_query = function(status_vector: PISC_STATUS; service_handle: PISC_SVC_HANDLE; recv_handle: PISC_SVC_HANDLE; isc_arg4: UShort; isc_arg5: PChar; isc_arg6: UShort; isc_arg7: PChar; isc_arg8: UShort; isc_arg9: PChar): ISC_STATUS; isc_export;
 
-  Tisc_service_start = function(status_vector: PISC_STATUS;
-    service_handle: PISC_SVC_HANDLE;
-    recv_handle: PISC_SVC_HANDLE;
-    isc_arg4: UShort;
-    isc_arg5: PChar): ISC_STATUS;
-  stdcall;
+  Tisc_service_start = function(status_vector: PISC_STATUS; service_handle: PISC_SVC_HANDLE; recv_handle: PISC_SVC_HANDLE; isc_arg4: UShort; isc_arg5: PChar): ISC_STATUS; isc_export;
 
 (********************************)
 (* Client information functions *)
 (********************************)
-  Tisc_get_client_version = procedure(buffer: PChar); stdcall;
-  Tisc_get_client_major_version = function: Integer; stdcall;
-  Tisc_get_client_minor_version = function: Integer; stdcall;
+
+{  Tfb_shutdown= function (arg1: UInt; arg2: int): Int;
+
+  ISC_STATUS isc_export fb_shutdown_callback(ISC_STATUS*,
+  										   FB_SHUTDOWN_CALLBACK,
+  										   const int,
+  										   void*);
+
+  ISC_STATUS isc_export fb_cancel_operation(ISC_STATUS*,
+  										  isc_db_handle*,
+  										  ISC_USHORT);
+
+}
+(********************************)
+(* Client information functions *)
+(********************************)
+
+  Tisc_get_client_version = procedure(buffer: PChar); isc_export;
+  Tisc_get_client_major_version = function: Integer; isc_export;
+  Tisc_get_client_minor_version = function: Integer; isc_export;
 
 (*********************************)
 (** Forms functions             **)
 (*********************************)
 
-  Tisc_compile_map = function(status_vector: PISC_STATUS;
-    form_handle: PISC_FORM_HANDLE;
-    request_handle: PISC_REQ_HANDLE;
-    isc_arg4: PShort;
-    isc_arg5: PChar): ISC_STATUS;
-  stdcall;
+  Tisc_compile_map = function(status_vector: PISC_STATUS; form_handle: PISC_FORM_HANDLE; request_handle: PISC_REQ_HANDLE; isc_arg4: PShort; isc_arg5: PChar): ISC_STATUS; isc_export;
 
-  Tisc_compile_menu = function(status_vector: PISC_STATUS;
-    form_handle: PISC_FORM_HANDLE;
-    request_handle: PISC_REQ_HANDLE;
-    isc_arg4: PShort;
-    isc_arg5: PChar): ISC_STATUS;
-  stdcall;
+  Tisc_compile_menu = function(status_vector: PISC_STATUS; form_handle: PISC_FORM_HANDLE; request_handle: PISC_REQ_HANDLE; isc_arg4: PShort; isc_arg5: PChar): ISC_STATUS; isc_export;
 
-  Tisc_compile_sub_map = function(status_vector: PISC_STATUS;
-    win_handle: PISC_WIN_HANDLE;
-    request_handle: PISC_REQ_HANDLE;
-    isc_arg4: PShort;
-    isc_arg5: PChar): ISC_STATUS;
-  stdcall;
+  Tisc_compile_sub_map = function(status_vector: PISC_STATUS; win_handle: PISC_WIN_HANDLE; request_handle: PISC_REQ_HANDLE; isc_arg4: PShort; isc_arg5: PChar): ISC_STATUS; isc_export;
 
-  Tisc_create_window = function(status_vector: PISC_STATUS;
-    win_handle: PISC_WIN_HANDLE;
-    isc_arg3: PShort;
-    isc_arg4: PChar;
-    isc_arg5: PShort;
-    isc_arg6: PShort): ISC_STATUS;
-  stdcall;
+  Tisc_create_window = function(status_vector: PISC_STATUS; win_handle: PISC_WIN_HANDLE; isc_arg3: PShort; isc_arg4: PChar; isc_arg5: PShort; isc_arg6: PShort): ISC_STATUS; isc_export;
 
-  Tisc_delete_window = function(status_vector: PISC_STATUS;
-    win_handle: PISC_WIN_HANDLE): ISC_STATUS;
-  stdcall;
+  Tisc_delete_window = function(status_vector: PISC_STATUS; win_handle: PISC_WIN_HANDLE): ISC_STATUS; isc_export;
 
-  Tisc_drive_form = function(status_vector: PISC_STATUS;
-    db_handle: PISC_DB_HANDLE;
-    tran_handle: PISC_TR_HANDLE;
-    win_handle: PISC_WIN_HANDLE;
-    request_handle: PISC_REQ_HANDLE;
-    isc_arg6: PUChar;
-    isc_arg7: PUChar): ISC_STATUS;
-  stdcall;
+  Tisc_drive_form = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; tran_handle: PISC_TR_HANDLE; win_handle: PISC_WIN_HANDLE; request_handle: PISC_REQ_HANDLE; isc_arg6: PUChar; isc_arg7: PUChar): ISC_STATUS; isc_export;
 
-  Tisc_drive_menu = function(status_vector: PISC_STATUS;
-    win_handle: PISC_WIN_HANDLE;
-    request_handle: PISC_REQ_HANDLE;
-    isc_arg4: PShort;
-    isc_arg5: PChar;
-    isc_arg6: PShort;
-    isc_arg7: PChar;
-    isc_arg8: PShort;
-    isc_arg9: PShort;
-    isc_arg10: PChar;
-    isc_arg11: PISC_LONG): ISC_STATUS;
-  stdcall;
+  Tisc_drive_menu = function(status_vector: PISC_STATUS; win_handle: PISC_WIN_HANDLE; request_handle: PISC_REQ_HANDLE; isc_arg4: PShort; isc_arg5: PChar; isc_arg6: PShort; isc_arg7: PChar; isc_arg8: PShort; isc_arg9: PShort; isc_arg10: PChar; isc_arg11: PISC_LONG): ISC_STATUS; isc_export;
 
-  Tisc_form_delete = function(status_vector: PISC_STATUS;
-    form_handle: PISC_FORM_HANDLE): ISC_STATUS;
-  stdcall;
+  Tisc_form_delete = function(status_vector: PISC_STATUS; form_handle: PISC_FORM_HANDLE): ISC_STATUS; isc_export;
 
-  Tisc_form_fetch = function(status_vector: PISC_STATUS;
-    db_handle: PISC_DB_HANDLE;
-    tran_handle: PISC_TR_HANDLE;
-    request_handle: PISC_REQ_HANDLE;
-    isc_arg5: PUChar): ISC_STATUS;
-  stdcall;
+  Tisc_form_fetch = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; tran_handle: PISC_TR_HANDLE; request_handle: PISC_REQ_HANDLE; isc_arg5: PUChar): ISC_STATUS; isc_export;
 
-  Tisc_form_insert = function(status_vector: PISC_STATUS;
-    db_handle: PISC_DB_HANDLE;
-    tran_handle: PISC_TR_HANDLE;
-    request_handle: PISC_REQ_HANDLE;
-    isc_arg5: PUChar): ISC_STATUS;
-  stdcall;
+  Tisc_form_insert = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; tran_handle: PISC_TR_HANDLE; request_handle: PISC_REQ_HANDLE; isc_arg5: PUChar): ISC_STATUS; isc_export;
 
-  Tisc_get_entree = function(status_vector: PISC_STATUS;
-    request_handle: PISC_REQ_HANDLE;
-    isc_arg3: PShort;
-    isc_arg4: PChar;
-    isc_arg5: PISC_LONG;
-    isc_arg6: PShort): ISC_STATUS;
-  stdcall;
+  Tisc_get_entree = function(status_vector: PISC_STATUS; request_handle: PISC_REQ_HANDLE; isc_arg3: PShort; isc_arg4: PChar; isc_arg5: PISC_LONG; isc_arg6: PShort): ISC_STATUS; isc_export;
 
-  Tisc_initialize_menu = function(status_vector: PISC_STATUS;
-    request_handle: PISC_REQ_HANDLE): ISC_STATUS;
-  stdcall;
+  Tisc_initialize_menu = function(status_vector: PISC_STATUS; request_handle: PISC_REQ_HANDLE): ISC_STATUS; isc_export;
 
-  Tisc_menu = function(status_vector: PISC_STATUS;
-    win_handle: PISC_WIN_HANDLE;
-    request_handle: PISC_REQ_HANDLE;
-    isc_arg4: PShort;
-    isc_arg5: PChar): ISC_STATUS;
-  stdcall;
+  Tisc_menu = function(status_vector: PISC_STATUS; win_handle: PISC_WIN_HANDLE; request_handle: PISC_REQ_HANDLE; isc_arg4: PShort; isc_arg5: PChar): ISC_STATUS; isc_export;
 
-  Tisc_load_form = function(status_vector: PISC_STATUS;
-    db_handle: PISC_DB_HANDLE;
-    tran_handle: PISC_TR_HANDLE;
-    form_handle: PISC_FORM_HANDLE;
-    isc_arg5: PShort;
-    isc_arg6: PChar): ISC_STATUS;
-  stdcall;
+  Tisc_load_form = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; tran_handle: PISC_TR_HANDLE; form_handle: PISC_FORM_HANDLE; isc_arg5: PShort; isc_arg6: PChar): ISC_STATUS; isc_export;
 
-  Tisc_pop_window = function(status_vector: PISC_STATUS;
-    win_handle: PISC_WIN_HANDLE): ISC_STATUS;
-  stdcall;
+  Tisc_pop_window = function(status_vector: PISC_STATUS; win_handle: PISC_WIN_HANDLE): ISC_STATUS; isc_export;
 
-  Tisc_put_entree = function(status_vector: PISC_STATUS;
-    request_handle: PISC_REQ_HANDLE;
-    isc_arg3: PShort;
-    isc_arg4: PChar;
-    isc_arg5: PISC_LONG): ISC_STATUS;
-  stdcall;
+  Tisc_put_entree = function(status_vector: PISC_STATUS; request_handle: PISC_REQ_HANDLE; isc_arg3: PShort; isc_arg4: PChar; isc_arg5: PISC_LONG): ISC_STATUS; isc_export;
 
-  Tisc_reset_form = function(status_vector: PISC_STATUS;
-    request_handle: PISC_REQ_HANDLE): ISC_STATUS;
-  stdcall;
+  Tisc_reset_form = function(status_vector: PISC_STATUS; request_handle: PISC_REQ_HANDLE): ISC_STATUS; isc_export;
 
-  Tisc_suspend_window = function(status_vector: PISC_STATUS;
-    win_handle: PISC_WIN_HANDLE): ISC_STATUS;
-  stdcall;
+  Tisc_suspend_window = function(status_vector: PISC_STATUS; win_handle: PISC_WIN_HANDLE): ISC_STATUS; isc_export;
 
-(** Constants!!! **)
 (*****************************************************)
 (** Actions to pass to the blob filter (ctl_source) **)
 (*****************************************************)
@@ -1456,273 +763,291 @@ const
 (** Blr definitions **)
 (*********************)
 
-  // In pascal, how does one deal with the below "#define"?
-  // blr_word(n) ((n) % 256), ((n) / 256)
-  blr_text = 14;
-  blr_text2 = 15;
-  blr_short = 7;
-  blr_long = 8;
-  blr_quad = 9;
-  blr_float = 10;
-  blr_double = 27;
-  blr_d_float = 11;
-  blr_timestamp = 35;
-  blr_varying = 37;
-  blr_varying2 = 38;
-  blr_blob = 261;
-  blr_cstring = 40;
-  blr_cstring2 = 41;
-  blr_blob_id = 45;
-  blr_sql_date = 12;
-  blr_sql_time = 13;
-  blr_int64 = 16;
-  blr_boolean_dtype = 17;
-  blr_date = blr_timestamp;
+  blr_text                = 14;
+  blr_text2               = 15;
+  blr_short               = 7;
+  blr_long                = 8;
+  blr_quad                = 9;
+  blr_float               = 10;
+  blr_double              = 27;
+  blr_d_float             = 11;
+  blr_timestamp           = 35;
+  blr_varying             = 37;
+  blr_varying2            = 38;
+  blr_blob                = 261;
+  blr_cstring             = 40;
+  blr_cstring2            = 41;
+  blr_blob_id             = 45;
+  blr_sql_date            = 12;
+  blr_sql_time            = 13;
+  blr_int64               = 16;
+  blr_blob2               = 17;
+  blr_domain_name         = 18;
+  blr_domain_name2        = 19;
+  blr_not_nullable        = 20;
+  blr_column_name         = 21;
+  blr_column_name2        = 22;
 
-  blr_inner = 0;
-  blr_left = 1;
-  blr_right = 2;
-  blr_full = 3;
+  blr_domain_type_of      = 0;
+  blr_domain_full         = 1;
 
-  blr_gds_code = 0;
-  blr_sql_code = 1;
-  blr_exception = 2;
-  blr_trigger_code = 3;
-  blr_default_code = 4;
+  blr_date                = blr_timestamp;
 
-  blr_version4 = 4;
-  blr_version5 = 5;
-  blr_eoc = 76;
-  blr_end = -1;
+  blr_inner               = 0;
+  blr_left                = 1;
+  blr_right               = 2;
+  blr_full                = 3;
 
-  blr_assignment = 1;
-  blr_begin = 2;
-  blr_dcl_variable = 3;
-  blr_message = 4;
-  blr_erase = 5;
-  blr_fetch = 6;
-  blr_for = 7;
-  blr_if = 8;
-  blr_loop = 9;
-  blr_modify = 10;
-  blr_handler = 11;
-  blr_receive = 12;
-  blr_select = 13;
-  blr_send = 14;
-  blr_store = 15;
-  blr_label = 17;
-  blr_leave = 18;
-  blr_store2 = 19;
-  blr_post = 20;
+  blr_gds_code            = 0;
+  blr_sql_code            = 1;
+  blr_exception           = 2;
+  blr_trigger_code        = 3;
+  blr_default_code        = 4;
+  blr_raise               = 5;
+  blr_exception_msg       = 6;
 
-  blr_literal = 21;
-  blr_dbkey = 22;
-  blr_field = 23;
-  blr_fid = 24;
-  blr_parameter = 25;
-  blr_variable = 26;
-  blr_average = 27;
-  blr_count = 28;
-  blr_maximum = 29;
-  blr_minimum = 30;
-  blr_total = 31;
-  blr_add = 34;
-  blr_subtract = 35;
-  blr_multiply = 36;
-  blr_divide = 37;
-  blr_negate = 38;
-  blr_concatenate = 39;
-  blr_substring = 40;
-  blr_parameter2 = 41;
-  blr_from = 42;
-  blr_via = 43;
-  blr_user_name = 44;
-  blr_null = 45;
+  blr_version4            = 4;
+  blr_version5            = 5;
+  blr_eoc                 = 76;
+  blr_end                 = 255;
 
-  blr_eql = 47;
-  blr_neq = 48;
-  blr_gtr = 49;
-  blr_geq = 50;
-  blr_lss = 51;
-  blr_leq = 52;
-  blr_containing = 53;
-  blr_matching = 54;
-  blr_starting = 55;
-  blr_between = 56;
-  blr_or = 57;
-  blr_and = 58;
-  blr_not = 59;
-  blr_any = 60;
-  blr_missing = 61;
-  blr_unique = 62;
-  blr_like = 63;
+  blr_assignment          = 1;
+  blr_begin               = 2;
+  blr_dcl_variable        = 3;
+  blr_message             = 4;
+  blr_erase               = 5;
+  blr_fetch               = 6;
+  blr_for                 = 7;
+  blr_if                  = 8;
+  blr_loop                = 9;
+  blr_modify              = 10;
+  blr_handler             = 11;
+  blr_receive             = 12;
+  blr_select              = 13;
+  blr_send                = 14;
+  blr_store               = 15;
+  blr_label               = 17;
+  blr_leave               = 18;
+  blr_store2              = 19;
+  blr_post                = 20;
+  blr_literal             = 21;
+  blr_dbkey               = 22;
+  blr_field               = 23;
+  blr_fid                 = 24;
+  blr_parameter           = 25;
+  blr_variable            = 26;
+  blr_average             = 27;
+  blr_count               = 28;
+  blr_maximum             = 29;
+  blr_minimum             = 30;
+  blr_total               = 31;
 
-  blr_stream = 65;
-  blr_set_index = 66;
-  blr_rse = 67;
-  blr_first = 68;
-  blr_project = 69;
-  blr_sort = 70;
-  blr_boolean = 71;
-  blr_ascending = 72;
-  blr_descending = 73;
-  blr_relation = 74;
-  blr_rid = 75;
-  blr_union = 76;
-  blr_map = 77;
-  blr_group_by = 78;
-  blr_aggregate = 79;
-  blr_join_type = 80;
-  blr_rows = 81;
+  blr_add                 = 34;
+  blr_subtract            = 35;
+  blr_multiply            = 36;
+  blr_divide              = 37;
+  blr_negate              = 38;
+  blr_concatenate         = 39;
+  blr_substring           = 40;
+  blr_parameter2          = 41;
+  blr_from                = 42;
+  blr_via                 = 43;
+  blr_parameter2_old      = 44;
+  blr_user_name           = 44;
+  blr_null                = 45;
 
-{ sub parameters for blr_rows }
+  blr_equiv               = 46;
+  blr_eql                 = 47;
+  blr_neq                 = 48;
+  blr_gtr                 = 49;
+  blr_geq                 = 50;
+  blr_lss                 = 51;
+  blr_leq                 = 52;
+  blr_containing          = 53;
+  blr_matching            = 54;
+  blr_starting            = 55;
+  blr_between             = 56;
+  blr_or                  = 57;
+  blr_and                 = 58;
+  blr_not                 = 59;
+  blr_any                 = 60;
+  blr_missing             = 61;
+  blr_unique              = 62;
+  blr_like                = 63;
 
-  blr_ties = 0;
-  blr_percent = 1;
+  blr_rse                 = 67;
+  blr_first               = 68;
+  blr_project             = 69;
+  blr_sort                = 70;
+  blr_boolean             = 71;
+  blr_ascending           = 72;
+  blr_descending          = 73;
+  blr_relation            = 74;
+  blr_rid                 = 75;
+  blr_union               = 76;
+  blr_map                 = 77;
+  blr_group_by            = 78;
+  blr_aggregate           = 79;
+  blr_join_type           = 80;
 
-  blr_agg_count = 83;
-  blr_agg_max = 84;
-  blr_agg_min = 85;
-  blr_agg_total = 86;
-  blr_agg_average = 87;
-  blr_parameter3 = 88;
-  blr_run_count = 118;
-  blr_run_max = 89;
-  blr_run_min = 90;
-  blr_run_total = 91;
-  blr_run_average = 92;
-  blr_agg_count2 = 93;
-  blr_agg_count_distinct = 94;
-  blr_agg_total_distinct = 95;
+  blr_agg_count           = 83;
+  blr_agg_max             = 84;
+  blr_agg_min             = 85;
+  blr_agg_total           = 86;
+  blr_agg_average         = 87;
+  blr_parameter3          = 88;
+  blr_run_max             = 89;
+  blr_run_min             = 90;
+  blr_run_total           = 91;
+  blr_run_average         = 92;
+  blr_agg_count2          = 93;
+  blr_agg_count_distinct  = 94;
+  blr_agg_total_distinct  = 95;
   blr_agg_average_distinct = 96;
 
-  blr_function = 100;
-  blr_gen_id = 101;
-  blr_prot_mask = 102;
-  blr_upcase = 103;
-  blr_lock_state = 104;
-  blr_value_if = 105;
-  blr_matching2 = 106;
-  blr_index = 107;
-  blr_ansi_like = 108;
-  blr_bookmark = 109;
-  blr_crack = 110;
-  blr_force_crack = 111;
-  blr_seek = 112;
-  blr_find = 113;
+  blr_function            = 100;
+  blr_gen_id              = 101;
+  blr_prot_mask           = 102;
+  blr_upcase              = 103;
+  blr_lock_state          = 104;
+  blr_value_if            = 105;
+  blr_matching2           = 106;
+  blr_index               = 107;
+  blr_ansi_like           = 108;
 
-  blr_continue = 0;
-  blr_forward = 1;
-  blr_backward = 2;
-  blr_bof_forward = 3;
-  blr_eof_backward = 4;
+  blr_seek                = 112;
 
-  blr_lock_relation = 114;
-  blr_lock_record = 115;
-  blr_set_bookmark = 116;
-  blr_get_bookmark = 117;
-  blr_rs_stream = 119;
-  blr_exec_proc = 120;
-  blr_begin_range = 121;
-  blr_end_range = 122;
-  blr_delete_range = 123;
-  blr_procedure = 124;
-  blr_pid = 125;
-  blr_exec_pid = 126;
-  blr_singular = 127;
-  blr_abort = 128;
-  blr_block = 129;
-  blr_error_handler = 130;
-  blr_cast = 131;
-  blr_release_lock = 132;
-  blr_release_locks = 133;
-  blr_start_savepoint = 134;
-  blr_end_savepoint = 135;
-  blr_find_dbkey = 136;
-  blr_range_relation = 137;
-  blr_delete_ranges = 138;
+  blr_continue            = 0;
+  blr_forward             = 1;
+  blr_backward            = 2;
+  blr_bof_forward         = 3;
+  blr_eof_backward        = 4;
 
-  blr_plan = 139;
-  blr_merge = 140;
-  blr_join = 141;
-  blr_sequential = 142;
-  blr_navigational = 143;
-  blr_indices = 144;
-  blr_retrieve = 145;
+  blr_run_count           = 118;
+  blr_rs_stream           = 119;
+  blr_exec_proc           = 120;
 
-  blr_relation2 = 146;
-  blr_rid2 = 147;
-  blr_reset_stream = 148;
-  blr_release_bookmark = 149;
-  blr_set_generator = 150;
-  blr_ansi_any = 151;
-  blr_exists = 152;
-  blr_cardinality = 153;
+  blr_procedure           = 124;
+  blr_pid                 = 125;
+  blr_exec_pid            = 126;
+  blr_singular            = 127;
+  blr_abort               = 128;
+  blr_block               = 129;
+  blr_error_handler       = 130;
 
-  blr_record_version = 154; (** get tid of record **)
-  blr_stall = 155; (** fake server stall **)
-  blr_seek_no_warn = 156;
-  blr_find_dbkey_version = 157;
-  blr_ansi_all = 158;
+  blr_cast                = 131;
 
-  blr_extract = 159;
+  blr_start_savepoint     = 134;
+  blr_end_savepoint       = 135;
 
-  (* sub parameters for blr_extract *)
+  blr_plan                = 139;
+  blr_merge               = 140;
+  blr_join                = 141;
+  blr_sequential          = 142;
+  blr_navigational        = 143;
+  blr_indices             = 144;
+  blr_retrieve            = 145;
 
-  blr_extract_year = 0;
-  blr_extract_month = 1;
-  blr_extract_day = 2;
-  blr_extract_hour = 3;
-  blr_extract_minute = 4;
-  blr_extract_second = 5;
-  blr_extract_weekday = 6;
-  blr_extract_yearday = 7;
+  blr_relation2           = 146;
+  blr_rid2                = 147;
 
-  blr_current_date = 160;
-  blr_current_timestamp = 161;
-  blr_current_time = 162;
+  blr_set_generator       = 150;
 
-  blr_post_arg = 163;
-  blr_exec_into = 164;
-  blr_user_savepoint = 165;
+  blr_ansi_any            = 151;
+  blr_exists              = 152;
 
-  (* These verbs were added in 6.0,
-  primarily to support 64-bit integers *)
+  blr_record_version      = 154;
+  blr_stall               = 155;
 
-{  blr_add2	            = 163;
-  blr_subtract2	            = 164;
-  blr_multiply2             = 165;
-  blr_divide2	            = 166;
-  blr_agg_total2            = 167;
-  blr_agg_total_distinct2   = 168;
-  blr_agg_average2          = 169;
-  blr_agg_average_distinct2 = 170;
-  blr_average2		    = 171;
-  blr_gen_id2		    = 172;
-  blr_set_generator2        = 173;}
+  blr_ansi_all            = 158;
 
-{ FB 1.0 specific BLR }
+  blr_extract             = 159;
 
-  blr_current_role = 174;
-  blr_skip = 175;
+  blr_extract_year                = 0;
+  blr_extract_month               = 1;
+  blr_extract_day                 = 2;
+  blr_extract_hour                = 3;
+  blr_extract_minute              = 4;
+  blr_extract_second              = 5;
+  blr_extract_weekday             = 6;
+  blr_extract_yearday             = 7;
+  blr_extract_millisecond         = 8;
+  blr_extract_week                = 9;
 
-{ FB 2.0 specific BLR }
+  blr_current_date        = 160;
+  blr_current_timestamp   = 161;
+  blr_current_time        = 162;
 
-  blr_exec_sql = 176;
-  blr_internal_info = 177;
-  blr_nullsfirst = 178;
-  blr_writelock = 179;
-  blr_nullslast = 180;
+  blr_post_arg            = 163;
+  blr_exec_into           = 164;
+  blr_user_savepoint      = 165;
+  blr_dcl_cursor          = 166;
+  blr_cursor_stmt         = 167;
+  blr_current_timestamp2  = 168;
+  blr_current_time2       = 169;
+  blr_agg_list            = 170;
+  blr_agg_list_distinct   = 171;
+  blr_modify2             = 172;
 
-  blr_savepoint_set = 0;
-  blr_savepoint_release = 1;
-  blr_savepoint_undo = 2;
-  blr_savepoint_release_single = 3;
+  blr_current_role        = 174;
+  blr_skip                = 175;
 
-  (* These verbs were added in 2.0 for SQL savepoint support *)
-{  blr_start_savepoint2      = 176;
-  blr_release_savepoint     = 177;
-  blr_rollback_savepoint    = 178;}
+  blr_exec_sql            = 176;
+  blr_internal_info       = 177;
+  blr_nullsfirst          = 178;
+  blr_writelock           = 179;
+  blr_nullslast           = 180;
+
+  blr_lowcase                     = 181;
+  blr_strlen                      = 182;
+
+  blr_strlen_bit          = 0;
+  blr_strlen_char         = 1;
+  blr_strlen_octet        = 2;
+
+  blr_trim                        = 183;
+
+  blr_trim_both           = 0;
+  blr_trim_leading        = 1;
+  blr_trim_trailing       = 2;
+
+  blr_trim_spaces         = 0;
+  blr_trim_characters     = 1;
+
+  blr_savepoint_set       = 0;
+  blr_savepoint_release   = 1;
+  blr_savepoint_undo      = 2;
+  blr_savepoint_release_single    = 3;
+
+  blr_cursor_open                 = 0;
+  blr_cursor_close                = 1;
+  blr_cursor_fetch                = 2;
+
+  blr_init_variable       = 184;
+  blr_recurse                     = 185;
+  blr_sys_function        = 186;
+
+  blr_auto_trans          = 187;
+  blr_similar                     = 188;
+  blr_exec_stmt           = 189;
+
+  blr_exec_stmt_inputs            =  1;
+  blr_exec_stmt_outputs           =  2;
+  blr_exec_stmt_sql                       =  3;
+  blr_exec_stmt_proc_block        =  4;
+  blr_exec_stmt_data_src          =  5;
+  blr_exec_stmt_user                      =  6;
+  blr_exec_stmt_pwd                       =  7;
+  blr_exec_stmt_tran              =  8;
+  blr_exec_stmt_tran_clone        =  9;
+  blr_exec_stmt_privs                     =  10;
+  blr_exec_stmt_in_params         =  11;
+  blr_exec_stmt_in_params2        =  12;
+  blr_exec_stmt_out_params        =  13;
+  blr_exec_stmt_role                      =  14;
+
+  blr_stmt_expr                           =  190;
+  blr_derived_expr                        =  191;
 
 (************************************)
 (** Database parameter block stuff **)
@@ -1877,7 +1202,8 @@ const
   isc_tpb_no_rec_version = 18;
   isc_tpb_restart_requests = 19;
   isc_tpb_no_auto_undo = 20;
-  isc_tpb_lock_timeout = 21;//fb2
+  isc_tpb_lock_timeout = 21;
+
   isc_tpb_last_tpb_constant = isc_tpb_lock_timeout;
 
 (**************************)
@@ -1895,7 +1221,6 @@ const
 
   isc_bpb_type_segmented = 0;
   isc_bpb_type_stream = 1;
-
   isc_bpb_storage_main = 0;
   isc_bpb_storage_temp = 2;
 
@@ -1903,56 +1228,98 @@ const
 (** Service parameter block stuff **)
 (***********************************)
 
-  isc_spb_user_name = 1;
-  isc_spb_sys_user_name = 2;
-  isc_spb_sys_user_name_enc = 3;
-  isc_spb_password = 4;
-  isc_spb_password_enc = 5;
-  isc_spb_command_line = 6;
-  isc_spb_dbname = 7;
-  isc_spb_verbose = 8;
-  isc_spb_options = 9;
-  isc_spb_connect_timeout = 10;
-  isc_spb_dummy_packet_interval = 11;
-  isc_spb_sql_role_name = 12;
-  isc_spb_last_spb_constant = isc_spb_sql_role_name;
+  c_spb_version1                  = 1;
+  isc_spb_current_version         = 2;
+  isc_spb_version                 = isc_spb_current_version;
+  isc_spb_user_name               = isc_dpb_user_name;
+  isc_spb_sys_user_name           = isc_dpb_sys_user_name;
+  isc_spb_sys_user_name_enc       = isc_dpb_sys_user_name_enc;
+  isc_spb_password                = isc_dpb_password;
+  isc_spb_password_enc            = isc_dpb_password_enc;
+  isc_spb_command_line            = 105;
+  isc_spb_dbname                  = 106;
+  isc_spb_verbose                 = 107;
+  isc_spb_options                 = 108;
+  isc_spb_address_path            = 109;
+  isc_spb_process_id              = 110;
+  isc_spb_trusted_auth            = 111;
+  isc_spb_process_name            = 112;
+  isc_spb_trusted_role            = 113;
 
-  isc_spb_version1 = 1;
-  isc_spb_current_version = 2;
-  isc_spb_version = isc_spb_current_version;
-  isc_spb_user_name_mapped_to_server = isc_dpb_user_name;
-  isc_spb_sys_user_name_mapped_to_server = isc_dpb_sys_user_name;
-  isc_spb_sys_user_name_enc_mapped_to_server = isc_dpb_sys_user_name_enc;
-  isc_spb_password_mapped_to_server = isc_dpb_password;
-  isc_spb_password_enc_mapped_to_server = isc_dpb_password_enc;
-  isc_spb_command_line_mapped_to_server = 105;
-  isc_spb_dbname_mapped_to_server = 106;
-  isc_spb_verbose_mapped_to_server = 107;
-  isc_spb_options_mapped_to_server = 108;
-  isc_spb_address_path = 109;
-  isc_spb_process_id = 110;
-  isc_spb_trusted_auth = 111;
-  isc_spb_process_name = 112;
-  isc_spb_trusted_role = 113;
+  isc_spb_connect_timeout         = isc_dpb_connect_timeout;
+  isc_spb_dummy_packet_interval   = isc_dpb_dummy_packet_interval;
+  isc_spb_sql_role_name           = isc_dpb_sql_role_name;
 
-  isc_spb_connect_timeout_mapped_to_server = isc_dpb_connect_timeout;
-  isc_spb_dummy_packet_interval_mapped_to_server = isc_dpb_dummy_packet_interval;
-  isc_spb_sql_role_name_mapped_to_server = isc_dpb_sql_role_name;
+(*****************************************)
+(* Service action items                 **)
+(*****************************************)
 
-(***********************************)
-(** Information call declarations **)
-(***********************************)
+  isc_action_svc_backup = 1;
+  isc_action_svc_restore = 2;
+  isc_action_svc_repair = 3;
+  isc_action_svc_add_user  = 4;
+  isc_action_svc_delete_user = 5;
+  isc_action_svc_modify_user = 6;
+  isc_action_svc_display_user = 7;
+  isc_action_svc_properties = 8;
+  isc_action_svc_add_license = 9;
+  isc_action_svc_remove_license = 10;
+  isc_action_svc_db_stats = 11;
+  //isc_action_svc_get_ib_log = 12;
+  isc_action_svc_get_fb_log = 12;
+  isc_action_svc_nbak = 20;
+  isc_action_svc_nrest = 21;
+  isc_action_svc_trace_start = 22;
+  isc_action_svc_trace_stop = 23;
+  isc_action_svc_trace_suspend = 24;
+  isc_action_svc_trace_resume = 25;
+  isc_action_svc_trace_list = 26;
+  isc_action_svc_set_mapping = 27;
+  isc_action_svc_drop_mapping = 28;
+  isc_action_svc_display_user_adm = 29;
+  isc_action_svc_last = 30;
 
-(******************************)
-(** Common, structural codes **)
-(******************************)
+(*****************************************)
+(** Service information items           **)
+(*****************************************)
 
-  isc_info_end = 1;
-  isc_info_truncated = 2;
-  isc_info_error = 3;
-  isc_info_data_not_ready = 4;
-  isc_info_length = 126;
-  isc_info_flag_end = 127;
+  isc_info_svc_svr_db_info = 50; { Retrieves the number of attachments and databases }
+  isc_info_svc_get_license = 51; { Retrieves all license keys and IDs from the license file }
+  isc_info_svc_get_license_mask = 52; { Retrieves a bitmask representing licensed options on the server }
+  isc_info_svc_get_config = 53; { Retrieves the parameters and values for FB_CONFIG }
+  isc_info_svc_version = 54; { Retrieves the version of the services manager }
+  isc_info_svc_server_version = 55; { Retrieves the version of the Firebird server }
+  isc_info_svc_implementation = 56; { Retrieves the implementation of the Firebird server }
+  isc_info_svc_capabilities = 57; { Retrieves a bitmask representing the server's capabilities }
+  isc_info_svc_user_dbpath = 58; { Retrieves the path to the security database in use by the server }
+  isc_info_svc_get_env = 59; { Retrieves the setting of $Firebird }
+  isc_info_svc_get_env_lock = 60; { Retrieves the setting of $Firebird_LCK }
+  isc_info_svc_get_env_msg = 61; { Retrieves the setting of $Firebird_MSG }
+  isc_info_svc_line = 62; { Retrieves 1 line of service output per call }
+  isc_info_svc_to_eof = 63; { Retrieves as much of the server output as will fit in the supplied buffer }
+  isc_info_svc_timeout = 64; { Sets / signifies a timeout value for reading service information }
+  isc_info_svc_get_licensed_users = 65; { Retrieves the number of users licensed for accessing the server }
+  isc_info_svc_limbo_trans = 66; { Retrieve the limbo transactions }
+  isc_info_svc_running = 67; { Checks to see if a service is running on an attachment }
+  isc_info_svc_get_users = 68; { Returns the user information from isc_action_svc_display_users }
+
+(*****************************************)
+(* Parameters for isc_action_{add|delete|modify)_user *)
+(*****************************************)
+
+  isc_spb_sec_userid = 5;
+  isc_spb_sec_groupid = 6;
+  isc_spb_sec_username = 7;
+  isc_spb_sec_password = 8;
+  isc_spb_sec_groupname = 9;
+  isc_spb_sec_firstname = 10;
+  isc_spb_sec_middlename = 11;
+  isc_spb_sec_lastname = 12;
+  isc_spb_sec_admin = 13;
+
+  isc_spb_lic_key              = 5;
+  isc_spb_lic_id               = 6;
+  isc_spb_lic_desc             = 7;
 
 (********************************)
 (** Database information items **)
@@ -2117,13 +1484,10 @@ const
 
   isc_info_db_impl_linux_sh = 80;
   isc_info_db_impl_linux_sheb = 81;
+  isc_info_db_impl_linux_hppa = 82;
+  isc_info_db_impl_linux_alpha = 83;
 
-  isc_info_db_impl_last_value = isc_info_db_impl_linux_sheb;
-
-  isc_info_db_impl_isc_a = isc_info_db_impl_isc_apl_68K;
-  isc_info_db_impl_isc_u = isc_info_db_impl_isc_vax_ultr;
-  isc_info_db_impl_isc_v = isc_info_db_impl_isc_vms;
-  isc_info_db_impl_isc_s = isc_info_db_impl_isc_sun_68k;
+  isc_info_db_impl_last_value = isc_info_db_impl_linux_alpha;
 
   isc_info_db_class_access = 1;
   isc_info_db_class_y_valve = 2;
@@ -2138,11 +1502,15 @@ const
   isc_info_db_class_classic_access = 13;
   isc_info_db_class_server_access = 14;
 
+  isc_info_db_class_last_value = isc_info_db_class_server_access;
+
 //  info_db_provider
   isc_info_db_code_rdb_eln = 1;
   isc_info_db_code_rdb_vms = 2;
   isc_info_db_code_interbase = 3;
   isc_info_db_code_firebird = 4;
+
+  isc_info_db_code_last_value = isc_info_db_code_firebird;
 
 (*******************************)
 (** Request information items **)
@@ -2248,67 +1616,51 @@ const
   isc_info_tra_readonly = 0;
   isc_info_tra_readwrite = 1;
 
-(*****************************************)
-(* Service action items                 **)
-(*****************************************)
+(***************************)
+(** SQL information items **)
+(***************************)
 
-  isc_action_svc_backup = 1; (* Starts database backup process on the server *)
-  isc_action_svc_restore = 2; (* Starts database restore process on the server *)
-  isc_action_svc_repair = 3; (* Starts database repair process on the server *)
-  isc_action_svc_add_user = 4; (* Adds a new user to the security database *)
-  isc_action_svc_delete_user = 5; (* Deletes a user record from the security database *)
-  isc_action_svc_modify_user = 6; (* Modifies a user record in the security database *)
-  isc_action_svc_display_user = 7; (* Displays a user record from the security database *)
-  isc_action_svc_properties = 8; (* Sets database properties *)
-{  isc_action_svc_add_license = 9; (* Adds a license to the license file *)
-  isc_action_svc_remove_license = 10; (* Removes a license from the license file *)}
-  isc_action_svc_db_stats = 11; (* Retrieves database statistics *)
-  isc_action_svc_get_fb_log = 12; (* Retrieves the Firebird log file from the server *)
+  isc_info_sql_select = 4;
+  isc_info_sql_bind = 5;
+  isc_info_sql_num_variables = 6;
+  isc_info_sql_describe_vars = 7;
+  isc_info_sql_describe_end = 8;
+  isc_info_sql_sqlda_seq = 9;
+  isc_info_sql_message_seq = 10;
+  isc_info_sql_type = 11;
+  isc_info_sql_sub_type = 12;
+  isc_info_sql_scale = 13;
+  isc_info_sql_length = 14;
+  isc_info_sql_null_ind = 15;
+  isc_info_sql_field = 16;
+  isc_info_sql_relation = 17;
+  isc_info_sql_owner = 18;
+  isc_info_sql_alias = 19;
+  isc_info_sql_sqlda_start = 20;
+  isc_info_sql_stmt_type = 21;
+  isc_info_sql_get_plan = 22;
+  isc_info_sql_records = 23;
+  isc_info_sql_batch_fetch = 24;
+  isc_info_sql_relation_alias = 25;
 
-(*****************************************)
-(** Service information items           **)
-(*****************************************)
+(***********************************)
+(** SQL information return values **)
+(***********************************)
 
-  isc_info_svc_svr_db_info = 50; (* Retrieves the number of attachments and databases *)
-  isc_info_svc_get_license = 51; (* Retrieves all license keys and IDs from the license file *)
-  isc_info_svc_get_license_mask = 52; (* Retrieves a bitmask representing licensed options on the server *)
-  isc_info_svc_get_config = 53; (* Retrieves the parameters and values for FB_CONFIG *)
-  isc_info_svc_version = 54; (* Retrieves the version of the services manager *)
-  isc_info_svc_server_version = 55; (* Retrieves the version of the Firebird server *)
-  isc_info_svc_implementation = 56; (* Retrieves the implementation of the Firebird server *)
-  isc_info_svc_capabilities = 57; (* Retrieves a bitmask representing the server's capabilities *)
-  isc_info_svc_user_dbpath = 58; (* Retrieves the path to the security database in use by the server *)
-  isc_info_svc_get_env = 59; (* Retrieves the setting of $Firebird *)
-  isc_info_svc_get_env_lock = 60; (* Retrieves the setting of $Firebird_LCK *)
-  isc_info_svc_get_env_msg = 61; (* Retrieves the setting of $Firebird_MSG *)
-  isc_info_svc_line = 62; (* Retrieves 1 line of service output per call *)
-  isc_info_svc_to_eof = 63; (* Retrieves as much of the server output as will fit in the supplied buffer *)
-  isc_info_svc_timeout = 64; (* Sets / signifies a timeout value for reading service information *)
-  isc_info_svc_get_licensed_users = 65; (* Retrieves the number of users licensed for accessing the server *)
-  isc_info_svc_limbo_trans = 66; (* Retrieve the limbo transactions *)
-  isc_info_svc_running = 67; (* Checks to see if a service is running on an attachment *)
-  isc_info_svc_get_users = 68; (* Returns the user information from isc_action_svc_display_users *)
-
-(*****************************************)
-(* Parameters for isc_action_{add|delete|modify)_user *)
-(*****************************************)
-
-  isc_spb_sec_userid = 5;
-  isc_spb_sec_groupid = 6;
-  isc_spb_sec_username = 7;
-  isc_spb_sec_password = 8;
-  isc_spb_sec_groupname = 9;
-  isc_spb_sec_firstname = 10;
-  isc_spb_sec_middlename = 11;
-  isc_spb_sec_lastname = 12;
-
-(*****************************************)
-(*    Server configuration key values    *)
-(*****************************************)
-
-  isc_spb_lic_key = 5;
-  isc_spb_lic_id = 6;
-  isc_spb_lic_desc = 7;
+  isc_info_sql_stmt_select = 1;
+  isc_info_sql_stmt_insert = 2;
+  isc_info_sql_stmt_update = 3;
+  isc_info_sql_stmt_delete = 4;
+  isc_info_sql_stmt_ddl = 5;
+  isc_info_sql_stmt_get_segment = 6;
+  isc_info_sql_stmt_put_segment = 7;
+  isc_info_sql_stmt_exec_procedure = 8;
+  isc_info_sql_stmt_start_trans = 9;
+  isc_info_sql_stmt_commit = 10;
+  isc_info_sql_stmt_rollback = 11;
+  isc_info_sql_stmt_select_for_upd = 12;
+  isc_info_sql_stmt_set_generator = 13;
+  isc_info_sql_stmt_savepoint = 14;
 
 (*****************************************)
 (* Parameters for isc_action_svc_backup  *)
@@ -2436,52 +1788,6 @@ const
   isc_spb_sts_record_versions = $20;
   isc_spb_sts_table = $40;
   isc_spb_sts_nocreation = $80;
-
-(***************************)
-(** SQL information items **)
-(***************************)
-
-  isc_info_sql_select = 4;
-  isc_info_sql_bind = 5;
-  isc_info_sql_num_variables = 6;
-  isc_info_sql_describe_vars = 7;
-  isc_info_sql_describe_end = 8;
-  isc_info_sql_sqlda_seq = 9;
-  isc_info_sql_message_seq = 10;
-  isc_info_sql_type = 11;
-  isc_info_sql_sub_type = 12;
-  isc_info_sql_scale = 13;
-  isc_info_sql_length = 14;
-  isc_info_sql_null_ind = 15;
-  isc_info_sql_field = 16;
-  isc_info_sql_relation = 17;
-  isc_info_sql_owner = 18;
-  isc_info_sql_alias = 19;
-  isc_info_sql_sqlda_start = 20;
-  isc_info_sql_stmt_type = 21;
-  isc_info_sql_get_plan = 22;
-  isc_info_sql_records = 23;
-  isc_info_sql_batch_fetch = 24;
-  isc_info_sql_precision = 25;
-
-(***********************************)
-(** SQL information return values **)
-(***********************************)
-
-  isc_info_sql_stmt_select = 1;
-  isc_info_sql_stmt_insert = 2;
-  isc_info_sql_stmt_update = 3;
-  isc_info_sql_stmt_delete = 4;
-  isc_info_sql_stmt_ddl = 5;
-  isc_info_sql_stmt_get_segment = 6;
-  isc_info_sql_stmt_put_segment = 7;
-  isc_info_sql_stmt_exec_procedure = 8;
-  isc_info_sql_stmt_start_trans = 9;
-  isc_info_sql_stmt_commit = 10;
-  isc_info_sql_stmt_rollback = 11;
-  isc_info_sql_stmt_select_for_upd = 12;
-  isc_info_sql_stmt_set_generator = 13;
-  isc_info_sql_stmt_savepoint = 14;
 
 (*************************************)
 (*  Server configuration key values  *)
@@ -2737,27 +2043,6 @@ const
 
 
 (**********************************)
-(** Log file specific attributes **)
-(**********************************)
-{ Deprecated.
-  isc_dyn_log_file_sequence = 177;
-  isc_dyn_log_file_partitions = 178;
-  isc_dyn_log_file_serial = 179;
-  isc_dyn_log_file_overflow = 200;
-  isc_dyn_log_file_raw = 201;
-}
-
-(*****************************)
-(** Log specific attributes **)
-(*****************************)
-{ Deprecated.
-  isc_dyn_log_group_commit_wait = 189;
-  isc_dyn_log_buffer_size = 190;
-  isc_dyn_log_check_point_length = 191;
-  isc_dyn_log_num_of_buffers = 192;
-}
-
-(**********************************)
 (** Function specific attributes **)
 (**********************************)
 
@@ -2857,11 +2142,27 @@ const
   isc_dyn_coll_specific_attributes		 = 236;
   isc_dyn_del_collation					 = 237;
 
-(****************************)
-(* Last $dyn value assigned *)
-(****************************)
 
-  isc_dyn_last_dyn_value           = 237;
+  isc_dyn_mapping = 243;
+  isc_dyn_map_role = 1;
+  isc_dyn_unmap_role = 2;
+  isc_dyn_map_user = 3;
+  isc_dyn_unmap_user = 4;
+  isc_dyn_automap_role = 5;
+  isc_dyn_autounmap_role = 6;
+
+  isc_dyn_user = 244;
+  isc_dyn_user_add = 1;
+  isc_dyn_user_mod = 2;
+  isc_dyn_user_del = 3;
+  isc_dyn_user_passwd = 4;
+  isc_dyn_user_first = 5;
+  isc_dyn_user_middle = 6;
+  isc_dyn_user_last = 7;
+  isc_dyn_user_admin = 8;
+  isc_user_end = 0;
+
+  isc_dyn_last_dyn_value           = 247;
 
 (********************************************)
 (** Array slice description language (SDL) **)
@@ -2960,10 +2261,26 @@ const
   fb_cancel_enable                                 = 2;
   fb_cancel_raise                                  = 3;
   fb_cancel_abort = 4;
-  
-(** XSQLDA_LENGTH is defined in C as a macro, but in Pascal we must defined it
-   as a function... **)
 
+  fb_dbg_version = 1;
+  fb_dbg_end = 255;
+  fb_dbg_map_src2blr = 2;
+  fb_dbg_map_varname = 3;
+  fb_dbg_map_argument = 4;
+
+  fb_dbg_arg_input = 0;
+  fb_dbg_arg_output = 1;
+
+{*********************************}
+{  Information call declarations  }
+{*********************************}
+
+  isc_info_end = 1;
+  isc_info_truncated = 2;
+  isc_info_error = 3;
+  isc_info_data_not_ready = 4;
+  isc_info_length = 126;
+  isc_info_flag_end = 127;
 
   XSQLVAR_SIZE = sizeof(TXSQLVAR);
 

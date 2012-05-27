@@ -1,3 +1,4 @@
+unit mncFBTypes;
 {**
  *  This file is part of the "Mini Connections"
  *
@@ -10,23 +11,22 @@
 }
 
 
-{$M+}
-{$H+}
-{$IFDEF FPC}
+{$M+}{$H+}
 {$mode delphi}
-{$ENDIF}
-
-unit mncFBTypes;
 
 { Some structures, declarations that we need for the FB stuff to work, but
   that aren't really part of the fb header file. }
 
 interface
 
-uses
-  Windows;
-
 type
+
+  IntPtr_t = PtrInt;
+  PIntPtr_t = ^PtrInt;
+
+  UIntPtr_t = PtrUInt;
+  PUIntPtr_t = ^PtrUInt;
+
   Int                  =
 
   Integer; { 32 bit signed }
@@ -44,8 +44,9 @@ type
   UISC_LONG            = ULong;   { 32 bit unsigned }
   ISC_INT64            = Int64;   { 64 bit signed  }
   ISC_BOOLEAN          = SmallInt; { 16 bit signed  }
-  ISC_STATUS           = Long;    { 32 bit signed }
-  UISC_STATUS          = ULong;   { 32 bit unsigned}
+
+  ISC_STATUS           = IntPtr_t;    { 32 bit signed }
+  UISC_STATUS          = UIntPtr_t;   { 32 bit unsigned}
 
   { Delphi Pointer types }
   PPChar               = ^PChar;
