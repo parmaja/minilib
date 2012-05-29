@@ -54,6 +54,7 @@ type
     procedure DoInit; override;
   public
     constructor Create;
+    function CreateSession: TmncSession; override;
     procedure Interrupt;
     function GetVersion: string;
     procedure Execute(SQL: string);
@@ -82,6 +83,7 @@ type
   public
     constructor Create(vConnection: TmncConnection); override;
     destructor Destroy; override;
+    function CreateCommand: TmncCommand; override;
     procedure Execute(SQL: string);
     function GetLastInsertID: Int64;
     function GetRowsChanged: Integer;
@@ -354,7 +356,8 @@ begin
   Result := TmncSQLiteParam.Create;
 end;
 
-procedure TmncSQLiteConnection.CheckError(Error:longint; const ExtraMsg: string);
+procedure TmncSQLiteConnection.CheckError(Error: Integer; const ExtraMsg: string
+  );
 var
   s : Utf8String;
 begin
@@ -372,6 +375,11 @@ end;
 constructor TmncSQLiteConnection.Create;
 begin
   inherited Create;
+end;
+
+function TmncSQLiteConnection.CreateSession: TmncSession;
+begin
+  Result := TmncSQLiteSession.Create(Self);
 end;
 
 procedure TmncSQLiteConnection.Interrupt;
@@ -428,6 +436,11 @@ end;
 destructor TmncSQLiteSession.Destroy;
 begin
   inherited;
+end;
+
+function TmncSQLiteSession.CreateCommand: TmncCommand;
+begin
+  Result := TmncSQLiteCommand.Create;
 end;
 
 procedure TmncSQLiteSession.Execute(SQL: string);

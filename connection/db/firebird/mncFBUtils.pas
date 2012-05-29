@@ -66,7 +66,7 @@ function GetAliasName(FileName: string): string;
 function GetAliasFile(AliasName: string): string;
 procedure SetAliasFile(AliasName, FileName: string);
 
-procedure FBHostInfo(const Host, UserName, Password, Role, CharacterSet: string; vParams: TStrings);
+procedure FBDatabaseInfo(const UserName, Password, Role, CharacterSet: string; vParams: TStrings);
 procedure GenerateDPB(sl: TStrings; out DPB: AnsiString; var DPBLength: Short);
 procedure GenerateTPB(sl: TStrings; out TPB: AnsiString; var TPBLength: Short);
 
@@ -692,7 +692,7 @@ begin
   end;
 end;
 
-procedure FBHostInfo(const Host, UserName, Password, Role, CharacterSet: string; vParams: TStrings);
+procedure FBDatabaseInfo(const UserName, Password, Role, CharacterSet: string; vParams: TStrings);
 begin
   if (vParams.IndexOfName(DPBConstantNames[isc_dpb_user_name]) < 0) or (UserName <> '') then
     vParams.Values[DPBConstantNames[isc_dpb_user_name]] := UserName;

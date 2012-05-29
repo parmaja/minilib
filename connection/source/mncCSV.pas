@@ -20,6 +20,9 @@ uses
   mnUtils, mncConnections, mnStreams;
 
 type
+
+  { TmncCSVConnection }
+
   TmncCSVConnection = class(TmncConnection)
   private
     FConnected: Boolean;
@@ -29,6 +32,7 @@ type
     function GetConnected: Boolean; override;
   public
     constructor Create;
+    function CreateSession: TmncSession; override;
   end;
 
   { TmncCSVSession }
@@ -43,6 +47,7 @@ type
     procedure DoStop(How: TmncSessionAction; Retaining: Boolean); override;
   public
     constructor Create(vConnection: TmncConnection); override;
+    function CreateCommand: TmncCommand; override;
     property SpliteChar: Char read FSpliteChar write FSpliteChar default #9;
     property EndOfLine: string read FEndOfLine write FEndOfLine;
     property HaveHeader: Boolean read FHaveHeader write FHaveHeader default True;
@@ -83,6 +88,7 @@ type
     constructor Create(vSession: TmncSession; vStream: TStream; vMode: TmncCSVMode); overload;
     destructor Destroy; override;
     property Mode: TmncCSVMode read FMode;
+    //property Stream: TStream read FStream write SetStream;//TODO
     //EOFOnEmpty: when True make EOF when read empty line  
     property EmptyLine: TmncEmptyLine read FEmptyLine write FEmptyLine;
   end;
@@ -94,6 +100,11 @@ implementation
 constructor TmncCSVConnection.Create;
 begin
   inherited Create;
+end;
+
+function TmncCSVConnection.CreateSession: TmncSession;
+begin
+  Result := TmncCSVSession.Create(Self);
 end;
 
 procedure TmncCSVConnection.DoConnect;
@@ -127,6 +138,11 @@ begin
   FHaveHeader := True;
   SpliteChar := #9; //TAB
   EndOfLine := sEndOfLine;
+end;
+
+function TmncCSVSession.CreateCommand: TmncCommand;
+begin
+  Result := TmncCSVCommand.Create(Self, nil, csvmRead);//TODO dummy create
 end;
 
 { TmncCSVCommand }
@@ -328,4 +344,3 @@ begin
 end;
 
 end.
-

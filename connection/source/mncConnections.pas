@@ -36,6 +36,7 @@ type
   end;
 
   TmncSession = class;
+  TmncCommand = class;
   TmncLinkObject = class;
 
   TmncSessions = class(TObjectList)
@@ -110,6 +111,9 @@ type
     procedure Disconnect;
     procedure Open; //Alias for Connect
     procedure Close; //Alias for Disonnect;
+
+    function CreateSession: TmncSession; virtual; abstract;
+
     property Sessions: TmncSessions read FSessions;
     property Mode: TmncSessionMode read GetMode;
     property AutoStart: Boolean read FAutoStart write FAutoStart; //AutoStart the Session when created
@@ -158,6 +162,9 @@ type
   public
     constructor Create(vConnection: TmncConnection); virtual;
     destructor Destroy; override;
+
+    function CreateCommand: TmncCommand; virtual; abstract;
+
     procedure Start;
     procedure Commit;
     procedure Rollback;

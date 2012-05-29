@@ -54,6 +54,9 @@ type
     procedure DoInit; override;
   public
     constructor Create;
+
+    function CreateSession: TmncSession; override;
+
     function GetVersion: string;
     procedure Execute(SQL: string);
     property Role: string read FRole write FRole;
@@ -80,6 +83,7 @@ type
   public
     constructor Create(vConnection: TmncConnection); override;
     destructor Destroy; override;
+    function CreateCommand: TmncCommand; override;
     procedure Execute(SQL: string);
     property Handle: TISC_TR_HANDLE read FHandle;
     property TPB: PChar read FTPB;
@@ -314,6 +318,11 @@ begin
   inherited Create;
 end;
 
+function TmncFBConnection.CreateSession: TmncSession;
+begin
+  Result := TmncFBSession.Create(Self);
+end;
+
 function TmncFBConnection.GetVersion: string;
 var
   local_buffer: array[0..FBBigLocalBufferLength - 1] of Char;
@@ -405,7 +414,7 @@ begin
   aParams := TStringList.Create;
   try
     aParams.Assign(Params);
-    FBHostInfo(Host, UserName, Password, Role, CharacterSet, aParams);
+    FBDatabaseInfo(UserName, Password, Role, CharacterSet, aParams);
     GenerateDPB(aParams, DPB, FDPBLength);
   finally
     aParams.Free;
@@ -452,6 +461,11 @@ begin
   FreeMem(FTPB);
   FTPB := nil;
   inherited;
+end;
+
+function TmncFBSession.CreateCommand: TmncCommand;
+begin
+  Result := TmncFBCommand.Create;
 end;
 
 procedure TmncFBSession.Execute(SQL: string);

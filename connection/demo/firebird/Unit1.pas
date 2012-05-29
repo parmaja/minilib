@@ -6,8 +6,8 @@ interface
 
 uses
   Classes, SysUtils, FileUtil, LResources, Forms, Controls, Graphics, Dialogs,
-  StdCtrls, mncFirebird, mncCSV, mncCSVExchanges, ibase60,
-  mncConnections;
+  StdCtrls, mncFirebird, mncCSV, mncCSVExchanges,
+  mncConnections, mncDS, memds;
 
 type
 
