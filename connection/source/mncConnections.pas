@@ -112,8 +112,6 @@ type
     procedure Open; //Alias for Connect
     procedure Close; //Alias for Disonnect;
 
-    function CreateSession: TmncSession; virtual; abstract;
-
     property Sessions: TmncSessions read FSessions;
     property Mode: TmncSessionMode read GetMode;
     property AutoStart: Boolean read FAutoStart write FAutoStart; //AutoStart the Session when created
@@ -163,8 +161,6 @@ type
     constructor Create(vConnection: TmncConnection); virtual;
     destructor Destroy; override;
 
-    function CreateCommand: TmncCommand; virtual; abstract;
-
     procedure Start;
     procedure Commit;
     procedure Rollback;
@@ -176,7 +172,7 @@ type
     property Params: TStrings read FParams write SetParams;
   end;
 
-  TmncDataType = (ftUnkown, ftString, ftBoolean, ftInteger, ftCurrency, ftFloat, ftDate, ftTime, ftDateTime, ftMemo, ftBlob);
+  TmncDataType = (dtUnknown, dtString, dtBoolean, dtInteger, dtCurrency, dtFloat, dtDate, dtTime, dtDateTime, dtMemo, dtBlob);
   TmncBlobType = (blobBinary, blobText);
 
 {
@@ -198,7 +194,7 @@ type
     procedure SetAsText(const AValue: string); override;
     property IsBlob: Boolean read FIsBlob write FIsBlob default false;
     property BlobType: TmncBlobType read FBlobType write FBlobType default blobBinary;
-    property DataType: TmncDataType read FDataType default ftUnkown;
+    property DataType: TmncDataType read FDataType default dtUnknown;
   public
   published
   end;
@@ -220,6 +216,10 @@ type
     property Items[Index: Integer]: TmncItem read GetItem;
   end;
 
+  TmnDataOption = (doRequired, doNullable);
+
+  TmnDataOptions = set of TmnDataOption;
+
   { TmncColumn }
 
   TmncColumn = class(TmncItem)
@@ -227,6 +227,7 @@ type
     FName: string;
     FIndex: Integer;
     FMaxSize: Integer;
+    FOptions: TmnDataOptions;
     FSchemaType: string;
     FSize: Int64;
   protected
@@ -240,6 +241,7 @@ type
     property SchemaType: string read FSchemaType write FSchemaType;
     //Size, in sqlite every value have own length not depends on the Schema
     property Size: Int64 read FSize write SetSize; //TODO: I am thinking to move it to TmncItem
+    property Options: TmnDataOptions read FOptions write FOptions default [];
     property MaxSize: Integer read FMaxSize write FMaxSize;
   end;
 

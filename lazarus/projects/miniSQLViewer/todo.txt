@@ -1,0 +1,2 @@
+BUG: Double click on field in schema make alter table without name of that table
+BUG: Refresh the schema by F5 or after execute any statmeants

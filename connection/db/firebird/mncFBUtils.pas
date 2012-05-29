@@ -922,24 +922,24 @@ end;
 function SQLTypeToDataType(SQLType: Integer):TmncDataType;
 begin
   case SQLType of
-    SQL_TEXT: Result := ftString;
-    SQL_DOUBLE: Result := ftFloat;
-    SQL_FLOAT: Result := ftFloat;
-    SQL_LONG: Result := ftInteger;
-    SQL_SHORT: Result := ftInteger;
-    SQL_TIMESTAMP: Result := ftDateTime;
-    SQL_BLOB: Result := ftBlob;
-    SQL_D_FLOAT: Result := ftFloat;
-    SQL_ARRAY: Result := ftUnkown;
-    SQL_QUAD: Result := ftBlob;
-    SQL_TYPE_TIME: Result := ftTime;
-    SQL_TYPE_DATE: Result := ftDate;
-    SQL_INT64: Result := ftInteger;
-    SQL_NULL: Result := ftUnkown;
-    //SQL_DATE: Result := ftDateTime;
-    SQL_BOOLEAN: Result := ftBoolean;
+    SQL_TEXT: Result := dtString;
+    SQL_DOUBLE: Result := dtFloat;
+    SQL_FLOAT: Result := dtFloat;
+    SQL_LONG: Result := dtInteger;
+    SQL_SHORT: Result := dtInteger;
+    SQL_TIMESTAMP: Result := dtDateTime;
+    SQL_BLOB: Result := dtBlob;
+    SQL_D_FLOAT: Result := dtFloat;
+    SQL_ARRAY: Result := dtUnknown;
+    SQL_QUAD: Result := dtBlob;
+    SQL_TYPE_TIME: Result := dtTime;
+    SQL_TYPE_DATE: Result := dtDate;
+    SQL_INT64: Result := dtInteger;
+    SQL_NULL: Result := dtUnknown;
+    //SQL_DATE: Result := dtDateTime;
+    SQL_BOOLEAN: Result := dtBoolean;
     else
-      Result := ftUnkown;
+      Result := dtUnknown;
 
   end;
 end;

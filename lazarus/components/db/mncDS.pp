@@ -11,23 +11,30 @@ uses
 type
   { TmncDataset }
 
-  TmncDataset = class(TDataSet)
+  { TmncSQLDataset }
+
+  TmncSQLDataset = class(TDataSet)
   private
-    FConnection: TmncConnection;
+    FConnection: TmncSQLConnection;
+    FIsOpen: Boolean;
+    FKeepAlive: Boolean;
     FKeyFields: string;
     FSelectSQL: TStrings;
     FInsertSQL: TStrings;
     FUpdateSQL: TStrings;
     FDeleteSQL: TStrings;
     FRefreshSQL: TStrings;
+    procedure SetKeepAlive(AValue: Boolean);
     procedure SetSelectSQL(AValue: TStrings);
     procedure SetInsertSQL(AValue: TStrings);
     procedure SetUpdateSQL(AValue: TStrings);
     procedure SetDeleteSQL(AValue: TStrings);
     procedure SetRefreshSQL(AValue: TStrings);
 
-    procedure InitFieldDefs;
   protected
+    FCurrentFields: TmncFields; //Field that contain data;
+    function CreateSession: TmncSQLSession;
+
     procedure DoSQLChanged(Sender: TObject);
 
     function AllocRecordBuffer: PChar; override;
@@ -73,7 +80,9 @@ type
     property RefreshSQL: TStrings read FRefreshSQL write SetRefreshSQL;
     property KeyFields: string read FKeyFields write FKeyFields;
 
-    property Connection: TmncConnection read FConnection write FConnection;
+    property Connection: TmncSQLConnection read FConnection write FConnection;
+    //Keep the select command opened for forard cursor, i dislike it, so may be it deprecated
+    property KeepAlive: Boolean read FKeepAlive write SetKeepAlive; deprecated;
   published
     property Active;
     property FieldDefs;
@@ -99,151 +108,206 @@ type
     property OnPostError;
   end;
 
+function DataTypeToFieldType(DataType: TmncDataType):TFieldType;
+
 implementation
 
-{ TmncDataset }
+{ TmncSQLDataset }
 
-procedure TmncDataset.SetDeleteSQL(AValue: TStrings);
+procedure TmncSQLDataset.SetDeleteSQL(AValue: TStrings);
 begin
   if FDeleteSQL =AValue then Exit;
   FDeleteSQL.Assign(AValue);
 end;
 
-procedure TmncDataset.SetInsertSQL(AValue: TStrings);
+procedure TmncSQLDataset.SetInsertSQL(AValue: TStrings);
 begin
   if FInsertSQL =AValue then Exit;
   FInsertSQL.Assign(AValue);
 end;
 
-procedure TmncDataset.SetRefreshSQL(AValue: TStrings);
+procedure TmncSQLDataset.SetRefreshSQL(AValue: TStrings);
 begin
   if FRefreshSQL =AValue then Exit;
   FRefreshSQL.Assign(AValue);
 end;
 
-procedure TmncDataset.InitFieldDefs;
+function TmncSQLDataset.CreateSession: TmncSQLSession;
+begin
+  Result := FConnection.CreateSession;
+  Result.Start;
+  Result.Action := sdaCommit; //commit it when free it
+end;
+
+procedure TmncSQLDataset.DoSQLChanged(Sender: TObject);
 begin
 
 end;
 
-procedure TmncDataset.DoSQLChanged(Sender: TObject);
-begin
-
-end;
-
-procedure TmncDataset.SetSelectSQL(AValue: TStrings);
+procedure TmncSQLDataset.SetSelectSQL(AValue: TStrings);
 begin
   if FSelectSQL =AValue then Exit;
   FSelectSQL.Assign(AValue);
 end;
 
-procedure TmncDataset.SetUpdateSQL(AValue: TStrings);
+procedure TmncSQLDataset.SetKeepAlive(AValue: Boolean);
+begin
+  if FKeepAlive =AValue then Exit;
+  FKeepAlive :=AValue;
+end;
+
+procedure TmncSQLDataset.SetUpdateSQL(AValue: TStrings);
 begin
   if FUpdateSQL =AValue then Exit;
   FUpdateSQL.Assign(AValue);
 end;
 
-function TmncDataset.AllocRecordBuffer: PChar;
+function TmncSQLDataset.AllocRecordBuffer: PChar;
 begin
 end;
 
-procedure TmncDataset.FreeRecordBuffer(var Buffer: PChar);
+procedure TmncSQLDataset.FreeRecordBuffer(var Buffer: PChar);
 begin
 end;
 
-procedure TmncDataset.GetBookmarkData(Buffer: PChar; Data: Pointer);
+procedure TmncSQLDataset.GetBookmarkData(Buffer: PChar; Data: Pointer);
 begin
 end;
 
-function TmncDataset.GetBookmarkFlag(Buffer: PChar): TBookmarkFlag;
+function TmncSQLDataset.GetBookmarkFlag(Buffer: PChar): TBookmarkFlag;
 begin
 end;
 
-function TmncDataset.GetFieldData(Field: TField; Buffer: Pointer): Boolean;
+function TmncSQLDataset.GetFieldData(Field: TField; Buffer: Pointer): Boolean;
 begin
 end;
 
-function TmncDataset.GetRecord(Buffer: PChar; GetMode: TGetMode; DoCheck: Boolean): TGetResult;
+function TmncSQLDataset.GetRecord(Buffer: PChar; GetMode: TGetMode; DoCheck: Boolean): TGetResult;
 begin
 end;
 
-function TmncDataset.GetRecordSize: Word;
+function TmncSQLDataset.GetRecordSize: Word;
 begin
 end;
 
-procedure TmncDataset.InternalAddRecord(Buffer: Pointer; DoAppend: Boolean);
+procedure TmncSQLDataset.InternalAddRecord(Buffer: Pointer; DoAppend: Boolean);
 begin
 end;
 
-procedure TmncDataset.InternalClose;
+procedure TmncSQLDataset.InternalClose;
+begin
+  FIsOpen := False;
+end;
+
+procedure TmncSQLDataset.InternalDelete;
 begin
 end;
 
-procedure TmncDataset.InternalDelete;
+procedure TmncSQLDataset.InternalFirst;
+var
+  i: Integer;
+  Cmd: TmncSQLCommand;
+  Se: TmncSQLSession;
+begin
+  Se := CreateSession;
+  try
+    Cmd := Se.CreateCommand as TmncSQLCommand;
+    try
+      Cmd.SQL.Assign(SelectSQL);
+      Cmd.Prepare;
+      for i := 0 to Cmd.Columns.Count -1 do
+      begin
+        with Cmd.Columns[i] do
+          TFieldDef.Create(FieldDefs, Name, DataTypeToFieldType(DataType), Size, doRequired in Options, I);
+      end;
+    finally
+      Cmd.Free;
+    end;
+  finally
+    Se.Free;
+  end;
+end;
+
+procedure TmncSQLDataset.InternalGotoBookmark(ABookmark: Pointer);
 begin
 end;
 
-procedure TmncDataset.InternalFirst;
+procedure TmncSQLDataset.InternalInitFieldDefs;
+var
+  i: Integer;
+  Cmd: TmncSQLCommand;
+  Se: TmncSQLSession;
+begin
+  Se := CreateSession;
+  try
+    Cmd := Se.CreateCommand;
+    try
+      Cmd.SQL.Assign(SelectSQL);
+      Cmd.Prepare;
+      for i := 0 to Cmd.Columns.Count -1 do
+      begin
+        with Cmd.Columns[i] do
+          TFieldDef.Create(FieldDefs, Name, DataTypeToFieldType(DataType), Size, doRequired in Options, I);
+      end;
+    finally
+      Cmd.Free;
+    end;
+  finally
+    Se.Free;
+  end;
+end;
+
+procedure TmncSQLDataset.InternalInitRecord(Buffer: PChar);
 begin
 end;
 
-procedure TmncDataset.InternalGotoBookmark(ABookmark: Pointer);
+procedure TmncSQLDataset.InternalLast;
 begin
 end;
 
-procedure TmncDataset.InternalInitFieldDefs;
+procedure TmncSQLDataset.InternalOpen;
+begin
+  FIsOpen := True;
+end;
+
+procedure TmncSQLDataset.InternalPost;
 begin
 end;
 
-procedure TmncDataset.InternalInitRecord(Buffer: PChar);
+procedure TmncSQLDataset.InternalSetToRecord(Buffer: PChar);
 begin
 end;
 
-procedure TmncDataset.InternalLast;
+function TmncSQLDataset.IsCursorOpen: Boolean;
+begin
+  Result := FIsOpen;
+end;
+
+procedure TmncSQLDataset.SetBookmarkFlag(Buffer: PChar; Value: TBookmarkFlag);
 begin
 end;
 
-procedure TmncDataset.InternalOpen;
+procedure TmncSQLDataset.SetBookmarkData(Buffer: PChar; Data: Pointer);
 begin
 end;
 
-procedure TmncDataset.InternalPost;
+procedure TmncSQLDataset.SetFieldData(Field: TField; Buffer: Pointer);
 begin
 end;
 
-procedure TmncDataset.InternalSetToRecord(Buffer: PChar);
+function TmncSQLDataset.GetRecordCount: Integer;
 begin
 end;
 
-function TmncDataset.IsCursorOpen: Boolean;
+procedure TmncSQLDataset.SetRecNo(Value: Integer);
 begin
 end;
 
-procedure TmncDataset.SetBookmarkFlag(Buffer: PChar; Value: TBookmarkFlag);
+function TmncSQLDataset.GetRecNo: Integer;
 begin
 end;
 
-procedure TmncDataset.SetBookmarkData(Buffer: PChar; Data: Pointer);
-begin
-end;
-
-procedure TmncDataset.SetFieldData(Field: TField; Buffer: Pointer);
-begin
-end;
-
-function TmncDataset.GetRecordCount: Integer;
-begin
-end;
-
-procedure TmncDataset.SetRecNo(Value: Integer);
-begin
-end;
-
-function TmncDataset.GetRecNo: Integer;
-begin
-end;
-
-constructor TmncDataset.Create(AOwner: TComponent);
+constructor TmncSQLDataset.Create(AOwner: TComponent);
 begin
   FSelectSQL := TStringList.Create;
   FUpdateSQL := TStringList.Create;
@@ -259,7 +323,7 @@ begin
   inherited;
 end;
 
-destructor TmncDataset.Destroy;
+destructor TmncSQLDataset.Destroy;
 begin
   FreeAndNil(FSelectSQL);
   FreeAndNil(FUpdateSQL);
@@ -269,18 +333,26 @@ begin
   inherited;
 end;
 
-function TmncDataset.BookmarkValid(ABookmark: TBookmark): Boolean;
+function TmncSQLDataset.BookmarkValid(ABookmark: TBookmark): Boolean;
 begin
 end;
 
-procedure TmncDataset.Prepare;
+procedure TmncSQLDataset.Prepare;
 begin
 
 end;
 
-procedure TmncDataset.Unprepare;
+procedure TmncSQLDataset.Unprepare;
 begin
 
+end;
+
+const
+  cDT2FT: array[TmncDataType] of TFieldType = (ftUnknown, ftString, ftBoolean, ftInteger, ftCurrency, ftFloat, ftDate, ftTime, ftDateTime, ftMemo, ftBlob);
+
+function DataTypeToFieldType(DataType: TmncDataType): TFieldType;
+begin
+  Result := cDT2FT[DataType];
 end;
 
 end.

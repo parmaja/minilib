@@ -33,7 +33,7 @@ type
 
   { TmncSQLiteConnection }
 
-  TmncSQLiteConnection = class(TmncConnection)
+  TmncSQLiteConnection = class(TmncSQLConnection)
   private
     FDBHandle: PSqlite3;
     FExclusive: Boolean;
@@ -54,7 +54,7 @@ type
     procedure DoInit; override;
   public
     constructor Create;
-    function CreateSession: TmncSession; override;
+    function CreateSession: TmncSQLSession; override;
     procedure Interrupt;
     function GetVersion: string;
     procedure Execute(SQL: string);
@@ -71,7 +71,7 @@ type
 
   { TmncSQLiteSession }
 
-  TmncSQLiteSession = class(TmncSession)
+  TmncSQLiteSession = class(TmncSQLSession)
   private
     function GetConnection: TmncSQLiteConnection;
     procedure SetConnection(const AValue: TmncSQLiteConnection);
@@ -83,7 +83,7 @@ type
   public
     constructor Create(vConnection: TmncConnection); override;
     destructor Destroy; override;
-    function CreateCommand: TmncCommand; override;
+    function CreateCommand: TmncSQLCommand; override;
     procedure Execute(SQL: string);
     function GetLastInsertID: Int64;
     function GetRowsChanged: Integer;
@@ -253,21 +253,21 @@ begin
   case vType of
     SQLITE_INTEGER:
       if SameText(SchemaType, 'date') then
-        Result := ftDate
+        Result := dtDate
       else//not yet
-        Result := ftInteger;
+        Result := dtInteger;
     SQLITE_FLOAT:
     begin
       if SameText(SchemaType, 'date') then
-        Result := ftDateTime
+        Result := dtDateTime
       else//not yet
-        Result := ftFloat;
+        Result := dtFloat;
     end;
-    SQLITE_BLOB: Result := ftBlob;
-    SQLITE_NULL: Result := ftUnkown;
-    SQLITE_TEXT: Result := ftString;
+    SQLITE_BLOB: Result := dtBlob;
+    SQLITE_NULL: Result := dtUnknown;
+    SQLITE_TEXT: Result := dtString;
     else
-      Result := ftUnkown;
+      Result := dtUnknown;
   end;
 end;
 
@@ -377,7 +377,7 @@ begin
   inherited Create;
 end;
 
-function TmncSQLiteConnection.CreateSession: TmncSession;
+function TmncSQLiteConnection.CreateSession: TmncSQLSession;
 begin
   Result := TmncSQLiteSession.Create(Self);
 end;
@@ -438,7 +438,7 @@ begin
   inherited;
 end;
 
-function TmncSQLiteSession.CreateCommand: TmncCommand;
+function TmncSQLiteSession.CreateCommand: TmncSQLCommand;
 begin
   Result := TmncSQLiteCommand.Create;
 end;

@@ -32,7 +32,7 @@ type
 
   { TmncFBConnection }
 
-  TmncFBConnection = class(TmncConnection)
+  TmncFBConnection = class(TmncSQLConnection)
   private
     FHandle: TISC_DB_HANDLE;
     FCharacterSet: string;
@@ -55,7 +55,7 @@ type
   public
     constructor Create;
 
-    function CreateSession: TmncSession; override;
+    function CreateSession: TmncSQLSession; override;
 
     function GetVersion: string;
     procedure Execute(SQL: string);
@@ -67,7 +67,7 @@ type
 
   { TmncFBSession }
 
-  TmncFBSession = class(TmncSession)
+  TmncFBSession = class(TmncSQLSession)
   private
     FHandle: TISC_TR_HANDLE;
     FTPB: PChar;
@@ -83,7 +83,7 @@ type
   public
     constructor Create(vConnection: TmncConnection); override;
     destructor Destroy; override;
-    function CreateCommand: TmncCommand; override;
+    function CreateCommand: TmncSQLCommand; override;
     procedure Execute(SQL: string);
     property Handle: TISC_TR_HANDLE read FHandle;
     property TPB: PChar read FTPB;
@@ -318,7 +318,7 @@ begin
   inherited Create;
 end;
 
-function TmncFBConnection.CreateSession: TmncSession;
+function TmncFBConnection.CreateSession: TmncSQLSession;
 begin
   Result := TmncFBSession.Create(Self);
 end;
@@ -463,7 +463,7 @@ begin
   inherited;
 end;
 
-function TmncFBSession.CreateCommand: TmncCommand;
+function TmncFBSession.CreateCommand: TmncSQLCommand;
 begin
   Result := TmncFBCommand.Create;
 end;

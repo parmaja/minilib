@@ -32,7 +32,6 @@ type
     function GetConnected: Boolean; override;
   public
     constructor Create;
-    function CreateSession: TmncSession; override;
   end;
 
   { TmncCSVSession }
@@ -47,7 +46,6 @@ type
     procedure DoStop(How: TmncSessionAction; Retaining: Boolean); override;
   public
     constructor Create(vConnection: TmncConnection); override;
-    function CreateCommand: TmncCommand; override;
     property SpliteChar: Char read FSpliteChar write FSpliteChar default #9;
     property EndOfLine: string read FEndOfLine write FEndOfLine;
     property HaveHeader: Boolean read FHaveHeader write FHaveHeader default True;
@@ -102,11 +100,6 @@ begin
   inherited Create;
 end;
 
-function TmncCSVConnection.CreateSession: TmncSession;
-begin
-  Result := TmncCSVSession.Create(Self);
-end;
-
 procedure TmncCSVConnection.DoConnect;
 begin
   FConnected := True;
@@ -138,11 +131,6 @@ begin
   FHaveHeader := True;
   SpliteChar := #9; //TAB
   EndOfLine := sEndOfLine;
-end;
-
-function TmncCSVSession.CreateCommand: TmncCommand;
-begin
-  Result := TmncCSVCommand.Create(Self, nil, csvmRead);//TODO dummy create
 end;
 
 { TmncCSVCommand }
@@ -234,7 +222,7 @@ begin
     try
       for i := 0 to aStrings.Count - 1 do
       begin
-        Columns.Add(i, DequoteStr(aStrings[i]), ftString);
+        Columns.Add(i, DequoteStr(aStrings[i]), dtString);
       end;
     finally
       aStrings.Free;

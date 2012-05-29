@@ -21,6 +21,19 @@ uses
 
 type
   TmncParseSQLOptions = set of (psoGenerateParams, psoAddParamsID, psoAddParamsNames);
+
+  TmncSQLSession = class;
+  TmncSQLCommand = class;
+
+  TmncSQLConnection = class(TmncConnection)
+  public
+    function CreateSession: TmncSQLSession; virtual; abstract;
+  end;
+
+  TmncSQLSession = class(TmncSession)
+  public
+    function CreateCommand: TmncSQLCommand; virtual; abstract;
+  end;
   
   TmncSQLCommand = class(TmncCommand)
   private
