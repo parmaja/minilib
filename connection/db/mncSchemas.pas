@@ -60,9 +60,9 @@ type
   end;
 
 
-  { TmncParamItem }
+  { TmncSchemaParam }
 
-  TmncParamItem = class(TObject)
+  TmncSchemaParam = class(TObject)
   private
     FName: string;
     FValue: string;
@@ -71,19 +71,19 @@ type
     property Value: string read FValue write FValue;
   end;
 
-  { TmncParams }
+  { TmncSchemaParams }
 
-  TmncParams = class(TObjectList)
+  TmncSchemaParams = class(TObjectList)
   private
-    function GetItem(Index: Integer): TmncParamItem;
+    function GetItem(Index: Integer): TmncSchemaParam;
     function GetValues(Index: string): string;
-    procedure SetItem(Index: Integer; const Value: TmncParamItem);
+    procedure SetItem(Index: Integer; const Value: TmncSchemaParam);
   public
     constructor Create(Names, Values: array of string);
-    function Find(const Name: string): TmncParamItem;
-    function Add(Param: TmncParamItem): Integer; overload;
-    function Add(Name, Value: string): TmncParamItem; overload;
-    property Items[Index: Integer]: TmncParamItem read GetItem write SetItem;
+    function Find(const Name: string): TmncSchemaParam;
+    function Add(Param: TmncSchemaParam): Integer; overload;
+    function Add(Name, Value: string): TmncSchemaParam; overload;
+    property Items[Index: Integer]: TmncSchemaParam read GetItem write SetItem;
     property Values[Index: string]:string read GetValues; default;
   end;
 
@@ -114,7 +114,7 @@ type
     property IncludeHeader: Boolean read FIncludeHeader write FIncludeHeader default False;
   end;
 
-  TSQLType = record
+  TmncSchemaType = record
     SqlType: Integer;
     TypeName: string;
   end;
@@ -124,7 +124,7 @@ type
     PrivString: string;
   end;
 
-  TSQLDomains = array[0..14] of TSQLType;
+  TmncSchemaDomain = array[0..14] of TmncSchemaType;
 
 implementation
 
@@ -286,16 +286,16 @@ begin
 
 end;
 
-{ TmncParams }
+{ TmncSchemaParams }
 
-function TmncParams.GetItem(Index: Integer): TmncParamItem;
+function TmncSchemaParams.GetItem(Index: Integer): TmncSchemaParam;
 begin
-  Result := inherited Items[Index] as TmncParamItem;
+  Result := inherited Items[Index] as TmncSchemaParam;
 end;
 
-function TmncParams.GetValues(Index: string): string;
+function TmncSchemaParams.GetValues(Index: string): string;
 var
-  aItem: TmncParamItem;
+  aItem: TmncSchemaParam;
 begin
   if Self = nil then
     Result := ''
@@ -309,12 +309,12 @@ begin
   end;
 end;
 
-procedure TmncParams.SetItem(Index: Integer; const Value: TmncParamItem);
+procedure TmncSchemaParams.SetItem(Index: Integer; const Value: TmncSchemaParam);
 begin
   inherited Items[Index] := Value;
 end;
 
-constructor TmncParams.Create(Names, Values: array of string);
+constructor TmncSchemaParams.Create(Names, Values: array of string);
 var
   i: Integer;
   v: string;
@@ -330,7 +330,7 @@ begin
   end;
 end;
 
-function TmncParams.Find(const Name: string): TmncParamItem;
+function TmncSchemaParams.Find(const Name: string): TmncSchemaParam;
 var
   i: Integer;
 begin
@@ -345,14 +345,14 @@ begin
   end;
 end;
 
-function TmncParams.Add(Param: TmncParamItem): Integer;
+function TmncSchemaParams.Add(Param: TmncSchemaParam): Integer;
 begin
   Result := inherited Add(Param);
 end;
 
-function TmncParams.Add(Name, Value: string): TmncParamItem;
+function TmncSchemaParams.Add(Name, Value: string): TmncSchemaParam;
 begin
-  Result := TmncParamItem.Create;
+  Result := TmncSchemaParam.Create;
   Result.Name := Name;
   Result.Value := Value;
   Add(Result);

@@ -24,6 +24,7 @@ type
 
   TmncSQLSession = class;
   TmncSQLCommand = class;
+  TmncSQLGenerator = class;
 
   TmncSQLConnection = class(TmncConnection)
   public
@@ -34,7 +35,7 @@ type
   public
     function CreateCommand: TmncSQLCommand; virtual; abstract;
   end;
-  
+
   TmncSQLCommand = class(TmncCommand)
   private
   protected
@@ -43,7 +44,52 @@ type
     property SQL: TStrings read FRequest;//Alias of Request
   end;
 
+  { TmncSQLGenerator }
+
+  TmncSQLGenerator = class(TmncObject)
+  public
+    function Select(Table: string; Fields: array of string; Keys: array of string; ExtraFields: array of string): string; virtual; abstract; overload;
+    function Select(Table: string; Fields: array of string; Keys: array of string): string; overload;
+    function Update(Table: string; Fields: array of string; Keys: array of string; ExtraFields: array of string): string; virtual; abstract; overload;
+    function Update(Table: string; Fields: array of string; Keys: array of string): string; overload;
+    function Insert(Table: string; Fields: array of string; ExtraFields: array of string): string; virtual; abstract; overload;
+    function Insert(Table: string; Fields: array of string): string; overload;
+    function UpdateOrInsert(Updating, Returning:Boolean; Table: string; Fields: array of string; Keys: array of string): string; overload;
+    function Delete(Table: string; Keys: array of string): string; overload;
+  end;
+
 implementation
+
+{ TmncSQLGenerator }
+
+function TmncSQLGenerator.Select(Table: string; Fields: array of string;
+  Keys: array of string): string;
+begin
+
+end;
+
+function TmncSQLGenerator.Update(Table: string; Fields: array of string;
+  Keys: array of string): string;
+begin
+
+end;
+
+function TmncSQLGenerator.Insert(Table: string; Fields: array of string
+  ): string;
+begin
+
+end;
+
+function TmncSQLGenerator.UpdateOrInsert(Updating, Returning: Boolean;
+  Table: string; Fields: array of string; Keys: array of string): string;
+begin
+
+end;
+
+function TmncSQLGenerator.Delete(Table: string; Keys: array of string): string;
+begin
+
+end;
 
 function TmncSQLCommand.ParseSQL(Options: TmncParseSQLOptions; ParamChar: string = '?'): string;
 var
