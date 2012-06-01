@@ -1,4 +1,4 @@
-unit SynHighlighterSQLite;
+unit SynHighlighterFirebird;
 {**
  *  This file is part of the "Mini Connections"
  *
@@ -12,13 +12,13 @@ unit SynHighlighterSQLite;
 interface
 
 uses
-  SysUtils, Controls, Graphics,
+  SysUtils, Windows, Messages, Graphics, Registry, Controls,
   Classes, SynEditTypes, SynEditHighlighter, SynHighlighterHashEntries;
 
 type
-  TtkTokenKind = (tkComment, tkDatatype, tkObject,
+  TtkTokenKind = (tkComment, tkDatatype, tkObject, tkException,
     tkFunction, tkIdentifier, tkKey, tkNull, tkNumber, tkSpace,
-    tkString, tkSymbol, tkVariable, tkUnknown);
+    tkString, tkSymbol, tkUnknown, tkVariable);
 
   TRangeState = (rsUnknown, rsComment, rsString);
 
@@ -26,38 +26,37 @@ type
 
 type
   PIdentifierTable = ^TIdentifierTable;
-  TIdentifierTable = array[AnsiChar] of ByteBool;
+  TIdentifierTable = array[Char] of ByteBool;
 
-  PHashCharTable = ^THashCharTable;
-  THashCharTable = array[AnsiChar] of Integer;
+  PHashTable = ^THashTable;
+  THashTable = array[Char] of Integer;
 
 type
 
-  { TSynSqliteSyn }
-
-  TSynSqliteSyn = class(TSynCustomHighlighter)
+  TSynFirebirdSyn = class(TSynCustomHighlighter)
   private
-    FRange: TRangeState;
-    FLine: PChar;
-    FLineNumber: Integer;
-    FProcTable: array[#0..#255] of TProcTableProc;
+    fRange: TRangeState;
+    fLine: PChar;
+    fLineNumber: Integer;
+    fProcTable: array[#0..#255] of TProcTableProc;
     Run: LongInt;
-    FStringLen: Integer;
-    FToIdent: PChar;
-    FTokenPos: Integer;
-    FTokenID: TtkTokenKind;
-    FKeywords: TSynHashEntryList;
-    FCommentAttri: TSynHighlighterAttributes;
-    FDataTypeAttri: TSynHighlighterAttributes;
-    FObjectAttri: TSynHighlighterAttributes;
-    FFunctionAttri: TSynHighlighterAttributes;
-    FIdentifierAttri: TSynHighlighterAttributes;
-    FKeyAttri: TSynHighlighterAttributes;
-    FNumberAttri: TSynHighlighterAttributes;
-    FSpaceAttri: TSynHighlighterAttributes;
-    FStringAttri: TSynHighlighterAttributes;
-    FSymbolAttri: TSynHighlighterAttributes;
-    FVariableAttri: TSynHighlighterAttributes;
+    fStringLen: Integer;
+    fToIdent: PChar;
+    fTokenPos: Integer;
+    fTokenID: TtkTokenKind;
+    fKeywords: TSynHashEntryList;
+    fCommentAttri: TSynHighlighterAttributes;
+    fDataTypeAttri: TSynHighlighterAttributes;
+    fObjectAttri: TSynHighlighterAttributes;
+    fExceptionAttri: TSynHighlighterAttributes;
+    fFunctionAttri: TSynHighlighterAttributes;
+    fIdentifierAttri: TSynHighlighterAttributes;
+    fKeyAttri: TSynHighlighterAttributes;
+    fNumberAttri: TSynHighlighterAttributes;
+    fSpaceAttri: TSynHighlighterAttributes;
+    fStringAttri: TSynHighlighterAttributes;
+    fSymbolAttri: TSynHighlighterAttributes;
+    fVariableAttri: TSynHighlighterAttributes;
     function KeyHash(ToHash: PChar): Integer;
     function KeyComp(const aKey: string): Boolean;
     procedure AndSymbolProc;
@@ -98,9 +97,6 @@ type
     function GetEol: Boolean; override;
     function GetRange: Pointer; override;
     function GetToken: string; override;
-    {.$IFDEF SYN_LAZARUS}
-    procedure GetTokenEx(out TokenStart: PChar; out TokenLength: integer); override;
-    {.$ENDIF}
     function GetTokenAttribute: TSynHighlighterAttributes; override;
     function GetTokenID: TtkTokenKind;
     function GetTokenKind: integer; override;
@@ -114,6 +110,7 @@ type
     property CommentAttri: TSynHighlighterAttributes read fCommentAttri write fCommentAttri;
     property DataTypeAttri: TSynHighlighterAttributes read fDataTypeAttri write fDataTypeAttri;
     property ObjectAttri: TSynHighlighterAttributes read fObjectAttri write fObjectAttri;
+    property ExceptionAttri: TSynHighlighterAttributes read fExceptionAttri write fExceptionAttri;
     property FunctionAttri: TSynHighlighterAttributes read fFunctionAttri write fFunctionAttri;
     property IdentifierAttri: TSynHighlighterAttributes read fIdentifierAttri write fIdentifierAttri;
     property KeyAttri: TSynHighlighterAttributes read fKeyAttri write fKeyAttri;
@@ -126,57 +123,84 @@ type
 
 
 const
-//---Sqlite 6----------------------------------------------------------------
+//---Firebird 6----------------------------------------------------------------
 
   // functions
-  SqliteFunctions =
-    //Aggregate Functions
-    'avg,count,group_concat,max,min,sum,total,'+
-    //Core Functions
-    'abs,changes,coalesce,ifnull,hex,last_insert_rowid,length,'+//glob,like,
-    'load_extension,lower,ltrim,nullif,quote,random,randomblob,round,rtrim,'+//replace,
-    'soundex,sqlite_version,substr,total_changes,trim,typeof,upper,zeroblob,'+
-    //Date Functions
-    'date,time,datetime,julianday,strftime';
-
-
+  FirebirdFunctions =
+    'AVG,CAST,COUNT,GEN_ID,MAX,MIN,SUM,UPPER'+
+    'ABS,ACOS,ASCII_CHAR,ASCII_VAL,ASIN,ATAN,ATAN2,'+
+    'BIN_AND,BIN_OR,BIN_SHL,BIN_SHR,BIN_XOR,'+
+    'CEIL,COS,COSH,COT,DATEADD,DATEDIFF,DECODE,'+
+    'EXP,FLOOR,GEN_UUID,HASH,LN,LOG,LOG10,LPAD,'+
+    'MAXVALUE,MINVALUE,MOD,OVERLAY,PI,POWER,'+
+    'RAND,REPLACE,REVERSE,ROUND,RPAD,'+
+    'SIGN,SIN,SINH,SQRT,TAN,TANH,TRUNC,'+
+    'UUID_TO_CHAR,CHAR_TO_UUID';
 
   // keywords
-  SqliteKeywords: string =
-    'abort,add,after,all,alter,analyze,and,as,asc,attach,autoincrement,'+
-    'before,begin,between,by,cascade,case,cast,check,collate,column,commit,'+
-    'conflict,constraint,create,cross,current_date,current_time,current_timestamp,'+
-    'database,default,deferrable,deferred,delete,desc,detach,distinct,drop,each,'+
-    'else,end,escape,except,exclusive,exists,explain,fail,for,foreign,from,full,'+
-    'glob,group,having,if,ignore,immediate,in,index,indexed,initially,inner,insert,'+
-    'instead,intersect,into,is,isnull,join,key,left,like,limit,match,natural,not,'+
-    'notnull,null,of,offset,on,or,order,outer,plan,pragma,primary,query,raise,'+
-    'references,regexp,reindex,release,rename,replace,restrict,right,rollback,'+
-    'row,savepoint,select,set,table,temp,temporary,then,to,transaction,trigger,'+
-    'union,unique,update,using,vacuum,values,view,virtual,when,where';
-
+  FirebirdKeywords: string =
+    'ACTIVE,ADD,AFTER,ALL,ALTER,AND,ANY,AS,ASC,ASCENDING,AT,AUTO,AUTONOMOUS,AUTODDL,'+
+    'BASED,BASENAME,BASE_NAME,BEFORE,BEGIN,BETWEEN,BLOBEDIT,BLOCK,BREAK,BUFFER,BY,' +
+    'CACHE,CASE,CHARACTER_LENGTH,CHAR_LENGTH,CHECK,' +
+    'CHECK_POINT_LEN,CHECK_POINT_LENGTH,COALESCE,COLLATE,COLLATION,COLUMN,COMMIT,' +
+    'COMMITED,COMPILETIME,COMPUTED,CLOSE,CONDITIONAL,CONNECT,CONSTRAINT,' +
+    'CONTAINING,CONTINUE,CREATE,CURRENT,CURRENT_DATE,CURRENT_TIME,' +
+    'CURRENT_CONNECTION,CURRENT_TIMESTAMP,CURRENT_TRANSACTION,CURSOR,' +
+    'DATABASE,DAY,DB_KEY,DEBUG,DEC,DECLARE,DEFAULT,DELETE,DELETING,DESC,DESCENDING,' +
+    'DESCRIBE,DESCRIPTOR,DISCONNECT,DISTINCT,DO,DOMAIN,DROP,ECHO,EDIT,ELSE,END,' +
+    'ENTRY_POINT,ESCAPE,EVENT,EXCEPTION,EXECUTE,EXISTS,EXIT,EXTERN,EXTERNAL,EXTRACT,' +
+    'FETCH,FILE,FILTER,FIRST,FOR,FOREIGN,FOUND,FREE_IT,FROM,FULL,FUNCTION,' +
+    'GDSCODE,GENERATOR,GLOBAL,GOTO,GRANT,GROUP,GROUP_COMMIT_WAIT,GROUP_COMMIT_WAIT_TIME,' +
+    'HAVING,HELP,HOUR,'+
+    'IF,IIF,IMMEDIATE,IN,INACTIVE,INDEX,INDICATOR,INIT,INNER,INPUT,INPUT_TYPE,INSENSITIVE,' +
+    'INSERT,INSERTING,INT,INTO,IS,ISOLATION,ISQL,'+
+    'JOIN,'+
+    'KEY,LAST,LIST,'+
+    'LC_MESSAGES,LC_TYPE,LEAVE,LEFT,LENGTH,LEV,LEVEL,LIKE,' +
+    'LOGFILE,LOG_BUFFER_SIZE,LOG_BUF_SIZE,LONG,LOCK,MANUAL,' +
+    'MATCHING,MAXIMUM,MAXIMUM_SEGMENT,MAX_SEGMENT,MERGE,MESSAGE,MINIMUM,MINUTE,MODULE_NAME,MONTH,' +
+    'NAMES,NATIONAL,NATURAL,NCHAR,NEW,NEXT,NO,NOAUTO,NOT,NULL,NULLIF' +
+    'NUM_LOG_BUFFS,NUM_LOG_BUFFERS,'+
+    'OCTET_LENGTH,OF,OLD,ON,ONLY,OPEN,OPTION,OR,' +
+    'ORDER,OUTER,OUTPUT,OUTPUT_TYPE,OVERFLOW,'+
+    'PAGE,PAGELENGTH,PAGES,PAGE_SIZE,' +
+    'PARAMETER,PASSWORD,PLAN,POSITION,POST_EVENT,PREPARE,PROCEDURE,' +
+    'PROTECTED,PRIMARY,PRIVILEGES,PUBLIC,QUIT,RAW_PARTITIONS,READ,REAL,' +
+    'RECORD_VERSION,RECREATE,REFERENCES,RELEASE,RESERV,RESERVING,RETAIN,RETURN,' +
+    'RETURNING,RETURNING_VALUES,RETURNS,RESTART,REVOKE,RIGHT,ROLLBACK,ROW_COUNT,ROWS,RUNTIME,'+
+    'SAVEPOINT,SCHEMA,SECOND,' +
+    'SEGMENT,SELECT,SET,SEQUENCE,SHADOW,SHARED,SHELL,SHOW,SIMILAR,SINGULAR,SIZE,SNAPSHOT,SOME,' +
+    'SORT,SKIP,SQL,SQLCODE,SQLERROR,SQLWARNING,STABILITY,STARTING,STARTS,' +
+    'SENSITIVE,STATEMENT,STATIC,STATISTICS,SUB_TYPE,SUSPEND,SUBSTRING,'+
+    'TABLE,TERMINATOR,THEN,TO,TRANSACTION,TRANSLATE,TRANSLATION,TRIGGER,TRIM,TYPE,' +
+    'UNCOMMITTED,UNION,UNIQUE,UNICODE,UPDATE,UPDATING,USER,USING,UTF8,'+
+    'VALUE,VALUES,VARIABLE,VARYING,VERSION,VIEW,' +
+    'WAIT,WEEKDAY,WHEN,WHENEVER,WHERE,WHILE,WITH,WORK,WRITE,'+
+    'YEAR,YEARDAY';
 
   // types
-  SqliteTypes = 'blob,char,character,decimal,double,float,integer,' +
-    'numeric,precision,smallint,timestamp,varchar';
+  FirebirdTypes = 'BIGINT,BLOB,CHAR,CHARACTER,DATE,DECIMAL,DOUBLE,FLOAT,INT64,INTEGER,' +
+    'NUMERIC,PRECISION,SMALLINT,TIME,TIMESTAMP,VARCHAR';
+
+  ISQLKeywords = 'TERM';
 
 implementation
 
 uses
-  mnUtils, SynEditStrConst;
+  SynEditStrConst;
 
 const
   SYNS_AttrObjects = 'Objects';
 
 var
   Identifiers: TIdentifierTable;
-  mHashCharTable: THashCharTable;
+  mHashTable: THashTable;
 
 procedure MakeIdentTable;
 var
   c: char;
 begin
-  InitMemory(Identifiers, SizeOf(Identifiers));
+  FillChar(Identifiers, SizeOf(Identifiers), 0);
   for c := 'a' to 'z' do
     Identifiers[c] := True;
   for c := 'A' to 'Z' do
@@ -187,43 +211,43 @@ begin
   Identifiers[':'] := True;
   Identifiers['"'] := True;
 
-  FillChar(mHashCharTable, SizeOf(mHashCharTable), 0);
-  mHashCharTable['_'] := 1;
+  FillChar(mHashTable, SizeOf(mHashTable), 0);
+  mHashTable['_'] := 1;
   for c := 'a' to 'z' do
-    mHashCharTable[c] := 2 + Ord(c) - Ord('a');
+    mHashTable[c] := 2 + Ord(c) - Ord('a');
   for c := 'A' to 'Z' do
-    mHashCharTable[c] := 2 + Ord(c) - Ord('A');
-  mHashCharTable[':'] := mHashCharTable['Z'] + 1;
-  mHashCharTable['"'] := mHashCharTable['Z'] + 1;
+    mHashTable[c] := 2 + Ord(c) - Ord('A');
+  mHashTable[':'] := mHashTable['Z'] + 1;
+  mHashTable['"'] := mHashTable['Z'] + 1;
 end;
 
-function TSynSqliteSyn.KeyHash(ToHash: PChar): Integer;
+function TSynFirebirdSyn.KeyHash(ToHash: PChar): Integer;
 begin
   Result := 0;
   while Identifiers[ToHash^] do
   begin
 {$IFOPT Q-}
-    Result := 2 * Result + mHashCharTable[ToHash^];
+    Result := 2 * Result + mHashTable[ToHash^];
 {$ELSE}
-    Result := (2 * Result + mHashCharTable[ToHash^]) and $FFFFFF;
+    Result := (2 * Result + mHashTable[ToHash^]) and $FFFFFF;
 {$ENDIF}
     inc(ToHash);
   end;
   Result := Result and $FF; // 255
-  FStringLen := ToHash - fToIdent;
+  fStringLen := ToHash - fToIdent;
 end;
 
-function TSynSqliteSyn.KeyComp(const aKey: string): Boolean;
+function TSynFirebirdSyn.KeyComp(const aKey: string): Boolean;
 var
   i: integer;
   pKey1, pKey2: PChar;
 begin
   pKey1 := fToIdent;
-  // Note: FStringLen is always > 0 !
+  // Note: fStringLen is always > 0 !
   pKey2 := pointer(aKey);
-  for i := 1 to FStringLen do
+  for i := 1 to fStringLen do
   begin
-    if mHashCharTable[pKey1^] <> mHashCharTable[pKey2^] then
+    if mHashTable[pKey1^] <> mHashTable[pKey2^] then
     begin
       Result := FALSE;
       exit;
@@ -234,7 +258,7 @@ begin
   Result := True;
 end;
 
-function TSynSqliteSyn.IdentKind(MayBe: PChar): TtkTokenKind;
+function TSynFirebirdSyn.IdentKind(MayBe: PChar): TtkTokenKind;
 var
   Entry: TSynHashEntry;
 begin
@@ -242,9 +266,9 @@ begin
   Entry := fKeywords[KeyHash(MayBe)];
   while Assigned(Entry) do
   begin
-    if Entry.KeywordLen > FStringLen then
+    if Entry.KeywordLen > fStringLen then
       break
-    else if Entry.KeywordLen = FStringLen then
+    else if Entry.KeywordLen = fStringLen then
       if KeyComp(Entry.Keyword) then
       begin
         Result := TtkTokenKind(Entry.Kind);
@@ -255,98 +279,97 @@ begin
   Result := tkIdentifier;
 end;
 
-procedure TSynSqliteSyn.MakeMethodTables;
+procedure TSynFirebirdSyn.MakeMethodTables;
 var
   I: Char;
 begin
   for I := #0 to #255 do
     case I of
-      #0: FProcTable[I] := @NullProc;
-      #10: FProcTable[I] := @LFProc;
-      #13: FProcTable[I] := @CRProc;
-      '=': FProcTable[I] := @EqualProc;
-      '>': FProcTable[I] := @GreaterProc;
-      '<': FProcTable[I] := @LowerProc;
-      '-': FProcTable[I] := @MinusProc;
-      '|': FProcTable[I] := @OrSymbolProc;
-      '+': FProcTable[I] := @PlusProc;
-      '/': FProcTable[I] := @SlashProc;
-      '&': FProcTable[I] := @AndSymbolProc;
-      #39: FProcTable[I] := @StringProc;
-      '"': FProcTable[I] := @ObjectProc;
-      ':': FProcTable[I] := @VariableProc;
+      #0: fProcTable[I] := @NullProc;
+      #10: fProcTable[I] := @LFProc;
+      #13: fProcTable[I] := @CRProc;
+      '=': fProcTable[I] := @EqualProc;
+      '>': fProcTable[I] := @GreaterProc;
+      '<': fProcTable[I] := @LowerProc;
+      '-': fProcTable[I] := @MinusProc;
+      '|': fProcTable[I] := @OrSymbolProc;
+      '+': fProcTable[I] := @PlusProc;
+      '/': fProcTable[I] := @SlashProc;
+      '&': fProcTable[I] := @AndSymbolProc;
+      #39: fProcTable[I] := @StringProc;
+      '"': fProcTable[I] := @ObjectProc;
+      ':': fProcTable[I] := @VariableProc;
       'A'..'Z', 'a'..'z', '_':
-        FProcTable[I] := @IdentProc;
+        fProcTable[I] := @IdentProc;
       '0'..'9':
-        FProcTable[I] := @NumberProc;
+        fProcTable[I] := @NumberProc;
       #1..#9, #11, #12, #14..#32:
-        FProcTable[I] := @SpaceProc;
+        fProcTable[I] := @SpaceProc;
       '^', '%', '*', '!':
-        FProcTable[I] := @SymbolAssignProc;
+        fProcTable[I] := @SymbolAssignProc;
       '{', '}', '.', ',', ';', '?', '(', ')', '[', ']', '~':
-        FProcTable[I] := @SymbolProc;
+        fProcTable[I] := @SymbolProc;
     else
-      FProcTable[I] := @UnknownProc;
+      fProcTable[I] := @UnknownProc;
     end;
 end;
 
-constructor TSynSqliteSyn.Create(AOwner: TComponent);
+constructor TSynFirebirdSyn.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
-  FKeywords := TSynHashEntryList.Create;
-  FCommentAttri := TSynHighlighterAttributes.Create(SYNS_AttrComment);
-  FCommentAttri.Style := [fsBold];
-  FCommentAttri.Foreground := clMaroon;
+  fKeywords := TSynHashEntryList.Create;
+  fCommentAttri := TSynHighlighterAttributes.Create(SYNS_AttrComment);
+  fCommentAttri.Style := [fsItalic];
   AddAttribute(fCommentAttri);
-  FDataTypeAttri := TSynHighlighterAttributes.Create(SYNS_AttrDataType);
-  FDataTypeAttri.Style := [fsBold];
-  FDataTypeAttri.Foreground := $00C56A31;
+  fDataTypeAttri := TSynHighlighterAttributes.Create(SYNS_AttrDataType);
+  fDataTypeAttri.Style := [fsBold];
   AddAttribute(fDataTypeAttri);
-  FObjectAttri := TSynHighlighterAttributes.Create(SYNS_AttrObjects);
-  FObjectAttri.Style := [fsBold];
-  FObjectAttri.Foreground := clGreen;
-  AddAttribute(FObjectAttri);
-  FFunctionAttri := TSynHighlighterAttributes.Create(SYNS_AttrFunction);
-  FFunctionAttri.Style := [fsBold];
-  FFunctionAttri.Foreground := $00C56A31;
+  fObjectAttri := TSynHighlighterAttributes.Create(SYNS_AttrObjects);
+  fObjectAttri.Style := [fsBold];
+  AddAttribute(fObjectAttri);
+  fExceptionAttri := TSynHighlighterAttributes.Create(SYNS_AttrException);
+  fExceptionAttri.Style := [fsItalic];
+  AddAttribute(fExceptionAttri);
+  fFunctionAttri := TSynHighlighterAttributes.Create(SYNS_AttrFunction);
+  fFunctionAttri.Style := [fsBold];
   AddAttribute(fFunctionAttri);
-  FIdentifierAttri := TSynHighlighterAttributes.Create(SYNS_AttrIdentifier);
+  fIdentifierAttri := TSynHighlighterAttributes.Create(SYNS_AttrIdentifier);
   AddAttribute(fIdentifierAttri);
-  FKeyAttri := TSynHighlighterAttributes.Create(SYNS_AttrReservedWord);
-  FKeyAttri.Style := [fsBold];
-  FKeyAttri.Foreground := $00C56A31;
+  fKeyAttri := TSynHighlighterAttributes.Create(SYNS_AttrReservedWord);
+  fKeyAttri.Style := [fsBold];
   AddAttribute(fKeyAttri);
-  FNumberAttri := TSynHighlighterAttributes.Create(SYNS_AttrNumber);
+  fNumberAttri := TSynHighlighterAttributes.Create(SYNS_AttrNumber);
   AddAttribute(fNumberAttri);
-  FSpaceAttri := TSynHighlighterAttributes.Create(SYNS_AttrSpace);
+  fSpaceAttri := TSynHighlighterAttributes.Create(SYNS_AttrSpace);
   AddAttribute(fSpaceAttri);
-  FStringAttri := TSynHighlighterAttributes.Create(SYNS_AttrString);
+  fStringAttri := TSynHighlighterAttributes.Create(SYNS_AttrString);
   AddAttribute(fStringAttri);
   FSymbolAttri := TSynHighlighterAttributes.Create(SYNS_AttrSymbol);
   AddAttribute(FSymbolAttri);
-  FVariableAttri := TSynHighlighterAttributes.Create(SYNS_AttrVariable);
+  fVariableAttri := TSynHighlighterAttributes.Create(SYNS_AttrVariable);
   AddAttribute(fVariableAttri);
   SetAttributesOnChange(@DefHighlightChange);
-  EnumerateKeywords(Ord(tkDatatype), SqliteTypes, IdentChars, @DoAddKeyword);
-  EnumerateKeywords(Ord(tkFunction), SqliteFunctions, IdentChars, @DoAddKeyword);
-  EnumerateKeywords(Ord(tkKey), SqliteKeywords, IdentChars, @DoAddKeyword);
+  EnumerateKeywords(Ord(tkDatatype), FirebirdTypes, IdentChars, @DoAddKeyword);
+  EnumerateKeywords(Ord(tkFunction), FirebirdFunctions, IdentChars, @DoAddKeyword);
+  EnumerateKeywords(Ord(tkKey), FirebirdKeywords, IdentChars, @DoAddKeyword);
+  EnumerateKeywords(Ord(tkKey), ISQLKeywords, IdentChars, @DoAddKeyword);
   MakeMethodTables;
   FDefaultFilter := SYNS_FilterSQL;
   FRange := rsUnknown;
 end;
 
-destructor TSynSqliteSyn.Destroy;
+destructor TSynFirebirdSyn.Destroy;
 begin
   fKeywords.Free;
   inherited Destroy;
 end;
 
-procedure TSynSqliteSyn.Assign(Source: TPersistent);
+procedure TSynFirebirdSyn.Assign(Source: TPersistent);
 begin
   inherited Assign(Source);
 end;
 
-procedure TSynSqliteSyn.SetLine({$IFDEF FPC}const {$ENDIF}NewValue: string; LineNumber: Integer);
+procedure TSynFirebirdSyn.SetLine(const NewValue: string; LineNumber: Integer);
 begin
   fLine := PChar(NewValue);
   Run := 0;
@@ -354,7 +377,7 @@ begin
   Next;
 end;
 
-procedure TSynSqliteSyn.AndSymbolProc;
+procedure TSynFirebirdSyn.AndSymbolProc;
 begin
   fTokenID := tkSymbol;
   Inc(Run);
@@ -362,7 +385,7 @@ begin
     Inc(Run);
 end;
 
-procedure TSynSqliteSyn.StringProc;
+procedure TSynFirebirdSyn.StringProc;
 begin
   if fLine[Run] = #0 then
     NullProc
@@ -384,7 +407,7 @@ begin
   end;
 end;
 
-procedure TSynSqliteSyn.CRProc;
+procedure TSynFirebirdSyn.CRProc;
 begin
   fTokenID := tkSpace;
   Inc(Run);
@@ -392,7 +415,7 @@ begin
     Inc(Run);
 end;
 
-procedure TSynSqliteSyn.EqualProc;
+procedure TSynFirebirdSyn.EqualProc;
 begin
   fTokenID := tkSymbol;
   Inc(Run);
@@ -400,7 +423,7 @@ begin
     Inc(Run);
 end;
 
-procedure TSynSqliteSyn.GreaterProc;
+procedure TSynFirebirdSyn.GreaterProc;
 begin
   fTokenID := tkSymbol;
   Inc(Run);
@@ -408,10 +431,10 @@ begin
     Inc(Run);
 end;
 
-procedure TSynSqliteSyn.IdentProc;
+procedure TSynFirebirdSyn.IdentProc;
 begin
   fTokenID := IdentKind((fLine + Run));
-  inc(Run, FStringLen);
+  inc(Run, fStringLen);
   if fTokenID = tkComment then
   begin
     while not (fLine[Run] in [#0, #10, #13]) do
@@ -422,13 +445,13 @@ begin
       inc(Run);
 end;
 
-procedure TSynSqliteSyn.LFProc;
+procedure TSynFirebirdSyn.LFProc;
 begin
   fTokenID := tkSpace;
   inc(Run);
 end;
 
-procedure TSynSqliteSyn.LowerProc;
+procedure TSynFirebirdSyn.LowerProc;
 begin
   fTokenID := tkSymbol;
   Inc(Run);
@@ -443,7 +466,7 @@ begin
   end;
 end;
 
-procedure TSynSqliteSyn.MinusProc;
+procedure TSynFirebirdSyn.MinusProc;
 begin
   Inc(Run);
   if fLine[Run] = '-' then
@@ -457,12 +480,12 @@ begin
     fTokenID := tkSymbol;
 end;
 
-procedure TSynSqliteSyn.NullProc;
+procedure TSynFirebirdSyn.NullProc;
 begin
   fTokenID := tkNull;
 end;
 
-procedure TSynSqliteSyn.NumberProc;
+procedure TSynFirebirdSyn.NumberProc;
 begin
   inc(Run);
   fTokenID := tkNumber;
@@ -477,7 +500,7 @@ begin
   end;
 end;
 
-procedure TSynSqliteSyn.OrSymbolProc;
+procedure TSynFirebirdSyn.OrSymbolProc;
 begin
   fTokenID := tkSymbol;
   Inc(Run);
@@ -485,7 +508,7 @@ begin
     Inc(Run);
 end;
 
-procedure TSynSqliteSyn.PlusProc;
+procedure TSynFirebirdSyn.PlusProc;
 begin
   fTokenID := tkSymbol;
   Inc(Run);
@@ -493,7 +516,7 @@ begin
     Inc(Run);
 end;
 
-procedure TSynSqliteSyn.SlashProc;
+procedure TSynFirebirdSyn.SlashProc;
 begin
   Inc(Run);
   case fLine[Run] of
@@ -521,7 +544,7 @@ begin
   end;
 end;
 
-procedure TSynSqliteSyn.SpaceProc;
+procedure TSynFirebirdSyn.SpaceProc;
 begin
   fTokenID := tkSpace;
   repeat
@@ -529,13 +552,13 @@ begin
   until (fLine[Run] > #32) or (fLine[Run] in [#0, #10, #13]);
 end;
 
-procedure TSynSqliteSyn.SymbolProc;
+procedure TSynFirebirdSyn.SymbolProc;
 begin
   Inc(Run);
   fTokenID := tkSymbol;
 end;
 
-procedure TSynSqliteSyn.SymbolAssignProc;
+procedure TSynFirebirdSyn.SymbolAssignProc;
 begin
   fTokenID := tkSymbol;
   Inc(Run);
@@ -543,7 +566,7 @@ begin
     Inc(Run);
 end;
 
-procedure TSynSqliteSyn.VariableProc;
+procedure TSynFirebirdSyn.VariableProc;
 var
   i: integer;
 begin
@@ -558,13 +581,13 @@ begin
   end;
 end;
 
-procedure TSynSqliteSyn.UnknownProc;
+procedure TSynFirebirdSyn.UnknownProc;
 begin
   inc(Run);
   fTokenID := tkUnknown;
 end;
 
-procedure TSynSqliteSyn.AnsiCProc;
+procedure TSynFirebirdSyn.AnsiCProc;
 begin
   case fLine[Run] of
     #0: NullProc;
@@ -586,15 +609,15 @@ begin
   end;
 end;
 
-function TSynSqliteSyn.IsKeyword(const AKeyword: string): boolean;
+function TSynFirebirdSyn.IsKeyword(const AKeyword: string): boolean;
 var
   tk: TtkTokenKind;
 begin
   tk := IdentKind(PChar(AKeyword));
-  Result := tk in [tkDatatype, tkFunction, tkKey, tkObject];
+  Result := tk in [tkDatatype, tkException, tkFunction, tkKey, tkObject];
 end;
 
-procedure TSynSqliteSyn.Next;
+procedure TSynFirebirdSyn.Next;
 begin
   fTokenPos := Run;
   case fRange of
@@ -603,11 +626,11 @@ begin
     rsString:
       StringProc;
   else
-    FProcTable[fLine[Run]];
+    fProcTable[fLine[Run]];
   end;
 end;
 
-function TSynSqliteSyn.GetDefaultAttribute(Index: integer):
+function TSynFirebirdSyn.GetDefaultAttribute(Index: integer):
   TSynHighlighterAttributes;
 begin
   case Index of
@@ -622,89 +645,81 @@ begin
   end;
 end;
 
-function TSynSqliteSyn.GetEOL: Boolean;
+function TSynFirebirdSyn.GetEOL: Boolean;
 begin
   Result := fTokenID = tkNull;
 end;
 
-function TSynSqliteSyn.GetRange: Pointer;
+function TSynFirebirdSyn.GetRange: Pointer;
 begin
   Result := Pointer(fRange);
 end;
 
-function TSynSqliteSyn.GetToken: string;
+function TSynFirebirdSyn.GetToken: string;
 var
   Len: LongInt;
 begin
   Len := Run - fTokenPos;
-  SetString(Result, (FLine + fTokenPos), Len);
+  Setstring(Result, (FLine + fTokenPos), Len);
 end;
 
-{.$IFDEF SYN_LAZARUS}
-procedure TSynSqliteSyn.GetTokenEx(out TokenStart: PChar; out
-  TokenLength: integer);
-begin
-  TokenLength:=Run-fTokenPos;
-  TokenStart:=FLine + fTokenPos;
-end;
-{.$ENDIF}
-
-function TSynSqliteSyn.GetTokenID: TtkTokenKind;
+function TSynFirebirdSyn.GetTokenID: TtkTokenKind;
 begin
   Result := fTokenId;
 end;
 
-function TSynSqliteSyn.GetTokenAttribute: TSynHighlighterAttributes;
+function TSynFirebirdSyn.GetTokenAttribute: TSynHighlighterAttributes;
 begin
   case GetTokenID of
-    tkComment: Result := FCommentAttri;
-    tkDatatype: Result := FDataTypeAttri;
-    tkObject: Result := FObjectAttri;
-    tkFunction: Result := FFunctionAttri;
-    tkIdentifier: Result := FIdentifierAttri;
-    tkKey: Result := FKeyAttri;
-    tkNumber: Result := FNumberAttri;
-    tkSpace: Result := FSpaceAttri;
-    tkString: Result := FStringAttri;
+    tkComment: Result := fCommentAttri;
+    tkDatatype: Result := fDataTypeAttri;
+    tkObject: Result := fObjectAttri;
+    tkException: Result := fExceptionAttri;
+    tkFunction: Result := fFunctionAttri;
+    tkIdentifier: Result := fIdentifierAttri;
+    tkKey: Result := fKeyAttri;
+    tkNumber: Result := fNumberAttri;
+    tkSpace: Result := fSpaceAttri;
+    tkString: Result := fStringAttri;
     tkSymbol: Result := FSymbolAttri;
-    tkVariable: Result := FVariableAttri;
-    tkUnknown: Result := FIdentifierAttri;
+    tkVariable: Result := fVariableAttri;
+    tkUnknown: Result := fIdentifierAttri;
   else
     Result := nil;
   end;
 end;
 
-function TSynSqliteSyn.GetTokenKind: integer;
+function TSynFirebirdSyn.GetTokenKind: integer;
 begin
   Result := Ord(fTokenId);
 end;
 
-function TSynSqliteSyn.GetTokenPos: Integer;
+function TSynFirebirdSyn.GetTokenPos: Integer;
 begin
   Result := fTokenPos;
 end;
 
-procedure TSynSqliteSyn.ResetRange;
+procedure TSynFirebirdSyn.ResetRange;
 begin
   fRange := rsUnknown;
 end;
 
-procedure TSynSqliteSyn.SetRange(Value: Pointer);
+procedure TSynFirebirdSyn.SetRange(Value: Pointer);
 begin
   fRange := TRangeState(Value);
 end;
 
-function TSynSqliteSyn.GetIdentChars: TSynIdentChars;
+function TSynFirebirdSyn.GetIdentChars: TSynIdentChars;
 begin
   Result := TSynValidStringChars;
 end;
 
-class function TSynSqliteSyn.GetLanguageName: string;
+class function TSynFirebirdSyn.GetLanguageName: string;
 begin
   Result := SYNS_LangSQL;
 end;
 
-procedure TSynSqliteSyn.DoAddKeyword(AKeyword: string; AKind: integer);
+procedure TSynFirebirdSyn.DoAddKeyword(AKeyword: string; AKind: integer);
 var
   HashValue: integer;
 begin
@@ -712,12 +727,12 @@ begin
   fKeywords[HashValue] := TSynHashEntry.Create(AKeyword, AKind);
 end;
 
-function TSynSqliteSyn.GetSampleSource: string;
+function TSynFirebirdSyn.GetSampleSource: string;
 begin
   Result := '';
 end;
 
-procedure TSynSqliteSyn.ObjectProc;
+procedure TSynFirebirdSyn.ObjectProc;
 begin
   fTokenID := tkObject;
   Inc(Run);
