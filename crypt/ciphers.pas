@@ -30,8 +30,8 @@ type
   TCipherBuffer = class(TObject)
   private
     FBuffer: PChar;
-    FPosition: PChar;
-    FEOB: PChar;
+    FEOD: PChar; //end of Data ...
+    FEOB: PChar; //end of Buffer ...
     function GetAsString: string;
   public
     constructor Create;
@@ -43,7 +43,7 @@ type
     procedure PutChar(vChar: Char);
     procedure IncPos(vCount: Integer=1);
     property Buffer: PChar read FBuffer;
-    property Position: PChar read FPosition;
+    property EOD: PChar read FEOD; //end of Data
     property EOB: PChar read FEOB; //end of Buffer ...
     property AsString: string read GetAsString;
     procedure SaveToStream(Stream: TStream);
@@ -79,14 +79,16 @@ type
   private
     FMode: TCipherMode;
     FWay: TCipherWay;
-    FExDataBuffer: TCipherBuffer;
-    FExBuffer: TCipherBuffer;
+    FOutBuffer: TCipherBuffer;
+    FInBuffer: TCipherBuffer;
     function GetBufferCount: Integer;
     function GetDataCount: Integer;
   protected
     function SetSize(var vBuffer: PChar; vSize: Integer): Integer;
-    procedure Encrypt(var ReadCount, WriteCount: Integer); virtual; abstract; //result bytes readed from data buffer
-    procedure Decrypt(var ReadCount, WriteCount: Integer); virtual; abstract;
+    procedure Encrypt(var ReadCount, WriteCount: Integer); overload; virtual; abstract; //result bytes readed from data buffer
+    procedure Decrypt(var ReadCount, WriteCount: Integer); overload; virtual; abstract;
+    function Encrypt(InBuffer, OutBuffer: TCipherBuffer): Longint; overload; virtual; abstract; //result bytes readed from data buffer
+    function Decrypt(InBuffer, OutBuffer: TCipherBuffer): Longint; overload; virtual; abstract;
     procedure UpdateBuffer; virtual;
     function InternalRead(var Buffer; Count: Longint): Longint; virtual;
     function InternalWrite(const Buffer; Count: Longint): Longint; virtual;
@@ -102,14 +104,14 @@ type
     property Way: TCipherWay read FWay;
     property Mode: TCipherMode read FMode;
 
-    property ExBuffer: TCipherBuffer read FExBuffer;
-    property ExDataBuffer: TCipherBuffer read FExDataBuffer;
+    property InBuffer: TCipherBuffer read FInBuffer;
+    property OutBuffer: TCipherBuffer read FOutBuffer;
 
     property DataCount: Integer read GetDataCount;
     property BufferCount: Integer read GetBufferCount;
   end;
 
-  TExBufferdCipher = class(TExCipher)
+  TInBufferdCipher = class(TExCipher)
   end;
 
   TExStreamCipher = class(TExCipher)
@@ -285,7 +287,7 @@ procedure TExCipher.AddData(const vBuffer; vCount: Integer);
 //var
   ///p: PChar;
 begin
-  ExDataBuffer.WriteBuffer(vBuffer, vCount);
+  OutBuffer.WriteBuffer(vBuffer, vCount);
   {if vCount<>0 then
   begin
     FDataCount := SetSize(FDataBuffer, vCount+DataPos);
@@ -301,27 +303,27 @@ begin
   FMode := vMode;
   FWay := vWay;
 
-  FExBuffer := TCipherBuffer.Create;
-  FExDataBuffer := TCipherBuffer.Create;
+  FInBuffer := TCipherBuffer.Create;
+  FOutBuffer := TCipherBuffer.Create;
 end;
 
 destructor TExCipher.Destroy;
 begin
   //if datacount <>0 then error some data not process
 
-  FreeAndNil(FExBuffer);
-  FreeAndNil(FExDataBuffer);
+  FreeAndNil(FInBuffer);
+  FreeAndNil(FOutBuffer);
   inherited;
 end;
 
 function TExCipher.GetBufferCount: Integer;
 begin
-  Result := ExBuffer.Count;
+  Result := InBuffer.Count;
 end;
 
 function TExCipher.GetDataCount: Integer;
 begin
-  Result := ExDataBuffer.Count;
+  Result := OutBuffer.Count;
 end;
 
 function TExCipher.HasData: Boolean;
@@ -329,7 +331,7 @@ var
   aBuffer: string;
   c: Integer;
 begin
-  if ExBuffer.Count>0 then
+  if InBuffer.Count>0 then
     Result := True
   else
   begin
@@ -343,16 +345,16 @@ begin
       SetLength(aBuffer, 0);
     end;
     //Result := (FCount<>0) and (FPos<FCount);
-    Result := ExBuffer.Count<>0;
+    Result := InBuffer.Count<>0;
   end;
 end;
 
-function TExCipher.InternalRead(var Buffer; Count: Integer): Longint;
+function TExCipher.InternalRead(var Buffer; Count: Longint): Longint;
 begin
   Result := 0;
 end;
 
-function TExCipher.InternalWrite(const Buffer; Count: Integer): Longint;
+function TExCipher.InternalWrite(const Buffer; Count: Longint): Longint;
 begin
   Result := 0;
 end;
@@ -367,7 +369,7 @@ begin
   p := @vBuffer;
   while (i>0) and HasData do
   begin
-    c := ExBuffer.ReadBuffer(p^, i);
+    c := InBuffer.ReadBuffer(p^, i);
     Inc(Result, c);
     Dec(i, c);
     Inc(p, c);
@@ -376,12 +378,12 @@ end;
 
 procedure TExCipher.SetBufferSize(vSize: Integer);
 begin
-  ExBuffer.MakeRooms(vSize);
+  InBuffer.MakeRooms(vSize);
 end;
 
 procedure TExCipher.SetDataBufferSize(vSize: Integer);
 begin
-  ExDataBuffer.SetSize(vSize);
+  OutBuffer.SetSize(vSize);
 end;
 
 function TExCipher.SetSize(var vBuffer: PChar; vSize: Integer): Integer;
@@ -392,9 +394,20 @@ end;
 
 procedure TExCipher.UpdateBuffer;
 var
-  r, w: Integer;
+  c: Integer;
 begin
-  if ExDataBuffer.Count<>0 then
+  if OutBuffer.Count<>0 then
+  begin
+    c := 0;
+    case Way of
+      cyEncrypt: c := Encrypt(InBuffer, OutBuffer);
+      cyDecrypt: c := Decrypt(InBuffer, OutBuffer);
+    end;
+
+    OutBuffer.DeleteReaded(c);
+  end;
+
+  {if OutBuffer.Count<>0 then
   begin
     r := 0;
     w := 0;
@@ -403,17 +416,17 @@ begin
       cyDecrypt: Decrypt(r, w);
     end;
 
-    ExDataBuffer.DeleteReaded(r); //???????????????????
-    ExBuffer.IncPos(w); //??????????????/
-  end;
+    OutBuffer.DeleteReaded(r); //???????????????????
+    InBuffer.IncPos(w); //??????????????/
+  end;}
 end;
 
 function TExCipher.Write(const vBuffer; vCount: Integer): Longint;
 begin
   AddData(vBuffer, vCount);
   UpdateBuffer;
-  InternalWrite(ExBuffer.Buffer^, ExBuffer.Count);
-  ExBuffer.DeleteReaded(ExBuffer.Count);
+  InternalWrite(InBuffer.Buffer^, InBuffer.Count);
+  InBuffer.DeleteReaded(InBuffer.Count);
   Result := vCount;
 end;
 
@@ -425,12 +438,12 @@ begin
   FStream := vStream;
 end;
 
-function TExStreamCipher.InternalRead(var Buffer; Count: Integer): Longint;
+function TExStreamCipher.InternalRead(var Buffer; Count: Longint): Longint;
 begin
   Result := Stream.read(Buffer, Count);
 end;
 
-function TExStreamCipher.InternalWrite(const Buffer; Count: Integer): Longint;
+function TExStreamCipher.InternalWrite(const Buffer; Count: Longint): Longint;
 begin
   Result := Stream.Write(Buffer, Count);
 end;
@@ -525,13 +538,13 @@ var
   i, c: Integer;
 begin
   if vCount=Count then
-    FPosition := FBuffer
+    FEOD := FBuffer
   else if vCount<>0 then
   begin
     t := Buffer;
     Inc(t, vCount);
-    Move(t^, Buffer^, Position-t);
-    Dec(FPosition, vCount);
+    Move(t^, Buffer^, EOD-t);
+    Dec(FEOD, vCount);
   end;
 end;
 
@@ -548,7 +561,7 @@ end;
 
 procedure TCipherBuffer.IncPos(vCount: Integer);
 begin
-  Inc(FPosition, vCount);
+  Inc(FEOD, vCount);
 end;
 
 procedure TCipherBuffer.MakeRooms(vCount: Integer);
@@ -562,9 +575,9 @@ begin
     if (vCount>(s-c)) then
     begin
       x := ((vCount div cDefaultAlloc)+1) * cDefaultAlloc;
-        
+
       ReallocMem(FBuffer, s + x);
-      FPosition := FBuffer + c;
+      FEOD := FBuffer + c;
       FEOB      := FBuffer + s + vCount;
     end;
   end;
@@ -572,8 +585,8 @@ end;
 
 procedure TCipherBuffer.PutChar(vChar: Char);
 begin
-  FPosition^ := vChar;
-  Inc(FPosition);
+  FEOD^ := vChar;
+  Inc(FEOD);
 end;
 
 function TCipherBuffer.ReadBuffer(var vBuffer; vCount: Integer): Integer;
@@ -603,7 +616,7 @@ end;
 
 procedure TCipherBuffer.SaveToStream(Stream: TStream);
 begin
-  Stream.write(Buffer^, Position - Buffer);
+  Stream.write(Buffer^, EOD - Buffer);
 end;
 
 procedure TCipherBuffer.SetSize(vSize: integer);
@@ -611,7 +624,7 @@ begin
   if (vSize>0) and (vSize>Size) then
   begin
     ReallocMem(FBuffer, vSize);
-    FPosition := FBuffer;
+    FEOD := FBuffer;
     FEOB := FBuffer + vSize;
   end
   else if vSize=0 then
@@ -635,9 +648,9 @@ begin
     MakeRooms(vCount);
 
     p := @vBuffer;
-    t := Position;
+    t := EOD;
     Move(p^, t^, vCount);
-    Inc(FPosition, vCount);
+    Inc(FEOD, vCount);
   end;
 end;
 
@@ -646,13 +659,13 @@ begin
   FreeMem(FBuffer, Size);
   FBuffer := nil;
   FEOB := nil;
-  FPosition := nil;
+  FEOD := nil;
 end;
 
 function TCipherBuffer.Count: Integer;
 begin
   if FBuffer<>nil then
-    Result := Position-Buffer
+    Result := EOD-Buffer
   else
     Result := 0;
 end;
@@ -662,7 +675,7 @@ begin
   inherited Create;
   FBuffer := nil;
   FEOB := nil;
-  FPosition := nil;
+  FEOD := nil;
 
   //SetSize(cBufferSize*3);
 end;

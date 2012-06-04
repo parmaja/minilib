@@ -296,7 +296,7 @@ end;
 
 procedure TExSnow2Cipher.Decrypt(var ReadCount, WriteCount: Integer);
 begin
-  ReadCount := ExDataBuffer.Count;
+  ReadCount := OutBuffer.Count;
   WriteCount := ReadCount;
   SetBufferSize(WriteCount);
   StreamBlock;
@@ -304,7 +304,7 @@ end;
 
 procedure TExSnow2Cipher.Encrypt(var ReadCount, WriteCount: Integer);
 begin
-  ReadCount := ExDataBuffer.Count;
+  ReadCount := OutBuffer.Count;
   WriteCount := ReadCount;
   SetBufferSize(WriteCount);
   StreamBlock;
@@ -353,8 +353,8 @@ var
   i: Integer;
   s, d: PByte;
 begin
-  s := PByte(ExDataBuffer.Buffer);
-  d := PByte(ExBuffer.Buffer);
+  s := PByte(OutBuffer.Buffer);
+  d := PByte(InBuffer.Buffer);
   for I := 0 to DataCount-1 do
   begin
     //d^ := Chr(Ord(s^) xor GetByte);
