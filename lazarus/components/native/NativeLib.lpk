@@ -4,7 +4,7 @@
     <PathDelim Value="\"/>
     <Name Value="NativeLib"/>
     <CompilerOptions>
-      <Version Value="10"/>
+      <Version Value="11"/>
       <PathDelim Value="\"/>
       <SearchPaths>
         <UnitOutputDirectory Value="./units\$(TargetCPU)-$(TargetOS)"/>
@@ -15,12 +15,6 @@
           <UseAnsiStrings Value="False"/>
         </SyntaxOptions>
       </Parsing>
-      <Linking>
-        <Debugging>
-          <GenerateDebugInfo Value="True"/>
-          <DebugInfoType Value="dsAuto"/>
-        </Debugging>
-      </Linking>
       <Other>
         <Verbosity>
           <ShowNotes Value="False"/>
@@ -34,8 +28,8 @@
         <CreateMakefileOnBuild Value="True"/>
       </Other>
     </CompilerOptions>
-    <Version Build="1" Major="1" Release="1"/>
-    <Files Count="8">
+    <Version Major="1" Release="1" Build="1"/>
+    <Files Count="9">
       <Item1>
         <Filename Value="ntvRegCtrls.pas"/>
         <HasRegisterProc Value="True"/>
@@ -72,6 +66,10 @@
         <Filename Value="ntvTabs.pas"/>
         <UnitName Value="ntvTabs"/>
       </Item8>
+      <Item9>
+        <Filename Value="ntvSpliters.pas"/>
+        <UnitName Value="ntvSpliters"/>
+      </Item9>
     </Files>
     <Type Value="RunAndDesignTime"/>
     <RequiredPkgs Count="4">

@@ -2,21 +2,21 @@
   This source is only used to compile and install the package.
  }
 
-unit NativeLib; 
+unit NativeLib;
 
 interface
 
 uses
   ntvRegCtrls, ntvPageControls, ntvProgressBars, ntvDotMatrix, ntvTabSets, 
-  ntvTabs, LazarusPackageIntf;
+  ntvTabs, ntvSpliters, LazarusPackageIntf;
 
 implementation
 
-procedure Register; 
+procedure Register;
 begin
-  RegisterUnit('ntvRegCtrls', @ntvRegCtrls.Register); 
-end; 
+  RegisterUnit('ntvRegCtrls', @ntvRegCtrls.Register);
+end;
 
 initialization
-  RegisterPackage('NativeLib', @Register); 
+  RegisterPackage('NativeLib', @Register);
 end.

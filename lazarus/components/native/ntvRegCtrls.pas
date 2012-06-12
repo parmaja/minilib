@@ -14,7 +14,7 @@ interface
 
 uses
   Classes, SysUtils, Menus, LResources, TypInfo, LCLProc, Forms, Controls,
-  ntvDotMatrix, ntvCtrls, ntvProgressBars, ntvTabSets, ntvPageControls,
+  ntvDotMatrix, ntvCtrls, ntvProgressBars, ntvTabSets, ntvPageControls, ntvSpliters,
   ComponentEditors, PropEdits;
 
 type
@@ -39,7 +39,7 @@ implementation
 procedure Register;
 begin
   RegisterComponents('Native', [TntvDotMatrix, TntvTextDotMatrix, TntvProgressBar,
-    TntvTabSet, TntvPageControl]);
+    TntvTabSet, TntvPageControl, TntvSplitter]);
   RegisterComponentEditor(TntvCustomTabSet, TntvTabSetEditor);
 end;
 
