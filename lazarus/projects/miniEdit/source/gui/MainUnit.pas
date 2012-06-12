@@ -26,7 +26,7 @@ uses
   LMessages, lCLType, LCLIntf, LCLProc, EditorDebugger, FileUtil,
   Dialogs, StdCtrls, Math, ComCtrls, ExtCtrls, ImgList, Menus, ToolWin,
   Buttons, FileCtrl, ShellCtrls, ActnList, EditorEngine, mneClasses, StdActns,
-  PairSplitter, SynEditHighlighter, SynEdit, IAddons,
+  PairSplitter, SynEditHighlighter, SynEdit, IAddons, ntvSpliters,
   {$ifdef WINDOWS}
   TSVN_SCM, TGIT_SCM,
   {$endif}
@@ -50,9 +50,12 @@ type
   { TMainForm }
 
   TMainForm = class(TForm)
+    FoldersSpl: TntvSplitter;
     NewAsMnu: TMenuItem;
     NewAsAct: TAction;
     MenuItem13: TMenuItem;
+    MessagesSpl: TntvSplitter;
+    OutputSpl: TntvSplitter;
     SCMTypeAct: TAction;
     TypePnl: TPanel;
     ProjectTypeMnu: TMenuItem;
@@ -164,7 +167,6 @@ type
     CloseProject1: TMenuItem;
     OpenFolderAct: TAction;
     OpenFolder1: TMenuItem;
-    MessagesSpl: TSplitter;
     ToolButton2: TToolButton;
     MessagesAct: TAction;
     Messages1: TMenuItem;
@@ -177,7 +179,6 @@ type
     FolderPanel: TPanel;
     FolderCloseBtn: TSpeedButton;
     FileList: TListView;
-    FoldersSpl: TSplitter;
     Extractkeywords: TMenuItem;
     ManageAct: TAction;
     Manage1: TMenuItem;
@@ -269,7 +270,6 @@ type
     FileCloseBtn: TSpeedButton;
     FileNameLbl: TLabel;
     OutputEdit: TSynEdit;
-    OutputSpl: TSplitter;
     Output1: TMenuItem;
     DBGRunToCursor: TAction;
     RunToCursor1: TMenuItem;
@@ -323,6 +323,8 @@ type
     procedure FileSetTabSelected(Sender: TObject; OldTab, NewTab: TntvTabItem);
     procedure FolderCloseBtnClick(Sender: TObject);
     procedure FoldersActExecute(Sender: TObject);
+    procedure FoldersSplCanOffset(Sender: TObject; var NewOffset: Integer;
+      var Accept: Boolean);
     procedure FormDropFiles(Sender: TObject; const FileNames: array of string);
     procedure IPCServerMessage(Sender: TObject);
     procedure NewAsActExecute(Sender: TObject);
@@ -627,6 +629,12 @@ end;
 procedure TMainForm.FoldersActExecute(Sender: TObject);
 begin
   UpdateFoldersPnl;
+end;
+
+procedure TMainForm.FoldersSplCanOffset(Sender: TObject;
+  var NewOffset: Integer; var Accept: Boolean);
+begin
+
 end;
 
 procedure TMainForm.FormDropFiles(Sender: TObject; const FileNames: array of string);

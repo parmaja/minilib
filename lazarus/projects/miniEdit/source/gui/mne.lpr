@@ -51,6 +51,7 @@ uses
   mneAddons, mneAssociateForm,
   mnePHPClasses,
   mnePASClasses,
+  Classes,
   PHPUtils in '..\lib\PHPUtils.pas', mnePHPConfigForms;
 
 {$R *.res}
@@ -120,6 +121,7 @@ end;
 begin
   if not AnotherInstance then
   begin
+    Application.BidiMode := bdLeftToRight;
     Application.Initialize;
     if CheckSetup then
     begin
@@ -127,4 +129,5 @@ begin
       Application.Run;
     end;
   end;
-end.
+end.
+
