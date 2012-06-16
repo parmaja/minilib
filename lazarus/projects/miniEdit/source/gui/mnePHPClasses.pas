@@ -24,15 +24,23 @@ uses
 
 type
 
-  { TXHTMLFile }
+  { TPHPFile }
 
-  TXHTMLFile = class(TEditorFile)
+  TPHPFile = class(TEditorFile)
   protected
     procedure NewSource; override;
   public
     procedure OpenInclude; override;
     function CanOpenInclude: Boolean; override;
     function Run: Boolean; override;
+  end;
+
+  { TXHTMLFile }
+
+  TXHTMLFile = class(TEditorFile)
+  protected
+    procedure NewSource; override;
+  public
   end;
 
   { TCssFile }
@@ -104,28 +112,9 @@ implementation
 uses
   IniFiles, mnStreams, mnUtils;
 
-{ TPHPPerspective }
+{ TPHPFile }
 
-function TPHPPerspective.CreateDebugger: TEditorDebugger;
-begin
-  Result := TPHP_xDebug.Create;
-end;
-
-procedure TPHPPerspective.Init;
-begin
-  FTitle := 'PHP project';
-  FDescription := 'PHP Files, *.php, *.inc';
-  FName := 'PHP';
-  FImageIndex := -1;
-  AddGroup('php', 'html');
-  AddGroup('html', 'html');
-  AddGroup('css', 'css');
-  AddGroup('js', 'js');
-end;
-
-{ TXHTMLFile }
-
-procedure TXHTMLFile.NewSource;
+procedure TPHPFile.NewSource;
 begin
   SynEdit.Text := '<?php';
   SynEdit.Lines.Add('');
@@ -134,7 +123,7 @@ begin
   SynEdit.CaretX := 3;
 end;
 
-procedure TXHTMLFile.OpenInclude;
+procedure TPHPFile.OpenInclude;
 var
   P: TPoint;
   Attri: TSynHighlighterAttributes;
@@ -172,7 +161,7 @@ begin
   end;
 end;
 
-function TXHTMLFile.CanOpenInclude: Boolean;
+function TPHPFile.CanOpenInclude: Boolean;
 var
   P: TPoint;
   Attri: TSynHighlighterAttributes;
@@ -193,7 +182,7 @@ begin
   end;
 end;
 
-function TXHTMLFile.Run: Boolean;
+function TPHPFile.Run: Boolean;
 var
   aFile: string;
   aRoot: string;
@@ -237,6 +226,45 @@ begin
       //        ShellExecute(0, '', PChar(aRoot), PChar(aFile), PChar(ExtractFilePath(aFile)), SW_SHOWNOACTIVATE);
     end;
   end;
+end;
+
+{ TPHPPerspective }
+
+function TPHPPerspective.CreateDebugger: TEditorDebugger;
+begin
+  Result := TPHP_xDebug.Create;
+end;
+
+procedure TPHPPerspective.Init;
+begin
+  FTitle := 'PHP project';
+  FDescription := 'PHP Files, *.php, *.inc';
+  FName := 'PHP';
+  FImageIndex := -1;
+  AddGroup('php', 'html');
+  AddGroup('html', 'html');
+  AddGroup('css', 'css');
+  AddGroup('js', 'js');
+end;
+
+{ TXHTMLFile }
+
+procedure TXHTMLFile.NewSource;
+begin
+  SynEdit.Text :=   '<?xml version="1.0" encoding="UTF-8"?>';
+  SynEdit.Lines.Add('<!DOCTYPE html PUBLIC');
+  SynEdit.Lines.Add('  "-//W3C//DTD XHTML 1.0 Strict//EN"');
+  SynEdit.Lines.Add('  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">');
+  SynEdit.Lines.Add('<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">');
+  SynEdit.Lines.Add('  <head>');
+  SynEdit.Lines.Add('    <title></title>');
+  SynEdit.Lines.Add('  </head>');
+  SynEdit.Lines.Add('  <body>');
+  SynEdit.Lines.Add('  </body>');
+  SynEdit.Lines.Add('</html>');
+
+  SynEdit.CaretY := 2;
+  SynEdit.CaretX := 9;
 end;
 
 { TCSSFileCategory }
@@ -466,11 +494,12 @@ end;
 initialization
   with Engine do
   begin
+    Categories.Add('php', TPHPFile, TXHTMLFileCategory, [fckPublish]);
     Categories.Add('html', TXHTMLFile, TXHTMLFileCategory, [fckPublish]);
     Categories.Add('css', TCssFile, TCSSFileCategory, [fckPublish]);
     Categories.Add('js', TJSFile, TJSFileCategory, [fckPublish]);
 
-    Groups.Add('php', 'PHP Files', 'html', ['php', 'inc'], [fgkExecutable, fgkMember, fgkBrowsable, fgkProject]);
+    Groups.Add('php', 'PHP Files', 'php', ['php', 'inc'], [fgkExecutable, fgkMember, fgkBrowsable, fgkProject]);
     Groups.Add('html', 'HTML Files', 'html', ['html', 'xhtml', 'htm', 'tpl'], [fgkMember, fgkBrowsable]);
     Groups.Add('css', 'CSS Files', 'css', ['css'], [fgkMember, fgkBrowsable]);
     Groups.Add('js', 'Java Script Files', 'js', ['js'], [fgkMember, fgkBrowsable]);

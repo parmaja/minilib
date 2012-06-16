@@ -267,7 +267,7 @@
     </Target>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)"/>
-      <OtherUnitFiles Value="..\editor;..\lib;..\addons;..\..\..\..\lib;..\..\..\..\..\lib;..\..\..\..\components\native"/>
+      <OtherUnitFiles Value="..\editor;..\lib;..\addons;..\..\..\..\lib;..\..\..\..\..\lib"/>
       <UnitOutputDirectory Value="..\..\units"/>
     </SearchPaths>
     <Linking>

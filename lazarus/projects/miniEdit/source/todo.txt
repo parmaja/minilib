@@ -1,8 +1,15 @@
+[TODO]
+menu-edit-conevert case to lower/upper
+escape not work in message box when ask to save
+Cltr+Ins = copy the current word if not selected
+Fix Search result selected line
+Right click on filename on to of editor, open folder not work
+
 [DONE]
-open read only file when we can not open for write
+Open read only file when we can not open for write
 Open PHP ini as addon
 Open Folder not worked in Linux
-Make Assoiate as Addon tool
+Make Associate as Addon tool
 Make Help as Addon
 
 Edit color if 3 char like #fff

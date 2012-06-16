@@ -17,7 +17,7 @@ uses
   mnXMLRttiProfile, mnXMLUtils, mnUtils, LCLType;
 
 type
-  TEditorChangeState = set of (ecsChanged, ecsState, ecsRefresh, ecsDebug, ecsShow, ecsEdit, ecsFolder, ecsProject); //ecsShow bring to front
+  TEditorChangeStates = set of (ecsChanged, ecsState, ecsRefresh, ecsDebug, ecsShow, ecsEdit, ecsFolder, ecsProject); //ecsShow bring to front
   TSynCompletionType = (ctCode, ctHint, ctParams);
 
   TEditorEngine = class;
@@ -274,7 +274,7 @@ type
     destructor Destroy; override;
     procedure Load(FileName: string); virtual;
     procedure Save(FileName: string); virtual;
-    procedure SaveFile(AsNewFile: Boolean = False); virtual;
+    procedure SaveFile(Extension:string = ''; AsNewFile: Boolean = False); virtual;
     procedure Reload;
     procedure Show;
     procedure Close;
@@ -528,7 +528,7 @@ type
     procedure EnumExtensions(vExtensions: TStringList);
     procedure EnumExtensions(vExtensions: TEditorElements);
     function FindExtension(vExtension: string): TFileGroup;
-    function CreateFilter(vGroup: TFileGroup = nil): string;
+    function CreateFilter(FirstExtension: string = ''; vGroup: TFileGroup = nil; OnlyThisGroup: Boolean = true): string;
     procedure Add(vGroup: TFileGroup);
     procedure Add(const Name, Title: string; Category: string; Extensions: array of string; Kind: TFileGroupKinds = []; Style: TFileGroupStyles = []);
     property Items[Index: integer]: TFileGroup read GetItem; default;
@@ -638,7 +638,7 @@ type
   end;
 
   TOnFoundEvent = procedure(FileName: string; const Line: string; LineNo, Column, FoundLength: integer) of object;
-  TOnEditorChangeState = procedure(State: TEditorChangeState) of object;
+  TOnEditorChangeState = procedure(State: TEditorChangeStates) of object;
 
   { TEditorEngine }
 
@@ -652,7 +652,7 @@ type
     FForms: TEditorFormList;
     FPerspectives: TPerspectives;
     FSourceManagements: TSourceManagements;
-    FUpdateState: TEditorChangeState;
+    FUpdateState: TEditorChangeStates;
     FUpdateCount: integer;
     FFiles: TEditorFiles;
     FFilesControl: TWinControl;
@@ -677,10 +677,13 @@ type
     procedure SetDefaultPerspective(AValue: TEditorPerspective);
     procedure SetDefaultSCM(AValue: TEditorSCM);
   protected
+    FInUpdateState: Integer;
     property SearchEngine: TSynEditSearch read FSearchEngine;
-    procedure DoChangedState(State: TEditorChangeState); virtual;
+    procedure InternalChangedState(State: TEditorChangeStates);
+    procedure DoChangedState(State: TEditorChangeStates); virtual;
     procedure DoMacroStateChange(Sender: TObject);
     procedure DoReplaceText(Sender: TObject; const ASearch, AReplace: string; Line, Column: integer; var ReplaceAction: TSynReplaceAction);
+
   public
     constructor Create; virtual;
     destructor Destroy; override;
@@ -694,12 +697,13 @@ type
     procedure ProcessProject(const FileName: string);
     procedure RemoveProject(const FileName: string);
 
+    procedure Startup;
     procedure LoadOptions;
     procedure SaveOptions;
     procedure Shutdown;
 
     procedure BeginUpdate;
-    procedure UpdateState(State: TEditorChangeState);
+    procedure UpdateState(State: TEditorChangeStates);
     property Updating: Boolean read GetUpdating;
     procedure EndUpdate;
 
@@ -1083,7 +1087,7 @@ begin
   if Groups.Count > 0 then
     Result := Groups[0]
   else
-    Result := Engine.Groups[0];//first group in all groups, naah
+    Result := Engine.Groups[0];//first group in all groups, naah //TODO wrong wrong
 end;
 
 { TPerspectives }
@@ -1369,13 +1373,13 @@ end;
 
 procedure TEditorEngine.EndUpdate;
 begin
+  if (FUpdateCount = 1) and (Files.Current <> nil) then
+    Files.Current.Show;
   Dec(FUpdateCount);
   if FUpdateCount = 0 then
   begin
-    if Files.Current <> nil then
-      Files.Current.Show;
     if FUpdateState <> [] then
-      DoChangedState(FUpdateState);
+      InternalChangedState(FUpdateState);
     FUpdateState := [];
   end;
 end;
@@ -1516,7 +1520,7 @@ function TEditorFiles.New(vGroupName: string): TEditorFile;
 var
   aGroup: TFileGroup;
 begin
-  BeginUpdate;
+  Engine.BeginUpdate;
   try
     if vGroupName = '' then
       aGroup := Engine.Perspective.GetDefaultGroup
@@ -1528,7 +1532,7 @@ begin
     Current := Result;
     Engine.UpdateState([ecsChanged, ecsState, ecsRefresh]);
   finally
-    EndUpdate;
+    Engine.EndUpdate;
   end;
 end;
 
@@ -1697,7 +1701,7 @@ end;
 procedure TEditorFiles.SaveAs;
 begin
   if Current <> nil then
-    Current.SaveFile(True);
+    Current.SaveFile(ExtractFileExt(Current.Name), True);
 end;
 
 procedure TEditorOptions.Save;
@@ -1782,12 +1786,23 @@ begin
     Options.Projects.Delete(i);
 end;
 
+function SortGroupsByTitle(Item1, Item2: Pointer): Integer;
+begin
+  Result := CompareText(TFileGroup(Item1).Title, TFileGroup(Item2).Title);
+end;
+
+procedure TEditorEngine.Startup;
+begin
+  LoadOptions;
+  Groups.Sort(@SortGroupsByTitle)
+end;
+
 procedure TEditorEngine.LoadOptions;
 var
   aFile: string;
   i: Integer;
 begin
-  BeginUpdate;
+  Engine.BeginUpdate;
   try
     Options.Load(Workspace + 'mne-options.xml');
     Session.Options.SafeLoadFromFile(LowerCase(Workspace + 'mne-' + SysPlatform + '-options.xml'));
@@ -1803,7 +1818,7 @@ begin
     SetDefaultPerspective(Session.Options.DefaultPerspective);
     SetDefaultSCM(Session.Options.DefaultSCM);
   finally
-    EndUpdate;
+    Engine.EndUpdate;
   end;
 end;
 
@@ -1827,6 +1842,7 @@ end;
 
 procedure TEditorEngine.Shutdown;
 begin
+  SaveOptions;
   if Perspective.Debug <> nil then
     Perspective.Debug.Stop;
   Files.Clear;
@@ -1893,18 +1909,18 @@ begin
   DefaultSCM := SourceManagements.Find(vName);
 end;
 
-procedure TEditorEngine.DoChangedState(State: TEditorChangeState);
+procedure TEditorEngine.DoChangedState(State: TEditorChangeStates);
 begin
   if Assigned(FOnChangedState) then
     FOnChangedState(State);
 end;
 
-procedure TEditorEngine.UpdateState(State: TEditorChangeState);
+procedure TEditorEngine.UpdateState(State: TEditorChangeStates);
 begin
   if Updating then
     FUpdateState := FUpdateState + State
-  else
-    DoChangedState(State);
+  else //if (FInUpdateState = 0) or not (State in FUpdateState) then
+    InternalChangedState(State);
 end;
 
 function TEditorFiles.LoadFile(vFileName: string; AppendToRecent: Boolean): TEditorFile;
@@ -1966,6 +1982,16 @@ begin
   if FDefaultSCM <> nil then
     Session.Options.DefaultSCM := FDefaultSCM.Name;
   Engine.UpdateState([ecsChanged, ecsProject]);
+end;
+
+procedure TEditorEngine.InternalChangedState(State: TEditorChangeStates);
+begin
+  Inc(FInUpdateState);
+  try
+    DoChangedState(State);
+  finally
+    Dec(FInUpdateState);
+  end;
 end;
 
 { TEditorFiles }
@@ -2167,7 +2193,7 @@ begin
   (Engine.FilesControl.Owner as TCustomForm).ActiveControl := SynEdit;
 end;
 
-procedure TEditorFile.SaveFile(AsNewFile: Boolean);
+procedure TEditorFile.SaveFile(Extension:string; AsNewFile: Boolean);
 var
   aDialog: TSaveDialog;
   DoSave, DoRecent: Boolean;
@@ -2179,14 +2205,18 @@ begin
   begin
     aDialog := TSaveDialog.Create(nil);
     aDialog.Title := 'Save file';
-    aDialog.Filter := Engine.Groups.CreateFilter;
+    aDialog.Filter := Engine.Groups.CreateFilter(Extension, Group, False);//put the group of file as the first one
     aDialog.InitialDir := Engine.BrowseFolder;
-    if Group <> nil then
-      aDialog.DefaultExt := Group.Extensions[0]
+    if Extension <> '' then
+      aDialog.DefaultExt := Extension
     else
-      aDialog.DefaultExt := Engine.Perspective.GetDefaultGroup.Extensions[0];
+    begin
+      if Group <> nil then
+        aDialog.DefaultExt := Group.Extensions[0]
+      else
+        aDialog.DefaultExt := Engine.Perspective.GetDefaultGroup.Extensions[0];
+    end;
     aDialog.FileName := '*' + aDialog.DefaultExt;
-
 
     DoSave := aDialog.Execute;
     if DoSave then
@@ -2507,40 +2537,66 @@ begin
   Add(aFC);
 end;
 
-function TFileGroups.CreateFilter(vGroup: TFileGroup): string;
+function TFileGroups.CreateFilter(FirstExtension: string; vGroup: TFileGroup; OnlyThisGroup: Boolean): string;
 var
-  i, j: integer;
-  s: string;
   aSupported: string;
-  AExtensions: TStringList;
+  procedure AddIt(AGroup: TFileGroup);
+  var
+    i, n: integer;
+    s: string;
+    AExtensions: TStringList;
+  begin
+    if fgkBrowsable in AGroup.Kind then
+    begin
+      if Result <> '' then
+        Result := Result + '|';
+      s := '';
+      AExtensions := TStringList.Create;
+      try
+        AGroup.EnumExtensions(AExtensions);
+        if (AGroup = vGroup) and (FirstExtension <> '') then
+        begin
+          if AExtensions.Find(FirstExtension, n) then
+            AExtensions.Move(n, 0);
+        end;
+
+        for i := 0 to AExtensions.Count - 1 do
+        begin
+          if s <> '' then
+            s := s + ';';
+          s := s + '*.' + AExtensions[i];
+          if aSupported <> '' then
+            aSupported := aSupported + ';';
+          aSupported := aSupported + '*.' + AExtensions[i];
+        end;
+        Result := Result + AGroup.Title + ' (' + s + ')|' + s;
+      finally
+        AExtensions.Free;
+      end;
+    end;
+  end;
+var
+  i: integer;
+  s: string;
+  aDefaultGroup: TFileGroup;
 begin
   aSupported := '';
-  AExtensions := TStringList.Create;
-  try
+  if LeftStr(FirstExtension, 1) = '.' then
+    FirstExtension := MidStr(FirstExtension, 2, MaxInt);
+  if (vGroup <> nil) and OnlyThisGroup then
+    AddIt(vGroup)
+  else
+  begin
+    if vGroup <> nil then
+      aDefaultGroup := vGroup
+    else
+      aDefaultGroup := Engine.Perspective.GetDefaultGroup;
+    AddIt(aDefaultGroup);
     for i := 0 to Count - 1 do
     begin
-      if (vGroup = nil) or (vGroup = Items[i]) then
-        if fgkBrowsable in Items[i].Kind then
-        begin
-          if Result <> '' then
-            Result := Result + '|';
-          s := '';
-          AExtensions.Clear;
-          Items[i].EnumExtensions(AExtensions);
-          for j := 0 to AExtensions.Count - 1 do
-          begin
-            if s <> '' then
-              s := s + ';';
-            s := s + '*.' + AExtensions[j];
-            if aSupported <> '' then
-              aSupported := aSupported + ';';
-            aSupported := aSupported + '*.' + AExtensions[j];
-          end;
-          Result := Result + Items[i].Title + ' (' + s + ')|' + s;
-        end;
+      if (Items[i] <> aDefaultGroup) then
+        AddIt(Items[i]);
     end;
-  finally
-    AExtensions.Free;
   end;
 
   if Result <> '' then

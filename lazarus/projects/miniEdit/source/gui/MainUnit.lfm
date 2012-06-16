@@ -1,7 +1,7 @@
 object MainForm: TMainForm
-  Left = 306
+  Left = 207
   Height = 518
-  Top = 178
+  Top = 198
   Width = 876
   AllowDropFiles = True
   Caption = 'Mini Edit'
@@ -102,13 +102,13 @@ object MainForm: TMainForm
   end
   object FoldersPnl: TPanel
     Left = 0
-    Height = 316
+    Height = 315
     Top = 29
     Width = 200
     Align = alLeft
     BevelOuter = bvNone
     BorderWidth = 5
-    ClientHeight = 316
+    ClientHeight = 315
     ClientWidth = 200
     Constraints.MinHeight = 60
     TabOrder = 0
@@ -208,7 +208,7 @@ object MainForm: TMainForm
     end
     object FileList: TListView
       Left = 5
-      Height = 287
+      Height = 286
       Top = 24
       Width = 190
       Align = alClient
@@ -233,22 +233,22 @@ object MainForm: TMainForm
   end
   object ClientPnl: TPanel
     Left = 206
-    Height = 316
+    Height = 315
     Top = 29
     Width = 670
     Align = alClient
     BevelOuter = bvNone
-    ClientHeight = 316
+    ClientHeight = 315
     ClientWidth = 670
     TabOrder = 1
     object EditorsPnl: TPanel
       Left = 0
-      Height = 158
+      Height = 160
       Top = 0
       Width = 670
       Align = alClient
       BevelOuter = bvNone
-      ClientHeight = 158
+      ClientHeight = 160
       ClientWidth = 670
       FullRepaint = False
       TabOrder = 0
@@ -326,7 +326,7 @@ object MainForm: TMainForm
       object QuickFindPnl: TPanel
         Left = 0
         Height = 29
-        Top = 129
+        Top = 131
         Width = 670
         Align = alBottom
         BevelInner = bvSpace
@@ -443,8 +443,8 @@ object MainForm: TMainForm
     end
     inline OutputEdit: TSynEdit
       Left = 0
-      Height = 152
-      Top = 164
+      Height = 149
+      Top = 166
       Width = 670
       Align = alBottom
       Constraints.MinHeight = 60
@@ -585,7 +585,7 @@ object MainForm: TMainForm
       Cursor = crVSplit
       Left = 0
       Height = 6
-      Top = 158
+      Top = 160
       Width = 670
       ResizeControl = OutputEdit
       Visible = False
@@ -801,15 +801,15 @@ object MainForm: TMainForm
   object MessagesSpl: TntvSplitter
     Cursor = crVSplit
     Left = 0
-    Height = 5
-    Top = 345
+    Height = 6
+    Top = 344
     Width = 876
     ResizeControl = MessagesTabs
   end
   object FoldersSpl: TntvSplitter
     Cursor = crDefault
     Left = 200
-    Height = 316
+    Height = 315
     Top = 29
     Width = 6
     OnCanOffset = FoldersSplCanOffset
@@ -1208,7 +1208,7 @@ object MainForm: TMainForm
   end
   object ActionList: TActionList
     Images = EditorResource.ToolbarImageList
-    left = 32
+    left = 25
     top = 71
     object PasteAct: TAction
       Category = 'Edit'
@@ -1721,7 +1721,7 @@ object MainForm: TMainForm
   end
   object FolderMenu: TPopupMenu
     left = 84
-    top = 223
+    top = 208
     object Home1: TMenuItem
       Action = FolderHomeAct
       OnClick = FolderHomeActExecute
@@ -1904,6 +1904,7 @@ object MainForm: TMainForm
     top = 117
   end
   object ApplicationProperties: TApplicationProperties
+    OnActivate = ApplicationPropertiesActivate
     OnShowHint = ApplicationPropertiesShowHint
     left = 83
     top = 138
