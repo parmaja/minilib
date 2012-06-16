@@ -26,7 +26,7 @@ uses
   LMessages, lCLType, LCLIntf, LCLProc, EditorDebugger, FileUtil,
   Dialogs, StdCtrls, Math, ComCtrls, ExtCtrls, ImgList, Menus, ToolWin,
   Buttons, FileCtrl, ShellCtrls, ActnList, EditorEngine, mneClasses, StdActns,
-  PairSplitter, SynEditHighlighter, SynEdit, IAddons, ntvSpliters,
+  SynEditHighlighter, SynEdit, IAddons, ntvSpliters,
   {$ifdef WINDOWS}
   TSVN_SCM, TGIT_SCM,
   {$endif}
@@ -547,7 +547,9 @@ begin
   OutputAct.Checked := Engine.Options.ShowOutput;
   OutputEdit.Height := Engine.Options.OutputHeight;
   FoldersPnl.Width := Engine.Options.FoldersWidth;
-  MessagesTabs.Height := Engine.Options.MessagesHeight;
+  //MessagesTabs.Height := Engine.Options.MessagesHeight;
+  with MessagesTabs, BoundsRect do
+    BoundsRect := Rect(Left, Bottom - Engine.Options.MessagesHeight, Right, Bottom);
   MessagesTabs.Visible := False;
   MessagesSpl.Visible := False;
   UpdateFoldersPnl;
@@ -2145,7 +2147,7 @@ begin
       af := Copy(Item.SubItems[1], c + l, MaxInt);
       //TControlCanvas(Sender.Canvas).UpdateTextFlags;
       Sender.Canvas.Font.Color := clWindowText;
-      Sender.Canvas.Brush.Color := clWindow;
+      Sender.Canvas.Brush.Color := clRed;
       w := aRect.Left + 2;
       aRect.Bottom := aRect.Bottom - 1;
       aRect.Left := aRect.Left + 1;
@@ -2164,6 +2166,7 @@ begin
     finally
       Sender.Canvas.Unlock;
     end;
+    //DefaultDraw := True;
   end
   else
     DefaultDraw := True;
