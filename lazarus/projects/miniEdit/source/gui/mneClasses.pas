@@ -279,17 +279,17 @@ initialization
   with Engine do
   begin
     //Categories.Add('', TTXTFile, TTXTFileCategory);
-    Categories.Add('txt', TTXTFile, TTXTFileCategory);
-    Categories.Add('apache', TApacheFile, TApacheFileCategory, []);
-    Categories.Add('sql', TSQLFile, TSQLFileCategory);
-    Categories.Add('ini', TINIFile, TINIFileCategory);
-    Categories.Add('xml', TXMLFile, TXMLFileCategory);
+    Categories.Add(TTXTFileCategory, 'txt');
+    Categories.Add(TSQLFileCategory, 'sql');
+    Categories.Add(TApacheFileCategory, 'apache', []);
+    Categories.Add(TINIFileCategory, 'ini');
+    Categories.Add(TXMLFileCategory, 'xml');
 
-    Groups.Add('sql', 'SQL files', 'SQL', ['sql'], [fgkMember, fgkBrowsable]);
-    Groups.Add('htaccess', 'htaccess files', 'apache', ['htaccess', 'conf'], [fgkBrowsable]);
-    Groups.Add('xml', 'XML files', 'xml', ['xml'], [fgkMember, fgkBrowsable]);
-    Groups.Add('ini', 'INI files', 'ini', ['ini'], []);
-    Groups.Add('txt', 'TXT files', 'txt', ['txt'], []);
+    Groups.Add(TTXTFile, 'txt', 'TXT files', 'txt', ['txt'], []);
+    Groups.Add(TSQLFile, 'sql', 'SQL files', 'SQL', ['sql'], [fgkMember, fgkBrowsable]);
+    Groups.Add(TApacheFile, 'htaccess', 'htaccess files', 'apache', ['htaccess', 'conf'], [fgkBrowsable]);
+    Groups.Add(TINIFile, 'xml', 'XML files', 'xml', ['xml'], [fgkMember, fgkBrowsable]);
+    Groups.Add(TXMLFile, 'ini', 'INI files', 'ini', ['ini'], []);
   end;
   Engine.AddInstant('Python', ['py'], TSynPythonSyn, []);
 end.

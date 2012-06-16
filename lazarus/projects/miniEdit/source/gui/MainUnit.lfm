@@ -252,7 +252,6 @@ object MainForm: TMainForm
       ClientWidth = 670
       FullRepaint = False
       TabOrder = 0
-      OnClick = EditorsPnlClick
       object FileHeaderPanel: TPanel
         Left = 0
         Height = 19
@@ -812,7 +811,6 @@ object MainForm: TMainForm
     Height = 315
     Top = 29
     Width = 6
-    OnCanOffset = FoldersSplCanOffset
     ResizeControl = FoldersPnl
   end
   object MainMenu: TMainMenu

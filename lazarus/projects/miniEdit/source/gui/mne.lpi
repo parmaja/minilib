@@ -103,7 +103,7 @@
         <MinVersion Major="1" Release="1" Valid="True"/>
       </Item9>
     </RequiredPackages>
-    <Units Count="22">
+    <Units Count="23">
       <Unit0>
         <Filename Value="mne.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -257,6 +257,14 @@
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="MainUnit"/>
       </Unit21>
+      <Unit22>
+        <Filename Value="..\editor\EditorOptions.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="EditorOptionsForm"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+        <UnitName Value="EditorOptions"/>
+      </Unit22>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

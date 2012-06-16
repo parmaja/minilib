@@ -51,6 +51,8 @@ uses
   mneAddons, mneAssociateForm,
   mnePHPClasses,
   mnePASClasses,
+  MsgBox,
+  GUIMsgBox,
   Classes,
   PHPUtils in '..\lib\PHPUtils.pas', mnePHPConfigForms;
 

@@ -28,8 +28,8 @@ type
 
   TPHPFile = class(TEditorFile)
   protected
-    procedure NewSource; override;
   public
+    procedure NewSource; override;
     procedure OpenInclude; override;
     function CanOpenInclude: Boolean; override;
     function Run: Boolean; override;
@@ -37,10 +37,10 @@ type
 
   { TXHTMLFile }
 
-  TXHTMLFile = class(TEditorFile)
+  TXHTMLFile = class(TPHPFile)
   protected
-    procedure NewSource; override;
   public
+    procedure NewSource; override;
   end;
 
   { TCssFile }
@@ -67,9 +67,9 @@ type
   private
     procedure ExtractKeywords(Files, Variables, Identifiers: TStringList);
   protected
+    function CreateHighlighter: TSynCustomHighlighter; override;
     procedure InitCompletion(vSynEdit: TCustomSynEdit); override;
     procedure DoAddCompletion(AKeyword: string; AKind: integer);
-    function CreateHighlighter: TSynCustomHighlighter; override;
     procedure OnExecuteCompletion(Sender: TObject); override;
   public
     constructor Create; override;
@@ -111,6 +111,30 @@ implementation
 
 uses
   IniFiles, mnStreams, mnUtils;
+
+{ TXHTMLFile }
+
+procedure TXHTMLFile.NewSource;
+begin
+  SynEdit.Text :=   '<?xml version="1.0" encoding="UTF-8"?>';
+  SynEdit.Lines.Add('<!DOCTYPE html PUBLIC');
+  SynEdit.Lines.Add('  "-//W3C//DTD XHTML 1.0 Strict//EN"');
+  SynEdit.Lines.Add('  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">');
+  SynEdit.Lines.Add('<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">');
+  SynEdit.Lines.Add('  <head>');
+  SynEdit.Lines.Add('    <title></title>');
+  SynEdit.Lines.Add('  </head>');
+  SynEdit.Lines.Add('  <body>');
+  SynEdit.Lines.Add('  </body>');
+  SynEdit.Lines.Add('</html>');
+
+  SynEdit.CaretY := 2;
+  SynEdit.CaretX := 9;
+end;
+
+{ THTMLFileGroup }
+
+{ TPHPFileGroup }
 
 { TPHPFile }
 
@@ -245,26 +269,6 @@ begin
   AddGroup('html', 'html');
   AddGroup('css', 'css');
   AddGroup('js', 'js');
-end;
-
-{ TXHTMLFile }
-
-procedure TXHTMLFile.NewSource;
-begin
-  SynEdit.Text :=   '<?xml version="1.0" encoding="UTF-8"?>';
-  SynEdit.Lines.Add('<!DOCTYPE html PUBLIC');
-  SynEdit.Lines.Add('  "-//W3C//DTD XHTML 1.0 Strict//EN"');
-  SynEdit.Lines.Add('  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">');
-  SynEdit.Lines.Add('<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">');
-  SynEdit.Lines.Add('  <head>');
-  SynEdit.Lines.Add('    <title></title>');
-  SynEdit.Lines.Add('  </head>');
-  SynEdit.Lines.Add('  <body>');
-  SynEdit.Lines.Add('  </body>');
-  SynEdit.Lines.Add('</html>');
-
-  SynEdit.CaretY := 2;
-  SynEdit.CaretX := 9;
 end;
 
 { TCSSFileCategory }
@@ -494,15 +498,14 @@ end;
 initialization
   with Engine do
   begin
-    Categories.Add('php', TPHPFile, TXHTMLFileCategory, [fckPublish]);
-    Categories.Add('html', TXHTMLFile, TXHTMLFileCategory, [fckPublish]);
-    Categories.Add('css', TCssFile, TCSSFileCategory, [fckPublish]);
-    Categories.Add('js', TJSFile, TJSFileCategory, [fckPublish]);
+    Categories.Add(TXHTMLFileCategory, 'php/html', [fckPublish]);
+    Categories.Add(TCSSFileCategory, 'css', [fckPublish]);
+    Categories.Add(TJSFileCategory, 'js', [fckPublish]);
 
-    Groups.Add('php', 'PHP Files', 'php', ['php', 'inc'], [fgkExecutable, fgkMember, fgkBrowsable, fgkProject]);
-    Groups.Add('html', 'HTML Files', 'html', ['html', 'xhtml', 'htm', 'tpl'], [fgkMember, fgkBrowsable]);
-    Groups.Add('css', 'CSS Files', 'css', ['css'], [fgkMember, fgkBrowsable]);
-    Groups.Add('js', 'Java Script Files', 'js', ['js'], [fgkMember, fgkBrowsable]);
+    Groups.Add(TPHPFile, 'php', 'PHP Files', 'php/html', ['php', 'inc'], [fgkExecutable, fgkMember, fgkBrowsable, fgkProject]);
+    Groups.Add(TXHTMLFile, 'html', 'HTML Files', 'php/html', ['html', 'xhtml', 'htm', 'tpl'], [fgkMember, fgkBrowsable]);
+    Groups.Add(TCssFile, 'css', 'CSS Files', 'css', ['css'], [fgkMember, fgkBrowsable]);
+    Groups.Add(TJSFile,'js', 'Java Script Files', 'js', ['js'], [fgkMember, fgkBrowsable]);
 
     Perspectives.Add(TPHPPerspective);
   end;

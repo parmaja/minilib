@@ -318,14 +318,9 @@ type
     FileModeBtn: TSpeedButton;
     procedure ApplicationPropertiesActivate(Sender: TObject);
     procedure ApplicationPropertiesShowHint(var HintStr: string; var CanShow: boolean; var HintInfo: THintInfo);
-    procedure Associate1Click(Sender: TObject);
-    procedure EditorsPnlClick(Sender: TObject);
-    procedure FileSetSelectTab(Sender: TObject; OldTab, NewTab: TntvTabItem; var CanSelect: boolean);
     procedure FileSetTabSelected(Sender: TObject; OldTab, NewTab: TntvTabItem);
     procedure FolderCloseBtnClick(Sender: TObject);
     procedure FoldersActExecute(Sender: TObject);
-    procedure FoldersSplCanOffset(Sender: TObject; var NewOffset: Integer;
-      var Accept: Boolean);
     procedure FormDropFiles(Sender: TObject; const FileNames: array of string);
     procedure IPCServerMessage(Sender: TObject);
     procedure NewAsActExecute(Sender: TObject);
@@ -588,16 +583,6 @@ begin
   FoldersAct.Execute;
 end;
 
-procedure TMainForm.FileSetSelectTab(Sender: TObject; OldTab, NewTab: TntvTabItem; var CanSelect: boolean);
-begin
-  //
-end;
-
-procedure TMainForm.Associate1Click(Sender: TObject);
-begin
-
-end;
-
 procedure TMainForm.ApplicationPropertiesShowHint(var HintStr: string; var CanShow: boolean; var HintInfo: THintInfo);
 var
   v, s, t: string;
@@ -620,11 +605,6 @@ begin
     Engine.Files.CheckChanged;
 end;
 
-procedure TMainForm.EditorsPnlClick(Sender: TObject);
-begin
-
-end;
-
 procedure TMainForm.FileSetTabSelected(Sender: TObject; OldTab, NewTab: TntvTabItem);
 begin
   Engine.Files.SetCurrentIndex(FileSet.ItemIndex, True);
@@ -633,12 +613,6 @@ end;
 procedure TMainForm.FoldersActExecute(Sender: TObject);
 begin
   UpdateFoldersPnl;
-end;
-
-procedure TMainForm.FoldersSplCanOffset(Sender: TObject;
-  var NewOffset: Integer; var Accept: Boolean);
-begin
-
 end;
 
 procedure TMainForm.FormDropFiles(Sender: TObject; const FileNames: array of string);

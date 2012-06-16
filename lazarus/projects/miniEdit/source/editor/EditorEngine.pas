@@ -430,7 +430,6 @@ type
   TFileCategory = class(TEditorElements)
   private
     FName: string;
-    FEditorFileClass: TEditorFileClass;
     FHighlighter: TSynCustomHighlighter;
     FKind: TFileCategoryKinds;
     function GetHighlighter: TSynCustomHighlighter;
@@ -446,9 +445,7 @@ type
     destructor Destroy; override;
     property Name: string read FName write FName;
     function Find(vName: string): TFileGroup;
-    function CreateEditorFile(Files: TEditorFiles): TEditorFile; virtual;
     procedure EnumExtensions(vExtensions: TStringList);
-    property EditorFileClass: TEditorFileClass read FEditorFileClass;
     property Highlighter: TSynCustomHighlighter read GetHighlighter;
     property Completion: TmneSynCompletion read FCompletion;
     property Kind: TFileCategoryKinds read FKind;
@@ -478,7 +475,7 @@ type
   public
     function Find(vName: string): TFileCategory;
     function Add(vFileCategory: TFileCategory): Integer;
-    procedure Add(const Name: string; EditorFileClass: TEditorFileClass; CategoryClass: TFileCategoryClass; Kind: TFileCategoryKinds = []);
+    procedure Add(CategoryClass: TFileCategoryClass; const Name: string; Kind: TFileCategoryKinds = []);
     property Items[Index: integer]: TFileCategory read GetItem write SetItem; default;
   end;
 
@@ -500,6 +497,7 @@ type
 
   TFileGroup = class(TEditorElement)
   private
+    FFileClass: TEditorFileClass;
     FExtensions: TStringList;
     FKind: TFileGroupKinds;
     FCategory: TFileCategory;
@@ -509,13 +507,17 @@ type
   public
     constructor Create; override;
     destructor Destroy; override;
+    function CreateEditorFile(vFiles: TEditorFiles): TEditorFile; virtual;
     procedure EnumExtensions(vExtensions: TStringList);
     procedure EnumExtensions(vExtensions: TEditorElements);
     property Category: TFileCategory read FCategory write SetCategory;
     property Extensions: TStringList read FExtensions;
     property Kind: TFileGroupKinds read FKind write FKind;
     property Style: TFileGroupStyles read FStyle write FStyle;
+    property FileClass: TEditorFileClass read FFileClass;
   end;
+
+  TFileGroupClass = class of TFileGroup;
 
   { TFileGroups }
 
@@ -530,7 +532,8 @@ type
     function FindExtension(vExtension: string): TFileGroup;
     function CreateFilter(FirstExtension: string = ''; vGroup: TFileGroup = nil; OnlyThisGroup: Boolean = true): string;
     procedure Add(vGroup: TFileGroup);
-    procedure Add(const Name, Title: string; Category: string; Extensions: array of string; Kind: TFileGroupKinds = []; Style: TFileGroupStyles = []);
+    procedure Add(GroupClass: TFileGroupClass; FileClass: TEditorFileClass; const Name, Title: string; Category: string; Extensions: array of string; Kind: TFileGroupKinds = []; Style: TFileGroupStyles = []);
+    procedure Add(FileClass: TEditorFileClass; const Name, Title: string; Category: string; Extensions: array of string; Kind: TFileGroupKinds = []; Style: TFileGroupStyles = []);
     property Items[Index: integer]: TFileGroup read GetItem; default;
   end;
 
@@ -1070,7 +1073,7 @@ end;
 function TEditorPerspective.CreateEditorFile(vGroup: TFileGroup): TEditorFile;
 begin
   if vGroup <> nil then
-    Result := vGroup.Category.CreateEditorFile(Engine.Files)
+    Result := vGroup.CreateEditorFile(Engine.Files)
   else
     Result := TEditorFile.Create(Engine.Files);
   Result.Group := vGroup;
@@ -1358,8 +1361,9 @@ begin
     if FindFirst(FullPath + '*.*', faDirectory, sr) = 0 then
     begin
       repeat
-        if (sr.Name = '') or (sr.Name[1] = '.') or (sr.Name = '..') or (copy(sr.Name, 1, 5) = '_vti_') or SameText(sr.Name, '.svn') or SameText(sr.Name, '_svn') then
-          continue;
+        if (sr.Name = '') or (sr.Name[1] = '.') or (sr.Name = '..') or (copy(sr.Name, 1, 5) = '_vti_') or SameText(sr.Name, '.svn') or
+          SameText(sr.Name, '_svn') or SameText(sr.Name, '.git') then//TODO add it to external list
+            continue;
         if (sr.Attr and faDirectory) <> 0 then
           EnumFileList(Root, IncludeTrailingPathDelimiter(Path) + sr.Name, Files, Strings, vMaxCount, Recursive)
       until (FindNext(sr) <> 0);
@@ -1888,10 +1892,9 @@ begin
   aFC := TCustomFileCategory.Create;
   aFC.Name := vName;
   aFC.FHighlighterClass := vHighlighterClass;
-  aFC.FEditorFileClass := TEditorFile;
   aFC.FKind := vKind;
   Categories.Add(aFC);
-  Groups.Add(vExtensions[0], vName + ' files', vName, vExtensions, []);
+  Groups.Add(TFileGroup, TEditorFile, vExtensions[0], vName + ' files', vName, vExtensions, []);
 end;
 
 procedure TEditorEngine.SetDefaultPerspective(vName: string);
@@ -2340,7 +2343,6 @@ end;
 
 procedure TEditorFile.NewSource;
 begin
-
 end;
 
 function DetectFileMode(const Contents: string): TEditorFileMode;
@@ -2526,13 +2528,12 @@ end;
 
 { TFileCategories }
 
-procedure TFileCategories.Add(const Name: string; EditorFileClass: TEditorFileClass; CategoryClass: TFileCategoryClass; Kind: TFileCategoryKinds);
+procedure TFileCategories.Add(CategoryClass: TFileCategoryClass; const Name: string; Kind: TFileCategoryKinds);
 var
   aFC: TFileCategory;
 begin
   aFC := CategoryClass.Create;
   aFC.FName := Name;
-  aFC.FEditorFileClass := EditorFileClass;
   aFC.FKind := Kind;
   Add(aFC);
 end;
@@ -2679,11 +2680,6 @@ end;
 constructor TFileCategory.Create;
 begin
   inherited Create(False);//childs is groups and already added to Groups and freed by it
-end;
-
-function TFileCategory.CreateEditorFile(Files: TEditorFiles): TEditorFile;
-begin
-  Result := FEditorFileClass.Create(Files);
 end;
 
 procedure TFileCategory.EnumExtensions(vExtensions: TStringList);
@@ -2930,9 +2926,14 @@ begin
   inherited;
 end;
 
+function TFileGroup.CreateEditorFile(vFiles: TEditorFiles): TEditorFile;
+begin
+  Result := FFileClass.Create(vFiles);
+end;
+
 { TFileGroups }
 
-procedure TFileGroups.Add(const Name, Title:string; Category: string; Extensions: array of string; Kind: TFileGroupKinds; Style: TFileGroupStyles);
+procedure TFileGroups.Add(GroupClass: TFileGroupClass; FileClass: TEditorFileClass; const Name, Title:string; Category: string; Extensions: array of string; Kind: TFileGroupKinds; Style: TFileGroupStyles);
 var
   aCategory: TFileCategory;
   aGroup: TFileGroup;
@@ -2944,7 +2945,8 @@ begin
   aGroup:= Find(Name);
   if aGroup <> nil then
     raise Exception.Create(Name + ' already exists');
-  aGroup := TFileGroup.Create;
+  aGroup := GroupClass.Create;
+  aGroup.FFileClass := FileClass;
   aGroup.FTitle := Title;
   aGroup.FName := Name;
   aGroup.FKind := Kind;
@@ -2953,6 +2955,11 @@ begin
     aGroup.Extensions.Add(Extensions[i]);
   aGroup.Category := aCategory;
   inherited Add(aGroup);
+end;
+
+procedure TFileGroups.Add(FileClass: TEditorFileClass; const Name, Title: string; Category: string; Extensions: array of string; Kind: TFileGroupKinds; Style: TFileGroupStyles);
+begin
+  Add(TFileGroup, FileClass, Name, Title, Category, Extensions, Kind, Style);
 end;
 
 function TFileGroups.Find(vName: string): TFileGroup;
