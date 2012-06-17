@@ -4,24 +4,22 @@ unit mnHttpClient;
  *
  * @license   modifiedLGPL (modified of http://www.gnu.org/licenses/lgpl.html)
  *            See the file COPYING.MLGPL, included in this distribution,
- * @author    Zaher Dirkey <zaher at parmaja dot com>
+ * @author    Jihad Khlaifa <jkhalifa at gmail dot com>
  *}
 
-{$M+}
-{$H+}
-{$IFDEF FPC}
-{$MODE delphi}
-{$ENDIF}
+{$h+}{$m+}
+{$ifdef fpc}
+{$mode objfpc}
+{$endif}
 
 interface
 
 uses
-  SysUtils, Classes, mnSockets, mnClients, mnSocketStreams, mnStreams;
+  SysUtils, Classes, mnSockets, mnClients, mnSocketStreams, mnStreams, mnUtils;
 
-const
-  EOL = #$A;
-    
 type
+  { TmnCustomHttpHeader }
+
   TmnCustomHttpHeader = class(TObject)
   private
     FStream: TmnBufferStream;
@@ -44,6 +42,8 @@ type
     property Expires: TDateTime read FExpires write FExpires;
     property LastModified: TDateTime read FLastModified write FLastModified;
   end;
+
+  { TmnHttpRequest }
 
   TmnHttpRequest = class(TmnCustomHttpHeader)
   private
@@ -69,6 +69,8 @@ type
     property UserAgent: string read FUserAgent write FUserAgent;
   end;
 
+  { TmnHttpResponse }
+
   TmnHttpResponse = class(TmnCustomHttpHeader)
   private
     FLocation: string;
@@ -82,6 +84,8 @@ type
     property Location: string read FLocation write FLocation;
     property Server: string read FServer write FServer;
   end;
+
+  { TmnCustomHttpClient }
 
   TmnCustomHttpClient = class(TmnClient)
   private
@@ -100,6 +104,8 @@ type
     property Port: string read FPort write FPort;
   end;
 
+  { TmnHttpClient }
+
   TmnHttpClient = class(TmnCustomHttpClient)
   public
     constructor Create(AOwner: TComponent); override;
@@ -109,6 +115,8 @@ type
 
 implementation
 
+const
+  sEOL = #$A;
 
 { TmnCustomHttpHeader }
 
@@ -156,16 +164,16 @@ var
 begin
   //if FStream.Connected then
   begin
-    s := Trim(FStream.ReadLine(EOL));
+    s := Trim(FStream.ReadLine(sEOL));
     repeat
       Headers.Add(s);
-      s := Trim(FStream.ReadLine(EOL));
+      s := Trim(FStream.ReadLine(sEOL));
     until not {FStream.Connected or} (s = '');
   end;
   DoReadHeaders;
   s := Headers.Values['Set-Cookie'];
   if s <> '' then
-    ExtractStrings([';'], [], PChar(s), Cookies);
+    StrToStrings(s, Cookies, [';'], []);
 end;
 
 procedure TmnCustomHttpHeader.WriteHeaders;
@@ -175,12 +183,12 @@ var
 begin
   DoWriteHeaders;
   for I := 0 to Headers.Count - 1 do
-    FStream.WriteLine(Headers[I], EOL);
+    FStream.WriteLine(Headers[I], sEOL);
   for I := 0 to Cookies.Count - 1 do
     s := Cookies[I] + ';';
   if s <> '' then
     WriteLn('Cookie: ' + s);
-  FStream.WriteLn(EOL);
+  FStream.WriteLn(sEOL);
 end;
 
 { TmnCustomHttpClient }
@@ -239,14 +247,14 @@ begin
   end;
 end;
 
-function TmnHttpRequest.Write(const Buffer; Count: Integer): Longint;
+function TmnHttpRequest.Write(const Buffer; Count: Longint): Longint;
 begin
   Result := FStream.Write(Buffer, Count); 
 end;
 
 function TmnHttpRequest.Writeln(const Value: string): Cardinal;
 begin
-  Result := FStream.WriteLine(Value, EOL);
+  Result := FStream.WriteLine(Value, sEOL);
 end;
 
 { TmnHttpResponse }
@@ -278,7 +286,7 @@ end;
 
 function TmnHttpResponse.ReadLn: string;
 begin
-  Result := FStream.ReadLine(EOL);
+  Result := FStream.ReadLine(sEOL);
 end;
 
 { TmnHttpClient }
@@ -286,19 +294,17 @@ end;
 constructor TmnHttpClient.Create(AOwner: TComponent);
 begin
   inherited;
-
 end;
 
 destructor TmnHttpClient.Destroy;
 begin
-
   inherited;
 end;
 
 procedure TmnHttpClient.Get(const vUrl: string);
 begin
-  FStream.Address := Request.Host; //Sould be published
-  FStream.Port := '80'; //Sould be published
+  FStream.Address := Request.Host; //Should be published
+  FStream.Port := '80'; //Should be published
   FStream.Connect;
   FStream.WriteLn('GET' + ' ' + vUrl +  ' ' + 'HTTP/1.0');
   FRequest.WriteHeaders;
