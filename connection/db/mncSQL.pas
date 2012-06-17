@@ -48,11 +48,11 @@ type
 
   TmncSQLGenerator = class(TmncObject)
   public
-    function Select(Table: string; Fields: array of string; Keys: array of string; ExtraFields: array of string): string; virtual; abstract; overload;
+    function Select(Table: string; Fields: array of string; Keys: array of string; ExtraFields: array of string): string; overload; virtual; abstract; 
     function Select(Table: string; Fields: array of string; Keys: array of string): string; overload;
-    function Update(Table: string; Fields: array of string; Keys: array of string; ExtraFields: array of string): string; virtual; abstract; overload;
+    function Update(Table: string; Fields: array of string; Keys: array of string; ExtraFields: array of string): string; overload; virtual; abstract; 
     function Update(Table: string; Fields: array of string; Keys: array of string): string; overload;
-    function Insert(Table: string; Fields: array of string; ExtraFields: array of string): string; virtual; abstract; overload;
+    function Insert(Table: string; Fields: array of string; ExtraFields: array of string): string; overload; virtual; abstract;
     function Insert(Table: string; Fields: array of string): string; overload;
     function UpdateOrInsert(Updating, Returning:Boolean; Table: string; Fields: array of string; Keys: array of string): string; overload;
     function Delete(Table: string; Keys: array of string): string; overload;
