@@ -26,7 +26,7 @@ type
     TextBox: TEdit;
     LabelMsg: TLabel;
     ChoiceIndex: Integer;
-    procedure CustomKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+    procedure KeyDown(var Key: Word; Shift: TShiftState); override;
     procedure WMGetDlgCode(var Message: TWMGetDlgCode); message WM_GETDLGCODE;
     function ShowNow: Integer;
     procedure DoClose(var CloseAction: TCloseAction); override;
@@ -95,7 +95,6 @@ begin
   FMsgKind := vMsgKind;
   Position := poMainFormCenter;
   KeyPreview := True;
-  OnKeyDown := @CustomKeyDown;
 end;
 
 function TGUIMsgBox.CreateForm(Kind: TMsgKind): TMsgForm;
@@ -357,9 +356,9 @@ begin
   Result.Caption := vSelect.Caption;
 end;
 
-procedure TMsgForm.CustomKeyDown(Sender: TObject; var Key: Word;
-  Shift: TShiftState);
+procedure TMsgForm.KeyDown(var Key: Word; Shift: TShiftState);
 begin
+  inherited;
   if ((Shift = [ssCtrl]) and (Key = Word('C'))) or (((Shift = [ssCtrl]) and (Key = VK_INSERT))) then
   begin
     Clipboard.AsText := LabelMsg.Caption;
