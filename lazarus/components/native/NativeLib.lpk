@@ -67,8 +67,8 @@
         <UnitName Value="ntvTabs"/>
       </Item8>
       <Item9>
-        <Filename Value="ntvSpliters.pas"/>
-        <UnitName Value="ntvSpliters"/>
+        <Filename Value="ntvSplitters.pas"/>
+        <UnitName Value="ntvSplitters"/>
       </Item9>
     </Files>
     <Type Value="RunAndDesignTime"/>

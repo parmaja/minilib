@@ -1,4 +1,4 @@
-unit ntvSpliters;
+unit ntvSplitters;
 {**
  *  This file is part of the "Mini Library"
  *
@@ -6,7 +6,7 @@ unit ntvSpliters;
  * @license   modifiedLGPL (modified of http://www.gnu.org/licenses/lgpl.html)
  *            See the file COPYING.MLGPL, included in this distribution,
  * @author    Zaher Dirkey <zaher at parmaja dot com>
- * @ported    ported from Lazarus component TSpliter in ExtCtrls
+ * @ported    ported from Lazarus component TSplitter in ExtCtrls
  *}
 
 {$mode objfpc}{$H+}
