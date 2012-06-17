@@ -26,7 +26,7 @@ uses
   LMessages, lCLType, LCLIntf, LCLProc, EditorDebugger, FileUtil,
   Dialogs, StdCtrls, Math, ComCtrls, ExtCtrls, ImgList, Menus, ToolWin,
   Buttons, FileCtrl, ShellCtrls, ActnList, EditorEngine, mneClasses, StdActns,
-  SynEditHighlighter, SynEdit, IAddons, ntvSpliters,
+  SynEditHighlighter, SynEdit, IAddons, ntvSplitters,
   {$ifdef WINDOWS}
   TSVN_SCM, TGIT_SCM,
   {$endif}
@@ -2134,8 +2134,6 @@ var
 begin
   if (Sender.Items.Count > 0) and (SubItem = 2) and (Item.SubItems.Count > 0) then
   begin
-    DefaultDraw := False;
-
     Sender.Canvas.Lock;
     try
       aRect := Item.DisplayRectSubItem(SubItem, drSelectBounds);
@@ -2145,13 +2143,20 @@ begin
       bf := Copy(s, 1, c - 1);
       md := Copy(Item.SubItems[1], c, l);
       af := Copy(Item.SubItems[1], c + l, MaxInt);
-      //TControlCanvas(Sender.Canvas).UpdateTextFlags;
-      Sender.Canvas.Font.Color := clWindowText;
-      Sender.Canvas.Brush.Color := clRed;
+      if cdsFocused in State then
+      begin
+        Sender.Canvas.Font.Color := clHighlightText;
+        Sender.Canvas.Brush.Color := clHighlight;
+      end
+      else
+      begin
+        Sender.Canvas.Font.Color := clWindowText;
+        Sender.Canvas.Brush.Color := clWindow;
+      end;
       w := aRect.Left + 2;
-      aRect.Bottom := aRect.Bottom - 1;
-      aRect.Left := aRect.Left + 1;
-
+      //aRect.Bottom := aRect.Bottom - 1;
+      //aRect.Left := aRect.Left + 1;
+      Sender.Canvas.Refresh;
       Sender.Canvas.FillRect(aRect);
       Sender.Canvas.Font.Style := [];
       Sender.Canvas.TextOut(w, aRect.Top, bf);
@@ -2163,10 +2168,11 @@ begin
       Sender.Canvas.Font.Style := [];
       Sender.Canvas.Refresh; //need to change color because canvas not change the font when style changed
       Sender.Canvas.TextOut(w, aRect.Top, af);
+      Sender.Canvas.Refresh;
     finally
       Sender.Canvas.Unlock;
     end;
-    //DefaultDraw := True;
+    DefaultDraw := False;
   end
   else
     DefaultDraw := True;
