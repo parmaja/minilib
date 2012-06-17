@@ -1760,6 +1760,7 @@ procedure TEditorOptions.Show;
 var
   i: integer;
   aList: TList;
+  aSelect: string;
 begin
   with TEditorOptionsForm.Create(Application) do
   begin
@@ -1770,7 +1771,11 @@ begin
         if Engine.Categories[i].Highlighter <> nil then
           aList.Add(Engine.Categories[i].Highlighter.ClassType);
       end;
-      if Execute(Profile, aList) then
+      if (Engine.Files.Current <> nil) and (Engine.Files.Current.SynEdit <> nil) and (Engine.Files.Current.SynEdit.Highlighter <> nil) then
+        aSelect := Engine.Files.Current.SynEdit.Highlighter.GetLanguageName
+      else
+        aSelect := '';
+      if Execute(Profile, aList, aSelect) then
       begin
         Apply;
       end;

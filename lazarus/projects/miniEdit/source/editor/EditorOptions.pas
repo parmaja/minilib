@@ -151,7 +151,7 @@ type
     procedure GetData;
     procedure PutData;
   public
-    function Execute(Profile: TEditorProfile; Highlighters: TList): boolean;
+    function Execute(Profile: TEditorProfile; Highlighters: TList; Select: string): boolean;
   end;
 
 implementation
@@ -163,21 +163,25 @@ uses
 
 { TEditorOptionsForm }
 
-function TEditorOptionsForm.Execute(Profile: TEditorProfile; Highlighters: TList): boolean;
+function TEditorOptionsForm.Execute(Profile: TEditorProfile; Highlighters: TList; Select: string): boolean;
 var
   i: integer;
+  n: Integer;
   aHighlighter: TSynCustomHighlighter;
 begin
   if (Profile <> nil) then
   begin
     FProfile := Profile;
+    n := 0;
     for i := 0 to Highlighters.Count - 1 do
     begin
       aHighlighter := TSynCustomHighlighterClass(Highlighters[i]).Create(Self);
       GroupCbo.Items.AddObject(aHighlighter.GetLanguageName, aHighlighter);
+      if SameText(Select, aHighlighter.GetLanguageName) then
+        n := i;
       Profile.Highlighters.AssignTo(aHighlighter);
     end;
-    GroupCbo.ItemIndex := 0;
+    GroupCbo.ItemIndex := n;
     ApplyGroup;
     //Get Data
     GetData;
