@@ -166,6 +166,7 @@ type
   end;
 
 const
+
 {$INCLUDE 'PHPKeywords.inc'}
 
   SYNS_FilterXHTML = 'PHP Files (*.php;*.php3;*.phtml;*.inc)|*.php;*.php3;*.phtml;*.inc';

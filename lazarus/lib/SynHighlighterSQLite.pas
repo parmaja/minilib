@@ -98,9 +98,7 @@ type
     function GetEol: Boolean; override;
     function GetRange: Pointer; override;
     function GetToken: string; override;
-    {.$IFDEF SYN_LAZARUS}
     procedure GetTokenEx(out TokenStart: PChar; out TokenLength: integer); override;
-    {.$ENDIF}
     function GetTokenAttribute: TSynHighlighterAttributes; override;
     function GetTokenID: TtkTokenKind;
     function GetTokenKind: integer; override;
@@ -561,6 +559,8 @@ end;
 procedure TSynSqliteSyn.UnknownProc;
 begin
   inc(Run);
+  while (fLine[Run] in [#128..#191]) OR // continued utf8 subcode
+   ((fLine[Run]<>#0) and (fProcTable[fLine[Run]] = @UnknownProc)) do inc(Run);
   fTokenID := tkUnknown;
 end;
 
@@ -640,14 +640,12 @@ begin
   SetString(Result, (FLine + fTokenPos), Len);
 end;
 
-{.$IFDEF SYN_LAZARUS}
 procedure TSynSqliteSyn.GetTokenEx(out TokenStart: PChar; out
   TokenLength: integer);
 begin
   TokenLength:=Run-fTokenPos;
   TokenStart:=FLine + fTokenPos;
 end;
-{.$ENDIF}
 
 function TSynSqliteSyn.GetTokenID: TtkTokenKind;
 begin
