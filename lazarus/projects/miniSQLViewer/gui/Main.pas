@@ -316,7 +316,7 @@ begin
         aMemberName := MembersGrid.Cells[0, MembersGrid.Row]
       else
         aMemberName := '';
-      aInfo.Node.Execute(aMemberName, TmncParams.Create([aInfo.Name], [aInfo.Value]));
+      aInfo.Node.Execute(aMemberName, TmncSchemaParams.Create([aInfo.Name], [aInfo.Value]));
     finally
       ActionsList.ItemIndex := -1;
     end;

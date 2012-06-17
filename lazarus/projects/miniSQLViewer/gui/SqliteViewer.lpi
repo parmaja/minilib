@@ -145,7 +145,7 @@
     </Target>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)"/>
-      <OtherUnitFiles Value="..\lib"/>
+      <OtherUnitFiles Value="..\lib;..\..\..\lib"/>
       <UnitOutputDirectory Value="..\units"/>
     </SearchPaths>
     <Parsing>

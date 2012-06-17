@@ -95,12 +95,12 @@ type
     FImageIndex: TImageIndex;
   protected
     function GetCanExecute: Boolean; virtual;
-    procedure DoExecute(const Value: string; Params: TmncParams = nil); virtual;
+    procedure DoExecute(const Value: string; Params: TmncSchemaParams = nil); virtual;
   public
     constructor Create; virtual;
     destructor Destroy; override;
     procedure ShowProperty; virtual;
-    procedure Execute(const Value: string; Params: TmncParams = nil);
+    procedure Execute(const Value: string; Params: TmncSchemaParams = nil);
     procedure Enum(Nodes: TsqlvNodes);
     procedure EnumDefaults(Nodes: TsqlvNodes);
     procedure EnumHeader(Header: TStringList); virtual;
@@ -414,7 +414,7 @@ begin
   Header.Add(Title);
 end;
 
-procedure TsqlvNode.Execute(const Value: string; Params: TmncParams = nil);
+procedure TsqlvNode.Execute(const Value: string; Params: TmncSchemaParams = nil);
 begin
   DoExecute(Value, Params);
   FreeAndNil(Params);
@@ -425,7 +425,7 @@ begin
   Result := True;
 end;
 
-procedure TsqlvNode.DoExecute(const Value: string; Params: TmncParams);
+procedure TsqlvNode.DoExecute(const Value: string; Params: TmncSchemaParams);
 begin
 end;
 

@@ -1,6 +1,15 @@
 unit mncDS;
+{**
+ *  This file is part of the "Mini Connections"
+ *
+ * @license   modifiedLGPL (modified of http://www.gnu.org/licenses/lgpl.html)
+ *            See the file COPYING.MLGPL, included in this distribution,
+ * @author    Zaher Dirkey <zaher at parmaja dot com>
+ *
+ *}
+ {$mode objfpc}
 
-{$mode objfpc}
+{$warning 'Still working on it, not finished}
 
 interface
 

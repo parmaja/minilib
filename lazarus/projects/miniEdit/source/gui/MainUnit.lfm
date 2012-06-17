@@ -102,13 +102,13 @@ object MainForm: TMainForm
   end
   object FoldersPnl: TPanel
     Left = 0
-    Height = 315
+    Height = 312
     Top = 29
     Width = 200
     Align = alLeft
     BevelOuter = bvNone
     BorderWidth = 5
-    ClientHeight = 315
+    ClientHeight = 312
     ClientWidth = 200
     Constraints.MinHeight = 60
     TabOrder = 0
@@ -208,7 +208,7 @@ object MainForm: TMainForm
     end
     object FileList: TListView
       Left = 5
-      Height = 286
+      Height = 283
       Top = 24
       Width = 190
       Align = alClient
@@ -232,36 +232,36 @@ object MainForm: TMainForm
     end
   end
   object ClientPnl: TPanel
-    Left = 206
-    Height = 315
+    Left = 207
+    Height = 312
     Top = 29
-    Width = 670
+    Width = 669
     Align = alClient
     BevelOuter = bvNone
-    ClientHeight = 315
-    ClientWidth = 670
+    ClientHeight = 312
+    ClientWidth = 669
     TabOrder = 1
     object EditorsPnl: TPanel
       Left = 0
-      Height = 160
+      Height = 157
       Top = 0
-      Width = 670
+      Width = 669
       Align = alClient
       BevelOuter = bvNone
-      ClientHeight = 160
-      ClientWidth = 670
+      ClientHeight = 157
+      ClientWidth = 669
       FullRepaint = False
       TabOrder = 0
       object FileHeaderPanel: TPanel
         Left = 0
         Height = 19
         Top = 0
-        Width = 670
+        Width = 669
         Align = alTop
         Alignment = taLeftJustify
         BevelOuter = bvNone
         ClientHeight = 19
-        ClientWidth = 670
+        ClientWidth = 669
         Color = 13027052
         Font.Height = -11
         Font.Name = 'MS Sans Serif'
@@ -270,7 +270,7 @@ object MainForm: TMainForm
         TabOrder = 0
         Visible = False
         object FileCloseBtn: TSpeedButton
-          Left = 654
+          Left = 653
           Height = 17
           Hint = 'Close file'
           Top = 1
@@ -325,13 +325,13 @@ object MainForm: TMainForm
       object QuickFindPnl: TPanel
         Left = 0
         Height = 29
-        Top = 131
-        Width = 670
+        Top = 128
+        Width = 669
         Align = alBottom
         BevelInner = bvSpace
         BevelOuter = bvLowered
         ClientHeight = 29
-        ClientWidth = 670
+        ClientWidth = 669
         TabOrder = 1
         Visible = False
         object Label2: TLabel
@@ -430,7 +430,7 @@ object MainForm: TMainForm
         Left = 0
         Height = 23
         Top = 19
-        Width = 670
+        Width = 669
         StoreIndex = False
         ShowButtons = False
         Items = <>
@@ -443,8 +443,8 @@ object MainForm: TMainForm
     inline OutputEdit: TSynEdit
       Left = 0
       Height = 149
-      Top = 166
-      Width = 670
+      Top = 163
+      Width = 669
       Align = alBottom
       Constraints.MinHeight = 60
       Font.Height = -13
@@ -584,8 +584,8 @@ object MainForm: TMainForm
       Cursor = crVSplit
       Left = 0
       Height = 6
-      Top = 160
-      Width = 670
+      Top = 157
+      Width = 669
       ResizeControl = OutputEdit
       Visible = False
     end
@@ -800,17 +800,16 @@ object MainForm: TMainForm
   object MessagesSpl: TntvSplitter
     Cursor = crVSplit
     Left = 0
-    Height = 6
-    Top = 344
+    Height = 9
+    Top = 341
     Width = 876
     ResizeControl = MessagesTabs
   end
   object FoldersSpl: TntvSplitter
-    Cursor = crDefault
     Left = 200
-    Height = 315
+    Height = 312
     Top = 29
-    Width = 6
+    Width = 7
     ResizeControl = FoldersPnl
   end
   object MainMenu: TMainMenu

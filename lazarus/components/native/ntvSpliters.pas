@@ -33,10 +33,11 @@ type
   TCanResizeEvent = procedure(Sender: TObject; var NewSize: Integer;
     var Accept: Boolean) of object;
 
+  TntvSplitterStyle = (spsSpace, spsLoweredLine, spsRaisedLine);
+
   TntvCustomSplitter = class(TGraphicControl)
   private
     FAutoSnap: boolean;
-    FBeveled: boolean;
     FMouseInControl: Boolean;
     FOnCanOffset: TCanOffsetEvent;
     FOnCanResize: TCanResizeEvent;
@@ -48,8 +49,9 @@ type
     FSplitterStartLeftTop: TPoint; // in screen coordinates
     FResizeControl: TControl;
     FSplitterWindow: HWND;
-    procedure SetBeveled(const AValue: boolean);
+    FStyle: TntvSplitterStyle;
     procedure SetResizeControl(AValue: TControl);
+    procedure SetStyle(AValue: TntvSplitterStyle);
   protected
     procedure AlignTo(Control:TControl);
     function AdaptAnchors(const aAnchors: TAnchors): TAnchors;
@@ -76,8 +78,8 @@ type
     procedure MoveSplitter(Offset: Integer);
   public
     property AutoSnap: boolean read FAutoSnap write FAutoSnap default False;
-    property Beveled: boolean read FBeveled write SetBeveled default False;
     property Cursor default crHSplit;
+    property Style: TntvSplitterStyle read FStyle write SetStyle default spsLoweredLine;
     property ResizeAnchor: TAnchorKind read FResizeAnchor write SetResizeAnchor default akLeft;
     property ResizeStyle: TntvResizeStyle read FResizeStyle write FResizeStyle default nrsUpdate;
     property ResizeControl: TControl read FResizeControl write SetResizeControl;
@@ -90,7 +92,6 @@ type
   published
     property Anchors;
     property AutoSnap;
-    property Beveled;
     property Color;
     property Constraints;
     property Cursor;
@@ -266,13 +267,6 @@ begin
       DrawAlignControlSize(NewSize);
 end;
 
-procedure TntvCustomSplitter.SetBeveled(const AValue: boolean);
-begin
-  if FBeveled = AValue then Exit;
-  FBeveled := AValue;
-  Invalidate;
-end;
-
 procedure TntvCustomSplitter.SetResizeControl(AValue: TControl);
 begin
   if FResizeControl =AValue then Exit;
@@ -282,6 +276,12 @@ begin
   if FResizeControl <> nil then
     FResizeControl.FreeNotification(Self);
   AlignTo(FResizeControl);
+end;
+
+procedure TntvCustomSplitter.SetStyle(AValue: TntvSplitterStyle);
+begin
+  if FStyle =AValue then Exit;
+  FStyle :=AValue;
 end;
 
 procedure TntvCustomSplitter.AlignTo(Control: TControl);
@@ -453,65 +453,51 @@ begin
 end;
 
 procedure TntvCustomSplitter.Paint;
-  procedure DrawThemedPattern(ARect: TRect);
-  const
-    GripperDetailsPart: array[Boolean] of TThemedRebar =
-    (
-      trGripperVert,
-      trGripper
-    );
-  var
-    GripperRect: TRect;
-    BgPart: TThemedRebar;
-    BgDetails, GripperDetails: TThemedElementDetails;
-    GripperSize: TSize;
-  begin
-    GripperDetails := ThemeServices.GetElementDetails(GripperDetailsPart[ResizeAnchor in [akLeft,akRight]]);
-
-    if not Enabled then
-      BgPart := trBandDisabled
+var
+  C1, C2: TColor;
+  x, y: Integer;
+begin
+  case Style of
+    spsRaisedLine:
+      begin
+        C1 := cl3DHilight;
+        C2 := cl3DShadow;
+      end;
+    spsLoweredLine:
+      begin
+        C1 := cl3DShadow;
+        C2 := cl3DHilight;
+      end;
     else
-    if FMouseInControl then
-      BgPart := trBandHot
-    else
-      BgPart := trBandNormal;
-
-    BgDetails := ThemeServices.GetElementDetails(BgPart);
-    ThemeServices.DrawElement(Canvas.Handle, BgDetails, ARect, nil);
-
-    if Beveled then
-      ThemeServices.DrawEdge(Canvas.Handle, BgDetails, ARect, BDR_RAISEDOUTER,
-        BF_ADJUST or BF_RECT, @ARect);
-
-    GripperRect := ARect;
-    GripperSize := ThemeServices.GetDetailSize(GripperDetails);
-    if (GripperSize.cx <> -1) or (GripperSize.cy <> -1) then
     begin
-      if ResizeAnchor in [akLeft,akRight] then
+      inherited;
+      exit;
+    end;
+  end;
+  Canvas.Pen.Width:=1;
+  with Canvas, ClientRect do
+    case ResizeAnchor of
+      akTop, akBottom:
       begin
-        if (GripperRect.Bottom - GripperRect.Top) > GripperSize.cy then
-        begin
-          GripperRect.Top := (GripperRect.Top + GripperRect.Bottom - GripperSize.cy) div 2;
-          GripperRect.Bottom := GripperRect.Top + GripperSize.cy;
-        end;
-      end
-      else
+        Pen.Color := C1;
+        y := (Bottom - Top) div 2;
+        MoveTo(Left, y);
+        LineTo(Right - 1, y);
+        Pen.Color := C2;
+        MoveTo(Left, y + 1);
+        LineTo(Right - 1, y + 1);
+      end;
+      akLeft, akRight:
       begin
-        if (GripperRect.Right - GripperRect.Left) > GripperSize.cx then
-        begin
-          GripperRect.Left := (GripperRect.Left + GripperRect.Right - GripperSize.cx) div 2;
-          GripperRect.Right := GripperRect.Left + GripperSize.cx;
-        end;
+        Pen.Color:=C1;
+        x := (Right - Left) div 2;
+        MoveTo(x, Top);
+        LineTo(x, Bottom - 1);
+        Pen.Color := C2;
+        MoveTo(x + 1, Top);
+        LineTo(x + 1, Bottom - 1);
       end;
     end;
-
-    ThemeServices.DrawElement(Canvas.Handle, GripperDetails, GripperRect);
-  end;
-
-begin
-  inherited Paint;
-
-  DrawThemedPattern(ClientRect)
 end;
 
 procedure TntvCustomSplitter.Notification(AComponent: TComponent; Operation: TOperation);
@@ -553,9 +539,9 @@ begin
   inherited Create(TheOwner);
   FResizeStyle := nrsUpdate;
   FAutoSnap := False;
-  FBeveled := False;
   FMouseInControl := False;
   FResizeAnchor := akLeft;
+  FStyle := spsLoweredLine;
   Width := 5;
 end;
 
