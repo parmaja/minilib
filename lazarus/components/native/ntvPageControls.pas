@@ -28,7 +28,6 @@ type
     FControl: TControl;
     procedure SetControl(const Value: TControl);
     function GetPageControl: TntvPageControl;
-    procedure SetVisible(const Value: Boolean);
   protected
     procedure SetIndex(Value: Integer); override;
   public
@@ -44,18 +43,14 @@ type
 
   { TntvPages }
 
-  TntvPages = class(TntvTabs)
+  TntvPages = class(TntvTabSetItems)
   private
-    FPageControl: TntvPageControl;
     function GetItem(Index: Integer): TntvPageItem;
+    function GetPageControl: TntvPageControl;
     procedure SetItem(Index: Integer; Value: TntvPageItem);
   protected
-    procedure Update(Item: TCollectionItem); override;
-    procedure Invalidate; override;
-    procedure UpdateCanvas(vCanvas: TCanvas); override;
+    property PageControl: TntvPageControl read GetPageControl;
   public
-    constructor Create(APageControl: TntvPageControl);
-    destructor Destroy; override;
     function GetOwner: TPersistent; override;
     function Add: TntvPageItem;
     function FindControl(vControl: TControl): TntvPageItem;
@@ -181,7 +176,8 @@ end;
 
 function TntvPageControl.CreateTabs: TntvTabs;
 begin
-  Result := TntvPages.Create(Self);
+  Result := TntvPages.Create(TntvPageItem);
+  (Result as TntvPages).Control := Self;
 end;
 
 procedure TntvPageControl.ShowControl(AControl: TControl);
@@ -373,7 +369,7 @@ end;
 function TntvPageItem.GetPageControl: TntvPageControl;
 begin
   if Collection <> nil then
-    Result := (Collection as TntvPages).FPageControl
+    Result := (Collection as TntvPages).FControl as TntvPageControl
   else
     Result := nil;
 end;
@@ -438,7 +434,7 @@ begin
         Control := vControl;
         Name := Control.Name;
         Caption := Name;
-        Control.FreeNotification(FPageControl);
+        Control.FreeNotification(PageControl);
         Collection := Self; //Add to Pages list
         if Control is TWinControl and (Control.Parent = PageControl) then
           Control.Align := alClient;
@@ -453,31 +449,6 @@ begin
     Result := nil;
 end;
 
-procedure TntvPages.Invalidate;
-begin
-  if (FPageControl <> nil) and not (csLoading in FPageControl.ComponentState) and FPageControl.HandleAllocated then
-  begin
-    FPageControl.Invalidate;
-  end;
-end;
-
-procedure TntvPages.UpdateCanvas(vCanvas: TCanvas);
-begin
-  inherited;
-  vCanvas.Font.Assign(FPageControl.Font);
-end;
-
-constructor TntvPages.Create(APageControl: TntvPageControl);
-begin
-  inherited Create(TntvPageItem);
-  FPageControl := APageControl;
-end;
-
-destructor TntvPages.Destroy;
-begin
-  inherited;
-end;
-
 function TntvPages.ExtractControl(vControl: TControl): TControl;
 var
   i: Integer;
@@ -490,12 +461,12 @@ begin
       Result := Items[i].Control;
       Items[i].Control := nil;
       Delete(i);
-      if not (csDestroying in FPageControl.ComponentState) then
+      if not (csDestroying in Control.ComponentState) then
       begin
         c := i;
         if c > 0 then
           c := c - 1;
-        FPageControl.ShowTab(c);
+        PageControl.ShowTab(c);
       end;
       Break;
     end;
@@ -519,23 +490,19 @@ begin
   Result := (inherited Items[Index] as TntvPageItem);
 end;
 
+function TntvPages.GetPageControl: TntvPageControl;
+begin
+  Result := Control as TntvPageControl;
+end;
+
 function TntvPages.GetOwner: TPersistent;
 begin
-  Result := FPageControl;
+  Result := Control as TntvPageControl;
 end;
 
 procedure TntvPages.SetItem(Index: Integer; Value: TntvPageItem);
 begin
   inherited SetItem(Index, Value);
-end;
-
-procedure TntvPages.Update(Item: TCollectionItem);
-begin
-  inherited;
-end;
-
-procedure TntvPageItem.SetVisible(const Value: Boolean);
-begin
 end;
 
 function TntvPages.IndexOf(vControl: TControl): Integer;

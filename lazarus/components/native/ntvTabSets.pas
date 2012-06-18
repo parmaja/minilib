@@ -29,6 +29,17 @@ type
   TOnTabSelect = procedure(Sender: TObject; OldTab, NewTab: TntvTabItem; var CanSelect: boolean) of object;
   TOnTabSelected = procedure(Sender: TObject; OldTab, NewTab: TntvTabItem) of object;
 
+  { TntvTabSetItems }
+
+  TntvTabSetItems = class(TntvTabs)
+  protected
+    FControl: TCustomControl;
+    procedure Invalidate; override;
+    procedure UpdateCanvas(vCanvas: TCanvas); override;
+  public
+    property Control: TCustomControl read FControl write FControl;
+  end;
+
   { TntvCustomTabSet }
 
   TntvCustomTabSet = class(TCustomControl)
@@ -202,6 +213,23 @@ type
   end;
 
 implementation
+
+{ TntvTabSetItems }
+
+procedure TntvTabSetItems.Invalidate;
+begin
+  inherited Invalidate;
+  if (FControl <> nil) and not (csLoading in FControl.ComponentState) and FControl.HandleAllocated then
+  begin
+    FControl.Invalidate;
+  end;
+end;
+
+procedure TntvTabSetItems.UpdateCanvas(vCanvas: TCanvas);
+begin
+  inherited;
+  vCanvas.Font.Assign(FControl.Font);
+end;
 
   { TntvCustomTabSet }
 
@@ -714,7 +742,8 @@ end;
 
 function TntvCustomTabSet.CreateTabs: TntvTabs;
 begin
-  Result := TntvTabs.Create(TntvTabItem);
+  Result := TntvTabSetItems.Create(TntvTabItem);
+  (Result as TntvTabSetItems).Control := Self;
 end;
 
 end.

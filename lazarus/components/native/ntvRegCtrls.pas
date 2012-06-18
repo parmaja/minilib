@@ -14,7 +14,7 @@ interface
 
 uses
   Classes, SysUtils, Menus, LResources, TypInfo, LCLProc, Forms, Controls,
-  ntvDotMatrix, ntvCtrls, ntvProgressBars, ntvTabSets, ntvPageControls, ntvSpliters,
+  ntvDotMatrix, ntvCtrls, ntvProgressBars, ntvTabSets, ntvPageControls, ntvSplitters,
   ComponentEditors, PropEdits;
 
 type
