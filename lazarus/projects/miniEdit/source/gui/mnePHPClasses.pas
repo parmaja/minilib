@@ -17,8 +17,7 @@ uses
   Dialogs, EditorOptions, SynEditHighlighter, SynEditSearch, SynEdit,
   Registry, EditorEngine, mnXMLRttiProfile, mnXMLUtils,
   SynEditTypes, SynCompletion, SynHighlighterHashEntries, EditorProfiles,
-  SynHighlighterCSS, SynHighlighterSQL, SynHighlighterXML, SynHighlighterApache,
-  SynHighlighterJScript, SynHighlighterXHTML, SynHighlighterPas,
+  SynHighlighterCSS, SynHighlighterSQL, SynHighlighterXML, SynHighlighterJScript, SynHighlighterXHTML,
   EditorDebugger, PHP_xDebug,
   mneClasses;
 
@@ -70,7 +69,7 @@ type
     function CreateHighlighter: TSynCustomHighlighter; override;
     procedure InitCompletion(vSynEdit: TCustomSynEdit); override;
     procedure DoAddCompletion(AKeyword: string; AKind: integer);
-    procedure OnExecuteCompletion(Sender: TObject); override;
+    procedure DoExecuteCompletion(Sender: TObject); override;
   public
     constructor Create; override;
   end;
@@ -110,7 +109,7 @@ type
 implementation
 
 uses
-  IniFiles, mnStreams, mnUtils;
+  IniFiles, mnStreams, mnUtils, HTMLProcessor, PHPProcessor;
 
 { TXHTMLFile }
 
@@ -131,10 +130,6 @@ begin
   SynEdit.CaretY := 2;
   SynEdit.CaretX := 9;
 end;
-
-{ THTMLFileGroup }
-
-{ TPHPFileGroup }
 
 { TPHPFile }
 
@@ -290,7 +285,7 @@ begin
   Completion.ItemList.Add(AKeyword);
 end;
 
-procedure TXHTMLFileCategory.OnExecuteCompletion(Sender: TObject);
+procedure TXHTMLFileCategory.DoExecuteCompletion(Sender: TObject);
 var
   aVariables: THashedStringList;
   aIdentifiers: THashedStringList;
@@ -329,10 +324,9 @@ begin
       begin
         if aTokenType = Ord(tkComment) then
           Abort
-        //CanExecute := False
         else if aTokenType = Ord(tkString) then
         begin
-          EnumerateKeywords(Ord(tkSQL), sSQLKeywords, Highlighter.IdentChars, @DoAddCompletion);
+          //EnumerateKeywords(Ord(tkSQL), sSQLKeywords, Highlighter.IdentChars, @DoAddCompletion);
         end
         else
         begin
@@ -479,8 +473,8 @@ procedure TXHTMLFileCategory.InitCompletion(vSynEdit: TCustomSynEdit);
 begin
   FCompletion := TmneSynCompletion.Create(nil);
   FCompletion.Width := 340;
-  FCompletion.EndOfTokenChr := '{}()[].<>/\:!$&*+-=%;';
-  FCompletion.OnExecute := @OnExecuteCompletion;
+  FCompletion.EndOfTokenChr := '{}()[].<>/\:!&*+-=%;';//do not add $
+  FCompletion.OnExecute := @DoExecuteCompletion;
   FCompletion.ShortCut := scCtrl + VK_SPACE;
   FCompletion.CaseSensitive := False;
   //Result.Options := [scoLimitToMatchedText, {scoCaseSensitive, }scoUseInsertList, scoUsePrettyText, scoEndCharCompletion, scoCompleteWithTab, scoCompleteWithEnter];

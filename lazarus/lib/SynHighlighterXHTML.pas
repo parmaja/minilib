@@ -166,11 +166,8 @@ type
   end;
 
 const
-
-{$INCLUDE 'PHPKeywords.inc'}
-
-  SYNS_FilterXHTML = 'PHP Files (*.php;*.php3;*.phtml;*.inc)|*.php;*.php3;*.phtml;*.inc';
   SYNS_LangXHTML = 'HTML/PHP';
+  SYNS_FilterXHTML = 'HTML/PHP Files (*.php;*.html;*.phtml;*.inc)|*.php;*.html;*.phtml;*.inc';
 
 //range mix Main processor as byte and Current processor as byte and index Byte
 function RangeToProcessor(Range: cardinal): byte;

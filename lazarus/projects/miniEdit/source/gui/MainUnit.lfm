@@ -2,11 +2,11 @@ object MainForm: TMainForm
   Left = 207
   Height = 518
   Top = 198
-  Width = 876
+  Width = 927
   AllowDropFiles = True
   Caption = 'Mini Edit'
   ClientHeight = 498
-  ClientWidth = 876
+  ClientWidth = 927
   Font.Height = -11
   Font.Name = 'MS Sans Serif'
   Menu = MainMenu
@@ -22,7 +22,7 @@ object MainForm: TMainForm
     Left = 0
     Height = 29
     Top = 0
-    Width = 876
+    Width = 927
     AutoSize = True
     EdgeBorders = [ebTop, ebBottom]
     Images = EditorResource.ToolbarImageList
@@ -31,7 +31,7 @@ object MainForm: TMainForm
       Left = 1
       Height = 23
       Top = 2
-      Width = 875
+      Width = 926
       AutoSize = True
       ButtonHeight = 23
       ButtonWidth = 75
@@ -235,33 +235,34 @@ object MainForm: TMainForm
     Left = 207
     Height = 312
     Top = 29
-    Width = 669
+    Width = 720
     Align = alClient
     BevelOuter = bvNone
     ClientHeight = 312
-    ClientWidth = 669
+    ClientWidth = 720
     TabOrder = 1
     object EditorsPnl: TPanel
       Left = 0
       Height = 157
       Top = 0
-      Width = 669
+      Width = 720
       Align = alClient
       BevelOuter = bvNone
       ClientHeight = 157
-      ClientWidth = 669
+      ClientWidth = 720
       FullRepaint = False
       TabOrder = 0
       object FileHeaderPanel: TPanel
         Left = 0
-        Height = 19
+        Height = 23
         Top = 0
-        Width = 669
+        Width = 720
         Align = alTop
         Alignment = taLeftJustify
         BevelOuter = bvNone
-        ClientHeight = 19
-        ClientWidth = 669
+        BorderWidth = 2
+        ClientHeight = 23
+        ClientWidth = 720
         Color = 13027052
         Font.Height = -11
         Font.Name = 'MS Sans Serif'
@@ -269,13 +270,43 @@ object MainForm: TMainForm
         ParentFont = False
         TabOrder = 0
         Visible = False
+        object Bevel1: TBevel
+          Left = 74
+          Height = 19
+          Top = 2
+          Width = 627
+          Align = alClient
+        end
+        object FileNameLbl: TLabel
+          Left = 77
+          Height = 14
+          Hint = 'File name'
+          Top = 4
+          Width = 46
+          Caption = 'File name'
+          Layout = tlCenter
+          ParentColor = False
+          PopupMenu = FilePopupMenu
+        end
+        object FileModeBtn: TSpeedButton
+          Left = 2
+          Height = 19
+          Top = 2
+          Width = 72
+          Align = alLeft
+          Caption = 'Widnows'
+          Flat = True
+          Transparent = False
+          OnClick = FileModeBtnClick
+          PopupMenu = FileModeMenu
+        end
         object FileCloseBtn: TSpeedButton
-          Left = 653
-          Height = 17
+          Left = 701
+          Height = 19
           Hint = 'Close file'
-          Top = 1
-          Width = 16
-          Anchors = [akTop, akRight, akBottom]
+          Top = 2
+          Width = 17
+          Align = alRight
           Flat = True
           Font.CharSet = SYMBOL_CHARSET
           Font.Color = clWhite
@@ -299,39 +330,17 @@ object MainForm: TMainForm
           OnClick = FileCloseBtnClick
           ParentFont = False
         end
-        object FileNameLbl: TLabel
-          Left = 81
-          Height = 14
-          Hint = 'File name'
-          Top = 2
-          Width = 46
-          Caption = 'File name'
-          Layout = tlCenter
-          ParentColor = False
-          PopupMenu = FilePopupMenu
-        end
-        object FileModeBtn: TSpeedButton
-          Left = 0
-          Height = 19
-          Top = 0
-          Width = 72
-          Caption = 'Widnows'
-          Flat = True
-          Transparent = False
-          OnClick = FileModeBtnClick
-          PopupMenu = FileModeMenu
-        end
       end
       object QuickFindPnl: TPanel
         Left = 0
         Height = 29
         Top = 128
-        Width = 669
+        Width = 720
         Align = alBottom
         BevelInner = bvSpace
         BevelOuter = bvLowered
         ClientHeight = 29
-        ClientWidth = 669
+        ClientWidth = 720
         TabOrder = 1
         Visible = False
         object Label2: TLabel
@@ -426,15 +435,15 @@ object MainForm: TMainForm
           TabOrder = 0
         end
       end
-      object FileSet: TntvTabSet
+      object FileTabs: TntvTabSet
         Left = 0
-        Height = 23
-        Top = 19
-        Width = 669
+        Height = 24
+        Top = 23
+        Width = 720
         StoreIndex = False
         ShowButtons = False
         Items = <>
-        OnTabSelected = FileSetTabSelected
+        OnTabSelected = FileTabsTabSelected
         Align = alTop
         Caption = 'Files'
         TabOrder = 2
@@ -444,7 +453,7 @@ object MainForm: TMainForm
       Left = 0
       Height = 149
       Top = 163
-      Width = 669
+      Width = 720
       Align = alBottom
       Constraints.MinHeight = 60
       Font.Height = -13
@@ -585,7 +594,7 @@ object MainForm: TMainForm
       Left = 0
       Height = 6
       Top = 157
-      Width = 669
+      Width = 720
       ResizeControl = OutputEdit
       Visible = False
     end
@@ -594,18 +603,18 @@ object MainForm: TMainForm
     Left = 0
     Height = 21
     Top = 477
-    Width = 876
+    Width = 927
     Align = alBottom
     BevelOuter = bvNone
     ClientHeight = 21
-    ClientWidth = 876
+    ClientWidth = 927
     TabOrder = 2
     object MessagePnl: TPanel
       Left = 80
       Height = 19
       Hint = 'Message'
       Top = 1
-      Width = 588
+      Width = 639
       Alignment = taLeftJustify
       Anchors = [akLeft, akRight, akBottom]
       BevelOuter = bvLowered
@@ -613,7 +622,7 @@ object MainForm: TMainForm
       TabOrder = 0
     end
     object DebugPnl: TPanel
-      Left = 774
+      Left = 825
       Height = 19
       Hint = 'Debug Session'
       Top = 1
@@ -625,7 +634,7 @@ object MainForm: TMainForm
       TabOrder = 1
     end
     object CursorPnl: TPanel
-      Left = 692
+      Left = 743
       Height = 19
       Hint = 'Caret Position'
       Top = 1
@@ -636,7 +645,7 @@ object MainForm: TMainForm
       TabOrder = 2
     end
     object StatePnl: TPanel
-      Left = 670
+      Left = 721
       Height = 19
       Hint = 'State'
       Top = 1
@@ -662,7 +671,7 @@ object MainForm: TMainForm
     Left = 0
     Height = 127
     Top = 350
-    Width = 876
+    Width = 927
     StoreIndex = False
     ShowButtons = False
     Items = <    
@@ -694,7 +703,7 @@ object MainForm: TMainForm
       Left = 3
       Height = 103
       Top = 21
-      Width = 870
+      Width = 921
       Align = alClient
       Columns = <      
         item
@@ -704,7 +713,7 @@ object MainForm: TMainForm
         item
           AutoSize = True
           Caption = 'Message'
-          Width = 766
+          Width = 817
         end      
         item
           Caption = 'File'
@@ -732,7 +741,7 @@ object MainForm: TMainForm
       Left = 3
       Height = 103
       Top = 21
-      Width = 870
+      Width = 921
       Align = alClient
       Columns = <      
         item
@@ -746,7 +755,7 @@ object MainForm: TMainForm
         item
           AutoSize = True
           Caption = 'Value'
-          Width = 566
+          Width = 617
         end>
       ColumnClick = False
       Font.CharSet = ARABIC_CHARSET
@@ -765,7 +774,7 @@ object MainForm: TMainForm
       Left = 3
       Height = 103
       Top = 21
-      Width = 870
+      Width = 921
       Align = alClient
       Columns = <      
         item
@@ -779,7 +788,7 @@ object MainForm: TMainForm
         item
           AutoSize = True
           Caption = 'Result'
-          Width = 486
+          Width = 537
         end>
       ColumnClick = False
       Font.CharSet = ARABIC_CHARSET
@@ -802,7 +811,7 @@ object MainForm: TMainForm
     Left = 0
     Height = 9
     Top = 341
-    Width = 876
+    Width = 927
     ResizeControl = MessagesTabs
   end
   object FoldersSpl: TntvSplitter
@@ -1759,8 +1768,8 @@ object MainForm: TMainForm
     end
   end
   object FileModeMenu: TPopupMenu
-    left = 240
-    top = 117
+    left = 247
+    top = 97
     object UnixMnu: TMenuItem
       Caption = 'Unix'
       OnClick = UnixMnuClick
@@ -1776,8 +1785,8 @@ object MainForm: TMainForm
   end
   object EditorPopupMenu: TPopupMenu
     TrackButton = tbLeftButton
-    left = 529
-    top = 118
+    left = 536
+    top = 98
     object OpenInclude2: TMenuItem
       Action = OpenIncludeAct
       OnClick = OpenIncludeActExecute
@@ -1858,8 +1867,8 @@ object MainForm: TMainForm
     end
   end
   object FilePopupMenu: TPopupMenu
-    left = 344
-    top = 117
+    left = 351
+    top = 97
     object Copyfilename1: TMenuItem
       Action = CopyFileNameAct
       OnClick = CopyFileNameActExecute
@@ -1873,8 +1882,8 @@ object MainForm: TMainForm
     Enabled = False
     Interval = 5000
     OnTimer = StatusTimerTimer
-    left = 436
-    top = 118
+    left = 443
+    top = 98
   end
   object MessagesPopup: TPopupMenu
     left = 83
@@ -1885,8 +1894,8 @@ object MainForm: TMainForm
     end
   end
   object OutputPopup: TPopupMenu
-    left = 619
-    top = 117
+    left = 626
+    top = 97
     object MenuItem1: TMenuItem
       Caption = 'Clear'
       OnClick = MenuItem1Click
@@ -1897,8 +1906,8 @@ object MainForm: TMainForm
     ServerID = 'Parmaja.MiniEdit'
     Global = True
     OnMessage = IPCServerMessage
-    left = 712
-    top = 117
+    left = 719
+    top = 97
   end
   object ApplicationProperties: TApplicationProperties
     OnActivate = ApplicationPropertiesActivate

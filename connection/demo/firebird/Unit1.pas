@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, FileUtil, LResources, Forms, Controls, Graphics, Dialogs,
-  StdCtrls, mncFirebird, mncCSV, mncCSVExchanges,
+  StdCtrls, ExtCtrls, mncFirebird, mncCSV, mncCSVExchanges,
   mncConnections, mncDS, memds;
 
 type
@@ -25,6 +25,7 @@ type
     procedure Button3Click(Sender: TObject);
     procedure Button4Click(Sender: TObject);
     procedure FormCreate(Sender: TObject);
+    procedure Panel1Click(Sender: TObject);
   private
     { private declarations }
   public
@@ -39,6 +40,11 @@ implementation
 { TForm1 }
 
 procedure TForm1.FormCreate(Sender: TObject);
+begin
+
+end;
+
+procedure TForm1.Panel1Click(Sender: TObject);
 begin
 
 end;

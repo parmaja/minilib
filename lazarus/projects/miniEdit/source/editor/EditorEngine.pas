@@ -251,6 +251,7 @@ type
     FSynEdit: TSynEdit;
     FEdited: Boolean;
     FFileAge: integer;
+    FFileSize: int64;
     FGroup: TFileGroup;
     FRelated: string;
     FMode: TEditorFileMode;
@@ -436,7 +437,7 @@ type
     function GetItem(Index: Integer): TFileGroup;
   protected
     FCompletion: TmneSynCompletion;
-    procedure OnExecuteCompletion(Sender: TObject); virtual;
+    procedure DoExecuteCompletion(Sender: TObject); virtual;
     function CreateHighlighter: TSynCustomHighlighter; virtual;
     procedure InitCompletion(vSynEdit: TCustomSynEdit); virtual;
     procedure InitEdit(vSynEdit: TCustomSynEdit); virtual;
@@ -2141,7 +2142,7 @@ var
   Stream: TFileStream;
 begin
   FileName := ExpandFileName(FileName);
-  Stream := TFileStream.Create(FileName, fmOpenRead or fmShareDenyWrite);
+  Stream := TFileStream.Create(FileName, fmOpenRead or fmShareDenyNone);
   SynEdit.BeginUpdate;
   try
     Size := Stream.Size - Stream.Position;
@@ -2259,7 +2260,7 @@ var
   mr: TmsgChoice;
 begin
   Result := True;
-  if (FileExists(Name)) and (FFileAge <> FileAge(Name)) then
+  if (FileExists(Name)) and ((FFileAge <> FileAge(Name)) or (FFileSize <> FileSize(Name)))  then
   begin
     mr := MsgBox.Msg.YesNoCancel(Name + #13' was changed, update it?');
     if mr = msgcYes then
@@ -2279,6 +2280,7 @@ end;
 procedure TEditorFile.UpdateAge;
 begin
   FFileAge := FileAge(Name);
+  FFileSize := FileSize(Name);
   if SynEdit <> nil then
   begin
     SynEdit.Modified := False;
@@ -2734,7 +2736,7 @@ begin
   Result := FHighlighter;
 end;
 
-procedure TFileCategory.OnExecuteCompletion(Sender: TObject);
+procedure TFileCategory.DoExecuteCompletion(Sender: TObject);
 begin
 end;
 

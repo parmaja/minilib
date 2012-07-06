@@ -26,7 +26,7 @@ uses
   LMessages, lCLType, LCLIntf, LCLProc, EditorDebugger, FileUtil,
   Dialogs, StdCtrls, Math, ComCtrls, ExtCtrls, ImgList, Menus, ToolWin,
   Buttons, FileCtrl, ShellCtrls, ActnList, EditorEngine, mneClasses, StdActns,
-  SynEditHighlighter, SynEdit, IAddons, ntvSplitters,
+  SynEditHighlighter, SynEdit, IAddons, ntvSplitters, SynHighlighterSQL,
   {$ifdef WINDOWS}
   TSVN_SCM, TGIT_SCM,
   {$endif}
@@ -50,6 +50,8 @@ type
   { TMainForm }
 
   TMainForm = class(TForm)
+    Bevel1: TBevel;
+    FileCloseBtn: TSpeedButton;
     FoldersSpl: TntvSplitter;
     NewAsMnu: TMenuItem;
     NewAsAct: TAction;
@@ -74,7 +76,7 @@ type
     ApplicationProperties: TApplicationProperties;
     MainMenu: TMainMenu;
     file1: TMenuItem;
-    FileSet: TntvTabSet;
+    FileTabs: TntvTabSet;
     MenuItem2: TMenuItem;
     MenuItem3: TMenuItem;
     MenuItem4: TMenuItem;
@@ -267,7 +269,6 @@ type
     ClientPnl: TPanel;
     EditorsPnl: TPanel;
     FileHeaderPanel: TPanel;
-    FileCloseBtn: TSpeedButton;
     FileNameLbl: TLabel;
     OutputEdit: TSynEdit;
     Output1: TMenuItem;
@@ -318,7 +319,7 @@ type
     FileModeBtn: TSpeedButton;
     procedure ApplicationPropertiesActivate(Sender: TObject);
     procedure ApplicationPropertiesShowHint(var HintStr: string; var CanShow: boolean; var HintInfo: THintInfo);
-    procedure FileSetTabSelected(Sender: TObject; OldTab, NewTab: TntvTabItem);
+    procedure FileTabsTabSelected(Sender: TObject; OldTab, NewTab: TntvTabItem);
     procedure FolderCloseBtnClick(Sender: TObject);
     procedure FoldersActExecute(Sender: TObject);
     procedure FormDropFiles(Sender: TObject; const FileNames: array of string);
@@ -327,7 +328,7 @@ type
     procedure OpenActExecute(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure FileCloseBtnClick(Sender: TObject);
-    procedure FileSetClick(Sender: TObject);
+    procedure FileTabsClick(Sender: TObject);
     procedure NextActExecute(Sender: TObject);
     procedure PriorActExecute(Sender: TObject);
     procedure CloseActExecute(Sender: TObject);
@@ -489,7 +490,7 @@ type
     procedure ReceiveBuffer(const Buffer: string);
     procedure Log(Error: integer; ACaption, Msg, FileName: string; LineNo: integer); overload;
     procedure Log(ACaption, AMsg: string); overload;
-    procedure FollowFolder(vFolder: string);
+    procedure FollowFolder(vFolder: string; FocusIt: Boolean);
     procedure ShowMessagesList;
     procedure ShowWatchesList;
     procedure LoadAddons;
@@ -534,7 +535,7 @@ begin
   end;
   Engine.Workspace := ExpandToPath(aWorkspace, Application.Location);
   Engine.FilesControl := EditorsPnl;
-  //FileSet.Align := alClient;
+  //FileTabs.Align := alClient;
   Engine.OnChangedState := @EditorChangeState;
   Engine.OnReplaceText:= @OnReplaceText;
   if (aWorkspace <> '') then
@@ -607,9 +608,9 @@ begin
     Engine.Files.CheckChanged;
 end;
 
-procedure TMainForm.FileSetTabSelected(Sender: TObject; OldTab, NewTab: TntvTabItem);
+procedure TMainForm.FileTabsTabSelected(Sender: TObject; OldTab, NewTab: TntvTabItem);
 begin
-  Engine.Files.SetCurrentIndex(FileSet.ItemIndex, True);
+  Engine.Files.SetCurrentIndex(FileTabs.ItemIndex, True);
 end;
 
 procedure TMainForm.FoldersActExecute(Sender: TObject);
@@ -687,20 +688,20 @@ procedure TMainForm.EngineChanged;
 var
   i: integer;
 begin
-  FileSet.Items.BeginUpdate;
-  FileSet.Items.Clear;
+  FileTabs.Items.BeginUpdate;
   try
+    FileTabs.Items.Clear;
     for i := 0 to Engine.Files.Count - 1 do
     begin
       if Engine.Files[i].Name = '' then
-        FileSet.Items.AddItem(Engine.Files[i].Group.Name, '*' + Engine.Files[i].Group.Name + '*')
+        FileTabs.Items.AddItem(Engine.Files[i].Group.Name, '*' + Engine.Files[i].Group.Name + '*')
       else
-        FileSet.Items.AddItem(ExtractFileName(Engine.Files[i].Name), ExtractFileName(Engine.Files[i].Name));
+        FileTabs.Items.AddItem(ExtractFileName(Engine.Files[i].Name), ExtractFileName(Engine.Files[i].Name));
     end;
   finally
-    FileSet.Items.EndUpdate;
+    FileTabs.Items.EndUpdate;
   end;
-  FileSet.Visible := FileSet.Items.Count > 0;
+  FileTabs.Visible := FileTabs.Items.Count > 0;
   if Engine.Files.Current = nil then
     QuickFindPnl.Visible := False;
   if (Engine.Session.IsOpened) and (Engine.Session.Project.Name <> '') then
@@ -720,9 +721,9 @@ begin
     Engine.Files.Current.SynEdit.PopupMenu := EditorPopupMenu;
     FileNameLbl.Caption := Engine.Files.Current.Name;
     FileModeBtn.Caption := Engine.Files.Current.ModeAsText;
-    FileSet.ItemIndex := Engine.Files.Current.Index;
+    FileTabs.ItemIndex := Engine.Files.Current.Index;
     if Engine.Files.Current.Name <> '' then
-      FileSet.Items[FileSet.ItemIndex].Caption := ExtractFileName(Engine.Files.Current.Name);
+      FileTabs.Items[FileTabs.ItemIndex].Caption := ExtractFileName(Engine.Files.Current.Name);
     if Folder = '' then
       Folder := ExtractFilePath(Engine.Files.Current.Name);
     SaveAct.Enabled := Engine.Files.Current.Edited;
@@ -749,9 +750,9 @@ begin
   CloseAct.Execute;
 end;
 
-procedure TMainForm.FileSetClick(Sender: TObject);
+procedure TMainForm.FileTabsClick(Sender: TObject);
 begin
-  Engine.Files.SetCurrentIndex(FileSet.ItemIndex, True);
+  Engine.Files.SetCurrentIndex(FileTabs.ItemIndex, True);
 end;
 
 procedure TMainForm.NextActExecute(Sender: TObject);
@@ -909,7 +910,7 @@ begin
   if FileList.Selected <> nil then
   begin
     if PtrUInt(FileList.Selected.Data) = 0 then
-      FollowFolder(FileList.Selected.Caption)
+      FollowFolder(FileList.Selected.Caption, FileList.Focused)
     else
       Engine.Files.OpenFile(Folder + FileList.Selected.Caption);
   end;
@@ -1114,8 +1115,12 @@ end;
 
 procedure TMainForm.OpenFolderActExecute(Sender: TObject);
 begin
-{  if Engine.Files.Current <> nil then
-    ShellExecute(0, 'open', 'explorer.exe', PChar('/select,"' + Engine.Files.Current.Name + '"'), nil, SW_SHOW);}
+(*
+{$ifdef WINDOWS}
+  if Engine.Files.Current <> nil then
+    ShellExecute(0, 'open', 'explorer.exe', PChar('/select,"' + Engine.Files.Current.Name + '"'), nil, SW_SHOW);
+{$endif}
+*)
 end;
 
 procedure TMainForm.UpdateMessagesPnl;
@@ -1170,7 +1175,7 @@ begin
   EngineChanged;
   EngineRefresh;
   EngineDebug;
-  FileSet.ShowBorder := False;
+  FileTabs.ShowBorder := False;
   IPCServer.ServerID := sApplicationID;
   IPCServer.StartServer;
   LoadAddons;
@@ -1361,8 +1366,10 @@ var
     else
       Result := True;
   end;
+
 var
   i:Integer;
+  aFiles: TStringList;
 begin
   FileList.Items.BeginUpdate;
   try
@@ -1377,44 +1384,58 @@ begin
         sffAll: All := True;
       end;
 
-      //Folders
-      if (Folder <> '') and DirectoryExistsUTF8(Folder) then
-      begin
-        r := FindFirstUTF8(Folder + '*.*', faAnyFile or faDirectory, SearchRec);
-        while r = 0 do
+      aFiles := TStringList.Create;
+      try
+        //Folders
+        if (Folder <> '') and DirectoryExistsUTF8(Folder) then
         begin
-          if (SearchRec.Name <> '.') then
+          aFiles.Clear;
+          r := FindFirstUTF8(Folder + '*.*', faAnyFile or faDirectory, SearchRec);
+          while r = 0 do
           begin
-            if (SearchRec.Attr and faDirectory) <> 0 then
+            if (SearchRec.Name <> '.') then
             begin
-              aItem := FileList.Items.Add;
-              aItem.Caption := SearchRec.Name;
-              aItem.Data := nil;
-              aItem.ImageIndex := 0;
+              if (SearchRec.Attr and faDirectory) <> 0 then
+                aFiles.Add(SearchRec.Name);
             end;
+            r := FindNextUTF8(SearchRec);
           end;
-          r := FindNextUTF8(SearchRec);
-        end;
-        FindCloseUTF8(SearchRec);
+          FindCloseUTF8(SearchRec);
+          aFiles.Sort;
 
-        //Files
-        r := FindFirstUTF8(Folder + '*.*', faAnyFile, SearchRec);
-        while r = 0 do
-        begin
-          //if (SearchRec.Name <> '.') and (SearchRec.Name <> '..') then
-          if (SearchRec.Attr and faDirectory) = 0 then
+          for r := 0 to aFiles.Count -1 do
           begin
-            if MatchExtension(ExtractFileExt(SearchRec.Name)) then
-            begin
-              aItem := FileList.Items.Add;
-              aItem.Caption := SearchRec.Name;
-              aItem.Data := Pointer(1);
-              aItem.ImageIndex := GetFileImageIndex(SearchRec.Name);
-            end;
+            aItem := FileList.Items.Add;
+            aItem.Caption := aFiles[r];
+            aItem.Data := nil;
+            aItem.ImageIndex := 0;
           end;
-          r := FindNextUTF8(SearchRec);
+
+          //Files
+          aFiles.Clear;
+          r := FindFirstUTF8(Folder + '*.*', faAnyFile, SearchRec);
+          while r = 0 do
+          begin
+            //if (SearchRec.Name <> '.') and (SearchRec.Name <> '..') then
+            if (SearchRec.Attr and faDirectory) = 0 then
+            begin
+              if MatchExtension(ExtractFileExt(SearchRec.Name)) then
+                aFiles.Add(SearchRec.Name);
+            end;
+            r := FindNextUTF8(SearchRec);
+          end;
+          FindCloseUTF8(SearchRec);
+          aFiles.Sort;
+          for r := 0 to aFiles.Count -1 do
+          begin
+            aItem := FileList.Items.Add;
+            aItem.Caption := aFiles[r];
+            aItem.Data := Pointer(1);
+            aItem.ImageIndex := GetFileImageIndex(SearchRec.Name);
+          end;
         end;
-        FindCloseUTF8(SearchRec);
+      finally
+        aFiles.Free;
       end;
     finally
       AExtensions.Free;
@@ -1515,13 +1536,13 @@ begin
       end;
       VK_BACK:
       begin
-        FollowFolder('..');
+        FollowFolder('..', FileList.Focused);
       end;
     end;
   end;
 end;
 
-procedure TMainForm.FollowFolder(vFolder: string);
+procedure TMainForm.FollowFolder(vFolder: string; FocusIt: Boolean);
 var
   OldFolder: string;
   i, n: integer;
@@ -1547,6 +1568,8 @@ begin
   begin
     FileList.ItemIndex := n;
     FileList.Items[FileList.ItemIndex].Focused := True;
+    if FocusIt then
+      FileList.SetFocus;
   end;
 end;
 

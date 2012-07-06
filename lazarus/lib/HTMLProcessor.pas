@@ -52,7 +52,7 @@ type
   end;
 
 const
-{$INCLUDE 'PHPKeywords.inc'}
+  {$INCLUDE 'HTMLKeywords.inc'}
 
   MAX_ESCAPEAMPS = 249;
 

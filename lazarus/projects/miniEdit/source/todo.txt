@@ -1,17 +1,20 @@
 [TODO]
+show folder of current file
+replace + in files, in PHP files must changed
+how to know where is the folder panel point
+when fail to open locked only file, it add hiden file
+Size of Tabs depend on font, make it user define it
 menu-edit-conevert case to lower/upper
 escape not work in message box when ask to save
 Cltr+Ins = copy the current word if not selected
-Fix Search result selected line
 Right click on filename on to of editor, open folder not work
 
 [DONE]
-Open read only file when we can not open for write
 Open PHP ini as addon
-Open Folder not worked in Linux
 Make Associate as Addon tool
 Make Help as Addon
 
+check update when the size is changed also
 Edit color if 3 char like #fff
 Drop files;
 Open by assoiate

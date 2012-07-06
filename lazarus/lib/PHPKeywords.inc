@@ -904,13 +904,13 @@
     'XML_OPTION_CASE_FOLDING,'+
     'XML_OPTION_TARGET_ENCODING';
 
-  sPHPVariables =
+(*  sPHPVariables =
     '_COOKIE,'+
     '_ENV,'+
     '_FILES,'+
     '_GET,'+
     '_POST,'+
-    '_REQUEST,'+
+    '$_REQUEST,'+
     '_SERVER,'+
     '_SESSION,'+
     'argc,'+
@@ -922,130 +922,8 @@
     'HTTP_POST_VARS,'+
     'PHP_SELF';
 
-  sHTMLKeywords =
-    'a,'+
-    'abbr,'+
-    'accesskey,'+
-    'acronym,'+
-    'address,'+
-    'align,'+
-    'applet,'+
-    'area,'+
-    'axis,'+
-    'b,'+
-    'background,'+
-    'base,'+
-    'basefont,'+
-    'bdo,'+
-    'bgcolor,'+
-    'big,'+
-    'blockquote,'+
-    'body,'+
-    'br,'+
-    'button,'+
-    'caption,'+
-    'center,'+
-    'char,'+
-    'charoff,'+
-    'charset,'+
-    'cite,'+
-    'class,'+
-    'code,'+
-    'col,'+
-    'colgroup,'+
-    'colspan,'+
-    'dd,'+
-    'del,'+
-    'dfn,'+
-    'dir,'+
-    'div,'+
-    'dl,'+
-    'dt,'+
-    'em,'+
-    'fieldset,'+
-    'font,'+
-    'form,'+
-    'frame,'+
-    'frameset,'+
-    'h1,'+
-    'h2,'+
-    'h3,'+
-    'h4,'+
-    'h5,'+
-    'h6,'+
-    'head,'+
-    'headers,'+
-    'height,'+
-    'hr,'+
-    'href,'+
-    'hreflang,'+
-    'html,'+
-    'i,'+
-    'id,'+
-    'iframe,'+
-    'img,'+
-    'input,'+
-    'ins,'+
-    'isindex,'+
-    'kbd,'+
-    'label,'+
-    'legend,'+
-    'li,'+
-    'link,'+
-    'map,'+
-    'menu,'+
-    'meta,'+
-    'name,'+
-    'noframes,'+
-    'noscript,'+
-    'nowrap,'+
-    'object,'+
-    'ol,'+
-    'onblur,'+
-    'onfocus,'+
-    'optgroup,'+
-    'option,'+
-    'p,'+
-    'param,'+
-    'pre,'+
-    'q,'+
-    'rel,'+
-    'rev,'+
-    'rowspan,'+
-    's,'+
-    'samp,'+
-    'scope,'+
-    'script,'+
-    'select,'+
-    'small,'+
-    'span,'+
-    'strike,'+
-    'strong,'+
-    'style,'+
-    'sub,'+
-    'sup,'+
-    'tabindex,'+
-    'table,'+
-    'target,'+
-    'tbody,'+
-    'td,'+
-    'textarea,'+
-    'tfoot,'+
-    'th,'+
-    'thead,'+
-    'title,'+
-    'tr,'+
-    'tt,'+
-    'type,'+
-    'u,'+
-    'ul,'+
-    'valign,'+
-    'value,'+
-    'var,'+
-    'width';
+    *)
 
-  sSQLKeywords =
-    'SELECT,'+
-    'INSERT,'+
-    'UPDATE,'+
-    'DELETE';
+sPHPVariables =
+  '_REQUEST';
+

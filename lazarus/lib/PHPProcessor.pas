@@ -63,6 +63,9 @@ type
     procedure MakeIdentTable; override;
   end;
 
+const
+  {$INCLUDE 'PHPKeywords.inc'}
+
 implementation
 
 uses
@@ -558,12 +561,12 @@ end;
 procedure TPHPProcessor.InitIdent;
 begin
   inherited;
-  EnumerateKeywords(Ord(tkKeyword), sPHPControls, TSynValidStringChars, @DoAddKeyword);
-  EnumerateKeywords(Ord(tkKeyword), sPHPKeywords, TSynValidStringChars, @DoAddKeyword);
-  EnumerateKeywords(Ord(tkFunction), sPHPFunctions, TSynValidStringChars, @DoAddKeyword);
-  EnumerateKeywords(Ord(tkValue), sPHPConstants, TSynValidStringChars, @DoAddKeyword);
-  EnumerateKeywords(Ord(tkVariable), sPHPVariables, TSynValidStringChars, @DoAddKeyword);
-  FRange := rsphpUnknown;
+  //EnumerateKeywords(Ord(tkKeyword), sPHPControls, TSynValidStringChars, @DoAddKeyword);
+  //EnumerateKeywords(Ord(tkKeyword), sPHPKeywords, TSynValidStringChars, @DoAddKeyword);
+  //EnumerateKeywords(Ord(tkFunction), sPHPFunctions, TSynValidStringChars, @DoAddKeyword);
+  //EnumerateKeywords(Ord(tkValue), sPHPConstants, TSynValidStringChars, @DoAddKeyword);
+   EnumerateKeywords(Ord(tkVariable), sPHPVariables, TSynValidStringChars, @DoAddKeyword);
+   FRange := rsphpUnknown;
 end;
 
 function TPHPProcessor.KeyHash(ToHash: PChar): Integer;

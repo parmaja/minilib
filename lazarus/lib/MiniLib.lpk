@@ -4,16 +4,10 @@
     <Name Value="MiniLib"/>
     <Author Value="www.parmaja.com"/>
     <CompilerOptions>
-      <Version Value="10"/>
+      <Version Value="11"/>
       <SearchPaths>
         <UnitOutputDirectory Value="units/$(TargetCPU)-$(TargetOS)"/>
       </SearchPaths>
-      <Linking>
-        <Debugging>
-          <GenerateDebugInfo Value="True"/>
-          <DebugInfoType Value="dsAuto"/>
-        </Debugging>
-      </Linking>
       <Other>
         <CompilerMessages>
           <UseMsgFile Value="True"/>
@@ -28,7 +22,7 @@
         <UnitName Value="HTMLProcessor"/>
       </Item1>
       <Item2>
-        <Filename Value="PHPKeywords.inc"/>
+        <Filename Value="HTMLKeywords.inc"/>
         <Type Value="Include"/>
       </Item2>
       <Item3>
@@ -65,7 +59,7 @@
       </Item3>
       <Item4>
         <PackageName Value="FCL"/>
-        <MinVersion Major="1" Valid="True" Release="1"/>
+        <MinVersion Major="1" Release="1" Valid="True"/>
       </Item4>
     </RequiredPkgs>
     <UsageOptions>

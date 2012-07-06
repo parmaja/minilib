@@ -72,7 +72,7 @@
       </Item9>
     </Files>
     <Type Value="RunAndDesignTime"/>
-    <RequiredPkgs Count="4">
+    <RequiredPkgs Count="2">
       <Item1>
         <PackageName Value="MiniCommons"/>
       </Item1>
@@ -80,14 +80,6 @@
         <PackageName Value="IDEIntf"/>
         <MinVersion Major="1" Valid="True"/>
       </Item2>
-      <Item3>
-        <PackageName Value="LCL"/>
-        <MinVersion Major="1" Valid="True"/>
-      </Item3>
-      <Item4>
-        <PackageName Value="FCL"/>
-        <MinVersion Major="1" Valid="True"/>
-      </Item4>
     </RequiredPkgs>
     <UsageOptions>
       <UnitPath Value="$(PkgOutDir)"/>
