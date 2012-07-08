@@ -26,9 +26,10 @@ type
     TextBox: TEdit;
     LabelMsg: TLabel;
     ChoiceIndex: Integer;
+    IsStatus: Boolean;
     procedure KeyDown(var Key: Word; Shift: TShiftState); override;
     procedure WMGetDlgCode(var Message: TWMGetDlgCode); message WM_GETDLGCODE;
-    function ShowNow: Integer;
+    function ShowNow(DefaultChoiceIndex: Integer): Integer;
     procedure DoClose(var CloseAction: TCloseAction); override;
     procedure DoShow; override;
     procedure DoHide; override;
@@ -93,8 +94,8 @@ constructor TMsgForm.CreateNew(vMsgKind: TMsgKind; AOwner: TComponent);
 begin
   inherited CreateNew(AOwner);
   FMsgKind := vMsgKind;
-  Position := poMainFormCenter;
   KeyPreview := True;
+  Position := poMainFormCenter;
 end;
 
 function TGUIMsgBox.CreateForm(Kind: TMsgKind): TMsgForm;
@@ -112,11 +113,14 @@ const
 
   cHorzSpacing = 5;
   cVertSpacing = 5;
-  cButtonHeight = 28;
   cButtonSpacing = 5;
   {$ifdef LINUX}
+  cButtonHeight = 32;
+  cButtonMargin = 5;
   cIconSize = 48;
   {$else}
+  cButtonMargin = 0;
+  cButtonHeight = 28;
   cIconSize = 32;
   {$endif}
   procedure FlipRect(var Rect: TRect; Width: Integer);
@@ -175,7 +179,7 @@ begin
     ButtonCount := Length(Choices);
 
     if ButtonCount <> 0 then
-      ButtonsWidth := ButtonWidth * ButtonCount + cButtonSpacing * (ButtonCount - 1)
+      ButtonsWidth := (ButtonWidth + cButtonMargin * 2) * ButtonCount + cButtonSpacing * (ButtonCount - 1)
     else
       ButtonsWidth := 0;
 
@@ -301,16 +305,16 @@ begin
                 TabOrder := 0;
             end;
           end;
-          if (i = CancelChoice) then
-            Cancel := True;
+          {if (i = CancelChoice) then //we use KeyDown
+            Cancel := True;}
           aRect.Left := X;
           aRect.Top := aClientHeight;
-          aRect.Right := aRect.Left + ButtonWidth;
+          aRect.Right := aRect.Left + ButtonWidth + cButtonMargin * 2;
           aRect.Bottom := aRect.Top + cButtonHeight;
           if aButton.UseRightToLeftReading then
             FlipRect(aRect, aClientWidth);
           BoundsRect := aRect;
-          Inc(X, ButtonWidth + cButtonSpacing);
+          Inc(X, ButtonWidth + cButtonSpacing + cButtonMargin * 2);
         end;
       end;
       aClientHeight := aClientHeight + cButtonHeight;
@@ -339,12 +343,16 @@ end;
 
 procedure TMsgForm.DoClose(var CloseAction: TCloseAction);
 begin
-  CloseAction := caHide;
+  if IsStatus then
+    CloseAction := caNone
+  else
+    CloseAction := caHide;
 end;
 
-function TMsgForm.ShowNow: Integer;
+function TMsgForm.ShowNow(DefaultChoiceIndex: Integer): Integer;
 begin
   Position := poMainFormCenter;
+  ChoiceIndex := DefaultChoiceIndex;
   ShowModal;
   Result := ChoiceIndex;
 end;
@@ -362,7 +370,9 @@ begin
   if ((Shift = [ssCtrl]) and (Key = Word('C'))) or (((Shift = [ssCtrl]) and (Key = VK_INSERT))) then
   begin
     Clipboard.AsText := LabelMsg.Caption;
-  end;
+  end
+  else if not IsStatus and (Shift = []) and (Key = VK_ESCAPE) then
+    Close;
 end;
 
 procedure TMsgForm.WMGetDlgCode(var Message: TWMGetDlgCode);
@@ -400,9 +410,10 @@ begin
       aMsgForm.FSenderObject := Sender;
       aMsgForm.Caption := '';
       aMsgForm.BorderIcons := [];
-      aMsgForm.BorderStyle := bsSingle;
+      aMsgForm.BorderStyle := bsNone;
       aMsgForm.Position := poMainFormCenter;
       aMsgForm.FormStyle := fsStayOnTop;
+      aMsgForm.IsStatus := True;
       FStatusForms.Add(aMsgForm);
     end;
     CreateFormObjects(aMsgForm, vText, Application.Title, [], 0, 0);
@@ -454,7 +465,7 @@ begin
   with aMsgForm do
   try
     Position := poScreenCenter;
-    Result := ShowNow;
+    Result := ShowNow(CancelChoice);
   finally
     Free;
   end;
@@ -471,7 +482,7 @@ begin
     TextBox.Text := vResult;
     if Kind = msgkPassword then
       TextBox.PasswordChar := '*';
-    Result := ShowNow;
+    Result := ShowNow(CancelChoice);
     vResult := TextBox.Text;
   finally
     Free;
@@ -502,6 +513,7 @@ end;
 procedure TMsgForm.DoShow;
 begin
   inherited; 
+  Position := poMainFormCenter;
   BringToFront;
 end;
 
@@ -509,4 +521,4 @@ initialization
   Msg.Register(TGUIMsgBox, True);
 finalization
 end.
-
+

@@ -356,16 +356,10 @@ begin
     FCurrent.ShowStatus(vText, Sender);
 end;
 
-function TMsgBox.ShowMessage(var Answer: string; const vText: string; Choices: array of TmsgSelect; DefaultChoice: Integer; CancelChoice: Integer; Kind: TmsgKind): Integer;
-begin
-  if not Locked and (FCurrent <> nil) then
-    Result := FCurrent.ShowMessage(Answer, vText, Choices, DefaultChoice, CancelChoice, Kind)
-  else
-    Result := DefaultChoice;
-end;
-
 function TMsgBox.ShowMessage(const vText: string; Choices: TmsgChoices; DefaultChoice: TmsgChoice; CancelChoice: TmsgChoice; Kind: TmsgKind): TmsgChoice;
 begin
+  if CancelChoice = msgcUnknown then
+    CancelChoice := DefaultChoice;
   if not Locked and (FCurrent <> nil) then
     Result := FCurrent.ShowMessage(vText, Choices, DefaultChoice, CancelChoice, Kind)
   else
@@ -374,6 +368,18 @@ end;
 
 function TMsgBox.ShowMessage(var Answer: string; const vText: string; Choices: TmsgChoices; DefaultChoice: TmsgChoice; CancelChoice: TmsgChoice; Kind: TmsgKind): TmsgChoice;
 begin
+  if CancelChoice = msgcUnknown then
+    CancelChoice := DefaultChoice;
+  if not Locked and (FCurrent <> nil) then
+    Result := FCurrent.ShowMessage(Answer, vText, Choices, DefaultChoice, CancelChoice, Kind)
+  else
+    Result := DefaultChoice;
+end;
+
+function TMsgBox.ShowMessage(var Answer: string; const vText: string; Choices: array of TmsgSelect; DefaultChoice: Integer; CancelChoice: Integer; Kind: TmsgKind): Integer;
+begin
+  if CancelChoice < 0 then
+    CancelChoice := DefaultChoice;
   if not Locked and (FCurrent <> nil) then
     Result := FCurrent.ShowMessage(Answer, vText, Choices, DefaultChoice, CancelChoice, Kind)
   else
@@ -382,6 +388,8 @@ end;
 
 function TMsgBox.ShowMessage(const vText: string; Choices: array of TmsgSelect; DefaultChoice: Integer; CancelChoice: Integer; Kind: TmsgKind): Integer;
 begin
+  if CancelChoice < 0 then
+    CancelChoice := DefaultChoice;
   if not Locked and (FCurrent <> nil) then
     Result := FCurrent.ShowMessage(vText, Choices, DefaultChoice, CancelChoice, Kind)
   else
@@ -554,4 +562,4 @@ initialization
 finalization
   FreeAndNil(FMsgBox);
 end.
-
+

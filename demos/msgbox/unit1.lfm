@@ -6,7 +6,7 @@ object Form1: TForm1
   Caption = 'Form1'
   ClientHeight = 240
   ClientWidth = 320
-  LCLVersion = '0.9.31'
+  LCLVersion = '1.1'
   object Button1: TButton
     Left = 19
     Height = 25
@@ -45,18 +45,18 @@ object Form1: TForm1
   end
   object Button5: TButton
     Left = 169
-    Height = 25
+    Height = 28
     Top = 49
-    Width = 90
+    Width = 114
     Caption = 'MSG Status'
     OnClick = Button5Click
     TabOrder = 4
   end
   object Button6: TButton
     Left = 168
-    Height = 25
-    Top = 75
-    Width = 91
+    Height = 27
+    Top = 78
+    Width = 115
     Caption = 'MSG Custom'
     OnClick = Button6Click
     TabOrder = 5
@@ -67,4 +67,4 @@ object Form1: TForm1
     left = 128
     top = 132
   end
-end
+end

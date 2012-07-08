@@ -53,7 +53,8 @@ end;
 
 procedure TForm1.Button3Click(Sender: TObject);
 begin
-  Msg.Yes('Do you want to exit, are you sure to exit from this program!!!'#13'Please tell me'#13'Yes or No');
+  if Msg.Yes('Do you want to exit, are you sure to exit from this program!!!'#13'Please tell me'#13'Yes or No') then
+    Msg.Show('Then click the X button at the corner');
 end;
 
 procedure TForm1.Button4Click(Sender: TObject);
@@ -73,9 +74,13 @@ begin
 end;
 
 procedure TForm1.Button6Click(Sender: TObject);
+var
+  r: integer;
 begin
-  Msg.Ask('Before Exit', ['Save', 'Discard', 'Dont close'], 0);
-  Msg.Ask('Again Before Exit', [Choice('Save', msgcOK), Choice('Discard', msgcDiscard), Choice('Dont close', msgcCancel)], 0);
+  r := Msg.Ask('Before Exit', ['Save', 'Discard', 'Dont close'], 2);
+  Msg.Show(IntToStr(r));
+  {r := Msg.Ask('Again Before Exit', [Choice('Save', msgcOK), Choice('Discard', msgcDiscard), Choice('Dont close', msgcCancel)], 2);
+  Msg.Show(IntToStr(r));}
 end;
 
 procedure TForm1.Timer1Timer(Sender: TObject);
@@ -85,4 +90,4 @@ begin
 end;
 
 end.
-
+
