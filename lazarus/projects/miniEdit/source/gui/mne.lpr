@@ -27,7 +27,6 @@ uses
   SearchForms in '..\editor\SearchForms.pas' {SearchForm},
   EditorOptions in '..\editor\EditorOptions.pas' {EditorOptionsForm},
   EditorProfiles in '..\editor\EditorProfiles.pas',
-  mneSetups in 'mneSetups.pas' {EditorSetupForm},
   EditorEngine in '..\editor\EditorEngine.pas',
   mneResources in 'mneResources.pas' {EditorResource: TDataModule},
   SelectFiles in '..\editor\SelectFiles.pas' {SelectFileForm},
@@ -54,7 +53,7 @@ uses
   MsgBox,
   GUIMsgBox,
   Classes,
-  PHPUtils in '..\lib\PHPUtils.pas', mnePHPConfigForms;
+  PHPUtils in '..\lib\PHPUtils.pas', mnePHPConfigForms, mneSetups;
 
 {$R *.res}
 
@@ -132,4 +131,4 @@ begin
     end;
   end;
 end.
-
+

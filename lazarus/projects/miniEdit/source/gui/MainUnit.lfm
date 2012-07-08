@@ -5,7 +5,7 @@ object MainForm: TMainForm
   Width = 927
   AllowDropFiles = True
   Caption = 'Mini Edit'
-  ClientHeight = 498
+  ClientHeight = 489
   ClientWidth = 927
   Font.Height = -11
   Font.Name = 'MS Sans Serif'
@@ -93,7 +93,7 @@ object MainForm: TMainForm
         Style = tbsCheck
       end
       object ToolButton8: TToolButton
-        Left = 611
+        Left = 620
         Top = 0
         Action = OutputAct
         Style = tbsCheck
@@ -102,13 +102,13 @@ object MainForm: TMainForm
   end
   object FoldersPnl: TPanel
     Left = 0
-    Height = 312
+    Height = 303
     Top = 29
     Width = 200
     Align = alLeft
     BevelOuter = bvNone
     BorderWidth = 5
-    ClientHeight = 312
+    ClientHeight = 303
     ClientWidth = 200
     Constraints.MinHeight = 60
     TabOrder = 0
@@ -158,7 +158,7 @@ object MainForm: TMainForm
         Left = 5
         Height = 14
         Top = 2
-        Width = 30
+        Width = 36
         Caption = 'Folder'
         ParentColor = False
       end
@@ -208,7 +208,7 @@ object MainForm: TMainForm
     end
     object FileList: TListView
       Left = 5
-      Height = 283
+      Height = 274
       Top = 24
       Width = 190
       Align = alClient
@@ -216,7 +216,7 @@ object MainForm: TMainForm
         item
           AutoSize = True
           Caption = 'File Name'
-          Width = 186
+          Width = 170
         end>
       HideSelection = False
       PopupMenu = FolderMenu
@@ -233,22 +233,22 @@ object MainForm: TMainForm
   end
   object ClientPnl: TPanel
     Left = 207
-    Height = 312
+    Height = 303
     Top = 29
     Width = 720
     Align = alClient
     BevelOuter = bvNone
-    ClientHeight = 312
+    ClientHeight = 303
     ClientWidth = 720
     TabOrder = 1
     object EditorsPnl: TPanel
       Left = 0
-      Height = 157
+      Height = 148
       Top = 0
       Width = 720
       Align = alClient
       BevelOuter = bvNone
-      ClientHeight = 157
+      ClientHeight = 148
       ClientWidth = 720
       FullRepaint = False
       TabOrder = 0
@@ -282,7 +282,7 @@ object MainForm: TMainForm
           Height = 14
           Hint = 'File name'
           Top = 4
-          Width = 46
+          Width = 55
           Caption = 'File name'
           Layout = tlCenter
           ParentColor = False
@@ -334,7 +334,7 @@ object MainForm: TMainForm
       object QuickFindPnl: TPanel
         Left = 0
         Height = 29
-        Top = 128
+        Top = 119
         Width = 720
         Align = alBottom
         BevelInner = bvSpace
@@ -347,7 +347,7 @@ object MainForm: TMainForm
           Left = 32
           Height = 14
           Top = 8
-          Width = 24
+          Width = 27
           Caption = 'Find:'
           ParentColor = False
         end
@@ -427,7 +427,7 @@ object MainForm: TMainForm
         end
         object QuickSearchEdit: TEdit
           Left = 60
-          Height = 21
+          Height = 23
           Top = 4
           Width = 173
           OnChange = QuickSearchEditChange
@@ -452,7 +452,7 @@ object MainForm: TMainForm
     inline OutputEdit: TSynEdit
       Left = 0
       Height = 149
-      Top = 163
+      Top = 154
       Width = 720
       Align = alBottom
       Constraints.MinHeight = 60
@@ -593,7 +593,7 @@ object MainForm: TMainForm
       Cursor = crVSplit
       Left = 0
       Height = 6
-      Top = 157
+      Top = 148
       Width = 720
       ResizeControl = OutputEdit
       Visible = False
@@ -602,7 +602,7 @@ object MainForm: TMainForm
   object StatusPanel: TPanel
     Left = 0
     Height = 21
-    Top = 477
+    Top = 468
     Width = 927
     Align = alBottom
     BevelOuter = bvNone
@@ -670,7 +670,7 @@ object MainForm: TMainForm
   object MessagesTabs: TntvPageControl
     Left = 0
     Height = 127
-    Top = 350
+    Top = 341
     Width = 927
     StoreIndex = False
     ShowButtons = False
@@ -701,8 +701,8 @@ object MainForm: TMainForm
     TabOrder = 4
     object MessageList: TListView
       Left = 3
-      Height = 103
-      Top = 21
+      Height = 95
+      Top = 29
       Width = 921
       Align = alClient
       Columns = <      
@@ -713,7 +713,7 @@ object MainForm: TMainForm
         item
           AutoSize = True
           Caption = 'Message'
-          Width = 817
+          Width = 68
         end      
         item
           Caption = 'File'
@@ -721,7 +721,7 @@ object MainForm: TMainForm
         end      
         item
           Caption = 'Line'
-          Width = 387
+          Width = 433
         end>
       ColumnClick = False
       Font.CharSet = ARABIC_CHARSET
@@ -739,8 +739,8 @@ object MainForm: TMainForm
     end
     object WatchList: TListView
       Left = 3
-      Height = 103
-      Top = 21
+      Height = 95
+      Top = 29
       Width = 921
       Align = alClient
       Columns = <      
@@ -755,7 +755,7 @@ object MainForm: TMainForm
         item
           AutoSize = True
           Caption = 'Value'
-          Width = 617
+          Width = 601
         end>
       ColumnClick = False
       Font.CharSet = ARABIC_CHARSET
@@ -772,8 +772,8 @@ object MainForm: TMainForm
     end
     object SearchList: TListView
       Left = 3
-      Height = 103
-      Top = 21
+      Height = 95
+      Top = 29
       Width = 921
       Align = alClient
       Columns = <      
@@ -788,7 +788,7 @@ object MainForm: TMainForm
         item
           AutoSize = True
           Caption = 'Result'
-          Width = 537
+          Width = 521
         end>
       ColumnClick = False
       Font.CharSet = ARABIC_CHARSET
@@ -807,16 +807,17 @@ object MainForm: TMainForm
     end
   end
   object MessagesSpl: TntvSplitter
-    Cursor = crVSplit
+    Cursor = crDefault
     Left = 0
     Height = 9
-    Top = 341
+    Top = 332
     Width = 927
     ResizeControl = MessagesTabs
   end
   object FoldersSpl: TntvSplitter
+    Cursor = crDefault
     Left = 200
-    Height = 312
+    Height = 303
     Top = 29
     Width = 7
     ResizeControl = FoldersPnl
@@ -1915,4 +1916,4 @@ object MainForm: TMainForm
     left = 83
     top = 138
   end
-end
+end

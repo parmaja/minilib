@@ -780,12 +780,13 @@ uses
   mneResources, MsgBox, GUIMsgBox;
 
 var
-  FEngineShutdown: Boolean  = False;
+  FIsEngineStart: Boolean = False;
+  FIsEngineShutdown: Boolean  = False;
   FEngine: TEditorEngine = nil;
 
 function Engine: TEditorEngine;
 begin
-  if FEngineShutdown then
+  if FIsEngineShutdown then
     raise Exception.Create('Engine in shutdown?');
   if FEngine = nil then
     FEngine := TEditorEngine.Create;
@@ -1301,7 +1302,7 @@ end;
 
 destructor TEditorEngine.Destroy;
 begin
-  if not FEngineShutdown then
+  if not FIsEngineShutdown then
     Shutdown;
   FreeAndNil(FFiles);
   FreeAndNil(FSession);
@@ -1803,6 +1804,7 @@ end;
 
 procedure TEditorEngine.Startup;
 begin
+  FIsEngineStart := True;
   LoadOptions;
   Groups.Sort(@SortGroupsByTitle)
 end;
@@ -1852,11 +1854,14 @@ end;
 
 procedure TEditorEngine.Shutdown;
 begin
-  SaveOptions;
+  if FIsEngineStart then
+  begin
+    SaveOptions;
+  end;
   if Perspective.Debug <> nil then
     Perspective.Debug.Stop;
   Files.Clear;
-  FEngineShutdown := True;
+  FIsEngineShutdown := True;
 end;
 
 procedure TEditorEngine.RemoveRecentProject(const FileName: string);
@@ -3288,4 +3293,4 @@ end;
 
 finalization
   FreeAndNil(FEngine);
-end.
+end.

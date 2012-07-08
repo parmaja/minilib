@@ -82,6 +82,7 @@ begin
     WorkspaceEdit.Items.Add('D:\workspace');
   WorkspaceEdit.Items.Add('\workspace');
   {$else}
+  WorkspaceEdit.Items.Add(GetUserDir);
   WorkspaceEdit.Items.Add('/usr/workspace');
   {$endif}
   WorkspaceEdit.Items.Add(ExtractFilePath(Application.ExeName));
@@ -93,4 +94,4 @@ begin
   end;
 end;
 
-end.
+end.
