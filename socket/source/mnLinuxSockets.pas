@@ -282,11 +282,6 @@ end;
 
 { TmnWallSocket }
 
-procedure TmnWallSocket.Cleanup;
-begin
-  Dec(FCount);
-end;
-
 constructor TmnWallSocket.Create;
 begin
   inherited;
@@ -334,15 +329,6 @@ begin
   Result := StrToIntDef(Port, 0);
 end;
 
-procedure TmnWallSocket.Startup;
-begin
-  if FCount = 0 then
-  begin
-    //init somthing
-  end;
-  Inc(FCount)
-end;
-
 function TmnWallSocket.Connect(Options: TmnOptions; const Port, Address: ansistring): TmnCustomSocket;
 var
   aHandle: TSocket;
@@ -367,4 +353,4 @@ end;
 
 end.
 
-//StrToHostAddr
+//StrToHostAddr

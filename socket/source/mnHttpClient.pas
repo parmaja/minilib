@@ -168,7 +168,7 @@ begin
     repeat
       Headers.Add(s);
       s := Trim(FStream.ReadLine(sEOL));
-    until not {FStream.Connected or} (s = '');
+    until {FStream.Connected or} (s = '');
   end;
   DoReadHeaders;
   s := Headers.Values['Set-Cookie'];
@@ -313,4 +313,4 @@ begin
 end;
 
 end.
-
+
