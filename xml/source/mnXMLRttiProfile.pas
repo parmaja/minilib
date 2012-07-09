@@ -17,7 +17,7 @@ interface
 
 uses
 {$IFDEF WINDOWS}
-  Windows,
+  Windows, 
 {$ENDIF}
   SysUtils, Variants, Classes, Contnrs,
   mnStreams, mnXMLRtti, mnXMLRttiReader, mnXMLRttiWriter;
@@ -39,15 +39,15 @@ type
     procedure Saving; virtual;
     procedure Saved(Failed: Boolean); virtual;
     procedure LoadDefault; virtual;
-    function _AddRef: Integer; stdcall;
-    function _Release: Integer; stdcall;
+    function _AddRef: Integer; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+    function _Release: Integer; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
     {$ifdef FPC}
     procedure RttiCreateObject(var vObject: TObject; vInstance: TObject; vObjectClass:TClass; const vClassName, vName: string); virtual;
     {$endif}
   public
     constructor Create;
     procedure Clear; virtual;
-    function QueryInterface({$ifdef FPC}constref{$else}const{$endif FPC} IID: TGUID; out Obj): HResult; virtual; stdcall;
+    function QueryInterface({$ifdef FPC}constref{$else}const{$endif} IID: TGUID; out Obj): HResult; virtual; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
     procedure LoadFromStream(Stream: TStream); virtual;
     procedure SaveToStream(Stream: TStream); virtual;
     procedure LoadFromFile(FileName: string);
@@ -228,7 +228,7 @@ procedure TmnXMLProfile.Loading;
 begin
 end;
 
-function TmnXMLProfile.QueryInterface({$ifdef FPC}constref{$else}const{$endif FPC} IID: TGUID; out Obj): HResult;
+function TmnXMLProfile.QueryInterface({$ifdef FPC}constref{$else}const{$endif FPC}IID: TGUID; out Obj): HResult;  
 begin
   if GetInterface(IID, Obj) then
     Result := 0
@@ -648,4 +648,4 @@ begin
 end;
 
 end.
-
+

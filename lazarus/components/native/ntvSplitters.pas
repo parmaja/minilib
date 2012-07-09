@@ -78,7 +78,6 @@ type
     procedure MoveSplitter(Offset: Integer);
   public
     property AutoSnap: boolean read FAutoSnap write FAutoSnap default False;
-    property Cursor default crHSplit;
     property Style: TntvSplitterStyle read FStyle write SetStyle default spsLoweredLine;
     property ResizeAnchor: TAnchorKind read FResizeAnchor write SetResizeAnchor default akLeft;
     property ResizeStyle: TntvResizeStyle read FResizeStyle write FResizeStyle default nrsUpdate;
@@ -94,7 +93,6 @@ type
     property AutoSnap;
     property Color;
     property Constraints;
-    property Cursor;
     property Height;
     property OnCanOffset;
     property OnCanResize;
@@ -296,9 +294,11 @@ procedure TntvCustomSplitter.SetResizeAnchor(const AValue: TAnchorKind);
 begin
   if FResizeAnchor = AValue then Exit;
   FResizeAnchor := AValue;
-  UpdateCursor;
   if not (csLoading in ComponentState) then
+  begin
+    UpdateCursor;
     Invalidate;
+  end;
 end;
 
 procedure TntvCustomSplitter.StartSplitterMove(const MouseXY: TPoint);
@@ -552,4 +552,4 @@ begin
 end;
 
 end.
-
+

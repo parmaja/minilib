@@ -83,7 +83,7 @@ procedure CenterRect(var R1: TRect; R2: TRect);
 
 {$ifndef FPC}
 const
-{$ifdef WINDOWS}
+{$ifdef MSWINDOWS}
   DirectorySeparator: string = '\';
 {$else}
   DirectorySeparator: string = '/';

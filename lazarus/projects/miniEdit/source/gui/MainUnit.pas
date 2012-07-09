@@ -59,6 +59,7 @@ type
     MessagesSpl: TntvSplitter;
     OutputSpl: TntvSplitter;
     SCMTypeAct: TAction;
+    Splitter1: TSplitter;
     TypePnl: TPanel;
     ProjectTypeMnu: TMenuItem;
     ProjectTypeAct: TAction;

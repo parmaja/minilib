@@ -198,15 +198,14 @@ type
 
   TmnFields = class(TmnCustomFields, IFields)
   private
-    function _AddRef: Integer; {$ifdef windows}stdcall{$else}cdecl{$endif};
-    function _Release: Integer; {$ifdef windows}stdcall{$else}cdecl{$endif};
+    function _AddRef: Integer; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+    function _Release: Integer; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
   protected
     procedure SetValues(Index: string; const AValue: Variant);
     function GetValues(Index: string): Variant;
     function Find(vName: string): TmnField; virtual;
   public
-    //function QueryInterface(const IID: TGUID; out Obj): longint; stdcall; //HResult
-    function QueryInterface({$ifdef FPC}constref{$else}const{$endif} iid : TGuid; out Obj):{$ifdef FPC}longint{$else}HResult{$endif}; {$ifdef windows}stdcall{$else}cdecl{$endif};
+    function QueryInterface({$ifdef FPC}constref{$else}const{$endif} iid : TGuid; out Obj):{$ifdef FPC}longint{$else}HResult{$endif}; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
     procedure LoadFromStream(Stream: TStream); virtual;
     procedure SaveToStream(Stream: TStream); virtual;
     procedure LoadFromFile(const FileName: string);
@@ -736,7 +735,7 @@ begin
   raise Exception.Create('Not implemented yet');
 end;
 
-function TmnFields.QueryInterface({$ifdef FPC}constref{$else}const{$endif} IID: TGUID; out Obj):{$ifdef FPC}longint{$else}HResult{$endif};
+function TmnFields.QueryInterface({$ifdef FPC}constref{$else}const{$endif} IID: TGUID; out Obj): HResult;
 begin
   if GetInterface(IID, Obj) then
     Result := 0

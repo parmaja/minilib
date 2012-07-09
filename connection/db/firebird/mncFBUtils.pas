@@ -907,7 +907,7 @@ var
   st: string;
 begin
   p := Pos(':', DatabaseName);
-  if (p = 0) {$ifdef Windows}or (p = 2){$endif} then  //filename 'c:\blababa'
+  if (p = 0) {$ifdef Windows}or (p = 2){$endif} then  //filename 'c:\testdb'
   begin
     FileName := DatabaseName;
     Host := '';

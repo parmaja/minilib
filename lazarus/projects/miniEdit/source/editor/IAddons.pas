@@ -31,11 +31,11 @@ type
 
   TAddonObject = class(TObject, IInterface)
   protected
-    function _AddRef: integer; {$ifdef WINDOWS}stdcall{$else}cdecl{$endif};
-    function _Release: integer; {$ifdef WINDOWS}stdcall{$else}cdecl{$endif};
+    function _AddRef: integer; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+    function _Release: integer; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
   public
     function GetObject: TObject;
-    function QueryInterface({$ifdef FPC}constref{$else}const{$endif} IID: TGUID; out Obj): HResult; virtual; {$ifdef WINDOWS}stdcall{$else}cdecl{$endif};
+    function QueryInterface({$ifdef FPC}constref{$else}const{$endif} IID: TGUID; out Obj): HResult; virtual; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
     destructor Destroy; override;
   end;
 
@@ -193,12 +193,12 @@ begin
   Result.FAddonObject := AO; //to kill the object when free the list
 end;
 
-function TAddonObject._AddRef: integer; {$ifdef WINDOWS}stdcall{$else}cdecl{$endif};
+function TAddonObject._AddRef: integer;
 begin
   Result := 0;
 end;
 
-function TAddonObject._Release: integer; {$ifdef WINDOWS}stdcall{$else}cdecl{$endif};
+function TAddonObject._Release: integer;
 begin
   Result := 0;
 end;
@@ -208,7 +208,7 @@ begin
   Result := Self;
 end;
 
-function TAddonObject.QueryInterface({$ifdef FPC}constref{$else}const{$endif} IID: TGUID; out Obj): HResult; {$ifdef WINDOWS}stdcall{$else}cdecl{$endif};
+function TAddonObject.QueryInterface({$ifdef FPC}constref{$else}const{$endif} IID: TGUID; out Obj): HResult; 
 begin
   if GetInterface(IID, Obj) then
     Result := 0

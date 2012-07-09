@@ -100,7 +100,7 @@ const
   ssMsgPlural = 'msgid_plural ';
   ssMsgStrs = 'msgstr[';
 
-{$IFDEF WINDOWS}
+{$IFDEF MSWINDOWS}
   sOSEOL = #13#10;
 {$ELSE}
   sOSEOL = #10;

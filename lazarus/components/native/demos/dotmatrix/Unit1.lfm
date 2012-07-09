@@ -1,25 +1,25 @@
 object Form1: TForm1
-  Left = 236
-  Height = 119
-  Top = 63
+  Left = 268
+  Height = 147
+  Top = 203
   Width = 590
   Caption = 'Form1'
-  ClientHeight = 119
+  ClientHeight = 147
   ClientWidth = 590
   OnCreate = FormCreate
-  LCLVersion = '0.9.31'
-  object TextDotMatrix: TTextDotMatrix
+  LCLVersion = '1.1'
+  object TextDotMatrix: TntvTextDotMatrix
     Left = 8
-    Height = 61
-    Top = 9
+    Height = 76
+    Top = 4
     Width = 577
     Anchors = [akTop, akLeft, akRight, akBottom]
     Dots.ForeColor = 30715
     Dots.DotSize = 3
     Font.CharSet = ARABIC_CHARSET
     Font.Color = clBlack
-    Font.Height = -12
-    Font.Name = 'MS Serif'
+    Font.Height = -13
+    Font.Name = 'Sans'
     Font.Pitch = fpVariable
     Font.Quality = fqDraft
     ParentFont = False
@@ -29,7 +29,7 @@ object Form1: TForm1
   object Edit1: TEdit
     Left = 9
     Height = 21
-    Top = 76
+    Top = 96
     Width = 193
     Anchors = [akLeft, akBottom]
     OnChange = Edit1Change
@@ -39,7 +39,7 @@ object Form1: TForm1
   object Image1: TImage
     Left = 555
     Height = 21
-    Top = 76
+    Top = 93
     Width = 24
     Anchors = [akLeft, akBottom]
     Center = True
@@ -58,7 +58,7 @@ object Form1: TForm1
   object Button1: TButton
     Left = 478
     Height = 25
-    Top = 74
+    Top = 91
     Width = 75
     Anchors = [akLeft, akBottom]
     Caption = 'Draw'
@@ -68,7 +68,7 @@ object Form1: TForm1
   object ThemeList: TComboBox
     Left = 221
     Height = 21
-    Top = 76
+    Top = 95
     Width = 115
     Anchors = [akLeft, akBottom]
     ItemHeight = 13
@@ -77,9 +77,9 @@ object Form1: TForm1
     TabOrder = 3
   end
   object CheckBox1: TCheckBox
-    Left = 346
+    Left = 341
     Height = 17
-    Top = 78
+    Top = 95
     Width = 41
     Anchors = [akLeft, akBottom]
     Caption = 'Glow'
@@ -87,9 +87,9 @@ object Form1: TForm1
     TabOrder = 4
   end
   object Button2: TButton
-    Left = 93
-    Height = 20
-    Top = 98
+    Left = 100
+    Height = 25
+    Top = 121
     Width = 66
     Anchors = [akLeft, akBottom]
     Caption = 'Offset X'
@@ -97,18 +97,19 @@ object Form1: TForm1
     TabOrder = 5
   end
   object Button3: TButton
-    Left = 34
-    Height = 20
-    Top = 98
+    Left = 42
+    Height = 25
+    Top = 121
     Width = 58
+    Anchors = [akLeft, akBottom]
     Caption = 'Dim'
     OnClick = Button3Click
     TabOrder = 6
   end
   object Button4: TButton
-    Left = 267
-    Height = 20
-    Top = 98
+    Left = 274
+    Height = 25
+    Top = 121
     Width = 66
     Anchors = [akLeft, akBottom]
     Caption = 'Reset'
@@ -118,15 +119,15 @@ object Form1: TForm1
   object Label1: TLabel
     Left = 8
     Height = 14
-    Top = 100
+    Top = 125
     Width = 21
     Caption = 'Play'
     ParentColor = False
   end
   object Button5: TButton
-    Left = 160
-    Height = 20
-    Top = 98
+    Left = 167
+    Height = 25
+    Top = 121
     Width = 66
     Anchors = [akLeft, akBottom]
     Caption = 'Offset Y'
@@ -136,7 +137,7 @@ object Form1: TForm1
   object Button6: TButton
     Left = 403
     Height = 25
-    Top = 74
+    Top = 91
     Width = 75
     Anchors = [akLeft, akBottom]
     Caption = 'Power'
@@ -147,8 +148,8 @@ object Form1: TForm1
     Enabled = False
     Interval = 50
     OnTimer = TimerXTimer
-    left = 343
-    top = 23
+    left = 360
+    top = 24
   end
   object DimTimer: TTimer
     Enabled = False
@@ -161,7 +162,7 @@ object Form1: TForm1
     Enabled = False
     Interval = 50
     OnTimer = TimerYTimer
-    left = 488
+    left = 480
     top = 23
   end
 end

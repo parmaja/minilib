@@ -45,7 +45,7 @@ type
 {$endif}
 
 const
-{$IFDEF WINDOWS}
+{$IFDEF MSWINDOWS}
   Sqlite3Lib = 'sqlite3.dll';
 {$ELSE}
   Sqlite3Lib = 'libsqlite3.'+sharedsuffix;

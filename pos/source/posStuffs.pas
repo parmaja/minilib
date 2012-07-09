@@ -40,7 +40,7 @@ type
     function _AddRef: Integer; stdcall;
     function _Release: Integer; stdcall;
   public
-    function QueryInterface({$ifdef FPC}constref{$else}const{$endif FPC} IID: TGUID; out Obj): HResult; virtual; stdcall;
+    function QueryInterface({$ifdef FPC}constref{$else}const{$endif FPC} IID: TGUID; out Obj): HResult; virtual; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
   end;
 
   TposStuffs = class;
@@ -78,7 +78,7 @@ type
     procedure Add(Stuff: IposStuff);
     function GetDrawSize: Integer; virtual;
     function Release: Boolean;
-    function QueryInterface({$ifdef FPC}constref{$else}const{$endif FPC} IID: TGUID; out Obj): HResult; virtual; stdcall;
+    function QueryInterface({$ifdef FPC}constref{$else}const{$endif FPC} IID: TGUID; out Obj): HResult; virtual; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
     procedure Clear; override;
     procedure ItemClick(Sender: TObject); virtual;
     procedure ItemStates(Sender: TObject; var vStates: TposDrawStates); virtual;

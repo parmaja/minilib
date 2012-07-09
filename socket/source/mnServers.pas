@@ -22,7 +22,7 @@ interface
 uses
   Classes,
   SysUtils,
-  mnSockets,
+  mnSockets, mnHttpClient,
   mnConnections;
 
 type
@@ -578,4 +578,4 @@ end;
 initialization
 finalization
 end.
-
+
