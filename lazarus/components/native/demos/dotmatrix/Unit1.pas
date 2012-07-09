@@ -81,6 +81,11 @@ begin
   TextDotMatrix.Dots.RotateOffset := True;
   TextDotMatrix.Dots.Power := true;
   TextDotMatrix.Text := Edit1.Text;
+  {$ifdef LINUX}
+  TextDotMatrix.Font.Name:= 'Misc Fixed';
+  TextDotMatrix.Font.Size := 10;
+  {$else}
+  {$endif}
 end;
 
 procedure TForm1.ThemeListSelect(Sender: TObject);
@@ -170,4 +175,4 @@ begin
 end;
 
 end.
-
+

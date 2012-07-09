@@ -1,7 +1,7 @@
 object Form1: TForm1
-  Left = 268
+  Left = 269
   Height = 147
-  Top = 203
+  Top = 235
   Width = 590
   Caption = 'Form1'
   ClientHeight = 147
@@ -16,10 +16,9 @@ object Form1: TForm1
     Anchors = [akTop, akLeft, akRight, akBottom]
     Dots.ForeColor = 30715
     Dots.DotSize = 3
-    Font.CharSet = ARABIC_CHARSET
     Font.Color = clBlack
-    Font.Height = -13
-    Font.Name = 'Sans'
+    Font.Height = -11
+    Font.Name = 'Misc Fixed'
     Font.Pitch = fpVariable
     Font.Quality = fqDraft
     ParentFont = False
@@ -28,8 +27,8 @@ object Form1: TForm1
   end
   object Edit1: TEdit
     Left = 9
-    Height = 21
-    Top = 96
+    Height = 31
+    Top = 86
     Width = 193
     Anchors = [akLeft, akBottom]
     OnChange = Edit1Change
@@ -67,20 +66,20 @@ object Form1: TForm1
   end
   object ThemeList: TComboBox
     Left = 221
-    Height = 21
-    Top = 95
+    Height = 35
+    Top = 81
     Width = 115
     Anchors = [akLeft, akBottom]
-    ItemHeight = 13
+    ItemHeight = 0
     OnSelect = ThemeListSelect
     Style = csDropDownList
     TabOrder = 3
   end
   object CheckBox1: TCheckBox
     Left = 341
-    Height = 17
-    Top = 95
-    Width = 41
+    Height = 25
+    Top = 87
+    Width = 59
     Anchors = [akLeft, akBottom]
     Caption = 'Glow'
     OnChange = CheckBox1Change
@@ -118,9 +117,9 @@ object Form1: TForm1
   end
   object Label1: TLabel
     Left = 8
-    Height = 14
+    Height = 22
     Top = 125
-    Width = 21
+    Width = 28
     Caption = 'Play'
     ParentColor = False
   end
@@ -165,4 +164,4 @@ object Form1: TForm1
     left = 480
     top = 23
   end
-end
+end

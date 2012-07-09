@@ -720,7 +720,7 @@ begin
   FInfo.RawImage := TLazIntfImage.Create(100, 100, [riqfMono]);
   FInfo.Bitmap := TBitmap.Create;
   {$ifndef WINCE}
-  FInfo.Bitmap.Monochrome := True;//maybe not work in WINCE
+  //FInfo.Bitmap.Monochrome := True;//maybe not work in WINCE and not work in Linux, outch
   {$endif}
   FInfo.Bitmap.Canvas.OnChange := @CanvasChanged;
   FInfo.Power := True;
@@ -891,6 +891,7 @@ begin
     aRect := Rect(0 ,0, Dots.RealWidth, Dots.RealHeight);
     Dots.Canvas.Font := Font;
     Dots.Canvas.Font.Color := clBlack;
+    Dots.Canvas.Font.Quality := fqNonAntialiased;//not work in GTK2
     Dots.Canvas.Pen.Color := clBlack;
     Dots.Canvas.Brush.Color := clWhite;
     Dots.Canvas.FillRect(aRect);
@@ -922,4 +923,4 @@ begin
 end;
 
 end.
-
+

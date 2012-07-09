@@ -205,7 +205,7 @@ type
     function GetValues(Index: string): Variant;
     function Find(vName: string): TmnField; virtual;
   public
-    function QueryInterface({$ifdef FPC}constref{$else}const{$endif} iid : TGuid; out Obj):{$ifdef FPC}longint{$else}HResult{$endif}; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+    function QueryInterface({$ifdef FPC}constref{$else}const{$endif} iid : TGuid; out Obj):HResult; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
     procedure LoadFromStream(Stream: TStream); virtual;
     procedure SaveToStream(Stream: TStream); virtual;
     procedure LoadFromFile(const FileName: string);
