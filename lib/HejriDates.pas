@@ -64,8 +64,8 @@ implementation
 
 {$ifdef HEJRI_COMPLEX}
 const
+  HejriYearDays: Double = 354.367056;
   HejriMonthDays: Double = 29.530587962963;
-  HejriYearDays: Double = 354.367056; //365.2425;
   HejriDiff: Double = 1948437.7759375;
   HejriStart = -466578; // EncodeDate(622, 7, 20), the first day in the hijra date system, it is the day when the prohpet went to Madena.
 
@@ -138,12 +138,12 @@ begin
 end;
 
 {$else not HEJRI_COMPLEX}
-//This functions ported from Motaz Abd alazeem, Abu Eyas with modifications
-const
-  HejriYearDays: Extended = 354.367056;
-  HejriMonthDays: Extended = 29.530588;
-  HejriStart = -466582; // EncodeDate(622, 7, 16+1), the first day in the hijra date system, it is the day when the prohpet went to Madena.
+var
+  HejriYearDays: Extended = 354.3680;// 354.367056;// or 354.3680;
+//  HejriMonthDays: Extended = 29.530588; not need it any more
+  HejriStart: Integer = -466583; // EncodeDate(622, 7, 16+1), the first day in the hijra date system, it is the day when the prohpet went to Madena.
 
+//This functions ported from Motaz Abd alazeem (Abu Eyas), with modifications
 function Hejri_MonthDays(Year, Month: Word): Word;
 var
   HYear, HMonth, HDay: Word;
@@ -165,7 +165,7 @@ end;
 
 function Hejri_EncodeDate(Y, M, D: Word): TDateTime;
 begin
-  Result := (Y - 1) * HejriYearDays + (M - 1) * HejriMonthDays + D;
+  Result := (Y - 1) * HejriYearDays + ((M - 1) * HejriYearDays / 12) + D;
   Result := Result + HejriStart;
   if Result > 0 then
     Result := Result + 1;//the problem between trunc of -0.25 = trunc of +0.75 while the diff is 1
@@ -180,18 +180,20 @@ var
   S: Integer;
 begin
   S := Trunc(DateTime - HejriStart) - 1; //Days only
+  //S := DaysBetween(DateTime, HejriStart) - 1;
 
   fY := S / HejriYearDays;
   fD := Frac(fY);
   Y := Trunc(fY) + 1;
-  fM := ((fD * HejriYearDays) / HejriMonthDays);
+  fM := fD * 12; //see svn log to understand
   M := Trunc(fM) + 1;
-  D := Trunc((Frac(fM) * HejriMonthDays) + 1);
+  fD := Frac(fM);
+  D := Trunc(fD * HejriYearDays / 12) + 1;
 end;
-
-
 {$endif not HEJRI_COMPLEX}
 
 initialization
+  //HejriYearDays := 354.367056;
+  //HejriStart := EncodeDate(622, 7, 16+1);
 end.
 
