@@ -58,16 +58,26 @@ var
   i: Integer;
   dt, old_dt, dt2: TDateTime;
   y, m, d: word;
+  count: Integer;
   c, c2, old_y, old_m: Integer;
+{  procedure nothing;
+  begin
+    //ok it is nothing :P
+  end;}
 begin
   Memo1.Clear;
+  count := 0;
   old_m := 0;
   old_y := 0;
   old_dt := 0;
   dt := HejriEncodeDate(1,1,1);
   for i := Trunc(dt) to Trunc(Now) do
   begin
+{    if count = 6 then
+      nothing;}
     Hejri_DecodeDate(dt, y, m, d);
+
+    //check the wrong of MonthDays in this month
     if (old_y <> y) or (old_m <> m) then
     begin
       if (old_m <> 0) then
@@ -76,7 +86,7 @@ begin
         c2 := Hejri_MonthDays(old_y, old_m);
         if c <> c2 then
         begin
-          memo1.Lines.Add(FormatDateTime('YYYY-MM-DD', dt) + ' -> '+ IntToStr(y) +'-'+ IntToStr(m)+'-'+IntToStr(d) + ' <> '+ IntToStr(y) +'-'+ IntToStr(m)+'-'+IntToStr(d) + ' C=' + IntToStr(c) + ' C2=' + IntToStr(c2));
+          memo1.Lines.Add(IntToStr(count) + ': ' + FormatDateTime('YYYY-MM-DD', dt) + ' -> '+ IntToStr(y) +'-'+ IntToStr(m)+'-'+IntToStr(d) + ' <> '+ ' C=' + IntToStr(c) + ' C2=' + IntToStr(c2));
           exit;
         end;
       end;
@@ -85,13 +95,15 @@ begin
       old_dt := dt;
     end;
 
+    //check the reverse of encode/decode
     dt2 := Hejri_EncodeDate(y, m, d);
     if dt2 <> dt then
     begin
-      memo1.Lines.Add(FormatDateTime('YYYY-MM-DD', dt) + ' -> '+ IntToStr(y) +'-'+ IntToStr(m)+'-'+IntToStr(d) + ' <> '+ IntToStr(y) +'-'+ IntToStr(m)+'-'+IntToStr(d));
+      memo1.Lines.Add(IntToStr(count) + ': ' + FormatDateTime('YYYY-MM-DD', dt) + ' -> '+ IntToStr(y) +'-'+ IntToStr(m)+'-'+IntToStr(d) + ' <> '+ IntToStr(y) +'-'+ IntToStr(m)+'-'+IntToStr(d));
       exit;
     end;
     dt := dt + 1;
+    inc(count);
   end;
   memo1.Lines.Add('Test Finished');
 end;
