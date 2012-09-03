@@ -265,7 +265,13 @@ begin
     end;
     SQLITE_BLOB: Result := dtBlob;
     SQLITE_NULL: Result := dtUnknown;
-    SQLITE_TEXT: Result := dtString;
+    SQLITE_TEXT:
+    begin
+      if SameText(SchemaType, 'Blob') then
+        Result := dtBlob
+      else
+        Result := dtString;
+    end
     else
       Result := dtUnknown;
   end;
@@ -820,6 +826,8 @@ var
   aColumn: TmncColumn;
   //aSize: Integer;
 begin
+  //belal why not use Columns ????
+  //c := Columns.Count;
   c := sqlite3_column_count(FStatment);
   if c > 0 then
   begin
@@ -828,8 +836,9 @@ begin
     begin
 //    TStorageType = (stNone, stInteger, stFloat, stText, stBlob, stNull);
       //aSize := sqlite3_column_bytes(FStatment, i);
-      aType := sqlite3_column_type(FStatment, i);
       aColumn := Columns[i];
+      aType := sqlite3_column_type(FStatment, i);
+      //aType := Columns[i].DataType;
       case aType of
         SQLITE_NULL:
         begin
@@ -847,9 +856,21 @@ begin
           flt := sqlite3_column_double(FStatment, i);
           aCurrent.Add(i, flt);
         end;
+        SQLITE_BLOB:
+        begin
+          int := sqlite3_column_bytes(FStatment, i);
+          SetString(str, PChar(sqlite3_column_blob(FStatment, i)), int);
+          aCurrent.Add(i, str);
+        end;
         SQLITE_TEXT:
         begin
-          str := sqlite3_column_text(FStatment, i);
+          if SameText(aColumn.SchemaType, 'Blob') then
+          begin
+            int := sqlite3_column_bytes(FStatment, i);
+            SetString(str, PChar(sqlite3_column_blob(FStatment, i)), int);
+          end
+          else
+            str := sqlite3_column_text(FStatment, i);
           aCurrent.Add(i, str);
         end
         else

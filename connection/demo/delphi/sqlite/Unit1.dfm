@@ -2,8 +2,8 @@ object Form1: TForm1
   Left = 0
   Top = 0
   Caption = 'Form1'
-  ClientHeight = 213
-  ClientWidth = 339
+  ClientHeight = 249
+  ClientWidth = 491
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -13,6 +13,12 @@ object Form1: TForm1
   OldCreateOrder = False
   PixelsPerInch = 96
   TextHeight = 13
+  object Image1: TImage
+    Left = 8
+    Top = 67
+    Width = 201
+    Height = 166
+  end
   object Button1: TButton
     Left = 6
     Top = 6
@@ -23,8 +29,8 @@ object Form1: TForm1
     OnClick = Button1Click
   end
   object Button2: TButton
-    Left = 258
-    Top = 5
+    Left = 394
+    Top = 8
     Width = 75
     Height = 25
     Caption = 'Read'
@@ -32,8 +38,8 @@ object Form1: TForm1
     OnClick = Button2Click
   end
   object ListBox1: TListBox
-    Left = 95
-    Top = 40
+    Left = 232
+    Top = 67
     Width = 237
     Height = 166
     ItemHeight = 13

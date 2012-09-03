@@ -4,13 +4,14 @@ interface
 
 uses     
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, StdCtrls, mncConnections, mncSQLite, mncSQL;
+  Dialogs, StdCtrls, mncConnections, mncSQLite, mncSQL, ExtCtrls;
 
 type
   TForm1 = class(TForm)
     Button1: TButton;
     Button2: TButton;
     ListBox1: TListBox;
+    Image1: TImage;
     procedure Button2Click(Sender: TObject);
     procedure Button1Click(Sender: TObject);
   private
@@ -82,14 +83,17 @@ var
   Conn: TmncSQLiteConnection;
   Session: TmncSQLiteSession;
   Cmd: TmncSQLiteCommand;
+  s: TStringStream;
+  im: string;
 begin
   Conn := TmncSQLiteConnection.Create;
   try
     Conn.Resource := ExpandFileName(ExtractFilePath(Application.ExeName) + '..\..\data\cars.sqlite');
+    Conn.AutoStart := True;
     Conn.Connect;
     Session := TmncSQLiteSession.Create(Conn);
     try
-      Cmd := TmncSQLiteCommand.Create;
+      Cmd := TmncSQLiteCommand.CreateBy(Session);
       Cmd.SQL.Text := 'select * from companies';
 //      Cmd.SQL.Add('where name = ?name');
       Cmd.Prepare;
@@ -99,6 +103,13 @@ begin
         while not Cmd.EOF do
         begin
           ListBox1.Items.Add(Cmd.Field['id'].AsString + ' - ' + Cmd.Field['name'].AsString);
+          im := Cmd.Field['image'].AsString;
+          s := TStringStream.Create(im);
+          try
+            Image1.Picture.Bitmap.LoadFromStream(s);
+          finally
+            s.Free;
+          end;
           Cmd.Next;
         end;
       end;
