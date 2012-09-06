@@ -465,7 +465,7 @@ begin
   for i := 0 to c - 1 do
   begin
     aName :=  DequoteStr(PQfname(FStatment, i));
-    Columns.Add(aName, ftUnkown);
+    Columns.Add(aName, dtUnknown);
   end;
 end;
 
