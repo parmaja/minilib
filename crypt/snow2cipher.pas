@@ -32,6 +32,9 @@ type
 
     procedure Encrypt(var ReadCount, WriteCount: Integer); override;
     procedure Decrypt(var ReadCount, WriteCount: Integer); override;
+
+    function Encrypt(InBuffer, OutBuffer: TCipherBuffer): Longint; overload; override;
+    function Decrypt(InBuffer, OutBuffer: TCipherBuffer): Longint; overload; override;
   end;
 
   TSnow2ExCipherStream = class(TExCipherStream)
@@ -298,7 +301,7 @@ procedure TExSnow2Cipher.Decrypt(var ReadCount, WriteCount: Integer);
 begin
   ReadCount := OutBuffer.Count;
   WriteCount := ReadCount;
-  SetBufferSize(WriteCount);
+  InBuffer.Grow(WriteCount);
   StreamBlock;
 end;
 
@@ -306,7 +309,14 @@ procedure TExSnow2Cipher.Encrypt(var ReadCount, WriteCount: Integer);
 begin
   ReadCount := OutBuffer.Count;
   WriteCount := ReadCount;
-  SetBufferSize(WriteCount);
+  InBuffer.Grow(WriteCount);
+  StreamBlock;
+end;
+
+function TExSnow2Cipher.Encrypt(InBuffer, OutBuffer: TCipherBuffer): Longint;
+begin
+  Result := InBuffer.Count;
+  OutBuffer.Grow(Result);
   StreamBlock;
 end;
 
@@ -353,15 +363,23 @@ var
   i: Integer;
   s, d: PByte;
 begin
-  s := PByte(OutBuffer.Buffer);
-  d := PByte(InBuffer.Buffer);
-  for I := 0 to DataCount-1 do
+  s := PByte(InBuffer.Start);
+  d := PByte(OutBuffer.Position);
+  for I := 0 to InBuffer.Count-1 do
   begin
     //d^ := Chr(Ord(s^) xor GetByte);
     d^ := s^ xor GetByte2;
     Inc(s);
     Inc(d);
   end;
+  OutBuffer.Seek(InBuffer.Count, soFromCurrent);
+end;
+
+function TExSnow2Cipher.Decrypt(InBuffer, OutBuffer: TCipherBuffer): Longint;
+begin
+  Result := InBuffer.Count;
+  OutBuffer.Grow(Result);
+  StreamBlock;
 end;
 
 end.

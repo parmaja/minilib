@@ -18,39 +18,43 @@ uses
   Classes, SysUtils, Math;
 
 const
-  cBufferSize = 1023;
+  cBufferSize = 1024;
   cDefaultAlloc = cBufferSize div 2;
 
 type
   TCipherStream = class;
   TCipherStreamClass = class of TCipherStream;
 
+  TExCipherStream = class;
+  TExCipherStreamClass = class of TExCipherStream;
+
   ECipherException = class(Exception);
 
   TCipherBuffer = class(TObject)
   private
-    FBuffer: PChar;
-    FEOD: PChar; //end of Data ...
-    FEOB: PChar; //end of Buffer ...
+    FStart: PChar;
+    FPosition: PChar; //end of Data ...
+    FEOS: PChar; //end of Buffer ...
     function GetAsString: string;
   public
     constructor Create;
     destructor Destroy; override;
-    procedure MakeRooms(vCount: Integer);
     procedure WriteBuffer(const vBuffer; vCount: Integer);
     function ReadBuffer(var vBuffer; vCount: Integer): Integer;
 
     procedure PutChar(vChar: Char);
     procedure IncPos(vCount: Integer=1);
-    property Buffer: PChar read FBuffer;
-    property EOD: PChar read FEOD; //end of Data
-    property EOB: PChar read FEOB; //end of Buffer ...
+    property Start: PChar read FStart;
+    property Position: PChar read FPosition; 
+    property EOS: PChar read FEOS; //end of Buffer ...
     property AsString: string read GetAsString;
     procedure SaveToStream(Stream: TStream);
     procedure SaveToFile(FileName: TFileName);
     procedure SetSize(vSize: integer);
     procedure Clear;
     procedure DeleteReaded(vCount: Integer);
+    procedure Grow(vCount: Integer);
+    function Seek(Offset: Longint; Origin: Word): Longint;
 
     function Count: Integer;
     function Size: Integer;
@@ -77,6 +81,7 @@ type
 
   TExCipher = class(TObject)
   private
+    FEOS: Boolean; //end of stream data
     FMode: TCipherMode;
     FWay: TCipherWay;
     FOutBuffer: TCipherBuffer;
@@ -85,17 +90,17 @@ type
     function GetDataCount: Integer;
   protected
     function SetSize(var vBuffer: PChar; vSize: Integer): Integer;
-    procedure Encrypt(var ReadCount, WriteCount: Integer); overload; virtual; abstract; //result bytes readed from data buffer
+    procedure Encrypt(var ReadCount, WriteCount: Integer); overload; virtual; abstract;
     procedure Decrypt(var ReadCount, WriteCount: Integer); overload; virtual; abstract;
+
     function Encrypt(InBuffer, OutBuffer: TCipherBuffer): Longint; overload; virtual; abstract; //result bytes readed from data buffer
     function Decrypt(InBuffer, OutBuffer: TCipherBuffer): Longint; overload; virtual; abstract;
     procedure UpdateBuffer; virtual;
     function InternalRead(var Buffer; Count: Longint): Longint; virtual;
     function InternalWrite(const Buffer; Count: Longint): Longint; virtual;
     procedure AddData(const vBuffer; vCount: Longint);
-    procedure SetBufferSize(vSize: Integer);
     procedure SetDataBufferSize(vSize: Integer);
-    function HasData: Boolean; //use in read mode
+    function HasData(vCount: Integer): Boolean; //use in read mode
   public
     constructor Create(vWay: TCipherWay; vMode: TCipherMode);
     destructor Destroy; override;
@@ -287,7 +292,7 @@ procedure TExCipher.AddData(const vBuffer; vCount: Integer);
 //var
   ///p: PChar;
 begin
-  OutBuffer.WriteBuffer(vBuffer, vCount);
+  InBuffer.WriteBuffer(vBuffer, vCount);
   {if vCount<>0 then
   begin
     FDataCount := SetSize(FDataBuffer, vCount+DataPos);
@@ -326,18 +331,17 @@ begin
   Result := OutBuffer.Count;
 end;
 
-function TExCipher.HasData: Boolean;
+function TExCipher.HasData(vCount: Integer): Boolean;
 var
   aBuffer: string;
   c: Integer;
 begin
-  if InBuffer.Count>0 then
-    Result := True
-  else
+  if (OutBuffer.Count<vCount) and not FEOS then
   begin
     SetLength(aBuffer, cBufferSize);
     try
       c := InternalRead(aBuffer[1], cBufferSize);
+      FEOS := c <> cBufferSize;
       if c<>0 then
         AddData(aBuffer[1], c);
       UpdateBuffer;
@@ -345,8 +349,9 @@ begin
       SetLength(aBuffer, 0);
     end;
     //Result := (FCount<>0) and (FPos<FCount);
-    Result := InBuffer.Count<>0;
   end;
+
+  Result := OutBuffer.Count<>0;
 end;
 
 function TExCipher.InternalRead(var Buffer; Count: Longint): Longint;
@@ -367,18 +372,15 @@ begin
   Result := 0;
   i := vCount;
   p := @vBuffer;
-  while (i>0) and HasData do
+  while (i>0) and HasData(i) do
   begin
-    c := InBuffer.ReadBuffer(p^, i);
+    c := OutBuffer.ReadBuffer(p^, i);
+    if c=0 then Break;
+    
     Inc(Result, c);
     Dec(i, c);
     Inc(p, c);
   end;
-end;
-
-procedure TExCipher.SetBufferSize(vSize: Integer);
-begin
-  InBuffer.MakeRooms(vSize);
 end;
 
 procedure TExCipher.SetDataBufferSize(vSize: Integer);
@@ -396,15 +398,14 @@ procedure TExCipher.UpdateBuffer;
 var
   c: Integer;
 begin
-  if OutBuffer.Count<>0 then
+  if InBuffer.Count<>0 then
   begin
     c := 0;
     case Way of
       cyEncrypt: c := Encrypt(InBuffer, OutBuffer);
       cyDecrypt: c := Decrypt(InBuffer, OutBuffer);
     end;
-
-    OutBuffer.DeleteReaded(c);
+    InBuffer.DeleteReaded(c);
   end;
 
   {if OutBuffer.Count<>0 then
@@ -425,8 +426,8 @@ function TExCipher.Write(const vBuffer; vCount: Integer): Longint;
 begin
   AddData(vBuffer, vCount);
   UpdateBuffer;
-  InternalWrite(InBuffer.Buffer^, InBuffer.Count);
-  InBuffer.DeleteReaded(InBuffer.Count);
+  InternalWrite(OutBuffer.Start^, OutBuffer.Count);
+  OutBuffer.Clear;
   Result := vCount;
 end;
 
@@ -538,13 +539,13 @@ var
   i, c: Integer;
 begin
   if vCount=Count then
-    FEOD := FBuffer
+    FPosition := FStart
   else if vCount<>0 then
   begin
-    t := Buffer;
+    t := Start;
     Inc(t, vCount);
-    Move(t^, Buffer^, EOD-t);
-    Dec(FEOD, vCount);
+    Move(t^, Start^, Position-t);
+    Dec(FPosition, vCount);
   end;
 end;
 
@@ -556,37 +557,37 @@ end;
 
 function TCipherBuffer.GetAsString: string;
 begin
-  SetString(Result, Buffer, EOB - Buffer);
+  SetString(Result, Start, EOS - Start);
 end;
 
-procedure TCipherBuffer.IncPos(vCount: Integer);
-begin
-  Inc(FEOD, vCount);
-end;
-
-procedure TCipherBuffer.MakeRooms(vCount: Integer);
+procedure TCipherBuffer.Grow(vCount: Integer);
 var
-  c, s, x: Integer;
+  aLen, aOffset: Integer;
+  m: Integer;
 begin
-  if (vCount<>0) then
+  if vCount<>0 then
   begin
-    c := Count;
-    s := Size;
-    if (vCount>(s-c)) then
+    if (FEOS - FPosition) <= vCount then
     begin
-      x := ((vCount div cDefaultAlloc)+1) * cDefaultAlloc;
-
-      ReallocMem(FBuffer, s + x);
-      FEOD := FBuffer + c;
-      FEOB      := FBuffer + s + vCount;
+      m := ((vCount div cBufferSize) + 1) * cBufferSize; //room needed for new Buffer;
+      aLen := (FEOS - FStart)+m; //new length = oldlength + m
+      aOffset := FPosition - FStart;
+      ReallocMem(FStart, aLen);
+      FPosition := FStart + aOffset; //reassign FPosition due realocmem change pointers ....
+      FEOS := FStart + aLen;
     end;
   end;
 end;
 
+procedure TCipherBuffer.IncPos(vCount: Integer);
+begin
+  Inc(FPosition, vCount);
+end;
+
 procedure TCipherBuffer.PutChar(vChar: Char);
 begin
-  FEOD^ := vChar;
-  Inc(FEOD);
+  FPosition^ := vChar;
+  Inc(FPosition);
 end;
 
 function TCipherBuffer.ReadBuffer(var vBuffer; vCount: Integer): Integer;
@@ -597,7 +598,7 @@ begin
   if Result<>0 then
   begin
     p := @vBuffer;
-    Move(FBuffer^, p^, Result);
+    Move(FStart^, p^, Result);
     DeleteReaded(Result);
   end;
 end;
@@ -616,16 +617,25 @@ end;
 
 procedure TCipherBuffer.SaveToStream(Stream: TStream);
 begin
-  Stream.write(Buffer^, EOD - Buffer);
+  Stream.write(Start^, Position - Start);
+end;
+
+function TCipherBuffer.Seek(Offset: Integer; Origin: Word): Longint;
+begin
+  case Origin of
+    soFromBeginning: FPosition := FStart + Offset;
+    soFromCurrent: FPosition := FPosition + Offset;  
+    soFromEnd: FPosition := FEOS - Offset;  
+  end;
 end;
 
 procedure TCipherBuffer.SetSize(vSize: integer);
 begin
   if (vSize>0) and (vSize>Size) then
   begin
-    ReallocMem(FBuffer, vSize);
-    FEOD := FBuffer;
-    FEOB := FBuffer + vSize;
+    ReallocMem(FStart, vSize);
+    FPosition := FStart;
+    FEOS := FStart + vSize;
   end
   else if vSize=0 then
     Clear;
@@ -633,39 +643,34 @@ end;
 
 function TCipherBuffer.Size: Integer;
 begin
-  if FBuffer<>nil then
-    Result := EOB - Buffer
+  if FStart<>nil then
+    Result := EOS - Start
   else
     Result := 0;
 end;
 
 procedure TCipherBuffer.WriteBuffer(const vBuffer; vCount: Integer);
-var
-  p, t: PChar;
 begin
-  if (vCount<>0) then //append buffer
+  if vCount>0 then
   begin
-    MakeRooms(vCount);
-
-    p := @vBuffer;
-    t := EOD;
-    Move(p^, t^, vCount);
-    Inc(FEOD, vCount);
+    Grow(vCount);
+    Move(vBuffer, FPosition^, vCount);
+    Inc(FPosition, vCount);
   end;
 end;
 
 procedure TCipherBuffer.Clear;
 begin
-  FreeMem(FBuffer, Size);
-  FBuffer := nil;
-  FEOB := nil;
-  FEOD := nil;
+  FreeMem(FStart, Size);
+  FStart := nil;
+  FEOS := nil;
+  FPosition := nil;
 end;
 
 function TCipherBuffer.Count: Integer;
 begin
-  if FBuffer<>nil then
-    Result := EOD-Buffer
+  if FStart<>nil then
+    Result := Position-Start
   else
     Result := 0;
 end;
@@ -673,9 +678,9 @@ end;
 constructor TCipherBuffer.Create;
 begin
   inherited Create;
-  FBuffer := nil;
-  FEOB := nil;
-  FEOD := nil;
+  FStart := nil;
+  FEOS := nil;
+  FPosition := nil;
 
   //SetSize(cBufferSize*3);
 end;

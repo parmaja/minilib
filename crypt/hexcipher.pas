@@ -33,8 +33,6 @@ type
 
   TExHexCipher = class(TExStreamCipher)
   protected
-    procedure Encrypt(var ReadCount, WriteCount: Integer); overload; override;
-    procedure Decrypt(var ReadCount, WriteCount: Integer); overload; override;
     function Encrypt(InBuffer, OutBuffer: TCipherBuffer): Longint; overload; override;
     function Decrypt(InBuffer, OutBuffer: TCipherBuffer): Longint; overload; override;
   end;
@@ -298,84 +296,32 @@ end;
 
 { TExHexCipher }
 
-procedure TExHexCipher.Decrypt(var ReadCount, WriteCount: Integer);
-var
-  iP, oP: PChar;
-begin
-  ReadCount := (OutBuffer.Count div 2)*2;
-  WriteCount := ReadCount div 2;
-  SetBufferSize(WriteCount);
-  iP := OutBuffer.Buffer;
-  oP := InBuffer.Buffer;
-  HexToBin(ip, op, WriteCount);
-end;
-
-procedure TExHexCipher.Encrypt(var ReadCount, WriteCount: Integer);
-var
-  i: Integer;
-  iP, oP: PChar;
-begin
-  ReadCount := OutBuffer.Count;
-  WriteCount := ReadCount * 2;
-
-  SetBufferSize(WriteCount);
-  iP := OutBuffer.Buffer;
-  oP := InBuffer.Buffer;
-  for i := 0 to ReadCount - 1 do
-  begin
-    //InBuffer.PutChar(cCharToHexArr[ip^][1]);
-    //InBuffer.PutChar(cCharToHexArr[ip^][2]);
-    op^ := cCharToHexArr[ip^][1];
-    Inc(op);
-    op^ := cCharToHexArr[ip^][2];
-    Inc(op);
-    Inc(iP);
-  end;
-end;
-
 function TExHexCipher.Decrypt(InBuffer, OutBuffer: TCipherBuffer): Longint;
 var
   iP, oP: PChar;
   c: Integer;
 begin
   c := InBuffer.Count div 2;
-  OutBuffer.MakeRooms(c);
-  iP := InBuffer.Buffer;
-  oP := OutBuffer.Buffer;
-  HexToBin(ip, op, c);
+  Result := c * 2;
+  OutBuffer.Grow(c);
+  iP := InBuffer.Start;
+  oP := OutBuffer.Position;
+  HexToBin(ip, op, Result);
+  OutBuffer.Seek(c, soFromCurrent);
 end;
 
 function TExHexCipher.Encrypt(InBuffer, OutBuffer: TCipherBuffer): Longint;
 var
-  i: Integer;
   iP, oP: PChar;
+  c: Integer;
 begin
-  OutBuffer.MakeRooms(InBuffer.Count*2);
-  iP := InBuffer.Buffer;
-  for i := 0 to InBuffer.Count - 1 do
-  begin
-    OutBuffer.PutChar(cCharToHexArr[ip^][1]);
-    OutBuffer.PutChar(cCharToHexArr[ip^][2]);
-    Inc(iP);
-  end;
-
-
-{  ReadCount := OutBuffer.Count;
-  WriteCount := ReadCount * 2;
-
-  SetBufferSize(WriteCount);
-  iP := OutBuffer.Buffer;
-  oP := InBuffer.Buffer;
-  for i := 0 to ReadCount - 1 do
-  begin
-    //InBuffer.PutChar(cCharToHexArr[ip^][1]);
-    //InBuffer.PutChar(cCharToHexArr[ip^][2]);
-    op^ := cCharToHexArr[ip^][1];
-    Inc(op);
-    op^ := cCharToHexArr[ip^][2];
-    Inc(op);
-    Inc(iP);
-  end;}
+  Result := InBuffer.Count; //bytes readed from in buffer
+  c := Result * 2;
+  OutBuffer.Grow(c);
+  iP := InBuffer.Start;
+  oP := OutBuffer.Position;
+  BinToHex(ip, op, Result);
+  OutBuffer.Seek(c, soFromCurrent);
 end;
 
 { THexExCipherStream }

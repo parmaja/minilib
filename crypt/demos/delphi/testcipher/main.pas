@@ -15,6 +15,11 @@ type
     procedure Prepare; override;
   end;
 
+  TMyExSnowCiphr = class(TSnow2ExCipherStream)
+  protected
+    procedure Prepare; override;
+  end;
+
   TMainForm = class(TForm)
     SrcEdit: TEdit;
     EncEdit: TEdit;
@@ -38,6 +43,8 @@ type
     TestExCipherBtn: TButton;
     TestExWriteBtn: TButton;
     TextExReadBtn: TButton;
+    ExMethodLbl: TLabel;
+    ExMethodBox: TComboBox;
     procedure TestReadBtnClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure TestWriteBtnClick(Sender: TObject);
@@ -59,6 +66,7 @@ type
     function GetCipherClass: TCipherStreamClass;
     procedure SetTestResult(const Value: TTestResult);
     function GetFileSize: Cardinal;
+    function GetExCipherClass: TExCipherStreamClass;
     { Private declarations }
   public
     { Public declarations }
@@ -87,6 +95,7 @@ type
     procedure UpdateInfo;
 
     property CipherClass: TCipherStreamClass read GetCipherClass;
+    property ExCipherClass: TExCipherStreamClass read GetExCipherClass;
     property FileName: string read GetFileName write SetFileName;
     property FileSize: Cardinal read GetFileSize;
     property EncFileName: string read GetEncFileName;
@@ -159,9 +168,10 @@ end;
 
 function TMainForm.CreateExCipherStream(AStream: TStream; Way: TCipherWay; Mode: TCipherMode; Owned: Boolean): TExCipherStream;
 begin
-  Result := THexExCipherStream.Create(AStream, Way, Mode, Owned)
-  //Result := TSnow2ExCipherStream.Create(AStream, Way, Mode, Owned)
-  //Result := THexExCipherStream.Create(AStream, Way, Mode, Owned);
+  if ExCipherClass<>nil then
+    Result := ExCipherClass.Create(AStream, Way, Mode, Owned)
+  else
+    Result := nil;
 end;
 
 procedure TMainForm.ReadDecryptFile;
@@ -500,6 +510,10 @@ begin
   MethodBox.Items.AddObject('ZLib Cipher', TObject(TZLibCipherStream));
   MethodBox.ItemIndex := 0;
 
+  ExMethodBox.Items.AddObject('Snow2 Cipher', TObject(TSnow2ExCipherStream));
+  ExMethodBox.Items.AddObject('Hex Cipher', TObject(THexExCipherStream));
+  ExMethodBox.ItemIndex := 0;
+
   SrcEdit.Text := 'abcdefghijklmnopqrsstuvwxyzabcdef';
   FileName := 'c:\1.txt';
 end;
@@ -526,6 +540,14 @@ begin
     Result := ChangeFileExt(FileName, '.enc'+ExtractFileExt(FileName))
   else
     Result := '';
+end;
+
+function TMainForm.GetExCipherClass: TExCipherStreamClass;
+begin
+  if ExMethodBox.ItemIndex<>-1 then
+    Result := TExCipherStreamClass(MethodBox.Items.Objects[MethodBox.ItemIndex])
+  else
+    Result := nil;
 end;
 
 function TMainForm.GetFileName: string;
@@ -885,6 +907,14 @@ end;
 procedure TMainForm.TestExCipherBtnClick(Sender: TObject);
 begin
   TestExCipher;
+end;
+
+{ TMyExSnowCiphr }
+
+procedure TMyExSnowCiphr.Prepare;
+begin
+  inherited;
+  Key [0] := $80;
 end;
 
 end.

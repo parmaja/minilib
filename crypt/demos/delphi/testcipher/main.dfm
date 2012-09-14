@@ -2,7 +2,7 @@ object MainForm: TMainForm
   Left = 0
   Top = 0
   Caption = 'Crypto'
-  ClientHeight = 320
+  ClientHeight = 350
   ClientWidth = 664
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -15,47 +15,47 @@ object MainForm: TMainForm
   OnCreate = FormCreate
   DesignSize = (
     664
-    320)
+    350)
   PixelsPerInch = 96
   TextHeight = 13
   object FileNameLbl: TLabel
     Left = 19
-    Top = 48
+    Top = 78
     Width = 46
     Height = 13
     Caption = 'File Name'
   end
   object EncFileNameLbl: TLabel
     Left = 19
-    Top = 80
+    Top = 110
     Width = 46
     Height = 13
     Caption = 'File Name'
   end
   object DecFileNameLbl: TLabel
     Left = 19
-    Top = 104
+    Top = 134
     Width = 46
     Height = 13
     Caption = 'File Name'
   end
   object SrcTextLbl: TLabel
     Left = 7
-    Top = 138
+    Top = 168
     Width = 58
     Height = 13
     Caption = 'Source Text'
   end
   object EncTextLbl: TLabel
     Left = 3
-    Top = 165
+    Top = 195
     Width = 62
     Height = 13
     Caption = 'Encrypt Text'
   end
   object DecTextLbl: TLabel
     Left = 2
-    Top = 192
+    Top = 222
     Width = 63
     Height = 13
     Caption = 'Decrypt Text'
@@ -67,9 +67,16 @@ object MainForm: TMainForm
     Height = 13
     Caption = 'Method'
   end
+  object ExMethodLbl: TLabel
+    Left = 17
+    Top = 46
+    Width = 48
+    Height = 13
+    Caption = 'ExMethod'
+  end
   object SrcEdit: TEdit
     Left = 72
-    Top = 135
+    Top = 165
     Width = 588
     Height = 21
     Anchors = [akLeft, akTop, akRight]
@@ -78,7 +85,7 @@ object MainForm: TMainForm
   end
   object DecEdit: TEdit
     Left = 72
-    Top = 189
+    Top = 219
     Width = 588
     Height = 21
     Anchors = [akLeft, akTop, akRight]
@@ -87,7 +94,7 @@ object MainForm: TMainForm
   end
   object EncEdit: TEdit
     Left = 72
-    Top = 162
+    Top = 192
     Width = 588
     Height = 21
     Anchors = [akLeft, akTop, akRight]
@@ -96,7 +103,7 @@ object MainForm: TMainForm
   end
   object TestReadBtn: TButton
     Left = 585
-    Top = 72
+    Top = 102
     Width = 75
     Height = 25
     Anchors = [akTop, akRight]
@@ -106,7 +113,7 @@ object MainForm: TMainForm
   end
   object TestWriteBtn: TButton
     Left = 585
-    Top = 103
+    Top = 133
     Width = 75
     Height = 25
     Anchors = [akTop, akRight]
@@ -116,7 +123,7 @@ object MainForm: TMainForm
   end
   object FileNameEdit: TEdit
     Left = 72
-    Top = 45
+    Top = 75
     Width = 544
     Height = 21
     Anchors = [akLeft, akTop, akRight]
@@ -125,7 +132,7 @@ object MainForm: TMainForm
   end
   object SelectFileBtn: TButton
     Left = 622
-    Top = 45
+    Top = 75
     Width = 38
     Height = 21
     Anchors = [akTop, akRight]
@@ -135,7 +142,7 @@ object MainForm: TMainForm
   end
   object StatusBar: TStatusBar
     Left = 0
-    Top = 301
+    Top = 331
     Width = 664
     Height = 19
     Panels = <
@@ -145,6 +152,7 @@ object MainForm: TMainForm
       item
         Width = 50
       end>
+    ExplicitTop = 301
   end
   object MethodBox: TComboBox
     Left = 72
@@ -152,22 +160,23 @@ object MainForm: TMainForm
     Width = 209
     Height = 21
     Style = csDropDownList
-    ItemHeight = 0
+    ItemHeight = 13
     TabOrder = 0
     OnClick = MethodBoxClick
   end
   object LogBox: TListBox
     Left = 0
-    Top = 216
+    Top = 246
     Width = 664
     Height = 85
     Align = alBottom
     ItemHeight = 13
     TabOrder = 9
+    ExplicitTop = 216
   end
   object TestZLibBtn: TButton
     Left = 489
-    Top = 72
+    Top = 102
     Width = 75
     Height = 25
     Anchors = [akTop, akRight]
@@ -177,7 +186,7 @@ object MainForm: TMainForm
   end
   object TestZLibBufferBtn: TButton
     Left = 489
-    Top = 103
+    Top = 133
     Width = 75
     Height = 25
     Anchors = [akTop, akRight]
@@ -187,7 +196,7 @@ object MainForm: TMainForm
   end
   object TestExCipherBtn: TButton
     Left = 312
-    Top = 104
+    Top = 134
     Width = 75
     Height = 25
     Caption = 'Test Ex'
@@ -196,7 +205,7 @@ object MainForm: TMainForm
   end
   object TestExWriteBtn: TButton
     Left = 393
-    Top = 104
+    Top = 134
     Width = 75
     Height = 25
     Anchors = [akTop, akRight]
@@ -206,12 +215,22 @@ object MainForm: TMainForm
   end
   object TextExReadBtn: TButton
     Left = 393
-    Top = 72
+    Top = 102
     Width = 75
     Height = 25
     Anchors = [akTop, akRight]
     Caption = 'Test ExRead'
     TabOrder = 14
     OnClick = TextExReadBtnClick
+  end
+  object ExMethodBox: TComboBox
+    Left = 72
+    Top = 40
+    Width = 209
+    Height = 21
+    Style = csDropDownList
+    ItemHeight = 13
+    TabOrder = 15
+    OnClick = MethodBoxClick
   end
 end
