@@ -29,6 +29,8 @@ uses
 
 type
 
+  TmpgResultFormat = (mrfText, mrfBinary);
+
   { TmncPGConnection }
 
   TmncPGConnection = class(TmncConnection)
@@ -76,6 +78,35 @@ type
 
   TArrayOfPChar = array of PChar;
 
+  TmncPostgreParam = class(TmncParam)
+  private
+    FValue: Variant;
+  protected
+    function GetValue: Variant; override;
+    procedure SetValue(const AValue: Variant); override;
+  public
+    constructor Create; override;
+    destructor Destroy; override;
+  end;
+
+  TmncPostgreParams = class(TmncParams)
+  protected
+    function CreateParam: TmncParam; override;
+  end;
+
+  TmncPostgreField = class(TmncField)
+  private
+    FValue: Variant;
+  protected
+    function GetValue: Variant; override;
+    procedure SetValue(const AValue: Variant); override;
+  end;
+
+  TmncPostgreFields = class(TmncFields)
+  protected
+    function CreateField(vColumn: TmncColumn): TmncField; override;
+  end;
+
   { TmncPGCommand }
 
   TmncPGCommand = class(TmncSQLCommand)
@@ -86,6 +117,7 @@ type
     FBOF: Boolean;
     FEOF: Boolean;
     FStatus: TExecStatusType;
+    FResultFormat: TmpgResultFormat;
     function GetConnection: TmncPGConnection;
     procedure FetchFields;
     procedure FetchValues;
@@ -106,6 +138,8 @@ type
     procedure DoRollback; override;
     property Connection: TmncPGConnection read GetConnection;
     property Session: TmncPGSession read GetSession write SetSession;
+    function CreateParams: TmncParams; override;
+    function CreateFields(vColumns: TmncColumns): TmncFields; override;
   public
     constructor Create(vSession:TmncPGSession);
     destructor Destroy; override;
@@ -115,6 +149,7 @@ type
     property Statment: PPGresult read FStatment;//opened by PQexecPrepared
     property Status: TExecStatusType read FStatus;
     property Handle: string read FHandle;//used for name in PQprepare
+    property ResultFormat: TmpgResultFormat read FResultFormat write FResultFormat default mrfText; 
   end;
 
 implementation
@@ -306,6 +341,11 @@ begin
   FTuple := 0;
 end;
 
+function TmncPGCommand.CreateParams: TmncParams;
+begin
+  Result := TmncPostgreParams.Create;
+end;
+
 procedure TmncPGCommand.CreateParamValues(var Result: TArrayOfPChar);
 var
   i: Integer;
@@ -352,6 +392,12 @@ begin
   inherited Create;
   Session := vSession;
   FHandle := Session.NewToken;
+  FResultFormat := mrfText;
+end;
+
+function TmncPGCommand.CreateFields(vColumns: TmncColumns): TmncFields;
+begin
+  Result := TmncPostgreFields.Create(vColumns);
 end;
 
 destructor TmncPGCommand.Destroy;
@@ -373,7 +419,7 @@ procedure TmncPGCommand.DoExecute;
 var
   Values: TArrayOfPChar;
   P: pointer;
-  FF: Longint;//Result Field format
+  f: Integer;//Result Field format
 begin
   if FStatment <> nil then
     PQclear(FStatment);
@@ -385,8 +431,12 @@ begin
     end
     else
       p := nil;
-    FF :=   1;//format as binnary.
-    FStatment := PQexecPrepared(Session.DBHandle, PChar(FHandle), Params.Count, P, nil, nil, FF);
+    case ResultFormat of
+      mrfBinary: f := 1;
+      else
+        f := 0;
+    end;
+    FStatment := PQexecPrepared(Session.DBHandle, PChar(FHandle), Params.Count, P, nil, nil, f);
     //FStatment := PQexec(Session.DBHandle, PChar(SQL.Text));
   finally
     FreeParamValues(Values);
@@ -475,6 +525,20 @@ begin
 end;
 
 procedure TmncPGCommand.FetchValues;
+    function _BRead(vSrc: PChar; Count: Longint): Integer;
+    var
+      s: string;
+      c, i: Integer;
+    begin
+      Result := 0;
+      SetLength(s, Count);
+      Move(vSrc^, s[1], Count);
+      for I := 0 to Count - 1 do
+      begin
+        c := Count-i;
+        Result := Result + Ord(s[c]) * (1 shl (i*8));
+      end;
+    end;
 var
   str: Utf8String;
   t: Int64;
@@ -490,7 +554,7 @@ begin
   c := PQnfields(FStatment);
   if c > 0 then
   begin
-    aCurrent := TmncFields.Create(Columns);
+    aCurrent := CreateFields(Columns);
     for i := 0 to c - 1 do
     begin
       if PQgetisnull(Statment, FTuple, i) <> 0 then
@@ -499,35 +563,43 @@ begin
       begin
         aFieldSize := PQfsize(Statment, i);
         p := PQgetvalue(FStatment, FTuple, i);
-        case PQftype(Statment, i) of
-          Oid_varchar, Oid_bpchar, Oid_name:
-            v := string(p);
-          Oid_oid,
-          Oid_int4:
-            v := BEtoN(PInteger(p)^);
-          Oid_int2:
-            v  := BEtoN(PShortInt(p)^);
-          Oid_int8:
-            v := BEtoN(PInt64(p)^);
-          Oid_Float4, Oid_Float8:
-          begin
+        if ResultFormat=mrfText then
+          v := string(p)
+        else
+        begin
+          case PQftype(Statment, i) of
+            Oid_varchar, Oid_bpchar, Oid_name:
+              v := string(p);
+            Oid_oid,
+            Oid_int4:
+              v := BEtoN(PInteger(p)^);
+            Oid_int2:
+              v  := BEtoN(PShortInt(p)^);
+            Oid_int8:
+              //if PQbinaryTuples(FStatment) = 1 then
+                v := _BRead(p, 8);
+              //else
+                //v := String(p);
+            Oid_Float4, Oid_Float8:
+            begin
+            end;
+            Oid_Date:
+            begin
+              d := BEtoN(plongint(p)^) + 36526;
+              v := TDateTime(d);
+            end;
+            Oid_Time,
+            Oid_TimeStamp:
+            begin
+              t := BEtoN(pint64(p)^);
+              //v := TDateTime(t);//todo
+              v := t;//todo
+            end;
+            Oid_Bool:
+               v := (p[0] <> #0);
+            Oid_Money:;
+            Oid_Unknown:;
           end;
-          Oid_Date:
-          begin
-            d := BEtoN(plongint(p)^) + 36526;
-            v := TDateTime(d);
-          end;
-          Oid_Time,
-          Oid_TimeStamp:
-          begin
-            t := BEtoN(pint64(p)^);
-            //v := TDateTime(t);//todo
-            v := t;//todo
-          end;
-          Oid_Bool:
-             v := (p[0] <> #0);
-          Oid_Money:;
-          Oid_Unknown:;
         end;
 
         aCurrent.Add(i, v);
@@ -551,6 +623,54 @@ function TmncPGCommand.GetRowsChanged: Integer;
 begin
   CheckActive;
   Result := StrToIntDef(PQcmdTuples(FStatment), 0);
+end;
+
+{ TmncPostgreParam }
+
+constructor TmncPostgreParam.Create;
+begin
+  inherited;
+end;
+
+destructor TmncPostgreParam.Destroy;
+begin
+  inherited;
+end;
+
+function TmncPostgreParam.GetValue: Variant;
+begin
+  Result := FValue;
+end;
+
+procedure TmncPostgreParam.SetValue(const AValue: Variant);
+begin
+  FValue := AValue;
+end;
+
+{ TmncPostgreParams }
+
+function TmncPostgreParams.CreateParam: TmncParam;
+begin
+  Result := TmncPostgreParam.Create;
+end;
+
+{ TmncPostgreField }
+
+function TmncPostgreField.GetValue: Variant;
+begin
+  Result := FValue;
+end;
+
+procedure TmncPostgreField.SetValue(const AValue: Variant);
+begin
+  FValue := AValue;
+end;
+
+{ TmncPostgreFields }
+
+function TmncPostgreFields.CreateField(vColumn: TmncColumn): TmncField;
+begin
+  Result := TmncPostgreField.Create(vColumn);
 end;
 
 end.

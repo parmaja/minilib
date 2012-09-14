@@ -80,15 +80,18 @@ var
 begin
   Conn := TmncPGConnection.Create;
   try
-    Conn.Resource := 'pgtest';
+    Conn.Resource := 'csdata';
+    Conn.Host := 'belalpc';
     Conn.UserName := 'postgres';
     Conn.Password := 'masterkey';
     Conn.Connect;
     Session := TmncPGSession.Create(Conn);
     try
       Session.Start;
-      Cmd := TmncPGCommand.Create(Session);
-      Cmd.SQL.Text := 'select * from "Accounts"';
+      Cmd := TmncPGCommand.CreateBy(Session);
+      cmd.ResultFormat := mrfBinary; 
+      Cmd.SQL.Text := 'select "AccID", "AccName", "AccCode" from "Accounts"';
+      //Cmd.SQL.Text := 'select "AccID" from "Accounts"';
 //      Cmd.SQL.Add('where name = ?name');
       //Cmd.Prepare;
 //      Cmd.Param['name'].AsString := 'Ferrari';
@@ -97,6 +100,7 @@ begin
         while not Cmd.EOF do
         begin
           ListBox1.Items.Add(Cmd.Field['AccID'].AsString + ' - ' + Cmd.Field['AccName'].AsString+ ' - ' + Cmd.Field['AccCode'].AsString);
+          //ListBox1.Items.Add(Cmd.Field['AccID'].AsString);
           Cmd.Next;
         end;
       end;
