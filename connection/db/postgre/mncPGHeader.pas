@@ -6,6 +6,8 @@ unit mncPGHeader;
  * @license   modifiedLGPL (modified of http://www.gnu.org/licenses/lgpl.html)
  *            See the file COPYING.MLGPL, included in this distribution,
  * @author    Zaher Dirkey <zaher at parmaja dot com>
+ * @author    Belal Hamed <belalhamed at gmail dot com>  
+ *
  *}
  {
    This file sqlite3.inc ported from Lazarus just to be compatiple in both Delphi and FPC

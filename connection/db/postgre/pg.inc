@@ -1,6 +1,7 @@
 interface
 
-uses Windows, SysUtils;
+uses 
+  SysUtils;
 
 const
 
@@ -471,9 +472,7 @@ end;
 
 initialization
   LoadLib;
-
 finalization
   FreeLib;
-
 end.
 

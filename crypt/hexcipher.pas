@@ -5,6 +5,7 @@ unit hexcipher;
  * @license   modifiedLGPL (modified of http://www.gnu.org/licenses/lgpl.html)
  *            See the file COPYING.MLGPL, included in this distribution,
  * @author    Zaher Dirkey <zaher at parmaja dot com>
+ * @author    Belal Hamed <belalhamed at gmail dot com> 
  *
  * Synopsis:
  *   Hex Cipher convert from/to Hex text not that then cryption

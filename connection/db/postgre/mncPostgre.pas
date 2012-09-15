@@ -5,6 +5,7 @@ unit mncPostgre;
  * @license   modifiedLGPL (modified of http://www.gnu.org/licenses/lgpl.html)
  *            See the file COPYING.MLGPL, included in this distribution,
  * @author    Zaher Dirkey <zaher at parmaja dot com>
+ * @author    Belal Hamed <belalhamed at gmail dot com>  
  * @comment   Only for postgre 8.x or later
  *}
 

@@ -5,6 +5,7 @@ unit ciphers;
  * @license   modifiedLGPL (modified of http://www.gnu.org/licenses/lgpl.html)
  *            See the file COPYING.MLGPL, included in this distribution,
  * @author    Zaher Dirkey <zaher at parmaja dot com>
+ * @author    Belal Hamed <belalhamed at gmail dot com> 
  *}
 
 {$IFDEF FPC}

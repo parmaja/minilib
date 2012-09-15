@@ -15,6 +15,13 @@ unit HejriDates;
 {$ENDIF}
 {$M+}{$H+}
 
+{ Induction
+  Lunar Month = 29.530588 days;
+  Lunar Year = Lunar Month * 12 = 354.367056
+
+  But we have leap year every 30 years.
+}
+
 {.$define HEJRI_COMPLEX}
 
 { Complex Hejri calender, not completed yet
@@ -37,6 +44,21 @@ unit HejriDates;
 
   tester:
     http://www.adma1.com/5dmat/Date-Convert.html
+}
+
+{
+  1971-10-19 -> 1391-08-30
+  1975-12-13 -> 1395-12-10?
+  2002-02-21 -> 1422-12-09
+  2004-03-18 -> 1425-01-07
+  2005-12-11 -> 1426-11-11
+
+  2007-09-09 -> 2007-09-09
+  2007-09-01 -> 1428-08-19
+  2003-12-21 -> 1424-10-27
+
+  2012-07-20 -> 1433-09-01 (I am sure about it) by formula is 1433-09-02
+  2012-08-19 -> 1433-10-01 (I am sure about it) by formula is 1433-10-02
 }
 
 interface
@@ -139,9 +161,9 @@ end;
 
 {$else not HEJRI_COMPLEX}
 var
-  HejriYearDays: Extended = 354.3680;// 354.367056;// or 354.3680;
+  HejriYearDays: Extended = 354.367056;// or 354.3680;
 //  HejriMonthDays: Extended = 29.530588; not need it any more
-  HejriStart: Integer = -466583; // EncodeDate(622, 7, 16+1), the first day in the hijra date system, it is the day when the prohpet went to Madena.
+  HejriStart: Extended = -466583; // EncodeDate(622, 7, 16+1), the first day in the hijra date system, it is the day when the prohpet went to Madena.
 
 //This functions ported from Motaz Abd alazeem (Abu Eyas), with modifications
 function Hejri_MonthDays(Year, Month: Word): Word;
@@ -168,7 +190,7 @@ begin
   Result := (Y - 1) * HejriYearDays + ((M - 1) * HejriYearDays / 12) + D;
   Result := Result + HejriStart;
   if Result > 0 then
-    Result := Result + 1;//the problem between trunc of -0.25 = trunc of +0.75 while the diff is 1
+    Result := Result + 1; //the problem between trunc of -0.25 = trunc of +0.75 while the diff is 1
   Result := Trunc(Result);
 end;
 
@@ -180,7 +202,6 @@ var
   S: Integer;
 begin
   S := Trunc(DateTime - HejriStart) - 1; //Days only
-  //S := DaysBetween(DateTime, HejriStart) - 1;
 
   fY := S / HejriYearDays;
   fD := Frac(fY);
@@ -194,6 +215,6 @@ end;
 
 initialization
   //HejriYearDays := 354.367056;
-  //HejriStart := EncodeDate(622, 7, 16+1);
+  HejriStart := Trunc(EncodeDate(622, 7, 16));
 end.
 

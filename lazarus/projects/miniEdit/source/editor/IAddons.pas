@@ -35,7 +35,7 @@ type
     function _Release: integer; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
   public
     function GetObject: TObject;
-    function QueryInterface({$ifdef FPC}constref{$else}const{$endif} IID: TGUID; out Obj): HResult; virtual; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+    function QueryInterface({$ifdef FPC}constref{$else}const{$endif} IID: TGUID; out Obj): HResult; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
     destructor Destroy; override;
   end;
 
@@ -193,12 +193,12 @@ begin
   Result.FAddonObject := AO; //to kill the object when free the list
 end;
 
-function TAddonObject._AddRef: integer;
+function TAddonObject._AddRef: integer; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
 begin
   Result := 0;
 end;
 
-function TAddonObject._Release: integer;
+function TAddonObject._Release: integer; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
 begin
   Result := 0;
 end;
@@ -208,7 +208,7 @@ begin
   Result := Self;
 end;
 
-function TAddonObject.QueryInterface({$ifdef FPC}constref{$else}const{$endif} IID: TGUID; out Obj): HResult; 
+function TAddonObject.QueryInterface({$ifdef FPC}constref{$else}const{$endif} IID: TGUID; out Obj): HResult; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
 begin
   if GetInterface(IID, Obj) then
     Result := 0
@@ -226,4 +226,4 @@ initialization
 finalization
   FreeAndNil(FAddons);
 end.
-
+
