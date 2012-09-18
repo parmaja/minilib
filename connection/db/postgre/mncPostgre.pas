@@ -562,16 +562,18 @@ begin
         aCurrent.Add(i, NULL)
       else
       begin
-        aFieldSize := PQfsize(Statment, i);
+        //aFieldSize := PQfsize(Statment, i);
         p := PQgetvalue(FStatment, FTuple, i);
         if ResultFormat=mrfText then
           v := string(p)
         else
         begin
+          aFieldSize :=PQgetlength(Statment, FTuple, i);
           case PQftype(Statment, i) of
             Oid_varchar, Oid_bpchar, Oid_name:
               v := string(p);
             Oid_oid,
+
             Oid_int4:
               v := BEtoN(PInteger(p)^);
             Oid_int2:
@@ -583,10 +585,11 @@ begin
                 //v := String(p);
             Oid_Float4, Oid_Float8:
             begin
-            end;
+            end;                             
             Oid_Date:
             begin
-              d := BEtoN(plongint(p)^) + 36526;
+              //d := BEtoN(plongint(p)^) + 36526;
+              d := _BRead(p, aFieldSize) + 36526; //36526 = days between 31/12/1899 and 01/01/2000  = delphi, Postgre (0) date 
               v := TDateTime(d);
             end;
             Oid_Time,
@@ -598,7 +601,10 @@ begin
             end;
             Oid_Bool:
                v := (p[0] <> #0);
-            Oid_Money:;
+            OID_NUMERIC:
+              v := _BRead(p, aFieldSize);
+            Oid_Money:
+              v := _BRead(p, 8) / 100;
             Oid_Unknown:;
           end;
         end;

@@ -12,6 +12,7 @@ type
     Button2: TButton;
     ListBox1: TListBox;
     PassEdit: TEdit;
+    BinaryResultChk: TCheckBox;
     procedure Button2Click(Sender: TObject);
     procedure Button1Click(Sender: TObject);
   private
@@ -77,7 +78,11 @@ var
   Conn: TmncPGConnection;
   Session: TmncPGSession;
   Cmd: TmncPGCommand;
+  i: Integer;
+  d: TDate;
 begin
+  d := 0;
+  ShowMessage(DateToStr(d));
   Conn := TmncPGConnection.Create;
   try
     Conn.Resource := 'csdata';
@@ -86,11 +91,13 @@ begin
     Conn.Password := 'masterkey';
     Conn.Connect;
     Session := TmncPGSession.Create(Conn);
+    ListBox1.Items.Clear;
     try
       Session.Start;
       Cmd := TmncPGCommand.CreateBy(Session);
-      cmd.ResultFormat := mrfBinary; 
-      Cmd.SQL.Text := 'select "AccID", "AccName", "AccCode" from "Accounts"';
+      if BinaryResultChk.Checked then
+        cmd.ResultFormat := mrfBinary;
+      Cmd.SQL.Text := 'select "AccDate" from "Accounts"';
       //Cmd.SQL.Text := 'select "AccID" from "Accounts"';
 //      Cmd.SQL.Add('where name = ?name');
       //Cmd.Prepare;
@@ -99,7 +106,10 @@ begin
       begin
         while not Cmd.EOF do
         begin
-          ListBox1.Items.Add(Cmd.Field['AccID'].AsString + ' - ' + Cmd.Field['AccName'].AsString+ ' - ' + Cmd.Field['AccCode'].AsString);
+          for I := 0 to Cmd.Fields.Count - 1 do
+            ListBox1.Items.Add(Cmd.Fields.Items[i].Column.Name+': '+Cmd.Fields.Items[i].AsString);
+          ListBox1.Items.Add('-------------------------------');
+          //ListBox1.Items.Add(Cmd.Field['AccID'].AsString + ' - ' + Cmd.Field['AccName'].AsString+ ' - ' + Cmd.Field['AccCode'].AsString);
           //ListBox1.Items.Add(Cmd.Field['AccID'].AsString);
           Cmd.Next;
         end;

@@ -2,8 +2,8 @@ object Form1: TForm1
   Left = 770
   Top = 179
   Caption = 'Form1'
-  ClientHeight = 213
-  ClientWidth = 339
+  ClientHeight = 328
+  ClientWidth = 378
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
@@ -32,10 +32,11 @@ object Form1: TForm1
     OnClick = Button2Click
   end
   object ListBox1: TListBox
-    Left = 95
-    Top = 80
-    Width = 237
-    Height = 126
+    Left = 0
+    Top = 64
+    Width = 378
+    Height = 264
+    Align = alBottom
     ItemHeight = 13
     TabOrder = 2
   end
@@ -46,5 +47,13 @@ object Form1: TForm1
     Height = 21
     PasswordChar = '*'
     TabOrder = 3
+  end
+  object BinaryResultChk: TCheckBox
+    Left = 95
+    Top = 14
+    Width = 97
+    Height = 17
+    Caption = 'Binary Result'
+    TabOrder = 4
   end
 end

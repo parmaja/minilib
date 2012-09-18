@@ -980,6 +980,7 @@ begin
     FCommands[0].Session := nil;
   Connection := nil;
   FreeAndNil(FCommands);
+  FreeAndNil(FParams);
   inherited;
 end;
 
