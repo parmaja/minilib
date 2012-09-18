@@ -8,12 +8,12 @@ unit base36;
 interface
 
 uses
-  SysUtils{$ifdef FPC}, sha1 {$endif}, MD5;
+  SysUtils{$ifdef FPC}, sha1, MD5 {$endif};
 
 function DecodeB36(Value: string): int64; overload;
 function EncodeB36(Value: int64): string; overload;
-function EncodeB36(D: TMD5Digest; Dash: string = '-'): string; overload;
 {$ifdef FPC}//todo
+function EncodeB36(D: TMD5Digest; Dash: string = '-'): string; overload;
 function EncodeB36(D: TSHA1Digest; Dash: string = '-'): string; overload;
 {$endif}
 
@@ -74,6 +74,7 @@ begin
   end;
 end;
 
+{$ifdef FPC}//todo
 function EncodeB36(D: TMD5Digest; Dash: string = '-'): string;
 var
   i: Integer;
@@ -96,7 +97,6 @@ begin
   end;
 end;
 
-{$ifdef FPC}//todo
 function EncodeB36(D: TSHA1Digest; Dash: string = '-'): string;
 var
   i: Integer;
