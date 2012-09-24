@@ -18,6 +18,28 @@ uses
   SysUtils, Classes, mnSockets, mnClients, mnSocketStreams, mnStreams, mnUtils;
 
 type
+
+  {$ifdef fpc}
+  TmnHttpUrl = object
+  {$else}
+  TmnHttpUrl = record
+  {$endif}
+    Protocol: string;
+    Host: string;
+    Port: string;
+    Params: string;
+    procedure Create(const vURL: string); overload;
+    procedure Create(const vProtocol, vHost, vPort, vParams: string); overload;
+
+    procedure Encode(const vURL: string; var vProtocol, vHost, vPort, vParams: string);
+    function GetUrlPart(var vPos: PChar; var vCount: Integer; const vTo: string; const vStops: TSysCharSet = []): string;
+
+    function GetProtocol: string;
+    function GetHost: string;
+    function GetPort: string;
+    function GetParams: string;
+  end;
+
   { TmnCustomHttpHeader }
 
   TmnCustomHttpHeader = class(TObject)
@@ -54,6 +76,7 @@ type
     FAcceptLanguage: string;
     FAccept: string;
     FUserAgent: string;
+    FConnection: string;
   protected
     procedure DoReadHeaders; override;
     procedure DoWriteHeaders; override;
@@ -67,6 +90,7 @@ type
     property Host: string read FHost write FHost;
     property Referer: string read FReferer write FReferer;
     property UserAgent: string read FUserAgent write FUserAgent;
+    property Connection: string read FConnection write FConnection;
   end;
 
   { TmnHttpResponse }
@@ -75,6 +99,7 @@ type
   private
     FLocation: string;
     FServer: string;
+    FContentLength: Integer;
   protected
     procedure DoReadHeaders; override;
     procedure DoWriteHeaders; override;
@@ -83,6 +108,7 @@ type
     procedure ReadBuffer(var Buffer; Count: Integer);
     property Location: string read FLocation write FLocation;
     property Server: string read FServer write FServer;
+    property ContentLength: Integer read FContentLength write FContentLength;
   end;
 
   { TmnCustomHttpClient }
@@ -110,6 +136,27 @@ type
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
+    procedure Get(const vUrl: string);
+  end;
+
+  TmnCustomHttpStream = class(TmnClientStream)
+  private
+    FParams: string;
+    FProtocol: string;
+    FRequest: TmnHttpRequest;
+    FResponse: TmnHttpResponse;
+  protected
+    function CreateSocket: TmnCustomSocket; override;
+    function GetSize: Int64; override;
+  public
+    constructor Create(vSocket: TmnCustomSocket = nil); override;
+    destructor Destroy; override;
+    function Seek(Offset: Integer; Origin: Word): Integer; override;
+    property Request: TmnHttpRequest read FRequest;
+    property Response: TmnHttpResponse read FResponse;
+
+    property Protocol: string read FProtocol write FProtocol;
+    property Params: string read FParams write FParams;
     procedure Get(const vUrl: string);
   end;
 
@@ -229,6 +276,7 @@ begin
     FHost := Values['Host'];
     FReferer := Values['Referer'];
     FUserAgent := Values['User-Agent'];
+    FConnection := Values['Connection'];
   end;
 end;
 
@@ -244,6 +292,7 @@ begin
     Values['Host'] := FHost;
     Values['Referer'] := FReferer;
     Values['User-Agent'] := FUserAgent;
+    Values['Connection'] := FConnection;
   end;
 end;
 
@@ -266,6 +315,7 @@ begin
   begin
     FLocation := Values['Location'];
     FServer := Values['Server'];
+    FContentLength := StrToIntDef(Values['Content-Length'], 0);
   end;
 end;
 
@@ -302,14 +352,203 @@ begin
 end;
 
 procedure TmnHttpClient.Get(const vUrl: string);
+var
+  u: TmnHttpUrl;
 begin
-  FStream.Address := Request.Host; //Should be published
-  FStream.Port := '80'; //Should be published
+  u.Create(vUrl);
+  Request.Host := u.GetHost;
+  Request.UserAgent := 'Mozilla/4.0';
+
+  FStream.Address := u.GetHost; //Should be published
+  FStream.Port := u.GetPort; //Should be published
   FStream.Connect;
-  FStream.WriteLn('GET' + ' ' + vUrl +  ' ' + 'HTTP/1.0');
+  FStream.WriteLn('GET' + ' ' + u.GetParams +  ' ' + 'HTTP/1.0');
   FRequest.WriteHeaders;
   if FStream.Connected then
     FResponse.ReadHeaders;
+end;
+
+{ TmnHttpUrl }
+
+procedure TmnHttpUrl.Create(const vURL: string);
+begin
+  Encode(vURL, Protocol,Host, Port, Params);
+end;
+
+procedure TmnHttpUrl.Create(const vProtocol, vHost, vPort, vParams: string);
+begin
+  Protocol := vProtocol;
+  Host := vHost;
+  Port := vPort;
+  Params := vParams;
+end;
+
+procedure TmnHttpUrl.Encode(const vURL: string; var vProtocol, vHost, vPort, vParams: string);
+var
+  p: PChar;
+  l: Integer;
+begin
+  vProtocol := '';
+  vHost := '';
+  vPort := '';
+  vParams := '';
+
+  p := PChar(vURL);
+  l := Length(vURL);
+  if l>0 then vProtocol := GetUrlPart(p, l, '://', ['.']);
+  if l>0 then
+  begin
+    vHost := GetUrlPart(p, l, ':', ['/']);
+    if vHost<>'' then
+    begin
+      vPort := GetUrlPart(p, l, '/', []);
+      if vPort='' then
+      begin
+        SetString(vPort, p, l);
+        l := 0;
+      end;
+    end
+    else
+    begin
+      vHost := GetUrlPart(p, l, '/', []);
+      if vHost='' then
+      begin
+        SetString(vHost, p, l);
+        l := 0;
+      end;
+    end;
+  end;
+  if l>0 then SetString(vParams, p, l);
+end;
+
+function TmnHttpUrl.GetProtocol: string;
+begin
+  if Protocol<>'' then
+    Result := Protocol
+  else
+    Result := 'http';
+end;
+
+function TmnHttpUrl.GetHost: string;
+begin
+  Result := Host;
+end;
+
+function TmnHttpUrl.GetPort: string;
+begin
+  if Port<>'' then
+    Result := Port
+  else
+    Result := '80';
+end;
+
+function TmnHttpUrl.GetParams: string;
+begin
+  if Params<>'' then
+    Result := '/'+Params
+  else
+    Result := '/';
+end;
+
+function TmnHttpUrl.GetUrlPart(var vPos: PChar; var vCount: Integer; const vTo: string; const vStops: TSysCharSet = []): string;
+
+  function _IsMatch(vSrc, vDst: PChar; ACount: Integer): Boolean;
+  var
+    i: Integer;
+  begin
+    Result := True;
+    for I := 0 to ACount - 1 do
+    begin
+      if vSrc^<>vDst^ then
+      begin
+        Result := False;
+        Break;
+      end;
+      Inc(vSrc);
+      Inc(vDst);
+    end;
+  end;
+
+var
+  l: Integer;
+  p, e, d: PChar;
+  aFound: Boolean;
+begin
+  l := Length(vTo);
+  d := Pchar(vTo);
+  p := vPos;
+  e := vPos;
+  Inc(e, vCount - l);
+  aFound := False;
+  while p<e do
+  begin
+    if (p^ in vStops) then Break;
+    if (p^ = d^) and _IsMatch(p, d, l) then
+    begin
+      aFound := True;
+      Break;
+    end;
+    Inc(p);
+  end;
+
+  if aFound then
+  begin
+    SetString(Result, vPos, p-vPos);
+    Dec(vCount, l + (p-vPos));
+    Inc(vPos, l + (p-vPos));
+  end
+  else
+    Result := '';
+end;
+
+{ TmnCustomHttpStream }
+
+constructor TmnCustomHttpStream.Create(vSocket: TmnCustomSocket);
+begin
+  inherited;
+  FRequest := TmnHttpRequest.Create(Self);
+  FResponse := TmnHttpResponse.Create(Self);
+  Request.UserAgent := 'Mozilla/4.0';
+end;
+
+function TmnCustomHttpStream.CreateSocket: TmnCustomSocket;
+begin
+  Result := inherited CreateSocket;
+end;
+
+destructor TmnCustomHttpStream.Destroy;
+begin
+  FreeAndNil(FRequest);
+  FreeAndNil(FResponse);
+  inherited;
+end;
+
+procedure TmnCustomHttpStream.Get(const vUrl: string);
+var
+  u: TmnHttpUrl;
+begin
+  u.Create(vUrl);
+  Protocol := u.GetProtocol;
+  Address := u.GetHost;
+  Port := u.GetPort;
+  Params := u.GetParams;
+  Connect;
+  //FRequest.Connection := 'Keep-Alive';
+  FRequest.Host := Address;
+  WriteLn('GET' + ' ' + Params +  ' ' + 'HTTP/1.0');
+  FRequest.WriteHeaders;
+  if Connected then
+    FResponse.ReadHeaders;
+end;
+
+function TmnCustomHttpStream.GetSize: Int64;
+begin
+  Result := FResponse.ContentLength;
+end;
+
+function TmnCustomHttpStream.Seek(Offset: Integer; Origin: Word): Integer;
+begin
+  Result := 0;// for loading from this stream like Image.loadfrom streaM
 end;
 
 end.

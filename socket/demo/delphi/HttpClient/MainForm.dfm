@@ -11,13 +11,15 @@ object Form4: TForm4
   Font.Name = 'Tahoma'
   Font.Style = []
   OldCreateOrder = False
+  OnCreate = FormCreate
+  OnDestroy = FormDestroy
   PixelsPerInch = 96
   TextHeight = 13
   object DocList: TMemo
     Left = 8
-    Top = 110
+    Top = 152
     Width = 617
-    Height = 265
+    Height = 223
     ScrollBars = ssVertical
     TabOrder = 0
   end
@@ -32,7 +34,7 @@ object Form4: TForm4
   end
   object HeaderList: TMemo
     Left = 8
-    Top = 33
+    Top = 73
     Width = 617
     Height = 73
     ScrollBars = ssVertical
@@ -45,5 +47,40 @@ object Form4: TForm4
     Height = 21
     TabOrder = 3
     Text = 'www.google.com'
+  end
+  object Button1: TButton
+    Left = 8
+    Top = 35
+    Width = 75
+    Height = 25
+    Caption = 'Button1'
+    TabOrder = 4
+    OnClick = Button1Click
+  end
+  object Button3: TButton
+    Left = 112
+    Top = 35
+    Width = 75
+    Height = 25
+    Caption = 'Button3'
+    TabOrder = 5
+    OnClick = Button3Click
+  end
+  object IdHTTP1: TIdHTTP
+    AuthRetries = 0
+    AuthProxyRetries = 0
+    AllowCookies = True
+    ProxyParams.BasicAuthentication = False
+    ProxyParams.ProxyPort = 0
+    Request.ContentLength = -1
+    Request.ContentRangeEnd = 0
+    Request.ContentRangeStart = 0
+    Request.ContentRangeInstanceLength = 0
+    Request.Accept = 'text/html, */*'
+    Request.BasicAuthentication = False
+    Request.UserAgent = 'Mozilla/3.0 (compatible; Indy Library)'
+    HTTPOptions = [hoForceEncodeParams]
+    Left = 304
+    Top = 192
   end
 end
