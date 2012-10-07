@@ -101,7 +101,7 @@ begin
   Disconnect;
 end;
 
-constructor TmnCustomCommStream.Create(Suspend: Boolean; vPort: string; vBaudRate: Int64; vDataBits: TDataBits = dbEight; vParity: TParityBits = prNone; vStopBits: TStopBits = sbOneStopBit; vHandshake: THandshake = hsHardware); overload;
+constructor TmnCustomCommStream.Create(Suspend: Boolean; vPort: string; vBaudRate: Int64; vDataBits: TDataBits = dbEight; vParity: TParityBits = prNone; vStopBits: TStopBits = sbOneStopBit; vHandshake: THandshake = hsHardware);
 begin
   inherited Create;
   FTimeout := cTimeout;

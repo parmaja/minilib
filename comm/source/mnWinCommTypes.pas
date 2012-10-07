@@ -107,13 +107,15 @@ type
     FWriteTimeout: Cardinal;
     procedure SetReceiveBuffer(AValue: Integer);
   protected
-    FHandle: THandle;
+    //FHandle: THandle;
     procedure Created; override;
     function GetFlowControlFlags: TFlowControlFlags; virtual;
     function GetParityFlags: TParityFlags; virtual;
   public
     function WaitEvent(const Events: TComEvents): TComEvents; virtual;
     property ReceiveBuffer: Integer read FReceiveBuffer write SetReceiveBuffer;
+    property ReadTimeout: Cardinal read FReadTimeout write FReadTimeout;
+    property WriteTimeout: Cardinal read FWriteTimeout write FWriteTimeout;
   end;
 
 const
@@ -188,8 +190,8 @@ procedure TmnWinCustomCommStream.Created;
 begin
   inherited Created;
   FReceiveBuffer := 4096;
-  FReadTimeout := 100;
-  FWriteTimeout := 1000;
+  FReadTimeout := Timeout;
+  FWriteTimeout := Timeout;
 end;
 
 function TmnWinCustomCommStream.WaitEvent(const Events: TComEvents): TComEvents;

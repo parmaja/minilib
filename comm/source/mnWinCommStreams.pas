@@ -30,12 +30,12 @@ type
 
   TmnOSCommStream = class(TmnWinCustomCommStream)
   private
-    FHandle: THandle;
     FCancelEvent: THandle;
     FUseOverlapped: Boolean;
     FWriteThrough: Boolean;
     procedure SetUseOverlapped(const Value: Boolean);
   protected
+    FHandle: THandle;
     procedure DoConnect; override;
     procedure DoDisconnect; override;
     function GetConnected: Boolean; override;
@@ -115,6 +115,10 @@ begin
     DCB.XoffLim := DCB.XonLim;
     DCB.EvtChar := EventChar;
 
+    //read settings
+    if not GetCommState(FHandle, DCB) then
+      RaiseLastOSError;
+
     DCB.Flags := dcb_Binary;
     if DiscardNull then
       DCB.Flags := DCB.Flags or dcb_Null;
@@ -159,11 +163,12 @@ begin
     if not SetCommState(FHandle, DCB) then
       RaiseLastOSError;
 
-    aTimeouts.ReadIntervalTimeout := MAXWORD;
+    aTimeouts.ReadIntervalTimeout := MAXDWORD;
     aTimeouts.ReadTotalTimeoutMultiplier := 0;
-    aTimeouts.ReadTotalTimeoutConstant := Timeout;
+    aTimeouts.ReadTotalTimeoutConstant := ReadTimeout;
+    aTimeouts.ReadTotalTimeoutConstant := 0;
     aTimeouts.WriteTotalTimeoutMultiplier := 0;
-    aTimeouts.WriteTotalTimeoutConstant := Timeout;
+    aTimeouts.WriteTotalTimeoutConstant := WriteTimeout;
 
     if not SetCommTimeouts(FHandle, aTimeouts) then
       RaiseLastOSError;
