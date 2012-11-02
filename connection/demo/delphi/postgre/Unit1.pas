@@ -79,14 +79,11 @@ var
   Session: TmncPGSession;
   Cmd: TmncPGCommand;
   i: Integer;
-  d: TDate;
 begin
-  d := 0;
-  ShowMessage(DateToStr(d));
   Conn := TmncPGConnection.Create;
   try
-    Conn.Resource := 'csdata';
-    Conn.Host := 'belalpc';
+    Conn.Resource := 'csData';
+    Conn.Host := '';
     Conn.UserName := 'postgres';
     Conn.Password := 'masterkey';
     Conn.Connect;
@@ -97,7 +94,7 @@ begin
       Cmd := TmncPGCommand.CreateBy(Session);
       if BinaryResultChk.Checked then
         cmd.ResultFormat := mrfBinary;
-      Cmd.SQL.Text := 'select "AccDate" from "Accounts"';
+      Cmd.SQL.Text := 'select "AccBalance" from "Accounts"';
       //Cmd.SQL.Text := 'select "AccID" from "Accounts"';
 //      Cmd.SQL.Add('where name = ?name');
       //Cmd.Prepare;

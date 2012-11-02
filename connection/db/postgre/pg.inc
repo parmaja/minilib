@@ -1,7 +1,7 @@
 interface
 
 uses 
-  SysUtils;
+  Windows, SysUtils;
 
 const
 

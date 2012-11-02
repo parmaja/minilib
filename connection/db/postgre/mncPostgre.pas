@@ -155,6 +155,9 @@ type
 
 implementation
 
+uses
+  Math;
+
 
 procedure TmncPGConnection.RaiseError(Error: Boolean; const ExtraMsg: string);
 var
@@ -375,7 +378,6 @@ end;
 procedure TmncPGCommand.FreeParamValues(var Result: TArrayOfPChar);
 var
   i: Integer;
-  s: string;
 begin
   for i := 0 to Length(Result) - 1 do
     FreeMem(Result[i]);
@@ -454,8 +456,6 @@ begin
 end;
 
 procedure TmncPGCommand.DoNext;
-var
-  r: Integer;
 begin
   if (Status = PGRES_TUPLES_OK) then
   begin
@@ -509,14 +509,14 @@ var
   i: Integer;
   c: Integer;
   aName: string;
-  r: PPGresult;
+  //r: PPGresult;
 begin
   //Fields.Clear;
   c := PQnfields(FStatment);
   for i := 0 to c - 1 do
   begin
     aName :=  DequoteStr(PQfname(FStatment, i));
-    Columns.Add(aName, dtUnknown);
+    Columns.Add(aName, dtUnknown); //belal: data type
   end;
 end;
 
@@ -526,25 +526,41 @@ begin
 end;
 
 procedure TmncPGCommand.FetchValues;
-    function _BRead(vSrc: PChar; Count: Longint): Integer;
+
+    function _BRead(vSrc: PChar; vCount: Longint): Integer;
     var
-      s: string;
+      t: PChar;
+      i: Integer;
+    begin
+      Result := 0;
+      t := vSrc;
+      Inc(t, vCount-1);
+      for I := 0 to vCount - 1 do
+      begin
+        Result := Result + Ord(t^) * (1 shl (i*8));
+        Dec(t);
+      end;
+    end;
+
+    function _DRead(vSrc: PChar; vCount: Longint): Int64;
+    var
+      t: PChar;
       c, i: Integer;
     begin
       Result := 0;
-      SetLength(s, Count);
-      Move(vSrc^, s[1], Count);
-      for I := 0 to Count - 1 do
+      t := vSrc;
+      Inc(t, vCount);
+      c := vCount div 2;
+      for I := 0 to c - 1 do
       begin
-        c := Count-i;
-        Result := Result + Ord(s[c]) * (1 shl (i*8));
+        Dec(t, 2);
+        Result := Result + _BRead(t, 2) * Trunc(Power(10000, i));
       end;
     end;
 var
-  str: Utf8String;
   t: Int64;
   d: Double;
-  aType: Integer;
+  //aType: Integer;
   v: Variant;
   aFieldSize: Integer;
   p: PChar;
@@ -570,26 +586,19 @@ begin
         begin
           aFieldSize :=PQgetlength(Statment, FTuple, i);
           case PQftype(Statment, i) of
-            Oid_varchar, Oid_bpchar, Oid_name:
-              v := string(p);
-            Oid_oid,
-
-            Oid_int4:
-              v := BEtoN(PInteger(p)^);
-            Oid_int2:
-              v  := BEtoN(PShortInt(p)^);
-            Oid_int8:
-              //if PQbinaryTuples(FStatment) = 1 then
-                v := _BRead(p, 8);
-              //else
-                //v := String(p);
+            Oid_Bool: v := (p^ <> #0);
+            Oid_varchar, Oid_bpchar, Oid_name: v := string(p);
+            Oid_oid, Oid_int2: v := _BRead(p, 2);
+            Oid_int4: v := _BRead(p, 4);
+            Oid_int8: v := _BRead(p, 8);
+            Oid_Money: v := _BRead(p, 8) / 100;
             Oid_Float4, Oid_Float8:
             begin
-            end;                             
+            end;
             Oid_Date:
             begin
               //d := BEtoN(plongint(p)^) + 36526;
-              d := _BRead(p, aFieldSize) + 36526; //36526 = days between 31/12/1899 and 01/01/2000  = delphi, Postgre (0) date 
+              d := _BRead(p, aFieldSize) + 36526; //36526 = days between 31/12/1899 and 01/01/2000  = delphi, Postgre (0) date
               v := TDateTime(d);
             end;
             Oid_Time,
@@ -599,12 +608,16 @@ begin
               //v := TDateTime(t);//todo
               v := t;//todo
             end;
-            Oid_Bool:
-               v := (p[0] <> #0);
             OID_NUMERIC:
-              v := _BRead(p, aFieldSize);
-            Oid_Money:
-              v := _BRead(p, 8) / 100;
+            begin
+               t := _BRead(p, 2);
+               d := Power(10, 2 * t);
+
+
+              inc(p, 8);
+              t := _DRead(p, aFieldSize - 8);
+              v := t / d;
+            end;
             Oid_Unknown:;
           end;
         end;

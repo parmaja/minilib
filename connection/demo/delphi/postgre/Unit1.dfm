@@ -49,11 +49,13 @@ object Form1: TForm1
     TabOrder = 3
   end
   object BinaryResultChk: TCheckBox
-    Left = 95
+    Left = 87
     Top = 14
     Width = 97
     Height = 17
     Caption = 'Binary Result'
+    Checked = True
+    State = cbChecked
     TabOrder = 4
   end
 end
