@@ -54,10 +54,14 @@ type
     FEndOfLine: string;
     FEOFOnError: Boolean;
     procedure LoadBuffer;
+  private
   protected
     procedure DoError(S: string); virtual;
     function DoRead(var Buffer; Count: Longint): Longint; virtual; abstract;
     function DoWrite(const Buffer; Count: Longint): Longint; virtual; abstract;
+
+    function CheckBuffer: Boolean;
+    procedure SetPosition(vPos: PChar);
   public
     constructor Create(AEndOfLine: string = sUnixEndOfLine);
     destructor Destroy; override;
@@ -85,6 +89,10 @@ type
     function WriteStrings(const Value: TStrings): Cardinal; overload;
 
     property EOF: Boolean read FEOF;
+    property Buffer: PChar read FBuffer; //belal need check names
+    property Position: PChar read FPos;
+    property EndPos: PChar read FEnd;
+
     property EndOfLine: string read FEndOfLine write FEndOfLine;
     property EOFOnError: Boolean read FEOFOnError write FEOFOnError default False;
   end;
@@ -370,16 +378,16 @@ begin
   Result := aCount;
 end;
 
+function TmnBufferStream.CheckBuffer: Boolean;
+begin
+  if not (FPos < FEnd) then
+    LoadBuffer;
+  Result := (FPos < FEnd);
+end;
+
 procedure TmnBufferStream.ReadUntil(const UntilStr: string; var Result: string; var Matched: Boolean);
 var
   P: PChar;
-  function CheckBuffer: Boolean;
-  begin
-    if not (FPos < FEnd) then
-      LoadBuffer;
-    Result := (FPos < FEnd);
-  end;
-var
   idx, l: Integer;
   t: string;
 begin
@@ -409,6 +417,11 @@ begin
     Result := Result + t;
     FPos := P;
   end;
+end;
+
+procedure TmnBufferStream.SetPosition(vPos: PChar);
+begin
+  FPos := vPos;
 end;
 
 procedure TmnWrapperStream.SetStream(const Value: TStream);
