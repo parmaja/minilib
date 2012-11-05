@@ -814,5 +814,10 @@ begin
   Result := udtISODateToStr(UniDate.Current, DateTime, TimeDivider, WithTime);
 end;
 
+initialization
+
+finalization
+  FreeAndNil(FUniDate);
+
 end.
 

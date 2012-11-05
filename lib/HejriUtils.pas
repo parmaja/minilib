@@ -7,6 +7,43 @@ unit HejriUtils;
  * @author    Zaher Dirkey <zaher at parmaja dot com>
  *}
 
+ { Example of Hejri.txt file
+
+# Hejri file date is csv file
+#---------------------------------
+# The format Hiri date without day number 1430-01 and the count of day in this month,
+# then only first line the date in greg date in ISO date format
+# you can ignore any line by use # in the first char of line
+# any empry line will be ignored.
+
+1420-01;30;1999-04-16
+1420-02;29
+1420-03;30
+1420-04;29
+1420-05;30
+1420-06;30
+1420-07;29
+1420-08;30
+1420-09;29
+1420-10;30
+1420-11;29
+1420-12;30
+
+1421-01;29;2000-04-05
+1421-02;30
+1421-03;29
+1421-04;30
+1421-05;29
+1421-06;30
+1421-07;29
+1421-08;30
+1421-09;29
+1421-10;30
+1421-11;30
+1421-12;29
+
+}
+
 interface
 
 uses
@@ -286,40 +323,3 @@ initialization
 finalization
   FreeAndNil(HejriItems);
 end.
-
-{ Example of Hejri.txt file
-
-# Hejri file date is csv file
-#---------------------------------
-# The format Hiri date without day number 1430-01 and the count of day in this month,
-# then only first line the date in greg date in ISO date format
-# you can ignore any line by use # in the first char of line
-# any empry line will be ignored.
-
-1420-01;30;1999-04-16
-1420-02;29
-1420-03;30
-1420-04;29
-1420-05;30
-1420-06;30
-1420-07;29
-1420-08;30
-1420-09;29
-1420-10;30
-1420-11;29
-1420-12;30
-
-1421-01;29;2000-04-05
-1421-02;30
-1421-03;29
-1421-04;30
-1421-05;29
-1421-06;30
-1421-07;29
-1421-08;30
-1421-09;29
-1421-10;30
-1421-11;30
-1421-12;29
-
-}
