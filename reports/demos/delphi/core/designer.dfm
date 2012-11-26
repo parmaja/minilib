@@ -29,7 +29,6 @@ object DesignerForm: TDesignerForm
     ItemHeight = 18
     TabOrder = 0
     OnDblClick = LayoutsListDblClick
-    ExplicitHeight = 254
   end
   object SaveBtn: TButton
     Left = 127
@@ -61,7 +60,7 @@ object DesignerForm: TDesignerForm
     AutoCloseUp = True
     Style = csDropDownList
     Anchors = [akTop, akRight]
-    ItemHeight = 13
+    ItemHeight = 0
     TabOrder = 3
     OnClick = SectionsListBoxClick
   end

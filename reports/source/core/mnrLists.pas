@@ -21,16 +21,56 @@ type
 
   TmnrNode = class(TPersistent)
   private
-    FNodes: TmnrNodes;
+    FNodes: TmnrNode;
   protected
-    procedure SetNodes(const Value: TmnrNodes);
-    function GetNodes: TmnrNodes;
-    procedure Attach; virtual; abstract;
-    procedure Detach; virtual; abstract;
+    procedure SetNodes(const Value: TmnrNode);
+    function GetNodes: TmnrNode;
+    procedure Attach; virtual;
+    procedure Detach; virtual; 
+
+    function GetCount: Integer; virtual;
+
+    function GetFirst: TmnrNode;
+    function GetHead: TmnrNode;
+    function GetLast: TmnrNode;
+    function GetNext: TmnrNode;
+    function GetPrior: TmnrNode;
+
+    procedure SetFirst(const Value: TmnrNode);
+    procedure SetLast(const Value: TmnrNode);
+    procedure SetNext(const Value: TmnrNode);
+    procedure SetPrior(const Value: TmnrNode);
+
+    function DoGetHead: TmnrNode; virtual;
+    function DoGetFirst: TmnrNode; virtual;
+    function DoGetLast: TmnrNode; virtual;
+    function DoGetNext: TmnrNode; virtual;
+    function DoGetPrior: TmnrNode; virtual;
+    procedure DoSetFirst(const Value: TmnrNode); virtual;
+    procedure DoSetLast(const Value: TmnrNode); virtual;
+    procedure DoSetNext(const Value: TmnrNode); virtual;
+    procedure DoSetPrior(const Value: TmnrNode); virtual;
   public
-    constructor Create(vNodes: TmnrNodes); virtual;
+    constructor Create(vNodes: TmnrNode);
     destructor Destroy; override;
-    property Nodes: TmnrNodes read GetNodes write SetNodes;
+    property Nodes: TmnrNode read GetNodes write SetNodes;
+
+    property Next: TmnrNode read GetNext write SetNext;
+    property Prior: TmnrNode read GetPrior write SetPrior;
+    property First: TmnrNode read GetFirst write SetFirst;
+    property Last: TmnrNode read GetLast write SetLast;
+    property Head: TmnrNode read GetHead;
+    property Count: Integer read GetCount;
+    procedure IncCount; virtual;
+    procedure DecCount; virtual;
+  end;
+
+  TmnrNodes = class(TmnrNode)
+  public
+    constructor Create(vNodes: TmnrNode); overload;
+    constructor Create; overload;
+    destructor Destroy; override;
+    procedure Clear; virtual;
   end;
 
   TmnrIndex = class
@@ -42,115 +82,124 @@ type
     function GetCount: Integer; virtual;
     function GetItems(Index: Integer): TmnrNode;
   public
-    constructor Create(vNodes: TmnrNodes); 
+    constructor Create(vNodes: TmnrNodes);
     destructor Destroy; override;
     property Nodes: TmnrNodes read GetNodes;
     property Count: Integer read GetCount;
     property Items[Index: Integer]: TmnrNode read GetItems; default;
   end;
 
-  TmnrNodes = class
-  private
-  protected
-    function GetHead: TmnrNode; virtual;
-    function GetCount: Integer; virtual;
-  public
-    constructor Create;
-    destructor Destroy; override;
-    property Head: TmnrNode read GetHead;
-    procedure Clear; virtual;
-    property Count: Integer read GetCount;
-  end;
-
   TmnrLinkNode = class(TmnrNode)
   private
-    FPrior: TmnrLinkNode;
-    FNext: TmnrLinkNode;
+    FPrior: TmnrNode;
+    FNext: TmnrNode;
   protected
     procedure SetNodes(const Value: TmnrLinkNodes);
     function GetNodes: TmnrLinkNodes;
-    procedure Attach; override;
-    procedure Detach; override;
-    function GetNext: TmnrLinkNode;
-    function GetPrior: TmnrLinkNode;
+    function DoGetNext: TmnrNode; override;
+    function DoGetPrior: TmnrNode; override;
+    procedure DoSetNext(const Value: TmnrNode); override;
+    procedure DoSetPrior(const Value: TmnrNode); override;
   public
-    property Next: TmnrLinkNode read GetNext;
-    property Prior: TmnrLinkNode read GetPrior;
     property Nodes: TmnrLinkNodes read GetNodes write SetNodes;
+  end;
+
+  TmnrValueNode = class(TmnrLinkNode)
+  protected
+    function GetAsBoolean: Boolean; virtual; abstract;
+    function GetAsCurrency: Currency; virtual; abstract;
+    function GetAsDateTime: TDateTime; virtual; abstract;
+    function GetAsFloat: Double; virtual; abstract;
+    function GetAsInteger: Longint; virtual; abstract;
+    function GetAsString: string; virtual; abstract;
+    function GetAsVariant: Variant; virtual; abstract;
+
+    procedure SetAsBoolean(const Value: Boolean); virtual; abstract;
+    procedure SetAsCurrency(const Value: Currency); virtual; abstract;
+    procedure SetAsDateTime(const Value: TDateTime); virtual; abstract;
+    procedure SetAsFloat(const Value: Double); virtual; abstract;
+    procedure SetAsInteger(const Value: Longint); virtual; abstract;
+    procedure SetAsString(const Value: string); virtual; abstract;
+    procedure SetAsVariant(const Value: Variant); virtual; abstract;
+  public
+
+    property AsBoolean: Boolean read GetAsBoolean write SetAsBoolean;
+    property AsCurrency: Currency read GetAsCurrency write SetAsCurrency;
+    property AsDateTime: TDateTime read GetAsDateTime write SetAsDateTime;
+    property AsFloat: Double read GetAsFloat write SetAsFloat;
+    property AsInteger: Longint read GetAsInteger write SetAsInteger;
+    property AsString: string read GetAsString write SetAsString;
+    property AsVariant: Variant read GetAsVariant write SetAsVariant;
+    property Value: Variant read GetAsVariant write SetAsVariant;
   end;
 
   TmnrLinkNodes = class(TmnrNodes)
   private
-    FLast: TmnrLinkNode;
-    FFirst: TmnrLinkNode;
+    FLast: TmnrNode;
+    FFirst: TmnrNode;
     FCount: Integer;
-    function GetByIndex(vIndex: Integer): TmnrLinkNode;
   protected
-    function GetHead: TmnrNode; override;
-    function GetFirst: TmnrLinkNode;
-    function GetLast: TmnrLinkNode;
+    function GetByIndex(vIndex: Integer): TmnrNode;
     function GetCount: Integer; override;
+    function DoGetFirst: TmnrNode; override;
+    function DoGetLast: TmnrNode; override;
+    procedure DoSetFirst(const Value: TmnrNode); override;
+    procedure DoSetLast(const Value: TmnrNode); override;
 
   public
     function Add: TmnrLinkNode;
-    property First: TmnrLinkNode read GetFirst;
-    property Last: TmnrLinkNode read GetLast;
-    property ByIndex[vIndex: Integer]: TmnrLinkNode read GetByIndex;
+    procedure IncCount; override;
+    procedure DecCount; override;
+    property ByIndex[vIndex: Integer]: TmnrNode read GetByIndex;
   end;
 
-  TmnrNodeArray = array of TmnrLinkNode;
+  TmnrNodeArray = array of TmnrNode;
 
   TmnrLinkNodesListIndex = class(TmnrIndex)
   protected
     FArray: TmnrNodeArray;
     procedure Compute; override;
     function GetCount: Integer; override;
-    function GetItems(Index: Integer): TmnrLinkNode;
+    function GetItems(Index: Integer): TmnrNode;
     function GetNodes: TmnrLinkNodes;
   public
     constructor Create(vNodes: TmnrLinkNodes);
     destructor Destroy; override;
     property Nodes: TmnrLinkNodes read GetNodes;
-    property Items[Index: Integer]: TmnrLinkNode read GetItems; default; 
+    property Items[Index: Integer]: TmnrNode read GetItems; default; 
   end;
 
-  TmnrRowCells = class(TmnrLinkNodes)
+  TmnrRowNode = class(TmnrLinkNodes)
   private
-    FRow: TmnrRowNode;
+    FNext: TmnrNode;
+    FPrior: TmnrNode;
   protected
-    function GetRow: TmnrRowNode;
-  public
-    property Row: TmnrRowNode read GetRow;
-  end;
-
-  TmnrRowNode = class(TmnrLinkNode)
-  private
-    function GetCells: TmnrRowCells;
-  protected
-    FCells: TmnrRowCells;
     FID: Integer;
     procedure SetNodes(const Value: TmnrRowNodes);
     function GetNodes: TmnrRowNodes;
     function GetNext: TmnrRowNode;
     function GetPrior: TmnrRowNode;
-    function CreateCells: TmnrRowCells; virtual;
+
+
+    function DoGetNext: TmnrNode; override;
+    function DoGetPrior: TmnrNode; override;
+    procedure DoSetNext(const Value: TmnrNode); override;
+    procedure DoSetPrior(const Value: TmnrNode); override;
     procedure Attach; override;
     procedure Detach; override;
 
   public
-    constructor Create(vNodes: TmnrNodes); override;
+    constructor Create(vNodes: TmnrNodes);
     destructor Destroy; override;
     property ID: Integer read FID;
 
     property Next: TmnrRowNode read GetNext;
     property Prior: TmnrRowNode read GetPrior;
     property Nodes: TmnrRowNodes read GetNodes write SetNodes; //parent nodes of row
-    property Cells: TmnrRowCells read GetCells; //cells in row
   end;
 
   TmnrRowNodes = class(TmnrLinkNodes)
   protected
-    function GetHead: TmnrNode; override;
     function GetFirst: TmnrRowNode;
     function GetLast: TmnrRowNode;
   public
@@ -169,7 +218,26 @@ var
 
 { TmnrNode }
 
-constructor TmnrNode.Create(vNodes: TmnrNodes);
+procedure TmnrNode.Attach;
+begin
+  if Nodes<>nil then
+  begin
+    if Nodes.Last=nil then
+    begin
+      Nodes.First := Self;
+      Nodes.Last := Self;
+    end
+    else
+    begin
+      Prior := Nodes.Last;
+      Prior.Next := Self;
+      Nodes.Last := Self;
+    end;
+    Nodes.IncCount;
+  end;
+end;
+
+constructor TmnrNode.Create(vNodes: TmnrNode);
 begin
   inherited Create;
   Nodes := vNodes;
@@ -178,21 +246,136 @@ begin
   {$ENDIF}
 end;
 
+procedure TmnrNode.DecCount;
+begin
+
+end;
+
 destructor TmnrNode.Destroy;
 begin
-  Detach;
+  if FNodes<>nil then Detach;
   {$IFOPT D+}
   Dec(FNodesCount);
   {$ENDIF}
   inherited;
 end;
 
-function TmnrNode.GetNodes: TmnrNodes;
+procedure TmnrNode.Detach;
+begin
+  if Nodes<>nil then
+  begin
+    if Nodes.First=Self then Nodes.First := Next;
+    if Nodes.First<>nil then Nodes.First.Prior := nil;
+
+    if Nodes.Last=Self then Nodes.Last := Prior;
+    if Nodes.Last<>nil then Nodes.Last.Next := nil;
+    Nodes.DecCount;
+    FNodes := nil;
+  end;
+  if Prior<>nil then Prior.Next := Next;
+  if Next<>nil then Next.Prior := Prior;
+
+  Next := nil;
+  Prior := nil;
+end;
+
+function TmnrNode.DoGetFirst: TmnrNode;
+begin
+  Result := nil;
+end;
+
+function TmnrNode.DoGetHead: TmnrNode;
+begin
+  Result := First;
+end;
+
+function TmnrNode.DoGetLast: TmnrNode;
+begin
+  Result := nil;
+end;
+
+function TmnrNode.DoGetNext: TmnrNode;
+begin
+  Result := nil;
+end;
+
+function TmnrNode.DoGetPrior: TmnrNode;
+begin
+  Result := nil;
+end;
+
+procedure TmnrNode.DoSetFirst(const Value: TmnrNode);
+begin
+end;
+
+procedure TmnrNode.DoSetLast(const Value: TmnrNode);
+begin
+end;
+
+procedure TmnrNode.DoSetNext(const Value: TmnrNode);
+begin
+end;
+
+procedure TmnrNode.DoSetPrior(const Value: TmnrNode);
+begin
+end;
+
+function TmnrNode.GetCount: Integer;
+begin
+  Result := 0;
+end;
+
+function TmnrNode.GetFirst: TmnrNode;
+begin
+  Result := DoGetFirst;
+end;
+
+function TmnrNode.GetHead: TmnrNode;
+begin
+  Result := DoGetHead;
+end;
+
+function TmnrNode.GetLast: TmnrNode;
+begin
+  Result := DoGetLast;
+end;
+
+function TmnrNode.GetNext: TmnrNode;
+begin
+  Result := DoGetNext;
+end;
+
+function TmnrNode.GetNodes: TmnrNode;
 begin
   Result := FNodes;
 end;
 
-procedure TmnrNode.SetNodes(const Value: TmnrNodes);
+function TmnrNode.GetPrior: TmnrNode;
+begin
+  Result := DoGetPrior;
+end;
+
+procedure TmnrNode.IncCount;
+begin
+
+end;
+
+procedure TmnrNode.SetFirst(const Value: TmnrNode);
+begin
+  if GetFirst<>Value then DoSetFirst(Value);
+end;
+
+procedure TmnrNode.SetLast(const Value: TmnrNode);
+begin
+  if GetLast<>Value then DoSetLast(Value);
+end;
+
+procedure TmnrNode.SetNext(const Value: TmnrNode);
+begin
+  if GetNext<>Value then DoSetNext(Value);
+end;
+
+procedure TmnrNode.SetNodes(const Value: TmnrNode);
 begin
   if FNodes<>Value then
   begin
@@ -202,25 +385,45 @@ begin
   end;
 end;
 
+procedure TmnrNode.SetPrior(const Value: TmnrNode);
+begin
+  if GetPrior<>Value then DoSetPrior(Value);
+end;
+
 { TmnrNodes }
 
 procedure TmnrNodes.Clear;
 var
-  h: TmnrNode;
+  h, n: TmnrNode;
 begin
-  h := Head;
+  {h := Head;
   while h<>nil do
   begin
-    h.Detach;
     //
     h.Free;
     h := Head;
+  end;}
+
+  h := First;
+  while h<>nil do
+  begin
+    n := h;
+    h := h.Next;
+    n.FNodes := nil;
+    n.Free;
   end;
+  First := nil;
+  Last := nil;
+end;
+
+constructor TmnrNodes.Create(vNodes: TmnrNode);
+begin
+  inherited Create(vNodes);
 end;
 
 constructor TmnrNodes.Create;
 begin
-  inherited Create;
+  Create(nil);
 end;
 
 destructor TmnrNodes.Destroy;
@@ -229,59 +432,9 @@ begin
   inherited;
 end;
 
-function TmnrNodes.GetCount: Integer;
-begin
-  Result := 0;
-end;
-
-function TmnrNodes.GetHead: TmnrNode;
-begin
-  Result := nil;
-end;
-
-{ TmnrLinkNodes }
-
 { TmnrLinkNode }
 
-procedure TmnrLinkNode.Attach;
-begin
-  if Nodes<>nil then
-  begin
-    if Nodes.Last=nil then
-    begin
-      Nodes.FFirst := Self;
-      Nodes.FLast := Self;
-    end
-    else
-    begin
-      FPrior := Nodes.Last;
-      FPrior.FNext := Self;
-      Nodes.FLast := Self;
-    end;
-
-    Inc(Nodes.FCount);
-  end;
-end;
-
-procedure TmnrLinkNode.Detach;
-begin
-  if Nodes<>nil then
-  begin
-    if Nodes.First=Self then Nodes.FFirst := Next;
-    if Nodes.First<>nil then Nodes.FFirst.FPrior := nil;
-
-    if Nodes.Last=Self then Nodes.FLast := Prior;
-    if Nodes.Last<>nil then Nodes.FLast.FNext := nil;
-    Dec(Nodes.FCount);
-  end;
-  if Prior<>nil then Prior.FNext := Next;
-  if Next<>nil then Next.FPrior := Prior;
-
-  FNext := nil;
-  FPrior := nil;
-end;
-
-function TmnrLinkNode.GetNext: TmnrLinkNode;
+function TmnrLinkNode.DoGetNext: TmnrNode;
 begin
   Result := FNext;
 end;
@@ -291,9 +444,19 @@ begin
   Result := TmnrLinkNodes(inherited GetNodes);
 end;
 
-function TmnrLinkNode.GetPrior: TmnrLinkNode;
+function TmnrLinkNode.DoGetPrior: TmnrNode;
 begin
   Result := FPrior;
+end;
+
+procedure TmnrLinkNode.DoSetNext(const Value: TmnrNode);
+begin
+  FNext := Value;
+end;
+
+procedure TmnrLinkNode.DoSetPrior(const Value: TmnrNode);
+begin
+  FPrior := Value;
 end;
 
 procedure TmnrLinkNode.SetNodes(const Value: TmnrLinkNodes);
@@ -308,12 +471,32 @@ begin
   Result := TmnrLinkNode.Create(Self);
 end;
 
-function TmnrLinkNodes.GetHead: TmnrNode;
+procedure TmnrLinkNodes.DecCount;
 begin
-  Result := First;
+  Dec(FCount);
 end;
 
-function TmnrLinkNodes.GetByIndex(vIndex: Integer): TmnrLinkNode;
+function TmnrLinkNodes.DoGetFirst: TmnrNode;
+begin
+  Result := FFirst;
+end;
+
+function TmnrLinkNodes.DoGetLast: TmnrNode;
+begin
+  Result := FLast;
+end;
+
+procedure TmnrLinkNodes.DoSetFirst(const Value: TmnrNode);
+begin
+  FFirst := Value;
+end;
+
+procedure TmnrLinkNodes.DoSetLast(const Value: TmnrNode);
+begin
+  FLast := Value;
+end;
+
+function TmnrLinkNodes.GetByIndex(vIndex: Integer): TmnrNode;
 var
   i: Integer;
 begin
@@ -331,14 +514,9 @@ begin
   Result := FCount;
 end;
 
-function TmnrLinkNodes.GetFirst: TmnrLinkNode;
+procedure TmnrLinkNodes.IncCount;
 begin
-  Result := FFirst;
-end;
-
-function TmnrLinkNodes.GetLast: TmnrLinkNode;
-begin
-  Result := FLast;
+  Inc(FCount);
 end;
 
 { TmnrRowNode }
@@ -355,20 +533,10 @@ end;
 constructor TmnrRowNode.Create(vNodes: TmnrNodes);
 begin
   inherited Create(vNodes);
-  FCells := CreateCells;
-  if FCells=nil then
-    FCells := TmnrRowCells.Create;
-  FCells.FRow := Self; 
-end;
-
-function TmnrRowNode.CreateCells: TmnrRowCells;
-begin
-  Result := nil;
 end;
 
 destructor TmnrRowNode.Destroy;
 begin
-  FreeAndNil(FCells);
   inherited;
 end;
 
@@ -378,9 +546,24 @@ begin
 
 end;
 
-function TmnrRowNode.GetCells: TmnrRowCells;
+function TmnrRowNode.DoGetNext: TmnrNode;
 begin
-  Result := FCells;
+  Result := FNext;
+end;
+
+function TmnrRowNode.DoGetPrior: TmnrNode;
+begin
+  Result := FPrior;
+end;
+
+procedure TmnrRowNode.DoSetNext(const Value: TmnrNode);
+begin
+  FNext := Value;
+end;
+
+procedure TmnrRowNode.DoSetPrior(const Value: TmnrNode);
+begin
+  FPrior := Value;
 end;
 
 function TmnrRowNode.GetNext: TmnrRowNode;
@@ -413,11 +596,6 @@ end;
 function TmnrRowNodes.GetFirst: TmnrRowNode;
 begin
   Result := TmnrRowNode(inherited GetFirst);
-end;
-
-function TmnrRowNodes.GetHead: TmnrNode;
-begin
-  Result := First;
 end;
 
 function TmnrRowNodes.GetLast: TmnrRowNode;
@@ -464,7 +642,7 @@ end;
 
 procedure TmnrLinkNodesListIndex.Compute;
 var
-  p: TmnrLinkNode;
+  p: TmnrNode;
   i: Integer;
 begin
   SetLength(FArray, Nodes.Count);
@@ -494,7 +672,7 @@ begin
   Result := Nodes.Count;
 end;
 
-function TmnrLinkNodesListIndex.GetItems(Index: Integer): TmnrLinkNode;
+function TmnrLinkNodesListIndex.GetItems(Index: Integer): TmnrNode;
 begin
   Result := FArray[Index];
 end;
@@ -504,12 +682,6 @@ begin
   Result := TmnrLinkNodes(inherited GetNodes);
 end;
 
-{ TmnrRowCells }
-
-function TmnrRowCells.GetRow: TmnrRowNode;
-begin
-  Result := FRow;
-end;
 
 initialization
 

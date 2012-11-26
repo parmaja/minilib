@@ -9,8 +9,8 @@ uses
   //dluxdetails dluxdesign
 
 const
-  cMaxRows  = 10000;
-  cMaxCells = 100;
+  cMaxRows  = 1000000;
+  cMaxCells = 4;
 
 type
 
@@ -91,8 +91,12 @@ begin
   r := TSimpleDetailsReport.Create;
   try
     r.Generate;
-    r.ExportCSV('c:\1.csv');
     ShowMessage('Create in '+IntToStr(GetTickCount-t));
+
+    t := GetTickCount;
+    r.ExportCSV('c:\1.csv');
+    ShowMessage('Export in '+IntToStr(GetTickCount-t));
+
     t := GetTickCount;
   finally
     r.Free;
@@ -116,7 +120,7 @@ begin
       r := rs.Add;
       for j:= 0 to cMaxCells - 1 do
       begin
-        r.Cells.Add;
+        r.Add;
       end;
     end;
     ShowMessage(Format('Create %d node in %d ms', [cMaxRows*cMaxCells, GetTickCount-t]));
@@ -155,7 +159,7 @@ begin
       r := rep.Items.Add;
       for j:= 0 to cMaxCells - 1 do
       begin
-        r.Cells.Add;
+        r.Add;
       end;
     end;
     ShowMessage(Format('Create %d node in %d ms', [cMaxRows*cMaxCells, GetTickCount-t]));
@@ -257,7 +261,7 @@ begin
       SubPos := 0
     else
       Inc(SubPos);
-    if SubPos>60 then
+    if SubPos>2000 then
       AcceptMode := acmEof;
   end;
 end;
@@ -279,7 +283,7 @@ begin
       BigPos := 0
     else
       Inc(BigPos);
-    if BigPos>30 then
+    if BigPos>1000 then
       AcceptMode := acmEof;
   end;
 end;
@@ -363,6 +367,7 @@ var
   i, j, k: Integer;
   sec: TmnrSection;
   c: TmnrDesignCell;
+  aRow: TmnrDesignRow;
 
 begin
   st := TStringList.Create;
@@ -387,13 +392,11 @@ begin
           vIni.ReadSection(s, cl);
           if cl.Count<>0 then
           begin
-            with sec.DesignRows.Add do
+            aRow := sec.DesignRows.Add;
+            for k:= 0 to cl.Count - 1 do
             begin
-              for k:= 0 to cl.Count - 1 do
-              begin
-                c := TmnrDesignCell.AutoCreate(Cells, cl[k]);
-                c.Width := vIni.ReadInteger(s, cl[k], -1);
-              end;
+              c := TmnrDesignCell.AutoCreate(aRow, cl[k]);
+              c.Width := vIni.ReadInteger(s, cl[k], -1);
             end;
           end;
           Inc(j);
@@ -458,7 +461,7 @@ var
   c: TmnrDesignCell;
 begin
   sec := Format('%s.Row%d', [vRow.Section.Name, vID]);
-  c := vRow.Cells.First;
+  c := vRow.First;
   while c<>nil do
   begin
     vIni.WriteInteger(Sec, c.Name, c.Width);

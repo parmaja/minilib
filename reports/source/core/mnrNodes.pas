@@ -36,7 +36,7 @@ type
 
   TmnrTextLayout = class(TmnrLayout)
   protected
-    function CreateCell(vCells: TmnrReportCells): TmnrReportCell; override;
+    function CreateCell(vRow: TmnrRow): TmnrReportCell; override;
   end;
 
   TmnrIntegerReportCell = class(TmnrReportCell)
@@ -67,7 +67,7 @@ type
     procedure ScaleCell(vCell: TmnrCell); override;
     function GetTotal: Double; override;
   protected
-    function CreateCell(vCells: TmnrReportCells): TmnrReportCell; override;
+    function CreateCell(vRow: TmnrRow): TmnrReportCell; override;
   end;
 
   TmnrDateTimeReportCell = class(TmnrReportCell)
@@ -94,7 +94,7 @@ type
 
   TmnrDateTimeLayout = class(TmnrLayout)
   protected
-    function CreateCell(vCells: TmnrReportCells): TmnrReportCell; override;
+    function CreateCell(vRow: TmnrRow): TmnrReportCell; override;
   end;
 
   TmnrTimeReportCell = class(TmnrReportCell)
@@ -121,7 +121,7 @@ type
 
   TmnrTimeLayout = class(TmnrLayout)
   protected
-    function CreateCell(vCells: TmnrReportCells): TmnrReportCell; override;
+    function CreateCell(vRow: TmnrRow): TmnrReportCell; override;
   end;
 
   TmnrCurrencyReportCell = class(TmnrReportCell)
@@ -148,7 +148,7 @@ type
 
   TmnrCurrencyLayout = class(TmnrIntegerLayout)
   protected
-    function CreateCell(vCells: TmnrReportCells): TmnrReportCell; override;
+    function CreateCell(vRow: TmnrRow): TmnrReportCell; override;
   end;
 
   TmnrDoubleReportCell = class(TmnrReportCell)
@@ -175,7 +175,7 @@ type
 
   TmnrDoubleLayout = class(TmnrIntegerLayout)
   protected
-    function CreateCell(vCells: TmnrReportCells): TmnrReportCell; override;
+    function CreateCell(vRow: TmnrRow): TmnrReportCell; override;
   end;
 
   TmnrBooleanReportCell = class(TmnrReportCell)
@@ -202,7 +202,7 @@ type
 
   TmnrBooleanLayout = class(TmnrLayout)
   protected
-    function CreateCell(vCells: TmnrReportCells): TmnrReportCell; override;
+    function CreateCell(vRow: TmnrRow): TmnrReportCell; override;
   end;
 
 
@@ -287,16 +287,16 @@ end;
 
 { TmnrTextLayout }
 
-function TmnrTextLayout.CreateCell(vCells: TmnrReportCells): TmnrReportCell;
+function TmnrTextLayout.CreateCell(vRow: TmnrRow): TmnrReportCell;
 begin
-  Result := TmnrTextReportCell.Create(vCells);
+  Result := TmnrTextReportCell.Create(vRow);
 end;
 
 { TmnrIntegerLayout }
 
-function TmnrIntegerLayout.CreateCell(vCells: TmnrReportCells): TmnrReportCell;
+function TmnrIntegerLayout.CreateCell(vRow: TmnrRow): TmnrReportCell;
 begin
-  Result := TmnrIntegerReportCell.Create(vCells);
+  Result := TmnrIntegerReportCell.Create(vRow);
 end;
 
 function TmnrIntegerLayout.GetTotal: Double;
@@ -393,9 +393,9 @@ end;
 
 { TmnrDateTimeLayout }
 
-function TmnrDateTimeLayout.CreateCell(vCells: TmnrReportCells): TmnrReportCell;
+function TmnrDateTimeLayout.CreateCell(vRow: TmnrRow): TmnrReportCell;
 begin
-  Result := TmnrDateTimeReportCell.Create(vCells);
+  Result := TmnrDateTimeReportCell.Create(vRow);
 end;
 
 { TmnrDateTimeReportCell }
@@ -477,9 +477,9 @@ end;
 
 { TmnrCurrencyLayout }
 
-function TmnrCurrencyLayout.CreateCell(vCells: TmnrReportCells): TmnrReportCell;
+function TmnrCurrencyLayout.CreateCell(vRow: TmnrRow): TmnrReportCell;
 begin
-  Result := TmnrCurrencyReportCell.Create(vCells);
+  Result := TmnrCurrencyReportCell.Create(vRow);
 end;
 
 { TmnrCurrencyReportCell }
@@ -561,9 +561,9 @@ end;
 
 { TmnrDoubleLayout }
 
-function TmnrDoubleLayout.CreateCell(vCells: TmnrReportCells): TmnrReportCell;
+function TmnrDoubleLayout.CreateCell(vRow: TmnrRow): TmnrReportCell;
 begin
-  Result := TmnrDoubleReportCell.Create(vCells);
+  Result := TmnrDoubleReportCell.Create(vRow);
 end;
 
 { TmnrDoubleReportCell }
@@ -645,9 +645,9 @@ end;
 
 { TmnrBooleanLayout }
 
-function TmnrBooleanLayout.CreateCell(vCells: TmnrReportCells): TmnrReportCell;
+function TmnrBooleanLayout.CreateCell(vRow: TmnrRow): TmnrReportCell;
 begin
-  Result := TmnrBooleanReportCell.Create(vCells);
+  Result := TmnrBooleanReportCell.Create(vRow);
 end;
 
 { TmnrBooleanReportCell }
@@ -729,9 +729,9 @@ end;
 
 { TmnrTimeLayout }
 
-function TmnrTimeLayout.CreateCell(vCells: TmnrReportCells): TmnrReportCell;
+function TmnrTimeLayout.CreateCell(vRow: TmnrRow): TmnrReportCell;
 begin
-  Result := TmnrTimeReportCell.Create(vCells);
+  Result := TmnrTimeReportCell.Create(vRow);
 end;
 
 { TmnrTimeReportCell }

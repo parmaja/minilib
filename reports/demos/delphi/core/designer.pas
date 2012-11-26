@@ -90,7 +90,7 @@ begin
     CellsListBox.Clear;
     if (Section<>nil)and(Section.DesignRows.First<>nil) then
     begin
-      c := Section.DesignRows.First.Cells.First;
+      c := Section.DesignRows.First.First;
       while c<>nil do
       begin
         CellsListBox.Items.AddObject(c.Layout.Title, c);
@@ -132,11 +132,9 @@ begin
   begin
     if Section.DesignRows.First=nil then
       Section.DesignRows.Add;
-    with Section.DesignRows.First do
-    begin
-      c := TmnrDesignCell.AutoCreate(Cells, Layout.Name);
-      c.Layout := Layout;
-    end;
+
+    c := TmnrDesignCell.AutoCreate(Section.DesignRows.First, Layout.Name);
+    c.Layout := Layout;
     FillSection;
   end;
 end;
