@@ -297,7 +297,7 @@ type
     function GetLast: TmnrReference;
   protected
   public
-    constructor Create(vNodes: TmnrNodes);
+    constructor Create(vNodes: TmnrNode);
     destructor Destroy; override;
 
     property Next: TmnrReferencesRow read GetNext;
@@ -1421,7 +1421,7 @@ begin
   Result := TmnrReference.Create(Self);
 end;
 
-constructor TmnrReferencesRow.Create(vNodes: TmnrNodes);
+constructor TmnrReferencesRow.Create(vNodes: TmnrNode);
 begin
   inherited;
 end;

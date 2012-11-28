@@ -75,16 +75,16 @@ type
 
   TmnrIndex = class
   private
-    FNodes: TmnrNodes;
+    FNodes: TmnrNode;
   protected
-    function GetNodes: TmnrNodes;
+    function GetNodes: TmnrNode;
     procedure Compute; virtual;
     function GetCount: Integer; virtual;
     function GetItems(Index: Integer): TmnrNode;
   public
-    constructor Create(vNodes: TmnrNodes);
+    constructor Create(vNodes: TmnrNode);
     destructor Destroy; override;
-    property Nodes: TmnrNodes read GetNodes;
+    property Nodes: TmnrNode read GetNodes;
     property Count: Integer read GetCount;
     property Items[Index: Integer]: TmnrNode read GetItems; default;
   end;
@@ -189,7 +189,7 @@ type
     procedure Detach; override;
 
   public
-    constructor Create(vNodes: TmnrNodes);
+    constructor Create(vNodes: TmnrNode);
     destructor Destroy; override;
     property ID: Integer read FID;
 
@@ -530,7 +530,7 @@ begin
   end;
 end;
 
-constructor TmnrRowNode.Create(vNodes: TmnrNodes);
+constructor TmnrRowNode.Create(vNodes: TmnrNode);
 begin
   inherited Create(vNodes);
 end;
@@ -610,7 +610,7 @@ begin
 
 end;
 
-constructor TmnrIndex.Create(vNodes: TmnrNodes);
+constructor TmnrIndex.Create(vNodes: TmnrNode);
 begin
   inherited Create;
   FNodes := vNodes; //vNodes <> nil
@@ -633,9 +633,9 @@ begin
   Result := nil;
 end;
 
-function TmnrIndex.GetNodes: TmnrNodes;
+function TmnrIndex.GetNodes: TmnrNode;
 begin
-  Result := FNodes;  
+  Result := FNodes;
 end;
 
 { TmnrLinkNodesListIndex }
