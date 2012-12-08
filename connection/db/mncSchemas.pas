@@ -20,45 +20,15 @@ uses
   mncConnections;
 
 type
-  TschmKind = (sokNone, sokDatabase, sokDomains, sokTable, sokIndex, sokView,
-               sokProcedure, sokFunction, sokSequences, sokException, sokRole, sokRoles,
-               sokTrigger, sokForeign, sokIndices, sokConstraints, sokFields,
-               sokField, sokTypes, sokOperators, sokData, sokProperty, sokProperties);
+  TschmKind = (sokNone, sokSchema, sokData,
+               sokHost, sokDatabase, sokTable, sokView,
+               sokProcedure, sokFunction, sokException, sokRole,
+               sokTrigger, sokSequence, sokForeign, sokIndex, sokConstraint,
+               sokField, sokOperator, sokProperty,
+               sokType, sokDomain);
 
-  TExtractObject = (etDomain, etTable, etRole, etTrigger, etForeign,
-                    etIndex, etData, etGrant, etCheck);
-
-  TExtractObjects = set of TExtractObject;
-
-  TExtractOption = (ekExtra, ekAlter, ekSystem, ekSort);
-  TschmEnumOptions = set of TExtractOption;
-
-  { TmncSchemaItem }
-
-  TmncSchemaItem = class(TObject)
-  private
-    FName: string;
-    FAttributes: TStringList;
-  public
-    constructor Create;
-    destructor Destroy; override;
-    property Name: string read FName write FName;
-    property Attributes: TStringList read FAttributes;
-  end;
-
-  { TmncSchemaItems }
-
-  TmncSchemaItems = class(TObjectList)
-  private
-    function GetItem(Index: Integer): TmncSchemaItem;
-    procedure SetItem(Index: Integer; const Value: TmncSchemaItem);
-  public
-    function Find(const Name: string): TmncSchemaItem;
-    function Add(vSchemaItem: TmncSchemaItem): Integer; overload;
-    function Add(Name: string): TmncSchemaItem; overload;
-    property Items[Index: Integer]: TmncSchemaItem read GetItem write SetItem; default;
-  end;
-
+  TschmEnumOption = (ekExtra, ekAlter, ekSystem, ekSort);
+  TschmEnumOptions = set of TschmEnumOption;
 
   { TmncSchemaParam }
 
@@ -79,12 +49,45 @@ type
     function GetValues(Index: string): string;
     procedure SetItem(Index: Integer; const Value: TmncSchemaParam);
   public
-    constructor Create(Names, Values: array of string);
+    constructor Create(Names, Values: array of string); overload;
+    constructor Create; overload;
     function Find(const Name: string): TmncSchemaParam;
     function Add(Param: TmncSchemaParam): Integer; overload;
-    function Add(Name, Value: string): TmncSchemaParam; overload;
+    function Add(Name:string; Value: string=''): TmncSchemaParam; overload;
     property Items[Index: Integer]: TmncSchemaParam read GetItem write SetItem;
-    property Values[Index: string]:string read GetValues; default;
+    property Values[Index: string]: string read GetValues; default;
+  end;
+
+  TmncSchemaAncestors = class(TmncSchemaParams)
+  end;
+
+  { TmncSchemaItem }
+
+  TmncSchemaItem = class(TObject)
+  private
+    FKind: TschmKind;
+    FName: string;
+    //Ancestors: ;
+    FAttributes: TmncSchemaParams;
+  public
+    constructor Create;
+    destructor Destroy; override;
+    property Name: string read FName write FName;
+    property Kind: TschmKind read FKind write FKind;
+    property Attributes: TmncSchemaParams read FAttributes;
+  end;
+
+  { TmncSchemaItems }
+
+  TmncSchemaItems = class(TObjectList)
+  private
+    function GetItem(Index: Integer): TmncSchemaItem;
+    procedure SetItem(Index: Integer; const Value: TmncSchemaItem);
+  public
+    function Find(const Name: string): TmncSchemaItem;
+    function Add(vSchemaItem: TmncSchemaItem): Integer; overload;
+    function Add(Name: string): TmncSchemaItem; overload;
+    property Items[Index: Integer]: TmncSchemaItem read GetItem write SetItem; default;
   end;
 
 { TmncSchema }
@@ -118,13 +121,6 @@ type
     SqlType: Integer;
     TypeName: string;
   end;
-
-  TPrivDomains = record
-    PrivFlag: Integer;
-    PrivString: string;
-  end;
-
-  TmncSchemaDomain = array[0..14] of TmncSchemaType;
 
 implementation
 
@@ -186,7 +182,7 @@ end;
 constructor TmncSchemaItem.Create;
 begin
   inherited;
-  FAttributes := TStringList.Create;
+  FAttributes := TmncSchemaParams.Create;
 end;
 
 destructor TmncSchemaItem.Destroy;
@@ -199,69 +195,54 @@ procedure TmncSchema.EnumObject(Schema: TmncSchemaItems; Kind: TschmKind; Member
 begin
   case Kind of
     sokDatabase: ;
-    sokDomains: EnumDomains(Schema, Options);
+    sokDomain: EnumDomains(Schema, Options);
     sokTable: EnumTables(Schema, Options);
     sokView: EnumViews(Schema, Options);
     sokProcedure: EnumProcedures(Schema, Options);
     sokFunction: EnumFunctions(Schema, Options);
-    sokSequences: EnumSequences(Schema, Options);
+    sokSequence: EnumSequences(Schema, Options);
     sokException: EnumExceptions(Schema, Options);
     sokRole: ;
     sokTrigger: EnumTriggers(Schema, MemberName, Options);
     sokForeign: ;
-    sokFields: EnumFields(Schema, MemberName, Options);
-    sokIndices: EnumIndices(Schema, MemberName, Options);
-    sokConstraints: EnumConstraints(Schema, MemberName, Options);
+    sokField: EnumFields(Schema, MemberName, Options);
+    sokIndex: EnumIndices(Schema, MemberName, Options);
+    sokConstraint: EnumConstraints(Schema, MemberName, Options);
     sokData: ;
   end;
 end;
 
-procedure TmncSchema.EnumTables(Schema: TmncSchemaItems;
-  Options: TschmEnumOptions);
+procedure TmncSchema.EnumTables(Schema: TmncSchemaItems; Options: TschmEnumOptions);
 begin
 
 end;
 
-procedure TmncSchema.EnumViews(Schema: TmncSchemaItems; Options: TschmEnumOptions
-  );
+procedure TmncSchema.EnumViews(Schema: TmncSchemaItems; Options: TschmEnumOptions);
 begin
-
 end;
 
-procedure TmncSchema.EnumProcedures(Schema: TmncSchemaItems;
-  Options: TschmEnumOptions);
+procedure TmncSchema.EnumProcedures(Schema: TmncSchemaItems; Options: TschmEnumOptions);
 begin
-
 end;
 
-procedure TmncSchema.EnumSequences(Schema: TmncSchemaItems;
-  Options: TschmEnumOptions);
+procedure TmncSchema.EnumSequences(Schema: TmncSchemaItems; Options: TschmEnumOptions);
 begin
-
 end;
 
-procedure TmncSchema.EnumFunctions(Schema: TmncSchemaItems;
-  Options: TschmEnumOptions);
+procedure TmncSchema.EnumFunctions(Schema: TmncSchemaItems; Options: TschmEnumOptions);
 begin
-
 end;
 
-procedure TmncSchema.EnumExceptions(Schema: TmncSchemaItems;
-  Options: TschmEnumOptions);
+procedure TmncSchema.EnumExceptions(Schema: TmncSchemaItems; Options: TschmEnumOptions);
 begin
-
 end;
 
-procedure TmncSchema.EnumDomains(Schema: TmncSchemaItems;
-  Options: TschmEnumOptions);
+procedure TmncSchema.EnumDomains(Schema: TmncSchemaItems; Options: TschmEnumOptions);
 begin
-
 end;
 
-procedure TmncSchema.EnumConstraints(Schema: TmncSchemaItems;
-  MemberName: string; Options: TschmEnumOptions);
+procedure TmncSchema.EnumConstraints(Schema: TmncSchemaItems; MemberName: string; Options: TschmEnumOptions);
 begin
-
 end;
 
 procedure TmncSchema.EnumTriggers(Schema: TmncSchemaItems;
@@ -328,6 +309,11 @@ begin
       v := '';
     Add(Names[i], v);
   end;
+end;
+
+constructor TmncSchemaParams.Create;
+begin
+  Create([], []);
 end;
 
 function TmncSchemaParams.Find(const Name: string): TmncSchemaParam;

@@ -70,7 +70,7 @@
             </CompilerMessages>
             <CompilerPath Value="$(CompPath)"/>
           </Other>
-          <LCLWidgetType Value="win32"/>
+          <LCLWidgetType Value="wince"/>
         </CompilerOptions>
       </Item2>
     </BuildModes>

@@ -14,7 +14,7 @@ interface
 uses
   SysUtils, Variants, Classes, Controls, Dialogs, Contnrs,
   mnXMLRttiProfile, mncCSVExchanges,
-  mncSchemas, mnUtils,
+  mncSchemas, mnUtils, mnParams,
   sqlvConsts, sqlvSessions, ImgList;
 
 const
@@ -86,7 +86,7 @@ type
 
   TsqlvNode = class(TObject)
   private
-    FAttributes: TStringList;
+    FMembers: TStringList;
     FGroup: string;
     FName: string;
     FStyle: TsqlvNodeStyle;
@@ -95,20 +95,21 @@ type
     FImageIndex: TImageIndex;
   protected
     function GetCanExecute: Boolean; virtual;
-    procedure DoExecute(const Value: string; Params: TmncSchemaParams = nil); virtual;
+    procedure DoExecute(const Value: string; Params: TmncSchemaParams); virtual;
   public
     constructor Create; virtual;
     destructor Destroy; override;
     procedure ShowProperty; virtual;
-    procedure Execute(const Value: string; Params: TmncSchemaParams = nil);
+    procedure Execute(const Value: string; var Params: TmncSchemaParams);
+    procedure Execute(const Value: string);
     procedure Enum(Nodes: TsqlvNodes);
     procedure EnumDefaults(Nodes: TsqlvNodes);
     procedure EnumHeader(Header: TStringList); virtual;
-    procedure EnumSchema(var SchemaName:string; SchemaItems: TmncSchemaItems; const MemberName: string = ''); virtual;
+    procedure EnumSchema(var SchemaName: string; SchemaItems: TmncSchemaItems; const MemberName: string = ''); virtual;
     property CanExecute: Boolean read GetCanExecute;
     property Group: string read FGroup write FGroup;
     property Name: string read FName write FName;
-    property Attributes: TStringList read FAttributes write FAttributes;
+    property Members: TStringList read FMembers write FMembers;
     property Title: string read FTitle write FTitle;
     property Kind: TschmKind read FKind write FKind default sokNone;
     property Style:TsqlvNodeStyle read FStyle write FStyle;
@@ -124,7 +125,7 @@ type
     function GetItem(Index: Integer): TsqlvNode;
     procedure SetItem(Index: Integer; const Value: TsqlvNode);
   public
-    procedure Enum(Name: string; Nodes: TsqlvNodes; SessionActive:Boolean; OnlyDefaults: Boolean = False); overload;
+    procedure Enum(Name: string; Nodes: TsqlvNodes; SessionActive: Boolean; OnlyDefaults: Boolean = False); overload;
     function Find(const Name: string): TsqlvNode; overload;
     function Find(const Group, Name: string): TsqlvNode; overload;
     property Items[Index: Integer]: TsqlvNode read GetItem write SetItem; default;
@@ -138,8 +139,20 @@ type
     function Add(vNode:TsqlvNode): Integer;
   end;
 
+  { TsqlvHistoryItem }
+
   TsqlvHistoryItem = class(TObject)
-    Text: string;
+  private
+    FNode: TsqlvNode;
+    FStrings: TStringList;
+    function GetText: string;
+    procedure SetText(AValue: string);
+  public
+    constructor Create; virtual;
+    destructor Destroy; override;
+    property Text: string read GetText write SetText;
+    property Strings: TStringList read FStrings;
+    property Node: TsqlvNode read FNode write FNode;
   end;
 
   { TsqlvHistory }
@@ -155,7 +168,7 @@ type
   public
     constructor Create;
     function Add(History: TsqlvHistoryItem): Integer;
-    procedure Add(const Text: string; Silent: Boolean);
+    procedure Add(const Text: string; ANode: TsqlvNode; Silent: Boolean);
     function HaveBackward: Boolean;
     function Backward: Boolean;
     function HaveForward: Boolean;
@@ -186,10 +199,9 @@ type
     procedure SaveSetting;
     procedure LoadRecents;
     procedure SaveRecents;
-    //vSilent: without add to history
-    procedure Launch(Name: string; Group: string; MemberName: string; vSilent:Boolean = False);
-    procedure Launch(Node: TsqlvNode; MemberName: string; vSilent:Boolean = False);
-    procedure LaunchGroup(SchemaName: string; MemberName: string =''; vSilent:Boolean = False);
+    procedure Launch(Node: TsqlvNode; MemberName: string; vParams: TmncSchemaParams);
+    procedure Launch(Name: string; Group: string; MemberName: string; vParams: TmncSchemaParams);
+    procedure LaunchSchema(SchemaName: string; MemberName: string; vParams: TmncSchemaParams);
     procedure RegisterFilter(Filter: string);
     procedure RegisterViewer(Classes: array of TsqlvNodeClass);
     procedure AddRecent(Name:string);
@@ -219,6 +231,30 @@ begin
   if FsqlvEngine = nil then
     FsqlvEngine := TsqlvEngine.Create;
   Result := FsqlvEngine;
+end;
+
+{ TsqlvHistoryItem }
+
+function TsqlvHistoryItem.GetText: string;
+begin
+  Result := FStrings.Text;
+end;
+
+procedure TsqlvHistoryItem.SetText(AValue: string);
+begin
+  FStrings.Text := AValue;
+end;
+
+constructor TsqlvHistoryItem.Create;
+begin
+  inherited;
+  FStrings := TStringList.Create;
+end;
+
+destructor TsqlvHistoryItem.Destroy;
+begin
+  FreeAndNil(FStrings);
+  inherited;
 end;
 
 procedure TsqlvEngine.RegisterViewer(Classes: array of TsqlvNodeClass);
@@ -362,12 +398,12 @@ constructor TsqlvNode.Create;
 begin
   inherited;
   FImageIndex := -1;
-  FAttributes := TStringList.Create;
+  FMembers := TStringList.Create;
 end;
 
 destructor TsqlvNode.Destroy;
 begin
-  FreeAndNil(FAttributes);
+  FreeAndNil(FMembers);
   inherited Destroy;
 end;
 
@@ -414,10 +450,22 @@ begin
   Header.Add(Title);
 end;
 
-procedure TsqlvNode.Execute(const Value: string; Params: TmncSchemaParams = nil);
+procedure TsqlvNode.Execute(const Value: string; var Params: TmncSchemaParams);
 begin
   DoExecute(Value, Params);
-  FreeAndNil(Params);
+  //FreeAndNil(Params);
+end;
+
+procedure TsqlvNode.Execute(const Value: string);
+var
+  aParams: TmncSchemaParams;
+begin
+  aParams := TmncSchemaParams.Create([], []);
+  try
+    DoExecute(Value, aParams);
+  finally
+    FreeAndNil(aParams);
+  end;
 end;
 
 function TsqlvNode.GetCanExecute: Boolean;
@@ -433,16 +481,16 @@ procedure TsqlvNode.ShowProperty;
 begin
 end;
 
-procedure TsqlvEngine.Launch(Name: string; Group, MemberName: string; vSilent:Boolean); overload;
+procedure TsqlvEngine.Launch(Name: string; Group, MemberName: string; vParams: TmncSchemaParams); overload;
 var
   aNode: TsqlvNode;
   s: string;
 begin
   try
-    if Group = '' then
-      aNode := Find(Name)
+    if Group <> '' then
+      aNode := Find(Group, Name)
     else
-      aNode := Find(Group, Name);
+      aNode := Find(Name);
     if aNode = nil then
     begin
       s := Group;
@@ -450,21 +498,19 @@ begin
         s := s + '\';
       raise Exception.Create(s + Name + ' node not found');
     end;
-    Launch(aNode, MemberName, vSilent);
+    Launch(aNode, MemberName, vParams);
   finally
   end;
 end;
 
-procedure TsqlvEngine.Launch(Node: TsqlvNode; MemberName: string; vSilent:Boolean);
+procedure TsqlvEngine.Launch(Node: TsqlvNode; MemberName: string; vParams: TmncSchemaParams);
 var
   aNodes: TsqlvNodes;
 begin
   if Node <> nil then
   begin
     if Node.CanExecute then
-    begin
-      Node.Execute(MemberName);
-    end
+      Node.Execute(MemberName, vParams)
     else
     begin
       aNodes := TsqlvNodes.Create;
@@ -473,9 +519,7 @@ begin
         if MemberName = '' then
           MemberName := Node.Name;
         if aNodes.Count > 0 then
-        begin
-          aNodes[0].Execute(MemberName);
-        end;
+          aNodes[0].Execute(MemberName, vParams);
       finally
         aNodes.Free;
       end;
@@ -483,7 +527,7 @@ begin
   end;
 end;
 
-procedure TsqlvEngine.LaunchGroup(SchemaName: string; MemberName: string; vSilent:Boolean); overload;
+procedure TsqlvEngine.LaunchSchema(SchemaName: string; MemberName: string; vParams: TmncSchemaParams); overload;
 var
   aNodes: TsqlvNodes;
   aNode: TsqlvNode;
@@ -492,12 +536,12 @@ begin
   try
     aNode := Find(SchemaName);
     if (aNode <> nil) and (aNode.CanExecute) then
-       Launch(aNode, MemberName, vSilent)
+       Launch(aNode, MemberName, vParams)
     else
     begin
       Enum(SchemaName, aNodes, True);
       if aNodes.Count > 0 then
-        Launch(aNodes[0], MemberName, vSilent);
+        Launch(aNodes[0], MemberName, vParams);
     end;
   finally
     aNodes.Free;
@@ -609,7 +653,7 @@ begin
   Result := inherited Add(History);
 end;
 
-procedure TsqlvHistory.Add(const Text: string; Silent: Boolean);
+procedure TsqlvHistory.Add(const Text: string; ANode: TsqlvNode; Silent: Boolean);
 var
   i: Integer;
   aHistory: TsqlvHistoryItem;
@@ -628,6 +672,7 @@ begin
   end;
   aHistory := TsqlvHistoryItem.Create;
   aHistory.Text := Text;
+  aHistory.Node := ANode;
   i := Add(aHistory);
   if not Silent then
     Index := i;

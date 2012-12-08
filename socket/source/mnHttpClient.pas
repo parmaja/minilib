@@ -7,9 +7,9 @@ unit mnHttpClient;
  * @author    Jihad Khlaifa <jkhalifa at gmail dot com>
  *}
 
-{$h+}{$m+}
+{$H+}{$M+}
 {$ifdef fpc}
-{$mode objfpc}
+{$mode delphi}
 {$endif}
 
 interface
@@ -552,4 +552,4 @@ begin
 end;
 
 end.
-
+

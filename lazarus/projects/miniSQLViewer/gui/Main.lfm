@@ -1,8 +1,7 @@
 object MainForm: TMainForm
-  Left = 93
+  Left = 687
   Height = 395
-  Hint = 'Connect F9'
-  Top = 125
+  Top = 275
   Width = 560
   Caption = 'SQLite Viewer'
   ClientHeight = 375
@@ -77,7 +76,6 @@ object MainForm: TMainForm
           0000000000000000000000000000000000000000000000000000000000000000
           00000000000000000000
         }
-        NumGlyphs = 0
         OnClick = SQLBackwardBtnClick
         ShowCaption = False
       end
@@ -116,14 +114,13 @@ object MainForm: TMainForm
           0000000000000000000000000000000000000000000000000000000000000000
           00000000000000000000
         }
-        NumGlyphs = 0
         OnClick = SQLForwardBtnClick
       end
       object Label4: TLabel
         Left = 6
-        Height = 14
+        Height = 13
         Top = 24
-        Width = 21
+        Width = 20
         Caption = 'File:'
         ParentColor = False
       end
@@ -567,6 +564,12 @@ object MainForm: TMainForm
         Options = [eoAutoIndent, eoBracketHighlight, eoGroupUndo, eoScrollPastEol, eoTabIndent, eoTabsToSpaces, eoTrimTrailingSpaces]
         Options2 = [eoOverwriteBlock]
         VisibleSpecialChars = [vscSpace, vscTabAtLast]
+        SelectedColor.BackPriority = 50
+        SelectedColor.ForePriority = 50
+        SelectedColor.FramePriority = 50
+        SelectedColor.BoldPriority = 50
+        SelectedColor.ItalicPriority = 50
+        SelectedColor.UnderlinePriority = 50
         BracketHighlightStyle = sbhsBoth
         BracketMatchColor.Background = clNone
         BracketMatchColor.Foreground = clNone
@@ -661,17 +664,17 @@ object MainForm: TMainForm
       TabOrder = 1
       object FetchCountLbl: TLabel
         Left = 55
-        Height = 14
+        Height = 13
         Top = 6
-        Width = 7
+        Width = 6
         Caption = '0'
         ParentColor = False
       end
       object FetchedLbl: TLabel
         Left = 7
-        Height = 14
+        Height = 13
         Top = 6
-        Width = 44
+        Width = 43
         Caption = 'Fetched:'
         ParentColor = False
       end
@@ -723,25 +726,25 @@ object MainForm: TMainForm
       TabOrder = 2
       object Label1: TLabel
         Left = 7
-        Height = 14
+        Height = 13
         Top = 51
-        Width = 94
+        Width = 93
         Caption = 'Database Directory'
         ParentColor = False
       end
       object Label2: TLabel
         Left = 7
-        Height = 14
+        Height = 13
         Top = 96
-        Width = 90
+        Width = 89
         Caption = 'Databases *.sqlite'
         ParentColor = False
       end
       object Label3: TLabel
         Left = 7
-        Height = 14
+        Height = 13
         Top = 8
-        Width = 57
+        Width = 56
         Caption = 'Recent files'
         ParentColor = False
       end
@@ -753,6 +756,7 @@ object MainForm: TMainForm
         Anchors = [akTop, akLeft, akRight]
         ItemHeight = 13
         OnDropDown = DatabasesCboDropDown
+        OnKeyPress = DataPathCboKeyPress
         TabOrder = 1
       end
       object DataPathCbo: TComboBox
@@ -764,6 +768,7 @@ object MainForm: TMainForm
         ItemHeight = 13
         OnDropDown = DataPathCboDropDown
         OnExit = DataPathCboExit
+        OnKeyPress = DataPathCboKeyPress
         TabOrder = 0
         Text = '\'
       end
@@ -870,6 +875,7 @@ object MainForm: TMainForm
         DefaultRowHeight = 18
         FixedCols = 0
         Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goDrawFocusSelected, goColSizing, goRowSelect]
+        PopupMenu = ActionsPopupMenu
         RowCount = 3
         TabOrder = 0
         TitleFont.CharSet = ANSI_CHARSET
@@ -896,11 +902,11 @@ object MainForm: TMainForm
         ClientHeight = 44
         ClientWidth = 230
         TabOrder = 1
-        object TitleLbl: TLabel
+        object SchemaLbl: TLabel
           Left = 2
-          Height = 14
+          Height = 13
           Top = 4
-          Width = 21
+          Width = 20
           Caption = 'Title'
           ParentColor = False
         end
@@ -911,7 +917,6 @@ object MainForm: TMainForm
           Width = 32
           Anchors = [akTop, akRight]
           Caption = 'Top'
-          NumGlyphs = 0
           OnClick = FirstBtnClick
         end
         object GroupsList: TComboBox
@@ -925,6 +930,15 @@ object MainForm: TMainForm
           OnSelect = GroupsListSelect
           Style = csDropDownList
           TabOrder = 0
+        end
+        object BackBtn: TSpeedButton
+          Left = 164
+          Height = 19
+          Top = 1
+          Width = 32
+          Anchors = [akTop, akRight]
+          Caption = 'Back'
+          OnClick = BackBtnClick
         end
       end
     end
@@ -948,9 +962,9 @@ object MainForm: TMainForm
       TabOrder = 4
       object InfoLbl: TLabel
         Left = 9
-        Height = 17
+        Height = 16
         Top = 5
-        Width = 33
+        Width = 32
         Caption = 'Info'
         ParentColor = False
       end
@@ -984,9 +998,9 @@ object MainForm: TMainForm
       TabOrder = 5
       object Label5: TLabel
         Left = 6
-        Height = 14
+        Height = 13
         Top = 5
-        Width = 36
+        Width = 35
         Caption = 'Actions'
         ParentColor = False
       end
@@ -1148,8 +1162,8 @@ object MainForm: TMainForm
     FileName = '*.sql'
     Filter = '*.sql'
     InitialDir = '\'
-    left = 279
-    top = 62
+    left = 352
+    top = 279
   end
   object SaveDialog: TSaveDialog
     DefaultExt = '.sql'
@@ -1157,5 +1171,9 @@ object MainForm: TMainForm
     Filter = '*.sql'
     left = 377
     top = 18
+  end
+  object ActionsPopupMenu: TPopupMenu
+    left = 56
+    top = 247
   end
 end

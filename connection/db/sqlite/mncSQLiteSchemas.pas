@@ -26,8 +26,8 @@ type
   private
   protected
     function CreateCMD(SQL: string): TmncSQLiteCommand;
-    procedure EnumCMD(Schema: TmncSchemaItems; SQL: string; Fields: array of string); overload;//use field 'name'
-    procedure EnumCMD(Schema: TmncSchemaItems; SQL: string); overload;
+    procedure EnumCMD(Schema: TmncSchemaItems; vKind: TschmKind; SQL: string; Fields: array of string); overload;//use field 'name'
+    procedure EnumCMD(Schema: TmncSchemaItems; vKind: TschmKind; SQL: string); overload;
     procedure FetchCMD(Strings:TStringList; SQL: string);//use field 'name'
     function GetSortSQL(Options: TschmEnumOptions):string;
   public
@@ -57,7 +57,7 @@ begin
   Result.SQL.Text := SQL;
 end;
 
-procedure TmncSQLiteSchema.EnumCMD(Schema: TmncSchemaItems; SQL: string; Fields: array of string);
+procedure TmncSQLiteSchema.EnumCMD(Schema: TmncSchemaItems; vKind: TschmKind; SQL: string; Fields: array of string);
 var
   aCMD: TmncSQLiteCommand;
   aItem: TmncSchemaItem;
@@ -70,17 +70,18 @@ begin
     while not aCMD.EOF do
     begin
       aItem := Schema.Add(aCMD.Field['name'].AsString);
+      aItem.Kind := vKind;
       for i := Low(Fields) to High(Fields) do
-        aItem.Attributes.Add(aCMD.Field[Fields[i]].AsString);
+        aItem.Attributes.Add(Fields[i], aCMD.Field[Fields[i]].AsString);
       aCMD.Next;
     end;
   finally
   end;
 end;
 
-procedure TmncSQLiteSchema.EnumCMD(Schema: TmncSchemaItems; SQL: string);
+procedure TmncSQLiteSchema.EnumCMD(Schema: TmncSchemaItems; vKind: TschmKind; SQL: string);
 begin
-  EnumCMD(Schema, SQL, []);
+  EnumCMD(Schema, vKind, SQL, []);
 end;
 
 procedure TmncSQLiteSchema.FetchCMD(Strings: TStringList; SQL: string);
@@ -110,13 +111,12 @@ end;
 
 procedure TmncSQLiteSchema.EnumTables(Schema: TmncSchemaItems; Options: TschmEnumOptions);
 begin
-  EnumCMD(Schema, 'select name from sqlite_master where type = ''table'''+ GetSortSQL(Options));
+  EnumCMD(Schema, sokTable, 'select name from sqlite_master where type = ''table''' + GetSortSQL(Options));
 end;
 
-procedure TmncSQLiteSchema.EnumViews(Schema: TmncSchemaItems; Options: TschmEnumOptions
-  );
+procedure TmncSQLiteSchema.EnumViews(Schema: TmncSchemaItems; Options: TschmEnumOptions);
 begin
-  EnumCMD(Schema, 'select name from sqlite_master where type = ''view'''+ GetSortSQL(Options));
+  EnumCMD(Schema, sokView, 'select name from sqlite_master where type = ''view'''+ GetSortSQL(Options));
 end;
 
 procedure TmncSQLiteSchema.EnumProcedures(Schema: TmncSchemaItems;
@@ -164,7 +164,7 @@ begin
   if MemberName <> '' then
     s := s + ' and tbl_name = ''' +MemberName+ '''';
   s := s +  GetSortSQL(Options);
-  EnumCMD(Schema, s);
+  EnumCMD(Schema, sokTrigger, s);
 end;
 
 procedure TmncSQLiteSchema.EnumIndices(Schema: TmncSchemaItems; MemberName: string;
@@ -176,12 +176,12 @@ begin
   if MemberName <> '' then
   begin
     s := s + 'PRAGMA index_list('''+ MemberName +''')' + GetSortSQL(Options);
-    EnumCMD(Schema, s, ['unique']);
+    EnumCMD(Schema, sokIndex, s, ['unique']);
   end
   else
   begin
     s := 'select name from sqlite_master where type = ''index''' + GetSortSQL(Options);
-    EnumCMD(Schema, s);
+    EnumCMD(Schema, sokIndex, s);
   end;
 end;
 
@@ -205,22 +205,22 @@ begin
     begin
       aItem := TmncSchemaItem.Create;
       aItem.Name := 'Name';
-      aItem.Attributes.Add(MemberName);
+      aItem.Attributes.Add('name', MemberName);
       Schema.Add(aItem);
 
       aItem := TmncSchemaItem.Create;
       aItem.Name := 'Field';
-      aItem.Attributes.Add(aCMD.Field['name'].AsString);
+      aItem.Attributes.Add('field', aCMD.Field['name'].AsString);
       Schema.Add(aItem);
 
       aItem := TmncSchemaItem.Create;
       aItem.Name := 'CID';
-      aItem.Attributes.Add(aCMD.Field['cid'].AsString);
+      aItem.Attributes.Add('cid', aCMD.Field['cid'].AsString);
       Schema.Add(aItem);
 
       aItem := TmncSchemaItem.Create;
       aItem.Name := 'Sequence NO';
-      aItem.Attributes.Add(aCMD.Field['seqno'].AsString);
+      aItem.Attributes.Add('seqno',  aCMD.Field['seqno'].AsString);
       Schema.Add(aItem);
     end;
   finally
@@ -242,11 +242,11 @@ begin
     begin
       aItem := TmncSchemaItem.Create;
       aItem.Name := aCMD.Field['name'].AsString;
-      aItem.Attributes.Add(aCMD.Field['type'].AsString);
-      aItem.Attributes.Add(IntToStr(ord(aCMD.Field['pk'].AsInteger <> 0)));
-      aItem.Attributes.Add(IntToStr(ord(aCMD.Field['notnull'].AsInteger <> 0)));
-      aItem.Attributes.Add(aCMD.Field['dflt_value'].AsString);
-      aItem.Attributes.Add(aCMD.Field['cid'].AsString);
+      aItem.Attributes.Add('type', aCMD.Field['type'].AsString);
+      aItem.Attributes.Add('pk', IntToStr(ord(aCMD.Field['pk'].AsInteger <> 0)));
+      aItem.Attributes.Add('notnull', IntToStr(ord(aCMD.Field['notnull'].AsInteger <> 0)));
+      aItem.Attributes.Add('dflt_value', aCMD.Field['dflt_value'].AsString);
+      aItem.Attributes.Add('cid', aCMD.Field['cid'].AsString);
       Schema.Add(aItem);
       aCMD.Next;
     end;

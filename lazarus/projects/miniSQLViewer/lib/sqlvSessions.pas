@@ -140,11 +140,11 @@ begin
       Schema.EnumObject(Tables, sokTable, '', [ekSystem, ekSort]);
       Schema.EnumObject(Views, sokView, '', [ekSort]);
       Schema.EnumObject(Proceduers, sokProcedure, '', [ekSort]);
-      Schema.EnumObject(Sequences, sokSequences, '', [ekSort]);
+      Schema.EnumObject(Sequences, sokSequence, '', [ekSort]);
       Schema.EnumObject(Functions, sokFunction, '', [ekSort]);
       Schema.EnumObject(Exceptions, sokException, '', [ekSort]);
-      Schema.EnumObject(Domains, sokDomains, '', [ekSort]);
-      Schema.EnumObject(Fields, sokFields);
+      Schema.EnumObject(Domains, sokDomain, '', [ekSort]);
+      Schema.EnumObject(Fields, sokField);
     finally
       Schema.Free;
     end;

@@ -33,8 +33,7 @@ uses
   sqlvClasses, sqlvStdClasses, LMessages;
 
 type
-  TExecuteType = (execNormal, execExport, execImport);
-  TsqlState = (sqlsRoot, sqlsSQL, sqlsResults, sqlsInfo, sqlsMembers);
+  TsqlState = (sqlsRoot, sqlsSQL, sqlsResults, sqlsInfo, sqlsSchema);
 
   TControlObject = class(TObject)
   public
@@ -92,10 +91,12 @@ type
     ExecuteBtn: TButton;
     FileMnu: TMenuItem;
     ExitMnu: TMenuItem;
+    BackBtn: TSpeedButton;
     MenuItem1: TMenuItem;
     MenuItem2: TMenuItem;
     MenuItem3: TMenuItem;
     HelpMnu: TMenuItem;
+    ActionsPopupMenu: TPopupMenu;
     SaveMnu: TMenuItem;
     SaveAsMnu: TMenuItem;
     OpenMnu: TMenuItem;
@@ -140,7 +141,7 @@ type
     SQLSaveBtn: TButton;
     BrowseBtn: TButton;
     RemoveBtn: TButton;
-    TitleLbl: TLabel;
+    SchemaLbl: TLabel;
     ToolsMnu: TMenuItem;
     DataPathCbo: TComboBox;
     Label1: TLabel;
@@ -155,11 +156,13 @@ type
     DataGrid: TStringGrid;
     procedure AboutMnuClick(Sender: TObject);
     procedure ActionsListSelect(Sender: TObject);
+    procedure BackBtnClick(Sender: TObject);
     procedure BrowseBtnClick(Sender: TObject);
     procedure ConnectBtnClick(Sender: TObject);
     procedure DatabasesCboDropDown(Sender: TObject);
     procedure DataPathCboDropDown(Sender: TObject);
     procedure DataPathCboExit(Sender: TObject);
+    procedure DataPathCboKeyPress(Sender: TObject; var Key: char);
     procedure DisconnectBtnClick(Sender: TObject);
     procedure ExecuteBtnClick(Sender: TObject);
     procedure FirstBtnClick(Sender: TObject);
@@ -231,7 +234,7 @@ type
     FCancel: Boolean;
     procedure ClearGrid;
     procedure DoAddKeyword(AKeyword: string; AKind: integer);
-    procedure Execute(ExecuteType: TExecuteType; SQLCMD: TmncSQLiteCommand; SQL:TStringList; ShowGrid:Boolean);
+    procedure Execute(ExecuteType: TsqlvExecuteType; SQLCMD: TmncSQLiteCommand; SQL:TStringList; ShowGrid:Boolean);
     procedure OnExecuteCompletion(Sender: TObject);
     procedure FillGrid(SQLCMD: TmncSQLiteCommand);
     procedure UpdateCompletion;
@@ -246,18 +249,36 @@ type
     property DataPath: string read FDataPath write SetDataPath;
   public
     GroupsNames: TStringList;//Fields, Indexes
-    GroupInfo: TSchemaInfo;//Table,Accounts
+    SchemaInfo: TSchemaInfo;//Table,Accounts
     SchemaName: string;//Field
+    Ancestors: TmncSchemaAncestors;
     FActionsSchemaName: string;
+    procedure ActionsMenuSelect(Sender: TObject);
     constructor Create(TheOwner: TComponent); override;
     destructor Destroy; override;
     procedure AddRecentSQL(Silent: Boolean = False);
-    procedure ExecuteScript(ExecuteType: TExecuteType);
+    procedure ExecuteScript(ExecuteType: TsqlvExecuteType);
     procedure OpenMember;
     procedure OpenGroup;
     procedure UpdateToolActions(vSchemaName: string);
     property State: TsqlState read FState write SetState;
     property LastSQLFile: string read FLastSQLFile write SetLastSQLFile;
+  end;
+
+  { TsqlvMainGui }
+
+  TsqlvMainGui = class(TsqlvGui)
+  public
+    procedure ExecuteScript(ExecuteType: TsqlvExecuteType); override;
+
+    procedure LoadEditor(vNode: TsqlvNode; S: string); override;
+
+    procedure EnumGroups(vNode: TsqlvNode; vGroup, vMemberName: string; Params: TmncSchemaParams; vSelectDefault: Boolean); override;
+    procedure EnumMembers(vNode: TsqlvNode; const vMemberName: string); override;
+
+    procedure LoadSchema(vNode: TsqlvNode; vNodes: TsqlvNodes; vMemberName: string; Params: TmncSchemaParams; vSelectDefault: Boolean); override;
+    procedure LoadHeader(vNode: TsqlvNode; vHeader: TStringList); override;
+    procedure LoadMembers(vNode: TsqlvNode; vSchemaName: string; vNodes: TsqlvNodes); override;
   end;
 
 var
@@ -269,6 +290,176 @@ implementation
 
 uses
   AboutForm, CSVIEForms, ParamsForms, SynEditMiscProcs;
+
+{ TsqlvMainGui }
+
+procedure TsqlvMainGui.EnumGroups(vNode: TsqlvNode; vGroup, vMemberName: string; Params: TmncSchemaParams; vSelectDefault: Boolean);
+var
+  aNodes: TsqlvNodes;
+begin
+  aNodes := TsqlvNodes.Create;
+  try
+    sqlvEngine.Enum(vGroup, aNodes, sqlvEngine.Session.IsActive);
+    LoadSchema(vNode, aNodes, vMemberName, Params, vSelectDefault);
+  finally
+    aNodes.Free;
+  end;
+end;
+
+procedure TsqlvMainGui.EnumMembers(vNode: TsqlvNode; const vMemberName: string);
+var
+  i, j: Integer;
+  aItems: TmncSchemaItems;
+  aSchemaName: string;
+  aNodes: TsqlvNodes;
+  aNode: TsqlvNode;
+begin
+  aNodes := TsqlvNodes.Create;
+  aItems := TmncSchemaItems.Create;
+  try
+    vNode.EnumSchema(aSchemaName, aItems, vMemberName);
+    for i := 0 to aItems.Count -1 do
+    begin
+      aNode := TsqlvNode.Create;
+      aNode.Name := aItems[i].Name;
+      for j := 0 to aItems[i].Attributes.Count -1 do
+        aNode.Members.Add(aItems[i].Attributes.Items[j].Value);
+      aNodes.Add(aNode);
+    end;
+    LoadMembers(vNode, aSchemaName, aNodes);
+  finally
+    aItems.Free;
+    aNodes.Free;
+  end;
+end;
+
+procedure TsqlvMainGui.LoadHeader(vNode: TsqlvNode; vHeader: TStringList);
+var
+  i: Integer;
+begin
+  with MainForm do
+  begin
+    MembersGrid.ColCount := vHeader.Count;
+    for i := 0 to vHeader.Count -1 do
+    begin
+      MembersGrid.Cells[i, 0] := vHeader[i];
+//      if i = 0 then
+//        MembersGrid.Columns[i].SizePriority := 50;
+    end;
+  end;
+end;
+
+procedure TsqlvMainGui.ExecuteScript(ExecuteType: TsqlvExecuteType);
+begin
+  with MainForm do
+    sqlvGui.ExecuteScript(ExecuteType);
+end;
+
+procedure TsqlvMainGui.LoadEditor(vNode: TsqlvNode; S: string);
+begin
+  with MainForm do
+  begin
+    AddRecentSQL;
+    SQLEdit.Lines.BeginUpdate;
+    SQLEdit.Lines.Text := S;
+    SQLEdit.Lines.EndUpdate;
+    State := sqlsSQL;
+    SQLEdit.SetFocus;
+  end;
+end;
+
+procedure TsqlvMainGui.LoadSchema(vNode: TsqlvNode; vNodes: TsqlvNodes; vMemberName: string; Params: TmncSchemaParams; vSelectDefault: Boolean);
+var
+  i, c: Integer;
+  d: Integer;
+begin
+  with MainForm do
+  begin
+    d := -1;
+    c := 0;
+    GroupsList.Items.BeginUpdate;
+    try
+      GroupsList.Clear;
+      GroupsNames.Clear;
+      for i := 0 to vNodes.Count -1 do
+      begin
+        if not (nsCommand in vNodes[i].Style) then
+        begin
+          GroupsList.Items.Add(vNodes[i].Title);
+          GroupsNames.Add(vNodes[i].Name);
+          if (d < 0) and (nsDefault in vNodes[i].Style) then
+            d := c;
+          c := c + 1;
+        end;
+      end;
+    finally
+      GroupsList.Items.EndUpdate;
+    end;
+    if d < 0 then
+      d := 0;
+    if vNodes.Count > 0 then
+      GroupsList.ItemIndex := d;
+    SchemaInfo.Name := vNode.Name;
+    SchemaInfo.Value := vMemberName;
+    SchemaLbl.Caption := vNode.Title + ': ' + vMemberName;
+    if vSelectDefault then
+      OpenGroup;
+    State := sqlsSchema;
+  end;
+end;
+
+procedure TsqlvMainGui.LoadMembers(vNode: TsqlvNode; vSchemaName: string; vNodes: TsqlvNodes);
+var
+  i, j, c: Integer;
+  d: Integer;
+  aHeader: TStringList;
+  aCols: Integer;
+begin
+  aHeader:=TStringList.Create;
+  try
+    vNode.EnumHeader(aHeader);
+    LoadHeader(vNode, aHeader);
+    aCols := aHeader.Count;
+  finally
+    aHeader.Free;
+  end;
+  with MainForm do
+  begin
+    d := -1;
+    c := 0;
+    MembersGrid.BeginUpdate;
+    try
+      MembersGrid.RowCount := 1;//fixed only
+      MembersGrid.Cells[0, 0] := vSchemaName;
+      for i := 0 to vNodes.Count -1 do
+      begin
+        if not (nsCommand in vNodes[i].Style) then
+        begin
+          MembersGrid.RowCount := c + 2;
+          for j := 0 to aCols - 1 do
+          begin
+            if j = 0 then
+              MembersGrid.Cells[j, c + 1] := vNodes[i].Name
+            else if (j - 1) < vNodes[i].Members.Count then //maybe Attributes not have all data
+              MembersGrid.Cells[j, c + 1] := vNodes[i].Members[j - 1]; //TODO must be assigned my name not by index
+          end;
+          if (d < 0) and (nsDefault in vNodes[i].Style) then
+            d := c;
+          c := c + 1;
+        end;
+      end;
+    finally
+      MembersGrid.EndUpdate;
+    end;
+    if d < 0 then
+      d := 0;
+    MembersGrid.Row := d;
+    MembersGrid.AutoSizeColumns;
+    SchemaName := vSchemaName;
+    State := sqlsSchema;
+    UpdateToolActions(vSchemaName);
+  end;
+end;
 
 { TMainForm }
 
@@ -312,15 +503,20 @@ begin
   begin
     try
       aInfo := FActions[ActionsList.ItemIndex];
-      if State = sqlsMembers then
+      if State = sqlsSchema then
         aMemberName := MembersGrid.Cells[0, MembersGrid.Row]
       else
         aMemberName := '';
-      aInfo.Node.Execute(aMemberName, TmncSchemaParams.Create([aInfo.Name], [aInfo.Value]));
+      aInfo.Node.Execute(aMemberName);
     finally
       ActionsList.ItemIndex := -1;
     end;
   end;
+end;
+
+procedure TMainForm.BackBtnClick(Sender: TObject);
+begin
+
 end;
 
 procedure TMainForm.DataPathCboDropDown(Sender: TObject);
@@ -331,6 +527,13 @@ end;
 procedure TMainForm.DataPathCboExit(Sender: TObject);
 begin
   DataPath := DataPathCbo.Text;
+end;
+
+procedure TMainForm.DataPathCboKeyPress(Sender: TObject; var Key: char);
+begin
+  if Key = #13 then
+    if not sqlvEngine.Session.IsActive then
+      Connect;
 end;
 
 procedure TMainForm.DisconnectBtnClick(Sender: TObject);
@@ -345,7 +548,7 @@ end;
 
 procedure TMainForm.FirstBtnClick(Sender: TObject);
 begin
-  sqlvEngine.Launch('Database', 'Databases', DatabasesCbo.Text);
+  sqlvEngine.Launch('Database', 'Databases', DatabasesCbo.Text, nil);
 end;
 
 procedure TMainForm.FormClose(Sender: TObject; var CloseAction: TCloseAction);
@@ -384,7 +587,7 @@ begin
     begin
       if State = sqlsSQL then
       begin
-        State := sqlsMembers;
+        State := sqlsSchema;
         MembersGrid.SetFocus;
       end
       else
@@ -408,7 +611,7 @@ begin
               Handled := True;
             end;
           end;
-        sqlsMembers:
+        sqlsSchema:
           case Msg.CharCode of
             VK_F6:
             begin
@@ -599,7 +802,7 @@ end;
 
 procedure TMainForm.SchemaBtnClick(Sender: TObject);
 begin
-  State := sqlsMembers;
+  State := sqlsSchema;
 end;
 
 procedure TMainForm.MembersListDblClick(Sender: TObject);
@@ -770,7 +973,7 @@ begin
   begin
     sqlvEngine.Setting.CacheSchemas := CacheSchemaChk.Checked;
     sqlvEngine.Session.Open(GetDatabaseName, AutoCreateChk.Checked, ExclusiveChk.Checked, VacuumChk.Checked);
-    sqlvEngine.Launch('Database', 'Databases', DatabasesCbo.Text);
+    sqlvEngine.Launch('Database', 'Databases', DatabasesCbo.Text, nil);
   end;
 end;
 
@@ -892,8 +1095,8 @@ begin
     sqlsResults:
     begin
       PanelsList.Show(ResultPanel, sqlvEngine.Session.IsActive);
-      {if DataGrid.CanFocus then
-        DataGrid.SetFocus;}
+      if Visible then
+        DataGrid.SetFocus;
       UpdateToolActions('GUI.Results');
     end;
     sqlsInfo:
@@ -901,12 +1104,12 @@ begin
       PanelsList.Show(InfoPanel, sqlvEngine.Session.IsActive);
       UpdateToolActions('GUI.Info');
     end;
-    sqlsMembers:
+    sqlsSchema:
     begin
       PanelsList.Show(GroupPanel, sqlvEngine.Session.IsActive);
       UpdateToolActions(SchemaName);
-      {if MembersGrid.CanFocus then
-        MembersGrid.SetFocus;}
+      if Visible then //prevent from setfocus non visible control
+        MembersGrid.SetFocus;
     end;
   end;
 end;
@@ -915,11 +1118,13 @@ procedure TMainForm.UpdateToolActions(vSchemaName: string);
 var
   i, c: Integer;
   aNodes: TsqlvNodes;
+  aMenuItem: TMenuItem;
 begin
   if FActionsSchemaName <> vSchemaName then
   begin
     FActionsSchemaName := vSchemaName;
     ActionsList.Items.Clear;
+    ActionsPopupMenu.Items.Clear;
     FActions := nil;
     if vSchemaName <> '' then
     begin
@@ -932,8 +1137,13 @@ begin
         begin
           SetLength(FActions, c + 1);
           ActionsList.Items.Add(aNodes[i].Title);
-          FActions[c].Name := GroupInfo.Name;
-          FActions[c].Value := GroupInfo.Value;
+          aMenuItem := TMenuItem.Create(ActionsPopupMenu);
+          aMenuItem.Caption := aNodes[i].Title;
+          aMenuItem.OnClick := @ActionsMenuSelect;
+          aMenuItem.Tag := c;
+          ActionsPopupMenu.Items.Add(aMenuItem);
+          FActions[c].Name := SchemaInfo.Name;
+          FActions[c].Value := SchemaInfo.Value;
           FActions[c].Node := aNodes[i];
           Inc(c);
         end;
@@ -942,6 +1152,10 @@ begin
       end;
     end;
     ActionsPanel.Visible := ActionsList.Items.Count > 0;
+    if ActionsPanel.Visible then
+      MembersGrid.PopupMenu := ActionsPopupMenu
+    else
+      MembersGrid.PopupMenu := nil;
   end;
 end;
 
@@ -969,6 +1183,24 @@ begin
     DatabasesCbo.ItemIndex := i
   else
     DatabasesCbo.Text := FileName;
+end;
+
+procedure TMainForm.ActionsMenuSelect(Sender: TObject);
+var
+  aMemberName: string;
+  aInfo: TActionInfo;
+begin
+  try
+    aInfo := FActions[(Sender as TMenuItem).Tag];
+    if State = sqlsSchema then
+      aMemberName := MembersGrid.Cells[0, MembersGrid.Row]
+    else
+      aMemberName := '';
+    //aInfo.Node.Execute(aMemberName, TmncSchemaParams.Create([aInfo.Name], [aInfo.Value]));
+    aInfo.Node.Execute(aMemberName);//{$hint 'check it'}
+  finally
+    ActionsList.ItemIndex := -1;
+  end;
 end;
 
 constructor TMainForm.Create(TheOwner: TComponent);
@@ -1014,6 +1246,8 @@ begin
   PanelsList.Add(InfoPanel, SQLBtn, False);
   PanelsList.Add(InfoPanel, SchemaBtn, True);
 
+  sqlvGui := TsqlvMainGui.Create;
+
   sqlvEngine.SQLHistory.OnChanged := @RefreshSQLHistory;
   sqlvEngine.LoadFile('recent.sql', SQLEdit.Lines);
   sqlvEngine.History.Changed;
@@ -1050,6 +1284,7 @@ destructor TMainForm.Destroy;
 begin
   FreeAndNil(GroupsNames);
   FreeAndNil(PanelsList);
+  FreeAndNil(sqlvGui);
   inherited Destroy;
 end;
 
@@ -1177,13 +1412,13 @@ end;
 procedure TMainForm.OpenMember;
 begin
   if (MembersGrid.RowCount > 1) and (MembersGrid.Row >= 1) then
-    sqlvEngine.LaunchGroup(SchemaName, MembersGrid.Cells[0, MembersGrid.Row]);
+    sqlvEngine.LaunchSchema(SchemaName, MembersGrid.Cells[0, MembersGrid.Row], nil);
 end;
 
 procedure TMainForm.OpenGroup;
 begin
   if (GroupsList.Items.Count > 0) and (GroupsList.ItemIndex >=0) then
-    sqlvEngine.Launch(GroupsNames[GroupsList.ItemIndex], GroupInfo.Name, GroupInfo.Value, True);
+    sqlvEngine.Launch(GroupsNames[GroupsList.ItemIndex], SchemaInfo.Name, SchemaInfo.Value, nil);
 end;
 
 procedure TMainForm.RefreshSQLHistory(Sender: TObject);
@@ -1200,10 +1435,10 @@ end;
 
 procedure TMainForm.AddRecentSQL(Silent: Boolean);
 begin
-  sqlvEngine.SQLHistory.Add(SQLEdit.Text, Silent);
+  sqlvEngine.SQLHistory.Add(SQLEdit.Text, nil, Silent);
 end;
 
-procedure TMainForm.Execute(ExecuteType: TExecuteType; SQLCMD: TmncSQLiteCommand; SQL:TStringList; ShowGrid:Boolean);
+procedure TMainForm.Execute(ExecuteType: TsqlvExecuteType; SQLCMD: TmncSQLiteCommand; SQL:TStringList; ShowGrid:Boolean);
 var
   t: TDateTime;
   aExport: TmncCSVExport;
@@ -1338,7 +1573,7 @@ procedure TMainForm.OnExecuteCompletion(Sender: TObject);
 begin
 end;
 
-procedure TMainForm.ExecuteScript(ExecuteType: TExecuteType);
+procedure TMainForm.ExecuteScript(ExecuteType: TsqlvExecuteType);
 var
   aStrings: TStringList;
   i: Integer;
