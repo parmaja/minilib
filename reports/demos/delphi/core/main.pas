@@ -10,7 +10,7 @@ uses
 
 const
   cMaxRows  = 1000000;
-  cMaxCells = 4;
+  cMaxCells = 5;
 
 type
 

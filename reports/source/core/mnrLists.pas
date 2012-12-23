@@ -30,8 +30,8 @@ type
 
     function GetCount: Integer; virtual;
 
-    function GetFirst: TmnrNode;
     function GetHead: TmnrNode;
+    function GetFirst: TmnrNode;
     function GetLast: TmnrNode;
     function GetNext: TmnrNode;
     function GetPrior: TmnrNode;
@@ -61,8 +61,8 @@ type
     property Last: TmnrNode read GetLast write SetLast;
     property Head: TmnrNode read GetHead;
     property Count: Integer read GetCount;
-    procedure IncCount; virtual;
-    procedure DecCount; virtual;
+    procedure IncCount(Value: Integer); virtual;
+    procedure DecCount(Value: Integer); virtual;
   end;
 
   TmnrNodes = class(TmnrNode)
@@ -148,8 +148,8 @@ type
 
   public
     function Add: TmnrLinkNode;
-    procedure IncCount; override;
-    procedure DecCount; override;
+    procedure IncCount(Value: Integer); override;
+    procedure DecCount(Value: Integer); override;
     property ByIndex[vIndex: Integer]: TmnrNode read GetByIndex;
   end;
 
@@ -233,7 +233,7 @@ begin
       Prior.Next := Self;
       Nodes.Last := Self;
     end;
-    Nodes.IncCount;
+    Nodes.IncCount(Count);
   end;
 end;
 
@@ -269,7 +269,7 @@ begin
 
     if Nodes.Last=Self then Nodes.Last := Prior;
     if Nodes.Last<>nil then Nodes.Last.Next := nil;
-    Nodes.DecCount;
+    Nodes.DecCount(Count);
     FNodes := nil;
   end;
   if Prior<>nil then Prior.Next := Next;
@@ -322,7 +322,7 @@ end;
 
 function TmnrNode.GetCount: Integer;
 begin
-  Result := 0;
+  Result := 1;
 end;
 
 function TmnrNode.GetFirst: TmnrNode;
@@ -471,9 +471,9 @@ begin
   Result := TmnrLinkNode.Create(Self);
 end;
 
-procedure TmnrLinkNodes.DecCount;
+procedure TmnrLinkNodes.DecCount(Value: Integer);
 begin
-  Dec(FCount);
+  Dec(FCount, Value);
 end;
 
 function TmnrLinkNodes.DoGetFirst: TmnrNode;
@@ -514,9 +514,9 @@ begin
   Result := FCount;
 end;
 
-procedure TmnrLinkNodes.IncCount;
+procedure TmnrLinkNodes.IncCount(Value: Integer);
 begin
-  Inc(FCount);
+  Inc(FCount, Value);
 end;
 
 { TmnrRowNode }
