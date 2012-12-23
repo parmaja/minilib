@@ -33,7 +33,7 @@ function StrToStringsCallback(Sender: Pointer; Proc: TStrToStringsCallbackProc; 
 function StrToStrings(Content: string; Strings: TStrings; Separators: TSysCharSet; WhiteSpace: TSysCharSet = [#0, #13, #10]; DequoteValues: Boolean = False; Quotes: TSysCharSet = ['''', '"']): Integer;
 function CompareLeftStr(const Str: string; const WithStr: string; Start: Integer=1): Boolean;
 //Index started from 1
-function SubStr(const Str: String; vSeperator: Char; vIndex: Integer = 1): String; overload;
+function SubStr(const Str: String; vSeperator: Char; vIndex: Integer = 0): String; overload;
 function SubStr(const Str: String; vSeperator: Char; vFromIndex, vToIndex: Integer): String; overload;
 
 function PeriodToString(vPeriod: Double; WithSeconds:Boolean): string;
@@ -566,7 +566,25 @@ function SubStr(const Str: String; vSeperator: Char; vFromIndex, vToIndex: Integ
 var
   Index, B, E: Integer;
 begin
-  Result := '';
+  Index := 0;
+  B := 0;
+  for E := 1 to Length(Str) do
+  begin
+    if (B=0) and (Index = vFromIndex) then B := E;
+    
+    if Str[E] = vSeperator then Inc(Index);
+
+    if (Index = (vToIndex+1)) then Break;
+  end;
+
+  if B<>0 then
+    Result := Copy(Str, B, E-B)
+  else
+    Result := '';
+
+
+
+  {Result := '';
   Index := 0;
   B := 1;
   for E := 1 to Length(Str) do
@@ -584,7 +602,7 @@ begin
       exit;
     end;
   end;
-  Result := Copy(Str, B, MaxInt);
+  Result := Copy(Str, B, MaxInt);}
 end;
 
 function SubStr(const Str: String; vSeperator: Char; vIndex: Integer): String;
