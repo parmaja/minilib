@@ -38,6 +38,9 @@ type
   private
     FHandle: PPGconn;
   protected
+    function CreateConnection: PPGconn; overload;
+    function CreateConnection(const vDatabase: string): PPGconn; overload;
+
     procedure InternalConnect(var vHandle: PPGconn);
     procedure InternalDisconnect(var vHandle: PPGconn);
     procedure DoConnect; override;
@@ -50,11 +53,16 @@ type
     procedure Interrupt;
     //TODO: Reconnect  use PQReset
     property Handle: PPGconn read FHandle;
+    procedure CreateDatabase(const vName: string);
+    procedure DropDatabase; overload;
+    procedure DropDatabase(const vName: string); overload;
+    procedure Execute(const vSQL: string); overload;
+    procedure Execute(vHandle: PPGconn; const vSQL: string); overload;
   end;
 
   { TmncPGSession }
 
-  TmncPGSession = class(TmncSession)
+  TmncPGSession = class(TmncSession) //note now each session has it's connection 
   private
     FTokenID: Cardinal;
     FDBHandle: PPGconn;
@@ -71,7 +79,7 @@ type
   public
     constructor Create(vConnection: TmncConnection); override;
     destructor Destroy; override;
-    procedure Execute(SQL: string);
+    procedure Execute(vSQL: string);
     property Exclusive: Boolean read FExclusive write SetExclusive;
     property Connection: TmncPGConnection read GetConnection write SetConnection;
     property DBHandle: PPGconn read GetDBHandle;
@@ -108,6 +116,25 @@ type
     function CreateField(vColumn: TmncColumn): TmncField; override;
   end;
 
+  TPGColumn = class(TmncColumn)
+  private
+    FPGType: Integer;
+    FFieldSize: Integer;
+  public
+    property PGType: Integer read FPGType write FPGType;
+    property FieldSize: Integer read FFieldSize write FFieldSize;
+  end;
+
+  TPGColumns = class(TmncColumns)
+  private
+    function GetItem(Index: Integer): TPGColumn;
+  protected
+    function GetFieldClass: TmncColumnClass; override;
+  public
+    function Add(vName: string; vPGType, vSize: Integer): TmncColumn; overload;
+    property Items[Index: Integer]: TPGColumn read GetItem; default;
+  end;
+
   { TmncPGCommand }
 
   TmncPGCommand = class(TmncSQLCommand)
@@ -115,8 +142,10 @@ type
     FHandle: string;
     FStatment: PPGresult;
     FTuple: Integer;
+    FTuples: Integer;
     FBOF: Boolean;
     FEOF: Boolean;
+    FFieldsCount: Integer;
     FStatus: TExecStatusType;
     FResultFormat: TmpgResultFormat;
     function GetConnection: TmncPGConnection;
@@ -124,6 +153,9 @@ type
     procedure FetchValues;
     function GetSession: TmncPGSession;
     procedure SetSession(const AValue: TmncPGSession);
+    function GetColumns: TPGColumns;
+    procedure SetColumns(const Value: TPGColumns);
+    function GetRecordCount: Integer;
   protected
     procedure InternalClose;
     procedure RaiseError(PGResult: PPGresult);
@@ -137,10 +169,12 @@ type
     procedure DoClose; override;
     procedure DoCommit; override;
     procedure DoRollback; override;
+    function CreateColumns: TmncColumns; override;
     property Connection: TmncPGConnection read GetConnection;
     property Session: TmncPGSession read GetSession write SetSession;
     function CreateParams: TmncParams; override;
     function CreateFields(vColumns: TmncColumns): TmncFields; override;
+
   public
     constructor Create(vSession:TmncPGSession);
     destructor Destroy; override;
@@ -150,7 +184,10 @@ type
     property Statment: PPGresult read FStatment;//opened by PQexecPrepared
     property Status: TExecStatusType read FStatus;
     property Handle: string read FHandle;//used for name in PQprepare
-    property ResultFormat: TmpgResultFormat read FResultFormat write FResultFormat default mrfText; 
+    property ResultFormat: TmpgResultFormat read FResultFormat write FResultFormat default mrfText;
+
+    property Columns: TPGColumns read GetColumns write SetColumns;
+    property RecordCount: Integer read GetRecordCount;
   end;
 
 implementation
@@ -185,19 +222,9 @@ begin
 end;
 
 procedure TmncPGConnection.InternalConnect(var vHandle: PPGconn);
-var
-  PGOptions, PGtty: Pchar;
-  aPort: string;
 begin
-  if not Assigned(PQsetdbLogin) then
-    raise EmncException.Create('PQsetdbLogin not assigned');
-  PGOptions := nil;
-  PGtty := nil;
-  if Port <> '' then
-    aPort := Port
-  else
-    aPort := '5432';
-  vHandle := PQsetdbLogin(PChar(Host), PChar(aPort), PChar(PGOptions), PChar(PGtty), PChar(Resource), PChar(UserName), PChar(Password));
+  if AutoCreate then CreateDatabase(Resource);
+  vHandle := CreateConnection;
   try
     RaiseError(PQstatus(vHandle) = CONNECTION_BAD);
   except
@@ -211,6 +238,49 @@ procedure TmncPGConnection.InternalDisconnect(var vHandle: PPGconn);
 begin
   PQfinish(vHandle);
   FHandle := nil;
+end;
+
+function TmncPGConnection.CreateConnection: PPGconn;
+begin
+  Result := CreateConnection(Resource);
+end;
+
+function TmncPGConnection.CreateConnection(const vDatabase: string): PPGconn;
+var
+  PGOptions, PGtty: Pchar;
+  aPort: string;
+begin
+  if not Assigned(PQsetdbLogin) then raise EmncException.Create('PQsetdbLogin not assigned');
+  PGOptions := nil;
+  PGtty := nil;
+  if Port <> '' then
+    aPort := Port
+  else
+    aPort := '5432';
+  Result := PQsetdbLogin(PChar(Host), PChar(aPort), PChar(PGOptions), PChar(PGtty), PChar(LowerCase(vDatabase)), PChar(UserName), PChar(Password));
+end;
+
+procedure TmncPGConnection.CreateDatabase(const vName: string);
+var
+  PGOptions, PGtty: Pchar;
+  aHandle: PPGconn;
+  aQry, aPort: string;
+begin
+  aHandle := CreateConnection('postgres');
+  try
+    if PQstatus(aHandle) = CONNECTION_OK then
+    begin
+      //need check database exist
+      aQry := Format('Create Database %s;', [vName]);
+      try
+        PQexec(aHandle, PChar(aQry));
+      except
+        raise;
+      end;
+    end;
+  finally
+    PQfinish(aHandle);
+  end;
 end;
 
 procedure TmncPGConnection.DoConnect;
@@ -228,6 +298,62 @@ begin
   InternalDisconnect(FHandle);
 end;
 
+procedure TmncPGConnection.DropDatabase;
+begin
+  DropDatabase(Resource);
+end;
+
+procedure TmncPGConnection.DropDatabase(const vName: string);
+var
+  PGOptions, PGtty: Pchar;
+  aHandle: PPGconn;
+  aQry, aPort: string;
+begin
+  aHandle := CreateConnection('postgres');
+  try
+    if PQstatus(aHandle) = CONNECTION_OK then
+    begin
+      //need check database exist
+      aQry := Format('drop database if exists %s;', [vName]);
+      try
+        PQexec(aHandle, PChar(aQry));
+      except
+        raise;
+      end;
+    end;
+  finally
+    PQfinish(aHandle);
+  end;
+end;
+
+procedure TmncPGConnection.Execute(vHandle: PPGconn; const vSQL: string);
+var
+ r  : PPGresult;
+ s: AnsiString;
+begin
+  s := vSQL;
+  r := PQexec(vHandle, PChar(vSQL));
+  try
+  //Connection.RaisePQError(r, s);
+  finally
+    PQclear(r);
+  end;
+end;
+
+procedure TmncPGConnection.Execute(const vSQL: string);
+var
+  aQry, aPort: string;
+begin
+  if PQstatus(FHandle) = CONNECTION_OK then
+  begin
+    try
+      PQexec(FHandle, PChar(vSQL));
+    except
+      raise;
+    end;
+  end;
+end;
+
 { TmncPGSession }
 
 destructor TmncPGSession.Destroy;
@@ -237,17 +363,17 @@ end;
 
 procedure TmncPGSession.DoStart;
 begin
-  if FDBHandle = nil then
-    Connection.InternalConnect(FDBHandle);
+  if FDBHandle = nil then Connection.InternalConnect(FDBHandle);
   Execute('BEGIN');
 end;
 
 procedure TmncPGSession.DoStop(How: TmncSessionAction; Retaining: Boolean);
 begin
-  //Execute('COMMIT');
-  //Execute('ROLLBACK');
-  if FDBHandle <> nil then
-    Connection.InternalDisconnect(FDBHandle);
+  case How of
+    sdaCommit: Execute('COMMIT');
+    sdaRollback: Execute('ROLLBACK');
+  end;
+  if FDBHandle <> nil then  Connection.InternalDisconnect(FDBHandle);
 end;
 
 function TmncPGSession.NewToken: string;
@@ -261,20 +387,15 @@ begin
   end;
 end;
 
-procedure TmncPGSession.Execute(SQL: string);
-var
- s : Utf8String;
- r  : PPGresult;
+procedure TmncPGSession.Execute(vSQL: string);
 begin
-  s := SQL;
-  r := PQexec(FDBHandle, PChar(s));
-//  Connection.RaisePQError(r, s);
-  PQclear(r);
+  Connection.Execute(FDBHandle, vSQL);
 end;
 
 function TmncPGSession.GetActive: Boolean;
 begin
   Result:= inherited GetActive;
+  Result := Result or Connection.Connected;
 end;
 
 constructor TmncPGSession.Create(vConnection: TmncConnection);
@@ -289,10 +410,14 @@ end;
 
 function TmncPGSession.GetDBHandle: PPGconn;
 begin
-  if Connection<>nil then
+  {if Connection<>nil then
     Result := Connection.Handle
   else
-    Result := nil;
+    Result := nil;}
+  if FDBHandle=nil then
+    Result := Connection.FHandle
+  else
+    Result := FDBHandle;
 end;
 
 procedure TmncPGSession.SetConnection(const AValue: TmncPGConnection);
@@ -330,6 +455,11 @@ end;
 function TmncPGCommand.GetSession: TmncPGSession;
 begin
   Result := inherited Session as TmncPGSession;
+end;
+
+procedure TmncPGCommand.SetColumns(const Value: TPGColumns);
+begin
+  inherited Columns := Value;
 end;
 
 procedure TmncPGCommand.SetSession(const AValue: TmncPGSession);
@@ -398,6 +528,11 @@ begin
   FResultFormat := mrfText;
 end;
 
+function TmncPGCommand.CreateColumns: TmncColumns;
+begin
+  Result := TPGColumns.Create; 
+end;
+
 function TmncPGCommand.CreateFields(vColumns: TmncColumns): TmncFields;
 begin
   Result := TmncPostgreFields.Create(vColumns);
@@ -445,8 +580,10 @@ begin
     FreeParamValues(Values);
   end;
   FStatus := PQresultStatus(FStatment);
+  FTuples := PQntuples(FStatment);
+  FFieldsCount := PQnfields(FStatment);
   FBOF := True;
-  FEOF := Status <> PGRES_TUPLES_OK;
+  FEOF := FStatus <> PGRES_TUPLES_OK;
   try
     RaiseError(FStatment);
   except
@@ -460,16 +597,18 @@ begin
   if (Status = PGRES_TUPLES_OK) then
   begin
     if FBOF then
-      FetchFields
+    begin
+      FetchFields;
+      FBOF := False;
+    end
     else
       inc(FTuple);
-    FEOF := FTuple >= PQntuples(FStatment);
+    FEOF := FTuple >= FTuples;
     if not FEOF then
       FetchValues;
   end
   else
     FEOF := True;
-  FBOF := False;
 end;
 
 procedure TmncPGCommand.DoPrepare;
@@ -512,11 +651,10 @@ var
   //r: PPGresult;
 begin
   //Fields.Clear;
-  c := PQnfields(FStatment);
-  for i := 0 to c - 1 do
+  for i := 0 to FFieldsCount - 1 do
   begin
     aName :=  DequoteStr(PQfname(FStatment, i));
-    Columns.Add(aName, dtUnknown); //belal: data type
+    Columns.Add(aName, PQftype(FStatment, i), PQfsize(Statment, i));
   end;
 end;
 
@@ -568,7 +706,7 @@ var
   c: Integer;
   aCurrent: TmncFields;
 begin
-  c := PQnfields(FStatment);
+  c := FFieldsCount;
   if c > 0 then
   begin
     aCurrent := CreateFields(Columns);
@@ -578,14 +716,13 @@ begin
         aCurrent.Add(i, NULL)
       else
       begin
-        //aFieldSize := PQfsize(Statment, i);
         p := PQgetvalue(FStatment, FTuple, i);
         if ResultFormat=mrfText then
           v := string(p)
         else
         begin
           aFieldSize :=PQgetlength(Statment, FTuple, i);
-          case PQftype(Statment, i) of
+          case Columns[i].PGType of
             Oid_Bool: v := (p^ <> #0);
             Oid_varchar, Oid_bpchar, Oid_name: v := string(p);
             Oid_oid, Oid_int2: v := _BRead(p, 2);
@@ -634,9 +771,19 @@ begin
   Result := FStatment <> nil; 
 end;
 
+function TmncPGCommand.GetColumns: TPGColumns;
+begin
+  Result := inherited Columns as TPGColumns
+end;
+
 function TmncPGCommand.GetConnection: TmncPGConnection;
 begin
   Result := Session.Connection as TmncPGConnection;
+end;
+
+function TmncPGCommand.GetRecordCount: Integer;
+begin
+  Result := FTuples;
 end;
 
 function TmncPGCommand.GetRowsChanged: Integer;
@@ -691,6 +838,25 @@ end;
 function TmncPostgreFields.CreateField(vColumn: TmncColumn): TmncField;
 begin
   Result := TmncPostgreField.Create(vColumn);
+end;
+
+{ TPGColumns }
+
+function TPGColumns.Add(vName: string; vPGType, vSize: Integer): TmncColumn;
+begin
+  Result := inherited Add(vName, dtUnknown);
+  TPGColumn(Result).PGType := vPGType;
+  TPGColumn(Result).FieldSize := vSize;
+end;
+
+function TPGColumns.GetFieldClass: TmncColumnClass;
+begin
+  Result := TPGColumn;
+end;
+
+function TPGColumns.GetItem(Index: Integer): TPGColumn;
+begin
+  Result := TPGColumn(inherited GetItem(Index));
 end;
 
 end.
