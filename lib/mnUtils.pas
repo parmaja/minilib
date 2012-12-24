@@ -32,7 +32,7 @@ type
 function StrToStringsCallback(Sender: Pointer; Proc: TStrToStringsCallbackProc; Content: string; Separators: TSysCharSet; WhiteSpace: TSysCharSet = [#0, #13, #10]; DequoteValues: Boolean = False; Quotes: TSysCharSet = ['''', '"']): Integer;
 function StrToStrings(Content: string; Strings: TStrings; Separators: TSysCharSet; WhiteSpace: TSysCharSet = [#0, #13, #10]; DequoteValues: Boolean = False; Quotes: TSysCharSet = ['''', '"']): Integer;
 function CompareLeftStr(const Str: string; const WithStr: string; Start: Integer=1): Boolean;
-//Index started from 1
+//Index started from 0
 function SubStr(const Str: String; vSeperator: Char; vIndex: Integer = 0): String; overload;
 function SubStr(const Str: String; vSeperator: Char; vFromIndex, vToIndex: Integer): String; overload;
 
@@ -568,41 +568,27 @@ var
 begin
   Index := 0;
   B := 0;
-  for E := 1 to Length(Str) do
+  E := 1;
+  while E <= Length(Str) do
   begin
-    if (B=0) and (Index = vFromIndex) then B := E;
+    if (B = 0) and (Index = vFromIndex) then
+      B := E;
     
-    if Str[E] = vSeperator then Inc(Index);
+    if Str[E] = vSeperator then
+      Inc(Index);
 
-    if (Index = (vToIndex+1)) then Break;
+    if Index = vToIndex + 1 then
+    begin
+      E := E - 1;
+      Break;
+    end;
+    Inc(E);
   end;
 
-  if B<>0 then
-    Result := Copy(Str, B, E-B)
+  if B <> 0 then
+    Result := Copy(Str, B, E - B + 1)
   else
     Result := '';
-
-
-
-  {Result := '';
-  Index := 0;
-  B := 1;
-  for E := 1 to Length(Str) do
-  begin
-    if Str[E] = vSeperator then
-    begin
-      Inc(Index);
-      if Index = vFromIndex - 1 then
-        B := E + 1;
-    end;
-
-    if Index = vToIndex then
-    begin
-      Result := Copy(Str, B, E - B);
-      exit;
-    end;
-  end;
-  Result := Copy(Str, B, MaxInt);}
 end;
 
 function SubStr(const Str: String; vSeperator: Char; vIndex: Integer): String;
