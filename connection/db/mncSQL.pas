@@ -38,13 +38,10 @@ type
 
   TmncSQLCommand = class(TmncCommand)
   private
-    //FRequest: TStrings; 
   protected
     function ParseSQL(Options: TmncParseSQLOptions; ParamChar: string = '?'): string;
   public
     property SQL: TStrings read FRequest;//Alias of Request
-    procedure Add(vSQL: string); overload; virtual;
-    procedure Add(vFormat: string; vArgs: array of const); overload; virtual;
   end;
 
   { TmncSQLGenerator }
@@ -92,16 +89,6 @@ end;
 function TmncSQLGenerator.Delete(Table: string; Keys: array of string): string;
 begin
 
-end;
-
-procedure TmncSQLCommand.Add(vSQL: string);
-begin
-  SQL.Add(vSQL);
-end;
-
-procedure TmncSQLCommand.Add(vFormat: string; vArgs: array of const);
-begin
-  Add(Format(vFormat, vArgs));
 end;
 
 function TmncSQLCommand.ParseSQL(Options: TmncParseSQLOptions; ParamChar: string = '?'): string;
