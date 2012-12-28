@@ -1,6 +1,6 @@
 object Form1: TForm1
-  Left = 770
-  Top = 179
+  Left = 877
+  Top = 182
   Caption = 'Form1'
   ClientHeight = 328
   ClientWidth = 378
@@ -33,9 +33,9 @@ object Form1: TForm1
   end
   object ListBox1: TListBox
     Left = 0
-    Top = 64
+    Top = 208
     Width = 378
-    Height = 264
+    Height = 120
     Align = alBottom
     ItemHeight = 13
     TabOrder = 2
@@ -57,5 +57,42 @@ object Form1: TForm1
     Checked = True
     State = cbChecked
     TabOrder = 4
+  end
+  object Button3: TButton
+    Left = 258
+    Top = 33
+    Width = 75
+    Height = 25
+    Caption = 'Read'
+    TabOrder = 5
+    OnClick = Button3Click
+  end
+  object SynEdit1: TSynEdit
+    Left = 0
+    Top = 104
+    Width = 378
+    Height = 98
+    Font.Charset = DEFAULT_CHARSET
+    Font.Color = clWindowText
+    Font.Height = -13
+    Font.Name = 'Courier New'
+    Font.Style = []
+    TabOrder = 6
+    Gutter.Font.Charset = DEFAULT_CHARSET
+    Gutter.Font.Color = clWindowText
+    Gutter.Font.Height = -11
+    Gutter.Font.Name = 'Courier New'
+    Gutter.Font.Style = []
+    Lines.Strings = (
+      'SynEdit1')
+  end
+  object TreeBtn: TButton
+    Left = 258
+    Top = 64
+    Width = 75
+    Height = 25
+    Caption = 'Tree'
+    TabOrder = 7
+    OnClick = TreeBtnClick
   end
 end

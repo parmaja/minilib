@@ -129,7 +129,6 @@ type
   private
     function GetItem(Index: Integer): TPGColumn;
   protected
-    function GetFieldClass: TmncColumnClass; override;
   public
     function Add(vName: string; vPGType, vSize: Integer): TmncColumn; overload;
     property Items[Index: Integer]: TPGColumn read GetItem; default;
@@ -844,14 +843,9 @@ end;
 
 function TPGColumns.Add(vName: string; vPGType, vSize: Integer): TmncColumn;
 begin
-  Result := inherited Add(vName, dtUnknown);
+  Result := inherited Add(Count, vName, dtUnknown, TPGColumn);
   TPGColumn(Result).PGType := vPGType;
   TPGColumn(Result).FieldSize := vSize;
-end;
-
-function TPGColumns.GetFieldClass: TmncColumnClass;
-begin
-  Result := TPGColumn;
 end;
 
 function TPGColumns.GetItem(Index: Integer): TPGColumn;
