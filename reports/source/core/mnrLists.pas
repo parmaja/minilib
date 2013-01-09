@@ -26,7 +26,7 @@ type
     procedure SetNodes(const Value: TmnrNode);
     function GetNodes: TmnrNode;
     procedure Attach; virtual;
-    procedure Detach; virtual; 
+    procedure Detach; virtual;
 
     function GetCount: Integer; virtual;
 
@@ -264,11 +264,17 @@ procedure TmnrNode.Detach;
 begin
   if Nodes<>nil then
   begin
-    if Nodes.First=Self then Nodes.First := Next;
-    if Nodes.First<>nil then Nodes.First.Prior := nil;
+    if Nodes.First=Self then
+    begin
+      Nodes.First := Next;
+      if Nodes.First<>nil then Nodes.First.Prior := nil;
+    end;
 
-    if Nodes.Last=Self then Nodes.Last := Prior;
-    if Nodes.Last<>nil then Nodes.Last.Next := nil;
+    if Nodes.Last=Self then
+    begin
+      Nodes.Last := Prior;
+      if Nodes.Last<>nil then Nodes.Last.Next := nil;
+    end;
     Nodes.DecCount(Count);
     FNodes := nil;
   end;
@@ -379,9 +385,9 @@ procedure TmnrNode.SetNodes(const Value: TmnrNode);
 begin
   if FNodes<>Value then
   begin
-    Detach;
+    if FNodes<>nil then Detach;
     FNodes := Value;
-    Attach;
+    if FNodes<>nil then Attach;
   end;
 end;
 
