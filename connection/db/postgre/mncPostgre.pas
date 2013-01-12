@@ -189,6 +189,12 @@ type
     property RecordCount: Integer read GetRecordCount;
   end;
 
+  TmncPGDirectCommand = class(TmncPGCommand)
+  protected
+    procedure DoPrepare; override;
+    procedure DoExecute; override;
+  end;
+
 implementation
 
 uses
@@ -523,7 +529,7 @@ constructor TmncPGCommand.Create(vSession:TmncPGSession);
 begin
   inherited Create;
   Session := vSession;
-  FHandle := Session.NewToken;
+  //FHandle := Session.NewToken;
   FResultFormat := mrfText;
 end;
 
@@ -617,6 +623,7 @@ var
   c: PPGconn;
 begin
   FBOF := True;
+  FHandle := Session.NewToken;
   s := ParseSQL([psoAddParamsID], '$');
   c := Session.DBHandle;
   r := PQprepare(c, PChar(FHandle), PChar(s), 0 , nil);
@@ -851,6 +858,39 @@ end;
 function TPGColumns.GetItem(Index: Integer): TPGColumn;
 begin
   Result := TPGColumn(inherited GetItem(Index));
+end;
+
+{ TmncPGDirectCommand }
+
+procedure TmncPGDirectCommand.DoExecute;
+var
+  Values: TArrayOfPChar;
+  P: pointer;
+  f: Integer;//Result Field format
+begin
+  if FStatment <> nil then
+    PQclear(FStatment);
+  try
+    FStatment := PQexec(Session.DBHandle, PChar(SQL.Text));
+  finally
+    FreeParamValues(Values);
+  end;
+  FStatus := PQresultStatus(FStatment);
+  FTuples := PQntuples(FStatment);
+  FFieldsCount := PQnfields(FStatment);
+  FBOF := True;
+  FEOF := FStatus <> PGRES_TUPLES_OK;
+  try
+    RaiseError(FStatment);
+  except
+    InternalClose;
+    raise;
+  end;
+end;
+
+procedure TmncPGDirectCommand.DoPrepare;
+begin
+  //no need prepare
 end;
 
 end.
