@@ -48,6 +48,8 @@ type
     function GetConnected:Boolean; override;
   protected
     procedure RaiseError(Error: Boolean; const ExtraMsg: string = '');
+    class function GetMode: TmncSessionMode; override;
+
   public
     constructor Create;
     procedure Interrupt;
@@ -298,6 +300,11 @@ begin
   Result := FHandle <> nil;
 end;
 
+class function TmncPGConnection.GetMode: TmncSessionMode;
+begin
+  Result := smMultiple; //transaction act as connection
+end;
+
 procedure TmncPGConnection.DoDisconnect;
 begin
   InternalDisconnect(FHandle);
@@ -400,7 +407,7 @@ end;
 function TmncPGSession.GetActive: Boolean;
 begin
   Result:= inherited GetActive;
-  Result := Result or Connection.Connected;
+  //Result := Result or Connection.Connected; ??why this
 end;
 
 constructor TmncPGSession.Create(vConnection: TmncConnection);
