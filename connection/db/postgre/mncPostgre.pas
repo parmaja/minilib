@@ -64,7 +64,7 @@ type
 
   { TmncPGSession }
 
-  TmncPGSession = class(TmncSession) //note now each session has it's connection 
+  TmncPGSession = class(TmncSQLSession) //note now each session has it's connection 
   private
     FTokenID: Cardinal;
     FDBHandle: PPGconn;
@@ -78,10 +78,12 @@ type
     procedure DoStart; override;
     procedure DoStop(How: TmncSessionAction; Retaining: Boolean); override;
     function GetActive: Boolean; override;
+
   public
     constructor Create(vConnection: TmncConnection); override;
     destructor Destroy; override;
     procedure Execute(vSQL: string);
+    function CreateCommand: TmncSQLCommand; override;
     property Exclusive: Boolean read FExclusive write SetExclusive;
     property Connection: TmncPGConnection read GetConnection write SetConnection;
     property DBHandle: PPGconn read GetDBHandle;
@@ -191,7 +193,7 @@ type
     property RecordCount: Integer read GetRecordCount;
   end;
 
-  TmncPGDirectCommand = class(TmncPGCommand)
+  TmncPGDDLCommand = class(TmncPGCommand)
   protected
     procedure DoPrepare; override;
     procedure DoExecute; override;
@@ -243,8 +245,11 @@ end;
 
 procedure TmncPGConnection.InternalDisconnect(var vHandle: PPGconn);
 begin
-  PQfinish(vHandle);
-  FHandle := nil;
+  try
+    PQfinish(vHandle);
+  finally
+    vHandle := nil;
+  end;
 end;
 
 function TmncPGConnection.CreateConnection: PPGconn;
@@ -368,6 +373,11 @@ end;
 
 { TmncPGSession }
 
+function TmncPGSession.CreateCommand: TmncSQLCommand;
+begin
+  Result := TmncPGCommand.Create(Self);
+end;
+
 destructor TmncPGSession.Destroy;
 begin
   inherited;
@@ -385,7 +395,11 @@ begin
     sdaCommit: Execute('COMMIT');
     sdaRollback: Execute('ROLLBACK');
   end;
-  if FDBHandle <> nil then  Connection.InternalDisconnect(FDBHandle);
+  if FDBHandle <> nil then
+  begin
+    Connection.InternalDisconnect(FDBHandle);
+
+  end;
 end;
 
 function TmncPGSession.NewToken: string;
@@ -867,9 +881,9 @@ begin
   Result := TPGColumn(inherited GetItem(Index));
 end;
 
-{ TmncPGDirectCommand }
+{ TmncPGDDLCommand }
 
-procedure TmncPGDirectCommand.DoExecute;
+procedure TmncPGDDLCommand.DoExecute;
 var
   Values: TArrayOfPChar;
   P: pointer;
@@ -895,7 +909,7 @@ begin
   end;
 end;
 
-procedure TmncPGDirectCommand.DoPrepare;
+procedure TmncPGDDLCommand.DoPrepare;
 begin
   //no need prepare
 end;

@@ -1045,7 +1045,7 @@ end;
 
 procedure TmncSession.Rollback;
 begin
-  InternalStop(sdaCommit, False);
+  InternalStop(sdaRollback, False);
 end;
 
 procedure TmncSession.SetActive(const Value: Boolean);
