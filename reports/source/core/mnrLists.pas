@@ -113,6 +113,7 @@ type
     function GetAsInteger: Longint; virtual; abstract;
     function GetAsString: string; virtual; abstract;
     function GetAsVariant: Variant; virtual; abstract;
+    function GetAsData: Integer; virtual; abstract;
 
     procedure SetAsBoolean(const Value: Boolean); virtual; abstract;
     procedure SetAsCurrency(const Value: Currency); virtual; abstract;
@@ -121,6 +122,8 @@ type
     procedure SetAsInteger(const Value: Longint); virtual; abstract;
     procedure SetAsString(const Value: string); virtual; abstract;
     procedure SetAsVariant(const Value: Variant); virtual; abstract;
+    procedure SetAsData(const Value: Integer); virtual; abstract;
+  published
   public
 
     property AsBoolean: Boolean read GetAsBoolean write SetAsBoolean;
@@ -130,6 +133,7 @@ type
     property AsInteger: Longint read GetAsInteger write SetAsInteger;
     property AsString: string read GetAsString write SetAsString;
     property AsVariant: Variant read GetAsVariant write SetAsVariant;
+    property AsData: Integer read GetAsData write SetAsData;
     property Value: Variant read GetAsVariant write SetAsVariant;
   end;
 
@@ -687,7 +691,6 @@ function TmnrLinkNodesListIndex.GetNodes: TmnrLinkNodes;
 begin
   Result := TmnrLinkNodes(inherited GetNodes);
 end;
-
 
 initialization
 
