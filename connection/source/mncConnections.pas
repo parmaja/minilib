@@ -1039,7 +1039,7 @@ begin
         if (Connection.FStartCount > 0) then
           DoStart;
       end;
-    smConnection:{TODO};
+    smConnection: DoStop(How, Retaining);
   end;
 end;
 
@@ -1088,7 +1088,7 @@ end;
 
 procedure TmncSession.Start;
 begin
-  if (Connection.Mode <> smNone) and (Active) then
+  if not (Connection.Mode in [smNone, smConnection]) and (Active) then
     raise EmncException.Create('Session is already active.');
   Connection.Init;
   Init;
@@ -1101,7 +1101,7 @@ begin
           DoStart;
         Inc(Connection.FStartCount);
       end;
-    smConnection:{TODO};
+    smConnection: DoStart;
   end;
   Inc(FStartCount);
 end;

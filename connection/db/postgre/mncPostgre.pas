@@ -178,6 +178,7 @@ type
     function CreateParams: TmncParams; override;
     function CreateFields(vColumns: TmncColumns): TmncFields; override;
 
+
   public
     constructor Create(vSession:TmncPGSession);
     destructor Destroy; override;
@@ -307,7 +308,7 @@ end;
 
 class function TmncPGConnection.GetMode: TmncSessionMode;
 begin
-  Result := smMultiple; //transaction act as connection
+  Result := smConnection; //transaction act as connection
 end;
 
 procedure TmncPGConnection.DoDisconnect;
@@ -420,8 +421,8 @@ end;
 
 function TmncPGSession.GetActive: Boolean;
 begin
-  Result:= inherited GetActive;
-  //Result := Result or Connection.Connected; ??why this
+  //Result:= inherited GetActive;
+  Result := (FDBHandle<>nil) or Connection.Connected;
 end;
 
 constructor TmncPGSession.Create(vConnection: TmncConnection);
