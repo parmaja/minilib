@@ -34,55 +34,51 @@
     <Description Value="MiniLib XML reader/writer, rtti profiler"/>
     <License Value="ModifiedLGPL"/>
     <Version Major="1" Release="1"/>
-    <Files Count="12">
+    <Files Count="11">
       <Item1>
         <Filename Value="mnXML.pas"/>
         <UnitName Value="mnXML"/>
       </Item1>
       <Item2>
-        <Filename Value="mnXMLBase64.pas"/>
-        <UnitName Value="mnXMlBase64"/>
-      </Item2>
-      <Item3>
         <Filename Value="mnXMLNodes.pas"/>
         <UnitName Value="mnXMLNodes"/>
-      </Item3>
-      <Item4>
+      </Item2>
+      <Item3>
         <Filename Value="mnXMLReader.pas"/>
         <UnitName Value="mnXMLReader"/>
-      </Item4>
-      <Item5>
+      </Item3>
+      <Item4>
         <Filename Value="mnXMLRtti.pas"/>
         <UnitName Value="mnXMLRtti"/>
-      </Item5>
-      <Item6>
+      </Item4>
+      <Item5>
         <Filename Value="mnXMLRttiProfile.pas"/>
         <UnitName Value="mnXMLRttiProfile"/>
-      </Item6>
-      <Item7>
+      </Item5>
+      <Item6>
         <Filename Value="mnXMLRttiReader.pas"/>
         <UnitName Value="mnXMLRttiReader"/>
-      </Item7>
-      <Item8>
+      </Item6>
+      <Item7>
         <Filename Value="mnXMLRttiStdClasses.pas"/>
         <UnitName Value="mnXMLRttiStdClasses"/>
-      </Item8>
-      <Item9>
+      </Item7>
+      <Item8>
         <Filename Value="mnXMLRttiWriter.pas"/>
         <UnitName Value="mnXMLRttiWriter"/>
-      </Item9>
-      <Item10>
+      </Item8>
+      <Item9>
         <Filename Value="mnXMLScanner.pas"/>
         <UnitName Value="mnXMLScanner"/>
-      </Item10>
-      <Item11>
+      </Item9>
+      <Item10>
         <Filename Value="mnXMLUtils.pas"/>
         <UnitName Value="mnXMLUtils"/>
-      </Item11>
-      <Item12>
+      </Item10>
+      <Item11>
         <Filename Value="mnXMLWriter.pas"/>
         <UnitName Value="mnXMLWriter"/>
-      </Item12>
+      </Item11>
     </Files>
     <Type Value="RunAndDesignTime"/>
     <RequiredPkgs Count="2">

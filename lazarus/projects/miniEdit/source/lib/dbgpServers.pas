@@ -18,7 +18,7 @@ interface
 
 uses
   SysUtils, StrUtils, Classes, Contnrs, Dialogs, Variants,
-  mnSockets, mnStreams, mnConnections, mnServers, mnXMLUtils, mnXMLBase64,
+  mnSockets, mnStreams, mnConnections, mnServers, mnXMLUtils, Base64,
   mnXMLRttiProfile, mnXMLNodes, SyncObjs, IniFiles;
 
 type
@@ -1480,7 +1480,7 @@ begin
   if Respond[sCmd] <> nil then
   begin
     if Respond[sCmd].Attributes['encoding'] = 'base64' then
-      VariableValue := Base64Decode(Respond[sCmd].Value)
+      VariableValue := DecodeStringBase64(Respond[sCmd].Value)
     else
       VariableValue := Respond[sCmd].Value;
 

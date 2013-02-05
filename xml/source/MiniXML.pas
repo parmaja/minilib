@@ -2,21 +2,21 @@
   This source is only used to compile and install the package.
  }
 
-unit MiniXML; 
+unit MiniXML;
 
 interface
 
 uses
-  mnXML, mnXMLBase64, mnXMLNodes, mnXMLReader, mnXMLRtti, mnXMLRttiProfile, 
+  mnXML, mnXMLNodes, mnXMLReader, mnXMLRtti, mnXMLRttiProfile, 
   mnXMLRttiReader, mnXMLRttiStdClasses, mnXMLRttiWriter, mnXMLScanner, 
   mnXMLUtils, mnXMLWriter, LazarusPackageIntf;
 
 implementation
 
-procedure Register; 
+procedure Register;
 begin
-end; 
+end;
 
 initialization
-  RegisterPackage('MiniXML', @Register); 
+  RegisterPackage('MiniXML', @Register);
 end.
