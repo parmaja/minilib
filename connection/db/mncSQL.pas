@@ -74,8 +74,7 @@ begin
 
 end;
 
-function TmncSQLGenerator.Insert(Table: string; Fields: array of string
-  ): string;
+function TmncSQLGenerator.Insert(Table: string; Fields: array of string): string;
 begin
 
 end;

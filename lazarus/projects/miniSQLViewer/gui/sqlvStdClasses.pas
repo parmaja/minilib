@@ -214,8 +214,6 @@ type
     procedure DoExecute(const Value: string; vParams: TmncSchemaParams); override;
   end;
 
-  { TsqlvDropTable }
-
   { TsqlvInsertTable }
 
   TsqlvInsertTable = class(TsqlvNode)

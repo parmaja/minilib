@@ -2,19 +2,20 @@
   This source is only used to compile and install the package.
  }
 
-unit MiniCommons; 
+unit MiniCommons;
 
 interface
 
 uses
-  minibidi, mnFields, mnParams, mnStreams, mnUtils, LazarusPackageIntf;
+  mnFields, mnParams, mnStreams, mnUtils, mnBase64, minibidi, 
+  LazarusPackageIntf;
 
 implementation
 
-procedure Register; 
+procedure Register;
 begin
-end; 
+end;
 
 initialization
-  RegisterPackage('MiniCommons', @Register); 
+  RegisterPackage('MiniCommons', @Register);
 end.

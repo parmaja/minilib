@@ -22,7 +22,10 @@ uses
   Math;
 
 type
-  TUniviersalDateFlags = set of (udtfUseDayName, udtfUseMonthName);
+  {
+    TODO udtfReverseOrder usfule for Right to left application
+  }
+  TUniviersalDateFlags = set of (udtfUseDayName, udtfUseMonthName, udtfReverseOrder);
 
   TUniviersalDateSystem = class(TObject)
   private

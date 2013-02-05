@@ -11,8 +11,8 @@ unit Main;
 
 {todo: Save/Load sql scripts: DONE}
 {todo: Auto complete: DONE}
-{todo: search for members: Done}
-{todo: More short cuts: Done}
+{todo: search for members: DONE}
+{todo: More short cuts: DONE}
 {todo: Export/Import As CSV: DONE}
 {todo: Ask for param when have params in normal execute sql script: DONE}
 
