@@ -38,5 +38,7 @@ contains
   mncSchemas in '..\db\mncSchemas.pas',
   mncSQLite in '..\db\sqlite\mncSQLite.pas',
   mncSQLiteHeader in '..\db\sqlite\mncSQLiteHeader.pas',
-  mncSQLiteSchemas in '..\db\sqlite\mncSQLiteSchemas.pas';
+  mncSQLiteSchemas in '..\db\sqlite\mncSQLiteSchemas.pas',
+  mncPGHeader in '..\db\postgre\mncPGHeader.pas',
+  mncPostgre in '..\db\postgre\mncPostgre.pas';
 end.

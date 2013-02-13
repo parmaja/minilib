@@ -34,7 +34,7 @@ type
 
   { TmncPGConnection }
 
-  TmncPGConnection = class(TmncConnection)
+  TmncPGConnection = class(TmncSQLConnection)
   private
     FHandle: PPGconn;
   protected
@@ -46,18 +46,26 @@ type
     procedure DoConnect; override;
     procedure DoDisconnect; override;
     function GetConnected:Boolean; override;
+
   protected
-    procedure RaiseError(Error: Boolean; const ExtraMsg: string = '');
+    procedure RaiseError(Error: Boolean; const ExtraMsg: string = ''); overload;
+    procedure RaiseError(PGResult: PPGresult); overload;
     class function GetMode: TmncSessionMode; override;
 
   public
     constructor Create;
     procedure Interrupt;
+    function CreateSession: TmncSQLSession; override;
     //TODO: Reconnect  use PQReset
     property Handle: PPGconn read FHandle;
-    procedure CreateDatabase(const vName: string);
+    procedure CreateDatabase; overload;
+    procedure CreateDatabase(const vName: string); overload;
     procedure DropDatabase; overload;
     procedure DropDatabase(const vName: string); overload;
+    procedure RenameDatabase(const vName, vToName: string); overload;
+
+    procedure Execute(const vResource: string; const vSQL: string; vArgs: array of const); overload;
+    procedure Execute(const vResource: string; const vSQL: string); overload;
     procedure Execute(const vSQL: string); overload;
     procedure Execute(vHandle: PPGconn; const vSQL: string); overload;
   end;
@@ -178,9 +186,8 @@ type
     function CreateParams: TmncParams; override;
     function CreateFields(vColumns: TmncColumns): TmncFields; override;
 
-
   public
-    constructor Create(vSession:TmncPGSession);
+    constructor CreateBy(vSession:TmncPGSession);
     destructor Destroy; override;
     procedure Clear; override;
     function GetRowsChanged: Integer;
@@ -217,6 +224,25 @@ begin
       s := s + ' - ' + ExtraMsg;
     raise EmncException.Create(s) {$ifdef fpc} at get_caller_frame(get_frame) {$endif};
   end;
+end;
+
+procedure TmncPGConnection.RaiseError(PGResult: PPGresult);
+var
+  s : Utf8String;
+  //ExtraMsg: string;
+begin
+  case PQresultStatus(PGResult) of
+    PGRES_BAD_RESPONSE,PGRES_NONFATAL_ERROR, PGRES_FATAL_ERROR:
+    begin
+      s := PQresultErrorMessage(PGResult);
+      raise EmncException.Create('Postgre command: ' + s) {$ifdef fpc} at get_caller_frame(get_frame) {$endif};
+    end;
+  end;
+end;
+
+procedure TmncPGConnection.RenameDatabase(const vName, vToName: string);
+begin
+  Execute('postgres', 'alter database %s rename to %s', [vName, vToName]);
 end;
 
 { TmncPGConnection }
@@ -273,27 +299,19 @@ begin
   Result := PQsetdbLogin(PChar(Host), PChar(aPort), PChar(PGOptions), PChar(PGtty), PChar(LowerCase(vDatabase)), PChar(UserName), PChar(Password));
 end;
 
-procedure TmncPGConnection.CreateDatabase(const vName: string);
-var
-  PGOptions, PGtty: Pchar;
-  aHandle: PPGconn;
-  aQry, aPort: string;
+procedure TmncPGConnection.CreateDatabase;
 begin
-  aHandle := CreateConnection('postgres');
-  try
-    if PQstatus(aHandle) = CONNECTION_OK then
-    begin
-      //need check database exist
-      aQry := Format('Create Database %s;', [vName]);
-      try
-        PQexec(aHandle, PChar(aQry));
-      except
-        raise;
-      end;
-    end;
-  finally
-    PQfinish(aHandle);
-  end;
+  CreateDatabase(Resource);
+end;
+
+procedure TmncPGConnection.CreateDatabase(const vName: string);
+begin
+  Execute('postgres', 'Create Database %s;', [vName]);
+end;
+
+function TmncPGConnection.CreateSession: TmncSQLSession;
+begin
+  Result := TmncPGSession.Create(Self);
 end;
 
 procedure TmncPGConnection.DoConnect;
@@ -322,53 +340,47 @@ begin
 end;
 
 procedure TmncPGConnection.DropDatabase(const vName: string);
-var
-  PGOptions, PGtty: Pchar;
-  aHandle: PPGconn;
-  aQry, aPort: string;
 begin
-  aHandle := CreateConnection('postgres');
+  Execute('postgres', 'drop database if exists %s;', [vName]);
+end;
+
+procedure TmncPGConnection.Execute(vHandle: PPGconn; const vSQL: string);
+var
+  res: PGresult;
+begin
+  try
+    res := PQexec(vHandle, PChar(vSQL));
+    RaiseError(res);
+  except
+    raise;
+  end;
+end;
+
+procedure TmncPGConnection.Execute(const vResource, vSQL: string; vArgs: array of const);
+begin
+  Execute(vResource, Format(vSQL, vArgs));
+end;
+
+procedure TmncPGConnection.Execute(const vResource, vSQL: string);
+var
+  aHandle: PPGconn;
+begin
+  aHandle := CreateConnection(vResource);
   try
     if PQstatus(aHandle) = CONNECTION_OK then
     begin
-      //need check database exist
-      aQry := Format('drop database if exists %s;', [vName]);
-      try
-        PQexec(aHandle, PChar(aQry));
-      except
-        raise;
-      end;
+      Execute(aHandle, vSQL);
     end;
   finally
     PQfinish(aHandle);
   end;
 end;
 
-procedure TmncPGConnection.Execute(vHandle: PPGconn; const vSQL: string);
-var
- r  : PPGresult;
- s: AnsiString;
-begin
-  s := vSQL;
-  r := PQexec(vHandle, PChar(vSQL));
-  try
-  //Connection.RaisePQError(r, s);
-  finally
-    PQclear(r);
-  end;
-end;
-
 procedure TmncPGConnection.Execute(const vSQL: string);
-var
-  aQry, aPort: string;
 begin
   if PQstatus(FHandle) = CONNECTION_OK then
   begin
-    try
-      PQexec(FHandle, PChar(vSQL));
-    except
-      raise;
-    end;
+    Execute(FHandle, vSQL);
   end;
 end;
 
@@ -376,7 +388,7 @@ end;
 
 function TmncPGSession.CreateCommand: TmncSQLCommand;
 begin
-  Result := TmncPGCommand.Create(Self);
+  Result := TmncPGCommand.CreateBy(Self);
 end;
 
 destructor TmncPGSession.Destroy;
@@ -399,7 +411,6 @@ begin
   if FDBHandle <> nil then
   begin
     Connection.InternalDisconnect(FDBHandle);
-
   end;
 end;
 
@@ -416,7 +427,10 @@ end;
 
 procedure TmncPGSession.Execute(vSQL: string);
 begin
-  Connection.Execute(FDBHandle, vSQL);
+  if FDBHandle<>nil then
+    Connection.Execute(FDBHandle, vSQL)
+  else
+    Connection.Execute(vSQL);
 end;
 
 function TmncPGSession.GetActive: Boolean;
@@ -465,18 +479,8 @@ end;
 { TmncPGCommand }
 
 procedure TmncPGCommand.RaiseError(PGResult: PPGresult);
-var
-  s : Utf8String;
-  ExtraMsg: string;
-  r: Integer;
 begin
-  case PQresultStatus(PGResult) of
-    PGRES_BAD_RESPONSE,PGRES_NONFATAL_ERROR, PGRES_FATAL_ERROR:
-    begin
-      s := PQresultErrorMessage(PGResult);
-      raise EmncException.Create('Postgre command: ' + s) {$ifdef fpc} at get_caller_frame(get_frame) {$endif};
-    end;
-  end;
+  Connection.RaiseError(PGResult);
 end;
 
 function TmncPGCommand.GetSession: TmncPGSession;
@@ -547,10 +551,9 @@ begin
   FBOF := True;
 end;
 
-constructor TmncPGCommand.Create(vSession:TmncPGSession);
+constructor TmncPGCommand.CreateBy(vSession:TmncPGSession);
 begin
-  inherited Create;
-  Session := vSession;
+  inherited CreateBy(vSession);
   //FHandle := Session.NewToken;
   FResultFormat := mrfText;
 end;
@@ -572,7 +575,7 @@ end;
 
 function TmncPGCommand.GetEOF: Boolean;
 begin
-  Result := (FStatment = nil) or FEOF; 
+  Result := (FStatment = nil) or FEOF;
 end;
 
 function TmncPGCommand.GetLastInsertID: Int64;
@@ -610,7 +613,8 @@ begin
   FTuples := PQntuples(FStatment);
   FFieldsCount := PQnfields(FStatment);
   FBOF := True;
-  FEOF := FStatus <> PGRES_TUPLES_OK;
+  FTuple := 0;
+  FEOF := not (FStatus in [PGRES_TUPLES_OK]);
   try
     RaiseError(FStatment);
   except
@@ -621,7 +625,7 @@ end;
 
 procedure TmncPGCommand.DoNext;
 begin
-  if (Status = PGRES_TUPLES_OK) then
+  if (Status in [PGRES_TUPLES_OK]) then
   begin
     if FBOF then
     begin
@@ -674,7 +678,6 @@ end;
 procedure TmncPGCommand.FetchFields;
 var
   i: Integer;
-  c: Integer;
   aName: string;
   //r: PPGresult;
 begin
@@ -887,8 +890,6 @@ end;
 procedure TmncPGDDLCommand.DoExecute;
 var
   Values: TArrayOfPChar;
-  P: pointer;
-  f: Integer;//Result Field format
 begin
   if FStatment <> nil then
     PQclear(FStatment);

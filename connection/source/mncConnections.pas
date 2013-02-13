@@ -284,6 +284,7 @@ type
     property AsDateTime;
     property AsText; //binary text blob convert to hex
     property AsHex;
+    property AsDouble;
   end;
 
   { TmncCustomFields }
