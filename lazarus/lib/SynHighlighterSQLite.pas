@@ -7,7 +7,8 @@ unit SynHighlighterSQLite;
  * @author    Zaher Dirkey <zaher at parmaja dot com>
  *}
 
-{$mode objfpc}{$H+}
+{$mode objfpc}
+{$H+}
 
 interface
 
@@ -25,6 +26,7 @@ type
   TProcTableProc = procedure of object;
 
 type
+  {$hint 'Move it to SynHighlighterHashEntries'}
   PIdentifierTable = ^TIdentifierTable;
   TIdentifierTable = array[AnsiChar] of ByteBool;
 
@@ -40,13 +42,10 @@ type
     FRange: TRangeState;
     FLine: PChar;
     FLineNumber: Integer;
-    FProcTable: array[#0..#255] of TProcTableProc;
+    FProcTable: array[AnsiChar] of TProcTableProc;
     Run: LongInt;
-    FStringLen: Integer;
-    FToIdent: PChar;
     FTokenPos: Integer;
     FTokenID: TtkTokenKind;
-    FKeywords: TSynHashEntryList;
     FCommentAttri: TSynHighlighterAttributes;
     FDataTypeAttri: TSynHighlighterAttributes;
     FObjectAttri: TSynHighlighterAttributes;
@@ -58,8 +57,6 @@ type
     FStringAttri: TSynHighlighterAttributes;
     FSymbolAttri: TSynHighlighterAttributes;
     FVariableAttri: TSynHighlighterAttributes;
-    function KeyHash(ToHash: PChar): Integer;
-    function KeyComp(const aKey: string): Boolean;
     procedure AndSymbolProc;
     procedure StringProc;
     procedure CRProc;
@@ -80,10 +77,9 @@ type
     procedure VariableProc;
     procedure ObjectProc;
     procedure UnknownProc;
-    function IdentKind(MayBe: PChar): TtkTokenKind;
-    procedure MakeMethodTables;
-    procedure AnsiCProc;
-    procedure DoAddKeyword(AKeyword: string; AKind: integer);
+    procedure CommentProc;
+
+    procedure MakeProcTables;
   protected
     function GetIdentChars: TSynIdentChars; override;
     function GetSampleSource: string; override;
@@ -122,7 +118,6 @@ type
     property VariableAttri: TSynHighlighterAttributes read fVariableAttri write fVariableAttri;
   end;
 
-
 const
 //---Sqlite 6----------------------------------------------------------------
 
@@ -136,8 +131,6 @@ const
     'soundex,sqlite_version,substr,total_changes,trim,typeof,upper,zeroblob,'+
     //Date Functions
     'date,time,datetime,julianday,strftime';
-
-
 
   // keywords
   SqliteKeywords: string =
@@ -158,23 +151,51 @@ const
   SqliteTypes = 'blob,char,character,decimal,double,float,integer,' +
     'numeric,precision,smallint,timestamp,varchar';
 
+  type
+
+    { TSQLiteSyn }
+
+    TSQLiteSyn = class(TObject)
+    private
+      function KeyHash(ToHash: PChar; out L: Integer): Integer;
+      function KeyComp(const aKey: string; aWithKey: PChar; L: Integer): Boolean;
+      procedure DoAddKeyword(AKeyword: string; AKind: integer);
+      procedure MakeIdentTable;
+    public
+      Keywords: TSynHashEntryList;
+      Identifiers: TIdentifierTable;
+      HashTable: THashCharTable;
+      function IdentKind(MayBe: PChar; out L: Integer): TtkTokenKind; overload;
+      function IdentKind(MayBe: PChar): TtkTokenKind; overload;
+      constructor Create; virtual;
+      destructor Destroy; override;
+    end;
+
+function SQLiteSyn: TSQLiteSyn;
+
 implementation
 
 uses
-  mnUtils, SynEditStrConst;
+  SynEditStrConst;
 
 const
   SYNS_AttrObjects = 'Objects';
 
 var
-  Identifiers: TIdentifierTable;
-  mHashCharTable: THashCharTable;
+  FSQLiteSyn: TSQLiteSyn = nil;
 
-procedure MakeIdentTable;
+function SQLiteSyn: TSQLiteSyn;
+begin
+  if FSQLiteSyn = nil then
+    FSQLiteSyn := TSQLiteSyn.Create;
+  Result := FSQLiteSyn;
+end;
+
+procedure TSQLiteSyn.MakeIdentTable;
 var
   c: char;
 begin
-  InitMemory(Identifiers, SizeOf(Identifiers));
+  FillChar(Identifiers, SizeOf(Identifiers), 0);
   for c := 'a' to 'z' do
     Identifiers[c] := True;
   for c := 'A' to 'Z' do
@@ -185,45 +206,66 @@ begin
   Identifiers[':'] := True;
   Identifiers['"'] := True;
 
-  FillChar(mHashCharTable, SizeOf(mHashCharTable), 0);
-  mHashCharTable['_'] := 1;
+  FillChar(HashTable, SizeOf(HashTable), 0);
+  HashTable['_'] := 1;
   for c := 'a' to 'z' do
-    mHashCharTable[c] := 2 + Ord(c) - Ord('a');
+    HashTable[c] := 2 + Ord(c) - Ord('a');
   for c := 'A' to 'Z' do
-    mHashCharTable[c] := 2 + Ord(c) - Ord('A');
-  mHashCharTable[':'] := mHashCharTable['Z'] + 1;
-  mHashCharTable['"'] := mHashCharTable['Z'] + 1;
+    HashTable[c] := 2 + Ord(c) - Ord('A');
+  HashTable[':'] := HashTable['Z'] + 1;
+  HashTable['"'] := HashTable['Z'] + 2;{$warning 'Check if it is 1'}
 end;
 
-function TSynSqliteSyn.KeyHash(ToHash: PChar): Integer;
+procedure TSQLiteSyn.DoAddKeyword(AKeyword: string; AKind: integer);
+var
+  HashValue, L: integer;
+begin
+  HashValue := KeyHash(PChar(AKeyword), L);
+  Keywords[HashValue] := TSynHashEntry.Create(AKeyword, AKind);
+end;
+
+{ TSQLiteSyn }
+
+constructor TSQLiteSyn.Create;
+begin
+  inherited Create;
+  Keywords := TSynHashEntryList.Create;
+  MakeIdentTable;
+  EnumerateKeywords(Ord(tkDatatype), SqliteTypes, TSynValidStringChars, @DoAddKeyword);
+  EnumerateKeywords(Ord(tkFunction), SqliteFunctions, TSynValidStringChars, @DoAddKeyword);
+  EnumerateKeywords(Ord(tkKey), SqliteKeywords, TSynValidStringChars, @DoAddKeyword);
+end;
+
+destructor TSQLiteSyn.Destroy;
+begin
+  inherited;
+  FreeAndNil(Keywords);
+end;
+
+function TSQLiteSyn.KeyHash(ToHash: PChar; out L: Integer): Integer;
 begin
   Result := 0;
-  while Identifiers[ToHash^] do
+  L := 0;
+  while ToHash^ in ['a'..'z', 'A'..'Z', '0'..'9', '-', '_','@'] do
   begin
-{$IFOPT Q-}
-    Result := 2 * Result + mHashCharTable[ToHash^];
-{$ELSE}
-    Result := (2 * Result + mHashCharTable[ToHash^]) and $FFFFFF;
-{$ENDIF}
-    inc(ToHash);
+    Inc(Result, HashTable[ToHash^]);
+    Inc(ToHash);
+    Inc(L);
   end;
-  Result := Result and $FF; // 255
-  FStringLen := ToHash - fToIdent;
 end;
 
-function TSynSqliteSyn.KeyComp(const aKey: string): Boolean;
+function TSQLiteSyn.KeyComp(const aKey: string; aWithKey: PChar; L: Integer): Boolean;
 var
   i: integer;
   pKey1, pKey2: PChar;
 begin
-  pKey1 := fToIdent;
-  // Note: FStringLen is always > 0 !
-  pKey2 := pointer(aKey);
-  for i := 1 to FStringLen do
+  pKey1 := aWithKey;
+  pKey2 := Pointer(aKey);
+  for i := 1 to L do
   begin
-    if mHashCharTable[pKey1^] <> mHashCharTable[pKey2^] then
+    if SQLiteSyn.HashTable[pKey1^] <> SQLiteSyn.HashTable[pKey2^] then
     begin
-      Result := FALSE;
+      Result := False;
       exit;
     end;
     Inc(pKey1);
@@ -232,18 +274,17 @@ begin
   Result := True;
 end;
 
-function TSynSqliteSyn.IdentKind(MayBe: PChar): TtkTokenKind;
+function TSQLiteSyn.IdentKind(MayBe: PChar; out L: Integer): TtkTokenKind;
 var
   Entry: TSynHashEntry;
 begin
-  fToIdent := MayBe;
-  Entry := fKeywords[KeyHash(MayBe)];
+  Entry := SQLiteSyn.Keywords[KeyHash(MayBe, L)];
   while Assigned(Entry) do
   begin
-    if Entry.KeywordLen > FStringLen then
+    if Entry.KeywordLen > L then
       break
-    else if Entry.KeywordLen = FStringLen then
-      if KeyComp(Entry.Keyword) then
+    else if Entry.KeywordLen = L then
+      if KeyComp(Entry.Keyword, MayBe, L) then
       begin
         Result := TtkTokenKind(Entry.Kind);
         exit;
@@ -253,7 +294,14 @@ begin
   Result := tkIdentifier;
 end;
 
-procedure TSynSqliteSyn.MakeMethodTables;
+function TSQLiteSyn.IdentKind(MayBe: PChar): TtkTokenKind;
+var
+  L: Integer;
+begin
+  Result := IdentKind(MayBe, L);
+end;
+
+procedure TSynSqliteSyn.MakeProcTables;
 var
   I: Char;
 begin
@@ -291,15 +339,14 @@ end;
 constructor TSynSqliteSyn.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
-  FKeywords := TSynHashEntryList.Create;
   FCommentAttri := TSynHighlighterAttributes.Create(SYNS_AttrComment);
   FCommentAttri.Style := [fsBold];
   FCommentAttri.Foreground := clMaroon;
-  AddAttribute(fCommentAttri);
+  AddAttribute(FCommentAttri);
   FDataTypeAttri := TSynHighlighterAttributes.Create(SYNS_AttrDataType);
   FDataTypeAttri.Style := [fsBold];
   FDataTypeAttri.Foreground := $00C56A31;
-  AddAttribute(fDataTypeAttri);
+  AddAttribute(FDataTypeAttri);
   FObjectAttri := TSynHighlighterAttributes.Create(SYNS_AttrObjects);
   FObjectAttri.Style := [fsBold];
   FObjectAttri.Foreground := clGreen;
@@ -307,36 +354,32 @@ begin
   FFunctionAttri := TSynHighlighterAttributes.Create(SYNS_AttrFunction);
   FFunctionAttri.Style := [fsBold];
   FFunctionAttri.Foreground := $00C56A31;
-  AddAttribute(fFunctionAttri);
+  AddAttribute(FFunctionAttri);
   FIdentifierAttri := TSynHighlighterAttributes.Create(SYNS_AttrIdentifier);
-  AddAttribute(fIdentifierAttri);
+  AddAttribute(FIdentifierAttri);
   FKeyAttri := TSynHighlighterAttributes.Create(SYNS_AttrReservedWord);
   FKeyAttri.Style := [fsBold];
   FKeyAttri.Foreground := $00C56A31;
-  AddAttribute(fKeyAttri);
+  AddAttribute(FKeyAttri);
   FNumberAttri := TSynHighlighterAttributes.Create(SYNS_AttrNumber);
-  AddAttribute(fNumberAttri);
+  AddAttribute(FNumberAttri);
   FSpaceAttri := TSynHighlighterAttributes.Create(SYNS_AttrSpace);
-  AddAttribute(fSpaceAttri);
+  AddAttribute(FSpaceAttri);
   FStringAttri := TSynHighlighterAttributes.Create(SYNS_AttrString);
-  AddAttribute(fStringAttri);
+  AddAttribute(FStringAttri);
   FSymbolAttri := TSynHighlighterAttributes.Create(SYNS_AttrSymbol);
   AddAttribute(FSymbolAttri);
   FVariableAttri := TSynHighlighterAttributes.Create(SYNS_AttrVariable);
-  AddAttribute(fVariableAttri);
+  AddAttribute(FVariableAttri);
   SetAttributesOnChange(@DefHighlightChange);
-  EnumerateKeywords(Ord(tkDatatype), SqliteTypes, IdentChars, @DoAddKeyword);
-  EnumerateKeywords(Ord(tkFunction), SqliteFunctions, IdentChars, @DoAddKeyword);
-  EnumerateKeywords(Ord(tkKey), SqliteKeywords, IdentChars, @DoAddKeyword);
-  MakeMethodTables;
+  MakeProcTables;
   FDefaultFilter := SYNS_FilterSQL;
   FRange := rsUnknown;
 end;
 
 destructor TSynSqliteSyn.Destroy;
 begin
-  fKeywords.Free;
-  inherited Destroy;
+  inherited;
 end;
 
 procedure TSynSqliteSyn.Assign(Source: TPersistent);
@@ -344,98 +387,101 @@ begin
   inherited Assign(Source);
 end;
 
-procedure TSynSqliteSyn.SetLine({$IFDEF FPC}const {$ENDIF}NewValue: string; LineNumber: Integer);
+procedure TSynSqliteSyn.SetLine(const NewValue: string; LineNumber: Integer);
 begin
-  fLine := PChar(NewValue);
+  inherited;
+  FLine := PChar(NewValue);
   Run := 0;
-  fLineNumber := LineNumber;
+  FLineNumber := LineNumber;
   Next;
 end;
 
 procedure TSynSqliteSyn.AndSymbolProc;
 begin
-  fTokenID := tkSymbol;
+  FTokenID := tkSymbol;
   Inc(Run);
-  if fLine[Run] in ['=', '&'] then
+  if FLine[Run] in ['=', '&'] then
     Inc(Run);
 end;
 
 procedure TSynSqliteSyn.StringProc;
 begin
-  if fLine[Run] = #0 then
+  if FLine[Run] = #0 then
     NullProc
   else
   begin
-    fTokenID := tkString;
-    if (Run > 0) or (fRange <> rsString) or (fLine[Run] <> #39) then
+    FTokenID := tkString;
+    if (Run > 0) or (FRange <> rsString) or (FLine[Run] <> #39) then
     begin
-      fRange := rsString;
+      FRange := rsString;
       repeat
         Inc(Run);
-      until fLine[Run] in [#0, #10, #13, #39];
+      until FLine[Run] in [#0, #10, #13, #39];
     end;
-    if fLine[Run] = #39 then
+    if FLine[Run] = #39 then
     begin
       Inc(Run);
-      fRange := rsUnknown;
+      FRange := rsUnknown;
     end;
   end;
 end;
 
 procedure TSynSqliteSyn.CRProc;
 begin
-  fTokenID := tkSpace;
+  FTokenID := tkSpace;
   Inc(Run);
-  if fLine[Run] = #10 then
+  if FLine[Run] = #10 then
     Inc(Run);
 end;
 
 procedure TSynSqliteSyn.EqualProc;
 begin
-  fTokenID := tkSymbol;
+  FTokenID := tkSymbol;
   Inc(Run);
-  if fLine[Run] in ['=', '>'] then
+  if FLine[Run] in ['=', '>'] then
     Inc(Run);
 end;
 
 procedure TSynSqliteSyn.GreaterProc;
 begin
-  fTokenID := tkSymbol;
+  FTokenID := tkSymbol;
   Inc(Run);
-  if fLine[Run] in ['=', '>'] then
+  if FLine[Run] in ['=', '>'] then
     Inc(Run);
 end;
 
 procedure TSynSqliteSyn.IdentProc;
+var
+  L: Integer;
 begin
-  fTokenID := IdentKind((fLine + Run));
-  inc(Run, FStringLen);
-  if fTokenID = tkComment then
+  FTokenID := SqliteSyn.IdentKind((FLine + Run), L);
+  inc(Run, L);
+  if FTokenID = tkComment then
   begin
-    while not (fLine[Run] in [#0, #10, #13]) do
+    while not (FLine[Run] in [#0, #10, #13]) do
       Inc(Run);
   end
   else
-    while Identifiers[fLine[Run]] do
+    while SQLiteSyn.Identifiers[FLine[Run]] do
       inc(Run);
 end;
 
 procedure TSynSqliteSyn.LFProc;
 begin
-  fTokenID := tkSpace;
+  FTokenID := tkSpace;
   inc(Run);
 end;
 
 procedure TSynSqliteSyn.LowerProc;
 begin
-  fTokenID := tkSymbol;
+  FTokenID := tkSymbol;
   Inc(Run);
-  case fLine[Run] of
+  case FLine[Run] of
     '=': Inc(Run);
     '<':
       begin
         Inc(Run);
-        if fLine[Run] = '=' then
+        if FLine[Run] = '=' then
           Inc(Run);
       end;
   end;
@@ -444,26 +490,26 @@ end;
 procedure TSynSqliteSyn.MinusProc;
 begin
   Inc(Run);
-  if fLine[Run] = '-' then
+  if FLine[Run] = '-' then
   begin
-    fTokenID := tkComment;
+    FTokenID := tkComment;
     repeat
       Inc(Run);
-    until fLine[Run] in [#0, #10, #13];
+    until FLine[Run] in [#0, #10, #13];
   end
   else
-    fTokenID := tkSymbol;
+    FTokenID := tkSymbol;
 end;
 
 procedure TSynSqliteSyn.NullProc;
 begin
-  fTokenID := tkNull;
+  FTokenID := tkNull;
 end;
 
 procedure TSynSqliteSyn.NumberProc;
 begin
   inc(Run);
-  fTokenID := tkNumber;
+  FTokenID := tkNumber;
   while FLine[Run] in ['0'..'9', '.', '-'] do
   begin
     case FLine[Run] of
@@ -477,67 +523,67 @@ end;
 
 procedure TSynSqliteSyn.OrSymbolProc;
 begin
-  fTokenID := tkSymbol;
+  FTokenID := tkSymbol;
   Inc(Run);
-  if fLine[Run] in ['=', '|'] then
+  if FLine[Run] in ['=', '|'] then
     Inc(Run);
 end;
 
 procedure TSynSqliteSyn.PlusProc;
 begin
-  fTokenID := tkSymbol;
+  FTokenID := tkSymbol;
   Inc(Run);
-  if fLine[Run] in ['=', '+'] then
+  if FLine[Run] in ['=', '+'] then
     Inc(Run);
 end;
 
 procedure TSynSqliteSyn.SlashProc;
 begin
   Inc(Run);
-  case fLine[Run] of
+  case FLine[Run] of
     '*':
       begin
-        fRange := rsComment;
-        fTokenID := tkComment;
+        FRange := rsComment;
+        FTokenID := tkComment;
         repeat
           Inc(Run);
-          if (fLine[Run] = '*') and (fLine[Run + 1] = '/') then
+          if (FLine[Run] = '*') and (FLine[Run + 1] = '/') then
           begin
-            fRange := rsUnknown;
+            FRange := rsUnknown;
             Inc(Run, 2);
             break;
           end;
-        until fLine[Run] in [#0, #10, #13];
+        until FLine[Run] in [#0, #10, #13];
       end;
     '=':
       begin
         Inc(Run);
-        fTokenID := tkSymbol;
+        FTokenID := tkSymbol;
       end;
   else
-    fTokenID := tkSymbol;
+    FTokenID := tkSymbol;
   end;
 end;
 
 procedure TSynSqliteSyn.SpaceProc;
 begin
-  fTokenID := tkSpace;
+  FTokenID := tkSpace;
   repeat
     Inc(Run);
-  until (fLine[Run] > #32) or (fLine[Run] in [#0, #10, #13]);
+  until (FLine[Run] > #32) or (FLine[Run] in [#0, #10, #13]);
 end;
 
 procedure TSynSqliteSyn.SymbolProc;
 begin
   Inc(Run);
-  fTokenID := tkSymbol;
+  FTokenID := tkSymbol;
 end;
 
 procedure TSynSqliteSyn.SymbolAssignProc;
 begin
-  fTokenID := tkSymbol;
+  FTokenID := tkSymbol;
   Inc(Run);
-  if fLine[Run] = '=' then
+  if FLine[Run] = '=' then
     Inc(Run);
 end;
 
@@ -545,13 +591,13 @@ procedure TSynSqliteSyn.VariableProc;
 var
   i: integer;
 begin
-  if (fLine[Run] = ':') then
+  if (FLine[Run] = ':') then
   begin
-    fTokenID := tkVariable;
+    FTokenID := tkVariable;
     i := Run;
     repeat
       Inc(i);
-    until not (Identifiers[fLine[i]]);
+    until not (SQLiteSyn.Identifiers[FLine[i]]);
     Run := i;
   end;
 end;
@@ -559,29 +605,29 @@ end;
 procedure TSynSqliteSyn.UnknownProc;
 begin
   inc(Run);
-  while (fLine[Run] in [#128..#191]) OR // continued utf8 subcode
-   ((fLine[Run]<>#0) and (fProcTable[fLine[Run]] = @UnknownProc)) do inc(Run);
-  fTokenID := tkUnknown;
+  while (FLine[Run] in [#128..#191]) OR // continued utf8 subcode
+   ((FLine[Run]<>#0) and (fProcTable[FLine[Run]] = @UnknownProc)) do inc(Run);
+  FTokenID := tkUnknown;
 end;
 
-procedure TSynSqliteSyn.AnsiCProc;
+procedure TSynSqliteSyn.CommentProc;
 begin
-  case fLine[Run] of
+  case FLine[Run] of
     #0: NullProc;
     #10: LFProc;
     #13: CRProc;
   else
     begin
-      fTokenID := tkComment;
+      FTokenID := tkComment;
       repeat
-        if (fLine[Run] = '*') and (fLine[Run + 1] = '/') then
+        if (FLine[Run] = '*') and (FLine[Run + 1] = '/') then
         begin
-          fRange := rsUnknown;
+          FRange := rsUnknown;
           Inc(Run, 2);
           break;
         end;
         Inc(Run);
-      until fLine[Run] in [#0, #10, #13];
+      until FLine[Run] in [#0, #10, #13];
     end;
   end;
 end;
@@ -590,20 +636,20 @@ function TSynSqliteSyn.IsKeyword(const AKeyword: string): boolean;
 var
   tk: TtkTokenKind;
 begin
-  tk := IdentKind(PChar(AKeyword));
+  tk := SQLiteSyn.IdentKind(PChar(AKeyword));
   Result := tk in [tkDatatype, tkFunction, tkKey, tkObject];
 end;
 
 procedure TSynSqliteSyn.Next;
 begin
-  fTokenPos := Run;
-  case fRange of
+  FTokenPos := Run;
+  case FRange of
     rsComment:
-      AnsiCProc;
+      CommentProc;
     rsString:
       StringProc;
   else
-    FProcTable[fLine[Run]];
+    FProcTable[FLine[Run]]();
   end;
 end;
 
@@ -624,32 +670,32 @@ end;
 
 function TSynSqliteSyn.GetEOL: Boolean;
 begin
-  Result := fTokenID = tkNull;
+  Result := FTokenID = tkNull;
 end;
 
 function TSynSqliteSyn.GetRange: Pointer;
 begin
-  Result := Pointer(fRange);
+  Result := Pointer(PtrInt(FRange));
 end;
 
 function TSynSqliteSyn.GetToken: string;
 var
   Len: LongInt;
 begin
-  Len := Run - fTokenPos;
-  SetString(Result, (FLine + fTokenPos), Len);
+  Result := '';
+  Len := Run - FTokenPos;
+  SetString(Result, (FLine + FTokenPos), Len);
 end;
 
-procedure TSynSqliteSyn.GetTokenEx(out TokenStart: PChar; out
-  TokenLength: integer);
+procedure TSynSqliteSyn.GetTokenEx(out TokenStart: PChar; out TokenLength: integer);
 begin
-  TokenLength:=Run-fTokenPos;
-  TokenStart:=FLine + fTokenPos;
+  TokenLength := Run - FTokenPos;
+  TokenStart := FLine + FTokenPos;
 end;
 
 function TSynSqliteSyn.GetTokenID: TtkTokenKind;
 begin
-  Result := fTokenId;
+  Result := FTokenID;
 end;
 
 function TSynSqliteSyn.GetTokenAttribute: TSynHighlighterAttributes;
@@ -674,22 +720,22 @@ end;
 
 function TSynSqliteSyn.GetTokenKind: integer;
 begin
-  Result := Ord(fTokenId);
+  Result := Ord(FTokenID);
 end;
 
 function TSynSqliteSyn.GetTokenPos: Integer;
 begin
-  Result := fTokenPos;
+  Result := FTokenPos;
 end;
 
 procedure TSynSqliteSyn.ResetRange;
 begin
-  fRange := rsUnknown;
+  FRange := rsUnknown;
 end;
 
 procedure TSynSqliteSyn.SetRange(Value: Pointer);
 begin
-  fRange := TRangeState(Value);
+  FRange := TRangeState(Value);
 end;
 
 function TSynSqliteSyn.GetIdentChars: TSynIdentChars;
@@ -702,26 +748,18 @@ begin
   Result := SYNS_LangSQL;
 end;
 
-procedure TSynSqliteSyn.DoAddKeyword(AKeyword: string; AKind: integer);
-var
-  HashValue: integer;
-begin
-  HashValue := KeyHash(PChar(AKeyword));
-  fKeywords[HashValue] := TSynHashEntry.Create(AKeyword, AKind);
-end;
-
 function TSynSqliteSyn.GetSampleSource: string;
 begin
-  Result := '';
+  Result := 'select * from Employees';
 end;
 
 procedure TSynSqliteSyn.ObjectProc;
 begin
-  fTokenID := tkObject;
+  FTokenID := tkObject;
   Inc(Run);
-  while not (fLine[Run] in [#0, #10, #13]) do
+  while not (FLine[Run] in [#0, #10, #13]) do
   begin
-    if fLine[Run] = '"' then
+    if FLine[Run] = '"' then
     begin
       Inc(Run);
       break;
@@ -731,6 +769,6 @@ begin
 end;
 
 initialization
-  MakeIdentTable;
+  RegisterPlaceableHighlighter(TSynSqliteSyn);
 end.
 

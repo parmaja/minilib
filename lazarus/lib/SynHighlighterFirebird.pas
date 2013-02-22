@@ -371,6 +371,7 @@ end;
 
 procedure TSynFirebirdSyn.SetLine(const NewValue: string; LineNumber: Integer);
 begin
+  inherited;
   fLine := PChar(NewValue);
   Run := 0;
   fLineNumber := LineNumber;

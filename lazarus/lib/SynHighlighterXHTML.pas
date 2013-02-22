@@ -351,6 +351,7 @@ end;
 
 procedure TSynXHTMLSyn.SetLine(const NewValue: string; LineNumber: integer);
 begin
+  inherited;
   FLine := PChar(NewValue);
   FLineNumber := LineNumber;
   Run := 0;

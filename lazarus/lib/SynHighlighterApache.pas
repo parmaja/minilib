@@ -14,7 +14,7 @@ interface
 
 uses
   Classes, Graphics,
-  {SynHighlighterHashEntries,} SynEditTypes, SynEditHighlighter;
+  SynEditTypes, SynEditHighlighter;
 
 
 type
@@ -162,6 +162,7 @@ end; { Create }
 
 procedure TSynApacheSyn.SetLine(const NewValue: String; LineNumber:Integer);
 begin
+  inherited;
   fLine := PChar(NewValue);
   Run := 0;
   fLineNumber := LineNumber;
