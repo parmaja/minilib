@@ -1,7 +1,7 @@
 object MainForm: TMainForm
-  Left = 687
+  Left = 426
   Height = 395
-  Top = 275
+  Top = 184
   Width = 560
   Caption = 'SQLite Viewer'
   ClientHeight = 375
@@ -602,6 +602,8 @@ object MainForm: TMainForm
           object TSynGutterSeparator
             Width = 2
             MouseActions = <>
+            MarkupInfo.Background = clWhite
+            MarkupInfo.Foreground = clGray
           end
         end
       end

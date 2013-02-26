@@ -17,7 +17,7 @@ uses
 type
   TmsgKind = (msgkNormal, msgkWarning, msgkError, msgkInformation, msgkConfirmation, msgkInput, msgkPassword, msgkStatus);
 
-  TmsgChoice = (msgcUnknown, msgcYes, msgcNo, msgcOK, msgcCancel, msgcAbort, msgcRetry, msgcIgnore, msgcDiscard, msgcNone, msgcAll, msgcNoToAll, msgcYesToAll, msgcHelp);
+  TmsgChoice = (msgcUnknown, msgcYes, msgcNo, msgcOK, msgcCancel, msgcAbort, msgcRetry, msgcIgnore, msgcDiscard, msgcClose, msgcNone, msgcAll, msgcNoToAll, msgcYesToAll, msgcHelp);
   TmsgChoices = set of TmsgChoice;
 
   TmsgSelect = record
@@ -111,11 +111,11 @@ type
 
 var
   ChoiceNames: array[TmsgChoice] of string = (
-    'Unknown', 'Yes', 'No', 'OK', 'Cancel', 'Abort', 'Retry', 'Ignore', 'Discard', 'None',  'All', 'NoToAll',
+    'Unknown', 'Yes', 'No', 'OK', 'Cancel', 'Abort', 'Retry', 'Ignore', 'Discard', 'Close', 'None',  'All', 'NoToAll',
     'YesToAll', 'Help');
 
   ChoiceCaptions: array[TmsgChoice] of string = (
-    'Unknown', '&Yes', '&No', '&OK', '&Cancel', '&Abort', '&Retry', 'Di&scard', 'N&one', '&Ignore', '&All', 'No &To All',
+    'Unknown', '&Yes', '&No', '&OK', '&Cancel', '&Abort', '&Retry', 'Di&scard', 'C&lose', 'N&one', '&Ignore', '&All', 'No &To All',
     'Yes To A&ll', '&Help');
 
 {* TMsgConsole
@@ -562,4 +562,4 @@ initialization
 finalization
   FreeAndNil(FMsgBox);
 end.
-
+

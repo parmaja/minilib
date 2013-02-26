@@ -727,7 +727,7 @@ begin
       FileTabs.Items[FileTabs.ItemIndex].Caption := ExtractFileName(Engine.Files.Current.Name);
     if Folder = '' then
       Folder := ExtractFilePath(Engine.Files.Current.Name);
-    SaveAct.Enabled := Engine.Files.Current.Edited;
+    SaveAct.Enabled := Engine.Files.Current.IsEdited;
     SaveAllAct.Enabled := Engine.Files.GetEditedCount > 0;
   end
   else
@@ -848,8 +848,8 @@ procedure TMainForm.EngineEdited;
 begin
   if Engine.Files.Current <> nil then
   begin
-    SaveAct.Enabled := Engine.Files.Current.Edited;
-    if Engine.Files.Current.Edited then
+    SaveAct.Enabled := Engine.Files.Current.IsEdited;
+    if Engine.Files.Current.IsEdited then
       SaveAllAct.Enabled := True;
   end
   else
@@ -2280,7 +2280,6 @@ begin
 {  if Engine.MacroRecorder.State = msRecording then
     StatePnl.Caption := 'R'
   else}
-  StatePnl.Caption := '';
   if Engine.Files.Current <> nil then
   begin
     s := IntToStr(Engine.Files.Current.SynEdit.CaretY) + ':' + IntToStr(Engine.Files.Current.SynEdit.CaretX);
@@ -2290,7 +2289,15 @@ begin
       s := s + ' [' + IntToStr(r) + ']';
     end;
     CursorPnl.Caption := s;
-  end;
+    if Engine.Files.Current.IsNew then
+      StatePnl.Caption := 'N'
+    else if Engine.Files.Current.IsReadOnly then
+      StatePnl.Caption := 'R'
+    else
+      StatePnl.Caption := 'S'
+  end
+  else
+    StatePnl.Caption := '';
 end;
 
 procedure TMainForm.SCMCompareToActExecute(Sender: TObject);

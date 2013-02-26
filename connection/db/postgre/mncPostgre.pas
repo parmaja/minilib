@@ -9,6 +9,10 @@ unit mncPostgre;
  * @comment   Only for postgre 8.x or later
  *}
 
+{*TODO
+  - Retrieving Query Results Row-By-Row
+      http://www.postgresql.org/docs/9.2/static/libpq-single-row-mode.html
+} 
 {$M+}
 {$H+}
 {$IFDEF FPC}

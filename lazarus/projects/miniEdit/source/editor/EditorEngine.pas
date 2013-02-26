@@ -249,16 +249,18 @@ type
   private
     FName: string;
     FSynEdit: TSynEdit;
-    FEdited: Boolean;
+    FIsNew: Boolean;
+    FIsEdited: Boolean;
     FFileAge: integer;
     FFileSize: int64;
     FGroup: TFileGroup;
     FRelated: string;
     FMode: TEditorFileMode;
-    procedure SetEdited(const Value: Boolean);
     procedure SetGroup(const Value: TFileGroup);
-    function GetReadonly: Boolean;
-    procedure SetReadonly(const Value: Boolean);
+    function GetIsReadonly: Boolean;
+    procedure SetIsEdited(const Value: Boolean);
+    procedure SetIsNew(AValue: Boolean);
+    procedure SetIsReadonly(const Value: Boolean);
     function GetModeAsText: string;
     procedure SetMode(const Value: TEditorFileMode);
   protected
@@ -289,8 +291,9 @@ type
     property Name: string read FName write FName;
     property Related: string read FRelated write FRelated;
     property SynEdit: TSynEdit read FSynEdit;
-    property Edited: Boolean read FEdited write SetEdited;
-    property ReadOnly: Boolean read GetReadonly write SetReadonly;
+    property IsEdited: Boolean read FIsEdited write SetIsEdited;
+    property IsNew: Boolean read FIsNew write SetIsNew default False;
+    property IsReadOnly: Boolean read GetIsReadonly write SetIsReadonly;
     property Group: TFileGroup read FGroup write SetGroup;
   published
   end;
@@ -1435,7 +1438,7 @@ begin
   Result := 0;
   for i := 0 to Count - 1 do
   begin
-    if Items[i].Edited then
+    if Items[i].IsEdited then
       Result := Result + 1;
   end;
 end;
@@ -1545,7 +1548,7 @@ end;
 function TEditorFiles.New(Category, Name, Related: string; ReadOnly, Executable: Boolean): TEditorFile;
 begin
   Result := Engine.Perspective.CreateEditorFile(Category);
-  Result.ReadOnly := ReadOnly;
+  Result.IsReadOnly := ReadOnly;
   Result.Name := Name;
   Result.Related := Related;
   Current := Result;
@@ -2065,7 +2068,7 @@ end;
 procedure TEditorFile.Edit;
 begin
   if not SynEdit.ReadOnly then
-    Edited := True;
+    IsEdited := True;
 end;
 
 procedure TEditorFile.Close;
@@ -2074,7 +2077,7 @@ var
   i: integer;
   mr: TmsgChoice;
 begin
-  if Edited then
+  if IsEdited then
   begin
     mr := MsgBox.Msg.YesNoCancel('Save file ' + Name + ' before close?');
     if mr = msgcCancel then
@@ -2126,6 +2129,8 @@ begin
   FSynEdit.Realign;
   FSynEdit.WantTabs := True;
   FSynEdit.Parent := Engine.FilesControl;
+  FIsNew := True;
+  FIsEdited := False;
 end;
 
 destructor TEditorFile.Destroy;
@@ -2147,24 +2152,31 @@ var
   Stream: TFileStream;
 begin
   FileName := ExpandFileName(FileName);
-  Stream := TFileStream.Create(FileName, fmOpenRead or fmShareDenyNone);
-  SynEdit.BeginUpdate;
   try
-    Size := Stream.Size - Stream.Position;
-    SetString(Contents, nil, Size);
-    Stream.Read(Pointer(Contents)^, Size);
-    Mode := DetectFileMode(Contents);
-    if eoTabsToSpaces in SynEdit.Options then
-    begin
-      Contents := ChangeTabsToSpace(Contents, SynEdit.TabWidth);
+    Stream := TFileStream.Create(FileName, fmOpenRead or fmShareDenyNone);
+    SynEdit.BeginUpdate;
+    try
+      Size := Stream.Size - Stream.Position;
+      SetString(Contents, nil, Size);
+      Stream.Read(Pointer(Contents)^, Size);
+      Mode := DetectFileMode(Contents);
+      if eoTabsToSpaces in SynEdit.Options then
+      begin
+        Contents := ChangeTabsToSpace(Contents, SynEdit.TabWidth);
+      end;
+      SynEdit.Lines.Text := Contents;
+      Name := FileName;
+      IsEdited := False;
+      IsNew := False;
+      UpdateAge;
+    finally
+      SynEdit.EndUpdate;
+      Stream.Free;
     end;
-    SynEdit.Lines.Text := Contents; //lll
-    Name := FileName;
-    Edited := False;
-    UpdateAge;
   finally
-    SynEdit.EndUpdate;
-    Stream.Free;
+    {on E: EStreamError do
+    else
+      raise;}
   end;
 end;
 
@@ -2189,14 +2201,15 @@ procedure TEditorFile.Save(FileName: string);
 begin
   SaveAsMode(FileName, Mode, SynEdit.Lines);
   Name := FileName;
-  Edited := False;
+  IsEdited := False;
+  IsNew := False;
   Engine.UpdateState([ecsFolder]);
   UpdateAge;
 end;
 
-procedure TEditorFile.SetEdited(const Value: Boolean);
+procedure TEditorFile.SetIsEdited(const Value: Boolean);
 begin
-  FEdited := Value;
+  FIsEdited := Value;
 end;
 
 procedure TEditorFile.Show;
@@ -2263,17 +2276,37 @@ end;
 function TEditorFile.CheckChanged: Boolean;
 var
   mr: TmsgChoice;
+  n: Integer;
 begin
   Result := True;
-  if (FileExists(Name)) and ((FFileAge <> FileAge(Name)) or (FFileSize <> FileSize(Name)))  then
+  if not IsNew then
   begin
-    mr := MsgBox.Msg.YesNoCancel(Name + #13' was changed, update it?');
-    if mr = msgcYes then
-      Reload
+    if (FileExists(Name)) then
+    begin
+      if ((FFileAge <> FileAge(Name)) or (FFileSize <> FileSize(Name)))  then
+      begin
+        mr := MsgBox.Msg.YesNoCancel(Name + #13' was changed, update it?');
+        if mr = msgcYes then
+          Reload;
+        if mr = msgcCancel then
+          Result := False
+        else
+          UpdateAge;
+      end;
+    end
     else
-      UpdateAge;
-    if mr = msgcCancel then
-      Result := False;
+    begin
+      n := MsgBox.Msg.Ask(Name + #13' was not found, what do want?', [Choice('&Keep It', msgcYes), Choice('&Close', msgcCancel), Choice('Read only', msgcNo)], 0, 2);
+      if n = 0 then //Keep It
+        IsNew := True
+      else if n = 2 then //Keep It
+      begin
+        IsEdited := False;
+        IsReadOnly := True
+      end
+      else
+        Close;
+    end;
   end;
 end;
 
@@ -2343,12 +2376,19 @@ begin
     Result := nil;
 end;
 
-function TEditorFile.GetReadonly: Boolean;
+function TEditorFile.GetIsReadonly: Boolean;
 begin
   Result := SynEdit.ReadOnly;
 end;
 
-procedure TEditorFile.SetReadonly(const Value: Boolean);
+procedure TEditorFile.SetIsNew(AValue: Boolean);
+begin
+  if FIsNew =AValue then
+    Exit;
+  FIsNew :=AValue;
+end;
+
+procedure TEditorFile.SetIsReadonly(const Value: Boolean);
 begin
   SynEdit.ReadOnly := Value;
 end;
@@ -2482,7 +2522,7 @@ end;
 
 procedure TEditorFile.DoStatusChange(Sender: TObject; Changes: TSynStatusChanges);
 begin
-  if ([scLeftChar, scTopLine, scSelection] * Changes) <> [] then
+  if ([scReadOnly, scCaretX, scCaretY, scLeftChar, scTopLine, scSelection] * Changes) <> [] then
     Engine.UpdateState([ecsState]);
 end;
 
@@ -3293,4 +3333,4 @@ end;
 
 finalization
   FreeAndNil(FEngine);
-end.
+end.

@@ -156,9 +156,9 @@ object MainForm: TMainForm
       end
       object Label1: TLabel
         Left = 5
-        Height = 14
+        Height = 13
         Top = 2
-        Width = 30
+        Width = 29
         Caption = 'Folder'
         ParentColor = False
       end
@@ -268,6 +268,7 @@ object MainForm: TMainForm
         Font.Name = 'MS Sans Serif'
         ParentColor = False
         ParentFont = False
+        PopupMenu = FilePopupMenu
         TabOrder = 0
         Visible = False
         object Bevel1: TBevel
@@ -279,10 +280,10 @@ object MainForm: TMainForm
         end
         object FileNameLbl: TLabel
           Left = 77
-          Height = 14
+          Height = 13
           Hint = 'File name'
           Top = 4
-          Width = 46
+          Width = 45
           Caption = 'File name'
           Layout = tlCenter
           ParentColor = False
@@ -345,9 +346,9 @@ object MainForm: TMainForm
         Visible = False
         object Label2: TLabel
           Left = 32
-          Height = 14
+          Height = 13
           Top = 8
-          Width = 24
+          Width = 23
           Caption = 'Find:'
           ParentColor = False
         end
@@ -566,6 +567,12 @@ object MainForm: TMainForm
         end>
       VisibleSpecialChars = [vscSpace, vscTabAtLast]
       ReadOnly = True
+      SelectedColor.BackPriority = 50
+      SelectedColor.ForePriority = 50
+      SelectedColor.FramePriority = 50
+      SelectedColor.BoldPriority = 50
+      SelectedColor.ItalicPriority = 50
+      SelectedColor.UnderlinePriority = 50
       BracketHighlightStyle = sbhsBoth
       BracketMatchColor.Background = clNone
       BracketMatchColor.Foreground = clNone
@@ -592,6 +599,8 @@ object MainForm: TMainForm
         object SynGutterSeparator1: TSynGutterSeparator
           Width = 2
           MouseActions = <>
+          MarkupInfo.Background = clWhite
+          MarkupInfo.Foreground = clGray
         end
       end
     end
@@ -821,6 +830,7 @@ object MainForm: TMainForm
     ResizeControl = MessagesTabs
   end
   object FoldersSpl: TntvSplitter
+    Cursor = crHSplit
     Left = 200
     Height = 312
     Top = 29

@@ -1,11 +1,11 @@
 [TODO]
+escape in editor, exit the app as option
 show folder of current file
 replace + in files, in PHP files must changed
 how to know where is the folder panel point
 when fail to open locked only file, it add hiden file
 Size of Tabs depend on font, make it user define it
 menu-edit-conevert case to lower/upper
-escape not work in message box when ask to save
 Cltr+Ins = copy the current word if not selected
 Right click on filename on to of editor, open folder not work
 

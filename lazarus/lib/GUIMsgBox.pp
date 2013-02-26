@@ -68,7 +68,7 @@ type
 
 const
   ChoiceGlyphKind: array[TmsgChoice] of TBitBtnKind = (
-    bkCustom, bkYes, bkNo, bkOK, bkCancel, bkAbort, bkRetry, bkIgnore, bkCustom, bkCustom,
+    bkCustom, bkYes, bkNo, bkOK, bkCancel, bkAbort, bkRetry, bkIgnore, bkCustom, bkCustom, bkCustom,
     bkAll, bkNo, bkYes, bkHelp);
 
 implementation
@@ -521,4 +521,4 @@ initialization
   Msg.Register(TGUIMsgBox, True);
 finalization
 end.
-
+
