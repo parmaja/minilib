@@ -81,6 +81,7 @@ type
     FTokenID: Cardinal;
     FDBHandle: PPGconn;
     FExclusive: Boolean;
+    FUseConnection: Boolean;
     function GetConnection: TmncPGConnection;
     procedure SetConnection(const AValue: TmncPGConnection);
     procedure SetExclusive(const AValue: Boolean);
@@ -90,7 +91,6 @@ type
     procedure DoStart; override;
     procedure DoStop(How: TmncSessionAction; Retaining: Boolean); override;
     function GetActive: Boolean; override;
-
   public
     constructor Create(vConnection: TmncConnection); override;
     destructor Destroy; override;
@@ -99,6 +99,7 @@ type
     property Exclusive: Boolean read FExclusive write SetExclusive;
     property Connection: TmncPGConnection read GetConnection write SetConnection;
     property DBHandle: PPGconn read GetDBHandle;
+    property UseConnection: Boolean read FUseConnection write FUseConnection default True;
   end;
 
   TArrayOfPChar = array of PChar;
@@ -402,19 +403,21 @@ end;
 
 procedure TmncPGSession.DoStart;
 begin
-  if FDBHandle = nil then Connection.InternalConnect(FDBHandle);
   Execute('BEGIN');
 end;
 
 procedure TmncPGSession.DoStop(How: TmncSessionAction; Retaining: Boolean);
 begin
-  case How of
-    sdaCommit: Execute('COMMIT');
-    sdaRollback: Execute('ROLLBACK');
-  end;
-  if FDBHandle <> nil then
+  if StartCount>0 then
   begin
-    Connection.InternalDisconnect(FDBHandle);
+    case How of
+      sdaCommit: Execute('COMMIT');
+      sdaRollback: Execute('ROLLBACK');
+    end;
+    if FDBHandle <> nil then
+    begin
+      Connection.InternalDisconnect(FDBHandle);
+    end;
   end;
 end;
 
@@ -431,10 +434,7 @@ end;
 
 procedure TmncPGSession.Execute(vSQL: string);
 begin
-  if FDBHandle<>nil then
-    Connection.Execute(FDBHandle, vSQL)
-  else
-    Connection.Execute(vSQL);
+  Connection.Execute(DBHandle, vSQL)
 end;
 
 function TmncPGSession.GetActive: Boolean;
@@ -446,6 +446,7 @@ end;
 constructor TmncPGSession.Create(vConnection: TmncConnection);
 begin
   inherited;
+  FUseConnection := True;
 end;
 
 function TmncPGSession.GetConnection: TmncPGConnection;
@@ -459,10 +460,14 @@ begin
     Result := Connection.Handle
   else
     Result := nil;}
-  if FDBHandle=nil then
+  if UseConnection then
     Result := Connection.FHandle
   else
+  begin
+    if FDBHandle=nil then
+      Connection.InternalConnect(FDBHandle);
     Result := FDBHandle;
+  end;
 end;
 
 procedure TmncPGSession.SetConnection(const AValue: TmncPGConnection);

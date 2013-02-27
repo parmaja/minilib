@@ -157,6 +157,7 @@ type
     procedure Init;
     procedure InternalStop(How: TmncSessionAction; Retaining: Boolean = False);
     property ParamsChanged: Boolean read FParamsChanged write FParamsChanged;
+    property StartCount: Integer read FStartCount;
   public
     constructor Create(vConnection: TmncConnection); virtual;
     destructor Destroy; override;
