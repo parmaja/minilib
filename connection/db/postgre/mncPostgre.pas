@@ -264,7 +264,8 @@ end;
 
 procedure TmncPGConnection.InternalConnect(var vHandle: PPGconn);
 begin
-  if AutoCreate then CreateDatabase(Resource);
+  if AutoCreate then
+  	CreateDatabase(Resource);
   vHandle := CreateConnection;
   try
     RaiseError(PQstatus(vHandle) = CONNECTION_BAD);
@@ -294,7 +295,8 @@ var
   PGOptions, PGtty: Pchar;
   aPort: string;
 begin
-  if not Assigned(PQsetdbLogin) then raise EmncException.Create('PQsetdbLogin not assigned');
+  if not Assigned(PQsetdbLogin) then
+  	raise EmncException.Create('PQsetdbLogin not assigned');
   PGOptions := nil;
   PGtty := nil;
   if Port <> '' then
@@ -440,7 +442,7 @@ end;
 function TmncPGSession.GetActive: Boolean;
 begin
   //Result:= inherited GetActive;
-  Result := (FDBHandle<>nil) or Connection.Connected;
+  Result := (FDBHandle <> nil) or Connection.Connected;
 end;
 
 constructor TmncPGSession.Create(vConnection: TmncConnection);
@@ -464,7 +466,7 @@ begin
     Result := Connection.FHandle
   else
   begin
-    if FDBHandle=nil then
+    if FDBHandle = nil then
       Connection.InternalConnect(FDBHandle);
     Result := FDBHandle;
   end;
@@ -926,4 +928,3 @@ begin
 end;
 
 end.
-
