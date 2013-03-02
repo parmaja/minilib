@@ -346,6 +346,7 @@ type
     IsBreakPoint: Boolean;
   end;
 
+  TSortFolderFiles = (srtfByNames, srtfByExt);
   TShowFolderFiles = (sffRelated, sffKnown, sffAll);
   TEditorFileClass = class of TEditorFile;
 
@@ -358,6 +359,7 @@ type
     FFileName: string;
     FShowFolder: Boolean;
     FShowFolderFiles: TShowFolderFiles;
+    FSortFolderFiles: TSortFolderFiles;
     FWindowMaxmized: Boolean;
     FBoundRect: TRect;
     FSearchHistory: TStringList;
@@ -397,6 +399,7 @@ type
     property CollectTimeout: DWORD read FCollectTimeout write FCollectTimeout default 60;
     property ShowFolder: Boolean read FShowFolder write FShowFolder default True;
     property ShowFolderFiles: TShowFolderFiles read FShowFolderFiles write FShowFolderFiles default sffRelated;
+    property SortFolderFiles: TSortFolderFiles read FSortFolderFiles write FSortFolderFiles default srtfByNames;
     property ShowMessages: Boolean read FShowMessages write FShowMessages default False;
     property ShowOutput: Boolean read FShowOutput write FShowOutput default False;
     property OutputHeight: integer read FOutputHeight write FOutputHeight default 100;
@@ -2540,6 +2543,7 @@ begin
   FRecentProjects := TStringList.Create;
   FProjects := TStringList.Create;
   FShowFolder := True;
+  FSortFolderFiles := srtfByNames;
   FShowMessages := False;
   FCollectTimeout := 60;
   FOutputHeight := 100;

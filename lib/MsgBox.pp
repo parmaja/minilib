@@ -79,26 +79,26 @@ type
     procedure EnumItems(vItems: TStrings);
     property Items[Index: Integer]: TMsgPrompt read GetItem;
 
-    function Input(var Answer: string; const vText: string): boolean;
-    function Password(var Answer: string; const vText: string): boolean;
+    function Input(var Answer: string; const vText: string): Boolean;
+    function Password(var Answer: string; const vText: string): Boolean;
 
     function Ask(const vText: string; Choices: TmsgChoices; DefaultChoice: TmsgChoice; CancelChoice: TmsgChoice; Kind: TmsgKind = msgkNormal): TmsgChoice;
     function Ask(const vText: string; Choices: array of TmsgSelect; DefaultChoice: Integer; CancelChoice: Integer = -1; Kind: TmsgKind = msgkNormal): Integer;
     function Ask(const vText: string; Choices: array of string; DefaultChoice: Integer = -1; CancelChoice: Integer = -1; Kind: TmsgKind = msgkNormal): Integer;
 
     //OK/Cancel the default OK
-    function Ok(const vText: string): boolean;
+    function Ok(const vText: string): Boolean;
     //OK/Cancel the default Cancel
-    function Cancel(const vText: string): boolean;
+    function Cancel(const vText: string): Boolean;
     //Yes/No the default Yes
-    function Yes(const vText: string): boolean;
+    function Yes(const vText: string): Boolean;
     //Yes/No the default No
-    function No(const vText: string): boolean;
+    function No(const vText: string): Boolean;
     function YesNoCancel(const vText: string): TmsgChoice;
 
-    function Error(const vText: string): boolean;
-    function Warning(const vText: string): boolean;
-    function Hint(const vText: string): boolean;
+    function Error(const vText: string): Boolean;
+    function Warning(const vText: string): Boolean;
+    function Hint(const vText: string): Boolean;
 
     procedure Show(vVar: Variant);
     procedure List(Strings: TStringList; Kind: TmsgKind);
@@ -269,32 +269,32 @@ begin
   end;
 end;
 
-function TMsgBox.Cancel(const vText: string): boolean;
+function TMsgBox.Cancel(const vText: string): Boolean;
 begin
   Result := ShowMessage(vText, [msgcOK, msgcCancel], msgcCancel, msgcOk, msgkWarning) = msgcCancel
 end;
 
-function TMsgBox.Ok(const vText: string): boolean;
+function TMsgBox.Ok(const vText: string): Boolean;
 begin
   Result := ShowMessage(vText, [msgcOK, msgcCancel], msgcOK, msgcCancel, msgkWarning) = msgcOK;
 end;
 
-function TMsgBox.Input(var Answer: string; const vText: string): boolean;
+function TMsgBox.Input(var Answer: string; const vText: string): Boolean;
 begin
   Result := ShowMessage(Answer, vText, [msgcOK, msgcCancel], msgcOk, msgcCancel, msgkConfirmation) = msgcOK
 end;
 
-function TMsgBox.Password(var Answer: string; const vText: string): boolean;
+function TMsgBox.Password(var Answer: string; const vText: string): Boolean;
 begin
   Result := ShowMessage(Answer, vText, [msgcOK, msgcCancel], msgcOk, msgcCancel, msgkPassword) = msgcOK
 end;
 
-function TMsgBox.Yes(const vText: string): boolean;
+function TMsgBox.Yes(const vText: string): Boolean;
 begin
   Result := ShowMessage(vText, [msgcYes, msgcNo], msgcYes, msgcNo, msgkConfirmation) = msgcYes;
 end;
 
-function TMsgBox.No(const vText: string): boolean;
+function TMsgBox.No(const vText: string): Boolean;
 begin
   Result := ShowMessage(vText, [msgcYes, msgcNo], msgcNo, msgcNo, msgkConfirmation) in [msgcCancel, msgcNo];
 end;
@@ -304,17 +304,17 @@ begin
   Result := ShowMessage(vText, [msgcYes, msgcNo, msgcCancel], msgcYes, msgcCancel, msgkConfirmation);
 end;
 
-function TMsgBox.Error(const vText: string): boolean;
+function TMsgBox.Error(const vText: string): Boolean;
 begin
   Result := ShowMessage(vText, [msgcOK], msgcOK, msgcOk, msgkError) = msgcOK
 end;
 
-function TMsgBox.Hint(const vText: string): boolean;
+function TMsgBox.Hint(const vText: string): Boolean;
 begin
   Result := ShowMessage(vText, [msgcOK], msgcOK, msgcOK, msgkError) = msgcOK
 end;
 
-function TMsgBox.Warning(const vText: string): boolean;
+function TMsgBox.Warning(const vText: string): Boolean;
 begin
   Result := ShowMessage(vText, [msgcYes], msgcOK, msgcOK, msgkWarning) = msgcOK
 end;

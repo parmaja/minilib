@@ -1740,6 +1740,19 @@ object MainForm: TMainForm
       Caption = 'New as'
       OnExecute = NewAsActExecute
     end
+    object SortByNamesAct: TAction
+      Category = 'Files'
+      Caption = 'Sort By Names'
+      Checked = True
+      GroupIndex = 6
+      OnExecute = SortByNamesActExecute
+    end
+    object SortByExtensionsAct: TAction
+      Category = 'Files'
+      Caption = 'Sort By Extensions'
+      GroupIndex = 6
+      OnExecute = SortByExtensionsActExecute
+    end
   end
   object FolderMenu: TPopupMenu
     left = 84
@@ -1777,6 +1790,15 @@ object MainForm: TMainForm
       Action = ShowAllAct
     end
     object MenuItem11: TMenuItem
+      Caption = '-'
+    end
+    object MenuItem14: TMenuItem
+      Action = SortByNamesAct
+    end
+    object MenuItem15: TMenuItem
+      Action = SortByExtensionsAct
+    end
+    object MenuItem16: TMenuItem
       Caption = '-'
     end
     object MenuItem12: TMenuItem

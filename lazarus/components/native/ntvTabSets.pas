@@ -61,7 +61,7 @@ type
     function GetItemIndex: Integer;
     procedure WMGetDlgCode(var message: TWMGetDlgCode); message WM_GETDLGCODE;
     procedure CMFocusChanged(var Message: TMessage); message CM_FOCUSCHANGED;
-    procedure CMDialogKey(var Message: TCMDialogKey); message CM_DIALOGKEY;
+    //procedure CMDialogKey(var Message: TCMDialogKey); message CM_DIALOGKEY;
     procedure CMDesignHitTest(var Message: TLMMouse); message CM_DESIGNHITTEST;
 
     procedure SetShowButtons(const Value: Boolean);
@@ -581,7 +581,7 @@ end;
 {begin
   Result:=inherited ChildKey(Message);
 end;}
-
+(*
 procedure TntvCustomTabSet.CMDialogKey(var Message: TCMDialogKey);
 begin
   //if not (csDesigning in ComponentState) and (Focused or IsChild(Handle, Windows.GetFocus)) and (Message.CharCode = VK_TAB) and (GetKeyState(VK_CONTROL) < 0) then
@@ -613,7 +613,7 @@ begin
     end;
   end;
 end;
-
+*)
 function TntvCustomTabSet.GetTopIndex: Integer;
 begin
   Result := Items.TopIndex;

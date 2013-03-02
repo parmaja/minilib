@@ -168,12 +168,12 @@ begin
   end;
 end;
 
-procedure ReadAttStrings(Strings: TStrings; const Attributes: string); overload;
+procedure ReadAttStrings(Strings: TStrings; const Attributes: string);
 begin
   StrToStrings(Attributes, Strings, [' '], [#0, #13, #10], True);
 end;
 
-function CreateAttStrings(const Attributes: string): TStrings; overload;
+function CreateAttStrings(const Attributes: string): TStrings;
 begin
   Result := TStringList.Create;
   ReadAttStrings(Result, Attributes);

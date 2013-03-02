@@ -50,9 +50,14 @@ type
   { TMainForm }
 
   TMainForm = class(TForm)
+    SortByExtensionsAct: TAction;
+    SortByNamesAct: TAction;
     Bevel1: TBevel;
     FileCloseBtn: TSpeedButton;
     FoldersSpl: TntvSplitter;
+    MenuItem14: TMenuItem;
+    MenuItem15: TMenuItem;
+    MenuItem16: TMenuItem;
     NewAsMnu: TMenuItem;
     NewAsAct: TAction;
     MenuItem13: TMenuItem;
@@ -363,6 +368,8 @@ type
     procedure ShowAllActExecute(Sender: TObject);
     procedure ShowRelatedActExecute(Sender: TObject);
     procedure ShowKnownActExecute(Sender: TObject);
+    procedure SortByExtensionsActExecute(Sender: TObject);
+    procedure SortByNamesActExecute(Sender: TObject);
     procedure UnixMnuClick(Sender: TObject);
     procedure WindowsMnuClick(Sender: TObject);
     procedure MacMnuClick(Sender: TObject);
@@ -444,10 +451,12 @@ type
     //ApplicationEvents: TApplicationEvents;
     FMessages: TEditorMessages;
     FShowFolderFiles: TShowFolderFiles;
+    FSortFolderFiles: TSortFolderFiles;
     //    OnActivate = ApplicationEventsActivate
     //    OnHint = ApplicationEventsHint
     function CanOpenInclude: boolean;
     procedure SetShowFolderFiles(AValue: TShowFolderFiles);
+    procedure SetSortFolderFiles(AValue: TSortFolderFiles);
     procedure UpdateFileHeaderPanel;
     procedure EditorChangeState(State: TEditorChangeStates);
     function ChoosePerspective(var vPerspective: TEditorPerspective): Boolean;
@@ -462,7 +471,6 @@ type
     procedure ProjectLoaded;
     procedure UpdateFolder;
     procedure UpdateProject;
-
     procedure SetFolder(const Value: string);
     procedure ReopenClick(Sender: TObject);
     procedure ReopenProjectClick(Sender: TObject);
@@ -496,6 +504,7 @@ type
     procedure ShowWatchesList;
     procedure LoadAddons;
     property ShowFolderFiles: TShowFolderFiles read FShowFolderFiles write SetShowFolderFiles;
+    property SortFolderFiles: TSortFolderFiles read FSortFolderFiles write SetSortFolderFiles;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -518,6 +527,13 @@ uses
   SynEditTypes, AboutForms, mneProjectForms, GotoForms, Types,
   mneBreakpoints,
   SearchInFilesForms, SelectList, MsgBox;
+
+function SortByExt(List: TStringList; Index1, Index: Integer): Integer;
+begin
+  Result := CompareText(ExtractFileExt(List[Index1]), ExtractFileExt(List[Index]));
+  if Result = 0 then
+    Result := CompareText(List[Index1], List[Index]);
+end;
 
 {$R *.lfm}
 
@@ -544,6 +560,7 @@ begin
     Engine.Startup;
   end;
   ShowFolderFiles := Engine.Options.ShowFolderFiles;
+  SortFolderFiles := Engine.Options.SortFolderFiles;
   FoldersAct.Checked := Engine.Options.ShowFolder;
   MessagesAct.Checked := Engine.Options.ShowMessages;
   OutputAct.Checked := Engine.Options.ShowOutput;
@@ -868,6 +885,7 @@ procedure TMainForm.FormClose(Sender: TObject; var CloseAction: TCloseAction);
 begin
   Engine.Options.ShowFolder := FoldersAct.Checked;
   Engine.Options.ShowFolderFiles := ShowFolderFiles;
+  Engine.Options.SortFolderFiles := SortFolderFiles;
   Engine.Options.ShowMessages := MessagesAct.Checked;
   Engine.Options.ShowOutput := OutputAct.Checked;
 
@@ -1150,6 +1168,16 @@ begin
   ShowFolderFiles := sffKnown;
 end;
 
+procedure TMainForm.SortByExtensionsActExecute(Sender: TObject);
+begin
+  SortFolderFiles := srtfByExt;
+end;
+
+procedure TMainForm.SortByNamesActExecute(Sender: TObject);
+begin
+  SortFolderFiles := srtfByNames;
+end;
+
 procedure TMainForm.UnixMnuClick(Sender: TObject);
 begin
   Engine.Files.Current.Mode := efmUnix;
@@ -1303,7 +1331,7 @@ begin
     Engine.Files.Current.SynEdit.SelectAll;
 end;
 
-function TMainForm.CanOpenInclude: Boolean;
+function TMainForm.CanOpenInclude: boolean;
 begin
   Result := (Engine.Files.Current <> nil) and Engine.Files.Current.CanOpenInclude;
 end;
@@ -1318,6 +1346,18 @@ begin
     sffRelated: ShowRelatedAct.Checked := True;
     sffKnown: ShowKnownAct.Checked := True;
     sffAll: ShowAllAct.Checked := True;
+  end;
+end;
+
+procedure TMainForm.SetSortFolderFiles(AValue: TSortFolderFiles);
+begin
+  if FSortFolderFiles =AValue then Exit;
+  FSortFolderFiles :=AValue;
+  if FoldersAct.Checked then
+    UpdateFolder;
+  case FSortFolderFiles of
+    srtfByNames: SortByNamesAct.Checked := True;
+    srtfByExt: SortByExtensionsAct.Checked := True;
   end;
 end;
 
@@ -1402,6 +1442,7 @@ begin
             r := FindNextUTF8(SearchRec);
           end;
           FindCloseUTF8(SearchRec);
+
           aFiles.Sort;
 
           for r := 0 to aFiles.Count -1 do
@@ -1426,13 +1467,18 @@ begin
             r := FindNextUTF8(SearchRec);
           end;
           FindCloseUTF8(SearchRec);
-          aFiles.Sort;
+
+          if SortFolderFiles  = srtfByNames then
+            aFiles.Sort
+          else
+            aFiles.CustomSort(@SortByExt);
+
           for r := 0 to aFiles.Count -1 do
           begin
             aItem := FileList.Items.Add;
             aItem.Caption := aFiles[r];
             aItem.Data := Pointer(1);
-            aItem.ImageIndex := GetFileImageIndex(SearchRec.Name);
+            aItem.ImageIndex := GetFileImageIndex(aFiles[r]);
           end;
         end;
       finally
