@@ -33,7 +33,7 @@ type
   public
     procedure QuestionProc;
     procedure AndSymbolProc;
-    procedure LineCommentProc;
+    procedure HashLineCommentProc;
     procedure CommentProc;
     procedure SlashProc;
     procedure StringProc;
@@ -98,6 +98,15 @@ begin
   Inc(Parent.Run);
   if Parent.FLine[Parent.Run] in ['=', '&'] then
     Inc(Parent.Run);
+end;
+
+procedure TPHPProcessor.HashLineCommentProc;
+begin
+  Parent.FTokenID := tkComment;
+  Inc(Parent.Run);
+  repeat
+    Inc(Parent.Run);
+  until Parent.FLine[Parent.Run] in [#0, #10, #13];
 end;
 
 {procedure TPHPProcessor.StringProc;
@@ -365,7 +374,7 @@ begin
       '?': ProcTable[I] := @QuestionProc;
       '''': ProcTable[I] := @StringSQProc;
       '"': ProcTable[I] := @StringDQProc;
-      '#': ProcTable[I] := @LineCommentProc;
+      '#': ProcTable[I] := @HashLineCommentProc;
       '/': ProcTable[I] := @SlashProc;
       '=': ProcTable[I] := @EqualProc;
       '>': ProcTable[I] := @GreaterProc;
@@ -583,15 +592,6 @@ end;
 function TPHPProcessor.GetIdentChars: TSynIdentChars;
 begin
   Result := TSynValidStringChars + ['$'];
-end;
-
-procedure TPHPProcessor.LineCommentProc;
-begin
-  Inc(Parent.Run);
-  Parent.FTokenID := tkComment;
-  repeat
-    Inc(Parent.Run);
-  until Parent.FLine[Parent.Run] in [#0, #10, #13];
 end;
 
 end.
