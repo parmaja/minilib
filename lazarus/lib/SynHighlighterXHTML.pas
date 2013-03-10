@@ -170,30 +170,37 @@ const
   SYNS_FilterXHTML = 'HTML/PHP Files (*.php;*.html;*.phtml;*.inc)|*.php;*.html;*.phtml;*.inc';
 
 //range mix Main processor as byte and Current processor as byte and index Byte
-function RangeToProcessor(Range: cardinal): byte;
-function MixRange(Index, Main, Current: byte): PtrUInt;
-procedure SplitRange(Range: cardinal; out Index, Main, Current: byte);
+function RangeToProcessor(Range: Pointer): Byte;
+function MixRange(Index, Main, Current: Byte): Pointer;
+procedure SplitRange(Range: Pointer; out Index, Main, Current: Byte);
 
 implementation
 
 uses
   SynEditStrConst, PHPProcessor, HTMLProcessor;
 
-function RangeToProcessor(Range: cardinal): byte;
+function RangeToProcessor(Range: Pointer): Byte;
 begin
-  Result := Range and $FF;
+  Result := PtrUInt(Range) and $FF;
 end;
 
-function MixRange(Index, Main, Current: byte): PtrUInt;
+function MixRange(Index, Main, Current: byte): Pointer;
 begin
-  Result := Index or Main shl 8 or Current shl 16;
+  {$PUSH}{$HINTS OFF}
+  Result := Pointer(PtrUInt(Index or Main shl 8 or Current shl 16));
+  {$POP}
 end;
 
-procedure SplitRange(Range: cardinal; out Index, Main, Current: byte);
+procedure SplitRange(Range: Pointer; out Index, Main, Current: byte);
+var
+  r: PtrUInt;
 begin
-  Index := Range and $FF;
-  Main := Range shr 8 and $FF;
-  Current := Range shr 16 and $FF;
+  {$PUSH}{$HINTS OFF}
+  r := Integer(Range);
+  {$POP}
+  Index := r and $FF;
+  Main := r shr 8 and $FF;
+  Current := r shr 16 and $FF;
 end;
 
 function TSynProcessor.KeyHash(ToHash: PChar): integer;
@@ -392,7 +399,7 @@ end;
 
 function TSynXHTMLSyn.GetRange: Pointer;
 begin
-  Result := Pointer(Integer(MixRange(Processors.Current.Index, Processors.Main.GetRange, Processors.Current.GetRange)));
+  Result := Pointer(MixRange(Processors.Current.Index, Processors.Main.GetRange, Processors.Current.GetRange));
 end;
 
 function TSynXHTMLSyn.GetToken: string;
@@ -462,7 +469,7 @@ var
   i: integer;
 begin
   inherited;
-  SplitRange(PtrUInt(Value), aIndex, aMain, aCurrent);
+  SplitRange(Value, aIndex, aMain, aCurrent);
   Processors.Switch(aIndex);
   Processors.Main.SetRange(aMain);
   if aIndex = 0 then
