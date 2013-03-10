@@ -18,8 +18,8 @@ object EditorOptionsForm: TEditorOptionsForm
     Height = 379
     Top = 4
     Width = 362
-    ActivePage = ColorTab
-    TabIndex = 2
+    ActivePage = OptionsTab
+    TabIndex = 0
     TabOrder = 0
     OnChange = PageControlChange
     object OptionsTab: TTabSheet
@@ -281,17 +281,17 @@ object EditorOptionsForm: TEditorOptionsForm
         TabOrder = 1
         object Label2: TLabel
           Left = 16
-          Height = 14
+          Height = 13
           Top = 5
-          Width = 57
+          Width = 56
           Caption = 'Insert caret:'
           ParentColor = False
         end
         object Label4: TLabel
           Left = 16
-          Height = 14
+          Height = 13
           Top = 29
-          Width = 76
+          Width = 75
           Caption = 'Overwrite caret:'
           ParentColor = False
         end
@@ -342,17 +342,17 @@ object EditorOptionsForm: TEditorOptionsForm
         TabOrder = 1
         object Label3: TLabel
           Left = 9
-          Height = 14
+          Height = 13
           Top = 33
-          Width = 55
+          Width = 54
           Caption = 'Edge color:'
           ParentColor = False
         end
         object Label10: TLabel
           Left = 9
-          Height = 14
+          Height = 13
           Top = 9
-          Width = 67
+          Width = 66
           Caption = 'Edge Column:'
           ParentColor = False
         end
@@ -385,9 +385,9 @@ object EditorOptionsForm: TEditorOptionsForm
         TabOrder = 0
         object Label1: TLabel
           Left = 129
-          Height = 14
+          Height = 13
           Top = 29
-          Width = 52
+          Width = 51
           Caption = 'Backcolor:'
           ParentColor = False
         end
@@ -444,9 +444,9 @@ object EditorOptionsForm: TEditorOptionsForm
         end
         object Label5: TLabel
           Left = 129
-          Height = 14
+          Height = 13
           Top = 2
-          Width = 51
+          Width = 50
           Caption = 'Frontcolor:'
           ParentColor = False
         end
@@ -470,9 +470,9 @@ object EditorOptionsForm: TEditorOptionsForm
         end
         object Label6: TLabel
           Left = 129
-          Height = 14
+          Height = 13
           Top = 78
-          Width = 50
+          Width = 49
           Caption = 'Separator:'
           ParentColor = False
         end
@@ -495,9 +495,9 @@ object EditorOptionsForm: TEditorOptionsForm
         end
         object Label7: TLabel
           Left = 129
-          Height = 14
+          Height = 13
           Top = 129
-          Width = 32
+          Width = 31
           Caption = 'Saved'
           ParentColor = False
         end
@@ -520,11 +520,19 @@ object EditorOptionsForm: TEditorOptionsForm
         end
         object Label15: TLabel
           Left = 129
-          Height = 14
+          Height = 13
           Top = 153
-          Width = 44
+          Width = 43
           Caption = 'Unsaved'
           ParentColor = False
+        end
+        object CodeFoldingChk: TCheckBox
+          Left = 9
+          Height = 17
+          Top = 100
+          Width = 80
+          Caption = 'Code Folding'
+          TabOrder = 12
         end
       end
       object LineSpacingGrp: TGroupBox
@@ -538,17 +546,17 @@ object EditorOptionsForm: TEditorOptionsForm
         TabOrder = 2
         object Label8: TLabel
           Left = 9
-          Height = 14
+          Height = 13
           Top = 9
-          Width = 56
+          Width = 55
           Caption = 'Extra Lines:'
           ParentColor = False
         end
         object Label9: TLabel
           Left = 9
-          Height = 14
+          Height = 13
           Top = 39
-          Width = 54
+          Width = 53
           Caption = 'Tab Width:'
           ParentColor = False
         end
@@ -577,17 +585,17 @@ object EditorOptionsForm: TEditorOptionsForm
       ImageIndex = 3
       object Label11: TLabel
         Left = 5
-        Height = 14
+        Height = 13
         Top = 65
-        Width = 42
+        Width = 41
         Caption = '&Element:'
         ParentColor = False
       end
       object Label12: TLabel
         Left = 5
-        Height = 14
+        Height = 13
         Top = 38
-        Width = 28
+        Width = 27
         Caption = '&Type:'
         ParentColor = False
       end
@@ -699,6 +707,12 @@ object EditorOptionsForm: TEditorOptionsForm
           end>
         VisibleSpecialChars = [vscSpace, vscTabAtLast]
         ReadOnly = True
+        SelectedColor.BackPriority = 50
+        SelectedColor.ForePriority = 50
+        SelectedColor.FramePriority = 50
+        SelectedColor.BoldPriority = 50
+        SelectedColor.ItalicPriority = 50
+        SelectedColor.UnderlinePriority = 50
         BracketHighlightStyle = sbhsBoth
         BracketMatchColor.Background = clNone
         BracketMatchColor.Foreground = clNone
@@ -734,6 +748,8 @@ object EditorOptionsForm: TEditorOptionsForm
           object SynGutterSeparator1: TSynGutterSeparator
             Width = 2
             MouseActions = <>
+            MarkupInfo.Background = clWhite
+            MarkupInfo.Foreground = clGray
           end
           object SynGutterCodeFolding1: TSynGutterCodeFolding
             MouseActions = <            
@@ -851,9 +867,9 @@ object EditorOptionsForm: TEditorOptionsForm
       end
       object FontLbl: TLabel
         Left = 10
-        Height = 17
+        Height = 16
         Top = 171
-        Width = 129
+        Width = 128
         Caption = 'Courier New 10pt'
         Font.Height = -13
         Font.Name = 'Courier New'
@@ -921,17 +937,17 @@ object EditorOptionsForm: TEditorOptionsForm
       end
       object Label13: TLabel
         Left = 5
-        Height = 14
+        Height = 13
         Top = 11
-        Width = 55
+        Width = 54
         Caption = 'Foreground'
         ParentColor = False
       end
       object Label14: TLabel
         Left = 182
-        Height = 14
+        Height = 13
         Top = 11
-        Width = 59
+        Width = 58
         Caption = 'Background'
         ParentColor = False
       end
@@ -982,7 +998,7 @@ object EditorOptionsForm: TEditorOptionsForm
     MinFontSize = 0
     MaxFontSize = 0
     Options = [fdEffects, fdFixedPitchOnly]
-    left = 265
-    top = 190
+    left = 94
+    top = 322
   end
 end

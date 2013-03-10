@@ -39,6 +39,7 @@ type
     FontBtn: TButton;
     FontLbl: TLabel;
     DefForegroundCbo: TColorBox;
+    CodeFoldingChk: TCheckBox;
     Label15: TLabel;
     Label7: TLabel;
     SavedColorCbo: TColorBox;
@@ -255,6 +256,7 @@ begin
   BracketHighlightChk.Checked := eoBracketHighlight in FProfile.Options;
   //Caret
   InsertModeChk.Checked := FProfile.InsertMode;
+  CodeFoldingChk.Checked := FProfile.CodeFolding;
   InsertCaretCbo.ItemIndex := Ord(FProfile.InsertCaret);
   OverwriteCaretCbo.ItemIndex := Ord(FProfile.OverwriteCaret);
 end;
@@ -336,6 +338,7 @@ begin
   FProfile.ExtOptions := vExtOptions;
   //Caret
   FProfile.InsertMode := InsertModeChk.Checked;
+  FProfile.CodeFolding := CodeFoldingChk.Checked;
   FProfile.InsertCaret := TSynEditCaretType(InsertCaretCbo.ItemIndex);
   FProfile.OverwriteCaret := TSynEditCaretType(OverwriteCaretCbo.ItemIndex);
 end;

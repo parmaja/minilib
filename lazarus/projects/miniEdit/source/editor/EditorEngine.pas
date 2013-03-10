@@ -1585,11 +1585,12 @@ begin
   aDialog := TOpenDialog.Create(nil);
   try
     aDialog.Title := 'Open file';
-    aDialog.Options := aDialog.Options + [ofAllowMultiSelect];
+    aDialog.Options := aDialog.Options + [ofHideReadOnly, ofFileMustExist, ofAllowMultiSelect];
     aDialog.Filter := Engine.Groups.CreateFilter;
+    aDialog.FilterIndex := 0;
     aDialog.InitialDir := Engine.BrowseFolder;
     aDialog.DefaultExt := Engine.Perspective.GetDefaultGroup.Extensions[0];
-    aDialog.FileName := '*' + aDialog.DefaultExt;
+    //aDialog.FileName := '*' + aDialog.DefaultExt;
     if aDialog.Execute then
     begin
       Engine.BeginUpdate;
@@ -1598,6 +1599,7 @@ begin
         for i := 0 to aDialog.Files.Count - 1 do
         begin
           aFile := InternalOpenFile(aDialog.Files[i], True);
+          //aFile.IsReadOnly := aDialog. TODO
         end;
         if aFile <> nil then
           Current := aFile;
@@ -2111,7 +2113,7 @@ end;
 constructor TEditorFile.Create(ACollection: TCollection);
 begin
   inherited;
-  { There is more assigns in SetGroup }
+  { There is more assigns in TEditorFile.SetGroup and TEditorProfile.Assign}
   FSynEdit := TSynEdit.Create(Engine.FilesControl);
   FSynEdit.OnChange := @DoEdit;
   FSynEdit.OnStatusChange := @DoStatusChange;

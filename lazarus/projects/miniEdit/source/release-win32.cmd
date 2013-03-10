@@ -1,12 +1,10 @@
 @echo off
-del ..\bin\mne.exe
+if exist ..\bin\mne.exe (del ..\bin\mne.exe)
  
-lazbuild --build-mode=windows gui\mne.lpr -r -B
+lazbuild --build-mode=release_win32 gui\mne.lpr -r -B
 if errorlevel 1 goto erroroccurred
 
-strip ..\bin\mne.exe
-if errorlevel 1 goto erroroccurred
-
+7z a "../release/miniedit-%DATE:~-4%-%DATE:~4,2%-%DATE:~7,2%.7z" ../bin/mne.exe ../README.TXT
 goto noerrors
 
 :erroroccurred

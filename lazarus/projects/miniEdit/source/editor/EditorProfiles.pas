@@ -127,6 +127,7 @@ type
   TEditorProfile = class(TComponent) //make it as object
   private
     FBackgroundColor: TColor;
+    FCodeFolding: Boolean;
     FExtOptions: TSynEditorOptions2;
     FForegroundColor: TColor;
     FMaxUndo: Integer;
@@ -173,6 +174,7 @@ type
     property OverwriteCaret: TSynEditCaretType read FOverwriteCaret write FOverwriteCaret default ctBlock;
     property MaxUndo: Integer read FMaxUndo write FMaxUndo default 1024;
     property TabWidth: Integer read FTabWidth write FTabWidth default 2;
+    property CodeFolding: Boolean read FCodeFolding write FCodeFolding default False;
   end;
 
 implementation
@@ -182,25 +184,22 @@ uses
 
 { TEditorProfile }
 
-type
-  THackCustomSynEdit = class(TCustomSynEdit);
-
 procedure TEditorProfile.Assign(Source: TPersistent);
 begin
   if Assigned(Source) and (Source is TCustomSynEdit) then
   begin
     Self.Font.Assign(TCustomSynEdit(Source).Font);
-    Self.Gutter.Assign(THackCustomSynEdit(Source).Gutter);
-    Self.SelectedColor.Assign(THackCustomSynEdit(Source).SelectedColor);
+    Self.Gutter.Assign(TCustomSynEdit(Source).Gutter);
+    Self.SelectedColor.Assign(TCustomSynEdit(Source).SelectedColor);
 
-    Self.Options := THackCustomSynEdit(Source).Options;
-    Self.ExtraLineSpacing := THackCustomSynEdit(Source).ExtraLineSpacing;
-    Self.InsertCaret := THackCustomSynEdit(Source).InsertCaret;
-    Self.OverwriteCaret := THackCustomSynEdit(Source).OverwriteCaret;
-    Self.MaxUndo := THackCustomSynEdit(Source).MaxUndo;
-    Self.RightEdge := THackCustomSynEdit(Source).RightEdge;
-    Self.RightEdgeColor := THackCustomSynEdit(Source).RightEdgeColor;
-    Self.TabWidth := THackCustomSynEdit(Source).TabWidth;
+    Self.Options := TCustomSynEdit(Source).Options;
+    Self.ExtraLineSpacing := TCustomSynEdit(Source).ExtraLineSpacing;
+    Self.InsertCaret := TCustomSynEdit(Source).InsertCaret;
+    Self.OverwriteCaret := TCustomSynEdit(Source).OverwriteCaret;
+    Self.MaxUndo := TCustomSynEdit(Source).MaxUndo;
+    Self.RightEdge := TCustomSynEdit(Source).RightEdge;
+    Self.RightEdgeColor := TCustomSynEdit(Source).RightEdgeColor;
+    Self.TabWidth := TCustomSynEdit(Source).TabWidth;
   end
   else
     inherited;
@@ -210,7 +209,7 @@ procedure TEditorProfile.AssignTo(Dest: TPersistent);
 begin
   if Assigned(Dest) and (Dest is TCustomSynEdit) then
   begin
-    THackCustomSynEdit(Dest).Font.Assign(Self.Font);
+    TCustomSynEdit(Dest).Font.Assign(Self.Font);
     if TCustomSynEdit(Dest).Highlighter = nil then
     begin
       TCustomSynEdit(Dest).Font.Color := ForegroundColor;
@@ -222,20 +221,20 @@ begin
       TCustomSynEdit(Dest).Color := TCustomSynEdit(Dest).Highlighter.WhitespaceAttribute.Background;//BUG: bad to be here
     end;
 
-    THackCustomSynEdit(Dest).Options := THackCustomSynEdit(Dest).Options - [eoDropFiles]; //make main window accept the files
-    THackCustomSynEdit(Dest).Gutter.Assign(Self.Gutter);
-    THackCustomSynEdit(Dest).SelectedColor.Assign(Self.SelectedColor);
+    TCustomSynEdit(Dest).Options := TCustomSynEdit(Dest).Options - [eoDropFiles]; //make main window accept the files
+    TCustomSynEdit(Dest).Gutter.Assign(Self.Gutter);
+    TCustomSynEdit(Dest).SelectedColor.Assign(Self.SelectedColor);
 
-    THackCustomSynEdit(Dest).Font.Quality := fqNonAntialiased; //not work
+    TCustomSynEdit(Dest).Font.Quality := fqNonAntialiased; //not work
 
-    THackCustomSynEdit(Dest).Options := Self.Options;
-    THackCustomSynEdit(Dest).ExtraLineSpacing := Self.ExtraLineSpacing;
-    THackCustomSynEdit(Dest).InsertCaret := Self.InsertCaret;
-    THackCustomSynEdit(Dest).OverwriteCaret := Self.OverwriteCaret;
-    THackCustomSynEdit(Dest).MaxUndo := Self.MaxUndo;
-    THackCustomSynEdit(Dest).RightEdge := Self.RightEdge;
-    THackCustomSynEdit(Dest).RightEdgeColor := Self.RightEdgeColor;
-    THackCustomSynEdit(Dest).TabWidth := Self.TabWidth;
+    TCustomSynEdit(Dest).Options := Self.Options;
+    TCustomSynEdit(Dest).ExtraLineSpacing := Self.ExtraLineSpacing;
+    TCustomSynEdit(Dest).InsertCaret := Self.InsertCaret;
+    TCustomSynEdit(Dest).OverwriteCaret := Self.OverwriteCaret;
+    TCustomSynEdit(Dest).MaxUndo := Self.MaxUndo;
+    TCustomSynEdit(Dest).RightEdge := Self.RightEdge;
+    TCustomSynEdit(Dest).RightEdgeColor := Self.RightEdgeColor;
+    TCustomSynEdit(Dest).TabWidth := Self.TabWidth;
   end
   else
     inherited;
@@ -252,6 +251,7 @@ begin
   FHighlighters := THighlightersProfile.Create(THighlighterProfile);
   FBackgroundColor := clWindow;
   FForegroundColor := clWindowText;
+  CodeFolding := False;
   Reset;
 end;
 
@@ -316,8 +316,7 @@ begin
   FExtOptions :=AValue;
 end;
 
-procedure TEditorProfile.SetOptions(
-  const Value: TSynEditorOptions);
+procedure TEditorProfile.SetOptions(const Value: TSynEditorOptions);
 begin
   FOptions := Value;
 end;
@@ -617,4 +616,4 @@ begin
 end;
 
 end.
-
+
