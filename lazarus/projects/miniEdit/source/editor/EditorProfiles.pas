@@ -13,7 +13,8 @@ interface
 
 uses
   Messages, Graphics, Controls, Forms, Dialogs, StdCtrls, ComCtrls, Registry, ExtCtrls, Buttons, ImgList,
-  Contnrs, Menus, SynEdit, SynEditHighlighter, SynEditMiscClasses, SynEditPointClasses, SynGutter, SynEditKeyCmds, Classes, SysUtils;
+  Contnrs, Menus, SynEdit, SynEditHighlighter, SynEditMiscClasses, SynEditPointClasses, SynGutterCodeFolding,
+  SynGutter, SynEditKeyCmds, Classes, SysUtils;
 
 const
   cDefaultOptions = [eoAltSetsColumnMode, eoAutoIndent, eoDragDropEditing, eoDropFiles, eoScrollPastEol,
@@ -206,6 +207,9 @@ begin
 end;
 
 procedure TEditorProfile.AssignTo(Dest: TPersistent);
+var
+  cf: TSynGutterCodeFolding;
+  OldCF: Boolean;
 begin
   if Assigned(Dest) and (Dest is TCustomSynEdit) then
   begin
@@ -224,6 +228,15 @@ begin
     TCustomSynEdit(Dest).Options := TCustomSynEdit(Dest).Options - [eoDropFiles]; //make main window accept the files
     TCustomSynEdit(Dest).Gutter.Assign(Self.Gutter);
     TCustomSynEdit(Dest).SelectedColor.Assign(Self.SelectedColor);
+
+    cf := TCustomSynEdit(Dest).Gutter.Parts.ByClass[TSynGutterCodeFolding, 0] as TSynGutterCodeFolding;
+    if cf <> nil then
+    begin
+      OldCF := cf.Visible;
+      cf.Visible := CodeFolding and (TCustomSynEdit(Dest).Highlighter <> nil) and (hcCodeFolding in TCustomSynEdit(Dest).Highlighter.Capabilities);
+      if (cf.Visible) and (cf.Visible <> OldCF) then
+        TCustomSynEdit(Dest).UnfoldAll;
+    end;
 
     TCustomSynEdit(Dest).Font.Quality := fqNonAntialiased; //not work
 

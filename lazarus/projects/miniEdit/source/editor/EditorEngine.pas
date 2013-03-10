@@ -2337,8 +2337,6 @@ begin
 end;
 
 procedure TEditorFile.SetGroup(const Value: TFileGroup);
-var
-  cf: TSynGutterCodeFolding;
 begin
   if FGroup <> Value then
   begin
@@ -2356,14 +2354,6 @@ begin
           Width := EditorResource.DebugImages.Width + DEBUG_IMAGE_MARGINES;
         end;
 
-      if not (fgsFolding in FGroup.Style) then//TODO: Check the Options
-      begin
-        cf := FSynEdit.Gutter.Parts.ByClass[TSynGutterCodeFolding, 0] as TSynGutterCodeFolding;
-        if cf <> nil then
-        begin
-          cf.Visible := False;
-        end;
-      end;
       FSynEdit.Gutter.SeparatorPart(0).Index := FSynEdit.Gutter.Parts.Count - 1;
 
       FGroup.Category.InitEdit(FSynEdit);
