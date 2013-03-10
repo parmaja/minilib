@@ -12,7 +12,7 @@ object EditorSettingForm: TEditorSettingForm
   OnClose = FormClose
   OnCreate = FormCreate
   Position = poMainFormCenter
-  LCLVersion = '0.9.31'
+  LCLVersion = '1.1'
   object OkBtn: TButton
     Left = 347
     Height = 26
@@ -40,8 +40,8 @@ object EditorSettingForm: TEditorSettingForm
     Height = 238
     Top = 3
     Width = 419
-    ActivePage = TabSheet4
-    TabIndex = 1
+    ActivePage = TabSheet2
+    TabIndex = 0
     TabOrder = 2
     object TabSheet2: TTabSheet
       Caption = 'Options'
@@ -50,9 +50,9 @@ object EditorSettingForm: TEditorSettingForm
       ImageIndex = 1
       object Label3: TLabel
         Left = 7
-        Height = 14
+        Height = 13
         Top = 80
-        Width = 215
+        Width = 214
         Caption = 'This words will be cached and updated every'
         ParentColor = False
       end
@@ -102,9 +102,9 @@ object EditorSettingForm: TEditorSettingForm
       end
       object Label4: TLabel
         Left = 7
-        Height = 14
+        Height = 13
         Top = 100
-        Width = 327
+        Width = 326
         Caption = 'You must have a project and define the root folder to use this feature.'
         ParentColor = False
       end
@@ -116,17 +116,17 @@ object EditorSettingForm: TEditorSettingForm
       ImageIndex = 3
       object Label9: TLabel
         Left = 5
-        Height = 14
+        Height = 13
         Top = 6
-        Width = 339
+        Width = 338
         Caption = 'You can add extra extension files to open and browse, do not use DOT.'
         ParentColor = False
       end
       object Label10: TLabel
         Left = 11
-        Height = 14
+        Height = 13
         Top = 23
-        Width = 114
+        Width = 113
         Caption = 'example: inc;php3;php4'
         ParentColor = False
       end

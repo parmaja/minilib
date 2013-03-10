@@ -53,7 +53,7 @@ uses
   MsgBox,
   GUIMsgBox,
   Classes,
-  PHPUtils in '..\lib\PHPUtils.pas', mnePHPConfigForms, mneSetups;
+  PHPUtils in '..\lib\PHPUtils.pas', mnePHPConfigForms, mneSetups, mneSettings;
 
 {$R *.res}
 

@@ -148,7 +148,7 @@
         <MinVersion Major="1" Release="1" Valid="True"/>
       </Item9>
     </RequiredPackages>
-    <Units Count="24">
+    <Units Count="25">
       <Unit0>
         <Filename Value="mne.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -313,9 +313,19 @@
       <Unit23>
         <Filename Value="mneSetups.pas"/>
         <IsPartOfProject Value="True"/>
+        <ComponentName Value="EditorSetupForm"/>
         <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
         <UnitName Value="mneSetups"/>
       </Unit23>
+      <Unit24>
+        <Filename Value="mneSettings.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="EditorSettingForm"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Form"/>
+        <UnitName Value="mneSettings"/>
+      </Unit24>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
