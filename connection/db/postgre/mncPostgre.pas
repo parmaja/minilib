@@ -410,7 +410,7 @@ end;
 
 procedure TmncPGSession.DoStop(How: TmncSessionAction; Retaining: Boolean);
 begin
-  if StartCount>0 then
+  if StartCount>=0 then //dec of FStartCount befor this function
   begin
     case How of
       sdaCommit: Execute('COMMIT');

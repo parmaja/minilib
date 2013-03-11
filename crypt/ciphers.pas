@@ -537,7 +537,6 @@ end;
 procedure TCipherBuffer.DeleteReaded(vCount: Integer);
 var
   t: PChar;
-  i, c: Integer;
 begin
   if vCount=Count then
     FPosition := FStart
@@ -625,9 +624,10 @@ function TCipherBuffer.Seek(Offset: Integer; Origin: Word): Longint;
 begin
   case Origin of
     soFromBeginning: FPosition := FStart + Offset;
-    soFromCurrent: FPosition := FPosition + Offset;  
-    soFromEnd: FPosition := FEOS - Offset;  
+    soFromCurrent: FPosition := FPosition + Offset;
+    soFromEnd: FPosition := FEOS - Offset;
   end;
+  Result := FPosition - FStart;
 end;
 
 procedure TCipherBuffer.SetSize(vSize: integer);
