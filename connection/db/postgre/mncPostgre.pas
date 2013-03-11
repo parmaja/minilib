@@ -81,7 +81,7 @@ type
     FTokenID: Cardinal;
     FDBHandle: PPGconn;
     FExclusive: Boolean;
-    FUseConnection: Boolean;
+    FIsolated: Boolean;
     function GetConnection: TmncPGConnection;
     procedure SetConnection(const AValue: TmncPGConnection);
     procedure SetExclusive(const AValue: Boolean);
@@ -99,7 +99,7 @@ type
     property Exclusive: Boolean read FExclusive write SetExclusive;
     property Connection: TmncPGConnection read GetConnection write SetConnection;
     property DBHandle: PPGconn read GetDBHandle;
-    property UseConnection: Boolean read FUseConnection write FUseConnection default True;
+    property Isolated: Boolean read FIsolated write FIsolated default True;
   end;
 
   TArrayOfPChar = array of PChar;
@@ -448,7 +448,7 @@ end;
 constructor TmncPGSession.Create(vConnection: TmncConnection);
 begin
   inherited;
-  FUseConnection := True;
+  FIsolated := True;
 end;
 
 function TmncPGSession.GetConnection: TmncPGConnection;
@@ -462,7 +462,7 @@ begin
     Result := Connection.Handle
   else
     Result := nil;}
-  if UseConnection then
+  if Isolated then
     Result := Connection.FHandle
   else
   begin
