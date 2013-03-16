@@ -405,6 +405,7 @@ end;
 
 procedure TmncPGSession.DoStart;
 begin
+	//TODO: Use session params to pass it here
   Execute('begin isolation level read committed;');
 end;
 
