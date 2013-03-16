@@ -405,7 +405,7 @@ end;
 
 procedure TmncPGSession.DoStart;
 begin
-  Execute('BEGIN');
+  Execute('begin isolation level read committed;');
 end;
 
 procedure TmncPGSession.DoStop(How: TmncSessionAction; Retaining: Boolean);
