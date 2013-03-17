@@ -22,9 +22,16 @@ type
   TmnrNode = class(TPersistent)
   private
     FNodes: TmnrNode;
+    FNext: TmnrNode;
+    FPrior: TmnrNode;
+    FFirst: TmnrNode;
+    FLast: TmnrNode;
   protected
     procedure SetNodes(const Value: TmnrNode);
     function GetNodes: TmnrNode;
+    procedure Link(vNode: TmnrNode); virtual;
+    procedure UnLink(vNode: TmnrNode); virtual;
+
     procedure Attach; virtual;
     procedure Detach; virtual;
 
@@ -42,14 +49,6 @@ type
     procedure SetPrior(const Value: TmnrNode);
 
     function DoGetHead: TmnrNode; virtual;
-    function DoGetFirst: TmnrNode; virtual;
-    function DoGetLast: TmnrNode; virtual;
-    function DoGetNext: TmnrNode; virtual;
-    function DoGetPrior: TmnrNode; virtual;
-    procedure DoSetFirst(const Value: TmnrNode); virtual;
-    procedure DoSetLast(const Value: TmnrNode); virtual;
-    procedure DoSetNext(const Value: TmnrNode); virtual;
-    procedure DoSetPrior(const Value: TmnrNode); virtual;
   public
     constructor Create(vNodes: TmnrNode);
     destructor Destroy; override;
@@ -91,15 +90,9 @@ type
 
   TmnrLinkNode = class(TmnrNode)
   private
-    FPrior: TmnrNode;
-    FNext: TmnrNode;
   protected
     procedure SetNodes(const Value: TmnrLinkNodes);
     function GetNodes: TmnrLinkNodes;
-    function DoGetNext: TmnrNode; override;
-    function DoGetPrior: TmnrNode; override;
-    procedure DoSetNext(const Value: TmnrNode); override;
-    procedure DoSetPrior(const Value: TmnrNode); override;
   public
     property Nodes: TmnrLinkNodes read GetNodes write SetNodes;
   end;
@@ -139,16 +132,10 @@ type
 
   TmnrLinkNodes = class(TmnrNodes)
   private
-    FLast: TmnrNode;
-    FFirst: TmnrNode;
     FCount: Integer;
   protected
     function GetByIndex(vIndex: Integer): TmnrNode;
     function GetCount: Integer; override;
-    function DoGetFirst: TmnrNode; override;
-    function DoGetLast: TmnrNode; override;
-    procedure DoSetFirst(const Value: TmnrNode); override;
-    procedure DoSetLast(const Value: TmnrNode); override;
 
   public
     function Add: TmnrLinkNode;
@@ -175,8 +162,6 @@ type
 
   TmnrRowNode = class(TmnrLinkNodes)
   private
-    FNext: TmnrNode;
-    FPrior: TmnrNode;
   protected
     FID: Integer;
     procedure SetNodes(const Value: TmnrRowNodes);
@@ -184,11 +169,6 @@ type
     function GetNext: TmnrRowNode;
     function GetPrior: TmnrRowNode;
 
-
-    function DoGetNext: TmnrNode; override;
-    function DoGetPrior: TmnrNode; override;
-    procedure DoSetNext(const Value: TmnrNode); override;
-    procedure DoSetPrior(const Value: TmnrNode); override;
     procedure Attach; override;
     procedure Detach; override;
 
@@ -224,7 +204,9 @@ var
 
 procedure TmnrNode.Attach;
 begin
-  if Nodes<>nil then
+  Nodes.Link(Self);
+
+  {if Nodes<>nil then
   begin
     if Nodes.Last=nil then
     begin
@@ -238,15 +220,19 @@ begin
       Nodes.Last := Self;
     end;
     Nodes.IncCount(Count);
-  end;
+  end;}
 end;
 
 constructor TmnrNode.Create(vNodes: TmnrNode);
 begin
   inherited Create;
+  FFirst := nil;
+  FLast := nil;
+  FPrior := nil;
+  FNext := nil;
   Nodes := vNodes;
   {$IFOPT D+}
-  Inc(FNodesCount);
+  //Inc(FNodesCount);
   {$ENDIF}
 end;
 
@@ -259,75 +245,22 @@ destructor TmnrNode.Destroy;
 begin
   if FNodes<>nil then Detach;
   {$IFOPT D+}
-  Dec(FNodesCount);
+  //Dec(FNodesCount);
   {$ENDIF}
   inherited;
 end;
 
 procedure TmnrNode.Detach;
 begin
-  if Nodes<>nil then
-  begin
-    if Nodes.First=Self then
-    begin
-      Nodes.First := Next;
-      if Nodes.First<>nil then Nodes.First.Prior := nil;
-    end;
-
-    if Nodes.Last=Self then
-    begin
-      Nodes.Last := Prior;
-      if Nodes.Last<>nil then Nodes.Last.Next := nil;
-    end;
-    Nodes.DecCount(Count);
-    FNodes := nil;
-  end;
-  if Prior<>nil then Prior.Next := Next;
-  if Next<>nil then Next.Prior := Prior;
-
-  Next := nil;
-  Prior := nil;
-end;
-
-function TmnrNode.DoGetFirst: TmnrNode;
-begin
-  Result := nil;
+  Nodes.UnLink(Self);
+  FNodes := nil;
+  FNext := nil;
+  FPrior := nil;
 end;
 
 function TmnrNode.DoGetHead: TmnrNode;
 begin
   Result := First;
-end;
-
-function TmnrNode.DoGetLast: TmnrNode;
-begin
-  Result := nil;
-end;
-
-function TmnrNode.DoGetNext: TmnrNode;
-begin
-  Result := nil;
-end;
-
-function TmnrNode.DoGetPrior: TmnrNode;
-begin
-  Result := nil;
-end;
-
-procedure TmnrNode.DoSetFirst(const Value: TmnrNode);
-begin
-end;
-
-procedure TmnrNode.DoSetLast(const Value: TmnrNode);
-begin
-end;
-
-procedure TmnrNode.DoSetNext(const Value: TmnrNode);
-begin
-end;
-
-procedure TmnrNode.DoSetPrior(const Value: TmnrNode);
-begin
 end;
 
 function TmnrNode.GetCount: Integer;
@@ -337,7 +270,7 @@ end;
 
 function TmnrNode.GetFirst: TmnrNode;
 begin
-  Result := DoGetFirst;
+  Result := FFirst;
 end;
 
 function TmnrNode.GetHead: TmnrNode;
@@ -347,12 +280,12 @@ end;
 
 function TmnrNode.GetLast: TmnrNode;
 begin
-  Result := DoGetLast;
+  Result := FLast;
 end;
 
 function TmnrNode.GetNext: TmnrNode;
 begin
-  Result := DoGetNext;
+  Result := FNext;
 end;
 
 function TmnrNode.GetNodes: TmnrNode;
@@ -362,7 +295,7 @@ end;
 
 function TmnrNode.GetPrior: TmnrNode;
 begin
-  Result := DoGetPrior;
+  Result := FPrior;
 end;
 
 procedure TmnrNode.IncCount;
@@ -370,19 +303,35 @@ begin
 
 end;
 
+procedure TmnrNode.Link(vNode: TmnrNode);
+begin
+  if Last=nil then
+  begin
+    FFirst := vNode;
+    FLast := vNode;
+  end
+  else
+  begin
+    vNode.FPrior := FLast;
+    Last.FNext := vNode;
+    FLast := vNode;
+  end;
+  IncCount(vNode.Count);
+end;
+
 procedure TmnrNode.SetFirst(const Value: TmnrNode);
 begin
-  if GetFirst<>Value then DoSetFirst(Value);
+  FFirst := Value;
 end;
 
 procedure TmnrNode.SetLast(const Value: TmnrNode);
 begin
-  if GetLast<>Value then DoSetLast(Value);
+  FLast := Value;
 end;
 
 procedure TmnrNode.SetNext(const Value: TmnrNode);
 begin
-  if GetNext<>Value then DoSetNext(Value);
+  FNext := Value;
 end;
 
 procedure TmnrNode.SetNodes(const Value: TmnrNode);
@@ -397,7 +346,25 @@ end;
 
 procedure TmnrNode.SetPrior(const Value: TmnrNode);
 begin
-  if GetPrior<>Value then DoSetPrior(Value);
+  FPrior := Value;
+end;
+
+procedure TmnrNode.UnLink(vNode: TmnrNode);
+begin
+  if First=vNode then
+  begin
+    First := vNode.Next;
+    if First<>nil then First.Prior := nil;
+  end;
+
+  if Last=vNode then
+  begin
+    Last := vNode.Prior;
+    if Last<>nil then Last.Next := nil;
+  end;
+  if vNode.Prior<>nil then vNode.Prior.Next := vNode.Next;
+  if vNode.Next<>nil then vNode.Next.Prior := vNode.Prior;
+  DecCount(vNode.Count);
 end;
 
 { TmnrNodes }
@@ -444,29 +411,9 @@ end;
 
 { TmnrLinkNode }
 
-function TmnrLinkNode.DoGetNext: TmnrNode;
-begin
-  Result := FNext;
-end;
-
 function TmnrLinkNode.GetNodes: TmnrLinkNodes;
 begin
   Result := TmnrLinkNodes(inherited GetNodes);
-end;
-
-function TmnrLinkNode.DoGetPrior: TmnrNode;
-begin
-  Result := FPrior;
-end;
-
-procedure TmnrLinkNode.DoSetNext(const Value: TmnrNode);
-begin
-  FNext := Value;
-end;
-
-procedure TmnrLinkNode.DoSetPrior(const Value: TmnrNode);
-begin
-  FPrior := Value;
 end;
 
 procedure TmnrLinkNode.SetNodes(const Value: TmnrLinkNodes);
@@ -484,26 +431,6 @@ end;
 procedure TmnrLinkNodes.DecCount(Value: Integer);
 begin
   Dec(FCount, Value);
-end;
-
-function TmnrLinkNodes.DoGetFirst: TmnrNode;
-begin
-  Result := FFirst;
-end;
-
-function TmnrLinkNodes.DoGetLast: TmnrNode;
-begin
-  Result := FLast;
-end;
-
-procedure TmnrLinkNodes.DoSetFirst(const Value: TmnrNode);
-begin
-  FFirst := Value;
-end;
-
-procedure TmnrLinkNodes.DoSetLast(const Value: TmnrNode);
-begin
-  FLast := Value;
 end;
 
 function TmnrLinkNodes.GetByIndex(vIndex: Integer): TmnrNode;
@@ -554,26 +481,6 @@ procedure TmnrRowNode.Detach;
 begin
   inherited;
 
-end;
-
-function TmnrRowNode.DoGetNext: TmnrNode;
-begin
-  Result := FNext;
-end;
-
-function TmnrRowNode.DoGetPrior: TmnrNode;
-begin
-  Result := FPrior;
-end;
-
-procedure TmnrRowNode.DoSetNext(const Value: TmnrNode);
-begin
-  FNext := Value;
-end;
-
-procedure TmnrRowNode.DoSetPrior(const Value: TmnrNode);
-begin
-  FPrior := Value;
 end;
 
 function TmnrRowNode.GetNext: TmnrRowNode;
