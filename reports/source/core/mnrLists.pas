@@ -34,6 +34,7 @@ type
 
     procedure Attach; virtual;
     procedure Detach; virtual;
+    function GetIndex: Integer; virtual;
 
     function GetCount: Integer; virtual;
 
@@ -62,6 +63,7 @@ type
     property Count: Integer read GetCount;
     procedure IncCount(Value: Integer); virtual;
     procedure DecCount(Value: Integer); virtual;
+    property Index: Integer read GetIndex;
   end;
 
   TmnrNodes = class(TmnrNode)
@@ -276,6 +278,25 @@ end;
 function TmnrNode.GetHead: TmnrNode;
 begin
   Result := DoGetHead;
+end;
+
+function TmnrNode.GetIndex: Integer;
+var
+  p: TmnrNode;
+begin
+  Result := -1;
+  if Nodes<>nil then
+  begin
+    p := FNodes.First;
+    while p<>nil do
+    begin
+      Inc(Result);
+      if p=Self then
+        Break
+      else
+        p := p.Next;
+    end;
+  end;
 end;
 
 function TmnrNode.GetLast: TmnrNode;
