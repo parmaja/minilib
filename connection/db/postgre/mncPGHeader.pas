@@ -107,8 +107,9 @@ type
   whereas in earlier versions it was always your own backend's PID.
 }
   PGnotify = packed record
-    relname: array[0..NAMEDATALEN - 1] of Char; { name of relation containing data }
+    relname: PChar; { name of relation containing data }
     be_pid: Integer; { process id of backend }
+    extra: PChar;
   end;
 
   PPGnotify = ^PGnotify;

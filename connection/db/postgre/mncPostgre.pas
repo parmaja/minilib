@@ -35,12 +35,36 @@ uses
 type
 
   TmpgResultFormat = (mrfText, mrfBinary);
+  TmncPGConnection = class;
+
+  TPGListenThread = class(TThread)
+  private
+    FConnection: TmncPGConnection;
+    FHandle: PPGconn;
+    FChannel: string;
+    FEvent: PPGnotify;
+  protected
+    procedure PostEvent;
+    procedure Execute; override;
+
+  public
+    constructor Create(vConn: TmncPGConnection; const vChannel: string);
+    destructor Destroy; override;
+
+    property Connection: TmncPGConnection read FConnection;
+    property Channel: string read FChannel;
+
+  end;
 
   { TmncPGConnection }
 
   TmncPGConnection = class(TmncSQLConnection)
   private
     FHandle: PPGconn;
+    FChannel: string;
+    FEventListener: TPGListenThread;
+    procedure SetChannel(const Value: string);
+    procedure DoEvent(vPID: Integer; const vName, vData: string);
   protected
     function CreateConnection: PPGconn; overload;
     function CreateConnection(const vDatabase: string): PPGconn; overload;
@@ -55,9 +79,15 @@ type
     procedure RaiseError(Error: Boolean; const ExtraMsg: string = ''); overload;
     procedure RaiseError(PGResult: PPGresult); overload;
     class function GetMode: TmncSessionMode; override;
+    procedure DoNotify(vPID: Integer; const vName, vData: string); virtual;
+    procedure Notify(vPID: Integer; const vName, vData: string);
+    procedure Listen(const vChannel: string);
 
   public
     constructor Create;
+    destructor Destroy; override;
+
+
     procedure Interrupt;
     function CreateSession: TmncSQLSession; override;
     //TODO: Reconnect  use PQReset
@@ -71,7 +101,9 @@ type
     procedure Execute(const vResource: string; const vSQL: string; vArgs: array of const); overload;
     procedure Execute(const vResource: string; const vSQL: string); overload;
     procedure Execute(const vSQL: string); overload;
+    procedure Execute(vHandle: PPGconn; const vSQL: string; vArgs: array of const); overload;
     procedure Execute(vHandle: PPGconn; const vSQL: string); overload;
+    property Channel: string read FChannel write SetChannel;
   end;
 
   { TmncPGSession }
@@ -250,6 +282,16 @@ begin
   Execute('postgres', 'alter database %s rename to %s', [vName, vToName]);
 end;
 
+procedure TmncPGConnection.SetChannel(const Value: string);
+begin
+  if FChannel <> Value then
+  begin
+    FChannel := Value;
+    if Connected then
+      Listen(FChannel);
+  end;
+end;
+
 { TmncPGConnection }
 
 constructor TmncPGConnection.Create;
@@ -260,6 +302,25 @@ end;
 procedure TmncPGConnection.Interrupt;
 begin
   //PG3_interrupt(DBHandle);
+end;
+
+procedure TmncPGConnection.Listen(const vChannel: string);
+begin
+  if FEventListener<>nil then
+  begin
+    FEventListener.Terminate;
+    FreeAndNil(FEventListener);
+  end;
+
+  if vChannel<>'' then
+  begin
+    TPGListenThread.Create(Self, vChannel);
+  end;
+end;
+
+procedure TmncPGConnection.Notify(vPID: Integer; const vName, vData: string);
+begin
+  DoNotify(vPID, vName, vData);
 end;
 
 procedure TmncPGConnection.InternalConnect(var vHandle: PPGconn);
@@ -321,9 +382,16 @@ begin
   Result := TmncPGSession.Create(Self);
 end;
 
+destructor TmncPGConnection.Destroy;
+begin
+  Listen('');
+  inherited;
+end;
+
 procedure TmncPGConnection.DoConnect;
 begin
   InternalConnect(FHandle);
+  Listen(Channel);
 end;
 
 function TmncPGConnection.GetConnected: Boolean;
@@ -341,6 +409,16 @@ begin
   InternalDisconnect(FHandle);
 end;
 
+procedure TmncPGConnection.DoEvent(vPID: Integer; const vName, vData: string);
+begin
+
+end;
+
+procedure TmncPGConnection.DoNotify(vPID: Integer; const vName, vData: string);
+begin
+
+end;
+
 procedure TmncPGConnection.DropDatabase;
 begin
   DropDatabase(Resource);
@@ -349,6 +427,11 @@ end;
 procedure TmncPGConnection.DropDatabase(const vName: string);
 begin
   Execute('postgres', 'drop database if exists %s;', [vName]);
+end;
+
+procedure TmncPGConnection.Execute(vHandle: PPGconn; const vSQL: string; vArgs: array of const);
+begin
+  Execute(vHandle, Format(vSQL, vArgs));
 end;
 
 procedure TmncPGConnection.Execute(vHandle: PPGconn; const vSQL: string);
@@ -926,6 +1009,50 @@ end;
 procedure TmncPGDDLCommand.DoPrepare;
 begin
   //no need prepare
+end;
+
+{ TPGListenThread }
+
+constructor TPGListenThread.Create(vConn: TmncPGConnection; const vChannel: string);
+begin
+  inherited Create(True);
+  FConnection := vConn;
+  FChannel := vChannel;
+  FConnection.InternalConnect(FHandle);
+  FConnection.Execute(FHandle, 'LISTEN "%s";', [vChannel]);
+  FConnection.FEventListener := Self;
+  Resume;
+end;
+
+destructor TPGListenThread.Destroy;
+begin
+  try
+    PQfinish(FHandle);
+  except
+    //no exception needed
+  end;
+  inherited;
+end;
+
+procedure TPGListenThread.Execute;
+begin
+  inherited;
+  while not Terminated do
+  begin
+    PQconsumeInput(FHandle);
+    FEvent := PQnotifies(FHandle);
+    if FEvent<>nil then
+    begin
+      Synchronize(PostEvent);
+      PQFreemem(FEvent);
+    end;
+    Sleep(10); //belal: cpu usage .....
+  end;  
+end;
+
+procedure TPGListenThread.PostEvent;
+begin
+  FConnection.Notify(FEvent^.be_pid, FEvent^.relname, FEvent^.extra);
 end;
 
 end.
