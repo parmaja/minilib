@@ -243,11 +243,38 @@ type
     procedure DoExecute; override;
   end;
 
+function EncodeBytea(const vStr: string): string; overload;
+function EncodeBytea(vStr: PChar; vFrom, vTo: Cardinal): string; overload;
+
 implementation
 
 uses
   Math;
 
+
+function EncodeBytea(const vStr: string): string;
+begin
+  EncodeBytea(PChar(vStr), Length(vStr));
+end;
+
+function EncodeBytea(vStr: PChar; vLen: Cardinal): string; overload;
+var
+  e: PChar;
+  aLen: Longword;
+begin
+  if vLen=0 then
+    Result := ''
+  else
+  begin
+    e := PQescapeBytea(vStr, vLen, @aLen);
+    try
+      setlength(Result,aLen-1);
+      StrCopy(PAnsiChar(result), e);
+    finally
+      PQFreemem(e);
+    end;
+  end;
+end;
 
 procedure TmncPGConnection.RaiseError(Error: Boolean; const ExtraMsg: string);
 var
