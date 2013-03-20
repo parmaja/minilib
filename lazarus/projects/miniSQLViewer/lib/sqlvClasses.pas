@@ -139,46 +139,84 @@ type
     function Add(vNode:TsqlvNode): Integer;
   end;
 
-  { TsqlvHistoryItem }
+  { TsqlvCustomHistoryItem }
 
-  TsqlvHistoryItem = class(TObject)
+  TsqlvCustomHistoryItem = class(TObject)
   private
-    FNode: TsqlvNode;
-    FStrings: TStringList;
-    function GetText: string;
-    procedure SetText(AValue: string);
   public
     constructor Create; virtual;
     destructor Destroy; override;
-    property Text: string read GetText write SetText;
-    property Strings: TStringList read FStrings;
-    property Node: TsqlvNode read FNode write FNode;
   end;
 
   { TsqlvHistory }
 
-  TsqlvHistory = class(TObjectList)
+  TsqlvCustomHistory = class(TObjectList)
   private
     FIndex: Integer;
     FMaxCount: Integer;
     FOnChanged: TNotifyEvent;
-    function GetCurrent: TsqlvHistoryItem;
-    function GetItem(Index: Integer): TsqlvHistoryItem;
+    function GetCurrent: TsqlvCustomHistoryItem;
+    function GetItem(Index: Integer): TsqlvCustomHistoryItem;
   protected
+    function CreateItem: TsqlvCustomHistoryItem; virtual; abstract;
   public
     constructor Create;
-    function Add(History: TsqlvHistoryItem): Integer;
-    procedure Add(const Text: string; ANode: TsqlvNode; Silent: Boolean);
+    function Add(History: TsqlvCustomHistoryItem): Integer;
     function HaveBackward: Boolean;
     function Backward: Boolean;
     function HaveForward: Boolean;
     function Forward: Boolean;
     procedure Changed; virtual;
-    property Items[Index: Integer]: TsqlvHistoryItem read GetItem; default;
-    property Index: Integer read FIndex write FIndex;
-    property Current: TsqlvHistoryItem read GetCurrent;
+    property Current: TsqlvCustomHistoryItem read GetCurrent;
     property OnChanged: TNotifyEvent read FOnChanged write FOnChanged;
     property MaxCount: Integer read FMaxCount write FMaxCount;
+    property Items[Index: Integer]: TsqlvCustomHistoryItem read GetItem; default;
+    property Index: Integer read FIndex write FIndex;
+  end;
+
+  TsqlvSQLHistoryItem = class(TsqlvCustomHistoryItem)
+  private
+    FStrings: TStringList;
+    function GetText: string;
+    procedure SetText(AValue: string);
+  public
+    constructor Create; override;
+    destructor Destroy; override;
+    property Text: string read GetText write SetText;
+    property Strings: TStringList read FStrings;
+  end;
+
+  { TsqlvSQLHistory }
+
+  TsqlvSQLHistory = class(TsqlvCustomHistory)
+  private
+    function GetCurrent: TsqlvSQLHistoryItem;
+  protected
+    function CreateItem: TsqlvCustomHistoryItem; override;
+  public
+    procedure Add(const Text: string; Silent: Boolean);
+    property Current: TsqlvSQLHistoryItem read GetCurrent;
+  end;
+
+  { TsqlvNodeHistoryItem }
+
+  TsqlvNodeHistoryItem = class(TsqlvCustomHistoryItem)
+  private
+    FNode: TsqlvNode;
+  public
+    constructor Create; override;
+    destructor Destroy; override;
+    property Node: TsqlvNode read FNode write FNode;
+  end;
+
+  TsqlvNodeHistory = class(TsqlvCustomHistory)
+  private
+    function GetCurrent: TsqlvNodeHistoryItem;
+  protected
+    function CreateItem: TsqlvCustomHistoryItem; override;
+  public
+    procedure Add(const Node: TsqlvNode; Silent: Boolean);
+    property Current: TsqlvNodeHistoryItem read GetCurrent;
   end;
 
   { TsqlvEngine }
@@ -189,8 +227,8 @@ type
     FSetting: TsqlvSetting;
     FRecents: TStringList;
     FWorkPath: string;
-    FHistory: TsqlvHistory;
-    FSQLHistory: TsqlvHistory;
+    FHistory: TsqlvNodeHistory;
+    FSQLHistory: TsqlvSQLHistory;
     procedure SetWorkPath(const Value: string);
   public
     constructor Create;
@@ -200,7 +238,7 @@ type
     procedure LoadRecents;
     procedure SaveRecents;
     procedure Launch(Node: TsqlvNode; MemberName: string; vParams: TmncSchemaParams);
-    procedure Launch(Name: string; Group: string; MemberName: string; vParams: TmncSchemaParams);
+    procedure Launch(Name: string; Group, MemberName: string; vParams: TmncSchemaParams);
     procedure LaunchSchema(SchemaName: string; MemberName: string; vParams: TmncSchemaParams);
     procedure RegisterFilter(Filter: string);
     procedure RegisterViewer(Classes: array of TsqlvNodeClass);
@@ -212,8 +250,8 @@ type
     property Recents: TStringList read FRecents;
     property Session: TsqlvSession read FSession;
     property WorkPath :string read FWorkPath write SetWorkPath;
-    property History: TsqlvHistory read FHistory;
-    property SQLHistory: TsqlvHistory read FSQLHistory;
+    property History: TsqlvNodeHistory read FHistory;
+    property SQLHistory: TsqlvSQLHistory read FSQLHistory;
   end;
 
 var
@@ -233,25 +271,81 @@ begin
   Result := FsqlvEngine;
 end;
 
-{ TsqlvHistoryItem }
+{ TsqlvNodeHistory }
 
-function TsqlvHistoryItem.GetText: string;
+function TsqlvNodeHistory.GetCurrent: TsqlvNodeHistoryItem;
+begin
+  REsult := Inherited GetCurrent as TsqlvNodeHistoryItem;
+end;
+
+function TsqlvNodeHistory.CreateItem: TsqlvCustomHistoryItem;
+begin
+  Result := TsqlvNodeHistoryItem.Create;
+end;
+
+procedure TsqlvNodeHistory.Add(const Node: TsqlvNode; Silent: Boolean);
+var
+  i: Integer;
+  aHistory: TsqlvNodeHistoryItem;
+begin
+  aHistory := TsqlvNodeHistoryItem.Create;
+  aHistory.Node := Node;
+  i := inherited Add(aHistory);
+  if not Silent then
+    Index := i;
+  Changed;
+end;
+
+{ TsqlvNodeHistoryItem }
+
+constructor TsqlvNodeHistoryItem.Create;
+begin
+  inherited Create;
+end;
+
+destructor TsqlvNodeHistoryItem.Destroy;
+begin
+  inherited;
+end;
+
+{ TsqlvCustomHistoryItem }
+
+constructor TsqlvCustomHistoryItem.Create;
+begin
+  inherited Create;
+end;
+
+destructor TsqlvCustomHistoryItem.Destroy;
+begin
+  inherited;
+end;
+
+{ TsqlvSQLHistory }
+
+function TsqlvSQLHistory.CreateItem: TsqlvCustomHistoryItem;
+begin
+  Result := TsqlvSQLHistoryItem.Create;
+end;
+
+{ TsqlvCustomHistoryItem }
+
+function TsqlvSQLHistoryItem.GetText: string;
 begin
   Result := FStrings.Text;
 end;
 
-procedure TsqlvHistoryItem.SetText(AValue: string);
+procedure TsqlvSQLHistoryItem.SetText(AValue: string);
 begin
   FStrings.Text := AValue;
 end;
 
-constructor TsqlvHistoryItem.Create;
+constructor TsqlvSQLHistoryItem.Create;
 begin
   inherited;
   FStrings := TStringList.Create;
 end;
 
-destructor TsqlvHistoryItem.Destroy;
+destructor TsqlvSQLHistoryItem.Destroy;
 begin
   FreeAndNil(FStrings);
   inherited;
@@ -481,7 +575,7 @@ procedure TsqlvNode.ShowProperty;
 begin
 end;
 
-procedure TsqlvEngine.Launch(Name: string; Group, MemberName: string; vParams: TmncSchemaParams); overload;
+procedure TsqlvEngine.Launch(Name: string; Group, MemberName: string; vParams: TmncSchemaParams);
 var
   aNode: TsqlvNode;
   s: string;
@@ -527,7 +621,7 @@ begin
   end;
 end;
 
-procedure TsqlvEngine.LaunchSchema(SchemaName: string; MemberName: string; vParams: TmncSchemaParams); overload;
+procedure TsqlvEngine.LaunchSchema(SchemaName: string; MemberName: string; vParams: TmncSchemaParams);
 var
   aNodes: TsqlvNodes;
   aNode: TsqlvNode;
@@ -553,8 +647,8 @@ end;
 constructor TsqlvEngine.Create;
 begin
   inherited Create(True);
-  FHistory := TsqlvHistory.create;
-  FSQLHistory := TsqlvHistory.create;
+  FHistory := TsqlvNodeHistory.create;
+  FSQLHistory := TsqlvSQLHistory.create;
   FSetting := TsqlvSetting.Create;
   FRecents := TStringList.Create;
   FSession := TsqlvSession.Create;
@@ -615,20 +709,20 @@ begin
   FSetting.SafeLoadFromFile(WorkPath + 'sqlviewer.config');
 end;
 
-{ TsqlvHistory }
+{ TsqlvCustomHistory }
 
-function TsqlvHistory.GetItem(Index: Integer): TsqlvHistoryItem;
+function TsqlvCustomHistory.GetItem(Index: Integer): TsqlvCustomHistoryItem;
 begin
-  Result := inherited Items[Index] as TsqlvHistoryItem;
+  Result := inherited Items[Index] as TsqlvCustomHistoryItem;
 end;
 
-procedure TsqlvHistory.Changed;
+procedure TsqlvCustomHistory.Changed;
 begin
   if Assigned(OnChanged) then
     OnChanged(Self);
 end;
 
-function TsqlvHistory.GetCurrent: TsqlvHistoryItem;
+function TsqlvCustomHistory.GetCurrent: TsqlvCustomHistoryItem;
 begin
   if (Index < Count) and (FIndex >=0) then
     Result := Items[Index]
@@ -636,14 +730,14 @@ begin
     Result := nil;
 end;
 
-constructor TsqlvHistory.Create;
+constructor TsqlvCustomHistory.Create;
 begin
   inherited Create(True);
   Index := 0;
   MaxCount := 50;
 end;
 
-function TsqlvHistory.Add(History: TsqlvHistoryItem): Integer;
+function TsqlvCustomHistory.Add(History: TsqlvCustomHistoryItem): Integer;
 begin
   if (Count > MaxCount) and (Count > 0) then
   begin
@@ -653,43 +747,48 @@ begin
   Result := inherited Add(History);
 end;
 
-procedure TsqlvHistory.Add(const Text: string; ANode: TsqlvNode; Silent: Boolean);
+function TsqlvSQLHistory.GetCurrent: TsqlvSQLHistoryItem;
+begin
+  Result := GetCurrent as TsqlvSQLHistoryItem;
+end;
+
+procedure TsqlvSQLHistory.Add(const Text: string; Silent: Boolean);
 var
   i: Integer;
-  aHistory: TsqlvHistoryItem;
+  aHistory: TsqlvSQLHistoryItem;
 begin
   if (Count > 0) then
   begin
-    aHistory := Items[Count - 1];
+    aHistory := Items[Count - 1] as TsqlvSQLHistoryItem;
     if (aHistory.Text = Text) then
       exit;//do not duplicate the last one
     if (Index < Count) and (Index >= 0) then
     begin
-      aHistory := Items[Index];
+      aHistory := Items[Index] as TsqlvSQLHistoryItem;
       if (aHistory.Text = Text) then
         exit;//do not duplicate the current one
     end;
   end;
-  aHistory := TsqlvHistoryItem.Create;
+  aHistory := TsqlvSQLHistoryItem.Create;
   aHistory.Text := Text;
-  aHistory.Node := ANode;
-  i := Add(aHistory);
+  //aHistory.Node := ANode;
+  i := inherited Add(aHistory);
   if not Silent then
     Index := i;
   Changed;
 end;
 
-function TsqlvHistory.HaveForward: Boolean;
+function TsqlvCustomHistory.HaveForward: Boolean;
 begin
   Result := (Count > 0) and (Index < Count - 1);
 end;
 
-function TsqlvHistory.HaveBackward: Boolean;
+function TsqlvCustomHistory.HaveBackward: Boolean;
 begin
   Result := (Count> 0) and (FIndex > 0);
 end;
 
-function TsqlvHistory.Forward: Boolean;
+function TsqlvCustomHistory.Forward: Boolean;
 begin
   Result := HaveForward;
   if Result then
@@ -699,7 +798,7 @@ begin
   end;
 end;
 
-function TsqlvHistory.Backward: Boolean;
+function TsqlvCustomHistory.Backward: Boolean;
 begin
   Result := HaveBackward;
   if Result then

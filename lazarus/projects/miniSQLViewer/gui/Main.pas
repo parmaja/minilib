@@ -1435,7 +1435,7 @@ end;
 
 procedure TMainForm.AddRecentSQL(Silent: Boolean);
 begin
-  sqlvEngine.SQLHistory.Add(SQLEdit.Text, nil, Silent);
+  sqlvEngine.SQLHistory.Add(SQLEdit.Text, Silent);
 end;
 
 procedure TMainForm.Execute(ExecuteType: TsqlvExecuteType; SQLCMD: TmncSQLiteCommand; SQL:TStringList; ShowGrid:Boolean);
