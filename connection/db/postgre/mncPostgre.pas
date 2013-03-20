@@ -64,7 +64,6 @@ type
     FChannel: string;
     FEventListener: TPGListenThread;
     procedure SetChannel(const Value: string);
-    procedure DoEvent(vPID: Integer; const vName, vData: string);
   protected
     function CreateConnection: PPGconn; overload;
     function CreateConnection(const vDatabase: string): PPGconn; overload;
@@ -407,11 +406,6 @@ end;
 procedure TmncPGConnection.DoDisconnect;
 begin
   InternalDisconnect(FHandle);
-end;
-
-procedure TmncPGConnection.DoEvent(vPID: Integer; const vName, vData: string);
-begin
-
 end;
 
 procedure TmncPGConnection.DoNotify(vPID: Integer; const vName, vData: string);
