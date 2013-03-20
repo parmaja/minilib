@@ -244,7 +244,7 @@ type
   end;
 
 function EncodeBytea(const vStr: string): string; overload;
-function EncodeBytea(vStr: PChar; vFrom, vTo: Cardinal): string; overload;
+function EncodeBytea(vStr: PChar; vLen: Cardinal): string; overload;
 
 implementation
 
