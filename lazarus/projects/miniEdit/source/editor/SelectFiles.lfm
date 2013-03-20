@@ -12,7 +12,7 @@ object SelectFileForm: TSelectFileForm
   OnCreate = FormCreate
   OnDestroy = FormDestroy
   Position = poMainFormCenter
-  LCLVersion = '0.9.31'
+  LCLVersion = '1.1'
   object FilesList: TListView
     Left = 3
     Height = 287
@@ -27,7 +27,7 @@ object SelectFileForm: TSelectFileForm
       item
         AutoSize = True
         Caption = 'Path'
-        Width = 62
+        Width = 78
       end>
     HideSelection = False
     ReadOnly = True
@@ -39,7 +39,7 @@ object SelectFileForm: TSelectFileForm
     OnDblClick = FilesListDblClick
   end
   object OkBtn: TButton
-    Left = 210
+    Left = 6
     Height = 26
     Top = 319
     Width = 75
@@ -50,7 +50,7 @@ object SelectFileForm: TSelectFileForm
     TabOrder = 2
   end
   object CancelBtn: TButton
-    Left = 134
+    Left = 83
     Height = 26
     Top = 319
     Width = 75
@@ -62,7 +62,7 @@ object SelectFileForm: TSelectFileForm
   end
   object FilterEdit: TEdit
     Left = 3
-    Height = 23
+    Height = 21
     Top = 5
     Width = 282
     Anchors = [akTop, akLeft, akRight]
@@ -77,4 +77,4 @@ object SelectFileForm: TSelectFileForm
     left = 96
     top = 79
   end
-end
+end

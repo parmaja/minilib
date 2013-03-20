@@ -219,7 +219,7 @@ begin
 
   AExtensions := TStringList.Create;
   try
-    Engine.Perspective.Groups[0].EnumExtensions(AExtensions);
+    Engine.Perspective.Groups[0].EnumExtensions(AExtensions);//TODO bad bad
     if AExtensions.IndexOf(s) >= 0 then
       Result := 2
     else

@@ -18,6 +18,9 @@ type
   { TEditorSettingForm }
 
   TEditorSettingForm = class(TForm)
+    IgnoreNamesEdit: TEdit;
+    Label11: TLabel;
+    Label12: TLabel;
     Label4: TLabel;
     OkBtn: TButton;
     CancelBtn: TButton;
@@ -89,6 +92,7 @@ begin
       Inc(c);
     end;
   end;
+  FEngine.Options.IgnoreNames := IgnoreNamesEdit.Text;
 end;
 
 procedure TEditorSettingForm.Retrive;
@@ -114,6 +118,7 @@ begin
       Inc(c);
     end;
   end;
+  IgnoreNamesEdit.Text := FEngine.Options.IgnoreNames;
 end;
 
 

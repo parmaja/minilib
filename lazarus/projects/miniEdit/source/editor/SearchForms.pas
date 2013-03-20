@@ -18,7 +18,7 @@ type
     SearchTextEdit: TComboBox;
     SearchDirectionGrp: TRadioGroup;
     SearchOptionsGrp: TGroupBox;
-    OKBtn: TButton;
+    FindBtn: TButton;
     CancelBtn: TButton;
     SearchCaseSensitiveChk: TCheckBox;
     SearchWholeWordsChk: TCheckBox;

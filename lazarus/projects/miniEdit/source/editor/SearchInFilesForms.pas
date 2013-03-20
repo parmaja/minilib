@@ -27,7 +27,7 @@ type
     Label1: TLabel;
     SearchTextEdit: TComboBox;
     SearchOptionsGrp: TGroupBox;
-    OKBtn: TButton;
+    FindBtn: TButton;
     CancelBtn: TButton;
     SearchCaseSensitiveChk: TCheckBox;
     SearchWholeWordsChk: TCheckBox;
@@ -41,10 +41,9 @@ type
     procedure UpdateReplace;
     procedure FoundEvent(FileName: string; const Line: string; LineNo, Column, FoundLength: Integer);
     procedure SearchReplaceText;
-    procedure SearchInFiles(const Root, Path, Files: string; AllKnown:Boolean);
+    procedure SearchInFiles;
     procedure SearchInFile(FileName: string);
   protected
-    FCanceled: Boolean;
     FSearchCount: Integer;
     FProgressForm: TSearchProgressForm;
     FSearchText: string;
@@ -62,46 +61,31 @@ uses EditorEngine, SearchForms;
 
 {$R *.lfm}
 
-procedure TSearchInFilesForm.SearchInFiles(const Root, Path, Files: string; AllKnown:Boolean);
-var
-  sr: TSearchRec;
-  function FullPath: string;
-  begin
-    if Root <> '' then
-      Result := IncludeTrailingPathDelimiter(Root);
-    if Path <> '' then
-      Result := IncludeTrailingPathDelimiter(Result + Path);
-  end;
-var
-  p: string;
+procedure DoSearchInFileCallback(AObject: TObject; const FileName: string; Count, Level:Integer; var Resume: Boolean);
 begin
-  p := ExpandFileName(FullPath);
-  if FindFirst(p + Files, faAnyFile, sr) = 0 then
+  with (AObject as TSearchInFilesForm) do
   begin
-    repeat
-      if AllKnown then
-      begin
-        if Engine.Groups.FindExtension(ExtractFileExt(sr.Name)) <> nil then
-          SearchInFile(p + sr.Name);
-      end
-      else
-        SearchInFile(p + sr.Name);
-      if FCanceled then
-        exit;
-    until (FindNext(sr) <> 0);
+    SearchInFile(ExpandFileName(FileName));
+    if (Count mod 25) = 0 then
+    begin
+      Application.ProcessMessages;
+      if FProgressForm.Canceled then
+        Resume := False;
+      Application.ProcessMessages;
+    end;
   end;
+end;
 
-  if FindFirst(FullPath + '*.*', faDirectory, sr) = 0 then
-  begin
-    repeat
-      if (sr.Name = '') or (sr.Name[1] = '.') or (sr.Name = '..') or (copy(sr.Name, 1, 5) = '_vti_') then
-        continue;
-      if (sr.Attr and faDirectory) <> 0 then
-        SearchInFiles(Root, IncludeTrailingPathDelimiter(Path) + sr.Name, Files, AllKnown);
-      if FCanceled then
-        exit;
-    until (FindNext(sr) <> 0);
-  end;
+procedure TSearchInFilesForm.SearchInFiles;
+var
+  aMasks: string;
+begin
+  if SearchFilesGrp.ItemIndex = 0 then
+    aMasks := Engine.Perspective.Groups.CreateFilter(False)
+  else
+    aMasks := Engine.Groups.CreateFilter(False);
+
+  EnumFileList(IncludeTrailingPathDelimiter(SearchFolderEdit.Text), aMasks, Engine.Options.IgnoreNames, @DoSearchInFileCallback, Self, 1000, 3, True, True);
 end;
 
 procedure TSearchInFilesForm.SearchReplaceText;
@@ -119,10 +103,7 @@ begin
     if ReplaceWithChk.Checked then
       FSearchOptions := [ssoReplace, ssoReplaceAll];
 
-    if SearchFilesGrp.ItemIndex = 0 then
-      SearchInFiles(IncludeTrailingPathDelimiter(SearchFolderEdit.Text), '.', '*.php', False)
-    else
-      SearchInFiles(IncludeTrailingPathDelimiter(SearchFolderEdit.Text), '.', '*.*', True);
+    SearchInFiles;
     SetTextSearch(FSearchText, FReplaceText, FSearchOptions);// send text to normal text search
     Engine.Files.CheckChanged;
   finally
@@ -252,7 +233,6 @@ begin
   if FProgressForm <> nil then
   begin
     FProgressForm.FileNameLbl.Caption := FileName;
-    FCanceled := FProgressForm.Canceled;
     Application.ProcessMessages;
   end;
   aStrings := TStringList.Create;
@@ -276,7 +256,6 @@ begin
   if FProgressForm <> nil then
   begin
     FProgressForm.FoundLbl.Caption := IntToStr(FSearchCount);
-    FCanceled := FProgressForm.Canceled;
     Application.ProcessMessages;
   end;
 end;

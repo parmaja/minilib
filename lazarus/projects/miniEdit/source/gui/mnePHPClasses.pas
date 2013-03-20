@@ -356,7 +356,7 @@ begin
                 Engine.Session.Project.CachedIdentifiers.Clear;
                 aFiles := TStringList.Create;
                 try
-                  EnumFileList('', Engine.Session.Project.RootDir, '*.php', aFiles, 1000, Engine.Session.IsOpened);
+                  EnumFileList(Engine.Session.Project.RootDir, '*.php', Engine.Options.IgnoreNames, aFiles, 1000, 3, True, Engine.Session.IsOpened);//TODO check the root dir if no project opened
                   r := aFiles.IndexOf(Engine.Files.Current.Name);
                   if r >= 0 then
                     aFiles.Delete(r);

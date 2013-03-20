@@ -2356,7 +2356,7 @@ begin
     try
       aDialog.Title := 'Open file';
       aDialog.Options := aDialog.Options - [ofAllowMultiSelect];
-      aDialog.Filter := Engine.Groups.CreateFilter('', Engine.Files.Current.Group);
+      aDialog.Filter := Engine.Groups.CreateFilter(True, '', Engine.Files.Current.Group);
       //      aDialog.InitialDir := Engine.BrowseFolder;
       if aDialog.Execute then
       begin
