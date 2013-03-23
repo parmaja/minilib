@@ -244,7 +244,10 @@ type
   end;
 
 function EncodeBytea(const vStr: string): string; overload;
-function EncodeBytea(vStr: PChar; vLen: Cardinal): string; overload;
+function EncodeBytea(vStr: PAnsiChar; vLen: Cardinal): string; overload;
+
+function DecodeBytea(const vStr: string): string; overload;
+function DecodeBytea(vStr: PAnsiChar; vLen: Cardinal): string; overload;
 
 implementation
 
@@ -254,10 +257,10 @@ uses
 
 function EncodeBytea(const vStr: string): string;
 begin
-  EncodeBytea(PChar(vStr), Length(vStr));
+  Result := EncodeBytea(PAnsiChar(vStr), Length(vStr));
 end;
 
-function EncodeBytea(vStr: PChar; vLen: Cardinal): string; overload;
+function EncodeBytea(vStr: PAnsiChar; vLen: Cardinal): string; overload;
 var
   e: PChar;
   aLen: Longword;
@@ -268,11 +271,34 @@ begin
   begin
     e := PQescapeBytea(vStr, vLen, @aLen);
     try
-      setlength(Result,aLen-1);
-      StrCopy(PAnsiChar(result), e);
+      SetLength(Result,aLen+1);
+      Move(e^, Result[2], aLen-1);
+      Result[1] := '''';
+      Result[aLen+1] := '''';
+      //StrCopy(PAnsiChar(Result), e);
     finally
       PQFreemem(e);
     end;
+  end;
+end;
+
+function DecodeBytea(const vStr: string): string;
+begin
+  Result := DecodeBytea(PAnsiChar(vStr), Length(vStr));
+end;
+
+function DecodeBytea(vStr: PAnsiChar; vLen: Cardinal): string; overload;
+var
+  e: PChar;
+  aLen: Longword;
+begin
+  e := PQunescapeBytea(vStr, @aLen);
+  try
+    SetLength(Result, aLen);
+    if aLen<>0 then
+      Move(e^, Result[1], aLen);
+  finally
+    PQFreemem(e);
   end;
 end;
 
@@ -567,13 +593,18 @@ begin
     Result := Connection.Handle
   else
     Result := nil;}
-  if Isolated then
-    Result := Connection.FHandle
-  else
-  begin
-    if FDBHandle = nil then
-      Connection.InternalConnect(FDBHandle);
-    Result := FDBHandle;
+  ConnectionLock.Enter;
+  try
+    if Isolated then
+      Result := Connection.Handle
+    else
+    begin
+      if FDBHandle = nil then
+        Connection.InternalConnect(FDBHandle);
+      Result := FDBHandle;
+    end;
+  finally
+    ConnectionLock.Leave;
   end;
 end;
 
