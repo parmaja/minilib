@@ -142,7 +142,7 @@
     <Version Value="11"/>
     <PathDelim Value="\"/>
     <Target>
-      <Filename Value="..\bin\SqliteViewer.exe"/>
+      <Filename Value="..\bin\SqliteViewer"/>
     </Target>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)"/>

@@ -70,6 +70,47 @@ type
     property CSVANSIContents: Boolean read FCSVANSIContents write FCSVANSIContents default False;
   end;
 
+  TsqlvNode = class;
+
+  { TsqlvStackItem }
+
+  TsqlvStackItem = class(TObject)
+  private
+    FGroup: string;
+    FName: string;
+    FValue: string;
+    FSelect: string;
+    FNode: TsqlvNode;
+  public
+    property Group: string read FGroup write FGroup;
+    property Name: string read FName write FName;
+    property Value: string read FValue write FValue;
+    property Select: string read FSelect write FSelect;
+
+    property Node: TsqlvNode read FNode write FNode;
+  end;
+
+  { TsqlvStack }
+
+  TsqlvStack = class(TObjectList)
+  private
+    function GetCurrent: TsqlvStackItem;
+    function GetItem(Index: Integer): TsqlvStackItem;
+    function GetValues(Index: string): string;
+    procedure SetItem(Index: Integer; const Value: TsqlvStackItem);
+  public
+    constructor Create;
+    function Find(const Name: string): TsqlvStackItem;
+    function Add(Param: TsqlvStackItem): Integer; overload;
+    function Push(Group, Name: string; Value, Select: string): TsqlvStackItem;
+    procedure Pop;
+    procedure Top; //pop all to top
+    procedure Trim(ToCount: Integer); //Similar to SetCount
+    property Current: TsqlvStackItem read GetCurrent;
+    property Items[Index: Integer]: TsqlvStackItem read GetItem write SetItem;
+    property Values[Index: string]: string read GetValues; default;
+  end;
+
   TsqlvNodes = class;
 
 {
@@ -80,13 +121,13 @@ type
   nsNeedSession: Enum only when session is active
 }
 
-  TsqlvNodeStyle = set of (nsDefault, nsCommand, nsEditor, nsButton, nsNeedSession);
+  TsqlvNodeStyle = set of (nsDefault, nsGroup, nsCommand, nsEditor, nsButton, nsNeedSession);
 
   { TsqlvNode }
 
   TsqlvNode = class(TObject)
   private
-    FMembers: TStringList;
+    FItem: string;
     FGroup: string;
     FName: string;
     FStyle: TsqlvNodeStyle;
@@ -95,24 +136,24 @@ type
     FImageIndex: TImageIndex;
   protected
     function GetCanExecute: Boolean; virtual;
-    procedure DoExecute(const Value: string; Params: TmncSchemaParams); virtual;
+    procedure DoExecute(const Value: string; Params: TsqlvStack); virtual;
   public
     constructor Create; virtual;
     destructor Destroy; override;
     procedure ShowProperty; virtual;
-    procedure Execute(const Value: string; var Params: TmncSchemaParams);
+    procedure Execute(const Value: string; vStack: TsqlvStack; FallDefault: Boolean = False);
     procedure Execute(const Value: string);
     procedure Enum(Nodes: TsqlvNodes);
     procedure EnumDefaults(Nodes: TsqlvNodes);
     procedure EnumHeader(Header: TStringList); virtual;
-    procedure EnumSchema(var SchemaName: string; SchemaItems: TmncSchemaItems; const MemberName: string = ''); virtual;
+    procedure EnumSchema(vItems: TmncSchemaItems; const MemberName: string = ''); virtual; abstract;
     property CanExecute: Boolean read GetCanExecute;
-    property Group: string read FGroup write FGroup;
-    property Name: string read FName write FName;
-    property Members: TStringList read FMembers write FMembers;
-    property Title: string read FTitle write FTitle;
+    property Group: string read FGroup write FGroup; //Group is parent node like Tabkes.Group = 'Database'
+    property Name: string read FName write FName; //Name = 'Tables'
+    property Item: string read FItem write FItem; //Item name eg  Tables.Item = 'Table'
     property Kind: TschmKind read FKind write FKind default sokNone;
-    property Style:TsqlvNodeStyle read FStyle write FStyle;
+    property Style: TsqlvNodeStyle read FStyle write FStyle;
+    property Title: string read FTitle write FTitle;
     property ImageIndex: TImageIndex read FImageIndex write FImageIndex default -1;
   end;
 
@@ -125,9 +166,9 @@ type
     function GetItem(Index: Integer): TsqlvNode;
     procedure SetItem(Index: Integer; const Value: TsqlvNode);
   public
-    procedure Enum(Name: string; Nodes: TsqlvNodes; SessionActive: Boolean; OnlyDefaults: Boolean = False); overload;
-    function Find(const Name: string): TsqlvNode; overload;
-    function Find(const Group, Name: string): TsqlvNode; overload;
+    procedure Enum(GroupName: string; Nodes: TsqlvNodes; SessionActive: Boolean; OnlyDefaults: Boolean = False); overload;
+    function Find(const Name: string): TsqlvNode; deprecated;
+    function Find(const Group, Name: string): TsqlvNode;
     property Items[Index: Integer]: TsqlvNode read GetItem write SetItem; default;
   end;
 
@@ -226,6 +267,7 @@ type
     FSession: TsqlvSession;
     FSetting: TsqlvSetting;
     FRecents: TStringList;
+    FStack: TsqlvStack;
     FWorkPath: string;
     FHistory: TsqlvNodeHistory;
     FSQLHistory: TsqlvSQLHistory;
@@ -237,9 +279,9 @@ type
     procedure SaveSetting;
     procedure LoadRecents;
     procedure SaveRecents;
-    procedure Launch(Node: TsqlvNode; MemberName: string; vParams: TmncSchemaParams);
-    procedure Launch(Name: string; Group, MemberName: string; vParams: TmncSchemaParams);
-    procedure LaunchSchema(SchemaName: string; MemberName: string; vParams: TmncSchemaParams);
+    procedure Run(vStack: TsqlvStack);
+    procedure Run;
+    procedure Run(vGroup, vName, vValue: string; vSelect: string = '');
     procedure RegisterFilter(Filter: string);
     procedure RegisterViewer(Classes: array of TsqlvNodeClass);
     procedure AddRecent(Name:string);
@@ -251,6 +293,7 @@ type
     property Session: TsqlvSession read FSession;
     property WorkPath :string read FWorkPath write SetWorkPath;
     property History: TsqlvNodeHistory read FHistory;
+    property Stack: TsqlvStack read FStack;
     property SQLHistory: TsqlvSQLHistory read FSQLHistory;
   end;
 
@@ -271,11 +314,96 @@ begin
   Result := FsqlvEngine;
 end;
 
+{ TsqlvStack }
+
+function TsqlvStack.GetCurrent: TsqlvStackItem;
+begin
+  Result := Last as TsqlvStackItem;
+end;
+
+function TsqlvStack.GetItem(Index: Integer): TsqlvStackItem;
+begin
+  Result := inherited Items[Index] as TsqlvStackItem;
+end;
+
+function TsqlvStack.GetValues(Index: string): string;
+var
+  aItem: TsqlvStackItem;
+begin
+  if Self = nil then
+    Result := ''
+  else
+  begin
+    aItem := Find(Index);
+    if aItem = nil then
+      Result := ''
+    else
+      Result := aItem.Value;
+  end;
+end;
+
+procedure TsqlvStack.SetItem(Index: Integer; const Value: TsqlvStackItem);
+begin
+  inherited Items[Index] := Value;
+end;
+
+constructor TsqlvStack.Create;
+begin
+  inherited Create(True);
+end;
+
+function TsqlvStack.Find(const Name: string): TsqlvStackItem;
+var
+  i: Integer;
+begin
+  Result := nil;
+  for i := 0 to Count - 1 do
+  begin
+    if SameText(Name, Items[i].Name) then
+    begin
+      Result := Items[i];
+      break;
+    end;
+  end;
+end;
+
+function TsqlvStack.Add(Param: TsqlvStackItem): Integer;
+begin
+  Result := inherited Add(Param);
+end;
+
+function TsqlvStack.Push(Group, Name: string; Value, Select: string): TsqlvStackItem;
+begin
+  Result := TsqlvStackItem.Create;
+  Result.Group := Group;
+  Result.Name := Name;
+  Result.Value := Value;
+  Result.Select := Select;
+  Add(Result);
+end;
+
+procedure TsqlvStack.Trim(ToCount: Integer);
+begin
+  SetCount(ToCount);
+end;
+
+procedure TsqlvStack.Pop;
+begin
+  if Count > 0 then
+    Delete(Count - 1);
+end;
+
+procedure TsqlvStack.Top;
+begin
+  if Count > 0  then
+    SetCount(1);
+end;
+
 { TsqlvNodeHistory }
 
 function TsqlvNodeHistory.GetCurrent: TsqlvNodeHistoryItem;
 begin
-  REsult := Inherited GetCurrent as TsqlvNodeHistoryItem;
+  REsult := inherited GetCurrent as TsqlvNodeHistoryItem;
 end;
 
 function TsqlvNodeHistory.CreateItem: TsqlvCustomHistoryItem;
@@ -399,6 +527,45 @@ begin
   FRecents.SaveToFile(WorkPath + 'recents.ini');
 end;
 
+procedure TsqlvEngine.Run(vStack: TsqlvStack);
+var
+  aNodes: TsqlvNodes;
+begin
+  if (vStack = nil) and (vStack.Count = 0) then
+    raise Exception.Create('Stack is empty');
+  with vStack.Current do
+  begin
+    if Node = nil then
+    begin
+      Node := Find(Group, Name);
+      if (Node = nil) then
+      begin
+        aNodes := TsqlvNodes.Create;
+        try
+          Enum(Name, aNodes, True);
+          if aNodes.Count > 0 then
+            Node := aNodes[0];
+        finally
+          aNodes.Free;
+        end;
+      end;
+    end;
+    if Node <> nil then
+      Node.Execute(Value, vStack, True);
+  end;
+end;
+
+procedure TsqlvEngine.Run;
+begin
+  Run(Stack);
+end;
+
+procedure TsqlvEngine.Run(vGroup, vName, vValue: string; vSelect: string);
+begin
+  Stack.Push(vGroup, vName, vValue, vSelect);
+  Run(Stack);
+end;
+
 procedure TsqlvEngine.SetWorkPath(const Value: string);
 begin
   if FWorkPath <> Value then
@@ -411,7 +578,7 @@ end;
 
 { TsqlvNodes }
 
-procedure TsqlvCustomNodes.Enum(Name: string; Nodes: TsqlvNodes; SessionActive:Boolean; OnlyDefaults:Boolean = False);
+procedure TsqlvCustomNodes.Enum(GroupName: string; Nodes: TsqlvNodes; SessionActive: Boolean; OnlyDefaults:Boolean = False);
 var
   i: Integer;
   aDefault: Integer;
@@ -422,7 +589,7 @@ begin
   c := 0;
   for i := 0 to Count - 1 do
   begin
-    if SameText(Items[i].Group, Name) and (not OnlyDefaults or (nsDefault in Items[i].Style)) and (SessionActive or not (nsNeedSession in Items[i].Style)) then
+    if SameText(Items[i].Group, GroupName) and (not OnlyDefaults or (nsDefault in Items[i].Style)) and (SessionActive or not (nsNeedSession in Items[i].Style)) then
     begin
       if (aDefault < 0) and (nsDefault in Items[i].Style) then
         aDefault := c;
@@ -492,17 +659,11 @@ constructor TsqlvNode.Create;
 begin
   inherited;
   FImageIndex := -1;
-  FMembers := TStringList.Create;
 end;
 
 destructor TsqlvNode.Destroy;
 begin
-  FreeAndNil(FMembers);
   inherited Destroy;
-end;
-
-procedure TsqlvNode.EnumSchema(var SchemaName:string; SchemaItems: TmncSchemaItems; const MemberName: string);
-begin
 end;
 
 {procedure TsqlvNode.Enum(Session: TsqlvSession; Strings: TStrings);
@@ -541,20 +702,39 @@ end;
 procedure TsqlvNode.EnumHeader(Header: TStringList);
 begin
   Header.Clear;
-  Header.Add(Title);
+  if Item = '' then
+    Header.Add(Title)
+  else
+    Header.Add(Item);
 end;
 
-procedure TsqlvNode.Execute(const Value: string; var Params: TmncSchemaParams);
+procedure TsqlvNode.Execute(const Value: string; vStack: TsqlvStack; FallDefault: Boolean = False);
+var
+  aNodes: TsqlvNodes;
 begin
-  DoExecute(Value, Params);
-  //FreeAndNil(Params);
+  if CanExecute then
+    DoExecute(Value, vStack)
+  else if FallDefault then
+  begin
+    //if Node.CanRunDefault then //TODO
+    aNodes := TsqlvNodes.Create; //It only contain live nodes, not freed when free this list
+    try
+      EnumDefaults(aNodes);
+{      if vValue = '' then
+        vValue := Node.Name;}//TODO
+      if aNodes.Count > 0 then
+        aNodes[0].Execute(Value, vStack);
+    finally
+      aNodes.Free;
+    end;
+  end;
 end;
 
 procedure TsqlvNode.Execute(const Value: string);
 var
-  aParams: TmncSchemaParams;
+  aParams: TsqlvStack;
 begin
-  aParams := TmncSchemaParams.Create([], []);
+  aParams := TsqlvStack.Create;
   try
     DoExecute(Value, aParams);
   finally
@@ -567,7 +747,7 @@ begin
   Result := True;
 end;
 
-procedure TsqlvNode.DoExecute(const Value: string; Params: TmncSchemaParams);
+procedure TsqlvNode.DoExecute(const Value: string; Params: TsqlvStack);
 begin
 end;
 
@@ -575,80 +755,14 @@ procedure TsqlvNode.ShowProperty;
 begin
 end;
 
-procedure TsqlvEngine.Launch(Name: string; Group, MemberName: string; vParams: TmncSchemaParams);
-var
-  aNode: TsqlvNode;
-  s: string;
-begin
-  try
-    if Group <> '' then
-      aNode := Find(Group, Name)
-    else
-      aNode := Find(Name);
-    if aNode = nil then
-    begin
-      s := Group;
-      if s <> '' then
-        s := s + '\';
-      raise Exception.Create(s + Name + ' node not found');
-    end;
-    Launch(aNode, MemberName, vParams);
-  finally
-  end;
-end;
-
-procedure TsqlvEngine.Launch(Node: TsqlvNode; MemberName: string; vParams: TmncSchemaParams);
-var
-  aNodes: TsqlvNodes;
-begin
-  if Node <> nil then
-  begin
-    if Node.CanExecute then
-      Node.Execute(MemberName, vParams)
-    else
-    begin
-      aNodes := TsqlvNodes.Create;
-      try
-        Node.EnumDefaults(aNodes);
-        if MemberName = '' then
-          MemberName := Node.Name;
-        if aNodes.Count > 0 then
-          aNodes[0].Execute(MemberName, vParams);
-      finally
-        aNodes.Free;
-      end;
-    end;
-  end;
-end;
-
-procedure TsqlvEngine.LaunchSchema(SchemaName: string; MemberName: string; vParams: TmncSchemaParams);
-var
-  aNodes: TsqlvNodes;
-  aNode: TsqlvNode;
-begin
-  aNodes := TsqlvNodes.Create;
-  try
-    aNode := Find(SchemaName);
-    if (aNode <> nil) and (aNode.CanExecute) then
-       Launch(aNode, MemberName, vParams)
-    else
-    begin
-      Enum(SchemaName, aNodes, True);
-      if aNodes.Count > 0 then
-        Launch(aNodes[0], MemberName, vParams);
-    end;
-  finally
-    aNodes.Free;
-  end;
-end;
-
 { TsqlvClass }
 
 constructor TsqlvEngine.Create;
 begin
   inherited Create(True);
-  FHistory := TsqlvNodeHistory.create;
-  FSQLHistory := TsqlvSQLHistory.create;
+  FHistory := TsqlvNodeHistory.Create;
+  FStack := TsqlvStack.Create;
+  FSQLHistory := TsqlvSQLHistory.Create;
   FSetting := TsqlvSetting.Create;
   FRecents := TStringList.Create;
   FSession := TsqlvSession.Create;
@@ -749,7 +863,7 @@ end;
 
 function TsqlvSQLHistory.GetCurrent: TsqlvSQLHistoryItem;
 begin
-  Result := GetCurrent as TsqlvSQLHistoryItem;
+  Result := inherited GetCurrent as TsqlvSQLHistoryItem;
 end;
 
 procedure TsqlvSQLHistory.Add(const Text: string; Silent: Boolean);

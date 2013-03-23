@@ -58,16 +58,12 @@ type
     property Values[Index: string]: string read GetValues; default;
   end;
 
-  TmncSchemaAncestors = class(TmncSchemaParams)
-  end;
-
   { TmncSchemaItem }
 
   TmncSchemaItem = class(TObject)
   private
     FKind: TschmKind;
     FName: string;
-    //Ancestors: ;
     FAttributes: TmncSchemaParams;
   public
     constructor Create;

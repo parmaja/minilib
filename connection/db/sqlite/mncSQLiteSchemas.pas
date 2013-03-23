@@ -228,8 +228,7 @@ begin
   end;
 end;
 
-procedure TmncSQLiteSchema.EnumFields(Schema: TmncSchemaItems; MemberName: string;
-  Options: TschmEnumOptions);
+procedure TmncSQLiteSchema.EnumFields(Schema: TmncSchemaItems; MemberName: string; Options: TschmEnumOptions);
 var
   aCMD: TmncSQLiteCommand;
   aItem: TmncSchemaItem;
