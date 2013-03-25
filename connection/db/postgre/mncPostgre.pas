@@ -5,14 +5,14 @@ unit mncPostgre;
  * @license   modifiedLGPL (modified of http://www.gnu.org/licenses/lgpl.html)
  *            See the file COPYING.MLGPL, included in this distribution,
  * @author    Zaher Dirkey <zaher at parmaja dot com>
- * @author    Belal Hamed <belalhamed at gmail dot com>  
+ * @author    Belal Hamed <belalhamed at gmail dot com>
  * @comment   Only for postgre 8.x or later
  *}
 
 {*TODO
   - Retrieving Query Results Row-By-Row
       http://www.postgresql.org/docs/9.2/static/libpq-single-row-mode.html
-} 
+}
 {$M+}
 {$H+}
 {$IFDEF FPC}
@@ -36,7 +36,9 @@ type
 
   TmpgResultFormat = (mrfText, mrfBinary);
   TmncPGConnection = class;
-
+  TmncPGCommand = class;
+  TmncPostgreFields = class;
+  
   TPGListenThread = class(TThread)
   private
     FConnection: TmncPGConnection;
@@ -154,14 +156,22 @@ type
   TmncPostgreField = class(TmncField)
   private
     FValue: Variant;
+    FFields: TmncPostgreFields;
+    function GetCommand: TmncPGCommand;
+
   protected
     function GetValue: Variant; override;
     procedure SetValue(const AValue: Variant); override;
+    property Fields: TmncPostgreFields read FFields;
+    property Command: TmncPGCommand read GetCommand;
   end;
 
   TmncPostgreFields = class(TmncFields)
+  private
+    FCommand: TmncPGCommand;
   protected
     function CreateField(vColumn: TmncColumn): TmncField; override;
+    property Command: TmncPGCommand read FCommand;
   end;
 
   TPGColumn = class(TmncColumn)
@@ -197,6 +207,8 @@ type
     FResultFormat: TmpgResultFormat;
     function GetConnection: TmncPGConnection;
     procedure FetchFields;
+    function FetchCurrentValue(vIndex: Integer): Variant; overload;
+    procedure FetchCurrentValue(vIndex: Integer; var Value: Variant); overload;
     procedure FetchValues;
     function GetSession: TmncPGSession;
     procedure SetSession(const AValue: TmncPGSession);
@@ -254,6 +266,11 @@ implementation
 uses
   Math;
 
+
+function BEtoN(Val: Integer): Integer;
+begin
+  Result := Val;
+end;
 
 function EncodeBytea(const vStr: string): string;
 begin
@@ -662,20 +679,25 @@ procedure TmncPGCommand.CreateParamValues(var Result: TArrayOfPChar);
 var
   i: Integer;
   s: string;
+  sp, dp: TmncParam;
 begin
   FreeParamValues(Result);
-  SetLength(Result, Params.Count);
-  for i := 0 to Params.Count -1 do
+  SetLength(Result, Binds.Count);
+
+  for i := 0 to Binds.Count -1 do
   begin
-    if Params.Items[i].IsNull then
+    sp := Binds.Items[i].Param;
+    dp := Params.FindParam(sp.Name);
+
+    if (dp=nil)or(dp.IsNull) then
       FreeMem(Result[i])
     else
     begin
-      case VarType(Params.Items[i].Value) of
+      case VarType(dp.Value) of
         VarDate:
-          s := FormatDateTime('yyyy-mm-dd hh:nn:ss', Params.Items[i].Value);
+          s := FormatDateTime('yyyy-mm-dd hh:nn:ss', dp.Value);
         else
-          s := Params.Items[i].Value;
+          s := dp.Value;
       end;
       GetMem(Result[i], Length(s) + 1);
       StrMove(PChar(Result[i]), Pchar(s), Length(s) + 1);
@@ -703,6 +725,7 @@ begin
   inherited CreateBy(vSession);
   //FHandle := Session.NewToken;
   FResultFormat := mrfText;
+  //FResultFormat := mrfBinary;
 end;
 
 function TmncPGCommand.CreateColumns: TmncColumns;
@@ -713,6 +736,8 @@ end;
 function TmncPGCommand.CreateFields(vColumns: TmncColumns): TmncFields;
 begin
   Result := TmncPostgreFields.Create(vColumns);
+  with TmncPostgreFields(Result) do
+    FCommand := Self; 
 end;
 
 destructor TmncPGCommand.Destroy;
@@ -751,7 +776,7 @@ begin
       else
         f := 0;
     end;
-    FStatment := PQexecPrepared(Session.DBHandle, PChar(FHandle), Params.Count, P, nil, nil, f);
+    FStatment := PQexecPrepared(Session.DBHandle, PChar(FHandle), Binds.Count, P, nil, nil, f);
     //FStatment := PQexec(Session.DBHandle, PChar(SQL.Text));
   finally
     FreeParamValues(Values);
@@ -822,27 +847,12 @@ begin
   Session.Commit;
 end;
 
-procedure TmncPGCommand.FetchFields;
-var
-  i: Integer;
-  aName: string;
-  //r: PPGresult;
+function TmncPGCommand.FetchCurrentValue(vIndex: Integer): Variant;
 begin
-  //Fields.Clear;
-  for i := 0 to FFieldsCount - 1 do
-  begin
-    aName :=  DequoteStr(PQfname(FStatment, i));
-    Columns.Add(aName, PQftype(FStatment, i), PQfsize(Statment, i));
-  end;
+  FetchCurrentValue(vIndex, Result);
 end;
 
-function BEtoN(Val: Integer): Integer;
-begin
-  Result := Val;
-end;
-
-procedure TmncPGCommand.FetchValues;
-
+procedure TmncPGCommand.FetchCurrentValue(vIndex: Integer; var Value: Variant);
     function _BRead(vSrc: PChar; vCount: Longint): Integer;
     var
       t: PChar;
@@ -877,9 +887,76 @@ var
   t: Int64;
   d: Double;
   //aType: Integer;
-  v: Variant;
   aFieldSize: Integer;
   p: PChar;
+  i: Integer;
+  c: Integer;
+  aCurrent: TmncFields;
+begin
+  if PQgetisnull(Statment, FTuple, vIndex) <> 0 then
+    Value := NULL
+  else
+  begin
+    p := PQgetvalue(FStatment, FTuple, vIndex);
+    if ResultFormat=mrfText then
+      Value := string(p)
+    else
+    begin
+      aFieldSize :=PQgetlength(Statment, FTuple, vIndex);
+      case Columns[i].PGType of
+        Oid_Bool: Value := (p^ <> #0);
+        Oid_varchar, Oid_bpchar, Oid_name: Value := string(p);
+        Oid_oid, Oid_int2: Value := _BRead(p, 2);
+        Oid_int4: Value := _BRead(p, 4);
+        Oid_int8: Value := _BRead(p, 8);
+        Oid_Money: Value := _BRead(p, 8) / 100;
+        Oid_Float4, Oid_Float8:
+        begin
+        end;
+        Oid_Date:
+        begin
+          //d := BEtoN(plongint(p)^) + 36526;
+          d := _BRead(p, aFieldSize) + 36526; //36526 = days between 31/12/1899 and 01/01/2000  = delphi, Postgre (0) date
+          Value := TDateTime(d);
+        end;
+        Oid_Time,
+        Oid_TimeStamp:
+        begin
+          t := BEtoN(pint64(p)^);
+          //Value := TDateTime(t);//todo
+          Value := t;//todo
+        end;
+        OID_NUMERIC:
+        begin
+           t := _BRead(p, 2);
+           d := Power(10, 2 * t);
+
+
+          inc(p, 8);
+          t := _DRead(p, aFieldSize - 8);
+          Value := t / d;
+        end;
+        Oid_Unknown:;
+      end;
+    end;
+  end;
+end;
+
+procedure TmncPGCommand.FetchFields;
+var
+  i: Integer;
+  aName: string;
+begin
+  Columns.Clear;
+  for i := 0 to FFieldsCount - 1 do
+  begin
+    aName :=  DequoteStr(PQfname(FStatment, i));
+    Columns.Add(aName, PQftype(FStatment, i), PQfsize(Statment, i));
+  end;
+end;
+
+procedure TmncPGCommand.FetchValues;
+var
   i: Integer;
   c: Integer;
   aCurrent: TmncFields;
@@ -889,64 +966,14 @@ begin
   begin
     aCurrent := CreateFields(Columns);
     for i := 0 to c - 1 do
-    begin
-      if PQgetisnull(Statment, FTuple, i) <> 0 then
-        aCurrent.Add(i, NULL)
-      else
-      begin
-        p := PQgetvalue(FStatment, FTuple, i);
-        if ResultFormat=mrfText then
-          v := string(p)
-        else
-        begin
-          aFieldSize :=PQgetlength(Statment, FTuple, i);
-          case Columns[i].PGType of
-            Oid_Bool: v := (p^ <> #0);
-            Oid_varchar, Oid_bpchar, Oid_name: v := string(p);
-            Oid_oid, Oid_int2: v := _BRead(p, 2);
-            Oid_int4: v := _BRead(p, 4);
-            Oid_int8: v := _BRead(p, 8);
-            Oid_Money: v := _BRead(p, 8) / 100;
-            Oid_Float4, Oid_Float8:
-            begin
-            end;
-            Oid_Date:
-            begin
-              //d := BEtoN(plongint(p)^) + 36526;
-              d := _BRead(p, aFieldSize) + 36526; //36526 = days between 31/12/1899 and 01/01/2000  = delphi, Postgre (0) date
-              v := TDateTime(d);
-            end;
-            Oid_Time,
-            Oid_TimeStamp:
-            begin
-              t := BEtoN(pint64(p)^);
-              //v := TDateTime(t);//todo
-              v := t;//todo
-            end;
-            OID_NUMERIC:
-            begin
-               t := _BRead(p, 2);
-               d := Power(10, 2 * t);
-
-
-              inc(p, 8);
-              t := _DRead(p, aFieldSize - 8);
-              v := t / d;
-            end;
-            Oid_Unknown:;
-          end;
-        end;
-
-        aCurrent.Add(i, v);
-      end;
-    end;
+      aCurrent.Add(i, FetchCurrentValue(i));
     Fields := aCurrent;
   end;
 end;
 
 function TmncPGCommand.GetActive: Boolean;
 begin
-  Result := FStatment <> nil; 
+  Result := FStatment <> nil;
 end;
 
 function TmncPGCommand.GetColumns: TPGColumns;
@@ -1001,6 +1028,11 @@ end;
 
 { TmncPostgreField }
 
+function TmncPostgreField.GetCommand: TmncPGCommand;
+begin
+  Result := Fields.Command; //note must not be nil at any way
+end;
+
 function TmncPostgreField.GetValue: Variant;
 begin
   Result := FValue;
@@ -1008,7 +1040,7 @@ end;
 
 procedure TmncPostgreField.SetValue(const AValue: Variant);
 begin
-  FValue := AValue;
+  FValue := AValue; 
 end;
 
 { TmncPostgreFields }
@@ -1016,6 +1048,8 @@ end;
 function TmncPostgreFields.CreateField(vColumn: TmncColumn): TmncField;
 begin
   Result := TmncPostgreField.Create(vColumn);
+  with TmncPostgreField(Result) do
+    FFields := Self;
 end;
 
 { TPGColumns }
