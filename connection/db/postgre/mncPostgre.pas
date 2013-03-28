@@ -889,9 +889,6 @@ var
   //aType: Integer;
   aFieldSize: Integer;
   p: PChar;
-  i: Integer;
-  c: Integer;
-  aCurrent: TmncFields;
 begin
   if PQgetisnull(Statment, FTuple, vIndex) <> 0 then
     Value := NULL
@@ -903,7 +900,7 @@ begin
     else
     begin
       aFieldSize :=PQgetlength(Statment, FTuple, vIndex);
-      case Columns[i].PGType of
+      case Columns[vIndex].PGType of
         Oid_Bool: Value := (p^ <> #0);
         Oid_varchar, Oid_bpchar, Oid_name: Value := string(p);
         Oid_oid, Oid_int2: Value := _BRead(p, 2);
