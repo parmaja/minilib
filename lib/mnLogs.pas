@@ -10,7 +10,7 @@ unit mnLogs;
 interface
 
 uses
-  Classes, Controls, SysUtils, contnrs, LCLProc;
+  Classes, SysUtils, contnrs;
 
 type
   ILog = interface(IInterface)
@@ -88,7 +88,7 @@ Begin
     if Sender is Exception then
     begin
       Log.Write('Exception: ' + Exception(Sender).Message);
-      Log.Write(GetStackTrace(False));
+      //Log.Write(GetStackTrace(False));
     end;
     //Dump;
   end;

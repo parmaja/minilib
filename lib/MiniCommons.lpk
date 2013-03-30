@@ -28,7 +28,7 @@
     <Description Value="MiniLib common units"/>
     <License Value="ModifiedLGPL"/>
     <Version Major="1" Release="1"/>
-    <Files Count="7">
+    <Files Count="13">
       <Item1>
         <Filename Value="minibidi.inc"/>
         <Type Value="Include"/>
@@ -51,12 +51,36 @@
       </Item5>
       <Item6>
         <Filename Value="mnBase64.pas"/>
-        <UnitName Value="mnXMLBase64"/>
+        <UnitName Value="mnBase64"/>
       </Item6>
       <Item7>
         <Filename Value="minibidi.pas"/>
         <UnitName Value="minibidi"/>
       </Item7>
+      <Item8>
+        <Filename Value="MsgBox.pp"/>
+        <UnitName Value="MsgBox"/>
+      </Item8>
+      <Item9>
+        <Filename Value="HejriDates.pas"/>
+        <UnitName Value="HejriDates"/>
+      </Item9>
+      <Item10>
+        <Filename Value="HejriUtils.pas"/>
+        <UnitName Value="HejriUtils"/>
+      </Item10>
+      <Item11>
+        <Filename Value="mnDrivers.pas"/>
+        <UnitName Value="mnDrivers"/>
+      </Item11>
+      <Item12>
+        <Filename Value="mnLogs.pas"/>
+        <UnitName Value="mnLogs"/>
+      </Item12>
+      <Item13>
+        <Filename Value="UniDates.pas"/>
+        <UnitName Value="UniDates"/>
+      </Item13>
     </Files>
     <Type Value="RunAndDesignTime"/>
     <RequiredPkgs Count="1">

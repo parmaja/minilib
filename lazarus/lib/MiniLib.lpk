@@ -16,7 +16,7 @@
       </Other>
     </CompilerOptions>
     <Description Value="MiniLib FreePascal/Lazarus library"/>
-    <Files Count="7">
+    <Files Count="10">
       <Item1>
         <Filename Value="HTMLProcessor.pas"/>
         <UnitName Value="HTMLProcessor"/>
@@ -45,6 +45,18 @@
         <Filename Value="SynHighlighterSQLite.pas"/>
         <UnitName Value="SynHighlighterSQLite"/>
       </Item7>
+      <Item8>
+        <Filename Value="GUIMsgBox.pp"/>
+        <UnitName Value="GUIMsgBox"/>
+      </Item8>
+      <Item9>
+        <Filename Value="PHPKeywords.inc"/>
+        <Type Value="Include"/>
+      </Item9>
+      <Item10>
+        <Filename Value="SynHighlighterFirebird.pas"/>
+        <UnitName Value="SynHighlighterFirebird"/>
+      </Item10>
     </Files>
     <Type Value="RunAndDesignTime"/>
     <RequiredPkgs Count="4">

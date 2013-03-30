@@ -2,20 +2,21 @@
   This source is only used to compile and install the package.
  }
 
-unit MiniLib; 
+unit MiniLib;
 
 interface
 
 uses
   HTMLProcessor, PHPProcessor, PHPUtils, SynHighlighterApache, 
-  SynHighlighterXHTML, SynHighlighterSQLite, LazarusPackageIntf;
+  SynHighlighterXHTML, SynHighlighterSQLite, GUIMsgBox, 
+  SynHighlighterFirebird, LazarusPackageIntf;
 
 implementation
 
-procedure Register; 
+procedure Register;
 begin
-end; 
+end;
 
 initialization
-  RegisterPackage('MiniLib', @Register); 
+  RegisterPackage('MiniLib', @Register);
 end.
