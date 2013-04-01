@@ -39,6 +39,19 @@ type
     function CreateCell(vRow: TmnrRow): TmnrReportCell; override;
   end;
 
+  TmnrDataReportCell = class(TmnrTextReportCell)
+  private
+    FData: Integer;
+  protected
+    function GetAsData: Integer; override;
+    procedure SetAsData(const Value: Integer); override;
+  end;
+
+  TmnrDataLayout = class(TmnrLayout)
+  protected
+    function CreateCell(vRow: TmnrRow): TmnrReportCell; override;
+  end;
+
   TmnrIntegerReportCell = class(TmnrReportCell)
   private
     FValue: Integer;
@@ -163,6 +176,7 @@ type
     function GetAsString: string; override;
     function GetAsVariant: Variant; override;
     function GetIsNull: Boolean; override;
+
 
     procedure SetAsBoolean(const Value: Boolean); override;
     procedure SetAsCurrency(const Value: Currency); override;
@@ -809,6 +823,25 @@ end;
 procedure TmnrTimeReportCell.SetAsVariant(const Value: Variant);
 begin
   FValue := Value;
+end;
+
+{ TmnrDataReportCell }
+
+function TmnrDataReportCell.GetAsData: Integer;
+begin
+  Result := FData;
+end;
+
+procedure TmnrDataReportCell.SetAsData(const Value: Integer);
+begin
+  FData := Value;
+end;
+
+{ TmnrDataLayout }
+
+function TmnrDataLayout.CreateCell(vRow: TmnrRow): TmnrReportCell;
+begin
+  Result := TmnrDataReportCell.Create(vRow);
 end;
 
 initialization

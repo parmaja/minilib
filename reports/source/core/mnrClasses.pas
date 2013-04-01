@@ -32,6 +32,7 @@ const
   ID_SECTION_DETAILS = ID_SECTION_BASE + 7;
   ID_SECTION_FOOTERDETAILS = ID_SECTION_BASE + 8;
   ID_SECTION_LAST = ID_SECTION_BASE + 9;
+  DEFAULT_CELL_WIDTH = 1000;
 
 type
   TmnrSection = class;
@@ -100,6 +101,7 @@ type
     function GetAsString: string; override;
     function GetAsVariant: Variant; override;
     function GetIsNull: Boolean; override;
+    function GetAsData: Integer; override;
 
     procedure SetAsBoolean(const Value: Boolean); override;
     procedure SetAsCurrency(const Value: Currency); override;
@@ -108,6 +110,7 @@ type
     procedure SetAsInteger(const Value: Longint); override;
     procedure SetAsString(const Value: string); override;
     procedure SetAsVariant(const Value: Variant); override;
+    procedure SetAsData(const Value: Integer); override;
   end;
 
   TmnrRow = class(TmnrRowNode)
@@ -164,6 +167,7 @@ type
     function CreateCell(vRow: TmnrRow): TmnrReportCell; virtual;
     procedure ScaleCell(vCell: TmnrCell); virtual;
     function GetTotal: Double; virtual;
+    function DoCreateDesignCell(vRow: TmnrDesignRow): TmnrDesignCell; virtual;
   public
     Info: TmnrLayoutInfo;
     property Next: TmnrLayout read GetNext;
@@ -179,6 +183,7 @@ type
     property Reference: TmnrReference read FReference;
     property DesignerCell: TmnrDesignCell read FDesignerCell write FDesignerCell;
     property Total: Double read GetTotal;
+    function CreateDesignCell(vRow: TmnrDesignRow): TmnrDesignCell;
   end;
 
   TmnrLayouts = class(TmnrLinkNodes)
@@ -208,13 +213,12 @@ type
     procedure SetWidth(const Value: Integer);
     procedure SetLayout(const Value: TmnrLayout);
   public
-    constructor Create(vNodes: TmnrNode);
-    constructor AutoCreate(vNodes: TmnrNodes; const vName: string; vWidth: Integer = 100); virtual;
+    constructor Create(vNodes: TmnrNodes);
     destructor Destroy; override;
 
     property Next: TmnrDesignCell read GetNext;
     property Prior: TmnrDesignCell read GetPrior;
-    property Width: Integer read FWidth write SetWidth default 100;
+    property Width: Integer read FWidth write SetWidth default DEFAULT_CELL_WIDTH;
     property Layout: TmnrLayout read FLayout write SetLayout;
     property Row: TmnrDesignRow read GetRow;
     property Section: TmnrSection read GetSection;
@@ -231,6 +235,7 @@ type
     function GetReport: TmnrCustomReport;
     function GetFirst: TmnrDesignCell;
     function GetLast: TmnrDesignCell;
+    function GetByIndex(vIndex: Integer): TmnrDesignCell;
   protected
   public
     property Next: TmnrDesignRow read GetNext;
@@ -243,6 +248,8 @@ type
     function Add: TmnrDesignCell;
     property First: TmnrDesignCell read GetFirst;
     property Last: TmnrDesignCell read GetLast;
+    property ByIndex[vIndex: Integer]: TmnrDesignCell read GetByIndex;
+
   end;
 
   TmnrDesignRows = class(TmnrRowNodes)
@@ -250,12 +257,14 @@ type
     FSection: TmnrSection;
     function GetFirst: TmnrDesignRow;
     function GetLast: TmnrDesignRow;
+    function GetByIndex(vIndex: Integer): TmnrDesignRow;
   public
     constructor Create(vSection: TmnrSection);
     function Add: TmnrDesignRow;
     property First: TmnrDesignRow read GetFirst;
     property Last: TmnrDesignRow read GetLast;
     property Section: TmnrSection read FSection;
+    property ByIndex[vIndex: Integer]: TmnrDesignRow read GetByIndex;
   end;
 
   TmnrRowReference = class(TmnrLinkNode)
@@ -422,6 +431,10 @@ type
     property Field[Index: string]: TmnField read GetField; default;
   end;
 
+  ImnrReportDesigner = interface
+    procedure DesignReport(vClass: TmnrCustomReportClass);
+  end;
+
   TmnrCustomReport = class(TObject)
   private
     FCanceled: Boolean;
@@ -478,6 +491,8 @@ type
 
     procedure ExportCSV(const vFile: TFileName); overload; //test purpose only
     procedure ExportCSV(const vStream: TStream); overload; //test purpose only
+    class function CreateReportDesgin: ImnrReportDesigner; virtual;
+    class procedure Desgin;
   end;
 
   TmnrReportClass = class of TmnrCustomReport;
@@ -517,9 +532,6 @@ type
 var
   DefaultCellClass: TmnrReportCellClass = nil; //test purpose
 
-procedure SetReportDesignerClass(vClass: TCustomReportDesignerClass);
-procedure DesignReport(vClass: TmnrCustomReportClass);
-
 function NewParams: TmnrParams; overload;
 //function NewParams(Strings: TStrings): TmnrParams; overload;
 //function NewParams(vText: string): TmnrParams; overload;
@@ -528,20 +540,7 @@ function NewParams(Keys: array of string; Values: array of Variant): TmnrParams;
 implementation
 
 uses
-  mnrNodes;
-
-var
-  ReportDesignerClass: TCustomReportDesignerClass = TCustomReportDesigner;
-
-procedure SetReportDesignerClass(vClass: TCustomReportDesignerClass);
-begin
-  ReportDesignerClass := vClass;
-end;
-
-procedure DesignReport(vClass: TmnrCustomReportClass);
-begin
-  ReportDesignerClass.AutoCreate(vClass);
-end;
+  mnrNodes, TypInfo;
 
 function NewParams: TmnrParams;
 begin
@@ -629,8 +628,27 @@ begin
   Result := TmnrProfiler.Create;
 end;
 
+class function TmnrCustomReport.CreateReportDesgin: ImnrReportDesigner;
+begin
+  Result := nil;
+end;
+
 procedure TmnrCustomReport.CreateSections(vSections: TmnrSections);
 begin
+end;
+
+class procedure TmnrCustomReport.Desgin;
+var
+  aDesigner: ImnrReportDesigner;
+  aClass: TmnrCustomReportClass;
+begin
+  aClass := Self;
+  if (aClass <> nil) then
+  begin
+    aDesigner := CreateReportDesgin;
+    if aDesigner<>nil then
+      aDesigner.DesignReport(aClass);
+  end;
 end;
 
 procedure TmnrCustomReport.Design;
@@ -1270,6 +1288,18 @@ begin
   Result := nil;
 end;
 
+function TmnrLayout.CreateDesignCell(vRow: TmnrDesignRow): TmnrDesignCell;
+begin
+  Result := DoCreateDesignCell(vRow);
+  Result.Name := Name;
+  Result.Layout := Self;  
+end;
+
+function TmnrLayout.DoCreateDesignCell(vRow: TmnrDesignRow): TmnrDesignCell;
+begin
+  Result := TmnrDesignCell.Create(vRow);
+end;
+
 procedure TmnrLayout.DoRequest(vCell: TmnrCell);
 begin
   if Assigned(FOnRequest) then
@@ -1332,6 +1362,11 @@ begin
   Result := 0;
 end;
 
+function TmnrReportCell.GetAsData: Integer;
+begin
+  Result := AsInteger;
+end;
+
 function TmnrReportCell.GetAsDateTime: TDateTime;
 begin
   Result := AsCurrency;
@@ -1370,6 +1405,11 @@ end;
 procedure TmnrReportCell.SetAsCurrency(const Value: Currency);
 begin
 
+end;
+
+procedure TmnrReportCell.SetAsData(const Value: Integer);
+begin
+  AsInteger := Value;
 end;
 
 procedure TmnrReportCell.SetAsDateTime(const Value: TDateTime);
@@ -1666,17 +1706,10 @@ end;
 
 { TmnrDesignCell }
 
-constructor TmnrDesignCell.AutoCreate(vNodes: TmnrNodes; const vName: string; vWidth: Integer);
+constructor TmnrDesignCell.Create(vNodes: TmnrNodes);
 begin
-  Create(vNodes);
-  Name := vName;
-  Width := vWidth;
-end;
-
-constructor TmnrDesignCell.Create(vNodes: TmnrNode);
-begin
-  inherited;
-  FWidth := 100;
+  inherited Create(vNodes);
+  FWidth := DEFAULT_CELL_WIDTH;
 end;
 
 destructor TmnrDesignCell.Destroy;
@@ -1735,7 +1768,7 @@ end;
 procedure TmnrDesignCell.SetWidth(const Value: Integer);
 begin
   if Value < 0 then
-    FWidth := 100
+    FWidth := DEFAULT_CELL_WIDTH
   else
     FWidth := Value;
 end;
@@ -1745,6 +1778,11 @@ end;
 function TmnrDesignRow.Add: TmnrDesignCell;
 begin
   Result := TmnrDesignCell.Create(Self);
+end;
+
+function TmnrDesignRow.GetByIndex(vIndex: Integer): TmnrDesignCell;
+begin
+  Result := TmnrDesignCell(inherited GetByIndex(vIndex));
 end;
 
 function TmnrDesignRow.GetDesignRows: TmnrDesignRows;
@@ -1806,6 +1844,11 @@ constructor TmnrDesignRows.Create(vSection: TmnrSection);
 begin
   inherited Create;
   FSection := vSection;
+end;
+
+function TmnrDesignRows.GetByIndex(vIndex: Integer): TmnrDesignRow;
+begin
+  Result := TmnrDesignRow(inherited GetByIndex(vIndex));
 end;
 
 function TmnrDesignRows.GetFirst: TmnrDesignRow;
