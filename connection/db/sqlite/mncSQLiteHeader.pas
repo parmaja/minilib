@@ -12,12 +12,14 @@ unit mncSQLiteHeader;
  *  This file ported from FPC sqlite3.inc, just to be compatiple in both Delphi and FPC
  *}
 {
+  SQqlite Version x.x.x //i forget it :P
+
   TODO:
   * Improve the header to reach last sqlite version.
 }
 
 {$IFDEF fpc}
-{$MODE Delphi}
+{$MODE DELPHI}
 {$ELSE}
 {$DEFINE WINDOWS}
 {$ENDIF}
@@ -45,7 +47,7 @@ type
 {$endif}
 
 const
-{$IFDEF MSWINDOWS}
+{$IFDEF WINDOWS}
   Sqlite3Lib = 'sqlite3.dll';
 {$ELSE}
   Sqlite3Lib = 'libsqlite3.'+sharedsuffix;
@@ -180,7 +182,7 @@ type
   sqlite3_create_collation_func = function(_para1: pointer; _para2: longint; _para3: pointer; _para4: longint; _para5: pointer): longint; cdecl;
   sqlite3_collation_needed_func = procedure(_para1: pointer; _para2: Psqlite3; eTextRep: longint; _para4: Pchar); cdecl;
 
-{$IFNDEF win32}
+{$IFNDEF WINDOWS}
 var
   //This is not working under windows. Any clues?
   sqlite3_temp_directory: Pchar; cvar; external;

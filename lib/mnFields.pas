@@ -9,6 +9,7 @@ unit mnFields;
 {$MODE delphi}{$H+}
 {.$INTERFACES CORBA}
 {$ELSE}
+{$DEFINE WINDOWS}
 {$M+}
 {$ENDIF}
 
@@ -145,6 +146,7 @@ type
     }
   public
     constructor Create;
+    procedure Assign(vField: TmnCustomField); virtual;
     procedure Clear; virtual;//make value null
     procedure Empty; virtual;//make value empty
   end;
@@ -170,6 +172,8 @@ type
   protected
     function GetValue: Variant; override;
     procedure SetValue(const AValue: Variant); override;
+    function GetAsString: string; override;
+    procedure SetAsString(const AValue: string); override;
   public
   published
     property Value;
@@ -198,18 +202,20 @@ type
 
   TmnFields = class(TmnCustomFields, IFields)
   private
-    function _AddRef: Integer; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
-    function _Release: Integer; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+    function _AddRef: Integer; {$ifdef WINDOWS}stdcall{$else}cdecl{$endif};
+    function _Release: Integer; {$ifdef WINDOWS}stdcall{$else}cdecl{$endif};
   protected
+    function CreateField: TmnField; virtual;
     procedure SetValues(Index: string; const AValue: Variant);
     function GetValues(Index: string): Variant;
     function Find(vName: string): TmnField; virtual;
   public
-    function QueryInterface({$ifdef FPC}constref{$else}const{$endif} iid : TGuid; out Obj):HResult; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+    function QueryInterface({$ifdef FPC}constref{$else}const{$endif} iid : TGuid; out Obj):HResult; {$ifdef WINDOWS}stdcall{$else}cdecl{$endif};
     procedure LoadFromStream(Stream: TStream); virtual;
     procedure SaveToStream(Stream: TStream); virtual;
     procedure LoadFromFile(const FileName: string);
     procedure SaveToFile(const FileName: string);
+    function Add(AName, AValue: string): TmnField; overload;
     function Add(AField: TmnField): Integer; overload;
     function ByName(vName: string): TmnField;
     function IsExists(vName: string): Boolean;
@@ -556,6 +562,11 @@ begin
   inherited Create;
 end;
 
+procedure TmnCustomField.Assign(vField: TmnCustomField);
+begin
+  Value := vField.Value;
+end;
+
 procedure TmnCustomField.SaveToStream(Stream: TStream);
 begin
   raise Exception.Create('Not implemented yet');
@@ -735,7 +746,8 @@ begin
   raise Exception.Create('Not implemented yet');
 end;
 
-function TmnFields.QueryInterface({$ifdef FPC}constref{$else}const{$endif} IID: TGUID; out Obj): HResult;
+function TmnFields.QueryInterface({$ifdef FPC}constref{$else}const{$endif} iid : TGuid; out Obj): HResult;
+  stdcall;
 begin
   if GetInterface(IID, Obj) then
     Result := 0
@@ -755,6 +767,14 @@ begin
   end;
 end;
 
+function TmnFields.Add(AName, AValue: string): TmnField;
+begin
+  Result := TmnField.Create;
+  Result.FValue := AValue;
+  Result.FName := AName;
+  Add(Result);
+end;
+
 procedure TmnFields.SaveToStream(Stream: TStream);
 begin
   raise Exception.Create('Not implemented yet');
@@ -767,21 +787,26 @@ begin
   F := Find(Index);
   if F = nil then
   begin
-    F := TmnField.Create;
+    F := CreateField;
     F.Name := Index;
     Add(F);
   end;
   F.Value := AValue;
 end;
 
-function TmnFields._AddRef: Integer;
+function TmnFields._AddRef: Integer; stdcall;
 begin
   Result := 0;
 end;
 
-function TmnFields._Release: Integer;
+function TmnFields._Release: Integer; stdcall;
 begin
   Result := 0;
+end;
+
+function TmnFields.CreateField: TmnField;
+begin
+  Result := TmnField.Create;
 end;
 
 procedure TmnFields.Clean;
@@ -838,5 +863,15 @@ begin
     raise Exception.Create('Can not assign value');
 end;
 
+function TmnField.GetAsString: string;
+begin
+  Result := FValue;
+end;
+
+procedure TmnField.SetAsString(const AValue: string);
+begin
+  FValue := AValue;
+end;
+
 end.
-
+

@@ -11,6 +11,8 @@ unit mnXMLRttiProfile;
 {$H+}
 {$IFDEF FPC}
 {$MODE delphi}
+{$ELSE}
+{$DEFINE WINDOWS}
 {$ENDIF}
 
 interface
@@ -39,15 +41,15 @@ type
     procedure Saving; virtual;
     procedure Saved(Failed: Boolean); virtual;
     procedure LoadDefault; virtual;
-    function _AddRef: Integer; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
-    function _Release: Integer; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+    function _AddRef: Integer; {$ifdef WINDOWS}stdcall{$else}cdecl{$endif};
+    function _Release: Integer; {$ifdef WINDOWS}stdcall{$else}cdecl{$endif};
     {$ifdef FPC}
     procedure RttiCreateObject(var vObject: TObject; vInstance: TObject; vObjectClass:TClass; const vClassName, vName: string); virtual;
     {$endif}
   public
     constructor Create;
     procedure Clear; virtual;
-    function QueryInterface({$ifdef FPC}constref{$else}const{$endif} IID: TGUID; out Obj): HResult; virtual; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+    function QueryInterface({$ifdef FPC}constref{$else}const{$endif} IID: TGUID; out Obj): HResult; virtual; {$ifdef WINDOWS}stdcall{$else}cdecl{$endif};
     procedure LoadFromStream(Stream: TStream); virtual;
     procedure SaveToStream(Stream: TStream); virtual;
     procedure LoadFromFile(FileName: string);
@@ -648,4 +650,4 @@ begin
 end;
 
 end.
-
+

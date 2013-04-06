@@ -39,10 +39,17 @@ function SubStr(const Str: String; vSeperator: Char; vFromIndex, vToIndex: Integ
 function PeriodToString(vPeriod: Double; WithSeconds:Boolean): string;
 function DequoteStr(Str: string; QuoteChar: string): string; overload;
 function DequoteStr(Str: string): string; overload; //deqoute use both of ' and "
-function LeadLeft(const vStr: string; Count: Integer; vChar: Char): string; overload;
-function LeadRight(const vStr: string; Count: integer; vChar: Char): string; overload;
-function LeadLeft(const I: Integer; Count: Integer; vChar: Char): string; overload;
-function LeadRight(const I: Integer; Count: integer; vChar: Char): string; overload;
+
+type
+  //alsCut = if the string > count we cut it as count or keep the string
+  TAlignStrOptions = set of (alsLeft, alsRight, alsCut); {TODO left+right=center TODO use righttoleft}
+
+function AlignStr(const S: string; Count: Integer; Options: TAlignStrOptions = [alsLeft]; vChar: Char = ' '): string; overload;
+
+function LeadLeft(const vStr: string; Count: Integer; vChar: Char): string; overload; deprecated;
+function LeadRight(const vStr: string; Count: integer; vChar: Char): string; overload; deprecated;
+function LeadLeft(const I: Integer; Count: Integer; vChar: Char): string; overload; deprecated;
+function LeadRight(const I: Integer; Count: integer; vChar: Char): string; overload; deprecated;
 
 {
   Break string to Strings list items at #10 or #13 or #13#10 
@@ -151,6 +158,29 @@ begin
     else
       Result := Str;
   end;
+end;
+
+function AlignStr(const S: string; Count: Integer; Options: TAlignStrOptions; vChar: Char): string;
+var
+  l: integer;
+begin
+  l := Length(S);
+  if l >= Count then
+  begin
+    if alsCut in Options then
+      Result := LeftStr(S, Count)
+    else
+    begin
+      Result := S;
+      exit;//or cut
+    end;
+  end;
+  if (alsLeft in Options) and (alsRight in Options) then
+    Result := StringOfChar(vChar, Count div 2) + S + StringOfChar(vChar, Count - (Count div 2) - l) //the rest if div used in right
+  else if alsLeft in Options then
+    Result := S + StringOfChar(vChar, Count  - l)
+ else if alsRight in Options then
+    Result := StringOfChar(vChar, Count  - l) + S
 end;
 
 function LeadLeft(const vStr: string; Count: Integer; vChar: Char): string;
