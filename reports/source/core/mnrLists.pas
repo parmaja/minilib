@@ -64,6 +64,9 @@ type
     procedure IncCount(Value: Integer); virtual;
     procedure DecCount(Value: Integer); virtual;
     property Index: Integer read GetIndex;
+
+    procedure MoveAfter(vNode: TmnrNode);
+    procedure MoveBefore(vNode: TmnrNode);
   end;
 
   TmnrNodes = class(TmnrNode)
@@ -188,6 +191,9 @@ type
   protected
     function GetFirst: TmnrRowNode;
     function GetLast: TmnrRowNode;
+    procedure Link(vNode: TmnrNode); override;
+    procedure UnLink(vNode: TmnrNode); override;
+
   public
     function Add: TmnrRowNode;
     property First: TmnrRowNode read GetFirst;
@@ -338,6 +344,41 @@ begin
     FLast := vNode;
   end;
   IncCount(vNode.Count);
+end;
+
+procedure TmnrNode.MoveAfter(vNode: TmnrNode);
+begin
+  if vNode.Nodes=Nodes then
+  begin
+    if Nodes.First=Self then Nodes.First := Next;
+    if Nodes.Last=Self then Nodes.Last := Prior;
+    if Prior<>nil then Prior.Next := Next;
+    if Next<>nil then Next.Prior := Prior;
+
+    if vNode.Next<>nil then vNode.Next.Prior := Self;
+    Next := vNode.Next;
+    Prior := vNode;
+    vNode.Next := Self;
+
+    if Nodes.Last=vNode then Nodes.Last := Self;
+  end;
+end;
+
+procedure TmnrNode.MoveBefore(vNode: TmnrNode);
+begin
+  if vNode.Nodes=Nodes then
+  begin
+    if Nodes.First=Self then Nodes.First := Next;
+    if Nodes.Last=Self then Nodes.Last := Prior;
+    if Prior<>nil then Prior.Next := Next;
+    if Next<>nil then Next.Prior := Prior;
+
+    if vNode.Prior<>nil then vNode.Prior.Next := Self;
+    Prior := vNode.Prior;
+    Next := vNode;
+    vNode.Prior := Self;
+    if Nodes.First=vNode then Nodes.First := Self;
+  end;
 end;
 
 procedure TmnrNode.SetFirst(const Value: TmnrNode);
@@ -539,6 +580,18 @@ end;
 function TmnrRowNodes.GetLast: TmnrRowNode;
 begin
   Result := TmnrRowNode(inherited GetLast);
+end;
+
+procedure TmnrRowNodes.Link(vNode: TmnrNode);
+begin
+  inherited;
+  Inc(FCount, 1);
+end;
+
+procedure TmnrRowNodes.UnLink(vNode: TmnrNode);
+begin
+  inherited;
+  Dec(FCount, 1);
 end;
 
 { TmnrIndex }

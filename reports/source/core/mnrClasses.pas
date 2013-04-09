@@ -50,11 +50,12 @@ type
   TmnrDesignRows = class;
   TmnrProfiler = class;
 
-  TmnrReportCellClass = class of TmnrReportCell;
+  TmnrCellClass = class of TmnrCell;
   TmnrLayoutClass = class of TmnrLayout;
   TmnrCustomReportClass = class of TmnrCustomReport;
   TCustomReportDesignerClass = class of TCustomReportDesigner;
   TmnrProfilerClass = class of TmnrProfiler;
+  TmnrDesignCellClass = class of TmnrDesignCell;
 
   TmnrRowArray = array of TmnrRow;
 
@@ -74,24 +75,7 @@ type
   TOnRequest = procedure(vCell: TmnrCell) of object;
   TOnFetch = procedure(var vParams: TmnrFetch) of object;
 
-  TmnrCell = class(TmnrValueNode)
-  private
-    FReference: TmnrReference;
-    FLayout: TmnrLayout;
-    function GetNext: TmnrCell;
-    function GetPrior: TmnrCell;
-    function GetRow: TmnrRow;
-  protected
-    function GetIsNull: Boolean; virtual; abstract;
-  public
-    property Layout: TmnrLayout read FLayout;
-    property Row: TmnrRow read GetRow;
-    property Next: TmnrCell read GetNext;
-    property Prior: TmnrCell read GetPrior;
-    property Reference: TmnrReference read FReference;
-  end;
-
-  TmnrReportCell = class(TmnrCell)
+  TmnrBaseCell = class(TmnrValueNode)
   protected
     function GetAsBoolean: Boolean; override;
     function GetAsCurrency: Currency; override;
@@ -100,7 +84,6 @@ type
     function GetAsInteger: Longint; override;
     function GetAsString: string; override;
     function GetAsVariant: Variant; override;
-    function GetIsNull: Boolean; override;
     function GetAsData: Integer; override;
 
     procedure SetAsBoolean(const Value: Boolean); override;
@@ -111,6 +94,25 @@ type
     procedure SetAsString(const Value: string); override;
     procedure SetAsVariant(const Value: Variant); override;
     procedure SetAsData(const Value: Integer); override;
+  public
+    function DisplayText: string; virtual;
+  end;
+
+  TmnrCell = class(TmnrBaseCell)
+  private
+    FReference: TmnrReference;
+    FLayout: TmnrLayout;
+    function GetNext: TmnrCell;
+    function GetPrior: TmnrCell;
+    function GetRow: TmnrRow;
+  protected
+    function GetIsNull: Boolean; virtual;
+  public
+    property Layout: TmnrLayout read FLayout;
+    property Row: TmnrRow read GetRow;
+    property Next: TmnrCell read GetNext;
+    property Prior: TmnrCell read GetPrior;
+    property Reference: TmnrReference read FReference;
   end;
 
   TmnrRow = class(TmnrRowNode)
@@ -122,17 +124,17 @@ type
     function GetPrior: TmnrRow;
     procedure SetReferencesRow(const Value: TmnrReferencesRow);
   protected
-    function GetFirst: TmnrReportCell;
-    function GetLast: TmnrReportCell;
+    function GetFirst: TmnrCell;
+    function GetLast: TmnrCell;
   public
     function GetCellByIndex(I: Integer): TmnrCell;
     property Next: TmnrRow read GetNext;
     property Prior: TmnrRow read GetPrior;
     property ReferencesRow: TmnrReferencesRow read FReferencesRow write SetReferencesRow;
 
-    function Add: TmnrReportCell;
-    property First: TmnrReportCell read GetFirst;
-    property Last: TmnrReportCell read GetLast;
+    function Add: TmnrCell;
+    property First: TmnrCell read GetFirst;
+    property Last: TmnrCell read GetLast;
 
     property ID: Int64 read FID write FID;
     property Number: Integer read FNumber write FNumber;
@@ -155,7 +157,7 @@ type
     ExcludeSections: TmnrSectionClassIDs;
   end;
 
-  TmnrLayout = class(TmnrLinkNode)
+  TmnrLayout = class(TmnrBaseCell)
   private
     FOnRequest: TOnRequest;
     FReference: TmnrReference;
@@ -164,12 +166,13 @@ type
     function GetPrior: TmnrLayout;
   protected
     procedure DoRequest(vCell: TmnrCell); virtual;
-    function CreateCell(vRow: TmnrRow): TmnrReportCell; virtual;
+    function CreateCell(vRow: TmnrRow): TmnrCell; virtual;
     procedure ScaleCell(vCell: TmnrCell); virtual;
     function GetTotal: Double; virtual;
     function DoCreateDesignCell(vRow: TmnrDesignRow): TmnrDesignCell; virtual;
   public
     Info: TmnrLayoutInfo;
+    function DisplayText: string; override;
     property Next: TmnrLayout read GetNext;
     property Prior: TmnrLayout read GetPrior;
 
@@ -188,15 +191,42 @@ type
 
   TmnrLayouts = class(TmnrLinkNodes)
   private
+    FName: string;
     function GetFirst: TmnrLayout;
     function GetLast: TmnrLayout;
+    procedure SetName(const Value: string);
+    function GetNext: TmnrLayouts;
+    function GetPrior: TmnrLayouts;
   public
     function Add: TmnrLayout;
     property First: TmnrLayout read GetFirst;
     property Last: TmnrLayout read GetLast;
+    property Next: TmnrLayouts read GetNext;
+    property Prior: TmnrLayouts read GetPrior;
+
     procedure CreateLayout(vClass: TmnrLayoutClass; const vName: string; const vTitle: string; vIncludeSections: TmnrSectionClassIDs = []; vExcludeSections: TmnrSectionClassIDs = []); overload;
     procedure CreateLayout(vClass: TmnrLayoutClass; const vInfo: TmnrLayoutInfo); overload;
     function Find(const vName: string): TmnrLayout;
+    property Name: string read FName write SetName;
+  end;
+
+  TmnrGroups = class(TmnrLinkNodes)
+  private
+    FReport: TmnrCustomReport;
+    function GetFirst: TmnrLayouts;
+    function GetLast: TmnrLayouts;
+  public
+    constructor Create(vReport: TmnrCustomReport);
+    function Add: TmnrLayouts;
+    property First: TmnrLayouts read GetFirst;
+    property Last: TmnrLayouts read GetLast;
+    function Find(const vName: string): TmnrLayouts;
+    function FindLayout(const vName: string): TmnrLayout;
+    property Report: TmnrCustomReport read FReport;
+
+    procedure CreateLayout(const vGroup: string; vClass: TmnrLayoutClass; const vName: string; const vTitle: string; vIncludeSections: TmnrSectionClassIDs = []; vExcludeSections: TmnrSectionClassIDs = []); overload;
+    procedure CreateLayout(const vGroup: string; vClass: TmnrLayoutClass; const vInfo: TmnrLayoutInfo); overload;
+
   end;
 
   TmnrDesignCell = class(TmnrLinkNode)
@@ -204,6 +234,7 @@ type
     FWidth: Integer;
     FLayout: TmnrLayout;
     FName: string;
+  protected
     function GetNext: TmnrDesignCell;
     function GetPrior: TmnrDesignCell;
     function GetRow: TmnrDesignRow;
@@ -218,12 +249,13 @@ type
 
     property Next: TmnrDesignCell read GetNext;
     property Prior: TmnrDesignCell read GetPrior;
-    property Width: Integer read FWidth write SetWidth default DEFAULT_CELL_WIDTH;
     property Layout: TmnrLayout read FLayout write SetLayout;
     property Row: TmnrDesignRow read GetRow;
     property Section: TmnrSection read GetSection;
     property Report: TmnrCustomReport read GetReport;
+  published
     property Name: string read FName write SetName;
+    property Width: Integer read FWidth write SetWidth default DEFAULT_CELL_WIDTH;
   end;
 
   TmnrDesignRow = class(TmnrRowNode)
@@ -255,15 +287,17 @@ type
   TmnrDesignRows = class(TmnrRowNodes)
   private
     FSection: TmnrSection;
+  protected
     function GetFirst: TmnrDesignRow;
     function GetLast: TmnrDesignRow;
     function GetByIndex(vIndex: Integer): TmnrDesignRow;
+    function GetSection: TmnrSection;
   public
     constructor Create(vSection: TmnrSection);
     function Add: TmnrDesignRow;
     property First: TmnrDesignRow read GetFirst;
     property Last: TmnrDesignRow read GetLast;
-    property Section: TmnrSection read FSection;
+    property Section: TmnrSection read GetSection;
     property ByIndex[vIndex: Integer]: TmnrDesignRow read GetByIndex;
   end;
 
@@ -350,10 +384,14 @@ type
     function DoFetch(var vParams: TmnrFetch): TmnrAcceptMode; virtual;
     procedure DoAppendTotals(vTotalSection: TmnrSection);
     procedure DoAppendSummary(vSummarySection: TmnrSection);
+    function DoCreateDesignRows: TmnrDesignRows; virtual;
+    function GetDesignRows: TmnrDesignRows;
+    function DoCreateSections: TmnrSections;
+    function GetSections: TmnrSections;
   public
-    constructor Create(vNodes: TmnrNode); 
+    constructor Create(vNodes: TmnrNode);
     destructor Destroy; override;
-    property Sections: TmnrSections read FSections;
+    property Sections: TmnrSections read GetSections;
     property Items: TmnrRowReferences read FItems;
 
     property Next: TmnrSection read GetNext;
@@ -362,7 +400,7 @@ type
     property Report: TmnrCustomReport read GetReport;
 
     //function AddLayout
-    property DesignRows: TmnrDesignRows read FDesignRows;
+    property DesignRows: TmnrDesignRows read GetDesignRows;
     property ReferencesRows: TmnrReferencesRows read FReferencesRows;
     function NewReference: TmnrReferencesRow;
 
@@ -375,19 +413,22 @@ type
 
     procedure FillNow(vParams: TmnrFetch; vReference: TmnrReferencesRow);
   published
-    property AppendTotals: Boolean read FAppendTotals write FAppendTotals;
-    property AppendSummary: Boolean read FAppendSummary write FAppendSummary;
+    property AppendTotals: Boolean read FAppendTotals write FAppendTotals default False;
+    property AppendSummary: Boolean read FAppendSummary write FAppendSummary default False;
   end;
 
   TmnrSections = class(TmnrLinkNodes)
   private
     FReport: TmnrCustomReport;
+  protected
     function GetFirst: TmnrSection;
     function GetLast: TmnrSection;
     function GetByName(const vName: string): TmnrSection;
     function GetReport: TmnrCustomReport;
-  protected
+
     procedure DoAppendSummary(vSummarySection: TmnrSection);
+    function DoCreateSection: TmnrSection; virtual;
+
   public
     constructor Create(vReport: TmnrCustomReport); virtual;
     destructor Destroy; override;
@@ -398,6 +439,7 @@ type
     property Report: TmnrCustomReport read GetReport;
     property First: TmnrSection read GetFirst;
     property Last: TmnrSection read GetLast;
+    procedure ClearDesignRows;
 
     procedure Loop;
   end;
@@ -422,17 +464,10 @@ type
     property Count: Integer read GetCount;
   end;
 
-  TmnrParams = class(TmnFields)
-  private
-    FID: Int64;
-    function GetField(Index: string): TmnField;
-  public
-    property ID: Int64 read FID write FID;
-    property Field[Index: string]: TmnField read GetField; default;
-  end;
-
   ImnrReportDesigner = interface
     procedure DesignReport(vClass: TmnrCustomReportClass);
+    procedure UpdateView;
+    procedure ProcessDrop(vNode: TmnrLayout);
   end;
 
   TmnrCustomReport = class(TObject)
@@ -440,47 +475,52 @@ type
     FCanceled: Boolean;
     FItems: TmnrRows;
     FSections: TmnrSections;
+    FGroups: TmnrGroups;
     FRowsListIndex: TmnrRowsIndex;
     FDetailTotals: TmnrSection;
     FSummary: TmnrSection;
-    FLayouts: TmnrLayouts;
     FProfiler: TmnrProfiler;
-    FParams: TmnrParams;
+    FDesigner: ImnrReportDesigner;
 
     function GetCells(Row, Column: Integer): TmnrCell;
     function GetRows(Row: Integer): TmnrRow;
+    function GetProfiler: TmnrProfiler;
   protected
     function Canceled: Boolean;
     procedure HandleNewRow(vRow: TmnrRowNode); virtual;
     procedure CreateSections(vSections: TmnrSections); virtual;
-    procedure CreateLayouts(vLayouts: TmnrLayouts); virtual;
+    procedure CreateLayouts(vGroups: TmnrGroups); virtual;
     function CreateNewRow(vSection: TmnrSection): TmnrRow; virtual;
-    function CreateProfiler: TmnrProfiler; virtual;
     procedure Loop;
     //Apply param to report to use it in Queries or assign it to Variables
-    procedure SetParams(vParams: TmnrParams); virtual;
+    //procedure SetParams(vParams: TmnrParams); virtual;
     //Collect params from current record in report to send it to another report
-    procedure CollectParams(vParams: TmnrParams); virtual;
     function SumString: string; virtual;
 
     procedure Created; virtual; //after create
     procedure Start; virtual; //after build report only in generate
     procedure Finish; virtual; //
+
+    function DoCreateProfiler: TmnrProfiler; virtual;
+    function DoCreateSections: TmnrSections; virtual;
+    function DoCreateGroups: TmnrGroups; virtual;
+    function GetSections: TmnrSections;
+    function GetGroups: TmnrGroups;
   public
-    constructor Create(vParams: TmnrParams = nil); virtual; //(vParams: TMiscParams); note: report responsible for free params
+    constructor Create; //(vParams: TMiscParams); note: report responsible for free params
     destructor Destroy; override;
-    property Params: TmnrParams read FParams;
-    property Sections: TmnrSections read FSections;
-    property Layouts: TmnrLayouts read FLayouts;
+    property Sections: TmnrSections read GetSections;
+    property Groups: TmnrGroups read GetGroups;
     property Items: TmnrRows read FItems;
     procedure Load; virtual;
     procedure Cancel;
     function FindSection(const vName: string): TmnrSection;
+    property Designer: ImnrReportDesigner read FDesigner write FDesigner;
 
     procedure Prepare; virtual; //for design and generate
     procedure Generate;
     procedure Design;
-    property Profiler: TmnrProfiler read FProfiler;
+    property Profiler: TmnrProfiler read GetProfiler;
 
     procedure Fetch(vSection: TmnrSection; var vParams: TmnrFetch); virtual;
     procedure RegisterRequest(const vName: string; vOnRequest: TOnRequest); virtual;
@@ -516,60 +556,22 @@ type
 
   TmnrProfiler = class
   private
-    FRow: TmnrDesignRow;
     FReport: TmnrCustomReport;
-    function GetRow: TmnrDesignRow;
-  protected
   public
     constructor Create; virtual;
     procedure SaveReport; virtual;
     procedure LoadReport; virtual;
-    //property Row: TmnrDesignRow read GetRow;
     property Report: TmnrCustomReport read FReport;
   end;
 
 
 var
-  DefaultCellClass: TmnrReportCellClass = nil; //test purpose
-
-function NewParams: TmnrParams; overload;
-//function NewParams(Strings: TStrings): TmnrParams; overload;
-//function NewParams(vText: string): TmnrParams; overload;
-function NewParams(Keys: array of string; Values: array of Variant): TmnrParams; overload;
+  DefaultCellClass: TmnrCellClass = nil; //test purpose
 
 implementation
 
 uses
   mnrNodes, TypInfo;
-
-function NewParams: TmnrParams;
-begin
-  Result := TmnrParams.Create;
-end;
-
-{function NewParams(vText: string): TmnrParams; overload;
-begin
-  Result := NewParams;
-  Result.Text := vText;
-end;}
-
-{function NewParams(Strings: TStrings): TmnrParams; overload;
-begin
-  Result := NewParams;
-//  Result.Assign(Strings);
-end;}
-
-function NewParams(Keys: array of string; Values: array of Variant): TmnrParams;
-var
-  l, i: Integer;
-begin
-  Result := NewParams;
-  l := Length(Keys);
-  if l > Length(Values) then
-    l := Length(Values);
-  for i := 0 to l - 1 do
-    Result.Field[Keys[i]].AsVariant := Values[i];
-end;
 
 { TmnrCustomReport }
 
@@ -588,32 +590,25 @@ begin
   Result := FCanceled;
 end;
 
-procedure TmnrCustomReport.CollectParams(vParams: TmnrParams);
-begin
-end;
-
-constructor TmnrCustomReport.Create(vParams: TmnrParams);
+constructor TmnrCustomReport.Create;
 begin
   inherited Create;
-  FParams := vParams;
-  if FParams = nil then
-    FParams := TmnrParams.Create;
 
-  FProfiler := CreateProfiler;
+  FProfiler := DoCreateProfiler;
   FProfiler.FReport := Self;
-  FSections := TmnrSections.Create(Self);
-  FLayouts := TmnrLayouts.Create;
+  FSections := DoCreateSections;
+  FGroups := DoCreateGroups;
   FItems := TmnrRows.Create;
   FRowsListIndex := nil;
   FDetailTotals := TmnrSection.Create(nil);
   FSummary := TmnrSection.Create(nil);
 
   CreateSections(FSections);
-  CreateLayouts(FLayouts);
+  CreateLayouts(FGroups);
   Created;
 end;
 
-procedure TmnrCustomReport.CreateLayouts(vLayouts: TmnrLayouts);
+procedure TmnrCustomReport.CreateLayouts(vGroups: TmnrGroups);
 begin
 
 end;
@@ -623,7 +618,12 @@ begin
   Result := TmnrRow.Create(Items);
 end;
 
-function TmnrCustomReport.CreateProfiler: TmnrProfiler;
+function TmnrCustomReport.DoCreateGroups: TmnrGroups;
+begin
+  Result := TmnrGroups.Create(Self);
+end;
+
+function TmnrCustomReport.DoCreateProfiler: TmnrProfiler;
 begin
   Result := TmnrProfiler.Create;
 end;
@@ -665,13 +665,17 @@ destructor TmnrCustomReport.Destroy;
 begin
   FDetailTotals.Free;
   FSummary.Free;
-  FLayouts.Free;
+  FGroups.Free;
   FSections.Free;
   FItems.Free;
   FRowsListIndex.Free;
   FreeAndNil(FProfiler);
-  FreeAndNil(FParams);
   inherited;
+end;
+
+function TmnrCustomReport.DoCreateSections: TmnrSections;
+begin
+  Result := TmnrSections.Create(Self);
 end;
 
 procedure TmnrCustomReport.ExportCSV(const vStream: TStream);
@@ -727,15 +731,11 @@ begin
   FRowsListIndex := TmnrRowsIndex.Create(Self);
 end;
 
-procedure TmnrCustomReport.SetParams(vParams: TmnrParams);
-begin
-end;
-
 procedure TmnrCustomReport.Generate;
 begin
   Prepare;
   try
-    SetParams(Params);
+    //SetParams(Params);
     Load;
     Start;
     Loop;
@@ -769,12 +769,27 @@ begin
     Result := nil;
 end;
 
+function TmnrCustomReport.GetGroups: TmnrGroups;
+begin
+  Result := FGroups;
+end;
+
+function TmnrCustomReport.GetProfiler: TmnrProfiler;
+begin
+  Result := FProfiler;
+end;
+
 function TmnrCustomReport.GetRows(Row: Integer): TmnrRow;
 begin
   if RowsIndex <> nil then
     Result := RowsIndex.Items[Row]
   else
     Result := nil;
+end;
+
+function TmnrCustomReport.GetSections: TmnrSections;
+begin
+  Result := FSections;
 end;
 
 procedure TmnrCustomReport.HandleNewRow(vRow: TmnrRowNode);
@@ -801,7 +816,7 @@ procedure TmnrCustomReport.RegisterRequest(const vName: string; vOnRequest: TOnR
 var
   l: TmnrLayout;
 begin
-  l := Layouts.Find(vName);
+  l := Groups.FindLayout(vName);
   if l <> nil then
     l.OnRequest := vOnRequest;
 end;
@@ -818,7 +833,7 @@ end;
 
 { TmnrCustomReportRowNode }
 
-function TmnrRow.Add: TmnrReportCell;
+function TmnrRow.Add: TmnrCell;
 begin
   if DefaultCellClass <> nil then
     Result := DefaultCellClass.Create(Self)
@@ -899,6 +914,19 @@ begin
   end;
 end;
 
+function TmnrSection.DoCreateDesignRows: TmnrDesignRows;
+begin
+  Result := TmnrDesignRows.Create(Self);
+end;
+
+function TmnrSection.DoCreateSections: TmnrSections;
+begin
+  if Report<>nil then
+    Result := Report.DoCreateSections
+  else
+    Result := TmnrSections.Create(nil);
+end;
+
 procedure TmnrSection.DoAppendSummary(vSummarySection: TmnrSection);
 var
   r: TmnrDesignRow;
@@ -956,10 +984,12 @@ end;
 constructor TmnrSection.Create(vNodes: TmnrNode);
 begin
   inherited;
-  FSections := TmnrSections.Create(Report);
-  FDesignRows := TmnrDesignRows.Create(Self);
+  FSections := DoCreateSections;
+  FDesignRows := DoCreateDesignRows;
   FReferencesRows := TmnrReferencesRows.Create;
   FItems := TmnrRowReferences.Create;
+  FAppendTotals := False;
+  FAppendSummary := False;
 end;
 
 destructor TmnrSection.Destroy;
@@ -1023,6 +1053,11 @@ begin
   end;
 end;
 
+function TmnrSection.GetDesignRows: TmnrDesignRows;
+begin
+  Result := FDesignRows;
+end;
+
 function TmnrSection.GetLoopWay: TmnrSectionLoopWay;
 begin
   if ClassID in [sciHeaderDetails, sciDetails] then
@@ -1052,6 +1087,11 @@ begin
     Result := Nodes.Report
   else
     Result := nil;
+end;
+
+function TmnrSection.GetSections: TmnrSections;
+begin
+  Result := FSections;
 end;
 
 function TmnrSection.NewReference: TmnrReferencesRow;
@@ -1086,6 +1126,18 @@ end;
 
 { TmnrSections }
 
+procedure TmnrSections.ClearDesignRows;
+var
+  s: TmnrSection;
+begin
+  s := First;
+  while s <> nil do
+  begin
+    s.DesignRows.Clear;
+    s := s.Next;
+  end;
+end;
+
 constructor TmnrSections.Create(vReport: TmnrCustomReport);
 begin
   inherited Create;
@@ -1110,6 +1162,11 @@ begin
     s.Sections.DoAppendSummary(vSummarySection);
     s := s.Next;
   end;
+end;
+
+function TmnrSections.DoCreateSection: TmnrSection;
+begin
+  Result := TmnrSection.Create(Self);
 end;
 
 function TmnrSections.Find(const vName: string): TmnrSection;
@@ -1231,7 +1288,7 @@ end;
 
 function TmnrSections.RegisterSection(const vName, vCaption: string; const vClass: TmnrSectionClassID; const vID: Integer; vOnFetch: TOnFetch): TmnrSection;
 begin
-  Result := TmnrSection.Create(Self);
+  Result := DoCreateSection;
   Result.FName := vName;
   Result.FClassID := vClass;
   Result.OnFetch := vOnFetch;
@@ -1256,14 +1313,14 @@ begin
   end;
 end;
 
-function TmnrRow.GetFirst: TmnrReportCell;
+function TmnrRow.GetFirst: TmnrCell;
 begin
-  Result := TmnrReportCell(inherited GetFirst);
+  Result := TmnrCell(inherited GetFirst);
 end;
 
-function TmnrRow.GetLast: TmnrReportCell;
+function TmnrRow.GetLast: TmnrCell;
 begin
-  Result := TmnrReportCell(inherited GetLast);
+  Result := TmnrCell(inherited GetLast);
 end;
 
 function TmnrRow.GetNext: TmnrRow;
@@ -1283,7 +1340,7 @@ end;
 
 { TmnrLayout }
 
-function TmnrLayout.CreateCell(vRow: TmnrRow): TmnrReportCell;
+function TmnrLayout.CreateCell(vRow: TmnrRow): TmnrCell;
 begin
   Result := nil;
 end;
@@ -1293,6 +1350,11 @@ begin
   Result := DoCreateDesignCell(vRow);
   Result.Name := Name;
   Result.Layout := Self;  
+end;
+
+function TmnrLayout.DisplayText: string;
+begin
+  Result := Title;
 end;
 
 function TmnrLayout.DoCreateDesignCell(vRow: TmnrDesignRow): TmnrDesignCell;
@@ -1350,94 +1412,12 @@ begin
 
 end;
 
-{ TmnrReportCell }
+{ TmnrCell }
 
-function TmnrReportCell.GetAsBoolean: Boolean;
-begin
-  Result := False;
-end;
-
-function TmnrReportCell.GetAsCurrency: Currency;
-begin
-  Result := 0;
-end;
-
-function TmnrReportCell.GetAsData: Integer;
-begin
-  Result := AsInteger;
-end;
-
-function TmnrReportCell.GetAsDateTime: TDateTime;
-begin
-  Result := AsCurrency;
-end;
-
-function TmnrReportCell.GetAsFloat: Double;
-begin
-  Result := AsCurrency;
-end;
-
-function TmnrReportCell.GetAsInteger: Longint;
-begin
-  Result := 0;
-end;
-
-function TmnrReportCell.GetAsString: string;
-begin
-  Result := '';
-end;
-
-function TmnrReportCell.GetAsVariant: Variant;
-begin
-  Result := '';
-end;
-
-function TmnrReportCell.GetIsNull: Boolean;
+function TmnrCell.GetIsNull: Boolean;
 begin
   Result := AsString = '';
 end;
-
-procedure TmnrReportCell.SetAsBoolean(const Value: Boolean);
-begin
-
-end;
-
-procedure TmnrReportCell.SetAsCurrency(const Value: Currency);
-begin
-
-end;
-
-procedure TmnrReportCell.SetAsData(const Value: Integer);
-begin
-  AsInteger := Value;
-end;
-
-procedure TmnrReportCell.SetAsDateTime(const Value: TDateTime);
-begin
-
-end;
-
-procedure TmnrReportCell.SetAsFloat(const Value: Double);
-begin
-
-end;
-
-procedure TmnrReportCell.SetAsInteger(const Value: Integer);
-begin
-
-end;
-
-procedure TmnrReportCell.SetAsString(const Value: string);
-begin
-
-end;
-
-procedure TmnrReportCell.SetAsVariant(const Value: Variant);
-begin
-
-end;
-
-{ TmnrCell }
 
 function TmnrCell.GetNext: TmnrCell;
 begin
@@ -1704,6 +1684,21 @@ begin
   Result := TmnrLayout(inherited GetLast);
 end;
 
+function TmnrLayouts.GetNext: TmnrLayouts;
+begin
+  Result := TmnrLayouts(inherited GetNext);
+end;
+
+function TmnrLayouts.GetPrior: TmnrLayouts;
+begin
+  Result := TmnrLayouts(inherited GetPrior);
+end;
+
+procedure TmnrLayouts.SetName(const Value: string);
+begin
+  FName := Value;
+end;
+
 { TmnrDesignCell }
 
 constructor TmnrDesignCell.Create(vNodes: TmnrNodes);
@@ -1760,7 +1755,7 @@ begin
   begin
     FName := Value;
     if Layout <> nil then Layout.FDesignerCell := nil;
-    Layout := Report.Layouts.Find(Value);
+    if Report<>nil then Layout := Report.Groups.FindLayout(Value);
     if Layout <> nil then Layout.FDesignerCell := Self
   end;
 end;
@@ -1861,16 +1856,16 @@ begin
   Result := TmnrDesignRow(inherited GetLast);
 end;
 
+function TmnrDesignRows.GetSection: TmnrSection;
+begin
+  Result := FSection;
+end;
+
 { TmnrProfiler }
 
 constructor TmnrProfiler.Create;
 begin
   inherited Create;
-end;
-
-function TmnrProfiler.GetRow: TmnrDesignRow;
-begin
-  Result := FRow;
 end;
 
 procedure TmnrProfiler.LoadReport;
@@ -1883,11 +1878,169 @@ begin
 
 end;
 
-{ TmnrParams }
+{ TmnrBaseCell }
 
-function TmnrParams.GetField(Index: string): TmnField;
+function TmnrBaseCell.DisplayText: string;
 begin
-  Result := Find(Index);
+  Result := AsString;
+end;
+
+function TmnrBaseCell.GetAsBoolean: Boolean;
+begin
+  Result := False;
+end;
+
+function TmnrBaseCell.GetAsCurrency: Currency;
+begin
+  Result := 0;
+end;
+
+function TmnrBaseCell.GetAsData: Integer;
+begin
+  Result := AsInteger;
+end;
+
+function TmnrBaseCell.GetAsDateTime: TDateTime;
+begin
+  Result := AsCurrency;
+end;
+
+function TmnrBaseCell.GetAsFloat: Double;
+begin
+  Result := AsCurrency;
+end;
+
+function TmnrBaseCell.GetAsInteger: Longint;
+begin
+  Result := 0;
+end;
+
+function TmnrBaseCell.GetAsString: string;
+begin
+  Result := '';
+end;
+
+function TmnrBaseCell.GetAsVariant: Variant;
+begin
+  Result := '';
+end;
+
+procedure TmnrBaseCell.SetAsBoolean(const Value: Boolean);
+begin
+
+end;
+
+procedure TmnrBaseCell.SetAsCurrency(const Value: Currency);
+begin
+
+end;
+
+procedure TmnrBaseCell.SetAsData(const Value: Integer);
+begin
+  AsInteger := Value;
+end;
+
+procedure TmnrBaseCell.SetAsDateTime(const Value: TDateTime);
+begin
+
+end;
+
+procedure TmnrBaseCell.SetAsFloat(const Value: Double);
+begin
+
+end;
+
+procedure TmnrBaseCell.SetAsInteger(const Value: Integer);
+begin
+
+end;
+
+procedure TmnrBaseCell.SetAsString(const Value: string);
+begin
+
+end;
+
+procedure TmnrBaseCell.SetAsVariant(const Value: Variant);
+begin
+
+end;
+
+{ TmnrGroups }
+
+function TmnrGroups.Add: TmnrLayouts;
+begin
+  Result := TmnrLayouts.Create(Self);
+end;
+
+constructor TmnrGroups.Create(vReport: TmnrCustomReport);
+begin
+  inherited Create(nil);
+  FReport := vReport;
+end;
+
+procedure TmnrGroups.CreateLayout(const vGroup: string; vClass: TmnrLayoutClass; const vName, vTitle: string; vIncludeSections, vExcludeSections: TmnrSectionClassIDs);
+var
+  aInfo: TmnrLayoutInfo;
+begin
+  aInfo.Name := vName;
+  aInfo.Title := vTitle;
+  aInfo.IncludeSections := vIncludeSections;
+  aInfo.ExcludeSections := vExcludeSections;
+  CreateLayout(vGroup, vClass, aInfo);
+end;
+
+procedure TmnrGroups.CreateLayout(const vGroup: string; vClass: TmnrLayoutClass; const vInfo: TmnrLayoutInfo);
+var
+  aLayouts: TmnrLayouts;
+begin
+  aLayouts := Find(vGroup);
+  if aLayouts=nil then
+  begin
+    aLayouts := Add;
+    aLayouts.Name := vGroup;
+  end;
+  aLayouts.CreateLayout(vClass, vInfo);
+end;
+
+function TmnrGroups.Find(const vName: string): TmnrLayouts;
+begin
+  if vName = '' then
+    Result := nil
+  else
+  begin
+    Result := First;
+    while Result <> nil do
+      if SameText(Result.Name, vName) then
+        Break
+      else
+        Result := Result.Next;
+  end;
+end;
+
+function TmnrGroups.FindLayout(const vName: string): TmnrLayout;
+var
+  l: TmnrLayouts;
+begin
+  Result := nil;
+  l := First;
+  while l<>nil do
+  begin
+    Result := l.Find(vName);
+    if Result<>nil then
+      Break
+    else
+      l := l.Next;
+  end;
+end;
+
+function TmnrGroups.GetFirst: TmnrLayouts;
+begin
+  Result := TmnrLayouts(inherited GetFirst);
+end;
+
+function TmnrGroups.GetLast: TmnrLayouts;
+begin
+  Result := TmnrLayouts(inherited GetLast);
 end;
 
 initialization
