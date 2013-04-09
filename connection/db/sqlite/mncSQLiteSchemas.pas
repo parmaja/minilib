@@ -32,7 +32,7 @@ type
     function GetSortSQL(Options: TschmEnumOptions):string;
   public
     procedure EnumTables(Schema: TmncSchemaItems; Options: TschmEnumOptions = []); override;
-    procedure EnumFields(Schema: TmncSchemaItems; MemberName: string = ''; Options: TschmEnumOptions = []); override;
+    procedure EnumFields(Schema: TmncSchemaItems; MemberName: string; Options: TschmEnumOptions = []); override;
     procedure EnumViews(Schema: TmncSchemaItems; Options: TschmEnumOptions = []); override;
     procedure EnumProcedures(Schema: TmncSchemaItems; Options: TschmEnumOptions = []); override;
     procedure EnumSequences(Schema: TmncSchemaItems; Options: TschmEnumOptions = []); override;

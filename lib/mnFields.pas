@@ -220,7 +220,7 @@ type
     function ByName(vName: string): TmnField;
     function IsExists(vName: string): Boolean;
     procedure Clean; virtual;
-    property Values[Index: string]: Variant read GetValues write SetValues;
+    property Values[Index: string]: Variant read GetValues write SetValues; default;
   end;
 
 implementation

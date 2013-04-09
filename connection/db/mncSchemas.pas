@@ -106,7 +106,7 @@ type
     procedure EnumConstraints(Schema: TmncSchemaItems; MemberName: string = ''; Options: TschmEnumOptions = []); virtual;
     procedure EnumTriggers(Schema: TmncSchemaItems; MemberName: string = ''; Options: TschmEnumOptions = []); virtual;
     procedure EnumIndices(Schema: TmncSchemaItems; MemberName: string = ''; Options: TschmEnumOptions = []); virtual;
-    procedure EnumFields(Schema: TmncSchemaItems; MemberName: string = ''; Options: TschmEnumOptions = []); virtual;
+    procedure EnumFields(Schema: TmncSchemaItems; MemberName: string; Options: TschmEnumOptions = []); virtual;
     //source
     procedure GetTriggerSource(Strings:TStringList; MemberName: string; Options: TschmEnumOptions = []); virtual;
   published
@@ -247,15 +247,12 @@ begin
 
 end;
 
-procedure TmncSchema.EnumIndices(Schema: TmncSchemaItems; MemberName: string;
-  Options: TschmEnumOptions);
+procedure TmncSchema.EnumIndices(Schema: TmncSchemaItems; MemberName: string; Options: TschmEnumOptions);
 begin
-
 end;
 
 procedure TmncSchema.EnumFields(Schema: TmncSchemaItems; MemberName: string; Options: TschmEnumOptions);
 begin
-
 end;
 
 procedure TmncSchema.GetTriggerSource(Strings: TStringList; MemberName: string; Options: TschmEnumOptions = []);

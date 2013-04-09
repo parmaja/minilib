@@ -296,7 +296,7 @@ type
     function GetValue(Index: string): Variant;
     procedure SetValue(Index: string; const Value: Variant);
   protected
-    //Called before reelase it, good to deattach the handles
+    //Called before release it, good to deattach the handles
     procedure Detach; virtual;
   public
     property Items[Index: Integer]: TmncCustomField read GetItem;
@@ -493,6 +493,7 @@ type
     procedure Clear; virtual;
     procedure Commit;
     procedure Rollback;
+    //Detach make Fields or Params unrelated to DB handles, you can use them in salfty in arrays
     function DetachFields: TmncFields;
     function DetachParams: TmncParams;
     function FieldIsExist(Name: string): Boolean;
