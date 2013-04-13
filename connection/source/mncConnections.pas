@@ -494,6 +494,9 @@ type
       Do not use api call here
     }
     procedure Parse;
+    {
+      Prepare: call the sql engine api, it call parse automaticly if it not called
+    }
     procedure Prepare;
     function Execute: Boolean;
     procedure Close;

@@ -40,13 +40,14 @@ type
 
   TmncSQLCommand = class(TmncCommand)
   private
+    function GetSQL: TStrings;
   protected
     ParsedSQL: string;
     procedure DoParse; override;
     procedure DoUnparse; override;
     procedure ParseSQL(Options: TmncParseSQLOptions; ParamChar: string = '?');
   public
-    property SQL: TStrings read FRequest;//Alias of Request, autocomplete may add it in private becareful
+    property SQL: TStrings read GetSQL;//Alias of Request, autocomplete may add it in private becareful
   end;
 
   { TmncSQLGenerator }
@@ -93,6 +94,11 @@ end;
 function TmncSQLGenerator.Delete(Table: string; Keys: array of string): string;
 begin
 
+end;
+
+function TmncSQLCommand.GetSQL: TStrings;
+begin
+  Result := FRequest;//just alias
 end;
 
 procedure TmncSQLCommand.DoParse;
