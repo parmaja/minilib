@@ -43,6 +43,11 @@ type
     function GetSQL: TStrings;
   protected
     ParsedSQL: string;
+    {
+      GetParamChar: Called to take the real param char depend on the sql engine to replace it with this new one.
+                    by default it is ?
+    }
+    function GetParamChar: string; virtual;
     procedure DoParse; override;
     procedure DoUnparse; override;
     procedure ParseSQL(Options: TmncParseSQLOptions; ParamChar: string = '?');
@@ -99,6 +104,11 @@ end;
 function TmncSQLCommand.GetSQL: TStrings;
 begin
   Result := FRequest;//just alias
+end;
+
+function TmncSQLCommand.GetParamChar: string;
+begin
+  Result := '?';
 end;
 
 procedure TmncSQLCommand.DoParse;
@@ -171,7 +181,7 @@ begin
               '?':
                 begin
                   iCurState := ParamState;
-                  AddToSQL(ParamChar);
+                  AddToSQL(GetParamChar);//here we can replace it with new param char for example % for some sql engine
 {                  if psoAddParamsID in Options then
                     AddToSQL();}
                 end;
