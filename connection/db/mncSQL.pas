@@ -16,7 +16,7 @@ unit mncSQL;
 interface
 
 uses
-  Classes, SysUtils,
+  Classes, SysUtils, Contnrs,
   mncConnections;
 
 type
@@ -36,13 +36,32 @@ type
     function CreateCommand: TmncSQLCommand; virtual; abstract;
   end;
 
+  TmncSQLName = class(TObject)
+  public
+    ID: Integer;
+    Name: string;
+  end;
+
+  { TmncSQLNames }
+
+  TmncParamNames = class(TObjectList)
+  private
+    function GetItem(Index: Integer): TmncSQLName;
+  public
+    SQL: string;
+    procedure Clear; override;
+    procedure Add(vID: Integer; vName:string);
+    property Items[Index: Integer]: TmncSQLName read GetItem; default;
+  end;
+
   { TmncSQLCommand }
 
   TmncSQLCommand = class(TmncCommand)
   private
     function GetSQL: TStrings;
   protected
-    ParsedSQL: string;
+    //ParsedSQL: string;
+    ParamNames: TmncParamNames;
     {
       GetParamChar: Called to take the real param char depend on the sql engine to replace it with this new one.
                     by default it is ?
@@ -52,6 +71,8 @@ type
     procedure DoUnparse; override;
     procedure ParseSQL(Options: TmncParseSQLOptions; ParamChar: string = '?');
   public
+    constructor Create; override;
+    destructor Destroy; override;
     property SQL: TStrings read GetSQL;//Alias of Request, autocomplete may add it in private becareful
   end;
 
@@ -70,6 +91,29 @@ type
   end;
 
 implementation
+
+{ TmncParamNames }
+
+function TmncParamNames.GetItem(Index: Integer): TmncSQLName;
+begin
+  Result := inherited Items[Index] as TmncSQLName;
+end;
+
+procedure TmncParamNames.Clear;
+begin
+  inherited Clear;
+  SQL := '';
+end;
+
+procedure TmncParamNames.Add(vID: Integer; vName: string);
+var
+  r: TmncSQLName;
+begin
+  r := TmncSQLName.Create;
+  r.ID := vID;
+  r.Name := vName;
+  inherited Add(r);
+end;
 
 { TmncSQLGenerator }
 
@@ -119,7 +163,7 @@ end;
 procedure TmncSQLCommand.DoUnparse;
 begin
   inherited;
-  ParsedSQL := '';
+  ParamNames.Clear;
   //maybe clear params, idk
 end;
 
@@ -130,7 +174,6 @@ var
   i, LenSQL: Integer;
   iCurState, iCurParamState: Integer;
   iParam: Integer;
-  slNames: TStrings;
 const
   DefaultState = 0;
   CommentState = 1;
@@ -141,15 +184,14 @@ const
 
   procedure AddToSQL(s: string);
   begin
-    ParsedSQL := ParsedSQL + s;
+    ParamNames.SQL := ParamNames.SQL + s;
   end;
 var
   aParam: TmncParam;
 begin
   //TODO stored procedures and trigger must not check param in budy procedure
-  ParsedSQL := '';
+  ParamNames.Clear;
   sParamName := '';
-  slNames := TStringList.Create;
   try
     iParam := 1;
     cQuoteChar := '''';
@@ -236,7 +278,7 @@ begin
                 sParamName := '_Param_' + IntToStr(iParam);
                 Inc(iParam);
                 iCurState := DefaultState;
-                slNames.Add(sParamName);
+                ParamNames.Add(iParam, sParamName);
                 sParamName := '';
               end
               else
@@ -248,7 +290,7 @@ begin
               if cCurChar = '"' then
               begin
                 Inc(i);
-                slNames.Add(sParamName);
+                ParamNames.Add(iParam, sParamName);
                 SParamName := '';
                 iCurParamState := ParamDefaultState;
                 iCurState := DefaultState;
@@ -270,7 +312,7 @@ begin
                   Inc(iParam);
                 end;
                 //slNames.Add(UpperCase(sParamName));
-                slNames.Add(sParamName);
+                ParamNames.Add(iParam, sParamName);
                 sParamName := '';
               end;
             end;
@@ -282,14 +324,25 @@ begin
     end;
     Params.Clear; 
     Binds.Clear;
-    for i := 0 to slNames.Count - 1 do
+    for i := 0 to ParamNames.Count - 1 do
     begin
-      aParam := Params.Found(slNames[i]);
+      aParam := Params.Found(ParamNames[i].Name);//it will auto create it if not founded
       Binds.Add(aParam);
     end;
   finally
-    slNames.Free;
   end;
+end;
+
+constructor TmncSQLCommand.Create;
+begin
+  inherited Create;
+  ParamNames := TmncParamNames.Create;
+end;
+
+destructor TmncSQLCommand.Destroy;
+begin
+  FreeAndNil(ParamNames);
+  inherited Destroy;
 end;
 
 end.

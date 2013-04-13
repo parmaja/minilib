@@ -750,7 +750,8 @@ var
 begin
   FBOF := True;
 //  sqlite3_prepare_v2
-  r := sqlite3_prepare(Connection.DBHandle, PChar(ParsedSQL), -1 , @FStatment, @FTail);
+//TODO: apply value of params if using injection mode
+  r := sqlite3_prepare(Connection.DBHandle, PChar(ParamNames.SQL), -1 , @FStatment, @FTail);
   CheckError(r);
 end;
 
