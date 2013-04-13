@@ -1,2 +1,11 @@
 units
+doc
+ref
+.svn
+*.ppu
+*.o
+*.compiled
+*.dcu
+*.local
+*.dsk
 /lib/doc
