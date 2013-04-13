@@ -12,8 +12,8 @@ unit SynHighlighterFirebird;
 interface
 
 uses
-  SysUtils, Windows, Messages, Graphics, Registry, Controls,
-  Classes, SynEditTypes, SynEditHighlighter, SynHighlighterHashEntries;
+  SysUtils, Classes, Graphics,
+  SynEditTypes, SynEditHighlighter, SynHighlighterHashEntries;
 
 type
   TtkTokenKind = (tkComment, tkDatatype, tkObject, tkException,
