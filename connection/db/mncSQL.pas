@@ -36,12 +36,17 @@ type
     function CreateCommand: TmncSQLCommand; virtual; abstract;
   end;
 
+  { TmncSQLCommand }
+
   TmncSQLCommand = class(TmncCommand)
   private
   protected
-    function ParseSQL(Options: TmncParseSQLOptions; ParamChar: string = '?'): string;
+    ParsedSQL: string;
+    procedure DoParse; override;
+    procedure DoUnparse; override;
+    procedure ParseSQL(Options: TmncParseSQLOptions; ParamChar: string = '?');
   public
-    property SQL: TStrings read FRequest;//Alias of Request
+    property SQL: TStrings read FRequest;//Alias of Request, autocomplete may add it in private becareful
   end;
 
   { TmncSQLGenerator }
@@ -90,10 +95,22 @@ begin
 
 end;
 
-function TmncSQLCommand.ParseSQL(Options: TmncParseSQLOptions; ParamChar: string = '?'): string;
+procedure TmncSQLCommand.DoParse;
+begin
+  ParseSQL([]);
+end;
+
+procedure TmncSQLCommand.DoUnparse;
+begin
+  inherited;
+  ParsedSQL := '';
+  //maybe clear params, idk
+end;
+
+procedure TmncSQLCommand.ParseSQL(Options: TmncParseSQLOptions; ParamChar: string = '?');
 var
   cCurChar, cNextChar, cQuoteChar: Char;
-  sSQL, sProcessedSQL, sParamName: string;
+  sSQL, sParamName: string;
   i, LenSQL: Integer;
   iCurState, iCurParamState: Integer;
   iParam: Integer;
@@ -108,13 +125,13 @@ const
 
   procedure AddToSQL(s: string);
   begin
-    sProcessedSQL := sProcessedSQL + s;
+    ParsedSQL := ParsedSQL + s;
   end;
 var
   aParam: TmncParam;
 begin
   //TODO stored procedures and trigger must not check param in budy procedure
-  sProcessedSQL := '';
+  ParsedSQL := '';
   sParamName := '';
   slNames := TStringList.Create;
   try
@@ -254,7 +271,6 @@ begin
       aParam := Params.Found(slNames[i]);
       Binds.Add(aParam);
     end;
-    Result := sProcessedSQL;
   finally
     slNames.Free;
   end;

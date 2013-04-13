@@ -453,6 +453,7 @@ type
     FFields: TmncFields;
     FParams: TmncParams;
     FBinds: TmncBinds;
+    FParsed: Boolean;
     FPrepared: Boolean;
     FNextOnExecute: Boolean;
     procedure SetRequest(const Value: TStrings);
@@ -468,6 +469,8 @@ type
     procedure CheckInactive;
     procedure CheckStarted; //Check the session is started
     function GetEOF: Boolean; virtual; abstract;
+    procedure DoParse; virtual; abstract;
+    procedure DoUnparse; virtual;
     procedure DoPrepare; virtual; abstract;
     procedure DoUnprepare; virtual;
     procedure DoExecute; virtual; abstract; //Here apply the Binds and execute the sql
@@ -485,6 +488,12 @@ type
   public
     constructor Create; override;
     destructor Destroy; override;
+    {
+      Parse: is not an api call to sql engine, it just inside fpc parsing the sql,
+      for collecting params and other things prepareing the sql string.
+      Do not use api call here
+    }
+    procedure Parse;
     procedure Prepare;
     function Execute: Boolean;
     procedure Close;
@@ -498,6 +507,7 @@ type
     function DetachParams: TmncParams;
     function FieldIsExist(Name: string): Boolean;
     property NextOnExecute: Boolean read FNextOnExecute write FNextOnExecute default True;
+    property Parsed: Boolean read FParsed;
     property Prepared: Boolean read FPrepared;
     property Columns: TmncColumns read FColumns write SetColumns;
     property Fields: TmncFields read FFields write SetFields; //Current record loaded in memory
@@ -709,6 +719,7 @@ end;
 
 procedure TmncCommand.Clear;
 begin
+  DoUnparse;
   FPrepared := False;
   FRequest.Clear;
   if FParams <> nil then
@@ -726,6 +737,12 @@ begin
   FreeAndNil(FParams);
   FreeAndNil(FColumns);
   inherited;
+end;
+
+procedure TmncCommand.Parse;
+begin
+  DoParse;
+  FParsed := True;
 end;
 
 procedure TmncCommand.DoRequestChanged(Sender: TObject);
@@ -817,6 +834,11 @@ begin
     raise EmncException.Create('Session is not active/started');
 end;
 
+procedure TmncCommand.DoUnparse;
+begin
+  FParsed := False;
+end;
+
 procedure TmncCommand.DoUnprepare;
 begin
 end;
@@ -837,6 +859,8 @@ end;
 
 procedure TmncCommand.Prepare;
 begin
+  if not FParsed then
+    Parse;
   CheckStarted;
   DoPrepare;
   FPrepared := True;
@@ -953,6 +977,7 @@ begin
     raise EmncException.Create('Command already Closed');
   DoUnprepare;
   DoClose;
+  DoUnparse;
   FPrepared := False;
 end;
 

@@ -746,13 +746,11 @@ end;
 
 procedure TmncSQLiteCommand.DoPrepare;
 var
-  s:string;
   r: Integer;
 begin
   FBOF := True;
-  s := ParseSQL([]);
 //  sqlite3_prepare_v2
-  r := sqlite3_prepare(Connection.DBHandle, PChar(s), -1 , @FStatment, @FTail);
+  r := sqlite3_prepare(Connection.DBHandle, PChar(ParsedSQL), -1 , @FStatment, @FTail);
   CheckError(r);
 end;
 

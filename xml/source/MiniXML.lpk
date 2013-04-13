@@ -16,8 +16,14 @@
           <AllowLabel Value="False"/>
         </SyntaxOptions>
       </Parsing>
+      <CodeGeneration>
+        <Optimizations>
+          <OptimizationLevel Value="3"/>
+        </Optimizations>
+      </CodeGeneration>
       <Linking>
         <Debugging>
+          <GenerateDebugInfo Value="False"/>
           <UseExternalDbgSyms Value="True"/>
         </Debugging>
       </Linking>

@@ -13,8 +13,14 @@
           <AllowLabel Value="False"/>
         </SyntaxOptions>
       </Parsing>
+      <CodeGeneration>
+        <Optimizations>
+          <OptimizationLevel Value="3"/>
+        </Optimizations>
+      </CodeGeneration>
       <Linking>
         <Debugging>
+          <GenerateDebugInfo Value="False"/>
           <DebugInfoType Value="dsDwarf2"/>
           <UseLineInfoUnit Value="False"/>
         </Debugging>
