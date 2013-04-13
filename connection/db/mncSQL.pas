@@ -336,13 +336,13 @@ end;
 constructor TmncSQLCommand.Create;
 begin
   inherited Create;
-  ParamNames := TmncParamNames.Create;
+  ParamNames := TmncParamNames.Create(True);
 end;
 
 destructor TmncSQLCommand.Destroy;
 begin
-  FreeAndNil(ParamNames);
   inherited Destroy;
+  FreeAndNil(ParamNames);
 end;
 
 end.

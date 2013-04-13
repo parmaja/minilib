@@ -15,11 +15,6 @@
           <UseAnsiStrings Value="False"/>
         </SyntaxOptions>
       </Parsing>
-      <CodeGeneration>
-        <Optimizations>
-          <OptimizationLevel Value="3"/>
-        </Optimizations>
-      </CodeGeneration>
       <Linking>
         <Debugging>
           <DebugInfoType Value="dsDwarf2Set"/>
@@ -30,7 +25,7 @@
           <IgnoredMessages idx5024="True"/>
           <UseMsgFile Value="True"/>
         </CompilerMessages>
-        <CustomOptions Value="$(IDEBuildOptions) -CR -dgc"/>
+        <CustomOptions Value="$(ProjectOpts)"/>
         <CompilerPath Value="$(CompPath)"/>
       </Other>
     </CompilerOptions>
@@ -80,6 +75,7 @@
       </Item2>
     </RequiredPkgs>
     <UsageOptions>
+      <CustomOptions Value="$(ProjectOpts)"/>
       <UnitPath Value="$(PkgOutDir)"/>
     </UsageOptions>
     <PublishOptions>
