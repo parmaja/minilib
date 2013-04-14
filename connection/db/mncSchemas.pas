@@ -41,9 +41,9 @@ type
     property Value: string read FValue write FValue;
   end;
 
-  { TmncSchemaParams }
+  { TmncSchemaAttributes }
 
-  TmncSchemaParams = class(TObjectList)
+  TmncSchemaAttributes = class(TObjectList)
   private
     function GetItem(Index: Integer): TmncSchemaParam;
     function GetValues(Index: string): string;
@@ -64,13 +64,13 @@ type
   private
     FKind: TschmKind;
     FName: string;
-    FAttributes: TmncSchemaParams;
+    FAttributes: TmncSchemaAttributes;
   public
     constructor Create;
     destructor Destroy; override;
     property Name: string read FName write FName;
     property Kind: TschmKind read FKind write FKind;
-    property Attributes: TmncSchemaParams read FAttributes;
+    property Attributes: TmncSchemaAttributes read FAttributes;
   end;
 
   { TmncSchemaItems }
@@ -178,7 +178,7 @@ end;
 constructor TmncSchemaItem.Create;
 begin
   inherited;
-  FAttributes := TmncSchemaParams.Create;
+  FAttributes := TmncSchemaAttributes.Create;
 end;
 
 destructor TmncSchemaItem.Destroy;
@@ -260,14 +260,14 @@ begin
 
 end;
 
-{ TmncSchemaParams }
+{ TmncSchemaAttributes }
 
-function TmncSchemaParams.GetItem(Index: Integer): TmncSchemaParam;
+function TmncSchemaAttributes.GetItem(Index: Integer): TmncSchemaParam;
 begin
   Result := inherited Items[Index] as TmncSchemaParam;
 end;
 
-function TmncSchemaParams.GetValues(Index: string): string;
+function TmncSchemaAttributes.GetValues(Index: string): string;
 var
   aItem: TmncSchemaParam;
 begin
@@ -283,12 +283,12 @@ begin
   end;
 end;
 
-procedure TmncSchemaParams.SetItem(Index: Integer; const Value: TmncSchemaParam);
+procedure TmncSchemaAttributes.SetItem(Index: Integer; const Value: TmncSchemaParam);
 begin
   inherited Items[Index] := Value;
 end;
 
-constructor TmncSchemaParams.Create(Names, Values: array of string);
+constructor TmncSchemaAttributes.Create(Names, Values: array of string);
 var
   i: Integer;
   v: string;
@@ -304,12 +304,12 @@ begin
   end;
 end;
 
-constructor TmncSchemaParams.Create;
+constructor TmncSchemaAttributes.Create;
 begin
   Create([], []);
 end;
 
-function TmncSchemaParams.Find(const Name: string): TmncSchemaParam;
+function TmncSchemaAttributes.Find(const Name: string): TmncSchemaParam;
 var
   i: Integer;
 begin
@@ -324,12 +324,12 @@ begin
   end;
 end;
 
-function TmncSchemaParams.Add(Param: TmncSchemaParam): Integer;
+function TmncSchemaAttributes.Add(Param: TmncSchemaParam): Integer;
 begin
   Result := inherited Add(Param);
 end;
 
-function TmncSchemaParams.Add(Name, Value: string): TmncSchemaParam;
+function TmncSchemaAttributes.Add(Name, Value: string): TmncSchemaParam;
 begin
   Result := TmncSchemaParam.Create;
   Result.Name := Name;
