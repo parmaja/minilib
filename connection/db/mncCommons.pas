@@ -51,12 +51,12 @@ type
     procedure SetLink(const Value: TmncLinksObject);
     function GetActive: Boolean; virtual;
     procedure SetActive(const AValue: Boolean); virtual;
-    property Link: TmncLinksObject read FLink write SetLink;
   public
     constructor Create; virtual;
     destructor Destroy; override;
     constructor CreateBy(vLink: TmncLinksObject);
     property Active: Boolean read GetActive write SetActive;
+    property Link: TmncLinksObject read FLink write SetLink;
   end;
 
   { TmncLinksObject }

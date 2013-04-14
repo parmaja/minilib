@@ -70,6 +70,8 @@ type
 }
   TmncSessionMode = (smNone, smSingle, smEmulate, smMultiple, smConnection);
   TmncCapability = (
+    ccDB, //It is Database engine not just transfer data object
+    ccSQL, //It is SQL engine, you know CSV or Paradox is not, but we have no plan to support Paradox
     ccTransactions, //Support transaction, most of them Like Firebird, SQLite, PG
     ccMultiTransactions, //Like Firebird, while PG and SQLite is not
     ccNetwork //Can connect over network

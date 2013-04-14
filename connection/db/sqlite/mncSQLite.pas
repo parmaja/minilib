@@ -17,7 +17,7 @@ interface
 
 uses
   Classes, SysUtils, Variants,
-  mncSQLiteHeader, mncCommons,
+  mncSQLiteHeader, mncCommons, mncSchemas,
   mnUtils, mncConnections, mncSQL;
 
 const
@@ -58,7 +58,7 @@ type
     function CreateSession: TmncSQLSession; override;
     procedure Interrupt;
     function GetVersion: string;
-    procedure Execute(SQL: string);
+    procedure Execute(Command: string); override;
     property Exclusive: Boolean read FExclusive write SetExclusive;
     property ReadCommited: Boolean read FReadCommited write SetReadCommited;
     property Synchronous: TmncSynchronous read FSynchronous write FSynchronous default syncDefault;
@@ -85,6 +85,7 @@ type
     constructor Create(vConnection: TmncConnection); override;
     destructor Destroy; override;
     function CreateCommand: TmncSQLCommand; override;
+    function CreateSchema: TmncSchema; override;
     procedure Execute(SQL: string);
     function GetLastInsertID: Int64;
     function GetRowsChanged: Integer;
@@ -391,7 +392,7 @@ class function TmncSQLiteConnection.Model: TmncConnectionModel;
 begin
   Result.Name := 'SQLite';
   Result.Title := 'SQLite Database';
-  Result.Capabilities := [ccTransactions];
+  Result.Capabilities := [ccDB, ccSQL, ccTransactions];
   Result.SchemaClass := TmncSQLiteSchema;
   Result.Mode := smEmulate;
 end;
@@ -460,6 +461,12 @@ end;
 function TmncSQLiteSession.CreateCommand: TmncSQLCommand;
 begin
   Result := TmncSQLiteCommand.Create;
+  Result.Session := Self;
+end;
+
+function TmncSQLiteSession.CreateSchema: TmncSchema;
+begin
+  Result := TmncSQLiteSchema.CreateBy(Self);
 end;
 
 procedure TmncSQLiteSession.Execute(SQL: string);
@@ -482,14 +489,14 @@ begin
     Execute('BEGIN');
 end;
 
-procedure TmncSQLiteConnection.Execute(SQL: string);
+procedure TmncSQLiteConnection.Execute(Command: string);
 var
  lMsg  : PChar;
  s : Utf8String;
  r  : integer;
 begin
   lMSg := nil;
-  s := SQL;
+  s := Command;
   r := sqlite3_exec(FDBHandle, PChar(s), nil, nil, @lMsg);
   if lMSg <> nil then
   begin

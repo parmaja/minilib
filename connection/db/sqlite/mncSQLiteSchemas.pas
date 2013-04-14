@@ -46,7 +46,7 @@ type
     procedure EnumIndices(Schema: TmncSchemaItems; SQLName: string = ''; Options: TschmEnumOptions = []); override;
     //source
     procedure GetTriggerSource(Strings:TStringList; SQLName: string; Options: TschmEnumOptions = []); override;
-    procedure GetIndexInfo(Schema: TmncSchemaItems; SQLName: string; Options: TschmEnumOptions = []);
+    procedure GetIndexInfo(Schema: TmncSchemaItems; SQLName: string; Options: TschmEnumOptions = []); override;
     property Session: TmncSession read GetSession write SetSession;//alias for FLink in base class
   end;
 
