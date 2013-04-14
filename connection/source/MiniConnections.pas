@@ -2,20 +2,20 @@
   This source is only used to compile and install the package.
  }
 
-unit MiniConnections; 
+unit MiniConnections;
 
 interface
 
 uses
   mncConnections, mncCSV, mncCSVExchanges, mncSchemas, mncSQL, mncSQLUtils, 
-  mncSQLite, mncSQLiteSchemas, LazarusPackageIntf;
+  mncSQLite, mncSQLiteSchemas, mncDB, LazarusPackageIntf;
 
 implementation
 
-procedure Register; 
+procedure Register;
 begin
-end; 
+end;
 
 initialization
-  RegisterPackage('MiniConnections', @Register); 
+  RegisterPackage('MiniConnections', @Register);
 end.

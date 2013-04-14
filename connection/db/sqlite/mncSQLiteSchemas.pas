@@ -32,19 +32,19 @@ type
     function GetSortSQL(Options: TschmEnumOptions):string;
   public
     procedure EnumTables(Schema: TmncSchemaItems; Options: TschmEnumOptions = []); override;
-    procedure EnumFields(Schema: TmncSchemaItems; MemberName: string; Options: TschmEnumOptions = []); override;
+    procedure EnumFields(Schema: TmncSchemaItems; SQLName: string; Options: TschmEnumOptions = []); override;
     procedure EnumViews(Schema: TmncSchemaItems; Options: TschmEnumOptions = []); override;
     procedure EnumProcedures(Schema: TmncSchemaItems; Options: TschmEnumOptions = []); override;
     procedure EnumSequences(Schema: TmncSchemaItems; Options: TschmEnumOptions = []); override;
     procedure EnumFunctions(Schema: TmncSchemaItems; Options: TschmEnumOptions = []); override;
     procedure EnumExceptions(Schema: TmncSchemaItems; Options: TschmEnumOptions = []); override;
     procedure EnumDomains(Schema: TmncSchemaItems; Options: TschmEnumOptions = []); override;
-    procedure EnumConstraints(Schema: TmncSchemaItems; MemberName: string = ''; Options: TschmEnumOptions = []); override;
-    procedure EnumTriggers(Schema: TmncSchemaItems; MemberName: string = ''; Options: TschmEnumOptions = []); override;
-    procedure EnumIndices(Schema: TmncSchemaItems; MemberName: string = ''; Options: TschmEnumOptions = []); override;
+    procedure EnumConstraints(Schema: TmncSchemaItems; SQLName: string = ''; Options: TschmEnumOptions = []); override;
+    procedure EnumTriggers(Schema: TmncSchemaItems; SQLName: string = ''; Options: TschmEnumOptions = []); override;
+    procedure EnumIndices(Schema: TmncSchemaItems; SQLName: string = ''; Options: TschmEnumOptions = []); override;
     //source
-    procedure GetTriggerSource(Strings:TStringList; MemberName: string; Options: TschmEnumOptions = []); override;
-    procedure GetIndexInfo(Schema: TmncSchemaItems; MemberName: string; Options: TschmEnumOptions = []);
+    procedure GetTriggerSource(Strings:TStringList; SQLName: string; Options: TschmEnumOptions = []); override;
+    procedure GetIndexInfo(Schema: TmncSchemaItems; SQLName: string; Options: TschmEnumOptions = []);
   end;
 
 implementation
@@ -150,32 +150,32 @@ begin
 end;
 
 procedure TmncSQLiteSchema.EnumConstraints(Schema: TmncSchemaItems;
-  MemberName: string; Options: TschmEnumOptions);
+  SQLName: string; Options: TschmEnumOptions);
 begin
 
 end;
 
 procedure TmncSQLiteSchema.EnumTriggers(Schema: TmncSchemaItems;
-  MemberName: string; Options: TschmEnumOptions);
+  SQLName: string; Options: TschmEnumOptions);
 var
   s: string;
 begin
   s := 'select name from sqlite_master where type = ''trigger''';
-  if MemberName <> '' then
-    s := s + ' and tbl_name = ''' +MemberName+ '''';
+  if SQLName <> '' then
+    s := s + ' and tbl_name = ''' +SQLName+ '''';
   s := s +  GetSortSQL(Options);
   EnumCMD(Schema, sokTrigger, s);
 end;
 
-procedure TmncSQLiteSchema.EnumIndices(Schema: TmncSchemaItems; MemberName: string;
+procedure TmncSQLiteSchema.EnumIndices(Schema: TmncSchemaItems; SQLName: string;
   Options: TschmEnumOptions);
 var
   s: string;
 begin
   s := '';
-  if MemberName <> '' then
+  if SQLName <> '' then
   begin
-    s := s + 'PRAGMA index_list('''+ MemberName +''')' + GetSortSQL(Options);
+    s := s + 'PRAGMA index_list('''+ SQLName +''')' + GetSortSQL(Options);
     EnumCMD(Schema, sokIndex, s, ['unique']);
   end
   else
@@ -185,27 +185,27 @@ begin
   end;
 end;
 
-procedure TmncSQLiteSchema.GetTriggerSource(Strings: TStringList; MemberName: string; Options: TschmEnumOptions);
+procedure TmncSQLiteSchema.GetTriggerSource(Strings: TStringList; SQLName: string; Options: TschmEnumOptions);
 var
   s: string;
 begin
   s := 'select "sql" as name from sqlite_master where type = ''trigger''';
-  s := s + ' and name = ''' +MemberName+ '''';
+  s := s + ' and name = ''' +SQLName+ '''';
   FetchCMD(Strings, s);
 end;
 
-procedure TmncSQLiteSchema.GetIndexInfo(Schema: TmncSchemaItems; MemberName: string; Options: TschmEnumOptions);
+procedure TmncSQLiteSchema.GetIndexInfo(Schema: TmncSchemaItems; SQLName: string; Options: TschmEnumOptions);
 var
   aCMD: TmncSQLiteCommand;
   aItem: TmncSchemaItem;
 begin
-  aCMD := CreateCMD('PRAGMA index_info('''+ MemberName +''')');
+  aCMD := CreateCMD('PRAGMA index_info('''+ SQLName +''')');
   try
     if aCMD.Execute then
     begin
       aItem := TmncSchemaItem.Create;
       aItem.Name := 'Name';
-      aItem.Attributes.Add('name', MemberName);
+      aItem.Attributes.Add('name', SQLName);
       Schema.Add(aItem);
 
       aItem := TmncSchemaItem.Create;
@@ -228,12 +228,12 @@ begin
   end;
 end;
 
-procedure TmncSQLiteSchema.EnumFields(Schema: TmncSchemaItems; MemberName: string; Options: TschmEnumOptions);
+procedure TmncSQLiteSchema.EnumFields(Schema: TmncSchemaItems; SQLName: string; Options: TschmEnumOptions);
 var
   aCMD: TmncSQLiteCommand;
   aItem: TmncSchemaItem;
 begin
-  aCMD := CreateCMD('pragma table_info(''' + (MemberName) + ''')' + GetSortSQL(Options));
+  aCMD := CreateCMD('pragma table_info(''' + (SQLName) + ''')' + GetSortSQL(Options));
   try
     aCMD.Prepare;
     aCMD.Execute;

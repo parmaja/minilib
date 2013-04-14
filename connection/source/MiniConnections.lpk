@@ -25,12 +25,12 @@
           <IgnoredMessages idx5024="True"/>
           <UseMsgFile Value="True"/>
         </CompilerMessages>
-        <CustomOptions Value="$(ProjectOpts)"/>
+        <CustomOptions Value="$(IDEBuildOptions)"/>
         <CompilerPath Value="$(CompPath)"/>
       </Other>
     </CompilerOptions>
     <Version Major="1" Release="1"/>
-    <Files Count="8">
+    <Files Count="9">
       <Item1>
         <Filename Value="mncConnections.pas"/>
         <UnitName Value="mncConnections"/>
@@ -63,6 +63,10 @@
         <Filename Value="..\db\sqlite\mncSQLiteSchemas.pas"/>
         <UnitName Value="mncSQLiteSchemas"/>
       </Item8>
+      <Item9>
+        <Filename Value="..\db\mncDB.pas"/>
+        <UnitName Value="mncDB"/>
+      </Item9>
     </Files>
     <Type Value="RunAndDesignTime"/>
     <RequiredPkgs Count="2">
@@ -75,7 +79,7 @@
       </Item2>
     </RequiredPkgs>
     <UsageOptions>
-      <CustomOptions Value="$(ProjectOpts)"/>
+      <CustomOptions Value="$(IDEBuildOptions)"/>
       <UnitPath Value="$(PkgOutDir)"/>
     </UsageOptions>
     <PublishOptions>

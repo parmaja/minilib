@@ -69,8 +69,8 @@ end;
 function TmncEngines.Add(vConnectionClass: TmncConnectionClass): TmncEngine;
 begin
   Result := TmncEngine.Create;
-  Result.Name := vConnectionClass.GetModel.Name;
-  Result.Title := vConnectionClass.GetModel.Title;
+  Result.Name := vConnectionClass.Model.Name;
+  Result.Title := vConnectionClass.Model.Title;
   Result.ConnectionClass := vConnectionClass;
   inherited Add(Result);
   //mnDriversClasses.Add('Engines', 'SerialEngines', 'Serial Engine', vConnectionClass);//TODO

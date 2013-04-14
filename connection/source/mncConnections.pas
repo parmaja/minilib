@@ -59,7 +59,7 @@ type
     property Items[Index: Integer]: TmncLinkObject read GetItem write SetItem; default;
   end;
 
-  TmncCodepageConvert = (cpcNone, cpcAnsi, cpcUTF8, cpcUnicode);
+  TmncCodePageConvert = (cpcNone, cpcAnsi, cpcUTF8, cpcUnicode);
 
 //Connection as like connect by FTP server to send commands or a Database to send SQL
 {
@@ -71,6 +71,20 @@ type
   smConnection: Every session have new connection good for SQLite and PG
 }
   TmncSessionMode = (smNone, smSingle, smEmulate, smMultiple, smConnection);
+  TmncCapability = (
+    ccTransactions, //Support transaction, most of them Like Firebird, SQLite, PG
+    ccMultiTransactions, //Like Firebird, while PG and SQLite is not
+    ccNetwork //Can connect over network
+  );
+
+  TmncCapabilities = set of TmncCapability;
+
+  TmncConnectionModel = record
+    Name: string;
+    Title: string;
+    Mode: TmncSessionMode;
+    Capabilities: TmncCapabilities;
+  end;
 
   { TmncConnection }
 
@@ -100,13 +114,14 @@ type
     procedure DoConnect; virtual; abstract;
     procedure DoDisconnect; virtual; abstract;
     function GetConnected: Boolean; virtual; abstract;
-    class function GetMode: TmncSessionMode; virtual;
     procedure DoInit; virtual;
     procedure Init;
+    class function GetMode: TmncSessionMode; virtual; deprecated;
     property ParamsChanged: Boolean read FParamsChanged write FParamsChanged;
   public
     constructor Create;
     destructor Destroy; override;
+    class function Model: TmncConnectionModel; virtual; abstract;
     procedure Connect;
     procedure Disconnect;
     procedure Open; //Alias for Connect
@@ -127,6 +142,8 @@ type
     property OnConnected: TNotifyEvent read FOnConnected write FOnConnected;
     property OnDisconnected: TNotifyEvent read FOnDisconnected write FOnDisconnected;
   end;
+
+  TmncConnectionClass = class of TmncConnection;
 
   //Session it is branch/clone of Connection but usefull for take a special params, it is like Transactions.
   TmncSessionAction = (sdaCommit, sdaRollback);
@@ -1050,7 +1067,7 @@ begin
   if not Active then
     raise EmncException.Create('Oops you have not started yet!');
   Dec(FStartCount);
-  case Connection.Mode of
+  case Connection.Model.Mode of
     smMultiple:
       DoStop(How, Retaining);
     smSingle:
@@ -1119,11 +1136,11 @@ end;
 
 procedure TmncSession.Start;
 begin
-  if not (Connection.Mode in [smNone, smConnection]) and (Active) then
+  if not (Connection.Model.Mode in [smNone, smConnection]) and (Active) then
     raise EmncException.Create('Session is already active.');
   Connection.Init;
   Init;
-  case Connection.Mode of
+  case Connection.Model.Mode of
     smMultiple: DoStart;
     smSingle,
     smEmulate:
