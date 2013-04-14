@@ -54,6 +54,8 @@ type
     procedure DoInit; override;
   public
     constructor Create;
+    class function GetName: string; override;
+    class function GetTitle: string; override;
     function CreateSession: TmncSQLSession; override;
     procedure Interrupt;
     function GetVersion: string;
@@ -199,6 +201,9 @@ function SQLiteTempStoreToStr(TempStore: TmncTempStore): string;
 function SQLiteSynchronousToStr(Synchronous: TmncSynchronous): string;
 
 implementation
+
+uses
+  mncDB;
 
 function SQLiteJournalModeToStr(JournalMode: TmncJournalMode): string;
 begin
@@ -381,6 +386,16 @@ end;
 constructor TmncSQLiteConnection.Create;
 begin
   inherited Create;
+end;
+
+class function TmncSQLiteConnection.GetName: string;
+begin
+  Result := 'SQLite';
+end;
+
+class function TmncSQLiteConnection.GetTitle: string;
+begin
+  Result := 'SQLite Database';
 end;
 
 function TmncSQLiteConnection.CreateSession: TmncSQLSession;
@@ -898,5 +913,7 @@ begin
   Result := inherited Binds as TmncSQLiteBinds;
 end;
 
+initialization
+  mncDB.Engines.Add(TmncSQLiteConnection);
 end.
 
