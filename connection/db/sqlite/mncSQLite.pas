@@ -54,8 +54,7 @@ type
     procedure DoInit; override;
   public
     constructor Create;
-    class function GetName: string; override;
-    class function GetTitle: string; override;
+    class function GetModel: TmncConnectionModel; override;
     function CreateSession: TmncSQLSession; override;
     procedure Interrupt;
     function GetVersion: string;
@@ -388,14 +387,12 @@ begin
   inherited Create;
 end;
 
-class function TmncSQLiteConnection.GetName: string;
+class function TmncSQLiteConnection.GetModel: TmncConnectionModel;
 begin
-  Result := 'SQLite';
-end;
-
-class function TmncSQLiteConnection.GetTitle: string;
-begin
-  Result := 'SQLite Database';
+  Result.Name := 'SQLite';
+  Result.Title := 'SQLite Database';
+  Result.Capabilities := [ccTransactions];
+  Result.Mode := smEmulate;
 end;
 
 function TmncSQLiteConnection.CreateSession: TmncSQLSession;
