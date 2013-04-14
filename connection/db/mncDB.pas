@@ -17,7 +17,7 @@ interface
 
 uses
   SysUtils, Classes, Contnrs,
-  mncConnections;
+  mncCommons, mncConnections;
 
 type
 

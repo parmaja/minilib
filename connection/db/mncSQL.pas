@@ -17,7 +17,7 @@ interface
 
 uses
   Classes, SysUtils, Contnrs,
-  mncConnections;
+  mncConnections, mncCommons;
 
 type
   TmncParseSQLOptions = set of (psoGenerateParams, psoAddParamsID, psoAddParamsNames);

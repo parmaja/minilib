@@ -17,7 +17,7 @@ interface
 
 uses
   Classes, SysUtils, Variants,
-  mncSQLiteHeader,
+  mncSQLiteHeader, mncCommons,
   mnUtils, mncConnections, mncSQL;
 
 const

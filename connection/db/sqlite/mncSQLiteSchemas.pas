@@ -24,6 +24,8 @@ type
 
   TmncSQLiteSchema = class(TmncSchema)
   private
+    function GetSession: TmncSession;
+    procedure SetSession(AValue: TmncSession);
   protected
     function CreateCMD(SQL: string): TmncSQLiteCommand;
     procedure EnumCMD(Schema: TmncSchemaItems; vKind: TschmKind; SQL: string; Fields: array of string); overload;//use field 'name'
@@ -45,11 +47,22 @@ type
     //source
     procedure GetTriggerSource(Strings:TStringList; SQLName: string; Options: TschmEnumOptions = []); override;
     procedure GetIndexInfo(Schema: TmncSchemaItems; SQLName: string; Options: TschmEnumOptions = []);
+    property Session: TmncSession read GetSession write SetSession;//alias for FLink in base class
   end;
 
 implementation
 
 { TmncSchemaItems }
+
+function TmncSQLiteSchema.GetSession: TmncSession;
+begin
+  Result := Link as TmncSession;
+end;
+
+procedure TmncSQLiteSchema.SetSession(AValue: TmncSession);
+begin
+  inherited Link := AValue;
+end;
 
 function TmncSQLiteSchema.CreateCMD(SQL: string): TmncSQLiteCommand;
 begin

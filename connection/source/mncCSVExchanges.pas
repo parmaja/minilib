@@ -14,7 +14,8 @@ interface
 {$ENDIF}
 
 uses
-  SysUtils, Variants, Classes, mncConnections, mnUtils;
+  SysUtils, Variants, Classes, mnUtils,
+  mncConnections, mncCommons;
 
 type
 {

@@ -17,7 +17,7 @@ interface
 
 uses
   SysUtils, Classes, Contnrs,
-  mncConnections;
+  mncCommons;
 
 type
   TschmKind = (sokNone, sokSchema, sokData,
@@ -94,7 +94,7 @@ type
   protected
   public
     destructor Destroy; override;
-    procedure EnumObject(Schema: TmncSchemaItems; Kind: TschmKind; SQLName: string = ''; Options: TschmEnumOptions = []);
+    procedure EnumObjects(Schema: TmncSchemaItems; Kind: TschmKind; SQLName: string = ''; Options: TschmEnumOptions = []);
     //---------------------
     procedure EnumTables(Schema: TmncSchemaItems; Options: TschmEnumOptions = []); virtual;
     procedure EnumViews(Schema: TmncSchemaItems; Options: TschmEnumOptions = []); virtual;
@@ -187,7 +187,7 @@ begin
   inherited;
 end;
 
-procedure TmncSchema.EnumObject(Schema: TmncSchemaItems; Kind: TschmKind; SQLName: string; Options: TschmEnumOptions);
+procedure TmncSchema.EnumObjects(Schema: TmncSchemaItems; Kind: TschmKind; SQLName: string; Options: TschmEnumOptions);
 begin
   case Kind of
     sokDatabase: ;
