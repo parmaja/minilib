@@ -113,6 +113,8 @@ type
     property IncludeHeader: Boolean read FIncludeHeader write FIncludeHeader default False;
   end;
 
+  TmncSchemaClass = class of TmncSchema;
+
   TmncSchemaType = record
     SQLType: Integer;
     TypeName: string;

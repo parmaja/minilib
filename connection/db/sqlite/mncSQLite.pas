@@ -202,7 +202,7 @@ function SQLiteSynchronousToStr(Synchronous: TmncSynchronous): string;
 implementation
 
 uses
-  mncDB;
+  mncDB, mncSQLiteSchemas;
 
 function SQLiteJournalModeToStr(JournalMode: TmncJournalMode): string;
 begin
@@ -392,6 +392,7 @@ begin
   Result.Name := 'SQLite';
   Result.Title := 'SQLite Database';
   Result.Capabilities := [ccTransactions];
+  Result.SchemaClass := TmncSQLiteSchema;
   Result.Mode := smEmulate;
 end;
 

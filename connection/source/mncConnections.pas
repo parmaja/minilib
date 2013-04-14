@@ -26,7 +26,7 @@ interface
 
 uses
   Classes, SysUtils, DateUtils, Variants, Contnrs, SyncObjs,
-  mncCommons, mnFields;
+  mnFields, mncCommons, mncSchemas;
 
 type
 
@@ -81,6 +81,7 @@ type
     Name: string;
     Title: string;
     Mode: TmncSessionMode;
+    SchemaClass: TmncSchemaClass;
     Capabilities: TmncCapabilities;
   end;
 
