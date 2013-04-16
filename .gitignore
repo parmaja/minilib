@@ -9,3 +9,4 @@ ref
 *.local
 *.dsk
 /lib/doc
+/reports/source/delphi

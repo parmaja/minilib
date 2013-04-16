@@ -30,7 +30,7 @@ uses
   {$else}
   mncPGHeader,
   {$endif}
-  mnUtils, mnStreams, mncConnections, mncSQL;
+  mnUtils, mnStreams, mncConnections, mncSQL, mncCommons;
 
 type
 
@@ -822,9 +822,9 @@ var
 begin
   FBOF := True;
   FHandle := Session.NewToken;
-  s := ParseSQL([psoAddParamsID], '$');
+  ParseSQL([psoAddParamsID], '$');
   c := Session.DBHandle;
-  r := PQprepare(c, PChar(FHandle), PChar(s), 0 , nil);
+  r := PQprepare(c, PChar(FHandle), PChar(ParamNames.SQL), 0 , nil);
   try
     RaiseError(r);
   finally

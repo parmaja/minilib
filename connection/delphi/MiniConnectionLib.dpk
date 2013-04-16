@@ -35,6 +35,8 @@ contains
   mncConnections in '..\source\mncConnections.pas',
   mncCSV in '..\source\mncCSV.pas',
   mncSQL in '..\db\mncSQL.pas',
+  mncDB in '..\db\mncDB.pas',
+  mncCommons in '..\db\mncCommons.pas',
   mncSchemas in '..\db\mncSchemas.pas',
   mncSQLite in '..\db\sqlite\mncSQLite.pas',
   mncSQLiteHeader in '..\db\sqlite\mncSQLiteHeader.pas',
