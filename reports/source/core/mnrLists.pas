@@ -141,7 +141,6 @@ type
   protected
     function GetByIndex(vIndex: Integer): TmnrNode;
     function GetCount: Integer; override;
-
   public
     function Add: TmnrLinkNode;
     procedure IncCount(Value: Integer); override;
