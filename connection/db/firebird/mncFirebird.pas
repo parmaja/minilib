@@ -22,7 +22,7 @@ interface
 uses
   Classes, SysUtils, Variants,
   mncConnections, mncSQL,
-  mncFBTypes, mncFBHeader, mncFBErrors, mncFBUtils, mncFBClient,
+  mncFBTypes, mncFBHeader, mncFBErrors, mncFBUtils, mncFBClient, mncSchemas,
   mncSQLDA;
 
 const
@@ -54,11 +54,11 @@ type
     procedure DoInit; override;
   public
     constructor Create;
-
+    class function Model: TmncConnectionModel; override;
     function CreateSession: TmncSQLSession; override;
 
     function GetVersion: string;
-    procedure Execute(SQL: string);
+    procedure Execute(SQL: string); override;
     property Role: string read FRole write FRole;
     property CharacterSet: string read FCharacterSet write FCharacterSet;
     property Handle: TISC_DB_HANDLE read FHandle;
@@ -84,6 +84,7 @@ type
     constructor Create(vConnection: TmncConnection); override;
     destructor Destroy; override;
     function CreateCommand: TmncSQLCommand; override;
+    function CreateSchema: TmncSchema; override;
     procedure Execute(SQL: string);
     property Handle: TISC_TR_HANDLE read FHandle;
     property TPB: PChar read FTPB;
@@ -215,7 +216,6 @@ type
     FEOF: Boolean;
     FCursor: string;
     FSQLType: TFBDSQLTypes;
-    FParsedSQL: string;
     function GetConnection: TmncFBConnection;
     function GetSession: TmncFBSession;
     procedure SetCursor(AValue: string);
@@ -260,6 +260,9 @@ type
   end;
 
 implementation
+
+uses
+  mncFBSchemas, mncDB;
 
 procedure InitSQLDA(var Data: PXSQLDA; New: Integer; Clean: Boolean = True);
 var
@@ -316,6 +319,15 @@ end;
 constructor TmncFBConnection.Create;
 begin
   inherited Create;
+end;
+
+class function TmncFBConnection.Model: TmncConnectionModel;
+begin
+  Result.Name := 'FirebirdSQL';
+  Result.Title := 'Firebird SQL Database';
+  Result.Capabilities := [ccDB, ccSQL, ccTransactions, ccMultiTransactions, ccNetwork];
+  Result.SchemaClass := TmncFBSchema;
+  Result.Mode := smMultiple;
 end;
 
 function TmncFBConnection.CreateSession: TmncSQLSession;
@@ -465,7 +477,12 @@ end;
 
 function TmncFBSession.CreateCommand: TmncSQLCommand;
 begin
-  Result := TmncFBCommand.Create;
+  Result := TmncFBCommand.CreateBy(Self);
+end;
+
+function TmncFBSession.CreateSchema: TmncSchema;
+begin
+  Result := TmncFBSchema.CreateBy(Self)
 end;
 
 procedure TmncFBSession.Execute(SQL: string);
@@ -1242,16 +1259,11 @@ var
   aField: TmncFBField;
   aParam: TmncFBParam;
 begin
-  if not Prepared then
+  if not Prepared then//TODO remove this lline
   begin
-    if (SQL.Text = '') then
-      FBRaiseError(fbceEmptyQuery, [nil]);
-    FParsedSQL := ParseSQL([]);
-    if (FParsedSQL = '') then
-      FBRaiseError(fbceEmptyQuery, [nil]);
     try
       Call(FBClient.isc_dsql_alloc_statement2(@StatusVector, @Connection.Handle, @FHandle), StatusVector, True);
-      Call(FBClient.isc_dsql_prepare(@StatusVector, @Session.Handle, @FHandle, 0, PAnsiChar(FParsedSQL), FB_DIALECT, nil), StatusVector, True);
+      Call(FBClient.isc_dsql_prepare(@StatusVector, @Session.Handle, @FHandle, 0, PAnsiChar(SQLProcessed.SQL), FB_DIALECT, nil), StatusVector, True);
       { type of the statement }
       type_item := Char(isc_info_sql_stmt_type);
       Call(FBClient.isc_dsql_sql_info(@StatusVector, @FHandle, 1, @type_item, SizeOf(res_buffer), res_buffer), StatusVector, True);
@@ -1343,4 +1355,6 @@ begin
   end;
 end;
 
+initialization
+  mncDB.Engines.Add(TmncFBConnection);
 end.
