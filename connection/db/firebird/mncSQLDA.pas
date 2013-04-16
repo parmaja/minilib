@@ -187,7 +187,7 @@ type
     property AsChar: Char read GetAsChar write SetAsChar;
     property AsNullString: string read GetAsString write SetAsNullString;
     property AsHex: string read GetAsHex write SetAsHex;
-    property AsText: string read GetAsText write SetAsText; //binary blob not text convert to hex
+    property AsText: string read GetAsText write SetAsText; //binary blob not text will convert to hex
     property AsTrimString: string read GetAsStrip write SetAsStrip;
     property AsStrip: string read GetAsStrip write SetAsStrip;
     property AsVariant: Variant read GetAsVariant write SetAsVariant;
@@ -874,7 +874,7 @@ begin
   if not IsNull then
     case SqlDef of
       SQL_ARRAY:
-        Result := '(Array)';
+        Result := '[Array]';
       SQL_BLOB:
         begin
           ss := TStringStream.Create('');
@@ -937,13 +937,13 @@ begin
   else
     case SqlDef of
       SQL_ARRAY:
-        Result := '(Array)';
+        Result := '[Array]';
       SQL_BLOB:
         begin
           if SqlSubtype = 1 then
             Result := AsString
           else
-            Result := '(Blob)';
+            Result := '[Blob]';
         end;
       SQL_TEXT, SQL_VARYING:
         Result := AsString;

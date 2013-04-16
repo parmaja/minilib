@@ -1293,7 +1293,7 @@ begin
               aParam := (Params.Items[i] as TmncFBParam);
 
               aParam.SQLVAR.XSQLVar := p;
-              aParam.SQLVAR.Attach(@Session.Handle, @Connection.Handle);
+              aParam.SQLVAR.Attach(@Connection.Handle, @Session.Handle);
               aParam.SQLVAR.Prepare;
 
               p := Pointer(PAnsiChar(p) + XSQLVar_Size);
@@ -1335,7 +1335,7 @@ begin
                   //aColumn.Name := FBDequoteName(aColumn.Name);
                   aField := Fields.Add(aColumn) as TmncFBField;
                   aField.SQLVAR.XSQLVar := p;
-                  aField.SQLVAR.Attach(@Session.Handle, @Connection.Handle);
+                  aField.SQLVAR.Attach(@Connection.Handle, @Session.Handle);
                   aField.SQLVAR.Prepare;
 
                   p := Pointer(PAnsiChar(p) + XSQLVar_Size);

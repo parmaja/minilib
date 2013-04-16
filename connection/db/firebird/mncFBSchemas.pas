@@ -83,10 +83,10 @@ begin
     aCMD.Execute;
     while not aCMD.EOF do
     begin
-      aItem := Schema.Add(aCMD.Field['name'].AsString);
+      aItem := Schema.Add(aCMD.Field['name'].AsTrimString);
       aItem.Kind := vKind;
       for i := Low(Fields) to High(Fields) do
-        aItem.Attributes.Add(Fields[i], aCMD.Field[Fields[i]].AsString);
+        aItem.Attributes.Add(Fields[i], aCMD.Field[Fields[i]].AsTrimString);
       aCMD.Next;
     end;
   finally
@@ -108,7 +108,7 @@ begin
     aCMD.Execute;
     while not aCMD.EOF do
     begin
-      Strings.Add(aCMD.Field['name'].AsString);
+      Strings.Add(aCMD.Field['name'].AsTrimString);
       aCMD.Next;
     end;
   finally
@@ -205,7 +205,17 @@ begin
 end;
 
 procedure TmncFBSchema.GetTriggerSource(Strings: TStringList; SQLName: string; Options: TschmEnumOptions);
+const
+  sSQL =
+    'select rdb$trigger_name name, rdb$trigger_source source, rdb$trigger_inactive as inactive, rdb$flags as flags from rdb$triggers trg join rdb$relations rel on  trg.rdb$relation_name = rel.rdb$relation_name ' +
+    'where ' +
+    '(rel.rdb$system_flag <> 1 or rel.rdb$system_flag is null) and ' +
+    'not exists (select * from rdb$check_constraints chk where trg.rdb$trigger_name = chk.rdb$trigger_name) ';
+var
+  s: string;
 begin
+  s := sSQL + ' and trg.rdb$relation_name = ''' + SQLName + '''';
+
 end;
 
 procedure TmncFBSchema.GetIndexInfo(Schema: TmncSchemaItems; SQLName: string; Options: TschmEnumOptions);
@@ -224,17 +234,17 @@ begin
 
       aItem := TmncSchemaItem.Create;
       aItem.Name := 'Field';
-      aItem.Attributes.Add('field', aCMD.Field['name'].AsString);
+      aItem.Attributes.Add('field', aCMD.Field['name'].AsTrimString);
       Schema.Add(aItem);
 
       aItem := TmncSchemaItem.Create;
       aItem.Name := 'CID';
-      aItem.Attributes.Add('cid', aCMD.Field['cid'].AsString);
+      aItem.Attributes.Add('cid', aCMD.Field['cid'].AsTrimString);
       Schema.Add(aItem);
 
       aItem := TmncSchemaItem.Create;
       aItem.Name := 'Sequence NO';
-      aItem.Attributes.Add('seqno',  aCMD.Field['seqno'].AsString);
+      aItem.Attributes.Add('seqno',  aCMD.Field['seqno'].AsTrimString);
       Schema.Add(aItem);
     end;
   finally
@@ -262,7 +272,7 @@ begin
     while not aCMD.EOF do
     begin
       aItem := TmncSchemaItem.Create;
-      aItem.Name := aCMD.Field['name'].AsString;
+      aItem.Name := aCMD.Field['name'].AsTrimString;
   {    aItem.Attributes.Add('type', aCMD.Field['type'].AsString);
       aItem.Attributes.Add('pk', IntToStr(ord(aCMD.Field['pk'].AsInteger <> 0)));
       aItem.Attributes.Add('notnull', IntToStr(ord(aCMD.Field['notnull'].AsInteger <> 0)));
