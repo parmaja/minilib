@@ -228,6 +228,7 @@ type
   protected
     function Call(ErrCode: ISC_STATUS; StatusVector: TStatusVector; RaiseError: Boolean): ISC_STATUS;
     procedure CheckHandle;//TODO remove it
+    procedure DoParse; override;
     procedure DoUnprepare; override;
     procedure DoPrepare; override;
     procedure DoExecute; override;
@@ -1224,6 +1225,11 @@ procedure TmncFBCommand.DoUnprepare;
 begin
   inherited;
   FreeHandle;
+end;
+
+procedure TmncFBCommand.DoParse;
+begin
+  inherited DoParse;
 end;
 
 function TmncFBCommand.Call(ErrCode: ISC_STATUS; StatusVector: TStatusVector; RaiseError: Boolean): ISC_STATUS;

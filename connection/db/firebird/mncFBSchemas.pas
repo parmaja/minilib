@@ -17,7 +17,7 @@ interface
 
 uses
   SysUtils, Classes,
-  mncSchemas, mncConnections, mncFirebird;
+  mncSchemas, mncConnections, mncFBUtils, mncFirebird;
 
 type
 
@@ -46,7 +46,8 @@ type
     procedure EnumTriggers(Schema: TmncSchemaItems; SQLName: string = ''; Options: TschmEnumOptions = []); override;
     procedure EnumIndices(Schema: TmncSchemaItems; SQLName: string = ''; Options: TschmEnumOptions = []); override;
     //source
-    procedure GetTriggerSource(Strings:TStringList; SQLName: string; Options: TschmEnumOptions = []); override;
+    procedure GetTriggerSource(Strings: TStringList; SQLName: string; Options: TschmEnumOptions = []); override;
+    procedure GetViewSource(Strings: TStringList; SQLName: string; Options: TschmEnumOptions = []); override;
     procedure GetIndexInfo(Schema: TmncSchemaItems; SQLName: string; Options: TschmEnumOptions = []); override;
     property Session: TmncSession read GetSession write SetSession;//alias for FLink in base class
   end;
@@ -204,18 +205,106 @@ begin
     EnumCMD(Schema, sokIndex, s);
 end;
 
+function GetTriggerType(TriggerType: Integer): string;
+var
+  i, t: Integer;
+const
+  sTypes: array[0..2] of string = ('insert', 'update', 'delete');
+begin
+    // this function taked from trigger.cpp in project FlameRobin
+    // For explanation: read README.universal_triggers file in Firebird's
+    //                  doc/sql.extensions directory
+  i := TriggerType mod 2;
+  if i > 0 then
+    Result := 'before '
+  else
+    Result := 'after ';
+  TriggerType := TriggerType + 1;
+  TriggerType := TriggerType shr 1;
+  for i := 0 to 2 do
+  begin
+    t := TriggerType mod 4;
+    if t > 0 then
+    begin
+      if (i > 0) then
+        Result := Result + ' or ';
+      Result := Result + sTypes[t - 1];
+      TriggerType := TriggerType shr 2;
+    end;
+  end;
+end;
+
 procedure TmncFBSchema.GetTriggerSource(Strings: TStringList; SQLName: string; Options: TschmEnumOptions);
 const
   sSQL =
-    'select rdb$trigger_name name, rdb$trigger_source source, rdb$trigger_inactive as inactive, rdb$flags as flags from rdb$triggers trg join rdb$relations rel on  trg.rdb$relation_name = rel.rdb$relation_name ' +
-    'where ' +
-    '(rel.rdb$system_flag <> 1 or rel.rdb$system_flag is null) and ' +
-    'not exists (select * from rdb$check_constraints chk where trg.rdb$trigger_name = chk.rdb$trigger_name) ';
+    'select trg.rdb$trigger_name name, trg.rdb$trigger_source source, trg.rdb$trigger_sequence as sequence, trg.rdb$trigger_type as type, trg.rdb$trigger_inactive as inactive, trg.rdb$flags as flags, trg.rdb$relation_name relname '+
+    'from rdb$triggers trg join rdb$relations rel on  trg.rdb$relation_name = rel.rdb$relation_name ' +
+    'where ';
+//    '(rel.rdb$system_flag <> 1 or rel.rdb$system_flag is null) and ' +
+//    'not exists (select * from rdb$check_constraints chk where trg.rdb$trigger_name = chk.rdb$trigger_name) ';
 var
   s: string;
+  aName: string;
+  aRelationName: string;
+  aCMD: TmncFBCommand;
+  ActiveStr: string;
 begin
-  s := sSQL + ' and trg.rdb$relation_name = ''' + SQLName + '''';
+  s := sSQL + ' trg.rdb$trigger_name = ''' + SQLName + '''';
+  aCMD := CreateCMD(s);
+  try
+    if aCMD.Execute then
+    begin
+      aName := aCMD.Field['name'].AsTrimString;
+      aRelationName := aCMD.Field['relname'].AsTrimString;
+      if aCMD.Field['inactive'].IsNull then
+        ActiveStr := 'inactive'
+      else if aCMD.Field['inactive'].AsInteger = 1 then
+        ActiveStr := 'inactive'
+      else
+        ActiveStr := 'active';
 
+      if aCMD.Field['flags'].AsInteger <> 1 then
+        Strings.Add('/* ');
+
+      Strings.Add(Format('create or alter trigger %s for %s', [FBQuoteName(aName), FBQuoteName(aRelationName)]));
+
+      Strings.Add(Format('%s %s position %d', [ActiveStr, GetTriggerType(aCMD.Field['type'].AsInteger),
+          aCMD.Field['sequence'].AsInteger]));
+
+      if not aCMD.Field['source'].IsNull then
+        Strings.Text := Strings.Text + aCMD.Field['source'].AsTrimString;
+
+      if aCMD.Field['flags'].AsInteger <> 1 then
+        Strings.Add(' */');
+    end;
+  finally
+    aCMD.Free;
+  end;
+end;
+
+procedure TmncFBSchema.GetViewSource(Strings: TStringList; SQLName: string;
+  Options: TschmEnumOptions);
+const
+  sSQL =
+    'select vew.rdb$owner_name name, vew.rdb$view_source source, vew.rdb$relation_name relname '+ LineEnding +
+    'from rdb$relations ' + LineEnding +
+    'where ' + LineEnding;
+//    '(rel.rdb$system_flag <> 1 or rel.rdb$system_flag is null) and ' +
+//    'not exists (select * from rdb$check_constraints chk where trg.rdb$trigger_name = chk.rdb$trigger_name) ';
+var
+  s: string;
+  aName: string;
+  aRelationName: string;
+  aCMD: TmncFBCommand;
+begin
+  s := sSQL + ' trg.vew$owner_name = ''' + SQLName + '''';
+  aCMD := CreateCMD(s);
+  try
+    if aCMD.Execute then
+    begin
+    end;
+  finally
+  end;
 end;
 
 procedure TmncFBSchema.GetIndexInfo(Schema: TmncSchemaItems; SQLName: string; Options: TschmEnumOptions);

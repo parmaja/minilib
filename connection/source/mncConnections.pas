@@ -492,6 +492,7 @@ type
       Parse: is not an api call to sql engine, it just inside fpc parsing the sql,
       for collecting params and other things prepareing the sql string.
       Do not use api call here
+      NOTICE: You can not use params after Parse, params used after prepare.
     }
     procedure Parse;
     {

@@ -1,3 +1,4 @@
+unit mncFBUtils;
 {**
  *  This file is part of the "Mini Connections"
  *
@@ -11,8 +12,6 @@
 {$IFDEF FPC}
 {$mode delphi}
 {$ENDIF}
-
-unit mncFBUtils;
 
 interface
 
