@@ -824,7 +824,7 @@ begin
   FHandle := Session.NewToken;
   ParseSQL([psoAddParamsID], '$');
   c := Session.DBHandle;
-  r := PQprepare(c, PChar(FHandle), PChar(ParamNames.SQL), 0 , nil);
+  r := PQprepare(c, PChar(FHandle), PChar(SQLProcessed.SQL), 0 , nil);
   try
     RaiseError(r);
   finally
