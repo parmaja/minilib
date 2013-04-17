@@ -49,6 +49,7 @@ type
   TmnrDesignRow = class;
   TmnrDesignRows = class;
   TmnrProfiler = class;
+  TmnrGroups = class;
 
   TmnrCellClass = class of TmnrCell;
   TmnrLayoutClass = class of TmnrLayout;
@@ -118,10 +119,12 @@ type
   TmnrRow = class(TmnrRowNode)
   private
     FReferencesRow: TmnrReferencesRow;
-    FID: Int64;
-    FNumber: Integer;
     FDesignRow: TmnrDesignRow;
     FSection: TmnrSection;
+
+    FID: Int64;
+    FNumber: Integer;
+    FRowIndex: Integer;
   protected
     function GetFirst: TmnrCell;
     function GetLast: TmnrCell;
@@ -144,8 +147,9 @@ type
     property First: TmnrCell read GetFirst;
     property Last: TmnrCell read GetLast;
 
-    property ID: Int64 read FID write FID;
-    property Number: Integer read FNumber write FNumber;
+    property ID: Int64 read FID;
+    property Number: Integer read FNumber;
+    property RowIndex: Integer read FRowIndex;
 
     property ByIndex[vIndex: Integer]: TmnrCell read GetByIndex;
   end;
@@ -174,24 +178,32 @@ type
     FOnRequest: TOnRequest;
     FReference: TmnrReference;
     FDesignerCell: TmnrDesignCell;
+    function GetReport: TmnrCustomReport;
+  protected
     function GetNext: TmnrLayout;
     function GetPrior: TmnrLayout;
-  protected
     procedure DoRequest(vCell: TmnrCell); virtual;
     function CreateCell(vRow: TmnrRow): TmnrCell; virtual;
     procedure ScaleCell(vCell: TmnrCell); virtual;
     function GetTotal: Double; virtual;
     function DoCreateDesignCell(vRow: TmnrDesignRow): TmnrDesignCell; virtual;
+
+    function GetExcludeSections: TmnrSectionClassIDs; virtual;
+    function GetIncludeSections: TmnrSectionClassIDs; virtual;
+    function GetName: string; virtual;
+    function GetTitle: string; virtual;
+    function GetLayouts: TmnrLayouts;
   public
     Info: TmnrLayoutInfo;
     function DisplayText: string; override;
     property Next: TmnrLayout read GetNext;
     property Prior: TmnrLayout read GetPrior;
 
-    property Name: string read Info.Name;
-    property Title: string read Info.Title;
-    property IncludeSections: TmnrSectionClassIDs read Info.IncludeSections;
-    property ExcludeSections: TmnrSectionClassIDs read Info.ExcludeSections;
+    property Name: string read GetName;
+    property Title: string read GetTitle;
+    property IncludeSections: TmnrSectionClassIDs read GetIncludeSections;
+    property ExcludeSections: TmnrSectionClassIDs read GetExcludeSections;
+
     procedure Request(vCell: TmnrCell);
     property OnRequest: TOnRequest read FOnRequest write FOnRequest;
     function NewCell(vRow: TmnrRow): TmnrCell;
@@ -199,6 +211,8 @@ type
     property DesignerCell: TmnrDesignCell read FDesignerCell write FDesignerCell;
     property Total: Double read GetTotal;
     function CreateDesignCell(vRow: TmnrDesignRow): TmnrDesignCell;
+    property Layouts: TmnrLayouts read GetLayouts;
+    property Report: TmnrCustomReport read GetReport;
   end;
 
   TmnrLayouts = class(TmnrLinkNodes)
@@ -209,6 +223,8 @@ type
     procedure SetName(const Value: string);
     function GetNext: TmnrLayouts;
     function GetPrior: TmnrLayouts;
+    function GetGroups: TmnrGroups;
+    function GetReport: TmnrCustomReport;
   public
     function Add: TmnrLayout;
     property First: TmnrLayout read GetFirst;
@@ -220,6 +236,8 @@ type
     procedure CreateLayout(vClass: TmnrLayoutClass; const vInfo: TmnrLayoutInfo); overload;
     function Find(const vName: string): TmnrLayout;
     property Name: string read FName write SetName;
+    property Groups: TmnrGroups read GetGroups;
+    property Report: TmnrCustomReport read GetReport;
   end;
 
   TmnrGroups = class(TmnrLinkNodes)
@@ -427,7 +445,7 @@ type
     property LoopWay: TmnrSectionLoopWay read GetLoopWay;
     property OnFetch: TOnFetch read FOnFetch write FOnFetch;
 
-    procedure FillNow(vParams: TmnrFetch; vReference: TmnrReferencesRow);
+    procedure FillNow(vParams: TmnrFetch; vIndex: Integer; vReference: TmnrReferencesRow);
   published
     property AppendDetailTotals: Boolean read FAppendDetailTotals write FAppendDetailTotals default False;
     property AppendReportTotals: Boolean read FAppendReportTotals write FAppendReportTotals default False;
@@ -509,8 +527,8 @@ type
   protected
     function Canceled: Boolean;
     procedure HandleNewRow(vRow: TmnrRowNode); virtual;
-    procedure CreateSections(vSections: TmnrSections); virtual;
-    procedure CreateLayouts(vGroups: TmnrGroups); virtual;
+    procedure InitSections(vSections: TmnrSections); virtual;
+    procedure InitLayouts(vGroups: TmnrGroups); virtual;
     function CreateNewRow(vSection: TmnrSection): TmnrRow; 
     procedure Loop;
     //Apply param to report to use it in Queries or assign it to Variables
@@ -538,7 +556,7 @@ type
     function GetDetailTitles: TmnrSection;
     function GetReportTitles: TmnrSection;
   public
-    constructor Create; //(vParams: TMiscParams); note: report responsible for free params
+    constructor Create;
     destructor Destroy; override;
     property Sections: TmnrSections read GetSections;
     property Groups: TmnrGroups read GetGroups;
@@ -638,18 +656,18 @@ begin
   FItems := DoCreateItems;
   FRowsListIndex := nil;
 
-  CreateSections(FSections);
+  InitSections(FSections);
   FDetailTotals := FSections.RegisterSection('DetailTotals', '„Ã«„Ì⁄ «· ›’Ì·', sciFooterDetails);
   FReportTotals := FSections.RegisterSection('ReportTotals', '„Ã«„Ì⁄ «· ﬁ—Ì—', sciFooterReport);
   FDetailTitles := FSections.RegisterSection('DetailTitles', '⁄‰«ÊÌ‰ «· ›’Ì·', sciDetails, 0, nil, slwSingle);
   FReportTitles := FSections.RegisterSection('ReportTitles', '⁄‰«ÊÌ‰ «· ﬁ—Ì—', sciHeaderReport);
 
-  CreateLayouts(FGroups);
+  InitLayouts(FGroups);
   Created;
   FWorking := True;
 end;
 
-procedure TmnrCustomReport.CreateLayouts(vGroups: TmnrGroups);
+procedure TmnrCustomReport.InitLayouts(vGroups: TmnrGroups);
 begin
 
 end;
@@ -685,7 +703,7 @@ begin
   Result := nil;
 end;
 
-procedure TmnrCustomReport.CreateSections(vSections: TmnrSections);
+procedure TmnrCustomReport.InitSections(vSections: TmnrSections);
 begin
 end;
 
@@ -1128,7 +1146,7 @@ begin
     Report.Fetch(Self, vParams);
 end;
 
-procedure TmnrSection.FillNow(vParams: TmnrFetch; vReference: TmnrReferencesRow);
+procedure TmnrSection.FillNow(vParams: TmnrFetch; vIndex: Integer; vReference: TmnrReferencesRow);
 var
   r: TmnrDesignRow;
   d: TmnrDesignCell;
@@ -1143,8 +1161,9 @@ begin
     begin
       aRow := Report.CreateNewRow(Self);
       try
-        aRow.ID := vParams.ID;
+        aRow.FID := vParams.ID;
         aRow.FNumber := vParams.Number;
+        aRow.FRowIndex := vIndex;
         aRow.FReferencesRow := vReference;
         aRow.FDesignRow := r;
 
@@ -1363,36 +1382,38 @@ end;
 procedure TmnrSections.Loop;
 var
   s: TmnrSection;
-  fParams: TmnrFetch;
+  aParams: TmnrFetch;
   r: TmnrReferencesRow;
+  aIdx: Integer;
 begin
   s := First;
   while s <> nil do
   begin
-    fParams.ID := 0;
-    fParams.Number := 0;
+    aParams.ID := 0;
+    aParams.Number := 0;
+    aIdx := 0;
     case s.LoopWay of
       slwSingle:
       begin
-        fparams.AcceptMode := acmAccept;
-        fparams.FetchMode := fmFirst;
-        s.DoFetch(fparams);
-        if fparams.AcceptMode = acmAccept then
+        aParams.AcceptMode := acmAccept;
+        aParams.FetchMode := fmFirst;
+        s.DoFetch(aParams);
+        if aParams.AcceptMode = acmAccept then
         begin
-          s.FillNow(fparams, s.NewReference);
+          s.FillNow(aParams, 0, s.NewReference);
           s.Sections.Loop;
         end;
       end;
       slwMulti:
       begin
-        fparams.FetchMode := fmFirst;
-        fparams.AcceptMode := acmAccept;
+        aParams.FetchMode := fmFirst;
+        aParams.AcceptMode := acmAccept;
         r := nil;
-        while not Report.Canceled and (fparams.AcceptMode = acmAccept) do
+        while not Report.Canceled and (aParams.AcceptMode = acmAccept) do
         begin
-          s.DoFetch(fparams);
+          s.DoFetch(aParams);
 
-          if (fparams.FetchMode = fmFirst) then
+          if (aParams.FetchMode = fmFirst) then
           begin
             if (s.ClassID = sciDetails) then //improve add referance on first accepted ...
               r := s.NewReference;
@@ -1400,15 +1421,15 @@ begin
               s.DoAppendTitles(Report.DetailTitles);
           end;
 
-          if fparams.AcceptMode = acmAccept then
+          if aParams.AcceptMode = acmAccept then
           begin
-            s.FillNow(fparams, r);
+            s.FillNow(aParams, aIdx, r);
             s.Sections.Loop;
           end
-          else if (fparams.AcceptMode = acmSkip) and (s.ClassID = sciHeaderDetails) then
+          else if (aParams.AcceptMode = acmSkip) and (s.ClassID = sciHeaderDetails) then
             s.Sections.Loop;
 
-          if (fparams.AcceptMode = acmEof) and (s.Items.Count <> 0) then
+          if (aParams.AcceptMode = acmEof) and (s.Items.Count <> 0) then
           begin
             if (r <> nil) and s.AppendDetailTotals then
             begin
@@ -1416,8 +1437,9 @@ begin
             end;
           end;
 
-          if fparams.FetchMode = fmFirst then
-            fparams.FetchMode := fmNext;
+          if aParams.FetchMode = fmFirst then
+            aParams.FetchMode := fmNext;
+          Inc(aIdx);
         end;
 
       //Summary
@@ -1530,6 +1552,26 @@ begin
     FOnRequest(vCell);
 end;
 
+function TmnrLayout.GetExcludeSections: TmnrSectionClassIDs;
+begin
+  Result := Info.ExcludeSections;
+end;
+
+function TmnrLayout.GetIncludeSections: TmnrSectionClassIDs;
+begin
+  Result := Info.IncludeSections;
+end;
+
+function TmnrLayout.GetLayouts: TmnrLayouts;
+begin
+  Result := TmnrLayouts(Nodes);
+end;
+
+function TmnrLayout.GetName: string;
+begin
+  Result := Info.Name;
+end;
+
 function TmnrLayout.GetNext: TmnrLayout;
 begin
   Result := TmnrLayout(inherited GetNext);
@@ -1538,6 +1580,19 @@ end;
 function TmnrLayout.GetPrior: TmnrLayout;
 begin
   Result := TmnrLayout(inherited GetPrior);
+end;
+
+function TmnrLayout.GetReport: TmnrCustomReport;
+begin
+  if Layouts<>nil then
+    Result := Layouts.Report
+  else
+    Result := nil;
+end;
+
+function TmnrLayout.GetTitle: string;
+begin
+  Result := Info.Title;
 end;
 
 function TmnrLayout.GetTotal: Double;
@@ -1841,6 +1896,11 @@ begin
   Result := TmnrLayout(inherited GetFirst);
 end;
 
+function TmnrLayouts.GetGroups: TmnrGroups;
+begin
+  Result := TmnrGroups(Nodes);
+end;
+
 function TmnrLayouts.GetLast: TmnrLayout;
 begin
   Result := TmnrLayout(inherited GetLast);
@@ -1854,6 +1914,14 @@ end;
 function TmnrLayouts.GetPrior: TmnrLayouts;
 begin
   Result := TmnrLayouts(inherited GetPrior);
+end;
+
+function TmnrLayouts.GetReport: TmnrCustomReport;
+begin
+  if Groups<>nil then
+    Result := Groups.Report
+  else
+    Result := nil;
 end;
 
 procedure TmnrLayouts.SetName(const Value: string);
