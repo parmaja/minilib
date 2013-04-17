@@ -226,7 +226,6 @@ type
     //Very dangrouse functions, be sure not free it with SQLVAR sqldata and sqlind, becuase it is shared with params sqldata
     procedure AllocateBinds(var XSQLDA: PXSQLDA);
     procedure DeallocateBinds(var XSQLDA: PXSQLDA);
-    procedure InternalPrepare;
   protected
     function Call(ErrCode: ISC_STATUS; StatusVector: TStatusVector; RaiseError: Boolean): ISC_STATUS;
     procedure CheckHandle;//TODO remove it
@@ -1051,11 +1050,15 @@ begin
           Call(FBClient.isc_dsql_execute2(@StatusVector,
             @Session.Handle, @FHandle, FB_DIALECT,
             BindsData, (Params as TmncFBParams).SQLDA), StatusVector, True);
+          FBOF := False;
+          FEOF := False;
         end
     else
       Call(FBClient.isc_dsql_execute(@StatusVector,
         @Session.Handle, @FHandle, FB_DIALECT,
-        BindsData), StatusVector, True)
+        BindsData), StatusVector, True);
+      FBOF := False;
+      FEOF := False;
     end;
   finally
     DeallocateBinds(BindsData);
@@ -1067,24 +1070,19 @@ var
   fetch_res: ISC_STATUS;
   StatusVector: TStatusVector;
 begin
-  //TODO: check of fields created??
-  fetch_res := Call(FBClient.isc_dsql_fetch(@StatusVector, @FHandle, FB_DIALECT, (Fields as TmncFBFields).FSQLDA), StatusVector, False);
-  if (fetch_res = 100) or (CheckStatusVector(StatusVector, [isc_dsql_cursor_err])) then
+  if not EOF then
   begin
-    FEOF := True;
-    Fields.Clean;
-  end
-  else if (fetch_res > 0) then
-    FBRaiseError(StatusVector)
-  else
-  begin
-    FBOF := False;
+    fetch_res := Call(FBClient.isc_dsql_fetch(@StatusVector, @FHandle, FB_DIALECT, (Fields as TmncFBFields).FSQLDA), StatusVector, False);
+    if (fetch_res = 100) or (CheckStatusVector(StatusVector, [isc_dsql_cursor_err])) then
+    begin
+      FEOF := True;
+      Fields.Clean;
+    end
+    else if (fetch_res > 0) then
+      FBRaiseError(StatusVector)
+    else
+      FBOF := False;
   end;
-end;
-
-procedure TmncFBCommand.DoPrepare;
-begin
-  InternalPrepare;
 end;
 
 procedure TmncFBCommand.DoRollback;
@@ -1205,7 +1203,7 @@ begin
     FBRaiseError(StatusVector);
 end;
 
-procedure TmncFBCommand.InternalPrepare;
+procedure TmncFBCommand.DoPrepare;
 var
   res_buffer: array[0..7] of Char;
   type_item: Char;
@@ -1229,7 +1227,7 @@ var
   aField: TmncFBField;
   aParam: TmncFBParam;
 begin
-  if not Prepared then//TODO remove this lline
+  if not Prepared then//TODO remove this line
   begin
     try
       Call(FBClient.isc_dsql_alloc_statement2(@StatusVector, @Connection.Handle, @FHandle), StatusVector, True);
