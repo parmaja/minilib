@@ -109,6 +109,7 @@ type
     procedure EnumFields(Schema: TmncSchemaItems; SQLName: string; Options: TschmEnumOptions = []); virtual;
     //source
     procedure GetTriggerSource(Strings:TStringList; SQLName: string; Options: TschmEnumOptions = []); virtual;
+    procedure GetViewSource(Strings: TStringList; SQLName: string; Options: TschmEnumOptions = []); virtual;
     procedure GetIndexInfo(Schema: TmncSchemaItems; SQLName: string; Options: TschmEnumOptions = []); virtual;
   published
     property IncludeHeader: Boolean read FIncludeHeader write FIncludeHeader default False;
@@ -259,6 +260,12 @@ begin
 end;
 
 procedure TmncSchema.GetTriggerSource(Strings: TStringList; SQLName: string; Options: TschmEnumOptions = []);
+begin
+
+end;
+
+procedure TmncSchema.GetViewSource(Strings: TStringList; SQLName: string;
+  Options: TschmEnumOptions);
 begin
 
 end;

@@ -33,6 +33,8 @@ type
 
   TSynXHTMLSyn = class;
 
+  { TSynProcessor }
+
   TSynProcessor = class(TObject)
   private
     FKeywords: TSynHashEntryList;
@@ -201,11 +203,6 @@ begin
   Index := r and $FF;
   Main := r shr 8 and $FF;
   Current := r shr 16 and $FF;
-end;
-
-function TSynProcessor.KeyHash(ToHash: PChar): integer;
-begin
-  Result := 0;
 end;
 
 function TSynProcessor.KeyComp(const aKey: string): boolean;
@@ -550,13 +547,24 @@ procedure TSynProcessor.ResetRange;
 begin
 end;
 
-function TSynProcessor.GetRange: byte;
+function TSynProcessor.GetRange: Byte;
 begin
   Result := 0;
 end;
 
-procedure TSynProcessor.SetRange(Value: byte);
+procedure TSynProcessor.SetRange(Value: Byte);
 begin
+end;
+
+function TSynProcessor.KeyHash(ToHash: PChar): integer;
+begin
+  Result := 0;
+  while ToHash^ in ['_', '0'..'9', 'a'..'z', 'A'..'Z'] do
+  begin
+    inc(Result, HashCharTable[ToHash^]);
+    inc(ToHash);
+  end;
+  FStringLen := ToHash - fToIdent;
 end;
 
 procedure TSynProcessor.InitIdent;

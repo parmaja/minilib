@@ -691,19 +691,6 @@ begin
     inc(ToHash);
   end;
   fStringLen := ToHash - fToIdent;
-
-{  Result := 0;
-  while (ToHash^ in ['a'..'z', 'A'..'Z', '!', '/']) do
-  begin
-    Inc(Result, HashCharTable[ToHash^]);
-    Inc(ToHash);
-  end;
-  while (ToHash^ in ['0'..'9']) do
-  begin
-    Inc(Result, (Ord(ToHash^) - Ord('0')));
-    Inc(ToHash);
-  end;
-  fStringLen := (ToHash - fToIdent);}
 end;
 
 function THTMLProcessor.GetIdentChars: TSynIdentChars;

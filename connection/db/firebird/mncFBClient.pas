@@ -1,3 +1,4 @@
+unit mncFBClient;
 {**
  *  This file is part of the "Mini Connections"
  *
@@ -13,8 +14,6 @@
 {$ENDIF}
 
 {$DEFINE FREEFBCLIENT}
-
-unit mncFBClient;
 
 interface
 

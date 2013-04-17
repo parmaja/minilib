@@ -55,7 +55,7 @@ type
 
   { TmncSQLNames }
 
-  TmncParamNames = class(TObjectList)
+  TmncSQLProcessed = class(TObjectList)
   private
     function GetItem(Index: Integer): TmncSQLName;
   public
@@ -72,7 +72,7 @@ type
     function GetSQL: TStrings;
   protected
     //ParsedSQL: string;
-    ParamNames: TmncParamNames;
+    SQLProcessed: TmncSQLProcessed;
     {
       GetParamChar: Called to take the real param char depend on the sql engine to replace it with this new one.
                     by default it is ?
@@ -109,20 +109,20 @@ procedure TmncSQLConnection.Execute(Command: string);
 begin
 end;
 
-{ TmncParamNames }
+{ TmncSQLProcessed }
 
-function TmncParamNames.GetItem(Index: Integer): TmncSQLName;
+function TmncSQLProcessed.GetItem(Index: Integer): TmncSQLName;
 begin
   Result := inherited Items[Index] as TmncSQLName;
 end;
 
-procedure TmncParamNames.Clear;
+procedure TmncSQLProcessed.Clear;
 begin
   inherited Clear;
   SQL := '';
 end;
 
-procedure TmncParamNames.Add(vID: Integer; vName: string);
+procedure TmncSQLProcessed.Add(vID: Integer; vName: string);
 var
   r: TmncSQLName;
 begin
@@ -180,7 +180,7 @@ end;
 procedure TmncSQLCommand.DoUnparse;
 begin
   inherited;
-  ParamNames.Clear;
+  SQLProcessed.Clear;
   //maybe clear params, idk
 end;
 
@@ -201,13 +201,15 @@ const
 
   procedure AddToSQL(s: string);
   begin
-    ParamNames.SQL := ParamNames.SQL + s;
+    SQLProcessed.SQL := SQLProcessed.SQL + s;
   end;
 var
   aParam: TmncParam;
 begin
+  if (SQL.Text = '') then
+    raise EmncException.Create('Empty SQL to parse!');
   //TODO stored procedures and trigger must not check param in budy procedure
-  ParamNames.Clear;
+  SQLProcessed.Clear;
   sParamName := '';
   try
     iParam := 1;
@@ -295,7 +297,7 @@ begin
                 sParamName := '_Param_' + IntToStr(iParam);
                 Inc(iParam);
                 iCurState := DefaultState;
-                ParamNames.Add(iParam, sParamName);
+                SQLProcessed.Add(iParam, sParamName);
                 sParamName := '';
               end
               else
@@ -307,7 +309,7 @@ begin
               if cCurChar = '"' then
               begin
                 Inc(i);
-                ParamNames.Add(iParam, sParamName);
+                SQLProcessed.Add(iParam, sParamName);
                 SParamName := '';
                 iCurParamState := ParamDefaultState;
                 iCurState := DefaultState;
@@ -329,7 +331,7 @@ begin
                   Inc(iParam);
                 end;
                 //slNames.Add(UpperCase(sParamName));
-                ParamNames.Add(iParam, sParamName);
+                SQLProcessed.Add(iParam, sParamName);
                 sParamName := '';
               end;
             end;
@@ -341,9 +343,9 @@ begin
     end;
     Params.Clear; 
     Binds.Clear;
-    for i := 0 to ParamNames.Count - 1 do
+    for i := 0 to SQLProcessed.Count - 1 do
     begin
-      aParam := Params.Found(ParamNames[i].Name);//it will auto create it if not founded
+      aParam := Params.Found(SQLProcessed[i].Name);//it will auto create it if not founded
       Binds.Add(aParam);
     end;
   finally
@@ -353,13 +355,13 @@ end;
 constructor TmncSQLCommand.Create;
 begin
   inherited Create;
-  ParamNames := TmncParamNames.Create(True);
+  SQLProcessed := TmncSQLProcessed.Create(True);
 end;
 
 destructor TmncSQLCommand.Destroy;
 begin
   inherited Destroy;
-  FreeAndNil(ParamNames);
+  FreeAndNil(SQLProcessed);
 end;
 
 end.

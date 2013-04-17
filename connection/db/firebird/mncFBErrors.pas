@@ -15,7 +15,8 @@ unit mncFBErrors;
 interface
 
 uses
-  SysUtils, Classes, mncConnections, mncFBTypes, mncFBStrings;
+  SysUtils, Classes,
+  mncCommons, mncConnections, mncFBTypes, mncFBStrings;
 
 {$i mncFBErrors.inc}
 

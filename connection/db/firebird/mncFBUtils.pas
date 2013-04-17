@@ -1,3 +1,4 @@
+unit mncFBUtils;
 {**
  *  This file is part of the "Mini Connections"
  *
@@ -11,8 +12,6 @@
 {$IFDEF FPC}
 {$mode delphi}
 {$ENDIF}
-
-unit mncFBUtils;
 
 interface
 
@@ -76,9 +75,6 @@ procedure FBDecomposeConnectionString(DatabaseName: string; var Host, FileName: 
 function SQLTypeToDataType(SQLType: Integer):TmncDataType;
 
 implementation
-
-const
-  CRLF = #0;
 
 function FBMax(n1, n2: Integer): Integer;
 begin
@@ -277,7 +273,7 @@ var
   procedure AddMsg(const vMsg: string);
   begin
     if Msg <> '' then
-      Msg := Msg + CRLF;
+      Msg := Msg + LineEnding;
     Msg := Msg + vMsg;
   end;
 var
@@ -303,11 +299,8 @@ begin
   if (ShowFBMessage in FBDataBaseErrorMessages) then
   begin
     StatusVectorWalk := @StatusVector;
-//    while (FBClient.fb_interpret(local_buffer, FBLocalBufferLength, StatusVectorWalk,) > 0) do
     while (FBClient.isc_interprete(local_buffer, StatusVectorWalk) > 0) do//TODO use fb_interpret
-    begin
       AddMsg(string(local_buffer));
-    end;
   end;
 
   if (ShowSqlCode in FBDataBaseErrorMessages) then
@@ -325,7 +318,7 @@ begin
     end;
     -551: raise EFBRoleError.Create(SqlCode, ErrorCode, Msg);
   else
-    raise EFBError.Create(SqlCode, ErrorCode, Msg) {$ifdef FPC} {$endif};
+    raise EFBError.Create(SqlCode, ErrorCode, Msg);
   end;
 end;
 
@@ -451,12 +444,12 @@ begin
   while (p^ <> 0) do
     if (p^ = 3) then
     begin
-      Result := Result + Format('%d %d %d', [p^, NextP(1)^, NextP(1)^]) + CRLF;
+      Result := Result + Format('%d %d %d', [p^, NextP(1)^, NextP(1)^]) + LineEnding;
       NextP(1);
     end
     else
     begin
-      Result := Result + Format('%d %d', [p^, NextP(1)^]) + CRLF;
+      Result := Result + Format('%d %d', [p^, NextP(1)^]) + LineEnding;
       NextP(1);
     end;
 end;

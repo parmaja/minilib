@@ -180,8 +180,9 @@ type
     destructor Destroy; override;
 
     procedure Start;
-    procedure Commit;
-    procedure Rollback;
+    //* Retaining mean keep it active
+    procedure Commit(Retaining: Boolean = False);
+    procedure Rollback(Retaining: Boolean = False);
     procedure Stop;
     property Action: TmncSessionAction read FAction write FAction;
     property Connection: TmncConnection read FConnection write SetConnection;
@@ -491,6 +492,7 @@ type
       Parse: is not an api call to sql engine, it just inside fpc parsing the sql,
       for collecting params and other things prepareing the sql string.
       Do not use api call here
+      NOTICE: You can not use params after Parse, params used after prepare.
     }
     procedure Parse;
     {
@@ -963,9 +965,9 @@ end;
 
 { TmncSession }
 
-procedure TmncSession.Commit;
+procedure TmncSession.Commit(Retaining: Boolean = False);
 begin
-  InternalStop(sdaCommit, False);
+  InternalStop(sdaCommit, Retaining);
 end;
 
 constructor TmncSession.Create(vConnection: TmncConnection);
@@ -1048,9 +1050,9 @@ begin
   end;
 end;
 
-procedure TmncSession.Rollback;
+procedure TmncSession.Rollback(Retaining: Boolean);
 begin
-  InternalStop(sdaRollback, False);
+  InternalStop(sdaRollback, Retaining);
 end;
 
 procedure TmncSession.SetActive(const Value: Boolean);
