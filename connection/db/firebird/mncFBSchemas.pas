@@ -286,24 +286,49 @@ procedure TmncFBSchema.GetViewSource(Strings: TStringList; SQLName: string;
   Options: TschmEnumOptions);
 const
   sSQL =
-    'select vew.rdb$owner_name name, vew.rdb$view_source source, vew.rdb$relation_name relname '+ LineEnding +
+    'select rdb$relation_name relname, rdb$view_source source'+ LineEnding +
     'from rdb$relations ' + LineEnding +
-    'where ' + LineEnding;
-//    '(rel.rdb$system_flag <> 1 or rel.rdb$system_flag is null) and ' +
-//    'not exists (select * from rdb$check_constraints chk where trg.rdb$trigger_name = chk.rdb$trigger_name) ';
+    'where ' + LineEnding +
+    '  (rdb$system_flag <> 1 or rdb$system_flag is null) ' + LineEnding +
+    '  and rdb$flags = 1 ' +
+    '  and  not rdb$view_blr is null ' + LineEnding +
+    '  and rdb$relation_name = ?name';
+
+  sSQLColumns =
+      'select rdb$field_name as name, rdb$relation_name relname from rdb$relation_fields ' + LineEnding +
+      'where ' + LineEnding +
+      '  rdb$relation_name = ?name ' + LineEnding +
+      'order by rdb$field_position';
 var
-  s: string;
-  aName: string;
-  aRelationName: string;
+  C, S, aName: string;
   aCMD: TmncFBCommand;
 begin
-  s := sSQL + ' trg.vew$owner_name = ''' + SQLName + '''';
-  aCMD := CreateCMD(s);
+  aCMD := CreateCMD('');
   try
+    aCMD.SQL.Text := sSQL;
+    aCMD.Param['name'].AsTrimString := SQLName;
+    S := '';
     if aCMD.Execute then
     begin
+      S := aCMD.Field['source'].AsString;
+      aName := FBQuoteName(aCMD.Field['relname'].AsTrimString);
+      aCMD.Close;
+
+      aCMD.SQL.Text := sSQLColumns;
+      aCMD.Param['name'].AsTrimString := SQLName;
+      aCMD.Execute;
+      C := '';
+      while not aCMD.Eof do
+      begin
+        if C <> '' then
+          C := C + ', ';
+        C := C + FBQuoteName(aCMD.Field['name'].AsTrimString);
+        aCMD.Next;
+      end;
+      Strings.Text := 'recreate view ' + aName + '(' + C + ')' + LineEnding + 'as ' + LineEnding + Trim(S);
     end;
   finally
+    aCMD.Free;
   end;
 end;
 

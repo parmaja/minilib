@@ -199,7 +199,60 @@ type
 
   end;
 
+procedure FreeSQLDA(var Data: PXSQLDA; Clean: Boolean = True);
+procedure InitSQLDA(var Data: PXSQLDA; New: Integer; Clean: Boolean = True);
+
 implementation
+
+procedure InitSQLDA(var Data: PXSQLDA; New: Integer; Clean: Boolean = True);
+var
+  old: Integer;
+var
+  p: PXSQLVAR;
+  i: Integer;
+begin
+  if Data = nil then
+    old := 0
+  else
+    old := Data^.sqln;
+
+
+  if Clean and (new < old) then
+  begin
+    p := @Data^.sqlvar[new];
+    for i := new to old - 1 do
+    begin
+      FBFree(p^.sqldata);
+      FBFree(p^.sqlind);
+      p := Pointer(PAnsiChar(p) + XSQLVar_Size);
+    end;
+  end;
+
+  FBAlloc(Data, XSQLDA_LENGTH(old), XSQLDA_LENGTH(new));
+  Data^.version := SQLDA_VERSION1;
+  Data^.sqln := New;
+end;
+
+procedure FreeSQLDA(var Data: PXSQLDA; Clean: Boolean = True);
+var
+  p: PXSQLVAR;
+  i: Integer;
+begin
+  if Data <> nil then
+  begin
+    if Clean then
+    begin
+      p := @Data^.sqlvar[0];
+      for i := 0 to Data.sqln - 1 do
+      begin
+        FBFree(p^.sqldata);
+        FBFree(p^.sqlind);
+        p := Pointer(PAnsiChar(p) + XSQLVar_Size);
+      end;
+    end;
+    FBFree(Data);
+  end;
+end;
 
 { TmncSQLVAR }
 

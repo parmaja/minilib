@@ -185,6 +185,7 @@ type
   public
     constructor Create(vColumns: TmncColumns); override;
     destructor Destroy; override;
+    procedure Clear; override;
     property Items[Index: Integer]: TmncFBField read GetItem;
     property SQLDA: PXSQLDA read FSQLDA;
   end;
@@ -202,6 +203,7 @@ type
   public
     constructor Create; override;
     destructor Destroy; override;
+    procedure Clear; override;
     property Items[Index: Integer]: TmncFBParam read GetItem;
     property SQLDA: PXSQLDA read FSQLDA;
   end;
@@ -221,7 +223,7 @@ type
     procedure SetCursor(AValue: string);
     procedure SetSession(const AValue: TmncFBSession);
     procedure FreeHandle;
-    //ApplyParams Very dangrouse function, be sure not free it with SQLVAR sqldata and sqlind, becuase it is shared with params sqldata
+    //Very dangrouse functions, be sure not free it with SQLVAR sqldata and sqlind, becuase it is shared with params sqldata
     procedure AllocateBinds(var XSQLDA: PXSQLDA);
     procedure DeallocateBinds(var XSQLDA: PXSQLDA);
     procedure InternalPrepare;
@@ -264,56 +266,6 @@ implementation
 
 uses
   mncFBSchemas, mncDB;
-
-procedure InitSQLDA(var Data: PXSQLDA; New: Integer; Clean: Boolean = True);
-var
-  old: Integer;
-var
-  p: PXSQLVAR;
-  i: Integer;
-begin
-  if Data = nil then
-    old := 0
-  else
-    old := Data^.sqln;
-
-
-  if Clean and (new < old) then
-  begin
-    p := @Data^.sqlvar[new];
-    for i := new to old - 1 do
-    begin
-      FBFree(p^.sqldata);
-      FBFree(p^.sqlind);
-      p := Pointer(PAnsiChar(p) + XSQLVar_Size);
-    end;
-  end;
-
-  FBAlloc(Data, XSQLDA_LENGTH(old), XSQLDA_LENGTH(new));
-  Data^.version := SQLDA_VERSION1;
-  Data^.sqln := New;
-end;
-
-procedure FreeSQLDA(var Data: PXSQLDA; Clean: Boolean = True);
-var
-  p: PXSQLVAR;
-  i: Integer;
-begin
-  if Data <> nil then
-  begin
-    if Clean then
-    begin
-      p := @Data^.sqlvar[0];
-      for i := 0 to Data.sqln - 1 do
-      begin
-        FBFree(p^.sqldata);
-        FBFree(p^.sqlind);
-        p := Pointer(PAnsiChar(p) + XSQLVar_Size);
-      end;
-    end;
-    FBFree(Data);
-  end;
-end;
 
 { TmncFBConnection }
 
@@ -804,8 +756,14 @@ end;
 destructor TmncFBParams.Destroy;
 begin
   Clear;
-  FreeSQLDA(FSQLDA);
+  //FreeSQLDA(FSQLDA); already did in Clear;
   inherited;
+end;
+
+procedure TmncFBParams.Clear;
+begin
+  inherited Clear;
+  InitSQLDA(FSQLDA, 0);
 end;
 
 { TmncFBParam }
@@ -980,8 +938,14 @@ end;
 destructor TmncFBFields.Destroy;
 begin
   Clear;
-  FreeSQLDA(FSQLDA);
+  //FreeSQLDA(FSQLDA); already did in Clear;
   inherited;
+end;
+
+procedure TmncFBFields.Clear;
+begin
+  inherited Clear;
+  InitSQLDA(FSQLDA, 0);
 end;
 
 { TmncFBCommand }
