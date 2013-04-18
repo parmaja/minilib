@@ -102,14 +102,16 @@ type
   TmnrCell = class(TmnrBaseCell)
   private
     FReference: TmnrReference;
-    FLayout: TmnrLayout;
+    FDesignCell: TmnrDesignCell;
     function GetNext: TmnrCell;
     function GetPrior: TmnrCell;
     function GetRow: TmnrRow;
+    function GetLayout: TmnrLayout;
   protected
     function GetIsNull: Boolean; virtual;
   public
-    property Layout: TmnrLayout read FLayout;
+    property Layout: TmnrLayout read GetLayout;
+    property DesignCell: TmnrDesignCell read FDesignCell;
     property Row: TmnrRow read GetRow;
     property Next: TmnrCell read GetNext;
     property Prior: TmnrCell read GetPrior;
@@ -177,7 +179,7 @@ type
   private
     FOnRequest: TOnRequest;
     FReference: TmnrReference;
-    FDesignerCell: TmnrDesignCell;
+    //FDesignerCell: TmnrDesignCell;
     function GetReport: TmnrCustomReport;
   protected
     function GetNext: TmnrLayout;
@@ -206,9 +208,9 @@ type
 
     procedure Request(vCell: TmnrCell);
     property OnRequest: TOnRequest read FOnRequest write FOnRequest;
-    function NewCell(vRow: TmnrRow): TmnrCell;
+    function NewCell(vDesignCell: TmnrDesignCell; vRow: TmnrRow): TmnrCell;
     property Reference: TmnrReference read FReference;
-    property DesignerCell: TmnrDesignCell read FDesignerCell write FDesignerCell;
+    //property DesignerCell: TmnrDesignCell read FDesignerCell write FDesignerCell;
     property Total: Double read GetTotal;
     function CreateDesignCell(vRow: TmnrDesignRow): TmnrDesignCell;
     property Layouts: TmnrLayouts read GetLayouts;
@@ -256,7 +258,6 @@ type
 
     procedure CreateLayout(const vGroup: string; vClass: TmnrLayoutClass; const vName: string; const vTitle: string; vIncludeSections: TmnrSectionClassIDs = []; vExcludeSections: TmnrSectionClassIDs = []); overload;
     procedure CreateLayout(const vGroup: string; vClass: TmnrLayoutClass; const vInfo: TmnrLayoutInfo); overload;
-
   end;
 
   TmnrDesignCell = class(TmnrLinkNode)
@@ -503,7 +504,7 @@ type
 
   ImnrReportDesigner = interface
     procedure DesignReport(vClass: TmnrCustomReportClass);
-    procedure UpdateView;
+    procedure UpdateView(vCell: TmnrDesignCell = nil);
     procedure ProcessDrop(vNode: TmnrLayout);
   end;
 
@@ -994,7 +995,7 @@ begin
             if (l <> nil) and (l.Reference <> nil) then
               c.AsCurrency := l.Reference.Total;
           end;
-          c.FLayout := l;
+          c.FDesignCell := d;
           if l <> nil then c.FReference := l.Reference;
 
           d := d.Next;
@@ -1049,7 +1050,7 @@ begin
             if l <> nil then
               c.AsCurrency := l.Total;
           end;
-          c.FLayout := l;
+          c.FDesignCell := d;
           if l <> nil then c.FReference := l.Reference;
 
           d := d.Next;
@@ -1093,7 +1094,7 @@ begin
           c := TmnrTextReportCell.Create(aRow);
           if l<>nil then
           begin
-            c.FLayout := l;
+            c.FDesignCell := d;
             c.AsString := l.DisplayText;
             c.FReference := l.Reference;
           end;
@@ -1173,7 +1174,7 @@ begin
           l := d.Layout;
           //c := l.NewCell(aRow);
           if l <> nil then
-            l.NewCell(aRow);
+            l.NewCell(d, aRow);
           d := d.Next;
         end;
       except
@@ -1600,14 +1601,14 @@ begin
   Result := 0;
 end;
 
-function TmnrLayout.NewCell(vRow: TmnrRow): TmnrCell;
+function TmnrLayout.NewCell(vDesignCell: TmnrDesignCell; vRow: TmnrRow): TmnrCell;
 begin
   Result := CreateCell(vRow);
   if Result <> nil then
   begin
     try
       Result.FReference := Reference;
-      Result.FLayout := Self;
+      Result.FDesignCell := vDesignCell;
       DoRequest(Result);
       ScaleCell(Result);
     except
@@ -1634,6 +1635,14 @@ end;
 function TmnrCell.GetIsNull: Boolean;
 begin
   Result := AsString = '';
+end;
+
+function TmnrCell.GetLayout: TmnrLayout;
+begin
+  if DesignCell<>nil then
+    Result := DesignCell.Layout
+  else
+    Result := nil;
 end;
 
 function TmnrCell.GetNext: TmnrCell;
@@ -1984,9 +1993,9 @@ begin
   if FName <> Value then
   begin
     FName := Value;
-    if Layout <> nil then Layout.FDesignerCell := nil;
+    //if Layout <> nil then Layout.FDesignerCell := nil;
     if Report<>nil then Layout := Report.Groups.FindLayout(Value);
-    if Layout <> nil then Layout.FDesignerCell := Self
+    //if Layout <> nil then Layout.FDesignerCell := Self
   end;
 end;
 

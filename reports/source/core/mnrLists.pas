@@ -288,18 +288,25 @@ end;
 function TmnrNode.GetIndex: Integer;
 var
   p: TmnrNode;
+  i: Integer;
 begin
   Result := -1;
   if Nodes<>nil then
   begin
     p := FNodes.First;
+    i := 0;
     while p<>nil do
     begin
-      Inc(Result);
       if p=Self then
+      begin
+        Result := i;
         Break
+      end
       else
+      begin
+        Inc(i);
         p := p.Next;
+      end;
     end;
   end;
 end;

@@ -75,7 +75,6 @@ type
     procedure DoConnect; override;
     procedure DoDisconnect; override;
     function GetConnected:Boolean; override;
-
   protected
     procedure RaiseError(Error: Boolean; const ExtraMsg: string = ''); overload;
     procedure RaiseError(PGResult: PPGresult); overload;
@@ -88,9 +87,9 @@ type
     constructor Create;
     destructor Destroy; override;
 
-
     procedure Interrupt;
     function CreateSession: TmncSQLSession; override;
+    class function Model: TmncConnectionModel; override;
     //TODO: Reconnect  use PQReset
     property Handle: PPGconn read FHandle;
     procedure CreateDatabase; overload;
@@ -105,6 +104,7 @@ type
     procedure Execute(vHandle: PPGconn; const vSQL: string; vArgs: array of const); overload;
     procedure Execute(vHandle: PPGconn; const vSQL: string); overload;
     property Channel: string read FChannel write SetChannel;
+  published
   end;
 
   { TmncPGSession }
@@ -229,10 +229,13 @@ type
     procedure DoCommit; override;
     procedure DoRollback; override;
     function CreateColumns: TmncColumns; override;
+    function GetParamChar: string; override;
     property Connection: TmncPGConnection read GetConnection;
     property Session: TmncPGSession read GetSession write SetSession;
     function CreateParams: TmncParams; override;
     function CreateFields(vColumns: TmncColumns): TmncFields; override;
+
+
 
   public
     constructor CreateBy(vSession:TmncPGSession);
@@ -385,6 +388,15 @@ begin
   begin
     TPGListenThread.Create(Self, vChannel);
   end;
+end;
+
+class function TmncPGConnection.Model: TmncConnectionModel;
+begin
+  Result.Name := 'PostgreSQL';
+  Result.Title := 'Postgre Database';
+  Result.Capabilities := [ccDB, ccSQL, ccNetwork, ccTransactions];
+  Result.SchemaClass := nil;
+  Result.Mode := smConnection;
 end;
 
 procedure TmncPGConnection.Notify(vPID: Integer; const vName, vData: string);
@@ -753,6 +765,11 @@ end;
 function TmncPGCommand.GetLastInsertID: Int64;
 begin
   Result := 0;
+end;
+
+function TmncPGCommand.GetParamChar: string;
+begin
+  Result := '$';
 end;
 
 procedure TmncPGCommand.DoExecute;

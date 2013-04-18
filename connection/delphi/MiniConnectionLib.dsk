@@ -12,8 +12,8 @@ File_9=TSourceModule,'W:\work\delphi\jobs\tacbord_sql\source\std\StdModule.pas',
 
 [Modules]
 Module0=W:\source\platform\minilib\connection\db\postgre\mncPostgre.pas
-Module1=W:\source\platform\minilib\connection\db\mncSQL.pas
-Module2=W:\source\platform\minilib\connection\delphi\MiniConnectionLib.bdsproj
+Module1=W:\source\platform\minilib\connection\delphi\MiniConnectionLib.bdsproj
+Module2=W:\source\platform\minilib\connection\db\mncSQL.pas
 Count=3
 EditWindowCount=1
 
@@ -22,13 +22,13 @@ ModuleType=TSourceModule
 FormState=0
 FormOnTop=0
 
+[W:\source\platform\minilib\connection\delphi\MiniConnectionLib.bdsproj]
+ModuleType=TBaseProject
+
 [W:\source\platform\minilib\connection\db\mncSQL.pas]
 ModuleType=TSourceModule
 FormState=0
 FormOnTop=0
-
-[W:\source\platform\minilib\connection\delphi\MiniConnectionLib.bdsproj]
-ModuleType=TBaseProject
 
 [EditWindow0]
 ViewCount=3
