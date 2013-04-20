@@ -27,11 +27,10 @@ type
 
   TSynSqliteSyn = class(TSynCustomHighlighter)
   private
+    Run: LongInt;
+    FProcTable: array[AnsiChar] of TProcTableProc;
     FRange: TRangeState;
     FLine: PChar;
-    FLineNumber: Integer;
-    FProcTable: array[AnsiChar] of TProcTableProc;
-    Run: LongInt;
     FTokenPos: Integer;
     FTokenID: TtkTokenKind;
     FCommentAttri: TSynHighlighterAttributes;
@@ -145,7 +144,7 @@ const
     public
       function IdentKind(MayBe: PChar; out L: Integer): TtkTokenKind; overload;
       function IdentKind(MayBe: PChar): TtkTokenKind; overload;
-      constructor Create; virtual;
+      constructor Create; override;
     end;
 
 function SQLiteSyn: TSQLiteSyn;
@@ -302,7 +301,6 @@ begin
   inherited;
   FLine := PChar(NewValue);
   Run := 0;
-  FLineNumber := LineNumber;
   Next;
 end;
 
@@ -585,7 +583,7 @@ end;
 
 function TSynSqliteSyn.GetRange: Pointer;
 begin
-  Result := Pointer(PtrInt(FRange));
+  Result := Pointer(FRange);
 end;
 
 function TSynSqliteSyn.GetToken: string;

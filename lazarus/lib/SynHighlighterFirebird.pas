@@ -25,14 +25,12 @@ type
   TSynFirebirdSyn = class(TSynCustomHighlighter)
   private
     Run: LongInt;
+    FProcTable: array[#0..#255] of TProcTableProc;
     FRange: TRangeState;
     FLine: PChar;
-    FLineNumber: Integer;
-    FProcTable: array[#0..#255] of TProcTableProc;
     FStringLen: Integer;
     FTokenPos: Integer;
     FTokenID: TtkTokenKind;
-    FKeywords: TSynHashEntryList;
     FCommentAttri: TSynHighlighterAttributes;
     FDataTypeAttri: TSynHighlighterAttributes;
     FObjectAttri: TSynHighlighterAttributes;
@@ -107,7 +105,6 @@ type
 
 
 const
-//---Firebird 6----------------------------------------------------------------
 
   // functions
   FirebirdFunctions =
@@ -284,7 +281,6 @@ end;
 constructor TSynFirebirdSyn.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
-  FKeywords := TSynHashEntryList.Create;
   FCommentAttri := TSynHighlighterAttributes.Create(SYNS_AttrComment);
   FCommentAttri.Foreground := clMaroon;
   FCommentAttri.Style := [fsItalic];
@@ -329,8 +325,7 @@ end;
 
 destructor TSynFirebirdSyn.Destroy;
 begin
-  FKeywords.Free;
-  inherited Destroy;
+  inherited;
 end;
 
 procedure TSynFirebirdSyn.Assign(Source: TPersistent);
@@ -343,7 +338,6 @@ begin
   inherited;
   FLine := PChar(NewValue);
   Run := 0;
-  FLineNumber := LineNumber;
   Next;
 end;
 
