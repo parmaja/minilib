@@ -95,4 +95,13 @@ object Form1: TForm1
     TabOrder = 7
     OnClick = TreeBtnClick
   end
+  object Button4: TButton
+    Left = 109
+    Top = 73
+    Width = 75
+    Height = 25
+    Caption = 'Read Cursor'
+    TabOrder = 8
+    OnClick = Button4Click
+  end
 end

@@ -17,10 +17,12 @@ type
     Button3: TButton;
     SynEdit1: TSynEdit;
     TreeBtn: TButton;
+    Button4: TButton;
     procedure Button2Click(Sender: TObject);
     procedure Button1Click(Sender: TObject);
     procedure Button3Click(Sender: TObject);
     procedure TreeBtnClick(Sender: TObject);
+    procedure Button4Click(Sender: TObject);
   private
   public
   end;
@@ -55,7 +57,7 @@ begin
     Session := TmncPGSession.Create(Conn);
     try
       Session.Start;
-      Cmd := TmncPGCommand.Create(Session);
+      Cmd := TmncPGCommand(Session.CreateCommand);
       try
         Cmd.SQL.Text := 'insert into companies';
         Cmd.SQL.Add('(id, name, nationality)');
@@ -95,10 +97,12 @@ var
   Session: TmncPGSession;
   Cmd: TmncPGCommand;
   i: Integer;
+  t: Cardinal;
 begin
   Conn := TmncPGConnection.Create;
+  SynEdit1.BeginUpdate;
   try
-    Conn.Resource := 'csData';
+    Conn.Resource := 'Data';
     Conn.Host := '';
     Conn.UserName := 'postgres';
     Conn.Password := 'masterkey';
@@ -108,32 +112,40 @@ begin
     try
       Session.Start;
       Cmd := TmncPGCommand.CreateBy(Session);
-      if BinaryResultChk.Checked then
-        cmd.ResultFormat := mrfBinary;
-      Cmd.SQL.Text := 'select "AccBalance" from "Accounts"';
-      //Cmd.SQL.Text := 'select "AccID" from "Accounts"';
-//      Cmd.SQL.Add('where name = ?name');
-      //Cmd.Prepare;
-//      Cmd.Param['name'].AsString := 'Ferrari';
-      if Cmd.Execute then
-      begin
-        while not Cmd.EOF do
+      try
+        if BinaryResultChk.Checked then
+          cmd.ResultFormat := mrfBinary;
+
+
+        Cmd.SQL.Text := 'select "DocID" , "DocUser" ,"DocArchive" ,"DocName" ,"DocCode" from "Documents"';
+        //Cmd.SQL.Text := 'select "AccID" from "Accounts"';
+  //      Cmd.SQL.Add('where name = ?name');
+        //Cmd.Prepare;
+  //      Cmd.Param['name'].AsString := 'Ferrari';
+        t := GetTickCount;
+        if Cmd.Execute then
         begin
-          for I := 0 to Cmd.Fields.Count - 1 do
-            ListBox1.Items.Add(Cmd.Fields.Items[i].Column.Name+': '+Cmd.Fields.Items[i].AsString);
-          ListBox1.Items.Add('-------------------------------');
-          //ListBox1.Items.Add(Cmd.Field['AccID'].AsString + ' - ' + Cmd.Field['AccName'].AsString+ ' - ' + Cmd.Field['AccCode'].AsString);
-          //ListBox1.Items.Add(Cmd.Field['AccID'].AsString);
-          Cmd.Next;
+          while not Cmd.EOF do
+          begin
+            for I := 0 to Cmd.Fields.Count - 1 do
+              SynEdit1.Lines.Add(Cmd.Fields.Items[i].Column.Name+': '+Cmd.Fields.Items[i].AsString);
+            SynEdit1.Lines.Add('-------------------------------');
+            //ListBox1.Items.Add(Cmd.Field['AccID'].AsString + ' - ' + Cmd.Field['AccName'].AsString+ ' - ' + Cmd.Field['AccCode'].AsString);
+            //ListBox1.Items.Add(Cmd.Field['AccID'].AsString);
+            Cmd.Next;
+          end;
         end;
+      finally
+        Cmd.Free;
       end;
-      Cmd.Close;
+      SynEdit1.Lines.Add(IntToStr(GetTickCount-t));
     finally
       Session.Free;
     end;
     Conn.Disconnect;
   finally
     Conn.Free;
+    SynEdit1.EndUpdate;
   end;
 end;
 
@@ -230,6 +242,58 @@ begin
     Conn.Disconnect;
   finally
     Conn.Free;
+  end;
+end;
+
+procedure TForm1.Button4Click(Sender: TObject);
+var
+  Conn: TmncPGConnection;
+  Session: TmncPGSession;
+  Cmd: TmncPGCursorCommand;
+  i: Integer;
+  t: Cardinal;
+begin
+  Conn := TmncPGConnection.Create;
+  SynEdit1.BeginUpdate;
+  try
+    Conn.Resource := 'Data';
+    Conn.Host := '';
+    Conn.UserName := 'postgres';
+    Conn.Password := 'masterkey';
+    Conn.Connect;
+    Session := TmncPGSession.Create(Conn);
+    ListBox1.Items.Clear;
+    try
+      Session.Start;
+      Cmd := TmncPGCursorCommand.CreateBy(Session);
+      try
+        if BinaryResultChk.Checked then
+          cmd.ResultFormat := mrfBinary;
+
+
+        Cmd.SQL.Text := 'select "DocID" , "DocUser" ,"DocArchive" ,"DocName" ,"DocCode" from "Documents"';
+        t := GetTickCount;
+        if Cmd.Execute then
+        begin
+          while not Cmd.EOF do
+          begin
+            for I := 0 to Cmd.Fields.Count - 1 do
+              SynEdit1.Lines.Add(Cmd.Fields.Items[i].Column.Name+': '+Cmd.Fields.Items[i].AsString);
+            SynEdit1.Lines.Add('-------------------------------');
+            Cmd.Next;
+          end;
+        end;
+      finally
+        Cmd.Free;
+      end;
+      SynEdit1.Lines.Add(IntToStr(GetTickCount-t));
+    finally
+      Session.Free;
+    end;
+    Conn.Disconnect;
+  finally
+    Conn.Free;
+    SynEdit1.EndUpdate;
   end;
 end;
 
