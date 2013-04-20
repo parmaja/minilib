@@ -30,6 +30,7 @@ uses
   {$else}
   mncPGHeader,
   {$endif}
+
   mnUtils, mnStreams, mncConnections, mncSQL, mncCommons;
 
 type
@@ -159,9 +160,11 @@ type
     FFields: TmncPostgreFields;
     function GetCommand: TmncPGCommand;
 
+
   protected
     function GetValue: Variant; override;
     procedure SetValue(const AValue: Variant); override;
+    function GetAsDateTime: TDateTime; override;
     property Fields: TmncPostgreFields read FFields;
     property Command: TmncPGCommand read GetCommand;
   end;
@@ -263,11 +266,35 @@ function EncodeBytea(vStr: PAnsiChar; vLen: Cardinal): string; overload;
 
 function DecodeBytea(const vStr: string): string; overload;
 function DecodeBytea(vStr: PAnsiChar; vLen: Cardinal): string; overload;
+function PGDateToDateTime(const vStr: string): TDateTime;
 
 implementation
 
 uses
   Math;
+
+
+function PGDateToDateTime(const vStr: string): TDateTime;
+var
+  T: String;
+  Y, M, D, H, N, S: Word;
+begin
+  try
+    T := SubStr(vStr, ' ', 0);
+
+    Y := StrToIntDef(SubStr(T, '-', 0), 0);
+    M := StrToIntDef(SubStr(T, '-', 1), 0);
+    D := StrToIntDef(SubStr(T, '-', 2), 0);
+
+    T := SubStr(vStr, ' ', 1);
+    H := StrToIntDef(SubStr(T, ':', 0), 0);
+    N := StrToIntDef(SubStr(T, ':', 1), 0);
+    S := StrToIntDef(SubStr(T, ':', 2), 0);
+    Result := EncodeDate(Y, M, D) + EncodeTime(H, M, S, 0);
+  except
+    Result := 0;
+  end;
+end;
 
 
 function BEtoN(Val: Integer): Integer;
@@ -1041,6 +1068,12 @@ begin
 end;
 
 { TmncPostgreField }
+
+function TmncPostgreField.GetAsDateTime: TDateTime;
+begin
+  Result := PGDateToDateTime(AsString);
+  //Result := inherited GetAsDateTime;
+end;
 
 function TmncPostgreField.GetCommand: TmncPGCommand;
 begin
