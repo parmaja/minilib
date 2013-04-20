@@ -769,7 +769,7 @@ end;
 
 function TmnFields.Add(AName, AValue: string): TmnField;
 begin
-  Result := TmnField.Create;
+  Result := CreateField;
   Result.FValue := AValue;
   Result.FName := AName;
   Add(Result);

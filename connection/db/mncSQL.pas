@@ -71,7 +71,6 @@ type
   private
     function GetSQL: TStrings;
   protected
-    //ParsedSQL: string;
     SQLProcessed: TmncSQLProcessed;
     {
       GetParamChar: Called to take the real param char depend on the sql engine to replace it with this new one.

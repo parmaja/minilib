@@ -270,8 +270,7 @@ begin
 
 end;
 
-procedure TmncSchema.GetIndexInfo(Schema: TmncSchemaItems; SQLName: string;
-  Options: TschmEnumOptions);
+procedure TmncSchema.GetIndexInfo(Schema: TmncSchemaItems; SQLName: string; Options: TschmEnumOptions);
 begin
 end;
 
