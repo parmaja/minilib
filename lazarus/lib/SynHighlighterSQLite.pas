@@ -14,7 +14,7 @@ interface
 
 uses
   SysUtils, Controls, Graphics,
-  Classes, SynEditTypes, SynEditHighlighter, SynHighlighterHashEntries;
+  Classes, SynEditTypes, SynEditHighlighter, SynHighlighterHashEntries, SynUtils;
 
 type
   TtkTokenKind = (tkComment, tkDatatype, tkObject,
@@ -22,18 +22,6 @@ type
     tkString, tkSymbol, tkVariable, tkUnknown);
 
   TRangeState = (rsUnknown, rsComment, rsString);
-
-  TProcTableProc = procedure of object;
-
-type
-  {$hint 'Move it to SynHighlighterHashEntries'}
-  PIdentifierTable = ^TIdentifierTable;
-  TIdentifierTable = array[AnsiChar] of ByteBool;
-
-  PHashCharTable = ^THashCharTable;
-  THashCharTable = array[AnsiChar] of Integer;
-
-type
 
   { TSynSqliteSyn }
 
@@ -148,20 +136,16 @@ const
 
     { TSQLiteSyn }
 
-    TSQLiteSyn = class(TObject)
+   TSQLiteSyn = class(TSynPersistent)
     private
-      function KeyHash(ToHash: PChar; out L: Integer): Integer;
-      function KeyComp(const aKey: string; aWithKey: PChar; L: Integer): Boolean;
-      procedure DoAddKeyword(AKeyword: string; AKind: integer);
-      procedure MakeIdentTable;
+    protected
+      procedure MakeIdentifiers; override;
+      procedure MakeHashes; override;
+      function GetDefaultKind: Integer; override;
     public
-      Keywords: TSynHashEntryList;
-      Identifiers: TIdentifierTable;
-      HashTable: THashCharTable;
       function IdentKind(MayBe: PChar; out L: Integer): TtkTokenKind; overload;
       function IdentKind(MayBe: PChar): TtkTokenKind; overload;
       constructor Create; virtual;
-      destructor Destroy; override;
     end;
 
 function SQLiteSyn: TSQLiteSyn;
@@ -184,115 +168,47 @@ begin
   Result := FSQLiteSyn;
 end;
 
-procedure TSQLiteSyn.MakeIdentTable;
-var
-  c: char;
-begin
-  FillChar(Identifiers, SizeOf(Identifiers), 0);
-  for c := 'a' to 'z' do
-    Identifiers[c] := True;
-  for c := 'A' to 'Z' do
-    Identifiers[c] := True;
-  for c := '0' to '9' do
-    Identifiers[c] := True;
-  Identifiers['_'] := True;
-  Identifiers[':'] := True;
-  Identifiers['"'] := True;
-
-  FillChar(HashTable, SizeOf(HashTable), 0);
-  HashTable['_'] := 1;
-  for c := 'a' to 'z' do
-    HashTable[c] := 2 + Ord(c) - Ord('a');
-  for c := 'A' to 'Z' do
-    HashTable[c] := 2 + Ord(c) - Ord('A');
-  HashTable[':'] := HashTable['Z'] + 1;
-  HashTable['"'] := HashTable['Z'] + 2;{$warning 'Check if it is 1'}
-end;
-
-procedure TSQLiteSyn.DoAddKeyword(AKeyword: string; AKind: integer);
-var
-  HashValue, L: integer;
-begin
-  HashValue := KeyHash(PChar(AKeyword), L);
-  Keywords[HashValue] := TSynHashEntry.Create(AKeyword, AKind);
-end;
-
 { TSQLiteSyn }
 
-constructor TSQLiteSyn.Create;
-begin
-  inherited Create;
-  Keywords := TSynHashEntryList.Create;
-  MakeIdentTable;
-  EnumerateKeywords(Ord(tkDatatype), SqliteTypes, TSynValidStringChars, @DoAddKeyword);
-  EnumerateKeywords(Ord(tkFunction), SqliteFunctions, TSynValidStringChars, @DoAddKeyword);
-  EnumerateKeywords(Ord(tkKey), SqliteKeywords, TSynValidStringChars, @DoAddKeyword);
-end;
-
-destructor TSQLiteSyn.Destroy;
+procedure TSQLiteSyn.MakeIdentifiers;
 begin
   inherited;
-  FreeAndNil(Keywords);
+  Identifiers[':'] := True;
+  Identifiers['"'] := True;
 end;
 
-function TSQLiteSyn.KeyHash(ToHash: PChar; out L: Integer): Integer;
+procedure TSQLiteSyn.MakeHashes;
 begin
-  Result := 0;
-  L := 0;
-  while ToHash^ in ['a'..'z', 'A'..'Z', '0'..'9', '-', '_','@'] do
-  begin
-    Inc(Result, HashTable[ToHash^]);
-    Inc(ToHash);
-    Inc(L);
-  end;
+  inherited;
+  HashTable[':'] := HashTable['Z'] + 1;
+  HashTable['"'] := HashTable['Z'] + 2;
 end;
 
-function TSQLiteSyn.KeyComp(const aKey: string; aWithKey: PChar; L: Integer): Boolean;
-var
-  i: integer;
-  pKey1, pKey2: PChar;
+function TSQLiteSyn.GetDefaultKind: Integer;
 begin
-  pKey1 := aWithKey;
-  pKey2 := Pointer(aKey);
-  for i := 1 to L do
-  begin
-    if SQLiteSyn.HashTable[pKey1^] <> SQLiteSyn.HashTable[pKey2^] then
-    begin
-      Result := False;
-      exit;
-    end;
-    Inc(pKey1);
-    Inc(pKey2);
-  end;
-  Result := True;
+  Result := Ord(tkIdentifier);
 end;
 
 function TSQLiteSyn.IdentKind(MayBe: PChar; out L: Integer): TtkTokenKind;
-var
-  Entry: TSynHashEntry;
 begin
-  Entry := SQLiteSyn.Keywords[KeyHash(MayBe, L)];
-  while Assigned(Entry) do
-  begin
-    if Entry.KeywordLen > L then
-      break
-    else if Entry.KeywordLen = L then
-      if KeyComp(Entry.Keyword, MayBe, L) then
-      begin
-        Result := TtkTokenKind(Entry.Kind);
-        exit;
-      end;
-    Entry := Entry.Next;
-  end;
-  Result := tkIdentifier;
+  Result := TtkTokenKind(GetIdentKind(MayBe, L));
 end;
 
 function TSQLiteSyn.IdentKind(MayBe: PChar): TtkTokenKind;
 var
   L: Integer;
 begin
-  Result := IdentKind(MayBe, L);
+  Result := TtkTokenKind(GetIdentKind(MayBe, L));
 end;
+
+constructor TSQLiteSyn.Create;
+begin
+  inherited;
+  EnumerateKeywords(Ord(tkDatatype), SqliteTypes, TSynValidStringChars, @DoAddKeyword);
+  EnumerateKeywords(Ord(tkFunction), SqliteFunctions, TSynValidStringChars, @DoAddKeyword);
+  EnumerateKeywords(Ord(tkKey), SqliteKeywords, TSynValidStringChars, @DoAddKeyword);
+end;
+
 
 procedure TSynSqliteSyn.MakeProcTables;
 var
@@ -734,7 +650,7 @@ end;
 
 function TSynSqliteSyn.GetIdentChars: TSynIdentChars;
 begin
-  Result := TSynValidStringChars;
+  Result := SQLiteSyn.GetIdentChars
 end;
 
 class function TSynSqliteSyn.GetLanguageName: string;

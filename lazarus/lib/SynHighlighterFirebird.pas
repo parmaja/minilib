@@ -13,7 +13,7 @@ interface
 
 uses
   SysUtils, Classes, Graphics,
-  SynEditTypes, SynEditHighlighter, SynHighlighterHashEntries;
+  SynEditTypes, SynEditHighlighter, SynHighlighterHashEntries, SynUtils;
 
 type
   TtkTokenKind = (tkComment, tkDatatype, tkObject, tkException,
@@ -22,26 +22,14 @@ type
 
   TRangeState = (rsUnknown, rsComment, rsString);
 
-  TProcTableProc = procedure of object;
-
-type
-  PIdentifierTable = ^TIdentifierTable;
-  TIdentifierTable = array[Char] of ByteBool;
-
-  PHashTable = ^THashTable;
-  THashTable = array[Char] of Integer;
-
-type
-
   TSynFirebirdSyn = class(TSynCustomHighlighter)
   private
+    Run: LongInt;
     FRange: TRangeState;
     FLine: PChar;
     FLineNumber: Integer;
     FProcTable: array[#0..#255] of TProcTableProc;
-    Run: LongInt;
     FStringLen: Integer;
-    FToIdent: PChar;
     FTokenPos: Integer;
     FTokenID: TtkTokenKind;
     FKeywords: TSynHashEntryList;
@@ -57,8 +45,6 @@ type
     FStringAttri: TSynHighlighterAttributes;
     FSymbolAttri: TSynHighlighterAttributes;
     FVariableAttri: TSynHighlighterAttributes;
-    function KeyHash(ToHash: PChar): Integer;
-    function KeyComp(const aKey: string): Boolean;
     procedure AndSymbolProc;
     procedure StringProc;
     procedure CRProc;
@@ -79,10 +65,8 @@ type
     procedure VariableProc;
     procedure ObjectProc;
     procedure UnknownProc;
-    function IdentKind(MayBe: PChar): TtkTokenKind;
-    procedure MakeMethodTables;
     procedure AnsiCProc;
-    procedure DoAddKeyword(AKeyword: string; AKind: integer);
+    procedure MakeMethodTables;
   protected
     function GetIdentChars: TSynIdentChars; override;
     function GetSampleSource: string; override;
@@ -127,62 +111,80 @@ const
 
   // functions
   FirebirdFunctions =
-    'AVG,CAST,COUNT,GEN_ID,MAX,MIN,SUM,UPPER'+
-    'ABS,ACOS,ASCII_CHAR,ASCII_VAL,ASIN,ATAN,ATAN2,'+
-    'BIN_AND,BIN_OR,BIN_SHL,BIN_SHR,BIN_XOR,'+
-    'CEIL,COS,COSH,COT,DATEADD,DATEDIFF,DECODE,'+
-    'EXP,FLOOR,GEN_UUID,HASH,LN,LOG,LOG10,LPAD,'+
-    'MAXVALUE,MINVALUE,MOD,OVERLAY,PI,POWER,'+
-    'RAND,REPLACE,REVERSE,ROUND,RPAD,'+
-    'SIGN,SIN,SINH,SQRT,TAN,TANH,TRUNC,'+
-    'UUID_TO_CHAR,CHAR_TO_UUID';
+    'avg,cast,count,gen_id,max,min,sum,upper'+
+    'abs,acos,ascii_char,ascii_val,asin,atan,atan2,'+
+    'bin_and,bin_or,bin_shl,bin_shr,bin_xor,'+
+    'ceil,cos,cosh,cot,dateadd,datediff,decode,'+
+    'exp,floor,gen_uuid,hash,ln,log,log10,lpad,'+
+    'maxvalue,minvalue,mod,overlay,pi,power,'+
+    'rand,replace,reverse,round,rpad,'+
+    'sign,sin,sinh,sqrt,tan,tanh,trunc,'+
+    'uuid_to_char,char_to_uuid';
 
   // keywords
   FirebirdKeywords: string =
-    'ACTIVE,ADD,AFTER,ALL,ALTER,AND,ANY,AS,ASC,ASCENDING,AT,AUTO,AUTONOMOUS,AUTODDL,'+
-    'BASED,BASENAME,BASE_NAME,BEFORE,BEGIN,BETWEEN,BLOBEDIT,BLOCK,BREAK,BUFFER,BY,' +
-    'CACHE,CASE,CHARACTER_LENGTH,CHAR_LENGTH,CHECK,' +
-    'CHECK_POINT_LEN,CHECK_POINT_LENGTH,COALESCE,COLLATE,COLLATION,COLUMN,COMMIT,' +
-    'COMMITED,COMPILETIME,COMPUTED,CLOSE,CONDITIONAL,CONNECT,CONSTRAINT,' +
-    'CONTAINING,CONTINUE,CREATE,CURRENT,CURRENT_DATE,CURRENT_TIME,' +
-    'CURRENT_CONNECTION,CURRENT_TIMESTAMP,CURRENT_TRANSACTION,CURSOR,' +
-    'DATABASE,DAY,DB_KEY,DEBUG,DEC,DECLARE,DEFAULT,DELETE,DELETING,DESC,DESCENDING,' +
-    'DESCRIBE,DESCRIPTOR,DISCONNECT,DISTINCT,DO,DOMAIN,DROP,ECHO,EDIT,ELSE,END,' +
-    'ENTRY_POINT,ESCAPE,EVENT,EXCEPTION,EXECUTE,EXISTS,EXIT,EXTERN,EXTERNAL,EXTRACT,' +
-    'FETCH,FILE,FILTER,FIRST,FOR,FOREIGN,FOUND,FREE_IT,FROM,FULL,FUNCTION,' +
-    'GDSCODE,GENERATOR,GLOBAL,GOTO,GRANT,GROUP,GROUP_COMMIT_WAIT,GROUP_COMMIT_WAIT_TIME,' +
-    'HAVING,HELP,HOUR,'+
-    'IF,IIF,IMMEDIATE,IN,INACTIVE,INDEX,INDICATOR,INIT,INNER,INPUT,INPUT_TYPE,INSENSITIVE,' +
-    'INSERT,INSERTING,INT,INTO,IS,ISOLATION,ISQL,'+
-    'JOIN,'+
-    'KEY,LAST,LIST,'+
-    'LC_MESSAGES,LC_TYPE,LEAVE,LEFT,LENGTH,LEV,LEVEL,LIKE,' +
-    'LOGFILE,LOG_BUFFER_SIZE,LOG_BUF_SIZE,LONG,LOCK,MANUAL,' +
-    'MATCHING,MAXIMUM,MAXIMUM_SEGMENT,MAX_SEGMENT,MERGE,MESSAGE,MINIMUM,MINUTE,MODULE_NAME,MONTH,' +
-    'NAMES,NATIONAL,NATURAL,NCHAR,NEW,NEXT,NO,NOAUTO,NOT,NULL,NULLIF' +
-    'NUM_LOG_BUFFS,NUM_LOG_BUFFERS,'+
-    'OCTET_LENGTH,OF,OLD,ON,ONLY,OPEN,OPTION,OR,' +
-    'ORDER,OUTER,OUTPUT,OUTPUT_TYPE,OVERFLOW,'+
-    'PAGE,PAGELENGTH,PAGES,PAGE_SIZE,' +
-    'PARAMETER,PASSWORD,PLAN,POSITION,POST_EVENT,PREPARE,PROCEDURE,' +
-    'PROTECTED,PRIMARY,PRIVILEGES,PUBLIC,QUIT,RAW_PARTITIONS,READ,REAL,' +
-    'RECORD_VERSION,RECREATE,REFERENCES,RELEASE,RESERV,RESERVING,RETAIN,RETURN,' +
-    'RETURNING,RETURNING_VALUES,RETURNS,RESTART,REVOKE,RIGHT,ROLLBACK,ROW_COUNT,ROWS,RUNTIME,'+
-    'SAVEPOINT,SCHEMA,SECOND,' +
-    'SEGMENT,SELECT,SET,SEQUENCE,SHADOW,SHARED,SHELL,SHOW,SIMILAR,SINGULAR,SIZE,SNAPSHOT,SOME,' +
-    'SORT,SKIP,SQL,SQLCODE,SQLERROR,SQLWARNING,STABILITY,STARTING,STARTS,' +
-    'SENSITIVE,STATEMENT,STATIC,STATISTICS,SUB_TYPE,SUSPEND,SUBSTRING,'+
-    'TABLE,TERMINATOR,THEN,TO,TRANSACTION,TRANSLATE,TRANSLATION,TRIGGER,TRIM,TYPE,' +
-    'UNCOMMITTED,UNION,UNIQUE,UNICODE,UPDATE,UPDATING,USER,USING,UTF8,'+
-    'VALUE,VALUES,VARIABLE,VARYING,VERSION,VIEW,' +
-    'WAIT,WEEKDAY,WHEN,WHENEVER,WHERE,WHILE,WITH,WORK,WRITE,'+
-    'YEAR,YEARDAY';
+    'active,add,after,all,alter,and,any,as,asc,ascending,at,auto,autonomous,autoddl,'+
+    'based,basename,base_name,before,begin,between,blobedit,block,break,buffer,by,' +
+    'cache,case,character_length,char_length,check,' +
+    'check_point_len,check_point_length,coalesce,collate,collation,column,commit,' +
+    'commited,compiletime,computed,close,conditional,connect,constraint,' +
+    'containing,continue,create,current,current_date,current_time,' +
+    'current_connection,current_timestamp,current_transaction,cursor,' +
+    'database,day,db_key,debug,dec,declare,default,delete,deleting,desc,descending,' +
+    'describe,descriptor,disconnect,distinct,do,domain,drop,echo,edit,else,end,' +
+    'entry_point,escape,event,exception,execute,exists,exit,extern,external,extract,' +
+    'fetch,file,filter,first,for,foreign,found,free_it,from,full,function,' +
+    'gdscode,generator,global,goto,grant,group,group_commit_wait,group_commit_wait_time,' +
+    'having,help,hour,'+
+    'if,iif,immediate,in,inactive,index,indicator,init,inner,input,input_type,insensitive,' +
+    'insert,inserting,int,into,is,isolation,isql,'+
+    'join,'+
+    'key,last,list,'+
+    'lc_messages,lc_type,leave,left,length,lev,level,like,' +
+    'logfile,log_buffer_size,log_buf_size,long,lock,manual,' +
+    'matching,maximum,maximum_segment,max_segment,merge,message,minimum,minute,module_name,month,' +
+    'names,national,natural,nchar,new,next,no,noauto,not,null,nullif' +
+    'num_log_buffs,num_log_buffers,'+
+    'octet_length,of,old,on,only,open,option,or,' +
+    'order,outer,output,output_type,overflow,'+
+    'page,pagelength,pages,page_size,' +
+    'parameter,password,plan,position,post_event,prepare,procedure,' +
+    'protected,primary,privileges,public,quit,raw_partitions,read,real,' +
+    'record_version,recreate,references,release,reserv,reserving,retain,return,' +
+    'returning,returning_values,returns,restart,revoke,right,rollback,row_count,rows,runtime,'+
+    'savepoint,schema,second,' +
+    'segment,select,set,sequence,shadow,shared,shell,show,similar,singular,size,snapshot,some,' +
+    'sort,skip,sql,sqlcode,sqlerror,sqlwarning,stability,starting,starts,' +
+    'sensitive,statement,static,statistics,sub_type,suspend,substring,'+
+    'table,terminator,then,to,transaction,translate,translation,trigger,trim,type,' +
+    'uncommitted,union,unique,unicode,update,updating,user,using,utf8,'+
+    'value,values,variable,varying,version,view,' +
+    'wait,weekday,when,whenever,where,while,with,work,write,'+
+    'year,yearday';
 
   // types
-  FirebirdTypes = 'BIGINT,BLOB,CHAR,CHARACTER,DATE,DECIMAL,DOUBLE,FLOAT,INT64,INTEGER,' +
-    'NUMERIC,PRECISION,SMALLINT,TIME,TIMESTAMP,VARCHAR';
+  FirebirdTypes = 'bigint,blob,char,character,date,decimal,double,float,int64,integer,' +
+    'numeric,precision,smallint,time,timestamp,varchar';
 
   ISQLKeywords = 'TERM';
+
+type
+
+  { TFirebirdSyn }
+
+  TFirebirdSyn = class(TSynPersistent)
+   private
+   protected
+     procedure MakeIdentifiers; override;
+     procedure MakeHashes; override;
+     function GetDefaultKind: Integer; override;
+   public
+     function IdentKind(MayBe: PChar; out L: Integer): TtkTokenKind; overload;
+     function IdentKind(MayBe: PChar): TtkTokenKind; overload;
+     constructor Create; override;
+   end;
+
+function FirebirdSyn: TFirebirdSyn;
 
 implementation
 
@@ -193,90 +195,55 @@ const
   SYNS_AttrObjects = 'Objects';
 
 var
-  Identifiers: TIdentifierTable;
-  mHashTable: THashTable;
+  FFirebirdSyn: TFirebirdSyn = nil;
 
-procedure MakeIdentTable;
-var
-  c: char;
+function FirebirdSyn: TFirebirdSyn;
 begin
-  FillChar(Identifiers, SizeOf(Identifiers), 0);
-  for c := 'a' to 'z' do
-    Identifiers[c] := True;
-  for c := 'A' to 'Z' do
-    Identifiers[c] := True;
-  for c := '0' to '9' do
-    Identifiers[c] := True;
-  Identifiers['_'] := True;
+  if FFirebirdSyn = nil then
+    FFirebirdSyn := TFirebirdSyn.Create;
+  Result := FFirebirdSyn;
+end;
+
+{ TFirebirdSyn }
+
+procedure TFirebirdSyn.MakeIdentifiers;
+begin
+  inherited;
   Identifiers[':'] := True;
   Identifiers['"'] := True;
-
-  FillChar(mHashTable, SizeOf(mHashTable), 0);
-  mHashTable['_'] := 1;
-  for c := 'a' to 'z' do
-    mHashTable[c] := 2 + Ord(c) - Ord('a');
-  for c := 'A' to 'Z' do
-    mHashTable[c] := 2 + Ord(c) - Ord('A');
-  mHashTable[':'] := mHashTable['Z'] + 1;
-  mHashTable['"'] := mHashTable['Z'] + 1;
 end;
 
-function TSynFirebirdSyn.KeyHash(ToHash: PChar): Integer;
+procedure TFirebirdSyn.MakeHashes;
 begin
-  Result := 0;
-  while Identifiers[ToHash^] do
-  begin
-{$IFOPT Q-}
-    Result := 2 * Result + mHashTable[ToHash^];
-{$ELSE}
-    Result := (2 * Result + mHashTable[ToHash^]) and $FFFFFF;
-{$ENDIF}
-    inc(ToHash);
-  end;
-  Result := Result and $FF; // 255
-  FStringLen := ToHash - FToIdent;
+  inherited;
+  HashTable[':'] := HashTable['Z'] + 1;
+  HashTable['"'] := HashTable['Z'] + 2;
 end;
 
-function TSynFirebirdSyn.KeyComp(const aKey: string): Boolean;
+function TFirebirdSyn.GetDefaultKind: Integer;
+begin
+  Result := ord(tkIdentifier);
+end;
+
+function TFirebirdSyn.IdentKind(MayBe: PChar; out L: Integer): TtkTokenKind;
+begin
+  Result := TtkTokenKind(GetIdentKind(MayBe, L));
+end;
+
+function TFirebirdSyn.IdentKind(MayBe: PChar): TtkTokenKind;
 var
-  i: integer;
-  pKey1, pKey2: PChar;
+  L: Integer;
 begin
-  pKey1 := FToIdent;
-  // Note: FStringLen is always > 0 !
-  pKey2 := pointer(aKey);
-  for i := 1 to FStringLen do
-  begin
-    if mHashTable[pKey1^] <> mHashTable[pKey2^] then
-    begin
-      Result := FALSE;
-      exit;
-    end;
-    Inc(pKey1);
-    Inc(pKey2);
-  end;
-  Result := True;
+  Result := TtkTokenKind(GetIdentKind(MayBe, L));
 end;
 
-function TSynFirebirdSyn.IdentKind(MayBe: PChar): TtkTokenKind;
-var
-  Entry: TSynHashEntry;
+constructor TFirebirdSyn.Create;
 begin
-  FToIdent := MayBe;
-  Entry := FKeywords[KeyHash(MayBe)];
-  while Assigned(Entry) do
-  begin
-    if Entry.KeywordLen > FStringLen then
-      break
-    else if Entry.KeywordLen = FStringLen then
-      if KeyComp(Entry.Keyword) then
-      begin
-        Result := TtkTokenKind(Entry.Kind);
-        exit;
-      end;
-    Entry := Entry.Next;
-  end;
-  Result := tkIdentifier;
+  inherited;
+  EnumerateKeywords(Ord(tkDatatype), FirebirdTypes, GetIdentChars, @DoAddKeyword);
+  EnumerateKeywords(Ord(tkFunction), FirebirdFunctions, GetIdentChars, @DoAddKeyword);
+  EnumerateKeywords(Ord(tkKey), FirebirdKeywords, GetIdentChars, @DoAddKeyword);
+  EnumerateKeywords(Ord(tkKey), ISQLKeywords, GetIdentChars, @DoAddKeyword);
 end;
 
 procedure TSynFirebirdSyn.MakeMethodTables;
@@ -355,10 +322,6 @@ begin
   FVariableAttri := TSynHighlighterAttributes.Create(SYNS_AttrVariable);
   AddAttribute(FVariableAttri);
   SetAttributesOnChange(@DefHighlightChange);
-  EnumerateKeywords(Ord(tkDatatype), FirebirdTypes, IdentChars, @DoAddKeyword);
-  EnumerateKeywords(Ord(tkFunction), FirebirdFunctions, IdentChars, @DoAddKeyword);
-  EnumerateKeywords(Ord(tkKey), FirebirdKeywords, IdentChars, @DoAddKeyword);
-  EnumerateKeywords(Ord(tkKey), ISQLKeywords, IdentChars, @DoAddKeyword);
   MakeMethodTables;
   FDefaultFilter := SYNS_FilterSQL;
   FRange := rsUnknown;
@@ -440,7 +403,7 @@ end;
 
 procedure TSynFirebirdSyn.IdentProc;
 begin
-  FTokenID := IdentKind((FLine + Run));
+  FTokenID := FirebirdSyn.IdentKind((FLine + Run));
   inc(Run, FStringLen);
   if FTokenID = tkComment then
   begin
@@ -448,7 +411,7 @@ begin
       Inc(Run);
   end
   else
-    while Identifiers[FLine[Run]] do
+    while FirebirdSyn.Identifiers[FLine[Run]] do
       inc(Run);
 end;
 
@@ -583,7 +546,7 @@ begin
     i := Run;
     repeat
       Inc(i);
-    until not (Identifiers[FLine[i]]);
+    until not (FirebirdSyn.Identifiers[FLine[i]]);
     Run := i;
   end;
 end;
@@ -620,7 +583,7 @@ function TSynFirebirdSyn.IsKeyword(const AKeyword: string): boolean;
 var
   tk: TtkTokenKind;
 begin
-  tk := IdentKind(PChar(AKeyword));
+  tk := FirebirdSyn.IdentKind(PChar(AKeyword));
   Result := tk in [tkDatatype, tkException, tkFunction, tkKey, tkObject];
 end;
 
@@ -724,7 +687,7 @@ end;
 
 function TSynFirebirdSyn.GetIdentChars: TSynIdentChars;
 begin
-  Result := TSynValidStringChars;
+  Result := FirebirdSyn.GetIdentChars
 end;
 
 class function TSynFirebirdSyn.GetLanguageName: string;
@@ -732,17 +695,9 @@ begin
   Result := SYNS_LangSQL;
 end;
 
-procedure TSynFirebirdSyn.DoAddKeyword(AKeyword: string; AKind: integer);
-var
-  HashValue: integer;
-begin
-  HashValue := KeyHash(PChar(AKeyword));
-  FKeywords[HashValue] := TSynHashEntry.Create(AKeyword, AKind);
-end;
-
 function TSynFirebirdSyn.GetSampleSource: string;
 begin
-  Result := '';
+  Result := 'select * from Employees';
 end;
 
 procedure TSynFirebirdSyn.ObjectProc;
@@ -761,7 +716,6 @@ begin
 end;
 
 initialization
-  MakeIdentTable;
   RegisterPlaceableHighlighter(TSynFirebirdSyn);
 end.
 
