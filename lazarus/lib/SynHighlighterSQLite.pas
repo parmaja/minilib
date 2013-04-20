@@ -89,8 +89,7 @@ type
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
     procedure Assign(Source: TPersistent); override;
-    function GetDefaultAttribute(Index: integer): TSynHighlighterAttributes;
-      override;
+    function GetDefaultAttribute(Index: integer): TSynHighlighterAttributes; override;
     function GetEol: Boolean; override;
     function GetRange: Pointer; override;
     function GetToken: string; override;
@@ -119,19 +118,6 @@ type
   end;
 
 const
-//---Sqlite 6----------------------------------------------------------------
-
-  // functions
-  SqliteFunctions =
-    //Aggregate Functions
-    'avg,count,group_concat,max,min,sum,total,'+
-    //Core Functions
-    'abs,changes,coalesce,ifnull,hex,last_insert_rowid,length,'+//glob,like,
-    'load_extension,lower,ltrim,nullif,quote,random,randomblob,round,rtrim,'+//replace,
-    'soundex,sqlite_version,substr,total_changes,trim,typeof,upper,zeroblob,'+
-    //Date Functions
-    'date,time,datetime,julianday,strftime';
-
   // keywords
   SqliteKeywords: string =
     'abort,add,after,all,alter,analyze,and,as,asc,attach,autoincrement,'+
@@ -146,6 +132,13 @@ const
     'row,savepoint,select,set,table,temp,temporary,then,to,transaction,trigger,'+
     'union,unique,update,using,vacuum,values,view,virtual,when,where';
 
+  // functions
+  SqliteFunctions =
+    'avg,count,group_concat,max,min,sum,total,'+
+    'abs,changes,coalesce,ifnull,hex,last_insert_rowid,length,'+
+    'load_extension,lower,ltrim,nullif,quote,random,randomblob,round,rtrim,'+
+    'soundex,sqlite_version,substr,total_changes,trim,typeof,upper,zeroblob,'+
+    'date,time,datetime,julianday,strftime';
 
   // types
   SqliteTypes = 'blob,char,character,decimal,double,float,integer,' +
@@ -356,6 +349,7 @@ begin
   FFunctionAttri.Foreground := $00C56A31;
   AddAttribute(FFunctionAttri);
   FIdentifierAttri := TSynHighlighterAttributes.Create(SYNS_AttrIdentifier);
+  FIdentifierAttri.Foreground := clBlack;
   AddAttribute(FIdentifierAttri);
   FKeyAttri := TSynHighlighterAttributes.Create(SYNS_AttrReservedWord);
   FKeyAttri.Style := [fsBold];
