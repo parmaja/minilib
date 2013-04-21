@@ -54,8 +54,6 @@ object Form1: TForm1
     Width = 97
     Height = 17
     Caption = 'Binary Result'
-    Checked = True
-    State = cbChecked
     TabOrder = 4
   end
   object Button3: TButton

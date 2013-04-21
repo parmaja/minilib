@@ -271,7 +271,7 @@ begin
           cmd.ResultFormat := mrfBinary;
 
 
-        Cmd.SQL.Text := 'select "DocID" , "DocUser" ,"DocArchive" ,"DocName" ,"DocCode" from "Documents"';
+        Cmd.SQL.Text := 'select "DocID" , "DocUser" ,"DocArchive" ,"DocName" ,"DocCode" from "Documents" order by "DocID"';
         t := GetTickCount;
         if Cmd.Execute then
         begin

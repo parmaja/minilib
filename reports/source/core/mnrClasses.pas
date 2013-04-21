@@ -480,7 +480,7 @@ type
     procedure ClearDesignRows;
 
     procedure Loop;
-    procedure Clear;
+    procedure ClearItems;
   end;
 
   TmnrIndex = class(TObject)
@@ -652,7 +652,7 @@ end;
 procedure TmnrCustomReport.Clear;
 begin
   Items.Clear;
-  Sections.Clear;
+  Sections.ClearItems;
 end;
 
 constructor TmnrCustomReport.Create;
@@ -1287,7 +1287,7 @@ end;
 
 { TmnrSections }
 
-procedure TmnrSections.Clear;
+procedure TmnrSections.ClearItems;
 var
   s: TmnrSection;
 begin
@@ -1295,7 +1295,7 @@ begin
   while s <> nil do
   begin
     s.Items.Clear;
-    if s.Sections<>nil then s.Sections.Clear;
+    if s.Sections<>nil then s.Sections.ClearItems;
     
     s := s.Next;
   end;

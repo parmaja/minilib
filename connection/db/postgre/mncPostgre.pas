@@ -173,6 +173,8 @@ type
   protected
     function CreateField(vColumn: TmncColumn): TmncField; override;
     property Command: TmncCustomPGCommand read FCommand;
+  public
+    function IsNull: Boolean;
   end;
 
   TPGColumn = class(TmncColumn)
@@ -304,7 +306,7 @@ begin
     H := StrToIntDef(SubStr(T, ':', 0), 0);
     N := StrToIntDef(SubStr(T, ':', 1), 0);
     S := StrToIntDef(SubStr(T, ':', 2), 0);
-    Result := EncodeDate(Y, M, D) + EncodeTime(H, M, S, 0);
+    Result := EncodeDate(Y, M, D) + EncodeTime(H, N, S, 0);
   except
     Result := 0;
   end;
@@ -782,7 +784,6 @@ end;
 
 procedure TmncPGCommand.DoPrepare;
 var
-  s:string;
   r: PPGresult;
   c: PPGconn;
 begin
@@ -878,6 +879,19 @@ begin
   Result := TmncPostgreField.Create(vColumn);
   with TmncPostgreField(Result) do
     FFields := Self;
+end;
+
+function TmncPostgreFields.IsNull: Boolean;
+var
+  i: Integer;
+begin
+  Result := True;
+  for I := 0 to Count - 1 do
+    if not Items[i].IsNull then
+    begin
+      Result := False;
+      Break;
+    end;
 end;
 
 { TPGColumns }
@@ -1229,7 +1243,6 @@ procedure TmncPGCursorCommand.DoExecute;
 var
   Values: TArrayOfPChar;
   P: pointer;
-  f: Integer;//Result Field format
   aStatment: PPGresult;
 begin
   try
@@ -1240,17 +1253,13 @@ begin
     end
     else
       p := nil;
-    case ResultFormat of
-      mrfBinary: f := 1;
-      else
-        f := 0;
-    end;
-    aStatment := PQexecPrepared(Session.DBHandle, PChar(FHandle), Binds.Count, P, nil, nil, f);
+    aStatment := PQexecPrepared(Session.DBHandle, PChar(FHandle), Binds.Count, P, nil, nil, 0);
     //FStatment := PQexec(Session.DBHandle, PChar(SQL.Text));
   finally
     FreeParamValues(Values);
   end;
   FStatus := PQresultStatus(aStatment);
+  FBOF := True;
   FEOF := not (FStatus in [PGRES_TUPLES_OK]);
   try
     RaiseError(aStatment);
@@ -1276,6 +1285,10 @@ begin
         FBOF := False;
       end;
       FetchValues(aStatment, 0);
+      if TmncPostgreFields(Fields).IsNull then
+        FEOF := True
+      else
+        FEOF := False;
     end
     else
       FEOF := True;
@@ -1285,7 +1298,7 @@ end;
 
 procedure TmncPGCursorCommand.DoPrepare;
 var
-  s:string;
+  s, b:string;
   r: PPGresult;
   c: PPGconn;
 begin
@@ -1293,12 +1306,17 @@ begin
   FHandle := Session.NewToken;
   ParseSQL([psoAddParamsID], '$');
   c := Session.DBHandle;
-  s := Format('decalre %s cursor for %s', [Handle, SQLProcessed.SQL]);
+  if ResultFormat=mrfBinary then
+    b := 'binary'
+  else
+    b := '';
+
+  s := Format('declare %s %s cursor for %s', [Handle, b, SQLProcessed.SQL]);
   r := PQprepare(c, PChar(FHandle), PChar(s), 0 , nil);
   try
     RaiseError(r);
   finally
-    PQclear(r);
+    PQclear(r);     
   end;
 end;
 
@@ -1309,18 +1327,19 @@ end;
 
 function TmncPGCursorCommand.GetActive: Boolean;
 begin
-
+  Result := not FBOF;
 end;
 
 function TmncPGCursorCommand.GetEOF: Boolean;
 begin
-
+  Result := FEOF;
 end;
 
 procedure TmncPGCursorCommand.InternalClose;
 begin
   Session.Execute(CloseSQL);
   FStatus := PGRES_EMPTY_QUERY;
+  FBOF := True;
 end;
 
 end.
