@@ -480,6 +480,7 @@ type
     procedure ClearDesignRows;
 
     procedure Loop;
+    procedure ClearItems;
   end;
 
   TmnrIndex = class(TObject)
@@ -530,6 +531,7 @@ type
     procedure HandleNewRow(vRow: TmnrRowNode); virtual;
     procedure InitSections(vSections: TmnrSections); virtual;
     procedure InitLayouts(vGroups: TmnrGroups); virtual;
+    procedure InitRequests; virtual;
     function CreateNewRow(vSection: TmnrSection): TmnrRow; 
     procedure Loop;
     //Apply param to report to use it in Queries or assign it to Variables
@@ -540,6 +542,7 @@ type
     procedure Created; virtual; //after create
     procedure Start; virtual; //after build report only in generate
     procedure Finish; virtual; //
+    procedure DoPrepare; virtual;
 
     function DoCreateNewRow(vSection: TmnrSection): TmnrRow; virtual;
     function DoCreateProfiler: TmnrProfiler; virtual;
@@ -568,9 +571,8 @@ type
     function FindSection(const vName: string): TmnrSection;
     property Designer: ImnrReportDesigner read FDesigner write FDesigner;
 
-    procedure Prepare; virtual; //for design and generate
+    procedure Prepare; //for design and generate
     procedure Generate;
-    procedure Design;
     property Profiler: TmnrProfiler read GetProfiler;
 
     procedure Fetch(vSection: TmnrSection; var vParams: TmnrFetch); virtual;
@@ -584,6 +586,7 @@ type
     procedure ExportCSV(const vStream: TStream); overload; //test purpose only
     class function CreateReportDesgin: ImnrReportDesigner; virtual;
     class procedure Desgin;
+    procedure Clear; virtual;
 
     property DetailTotals: TmnrSection read GetDetailTotals;
     property ReportTotals: TmnrSection read GetReportTotals;
@@ -646,6 +649,12 @@ begin
   Result := FCanceled;
 end;
 
+procedure TmnrCustomReport.Clear;
+begin
+  Items.Clear;
+  Sections.ClearItems;
+end;
+
 constructor TmnrCustomReport.Create;
 begin
   inherited Create;
@@ -663,12 +672,17 @@ begin
   FDetailTitles := FSections.RegisterSection('DetailTitles', '⁄‰«ÊÌ‰ «· ›’Ì·', sciDetails, 0, nil, slwSingle);
   FReportTitles := FSections.RegisterSection('ReportTitles', '⁄‰«ÊÌ‰ «· ﬁ—Ì—', sciHeaderReport);
 
-  InitLayouts(FGroups);
+  //InitLayouts(FGroups);
   Created;
   FWorking := True;
 end;
 
 procedure TmnrCustomReport.InitLayouts(vGroups: TmnrGroups);
+begin
+
+end;
+
+procedure TmnrCustomReport.InitRequests;
 begin
 
 end;
@@ -722,16 +736,6 @@ begin
   end;
 end;
 
-procedure TmnrCustomReport.Design;
-begin
-  {Prepare;
-  try
-    DesignReport;
-  finally //handle safe finish ........
-    Finish;
-  end;}
-end;
-
 destructor TmnrCustomReport.Destroy;
 begin
   FGroups.Free;
@@ -745,6 +749,11 @@ end;
 function TmnrCustomReport.DoCreateSections: TmnrSections;
 begin
   Result := TmnrSections.Create(Self);
+end;
+
+procedure TmnrCustomReport.DoPrepare;
+begin
+
 end;
 
 procedure TmnrCustomReport.ExportCSV(const vStream: TStream);
@@ -886,13 +895,19 @@ end;
 procedure TmnrCustomReport.Loop;
 begin
   FCanceled := False;
-  Sections.DoAppendReportTitles(ReportTitles);
-  Sections.Loop;
+  try
+    Sections.DoAppendReportTitles(ReportTitles);
+    Sections.Loop;
+  except
+    //Clear;
+    raise;
+  end;
 end;
 
 procedure TmnrCustomReport.Prepare;
 begin
-
+  DoPrepare;
+  InitLayouts(Groups);
 end;
 
 procedure TmnrCustomReport.RegisterRequest(const vName: string; vOnRequest: TOnRequest);
@@ -906,7 +921,7 @@ end;
 
 procedure TmnrCustomReport.Start;
 begin
-
+  InitRequests;
 end;
 
 function TmnrCustomReport.SumString: string;
@@ -1271,6 +1286,20 @@ begin
 end;
 
 { TmnrSections }
+
+procedure TmnrSections.ClearItems;
+var
+  s: TmnrSection;
+begin
+  s := First;
+  while s <> nil do
+  begin
+    s.Items.Clear;
+    if s.Sections<>nil then s.Sections.ClearItems;
+    
+    s := s.Next;
+  end;
+end;
 
 procedure TmnrSections.ClearDesignRows;
 var

@@ -54,8 +54,6 @@ object Form1: TForm1
     Width = 97
     Height = 17
     Caption = 'Binary Result'
-    Checked = True
-    State = cbChecked
     TabOrder = 4
   end
   object Button3: TButton
@@ -94,5 +92,14 @@ object Form1: TForm1
     Caption = 'Tree'
     TabOrder = 7
     OnClick = TreeBtnClick
+  end
+  object Button4: TButton
+    Left = 109
+    Top = 73
+    Width = 75
+    Height = 25
+    Caption = 'Read Cursor'
+    TabOrder = 8
+    OnClick = Button4Click
   end
 end
