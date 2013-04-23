@@ -71,6 +71,8 @@ type
     AcceptMode: TmnrAcceptMode;
     ID: Integer;
     Number: Integer;
+    Locked: Boolean;
+    Data: TObject;
   end;
 
   TOnRequest = procedure(vCell: TmnrCell) of object;
@@ -127,6 +129,7 @@ type
     FID: Int64;
     FNumber: Integer;
     FRowIndex: Integer;
+    FLocked: Boolean;
   protected
     function GetFirst: TmnrCell;
     function GetLast: TmnrCell;
@@ -150,6 +153,7 @@ type
     property Last: TmnrCell read GetLast;
 
     property ID: Int64 read FID;
+    property Locked: Boolean read FLocked;
     property Number: Integer read FNumber;
     property RowIndex: Integer read FRowIndex;
 
@@ -422,6 +426,8 @@ type
     function GetDesignRows: TmnrDesignRows;
     function DoCreateSections: TmnrSections;
     function GetSections: TmnrSections;
+
+    procedure UpdateRowData(vRow: TmnrRow; vData: TObject); virtual;
   public
     constructor Create(vNodes: TmnrNode);
     destructor Destroy; override;
@@ -1179,9 +1185,12 @@ begin
       try
         aRow.FID := vParams.ID;
         aRow.FNumber := vParams.Number;
+        aRow.FLocked := vParams.Locked;
         aRow.FRowIndex := vIndex;
         aRow.FReferencesRow := vReference;
         aRow.FDesignRow := r;
+        if vParams.Data<>nil then UpdateRowData(aRow, vParams.Data);
+        
 
         d := r.First;
         while d <> nil do
@@ -1283,6 +1292,11 @@ end;
 procedure TmnrSection.SetNodes(const Value: TmnrSections);
 begin
   inherited SetNodes(Value);
+end;
+
+procedure TmnrSection.UpdateRowData(vRow: TmnrRow; vData: TObject);
+begin
+
 end;
 
 { TmnrSections }
@@ -1419,25 +1433,27 @@ begin
   s := First;
   while s <> nil do
   begin
+    aIdx := 0;
     aParams.ID := 0;
     aParams.Number := 0;
-    aIdx := 0;
+    aParams.Locked := False;
+    aParams.Data := nil;
+    aParams.AcceptMode := acmAccept;
+    aParams.FetchMode := fmFirst;
+
     case s.LoopWay of
       slwSingle:
       begin
-        aParams.AcceptMode := acmAccept;
-        aParams.FetchMode := fmFirst;
         s.DoFetch(aParams);
         if aParams.AcceptMode = acmAccept then
         begin
           s.FillNow(aParams, 0, s.NewReference);
+          if aParams.Data <> nil then FreeAndNil(aParams.Data);
           s.Sections.Loop;
         end;
       end;
       slwMulti:
       begin
-        aParams.FetchMode := fmFirst;
-        aParams.AcceptMode := acmAccept;
         r := nil;
         while not Report.Canceled and (aParams.AcceptMode = acmAccept) do
         begin
@@ -1467,8 +1483,12 @@ begin
             end;
           end;
 
-          if aParams.FetchMode = fmFirst then
-            aParams.FetchMode := fmNext;
+          aParams.ID := 0;
+          aParams.Number := 0;
+          aParams.Locked := False;
+          if aParams.FetchMode = fmFirst then aParams.FetchMode := fmNext;
+          if aParams.Data <> nil then FreeAndNil(aParams.Data);
+
           Inc(aIdx);
         end;
 
@@ -1639,7 +1659,7 @@ begin
       Result.FReference := Reference;
       Result.FDesignCell := vDesignCell;
       DoRequest(Result);
-      ScaleCell(Result);
+      if not vRow.Locked then ScaleCell(Result);
     except
       FreeAndNil(Result);
       raise;
