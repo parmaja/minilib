@@ -574,6 +574,7 @@ type
     procedure Load; virtual;
     procedure Cancel;
     property Working: Boolean read FWorking;
+    function Finished: Boolean;
     function FindSection(const vName: string): TmnrSection;
     property Designer: ImnrReportDesigner read FDesigner write FDesigner;
 
@@ -813,6 +814,11 @@ end;
 procedure TmnrCustomReport.Finish;
 begin
   FRowsListIndex := TmnrRowsIndex.Create(Self);
+end;
+
+function TmnrCustomReport.Finished: Boolean;
+begin
+  Result := not Working;
 end;
 
 procedure TmnrCustomReport.Generate;
