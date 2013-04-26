@@ -35,6 +35,7 @@ const
   DEFAULT_CELL_WIDTH = 1000;
 
 type
+
   TmnrSection = class;
   TmnrSections = class;
   TmnrCustomReport = class;
@@ -57,6 +58,7 @@ type
   TCustomReportDesignerClass = class of TCustomReportDesigner;
   TmnrProfilerClass = class of TmnrProfiler;
   TmnrDesignCellClass = class of TmnrDesignCell;
+  //TmnrReportClass = class of TmnrCustomReport;
 
   TmnrRowArray = array of TmnrRow;
 
@@ -412,7 +414,6 @@ type
     function GetNodes: TmnrSections;
     function GetPrior: TmnrSection;
     procedure SetNodes(const Value: TmnrSections);
-    function GetReport: TmnrCustomReport;
     function GetLoopWay: TmnrSectionLoopWay;
   protected
     function DoFetch(var vParams: TmnrFetch): TmnrAcceptMode; virtual;
@@ -426,6 +427,7 @@ type
 
     procedure UpdateRowData(vRow: TmnrRow; vData: TObject); virtual;
     function GetCaption: string; virtual;
+    function GetReport: TmnrCustomReport;
   public
     constructor Create(vNodes: TmnrNode);
     destructor Destroy; override;
@@ -515,6 +517,7 @@ type
     procedure ProcessDrop(vNode: TmnrLayout);
   end;
 
+{$M+}
   TmnrCustomReport = class(TObject)
   private
     FWorking: Boolean;
@@ -601,7 +604,7 @@ type
     property ReportTitles: TmnrSection read GetReportTitles;
   end;
 
-  TmnrReportClass = class of TmnrCustomReport;
+{$M-}
 
   TCustomReportDesigner = class(TComponent)
   private
