@@ -191,6 +191,7 @@ type
     function CreateCell(vRow: TmnrRow): TmnrCell; virtual;
     procedure ScaleCell(vCell: TmnrCell); virtual;
     function GetTotal: Double; virtual;
+    function GetPageTotal: Double; virtual;
     function DoCreateDesignCell(vRow: TmnrDesignRow): TmnrDesignCell; virtual;
 
     function GetExcludeSections: TmnrSectionClassIDs; virtual;
@@ -216,6 +217,7 @@ type
     property Reference: TmnrReference read FReference;
     //property DesignerCell: TmnrDesignCell read FDesignerCell write FDesignerCell;
     property Total: Double read GetTotal;
+    property PageTotal: Double read GetPageTotal;
     function CreateDesignCell(vRow: TmnrDesignRow): TmnrDesignCell;
     property Layouts: TmnrLayouts read GetLayouts;
     property Report: TmnrCustomReport read GetReport;
@@ -410,6 +412,7 @@ type
     FAppendDetailTitles: Boolean;
     FAppendReportTitles: Boolean;
     FSectionLoopWay: TmnrSectionLoopWay;
+    FAppendPageTotals: Boolean;
     function GetNext: TmnrSection;
     function GetNodes: TmnrSections;
     function GetPrior: TmnrSection;
@@ -418,6 +421,7 @@ type
   protected
     function DoFetch(var vParams: TmnrFetch): TmnrAcceptMode; virtual;
     procedure DoAppendDetailTotals(vSection: TmnrSection);
+    procedure DoAppendPageTotals(vSection: TmnrSection);
     procedure DoAppendReportTotals(vSection: TmnrSection);
     procedure DoAppendTitles(vSection: TmnrSection);
     function DoCreateDesignRows: TmnrDesignRows; virtual;
@@ -456,6 +460,7 @@ type
     function FindDesignCell(const vName: string): TmnrDesignCell;
   published
     property AppendDetailTotals: Boolean read FAppendDetailTotals write FAppendDetailTotals default False;
+    property AppendPageTotals: Boolean read FAppendPageTotals write FAppendPageTotals default False;
     property AppendReportTotals: Boolean read FAppendReportTotals write FAppendReportTotals default False;
     property AppendDetailTitles: Boolean read FAppendDetailTitles write FAppendDetailTitles default False;
     property AppendReportTitles: Boolean read FAppendReportTitles write FAppendReportTitles default False;
@@ -471,6 +476,7 @@ type
     function GetReport: TmnrCustomReport;
 
     procedure DoAppendReportTotals(vSection: TmnrSection);
+    procedure DoAppendPageTotals(vSection: TmnrSection);
     procedure DoAppendReportTitles(vSection: TmnrSection);
     function DoCreateSection: TmnrSection; virtual;
 
@@ -533,6 +539,8 @@ type
     FReportTotals: TmnrSection;
     FDetailTitles: TmnrSection;
     FReportTitles: TmnrSection;
+    FHeaderPage: TmnrSection;
+    FFooterPage: TmnrSection;
 
     function GetProfiler: TmnrProfiler;
   protected
@@ -541,7 +549,7 @@ type
     procedure InitSections(vSections: TmnrSections); virtual;
     procedure InitLayouts(vGroups: TmnrGroups); virtual;
     procedure InitRequests; virtual;
-    function CreateNewRow(vSection: TmnrSection): TmnrRow; 
+    function CreateNewRow(vSection: TmnrSection): TmnrRow;
     procedure Loop;
     //Apply param to report to use it in Queries or assign it to Variables
     //procedure SetParams(vParams: TmnrParams); virtual;
@@ -568,6 +576,8 @@ type
     function GetReportTotals: TmnrSection;
     function GetDetailTitles: TmnrSection;
     function GetReportTitles: TmnrSection;
+    function GetFooterPage: TmnrSection;
+    function GetHeaderPage: TmnrSection;
   public
     constructor Create;
     destructor Destroy; override;
@@ -602,6 +612,8 @@ type
     property ReportTotals: TmnrSection read GetReportTotals;
     property DetailTitles: TmnrSection read GetDetailTitles;
     property ReportTitles: TmnrSection read GetReportTitles;
+    property HeaderPage: TmnrSection read GetHeaderPage;
+    property FooterPage: TmnrSection read GetFooterPage;
   end;
 
 {$M-}
@@ -681,6 +693,8 @@ begin
   FReportTotals := FSections.RegisterSection('ReportTotals', '„Ã«„Ì⁄ «· ﬁ—Ì—', sciFooterReport);
   FDetailTitles := FSections.RegisterSection('DetailTitles', '⁄‰«ÊÌ‰ «· ›’Ì·', sciDetails, 0, nil, slwSingle);
   FReportTitles := FSections.RegisterSection('ReportTitles', '⁄‰«ÊÌ‰ «· ﬁ—Ì—', sciHeaderReport);
+  FHeaderPage   := FSections.RegisterSection('HeaderPage', '—«” «·’›Õ…', sciHeaderPage, ID_SECTION_HEADERPage);
+  FFooterPage   := FSections.RegisterSection('FooterPage', '«”›· «·’›Õ…', sciFooterPage, ID_SECTION_FooterPage);
 
   //InitLayouts(FGroups);
   Created;
@@ -855,6 +869,11 @@ begin
   Result := FDetailTotals;
 end;
 
+function TmnrCustomReport.GetFooterPage: TmnrSection;
+begin
+  Result := FFooterPage;
+end;
+
 function TmnrCustomReport.GetReportTotals: TmnrSection;
 begin
   Result := FReportTotals;
@@ -873,6 +892,11 @@ end;
 function TmnrCustomReport.GetGroups: TmnrGroups;
 begin
   Result := FGroups;
+end;
+
+function TmnrCustomReport.GetHeaderPage: TmnrSection;
+begin
+  Result := FHeaderPage;
 end;
 
 function TmnrCustomReport.GetItems: TmnrRows;
@@ -913,6 +937,7 @@ begin
   try
     Sections.DoAppendReportTitles(ReportTitles);
     Sections.Loop;
+    Sections.DoAppendPageTotals(FooterPage);
   except
     //Clear;
     raise;
@@ -1046,6 +1071,59 @@ begin
   end;
 end;
 
+procedure TmnrSection.DoAppendPageTotals(vSection: TmnrSection);
+var
+  r: TmnrDesignRow;
+  d: TmnrDesignCell;
+  l: TmnrLayout;
+  aRow: TmnrRow;
+  f: Boolean; //first
+  c: TmnrCell;
+begin
+  r := DesignRows.First;
+  if r <> nil then
+  begin
+    f := True;
+    while r <> nil do
+    begin
+      aRow := Report.CreateNewRow(vSection);
+      aRow.FDesignRow := r;
+      try
+        d := r.First;
+        while d <> nil do
+        begin
+          l := d.Layout;
+          if f then
+          begin
+            f := False;
+            c := TmnrTextReportCell.Create(aRow);
+            c.AsString := Report.SumString;
+          end
+          else
+          begin
+            c := TmnrPageTotalCell.Create(aRow);
+          end;
+          c.FDesignCell := d;
+          if l <> nil then c.FReference := l.Reference;
+
+          d := d.Next;
+        end;
+      except
+        aRow.Free;
+        raise;
+      end;
+      //todo make arow pass as var and if report handle row and free it then do nothing
+      Report.HandleNewRow(aRow);
+      with vSection.Items.Add do
+      begin
+        FRow := aRow;
+      end;
+
+      r := r.Next;
+    end;
+  end;
+end;
+
 procedure TmnrSection.DoAppendReportTotals(vSection: TmnrSection);
 var
   r: TmnrDesignRow;
@@ -1156,6 +1234,7 @@ begin
   FAppendReportTotals := False;
   FAppendDetailTitles := False;
   FAppendReportTitles := False;
+  FAppendPageTotals := False;
   FSectionLoopWay := slwAuto;
 end;
 
@@ -1368,6 +1447,20 @@ begin
     if s.AppendReportTotals then
       s.DoAppendReportTotals(vSection);
     s.Sections.DoAppendReportTotals(vSection);
+    s := s.Next;
+  end;
+end;
+
+procedure TmnrSections.DoAppendPageTotals(vSection: TmnrSection);
+var
+  s: TmnrSection;
+begin
+  s := First;
+  while s <> nil do
+  begin
+    if s.AppendPageTotals then
+      s.DoAppendPageTotals(vSection);
+    s.Sections.DoAppendPageTotals(vSection);
     s := s.Next;
   end;
 end;
@@ -1670,6 +1763,11 @@ end;
 function TmnrLayout.GetNumber: Integer;
 begin
   Result := FNumber;
+end;
+
+function TmnrLayout.GetPageTotal: Double;
+begin
+  Result := 0;
 end;
 
 function TmnrLayout.GetPrior: TmnrLayout;

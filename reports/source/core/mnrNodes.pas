@@ -72,15 +72,21 @@ type
     procedure SetAsInteger(const Value: Longint); override;
     procedure SetAsString(const Value: string); override;
     procedure SetAsVariant(const Value: Variant); override;
+
+  public
+    function DisplayText: string; override;
   end;
 
   TmnrIntegerLayout = class(TmnrLayout)
   protected
     FTotal: Double;
+    FPageTotal: Double;
     procedure ScaleCell(vCell: TmnrCell); override;
     function GetTotal: Double; override;
+    function GetPageTotal: Double; override;
   protected
     function CreateCell(vRow: TmnrRow): TmnrCell; override;
+  public
   end;
 
   TmnrDateTimeReportCell = class(TmnrCell)
@@ -157,6 +163,13 @@ type
     procedure SetAsInteger(const Value: Longint); override;
     procedure SetAsString(const Value: string); override;
     procedure SetAsVariant(const Value: Variant); override;
+  public
+    function DisplayText: string; override;
+  end;
+
+  TmnrPageTotalCell = class(TmnrCurrencyReportCell)
+  protected
+    function GetAsCurrency: Currency; override;
   end;
 
   TmnrCurrencyLayout = class(TmnrIntegerLayout)
@@ -313,6 +326,11 @@ begin
   Result := TmnrIntegerReportCell.Create(vRow);
 end;
 
+function TmnrIntegerLayout.GetPageTotal: Double;
+begin
+  Result := FPageTotal;
+end;
+
 function TmnrIntegerLayout.GetTotal: Double;
 begin
   Result := FTotal;
@@ -322,6 +340,7 @@ procedure TmnrIntegerLayout.ScaleCell(vCell: TmnrCell);
 begin
   inherited;
   FTotal := FTotal + vCell.AsFloat;
+  FPageTotal := FPageTotal + vCell.AsFloat;
   if vCell.Reference <> nil then
   begin
     vCell.Reference.Total := vCell.Reference.Total + vCell.AsFloat;
@@ -329,6 +348,14 @@ begin
 end;
 
 { TmnrIntegerReportCell }
+
+function TmnrIntegerReportCell.DisplayText: string;
+begin
+  if AsInteger=0 then
+    Result:= ''
+  else
+    Result := inherited DisplayText;
+end;
 
 function TmnrIntegerReportCell.GetAsBoolean: Boolean;
 begin
@@ -498,6 +525,14 @@ end;
 
 { TmnrCurrencyReportCell }
 
+function TmnrCurrencyReportCell.DisplayText: string;
+begin
+  if AsCurrency=0 then
+    Result := ''
+  else
+    Result := inherited DisplayText;
+end;
+
 function TmnrCurrencyReportCell.GetAsBoolean: Boolean;
 begin
   Result := AsCurrency <> 0;
@@ -520,17 +555,17 @@ end;
 
 function TmnrCurrencyReportCell.GetAsInteger: Longint;
 begin
-  Result := Trunc(FValue);
+  Result := Trunc(AsCurrency);
 end;
 
 function TmnrCurrencyReportCell.GetAsString: string;
 begin
-  Result := CurrToStr(FValue);
+  Result := CurrToStr(AsCurrency);
 end;
 
 function TmnrCurrencyReportCell.GetAsVariant: Variant;
 begin
-  Result := FValue;
+  Result := AsCurrency;
 end;
 
 function TmnrCurrencyReportCell.GetIsNull: Boolean;
@@ -842,6 +877,13 @@ end;
 function TmnrDataLayout.CreateCell(vRow: TmnrRow): TmnrCell;
 begin
   Result := TmnrDataReportCell.Create(vRow);
+end;
+
+{ TmnrPageTotalCell }
+
+function TmnrPageTotalCell.GetAsCurrency: Currency;
+begin
+  Result := Layout.PageTotal;
 end;
 
 initialization
