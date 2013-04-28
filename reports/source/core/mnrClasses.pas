@@ -101,6 +101,7 @@ type
     procedure SetAsData(const Value: Integer); override;
   public
     function DisplayText: string; virtual;
+    function GetImageIndex: Integer; virtual;
   end;
 
   TmnrCell = class(TmnrBaseCell)
@@ -278,13 +279,14 @@ type
     procedure SetName(const Value: string);
     procedure SetWidth(const Value: Integer);
     procedure SetLayout(const Value: TmnrLayout);
+    function GetLayout: TmnrLayout;
   public
     constructor Create(vNodes: TmnrNodes);
     destructor Destroy; override;
 
     property Next: TmnrDesignCell read GetNext;
     property Prior: TmnrDesignCell read GetPrior;
-    property Layout: TmnrLayout read FLayout write SetLayout;
+    property Layout: TmnrLayout read GetLayout write SetLayout;
     property Row: TmnrDesignRow read GetRow;
     property Section: TmnrSection read GetSection;
     property Report: TmnrCustomReport read GetReport;
@@ -2143,6 +2145,11 @@ begin
   Result := Nodes as TmnrDesignRow;
 end;
 
+function TmnrDesignCell.GetLayout: TmnrLayout;
+begin
+  Result := FLayout;
+end;
+
 function TmnrDesignCell.GetNext: TmnrDesignCell;
 begin
   Result := TmnrDesignCell(inherited GetNext);
@@ -2376,6 +2383,11 @@ end;
 function TmnrBaseCell.GetAsVariant: Variant;
 begin
   Result := '';
+end;
+
+function TmnrBaseCell.GetImageIndex: Integer;
+begin
+  Result := -1;
 end;
 
 procedure TmnrBaseCell.SetAsBoolean(const Value: Boolean);
