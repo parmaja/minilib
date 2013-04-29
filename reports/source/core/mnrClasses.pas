@@ -654,7 +654,7 @@ var
 implementation
 
 uses
-  mnrNodes, TypInfo, pmrLayouts;
+  mnrNodes;
 
 { TmnrCustomReport }
 
