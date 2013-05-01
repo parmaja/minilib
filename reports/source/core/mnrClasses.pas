@@ -568,6 +568,7 @@ type
     function DoCreateSections: TmnrSections; virtual;
     function DoCreateGroups: TmnrGroups; virtual;
     function DoCreateItems: TmnrRows; virtual;
+    procedure DoReportLoaded; virtual;
     function GetSections: TmnrSections;
     function GetGroups: TmnrGroups;
     function GetItems: TmnrRows;
@@ -586,7 +587,7 @@ type
     property Sections: TmnrSections read GetSections;
     property Groups: TmnrGroups read GetGroups;
     property Items: TmnrRows read GetItems;
-    procedure Load; virtual;
+    procedure Load;
     procedure Cancel;
     property Working: Boolean read FWorking;
     function Finished: Boolean;
@@ -661,6 +662,7 @@ uses
 procedure TmnrCustomReport.Load;
 begin
   Profiler.LoadReport;
+  DoReportLoaded;
 end;
 
 procedure TmnrCustomReport.Cancel;
@@ -777,6 +779,11 @@ begin
 end;
 
 procedure TmnrCustomReport.DoPrepare;
+begin
+
+end;
+
+procedure TmnrCustomReport.DoReportLoaded;
 begin
 
 end;
