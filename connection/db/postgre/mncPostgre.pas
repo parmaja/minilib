@@ -31,7 +31,7 @@ uses
   mncPGHeader,
   {$endif}
 
-  mnUtils, mnStreams, mncConnections, mncSQL, mncCommons;
+  mnUtils, mnStreams, mncConnections, mncSQL, mncCommons, mncSchemas;
 
 type
 
@@ -125,11 +125,13 @@ type
     procedure DoStart; override;
     procedure DoStop(How: TmncSessionAction; Retaining: Boolean); override;
     function GetActive: Boolean; override;
+
   public
     constructor Create(vConnection: TmncConnection); override;
     destructor Destroy; override;
     function Execute(vSQL: string; vClear: Boolean=True): PPGresult;
     function CreateCommand: TmncSQLCommand; override;
+    function CreateSchema: TmncSchema; override;
     property Exclusive: Boolean read FExclusive write SetExclusive;
     property Connection: TmncPGConnection read GetConnection write SetConnection;
     property DBHandle: PPGconn read GetDBHandle;
@@ -606,6 +608,11 @@ end;
 function TmncPGSession.CreateCommand: TmncSQLCommand;
 begin
   Result := TmncPGCommand.CreateBy(Self);
+end;
+
+function TmncPGSession.CreateSchema: TmncSchema;
+begin
+  Result := nil;
 end;
 
 destructor TmncPGSession.Destroy;
