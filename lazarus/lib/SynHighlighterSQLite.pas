@@ -279,11 +279,13 @@ begin
   FSymbolAttri := TSynHighlighterAttributes.Create(SYNS_AttrSymbol);
   AddAttribute(FSymbolAttri);
   FVariableAttri := TSynHighlighterAttributes.Create(SYNS_AttrVariable);
+  FVariableAttri.Style := [fsBold];
+  FVariableAttri.Foreground := clBlack;
   AddAttribute(FVariableAttri);
   SetAttributesOnChange(@DefHighlightChange);
-  MakeProcTables;
   FDefaultFilter := SYNS_FilterSQL;
   FRange := rsUnknown;
+  MakeProcTables;
 end;
 
 destructor TSynSqliteSyn.Destroy;

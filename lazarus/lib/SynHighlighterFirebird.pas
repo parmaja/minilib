@@ -64,7 +64,7 @@ type
     procedure ObjectProc;
     procedure UnknownProc;
     procedure AnsiCProc;
-    procedure MakeMethodTables;
+    procedure MakeProcTables;
   protected
     function GetIdentChars: TSynIdentChars; override;
     function GetSampleSource: string; override;
@@ -102,7 +102,6 @@ type
     property SymbolAttri: TSynHighlighterAttributes read FSymbolAttri write FSymbolAttri;
     property VariableAttri: TSynHighlighterAttributes read FVariableAttri write FVariableAttri;
   end;
-
 
 const
 
@@ -243,7 +242,7 @@ begin
   EnumerateKeywords(Ord(tkKey), ISQLKeywords, GetIdentChars, @DoAddKeyword);
 end;
 
-procedure TSynFirebirdSyn.MakeMethodTables;
+procedure TSynFirebirdSyn.MakeProcTables;
 var
   I: Char;
 begin
@@ -316,11 +315,13 @@ begin
   FSymbolAttri := TSynHighlighterAttributes.Create(SYNS_AttrSymbol);
   AddAttribute(FSymbolAttri);
   FVariableAttri := TSynHighlighterAttributes.Create(SYNS_AttrVariable);
+  FVariableAttri.Style := [fsBold];
+  FVariableAttri.Foreground := clBlack;
   AddAttribute(FVariableAttri);
   SetAttributesOnChange(@DefHighlightChange);
-  MakeMethodTables;
   FDefaultFilter := SYNS_FilterSQL;
   FRange := rsUnknown;
+  MakeProcTables;
 end;
 
 destructor TSynFirebirdSyn.Destroy;
@@ -691,7 +692,7 @@ end;
 
 function TSynFirebirdSyn.GetSampleSource: string;
 begin
-  Result := 'select * from Employees';
+  Result := 'select EMP_NO, "EMP_NAME" from EMPLOYEE' + LineEnding + 'where EMP_NO=?EMP_NO';
 end;
 
 procedure TSynFirebirdSyn.ObjectProc;

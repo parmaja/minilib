@@ -193,9 +193,9 @@ begin
   if Active then
   begin
   {$IFDEF FPC}
-    WinSock2.Closesocket(FHandle);
+    WinSock2.CloseSocket(FHandle);
   {$ELSE}
-    WinSock.Closesocket(FHandle);
+    WinSock.CloseSocket(FHandle);
   {$ENDIF}
     FHandle := INVALID_SOCKET;
   end;

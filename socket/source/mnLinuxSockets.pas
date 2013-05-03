@@ -179,7 +179,7 @@ begin
   if c = SOCKET_ERROR then
   begin
     Result := erFail;
-//    RaiseLastOSError; do not raise an error, matbe it is disconnected by the other side
+//    RaiseLastOSError; do not raise an error, maybe it is disconnected by the other side
   end
   else
     Result := erNone;
