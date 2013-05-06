@@ -237,6 +237,9 @@ end;
 
 function TmnBufferStream.ReadLn: string;
 begin
+  {$ifdef FPC}
+  Result := '';
+  {$endif}
   ReadLn(Result);
 end;
 
@@ -258,6 +261,9 @@ end;
 
 function TmnBufferStream.ReadLine(const vEOL: string): string; 
 begin
+  {$ifdef FPC}
+  Result := '';
+  {$endif}
   ReadLine(Result, vEOL);
 end;
 

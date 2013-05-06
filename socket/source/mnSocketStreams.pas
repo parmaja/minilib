@@ -46,8 +46,10 @@ type
     procedure Connect;
     procedure Disconnect;
     procedure Shutdown;
-    function WaitToRead(Timeout: Longint = -1): Boolean; //select
-    function WaitToWrite(Timeout: Longint = -1): Boolean; //select
+    function WaitToRead: Boolean; overload;
+    function WaitToWrite: Boolean; overload;
+    function WaitToRead(Timeout: Longint = -1): Boolean; overload; //select
+    function WaitToWrite(Timeout: Longint = -1): Boolean; overload; //select
     function Seek(Offset: Longint; Origin: Word): Longint; override;
     property Socket: TmnCustomSocket read FSocket;
     property Timeout: Integer read FTimeout write FTimeout;
@@ -131,14 +133,6 @@ begin
   FTimeout := cReadTimeout;
 end;
 
-function TmnSocketStream.WaitToRead(Timeout: Integer): Boolean;
-var
-  err:TmnError;
-begin
-  err := Socket.Select(Timeout, slRead); 
-  Result := err = erNone;
-end;
-
 procedure TmnSocketStream.Disconnect;
 begin
   if (Socket <> nil) and Socket.Connected then
@@ -165,6 +159,24 @@ end;
 function TmnSocketStream.CreateSocket: TmnCustomSocket;
 begin
   Result := nil;//if server connect no need to create socket
+end;
+
+function TmnSocketStream.WaitToRead: Boolean;
+begin
+  Result := WaitToRead(Timeout);
+end;
+
+function TmnSocketStream.WaitToWrite: Boolean;
+begin
+  Result := WaitToWrite(Timeout);
+end;
+
+function TmnSocketStream.WaitToRead(Timeout: Integer): Boolean;
+var
+  err:TmnError;
+begin
+  err := Socket.Select(Timeout, slRead);
+  Result := err = erNone;
 end;
 
 function TmnSocketStream.WaitToWrite(Timeout: Integer): Boolean;

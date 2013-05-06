@@ -32,6 +32,7 @@ type
 
   TmnCustomSocket = class(TObject)
   private
+    FCloseWhenError: Boolean;
     FClosing: Boolean;
     FShutdownState: TmnShutdown;
     function GetConnected: Boolean;
@@ -44,6 +45,7 @@ type
     function DoShutdown(How: TmnShutdown): TmnError; virtual; abstract;
     property ShutdownState: TmnShutdown read FShutdownState;
   public
+    constructor Create;
     destructor Destroy; override;
     procedure Terminate;
     function Shutdown(How: TmnShutdown): TmnError;
@@ -55,6 +57,7 @@ type
     function Accept: TmnCustomSocket; virtual; abstract;
     property Active: Boolean read GetActive;
     property Connected: Boolean read GetConnected;
+    property CloseWhenError: Boolean read FCloseWhenError write FCloseWhenError default True;
     function GetLocalAddress: ansistring; virtual; abstract;
     function GetRemoteAddress: ansistring; virtual; abstract;
     function GetLocalName: string; virtual; abstract;
@@ -117,6 +120,12 @@ begin
     FatalError('Socket is inactive');
 end;
 
+constructor TmnCustomSocket.Create;
+begin
+  inherited;
+  FCloseWhenError := True;
+end;
+
 destructor TmnCustomSocket.Destroy;
 begin
   if Active then
@@ -128,7 +137,8 @@ end;
 
 procedure TmnCustomSocket.Error;
 begin
-  Close;
+  if FCloseWhenError then
+    Close;
 end;
 
 function TmnCustomSocket.GetConnected: Boolean;

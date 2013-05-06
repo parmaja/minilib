@@ -265,7 +265,8 @@ end;
 procedure TmnListener.Changed;
 begin
   {$ifndef NoLog}
-  {$ifdef Synchronize}
+  {$ifdef Synchrcmd
+  onize}
   Synchronize(Self, SyncChanged);
   {$else}
   SyncChanged;
@@ -278,6 +279,7 @@ begin
   if not Terminated then
   begin
     FSocket := WallSocket.Bind(FOptions, FPort, FAddress);
+    FSocket.CloseWhenError := False;
     if Connected then
       Socket.Listen;
   end;
@@ -320,7 +322,10 @@ begin
   begin
     try
       begin
-        aSocket := Socket.Accept;
+        if Socket.Select(10000, slRead) = erNone then
+          aSocket := Socket.Accept
+        else
+          aSocket := nil;
         Enter;
         try
           //Just a stop to finish proc outside
@@ -578,4 +583,4 @@ end;
 initialization
 finalization
 end.
-
+
