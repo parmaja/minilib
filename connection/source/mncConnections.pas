@@ -1025,7 +1025,6 @@ procedure TmncSession.InternalStop(How: TmncSessionAction; Retaining: Boolean);
 begin
   if not Active then
     raise EmncException.Create('Oops you have not started yet!');
-  Dec(FStartCount);
   case Connection.Model.Mode of
     smMultiple:
       DoStop(How, Retaining);
@@ -1048,6 +1047,7 @@ begin
       end;
     smConnection: DoStop(How, Retaining);
   end;
+  Dec(FStartCount);
 end;
 
 procedure TmncSession.Rollback(Retaining: Boolean);
