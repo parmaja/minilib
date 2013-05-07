@@ -15,7 +15,7 @@ unit mnHttpClient;
 interface
 
 uses
-  SysUtils, Classes, mnSockets, mnClients, mnSocketStreams, mnStreams, mnUtils;
+  SysUtils, Classes, mnSockets, mnClients, mnStreams, mnUtils;
 
 type
 

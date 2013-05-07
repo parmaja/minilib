@@ -4,6 +4,7 @@ ref
 .svn
 *.ppu
 *.o
+*.a
 *.compiled
 *.dcu
 *.local

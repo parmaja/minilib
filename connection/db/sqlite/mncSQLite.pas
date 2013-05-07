@@ -921,4 +921,3 @@ end;
 initialization
   mncDB.Engines.Add(TmncSQLiteConnection);
 end.
-

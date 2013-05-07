@@ -61,7 +61,7 @@ type
 procedure BreakToStrings(S: string; vStrings: TStrings; IncludeLineBreaks: Boolean = False; CallBackProc: TBreakToStringsCallBack = nil);
 
 {
-  Usfull to make your project path related
+  Useful to make your project path related (Portable)
 }
 function ExpandToPath(FileName: string; Path: string; Root: string = ''): string;
 
@@ -632,4 +632,3 @@ begin
 end;
 
 end.
-

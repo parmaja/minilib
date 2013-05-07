@@ -237,9 +237,7 @@ begin
   if aHandle = INVALID_SOCKET then
     Result := nil
   else
-  begin
     Result := TmnSocket.Create(aHandle);
-  end;
 end;
 
 constructor TmnSocket.Create(Handle: TSocket);
