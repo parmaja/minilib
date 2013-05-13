@@ -62,13 +62,11 @@ type
 //Connection as like connect by FTP server to send commands or a Database to send SQL
 {
   smNone:     No transactions support
-  smSingle:   All sessions have the same transacion like PG and SQLite
-                         but we can make in PG for every session a have new connection to database so PG is smMultiTransactions
   smEmulate:  Single transaction but last session commited make the real commit
   smMultiple: Every session have transacion like as Firebird
   smConnection: Every session have new connection good for SQLite and PG
 }
-  TmncSessionMode = (smNone, smSingle, smEmulate, smMultiple, smConnection);
+  TmncSessionMode = (smNone, smEmulate, smMultiple, smConnection);
   TmncCapability = (
     ccDB, //It is Database engine not just transfer data object
     ccSQL, //It is SQL engine, you know CSV or Paradox is not, but we have no plan to support Paradox
@@ -181,8 +179,8 @@ type
 
     procedure Start;
     //* Retaining mean keep it active
-    procedure Commit(Retaining: Boolean = False);
-    procedure Rollback(Retaining: Boolean = False);
+    procedure Commit(Retaining: Boolean = False); virtual;
+    procedure Rollback(Retaining: Boolean = False); virtual;
     procedure Stop;
     property Action: TmncSessionAction read FAction write FAction;
     property Connection: TmncConnection read FConnection write SetConnection;
@@ -1027,26 +1025,22 @@ begin
     raise EmncException.Create('Oops you have not started yet!');
   Dec(FStartCount);
   case Connection.Model.Mode of
+    smNone:; //nothing todo
     smMultiple:
       DoStop(How, Retaining);
-    smSingle:
-      begin
-        if Connection.FStartCount = 0 then
-          raise EmncException.Create('Connection not started yet!');
-        Dec(Connection.FStartCount);
-        if (Connection.FStartCount > 0) then
-          DoStop(How, Retaining);
-      end;
     smEmulate:
       begin
-        if Connection.FStartCount = 0 then
-          raise EmncException.Create('Connection not started yet!');
-        Dec(Connection.FStartCount);
-        DoStop(How, Retaining);
-        if (Connection.FStartCount > 0) then
-          DoStart;
+        if not Retaining then //Nothing to do if Retaingig
+        begin
+          if Connection.FStartCount = 0 then
+            raise EmncException.Create('Connection not started yet!');
+          Dec(Connection.FStartCount);
+          if Connection.FStartCount = 0 then
+            DoStop(How, Retaining);
+        end;
       end;
-    smConnection: DoStop(How, Retaining);
+    smConnection:
+        DoStop(How, Retaining);
   end;
 end;
 
@@ -1101,7 +1095,6 @@ begin
   Init;
   case Connection.Model.Mode of
     smMultiple: DoStart;
-    smSingle,
     smEmulate:
       begin
         if Connection.FStartCount = 0 then
