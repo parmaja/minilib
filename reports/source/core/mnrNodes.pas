@@ -109,6 +109,8 @@ type
     procedure SetAsInteger(const Value: Longint); override;
     procedure SetAsString(const Value: string); override;
     procedure SetAsVariant(const Value: Variant); override;
+  public
+    function DisplayText: string; override;
   end;
 
   TmnrDateTimeLayout = class(TmnrLayout)
@@ -440,6 +442,14 @@ begin
 end;
 
 { TmnrDateTimeReportCell }
+
+function TmnrDateTimeReportCell.DisplayText: string;
+begin
+  if AsDateTime=0 then
+    Result := ''
+  else
+    Result := inherited DisplayText;
+end;
 
 function TmnrDateTimeReportCell.GetAsBoolean: Boolean;
 begin

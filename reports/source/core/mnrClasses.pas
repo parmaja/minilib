@@ -941,6 +941,7 @@ end;
 
 procedure TmnrCustomReport.Loop;
 begin
+  InitRequests; //must bge after start 
   FCanceled := False;
   try
     Sections.DoAppendReportTitles(ReportTitles);
@@ -963,13 +964,12 @@ var
   l: TmnrLayout;
 begin
   l := Groups.FindLayout(vName);
-  if l <> nil then
+  if (l <> nil) {and not Assigned(l.OnRequest) belal: need check} then
     l.OnRequest := vOnRequest;
 end;
 
 procedure TmnrCustomReport.Start;
 begin
-  InitRequests;
 end;
 
 function TmnrCustomReport.SumString: string;
