@@ -582,6 +582,7 @@ type
     function GetFooterPage: TmnrSection;
     function GetHeaderPage: TmnrSection;
   public
+  
     constructor Create;
     destructor Destroy; override;
     property Sections: TmnrSections read GetSections;
