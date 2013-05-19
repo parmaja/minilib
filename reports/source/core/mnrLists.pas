@@ -642,14 +642,17 @@ var
   p: TmnrNode;
   i: Integer;
 begin
-  SetLength(FArray, Nodes.Count);
-  p := Nodes.First;
-  i := 0;
-  while p<>nil do
+  if Nodes.Count>0 then
   begin
-    FArray[i] := p;
-    Inc(i);
-    p := p.Next;    
+    SetLength(FArray, Nodes.Count);
+    p := Nodes.First;
+    i := 0;
+    while p<>nil do
+    begin
+      FArray[i] := p;
+      Inc(i);
+      p := p.Next;
+    end;
   end;
 end;
 
