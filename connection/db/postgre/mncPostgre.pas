@@ -76,13 +76,14 @@ type
     procedure DoConnect; override;
     procedure DoDisconnect; override;
     function GetConnected:Boolean; override;
+
   protected
     procedure RaiseError(Error: Boolean; const ExtraMsg: string = ''); overload;
     procedure RaiseError(PGResult: PPGresult); overload;
-    class function GetMode: TmncSessionMode; override;
     procedure DoNotify(vPID: Integer; const vName, vData: string); virtual;
     procedure Notify(vPID: Integer; const vName, vData: string);
     procedure Listen(const vChannel: string);
+    procedure DoInit; override;
 
   public
     constructor Create;
@@ -525,14 +526,18 @@ begin
   Result := FHandle <> nil;
 end;
 
-class function TmncPGConnection.GetMode: TmncSessionMode;
-begin
-  Result := smConnection; //transaction act as connection
-end;
-
 procedure TmncPGConnection.DoDisconnect;
 begin
-  InternalDisconnect(FHandle);
+  try
+    InternalDisconnect(FHandle);
+  except
+    beep; //belal need review some time access violation
+  end;
+end;
+
+procedure TmncPGConnection.DoInit;
+begin
+  inherited;
 end;
 
 procedure TmncPGConnection.DoNotify(vPID: Integer; const vName, vData: string);
