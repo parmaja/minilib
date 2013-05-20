@@ -83,7 +83,6 @@ type
     procedure DoNotify(vPID: Integer; const vName, vData: string); virtual;
     procedure Notify(vPID: Integer; const vName, vData: string);
     procedure Listen(const vChannel: string);
-    procedure DoInit; override;
 
   public
     constructor Create;
@@ -533,11 +532,6 @@ begin
   except
     beep; //belal need review some time access violation
   end;
-end;
-
-procedure TmncPGConnection.DoInit;
-begin
-  inherited;
 end;
 
 procedure TmncPGConnection.DoNotify(vPID: Integer; const vName, vData: string);
