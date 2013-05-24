@@ -293,6 +293,7 @@ type
   Tlo_unlink = function(Handle: PPGconn; lobjId: OID): Integer; cdecl;
   Tlo_import = function(Handle: PPGconn; filename: PChar): OID; cdecl;
   Tlo_export = function(Handle: PPGconn; lobjId: OID; filename: PChar): Integer; cdecl;
+  Tlo_truncate = function(Handle: PPGconn; fd, len: Integer): Integer; cdecl;
 
 
 { ************* Plain API Function variables definition ************ }
@@ -376,6 +377,7 @@ var
   lo_unlink: Tlo_unlink;
   lo_import: Tlo_import;
   lo_export: Tlo_export;
+  lo_truncate: Tlo_truncate;
 
 
 implementation
@@ -491,6 +493,8 @@ begin
   @lo_unlink := GetAddress('lo_unlink');
   @lo_import := GetAddress('lo_import');
   @lo_export := GetAddress('lo_export');
+  @lo_truncate := GetAddress('lo_truncate');
+
 end;
 
 initialization
