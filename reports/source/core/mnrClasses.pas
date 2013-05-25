@@ -525,8 +525,7 @@ type
     procedure ProcessDrop(vNode: TmnrLayout);
   end;
 
-{$M+}
-  TmnrCustomReport = class(TObject)
+  TmnrCustomReport = class(TPersistent) //belal: must be tobject but {$m+) not working need fix 
   private
     FWorking: Boolean;
     FCanceled: Boolean;
@@ -620,7 +619,6 @@ type
     property FooterPage: TmnrSection read GetFooterPage;
   end;
 
-{$M-}
 
   TCustomReportDesigner = class(TComponent)
   private
