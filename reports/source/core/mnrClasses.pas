@@ -1055,7 +1055,8 @@ begin
           end
           else
           begin
-            c := TmnrCurrencyReportCell.Create(aRow);
+            //c := TmnrCurrencyReportCell.Create(aRow);
+            c := l.CreateCell(aRow);
             if (l <> nil) and (l.Reference <> nil) then
               c.AsCurrency := l.Reference.Total;
           end;
