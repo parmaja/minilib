@@ -118,4 +118,9 @@ begin
     raise EmncException.Create('Engine ' + vName + ' not found');
 end;
 
+initialization
+
+finalization
+  FreeAndNil(FmncEngines);
+
 end.

@@ -4,7 +4,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, StdCtrls, mncConnections, mncPostgre, mncSQL, SynEdit;
+  Dialogs, StdCtrls, mncConnections, mncPostgre, mncSQL, SynEdit, mncPGHeader;
 
 type
 
@@ -18,13 +18,16 @@ type
     SynEdit1: TSynEdit;
     TreeBtn: TButton;
     Button4: TButton;
+    Button5: TButton;
     procedure Button2Click(Sender: TObject);
     procedure Button1Click(Sender: TObject);
     procedure Button3Click(Sender: TObject);
     procedure TreeBtnClick(Sender: TObject);
     procedure Button4Click(Sender: TObject);
+    procedure Button5Click(Sender: TObject);
   private
   public
+    function ConnectData: TmncPGConnection;
   end;
 
   TMatRec = record
@@ -50,10 +53,8 @@ var
   Session: TmncPGSession;
   Cmd: TmncPGCommand;
 begin
-  Conn := TmncPGConnection.Create;
+  Conn := ConnectData;
   try
-    Conn.Resource := ExpandFileName(ExtractFilePath(Application.ExeName) + '..\..\data\cars.PG');
-    Conn.Connect;
     Session := TmncPGSession.Create(Conn);
     try
       Session.Start;
@@ -99,14 +100,9 @@ var
   i: Integer;
   t: Cardinal;
 begin
-  Conn := TmncPGConnection.Create;
+  Conn := ConnectData;
   SynEdit1.BeginUpdate;
   try
-    Conn.Resource := 'Data';
-    Conn.Host := '';
-    Conn.UserName := 'postgres';
-    Conn.Password := 'masterkey';
-    Conn.Connect;
     Session := TmncPGSession.Create(Conn);
     ListBox1.Items.Clear;
     try
@@ -297,61 +293,93 @@ begin
   end;
 end;
 
+procedure TForm1.Button5Click(Sender: TObject);
+var
+  Conn: TmncPGConnection;
+  Session: TmncPGSession;
+  Cmd: TmncPGCommand;
+  aOID: OID;
+begin
+  Conn := ConnectData;
+  try
+    Session := TmncPGSession.Create(Conn);
+    try
+      Session.Start;
+      Cmd := TmncPGCommand(Session.CreateCommand);
+      try
+        aOID := lo_import(Conn.Handle, PChar('c:\worldcitiespop.txt'));
+
+        Cmd.SQL.Text := 'update "Test" set "Data" = ?Data where "ID" = 5';
+        Cmd.Prepare;
+        Cmd.Params['Data'].AsInteger := aOID;
+        Cmd.Execute;
+
+        Session.Commit;
+
+      finally
+        Cmd.Free;
+      end;
+    finally
+      Session.Free;
+    end;
+  finally
+    Conn.Free;
+  end;
+end;
+
+function TForm1.ConnectData: TmncPGConnection;
+begin
+  Result := TmncPGConnection.Create;
+  try
+    Result.Resource := 'data';
+    Result.Host := '';
+    Result.UserName := 'postgres';
+    Result.Password := 'masterkey';
+    Result.Connect;
+  except
+    FreeAndNil(Result);
+    raise;
+  end;
+end;
+
 procedure TForm1.TreeBtnClick(Sender: TObject);
 var
   Conn: TmncPGConnection;
   Session: TmncPGSession;
   Cmd: TmncPGCommand;
-  i: Integer;
-  t: Cardinal;
-  s: string;
-  aArr: TMatArr;
 begin
-  Conn := TmncPGConnection.Create;
+  Conn := ConnectData;
   try
-    Conn.Resource := 'afraa2011';
-    Conn.Host := '';
-    Conn.UserName := 'postgres';
-    Conn.Password := 'masterkey';
-    Conn.Connect;
-    Conn.Execute('SET CLIENT_ENCODING TO ''WIN1256'';');
     Session := TmncPGSession.Create(Conn);
-    ListBox1.Items.Clear;
     try
       Session.Start;
-      Cmd := TmncPGCommand.CreateBy(Session);
-      if BinaryResultChk.Checked then
-        cmd.ResultFormat := mrfBinary;
+      Cmd := TmncPGCommand(Session.CreateCommand);
+      try
+        Cmd.SQL.Text := 'insert into companies';
+        Cmd.SQL.Add('(id, name, nationality)');
+        Cmd.SQL.Add('values (?id, ?name, ?nationality)');
+        Cmd.Prepare;
+        Cmd.Params['id'].AsVariant := Null;
+        Cmd.Params['name'].AsString := 'าวๅั';
+        Cmd.Params['nationality'].AsInteger := 22;
+        Cmd.Execute;
 
+        Session.Commit;
+        Cmd.SQL.Text := 'select * from companies';
+        Cmd.SQL.Add('where name = ?name');
+        Cmd.Prepare;
+        Cmd.Param['name'].AsString := 'zaher';
+        if Cmd.Execute then
+          ShowMessage(Cmd.Field['name'].AsString)
+        else
+          ShowMessage('not found');
 
-      Cmd.SQl.Add('select "MatID", "MatParent", "MatName", "MatCode"');
-      Cmd.SQl.Add('from "Materials"');
-
-      SetLength(aArr, 120000);
-      t := GetTickCount;
-      if Cmd.Execute then
-      begin
-        SynEdit1.Lines.BeginUpdate;
-        SynEdit1.Lines.Clear;
-        while not Cmd.EOF do
-        begin
-          i := Cmd.Fields.Items[0].AsInteger;
-          aArr[i].ID := i;
-          aArr[i].Parent := Cmd.Fields.Items[1].AsInteger;
-          aArr[i].Name := Cmd.Fields.Items[2].AsString;
-          aArr[i].Code := Cmd.Fields.Items[3].AsString;
-          aArr[i].Hit := 1;
-          SynEdit1.Lines.Add(aArr[i].Name);
-          Cmd.Next;
-        end;
-        SynEdit1.Lines.EndUpdate;
-        ShowMessage(IntToStr(GetTickCount-t));
+      finally
+        Cmd.Free;
       end;
-      Cmd.Close;
     finally
       Session.Free;
     end;
-    Conn.Disconnect;
   finally
     Conn.Free;
   end;

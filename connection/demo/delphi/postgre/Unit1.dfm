@@ -2,7 +2,7 @@ object Form1: TForm1
   Left = 877
   Top = 182
   Caption = 'Form1'
-  ClientHeight = 328
+  ClientHeight = 428
   ClientWidth = 378
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -33,12 +33,13 @@ object Form1: TForm1
   end
   object ListBox1: TListBox
     Left = 0
-    Top = 208
+    Top = 308
     Width = 378
     Height = 120
     Align = alBottom
     ItemHeight = 13
     TabOrder = 2
+    ExplicitTop = 208
   end
   object PassEdit: TEdit
     Left = 8
@@ -67,7 +68,7 @@ object Form1: TForm1
   end
   object SynEdit1: TSynEdit
     Left = 0
-    Top = 104
+    Top = 208
     Width = 378
     Height = 98
     Font.Charset = DEFAULT_CHARSET
@@ -94,12 +95,21 @@ object Form1: TForm1
     OnClick = TreeBtnClick
   end
   object Button4: TButton
-    Left = 109
+    Left = 8
     Top = 73
     Width = 75
     Height = 25
     Caption = 'Read Cursor'
     TabOrder = 8
     OnClick = Button4Click
+  end
+  object Button5: TButton
+    Left = 8
+    Top = 104
+    Width = 75
+    Height = 25
+    Caption = 'Blob'
+    TabOrder = 9
+    OnClick = Button5Click
   end
 end

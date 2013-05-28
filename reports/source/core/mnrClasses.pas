@@ -525,8 +525,7 @@ type
     procedure ProcessDrop(vNode: TmnrLayout);
   end;
 
-{$M+}
-  TmnrCustomReport = class(TObject)
+  TmnrCustomReport = class(TPersistent) //belal: must be tobject but {$m+) not working need fix 
   private
     FWorking: Boolean;
     FCanceled: Boolean;
@@ -582,6 +581,7 @@ type
     function GetFooterPage: TmnrSection;
     function GetHeaderPage: TmnrSection;
   public
+  
     constructor Create;
     destructor Destroy; override;
     property Sections: TmnrSections read GetSections;
@@ -619,7 +619,6 @@ type
     property FooterPage: TmnrSection read GetFooterPage;
   end;
 
-{$M-}
 
   TCustomReportDesigner = class(TComponent)
   private
@@ -941,6 +940,7 @@ end;
 
 procedure TmnrCustomReport.Loop;
 begin
+  InitRequests; //must bge after start 
   FCanceled := False;
   try
     Sections.DoAppendReportTitles(ReportTitles);
@@ -963,13 +963,12 @@ var
   l: TmnrLayout;
 begin
   l := Groups.FindLayout(vName);
-  if l <> nil then
+  if (l <> nil) {and not Assigned(l.OnRequest) belal: need check} then
     l.OnRequest := vOnRequest;
 end;
 
 procedure TmnrCustomReport.Start;
 begin
-  InitRequests;
 end;
 
 function TmnrCustomReport.SumString: string;
@@ -1054,7 +1053,8 @@ begin
           end
           else
           begin
-            c := TmnrCurrencyReportCell.Create(aRow);
+            //c := TmnrCurrencyReportCell.Create(aRow);
+            c := l.CreateCell(aRow);
             if (l <> nil) and (l.Reference <> nil) then
               c.AsCurrency := l.Reference.Total;
           end;

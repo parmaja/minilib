@@ -76,10 +76,10 @@ type
     procedure DoConnect; override;
     procedure DoDisconnect; override;
     function GetConnected:Boolean; override;
+
   protected
     procedure RaiseError(Error: Boolean; const ExtraMsg: string = ''); overload;
     procedure RaiseError(PGResult: PPGresult); overload;
-    class function GetMode: TmncSessionMode; override;
     procedure DoNotify(vPID: Integer; const vName, vData: string); virtual;
     procedure Notify(vPID: Integer; const vName, vData: string);
     procedure Listen(const vChannel: string);
@@ -106,6 +106,10 @@ type
     function Execute(vHandle: PPGconn; const vSQL: string; vArgs: array of const; vClear: Boolean=True): PPGresult; overload;
     function Execute(vHandle: PPGconn; const vSQL: string; vClear: Boolean=True): PPGresult; overload;
     property Channel: string read FChannel write SetChannel;
+    function loImport(const vFileName: string): OID;
+    function loExport(vOID: OID; const vFileName: string): Integer;
+    function loUnlink(vOID: OID): Integer;
+    function loCopy(vSrc: TmncPGConnection; vOID: OID): OID;
   end;
 
   { TmncPGSession }
@@ -434,6 +438,60 @@ begin
     TPGListenThread.Create(Self, vChannel);
   end;
 end;
+                           
+function TmncPGConnection.loCopy(vSrc: TmncPGConnection; vOID: OID): OID;
+const
+  cBufferSize = 512;
+
+var
+  c, fdd, fds: Integer;
+  s: string;
+begin
+  Result := lo_creat(Handle, INV_READ or INV_WRITE);
+  if Result<>0 then
+  begin
+    fdd := lo_open(Handle, Result, INV_WRITE or INV_READ);
+    if (fdd<>-1) then
+    begin
+      try
+        fds := lo_open(vSrc.Handle, vOID, INV_WRITE or INV_READ);
+        if (fds<>-1) then
+        begin
+          SetLength(s, cBufferSize);
+          try
+            while True do
+            begin
+              c := lo_read(vSrc.Handle, fds, PChar(s), cBufferSize);
+              if c<>0 then
+                lo_write(Handle, fdd, PChar(s), c);
+              if c<cBufferSize then Break;
+            end;
+          finally
+            SetLength(s, 0);
+            //lo_close(Handle, fds);
+          end;
+        end;
+      finally
+        //lo_close(Handle, fdd); make transaction abord
+      end;
+    end;
+  end;
+end;
+
+function TmncPGConnection.loExport(vOID: OID; const vFileName: string): Integer;
+begin
+  Result := lo_export(Handle, vOID, PChar(vFileName));
+end;
+
+function TmncPGConnection.loImport(const vFileName: string): OID;
+begin
+  Result := lo_import(Handle, PChar(vFileName));
+end;
+
+function TmncPGConnection.loUnlink(vOID: OID): Integer;
+begin
+  Result := lo_unlink(Handle, vOID);
+end;
 
 class function TmncPGConnection.Model: TmncConnectionModel;
 begin
@@ -525,14 +583,13 @@ begin
   Result := FHandle <> nil;
 end;
 
-class function TmncPGConnection.GetMode: TmncSessionMode;
-begin
-  Result := smConnection; //transaction act as connection
-end;
-
 procedure TmncPGConnection.DoDisconnect;
 begin
-  InternalDisconnect(FHandle);
+  try
+    InternalDisconnect(FHandle);
+  except
+    beep; //belal need review some time access violation
+  end;
 end;
 
 procedure TmncPGConnection.DoNotify(vPID: Integer; const vName, vData: string);
@@ -628,7 +685,7 @@ end;
 
 procedure TmncPGSession.DoStop(How: TmncSessionAction; Retaining: Boolean);
 begin
-  if StartCount>=0 then //dec of FStartCount befor this function
+  if StartCount=1 then 
   begin
     case How of
       sdaCommit: Execute('COMMIT');
