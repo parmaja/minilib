@@ -106,7 +106,9 @@ type
     function Execute(vHandle: PPGconn; const vSQL: string; vArgs: array of const; vClear: Boolean=True): PPGresult; overload;
     function Execute(vHandle: PPGconn; const vSQL: string; vClear: Boolean=True): PPGresult; overload;
     property Channel: string read FChannel write SetChannel;
-    function loImport(const vFileName: string): OID;
+    function loImport(const vFileName: string): OID; overload;
+    function loImport(const vStream: TStream): OID; overload;
+
     function loExport(vOID: OID; const vFileName: string): Integer;
     function loUnlink(vOID: OID): Integer;
     function loCopy(vSrc: TmncPGConnection; vOID: OID): OID;
@@ -481,6 +483,40 @@ end;
 function TmncPGConnection.loExport(vOID: OID; const vFileName: string): Integer;
 begin
   Result := lo_export(Handle, vOID, PChar(vFileName));
+end;
+
+function TmncPGConnection.loImport(const vStream: TStream): OID;
+const
+  cBufferSize = 512;
+
+var
+  c, fdd: Integer;
+  s: string;
+begin
+  Result := lo_creat(Handle, INV_READ or INV_WRITE);
+  if Result<>0 then
+  begin
+    fdd := lo_open(Handle, Result, INV_WRITE or INV_READ);
+    if (fdd<>-1) then
+    begin
+      try
+        SetLength(s, cBufferSize);
+        try
+          while True do
+          begin
+            c := vStream.Read(s[1], cBufferSize);
+            if c<>0 then
+              lo_write(Handle, fdd, PChar(s), c);
+            if c<cBufferSize then Break;
+          end;
+        finally
+          SetLength(s, 0);
+        end;
+      finally
+        //lo_close(Handle, fdd); make transaction abord
+      end;
+    end;
+  end;
 end;
 
 function TmncPGConnection.loImport(const vFileName: string): OID;
