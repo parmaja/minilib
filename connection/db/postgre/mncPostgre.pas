@@ -167,10 +167,13 @@ type
     FValue: Variant;
     FFields: TmncPostgreFields;
     function GetCommand: TmncCustomPGCommand;
+
   protected
     function GetValue: Variant; override;
     procedure SetValue(const AValue: Variant); override;
     function GetAsDateTime: TDateTime; override;
+    function GetAsBoolean: Boolean; override;
+    procedure SetAsBoolean(const AValue: Boolean); override;
     property Fields: TmncPostgreFields read FFields;
     property Command: TmncCustomPGCommand read GetCommand;
   end;
@@ -951,6 +954,16 @@ end;
 
 { TmncPostgreField }
 
+function StrToBoolEx(const vStr: string): Boolean;
+begin
+  Result := (vStr<>'') and (vStr[1] in ['1', 't', 'T', 'y', 'Y']);
+end;
+
+function TmncPostgreField.GetAsBoolean: Boolean;
+begin
+  Result := StrToBoolEx(AsString);
+end;
+
 function TmncPostgreField.GetAsDateTime: TDateTime;
 begin
   Result := PGDateToDateTime(AsString);
@@ -965,6 +978,11 @@ end;
 function TmncPostgreField.GetValue: Variant;
 begin
   Result := FValue;
+end;
+
+procedure TmncPostgreField.SetAsBoolean(const AValue: Boolean);
+begin
+  Value := AValue;
 end;
 
 procedure TmncPostgreField.SetValue(const AValue: Variant);
