@@ -1,0 +1,66 @@
+object Form1: TForm1
+  Left = 191
+  Height = 314
+  Top = 103
+  Width = 476
+  Caption = 'Form1'
+  ClientHeight = 314
+  ClientWidth = 476
+  Color = clBtnFace
+  Font.Color = clWindowText
+  Font.Height = -11
+  Font.Name = 'MS Sans Serif'
+  LCLVersion = '1.1'
+  object Button1: TButton
+    Left = 4
+    Height = 25
+    Top = 7
+    Width = 75
+    Caption = 'Write XML'
+    OnClick = Button1Click
+    TabOrder = 0
+  end
+  object Button2: TButton
+    Left = 4
+    Height = 25
+    Top = 33
+    Width = 75
+    Caption = 'Manual Read'
+    OnClick = Button2Click
+    TabOrder = 1
+  end
+  object Button3: TButton
+    Left = 4
+    Height = 25
+    Top = 59
+    Width = 75
+    Caption = 'File Read'
+    OnClick = Button3Click
+    TabOrder = 2
+  end
+  object Memo: TMemo
+    Left = 84
+    Height = 308
+    Top = 5
+    Width = 387
+    Anchors = [akTop, akLeft, akRight, akBottom]
+    Font.CharSet = ARABIC_CHARSET
+    Font.Color = clWindowText
+    Font.Height = -12
+    Font.Name = 'Courier New'
+    Font.Style = [fsBold]
+    ParentFont = False
+    ScrollBars = ssVertical
+    TabOrder = 3
+  end
+  object Button4: TButton
+    Left = 4
+    Height = 25
+    Top = 285
+    Width = 75
+    Cancel = True
+    Caption = 'Close'
+    OnClick = Button4Click
+    TabOrder = 4
+  end
+end
