@@ -114,9 +114,10 @@ type
     function GetLayout: TmnrLayout;
   protected
     function GetIsNull: Boolean; virtual;
+    function GetDesignCell: TmnrDesignCell;
   public
     property Layout: TmnrLayout read GetLayout;
-    property DesignCell: TmnrDesignCell read FDesignCell;
+    property DesignCell: TmnrDesignCell read GetDesignCell;
     property Row: TmnrRow read GetRow;
     property Next: TmnrCell read GetNext;
     property Prior: TmnrCell read GetPrior;
@@ -270,6 +271,7 @@ type
     FWidth: Integer;
     FLayout: TmnrLayout;
     FName: string;
+    FAppendTotals: Boolean;
   protected
     function GetNext: TmnrDesignCell;
     function GetPrior: TmnrDesignCell;
@@ -293,6 +295,7 @@ type
   published
     property Name: string read FName write SetName;
     property Width: Integer read FWidth write SetWidth default DEFAULT_CELL_WIDTH;
+    property AppendTotals: Boolean read FAppendTotals write FAppendTotals default False;
   end;
 
   TmnrDesignRow = class(TmnrRowNode)
@@ -1053,9 +1056,9 @@ begin
           end
           else
           begin
-            //c := TmnrCurrencyReportCell.Create(aRow);
-            c := l.CreateCell(aRow);
-            if (l <> nil) and (l.Reference <> nil) then
+            c := TmnrCurrencyReportCell.Create(aRow);
+            //c := l.CreateCell(aRow);
+            if d.AppendTotals and (l <> nil) and (l.Reference <> nil) then
               c.AsCurrency := l.Reference.Total;
           end;
           c.FDesignCell := d;
@@ -1832,6 +1835,11 @@ end;
 
 { TmnrCell }
 
+function TmnrCell.GetDesignCell: TmnrDesignCell;
+begin
+  Result := FDesignCell;
+end;
+
 function TmnrCell.GetIsNull: Boolean;
 begin
   Result := AsString = '';
@@ -2139,6 +2147,7 @@ constructor TmnrDesignCell.Create(vNodes: TmnrNodes);
 begin
   inherited Create(vNodes);
   FWidth := DEFAULT_CELL_WIDTH;
+  FAppendTotals := False;
 end;
 
 destructor TmnrDesignCell.Destroy;
