@@ -40,16 +40,13 @@ function PeriodToString(vPeriod: Double; WithSeconds:Boolean): string;
 function DequoteStr(Str: string; QuoteChar: string): string; overload;
 function DequoteStr(Str: string): string; overload; //deqoute use both of ' and "
 
+function RepeatString(const Str: string; Count: Integer): string;
+
 type
   //alsCut = if the string > count we cut it as count or keep the string
   TAlignStrOptions = set of (alsLeft, alsRight, alsCut); {TODO left+right=center TODO use righttoleft}
 
 function AlignStr(const S: string; Count: Integer; Options: TAlignStrOptions = [alsLeft]; vChar: Char = ' '): string; overload;
-
-function LeadLeft(const vStr: string; Count: Integer; vChar: Char): string; overload; deprecated;
-function LeadRight(const vStr: string; Count: integer; vChar: Char): string; overload; deprecated;
-function LeadLeft(const I: Integer; Count: Integer; vChar: Char): string; overload; deprecated;
-function LeadRight(const I: Integer; Count: integer; vChar: Char): string; overload; deprecated;
 
 {
   Break string to Strings list items at #10 or #13 or #13#10 
@@ -183,36 +180,14 @@ begin
     Result := StringOfChar(vChar, Count  - l) + S
 end;
 
-function LeadLeft(const vStr: string; Count: Integer; vChar: Char): string;
-var
-  l: integer;
+function RepeatString(const Str: string; Count: Integer): string;
 begin
-  l := Length(vStr);
-  if l < Count then
-    Result := vStr + StringOfChar(vChar, Count  - l)
-  else
-    Result := vStr;
-end;
-
-function LeadRight(const vStr: string; Count: integer; vChar: Char): string;
-var
-  l: integer;
-begin
-  l := Length(vStr);
-  if l < Count then
-    Result := StringOfChar(vChar, Count - l) + vStr
-  else
-    Result := vStr;
-end;
-
-function LeadLeft(const I: Integer; Count: Integer; vChar: Char): string;
-begin
-  Result := LeadLeft(IntToStr(I), Count, vChar);
-end;
-
-function LeadRight(const I: Integer; Count: integer; vChar: Char): string;
-begin
-  Result := LeadRight(IntToStr(I), Count, vChar);
+  Result := '';
+  while Count > 0 do
+  begin
+    Result := Result + Str;
+    Count := Count - 1;
+  end;
 end;
 
 function DequoteStr(Str: string; QuoteChar: string): string;

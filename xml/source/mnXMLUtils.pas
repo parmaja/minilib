@@ -41,7 +41,6 @@ function GetPropTypeInfo(PropInfo: PPropInfo): PTypeInfo;
 Function PropType(PropInfo: PPropInfo): TTypeKind; //need to move to FPC typeinfo.pp
 function IsDefaultValue(Instance: TObject; PropInfo: PPropInfo): Boolean;
 
-function RepeatString(const Str: string; Count: Integer): string;
 function RemoveEncloses(S, Left, Right: string): string;
 function Enclose(S, Left: string; Right: string = ''): string;
 function RangeStr(s: string; Start, Stop: Integer): string;
@@ -64,16 +63,6 @@ implementation
 
 uses
   StrUtils;
-
-function RepeatString(const Str: string; Count: Integer): string;
-begin
-  Result := '';
-  while Count > 0 do
-  begin
-    Result := Result + Str;
-    Count := Count - 1;
-  end;
-end;
 
 function RemoveEncloses(S, Left, Right: string): string;
 var

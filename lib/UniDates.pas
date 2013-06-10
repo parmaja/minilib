@@ -268,7 +268,7 @@ begin
       Dec(h, 12);
     h12 := True;
   end;
-  Result := LeadRight(IntToStr(h), 2, '0') + TimeSeparator + LeadRight(IntToStr(n), 2, '0');
+  Result := AlignStr(IntToStr(h), 2, [alsRight], '0') + TimeSeparator + AlignStr(IntToStr(n), 2, [alsRight], '0');
   if h12 then
     Result := Result + TimeSeparator + TimePMString
   else
@@ -289,13 +289,13 @@ begin
     d := (d - (h * 3600));
     m := d div 60;
     s := (d - (m * 60));
-    Result := LeadRight(IntToStr(h), 2, '0') + TimeSeparator + LeadRight(IntToStr(m), 2, '0');
+    Result := AlignStr(IntToStr(h), 2, [alsRight], '0') + TimeSeparator + AlignStr(IntToStr(m), 2, [alsRight], '0');
     if WithSeconds then
     begin
       if s = 0 then
         Result := Result + TimeSeparator + '00'
       else
-        Result := Result + TimeSeparator + LeadRight(IntToStr(s), 2, '0');
+        Result := Result + TimeSeparator + AlignStr(IntToStr(s), 2, [alsRight], '0');
     end;
     if g then
       Result := '-' + Result;
@@ -316,9 +316,9 @@ begin
   h := d div 3600;
   m := (d div 60) - (h * 60);
   s := d - (h * 3600) - (m * 60);
-  Result := LeadRight(IntToStr(h), 2, '0') + TimeSeparator + LeadRight(IntToStr(m), 2, '0');
+  Result := AlignStr(IntToStr(h), 2, [alsRight], '0') + TimeSeparator + AlignStr(IntToStr(m), 2, [alsRight],'0');
   if s <> 0 then
-    Result := Result + TimeSeparator + LeadRight(IntToStr(s), 2, '0');
+    Result := Result + TimeSeparator + AlignStr(IntToStr(s), 2, [alsRight], '0');
   if g then
     Result := '-' + Result;
 end;
@@ -811,11 +811,11 @@ var
   Y, M, D, H, N, S, O: Word;
 begin
   udtDecodeDate(UDS, DateTime, Y, M, D);
-  Result := LeadRight(Y, 4, '0') + vDateSeparator +  LeadRight(M, 2, '0') + vDateSeparator + LeadRight(D, 2, '0');
+  Result := AlignStr(IntToStr(Y), 4, [alsRight],'0') + vDateSeparator +  AlignStr(IntToStr(M), 2, [alsRight],'0') + vDateSeparator + AlignStr(IntToStr(D), 2, [alsRight], '0');
   if WithTime then
   begin
     DecodeTime(DateTime, H, N, S, O);
-    Result := Result + TimeDivider + LeadRight(H, 2, '0') + ':' + LeadRight(N, 2, '0') + ':' + LeadRight(S, 2, '0');
+    Result := Result + TimeDivider + AlignStr(IntToStr(H), 2, [alsRight],'0') + ':' + AlignStr(IntToStr(N), 2, [alsRight],'0') + ':' + AlignStr(IntToStr(S), 2, [alsRight],'0');
   end;
 end;
 

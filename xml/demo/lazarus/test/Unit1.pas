@@ -48,7 +48,8 @@ type
   
 implementation
 
-uses mnXMLNodes;
+uses
+  mnXMLNodes;
 
 {$R *.lfm}
 

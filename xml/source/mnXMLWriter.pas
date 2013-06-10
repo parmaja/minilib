@@ -63,6 +63,9 @@ type
 
 implementation
 
+uses
+  mnUtils;
+
 { TmnXMLWriter }
 
 procedure TmnXMLWriter.WriteCloseTag(Name: string);
