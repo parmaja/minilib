@@ -1,21 +1,24 @@
 <?xml version="1.0"?>
 <CONFIG>
   <ProjectOptions>
+    <Version Value="9"/>
     <PathDelim Value="\"/>
-    <Version Value="7"/>
     <General>
       <Flags>
         <LRSInOutputDirectory Value="False"/>
       </Flags>
       <MainUnit Value="0"/>
-      <TargetFileExt Value=".exe"/>
       <ResourceType Value="res"/>
       <UseXPManifest Value="True"/>
       <Icon Value="0"/>
+      <ActiveWindowIndexAtStart Value="0"/>
     </General>
     <VersionInfo>
-      <ProjectVersion Value=""/>
+      <StringTable ProductVersion=""/>
     </VersionInfo>
+    <BuildModes Count="1">
+      <Item1 Name="default" Default="True"/>
+    </BuildModes>
     <PublishOptions>
       <Version Value="2"/>
       <IgnoreBinaries Value="False"/>
@@ -38,9 +41,12 @@
         <Filename Value="Calculator.lpr"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="Calculator"/>
-        <CursorPos X="11" Y="16"/>
+        <EditorIndex Value="1"/>
+        <WindowIndex Value="0"/>
         <TopLine Value="1"/>
-        <UsageCount Value="32"/>
+        <CursorPos X="12" Y="3"/>
+        <UsageCount Value="50"/>
+        <Loaded Value="True"/>
       </Unit0>
       <Unit1>
         <Filename Value="Main.pas"/>
@@ -48,120 +54,253 @@
         <ComponentName Value="CalcForm"/>
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="Main"/>
-        <CursorPos X="1" Y="103"/>
-        <TopLine Value="90"/>
-        <UsageCount Value="32"/>
+        <EditorIndex Value="0"/>
+        <WindowIndex Value="0"/>
+        <TopLine Value="149"/>
+        <CursorPos X="1" Y="173"/>
+        <UsageCount Value="50"/>
+        <Loaded Value="True"/>
       </Unit1>
       <Unit2>
         <Filename Value="FPCalculators.pas"/>
         <UnitName Value="FPCalculators"/>
-        <CursorPos X="20" Y="34"/>
         <TopLine Value="16"/>
-        <UsageCount Value="11"/>
+        <CursorPos X="20" Y="34"/>
+        <UsageCount Value="9"/>
       </Unit2>
       <Unit3>
         <Filename Value="..\compile-wince.cmd"/>
-        <CursorPos X="19" Y="2"/>
         <TopLine Value="1"/>
-        <UsageCount Value="11"/>
+        <CursorPos X="19" Y="2"/>
         <SyntaxHighlighter Value="None"/>
+        <UsageCount Value="9"/>
       </Unit3>
       <Unit4>
         <Filename Value="..\..\..\lib\minilib\lib\FPCalculators.pas"/>
         <UnitName Value="FPCalculators"/>
-        <CursorPos X="7" Y="1"/>
         <TopLine Value="1"/>
-        <UsageCount Value="12"/>
+        <CursorPos X="7" Y="1"/>
+        <UsageCount Value="10"/>
         <Bookmarks Count="1">
           <Item0 X="13" Y="279" ID="1"/>
         </Bookmarks>
       </Unit4>
       <Unit5>
         <Filename Value="..\..\..\..\..\programs\fpc\src\rtl\objpas\sysutils\sysstrh.inc"/>
-        <CursorPos X="1" Y="1"/>
         <TopLine Value="1"/>
-        <UsageCount Value="12"/>
+        <CursorPos X="1" Y="1"/>
+        <UsageCount Value="10"/>
       </Unit5>
       <Unit6>
         <Filename Value="..\..\..\..\..\programs\fpc\src\rtl\objpas\sysutils\sysstr.inc"/>
-        <CursorPos X="1" Y="1"/>
         <TopLine Value="1"/>
-        <UsageCount Value="12"/>
+        <CursorPos X="1" Y="1"/>
+        <UsageCount Value="10"/>
       </Unit6>
       <Unit7>
         <Filename Value="..\..\..\..\..\programs\fpc\src\rtl\objpas\sysutils\sysinth.inc"/>
-        <CursorPos X="1" Y="1"/>
         <TopLine Value="1"/>
-        <UsageCount Value="12"/>
+        <CursorPos X="1" Y="1"/>
+        <UsageCount Value="10"/>
       </Unit7>
       <Unit8>
         <Filename Value="..\..\..\..\..\programs\fpc\src\rtl\objpas\strutils.pp"/>
         <UnitName Value="strutils"/>
-        <CursorPos X="1" Y="12"/>
         <TopLine Value="1"/>
-        <UsageCount Value="12"/>
+        <CursorPos X="1" Y="12"/>
+        <UsageCount Value="10"/>
       </Unit8>
       <Unit9>
         <Filename Value="Main.lfm"/>
-        <CursorPos X="4" Y="359"/>
         <TopLine Value="317"/>
-        <UsageCount Value="10"/>
+        <CursorPos X="4" Y="359"/>
         <SyntaxHighlighter Value="LFM"/>
+        <UsageCount Value="8"/>
       </Unit9>
       <Unit10>
         <Filename Value="..\..\..\lib\minilib\lib\calculators.pas"/>
         <UnitName Value="calculators"/>
-        <CursorPos X="22" Y="45"/>
         <TopLine Value="18"/>
-        <UsageCount Value="11"/>
+        <CursorPos X="22" Y="45"/>
+        <UsageCount Value="9"/>
       </Unit10>
       <Unit11>
         <Filename Value="V:\dev\fpc\ide\fpcalc.pas"/>
         <UnitName Value="FPCalc"/>
-        <CursorPos X="1" Y="1"/>
         <TopLine Value="1"/>
-        <UsageCount Value="10"/>
+        <CursorPos X="1" Y="1"/>
+        <UsageCount Value="8"/>
       </Unit11>
       <Unit12>
         <Filename Value="V:\dev\fpc\rtl\COPYING.FPC"/>
-        <CursorPos X="1" Y="1"/>
         <TopLine Value="1"/>
-        <UsageCount Value="10"/>
+        <CursorPos X="1" Y="1"/>
         <SyntaxHighlighter Value="None"/>
+        <UsageCount Value="8"/>
       </Unit12>
       <Unit13>
         <Filename Value="..\extra.cfg"/>
-        <CursorPos X="5" Y="13"/>
         <TopLine Value="1"/>
-        <UsageCount Value="10"/>
+        <CursorPos X="5" Y="13"/>
         <SyntaxHighlighter Value="None"/>
+        <UsageCount Value="8"/>
       </Unit13>
       <Unit14>
         <Filename Value="..\compile-win32.cmd"/>
-        <CursorPos X="1" Y="1"/>
         <TopLine Value="1"/>
-        <UsageCount Value="10"/>
+        <CursorPos X="1" Y="1"/>
         <SyntaxHighlighter Value="None"/>
+        <UsageCount Value="8"/>
       </Unit14>
       <Unit15>
         <Filename Value="..\lib\calculators.pas"/>
         <UnitName Value="calculators"/>
-        <CursorPos X="8" Y="41"/>
-        <TopLine Value="32"/>
-        <UsageCount Value="10"/>
+        <IsVisibleTab Value="True"/>
+        <EditorIndex Value="2"/>
+        <WindowIndex Value="0"/>
+        <TopLine Value="228"/>
+        <CursorPos X="16" Y="238"/>
+        <UsageCount Value="19"/>
+        <Loaded Value="True"/>
       </Unit15>
     </Units>
-    <JumpHistory Count="0" HistoryIndex="-1"/>
+    <JumpHistory Count="30" HistoryIndex="29">
+      <Position1>
+        <Filename Value="..\lib\calculators.pas"/>
+        <Caret Line="237" Column="21" TopLine="203"/>
+      </Position1>
+      <Position2>
+        <Filename Value="..\lib\calculators.pas"/>
+        <Caret Line="246" Column="21" TopLine="212"/>
+      </Position2>
+      <Position3>
+        <Filename Value="..\lib\calculators.pas"/>
+        <Caret Line="252" Column="21" TopLine="218"/>
+      </Position3>
+      <Position4>
+        <Filename Value="..\lib\calculators.pas"/>
+        <Caret Line="268" Column="21" TopLine="234"/>
+      </Position4>
+      <Position5>
+        <Filename Value="..\lib\calculators.pas"/>
+        <Caret Line="138" Column="49" TopLine="113"/>
+      </Position5>
+      <Position6>
+        <Filename Value="..\lib\calculators.pas"/>
+        <Caret Line="167" Column="15" TopLine="131"/>
+      </Position6>
+      <Position7>
+        <Filename Value="..\lib\calculators.pas"/>
+        <Caret Line="177" Column="9" TopLine="142"/>
+      </Position7>
+      <Position8>
+        <Filename Value="..\lib\calculators.pas"/>
+        <Caret Line="309" Column="39" TopLine="290"/>
+      </Position8>
+      <Position9>
+        <Filename Value="..\lib\calculators.pas"/>
+        <Caret Line="1" Column="1" TopLine="1"/>
+      </Position9>
+      <Position10>
+        <Filename Value="..\lib\calculators.pas"/>
+        <Caret Line="39" Column="19" TopLine="4"/>
+      </Position10>
+      <Position11>
+        <Filename Value="..\lib\calculators.pas"/>
+        <Caret Line="268" Column="1" TopLine="249"/>
+      </Position11>
+      <Position12>
+        <Filename Value="..\lib\calculators.pas"/>
+        <Caret Line="269" Column="1" TopLine="249"/>
+      </Position12>
+      <Position13>
+        <Filename Value="..\lib\calculators.pas"/>
+        <Caret Line="317" Column="1" TopLine="291"/>
+      </Position13>
+      <Position14>
+        <Filename Value="..\lib\calculators.pas"/>
+        <Caret Line="268" Column="1" TopLine="247"/>
+      </Position14>
+      <Position15>
+        <Filename Value="..\lib\calculators.pas"/>
+        <Caret Line="137" Column="1" TopLine="115"/>
+      </Position15>
+      <Position16>
+        <Filename Value="..\lib\calculators.pas"/>
+        <Caret Line="142" Column="1" TopLine="115"/>
+      </Position16>
+      <Position17>
+        <Filename Value="..\lib\calculators.pas"/>
+        <Caret Line="269" Column="1" TopLine="249"/>
+      </Position17>
+      <Position18>
+        <Filename Value="..\lib\calculators.pas"/>
+        <Caret Line="317" Column="1" TopLine="291"/>
+      </Position18>
+      <Position19>
+        <Filename Value="..\lib\calculators.pas"/>
+        <Caret Line="268" Column="1" TopLine="247"/>
+      </Position19>
+      <Position20>
+        <Filename Value="..\lib\calculators.pas"/>
+        <Caret Line="137" Column="1" TopLine="115"/>
+      </Position20>
+      <Position21>
+        <Filename Value="..\lib\calculators.pas"/>
+        <Caret Line="142" Column="1" TopLine="115"/>
+      </Position21>
+      <Position22>
+        <Filename Value="..\lib\calculators.pas"/>
+        <Caret Line="269" Column="1" TopLine="249"/>
+      </Position22>
+      <Position23>
+        <Filename Value="..\lib\calculators.pas"/>
+        <Caret Line="268" Column="1" TopLine="249"/>
+      </Position23>
+      <Position24>
+        <Filename Value="..\lib\calculators.pas"/>
+        <Caret Line="269" Column="1" TopLine="249"/>
+      </Position24>
+      <Position25>
+        <Filename Value="..\lib\calculators.pas"/>
+        <Caret Line="317" Column="1" TopLine="291"/>
+      </Position25>
+      <Position26>
+        <Filename Value="..\lib\calculators.pas"/>
+        <Caret Line="268" Column="1" TopLine="247"/>
+      </Position26>
+      <Position27>
+        <Filename Value="..\lib\calculators.pas"/>
+        <Caret Line="137" Column="1" TopLine="115"/>
+      </Position27>
+      <Position28>
+        <Filename Value="..\lib\calculators.pas"/>
+        <Caret Line="139" Column="1" TopLine="115"/>
+      </Position28>
+      <Position29>
+        <Filename Value="..\lib\calculators.pas"/>
+        <Caret Line="140" Column="1" TopLine="115"/>
+      </Position29>
+      <Position30>
+        <Filename Value="..\lib\calculators.pas"/>
+        <Caret Line="142" Column="1" TopLine="115"/>
+      </Position30>
+    </JumpHistory>
   </ProjectOptions>
   <CompilerOptions>
-    <Version Value="8"/>
+    <Version Value="11"/>
     <PathDelim Value="\"/>
     <Target>
       <Filename Value="..\bin\Calculator.exe"/>
     </Target>
     <SearchPaths>
-      <OtherUnitFiles Value="..\lib\"/>
+      <OtherUnitFiles Value="..\lib"/>
     </SearchPaths>
+    <Parsing>
+      <SyntaxOptions>
+        <UseAnsiStrings Value="False"/>
+      </SyntaxOptions>
+    </Parsing>
     <Linking>
       <Options>
         <Win32>
@@ -177,71 +316,126 @@
     </Other>
   </CompilerOptions>
   <Debugging>
-    <BreakPoints Count="16">
+    <BreakPoints Count="17">
       <Item1>
+        <Kind Value="bpkSource"/>
+        <WatchScope Value="wpsGlobal"/>
+        <WatchKind Value="wpkWrite"/>
         <Source Value="..\..\..\..\..\work\delphi\jobs\tacbord_sql\source\mpos\wince\lazarus\fpc\2.0.4\source\fcl\inc\inifiles.pp"/>
         <Line Value="434"/>
       </Item1>
       <Item2>
+        <Kind Value="bpkSource"/>
+        <WatchScope Value="wpsGlobal"/>
+        <WatchKind Value="wpkWrite"/>
         <Source Value="C:\pascal\fpgui\gfx\gdi\fpgfxpackage.pas"/>
         <Line Value="3"/>
       </Item2>
       <Item3>
+        <Kind Value="bpkSource"/>
+        <WatchScope Value="wpsGlobal"/>
+        <WatchKind Value="wpkWrite"/>
         <Source Value="C:\lazarus\fpc\2.1.3\source\packages\fcl-db\src\db.pas"/>
         <Line Value="1944"/>
       </Item3>
       <Item4>
+        <Kind Value="bpkSource"/>
+        <WatchScope Value="wpsGlobal"/>
+        <WatchKind Value="wpkWrite"/>
         <Source Value="C:\lazarus\fpc\2.1.5\source\rtl\objpas\classes\compon.inc"/>
         <Line Value="215"/>
       </Item4>
       <Item5>
+        <Kind Value="bpkSource"/>
+        <WatchScope Value="wpsGlobal"/>
+        <WatchKind Value="wpkWrite"/>
         <Source Value="..\..\..\..\..\work\delphi\jobs\tacbord_sql\source\mpos\pda\source\OptionsForms.lfm"/>
         <Line Value="17"/>
       </Item5>
       <Item6>
+        <Kind Value="bpkSource"/>
+        <WatchScope Value="wpsGlobal"/>
+        <WatchKind Value="wpkWrite"/>
         <Source Value="..\..\..\..\..\work\delphi\jobs\tacbord_sql\source\mpos\pda\lib\mposSessions.pas"/>
         <Line Value="736"/>
       </Item6>
       <Item7>
+        <Kind Value="bpkSource"/>
+        <WatchScope Value="wpsGlobal"/>
+        <WatchKind Value="wpkWrite"/>
         <Source Value="C:\lazarus\fpc\2.1.5\src\packages\fcl-db\src\sqlite\sqlite3ds.pas"/>
         <Line Value="305"/>
       </Item7>
       <Item8>
+        <Kind Value="bpkSource"/>
+        <WatchScope Value="wpsGlobal"/>
+        <WatchKind Value="wpkWrite"/>
         <Source Value="V:\programs\lazarus\fpc\src\packages\fcl-base\src\inc\blowfish.pp"/>
         <Line Value="177"/>
       </Item8>
       <Item9>
+        <Kind Value="bpkSource"/>
+        <WatchScope Value="wpsGlobal"/>
+        <WatchKind Value="wpkWrite"/>
         <Source Value="V:\programs\lazarus\fpc\src\packages\fcl-db\src\sqldb\sqlite\sqlite3conn.pp"/>
         <Line Value="225"/>
       </Item9>
       <Item10>
+        <Kind Value="bpkSource"/>
+        <WatchScope Value="wpsGlobal"/>
+        <WatchKind Value="wpkWrite"/>
         <Source Value="..\..\..\..\..\work\delphi\jobs\tacbord_sql\source\mpos\lib\mposFBEngine.pas"/>
         <Line Value="122"/>
       </Item10>
       <Item11>
+        <Kind Value="bpkSource"/>
+        <WatchScope Value="wpsGlobal"/>
+        <WatchKind Value="wpkWrite"/>
         <Source Value="..\..\..\..\..\work\delphi\jobs\tacbord_sql\source\mpos\lib\mposFBEngine.pas"/>
         <Line Value="116"/>
       </Item11>
       <Item12>
+        <Kind Value="bpkSource"/>
+        <WatchScope Value="wpsGlobal"/>
+        <WatchKind Value="wpkWrite"/>
         <Source Value="..\..\..\..\..\work\delphi\jobs\tacbord_sql\source\mpos\lib\mposFBEngine.pas"/>
         <Line Value="208"/>
       </Item12>
       <Item13>
+        <Kind Value="bpkSource"/>
+        <WatchScope Value="wpsGlobal"/>
+        <WatchKind Value="wpkWrite"/>
         <Source Value="..\..\..\..\..\work\delphi\jobs\tacbord_sql\source\mpos\lib\mposSessions.pas"/>
         <Line Value="2257"/>
       </Item13>
       <Item14>
+        <Kind Value="bpkSource"/>
+        <WatchScope Value="wpsGlobal"/>
+        <WatchKind Value="wpkWrite"/>
         <Source Value="..\..\..\..\..\work\delphi\jobs\tacbord_sql\source\mpos\lib\mposProcesses.pas"/>
         <Line Value="748"/>
       </Item14>
       <Item15>
+        <Kind Value="bpkSource"/>
+        <WatchScope Value="wpsGlobal"/>
+        <WatchKind Value="wpkWrite"/>
         <Source Value="..\..\..\..\..\work\delphi\jobs\tacbord_sql\source\mpos\lib\mposProcesses.pas"/>
         <Line Value="961"/>
       </Item15>
       <Item16>
+        <Kind Value="bpkSource"/>
+        <WatchScope Value="wpsGlobal"/>
+        <WatchKind Value="wpkWrite"/>
         <Source Value="..\..\Unicodes\source\ucputils.pas"/>
         <Line Value="45"/>
       </Item16>
+      <Item17>
+        <Kind Value="bpkSource"/>
+        <WatchScope Value="wpsLocal"/>
+        <WatchKind Value="wpkWrite"/>
+        <Source Value="..\lib\calculators.pas"/>
+        <Line Value="268"/>
+      </Item17>
     </BreakPoints>
     <Exceptions Count="2">
       <Item1>
@@ -252,4 +446,5 @@
       </Item2>
     </Exceptions>
   </Debugging>
+  <EditorMacros Count="0"/>
 </CONFIG>

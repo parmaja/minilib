@@ -113,9 +113,6 @@ type
 
   TmnWrapperStreamClass = class of TmnWrapperStream;
 
-  TmnStream = class(TmnWrapperStream) //Alias for backward compatibility
-  end deprecated;
-
 implementation
 
 const

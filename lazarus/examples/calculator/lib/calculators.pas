@@ -82,13 +82,15 @@ end;
 procedure TCalculator.SetDisplay(R: Extended; ShouldKeepZeroes: Boolean);
 var
   S: string;
-  i, KeepZeroes: byte;
+  i, KeepZeroes: Integer;
+  p: Integer;
 begin
   DispNumber := R;
   KeepZeroes := 0;
-  if ShouldKeepZeroes and (pos('.', Number) > 0) then
+  p := pos('.', Number);
+  if (ShouldKeepZeroes and (p > 0)) then
   begin
-    for i := Length(Number) downto pos('.', Number) + 1 do
+    for i := Length(Number) downto p + 1 do
       if Number[i] = '0' then
         inc(KeepZeroes)
       else
@@ -234,7 +236,7 @@ begin
         begin
           CheckFirst;
           if Number = '0' then
-            Number := '';
+             Number := '';
           Number := Number + Key;
           DispNumber := StrToFloat(Number);
           //SetDisplay(StrToFloat(Number), True);
@@ -260,6 +262,11 @@ begin
           X := trunc(abs(R));
           Number := IntToHex(longint(X), 8);
           HexShown := True;
+        end;
+      'C':
+        begin
+          CheckFirst;
+          SetDisplay(0, True);
         end;
       '^', '+', '-', '*', '/', '%', '=':
         begin
@@ -303,11 +310,6 @@ begin
           end;
           CurrentOperator := Key[1];
           GetDisplay(Operand);
-        end;
-      'C':
-        begin
-          CheckFirst;
-          SetDisplay(0, True);
         end;
     else
       Result := False;

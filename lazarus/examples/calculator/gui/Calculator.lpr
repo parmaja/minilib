@@ -9,7 +9,7 @@ uses
   {$IFDEF WINDOWS}
   Windows,
   {$ENDIF}
-  Interfaces, Forms, Main;
+  Classes, Interfaces, Forms, Main;
 
 procedure Run;
 var
@@ -31,6 +31,7 @@ begin
   begin
     Application.Initialize;
     Application.Title := 'Lazarus Calculator';
+    Application.BidiMode := bdLeftToRight;
     Application.CreateForm(TCalcForm, CalcForm);
     Application.Run;
   end;
