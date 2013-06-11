@@ -49,13 +49,12 @@ type
     procedure DoConnect; override;
     procedure DoDisconnect; override;
     function GetConnected:Boolean; override;
-    class function GetMode: TmncSessionMode; override;
     procedure CheckError(Error: Integer; const ExtraMsg: string = '');
     procedure DoInit; override;
   public
     constructor Create;
     class function Model: TmncConnectionModel; override;
-    function CreateSession: TmncSQLSession; override;
+    function CreateSession: TmncSQLSession; override; overload;
     procedure Interrupt;
     function GetVersion: string;
     procedure Execute(Command: string); override;
@@ -392,9 +391,8 @@ class function TmncSQLiteConnection.Model: TmncConnectionModel;
 begin
   Result.Name := 'SQLite';
   Result.Title := 'SQLite Database';
-  Result.Capabilities := [ccDB, ccSQL, ccTransactions];
+  Result.Capabilities := [ccDB, ccSQL, ccTransaction];
   Result.SchemaClass := TmncSQLiteSchema;
-  Result.Mode := smEmulate;
 end;
 
 function TmncSQLiteConnection.CreateSession: TmncSQLSession;
@@ -531,11 +529,6 @@ end;
 function TmncSQLiteSession.GetConnection: TmncSQLiteConnection;
 begin
   Result := inherited Connection as TmncSQLiteConnection;
-end;
-
-class function TmncSQLiteConnection.GetMode: TmncSessionMode;
-begin
-  Result := smEmulate;
 end;
 
 procedure TmncSQLiteConnection.DoInit;

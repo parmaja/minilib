@@ -59,20 +59,17 @@ type
 
   TmncCodePageConvert = (cpcNone, cpcAnsi, cpcUTF8, cpcUnicode);
 
-//Connection as like connect by FTP server to send commands or a Database to send SQL
-{
-  smNone:     No transactions support
-  smEmulate:  Single transaction but last session commited make the real commit
-  smMultiple: Every session have transacion like as Firebird
-  smConnection: Every session have new connection good for SQLite and PG
-}
-  TmncSessionMode = (smNone, smEmulate, smMultiple, smConnection);
   TmncCapability = (
     ccDB, //It is Database engine not just transfer data object
-    ccSQL, //It is SQL engine, you know CSV or Paradox is not, but we have no plan to support Paradox
-    ccTransactions, //Support transaction, most of them Like Firebird, SQLite, PG
-    ccMultiTransactions, //Like Firebird, while PG and SQLite is not
-    ccNetwork //Can connect over network
+    ccSQL, //It is SQL engine, you know CSV or Paradox is not, we have no plan to support Paradox
+    ccNetwork, //Can connect over network
+    ccStrict, //Without it, it no need to call Start and Stop (Commit/Rollback) this DB automatically do it (pg/SQLite allow it)
+    ccTransaction, //Support transaction, most of them Like Firebird, SQLite, PG
+    ccMultiTransaction //Like Firebird can have multiple transaction for one connection, while PG and SQLite has not, see also sbhMultiple
+{  nop i hate it
+    ccMultiConnection //Some time we need to make for every session a new connection
+        //(PG and SQLite), it slowing app, i will not use it. see sbhIndependent
+        }
   );
 
   TmncCapabilities = set of TmncCapability;
@@ -80,7 +77,6 @@ type
   TmncConnectionModel = record
     Name: string;
     Title: string;
-    Mode: TmncSessionMode;
     SchemaClass: TmncSchemaClass;
     Capabilities: TmncCapabilities;
   end;
@@ -115,7 +111,6 @@ type
     function GetConnected: Boolean; virtual; abstract;
     procedure DoInit; virtual;
     procedure Init;
-    class function GetMode: TmncSessionMode; virtual; deprecated;
     property ParamsChanged: Boolean read FParamsChanged write FParamsChanged;
   public
     constructor Create;
@@ -127,7 +122,6 @@ type
     procedure Close; //Alias for Disonnect;
 
     property Sessions: TmncSessions read FSessions;
-    property Mode: TmncSessionMode read GetMode;
     property AutoStart: Boolean read FAutoStart write FAutoStart; //AutoStart the Session when created
     property Connected: Boolean read GetConnected write SetConnected;
     property Active: Boolean read GetConnected write SetConnected;
@@ -143,6 +137,16 @@ type
   end;
 
   TmncConnectionClass = class of TmncConnection;
+
+  {
+    sbhStrict: Without it, it no need to call Start and Stop (Commit/Rollback) this DB automatically do it (pg/SQLite allow it)
+    sbhMultiple: Multiple Transactions works simultaneously, Every session have transacion like as Firebird
+    sbhEmulate:  Single transaction(main connection) but last session commited make the real commit, maybe PG/SQLite
+
+    sbhIndependent: This session have independent resources, maybe open new connection separated from the main one, or other database file, not sure
+  }
+  TmncSessionBehavior = (sbhStrict, sbhIndependent, sbhMultiple, sbhEmulate);
+  TmncSessionBehaviors = set of TmncSessionBehavior;
 
   //Session it is branch/clone of Connection but usefull for take a special params, it is like Transactions.
   TmncSessionAction = (sdaCommit, sdaRollback);
@@ -163,6 +167,7 @@ type
     procedure ParamsChanging(Sender: TObject);
     procedure ParamsChange(Sender: TObject);
   protected
+    FBehaviors: TmncSessionBehaviors;
     function GetActive: Boolean; virtual;
     procedure CheckActive;
     procedure CheckInactive;
@@ -174,14 +179,16 @@ type
     property ParamsChanged: Boolean read FParamsChanged write FParamsChanged;
     property StartCount: Integer read FStartCount;
   public
-    constructor Create(vConnection: TmncConnection); virtual;
+    constructor Create(vConnection: TmncConnection); virtual; overload;
+    constructor Create(vConnection: TmncConnection; vBehaviors: TmncSessionBehaviors); virtual; overload;
     destructor Destroy; override;
 
     procedure Start;
-    //* Retaining mean keep it active
+    //* Retaining: keep it active
     procedure Commit(Retaining: Boolean = False); virtual;
     procedure Rollback(Retaining: Boolean = False); virtual;
     procedure Stop;
+    property Behaviors: TmncSessionBehaviors read FBehaviors;
     property Action: TmncSessionAction read FAction write FAction;
     property Connection: TmncConnection read FConnection write SetConnection;
     property Active: Boolean read GetActive write SetActive;
@@ -699,11 +706,6 @@ begin
     raise EmncException.Create('Connection not connected');
 end;
 
-class function TmncConnection.GetMode: TmncSessionMode;
-begin
-  Result := smNone;
-end;
-
 procedure TmncConnection.DoInit;
 begin
 end;
@@ -832,7 +834,7 @@ procedure TmncCommand.CheckStarted;
 begin
   if (Session = nil) then
     raise EmncException.Create('Session not assigned');
-  if not Session.Active then
+  if (sbhStrict in Session.Behaviors) and not Session.Active then
     raise EmncException.Create('Session is not active/started');
 end;
 
@@ -969,13 +971,32 @@ begin
 end;
 
 constructor TmncSession.Create(vConnection: TmncConnection);
+var
+  aBehaviors: TmncSessionBehaviors;
 begin
-  inherited Create;
+  aBehaviors := [];
+  if ccStrict in vConnection.Model.Capabilities then
+    aBehaviors := aBehaviors + [sbhStrict];
+  if ccTransaction in vConnection.Model.Capabilities then
+  begin
+{    if ccMultiConnection in vConnection.Model.Capabilities then //deprecated
+      aBehaviors := aBehaviors + [sbhMultiple, sbhIndependent]
+    else }if ccMultiTransaction in vConnection.Model.Capabilities then
+      aBehaviors := aBehaviors + [sbhMultiple]
+    else
+      aBehaviors := aBehaviors + [sbhEmulate]
+  end;
+  Create(vConnection, aBehaviors);
+end;
+
+constructor TmncSession.Create(vConnection: TmncConnection; vBehaviors: TmncSessionBehaviors);
+begin
   FParams := TStringList.Create;
   FParamsChanged := True;
   TStringList(FParams).OnChange := ParamsChange;
   TStringList(FParams).OnChanging := ParamsChanging;
   Connection := vConnection;
+  FBehaviors := vBehaviors;
   if Connection.AutoStart then
     Start;
 end;
@@ -1023,24 +1044,20 @@ procedure TmncSession.InternalStop(How: TmncSessionAction; Retaining: Boolean);
 begin
   if not Active then
     raise EmncException.Create('Oops you have not started yet!');
-  case Connection.Model.Mode of
-    smNone:; //nothing todo
-    smMultiple:
-      DoStop(How, Retaining);
-    smEmulate:
-      begin
-        if not Retaining then //Nothing to do if Retaingig
-        begin
-          if Connection.FStartCount = 0 then
-            raise EmncException.Create('Connection not started yet!');
-          Dec(Connection.FStartCount);
-          if Connection.FStartCount = 0 then
-            DoStop(How, Retaining);
-        end;
-      end;
-    smConnection:
+
+  if sbhEmulate in Behaviors then
+  begin
+    if not Retaining then //Nothing to do if Retaingig
+    begin
+      if Connection.FStartCount = 0 then
+        raise EmncException.Create('Connection not started yet!');
+      Dec(Connection.FStartCount);
+      if Connection.FStartCount = 0 then
         DoStop(How, Retaining);
-  end;
+    end;
+  end
+  else if sbhMultiple in Behaviors then
+      DoStop(How, Retaining);
   Dec(FStartCount);
 end;
 
@@ -1089,20 +1106,18 @@ end;
 
 procedure TmncSession.Start;
 begin
-  if not (Connection.Model.Mode in [smNone, smConnection]) and (Active) then
+  if Active then
     raise EmncException.Create('Session is already active.');
   Connection.Init;
   Init;
-  case Connection.Model.Mode of
-    smMultiple: DoStart;
-    smEmulate:
-      begin
-        if Connection.FStartCount = 0 then
-          DoStart;
-        Inc(Connection.FStartCount);
-      end;
-    smConnection: DoStart;
-  end;
+  if sbhEmulate in Behaviors then
+  begin
+     if Connection.FStartCount = 0 then
+       DoStart;
+      Inc(Connection.FStartCount);
+  end
+  else if sbhMultiple in Behaviors then
+    DoStart;
   Inc(FStartCount);
 end;
 

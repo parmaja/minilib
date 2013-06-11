@@ -1,4 +1,8 @@
 unit HejriUtils;
+{$IFDEF FPC}
+{$MODE delphi}
+{$ENDIF}
+{$M+}{$H+}
 {**
  *  This file is part of the "Mini Library"
  *

@@ -6,27 +6,27 @@
     <CompilerOptions>
       <Version Value="11"/>
       <SearchPaths>
+        <IncludeFiles Value="$(ProjOutDir)"/>
         <UnitOutputDirectory Value="units/$(TargetCPU)-$(TargetOS)"/>
       </SearchPaths>
       <Parsing>
         <SyntaxOptions>
-          <AllowLabel Value="False"/>
+          <UseAnsiStrings Value="False"/>
         </SyntaxOptions>
       </Parsing>
-      <CodeGeneration>
-        <Optimizations>
-          <OptimizationLevel Value="3"/>
-        </Optimizations>
-      </CodeGeneration>
       <Linking>
         <Debugging>
-          <GenerateDebugInfo Value="False"/>
-          <DebugInfoType Value="dsDwarf2"/>
-          <UseLineInfoUnit Value="False"/>
+          <DebugInfoType Value="dsDwarf2Set"/>
         </Debugging>
+        <Options>
+          <Win32>
+            <GraphicApplication Value="True"/>
+          </Win32>
+        </Options>
       </Linking>
       <Other>
         <CompilerMessages>
+          <IgnoredMessages idx5024="True"/>
           <UseMsgFile Value="True"/>
         </CompilerMessages>
         <CompilerPath Value="$(CompPath)"/>
