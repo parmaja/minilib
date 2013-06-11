@@ -71,6 +71,7 @@ type
         //(PG and SQLite), it slowing app, i will not use it. see sbhIndependent
         }
   );
+  //if you put ccTransaction and not put ccMultiTransaction it will emulate it.
 
   TmncCapabilities = set of TmncCapability;
 

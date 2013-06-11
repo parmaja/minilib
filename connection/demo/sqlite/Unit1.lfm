@@ -1,0 +1,65 @@
+object Form1: TForm1
+  Left = 308
+  Height = 249
+  Top = 313
+  Width = 491
+  Caption = 'Form1'
+  ClientHeight = 249
+  ClientWidth = 491
+  Color = clBtnFace
+  Font.Color = clWindowText
+  Font.Height = -11
+  Font.Name = 'Tahoma'
+  LCLVersion = '1.1'
+  object Image1: TImage
+    Left = 8
+    Height = 166
+    Top = 67
+    Width = 201
+  end
+  object SelectBtn: TButton
+    Left = 85
+    Height = 25
+    Top = 4
+    Width = 75
+    Caption = 'Select'
+    OnClick = SelectBtnClick
+    TabOrder = 0
+  end
+  object Button2: TButton
+    Left = 394
+    Height = 25
+    Top = 8
+    Width = 75
+    Caption = 'Read'
+    OnClick = Button2Click
+    TabOrder = 1
+  end
+  object ListBox1: TListBox
+    Left = 232
+    Height = 166
+    Top = 67
+    Width = 237
+    ItemHeight = 0
+    TabOrder = 2
+  end
+  object Button3: TButton
+    Left = 8
+    Height = 25
+    Top = 4
+    Width = 75
+    Caption = 'Write'
+    OnClick = Button1Click
+    TabOrder = 3
+  end
+  object SelectDSBtn: TButton
+    Left = 160
+    Height = 25
+    Hint = 'Double Sessions'
+    Top = 4
+    Width = 75
+    Caption = 'Select DS'
+    OnClick = SelectDSBtnClick
+    TabOrder = 4
+  end
+end
