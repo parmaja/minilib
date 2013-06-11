@@ -10,7 +10,7 @@ version=1.0.1.1
 
 [compiler]
 unittargetdir=./units/$(CPU_TARGET)-$(OS_TARGET)
-unitdir=P:/dev/lazarus/packager/units/$(CPU_TARGET)-$(OS_TARGET) P:/dev/lazarus/components/lazutils/lib/$(CPU_TARGET)-$(OS_TARGET) ../../../lib/units/release/$(CPU_TARGET)-$(OS_TARGET) P:/dev/lazarus/lcl/units/$(CPU_TARGET)-$(OS_TARGET) P:/dev/lazarus/lcl/units/$(CPU_TARGET)-$(OS_TARGET)/$(LCL_PLATFORM) P:/dev/lazarus/components/lazcontrols/lib/$(CPU_TARGET)-$(OS_TARGET)/$(LCL_PLATFORM) P:/dev/lazarus/components/ideintf/units/$(CPU_TARGET)-$(OS_TARGET)/$(LCL_PLATFORM) .
+unitdir=P:/dev/lazarus/packager/units/$(CPU_TARGET)-$(OS_TARGET) P:/dev/lazarus/components/lazutils/lib/$(CPU_TARGET)-$(OS_TARGET) ../../../lib/units/$(CPU_TARGET)-$(OS_TARGET) P:/dev/lazarus/lcl/units/$(CPU_TARGET)-$(OS_TARGET) P:/dev/lazarus/lcl/units/$(CPU_TARGET)-$(OS_TARGET)/$(LCL_PLATFORM) P:/dev/lazarus/components/lazcontrols/lib/$(CPU_TARGET)-$(OS_TARGET)/$(LCL_PLATFORM) P:/dev/lazarus/components/ideintf/units/$(CPU_TARGET)-$(OS_TARGET)/$(LCL_PLATFORM) .
 options= -MObjFPC -Scgim -O1 -g -gl -vew -l -dLCL -dLCL$(LCL_PLATFORM)
 
 [target]

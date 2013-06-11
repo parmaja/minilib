@@ -9,7 +9,7 @@
       <SearchPaths>
         <IncludeFiles Value="$(ProjOutDir)"/>
         <OtherUnitFiles Value="..\db;..\db\sqlite"/>
-        <UnitOutputDirectory Value="units\release\$(TargetCPU)-$(TargetOS)"/>
+        <UnitOutputDirectory Value="units\$(TargetCPU)-$(TargetOS)"/>
       </SearchPaths>
       <Parsing>
         <SyntaxOptions>

@@ -992,6 +992,7 @@ end;
 
 constructor TmncSession.Create(vConnection: TmncConnection; vBehaviors: TmncSessionBehaviors);
 begin
+  inherited Create;
   FParams := TStringList.Create;
   FParamsChanged := True;
   TStringList(FParams).OnChange := ParamsChange;

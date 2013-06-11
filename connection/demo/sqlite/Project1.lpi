@@ -101,12 +101,12 @@
     <Version Value="11"/>
     <PathDelim Value="\"/>
     <Target>
-      <Filename ApplyConventions="False"/>
+      <Filename Value="project1"/>
     </Target>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)"/>
       <OtherUnitFiles Value="..\db;..\db\sqlite"/>
-      <UnitOutputDirectory Value="units\release\$(TargetCPU)-$(TargetOS)"/>
+      <UnitOutputDirectory Value="units\$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>
     <Parsing>
       <SyntaxOptions>
@@ -129,14 +129,7 @@
         <UseMsgFile Value="True"/>
       </CompilerMessages>
       <CompilerPath Value="$(CompPath)"/>
-      <ExecuteBefore>
-        <CompileReasons Compile="False" Build="False" Run="False"/>
-      </ExecuteBefore>
-      <ExecuteAfter>
-        <CompileReasons Compile="False" Build="False" Run="False"/>
-      </ExecuteAfter>
     </Other>
-    <CompileReasons Compile="False"/>
   </CompilerOptions>
   <Debugging>
     <Exceptions Count="3">
