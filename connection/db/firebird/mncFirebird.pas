@@ -525,11 +525,6 @@ begin
   Result := inherited Connection as TmncFBConnection;
 end;
 
-class function TmncFBConnection.GetMode: TmncSessionMode;
-begin
-  Result := smMultiple;
-end;
-
 procedure TmncFBConnection.DoInit;
 begin
 end;

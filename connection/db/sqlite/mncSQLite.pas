@@ -366,8 +366,7 @@ begin
   Result := TmncSQLiteParam.Create;
 end;
 
-procedure TmncSQLiteConnection.CheckError(Error: Integer; const ExtraMsg: string
-  );
+procedure TmncSQLiteConnection.CheckError(Error: Integer; const ExtraMsg: string);
 var
   s : Utf8String;
 begin
