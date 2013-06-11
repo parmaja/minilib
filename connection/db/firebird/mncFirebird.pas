@@ -50,7 +50,6 @@ type
     procedure DoConnect; override;
     procedure DoDisconnect; override;
     function GetConnected: Boolean; override;
-    class function GetMode: TmncSessionMode; override;
     procedure DoInit; override;
   public
     constructor Create;
@@ -277,9 +276,8 @@ class function TmncFBConnection.Model: TmncConnectionModel;
 begin
   Result.Name := 'FirebirdSQL';
   Result.Title := 'Firebird SQL Database';
-  Result.Capabilities := [ccDB, ccSQL, ccTransactions, ccMultiTransactions, ccNetwork];
+  Result.Capabilities := [ccDB, ccSQL, ccStrict, ccTransaction, ccMultiTransaction, ccNetwork];
   Result.SchemaClass := TmncFBSchema;
-  Result.Mode := smMultiple;
 end;
 
 function TmncFBConnection.CreateSession: TmncSQLSession;
