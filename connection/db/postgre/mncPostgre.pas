@@ -130,7 +130,6 @@ type
     function NewToken: string;//used for new command name
     procedure DoStart; override;
     procedure DoStop(How: TmncSessionAction; Retaining: Boolean); override;
-    function GetActive: Boolean; override;
 
   public
     constructor Create(vConnection: TmncConnection); override;
@@ -536,7 +535,7 @@ class function TmncPGConnection.Model: TmncConnectionModel;
 begin
   Result.Name := 'PostgreSQL';
   Result.Title := 'Postgre Database';
-  Result.Capabilities := [ccDB, ccSQL, ccNetwork, ccTransaction];
+  Result.Capabilities := [ccDB, ccSQL, ccNetwork, ccStrict, ccTransaction];
   Result.SchemaClass := nil;
   //Result.Mode := smConnection;
 end;
@@ -724,16 +723,13 @@ end;
 
 procedure TmncPGSession.DoStop(How: TmncSessionAction; Retaining: Boolean);
 begin
-  if StartCount=1 then 
+  case How of
+    sdaCommit: Execute('COMMIT');
+    sdaRollback: Execute('ROLLBACK');
+  end;
+  if FDBHandle <> nil then
   begin
-    case How of
-      sdaCommit: Execute('COMMIT');
-      sdaRollback: Execute('ROLLBACK');
-    end;
-    if FDBHandle <> nil then
-    begin
-      Connection.InternalDisconnect(FDBHandle);
-    end;
+    Connection.InternalDisconnect(FDBHandle);
   end;
 end;
 
@@ -751,12 +747,6 @@ end;
 function TmncPGSession.Execute(vSQL: string; vClear: Boolean): PPGresult;
 begin
   Result := Connection.Execute(DBHandle, vSQL, vClear);
-end;
-
-function TmncPGSession.GetActive: Boolean;
-begin
-  //Result:= inherited GetActive;
-  Result := (FDBHandle <> nil) or Connection.Connected;
 end;
 
 constructor TmncPGSession.Create(vConnection: TmncConnection);
