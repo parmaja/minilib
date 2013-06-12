@@ -54,7 +54,7 @@ type
   public
     constructor Create;
     class function Model: TmncConnectionModel; override;
-    function CreateSession: TmncSQLSession; override; overload;
+    function CreateSession: TmncSQLSession; overload; override; 
     procedure Interrupt;
     function GetVersion: string;
     procedure Execute(Command: string); override;

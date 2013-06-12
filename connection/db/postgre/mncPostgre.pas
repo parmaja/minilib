@@ -536,9 +536,9 @@ class function TmncPGConnection.Model: TmncConnectionModel;
 begin
   Result.Name := 'PostgreSQL';
   Result.Title := 'Postgre Database';
-  Result.Capabilities := [ccDB, ccSQL, ccNetwork, ccTransactions];
+  Result.Capabilities := [ccDB, ccSQL, ccNetwork, ccTransaction];
   Result.SchemaClass := nil;
-  Result.Mode := smConnection;
+  //Result.Mode := smConnection;
 end;
 
 procedure TmncPGConnection.Notify(vPID: Integer; const vName, vData: string);

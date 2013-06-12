@@ -180,8 +180,8 @@ type
     property ParamsChanged: Boolean read FParamsChanged write FParamsChanged;
     property StartCount: Integer read FStartCount;
   public
-    constructor Create(vConnection: TmncConnection); virtual; overload;
-    constructor Create(vConnection: TmncConnection; vBehaviors: TmncSessionBehaviors); virtual; overload;
+    constructor Create(vConnection: TmncConnection); overload; virtual;
+    constructor Create(vConnection: TmncConnection; vBehaviors: TmncSessionBehaviors); overload; virtual;
     destructor Destroy; override;
 
     procedure Start;
@@ -1035,6 +1035,7 @@ end;
 
 procedure TmncSession.Init;
 begin
+  Connection.Init;
   if not FIsInit then
   begin
     DoInit;
@@ -1044,22 +1045,24 @@ end;
 
 procedure TmncSession.InternalStop(How: TmncSessionAction; Retaining: Boolean);
 begin
-  if not Active then
-    raise EmncException.Create('Oops you have not started yet!');
-
   if sbhEmulate in Behaviors then
   begin
     if not Retaining then //Nothing to do if Retaingig
     begin
       if Connection.FStartCount = 0 then
-        raise EmncException.Create('Connection not started yet!');
+        raise EmncException.Create('Session not started yet!');
       Dec(Connection.FStartCount);
       if Connection.FStartCount = 0 then
         DoStop(How, Retaining);
     end;
   end
-  else if sbhMultiple in Behaviors then
+  else
+  begin
+    if not Active then
+      raise EmncException.Create('Oops you have not started yet!');
+    if sbhMultiple in Behaviors then
       DoStop(How, Retaining);
+  end;
   Dec(FStartCount);
 end;
 
@@ -1108,18 +1111,20 @@ end;
 
 procedure TmncSession.Start;
 begin
-  if Active then
-    raise EmncException.Create('Session is already active.');
-  Connection.Init;
   Init;
   if sbhEmulate in Behaviors then
   begin
-     if Connection.FStartCount = 0 then
-       DoStart;
-      Inc(Connection.FStartCount);
+    if Connection.FStartCount = 0 then
+      DoStart;
+    Inc(Connection.FStartCount);
   end
-  else if sbhMultiple in Behaviors then
-    DoStart;
+  else
+  begin
+    if Active then
+      raise EmncException.Create('Session is already active.');
+    if sbhMultiple in Behaviors then
+      DoStart;
+  end;
   Inc(FStartCount);
 end;
 
@@ -1127,12 +1132,7 @@ procedure TmncSession.Stop;
 begin
   Links.Close;
   if Active then
-  begin
-    if Action = sdaCommit then
-      Commit
-    else
-      Rollback;
-  end;
+    InternalStop(Action);
 end;
 
 function TmncFields.Add(Column: TmncColumn; Value: Variant): TmncField;
