@@ -1110,20 +1110,18 @@ end;
 
 procedure TmncSession.Start;
 begin
+  if Active then //Even if not strict, you cant start the session more than one
+    raise EmncException.Create('Session is already active.');
+  Connection.Init; //Sure if the connection is init, maybe it is not connected yet!
   Init;
   if sbhEmulate in Behaviors then
   begin
-    if Connection.FStartCount = 0 then
-      DoStart;
-    Inc(Connection.FStartCount);
+     if Connection.FStartCount = 0 then
+       DoStart;
+      Inc(Connection.FStartCount);
   end
-  else
-  begin
-    if Active then
-      raise EmncException.Create('Session is already active.');
-    if sbhMultiple in Behaviors then
-      DoStart;
-  end;
+  else if sbhMultiple in Behaviors then
+    DoStart;
   Inc(FStartCount);
 end;
 
