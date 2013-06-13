@@ -1046,6 +1046,9 @@ end;
 
 procedure TmncSession.InternalStop(How: TmncSessionAction; Retaining: Boolean);
 begin
+  if not Active then //Even if not strict we check if active, because you cant stop session if you not started it!
+    raise EmncException.Create('Oops you have not started it yet!');
+
   if sbhEmulate in Behaviors then
   begin
     if not Retaining then //Nothing to do if Retaingig
@@ -1057,13 +1060,8 @@ begin
         DoStop(How, Retaining);
     end;
   end
-  else
-  begin
-    if not Active then
-      raise EmncException.Create('Oops you have not started yet!');
-    if sbhMultiple in Behaviors then
+  else if sbhMultiple in Behaviors then
       DoStop(How, Retaining);
-  end;
   Dec(FStartCount);
 end;
 
