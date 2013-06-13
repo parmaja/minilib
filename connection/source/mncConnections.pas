@@ -628,6 +628,7 @@ end;
 
 procedure TmncConnection.Connect;
 begin
+  Init;
   CheckActive;
   DoConnect;
   if Assigned(OnConnected) then
@@ -835,7 +836,7 @@ procedure TmncCommand.CheckStarted;
 begin
   if (Session = nil) then
     raise EmncException.Create('Session not assigned');
-  //Raise an exception ig not active when it is strict
+  //Raise an exception if not active when it is strict
   if (sbhStrict in Session.Behaviors) and not Session.Active then
     raise EmncException.Create('Session is not active/started');
 end;
@@ -1036,7 +1037,6 @@ end;
 
 procedure TmncSession.Init;
 begin
-  Connection.Init;
   if not FIsInit then
   begin
     DoInit;
