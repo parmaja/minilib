@@ -1009,7 +1009,8 @@ end;
 
 destructor TmncSession.Destroy;
 begin
-  Stop;
+  if Active then
+    Stop;
   Links.Unlink;
   Connection := nil;
   FreeAndNil(FParams);
@@ -1393,7 +1394,8 @@ var
 begin
   for i := 0 to Count - 1 do
   begin
-    Items[i].Stop;
+    if Items[i].Active then
+      Items[i].Stop;
   end;
 end;
 
