@@ -186,10 +186,10 @@ type
     destructor Destroy; override;
 
     procedure Start;
+    procedure Stop;
     //* Retaining: keep it active
     procedure Commit(Retaining: Boolean = False); virtual;
     procedure Rollback(Retaining: Boolean = False); virtual;
-    procedure Stop;
     property Behaviors: TmncSessionBehaviors read FBehaviors;
     property Action: TmncSessionAction read FAction write FAction;
     property Connection: TmncConnection read FConnection write SetConnection;
@@ -1050,6 +1050,8 @@ begin
   if not Active then //Even if not strict we check if active, because you cant stop session if you not started it!
     raise EmncException.Create('Oops you have not started it yet!');
 
+  Links.Close;
+
   if sbhEmulate in Behaviors then
   begin
     if not Retaining then //Nothing to do if Retaingig
@@ -1128,9 +1130,7 @@ end;
 
 procedure TmncSession.Stop;
 begin
-  Links.Close;
-  if Active then
-    InternalStop(Action);
+  InternalStop(Action);
 end;
 
 function TmncFields.Add(Column: TmncColumn; Value: Variant): TmncField;
