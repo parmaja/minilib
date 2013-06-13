@@ -177,7 +177,8 @@ type
     procedure DoStart; virtual; abstract;
     procedure DoStop(How: TmncSessionAction; Retaining: Boolean); virtual; abstract;
     procedure Init;
-    procedure InternalStop(How: TmncSessionAction; Retaining: Boolean = False);
+    procedure InternalStart; virtual;
+    procedure InternalStop(How: TmncSessionAction; Retaining: Boolean = False); virtual;
     property ParamsChanged: Boolean read FParamsChanged write FParamsChanged;
     property StartCount: Integer read FStartCount;
   public
@@ -1045,6 +1046,23 @@ begin
   end;
 end;
 
+procedure TmncSession.InternalStart;
+begin
+  if Active then //Even if not strict, you cant start the session more than one
+    raise EmncException.Create('Session is already active.');
+  Connection.Init; //Sure if the connection is init, maybe it is not connected yet!
+  Init;
+  if sbhEmulate in Behaviors then
+  begin
+     if Connection.FStartCount = 0 then
+       DoStart;
+      Inc(Connection.FStartCount);
+  end
+  else if sbhMultiple in Behaviors then
+    DoStart;
+  Inc(FStartCount);
+end;
+
 procedure TmncSession.InternalStop(How: TmncSessionAction; Retaining: Boolean);
 begin
   if not Active then //Even if not strict we check if active, because you cant stop session if you not started it!
@@ -1113,19 +1131,7 @@ end;
 
 procedure TmncSession.Start;
 begin
-  if Active then //Even if not strict, you cant start the session more than one
-    raise EmncException.Create('Session is already active.');
-  Connection.Init; //Sure if the connection is init, maybe it is not connected yet!
-  Init;
-  if sbhEmulate in Behaviors then
-  begin
-     if Connection.FStartCount = 0 then
-       DoStart;
-      Inc(Connection.FStartCount);
-  end
-  else if sbhMultiple in Behaviors then
-    DoStart;
-  Inc(FStartCount);
+  InternalStart;
 end;
 
 procedure TmncSession.Stop;
