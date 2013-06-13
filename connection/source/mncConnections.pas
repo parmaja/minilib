@@ -835,7 +835,8 @@ procedure TmncCommand.CheckStarted;
 begin
   if (Session = nil) then
     raise EmncException.Create('Session not assigned');
-  if not (sbhStrict in Session.Behaviors) and not Session.Active then
+  //Raise an exception ig not active when it is strict
+  if (sbhStrict in Session.Behaviors) and not Session.Active then
     raise EmncException.Create('Session is not active/started');
 end;
 
