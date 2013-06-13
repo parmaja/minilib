@@ -64,6 +64,7 @@ type
     ccSQL, //It is SQL engine, you know CSV or Paradox is not, we have no plan to support Paradox
     ccNetwork, //Can connect over network
     ccStrict, //Without it, it no need to call Start and Stop (Commit/Rollback) this DB automatically do it (pg/SQLite allow it)
+              //But that not mean you can call Start more than one or Stop without started it.
     ccTransaction, //Support transaction, most of them Like Firebird, SQLite, PG
     ccMultiTransaction //Like Firebird can have multiple transaction for one connection, while PG and SQLite has not, see also sbhMultiple
 {  nop i hate it
