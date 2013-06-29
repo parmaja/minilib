@@ -118,26 +118,9 @@ type
     function CreateCell(vRow: TmnrRow): TmnrCell; override;
   end;
 
-  TmnrTimeReportCell = class(TmnrCell)
-  private
-    FValue: TDateTime;
+  TmnrTimeReportCell = class(TmnrDateTimeReportCell)
   protected
-    function GetAsBoolean: Boolean; override;
-    function GetAsCurrency: Currency; override;
-    function GetAsDateTime: TDateTime; override;
-    function GetAsFloat: Double; override;
-    function GetAsInteger: Longint; override;
     function GetAsString: string; override;
-    function GetAsVariant: Variant; override;
-    function GetIsNull: Boolean; override;
-
-    procedure SetAsBoolean(const Value: Boolean); override;
-    procedure SetAsCurrency(const Value: Currency); override;
-    procedure SetAsDateTime(const Value: TDateTime); override;
-    procedure SetAsFloat(const Value: Double); override;
-    procedure SetAsInteger(const Value: Longint); override;
-    procedure SetAsString(const Value: string); override;
-    procedure SetAsVariant(const Value: Variant); override;
   end;
 
   TmnrTimeLayout = class(TmnrLayout)
@@ -478,7 +461,7 @@ end;
 
 function TmnrDateTimeReportCell.GetAsString: string;
 begin
-  Result := DateToStr(AsDateTime);
+  Result := FormatDateTime('yyyy-mm-dd hh:nn:ss', AsDateTime);
 end;
 
 function TmnrDateTimeReportCell.GetAsVariant: Variant;
@@ -795,79 +778,9 @@ end;
 
 { TmnrTimeReportCell }
 
-function TmnrTimeReportCell.GetAsBoolean: Boolean;
-begin
-  Result := AsDateTime <> 0;
-end;
-
-function TmnrTimeReportCell.GetAsCurrency: Currency;
-begin
-  Result := AsDateTime;
-end;
-
-function TmnrTimeReportCell.GetAsDateTime: TDateTime;
-begin
-  Result := FValue;
-end;
-
-function TmnrTimeReportCell.GetAsFloat: Double;
-begin
-  Result := FValue;
-end;
-
-function TmnrTimeReportCell.GetAsInteger: Longint;
-begin
-  Result := Trunc(AsDateTime); //TODO not trunc
-end;
-
 function TmnrTimeReportCell.GetAsString: string;
 begin
-  Result := TimeToStr(AsDateTime);
-end;
-
-function TmnrTimeReportCell.GetAsVariant: Variant;
-begin
-  Result := FValue;
-end;
-
-function TmnrTimeReportCell.GetIsNull: Boolean;
-begin
-  Result := FValue <> 0;
-end;
-
-procedure TmnrTimeReportCell.SetAsBoolean(const Value: Boolean);
-begin
-  FValue := Ord(Value);
-end;
-
-procedure TmnrTimeReportCell.SetAsCurrency(const Value: Currency);
-begin
-  FValue := Value;
-end;
-
-procedure TmnrTimeReportCell.SetAsDateTime(const Value: TDateTime);
-begin
-  FValue := Value;
-end;
-
-procedure TmnrTimeReportCell.SetAsFloat(const Value: Double);
-begin
-  FValue := Value;
-end;
-
-procedure TmnrTimeReportCell.SetAsInteger(const Value: Integer);
-begin
-  FValue := Value;
-end;
-
-procedure TmnrTimeReportCell.SetAsString(const Value: string);
-begin
-  FValue := StrToTimeDef(Value, 0);
-end;
-
-procedure TmnrTimeReportCell.SetAsVariant(const Value: Variant);
-begin
-  FValue := Value;
+  Result := FormatDateTime('hh:nn:ss', AsDateTime);
 end;
 
 { TmnrDataReportCell }
