@@ -55,7 +55,7 @@ type
     function Add: TntvPageItem;
     function FindControl(vControl: TControl): TntvPageItem;
     function IndexOf(vControl: TControl): Integer;
-    function AddControl(vControl: TControl): TntvPageItem;
+    function AddControl(vControl: TControl; vShow: Boolean = True): TntvPageItem;
     function ExtractControl(vControl: TControl): TControl;
     property Items[Index: Integer]: TntvPageItem read GetItem write SetItem stored False; default;
   published
@@ -422,7 +422,7 @@ begin
   Result := TntvPageItem(inherited Add);
 end;
 
-function TntvPages.AddControl(vControl: TControl): TntvPageItem;
+function TntvPages.AddControl(vControl: TControl; vShow: Boolean): TntvPageItem;
 begin
   if vControl <> nil then
   begin
@@ -440,7 +440,8 @@ begin
           Control.Align := alClient;
         if not (csDesigning in Control.ComponentState) then
         begin
-          Control.Show
+          if vShow then
+            Control.Show
         end;
       end;
     finally
