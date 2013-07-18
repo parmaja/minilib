@@ -428,18 +428,20 @@ begin
   begin
     BeginUpdate;
     try
-      Result := TntvPageItem.Create(nil);
+      Result := TntvPageItem.Create(Self);
       with Result do
       begin
-        Control := vControl;
         Name := Control.Name;
         Caption := Name;
+        Control := vControl;
+//        Collection := Self; //Add to Pages list; Or when Create(Self) the page
         Control.FreeNotification(PageControl);
-        Collection := Self; //Add to Pages list
         if Control is TWinControl and (Control.Parent = PageControl) then
           Control.Align := alClient;
         if not (csDesigning in Control.ComponentState) then
+        begin
           Control.Show
+        end;
       end;
     finally
       EndUpdate;
