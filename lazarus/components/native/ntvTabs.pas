@@ -650,16 +650,28 @@ begin
     end
     else if vPosition = tpBottom then
     begin
-      MoveTo(vRect.Right, vRect.Top);
-      LineTo(vRect.Right, vRect.Bottom);
-      if (tdsFirst in State) then
+      if tbfRightToLeft in vFlags then
       begin
+        MoveTo(vRect.Left, vRect.Top);
         LineTo(vRect.Left, vRect.Bottom);
-        LineTo(vRect.Left, vRect.Top);
+        LineTo(vRect.Right + 1, vRect.Bottom);
+        if (tdsFirst in State) then
+        begin
+          MoveTo(vRect.Right, vRect.Top);
+          LineTo(vRect.Right, vRect.Bottom);
+        end;
       end
       else
+      begin
+        MoveTo(vRect.Right, vRect.Top);
+        LineTo(vRect.Right, vRect.Bottom);
         LineTo(vRect.Left - 1, vRect.Bottom);
-
+        if (tdsFirst in State) then
+        begin
+          MoveTo(vRect.Left, vRect.Top);
+          LineTo(vRect.Left, vRect.Bottom);
+        end;
+      end;
     end;
     if tdsActive in State then
     begin

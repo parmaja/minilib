@@ -183,7 +183,7 @@ begin
       Tabs.EndUpdate;
     end;
 
-    //Tabs.Position := tpBottom;
+    Tabs.Position := tpBottom;
     aRect := TestPanel.ClientRect;
     InflateRect(aRect, -5, -5);
     Tabs.Paint(TestPanel.Canvas, aRect, [tbfRightToLeft]); //tbfRightToLeft
