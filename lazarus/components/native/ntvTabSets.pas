@@ -19,7 +19,7 @@ unit ntvTabSets;
 interface
 
 uses
-  Classes, Messages, Controls, SysUtils, Math, Contnrs, Graphics, Forms, StdCtrls, Types,
+  Classes, Messages, Controls, SysUtils, Graphics, Forms, Types,
   LMessages, LCLType, LCLIntf, LCLProc,
   ntvTabs, ntvUtils, ntvThemes;
 
@@ -60,7 +60,6 @@ type
     procedure SetTopIndex(const Value: Integer);
     function GetItemIndex: Integer;
     procedure WMGetDlgCode(var message: TWMGetDlgCode); message WM_GETDLGCODE;
-    procedure CMFocusChanged(var Message: TMessage); message CM_FOCUSCHANGED;
     //procedure CMDialogKey(var Message: TCMDialogKey); message CM_DIALOGKEY;
     procedure CMDesignHitTest(var Message: TLMMouse); message CM_DESIGNHITTEST;
 
@@ -102,8 +101,10 @@ type
     procedure EraseBackground(DC: HDC); override;
     procedure Paint; override;
 
+    procedure First;
     procedure Next;
     procedure Prior;
+    procedure Last;
     procedure Clear;
   //to published
     property StoreIndex: Boolean read FStoreIndex write FStoreIndex;
@@ -163,6 +164,7 @@ type
   published
     property StoreIndex;
     property ShowButtons;
+    property ShowBorder;
     property ShowTabs;
     property ItemIndex;
     property ImageList;
@@ -271,7 +273,6 @@ end;
 
 procedure TntvCustomTabSet.Paint;
 var
-  i: Integer;
   R: TRect;
   aTabsRect: TRect;
 begin
@@ -325,6 +326,11 @@ begin
   end;
 end;
 
+procedure TntvCustomTabSet.First;
+begin
+  ItemIndex := 0;
+end;
+
 procedure TntvCustomTabSet.MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 begin
   inherited;
@@ -358,8 +364,6 @@ begin
 end;
 
 procedure TntvCustomTabSet.Loaded;
-var
-  i: Integer;
 begin
   inherited;
   if StoreIndex then
@@ -472,9 +476,7 @@ end;
 
 procedure TntvCustomTabSet.ShowTab(Index: Integer; Force: Boolean; vSetfocus: Boolean);
 var
-  i: Integer;
   OldIndex: Integer;
-  w: Integer;
 begin
 //  if HandleAllocated then
   begin
@@ -629,12 +631,6 @@ begin
   Result := Items.ShowButtons;
 end;
 
-procedure TntvCustomTabSet.CMFocusChanged(var Message: TMessage);
-begin
-  inherited;
-  Invalidate;
-end;
-
 procedure TntvCustomTabSet.Next;
 begin
   ItemIndex := ItemIndex + 1;
@@ -643,6 +639,11 @@ end;
 procedure TntvCustomTabSet.Prior;
 begin
   ItemIndex := ItemIndex - 1;
+end;
+
+procedure TntvCustomTabSet.Last;
+begin
+  ItemIndex := Items.Count - 1;
 end;
 
 procedure TntvCustomTabSet.SetShowButtons(const Value: Boolean);
@@ -699,6 +700,10 @@ begin
   if Shift = [] then
   begin
     case Key of
+      VK_END:
+        Last;
+      VK_HOME:
+        First;
       VK_LEFT:
         begin
           if UseRightToLeftAlignment then

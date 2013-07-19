@@ -89,6 +89,8 @@ type
     procedure DoTabShow(Index: Integer; vSetfocus: Boolean); override;
     procedure DoTabShowed(Index: Integer; vSetfocus: Boolean); override;
     class function GetControlClassDefaultSize: TSize; override;
+    procedure WMKillFocus(var Msg: TWMKillFocus); message WM_KILLFOCUS;
+    procedure WMSetFocus(var Msg: TLMSetFocus); message WM_SETFOCUS;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -413,6 +415,18 @@ class function TntvPageControl.GetControlClassDefaultSize: TSize;
 begin
   Result.cx := 200;
   Result.cy := 240;
+end;
+
+procedure TntvPageControl.WMKillFocus(var Msg: TWMKillFocus);
+begin
+  inherited;
+  Invalidate;
+end;
+
+procedure TntvPageControl.WMSetFocus(var Msg: TLMSetFocus);
+begin
+  inherited;
+  Invalidate;
 end;
 
 { TntvPages }

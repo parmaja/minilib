@@ -3,7 +3,6 @@ object Form1: TForm1
   Height = 362
   Top = 204
   Width = 418
-  ActiveControl = Edit1
   Caption = 'Form1'
   ClientHeight = 362
   ClientWidth = 418
@@ -73,7 +72,6 @@ object Form1: TForm1
     Top = 99
     Width = 253
     StoreIndex = False
-    ShowButtons = False
     Items = <    
       item
         Caption = 'Panel1'
@@ -91,25 +89,6 @@ object Form1: TForm1
       end>
     Caption = 'ntvPageControl1'
     TabOrder = 6
-    object Panel1: TPanel
-      Left = 3
-      Height = 127
-      Top = 21
-      Width = 247
-      Align = alClient
-      Caption = 'Panel1'
-      ClientHeight = 127
-      ClientWidth = 247
-      TabOrder = 0
-      object Edit2: TEdit
-        Left = 46
-        Height = 21
-        Top = 12
-        Width = 80
-        TabOrder = 0
-        Text = 'Edit2'
-      end
-    end
     object Panel2: TPanel
       Left = 3
       Height = 127
@@ -127,6 +106,25 @@ object Form1: TForm1
         Width = 80
         TabOrder = 0
         Text = 'Edit1'
+      end
+    end
+    object Panel1: TPanel
+      Left = 3
+      Height = 127
+      Top = 21
+      Width = 247
+      Align = alClient
+      Caption = 'Panel1'
+      ClientHeight = 127
+      ClientWidth = 247
+      TabOrder = 0
+      object Edit2: TEdit
+        Left = 46
+        Height = 21
+        Top = 12
+        Width = 80
+        TabOrder = 0
+        Text = 'Edit2'
       end
     end
   end
@@ -151,5 +149,14 @@ object Form1: TForm1
     Items = <>
     Caption = 'ntvPageControl2'
     TabOrder = 8
+  end
+  object Button6: TButton
+    Left = 321
+    Height = 25
+    Top = 222
+    Width = 75
+    Caption = 'Bidi'
+    OnClick = Button6Click
+    TabOrder = 9
   end
 end

@@ -17,7 +17,7 @@ interface
 
 uses
   Classes, SysUtils, Graphics, Controls, Contnrs, Types,
-  LMessages, LCLType, LCLIntf, LCLProc;
+  LCLType, LCLIntf, LCLProc;
 
 const
   cMinTabWidth = 10;
@@ -29,6 +29,8 @@ type
   TntvFlag = (tbfFocused, tbfRightToLeft);
   TntvFlags = set of TntvFlag;
 
+  TntvTabPosition = (tpTop, tpBottom{, tpLeft, tpRight});
+
   TntvTabItem = class;
 
   TTabDrawState = (tdsFirst, tdsNormal, tdsActive, tdsLast);
@@ -37,7 +39,7 @@ type
   TntvTabDraw = class(TObject)
   public
     function GetWidth(State: TTabDrawStates; vTabsRect: TRect; Width: Integer): Integer; virtual; abstract;
-    procedure Paint(vItem: TntvTabItem; State: TTabDrawStates ; vRect:TRect; Canvas:TCanvas; vFlags: TntvFlags); virtual; abstract;
+    procedure Paint(vItem: TntvTabItem; State: TTabDrawStates ; vRect:TRect; Canvas:TCanvas; vPosition: TntvTabPosition; vFlags: TntvFlags); virtual; abstract;
   end;
 
   { TTabDrawSheet }
@@ -45,7 +47,7 @@ type
   TTabDrawSheet = class(TntvTabDraw)
   public
     function GetWidth(State: TTabDrawStates; vTabsRect: TRect; Width: Integer): Integer; override;
-    procedure Paint(vItem: TntvTabItem; State: TTabDrawStates; vRect:TRect; Canvas:TCanvas; vFlags: TntvFlags); override;
+    procedure Paint(vItem: TntvTabItem; State: TTabDrawStates ; vRect:TRect; Canvas:TCanvas; vPosition: TntvTabPosition; vFlags: TntvFlags); override;
   end;
 
   { TntvTabItem }
@@ -105,6 +107,7 @@ type
   private
     FImages: TImageList;
     FItemIndex: Integer;
+    FPosition: TntvTabPosition;
     FShowAll: Boolean;
     FShowButtons: Boolean;
     FTopIndex: Integer;
@@ -131,14 +134,14 @@ type
     function Add: TntvTabItem;
     function AddItem(vName, vCaption: string): TntvTabItem;
     //Control functions
-    function HitTest(vCanvas: TCanvas; vPoint: TPoint; vRect:TRect; var vIndex: Integer; vFlags: TntvFlags): TntvhtTabHitTest;
-    procedure Paint(Canvas: TCanvas; vRect:TRect; vFlags: TntvFlags = []);
+    function HitTest(vCanvas: TCanvas; vPoint: TPoint; vRect:TRect; out vIndex: Integer; vFlags: TntvFlags): TntvhtTabHitTest;
+    procedure Paint(Canvas: TCanvas; vRect: TRect; vFlags: TntvFlags = []);
     function ShowTab(Canvas: TCanvas; const vRect:TRect; Index: Integer; vFlags: TntvFlags): Boolean;
 
     //Check function
     procedure UpdateItems(vCanvas: TCanvas); //call it before use next functions direclty
-    function GetTabRect(const vTabsRect:TRect; TopIndex, Index: Integer; var vTabRect: TRect; vFlags: TntvFlags): Boolean; overload;
-    function GetTabRect(const vTabsRect:TRect; Index: Integer; var vTabRect: TRect; vFlags: TntvFlags): Boolean; overload; virtual;
+    function GetTabRect(const vTabsRect: TRect; TopIndex, Index: Integer; out vTabRect: TRect; vFlags: TntvFlags): Boolean; overload;
+    function GetTabRect(const vTabsRect: TRect; Index: Integer; out vTabRect: TRect; vFlags: TntvFlags): Boolean; overload; virtual;
     function GetTabOffset(Index: Integer): Integer;
 
     //Items
@@ -149,6 +152,7 @@ type
     property ItemIndex: Integer read FItemIndex write FItemIndex;
     property TopIndex: Integer read FTopIndex write FTopIndex;
     property ShowButtons: Boolean read FShowButtons write FShowButtons;
+    property Position: TntvTabPosition read FPosition write FPosition;
   published
   end;
 
@@ -397,7 +401,7 @@ begin
   end;
 end;
 
-function TntvTabs.HitTest(vCanvas: TCanvas; vPoint: TPoint; vRect:TRect; var vIndex: Integer; vFlags: TntvFlags): TntvhtTabHitTest;
+function TntvTabs.HitTest(vCanvas: TCanvas; vPoint: TPoint; vRect:TRect; out vIndex: Integer; vFlags: TntvFlags): TntvhtTabHitTest;
 var
   i: Integer;
   R: TRect;
@@ -441,7 +445,7 @@ begin
   end;
 end;
 
-function TntvTabs.GetTabRect(const vTabsRect:TRect; TopIndex, Index: Integer; var vTabRect: TRect; vFlags: TntvFlags): Boolean;
+function TntvTabs.GetTabRect(const vTabsRect: TRect; TopIndex, Index: Integer; out vTabRect: TRect; vFlags: TntvFlags): Boolean;
 var
   R: Trect;
   w, i, x: Integer;
@@ -456,24 +460,25 @@ begin
     if FUpdateItems then
       raise Exception.Create('You can not GetTabRect directly after changed');
     vTabRect := Rect(0, 0, 0, 0);
+    if Index < TopIndex then
+      exit; //nothing to do :(
     Result := False;
     if (Index < FVisibles.Count) and (Index > -1) then
     begin
+      w := GetW(Index);
       x := 0;
-      for i := TopIndex to Index do
+      for i := TopIndex to Index - 1 do
         x := x + GetW(i);
       R := Rect(0, vTabsRect.Top, 0, vTabsRect.Bottom);
-      w := GetW(Index);
       if tbfRightToLeft in vFlags then
       begin
-        x := vTabsRect.Right - x;
-        R.Left := x;
-        R.Right := x + w;
+        R.Right := vTabsRect.Right - x - 1;
+        R.Left := R.Right - w;
       end
       else
       begin
-        R.Right := x - 1;
-        R.Left := x - w;
+        R.Left := vTabsRect.Left + x;
+        R.Right := R.Left + w - 1;
       end;
       vTabRect := R;
       Result := True;
@@ -500,13 +505,13 @@ var
 begin
   TabDraw := CreateTabDraw;
   try
-    TabDraw.Paint(Visibles[Index], IndexToState(Index), vRect, Canvas, vFlags);
+    TabDraw.Paint(Visibles[Index], IndexToState(Index), vRect, Canvas, Position, vFlags);
   finally
     FreeAndNil(TabDraw)
   end;
 end;
 
-function TntvTabs.GetTabRect(const vTabsRect:TRect; Index: Integer; var vTabRect: TRect; vFlags: TntvFlags): Boolean;
+function TntvTabs.GetTabRect(const vTabsRect: TRect; Index: Integer; out vTabRect: TRect; vFlags: TntvFlags): Boolean;
 begin
   Result := GetTabRect(vTabsRect, TopIndex, Index, vTabRect, vFlags);
 end;
@@ -579,7 +584,7 @@ begin
     Result := Result + w;}
 end;
 
-procedure TTabDrawSheet.Paint(vItem: TntvTabItem; State: TTabDrawStates; vRect: TRect; Canvas: TCanvas; vFlags: TntvFlags);
+procedure TTabDrawSheet.Paint(vItem: TntvTabItem; State: TTabDrawStates; vRect: TRect; Canvas: TCanvas; vPosition: TntvTabPosition; vFlags: TntvFlags);
 var
   aTextRect: TRect;
   aTextStyle: TTextStyle;
@@ -594,10 +599,19 @@ begin
     FillRect(vRect);
 
     aTextRect := vRect;
-    if (tdsFirst in State) then
+    InflateRect(aTextRect, -2, -2);
+{    if not (tdsFirst in State) then
     begin
-      Inc(aTextRect.Left);
-    end;
+      if tbfRightToLeft in vFlags then
+        Dec(aTextRect.Left)
+      else
+        Inc(aTextRect.Right);
+    end;}
+
+{    Brush.Color := clRed;
+    FillRect(aTextRect);}
+
+    //PaintText(aTextRect);
     //Dec(aTextRect.Right);
     aTextStyle.Layout := tlCenter;
     aTextStyle.Alignment := taCenter;
@@ -606,18 +620,47 @@ begin
     Font.Color := clBlack;
     TextRect(aTextRect, 0, 0, vItem.Caption, aTextStyle);
 
+
     Pen.Style := psSolid;
     Pen.Color := clDkGray;
-    MoveTo(vRect.Right, vRect.Bottom);
-    LineTo(vRect.Right, vRect.Top);
-    if (tdsFirst in State) then
+    if vPosition = tpTop then
     begin
-      LineTo(vRect.Left, vRect.Top);
-      LineTo(vRect.Left, vRect.Bottom);
+      if tbfRightToLeft in vFlags then
+      begin
+        MoveTo(vRect.Left, vRect.Bottom);
+        LineTo(vRect.Left, vRect.Top);
+        LineTo(vRect.Right + 1, vRect.Top);
+        if (tdsFirst in State) then
+        begin
+          MoveTo(vRect.Right, vRect.Bottom);
+          LineTo(vRect.Right, vRect.Top);
+        end;
+      end
+      else
+      begin
+        MoveTo(vRect.Right, vRect.Bottom);
+        LineTo(vRect.Right, vRect.Top);
+        LineTo(vRect.Left - 1, vRect.Top);
+        if (tdsFirst in State) then
+        begin
+          MoveTo(vRect.Left, vRect.Bottom);
+          LineTo(vRect.Left, vRect.Top);
+        end;
+      end;
     end
-    else
-      LineTo(vRect.Left - 1, vRect.Top);
+    else if vPosition = tpBottom then
+    begin
+      MoveTo(vRect.Right, vRect.Top);
+      LineTo(vRect.Right, vRect.Bottom);
+      if (tdsFirst in State) then
+      begin
+        LineTo(vRect.Left, vRect.Bottom);
+        LineTo(vRect.Left, vRect.Top);
+      end
+      else
+        LineTo(vRect.Left - 1, vRect.Bottom);
 
+    end;
     if tdsActive in State then
     begin
       if tbfFocused in vFlags then

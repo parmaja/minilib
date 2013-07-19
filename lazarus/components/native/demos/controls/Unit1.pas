@@ -15,8 +15,8 @@ interface
 
 uses
   LResources, Forms, Classes, SysUtils, ComCtrls, StdCtrls, ntvPageControls, ntvTabSets, LMessages,
-  ntvRegCtrls, ntvProgressBars,
-  LCLType, Controls, ExtCtrls, ExtendedNotebook, DividerBevel;
+  ntvRegCtrls, ntvProgressBars, types, Graphics,
+  LCLType, LCLProc, Controls, ExtCtrls, ExtendedNotebook, DividerBevel;
 
 type
   { TForm1 }
@@ -27,6 +27,7 @@ type
     Button3: TButton;
     Button4: TButton;
     Button5: TButton;
+    Button6: TButton;
     Edit1: TEdit;
     Edit2: TEdit;
     ntvPageControl1: TntvPageControl;
@@ -41,6 +42,7 @@ type
     procedure Button3Click(Sender: TObject);
     procedure Button4Click(Sender: TObject);
     procedure Button5Click(Sender: TObject);
+    procedure Button6Click(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure ntvPageControl1Click(Sender: TObject);
     procedure ntvPageControl2Click(Sender: TObject);
@@ -163,6 +165,7 @@ procedure TForm1.Button4Click(Sender: TObject);
 var
   Tabs: TntvTabs;
   aTab: TntvTabItem;
+  aRect: TRect;
 begin
   Tabs := TntvTabs.Create(TntvTabItem);
   try
@@ -173,11 +176,17 @@ begin
 
       aTab := Tabs.Add;
       aTab.Caption := 'Test' + IntToStr(aTab.Index);
+
+      aTab := Tabs.Add;
+      aTab.Caption := 'Test' + IntToStr(aTab.Index);
     finally
       Tabs.EndUpdate;
     end;
 
-    Tabs.Paint(TestPanel.Canvas, TestPanel.ClientRect, []);
+    //Tabs.Position := tpBottom;
+    aRect := TestPanel.ClientRect;
+    InflateRect(aRect, -5, -5);
+    Tabs.Paint(TestPanel.Canvas, aRect, [tbfRightToLeft]); //tbfRightToLeft
   finally
     Tabs.Free;
   end;
@@ -186,6 +195,14 @@ end;
 procedure TForm1.Button5Click(Sender: TObject);
 begin
   FreeAndNil(FPageControl);
+end;
+
+procedure TForm1.Button6Click(Sender: TObject);
+begin
+  if BiDiMode = bdLeftToRight then
+    BiDiMode := bdRightToLeft
+  else
+    BiDiMode := bdLeftToRight
 end;
 
 end.
