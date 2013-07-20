@@ -16,7 +16,7 @@ interface
 uses
   LResources, Forms, Classes, SysUtils, ComCtrls, StdCtrls, ntvPageControls, ntvTabSets, LMessages,
   ntvRegCtrls, ntvProgressBars, types, Graphics,
-  LCLType, LCLProc, Controls, ExtCtrls, ExtendedNotebook, DividerBevel;
+  LCLType, LCLProc, Controls, ExtCtrls, ExtendedNotebook, DividerBevel, ntvTabs;
 
 type
   { TForm1 }
@@ -36,6 +36,8 @@ type
     ntvTabSet1: TntvTabSet;
     Panel1: TPanel;
     Panel2: TPanel;
+    Panel3: TPanel;
+    Panel4: TPanel;
     TestPanel: TPanel;
     procedure Button1Click(Sender: TObject);
     procedure Button2Click(Sender: TObject);
@@ -58,15 +60,28 @@ type
   public
   end;
 
+  { TntvMyTabs }
+
+  TntvMyTabs = class(TntvTabs)
+  protected
+    function CreateTabDraw: TntvTabDraw; override;
+  end;
 var
   Form1: TForm1; 
 
 implementation
 
 uses
-  ntvTabs, ntvUtils;
+  ntvUtils;
 
 {$r *.lfm}
+
+{ TntvMyTabs }
+
+function TntvMyTabs.CreateTabDraw: TntvTabDraw;
+begin
+  Result := TntvTabDrawCart.Create;
+end;
 
 { TForm1 }
 
@@ -167,7 +182,7 @@ var
   aTab: TntvTabItem;
   aRect: TRect;
 begin
-  Tabs := TntvTabs.Create(TntvTabItem);
+  Tabs := TntvMyTabs.Create(TntvTabItem);
   try
     Tabs.BeginUpdate;
     try
@@ -186,7 +201,7 @@ begin
     Tabs.Position := tpBottom;
     aRect := TestPanel.ClientRect;
     InflateRect(aRect, -5, -5);
-    Tabs.Paint(TestPanel.Canvas, aRect, [tbfRightToLeft]); //tbfRightToLeft
+    Tabs.Paint(TestPanel.Canvas, aRect, []); //tbfRightToLeft
   finally
     Tabs.Free;
   end;

@@ -42,9 +42,17 @@ type
     procedure Paint(vItem: TntvTabItem; State: TTabDrawStates ; vRect:TRect; Canvas:TCanvas; vPosition: TntvTabPosition; vFlags: TntvFlags); virtual; abstract;
   end;
 
-  { TTabDrawSheet }
+  { TntvTabDrawSheet }
 
-  TTabDrawSheet = class(TntvTabDraw)
+  TntvTabDrawSheet = class(TntvTabDraw)
+  public
+    function GetWidth(State: TTabDrawStates; vTabsRect: TRect; Width: Integer): Integer; override;
+    procedure Paint(vItem: TntvTabItem; State: TTabDrawStates ; vRect:TRect; Canvas:TCanvas; vPosition: TntvTabPosition; vFlags: TntvFlags); override;
+  end;
+
+  { TntvTabDrawCart }
+
+  TntvTabDrawCart = class(TntvTabDraw)
   public
     function GetWidth(State: TTabDrawStates; vTabsRect: TRect; Width: Integer): Integer; override;
     procedure Paint(vItem: TntvTabItem; State: TTabDrawStates ; vRect:TRect; Canvas:TCanvas; vPosition: TntvTabPosition; vFlags: TntvFlags); override;
@@ -123,7 +131,7 @@ type
     procedure VisibleChanged;
     procedure Invalidate; virtual;
     function IndexToState(Index: Integer): TTabDrawStates;
-    function CreateTabDraw: TntvTabDraw;
+    function CreateTabDraw: TntvTabDraw; virtual;
     procedure DrawButtons(Canvas: TCanvas; var vRect: TRect; vFlags: TntvFlags);
     procedure DrawTab(Canvas: TCanvas; Index: Integer; vRect: TRect; vFlags: TntvFlags);
     //ShowAll for DesignMode or special states, visible and non visible tab
@@ -157,6 +165,101 @@ type
   end;
 
 implementation
+
+{ TntvTabDrawCart }
+
+function TntvTabDrawCart.GetWidth(State: TTabDrawStates; vTabsRect: TRect; Width: Integer): Integer;
+var
+  w: Integer;
+begin
+  w := (vTabsRect.Bottom - vTabsRect.Top) div 4;
+  Result := Width + w + 2 + 2; //margin
+  if tdsLast in State then
+    Result := Result + w;
+end;
+
+procedure TntvTabDrawCart.Paint(vItem: TntvTabItem; State: TTabDrawStates; vRect: TRect; Canvas: TCanvas; vPosition: TntvTabPosition; vFlags: TntvFlags);
+var
+  aTextRect: TRect;
+  aTextStyle: TTextStyle;
+  m: Integer;
+  mw: Integer;
+  a: array[0..3] of TPoint;
+  procedure DrawPrevious;
+  begin
+    with Canvas do
+    begin
+      a[0] := Point(vRect.Left, vRect.Top);
+      a[1] := Point(vRect.Left + mw, vRect.Bottom);
+      a[2] := Point(vRect.Left, vRect.Bottom);
+      Brush.Style := bsSolid;
+      Pen.Style := psClear;
+      Polygon(a, 3);
+      Pen.Style := psSolid;
+      Polyline(a, 0, 2);
+    end;
+  end;
+begin
+  m := 2;
+  mw := (vRect.Bottom - vRect.Top) div 4;
+
+  with Canvas do
+  begin
+    aTextRect := vRect;
+    aTextRect.Left := aTextRect.Left + mw;
+    if (tdsLast in State) then
+    aTextRect.Right := aTextRect.Right + mw;
+    InflateRect(aTextRect, -m, -m);
+
+    if tdsActive in State then
+      Brush.Color := clBtnFace
+    else
+      Brush.Color := clWhite;
+    Pen.Color := clBlack;
+
+    Brush.Style := bsSolid;
+    Pen.Style := psSolid;
+    if not (tdsFirst in State) then
+    begin
+      if (tdsActive in State) then
+      begin
+        DrawPrevious
+      end;
+    end;
+
+    Pen.Style := psClear;
+    a[0] := Point(vRect.Left, vRect.Bottom);
+    a[1] := Point(vRect.Left + mw, vRect.Top);
+    a[2] := Point(vRect.Right + 1, vRect.Top);
+    a[3] := Point(vRect.Right + 1, vRect.Bottom);
+    Polygon(a, 4);
+    Pen.Style := psSolid;
+    Polyline(a, 0, 3);
+
+    if not (tdsFirst in State) then
+    begin
+      if not (tdsActive in State) then
+      begin
+        Brush.Color := clBtnFace;
+        DrawPrevious;
+      end;
+    end;
+
+    Brush.Style := bsClear;
+    aTextStyle.Layout := tlCenter;
+    aTextStyle.Alignment := taCenter;
+    if tbfRightToLeft in vFlags then
+       aTextStyle.RightToLeft := True;
+    Font.Color := clBlack;
+    TextRect(aTextRect, 0, 0, vItem.Caption, aTextStyle);
+
+    if tdsActive in State then
+    begin
+      if tbfFocused in vFlags then
+        DrawFocusRect(aTextRect);
+    end;
+  end;
+end;
 
 { TntvTabItem }
 
@@ -368,7 +471,7 @@ end;
 
 function TntvTabs.CreateTabDraw: TntvTabDraw;
 begin
-  Result := TTabDrawSheet.Create;
+  Result := TntvTabDrawCart.Create;
 end;
 
 constructor TntvTabs.Create(AItemClass: TCollectionItemClass);
@@ -572,9 +675,9 @@ begin
   inherited SetItem(Index, Value)
 end;
 
-{ TTabDrawSheet }
+{ TntvTabDrawSheet }
 
-function TTabDrawSheet.GetWidth(State: TTabDrawStates; vTabsRect: TRect; Width: Integer): Integer;
+function TntvTabDrawSheet.GetWidth(State: TTabDrawStates; vTabsRect: TRect; Width: Integer): Integer;
 var
   w: Integer;
 begin
@@ -584,7 +687,7 @@ begin
     Result := Result + w;}
 end;
 
-procedure TTabDrawSheet.Paint(vItem: TntvTabItem; State: TTabDrawStates; vRect: TRect; Canvas: TCanvas; vPosition: TntvTabPosition; vFlags: TntvFlags);
+procedure TntvTabDrawSheet.Paint(vItem: TntvTabItem; State: TTabDrawStates; vRect: TRect; Canvas: TCanvas; vPosition: TntvTabPosition; vFlags: TntvFlags);
 var
   aTextRect: TRect;
   aTextStyle: TTextStyle;
