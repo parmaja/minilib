@@ -1599,7 +1599,7 @@ begin
       slwMulti:
       begin
         r := nil;
-        while not Report.Canceled and (aParams.AcceptMode = acmAccept) do
+        while not Report.Canceled and (aParams.AcceptMode <> acmEof) do
         begin
           s.DoFetch(aParams);
 
@@ -1633,7 +1633,10 @@ begin
           if aParams.FetchMode = fmFirst then aParams.FetchMode := fmNext;
           if aParams.Data <> nil then FreeAndNil(aParams.Data);
 
-          Inc(aIdx);
+          if aParams.AcceptMode=acmAccept then
+            Inc(aIdx)
+          else if aParams.AcceptMode in [acmSkip, acmSkipAll] then
+            aParams.AcceptMode := acmAccept;
         end;
 
       //Summary
