@@ -184,6 +184,7 @@ type
     FIncludeSections: TmnrSectionClassIDs;
     FName: string;
     FNumber: Integer;
+    FChain: string;
     //FDesignerCell: TmnrDesignCell;
     function GetReport: TmnrCustomReport;
   protected
@@ -210,6 +211,7 @@ type
     property Name: string read GetName;
     property Number: Integer read GetNumber;
     property Title: string read GetTitle;
+    property Chain: string read FChain write FChain;
     property IncludeSections: TmnrSectionClassIDs read GetIncludeSections;
     property ExcludeSections: TmnrSectionClassIDs read GetExcludeSections;
 
