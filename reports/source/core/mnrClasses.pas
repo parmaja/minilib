@@ -1262,11 +1262,12 @@ end;
 
 function TmnrSection.DoFetch(var vParams: TmnrFetch): TmnrAcceptMode;
 begin
-  Result := acmAccept;
   if Assigned(FOnFetch) then
     FOnFetch(vParams)
   else
     Report.Fetch(Self, vParams);
+
+  Result := vParams.AcceptMode;
 end;
 
 procedure TmnrSection.FillNow(vParams: TmnrFetch; vIndex: Integer; vReference: TmnrReferencesRow);
