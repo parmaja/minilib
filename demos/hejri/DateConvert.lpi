@@ -36,9 +36,9 @@
     </RequiredPackages>
     <Units Count="23">
       <Unit0>
-        <Filename Value="project1.lpr"/>
+        <Filename Value="DateConvert.lpr"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="project1"/>
+        <UnitName Value="DateConvert"/>
         <WindowIndex Value="0"/>
         <TopLine Value="1"/>
         <CursorPos X="12" Y="10"/>
@@ -357,7 +357,7 @@
     <Version Value="11"/>
     <PathDelim Value="\"/>
     <Target>
-      <Filename Value="project1"/>
+      <Filename Value="DateConvert"/>
     </Target>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)"/>
