@@ -184,6 +184,7 @@ type
     FIncludeSections: TmnrSectionClassIDs;
     FName: string;
     FNumber: Integer;
+    FChain: string;
     //FDesignerCell: TmnrDesignCell;
     function GetReport: TmnrCustomReport;
   protected
@@ -210,6 +211,7 @@ type
     property Name: string read GetName;
     property Number: Integer read GetNumber;
     property Title: string read GetTitle;
+    property Chain: string read FChain write FChain;
     property IncludeSections: TmnrSectionClassIDs read GetIncludeSections;
     property ExcludeSections: TmnrSectionClassIDs read GetExcludeSections;
 
@@ -1260,11 +1262,12 @@ end;
 
 function TmnrSection.DoFetch(var vParams: TmnrFetch): TmnrAcceptMode;
 begin
-  Result := acmAccept;
   if Assigned(FOnFetch) then
     FOnFetch(vParams)
   else
     Report.Fetch(Self, vParams);
+
+  Result := vParams.AcceptMode;
 end;
 
 procedure TmnrSection.FillNow(vParams: TmnrFetch; vIndex: Integer; vReference: TmnrReferencesRow);
@@ -1599,7 +1602,7 @@ begin
       slwMulti:
       begin
         r := nil;
-        while not Report.Canceled and (aParams.AcceptMode = acmAccept) do
+        while not Report.Canceled and (aParams.AcceptMode <> acmEof) do
         begin
           s.DoFetch(aParams);
 
@@ -1633,7 +1636,10 @@ begin
           if aParams.FetchMode = fmFirst then aParams.FetchMode := fmNext;
           if aParams.Data <> nil then FreeAndNil(aParams.Data);
 
-          Inc(aIdx);
+          if aParams.AcceptMode=acmAccept then
+            Inc(aIdx)
+          else if aParams.AcceptMode in [acmSkip, acmSkipAll] then
+            aParams.AcceptMode := acmAccept;
         end;
 
       //Summary
