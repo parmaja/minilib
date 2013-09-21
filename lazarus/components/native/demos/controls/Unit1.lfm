@@ -55,6 +55,8 @@ object Form1: TForm1
     Top = 5
     Width = 314
     Anchors = [akTop, akLeft, akRight]
+    BevelInner = bvSpace
+    BevelOuter = bvSpace
     Caption = 'TestPanel'
     TabOrder = 3
   end
@@ -69,9 +71,9 @@ object Form1: TForm1
   end
   object ntvPageControl1: TntvPageControl
     Left = 17
-    Height = 151
+    Height = 146
     Top = 99
-    Width = 253
+    Width = 298
     StoreIndex = False
     ShowButtons = False
     Items = <    
@@ -100,18 +102,51 @@ object Form1: TForm1
         Name = 'Panel4'
         AutoWidth = True
         Control = Panel4
+      end    
+      item
+        Caption = 'Panel5'
+        Name = 'Panel5'
+        AutoWidth = True
+        Control = Panel5
       end>
     Caption = 'ntvPageControl1'
     TabOrder = 6
+    object Panel4: TPanel
+      Left = 3
+      Height = 122
+      Top = 21
+      Width = 292
+      Align = alClient
+      Caption = 'Panel4'
+      TabOrder = 3
+    end
+    object Panel5: TPanel
+      Left = 3
+      Height = 122
+      Top = 21
+      Width = 292
+      Align = alClient
+      Caption = 'Panel5'
+      TabOrder = 4
+    end
+    object Panel3: TPanel
+      Left = 3
+      Height = 122
+      Top = 21
+      Width = 292
+      Align = alClient
+      Caption = 'Panel3'
+      TabOrder = 2
+    end
     object Panel2: TPanel
       Left = 3
-      Height = 127
+      Height = 122
       Top = 21
-      Width = 247
+      Width = 292
       Align = alClient
       Caption = 'Panel2'
-      ClientHeight = 127
-      ClientWidth = 247
+      ClientHeight = 122
+      ClientWidth = 292
       TabOrder = 1
       object Edit1: TEdit
         Left = 11
@@ -122,33 +157,15 @@ object Form1: TForm1
         Text = 'Edit1'
       end
     end
-    object Panel3: TPanel
-      Left = 3
-      Height = 127
-      Top = 21
-      Width = 247
-      Align = alClient
-      Caption = 'Panel3'
-      TabOrder = 2
-    end
-    object Panel4: TPanel
-      Left = 3
-      Height = 127
-      Top = 21
-      Width = 247
-      Align = alClient
-      Caption = 'Panel4'
-      TabOrder = 3
-    end
     object Panel1: TPanel
       Left = 3
-      Height = 127
+      Height = 122
       Top = 21
-      Width = 247
+      Width = 292
       Align = alClient
       Caption = 'Panel1'
-      ClientHeight = 127
-      ClientWidth = 247
+      ClientHeight = 122
+      ClientWidth = 292
       TabOrder = 0
       object Edit2: TEdit
         Left = 46
@@ -178,6 +195,7 @@ object Form1: TForm1
     Width = 321
     StoreIndex = False
     ShowButtons = False
+    ShowBorder = False
     Items = <>
     Caption = 'ntvPageControl2'
     TabOrder = 8

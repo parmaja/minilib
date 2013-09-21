@@ -63,7 +63,7 @@ type
     procedure VariableProc;
     procedure ObjectProc;
     procedure UnknownProc;
-    procedure AnsiCProc;
+    procedure CommentProc;
     procedure MakeProcTables;
   protected
     function GetIdentChars: TSynIdentChars; override;
@@ -552,7 +552,7 @@ begin
   FTokenID := tkUnknown;
 end;
 
-procedure TSynFirebirdSyn.AnsiCProc;
+procedure TSynFirebirdSyn.CommentProc;
 begin
   case FLine[Run] of
     #0: NullProc;
@@ -587,7 +587,7 @@ begin
   FTokenPos := Run;
   case FRange of
     rsComment:
-      AnsiCProc;
+      CommentProc;
     rsString:
       StringProc;
   else

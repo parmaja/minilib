@@ -101,6 +101,7 @@ type
     property StoreIndex;
     property ShowButtons;
     property ShowTabs;
+    property ShowBorder;
     property ItemIndex;
     property ImageList;
 

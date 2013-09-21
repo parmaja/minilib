@@ -309,11 +309,11 @@ begin
         Pen.Style := psSolid;
         Pen.Color := clDkGray;
 
-        MoveTo(ClientRect.Left, aTabsRect.Bottom);
+        {MoveTo(ClientRect.Left, aTabsRect.Bottom);
         LineTo(R.Left, aTabsRect.Bottom);
 
         MoveTo(R.Right, aTabsRect.Bottom);
-        LineTo(ClientRect.Right, aTabsRect.Bottom);
+        LineTo(ClientRect.Right, aTabsRect.Bottom);}
 
         if ShowBorder then
         begin

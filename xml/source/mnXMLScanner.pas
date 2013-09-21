@@ -422,14 +422,12 @@ begin
   ScanBody(FSection, '>', Text, Line, Column)
 end;
 
-procedure TmnXMLScanner.ssOnHeader(const Text: string; Line: Integer;
-  var Column: Integer);
+procedure TmnXMLScanner.ssOnHeader(const Text: string; Line: Integer; var Column: Integer);
 begin
   ScanBody(ssProlog, '?>', Text, Line, Column)
 end;
 
-procedure TmnXMLScanner.ssOnProlog(const Text: string; Line: Integer;
-  var Column: Integer);
+procedure TmnXMLScanner.ssOnProlog(const Text: string; Line: Integer; var Column: Integer);
 begin
   ScanStricted(ssReady, '<', Text, Line, Column);
 end;
@@ -439,8 +437,7 @@ begin
   ExtractStrings([' '], [], PChar(Text), Header);
 end;
 
-procedure TmnXMLScanner.ssOnNone(const Text: string; Line: Integer;
-  var Column: Integer);
+procedure TmnXMLScanner.ssOnNone(const Text: string; Line: Integer; var Column: Integer);
 begin
   if MidStr(Text, 1, Length(sXMLAnsiOpen)) = sXMLAnsiOpen then
   begin

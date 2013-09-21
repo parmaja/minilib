@@ -254,6 +254,40 @@ begin
     //Result := StringReplace(Result, Entities.Items[i].Value, '&' + Entities.Items[i].Name + ';', [rfReplaceAll]);
 end;
 
+function TmnXMLFiler.EntityDecode(const Value: string): string;
+//var
+  //i, l, cBegin, cStart, cEnd: integer;
+begin
+  Result := Entities.RenderText(Value, erwDecode);
+  {i := 1;
+  cBegin := 1;
+  l := Length(Value);
+  Result := '';
+  while i <= l do
+  begin
+    if Value[i] = '&' then
+    begin
+      cStart := i;
+      cEnd := 0;
+      while i <= l do
+      begin
+        if Value[i] = ';' then
+        begin
+          cEnd := i;
+          break;
+        end;
+        Inc(i);
+      end;
+      if cEnd = 0 then
+        raise EmnXMLException.Create('Simicolon not found for entity');
+      Result := Result + Copy(Value, cBegin, cStart - cBegin) + Entities.Decode(Copy(Value, cStart + 1, cEnd - cStart - 1));
+      cBegin := i + 1;
+    end;
+    Inc(i);
+  end;
+  Result := Result + Copy(Value, cBegin, MaxInt);}
+end;
+
 { TmnXMLEntities }
 
 function TmnXMLEntities.Add: TmnXMLEntity;
@@ -740,40 +774,6 @@ begin
     Result := FValue
   else
     Result := '';
-end;
-
-function TmnXMLFiler.EntityDecode(const Value: string): string;
-//var
-  //i, l, cBegin, cStart, cEnd: integer;
-begin
-  Result := Entities.RenderText(Value, erwDecode);
-  {i := 1;
-  cBegin := 1;
-  l := Length(Value);
-  Result := '';
-  while i <= l do
-  begin
-    if Value[i] = '&' then
-    begin
-      cStart := i;
-      cEnd := 0;
-      while i <= l do
-      begin
-        if Value[i] = ';' then
-        begin
-          cEnd := i;
-          break;
-        end;
-        Inc(i);
-      end;
-      if cEnd = 0 then
-        raise EmnXMLException.Create('Simicolon not found for entity');
-      Result := Result + Copy(Value, cBegin, cStart - cBegin) + Entities.Decode(Copy(Value, cStart + 1, cEnd - cStart - 1));
-      cBegin := i + 1;
-    end;
-    Inc(i);
-  end;
-  Result := Result + Copy(Value, cBegin, MaxInt);}
 end;
 
 { TmnXMLEntity }
