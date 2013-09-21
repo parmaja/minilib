@@ -195,7 +195,7 @@ begin
           begin
             FCommandObject := aClass.Create(Self, aParams);
             FCommandObject.FServer := Listener.Server;
-            FCommandObject.FConnection := Self;
+            //FCommandObject.FConnection := Self;
             FCommandObject.FName := UpperCase(aCommand);
           end;
           //TODO make a default command if not found
@@ -307,6 +307,7 @@ constructor TmnCommand.Create(Connection: TmnCommandConnection; const Params: st
 begin
   inherited Create;
   FLocking := True;
+  FConnection := Connection;
 end;
 
 procedure TmnCommand.Execute;
