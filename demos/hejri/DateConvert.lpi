@@ -1,4 +1,4 @@
-<?xml version="1.0"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <CONFIG>
   <ProjectOptions>
     <Version Value="9"/>
@@ -34,7 +34,7 @@
         <PackageName Value="LCL"/>
       </Item1>
     </RequiredPackages>
-    <Units Count="23">
+    <Units Count="25">
       <Unit0>
         <Filename Value="DateConvert.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -42,7 +42,7 @@
         <WindowIndex Value="0"/>
         <TopLine Value="1"/>
         <CursorPos X="12" Y="10"/>
-        <UsageCount Value="54"/>
+        <UsageCount Value="55"/>
       </Unit0>
       <Unit1>
         <Filename Value="unit1.pas"/>
@@ -55,7 +55,7 @@
         <WindowIndex Value="0"/>
         <TopLine Value="99"/>
         <CursorPos X="18" Y="125"/>
-        <UsageCount Value="54"/>
+        <UsageCount Value="55"/>
         <Loaded Value="True"/>
         <LoadedDesigner Value="True"/>
       </Unit1>
@@ -65,9 +65,9 @@
         <IsVisibleTab Value="True"/>
         <EditorIndex Value="3"/>
         <WindowIndex Value="0"/>
-        <TopLine Value="544"/>
-        <CursorPos X="53" Y="559"/>
-        <UsageCount Value="22"/>
+        <TopLine Value="738"/>
+        <CursorPos X="1" Y="742"/>
+        <UsageCount Value="23"/>
         <Bookmarks Count="1">
           <Item0 X="33" Y="558" ID="1"/>
         </Bookmarks>
@@ -76,11 +76,11 @@
       <Unit3>
         <Filename Value="..\..\lib\mnUtils.pas"/>
         <UnitName Value="mnUtils"/>
-        <EditorIndex Value="5"/>
+        <EditorIndex Value="6"/>
         <WindowIndex Value="0"/>
         <TopLine Value="574"/>
         <CursorPos X="30" Y="584"/>
-        <UsageCount Value="22"/>
+        <UsageCount Value="23"/>
         <Loaded Value="True"/>
       </Unit3>
       <Unit4>
@@ -90,7 +90,7 @@
         <WindowIndex Value="0"/>
         <TopLine Value="68"/>
         <CursorPos X="18" Y="68"/>
-        <UsageCount Value="22"/>
+        <UsageCount Value="23"/>
         <Loaded Value="True"/>
       </Unit4>
       <Unit5>
@@ -100,7 +100,7 @@
         <WindowIndex Value="0"/>
         <TopLine Value="190"/>
         <CursorPos X="1" Y="220"/>
-        <UsageCount Value="29"/>
+        <UsageCount Value="30"/>
         <Loaded Value="True"/>
       </Unit5>
       <Unit6>
@@ -222,134 +222,150 @@
       </Unit21>
       <Unit22>
         <Filename Value="P:\programs\fpc\2.6\src\rtl\objpas\sysutils\sysinth.inc"/>
-        <EditorIndex Value="4"/>
         <WindowIndex Value="0"/>
         <TopLine Value="65"/>
         <CursorPos X="30" Y="86"/>
         <UsageCount Value="11"/>
-        <Loaded Value="True"/>
       </Unit22>
+      <Unit23>
+        <Filename Value="P:\dev\fpc\2.6\src\rtl\objpas\sysutils\datih.inc"/>
+        <EditorIndex Value="4"/>
+        <WindowIndex Value="0"/>
+        <TopLine Value="84"/>
+        <CursorPos X="10" Y="101"/>
+        <UsageCount Value="11"/>
+        <Loaded Value="True"/>
+      </Unit23>
+      <Unit24>
+        <Filename Value="P:\dev\fpc\2.6\src\rtl\objpas\sysutils\dati.inc"/>
+        <EditorIndex Value="5"/>
+        <WindowIndex Value="0"/>
+        <TopLine Value="75"/>
+        <CursorPos X="10" Y="83"/>
+        <UsageCount Value="11"/>
+        <Loaded Value="True"/>
+      </Unit24>
     </Units>
     <JumpHistory Count="30" HistoryIndex="29">
       <Position1>
         <Filename Value="..\..\lib\UniDates.pas"/>
-        <Caret Line="89" Column="19" TopLine="74"/>
+        <Caret Line="799" Column="25" TopLine="799"/>
       </Position1>
       <Position2>
         <Filename Value="..\..\lib\UniDates.pas"/>
-        <Caret Line="221" Column="26" TopLine="197"/>
+        <Caret Line="1" Column="1" TopLine="1"/>
       </Position2>
       <Position3>
         <Filename Value="..\..\lib\UniDates.pas"/>
-        <Caret Line="491" Column="13" TopLine="489"/>
+        <Caret Line="126" Column="26" TopLine="101"/>
       </Position3>
       <Position4>
-        <Filename Value="unit1.pas"/>
-        <Caret Line="122" Column="50" TopLine="99"/>
+        <Filename Value="..\..\lib\UniDates.pas"/>
+        <Caret Line="775" Column="49" TopLine="760"/>
       </Position4>
       <Position5>
-        <Filename Value="unit1.pas"/>
-        <Caret Line="125" Column="18" TopLine="99"/>
+        <Filename Value="..\..\lib\UniDates.pas"/>
+        <Caret Line="1" Column="1" TopLine="1"/>
       </Position5>
       <Position6>
         <Filename Value="..\..\lib\UniDates.pas"/>
-        <Caret Line="799" Column="25" TopLine="799"/>
+        <Caret Line="126" Column="102" TopLine="101"/>
       </Position6>
       <Position7>
         <Filename Value="..\..\lib\UniDates.pas"/>
-        <Caret Line="1" Column="1" TopLine="1"/>
+        <Caret Line="127" Column="101" TopLine="102"/>
       </Position7>
       <Position8>
         <Filename Value="..\..\lib\UniDates.pas"/>
-        <Caret Line="126" Column="26" TopLine="101"/>
+        <Caret Line="128" Column="72" TopLine="103"/>
       </Position8>
       <Position9>
         <Filename Value="..\..\lib\UniDates.pas"/>
-        <Caret Line="775" Column="49" TopLine="760"/>
+        <Caret Line="130" Column="81" TopLine="105"/>
       </Position9>
       <Position10>
         <Filename Value="..\..\lib\UniDates.pas"/>
-        <Caret Line="1" Column="1" TopLine="1"/>
+        <Caret Line="131" Column="77" TopLine="106"/>
       </Position10>
       <Position11>
         <Filename Value="..\..\lib\UniDates.pas"/>
-        <Caret Line="126" Column="102" TopLine="101"/>
+        <Caret Line="132" Column="105" TopLine="107"/>
       </Position11>
       <Position12>
         <Filename Value="..\..\lib\UniDates.pas"/>
-        <Caret Line="127" Column="101" TopLine="102"/>
+        <Caret Line="301" Column="20" TopLine="273"/>
       </Position12>
       <Position13>
         <Filename Value="..\..\lib\UniDates.pas"/>
-        <Caret Line="128" Column="72" TopLine="103"/>
+        <Caret Line="320" Column="18" TopLine="295"/>
       </Position13>
       <Position14>
-        <Filename Value="..\..\lib\UniDates.pas"/>
-        <Caret Line="130" Column="81" TopLine="105"/>
+        <Filename Value="unit1.pas"/>
+        <Caret Line="125" Column="18" TopLine="99"/>
       </Position14>
       <Position15>
         <Filename Value="..\..\lib\UniDates.pas"/>
-        <Caret Line="131" Column="77" TopLine="106"/>
+        <Caret Line="811" Column="27" TopLine="806"/>
       </Position15>
       <Position16>
         <Filename Value="..\..\lib\UniDates.pas"/>
-        <Caret Line="132" Column="105" TopLine="107"/>
+        <Caret Line="1" Column="1" TopLine="1"/>
       </Position16>
       <Position17>
         <Filename Value="..\..\lib\UniDates.pas"/>
-        <Caret Line="301" Column="20" TopLine="273"/>
+        <Caret Line="83" Column="27" TopLine="58"/>
       </Position17>
       <Position18>
         <Filename Value="..\..\lib\UniDates.pas"/>
-        <Caret Line="320" Column="18" TopLine="295"/>
+        <Caret Line="161" Column="35" TopLine="136"/>
       </Position18>
       <Position19>
-        <Filename Value="unit1.pas"/>
-        <Caret Line="125" Column="18" TopLine="99"/>
+        <Filename Value="..\..\lib\UniDates.pas"/>
+        <Caret Line="811" Column="27" TopLine="786"/>
       </Position19>
       <Position20>
         <Filename Value="..\..\lib\UniDates.pas"/>
-        <Caret Line="811" Column="27" TopLine="806"/>
+        <Caret Line="554" Column="3" TopLine="539"/>
       </Position20>
       <Position21>
         <Filename Value="..\..\lib\UniDates.pas"/>
-        <Caret Line="1" Column="1" TopLine="1"/>
+        <Caret Line="557" Column="3" TopLine="546"/>
       </Position21>
       <Position22>
         <Filename Value="..\..\lib\UniDates.pas"/>
-        <Caret Line="83" Column="27" TopLine="58"/>
+        <Caret Line="834" Column="14" TopLine="806"/>
       </Position22>
       <Position23>
         <Filename Value="..\..\lib\UniDates.pas"/>
-        <Caret Line="161" Column="35" TopLine="136"/>
+        <Caret Line="147" Column="13" TopLine="132"/>
       </Position23>
       <Position24>
         <Filename Value="..\..\lib\UniDates.pas"/>
-        <Caret Line="811" Column="27" TopLine="786"/>
+        <Caret Line="51" Column="15" TopLine="34"/>
       </Position24>
       <Position25>
         <Filename Value="..\..\lib\UniDates.pas"/>
-        <Caret Line="554" Column="3" TopLine="539"/>
+        <Caret Line="28" Column="3" TopLine="10"/>
       </Position25>
       <Position26>
         <Filename Value="..\..\lib\UniDates.pas"/>
-        <Caret Line="557" Column="3" TopLine="546"/>
+        <Caret Line="552" Column="47" TopLine="544"/>
       </Position26>
       <Position27>
         <Filename Value="..\..\lib\UniDates.pas"/>
-        <Caret Line="834" Column="14" TopLine="806"/>
+        <Caret Line="76" Column="51" TopLine="66"/>
       </Position27>
       <Position28>
         <Filename Value="..\..\lib\UniDates.pas"/>
-        <Caret Line="147" Column="13" TopLine="132"/>
+        <Caret Line="742" Column="22" TopLine="725"/>
       </Position28>
       <Position29>
-        <Filename Value="..\..\lib\UniDates.pas"/>
-        <Caret Line="51" Column="15" TopLine="34"/>
+        <Filename Value="P:\dev\fpc\2.6\src\rtl\objpas\sysutils\dati.inc"/>
+        <Caret Line="123" Column="10" TopLine="120"/>
       </Position29>
       <Position30>
-        <Filename Value="..\..\lib\UniDates.pas"/>
-        <Caret Line="28" Column="3" TopLine="10"/>
+        <Filename Value="P:\dev\fpc\2.6\src\rtl\objpas\sysutils\dati.inc"/>
+        <Caret Line="83" Column="10" TopLine="75"/>
       </Position30>
     </JumpHistory>
   </ProjectOptions>

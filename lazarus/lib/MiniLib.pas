@@ -9,7 +9,7 @@ interface
 uses
   HTMLProcessor, PHPProcessor, PHPUtils, SynHighlighterApache, 
   SynHighlighterXHTML, SynHighlighterSQLite, GUIMsgBox, 
-  SynHighlighterFirebird, LazarusPackageIntf;
+  SynHighlighterFirebird, SynHighlighterSARD, LazarusPackageIntf;
 
 implementation
 
