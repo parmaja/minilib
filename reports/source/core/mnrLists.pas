@@ -121,7 +121,6 @@ type
     procedure SetAsString(const Value: string); virtual; abstract;
     procedure SetAsVariant(const Value: Variant); virtual; abstract;
     procedure SetAsData(const Value: Integer); virtual; abstract;
-  published
   public
 
     property AsBoolean: Boolean read GetAsBoolean write SetAsBoolean;
