@@ -10,9 +10,11 @@ unit SynHighlighterXHTML;
  *            See the file COPYING.MLGPL, included in this distribution,
  * @author    Zaher Dirkey <zaher at parmaja dot com>
  *}
+
 {
   http://flatdev.republika.pl/php-functions-lastest.zip
 }
+
 interface
 
 uses

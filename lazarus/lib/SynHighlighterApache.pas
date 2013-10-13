@@ -1,7 +1,7 @@
 unit SynHighlighterApache;
 {$mode objfpc}{$H+}
 {**
- *  Light PHP Edit project
+ *  MiniLib project
  *
  *  This file is part of the "Mini Library"
  *
@@ -10,6 +10,7 @@ unit SynHighlighterApache;
  *            See the file COPYING.MLGPL, included in this distribution,
  * @author    Zaher Dirkey <zaher at parmaja dot com>
  *}
+
 interface
 
 uses

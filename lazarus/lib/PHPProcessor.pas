@@ -109,27 +109,6 @@ begin
   until Parent.FLine[Parent.Run] in [#0, #10, #13];
 end;
 
-{procedure TPHPProcessor.StringProc;
-var
-  iCloseChar: char;
-begin
-  Parent.FTokenID := tkString;
-  if fRange = rsphpStringSQ then
-    iCloseChar := ''''
-  else
-    iCloseChar := '"';
-  while not (Parent.FLine[Parent.Run] in [#0, #10, #13]) do
-  begin
-    if (Parent.FLine[Parent.Run] = iCloseChar) then
-    begin
-      FRange := rsphpUnKnown;
-      Inc(Parent.Run);
-      break;
-    end;
-    Inc(Parent.Run);
-  end;
-end;}
-
 procedure TPHPProcessor.StringProc;
 
   function IsEscaped: boolean;
