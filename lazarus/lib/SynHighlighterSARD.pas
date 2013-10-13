@@ -18,7 +18,7 @@ uses
   SynEditTypes, SynEditHighlighter, SynHighlighterHashEntries, SynUtils;
 
 type
-  TtkTokenKind = (tkNull, {TODO: tkPreprocessor, tkEmbedComment}tkComment, tkObject, tkIdentifier, tkNumber, tkSpace, tkString, tkSymbol, tkUnknown);
+  TtkTokenKind = (tkNull, tkComment, tkObject, {TODO: tkEmbedComment, tkPreprocessor, Escape char \n \r \64 }tkIdentifier, tkNumber, tkSpace, tkString, tkSymbol, tkUnknown);
 
   TRangeState = (rsUnknown, rsEmbedComment, rsComment, rsPreprocessor, rsSQString, rsDQString);
 
@@ -40,11 +40,11 @@ type
     FSpaceAttri: TSynHighlighterAttributes;
     FStringAttri: TSynHighlighterAttributes;
     FSymbolAttri: TSynHighlighterAttributes;
-    procedure StringProc(QuoteString: Char);
+    procedure ScanTo(EndString: String; AKind: TtkTokenKind);
     procedure SQStringProc;
     procedure DQStringProc;
-    procedure CommentProc;
-    procedure SLCommentProc;
+    procedure SingleCommentProc;
+    procedure NormalCommentProc;
     procedure EmbedCommentProc;
     procedure PreprocessorProc;
     procedure CRProc;
@@ -246,40 +246,18 @@ begin
   Next;
 end;
 
-procedure TSynSARDSyn.StringProc(QuoteString: Char);
-begin
-  case FLine[Run] of
-    #0: NullProc;
-    #10: LFProc;
-    #13: CRProc;
-  else
-    begin
-      FTokenID := tkString;
-      repeat
-        if (FLine[Run] = QuoteString) then
-        begin
-          FRange := rsUnknown;
-          Inc(Run);
-          break;
-        end;
-        Inc(Run);
-      until FLine[Run] in [#0, #10, #13];
-    end;
-  end;
-end;
-
 procedure TSynSARDSyn.SQStringProc;
 begin
   FRange := rsSQString;
   Inc(Run);
-  StringProc('''');
+  ScanTo('''', tkString);
 end;
 
 procedure TSynSARDSyn.DQStringProc;
 begin
   FRange := rsDQString;
   Inc(Run);
-  StringProc('"');
+  ScanTo('"', tkString);
 end;
 
 procedure TSynSARDSyn.CRProc;
@@ -377,13 +355,13 @@ begin
   case FLine[Run] of
     '/':
       begin
-        SLCommentProc;
+        SingleCommentProc;
       end;
     '*':
       begin
         FRange := rsComment;
         FTokenID := tkComment;
-        CommentProc;
+        NormalCommentProc;
       end;
   else
     FTokenID := tkSymbol;
@@ -441,29 +419,25 @@ begin
           '~', '^', '%', '*', '!', '=', '>', '<', '-', '|', '+', '/', '&',  '''', '"']);
 end;
 
-procedure TSynSARDSyn.CommentProc;
+procedure TSynSARDSyn.ScanTo(EndString: String; AKind: TtkTokenKind);
+var
+  l: Integer;
 begin
-  case FLine[Run] of
-    #0: NullProc;
-    #10: LFProc;
-    #13: CRProc;
-  else
+  l := Length(EndString);
+  FTokenID := AKind;
+  while not (FLine[Run] in [#0, #10, #13]) do
+  begin
+    if (FLine[Run] = EndString[1]) and ((l < 2) or (FLine[Run + 1] = EndString[2])) then
     begin
-      FTokenID := tkComment;
-      repeat
-        if (FLine[Run] = '*') and (FLine[Run + 1] = '/') then
-        begin
-          FRange := rsUnknown;
-          Inc(Run, 2);
-          break;
-        end;
-        Inc(Run);
-      until FLine[Run] in [#0, #10, #13];
+      FRange := rsUnknown;
+      Inc(Run, l);
+      break;
     end;
+    Inc(Run);
   end;
 end;
 
-procedure TSynSARDSyn.SLCommentProc;
+procedure TSynSARDSyn.SingleCommentProc;
 begin
   FTokenID := tkComment;
   repeat
@@ -471,48 +445,19 @@ begin
   until FLine[Run] in [#0, #10, #13];
 end;
 
+procedure TSynSARDSyn.NormalCommentProc;
+begin
+  ScanTo('*/', tkComment);
+end;
+
 procedure TSynSARDSyn.EmbedCommentProc;
 begin
-  case FLine[Run] of
-    #0: NullProc;
-    #10: LFProc;
-    #13: CRProc;
-  else
-    begin
-      FTokenID := tkComment;
-      repeat
-        if (FLine[Run] = '*') and (FLine[Run + 1] = '}') then
-        begin
-          FRange := rsUnknown;
-          Inc(Run, 2);
-          break;
-        end;
-        Inc(Run);
-      until FLine[Run] in [#0, #10, #13];
-    end;
-  end;
+  ScanTo('*}', tkComment);
 end;
 
 procedure TSynSARDSyn.PreprocessorProc;
 begin
-  case FLine[Run] of
-    #0: NullProc;
-    #10: LFProc;
-    #13: CRProc;
-  else
-    begin
-      FTokenID := tkComment;
-      repeat
-        if (FLine[Run] = '?') and (FLine[Run + 1] = '}') then
-        begin
-          FRange := rsUnknown;
-          Inc(Run, 2);
-          break;
-        end;
-        Inc(Run);
-      until FLine[Run] in [#0, #10, #13];
-    end;
-  end;
+  ScanTo('?}', tkComment);
 end;
 
 function TSynSARDSyn.IsKeyword(const AKeyword: string): boolean;
@@ -526,19 +471,24 @@ end;
 procedure TSynSARDSyn.Next;
 begin
   FTokenPos := Run;
-  case FRange of
-    rsPreprocessor:
-      PreprocessorProc;
-    rsComment:
-      CommentProc;
-    rsEmbedComment:
-      EmbedCommentProc;
-    rsSQString:
-      StringProc('''');
-    rsDQString:
-      StringProc('"');
+  if (FLine[Run] in [#0, #10, #13]) then
+    FProcTable[FLine[Run]]
   else
-    FProcTable[FLine[Run]];
+  begin
+    case FRange of
+      rsPreprocessor:
+          PreprocessorProc;
+      rsComment:
+          NormalCommentProc;
+      rsEmbedComment:
+          EmbedCommentProc;
+      rsSQString:
+          ScanTo('''', tkString);
+      rsDQString:
+          ScanTo('"', tkString);
+    else
+      FProcTable[FLine[Run]];
+    end;
   end;
 end;
 
