@@ -56,12 +56,10 @@ type
     procedure NullProc;
     procedure NumberProc;
     procedure OrSymbolProc;
-    procedure PlusProc;
     procedure SlashProc;
     procedure BlockOpenProc;
     procedure SpaceProc;
     procedure SymbolProc;
-    procedure SymbolAssignProc;
     procedure MakeProcTables;
     function IsIdentifiers(C: Char): Boolean;
   protected
@@ -184,16 +182,13 @@ begin
       '/': FProcTable[I] := @SlashProc;
       '{': FProcTable[I] := @BlockOpenProc;
       '|': FProcTable[I] := @OrSymbolProc;
-      '+': FProcTable[I] := @PlusProc;
       '''': FProcTable[I] := @SQStringProc;
       '"': FProcTable[I] := @DQStringProc;
       '0'..'9':
         FProcTable[I] := @NumberProc;
       #1..#9, #11, #12, #14..#32:
         FProcTable[I] := @SpaceProc;
-      '^', '%', '*', '!':
-        FProcTable[I] := @SymbolAssignProc;
-      '}', ':', '.', ',', ';', '?', '(', ')', '[', ']', '~', '&':
+      '+', '-', '^', '%', '*', '!', '}', ':', '.', ',', ';', '?', '(', ')', '[', ']', '~', '&':
         FProcTable[I] := @SymbolProc;
     else
       FProcTable[I] := @IdentProc;
@@ -322,15 +317,8 @@ procedure TSynSARDSyn.NumberProc;
 begin
   inc(Run);
   FTokenID := tkNumber;
-  while FLine[Run] in ['0'..'9', '.', '-'] do
-  begin
-    case FLine[Run] of
-      '.':
-        if FLine[Run + 1] = '.' then
-          break;
-    end;
+  while FLine[Run] in ['0'..'9', '.'] do
     inc(Run);
-  end;
 end;
 
 procedure TSynSARDSyn.OrSymbolProc;
@@ -338,14 +326,6 @@ begin
   FTokenID := tkSymbol;
   Inc(Run);
   if FLine[Run] in ['=', '|'] then
-    Inc(Run);
-end;
-
-procedure TSynSARDSyn.PlusProc;
-begin
-  FTokenID := tkSymbol;
-  Inc(Run);
-  if FLine[Run] in ['=', '+'] then
     Inc(Run);
 end;
 
@@ -403,14 +383,6 @@ procedure TSynSARDSyn.SymbolProc;
 begin
   Inc(Run);
   FTokenID := tkSymbol;
-end;
-
-procedure TSynSARDSyn.SymbolAssignProc;
-begin
-  FTokenID := tkSymbol;
-  Inc(Run);
-  if FLine[Run] = '=' then
-    Inc(Run);
 end;
 
 function TSynSARDSyn.IsIdentifiers(C: Char): Boolean;
