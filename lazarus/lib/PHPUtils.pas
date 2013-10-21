@@ -56,6 +56,9 @@ type
     property CaseSensitive: Boolean read GetCaseSensitive write SetCaseSensitive;
   end;
 
+const
+  cNameValueSeparator = '=';
+
 implementation
 
 { TPHPStrings }
@@ -70,7 +73,7 @@ begin
   for I := 0 to GetCount - 1 do
   begin
     S := Get(I);
-    P := AnsiPos(NameValueSeparator, S);
+    P := AnsiPos(cNameValueSeparator, S);
     if (P <> 0) and (SameText(GetSplitName(S), Name)) and (AnsiPos(UpperCase(Value), UpperCase(GetSplitValue(S))) > 0) then
     begin
       Result := I;
@@ -83,7 +86,7 @@ function TPHPStrings.GetSplitName(S: string): string;
 var
   P: Integer;
 begin
-  P := AnsiPos(NameValueSeparator, S);
+  P := AnsiPos(cNameValueSeparator, S);
   if (P <> 0) then
   begin
     Result := TrimRight(Copy(S, 1, P - 1));
@@ -96,7 +99,7 @@ function TPHPStrings.GetSplitValue(S: string): string;
 var
   P: Integer;
 begin
-  P := AnsiPos(NameValueSeparator, S);
+  P := AnsiPos(cNameValueSeparator, S);
   if (P <> 0) then
   begin
     Result := Copy(S, P + 1, MaxInt);
@@ -118,7 +121,7 @@ begin
   for I := 0 to GetCount - 1 do
   begin
     S := Get(I);
-    P := AnsiPos(NameValueSeparator, S);
+    P := AnsiPos(cNameValueSeparator, S);
     if (P <> 0) and (SameText(GetSplitName(S), Name)) then
     begin
       Result := I;
@@ -136,12 +139,13 @@ begin
   for I := 0 to GetCount - 1 do
   begin
     S := Get(I);
-    P := AnsiPos(NameValueSeparator, S);
-    if (P <> 0) and (SameText(GetSplitName(S), Name)) then
-    begin
-      Result := I;
-      break;
-    end;
+    P := AnsiPos(cNameValueSeparator, S);
+    if (P <> 0) then
+      if (SameText(GetSplitName(S), Name)) then
+      begin
+        Result := I;
+        break;
+      end;
   end;
 end;
 
@@ -155,7 +159,7 @@ begin
   for I := 0 to GetCount - 1 do
   begin
     S := Get(I);
-    P := AnsiPos(NameValueSeparator, S);
+    P := AnsiPos(cNameValueSeparator, S);
     if (P <> 0) and (SameText(GetSplitName(S), Name)) and (SameText(GetSplitValue(S), Value)) then
     begin
       Result := I;
@@ -168,7 +172,7 @@ function TPHPStrings.SetSplitValue(S, Value: string): string;
 var
   P: Integer;
 begin
-  P := AnsiPos(NameValueSeparator, S);
+  P := AnsiPos(cNameValueSeparator, S);
   if (P <> 0) then
   begin
     Result := Trim(Copy(S, 1, P - 1));

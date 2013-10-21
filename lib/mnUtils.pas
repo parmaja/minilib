@@ -292,16 +292,21 @@ end;
 
 function ExpandToPath(FileName: string; Path: string; Root: string): string;
 begin
-  if (FileName <> '') and ((LeftStr(FileName, 3) = '../') or (LeftStr(FileName, 3) = '..\')) then
-    Result := ExpandFileName(IncludeTrailingPathDelimiter(Root) + IncludeTrailingPathDelimiter(Path) + FileName)
-  else if (FileName <> '') and ((LeftStr(FileName, 2) = './') or (LeftStr(FileName, 2) = '.\')) then
-    Result := IncludeTrailingPathDelimiter(Root) + IncludeTrailingPathDelimiter(Path) + RightStr(FileName, Length(FileName) - 2)
-  else if (FileName <> '') and (LeftStr(FileName, 2) <> '\\') and ((LeftStr(FileName, 1) = '/') or (LeftStr(FileName, 1) = '\')) then
-    Result := ExtractFileDrive(Path) + FileName
-  else if ExtractFilePath(FileName) = '' then
-    Result := IncludeTrailingPathDelimiter(Path) + FileName
+  if (FileName <> '') then
+  begin
+    if ((LeftStr(FileName, 3) = '../') or (LeftStr(FileName, 3) = '..\')) then
+      Result := ExpandFileName(IncludeTrailingPathDelimiter(Root) + IncludeTrailingPathDelimiter(Path) + FileName)
+    else if ((LeftStr(FileName, 2) = './') or (LeftStr(FileName, 2) = '.\')) then
+      Result := IncludeTrailingPathDelimiter(Root) + IncludeTrailingPathDelimiter(Path) + RightStr(FileName, Length(FileName) - 2)
+    else if (LeftStr(FileName, 2) <> '\\') and ((LeftStr(FileName, 1) = '/') or (LeftStr(FileName, 1) = '\')) then
+      Result := ExtractFileDrive(Path) + FileName
+    else if ExtractFileDrive(FileName) = '' then
+      Result := IncludeTrailingPathDelimiter(Path) + FileName
+    else
+      Result := FileName;
+  end
   else
-    Result := FileName;
+    Result := '';
 end;
 
 procedure cMoveStr(var Start: Integer; var Dest: string; const Source: string);
