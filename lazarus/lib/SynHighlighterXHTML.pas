@@ -58,6 +58,7 @@ type
     constructor Create(AParent: TSynXHTMLSyn; AName: string); virtual;
     destructor Destroy; override;
     procedure Next; virtual;
+    procedure SetLine(const NewValue: string; LineNumber: integer); virtual;
     procedure InitIdent; virtual;
     procedure MakeIdentTable; virtual;
     procedure MakeMethodTables; virtual;
@@ -371,6 +372,7 @@ begin
   FLine := PChar(NewValue);
   FLineNumber := LineNumber;
   Run := 0;
+  Processors.Current.SetLine(NewValue, LineNumber);
   Next;
 end;
 
@@ -547,6 +549,10 @@ begin
 end;
 
 procedure TSynProcessor.Next;
+begin
+end;
+
+procedure TSynProcessor.SetLine(const NewValue: string; LineNumber: integer);
 begin
 end;
 

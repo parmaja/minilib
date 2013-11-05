@@ -30,10 +30,13 @@ type
   TPHPProcessor = class(TSynProcessor)
   protected
     FRange: TPHPRangeState;
+    //LastRange: Bad Idea but let us try
+    LastRange: TPHPRangeState;
     function GetIdentChars: TSynIdentChars; override;
     procedure ResetRange; override;
     function GetRange: Byte; override;
     procedure SetRange(Value: Byte); override;
+    procedure SetRange(Value: TPHPRangeState); overload;
     function KeyHash(ToHash: PChar): Integer; override;
     procedure InternalCommentProc;
     function GetEndOfLineAttribute: TSynHighlighterAttributes; override;
@@ -64,7 +67,10 @@ type
     procedure SymbolAssignProc;
     procedure VariableProc;
     procedure UnknownProc;
+    procedure SetLine(const NewValue: string; LineNumber: integer); override;
     procedure Next; override;
+
+    property Range: TPHPRangeState read FRange;
 
     procedure InitIdent; override;
     procedure MakeMethodTables; override;
@@ -133,7 +139,7 @@ var
   iCloseChar: char;
 begin
   Parent.FTokenID := tkString;
-  if fRange = rsphpStringSQ then
+  if Range = rsphpStringSQ then
     iCloseChar := ''''
   else
     iCloseChar := '"';
@@ -141,7 +147,7 @@ begin
   begin
     if (Parent.FLine[Parent.Run] = iCloseChar) and (not IsEscaped) then
     begin
-      FRange := rsphpUnKnown;
+      SetRange(rsphpUnKnown);
       inc(Parent.Run);
       break;
     end;
@@ -153,7 +159,7 @@ begin
       if not IsEscaped then
       begin
         { break the token to process the variable }
-        fRange := rsphpVarExpansion;
+        SetRange(rsphpVarExpansion);
         break;
       end
       else if Parent.FLine[Parent.Run] = '{' then
@@ -335,17 +341,23 @@ begin
   Parent.FTokenID := tkUnknown;
 end;
 
+procedure TPHPProcessor.SetLine(const NewValue: string; LineNumber: integer);
+begin
+  inherited;
+  LastRange := rsphpUnknown;
+end;
+
 procedure TPHPProcessor.CommentProc;
 begin
   Parent.FTokenID := tkComment;
-  FRange := rsphpComment;
+  SetRange(rsphpComment);
   InternalCommentProc;
 end;
 
 procedure TPHPProcessor.DocumentProc;
 begin
   Parent.FTokenID := tkDocument;
-  FRange := rsphpDocument;
+  SetRange(rsphpDocument);
   InternalCommentProc;
 end;
 
@@ -404,7 +416,7 @@ end;
 procedure TPHPProcessor.Next;
 begin
   Parent.FTokenPos := Parent.Run;
-  case FRange of
+  case Range of
     rsphpComment:
     begin
       if (Parent.FLine[Parent.Run] in [#0, #10, #13]) then
@@ -440,7 +452,7 @@ var
   iOpenBrackets: integer;
   iTempRun: integer;
 begin
-  fRange := rsphpStringDQ; { var expansion only occurs in double quoted strings }
+  SetRange(rsphpStringDQ); { var expansion only occurs in double quoted strings }
   Parent.FTokenID := tkVariable;
   if Parent.FLine[Parent.Run] = '{' then
   begin
@@ -533,32 +545,40 @@ end;
 
 procedure TPHPProcessor.StringDQProc;
 begin
-  fRange := rsphpStringDQ;
+  SetRange(rsphpStringDQ);
   Inc(Parent.Run);
   StringProc;
 end;
 
 procedure TPHPProcessor.StringSQProc;
 begin
-  fRange := rsphpStringSQ;
+  SetRange(rsphpStringSQ);
   Inc(Parent.Run);
   StringProc;
 end;
 
 function TPHPProcessor.GetRange: Byte;
 begin
-  Result := Byte(FRange);
+  Result := Byte(Range);
 end;
 
 procedure TPHPProcessor.ResetRange;
 begin
   inherited;
-  FRange := rsphpUnknown;
+  SetRange(rsphpUnknown);
+  LastRange := rsphpUnknown;
 end;
 
 procedure TPHPProcessor.SetRange(Value: Byte);
 begin
-  FRange := TPHPRangeState(Value);
+  SetRange(TPHPRangeState(Value));
+end;
+
+procedure TPHPProcessor.SetRange(Value: TPHPRangeState);
+begin
+  if FRange <> Value then
+    LastRange := FRange;
+  FRange := Value;
 end;
 
 procedure TPHPProcessor.InitIdent;
@@ -569,7 +589,7 @@ begin
   EnumerateKeywords(Ord(tkFunction), sPHPFunctions, TSynValidStringChars, @DoAddKeyword);
   EnumerateKeywords(Ord(tkValue), sPHPConstants, TSynValidStringChars, @DoAddKeyword);
   EnumerateKeywords(Ord(tkVariable), sPHPVariables, TSynValidStringChars, @DoAddKeyword);
-  FRange := rsphpUnknown;
+  SetRange(rsphpUnknown);
 end;
 
 function TPHPProcessor.KeyHash(ToHash: PChar): Integer;
@@ -589,7 +609,7 @@ begin
   begin
     if (Parent.FLine[Parent.Run] = '*') and (Parent.FLine[Parent.Run + 1] = '/') then
     begin
-      FRange := rsphpUnKnown;
+      SetRange(rsphpUnKnown);
       Inc(Parent.Run, 2);
       break;
     end;
@@ -599,7 +619,7 @@ end;
 
 function TPHPProcessor.GetEndOfLineAttribute: TSynHighlighterAttributes;
 begin
-  if FRange = rsphpDocument then
+  if (Range = rsphpDocument) or (LastRange = rsphpDocument) then
     Result := Parent.DocumentAttri
   else
     Result := inherited GetEndOfLineAttribute;
