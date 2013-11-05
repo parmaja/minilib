@@ -79,6 +79,9 @@ function ExpandToPath(FileName: string; Path: string; Root: string = ''): string
 function EscapeString(const S: string; Esc: string; Chars: array of AnsiChar; Escapes: array of string): string;
 function DescapeString(const S: string; Esc: string; Chars: array of AnsiChar; Escapes: array of string): string;
 
+//IncludePathSeparator add the Delimiter when S not = ''
+function IncludePathSeparator(const S: string): string;
+
 //Similer to ZeroMemory
 procedure InitMemory(out V; Count: {$ifdef FPC}SizeInt{$else}Longint{$endif});
 
@@ -295,13 +298,13 @@ begin
   if (FileName <> '') then
   begin
     if ((LeftStr(FileName, 3) = '../') or (LeftStr(FileName, 3) = '..\')) then
-      Result := ExpandFileName(IncludeTrailingPathDelimiter(Root) + IncludeTrailingPathDelimiter(Path) + FileName)
+      Result := ExpandFileName(IncludePathSeparator(Root) + IncludePathSeparator(Path) + FileName)
     else if ((LeftStr(FileName, 2) = './') or (LeftStr(FileName, 2) = '.\')) then
-      Result := IncludeTrailingPathDelimiter(Root) + IncludeTrailingPathDelimiter(Path) + RightStr(FileName, Length(FileName) - 2)
+      Result := IncludePathSeparator(Root) + IncludePathSeparator(Path) + RightStr(FileName, Length(FileName) - 2)
     else if (LeftStr(FileName, 2) <> '\\') and ((LeftStr(FileName, 1) = '/') or (LeftStr(FileName, 1) = '\')) then
       Result := ExtractFileDrive(Path) + FileName
     else if ExtractFileDrive(FileName) = '' then
-      Result := IncludeTrailingPathDelimiter(Path) + FileName
+      Result := IncludePathSeparator(Path) + FileName
     else
       Result := FileName;
   end
@@ -604,6 +607,14 @@ end;
 function SubStr(const Str: String; vSeperator: Char; vIndex: Integer): String;
 begin
   Result := SubStr(Str, vSeperator, vIndex, vIndex);
+end;
+
+function IncludePathSeparator(const S: string): string;
+begin
+  if (s <> '') and (RightStr(S, 1) <> DirectorySeparator) then
+    Result := s + DirectorySeparator
+  else
+    Result := s;
 end;
 
 procedure CenterRect(var R1: TRect; R2: TRect);

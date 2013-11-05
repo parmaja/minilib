@@ -23,6 +23,7 @@ const
   cMinTabWidth = 10;
   cHeaderHeightMargin = 5;
   cImageMargin = 3;
+  cTextMargin = 4;
 
 type
   TntvhtTabHitTest = (htNone, htTab, htNext, htPrior, htClose);
@@ -474,7 +475,7 @@ begin
   for i := 0 to Count - 1 do
     if Items[I].AutoWidth then
     begin
-      w := vCanvas.TextWidth(Items[i].Caption);
+      w := vCanvas.TextWidth(Items[i].Caption) + cTextMargin;
       if (Images <> nil) and (Items[I].ImageIndex > -1) then
         w := w + Images.Width - cImageMargin;
       if w < cMinTabWidth then

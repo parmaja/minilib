@@ -52,9 +52,9 @@ type
     function QueryInterface({$ifdef FPC}constref{$else}const{$endif} IID: TGUID; out Obj): HResult; virtual; {$ifdef WINDOWS}stdcall{$else}cdecl{$endif};
     procedure LoadFromStream(Stream: TStream); virtual;
     procedure SaveToStream(Stream: TStream); virtual;
-    procedure LoadFromFile(FileName: string);
+    procedure LoadFromFile(FileName: string); virtual;
     procedure SafeLoadFromFile(FileName: string);
-    procedure SaveToFile(FileName: string);
+    procedure SaveToFile(FileName: string); virtual;
     procedure SaveToString(var S: string);
     procedure LoadFromString(S: string);
     property ProfileState: TmnXMLProfileStates read FProfileState write FProfileState;

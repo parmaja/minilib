@@ -11,10 +11,6 @@ unit SynHighlighterXHTML;
  * @author    Zaher Dirkey <zaher at parmaja dot com>
  *}
 
-{
-  http://flatdev.republika.pl/php-functions-lastest.zip
-}
-
 interface
 
 uses
@@ -22,7 +18,7 @@ uses
   SynEdit, SynEditTypes, SynEditHighlighter, SynHighlighterHashEntries;
 
 type
-  TtkTokenKind = (tkUnknown, tkNull, tkSpace, tkComment, tkIdentifier, tkSymbol, tkNumber,
+  TtkTokenKind = (tkUnknown, tkNull, tkSpace, tkComment, tkDocument, tkIdentifier, tkSymbol, tkNumber,
     tkString, tkText, tkValue, tkHTML, tkKeyword, tkFunction, tkVariable, tkSQL, tkProcessor);
 
   TProcTableProc = procedure of object;
@@ -108,19 +104,20 @@ type
 
   TSynXHTMLSyn = class(TSynCustomHighlighter)
   private
-    fCommentAttri: TSynHighlighterAttributes;
-    fValueAttri: TSynHighlighterAttributes;
+    FCommentAttri: TSynHighlighterAttributes;
+    FDocumentAttri: TSynHighlighterAttributes;
+    FValueAttri: TSynHighlighterAttributes;
     FFunctionAttri: TSynHighlighterAttributes;
-    fIdentifierAttri: TSynHighlighterAttributes;
-    fHtmlAttri: TSynHighlighterAttributes;
-    fTextAttri: TSynHighlighterAttributes;
-    fKeywordAttri: TSynHighlighterAttributes;
-    fNumberAttri: TSynHighlighterAttributes;
-    fSpaceAttri: TSynHighlighterAttributes;
-    fStringAttri: TSynHighlighterAttributes;
-    fSymbolAttri: TSynHighlighterAttributes;
-    fVariableAttri: TSynHighlighterAttributes;
-    fProcessorAttri: TSynHighlighterAttributes;
+    FIdentifierAttri: TSynHighlighterAttributes;
+    FHtmlAttri: TSynHighlighterAttributes;
+    FTextAttri: TSynHighlighterAttributes;
+    FKeywordAttri: TSynHighlighterAttributes;
+    FNumberAttri: TSynHighlighterAttributes;
+    FSpaceAttri: TSynHighlighterAttributes;
+    FStringAttri: TSynHighlighterAttributes;
+    FSymbolAttri: TSynHighlighterAttributes;
+    FVariableAttri: TSynHighlighterAttributes;
+    FProcessorAttri: TSynHighlighterAttributes;
     procedure InitIdent;
     procedure MakeMethodTables;
     procedure MakeIdentTable;
@@ -155,6 +152,7 @@ type
     procedure SetLine(const NewValue: string; LineNumber: integer); override;
   published
     property CommentAttri: TSynHighlighterAttributes read FCommentAttri write FCommentAttri;
+    property DocumentAttri: TSynHighlighterAttributes read FDocumentAttri write FDocumentAttri;
     property ValueAttri: TSynHighlighterAttributes read FValueAttri write FValueAttri;
     property FunctionAttri: TSynHighlighterAttributes read FFunctionAttri write FFunctionAttri;
     property IdentifierAttri: TSynHighlighterAttributes read FIdentifierAttri write FIdentifierAttri;
@@ -290,11 +288,16 @@ begin
 
   FSpaceAttri := TSynHighlighterAttributes.Create(SYNS_AttrSpace);
   FSpaceAttri.Foreground := clBlack;
-  AddAttribute(fSpaceAttri);
+  AddAttribute(FSpaceAttri);
 
   FCommentAttri := TSynHighlighterAttributes.Create(SYNS_AttrComment);
   FCommentAttri.Foreground := $000069D2;
-  AddAttribute(fCommentAttri);
+  AddAttribute(FCommentAttri);
+
+  FDocumentAttri := TSynHighlighterAttributes.Create('Document');
+  FDocumentAttri.Foreground := $000069D2;
+  FDocumentAttri.Style := [fsBold];
+  AddAttribute(FDocumentAttri);
 
   FValueAttri := TSynHighlighterAttributes.Create(SYNS_AttrValue);
   FValueAttri.Style := [fsBold];
@@ -380,11 +383,11 @@ end;
 function TSynXHTMLSyn.GetDefaultAttribute(Index: integer): TSynHighlighterAttributes;
 begin
   case Index of
-    SYN_ATTR_COMMENT: Result := fCommentAttri;
-    SYN_ATTR_IDENTIFIER: Result := fIdentifierAttri;
-    SYN_ATTR_KEYWORD: Result := fKeywordAttri;
-    SYN_ATTR_STRING: Result := fStringAttri;
-    SYN_ATTR_WHITESPACE: Result := fSpaceAttri;
+    SYN_ATTR_COMMENT: Result := FCommentAttri;
+    SYN_ATTR_IDENTIFIER: Result := FIdentifierAttri;
+    SYN_ATTR_KEYWORD: Result := FKeywordAttri;
+    SYN_ATTR_STRING: Result := FStringAttri;
+    SYN_ATTR_WHITESPACE: Result := FSpaceAttri;
     SYN_ATTR_SYMBOL: Result := FSymbolAttri;
     else
       Result := nil;
@@ -424,20 +427,21 @@ end;
 function TSynXHTMLSyn.GetTokenAttribute: TSynHighlighterAttributes;
 begin
   case GetTokenID of
-    tkComment: Result := fCommentAttri;
-    tkValue: Result := fValueAttri;
+    tkComment: Result := FCommentAttri;
+    tkDocument: Result := FDocumentAttri;
+    tkValue: Result := FValueAttri;
     tkFunction: Result := FFunctionAttri;
-    tkIdentifier: Result := fIdentifierAttri;
-    tkHtml: Result := fHtmlAttri;
-    tkKeyword: Result := fKeywordAttri;
-    tkNumber: Result := fNumberAttri;
-    tkSpace: Result := fSpaceAttri;
-    tkString: Result := fStringAttri;
+    tkIdentifier: Result := FIdentifierAttri;
+    tkHtml: Result := FHtmlAttri;
+    tkKeyword: Result := FKeywordAttri;
+    tkNumber: Result := FNumberAttri;
+    tkSpace: Result := FSpaceAttri;
+    tkString: Result := FStringAttri;
     tkSymbol: Result := FSymbolAttri;
     tkText: Result := FTextAttri;
-    tkVariable: Result := fVariableAttri;
-    tkProcessor: Result := fProcessorAttri;
-    tkUnknown: Result := fTextAttri;
+    tkVariable: Result := FVariableAttri;
+    tkProcessor: Result := FProcessorAttri;
+    tkUnknown: Result := FTextAttri;
     else
       Result := nil;
   end;
@@ -499,6 +503,9 @@ begin
     '  HTML and PHP syntax editor'#13#10 +
     '<?php'#13#10 +
     '// Syntax highlighting'#13#10 +
+    '/**'#13#10 +
+    ' It is a Documentation comments'#13#10 +
+    '*/'#13#10 +
     '  function printNumber()'#13#10 +
     '  {'#13#10 +
     '    $number = 1234;'#13#10 +

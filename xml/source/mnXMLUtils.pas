@@ -54,8 +54,6 @@ function StringsToString(Strings: TStrings; LineBreak: string = sLineBreak): str
 function URIToFileName(const URI: string): string;
 function FileNameToURI(FileName: string): string;
 function IncludeSlash(const S: string): string;
-//IncludePathSeparator add the Delimiter when S not = ''
-function IncludePathSeparator(const S: string): string;
 function LeftSubStr(S, Separator: string): string;
 function RightSubStr(S, Separator: string): string;
 
@@ -367,14 +365,6 @@ begin
 {$ENDIF}
     end;
   end;
-end;
-
-function IncludePathSeparator(const S: string): string;
-begin
-  if (s <> '') and (RightStr(S, 1) <> DirectorySeparator) then
-    Result := s + DirectorySeparator
-  else
-    Result := s;
 end;
 
 function LeftSubStr(S, Separator: string): string;

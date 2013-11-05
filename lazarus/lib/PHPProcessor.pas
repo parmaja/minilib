@@ -10,6 +10,11 @@ unit PHPProcessor;
  *            See the file COPYING.MLGPL, included in this distribution,
  * @author    Zaher Dirkey <zaher at parmaja dot com>
  *}
+
+{
+  http://flatdev.republika.pl/php-functions-lastest.zip
+}
+
 interface
 
 uses
@@ -18,7 +23,7 @@ uses
   SynEditHighlighter, SynHighlighterHashEntries, SynHighlighterXHTML;
 
 type
-  TPHPRangeState = (rsphpUnknown, rsphpComment, rsphpStringSQ, rsphpStringDQ, rsphpVarExpansion);
+  TPHPRangeState = (rsphpUnknown, rsphpComment, rsphpDocument, rsphpStringSQ, rsphpStringDQ, rsphpVarExpansion);
 
   { TPHPProcessor }
 
@@ -30,11 +35,13 @@ type
     function GetRange: Byte; override;
     procedure SetRange(Value: Byte); override;
     function KeyHash(ToHash: PChar): Integer; override;
+    procedure InternalCommentProc;
   public
     procedure QuestionProc;
     procedure AndSymbolProc;
     procedure HashLineCommentProc;
     procedure CommentProc;
+    procedure DocumentProc;
     procedure SlashProc;
     procedure StringProc;
     procedure StringSQProc;
@@ -271,9 +278,11 @@ begin
       end;
     '*':
       begin
-        Parent.FTokenID := tkComment;
         Inc(Parent.Run);
-        CommentProc;
+        if Parent.FLine[Parent.Run] = '*' then
+          DocumentProc
+        else
+          CommentProc;
       end;
     '=':
       begin
@@ -327,18 +336,16 @@ end;
 
 procedure TPHPProcessor.CommentProc;
 begin
-  FRange := rsphpComment;
   Parent.FTokenID := tkComment;
-  while not (Parent.FLine[Parent.Run] in [#0, #10, #13]) do
-  begin
-    if (Parent.FLine[Parent.Run] = '*') and (Parent.FLine[Parent.Run + 1] = '/') then
-    begin
-      FRange := rsphpUnKnown;
-      Inc(Parent.Run, 2);
-      break;
-    end;
-    Inc(Parent.Run);
-  end;
+  FRange := rsphpComment;
+  InternalCommentProc;
+end;
+
+procedure TPHPProcessor.DocumentProc;
+begin
+  Parent.FTokenID := tkDocument;
+  FRange := rsphpDocument;
+  InternalCommentProc;
 end;
 
 procedure TPHPProcessor.MakeMethodTables;
@@ -403,6 +410,13 @@ begin
         ProcTable[Parent.FLine[Parent.Run]]
       else
         CommentProc;
+    end;
+    rsphpDocument:
+    begin
+      if (Parent.FLine[Parent.Run] in [#0, #10, #13]) then
+        ProcTable[Parent.FLine[Parent.Run]]
+      else
+        DocumentProc;
     end;
     rsphpStringSQ, rsphpStringDQ:
       if (Parent.FLine[Parent.Run] in [#0, #10, #13]) then
@@ -566,6 +580,20 @@ begin
     inc(ToHash);
   end;
   fStringLen := ToHash - fToIdent;
+end;
+
+procedure TPHPProcessor.InternalCommentProc;
+begin
+  while not (Parent.FLine[Parent.Run] in [#0, #10, #13]) do
+  begin
+    if (Parent.FLine[Parent.Run] = '*') and (Parent.FLine[Parent.Run + 1] = '/') then
+    begin
+      FRange := rsphpUnKnown;
+      Inc(Parent.Run, 2);
+      break;
+    end;
+    Inc(Parent.Run);
+  end;
 end;
 
 function TPHPProcessor.GetIdentChars: TSynIdentChars;

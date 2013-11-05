@@ -26,6 +26,7 @@
     'function,'+
     'if,'+
     'include,'+
+    'namespace,'+
     'require,'+
     'return,'+
     'switch,'+
