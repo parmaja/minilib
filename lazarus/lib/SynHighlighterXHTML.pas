@@ -48,6 +48,7 @@ type
     procedure SetRange(Value: Byte); virtual;
     function KeyHash(ToHash: PChar): integer; virtual;
     function IdentKind(MayBe: PChar): TtkTokenKind; virtual;
+    function GetEndOfLineAttribute: TSynHighlighterAttributes; virtual;
   public
     FStringLen: integer;
     FToIdent: PChar;
@@ -140,6 +141,7 @@ type
     function GetEOL: boolean; override;
     function GetRange: Pointer; override;
     procedure SetRange(Value: Pointer); override;
+    function GetEndOfLineAttribute: TSynHighlighterAttributes; override;
     procedure ResetRange; override;
     function GetToken: string; override;
     procedure GetTokenEx(out TokenStart: PChar; out TokenLength: integer); override;
@@ -245,6 +247,11 @@ begin
     Entry := Entry.Next;
   end;
   Result := tkIdentifier;
+end;
+
+function TSynProcessor.GetEndOfLineAttribute: TSynHighlighterAttributes;
+begin
+  Result := nil;
 end;
 
 procedure TSynProcessor.DoAddKeyword(AKeyword: string; AKind: integer);
@@ -482,6 +489,11 @@ begin
   end
   else
     Processors.Current.SetRange(aCurrent);
+end;
+
+function TSynXHTMLSyn.GetEndOfLineAttribute: TSynHighlighterAttributes;
+begin
+  Result := Processors.Current.GetEndOfLineAttribute;
 end;
 
 function TSynXHTMLSyn.GetIdentChars: TSynIdentChars;

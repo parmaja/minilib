@@ -36,6 +36,7 @@ type
     procedure SetRange(Value: Byte); override;
     function KeyHash(ToHash: PChar): Integer; override;
     procedure InternalCommentProc;
+    function GetEndOfLineAttribute: TSynHighlighterAttributes; override;
   public
     procedure QuestionProc;
     procedure AndSymbolProc;
@@ -594,6 +595,14 @@ begin
     end;
     Inc(Parent.Run);
   end;
+end;
+
+function TPHPProcessor.GetEndOfLineAttribute: TSynHighlighterAttributes;
+begin
+  if FRange = rsphpDocument then
+    Result := Parent.DocumentAttri
+  else
+    Result := inherited GetEndOfLineAttribute;
 end;
 
 function TPHPProcessor.GetIdentChars: TSynIdentChars;
