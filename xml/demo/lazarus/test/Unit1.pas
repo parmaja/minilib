@@ -14,16 +14,21 @@ uses
   mnXML, mnXMLWriter, mnXMLReader, mnXMLScanner, mnXMLUtils, Dialogs, StdCtrls;
 
 type
+
+  { TForm1 }
+
   TForm1 = class(TForm)
     Button1: TButton;
     Button2: TButton;
     Button3: TButton;
+    Button5: TButton;
     Memo: TMemo;
     Button4: TButton;
     procedure Button1Click(Sender: TObject);
     procedure Button2Click(Sender: TObject);
     procedure Button3Click(Sender: TObject);
     procedure Button4Click(Sender: TObject);
+    procedure Button5Click(Sender: TObject);
   private
     { Private declarations }
   public
@@ -103,6 +108,33 @@ end;
 procedure TForm1.Button4Click(Sender: TObject);
 begin
   Close;
+end;
+
+procedure TForm1.Button5Click(Sender: TObject);
+var
+  s:string;
+  i: Integer;
+  c: Integer;
+  aNodes: TmnXMLNodes;
+  Reader: TmnXMLNodeReader;
+begin
+  s := '<?xml version="1.0" encoding="iso-8859-1"?>'#10;
+  s := s + '<response xmlns="urn:debugger_protocol_v1" xmlns:xdebug="http://xdebug.org/dbgp/xdebug" command="stack_get" transaction_id="8">';
+  s := s + '<stack where="App-&gt;__construct" level="0" type="file" filename="file:///W:/web/sites/abrash.com/websale/fw/core/ui/app.php" lineno="200"></stack>';
+  s := s + '<stack where="{main}" level="1" type="file" filename="file:///W:/web/sites/abrash.com/websale/index.php" lineno="8"></stack>';
+  s := s + '</response>';
+
+  aNodes := TmnXMLNodes.Create;
+  Reader := TmnXMLNodeReader.Create;
+  try
+    Reader.Start;
+    Reader.Nodes := aNodes;
+    Reader.Parse(s);
+  finally
+    Reader.Free;
+  end;
+  c := aNodes.Root.Items.Count;
+  aNodes.Free;
 end;
 
 { TMyXMLScanner }

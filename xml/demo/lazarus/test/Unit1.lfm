@@ -10,7 +10,7 @@ object Form1: TForm1
   Font.Color = clWindowText
   Font.Height = -11
   Font.Name = 'MS Sans Serif'
-  LCLVersion = '1.1'
+  LCLVersion = '1.3'
   object Button1: TButton
     Left = 4
     Height = 25
@@ -62,5 +62,14 @@ object Form1: TForm1
     Caption = 'Close'
     OnClick = Button4Click
     TabOrder = 4
+  end
+  object Button5: TButton
+    Left = 4
+    Height = 25
+    Top = 88
+    Width = 75
+    Caption = 'Test Nodes'
+    OnClick = Button5Click
+    TabOrder = 5
   end
 end

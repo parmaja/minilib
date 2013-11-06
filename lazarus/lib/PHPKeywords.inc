@@ -30,6 +30,7 @@
     'require,'+
     'return,'+
     'switch,'+
+    'use,'+
     'while';
 
   sPHPKeywords =
@@ -242,6 +243,7 @@
     'is_executable,'+
     'is_file,'+
     'is_float,'+
+    'is_callable,'+
     'is_int,'+
     'is_integer,'+
     'is_link,'+

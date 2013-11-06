@@ -446,7 +446,7 @@ begin
       Result := TntvPageItem.Create(Self);
       with Result do
       begin
-        Name := Control.Name;
+        Name := vControl.Name;
         Caption := Name;
         Control := vControl;
 //        Collection := Self; //Add to Pages list; Or when Create(Self) the page

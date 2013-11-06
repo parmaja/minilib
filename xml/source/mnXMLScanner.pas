@@ -33,6 +33,8 @@ type
 
   TmnDeclarePhase = array[TmnDeclarePhases] of TmnParserProc;
 
+  { TmnXMLScanner }
+
   TmnXMLScanner = class(TmnXMLFiler)
   private
     FBuffer: string;
@@ -99,7 +101,8 @@ type
   public
     constructor Create; override;
     destructor Destroy; override;
-    procedure ParseLine(const Text: string; Line: Integer);
+    procedure Parse(const vText: string);
+    procedure ParseLine(const vText: string; vLine: Integer);
   end;
 
 implementation
@@ -227,19 +230,19 @@ procedure TmnXMLScanner.ReadOpenTag(const Name: string);
 begin
 end;
 
-procedure TmnXMLScanner.ParseLine(const Text: string; Line: Integer);
+procedure TmnXMLScanner.ParseLine(const vText: string; vLine: Integer);
 var
   Column, l: Integer;
 begin
   if not Active then
     raise EmnXMLException.Create('Scanner not started');
   Column := 1; //start of delphi string is 1
-  l := Length(Text);
+  l := Length(vText);
   while (Column <= l) do
   begin
     if not Assigned(FParsers[FState]) then
       raise EmnXMLException.Create('Parser state not assigned');
-    FParsers[FState](Text, Line, Column);
+    FParsers[FState](vText, vLine, Column);
   end;
 end;
 
@@ -285,6 +288,23 @@ destructor TmnXMLScanner.Destroy;
 begin
 
   inherited;
+end;
+
+procedure TmnXMLScanner.Parse(const vText: string);
+var
+  aStrings: TStringList;
+  i: Integer;
+begin
+  aStrings := TStringList.Create;
+  try
+    aStrings.Text := vText;
+    for i := 0 to aStrings.Count -1 do
+    begin
+      ParseLine(aStrings[i], i + 1);
+    end;
+  finally
+    aStrings.Free;
+  end;
 end;
 
 procedure TmnXMLScanner.ssOnComment(const Text: string; Line: Integer; var Column: Integer);

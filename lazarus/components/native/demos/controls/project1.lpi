@@ -1,4 +1,4 @@
-<?xml version="1.0"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <CONFIG>
   <ProjectOptions>
     <Version Value="9"/>
@@ -65,8 +65,8 @@
         <UnitName Value="Unit1"/>
         <EditorIndex Value="0"/>
         <WindowIndex Value="0"/>
-        <TopLine Value="41"/>
-        <CursorPos X="3" Y="62"/>
+        <TopLine Value="157"/>
+        <CursorPos X="51" Y="169"/>
         <UsageCount Value="162"/>
         <Loaded Value="True"/>
         <LoadedDesigner Value="True"/>
@@ -97,10 +97,11 @@
       <Unit5>
         <Filename Value="..\..\ntvPageControls.pas"/>
         <UnitName Value="ntvPageControls"/>
-        <EditorIndex Value="1"/>
+        <IsVisibleTab Value="True"/>
+        <EditorIndex Value="2"/>
         <WindowIndex Value="0"/>
-        <TopLine Value="87"/>
-        <CursorPos X="25" Y="94"/>
+        <TopLine Value="439"/>
+        <CursorPos X="1" Y="442"/>
         <UsageCount Value="63"/>
         <Loaded Value="True"/>
       </Unit5>
@@ -886,11 +887,10 @@
         <Filename Value="..\..\ntvTabs.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="ntvTabs"/>
-        <IsVisibleTab Value="True"/>
-        <EditorIndex Value="3"/>
+        <EditorIndex Value="4"/>
         <WindowIndex Value="0"/>
         <TopLine Value="780"/>
-        <CursorPos X="26" Y="795"/>
+        <CursorPos X="26" Y="787"/>
         <UsageCount Value="130"/>
         <Bookmarks Count="2">
           <Item0 X="35" Y="626" ID="2"/>
@@ -959,7 +959,7 @@
         <Filename Value="..\..\ntvTabSets.pas"/>
         <IsPartOfProject Value="True"/>
         <UnitName Value="ntvTabSets"/>
-        <EditorIndex Value="2"/>
+        <EditorIndex Value="3"/>
         <WindowIndex Value="0"/>
         <TopLine Value="1"/>
         <CursorPos X="15" Y="8"/>
@@ -1188,10 +1188,13 @@
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="Unit2"/>
+        <EditorIndex Value="1"/>
         <WindowIndex Value="0"/>
-        <TopLine Value="7"/>
-        <CursorPos X="1" Y="29"/>
+        <TopLine Value="31"/>
+        <CursorPos X="6" Y="34"/>
         <UsageCount Value="58"/>
+        <Loaded Value="True"/>
+        <LoadedDesigner Value="True"/>
       </Unit148>
       <Unit149>
         <Filename Value="P:\dev\lazarus\lcl\include\control.inc"/>
@@ -1217,7 +1220,7 @@
       <Unit152>
         <Filename Value="P:\dev\lazarus\lcl\graphics.pp"/>
         <UnitName Value="Graphics"/>
-        <EditorIndex Value="4"/>
+        <EditorIndex Value="5"/>
         <WindowIndex Value="0"/>
         <TopLine Value="1040"/>
         <CursorPos X="15" Y="1042"/>
@@ -1308,124 +1311,124 @@
     </Units>
     <JumpHistory Count="30" HistoryIndex="29">
       <Position1>
-        <Filename Value="..\..\ntvTabSets.pas"/>
-        <Caret Line="167" Column="20" TopLine="141"/>
+        <Filename Value="..\..\ntvTabs.pas"/>
+        <Caret Line="146" Column="88" TopLine="132"/>
       </Position1>
       <Position2>
-        <Filename Value="..\..\ntvTabSets.pas"/>
-        <Caret Line="267" Column="37" TopLine="241"/>
+        <Filename Value="..\..\ntvTabs.pas"/>
+        <Caret Line="653" Column="88" TopLine="637"/>
       </Position2>
       <Position3>
-        <Filename Value="..\..\ntvTabSets.pas"/>
-        <Caret Line="269" Column="13" TopLine="243"/>
+        <Filename Value="..\..\ntvTabs.pas"/>
+        <Caret Line="732" Column="113" TopLine="717"/>
       </Position3>
       <Position4>
-        <Filename Value="..\..\ntvTabSets.pas"/>
-        <Caret Line="270" Column="10" TopLine="244"/>
+        <Filename Value="..\..\ntvTabs.pas"/>
+        <Caret Line="740" Column="22" TopLine="724"/>
       </Position4>
       <Position5>
         <Filename Value="..\..\ntvTabs.pas"/>
-        <Caret Line="253" Column="7" TopLine="240"/>
+        <Caret Line="770" Column="26" TopLine="755"/>
       </Position5>
       <Position6>
         <Filename Value="..\..\ntvTabs.pas"/>
-        <Caret Line="59" Column="48" TopLine="43"/>
+        <Caret Line="781" Column="26" TopLine="766"/>
       </Position6>
       <Position7>
         <Filename Value="..\..\ntvTabs.pas"/>
-        <Caret Line="52" Column="5" TopLine="44"/>
+        <Caret Line="787" Column="26" TopLine="780"/>
       </Position7>
       <Position8>
-        <Filename Value="..\..\ntvTabs.pas"/>
-        <Caret Line="53" Column="64" TopLine="37"/>
+        <Filename Value="Unit1.pas"/>
+        <Caret Line="48" Column="3" TopLine="41"/>
       </Position8>
       <Position9>
-        <Filename Value="..\..\ntvTabs.pas"/>
-        <Caret Line="69" Column="64" TopLine="41"/>
+        <Filename Value="Unit2.pas"/>
+        <Caret Line="15" Column="1" TopLine="7"/>
       </Position9>
       <Position10>
-        <Filename Value="..\..\ntvTabs.pas"/>
-        <Caret Line="61" Column="15" TopLine="54"/>
+        <Filename Value="Unit1.pas"/>
+        <Caret Line="213" Column="3" TopLine="210"/>
       </Position10>
       <Position11>
-        <Filename Value="..\..\ntvTabs.pas"/>
-        <Caret Line="732" Column="108" TopLine="732"/>
+        <Filename Value="Unit1.pas"/>
+        <Caret Line="169" Column="51" TopLine="157"/>
       </Position11>
       <Position12>
-        <Filename Value="..\..\ntvTabs.pas"/>
-        <Caret Line="232" Column="48" TopLine="217"/>
+        <Filename Value="..\..\ntvPageControls.pas"/>
+        <Caret Line="449" Column="1" TopLine="430"/>
       </Position12>
       <Position13>
-        <Filename Value="..\..\ntvTabs.pas"/>
-        <Caret Line="254" Column="21" TopLine="239"/>
+        <Filename Value="..\..\ntvPageControls.pas"/>
+        <Caret Line="442" Column="1" TopLine="430"/>
       </Position13>
       <Position14>
-        <Filename Value="..\..\ntvTabs.pas"/>
-        <Caret Line="260" Column="26" TopLine="245"/>
+        <Filename Value="..\..\ntvPageControls.pas"/>
+        <Caret Line="444" Column="1" TopLine="430"/>
       </Position14>
       <Position15>
-        <Filename Value="..\..\ntvTabs.pas"/>
-        <Caret Line="262" Column="25" TopLine="247"/>
+        <Filename Value="..\..\ntvPageControls.pas"/>
+        <Caret Line="445" Column="1" TopLine="430"/>
       </Position15>
       <Position16>
-        <Filename Value="..\..\ntvTabs.pas"/>
-        <Caret Line="268" Column="22" TopLine="253"/>
+        <Filename Value="..\..\ntvPageControls.pas"/>
+        <Caret Line="446" Column="1" TopLine="436"/>
       </Position16>
       <Position17>
-        <Filename Value="..\..\ntvTabs.pas"/>
-        <Caret Line="276" Column="21" TopLine="261"/>
+        <Filename Value="..\..\ntvPageControls.pas"/>
+        <Caret Line="449" Column="20" TopLine="439"/>
       </Position17>
       <Position18>
-        <Filename Value="..\..\ntvTabs.pas"/>
-        <Caret Line="283" Column="21" TopLine="268"/>
+        <Filename Value="..\..\ntvPageControls.pas"/>
+        <Caret Line="453" Column="18" TopLine="443"/>
       </Position18>
       <Position19>
-        <Filename Value="..\..\ntvTabs.pas"/>
-        <Caret Line="288" Column="26" TopLine="273"/>
+        <Filename Value="..\..\ntvPageControls.pas"/>
+        <Caret Line="442" Column="1" TopLine="427"/>
       </Position19>
       <Position20>
-        <Filename Value="..\..\ntvTabs.pas"/>
-        <Caret Line="290" Column="29" TopLine="275"/>
+        <Filename Value="..\..\ntvPageControls.pas"/>
+        <Caret Line="444" Column="1" TopLine="427"/>
       </Position20>
       <Position21>
-        <Filename Value="..\..\ntvTabs.pas"/>
-        <Caret Line="146" Column="26" TopLine="132"/>
+        <Filename Value="..\..\ntvPageControls.pas"/>
+        <Caret Line="445" Column="1" TopLine="427"/>
       </Position21>
       <Position22>
-        <Filename Value="..\..\ntvTabs.pas"/>
-        <Caret Line="1" Column="1" TopLine="1"/>
+        <Filename Value="..\..\ntvPageControls.pas"/>
+        <Caret Line="446" Column="1" TopLine="427"/>
       </Position22>
       <Position23>
-        <Filename Value="..\..\ntvTabs.pas"/>
-        <Caret Line="146" Column="26" TopLine="121"/>
+        <Filename Value="..\..\ntvPageControls.pas"/>
+        <Caret Line="449" Column="1" TopLine="427"/>
       </Position23>
       <Position24>
-        <Filename Value="..\..\ntvTabs.pas"/>
-        <Caret Line="636" Column="31" TopLine="611"/>
+        <Filename Value="..\..\ntvPageControls.pas"/>
+        <Caret Line="450" Column="1" TopLine="427"/>
       </Position24>
       <Position25>
-        <Filename Value="..\..\ntvTabs.pas"/>
-        <Caret Line="146" Column="88" TopLine="132"/>
+        <Filename Value="..\..\ntvPageControls.pas"/>
+        <Caret Line="451" Column="1" TopLine="427"/>
       </Position25>
       <Position26>
-        <Filename Value="..\..\ntvTabs.pas"/>
-        <Caret Line="653" Column="88" TopLine="637"/>
+        <Filename Value="..\..\ntvPageControls.pas"/>
+        <Caret Line="453" Column="1" TopLine="429"/>
       </Position26>
       <Position27>
-        <Filename Value="..\..\ntvTabs.pas"/>
-        <Caret Line="732" Column="113" TopLine="717"/>
+        <Filename Value="..\..\ntvPageControls.pas"/>
+        <Caret Line="454" Column="1" TopLine="430"/>
       </Position27>
       <Position28>
-        <Filename Value="..\..\ntvTabs.pas"/>
-        <Caret Line="740" Column="22" TopLine="724"/>
+        <Filename Value="..\..\ntvPageControls.pas"/>
+        <Caret Line="442" Column="1" TopLine="430"/>
       </Position28>
       <Position29>
-        <Filename Value="..\..\ntvTabs.pas"/>
-        <Caret Line="770" Column="26" TopLine="755"/>
+        <Filename Value="..\..\ntvPageControls.pas"/>
+        <Caret Line="444" Column="1" TopLine="430"/>
       </Position29>
       <Position30>
-        <Filename Value="..\..\ntvTabs.pas"/>
-        <Caret Line="781" Column="26" TopLine="766"/>
+        <Filename Value="..\..\ntvPageControls.pas"/>
+        <Caret Line="445" Column="1" TopLine="430"/>
       </Position30>
     </JumpHistory>
   </ProjectOptions>

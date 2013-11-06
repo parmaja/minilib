@@ -363,7 +363,7 @@ begin
   else
   begin
     CheckClosed;
-    FRoot.Add(Result);
+    FCurrent.Add(Result);
   end;
   FCurrent := Result;
 end;
