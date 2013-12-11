@@ -498,10 +498,10 @@ type
     property Report: TmnrCustomReport read GetReport;
     property First: TmnrSection read GetFirst;
     property Last: TmnrSection read GetLast;
-    procedure ClearDesignRows;
 
     procedure Loop;
     procedure ClearItems;
+    procedure ClearDesignItems;
   end;
 
   TmnrIndex = class(TObject)
@@ -645,11 +645,18 @@ type
   TmnrProfiler = class
   private
     FReport: TmnrCustomReport;
+  protected
+    function GetReport: TmnrCustomReport;
+    procedure DoEnumReports(vList: TStrings); virtual;
   public
     constructor Create; virtual;
     procedure SaveReport; virtual;
     procedure LoadReport; virtual;
-    property Report: TmnrCustomReport read FReport;
+    procedure DeleteReport(const vName: string); virtual;
+
+    procedure EnumReports(vList: TStrings); overload;
+    function EnumReports: TStrings; overload;
+    property Report: TmnrCustomReport read GetReport;
   end;
 
 
@@ -1422,12 +1429,12 @@ begin
   begin
     s.Items.Clear;
     if s.Sections<>nil then s.Sections.ClearItems;
-    
+
     s := s.Next;
   end;
 end;
 
-procedure TmnrSections.ClearDesignRows;
+procedure TmnrSections.ClearDesignItems;
 var
   s: TmnrSection;
 begin
@@ -1435,6 +1442,8 @@ begin
   while s <> nil do
   begin
     s.DesignRows.Clear;
+    if s.Sections<>nil then s.Sections.ClearDesignItems;
+
     s := s.Next;
   end;
 end;
@@ -2348,6 +2357,37 @@ end;
 constructor TmnrProfiler.Create;
 begin
   inherited Create;
+end;
+
+procedure TmnrProfiler.EnumReports(vList: TStrings);
+begin
+  vList.Clear;
+  DoEnumReports(vList);
+end;
+
+procedure TmnrProfiler.DeleteReport(const vName: string);
+begin
+
+end;
+
+procedure TmnrProfiler.DoEnumReports(vList: TStrings);
+begin
+end;
+
+function TmnrProfiler.EnumReports: TStrings;
+begin
+  Result := TStringList.Create;
+  try
+    EnumReports(Result);
+  except
+    FreeAndNil(Result);
+    raise;
+  end;
+end;
+
+function TmnrProfiler.GetReport: TmnrCustomReport;
+begin
+  Result := FReport;
 end;
 
 procedure TmnrProfiler.LoadReport;

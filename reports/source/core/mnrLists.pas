@@ -144,7 +144,9 @@ type
     function Add: TmnrLinkNode;
     procedure IncCount(Value: Integer); override;
     procedure DecCount(Value: Integer); override;
+    procedure Clear; override;
     property ByIndex[vIndex: Integer]: TmnrNode read GetByIndex;
+
   end;
 
   TmnrNodeArray = array of TmnrNode;
@@ -493,6 +495,12 @@ end;
 function TmnrLinkNodes.Add: TmnrLinkNode;
 begin
   Result := TmnrLinkNode.Create(Self);
+end;
+
+procedure TmnrLinkNodes.Clear;
+begin
+  inherited;
+  FCount := 0;
 end;
 
 procedure TmnrLinkNodes.DecCount(Value: Integer);
