@@ -294,6 +294,7 @@ type
     property Row: TmnrDesignRow read GetRow;
     property Section: TmnrSection read GetSection;
     property Report: TmnrCustomReport read GetReport;
+    function DisplayText: string; virtual;
   published
     property Name: string read FName write SetName;
     property Width: Integer read FWidth write SetWidth default DEFAULT_CELL_WIDTH;
@@ -1223,7 +1224,11 @@ begin
           if l<>nil then
           begin
             c.FDesignCell := d;
-            c.AsString := l.DisplayText;
+            if d.DisplayText<>'' then
+              c.AsString := d.DisplayText
+            else
+              c.AsString := l.DisplayText;
+              
             c.FReference := l.Reference;
           end;
           d := d.Next;
@@ -2169,6 +2174,11 @@ destructor TmnrDesignCell.Destroy;
 begin
 
   inherited;
+end;
+
+function TmnrDesignCell.DisplayText: string;
+begin
+  Result := '';
 end;
 
 function TmnrDesignCell.GetRow: TmnrDesignRow;
