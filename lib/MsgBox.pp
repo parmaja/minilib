@@ -96,7 +96,7 @@ type
     function No(const vText: string): Boolean;
     function YesNoCancel(const vText: string): TmsgChoice;
 
-    function Error(const vText: string): Boolean;
+    function Error(const vText: string): Boolean; reintroduce;
     function Warning(const vText: string): Boolean;
     function Hint(const vText: string): Boolean;
 
@@ -442,7 +442,6 @@ end;
 
 function TMsgBox.Ask(const vText: string; Choices: array of string; DefaultChoice: Integer; CancelChoice: Integer; Kind: TmsgKind = msgkNormal): Integer;
 var
-  a: TmsgChoice;
   c: array of TmsgSelect;
   i: Integer;
 begin
@@ -489,7 +488,6 @@ end;
 
 function TMsgConsole.ShowMessage(const vText: string; Choices: array of TmsgSelect; DefaultChoice: Integer; CancelChoice: Integer; Kind: TmsgKind): Integer;
 var
-  B: TmsgChoice;
   i, p: Integer;
   s: string;
   ch: Char;
@@ -539,8 +537,8 @@ begin
 end;
 
 function TMsgConsole.ShowMessage(var Answer: string; const vText: string; Choices: array of TmsgSelect; DefaultChoice: Integer; CancelChoice: Integer; Kind: TmsgKind): Integer;
-var
-  OldMode: Cardinal;
+{var
+  OldMode: Cardinal;}
 begin
   if Kind = msgkPassword then
   begin

@@ -46,6 +46,7 @@ type
     procedure SetReadCommited(const AValue: Boolean);
     procedure SetTempStore(const AValue: TmncTempStore);
   protected
+    procedure InitPragma; virtual;
     procedure DoConnect; override;
     procedure DoDisconnect; override;
     function GetConnected:Boolean; override;
@@ -127,7 +128,6 @@ type
   protected
     function CreateParam: TmncParam; override;
   end;
-
 
   { TmncSQLiteBind }
 
@@ -419,19 +419,20 @@ procedure TmncSQLiteConnection.DoConnect;
 var
   f: Integer;
 begin
-  if not IsInitializeSqlite then
-    InitializeSQLite();
-
   f := SQLITE_OPEN_READWRITE or SQLITE_OPEN_SHAREDCACHE;
   if not FileExists(Resource) then
   begin
     if AutoCreate then
-      f := f or SQLITE_OPEN_CREATE
+    begin
+      f := f or SQLITE_OPEN_CREATE;
+      SetState(cstCreated);
+    end
     else
       raise EmncException.Create('Database not exist: "' + Resource + '"');
   end;
   //  CheckError(sqlite3_enable_shared_cache(1));
   CheckError(sqlite3_open_v2(PChar(Resource), @FDBHandle, f, nil), Resource);
+  InitPragma;
 end;
 
 function TmncSQLiteConnection.GetConnected: Boolean;
@@ -532,25 +533,8 @@ end;
 
 procedure TmncSQLiteConnection.DoInit;
 begin
-  Execute('PRAGMA full_column_names=0');
-  Execute('PRAGMA short_column_names=1');
-  Execute('PRAGMA encoding="UTF-8"');
-  Execute('PRAGMA foreign_keys=ON');
-
-  if Exclusive then
-    Execute('PRAGMA locking_mode=EXCLUSIVE')
-  else
-    Execute('PRAGMA locking_mode=NORMAL');
-  if Exclusive then
-  Execute('PRAGMA TEMP_STORE=' + SQLiteTempStoreToStr(FTempStore));
-  Execute('PRAGMA journal_mode=' + SQLiteJournalModeToStr(FJournalMode));
-  Execute('PRAGMA synchronous=' + SQLiteSynchronousToStr(Synchronous));
-  {TODO
-    secure_delete
-    case_sensitive_like //to be compatiple with firebird
-    temp_store_directory
-    read_uncommitted nop
-  }
+  if not IsInitializeSqlite then
+    InitializeSQLite();
 end;
 
 procedure TmncSQLiteSession.SetConnection(const AValue: TmncSQLiteConnection);
@@ -596,6 +580,29 @@ begin
     if Active then
       raise EmncException.Create('You can not set TempStore when session active');
   end;
+end;
+
+procedure TmncSQLiteConnection.InitPragma;
+begin
+  Execute('PRAGMA full_column_names=0');
+  Execute('PRAGMA short_column_names=1');
+  Execute('PRAGMA encoding="UTF-8"');
+  Execute('PRAGMA foreign_keys=ON');
+
+  if Exclusive then
+    Execute('PRAGMA locking_mode=EXCLUSIVE')
+  else
+    Execute('PRAGMA locking_mode=NORMAL');
+  if Exclusive then
+  Execute('PRAGMA TEMP_STORE=' + SQLiteTempStoreToStr(FTempStore));
+  Execute('PRAGMA journal_mode=' + SQLiteJournalModeToStr(FJournalMode));
+  Execute('PRAGMA synchronous=' + SQLiteSynchronousToStr(Synchronous));
+  {TODO
+    secure_delete
+    case_sensitive_like //to be compatiple with firebird
+    temp_store_directory
+    read_uncommitted nop
+  }
 end;
 
 procedure TmncSQLiteSession.DoInit;

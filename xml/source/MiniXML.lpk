@@ -1,4 +1,4 @@
-<?xml version="1.0"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <CONFIG>
   <Package Version="4">
     <PathDelim Value="\"/>
@@ -16,17 +16,6 @@
           <AllowLabel Value="False"/>
         </SyntaxOptions>
       </Parsing>
-      <CodeGeneration>
-        <Optimizations>
-          <OptimizationLevel Value="3"/>
-        </Optimizations>
-      </CodeGeneration>
-      <Linking>
-        <Debugging>
-          <GenerateDebugInfo Value="False"/>
-          <UseExternalDbgSyms Value="True"/>
-        </Debugging>
-      </Linking>
       <Other>
         <Verbosity>
           <ShoLineNum Value="True"/>

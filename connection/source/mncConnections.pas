@@ -63,7 +63,7 @@ type
     ccDB, //It is Database engine not just transfer data object
     ccSQL, //It is SQL engine, you know CSV or Paradox is not, we have no plan to support Paradox
     ccNetwork, //Can connect over network
-    ccStrict, //Without it, it no need to call Start and Stop (Commit/Rollback) this DB automatically do it (pg/SQLite allow it)
+    ccStrict, //Without it: it is no need to call Start and Stop (Commit/Rollback) this DB automatically do it (pg/SQLite allow it)
               //But that not mean you can call Start more than one or Stop without started it.
     ccTransaction, //Support transaction, most of them Like Firebird, SQLite, PG
     ccMultiTransaction //Like Firebird can have multiple transaction for one connection, while PG and SQLite has not, see also sbhMultiple
@@ -83,6 +83,12 @@ type
     Capabilities: TmncCapabilities;
   end;
 
+  TmncState = (
+      cstCreated  //When use autocreate and it is created
+    );
+
+  TmncStates = set of TmncState;
+
   { TmncConnection }
 
   TmncConnection = class(TmncObject)
@@ -101,6 +107,7 @@ type
     FSessions: TmncSessions;
     FStartCount: Integer;
     FIsInit: Boolean;
+    FStates: TmncStates;
     procedure SetConnected(const Value: Boolean);
     procedure SetParams(const AValue: TStrings);
     procedure ParamsChanging(Sender: TObject);
@@ -123,11 +130,13 @@ type
     procedure Open; //Alias for Connect
     procedure Close; //Alias for Disonnect;
 
+    procedure SetState(aState: TmncState);
     property Sessions: TmncSessions read FSessions;
     property AutoStart: Boolean read FAutoStart write FAutoStart; //AutoStart the Session when created
     property Connected: Boolean read GetConnected write SetConnected;
     property Active: Boolean read GetConnected write SetConnected;
     property AutoCreate: Boolean read FAutoCreate write FAutoCreate default False;
+    property States: TmncStates read FStates;
     property Host: string read FHost write FHost;
     property Port: string read FPort write FPort;
     property Resource: string read FResource write FResource; //can be a Database name or Alias or service name etc...
@@ -626,6 +635,11 @@ end;
 procedure TmncConnection.Close;
 begin
   Disconnect;
+end;
+
+procedure TmncConnection.SetState(aState: TmncState);
+begin
+  FStates := FStates + [aState];
 end;
 
 procedure TmncConnection.Connect;

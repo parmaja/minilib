@@ -31,6 +31,7 @@ type
     procedure DoDisconnect; override;
     function GetConnected: Boolean; override;
   public
+    class function Model: TmncConnectionModel; override;
     constructor Create;
   end;
 
@@ -65,6 +66,7 @@ type
     function GetConnection: TmncCSVConnection;
     function GetSession: TmncCSVSession;
   protected
+    procedure DoParse; override;
     function CreateFields(vColumns: TmncColumns): TmncFields; override;
     function CreateParams: TmncParams; override;
     procedure PrepareParams;
@@ -108,6 +110,14 @@ end;
 function TmncCSVConnection.GetConnected: Boolean;
 begin
   Result := FConnected;
+end;
+
+class function TmncCSVConnection.Model: TmncConnectionModel;
+begin
+  Result.Name := 'CSV';
+  Result.Title := 'CSV Files';
+  Result.Capabilities := [];
+  Result.SchemaClass := nil;
 end;
 
 procedure TmncCSVConnection.DoDisconnect;
@@ -198,6 +208,11 @@ end;
 function TmncCSVCommand.GetSession: TmncCSVSession;
 begin
   Result := (Inherited Session) as TmncCSVSession;
+end;
+
+procedure TmncCSVCommand.DoParse;
+begin
+  //Nothing to do
 end;
 
 function TmncCSVCommand.CreateFields(vColumns: TmncColumns): TmncFields;
