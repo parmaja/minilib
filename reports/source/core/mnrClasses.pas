@@ -22,17 +22,17 @@ uses
   mnrLists;
 
 const
-  ID_SECTION_BASE = 0;
-  ID_SECTION_REPORT = ID_SECTION_BASE + 1;
-  ID_SECTION_HEADERREPORT = ID_SECTION_BASE + 2;
-  ID_SECTION_FOOTERREPORT = ID_SECTION_BASE + 3;
-  ID_SECTION_HEADERPAGE = ID_SECTION_BASE + 4;
-  ID_SECTION_FOOTERPAGE = ID_SECTION_BASE + 5;
+  ID_SECTION_BASE          = 0;
+  ID_SECTION_REPORT        = ID_SECTION_BASE + 1;
+  ID_SECTION_HEADERREPORT  = ID_SECTION_BASE + 2;
+  ID_SECTION_FOOTERREPORT  = ID_SECTION_BASE + 3;
+  ID_SECTION_HEADERPAGE    = ID_SECTION_BASE + 4;
+  ID_SECTION_FOOTERPAGE    = ID_SECTION_BASE + 5;
   ID_SECTION_HEADERDETAILS = ID_SECTION_BASE + 6;
-  ID_SECTION_DETAILS = ID_SECTION_BASE + 7;
+  ID_SECTION_DETAILS       = ID_SECTION_BASE + 7;
   ID_SECTION_FOOTERDETAILS = ID_SECTION_BASE + 8;
-  ID_SECTION_LAST = ID_SECTION_BASE + 9;
-  DEFAULT_CELL_WIDTH = 1000;
+  ID_SECTION_LAST          = ID_SECTION_BASE + 9;
+  DEFAULT_CELL_WIDTH       = 1000;
 
 type
 
@@ -568,6 +568,7 @@ type
     procedure Finish; virtual; //
     procedure DoPrepare; virtual;
 
+    class function DoGetProfilerClass: TmnrProfilerClass; virtual;
     function DoCreateNewRow(vSection: TmnrSection): TmnrRow; virtual;
     function DoCreateProfiler: TmnrProfiler; virtual;
     function DoCreateSections: TmnrSections; virtual;
@@ -587,7 +588,7 @@ type
     function GetFooterPage: TmnrSection;
     function GetHeaderPage: TmnrSection;
   public
-  
+
     constructor Create;
     destructor Destroy; override;
     property Sections: TmnrSections read GetSections;
@@ -603,6 +604,7 @@ type
     procedure Prepare; //for design and generate
     procedure Generate;
     property Profiler: TmnrProfiler read GetProfiler;
+    class function ProfilerClass: TmnrProfilerClass; 
 
     procedure Fetch(vSection: TmnrSection; var vParams: TmnrFetch); virtual;
     procedure RegisterRequest(const vName: string; vOnRequest: TOnRequest); virtual;
@@ -648,15 +650,15 @@ type
     FReport: TmnrCustomReport;
   protected
     function GetReport: TmnrCustomReport;
-    procedure DoEnumReports(vList: TStrings); virtual;
+    class procedure DoEnumReports(vClass: TmnrCustomReportClass; vList: TStrings); virtual;
   public
     constructor Create; virtual;
     procedure SaveReport; virtual;
     procedure LoadReport; virtual;
     procedure DeleteReport(const vName: string); virtual;
 
-    procedure EnumReports(vList: TStrings); overload;
-    function EnumReports: TStrings; overload;
+    class procedure EnumReports(vClass: TmnrCustomReportClass; vList: TStrings); overload;
+    class function EnumReports(vClass: TmnrCustomReportClass): TStrings; overload;
     property Report: TmnrCustomReport read GetReport;
   end;
 
@@ -732,6 +734,11 @@ begin
   Result.FSection := vSection;
 end;
 
+class function TmnrCustomReport.ProfilerClass: TmnrProfilerClass;
+begin
+  Result := DoGetProfilerClass;
+end;
+
 function TmnrCustomReport.DoCreateGroups: TmnrGroups;
 begin
   Result := TmnrGroups.Create(Self);
@@ -749,7 +756,7 @@ end;
 
 function TmnrCustomReport.DoCreateProfiler: TmnrProfiler;
 begin
-  Result := TmnrProfiler.Create;
+  Result := ProfilerClass.Create;
 end;
 
 class function TmnrCustomReport.CreateReportDesgin: ImnrReportDesigner;
@@ -788,6 +795,11 @@ end;
 function TmnrCustomReport.DoCreateSections: TmnrSections;
 begin
   Result := TmnrSections.Create(Self);
+end;
+
+class function TmnrCustomReport.DoGetProfilerClass: TmnrProfilerClass;
+begin
+  Result := TmnrProfiler;
 end;
 
 procedure TmnrCustomReport.DoPrepare;
@@ -2369,10 +2381,10 @@ begin
   inherited Create;
 end;
 
-procedure TmnrProfiler.EnumReports(vList: TStrings);
+class procedure TmnrProfiler.EnumReports(vClass: TmnrCustomReportClass; vList: TStrings);
 begin
   vList.Clear;
-  DoEnumReports(vList);
+  DoEnumReports(vClass, vList);
 end;
 
 procedure TmnrProfiler.DeleteReport(const vName: string);
@@ -2380,15 +2392,15 @@ begin
 
 end;
 
-procedure TmnrProfiler.DoEnumReports(vList: TStrings);
+class procedure TmnrProfiler.DoEnumReports(vClass: TmnrCustomReportClass; vList: TStrings);
 begin
 end;
 
-function TmnrProfiler.EnumReports: TStrings;
+class function TmnrProfiler.EnumReports(vClass: TmnrCustomReportClass): TStrings;
 begin
   Result := TStringList.Create;
   try
-    EnumReports(Result);
+    EnumReports(vClass, Result);
   except
     FreeAndNil(Result);
     raise;
