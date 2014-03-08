@@ -440,6 +440,8 @@ type
     procedure UpdateRowData(vRow: TmnrRow; vData: TObject); virtual;
     function GetCaption: string; virtual;
     function GetReport: TmnrCustomReport;
+    procedure DoBeginFill(vReference: TmnrReferencesRow); virtual;
+    procedure DoEndFill(vReference: TmnrReferencesRow); virtual;
   public
     constructor Create(vNodes: TmnrNode);
     destructor Destroy; override;
@@ -464,7 +466,7 @@ type
     property LoopWay: TmnrSectionLoopWay read GetLoopWay;
     property OnFetch: TOnFetch read FOnFetch write FOnFetch;
 
-    procedure FillNow(vParams: TmnrFetch; vIndex: Integer; vReference: TmnrReferencesRow);
+    procedure FillNow(vParams: TmnrFetch; vIndex: Integer; vReference: TmnrReferencesRow); virtual;
     function FindDesignCell(const vName: string): TmnrDesignCell;
   published
     property AppendDetailTotals: Boolean read FAppendDetailTotals write FAppendDetailTotals default False;
@@ -1048,6 +1050,11 @@ begin
     Result := TmnrSections.Create(nil);
 end;
 
+procedure TmnrSection.DoEndFill(vReference: TmnrReferencesRow);
+begin
+
+end;
+
 procedure TmnrSection.DoAppendDetailTotals(vSection: TmnrSection);
 var
   r: TmnrDesignRow;
@@ -1260,6 +1267,11 @@ begin
   end;
 end;
 
+procedure TmnrSection.DoBeginFill(vReference: TmnrReferencesRow);
+begin
+
+end;
+
 constructor TmnrSection.Create(vNodes: TmnrNode);
 begin
   inherited;
@@ -1316,7 +1328,6 @@ begin
         aRow.FReferencesRow := vReference;
         aRow.FDesignRow := r;
         if vParams.Data<>nil then UpdateRowData(aRow, vParams.Data);
-        
 
         d := r.First;
         while d <> nil do
@@ -1620,7 +1631,15 @@ begin
         s.DoFetch(aParams);
         if aParams.AcceptMode = acmAccept then
         begin
-          s.FillNow(aParams, 0, s.NewReference);
+          r := s.NewReference;
+
+          s.DoBeginFill(r);
+          try
+            s.FillNow(aParams, 0, r);
+          finally
+            s.DoEndFill(r);
+          end;
+          
           if aParams.Data <> nil then FreeAndNil(aParams.Data);
           s.Sections.Loop;
         end;
@@ -1636,6 +1655,7 @@ begin
           begin
             if (s.ClassID = sciDetails) then //improve add referance on first accepted ...
               r := s.NewReference;
+            s.DoBeginFill(r);
             if (s.AppendDetailTitles) then
               s.DoAppendTitles(Report.DetailTitles);
           end;
@@ -1653,6 +1673,7 @@ begin
             if (r <> nil) and s.AppendDetailTotals then
             begin
               s.DoAppendDetailTotals(Report.FDetailTotals);
+              s.DoEndFill(r);
             end;
           end;
 
