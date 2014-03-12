@@ -421,6 +421,8 @@ type
     FAppendReportTitles: Boolean;
     FSectionLoopWay: TmnrSectionLoopWay;
     FAppendPageTotals: Boolean;
+    FHitAppendReportTitles: Boolean;
+
     function GetNext: TmnrSection;
     function GetNodes: TmnrSections;
     function GetPrior: TmnrSection;
@@ -468,6 +470,9 @@ type
 
     procedure FillNow(vParams: TmnrFetch; vIndex: Integer; vReference: TmnrReferencesRow); virtual;
     function FindDesignCell(const vName: string): TmnrDesignCell;
+
+    procedure AddTitles;
+    procedure AddReportTitles;
   published
     property AppendDetailTotals: Boolean read FAppendDetailTotals write FAppendDetailTotals default False;
     property AppendPageTotals: Boolean read FAppendPageTotals write FAppendPageTotals default False;
@@ -544,18 +549,21 @@ type
     FProfiler: TmnrProfiler;
     FDesigner: ImnrReportDesigner;
 
+    FHeaderReport: TmnrSection;
     FDetailTotals: TmnrSection;
     FReportTotals: TmnrSection;
     FDetailTitles: TmnrSection;
     FReportTitles: TmnrSection;
     FHeaderPage: TmnrSection;
     FFooterPage: TmnrSection;
+    FFooterReport: TmnrSection;
 
     function GetProfiler: TmnrProfiler;
   protected
     function Canceled: Boolean;
     procedure HandleNewRow(vRow: TmnrRowNode); virtual;
-    procedure InitSections(vSections: TmnrSections); virtual;
+    procedure DoInitSections(vSections: TmnrSections); virtual;
+    procedure InitSections(vSections: TmnrSections); //virtual;
     procedure InitLayouts(vGroups: TmnrGroups); virtual;
     procedure InitRequests; virtual;
     function CreateNewRow(vSection: TmnrSection): TmnrRow;
@@ -588,6 +596,8 @@ type
     function GetDetailTitles: TmnrSection;
     function GetReportTitles: TmnrSection;
     function GetFooterPage: TmnrSection;
+    function GetFooterReport: TmnrSection;
+    function GetHeaderReport: TmnrSection;
     function GetHeaderPage: TmnrSection;
   public
 
@@ -621,12 +631,15 @@ type
     class procedure Desgin;
     procedure Clear; virtual;
 
-    property DetailTotals: TmnrSection read GetDetailTotals;
-    property ReportTotals: TmnrSection read GetReportTotals;
-    property DetailTitles: TmnrSection read GetDetailTitles;
-    property ReportTitles: TmnrSection read GetReportTitles;
+    property HeaderReport: TmnrSection read GetHeaderReport;
     property HeaderPage: TmnrSection read GetHeaderPage;
+    property DetailTotals: TmnrSection read GetDetailTotals;
+    property ReportTitles: TmnrSection read GetReportTitles;
+    property DetailTitles: TmnrSection read GetDetailTitles;
+    property ReportTotals: TmnrSection read GetReportTotals;
     property FooterPage: TmnrSection read GetFooterPage;
+    property FooterReport: TmnrSection read GetFooterReport;
+
   end;
 
 
@@ -709,12 +722,6 @@ begin
   FRowsListIndex := nil;
 
   InitSections(FSections);
-  FDetailTotals := FSections.RegisterSection('DetailTotals', '„Ã«„Ì⁄ «· ›’Ì·', sciFooterDetails);
-  FReportTotals := FSections.RegisterSection('ReportTotals', '„Ã«„Ì⁄ «· ﬁ—Ì—', sciFooterReport);
-  FDetailTitles := FSections.RegisterSection('DetailTitles', '⁄‰«ÊÌ‰ «· ›’Ì·', sciDetails, 0, nil, slwSingle);
-  FReportTitles := FSections.RegisterSection('ReportTitles', '⁄‰«ÊÌ‰ «· ﬁ—Ì—', sciHeaderReport);
-  FHeaderPage   := FSections.RegisterSection('HeaderPage', '—«” «·’›Õ…', sciHeaderPage, ID_SECTION_HEADERPage);
-  FFooterPage   := FSections.RegisterSection('FooterPage', '«”›· «·’›Õ…', sciFooterPage, ID_SECTION_FooterPage);
 
   Created;
   FWorking := True;
@@ -768,6 +775,17 @@ end;
 
 procedure TmnrCustomReport.InitSections(vSections: TmnrSections);
 begin
+  FHeaderPage   := FSections.RegisterSection('HeaderPage', '—«” «·’›Õ…', sciHeaderPage, ID_SECTION_HEADERPage);
+  FHeaderReport := FSections.RegisterSection('HeaderReport', '—«” «· ﬁ—Ì—', sciHeaderReport, ID_SECTION_HEADERREPORT);
+  FReportTitles := FSections.RegisterSection('ReportTitles', '⁄‰«ÊÌ‰ «· ﬁ—Ì—', sciHeaderReport);
+  FDetailTitles := FSections.RegisterSection('DetailTitles', '⁄‰«ÊÌ‰ «· ›’Ì·', sciDetails, 0, nil, slwSingle);
+
+  DoInitSections(vSections); //for header and details
+
+  FDetailTotals := FSections.RegisterSection('DetailTotals', '„Ã«„Ì⁄ «· ›’Ì·', sciFooterDetails);
+  FReportTotals := FSections.RegisterSection('ReportTotals', '„Ã«„Ì⁄ «· ﬁ—Ì—', sciFooterReport);
+  FFooterReport   := FSections.RegisterSection('FooterReport', '«”›· «· ﬁ—Ì—', sciFooterReport, ID_SECTION_FOOTERREPORT);
+  FFooterPage   := FSections.RegisterSection('FooterPage', '«”›· «·’›Õ…', sciFooterPage, ID_SECTION_FOOTERPAGE);
 end;
 
 class procedure TmnrCustomReport.Desgin;
@@ -802,6 +820,11 @@ end;
 class function TmnrCustomReport.DoGetProfilerClass: TmnrProfilerClass;
 begin
   Result := TmnrProfiler;
+end;
+
+procedure TmnrCustomReport.DoInitSections(vSections: TmnrSections);
+begin
+
 end;
 
 procedure TmnrCustomReport.DoPrepare;
@@ -908,6 +931,16 @@ begin
   Result := FFooterPage;
 end;
 
+function TmnrCustomReport.GetFooterReport: TmnrSection;
+begin
+  Result := FFooterReport;
+end;
+
+function TmnrCustomReport.GetHeaderReport: TmnrSection;
+begin
+  Result := FHeaderReport;
+end;
+
 function TmnrCustomReport.GetReportTotals: TmnrSection;
 begin
   Result := FReportTotals;
@@ -970,7 +1003,7 @@ begin
   InitRequests; //must bge after start 
   FCanceled := False;
   try
-    Sections.DoAppendReportTitles(ReportTitles);
+    //Sections.DoAppendReportTitles(ReportTitles);
     Sections.Loop;
     Sections.DoAppendPageTotals(FooterPage);
   except
@@ -1247,7 +1280,7 @@ begin
               c.AsString := d.DisplayText
             else
               c.AsString := l.DisplayText;
-              
+
             c.FReference := l.Reference;
           end;
           d := d.Next;
@@ -1270,6 +1303,20 @@ end;
 procedure TmnrSection.DoBeginFill(vReference: TmnrReferencesRow);
 begin
 
+end;
+
+procedure TmnrSection.AddReportTitles;
+begin
+  if AppendReportTitles and not FHitAppendReportTitles then
+  begin
+    FHitAppendReportTitles := True;
+    DoAppendTitles(Report.ReportTitles);
+  end;
+end;
+
+procedure TmnrSection.AddTitles;
+begin
+  if AppendDetailTitles then DoAppendTitles(Report.DetailTitles);
 end;
 
 constructor TmnrSection.Create(vNodes: TmnrNode);
@@ -1625,6 +1672,9 @@ begin
     aParams.AcceptMode := acmAccept;
     aParams.FetchMode := fmFirst;
 
+    s.AddReportTitles;
+    
+
     case s.LoopWay of
       slwSingle:
       begin
@@ -1656,8 +1706,7 @@ begin
             if (s.ClassID = sciDetails) then //improve add referance on first accepted ...
               r := s.NewReference;
             s.DoBeginFill(r);
-            if (s.AppendDetailTitles) then
-              s.DoAppendTitles(Report.DetailTitles);
+            s.AddTitles;
           end;
 
           if aParams.AcceptMode = acmAccept then
