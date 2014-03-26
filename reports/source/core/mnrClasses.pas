@@ -439,7 +439,7 @@ type
     function DoCreateSections: TmnrSections;
     function GetSections: TmnrSections;
 
-    procedure UpdateRowData(vRow: TmnrRow; vData: TObject); virtual;
+    procedure UpdateRowData(vRow: TmnrRow; vData: TObject; vLastDesignRow: Boolean); virtual;
     function GetCaption: string; virtual;
     function GetReport: TmnrCustomReport;
     procedure DoBeginFill(vReference: TmnrReferencesRow); virtual;
@@ -1374,7 +1374,7 @@ begin
         aRow.FRowIndex := vIndex;
         aRow.FReferencesRow := vReference;
         aRow.FDesignRow := r;
-        if vParams.Data<>nil then UpdateRowData(aRow, vParams.Data);
+        if vParams.Data<>nil then UpdateRowData(aRow, vParams.Data, r.Next=nil);
 
         d := r.First;
         while d <> nil do
@@ -1488,7 +1488,7 @@ begin
   inherited SetNodes(Value);
 end;
 
-procedure TmnrSection.UpdateRowData(vRow: TmnrRow; vData: TObject);
+procedure TmnrSection.UpdateRowData(vRow: TmnrRow; vData: TObject; vLastDesignRow: Boolean);
 begin
 
 end;
@@ -1673,7 +1673,7 @@ begin
     aParams.FetchMode := fmFirst;
 
     s.AddReportTitles;
-    
+
 
     case s.LoopWay of
       slwSingle:
@@ -1689,7 +1689,7 @@ begin
           finally
             s.DoEndFill(r);
           end;
-          
+
           if aParams.Data <> nil then FreeAndNil(aParams.Data);
           s.Sections.Loop;
         end;
@@ -1703,10 +1703,15 @@ begin
 
           if (aParams.FetchMode = fmFirst) then
           begin
-            if (s.ClassID = sciDetails) then //improve add referance on first accepted ...
+            //if (s.ClassID = sciDetails) then //improve add referance on first accepted ...
               r := s.NewReference;
             s.DoBeginFill(r);
             s.AddTitles;
+          end
+          else
+          begin
+            if (s.ClassID <> sciDetails) then
+              r := s.NewReference;
           end;
 
           if aParams.AcceptMode = acmAccept then
