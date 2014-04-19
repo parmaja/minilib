@@ -625,8 +625,6 @@ type
     property Rows[vRow: Integer]: TmnrRow read GetRows;
     property Cells[vRow, vCol: Integer]: TmnrCell read GetCells;
 
-    procedure ExportCSV(const vFile: TFileName); overload; //test purpose only
-    procedure ExportCSV(const vStream: TStream); overload; //test purpose only
     class function CreateReportDesgin: ImnrReportDesigner; virtual;
     class procedure Desgin;
     procedure Clear; virtual;
@@ -640,6 +638,9 @@ type
     property FooterPage: TmnrSection read GetFooterPage;
     property FooterReport: TmnrSection read GetFooterReport;
 
+    procedure ExportCSV(const vFile: TFileName); overload; virtual;//test purpose only
+    procedure ExportCSV(const vStream: TStream); overload; virtual;//test purpose only
+    procedure ExportCSV(const vStream: TStream; vItems: TmnrRows); overload; virtual;//test purpose only
   end;
 
 
@@ -837,7 +838,7 @@ begin
 
 end;
 
-procedure TmnrCustomReport.ExportCSV(const vStream: TStream);
+procedure TmnrCustomReport.ExportCSV(const vStream: TStream; vItems: TmnrRows);
   procedure WriteStr(const vStr: string);
   begin
     vStream.Write(vStr[1], Length(vStr));
@@ -846,7 +847,7 @@ var
   r: TmnrRow;
   n: TmnrCell;
 begin
-  r := Items.First;
+  r := vItems.First;
   while r <> nil do
   begin
     n := r.First;
@@ -862,6 +863,11 @@ begin
     if r <> nil then
       WriteStr(#13#10);
   end;
+end;
+
+procedure TmnrCustomReport.ExportCSV(const vStream: TStream);
+begin
+  ExportCSV(vStream, Items);
 end;
 
 procedure TmnrCustomReport.ExportCSV(const vFile: TFileName);
