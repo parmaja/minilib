@@ -15,7 +15,8 @@ unit mnUtils;
 interface
 
 uses
-  Classes, SysUtils, StrUtils, DateUtils, Types;
+  Classes, SysUtils, StrUtils, DateUtils, Types
+  {$IFDEF MSWINDOWS}, Windows{$ENDIF};
 
 const
   sUTF8BOM: array[1..3] of Char = (#$EF, #$BB, #$BF);
@@ -106,8 +107,8 @@ implementation
 {$ifndef FPC}
   {$if CompilerVersion < 22.0}
   var
-    FFormatSettings := TFormatSettings;
-  {$endif}
+    FFormatSettings: TFormatSettings;
+  {$ifend}
 {$endif}
 
 function StrHave(S:string; Separators: TSysCharSet): Boolean;
@@ -637,7 +638,7 @@ begin
     Result := FormatSettings;
     {$else}
     Result := FFormatSettings;
-    {$endif}
+    {$ifend}
   {$endif}
 end;
 
@@ -645,7 +646,7 @@ initialization
   {$ifndef FPC}
     {$if CompilerVersion < 22.0}
     GetLocaleFormatSettings(GetUserDefaultLCID, FFormatSettings)
-    {$endif}
+    {$ifend}
   {$endif}
 
 
