@@ -74,7 +74,7 @@ const
 implementation
 
 uses
-  Types, StrUtils;
+  Types;
 
 function Max(I, J: Integer): Integer;
 begin

@@ -28,7 +28,6 @@ function QuoteStr(Str: string; QuoteChar: string = '"'): string;
 
 type
   TStrToStringsCallbackProc = procedure(Sender: Pointer; S: string);
-  TDayNamesArr = array[1..7] of string;
 
 function StrToStringsCallback(Sender: Pointer; Proc: TStrToStringsCallbackProc; Content: string; Separators: TSysCharSet; WhiteSpace: TSysCharSet = [#0, #13, #10]; DequoteValues: Boolean = False; Quotes: TSysCharSet = ['''', '"']): Integer;
 function StrToStrings(Content: string; Strings: TStrings; Separators: TSysCharSet; WhiteSpace: TSysCharSet = [#0, #13, #10]; DequoteValues: Boolean = False; Quotes: TSysCharSet = ['''', '"']): Integer;
@@ -104,11 +103,12 @@ const
 
 implementation
 
-{$if CompilerVersion < 22.0}
-var
-  fFormatSettings := TFormatSettings;
+{$ifndef FPC}
+  {$if CompilerVersion < 22.0}
+  var
+    FFormatSettings := TFormatSettings;
+  {$endif}
 {$endif}
-
 
 function StrHave(S:string; Separators: TSysCharSet): Boolean;
 var
@@ -628,31 +628,24 @@ begin
   OffsetRect(R1, ((R2.Right - R2.Left) div 2) - ((R1.Right - R1.Left) div 2) + (R2.Left - R1.Left), ((R2.Bottom - R2.Top) div 2) - ((R1.Bottom - R1.Top) div 2) + (R2.Top - R1.Top));
 end;
 
-function GetLongDayNames(vIndex: Integer): string;
-begin
-  {$ifdef FPC}
-  Result := DefaultFormatSettings.LongDayNames[vIndex];
-  {$elseif CompilerVersion > 15.0}
-  Result := FormatSettings.LongDayNames[vIndex];
-  {$else}
-  Result := LongDayNames[vIndex];
-  {$endif}
-end;
-
 function GetFormatSettings: TFormatSettings;
 begin
   {$ifdef FPC}
   Result := DefaultFormatSettings;
-  {$elseif CompilerVersion >= 22.0}
-  Result := FormatSettings;
   {$else}
-  Result := fFormatSettings;
+    {$if CompilerVersion >= 22.0}
+    Result := FormatSettings;
+    {$else}
+    Result := FFormatSettings;
+    {$endif}
   {$endif}
 end;
 
 initialization
-  {$if CompilerVersion < 22.0}
-  GetLocaleFormatSettings(GetUserDefaultLCID, fFormatSettings)
+  {$ifndef FPC}
+    {$if CompilerVersion < 22.0}
+    GetLocaleFormatSettings(GetUserDefaultLCID, FFormatSettings)
+    {$endif}
   {$endif}
 
 
