@@ -28,6 +28,7 @@ function QuoteStr(Str: string; QuoteChar: string = '"'): string;
 
 type
   TStrToStringsCallbackProc = procedure(Sender: Pointer; S: string);
+  TDayNamesArr = array[1..7] of string;
 
 function StrToStringsCallback(Sender: Pointer; Proc: TStrToStringsCallbackProc; Content: string; Separators: TSysCharSet; WhiteSpace: TSysCharSet = [#0, #13, #10]; DequoteValues: Boolean = False; Quotes: TSysCharSet = ['''', '"']): Integer;
 function StrToStrings(Content: string; Strings: TStrings; Separators: TSysCharSet; WhiteSpace: TSysCharSet = [#0, #13, #10]; DequoteValues: Boolean = False; Quotes: TSysCharSet = ['''', '"']): Integer;
@@ -76,8 +77,8 @@ function ExpandToPath(FileName: string; Path: string; Root: string = ''): string
   sCRLF = #13#10 \r\n
 }
 
-function EscapeString(const S: string; Esc: string; Chars: array of AnsiChar; Escapes: array of string): string;
-function DescapeString(const S: string; Esc: string; Chars: array of AnsiChar; Escapes: array of string): string;
+function EscapeString(const S: string; Esc: string; Chars: array of Char; Escapes: array of string): string;
+function DescapeString(const S: string; Esc: string; Chars: array of Char; Escapes: array of string): string;
 
 //IncludePathSeparator add the Delimiter when S not = ''
 function IncludePathSeparator(const S: string): string;
@@ -88,6 +89,9 @@ procedure InitMemory(out V; Count: {$ifdef FPC}SizeInt{$else}Longint{$endif});
 //Rect functions
 procedure CenterRect(var R1: TRect; R2: TRect);
 
+function GetFormatSettings: TFormatSettings;
+
+
 {$ifndef FPC}
 const
 {$ifdef MSWINDOWS}
@@ -97,7 +101,14 @@ const
 {$endif}
 {$endif}
 
+
 implementation
+
+{$if CompilerVersion < 22.0}
+var
+  fFormatSettings := TFormatSettings;
+{$endif}
+
 
 function StrHave(S:string; Separators: TSysCharSet): Boolean;
 var
@@ -346,8 +357,8 @@ begin
   end;
 end;
 
-function EscapeString(const S: string; Esc: string; Chars: array of AnsiChar; Escapes: array of string): string;
-  function InChars(const Char: AnsiChar): Integer;
+function EscapeString(const S: string; Esc: string; Chars: array of Char; Escapes: array of string): string;
+  function InChars(const Char: Char): Integer;
   var
     i: Integer;
   begin
@@ -403,7 +414,7 @@ begin
   end;
 end;
 
-function DescapeString(const S: string; Esc: string; Chars: array of AnsiChar; Escapes: array of string): string;
+function DescapeString(const S: string; Esc: string; Chars: array of Char; Escapes: array of string): string;
   function InEscape(Start: Integer): Integer;
   var
     i: Integer;
@@ -536,14 +547,9 @@ var
     else
       Result := vStr;
   end;
-{$ifdef FPC}
-var
-  TimeSeparator: char;
-{$endif}
+
 begin
-  {$ifdef FPC}
-  TimeSeparator := DefaultFormatSettings.TimeSeparator;
-  {$endif}
+
   g := vPeriod < 0;
   vPeriod := abs(vPeriod);
   d := trunc(vPeriod * SecsPerDay);
@@ -551,13 +557,13 @@ begin
   d := (d  - (h *  3600));
   m := d div 60;
   s := (d  - (m *  60));
-  Result := LeadToRight(IntToStr(h), 2, '0') + TimeSeparator + LeadToRight(IntToStr(m), 2, '0');
+  Result := LeadToRight(IntToStr(h), 2, '0') + GetFormatSettings.TimeSeparator + LeadToRight(IntToStr(m), 2, '0');
   if WithSeconds then
   begin
     if s = 0 then
-      Result := Result + TimeSeparator + '00'
+      Result := Result + GetFormatSettings.TimeSeparator + '00'
     else
-      Result := Result + TimeSeparator + LeadToRight(IntToStr(s), 2, '0');
+      Result := Result + GetFormatSettings.TimeSeparator + LeadToRight(IntToStr(s), 2, '0');
   end;
   if g then
     Result := '-' + Result;
@@ -621,5 +627,33 @@ procedure CenterRect(var R1: TRect; R2: TRect);
 begin
   OffsetRect(R1, ((R2.Right - R2.Left) div 2) - ((R1.Right - R1.Left) div 2) + (R2.Left - R1.Left), ((R2.Bottom - R2.Top) div 2) - ((R1.Bottom - R1.Top) div 2) + (R2.Top - R1.Top));
 end;
+
+function GetLongDayNames(vIndex: Integer): string;
+begin
+  {$ifdef FPC}
+  Result := DefaultFormatSettings.LongDayNames[vIndex];
+  {$elseif CompilerVersion > 15.0}
+  Result := FormatSettings.LongDayNames[vIndex];
+  {$else}
+  Result := LongDayNames[vIndex];
+  {$endif}
+end;
+
+function GetFormatSettings: TFormatSettings;
+begin
+  {$ifdef FPC}
+  Result := DefaultFormatSettings;
+  {$elseif CompilerVersion >= 22.0}
+  Result := FormatSettings;
+  {$else}
+  Result := fFormatSettings;
+  {$endif}
+end;
+
+initialization
+  {$if CompilerVersion < 22.0}
+  GetLocaleFormatSettings(GetUserDefaultLCID, fFormatSettings)
+  {$endif}
+
 
 end.

@@ -200,7 +200,7 @@ begin
   else if (S >= #$0020) and (S < #$0028) then
     c := cp864_page00[Ord(S) - $0020]
   else if (S >= #$0028) and (S < #$0080) then
-    c := Char(S)
+    c := AnsiChar(S)
   else if (S >= #$00a0) and (S < #$00f8) then
     c := cp864_page00_1[Ord(S) - $00a0]
   else if (S = #$03b2) then

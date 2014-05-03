@@ -288,10 +288,10 @@ type
   end;
 
 function EncodeBytea(const vStr: string): string; overload;
-function EncodeBytea(vStr: PAnsiChar; vLen: Cardinal): string; overload;
+function EncodeBytea(vStr: PChar; vLen: Cardinal): string; overload;
 
 function DecodeBytea(const vStr: string): string; overload;
-function DecodeBytea(vStr: PAnsiChar; vLen: Cardinal): string; overload;
+function DecodeBytea(vStr: PChar; vLen: Cardinal): string; overload;
 function PGDateToDateTime(const vStr: string): TDateTime;
 
 implementation
@@ -330,10 +330,10 @@ end;
 
 function EncodeBytea(const vStr: string): string;
 begin
-  Result := EncodeBytea(PAnsiChar(vStr), Length(vStr));
+  Result := EncodeBytea(PChar(vStr), Length(vStr));
 end;
 
-function EncodeBytea(vStr: PAnsiChar; vLen: Cardinal): string; overload;
+function EncodeBytea(vStr: PChar; vLen: Cardinal): string; overload;
 var
   e: PChar;
   aLen: Longword;
@@ -348,7 +348,7 @@ begin
       Move(e^, Result[2], aLen-1);
       Result[1] := '''';
       Result[aLen+1] := '''';
-      //StrCopy(PAnsiChar(Result), e);
+      //StrCopy(PChar(Result), e);
     finally
       PQFreemem(e);
     end;
@@ -357,10 +357,10 @@ end;
 
 function DecodeBytea(const vStr: string): string;
 begin
-  Result := DecodeBytea(PAnsiChar(vStr), Length(vStr));
+  Result := DecodeBytea(PChar(vStr), Length(vStr));
 end;
 
-function DecodeBytea(vStr: PAnsiChar; vLen: Cardinal): string; overload;
+function DecodeBytea(vStr: PChar; vLen: Cardinal): string; overload;
 var
   e: PChar;
   aLen: Longword;

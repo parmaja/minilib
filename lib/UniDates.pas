@@ -112,7 +112,7 @@ function udtCorrectYear(y: Integer): Integer;
 function udtCurrentMonth: Word;
 function udtSeasonOfDate(Date: TDateTime): Integer;
 function udtExtractDateTimeString(S: String): String;
-function udtCompleteDateStr(S: String; vSeparator: AnsiChar = #0): String;
+function udtCompleteDateStr(S: String; vSeparator: Char = #0): String;
 
 //Date and Time strings
 
@@ -126,13 +126,13 @@ function udtHourPeriodToString(vPeriod: Double): String;
 function udtDateToString(DateTime: TDateTime; Options: TUniviersalDateFlags = []): String; overload; deprecated;
 function udtStringToDate(vStr: String): TDateTime; deprecated;
 
-procedure udtISOStrToDate(ISODate: String; out Y, M, D, H, N, S: Word; vDateSeparator: AnsiChar = '-'; TimeDivider: AnsiChar = #0; UseDefault: Boolean = False); overload;
-function udtISOStrToDate(UDS: TUniviersalDateSystem; ISODate: String; vDateSeparator: AnsiChar = '-'; TimeDivider: AnsiChar = #0; UseDefault: Boolean = False): TDateTime; overload;
-function udtISOStrToDate(ISODate: String; vDateSeparator: AnsiChar= '-'; TimeDivider: AnsiChar = #0; UseDefault: Boolean = False): TDateTime; overload;
+procedure udtISOStrToDate(ISODate: String; out Y, M, D, H, N, S: Word; vDateSeparator: Char = '-'; TimeDivider: Char = #0; UseDefault: Boolean = False); overload;
+function udtISOStrToDate(UDS: TUniviersalDateSystem; ISODate: String; vDateSeparator: Char = '-'; TimeDivider: Char = #0; UseDefault: Boolean = False): TDateTime; overload;
+function udtISOStrToDate(ISODate: String; vDateSeparator: Char= '-'; TimeDivider: Char = #0; UseDefault: Boolean = False): TDateTime; overload;
 
-function udtISOCorrespondStr(DateTime: TDateTime; vDateSeparator: AnsiChar = '-'; TimeDivider: AnsiChar = ' '; WithTime: Boolean = False): String;
-function udtISODateToStr(DateTime: TDateTime; vDateSeparator: AnsiChar = '-'; TimeDivider: AnsiChar = ' '; WithTime: Boolean = False): String; overload;
-function udtISODateToStr(UDS: TUniviersalDateSystem; DateTime: TDateTime; vDateSeparator: AnsiChar = '-'; TimeDivider: AnsiChar = ' '; WithTime: Boolean = False): String; overload;
+function udtISOCorrespondStr(DateTime: TDateTime; vDateSeparator: Char = '-'; TimeDivider: Char = ' '; WithTime: Boolean = False): String;
+function udtISODateToStr(DateTime: TDateTime; vDateSeparator: Char = '-'; TimeDivider: Char = ' '; WithTime: Boolean = False): String; overload;
+function udtISODateToStr(UDS: TUniviersalDateSystem; DateTime: TDateTime; vDateSeparator: Char = '-'; TimeDivider: Char = ' '; WithTime: Boolean = False): String; overload;
 
 //function udtDetectSeparator(const vText: string): Char;
 
@@ -174,7 +174,7 @@ end;
 
 function udtStringToPeriod(S: String): Double;
 begin
-  Result := StrToIntDef(Trim(SubStr(s, TimeSeparator, 0)), 0) + StrToIntDef(Trim(SubStr(s, TimeSeparator, 1)), 0) / 60 + StrToIntDef(Trim(SubStr(s, TimeSeparator, 2)), 0) / 3600;
+  Result := StrToIntDef(Trim(SubStr(s, GetFormatSettings.TimeSeparator, 0)), 0) + StrToIntDef(Trim(SubStr(s, GetFormatSettings.TimeSeparator, 1)), 0) / 60 + StrToIntDef(Trim(SubStr(s, GetFormatSettings.TimeSeparator, 2)), 0) / 3600;
 end;
 
 function udtStringToDate(vStr: String): TDateTime;
@@ -200,15 +200,15 @@ begin
     udtDecodeDate(Now, y, m, d);
     y1 := y;
     m1 := m;
-    s := Trim(SubStr(t, DateSeparator, 0));
+    s := Trim(SubStr(t, GetFormatSettings.DateSeparator, 0));
     if s <> '' then
     begin
       d1 := ToInt(s, d);
-      s := Trim(SubStr(t, DateSeparator, 1));
+      s := Trim(SubStr(t, GetFormatSettings.DateSeparator, 1));
       if s <> '' then
       begin
         m1 := ToInt(s, m);
-        s := Trim(SubStr(t, DateSeparator, 2));
+        s := Trim(SubStr(t, GetFormatSettings.DateSeparator, 2));
         if s <> '' then
           y1 := udtCorrectYear(ToInt(s, y));
       end;
@@ -236,14 +236,14 @@ var
 begin
   Result := '';
   udtDecodeDate(DateTime, aYear, aMonth, aDay);
-  Result := IntToStr(aDay) + DateSeparator + IntToStr(aMonth) + DateSeparator + IntToStr(aYear);
+  Result := IntToStr(aDay) + GetFormatSettings.DateSeparator + IntToStr(aMonth) + GetFormatSettings.DateSeparator + IntToStr(aYear);
   if [udtfUseDayName, udtfUseMonthName] * Options <> [] then
     Result := Result + ' -';
   if udtfUseDayName in Options then
   begin
     if Result <> '' then
       Result := Result + ' ';
-    Result := Result + LongDayNames[DayOfWeek(DateTime)];
+    Result := Result + GetFormatSettings.LongDayNames[DayOfWeek(DateTime)];
   end;
   if udtfUseMonthName in Options then
   begin
@@ -268,11 +268,11 @@ begin
       Dec(h, 12);
     h12 := True;
   end;
-  Result := AlignStr(IntToStr(h), 2, [alsRight], '0') + TimeSeparator + AlignStr(IntToStr(n), 2, [alsRight], '0');
+  Result := AlignStr(IntToStr(h), 2, [alsRight], '0') + GetFormatSettings.TimeSeparator + AlignStr(IntToStr(n), 2, [alsRight], '0');
   if h12 then
-    Result := Result + TimeSeparator + TimePMString
+    Result := Result + GetFormatSettings.TimeSeparator + GetFormatSettings.TimePMString
   else
-    Result := Result + TimeSeparator + TimeAMString;
+    Result := Result + GetFormatSettings.TimeSeparator + GetFormatSettings.TimeAMString;
 end;
 
 function udtPeriodToString(vPeriod: Double; WithSeconds: Boolean): String;
@@ -289,13 +289,13 @@ begin
     d := (d - (h * 3600));
     m := d div 60;
     s := (d - (m * 60));
-    Result := AlignStr(IntToStr(h), 2, [alsRight], '0') + TimeSeparator + AlignStr(IntToStr(m), 2, [alsRight], '0');
+    Result := AlignStr(IntToStr(h), 2, [alsRight], '0') + GetFormatSettings.TimeSeparator + AlignStr(IntToStr(m), 2, [alsRight], '0');
     if WithSeconds then
     begin
       if s = 0 then
-        Result := Result + TimeSeparator + '00'
+        Result := Result + GetFormatSettings.TimeSeparator + '00'
       else
-        Result := Result + TimeSeparator + AlignStr(IntToStr(s), 2, [alsRight], '0');
+        Result := Result + GetFormatSettings.TimeSeparator + AlignStr(IntToStr(s), 2, [alsRight], '0');
     end;
     if g then
       Result := '-' + Result;
@@ -316,9 +316,9 @@ begin
   h := d div 3600;
   m := (d div 60) - (h * 60);
   s := d - (h * 3600) - (m * 60);
-  Result := AlignStr(IntToStr(h), 2, [alsRight], '0') + TimeSeparator + AlignStr(IntToStr(m), 2, [alsRight],'0');
+  Result := AlignStr(IntToStr(h), 2, [alsRight], '0') + GetFormatSettings.TimeSeparator + AlignStr(IntToStr(m), 2, [alsRight],'0');
   if s <> 0 then
-    Result := Result + TimeSeparator + AlignStr(IntToStr(s), 2, [alsRight], '0');
+    Result := Result + GetFormatSettings.TimeSeparator + AlignStr(IntToStr(s), 2, [alsRight], '0');
   if g then
     Result := '-' + Result;
 end;
@@ -334,21 +334,21 @@ begin
   else
   begin
     DecodeTime(Frac(Now), h, n, se, ms);
-    s := Trim(SubStr(vStr, TimeSeparator, 0));
+    s := Trim(SubStr(vStr, GetFormatSettings.TimeSeparator, 0));
     if s <> '' then
     begin
       IsPm := h >= 12;
       h := StrToIntDef(s, 0);
       if h >= 12 then
         IsPm := True;
-      s := Trim(SubStr(vStr, TimeSeparator, 1));
+      s := Trim(SubStr(vStr, GetFormatSettings.TimeSeparator, 1));
       if s <> '' then
       begin
         n := StrToIntDef(s, 0);
-        s := Trim(SubStr(vStr, TimeSeparator, 2));
+        s := Trim(SubStr(vStr, GetFormatSettings.TimeSeparator, 2));
         if s <> '' then
         begin
-          IsPm := CompareText(s[1], TimePMString[1]) = 0;
+          IsPm := CompareText(s[1], GetFormatSettings.TimePMString[1]) = 0;
         end;
       end;
       if IsPM then
@@ -526,7 +526,7 @@ begin
   Result := UniDate.Current.CorrectYear(Y);
 end;
 
-function udtCompleteDateStr(S: String; vSeparator: AnsiChar): String;
+function udtCompleteDateStr(S: String; vSeparator: Char): String;
 
   function ToInt(const s: String; Default: Integer): Integer;
   begin
@@ -555,7 +555,7 @@ begin
   t := udtExtractDateTimeString(S);
 
   if vSeparator = #0 then
-    vSeparator := DateSeparator;
+    vSeparator := GetFormatSettings.DateSeparator;
 
   udtDecodeDate(Now, y, m, d);
   y1 := y;
@@ -744,7 +744,7 @@ end;
 
 function TGregorianDateSystem.MonthName(Month: Word): String;
 begin
-  Result := SysUtils.LongMonthNames[Month];
+  Result := GetFormatSettings.LongMonthNames[Month];
 end;
 
 {
@@ -760,7 +760,7 @@ end;
  TimeDivider = #0 = AutoDetect
 }
 
-procedure udtISOStrToDate(ISODate: String; out Y, M, D, H, N, S: Word; vDateSeparator, TimeDivider: AnsiChar; UseDefault: Boolean);
+procedure udtISOStrToDate(ISODate: String; out Y, M, D, H, N, S: Word; vDateSeparator, TimeDivider: Char; UseDefault: Boolean);
 var
   T: String;
 begin
@@ -793,7 +793,7 @@ begin
   end;
 end;
 
-function udtISOStrToDate(UDS: TUniviersalDateSystem; ISODate: String; vDateSeparator: AnsiChar; TimeDivider: AnsiChar; UseDefault: Boolean): TDateTime;
+function udtISOStrToDate(UDS: TUniviersalDateSystem; ISODate: String; vDateSeparator: Char; TimeDivider: Char; UseDefault: Boolean): TDateTime;
 var
   Y, M, D, H, N, S: Word;
 begin
@@ -801,12 +801,12 @@ begin
   Result := udtEncodeDate(UDS, Y, M, D) + EncodeTime(H, N, S, 0);
 end;
 
-function udtISOStrToDate(ISODate: String; vDateSeparator: AnsiChar; TimeDivider: AnsiChar; UseDefault: Boolean): TDateTime;
+function udtISOStrToDate(ISODate: String; vDateSeparator: Char; TimeDivider: Char; UseDefault: Boolean): TDateTime;
 begin
   Result := udtISOStrToDate(UniDate.Current, ISODate, vDateSeparator, TimeDivider, UseDefault);
 end;
 
-function udtISODateToStr(UDS: TUniviersalDateSystem; DateTime: TDateTime; vDateSeparator: AnsiChar; TimeDivider: AnsiChar; WithTime: Boolean): String;
+function udtISODateToStr(UDS: TUniviersalDateSystem; DateTime: TDateTime; vDateSeparator: Char; TimeDivider: Char; WithTime: Boolean): String;
 var
   Y, M, D, H, N, S, O: Word;
 begin
@@ -819,12 +819,12 @@ begin
   end;
 end;
 
-function udtISODateToStr(DateTime: TDateTime; vDateSeparator: AnsiChar; TimeDivider: AnsiChar; WithTime: Boolean): String;
+function udtISODateToStr(DateTime: TDateTime; vDateSeparator: Char; TimeDivider: Char; WithTime: Boolean): String;
 begin
   Result := udtISODateToStr(UniDate.Current, DateTime, vDateSeparator, TimeDivider, WithTime);
 end;
 
-function udtISOCorrespondStr(DateTime: TDateTime; vDateSeparator: AnsiChar; TimeDivider: AnsiChar; WithTime: Boolean): String;
+function udtISOCorrespondStr(DateTime: TDateTime; vDateSeparator: Char; TimeDivider: Char; WithTime: Boolean): String;
 begin
   if UniDate.Correspond <> nil then
     Result := udtISODateToStr(UniDate.Correspond, DateTime, vDateSeparator, TimeDivider, WithTime)

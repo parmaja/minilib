@@ -467,7 +467,12 @@ var
 begin
   s := GetAsString;
   SetLength(Result, Length(s) * 2);
+
+  {$if CompilerVersion < 22.0}
   BinToHex(PChar(s), @Result[1], Length(s));
+  {$else}
+  BinToHex(PAnsiChar(s), PAnsiChar(Result), Length(s));
+  {$endif}
 end;
 
 procedure TmnCustomField.WriteIsNull(const AValue: Boolean);
