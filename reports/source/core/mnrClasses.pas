@@ -22,17 +22,17 @@ uses
   mnrLists;
 
 const
-  ID_SECTION_BASE = 0;
-  ID_SECTION_REPORT = ID_SECTION_BASE + 1;
-  ID_SECTION_HEADERREPORT = ID_SECTION_BASE + 2;
-  ID_SECTION_FOOTERREPORT = ID_SECTION_BASE + 3;
-  ID_SECTION_HEADERPAGE = ID_SECTION_BASE + 4;
-  ID_SECTION_FOOTERPAGE = ID_SECTION_BASE + 5;
+  ID_SECTION_BASE          = 0;
+  ID_SECTION_REPORT        = ID_SECTION_BASE + 1;
+  ID_SECTION_HEADERREPORT  = ID_SECTION_BASE + 2;
+  ID_SECTION_FOOTERREPORT  = ID_SECTION_BASE + 3;
+  ID_SECTION_HEADERPAGE    = ID_SECTION_BASE + 4;
+  ID_SECTION_FOOTERPAGE    = ID_SECTION_BASE + 5;
   ID_SECTION_HEADERDETAILS = ID_SECTION_BASE + 6;
-  ID_SECTION_DETAILS = ID_SECTION_BASE + 7;
+  ID_SECTION_DETAILS       = ID_SECTION_BASE + 7;
   ID_SECTION_FOOTERDETAILS = ID_SECTION_BASE + 8;
-  ID_SECTION_LAST = ID_SECTION_BASE + 9;
-  DEFAULT_CELL_WIDTH = 1000;
+  ID_SECTION_LAST          = ID_SECTION_BASE + 9;
+  DEFAULT_CELL_WIDTH       = 1000;
 
 type
 
@@ -421,6 +421,8 @@ type
     FAppendReportTitles: Boolean;
     FSectionLoopWay: TmnrSectionLoopWay;
     FAppendPageTotals: Boolean;
+    FHitAppendReportTitles: Boolean;
+
     function GetNext: TmnrSection;
     function GetNodes: TmnrSections;
     function GetPrior: TmnrSection;
@@ -437,9 +439,11 @@ type
     function DoCreateSections: TmnrSections;
     function GetSections: TmnrSections;
 
-    procedure UpdateRowData(vRow: TmnrRow; vData: TObject); virtual;
+    procedure UpdateRowData(vRow: TmnrRow; vData: TObject; vLastDesignRow: Boolean); virtual;
     function GetCaption: string; virtual;
     function GetReport: TmnrCustomReport;
+    procedure DoBeginFill(vReference: TmnrReferencesRow); virtual;
+    procedure DoEndFill(vReference: TmnrReferencesRow); virtual;
   public
     constructor Create(vNodes: TmnrNode);
     destructor Destroy; override;
@@ -464,8 +468,11 @@ type
     property LoopWay: TmnrSectionLoopWay read GetLoopWay;
     property OnFetch: TOnFetch read FOnFetch write FOnFetch;
 
-    procedure FillNow(vParams: TmnrFetch; vIndex: Integer; vReference: TmnrReferencesRow);
+    procedure FillNow(vParams: TmnrFetch; vIndex: Integer; vReference: TmnrReferencesRow); virtual;
     function FindDesignCell(const vName: string): TmnrDesignCell;
+
+    procedure AddTitles;
+    procedure AddReportTitles;
   published
     property AppendDetailTotals: Boolean read FAppendDetailTotals write FAppendDetailTotals default False;
     property AppendPageTotals: Boolean read FAppendPageTotals write FAppendPageTotals default False;
@@ -542,18 +549,21 @@ type
     FProfiler: TmnrProfiler;
     FDesigner: ImnrReportDesigner;
 
+    FHeaderReport: TmnrSection;
     FDetailTotals: TmnrSection;
     FReportTotals: TmnrSection;
     FDetailTitles: TmnrSection;
     FReportTitles: TmnrSection;
     FHeaderPage: TmnrSection;
     FFooterPage: TmnrSection;
+    FFooterReport: TmnrSection;
 
     function GetProfiler: TmnrProfiler;
   protected
     function Canceled: Boolean;
     procedure HandleNewRow(vRow: TmnrRowNode); virtual;
-    procedure InitSections(vSections: TmnrSections); virtual;
+    procedure DoInitSections(vSections: TmnrSections); virtual;
+    procedure InitSections(vSections: TmnrSections); //virtual;
     procedure InitLayouts(vGroups: TmnrGroups); virtual;
     procedure InitRequests; virtual;
     function CreateNewRow(vSection: TmnrSection): TmnrRow;
@@ -568,6 +578,7 @@ type
     procedure Finish; virtual; //
     procedure DoPrepare; virtual;
 
+    class function DoGetProfilerClass: TmnrProfilerClass; virtual;
     function DoCreateNewRow(vSection: TmnrSection): TmnrRow; virtual;
     function DoCreateProfiler: TmnrProfiler; virtual;
     function DoCreateSections: TmnrSections; virtual;
@@ -585,9 +596,11 @@ type
     function GetDetailTitles: TmnrSection;
     function GetReportTitles: TmnrSection;
     function GetFooterPage: TmnrSection;
+    function GetFooterReport: TmnrSection;
+    function GetHeaderReport: TmnrSection;
     function GetHeaderPage: TmnrSection;
   public
-  
+
     constructor Create;
     destructor Destroy; override;
     property Sections: TmnrSections read GetSections;
@@ -603,6 +616,7 @@ type
     procedure Prepare; //for design and generate
     procedure Generate;
     property Profiler: TmnrProfiler read GetProfiler;
+    class function ProfilerClass: TmnrProfilerClass; 
 
     procedure Fetch(vSection: TmnrSection; var vParams: TmnrFetch); virtual;
     procedure RegisterRequest(const vName: string; vOnRequest: TOnRequest); virtual;
@@ -611,18 +625,22 @@ type
     property Rows[vRow: Integer]: TmnrRow read GetRows;
     property Cells[vRow, vCol: Integer]: TmnrCell read GetCells;
 
-    procedure ExportCSV(const vFile: TFileName); overload; //test purpose only
-    procedure ExportCSV(const vStream: TStream); overload; //test purpose only
     class function CreateReportDesgin: ImnrReportDesigner; virtual;
     class procedure Desgin;
     procedure Clear; virtual;
 
-    property DetailTotals: TmnrSection read GetDetailTotals;
-    property ReportTotals: TmnrSection read GetReportTotals;
-    property DetailTitles: TmnrSection read GetDetailTitles;
-    property ReportTitles: TmnrSection read GetReportTitles;
+    property HeaderReport: TmnrSection read GetHeaderReport;
     property HeaderPage: TmnrSection read GetHeaderPage;
+    property DetailTotals: TmnrSection read GetDetailTotals;
+    property ReportTitles: TmnrSection read GetReportTitles;
+    property DetailTitles: TmnrSection read GetDetailTitles;
+    property ReportTotals: TmnrSection read GetReportTotals;
     property FooterPage: TmnrSection read GetFooterPage;
+    property FooterReport: TmnrSection read GetFooterReport;
+
+    procedure ExportCSV(const vFile: TFileName); overload; virtual;//test purpose only
+    procedure ExportCSV(const vStream: TStream); overload; virtual;//test purpose only
+    procedure ExportCSV(const vStream: TStream; vItems: TmnrRows); overload; virtual;//test purpose only
   end;
 
 
@@ -648,15 +666,15 @@ type
     FReport: TmnrCustomReport;
   protected
     function GetReport: TmnrCustomReport;
-    procedure DoEnumReports(vList: TStrings); virtual;
+    class procedure DoEnumReports(vClass: TmnrCustomReportClass; vList: TStrings); virtual;
   public
     constructor Create; virtual;
     procedure SaveReport; virtual;
     procedure LoadReport; virtual;
     procedure DeleteReport(const vName: string); virtual;
 
-    procedure EnumReports(vList: TStrings); overload;
-    function EnumReports: TStrings; overload;
+    class procedure EnumReports(vClass: TmnrCustomReportClass; vList: TStrings); overload;
+    class function EnumReports(vClass: TmnrCustomReportClass): TStrings; overload;
     property Report: TmnrCustomReport read GetReport;
   end;
 
@@ -705,12 +723,6 @@ begin
   FRowsListIndex := nil;
 
   InitSections(FSections);
-  FDetailTotals := FSections.RegisterSection('DetailTotals', '„Ã«„Ì⁄ «· ›’Ì·', sciFooterDetails);
-  FReportTotals := FSections.RegisterSection('ReportTotals', '„Ã«„Ì⁄ «· ﬁ—Ì—', sciFooterReport);
-  FDetailTitles := FSections.RegisterSection('DetailTitles', '⁄‰«ÊÌ‰ «· ›’Ì·', sciDetails, 0, nil, slwSingle);
-  FReportTitles := FSections.RegisterSection('ReportTitles', '⁄‰«ÊÌ‰ «· ﬁ—Ì—', sciHeaderReport);
-  FHeaderPage   := FSections.RegisterSection('HeaderPage', '—«” «·’›Õ…', sciHeaderPage, ID_SECTION_HEADERPage);
-  FFooterPage   := FSections.RegisterSection('FooterPage', '«”›· «·’›Õ…', sciFooterPage, ID_SECTION_FooterPage);
 
   Created;
   FWorking := True;
@@ -732,6 +744,11 @@ begin
   Result.FSection := vSection;
 end;
 
+class function TmnrCustomReport.ProfilerClass: TmnrProfilerClass;
+begin
+  Result := DoGetProfilerClass;
+end;
+
 function TmnrCustomReport.DoCreateGroups: TmnrGroups;
 begin
   Result := TmnrGroups.Create(Self);
@@ -749,7 +766,7 @@ end;
 
 function TmnrCustomReport.DoCreateProfiler: TmnrProfiler;
 begin
-  Result := TmnrProfiler.Create;
+  Result := ProfilerClass.Create;
 end;
 
 class function TmnrCustomReport.CreateReportDesgin: ImnrReportDesigner;
@@ -759,6 +776,17 @@ end;
 
 procedure TmnrCustomReport.InitSections(vSections: TmnrSections);
 begin
+  FHeaderPage   := FSections.RegisterSection('HeaderPage', '—«” «·’›Õ…', sciHeaderPage, ID_SECTION_HEADERPage);
+  FHeaderReport := FSections.RegisterSection('HeaderReport', '—«” «· ﬁ—Ì—', sciHeaderReport, ID_SECTION_HEADERREPORT);
+  FReportTitles := FSections.RegisterSection('ReportTitles', '⁄‰«ÊÌ‰ «· ﬁ—Ì—', sciHeaderReport);
+  FDetailTitles := FSections.RegisterSection('DetailTitles', '⁄‰«ÊÌ‰ «· ›’Ì·', sciDetails, 0, nil, slwSingle);
+
+  DoInitSections(vSections); //for header and details
+
+  FDetailTotals := FSections.RegisterSection('DetailTotals', '„Ã«„Ì⁄ «· ›’Ì·', sciFooterDetails);
+  FReportTotals := FSections.RegisterSection('ReportTotals', '„Ã«„Ì⁄ «· ﬁ—Ì—', sciFooterReport);
+  FFooterReport   := FSections.RegisterSection('FooterReport', '«”›· «· ﬁ—Ì—', sciFooterReport, ID_SECTION_FOOTERREPORT);
+  FFooterPage   := FSections.RegisterSection('FooterPage', '«”›· «·’›Õ…', sciFooterPage, ID_SECTION_FOOTERPAGE);
 end;
 
 class procedure TmnrCustomReport.Desgin;
@@ -790,6 +818,16 @@ begin
   Result := TmnrSections.Create(Self);
 end;
 
+class function TmnrCustomReport.DoGetProfilerClass: TmnrProfilerClass;
+begin
+  Result := TmnrProfiler;
+end;
+
+procedure TmnrCustomReport.DoInitSections(vSections: TmnrSections);
+begin
+
+end;
+
 procedure TmnrCustomReport.DoPrepare;
 begin
 
@@ -800,7 +838,7 @@ begin
 
 end;
 
-procedure TmnrCustomReport.ExportCSV(const vStream: TStream);
+procedure TmnrCustomReport.ExportCSV(const vStream: TStream; vItems: TmnrRows);
   procedure WriteStr(const vStr: string);
   begin
     vStream.Write(vStr[1], Length(vStr));
@@ -809,7 +847,7 @@ var
   r: TmnrRow;
   n: TmnrCell;
 begin
-  r := Items.First;
+  r := vItems.First;
   while r <> nil do
   begin
     n := r.First;
@@ -825,6 +863,11 @@ begin
     if r <> nil then
       WriteStr(#13#10);
   end;
+end;
+
+procedure TmnrCustomReport.ExportCSV(const vStream: TStream);
+begin
+  ExportCSV(vStream, Items);
 end;
 
 procedure TmnrCustomReport.ExportCSV(const vFile: TFileName);
@@ -894,6 +937,16 @@ begin
   Result := FFooterPage;
 end;
 
+function TmnrCustomReport.GetFooterReport: TmnrSection;
+begin
+  Result := FFooterReport;
+end;
+
+function TmnrCustomReport.GetHeaderReport: TmnrSection;
+begin
+  Result := FHeaderReport;
+end;
+
 function TmnrCustomReport.GetReportTotals: TmnrSection;
 begin
   Result := FReportTotals;
@@ -956,7 +1009,7 @@ begin
   InitRequests; //must bge after start 
   FCanceled := False;
   try
-    Sections.DoAppendReportTitles(ReportTitles);
+    //Sections.DoAppendReportTitles(ReportTitles);
     Sections.Loop;
     Sections.DoAppendPageTotals(FooterPage);
   except
@@ -1034,6 +1087,11 @@ begin
     Result := Report.DoCreateSections
   else
     Result := TmnrSections.Create(nil);
+end;
+
+procedure TmnrSection.DoEndFill(vReference: TmnrReferencesRow);
+begin
+
 end;
 
 procedure TmnrSection.DoAppendDetailTotals(vSection: TmnrSection);
@@ -1228,7 +1286,7 @@ begin
               c.AsString := d.DisplayText
             else
               c.AsString := l.DisplayText;
-              
+
             c.FReference := l.Reference;
           end;
           d := d.Next;
@@ -1246,6 +1304,25 @@ begin
       r := r.Next;
     end;
   end;
+end;
+
+procedure TmnrSection.DoBeginFill(vReference: TmnrReferencesRow);
+begin
+
+end;
+
+procedure TmnrSection.AddReportTitles;
+begin
+  if AppendReportTitles and not FHitAppendReportTitles then
+  begin
+    FHitAppendReportTitles := True;
+    DoAppendTitles(Report.ReportTitles);
+  end;
+end;
+
+procedure TmnrSection.AddTitles;
+begin
+  if AppendDetailTitles then DoAppendTitles(Report.DetailTitles);
 end;
 
 constructor TmnrSection.Create(vNodes: TmnrNode);
@@ -1303,8 +1380,7 @@ begin
         aRow.FRowIndex := vIndex;
         aRow.FReferencesRow := vReference;
         aRow.FDesignRow := r;
-        if vParams.Data<>nil then UpdateRowData(aRow, vParams.Data);
-        
+        if vParams.Data<>nil then UpdateRowData(aRow, vParams.Data, r.Next=nil);
 
         d := r.First;
         while d <> nil do
@@ -1418,7 +1494,7 @@ begin
   inherited SetNodes(Value);
 end;
 
-procedure TmnrSection.UpdateRowData(vRow: TmnrRow; vData: TObject);
+procedure TmnrSection.UpdateRowData(vRow: TmnrRow; vData: TObject; vLastDesignRow: Boolean);
 begin
 
 end;
@@ -1602,13 +1678,24 @@ begin
     aParams.AcceptMode := acmAccept;
     aParams.FetchMode := fmFirst;
 
+    s.AddReportTitles;
+
+
     case s.LoopWay of
       slwSingle:
       begin
         s.DoFetch(aParams);
         if aParams.AcceptMode = acmAccept then
         begin
-          s.FillNow(aParams, 0, s.NewReference);
+          r := s.NewReference;
+
+          s.DoBeginFill(r);
+          try
+            s.FillNow(aParams, 0, r);
+          finally
+            s.DoEndFill(r);
+          end;
+
           if aParams.Data <> nil then FreeAndNil(aParams.Data);
           s.Sections.Loop;
         end;
@@ -1622,10 +1709,15 @@ begin
 
           if (aParams.FetchMode = fmFirst) then
           begin
-            if (s.ClassID = sciDetails) then //improve add referance on first accepted ...
+            //if (s.ClassID = sciDetails) then //improve add referance on first accepted ...
               r := s.NewReference;
-            if (s.AppendDetailTitles) then
-              s.DoAppendTitles(Report.DetailTitles);
+            s.DoBeginFill(r);
+            s.AddTitles;
+          end
+          else
+          begin
+            if (s.ClassID <> sciDetails) then
+              r := s.NewReference;
           end;
 
           if aParams.AcceptMode = acmAccept then
@@ -1641,6 +1733,7 @@ begin
             if (r <> nil) and s.AppendDetailTotals then
             begin
               s.DoAppendDetailTotals(Report.FDetailTotals);
+              s.DoEndFill(r);
             end;
           end;
 
@@ -2369,10 +2462,10 @@ begin
   inherited Create;
 end;
 
-procedure TmnrProfiler.EnumReports(vList: TStrings);
+class procedure TmnrProfiler.EnumReports(vClass: TmnrCustomReportClass; vList: TStrings);
 begin
   vList.Clear;
-  DoEnumReports(vList);
+  DoEnumReports(vClass, vList);
 end;
 
 procedure TmnrProfiler.DeleteReport(const vName: string);
@@ -2380,15 +2473,15 @@ begin
 
 end;
 
-procedure TmnrProfiler.DoEnumReports(vList: TStrings);
+class procedure TmnrProfiler.DoEnumReports(vClass: TmnrCustomReportClass; vList: TStrings);
 begin
 end;
 
-function TmnrProfiler.EnumReports: TStrings;
+class function TmnrProfiler.EnumReports(vClass: TmnrCustomReportClass): TStrings;
 begin
   Result := TStringList.Create;
   try
-    EnumReports(Result);
+    EnumReports(vClass, Result);
   except
     FreeAndNil(Result);
     raise;
