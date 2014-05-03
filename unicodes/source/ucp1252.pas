@@ -96,7 +96,7 @@ begin
   c := '?';
   if (S < #$0080) then
   begin
-    Byte(c) := Byte(S);
+    Byte(R) := Byte(S);
     exit;
   end
   else if (S >= #$00a0) and (S < #$0100) then
