@@ -122,7 +122,7 @@ const
 
 function TmnCustomStream.WriteString(const Value: string): Cardinal;
 begin
-  Result := Write(Pointer(Value)^, Length(Value));
+  Result := Write(Pointer(Value)^, Length(Value)*SizeOf(Char));
 end;
 
 function TmnCustomStream.IsActive: Boolean;

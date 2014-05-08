@@ -30,7 +30,7 @@ const
   //cMaxBuffer = 16*1024*1024-1;
 
 type
-  TmnBuffer = array[0..cMaxBuffer] of Char;
+  TmnBuffer = array[0..cMaxBuffer] of Byte;
 
   TExHexCipher = class(TExStreamCipher)
   protected
@@ -61,7 +61,7 @@ type
     procedure SetCipher(const Value: THexCipher);
   protected
     function ReadmnBuffer: Boolean;
-    function ReadChar(var B: Char): Boolean;
+    function ReadChar(var B: Byte): Boolean;
     function ReadOutBuffer(var Buffer; Count: Integer): Integer;
 
     function WritemnBuffer(const Buffer; Count: Integer): Integer;
@@ -77,7 +77,7 @@ type
   end;
 
 const
-  cCharToHexArr: array[AnsiChar] of string[2] = (
+  cCharToHexArr: array[Byte] of String[2] = (
     '00', '01', '02', '03', '04', '05', '06', '07', '08', '09', '0A', '0B', '0C', '0D', '0E', '0F',
     '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '1A', '1B', '1C', '1D', '1E', '1F',
     '20', '21', '22', '23', '24', '25', '26', '27', '28', '29', '2A', '2B', '2C', '2D', '2E', '2F',
@@ -105,7 +105,7 @@ uses
 
 procedure THexCipher.Decrypt(const InBuffer; InCount: Integer; var OutBuffer; var OutCount: Integer);
 var
-  iP, oP: PChar;
+  iP, oP: PAnsiChar;
 begin
   OutCount := InCount div 2;
   iP := @InBuffer;
@@ -123,9 +123,9 @@ begin
   oP := @OutBuffer;
   for i := 0 to InCount - 1 do
   begin
-    oP^ := cCharToHexArr[ip^][1];
+    oP^ := cCharToHexArr[Ord(ip^)][1];
     Inc(oP);
-    oP^ := cCharToHexArr[ip^][2];
+    oP^ := cCharToHexArr[Ord(ip^)][2];
     Inc(oP);
     Inc(iP);
   end;
@@ -202,7 +202,7 @@ end;
 
 function THexCipherStream.ReadmnBuffer: Boolean;
 var
-  aBuffer: string;
+  aBuffer: AnsiString;
   c: Integer;
 begin
   if FPos<FCount then
@@ -239,7 +239,7 @@ end;
 
 function THexCipherStream.ReadOutBuffer(var Buffer; Count: Integer): Integer;
 var
-  p: PChar;
+  p: PByte;
   i, c: Integer;
 begin
   Result := 0;
@@ -273,7 +273,7 @@ begin
   end;}
 end;
 
-function THexCipherStream.ReadChar(var B: Char): Boolean;
+function THexCipherStream.ReadChar(var B: Byte): Boolean;
 begin
   Result := ReadmnBuffer;
   if Result then
