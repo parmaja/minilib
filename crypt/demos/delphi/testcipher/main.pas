@@ -114,8 +114,8 @@ var
 
 implementation
 
-uses
-  zlibcipher;
+{uses
+  zlibcipher;}
 
 {$R *.dfm}
 
@@ -507,7 +507,7 @@ procedure TMainForm.FormCreate(Sender: TObject);
 begin
   MethodBox.Items.AddObject('Snow2 Cipher', TObject(TSnow2CipherStream));
   MethodBox.Items.AddObject('Hex Cipher', TObject(THexCipherStream));
-  MethodBox.Items.AddObject('ZLib Cipher', TObject(TZLibCipherStream));
+  //MethodBox.Items.AddObject('ZLib Cipher', TObject(TZLibCipherStream));
   MethodBox.ItemIndex := 0;
 
   ExMethodBox.Items.AddObject('Snow2 Cipher', TObject(TSnow2ExCipherStream));
@@ -736,10 +736,10 @@ begin
         if i=0 then Break;
         try
           OutBuff := nil;
-          CompressBuf(PChar(st), i, OutBuff, CompressedBytesRead);
+          //CompressBuf(PChar(st), i, OutBuff, CompressedBytesRead);
           fo.Write(OutBuff, CompressedBytesRead);
         finally
-          FreeMem(OutBuff);
+          //FreeMem(OutBuff);
         end;
         if i<cBufferSize then Break;
       end;
@@ -798,7 +798,7 @@ end;
 
 procedure TMainForm.TestCipher;
 var
-  st: string;
+  st: ansistring;
   s: TStringStream;
   scs: TCipherStream;
   i: Integer;
@@ -817,7 +817,7 @@ begin
           i := scs.read(st[1], cBufferSize);
           if i=0 then Break;
           SetLength(st, i);
-          EncEdit.Text := EncEdit.Text + st;
+          EncEdit.Text := EncEdit.Text + String(st);
         end;
       finally
         scs.Free;
@@ -838,7 +838,7 @@ begin
           i := scs.read(st[1], cBufferSize);
           if i=0 then Break;
           SetLength(st, i);
-          DecEdit.Text := DecEdit.Text + st;
+          DecEdit.Text := DecEdit.Text + String(st);
         end;
       finally
         scs.Free;
@@ -852,7 +852,7 @@ end;
 
 procedure TMainForm.TestExCipher;
 var
-  st: string;
+  st: ansistring;
   s: TStringStream;
   scs: TExCipherStream;
   i: Integer;
@@ -870,7 +870,7 @@ begin
           SetLength(st, cBufferSize);
           i := scs.read(st[1], cBufferSize);
           SetLength(st, i);
-          EncEdit.Text := EncEdit.Text + st;
+          EncEdit.Text := EncEdit.Text + string(st);
           if i=0 then Break;
         end;
       finally
@@ -891,7 +891,7 @@ begin
           SetLength(st, cBufferSize);
           i := scs.read(st[1], cBufferSize);
           SetLength(st, i);
-          DecEdit.Text := DecEdit.Text + st;
+          DecEdit.Text := DecEdit.Text + String(st);
           if i=0 then Break;
         end;
       finally

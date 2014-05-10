@@ -118,7 +118,7 @@ begin
   Result := False;
   for i := 1 to Length(S) do
   begin
-     if S[i] in Separators then
+     if CharInSet(S[i], Separators) then
      begin
        Result := True;
        Break; 
@@ -248,7 +248,7 @@ begin
     QuoteChar := #0;
     repeat
       //bypass white spaces
-      while (Cur <= Length(Content)) and (Content[Cur] in WhiteSpace) do
+      while (Cur <= Length(Content)) and CharInSet(Content[Cur], WhiteSpace) do
         Cur := Cur + 1;
 
       //start from the first char
@@ -256,9 +256,9 @@ begin
       while True do
       begin
         //seek until the separator and skip the separator if inside quoting
-        while (Cur <= Length(Content)) and ((InQuote and not (Content[Cur] <> QuoteChar)) or (not (Content[Cur] in Separators))) do
+        while (Cur <= Length(Content)) and ((InQuote and not (Content[Cur] <> QuoteChar)) or (not CharInSet(Content[Cur], Separators))) do
           Cur := Cur + 1;
-        if (Cur <= Length(Content)) and (Content[Cur] in Quotes) then
+        if (Cur <= Length(Content)) and CharInSet(Content[Cur], Quotes) then
         begin
           if (QuoteChar <> #0) and (QuoteChar = Content[Cur]) then
             QuoteChar := #0
@@ -506,7 +506,7 @@ begin
   j := 1;
   while (i <= l) do
   begin
-    if S[i] in [#13, #10] then
+    if CharInSet(S[i], [#13, #10]) then
     begin
       if IncludeLineBreaks then
         LB := 0

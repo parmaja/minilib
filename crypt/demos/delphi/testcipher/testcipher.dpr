@@ -2,8 +2,8 @@ program testcipher;
 
 uses
   Forms,
-  main in 'main.pas' {MainForm},
-  zlibcipher in '..\..\..\zlibcipher.pas';
+  main in 'main.pas' {MainForm};
+  //zlibcipher in '..\..\..\zlibcipher.pas';
 
 {$R *.res}
 

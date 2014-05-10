@@ -47,15 +47,15 @@ type
 
   TmnBufferStream = class(TmnCustomStream)
   strict private
-    FBuffer: PChar;
+    FBuffer: PByte;
     FEOF: Boolean;
     FEndOfLine: string;
     FEOFOnError: Boolean;
     procedure LoadBuffer;
   private
   protected
-    FPos: PChar;
-    FEnd: PChar;
+    FPos: PByte;
+    FEnd: PByte;
     procedure DoError(S: string); virtual;
     function DoRead(var Buffer; Count: Longint): Longint; virtual; abstract;
     function DoWrite(const Buffer; Count: Longint): Longint; virtual; abstract;
@@ -386,25 +386,27 @@ end;
 
 procedure TmnBufferStream.ReadUntil(const UntilStr: string; var Result: string; var Matched: Boolean);
 var
-  P: PChar;
+  P: PByte;
   idx, l: Integer;
-  t: string;
+  t: AnsiString;
+  us: PByte;
 begin
   if UntilStr = '' then
     raise Exception.Create('UntilStr is empty!');
   Idx := 1;
   Matched := False;
-  l := Length(UntilStr);
+  l := Length(UntilStr)*SizeOf(Char);
+  us := PByte(UntilStr);
   Result := '';
   while not Matched and CheckBuffer do
   begin
     P := FPos;
     while P < FEnd do
     begin
-      if UntilStr[idx] = P^ then
+      if us^ = P^ then
         Inc(Idx)
       else
-        Idx := 1;
+        us := PByte(UntilStr);
       Inc(P);
       if Idx > l then
       begin
@@ -412,8 +414,8 @@ begin
         break;
       end;
     end;
-    SetString(t, FPos, P - FPos);
-    Result := Result + t;
+    SetString(t, PAnsiChar(FPos), P - FPos);
+    Result := Result + string(t);
     FPos := P;
   end;
 end;
