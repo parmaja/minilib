@@ -15,15 +15,15 @@ unit mnUtils;
 interface
 
 uses
-  Classes, SysUtils, StrUtils, DateUtils, Types
-  {$IFDEF MSWINDOWS}, Windows{$ENDIF};
+  {$ifndef fpc}Windows, {$endif}
+  Classes, SysUtils, StrUtils, DateUtils, Types;
 
 const
   sUTF8BOM: array[1..3] of Char = (#$EF, #$BB, #$BF);
 {
   StrHave: test the string if it have Separators
 }
-function StrHave(S: string; Separators: TSysCharSet): Boolean;
+function StrHave(S: string; Separators: TSysCharSet): Boolean; deprecated;
 
 function QuoteStr(Str: string; QuoteChar: string = '"'): string;
 
@@ -118,7 +118,7 @@ end;
   {$ifend}
 {$endif}
 
-function StrHave(S: string; Separators: TSysCharSet): Boolean; deprecated;
+function StrHave(S: string; Separators: TSysCharSet): Boolean;
 var
   i: Integer;
 begin
