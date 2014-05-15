@@ -104,14 +104,21 @@ const
 
 implementation
 
-{$ifndef FPC}
+{$ifdef FPC}
+{ This function founded in FPC 2.7.1 remove it please when this version released}
+function CharInSet(C: Char; Separators: TSysCharSet): Boolean;
+begin
+  Result := C in Separators;
+end;
+
+{$else}
   {$if CompilerVersion < 22.0}
   var
     FFormatSettings: TFormatSettings;
   {$ifend}
 {$endif}
 
-function StrHave(S:string; Separators: TSysCharSet): Boolean;
+function StrHave(S: string; Separators: TSysCharSet): Boolean; deprecated;
 var
   i: Integer;
 begin
