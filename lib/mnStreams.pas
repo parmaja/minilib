@@ -36,8 +36,8 @@ type
   protected
     function IsActive: Boolean; virtual;
   public
-    function ReadString(Count: Longint = 255): ansistring;
-    function WriteString(const Value: ansistring): Cardinal;
+    function ReadString(Count: Longint = 255): string;
+    function WriteString(const Value: string): Cardinal;
     function ReadStream(Dest: TStream): Longint;
     function WriteStream(Source: TStream): Longint;
     property BufferSize: Cardinal read FBufferSize write FBufferSize;
@@ -68,7 +68,7 @@ type
     function Read(var Buffer; Count: Longint): Longint; override; final;
     function Write(const Buffer; Count: Longint): Longint; override; final;
 
-    procedure ReadUntil(const UntilStr: ansistring; var Result: ansistring; var Matched: Boolean);
+    procedure ReadUntil(const UntilStr: string; var Result: ansistring; var Matched: Boolean);
     function ReadLine(var S: string; const vEOL: string; vExcludeEOL: Boolean = True): Boolean; overload;
     function ReadLine(const vEOL: string): string; overload;
     function ReadLn: string; overload;
@@ -120,9 +120,9 @@ const
 
 { TmnBufferStream }
 
-function TmnCustomStream.WriteString(const Value: ansistring): Cardinal;
+function TmnCustomStream.WriteString(const Value: string): Cardinal;
 begin
-  Result := Write(Pointer(Value)^, Length(Value));
+  Result := Write(Pointer(Value)^, Length(Value) * SizeOf(Char));
 end;
 
 function TmnCustomStream.IsActive: Boolean;
@@ -130,7 +130,7 @@ begin
   Result := True;
 end;
 
-function TmnCustomStream.ReadString(Count: Longint): ansistring;
+function TmnCustomStream.ReadString(Count: Longint): string;
 var
   l : Longint;
 begin
@@ -250,7 +250,7 @@ begin
   begin
     aMatched := False;
     ReadUntil(vEOL, r, aMatched);
-    S := r;
+    S := string(r);
     if not aMatched and EOF and (S = '') then
       Result := False
     else if aMatched and vExcludeEOL and (S <> '') then
@@ -386,29 +386,29 @@ begin
   Result := (FPos < FEnd);
 end;
 
-procedure TmnBufferStream.ReadUntil(const UntilStr: AnsiString; var Result: AnsiString; var Matched: Boolean);
+procedure TmnBufferStream.ReadUntil(const UntilStr: String; var Result: AnsiString; var Matched: Boolean);
 var
-  P: PByte;
+  P: PChar;
   idx, l: Integer;
   t: AnsiString;
-  us: PByte;
+  us: PChar;
 begin
   if UntilStr = '' then
     raise Exception.Create('UntilStr is empty!');
   Idx := 1;
   Matched := False;
   l := Length(UntilStr);
-  us := PByte(UntilStr);
+  us := PChar(UntilStr);
   Result := '';
   while not Matched and CheckBuffer do
   begin
-    P := FPos;
+    P := PChar(FPos);
     while P < FEnd do
     begin
       if us^ = P^ then
         Inc(Idx)
       else
-        us := PByte(UntilStr);
+        us := PChar(UntilStr);
       Inc(P);
       if Idx > l then
       begin
@@ -416,9 +416,9 @@ begin
         break;
       end;
     end;
-    SetString(t, PAnsiChar(FPos), P - FPos);
-    Result := Result + string(t);
-    FPos := P;
+    SetString(t, PChar(FPos), P - FPos);
+    Result := Result + t;
+    FPos := PByte(P);
   end;
 end;
 

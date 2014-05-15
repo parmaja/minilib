@@ -302,7 +302,7 @@ begin
   end
   else
     s := '';
-  Result := s;
+  Result := string(s);
 end;
 
 function TmnSocket.GetLocalAddress: ansistring;
@@ -355,7 +355,7 @@ begin
   WinSock.gethostname(PAnsiChar(s), Length(s));
 {$ENDIF}
   s := PAnsiChar(s);
-  Result := s;
+  Result := string(s);
 end;
 
 { TmnWallSocket }
