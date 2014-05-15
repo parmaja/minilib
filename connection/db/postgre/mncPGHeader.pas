@@ -1,4 +1,5 @@
 unit mncPGHeader;
+{$mode Delphi}{$H+}
 {}
 {**
  *  This file is part of the "Mini Connections"
@@ -268,7 +269,7 @@ type
 //FirmOS: New defines
 
   TPQescapeByteaConn = function(Handle: PPGconn; const from: pchar; from_length: longword; to_lenght: PLongword): PChar; cdecl;
-  TPQescapeBytea = function(const from: pchar; from_length: longword; to_lenght: PLongword): PChar; cdecl;
+  TPQescapeBytea = function(const from: PByte; from_length: longword; to_lenght: PLongword): PByte; cdecl;
 
 //TODO  TPQescapeString    =function(const from:pchar;from_length:longword;to_lenght:PLongword):PChar;cdecl;
 
@@ -276,7 +277,7 @@ type
 //                                 const unsigned char *from,
 //                                 size_t from_length,
 //                                 size_t *to_length);
-  TPQunescapeBytea = function(const from: pchar; to_lenght: PLongword): PChar; cdecl;
+  TPQunescapeBytea = function(const from: PByte; to_lenght: PLongword): PByte; cdecl;
 //unsigned char *PQunescapeBytea(const unsigned char *from, size_t *to_length);
 
   TPQFreemem = procedure(ptr: Pointer); cdecl;
@@ -402,7 +403,7 @@ begin
     fLibHandle := LoadLibrary(PChar(pgLibName));
   end;
   if fLibHandle <> 0 then
-    Result := GetProcAddress(fLibHandle, PChar(vProc))
+    Result := GetProcAddress(fLibHandle, vProc)
   else
     Result := nil;
 end;
@@ -417,83 +418,81 @@ end;
 procedure LoadLib;
 begin
 { ===	in fe-connect.c === }
-  @PQfreemem := GetAddress('PQfreemem');
-  @PQescapeByteaConn := GetAddress('PQescapeByteaConn');
-  @PQescapeBytea := GetAddress('PQescapeBytea');
-  @PQunescapeBytea := GetAddress('PQunescapeBytea');
+  PQfreemem := GetAddress('PQfreemem');
+  PQescapeByteaConn := GetAddress('PQescapeByteaConn');
+  PQescapeBytea := GetAddress('PQescapeBytea');
+  PQunescapeBytea := GetAddress('PQunescapeBytea');
 
-  @PQconnectdb := GetAddress('PQconnectdb');
-  @PQsetdbLogin := GetAddress('PQsetdbLogin');
-  @PQconndefaults := GetAddress('PQconndefaults');
-  @PQfinish := GetAddress('PQfinish');
-  @PQreset := GetAddress('PQreset');
-  @PQrequestCancel := GetAddress('PQrequestCancel');
-  @PQdb := GetAddress('PQdb');
-  @PQuser := GetAddress('PQuser');
-  @PQpass := GetAddress('PQpass');
-  @PQhost := GetAddress('PQhost');
-  @PQport := GetAddress('PQport');
-  @PQtty := GetAddress('PQtty');
-  @PQoptions := GetAddress('PQoptions');
-  @PQstatus := GetAddress('PQstatus');
-  @PQerrorMessage := GetAddress('PQerrorMessage');
-  @PQsocket := GetAddress('PQsocket');
-  @PQbackendPID := GetAddress('PQbackendPID');
-  @PQtrace := GetAddress('PQtrace');
-  @PQuntrace := GetAddress('PQuntrace');
-  @PQsetNoticeProcessor := GetAddress('PQsetNoticeProcessor');
+  PQconnectdb := GetAddress('PQconnectdb');
+  PQsetdbLogin := GetAddress('PQsetdbLogin');
+  PQconndefaults := GetAddress('PQconndefaults');
+  PQfinish := GetAddress('PQfinish');
+  PQreset := GetAddress('PQreset');
+  PQrequestCancel := GetAddress('PQrequestCancel');
+  PQdb := GetAddress('PQdb');
+  PQuser := GetAddress('PQuser');
+  PQpass := GetAddress('PQpass');
+  PQhost := GetAddress('PQhost');
+  PQport := GetAddress('PQport');
+  PQtty := GetAddress('PQtty');
+  PQoptions := GetAddress('PQoptions');
+  PQstatus := GetAddress('PQstatus');
+  PQerrorMessage := GetAddress('PQerrorMessage');
+  PQsocket := GetAddress('PQsocket');
+  PQbackendPID := GetAddress('PQbackendPID');
+  PQtrace := GetAddress('PQtrace');
+  PQuntrace := GetAddress('PQuntrace');
+  PQsetNoticeProcessor := GetAddress('PQsetNoticeProcessor');
 
 { === in fe-exec.c === }
-  @PQexec := GetAddress('PQexec');
-  @PQnotifies := GetAddress('PQnotifies');
-  @PQfreeNotify := GetAddress('PQfreeNotify');
-  @PQsendQuery := GetAddress('PQsendQuery');
-  @PQgetResult := GetAddress('PQgetResult');
-  @PQisBusy := GetAddress('PQisBusy');
-  @PQconsumeInput := GetAddress('PQconsumeInput');
-  @PQgetline := GetAddress('PQgetline');
-  @PQputline := GetAddress('PQputline');
-  @PQgetlineAsync := GetAddress('PQgetlineAsync');
-  @PQputnbytes := GetAddress('PQputnbytes');
-  @PQendcopy := GetAddress('PQendcopy');
-  @PQfn := GetAddress('PQfn');
-  @PQresultStatus := GetAddress('PQresultStatus');
-  @PQresultErrorMessage := GetAddress('PQresultErrorMessage');
-  @PQresultErrorField := GetAddress('PQresultErrorField');
-  @PQntuples := GetAddress('PQntuples');
-  @PQnfields := GetAddress('PQnfields');
-  @PQbinaryTuples := GetAddress('PQbinaryTuples');
-  @PQfname := GetAddress('PQfname');
-  @PQfnumber := GetAddress('PQfnumber');
-  @PQftype := GetAddress('PQftype');
-  @PQfsize := GetAddress('PQfsize');
-  @PQfmod := GetAddress('PQfmod');
-  @PQcmdStatus := GetAddress('PQcmdStatus');
-  @PQoidValue := GetAddress('PQoidValue');
-  @PQoidStatus := GetAddress('PQoidStatus');
-  @PQcmdTuples := GetAddress('PQcmdTuples');
-  @PQgetvalue := GetAddress('PQgetvalue');
-  @PQgetlength := GetAddress('PQgetlength');
-  @PQgetisnull := GetAddress('PQgetisnull');
-  @PQclear := GetAddress('PQclear');
-  @PQmakeEmptyPGresult := GetAddress('PQmakeEmptyPGresult');
-  @PQPrepare := GetAddress('PQprepare');
-  @PQExecPrepared := GetAddress('PQexecPrepared');
-
-
+  PQexec := GetAddress('PQexec');
+  PQnotifies := GetAddress('PQnotifies');
+  PQfreeNotify := GetAddress('PQfreeNotify');
+  PQsendQuery := GetAddress('PQsendQuery');
+  PQgetResult := GetAddress('PQgetResult');
+  PQisBusy := GetAddress('PQisBusy');
+  PQconsumeInput := GetAddress('PQconsumeInput');
+  PQgetline := GetAddress('PQgetline');
+  PQputline := GetAddress('PQputline');
+  PQgetlineAsync := GetAddress('PQgetlineAsync');
+  PQputnbytes := GetAddress('PQputnbytes');
+  PQendcopy := GetAddress('PQendcopy');
+  PQfn := GetAddress('PQfn');
+  PQresultStatus := GetAddress('PQresultStatus');
+  PQresultErrorMessage := GetAddress('PQresultErrorMessage');
+  PQresultErrorField := GetAddress('PQresultErrorField');
+  PQntuples := GetAddress('PQntuples');
+  PQnfields := GetAddress('PQnfields');
+  PQbinaryTuples := GetAddress('PQbinaryTuples');
+  PQfname := GetAddress('PQfname');
+  PQfnumber := GetAddress('PQfnumber');
+  PQftype := GetAddress('PQftype');
+  PQfsize := GetAddress('PQfsize');
+  PQfmod := GetAddress('PQfmod');
+  PQcmdStatus := GetAddress('PQcmdStatus');
+  PQoidValue := GetAddress('PQoidValue');
+  PQoidStatus := GetAddress('PQoidStatus');
+  PQcmdTuples := GetAddress('PQcmdTuples');
+  PQgetvalue := GetAddress('PQgetvalue');
+  PQgetlength := GetAddress('PQgetlength');
+  PQgetisnull := GetAddress('PQgetisnull');
+  PQclear := GetAddress('PQclear');
+  PQmakeEmptyPGresult := GetAddress('PQmakeEmptyPGresult');
+  PQPrepare := GetAddress('PQprepare');
+  PQExecPrepared := GetAddress('PQexecPrepared');
 
 { === in fe-lobj.c === }
-  @lo_open := GetAddress('lo_open');
-  @lo_close := GetAddress('lo_close');
-  @lo_read := GetAddress('lo_read');
-  @lo_write := GetAddress('lo_write');
-  @lo_lseek := GetAddress('lo_lseek');
-  @lo_creat := GetAddress('lo_creat');
-  @lo_tell := GetAddress('lo_tell');
-  @lo_unlink := GetAddress('lo_unlink');
-  @lo_import := GetAddress('lo_import');
-  @lo_export := GetAddress('lo_export');
-  @lo_truncate := GetAddress('lo_truncate');
+  lo_open := GetAddress('lo_open');
+  lo_close := GetAddress('lo_close');
+  lo_read := GetAddress('lo_read');
+  lo_write := GetAddress('lo_write');
+  lo_lseek := GetAddress('lo_lseek');
+  lo_creat := GetAddress('lo_creat');
+  lo_tell := GetAddress('lo_tell');
+  lo_unlink := GetAddress('lo_unlink');
+  lo_import := GetAddress('lo_import');
+  lo_export := GetAddress('lo_export');
+  lo_truncate := GetAddress('lo_truncate');
 
 end;
 
