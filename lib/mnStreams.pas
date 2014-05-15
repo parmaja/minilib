@@ -68,7 +68,7 @@ type
     function Read(var Buffer; Count: Longint): Longint; override; final;
     function Write(const Buffer; Count: Longint): Longint; override; final;
 
-    procedure ReadUntil(const UntilStr: string; var Result: ansistring; var Matched: Boolean);
+    procedure ReadUntil(const UntilStr: string; out Result: ansistring; var Matched: Boolean);
     function ReadLine(var S: string; const vEOL: string; vExcludeEOL: Boolean = True): Boolean; overload;
     function ReadLine(const vEOL: string): string; overload;
     function ReadLn: string; overload;
@@ -386,7 +386,7 @@ begin
   Result := (FPos < FEnd);
 end;
 
-procedure TmnBufferStream.ReadUntil(const UntilStr: String; var Result: AnsiString; var Matched: Boolean);
+procedure TmnBufferStream.ReadUntil(const UntilStr: String; out Result: AnsiString; var Matched: Boolean);
 var
   P: PChar;
   idx, l: Integer;
@@ -403,7 +403,7 @@ begin
   while not Matched and CheckBuffer do
   begin
     P := PChar(FPos);
-    while P < FEnd do
+    while P < PChar(FEnd) do
     begin
       if us^ = P^ then
         Inc(Idx)
@@ -416,7 +416,7 @@ begin
         break;
       end;
     end;
-    SetString(t, PChar(FPos), P - FPos);
+    SetString(t, PChar(FPos), P - PChar(FPos));
     Result := Result + t;
     FPos := PByte(P);
   end;
