@@ -17,20 +17,14 @@ unit mncPostgre;
 {$H+}
 {$IFDEF FPC}
 {$mode delphi}
-{$warning Postgre unit not stable yet}
+{.$warning Postgre unit not stable yet}
 {$ENDIF}
 
 interface
 
 uses
   Classes, SysUtils, Variants, StrUtils,
-  {$ifdef FPC}
-  //postgres3,
-  postgres3dyn,
-  {$else}
   mncPGHeader,
-  {$endif}
-
   mnUtils, mnStreams, mncConnections, mncSQL, mncCommons, mncSchemas;
 
 type
@@ -254,6 +248,7 @@ type
     FTuples: Integer;
     function GetRecordCount: Integer;
   protected
+    function IsSingleRowMode: Boolean; virtual;
     procedure InternalClose; virtual;
     procedure DoPrepare; override;
     procedure DoExecute; override;
@@ -288,10 +283,10 @@ type
   end;
 
 function EncodeBytea(const vStr: string): string; overload;
-function EncodeBytea(vStr: PChar; vLen: Cardinal): string; overload;
+function EncodeBytea(vStr: PByte; vLen: Cardinal): string; overload;
 
 function DecodeBytea(const vStr: string): string; overload;
-function DecodeBytea(vStr: PChar; vLen: Cardinal): string; overload;
+function DecodeBytea(vStr: PByte; vLen: Cardinal): string; overload;
 function PGDateToDateTime(const vStr: string): TDateTime;
 
 implementation
@@ -330,12 +325,12 @@ end;
 
 function EncodeBytea(const vStr: string): string;
 begin
-  Result := EncodeBytea(PChar(vStr), Length(vStr));
+  Result := EncodeBytea(PByte(vStr), Length(vStr) * SizeOf(Char));
 end;
 
-function EncodeBytea(vStr: PChar; vLen: Cardinal): string; overload;
+function EncodeBytea(vStr: PByte; vLen: Cardinal): string; overload;
 var
-  e: PChar;
+  e: PByte;
   aLen: Longword;
 begin
   if vLen=0 then
@@ -357,12 +352,12 @@ end;
 
 function DecodeBytea(const vStr: string): string;
 begin
-  Result := DecodeBytea(PChar(vStr), Length(vStr));
+  Result := DecodeBytea(PByte(vStr), Length(vStr) * SizeOf(Char));
 end;
 
-function DecodeBytea(vStr: PChar; vLen: Cardinal): string; overload;
+function DecodeBytea(vStr: PByte; vLen: Cardinal): string; overload;
 var
-  e: PChar;
+  e: PByte;
   aLen: Longword;
 begin
   e := PQunescapeBytea(vStr, @aLen);
@@ -877,19 +872,36 @@ end;
 
 procedure TmncPGCommand.DoPrepare;
 var
-  r: PPGresult;
   c: PPGconn;
+  r: PPGresult;
+  f: Integer;
+  s: UTF8String;
 begin
   FBOF := True;
   FHandle := Session.NewToken;
   ParseSQL([psoAddParamsID], '$');
   c := Session.DBHandle;
-  r := PQprepare(c, PChar(FHandle), PChar(SQLProcessed.SQL), 0 , nil);
-  try
-    RaiseError(r);
-  finally
-    PQclear(r);
+
+  if IsSingleRowMode then
+  begin
+    //belal check for result ok
+{    PQconsumeInput(c);} //TODO
+    //f := PQsendQuery(c, PChar(SQLProcessed.SQL));
+    {f := PQsendPrepare(c, PAnsiChar(FHandle), PAnsiChar(SQLProcessed.SQL), 0 , nil);
+    r := PQgetResult(c);}
+  end
+  else
+  begin
+    s := UTF8Encode(SQLProcessed.SQL);
+    r := PQprepare(c, PAnsiChar(FHandle), PAnsiChar(s), 0 , nil);
+    try
+      RaiseError(r);
+    finally
+      PQclear(r);
+    end;
+
   end;
+
 end;
 
 procedure TmncPGCommand.DoClose;
@@ -905,6 +917,11 @@ end;
 function TmncPGCommand.GetRecordCount: Integer;
 begin
   Result := FTuples;
+end;
+
+function TmncPGCommand.IsSingleRowMode: Boolean;
+begin
+  Result := False;
 end;
 
 function TmncPGCommand.GetRowsChanged: Integer;
@@ -1124,7 +1141,7 @@ end;
 procedure TmncCustomPGCommand.CreateParamValues(var Result: TArrayOfPChar);
 var
   i: Integer;
-  s: string;
+  s: UTF8String;
   sp, dp: TmncParam;
 begin
   FreeParamValues(Result);
@@ -1136,17 +1153,17 @@ begin
     dp := Params.FindParam(sp.Name);
 
     if (dp=nil)or(dp.IsNull) then
-      FreeMem(Result[i])
+      Result[i] := nil
     else
     begin
       case VarType(dp.Value) of
         VarDate:
-          s := FormatDateTime('yyyy-mm-dd hh:nn:ss', dp.Value);
+          s := UTF8Encode(FormatDateTime('yyyy-mm-dd hh:nn:ss', dp.Value));
         else
-          s := dp.Value;
+          s := UTF8Encode(dp.Value);
       end;
       GetMem(Result[i], Length(s) + 1);
-      StrMove(PChar(Result[i]), Pchar(s), Length(s) + 1);
+      StrMove(PAnsiChar(Result[i]), PAnsiChar(s), Length(s) + 1);
     end;
   end;
 end;
@@ -1424,7 +1441,7 @@ begin
   try
     RaiseError(r);
   finally
-    PQclear(r);     
+    PQclear(r);
   end;
 end;
 
