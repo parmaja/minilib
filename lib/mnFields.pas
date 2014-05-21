@@ -795,12 +795,12 @@ begin
   F.Value := AValue;
 end;
 
-function TmnFields._AddRef: Integer; stdcall;
+function TmnFields._AddRef: Integer;
 begin
   Result := 0;
 end;
 
-function TmnFields._Release: Integer; stdcall;
+function TmnFields._Release: Integer;
 begin
   Result := 0;
 end;
