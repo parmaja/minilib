@@ -92,7 +92,10 @@ procedure CenterRect(var R1: TRect; R2: TRect);
 function GetFormatSettings: TFormatSettings;
 
 
-{$ifndef FPC}
+{$ifdef FPC}
+{ This function founded in FPC 2.7.1, remove it please when this version released}
+function CharInSet(C: Char; Separators: TSysCharSet): Boolean;
+{$else}
 const
 {$ifdef MSWINDOWS}
   DirectorySeparator: string = '\';
@@ -105,7 +108,6 @@ const
 implementation
 
 {$ifdef FPC}
-{ This function founded in FPC 2.7.1 remove it please when this version released}
 function CharInSet(C: Char; Separators: TSysCharSet): Boolean;
 begin
   Result := C in Separators;
