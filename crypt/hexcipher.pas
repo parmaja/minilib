@@ -299,7 +299,7 @@ end;
 
 function TExHexCipher.Decrypt(InBuffer, OutBuffer: TCipherBuffer): Longint;
 var
-  iP, oP: PChar;
+  iP, oP: PAnsiChar;
   c: Integer;
 begin
   c := InBuffer.Count div 2;
@@ -313,7 +313,7 @@ end;
 
 function TExHexCipher.Encrypt(InBuffer, OutBuffer: TCipherBuffer): Longint;
 var
-  iP, oP: PChar;
+  iP, oP: PAnsiChar;
   c: Integer;
 begin
   Result := InBuffer.Count; //bytes readed from in buffer

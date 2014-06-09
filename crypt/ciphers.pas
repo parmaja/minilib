@@ -5,7 +5,7 @@ unit ciphers;
  * @license   modifiedLGPL (modified of http://www.gnu.org/licenses/lgpl.html)
  *            See the file COPYING.MLGPL, included in this distribution,
  * @author    Zaher Dirkey <zaher at parmaja dot com>
- * @author    Belal Hamed <belalhamed at gmail dot com> 
+ * @author    Belal Hamed <belalhamed at gmail dot com>
  *}
 
 {$IFDEF FPC}
@@ -33,9 +33,9 @@ type
 
   TCipherBuffer = class(TObject)
   private
-    FStart: PChar;
-    FPosition: PChar; //end of Data ...
-    FEOS: PChar; //end of Buffer ...
+    FStart: PAnsiChar;
+    FPosition: PAnsiChar; //end of Data ...
+    FEOS: PAnsiChar; //end of Buffer ...
     function GetAsString: string;
   public
     constructor Create;
@@ -43,11 +43,11 @@ type
     procedure WriteBuffer(const vBuffer; vCount: Integer);
     function ReadBuffer(var vBuffer; vCount: Integer): Integer;
 
-    procedure PutChar(vChar: Char);
+    procedure PutChar(vChar: AnsiChar);
     procedure IncPos(vCount: Integer=1);
-    property Start: PChar read FStart;
-    property Position: PChar read FPosition; 
-    property EOS: PChar read FEOS; //end of Buffer ...
+    property Start: PAnsiChar read FStart;
+    property Position: PAnsiChar read FPosition;
+    property EOS: PAnsiChar read FEOS; //end of Buffer ...
     property AsString: string read GetAsString;
     procedure SaveToStream(Stream: TStream);
     procedure SaveToFile(FileName: TFileName);
@@ -158,6 +158,7 @@ type
     property Way: TCipherWay read FWay;
     property Mode: TCipherMode read FMode;
     property Cipher: TCipher read GetCipher write SetCipher;
+    procedure SaveToStream(vStream: TStream);
   end;
 
   TExCipherStream = class(TStream)
@@ -257,8 +258,29 @@ end;
 function TCipherStream.Read(var Buffer; Count: Integer): Longint;
 begin
   if FMode = cimWrite  then
-    raise ECipherException.Create('Stream created for Read');
+    raise ECipherException.Create('Stream created for Write');
   Result := FStream.Read(Buffer, Count);
+end;
+
+procedure TCipherStream.SaveToStream(vStream: TStream);
+var
+  aBuf: AnsiString;
+  i: Integer;
+begin
+  if FMode = cimWrite  then
+    raise ECipherException.Create('Stream created for Write');
+
+  SetLength(aBuf, cDefaultAlloc);
+  try
+    while True do
+    begin
+      i := read(aBuf[1], cDefaultAlloc);
+      if i<>0 then vStream.Write(aBuf[1], i);
+      if i<cDefaultAlloc then Break;
+    end;
+  finally
+    aBuf := '';
+  end;
 end;
 
 procedure TCipherStream.SetCipher(const Value: TCipher);
@@ -275,7 +297,7 @@ end;
 function TCipherStream.Write(const Buffer; Count: Integer): Longint;
 begin
   if FMode = cimRead  then
-    raise ECipherException.Create('Stream created for Write');
+    raise ECipherException.Create('Stream created for Read');
   Result := FStream.Write(Buffer, Count);
 end;
 
@@ -536,7 +558,7 @@ end;
 
 procedure TCipherBuffer.DeleteReaded(vCount: Integer);
 var
-  t: PChar;
+  t: PAnsiChar;
 begin
   if vCount=Count then
     FPosition := FStart
@@ -584,7 +606,7 @@ begin
   Inc(FPosition, vCount);
 end;
 
-procedure TCipherBuffer.PutChar(vChar: Char);
+procedure TCipherBuffer.PutChar(vChar: AnsiChar);
 begin
   FPosition^ := vChar;
   Inc(FPosition);
