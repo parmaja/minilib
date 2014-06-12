@@ -131,6 +131,7 @@ type
   TmnrCurrencyReportCell = class(TmnrCell)
   private
     FValue: Currency;
+    FData: Integer;
   protected
     function GetAsBoolean: Boolean; override;
     function GetAsCurrency: Currency; override;
@@ -140,6 +141,8 @@ type
     function GetAsString: string; override;
     function GetAsVariant: Variant; override;
     function GetIsNull: Boolean; override;
+    function GetAsData: Integer; override;
+
 
     procedure SetAsBoolean(const Value: Boolean); override;
     procedure SetAsCurrency(const Value: Currency); override;
@@ -148,6 +151,7 @@ type
     procedure SetAsInteger(const Value: Longint); override;
     procedure SetAsString(const Value: string); override;
     procedure SetAsVariant(const Value: Variant); override;
+    procedure SetAsData(const Value: Integer); override;
   public
     function DisplayText: string; override;
   end;
@@ -536,6 +540,11 @@ begin
   Result := FValue;
 end;
 
+function TmnrCurrencyReportCell.GetAsData: Integer;
+begin
+  Result := FData;
+end;
+
 function TmnrCurrencyReportCell.GetAsDateTime: TDateTime;
 begin
   Result := AsCurrency;
@@ -574,6 +583,11 @@ end;
 procedure TmnrCurrencyReportCell.SetAsCurrency(const Value: Currency);
 begin
   FValue := Value;
+end;
+
+procedure TmnrCurrencyReportCell.SetAsData(const Value: Integer);
+begin
+  FData := Value;
 end;
 
 procedure TmnrCurrencyReportCell.SetAsDateTime(const Value: TDateTime);

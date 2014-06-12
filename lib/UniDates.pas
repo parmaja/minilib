@@ -513,7 +513,7 @@ var
 begin
   b := 0;
   for i := 1 to Length(S) do
-    if S[i] in ['0'..'9'] then
+    if CharInSet(S[i], ['0'..'9']) then
     begin
       b := i;
       break;
@@ -544,7 +544,7 @@ var
 begin
   b := 0;
   for i := 1 to Length(S) do
-    if S[i] in ['0'..'9'] then
+    if CharInSet(S[i], ['0'..'9']) then
     begin
       b := i;
       break;
@@ -587,7 +587,7 @@ var
 begin
   b := 0;
   for i := 1 to Length(S) do
-    if S[i] in ['0'..'9'] then
+    if CharInSet(S[i], ['0'..'9']) then
     begin
       b := i;
       break;
