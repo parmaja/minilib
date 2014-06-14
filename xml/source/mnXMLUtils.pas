@@ -99,7 +99,7 @@ begin
   Result := i;
   while i <= Length(s) do
   begin
-    if (s[i] in IDENTIFIER_CHARS) then
+    if CharInSet(s[i], IDENTIFIER_CHARS) then
     begin
       Result := i;
       Inc(i);
@@ -225,7 +225,7 @@ begin
   Result := '';
   for i := 1 to Length(FileName) do
   begin
-    if (FileName[i] in sChars) or (FileName[i] in ['A'..'Z', 'a'..'z', '0'..'9']) then
+    if CharInSet(FileName[i], sChars) or CharInSet(FileName[i], ['A'..'Z', 'a'..'z', '0'..'9']) then
       Result := Result + FileName[i]
     else
       Result := Result + '%' + IntToHex(Ord(FileName[i]), 2);
