@@ -498,7 +498,7 @@ begin
   l := Length(SubStr);
   for i := Column to Length(Text) do
   begin
-    if not (Text[i] in sWhitespace) then
+    if not CharInSet(Text[i], sWhitespace) then
     begin
       if Text[i] = SubStr[c] then
       begin
