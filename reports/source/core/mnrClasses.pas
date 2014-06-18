@@ -183,8 +183,10 @@ type
     FExcludeSections: TmnrSectionClassIDs;
     FIncludeSections: TmnrSectionClassIDs;
     FName: string;
+    FDataName: string;
     FNumber: Integer;
     FChain: string;
+    FOnDataRequest: TOnRequest;
     //FDesignerCell: TmnrDesignCell;
     function GetReport: TmnrCustomReport;
   protected
@@ -200,6 +202,7 @@ type
     function GetExcludeSections: TmnrSectionClassIDs; virtual;
     function GetIncludeSections: TmnrSectionClassIDs; virtual;
     function GetName: string; virtual;
+    function GetDataName: string; virtual;
     function GetTitle: string; virtual;
     function GetNumber: Integer; virtual;
     function GetLayouts: TmnrLayouts;
@@ -209,6 +212,7 @@ type
     property Prior: TmnrLayout read GetPrior;
 
     property Name: string read GetName;
+    property DataName: string read GetDataName;
     property Number: Integer read GetNumber;
     property Title: string read GetTitle;
     property Chain: string read FChain write FChain;
@@ -217,6 +221,7 @@ type
 
     procedure Request(vCell: TmnrCell);
     property OnRequest: TOnRequest read FOnRequest write FOnRequest;
+    property OnDataRequest: TOnRequest read FOnDataRequest write FOnDataRequest;
     function NewCell(vDesignCell: TmnrDesignCell; vRow: TmnrRow): TmnrCell;
     property Reference: TmnrReference read FReference;
     //property DesignerCell: TmnrDesignCell read FDesignerCell write FDesignerCell;
@@ -244,7 +249,7 @@ type
     property Next: TmnrLayouts read GetNext;
     property Prior: TmnrLayouts read GetPrior;
 
-    function CreateLayout(vClass: TmnrLayoutClass; const vName: string; vOnRequest: TOnRequest = nil; vNumber: Integer = 0; vIncludeSections: TmnrSectionClassIDs = []; vExcludeSections: TmnrSectionClassIDs = []): TmnrLayout;
+    function CreateLayout(vClass: TmnrLayoutClass; const vName, vDataName: string; vOnRequest: TOnRequest = nil; vNumber: Integer = 0; vIncludeSections: TmnrSectionClassIDs = []; vExcludeSections: TmnrSectionClassIDs = []): TmnrLayout;
     function Find(const vName: string): TmnrLayout;
     property Name: string read FName write SetName;
     property Groups: TmnrGroups read GetGroups;
@@ -265,7 +270,7 @@ type
     function FindLayout(const vName: string): TmnrLayout;
     property Report: TmnrCustomReport read FReport;
 
-    function CreateLayout(const vGroup: string; vClass: TmnrLayoutClass; const vName: string; vOnRequest: TOnRequest = nil; vNumber: Integer = 0; vIncludeSections: TmnrSectionClassIDs = []; vExcludeSections: TmnrSectionClassIDs = []): TmnrLayout; 
+    function CreateLayout(const vGroup: string; vClass: TmnrLayoutClass; const vName, vDataName: string; vOnRequest: TOnRequest = nil; vNumber: Integer = 0; vIncludeSections: TmnrSectionClassIDs = []; vExcludeSections: TmnrSectionClassIDs = []): TmnrLayout;
   end;
 
   TmnrDesignCell = class(TmnrLinkNode)
@@ -1006,7 +1011,7 @@ end;
 
 procedure TmnrCustomReport.Loop;
 begin
-  InitRequests; //must bge after start 
+  InitRequests; //must be after start
   FCanceled := False;
   try
     //Sections.DoAppendReportTitles(ReportTitles);
@@ -1859,6 +1864,11 @@ begin
     FOnRequest(vCell);
 end;
 
+function TmnrLayout.GetDataName: string;
+begin
+  Result := FDataName;
+end;
+
 function TmnrLayout.GetExcludeSections: TmnrSectionClassIDs;
 begin
   Result := FExcludeSections;
@@ -2202,7 +2212,7 @@ begin
   end;
 end;
 
-function TmnrLayouts.CreateLayout(vClass: TmnrLayoutClass; const vName: string; vOnRequest: TOnRequest; vNumber: Integer; vIncludeSections: TmnrSectionClassIDs; vExcludeSections: TmnrSectionClassIDs): TmnrLayout;
+function TmnrLayouts.CreateLayout(vClass: TmnrLayoutClass; const vName, vDataName: string; vOnRequest: TOnRequest; vNumber: Integer; vIncludeSections: TmnrSectionClassIDs; vExcludeSections: TmnrSectionClassIDs): TmnrLayout;
 begin
   Result := vClass.Create(Self);
   with Result do
@@ -2608,7 +2618,7 @@ begin
   FReport := vReport;
 end;
 
-function TmnrGroups.CreateLayout(const vGroup: string; vClass: TmnrLayoutClass; const vName: string; vOnRequest: TOnRequest; vNumber: Integer; vIncludeSections, vExcludeSections: TmnrSectionClassIDs): TmnrLayout;
+function TmnrGroups.CreateLayout(const vGroup: string; vClass: TmnrLayoutClass; const vName, vDataName: string; vOnRequest: TOnRequest; vNumber: Integer; vIncludeSections, vExcludeSections: TmnrSectionClassIDs): TmnrLayout;
 var
   aLayouts: TmnrLayouts;
 begin
@@ -2618,7 +2628,7 @@ begin
     aLayouts := Add;
     aLayouts.Name := vGroup;
   end;
-  Result := aLayouts.CreateLayout(vClass, vName, vOnRequest, vNumber, vIncludeSections, vExcludeSections);
+  Result := aLayouts.CreateLayout(vClass, vName, vDataName, vOnRequest, vNumber, vIncludeSections, vExcludeSections);
 end;
 
 function TmnrGroups.Find(const vName: string): TmnrLayouts;
