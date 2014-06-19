@@ -673,7 +673,7 @@ type
     function GetReport: TmnrCustomReport;
     class procedure DoEnumReports(vClass: TmnrCustomReportClass; vList: TStrings); virtual;
   public
-    constructor Create; virtual;
+    constructor Create(vReport: TmnrCustomReport); virtual;
     procedure SaveReport; virtual;
     procedure LoadReport; virtual;
     procedure DeleteReport(const vName: string); virtual;
@@ -721,7 +721,7 @@ begin
   inherited Create;
 
   FProfiler := DoCreateProfiler;
-  FProfiler.FReport := Self;
+  //FProfiler.FReport := Self;
   FSections := DoCreateSections;
   FGroups := DoCreateGroups;
   FItems := DoCreateItems;
@@ -771,7 +771,7 @@ end;
 
 function TmnrCustomReport.DoCreateProfiler: TmnrProfiler;
 begin
-  Result := ProfilerClass.Create;
+  Result := ProfilerClass.Create(Self);
 end;
 
 class function TmnrCustomReport.CreateReportDesgin: ImnrReportDesigner;
@@ -2466,9 +2466,10 @@ end;
 
 { TmnrProfiler }
 
-constructor TmnrProfiler.Create;
+constructor TmnrProfiler.Create(vReport: TmnrCustomReport);
 begin
   inherited Create;
+  FReport := vReport;
 end;
 
 class procedure TmnrProfiler.EnumReports(vClass: TmnrCustomReportClass; vList: TStrings);

@@ -77,7 +77,10 @@ type
     function WriteLn(const S: string): Cardinal;
 
     procedure ReadCommand(var Command: string; var Params: string);
-    procedure WriteCommand(const Command: string; const Params: string = '');
+
+    procedure WriteCommand(const Command: string); overload;
+    procedure WriteCommand(const Command: string; const Params: string; const Args: array of const); overload;
+    procedure WriteCommand(const Command: string; const Params: string); overload;
 
     function WriteEOL(EOL: string): Cardinal; overload;
     function WriteEOL: Cardinal; overload;
@@ -311,6 +314,16 @@ end;
 function TmnBufferStream.Write(const Buffer; Count: Integer): Longint;
 begin
   Result := DoWrite(Buffer, Count);//TODO must be buffered
+end;
+
+procedure TmnBufferStream.WriteCommand(const Command: string);
+begin
+  WriteCommand(Command, '');
+end;
+
+procedure TmnBufferStream.WriteCommand(const Command, Params: string; const Args: array of const);
+begin
+  WriteCommand(Command, Format(Params, Args));
 end;
 
 { TmnBufferStream }
