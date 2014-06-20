@@ -1715,14 +1715,19 @@ begin
           if (aParams.FetchMode = fmFirst) then
           begin
             //if (s.ClassID = sciDetails) then //improve add referance on first accepted ...
-              r := s.NewReference;
+            r := s.NewReference;
             s.DoBeginFill(r);
             s.AddTitles;
           end
           else
           begin
             if (s.ClassID <> sciDetails) then
+            begin
               r := s.NewReference;
+              s.DoBeginFill(r);
+              if aParams.AcceptMode = acmAccept then
+                s.AddTitles;
+            end;
           end;
 
           if aParams.AcceptMode = acmAccept then
