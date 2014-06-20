@@ -79,7 +79,7 @@ type
     procedure ReadCommand(var Command: string; var Params: string);
 
     procedure WriteCommand(const Command: string); overload;
-    procedure WriteCommand(const Command: string; const Params: string; const Args: array of const); overload;
+    procedure WriteCommand(const Command: string; const Format: string; const Params: array of const); overload;
     procedure WriteCommand(const Command: string; const Params: string); overload;
 
     function WriteEOL(EOL: string): Cardinal; overload;
@@ -321,9 +321,9 @@ begin
   WriteCommand(Command, '');
 end;
 
-procedure TmnBufferStream.WriteCommand(const Command, Params: string; const Args: array of const);
+procedure TmnBufferStream.WriteCommand(const Command, Format: string; const Params: array of const);
 begin
-  WriteCommand(Command, Format(Params, Args));
+  WriteCommand(Command, SysUtils.Format(Format, Params));
 end;
 
 { TmnBufferStream }
