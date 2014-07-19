@@ -62,7 +62,7 @@ type
 
   TmnrRowArray = array of TmnrRow;
 
-  TmnrSectionLoopWay = (slwAuto, slwSingle, slwMulti);
+  TmnrSectionLoopWay = (slCustom, slwAuto, slwSingle, slwMulti);
   TmnrFetchMode = (fmFirst, fmNext);
   TmnrAcceptMode = (acmAccept, acmSkip, acmSkipAll, acmRepeat, acmEof);
   TmnrSectionClassID = (sciReport, sciHeaderReport, sciHeaderPage, sciHeaderDetails, sciDetails, sciFooterDetails, sciFooterPage, sciFooterReport);
@@ -513,6 +513,7 @@ type
     property Last: TmnrSection read GetLast;
 
     procedure Loop;
+    procedure CustomLoop; //for custom sections
     procedure ClearItems;
     procedure ClearDesignItems;
   end;
@@ -1540,6 +1541,77 @@ begin
   FReport := vReport;
 end;
 
+procedure TmnrSections.CustomLoop;
+var
+  s: TmnrSection;
+  aParams: TmnrFetch;
+  r: TmnrReferencesRow;
+  aIdx: Integer;
+begin
+  s := First;
+  while s <> nil do
+  begin
+    aIdx := 0;
+    aParams.ID := 0;
+    aParams.Number := 0;
+    aParams.Locked := False;
+    aParams.Data := nil;
+    aParams.AcceptMode := acmAccept;
+    aParams.FetchMode := fmFirst;
+
+
+
+    case s.LoopWay of
+      slCustom:
+      begin
+        r := nil;
+        while not Report.Canceled and (aParams.AcceptMode <> acmEof) do
+        begin
+          s.DoFetch(aParams);
+
+
+          if (aParams.FetchMode = fmFirst) and (aParams.AcceptMode <> acmEof) then
+          begin
+            r := s.NewReference;
+            s.DoBeginFill(r);
+            s.AddTitles;
+          end;
+
+          if aParams.AcceptMode = acmAccept then
+          begin
+            s.FillNow(aParams, aIdx, r);
+            //s.Sections.Loop;
+          end;
+
+          if (aParams.AcceptMode = acmEof) and (s.Items.Count <> 0) then
+          begin
+            if (r <> nil) and s.AppendDetailTotals then
+            begin
+              s.DoAppendDetailTotals(Report.FDetailTotals);
+              s.DoEndFill(r);
+            end;
+          end;
+
+          aParams.ID := 0;
+          aParams.Number := 0;
+          aParams.Locked := False;
+          if aParams.FetchMode = fmFirst then aParams.FetchMode := fmNext;
+          if aParams.Data <> nil then FreeAndNil(aParams.Data);
+
+          if aParams.AcceptMode=acmAccept then
+            Inc(aIdx)
+          else if aParams.AcceptMode in [acmSkip, acmSkipAll] then
+            aParams.AcceptMode := acmAccept;
+        end;
+
+
+      end;
+
+    end;
+    s := s.Next;
+  end;
+end;
+
 destructor TmnrSections.Destroy;
 begin
 
@@ -1766,6 +1838,7 @@ begin
         end;
 
       end; //case slwMulti:
+
     end;
     s := s.Next;
   end;
