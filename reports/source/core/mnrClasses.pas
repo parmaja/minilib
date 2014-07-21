@@ -279,6 +279,7 @@ type
     FLayout: TmnrLayout;
     FName: string;
     FAppendTotals: Boolean;
+    FNumber: Integer;
   protected
     function GetNext: TmnrDesignCell;
     function GetPrior: TmnrDesignCell;
@@ -303,6 +304,7 @@ type
   published
     property Name: string read FName write SetName;
     property Width: Integer read FWidth write SetWidth default DEFAULT_CELL_WIDTH;
+    property Number: Integer read FNumber write FNumber default 0; //used in exploded cells
     property AppendTotals: Boolean read FAppendTotals write FAppendTotals default False;
   end;
 
@@ -2348,6 +2350,7 @@ begin
   inherited Create(vNodes);
   FWidth := DEFAULT_CELL_WIDTH;
   FAppendTotals := False;
+  FNumber := 0;
 end;
 
 destructor TmnrDesignCell.Destroy;
