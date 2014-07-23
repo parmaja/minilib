@@ -290,6 +290,8 @@ type
     procedure SetWidth(const Value: Integer);
     procedure SetLayout(const Value: TmnrLayout);
     function GetLayout: TmnrLayout;
+    procedure AssignTo(Dest: TPersistent); override;
+
   public
     constructor Create(vNodes: TmnrNodes);
     destructor Destroy; override;
@@ -847,10 +849,12 @@ begin
 end;
 
 procedure TmnrCustomReport.ExportCSV(const vStream: TStream; vItems: TmnrRows);
+
   procedure WriteStr(const vStr: string);
   begin
-    vStream.Write(vStr[1], Length(vStr));
+    vStream.Write(vStr[1], ByteLength(vStr));
   end;
+
 var
   r: TmnrRow;
   n: TmnrCell;
@@ -2344,6 +2348,20 @@ begin
 end;
 
 { TmnrDesignCell }
+
+procedure TmnrDesignCell.AssignTo(Dest: TPersistent);
+var
+  d: TmnrDesignCell;
+begin
+  //inherited;
+  if Dest is TmnrDesignCell then
+  begin
+    d := Dest as TmnrDesignCell;
+    d.Width := Width;
+    d.Number := Number;
+    d.AppendTotals := AppendTotals;
+  end;
+end;
 
 constructor TmnrDesignCell.Create(vNodes: TmnrNodes);
 begin
