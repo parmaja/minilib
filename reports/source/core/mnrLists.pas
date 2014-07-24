@@ -67,6 +67,11 @@ type
 
     procedure MoveAfter(vNode: TmnrNode);
     procedure MoveBefore(vNode: TmnrNode);
+
+    procedure MoveUp;
+    procedure MoveDown;
+    procedure MoveFirst;
+    procedure MoveLast;
   end;
 
   TmnrNodes = class(TmnrNode)
@@ -387,6 +392,27 @@ begin
     if Nodes.First=vNode then Nodes.First := Self;
   end;
 end;
+
+procedure TmnrNode.MoveUp;
+begin
+  if Prior<>nil then MoveBefore(Prior);
+end;
+
+procedure TmnrNode.MoveDown;
+begin
+  if Next<>nil then MoveAfter(Next);
+end;
+
+procedure TmnrNode.MoveFirst;
+begin
+  if (Nodes<>nil) and (Nodes.First<>Self) then MoveBefore(Nodes.First);
+end;
+
+procedure TmnrNode.MoveLast;
+begin
+  if (Nodes<>nil) and (Nodes.Last<>Self) then MoveAfter(Nodes.Last);
+end;
+
 
 procedure TmnrNode.SetFirst(const Value: TmnrNode);
 begin
