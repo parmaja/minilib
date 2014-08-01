@@ -1591,9 +1591,9 @@ begin
 
           if (aParams.AcceptMode = acmEof) and (s.Items.Count <> 0) then
           begin
-            if (r <> nil) and s.AppendDetailTotals then
+            if (r <> nil) then
             begin
-              s.DoAppendDetailTotals(Report.FDetailTotals);
+              if s.AppendDetailTotals then s.DoAppendDetailTotals(Report.FDetailTotals);
               s.DoEndFill(r);
             end;
           end;
@@ -1818,9 +1818,9 @@ begin
 
           if (aParams.AcceptMode = acmEof) and (s.Items.Count <> 0) then
           begin
-            if (r <> nil) and s.AppendDetailTotals then
+            if (r <> nil) then
             begin
-              s.DoAppendDetailTotals(Report.FDetailTotals);
+              if s.AppendDetailTotals then s.DoAppendDetailTotals(Report.FDetailTotals);
               s.DoEndFill(r);
             end;
           end;
