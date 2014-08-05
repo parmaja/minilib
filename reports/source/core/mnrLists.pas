@@ -112,7 +112,7 @@ type
     function GetAsBoolean: Boolean; virtual; abstract;
     function GetAsCurrency: Currency; virtual; abstract;
     function GetAsDateTime: TDateTime; virtual; abstract;
-    function GetAsFloat: Double; virtual; abstract;
+    function GetAsDouble: Double; virtual; abstract;
     function GetAsInteger: Longint; virtual; abstract;
     function GetAsString: string; virtual; abstract;
     function GetAsVariant: Variant; virtual; abstract;
@@ -121,7 +121,7 @@ type
     procedure SetAsBoolean(const Value: Boolean); virtual; abstract;
     procedure SetAsCurrency(const Value: Currency); virtual; abstract;
     procedure SetAsDateTime(const Value: TDateTime); virtual; abstract;
-    procedure SetAsFloat(const Value: Double); virtual; abstract;
+    procedure SetAsDouble(const Value: Double); virtual; abstract;
     procedure SetAsInteger(const Value: Longint); virtual; abstract;
     procedure SetAsString(const Value: string); virtual; abstract;
     procedure SetAsVariant(const Value: Variant); virtual; abstract;
@@ -131,7 +131,7 @@ type
     property AsBoolean: Boolean read GetAsBoolean write SetAsBoolean;
     property AsCurrency: Currency read GetAsCurrency write SetAsCurrency;
     property AsDateTime: TDateTime read GetAsDateTime write SetAsDateTime;
-    property AsFloat: Double read GetAsFloat write SetAsFloat;
+    property AsDouble: Double read GetAsDouble write SetAsDouble;
     property AsInteger: Longint read GetAsInteger write SetAsInteger;
     property AsString: string read GetAsString write SetAsString;
     property AsVariant: Variant read GetAsVariant write SetAsVariant;

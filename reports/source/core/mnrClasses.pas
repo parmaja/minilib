@@ -85,7 +85,7 @@ type
     function GetAsBoolean: Boolean; override;
     function GetAsCurrency: Currency; override;
     function GetAsDateTime: TDateTime; override;
-    function GetAsFloat: Double; override;
+    function GetAsDouble: Double; override;
     function GetAsInteger: Longint; override;
     function GetAsString: string; override;
     function GetAsVariant: Variant; override;
@@ -94,7 +94,7 @@ type
     procedure SetAsBoolean(const Value: Boolean); override;
     procedure SetAsCurrency(const Value: Currency); override;
     procedure SetAsDateTime(const Value: TDateTime); override;
-    procedure SetAsFloat(const Value: Double); override;
+    procedure SetAsDouble(const Value: Double); override;
     procedure SetAsInteger(const Value: Longint); override;
     procedure SetAsString(const Value: string); override;
     procedure SetAsVariant(const Value: Variant); override;
@@ -2639,7 +2639,7 @@ begin
   Result := AsCurrency;
 end;
 
-function TmnrBaseCell.GetAsFloat: Double;
+function TmnrBaseCell.GetAsDouble: Double;
 begin
   Result := AsCurrency;
 end;
@@ -2684,7 +2684,7 @@ begin
 
 end;
 
-procedure TmnrBaseCell.SetAsFloat(const Value: Double);
+procedure TmnrBaseCell.SetAsDouble(const Value: Double);
 begin
 
 end;

@@ -19,7 +19,7 @@ type
     function GetAsBoolean: Boolean; override;
     function GetAsCurrency: Currency; override;
     function GetAsDateTime: TDateTime; override;
-    function GetAsFloat: Double; override;
+    function GetAsDouble: Double; override;
     function GetAsInteger: Longint; override;
     function GetAsString: string; override;
     function GetAsVariant: Variant; override;
@@ -28,7 +28,7 @@ type
     procedure SetAsBoolean(const Value: Boolean); override;
     procedure SetAsCurrency(const Value: Currency); override;
     procedure SetAsDateTime(const Value: TDateTime); override;
-    procedure SetAsFloat(const Value: Double); override;
+    procedure SetAsDouble(const Value: Double); override;
     procedure SetAsInteger(const Value: Longint); override;
     procedure SetAsString(const Value: string); override;
     procedure SetAsVariant(const Value: Variant); override;
@@ -59,7 +59,7 @@ type
     function GetAsBoolean: Boolean; override;
     function GetAsCurrency: Currency; override;
     function GetAsDateTime: TDateTime; override;
-    function GetAsFloat: Double; override;
+    function GetAsDouble: Double; override;
     function GetAsInteger: Longint; override;
     function GetAsString: string; override;
     function GetAsVariant: Variant; override;
@@ -68,7 +68,7 @@ type
     procedure SetAsBoolean(const Value: Boolean); override;
     procedure SetAsCurrency(const Value: Currency); override;
     procedure SetAsDateTime(const Value: TDateTime); override;
-    procedure SetAsFloat(const Value: Double); override;
+    procedure SetAsDouble(const Value: Double); override;
     procedure SetAsInteger(const Value: Longint); override;
     procedure SetAsString(const Value: string); override;
     procedure SetAsVariant(const Value: Variant); override;
@@ -96,7 +96,7 @@ type
     function GetAsBoolean: Boolean; override;
     function GetAsCurrency: Currency; override;
     function GetAsDateTime: TDateTime; override;
-    function GetAsFloat: Double; override;
+    function GetAsDouble: Double; override;
     function GetAsInteger: Longint; override;
     function GetAsString: string; override;
     function GetAsVariant: Variant; override;
@@ -105,7 +105,7 @@ type
     procedure SetAsBoolean(const Value: Boolean); override;
     procedure SetAsCurrency(const Value: Currency); override;
     procedure SetAsDateTime(const Value: TDateTime); override;
-    procedure SetAsFloat(const Value: Double); override;
+    procedure SetAsDouble(const Value: Double); override;
     procedure SetAsInteger(const Value: Longint); override;
     procedure SetAsString(const Value: string); override;
     procedure SetAsVariant(const Value: Variant); override;
@@ -136,7 +136,7 @@ type
     function GetAsBoolean: Boolean; override;
     function GetAsCurrency: Currency; override;
     function GetAsDateTime: TDateTime; override;
-    function GetAsFloat: Double; override;
+    function GetAsDouble: Double; override;
     function GetAsInteger: Longint; override;
     function GetAsString: string; override;
     function GetAsVariant: Variant; override;
@@ -147,7 +147,7 @@ type
     procedure SetAsBoolean(const Value: Boolean); override;
     procedure SetAsCurrency(const Value: Currency); override;
     procedure SetAsDateTime(const Value: TDateTime); override;
-    procedure SetAsFloat(const Value: Double); override;
+    procedure SetAsDouble(const Value: Double); override;
     procedure SetAsInteger(const Value: Longint); override;
     procedure SetAsString(const Value: string); override;
     procedure SetAsVariant(const Value: Variant); override;
@@ -173,7 +173,7 @@ type
     function GetAsBoolean: Boolean; override;
     function GetAsCurrency: Currency; override;
     function GetAsDateTime: TDateTime; override;
-    function GetAsFloat: Double; override;
+    function GetAsDouble: Double; override;
     function GetAsInteger: Longint; override;
     function GetAsString: string; override;
     function GetAsVariant: Variant; override;
@@ -183,7 +183,7 @@ type
     procedure SetAsBoolean(const Value: Boolean); override;
     procedure SetAsCurrency(const Value: Currency); override;
     procedure SetAsDateTime(const Value: TDateTime); override;
-    procedure SetAsFloat(const Value: Double); override;
+    procedure SetAsDouble(const Value: Double); override;
     procedure SetAsInteger(const Value: Longint); override;
     procedure SetAsString(const Value: string); override;
     procedure SetAsVariant(const Value: Variant); override;
@@ -201,7 +201,7 @@ type
     function GetAsBoolean: Boolean; override;
     function GetAsCurrency: Currency; override;
     function GetAsDateTime: TDateTime; override;
-    function GetAsFloat: Double; override;
+    function GetAsDouble: Double; override;
     function GetAsInteger: Longint; override;
     function GetAsString: string; override;
     function GetAsVariant: Variant; override;
@@ -210,7 +210,7 @@ type
     procedure SetAsBoolean(const Value: Boolean); override;
     procedure SetAsCurrency(const Value: Currency); override;
     procedure SetAsDateTime(const Value: TDateTime); override;
-    procedure SetAsFloat(const Value: Double); override;
+    procedure SetAsDouble(const Value: Double); override;
     procedure SetAsInteger(const Value: Longint); override;
     procedure SetAsString(const Value: string); override;
     procedure SetAsVariant(const Value: Variant); override;
@@ -241,7 +241,7 @@ begin
   Result := StrToDateTimeDef(AsString, 0);
 end;
 
-function TmnrTextReportCell.GetAsFloat: Double;
+function TmnrTextReportCell.GetAsDouble: Double;
 begin
   Result := StrToFloatDef(AsString, 0);
 end;
@@ -281,7 +281,7 @@ begin
   FValue := DateTimeToStr(Value);
 end;
 
-procedure TmnrTextReportCell.SetAsFloat(const Value: Double);
+procedure TmnrTextReportCell.SetAsDouble(const Value: Double);
 begin
   FValue := FloatToStr(Value);
 end;
@@ -328,11 +328,11 @@ end;
 procedure TmnrIntegerLayout.ScaleCell(vCell: TmnrCell);
 begin
   inherited;
-  FTotal := FTotal + vCell.AsFloat;
-  FPageTotal := FPageTotal + vCell.AsFloat;
+  FTotal := FTotal + vCell.AsDouble;
+  FPageTotal := FPageTotal + vCell.AsDouble;
   if vCell.Reference <> nil then
   begin
-    vCell.Reference.Total := vCell.Reference.Total + vCell.AsFloat;
+    vCell.Reference.Total := vCell.Reference.Total + vCell.AsDouble;
   end;
 end;
 
@@ -361,7 +361,7 @@ begin
   Result := AsInteger;
 end;
 
-function TmnrIntegerReportCell.GetAsFloat: Double;
+function TmnrIntegerReportCell.GetAsDouble: Double;
 begin
   Result := AsInteger;
 end;
@@ -401,7 +401,7 @@ begin
   FValue := Trunc(Value);
 end;
 
-procedure TmnrIntegerReportCell.SetAsFloat(const Value: Double);
+procedure TmnrIntegerReportCell.SetAsDouble(const Value: Double);
 begin
   FValue := Trunc(Value);
 end;
@@ -453,7 +453,7 @@ begin
   Result := FValue;
 end;
 
-function TmnrDateTimeReportCell.GetAsFloat: Double;
+function TmnrDateTimeReportCell.GetAsDouble: Double;
 begin
   Result := AsDateTime;
 end;
@@ -493,7 +493,7 @@ begin
   FValue := Value;
 end;
 
-procedure TmnrDateTimeReportCell.SetAsFloat(const Value: Double);
+procedure TmnrDateTimeReportCell.SetAsDouble(const Value: Double);
 begin
   FValue := Value;
 end;
@@ -550,7 +550,7 @@ begin
   Result := AsCurrency;
 end;
 
-function TmnrCurrencyReportCell.GetAsFloat: Double;
+function TmnrCurrencyReportCell.GetAsDouble: Double;
 begin
   Result := AsCurrency;
 end;
@@ -595,7 +595,7 @@ begin
   FValue := Value;
 end;
 
-procedure TmnrCurrencyReportCell.SetAsFloat(const Value: Double);
+procedure TmnrCurrencyReportCell.SetAsDouble(const Value: Double);
 begin
   FValue := Value;
 end;
@@ -626,20 +626,20 @@ end;
 
 function TmnrDoubleReportCell.GetAsBoolean: Boolean;
 begin
-  Result := AsFloat <> 0;
+  Result := AsDouble <> 0;
 end;
 
 function TmnrDoubleReportCell.GetAsCurrency: Currency;
 begin
-  Result := AsFloat;
+  Result := AsDouble;
 end;
 
 function TmnrDoubleReportCell.GetAsDateTime: TDateTime;
 begin
-  Result := AsFloat;
+  Result := AsDouble;
 end;
 
-function TmnrDoubleReportCell.GetAsFloat: Double;
+function TmnrDoubleReportCell.GetAsDouble: Double;
 begin
   Result := FValue;
 end;
@@ -679,7 +679,7 @@ begin
   FValue := Value;
 end;
 
-procedure TmnrDoubleReportCell.SetAsFloat(const Value: Double);
+procedure TmnrDoubleReportCell.SetAsDouble(const Value: Double);
 begin
   FValue := Value;
 end;
@@ -723,7 +723,7 @@ begin
   Result := 0;
 end;
 
-function TmnrBooleanReportCell.GetAsFloat: Double;
+function TmnrBooleanReportCell.GetAsDouble: Double;
 begin
   Result := Ord(AsBoolean);
 end;
@@ -763,7 +763,7 @@ begin
   FValue := Value <> 0;
 end;
 
-procedure TmnrBooleanReportCell.SetAsFloat(const Value: Double);
+procedure TmnrBooleanReportCell.SetAsDouble(const Value: Double);
 begin
   FValue := Value <> 0;
 end;
