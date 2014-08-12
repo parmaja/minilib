@@ -115,13 +115,16 @@ type
   protected
     function GetIsNull: Boolean; virtual;
     function GetDesignCell: TmnrDesignCell;
+    function DoGetDisplayText: string; virtual;
   public
+    function DisplayText: string; override;
     property Layout: TmnrLayout read GetLayout;
     property DesignCell: TmnrDesignCell read GetDesignCell;
     property Row: TmnrRow read GetRow;
     property Next: TmnrCell read GetNext;
     property Prior: TmnrCell read GetPrior;
     property Reference: TmnrReference read FReference;
+
   end;
 
   TmnrRow = class(TmnrRowNode)
@@ -292,6 +295,7 @@ type
     function GetLayout: TmnrLayout;
     procedure AssignTo(Dest: TPersistent); override;
 
+    procedure DoUpdateCellDisplayText(vCell: TmnrCell; var vText: string); virtual;
   public
     constructor Create(vNodes: TmnrNodes);
     destructor Destroy; override;
@@ -303,6 +307,7 @@ type
     property Section: TmnrSection read GetSection;
     property Report: TmnrCustomReport read GetReport;
     function DisplayText: string; virtual;
+    procedure UpdateCellDisplayText(vCell: TmnrCell; var vText: string);
   published
     property Name: string read FName write SetName;
     property Width: Integer read FWidth write SetWidth default DEFAULT_CELL_WIDTH;
@@ -2042,6 +2047,17 @@ end;
 
 { TmnrCell }
 
+function TmnrCell.DisplayText: string;
+begin
+  Result := DoGetDisplayText;
+  if DesignCell<>nil then DesignCell.UpdateCellDisplayText(Self, Result);
+end;
+
+function TmnrCell.DoGetDisplayText: string;
+begin
+  Result := inherited DisplayText;
+end;
+
 function TmnrCell.GetDesignCell: TmnrDesignCell;
 begin
   Result := FDesignCell;
@@ -2382,9 +2398,19 @@ begin
   Result := '';
 end;
 
+procedure TmnrDesignCell.DoUpdateCellDisplayText(vCell: TmnrCell; var vText: string);
+begin
+
+end;
+
 function TmnrDesignCell.GetRow: TmnrDesignRow;
 begin
   Result := Nodes as TmnrDesignRow;
+end;
+
+procedure TmnrDesignCell.UpdateCellDisplayText(vCell: TmnrCell; var vText: string);
+begin
+  DoUpdateCellDisplayText(vCell, vText);
 end;
 
 function TmnrDesignCell.GetLayout: TmnrLayout;
