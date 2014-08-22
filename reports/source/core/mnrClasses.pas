@@ -2327,6 +2327,7 @@ begin
   begin
     FName := vName;
     FNumber := vNumber;
+    FTag := vTag;
     FIncludeSections := vIncludeSections;
     FExcludeSections := vExcludeSections;
     FOnRequest := vOnRequest;
