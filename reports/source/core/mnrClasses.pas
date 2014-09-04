@@ -108,6 +108,8 @@ type
   private
     FReference: TmnrReference;
     FDesignCell: TmnrDesignCell;
+    FLayout: TmnrLayout;
+
     function GetNext: TmnrCell;
     function GetPrior: TmnrCell;
     function GetRow: TmnrRow;
@@ -2030,10 +2032,11 @@ begin
   if Result <> nil then
   begin
     try
+      Result.FLayout := Self; //for furmula layouts
       Result.FReference := Reference;
       Result.FDesignCell := vDesignCell;
       DoRequest(Result);
-      if not vRow.Locked then ScaleCell(Result);
+      if (vRow<>nil) and not vRow.Locked then ScaleCell(Result);
     except
       FreeAndNil(Result);
       raise;
@@ -2078,10 +2081,10 @@ end;
 
 function TmnrCell.GetLayout: TmnrLayout;
 begin
-  if DesignCell<>nil then
+  {if DesignCell<>nil then
     Result := DesignCell.Layout
-  else
-    Result := nil;
+  else}
+  Result := FLayout;
 end;
 
 function TmnrCell.GetNext: TmnrCell;
