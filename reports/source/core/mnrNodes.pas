@@ -820,7 +820,7 @@ end;
 
 function TmnrPageTotalCell.GetAsCurrency: Currency;
 begin
-  Result := Layout.PageTotal;
+  Result := DesignCell.PageTotal;
 end;
 
 initialization

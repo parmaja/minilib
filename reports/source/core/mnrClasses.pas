@@ -233,8 +233,8 @@ type
     function NewCell(vDesignCell: TmnrDesignCell; vRow: TmnrRow): TmnrCell;
     property Reference: TmnrReference read FReference;
     //property DesignerCell: TmnrDesignCell read FDesignerCell write FDesignerCell;
-    property Total: Double read GetTotal;
-    property PageTotal: Double read GetPageTotal;
+    //property Total: Double read GetTotal;
+    //property PageTotal: Double read GetPageTotal;
     function CreateDesignCell(vRow: TmnrDesignRow): TmnrDesignCell;
     property Layouts: TmnrLayouts read GetLayouts;
     property Report: TmnrCustomReport read GetReport;
@@ -301,6 +301,9 @@ type
     procedure AssignTo(Dest: TPersistent); override;
 
     procedure DoUpdateCellDisplayText(vCell: TmnrCell; var vText: string); virtual;
+
+    function GetPageTotal: Double; virtual;
+    function GetTotal: Double; virtual;
   public
     constructor Create(vNodes: TmnrNodes);
     destructor Destroy; override;
@@ -313,6 +316,10 @@ type
     property Report: TmnrCustomReport read GetReport;
     function DisplayText: string; virtual;
     procedure UpdateCellDisplayText(vCell: TmnrCell; var vText: string);
+
+    property Total: Double read GetTotal;
+    property PageTotal: Double read GetPageTotal;
+    procedure ScaleCell(vCell: TmnrCell); virtual;
   published
     property Name: string read FName write SetName;
     property Width: Integer read FWidth write SetWidth default DEFAULT_CELL_WIDTH;
@@ -1256,8 +1263,7 @@ begin
           else
           begin
             c := TmnrCurrencyReportCell.Create(aRow);
-            if l <> nil then
-              c.AsCurrency := l.Total;
+            c.AsCurrency := d.Total;
           end;
           c.FDesignCell := d;
           if l <> nil then c.FReference := l.Reference;
@@ -2036,7 +2042,7 @@ begin
       Result.FReference := Reference;
       Result.FDesignCell := vDesignCell;
       DoRequest(Result);
-      if (vRow<>nil) and not vRow.Locked then ScaleCell(Result);
+      if (vRow<>nil) and (vDesignCell<>nil) and not vRow.Locked then vDesignCell.ScaleCell(Result);
     except
       FreeAndNil(Result);
       raise;
@@ -2435,6 +2441,11 @@ begin
   Result := TmnrDesignCell(inherited GetNext);
 end;
 
+function TmnrDesignCell.GetPageTotal: Double;
+begin
+  Result := 0;
+end;
+
 function TmnrDesignCell.GetPrior: TmnrDesignCell;
 begin
   Result := TmnrDesignCell(inherited GetPrior);
@@ -2454,6 +2465,16 @@ begin
     Result := Row.Section
   else
     Result := nil;
+end;
+
+function TmnrDesignCell.GetTotal: Double;
+begin
+  Result := 0;
+end;
+
+procedure TmnrDesignCell.ScaleCell(vCell: TmnrCell);
+begin
+
 end;
 
 procedure TmnrDesignCell.SetLayout(const Value: TmnrLayout);
