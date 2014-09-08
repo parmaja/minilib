@@ -202,8 +202,6 @@ type
     procedure DoRequest(vCell: TmnrCell); virtual;
     function CreateCell(vRow: TmnrRow): TmnrCell; virtual;
     procedure ScaleCell(vCell: TmnrCell); virtual;
-    function GetTotal: Double; virtual;
-    function GetPageTotal: Double; virtual;
     function DoCreateDesignCell(vRow: TmnrDesignRow): TmnrDesignCell; virtual;
 
     function GetExcludeSections: TmnrSectionClassIDs; virtual;
@@ -288,6 +286,15 @@ type
     FName: string;
     FAppendTotals: Boolean;
     FNumber: Integer;
+    FMinValue: Double;
+    FSelectedTotal: Double;
+    FPageTotal: Double;
+    FSubTotal: Double;
+    FToPageTotal: Double;
+    FTotal: Double;
+    FMaxValue: Double;
+    FLockCount: Integer;
+    FCount: Integer;
   protected
     function GetNext: TmnrDesignCell;
     function GetPrior: TmnrDesignCell;
@@ -302,8 +309,7 @@ type
 
     procedure DoUpdateCellDisplayText(vCell: TmnrCell; var vText: string); virtual;
 
-    function GetPageTotal: Double; virtual;
-    function GetTotal: Double; virtual;
+    function CurrencyCellClass: TmnrCellClass; virtual;
   public
     constructor Create(vNodes: TmnrNodes);
     destructor Destroy; override;
@@ -317,8 +323,18 @@ type
     function DisplayText: string; virtual;
     procedure UpdateCellDisplayText(vCell: TmnrCell; var vText: string);
 
-    property Total: Double read GetTotal;
-    property PageTotal: Double read GetPageTotal;
+    property Total: Double read FTotal write FTotal;
+    property SubTotal: Double read FSubTotal write FSubTotal;
+    property PageTotal: Double read FPageTotal write FPageTotal;
+    property ToPageTotal: Double read FToPageTotal write FToPageTotal;
+    property SelectedTotal: Double read FSelectedTotal write FSelectedTotal;
+    property MinValue: Double read FMinValue write FMinValue;
+    property MaxValue: Double read FMaxValue write FMaxValue;
+    property Count: Integer read FCount write FCount;
+
+    procedure Lock;
+    procedure UnLock;
+    function Locked: Boolean;
     procedure ScaleCell(vCell: TmnrCell); virtual;
   published
     property Name: string read FName write SetName;
@@ -350,6 +366,7 @@ type
     property Last: TmnrDesignCell read GetLast;
     property ByIndex[vIndex: Integer]: TmnrDesignCell read GetByIndex;
     function Find(const vName: string): TmnrDesignCell;
+    procedure ClearSubTotals;
   end;
 
   TmnrDesignRows = class(TmnrRowNodes)
@@ -368,6 +385,8 @@ type
     property Section: TmnrSection read GetSection;
     property ByIndex[vIndex: Integer]: TmnrDesignRow read GetByIndex;
     function Find(const vName: string): TmnrDesignCell;
+
+    procedure ClearSubTotals;
   end;
 
   TmnrRowReference = class(TmnrLinkNode)
@@ -389,7 +408,6 @@ type
 
   TmnrReference = class(TmnrLinkNode)
   private
-    FTotal: Double;
     function GetNext: TmnrReference;
     function GetNodes: TmnrReferencesRow;
     function GetPrior: TmnrReference;
@@ -398,7 +416,6 @@ type
     property Next: TmnrReference read GetNext;
     property Prior: TmnrReference read GetPrior;
     property Nodes: TmnrReferencesRow read GetNodes write SetNodes;
-    property Total: Double read FTotal write FTotal;
   end;
 
   TmnrReferencesRow = class(TmnrRowNode)
@@ -499,6 +516,7 @@ type
 
     procedure AddTitles;
     procedure AddReportTitles;
+    procedure ClearSubTotals;
   published
     property AppendDetailTotals: Boolean read FAppendDetailTotals write FAppendDetailTotals default False;
     property AppendPageTotals: Boolean read FAppendPageTotals write FAppendPageTotals default False;
@@ -1153,10 +1171,10 @@ begin
           end
           else
           begin
-            c := TmnrCurrencyReportCell.Create(aRow);
+            c := d.CurrencyCellClass.Create(aRow);
             //c := l.CreateCell(aRow);
-            if d.AppendTotals and (l <> nil) and (l.Reference <> nil) then
-              c.AsCurrency := l.Reference.Total;
+            if d.AppendTotals  then
+              c.AsCurrency := d.SubTotal;
           end;
           c.FDesignCell := d;
           if l <> nil then c.FReference := l.Reference;
@@ -1351,6 +1369,11 @@ end;
 procedure TmnrSection.AddTitles;
 begin
   if AppendDetailTitles then DoAppendTitles(Report.DetailTitles);
+end;
+
+procedure TmnrSection.ClearSubTotals;
+begin
+  DesignRows.ClearSubTotals;
 end;
 
 constructor TmnrSection.Create(vNodes: TmnrNode);
@@ -1838,6 +1861,7 @@ begin
             begin
               if s.AppendDetailTotals then s.DoAppendDetailTotals(Report.FDetailTotals);
               s.DoEndFill(r);
+              s.ClearSubTotals;
             end;
           end;
 
@@ -1999,11 +2023,6 @@ begin
   Result := FNumber;
 end;
 
-function TmnrLayout.GetPageTotal: Double;
-begin
-  Result := 0;
-end;
-
 function TmnrLayout.GetPrior: TmnrLayout;
 begin
   Result := TmnrLayout(inherited GetPrior);
@@ -2025,11 +2044,6 @@ end;
 function TmnrLayout.GetTitle: string;
 begin
   Result := FName;
-end;
-
-function TmnrLayout.GetTotal: Double;
-begin
-  Result := 0;
 end;
 
 function TmnrLayout.NewCell(vDesignCell: TmnrDesignCell; vRow: TmnrRow): TmnrCell;
@@ -2405,6 +2419,11 @@ begin
   FNumber := 0;
 end;
 
+function TmnrDesignCell.CurrencyCellClass: TmnrCellClass;
+begin
+  Result := TmnrCurrencyReportCell;
+end;
+
 destructor TmnrDesignCell.Destroy;
 begin
 
@@ -2441,11 +2460,6 @@ begin
   Result := TmnrDesignCell(inherited GetNext);
 end;
 
-function TmnrDesignCell.GetPageTotal: Double;
-begin
-  Result := 0;
-end;
-
 function TmnrDesignCell.GetPrior: TmnrDesignCell;
 begin
   Result := TmnrDesignCell(inherited GetPrior);
@@ -2467,14 +2481,28 @@ begin
     Result := nil;
 end;
 
-function TmnrDesignCell.GetTotal: Double;
+procedure TmnrDesignCell.Lock;
 begin
-  Result := 0;
+  Inc(FLockCount);
+end;
+
+procedure TmnrDesignCell.UnLock;
+begin
+  Dec(FLockCount);
+end;
+
+function TmnrDesignCell.Locked: Boolean;
+begin
+  Result := FLockCount<>0;
 end;
 
 procedure TmnrDesignCell.ScaleCell(vCell: TmnrCell);
 begin
-
+  if not Locked then
+  begin
+    Layout.ScaleCell(vCell);
+    Inc(FCount)
+  end;
 end;
 
 procedure TmnrDesignCell.SetLayout(const Value: TmnrLayout);
@@ -2506,6 +2534,18 @@ end;
 function TmnrDesignRow.Add: TmnrDesignCell;
 begin
   Result := TmnrDesignCell.Create(Self);
+end;
+
+procedure TmnrDesignRow.ClearSubTotals;
+var
+  c: TmnrDesignCell;
+begin
+  c := First;
+  while c<>nil do
+  begin
+    c.SubTotal := 0;
+    c := c.Next;
+  end;
 end;
 
 function TmnrDesignRow.Find(const vName: string): TmnrDesignCell;
@@ -2578,6 +2618,18 @@ end;
 function TmnrDesignRows.Add: TmnrDesignRow;
 begin
   Result := TmnrDesignRow.Create(Self);
+end;
+
+procedure TmnrDesignRows.ClearSubTotals;
+var
+  aRow: TmnrDesignRow;
+begin
+  aRow := First;
+  while aRow<>nil do
+  begin
+    aRow.ClearSubTotals;
+    aRow := aRow.Next;
+  end;
 end;
 
 constructor TmnrDesignRows.Create(vSection: TmnrSection);

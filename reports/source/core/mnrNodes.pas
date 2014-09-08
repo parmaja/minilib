@@ -79,14 +79,9 @@ type
 
   TmnrIntegerLayout = class(TmnrLayout)
   protected
-    FTotal: Double;
-    FPageTotal: Double;
     procedure ScaleCell(vCell: TmnrCell); override;
-    function GetTotal: Double; override;
-    function GetPageTotal: Double; override;
   protected
     function CreateCell(vRow: TmnrRow): TmnrCell; override;
-  public
   end;
 
   TmnrDateTimeReportCell = class(TmnrCell)
@@ -315,24 +310,22 @@ begin
   Result := TmnrIntegerReportCell.Create(vRow);
 end;
 
-function TmnrIntegerLayout.GetPageTotal: Double;
-begin
-  Result := FPageTotal;
-end;
-
-function TmnrIntegerLayout.GetTotal: Double;
-begin
-  Result := FTotal;
-end;
-
 procedure TmnrIntegerLayout.ScaleCell(vCell: TmnrCell);
+var
+  v: Double;
 begin
-  inherited;
-  FTotal := FTotal + vCell.AsDouble;
-  FPageTotal := FPageTotal + vCell.AsDouble;
-  if vCell.Reference <> nil then
+  with vCell.DesignCell do
   begin
-    vCell.Reference.Total := vCell.Reference.Total + vCell.AsDouble;
+    if AppendTotals then
+    begin
+      v           := vCell.AsDouble;
+      SubTotal    := SubTotal + v;
+      Total       := Total + v;
+      PageTotal   := PageTotal + v;
+      ToPageTotal := ToPageTotal + v;
+      if (Count=0) or (v<MinValue) then MinValue := v;
+      if (Count=0) or (v>MaxValue) then MaxValue := v;
+    end;
   end;
 end;
 
