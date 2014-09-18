@@ -9,7 +9,7 @@ uses
   //dluxdetails dluxdesign
 
 const
-  cMaxRows  = 1000000;
+  cMaxRows  = 10000;
   cMaxCells = 5;
 
 type
@@ -34,13 +34,14 @@ type
   protected
     BigPos, SubPos: Integer;
     HeaderDeatils, Details, FooterDetails: TmnrSection;
-    procedure CreateSections(vSections: TmnrSections); override;
-    procedure CreateLayouts(vLayouts: TmnrLayouts); override;
+    procedure DoInitSections(vSections: TmnrSections); override;
+    procedure InitLayouts(vGroups: TmnrGroups); override;
     procedure HeadersFetch(var vParams: TmnrFetch);
     procedure DetailsFetch(var vParams: TmnrFetch);
     procedure FooterDetailsFetch(var vParams: TmnrFetch);
-    procedure Load; override;
-    function CreateProfiler: TmnrProfiler; override;
+    function DoCreateProfiler: TmnrProfiler; override;
+
+
   public
     procedure RequestMaster(vCell: TmnrCell);
     procedure RequestNumber(vCell: TmnrCell);
@@ -50,6 +51,7 @@ type
     procedure RequestValue(vCell: TmnrCell);
 
     procedure Start; override;
+    function CreateReportDesgin: ImnrReportDesigner; override;
   end;
 
   TForm1 = class(TForm)
@@ -79,7 +81,7 @@ uses
 
 procedure TForm1.DesignReportBtnClick(Sender: TObject);
 begin
-  DesignReport(TSimpleDetailsReport);
+  DesignmnReport(TSimpleDetailsReport);
 end;
 
 procedure TForm1.TestReportBtnClick(Sender: TObject);
@@ -183,54 +185,34 @@ end;
 
 { TSimpleDetailsReport }
 
-procedure TSimpleDetailsReport.Load;
+procedure TSimpleDetailsReport.InitLayouts(vGroups: TmnrGroups);
 begin
   inherited;
-  {with HeaderDeatils.DesignRows.Add do
+  with vGroups do
   begin
-    //CreateLayout();
-    TmnrDesignCell.AutoCreate(Cells, 'Master');
-  end;
-
-  with Details.DesignRows.Add do
-  begin
-    //CreateLayout();
-    TmnrDesignCell.AutoCreate(Cells, 'Number');
-    TmnrDesignCell.AutoCreate(Cells, 'Name');
-    TmnrDesignCell.AutoCreate(Cells, 'Date');
-    TmnrDesignCell.AutoCreate(Cells, 'Code');
-    TmnrDesignCell.AutoCreate(Cells, 'Value');
-  end;}
-end;
-
-procedure TSimpleDetailsReport.CreateLayouts(vLayouts: TmnrLayouts);
-begin
-  inherited;
-  with vLayouts do
-  begin
-    CreateLayout(TmnrIntegerLayout, 'Master', 'ÇáãÊÓáÓá');
-    CreateLayout(TmnrTextLayout, 'Name', 'ÇáÇÓã');
-    CreateLayout(TmnrIntegerLayout, 'Number', 'ÇáÑÞã');
-    CreateLayout(TmnrDateTimeLayout, 'Date', 'ÇáÊÇÑíÎ');
-    CreateLayout(TmnrTextLayout, 'Code', 'ÇáÑãÒ');
-    CreateLayout(TmnrCurrencyLayout, 'Value', 'ÇáÞíãÉ');
+    CreateLayout('Main', TmnrIntegerLayout, 'Master');
+    CreateLayout('Main', TmnrTextLayout, 'Name');
+    CreateLayout('Main', TmnrIntegerLayout, 'Number');
+    CreateLayout('Main', TmnrDateTimeLayout, 'Date');
+    CreateLayout('Main', TmnrTextLayout, 'Code');
+    CreateLayout('Main', TmnrCurrencyLayout, 'Value');
   end;
 end;
 
-function TSimpleDetailsReport.CreateProfiler: TmnrProfiler;
+function TSimpleDetailsReport.DoCreateProfiler: TmnrProfiler;
 begin
-  Result := TSimpleProfiler.Create;
+  Result := TSimpleProfiler.Create(Self);
 end;
 
-procedure TSimpleDetailsReport.CreateSections(vSections: TmnrSections);
+procedure TSimpleDetailsReport.DoInitSections(vSections: TmnrSections);
 begin
   inherited;
   HeaderDeatils := vSections.RegisterSection('HeaderDetails', 'ÑÇÓ ÇáÊÞÑíÑ', sciHeaderDetails, ID_SECTION_HEADERREPORT, HeadersFetch);
   Details := HeaderDeatils.Sections.RegisterSection('Details', 'ÇáÊÞÑíÑ', sciDetails, ID_SECTION_DETAILS, DetailsFetch);
   FooterDetails := HeaderDeatils.Sections.RegisterSection('FooterDetails', 'ÇÓÝá ÇáÊÞÑíÑ', sciDetails, ID_SECTION_FOOTERDETAILS, FooterDetailsFetch);
 
-  Details.AppendTotals := True;
-  Details.AppendSummary := True;
+  Details.AppendDetailTotals := True;
+  Details.AppendReportTotals := True;
 
   {with HeaderDeatils.DesignRows.Add do
   begin
@@ -253,6 +235,11 @@ begin
   end;}
 end;
 
+function TSimpleDetailsReport.CreateReportDesgin: ImnrReportDesigner;
+begin
+  Result := TDesignerForm.Create(Application);
+end;
+
 procedure TSimpleDetailsReport.DetailsFetch(var vParams: TmnrFetch);
 begin
   with vParams do
@@ -261,7 +248,7 @@ begin
       SubPos := 0
     else
       Inc(SubPos);
-    if SubPos>2000 then
+    if SubPos>200 then
       AcceptMode := acmEof;
   end;
 end;
@@ -283,7 +270,7 @@ begin
       BigPos := 0
     else
       Inc(BigPos);
-    if BigPos>1000 then
+    if BigPos>100 then
       AcceptMode := acmEof;
   end;
 end;
@@ -380,8 +367,8 @@ begin
       sec := Report.FindSection(s);
       if sec<>nil then
       begin
-        sec.AppendTotals := vIni.ReadBool(sec.Name, 'AppendTotals', False);
-        sec.AppendSummary := vIni.ReadBool(sec.Name, 'AppendSummary', False);
+        //sec.AppendTotals := vIni.ReadBool(sec.Name, 'AppendTotals', False);
+        //sec.AppendSummary := vIni.ReadBool(sec.Name, 'AppendSummary', False);
 
         j := 0;
         while True do
@@ -395,7 +382,8 @@ begin
             aRow := sec.DesignRows.Add;
             for k:= 0 to cl.Count - 1 do
             begin
-              c := TmnrDesignCell.AutoCreate(aRow, cl[k]);
+              c := TmnrDesignCell.Create(aRow);
+              c.Name := cl[k];
               c.Width := vIni.ReadInteger(s, cl[k], -1);
             end;
           end;
@@ -436,8 +424,8 @@ var
   i: Integer;
 begin
   vIni.WriteString('Sections', vSection.Name, vSection.Caption);
-  vIni.WriteBool(vSection.Name, 'AppendTotals', vSection.AppendTotals);
-  vIni.WriteBool(vSection.Name, 'AppendSummary', vSection.AppendSummary);
+  //vIni.WriteBool(vSection.Name, 'AppendTotals', vSection.AppendTotals);
+  //vIni.WriteBool(vSection.Name, 'AppendSummary', vSection.AppendSummary);
 
   i := 0;
   r := vSection.DesignRows.First;
@@ -471,6 +459,6 @@ end;
 
 initialization
   Randomize;
-  SetReportDesignerClass(TReportDesigner);
+  //SetReportDesignerClass(TReportDesigner);
 
 end.

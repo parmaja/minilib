@@ -8,7 +8,7 @@ uses
   mnrClasses, mnrLists, mnrNodes;
 
 type
-  TDesignerForm = class(TForm)
+  TDesignerForm = class(TForm, ImnrReportDesigner)
     LayoutsList: TListBox;
     SaveBtn: TButton;
     CellsListBox: TListBox;
@@ -23,11 +23,14 @@ type
     procedure CellsListBoxClick(Sender: TObject);
     procedure WidthEditChange(Sender: TObject);
   private
-    FReportDesigner: TCustomReportDesigner;
-    procedure SetReportDesigner(const Value: TCustomReportDesigner);
+    FReport: TmnrCustomReport;
+
     function GetReport: TmnrCustomReport;
   protected
-    procedure SetName(const NewName: TComponentName); override;
+
+    procedure DesignReport(vReport: TmnrCustomReport);
+    procedure UpdateView(vCell: TmnrDesignCell = nil);
+    procedure ProcessDrop(vNode: TmnrLayout);
     { Private declarations }
   public
     { Public declarations }
@@ -38,9 +41,10 @@ type
     function Section: TmnrSection;
     function Layout: TmnrLayout;
     function Cell: TmnrDesignCell;
+    destructor Destroy; override;
 
     property Report: TmnrCustomReport read GetReport;
-    property ReportDesigner: TCustomReportDesigner read FReportDesigner write SetReportDesigner;
+
   end;
 
 
@@ -81,25 +85,25 @@ begin
   end;
 end;
 
-procedure TDesignerForm.FillSection;
-var
-  c: TmnrDesignCell;
+procedure TDesignerForm.DesignReport(vReport: TmnrCustomReport);
 begin
-  CellsListBox.Items.BeginUpdate;
+  FReport := vReport;
   try
-    CellsListBox.Clear;
-    if (Section<>nil)and(Section.DesignRows.First<>nil) then
-    begin
-      c := Section.DesignRows.First.First;
-      while c<>nil do
-      begin
-        CellsListBox.Items.AddObject(c.Layout.Title, c);
-        c := c.Next;
-      end;
-    end;
-  finally
-    CellsListBox.Items.EndUpdate;
+    FReport.Prepare;
+    FReport.Designer := Self;
+    FReport.Load;
+  except
+    FreeAndNil(FReport);
+    raise;
   end;
+  LoadInfo;
+  Show;
+end;
+
+destructor TDesignerForm.Destroy;
+begin
+  FreeAndNil(FReport);
+  inherited;
 end;
 
 procedure TDesignerForm.FormClose(Sender: TObject; var Action: TCloseAction);
@@ -113,7 +117,7 @@ begin
     Result := ReportDesigner.Report
   else
     Result := nil;}
-  Result := TmnrCustomReport(Tag);
+  Result := FReport;
 end;
 
 function TDesignerForm.Layout: TmnrLayout;
@@ -133,7 +137,8 @@ begin
     if Section.DesignRows.First=nil then
       Section.DesignRows.Add;
 
-    c := TmnrDesignCell.AutoCreate(Section.DesignRows.First, Layout.Name);
+    c := TmnrDesignCell.Create(Section.DesignRows.First);
+    c.Name := Layout.Name;
     c.Layout := Layout;
     FillSection;
   end;
@@ -148,12 +153,19 @@ end;
 procedure TDesignerForm.LoadLayouts;
 var
   l: TmnrLayout;
+  g: TmnrLayouts;
 begin
-  l := Report.Layouts.First;
-  while l<>nil do
+  g := Report.Groups.First;
+
+  while g<>nil do
   begin
-    LayoutsList.Items.AddObject(l.Title, l);
-    l := l.Next;
+    l := g.First;
+    while l<>nil do
+    begin
+      LayoutsList.Items.AddObject(l.Title, l);
+      l := l.Next;
+    end;
+    g := g.Next;
   end;
 end;
 
@@ -184,6 +196,32 @@ begin
   FillSection;
 end;
 
+procedure TDesignerForm.FillSection;
+var
+  c: TmnrDesignCell;
+begin
+  CellsListBox.Items.BeginUpdate;
+  try
+    CellsListBox.Clear;
+    if (Section<>nil)and(Section.DesignRows.First<>nil) then
+    begin
+      c := Section.DesignRows.First.First;
+      while c<>nil do
+      begin
+        CellsListBox.Items.AddObject(c.Layout.Title, c);
+        c := c.Next;
+      end;
+    end;
+  finally
+    CellsListBox.Items.EndUpdate;
+  end;
+end;
+
+procedure TDesignerForm.ProcessDrop(vNode: TmnrLayout);
+begin
+
+end;
+
 procedure TDesignerForm.SaveBtnClick(Sender: TObject);
 begin
   Report.Profiler.SaveReport;
@@ -202,20 +240,9 @@ begin
   FillSection;
 end;
 
-procedure TDesignerForm.SetName(const NewName: TComponentName);
+procedure TDesignerForm.UpdateView(vCell: TmnrDesignCell);
 begin
-  inherited;
-  if not SameText('T'+NewName, ClassName) then
-  begin
-    LoadInfo;
-    ShowModal;
-  end;
-end;
 
-procedure TDesignerForm.SetReportDesigner(const Value: TCustomReportDesigner);
-begin
-  FReportDesigner := Value;
-  LoadInfo;
 end;
 
 procedure TDesignerForm.WidthEditChange(Sender: TObject);

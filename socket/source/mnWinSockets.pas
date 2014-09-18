@@ -405,7 +405,7 @@ begin
   else
   begin
     aSockAddr.sin_addr.s_addr := inet_addr(PAnsiChar(Address));
-    if aSockAddr.sin_addr.s_addr = INADDR_NONE then
+    if (aSockAddr.sin_addr.s_addr - INADDR_NONE)=0 then
     begin
       aHostEnt := gethostbyname(PAnsiChar(Address));
       if aHostEnt <> nil then
@@ -465,7 +465,7 @@ begin
   aSockAddr.sin_port := htons(LookupPort(Port));
 
   aSockAddr.sin_addr.s_addr := inet_addr(PAnsiChar(Address));
-  if aSockAddr.sin_addr.s_addr = INADDR_NONE then
+  if (aSockAddr.sin_addr.s_addr - INADDR_NONE)=0 then
   begin
     aHostEnt := gethostbyname(PAnsiChar(Address));
     if aHostEnt <> nil then

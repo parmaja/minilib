@@ -39,7 +39,6 @@ object DesignerForm: TDesignerForm
     Caption = 'Save'
     TabOrder = 1
     OnClick = SaveBtnClick
-    ExplicitTop = 223
   end
   object CellsListBox: TListBox
     Left = 121
@@ -60,7 +59,6 @@ object DesignerForm: TDesignerForm
     AutoCloseUp = True
     Style = csDropDownList
     Anchors = [akTop, akRight]
-    ItemHeight = 0
     TabOrder = 3
     OnClick = SectionsListBoxClick
   end

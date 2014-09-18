@@ -45,7 +45,6 @@ type
   TmnrRow = class;
   TmnrReferencesRow = class;
   TmnrReference = class;
-  TCustomReportDesigner = class;
   TmnrDesignCell = class;
   TmnrDesignRow = class;
   TmnrDesignRows = class;
@@ -55,7 +54,6 @@ type
   TmnrCellClass = class of TmnrCell;
   TmnrLayoutClass = class of TmnrLayout;
   TmnrCustomReportClass = class of TmnrCustomReport;
-  TCustomReportDesignerClass = class of TCustomReportDesigner;
   TmnrProfilerClass = class of TmnrProfiler;
   TmnrDesignCellClass = class of TmnrDesignCell;
   //TmnrReportClass = class of TmnrCustomReport;
@@ -578,7 +576,7 @@ type
   end;
 
   ImnrReportDesigner = interface
-    procedure DesignReport(vClass: TmnrCustomReportClass);
+    procedure DesignReport(vReport: TmnrCustomReport);
     procedure UpdateView(vCell: TmnrDesignCell = nil);
     procedure ProcessDrop(vNode: TmnrLayout);
   end;
@@ -604,6 +602,7 @@ type
     FFooterReport: TmnrSection;
 
     function GetProfiler: TmnrProfiler;
+    function GetReportName: string;
   protected
     function Canceled: Boolean;
     procedure HandleNewRow(vRow: TmnrRowNode); virtual;
@@ -623,13 +622,14 @@ type
     procedure Finish; virtual; //
     procedure DoPrepare; virtual;
 
-    class function DoGetProfilerClass: TmnrProfilerClass; virtual;
+    function DoGetProfilerClass: TmnrProfilerClass; virtual;
     function DoCreateNewRow(vSection: TmnrSection): TmnrRow; virtual;
     function DoCreateProfiler: TmnrProfiler; virtual;
     function DoCreateSections: TmnrSections; virtual;
     function DoCreateGroups: TmnrGroups; virtual;
     function DoCreateItems: TmnrRows; virtual;
     procedure DoReportLoaded; virtual;
+    function DoGetReportName: string; virtual;
     function GetSections: TmnrSections;
     function GetGroups: TmnrGroups;
     function GetItems: TmnrRows;
@@ -645,8 +645,8 @@ type
     function GetHeaderReport: TmnrSection;
     function GetHeaderPage: TmnrSection;
   public
-
     constructor Create;
+
     destructor Destroy; override;
     property Sections: TmnrSections read GetSections;
     property Groups: TmnrGroups read GetGroups;
@@ -661,7 +661,7 @@ type
     procedure Prepare; //for design and generate
     procedure Generate;
     property Profiler: TmnrProfiler read GetProfiler;
-    class function ProfilerClass: TmnrProfilerClass; 
+    function ProfilerClass: TmnrProfilerClass;
 
     procedure Fetch(vSection: TmnrSection; var vParams: TmnrFetch); virtual;
     procedure RegisterRequest(const vName: string; vOnRequest: TOnRequest); virtual;
@@ -670,8 +670,8 @@ type
     property Rows[vRow: Integer]: TmnrRow read GetRows;
     property Cells[vRow, vCol: Integer]: TmnrCell read GetCells;
 
-    class function CreateReportDesgin: ImnrReportDesigner; virtual;
-    class procedure Desgin;
+    function CreateReportDesgin: ImnrReportDesigner; virtual;
+    procedure Desgin;
     procedure Clear; virtual;
 
     property HeaderReport: TmnrSection read GetHeaderReport;
@@ -686,24 +686,7 @@ type
     procedure ExportCSV(const vFile: TFileName); overload; virtual;//test purpose only
     procedure ExportCSV(const vStream: TStream); overload; virtual;//test purpose only
     procedure ExportCSV(const vStream: TStream; vItems: TmnrRows); overload; virtual;//test purpose only
-  end;
-
-
-  TCustomReportDesigner = class(TComponent)
-  private
-    FReport: TmnrCustomReport;
-    FDesignerWindow: TComponent;
-  protected
-    procedure Notification(AComponent: TComponent; Operation: TOperation); override;
-    property DesignerWindow: TComponent read FDesignerWindow;
-    procedure Created; virtual;
-  public
-    constructor AutoCreate(vClass: TmnrCustomReportClass); overload; virtual;
-    destructor Destroy; override;
-
-    procedure DesignReport; virtual;
-    function CreateDesigner: TComponent; virtual;
-    property Report: TmnrCustomReport read FReport;
+    property ReportName: string read GetReportName;
   end;
 
   TmnrProfiler = class
@@ -711,15 +694,15 @@ type
     FReport: TmnrCustomReport;
   protected
     function GetReport: TmnrCustomReport;
-    class procedure DoEnumReports(vClass: TmnrCustomReportClass; vList: TStrings); virtual;
+    procedure DoEnumReports(vList: TStrings); virtual;
   public
     constructor Create(vReport: TmnrCustomReport); virtual;
     procedure SaveReport; virtual;
     procedure LoadReport; virtual;
     procedure DeleteReport(const vName: string); virtual;
 
-    class procedure EnumReports(vClass: TmnrCustomReportClass; vList: TStrings); overload;
-    class function EnumReports(vClass: TmnrCustomReportClass): TStrings; overload;
+    procedure EnumReports(vList: TStrings); overload;
+    function EnumReports: TStrings; overload;
     property Report: TmnrCustomReport read GetReport;
   end;
 
@@ -727,10 +710,30 @@ type
 var
   DefaultCellClass: TmnrCellClass = nil; //test purpose
 
+procedure DesignmnReport(vClass: TmnrCustomReportClass);
+
 implementation
 
 uses
   mnrNodes;
+
+procedure DesignmnReport(vClass: TmnrCustomReportClass);
+var
+  aReport: TmnrCustomReport;
+  aDesigner: ImnrReportDesigner;
+begin
+  aReport := vClass.Create;
+  try
+    aDesigner := aReport.CreateReportDesgin;
+    if aDesigner<>nil then
+      aDesigner.DesignReport(aReport)
+    else
+      aReport.Free;
+  except
+    FreeAndNil(aReport);
+    raise;
+  end;
+end;
 
 { TmnrCustomReport }
 
@@ -789,7 +792,7 @@ begin
   Result.FSection := vSection;
 end;
 
-class function TmnrCustomReport.ProfilerClass: TmnrProfilerClass;
+function TmnrCustomReport.ProfilerClass: TmnrProfilerClass;
 begin
   Result := DoGetProfilerClass;
 end;
@@ -814,7 +817,7 @@ begin
   Result := ProfilerClass.Create(Self);
 end;
 
-class function TmnrCustomReport.CreateReportDesgin: ImnrReportDesigner;
+function TmnrCustomReport.CreateReportDesgin: ImnrReportDesigner;
 begin
   Result := nil;
 end;
@@ -834,18 +837,13 @@ begin
   FFooterPage   := FSections.RegisterSection('FooterPage', '«”›· «·’›Õ…', sciFooterPage, ID_SECTION_FOOTERPAGE);
 end;
 
-class procedure TmnrCustomReport.Desgin;
+procedure TmnrCustomReport.Desgin;
 var
   aDesigner: ImnrReportDesigner;
-  aClass: TmnrCustomReportClass;
 begin
-  aClass := Self;
-  if (aClass <> nil) then
-  begin
-    aDesigner := CreateReportDesgin;
-    if aDesigner<>nil then
-      aDesigner.DesignReport(aClass);
-  end;
+  aDesigner := CreateReportDesgin;
+  if aDesigner<>nil then
+    aDesigner.DesignReport(Self);
 end;
 
 destructor TmnrCustomReport.Destroy;
@@ -863,9 +861,14 @@ begin
   Result := TmnrSections.Create(Self);
 end;
 
-class function TmnrCustomReport.DoGetProfilerClass: TmnrProfilerClass;
+function TmnrCustomReport.DoGetProfilerClass: TmnrProfilerClass;
 begin
   Result := TmnrProfiler;
+end;
+
+function TmnrCustomReport.DoGetReportName: string;
+begin
+  Result := Copy(ClassName, 2, MaxInt);
 end;
 
 procedure TmnrCustomReport.DoInitSections(vSections: TmnrSections);
@@ -1002,6 +1005,11 @@ end;
 function TmnrCustomReport.GetDetailTitles: TmnrSection;
 begin
   Result := FDetailTitles;
+end;
+
+function TmnrCustomReport.GetReportName: string;
+begin
+  Result := DoGetReportName;
 end;
 
 function TmnrCustomReport.GetReportTitles: TmnrSection;
@@ -2265,62 +2273,6 @@ begin
   inherited;
 end;
 
-{ TCustomReportDesigner }
-
-constructor TCustomReportDesigner.AutoCreate(vClass: TmnrCustomReportClass);
-begin
-  inherited Create(nil);
-  FReport := vClass.Create;
-  FReport.Prepare;
-  FReport.Load;
-  Created;
-  DesignReport;
-end;
-
-function TCustomReportDesigner.CreateDesigner: TComponent;
-begin
-  Result := nil;
-end;
-
-procedure TCustomReportDesigner.DesignReport;
-var
-  c: TComponent;
-begin
-  c := CreateDesigner;
-  if c <> nil then
-  begin
-    FDesignerWindow := c;
-    c.FreeNotification(Self);
-    c.Tag := Integer(Report);
-    c.Name := Report.ClassName;
-  end
-end;
-
-destructor TCustomReportDesigner.Destroy;
-begin
-  FReport.Finish;
-  FreeAndNil(FReport);
-  inherited;
-end;
-
-procedure TCustomReportDesigner.Created;
-begin
-
-end;
-
-procedure TCustomReportDesigner.Notification(AComponent: TComponent; Operation: TOperation);
-begin
-  inherited;
-  if (Operation = opRemove) then
-  begin
-    if (AComponent = FDesignerWindow) then
-    begin
-      FDesignerWindow := nil;
-      Free;
-    end;
-  end;
-end;
-
 { TmnrLayouts }
 
 function TmnrLayouts.Add: TmnrLayout;
@@ -2682,10 +2634,10 @@ begin
   FReport := vReport;
 end;
 
-class procedure TmnrProfiler.EnumReports(vClass: TmnrCustomReportClass; vList: TStrings);
+procedure TmnrProfiler.EnumReports(vList: TStrings);
 begin
   vList.Clear;
-  DoEnumReports(vClass, vList);
+  DoEnumReports(vList);
 end;
 
 procedure TmnrProfiler.DeleteReport(const vName: string);
@@ -2693,15 +2645,15 @@ begin
 
 end;
 
-class procedure TmnrProfiler.DoEnumReports(vClass: TmnrCustomReportClass; vList: TStrings);
+procedure TmnrProfiler.DoEnumReports(vList: TStrings);
 begin
 end;
 
-class function TmnrProfiler.EnumReports(vClass: TmnrCustomReportClass): TStrings;
+function TmnrProfiler.EnumReports: TStrings;
 begin
   Result := TStringList.Create;
   try
-    EnumReports(vClass, Result);
+    EnumReports(Result);
   except
     FreeAndNil(Result);
     raise;
