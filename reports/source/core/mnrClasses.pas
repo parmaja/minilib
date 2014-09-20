@@ -700,6 +700,7 @@ type
     procedure SaveReport; virtual;
     procedure LoadReport; virtual;
     procedure DeleteReport(const vName: string); virtual;
+    procedure CopyReport(const vName, vNewName: string); virtual;
 
     procedure EnumReports(vList: TStrings); overload;
     function EnumReports: TStrings; overload;
@@ -2627,6 +2628,11 @@ begin
 end;
 
 { TmnrProfiler }
+
+procedure TmnrProfiler.CopyReport(const vName, vNewName: string);
+begin
+
+end;
 
 constructor TmnrProfiler.Create(vReport: TmnrCustomReport);
 begin
