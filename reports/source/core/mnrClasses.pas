@@ -201,6 +201,7 @@ type
     function CreateCell(vRow: TmnrRow): TmnrCell; virtual;
     procedure ScaleCell(vCell: TmnrCell); virtual;
     function DoCreateDesignCell(vRow: TmnrDesignRow): TmnrDesignCell; virtual;
+    procedure DoCellsExchanged(vCell1, vCell2: TmnrCell); virtual;
 
     function GetExcludeSections: TmnrSectionClassIDs; virtual;
     function GetIncludeSections: TmnrSectionClassIDs; virtual;
@@ -222,6 +223,7 @@ type
     property Chain: string read FChain write FChain;
     property IncludeSections: TmnrSectionClassIDs read GetIncludeSections;
     property ExcludeSections: TmnrSectionClassIDs read GetExcludeSections;
+    procedure CellsExchanged(vCell1, vCell2: TmnrCell);
 
     procedure Request(vCell: TmnrCell);
     property OnRequest: TOnRequest read FOnRequest write FOnRequest;
@@ -556,11 +558,15 @@ type
   end;
 
   TmnrIndex = class(TObject)
+  private
+    FReport: TmnrCustomReport;
   protected
     procedure Compute(vReport: TmnrCustomReport); virtual;
   public
     constructor Create(vReport: TmnrCustomReport); virtual;
+    property Report: TmnrCustomReport read FReport;
     destructor Destroy; override;
+    procedure Build;
   end;
 
   TmnrRowsIndex = class(TmnrIndex)
@@ -1969,6 +1975,11 @@ end;
 
 { TmnrLayout }
 
+procedure TmnrLayout.CellsExchanged(vCell1, vCell2: TmnrCell);
+begin
+  DoCellsExchanged(vCell1, vCell2)
+end;
+
 function TmnrLayout.CreateCell(vRow: TmnrRow): TmnrCell;
 begin
   Result := nil;
@@ -1984,6 +1995,11 @@ end;
 function TmnrLayout.DisplayText: string;
 begin
   Result := Title;
+end;
+
+procedure TmnrLayout.DoCellsExchanged(vCell1, vCell2: TmnrCell);
+begin
+
 end;
 
 function TmnrLayout.DoCreateDesignCell(vRow: TmnrDesignRow): TmnrDesignCell;
@@ -2257,6 +2273,12 @@ end;
 
 { TmnrIndex }
 
+procedure TmnrIndex.Build;
+begin
+  if Report<>nil then
+    Compute(Report);
+end;
+
 procedure TmnrIndex.Compute(vReport: TmnrCustomReport);
 begin
 
@@ -2265,7 +2287,8 @@ end;
 constructor TmnrIndex.Create(vReport: TmnrCustomReport);
 begin
   inherited Create;
-  Compute(vReport);
+  FReport := vReport;
+  Build;
 end;
 
 destructor TmnrIndex.Destroy;

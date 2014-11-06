@@ -196,13 +196,15 @@ type
   protected
     function GetFirst: TmnrRowNode;
     function GetLast: TmnrRowNode;
+    procedure SetFirst(const Value: TmnrRowNode);
+    procedure SetLast(const Value: TmnrRowNode);
     procedure Link(vNode: TmnrNode); override;
     procedure UnLink(vNode: TmnrNode); override;
 
   public
     function Add: TmnrRowNode;
-    property First: TmnrRowNode read GetFirst;
-    property Last: TmnrRowNode read GetLast;
+    property First: TmnrRowNode read GetFirst write SetFirst;
+    property Last: TmnrRowNode read GetLast write SetLast;
   end;
 
 
@@ -625,6 +627,16 @@ procedure TmnrRowNodes.Link(vNode: TmnrNode);
 begin
   inherited;
   Inc(FCount, 1);
+end;
+
+procedure TmnrRowNodes.SetFirst(const Value: TmnrRowNode);
+begin
+  inherited SetFirst(Value);
+end;
+
+procedure TmnrRowNodes.SetLast(const Value: TmnrRowNode);
+begin
+  inherited SetLast(Value);
 end;
 
 procedure TmnrRowNodes.UnLink(vNode: TmnrNode);
