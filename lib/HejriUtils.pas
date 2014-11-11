@@ -91,13 +91,14 @@ type
     function CorrectYear(Y: Integer): Integer; override;
   end;
 
+var
+  HejriItems: THejriItems = nil;
+
 implementation
 
 uses
   mnUtils;
 
-var
-  HejriItems: THejriItems = nil;
 
 procedure LoadHejriFile(vFileName: string; HejriItems: THejriItems);
 var
