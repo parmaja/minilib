@@ -116,8 +116,10 @@ type
     function GetIsNull: Boolean; virtual;
     function GetDesignCell: TmnrDesignCell;
     function DoGetDisplayText: string; virtual;
+    function DoCompare(vCell: TmnrCell): Integer; virtual;
   public
     function DisplayText: string; override;
+    function Compare(vCell: TmnrCell): Integer;
     property Layout: TmnrLayout read GetLayout;
     property DesignCell: TmnrDesignCell read GetDesignCell;
     property Row: TmnrRow read GetRow;
@@ -2103,10 +2105,20 @@ end;
 
 { TmnrCell }
 
+function TmnrCell.Compare(vCell: TmnrCell): Integer;
+begin
+  Result := DoCompare(vCell);
+end;
+
 function TmnrCell.DisplayText: string;
 begin
   Result := DoGetDisplayText;
   if DesignCell<>nil then DesignCell.UpdateCellDisplayText(Self, Result);
+end;
+
+function TmnrCell.DoCompare(vCell: TmnrCell): Integer;
+begin
+  Result := 0;
 end;
 
 function TmnrCell.DoGetDisplayText: string;
