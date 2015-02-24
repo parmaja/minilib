@@ -19,6 +19,8 @@ sHTMLKeywords =
   'align,'+
   'applet,'+
   'area,'+
+  'article,'+
+  'aside,'+
   'axis,'+
   'b,'+
   'background,'+
@@ -85,6 +87,7 @@ sHTMLKeywords =
   'meta,'+
   'method,'+
   'name,'+
+  'nav,'+
   'noframes,'+
   'noscript,'+
   'nowrap,'+
@@ -112,6 +115,7 @@ sHTMLKeywords =
   'strong,'+
   'style,'+
   'sub,'+
+  'summary,'+
   'sup,'+
   'tabindex,'+
   'table,'+
