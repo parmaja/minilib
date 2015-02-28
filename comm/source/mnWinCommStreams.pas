@@ -260,7 +260,10 @@ begin
     P := @Overlapped;
   end
   else
+  begin
     P := nil;
+    Count := 0;
+  end;
 
   try
     Mask := EventsToInt(Events);
