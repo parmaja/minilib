@@ -61,7 +61,7 @@ begin
     Printer.Page.Canvas.Font.Size := 14;
     Printer.Page.Canvas.Font.Style := [];
 //    Printer.Density := mndLow;
-    Print('„—Õ»« »ﬂ„ ›Ì ”Â·Ì ”Ê› ');
+    Print('„—Õ»« »ﬂ„');
     Printer.Page.Canvas.Font.Style := [fsBold];
     Print( '«”„ «·⁄„Ì·: “«Â— œÌ—ﬂÌ');
     Printer.Page.Canvas.Font.Style := [];

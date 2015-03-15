@@ -1,4 +1,4 @@
-<?xml version="1.0"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <CONFIG>
   <ProjectOptions>
     <Version Value="9"/>
@@ -8,7 +8,6 @@
       <ResourceType Value="res"/>
       <UseXPManifest Value="True"/>
       <Icon Value="0"/>
-      <ActiveWindowIndexAtStart Value="0"/>
     </General>
     <i18n>
       <EnableI18N LFM="False"/>
@@ -38,10 +37,7 @@
       <Unit0>
         <Filename Value="escpos_print.lpr"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="escpos_print"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="1"/>
-        <CursorPos X="1" Y="19"/>
+        <CursorPos Y="19"/>
         <UsageCount Value="73"/>
       </Unit0>
       <Unit1>
@@ -51,71 +47,55 @@
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="main"/>
-        <EditorIndex Value="0"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="1"/>
-        <CursorPos X="28" Y="9"/>
+        <IsVisibleTab Value="True"/>
+        <TopLine Value="92"/>
+        <CursorPos X="78" Y="103"/>
         <UsageCount Value="73"/>
         <Loaded Value="True"/>
-        <LoadedDesigner Value="True"/>
       </Unit1>
       <Unit2>
         <Filename Value="..\..\printers\escpos\mnESCPOSPrinters.pas"/>
-        <UnitName Value="mnESCPOSPrinters"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="1"/>
         <CursorPos X="58" Y="7"/>
         <UsageCount Value="10"/>
       </Unit2>
       <Unit3>
         <Filename Value="..\..\source\mnWinCommStreams.pas"/>
-        <UnitName Value="mnWinCommStreams"/>
-        <WindowIndex Value="0"/>
         <TopLine Value="17"/>
         <CursorPos X="3" Y="31"/>
         <UsageCount Value="10"/>
       </Unit3>
       <Unit4>
         <Filename Value="..\..\source\mnCommStreams.pas"/>
-        <UnitName Value="mnCommStreams"/>
-        <WindowIndex Value="0"/>
         <TopLine Value="11"/>
         <CursorPos X="28" Y="33"/>
         <UsageCount Value="10"/>
       </Unit4>
       <Unit5>
         <Filename Value="..\..\source\mnCommClasses.pas"/>
-        <UnitName Value="mnCommClasses"/>
-        <WindowIndex Value="0"/>
         <TopLine Value="17"/>
         <CursorPos X="19" Y="17"/>
         <UsageCount Value="6"/>
       </Unit5>
       <Unit6>
         <Filename Value="W:\programs\lazarus\lcl\graphics.pp"/>
-        <UnitName Value="Graphics"/>
-        <WindowIndex Value="0"/>
         <TopLine Value="1122"/>
         <CursorPos X="15" Y="1122"/>
         <UsageCount Value="6"/>
       </Unit6>
       <Unit7>
         <Filename Value="W:\programs\lazarus\lcl\include\canvas.inc"/>
-        <WindowIndex Value="0"/>
         <TopLine Value="1617"/>
         <CursorPos X="3" Y="1630"/>
         <UsageCount Value="6"/>
       </Unit7>
       <Unit8>
         <Filename Value="W:\programs\lazarus\lcl\include\winapih.inc"/>
-        <WindowIndex Value="0"/>
         <TopLine Value="134"/>
         <CursorPos X="10" Y="155"/>
         <UsageCount Value="6"/>
       </Unit8>
       <Unit9>
         <Filename Value="W:\programs\lazarus\lcl\include\winapi.inc"/>
-        <WindowIndex Value="0"/>
         <TopLine Value="508"/>
         <CursorPos X="3" Y="511"/>
         <UsageCount Value="6"/>
@@ -123,11 +103,9 @@
       <Unit10>
         <Filename Value="..\..\printers\escpos\mnPrinters.pas"/>
         <UnitName Value="mnPrinters"/>
-        <IsVisibleTab Value="True"/>
         <EditorIndex Value="1"/>
-        <WindowIndex Value="0"/>
         <TopLine Value="348"/>
-        <CursorPos X="19" Y="369"/>
+        <CursorPos X="19" Y="355"/>
         <UsageCount Value="10"/>
         <Bookmarks Count="1">
           <Item0 X="11" Y="368" ID="1"/>
@@ -136,261 +114,199 @@
       </Unit10>
       <Unit11>
         <Filename Value="..\..\printers\escpos\mnSPTPrinters.pas"/>
-        <UnitName Value="mnSPTPrinters"/>
-        <WindowIndex Value="0"/>
         <TopLine Value="104"/>
         <CursorPos X="13" Y="107"/>
         <UsageCount Value="6"/>
       </Unit11>
       <Unit12>
         <Filename Value="..\..\printers\escpos\mnPRPPrinters.pas"/>
-        <UnitName Value="mnPRPPrinters"/>
-        <WindowIndex Value="0"/>
         <TopLine Value="51"/>
         <CursorPos X="9" Y="67"/>
         <UsageCount Value="9"/>
       </Unit12>
       <Unit13>
         <Filename Value="V:\ESC-POS-Command-Guide.pdf"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="1"/>
-        <CursorPos X="52" Y="1"/>
+        <CursorPos X="52"/>
         <UsageCount Value="6"/>
         <DefaultSyntaxHighlighter Value="None"/>
       </Unit13>
       <Unit14>
         <Filename Value="..\..\..\Unicodes\source\ucp1256.pas"/>
-        <UnitName Value="ucp1256"/>
-        <WindowIndex Value="0"/>
         <TopLine Value="126"/>
         <CursorPos X="23" Y="142"/>
         <UsageCount Value="7"/>
       </Unit14>
       <Unit15>
         <Filename Value="..\..\..\Unicodes\source\cp864.h"/>
-        <WindowIndex Value="0"/>
         <TopLine Value="146"/>
-        <CursorPos X="1" Y="154"/>
+        <CursorPos Y="154"/>
         <UsageCount Value="7"/>
         <DefaultSyntaxHighlighter Value="C++"/>
       </Unit15>
       <Unit16>
         <Filename Value="..\..\..\Unicodes\source\cp1256.h"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="1"/>
-        <CursorPos X="1" Y="1"/>
         <UsageCount Value="7"/>
         <DefaultSyntaxHighlighter Value="C++"/>
       </Unit16>
       <Unit17>
         <Filename Value="..\..\..\unicodes\source\ucp864.pas"/>
-        <UnitName Value="ucp864"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="1"/>
-        <CursorPos X="1" Y="1"/>
         <UsageCount Value="12"/>
       </Unit17>
       <Unit18>
         <Filename Value="..\..\..\Unicodes\source\ucputils.pas"/>
-        <UnitName Value="ucputils"/>
-        <WindowIndex Value="0"/>
         <TopLine Value="80"/>
-        <CursorPos X="1" Y="96"/>
+        <CursorPos Y="96"/>
         <UsageCount Value="11"/>
       </Unit18>
       <Unit19>
         <Filename Value="W:\programs\lazarus\lcl\lconvencoding.pas"/>
-        <UnitName Value="LConvEncoding"/>
-        <WindowIndex Value="0"/>
         <TopLine Value="5676"/>
-        <CursorPos X="1" Y="5711"/>
+        <CursorPos Y="5711"/>
         <UsageCount Value="8"/>
       </Unit19>
       <Unit20>
         <Filename Value="V:\programs\FPC\2.4\src\rtl\inc\strings.pp"/>
-        <UnitName Value="strings"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="1"/>
-        <CursorPos X="1" Y="1"/>
         <UsageCount Value="6"/>
       </Unit20>
       <Unit21>
         <Filename Value="W:\programs\lazarus\lcl\lclproc.pas"/>
-        <UnitName Value="LCLProc"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="1"/>
         <CursorPos X="46" Y="17"/>
         <UsageCount Value="8"/>
       </Unit21>
       <Unit22>
         <Filename Value="W:\programs\lazarus\lcl\lresources.pp"/>
-        <UnitName Value="LResources"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="1"/>
-        <CursorPos X="1" Y="1"/>
         <UsageCount Value="8"/>
       </Unit22>
       <Unit23>
         <Filename Value="W:\programs\lazarus\lcl\translations.pas"/>
-        <UnitName Value="Translations"/>
-        <WindowIndex Value="0"/>
         <TopLine Value="125"/>
         <CursorPos X="49" Y="141"/>
         <UsageCount Value="8"/>
       </Unit23>
       <Unit24>
         <Filename Value="W:\programs\lazarus\lcl\postscriptunicode.pas"/>
-        <UnitName Value="postscriptunicode"/>
-        <WindowIndex Value="0"/>
         <TopLine Value="95"/>
-        <CursorPos X="1" Y="111"/>
+        <CursorPos Y="111"/>
         <UsageCount Value="8"/>
       </Unit24>
       <Unit25>
         <Filename Value="V:\programs\FPC\2.4\src\rtl\objpas\sysutils\sysunih.inc"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="1"/>
         <CursorPos X="10" Y="17"/>
         <UsageCount Value="7"/>
       </Unit25>
       <Unit26>
         <Filename Value="V:\programs\FPC\2.4\src\rtl\objpas\sysutils\sysuni.inc"/>
-        <WindowIndex Value="0"/>
         <TopLine Value="110"/>
         <CursorPos X="3" Y="112"/>
         <UsageCount Value="7"/>
       </Unit26>
       <Unit27>
         <Filename Value="V:\programs\FPC\2.4\src\rtl\inc\systemh.inc"/>
-        <WindowIndex Value="0"/>
         <TopLine Value="1073"/>
         <CursorPos X="9" Y="1115"/>
         <UsageCount Value="10"/>
       </Unit27>
       <Unit28>
         <Filename Value="W:\programs\lazarus\lcl\interfaces\win32\win32wsgrids.pp"/>
-        <UnitName Value="Win32WSGrids"/>
-        <WindowIndex Value="0"/>
         <TopLine Value="34"/>
         <CursorPos X="19" Y="50"/>
         <UsageCount Value="6"/>
       </Unit28>
       <Unit29>
         <Filename Value="W:\programs\lazarus\lcl\interfaces\win32\win32trayicon.inc"/>
-        <WindowIndex Value="0"/>
         <TopLine Value="198"/>
         <CursorPos X="13" Y="210"/>
         <UsageCount Value="6"/>
       </Unit29>
       <Unit30>
         <Filename Value="W:\programs\lazarus\lcl\interfaces\win32\win32proc.pp"/>
-        <UnitName Value="win32proc"/>
-        <WindowIndex Value="0"/>
         <TopLine Value="34"/>
         <CursorPos X="23" Y="34"/>
         <UsageCount Value="6"/>
       </Unit30>
       <Unit31>
         <Filename Value="W:\programs\lazarus\lcl\interfaces\qt\qtwinapi.inc"/>
-        <WindowIndex Value="0"/>
         <TopLine Value="3597"/>
         <CursorPos X="15" Y="3597"/>
         <UsageCount Value="6"/>
       </Unit31>
       <Unit32>
         <Filename Value="W:\programs\lazarus\lcl\interfaces\wince\wincewsmenus.pp"/>
-        <UnitName Value="WinCEWSMenus"/>
-        <WindowIndex Value="0"/>
         <TopLine Value="684"/>
         <CursorPos X="13" Y="687"/>
         <UsageCount Value="6"/>
       </Unit32>
       <Unit33>
         <Filename Value="W:\programs\lazarus\lcl\include\winfileutil.inc"/>
-        <WindowIndex Value="0"/>
         <TopLine Value="143"/>
         <CursorPos X="23" Y="159"/>
         <UsageCount Value="6"/>
       </Unit33>
       <Unit34>
         <Filename Value="W:\programs\lazarus\lcl\include\sysenvapis_win.inc"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="1"/>
         <CursorPos X="30" Y="17"/>
         <UsageCount Value="6"/>
       </Unit34>
       <Unit35>
         <Filename Value="W:\programs\lazarus\lcl\interfaces\wince\wincecallback.inc"/>
-        <WindowIndex Value="0"/>
         <TopLine Value="926"/>
         <CursorPos X="15" Y="929"/>
         <UsageCount Value="6"/>
       </Unit35>
       <Unit36>
         <Filename Value="V:\programs\FPC\2.4\src\rtl\inc\ustringh.inc"/>
-        <WindowIndex Value="0"/>
         <TopLine Value="77"/>
         <CursorPos X="113" Y="93"/>
         <UsageCount Value="7"/>
       </Unit36>
       <Unit37>
         <Filename Value="V:\programs\FPC\2.4\src\rtl\inc\ustrings.inc"/>
-        <WindowIndex Value="0"/>
         <TopLine Value="2313"/>
         <CursorPos X="14" Y="2322"/>
         <UsageCount Value="7"/>
       </Unit37>
       <Unit38>
         <Filename Value="F:\escpos\epson.seq"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="1"/>
-        <CursorPos X="1" Y="1"/>
         <UsageCount Value="7"/>
         <DefaultSyntaxHighlighter Value="None"/>
       </Unit38>
       <Unit39>
         <Filename Value="..\..\..\Unicodes\doc\fonty\ISOX864.TAB"/>
-        <WindowIndex Value="0"/>
         <TopLine Value="22"/>
-        <CursorPos X="1" Y="22"/>
+        <CursorPos Y="22"/>
         <UsageCount Value="7"/>
         <DefaultSyntaxHighlighter Value="None"/>
       </Unit39>
       <Unit40>
         <Filename Value="..\..\..\Unicodes\doc\fonty\864XISO.TAB"/>
-        <WindowIndex Value="0"/>
         <TopLine Value="22"/>
-        <CursorPos X="1" Y="22"/>
+        <CursorPos Y="22"/>
         <UsageCount Value="7"/>
         <DefaultSyntaxHighlighter Value="None"/>
       </Unit40>
       <Unit41>
         <Filename Value="..\..\..\Unicodes\doc\fonty\cp864_uni.tbl"/>
-        <WindowIndex Value="0"/>
         <TopLine Value="65"/>
-        <CursorPos X="1" Y="107"/>
+        <CursorPos Y="107"/>
         <UsageCount Value="7"/>
         <DefaultSyntaxHighlighter Value="None"/>
       </Unit41>
       <Unit42>
         <Filename Value="..\..\..\Unicodes\doc\fonty\cp864.txt"/>
-        <WindowIndex Value="0"/>
         <TopLine Value="232"/>
-        <CursorPos X="1" Y="232"/>
+        <CursorPos Y="232"/>
         <UsageCount Value="7"/>
         <DefaultSyntaxHighlighter Value="None"/>
       </Unit42>
       <Unit43>
         <Filename Value="..\..\..\Unicodes\doc\fonty\cp864.c"/>
-        <WindowIndex Value="0"/>
         <TopLine Value="270"/>
-        <CursorPos X="1" Y="270"/>
+        <CursorPos Y="270"/>
         <UsageCount Value="7"/>
         <DefaultSyntaxHighlighter Value="C++"/>
       </Unit43>
       <Unit44>
         <Filename Value="..\..\..\Unicodes\doc\fonty\cp864.py"/>
-        <WindowIndex Value="0"/>
         <TopLine Value="128"/>
         <CursorPos X="61" Y="133"/>
         <UsageCount Value="7"/>
@@ -398,159 +314,120 @@
       </Unit44>
       <Unit45>
         <Filename Value="V:\programs\FPC\2.4\src\rtl\os2\pmbidi.pas"/>
-        <UnitName Value="pmbidi"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="1"/>
-        <CursorPos X="1" Y="1"/>
         <UsageCount Value="7"/>
       </Unit45>
       <Unit46>
         <Filename Value="V:\programs\FPC\2.4\src\rtl\objpas\freebidi.pp"/>
-        <UnitName Value="FreeBIDI"/>
-        <WindowIndex Value="0"/>
         <TopLine Value="11"/>
         <CursorPos X="4" Y="19"/>
         <UsageCount Value="7"/>
       </Unit46>
       <Unit47>
         <Filename Value="V:\programs\FPC\2.4\src\rtl\objpas\utf8bidi.pp"/>
-        <UnitName Value="UTF8BIDI"/>
-        <WindowIndex Value="0"/>
         <TopLine Value="40"/>
         <CursorPos X="20" Y="52"/>
         <UsageCount Value="7"/>
       </Unit47>
       <Unit48>
         <Filename Value="..\..\..\lib\minibidi.pas"/>
-        <UnitName Value="minibidi"/>
-        <WindowIndex Value="0"/>
         <TopLine Value="22"/>
-        <CursorPos X="1" Y="38"/>
+        <CursorPos Y="38"/>
         <UsageCount Value="28"/>
         <Bookmarks Count="1">
-          <Item0 X="1" Y="306" ID="2"/>
+          <Item0 Y="306" ID="2"/>
         </Bookmarks>
       </Unit48>
       <Unit49>
         <Filename Value="..\..\..\lib\minibidi.c"/>
-        <WindowIndex Value="0"/>
         <TopLine Value="230"/>
-        <CursorPos X="1" Y="250"/>
+        <CursorPos Y="250"/>
         <UsageCount Value="27"/>
         <Bookmarks Count="2">
-          <Item0 X="1" Y="1592" ID="0"/>
+          <Item0 Y="1592"/>
           <Item1 X="11" Y="1105" ID="9"/>
         </Bookmarks>
         <DefaultSyntaxHighlighter Value="C++"/>
       </Unit49>
       <Unit50>
         <Filename Value="W:\programs\lazarus\lcl\lclintf.pas"/>
-        <UnitName Value="LCLIntf"/>
-        <WindowIndex Value="0"/>
         <TopLine Value="98"/>
         <CursorPos X="5" Y="119"/>
         <UsageCount Value="7"/>
       </Unit50>
       <Unit51>
         <Filename Value="W:\programs\lazarus\lcl\extdlgs.pas"/>
-        <UnitName Value="ExtDlgs"/>
-        <WindowIndex Value="0"/>
         <TopLine Value="438"/>
         <CursorPos X="61" Y="457"/>
         <UsageCount Value="7"/>
       </Unit51>
       <Unit52>
         <Filename Value="W:\programs\lazarus\lcl\lcltype.pp"/>
-        <UnitName Value="LCLType"/>
-        <WindowIndex Value="0"/>
         <TopLine Value="1127"/>
         <CursorPos X="18" Y="1148"/>
         <UsageCount Value="7"/>
       </Unit52>
       <Unit53>
         <Filename Value="W:\programs\lazarus\lcl\clipbrd.pp"/>
-        <UnitName Value="Clipbrd"/>
-        <WindowIndex Value="0"/>
         <TopLine Value="230"/>
         <CursorPos X="16" Y="251"/>
         <UsageCount Value="7"/>
       </Unit53>
       <Unit54>
         <Filename Value="W:\programs\lazarus\lcl\dialogs.pp"/>
-        <UnitName Value="Dialogs"/>
-        <WindowIndex Value="0"/>
         <TopLine Value="28"/>
         <CursorPos X="26" Y="49"/>
         <UsageCount Value="7"/>
       </Unit54>
       <Unit55>
         <Filename Value="W:\programs\lazarus\lcl\controls.pp"/>
-        <UnitName Value="Controls"/>
-        <WindowIndex Value="0"/>
         <TopLine Value="847"/>
         <CursorPos X="19" Y="868"/>
         <UsageCount Value="7"/>
       </Unit55>
       <Unit56>
         <Filename Value="W:\programs\lazarus\lcl\lclunicodedata.pas"/>
-        <UnitName Value="LCLUnicodeData"/>
-        <WindowIndex Value="0"/>
         <TopLine Value="58"/>
         <CursorPos X="48" Y="73"/>
         <UsageCount Value="7"/>
       </Unit56>
       <Unit57>
         <Filename Value="V:\programs\FPC\2.4\src\compiler\aasmtai.pas"/>
-        <UnitName Value="aasmtai"/>
-        <WindowIndex Value="0"/>
         <TopLine Value="278"/>
         <CursorPos X="24" Y="299"/>
         <UsageCount Value="7"/>
       </Unit57>
       <Unit58>
         <Filename Value="V:\programs\FPC\2.4\src\compiler\aasmdata.pas"/>
-        <UnitName Value="aasmdata"/>
-        <WindowIndex Value="0"/>
         <TopLine Value="119"/>
         <CursorPos X="25" Y="139"/>
         <UsageCount Value="7"/>
       </Unit58>
       <Unit59>
         <Filename Value="V:\programs\FPC\2.4\src\compiler\cclasses.pas"/>
-        <UnitName Value="cclasses"/>
-        <WindowIndex Value="0"/>
         <TopLine Value="161"/>
         <CursorPos X="19" Y="181"/>
         <UsageCount Value="7"/>
       </Unit59>
       <Unit60>
         <Filename Value="V:\programs\FPC\2.4\src\compiler\export.pas"/>
-        <UnitName Value="export"/>
-        <WindowIndex Value="0"/>
         <TopLine Value="61"/>
         <CursorPos X="16" Y="82"/>
         <UsageCount Value="7"/>
       </Unit60>
       <Unit61>
         <Filename Value="V:\programs\FPC\2.4\src\packages\amunits\src\utilunits\easyasl.pas"/>
-        <UnitName Value="easyasl"/>
-        <WindowIndex Value="0"/>
         <TopLine Value="73"/>
         <CursorPos X="14" Y="94"/>
         <UsageCount Value="7"/>
       </Unit61>
       <Unit62>
         <Filename Value="V:\programs\FPC\2.4\src\packages\chm\src\paslzxcomp.pas"/>
-        <UnitName Value="paslzxcomp"/>
-        <WindowIndex Value="0"/>
         <TopLine Value="93"/>
         <CursorPos X="18" Y="114"/>
         <UsageCount Value="7"/>
       </Unit62>
       <Unit63>
         <Filename Value="V:\programs\FPC\2.4\src\packages\fcl-db\src\export\fpstdexports.pp"/>
-        <UnitName Value="fpstdexports"/>
-        <WindowIndex Value="0"/>
         <TopLine Value="65"/>
         <CursorPos X="111" Y="82"/>
         <UsageCount Value="7"/>
@@ -558,16 +435,12 @@
       <Unit64>
         <Filename Value="..\..\..\lib\minibidi.inc"/>
         <IsPartOfProject Value="True"/>
-        <WindowIndex Value="0"/>
         <TopLine Value="799"/>
         <CursorPos X="15" Y="815"/>
         <UsageCount Value="41"/>
       </Unit64>
       <Unit65>
         <Filename Value="..\..\..\lib\diff.cmd"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="1"/>
-        <CursorPos X="1" Y="1"/>
         <UsageCount Value="10"/>
         <DefaultSyntaxHighlighter Value="None"/>
       </Unit65>
@@ -575,7 +448,6 @@
         <Filename Value="..\..\..\lib\mnDrivers.pas"/>
         <UnitName Value="mnDrivers"/>
         <EditorIndex Value="2"/>
-        <WindowIndex Value="0"/>
         <TopLine Value="49"/>
         <CursorPos X="28" Y="61"/>
         <UsageCount Value="10"/>
@@ -585,123 +457,119 @@
     <JumpHistory Count="30" HistoryIndex="29">
       <Position1>
         <Filename Value="main.pas"/>
-        <Caret Line="145" Column="1" TopLine="118"/>
+        <Caret Line="148" TopLine="118"/>
       </Position1>
       <Position2>
         <Filename Value="main.pas"/>
-        <Caret Line="146" Column="1" TopLine="118"/>
+        <Caret Line="150" TopLine="118"/>
       </Position2>
       <Position3>
         <Filename Value="main.pas"/>
-        <Caret Line="148" Column="1" TopLine="118"/>
+        <Caret Line="144" Column="11" TopLine="118"/>
       </Position3>
       <Position4>
         <Filename Value="main.pas"/>
-        <Caret Line="150" Column="1" TopLine="118"/>
+        <Caret Line="137" Column="94" TopLine="118"/>
       </Position4>
       <Position5>
         <Filename Value="main.pas"/>
-        <Caret Line="144" Column="11" TopLine="118"/>
+        <Caret Line="139" Column="30" TopLine="118"/>
       </Position5>
       <Position6>
         <Filename Value="main.pas"/>
-        <Caret Line="137" Column="94" TopLine="118"/>
+        <Caret Line="131" Column="29" TopLine="118"/>
       </Position6>
       <Position7>
         <Filename Value="main.pas"/>
-        <Caret Line="139" Column="30" TopLine="118"/>
       </Position7>
       <Position8>
         <Filename Value="main.pas"/>
-        <Caret Line="131" Column="29" TopLine="118"/>
+        <Caret Line="97" Column="20" TopLine="73"/>
       </Position8>
       <Position9>
         <Filename Value="main.pas"/>
-        <Caret Line="1" Column="1" TopLine="1"/>
+        <Caret Line="17" Column="84"/>
       </Position9>
       <Position10>
         <Filename Value="main.pas"/>
-        <Caret Line="97" Column="20" TopLine="73"/>
+        <Caret Line="64" Column="108" TopLine="50"/>
       </Position10>
       <Position11>
         <Filename Value="main.pas"/>
-        <Caret Line="17" Column="84" TopLine="1"/>
+        <Caret Line="149" Column="24" TopLine="133"/>
       </Position11>
       <Position12>
         <Filename Value="main.pas"/>
-        <Caret Line="64" Column="108" TopLine="50"/>
       </Position12>
       <Position13>
         <Filename Value="main.pas"/>
-        <Caret Line="149" Column="24" TopLine="133"/>
+        <Caret Line="97" Column="18" TopLine="73"/>
       </Position13>
       <Position14>
         <Filename Value="main.pas"/>
-        <Caret Line="1" Column="1" TopLine="1"/>
+        <Caret Line="64" Column="27" TopLine="47"/>
       </Position14>
       <Position15>
         <Filename Value="main.pas"/>
-        <Caret Line="97" Column="18" TopLine="73"/>
+        <Caret Line="68" Column="12" TopLine="56"/>
       </Position15>
       <Position16>
         <Filename Value="main.pas"/>
-        <Caret Line="64" Column="27" TopLine="47"/>
+        <Caret Line="11" Column="21"/>
       </Position16>
       <Position17>
         <Filename Value="main.pas"/>
-        <Caret Line="68" Column="12" TopLine="56"/>
+        <Caret Line="61" Column="5" TopLine="43"/>
       </Position17>
       <Position18>
         <Filename Value="main.pas"/>
-        <Caret Line="11" Column="21" TopLine="1"/>
+        <Caret Line="145" Column="16" TopLine="109"/>
       </Position18>
       <Position19>
         <Filename Value="main.pas"/>
-        <Caret Line="61" Column="5" TopLine="43"/>
+        <Caret Line="143" Column="11" TopLine="109"/>
       </Position19>
       <Position20>
         <Filename Value="main.pas"/>
-        <Caret Line="145" Column="16" TopLine="109"/>
+        <Caret Line="162" Column="3" TopLine="139"/>
       </Position20>
       <Position21>
-        <Filename Value="main.pas"/>
-        <Caret Line="143" Column="11" TopLine="109"/>
+        <Filename Value="..\..\printers\escpos\mnPrinters.pas"/>
+        <Caret Line="89" Column="18" TopLine="75"/>
       </Position21>
       <Position22>
-        <Filename Value="main.pas"/>
-        <Caret Line="162" Column="3" TopLine="139"/>
+        <Filename Value="..\..\printers\escpos\mnPrinters.pas"/>
+        <Caret Line="326" Column="3" TopLine="314"/>
       </Position22>
       <Position23>
         <Filename Value="..\..\printers\escpos\mnPrinters.pas"/>
-        <Caret Line="89" Column="18" TopLine="75"/>
       </Position23>
       <Position24>
         <Filename Value="..\..\printers\escpos\mnPrinters.pas"/>
-        <Caret Line="326" Column="3" TopLine="314"/>
+        <Caret Line="24" Column="11" TopLine="4"/>
       </Position24>
       <Position25>
         <Filename Value="..\..\printers\escpos\mnPrinters.pas"/>
-        <Caret Line="1" Column="1" TopLine="1"/>
+        <Caret Line="326" Column="18" TopLine="314"/>
       </Position25>
       <Position26>
         <Filename Value="..\..\printers\escpos\mnPrinters.pas"/>
-        <Caret Line="24" Column="11" TopLine="4"/>
+        <Caret Line="325" Column="69" TopLine="314"/>
       </Position26>
       <Position27>
         <Filename Value="..\..\printers\escpos\mnPrinters.pas"/>
-        <Caret Line="326" Column="18" TopLine="314"/>
+        <Caret Line="368" Column="11" TopLine="348"/>
       </Position27>
       <Position28>
         <Filename Value="..\..\printers\escpos\mnPrinters.pas"/>
-        <Caret Line="325" Column="69" TopLine="314"/>
       </Position28>
       <Position29>
-        <Filename Value="..\..\printers\escpos\mnPrinters.pas"/>
-        <Caret Line="368" Column="11" TopLine="348"/>
+        <Filename Value="main.pas"/>
+        <Caret Line="53" Column="10" TopLine="46"/>
       </Position29>
       <Position30>
-        <Filename Value="..\..\printers\escpos\mnPrinters.pas"/>
-        <Caret Line="1" Column="1" TopLine="1"/>
+        <Filename Value="main.pas"/>
+        <Caret Line="61" Column="16" TopLine="46"/>
       </Position30>
     </JumpHistory>
   </ProjectOptions>
@@ -713,7 +581,7 @@
     </Target>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)"/>
-      <OtherUnitFiles Value="W:\home\pascal\lib\minilib\unicodes\source\;W:\home\pascal\lib\minilib\comm\source\;W:\home\pascal\lib\minilib\comm\printers\escpos\;W:\home\pascal\lib\minilib\lib\"/>
+      <OtherUnitFiles Value="W:\home\pascal\lib\minilib\unicodes\source\;W:\home\pascal\lib\minilib\comm\source\;W:\home\pascal\lib\minilib\comm\printers\escpos\;W:\home\pascal\lib\minilib\lib\;..\..\..\unicodes\source"/>
       <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>
     <Linking>
@@ -723,12 +591,6 @@
         </Win32>
       </Options>
     </Linking>
-    <Other>
-      <CompilerMessages>
-        <UseMsgFile Value="True"/>
-      </CompilerMessages>
-      <CompilerPath Value="$(CompPath)"/>
-    </Other>
   </CompilerOptions>
   <Debugging>
     <Watches Count="1">
