@@ -636,6 +636,7 @@ type
     function DoCreateSections: TmnrSections; virtual;
     function DoCreateGroups: TmnrGroups; virtual;
     function DoCreateItems: TmnrRows; virtual;
+    procedure DoNewCell(vCell: TmnrCell); virtual;
     procedure DoReportLoaded; virtual;
     function DoGetReportName: string; virtual;
     function GetSections: TmnrSections;
@@ -652,6 +653,7 @@ type
     function GetFooterReport: TmnrSection;
     function GetHeaderReport: TmnrSection;
     function GetHeaderPage: TmnrSection;
+    procedure DoLoad; virtual;
   public
     constructor Create;
 
@@ -748,8 +750,7 @@ end;
 
 procedure TmnrCustomReport.Load;
 begin
-  Profiler.LoadReport;
-  DoReportLoaded;
+  DoLoad;
 end;
 
 procedure TmnrCustomReport.Cancel;
@@ -881,6 +882,17 @@ begin
 end;
 
 procedure TmnrCustomReport.DoInitSections(vSections: TmnrSections);
+begin
+
+end;
+
+procedure TmnrCustomReport.DoLoad;
+begin
+  Profiler.LoadReport;
+  DoReportLoaded;
+end;
+
+procedure TmnrCustomReport.DoNewCell(vCell: TmnrCell);
 begin
 
 end;
@@ -1180,7 +1192,7 @@ begin
         while d <> nil do
         begin
           l := d.Layout;
-          if f then
+          if f and not d.AppendTotals then
           begin
             f := False;
             c := TmnrTextReportCell.Create(aRow);
@@ -1236,7 +1248,7 @@ begin
         while d <> nil do
         begin
           l := d.Layout;
-          if f then
+          if f and not d.AppendTotals then
           begin
             f := False;
             c := TmnrTextReportCell.Create(aRow);
@@ -1289,7 +1301,7 @@ begin
         while d <> nil do
         begin
           l := d.Layout;
-          if f then
+          if f and not d.AppendTotals then
           begin
             f := False;
             c := TmnrTextReportCell.Create(aRow);
@@ -1620,8 +1632,6 @@ begin
     aParams.Data := nil;
     aParams.AcceptMode := acmAccept;
     aParams.FetchMode := fmFirst;
-
-
 
     case s.LoopWay of
       slCustom:
@@ -2084,6 +2094,7 @@ begin
       Result.FDesignCell := vDesignCell;
       DoRequest(Result);
       if (vRow<>nil) and (vDesignCell<>nil) and not vRow.Locked then vDesignCell.ScaleCell(Result);
+      Report.DoNewCell(Result);
     except
       FreeAndNil(Result);
       raise;
