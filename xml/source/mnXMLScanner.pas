@@ -107,6 +107,9 @@ type
 
 implementation
 
+uses
+  mnUtils;
+
 { TmnXMLScanner }
 
 procedure TmnXMLScanner.ReadText(const Text: string);
