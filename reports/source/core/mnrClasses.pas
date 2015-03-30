@@ -2095,7 +2095,7 @@ begin
     try
       Result.FLayout := Self; //for furmula layouts
       Result.FDesignCell := vDesignCell;
-      Result.FReference :=  vDesignCell.Reference;
+      if (vDesignCell<>nil) then  Result.FReference :=  vDesignCell.Reference;
       DoRequest(Result);
       if (vRow<>nil) and (vDesignCell<>nil) and not vRow.Locked then vDesignCell.ScaleCell(Result);
       Report.DoNewCell(Result);
