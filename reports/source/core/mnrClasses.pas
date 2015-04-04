@@ -184,7 +184,7 @@ type
   TmnrLayout = class(TmnrBaseCell)
   private
     FOnRequest: TOnRequest;
-    FReference: TmnrReference;
+    //FReference: TmnrReference;
     FExcludeSections: TmnrSectionClassIDs;
     FIncludeSections: TmnrSectionClassIDs;
     FName: string;
@@ -231,7 +231,6 @@ type
     property OnRequest: TOnRequest read FOnRequest write FOnRequest;
     property OnDataRequest: TOnRequest read FOnDataRequest write FOnDataRequest;
     function NewCell(vDesignCell: TmnrDesignCell; vRow: TmnrRow): TmnrCell;
-    property Reference: TmnrReference read FReference;
     //property DesignerCell: TmnrDesignCell read FDesignerCell write FDesignerCell;
     //property Total: Double read GetTotal;
     //property PageTotal: Double read GetPageTotal;
@@ -297,6 +296,7 @@ type
     FMaxValue: Double;
     FLockCount: Integer;
     FCount: Integer;
+    FReference: TmnrReference;
   protected
     function GetNext: TmnrDesignCell;
     function GetPrior: TmnrDesignCell;
@@ -333,6 +333,7 @@ type
     property MinValue: Double read FMinValue write FMinValue;
     property MaxValue: Double read FMaxValue write FMaxValue;
     property Count: Integer read FCount write FCount;
+    property Reference: TmnrReference read FReference;
 
     procedure Lock;
     procedure UnLock;
@@ -410,6 +411,7 @@ type
 
   TmnrReference = class(TmnrLinkNode)
   private
+    FTotal: Currency;
     function GetNext: TmnrReference;
     function GetNodes: TmnrReferencesRow;
     function GetPrior: TmnrReference;
@@ -418,6 +420,7 @@ type
     property Next: TmnrReference read GetNext;
     property Prior: TmnrReference read GetPrior;
     property Nodes: TmnrReferencesRow read GetNodes write SetNodes;
+    property Total: Currency read FTotal write FTotal;
   end;
 
   TmnrReferencesRow = class(TmnrRowNode)
@@ -1206,7 +1209,7 @@ begin
               c.AsCurrency := d.SubTotal;
           end;
           c.FDesignCell := d;
-          if l <> nil then c.FReference := l.Reference;
+          c.FReference := d.Reference;
 
           d := d.Next;
         end;
@@ -1259,7 +1262,7 @@ begin
             c := TmnrPageTotalCell.Create(aRow);
           end;
           c.FDesignCell := d;
-          if l <> nil then c.FReference := l.Reference;
+          c.FReference := d.Reference;
 
           d := d.Next;
         end;
@@ -1313,7 +1316,7 @@ begin
             c.AsCurrency := d.Total;
           end;
           c.FDesignCell := d;
-          if l <> nil then c.FReference := l.Reference;
+          c.FReference := d.Reference;
 
           d := d.Next;
         end;
@@ -1362,7 +1365,7 @@ begin
             else
               c.AsString := l.DisplayText;
 
-            c.FReference := l.Reference;
+            c.FReference := d.Reference;
           end;
           d := d.Next;
         end;
@@ -1559,9 +1562,10 @@ begin
       d := r.First;
       while d <> nil do
       begin
-        l := d.Layout;
+        {l := d.Layout;
         if l <> nil then
-          l.FReference := Result.Add;
+          l.FReference := Result.Add;}
+        d.FReference := Result.Add;
         d := d.Next;
       end;
       r := r.Next;
@@ -2090,8 +2094,8 @@ begin
   begin
     try
       Result.FLayout := Self; //for furmula layouts
-      Result.FReference := Reference;
       Result.FDesignCell := vDesignCell;
+      if (vDesignCell<>nil) then  Result.FReference :=  vDesignCell.Reference;
       DoRequest(Result);
       if (vRow<>nil) and (vDesignCell<>nil) and not vRow.Locked then vDesignCell.ScaleCell(Result);
       Report.DoNewCell(Result);
