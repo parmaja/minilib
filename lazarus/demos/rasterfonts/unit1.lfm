@@ -1,0 +1,39 @@
+object Form1: TForm1
+  Left = 409
+  Height = 240
+  Top = 177
+  Width = 320
+  Caption = 'Form1'
+  ClientHeight = 240
+  ClientWidth = 320
+  OnCreate = FormCreate
+  OnDestroy = FormDestroy
+  LCLVersion = '1.5'
+  object Panel1: TPanel
+    Left = 30
+    Height = 101
+    Top = 17
+    Width = 247
+    BevelInner = bvRaised
+    BevelOuter = bvLowered
+    TabOrder = 0
+  end
+  object Button1: TButton
+    Left = 54
+    Height = 25
+    Top = 134
+    Width = 75
+    Caption = 'Print'
+    OnClick = Button1Click
+    TabOrder = 1
+  end
+  object Button2: TButton
+    Left = 143
+    Height = 25
+    Top = 131
+    Width = 75
+    Caption = 'Print'
+    OnClick = Button2Click
+    TabOrder = 2
+  end
+end
