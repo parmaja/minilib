@@ -15,7 +15,7 @@ unit mnFonts;
 interface
 
 uses
-  SysUtils, Classes, Graphics, FPCanvas;
+  SysUtils, Classes, Graphics, FPCanvas, IniFiles;
 
 type
 
@@ -41,6 +41,8 @@ type
     procedure PrintText(Canvas: TFPCustomCanvas; x, y: Integer; Text: String);
     procedure LoadFromFile(FileName: String);
     procedure SaveToFile(FileName: String);
+    procedure LoadInfoFromFile(FileName: String);
+    procedure SaveInfoToFile(FileName: String);
   end;
 
 implementation
@@ -77,14 +79,13 @@ begin
   FontBitmap := TBitmap.Create;
   with FontBitmap do
   begin
-    Width := 10;
-    Height := 10;
+    Width := 0;
+    Height := 0;
     Canvas.Brush.Color := clWhite;
     Canvas.FillRect(0, 0, Width, Height);
     Transparent := True;
     TransParentColor := clWhite;
     TransparentMode := tmAuto;
-    //Canvas.CopyRect(Rect(0, 0, Width, Height), Canvas, Rect(0, 0, w, h));
   end;
 end;
 
@@ -133,7 +134,7 @@ begin
   end;
 end;
 
-procedure TmnfRasterFont.LoadFromFile(fileName: String);
+procedure TmnfRasterFont.LoadFromFile(FileName: String);
 begin
   FreeAndNil(FontBitmap);
   FontBitmap := TBitmap.Create;
@@ -146,9 +147,42 @@ begin
   end;
 end;
 
-procedure TmnfRasterFont.SaveToFile(fileName: String);
+procedure TmnfRasterFont.LoadInfoFromFile(FileName: String);
+var
+  ini: TIniFile;
+begin
+  ini := TIniFile.Create(FileName);
+  try
+    CharStart := ini.ReadInteger('Font', 'CharStart', 0);
+    Rows := ini.ReadInteger('Font', 'Rows', 0);
+    Columns := ini.ReadInteger('Font', 'Columns', 0);
+    CharCount := ini.ReadInteger('Font', 'CharCount', 256);
+    CharWidth := ini.ReadInteger('Font', 'CharWidth', 0);
+    CharHeight := ini.ReadInteger('Font', 'CharHeight', 0);
+  finally
+    ini.Free;
+  end;
+end;
+
+procedure TmnfRasterFont.SaveToFile(FileName: String);
 begin
   FontBitmap.SaveToFile(fileName);
 end;
 
+procedure TmnfRasterFont.SaveInfoToFile(FileName: String);
+var
+  ini: TIniFile;
+begin
+  ini:=TIniFile.Create(FileName);
+  try
+    ini.WriteInteger('Font', 'CharStart', CharStart);
+    ini.WriteInteger('Font', 'Rows', Rows);
+    ini.WriteInteger('Font', 'Columns', Columns);
+    ini.WriteInteger('Font', 'CharCount', CharCount);
+    ini.WriteInteger('Font', 'CharWidth', CharWidth);
+    ini.WriteInteger('Font', 'CharHeight', CharHeight);
+  finally
+    ini.Free;
+  end;
+end;
 end.

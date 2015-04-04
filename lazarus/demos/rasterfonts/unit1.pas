@@ -52,7 +52,10 @@ procedure TForm1.FormCreate(Sender: TObject);
 begin
   RasterFont := TmnfRasterFont.Create;
   RasterFont.Generate();
-  RasterFont.SaveToFile(Application.Location+'font.bmp');
+  //RasterFont.SaveToFile(Application.Location+'font.bmp');
+  //RasterFont.SaveInfoToFile(Application.Location+'font.ini');
+  RasterFont.LoadFromFile(Application.Location+'font.bmp');
+  RasterFont.LoadInfoFromFile(Application.Location+'font.ini');
 end;
 
 procedure TForm1.FormDestroy(Sender: TObject);
