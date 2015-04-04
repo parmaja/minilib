@@ -5,9 +5,6 @@ unit mnWinCEPrinters;
 interface
 
 uses
-  {$ifdef win32}
-  Forms,
-  {$endif}
   Windows, Classes, Graphics, SysUtils, registry, Forms;
 
 type
@@ -30,6 +27,7 @@ type
     PosY: Integer;
     Title: widestring;
     PrinterName: widestring;
+    PrinterDriver: widestring;
     FontName: widestring;
     Width: DWORD;
     PageHeight: DWord;
@@ -55,6 +53,7 @@ var
 *}
 const
   sPrinterName = 'APS_UC05';
+  sPrinterDriver = 'APS_pcl.dll';
 
   APS_ID			= $1001;
   APS_STATUS	=	$1002;
@@ -113,7 +112,7 @@ begin
   dm^.dmSize := sizeof(DEVMODE);
   dm^.dmDeviceName := PrinterName;
 
-  dc := CreateDC( 'APS_pcl.dll', nil, nil, dm);
+  dc := CreateDC(PWideChar(PrinterDriver), nil, nil, dm);
 
   if (dc > 0) then
   begin
@@ -122,6 +121,7 @@ begin
     di.lpszOutput := nil;
     di.lpszDatatype := nil;
     di.fwType := 0;
+
 
     if (StartDoc(dc, di) > 0) then
     begin
@@ -248,6 +248,7 @@ begin
   inherited Create;
   FontName := 'Arial';
   PrinterName := AName;
+  PrinterDriver := sPrinterDriver;
   Title := ATitle;
   Width := GetWidth;
   PageHeight :=  8 * 8;//5cm
@@ -257,6 +258,7 @@ begin
   if PrinterOut = nil then
   begin
     PrinterOut := TForm.CreateNew(Application);
+    PrinterOut.Color := clWhite;
     PrinterOut.Show;
     PrinterOut.DoubleBuffered := true;
     PrinterOut.ClientWidth := Width;
