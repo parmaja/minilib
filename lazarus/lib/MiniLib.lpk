@@ -2,21 +2,17 @@
 <CONFIG>
   <Package Version="4">
     <Name Value="MiniLib"/>
+    <Type Value="RunAndDesignTime"/>
     <Author Value="www.parmaja.com"/>
     <CompilerOptions>
       <Version Value="11"/>
       <SearchPaths>
+        <OtherUnitFiles Value="."/>
         <UnitOutputDirectory Value="units/$(TargetCPU)-$(TargetOS)"/>
       </SearchPaths>
-      <Other>
-        <CompilerMessages>
-          <UseMsgFile Value="True"/>
-        </CompilerMessages>
-        <CompilerPath Value="$(CompPath)"/>
-      </Other>
     </CompilerOptions>
     <Description Value="MiniLib FreePascal/Lazarus library"/>
-    <Files Count="11">
+    <Files Count="12">
       <Item1>
         <Filename Value="HTMLProcessor.pas"/>
         <UnitName Value="HTMLProcessor"/>
@@ -61,8 +57,11 @@
         <Filename Value="SynHighlighterSARD.pas"/>
         <UnitName Value="SynHighlighterSARD"/>
       </Item11>
+      <Item12>
+        <Filename Value="mnFonts.pas"/>
+        <UnitName Value="mnFonts"/>
+      </Item12>
     </Files>
-    <Type Value="RunAndDesignTime"/>
     <RequiredPkgs Count="4">
       <Item1>
         <PackageName Value="MiniCommons"/>

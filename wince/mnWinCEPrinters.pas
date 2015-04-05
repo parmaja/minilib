@@ -13,7 +13,6 @@ type
   TmnWincePrinter = class
   private
     dm: PDEVMODE;
-    dc: HDC;
     {$ifdef win32}
     {$else}
     di: DOCINFO;
@@ -24,6 +23,7 @@ type
     procedure DrawString(Text: widestring; Alignment: TAlignment);
     function GetWidth: DWORD;
   public
+    DC: HDC;
     PosY: Integer;
     Title: widestring;
     PrinterName: widestring;

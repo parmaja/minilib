@@ -14,26 +14,46 @@ object Form1: TForm1
     Height = 101
     Top = 17
     Width = 247
-    BevelInner = bvRaised
-    BevelOuter = bvLowered
+    BevelInner = bvSpace
+    BevelOuter = bvNone
+    Color = clHighlight
+    ParentColor = False
     TabOrder = 0
   end
   object Button1: TButton
-    Left = 54
+    Left = 35
     Height = 25
-    Top = 134
+    Top = 130
     Width = 75
-    Caption = 'Print'
+    Caption = 'Print DC'
     OnClick = Button1Click
     TabOrder = 1
   end
   object Button2: TButton
-    Left = 143
+    Left = 199
     Height = 25
-    Top = 131
+    Top = 130
     Width = 75
-    Caption = 'Print'
+    Caption = 'Print Normal'
     OnClick = Button2Click
     TabOrder = 2
+  end
+  object Button3: TButton
+    Left = 66
+    Height = 25
+    Top = 184
+    Width = 75
+    Caption = 'Generate'
+    OnClick = Button3Click
+    TabOrder = 3
+  end
+  object Button4: TButton
+    Left = 120
+    Height = 25
+    Top = 130
+    Width = 75
+    Caption = 'Print Canvas'
+    OnClick = Button4Click
+    TabOrder = 4
   end
 end

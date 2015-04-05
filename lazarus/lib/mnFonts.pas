@@ -1,6 +1,6 @@
 unit mnFonts;
-
-{$mode delphi}
+{$mode objfpc}
+{$H+}
 {**
  *  Raster/Bitmap Fonts
  *
@@ -15,9 +15,14 @@ unit mnFonts;
 interface
 
 uses
+  {$ifdef windows}
+  Windows,
+  {$endif}
   SysUtils, Classes, Graphics, FPCanvas, IniFiles;
 
 type
+
+  TCallbackDrawChar = function(const Target; x, y:Integer; c: char): Boolean of Object;
 
   { TmnfRasterFont }
 
@@ -27,6 +32,14 @@ type
     procedure DoGetTextSize(Text: String; var w, h: Integer); override;
     function DoGetTextHeight(Text: String): Integer; override;
     function DoGetTextWidth(Text: String): Integer; override;
+
+    function DrawCharCanvas(const Target; x, y:Integer; c: char): Boolean;
+    {$ifdef windows}
+    function DrawCharDC(const Target; x, y:Integer; c: char): Boolean;
+    {$endif}
+
+    procedure PrintString(CallbackDrawChar: TCallbackDrawChar; const Target; x, y: Integer; Text: String);
+
   public
     FontBitmap: TBitmap;
     Rows, Columns: Integer;
@@ -38,7 +51,11 @@ type
 
     constructor Create; override;
     procedure Generate(FontName: String = 'Courier'; FontSize: integer = 10);
-    procedure PrintText(Canvas: TFPCustomCanvas; x, y: Integer; Text: String);
+
+    procedure PrintText(ACanvas: TFPCustomCanvas; x, y: Integer; Text: String);
+    {$ifdef windows}
+    procedure PrintText(DC: HDC; x, y: Integer; Text: String);
+    {$endif}
     procedure LoadFromFile(FileName: String);
     procedure SaveToFile(FileName: String);
     procedure LoadInfoFromFile(FileName: String);
@@ -56,26 +73,59 @@ end;
 
 procedure TmnfRasterFont.DoGetTextSize(Text: String; var w, h: Integer);
 begin
-
+  w := Length(Text) * CharWidth;
+  h := CharHeight;
 end;
 
 function TmnfRasterFont.DoGetTextHeight(Text: String): Integer;
 begin
-
+  Result := CharHeight;
 end;
 
 function TmnfRasterFont.DoGetTextWidth(Text: String): Integer;
 begin
+  Result := Length(Text) * CharWidth;
+end;
 
+{$ifdef windows}
+function TmnfRasterFont.DrawCharDC(const Target; x, y: Integer; c: char): Boolean;
+var
+  index: Integer;
+  cx, cy: Integer;
+begin
+  index := Ord(c) - CharStart;
+  cy := (index div Columns) * CharHeight;
+  cx := (index mod Columns) * CharWidth;
+  BitBlt(HDC(Target), x, y, CharWidth, CharHeight, FontBitmap.Canvas.Handle, cx, cy, MERGECOPY);
+  Result := true;
+end;
+{$endif}
+
+function TmnfRasterFont.DrawCharCanvas(const Target; x, y: Integer; c: char): Boolean;
+var
+  cRect: TRect;
+  index: Integer;
+  cx, cy: Integer;
+  ACanvas: TFPCustomCanvas;
+begin
+  ACanvas:=TFPCustomCanvas(Target);
+  index := Ord(c) - CharStart;
+  cy := (index div Columns) * CharHeight;
+  cx := (index mod Columns) * CharWidth;
+  cRect := rect(cx, cy, cx + CharWidth - 1, cy + CharHeight - 1);
+  if ACanvas is TCanvas then
+    (ACanvas as TCanvas).CopyMode := cmMergeCopy;
+  ACanvas.CopyRect(x, y, FontBitmap.Canvas, cRect);
+  Result := true;
 end;
 
 constructor TmnfRasterFont.Create;
 begin
   inherited Create;
-  CharCount := 256;
+  CharStart := 32;
+  CharCount := 256 - CharStart;
   Columns := 16;
   Rows := 16;
-  CharStart := 0;
   FontBitmap := TBitmap.Create;
   with FontBitmap do
   begin
@@ -106,7 +156,7 @@ begin
 
     Canvas.FillRect(0, 0, Width, Height);
 
-    i := 0;
+    i := CharStart;
     for r := 0 to Rows -1 do
       for c := 0 to Columns -1 do
       begin
@@ -116,20 +166,26 @@ begin
   end;
 end;
 
-procedure TmnfRasterFont.PrintText(Canvas: TFPCustomCanvas; x, y: Integer; Text: String);
+procedure TmnfRasterFont.PrintText(ACanvas: TFPCustomCanvas; x, y: Integer; Text: String);
+begin
+  PrintString(@DrawCharCanvas, ACanvas, x, y, Text);
+end;
+
+{$ifdef windows}
+procedure TmnfRasterFont.PrintText(DC: HDC; x, y: Integer; Text: String);
+begin
+  PrintString(@DrawCharDC, Dc, x, y, Text);
+end;
+{$endif}
+
+procedure TmnfRasterFont.PrintString(CallbackDrawChar: TCallbackDrawChar; const Target; x, y: Integer; Text: String);
 var
-  cRect: TRect;
-  i, c: Integer;
-  cx, cy: Integer;
+  i: Integer;
 begin
   for i := 1 to Length(Text) do
   begin
-    c := Ord(Text[i]);
-    cy := (c div Columns) * CharHeight;
-    cx := (c mod Columns) * CharWidth;
-    cRect := rect(cx, cy, cx + CharWidth - 1, cy + CharHeight - 1);
-    //Canvas.CopyMode := cmMergeCopy;
-    Canvas.CopyRect(x, y, FontBitmap.Canvas, cRect);
+    if not CallbackDrawChar(Target, x, y, text[i]) then
+      break;
     x := x + CharWidth;
   end;
 end;
