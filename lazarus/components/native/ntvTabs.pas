@@ -1,5 +1,6 @@
 unit ntvTabs;
 {$mode objfpc}{$H+}
+{$modeswitch advancedrecords}
 {**
  *  This file is part of the "Mini Library"
  *
@@ -24,10 +25,12 @@ const
   cHeaderHeightMargin = 5;
   cImageMargin = 3;
   cTextMargin = 2;
-  cWapSize = 3;
 
-  cActiveColor = clLtGray;
-  cNormalColor = clWhite;
+  cGapSize = 2;
+  cRound = 3;
+
+  cActiveColor = clBtnFace;
+  cNormalColor = clBtnHighlight;
 
 type
   TntvhtTabHitTest = (htNone, htTab, htNext, htPrior, htClose);
@@ -193,6 +196,12 @@ var
   i: Integer;
   P: TPoint;
 begin
+{  Canvas.Polyline(Points^, 0, Count);
+  P := Points[Count-1];
+  Canvas.MoveTo(P);
+  Inc(P.x);
+  Canvas.LineTo(P);
+  exit;}
   P := Points^;
   Canvas.MoveTo(P);
   Inc(Points);
@@ -223,12 +232,16 @@ begin
       Brush.Color := cActiveColor
     else
       Brush.Color := cNormalColor;
+    //Brush.Color := clred;
     FillRect(vRect);
     aTextStyle.Layout := tlCenter;
     aTextStyle.Alignment := taCenter;
     if tbfRightToLeft in vFlags then
        aTextStyle.RightToLeft := True;
     Font.Color := clBlack;
+    if tdsActive in State then
+    else
+      OffsetRect(vRect , 1, 1);
     InflateRect(vRect, -cTextMargin, -cTextMargin);
     TextRect(vRect, 0, 0, vItem.Caption, aTextStyle);
 
@@ -256,23 +269,49 @@ var
   m, mw: Integer;
 begin
   m := cTextMargin;
-  mw := (vTabsRect.Bottom - vTabsRect.Top) div cWapSize;
+  mw := (vTabsRect.Bottom - vTabsRect.Top) div cGapSize;
   Result := Width + mw + m * 2; //margin of text
   if (tdsLast in State) then
     Result := Result + mw;
 end;
 
+type
+
+  { TMyPoints }
+
+  TMyPoints = record
+    Count: Integer;
+    Last: TPoint;
+    P: array[0..10] of TPoint;
+    procedure Add(Point:TPoint);
+    procedure Reset;
+  end;
+
+{ TMyPoints }
+
+procedure TMyPoints.Add(Point: TPoint);
+begin
+  Last := Point;
+  P[Count] := Point;
+  Inc(Count);
+end;
+
+procedure TMyPoints.Reset;
+begin
+  Count := 0;
+  Last := Point(0, 0);
+end;
+
 procedure TntvTabDrawCart.DoPaint(vItem: TntvTabItem; Canvas: TCanvas; var vRect: TRect; vPosition: TntvTabPosition; vState: TTabDrawStates; vFlags: TntvFlags);
 var
   aTextRect: TRect;
-  aTextStyle: TTextStyle;
-  m: Integer;
   mw: Integer;
 
   procedure DrawPrevious;
   var
-    points: array[0..3] of TPoint;
+    points: TMyPoints;
   begin
+    points.Reset;
     with Canvas do
     begin
       if (tdsNear in vState) and (tdsAfter in vState) then
@@ -282,31 +321,34 @@ var
 
       if tbfRightToLeft in vFlags then
       begin
-        points[0] := Point(vRect.Right, vRect.Top);
-        points[1] := Point(vRect.Right - mw + 1, vRect.Bottom - 1);
-        points[2] := Point(vRect.Right, vRect.Bottom - 1);
+        points.Add(Point(vRect.Right, vRect.Top));
+        points.Add(Point(vRect.Right - mw + 1, vRect.Bottom - 1));
+        points.Add(Point(vRect.Right, vRect.Bottom - 1));
       end
       else
       begin
-        points[0] := Point(vRect.Left, vRect.Top);
-        points[1] := Point(vRect.Left + mw - 1, vRect.Bottom - 1);
-        points[2] := Point(vRect.Left, vRect.Bottom - 1);
+        points.Add(Point(vRect.Left, vRect.Top));
+        points.Add(Point(vRect.Left + cRound, vRect.Top + cRound));
+        points.Add(Point(vRect.Left + mw - 1, vRect.Bottom - 1));
+        points.Add(Point(vRect.Left, vRect.Bottom - 1));
       end;
 
       Brush.Style := bsSolid;
       Pen.Style := psSolid;
       Pen.Color := Brush.Color;
-      Polygon(points, 3);
+      Polygon(points.p, points.Count);
 
       Pen.Color := clBlack;
-      MyPolyline(canvas, points, 2);
+      MyPolyline(canvas, points.p, points.Count -1);
     end;
   end;
+const
+  len = 5;
 var
-  points: array[0..3] of TPoint;
+  points: TMyPoints;
 begin
-  m := cTextMargin;
-  mw := (vRect.Bottom - vRect.Top) div cWapSize;
+  points.Reset;
+  mw := (vRect.Bottom - vRect.Top) div cGapSize;
   with Canvas do
   begin
     Pen.Style := psSolid;//psInsideframe;
@@ -314,18 +356,18 @@ begin
 
     if tbfRightToLeft in vFlags then
     begin
-      aTextRect.Right := aTextRect.Right - mw - 1;
+      aTextRect.Right := aTextRect.Right - mw;
       if (tdsLast in vState) then
         aTextRect.Left := aTextRect.Left + mw;
     end
     else
     begin
-      aTextRect.Left := aTextRect.Left + mw + 1;
+      aTextRect.Left := aTextRect.Left + mw;
       if (tdsLast in vState) then
         aTextRect.Right := aTextRect.Right - mw;
     end;
 
-    InflateRect(aTextRect, 0, -1);
+    InflateRect(aTextRect, -1, -1);
 
     Brush.Style := bsSolid;
 
@@ -346,37 +388,41 @@ begin
 
     if tbfRightToLeft in vFlags then
     begin
-      points[0] := Point(vRect.Right, vRect.Bottom - 1);
-      points[1] := Point(vRect.Right - mw + 1, vRect.Top);
+      points.Add(Point(vRect.Right, vRect.Bottom - 1));
+      points.Add(Point(vRect.Right - mw + 1, vRect.Top));
       if (tdsLast in vState) then
-        points[2] := Point(vRect.Left + mw - 1 , vRect.Top)
+        points.Add(Point(vRect.Left + mw - 1 , vRect.Top))
       else
-        points[2] := Point(vRect.Left, vRect.Top);
-      points[3] := Point(vRect.Left, vRect.Bottom - 1);
+        points.Add(Point(vRect.Left, vRect.Top));
+      points.Add(Point(vRect.Left, vRect.Bottom - 1));
     end
     else
     begin
-      points[0] := Point(vRect.Left, vRect.Bottom - 1);
-      points[1] := Point(vRect.Left + mw - 1, vRect.Top);
+      points.Add(Point(vRect.Left, vRect.Bottom - 1));
+      points.Add(Point(vRect.Left + mw - 1 - cRound, vRect.Top + cRound));
+      points.Add(Point(points.last.x + cRound, points.last.y - cRound));
+
       if (tdsLast in vState) then //Add right corner
-        points[2] := Point(vRect.Right - mw + 1, vRect.Top)
+      begin
+        points.Add(Point(vRect.Right - mw + 1, vRect.Top));
+        points.Add(Point(points.last.x + cRound, points.last.y + cRound));
+      end
       else
-        points[2] := Point(vRect.Right , vRect.Top);
-      points[3] := Point(vRect.Right, vRect.Bottom - 1) ;
+        points.Add(Point(vRect.Right, vRect.Top));
+      points.Add(Point(vRect.Right, vRect.Bottom - 1)) ;
     end;
 
     //Draw /-\
     Pen.Color := Brush.Color;
-
-    Polygon(points, 4);
+    Polygon(points.p, points.Count);
 
     //Draw Border
     Pen.Color := clBlack;
 
     if (tdsLast in vState) then
-      MyPolyline(canvas, points, 4)
+      MyPolyline(canvas, points.p, points.Count)
     else
-      MyPolyline(canvas, points, 3);
+      MyPolyline(canvas, points.p, points.Count - 1);
 
     if not (tdsFirst in vState) then
     begin
@@ -838,19 +884,6 @@ begin
 
     aTextRect := vRect;
     InflateRect(aTextRect, -2, -2);
-{    if not (tdsFirst in State) then
-    begin
-      if tbfRightToLeft in vFlags then
-        Dec(aTextRect.Left)
-      else
-        Inc(aTextRect.Right);
-    end;}
-
-{    Brush.Color := clRed;
-    FillRect(aTextRect);}
-
-    //PaintText(aTextRect);
-    //Dec(aTextRect.Right);
 
     Pen.Style := psSolid;
     Pen.Color := clDkGray;
