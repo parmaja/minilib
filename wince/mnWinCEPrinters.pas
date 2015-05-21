@@ -32,6 +32,7 @@ type
     Width: DWORD;
     PageHeight: DWord;
     FontHeight: Integer;
+    FontWidth: Integer;
     FontBold: Boolean;
     LineMargin: Integer;
     procedure Start;
@@ -188,7 +189,7 @@ begin
     //OldPen := SelectObject(dc, WhitePen);
 
     lf.lfHeight := FontHeight;
-    lf.lfWidth := 0;
+    lf.lfWidth := FontWidth;
     lf.lfEscapement := 0;
     lf.lfOrientation := 0;
     if FontBold then

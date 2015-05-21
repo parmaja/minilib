@@ -42,7 +42,7 @@ implementation
 procedure TForm1.Button1Click(Sender: TObject);
 begin
   Panel1.Canvas.Clear;
-  RasterFont.PrintText(Panel1.Canvas.Handle, 1, 1, 'Hello World');
+  RasterFont.PrintText(Panel1.Canvas.Handle, 1, 1, 'Date: 1234567890');
 end;
 
 procedure TForm1.Button2Click(Sender: TObject);
@@ -55,7 +55,7 @@ end;
 
 procedure TForm1.Button3Click(Sender: TObject);
 begin
-  RasterFont.Generate();
+  RasterFont.Generate('Bitstream Vera Sans Mono', 16);
   RasterFont.CharStart := 32;
   RasterFont.CharCount := 96;
   RasterFont.SaveToFile(Application.Location+'font.bmp');

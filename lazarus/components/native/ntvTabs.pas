@@ -23,7 +23,11 @@ const
   cMinTabWidth = 10;
   cHeaderHeightMargin = 5;
   cImageMargin = 3;
-  cTextMargin = 4;
+  cTextMargin = 2;
+  cWapSize = 3;
+
+  cActiveColor = clLtGray;
+  cNormalColor = clWhite;
 
 type
   TntvhtTabHitTest = (htNone, htTab, htNext, htPrior, htClose);
@@ -51,11 +55,11 @@ type
   public
     function GetWidth(State: TTabDrawStates; vTabsRect: TRect; Width: Integer): Integer; virtual; abstract;
     procedure PaintText(vItem: TntvTabItem; Canvas:TCanvas; vRect: TRect; vPosition: TntvTabPosition; State: TTabDrawStates ; vFlags: TntvFlags); virtual;
-    procedure Paint(vItem: TntvTabItem; Canvas:TCanvas; vRect: TRect; vPosition: TntvTabPosition; vState: TTabDrawStates; vFlags: TntvFlags);
     {
       Paint the tab without the text area, and return in vRect the rect of text area
     }
     procedure DoPaint(vItem: TntvTabItem; Canvas:TCanvas; var vRect: TRect; vPosition: TntvTabPosition; vState: TTabDrawStates; vFlags: TntvFlags); virtual; abstract;
+    procedure Paint(vItem: TntvTabItem; Canvas:TCanvas; vRect: TRect; vPosition: TntvTabPosition; vState: TTabDrawStates; vFlags: TntvFlags);
   end;
 
   { TntvTabDrawSheet }
@@ -215,21 +219,24 @@ begin
   with Canvas do
   begin
     Brush.Style := bsSolid;
-    //Brush.Color := clRed;
-    //FillRect(vRect);
+    if tdsActive in State then
+      Brush.Color := cActiveColor
+    else
+      Brush.Color := cNormalColor;
+    FillRect(vRect);
     aTextStyle.Layout := tlCenter;
     aTextStyle.Alignment := taCenter;
     if tbfRightToLeft in vFlags then
        aTextStyle.RightToLeft := True;
     Font.Color := clBlack;
-    InflateRect(vRect, -1, -1);
+    InflateRect(vRect, -cTextMargin, -cTextMargin);
     TextRect(vRect, 0, 0, vItem.Caption, aTextStyle);
 
     if tdsActive in State then
     begin
       if tbfFocused in vFlags then
       begin
-        InflateRect(vRect, 1, 1);
+        InflateRect(vRect, cTextMargin, cTextMargin);
         DrawFocusRect(vRect);
       end;
     end;
@@ -248,8 +255,8 @@ function TntvTabDrawCart.GetWidth(State: TTabDrawStates; vTabsRect: TRect; Width
 var
   m, mw: Integer;
 begin
-  m := 2;
-  mw := (vTabsRect.Bottom - vTabsRect.Top) div 2;
+  m := cTextMargin;
+  mw := (vTabsRect.Bottom - vTabsRect.Top) div cWapSize;
   Result := Width + mw + m * 2; //margin of text
   if (tdsLast in State) then
     Result := Result + mw;
@@ -269,9 +276,9 @@ var
     with Canvas do
     begin
       if (tdsNear in vState) and (tdsAfter in vState) then
-        Brush.Color := clBtnFace
+        Brush.Color := cActiveColor
       else
-        Brush.Color := clWhite;
+        Brush.Color := cNormalColor;
 
       if tbfRightToLeft in vFlags then
       begin
@@ -298,8 +305,8 @@ var
 var
   points: array[0..3] of TPoint;
 begin
-  m := 2;
-  mw := (vRect.Bottom - vRect.Top) div 2;
+  m := cTextMargin;
+  mw := (vRect.Bottom - vRect.Top) div cWapSize;
   with Canvas do
   begin
     Pen.Style := psSolid;//psInsideframe;
@@ -318,7 +325,7 @@ begin
         aTextRect.Right := aTextRect.Right - mw;
     end;
 
-    InflateRect(aTextRect, 0, -m);
+    InflateRect(aTextRect, 0, -1);
 
     Brush.Style := bsSolid;
 
@@ -331,9 +338,9 @@ begin
     end;
 
     if tdsActive in vState then
-      Brush.Color := clBtnFace
+      Brush.Color := cActiveColor
     else
-      Brush.Color := clWhite;
+      Brush.Color := cNormalColor;
 
     Pen.Color := clBlack;
 
@@ -550,7 +557,7 @@ begin
   for i := 0 to Count - 1 do
     if Items[I].AutoWidth then
     begin
-      w := vCanvas.TextWidth(Items[i].Caption) + cTextMargin;
+      w := vCanvas.TextWidth(Items[i].Caption) + cTextMargin * 2;
       if (Images <> nil) and (Items[I].ImageIndex > -1) then
         w := w + Images.Width - cImageMargin;
       if w < cMinTabWidth then
@@ -824,9 +831,9 @@ begin
   begin
     Brush.Style := bsSolid;
     if tdsActive in vState then
-      Brush.Color := clBtnFace
+      Brush.Color := cActiveColor
     else
-      Brush.Color := clWhite;
+      Brush.Color := cNormalColor;
     FillRect(vRect);
 
     aTextRect := vRect;
