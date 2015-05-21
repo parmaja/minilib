@@ -1,7 +1,7 @@
 object Form1: TForm1
-  Left = 526
+  Left = 274
   Height = 362
-  Top = 204
+  Top = 21
   Width = 418
   ActiveControl = Edit2
   Caption = 'Form1'
@@ -9,7 +9,7 @@ object Form1: TForm1
   ClientWidth = 418
   OnCreate = FormCreate
   ParentBiDiMode = False
-  LCLVersion = '1.1'
+  LCLVersion = '1.5'
   object Button1: TButton
     Left = 7
     Height = 25
@@ -76,6 +76,7 @@ object Form1: TForm1
     Width = 298
     StoreIndex = False
     ShowButtons = False
+    ShowBorder = False
     Items = <    
       item
         Caption = 'Panel1'

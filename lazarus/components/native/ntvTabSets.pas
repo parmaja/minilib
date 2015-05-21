@@ -276,7 +276,7 @@ var
   R: TRect;
   aTabsRect: TRect;
 begin
-  inherited; //do not inherited
+  inherited; //do not inherited???
   with Canvas do
   begin
     Font.Assign(Self.Font);

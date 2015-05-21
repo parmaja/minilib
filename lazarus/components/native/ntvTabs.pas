@@ -182,6 +182,30 @@ type
 
 implementation
 
+//It draw last pixle
+
+procedure MyPolyline(Canvas:TCanvas; Points: PPoint; Count: Integer);
+var
+  i: Integer;
+  P: TPoint;
+begin
+  P := Points^;
+  Canvas.MoveTo(P);
+  Inc(Points);
+  for i := 1 to Count -1 do
+  begin
+    P := Points^;
+    Canvas.LineTo(P);
+    if i = Count -1 then
+    begin
+      Inc(P.x);
+      Canvas.LineTo(P);
+    end
+    else
+      Inc(Points);
+  end;
+end;
+
 { TntvTabDraw }
 
 procedure TntvTabDraw.PaintText(vItem: TntvTabItem; Canvas: TCanvas; vRect: TRect; vPosition: TntvTabPosition; State: TTabDrawStates; vFlags: TntvFlags);
@@ -190,7 +214,9 @@ var
 begin
   with Canvas do
   begin
-    Brush.Style := bsClear;
+    Brush.Style := bsSolid;
+    //Brush.Color := clRed;
+    //FillRect(vRect);
     aTextStyle.Layout := tlCenter;
     aTextStyle.Alignment := taCenter;
     if tbfRightToLeft in vFlags then
@@ -223,7 +249,7 @@ var
   m, mw: Integer;
 begin
   m := 2;
-  mw := (vTabsRect.Bottom - vTabsRect.Top) div 4;
+  mw := (vTabsRect.Bottom - vTabsRect.Top) div 2;
   Result := Width + mw + m * 2; //margin of text
   if (tdsLast in State) then
     Result := Result + mw;
@@ -235,8 +261,10 @@ var
   aTextStyle: TTextStyle;
   m: Integer;
   mw: Integer;
-  a: array[0..3] of TPoint;
+
   procedure DrawPrevious;
+  var
+    points: array[0..3] of TPoint;
   begin
     with Canvas do
     begin
@@ -244,30 +272,56 @@ var
         Brush.Color := clBtnFace
       else
         Brush.Color := clWhite;
-      a[0] := Point(vRect.Left, vRect.Top);
-      a[1] := Point(vRect.Left + mw, vRect.Bottom);
-      a[2] := Point(vRect.Left, vRect.Bottom);
+
+      if tbfRightToLeft in vFlags then
+      begin
+        points[0] := Point(vRect.Right, vRect.Top);
+        points[1] := Point(vRect.Right - mw + 1, vRect.Bottom - 1);
+        points[2] := Point(vRect.Right, vRect.Bottom - 1);
+      end
+      else
+      begin
+        points[0] := Point(vRect.Left, vRect.Top);
+        points[1] := Point(vRect.Left + mw - 1, vRect.Bottom - 1);
+        points[2] := Point(vRect.Left, vRect.Bottom - 1);
+      end;
+
       Brush.Style := bsSolid;
-      Pen.Style := psClear;
-      Polygon(a, 3);
       Pen.Style := psSolid;
-      Polyline(a, 0, 2);
+      Pen.Color := Brush.Color;
+      Polygon(points, 3);
+
+      Pen.Color := clBlack;
+      MyPolyline(canvas, points, 2);
     end;
   end;
+var
+  points: array[0..3] of TPoint;
 begin
   m := 2;
-  mw := (vRect.Bottom - vRect.Top) div 4;
-
+  mw := (vRect.Bottom - vRect.Top) div 2;
   with Canvas do
   begin
+    Pen.Style := psSolid;//psInsideframe;
     aTextRect := vRect;
-    aTextRect.Left := aTextRect.Left + mw;
-    if (tdsLast in vState) then
-    aTextRect.Right := aTextRect.Right + mw;
-    InflateRect(aTextRect, -m, -m);
+
+    if tbfRightToLeft in vFlags then
+    begin
+      aTextRect.Right := aTextRect.Right - mw - 1;
+      if (tdsLast in vState) then
+        aTextRect.Left := aTextRect.Left + mw;
+    end
+    else
+    begin
+      aTextRect.Left := aTextRect.Left + mw + 1;
+      if (tdsLast in vState) then
+        aTextRect.Right := aTextRect.Right - mw;
+    end;
+
+    InflateRect(aTextRect, 0, -m);
 
     Brush.Style := bsSolid;
-    Pen.Style := psSolid;
+
     if not (tdsFirst in vState) then
     begin
       if (tdsActive in vState) then
@@ -280,21 +334,42 @@ begin
       Brush.Color := clBtnFace
     else
       Brush.Color := clWhite;
+
     Pen.Color := clBlack;
-    Pen.Style := psClear;
-    a[0] := Point(vRect.Left, vRect.Bottom);
-    a[1] := Point(vRect.Left + mw, vRect.Top);
-    if (tdsLast in vState) then
-      a[2] := Point(vRect.Right - mw + 1, vRect.Top)
+
+    if tbfRightToLeft in vFlags then
+    begin
+      points[0] := Point(vRect.Right, vRect.Bottom - 1);
+      points[1] := Point(vRect.Right - mw + 1, vRect.Top);
+      if (tdsLast in vState) then
+        points[2] := Point(vRect.Left + mw - 1 , vRect.Top)
+      else
+        points[2] := Point(vRect.Left, vRect.Top);
+      points[3] := Point(vRect.Left, vRect.Bottom - 1);
+    end
     else
-      a[2] := Point(vRect.Right + 1, vRect.Top);
-    a[3] := Point(vRect.Right + 1, vRect.Bottom);
-    Polygon(a, 4);
-    Pen.Style := psSolid;
+    begin
+      points[0] := Point(vRect.Left, vRect.Bottom - 1);
+      points[1] := Point(vRect.Left + mw - 1, vRect.Top);
+      if (tdsLast in vState) then //Add right corner
+        points[2] := Point(vRect.Right - mw + 1, vRect.Top)
+      else
+        points[2] := Point(vRect.Right , vRect.Top);
+      points[3] := Point(vRect.Right, vRect.Bottom - 1) ;
+    end;
+
+    //Draw /-\
+    Pen.Color := Brush.Color;
+
+    Polygon(points, 4);
+
+    //Draw Border
+    Pen.Color := clBlack;
+
     if (tdsLast in vState) then
-      Polyline(a, 0, 4)
+      MyPolyline(canvas, points, 4)
     else
-      Polyline(a, 0, 3);
+      MyPolyline(canvas, points, 3);
 
     if not (tdsFirst in vState) then
     begin
@@ -629,8 +704,8 @@ begin
       R := Rect(0, vTabsRect.Top, 0, vTabsRect.Bottom);
       if tbfRightToLeft in vFlags then
       begin
-        R.Right := vTabsRect.Right - x - 1;
-        R.Left := R.Right - w;
+        R.Right := vTabsRect.Right - x;
+        R.Left := R.Right - w + 1;
       end
       else
       begin
