@@ -29,6 +29,8 @@ type
   TOnTabSelect = procedure(Sender: TObject; OldTab, NewTab: TntvTabItem; var CanSelect: boolean) of object;
   TOnTabSelected = procedure(Sender: TObject; OldTab, NewTab: TntvTabItem) of object;
 
+  TAlignTabs = (talTop, talBottom);
+
   { TntvTabSetItems }
 
   TntvTabSetItems = class(TntvTabs)
@@ -44,6 +46,7 @@ type
 
   TntvCustomTabSet = class(TCustomControl)
   private
+    FAlignTabs: TAlignTabs;
     FItems: TntvTabs;
     FHeaderHeight: Integer;
     FInternalHeaderHeight: Integer;
@@ -55,6 +58,7 @@ type
     function GetImageList: TImageList;
     function GetShowButtons: Boolean;
     function GetTopIndex: Integer;
+    procedure SetAlignTabs(AValue: TAlignTabs);
     procedure SetItemIndex(Value: Integer);
     procedure SetShowBorder(const AValue: Boolean);
     procedure SetTopIndex(const Value: Integer);
@@ -110,6 +114,7 @@ type
     property StoreIndex: Boolean read FStoreIndex write FStoreIndex;
     property ShowButtons: Boolean read GetShowButtons write SetShowButtons default True;
     property ShowTabs: Boolean read FShowTabs write SetShowTabs default True;
+    property AlignTabs: TAlignTabs read FAlignTabs write SetAlignTabs default talTop;
     property ShowBorder: Boolean read FShowBorder write SetShowBorder default True;
     property HeaderHeight: Integer read FHeaderHeight write FHeaderHeight;
     property ItemIndex: Integer read GetItemIndex write SetItemIndex stored FStoreIndex default 0;
@@ -166,6 +171,7 @@ type
     property ShowButtons;
     property ShowBorder;
     property ShowTabs;
+    property AlignTabs;
     property ItemIndex;
     property ImageList;
 
@@ -244,6 +250,7 @@ begin
   Items.TopIndex := 0;
   UpdateHeaderRect;
   FShowTabs := True;
+  FAlignTabs := talTop;
   SetInitialBounds(0, 0, GetControlClassDefaultSize.cx, GetControlClassDefaultSize.cy);
 end;
 
@@ -406,7 +413,10 @@ begin
   else
   begin
     Result := ClientRect;
-    Result.Bottom := Result.Top + GetHeaderHeight;
+    if AlignTabs = talTop then
+      Result.Bottom := Result.Top + GetHeaderHeight
+    else
+      Result.Top := Result.Bottom - GetHeaderHeight;
   end;
 end;
 
@@ -619,6 +629,16 @@ end;
 function TntvCustomTabSet.GetTopIndex: Integer;
 begin
   Result := Items.TopIndex;
+end;
+
+procedure TntvCustomTabSet.SetAlignTabs(AValue: TAlignTabs);
+begin
+  if FAlignTabs <>  AValue then
+  begin
+    FAlignTabs :=AValue;
+    Realign;
+    Invalidate;
+  end;
 end;
 
 function TntvCustomTabSet.GetImageList: TImageList;

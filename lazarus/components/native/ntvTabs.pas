@@ -29,8 +29,8 @@ const
   cGapSize = 2;
   cRound = 3;
 
-  cActiveColor = clBtnFace;
-  cNormalColor = clBtnHighlight;
+  cActiveColor = clWindow;
+  cNormalColor = clLtGray;
 
 type
   TntvhtTabHitTest = (htNone, htTab, htNext, htPrior, htClose);
