@@ -322,7 +322,7 @@ begin
   begin
     try
       begin
-        if Socket.Select(10000, slRead) = erNone then
+        if (Socket.Select(10000, slRead) = erNone) and not Terminated then
           aSocket := Socket.Accept
         else
           aSocket := nil;
