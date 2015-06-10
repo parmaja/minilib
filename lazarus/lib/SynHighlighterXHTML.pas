@@ -19,7 +19,7 @@ uses
 
 type
   TtkTokenKind = (tkUnknown, tkNull, tkSpace, tkComment, tkDocument, tkIdentifier, tkSymbol, tkNumber,
-    tkString, tkText, tkValue, tkHTML, tkKeyword, tkFunction, tkVariable, tkSQL, tkProcessor);
+    tkString, tkText, tkValue, tkHTML, tkKeyword, tkFunction, tkVariable, tkProcessor);
 
   TProcTableProc = procedure of object;
 
@@ -115,7 +115,7 @@ type
     FTextAttri: TSynHighlighterAttributes;
     FKeywordAttri: TSynHighlighterAttributes;
     FNumberAttri: TSynHighlighterAttributes;
-    FSpaceAttri: TSynHighlighterAttributes;
+    FWhitespaceAttri: TSynHighlighterAttributes;
     FStringAttri: TSynHighlighterAttributes;
     FSymbolAttri: TSynHighlighterAttributes;
     FVariableAttri: TSynHighlighterAttributes;
@@ -163,7 +163,7 @@ type
     property TextAttri: TSynHighlighterAttributes read FTextAttri write FTextAttri;
     property KeywordAttri: TSynHighlighterAttributes read FKeywordAttri write FKeywordAttri;
     property NumberAttri: TSynHighlighterAttributes read FNumberAttri write FNumberAttri;
-    property SpaceAttri: TSynHighlighterAttributes read FSpaceAttri write FSpaceAttri;
+    property WhitespaceAttri: TSynHighlighterAttributes read FWhitespaceAttri write FWhitespaceAttri;
     property StringAttri: TSynHighlighterAttributes read FStringAttri write FStringAttri;
     property SymbolAttri: TSynHighlighterAttributes read FSymbolAttri write FSymbolAttri;
     property VariableAttri: TSynHighlighterAttributes read FVariableAttri write FVariableAttri;
@@ -294,9 +294,9 @@ begin
 
   MakeIdentTable;
 
-  FSpaceAttri := TSynHighlighterAttributes.Create(SYNS_AttrSpace);
-  FSpaceAttri.Foreground := clBlack;
-  AddAttribute(FSpaceAttri);
+  FWhitespaceAttri := TSynHighlighterAttributes.Create(SYNS_AttrWhitespace);
+  FWhitespaceAttri.Foreground := clBlack;
+  AddAttribute(FWhitespaceAttri);
 
   FCommentAttri := TSynHighlighterAttributes.Create(SYNS_AttrComment);
   FCommentAttri.Foreground := $000069D2;
@@ -396,7 +396,7 @@ begin
     SYN_ATTR_IDENTIFIER: Result := FIdentifierAttri;
     SYN_ATTR_KEYWORD: Result := FKeywordAttri;
     SYN_ATTR_STRING: Result := FStringAttri;
-    SYN_ATTR_WHITESPACE: Result := FSpaceAttri;
+    SYN_ATTR_WHITESPACE: Result := FWhitespaceAttri;
     SYN_ATTR_SYMBOL: Result := FSymbolAttri;
     else
       Result := nil;
@@ -444,7 +444,7 @@ begin
     tkHtml: Result := FHtmlAttri;
     tkKeyword: Result := FKeywordAttri;
     tkNumber: Result := FNumberAttri;
-    tkSpace: Result := FSpaceAttri;
+    tkSpace: Result := FWhitespaceAttri;
     tkString: Result := FStringAttri;
     tkSymbol: Result := FSymbolAttri;
     tkText: Result := FTextAttri;
@@ -524,6 +524,9 @@ begin
     '  {'#13#10 +
     '    $number = 1234;'#13#10 +
     '    print "The number is $number";'#13#10 +
+    '    /* '#13#10 +
+    '    Multi line comment '#13#10 +
+    '    */ '#13#10 +
     '    for ($i = 0; $i <= $number; $i++)'#13#10 +
     '    {'#13#10 +
     '      $x++;'#13#10 +

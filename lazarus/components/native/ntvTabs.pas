@@ -29,9 +29,6 @@ const
   cGapSize = 2;
   cRound = 3;
 
-  cActiveColor = clWindow;
-  cNormalColor = clLtGray;
-
 type
   TntvhtTabHitTest = (htNone, htTab, htNext, htPrior, htClose);
   TntvFlag = (tbfFocused, tbfRightToLeft);
@@ -56,6 +53,9 @@ type
 
   TntvTabDraw = class(TObject)
   public
+    ActiveColor: TColor;
+    NormalColor: TColor;
+
     function GetWidth(State: TTabDrawStates; vTabsRect: TRect; Width: Integer): Integer; virtual; abstract;
     procedure PaintText(vItem: TntvTabItem; Canvas:TCanvas; vRect: TRect; vPosition: TntvTabPosition; State: TTabDrawStates ; vFlags: TntvFlags); virtual;
     {
@@ -136,8 +136,10 @@ type
 
   TntvTabs = class(TCollection)
   private
+    FActiveColor: TColor;
     FImages: TImageList;
     FItemIndex: Integer;
+    FNormalColor: TColor;
     FPosition: TntvTabPosition;
     FShowAll: Boolean;
     FShowButtons: Boolean;
@@ -154,7 +156,9 @@ type
     procedure VisibleChanged;
     procedure Invalidate; virtual;
     function IndexToState(Index: Integer): TTabDrawStates;
-    function CreateTabDraw: TntvTabDraw; virtual;
+    function DoCreateTabDraw: TntvTabDraw; virtual;
+    function CreateTabDraw: TntvTabDraw;
+
     procedure DrawButtons(Canvas: TCanvas; var vRect: TRect; vFlags: TntvFlags); //TODO
     procedure DrawTab(Canvas: TCanvas; Index: Integer; vRect: TRect; vFlags: TntvFlags);
     //ShowAll for DesignMode or special states, visible and non visible tab
@@ -184,6 +188,8 @@ type
     property TopIndex: Integer read FTopIndex write FTopIndex;
     property ShowButtons: Boolean read FShowButtons write FShowButtons;
     property Position: TntvTabPosition read FPosition write FPosition;
+    property ActiveColor: TColor read FActiveColor write FActiveColor;
+    property NormalColor: TColor read FNormalColor write FNormalColor;
   published
   end;
 
@@ -229,16 +235,16 @@ begin
   begin
     Brush.Style := bsSolid;
     if tdsActive in State then
-      Brush.Color := cActiveColor
+      Brush.Color := ActiveColor
     else
-      Brush.Color := cNormalColor;
+      Brush.Color := NormalColor;
     //Brush.Color := clred;
     FillRect(vRect);
     aTextStyle.Layout := tlCenter;
     aTextStyle.Alignment := taCenter;
     if tbfRightToLeft in vFlags then
        aTextStyle.RightToLeft := True;
-    Font.Color := clBlack;
+    //Font.Color := clBlack;
     if tdsActive in State then
     else
       OffsetRect(vRect , 1, 1);
@@ -315,9 +321,9 @@ var
     with Canvas do
     begin
       if (tdsNear in vState) and (tdsAfter in vState) then
-        Brush.Color := cActiveColor
+        Brush.Color := ActiveColor
       else
-        Brush.Color := cNormalColor;
+        Brush.Color := NormalColor;
 
       if tbfRightToLeft in vFlags then
       begin
@@ -338,7 +344,7 @@ var
       Pen.Color := Brush.Color;
       Polygon(points.p, points.Count);
 
-      Pen.Color := clBlack;
+      Pen.Color := Font.Color;
       MyPolyline(canvas, points.p, points.Count -1);
     end;
   end;
@@ -380,11 +386,11 @@ begin
     end;
 
     if tdsActive in vState then
-      Brush.Color := cActiveColor
+      Brush.Color := ActiveColor
     else
-      Brush.Color := cNormalColor;
+      Brush.Color := NormalColor;
 
-    Pen.Color := clBlack;
+    Pen.Color := Font.Color;
 
     if tbfRightToLeft in vFlags then
     begin
@@ -417,7 +423,7 @@ begin
     Polygon(points.p, points.Count);
 
     //Draw Border
-    Pen.Color := clBlack;
+    Pen.Color := Font.Color;
 
     if (tdsLast in vState) then
       MyPolyline(canvas, points.p, points.Count)
@@ -651,9 +657,16 @@ begin
     Result := Result + [tdsLast];
 end;
 
-function TntvTabs.CreateTabDraw: TntvTabDraw;
+function TntvTabs.DoCreateTabDraw: TntvTabDraw;
 begin
   Result := TntvTabDrawCart.Create;
+end;
+
+function TntvTabs.CreateTabDraw: TntvTabDraw;
+begin
+  Result := DoCreateTabDraw;
+  Result.ActiveColor := ActiveColor;
+  Result.NormalColor := NormalColor;
 end;
 
 constructor TntvTabs.Create(AItemClass: TCollectionItemClass);
@@ -877,9 +890,9 @@ begin
   begin
     Brush.Style := bsSolid;
     if tdsActive in vState then
-      Brush.Color := cActiveColor
+      Brush.Color := ActiveColor
     else
-      Brush.Color := cNormalColor;
+      Brush.Color := NormalColor;
     FillRect(vRect);
 
     aTextRect := vRect;

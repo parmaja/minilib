@@ -55,11 +55,15 @@ type
     FShowBorder: Boolean;
     FStoreIndex: Boolean;
     FShowTabs: Boolean;
+    function GetActiveColor: TColor;
     function GetImageList: TImageList;
+    function GetNormalColor: TColor;
     function GetShowButtons: Boolean;
     function GetTopIndex: Integer;
+    procedure SetActiveColor(AValue: TColor);
     procedure SetAlignTabs(AValue: TAlignTabs);
     procedure SetItemIndex(Value: Integer);
+    procedure SetNormalColor(AValue: TColor);
     procedure SetShowBorder(const AValue: Boolean);
     procedure SetTopIndex(const Value: Integer);
     function GetItemIndex: Integer;
@@ -119,6 +123,8 @@ type
     property HeaderHeight: Integer read FHeaderHeight write FHeaderHeight;
     property ItemIndex: Integer read GetItemIndex write SetItemIndex stored FStoreIndex default 0;
     property ImageList: TImageList read GetImageList write SetImageList;
+    property ActiveColor: TColor read GetActiveColor write SetActiveColor default clWhite;
+    property NormalColor: TColor read GetNormalColor write SetNormalColor default clSilver;
 
     property Items: TntvTabs read FItems write FItems;
     property OnTabSelected: TOnTabSelected read FOnTabSelected write FOnTabSelected;
@@ -248,6 +254,8 @@ begin
   FItems := CreateTabs;
   Items.ItemIndex := -1;
   Items.TopIndex := 0;
+  Items.ActiveColor := clWhite;
+  Items.NormalColor := clSilver;
   UpdateHeaderRect;
   FShowTabs := True;
   FAlignTabs := talTop;
@@ -271,6 +279,15 @@ begin
   end;
 end;
 
+procedure TntvCustomTabSet.SetNormalColor(AValue: TColor);
+begin
+  if Items.NormalColor <> AValue then
+  begin
+    Items.NormalColor := AValue;
+    Invalidate;
+  end;
+end;
+
 procedure TntvCustomTabSet.SetShowBorder(const AValue: Boolean);
 begin
   if FShowBorder =AValue then exit;
@@ -287,6 +304,7 @@ begin
   with Canvas do
   begin
     Font.Assign(Self.Font);
+    SetTextColor(Handle, Font.Color);
     if not ShowTabs or (Items.Visibles.Count = 0) then
     begin
       if (csDesigning in ComponentState) then
@@ -631,6 +649,15 @@ begin
   Result := Items.TopIndex;
 end;
 
+procedure TntvCustomTabSet.SetActiveColor(AValue: TColor);
+begin
+  if Items.ActiveColor <> AValue then
+  begin
+    Items.ActiveColor := AValue;
+    Invalidate;
+  end;
+end;
+
 procedure TntvCustomTabSet.SetAlignTabs(AValue: TAlignTabs);
 begin
   if FAlignTabs <>  AValue then
@@ -644,6 +671,16 @@ end;
 function TntvCustomTabSet.GetImageList: TImageList;
 begin
     Result := Items.Images;
+end;
+
+function TntvCustomTabSet.GetActiveColor: TColor;
+begin
+  Result := FItems.ActiveColor;
+end;
+
+function TntvCustomTabSet.GetNormalColor: TColor;
+begin
+  Result := FItems.NormalColor;
 end;
 
 function TntvCustomTabSet.GetShowButtons: Boolean;

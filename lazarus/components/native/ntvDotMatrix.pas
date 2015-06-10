@@ -201,6 +201,8 @@ type
 
 implementation
 
+//TODO use ColorUtils
+
 function MixColors(Color1, Color2: TColor; W1: Integer): TColor;
 var
   W2: Cardinal;
@@ -923,4 +925,4 @@ begin
 end;
 
 end.
-
+
