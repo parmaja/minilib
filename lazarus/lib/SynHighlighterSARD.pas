@@ -556,7 +556,29 @@ end;
 
 function TSynSARDSyn.GetSampleSource: string;
 begin
-  Result := '';
+  Result := '/*'
+            +'    This examples are worked, and this comment will ignored, not compiled or parsed as we say.'#13
+            +'  */'#13
+            +''#13
+            +'  //Single Line comment'#13
+            +'  CalcIt:Integer(p1, p2){'#13
+            +'      :=p1 * p2 / 2;'#13
+            +'    };'#13
+            +''#13
+            +'  x := {'#13
+            +'        y := 0;'#13
+            +'        x := CalcIt(x, y);'#13
+            +'        := y + x+ 500 * %10; //this is a result return of the block'#13
+            +'    }; //do not forget to add ; here'#13
+            +''#13
+            +'  f := 10.0;'#13
+            +'  f := z + 5.5;'#13
+            +''#13
+            +'  {* Embeded block comment *};'#13
+            +''#13
+            +'  := "Result:" + x + '' It is an example:'#13
+            +'    Multi Line String'#13
+            +'  '';'#13;
 end;
 
 initialization

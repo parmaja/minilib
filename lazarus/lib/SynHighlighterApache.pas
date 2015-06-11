@@ -194,10 +194,12 @@ begin
   inc(Run);
   while FLine[Run] <> #0 do
     case FLine[Run] of
+      ' ': break;
       '=': break;
       #10: break;
       #13: break;
-    else inc(Run);
+    else
+        inc(Run);
     end;
 end;
 
@@ -209,7 +211,7 @@ begin
     FTokenID := tkText;
     inc(Run);
     while FLine[Run] <> #0 do
-      if FLine[Run] in ['a'..'z', 'A'..'Z', '0'..'9'] then
+      if FLine[Run] in ['a'..'z', 'A'..'Z', '0'..'9', '_'] then
         inc(Run)
       else break;
   end;
@@ -264,7 +266,8 @@ procedure TSynApacheSyn.SpaceProc;
 begin
   inc(Run);
   FTokenID := tkSpace;
-  while FLine[Run] in [#1..#9, #11, #12, #14..#32] do inc(Run);
+  while FLine[Run] in [#1..#9, #11, #12, #14..#32] do
+    inc(Run);
 end;
 
 // ""
@@ -278,7 +281,9 @@ begin
     end;
     inc(Run);
   until FLine[Run] = #34;
-  if FLine[Run] <> #0 then inc(Run);
+
+  if FLine[Run] <> #0 then
+    inc(Run);
 end;
 
 // ''
