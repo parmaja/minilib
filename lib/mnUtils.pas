@@ -42,6 +42,7 @@ function DequoteStr(Str: string; QuoteChar: string): string; overload;
 function DequoteStr(Str: string): string; overload; //deqoute use both of ' and "
 
 function RepeatString(const Str: string; Count: Integer): string;
+function VarReplace(S: string; Values: TStrings; VarChar: Char = '$'): string;
 
 type
   //alsCut = if the string > count we cut it as count or keep the string
@@ -212,6 +213,44 @@ begin
     Result := Result + Str;
     Count := Count - 1;
   end;
+end;
+
+{**
+*  Replace multipe variables $var for example with value in Values
+*  Use name values in strings
+*}
+
+function VarReplace(S: string; Values: TStrings; VarChar: Char = '$'): string;
+var
+  i: Integer;
+  OpenAt: Integer;
+  n: string;
+  l: integer;
+begin
+  OpenAt := 0; //or -1 in other languages
+  i := 1;
+  while i <= length(s) do
+  begin
+    if S[i] = VarChar then
+      OpenAt := i
+    else if (OpenAt > 0) then
+    begin
+      if not(S[i] in ['0'..'9', 'a'..'z', 'A'..'Z', '_', '[', ']']) then
+      begin
+        l := i - OpenAt;
+        n := MidStr(S, OpenAt + 1, l - 1);
+        if Values.IndexOfName(n)>=0 then
+        begin
+          n := Values.Values[n];
+          S := MidStr(S, 1, OpenAt - 1) + n + MidStr(S, i, MaxInt);
+          i := i - l + length(n);
+          OpenAt := 0;
+        end;
+      end;
+    end;
+    i:= i + 1;
+  end;
+  Result := S;
 end;
 
 function DequoteStr(Str: string; QuoteChar: string): string;
