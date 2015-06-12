@@ -40,18 +40,18 @@ type
     FSpaceAttri: TSynHighlighterAttributes;
     FStringAttri: TSynHighlighterAttributes;
     FSymbolAttri: TSynHighlighterAttributes;
-    procedure SectionOpenProc;
-    procedure KeyProc;
-    procedure CRProc;
-    procedure EqualProc;
-    procedure TextProc;
     procedure LFProc;
     procedure NullProc;
+    procedure SectionOpenProc;
+    procedure CRProc;
+    procedure EqualProc;
+    procedure KeyProc;
+    procedure TextProc;
     procedure NumberProc;
     procedure CommentProc;
     procedure SpaceProc;
-    procedure StringProc;  // ""
-    procedure StringProc1; // ''
+    procedure DQStringProc;  // ""
+    procedure SQStringProc; // ''
     procedure MakeMethodTables;
   protected
     function GetIdentChars: TSynIdentChars; override;
@@ -62,6 +62,7 @@ type
   public
     constructor Create(AOwner: TComponent); override;
     function GetDefaultAttribute(Index: integer): TSynHighlighterAttributes; override;
+    procedure ResetRange; override;
     function GetEol: Boolean; override;
     function GetTokenID: TtkTokenKind;
     procedure SetLine(const NewValue: String; LineNumber:Integer); override;
@@ -102,12 +103,13 @@ begin
       #0      : FProcTable[i] := @NullProc;
       #10 {LF}: FProcTable[i] := @LFProc;
       #13 {CR}: FProcTable[i] := @CRProc;
-      #34 {"} : FProcTable[i] := @StringProc;
-      #39 {'} : FProcTable[i] := @StringProc1;
+      '"' : FProcTable[i] := @DQStringProc;
+      '''': FProcTable[i] := @SQStringProc;
       '0'..'9': FProcTable[i] := @NumberProc;
-      '#' {#} : FProcTable[i] := @CommentProc;
-      #61 {=} : FProcTable[i] := @EqualProc;
-      #91 {[} : FProcTable[i] := @SectionOpenProc;
+      '#' : FProcTable[i] := @CommentProc;
+      //';' : FProcTable[i] := @CommentProc;
+      '=' : FProcTable[i] := @EqualProc;
+      '<' : FProcTable[i] := @SectionOpenProc;
       #1..#9, #11, #12, #14..#32: FProcTable[i] := @SpaceProc;
     else
       FProcTable[i] := @TextProc;
@@ -153,23 +155,19 @@ end; { SetLine }
 
 procedure TSynApacheSyn.SectionOpenProc;
 begin
-  // if it is not column 0 mark as tkText and get out of here
-  if Run > 0 then
-  begin
-    FTokenID := tkText;
-    inc(Run);
-    Exit;
-  end;
-
-  // this is column 0 ok it is a Section
   FTokenID := tkSection;
   inc(Run);
   while FLine[Run] <> #0 do
     case FLine[Run] of
-      ']': begin inc(Run); break end;
+      '>':
+      begin
+        inc(Run);
+        break
+      end;
       #10: break;
       #13: break;
-    else inc(Run);
+    else
+      inc(Run);
     end;
 end;
 
@@ -243,14 +241,6 @@ end;
 // ;
 procedure TSynApacheSyn.CommentProc;
 begin
-  // if it is not column 0 mark as tkText and get out of here
-  if Run > 0 then
-  begin
-    FTokenID := tkText;
-    inc(Run);
-    Exit;
-  end;
-
   // this is column 0 ok it is a comment
   FTokenID := tkComment;
   inc(Run);
@@ -271,7 +261,7 @@ begin
 end;
 
 // ""
-procedure TSynApacheSyn.StringProc;
+procedure TSynApacheSyn.DQStringProc;
 begin
   FTokenID := tkString;
   if (FLine[Run + 1] = #34) and (FLine[Run + 2] = #34) then inc(Run, 2);
@@ -287,7 +277,7 @@ begin
 end;
 
 // ''
-procedure TSynApacheSyn.StringProc1;
+procedure TSynApacheSyn.SQStringProc;
 begin
   FTokenID := tkString;
   if (FLine[Run + 1] = #39) and (FLine[Run + 2] = #39) then inc(Run, 2);
@@ -317,6 +307,11 @@ begin
   else
     Result := nil;
   end;
+end;
+
+procedure TSynApacheSyn.ResetRange;
+begin
+  inherited ResetRange;
 end;
 
 function TSynApacheSyn.GetEol: Boolean;

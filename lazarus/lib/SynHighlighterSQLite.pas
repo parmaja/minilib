@@ -24,7 +24,7 @@ type
     tkFunction, tkIdentifier, tkKey, tkNull, tkNumber, tkSpace,
     tkString, tkSymbol, tkVariable, tkUnknown);
 
-  TRangeState = (rsUnknown, rsComment, rsString);
+  TRangeState = (rsUnknown, rsComment, rsSQString, rsDQString);
 
   { TSynSqliteSyn }
 
@@ -48,7 +48,8 @@ type
     FSymbolAttri: TSynHighlighterAttributes;
     FVariableAttri: TSynHighlighterAttributes;
     procedure AndSymbolProc;
-    procedure StringProc;
+    procedure SQStringProc;
+    procedure DQStringProc;
     procedure CRProc;
     procedure EqualProc;
     procedure GreaterProc;
@@ -229,9 +230,10 @@ begin
       '+': FProcTable[I] := @PlusProc;
       '/': FProcTable[I] := @SlashProc;
       '&': FProcTable[I] := @AndSymbolProc;
-      #39: FProcTable[I] := @StringProc;
-      '"': FProcTable[I] := @ObjectProc;
+      #39: FProcTable[I] := @SQStringProc;
+      '"': FProcTable[I] := @DQStringProc;
       ':': FProcTable[I] := @VariableProc;
+      '?': FProcTable[I] := @VariableProc;
       'A'..'Z', 'a'..'z', '_':
         FProcTable[I] := @IdentProc;
       '0'..'9':
@@ -240,7 +242,7 @@ begin
         FProcTable[I] := @SpaceProc;
       '^', '%', '*', '!':
         FProcTable[I] := @SymbolAssignProc;
-      '{', '}', '.', ',', ';', '?', '(', ')', '[', ']', '~':
+      '{', '}', '.', ',', ';', '(', ')', '[', ']', '~':
         FProcTable[I] := @SymbolProc;
     else
       FProcTable[I] := @UnknownProc;
@@ -317,21 +319,43 @@ begin
     Inc(Run);
 end;
 
-procedure TSynSqliteSyn.StringProc;
+procedure TSynSqliteSyn.SQStringProc;
 begin
   if FLine[Run] = #0 then
     NullProc
   else
   begin
     FTokenID := tkString;
-    if (Run > 0) or (FRange <> rsString) or (FLine[Run] <> #39) then
+    if (Run > 0) or (FRange <> rsSQString) or (FLine[Run] <> #39) then
     begin
-      FRange := rsString;
+      FRange := rsSQString;
       repeat
         Inc(Run);
       until FLine[Run] in [#0, #10, #13, #39];
     end;
     if FLine[Run] = #39 then
+    begin
+      Inc(Run);
+      FRange := rsUnknown;
+    end;
+  end;
+end;
+
+procedure TSynSqliteSyn.DQStringProc;
+begin
+  if FLine[Run] = #0 then
+    NullProc
+  else
+  begin
+    FTokenID := tkString;
+    if (Run > 0) or (FRange <> rsDQString) or (FLine[Run] <> '"') then
+    begin
+      FRange := rsDQString;
+      repeat
+        Inc(Run);
+      until FLine[Run] in [#0, #10, #13, '"'];
+    end;
+    if FLine[Run] = '"' then
     begin
       Inc(Run);
       FRange := rsUnknown;
@@ -504,7 +528,7 @@ procedure TSynSqliteSyn.VariableProc;
 var
   i: integer;
 begin
-  if (FLine[Run] = ':') then
+  if (FLine[Run] = ':') or (FLine[Run] = '?') then
   begin
     FTokenID := tkVariable;
     i := Run;
@@ -559,8 +583,10 @@ begin
   case FRange of
     rsComment:
       CommentProc;
-    rsString:
-      StringProc;
+    rsSQString:
+      SQStringProc;
+    rsDQString:
+      DQStringProc;
   else
     FProcTable[FLine[Run]]();
   end;
@@ -581,7 +607,7 @@ begin
   end;
 end;
 
-function TSynSqliteSyn.GetEOL: Boolean;
+function TSynSqliteSyn.GetEol: Boolean;
 begin
   Result := FTokenID = tkNull;
 end;
@@ -663,7 +689,17 @@ end;
 
 function TSynSqliteSyn.GetSampleSource: string;
 begin
-  Result := 'select * from Employees';
+  Result := '/* SQL Example*/'#13#10 +
+    #13#10 +
+    'create table employees ('#13#10 +
+    '        id int not null,'#13#10 +
+    '        name char(30) not null,'#13#10 +
+    '        primary key (id),'#13#10 +
+    '        index name (name));'#13#10 +
+    #13#10 +
+    '// Single line comment'#13#10+
+    'select name from employees'#13#10+
+    'where id=?id and name="Unkown"'#13#10;
 end;
 
 procedure TSynSqliteSyn.ObjectProc;
