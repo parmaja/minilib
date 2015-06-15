@@ -226,6 +226,18 @@ var
   OpenAt: Integer;
   n: string;
   l: integer;
+  procedure check;
+  begin
+    l := i - OpenAt;
+    n := MidStr(S, OpenAt + 1, l - 1);
+    if Values.IndexOfName(n)>=0 then
+    begin
+      n := Values.Values[n];
+      S := MidStr(S, 1, OpenAt - 1) + n + MidStr(S, i, MaxInt);
+      i := i - l + length(n);
+      OpenAt := 0;
+    end;
+  end;
 begin
   OpenAt := 0; //or -1 in other languages
   i := 1;
@@ -237,19 +249,12 @@ begin
     begin
       if not(S[i] in ['0'..'9', 'a'..'z', 'A'..'Z', '_', '[', ']']) then
       begin
-        l := i - OpenAt;
-        n := MidStr(S, OpenAt + 1, l - 1);
-        if Values.IndexOfName(n)>=0 then
-        begin
-          n := Values.Values[n];
-          S := MidStr(S, 1, OpenAt - 1) + n + MidStr(S, i, MaxInt);
-          i := i - l + length(n);
-          OpenAt := 0;
-        end;
+        check;
       end;
     end;
     i:= i + 1;
   end;
+  check;
   Result := S;
 end;
 

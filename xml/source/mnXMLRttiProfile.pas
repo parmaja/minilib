@@ -44,7 +44,7 @@ type
     function _AddRef: Integer; {$ifdef WINDOWS}stdcall{$else}cdecl{$endif};
     function _Release: Integer; {$ifdef WINDOWS}stdcall{$else}cdecl{$endif};
     {$ifdef FPC}
-    procedure RttiCreateObject(var vObject: TObject; vInstance: TObject; vObjectClass:TClass; const vClassName, vName: string); virtual;
+    procedure RttiCreateObject(var vObject: TObject; vInstance: TObject; vObjectClass: TClass; const vClassName, vName: string); virtual;
     {$endif}
   public
     constructor Create;
@@ -305,7 +305,7 @@ begin
 end;
 
 {$ifdef FPC}
-procedure TmnXMLProfile.RttiCreateObject(var vObject: TObject; vInstance: TObject; vObjectClass:TClass; const vClassName, vName: string);
+procedure TmnXMLProfile.RttiCreateObject(var vObject: TObject; vInstance: TObject; vObjectClass: TClass; const vClassName, vName: string);
 begin
 end;
 {$endif}
