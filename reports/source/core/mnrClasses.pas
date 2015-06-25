@@ -63,7 +63,7 @@ type
   TmnrSectionLoopWay = (slCustom, slwAuto, slwSingle, slwMulti);
   TmnrFetchMode = (fmFirst, fmNext);
   TmnrAcceptMode = (acmAccept, acmSkip, acmSkipAll, acmRepeat, acmEof);
-  TmnrSectionClassID = (sciReport, sciHeaderReport, sciHeaderPage, sciHeaderDetails, sciDetails, sciFooterDetails, sciFooterPage, sciFooterReport);
+  TmnrSectionClassID = (sciReport, sciHeaderReport, sciHeaderPage, sciHeaderTitles, sciHeaderDetails, sciDetailTitles, sciDetails, sciFooterDetails, sciFooterPage, sciFooterReport);
   TmnrSectionClassIDs = set of TmnrSectionClassID;
 
   TmnrFetch = record
@@ -368,7 +368,7 @@ type
     property First: TmnrDesignCell read GetFirst;
     property Last: TmnrDesignCell read GetLast;
     property ByIndex[vIndex: Integer]: TmnrDesignCell read GetByIndex;
-    function Find(const vName: string): TmnrDesignCell;
+    function FindName(const vName: string): TmnrDesignCell;
     procedure ClearSubTotals;
   end;
 
@@ -387,7 +387,7 @@ type
     property Last: TmnrDesignRow read GetLast;
     property Section: TmnrSection read GetSection;
     property ByIndex[vIndex: Integer]: TmnrDesignRow read GetByIndex;
-    function Find(const vName: string): TmnrDesignCell;
+    function FindName(const vName: string): TmnrDesignCell;
 
     procedure ClearSubTotals;
   end;
@@ -517,7 +517,8 @@ type
     property OnFetch: TOnFetch read FOnFetch write FOnFetch;
 
     procedure FillNow(vParams: TmnrFetch; vIndex: Integer; vReference: TmnrReferencesRow); virtual;
-    function FindDesignCell(const vName: string): TmnrDesignCell;
+    function FindDesignCellName(const vName: string): TmnrDesignCell;
+    function FindDesignCellGuid(const vGuid: string): TmnrDesignCell;
 
     procedure AddTitles;
     procedure AddReportTitles;
@@ -550,7 +551,7 @@ type
     function RegisterSection(const vName, vCaption: string; const vClass: TmnrSectionClassID; const vID: Integer = 0; vOnFetch: TOnFetch = nil; vLoopWay: TmnrSectionLoopWay = slwAuto): TmnrSection;
     property ByName[const vName: string]: TmnrSection read GetByName;
     function Find(const vName: string): TmnrSection;
-    function FindDesignCell(const vName: string): TmnrDesignCell;
+    function FindDesignCellName(const vName: string): TmnrDesignCell;
 
     property Report: TmnrCustomReport read GetReport;
     property First: TmnrSection read GetFirst;
@@ -839,8 +840,8 @@ procedure TmnrCustomReport.InitSections(vSections: TmnrSections);
 begin
   FHeaderPage   := FSections.RegisterSection('HeaderPage', '—«” «·’›Õ…', sciHeaderPage, ID_SECTION_HEADERPage);
   FHeaderReport := FSections.RegisterSection('HeaderReport', '—«” «· ﬁ—Ì—', sciHeaderReport, ID_SECTION_HEADERREPORT);
-  FReportTitles := FSections.RegisterSection('ReportTitles', '⁄‰«ÊÌ‰ «· ﬁ—Ì—', sciHeaderReport);
-  FDetailTitles := FSections.RegisterSection('DetailTitles', '⁄‰«ÊÌ‰ «· ›’Ì·', sciDetails, 0, nil, slwSingle);
+  FReportTitles := FSections.RegisterSection('ReportTitles', '⁄‰«ÊÌ‰ «· ﬁ—Ì—', sciHeaderTitles);
+  FDetailTitles := FSections.RegisterSection('DetailTitles', '⁄‰«ÊÌ‰ «· ›’Ì·', sciDetailTitles, 0, nil, slwSingle);
 
   DoInitSections(vSections); //for header and details
 
@@ -1491,9 +1492,14 @@ begin
   end;
 end;
 
-function TmnrSection.FindDesignCell(const vName: string): TmnrDesignCell;
+function TmnrSection.FindDesignCellName(const vName: string): TmnrDesignCell;
 begin
-  Result := DesignRows.Find(vName)
+  Result := DesignRows.FindName(vName)
+end;
+
+function TmnrSection.FindDesignCellGuid(const vGuid: string): TmnrDesignCell;
+begin
+  //Result := DesignRows.Find(vGuid)
 end;
 
 function TmnrSection.GetCaption: string;
@@ -1760,7 +1766,7 @@ begin
   end;
 end;
 
-function TmnrSections.FindDesignCell(const vName: string): TmnrDesignCell;
+function TmnrSections.FindDesignCellName(const vName: string): TmnrDesignCell;
 var
   s: TmnrSection;
 begin
@@ -1768,12 +1774,12 @@ begin
   s := First;
   while s <> nil do
   begin
-    Result := s.DesignRows.Find(vName);
+    Result := s.DesignRows.FindName(vName);
     if Result<>nil then
       Break
     else
     begin
-      Result := s.Sections.FindDesignCell(vName);
+      Result := s.Sections.FindDesignCellName(vName);
       if Result <> nil then
         Break
     end;
@@ -2551,7 +2557,7 @@ begin
   end;
 end;
 
-function TmnrDesignRow.Find(const vName: string): TmnrDesignCell;
+function TmnrDesignRow.FindName(const vName: string): TmnrDesignCell;
 begin
   Result := First;
   while Result<>nil do
@@ -2641,7 +2647,7 @@ begin
   FSection := vSection;
 end;
 
-function TmnrDesignRows.Find(const vName: string): TmnrDesignCell;
+function TmnrDesignRows.FindName(const vName: string): TmnrDesignCell;
 var
   aRow: TmnrDesignRow;
 begin
@@ -2649,7 +2655,7 @@ begin
   Result := nil;
   while aRow<>nil do
   begin
-    Result := aRow.Find(vName);
+    Result := aRow.FindName(vName);
     if Result<>nil then
       Break
     else
