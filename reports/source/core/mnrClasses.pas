@@ -60,6 +60,7 @@ type
 
   TmnrRowArray = array of TmnrRow;
 
+  TmnrSumStringIndex = (ssiTotal, ssiPageTotal, ssiToPageTotal);
   TmnrSectionLoopWay = (slCustom, slwAuto, slwSingle, slwMulti);
   TmnrFetchMode = (fmFirst, fmNext);
   TmnrAcceptMode = (acmAccept, acmSkip, acmSkipAll, acmRepeat, acmEof);
@@ -480,6 +481,7 @@ type
     function DoFetch(var vParams: TmnrFetch): TmnrAcceptMode; virtual;
     procedure DoAppendDetailTotals(vSection: TmnrSection);
     procedure DoAppendPageTotals(vSection: TmnrSection);
+    procedure DoAppendToPageTotals(vSection: TmnrSection);
     procedure DoAppendReportTotals(vSection: TmnrSection);
     procedure DoAppendTitles(vSection: TmnrSection);
     function DoCreateDesignRows: TmnrDesignRows; virtual;
@@ -627,7 +629,7 @@ type
     //Apply param to report to use it in Queries or assign it to Variables
     //procedure SetParams(vParams: TmnrParams); virtual;
     //Collect params from current record in report to send it to another report
-    function SumString: string; virtual;
+    function SumString(const vIndex: TmnrSumStringIndex): string; virtual;
 
     procedure Created; virtual; //after create
     procedure Start; virtual; //after build report only in generate
@@ -1117,9 +1119,14 @@ procedure TmnrCustomReport.Start;
 begin
 end;
 
-function TmnrCustomReport.SumString: string;
+function TmnrCustomReport.SumString(const vIndex: TmnrSumStringIndex): string;
 begin
-  Result := '«·„Ã„Ê⁄';
+  case vIndex of
+    ssiPageTotal: Result := '„Ã„Ê⁄ «·’›ÕÂ';
+    ssiToPageTotal: Result := '«·„Ã„Ê⁄ «· —«ﬂ„Ì';
+    else
+      Result := '«·„Ã„Ê⁄';
+  end;
 end;
 
 { TmnrCustomReportRowNode }
@@ -1190,6 +1197,7 @@ begin
     while r <> nil do
     begin
       aRow := Report.CreateNewRow(vSection);
+      aRow.FLocked := True;
       aRow.FDesignRow := r;
       try
         d := r.First;
@@ -1200,7 +1208,7 @@ begin
           begin
             f := False;
             c := TmnrTextReportCell.Create(aRow);
-            c.AsString := Report.SumString;
+            c.AsString := Report.SumString(ssiTotal);
           end
           else
           begin
@@ -1246,6 +1254,7 @@ begin
     while r <> nil do
     begin
       aRow := Report.CreateNewRow(vSection);
+      aRow.FLocked := True;
       aRow.FDesignRow := r;
       try
         d := r.First;
@@ -1256,7 +1265,7 @@ begin
           begin
             f := False;
             c := TmnrTextReportCell.Create(aRow);
-            c.AsString := Report.SumString;
+            c.AsString := Report.SumString(ssiPageTotal);
           end
           else
           begin
@@ -1299,6 +1308,7 @@ begin
     while r <> nil do
     begin
       aRow := Report.CreateNewRow(vSection);
+      aRow.FLocked := True;
       aRow.FDesignRow := r;
       try
         d := r.First;
@@ -1309,7 +1319,7 @@ begin
           begin
             f := False;
             c := TmnrTextReportCell.Create(aRow);
-            c.AsString := Report.SumString;
+            c.AsString := Report.SumString(ssiTotal);
           end
           else
           begin
@@ -1380,6 +1390,60 @@ begin
       begin
         FRow := aRow;
       end;
+      r := r.Next;
+    end;
+  end;
+end;
+
+procedure TmnrSection.DoAppendToPageTotals(vSection: TmnrSection);
+var
+  r: TmnrDesignRow;
+  d: TmnrDesignCell;
+  l: TmnrLayout;
+  aRow: TmnrRow;
+  f: Boolean; //first
+  c: TmnrCell;
+begin
+  r := DesignRows.First;
+  if r <> nil then
+  begin
+    f := True;
+    while r <> nil do
+    begin
+      aRow := Report.CreateNewRow(vSection);
+      aRow.FLocked := True;
+      aRow.FDesignRow := r;
+      try
+        d := r.First;
+        while d <> nil do
+        begin
+          l := d.Layout;
+          if f and not d.AppendTotals then
+          begin
+            f := False;
+            c := TmnrTextReportCell.Create(aRow);
+            c.AsString := Report.SumString(ssiToPageTotal);
+          end
+          else
+          begin
+            c := TmnrToPageTotalCell.Create(aRow);
+          end;
+          c.FDesignCell := d;
+          c.FReference := d.Reference;
+
+          d := d.Next;
+        end;
+      except
+        aRow.Free;
+        raise;
+      end;
+      //todo make arow pass as var and if report handle row and free it then do nothing
+      Report.HandleNewRow(aRow);
+      with vSection.Items.Add do
+      begin
+        FRow := aRow;
+      end;
+
       r := r.Next;
     end;
   end;
@@ -1722,7 +1786,10 @@ begin
   while s <> nil do
   begin
     if s.AppendPageTotals then
+    begin
       s.DoAppendPageTotals(vSection);
+      s.DoAppendToPageTotals(vSection);
+    end;
     s.Sections.DoAppendPageTotals(vSection);
     s := s.Next;
   end;
