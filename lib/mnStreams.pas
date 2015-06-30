@@ -68,13 +68,19 @@ type
     function Read(var Buffer; Count: Longint): Longint; override; final;
     function Write(const Buffer; Count: Longint): Longint; override; final;
 
-    procedure ReadUntil(const UntilStr: string; out Result: ansistring; var Matched: Boolean);
+    procedure ReadUntil(const UntilStr: string; out Result: ansistring; var Matched: Boolean); overload;
+
     function ReadLine(var S: string; const vEOL: string; vExcludeEOL: Boolean = True): Boolean; overload;
     function ReadLine(const vEOL: string): string; overload;
     function ReadLn: string; overload;
     function ReadLn(var S: string; ExcludeEOL: Boolean = True): Boolean; overload;
     function WriteLine(const S: string; const vEOL: string): Cardinal;
-    function WriteLn(const S: string): Cardinal;
+    function WriteLn(const S: string): Cardinal; overload;
+    //function for ansi handling
+    function WriteLn(const S: AnsiString): Cardinal; overload;
+    procedure ReadUntil(const UntilStr: ansistring; out Result: ansistring; var Matched: Boolean); overload;
+    function ReadLn(var S: AnsiString; vEOL: AnsiString): Boolean; overload;
+
 
     procedure ReadCommand(var Command: string; var Params: string);
 
@@ -189,6 +195,14 @@ end;
 function TmnBufferStream.WriteLine(const S: string; const vEOL: string): Cardinal;
 begin
   Result := WriteString(S + vEOL);
+end;
+
+function TmnBufferStream.WriteLn(const S: AnsiString): Cardinal;
+var
+  t: AnsiString;
+begin
+  t := s + AnsiString(EndOfLine);
+  Result := Write(Pointer(t)^, Length(t));
 end;
 
 function TmnBufferStream.WriteLn(const S: string): Cardinal;
@@ -311,6 +325,40 @@ begin
   ReadStrings(Value, EndOfLine);
 end;
 
+procedure TmnBufferStream.ReadUntil(const UntilStr: ansistring; out Result: ansistring; var Matched: Boolean);
+var
+  P: PAnsiChar;
+  idx, l: Integer;
+  t: AnsiString;
+  us: PAnsiChar;
+begin
+  Idx := 1;
+  Matched := False;
+  l := Length(UntilStr);
+  us := PAnsiChar(UntilStr);
+  Result := '';
+  while not Matched and CheckBuffer do
+  begin
+    P := PAnsiChar(FPos);
+    while P < PAnsiChar(FEnd) do
+    begin
+      if us^ = P^ then
+        Inc(Idx)
+      else
+        us := PAnsiChar(UntilStr);
+      Inc(P);
+      if Idx > l then
+      begin
+        Matched := True;
+        break;
+      end;
+    end;
+    SetString(t, PAnsiChar(FPos), P - PAnsiChar(FPos));
+    Result := Result + t;
+    FPos := PByte(P);
+  end;
+end;
+
 function TmnBufferStream.Write(const Buffer; Count: Integer): Longint;
 begin
   Result := DoWrite(Buffer, Count);//TODO must be buffered
@@ -324,6 +372,23 @@ end;
 procedure TmnBufferStream.WriteCommand(const Command, Format: string; const Params: array of const);
 begin
   WriteCommand(Command, SysUtils.Format(Format, Params));
+end;
+
+function TmnBufferStream.ReadLn(var S: ansistring; vEOL: AnsiString): Boolean;
+var
+  aMatched: Boolean;
+  r: AnsiString;
+begin
+  Result := not EOF;
+  if Result then
+  begin
+    aMatched := False;
+    ReadUntil(AnsiString(vEOL), r, aMatched);
+    if not aMatched and EOF and (r = '') then
+      Result := False
+    else if aMatched and (r <> '') then
+      S := LeftStr(r, Length(r) - Length(vEOL));
+  end;
 end;
 
 { TmnBufferStream }
