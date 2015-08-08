@@ -1163,8 +1163,14 @@ begin
 end;
 
 function TmncFields.Add(Index: Integer; Value: Variant): TmncField;
+var
+  aColumn: TmncColumn;
 begin
-  Result := Add(Columns[Index], Value);
+  if Index < Columns.Count then
+    aColumn := Columns[Index]
+  else
+    aColumn := nil; //TODO bad idea, need more check
+  Result := Add(aColumn, Value);
 end;
 
 function TmncFields.FieldByName(vName: string): TmncField;

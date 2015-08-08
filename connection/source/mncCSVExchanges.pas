@@ -25,6 +25,14 @@ type
 }
   TCSVIEHeader = (hdrNone, hdrNormal, hdrIgnore);
 
+
+  type
+    TFieldInfo = record
+      Name: string;
+      Param: TmncCustomField;
+    end;
+
+    TFieldsInfo = array of TFieldInfo;
   { TmncCSVIE }
 
   TmncCSVIE = class(TmncObject)
@@ -77,6 +85,7 @@ type
   private
     FBufferSize: Integer;
   protected
+    function Apply(Fields: TFieldsInfo; Index:Integer; Value:string): Boolean; virtual;
   public
     constructor Create;
     procedure DoExecute; override;
@@ -94,13 +103,18 @@ end;
 
 { TmncCSVImport }
 
-type
-  TFieldInfo = record
-    Name: string;
-    Param: TmncCustomField;
+function TmncCSVImport.Apply(Fields: TFieldsInfo; Index: Integer; Value: string): Boolean;
+begin
+  if Value = '' then
+    Fields[Index].Param.Clear
+  else
+  begin
+    if FANSIContents then
+      Fields[Index].Param.AsText := AnsiToUtf8(Value)
+    else
+      Fields[Index].Param.AsText := Value;
   end;
-
-  TFieldsInfo = array of TFieldInfo;
+end;
 
 constructor TmncCSVImport.Create;
 begin
@@ -275,15 +289,7 @@ begin
           //Ignore extra columns found in CSV file
           if (i < Length(Fields)) and (Fields[i].Param <> nil) then
           begin
-            if s = '' then
-              Fields[i].Param.Clear
-            else
-            begin
-              if FANSIContents then
-                Fields[i].Param.AsText := AnsiToUtf8(s)
-              else
-                Fields[i].Param.AsText := s;
-            end;
+            Apply(Fields, i, s);
           end;
           Inc(i);
         end;

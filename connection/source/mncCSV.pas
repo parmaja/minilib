@@ -237,7 +237,7 @@ begin
     try
       for i := 0 to aStrings.Count - 1 do
       begin
-        Columns.Add(i, DequoteStr(aStrings[i]), dtString);
+        Columns.Add(i, DequoteStr(trim(aStrings[i])), dtString);
       end;
     finally
       aStrings.Free;
@@ -259,7 +259,7 @@ begin
     aRecord := CreateFields(Columns);
     i := 0;
     try
-      while (i < aStrings.Count) and (i < Columns.Count) do
+      while (i < aStrings.Count) {and (i < Columns.Count)} do //TODO check it
       begin
         aRecord.Add(i, DequoteStr(aStrings[i]));
         Inc(i); 
@@ -314,7 +314,7 @@ begin
   for i := 0 to Columns.Count - 1 do
   begin
     if s <> '' then
-      s := s + #9;
+      s := s + Session.SpliteChar;
     s := s + Columns[i].Name;
   end;
   WriteLine(s);
