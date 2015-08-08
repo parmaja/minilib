@@ -252,9 +252,14 @@ var
   procedure WriteCharProp;
   var
     Value: Char;
+    S: string;
   begin
     Value := Char(GetOrdProp(Instance, PropInfo));
-    WriteValue(Value);
+    if Value < #32 then
+      S := '#' + IntToStr(Ord(Value))
+    else
+      S := Value;
+    WriteValue(S);
   end;
 
   procedure WriteInt64Prop;
@@ -286,7 +291,7 @@ var
     Value: ansistring;
   begin
     Value := GetStrProp(Instance, PropInfo);
-    WriteValue(Value);
+    WriteValue(Value);//TODO: Do we need to escape string for /n/r ?
   end;
 
   procedure WriteVariantProp;

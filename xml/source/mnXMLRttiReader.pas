@@ -340,7 +340,12 @@ var
     Data: Longint;
   begin
     if Value <> '' then
-      Data := Ord(Value[1])
+    begin
+      if (Length(Value)>1) and (Value[1]='#') then
+        Data := StrToIntDef(Copy(Value, 2, MaxInt), 0)
+      else
+        Data := Ord(Value[1]);
+    end
     else
       Data := 0;
     SetOrdProp(Instance, PropInfo, Data);
