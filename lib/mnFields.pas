@@ -271,7 +271,10 @@ end;
 
 function TmnCustomField.GetAsString: string;
 begin
-  Result := Value;
+  if VarIsNull(Value) then
+    Result := ''
+  else
+    Result := Value;
 end;
 
 function TmnCustomField.GetAsTime: TDateTime;
