@@ -156,6 +156,11 @@ type
     function GetAsCurrency: Currency; override;
   end;
 
+  TmnrToPageTotalCell = class(TmnrCurrencyReportCell)
+  protected
+    function GetAsCurrency: Currency; override;
+  end;
+
   TmnrCurrencyLayout = class(TmnrIntegerLayout)
   protected
     function CreateCell(vRow: TmnrRow): TmnrCell; override;
@@ -814,6 +819,13 @@ end;
 function TmnrPageTotalCell.GetAsCurrency: Currency;
 begin
   Result := DesignCell.PageTotal;
+end;
+
+{ TmnrToPageTotalCell }
+
+function TmnrToPageTotalCell.GetAsCurrency: Currency;
+begin
+  Result := DesignCell.ToPageTotal;
 end;
 
 initialization

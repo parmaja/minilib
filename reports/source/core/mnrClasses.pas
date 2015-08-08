@@ -60,10 +60,11 @@ type
 
   TmnrRowArray = array of TmnrRow;
 
+  TmnrSumStringIndex = (ssiTotal, ssiPageTotal, ssiToPageTotal);
   TmnrSectionLoopWay = (slCustom, slwAuto, slwSingle, slwMulti);
   TmnrFetchMode = (fmFirst, fmNext);
   TmnrAcceptMode = (acmAccept, acmSkip, acmSkipAll, acmRepeat, acmEof);
-  TmnrSectionClassID = (sciReport, sciHeaderReport, sciHeaderPage, sciHeaderDetails, sciDetails, sciFooterDetails, sciFooterPage, sciFooterReport);
+  TmnrSectionClassID = (sciReport, sciHeaderReport, sciHeaderPage, sciHeaderTitles, sciHeaderDetails, sciDetailTitles, sciDetails, sciFooterDetails, sciFooterPage, sciFooterReport);
   TmnrSectionClassIDs = set of TmnrSectionClassID;
 
   TmnrFetch = record
@@ -368,7 +369,7 @@ type
     property First: TmnrDesignCell read GetFirst;
     property Last: TmnrDesignCell read GetLast;
     property ByIndex[vIndex: Integer]: TmnrDesignCell read GetByIndex;
-    function Find(const vName: string): TmnrDesignCell;
+    function FindName(const vName: string): TmnrDesignCell;
     procedure ClearSubTotals;
   end;
 
@@ -387,7 +388,7 @@ type
     property Last: TmnrDesignRow read GetLast;
     property Section: TmnrSection read GetSection;
     property ByIndex[vIndex: Integer]: TmnrDesignRow read GetByIndex;
-    function Find(const vName: string): TmnrDesignCell;
+    function FindName(const vName: string): TmnrDesignCell;
 
     procedure ClearSubTotals;
   end;
@@ -480,6 +481,7 @@ type
     function DoFetch(var vParams: TmnrFetch): TmnrAcceptMode; virtual;
     procedure DoAppendDetailTotals(vSection: TmnrSection);
     procedure DoAppendPageTotals(vSection: TmnrSection);
+    procedure DoAppendToPageTotals(vSection: TmnrSection);
     procedure DoAppendReportTotals(vSection: TmnrSection);
     procedure DoAppendTitles(vSection: TmnrSection);
     function DoCreateDesignRows: TmnrDesignRows; virtual;
@@ -517,7 +519,8 @@ type
     property OnFetch: TOnFetch read FOnFetch write FOnFetch;
 
     procedure FillNow(vParams: TmnrFetch; vIndex: Integer; vReference: TmnrReferencesRow); virtual;
-    function FindDesignCell(const vName: string): TmnrDesignCell;
+    function FindDesignCellName(const vName: string): TmnrDesignCell;
+    function FindDesignCellGuid(const vGuid: string): TmnrDesignCell;
 
     procedure AddTitles;
     procedure AddReportTitles;
@@ -550,7 +553,7 @@ type
     function RegisterSection(const vName, vCaption: string; const vClass: TmnrSectionClassID; const vID: Integer = 0; vOnFetch: TOnFetch = nil; vLoopWay: TmnrSectionLoopWay = slwAuto): TmnrSection;
     property ByName[const vName: string]: TmnrSection read GetByName;
     function Find(const vName: string): TmnrSection;
-    function FindDesignCell(const vName: string): TmnrDesignCell;
+    function FindDesignCellName(const vName: string): TmnrDesignCell;
 
     property Report: TmnrCustomReport read GetReport;
     property First: TmnrSection read GetFirst;
@@ -626,7 +629,7 @@ type
     //Apply param to report to use it in Queries or assign it to Variables
     //procedure SetParams(vParams: TmnrParams); virtual;
     //Collect params from current record in report to send it to another report
-    function SumString: string; virtual;
+    function SumString(const vIndex: TmnrSumStringIndex): string; virtual;
 
     procedure Created; virtual; //after create
     procedure Start; virtual; //after build report only in generate
@@ -839,8 +842,8 @@ procedure TmnrCustomReport.InitSections(vSections: TmnrSections);
 begin
   FHeaderPage   := FSections.RegisterSection('HeaderPage', '—«” «·’›Õ…', sciHeaderPage, ID_SECTION_HEADERPage);
   FHeaderReport := FSections.RegisterSection('HeaderReport', '—«” «· ﬁ—Ì—', sciHeaderReport, ID_SECTION_HEADERREPORT);
-  FReportTitles := FSections.RegisterSection('ReportTitles', '⁄‰«ÊÌ‰ «· ﬁ—Ì—', sciHeaderReport);
-  FDetailTitles := FSections.RegisterSection('DetailTitles', '⁄‰«ÊÌ‰ «· ›’Ì·', sciDetails, 0, nil, slwSingle);
+  FReportTitles := FSections.RegisterSection('ReportTitles', '⁄‰«ÊÌ‰ «· ﬁ—Ì—', sciHeaderTitles);
+  FDetailTitles := FSections.RegisterSection('DetailTitles', '⁄‰«ÊÌ‰ «· ›’Ì·', sciDetailTitles, 0, nil, slwSingle);
 
   DoInitSections(vSections); //for header and details
 
@@ -1116,9 +1119,14 @@ procedure TmnrCustomReport.Start;
 begin
 end;
 
-function TmnrCustomReport.SumString: string;
+function TmnrCustomReport.SumString(const vIndex: TmnrSumStringIndex): string;
 begin
-  Result := '«·„Ã„Ê⁄';
+  case vIndex of
+    ssiPageTotal: Result := '„Ã„Ê⁄ «·’›ÕÂ';
+    ssiToPageTotal: Result := '«·„Ã„Ê⁄ «· —«ﬂ„Ì';
+    else
+      Result := '«·„Ã„Ê⁄';
+  end;
 end;
 
 { TmnrCustomReportRowNode }
@@ -1189,6 +1197,7 @@ begin
     while r <> nil do
     begin
       aRow := Report.CreateNewRow(vSection);
+      aRow.FLocked := True;
       aRow.FDesignRow := r;
       try
         d := r.First;
@@ -1199,7 +1208,7 @@ begin
           begin
             f := False;
             c := TmnrTextReportCell.Create(aRow);
-            c.AsString := Report.SumString;
+            c.AsString := Report.SumString(ssiTotal);
           end
           else
           begin
@@ -1245,6 +1254,7 @@ begin
     while r <> nil do
     begin
       aRow := Report.CreateNewRow(vSection);
+      aRow.FLocked := True;
       aRow.FDesignRow := r;
       try
         d := r.First;
@@ -1255,7 +1265,7 @@ begin
           begin
             f := False;
             c := TmnrTextReportCell.Create(aRow);
-            c.AsString := Report.SumString;
+            c.AsString := Report.SumString(ssiPageTotal);
           end
           else
           begin
@@ -1298,6 +1308,7 @@ begin
     while r <> nil do
     begin
       aRow := Report.CreateNewRow(vSection);
+      aRow.FLocked := True;
       aRow.FDesignRow := r;
       try
         d := r.First;
@@ -1308,7 +1319,7 @@ begin
           begin
             f := False;
             c := TmnrTextReportCell.Create(aRow);
-            c.AsString := Report.SumString;
+            c.AsString := Report.SumString(ssiTotal);
           end
           else
           begin
@@ -1379,6 +1390,60 @@ begin
       begin
         FRow := aRow;
       end;
+      r := r.Next;
+    end;
+  end;
+end;
+
+procedure TmnrSection.DoAppendToPageTotals(vSection: TmnrSection);
+var
+  r: TmnrDesignRow;
+  d: TmnrDesignCell;
+  l: TmnrLayout;
+  aRow: TmnrRow;
+  f: Boolean; //first
+  c: TmnrCell;
+begin
+  r := DesignRows.First;
+  if r <> nil then
+  begin
+    f := True;
+    while r <> nil do
+    begin
+      aRow := Report.CreateNewRow(vSection);
+      aRow.FLocked := True;
+      aRow.FDesignRow := r;
+      try
+        d := r.First;
+        while d <> nil do
+        begin
+          l := d.Layout;
+          if f and not d.AppendTotals then
+          begin
+            f := False;
+            c := TmnrTextReportCell.Create(aRow);
+            c.AsString := Report.SumString(ssiToPageTotal);
+          end
+          else
+          begin
+            c := TmnrToPageTotalCell.Create(aRow);
+          end;
+          c.FDesignCell := d;
+          c.FReference := d.Reference;
+
+          d := d.Next;
+        end;
+      except
+        aRow.Free;
+        raise;
+      end;
+      //todo make arow pass as var and if report handle row and free it then do nothing
+      Report.HandleNewRow(aRow);
+      with vSection.Items.Add do
+      begin
+        FRow := aRow;
+      end;
+
       r := r.Next;
     end;
   end;
@@ -1491,9 +1556,14 @@ begin
   end;
 end;
 
-function TmnrSection.FindDesignCell(const vName: string): TmnrDesignCell;
+function TmnrSection.FindDesignCellName(const vName: string): TmnrDesignCell;
 begin
-  Result := DesignRows.Find(vName)
+  Result := DesignRows.FindName(vName)
+end;
+
+function TmnrSection.FindDesignCellGuid(const vGuid: string): TmnrDesignCell;
+begin
+  //Result := DesignRows.Find(vGuid)
 end;
 
 function TmnrSection.GetCaption: string;
@@ -1716,7 +1786,10 @@ begin
   while s <> nil do
   begin
     if s.AppendPageTotals then
+    begin
       s.DoAppendPageTotals(vSection);
+      s.DoAppendToPageTotals(vSection);
+    end;
     s.Sections.DoAppendPageTotals(vSection);
     s := s.Next;
   end;
@@ -1760,7 +1833,7 @@ begin
   end;
 end;
 
-function TmnrSections.FindDesignCell(const vName: string): TmnrDesignCell;
+function TmnrSections.FindDesignCellName(const vName: string): TmnrDesignCell;
 var
   s: TmnrSection;
 begin
@@ -1768,12 +1841,12 @@ begin
   s := First;
   while s <> nil do
   begin
-    Result := s.DesignRows.Find(vName);
+    Result := s.DesignRows.FindName(vName);
     if Result<>nil then
       Break
     else
     begin
-      Result := s.Sections.FindDesignCell(vName);
+      Result := s.Sections.FindDesignCellName(vName);
       if Result <> nil then
         Break
     end;
@@ -2551,7 +2624,7 @@ begin
   end;
 end;
 
-function TmnrDesignRow.Find(const vName: string): TmnrDesignCell;
+function TmnrDesignRow.FindName(const vName: string): TmnrDesignCell;
 begin
   Result := First;
   while Result<>nil do
@@ -2641,7 +2714,7 @@ begin
   FSection := vSection;
 end;
 
-function TmnrDesignRows.Find(const vName: string): TmnrDesignCell;
+function TmnrDesignRows.FindName(const vName: string): TmnrDesignCell;
 var
   aRow: TmnrDesignRow;
 begin
@@ -2649,7 +2722,7 @@ begin
   Result := nil;
   while aRow<>nil do
   begin
-    Result := aRow.Find(vName);
+    Result := aRow.FindName(vName);
     if Result<>nil then
       Break
     else
