@@ -14,7 +14,7 @@ interface
 
 uses
   SysUtils, Graphics, Controls,
-  SynEdit, SynHighlighterXHTML, Classes, SynEditTypes, SynEditHighlighter, SynHighlighterHashEntries;
+  SynEdit, Classes, SynEditTypes, SynEditHighlighter, SynHighlighterHashEntries, SynHighlighterMultiProc, SynHighlighterXHTML;
 
 type
   THTMLRangeState = (rshtmlText, rshtmlAmpersand, rshtmlComment, rshtmlKeyword, rshtmlParam,
@@ -677,7 +677,7 @@ end;
 procedure THTMLProcessor.InitIdent;
 begin
   inherited;
-  EnumerateKeywords(Ord(tkHTML), sHTMLKeywords, TSynValidStringChars, @DoAddKeyword);
+  EnumerateKeywords(Ord(tkExternal), sHTMLKeywords, TSynValidStringChars, @DoAddKeyword);
   FRange := rshtmlText;
   FAndCode := -1;
 end;

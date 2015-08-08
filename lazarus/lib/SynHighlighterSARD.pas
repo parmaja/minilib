@@ -1,7 +1,6 @@
 unit SynHighlighterSARD;
 {$mode objfpc}{$H+}
 {**
- *  MiniLib project
  *
  *  This file is part of the "Mini Library"
  *

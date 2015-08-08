@@ -1,5 +1,4 @@
 {**
- *  Light PHP Edit project
  *
  *  This file is part of the "Mini Library"
  *
