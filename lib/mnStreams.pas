@@ -68,15 +68,17 @@ type
     function Read(var Buffer; Count: Longint): Longint; override; final;
     function Write(const Buffer; Count: Longint): Longint; override; final;
 
+    procedure ReadUntil(const UntilStr: string; out Result: ansistring; var Matched: Boolean); overload;
 
     function ReadLine(var S: string; const vEOL: string; vExcludeEOL: Boolean = True): Boolean; overload;
     function WriteLine(const S: string; const vEOL: string): Cardinal;
 
     function ReadLine(const vEOL: string): string; overload;
-    function ReadLn: string; overload;
+    function ReadLine: string; overload;
 
-    procedure ReadUntil(const UntilStr: string; out Result: ansistring; var Matched: Boolean); overload;
+    function ReadLn: string; overload;
     function ReadLn(var S: string; ExcludeEOL: Boolean = True): Boolean; overload;
+
     function WriteLn(const S: string): Cardinal; overload;
     {$ifndef FPC} //TODO
     //function for ansi handling
@@ -276,6 +278,14 @@ begin
   Result := '';
   {$endif}
   ReadLine(Result, vEOL);
+end;
+
+function TmnBufferStream.ReadLine: string;
+begin
+  {$ifdef FPC}
+  Result := '';
+  {$endif}
+  ReadLine(Result, EndOfLine);
 end;
 
 procedure TmnBufferStream.WriteCommand(const Command, Params: string);
