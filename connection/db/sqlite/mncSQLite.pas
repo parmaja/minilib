@@ -57,6 +57,7 @@ type
     class function Model: TmncConnectionModel; override;
     function CreateSession: TmncSQLSession; overload; override; 
     procedure Interrupt;
+    procedure Vacuum;
     function GetVersion: string;
     procedure Execute(Command: string); override;
     property Exclusive: Boolean read FExclusive write SetExclusive;
@@ -186,9 +187,9 @@ type
     function CreateParams: TmncParams; override;
     function CreateBinds: TmncBinds; override;
     property Binds: TmncSQLiteBinds read GetBinds;
+  public
     property Connection:TmncSQLiteConnection read GetConnection;
     property Session: TmncSQLiteSession read GetSession write SetSession;
-  public
     procedure Clear; override;
     function GetRowsChanged: Integer; virtual;
     function GetLastInsertID: Int64;
@@ -402,6 +403,11 @@ end;
 procedure TmncSQLiteConnection.Interrupt;
 begin
   sqlite3_interrupt(DBHandle);
+end;
+
+procedure TmncSQLiteConnection.Vacuum;
+begin
+  Execute('vacuum');
 end;
 
 function TmncSQLiteConnection.GetVersion: string;
@@ -675,6 +681,7 @@ var
   c: Currency;
   t: Integer;
   t64: Int64;
+  v: Variant;
 begin
   for i := 0 to Binds.Count - 1 do
   begin
@@ -722,10 +729,15 @@ begin
         begin
           if not Binds[i].BufferAllocated then //TODO test after  remove this line, i think it is not useful
           begin
-            s := VarToStrDef(Binds[i].Param.Value, '');
+            v := Binds[i].Param.Value;
+            if TVarData(v).vType = varNull then
+              s := ''
+            else
+              s := v + #0;
             Binds[i].AllocBuffer(PChar(s)^, Length(s));
           end;
-          CheckError(sqlite3_bind_text(FStatment, i + 1, PChar(Binds[i].Buffer), Binds[i].BufferSize, nil));
+          CheckError(sqlite3_bind_text(FStatment, i + 1, PChar(Binds[i].Buffer), -1, nil)); //up to #0
+          //CheckError(sqlite3_bind_text(FStatment, i + 1, PChar(Binds[i].Buffer), Binds[i].BufferSize, nil)); not work with empty string not null
         end;
       end;
     end;

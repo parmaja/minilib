@@ -231,6 +231,7 @@ type
     property BlobType: TmncBlobType read FBlobType write FBlobType default blobBinary;
     property DataType: TmncDataType read FDataType default dtUnknown;
   public
+    function IsNumber: Boolean;
   published
   end;
 
@@ -1471,6 +1472,11 @@ begin
     AsHex := AValue
   else
     inherited SetAsText(AValue);
+end;
+
+function TmncItem.IsNumber: Boolean;
+begin
+  Result := DataType in [dtInteger, dtCurrency, dtFloat];
 end;
 
 { TmncItems }
