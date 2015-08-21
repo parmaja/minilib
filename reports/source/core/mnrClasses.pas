@@ -175,10 +175,12 @@ type
     function GetFirst: TmnrRow;
     function GetLast: TmnrRow;
     function GetByIndex(vIndex: Integer): TmnrRow;
+    procedure SetFirst(const Value: TmnrRow);
+    procedure SetLast(const Value: TmnrRow);
   public
     function Add: TmnrRow;
-    property First: TmnrRow read GetFirst;
-    property Last: TmnrRow read GetLast;
+    property First: TmnrRow read GetFirst write SetFirst;
+    property Last: TmnrRow read GetLast write SetLast;
     property ByIndex[vIndex: Integer]: TmnrRow read GetByIndex;
   end;
 
@@ -298,6 +300,8 @@ type
     FLockCount: Integer;
     FCount: Integer;
     FReference: TmnrReference;
+    FHidden: Boolean;
+    function GetWidth: Integer;
   protected
     function GetNext: TmnrDesignCell;
     function GetPrior: TmnrDesignCell;
@@ -340,9 +344,10 @@ type
     procedure UnLock;
     function Locked: Boolean;
     procedure ScaleCell(vCell: TmnrCell); virtual;
+    property Hidden: Boolean read FHidden write FHidden;
   published
     property Name: string read FName write SetName;
-    property Width: Integer read FWidth write SetWidth default DEFAULT_CELL_WIDTH;
+    property Width: Integer read GetWidth write SetWidth default DEFAULT_CELL_WIDTH;
     property Number: Integer read FNumber write FNumber default 0; //used in exploded cells
     property AppendTotals: Boolean read FAppendTotals write FAppendTotals default False;
   end;
@@ -597,7 +602,6 @@ type
 
   TmnrCustomReport = class(TPersistent) //belal: must be tobject but {$m+) not working need fix 
   private
-    FWorking: Boolean;
     FCanceled: Boolean;
     FItems: TmnrRows;
     FSections: TmnrSections;
@@ -618,6 +622,7 @@ type
     function GetProfiler: TmnrProfiler;
     function GetReportName: string;
   protected
+    FWorking: Boolean;
     function Canceled: Boolean;
     procedure HandleNewRow(vRow: TmnrRowNode); virtual;
     procedure DoInitSections(vSections: TmnrSections); virtual;
@@ -1161,6 +1166,16 @@ begin
   Result := TmnrRow(inherited Last);
 end;
 
+procedure TmnrRows.SetFirst(const Value: TmnrRow);
+begin
+  inherited SetFirst(Value);
+end;
+
+procedure TmnrRows.SetLast(const Value: TmnrRow);
+begin
+  inherited SetLast(Value);
+end;
+
 { TmnrSection }
 
 function TmnrSection.DoCreateDesignRows: TmnrDesignRows;
@@ -1663,6 +1678,8 @@ begin
   while s <> nil do
   begin
     s.Items.Clear;
+    s.ReferencesRows.Clear;
+    s.FHitAppendReportTitles := False;
     if s.Sections<>nil then s.Sections.ClearItems;
 
     s := s.Next;
@@ -2555,6 +2572,14 @@ begin
     Result := Row.Section
   else
     Result := nil;
+end;
+
+function TmnrDesignCell.GetWidth: Integer;
+begin
+  if Hidden then
+    Result := 0
+  else
+    Result := FWidth;
 end;
 
 procedure TmnrDesignCell.Lock;
