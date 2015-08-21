@@ -71,16 +71,21 @@ type
     procedure ReadUntil(const UntilStr: string; out Result: ansistring; var Matched: Boolean); overload;
 
     function ReadLine(var S: string; const vEOL: string; vExcludeEOL: Boolean = True): Boolean; overload;
+    function WriteLine(const S: string; const vEOL: string): Cardinal;
+
     function ReadLine(const vEOL: string): string; overload;
+    function ReadLine: string; overload;
+
     function ReadLn: string; overload;
     function ReadLn(var S: string; ExcludeEOL: Boolean = True): Boolean; overload;
-    function WriteLine(const S: string; const vEOL: string): Cardinal;
+
     function WriteLn(const S: string): Cardinal; overload;
+    {$ifndef FPC} //TODO
     //function for ansi handling
-    function WriteLn(const S: AnsiString): Cardinal; overload;
     procedure ReadUntil(const UntilStr: ansistring; out Result: ansistring; var Matched: Boolean); overload;
     function ReadLn(var S: AnsiString; vEOL: AnsiString): Boolean; overload;
-
+    function WriteLn(const S: AnsiString): Cardinal; overload;
+    {$endif}
 
     procedure ReadCommand(var Command: string; var Params: string);
 
@@ -197,14 +202,6 @@ begin
   Result := WriteString(S + vEOL);
 end;
 
-function TmnBufferStream.WriteLn(const S: AnsiString): Cardinal;
-var
-  t: AnsiString;
-begin
-  t := s + AnsiString(EndOfLine);
-  Result := Write(Pointer(t)^, Length(t));
-end;
-
 function TmnBufferStream.WriteLn(const S: string): Cardinal;
 begin
   Result := WriteLine(S, EndOfLine);
@@ -283,6 +280,14 @@ begin
   ReadLine(Result, vEOL);
 end;
 
+function TmnBufferStream.ReadLine: string;
+begin
+  {$ifdef FPC}
+  Result := '';
+  {$endif}
+  ReadLine(Result, EndOfLine);
+end;
+
 procedure TmnBufferStream.WriteCommand(const Command, Params: string);
 begin
   if Params <> '' then
@@ -325,6 +330,22 @@ begin
   ReadStrings(Value, EndOfLine);
 end;
 
+function TmnBufferStream.Write(const Buffer; Count: Integer): Longint;
+begin
+  Result := DoWrite(Buffer, Count);//TODO must be buffered
+end;
+
+procedure TmnBufferStream.WriteCommand(const Command: string);
+begin
+  WriteCommand(Command, '');
+end;
+
+procedure TmnBufferStream.WriteCommand(const Command, Format: string; const Params: array of const);
+begin
+  WriteCommand(Command, SysUtils.Format(Format, Params));
+end;
+
+{$ifndef FPC}
 procedure TmnBufferStream.ReadUntil(const UntilStr: ansistring; out Result: ansistring; var Matched: Boolean);
 var
   P: PAnsiChar;
@@ -359,21 +380,6 @@ begin
   end;
 end;
 
-function TmnBufferStream.Write(const Buffer; Count: Integer): Longint;
-begin
-  Result := DoWrite(Buffer, Count);//TODO must be buffered
-end;
-
-procedure TmnBufferStream.WriteCommand(const Command: string);
-begin
-  WriteCommand(Command, '');
-end;
-
-procedure TmnBufferStream.WriteCommand(const Command, Format: string; const Params: array of const);
-begin
-  WriteCommand(Command, SysUtils.Format(Format, Params));
-end;
-
 function TmnBufferStream.ReadLn(var S: ansistring; vEOL: AnsiString): Boolean;
 var
   aMatched: Boolean;
@@ -390,6 +396,15 @@ begin
       S := LeftStr(r, Length(r) - Length(vEOL));
   end;
 end;
+
+function TmnBufferStream.WriteLn(const S: AnsiString): Cardinal;
+var
+  t: AnsiString;
+begin
+  t := s + AnsiString(EndOfLine);
+  Result := Write(Pointer(t)^, Length(t));
+end;
+{$endif}
 
 { TmnBufferStream }
 

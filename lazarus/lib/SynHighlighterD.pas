@@ -1,4 +1,4 @@
-unit PHPProcessor;
+unit SynHighlighterD;
 {$mode objfpc}{$H+}
 {**
  *
@@ -11,7 +11,7 @@ unit PHPProcessor;
  *}
 
 {
-  http://flatdev.republika.pl/php-functions-lastest.zip
+
 }
 
 interface
@@ -19,23 +19,23 @@ interface
 uses
   Classes, SysUtils,
   SynEdit, SynEditTypes,
-  SynEditHighlighter, SynHighlighterHashEntries, SynHighlighterMultiProc, SynHighlighterXHTML;
+  SynEditHighlighter, SynHighlighterHashEntries, SynHighlighterMultiProc;
 
 type
-  TPHPRangeState = (rsphpUnknown, rsphpComment, rsphpDocument, rsphpStringSQ, rsphpStringDQ, rsphpVarExpansion);
+  TDRangeState = (rsDUnknown, rsDComment, rsDDocument, rsDStringSQ, rsDStringDQ);
 
-  { TPHPProcessor }
+  { TDProcessor }
 
-  TPHPProcessor = class(TSynProcessor)
+  TDProcessor = class(TSynProcessor)
   protected
-    FRange: TPHPRangeState;
+    FRange: TDRangeState;
     //LastRange: Bad Idea but let us try
-    LastRange: TPHPRangeState;
+    LastRange: TDRangeState;
     function GetIdentChars: TSynIdentChars; override;
     procedure ResetRange; override;
     function GetRange: Byte; override;
     procedure SetRange(Value: Byte); override;
-    procedure SetRange(Value: TPHPRangeState); overload;
+    procedure SetRange(Value: TDRangeState); overload;
     function KeyHash(ToHash: PChar): Integer; override;
     procedure InternalCommentProc;
     function GetEndOfLineAttribute: TSynHighlighterAttributes; override;
@@ -49,7 +49,6 @@ type
     procedure StringProc;
     procedure StringSQProc;
     procedure StringDQProc;
-    procedure VarExpansionProc;
     procedure EqualProc;
     procedure IdentProc;
     procedure CRProc;
@@ -69,22 +68,58 @@ type
     procedure SetLine(const NewValue: string; LineNumber: integer); override;
     procedure Next; override;
 
-    property Range: TPHPRangeState read FRange;
+    property Range: TDRangeState read FRange;
 
     procedure InitIdent; override;
     procedure MakeMethodTables; override;
     procedure MakeIdentTable; override;
   end;
 
+  { TSynDSyn }
+
+  TSynDSyn = class(TSynMultiProcSyn)
+  private
+  protected
+    function GetIdentChars: TSynIdentChars; override;
+    function GetSampleSource: string; override;
+  public
+    class function GetLanguageName: string; override;
+  public
+    constructor Create(AOwner: TComponent); override;
+    procedure InitProcessors; override;
+  published
+  end;
+
 const
-  {$INCLUDE 'PHPKeywords.inc'}
+
+  SYNS_LangD = 'D';
+  SYNS_FilterD = 'D Lang Files (*.d;*.dd)|*.d;*.dd';
+
+  cDSample =
+      'import std.stdio;'#13#10+
+      '// Computes average line length for standard input.'#13#10+
+      ''#13#10+
+      'void main()'#13#10+
+      '{'#13#10+
+      '    ulong lines = 0;'#13#10+
+      '    double sumLength = 0;'#13#10+
+      '    foreach (line; stdin.byLine())'#13#10+
+      '    {'#13#10+
+      '        ++lines;'#13#10+
+      '        sumLength += line.length;'#13#10+
+      '    }'#13#10+
+      '    writeln("Average line length: ",'#13#10+
+      '        lines ? sumLength / lines : 0);'#13#10+
+      '}'#13#10;
+
+{$INCLUDE 'DKeywords.inc'}
 
 implementation
 
 uses
   mnUtils;
 
-procedure TPHPProcessor.MakeIdentTable;
+procedure TDProcessor.MakeIdentTable;
 var
   c: char;
 begin
@@ -105,7 +140,7 @@ begin
     HashCharTable[c] := 2 + Ord(c) - Ord('A');
 end;
 
-procedure TPHPProcessor.AndSymbolProc;
+procedure TDProcessor.AndSymbolProc;
 begin
   Parent.FTokenID := tkSymbol;
   Inc(Parent.Run);
@@ -113,7 +148,7 @@ begin
     Inc(Parent.Run);
 end;
 
-procedure TPHPProcessor.HashLineCommentProc;
+procedure TDProcessor.HashLineCommentProc;
 begin
   Parent.FTokenID := tkComment;
   Inc(Parent.Run);
@@ -122,7 +157,7 @@ begin
   until Parent.FLine[Parent.Run] in [#0, #10, #13];
 end;
 
-procedure TPHPProcessor.StringProc;
+procedure TDProcessor.StringProc;
 
   function IsEscaped: boolean;
   var
@@ -138,7 +173,7 @@ var
   iCloseChar: char;
 begin
   Parent.FTokenID := tkString;
-  if Range = rsphpStringSQ then
+  if Range = rsDStringSQ then
     iCloseChar := ''''
   else
     iCloseChar := '"';
@@ -146,29 +181,15 @@ begin
   begin
     if (Parent.FLine[Parent.Run] = iCloseChar) and (not IsEscaped) then
     begin
-      SetRange(rsphpUnKnown);
+      SetRange(rsDUnKnown);
       inc(Parent.Run);
       break;
-    end;
-    if (iCloseChar = '"') and (Parent.FLine[Parent.Run] = '$') and
-       ((Parent.FLine[Parent.Run + 1] = '{') or Identifiers[Parent.FLine[Parent.Run + 1]]) then
-    begin
-      if (Parent.Run > 1) and (Parent.FLine[Parent.Run - 1] = '{') then { complex syntax }
-        Dec(Parent.Run);
-      if not IsEscaped then
-      begin
-        { break the token to process the variable }
-        SetRange(rsphpVarExpansion);
-        break;
-      end
-      else if Parent.FLine[Parent.Run] = '{' then
-        Inc(Parent.Run); { restore Run if we previously deincremented it }
     end;
     Inc(Parent.Run);
   end;
 end;
 
-procedure TPHPProcessor.CRProc;
+procedure TDProcessor.CRProc;
 begin
   Parent.FTokenID := tkSpace;
   Inc(Parent.Run);
@@ -176,7 +197,7 @@ begin
     Inc(Parent.Run);
 end;
 
-procedure TPHPProcessor.EqualProc;
+procedure TDProcessor.EqualProc;
 begin
   Parent.FTokenID := tkSymbol;
   Inc(Parent.Run);
@@ -184,7 +205,7 @@ begin
     Inc(Parent.Run);
 end;
 
-procedure TPHPProcessor.GreaterProc;
+procedure TDProcessor.GreaterProc;
 begin
   Parent.FTokenID := tkSymbol;
   Inc(Parent.Run);
@@ -192,7 +213,7 @@ begin
     Inc(Parent.Run);
 end;
 
-procedure TPHPProcessor.IdentProc;
+procedure TDProcessor.IdentProc;
 begin
   Parent.FTokenID := IdentKind((Parent.FLine + Parent.Run));
   inc(Parent.Run, FStringLen);
@@ -206,13 +227,13 @@ begin
       inc(Parent.Run);
 end;
 
-procedure TPHPProcessor.LFProc;
+procedure TDProcessor.LFProc;
 begin
   Parent.FTokenID := tkSpace;
   inc(Parent.Run);
 end;
 
-procedure TPHPProcessor.LowerProc;
+procedure TDProcessor.LowerProc;
 begin
   Parent.FTokenID := tkSymbol;
   Inc(Parent.Run);
@@ -227,7 +248,7 @@ begin
   end;
 end;
 
-procedure TPHPProcessor.MinusProc;
+procedure TDProcessor.MinusProc;
 begin
   Parent.FTokenID := tkSymbol;
   Inc(Parent.Run);
@@ -235,12 +256,12 @@ begin
     Inc(Parent.Run);
 end;
 
-procedure TPHPProcessor.NullProc;
+procedure TDProcessor.NullProc;
 begin
   Parent.FTokenID := tkNull;
 end;
 
-procedure TPHPProcessor.NumberProc;
+procedure TDProcessor.NumberProc;
 begin
   inc(Parent.Run);
   Parent.FTokenID := tkNumber;
@@ -255,7 +276,7 @@ begin
   end;
 end;
 
-procedure TPHPProcessor.OrSymbolProc;
+procedure TDProcessor.OrSymbolProc;
 begin
   Parent.FTokenID := tkSymbol;
   Inc(Parent.Run);
@@ -263,7 +284,7 @@ begin
     Inc(Parent.Run);
 end;
 
-procedure TPHPProcessor.PlusProc;
+procedure TDProcessor.PlusProc;
 begin
   Parent.FTokenID := tkSymbol;
   Inc(Parent.Run);
@@ -271,7 +292,7 @@ begin
     Inc(Parent.Run);
 end;
 
-procedure TPHPProcessor.SlashProc;
+procedure TDProcessor.SlashProc;
 begin
   Inc(Parent.Run);
   case Parent.FLine[Parent.Run] of
@@ -300,7 +321,7 @@ begin
   end;
 end;
 
-procedure TPHPProcessor.SpaceProc;
+procedure TDProcessor.SpaceProc;
 begin
   Parent.FTokenID := tkSpace;
   repeat
@@ -308,13 +329,13 @@ begin
   until (Parent.FLine[Parent.Run] > #32) or (Parent.FLine[Parent.Run] in [#0, #10, #13]);
 end;
 
-procedure TPHPProcessor.SymbolProc;
+procedure TDProcessor.SymbolProc;
 begin
   Inc(Parent.Run);
   Parent.FTokenID := tkSymbol;
 end;
 
-procedure TPHPProcessor.SymbolAssignProc;
+procedure TDProcessor.SymbolAssignProc;
 begin
   Parent.FTokenID := tkSymbol;
   Inc(Parent.Run);
@@ -322,7 +343,7 @@ begin
     Inc(Parent.Run);
 end;
 
-procedure TPHPProcessor.VariableProc;
+procedure TDProcessor.VariableProc;
 var
   i: integer;
 begin
@@ -334,33 +355,33 @@ begin
   Parent.Run := i;
 end;
 
-procedure TPHPProcessor.UnknownProc;
+procedure TDProcessor.UnknownProc;
 begin
   inc(Parent.Run);
   Parent.FTokenID := tkUnknown;
 end;
 
-procedure TPHPProcessor.SetLine(const NewValue: string; LineNumber: integer);
+procedure TDProcessor.SetLine(const NewValue: string; LineNumber: integer);
 begin
   inherited;
-  LastRange := rsphpUnknown;
+  LastRange := rsDUnknown;
 end;
 
-procedure TPHPProcessor.CommentProc;
+procedure TDProcessor.CommentProc;
 begin
   Parent.FTokenID := tkComment;
-  SetRange(rsphpComment);
+  SetRange(rsDComment);
   InternalCommentProc;
 end;
 
-procedure TPHPProcessor.DocumentProc;
+procedure TDProcessor.DocumentProc;
 begin
   Parent.FTokenID := tkDocument;
-  SetRange(rsphpDocument);
+  SetRange(rsDDocument);
   InternalCommentProc;
 end;
 
-procedure TPHPProcessor.MakeMethodTables;
+procedure TDProcessor.MakeMethodTables;
 var
   I: Char;
 begin
@@ -397,7 +418,7 @@ begin
     end;
 end;
 
-procedure TPHPProcessor.QuestionProc;
+procedure TDProcessor.QuestionProc;
 begin
   Inc(Parent.Run);
   case Parent.FLine[Parent.Run] of
@@ -412,186 +433,81 @@ begin
   end;
 end;
 
-procedure TPHPProcessor.Next;
+procedure TDProcessor.Next;
 begin
   Parent.FTokenPos := Parent.Run;
   case Range of
-    rsphpComment:
+    rsDComment:
     begin
       if (Parent.FLine[Parent.Run] in [#0, #10, #13]) then
         ProcTable[Parent.FLine[Parent.Run]]
       else
         CommentProc;
     end;
-    rsphpDocument:
+    rsDDocument:
     begin
       if (Parent.FLine[Parent.Run] in [#0, #10, #13]) then
         ProcTable[Parent.FLine[Parent.Run]]
       else
         DocumentProc;
     end;
-    rsphpStringSQ, rsphpStringDQ:
+    rsDStringSQ, rsDStringDQ:
       if (Parent.FLine[Parent.Run] in [#0, #10, #13]) then
         ProcTable[Parent.FLine[Parent.Run]]
       else
         StringProc;
-    rsphpVarExpansion:
-      VarExpansionProc;
   else
     ProcTable[Parent.FLine[Parent.Run]];
   end;
 end;
 
-procedure TPHPProcessor.VarExpansionProc;
-type
-  TExpansionSyntax = (esNormal, esComplex, esBrace);
-var
-  iSyntax: TExpansionSyntax;
-  iOpenBraces: integer;
-  iOpenBrackets: integer;
-  iTempRun: integer;
+procedure TDProcessor.StringDQProc;
 begin
-  SetRange(rsphpStringDQ); { var expansion only occurs in double quoted strings }
-  Parent.FTokenID := tkVariable;
-  if Parent.FLine[Parent.Run] = '{' then
-  begin
-    iSyntax := esComplex;
-    Inc(Parent.Run, 2); // skips '{$'
-  end
-  else
-  begin
-    Inc(Parent.Run);
-    if Parent.FLine[Parent.Run] = '{' then
-    begin
-      iSyntax := esBrace;
-      Inc(Parent.Run);
-    end
-    else
-      iSyntax := esNormal;
-  end;
-  if iSyntax in [esBrace, esComplex] then
-  begin
-    iOpenBraces := 1;
-    while Parent.FLine[Parent.Run] <> #0 do
-    begin
-      if Parent.FLine[Parent.Run] = '}' then
-      begin
-        Dec(iOpenBraces);
-        if iOpenBraces = 0 then
-        begin
-          Inc(Parent.Run);
-          break;
-        end;
-      end;
-      if Parent.FLine[Parent.Run] = '{' then
-        Inc(iOpenBraces);
-      Inc(Parent.Run);
-    end;
-  end
-  else
-  begin
-    while Identifiers[Parent.FLine[Parent.Run]] do
-      Inc(Parent.Run);
-    iOpenBrackets := 0;
-    iTempRun := Parent.Run;
-    { process arrays and objects }
-    while Parent.FLine[iTempRun] <> #0 do
-    begin
-      if Parent.FLine[iTempRun] = '[' then
-      begin
-        Inc(iTempRun);
-        if Parent.FLine[iTempRun] = '''' then
-        begin
-          Inc(iTempRun);
-          while (Parent.FLine[iTempRun] <> '''') and (Parent.FLine[iTempRun] <> #0) do
-            Inc(iTempRun);
-          if (Parent.FLine[iTempRun] = '''') and (Parent.fLine[iTempRun + 1] = ']') then
-          begin
-            Inc(iTempRun, 2);
-            Parent.Run := iTempRun;
-            continue;
-          end
-          else
-            break;
-        end
-        else
-          Inc(iOpenBrackets);
-      end
-      else if (Parent.FLine[iTempRun] = '-') and (Parent.FLine[iTempRun + 1] = '>') then
-        Inc(iTempRun, 2)
-      else
-        break;
-
-      if not Identifiers[Parent.FLine[iTempRun]] then
-        break
-      else
-        repeat
-          Inc(iTempRun);
-        until not Identifiers[Parent.FLine[iTempRun]];
-
-      while Parent.FLine[iTempRun] = ']' do
-      begin
-        if iOpenBrackets = 0 then
-          break;
-        Dec(iOpenBrackets);
-        Inc(iTempRun);
-      end;
-      if iOpenBrackets = 0 then
-        Parent.Run := iTempRun;
-    end;
-  end;
-end;
-
-procedure TPHPProcessor.StringDQProc;
-begin
-  SetRange(rsphpStringDQ);
+  SetRange(rsDStringDQ);
   Inc(Parent.Run);
   StringProc;
 end;
 
-procedure TPHPProcessor.StringSQProc;
+procedure TDProcessor.StringSQProc;
 begin
-  SetRange(rsphpStringSQ);
+  SetRange(rsDStringSQ);
   Inc(Parent.Run);
   StringProc;
 end;
 
-function TPHPProcessor.GetRange: Byte;
+function TDProcessor.GetRange: Byte;
 begin
   Result := Byte(Range);
 end;
 
-procedure TPHPProcessor.ResetRange;
+procedure TDProcessor.ResetRange;
 begin
   inherited;
-  SetRange(rsphpUnknown);
-  LastRange := rsphpUnknown;
+  SetRange(rsDUnknown);
+  LastRange := rsDUnknown;
 end;
 
-procedure TPHPProcessor.SetRange(Value: Byte);
+procedure TDProcessor.SetRange(Value: Byte);
 begin
-  SetRange(TPHPRangeState(Value));
+  SetRange(TDRangeState(Value));
 end;
 
-procedure TPHPProcessor.SetRange(Value: TPHPRangeState);
+procedure TDProcessor.SetRange(Value: TDRangeState);
 begin
   if FRange <> Value then
     LastRange := FRange;
   FRange := Value;
 end;
 
-procedure TPHPProcessor.InitIdent;
+procedure TDProcessor.InitIdent;
 begin
   inherited;
-  EnumerateKeywords(Ord(tkKeyword), sPHPControls, TSynValidStringChars, @DoAddKeyword);
-  EnumerateKeywords(Ord(tkKeyword), sPHPKeywords, TSynValidStringChars, @DoAddKeyword);
-  EnumerateKeywords(Ord(tkFunction), sPHPFunctions, TSynValidStringChars, @DoAddKeyword);
-  EnumerateKeywords(Ord(tkValue), sPHPConstants, TSynValidStringChars, @DoAddKeyword);
-  EnumerateKeywords(Ord(tkVariable), sPHPVariables, TSynValidStringChars, @DoAddKeyword);
-  SetRange(rsphpUnknown);
+  EnumerateKeywords(Ord(tkKeyword), sDKeywords, TSynValidStringChars, @DoAddKeyword);
+  EnumerateKeywords(Ord(tkFunction), sDFunctions, TSynValidStringChars, @DoAddKeyword);
+  SetRange(rsDUnknown);
 end;
 
-function TPHPProcessor.KeyHash(ToHash: PChar): Integer;
+function TDProcessor.KeyHash(ToHash: PChar): Integer;
 begin
   Result := 0;
   while ToHash^ in ['_', '0'..'9', 'a'..'z', 'A'..'Z'] do
@@ -602,13 +518,13 @@ begin
   fStringLen := ToHash - fToIdent;
 end;
 
-procedure TPHPProcessor.InternalCommentProc;
+procedure TDProcessor.InternalCommentProc;
 begin
   while not (Parent.FLine[Parent.Run] in [#0, #10, #13]) do
   begin
     if (Parent.FLine[Parent.Run] = '*') and (Parent.FLine[Parent.Run + 1] = '/') then
     begin
-      SetRange(rsphpUnKnown);
+      SetRange(rsDUnKnown);
       Inc(Parent.Run, 2);
       break;
     end;
@@ -616,17 +532,48 @@ begin
   end;
 end;
 
-function TPHPProcessor.GetEndOfLineAttribute: TSynHighlighterAttributes;
+function TDProcessor.GetEndOfLineAttribute: TSynHighlighterAttributes;
 begin
-  if (Range = rsphpDocument) or (LastRange = rsphpDocument) then
+  if (Range = rsDDocument) or (LastRange = rsDDocument) then
     Result := Parent.DocumentAttri
   else
     Result := inherited GetEndOfLineAttribute;
 end;
 
-function TPHPProcessor.GetIdentChars: TSynIdentChars;
+function TDProcessor.GetIdentChars: TSynIdentChars;
 begin
   Result := TSynValidStringChars + ['$'];
+end;
+
+constructor TSynDSyn.Create(AOwner: TComponent);
+begin
+  inherited Create(AOwner);
+  FDefaultFilter := SYNS_FilterD;
+end;
+
+procedure TSynDSyn.InitProcessors;
+begin
+  inherited;
+  Processors.Add(TDProcessor.Create(Self, 'D'));
+
+  Processors.MainProcessor := 'D';
+  Processors.DefaultProcessor := 'D';
+end;
+
+function TSynDSyn.GetIdentChars: TSynIdentChars;
+begin
+  //  Result := TSynValidStringChars + ['&', '#', ';', '$'];
+  Result := TSynValidStringChars + ['&', '#', '$'];
+end;
+
+class function TSynDSyn.GetLanguageName: string;
+begin
+  Result := SYNS_LangD;
+end;
+
+function TSynDSyn.GetSampleSource: string;
+begin
+  Result := cDSample;
 end;
 
 end.

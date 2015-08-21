@@ -354,7 +354,7 @@ begin
       tkInt64:
         Result := IsDefaultInt64Prop;
       tkClass:
-        Result := IsDefaultClassProp;
+        Result := IsDefaultClassProp;//TODO:BUG when published Items of collection to inherited parent items
       tkInterface:
         Result := IsDefaultInterfaceProp;
 {$IFDEF FPC}
