@@ -15,56 +15,46 @@ interface
 
 uses
   SysUtils, Variants, Classes, mnUtils,
-  mncConnections, mncCommons;
+  mncConnections, mncCsv, mncCommons;
 
 type
-{
-  hdrNone: There is no header in export and import files
-  hdrNormal: Header is the first line contain field names
-  hdrIgnore: Header found for import files but ignored, header not exported
-}
-  TCSVIEHeader = (hdrNone, hdrNormal, hdrIgnore);
+  TFieldInfo = record
+    Name: string;
+    Param: TmncCustomField;
+  end;
 
-
-  type
-    TFieldInfo = record
-      Name: string;
-      Param: TmncCustomField;
-    end;
-
-    TFieldsInfo = array of TFieldInfo;
+  TFieldsInfo = array of TFieldInfo;
   { TmncCSVIE }
 
   TmncCSVIE = class(TmncObject)
   private
-    FANSIContents: Boolean;
+    FCSVOptions: TmncCSVOptions;
     FCount: Integer;
-    FEndOfLine: string;
-    FDelimiter: Char;
-    FEscapeChar: Char;
-    FHeader: TCSVIEHeader;
-    FLimit: Integer;
-    FQuoteChar: Char;
     FCommand: TmncCommand;
     FStream: TStream;
     FActive: Boolean;
+    FLimit: Integer;
     procedure SetCommand(const AValue: TmncCommand);
-    procedure SetHeader(const AValue: TCSVIEHeader);
+    procedure SetHeaderLine(const AValue: TmncCSVHeader);
     procedure SetStream(const AValue: TStream);
   protected
     procedure DoExecute; virtual; abstract;
   public
     constructor Create;
     procedure Execute;
-    property EndOfLine: string read FEndOfLine write FEndOfLine;
-    property Delimiter: Char read FDelimiter write FDelimiter;
-    property EscapeChar: Char read FEscapeChar write FEscapeChar default '\';
-    property QuoteChar: Char read FQuoteChar write FQuoteChar default #0;// or " or '
-    property Header: TCSVIEHeader read FHeader write SetHeader default hdrNormal;
-    property Limit: Integer read FLimit default 0; //Max count of rows to export or import
+    property CSVOptions: TmncCSVOptions read FCSVOptions write FCSVOptions;
+
+    property EndOfLine: string read FCSVOptions.EndOfLine write FCSVOptions.EndOfLine;
+    property DelimiterChar: Char read FCSVOptions.DelimiterChar write FCSVOptions.DelimiterChar;
+    property EscapeChar: Char read FCSVOptions.EscapeChar write FCSVOptions.EscapeChar default '\';
+    property QuoteChar: Char read FCSVOptions.QuoteChar write FCSVOptions.QuoteChar default #0;// or " or '
+    property HeaderLine: TmncCSVHeader read FCSVOptions.HeaderLine write SetHeaderLine default hdrNormal;
+    property ANSIContents: Boolean read FCSVOptions.ANSIContents write FCSVOptions.ANSIContents default False; //the stream is ANSI not UTF-8
+
+    property Limit: Integer read FLimit write FLimit default 0; //Max count of rows to export or import
+
     property Count: Integer read FCount; //count of rows was exported or imported
     property Active: Boolean read FActive;
-    property ANSIContents: Boolean read FANSIContents write FANSIContents default False; //the stream is ANSI not UTF-8
     property Command: TmncCommand read FCommand write SetCommand; //Requierd property
     property Stream: TStream read FStream write SetStream;
   end;
@@ -109,7 +99,7 @@ begin
     Fields[Index].Param.Clear
   else
   begin
-    if FANSIContents then
+    if ANSIContents then
       Fields[Index].Param.AsText := AnsiToUtf8(Value)
     else
       Fields[Index].Param.AsText := Value;
@@ -167,7 +157,7 @@ var
       begin
         if (QuoteChar <> #0) and (P^ = QuoteChar) then
          InQuote := not InQuote
-        else if (not InQuote and (P^ = Delimiter)) or (P^ = aEOL) then
+        else if (not InQuote and (P^ = DelimiterChar)) or (P^ = aEOL) then
         begin
           InQuote := False;//if EOL
           i := Length(aColumn);
@@ -188,7 +178,7 @@ var
           end
           else
           begin
-            EatDelimiter(Delimiter);
+            EatDelimiter(DelimiterChar);
             Result := True;
           end;
           Exit;
@@ -243,7 +233,7 @@ begin
     if not Command.Prepared then
       Command.Prepare;
 
-    if Header = hdrNormal then
+    if HeaderLine = hdrNormal then
     begin
       while not EOL do
       begin
@@ -256,7 +246,7 @@ begin
     end
     else
     begin
-      if Header = hdrIgnore then //eating the first line, Hummm
+      if HeaderLine = hdrIgnore then //eating the first line, Hummm
       begin
         while not EOL do
         begin
@@ -317,12 +307,12 @@ begin
     if not Command.NextOnExecute then
       Command.Next;
     st := '';
-    if Header = hdrNormal then
+    if HeaderLine = hdrNormal then
     begin
       for i := 0 to Command.Fields.Count - 1 do
       begin
         if i > 0 then
-          st := st + Delimiter;
+          st := st + DelimiterChar;
         s := Command.Fields.Items[i].GetName;
         if QuoteChar <> #0 then
           s := QuoteStr(s, QuoteChar);
@@ -339,7 +329,7 @@ begin
       for i := 0 to Command.Fields.Count - 1 do
       begin
         if i > 0 then
-          st := st + Delimiter;
+          st := st + DelimiterChar;
         s := Command.Fields.Items[i].AsText;
         if EscapeChar <> #0 then
           if QuoteChar <> #0 then
@@ -370,13 +360,13 @@ begin
   end;
 end;
 
-procedure TmncCSVIE.SetHeader(const AValue: TCSVIEHeader);
+procedure TmncCSVIE.SetHeaderLine(const AValue: TmncCSVHeader);
 begin
-  if FHeader <> AValue then
+  if FCSVOptions.HeaderLine <> AValue then
   begin
     if Active then
       raise EmncException.Create('Import/Export: Active, can not set Header property');
-    FHeader := AValue;
+    FCSVOptions.HeaderLine := AValue;
   end;
 end;
 
@@ -393,10 +383,10 @@ end;
 constructor TmncCSVIE.Create;
 begin
   inherited Create;
-  FEndOfLine := #13;
-  FDelimiter := ';';
-  FEscapeChar := '/';
-  FHeader := hdrNormal;
+  FCSVOptions.EndOfLine := #13;
+  FCSVOptions.DelimiterChar := ';';
+  FCSVOptions.EscapeChar := '/';
+  FCSVOptions.HeaderLine := hdrNormal;
 end;
 
 procedure TmncCSVIE.Execute;

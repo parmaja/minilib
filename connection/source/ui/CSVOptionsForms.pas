@@ -14,7 +14,7 @@ interface
 uses
   Classes, SysUtils, FileUtil, LResources, Forms, Controls, Graphics, Dialogs,
   StdCtrls,
-  mncCSVExchanges;
+  mncCSV;
 
 type
 
@@ -38,13 +38,13 @@ type
   public
   end;
 
-function ShowCSVOptions(Title: string; vCSVIE: TmncCSVIE): Boolean;
+function ShowCSVOptions(Title: string; var vCSVIE: TmncCSVOptions): Boolean;
 
 implementation
 
 {$R *.lfm}
 
-function ShowCSVOptions(Title: string; vCSVIE: TmncCSVIE): Boolean;
+function ShowCSVOptions(Title: string; var vCSVIE: TmncCSVOptions): Boolean;
 var
   s: string;
   c: Char;
@@ -54,18 +54,18 @@ begin
     Caption := Title;
 
     QuoteCharList.Text := vCSVIE.QuoteChar;
-    DelimiterList.Text := vCSVIE.Delimiter;
-    HeaderList.ItemIndex := Ord(vCSVIE.Header);
+    DelimiterList.Text := vCSVIE.DelimiterChar;
+    HeaderList.ItemIndex := Ord(vCSVIE.HeaderLine);
     ANSIFileChk.Checked := vCSVIE.ANSIContents;
 
     Result := ShowModal = mrOK;
     if Result then
     begin
       case HeaderList.ItemIndex of
-        1: vCSVIE.Header := hdrNormal;
-        2: vCSVIE.Header := hdrIgnore;
+        1: vCSVIE.HeaderLine := hdrNormal;
+        2: vCSVIE.HeaderLine := hdrIgnore;
         else
-          vCSVIE.Header := hdrNone;
+          vCSVIE.HeaderLine := hdrNone;
       end;
       s := DelimiterList.Text;
       if s = '' then
@@ -74,7 +74,7 @@ begin
         c := Char(StrToIntDef(Copy(s, 2, MaxInt), 0))
       else
         c := s[1];
-      vCSVIE.Delimiter := c;
+      vCSVIE.DelimiterChar := c;
 
       s := QuoteCharList.Text;
       if s = '' then

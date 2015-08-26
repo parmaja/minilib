@@ -1,4 +1,5 @@
 unit mncCSV;
+{$M+}{$H+}{$IFDEF FPC}{$MODE delphi}{$ENDIF}
 {**
  *  This file is part of the "Mini Connections"
  *
@@ -7,12 +8,6 @@ unit mncCSV;
  * @author    Zaher Dirkey <zaher at parmaja dot com>
  *}
 
-{$M+}
-{$H+}
-{$IFDEF FPC}
-{$MODE delphi}
-{$ENDIF}
-
 interface
 
 uses
@@ -20,6 +15,23 @@ uses
   mnUtils, mncConnections, mnStreams;
 
 type
+  {
+    hdrNone: There is no header in export and import files
+    hdrNormal: Header is the first line contain field names
+    hdrIgnore: Header found for import files but ignored, header not exported
+  }
+  TmncCSVHeader = (hdrNone, hdrNormal, hdrIgnore);
+  TmncEmptyLine = (elFetch, elSkip, elEOF);
+
+  TmncCSVOptions = record
+    EndOfLine: string;
+    DelimiterChar: Char;
+    EscapeChar: Char; //TODO take it from mncCSVExchanges
+    QuoteChar: Char;
+    HeaderLine: TmncCSVHeader;
+    ANSIContents: Boolean; //TODO take it from mncCSVExchanges
+  end;
+
 
   { TmncCSVConnection }
 
@@ -39,28 +51,28 @@ type
 
   TmncCSVSession = class(TmncSession)
   private
-    FEndOfLine: string;
-    FHaveHeader: Boolean;
-    FSpliteChar: Char;
+    FCSVOptions: TmncCSVOptions;
   protected
     procedure DoStart; override;
     procedure DoStop(How: TmncSessionAction; Retaining: Boolean); override;
   public
     constructor Create(vConnection: TmncConnection); override;
-    property SpliteChar: Char read FSpliteChar write FSpliteChar default #9;
-    property EndOfLine: string read FEndOfLine write FEndOfLine;
-    property HaveHeader: Boolean read FHaveHeader write FHaveHeader default True;
+    property CSVOptions: TmncCSVOptions read FCSVOptions write FCSVOptions;
+    property DelimiterChar: Char read FCSVOptions.DelimiterChar write FCSVOptions.DelimiterChar default #9;
+    property QuoteChar: Char read FCSVOptions.QuoteChar write FCSVOptions.QuoteChar default '"';
+    property EndOfLine: string read FCSVOptions.EndOfLine write FCSVOptions.EndOfLine;
+    property HeaderLine: TmncCSVHeader read FCSVOptions.HeaderLine write FCSVOptions.HeaderLine default hdrNormal;
   end;
 
   TmncCSVMode = (csvmRead, csvmWrite);
-  TmncEmptyLine = (elFetch, elSkip, elEOF);
 
   { TmncCSVCommand }
 
   TmncCSVCommand = class(TmncCommand)
   private
-    FCSVStream: TmnWrapperStream;
     FEmptyLine: TmncEmptyLine;
+
+    FCSVStream: TmnWrapperStream;
     FStream: TStream;
     FMode: TmncCSVMode;
     function GetConnection: TmncCSVConnection;
@@ -138,9 +150,10 @@ end;
 constructor TmncCSVSession.Create(vConnection: TmncConnection);
 begin
   inherited;
-  FHaveHeader := True;
-  SpliteChar := #9; //TAB
-  EndOfLine := sEndOfLine;
+  HeaderLine := hdrNormal;
+  DelimiterChar := ';';
+  EndOfLine := sUnixEndOfLine;
+  QuoteChar := '"';
 end;
 
 { TmncCSVCommand }
@@ -180,7 +193,7 @@ procedure TmncCSVCommand.DoPrepare;
 begin
   FCSVStream := TmnWrapperStream.Create(FStream, False);
   FCSVStream.EndOfLine := Session.EndOfLine;
-  if Session.HaveHeader then
+  if Session.HeaderLine <> hdrNone then
   begin
     if (Mode = csvmWrite) then
       SaveHeader
@@ -237,7 +250,7 @@ begin
     try
       for i := 0 to aStrings.Count - 1 do
       begin
-        Columns.Add(i, DequoteStr(trim(aStrings[i])), dtString);
+        Columns.Add(i, trim(aStrings[i]), dtString);
       end;
     finally
       aStrings.Free;
@@ -261,7 +274,7 @@ begin
     try
       while (i < aStrings.Count) {and (i < Columns.Count)} do //TODO check it
       begin
-        aRecord.Add(i, DequoteStr(aStrings[i]));
+        aRecord.Add(i, aStrings[i]);
         Inc(i); 
       end;
     finally
@@ -301,7 +314,7 @@ begin
 
     Result := Result and not ((s = '') and (EmptyLine = elEOF));
     if Result then
-      StrToStrings(s, Strings, [Session.SpliteChar], [#0, #13, #10], False, ['"']);
+      StrToStrings(s, Strings, [Session.DelimiterChar], [#0, #13, #10], True, [Session.QuoteChar]);
   end;
 end;
 
@@ -314,7 +327,7 @@ begin
   for i := 0 to Columns.Count - 1 do
   begin
     if s <> '' then
-      s := s + Session.SpliteChar;
+      s := s + Session.DelimiterChar;
     s := s + Columns[i].Name;
   end;
   WriteLine(s);
@@ -332,7 +345,7 @@ begin
   for i := 0 to Params.Count - 1 do
   begin
     if not First then
-      s := s + Session.SpliteChar
+      s := s + Session.DelimiterChar
     else
       First := False;
     v := Params.Items[i].Value;
