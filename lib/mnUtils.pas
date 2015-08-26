@@ -38,8 +38,8 @@ function SubStr(const Str: String; vSeperator: Char; vIndex: Integer = 0): Strin
 function SubStr(const Str: String; vSeperator: Char; vFromIndex, vToIndex: Integer): String; overload;
 
 function PeriodToString(vPeriod: Double; WithSeconds:Boolean): string;
-function DequoteStr(Str: string; QuoteChar: string): string; overload;
-function DequoteStr(Str: string): string; overload; //deqoute use both of ' and "
+function DequoteStr(Str: string; QuoteChar: string = '"'): string; overload;
+function DequoteStrAuto(Str: string): string; overload; //deqoute use both of ' and "
 
 function RepeatString(const Str: string; Count: Integer): string;
 function VarReplace(S: string; Values: TStrings; VarChar: Char = '$'): string;
@@ -157,7 +157,7 @@ begin
   end;
 end;
 
-function DequoteStr(Str: string): string;
+function DequoteStrAuto(Str: string): string;
 begin
   if Str = '' then
     Result := ''
@@ -264,7 +264,7 @@ begin
     Result := ''
   else
   begin
-    if Str[1] = QuoteChar then
+    if (QuoteChar > #0) and (Str[1] = QuoteChar) then
     begin
       if Str[Length(Str)] = QuoteChar then
         Result := MidStr(Str, 2, Length(Str) - 2)
