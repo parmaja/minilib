@@ -1,22 +1,32 @@
-<?xml version="1.0"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <CONFIG>
   <Package Version="4">
     <PathDelim Value="\"/>
     <Name Value="MiniDB"/>
+    <Type Value="RunAndDesignTime"/>
     <CompilerOptions>
       <Version Value="11"/>
       <PathDelim Value="\"/>
       <SearchPaths>
-        <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)\"/>
+        <IncludeFiles Value="..\..\..\connection\db\postgre"/>
+        <OtherUnitFiles Value="..\..\..\connection\db\postgre"/>
+        <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
       </SearchPaths>
-      <Other>
-        <CompilerMessages>
-          <MsgFileName Value=""/>
-        </CompilerMessages>
-        <CompilerPath Value="$(CompPath)"/>
-      </Other>
     </CompilerOptions>
-    <Type Value="RunAndDesignTime"/>
+    <Files Count="3">
+      <Item1>
+        <Filename Value="..\..\..\connection\db\postgre\mncPGHeader.pas"/>
+        <UnitName Value="mncPGHeader"/>
+      </Item1>
+      <Item2>
+        <Filename Value="..\..\..\connection\db\postgre\mncPostgre.pas"/>
+        <UnitName Value="mncPostgre"/>
+      </Item2>
+      <Item3>
+        <Filename Value="..\..\..\connection\db\postgre\pg.inc"/>
+        <Type Value="Include"/>
+      </Item3>
+    </Files>
     <RequiredPkgs Count="2">
       <Item1>
         <PackageName Value="MiniConnections"/>
@@ -31,5 +41,8 @@
     <PublishOptions>
       <Version Value="2"/>
     </PublishOptions>
+    <CustomOptions Items="ExternHelp" Version="2">
+      <_ExternHelp Items="Count"/>
+    </CustomOptions>
   </Package>
 </CONFIG>

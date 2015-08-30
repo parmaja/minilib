@@ -14,7 +14,7 @@ interface
 uses
   Classes, SysUtils, FileUtil, LResources, Forms, Controls, Graphics, Dialogs,
   StdCtrls,
-  mncCSV;
+  mnStreams, mncCSV;
 
 type
 
@@ -57,6 +57,12 @@ begin
     DelimiterList.Text := vCSVIE.DelimiterChar;
     HeaderList.ItemIndex := Ord(vCSVIE.HeaderLine);
     ANSIFileChk.Checked := vCSVIE.ANSIContents;
+    if vCSVIE.EndOfLine = sWinEndOfLine then
+      EOLCharList.ItemIndex := 0
+    else if vCSVIE.EndOfLine = sUnixEndOfLine then
+      EOLCharList.ItemIndex := 1
+    else
+      EOLCharList.ItemIndex := 0;
 
     Result := ShowModal = mrOK;
     if Result then

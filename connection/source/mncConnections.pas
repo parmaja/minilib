@@ -1088,7 +1088,11 @@ begin
 
   if sbhEmulate in Behaviors then
   begin
-    if not Retaining then //Nothing to do if Retaingig
+    if Retaining then //Nothing to do if Retaingig
+    begin
+      DoStop(How, Retaining);
+    end
+    else
     begin
       if Connection.FStartCount = 0 then
         raise EmncException.Create('Session not started yet!');
@@ -1099,7 +1103,9 @@ begin
   end
   else if sbhMultiple in Behaviors then
       DoStop(How, Retaining);
-  Dec(FStartCount);
+
+  if not Retaining then
+    Dec(FStartCount);
 end;
 
 procedure TmncSession.Rollback(Retaining: Boolean);

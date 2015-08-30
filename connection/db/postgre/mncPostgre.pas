@@ -83,23 +83,28 @@ type
     destructor Destroy; override;
 
     procedure Interrupt;
+    procedure Vacuum(Full: Boolean = False);
     function CreateSession: TmncSQLSession; override;
     class function Model: TmncConnectionModel; override;
     //TODO: Reconnect  use PQReset
     property Handle: PPGconn read FHandle;
     procedure CreateDatabase; overload;
-    procedure CreateDatabase(const vName: string); overload;
+    procedure CreateDatabase(const vName: string; CheckExists: Boolean = False); overload;
     procedure DropDatabase; overload;
     procedure DropDatabase(const vName: string); overload;
     procedure RenameDatabase(const vName, vToName: string); overload;
+    function IsDatabaseExists(const vName: string): Boolean;
 
     procedure Execute(const vResource: string; const vSQL: string; vArgs: array of const); overload;
     procedure Execute(const vResource: string; const vSQL: string); overload;
 
-    function Execute(const vSQL: string; vClear: Boolean=True): PPGresult; overload;
-    function Execute(vHandle: PPGconn; const vSQL: string; vArgs: array of const; vClear: Boolean=True): PPGresult; overload;
-    function Execute(vHandle: PPGconn; const vSQL: string; vClear: Boolean=True): PPGresult; overload;
+    function Execute(const vSQL: string; vClearResult: Boolean = True): PPGresult; overload;
+    function Execute(vHandle: PPGconn; const vSQL: string; vArgs: array of const; vClearResult: Boolean = True): PPGresult; overload;
+    function Execute(vHandle: PPGconn; const vSQL: string; vClearResult: Boolean = True): PPGresult; overload;
+
+
     property Channel: string read FChannel write SetChannel;
+
     function loImport(const vFileName: string): OID; overload;
     function loImport(const vStream: TStream): OID; overload;
 
@@ -128,7 +133,7 @@ type
   public
     constructor Create(vConnection: TmncConnection); override;
     destructor Destroy; override;
-    function Execute(vSQL: string; vClear: Boolean=True): PPGresult;
+    function Execute(vSQL: string; vClearResult: Boolean=True): PPGresult;
     function CreateCommand: TmncSQLCommand; override;
     function CreateSchema: TmncSchema; override;
     property Exclusive: Boolean read FExclusive write SetExclusive;
@@ -402,6 +407,12 @@ begin
   Execute('postgres', 'alter database %s rename to %s', [vName, vToName]);
 end;
 
+function TmncPGConnection.IsDatabaseExists(const vName: string): Boolean;
+begin
+  //Execute('postgres', 'select if exists %s;', [vName]);
+  //SELECT datname FROM pg_catalog.pg_database WHERE lower(datname) = lower('dbname');
+end;
+
 procedure TmncPGConnection.SetChannel(const Value: string);
 begin
   if FChannel <> Value then
@@ -422,6 +433,14 @@ end;
 procedure TmncPGConnection.Interrupt;
 begin
   //PG3_interrupt(DBHandle);
+end;
+
+procedure TmncPGConnection.Vacuum(Full: Boolean);
+begin
+  if Full then
+    Execute('Vacuum Full')
+  else
+    Execute('Vacuum');
 end;
 
 procedure TmncPGConnection.Listen(const vChannel: string);
@@ -589,9 +608,15 @@ begin
   CreateDatabase(Resource);
 end;
 
-procedure TmncPGConnection.CreateDatabase(const vName: string);
+procedure TmncPGConnection.CreateDatabase(const vName: string; CheckExists: Boolean = False);
+var
+  s: string;
 begin
-  Execute('postgres', 'Create Database %s;', [vName]);
+  s := 'Create Database ';
+  if CheckExists then
+    s := s + 'if not exists ';
+  s := s + vName + ';';
+  Execute('postgres', s);
 end;
 
 function TmncPGConnection.CreateSession: TmncSQLSession;
@@ -640,12 +665,12 @@ begin
   Execute('postgres', 'drop database if exists %s;', [vName]);
 end;
 
-function TmncPGConnection.Execute(vHandle: PPGconn; const vSQL: string; vArgs: array of const; vClear: Boolean): PPGresult;
+function TmncPGConnection.Execute(vHandle: PPGconn; const vSQL: string; vArgs: array of const; vClearResult: Boolean): PPGresult;
 begin
-  Result := Execute(vHandle, Format(vSQL, vArgs), vClear);
+  Result := Execute(vHandle, Format(vSQL, vArgs), vClearResult);
 end;
 
-function TmncPGConnection.Execute(vHandle: PPGconn; const vSQL: string; vClear: Boolean): PPGresult;
+function TmncPGConnection.Execute(vHandle: PPGconn; const vSQL: string; vClearResult: Boolean): PPGresult;
 begin
   try
     Result := PQexec(vHandle, PChar(vSQL));
@@ -655,7 +680,7 @@ begin
       PQclear(Result);
       raise;
     end;
-    if vClear then
+    if vClearResult then
     begin
       PQclear(Result);
       Result := nil;
@@ -685,10 +710,10 @@ begin
   end;
 end;
 
-function TmncPGConnection.Execute(const vSQL: string; vClear: Boolean): PPGresult;
+function TmncPGConnection.Execute(const vSQL: string; vClearResult: Boolean): PPGresult;
 begin
   if PQstatus(FHandle) = CONNECTION_OK then
-    Result := Execute(FHandle, vSQL, vClear)
+    Result := Execute(FHandle, vSQL, vClearResult)
   else
     Result := nil;
 end;
@@ -739,9 +764,9 @@ begin
   end;
 end;
 
-function TmncPGSession.Execute(vSQL: string; vClear: Boolean): PPGresult;
+function TmncPGSession.Execute(vSQL: string; vClearResult: Boolean): PPGresult;
 begin
-  Result := Connection.Execute(DBHandle, vSQL, vClear);
+  Result := Connection.Execute(DBHandle, vSQL, vClearResult);
 end;
 
 constructor TmncPGSession.Create(vConnection: TmncConnection);
@@ -1088,7 +1113,6 @@ end;
 
 procedure TPGListenThread.Execute;
 begin
-  inherited;
   while not Terminated do
   begin
     PQconsumeInput(FHandle);
