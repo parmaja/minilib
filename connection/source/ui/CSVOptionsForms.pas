@@ -23,12 +23,14 @@ type
   TCSVOptionsForm = class(TForm)
     CancelBtn: TButton;
     ANSIFileChk: TCheckBox;
+    SkipColumnEdit: TEdit;
     HeaderList: TComboBox;
     EOLCharList: TComboBox;
     Label1: TLabel;
     QuoteCharLbl: TLabel;
     QuoteCharLbl1: TLabel;
     QuoteCharLbl2: TLabel;
+    QuoteCharLbl3: TLabel;
     QuoteCharList: TComboBox;
     OkBtn: TButton;
     DelimiterList: TComboBox;
@@ -57,6 +59,7 @@ begin
     DelimiterList.Text := vCSVIE.DelimiterChar;
     HeaderList.ItemIndex := Ord(vCSVIE.HeaderLine);
     ANSIFileChk.Checked := vCSVIE.ANSIContents;
+    SkipColumnEdit.Text := IntToStr(vCSVIE.SkipColumn);
     if vCSVIE.EndOfLine = sWinEndOfLine then
       EOLCharList.ItemIndex := 0
     else if vCSVIE.EndOfLine = sUnixEndOfLine then
@@ -96,7 +99,7 @@ begin
           vCSVIE.EndOfLine := #13#10;
       end;
       vCSVIE.ANSIContents := ANSIFileChk.Checked;
-
+      vCSVIE.SkipColumn := StrToIntDef(SkipColumnEdit.Text, 0);
     end;
   end;
 end;

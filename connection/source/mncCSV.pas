@@ -28,6 +28,7 @@ type
     DelimiterChar: Char;
     EscapeChar: Char; //TODO take it from mncCSVExchanges
     QuoteChar: Char;
+    SkipColumn: Integer;
     HeaderLine: TmncCSVHeader;
     ANSIContents: Boolean; //TODO take it from mncCSVExchanges
   end;

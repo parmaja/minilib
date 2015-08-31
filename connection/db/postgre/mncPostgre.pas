@@ -322,7 +322,6 @@ begin
   end;
 end;
 
-
 function BEtoN(Val: Integer): Integer;
 begin
   Result := Val;
@@ -747,21 +746,26 @@ begin
     sdaCommit: Execute('COMMIT');
     sdaRollback: Execute('ROLLBACK');
   end;
-  if FDBHandle <> nil then
-  begin
-    Connection.InternalDisconnect(FDBHandle);
-  end;
+
+  if Retaining then
+    DoStart
+  else
+    if FDBHandle <> nil then
+      Connection.InternalDisconnect(FDBHandle);
 end;
 
 function TmncPGSession.NewToken: string;
+var
+  aID: Cardinal;
 begin
   ConnectionLock.Enter;
   try
     Inc(FTokenID);
-    Result := 'minilib_' + IntToStr(FTokenID);
+    aID := FTokenID;
   finally
     ConnectionLock.Leave;
   end;
+  Result := 'minilib_' + IntToStr(aID);
 end;
 
 function TmncPGSession.Execute(vSQL: string; vClearResult: Boolean): PPGresult;

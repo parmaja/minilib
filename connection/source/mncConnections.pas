@@ -1084,7 +1084,8 @@ begin
   if not Active then //Even if not strict we check if active, because you cant stop session if you not started it!
     raise EmncException.Create('Oops you have not started it yet!');
 
-  Links.Close;
+  if not Retaining then
+    Links.Close;
 
   if sbhEmulate in Behaviors then
   begin
