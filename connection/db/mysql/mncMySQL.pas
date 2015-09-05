@@ -455,11 +455,11 @@ begin
     RaiseError(-1, 'Query failed');
 {  lMSg := nil;
   s := Command;
-  r := MySQL3_exec(FDBHandle, PChar(s), nil, nil, @lMsg);
+  r := mysql_exec(FDBHandle, PChar(s), nil, nil, @lMsg);
   if lMSg <> nil then
   begin
     s := lMsg;
-    MySQL3_free(lMSg);
+    mysql_free(lMSg);
   end;
   CheckError(r, s);}
 end;
@@ -467,13 +467,13 @@ end;
 function TmncMySQLSession.GetLastInsertID: Int64;
 begin
   CheckActive;
-  //Result := MySQL3_last_insert_rowid(Connection.DBHandle);
+  //Result := mysql_last_insert_rowid(Connection.DBHandle);
 end;
 
 function TmncMySQLSession.GetRowsChanged: Integer;
 begin
   CheckActive;
-  //Result := MySQL3_changes(Connection.DBHandle);
+  //Result := mysql_changes(Connection.DBHandle);
 end;
 
 function TmncMySQLSession.GetActive: Boolean;
@@ -541,22 +541,22 @@ var
   ExtraMsg: string;
   r: Integer;
 begin
-(*  if (Error <> MySQL_OK) then
+  if (Error <> MySQL_OK) then
   begin
-    s := 'MySQL: ' + MySQL3_errmsg(Connection.DBHandle);
+    s := 'MySQL: ' + IntToStr(Error) + ', ' + mysql_stmt_error(FStatment) ;
     if Active then
     begin
-      r := MySQL3_finalize(FStatment);//without check error prevent the loop
+{      r := mysql_finalize(FStatment);//without check error prevent the loop
       if (r <> MySQL_OK) then
-        ExtraMsg := MySQL3_errmsg(Connection.DBHandle)
+        ExtraMsg := mysql_errmsg(Connection.DBHandle)
       else
         ExtraMsg := '';
       if ExtraMsg <> '' then
         s := s + ' - ' + ExtraMsg;
-      FStatment := nil;
+      FStatment := nil;}
     end;
     raise EmncException.Create(s) {$ifdef fpc} at get_caller_frame(get_frame) {$endif};
-  end;*)
+  end;
 end;
 
 function TmncMySQLCommand.GetSession: TmncMySQLSession;
@@ -600,7 +600,8 @@ var
   t: Integer;
   t64: Int64;
 begin
-{  for i := 0 to Binds.Count - 1 do
+  //* ref: https://dev.mysql.com/doc/refman/5.0/en/mysql-stmt-bind-param.html
+  for i := 0 to Binds.Count - 1 do
   begin
     Binds[i].FreeBuffer;
   end;
@@ -608,39 +609,39 @@ begin
   for i := 0 to Binds.Count - 1 do
   begin
     if Binds[i].Param.IsEmpty then
-      CheckError(MySQL3_bind_null(FStatment, i + 1))
+      CheckError(mysql_bind_null(FStatment, i + 1))
     else
     begin
       case VarType(Binds[i].Param.Value) of
         varDate:
         begin
           d := Binds[i].Param.Value;// - UnixDateDelta; todo
-          CheckError(MySQL3_bind_double(FStatment, i + 1, d));
+          CheckError(mysql_bind_double(FStatment, i + 1, d));
         end;
         varBoolean:
         begin
           b := Binds[i].Param.Value;
-          CheckError(MySQL3_bind_int(FStatment, i + 1, ord(b)));
+          CheckError(mysql_bind_int(FStatment, i + 1, ord(b)));
         end;
         varInteger:
         begin
           t := Binds[i].Param.Value;
-          CheckError(MySQL3_bind_int(FStatment, i + 1, t));
+          CheckError(mysql_bind_int(FStatment, i + 1, t));
         end;
         varint64:
         begin
           t64 := Binds[i].Param.Value;
-          CheckError(MySQL3_bind_int64(FStatment, i + 1, t64));
+          CheckError(mysql_bind_int64(FStatment, i + 1, t64));
         end;
         varCurrency:
         begin
           c := Binds[i].Param.Value;
-          CheckError(MySQL3_bind_double(FStatment, i + 1, c));
+          CheckError(mysql_bind_double(FStatment, i + 1, c));
         end;
         varDouble:
         begin
           d := Binds[i].Param.Value;
-          CheckError(MySQL3_bind_double(FStatment, i + 1, d));
+          CheckError(mysql_bind_double(FStatment, i + 1, d));
         end;
         else //String type
         begin
@@ -649,7 +650,7 @@ begin
             s := VarToStrDef(Binds[i].Param.Value, '');
             Binds[i].AllocBuffer(PChar(s)^, Length(s));
           end;
-          CheckError(MySQL3_bind_text(FStatment, i + 1, PChar(Binds[i].Buffer), Binds[i].BufferSize, nil));
+          CheckError(mysql_bind_text(FStatment, i + 1, PChar(Binds[i].Buffer), Binds[i].BufferSize, nil));
         end;
       end;
     end;
@@ -659,9 +660,9 @@ end;
 procedure TmncMySQLCommand.DoExecute;
 begin
   FBOF := True;
-  if FStatment <> nil then
-    CheckError(mysql_stmt_execute(FStatment));
+  CheckError(mysql_stmt_reset(FStatment));
   ApplyParams;
+  CheckError(mysql_stmt_execute(FStatment));
 end;
 
 procedure TmncMySQLCommand.DoNext;
@@ -669,7 +670,7 @@ var
   r: Integer;
   b: Boolean;
 begin
-//  CheckError(MySQL3_step(@FStatment));
+//  CheckError(mysql_step(@FStatment));
   b := mysql_stmt_fetch(FStatment) in [0, MYSQL_DATA_TRUNCATED];
   //r := mysql_fetch_row(FStatment);
   if (b) then
@@ -682,7 +683,7 @@ begin
   else //if (r = MySQL_DONE) then
   begin
     FEOF := True;
-    //CheckError(MySQL3_reset(FStatment));
+    //CheckError(mysql_reset(FStatment));
   end;
 //  else if error
 //    CheckError(r);
@@ -693,12 +694,20 @@ procedure TmncMySQLCommand.DoPrepare;
 var
   r: Integer;
 begin
+  //* ref: https://dev.mysql.com/doc/refman/5.0/en/mysql-stmt-prepare.html
   FBOF := True;
-//  MySQL3_prepare_v2
+//  mysql_prepare_v2
 //TODO: apply value of params if using injection mode
   FStatment := mysql_stmt_init(Connection.DBHandle);
-  mysql_stmt_prepare(FStatment, PChar(SQLProcessed.SQL), Length(SQLProcessed.SQL));
-  //CheckError(FStatment);
+  try
+    CheckError(mysql_stmt_prepare(FStatment, PChar(SQLProcessed.SQL), Length(SQLProcessed.SQL)));
+  except
+    on E: Exception do
+    begin
+      //FStatment := nil;
+      raise;
+    end;
+  end;
 end;
 
 procedure TmncMySQLCommand.DoRollback;
@@ -725,7 +734,7 @@ procedure TmncMySQLCommand.DoClose;
 begin
   mysql_stmt_free_result(FStatment);
   mysql_stmt_close(FStatment);
-//  CheckError(MySQL3_clear_bindings(FStatment));//not found in MySQL3 for WinCE
+//  CheckError(mysql_clear_bindings(FStatment));//not found in MySQL3 for WinCE
   FStatment := nil;  
 end;
 
@@ -748,9 +757,9 @@ begin
   c := mysql_stmt_field_count(FStatment);
   {for i := 0 to c -1 do
   begin
-    aName :=  DequoteStr(MySQL3_column_name(FStatment, i));
-    aType := MySQL3_column_type(FStatment, i);
-    pType := MySQL3_column_decltype(FStatment, i);
+    aName :=  DequoteStr(mysql_column_name(FStatment, i));
+    aType := mysql_column_type(FStatment, i);
+    pType := mysql_column_decltype(FStatment, i);
     aColumn := Columns.Add(aName, SQLTypeToType(aType, pType));
     aColumn.SchemaType := pType;
   end;}
@@ -774,16 +783,16 @@ var
 begin
   //belal why not use Columns ????
   //c := Columns.Count;
-(*  c := MySQL3_column_count(FStatment);
+(*  c := mysql_column_count(FStatment);
   if c > 0 then
   begin
     aCurrent := CreateFields(Columns);
     for i := 0 to c - 1 do
     begin
 //    TStorageType = (stNone, stInteger, stFloat, stText, stBlob, stNull);
-      //aSize := MySQL3_column_bytes(FStatment, i);
+      //aSize := mysql_column_bytes(FStatment, i);
       aColumn := Columns[i];
-      aType := MySQL3_column_type(FStatment, i);
+      aType := mysql_column_type(FStatment, i);
       //aType := Columns[i].DataType;
       case aType of
         MySQL_NULL:
@@ -792,36 +801,36 @@ begin
         end;
         MySQL_INTEGER:
         begin
-          int := MySQL3_column_int(FStatment, i);
+          int := mysql_column_int(FStatment, i);
 {          if aColumn.DataType = ftDate then //todo
             int := int - 1;}
           aCurrent.Add(i, int);
         end;
         MySQL_FLOAT:
         begin
-          flt := MySQL3_column_double(FStatment, i);
+          flt := mysql_column_double(FStatment, i);
           aCurrent.Add(i, flt);
         end;
         MySQL_BLOB:
         begin
-          int := MySQL3_column_bytes(FStatment, i);
-          SetString(str, PChar(MySQL3_column_blob(FStatment, i)), int);
+          int := mysql_column_bytes(FStatment, i);
+          SetString(str, PChar(mysql_column_blob(FStatment, i)), int);
           aCurrent.Add(i, str);
         end;
         MySQL_TEXT:
         begin
           if SameText(aColumn.SchemaType, 'Blob') then
           begin
-            int := MySQL3_column_bytes(FStatment, i);
-            SetString(str, PChar(MySQL3_column_blob(FStatment, i)), int);
+            int := mysql_column_bytes(FStatment, i);
+            SetString(str, PChar(mysql_column_blob(FStatment, i)), int);
           end
           else
-            str := MySQL3_column_text(FStatment, i);
+            str := mysql_column_text(FStatment, i);
           aCurrent.Add(i, str);
         end
         else
         begin
-          str := MySQL3_column_text(FStatment, i);
+          str := mysql_column_text(FStatment, i);
           aCurrent.Add(i, str);
         end;
       end;

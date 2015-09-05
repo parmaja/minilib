@@ -43,14 +43,11 @@ type
   protected
     procedure PostEvent;
     procedure Execute; override;
-
   public
     constructor Create(vConn: TmncPGConnection; const vChannel: string);
     destructor Destroy; override;
-
     property Connection: TmncPGConnection read FConnection;
     property Channel: string read FChannel;
-
   end;
 
   { TmncPGConnection }
@@ -101,7 +98,6 @@ type
     function Execute(const vSQL: string; vClearResult: Boolean = True): PPGresult; overload;
     function Execute(vHandle: PPGconn; const vSQL: string; vArgs: array of const; vClearResult: Boolean = True): PPGresult; overload;
     function Execute(vHandle: PPGconn; const vSQL: string; vClearResult: Boolean = True): PPGresult; overload;
-
 
     property Channel: string read FChannel write SetChannel;
 
@@ -1180,7 +1176,7 @@ begin
     sp := Binds.Items[i].Param;
     dp := Params.FindParam(sp.Name);
 
-    if (dp=nil)or(dp.IsNull) then
+    if (dp=nil) or (dp.IsNull) then
       Result[i] := nil
     else
     begin
@@ -1198,7 +1194,6 @@ end;
 
 destructor TmncCustomPGCommand.Destroy;
 begin
-
   inherited;
 end;
 
