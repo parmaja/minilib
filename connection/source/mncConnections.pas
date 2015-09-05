@@ -200,6 +200,8 @@ type
     //* Retaining: keep it active
     procedure Commit(Retaining: Boolean = False); virtual;
     procedure Rollback(Retaining: Boolean = False); virtual;
+    procedure CommitRetaining;
+    procedure RollbackRetaining;
     property Behaviors: TmncSessionBehaviors read FBehaviors;
     property Action: TmncSessionAction read FAction write FAction;
     property Connection: TmncConnection read FConnection write SetConnection;
@@ -1112,6 +1114,16 @@ end;
 procedure TmncSession.Rollback(Retaining: Boolean);
 begin
   InternalStop(sdaRollback, Retaining);
+end;
+
+procedure TmncSession.CommitRetaining;
+begin
+  Commit(True);
+end;
+
+procedure TmncSession.RollbackRetaining;
+begin
+  Rollback(True);
 end;
 
 procedure TmncSession.SetActive(const Value: Boolean);

@@ -81,7 +81,8 @@ type
     procedure DoUnparse; override;
     procedure ParseSQL(Options: TmncParseSQLOptions; ParamChar: string = '?');
   public
-    constructor Create; override;
+    constructor Create; override; overload;
+    constructor Create(aSession: TmncSQLSession); overload;
     destructor Destroy; override;
     property SQL: TStrings read GetSQL;//Alias of Request, autocomplete may add it in private becareful
   end;
@@ -355,6 +356,12 @@ constructor TmncSQLCommand.Create;
 begin
   inherited Create;
   SQLProcessed := TmncSQLProcessed.Create(True);
+end;
+
+constructor TmncSQLCommand.Create(aSession: TmncSQLSession);
+begin
+  Create;
+  Session := aSession;
 end;
 
 destructor TmncSQLCommand.Destroy;

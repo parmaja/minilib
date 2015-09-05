@@ -19,7 +19,7 @@ object CSVOptionsForm: TCSVOptionsForm
   object QuoteCharLbl1: TLabel
     Left = 9
     Height = 13
-    Top = 79
+    Top = 77
     Width = 41
     Caption = 'Delimiter'
     ParentColor = False
