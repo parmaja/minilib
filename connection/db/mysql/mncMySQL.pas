@@ -170,7 +170,7 @@ type
     function CreateBinds: TmncBinds; override;
     property Binds: TmncMySQLBinds read GetBinds;
   public
-    property Connection:TmncMySQLConnection read GetConnection;
+    property Connection: TmncMySQLConnection read GetConnection;
     property Session: TmncMySQLSession read GetSession write SetSession;
     procedure Clear; override;
     function GetRowsChanged: Integer; virtual;
@@ -221,25 +221,16 @@ begin
   inherited;
 end;
 
-{
-function SQLTypeToType(vType: Integer; const SchemaType: string): TmncDataType;
+function SQLTypeToType(vType: enum_field_types; const SchemaType: string): TmncDataType;
 begin
   case vType of
-    MySQL_INTEGER:
-      if SameText(SchemaType, 'date') then
-        Result := dtDate
-      else//not yet
-        Result := dtInteger;
-    MySQL_FLOAT:
-    begin
-      if SameText(SchemaType, 'date') then
-        Result := dtDateTime
-      else//not yet
-        Result := dtFloat;
-    end;
-    MySQL_BLOB: Result := dtBlob;
-    MySQL_NULL: Result := dtUnknown;
-    MySQL_TEXT:
+    MYSQL_TYPE_LONG:
+      Result := dtInteger;
+    MYSQL_TYPE_FLOAT:
+      Result := dtFloat;
+    MYSQL_TYPE_BLOB: Result := dtBlob;
+    MYSQL_TYPE_NULL: Result := dtUnknown;
+    MYSQL_TYPE_STRING:
     begin
       if SameText(SchemaType, 'Blob') then
         Result := dtBlob
@@ -250,7 +241,7 @@ begin
       Result := dtUnknown;
   end;
 end;
-}
+
 { TmncMySQLBinds }
 
 function TmncMySQLBinds.GetItem(Index: Integer): TmncMySQLBind;
@@ -596,6 +587,38 @@ begin
   Result := Session.GetLastInsertID;
 end;
 
+procedure DateTimeToMySQLDateTime(DateTime: TDateTime; out ATime: MYSQL_TIME);
+var
+  st: TSystemTime;
+begin
+  DateTimeToSystemTime(DateTime, st);
+  ATime.Year := st.Year;
+  ATime.Month := st.Month;
+  ATime.Day := st.Day;
+  ATime.Hour := st.Hour;
+  ATime.Minute := st.Minute;
+  ATime.Second := st.Second;
+  ATime.second_part := st.Millisecond;
+  ATime.neg := 0;
+  ATime.time_type := MYSQL_TIMESTAMP_DATETIME;
+end ;
+
+procedure DateTimeToMySQLTime(DateTime: TDateTime; out ATime: MYSQL_TIME);
+var
+  st: TSystemTime;
+begin
+  DateTimeToMySQLDateTime(DateTime, ATime);
+  ATime.time_type := MYSQL_TIMESTAMP_TIME;
+end ;
+
+procedure DateTimeToMySQLDate(DateTime: TDateTime; out ATime: MYSQL_TIME);
+var
+  st: TSystemTime;
+begin
+  DateTimeToMySQLDateTime(DateTime, ATime);
+  ATime.time_type := MYSQL_TIMESTAMP_DATE;
+end ;
+
 procedure TmncMySQLCommand.ApplyParams;
 var
   s: UTF8String;
@@ -606,10 +629,12 @@ var
   c: Currency;
   t: Integer;
   t64: Int64;
+  dt: MYSQL_TIME;
   Values: TMySQLBinds;
 begin
   //* ref: https://dev.mysql.com/doc/refman/5.0/en/mysql-stmt-bind-param.html
   //* ref: https://dev.mysql.com/doc/refman/5.0/en/mysql-stmt-execute.html
+  //* https://dev.mysql.com/doc/refman/5.0/en/c-api-prepared-statement-type-codes.html
 
   SetLength(Values, Binds.Count);
 
@@ -626,8 +651,8 @@ begin
         varDate:
         begin
           d := Binds[i].Param.Value;// - UnixDateDelta; todo
-          Values[i].is_null := Binds[i].AllocBuffer(d, SizeOf(d));
-          //Values[i].buffer_type := ;
+          DateTimeToMySQLDateTime(d, dt);
+          Values[i].buffer_type := MYSQL_TYPE_DATETIME;
           //CheckError(mysql_bind_double(FStatment, i + 1, d));
         end;
         varBoolean:
