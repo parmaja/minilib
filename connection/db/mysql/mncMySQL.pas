@@ -145,7 +145,6 @@ type
   TmncMySQLCommand = class(TmncSQLCommand)
   private
     FStatment: PMYSQL_STMT;
-    FTail: pchar;
     FBOF: Boolean;
     FEOF: Boolean;
     function GetBinds: TmncMySQLBinds;
@@ -623,13 +622,14 @@ procedure TmncMySQLCommand.ApplyParams;
 var
   s: UTF8String;
   b: my_bool;
+  dt: MYSQL_TIME;
   tiny: smallint;
+
   i: Integer;
   d: Double;
   c: Currency;
-  t: Integer;
+  n: Integer;
   t64: Int64;
-  dt: MYSQL_TIME;
   Values: TMySQLBinds;
 begin
   //* ref: https://dev.mysql.com/doc/refman/5.0/en/mysql-stmt-bind-param.html
@@ -642,18 +642,18 @@ begin
   begin
     if Binds[i].Param.IsEmpty then
     begin
-      t := 1;
-      Values[i].is_null := Binds[i].AllocBuffer(t, SizeOf(t));
+      n := 1;
+      Values[i].is_null := Binds[i].AllocBuffer(n, SizeOf(n));
     end
     else
     begin
       case VarType(Binds[i].Param.Value) of
         varDate:
         begin
-          d := Binds[i].Param.Value;// - UnixDateDelta; todo
-          DateTimeToMySQLDateTime(d, dt);
+          DateTimeToMySQLDateTime(Binds[i].Param.Value, dt);
+          Values[i].buffer := Binds[i].AllocBuffer(dt, SizeOf(dt));
+          Values[i].buffer_length := SizeOf(dt);
           Values[i].buffer_type := MYSQL_TYPE_DATETIME;
-          //CheckError(mysql_bind_double(FStatment, i + 1, d));
         end;
         varBoolean:
         begin
@@ -664,24 +664,38 @@ begin
         end;
         varInteger:
         begin
-          t := Ord(Integer(Binds[i].Param.Value));
-          Values[i].buffer := Binds[i].AllocBuffer(t, SizeOf(t));
+          n := Ord(Integer(Binds[i].Param.Value));
+          Values[i].buffer := Binds[i].AllocBuffer(n, SizeOf(n));
           Values[i].buffer_length := 0;
           Values[i].buffer_type := MYSQL_TYPE_LONG;
         end;
         varint64:
         begin
+          t64 := Binds[i].Param.Value;
+          Values[i].buffer := Binds[i].AllocBuffer(t64, SizeOf(t64));
+          Values[i].buffer_length := 0;
+          Values[i].buffer_type := MYSQL_TYPE_LONGLONG;
         end;
         varCurrency:
         begin
+          t64 := Binds[i].Param.Value;
+          Values[i].buffer := Binds[i].AllocBuffer(t64, SizeOf(t64));
+          Values[i].buffer_length := 0;
+          Values[i].buffer_type := MYSQL_TYPE_NEWDECIMAL;
         end;
         varDouble:
         begin
+          d := Binds[i].Param.Value;
+          Values[i].buffer := Binds[i].AllocBuffer(d, SizeOf(d));
+          Values[i].buffer_length := 0;
+          Values[i].buffer_type := MYSQL_TYPE_DOUBLE;
         end;
         else //String type
         begin
           s := VarToStrDef(Binds[i].Param.Value, '');
-          Binds[i].AllocBuffer(PChar(s)^, Length(s));
+          Values[i].buffer := Binds[i].AllocBuffer(PChar(s)^, Length(s));
+          Values[i].buffer_length := 0;
+          Values[i].buffer_type := MYSQL_TYPE_VAR_STRING;
         end;
       end;
     end;
@@ -765,8 +779,7 @@ procedure TmncMySQLCommand.DoClose;
 begin
   mysql_stmt_free_result(FStatment);
   mysql_stmt_close(FStatment);
-//  CheckError(mysql_clear_bindings(FStatment));//not found in MySQL3 for WinCE
-  FStatment := nil;  
+  FStatment := nil;
 end;
 
 procedure TmncMySQLCommand.DoCommit;
