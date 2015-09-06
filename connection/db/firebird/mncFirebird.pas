@@ -700,9 +700,6 @@ begin
   inherited;
 end;
 
-{ TFieldHelper }
-
-
 { TmncFBParams }
 
 function TmncFBParams.GetItem(Index: Integer): TmncFBParam;

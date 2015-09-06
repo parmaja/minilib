@@ -304,6 +304,16 @@ begin
   FValue := AValue;
 end;
 
+constructor TmncSQLiteParam.Create;
+begin
+  inherited;
+end;
+
+destructor TmncSQLiteParam.Destroy;
+begin
+  inherited;
+end;
+
 function TmncSQLiteBind.GetBufferAllocated: Boolean;
 begin
   Result := Buffer <> nil;
@@ -330,16 +340,6 @@ end;
 destructor TmncSQLiteBind.Destroy;
 begin
   FreeBuffer;
-  inherited;
-end;
-
-constructor TmncSQLiteParam.Create;
-begin
-  inherited;
-end;
-
-destructor TmncSQLiteParam.Destroy;
-begin
   inherited;
 end;
 
@@ -727,7 +727,7 @@ begin
         end;
         else //String type
         begin
-          if not Binds[i].BufferAllocated then //TODO test after  remove this line, i think it is not useful
+          if not Binds[i].BufferAllocated then //TODO test after remove this line, i think it is not useful
           begin
             v := Binds[i].Param.Value;
             if TVarData(v).vType = varNull then

@@ -110,15 +110,17 @@ type
     function CreateParam: TmncParam; override;
   end;
 
+  TMySQLBinds = array of MYSQL_BIND;
+
   { TmncMySQLBind }
 
   TmncMySQLBind = class(TmncBind)
   private
-    FBuffer: Pointer; //MYSQL_BIND
+    FBuffer: Pointer;
     FBufferSize: Integer;
     function GetBufferAllocated: Boolean;
   protected
-    procedure AllocBuffer(var P; Size: Integer); virtual;
+    function AllocBuffer(var P; Size: Integer): Pointer; virtual;
     procedure FreeBuffer;
     property Buffer: Pointer read FBuffer;
     property BufferSize: Integer read FBufferSize;
@@ -186,6 +188,39 @@ const
 
 var
   IsInitializeMySQL: Boolean = False;
+
+{ TmncMySQLBind }
+
+function TmncMySQLBind.GetBufferAllocated: Boolean;
+begin
+  Result := Buffer <> nil;
+end;
+
+function TmncMySQLBind.AllocBuffer(var P; Size: Integer): Pointer;
+begin
+  FreeBuffer;
+  FBufferSize := Size;
+  if Size > 0 then
+  begin
+    FBuffer := AllocMem(FBufferSize);
+    Move(P, FBuffer^, Size);
+  end;
+  Result := FBuffer;
+end;
+
+procedure TmncMySQLBind.FreeBuffer;
+begin
+  if FBuffer <> nil then
+    FreeMem(FBuffer);
+  FBuffer := nil;
+end;
+
+destructor TmncMySQLBind.Destroy;
+begin
+  FreeBuffer;
+  inherited;
+end;
+
 {
 function SQLTypeToType(vType: Integer; const SchemaType: string): TmncDataType;
 begin
@@ -236,35 +271,6 @@ end;
 procedure TmncMySQLParam.SetValue(const AValue: Variant);
 begin
   FValue := AValue;
-end;
-
-function TmncMySQLBind.GetBufferAllocated: Boolean;
-begin
-  Result := Buffer <> nil;
-end;
-
-procedure TmncMySQLBind.AllocBuffer(var P; Size: Integer);
-begin
-  FreeBuffer;
-  FBufferSize := Size;
-  if Size > 0 then
-  begin
-    FBuffer := AllocMem(FBufferSize);
-    Move(P, FBuffer^, Size);
-  end;
-end;
-
-procedure TmncMySQLBind.FreeBuffer;
-begin
-  if FBuffer <> nil then
-    FreeMem(FBuffer);
-  FBuffer := nil;
-end;
-
-destructor TmncMySQLBind.Destroy;
-begin
-  FreeBuffer;
-  inherited;
 end;
 
 constructor TmncMySQLParam.Create;
@@ -593,68 +599,68 @@ end;
 procedure TmncMySQLCommand.ApplyParams;
 var
   s: UTF8String;
-  b: boolean;
+  b: my_bool;
+  tiny: smallint;
   i: Integer;
   d: Double;
   c: Currency;
   t: Integer;
   t64: Int64;
+  Values: TMySQLBinds;
 begin
   //* ref: https://dev.mysql.com/doc/refman/5.0/en/mysql-stmt-bind-param.html
-  for i := 0 to Binds.Count - 1 do
-  begin
-    Binds[i].FreeBuffer;
-  end;
+  //* ref: https://dev.mysql.com/doc/refman/5.0/en/mysql-stmt-execute.html
+
+  SetLength(Values, Binds.Count);
 
   for i := 0 to Binds.Count - 1 do
   begin
     if Binds[i].Param.IsEmpty then
-      CheckError(mysql_bind_null(FStatment, i + 1))
+    begin
+      t := 1;
+      Values[i].is_null := Binds[i].AllocBuffer(t, SizeOf(t));
+    end
     else
     begin
       case VarType(Binds[i].Param.Value) of
         varDate:
         begin
           d := Binds[i].Param.Value;// - UnixDateDelta; todo
-          CheckError(mysql_bind_double(FStatment, i + 1, d));
+          Values[i].is_null := Binds[i].AllocBuffer(d, SizeOf(d));
+          //Values[i].buffer_type := ;
+          //CheckError(mysql_bind_double(FStatment, i + 1, d));
         end;
         varBoolean:
         begin
-          b := Binds[i].Param.Value;
-          CheckError(mysql_bind_int(FStatment, i + 1, ord(b)));
+          tiny := Ord(Boolean(Binds[i].Param.Value));
+          Values[i].buffer := Binds[i].AllocBuffer(tiny, SizeOf(tiny));
+          Values[i].buffer_length := SizeOf(tiny);
+          Values[i].buffer_type := MYSQL_TYPE_TINY;
         end;
         varInteger:
         begin
-          t := Binds[i].Param.Value;
-          CheckError(mysql_bind_int(FStatment, i + 1, t));
+          t := Ord(Integer(Binds[i].Param.Value));
+          Values[i].buffer := Binds[i].AllocBuffer(t, SizeOf(t));
+          Values[i].buffer_length := 0;
+          Values[i].buffer_type := MYSQL_TYPE_LONG;
         end;
         varint64:
         begin
-          t64 := Binds[i].Param.Value;
-          CheckError(mysql_bind_int64(FStatment, i + 1, t64));
         end;
         varCurrency:
         begin
-          c := Binds[i].Param.Value;
-          CheckError(mysql_bind_double(FStatment, i + 1, c));
         end;
         varDouble:
         begin
-          d := Binds[i].Param.Value;
-          CheckError(mysql_bind_double(FStatment, i + 1, d));
         end;
         else //String type
         begin
-          if not Binds[i].BufferAllocated then //TODO test after  remove this line, i think it is not useful
-          begin
-            s := VarToStrDef(Binds[i].Param.Value, '');
-            Binds[i].AllocBuffer(PChar(s)^, Length(s));
-          end;
-          CheckError(mysql_bind_text(FStatment, i + 1, PChar(Binds[i].Buffer), Binds[i].BufferSize, nil));
+          s := VarToStrDef(Binds[i].Param.Value, '');
+          Binds[i].AllocBuffer(PChar(s)^, Length(s));
         end;
       end;
     end;
-  end;}
+  end;
 end;
 
 procedure TmncMySQLCommand.DoExecute;

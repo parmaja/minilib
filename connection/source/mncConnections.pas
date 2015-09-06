@@ -504,7 +504,7 @@ type
     function CreateParams: TmncParams; virtual; abstract;
     function CreateBinds: TmncBinds; virtual;
     property Request: TStrings read FRequest write SetRequest;
-    property Binds: TmncBinds read FBinds; //for Dublicated names when pass the params when execute
+    property Binds: TmncBinds read FBinds; //for Dublicated names when pass the params when execute select * from t1 where f1 = ?p1 and f2 = ?p1 and f3=p2
   public
     constructor Create; override;
     destructor Destroy; override;

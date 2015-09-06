@@ -924,9 +924,7 @@ begin
     finally
       PQclear(r);
     end;
-
   end;
-
 end;
 
 procedure TmncPGCommand.DoClose;
@@ -1166,25 +1164,24 @@ procedure TmncCustomPGCommand.CreateParamValues(var Result: TArrayOfPChar);
 var
   i: Integer;
   s: UTF8String;
-  sp, dp: TmncParam;
+  p: TmncParam;
 begin
   FreeParamValues(Result);
   SetLength(Result, Binds.Count);
 
   for i := 0 to Binds.Count -1 do
   begin
-    sp := Binds.Items[i].Param;
-    dp := Params.FindParam(sp.Name);
+    p := Binds.Items[i].Param;
 
-    if (dp=nil) or (dp.IsNull) then
+    if (p = nil) or (p.IsNull) then
       Result[i] := nil
     else
     begin
-      case VarType(dp.Value) of
+      case p.Value of
         VarDate:
-          s := UTF8Encode(FormatDateTime('yyyy-mm-dd hh:nn:ss', dp.Value));
+          s := UTF8Encode(FormatDateTime('yyyy-mm-dd hh:nn:ss', p.Value));
         else
-          s := UTF8Encode(dp.Value);
+          s := UTF8Encode(p.Value);
       end;
       GetMem(Result[i], Length(s) + 1);
       StrMove(PAnsiChar(Result[i]), PAnsiChar(s), Length(s) + 1);
