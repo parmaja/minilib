@@ -16,7 +16,7 @@ unit mncMySQL;
 interface
 
 uses
-  Classes, SysUtils, Variants,
+  Classes, SysUtils, Variants, ctypes,
   mncCommons, mncSchemas, mncMySql56dyn,
   mnUtils, mncConnections, mncSQL;
 
@@ -170,8 +170,9 @@ type
         1: (AsBig: int64);
         2: (AsFloat: double);
         3: (AsRaw: array[0..10] of byte);
+        4: (AsString: array[0..15] of Char);
       end;
-      length: dword;
+      length: culong;
       is_null: my_bool;
       error: my_bool;
     end;
@@ -847,14 +848,13 @@ var
   b: Boolean;
   state: integer;
 begin
-  //  CheckError(mysql_step(@FStatment));
+  if FBOF then
+    FetchColumns;
   state := mysql_stmt_fetch(FStatment);
   b := state in [0, MYSQL_DATA_TRUNCATED];
   //r := mysql_fetch_row(FStatment);
   if (b) then
   begin
-    if FBOF then
-      FetchColumns;
     FetchValues;
     FEOF := False;
   end
@@ -944,36 +944,45 @@ begin
   Columns.Clear;
 
   Res := mysql_stmt_result_metadata(FStatment); // Fetch result set meta information
+  try
+    Field := mysql_fetch_fields(Res);
+    c := mysql_stmt_field_count(FStatment);
 
-  Field := mysql_fetch_fields(Res);
-  c := mysql_stmt_field_count(FStatment);
+    FResults := TmncMySQLResults.Create(c);
 
-  FResults := TmncMySQLResults.Create(c);
+    for i := 0 to c -1 do
+    begin
+      aName :=  Field.name;
+      FieldType := Field.ftype;
+      SchemaType := MySQLTypeToString(FieldType);
 
-  for i := 0 to c -1 do
-  begin
-    aName :=  Field.name;
-    FieldType := Field.ftype;
-    SchemaType := MySQLTypeToString(FieldType);
+      aColumn := TmncMySQLColumn.Create(aName, MySQLTypeToType(FieldType, SchemaType));
 
-    aColumn := TmncMySQLColumn.Create(aName, MySQLTypeToType(FieldType, SchemaType));
+      Columns.Add(aColumn);
 
-    Columns.Add(aColumn);
+      aColumn.SchemaType := SchemaType;
+      aColumn.Size := Field.length;
+      aColumn.FieldType := FieldType;
 
-    aColumn.SchemaType := SchemaType;
-    aColumn.Size := Field.length;
-    aColumn.FieldType := FieldType;
+      FillByte(FResults.Binds[i], sizeof(FResults.Binds[i]), 0);
 
-    FResults.Binds[i].buffer_type := FieldType;
-    FResults.Binds[i].buffer := @FResults.Buffers[i].buf;
-    FResults.Binds[i].buffer_length := SizeOf(FResults.Buffers[i].buf);
-    FResults.Binds[i].length := @FResults.Buffers[i].length;
-    FResults.Binds[i].is_null := @FResults.Buffers[i].is_null;
-    FResults.Binds[i].error := @FResults.Buffers[i].error;
+      FResults.Binds[i].buffer_type := FieldType;
+      if FieldType in [MYSQL_TYPE_VARCHAR,MYSQL_TYPE_VAR_STRING, MYSQL_TYPE_STRING] then
+        FResults.Binds[i].buffer := @FResults.Buffers[i].buf
+      else
+        FResults.Binds[i].buffer := @FResults.Buffers[i].buf;
+      FResults.Binds[i].buffer_length := SizeOf(FResults.Buffers[i].buf);
 
-    Inc(Field);
+      FResults.Binds[i].length := @FResults.Buffers[i].length;
+      FResults.Binds[i].is_null := @FResults.Buffers[i].is_null;
+      FResults.Binds[i].error := @FResults.Buffers[i].error;
+
+      Inc(Field);
+    end;
+    CheckError(mysql_stmt_bind_result(FStatment, @FResults.Binds[0]));
+  finally
+    //CheckError(mysql_free_result(Res));
   end;
-  CheckError(mysql_stmt_bind_result(FStatment, @FResults.Binds[0]));
 end;
 
 procedure TmncMySQLCommand.FetchValues;
@@ -994,7 +1003,7 @@ var
   aCurrent: TmncFields;
   aType: enum_field_types;
   aColumn: TmncMySQLColumn;
-  real_length: Integer;
+  real_length: culong;
   bind: MYSQL_BIND;
   state: Integer;
 begin
@@ -1024,9 +1033,11 @@ begin
         MYSQL_TYPE_TIME: ;
         MYSQL_TYPE_VARCHAR,MYSQL_TYPE_VAR_STRING, MYSQL_TYPE_STRING:
         begin
-          FillByte(bind, sizeof(bind), 0);
+          s := FResults.Buffers[i].buf.AsString;
           real_length := FResults.Buffers[i].length;
           SetLength(s, real_length);
+
+          FillByte(bind, sizeof(bind), 0);
           bind.buffer := @s[1];
           bind.buffer_length := real_length;
           CheckError(mysql_stmt_fetch_column(FStatment, @bind, i, 0));
@@ -1046,6 +1057,7 @@ begin
         MYSQL_TYPE_GEOMETRY: ;
       end;
     end;
+    Fields := aCurrent;
   end;
 
 (*  c := mysql_column_count(FStatment);
