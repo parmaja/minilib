@@ -333,24 +333,6 @@ begin
     MYSQL_TYPE_STRING: Result := dtString;
     MYSQL_TYPE_GEOMETRY: Result := dtBig; //TODO what is that!!!
   end;
-
-    case vType of
-    MYSQL_TYPE_LONG:
-      Result := dtInteger;
-    MYSQL_TYPE_FLOAT:
-      Result := dtFloat;
-    MYSQL_TYPE_BLOB: Result := dtBlob;
-    MYSQL_TYPE_NULL: Result := dtUnknown;
-    MYSQL_TYPE_STRING:
-    begin
-      if SameText(SchemaType, 'Blob') then
-        Result := dtBlob
-      else
-        Result := dtString;
-    end
-    else
-      Result := dtUnknown;
-  end;
 end;
 
 
@@ -863,9 +845,11 @@ procedure TmncMySQLCommand.DoNext;
 var
   r: Integer;
   b: Boolean;
+  state: integer;
 begin
-//  CheckError(mysql_step(@FStatment));
-  b := mysql_stmt_fetch(FStatment) in [0, MYSQL_DATA_TRUNCATED];
+  //  CheckError(mysql_step(@FStatment));
+  state := mysql_stmt_fetch(FStatment);
+  b := state in [0, MYSQL_DATA_TRUNCATED];
   //r := mysql_fetch_row(FStatment);
   if (b) then
   begin
@@ -994,27 +978,30 @@ end;
 
 procedure TmncMySQLCommand.FetchValues;
 var
-  i: Integer;
-  c: Integer;
-  int:Int64;
+  buf: record case byte of
+    0: (i: Integer);
+    1: (f: Double);
+    2: (b: boolean);
+    4: (g: int64);
+    5: (c: Currency);
+  end;
+  c, i: Integer;
 {$ifdef fpc}
-  str: string;
+  s: string;
 {$else}
   str: utf8string;
 {$endif}
-  flt: Double;
   aCurrent: TmncFields;
   aType: enum_field_types;
   aColumn: TmncMySQLColumn;
-  //aSize: Integer;
+  real_length: Integer;
+  bind: MYSQL_BIND;
+  state: Integer;
 begin
-  CheckError(mysql_stmt_fetch(FStatment));
-
-  c := mysql_stmt_field_count(FStatment);
-  if c > 0 then
+  if Columns.Count > 0 then
   begin
     aCurrent := CreateFields(Columns);
-    for i := 0 to c - 1 do
+    for i := 0 to Columns.Count - 1 do
     begin
       aColumn := Columns[i];
       aType := aColumn.FieldType;
@@ -1035,9 +1022,16 @@ begin
         MYSQL_TYPE_NEWDATE: ;
         MYSQL_TYPE_DATE: ;
         MYSQL_TYPE_TIME: ;
-        MYSQL_TYPE_VARCHAR: ;
-        MYSQL_TYPE_VAR_STRING: ;
-        MYSQL_TYPE_STRING: ;
+        MYSQL_TYPE_VARCHAR,MYSQL_TYPE_VAR_STRING, MYSQL_TYPE_STRING:
+        begin
+          FillByte(bind, sizeof(bind), 0);
+          real_length := FResults.Buffers[i].length;
+          SetLength(s, real_length);
+          bind.buffer := @s[1];
+          bind.buffer_length := real_length;
+          CheckError(mysql_stmt_fetch_column(FStatment, @bind, i, 0));
+          aCurrent.Add(i, s);
+        end;
         MYSQL_TYPE_TIMESTAMP2: ;
         MYSQL_TYPE_DATETIME2: ;
         MYSQL_TYPE_TIME2: ;
