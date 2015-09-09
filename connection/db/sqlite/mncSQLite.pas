@@ -674,13 +674,15 @@ end;
 
 procedure TmncSQLiteCommand.ApplyParams;
 var
+  buf: record case byte of
+    0: (i: Integer);
+    1: (f: Double);
+    2: (b: boolean);
+    4: (g: int64);
+    5: (c: Currency);
+  end;
   s: UTF8String;
-  b: boolean;
   i: Integer;
-  d: Double;
-  c: Currency;
-  t: Integer;
-  t64: Int64;
   v: Variant;
 begin
   for i := 0 to Binds.Count - 1 do
@@ -697,33 +699,33 @@ begin
       case VarType(Binds[i].Param.Value) of
         varDate:
         begin
-          d := Binds[i].Param.Value;// - UnixDateDelta; todo
-          CheckError(sqlite3_bind_double(FStatment, i + 1, d));
+          buf.f := Binds[i].Param.Value;// - UnixDateDelta; todo
+          CheckError(sqlite3_bind_double(FStatment, i + 1, buf.f));
         end;
         varBoolean:
         begin
-          b := Binds[i].Param.Value;
-          CheckError(sqlite3_bind_int(FStatment, i + 1, ord(b)));
+          buf.b := Binds[i].Param.Value;
+          CheckError(sqlite3_bind_int(FStatment, i + 1, ord(buf.b)));
         end;
         varInteger:
         begin
-          t := Binds[i].Param.Value;
-          CheckError(sqlite3_bind_int(FStatment, i + 1, t));
+          buf.i := Binds[i].Param.Value;
+          CheckError(sqlite3_bind_int(FStatment, i + 1, buf.i));
         end;
         varint64:
         begin
-          t64 := Binds[i].Param.Value;
-          CheckError(sqlite3_bind_int64(FStatment, i + 1, t64));
+          buf.g := Binds[i].Param.Value;
+          CheckError(sqlite3_bind_int64(FStatment, i + 1, buf.g));
         end;
         varCurrency:
         begin
-          c := Binds[i].Param.Value;
-          CheckError(sqlite3_bind_double(FStatment, i + 1, c));
+          buf.c := Binds[i].Param.Value;
+          CheckError(sqlite3_bind_double(FStatment, i + 1, buf.c));
         end;
         varDouble:
         begin
-          d := Binds[i].Param.Value;
-          CheckError(sqlite3_bind_double(FStatment, i + 1, d));
+          buf.f := Binds[i].Param.Value;
+          CheckError(sqlite3_bind_double(FStatment, i + 1, buf.f));
         end;
         else //String type
         begin
@@ -839,15 +841,17 @@ end;
 
 procedure TmncSQLiteCommand.FetchValues;
 var
+  v: record case byte of
+    0: (i: Integer);
+    1: (f: Double);
+  end;
   i: Integer;
   c: Integer;
-  int:Int64;
 {$ifdef fpc}
   str: string;
 {$else}
   str: utf8string;
 {$endif}
-  flt: Double;
   aCurrent: TmncFields;
   aType: Integer;
   aColumn: TmncColumn;
@@ -873,28 +877,28 @@ begin
         end;
         SQLITE_INTEGER:
         begin
-          int := sqlite3_column_int(FStatment, i);
+          v.i := sqlite3_column_int(FStatment, i);
 {          if aColumn.DataType = ftDate then //todo
             int := int - 1;}
-          aCurrent.Add(i, int);
+          aCurrent.Add(i, v.i);
         end;
         SQLITE_FLOAT:
         begin
-          flt := sqlite3_column_double(FStatment, i);
-          aCurrent.Add(i, flt);
+          v.f := sqlite3_column_double(FStatment, i);
+          aCurrent.Add(i, v.f);
         end;
         SQLITE_BLOB:
         begin
-          int := sqlite3_column_bytes(FStatment, i);
-          SetString(str, PChar(sqlite3_column_blob(FStatment, i)), int);
+          v.i := sqlite3_column_bytes(FStatment, i);
+          SetString(str, PChar(sqlite3_column_blob(FStatment, i)), v.i);
           aCurrent.Add(i, str);
         end;
         SQLITE_TEXT:
         begin
           if SameText(aColumn.SchemaType, 'Blob') then
           begin
-            int := sqlite3_column_bytes(FStatment, i);
-            SetString(str, PChar(sqlite3_column_blob(FStatment, i)), int);
+            v.i := sqlite3_column_bytes(FStatment, i);
+            SetString(str, PChar(sqlite3_column_blob(FStatment, i)), v.i);
           end
           else
             str := sqlite3_column_text(FStatment, i);

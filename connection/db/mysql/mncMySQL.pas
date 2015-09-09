@@ -165,7 +165,7 @@ type
     Binds: array of MYSQL_BIND;
 
     Buffers : array of record
-      buffer: record case byte of
+      buf: record case byte of
         0: (AsInteger: Integer);
         1: (AsBig: int64);
         2: (AsFloat: double);
@@ -981,8 +981,8 @@ begin
     aColumn.FieldType := FieldType;
 
     FResults.Binds[i].buffer_type := FieldType;
-    FResults.Binds[i].buffer := @FResults.Buffers[i].buffer;
-    FResults.Binds[i].buffer_length := SizeOf(FResults.Buffers[i].buffer);
+    FResults.Binds[i].buffer := @FResults.Buffers[i].buf;
+    FResults.Binds[i].buffer_length := SizeOf(FResults.Buffers[i].buf);
     FResults.Binds[i].length := @FResults.Buffers[i].length;
     FResults.Binds[i].is_null := @FResults.Buffers[i].is_null;
     FResults.Binds[i].error := @FResults.Buffers[i].error;
@@ -1022,14 +1022,14 @@ begin
       case aType of
         MYSQL_TYPE_NULL: aCurrent.Add(i, NULL);
         MYSQL_TYPE_BIT: ;
-        MYSQL_TYPE_TINY: aCurrent.Add(i, FResults.Buffers[i].buffer.AsInteger);
-        MYSQL_TYPE_SHORT: aCurrent.Add(i, FResults.Buffers[i].buffer.AsInteger);
-        MYSQL_TYPE_LONG: aCurrent.Add(i, FResults.Buffers[i].buffer.AsInteger);
-        MYSQL_TYPE_INT24: aCurrent.Add(i, FResults.Buffers[i].buffer.AsBig);
-        MYSQL_TYPE_LONGLONG: aCurrent.Add(i, FResults.Buffers[i].buffer.AsBig);
-        MYSQL_TYPE_FLOAT: aCurrent.Add(i, FResults.Buffers[i].buffer.AsFloat);
-        MYSQL_TYPE_DOUBLE: aCurrent.Add(i, FResults.Buffers[i].buffer.AsBig);
-        MYSQL_TYPE_TIMESTAMP: aCurrent.Add(i, FResults.Buffers[i].buffer.AsBig);
+        MYSQL_TYPE_TINY: aCurrent.Add(i, FResults.Buffers[i].buf.AsInteger);
+        MYSQL_TYPE_SHORT: aCurrent.Add(i, FResults.Buffers[i].buf.AsInteger);
+        MYSQL_TYPE_LONG: aCurrent.Add(i, FResults.Buffers[i].buf.AsInteger);
+        MYSQL_TYPE_INT24: aCurrent.Add(i, FResults.Buffers[i].buf.AsBig);
+        MYSQL_TYPE_LONGLONG: aCurrent.Add(i, FResults.Buffers[i].buf.AsBig);
+        MYSQL_TYPE_FLOAT: aCurrent.Add(i, FResults.Buffers[i].buf.AsFloat);
+        MYSQL_TYPE_DOUBLE: aCurrent.Add(i, FResults.Buffers[i].buf.AsBig);
+        MYSQL_TYPE_TIMESTAMP: aCurrent.Add(i, FResults.Buffers[i].buf.AsBig);
         MYSQL_TYPE_DATETIME: ;
         MYSQL_TYPE_YEAR: ;
         MYSQL_TYPE_NEWDATE: ;
@@ -1041,7 +1041,7 @@ begin
         MYSQL_TYPE_TIMESTAMP2: ;
         MYSQL_TYPE_DATETIME2: ;
         MYSQL_TYPE_TIME2: ;
-        MYSQL_TYPE_DECIMAL: aCurrent.Add(i, FResults.Buffers[i].buffer.AsBig);
+        MYSQL_TYPE_DECIMAL: aCurrent.Add(i, FResults.Buffers[i].buf.AsBig);
         MYSQL_TYPE_NEWDECIMAL: ;
         MYSQL_TYPE_ENUM: ;
         MYSQL_TYPE_SET: ;
