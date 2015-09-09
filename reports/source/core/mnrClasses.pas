@@ -525,7 +525,7 @@ type
 
     procedure FillNow(vParams: TmnrFetch; vIndex: Integer; vReference: TmnrReferencesRow); virtual;
     function FindDesignCellName(const vName: string): TmnrDesignCell;
-    function FindDesignCellGuid(const vGuid: string): TmnrDesignCell;
+    //function FindDesignCellGuid(const vGuid: string): TmnrDesignCell;
 
     procedure AddTitles;
     procedure AddReportTitles;
@@ -1576,10 +1576,10 @@ begin
   Result := DesignRows.FindName(vName)
 end;
 
-function TmnrSection.FindDesignCellGuid(const vGuid: string): TmnrDesignCell;
+{function TmnrSection.FindDesignCellGuid(const vGuid: string): TmnrDesignCell;
 begin
-  //Result := DesignRows.Find(vGuid)
-end;
+  Result := DesignRows.Find(vGuid)
+end;}
 
 function TmnrSection.GetCaption: string;
 begin
