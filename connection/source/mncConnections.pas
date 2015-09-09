@@ -209,7 +209,7 @@ type
     property Params: TStrings read FParams write SetParams;
   end;
 
-  TmncDataType = (dtUnknown, dtString, dtBoolean, dtInteger, dtCurrency, dtFloat, dtDate, dtTime, dtDateTime, dtMemo, dtBlob);
+  TmncDataType = (dtUnknown, dtString, dtBoolean, dtInteger, dtCurrency, dtFloat, dtDate, dtTime, dtDateTime, dtMemo, dtBlob, dtBig {bigint or int64}{, dtEnum, dtSet});
   TmncBlobType = (blobBinary, blobText);
 
 {
@@ -272,6 +272,7 @@ type
     function GetValue: Variant; override;
     procedure SetValue(const AValue: Variant); override;
     procedure SetSize(AValue: Int64); virtual;
+    procedure SetType(vType: TmncDataType);
   published
     property Index: Integer read FIndex write FIndex;
     property Name: string read FName write FName;
@@ -285,6 +286,8 @@ type
 
   TmncColumnClass = class of TmncColumn;
 
+  { TmncColumns }
+
   TmncColumns = class(TmncItems)
   private
     function GetItem(Index: Integer): TmncColumn;
@@ -293,6 +296,7 @@ type
   public
     function Add(vIndex: Integer; vName: string; vType: TmncDataType; FieldClass: TmncColumnClass = nil): TmncColumn; overload;
     function Add(vName: string; vType: TmncDataType): TmncColumn; overload;
+    function Add(vColumn: TmncColumn): Integer; overload;
     property Items[Index: Integer]: TmncColumn read GetItem; default;
   end;
 
@@ -1265,6 +1269,11 @@ begin
   Result := Add(Count, vName, vType);
 end;
 
+function TmncColumns.Add(vColumn: TmncColumn): Integer;
+begin
+  Result := inherited Add(vColumn);
+end;
+
 function TmncColumns.Find(vName: string): TmncItem;
 var
   i: Integer;
@@ -1401,6 +1410,11 @@ procedure TmncColumn.SetSize(AValue: Int64);
 begin
   if FSize =AValue then Exit;
   FSize :=AValue;
+end;
+
+procedure TmncColumn.SetType(vType: TmncDataType);
+begin
+  FDataType := vType;
 end;
 
 function TmncColumn.GetValue: Variant;

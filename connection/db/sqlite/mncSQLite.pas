@@ -820,8 +820,8 @@ var
   i: Integer;
   c: Integer;
   aName: string;
-  aType: Integer;
-  pType: PChar;
+  FieldType: Integer;
+  SchemaType: PChar;
   aColumn: TmncColumn;
   //aSize: Integer;
 begin
@@ -830,10 +830,10 @@ begin
   for i := 0 to c -1 do
   begin
     aName :=  DequoteStr(sqlite3_column_name(FStatment, i));
-    aType := sqlite3_column_type(FStatment, i);
-    pType := sqlite3_column_decltype(FStatment, i);
-    aColumn := Columns.Add(aName, SQLTypeToType(aType, pType));
-    aColumn.SchemaType := pType;
+    FieldType := sqlite3_column_type(FStatment, i);
+    SchemaType := sqlite3_column_decltype(FStatment, i);
+    aColumn := Columns.Add(aName, SQLTypeToType(FieldType, SchemaType));
+    aColumn.SchemaType := SchemaType;
   end;
 end;
 

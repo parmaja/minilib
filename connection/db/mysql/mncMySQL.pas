@@ -140,6 +140,45 @@ type
     property Items[Index: Integer]: TmncMySQLBind read GetItem; default;
   end;
 
+  { TmncMySQLColumn }
+
+  TmncMySQLColumn = class(TmncColumn)
+  public
+    FieldType: enum_field_types;
+    constructor Create(vName: string; vType: TmncDataType);
+  end;
+
+  { TmncMySQLColumns }
+
+  TmncMySQLColumns = class(TmncColumns)
+  private
+    function GetItem(Index: Integer): TmncMySQLColumn;
+  protected
+  public
+    property Items[Index: Integer]: TmncMySQLColumn read GetItem; default;
+  end;
+
+  { TmncMySQLResults }
+
+  TmncMySQLResults = class(TObject)
+  public
+    Binds: array of MYSQL_BIND;
+
+    Buffers : array of record
+      buffer: record case byte of
+        0: (AsInteger: Integer);
+        1: (AsBig: int64);
+        2: (AsFloat: double);
+        3: (AsRaw: array[0..10] of byte);
+      end;
+      length: dword;
+      is_null: my_bool;
+      error: my_bool;
+    end;
+    constructor Create(vLength: Integer);
+    destructor Destroy; override;
+  end;
+
   { TmncMySQLCommand }
 
   TmncMySQLCommand = class(TmncSQLCommand)
@@ -147,7 +186,9 @@ type
     FStatment: PMYSQL_STMT;
     FBOF: Boolean;
     FEOF: Boolean;
+    FResults : TmncMySQLResults;
     function GetBinds: TmncMySQLBinds;
+    function GetColumns: TmncMySQLColumns;
     function GetConnection: TmncMySQLConnection;
     procedure FetchColumns;
     procedure FetchValues;
@@ -167,7 +208,9 @@ type
     function CreateFields(vColumns: TmncColumns): TmncFields; override;
     function CreateParams: TmncParams; override;
     function CreateBinds: TmncBinds; override;
+    function CreateColumns: TmncColumns; override;
     property Binds: TmncMySQLBinds read GetBinds;
+
   public
     property Connection: TmncMySQLConnection read GetConnection;
     property Session: TmncMySQLSession read GetSession write SetSession;
@@ -175,7 +218,11 @@ type
     function GetRowsChanged: Integer; virtual;
     function GetLastInsertID: Int64;
     property Statment: PMYSQL_STMT read FStatment;
+    property Columns: TmncMySQLColumns read GetColumns;
   end;
+
+function MySQLTypeToType(vType: enum_field_types; const SchemaType: string): TmncDataType;
+function MySQLTypeToString(vType: enum_field_types): String;
 
 implementation
 
@@ -187,6 +234,38 @@ const
 
 var
   IsInitializeMySQL: Boolean = False;
+
+{ TmncMySQLResults }
+
+constructor TmncMySQLResults.Create(vLength: Integer);
+begin
+  inherited Create;
+  SetLength(Binds, vLength);
+  SetLength(Buffers, vLength);
+end;
+
+destructor TmncMySQLResults.Destroy;
+begin
+  Binds := nil;
+  Buffers := nil;
+  inherited Destroy;
+end;
+
+{ TmncMySQLColumn }
+
+constructor TmncMySQLColumn.Create(vName: string; vType: TmncDataType);
+begin
+  inherited Create;
+  Name := vName;
+  SetType(vType);
+end;
+
+{ TmncMySQLColumns }
+
+function TmncMySQLColumns.GetItem(Index: Integer): TmncMySQLColumn;
+begin
+  Result := inherited Items[Index] as TmncMySQLColumn;
+end;
 
 { TmncMySQLBind }
 
@@ -220,9 +299,42 @@ begin
   inherited;
 end;
 
-function SQLTypeToType(vType: enum_field_types; const SchemaType: string): TmncDataType;
+function MySQLTypeToType(vType: enum_field_types; const SchemaType: string): TmncDataType;
 begin
   case vType of
+    MYSQL_TYPE_DECIMAL: Result := dtCurrency;
+    MYSQL_TYPE_TINY: Result := dtInteger;
+    MYSQL_TYPE_SHORT: Result := dtInteger;
+    MYSQL_TYPE_LONG: Result := dtInteger;
+    MYSQL_TYPE_FLOAT: Result := dtFloat;
+    MYSQL_TYPE_DOUBLE: Result := dtFloat;
+    MYSQL_TYPE_NULL: Result := dtUnknown;
+    MYSQL_TYPE_TIMESTAMP: Result := dtDateTime;
+    MYSQL_TYPE_LONGLONG: Result := dtBig;
+    MYSQL_TYPE_INT24: Result := dtBig;
+    MYSQL_TYPE_DATE: Result := dtDate;
+    MYSQL_TYPE_TIME: Result := dtTime;
+    MYSQL_TYPE_DATETIME: Result := dtDateTime;
+    MYSQL_TYPE_YEAR: Result := dtDate;
+    MYSQL_TYPE_NEWDATE: Result := dtDate;
+    MYSQL_TYPE_VARCHAR: Result := dtString;
+    MYSQL_TYPE_BIT: Result := dtBoolean;
+    MYSQL_TYPE_TIMESTAMP2: Result := dtDateTime;
+    MYSQL_TYPE_DATETIME2: Result := dtDateTime;
+    MYSQL_TYPE_TIME2: Result := dtTime;
+    MYSQL_TYPE_NEWDECIMAL: Result := dtCurrency;
+    MYSQL_TYPE_ENUM: Result := dtInteger; //TODO dtEnum
+    MYSQL_TYPE_SET: Result := dtBig;
+    MYSQL_TYPE_TINY_BLOB: Result := dtBlob;
+    MYSQL_TYPE_MEDIUM_BLOB: Result := dtBlob;
+    MYSQL_TYPE_LONG_BLOB: Result := dtBlob;
+    MYSQL_TYPE_BLOB: Result := dtBlob;
+    MYSQL_TYPE_VAR_STRING: Result := dtString;
+    MYSQL_TYPE_STRING: Result := dtString;
+    MYSQL_TYPE_GEOMETRY: Result := dtBig; //TODO what is that!!!
+  end;
+
+    case vType of
     MYSQL_TYPE_LONG:
       Result := dtInteger;
     MYSQL_TYPE_FLOAT:
@@ -238,6 +350,43 @@ begin
     end
     else
       Result := dtUnknown;
+  end;
+end;
+
+
+function MySQLTypeToString(vType: enum_field_types): String;
+begin
+  case vType of
+    MYSQL_TYPE_DECIMAL: Result := 'DECIMAL';
+    MYSQL_TYPE_TINY: Result := 'TINY';
+    MYSQL_TYPE_SHORT: Result := 'SHORT';
+    MYSQL_TYPE_LONG: Result := 'LONG';
+    MYSQL_TYPE_FLOAT: Result := 'FLOAT';
+    MYSQL_TYPE_DOUBLE: Result := 'DOUBLE';
+    MYSQL_TYPE_NULL: Result := 'NULL';
+    MYSQL_TYPE_TIMESTAMP: Result := 'TIMESTAMP';
+    MYSQL_TYPE_LONGLONG: Result := 'LONGLONG';
+    MYSQL_TYPE_INT24: Result := 'INT24';
+    MYSQL_TYPE_DATE: Result := 'DATE';
+    MYSQL_TYPE_TIME: Result := 'TIME';
+    MYSQL_TYPE_DATETIME: Result := 'DATETIME';
+    MYSQL_TYPE_YEAR: Result := 'YEAR';
+    MYSQL_TYPE_NEWDATE: Result := 'NEWDATE';
+    MYSQL_TYPE_VARCHAR: Result := 'VARCHAR';
+    MYSQL_TYPE_BIT: Result := 'BIT';
+    MYSQL_TYPE_TIMESTAMP2: Result := 'TIMESTAMP2';
+    MYSQL_TYPE_DATETIME2: Result := 'DATETIME2';
+    MYSQL_TYPE_TIME2: Result := 'TIME2';
+    MYSQL_TYPE_NEWDECIMAL: Result := 'NEWDECIMAL';
+    MYSQL_TYPE_ENUM: Result := 'ENUM';
+    MYSQL_TYPE_SET: Result := 'SET';
+    MYSQL_TYPE_TINY_BLOB: Result := 'TINY_BLOB';
+    MYSQL_TYPE_MEDIUM_BLOB: Result := 'MEDIUM_BLOB';
+    MYSQL_TYPE_LONG_BLOB: Result := 'LONG_BLOB';
+    MYSQL_TYPE_BLOB: Result := 'BLOB';
+    MYSQL_TYPE_VAR_STRING: Result := 'VAR_STRING';
+    MYSQL_TYPE_STRING: Result := 'STRING';
+    MYSQL_TYPE_GEOMETRY: Result := 'GEOMETRY';
   end;
 end;
 
@@ -694,18 +843,18 @@ begin
         begin
           s := VarToStrDef(Binds[i].Param.Value, '');
           Values[i].buffer := Binds[i].AllocBuffer(PChar(s)^, Length(s));
-          Values[i].buffer_length := 0;
+          Values[i].buffer_length := Length(s);
           Values[i].buffer_type := MYSQL_TYPE_VAR_STRING;
         end;
       end;
     end;
   end;
+  CheckError(mysql_stmt_bind_param(FStatment, @Values[0]));
 end;
 
 procedure TmncMySQLCommand.DoExecute;
 begin
   FBOF := True;
-  CheckError(mysql_stmt_reset(FStatment));
   ApplyParams;
   CheckError(mysql_stmt_execute(FStatment));
 end;
@@ -743,7 +892,10 @@ begin
   FBOF := True;
 //  mysql_prepare_v2
 //TODO: apply value of params if using injection mode
-  FStatment := mysql_stmt_init(Connection.DBHandle);
+  if FStatment <> nil then
+    CheckError(mysql_stmt_reset(FStatment))
+  else
+    FStatment := mysql_stmt_init(Connection.DBHandle);
   try
     CheckError(mysql_stmt_prepare(FStatment, PChar(SQLProcessed.SQL), Length(SQLProcessed.SQL)));
   except
@@ -775,8 +927,14 @@ begin
   Result := TmncMySQLBinds.Create;
 end;
 
+function TmncMySQLCommand.CreateColumns: TmncColumns;
+begin
+  Result := TmncMySQLColumns.Create();
+end;
+
 procedure TmncMySQLCommand.DoClose;
 begin
+  FreeAndNil(FResults);
   mysql_stmt_free_result(FStatment);
   mysql_stmt_close(FStatment);
   FStatment := nil;
@@ -792,21 +950,46 @@ var
   i: Integer;
   c: Integer;
   aName: string;
-  aType: Integer;
-  pType: PChar;
-  aColumn: TmncColumn;
+  FieldType: enum_field_types;
+  SchemaType: string;
+  aColumn: TmncMySQLColumn;
   //aSize: Integer;
+  Res : PMYSQL_RES;
+  Field: PMYSQL_FIELD;
 begin
   Columns.Clear;
+
+  Res := mysql_stmt_result_metadata(FStatment); // Fetch result set meta information
+
+  Field := mysql_fetch_fields(Res);
   c := mysql_stmt_field_count(FStatment);
-  {for i := 0 to c -1 do
+
+  FResults := TmncMySQLResults.Create(c);
+
+  for i := 0 to c -1 do
   begin
-    aName :=  DequoteStr(mysql_column_name(FStatment, i));
-    aType := mysql_column_type(FStatment, i);
-    pType := mysql_column_decltype(FStatment, i);
-    aColumn := Columns.Add(aName, SQLTypeToType(aType, pType));
-    aColumn.SchemaType := pType;
-  end;}
+    aName :=  Field.name;
+    FieldType := Field.ftype;
+    SchemaType := MySQLTypeToString(FieldType);
+
+    aColumn := TmncMySQLColumn.Create(aName, MySQLTypeToType(FieldType, SchemaType));
+
+    Columns.Add(aColumn);
+
+    aColumn.SchemaType := SchemaType;
+    aColumn.Size := Field.length;
+    aColumn.FieldType := FieldType;
+
+    FResults.Binds[i].buffer_type := FieldType;
+    FResults.Binds[i].buffer := @FResults.Buffers[i].buffer;
+    FResults.Binds[i].buffer_length := SizeOf(FResults.Buffers[i].buffer);
+    FResults.Binds[i].length := @FResults.Buffers[i].length;
+    FResults.Binds[i].is_null := @FResults.Buffers[i].is_null;
+    FResults.Binds[i].error := @FResults.Buffers[i].error;
+
+    Inc(Field);
+  end;
+  CheckError(mysql_stmt_bind_result(FStatment, @FResults.Binds[0]));
 end;
 
 procedure TmncMySQLCommand.FetchValues;
@@ -821,12 +1004,56 @@ var
 {$endif}
   flt: Double;
   aCurrent: TmncFields;
-  aType: Integer;
-  aColumn: TmncColumn;
+  aType: enum_field_types;
+  aColumn: TmncMySQLColumn;
   //aSize: Integer;
 begin
-  //belal why not use Columns ????
-  //c := Columns.Count;
+  CheckError(mysql_stmt_fetch(FStatment));
+
+  c := mysql_stmt_field_count(FStatment);
+  if c > 0 then
+  begin
+    aCurrent := CreateFields(Columns);
+    for i := 0 to c - 1 do
+    begin
+      aColumn := Columns[i];
+      aType := aColumn.FieldType;
+
+      case aType of
+        MYSQL_TYPE_NULL: aCurrent.Add(i, NULL);
+        MYSQL_TYPE_BIT: ;
+        MYSQL_TYPE_TINY: aCurrent.Add(i, FResults.Buffers[i].buffer.AsInteger);
+        MYSQL_TYPE_SHORT: aCurrent.Add(i, FResults.Buffers[i].buffer.AsInteger);
+        MYSQL_TYPE_LONG: aCurrent.Add(i, FResults.Buffers[i].buffer.AsInteger);
+        MYSQL_TYPE_INT24: aCurrent.Add(i, FResults.Buffers[i].buffer.AsBig);
+        MYSQL_TYPE_LONGLONG: aCurrent.Add(i, FResults.Buffers[i].buffer.AsBig);
+        MYSQL_TYPE_FLOAT: aCurrent.Add(i, FResults.Buffers[i].buffer.AsFloat);
+        MYSQL_TYPE_DOUBLE: aCurrent.Add(i, FResults.Buffers[i].buffer.AsBig);
+        MYSQL_TYPE_TIMESTAMP: aCurrent.Add(i, FResults.Buffers[i].buffer.AsBig);
+        MYSQL_TYPE_DATETIME: ;
+        MYSQL_TYPE_YEAR: ;
+        MYSQL_TYPE_NEWDATE: ;
+        MYSQL_TYPE_DATE: ;
+        MYSQL_TYPE_TIME: ;
+        MYSQL_TYPE_VARCHAR: ;
+        MYSQL_TYPE_VAR_STRING: ;
+        MYSQL_TYPE_STRING: ;
+        MYSQL_TYPE_TIMESTAMP2: ;
+        MYSQL_TYPE_DATETIME2: ;
+        MYSQL_TYPE_TIME2: ;
+        MYSQL_TYPE_DECIMAL: aCurrent.Add(i, FResults.Buffers[i].buffer.AsBig);
+        MYSQL_TYPE_NEWDECIMAL: ;
+        MYSQL_TYPE_ENUM: ;
+        MYSQL_TYPE_SET: ;
+        MYSQL_TYPE_TINY_BLOB: ;
+        MYSQL_TYPE_MEDIUM_BLOB: ;
+        MYSQL_TYPE_LONG_BLOB: ;
+        MYSQL_TYPE_BLOB: ;
+        MYSQL_TYPE_GEOMETRY: ;
+      end;
+    end;
+  end;
+
 (*  c := mysql_column_count(FStatment);
   if c > 0 then
   begin
@@ -896,6 +1123,11 @@ end;
 function TmncMySQLCommand.GetBinds: TmncMySQLBinds;
 begin
   Result := inherited Binds as TmncMySQLBinds;
+end;
+
+function TmncMySQLCommand.GetColumns: TmncMySQLColumns;
+begin
+  Result := inherited Columns as TmncMySQLColumns;
 end;
 
 initialization
