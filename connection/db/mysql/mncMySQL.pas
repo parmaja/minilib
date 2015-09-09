@@ -18,7 +18,7 @@ interface
 uses
   Classes, SysUtils, Variants, ctypes,
   mncCommons, mncSchemas, mncMySql56dyn,
-  mnUtils, mncConnections, mncSQL;
+  mncConnections, mncSQL;
 
 type
   { TmncMySQLConnection }
@@ -27,8 +27,10 @@ type
   private
     FDBHandle: PMYSQL;
     FExclusive: Boolean;
+    FMultiCursors: Boolean;
     FReadCommited: Boolean;
     procedure SetExclusive(const AValue: Boolean);
+    procedure SetMultiCursors(AValue: Boolean);
     procedure SetReadCommited(const AValue: Boolean);
   protected
     procedure InitPragma; virtual;
@@ -49,6 +51,7 @@ type
     property Exclusive: Boolean read FExclusive write SetExclusive;
     property ReadCommited: Boolean read FReadCommited write SetReadCommited;
     property DBHandle: PMYSQL read FDBHandle;
+    property MultiCursors: Boolean read FMultiCursors write SetMultiCursors;
   end;
 
   { TmncMySQLSession }
@@ -68,8 +71,6 @@ type
     function CreateCommand: TmncSQLCommand; override;
     function CreateSchema: TmncSchema; override;
     procedure Execute(SQL: string);
-    function GetLastInsertID: Int64;
-    function GetRowsChanged: Integer;
     property Connection: TmncMySQLConnection read GetConnection write SetConnection;
   end;
 
@@ -184,10 +185,11 @@ type
 
   TmncMySQLCommand = class(TmncSQLCommand)
   private
+    FReadOnly: Boolean;
     FStatment: PMYSQL_STMT;
+    FResults :TmncMySQLResults;
     FBOF: Boolean;
     FEOF: Boolean;
-    FResults : TmncMySQLResults;
     function GetBinds: TmncMySQLBinds;
     function GetColumns: TmncMySQLColumns;
     function GetConnection: TmncMySQLConnection;
@@ -195,6 +197,7 @@ type
     procedure FetchValues;
     procedure ApplyParams;
     function GetSession: TmncMySQLSession;
+    procedure SetReadOnly(AValue: Boolean);
     procedure SetSession(const AValue: TmncMySQLSession);
   protected
     procedure CheckError(Error:longint);
@@ -216,10 +219,11 @@ type
     property Connection: TmncMySQLConnection read GetConnection;
     property Session: TmncMySQLSession read GetSession write SetSession;
     procedure Clear; override;
-    function GetRowsChanged: Integer; virtual;
-    function GetLastInsertID: Int64;
     property Statment: PMYSQL_STMT read FStatment;
     property Columns: TmncMySQLColumns read GetColumns;
+    property ReadOnly: Boolean read FReadOnly write SetReadOnly;
+    function GetLastInsertID: Int64; virtual;
+    function GetRowsChanged: Integer;
   end;
 
 function MySQLTypeToType(vType: enum_field_types; const SchemaType: string): TmncDataType;
@@ -228,7 +232,7 @@ function MySQLTypeToString(vType: enum_field_types): String;
 implementation
 
 uses
-  mncDB, mncMySQLSchemas;
+  mncDB;
 
 const
   MySQL_OK = 0;
@@ -483,10 +487,6 @@ begin
 end;
 
 procedure TmncMySQLConnection.DoConnect;
-var
-  f: Integer;
-  r: PMYSQL;
-  aHost: string;
 begin
   //TODO AutoCreate
   //* ref: https://dev.mysql.com/doc/refman/5.0/en/mysql-real-connect.html
@@ -495,6 +495,10 @@ begin
     //mysql_options(&mysql,MYSQL_READ_DEFAULT_GROUP,"your_prog_name");
     CheckError(mysql_real_connect(FDBHandle, PAnsiChar(Host), PChar(UserName), PChar(Password), nil, 0, nil, CLIENT_MULTI_RESULTS));
     CheckError(mysql_select_db(FDBHandle, PAnsiChar(Resource)));
+    if MultiCursors then
+      CheckError(mysql_set_server_option(FDBHandle, MYSQL_OPTION_MULTI_STATEMENTS_ON))
+    else
+      CheckError(mysql_set_server_option(FDBHandle, MYSQL_OPTION_MULTI_STATEMENTS_OFF))
   except
     on E:Exception do
     begin
@@ -574,34 +578,8 @@ begin
 end;
 
 procedure TmncMySQLConnection.Execute(Command: string);
-var
- lMsg  : PChar;
- s : Utf8String;
- r  : integer;
 begin
-  if mysql_query(FDBHandle, PAnsiChar(Command)) <> 0 then
-    RaiseError(-1, 'Query failed');
-{  lMSg := nil;
-  s := Command;
-  r := mysql_exec(FDBHandle, PChar(s), nil, nil, @lMsg);
-  if lMSg <> nil then
-  begin
-    s := lMsg;
-    mysql_free(lMSg);
-  end;
-  CheckError(r, s);}
-end;
-
-function TmncMySQLSession.GetLastInsertID: Int64;
-begin
-  CheckActive;
-  //Result := mysql_last_insert_rowid(Connection.DBHandle);
-end;
-
-function TmncMySQLSession.GetRowsChanged: Integer;
-begin
-  CheckActive;
-  //Result := mysql_changes(Connection.DBHandle);
+  CheckError(mysql_query(FDBHandle, PAnsiChar(Command)));
 end;
 
 function TmncMySQLSession.GetActive: Boolean;
@@ -643,6 +621,21 @@ begin
   end;
 end;
 
+procedure TmncMySQLConnection.SetMultiCursors(AValue: Boolean);
+begin
+  if FMultiCursors <> AValue then
+  begin
+    FMultiCursors :=AValue;
+    if Active then
+    begin
+      if MultiCursors then
+        CheckError(mysql_set_server_option(FDBHandle, MYSQL_OPTION_MULTI_STATEMENTS_ON))
+      else
+        CheckError(mysql_set_server_option(FDBHandle, MYSQL_OPTION_MULTI_STATEMENTS_OFF))
+    end;
+  end;
+end;
+
 procedure TmncMySQLConnection.SetReadCommited(const AValue: Boolean);
 begin
   if FReadCommited <> AValue then
@@ -666,22 +659,13 @@ end;
 procedure TmncMySQLCommand.CheckError(Error: longint);
 var
   s : Utf8String;
-  ExtraMsg: string;
-  r: Integer;
 begin
   if (Error <> MySQL_OK) then
   begin
     s := 'MySQL: ' + IntToStr(Error) + ', ' + mysql_stmt_error(FStatment) ;
     if Active then
     begin
-{      r := mysql_finalize(FStatment);//without check error prevent the loop
-      if (r <> MySQL_OK) then
-        ExtraMsg := mysql_errmsg(Connection.DBHandle)
-      else
-        ExtraMsg := '';
-      if ExtraMsg <> '' then
-        s := s + ' - ' + ExtraMsg;
-      FStatment := nil;}
+      DoClose;
     end;
     raise EmncException.Create(s) {$ifdef fpc} at get_caller_frame(get_frame) {$endif};
   end;
@@ -690,6 +674,15 @@ end;
 function TmncMySQLCommand.GetSession: TmncMySQLSession;
 begin
   Result := inherited Session as TmncMySQLSession;
+end;
+
+procedure TmncMySQLCommand.SetReadOnly(AValue: Boolean);
+begin
+  CheckInactive;
+  if FReadOnly <> AValue then
+  begin
+    FReadOnly := AValue;
+  end;
 end;
 
 procedure TmncMySQLCommand.SetSession(const AValue: TmncMySQLSession);
@@ -710,12 +703,14 @@ end;
 
 function TmncMySQLCommand.GetRowsChanged: Integer;
 begin
-  Result := Session.GetRowsChanged;
+  CheckActive;
+  Result := mysql_stmt_affected_rows(FStatment);
 end;
 
 function TmncMySQLCommand.GetLastInsertID: Int64;
 begin
-  Result := Session.GetLastInsertID;
+  CheckActive;
+  Result := mysql_stmt_insert_id(FStatment);
 end;
 
 procedure DateTimeToMySQLDateTime(DateTime: TDateTime; out ATime: MYSQL_TIME);
@@ -735,16 +730,12 @@ begin
 end ;
 
 procedure DateTimeToMySQLTime(DateTime: TDateTime; out ATime: MYSQL_TIME);
-var
-  st: TSystemTime;
 begin
   DateTimeToMySQLDateTime(DateTime, ATime);
   ATime.time_type := MYSQL_TIMESTAMP_TIME;
 end ;
 
 procedure DateTimeToMySQLDate(DateTime: TDateTime; out ATime: MYSQL_TIME);
-var
-  st: TSystemTime;
 begin
   DateTimeToMySQLDateTime(DateTime, ATime);
   ATime.time_type := MYSQL_TIMESTAMP_DATE;
@@ -753,13 +744,11 @@ end ;
 procedure TmncMySQLCommand.ApplyParams;
 var
   s: UTF8String;
-  b: my_bool;
   dt: MYSQL_TIME;
   tiny: smallint;
 
   i: Integer;
   d: Double;
-  c: Currency;
   n: Integer;
   t64: Int64;
   Values: TMySQLBinds;
@@ -844,43 +833,41 @@ end;
 
 procedure TmncMySQLCommand.DoNext;
 var
-  r: Integer;
   b: Boolean;
   state: integer;
 begin
   if FBOF then
     FetchColumns;
   state := mysql_stmt_fetch(FStatment);
-  b := state in [0, MYSQL_DATA_TRUNCATED];
-  //r := mysql_fetch_row(FStatment);
+  b := state in [0, MYSQL_NO_DATA, MYSQL_DATA_TRUNCATED];
   if (b) then
   begin
     FetchValues;
     FEOF := False;
   end
-  else //if (r = MySQL_DONE) then
+  else
   begin
     FEOF := True;
-    //CheckError(mysql_reset(FStatment));
   end;
-//  else if error
-//    CheckError(r);
   FBOF := False;
 end;
 
 procedure TmncMySQLCommand.DoPrepare;
 var
-  r: Integer;
+  aType: enum_cursor_type;
 begin
   //* ref: https://dev.mysql.com/doc/refman/5.0/en/mysql-stmt-prepare.html
   FBOF := True;
-//  mysql_prepare_v2
-//TODO: apply value of params if using injection mode
   if FStatment <> nil then
     CheckError(mysql_stmt_reset(FStatment))
   else
     FStatment := mysql_stmt_init(Connection.DBHandle);
   try
+    if ReadOnly then
+    begin
+      aType := CURSOR_TYPE_READ_ONLY;
+      CheckError(mysql_stmt_attr_set(FStatment, STMT_ATTR_CURSOR_TYPE, @aType));
+    end;
     CheckError(mysql_stmt_prepare(FStatment, PChar(SQLProcessed.SQL), Length(SQLProcessed.SQL)));
   except
     on E: Exception do
@@ -987,14 +974,7 @@ end;
 
 procedure TmncMySQLCommand.FetchValues;
 var
-  buf: record case byte of
-    0: (i: Integer);
-    1: (f: Double);
-    2: (b: boolean);
-    4: (g: int64);
-    5: (c: Currency);
-  end;
-  c, i: Integer;
+  i: Integer;
 {$ifdef fpc}
   s: string;
 {$else}
@@ -1005,7 +985,6 @@ var
   aColumn: TmncMySQLColumn;
   real_length: culong;
   bind: MYSQL_BIND;
-  state: Integer;
 begin
   if Columns.Count > 0 then
   begin
@@ -1033,14 +1012,18 @@ begin
         MYSQL_TYPE_TIME: ;
         MYSQL_TYPE_VARCHAR,MYSQL_TYPE_VAR_STRING, MYSQL_TYPE_STRING:
         begin
-          s := FResults.Buffers[i].buf.AsString;
           real_length := FResults.Buffers[i].length;
-          SetLength(s, real_length);
+          if real_length <= SizeOf(FResults.Buffers[i].buf) then
+            s := FResults.Buffers[i].buf.AsString
+          else
+          begin
+            SetLength(s, real_length);
+            Finalize(bind);
 
-          FillByte(bind, sizeof(bind), 0);
-          bind.buffer := @s[1];
-          bind.buffer_length := real_length;
-          CheckError(mysql_stmt_fetch_column(FStatment, @bind, i, 0));
+            bind.buffer := @s[1];
+            bind.buffer_length := real_length;
+            CheckError(mysql_stmt_fetch_column(FStatment, @bind, i, 0));
+          end;
           aCurrent.Add(i, s);
         end;
         MYSQL_TYPE_TIMESTAMP2: ;
