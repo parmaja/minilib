@@ -54,6 +54,7 @@ type
   protected
     procedure Stop;
   public
+    function IsAnyActive: Boolean;
     property Items[Index: Integer]: TmncSession read GetItem write SetItem; default;
   end;
 
@@ -1450,6 +1451,21 @@ begin
   begin
     if Items[i].Active then
       Items[i].Stop;
+  end;
+end;
+
+function TmncSessions.IsAnyActive: Boolean;
+var
+  i: Integer;
+begin
+  Result := False;
+  for i := 0 to Count - 1 do
+  begin
+    if Items[i].Active then
+    begin
+      Result := True;
+      exit;
+    end;
   end;
 end;
 
