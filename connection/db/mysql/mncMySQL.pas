@@ -33,6 +33,7 @@ type
     procedure SetMultiCursors(AValue: Boolean);
     procedure SetReadCommited(const AValue: Boolean);
   protected
+    FDatabase: string;
     procedure InitPragma; virtual;
     procedure DoConnect; override;
     procedure DoDisconnect; override;
@@ -47,6 +48,7 @@ type
     function CreateSession: TmncSQLSession; overload; override; 
     procedure Interrupt;
     procedure SetCharsetName(Charset: string);
+    procedure SelectDatabase(DBName: string);
     function GetVersion: string;
     procedure Execute(Command: string); override;
     property Exclusive: Boolean read FExclusive write SetExclusive;
@@ -62,6 +64,7 @@ type
     function GetConnection: TmncMySQLConnection;
     procedure SetConnection(const AValue: TmncMySQLConnection);
   protected
+    //TODO Check Setting Connection when no database selected
     procedure DoInit; override;
     procedure DoStart; override;
     procedure DoStop(How: TmncSessionAction; Retaining: Boolean); override;
@@ -486,6 +489,15 @@ begin
   mysql_options(FDBHandle, MYSQL_SET_CHARSET_NAME, PChar(Charset));
 end;
 
+procedure TmncMySQLConnection.SelectDatabase(DBName: string);
+begin
+  CheckActive;
+  if Sessions.Count > 0 then
+    RaiseError(-1, 'You cant select database if you have opened sessions');
+  CheckError(mysql_select_db(FDBHandle, PChar(DBName)));
+  FDatabase := DBName;
+end;
+
 function TmncMySQLConnection.GetVersion: string;
 var
   p: integer;
@@ -502,12 +514,13 @@ begin
   try
     //mysql_options(&mysql,MYSQL_READ_DEFAULT_GROUP,"your_prog_name");
     CheckError(mysql_real_connect(FDBHandle, PAnsiChar(Host), PChar(UserName), PChar(Password), nil, 0, nil, CLIENT_MULTI_RESULTS));
-    CheckError(mysql_select_db(FDBHandle, PAnsiChar(Resource)));
     if MultiCursors then
       CheckError(mysql_set_server_option(FDBHandle, MYSQL_OPTION_MULTI_STATEMENTS_ON))
     else
       CheckError(mysql_set_server_option(FDBHandle, MYSQL_OPTION_MULTI_STATEMENTS_OFF));
      SetCharsetName('utf8');
+    if Resource <> '' then
+      SelectDatabase(Resource);
   except
     on E:Exception do
     begin

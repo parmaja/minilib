@@ -652,7 +652,7 @@ end;
 procedure TmncConnection.Connect;
 begin
   Init;
-  CheckActive;
+  CheckInactive;
   DoConnect;
   if Assigned(OnConnected) then
     OnConnected(Self);
@@ -682,7 +682,7 @@ end;
 
 procedure TmncConnection.Disconnect;
 begin
-  CheckInactive;
+  CheckActive;
   DoDisconnect;
   if Assigned(OnDisconnected) then
     OnDisconnected(Self);
@@ -721,13 +721,13 @@ end;
 
 procedure TmncConnection.CheckActive;
 begin
-  if Connected then
+  if not Connected then
     raise EmncException.Create('Connection already connected');
 end;
 
 procedure TmncConnection.CheckInactive;
 begin
-  if not Connected then
+  if Connected then
     raise EmncException.Create('Connection not connected');
 end;
 

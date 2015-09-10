@@ -322,7 +322,7 @@ var
   DatabaseInfoCommand: Char;
   StatusVector: TStatusVector;
 begin
-  //CheckActive;
+  //CheckInactive;
   DatabaseInfoCommand := Char(isc_info_base_level);
   Call(FBClient.isc_database_info(@StatusVector, @FHandle, 1, @DatabaseInfoCommand,
     FBLocalBufferLength, local_buffer), StatusVector, True);
