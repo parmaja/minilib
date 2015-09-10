@@ -46,6 +46,7 @@ type
     class function Model: TmncConnectionModel; override;
     function CreateSession: TmncSQLSession; overload; override; 
     procedure Interrupt;
+    procedure SetCharsetName(Charset: string);
     function GetVersion: string;
     procedure Execute(Command: string); override;
     property Exclusive: Boolean read FExclusive write SetExclusive;
@@ -167,11 +168,12 @@ type
 
     Buffers : array of record
       buf: record case byte of
-        0: (AsInteger: Integer);
-        1: (AsBig: int64);
-        2: (AsFloat: double);
-        3: (AsRaw: array[0..10] of byte);
-        4: (AsString: array[0..15] of Char);
+        0: (AsRaw: array[0..15] of byte);
+        1: (AsInteger: Integer);
+        2: (AsBig: int64);
+        3: (AsFloat: double);
+        4: (AsDateTime: MYSQL_TIME);
+        5: (AsString: array[0..15] of Char);
       end;
       length: culong;
       is_null: my_bool;
@@ -457,6 +459,7 @@ end;
 constructor TmncMySQLConnection.Create;
 begin
   inherited Create;
+  FMultiCursors := True;
 end;
 
 class function TmncMySQLConnection.Model: TmncConnectionModel;
@@ -476,6 +479,11 @@ procedure TmncMySQLConnection.Interrupt;
 begin
   mysql_kill(DBHandle, 0); //TODO
   //https://dev.mysql.com/doc/refman/5.0/en/mysql-kill.html
+end;
+
+procedure TmncMySQLConnection.SetCharsetName(Charset: string);
+begin
+  mysql_options(FDBHandle, MYSQL_SET_CHARSET_NAME, PChar(Charset));
 end;
 
 function TmncMySQLConnection.GetVersion: string;
@@ -498,7 +506,8 @@ begin
     if MultiCursors then
       CheckError(mysql_set_server_option(FDBHandle, MYSQL_OPTION_MULTI_STATEMENTS_ON))
     else
-      CheckError(mysql_set_server_option(FDBHandle, MYSQL_OPTION_MULTI_STATEMENTS_OFF))
+      CheckError(mysql_set_server_option(FDBHandle, MYSQL_OPTION_MULTI_STATEMENTS_OFF));
+     SetCharsetName('utf8');
   except
     on E:Exception do
     begin
@@ -713,6 +722,11 @@ begin
   Result := mysql_stmt_insert_id(FStatment);
 end;
 
+function MySQLDateTimeToDateTime(ATime: MYSQL_TIME): TDateTime;
+begin
+  Result := ComposeDateTime(EncodeDate(ATime.year, ATime.month, ATime.day),EncodeTime(ATime.hour, ATime.minute, ATime.second, ATime.second_part));
+end ;
+
 procedure DateTimeToMySQLDateTime(DateTime: TDateTime; out ATime: MYSQL_TIME);
 var
   st: TSystemTime;
@@ -800,7 +814,7 @@ begin
         varCurrency:
         begin
           t64 := Binds[i].Param.Value;
-          Values[i].buffer := Binds[i].AllocBuffer(t64, SizeOf(t64));
+          Values[i].buffer := Binds[i].AllocBuffer(t64, SizeOf(t64)); //TODO it should be not MYSQL_TYPE_NEWDECIMAL
           Values[i].buffer_length := 0;
           Values[i].buffer_type := MYSQL_TYPE_NEWDECIMAL;
         end;
@@ -839,7 +853,7 @@ begin
   if FBOF then
     FetchColumns;
   state := mysql_stmt_fetch(FStatment);
-  b := state in [0, MYSQL_NO_DATA, MYSQL_DATA_TRUNCATED];
+  b := state in [0, MYSQL_DATA_TRUNCATED];
   if (b) then
   begin
     FetchValues;
@@ -954,10 +968,11 @@ begin
       FillByte(FResults.Binds[i], sizeof(FResults.Binds[i]), 0);
 
       FResults.Binds[i].buffer_type := FieldType;
-      if FieldType in [MYSQL_TYPE_VARCHAR,MYSQL_TYPE_VAR_STRING, MYSQL_TYPE_STRING] then
-        FResults.Binds[i].buffer := @FResults.Buffers[i].buf
-      else
-        FResults.Binds[i].buffer := @FResults.Buffers[i].buf;
+
+      if FieldType in [MYSQL_TYPE_NEWDECIMAL] then
+        FResults.Binds[i].buffer_type := MYSQL_TYPE_DOUBLE;
+
+      FResults.Binds[i].buffer := @FResults.Buffers[i].buf;
       FResults.Binds[i].buffer_length := SizeOf(FResults.Buffers[i].buf);
 
       FResults.Binds[i].length := @FResults.Buffers[i].length;
@@ -996,20 +1011,20 @@ begin
 
       case aType of
         MYSQL_TYPE_NULL: aCurrent.Add(i, NULL);
-        MYSQL_TYPE_BIT: ;
+        MYSQL_TYPE_BIT: aCurrent.Add(i, FResults.Buffers[i].buf.AsInteger <> 0);
         MYSQL_TYPE_TINY: aCurrent.Add(i, FResults.Buffers[i].buf.AsInteger);
         MYSQL_TYPE_SHORT: aCurrent.Add(i, FResults.Buffers[i].buf.AsInteger);
         MYSQL_TYPE_LONG: aCurrent.Add(i, FResults.Buffers[i].buf.AsInteger);
         MYSQL_TYPE_INT24: aCurrent.Add(i, FResults.Buffers[i].buf.AsBig);
         MYSQL_TYPE_LONGLONG: aCurrent.Add(i, FResults.Buffers[i].buf.AsBig);
         MYSQL_TYPE_FLOAT: aCurrent.Add(i, FResults.Buffers[i].buf.AsFloat);
-        MYSQL_TYPE_DOUBLE: aCurrent.Add(i, FResults.Buffers[i].buf.AsBig);
-        MYSQL_TYPE_TIMESTAMP: aCurrent.Add(i, FResults.Buffers[i].buf.AsBig);
-        MYSQL_TYPE_DATETIME: ;
-        MYSQL_TYPE_YEAR: ;
-        MYSQL_TYPE_NEWDATE: ;
-        MYSQL_TYPE_DATE: ;
-        MYSQL_TYPE_TIME: ;
+        MYSQL_TYPE_DOUBLE: aCurrent.Add(i, FResults.Buffers[i].buf.AsFloat);
+        MYSQL_TYPE_YEAR : aCurrent.Add(i, FResults.Buffers[i].buf.AsInteger);
+        MYSQL_TYPE_TIMESTAMP, MYSQL_TYPE_DATETIME, MYSQL_TYPE_NEWDATE,  MYSQL_TYPE_DATE,
+        MYSQL_TYPE_TIME, MYSQL_TYPE_TIMESTAMP2, MYSQL_TYPE_DATETIME2, MYSQL_TYPE_TIME2:
+        begin
+          aCurrent.Add(i, MySQLDateTimeToDateTime(FResults.Buffers[i].buf.AsDateTime));
+        end;
         MYSQL_TYPE_VARCHAR,MYSQL_TYPE_VAR_STRING, MYSQL_TYPE_STRING:
         begin
           real_length := FResults.Buffers[i].length;
@@ -1026,77 +1041,22 @@ begin
           end;
           aCurrent.Add(i, s);
         end;
-        MYSQL_TYPE_TIMESTAMP2: ;
-        MYSQL_TYPE_DATETIME2: ;
-        MYSQL_TYPE_TIME2: ;
-        MYSQL_TYPE_DECIMAL: aCurrent.Add(i, FResults.Buffers[i].buf.AsBig);
-        MYSQL_TYPE_NEWDECIMAL: ;
-        MYSQL_TYPE_ENUM: ;
-        MYSQL_TYPE_SET: ;
-        MYSQL_TYPE_TINY_BLOB: ;
-        MYSQL_TYPE_MEDIUM_BLOB: ;
-        MYSQL_TYPE_LONG_BLOB: ;
-        MYSQL_TYPE_BLOB: ;
-        MYSQL_TYPE_GEOMETRY: ;
+
+        MYSQL_TYPE_DECIMAL, MYSQL_TYPE_NEWDECIMAL:
+        //* ref: https://dev.mysql.com/doc/refman/5.0/en/fixed-point-types.html
+        //* ref: http://stackoverflow.com/questions/6831217/double-vs-decimal-in-mysql
+          aCurrent.Add(i, FResults.Buffers[i].buf.AsFloat);
+        MYSQL_TYPE_ENUM: aCurrent.Add(i, FResults.Buffers[i].buf.AsInteger);
+        MYSQL_TYPE_SET: aCurrent.Add(i, FResults.Buffers[i].buf.AsInteger);
+
+        MYSQL_TYPE_TINY_BLOB, MYSQL_TYPE_MEDIUM_BLOB, MYSQL_TYPE_LONG_BLOB,
+        MYSQL_TYPE_BLOB, MYSQL_TYPE_GEOMETRY:
+        begin
+        end;
       end;
     end;
     Fields := aCurrent;
   end;
-
-(*  c := mysql_column_count(FStatment);
-  if c > 0 then
-  begin
-    aCurrent := CreateFields(Columns);
-    for i := 0 to c - 1 do
-    begin
-//    TStorageType = (stNone, stInteger, stFloat, stText, stBlob, stNull);
-      //aSize := mysql_column_bytes(FStatment, i);
-      aColumn := Columns[i];
-      aType := mysql_column_type(FStatment, i);
-      //aType := Columns[i].DataType;
-      case aType of
-        MySQL_NULL:
-        begin
-          aCurrent.Add(i, Null);
-        end;
-        MySQL_INTEGER:
-        begin
-          int := mysql_column_int(FStatment, i);
-{          if aColumn.DataType = ftDate then //todo
-            int := int - 1;}
-          aCurrent.Add(i, int);
-        end;
-        MySQL_FLOAT:
-        begin
-          flt := mysql_column_double(FStatment, i);
-          aCurrent.Add(i, flt);
-        end;
-        MySQL_BLOB:
-        begin
-          int := mysql_column_bytes(FStatment, i);
-          SetString(str, PChar(mysql_column_blob(FStatment, i)), int);
-          aCurrent.Add(i, str);
-        end;
-        MySQL_TEXT:
-        begin
-          if SameText(aColumn.SchemaType, 'Blob') then
-          begin
-            int := mysql_column_bytes(FStatment, i);
-            SetString(str, PChar(mysql_column_blob(FStatment, i)), int);
-          end
-          else
-            str := mysql_column_text(FStatment, i);
-          aCurrent.Add(i, str);
-        end
-        else
-        begin
-          str := mysql_column_text(FStatment, i);
-          aCurrent.Add(i, str);
-        end;
-      end;
-    end;
-    Fields := aCurrent;
-  end;*)
 end;
 
 function TmncMySQLCommand.GetActive: Boolean;
