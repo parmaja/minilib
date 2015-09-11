@@ -17,7 +17,7 @@ interface
 
 uses
   Classes, SysUtils, Variants, ctypes,
-  mncCommons, mncSchemas, mncMySql56dyn,
+  mncCommons, mncSchemas, mncMySQLdyn,
   mncConnections, mncSQL;
 
 type
