@@ -774,8 +774,14 @@ begin
 end;
 
 function MySQLDateTimeToDateTime(ATime: MYSQL_TIME): TDateTime;
+var
+  t, d: TDateTime;
 begin
-  Result := ComposeDateTime(EncodeDate(ATime.year, ATime.month, ATime.day),EncodeTime(ATime.hour, ATime.minute, ATime.second, ATime.second_part));
+  if not TryEncodeDate(ATime.year, ATime.month, ATime.day, d) then
+    d := 0;
+  if not TryEncodeTime(ATime.hour, ATime.minute, ATime.second, ATime.second_part, t) then
+    t := 0;
+  Result := ComposeDateTime(d, t);
 end ;
 
 procedure DateTimeToMySQLDateTime(DateTime: TDateTime; out ATime: MYSQL_TIME);
