@@ -17,7 +17,7 @@ interface
 
 uses
   Classes, SysUtils, Contnrs,
-  mncConnections, mncCommons, mncSchemas;
+  mncConnections, mncCommons, mncMetas;
 
 type
   TmncParseSQLOptions = set of (psoGenerateParams, psoAddParamsID, psoAddParamsNames);
@@ -34,9 +34,9 @@ type
     procedure Execute(Command: string); virtual;
   end;
 
-  { TmncSQLSchema }
+  { TmncSQLMeta }
 
-  TmncSQLSchema = class(TmncSchema)
+  TmncSQLMeta = class(TmncMeta)
   end;
 
   { TmncSQLSession }
@@ -44,7 +44,7 @@ type
   TmncSQLSession = class(TmncSession)
   public
     function CreateCommand: TmncSQLCommand; virtual; abstract;
-    function CreateSchema: TmncSchema; virtual; abstract;
+    function CreateMeta: TmncMeta; virtual; abstract;
   end;
 
   TmncSQLName = class(TObject)

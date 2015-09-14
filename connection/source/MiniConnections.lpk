@@ -1,8 +1,9 @@
-<?xml version="1.0"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <CONFIG>
   <Package Version="4">
     <PathDelim Value="\"/>
     <Name Value="MiniConnections"/>
+    <Type Value="RunAndDesignTime"/>
     <CompilerOptions>
       <Version Value="11"/>
       <PathDelim Value="\"/>
@@ -29,13 +30,11 @@
       <Other>
         <CompilerMessages>
           <IgnoredMessages idx5024="True"/>
-          <UseMsgFile Value="True"/>
         </CompilerMessages>
-        <CompilerPath Value="$(CompPath)"/>
       </Other>
     </CompilerOptions>
     <Version Major="1" Release="1"/>
-    <Files Count="10">
+    <Files Count="9">
       <Item1>
         <Filename Value="mncConnections.pas"/>
         <UnitName Value="mncConnections"/>
@@ -49,35 +48,30 @@
         <UnitName Value="mncCSVExchanges"/>
       </Item3>
       <Item4>
-        <Filename Value="..\db\mncSchemas.pas"/>
-        <UnitName Value="mncSchemas"/>
-      </Item4>
-      <Item5>
         <Filename Value="..\db\mncCommons.pas"/>
         <UnitName Value="mncCommons"/>
-      </Item5>
-      <Item6>
+      </Item4>
+      <Item5>
         <Filename Value="..\db\mncSQL.pas"/>
         <UnitName Value="mncSQL"/>
-      </Item6>
-      <Item7>
+      </Item5>
+      <Item6>
         <Filename Value="..\db\mncSQLUtils.pas"/>
         <UnitName Value="mncSQLUtils"/>
-      </Item7>
-      <Item8>
+      </Item6>
+      <Item7>
         <Filename Value="..\db\mncDB.pas"/>
         <UnitName Value="mncDB"/>
-      </Item8>
-      <Item9>
+      </Item7>
+      <Item8>
         <Filename Value="..\db\sqlite\mncSQLite.pas"/>
         <UnitName Value="mncSQLite"/>
+      </Item8>
+      <Item9>
+        <Filename Value="..\db\mncMetas.pas"/>
+        <UnitName Value="mncMetas"/>
       </Item9>
-      <Item10>
-        <Filename Value="..\db\sqlite\mncSQLiteSchemas.pas"/>
-        <UnitName Value="mncSQLiteSchemas"/>
-      </Item10>
     </Files>
-    <Type Value="RunAndDesignTime"/>
     <RequiredPkgs Count="2">
       <Item1>
         <PackageName Value="MiniCommons"/>
@@ -94,5 +88,8 @@
       <Version Value="2"/>
       <IgnoreBinaries Value="False"/>
     </PublishOptions>
+    <CustomOptions Items="ExternHelp" Version="2">
+      <_ExternHelp Items="Count"/>
+    </CustomOptions>
   </Package>
 </CONFIG>

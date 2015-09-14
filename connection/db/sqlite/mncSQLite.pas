@@ -17,7 +17,7 @@ interface
 
 uses
   Classes, SysUtils, Variants,
-  mncSQLiteHeader, mncCommons, mncSchemas,
+  mncSQLiteHeader, mncCommons, mncMetas,
   mnUtils, mncConnections, mncSQL;
 
 const
@@ -86,7 +86,7 @@ type
     constructor Create(vConnection: TmncConnection); override;
     destructor Destroy; override;
     function CreateCommand: TmncSQLCommand; override;
-    function CreateSchema: TmncSchema; override;
+    function CreateMeta: TmncMeta; override;
     procedure Execute(SQL: string);
     function GetLastInsertID: Int64;
     function GetRowsChanged: Integer;
@@ -203,7 +203,7 @@ function SQLiteSynchronousToStr(Synchronous: TmncSynchronous): string;
 implementation
 
 uses
-  mncDB, mncSQLiteSchemas;
+  mncDB, mncSQLiteMetas;
 
 function SQLiteJournalModeToStr(JournalMode: TmncJournalMode): string;
 begin
@@ -253,17 +253,17 @@ begin
 
 end;
 
-function SQLTypeToType(vType: Integer; const SchemaType: string): TmncDataType;
+function SQLTypeToType(vType: Integer; const MetaType: string): TmncDataType;
 begin
   case vType of
     SQLITE_INTEGER:
-      if SameText(SchemaType, 'date') then
+      if SameText(MetaType, 'date') then
         Result := dtDate
       else//not yet
         Result := dtInteger;
     SQLITE_FLOAT:
     begin
-      if SameText(SchemaType, 'date') then
+      if SameText(MetaType, 'date') then
         Result := dtDateTime
       else//not yet
         Result := dtFloat;
@@ -272,7 +272,7 @@ begin
     SQLITE_NULL: Result := dtUnknown;
     SQLITE_TEXT:
     begin
-      if SameText(SchemaType, 'Blob') then
+      if SameText(MetaType, 'Blob') then
         Result := dtBlob
       else
         Result := dtString;
@@ -392,7 +392,7 @@ begin
   Result.Name := 'SQLite';
   Result.Title := 'SQLite Database';
   Result.Capabilities := [ccDB, ccSQL, ccTransaction];
-  Result.SchemaClass := TmncSQLiteSchema;
+  Result.MetaClass := TmncSQLiteMeta;
 end;
 
 function TmncSQLiteConnection.CreateSession: TmncSQLSession;
@@ -468,9 +468,9 @@ begin
   Result.Session := Self;
 end;
 
-function TmncSQLiteSession.CreateSchema: TmncSchema;
+function TmncSQLiteSession.CreateMeta: TmncMeta;
 begin
-  Result := TmncSQLiteSchema.CreateBy(Self);
+  Result := TmncSQLiteMeta.CreateBy(Self);
 end;
 
 procedure TmncSQLiteSession.Execute(SQL: string);
@@ -823,7 +823,7 @@ var
   c: Integer;
   aName: string;
   FieldType: Integer;
-  SchemaType: PChar;
+  MetaType: PChar;
   aColumn: TmncColumn;
   //aSize: Integer;
 begin
@@ -833,9 +833,9 @@ begin
   begin
     aName :=  DequoteStr(sqlite3_column_name(FStatment, i));
     FieldType := sqlite3_column_type(FStatment, i);
-    SchemaType := sqlite3_column_decltype(FStatment, i);
-    aColumn := Columns.Add(aName, SQLTypeToType(FieldType, SchemaType));
-    aColumn.SchemaType := SchemaType;
+    MetaType := sqlite3_column_decltype(FStatment, i);
+    aColumn := Columns.Add(aName, SQLTypeToType(FieldType, MetaType));
+    aColumn.MetaType := MetaType;
   end;
 end;
 
@@ -895,7 +895,7 @@ begin
         end;
         SQLITE_TEXT:
         begin
-          if SameText(aColumn.SchemaType, 'Blob') then
+          if SameText(aColumn.MetaType, 'Blob') then
           begin
             v.i := sqlite3_column_bytes(FStatment, i);
             SetString(str, PChar(sqlite3_column_blob(FStatment, i)), v.i);

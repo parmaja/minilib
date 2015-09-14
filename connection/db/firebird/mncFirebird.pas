@@ -22,7 +22,7 @@ interface
 uses
   Classes, SysUtils, Variants,
   mncConnections, mncSQL,
-  mncFBTypes, mncFBHeader, mncFBErrors, mncFBUtils, mncFBClient, mncSchemas,
+  mncFBTypes, mncFBHeader, mncFBErrors, mncFBUtils, mncFBClient, mncMetas,
   mncSQLDA;
 
 const
@@ -83,7 +83,7 @@ type
     constructor Create(vConnection: TmncConnection); override;
     destructor Destroy; override;
     function CreateCommand: TmncSQLCommand; override;
-    function CreateSchema: TmncSchema; override;
+    function CreateMeta: TmncMeta; override;
     procedure Execute(SQL: string);
     property Handle: TISC_TR_HANDLE read FHandle;
     property TPB: PChar read FTPB;
@@ -263,7 +263,7 @@ type
 implementation
 
 uses
-  mncFBSchemas, mncDB;
+  mncFBMetas, mncDB;
 
 { TmncFBConnection }
 
@@ -277,7 +277,7 @@ begin
   Result.Name := 'FirebirdSQL';
   Result.Title := 'Firebird SQL Database';
   Result.Capabilities := [ccDB, ccSQL, ccStrict, ccTransaction, ccMultiTransaction, ccNetwork];
-  Result.SchemaClass := TmncFBSchema;
+  Result.MetaClass := TmncFBMeta;
 end;
 
 function TmncFBConnection.CreateSession: TmncSQLSession;
@@ -430,9 +430,9 @@ begin
   Result := TmncFBCommand.CreateBy(Self);
 end;
 
-function TmncFBSession.CreateSchema: TmncSchema;
+function TmncFBSession.CreateMeta: TmncMeta;
 begin
-  Result := TmncFBSchema.CreateBy(Self)
+  Result := TmncFBMeta.CreateBy(Self)
 end;
 
 procedure TmncFBSession.Execute(SQL: string);

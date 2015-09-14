@@ -25,7 +25,7 @@ interface
 uses
   Classes, SysUtils, Variants, StrUtils,
   mncPGHeader,
-  mnUtils, mnStreams, mncConnections, mncSQL, mncCommons, mncSchemas;
+  mnUtils, mnStreams, mncConnections, mncSQL, mncCommons, mncMetas;
 
 type
 
@@ -131,7 +131,7 @@ type
     destructor Destroy; override;
     function Execute(vSQL: string; vClearResult: Boolean=True): PPGresult;
     function CreateCommand: TmncSQLCommand; override;
-    function CreateSchema: TmncSchema; override;
+    function CreateMeta: TmncMeta; override;
     property Exclusive: Boolean read FExclusive write SetExclusive;
     property Connection: TmncPGConnection read GetConnection write SetConnection;
     property DBHandle: PPGconn read GetDBHandle;
@@ -545,7 +545,7 @@ begin
   Result.Name := 'PostgreSQL';
   Result.Title := 'Postgre Database';
   Result.Capabilities := [ccDB, ccSQL, ccNetwork, ccTransaction];
-  Result.SchemaClass := nil;
+  Result.MetaClass := nil;
   //Result.Mode := smConnection;
 end;
 
@@ -720,7 +720,7 @@ begin
   Result := TmncPGCommand.CreateBy(Self);
 end;
 
-function TmncPGSession.CreateSchema: TmncSchema;
+function TmncPGSession.CreateMeta: TmncMeta;
 begin
   Result := nil;
 end;

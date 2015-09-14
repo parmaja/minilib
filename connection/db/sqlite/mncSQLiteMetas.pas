@@ -1,4 +1,4 @@
-unit mncSQLiteSchemas;
+unit mncSQLiteMetas;
 {**
  *  This file is part of the "Mini Connections"
  *
@@ -17,63 +17,63 @@ interface
 
 uses
   SysUtils, Classes,
-  mncSchemas, mncConnections, mncSQLite;
+  mncMetas, mncConnections, mncSQLite;
 
 type
-  { TmncSQLiteSchema }
+  { TmncSQLiteMeta }
 
-  TmncSQLiteSchema = class(TmncSchema)
+  TmncSQLiteMeta = class(TmncMeta)
   private
     function GetSession: TmncSession;
     procedure SetSession(AValue: TmncSession);
   protected
     function CreateCMD(SQL: string): TmncSQLiteCommand;
-    procedure EnumCMD(Schema: TmncSchemaItems; vKind: TschmKind; SQL: string; Fields: array of string); overload;//use field 'name'
-    procedure EnumCMD(Schema: TmncSchemaItems; vKind: TschmKind; SQL: string); overload;
+    procedure EnumCMD(Meta: TmncMetaItems; vKind: TschmKind; SQL: string; Fields: array of string); overload;//use field 'name'
+    procedure EnumCMD(Meta: TmncMetaItems; vKind: TschmKind; SQL: string); overload;
     procedure FetchCMD(Strings:TStringList; SQL: string);//use field 'name'
     function GetSortSQL(Options: TschmEnumOptions):string;
   public
-    procedure EnumTables(Schema: TmncSchemaItems; Options: TschmEnumOptions = []); override;
-    procedure EnumFields(Schema: TmncSchemaItems; SQLName: string; Options: TschmEnumOptions = []); override;
-    procedure EnumViews(Schema: TmncSchemaItems; Options: TschmEnumOptions = []); override;
-    procedure EnumProcedures(Schema: TmncSchemaItems; Options: TschmEnumOptions = []); override;
-    procedure EnumSequences(Schema: TmncSchemaItems; Options: TschmEnumOptions = []); override;
-    procedure EnumFunctions(Schema: TmncSchemaItems; Options: TschmEnumOptions = []); override;
-    procedure EnumExceptions(Schema: TmncSchemaItems; Options: TschmEnumOptions = []); override;
-    procedure EnumDomains(Schema: TmncSchemaItems; Options: TschmEnumOptions = []); override;
-    procedure EnumConstraints(Schema: TmncSchemaItems; SQLName: string = ''; Options: TschmEnumOptions = []); override;
-    procedure EnumTriggers(Schema: TmncSchemaItems; SQLName: string = ''; Options: TschmEnumOptions = []); override;
-    procedure EnumIndices(Schema: TmncSchemaItems; SQLName: string = ''; Options: TschmEnumOptions = []); override;
+    procedure EnumTables(Meta: TmncMetaItems; Options: TschmEnumOptions = []); override;
+    procedure EnumFields(Meta: TmncMetaItems; SQLName: string; Options: TschmEnumOptions = []); override;
+    procedure EnumViews(Meta: TmncMetaItems; Options: TschmEnumOptions = []); override;
+    procedure EnumProcedures(Meta: TmncMetaItems; Options: TschmEnumOptions = []); override;
+    procedure EnumSequences(Meta: TmncMetaItems; Options: TschmEnumOptions = []); override;
+    procedure EnumFunctions(Meta: TmncMetaItems; Options: TschmEnumOptions = []); override;
+    procedure EnumExceptions(Meta: TmncMetaItems; Options: TschmEnumOptions = []); override;
+    procedure EnumDomains(Meta: TmncMetaItems; Options: TschmEnumOptions = []); override;
+    procedure EnumConstraints(Meta: TmncMetaItems; SQLName: string = ''; Options: TschmEnumOptions = []); override;
+    procedure EnumTriggers(Meta: TmncMetaItems; SQLName: string = ''; Options: TschmEnumOptions = []); override;
+    procedure EnumIndices(Meta: TmncMetaItems; SQLName: string = ''; Options: TschmEnumOptions = []); override;
     //source
     procedure GetTriggerSource(Strings:TStringList; SQLName: string; Options: TschmEnumOptions = []); override;
-    procedure GetIndexInfo(Schema: TmncSchemaItems; SQLName: string; Options: TschmEnumOptions = []); override;
+    procedure GetIndexInfo(Meta: TmncMetaItems; SQLName: string; Options: TschmEnumOptions = []); override;
     property Session: TmncSession read GetSession write SetSession;//alias for FLink in base class
   end;
 
 implementation
 
-{ TmncSchemaItems }
+{ TmncMetaItems }
 
-function TmncSQLiteSchema.GetSession: TmncSession;
+function TmncSQLiteMeta.GetSession: TmncSession;
 begin
   Result := Link as TmncSession;
 end;
 
-procedure TmncSQLiteSchema.SetSession(AValue: TmncSession);
+procedure TmncSQLiteMeta.SetSession(AValue: TmncSession);
 begin
   inherited Link := AValue;
 end;
 
-function TmncSQLiteSchema.CreateCMD(SQL: string): TmncSQLiteCommand;
+function TmncSQLiteMeta.CreateCMD(SQL: string): TmncSQLiteCommand;
 begin
   Result := TmncSQLiteCommand.CreateBy(Session);
   Result.SQL.Text := SQL;
 end;
 
-procedure TmncSQLiteSchema.EnumCMD(Schema: TmncSchemaItems; vKind: TschmKind; SQL: string; Fields: array of string);
+procedure TmncSQLiteMeta.EnumCMD(Meta: TmncMetaItems; vKind: TschmKind; SQL: string; Fields: array of string);
 var
   aCMD: TmncSQLiteCommand;
-  aItem: TmncSchemaItem;
+  aItem: TmncMetaItem;
   i: Integer;
 begin
   aCMD := CreateCMD(SQL);
@@ -82,7 +82,7 @@ begin
     aCMD.Execute;
     while not aCMD.EOF do
     begin
-      aItem := Schema.Add(aCMD.Field['name'].AsString);
+      aItem := Meta.Add(aCMD.Field['name'].AsString);
       aItem.Kind := vKind;
       for i := Low(Fields) to High(Fields) do
         aItem.Attributes.Add(Fields[i], aCMD.Field[Fields[i]].AsString);
@@ -92,12 +92,12 @@ begin
   end;
 end;
 
-procedure TmncSQLiteSchema.EnumCMD(Schema: TmncSchemaItems; vKind: TschmKind; SQL: string);
+procedure TmncSQLiteMeta.EnumCMD(Meta: TmncMetaItems; vKind: TschmKind; SQL: string);
 begin
-  EnumCMD(Schema, vKind, SQL, []);
+  EnumCMD(Meta, vKind, SQL, []);
 end;
 
-procedure TmncSQLiteSchema.FetchCMD(Strings: TStringList; SQL: string);
+procedure TmncSQLiteMeta.FetchCMD(Strings: TStringList; SQL: string);
 var
   aCMD: TmncSQLiteCommand;
 begin
@@ -114,7 +114,7 @@ begin
   end;
 end;
 
-function TmncSQLiteSchema.GetSortSQL(Options: TschmEnumOptions): string;
+function TmncSQLiteMeta.GetSortSQL(Options: TschmEnumOptions): string;
 begin
   if ekSort in Options then
     Result := ' order by name'
@@ -122,53 +122,53 @@ begin
     Result := '';
 end;
 
-procedure TmncSQLiteSchema.EnumTables(Schema: TmncSchemaItems; Options: TschmEnumOptions);
+procedure TmncSQLiteMeta.EnumTables(Meta: TmncMetaItems; Options: TschmEnumOptions);
 begin
-  EnumCMD(Schema, sokTable, 'select name from sqlite_master where type = ''table''' + GetSortSQL(Options));
+  EnumCMD(Meta, sokTable, 'select name from sqlite_master where type = ''table''' + GetSortSQL(Options));
 end;
 
-procedure TmncSQLiteSchema.EnumViews(Schema: TmncSchemaItems; Options: TschmEnumOptions);
+procedure TmncSQLiteMeta.EnumViews(Meta: TmncMetaItems; Options: TschmEnumOptions);
 begin
-  EnumCMD(Schema, sokView, 'select name from sqlite_master where type = ''view'''+ GetSortSQL(Options));
+  EnumCMD(Meta, sokView, 'select name from sqlite_master where type = ''view'''+ GetSortSQL(Options));
 end;
 
-procedure TmncSQLiteSchema.EnumProcedures(Schema: TmncSchemaItems;
+procedure TmncSQLiteMeta.EnumProcedures(Meta: TmncMetaItems;
   Options: TschmEnumOptions);
 begin
 
 end;
 
-procedure TmncSQLiteSchema.EnumSequences(Schema: TmncSchemaItems;
+procedure TmncSQLiteMeta.EnumSequences(Meta: TmncMetaItems;
   Options: TschmEnumOptions);
 begin
 
 end;
 
-procedure TmncSQLiteSchema.EnumFunctions(Schema: TmncSchemaItems;
+procedure TmncSQLiteMeta.EnumFunctions(Meta: TmncMetaItems;
   Options: TschmEnumOptions);
 begin
 
 end;
 
-procedure TmncSQLiteSchema.EnumExceptions(Schema: TmncSchemaItems;
+procedure TmncSQLiteMeta.EnumExceptions(Meta: TmncMetaItems;
   Options: TschmEnumOptions);
 begin
 
 end;
 
-procedure TmncSQLiteSchema.EnumDomains(Schema: TmncSchemaItems;
+procedure TmncSQLiteMeta.EnumDomains(Meta: TmncMetaItems;
   Options: TschmEnumOptions);
 begin
 
 end;
 
-procedure TmncSQLiteSchema.EnumConstraints(Schema: TmncSchemaItems;
+procedure TmncSQLiteMeta.EnumConstraints(Meta: TmncMetaItems;
   SQLName: string; Options: TschmEnumOptions);
 begin
 
 end;
 
-procedure TmncSQLiteSchema.EnumTriggers(Schema: TmncSchemaItems;
+procedure TmncSQLiteMeta.EnumTriggers(Meta: TmncMetaItems;
   SQLName: string; Options: TschmEnumOptions);
 var
   s: string;
@@ -177,10 +177,10 @@ begin
   if SQLName <> '' then
     s := s + ' and tbl_name = ''' +SQLName+ '''';
   s := s +  GetSortSQL(Options);
-  EnumCMD(Schema, sokTrigger, s);
+  EnumCMD(Meta, sokTrigger, s);
 end;
 
-procedure TmncSQLiteSchema.EnumIndices(Schema: TmncSchemaItems; SQLName: string;
+procedure TmncSQLiteMeta.EnumIndices(Meta: TmncMetaItems; SQLName: string;
   Options: TschmEnumOptions);
 var
   s: string;
@@ -189,16 +189,16 @@ begin
   if SQLName <> '' then
   begin
     s := s + 'PRAGMA index_list('''+ SQLName +''')' + GetSortSQL(Options);
-    EnumCMD(Schema, sokIndex, s, ['unique']);
+    EnumCMD(Meta, sokIndex, s, ['unique']);
   end
   else
   begin
     s := 'select name from sqlite_master where type = ''index''' + GetSortSQL(Options);
-    EnumCMD(Schema, sokIndex, s);
+    EnumCMD(Meta, sokIndex, s);
   end;
 end;
 
-procedure TmncSQLiteSchema.GetTriggerSource(Strings: TStringList; SQLName: string; Options: TschmEnumOptions);
+procedure TmncSQLiteMeta.GetTriggerSource(Strings: TStringList; SQLName: string; Options: TschmEnumOptions);
 var
   s: string;
 begin
@@ -207,44 +207,44 @@ begin
   FetchCMD(Strings, s);
 end;
 
-procedure TmncSQLiteSchema.GetIndexInfo(Schema: TmncSchemaItems; SQLName: string; Options: TschmEnumOptions);
+procedure TmncSQLiteMeta.GetIndexInfo(Meta: TmncMetaItems; SQLName: string; Options: TschmEnumOptions);
 var
   aCMD: TmncSQLiteCommand;
-  aItem: TmncSchemaItem;
+  aItem: TmncMetaItem;
 begin
   aCMD := CreateCMD('PRAGMA index_info('''+ SQLName +''')');
   try
     if aCMD.Execute then
     begin
-      aItem := TmncSchemaItem.Create;
+      aItem := TmncMetaItem.Create;
       aItem.Name := 'Name';
       aItem.Attributes.Add('name', SQLName);
-      Schema.Add(aItem);
+      Meta.Add(aItem);
 
-      aItem := TmncSchemaItem.Create;
+      aItem := TmncMetaItem.Create;
       aItem.Name := 'Field';
       aItem.Attributes.Add('field', aCMD.Field['name'].AsString);
-      Schema.Add(aItem);
+      Meta.Add(aItem);
 
-      aItem := TmncSchemaItem.Create;
+      aItem := TmncMetaItem.Create;
       aItem.Name := 'CID';
       aItem.Attributes.Add('cid', aCMD.Field['cid'].AsString);
-      Schema.Add(aItem);
+      Meta.Add(aItem);
 
-      aItem := TmncSchemaItem.Create;
+      aItem := TmncMetaItem.Create;
       aItem.Name := 'Sequence NO';
       aItem.Attributes.Add('seqno',  aCMD.Field['seqno'].AsString);
-      Schema.Add(aItem);
+      Meta.Add(aItem);
     end;
   finally
     aCMD.Free;
   end;
 end;
 
-procedure TmncSQLiteSchema.EnumFields(Schema: TmncSchemaItems; SQLName: string; Options: TschmEnumOptions);
+procedure TmncSQLiteMeta.EnumFields(Meta: TmncMetaItems; SQLName: string; Options: TschmEnumOptions);
 var
   aCMD: TmncSQLiteCommand;
-  aItem: TmncSchemaItem;
+  aItem: TmncMetaItem;
 begin
   aCMD := CreateCMD('pragma table_info(''' + (SQLName) + ''')' + GetSortSQL(Options));
   try
@@ -252,14 +252,14 @@ begin
     aCMD.Execute;
     while not aCMD.EOF do
     begin
-      aItem := TmncSchemaItem.Create;
+      aItem := TmncMetaItem.Create;
       aItem.Name := aCMD.Field['name'].AsString;
       aItem.Attributes.Add('type', aCMD.Field['type'].AsString);
       aItem.Attributes.Add('pk', IntToStr(ord(aCMD.Field['pk'].AsInteger <> 0)));
       aItem.Attributes.Add('notnull', IntToStr(ord(aCMD.Field['notnull'].AsInteger <> 0)));
       aItem.Attributes.Add('dflt_value', aCMD.Field['dflt_value'].AsString);
       aItem.Attributes.Add('cid', aCMD.Field['cid'].AsString);
-      Schema.Add(aItem);
+      Meta.Add(aItem);
       aCMD.Next;
     end;
   finally

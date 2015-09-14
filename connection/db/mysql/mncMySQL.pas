@@ -17,7 +17,7 @@ interface
 
 uses
   Classes, SysUtils, Variants, ctypes,
-  mncCommons, mncSchemas, mncMySQLdyn,
+  mncCommons, mncMetas, mncMySQLdyn,
   mncConnections, mncSQL;
 
 type
@@ -77,7 +77,7 @@ type
     constructor Create(vConnection: TmncConnection); override;
     destructor Destroy; override;
     function CreateCommand: TmncSQLCommand; override;
-    function CreateSchema: TmncSchema; override;
+    function CreateMeta: TmncMeta; override;
     procedure Execute(SQL: string);
     property Connection: TmncMySQLConnection read GetConnection write SetConnection;
   end;
@@ -235,13 +235,13 @@ type
     function GetRowsChanged: Integer;
   end;
 
-function MySQLTypeToType(vType: enum_field_types; const SchemaType: string): TmncDataType;
+function MySQLTypeToType(vType: enum_field_types): TmncDataType;
 function MySQLTypeToString(vType: enum_field_types): String;
 
 implementation
 
 uses
-  mncDB;
+  mncMySQLMetas, mncDB;
 
 const
   MySQL_OK = 0;
@@ -313,7 +313,7 @@ begin
   inherited;
 end;
 
-function MySQLTypeToType(vType: enum_field_types; const SchemaType: string): TmncDataType;
+function MySQLTypeToType(vType: enum_field_types): TmncDataType;
 begin
   case vType of
     MYSQL_TYPE_DECIMAL: Result := dtCurrency;
@@ -474,7 +474,7 @@ begin
   Result.Name := 'MySQL';
   Result.Title := 'MySQL Database';
   Result.Capabilities := [ccDB, ccSQL, ccTransaction];
-  //Result.SchemaClass := TmncMySQLSchema;//TOdo
+  //Result.MetaClass := TmncMySQLMeta;//TOdo
 end;
 
 function TmncMySQLConnection.CreateSession: TmncSQLSession;
@@ -515,7 +515,7 @@ function TmncMySQLConnection.IsDatabaseExists(vName: string): Boolean;
 var
   s: string;
 begin
-  s := 'select count(*) as aCount from information_schema.schemata where schema_name = '''+ vName + '''';
+  s := 'select count(*) as aCount from information_Meta.Metata where Meta_name = '''+ vName + '''';
   CheckError(mysql_query(FDBHandle, PChar(s)));
   //TODO
 end;
@@ -612,10 +612,9 @@ begin
   Result.Session := Self;
 end;
 
-function TmncMySQLSession.CreateSchema: TmncSchema;
+function TmncMySQLSession.CreateMeta: TmncMeta;
 begin
-  //Result := TmncMySQLSchema.CreateBy(Self);
-  Result := nil;
+  Result := TmncMySQLMeta.CreateBy(Self);
 end;
 
 procedure TmncMySQLSession.Execute(SQL: string);
@@ -989,7 +988,7 @@ var
   c: Integer;
   aName: string;
   FieldType: enum_field_types;
-  SchemaType: string;
+  MetaType: string;
   aColumn: TmncMySQLColumn;
   //aSize: Integer;
   Res : PMYSQL_RES;
@@ -1010,13 +1009,13 @@ begin
       begin
         aName :=  Field.name;
         FieldType := Field.ftype;
-        SchemaType := MySQLTypeToString(FieldType);
+        MetaType := MySQLTypeToString(FieldType);
 
-        aColumn := TmncMySQLColumn.Create(aName, MySQLTypeToType(FieldType, SchemaType));
+        aColumn := TmncMySQLColumn.Create(aName, MySQLTypeToType(FieldType));
 
         Columns.Add(aColumn);
 
-        aColumn.SchemaType := SchemaType;
+        aColumn.MetaType := MetaType;
         aColumn.Size := Field.length;
         aColumn.FieldType := FieldType;
 

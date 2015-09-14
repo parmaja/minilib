@@ -86,7 +86,7 @@ const
   SQLITE_CANTOPEN = 14; { Unable to open the database file  }
   SQLITE_PROTOCOL = 15; { Database lock protocol error  }
   SQLITE_EMPTY = 16; { Database is empty  }
-  SQLITE_SCHEMA = 17; { The database schema changed  }
+  SQLITE_Meta = 17; { The database Meta changed  }
   SQLITE_TOOBIG = 18; { Too much data for one row of a table  }
   SQLITE_CONSTRAINT = 19; { Abort due to contraint violation  }
   SQLITE_MISMATCH = 20; { Data type mismatch  }

@@ -26,7 +26,7 @@ interface
 
 uses
   Classes, SysUtils, DateUtils, Variants, Contnrs, SyncObjs,
-  mnFields, mncCommons, mncSchemas;
+  mnFields, mncCommons, mncMetas;
 
 type
 
@@ -80,7 +80,7 @@ type
   TmncConnectionModel = record
     Name: string;
     Title: string;
-    SchemaClass: TmncSchemaClass;
+    MetaClass: TmncMetaClass;
     Capabilities: TmncCapabilities;
   end;
 
@@ -267,7 +267,7 @@ type
     FIndex: Integer;
     FMaxSize: Integer;
     FOptions: TmnDataOptions;
-    FSchemaType: string;
+    FMetaType: string;
     FSize: Int64;
   protected
     function GetValue: Variant; override;
@@ -278,8 +278,8 @@ type
     property Index: Integer read FIndex write FIndex;
     property Name: string read FName write FName;
     property DataType;
-    property SchemaType: string read FSchemaType write FSchemaType;
-    //Size, in sqlite every value have own length not depends on the Schema
+    property MetaType: string read FMetaType write FMetaType;
+    //Size, in sqlite every value have own length not depends on the Meta
     property Size: Int64 read FSize write SetSize; //TODO: I am thinking to move it to TmncItem
     property Options: TmnDataOptions read FOptions write FOptions default [];
     property MaxSize: Integer read FMaxSize write FMaxSize;
