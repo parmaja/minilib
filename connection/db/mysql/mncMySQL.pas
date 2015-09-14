@@ -180,7 +180,7 @@ type
         2: (AsBig: int64);
         3: (AsFloat: double);
         4: (AsDateTime: MYSQL_TIME);
-        5: (AsString: array[0..15] of Char);
+        5: (AsString: array[0..15] of AnsiChar);
       end;
       length: culong;
       is_null: my_bool;
@@ -196,7 +196,7 @@ type
   private
     FReadOnly: Boolean;
     FStatment: PMYSQL_STMT;
-    FResults :TmncMySQLResults;
+    FResults: TmncMySQLResults;
     FBOF: Boolean;
     FEOF: Boolean;
     function GetBinds: TmncMySQLBinds;
@@ -262,7 +262,7 @@ destructor TmncMySQLResults.Destroy;
 begin
   Binds := nil;
   Buffers := nil;
-  inherited Destroy;
+  inherited;
 end;
 
 { TmncMySQLColumn }
@@ -484,13 +484,13 @@ end;
 
 procedure TmncMySQLConnection.Interrupt;
 begin
-  mysql_kill(DBHandle, 0); //TODO
+  CheckError(mysql_kill(DBHandle, 0)); //TODO
   //https://dev.mysql.com/doc/refman/5.0/en/mysql-kill.html
 end;
 
 procedure TmncMySQLConnection.SetCharsetName(Charset: string);
 begin
-  mysql_options(FDBHandle, MYSQL_SET_CHARSET_NAME, PChar(Charset));
+  CheckError(mysql_options(FDBHandle, MYSQL_SET_CHARSET_NAME, PChar(Charset)));
 end;
 
 function TmncMySQLConnection.SelectDatabase(vName: string; RaiseException: Boolean): Boolean;
@@ -993,7 +993,6 @@ var
   FieldType: enum_field_types;
   MetaType: string;
   aColumn: TmncMySQLColumn;
-  //aSize: Integer;
   Res : PMYSQL_RES;
   Field: PMYSQL_FIELD;
 begin
@@ -1041,7 +1040,7 @@ begin
       CheckError(mysql_stmt_bind_result(FStatment, @FResults.Binds[0]));
     end;
   finally
-    //CheckError(mysql_free_result(Res));
+    mysql_free_result(Res);
   end;
 end;
 
@@ -1091,7 +1090,7 @@ begin
           else
           begin
             SetLength(s, real_length);
-            Finalize(bind);
+            FillByte(bind, sizeof(bind), 0);
 
             bind.buffer := @s[1];
             bind.buffer_length := real_length;
