@@ -87,7 +87,7 @@ type
     procedure SaveHeader;
     procedure LoadRecord;
     procedure SaveRecord;
-    function ReadLine(var Strings: TStringList): Boolean;
+    function ReadLine(out Strings: TStringList): Boolean;
     procedure WriteLine(S: string); //Because i am not trust with Strings.Text
     procedure DoPrepare; override;
     procedure DoExecute; override;
@@ -245,7 +245,6 @@ var
   i: Integer;
 begin
   Columns.Clear;
-  aStrings := nil;
   if ReadLine(aStrings) then
   begin
     try
@@ -298,7 +297,7 @@ begin
   Params := aParams;
 end;
 
-function TmncCSVCommand.ReadLine(var Strings: TStringList): Boolean;
+function TmncCSVCommand.ReadLine(out Strings: TStringList): Boolean;
 var
   s: string;
 begin
@@ -307,7 +306,6 @@ begin
   begin
     s := '';
     Strings := TStringList.Create;
-
     repeat
       Result := FCSVStream.ReadLn(s, False);
       s := Trim(s);
@@ -315,7 +313,9 @@ begin
 
     Result := Result and not ((s = '') and (EmptyLine = elEOF));
     if Result then
-      StrToStrings(s, Strings, [Session.DelimiterChar], [#0, #13, #10], True, [Session.QuoteChar]);
+      StrToStrings(s, Strings, [Session.DelimiterChar], [#0, #13, #10], True, [Session.QuoteChar])
+    else
+      FreeAndNil(Strings);
   end;
 end;
 
