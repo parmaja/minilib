@@ -366,7 +366,7 @@ end;
 
 destructor TmncSQLCommand.Destroy;
 begin
-  inherited Destroy;
+  inherited;
   FreeAndNil(SQLProcessed);
 end;
 

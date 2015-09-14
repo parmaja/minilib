@@ -638,16 +638,11 @@ end;
 
 procedure TmncPGConnection.DoDisconnect;
 begin
-  try
-    InternalDisconnect(FHandle);
-  except
-    beep; //belal need review some time access violation
-  end;
+  InternalDisconnect(FHandle);
 end;
 
 procedure TmncPGConnection.DoNotify(vPID: Integer; const vName, vData: string);
 begin
-
 end;
 
 procedure TmncPGConnection.DropDatabase;

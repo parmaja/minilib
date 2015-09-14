@@ -760,7 +760,7 @@ end;
 destructor TmncCommand.Destroy;
 begin
   Active := False;
-  Session := nil;//already in Linked but must be sure before free other objects
+  Session := nil; //already in Linked but must be sure before free other objects
   FreeAndNil(FRequest);
   FreeAndNil(FFields);
   FreeAndNil(FBinds);

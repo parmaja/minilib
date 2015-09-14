@@ -594,9 +594,6 @@ procedure TmncMySQLConnection.DoDisconnect;
 begin
   mysql_close(FDBHandle); //TODO check error
   FDBHandle := nil;
-  {$ifdef FPC}
-  ReleaseMySQL;
-  {$endif}
 end;
 
 { TmncMySQLSession }
@@ -978,8 +975,8 @@ end;
 procedure TmncMySQLCommand.DoClose;
 begin
   FreeAndNil(FResults);
-  mysql_stmt_free_result(FStatment);
-  mysql_stmt_close(FStatment);
+  CheckError(mysql_stmt_free_result(FStatment));
+  CheckError(mysql_stmt_close(FStatment));
   FStatment := nil;
 end;
 
