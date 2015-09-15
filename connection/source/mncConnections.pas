@@ -26,7 +26,7 @@ interface
 
 uses
   Classes, SysUtils, DateUtils, Variants, Contnrs, SyncObjs,
-  mnFields, mncCommons, mncMetas;
+  mnFields, mncCommons;
 
 type
 
@@ -80,7 +80,6 @@ type
   TmncConnectionModel = record
     Name: string;
     Title: string;
-    MetaClass: TmncMetaClass;
     Capabilities: TmncCapabilities;
   end;
 

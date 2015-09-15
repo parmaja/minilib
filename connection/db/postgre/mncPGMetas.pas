@@ -55,7 +55,7 @@ implementation
 
 function TmncSQLiteMeta.CreateCMD(SQL: string): TmncPGCommand;
 begin
-  Result := TmncPGCommand.Create(Session);
+  Result := TmncSQLiteCommand.Create(Session);
   Result.SQL.Text := SQL;
 end;
 

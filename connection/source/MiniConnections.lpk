@@ -9,7 +9,7 @@
       <PathDelim Value="\"/>
       <SearchPaths>
         <IncludeFiles Value="$(ProjOutDir)"/>
-        <OtherUnitFiles Value="..\db;..\db\sqlite"/>
+        <OtherUnitFiles Value="."/>
         <UnitOutputDirectory Value="units\$(TargetCPU)-$(TargetOS)"/>
       </SearchPaths>
       <Parsing>
@@ -34,7 +34,7 @@
       </Other>
     </CompilerOptions>
     <Version Major="1" Release="1"/>
-    <Files Count="9">
+    <Files Count="4">
       <Item1>
         <Filename Value="mncConnections.pas"/>
         <UnitName Value="mncConnections"/>
@@ -48,29 +48,9 @@
         <UnitName Value="mncCSVExchanges"/>
       </Item3>
       <Item4>
-        <Filename Value="..\db\mncCommons.pas"/>
+        <Filename Value="mncCommons.pas"/>
         <UnitName Value="mncCommons"/>
       </Item4>
-      <Item5>
-        <Filename Value="..\db\mncSQL.pas"/>
-        <UnitName Value="mncSQL"/>
-      </Item5>
-      <Item6>
-        <Filename Value="..\db\mncSQLUtils.pas"/>
-        <UnitName Value="mncSQLUtils"/>
-      </Item6>
-      <Item7>
-        <Filename Value="..\db\mncDB.pas"/>
-        <UnitName Value="mncDB"/>
-      </Item7>
-      <Item8>
-        <Filename Value="..\db\sqlite\mncSQLite.pas"/>
-        <UnitName Value="mncSQLite"/>
-      </Item8>
-      <Item9>
-        <Filename Value="..\db\mncMetas.pas"/>
-        <UnitName Value="mncMetas"/>
-      </Item9>
     </Files>
     <RequiredPkgs Count="2">
       <Item1>

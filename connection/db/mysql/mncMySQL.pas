@@ -38,7 +38,7 @@ type
     procedure DoConnect; override;
     procedure DoDisconnect; override;
     function GetConnected:Boolean; override;
-    procedure RaiseError(Error: Integer; const Msg: string; const ExtraMsg: string = '');
+    procedure RaiseError(Error: Integer; const ExtraMsg: string = '');
     procedure CheckError(Error: Integer; const ExtraMsg: string = ''); overload;
     procedure CheckError(vMySQL: PMYSQL); overload;
     procedure DoInit; override;
@@ -51,6 +51,7 @@ type
     function SelectDatabase(vName: string; RaiseException: Boolean = true): Boolean;
     function IsDatabaseExists(vName: string): Boolean;
     procedure CreateDatabase(const vName: string; CheckExists: Boolean = False); overload;
+    procedure DropDatabase(const vName: string; CheckExists: Boolean = False); overload;
     procedure Vacuum;
 
     function GetVersion: string;
@@ -532,6 +533,18 @@ begin
   Execute(s);
 end;
 
+procedure TmncMySQLConnection.DropDatabase(const vName: string; CheckExists: Boolean);
+var
+  s: string;
+begin
+  CheckActive;
+  s := 'drop database ';
+  if CheckExists then
+    s := s + 'if exists ';
+  s := s + vName + ';';
+  Execute(s);
+end;
+
 procedure TmncMySQLConnection.Vacuum;
 begin
   //TODO
@@ -577,7 +590,7 @@ begin
   Result := FDBHandle <> nil;
 end;
 
-procedure TmncMySQLConnection.RaiseError(Error: Integer; const Msg: string; const ExtraMsg: string = '');
+procedure TmncMySQLConnection.RaiseError(Error: Integer; const ExtraMsg: string = '');
 var
   s : string;
 begin

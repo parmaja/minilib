@@ -545,7 +545,6 @@ begin
   Result.Name := 'PostgreSQL';
   Result.Title := 'Postgre Database';
   Result.Capabilities := [ccDB, ccSQL, ccNetwork, ccTransaction];
-  Result.MetaClass := nil;
   //Result.Mode := smConnection;
 end;
 

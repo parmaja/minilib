@@ -277,7 +277,6 @@ begin
   Result.Name := 'FirebirdSQL';
   Result.Title := 'Firebird SQL Database';
   Result.Capabilities := [ccDB, ccSQL, ccStrict, ccTransaction, ccMultiTransaction, ccNetwork];
-  Result.MetaClass := TmncFBMeta;
 end;
 
 function TmncFBConnection.CreateSession: TmncSQLSession;

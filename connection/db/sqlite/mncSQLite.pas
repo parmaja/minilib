@@ -392,7 +392,6 @@ begin
   Result.Name := 'SQLite';
   Result.Title := 'SQLite Database';
   Result.Capabilities := [ccDB, ccSQL, ccTransaction];
-  Result.MetaClass := TmncSQLiteMeta;
 end;
 
 function TmncSQLiteConnection.CreateSession: TmncSQLSession;

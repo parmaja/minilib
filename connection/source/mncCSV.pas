@@ -130,7 +130,6 @@ begin
   Result.Name := 'CSV';
   Result.Title := 'CSV Files';
   Result.Capabilities := [];
-  Result.MetaClass := nil;
 end;
 
 procedure TmncCSVConnection.DoDisconnect;
