@@ -58,6 +58,7 @@ type
     function CreateSession: TmncSQLSession; overload; override; 
     procedure Interrupt;
     procedure Vacuum;
+    procedure DropDatabase(const vName: string; CheckExists: Boolean = False);
     function GetVersion: string;
     procedure Execute(Command: string); override;
     property Exclusive: Boolean read FExclusive write SetExclusive;
@@ -407,6 +408,12 @@ end;
 procedure TmncSQLiteConnection.Vacuum;
 begin
   Execute('vacuum');
+end;
+
+procedure TmncSQLiteConnection.DropDatabase(const vName: string; CheckExists: Boolean);
+begin
+  if not CheckExists or FileExists(vName) then
+    DeleteFile(vName);
 end;
 
 function TmncSQLiteConnection.GetVersion: string;

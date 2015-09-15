@@ -1033,14 +1033,16 @@ begin
 
         aColumn.MetaType := MetaType;
         aColumn.Size := Field.length;
+
+        if FieldType in [MYSQL_TYPE_NEWDECIMAL] then
+          FieldType := MYSQL_TYPE_DOUBLE;
+
         aColumn.FieldType := FieldType;
 
         FillByte(FResults.Binds[i], sizeof(FResults.Binds[i]), 0);
 
         FResults.Binds[i].buffer_type := FieldType;
 
-        if FieldType in [MYSQL_TYPE_NEWDECIMAL] then
-          FResults.Binds[i].buffer_type := MYSQL_TYPE_DOUBLE;
 
         FResults.Binds[i].buffer := @FResults.Buffers[i].buf;
         FResults.Binds[i].buffer_length := SizeOf(FResults.Buffers[i].buf);
@@ -1071,6 +1073,8 @@ var
   aColumn: TmncMySQLColumn;
   real_length: culong;
   bind: MYSQL_BIND;
+  f: single;
+  d: double;
 begin
   if Columns.Count > 0 then
   begin
@@ -1088,8 +1092,14 @@ begin
         MYSQL_TYPE_LONG: aCurrent.Add(i, FResults.Buffers[i].buf.AsInteger);
         MYSQL_TYPE_INT24: aCurrent.Add(i, FResults.Buffers[i].buf.AsBig);
         MYSQL_TYPE_LONGLONG: aCurrent.Add(i, FResults.Buffers[i].buf.AsBig);
-        MYSQL_TYPE_FLOAT: aCurrent.Add(i, FResults.Buffers[i].buf.AsFloat);
-        MYSQL_TYPE_DOUBLE: aCurrent.Add(i, FResults.Buffers[i].buf.AsFloat);
+        MYSQL_TYPE_FLOAT:
+        begin
+          aCurrent.Add(i, FResults.Buffers[i].buf.AsFloat); //float is bad //TODO need cfloat to single
+        end;
+        MYSQL_TYPE_DOUBLE:
+        begin
+          aCurrent.Add(i, FResults.Buffers[i].buf.AsDouble);
+        end;
         MYSQL_TYPE_YEAR : aCurrent.Add(i, FResults.Buffers[i].buf.AsInteger);
         MYSQL_TYPE_TIMESTAMP, MYSQL_TYPE_DATETIME, MYSQL_TYPE_NEWDATE,  MYSQL_TYPE_DATE,
         MYSQL_TYPE_TIME, MYSQL_TYPE_TIMESTAMP2, MYSQL_TYPE_DATETIME2, MYSQL_TYPE_TIME2:
@@ -1116,7 +1126,7 @@ begin
         MYSQL_TYPE_DECIMAL, MYSQL_TYPE_NEWDECIMAL:
         //* ref: https://dev.mysql.com/doc/refman/5.0/en/fixed-point-types.html
         //* ref: http://stackoverflow.com/questions/6831217/double-vs-decimal-in-mysql
-          aCurrent.Add(i, FResults.Buffers[i].buf.AsFloat);
+          aCurrent.Add(i, FResults.Buffers[i].buf.AsDouble);
         MYSQL_TYPE_ENUM: aCurrent.Add(i, FResults.Buffers[i].buf.AsInteger);
         MYSQL_TYPE_SET: aCurrent.Add(i, FResults.Buffers[i].buf.AsInteger);
 
