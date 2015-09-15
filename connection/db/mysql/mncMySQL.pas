@@ -179,7 +179,8 @@ type
         0: (AsRaw: array[0..15] of byte);
         1: (AsInteger: Integer);
         2: (AsBig: int64);
-        3: (AsFloat: double);
+        3: (AsFloat: single);
+        3: (AsDouble: double);
         4: (AsDateTime: MYSQL_TIME);
         5: (AsString: array[0..15] of AnsiChar);
       end;
