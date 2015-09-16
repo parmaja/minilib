@@ -48,6 +48,7 @@ type
     function CreateSession: TmncSQLSession; overload; override; 
     procedure Interrupt;
     procedure SetCharsetName(Charset: string);
+    procedure SetAutoCommit(AMode: Boolean);
     function SelectDatabase(vName: string; RaiseException: Boolean = true): Boolean;
     function IsDatabaseExists(vName: string): Boolean;
     procedure CreateDatabase(const vName: string; CheckExists: Boolean = False); overload;
@@ -211,7 +212,7 @@ type
     function GetBinds: TmncMySQLBinds;
     function GetColumns: TmncMySQLColumns;
     function GetConnection: TmncMySQLConnection;
-    procedure FetchColumns;
+    function FetchColumns: Boolean; //return false if no data
     procedure FetchValues;
     procedure ApplyParams;
     function GetSession: TmncMySQLSession;
@@ -529,6 +530,11 @@ begin
   CheckError(mysql_options(FDBHandle, MYSQL_SET_CHARSET_NAME, PChar(Charset)));
 end;
 
+procedure TmncMySQLConnection.SetAutoCommit(AMode: Boolean);
+begin
+  mysql_autocommit(FDBHandle, ord(AMode));
+end;
+
 function TmncMySQLConnection.SelectDatabase(vName: string; RaiseException: Boolean): Boolean;
 var
   r: Integer;
@@ -611,6 +617,7 @@ begin
     if Resource <> '' then
       SelectDatabase(Resource);
     CheckError(mysql_options(FDBHandle, MYSQL_REPORT_DATA_TRUNCATION, @b));
+    SetAutoCommit(false);
   except
     on E:Exception do
     begin
@@ -672,6 +679,7 @@ end;
 
 procedure TmncMySQLSession.DoStart;
 begin
+//  Execute('SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED');
   Execute('BEGIN');
 end;
 
@@ -1004,17 +1012,18 @@ var
   state: integer;
 begin
   if FBOF then
-    FetchColumns;
-  state := mysql_stmt_fetch(FStatment);
-  b := state in [0, MYSQL_DATA_TRUNCATED];
-  if (b) then
+    FEOF := not FetchColumns;
+  if not FEOF then
   begin
-    FetchValues;
-    FEOF := False;
-  end
-  else
-  begin
-    FEOF := True;
+    state := mysql_stmt_fetch(FStatment);
+    b := state in [0, MYSQL_DATA_TRUNCATED];
+    if (b) then
+    begin
+      FetchValues;
+      FEOF := False;
+    end
+    else
+      FEOF := True;
   end;
   FBOF := False;
 end;
@@ -1088,7 +1097,7 @@ begin
   Session.Commit;
 end;
 
-procedure TmncMySQLCommand.FetchColumns;
+function TmncMySQLCommand.FetchColumns: Boolean;
 var
   i: Integer;
   c: Integer;
@@ -1102,6 +1111,8 @@ begin
   Columns.Clear;
 
   Res := mysql_stmt_result_metadata(FStatment); // Fetch result set meta information
+  Result := Res <> nil;
+  if Result then
   try
     c := mysql_stmt_field_count(FStatment);
     if c > 0 then

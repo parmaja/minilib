@@ -764,8 +764,7 @@ procedure TmncSQLiteCommand.DoNext;
 var
   r: Integer;
 begin
-//  CheckError(sqlite3_step(@FStatment));
-  r:=sqlite3_step(FStatment);
+  r := sqlite3_step(FStatment);
   if (r = SQLITE_ROW) then
   begin
     if FBOF then

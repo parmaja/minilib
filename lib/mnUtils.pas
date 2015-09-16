@@ -37,7 +37,7 @@ function CompareLeftStr(const Str: string; const WithStr: string; Start: Integer
 function SubStr(const Str: String; vSeperator: Char; vIndex: Integer = 0): String; overload;
 function SubStr(const Str: String; vSeperator: Char; vFromIndex, vToIndex: Integer): String; overload;
 
-function PeriodToString(vPeriod: Double; WithSeconds:Boolean): string;
+function PeriodToString(vPeriod: Double; WithSeconds: Boolean): string;
 function DequoteStr(Str: string; QuoteChar: string = '"'): string; overload;
 function DequoteStrAuto(Str: string): string; overload; //deqoute use both of ' and "
 
@@ -584,7 +584,7 @@ begin
   end;
 end;
 
-function PeriodToString(vPeriod: Double; WithSeconds:Boolean): string;
+function PeriodToString(vPeriod: Double; WithSeconds: Boolean): string;
 var
   h, m, s: integer;
   d: Integer;
@@ -603,7 +603,6 @@ var
   end;
 
 begin
-
   g := vPeriod < 0;
   vPeriod := abs(vPeriod);
   d := trunc(vPeriod * SecsPerDay);
