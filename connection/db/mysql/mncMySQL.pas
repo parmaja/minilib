@@ -127,13 +127,17 @@ type
   TmncMySQLBind = class(TmncBind)
   private
     FBuffer: Pointer;
-    FBufferSize: Integer;
+    FBufferSize: cardinal;
     function GetBufferAllocated: Boolean;
   protected
-    function AllocBuffer(var P; Size: Integer): Pointer; virtual;
+    len: culong;
+    is_null: my_bool;
+    function AllocBuffer(Size: cardinal; Realloc: Boolean = False): Pointer; virtual; overload;
+    procedure CopyBuffer(var P; Size: cardinal);
+    function AllocBuffer(var P; Size: cardinal; Realloc: Boolean = False): Pointer; virtual; overload;
     procedure FreeBuffer;
     property Buffer: Pointer read FBuffer;
-    property BufferSize: Integer read FBufferSize;
+    property BufferSize: cardinal read FBufferSize;
     property BufferAllocated: Boolean read GetBufferAllocated;
   public
     destructor Destroy; override;
@@ -145,8 +149,11 @@ type
   private
     function GetItem(Index: Integer): TmncMySQLBind;
   protected
+    FValues: TMySQLBinds;
     function CreateBind: TmncBind; override;
+    procedure Clear; override;
   public
+
     property Items[Index: Integer]: TmncMySQLBind read GetItem; default;
   end;
 
@@ -213,6 +220,7 @@ type
   protected
     procedure CheckError(Error:longint);
     procedure DoPrepare; override;
+    procedure DoUnPrepare; override;
     procedure DoExecute; override;
     procedure DoNext; override;
     function GetEOF:Boolean; override;
@@ -244,6 +252,9 @@ implementation
 
 uses
   mncMySQLMetas, mncDB;
+
+const
+  cMaxString = 255;
 
 const
   MySQL_OK = 0;
@@ -290,16 +301,33 @@ begin
   Result := Buffer <> nil;
 end;
 
-function TmncMySQLBind.AllocBuffer(var P; Size: Integer): Pointer;
+function TmncMySQLBind.AllocBuffer(Size: cardinal; Realloc: Boolean): Pointer;
 begin
-  FreeBuffer;
+  if not Realloc then
+    FreeBuffer;
   FBufferSize := Size;
-  if Size > 0 then
+  if FBufferSize > 0 then
   begin
-    FBuffer := AllocMem(FBufferSize);
-    Move(P, FBuffer^, Size);
+    if Realloc then
+      FBuffer := ReallocMem(FBuffer, FBufferSize)
+    else
+      FBuffer := AllocMem(FBufferSize);
   end;
   Result := FBuffer;
+end;
+
+function TmncMySQLBind.AllocBuffer(var P; Size: cardinal; Realloc: Boolean): Pointer;
+begin
+  Result := AllocBuffer(Size, Realloc);
+  CopyBuffer(P, Size);
+end;
+
+procedure TmncMySQLBind.CopyBuffer(var P; Size: cardinal);
+begin
+  if Size > FBufferSize then
+    Size := FBufferSize;
+  if Size > 0 then
+    Move(P, FBuffer^, Size);
 end;
 
 procedure TmncMySQLBind.FreeBuffer;
@@ -398,6 +426,12 @@ end;
 function TmncMySQLBinds.CreateBind: TmncBind;
 begin
   Result := TmncMySQLBind.Create;
+end;
+
+procedure TmncMySQLBinds.Clear;
+begin
+  inherited Clear;
+  FValues := nil;
 end;
 
 function TmncMySQLParam.GetValue: Variant;
@@ -517,7 +551,7 @@ function TmncMySQLConnection.IsDatabaseExists(vName: string): Boolean;
 var
   s: string;
 begin
-  s := 'select count(*) as aCount from information_Meta.Metata where Meta_name = '''+ vName + '''';
+  s := 'select count(*) as aCount from information_meta.metata where Meta_name = '''+ vName + '''';
   CheckError(mysql_query(FDBHandle, PChar(s)));
   //TODO
 end;
@@ -560,6 +594,8 @@ begin
 end;
 
 procedure TmncMySQLConnection.DoConnect;
+var
+  b: my_bool = 0;
 begin
   //TODO AutoCreate
   //* ref: https://dev.mysql.com/doc/refman/5.0/en/mysql-real-connect.html
@@ -568,12 +604,13 @@ begin
     //mysql_options(&mysql,MYSQL_READ_DEFAULT_GROUP,"your_prog_name");
     CheckError(mysql_real_connect(FDBHandle, PAnsiChar(Host), PChar(UserName), PChar(Password), nil, 0, nil, CLIENT_MULTI_RESULTS));
     if MultiCursors then
-      CheckError(mysql_set_server_option(FDBHandle, MYSQL_OPTION_MULTI_STATEMENTS_ON))
+        CheckError(mysql_set_server_option(FDBHandle, MYSQL_OPTION_MULTI_STATEMENTS_ON))
     else
       CheckError(mysql_set_server_option(FDBHandle, MYSQL_OPTION_MULTI_STATEMENTS_OFF));
-     SetCharsetName('utf8');
+    SetCharsetName('utf8');
     if Resource <> '' then
       SelectDatabase(Resource);
+    CheckError(mysql_options(FDBHandle, MYSQL_REPORT_DATA_TRUNCATION, @b));
   except
     on E:Exception do
     begin
@@ -833,20 +870,81 @@ var
   d: Double;
   n: Integer;
   t64: Int64;
-  Values: TMySQLBinds;
 begin
   //* ref: https://dev.mysql.com/doc/refman/5.0/en/mysql-stmt-bind-param.html
   //* ref: https://dev.mysql.com/doc/refman/5.0/en/mysql-stmt-execute.html
   //* https://dev.mysql.com/doc/refman/5.0/en/c-api-prepared-statement-type-codes.html
-  if Binds.Count > 0 then
+  //* http://www.2uzhan.com/calling-mysql_stmt_bind_param-and-setting-mysql_bind-members/
+
+  if (Binds.FValues = nil) and (Binds.Count > 0) then //not binded yet
   begin
-    SetLength(Values, Binds.Count);
+    SetLength(Binds.FValues, Binds.Count);
     for i := 0 to Binds.Count - 1 do
     begin
       if Binds[i].Param.IsEmpty then
       begin
-        n := 1;
-        Values[i].is_null := Binds[i].AllocBuffer(n, SizeOf(n));
+        Binds.FValues[i].is_null := @Binds[i].is_null;
+      end
+      else
+      begin
+        Binds.FValues[i].is_null := 0;
+        case VarType(Binds[i].Param.Value) of
+          varDate:
+          begin
+            Binds.FValues[i].buffer := Binds[i].AllocBuffer(SizeOf(dt));
+            Binds.FValues[i].buffer_length := SizeOf(dt);
+            Binds.FValues[i].buffer_type := MYSQL_TYPE_DATETIME;
+          end;
+          varBoolean:
+          begin
+            Binds.FValues[i].buffer := Binds[i].AllocBuffer(SizeOf(tiny));
+            Binds.FValues[i].buffer_length := SizeOf(tiny);
+            Binds.FValues[i].buffer_type := MYSQL_TYPE_TINY;
+          end;
+          varInteger:
+          begin
+            Binds.FValues[i].buffer := Binds[i].AllocBuffer(SizeOf(n));
+            Binds.FValues[i].buffer_length := 0;
+            Binds.FValues[i].buffer_type := MYSQL_TYPE_LONG;
+          end;
+          varint64:
+          begin
+            Binds.FValues[i].buffer := Binds[i].AllocBuffer(SizeOf(t64));
+            Binds.FValues[i].buffer_length := 0;
+            Binds.FValues[i].buffer_type := MYSQL_TYPE_LONGLONG;
+          end;
+          varCurrency:
+          begin
+            Binds.FValues[i].buffer := Binds[i].AllocBuffer(SizeOf(t64)); //TODO it should be not MYSQL_TYPE_NEWDECIMAL
+            Binds.FValues[i].buffer_length := 0;
+            Binds.FValues[i].buffer_type := MYSQL_TYPE_NEWDECIMAL;
+          end;
+          varDouble:
+          begin
+            Binds.FValues[i].buffer := Binds[i].AllocBuffer(SizeOf(d));
+            Binds.FValues[i].buffer_length := 0;
+            Binds.FValues[i].buffer_type := MYSQL_TYPE_DOUBLE;
+          end;
+          else //String type
+          begin
+            Binds.FValues[i].buffer := Binds[i].AllocBuffer(cMaxString); //Will set in setting values, if i set it to 0 it will crash :(
+            Binds.FValues[i].length := @Binds[i].len;
+            Binds.FValues[i].buffer_length := 0;
+            Binds.FValues[i].buffer_type := MYSQL_TYPE_VAR_STRING;
+          end;
+        end;
+      end;
+    end;
+    CheckError(mysql_stmt_bind_param(FStatment, @Binds.FValues[0]));
+  end;
+
+  if (Binds.Count > 0) then
+  begin
+    for i := 0 to Binds.Count - 1 do
+    begin
+      if Binds[i].Param.IsEmpty then
+      begin
+        Binds[i].is_null := 1;
       end
       else
       begin
@@ -854,56 +952,42 @@ begin
           varDate:
           begin
             DateTimeToMySQLDateTime(Binds[i].Param.Value, dt);
-            Values[i].buffer := Binds[i].AllocBuffer(dt, SizeOf(dt));
-            Values[i].buffer_length := SizeOf(dt);
-            Values[i].buffer_type := MYSQL_TYPE_DATETIME;
+            Binds[i].CopyBuffer(dt, SizeOf(dt));
           end;
           varBoolean:
           begin
             tiny := Ord(Boolean(Binds[i].Param.Value));
-            Values[i].buffer := Binds[i].AllocBuffer(tiny, SizeOf(tiny));
-            Values[i].buffer_length := SizeOf(tiny);
-            Values[i].buffer_type := MYSQL_TYPE_TINY;
+            Binds[i].CopyBuffer(tiny, SizeOf(tiny));
           end;
           varInteger:
           begin
             n := Ord(Integer(Binds[i].Param.Value));
-            Values[i].buffer := Binds[i].AllocBuffer(n, SizeOf(n));
-            Values[i].buffer_length := 0;
-            Values[i].buffer_type := MYSQL_TYPE_LONG;
+            Binds[i].CopyBuffer(n, SizeOf(n));
           end;
           varint64:
           begin
             t64 := Binds[i].Param.Value;
-            Values[i].buffer := Binds[i].AllocBuffer(t64, SizeOf(t64));
-            Values[i].buffer_length := 0;
-            Values[i].buffer_type := MYSQL_TYPE_LONGLONG;
+            Binds[i].CopyBuffer(t64, SizeOf(t64));
           end;
           varCurrency:
           begin
             t64 := Binds[i].Param.Value;
-            Values[i].buffer := Binds[i].AllocBuffer(t64, SizeOf(t64)); //TODO it should be not MYSQL_TYPE_NEWDECIMAL
-            Values[i].buffer_length := 0;
-            Values[i].buffer_type := MYSQL_TYPE_NEWDECIMAL;
+            Binds[i].CopyBuffer(t64, SizeOf(t64)); //TODO it should be not MYSQL_TYPE_NEWDECIMAL
           end;
           varDouble:
           begin
             d := Binds[i].Param.Value;
-            Values[i].buffer := Binds[i].AllocBuffer(d, SizeOf(d));
-            Values[i].buffer_length := 0;
-            Values[i].buffer_type := MYSQL_TYPE_DOUBLE;
+            Binds[i].CopyBuffer(d, SizeOf(d));
           end;
           else //String type
           begin
             s := VarToStrDef(Binds[i].Param.Value, '');
-            Values[i].buffer := Binds[i].AllocBuffer(PChar(s)^, Length(s));
-            Values[i].buffer_length := Length(s);
-            Values[i].buffer_type := MYSQL_TYPE_VAR_STRING;
+            Binds[i].CopyBuffer(PChar(s)^, Length(s));
+            Binds[i].len := Length(s);
           end;
         end;
       end;
     end;
-    CheckError(mysql_stmt_bind_param(FStatment, @Values[0]));
   end;
 end;
 
@@ -959,6 +1043,11 @@ begin
       raise;
     end;
   end;
+end;
+
+procedure TmncMySQLCommand.DoUnPrepare;
+begin
+  inherited;
 end;
 
 procedure TmncMySQLCommand.DoRollback;
@@ -1073,8 +1162,6 @@ var
   aColumn: TmncMySQLColumn;
   real_length: culong;
   bind: MYSQL_BIND;
-  f: single;
-  d: double;
 begin
   if Columns.Count > 0 then
   begin
