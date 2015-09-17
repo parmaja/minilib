@@ -55,6 +55,10 @@ type
     constructor Create;
     class function Model: TmncConnectionModel; override;
     function CreateSession: TmncSQLSession; override;
+    procedure CreateDatabase(const vName: string; CheckExists: Boolean = False); override;
+    procedure DropDatabase(const vName: string; CheckExists: Boolean = False); override;
+    function IsDatabaseExists(vName: string): Boolean; override;
+    procedure Vacuum; override;
 
     function GetVersion: string;
     procedure Execute(SQL: string); override;
@@ -246,7 +250,7 @@ type
     property Session: TmncFBSession read GetSession write SetSession;
   public
     procedure Clear; override;
-    function GetRowsChanged: Integer; virtual;
+    function GetRowsChanged: Integer; override;
     property SQLType: TFBDSQLTypes read FSQLType;
     property Handle: TISC_STMT_HANDLE read FHandle;
     { Cursor name
@@ -282,6 +286,26 @@ end;
 function TmncFBConnection.CreateSession: TmncSQLSession;
 begin
   Result := TmncFBSession.Create(Self);
+end;
+
+procedure TmncFBConnection.CreateDatabase(const vName: string; CheckExists: Boolean);
+begin
+  //TODO
+end;
+
+procedure TmncFBConnection.DropDatabase(const vName: string; CheckExists: Boolean);
+begin
+  //TODO
+end;
+
+function TmncFBConnection.IsDatabaseExists(vName: string): Boolean;
+begin
+  //TODO
+end;
+
+procedure TmncFBConnection.Vacuum;
+begin
+  //TODO
 end;
 
 function TmncFBConnection.GetVersion: string;

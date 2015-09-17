@@ -80,17 +80,18 @@ type
     destructor Destroy; override;
 
     procedure Interrupt;
-    procedure Vacuum(Full: Boolean = False);
     function CreateSession: TmncSQLSession; override;
     class function Model: TmncConnectionModel; override;
     //TODO: Reconnect  use PQReset
     property Handle: PPGconn read FHandle;
+    procedure CreateDatabase(const vName: string; CheckExists: Boolean = False); overload; override;
+    procedure DropDatabase(const vName: string; CheckExists: Boolean = False); overload; override;
+    function IsDatabaseExists(vName: string): Boolean; override;
+    procedure Vacuum; override;
+
     procedure CreateDatabase; overload;
-    procedure CreateDatabase(const vName: string; CheckExists: Boolean = False); overload;
     procedure DropDatabase; overload;
-    procedure DropDatabase(const vName: string); overload;
     procedure RenameDatabase(const vName, vToName: string); overload;
-    function IsDatabaseExists(const vName: string): Boolean;
 
     procedure Execute(const vResource: string; const vSQL: string; vArgs: array of const); overload;
     procedure Execute(const vResource: string; const vSQL: string); overload;
@@ -258,8 +259,8 @@ type
     function GetActive: Boolean; override;
     procedure DoClose; override;
   public
-    function GetRowsChanged: Integer;
-    function GetLastInsertID: Int64;
+    function GetRowsChanged: Integer; override;
+    function GetLastRowID: Int64; override;
     property Statment: PPGresult read FStatment;//opened by PQexecPrepared
     property RecordCount: Integer read GetRecordCount;
   end;
@@ -402,7 +403,27 @@ begin
   Execute('postgres', 'alter database %s rename to %s', [vName, vToName]);
 end;
 
-function TmncPGConnection.IsDatabaseExists(const vName: string): Boolean;
+procedure TmncPGConnection.Execute(const vResource, vSQL: string; vArgs: array of const);
+begin
+  Execute(vResource, Format(vSQL, vArgs));
+end;
+
+procedure TmncPGConnection.Execute(const vResource, vSQL: string);
+var
+  aHandle: PPGconn;
+begin
+  aHandle := CreateConnection(vResource);
+  try
+    if PQstatus(aHandle) = CONNECTION_OK then
+    begin
+      Execute(aHandle, vSQL);
+    end;
+  finally
+    PQfinish(aHandle);
+  end;
+end;
+
+function TmncPGConnection.IsDatabaseExists(vName: string): Boolean;
 begin
   //Execute('postgres', 'select if exists %s;', [vName]);
   //SELECT datname FROM pg_catalog.pg_database WHERE lower(datname) = lower('dbname');
@@ -430,12 +451,9 @@ begin
   //PG3_interrupt(DBHandle);
 end;
 
-procedure TmncPGConnection.Vacuum(Full: Boolean);
+procedure TmncPGConnection.Vacuum;
 begin
-  if Full then
-    Execute('Vacuum Full')
-  else
-    Execute('Vacuum');
+  Execute('Vacuum Full')
 end;
 
 procedure TmncPGConnection.Listen(const vChannel: string);
@@ -649,9 +667,9 @@ begin
   DropDatabase(Resource);
 end;
 
-procedure TmncPGConnection.DropDatabase(const vName: string);
+procedure TmncPGConnection.DropDatabase(const vName: string; CheckExists: Boolean);
 begin
-  Execute('postgres', 'drop database if exists %s;', [vName]);
+  Execute('postgres', 'drop database if exists %s;', [vName]); //TODO Check if exists
 end;
 
 function TmncPGConnection.Execute(vHandle: PPGconn; const vSQL: string; vArgs: array of const; vClearResult: Boolean): PPGresult;
@@ -676,26 +694,6 @@ begin
     end;
   except
     raise;
-  end;
-end;
-
-procedure TmncPGConnection.Execute(const vResource, vSQL: string; vArgs: array of const);
-begin
-  Execute(vResource, Format(vSQL, vArgs));
-end;
-
-procedure TmncPGConnection.Execute(const vResource, vSQL: string);
-var
-  aHandle: PPGconn;
-begin
-  aHandle := CreateConnection(vResource);
-  try
-    if PQstatus(aHandle) = CONNECTION_OK then
-    begin
-      Execute(aHandle, vSQL);
-    end;
-  finally
-    PQfinish(aHandle);
   end;
 end;
 
@@ -826,7 +824,7 @@ begin
   Result := (FStatment = nil) or FEOF;
 end;
 
-function TmncPGCommand.GetLastInsertID: Int64;
+function TmncPGCommand.GetLastRowID: Int64;
 begin
   Result := 0;
 end;

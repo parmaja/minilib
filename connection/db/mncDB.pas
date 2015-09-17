@@ -20,6 +20,7 @@ uses
   mncCommons, mncConnections;
 
 type
+  //TmncDBType = (dbSQLite, dbMySQL, dbPosgre, dbFirebird);
 
   TmncConnectionClass = class of TmncConnection;
 
@@ -122,5 +123,4 @@ initialization
 
 finalization
   FreeAndNil(FmncEngines);
-
 end.

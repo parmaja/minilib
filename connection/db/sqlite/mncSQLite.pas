@@ -57,8 +57,10 @@ type
     class function Model: TmncConnectionModel; override;
     function CreateSession: TmncSQLSession; overload; override; 
     procedure Interrupt;
-    procedure Vacuum;
-    procedure DropDatabase(const vName: string; CheckExists: Boolean = False);
+    procedure CreateDatabase(const vName: string; CheckExists: Boolean =False); override;
+    function IsDatabaseExists(vName: string): Boolean; override;
+    procedure DropDatabase(const vName: string; CheckExists: Boolean = False); override;
+    procedure Vacuum; override;
     function GetVersion: string;
     procedure Execute(Command: string); override;
     property Exclusive: Boolean read FExclusive write SetExclusive;
@@ -89,7 +91,7 @@ type
     function CreateCommand: TmncSQLCommand; override;
     function CreateMeta: TmncMeta; override;
     procedure Execute(SQL: string);
-    function GetLastInsertID: Int64;
+    function GetLastRowID: Int64;
     function GetRowsChanged: Integer;
     property Connection: TmncSQLiteConnection read GetConnection write SetConnection;
   end;
@@ -193,8 +195,8 @@ type
     property Connection:TmncSQLiteConnection read GetConnection;
     property Session: TmncSQLiteSession read GetSession write SetSession;
     procedure Clear; override;
-    function GetRowsChanged: Integer; virtual;
-    function GetLastInsertID: Int64;
+    function GetRowsChanged: Integer; override;
+    function GetLastRowID: Int64; override;
     property Statment: Psqlite3_stmt read FStatment;
   end;
 
@@ -406,6 +408,16 @@ begin
   sqlite3_interrupt(DBHandle);
 end;
 
+procedure TmncSQLiteConnection.CreateDatabase(const vName: string; CheckExists: Boolean);
+begin
+  //TODO
+end;
+
+function TmncSQLiteConnection.IsDatabaseExists(vName: string): Boolean;
+begin
+  //TODO
+end;
+
 procedure TmncSQLiteConnection.Vacuum;
 begin
   Execute('vacuum');
@@ -517,7 +529,7 @@ begin
   CheckError(r, s);
 end;
 
-function TmncSQLiteSession.GetLastInsertID: Int64;
+function TmncSQLiteSession.GetLastRowID: Int64;
 begin
   CheckActive;
   Result := sqlite3_last_insert_rowid(Connection.DBHandle);
@@ -674,9 +686,9 @@ begin
   Result := Session.GetRowsChanged;
 end;
 
-function TmncSQLiteCommand.GetLastInsertID: Int64;
+function TmncSQLiteCommand.GetLastRowID: Int64;
 begin
-  Result := Session.GetLastInsertID;
+  Result := Session.GetLastRowID;
 end;
 
 procedure TmncSQLiteCommand.ApplyParams;

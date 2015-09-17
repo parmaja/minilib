@@ -28,10 +28,15 @@ type
 
   { TmncSQLConnection }
 
-  TmncSQLConnection = class(TmncConnection)
+  TmncSQLConnection = class abstract(TmncConnection)
   public
-    function CreateSession: TmncSQLSession; virtual; abstract;
+    constructor Create;
     procedure Execute(Command: string); virtual;
+    function CreateSession: TmncSQLSession; virtual; abstract;
+    function IsDatabaseExists(vName: string): Boolean; virtual; abstract;
+    procedure CreateDatabase(const vName: string; CheckExists: Boolean = False); virtual; abstract;
+    procedure DropDatabase(const vName: string; CheckExists: Boolean = False); virtual; abstract;
+    procedure Vacuum; virtual; abstract;
   end;
 
   { TmncSQLMeta }
@@ -41,7 +46,7 @@ type
 
   { TmncSQLSession }
 
-  TmncSQLSession = class(TmncSession)
+  TmncSQLSession = class abstract(TmncSession)
   public
     function CreateCommand: TmncSQLCommand; virtual; abstract;
     function CreateMeta: TmncMeta; virtual; abstract;
@@ -67,7 +72,7 @@ type
 
   { TmncSQLCommand }
 
-  TmncSQLCommand = class(TmncCommand)
+  TmncSQLCommand = class abstract(TmncCommand)
   private
     function GetSQL: TStrings;
   protected
@@ -84,6 +89,8 @@ type
     constructor Create; override; overload;
     constructor Create(aSession: TmncSQLSession); overload;
     destructor Destroy; override;
+    function GetLastRowID: Int64; virtual;
+    function GetRowsChanged: Integer; virtual;
     property SQL: TStrings read GetSQL;//Alias of Request, autocomplete may add it in private becareful
   end;
 
@@ -104,6 +111,11 @@ type
 implementation
 
 { TmncSQLConnection }
+
+constructor TmncSQLConnection.Create;
+begin
+  inherited Create;
+end;
 
 procedure TmncSQLConnection.Execute(Command: string);
 begin
@@ -368,6 +380,16 @@ destructor TmncSQLCommand.Destroy;
 begin
   inherited;
   FreeAndNil(SQLProcessed);
+end;
+
+function TmncSQLCommand.GetLastRowID: Int64;
+begin
+  Result := 0;
+end;
+
+function TmncSQLCommand.GetRowsChanged: Integer;
+begin
+  Result := 0;
 end;
 
 end.

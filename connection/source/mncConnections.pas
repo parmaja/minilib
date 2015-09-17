@@ -29,6 +29,8 @@ uses
   mnFields, mncCommons;
 
 type
+  TmncModel = class(TObject) //inherited it for every connection type
+  end;
 
   TmncSession = class;
   TmncCommand = class;
@@ -125,6 +127,7 @@ type
     constructor Create;
     destructor Destroy; override;
     class function Model: TmncConnectionModel; virtual; abstract;
+    function IsModel(vName: string): Boolean;
     procedure Connect;
     procedure Disconnect;
     procedure Open; //Alias for Connect
@@ -678,6 +681,11 @@ begin
   FreeAndNil(FSessions);
   FreeAndNil(FParams);
   inherited;
+end;
+
+function TmncConnection.IsModel(vName: string): Boolean;
+begin
+  Result := SameText(vName, Model.Name);
 end;
 
 procedure TmncConnection.Disconnect;

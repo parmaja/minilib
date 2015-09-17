@@ -51,10 +51,10 @@ type
     procedure SetStorageEngine(vName: string);
     procedure SetAutoCommit(AMode: Boolean);
     function SelectDatabase(vName: string; RaiseException: Boolean = true): Boolean;
-    function IsDatabaseExists(vName: string): Boolean;
-    procedure CreateDatabase(const vName: string; CheckExists: Boolean = False); overload;
-    procedure DropDatabase(const vName: string; CheckExists: Boolean = False); overload;
-    procedure Vacuum;
+    function IsDatabaseExists(vName: string): Boolean; override;
+    procedure CreateDatabase(const vName: string; CheckExists: Boolean = False); override;
+    procedure DropDatabase(const vName: string; CheckExists: Boolean = False); override;
+    procedure Vacuum; override;
 
     function GetVersion: string;
     procedure Execute(Command: string); override;
@@ -243,8 +243,8 @@ type
     property Statment: PMYSQL_STMT read FStatment;
     property Columns: TmncMySQLColumns read GetColumns;
     property ReadOnly: Boolean read FReadOnly write SetReadOnly;
-    function GetLastInsertID: Int64; virtual;
-    function GetRowsChanged: Integer;
+    function GetLastRowID: Int64; override;
+    function GetRowsChanged: Integer; override;
   end;
 
 function MySQLTypeToType(vType: enum_field_types): TmncDataType;
@@ -842,7 +842,7 @@ begin
   Result := mysql_stmt_affected_rows(FStatment);
 end;
 
-function TmncMySQLCommand.GetLastInsertID: Int64;
+function TmncMySQLCommand.GetLastRowID: Int64;
 begin
   CheckActive;
   Result := mysql_stmt_insert_id(FStatment);
