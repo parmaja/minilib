@@ -225,7 +225,7 @@ type
     procedure DoUnPrepare; override;
     procedure DoExecute; override;
     procedure DoNext; override;
-    function GetEOF:Boolean; override;
+    function GetEOF: Boolean; override;
     function GetActive:Boolean; override;
     procedure DoClose; override;
     procedure DoCommit; override;
@@ -1046,6 +1046,7 @@ var
 begin
   //* ref: https://dev.mysql.com/doc/refman/5.0/en/mysql-stmt-prepare.html
   FBOF := True;
+  FEOF := False;
   if FStatment <> nil then
     CheckError(mysql_stmt_reset(FStatment))
   else

@@ -897,6 +897,7 @@ var
   s: UTF8String;
 begin
   FBOF := True;
+  FEOF := False;
   FHandle := Session.NewToken;
   ParseSQL([psoAddParamsID], '$');
   c := Session.DBHandle;

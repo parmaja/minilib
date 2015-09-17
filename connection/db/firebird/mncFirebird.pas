@@ -229,10 +229,10 @@ type
     function Call(ErrCode: ISC_STATUS; StatusVector: TStatusVector; RaiseError: Boolean): ISC_STATUS;
     procedure CheckHandle;//TODO remove it
     procedure DoParse; override;
-    procedure DoUnprepare; override;
     procedure DoPrepare; override;
     procedure DoExecute; override;
     procedure DoNext; override;
+    procedure DoUnprepare; override;
     function GetEOF: Boolean; override;
     function GetActive: Boolean; override;
     procedure SetActive(const Value: Boolean); override;
@@ -1216,6 +1216,8 @@ var
   aField: TmncFBField;
   aParam: TmncFBParam;
 begin
+  FEOF := True;
+  FBOF := False;
   if not Prepared then//TODO remove this line
   begin
     try

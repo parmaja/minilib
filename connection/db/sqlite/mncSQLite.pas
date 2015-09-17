@@ -785,6 +785,7 @@ end;
 procedure TmncSQLiteCommand.DoPrepare;
 begin
   FBOF := True;
+  FEOF := False;
 //  sqlite3_prepare_v2
 //TODO: apply value of params if using injection mode
   CheckError(sqlite3_prepare(Connection.DBHandle, PChar(SQLProcessed.SQL), -1 , @FStatment, @FTail));
