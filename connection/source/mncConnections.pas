@@ -813,9 +813,8 @@ begin
     Prepare;
   DoExecute;
   if not EOF and FNextOnExecute then //TODO CHeck it do we need not EOF
-    Result := Next
-  else
-    Result := not EOF;
+    Result := Next;
+  Result := not EOF;
 end;
 
 function TmncCommand.FieldIsExist(Name: string): Boolean;

@@ -48,6 +48,7 @@ type
     function CreateSession: TmncSQLSession; overload; override; 
     procedure Interrupt;
     procedure SetCharsetName(Charset: string);
+    procedure SetStorageEngine(vName: string);
     procedure SetAutoCommit(AMode: Boolean);
     function SelectDatabase(vName: string; RaiseException: Boolean = true): Boolean;
     function IsDatabaseExists(vName: string): Boolean;
@@ -530,6 +531,11 @@ begin
   CheckError(mysql_options(FDBHandle, MYSQL_SET_CHARSET_NAME, PChar(Charset)));
 end;
 
+procedure TmncMySQLConnection.SetStorageEngine(vName: string);
+begin
+  Execute('SET default_storage_engine =' + vName);
+end;
+
 procedure TmncMySQLConnection.SetAutoCommit(AMode: Boolean);
 begin
   mysql_autocommit(FDBHandle, ord(AMode));
@@ -602,21 +608,34 @@ end;
 procedure TmncMySQLConnection.DoConnect;
 var
   b: my_bool = 0;
+  protocol: mysql_protocol_type;
 begin
   //TODO AutoCreate
   //* ref: https://dev.mysql.com/doc/refman/5.0/en/mysql-real-connect.html
   FDBHandle := mysql_init(FDBHandle);
   try
     //mysql_options(&mysql,MYSQL_READ_DEFAULT_GROUP,"your_prog_name");
-    CheckError(mysql_real_connect(FDBHandle, PAnsiChar(Host), PChar(UserName), PChar(Password), nil, 0, nil, CLIENT_MULTI_RESULTS));
+{   Shared memory:
+    you need to setup server to use it
+    [mysqld]
+    shared_memory = ON
+    shared-memory-base-name=MYSQL
+}
+{
+    protocol := MYSQL_PROTOCOL_MEMORY;
+    CheckError(mysql_options(FDBHandle, MYSQL_OPT_PROTOCOL, @protocol));
+    CheckError(mysql_options(FDBHandle, MYSQL_SHARED_MEMORY_BASE_NAME, PAnsiChar('MYSQL')));
+}
+
+    CheckError(mysql_real_connect(FDBHandle, PAnsiChar(Host), PChar(UserName), PChar(Password), nil, 0, nil, CLIENT_MULTI_RESULTS)); //CLIENT_MULTI_STATEMENTS
     if MultiCursors then
-        CheckError(mysql_set_server_option(FDBHandle, MYSQL_OPTION_MULTI_STATEMENTS_ON))
+      CheckError(mysql_set_server_option(FDBHandle, MYSQL_OPTION_MULTI_STATEMENTS_ON))
     else
       CheckError(mysql_set_server_option(FDBHandle, MYSQL_OPTION_MULTI_STATEMENTS_OFF));
     SetCharsetName('utf8');
     if Resource <> '' then
       SelectDatabase(Resource);
-    CheckError(mysql_options(FDBHandle, MYSQL_REPORT_DATA_TRUNCATION, @b));
+    //CheckError(mysql_options(FDBHandle, MYSQL_REPORT_DATA_TRUNCATION, @b));
     SetAutoCommit(false);
   except
     on E:Exception do
@@ -679,7 +698,7 @@ end;
 
 procedure TmncMySQLSession.DoStart;
 begin
-//  Execute('SET TRANSACTION ISOLATION LEVEL READ UNCOMMITTED');
+  //Execute('SET TRANSACTION ISOLATION LEVEL READ COMMITTED');
   Execute('BEGIN');
 end;
 
@@ -838,7 +857,7 @@ begin
   if not TryEncodeTime(ATime.hour, ATime.minute, ATime.second, ATime.second_part, t) then
     t := 0;
   Result := ComposeDateTime(d, t);
-end ;
+end;
 
 procedure DateTimeToMySQLDateTime(DateTime: TDateTime; out ATime: MYSQL_TIME);
 var
@@ -854,19 +873,19 @@ begin
   ATime.second_part := st.Millisecond;
   ATime.neg := 0;
   ATime.time_type := MYSQL_TIMESTAMP_DATETIME;
-end ;
+end;
 
 procedure DateTimeToMySQLTime(DateTime: TDateTime; out ATime: MYSQL_TIME);
 begin
   DateTimeToMySQLDateTime(DateTime, ATime);
   ATime.time_type := MYSQL_TIMESTAMP_TIME;
-end ;
+end;
 
 procedure DateTimeToMySQLDate(DateTime: TDateTime; out ATime: MYSQL_TIME);
 begin
   DateTimeToMySQLDateTime(DateTime, ATime);
   ATime.time_type := MYSQL_TIMESTAMP_DATE;
-end ;
+end;
 
 procedure TmncMySQLCommand.ApplyParams;
 var
@@ -889,57 +908,50 @@ begin
     SetLength(Binds.FValues, Binds.Count);
     for i := 0 to Binds.Count - 1 do
     begin
-      if Binds[i].Param.IsEmpty then
-      begin
-        Binds.FValues[i].is_null := @Binds[i].is_null;
-      end
-      else
-      begin
-        Binds.FValues[i].is_null := 0;
-        case VarType(Binds[i].Param.Value) of
-          varDate:
-          begin
-            Binds.FValues[i].buffer := Binds[i].AllocBuffer(SizeOf(dt));
-            Binds.FValues[i].buffer_length := SizeOf(dt);
-            Binds.FValues[i].buffer_type := MYSQL_TYPE_DATETIME;
-          end;
-          varBoolean:
-          begin
-            Binds.FValues[i].buffer := Binds[i].AllocBuffer(SizeOf(tiny));
-            Binds.FValues[i].buffer_length := SizeOf(tiny);
-            Binds.FValues[i].buffer_type := MYSQL_TYPE_TINY;
-          end;
-          varInteger:
-          begin
-            Binds.FValues[i].buffer := Binds[i].AllocBuffer(SizeOf(n));
-            Binds.FValues[i].buffer_length := 0;
-            Binds.FValues[i].buffer_type := MYSQL_TYPE_LONG;
-          end;
-          varint64:
-          begin
-            Binds.FValues[i].buffer := Binds[i].AllocBuffer(SizeOf(t64));
-            Binds.FValues[i].buffer_length := 0;
-            Binds.FValues[i].buffer_type := MYSQL_TYPE_LONGLONG;
-          end;
-          varCurrency:
-          begin
-            Binds.FValues[i].buffer := Binds[i].AllocBuffer(SizeOf(t64)); //TODO it should be not MYSQL_TYPE_NEWDECIMAL
-            Binds.FValues[i].buffer_length := 0;
-            Binds.FValues[i].buffer_type := MYSQL_TYPE_NEWDECIMAL;
-          end;
-          varDouble:
-          begin
-            Binds.FValues[i].buffer := Binds[i].AllocBuffer(SizeOf(d));
-            Binds.FValues[i].buffer_length := 0;
-            Binds.FValues[i].buffer_type := MYSQL_TYPE_DOUBLE;
-          end;
-          else //String type
-          begin
-            Binds.FValues[i].buffer := Binds[i].AllocBuffer(cMaxString); //Will set in setting values, if i set it to 0 it will crash :(
-            Binds.FValues[i].length := @Binds[i].len;
-            Binds.FValues[i].buffer_length := 0;
-            Binds.FValues[i].buffer_type := MYSQL_TYPE_VAR_STRING;
-          end;
+      Binds.FValues[i].is_null := @Binds[i].is_null;
+      case VarType(Binds[i].Param.Value) of
+        varDate:
+        begin
+          Binds.FValues[i].buffer := Binds[i].AllocBuffer(SizeOf(dt));
+          Binds.FValues[i].buffer_length := SizeOf(dt);
+          Binds.FValues[i].buffer_type := MYSQL_TYPE_DATETIME;
+        end;
+        varBoolean:
+        begin
+          Binds.FValues[i].buffer := Binds[i].AllocBuffer(SizeOf(tiny));
+          Binds.FValues[i].buffer_length := SizeOf(tiny);
+          Binds.FValues[i].buffer_type := MYSQL_TYPE_TINY;
+        end;
+        varInteger:
+        begin
+          Binds.FValues[i].buffer := Binds[i].AllocBuffer(SizeOf(n));
+          Binds.FValues[i].buffer_length := 0;
+          Binds.FValues[i].buffer_type := MYSQL_TYPE_LONG;
+        end;
+        varint64:
+        begin
+          Binds.FValues[i].buffer := Binds[i].AllocBuffer(SizeOf(t64));
+          Binds.FValues[i].buffer_length := 0;
+          Binds.FValues[i].buffer_type := MYSQL_TYPE_LONGLONG;
+        end;
+        varCurrency:
+        begin
+          Binds.FValues[i].buffer := Binds[i].AllocBuffer(SizeOf(t64)); //TODO it should be not MYSQL_TYPE_NEWDECIMAL
+          Binds.FValues[i].buffer_length := 0;
+          Binds.FValues[i].buffer_type := MYSQL_TYPE_NEWDECIMAL;
+        end;
+        varDouble:
+        begin
+          Binds.FValues[i].buffer := Binds[i].AllocBuffer(SizeOf(d));
+          Binds.FValues[i].buffer_length := 0;
+          Binds.FValues[i].buffer_type := MYSQL_TYPE_DOUBLE;
+        end;
+        else //String type
+        begin
+          Binds.FValues[i].buffer := Binds[i].AllocBuffer(cMaxString); //Will set in setting values, if i set it to 0 it will crash :(
+          Binds.FValues[i].length := @Binds[i].len;
+          Binds.FValues[i].buffer_length := 0;
+          Binds.FValues[i].buffer_type := MYSQL_TYPE_VAR_STRING;
         end;
       end;
     end;
