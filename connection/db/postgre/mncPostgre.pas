@@ -24,7 +24,7 @@ interface
 
 uses
   Classes, SysUtils, Variants, StrUtils,
-  mncPGHeader,
+  mncDB, mncPGHeader,
   mnUtils, mnStreams, mncConnections, mncSQL, mncCommons, mncMetas;
 
 type
@@ -1172,7 +1172,7 @@ begin
       Result[i] := nil
     else
     begin
-      case p.Value of
+      case VarType(p.Value) of
         VarDate:
           s := UTF8Encode(FormatDateTime('yyyy-mm-dd hh:nn:ss', p.Value));
         else
@@ -1482,4 +1482,6 @@ begin
   FBOF := True;
 end;
 
+initialization
+  mncDB.Engines.Add(TmncPGConnection);
 end.
