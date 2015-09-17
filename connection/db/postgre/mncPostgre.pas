@@ -837,6 +837,8 @@ var
   P: pointer;
   f: Integer;//Result Field format
 begin
+  FBOF := True;
+  FEOF := False;
   if FStatment <> nil then
     PQclear(FStatment);
   try

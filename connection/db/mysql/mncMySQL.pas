@@ -1014,6 +1014,7 @@ end;
 procedure TmncMySQLCommand.DoExecute;
 begin
   FBOF := True;
+  FEOF := False;
   ApplyParams;
   CheckError(mysql_stmt_execute(FStatment));
 end;

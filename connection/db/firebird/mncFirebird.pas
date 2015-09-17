@@ -1018,6 +1018,8 @@ var
   StatusVector: TStatusVector;
   BindsData: PXSQLDA;
 begin
+{  FBOF := True; //TODO
+  FEOF := False;}
   CheckHandle;
   BindsData := nil;
   AllocateBinds(BindsData);

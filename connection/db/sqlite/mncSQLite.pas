@@ -167,6 +167,7 @@ type
     FTail: pchar;
     FBOF: Boolean;
     FEOF: Boolean;
+    FLastStepResult: longint;
     function GetBinds: TmncSQLiteBinds;
     function GetConnection: TmncSQLiteConnection;
     procedure FetchColumns;
@@ -755,16 +756,21 @@ end;
 procedure TmncSQLiteCommand.DoExecute;
 begin
   FBOF := True;
+  FEOF := False;
   if FStatment <> nil then
     CheckError(sqlite3_reset(FStatment));
   ApplyParams;
+  FLastStepResult := sqlite3_step(FStatment);
 end;
 
 procedure TmncSQLiteCommand.DoNext;
 var
   r: Integer;
 begin
-  r := sqlite3_step(FStatment);
+  if not FBOF then
+    r := sqlite3_step(FStatment) //already steped in DoExecute
+  else
+    r := FLastStepResult;
   if (r = SQLITE_ROW) then
   begin
     if FBOF then
@@ -786,6 +792,7 @@ procedure TmncSQLiteCommand.DoPrepare;
 begin
   FBOF := True;
   FEOF := False;
+  FLastStepResult := 0;
 //  sqlite3_prepare_v2
 //TODO: apply value of params if using injection mode
   CheckError(sqlite3_prepare(Connection.DBHandle, PChar(SQLProcessed.SQL), -1 , @FStatment, @FTail));

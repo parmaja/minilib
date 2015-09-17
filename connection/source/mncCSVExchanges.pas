@@ -309,11 +309,11 @@ begin
     st := '';
     if HeaderLine = hdrNormal then
     begin
-      for i := 0 to Command.Fields.Count - 1 do
+      for i := 0 to Command.Columns.Count - 1 do
       begin
         if i > 0 then
           st := st + DelimiterChar;
-        s := Command.Fields.Items[i].GetName;
+        s := Command.Columns.Items[i].Name;
         if QuoteChar <> #0 then
           s := QuoteStr(s, QuoteChar);
         st := st + s;

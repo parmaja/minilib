@@ -812,7 +812,7 @@ begin
   if not FPrepared then
     Prepare;
   DoExecute;
-  if not EOF and FNextOnExecute then //TODO CHeck it do we need not EOF
+  if not EOF and FNextOnExecute then //TODO Check it do we need not EOF
     Result := Next;
   Result := not EOF;
 end;

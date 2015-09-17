@@ -90,6 +90,8 @@ begin
         vCSVIE.QuoteChar := #0
       else
         vCSVIE.QuoteChar := s[1];
+      if vCSVIE.QuoteChar < #32 then
+        vCSVIE.QuoteChar := #0;
 
 
       case EOLCharList.ItemIndex of
