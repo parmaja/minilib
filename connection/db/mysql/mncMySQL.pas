@@ -830,7 +830,7 @@ end;
 
 function TmncMySQLCommand.GetEOF: Boolean;
 begin
-  Result := (FStatment = nil) or FEOF; 
+  Result := (FStatment = nil) or inherited GetEOF;
 end;
 
 function TmncMySQLCommand.GetRowsChanged: Integer;
@@ -1019,11 +1019,11 @@ var
   b: Boolean;
   state: integer;
 begin
-  if FBOF then
+  if BOF then
     if not FetchColumns then
       HitEOF;
 
-  if not FEOF then
+  if not EOF then
   begin
     state := mysql_stmt_fetch(FStatment);
     b := state in [0, MYSQL_DATA_TRUNCATED];

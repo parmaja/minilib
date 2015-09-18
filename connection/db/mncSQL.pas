@@ -74,15 +74,16 @@ type
 
   TmncSQLCommand = class abstract(TmncCommand)
   private
-    function GetSQL: TStrings;
-  protected
     FBOF: Boolean;
     FEOF: Boolean;
+    function GetSQL: TStrings;
+  protected
     SQLProcessed: TmncSQLProcessed;
     {
       GetParamChar: Called to take the real param char depend on the sql engine to replace it with this new one.
                     by default it is ?
     }
+    function GetEOF: Boolean; override;
     function GetParamChar: string; virtual;
     procedure DoParse; override;
     procedure DoUnparse; override;
@@ -97,6 +98,8 @@ type
     function GetLastRowID: Int64; virtual;
     function GetRowsChanged: Integer; virtual;
     property SQL: TStrings read GetSQL;//Alias of Request, autocomplete may add it in private becareful
+    property EOF: Boolean read GetEOF;
+    property BOF: Boolean read FEOF;
   end;
 
   { TmncSQLGenerator }
@@ -182,6 +185,11 @@ end;
 function TmncSQLCommand.GetSQL: TStrings;
 begin
   Result := FRequest;//just alias
+end;
+
+function TmncSQLCommand.GetEOF: Boolean;
+begin
+  Result := FEOF;
 end;
 
 function TmncSQLCommand.GetParamChar: string;

@@ -819,7 +819,7 @@ end;
 
 function TmncPGCommand.GetEOF: Boolean;
 begin
-  Result := (FStatment = nil) or FEOF;
+  Result := (FStatment = nil) or inherited GetEOF;
 end;
 
 function TmncPGCommand.GetLastRowID: Int64;
@@ -872,17 +872,17 @@ procedure TmncPGCommand.DoNext;
 begin
   if (Status in [PGRES_TUPLES_OK]) then
   begin
-    if FBOF then
+    if BOF then
     begin
       FetchFields(FStatment);
-      FBOF := False;
+      HitBOF;
     end
     else
       inc(FTuple);
     if FTuple >= FTuples then
       HitBOF;
 
-    if not FEOF then
+    if not EOF then
       FetchValues(FStatment, FTuple);
   end
   else
@@ -1420,10 +1420,10 @@ begin
     FStatus := PQresultStatus(aStatment);
     if (Status in [PGRES_TUPLES_OK]) then
     begin
-      if FBOF then
+      if BOF then
       begin
         FetchFields(aStatment);
-        FBOF := False;
+        HitBOF;
       end;
       FetchValues(aStatment, 0);
       if TmncPostgreFields(Fields).IsNull then
@@ -1441,7 +1441,6 @@ var
   r: PPGresult;
   c: PPGconn;
 begin
-  FBOF := True;
   FHandle := Session.NewToken;
   ParseSQL([psoAddParamsID], '$');
   c := Session.DBHandle;
@@ -1466,19 +1465,18 @@ end;
 
 function TmncPGCursorCommand.GetActive: Boolean;
 begin
-  Result := not FBOF;
+  Result := not BOF;
 end;
 
 function TmncPGCursorCommand.GetEOF: Boolean;
 begin
-  Result := FEOF;
+  Result := inherited GetEOF;
 end;
 
 procedure TmncPGCursorCommand.InternalClose;
 begin
   Session.Execute(CloseSQL);
   FStatus := PGRES_EMPTY_QUERY;
-  FBOF := True;
 end;
 
 initialization

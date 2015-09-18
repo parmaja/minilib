@@ -1004,7 +1004,7 @@ end;
 
 function TmncFBCommand.GetEOF: Boolean;
 begin
-  Result := FEOF or not FActive;
+  Result := not FActive or inherited GetEOF;
 end;
 
 function TmncFBCommand.GetRowsChanged: Integer;
@@ -1088,7 +1088,7 @@ begin
     else if (fetch_res > 0) then
       FBRaiseError(StatusVector)
     else
-      FBOF := False;
+      HitBOF;
   end;
 end;
 

@@ -180,7 +180,7 @@ type
     procedure DoPrepare; override;
     procedure DoExecute; override;
     procedure DoNext; override;
-    function GetEOF:Boolean; override;
+    function GetEOF: Boolean; override;
     function GetActive:Boolean; override;
     procedure DoClose; override;
     procedure DoCommit; override;
@@ -675,7 +675,7 @@ end;
 
 function TmncSQLiteCommand.GetEOF: Boolean;
 begin
-  Result := (FStatment = nil) or FEOF; 
+  Result := (FStatment = nil) or inherited GetEOF;
 end;
 
 function TmncSQLiteCommand.GetRowsChanged: Integer;
@@ -774,13 +774,13 @@ procedure TmncSQLiteCommand.DoNext;
 var
   r: Integer;
 begin
-  if not FBOF then
+  if not BOF then
     r := sqlite3_step(FStatment) //already steped in DoExecute
   else
     r := FLastStepResult;
   if (r = SQLITE_ROW) then
   begin
-    if FBOF then
+    if BOF then
       FetchColumns;
     FetchValues;
   end
