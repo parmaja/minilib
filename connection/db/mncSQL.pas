@@ -75,7 +75,7 @@ type
   TmncSQLCommand = class abstract(TmncCommand)
   private
     FBOF: Boolean;
-    FEOF: Boolean;
+    FDone: Boolean;
     function GetSQL: TStrings;
   protected
     SQLProcessed: TmncSQLProcessed;
@@ -83,13 +83,13 @@ type
       GetParamChar: Called to take the real param char depend on the sql engine to replace it with this new one.
                     by default it is ?
     }
-    function GetEOF: Boolean; override;
+    function GetDone: Boolean; override;
     function GetParamChar: string; virtual;
     procedure DoParse; override;
     procedure DoUnparse; override;
     procedure ParseSQL(Options: TmncParseSQLOptions; ParamChar: string = '?');
-    procedure Clean; override; //Clean and reset stamemnt like EOF or BOF called in Execute before DoExecute and after Prepare
-    procedure HitEOF;   //Make it true
+    procedure Clean; override; //Clean and reset stamemnt like Done or BOF called in Execute before DoExecute and after Prepare
+    procedure HitDone;   //Make it true
     procedure HitBOF; //Make it False
   public
     constructor Create; override; overload;
@@ -98,8 +98,8 @@ type
     function GetLastRowID: Int64; virtual;
     function GetRowsChanged: Integer; virtual;
     property SQL: TStrings read GetSQL;//Alias of Request, autocomplete may add it in private becareful
-    property EOF: Boolean read GetEOF;
-    property BOF: Boolean read FEOF;
+    property Done: Boolean read GetDone;
+    property BOF: Boolean read FDone;
   end;
 
   { TmncSQLGenerator }
@@ -187,9 +187,9 @@ begin
   Result := FRequest;//just alias
 end;
 
-function TmncSQLCommand.GetEOF: Boolean;
+function TmncSQLCommand.GetDone: Boolean;
 begin
-  Result := FEOF;
+  Result := FDone;
 end;
 
 function TmncSQLCommand.GetParamChar: string;
@@ -282,7 +282,7 @@ begin
         CommentState:
           begin
             if (cNextChar = #0) then
-              raise EmncException.Create('EOF in comment detected: ' + IntToStr(i))
+              raise EmncException.Create('Done in comment detected: ' + IntToStr(i))
             else if (cCurChar = '*') then
             begin
               if (cNextChar = '/') then
@@ -292,7 +292,7 @@ begin
         QuoteState:
           begin
             if cNextChar = #0 then
-              raise EmncException.Create('EOF in string detected: ' + IntToStr(i))
+              raise EmncException.Create('Done in string detected: ' + IntToStr(i))
             else if (cCurChar = cQuoteChar) then
             begin
               if (cNextChar = cQuoteChar) then
@@ -381,12 +381,12 @@ procedure TmncSQLCommand.Clean;
 begin
   inherited;
   FBOF := True;
-  FEOF := False;
+  FDone := False;
 end;
 
-procedure TmncSQLCommand.HitEOF;
+procedure TmncSQLCommand.HitDone;
 begin
-  FEOF := True;
+  FDone := True;
 end;
 
 procedure TmncSQLCommand.HitBOF;

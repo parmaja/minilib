@@ -253,7 +253,7 @@ type
     procedure DoPrepare; override;
     procedure DoExecute; override;
     procedure DoNext; override;
-    function GetEOF: Boolean; override;
+    function GetDone: Boolean; override;
     function GetActive: Boolean; override;
     procedure DoClose; override;
   public
@@ -269,7 +269,7 @@ type
     procedure DoPrepare; override;
     procedure DoExecute; override;
     procedure DoNext; override;
-    function GetEOF: Boolean; override;
+    function GetDone: Boolean; override;
     function GetActive: Boolean; override;
     procedure DoClose; override;
     function FetchSQL: string;
@@ -817,9 +817,9 @@ begin
   //Connection.Execute();
 end;
 
-function TmncPGCommand.GetEOF: Boolean;
+function TmncPGCommand.GetDone: Boolean;
 begin
-  Result := (FStatment = nil) or inherited GetEOF;
+  Result := (FStatment = nil) or inherited GetDone;
 end;
 
 function TmncPGCommand.GetLastRowID: Int64;
@@ -858,7 +858,7 @@ begin
   FTuple := 0;
 
   if not (FStatus in [PGRES_TUPLES_OK]) then
-    HitEOF;
+    HitDone;
 
   try
     RaiseError(FStatment);
@@ -882,11 +882,11 @@ begin
     if FTuple >= FTuples then
       HitBOF;
 
-    if not EOF then
+    if not Done then
       FetchValues(FStatment, FTuple);
   end
   else
-    HitEOF;
+    HitDone;
 end;
 
 procedure TmncPGCommand.DoPrepare;
@@ -1066,7 +1066,7 @@ begin
   FTuples := PQntuples(FStatment);
 
   if FStatus <> PGRES_TUPLES_OK then
-    HitEOF;
+    HitDone;
 
   try
     RaiseError(FStatment);
@@ -1400,7 +1400,7 @@ begin
   FStatus := PQresultStatus(aStatment);
 
   if not (FStatus in [PGRES_TUPLES_OK]) then
-    HitEOF;
+    HitDone;
 
   try
     RaiseError(aStatment);
@@ -1427,10 +1427,10 @@ begin
       end;
       FetchValues(aStatment, 0);
       if TmncPostgreFields(Fields).IsNull then
-        HitEOF;
+        HitDone;
     end
     else
-      HitEOF;
+      HitDone;
     PQclear(aStatment);
   end;
 end;
@@ -1468,9 +1468,9 @@ begin
   Result := not BOF;
 end;
 
-function TmncPGCursorCommand.GetEOF: Boolean;
+function TmncPGCursorCommand.GetDone: Boolean;
 begin
-  Result := inherited GetEOF;
+  Result := inherited GetDone;
 end;
 
 procedure TmncPGCursorCommand.InternalClose;

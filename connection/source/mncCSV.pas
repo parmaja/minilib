@@ -92,7 +92,7 @@ type
     procedure DoPrepare; override;
     procedure DoExecute; override;
     procedure DoNext; override;
-    function GetEOF: Boolean; override;
+    function GetDone: Boolean; override;
     function GetActive: Boolean; override;
     procedure DoClose; override;
     property Session: TmncCSVSession read GetSession;
@@ -102,7 +102,7 @@ type
     destructor Destroy; override;
     property Mode: TmncCSVMode read FMode;
     //property Stream: TStream read FStream write SetStream;//TODO
-    //EOFOnEmpty: when True make EOF when read empty line  
+    //DoneOnEmpty: when True make Done when read empty line  
     property EmptyLine: TmncEmptyLine read FEmptyLine write FEmptyLine;
   end;
 
@@ -170,9 +170,9 @@ begin
   inherited;
 end;
 
-function TmncCSVCommand.GetEOF: Boolean;
+function TmncCSVCommand.GetDone: Boolean;
 begin
-  Result := (Mode = csvmWrite) or (FCSVStream = nil);// do not check (FCSVStream.EOF) last line will not loaded;
+  Result := (Mode = csvmWrite) or (FCSVStream = nil);// do not check (FCSVStream.Done) last line will not loaded;
 end;
 
 procedure TmncCSVCommand.DoExecute;

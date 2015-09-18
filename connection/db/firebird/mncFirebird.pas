@@ -235,7 +235,7 @@ type
     procedure DoExecute; override;
     procedure DoNext; override;
     procedure DoUnprepare; override;
-    function GetEOF: Boolean; override;
+    function GetDone: Boolean; override;
     function GetActive: Boolean; override;
     procedure SetActive(const Value: Boolean); override;
     procedure DoClose; override;
@@ -1002,9 +1002,9 @@ begin
   inherited;
 end;
 
-function TmncFBCommand.GetEOF: Boolean;
+function TmncFBCommand.GetDone: Boolean;
 begin
-  Result := not FActive or inherited GetEOF;
+  Result := not FActive or inherited GetDone;
 end;
 
 function TmncFBCommand.GetRowsChanged: Integer;
@@ -1077,12 +1077,12 @@ var
   fetch_res: ISC_STATUS;
   StatusVector: TStatusVector;
 begin
-  if not EOF then
+  if not Done then
   begin
     fetch_res := Call(FBClient.isc_dsql_fetch(@StatusVector, @FHandle, FB_DIALECT, (Fields as TmncFBFields).FSQLDA), StatusVector, False);
     if (fetch_res = 100) or (CheckStatusVector(StatusVector, [isc_dsql_cursor_err])) then
     begin
-      HitEOF;
+      HitDone;
       Fields.Clean;
     end
     else if (fetch_res > 0) then

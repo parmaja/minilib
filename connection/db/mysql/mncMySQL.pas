@@ -223,7 +223,7 @@ type
     procedure DoExecute; override;
     procedure DoNext; override;
     procedure DoUnPrepare; override;
-    function GetEOF: Boolean; override;
+    function GetDone: Boolean; override;
     function GetActive:Boolean; override;
     procedure DoClose; override;
     procedure DoCommit; override;
@@ -828,9 +828,9 @@ begin
   inherited;
 end;
 
-function TmncMySQLCommand.GetEOF: Boolean;
+function TmncMySQLCommand.GetDone: Boolean;
 begin
-  Result := (FStatment = nil) or inherited GetEOF;
+  Result := (FStatment = nil) or inherited GetDone;
 end;
 
 function TmncMySQLCommand.GetRowsChanged: Integer;
@@ -1021,7 +1021,7 @@ var
 begin
   if BOF then
     if not FetchColumns then
-      HitEOF;
+      HitDone;
 
   if not EOF then
   begin
@@ -1032,7 +1032,7 @@ begin
       FetchValues;
     end
     else
-      HitEOF;
+      HitDone;
   end;
   HitBOF;
 end;

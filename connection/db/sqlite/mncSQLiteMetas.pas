@@ -80,7 +80,7 @@ begin
   try
     aCMD.Prepare;
     aCMD.Execute;
-    while not aCMD.EOF do
+    while not aCMD.Done do
     begin
       aItem := Meta.Add(aCMD.Field['name'].AsString);
       aItem.Kind := vKind;
@@ -105,7 +105,7 @@ begin
   try
     aCMD.Prepare;
     aCMD.Execute;
-    while not aCMD.EOF do
+    while not aCMD.Done do
     begin
       Strings.Add(aCMD.Field['name'].AsString);
       aCMD.Next;
@@ -250,7 +250,7 @@ begin
   try
     aCMD.Prepare;
     aCMD.Execute;
-    while not aCMD.EOF do
+    while not aCMD.Done do
     begin
       aItem := TmncMetaItem.Create;
       aItem.Name := aCMD.Field['name'].AsString;

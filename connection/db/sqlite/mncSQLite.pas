@@ -180,7 +180,7 @@ type
     procedure DoPrepare; override;
     procedure DoExecute; override;
     procedure DoNext; override;
-    function GetEOF: Boolean; override;
+    function GetDone: Boolean; override;
     function GetActive:Boolean; override;
     procedure DoClose; override;
     procedure DoCommit; override;
@@ -673,9 +673,9 @@ begin
   inherited;
 end;
 
-function TmncSQLiteCommand.GetEOF: Boolean;
+function TmncSQLiteCommand.GetDone: Boolean;
 begin
-  Result := (FStatment = nil) or inherited GetEOF;
+  Result := (FStatment = nil) or inherited GetDone;
 end;
 
 function TmncSQLiteCommand.GetRowsChanged: Integer;
@@ -786,7 +786,7 @@ begin
   end
   else if (r = SQLITE_DONE) then
   begin
-    HitEOF;
+    HitDone;
     CheckError(sqlite3_reset(FStatment));
   end
   else

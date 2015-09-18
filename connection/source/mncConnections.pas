@@ -495,7 +495,7 @@ type
     procedure CheckActive;
     procedure CheckInactive;
     procedure CheckStarted; //Check the session is started
-    function GetEOF: Boolean; virtual; abstract;
+    function GetDone: Boolean; virtual; abstract;
     procedure DoParse; virtual; abstract;
     procedure DoUnparse; virtual;
     procedure DoPrepare; virtual; abstract;
@@ -505,7 +505,7 @@ type
     procedure DoClose; virtual; abstract;
     procedure DoCommit; virtual; //some time we need make commit with command or session
     procedure DoRollback; virtual;
-    procedure Clean; virtual; //Clean and reset stamemnt like EOF or BOF called in Execute before DoExecute and after Prepare
+    procedure Clean; virtual; //Clean and reset stamemnt like Done or BOF called in Execute before DoExecute and after Prepare
     procedure DoRequestChanged(Sender: TObject); virtual;
     function CreateFields(vColumns: TmncColumns): TmncFields; virtual; abstract;
     function CreateColumns: TmncColumns; virtual;
@@ -530,7 +530,7 @@ type
     function Execute: Boolean;
     procedure Close;
     function Next: Boolean;
-    function EOF: Boolean;
+    function Done: Boolean;
     procedure Clear; virtual;
     procedure Commit;
     procedure Rollback;
@@ -812,9 +812,9 @@ begin
   FNextOnExecute := True;
 end;
 
-function TmncCommand.EOF: Boolean;
+function TmncCommand.Done: Boolean;
 begin
-  Result := GetEOF;
+  Result := GetDone;
 end;
 
 function TmncCommand.Execute: Boolean;
@@ -823,9 +823,9 @@ begin
     Prepare;
   Clean;
   DoExecute;
-  if not EOF and FNextOnExecute then //TODO Check it do we need not EOF
+  if not Done and FNextOnExecute then //TODO Check it do we need not Done
     Result := Next;
-  Result := not EOF;
+  Result := not Done;
 end;
 
 function TmncCommand.FieldIsExist(Name: string): Boolean;
@@ -898,7 +898,7 @@ end;
 function TmncCommand.Next: Boolean;
 begin
   DoNext;
-  Result := not EOF;
+  Result := not Done;
 end;
 
 procedure TmncCommand.Prepare;

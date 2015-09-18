@@ -322,7 +322,7 @@ begin
       FStream.Write(st[1], Length(st));
     end;
 
-    while not Command.Eof do
+    while not Command.Done do
     begin
       Inc(FCount);
       st := '';
