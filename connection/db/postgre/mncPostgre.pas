@@ -1427,9 +1427,7 @@ begin
       end;
       FetchValues(aStatment, 0);
       if TmncPostgreFields(Fields).IsNull then
-        FEOF := True
-      else
-        FEOF := False; //TODO:Belal, What is that?
+        HitEOF;
     end
     else
       HitEOF;

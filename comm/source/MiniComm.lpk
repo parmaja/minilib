@@ -1,7 +1,8 @@
-<?xml version="1.0"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <CONFIG>
   <Package Version="4">
     <Name Value="MiniComm"/>
+    <Type Value="RunAndDesignTime"/>
     <CompilerOptions>
       <Version Value="11"/>
       <SearchPaths>
@@ -10,9 +11,7 @@
       <Other>
         <CompilerMessages>
           <IgnoredMessages idx5024="True"/>
-          <UseMsgFile Value="True"/>
         </CompilerMessages>
-        <CompilerPath Value="$(CompPath)"/>
       </Other>
     </CompilerOptions>
     <Description Value="Mini Comm Ports (COM/TTY)"/>
@@ -30,7 +29,6 @@
         <UnitName Value="mnCommThreads"/>
       </Item3>
     </Files>
-    <Type Value="RunAndDesignTime"/>
     <RequiredPkgs Count="2">
       <Item1>
         <PackageName Value="MiniCommons"/>
