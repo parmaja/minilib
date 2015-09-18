@@ -764,33 +764,35 @@ end;
 
 procedure TmncSQLiteCommand.DoExecute;
 begin
-  if FStatment <> nil then
-    CheckError(sqlite3_reset(FStatment));
   ApplyParams;
   FLastStepResult := sqlite3_step(FStatment);
+  if (FLastStepResult = SQLITE_DONE) then
+  begin
+    HitDone;
+    CheckError(sqlite3_reset(FStatment));
+  end
 end;
 
 procedure TmncSQLiteCommand.DoNext;
-var
-  r: Integer;
 begin
   if not Ready then
-    r := sqlite3_step(FStatment) //already steped in DoExecute
-  else
-    r := FLastStepResult;
-  if (r = SQLITE_ROW) then
+    FLastStepResult := sqlite3_step(FStatment); //already steped in DoExecute
+  if (FLastStepResult = SQLITE_ROW) then
   begin
     if Ready then
       FetchColumns;
     FetchValues;
   end
-  else if (r = SQLITE_DONE) then
+  else if (FLastStepResult = SQLITE_DONE) then
   begin
-    HitDone;
-    CheckError(sqlite3_reset(FStatment));
+    if not Done then
+    begin
+      HitDone;
+      CheckError(sqlite3_reset(FStatment));
+    end;
   end
   else
-    CheckError(r);
+    CheckError(FLastStepResult);
   HitReady;
 end;
 

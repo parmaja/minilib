@@ -99,7 +99,7 @@ type
     function GetRowsChanged: Integer; virtual;
     property SQL: TStrings read GetSQL;//Alias of Request, autocomplete may add it in private becareful
     property Done: Boolean read GetDone;
-    property Ready: Boolean read FDone;
+    property Ready: Boolean read FReady;
   end;
 
   { TmncSQLGenerator }
