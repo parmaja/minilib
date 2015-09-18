@@ -76,6 +76,8 @@ type
   private
     function GetSQL: TStrings;
   protected
+    FBOF: Boolean;
+    FEOF: Boolean;
     SQLProcessed: TmncSQLProcessed;
     {
       GetParamChar: Called to take the real param char depend on the sql engine to replace it with this new one.
@@ -85,6 +87,9 @@ type
     procedure DoParse; override;
     procedure DoUnparse; override;
     procedure ParseSQL(Options: TmncParseSQLOptions; ParamChar: string = '?');
+    procedure Clean; override; //Clean and reset stamemnt like EOF or BOF called in Execute before DoExecute and after Prepare
+    procedure HitEOF;   //Make it true
+    procedure HitBOF; //Make it False
   public
     constructor Create; override; overload;
     constructor Create(aSession: TmncSQLSession); overload;
@@ -362,6 +367,23 @@ begin
     end;
   finally
   end;
+end;
+
+procedure TmncSQLCommand.Clean;
+begin
+  inherited;
+  FBOF := True;
+  FEOF := False;
+end;
+
+procedure TmncSQLCommand.HitEOF;
+begin
+  FEOF := True;
+end;
+
+procedure TmncSQLCommand.HitBOF;
+begin
+  FBOF := False;
 end;
 
 constructor TmncSQLCommand.Create;

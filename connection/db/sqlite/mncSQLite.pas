@@ -167,8 +167,6 @@ type
   private
     FStatment: Psqlite3_stmt;
     FTail: pchar;
-    FBOF: Boolean;
-    FEOF: Boolean;
     FLastStepResult: longint;
     function GetBinds: TmncSQLiteBinds;
     function GetConnection: TmncSQLiteConnection;
@@ -673,7 +671,6 @@ end;
 procedure TmncSQLiteCommand.Clear;
 begin
   inherited;
-  FBOF := True;
 end;
 
 function TmncSQLiteCommand.GetEOF: Boolean;
@@ -767,8 +764,6 @@ end;
 
 procedure TmncSQLiteCommand.DoExecute;
 begin
-  FBOF := True;
-  FEOF := False;
   if FStatment <> nil then
     CheckError(sqlite3_reset(FStatment));
   ApplyParams;
@@ -788,22 +783,19 @@ begin
     if FBOF then
       FetchColumns;
     FetchValues;
-    FEOF := False;
   end
   else if (r = SQLITE_DONE) then
   begin
-    FEOF := True;
+    HitEOF;
     CheckError(sqlite3_reset(FStatment));
   end
   else
     CheckError(r);
-  FBOF := False;
+  HitBOF;
 end;
 
 procedure TmncSQLiteCommand.DoPrepare;
 begin
-  FBOF := True;
-  FEOF := False;
   FLastStepResult := 0;
 //  sqlite3_prepare_v2
 //TODO: apply value of params if using injection mode

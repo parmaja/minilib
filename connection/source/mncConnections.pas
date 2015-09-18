@@ -505,6 +505,7 @@ type
     procedure DoClose; virtual; abstract;
     procedure DoCommit; virtual; //some time we need make commit with command or session
     procedure DoRollback; virtual;
+    procedure Clean; virtual; //Clean and reset stamemnt like EOF or BOF called in Execute before DoExecute and after Prepare
     procedure DoRequestChanged(Sender: TObject); virtual;
     function CreateFields(vColumns: TmncColumns): TmncFields; virtual; abstract;
     function CreateColumns: TmncColumns; virtual;
@@ -762,6 +763,7 @@ begin
   if FParams <> nil then
     FParams.Clear;
   FBinds.Clear;
+  Clean;
 end;
 
 destructor TmncCommand.Destroy;
@@ -819,6 +821,7 @@ function TmncCommand.Execute: Boolean;
 begin
   if not FPrepared then
     Prepare;
+  Clean;
   DoExecute;
   if not EOF and FNextOnExecute then //TODO Check it do we need not EOF
     Result := Next;
@@ -885,6 +888,10 @@ begin
 end;
 
 procedure TmncCommand.DoRollback;
+begin
+end;
+
+procedure TmncCommand.Clean;
 begin
 end;
 
@@ -991,6 +998,7 @@ begin
   if not Active then
     raise EmncException.Create('Command already Closed');
   DoUnprepare;
+  Clean;
   DoClose;
   DoUnparse;
   FPrepared := False;

@@ -217,8 +217,6 @@ type
   private
     FHandle: TISC_STMT_HANDLE;
     FActive: Boolean;
-    FBOF: Boolean;
-    FEOF: Boolean;
     FCursor: string;
     FSQLType: TFBDSQLTypes;
     function GetConnection: TmncFBConnection;
@@ -1042,8 +1040,6 @@ var
   StatusVector: TStatusVector;
   BindsData: PXSQLDA;
 begin
-{  FBOF := True; //TODO
-  FEOF := False;}
   CheckHandle;
   BindsData := nil;
   AllocateBinds(BindsData);
@@ -1057,23 +1053,19 @@ begin
           if FCursor <> '' then
             Call(FBClient.isc_dsql_set_cursor_name(@StatusVector, @FHandle, PAnsiChar(FCursor), 0), StatusVector, True);
           FActive := True;
-          FBOF := True;
-          FEOF := False;
         end;
       SQLExecProcedure:
         begin
           Call(FBClient.isc_dsql_execute2(@StatusVector,
             @Session.Handle, @FHandle, FB_DIALECT,
             BindsData, (Params as TmncFBParams).SQLDA), StatusVector, True);
-          FBOF := False;
-          FEOF := False;
+          HitBOF;
         end
     else
       Call(FBClient.isc_dsql_execute(@StatusVector,
         @Session.Handle, @FHandle, FB_DIALECT,
         BindsData), StatusVector, True);
-      FBOF := False;
-      FEOF := False;
+      HitBOF;
     end;
   finally
     DeallocateBinds(BindsData);
@@ -1090,7 +1082,7 @@ begin
     fetch_res := Call(FBClient.isc_dsql_fetch(@StatusVector, @FHandle, FB_DIALECT, (Fields as TmncFBFields).FSQLDA), StatusVector, False);
     if (fetch_res = 100) or (CheckStatusVector(StatusVector, [isc_dsql_cursor_err])) then
     begin
-      FEOF := True;
+      HitEOF;
       Fields.Clean;
     end
     else if (fetch_res > 0) then
@@ -1132,8 +1124,6 @@ begin
           FBRaiseError(StatusVector);
     end;
   finally
-    FEOF := False;
-    FBOF := False;
     FActive := False;
   end;
 end;
@@ -1242,8 +1232,6 @@ var
   aField: TmncFBField;
   aParam: TmncFBParam;
 begin
-  FEOF := True;
-  FBOF := False;
   if not Prepared then//TODO remove this line
   begin
     try

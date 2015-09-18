@@ -212,8 +212,6 @@ type
     FHandle: string;
     FResultFormat: TmpgResultFormat;
     FStatus: TExecStatusType;
-    FBOF: Boolean;
-    FEOF: Boolean;
     function GetColumns: TPGColumns;
     procedure SetColumns(const Value: TPGColumns);
 
@@ -835,8 +833,6 @@ var
   P: pointer;
   f: Integer;//Result Field format
 begin
-  FBOF := True;
-  FEOF := False;
   if FStatment <> nil then
     PQclear(FStatment);
   try
@@ -859,9 +855,11 @@ begin
   end;
   FStatus := PQresultStatus(FStatment);
   FTuples := PQntuples(FStatment);
-  FBOF := True;
   FTuple := 0;
-  FEOF := not (FStatus in [PGRES_TUPLES_OK]);
+
+  if not (FStatus in [PGRES_TUPLES_OK]) then
+    HitEOF;
+
   try
     RaiseError(FStatment);
   except
@@ -881,12 +879,14 @@ begin
     end
     else
       inc(FTuple);
-    FEOF := FTuple >= FTuples;
+    if FTuple >= FTuples then
+      HitBOF;
+
     if not FEOF then
       FetchValues(FStatment, FTuple);
   end
   else
-    FEOF := True;
+    HitEOF;
 end;
 
 procedure TmncPGCommand.DoPrepare;
@@ -896,8 +896,6 @@ var
   f: Integer;
   s: UTF8String;
 begin
-  FBOF := True;
-  FEOF := False;
   FHandle := Session.NewToken;
   ParseSQL([psoAddParamsID], '$');
   c := Session.DBHandle;
@@ -1066,8 +1064,10 @@ begin
   end;
   FStatus := PQresultStatus(FStatment);
   FTuples := PQntuples(FStatment);
-  FBOF := True;
-  FEOF := FStatus <> PGRES_TUPLES_OK;
+
+  if FStatus <> PGRES_TUPLES_OK then
+    HitEOF;
+
   try
     RaiseError(FStatment);
   except
@@ -1129,7 +1129,6 @@ end;
 procedure TmncCustomPGCommand.Clear;
 begin
   inherited;
-  FBOF := True;
 end;
 
 constructor TmncCustomPGCommand.CreateBy(vSession: TmncPGSession);
@@ -1399,8 +1398,10 @@ begin
     FreeParamValues(Values);
   end;
   FStatus := PQresultStatus(aStatment);
-  FBOF := True;
-  FEOF := not (FStatus in [PGRES_TUPLES_OK]);
+
+  if not (FStatus in [PGRES_TUPLES_OK]) then
+    HitEOF;
+
   try
     RaiseError(aStatment);
   except
@@ -1428,10 +1429,10 @@ begin
       if TmncPostgreFields(Fields).IsNull then
         FEOF := True
       else
-        FEOF := False;
+        FEOF := False; //TODO:Belal, What is that?
     end
     else
-      FEOF := True;
+      HitEOF;
     PQclear(aStatment);
   end;
 end;

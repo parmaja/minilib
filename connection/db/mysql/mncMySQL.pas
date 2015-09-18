@@ -208,8 +208,6 @@ type
     FReadOnly: Boolean;
     FStatment: PMYSQL_STMT;
     FResults: TmncMySQLResults;
-    FBOF: Boolean;
-    FEOF: Boolean;
     function GetBinds: TmncMySQLBinds;
     function GetColumns: TmncMySQLColumns;
     function GetConnection: TmncMySQLConnection;
@@ -222,9 +220,9 @@ type
   protected
     procedure CheckError(Error:longint);
     procedure DoPrepare; override;
-    procedure DoUnPrepare; override;
     procedure DoExecute; override;
     procedure DoNext; override;
+    procedure DoUnPrepare; override;
     function GetEOF: Boolean; override;
     function GetActive:Boolean; override;
     procedure DoClose; override;
@@ -828,7 +826,6 @@ end;
 procedure TmncMySQLCommand.Clear;
 begin
   inherited;
-  FBOF := True;
 end;
 
 function TmncMySQLCommand.GetEOF: Boolean;
@@ -1013,8 +1010,6 @@ end;
 
 procedure TmncMySQLCommand.DoExecute;
 begin
-  FBOF := True;
-  FEOF := False;
   ApplyParams;
   CheckError(mysql_stmt_execute(FStatment));
 end;
@@ -1025,7 +1020,9 @@ var
   state: integer;
 begin
   if FBOF then
-    FEOF := not FetchColumns;
+    if not FetchColumns then
+      HitEOF;
+
   if not FEOF then
   begin
     state := mysql_stmt_fetch(FStatment);
@@ -1033,12 +1030,11 @@ begin
     if (b) then
     begin
       FetchValues;
-      FEOF := False;
     end
     else
-      FEOF := True;
+      HitEOF;
   end;
-  FBOF := False;
+  HitBOF;
 end;
 
 procedure TmncMySQLCommand.DoPrepare;
@@ -1046,8 +1042,6 @@ var
   aType: enum_cursor_type;
 begin
   //* ref: https://dev.mysql.com/doc/refman/5.0/en/mysql-stmt-prepare.html
-  FBOF := True;
-  FEOF := False;
   if FStatment <> nil then
     CheckError(mysql_stmt_reset(FStatment))
   else
