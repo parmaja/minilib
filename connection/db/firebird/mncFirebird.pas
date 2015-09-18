@@ -1059,13 +1059,13 @@ begin
           Call(FBClient.isc_dsql_execute2(@StatusVector,
             @Session.Handle, @FHandle, FB_DIALECT,
             BindsData, (Params as TmncFBParams).SQLDA), StatusVector, True);
-          HitBOF;
+          HitReady;
         end
     else
       Call(FBClient.isc_dsql_execute(@StatusVector,
         @Session.Handle, @FHandle, FB_DIALECT,
         BindsData), StatusVector, True);
-      HitBOF;
+      HitReady;
     end;
   finally
     DeallocateBinds(BindsData);
@@ -1088,7 +1088,7 @@ begin
     else if (fetch_res > 0) then
       FBRaiseError(StatusVector)
     else
-      HitBOF;
+      HitReady;
   end;
 end;
 

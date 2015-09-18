@@ -74,7 +74,7 @@ type
 
   TmncSQLCommand = class abstract(TmncCommand)
   private
-    FBOF: Boolean;
+    FReady: Boolean;
     FDone: Boolean;
     function GetSQL: TStrings;
   protected
@@ -88,9 +88,9 @@ type
     procedure DoParse; override;
     procedure DoUnparse; override;
     procedure ParseSQL(Options: TmncParseSQLOptions; ParamChar: string = '?');
-    procedure Clean; override; //Clean and reset stamemnt like Done or BOF called in Execute before DoExecute and after Prepare
+    procedure Clean; override; //Clean and reset stamemnt like Done or Ready called in Execute before DoExecute and after Prepare
     procedure HitDone;   //Make it true
-    procedure HitBOF; //Make it False
+    procedure HitReady; //Make it False
   public
     constructor Create; override; overload;
     constructor Create(aSession: TmncSQLSession); overload;
@@ -99,7 +99,7 @@ type
     function GetRowsChanged: Integer; virtual;
     property SQL: TStrings read GetSQL;//Alias of Request, autocomplete may add it in private becareful
     property Done: Boolean read GetDone;
-    property BOF: Boolean read FDone;
+    property Ready: Boolean read FDone;
   end;
 
   { TmncSQLGenerator }
@@ -380,7 +380,7 @@ end;
 procedure TmncSQLCommand.Clean;
 begin
   inherited;
-  FBOF := True;
+  FReady := True;
   FDone := False;
 end;
 
@@ -389,9 +389,9 @@ begin
   FDone := True;
 end;
 
-procedure TmncSQLCommand.HitBOF;
+procedure TmncSQLCommand.HitReady;
 begin
-  FBOF := False;
+  FReady := False;
 end;
 
 constructor TmncSQLCommand.Create;

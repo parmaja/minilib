@@ -872,15 +872,15 @@ procedure TmncPGCommand.DoNext;
 begin
   if (Status in [PGRES_TUPLES_OK]) then
   begin
-    if BOF then
+    if Ready then
     begin
       FetchFields(FStatment);
-      HitBOF;
+      HitReady;
     end
     else
       inc(FTuple);
     if FTuple >= FTuples then
-      HitBOF;
+      HitReady;
 
     if not Done then
       FetchValues(FStatment, FTuple);
@@ -1420,10 +1420,10 @@ begin
     FStatus := PQresultStatus(aStatment);
     if (Status in [PGRES_TUPLES_OK]) then
     begin
-      if BOF then
+      if Ready then
       begin
         FetchFields(aStatment);
-        HitBOF;
+        HitReady;
       end;
       FetchValues(aStatment, 0);
       if TmncPostgreFields(Fields).IsNull then
@@ -1465,7 +1465,7 @@ end;
 
 function TmncPGCursorCommand.GetActive: Boolean;
 begin
-  Result := not BOF;
+  Result := not Ready;
 end;
 
 function TmncPGCursorCommand.GetDone: Boolean;

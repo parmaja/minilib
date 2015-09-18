@@ -1019,7 +1019,7 @@ var
   b: Boolean;
   state: integer;
 begin
-  if BOF then
+  if Ready then
     if not FetchColumns then
       HitDone;
 
@@ -1034,7 +1034,7 @@ begin
     else
       HitDone;
   end;
-  HitBOF;
+  HitReady;
 end;
 
 procedure TmncMySQLCommand.DoPrepare;

@@ -774,13 +774,13 @@ procedure TmncSQLiteCommand.DoNext;
 var
   r: Integer;
 begin
-  if not BOF then
+  if not Ready then
     r := sqlite3_step(FStatment) //already steped in DoExecute
   else
     r := FLastStepResult;
   if (r = SQLITE_ROW) then
   begin
-    if BOF then
+    if Ready then
       FetchColumns;
     FetchValues;
   end
@@ -791,7 +791,7 @@ begin
   end
   else
     CheckError(r);
-  HitBOF;
+  HitReady;
 end;
 
 procedure TmncSQLiteCommand.DoPrepare;

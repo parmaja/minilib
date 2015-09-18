@@ -505,7 +505,7 @@ type
     procedure DoClose; virtual; abstract;
     procedure DoCommit; virtual; //some time we need make commit with command or session
     procedure DoRollback; virtual;
-    procedure Clean; virtual; //Clean and reset stamemnt like Done or BOF called in Execute before DoExecute and after Prepare
+    procedure Clean; virtual; //Clean and reset stamemnt like Done or Ready called in Execute before DoExecute and after Prepare
     procedure DoRequestChanged(Sender: TObject); virtual;
     function CreateFields(vColumns: TmncColumns): TmncFields; virtual; abstract;
     function CreateColumns: TmncColumns; virtual;
