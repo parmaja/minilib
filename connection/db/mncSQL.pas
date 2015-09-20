@@ -13,6 +13,11 @@ unit mncSQL;
 {$mode delphi}
 {$ENDIF}
 
+{*TODO
+*  Bulk Insert (save it into memory before execute
+*
+*
+*}
 interface
 
 uses
@@ -75,6 +80,7 @@ type
   TmncSQLCommand = class abstract(TmncCommand)
   private
     FReady: Boolean;
+    FFetched: Int64;
     FDone: Boolean;
     function GetSQL: TStrings;
   protected
@@ -88,6 +94,7 @@ type
     procedure DoParse; override;
     procedure DoUnparse; override;
     procedure ParseSQL(Options: TmncParseSQLOptions; ParamChar: string = '?');
+    procedure Step; override;
     procedure Clean; override; //Clean and reset stamemnt like Done or Ready called in Execute before DoExecute and after Prepare
     procedure HitDone;   //Make it true
     procedure HitReady; //Make it False
@@ -100,6 +107,7 @@ type
     property SQL: TStrings read GetSQL;//Alias of Request, autocomplete may add it in private becareful
     property Done: Boolean read GetDone;
     property Ready: Boolean read FReady;
+    property Fetched: Int64 read FFetched;
   end;
 
   { TmncSQLGenerator }
@@ -377,11 +385,18 @@ begin
   end;
 end;
 
+procedure TmncSQLCommand.Step;
+begin
+  inherited;
+  Inc(FFetched);
+end;
+
 procedure TmncSQLCommand.Clean;
 begin
   inherited;
   FReady := True;
   FDone := False;
+  FFetched := 0;
 end;
 
 procedure TmncSQLCommand.HitDone;

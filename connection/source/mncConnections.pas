@@ -511,6 +511,7 @@ type
     function CreateColumns: TmncColumns; virtual;
     function CreateParams: TmncParams; virtual; abstract;
     function CreateBinds: TmncBinds; virtual;
+    procedure Step; virtual; //Called before DoNext
     property Request: TStrings read FRequest write SetRequest;
     property Binds: TmncBinds read FBinds; //for Dublicated names when pass the params when execute select * from t1 where f1 = ?p1 and f2 = ?p1 and f3=p2
   public
@@ -800,6 +801,10 @@ begin
   Result := TmncBinds.Create;
 end;
 
+procedure TmncCommand.Step;
+begin
+end;
+
 constructor TmncCommand.Create;
 begin
   inherited;
@@ -897,6 +902,7 @@ end;
 
 function TmncCommand.Next: Boolean;
 begin
+  Step;
   DoNext;
   Result := not Done;
 end;

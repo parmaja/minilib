@@ -900,63 +900,63 @@ begin
   //* https://dev.mysql.com/doc/refman/5.0/en/c-api-prepared-statement-type-codes.html
   //* http://www.2uzhan.com/calling-mysql_stmt_bind_param-and-setting-mysql_bind-members/
 
-  if (Binds.FValues = nil) and (Binds.Count > 0) then //not binded yet
-  begin
-    SetLength(Binds.FValues, Binds.Count);
-    for i := 0 to Binds.Count - 1 do
-    begin
-      Binds.FValues[i].is_null := @Binds[i].is_null;
-      case VarType(Binds[i].Param.Value) of
-        varDate:
-        begin
-          Binds.FValues[i].buffer := Binds[i].AllocBuffer(SizeOf(dt));
-          Binds.FValues[i].buffer_length := SizeOf(dt);
-          Binds.FValues[i].buffer_type := MYSQL_TYPE_DATETIME;
-        end;
-        varBoolean:
-        begin
-          Binds.FValues[i].buffer := Binds[i].AllocBuffer(SizeOf(tiny));
-          Binds.FValues[i].buffer_length := SizeOf(tiny);
-          Binds.FValues[i].buffer_type := MYSQL_TYPE_TINY;
-        end;
-        varInteger:
-        begin
-          Binds.FValues[i].buffer := Binds[i].AllocBuffer(SizeOf(n));
-          Binds.FValues[i].buffer_length := 0;
-          Binds.FValues[i].buffer_type := MYSQL_TYPE_LONG;
-        end;
-        varint64:
-        begin
-          Binds.FValues[i].buffer := Binds[i].AllocBuffer(SizeOf(t64));
-          Binds.FValues[i].buffer_length := 0;
-          Binds.FValues[i].buffer_type := MYSQL_TYPE_LONGLONG;
-        end;
-        varCurrency:
-        begin
-          Binds.FValues[i].buffer := Binds[i].AllocBuffer(SizeOf(t64)); //TODO it should be not MYSQL_TYPE_NEWDECIMAL
-          Binds.FValues[i].buffer_length := 0;
-          Binds.FValues[i].buffer_type := MYSQL_TYPE_NEWDECIMAL;
-        end;
-        varDouble:
-        begin
-          Binds.FValues[i].buffer := Binds[i].AllocBuffer(SizeOf(d));
-          Binds.FValues[i].buffer_length := 0;
-          Binds.FValues[i].buffer_type := MYSQL_TYPE_DOUBLE;
-        end;
-        else //String type
-        begin
-          Binds.FValues[i].buffer := Binds[i].AllocBuffer(cMaxString); //Will set in setting values, if i set it to 0 it will crash :(
-          Binds.FValues[i].length := @Binds[i].len;
-          Binds.FValues[i].buffer_length := 0;
-          Binds.FValues[i].buffer_type := MYSQL_TYPE_VAR_STRING;
-        end;
-      end;
-    end;
-    CheckError(mysql_stmt_bind_param(FStatment, @Binds.FValues[0]));
-  end;
-
   if (Binds.Count > 0) then
   begin
+    if (Binds.FValues = nil) then //not binded yet
+    begin
+      SetLength(Binds.FValues, Binds.Count);
+      for i := 0 to Binds.Count - 1 do
+      begin
+        Binds.FValues[i].is_null := @Binds[i].is_null;
+        case VarType(Binds[i].Param.Value) of
+          varDate:
+          begin
+            Binds.FValues[i].buffer := Binds[i].AllocBuffer(SizeOf(dt));
+            Binds.FValues[i].buffer_length := SizeOf(dt);
+            Binds.FValues[i].buffer_type := MYSQL_TYPE_DATETIME;
+          end;
+          varBoolean:
+          begin
+            Binds.FValues[i].buffer := Binds[i].AllocBuffer(SizeOf(tiny));
+            Binds.FValues[i].buffer_length := SizeOf(tiny);
+            Binds.FValues[i].buffer_type := MYSQL_TYPE_TINY;
+          end;
+          varInteger:
+          begin
+            Binds.FValues[i].buffer := Binds[i].AllocBuffer(SizeOf(n));
+            Binds.FValues[i].buffer_length := 0;
+            Binds.FValues[i].buffer_type := MYSQL_TYPE_LONG;
+          end;
+          varint64:
+          begin
+            Binds.FValues[i].buffer := Binds[i].AllocBuffer(SizeOf(t64));
+            Binds.FValues[i].buffer_length := 0;
+            Binds.FValues[i].buffer_type := MYSQL_TYPE_LONGLONG;
+          end;
+          varCurrency:
+          begin
+            Binds.FValues[i].buffer := Binds[i].AllocBuffer(SizeOf(t64)); //TODO it should be not MYSQL_TYPE_NEWDECIMAL
+            Binds.FValues[i].buffer_length := 0;
+            Binds.FValues[i].buffer_type := MYSQL_TYPE_NEWDECIMAL;
+          end;
+          varDouble:
+          begin
+            Binds.FValues[i].buffer := Binds[i].AllocBuffer(SizeOf(d));
+            Binds.FValues[i].buffer_length := 0;
+            Binds.FValues[i].buffer_type := MYSQL_TYPE_DOUBLE;
+          end;
+          else //String type
+          begin
+            Binds.FValues[i].buffer := Binds[i].AllocBuffer(cMaxString); //Will set in setting values, if i set it to 0 it will crash :(
+            Binds.FValues[i].length := @Binds[i].len;
+            Binds.FValues[i].buffer_length := 0;
+            Binds.FValues[i].buffer_type := MYSQL_TYPE_VAR_STRING;
+          end;
+        end;
+      end;
+      CheckError(mysql_stmt_bind_param(FStatment, @Binds.FValues[0]));
+    end;
+
     for i := 0 to Binds.Count - 1 do
     begin
       if Binds[i].Param.IsEmpty then
@@ -1023,7 +1023,7 @@ begin
     if not FetchColumns then
       HitDone;
 
-  if not EOF then
+  if not Done then
   begin
     state := mysql_stmt_fetch(FStatment);
     b := state in [0, MYSQL_DATA_TRUNCATED];
