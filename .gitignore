@@ -11,3 +11,4 @@ ref
 *.dsk
 /lib/doc
 /reports/source/delphi
+/pos/delphi/demo
