@@ -1,4 +1,4 @@
-unit SynHighlighterINI;
+unit SynHighlighterConfig;
 {$mode objfpc}{$H+}
 {**
  *  MiniLib project
@@ -24,7 +24,7 @@ type
 
   { TSynINISyn }
 
-  TSynINISyn = class(TSynCustomHighlighter)
+  TSynConfigSyn = class(TSynCustomHighlighter)
   private
     FLine: PChar;
     FLineNumber: Integer;
@@ -87,7 +87,7 @@ implementation
 uses
   SynEditStrConst;
 
-procedure TSynINISyn.MakeMethodTables;
+procedure TSynConfigSyn.MakeMethodTables;
 var
   i: Char;
 begin
@@ -109,7 +109,7 @@ begin
     end;
 end;
 
-constructor TSynINISyn.Create(AOwner: TComponent);
+constructor TSynConfigSyn.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
   FCommentAttri := TSynHighlighterAttributes.Create(SYNS_AttrComment);
@@ -137,7 +137,7 @@ begin
   MakeMethodTables;
 end; { Create }
 
-procedure TSynINISyn.SetLine(const NewValue: String; LineNumber:Integer);
+procedure TSynConfigSyn.SetLine(const NewValue: String; LineNumber:Integer);
 begin
   inherited;
   FLine := PChar(NewValue);
@@ -146,7 +146,7 @@ begin
   Next;
 end; { SetLine }
 
-procedure TSynINISyn.SectionOpenProc;
+procedure TSynConfigSyn.SectionOpenProc;
 begin
   // if it is not column 0 mark as tkText and get out of here
   if Run > 0 then
@@ -168,7 +168,7 @@ begin
     end;
 end;
 
-procedure TSynINISyn.CRProc;
+procedure TSynConfigSyn.CRProc;
 begin
   FTokenID := tkSpace;
   Case FLine[Run + 1] of
@@ -177,13 +177,13 @@ begin
   end;
 end;
 
-procedure TSynINISyn.EqualProc;
+procedure TSynConfigSyn.EqualProc;
 begin
   inc(Run);
   FTokenID := tkSymbol;
 end;
 
-procedure TSynINISyn.KeyProc;
+procedure TSynConfigSyn.KeyProc;
 begin
   FTokenID := tkKey;
   inc(Run);
@@ -198,7 +198,7 @@ begin
     end;
 end;
 
-procedure TSynINISyn.TextProc;
+procedure TSynConfigSyn.TextProc;
 begin
   if Run = 0 then
     KeyProc
@@ -212,18 +212,18 @@ begin
   end;
 end;
 
-procedure TSynINISyn.LFProc;
+procedure TSynConfigSyn.LFProc;
 begin
   FTokenID := tkSpace;
   inc(Run);
 end;
 
-procedure TSynINISyn.NullProc;
+procedure TSynConfigSyn.NullProc;
 begin
   FTokenID := tkNull;
 end;
 
-procedure TSynINISyn.NumberProc;
+procedure TSynConfigSyn.NumberProc;
 begin
   if Run = 0 then
     KeyProc
@@ -236,7 +236,7 @@ begin
 end;
 
 // ;
-procedure TSynINISyn.CommentProc;
+procedure TSynConfigSyn.CommentProc;
 begin
   // if it is not column 0 mark as tkText and get out of here
   if Run > 0 then
@@ -257,7 +257,7 @@ begin
     end;
 end;
 
-procedure TSynINISyn.SpaceProc;
+procedure TSynConfigSyn.SpaceProc;
 begin
   inc(Run);
   FTokenID := tkSpace;
@@ -266,7 +266,7 @@ begin
 end;
 
 // ""
-procedure TSynINISyn.StringProc;
+procedure TSynConfigSyn.StringProc;
 begin
   FTokenID := tkString;
   if (FLine[Run + 1] = #34) and (FLine[Run + 2] = #34) then inc(Run, 2);
@@ -282,7 +282,7 @@ begin
 end;
 
 // ''
-procedure TSynINISyn.StringProc1;
+procedure TSynConfigSyn.StringProc1;
 begin
   FTokenID := tkString;
   if (FLine[Run + 1] = #39) and (FLine[Run + 2] = #39) then inc(Run, 2);
@@ -295,13 +295,13 @@ begin
   if FLine[Run] <> #0 then inc(Run);
 end;
 
-procedure TSynINISyn.Next;
+procedure TSynConfigSyn.Next;
 begin
   FTokenPos := Run;
   fProcTable[fLine[Run]];
 end;
 
-function TSynINISyn.GetDefaultAttribute(Index: integer): TSynHighlighterAttributes;
+function TSynConfigSyn.GetDefaultAttribute(Index: integer): TSynHighlighterAttributes;
 begin
   case Index of
     SYN_ATTR_COMMENT: Result := fCommentAttri;
@@ -314,12 +314,12 @@ begin
   end;
 end;
 
-function TSynINISyn.GetEol: Boolean;
+function TSynConfigSyn.GetEol: Boolean;
 begin
   Result := fTokenId = tkNull;
 end;
 
-function TSynINISyn.GetToken: String;
+function TSynConfigSyn.GetToken: String;
 var
   Len: LongInt;
 begin
@@ -327,18 +327,18 @@ begin
   SetString(Result, (FLine + FTokenPos), Len);
 end;
 
-procedure TSynINISyn.GetTokenEx(out TokenStart: PChar; out TokenLength: integer);
+procedure TSynConfigSyn.GetTokenEx(out TokenStart: PChar; out TokenLength: integer);
 begin
   TokenLength := Run - FTokenPos;
   TokenStart := FLine + FTokenPos;
 end;
 
-function TSynINISyn.GetTokenID: TtkTokenKind;
+function TSynConfigSyn.GetTokenID: TtkTokenKind;
 begin
   Result := fTokenId;
 end;
 
-function TSynINISyn.GetTokenAttribute: TSynHighlighterAttributes;
+function TSynConfigSyn.GetTokenAttribute: TSynHighlighterAttributes;
 begin
   case FTokenID of
     tkComment: Result := FCommentAttri;
@@ -354,32 +354,32 @@ begin
   end;
 end;
 
-function TSynINISyn.GetTokenKind: integer;
+function TSynConfigSyn.GetTokenKind: integer;
 begin
   Result := Ord(fTokenId);
 end;
 
-function TSynINISyn.GetTokenPos: Integer;
+function TSynConfigSyn.GetTokenPos: Integer;
 begin
  Result := FTokenPos;
 end;
 
-function TSynINISyn.GetIdentChars: TSynIdentChars;
+function TSynConfigSyn.GetIdentChars: TSynIdentChars;
 begin
   Result := TSynValidStringChars;
 end;
 
-function TSynINISyn.IsFilterStored: Boolean;
+function TSynConfigSyn.IsFilterStored: Boolean;
 begin
   Result := FDefaultFilter <> SYNS_FilterINI;
 end;
 
-class function TSynINISyn.GetLanguageName: string;
+class function TSynConfigSyn.GetLanguageName: string;
 begin
   Result := 'INI';
 end;
 
-function TSynINISyn.GetSampleSource: String;
+function TSynConfigSyn.GetSampleSource: String;
 begin
   Result := '# Syntax highlighting'#13#10+
             '[Options]'#13#10+
@@ -391,5 +391,5 @@ begin
 end;
 
 initialization
-  RegisterPlaceableHighlighter(TSynINISyn);
+  RegisterPlaceableHighlighter(TSynConfigSyn);
 end.
