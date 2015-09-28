@@ -582,5 +582,7 @@ end;
 
 initialization
   RegisterPlaceableHighlighter(TSynSARDSyn);
+finalization
+  FreeAndNil(FSARDSyn);
 end.
 

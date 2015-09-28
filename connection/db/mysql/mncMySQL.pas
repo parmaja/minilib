@@ -606,6 +606,7 @@ end;
 procedure TmncMySQLConnection.DoConnect;
 var
   b: my_bool = 0;
+  timout: cuint;
   protocol: mysql_protocol_type;
 begin
   //TODO AutoCreate
@@ -624,8 +625,10 @@ begin
     CheckError(mysql_options(FDBHandle, MYSQL_OPT_PROTOCOL, @protocol));
     CheckError(mysql_options(FDBHandle, MYSQL_SHARED_MEMORY_BASE_NAME, PAnsiChar('MYSQL')));
 }
+    {timout := 1;
+    CheckError(mysql_options(FDBHandle, MYSQL_OPT_CONNECT_TIMEOUT, @timout));}
 
-    CheckError(mysql_real_connect(FDBHandle, PAnsiChar(Host), PChar(UserName), PChar(Password), nil, 0, nil, CLIENT_MULTI_RESULTS)); //CLIENT_MULTI_STATEMENTS
+    CheckError(mysql_real_connect(FDBHandle, PAnsiChar(Host), PChar(UserName), PChar(Password), nil, 0, nil, CLIENT_MULTI_RESULTS)); //CLIENT_MULTI_STATEMENTS CLIENT_INTERACTIVE
     if MultiCursors then
       CheckError(mysql_set_server_option(FDBHandle, MYSQL_OPTION_MULTI_STATEMENTS_ON))
     else
@@ -633,8 +636,8 @@ begin
     SetCharsetName('utf8');
     if Resource <> '' then
       SelectDatabase(Resource);
-    //CheckError(mysql_options(FDBHandle, MYSQL_REPORT_DATA_TRUNCATION, @b));
     SetAutoCommit(false);
+    //CheckError(mysql_options(FDBHandle, MYSQL_REPORT_DATA_TRUNCATION, @b));
   except
     on E:Exception do
     begin

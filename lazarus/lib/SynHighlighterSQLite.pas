@@ -718,5 +718,7 @@ end;
 
 initialization
   RegisterPlaceableHighlighter(TSynSqliteSyn);
+finalization
+  FreeAndNil(FSQLiteSyn);
 end.
 
