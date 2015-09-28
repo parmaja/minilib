@@ -7,10 +7,10 @@ unit MiniLib;
 interface
 
 uses
-  HTMLProcessor, PHPProcessor, PHPUtils, SynHighlighterApache, 
-  SynHighlighterXHTML, SynHighlighterSQLite, GUIMsgBox, 
-  SynHighlighterFirebird, SynHighlighterSARD, mnFonts, ColorUtils, 
-  SynHighlighterD, LazarusPackageIntf;
+  HTMLProcessor, PHPProcessor, PHPUtils, GUIMsgBox, mnFonts, ColorUtils, 
+  SynHighlighterApache, SynHighlighterXHTML, SynHighlighterSQLite, 
+  SynHighlighterFirebird, SynHighlighterSARD, SynHighlighterD, 
+  SynHighlighterConfig, LazarusPackageIntf;
 
 implementation
 

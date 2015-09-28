@@ -12,7 +12,7 @@
       </SearchPaths>
     </CompilerOptions>
     <Description Value="MiniLib FreePascal/Lazarus library"/>
-    <Files Count="14">
+    <Files Count="15">
       <Item1>
         <Filename Value="HTMLProcessor.pas"/>
         <UnitName Value="HTMLProcessor"/>
@@ -30,45 +30,49 @@
         <UnitName Value="PHPUtils"/>
       </Item4>
       <Item5>
-        <Filename Value="SynHighlighterApache.pas"/>
-        <UnitName Value="SynHighlighterApache"/>
-      </Item5>
-      <Item6>
-        <Filename Value="SynHighlighterXHTML.pas"/>
-        <UnitName Value="SynHighlighterXHTML"/>
-      </Item6>
-      <Item7>
-        <Filename Value="SynHighlighterSQLite.pas"/>
-        <UnitName Value="SynHighlighterSQLite"/>
-      </Item7>
-      <Item8>
         <Filename Value="GUIMsgBox.pp"/>
         <UnitName Value="GUIMsgBox"/>
-      </Item8>
-      <Item9>
+      </Item5>
+      <Item6>
         <Filename Value="PHPKeywords.inc"/>
         <Type Value="Include"/>
-      </Item9>
-      <Item10>
-        <Filename Value="SynHighlighterFirebird.pas"/>
-        <UnitName Value="SynHighlighterFirebird"/>
-      </Item10>
-      <Item11>
-        <Filename Value="SynHighlighterSARD.pas"/>
-        <UnitName Value="SynHighlighterSARD"/>
-      </Item11>
-      <Item12>
+      </Item6>
+      <Item7>
         <Filename Value="mnFonts.pas"/>
         <UnitName Value="mnFonts"/>
-      </Item12>
-      <Item13>
+      </Item7>
+      <Item8>
         <Filename Value="ColorUtils.pas"/>
         <UnitName Value="ColorUtils"/>
+      </Item8>
+      <Item9>
+        <Filename Value="SynHighlighterApache.pas"/>
+        <UnitName Value="SynHighlighterApache"/>
+      </Item9>
+      <Item10>
+        <Filename Value="SynHighlighterXHTML.pas"/>
+        <UnitName Value="SynHighlighterXHTML"/>
+      </Item10>
+      <Item11>
+        <Filename Value="SynHighlighterSQLite.pas"/>
+        <UnitName Value="SynHighlighterSQLite"/>
+      </Item11>
+      <Item12>
+        <Filename Value="SynHighlighterFirebird.pas"/>
+        <UnitName Value="SynHighlighterFirebird"/>
+      </Item12>
+      <Item13>
+        <Filename Value="SynHighlighterSARD.pas"/>
+        <UnitName Value="SynHighlighterSARD"/>
       </Item13>
       <Item14>
         <Filename Value="SynHighlighterD.pas"/>
         <UnitName Value="SynHighlighterD"/>
       </Item14>
+      <Item15>
+        <Filename Value="SynHighlighterConfig.pas"/>
+        <UnitName Value="SynHighlighterConfig"/>
+      </Item15>
     </Files>
     <RequiredPkgs Count="4">
       <Item1>

@@ -317,6 +317,7 @@ var
   var
     points: TMyPoints;
   begin
+    Finalize(points);
     points.Reset;
     with Canvas do
     begin
@@ -353,6 +354,7 @@ const
 var
   points: TMyPoints;
 begin
+  Finalize(points);
   points.Reset;
   mw := (vRect.Bottom - vRect.Top) div cGapSize;
   with Canvas do
