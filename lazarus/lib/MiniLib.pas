@@ -10,7 +10,7 @@ uses
   HTMLProcessor, PHPProcessor, PHPUtils, SynHighlighterApache, 
   SynHighlighterXHTML, SynHighlighterSQLite, GUIMsgBox, 
   SynHighlighterFirebird, SynHighlighterSARD, mnFonts, ColorUtils, 
-  LazarusPackageIntf;
+  SynHighlighterD, LazarusPackageIntf;
 
 implementation
 

@@ -12,7 +12,7 @@
       </SearchPaths>
     </CompilerOptions>
     <Description Value="MiniLib FreePascal/Lazarus library"/>
-    <Files Count="13">
+    <Files Count="14">
       <Item1>
         <Filename Value="HTMLProcessor.pas"/>
         <UnitName Value="HTMLProcessor"/>
@@ -65,6 +65,10 @@
         <Filename Value="ColorUtils.pas"/>
         <UnitName Value="ColorUtils"/>
       </Item13>
+      <Item14>
+        <Filename Value="SynHighlighterD.pas"/>
+        <UnitName Value="SynHighlighterD"/>
+      </Item14>
     </Files>
     <RequiredPkgs Count="4">
       <Item1>

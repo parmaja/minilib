@@ -713,5 +713,7 @@ end;
 
 initialization
   RegisterPlaceableHighlighter(TSynFirebirdSyn);
+finalization
+  FreeAndNil(FFirebirdSyn);
 end.
 

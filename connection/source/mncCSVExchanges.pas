@@ -28,7 +28,6 @@ type
 
   TmncCSVIE = class(TmncObject)
   private
-    FCSVOptions: TmncCSVOptions;
     FCount: Integer;
     FCommand: TmncCommand;
     FStream: TStream;
@@ -40,16 +39,16 @@ type
   protected
     procedure DoExecute; virtual; abstract;
   public
+    CSVOptions: TmncCSVOptions;
     constructor Create;
     procedure Execute;
-    property CSVOptions: TmncCSVOptions read FCSVOptions write FCSVOptions;
 
-    property EndOfLine: string read FCSVOptions.EndOfLine write FCSVOptions.EndOfLine;
-    property DelimiterChar: Char read FCSVOptions.DelimiterChar write FCSVOptions.DelimiterChar;
-    property EscapeChar: Char read FCSVOptions.EscapeChar write FCSVOptions.EscapeChar default '\';
-    property QuoteChar: Char read FCSVOptions.QuoteChar write FCSVOptions.QuoteChar default #0;// or " or '
-    property HeaderLine: TmncCSVHeader read FCSVOptions.HeaderLine write SetHeaderLine default hdrNormal;
-    property ANSIContents: Boolean read FCSVOptions.ANSIContents write FCSVOptions.ANSIContents default False; //the stream is ANSI not UTF-8
+    property EndOfLine: string read CSVOptions.EndOfLine write CSVOptions.EndOfLine;
+    property DelimiterChar: Char read CSVOptions.DelimiterChar write CSVOptions.DelimiterChar;
+    property EscapeChar: Char read CSVOptions.EscapeChar write CSVOptions.EscapeChar default '\';
+    property QuoteChar: Char read CSVOptions.QuoteChar write CSVOptions.QuoteChar default #0;// or " or '
+    property HeaderLine: TmncCSVHeader read CSVOptions.HeaderLine write SetHeaderLine default hdrNormal;
+    property ANSIContents: Boolean read CSVOptions.ANSIContents write CSVOptions.ANSIContents default False; //the stream is ANSI not UTF-8
 
     property Limit: Integer read FLimit write FLimit default 0; //Max count of rows to export or import
 
@@ -362,11 +361,11 @@ end;
 
 procedure TmncCSVIE.SetHeaderLine(const AValue: TmncCSVHeader);
 begin
-  if FCSVOptions.HeaderLine <> AValue then
+  if CSVOptions.HeaderLine <> AValue then
   begin
     if Active then
       raise EmncException.Create('Import/Export: Active, can not set Header property');
-    FCSVOptions.HeaderLine := AValue;
+    CSVOptions.HeaderLine := AValue;
   end;
 end;
 
@@ -383,10 +382,10 @@ end;
 constructor TmncCSVIE.Create;
 begin
   inherited Create;
-  FCSVOptions.EndOfLine := #13;
-  FCSVOptions.DelimiterChar := ';';
-  FCSVOptions.EscapeChar := '/';
-  FCSVOptions.HeaderLine := hdrNormal;
+  CSVOptions.EndOfLine := #13;
+  CSVOptions.DelimiterChar := ';';
+  CSVOptions.EscapeChar := '/';
+  CSVOptions.HeaderLine := hdrNormal;
 end;
 
 procedure TmncCSVIE.Execute;

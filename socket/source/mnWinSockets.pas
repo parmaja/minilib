@@ -374,8 +374,8 @@ begin
 end;
 
 const
-  SO_TRUE:Longbool = True;
-  SO_FALSE:Longbool = False;
+  SO_TRUE: Longbool = True;
+  SO_FALSE: Longbool = False;
 
 function TmnWallSocket.Bind(Options: TmnOptions; const Port: ansistring; const Address: ansistring): TmnCustomSocket;
 var
