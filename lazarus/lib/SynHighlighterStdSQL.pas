@@ -10,8 +10,6 @@ unit SynHighlighterStdSQL;
  * @author    Zaher Dirkey <zaher at parmaja dot com>
  *}
 
-{$H+}
-
 interface
 
 uses
@@ -65,7 +63,6 @@ type
     procedure SymbolProc;
     procedure SymbolAssignProc;
     procedure VariableProc;
-    procedure ObjectProc;
     procedure UnknownProc;
     procedure CommentProc;
 
@@ -77,8 +74,6 @@ type
     class function GetLanguageName: string; override;
   public
     constructor Create(AOwner: TComponent); override;
-    destructor Destroy; override;
-    procedure Assign(Source: TPersistent); override;
     function GetDefaultAttribute(Index: integer): TSynHighlighterAttributes; override;
     function GetEol: Boolean; override;
     function GetRange: Pointer; override;
@@ -290,16 +285,6 @@ begin
   FDefaultFilter := SYNS_FilterSQL;
   FRange := rsUnknown;
   MakeProcTables;
-end;
-
-destructor TSynStdSQLSyn.Destroy;
-begin
-  inherited;
-end;
-
-procedure TSynStdSQLSyn.Assign(Source: TPersistent);
-begin
-  inherited Assign(Source);
 end;
 
 procedure TSynStdSQLSyn.SetLine(const NewValue: string; LineNumber: Integer);
@@ -699,21 +684,6 @@ begin
     '// Single line comment'#13#10+
     'select name from employees'#13#10+
     'where id=?id and name="Unkown"'#13#10;
-end;
-
-procedure TSynStdSQLSyn.ObjectProc;
-begin
-  FTokenID := tkObject;
-  Inc(Run);
-  while not (FLine[Run] in [#0, #10, #13]) do
-  begin
-    if FLine[Run] = '"' then
-    begin
-      Inc(Run);
-      break;
-    end;
-    Inc(Run);
-  end;
 end;
 
 initialization

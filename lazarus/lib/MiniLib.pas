@@ -8,9 +8,9 @@ interface
 
 uses
   HTMLProcessor, PHPProcessor, PHPUtils, GUIMsgBox, mnFonts, ColorUtils, 
-  SynHighlighterApache, SynHighlighterXHTML, SynHighlighterSQLite, 
-  SynHighlighterFirebird, SynHighlighterSARD, SynHighlighterD, 
-  SynHighlighterConfig, LazarusPackageIntf;
+  SynHighlighterApache, SynHighlighterXHTML, SynHighlighterFirebird, 
+  SynHighlighterSARD, SynHighlighterD, SynHighlighterConfig, 
+  SynHighlighterStdSQL, LazarusPackageIntf;
 
 implementation
 
