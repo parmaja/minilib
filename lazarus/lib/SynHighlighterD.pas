@@ -22,11 +22,12 @@ uses
   SynEditHighlighter, SynHighlighterHashEntries, SynHighlighterMultiProc;
 
 type
-  TDRangeState = (rsDUnknown, rsDComment, rsDDocument, rsDStringSQ, rsDStringDQ);
+  TDRangeState = (rsDUnknown, rsDComment, rsDCommentPlus, rsDDocument, rsDStringSQ, rsDStringDQ);
 
   { TDProcessor }
 
   TDProcessor = class(TSynProcessor)
+  private
   protected
     FRange: TDRangeState;
     //LastRange: Bad Idea but let us try
@@ -38,12 +39,14 @@ type
     procedure SetRange(Value: TDRangeState); overload;
     function KeyHash(ToHash: PChar): Integer; override;
     procedure InternalCommentProc;
+    procedure InternalCommentPlusProc;
     function GetEndOfLineAttribute: TSynHighlighterAttributes; override;
   public
     procedure QuestionProc;
     procedure AndSymbolProc;
     procedure HashLineCommentProc;
     procedure CommentProc;
+    procedure CommentPlusProc;
     procedure DocumentProc;
     procedure SlashProc;
     procedure StringProc;
@@ -311,6 +314,14 @@ begin
         else
           CommentProc;
       end;
+    '+':
+      begin
+        Inc(Parent.Run);
+        if Parent.FLine[Parent.Run] = '+' then
+          DocumentProc
+        else
+          CommentPlusProc;
+      end;
     '=':
       begin
         Inc(Parent.Run);
@@ -372,6 +383,13 @@ begin
   Parent.FTokenID := tkComment;
   SetRange(rsDComment);
   InternalCommentProc;
+end;
+
+procedure TDProcessor.CommentPlusProc;
+begin
+  Parent.FTokenID := tkComment;
+  SetRange(rsDCommentPlus);
+  InternalCommentPlusProc;
 end;
 
 procedure TDProcessor.DocumentProc;
@@ -443,6 +461,13 @@ begin
         ProcTable[Parent.FLine[Parent.Run]]
       else
         CommentProc;
+    end;
+    rsDCommentPlus:
+    begin
+      if (Parent.FLine[Parent.Run] in [#0, #10, #13]) then
+        ProcTable[Parent.FLine[Parent.Run]]
+      else
+        CommentPlusProc;
     end;
     rsDDocument:
     begin
@@ -524,7 +549,21 @@ begin
   begin
     if (Parent.FLine[Parent.Run] = '*') and (Parent.FLine[Parent.Run + 1] = '/') then
     begin
-      SetRange(rsDUnKnown);
+      SetRange(rsDUnknown);
+      Inc(Parent.Run, 2);
+      break;
+    end;
+    Inc(Parent.Run);
+  end;
+end;
+
+procedure TDProcessor.InternalCommentPlusProc;
+begin
+  while not (Parent.FLine[Parent.Run] in [#0, #10, #13]) do
+  begin
+    if (Parent.FLine[Parent.Run] = '+') and (Parent.FLine[Parent.Run + 1] = '/') then
+    begin
+      SetRange(rsDUnknown);
       Inc(Parent.Run, 2);
       break;
     end;

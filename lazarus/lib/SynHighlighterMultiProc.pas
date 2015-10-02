@@ -233,7 +233,7 @@ var
   Entry: TSynHashEntry;
 begin
   fToIdent := MayBe;
-  Entry := fKeywords[KeyHash(MayBe)];
+  Entry := FKeywords[KeyHash(MayBe)];
   while Assigned(Entry) do
   begin
     if Entry.KeywordLen > fStringLen then
@@ -382,7 +382,7 @@ var
   tk: TtkTokenKind;
 begin
   tk := Processors.Current.IdentKind(PChar(AKeyword));
-  Result := tk in [tkFunction, tkKeyword, tkExternal];
+  Result := tk in [tkKeyword, tkFunction];
 end;
 
 procedure TSynMultiProcSyn.Next;
