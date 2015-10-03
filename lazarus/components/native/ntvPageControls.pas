@@ -85,7 +85,6 @@ type
 
     procedure BringControl(vControl: TControl; vSetFocus: Boolean);
 
-    procedure Loaded; override;
     procedure DoTabShow(Index: Integer; vSetfocus: Boolean); override;
     procedure DoTabShowed(Index: Integer; vSetfocus: Boolean); override;
     class function GetControlClassDefaultSize: TSize; override;
@@ -159,14 +158,12 @@ implementation
 constructor TntvPageControl.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
-  ControlStyle := [csDesignInteractive, csCaptureMouse, csClickEvents, csAcceptsControls, csSetCaption, csOpaque, csDoubleClicks];
   FMargin := 3;
-  SetInitialBounds(0, 0, GetControlClassDefaultSize.cx, GetControlClassDefaultSize.cy);
 end;
 
 destructor TntvPageControl.Destroy;
 begin
-  inherited Destroy;
+  inherited;
 end;
 
 procedure TntvPageControl.CreateParams(var Params: TCreateParams);
@@ -247,11 +244,6 @@ begin
         end;
       end;
     end;
-end;
-
-procedure TntvPageControl.Loaded;
-begin
-  inherited;
 end;
 
 procedure TntvPageControl.DoTabShow(Index: Integer; vSetfocus: Boolean);

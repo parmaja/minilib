@@ -95,8 +95,6 @@ type
     function LeftMouseDown(Point: TPoint): boolean;
 
     procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer); override;
-    procedure MouseMove(Shift: TShiftState; X, Y: Integer); override;
-    procedure MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: Integer); override;
 
     property TopIndex: Integer read GetTopIndex write SetTopIndex;
     procedure Loaded; override;
@@ -250,7 +248,7 @@ end;
 constructor TntvCustomTabSet.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
-  ControlStyle := [csDesignInteractive, csCaptureMouse, csClickEvents, csAcceptsControls, csSetCaption, csOpaque, csDoubleClicks];
+  ControlStyle := [{csDesignInteractive, }csCaptureMouse, csClickEvents, csAcceptsControls, csSetCaption, csOpaque, csDoubleClicks];
   FItems := CreateTabs;
   Items.ItemIndex := -1;
   Items.TopIndex := 0;
@@ -363,17 +361,6 @@ begin
     LeftMouseDown(Point(x, y));
 end;
 
-procedure TntvCustomTabSet.MouseMove(Shift: TShiftState; X, Y: Integer);
-begin
-  inherited;
-end;
-
-procedure TntvCustomTabSet.MouseUp(Button: TMouseButton;
-  Shift: TShiftState; X, Y: Integer);
-begin
-  inherited;
-end;
-
 function TntvCustomTabSet.SelectTab(Index: Integer; Force: Boolean): Boolean;
 begin
   if (Index < Items.Visibles.Count) and (Index <> ItemIndex) and (Index > -1) then
@@ -444,17 +431,19 @@ var
   i: Integer;
   ht: TntvhtTabHitTest;
 begin
-  inherited;
   if Items.Visibles.Count > 0 then
   begin
+    Message.Result := 1;//We want it
     pt := SmallPointToPoint(Message.Pos);
     if PtInRect(GetTabsRect, pt) then
     begin
       ht := Items.HitTest(Canvas, pt, GetTabsRect, i, GetFlags);
-      if (ht <> htNone) and (i <> Items.ItemIndex) then
-        Message.Result := 1;
+      if (ht = htNone) or (i = Items.ItemIndex) then
+        Message.Result := 0; //not want it
     end;
-  end;
+  end
+  else
+    Message.Result := 0;
 end;
 
 function TntvCustomTabSet.LeftMouseDown(Point: TPoint): boolean;
@@ -476,7 +465,7 @@ begin
             SelectTab(i);
             Result := True;
           end
-          else
+          else if CanFocus then
             SetFocus;
         end;
         htNext:
