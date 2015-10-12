@@ -364,7 +364,10 @@ begin
     while P < PAnsiChar(FEnd) do
     begin
       if us^ = P^ then
-        Inc(Idx)
+      begin
+        Inc(Idx);
+        Inc(us);
+      end
       else
         us := PAnsiChar(UntilStr);
       Inc(P);
@@ -499,7 +502,10 @@ begin
     while P < PChar(FEnd) do
     begin
       if us^ = P^ then
-        Inc(Idx)
+      begin
+        Inc(Idx);
+        Inc(us);
+      end
       else
         us := PChar(UntilStr);
       Inc(P);
