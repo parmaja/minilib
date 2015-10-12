@@ -68,7 +68,9 @@ type
     function Read(var Buffer; Count: Longint): Longint; override; final;
     function Write(const Buffer; Count: Longint): Longint; override; final;
 
-    procedure ReadUntil(const UntilStr: string; out Result: ansistring; var Matched: Boolean); overload;
+    procedure ReadUntil(const Match: PByte; MatchSize: Word; out Result: ansistring; var Matched: Boolean); overload;
+
+    procedure ReadUntil(const Match: ansistring; out Result: ansistring; var Matched: Boolean); overload;
 
     function ReadLine(var S: string; const vEOL: string; vExcludeEOL: Boolean = True): Boolean; overload;
     function WriteLine(const S: string; const vEOL: string): Cardinal;
@@ -263,7 +265,7 @@ begin
   if Result then
   begin
     aMatched := False;
-    ReadUntil(vEOL, r, aMatched);
+    ReadUntil(@vEOL[1], Length(vEOL), r, aMatched);
     S := string(r);
     if not aMatched and EOF and (S = '') then
       Result := False
@@ -479,29 +481,29 @@ begin
   Result := (FPos < FEnd);
 end;
 
-procedure TmnBufferStream.ReadUntil(const UntilStr: String; out Result: AnsiString; var Matched: Boolean);
+procedure TmnBufferStream.ReadUntil(const Match: PByte; MatchSize: Word; out Result: ansistring; var Matched: Boolean);
 var
-  P: PChar;
-  idx, l: Integer;
+  P: PByte;
+  us: PByte;
+  idx, l: cardinal;
   t: AnsiString;
-  us: PChar;
 begin
-  if UntilStr = '' then
-    raise Exception.Create('UntilStr is empty!');
-  Idx := 1;
+  if (Match = nil) or (MatchSize = 0) then
+    raise Exception.Create('Match is empty!');
   Matched := False;
-  l := Length(UntilStr);
-  us := PChar(UntilStr);
+  us := Match;
+  l := MatchSize;
   Result := '';
+  Idx := 1;
   while not Matched and CheckBuffer do
   begin
-    P := PChar(FPos);
-    while P < PChar(FEnd) do
+    P := FPos;
+    while P < FEnd do
     begin
       if us^ = P^ then
         Inc(Idx)
       else
-        us := PChar(UntilStr);
+        us := Match;
       Inc(P);
       if Idx > l then
       begin
@@ -509,10 +511,17 @@ begin
         break;
       end;
     end;
-    SetString(t, PChar(FPos), P - PChar(FPos));
+    SetString(t, PAnsiChar(FPos), P - FPos);
     Result := Result + t;
     FPos := PByte(P);
   end;
+end;
+
+procedure TmnBufferStream.ReadUntil(const Match: ansistring; out Result: ansistring; var Matched: Boolean); overload;
+begin
+  if Match = '' then
+    raise Exception.Create('Match is empty!');
+  ReadUntil(@Match[1], Length(Match), Result, Matched);
 end;
 
 procedure TmnWrapperStream.SetStream(const Value: TStream);
