@@ -12,6 +12,7 @@ interface
 
 uses
   Classes, SysUtils, Variants,
+  IniFiles,
   mnUtils, mncConnections, mnStreams;
 
 type
@@ -23,6 +24,8 @@ type
   TmncCSVHeader = (hdrNone, hdrNormal, hdrIgnore);
   TmncEmptyLine = (elFetch, elSkip, elEOF);
 
+  { TmncCSVOptions }
+
   TmncCSVOptions = record
     EndOfLine: string;
     DelimiterChar: Char;
@@ -31,6 +34,8 @@ type
     SkipColumn: Integer;
     HeaderLine: TmncCSVHeader;
     ANSIContents: Boolean; //TODO take it from mncCSVExchanges
+    procedure SaveToIni(Section: string; ini: TiniFile);
+    procedure LoadFromIni(Section: string; ini: TiniFile);
   end;
 
 
@@ -107,6 +112,45 @@ type
   end;
 
 implementation
+
+{ TmncCSVOptions }
+
+function EscapeStr(Str: string):string;
+begin
+  Result:= EscapeString(Str, '\', [#13, #10, #9 , #8, '"'], ['r', 'n', 't', 'b', '"']);
+end;
+
+function DescapeStr(Str: string):string;
+begin
+  Result:= DescapeString(Str, '\', [#13, #10, #9 , #8, '"'], ['r', 'n', 't', 'b', '"']);
+end;
+
+procedure TmncCSVOptions.SaveToIni(Section: string; ini: TiniFile);
+begin
+  Ini.WriteString(Section, 'EndOfLine', EscapeStr(EndOfLine));
+  Ini.WriteInteger(Section, 'DelimiterChar', Ord(DelimiterChar));
+  Ini.WriteInteger(Section, 'EscapeChar', Ord(EscapeChar));
+  Ini.WriteInteger(Section, 'QuoteChar', Ord(QuoteChar));
+  Ini.WriteInteger(Section, 'SkipColumn', SkipColumn);
+  Ini.WriteInteger(Section, 'HeaderLine', Ord(HeaderLine));
+  Ini.WriteBool(Section, 'ANSIContents', ANSIContents);
+end;
+
+procedure TmncCSVOptions.LoadFromIni(Section: string; ini: TiniFile);
+var
+  s: string;
+begin
+  s := DescapeStr(Ini.ReadString(Section, 'EndOfLine', EndOfLine));
+  if s = '' then
+    s := EndOfLine;
+  EndOfLine := s;
+  Ord(DelimiterChar) := Ini.ReadInteger(Section, 'DelimiterChar', Ord(DelimiterChar));
+  Ord(EscapeChar) := Ini.ReadInteger(Section, 'EscapeChar', Ord(EscapeChar));
+  Ord(QuoteChar) := Ini.ReadInteger(Section, 'QuoteChar', Ord(QuoteChar));
+  SkipColumn := Ini.ReadInteger(Section, 'SkipColumn', SkipColumn);
+  HeaderLine := TmncCSVHeader(Ini.ReadInteger(Section, 'HeaderLine', Ord(HeaderLine)));
+  ANSIContents := Ini.ReadBool(Section, 'ANSIContents', ANSIContents);
+end;
 
 { TmncCSVConnection }
 

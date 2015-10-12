@@ -225,8 +225,9 @@ begin
           if TabStop and ((vControl as TWinControl).CanFocus) then
             ParentForm.ActiveControl := vControl as TWinControl
           else
-          begin if ((vControl as TWinControl).CanFocus) then
-            aList := TFPList.Create;
+          begin
+            if ((vControl as TWinControl).CanFocus) then
+              aList := TFPList.Create;
             try
               (vControl as TWinControl).GetTabOrderList(aList);
               for i := 0 to aList.Count - 1 do
