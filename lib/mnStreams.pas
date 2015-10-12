@@ -484,28 +484,31 @@ end;
 procedure TmnBufferStream.ReadUntil(const Match: PByte; MatchSize: Word; out Result: ansistring; var Matched: Boolean);
 var
   P: PByte;
-  us: PByte;
-  idx, l: cardinal;
+  mt: PByte;
+  c, l: cardinal;
   t: AnsiString;
 begin
   if (Match = nil) or (MatchSize = 0) then
     raise Exception.Create('Match is empty!');
   Matched := False;
-  us := Match;
+  mt := Match;
   l := MatchSize;
   Result := '';
-  Idx := 1;
+  c := 1;
   while not Matched and CheckBuffer do
   begin
     P := FPos;
     while P < FEnd do
     begin
-      if us^ = P^ then
-        Inc(Idx)
+      if mt^ = P^ then
+      begin
+        Inc(c);
+        Inc(mt);
+      end
       else
-        us := Match;
+        mt := Match;
       Inc(P);
-      if Idx > l then
+      if c > l then
       begin
         Matched := True;
         break;
