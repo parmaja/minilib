@@ -211,10 +211,12 @@ var
 begin
   //if FStream.Connected then
   begin
-    s := Trim(FStream.ReadLine(sEOL));
+    FStream.ReadLine(s, True, sEOL);
+    s := Trim(s);
     repeat
       Headers.Add(s);
-      s := Trim(FStream.ReadLine(sEOL));
+      FStream.ReadLine(s, True, sEOL);
+      s := Trim(s);
     until {FStream.Connected or} (s = '');
   end;
   DoReadHeaders;
@@ -235,7 +237,7 @@ begin
     s := Cookies[I] + ';';
   if s <> '' then
     WriteLn('Cookie: ' + s);
-  FStream.WriteLn(sEOL);
+  FStream.WriteLine(sEOL);
 end;
 
 { TmnCustomHttpClient }
@@ -336,7 +338,7 @@ end;
 
 function TmnHttpResponse.ReadLn: string;
 begin
-  Result := FStream.ReadLine(sEOL);
+  FStream.ReadLine(Result, True, sEOL);
 end;
 
 { TmnHttpClient }
@@ -362,7 +364,7 @@ begin
   FStream.Address := u.GetHost; //Should be published
   FStream.Port := u.GetPort; //Should be published
   FStream.Connect;
-  FStream.WriteLn('GET' + ' ' + u.GetParams +  ' ' + 'HTTP/1.0');
+  FStream.WriteLine('GET' + ' ' + u.GetParams +  ' ' + 'HTTP/1.0');
   FRequest.WriteHeaders;
   if FStream.Connected then
     FResponse.ReadHeaders;

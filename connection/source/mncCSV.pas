@@ -350,7 +350,7 @@ begin
     s := '';
     Strings := TStringList.Create;
     repeat
-      Result := FCSVStream.ReadLn(s, False);
+      Result := FCSVStream.ReadLine(s, False);
       s := Trim(s);
     until not Result or not ((s = '') and (EmptyLine = elSkip));
 
@@ -400,7 +400,7 @@ end;
 
 procedure TmncCSVCommand.WriteLine(S: string);
 begin
-  FCSVStream.WriteLn(s);
+  FCSVStream.WriteLine(s);
 end;
 
 end.

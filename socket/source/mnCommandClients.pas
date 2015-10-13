@@ -68,16 +68,16 @@ end;
 
 procedure TmnCommandClientConnection.Process;
 var
-  s:string;
+  s: string;
 begin
   inherited;
-  s:=Stream.ReadLn;
+  s := Stream.ReadLine;
   if Connected then
   begin
     if s='GET' then
-      Stream.WriteLn('OK')
+      Stream.WriteLine('OK')
     else if s='SET' then
-      Stream.WriteLn('TOK');
+      Stream.WriteLine('TOK');
   end;
 end;
 

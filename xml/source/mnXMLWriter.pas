@@ -170,7 +170,7 @@ begin
     s := s + Header[i];
   end;
   s := '<?xml ' + s + ' ?>';
-  Stream.WriteLn(s);
+  Stream.WriteLine(s);
 end;
 
 procedure TmnXMLWriter.WriteEmptyTag(Name: string);

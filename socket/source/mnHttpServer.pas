@@ -279,11 +279,11 @@ begin
     FRequestUserAgent := '';
     FRequestHost := '';
     FRequestConnection := '';
-    ln := Stream.ReadLine(#13);
+    Stream.ReadLine(ln, true, #13);
     while ln <> '' do
     begin
       FRequestHeader.Add(ln);
-      ln := Stream.ReadLn;
+      ln := Stream.ReadLine;
     end;
     if FRequestHeader.Count > 0 then
     begin

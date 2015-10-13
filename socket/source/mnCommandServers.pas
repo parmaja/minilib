@@ -169,7 +169,7 @@ var
   aClass: TmnCommandClass;
 begin
   inherited;
-  aCMD := Stream.ReadLn;
+  aCMD := Stream.ReadLine;
   if Connected then
   begin
     p := Pos(' ', aCMD);
