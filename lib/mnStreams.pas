@@ -71,12 +71,11 @@ type
     function ReadBufferUntil(const Match: PByte; MatchSize: Word; ExcludeMatch: Boolean; out Buffer: Pointer; out BufferSize: Word; out Matched: Boolean): Boolean;
 
     function ReadUntil(const Match: ansistring; ExcludeMatch: Boolean; out Buffer: ansistring; var Matched: Boolean): Boolean; overload;
-    function ReadUntil(const Match: widestring; ExcludeMatch: Boolean; out Buffer: widestring; var Matched: Boolean): Boolean; overload;
-    function ReadUntil(const Match: utf8string; ExcludeMatch: Boolean; out Buffer: utf8string; var Matched: Boolean): Boolean; overload;
 
     function ReadLine(out S: ansistring; ExcludeEOL: Boolean = True; EOL: ansistring = ''): Boolean; overload;
     function ReadLine(out S: widestring; ExcludeEOL: Boolean = True; EOL: widestring = ''): Boolean; overload;
     function ReadLine(out S: utf8string; ExcludeEOL: Boolean = True; EOL: utf8string = ''): Boolean; overload;
+    function ReadLine(out S: unicodestring; ExcludeEOL: Boolean = True; EOL: unicodestring = ''): Boolean; overload;
 
     function ReadLine: ansistring; overload;
     function ReadLine: widestring; overload;
@@ -85,9 +84,11 @@ type
     //Do not add UTF8, fpc will conflict it with ansi
     function ReadLn: ansistring; overload;
     function ReadLn: widestring; overload;
+    function ReadLn: unicodestring; overload;
 
     function WriteLine(const S: ansistring; EOL: ansistring): Cardinal; overload;
     function WriteLine(const S: widestring; EOL: widestring = ''): Cardinal; overload;
+    function WriteLine(const S: unicodestring; EOL: unicodestring = ''): Cardinal; overload;
     function WriteLine(const S: utf8string; EOL: utf8string = ''): Cardinal; overload;
 
     function WriteLn(const S: ansistring): Cardinal; overload;
@@ -99,7 +100,6 @@ type
     procedure WriteCommand(const Command: string; const Format: string; const Params: array of const); overload;
     procedure WriteCommand(const Command: string; const Params: string); overload;
 
-    function WriteEOL(EOL: string): Cardinal; overload;
     function WriteEOL: Cardinal; overload;
 
     procedure ReadStrings(Value: TStrings; const vEOL: string); overload;
@@ -137,11 +137,31 @@ implementation
 const
   cBufferSize = 10;//2048;
 
+function ByteLength(s: ansistring): Integer; overload;
+begin
+  Result := Length(s) * SizeOf(AnsiChar);
+end;
+
+function ByteLength(s: utf8string): Integer; overload;
+begin
+  Result := Length(s) * SizeOf(AnsiChar);
+end;
+
+function ByteLength(s: unicodestring): Integer; overload;
+begin
+  Result := Length(s) * SizeOf(UnicodeChar);
+end;
+
+function ByteLength(s: widestring): Integer; overload;
+begin
+  Result := Length(s) * SizeOf(WideChar);
+end;
+
 { TmnBufferStream }
 
 function TmnCustomStream.WriteString(const Value: string): Cardinal;
 begin
-  Result := Write(Pointer(Value)^, Length(Value) * SizeOf(Char));
+  Result := Write(Pointer(Value)^, ByteLength(Value) * SizeOf(Char));
 end;
 
 function TmnCustomStream.IsActive: Boolean;
@@ -203,24 +223,32 @@ function TmnBufferStream.WriteLine(const S: ansistring; EOL: ansistring): Cardin
 begin
   if EOL = '' then
     EOL := EndOfLine;
-  Result := Write(Pointer(S)^, Length(S) * SizeOf(AnsiChar));
-  WriteEOL(AnsiString(EndOfLine));
+  Result := Write(Pointer(S)^, ByteLength(S));
+  Write(Pointer(EOL)^, ByteLength(EOL));
 end;
 
 function TmnBufferStream.WriteLine(const S: widestring; EOL: widestring): Cardinal;
 begin
   if EOL = '' then
     EOL := EndOfLine;
-  Result := Write(Pointer(S)^, Length(S) * SizeOf(AnsiChar));
-  WriteEOL(WideString(EndOfLine));
+  Result := Write(Pointer(S)^, ByteLength(S));
+  Write(Pointer(EOL)^, ByteLength(EOL));
+end;
+
+function TmnBufferStream.WriteLine(const S: unicodestring; EOL: unicodestring): Cardinal;
+begin
+  if EOL = '' then
+    EOL := EndOfLine;
+  Result := Write(Pointer(S)^, ByteLength(S));
+  Write(Pointer(EOL)^, ByteLength(EOL));
 end;
 
 function TmnBufferStream.WriteLine(const S: utf8string; EOL: utf8string): Cardinal;
 begin
   if EOL = '' then
     EOL := EndOfLine;
-  Result := Write(Pointer(S)^, Length(S) * SizeOf(AnsiChar));
-  WriteEOL(UTF8String(EndOfLine));
+  Result := Write(Pointer(S)^, ByteLength(S));
+  Write(Pointer(EOL)^, ByteLength(EOL));
 end;
 
 function TmnBufferStream.WriteLn(const S: ansistring): Cardinal;
@@ -272,7 +300,7 @@ var
 begin
   if EOL = '' then
     EOL := EndOfLine;
-  Result := ReadBufferUntil(@eol[1], Length(eol), ExcludeEOL, res, len, m);
+  Result := ReadBufferUntil(@eol[1], ByteLength(eol), ExcludeEOL, res, len, m);
   SetString(S, res, len);
   FreeMem(res);
 end;
@@ -285,7 +313,20 @@ var
 begin
   if EOL = '' then
     EOL := EndOfLine;
-  Result := ReadBufferUntil(@eol[1], Length(eol), ExcludeEOL, res, len, m);
+  Result := ReadBufferUntil(@eol[1], ByteLength(eol), ExcludeEOL, res, len, m);
+  SetString(S, res, len);
+  FreeMem(res);
+end;
+
+function TmnBufferStream.ReadLine(out S: unicodestring; ExcludeEOL: Boolean; EOL: unicodestring): Boolean;
+var
+  m: Boolean;
+  res: Pointer;
+  len: Word;
+begin
+  if EOL = '' then
+    EOL := EndOfLine;
+  Result := ReadBufferUntil(@eol[1], ByteLength(eol), ExcludeEOL, res, len, m);
   SetString(S, res, len);
   FreeMem(res);
 end;
@@ -298,7 +339,7 @@ var
 begin
   if EOL = '' then
     EOL := EndOfLine;
-  Result := ReadBufferUntil(@eol[1], Length(eol), ExcludeEOL, res, len, m);
+  Result := ReadBufferUntil(@eol[1], ByteLength(eol), ExcludeEOL, res, len, m);
   SetString(S, res, len);
   FreeMem(res);
 end;
@@ -323,6 +364,11 @@ begin
   ReadLine(Result);
 end;
 
+function TmnBufferStream.ReadLn: unicodestring;
+begin
+  ReadLine(Result);
+end;
+
 function TmnBufferStream.ReadLn: widestring;
 begin
   ReadLine(Result);
@@ -337,15 +383,9 @@ begin
     WriteLine(Command);
 end;
 
-function TmnBufferStream.WriteEOL(EOL: string): Cardinal;
-begin
-  Result := WriteString(EOL); //TODO
-  //Result := Write(Pointer(Value)^, Length(Value) * SizeOf(Char));
-end;
-
 function TmnBufferStream.WriteEOL: Cardinal;
 begin
-  Result := WriteEOL(EndOfLine);
+  Result := Write(Pointer(EndOfLine)^, ByteLength(EndOfLine));
 end;
 
 procedure TmnBufferStream.ReadStrings(Value: TStrings; const vEOL: string);
@@ -505,30 +545,6 @@ begin
 end;
 
 function TmnBufferStream.ReadUntil(const Match: ansistring; ExcludeMatch: Boolean; out Buffer: ansistring; var Matched: Boolean): Boolean;
-var
-  Res: Pointer;
-  Len: Word;
-begin
-  if Match = '' then
-    raise Exception.Create('Match is empty!');
-  Result := ReadBufferUntil(@Match[1], Length(Match), ExcludeMatch, Res, Len, Matched);
-  SetString(Buffer, Res, Len);
-  FreeMem(Res);
-end;
-
-function TmnBufferStream.ReadUntil(const Match: widestring; ExcludeMatch: Boolean; out Buffer: widestring; var Matched: Boolean): Boolean;
-var
-  Res: Pointer;
-  Len: Word;
-begin
-  if Match = '' then
-    raise Exception.Create('Match is empty!');
-  Result := ReadBufferUntil(@Match[1], Length(Match), ExcludeMatch, Res, Len, Matched);
-  SetString(Buffer, Res, Len);
-  FreeMem(Res);
-end;
-
-function TmnBufferStream.ReadUntil(const Match: utf8string; ExcludeMatch: Boolean; out Buffer: utf8string; var Matched: Boolean): Boolean;
 var
   Res: Pointer;
   Len: Word;
