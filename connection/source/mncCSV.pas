@@ -22,7 +22,11 @@ type
     hdrIgnore: Header found for import files but ignored, header not exported
   }
   TmncCSVHeader = (hdrNone, hdrNormal, hdrIgnore);
-  TmncEmptyLine = (elFetch, elSkip, elEOF);
+  TmncEmptyLine = (
+    elFetch, //Load it
+    elSkip, //Ignore it
+    elDone //End of the file
+  );
 
   { TmncCSVOptions }
 
@@ -343,6 +347,8 @@ end;
 function TmncCSVCommand.ReadLine(out Strings: TStringList): Boolean;
 var
   s: string;
+  ansi: ansistring;
+  utf8: utf8string;
 begin
   Result := (FCSVStream <> nil) and not FCSVStream.EOF;
   if Result then
@@ -350,11 +356,21 @@ begin
     s := '';
     Strings := TStringList.Create;
     repeat
-      Result := FCSVStream.ReadLine(s, False);
+      if Session.CSVOptions.ANSIContents then
+      begin
+        Result := FCSVStream.ReadLine(ansi, False);
+        {$ifdef fpc}
+        s := UTF8Encode(ansi);
+        {$else}
+        s := string(ansi);//Here you can fix the bug
+        {$endif}
+      end
+      else
+        Result := FCSVStream.ReadLine(s, False);
       s := Trim(s);
     until not Result or not ((s = '') and (EmptyLine = elSkip));
 
-    Result := Result and not ((s = '') and (EmptyLine = elEOF));
+    Result := Result and not ((s = '') and (EmptyLine = elDone));
     if Result then
       StrToStrings(s, Strings, [Session.DelimiterChar], [#0, #13, #10], True, [Session.QuoteChar])
     else
@@ -399,8 +415,20 @@ begin
 end;
 
 procedure TmncCSVCommand.WriteLine(S: string);
+var
+  ansi: string;
 begin
-  FCSVStream.WriteLine(s);
+  if Session.CSVOptions.ANSIContents then
+  begin
+    {$ifdef fpc}
+    ansi := UTF8Decode(s);
+    {$else}
+    ansi := AnsiString(s);//Here you can fix the bug
+    {$endif}
+    FCSVStream.WriteLine(ansi);
+  end
+  else
+    FCSVStream.WriteLine(s);
 end;
 
 end.
