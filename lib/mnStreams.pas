@@ -68,28 +68,25 @@ type
     function Read(var Buffer; Count: Longint): Longint; override; final;
     function Write(const Buffer; Count: Longint): Longint; override; final;
 
-    procedure ReadUntil(const Match: PByte; MatchSize: Word; out Result: ansistring; var Matched: Boolean); overload;
+    function ReadBufferUntil(const Match: PByte; MatchSize: Word; ExcludeMatch: Boolean; out Buffer: Pointer; out BufferSize: Word; out Matched: Boolean): Boolean;
 
-    procedure ReadUntil(const Match: ansistring; out Result: ansistring; var Matched: Boolean); overload;
+    function ReadUntil(const Match: ansistring; ExcludeMatch: Boolean; out Buffer: ansistring; var Matched: Boolean): Boolean; overload;
+    function ReadUntil(const Match: widestring; ExcludeMatch: Boolean; out Buffer: widestring; var Matched: Boolean): Boolean; overload;
+    function ReadUntil(const Match: utf8string; ExcludeMatch: Boolean; out Buffer: utf8string; var Matched: Boolean): Boolean; overload;
 
-    function ReadLine(var S: string; const vEOL: string; vExcludeEOL: Boolean = True): Boolean; overload;
-    function WriteLine(const S: string; const vEOL: string): Cardinal;
+    function ReadLine(out S: ansistring; const vEOL: ansistring; vExcludeEOL: Boolean = True): Boolean; overload;
+    function ReadLine(out S: widestring; const vEOL: widestring; vExcludeEOL: Boolean = True): Boolean; overload;
+    function ReadLine(out S: utf8string; const vEOL: utf8string; vExcludeEOL: Boolean = True): Boolean; overload;
 
-    function ReadLine(const vEOL: string): string; overload;
-    function ReadLine: string; overload;
+    function ReadLine(vEOL: widestring = ''): widestring; overload;
+    function ReadLine(vEOL: ansistring = ''): ansistring; overload;
+    function ReadLine(vEOL: utf8string = ''): utf8string; overload;
 
-    function ReadLn: string; overload;
-    function ReadLn(var S: string; ExcludeEOL: Boolean = True): Boolean; overload;
+    function WriteLine(const S: widestring; const vEOL: widestring): Cardinal; overload;
+    function WriteLine(const S: ansistring; const vEOL: ansistring): Cardinal; overload;
+    function WriteLine(const S: utf8string; const vEOL: utf8string): Cardinal; overload;
 
-    function WriteLn(const S: string): Cardinal; overload;
-    {$ifndef FPC} //TODO
-    //function for ansi handling
-    procedure ReadUntil(const UntilStr: ansistring; out Result: ansistring; var Matched: Boolean); overload;
-    function ReadLn(var S: AnsiString; vEOL: AnsiString): Boolean; overload;
-    function WriteLn(const S: AnsiString): Cardinal; overload;
-    {$endif}
-
-    procedure ReadCommand(var Command: string; var Params: string);
+    procedure ReadCommand(out Command: string; out Params: string);
 
     procedure WriteCommand(const Command: string); overload;
     procedure WriteCommand(const Command: string; const Format: string; const Params: array of const); overload;
@@ -132,7 +129,7 @@ type
 implementation
 
 const
-  cBufferSize = 2048;
+  cBufferSize = 10;//2048;
 
 { TmnBufferStream }
 
@@ -199,14 +196,19 @@ begin
   end;
 end;
 
-function TmnBufferStream.WriteLine(const S: string; const vEOL: string): Cardinal;
+function TmnBufferStream.WriteLine(const S: widestring; const vEOL: widestring): Cardinal;
 begin
-  Result := WriteString(S + vEOL);
+  Result := Write(Pointer(S)^, Length(S) * SizeOf(AnsiChar));
 end;
 
-function TmnBufferStream.WriteLn(const S: string): Cardinal;
+function TmnBufferStream.WriteLine(const S: ansistring; const vEOL: ansistring): Cardinal;
 begin
-  Result := WriteLine(S, EndOfLine);
+  Result := Write(Pointer(S)^, Length(S) * SizeOf(AnsiChar));
+end;
+
+function TmnBufferStream.WriteLine(const S: utf8string; const vEOL: utf8string): Cardinal;
+begin
+  Result := Write(Pointer(S)^, Length(S) * SizeOf(AnsiChar));
 end;
 
 function TmnBufferStream.WriteStrings(const Value: TStrings): Cardinal;
@@ -226,15 +228,12 @@ begin
   end;
 end;
 
-procedure TmnBufferStream.ReadCommand(var Command, Params: string);
+procedure TmnBufferStream.ReadCommand(out Command, Params: string);
 var
   s: string;
   p: Integer;
 begin
-  {$IFDEF FPC}
-  S := '';
-  {$ENDIF}
-  ReadLn(S);
+  s := ReadLine;
   p := Pos(' ', s);
   if p > 0 then
   begin
@@ -248,46 +247,87 @@ begin
   end;
 end;
 
-function TmnBufferStream.ReadLn: string;
-begin
-  {$ifdef FPC}
-  Result := '';
-  {$endif}
-  ReadLn(Result);
-end;
-
-function TmnBufferStream.ReadLine(var S: string; const vEOL: string; vExcludeEOL: Boolean = True): Boolean;
+function TmnBufferStream.ReadLine(out S: widestring; const vEOL: widestring; vExcludeEOL: Boolean = True): Boolean;
 var
-  aMatched: Boolean;
-  r: AnsiString;
+  m: Boolean;
+  res: Pointer;
+  len: Word;
 begin
-  Result := not EOF;
-  if Result then
-  begin
-    aMatched := False;
-    ReadUntil(@vEOL[1], Length(vEOL), r, aMatched);
-    S := string(r);
-    if not aMatched and EOF and (S = '') then
-      Result := False
-    else if aMatched and vExcludeEOL and (S <> '') then
-      S := LeftStr(S, Length(S) - Length(vEOL));
-  end;
+  Result := ReadBufferUntil(@vEOL[1], Length(vEOL), vExcludeEOL, res, len, m);
+  SetString(S, res, len);
+  FreeMem(res);
 end;
 
-function TmnBufferStream.ReadLine(const vEOL: string): string; 
+function TmnBufferStream.ReadLine(out S: utf8string; const vEOL: utf8string; vExcludeEOL: Boolean = True): Boolean;
+var
+  m: Boolean;
+  res: Pointer;
+  len: Word;
 begin
-  {$ifdef FPC}
-  Result := '';
-  {$endif}
+  Result := ReadBufferUntil(@vEOL[1], Length(vEOL), vExcludeEOL, res, len, m);
+  SetString(S, res, len);
+  FreeMem(res);
+end;
+
+function TmnBufferStream.ReadLine(out S: string; const vEOL: string; vExcludeEOL: Boolean = True): Boolean;
+var
+  m: Boolean;
+  res: Pointer;
+  len: Word;
+begin
+  Result := ReadBufferUntil(@vEOL[1], Length(vEOL), vExcludeEOL, res, len, m);
+  SetString(S, res, len);
+  FreeMem(res);
+end;
+
+function TmnBufferStream.ReadLine(out S: ansistring; const vEOL: ansistring; vExcludeEOL: Boolean = True): Boolean;
+var
+  m: Boolean;
+  res: Pointer;
+  len: Word;
+begin
+  Result := ReadBufferUntil(@vEOL[1], Length(vEOL), vExcludeEOL, res, len, m);
+  SetString(S, res, len);
+  FreeMem(res);
+end;
+
+function TmnBufferStream.ReadLine(out S: string; const vEOL: string; vExcludeEOL: Boolean = True): Boolean;
+var
+  m: Boolean;
+  res: Pointer;
+  len: Word;
+begin
+  Result := ReadBufferUntil(@vEOL[1], Length(vEOL), vExcludeEOL, res, len, m);
+  SetString(S, res, len);
+  FreeMem(res);
+end;
+
+function TmnBufferStream.ReadLine(vEOL: widestring): widestring;
+begin
+  if vEOL = '' then
+    vEOL := EndOfLine;
   ReadLine(Result, vEOL);
 end;
 
-function TmnBufferStream.ReadLine: string;
+function TmnBufferStream.ReadLine(vEOL: ansistring): ansistring;
 begin
-  {$ifdef FPC}
-  Result := '';
-  {$endif}
-  ReadLine(Result, EndOfLine);
+  if vEOL = '' then
+    vEOL := EndOfLine;
+  ReadLine(Result, vEOL);
+end;
+
+function TmnBufferStream.ReadLine(vEOL: utf8string): ansistring;
+begin
+  if vEOL = '' then
+    vEOL := EndOfLine;
+  ReadLine(Result, vEOL);
+end;
+
+function TmnBufferStream.ReadLine(vEOL: string): string;
+begin
+  if vEOL = '' then
+    vEOL := EndOfLine;
+  ReadLine(Result, vEOL);
 end;
 
 procedure TmnBufferStream.WriteCommand(const Command, Params: string);
@@ -319,9 +359,6 @@ var
 begin
   while not EOF do
   begin
-    {$ifdef FPC}
-    s := '';
-    {$endif}
     if ReadLine(s, vEOL) then
       Value.Add(s);
   end;
@@ -346,67 +383,6 @@ procedure TmnBufferStream.WriteCommand(const Command, Format: string; const Para
 begin
   WriteCommand(Command, SysUtils.Format(Format, Params));
 end;
-
-{$ifndef FPC}
-procedure TmnBufferStream.ReadUntil(const UntilStr: ansistring; out Result: ansistring; var Matched: Boolean);
-var
-  P: PAnsiChar;
-  idx, l: Integer;
-  t: AnsiString;
-  us: PAnsiChar;
-begin
-  Idx := 1;
-  Matched := False;
-  l := Length(UntilStr);
-  us := PAnsiChar(UntilStr);
-  Result := '';
-  while not Matched and CheckBuffer do
-  begin
-    P := PAnsiChar(FPos);
-    while P < PAnsiChar(FEnd) do
-    begin
-      if us^ = P^ then
-        Inc(Idx)
-      else
-        us := PAnsiChar(UntilStr);
-      Inc(P);
-      if Idx > l then
-      begin
-        Matched := True;
-        break;
-      end;
-    end;
-    SetString(t, PAnsiChar(FPos), P - PAnsiChar(FPos));
-    Result := Result + t;
-    FPos := PByte(P);
-  end;
-end;
-
-function TmnBufferStream.ReadLn(var S: ansistring; vEOL: AnsiString): Boolean;
-var
-  aMatched: Boolean;
-  r: AnsiString;
-begin
-  Result := not EOF;
-  if Result then
-  begin
-    aMatched := False;
-    ReadUntil(AnsiString(vEOL), r, aMatched);
-    if not aMatched and EOF and (r = '') then
-      Result := False
-    else if aMatched and (r <> '') then
-      S := LeftStr(r, Length(r) - Length(vEOL));
-  end;
-end;
-
-function TmnBufferStream.WriteLn(const S: AnsiString): Cardinal;
-var
-  t: AnsiString;
-begin
-  t := s + AnsiString(EndOfLine);
-  Result := Write(Pointer(t)^, Length(t));
-end;
-{$endif}
 
 { TmnBufferStream }
 
@@ -481,20 +457,21 @@ begin
   Result := (FPos < FEnd);
 end;
 
-procedure TmnBufferStream.ReadUntil(const Match: PByte; MatchSize: Word; out Result: ansistring; var Matched: Boolean);
+function TmnBufferStream.ReadBufferUntil(const Match: PByte; MatchSize: Word; ExcludeMatch: Boolean; out Buffer: Pointer; out BufferSize: Word; out Matched: Boolean): Boolean;
 var
   P: PByte;
   mt: PByte;
   c, l: cardinal;
-  t: AnsiString;
+  t: PByte;
 begin
   if (Match = nil) or (MatchSize = 0) then
     raise Exception.Create('Match is empty!');
+  Result := not EOF;
   Matched := False;
   mt := Match;
-  l := MatchSize;
-  Result := '';
-  c := 1;
+  Buffer := nil;
+  BufferSize := 0;
+  c := 1;//TODO use start from 0
   while not Matched and CheckBuffer do
   begin
     P := FPos;
@@ -508,23 +485,64 @@ begin
       else
         mt := Match;
       Inc(P);
-      if c > l then
+      if c > MatchSize then
       begin
         Matched := True;
         break;
       end;
     end;
-    SetString(t, PAnsiChar(FPos), P - FPos);
-    Result := Result + t;
+
+    //Append to memory
+    l := P - FPos;
+    if ExcludeMatch and Matched then
+      l := l + MatchSize;
+
+    ReAllocMem(Buffer, BufferSize + l);
+    t := Buffer;
+    Inc(t, BufferSize);
+    Move(FPos^, t^, l);
+    BufferSize := BufferSize + l;
+
     FPos := PByte(P);
   end;
+  if not Matched and EOF and (BufferSize = 0) then
+    Result := False;
 end;
 
-procedure TmnBufferStream.ReadUntil(const Match: ansistring; out Result: ansistring; var Matched: Boolean); overload;
+function TmnBufferStream.ReadUntil(const Match: ansistring; ExcludeMatch: Boolean; out Buffer: ansistring; var Matched: Boolean): Boolean;
+var
+  Res: Pointer;
+  Len: Word;
 begin
   if Match = '' then
     raise Exception.Create('Match is empty!');
-  ReadUntil(@Match[1], Length(Match), Result, Matched);
+  Result := ReadBufferUntil(@Match[1], Length(Match), ExcludeMatch, Res, Len, Matched);
+  SetString(Buffer, Res, Len);
+  FreeMem(Res);
+end;
+
+function TmnBufferStream.ReadUntil(const Match: widestring; ExcludeMatch: Boolean; out Buffer: widestring; var Matched: Boolean): Boolean;
+var
+  Res: Pointer;
+  Len: Word;
+begin
+  if Match = '' then
+    raise Exception.Create('Match is empty!');
+  Result := ReadBufferUntil(@Match[1], Length(Match), ExcludeMatch, Res, Len, Matched);
+  SetString(Buffer, Res, Len);
+  FreeMem(Res);
+end;
+
+function TmnBufferStream.ReadUntil(const Match: utf8string; ExcludeMatch: Boolean; out Buffer: utf8string; var Matched: Boolean): Boolean;
+var
+  Res: Pointer;
+  Len: Word;
+begin
+  if Match = '' then
+    raise Exception.Create('Match is empty!');
+  Result := ReadBufferUntil(@Match[1], Length(Match), ExcludeMatch, Res, Len, Matched);
+  SetString(Buffer, Res, Len);
+  FreeMem(Res);
 end;
 
 procedure TmnWrapperStream.SetStream(const Value: TStream);
