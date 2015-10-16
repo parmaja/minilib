@@ -586,13 +586,15 @@ procedure TntvTabs.Update(Item: TCollectionItem);
 begin
   inherited;
   FUpdateItems := True;
-  if Item = nil then
+  VisibleChanged;
+  Invalidate;
+{  if Item = nil then
   begin
     VisibleChanged;
     Invalidate;
   end
   else
-    Invalidate;
+    Invalidate;}
 end;
 
 procedure TntvTabs.DoShowTab(Item: TntvTabItem);

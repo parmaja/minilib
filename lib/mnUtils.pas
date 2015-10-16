@@ -42,7 +42,11 @@ function DequoteStr(Str: string; QuoteChar: string = '"'): string; overload;
 function DequoteStrAuto(Str: string): string; overload; //deqoute use both of ' and "
 
 function RepeatString(const Str: string; Count: Integer): string;
-function VarReplace(S: string; Values: TStrings; VarChar: Char = '$'): string;
+{* VarReplace
+  VarChar = '$'
+  Example: VarReplace('c:\$project\$[name]';
+}
+function VarReplace(S: string; Values: TStrings; VarChar: Char): string;
 
 type
   //alsCut = if the string > count we cut it as count or keep the string
@@ -61,6 +65,13 @@ procedure BreakToStrings(S: string; vStrings: TStrings; IncludeLineBreaks: Boole
 
 {
   Useful to make your project path related (Portable)
+  FileName:
+          ./myfile
+          ../myfile
+          /myfile
+          \myfile
+  Path:
+  Root: is optional, added before Path
 }
 function ExpandToPath(FileName: string; Path: string; Root: string = ''): string;
 
@@ -220,7 +231,7 @@ end;
 *  Use name values in strings
 *}
 
-function VarReplace(S: string; Values: TStrings; VarChar: Char = '$'): string;
+function VarReplace(S: string; Values: TStrings; VarChar: Char): string;
 var
   i: Integer;
   OpenAt: Integer;

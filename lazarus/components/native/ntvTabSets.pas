@@ -23,6 +23,9 @@ uses
   LMessages, LCLType, LCLIntf, LCLProc,
   ntvTabs, ntvUtils, ntvThemes;
 
+const
+  sNormalColor = $00DBDBDB;
+
 type
   TntvCustomTabSet = class;
 
@@ -122,7 +125,7 @@ type
     property ItemIndex: Integer read GetItemIndex write SetItemIndex stored FStoreIndex default 0;
     property ImageList: TImageList read GetImageList write SetImageList;
     property ActiveColor: TColor read GetActiveColor write SetActiveColor default clWhite;
-    property NormalColor: TColor read GetNormalColor write SetNormalColor default clSilver;
+    property NormalColor: TColor read GetNormalColor write SetNormalColor default sNormalColor;
 
     property Items: TntvTabs read FItems write FItems;
     property OnTabSelected: TOnTabSelected read FOnTabSelected write FOnTabSelected;
@@ -253,7 +256,7 @@ begin
   Items.ItemIndex := -1;
   Items.TopIndex := 0;
   Items.ActiveColor := clWhite;
-  Items.NormalColor := clSilver;
+  Items.NormalColor := sNormalColor;
   UpdateHeaderRect;
   FShowTabs := True;
   FAlignTabs := talTop;
