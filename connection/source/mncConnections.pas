@@ -807,7 +807,7 @@ end;
 
 constructor TmncCommand.Create;
 begin
-  inherited;
+  inherited Create;
   FRequest := TStringList.Create;
   (FRequest as TStringList).OnChange := DoRequestChanged;
 
@@ -829,8 +829,9 @@ begin
   Clean;
   DoExecute;
   if not Done and FNextOnExecute then //TODO Check it do we need not Done
-    Result := Next;
-  Result := not Done;
+    Result := Next
+  else
+    Result := not Done;
 end;
 
 function TmncCommand.FieldIsExist(Name: string): Boolean;

@@ -12,18 +12,17 @@ package MiniConnectionLib;
 {$LOCALSYMBOLS OFF}
 {$LONGSTRINGS ON}
 {$OPENSTRINGS ON}
-{$OPTIMIZATION OFF}
+{$OPTIMIZATION ON}
 {$OVERFLOWCHECKS OFF}
 {$RANGECHECKS OFF}
 {$REFERENCEINFO OFF}
 {$SAFEDIVIDE OFF}
-{$STACKFRAMES ON}
+{$STACKFRAMES OFF}
 {$TYPEDADDRESS OFF}
 {$VARSTRINGCHECKS ON}
 {$WRITEABLECONST ON}
 {$MINENUMSIZE 1}
 {$IMAGEBASE $400000}
-{$DEFINE DEBUG}
 {$ENDIF IMPLICITBUILDING}
 {$DESCRIPTION 'Mini Connection Lib'}
 {$RUNONLY}
@@ -39,12 +38,12 @@ contains
   mncCSV in '..\source\mncCSV.pas',
   mncSQL in '..\db\mncSQL.pas',
   mncDB in '..\db\mncDB.pas',
-  mncCommons in '..\db\mncCommons.pas',
-  mncSchemas in '..\db\mncSchemas.pas',
   mncSQLite in '..\db\sqlite\mncSQLite.pas',
   mncSQLiteHeader in '..\db\sqlite\mncSQLiteHeader.pas',
-  mncSQLiteSchemas in '..\db\sqlite\mncSQLiteSchemas.pas',
   mncPGHeader in '..\db\postgre\mncPGHeader.pas',
-  mncPostgre in '..\db\postgre\mncPostgre.pas';
+  mncPostgre in '..\db\postgre\mncPostgre.pas',
+  mncCommons in '..\source\mncCommons.pas',
+  mncMetas in '..\db\mncMetas.pas',
+  mncSQLiteMetas in '..\db\sqlite\mncSQLiteMetas.pas';
 
 end.

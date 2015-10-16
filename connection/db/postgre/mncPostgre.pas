@@ -33,7 +33,7 @@ type
   TmncPGConnection = class;
   TmncCustomPGCommand = class;
   TmncPostgreFields = class;
-  
+
   TPGListenThread = class(TThread)
   private
     FConnection: TmncPGConnection;
@@ -89,7 +89,6 @@ type
     function IsDatabaseExists(vName: string): Boolean; override;
     procedure Vacuum; override;
 
-    procedure CreateDatabase; overload;
     procedure DropDatabase; overload;
     procedure RenameDatabase(const vName, vToName: string); overload;
 
@@ -613,11 +612,6 @@ begin
   Result := PQsetdbLogin(PChar(Host), PChar(aPort), PChar(PGOptions), PChar(PGtty), PChar(LowerCase(vDatabase)), PChar(UserName), PChar(Password));
 end;
 
-procedure TmncPGConnection.CreateDatabase;
-begin
-  CreateDatabase(Resource);
-end;
-
 procedure TmncPGConnection.CreateDatabase(const vName: string; CheckExists: Boolean = False);
 var
   s: string;
@@ -911,7 +905,7 @@ begin
   else
   begin
     s := UTF8Encode(SQLProcessed.SQL);
-    r := PQprepare(c, PAnsiChar(FHandle), PAnsiChar(s), 0 , nil);
+    r := PQprepare(c, PAnsiChar(FHandle), PAnsiChar(s), 0 , nil); //TODO check if it AnsiChar of UTF8 passed
     try
       RaiseError(r);
     finally
@@ -1178,7 +1172,7 @@ begin
           s := UTF8Encode(p.Value);
       end;
       GetMem(Result[i], Length(s) + 1);
-      StrMove(PAnsiChar(Result[i]), PAnsiChar(s), Length(s) + 1);
+      Move(PAnsiChar(Result[i]), s[1], Length(s) + 1);
     end;
   end;
 end;
@@ -1450,7 +1444,7 @@ begin
     b := '';
 
   s := Format('declare %s %s cursor for %s', [Handle, b, SQLProcessed.SQL]);
-  r := PQprepare(c, PChar(FHandle), PChar(s), 0 , nil);
+  r := PQprepare(c, PAnsiChar(FHandle), PAnsiChar(s), 0 , nil);
   try
     RaiseError(r);
   finally

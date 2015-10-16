@@ -99,8 +99,7 @@ type
     procedure HitDone;   //Make it true
     procedure HitReady; //Make it False
   public
-    constructor Create; override; overload;
-    constructor Create(aSession: TmncSQLSession); overload;
+    constructor Create; override;
     destructor Destroy; override;
     function GetLastRowID: Int64; virtual;
     function GetRowsChanged: Integer; virtual;
@@ -413,12 +412,6 @@ constructor TmncSQLCommand.Create;
 begin
   inherited Create;
   SQLProcessed := TmncSQLProcessed.Create(True);
-end;
-
-constructor TmncSQLCommand.Create(aSession: TmncSQLSession);
-begin
-  Create;
-  Session := aSession;
 end;
 
 destructor TmncSQLCommand.Destroy;

@@ -119,12 +119,12 @@ implementation
 
 { TmncCSVOptions }
 
-function EscapeStr(Str: string):string;
+function EscapeStr(Str: string): string;
 begin
   Result:= EscapeString(Str, '\', [#13, #10, #9 , #8, '"'], ['r', 'n', 't', 'b', '"']);
 end;
 
-function DescapeStr(Str: string):string;
+function DescapeStr(Str: string): string;
 begin
   Result:= DescapeString(Str, '\', [#13, #10, #9 , #8, '"'], ['r', 'n', 't', 'b', '"']);
 end;
@@ -148,9 +148,9 @@ begin
   if s = '' then
     s := EndOfLine;
   EndOfLine := s;
-  Ord(DelimiterChar) := Ini.ReadInteger(Section, 'DelimiterChar', Ord(DelimiterChar));
-  Ord(EscapeChar) := Ini.ReadInteger(Section, 'EscapeChar', Ord(EscapeChar));
-  Ord(QuoteChar) := Ini.ReadInteger(Section, 'QuoteChar', Ord(QuoteChar));
+  DelimiterChar := Char(Ini.ReadInteger(Section, 'DelimiterChar', Ord(DelimiterChar)));
+  EscapeChar := Char(Ini.ReadInteger(Section, 'EscapeChar', Ord(EscapeChar)));
+  QuoteChar := Char(Ini.ReadInteger(Section, 'QuoteChar', Ord(QuoteChar)));
   SkipColumn := Ini.ReadInteger(Section, 'SkipColumn', SkipColumn);
   HeaderLine := TmncCSVHeader(Ini.ReadInteger(Section, 'HeaderLine', Ord(HeaderLine)));
   ANSIContents := Ini.ReadBool(Section, 'ANSIContents', ANSIContents);

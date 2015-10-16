@@ -1,5 +1,5 @@
 unit mncPGHeader;
-{$mode Delphi}{$H+}
+{$ifdef FPC}{$mode Delphi}{$H+}{$endif}
 {}
 {**
  *  This file is part of the "Mini Connections"
@@ -240,7 +240,8 @@ type
   TPQresultStatus = function(Result: PPGresult): TExecStatusType; cdecl;
   TPQresultErrorMessage = function(Result: PPGresult): PChar; cdecl;
 
-  TPQPrepare = function(Handle: PPGconn; Name, Query: PChar; nParams: Integer; pTypes: Pointer): PPGresult; cdecl;
+  //PAnsiChar = PUtf8Char
+  TPQPrepare = function(Handle: PPGconn; Name, Query: PAnsiChar; nParams: Integer; pTypes: Pointer): PPGresult; cdecl;
   TPQExecPrepared = function(Handle: PPGconn; Name: PChar; nParams: Integer; pValues, pLength, pFormats: Pointer; rFormat: Integer): PPGresult; cdecl;
   //p = params
   //r = result
@@ -403,7 +404,7 @@ begin
     fLibHandle := LoadLibrary(PChar(pgLibName));
   end;
   if fLibHandle <> 0 then
-    Result := GetProcAddress(fLibHandle, vProc)
+    Result := GetProcAddress(fLibHandle, PChar(vProc))
   else
     Result := nil;
 end;
