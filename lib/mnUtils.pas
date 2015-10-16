@@ -124,9 +124,8 @@ function CharInSet(C: Char; Separators: TSysCharSet): Boolean;
 begin
   Result := C in Separators;
 end;
-
 {$else}
-  {$if CompilerVersion < 22.0}
+  {$if CompilerVersion < 22}
   var
     FFormatSettings: TFormatSettings;
   {$ifend}
@@ -258,7 +257,7 @@ begin
       OpenAt := i
     else if (OpenAt > 0) then
     begin
-      if not(S[i] in ['0'..'9', 'a'..'z', 'A'..'Z', '_', '[', ']']) then
+      if not(CharInSet(S[i], ['0'..'9', 'a'..'z', 'A'..'Z', '_', '[', ']'])) then
       begin
         check;
       end;

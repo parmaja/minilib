@@ -471,7 +471,7 @@ begin
   s := GetAsString;
   SetLength(Result, Length(s) * 2);
 
-  BinToHex(PAnsiChar(s), PAnsiChar(Result), Length(s));
+  BinToHex(PChar(s), PChar(Result), Length(s));
 end;
 
 procedure TmnCustomField.WriteIsNull(const AValue: Boolean);
@@ -546,7 +546,7 @@ end;
 
 function TmnCustomField.ReadAsAnsiString: ansistring;
 begin
-  Result := Utf8ToAnsi(GetAsString);
+  Result := AnsiString(GetAsString);
 end;
 
 procedure TmnCustomField.SaveToFile(const FileName: string);
@@ -578,8 +578,12 @@ end;
 
 procedure TmnCustomField.WriteAsAnsiString(const AValue: ansistring);
 begin
+  {$ifdef FPC}
   //fpc not auto convert because string type it same with ansistring
-  SetAsString(AnsiToUtf8(AValue));
+  SetAsString(Utf8Encode(AValue));
+  {$else}
+  SetAsString(String(AValue));
+  {$endif}
 end;
 
 function TmnCustomField.ReadAsWideString: widestring;
@@ -690,12 +694,16 @@ end;
 
 function TmnCustomField.ReadAsUtf8String: UTF8String;
 begin
-  Result := GetAsString; //the compiler will convert it
+  Result := UTF8Encode(GetAsString);
 end;
 
 procedure TmnCustomField.WriteAsUtf8String(const AValue: UTF8String);
 begin
-  SetAsString(AValue);
+  {$ifdef FPC}
+  SetAsString(UTF8Decode(AValue));
+  {$else}
+  SetAsString(UTF8ToString(AValue));
+  {$endif}
 end;
 
 procedure TmnCustomField.SetAsTime(const AValue: TDateTime);

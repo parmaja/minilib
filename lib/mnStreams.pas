@@ -82,7 +82,11 @@ type
 
     function ReadLn: string; overload; deprecated;
 
+    {$ifdef FPC}
+    //no Ansi, it is UTF8
+    {$else}
     function WriteLine(const S: ansistring; EOL: ansistring = ''): Cardinal; overload;
+    {$endif}
     function WriteLine(const S: widestring; EOL: widestring = ''): Cardinal; overload;
     function WriteLine(const S: unicodestring; EOL: unicodestring = ''): Cardinal; overload;
     function WriteLine(const S: utf8string; EOL: utf8string = ''): Cardinal; overload;
@@ -218,18 +222,20 @@ begin
   end;
 end;
 
+{$ifdef FPC}
+{$else}
 function TmnBufferStream.WriteLine(const S: ansistring; EOL: ansistring): Cardinal;
 begin
   if EOL = '' then
-    EOL := EndOfLine;
+    EOL := ansistring(EndOfLine);
   Result := Write(Pointer(S)^, ByteLength(S));
   Write(Pointer(EOL)^, ByteLength(EOL));
 end;
-
+{$endif}
 function TmnBufferStream.WriteLine(const S: widestring; EOL: widestring): Cardinal;
 begin
   if EOL = '' then
-    EOL := EndOfLine;
+    EOL := widestring(EndOfLine);
   Result := Write(Pointer(S)^, ByteLength(S));
   Write(Pointer(EOL)^, ByteLength(EOL));
 end;
@@ -237,7 +243,7 @@ end;
 function TmnBufferStream.WriteLine(const S: unicodestring; EOL: unicodestring): Cardinal;
 begin
   if EOL = '' then
-    EOL := EndOfLine;
+    EOL := unicodestring(EndOfLine);
   Result := Write(Pointer(S)^, ByteLength(S));
   Write(Pointer(EOL)^, ByteLength(EOL));
 end;
@@ -245,7 +251,7 @@ end;
 function TmnBufferStream.WriteLine(const S: utf8string; EOL: utf8string): Cardinal;
 begin
   if EOL = '' then
-    EOL := EndOfLine;
+    EOL := utf8string(EndOfLine);
   Result := Write(Pointer(S)^, ByteLength(S));
   Write(Pointer(EOL)^, ByteLength(EOL));
 end;
@@ -293,7 +299,7 @@ var
   len: Word;
 begin
   if EOL = '' then
-    EOL := EndOfLine;
+    EOL := widestring(EndOfLine);
   Result := ReadBufferUntil(@eol[1], ByteLength(eol), ExcludeEOL, res, len, m);
   SetString(S, PWideChar(res), len);
   FreeMem(res);
@@ -306,7 +312,7 @@ var
   len: Word;
 begin
   if EOL = '' then
-    EOL := EndOfLine;
+    EOL := utf8string(EndOfLine);
   Result := ReadBufferUntil(@eol[1], ByteLength(eol), ExcludeEOL, res, len, m);
   SetString(S, PAnsiChar(res), len);
   FreeMem(res);
@@ -319,7 +325,7 @@ var
   len: Word;
 begin
   if EOL = '' then
-    EOL := EndOfLine;
+    EOL := unicodestring(EndOfLine);
   Result := ReadBufferUntil(@eol[1], ByteLength(eol), ExcludeEOL, res, len, m);
   {$ifdef FPC}
   SetString(S, PUnicodeChar(res), len);
@@ -336,7 +342,7 @@ var
   len: Word;
 begin
   if EOL = '' then
-    EOL := EndOfLine;
+    EOL := ansistring(EndOfLine);
   Result := ReadBufferUntil(@eol[1], ByteLength(eol), ExcludeEOL, res, len, m);
   SetString(S, PAnsiChar(res), len);
   FreeMem(res);
