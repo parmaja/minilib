@@ -228,32 +228,40 @@ function TmnBufferStream.WriteLine(const S: ansistring; EOL: ansistring): Cardin
 begin
   if EOL = '' then
     EOL := ansistring(EndOfLine);
-  Result := Write(Pointer(S)^, ByteLength(S));
-  Write(Pointer(EOL)^, ByteLength(EOL));
+  Result := 0;
+  if s <> '' then
+    Result := Write(Pointer(S)^, ByteLength(S));
+  Result := Result + Write(Pointer(EOL)^, ByteLength(EOL));
 end;
 {$endif}
 function TmnBufferStream.WriteLine(const S: widestring; EOL: widestring): Cardinal;
 begin
   if EOL = '' then
     EOL := widestring(EndOfLine);
-  Result := Write(Pointer(S)^, ByteLength(S));
-  Write(Pointer(EOL)^, ByteLength(EOL));
+  Result := 0;
+  if s <> '' then
+    Result := Write(Pointer(S)^, ByteLength(S));
+  Result := Result + Write(Pointer(EOL)^, ByteLength(EOL));
 end;
 
 function TmnBufferStream.WriteLine(const S: unicodestring; EOL: unicodestring): Cardinal;
 begin
   if EOL = '' then
     EOL := unicodestring(EndOfLine);
-  Result := Write(Pointer(S)^, ByteLength(S));
-  Write(Pointer(EOL)^, ByteLength(EOL));
+  Result := 0;
+  if s <> '' then
+    Result := Write(Pointer(S)^, ByteLength(S));
+  Result := Result + Write(Pointer(EOL)^, ByteLength(EOL));
 end;
 
 function TmnBufferStream.WriteLine(const S: utf8string; EOL: utf8string): Cardinal;
 begin
   if EOL = '' then
     EOL := utf8string(EndOfLine);
-  Result := Write(Pointer(S)^, ByteLength(S));
-  Write(Pointer(EOL)^, ByteLength(EOL));
+  Result := 0;
+  if s <> '' then
+    Result := Write(Pointer(S)^, ByteLength(S));
+  Result := Result + Write(Pointer(EOL)^, ByteLength(EOL));
 end;
 
 function TmnBufferStream.WriteLn(const S: string): Cardinal;
