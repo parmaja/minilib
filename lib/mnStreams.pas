@@ -134,7 +134,7 @@ type
 implementation
 
 const
-  cBufferSize = 10;//2048;
+  cBufferSize = 2048;
 
 function ByteLength(s: ansistring): Integer; overload;
 begin
@@ -164,7 +164,7 @@ end;
 
 function TmnCustomStream.WriteString(const Value: string): Cardinal;
 begin
-  Result := Write(Pointer(Value)^, ByteLength(Value) * SizeOf(Char));
+  Result := Write(Pointer(Value)^, ByteLength(Value));
 end;
 
 function TmnCustomStream.IsActive: Boolean;
@@ -301,7 +301,7 @@ begin
   if EOL = '' then
     EOL := widestring(EndOfLine);
   Result := ReadBufferUntil(@eol[1], ByteLength(eol), ExcludeEOL, res, len, m);
-  SetString(S, PWideChar(res), len);
+  SetString(S, PWideChar(res), len div SizeOf(WideChar));
   FreeMem(res);
 end;
 
@@ -314,7 +314,7 @@ begin
   if EOL = '' then
     EOL := utf8string(EndOfLine);
   Result := ReadBufferUntil(@eol[1], ByteLength(eol), ExcludeEOL, res, len, m);
-  SetString(S, PAnsiChar(res), len);
+  SetString(S, PAnsiChar(res), len div SizeOf(AnsiChar));
   FreeMem(res);
 end;
 
@@ -328,9 +328,9 @@ begin
     EOL := unicodestring(EndOfLine);
   Result := ReadBufferUntil(@eol[1], ByteLength(eol), ExcludeEOL, res, len, m);
   {$ifdef FPC}
-  SetString(S, PUnicodeChar(res), len);
+  SetString(S, PUnicodeChar(res), len div SizeOf(UnicodeChar));
   {$else}
-  SetString(S, PWideChar(res), len); //TODO check if it widechat
+  SetString(S, PWideChar(res), len div SizeOf(WideChar)); //TODO check if it widechat
   {$endif}
   FreeMem(res);
 end;
@@ -344,7 +344,7 @@ begin
   if EOL = '' then
     EOL := ansistring(EndOfLine);
   Result := ReadBufferUntil(@eol[1], ByteLength(eol), ExcludeEOL, res, len, m);
-  SetString(S, PAnsiChar(res), len);
+  SetString(S, PAnsiChar(res), len div SizeOf(AnsiChar));
   FreeMem(res);
 end;
 
@@ -356,14 +356,6 @@ end;
 function TmnBufferStream.ReadLn: string;
 begin
   ReadLine(Result);
-end;
-
-procedure TmnBufferStream.WriteCommand(const Command, Params: string);
-begin
-  if Params <> '' then
-    WriteLine(Command + ' ' + Params)
-  else
-    WriteLine(Command);
 end;
 
 function TmnBufferStream.WriteEOL: Cardinal;
@@ -390,6 +382,14 @@ end;
 function TmnBufferStream.Write(const Buffer; Count: Integer): Longint;
 begin
   Result := DoWrite(Buffer, Count);//TODO must be buffered
+end;
+
+procedure TmnBufferStream.WriteCommand(const Command, Params: string);
+begin
+  if Params <> '' then
+    WriteLine(Command + ' ' + Params)
+  else
+    WriteLine(Command);
 end;
 
 procedure TmnBufferStream.WriteCommand(const Command: string);
@@ -513,7 +513,7 @@ begin
     //Append to memory
     l := P - FPos;
     if ExcludeMatch and Matched then
-      l := l + MatchSize;
+      l := l - MatchSize;
 
     ReAllocMem(Buffer, BufferSize + l);
     t := Buffer;
@@ -535,7 +535,7 @@ begin
   if Match = '' then
     raise Exception.Create('Match is empty!');
   Result := ReadBufferUntil(@Match[1], Length(Match), ExcludeMatch, Res, Len, Matched);
-  SetString(Buffer, PAnsiChar(Res), Len);
+  SetString(Buffer, PAnsiChar(Res), Len div SizeOf(AnsiChar));
   FreeMem(Res);
 end;
 
@@ -547,7 +547,7 @@ begin
   if Match = '' then
     raise Exception.Create('Match is empty!');
   Result := ReadBufferUntil(@Match[1], Length(Match), ExcludeMatch, Res, Len, Matched);
-  SetString(Buffer, PWideChar(Res), Len);
+  SetString(Buffer, PWideChar(Res), Len div SizeOf(WideChar));
   FreeMem(Res);
 end;
 
