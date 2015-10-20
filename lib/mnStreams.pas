@@ -68,7 +68,7 @@ type
     function Read(var Buffer; Count: Longint): Longint; override; final;
     function Write(const Buffer; Count: Longint): Longint; override; final;
 
-    function ReadBufferUntil(const Match: PByte; MatchSize: Word; ExcludeMatch: Boolean; out Buffer: Pointer; out BufferSize: Word; out Matched: Boolean): Boolean;
+    function ReadBufferUntil(const Match: PByte; MatchSize: Word; ExcludeMatch: Boolean; out Buffer: Pointer; out BufferSize: Cardinal; out Matched: Boolean): Boolean;
 
     function ReadUntil(const Match: ansistring; ExcludeMatch: Boolean; out Buffer: ansistring; var Matched: Boolean): Boolean; overload;
     function ReadUntil(const Match: widestring; ExcludeMatch: Boolean; out Buffer: widestring; var Matched: Boolean): Boolean; overload;
@@ -304,7 +304,7 @@ function TmnBufferStream.ReadLine(out S: widestring; ExcludeEOL: Boolean; EOL: w
 var
   m: Boolean;
   res: Pointer;
-  len: Word;
+  len: Cardinal;
 begin
   if EOL = '' then
     EOL := widestring(EndOfLine);
@@ -317,7 +317,7 @@ function TmnBufferStream.ReadLine(out S: utf8string; ExcludeEOL: Boolean; EOL: u
 var
   m: Boolean;
   res: Pointer;
-  len: Word;
+  len: Cardinal;
 begin
   if EOL = '' then
     EOL := utf8string(EndOfLine);
@@ -330,7 +330,7 @@ function TmnBufferStream.ReadLine(out S: unicodestring; ExcludeEOL: Boolean; EOL
 var
   m: Boolean;
   res: Pointer;
-  len: Word;
+  len: Cardinal;
 begin
   if EOL = '' then
     EOL := unicodestring(EndOfLine);
@@ -347,7 +347,7 @@ function TmnBufferStream.ReadLine(out S: ansistring; ExcludeEOL: Boolean; EOL: a
 var
   m: Boolean;
   res: Pointer;
-  len: Word;
+  len: Cardinal;
 begin
   if EOL = '' then
     EOL := ansistring(EndOfLine);
@@ -483,7 +483,7 @@ begin
   Result := (FPos < FEnd);
 end;
 
-function TmnBufferStream.ReadBufferUntil(const Match: PByte; MatchSize: Word; ExcludeMatch: Boolean; out Buffer: Pointer; out BufferSize: Word; out Matched: Boolean): Boolean;
+function TmnBufferStream.ReadBufferUntil(const Match: PByte; MatchSize: Word; ExcludeMatch: Boolean; out Buffer: Pointer; out BufferSize: Cardinal; out Matched: Boolean): Boolean;
 var
   P: PByte;
   mt: PByte;
@@ -538,7 +538,7 @@ end;
 function TmnBufferStream.ReadUntil(const Match: ansistring; ExcludeMatch: Boolean; out Buffer: ansistring; var Matched: Boolean): Boolean;
 var
   Res: Pointer;
-  Len: Word;
+  len: Cardinal;
 begin
   if Match = '' then
     raise Exception.Create('Match is empty!');
@@ -550,7 +550,7 @@ end;
 function TmnBufferStream.ReadUntil(const Match: widestring; ExcludeMatch: Boolean; out Buffer: widestring; var Matched: Boolean): Boolean;
 var
   Res: Pointer;
-  Len: Word;
+  len: Cardinal;
 begin
   if Match = '' then
     raise Exception.Create('Match is empty!');
