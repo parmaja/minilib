@@ -717,10 +717,8 @@ var
   aProcessor: TSynProcessor;
 begin
   aProcessor := Find(Name);
-  if Name = '' then
-    aProcessor := Find(DefaultProcessor); //default, the first processor
-  {if aProcessor = nil then
-    aProcessor := Find(''); //unkown, the last processor //TODO we do not need it}
+  if aProcessor = nil then
+    aProcessor := Find(''); //unkown, the last processor //We need it when write strange name <?bla
   if aProcessor = nil then
     raise Exception.Create('Fail to switch to processor');
   SetCurrent(aProcessor);

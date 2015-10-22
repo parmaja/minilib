@@ -1,4 +1,5 @@
 unit CSVOptionsForms;
+{$mode objfpc}{$H+}
 {**
  *  This file is part of the "Mini Library"
  *
@@ -6,8 +7,6 @@ unit CSVOptionsForms;
  *            See the file COPYING.MLGPL, included in this distribution,
  * @author    Zaher Dirkey <zaher at parmaja dot com>
  *}
-
-{$mode objfpc}{$H+}
 
 interface
 

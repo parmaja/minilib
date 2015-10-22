@@ -53,6 +53,7 @@ begin
   inherited;
   Processors.Add(THTMLProcessor.Create(Self, 'html'));
   Processors.Add(TPHPProcessor.Create(Self, 'php'));
+  Processors.Add(TPlainProcessor.Create(Self, ''));
 
   Processors.MainProcessor := 'html';
   Processors.DefaultProcessor := 'php';
