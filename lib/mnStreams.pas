@@ -136,17 +136,17 @@ implementation
 const
   cBufferSize = 2048;
 
-function ByteLength(s: ansistring): Integer; overload;
+function ByteLength(s: ansistring): Cardinal; overload;
 begin
   Result := Length(s) * SizeOf(AnsiChar);
 end;
 
-function ByteLength(s: utf8string): Integer; overload;
+function ByteLength(s: utf8string): Cardinal; overload;
 begin
   Result := Length(s) * SizeOf(AnsiChar);
 end;
 
-function ByteLength(s: unicodestring): Integer; overload;
+function ByteLength(s: unicodestring): Cardinal; overload;
 begin
 {$ifdef FPC}
   Result := Length(s) * SizeOf(UnicodeChar);
@@ -155,7 +155,7 @@ begin
 {$endif}
 end;
 
-function ByteLength(s: widestring): Integer; overload;
+function ByteLength(s: widestring): Cardinal; overload;
 begin
   Result := Length(s) * SizeOf(WideChar);
 end;
