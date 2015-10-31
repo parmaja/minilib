@@ -181,7 +181,7 @@ procedure SplitRange(Range: Pointer; out Index, Main, Current: Byte);
 implementation
 
 uses
-  SynEditStrConst, PHPProcessor, HTMLProcessor;
+  SynEditStrConst;
 
 function RangeToProcessor(Range: Pointer): Byte;
 begin

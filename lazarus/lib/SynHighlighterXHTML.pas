@@ -13,8 +13,8 @@ unit SynHighlighterXHTML;
 interface
 
 uses
-  Classes, Contnrs, SysUtils, Controls, Graphics,
-  SynEdit, SynEditTypes, SynEditHighlighter, SynHighlighterHashEntries, SynHighlighterMultiProc;
+  Classes, SysUtils, Controls, Graphics,
+  SynEdit, SynEditTypes, SynEditHighlighter, SynHighlighterMultiProc;
 
 type
 
@@ -40,7 +40,7 @@ const
 implementation
 
 uses
-  SynEditStrConst, PHPProcessor, HTMLProcessor;
+  PHPProcessor, HTMLProcessor;
 
 constructor TSynXHTMLSyn.Create(AOwner: TComponent);
 begin
@@ -53,6 +53,7 @@ begin
   inherited;
   Processors.Add(THTMLProcessor.Create(Self, 'html'));
   Processors.Add(TPHPProcessor.Create(Self, 'php'));
+  Processors.Add(TPHPProcessor.Create(Self, 'hh')); //<-- same php temporary ^.^
   Processors.Add(TPlainProcessor.Create(Self, ''));
 
   Processors.MainProcessor := 'html';

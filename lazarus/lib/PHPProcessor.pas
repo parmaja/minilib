@@ -19,7 +19,7 @@ interface
 uses
   Classes, SysUtils,
   SynEdit, SynEditTypes,
-  SynEditHighlighter, SynHighlighterHashEntries, SynHighlighterMultiProc, SynHighlighterXHTML;
+  SynEditHighlighter, SynHighlighterHashEntries, SynHighlighterMultiProc;
 
 type
   TPHPRangeState = (rsphpUnknown, rsphpComment, rsphpDocument, rsphpStringSQ, rsphpStringDQ, rsphpVarExpansion);

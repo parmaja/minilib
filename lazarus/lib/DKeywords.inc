@@ -106,6 +106,8 @@
     'with';
 
   sDFunctions =
+    'read,'+
+    'readln,'+
     'writeln,'+
     'write';
 
