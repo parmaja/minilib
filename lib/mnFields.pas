@@ -758,8 +758,7 @@ begin
   raise Exception.Create('Not implemented yet');
 end;
 
-function TmnFields.QueryInterface({$ifdef FPC}constref{$else}const{$endif} iid : TGuid; out Obj): HResult;
-  stdcall;
+function TmnFields.QueryInterface({$ifdef FPC}constref{$else}const{$endif} iid : TGuid; out Obj):HResult; {$ifdef WINDOWS}stdcall{$else}cdecl{$endif};
 begin
   if GetInterface(IID, Obj) then
     Result := 0

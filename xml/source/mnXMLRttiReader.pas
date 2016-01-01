@@ -14,6 +14,8 @@ unit mnXMLRttiReader;
 {$mode delphi}
 {$ENDIF}
 
+{$define SAFELOAD}
+
 interface
 
 uses
@@ -184,7 +186,14 @@ begin
       ((GetOrdProp(Instance, PropInfo) <> 0) and //Must be not null when read properties or must have a SetProc
       (PropInfo^.PropType^.Kind in [tkClass, tkInterface]))) then
   begin
+    {$ifdef SAFELOAD}
+    try
+    {$endif}
     ReadProperty(Instance, PropInfo, Value)
+    {$ifdef SAFELOAD}
+    except
+    end;
+    {$endif}
   end
   else
     SkipProperty(PropName);

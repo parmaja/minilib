@@ -22,7 +22,7 @@ uses
   SynEditHighlighter, SynHighlighterHashEntries, SynHighlighterMultiProc;
 
 type
-  TDRangeState = (rsDUnknown, rsDComment, rsDCommentPlus, rsDDocument, rsDStringSQ, rsDStringDQ);
+  TDRangeState = (rsDUnknown, rsDComment, rsDCommentPlus, rsDDocument, rsDStringSQ, rsDStringDQ, rsDStringBQ); //BackQuote
 
   { TDProcessor }
 
@@ -52,6 +52,7 @@ type
     procedure StringProc;
     procedure StringSQProc;
     procedure StringDQProc;
+    procedure StringBQProc;
     procedure EqualProc;
     procedure IdentProc;
     procedure CRProc;
@@ -176,10 +177,12 @@ var
   iCloseChar: char;
 begin
   Parent.FTokenID := tkString;
-  if Range = rsDStringSQ then
-    iCloseChar := ''''
-  else
-    iCloseChar := '"';
+  case Range of
+    rsDStringSQ: iCloseChar := '''';
+    rsDStringDQ: iCloseChar := '"';
+    rsDStringBQ: iCloseChar := '`';
+  end;
+
   while not (Parent.FLine[Parent.Run] in [#0, #10, #13]) do
   begin
     if (Parent.FLine[Parent.Run] = iCloseChar) and (not IsEscaped) then
@@ -411,6 +414,7 @@ begin
       '?': ProcTable[I] := @QuestionProc;
       '''': ProcTable[I] := @StringSQProc;
       '"': ProcTable[I] := @StringDQProc;
+      '`': ProcTable[I] := @StringBQProc;
       '#': ProcTable[I] := @HashLineCommentProc;
       '/': ProcTable[I] := @SlashProc;
       '=': ProcTable[I] := @EqualProc;
@@ -476,7 +480,7 @@ begin
       else
         DocumentProc;
     end;
-    rsDStringSQ, rsDStringDQ:
+    rsDStringSQ, rsDStringDQ, rsDStringBQ:
       if (Parent.FLine[Parent.Run] in [#0, #10, #13]) then
         ProcTable[Parent.FLine[Parent.Run]]
       else
@@ -489,6 +493,13 @@ end;
 procedure TDProcessor.StringDQProc;
 begin
   SetRange(rsDStringDQ);
+  Inc(Parent.Run);
+  StringProc;
+end;
+
+procedure TDProcessor.StringBQProc;
+begin
+  SetRange(rsDStringBQ);
   Inc(Parent.Run);
   StringProc;
 end;

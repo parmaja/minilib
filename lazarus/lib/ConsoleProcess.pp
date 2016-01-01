@@ -105,6 +105,12 @@ begin
           Inc(Count, C)
         else
           Sleep(100);
+
+        if not Assigned(OnWrite) then
+        begin
+          //SetLength(FBuffer, L + C);
+        end;
+
         FirstTime := False;
       end;
 
