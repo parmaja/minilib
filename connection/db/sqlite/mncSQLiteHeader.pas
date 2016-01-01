@@ -182,12 +182,6 @@ type
   sqlite3_create_collation_func = function(_para1: pointer; _para2: longint; _para3: pointer; _para4: longint; _para5: pointer): longint; cdecl;
   sqlite3_collation_needed_func = procedure(_para1: pointer; _para2: Psqlite3; eTextRep: longint; _para4: Pchar); cdecl;
 
-{$IFNDEF WINDOWS}
-var
-  //This is not working under windows. Any clues?
-  sqlite3_temp_directory: Pchar; cvar; external;
-{$ENDIF}
-
 var
   sqlite3_close: function(_para1: Psqlite3): longint; cdecl;
   sqlite3_exec: function(_para1: Psqlite3; sql: Pchar; _para3: sqlite3_callback; _para4: pointer; errmsg: PPchar): longint; cdecl;
