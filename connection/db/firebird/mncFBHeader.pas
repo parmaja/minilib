@@ -50,8 +50,8 @@ const
   REGSTR_PATH_FB='Software\Firebird Project\Firebird Server';
 
   {$else}
-  FBClient_DLL = 'fbclient.'+sharedsuffix;;
-  FBEmbed_DLL = 'fbembed.'+sharedsuffix;;
+  FBClient_DLL = 'fbclient.so';//TODO: Fix the name please
+  FBEmbed_DLL = 'fbembed.so';
   {$endif}
 
   FB_DefaultInstance = 'DefaultInstance';
