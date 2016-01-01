@@ -598,7 +598,7 @@ end;
 
 function TSynStdSQLSyn.GetRange: Pointer;
 begin
-  Result := Pointer(FRange);
+  Result := Pointer(PtrUInt(FRange));
 end;
 
 function TSynStdSQLSyn.GetToken: string;
@@ -658,7 +658,7 @@ end;
 
 procedure TSynStdSQLSyn.SetRange(Value: Pointer);
 begin
-  FRange := TRangeState(Value);
+  FRange := TRangeState(PtrUInt(Value));
 end;
 
 function TSynStdSQLSyn.GetIdentChars: TSynIdentChars;

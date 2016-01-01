@@ -485,7 +485,7 @@ end;
 
 function TSynSARDSyn.GetRange: Pointer;
 begin
-  Result := Pointer(FRange);
+  Result := Pointer(PtrUInt(FRange));
 end;
 
 function TSynSARDSyn.GetToken: string;
@@ -540,7 +540,7 @@ end;
 
 procedure TSynSARDSyn.SetRange(Value: Pointer);
 begin
-  FRange := TRangeState(Value);
+  FRange := TRangeState(PtrUInt(Value));
 end;
 
 function TSynSARDSyn.GetIdentChars: TSynIdentChars;

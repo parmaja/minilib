@@ -618,7 +618,7 @@ end;
 
 function TSynFirebirdSyn.GetRange: Pointer;
 begin
-  Result := Pointer(FRange);
+  Result := Pointer(PtrUInt(FRange));
 end;
 
 function TSynFirebirdSyn.GetToken: string;
@@ -678,7 +678,7 @@ end;
 
 procedure TSynFirebirdSyn.SetRange(Value: Pointer);
 begin
-  FRange := TRangeState(Value);
+  FRange := TRangeState(PtrUInt(Value));
 end;
 
 function TSynFirebirdSyn.GetIdentChars: TSynIdentChars;
