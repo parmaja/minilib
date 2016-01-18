@@ -271,7 +271,7 @@ procedure TDProcessor.NumberProc;
 begin
   inc(Parent.Run);
   Parent.FTokenID := tkNumber;
-  while Parent.FLine[Parent.Run] in ['0'..'9', '.', '-'] do
+  while Parent.FLine[Parent.Run] in ['0'..'9', '.', '-', 'E', 'x'] do
   begin
     case Parent.FLine[Parent.Run] of
       '.':

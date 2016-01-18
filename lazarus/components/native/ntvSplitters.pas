@@ -38,10 +38,12 @@ type
   TntvCustomSplitter = class(TGraphicControl)
   private
     FAutoSnap: boolean;
+    FLoweredColor: TColor;
     FMouseInControl: Boolean;
     FOnCanOffset: TCanOffsetEvent;
     FOnCanResize: TCanResizeEvent;
     FOnMoved: TNotifyEvent;
+    FRaisedColor: TColor;
     FResizeAnchor: TAnchorKind;
     FResizeStyle: TntvResizeStyle;
     FSplitDragging: Boolean;
@@ -85,6 +87,8 @@ type
     property OnCanOffset: TCanOffsetEvent read FOnCanOffset write FOnCanOffset;
     property OnCanResize: TCanResizeEvent read FOnCanResize write FOnCanResize;
     property OnMoved: TNotifyEvent read FOnMoved write FOnMoved;
+    property RaisedColor: TColor read FRaisedColor write FRaisedColor default cl3DHilight;
+    property LoweredColor:TColor read FLoweredColor write FLoweredColor default cl3DShadow;
   end;
 
   TntvSplitter = class(TntvCustomSplitter)
@@ -115,7 +119,7 @@ uses
 
 { TntvCustomSplitter }
 
-procedure TntvCustomSplitter.MoveSplitter(Offset: integer);
+procedure TntvCustomSplitter.MoveSplitter(Offset: Integer);
 var
   aMinSize: Integer;
   aMaxSize: Integer;
@@ -457,16 +461,17 @@ var
   C1, C2: TColor;
   x, y: Integer;
 begin
+  inherited;
   case Style of
     spsRaisedLine:
       begin
-        C1 := cl3DHilight;
-        C2 := cl3DShadow;
+        C1 := FRaisedColor;
+        C2 := FLoweredColor;
       end;
     spsLoweredLine:
       begin
-        C1 := cl3DShadow;
-        C2 := cl3DHilight;
+        C1 := FLoweredColor;
+        C2 := FRaisedColor;
       end;
     else
     begin
@@ -542,6 +547,8 @@ begin
   FMouseInControl := False;
   FResizeAnchor := akLeft;
   FStyle := spsLoweredLine;
+  FRaisedColor := cl3DHilight;
+  FLoweredColor := cl3DShadow;
   Width := 5;
 end;
 
@@ -552,4 +559,4 @@ begin
 end;
 
 end.
-
+

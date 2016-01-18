@@ -18,7 +18,7 @@ uses
 
 type
   TtkTokenKind = (tkUnknown, tkNull, tkSpace, tkComment, tkDocument, tkIdentifier, tkSymbol, tkNumber,
-    tkString, tkText, tkValue, tkExternal, tkKeyword, tkFunction, tkVariable, tkProcessor);
+    tkString, tkValue, tkText, tkKeyword, tkFunction, tkVariable, tkProcessor);
 
   TProcTableProc = procedure of object;
 
@@ -108,7 +108,6 @@ type
     FValueAttri: TSynHighlighterAttributes;
     FFunctionAttri: TSynHighlighterAttributes;
     FIdentifierAttri: TSynHighlighterAttributes;
-    FHtmlAttri: TSynHighlighterAttributes;
     FTextAttri: TSynHighlighterAttributes;
     FKeywordAttri: TSynHighlighterAttributes;
     FNumberAttri: TSynHighlighterAttributes;
@@ -158,7 +157,7 @@ type
     property ValueAttri: TSynHighlighterAttributes read FValueAttri write FValueAttri;
     property FunctionAttri: TSynHighlighterAttributes read FFunctionAttri write FFunctionAttri;
     property IdentifierAttri: TSynHighlighterAttributes read FIdentifierAttri write FIdentifierAttri;
-    property HtmlAttri: TSynHighlighterAttributes read FHtmlAttri write FHtmlAttri;
+    //property HtmlAttri: TSynHighlighterAttributes read FHtmlAttri write FHtmlAttri;
     property TextAttri: TSynHighlighterAttributes read FTextAttri write FTextAttri;
     property KeywordAttri: TSynHighlighterAttributes read FKeywordAttri write FKeywordAttri;
     property NumberAttri: TSynHighlighterAttributes read FNumberAttri write FNumberAttri;
@@ -321,10 +320,10 @@ begin
   FFunctionAttri.Foreground := $00926221;
   AddAttribute(FFunctionAttri);
 
-  FHtmlAttri := TSynHighlighterAttributes.Create('HTML');
+  {FHtmlAttri := TSynHighlighterAttributes.Create('HTML');
   FHtmlAttri.Style := [fsBold];
   FHtmlAttri.Foreground := $00AD655A;
-  AddAttribute(fHtmlAttri);
+  AddAttribute(fHtmlAttri);}
 
   FTextAttri := TSynHighlighterAttributes.Create('Text');
   AddAttribute(fTextAttri);
@@ -442,16 +441,15 @@ begin
     tkValue: Result := FValueAttri;
     tkFunction: Result := FFunctionAttri;
     tkIdentifier: Result := FIdentifierAttri;
-    tkExternal: Result := FHtmlAttri;
+    tkText: Result := FTextAttri;
     tkKeyword: Result := FKeywordAttri;
     tkNumber: Result := FNumberAttri;
     tkSpace: Result := FWhitespaceAttri;
     tkString: Result := FStringAttri;
     tkSymbol: Result := FSymbolAttri;
-    tkText: Result := FTextAttri;
     tkVariable: Result := FVariableAttri;
     tkProcessor: Result := FProcessorAttri;
-    tkUnknown: Result := FTextAttri;
+    tkUnknown: Result := FWhitespaceAttri;
     else
       Result := nil;
   end;

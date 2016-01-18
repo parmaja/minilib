@@ -10,6 +10,7 @@
  *}
 
 sHTMLKeywords =
+  '!DOCTYPE,'+
   'a,'+
   'abbr,'+
   'accesskey,'+

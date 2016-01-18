@@ -377,7 +377,7 @@ begin
     begin
       Inc(Parent.Run);
       fRange := rshtmlText;
-      Parent.fTokenID := tkText;
+      Parent.fTokenID := tkKeyword;
     end
     else
       IdentProc;
@@ -408,10 +408,10 @@ begin
         if (Parent.FLine[Parent.Run] = ';') then
         begin
           inc(Parent.Run);
-          Parent.fTokenID := tkVariable;
+          Parent.FTokenID := tkVariable;
         end
         else
-          Parent.fTokenID := tkText;
+          Parent.FTokenID := tkUnknown;
       end;
     end;
   end;
@@ -621,7 +621,7 @@ begin
   end
   else
   begin
-    Parent.fTokenID := tkText;
+    Parent.fTokenID := tkUnknown;
     while True do
     begin
       while not (Parent.FLine[Parent.Run] in StopSet) do
@@ -677,7 +677,7 @@ end;
 procedure THTMLProcessor.InitIdent;
 begin
   inherited;
-  EnumerateKeywords(Ord(tkExternal), sHTMLKeywords, TSynValidStringChars, @DoAddKeyword);
+  EnumerateKeywords(Ord(tkKeyword), sHTMLKeywords, TSynValidStringChars, @DoAddKeyword);
   FRange := rshtmlText;
   FAndCode := -1;
 end;
