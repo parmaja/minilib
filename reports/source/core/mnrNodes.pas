@@ -125,7 +125,7 @@ type
 
   TmnrCurrencyReportCell = class(TmnrCell)
   private
-    FValue: Currency;
+    FValue: Double;
     FData: Integer;
   protected
     function GetAsBoolean: Boolean; override;
@@ -535,7 +535,7 @@ end;
 
 function TmnrCurrencyReportCell.GetAsCurrency: Currency;
 begin
-  Result := FValue;
+  Result := AsDouble;
 end;
 
 function TmnrCurrencyReportCell.GetAsData: Integer;
@@ -545,27 +545,27 @@ end;
 
 function TmnrCurrencyReportCell.GetAsDateTime: TDateTime;
 begin
-  Result := AsCurrency;
+  Result := AsDouble;
 end;
 
 function TmnrCurrencyReportCell.GetAsDouble: Double;
 begin
-  Result := AsCurrency;
+  Result := FValue;
 end;
 
 function TmnrCurrencyReportCell.GetAsInteger: Longint;
 begin
-  Result := Trunc(AsCurrency);
+  Result := Trunc(AsDouble);
 end;
 
 function TmnrCurrencyReportCell.GetAsString: string;
 begin
-  Result := CurrToStr(AsCurrency);
+  Result := FloatToStr(AsDouble);
 end;
 
 function TmnrCurrencyReportCell.GetAsVariant: Variant;
 begin
-  Result := AsCurrency;
+  Result := AsDouble;
 end;
 
 function TmnrCurrencyReportCell.GetIsNull: Boolean;

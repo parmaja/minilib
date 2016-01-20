@@ -127,7 +127,6 @@ type
     property Next: TmnrCell read GetNext;
     property Prior: TmnrCell read GetPrior;
     property Reference: TmnrReference read FReference;
-
   end;
 
   TmnrRow = class(TmnrRowNode)
