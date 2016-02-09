@@ -462,6 +462,8 @@ var
   x, y: Integer;
 begin
   inherited;
+  Canvas.Brush.Color := Color;
+  Canvas.FillRect(ClientRect);
   case Style of
     spsRaisedLine:
       begin
@@ -479,7 +481,7 @@ begin
       exit;
     end;
   end;
-  Canvas.Pen.Width:=1;
+  Canvas.Pen.Width := 1;
   with Canvas, ClientRect do
     case ResizeAnchor of
       akTop, akBottom:
