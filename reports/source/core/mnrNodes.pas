@@ -12,6 +12,74 @@ uses
 
 type
 
+  TmnrBooleanLayout = class(TmnrLayout)
+  protected
+    function CreateCell(vRow: TmnrRow): TmnrCell; override;
+  end;
+
+  TmnrTextLayout = class(TmnrLayout)
+  protected
+    function CreateCell(vRow: TmnrRow): TmnrCell; override;
+  end;
+
+  TmnrDataLayout = class(TmnrLayout)
+  protected
+    function CreateCell(vRow: TmnrRow): TmnrCell; override;
+  end;
+
+  TmnrIntegerLayout = class(TmnrLayout)
+  protected
+    procedure ScaleCell(vCell: TmnrCell); override;
+  protected
+    function CreateCell(vRow: TmnrRow): TmnrCell; override;
+  end;
+
+  TmnrCurrencyLayout = class(TmnrIntegerLayout)
+  protected
+    function CreateCell(vRow: TmnrRow): TmnrCell; override;
+  end;
+
+  TmnrDoubleLayout = class(TmnrIntegerLayout)
+  protected
+    function CreateCell(vRow: TmnrRow): TmnrCell; override;
+  end;
+
+  TmnrDateTimeLayout = class(TmnrLayout)
+  protected
+    function CreateCell(vRow: TmnrRow): TmnrCell; override;
+  end;
+
+  TmnrTimeLayout = class(TmnrLayout)
+  protected
+    function CreateCell(vRow: TmnrRow): TmnrCell; override;
+  end;
+
+
+//************************ CELLS ************************
+
+
+  TmnrBooleanReportCell = class(TmnrCell)
+  private
+    FValue: Boolean;
+  protected
+    function GetAsBoolean: Boolean; override;
+    function GetAsCurrency: Currency; override;
+    function GetAsDateTime: TDateTime; override;
+    function GetAsDouble: Double; override;
+    function GetAsInteger: Longint; override;
+    function GetAsString: string; override;
+    function GetAsVariant: Variant; override;
+    function GetIsNull: Boolean; override;
+
+    procedure SetAsBoolean(const Value: Boolean); override;
+    procedure SetAsCurrency(const Value: Currency); override;
+    procedure SetAsDateTime(const Value: TDateTime); override;
+    procedure SetAsDouble(const Value: Double); override;
+    procedure SetAsInteger(const Value: Longint); override;
+    procedure SetAsString(const Value: string); override;
+    procedure SetAsVariant(const Value: Variant); override;
+  end;
+
   TmnrTextReportCell = class(TmnrCell)
   private
     FValue: string;
@@ -34,23 +102,6 @@ type
     procedure SetAsVariant(const Value: Variant); override;
   end;
 
-  TmnrTextLayout = class(TmnrLayout)
-  protected
-    function CreateCell(vRow: TmnrRow): TmnrCell; override;
-  end;
-
-  TmnrDataReportCell = class(TmnrTextReportCell)
-  private
-    FData: Integer;
-  protected
-    function GetAsData: Integer; override;
-    procedure SetAsData(const Value: Integer); override;
-  end;
-
-  TmnrDataLayout = class(TmnrLayout)
-  protected
-    function CreateCell(vRow: TmnrRow): TmnrCell; override;
-  end;
 
   TmnrIntegerReportCell = class(TmnrCell)
   private
@@ -77,11 +128,12 @@ type
     function DisplayText: string; override;
   end;
 
-  TmnrIntegerLayout = class(TmnrLayout)
+  TmnrDataReportCell = class(TmnrTextReportCell)
+  private
+    FData: Integer;
   protected
-    procedure ScaleCell(vCell: TmnrCell); override;
-  protected
-    function CreateCell(vRow: TmnrRow): TmnrCell; override;
+    function GetAsData: Integer; override;
+    procedure SetAsData(const Value: Integer); override;
   end;
 
   TmnrDateTimeReportCell = class(TmnrCell)
@@ -108,19 +160,9 @@ type
     function DisplayText: string; override;
   end;
 
-  TmnrDateTimeLayout = class(TmnrLayout)
-  protected
-    function CreateCell(vRow: TmnrRow): TmnrCell; override;
-  end;
-
   TmnrTimeReportCell = class(TmnrDateTimeReportCell)
   protected
     function GetAsString: string; override;
-  end;
-
-  TmnrTimeLayout = class(TmnrLayout)
-  protected
-    function CreateCell(vRow: TmnrRow): TmnrCell; override;
   end;
 
   TmnrCurrencyReportCell = class(TmnrCell)
@@ -161,11 +203,6 @@ type
     function GetAsCurrency: Currency; override;
   end;
 
-  TmnrCurrencyLayout = class(TmnrIntegerLayout)
-  protected
-    function CreateCell(vRow: TmnrRow): TmnrCell; override;
-  end;
-
   TmnrDoubleReportCell = class(TmnrCell)
   private
     FValue: Double;
@@ -188,39 +225,6 @@ type
     procedure SetAsString(const Value: string); override;
     procedure SetAsVariant(const Value: Variant); override;
   end;
-
-  TmnrDoubleLayout = class(TmnrIntegerLayout)
-  protected
-    function CreateCell(vRow: TmnrRow): TmnrCell; override;
-  end;
-
-  TmnrBooleanReportCell = class(TmnrCell)
-  private
-    FValue: Boolean;
-  protected
-    function GetAsBoolean: Boolean; override;
-    function GetAsCurrency: Currency; override;
-    function GetAsDateTime: TDateTime; override;
-    function GetAsDouble: Double; override;
-    function GetAsInteger: Longint; override;
-    function GetAsString: string; override;
-    function GetAsVariant: Variant; override;
-    function GetIsNull: Boolean; override;
-
-    procedure SetAsBoolean(const Value: Boolean); override;
-    procedure SetAsCurrency(const Value: Currency); override;
-    procedure SetAsDateTime(const Value: TDateTime); override;
-    procedure SetAsDouble(const Value: Double); override;
-    procedure SetAsInteger(const Value: Longint); override;
-    procedure SetAsString(const Value: string); override;
-    procedure SetAsVariant(const Value: Variant); override;
-  end;
-
-  TmnrBooleanLayout = class(TmnrLayout)
-  protected
-    function CreateCell(vRow: TmnrRow): TmnrCell; override;
-  end;
-
 
 implementation
 
