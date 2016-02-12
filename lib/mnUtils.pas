@@ -20,6 +20,7 @@ uses
 
 const
   sUTF8BOM: array[1..3] of Char = (#$EF, #$BB, #$BF);
+
 {
   StrHave: test the string if it have Separators
 }
@@ -29,9 +30,13 @@ function QuoteStr(Str: string; QuoteChar: string = '"'): string;
 
 type
   TStrToStringsCallbackProc = procedure(Sender: Pointer; S: string);
+{**
+  IgnoreInitialWhiteSpace: Ignore the first chars of this white space, not need it
+*}
 
-function StrToStringsCallback(Sender: Pointer; Proc: TStrToStringsCallbackProc; Content: string; Separators: TSysCharSet; WhiteSpace: TSysCharSet = [#0, #13, #10]; DequoteValues: Boolean = False; Quotes: TSysCharSet = ['''', '"']): Integer;
+function StrToStringsCallback(Sender: Pointer; CallBackProc: TStrToStringsCallbackProc; Content: string; Separators: TSysCharSet; IgnoreInitialWhiteSpace: TSysCharSet = []; DequoteValues: Boolean = False; Quotes: TSysCharSet = ['''', '"']): Integer;
 function StrToStrings(Content: string; Strings: TStrings; Separators: TSysCharSet; WhiteSpace: TSysCharSet = [#0, #13, #10]; DequoteValues: Boolean = False; Quotes: TSysCharSet = ['''', '"']): Integer;
+
 function CompareLeftStr(const Str: string; const WithStr: string; Start: Integer=1): Boolean;
 //Index started from 0
 function SubStr(const Str: String; vSeperator: Char; vIndex: Integer = 0): String; overload;
@@ -59,9 +64,11 @@ function AlignStr(const S: string; Count: Integer; Options: TAlignStrOptions = [
 }
 
 type
-  TBreakToStringsCallBack = procedure(S: string; vStrings: TStrings);
+  TBreakToStringsCallBack = procedure(S: string; vObject: TObject);
 
-procedure BreakToStrings(S: string; vStrings: TStrings; IncludeLineBreaks: Boolean = False; CallBackProc: TBreakToStringsCallBack = nil);
+procedure BreakToStrings(S: string; IncludeLineBreaks: Boolean; CallBackProc: TBreakToStringsCallBack; vObject: TObject); overload; deprecated;
+
+procedure BreakToStrings(S: string; vStrings: TStrings; IncludeLineBreaks: Boolean = False); overload; deprecated;
 
 {
   Useful to make your project path related (Portable)
@@ -294,7 +301,7 @@ f1,f2,,f4
 ,f2,f3,f4
 }
 
-function StrToStringsCallback(Sender: Pointer; Proc: TStrToStringsCallbackProc; Content: string; Separators, WhiteSpace: TSysCharSet; DequoteValues: Boolean; Quotes: TSysCharSet): Integer;
+function StrToStringsCallback(Sender: Pointer; CallBackProc: TStrToStringsCallbackProc; Content: string; Separators, IgnoreInitialWhiteSpace: TSysCharSet; DequoteValues: Boolean; Quotes: TSysCharSet): Integer;
 var
   Start, Cur, P: Integer;
   InQuote: Boolean;
@@ -302,8 +309,8 @@ var
   S: string;
 begin
   Result := 0;
-  if (@Proc = nil) then
-    raise Exception.Create('StrToStrings: Proc is nil');
+  if (@CallBackProc = nil) then
+    raise Exception.Create('StrToStrings: CallBackProc is nil');
   if (Content <> '') then
   begin
     Cur := 1;
@@ -311,8 +318,9 @@ begin
     QuoteChar := #0;
     repeat
       //bypass white spaces
-      while (Cur <= Length(Content)) and CharInSet(Content[Cur], WhiteSpace) do
-        Cur := Cur + 1;
+      if IgnoreInitialWhiteSpace <> [] then
+        while (Cur <= Length(Content)) and CharInSet(Content[Cur], IgnoreInitialWhiteSpace) do
+          Cur := Cur + 1;
 
       //start from the first char
       Start := Cur - 1;
@@ -343,7 +351,7 @@ begin
           if P > 0 then
             S := Copy(S, 1, P) + DequoteStr(Copy(S, P + 1, MaxInt));
         end;
-        Proc(Sender, S);
+        CallBackProc(Sender, S);
         Inc(Result);
       end;
       Cur := Cur + 1;
@@ -551,19 +559,18 @@ begin
   end;
 end;
 
-procedure BreakToStrings(S: string; vStrings: TStrings; IncludeLineBreaks: Boolean; CallBackProc: TBreakToStringsCallBack);
+procedure BreakToStrings(S: string; IncludeLineBreaks: Boolean; CallBackProc: TBreakToStringsCallBack; vObject: TObject);
 var
   t: string;
   i, j, l: Integer;
   LB: Integer;
   procedure AddIt;
   begin
-    if Assigned(CallBackProc) then
-      CallBackProc(t, vStrings)
-    else
-      vStrings.Add(t);
+    CallBackProc(t, vObject);
   end;
 begin
+  if not Assigned(CallBackProc) then
+    raise Exception.Create('CallBackProc is nil');
   l := Length(S);
   i := 1;
   j := 1;
@@ -592,6 +599,16 @@ begin
     t := MidStr(S, j, l - j + 1);
     AddIt;
   end;
+end;
+
+procedure BreakStringsCallBack(S: string; vObject: TObject);
+begin
+  (vObject as TStrings).Add(S);
+end;
+
+procedure BreakToStrings(S: string; vStrings: TStrings; IncludeLineBreaks: Boolean = False);
+begin
+  BreakToStrings(S, IncludeLineBreaks, @BreakStringsCallBack, vStrings);
 end;
 
 function PeriodToString(vPeriod: Double; WithSeconds: Boolean): string;

@@ -17,7 +17,7 @@ interface
 
 uses
   SysUtils, Classes, syncobjs,
-  mnSockets, mnServers, mnCommandServers, mnStreams;
+  mnFields, mnUtils, mnSockets, mnServers, mnCommandServers, mnStreams, mnXML;
 
 type
   TscatServer = class;
@@ -30,7 +30,8 @@ type
 
   TscatCommand = class(TmnCommand)
   private
-    FParams: TStringList;
+    //FParams: TStringList;
+    FParams: TmnFields;
     function GetServer: TscatServer;
   protected
     procedure DoExecute; virtual;
@@ -39,7 +40,7 @@ type
     property Server:TscatServer read GetServer;
     constructor Create(Connection: TmnCommandConnection; const Params: string); override;
     destructor Destroy; override;
-    property Params: TStringList read FParams;
+    property Params: TmnFields read FParams;
   end;
 
 {**
@@ -133,10 +134,10 @@ begin
   FDocumentRoot := '';
 
   RegisterCommand('Info', TscatServerInfoCommand);
-  {RegisterCommand('GET', TscatGetCommand);
+  RegisterCommand('GET', TscatGetCommand);
   RegisterCommand('PUT', TscatPutCommand);
   RegisterCommand('DIR', TscatDirCommand);
-  RegisterCommand('DEL', TscatDeleteFileCommand);}
+  RegisterCommand('DEL', TscatDeleteFileCommand);
 end;
 
 destructor TscatServer.Destroy;
@@ -190,15 +191,25 @@ begin
   end;}
 end;
 
+procedure FieldsCallBack(S: string; vObject: TObject);
+var
+  Name, Value: string;
+  p: Integer;
+begin
+  p := pos('=', s);
+  Name := Copy(s, 1, p - 1);
+  Value := DequoteStr(Copy(s, p + 1, MaxInt));
+  (vObject as TmnFields).Add(Name, Value);
+end;
+
 { TscatCommand }
 
-constructor TscatCommand.Create(Connection: TmnCommandConnection;
-  const Params: string);
+constructor TscatCommand.Create(Connection: TmnCommandConnection; const Params: string);
 begin
   inherited;
   Connection.Stream.Timeout := -1;
-  FParams := TStringList.Create;
-  ExtractStrings([','], [' '], PChar(Params), FParams);
+  FParams := TmnFields.Create;
+  StrToStringsCallback(FParams, @FieldsCallBack, Params, [#0, #13, #10], [' ']);
 end;
 
 destructor TscatCommand.Destroy;

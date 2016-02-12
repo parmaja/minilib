@@ -754,9 +754,9 @@ begin
   try
     for i := 0 to aStrings.Count - 1 do
     begin
+      aAttribute := TmnXMLAttribute.Create;
       s := aStrings[i];
       p := pos('=', s);
-      aAttribute := TmnXMLAttribute.Create;
       aAttribute.FName := Copy(s, 1, p - 1);
       aAttribute.FValue := DequoteStr(Copy(s, p + 1, MaxInt));
       Add(aAttribute);

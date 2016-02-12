@@ -580,7 +580,5 @@ begin
   Start;
 end;
 
-initialization
-finalization
 end.
 
