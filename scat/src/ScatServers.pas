@@ -224,7 +224,7 @@ procedure TScatConnection.ReceiveData;
       Inc(I);
     FVersion := Trim(UpperCase(Copy(s, J, I - J)));
     if FVersion = '' then
-      FVersion := 'Scat/1.0';
+      FVersion := 'WEB/1.0';
     FRequestHeader.Delete(0);
   end;
 
