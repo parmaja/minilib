@@ -30,8 +30,8 @@ type
 
   TscatCommand = class(TmnCommand)
   private
-    //FParams: TStringList;
     FParams: TmnFields;
+    FHeader: TmnFields;
     function GetServer: TscatServer;
   protected
     procedure DoExecute; virtual;
@@ -41,13 +41,26 @@ type
     constructor Create(Connection: TmnCommandConnection; const Params: string); override;
     destructor Destroy; override;
     property Params: TmnFields read FParams;
+    property Header: TmnFields read FHeader;
   end;
 
+  { TscatWebCommand }
+
+  TscatWebCommand = class(TscatCommand)
+  protected
+    procedure Answer404;
+  public
+    Root: string;
+
+    Host: string;
+    Path: string;
+    procedure DoExecute; override;
+  end;
 {**
   Files Commands
 *}
 
-  TscatGetCommand = class(TscatCommand)
+  TscatGetCommand = class(TscatWebCommand)
   protected
   public
     constructor Create(Connection: TmnCommandConnection; const Params: string); override;
@@ -120,6 +133,25 @@ begin
   Result := FscatServer;
 end;
 
+{ TscatWebCommand }
+
+procedure TscatWebCommand.Answer404;
+var
+  Body: string;
+begin
+  Body := '<HTML><HEAD><TITLE>404 Not Found</TITLE></HEAD>' +
+    '<BODY><H1>404 Not Found</H1>The requested URL ' + //FDocument +
+    ' was not found on this server.<P><h1>Powerd by Mini Web Server</h3></BODY></HTML>' + sEndOfLine;
+  Connection.Stream.WriteString(Body);
+end;
+
+procedure TscatWebCommand.DoExecute;
+begin
+  inherited DoExecute;
+  Root := Server.DocumentRoot;
+  Host := Header['Host'];
+end;
+
 { TscatServer }
 
 constructor TscatServer.Create(AOwner: TComponent);
@@ -176,22 +208,74 @@ begin
   inherited;
 end;
 
-procedure TscatGetCommand.DoExecute;
+function DocumentToContentType(FileName: string): string;
 var
-  aFile: TFileStream;
-  aFileName: string;
+  Ext: string;
 begin
-  Connection.Stream.WriteCommand('OK');
-  aFileName := Params.Values['FileName'];
-  {aFile := TFileStream.Create(DocumentRoot + aFileName, fmOpenRead or fmShareDenyWrite);
-  try
-    Connection.Stream.WriteStream(aFile);
-  finally
-    aFile.Free;
-  end;}
+  Ext := LowerCase(ExtractFileExt(FileName));
+  if Length(Ext) > 1 then
+    Ext := Copy(Ext, 2, Length(Ext));
+  if (Ext = 'htm') or (Ext = 'html') or (Ext = 'shtml') or (Ext = 'dhtml') then
+    Result := 'text/html'
+  else if Ext = 'gif' then
+    Result := 'image/gif'
+  else if Ext = 'bmp' then
+    Result := 'image/bmp'
+  else if (Ext = 'jpg') or (Ext = 'jpeg') then
+    Result := 'image/jpeg'
+  else if Ext = 'txt' then
+    Result := 'text/plain'
+  else
+    Result := 'application/binary';
 end;
 
-procedure FieldsCallBack(S: string; vObject: TObject);
+procedure TscatGetCommand.DoExecute;
+var
+  DocSize: Int64;
+  aDocStream: TFileStream;
+  aDocument: string;
+  aAnswerContentType: string;
+  aProxyRequest: Boolean;
+begin
+  aProxyRequest := False;
+  aDocument := ExcludeTrailingPathDelimiter(Root);
+  if aProxyRequest then
+    aDocument := IncludeTrailingPathDelimiter(aDocument) + IncludeTrailingPathDelimiter(Host) + Path
+  else
+    aDocument := IncludeTrailingPathDelimiter(aDocument) + Path;
+
+  aDocument := StringReplace(aDocument, '/', PathDelim, [rfReplaceAll]);
+
+{  if aDocument[Length(aDocument)] = PathDelim then //get the default file if it not defined
+    aDocument := GetDocument(aDocument);}
+
+  if FileExists(aDocument) then
+  begin
+    with Connection do
+    begin
+      if Connected then
+      begin
+        aAnswerContentType := DocumentToContentType(aDocument);
+        aDocStream := TFileStream.Create(aDocument, fmOpenRead or fmShareDenyWrite);
+        DocSize := aDocStream.Size;
+        if Connected then
+          Stream.WriteString('HTTP/1.1 200 OK' + sEndOfLine +
+            'Content-Type: ' + DocumentToContentType(aDocument) + sEndOfLine +
+            'Content-Length: ' + IntToStr(DocSize) + sEndOfLine +
+            sEndOfLine);
+        if Connected then
+          Stream.WriteStream(aDocStream);
+        aDocStream.Free;
+      end;
+      if Connected then
+        Stream.Socket.Shutdown(sdBoth);
+    end
+  end
+  else
+    Answer404;
+end;
+
+procedure FieldsCallBack(vObject: TObject; S: string);
 var
   Name, Value: string;
   p: Integer;
@@ -209,12 +293,14 @@ begin
   inherited;
   Connection.Stream.Timeout := -1;
   FParams := TmnFields.Create;
+  FHeader := TmnFields.Create;
   StrToStringsCallback(FParams, @FieldsCallBack, Params, [#0, #13, #10], [' ']);
 end;
 
 destructor TscatCommand.Destroy;
 begin
   FParams.Free;
+  FHeader.Free;
   inherited;
 end;
 

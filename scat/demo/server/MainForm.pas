@@ -13,7 +13,7 @@ interface
 
 uses
   LCLIntf, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
-  Registry, StdCtrls, ExtCtrls, mnSockets, mnServers, ScatServers, ScatCommands,
+  IniFiles, StdCtrls, ExtCtrls, mnSockets, mnServers, ScatCommands,
   LResources, Buttons, Menus;
 
 type
@@ -45,7 +45,7 @@ type
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
   private
-    ScatServer: TmnScatServer;
+    ScatServer: TScatServer;
     FMax:Integer;
     procedure ScatServerBeforeOpen(Sender: TObject);
     procedure ScatServerAfterClose(Sender: TObject);
@@ -128,7 +128,7 @@ end;
 
 procedure TMain.FormCreate(Sender: TObject);
 var
-  aReg:TRegistry;
+  aIni:TIniFile;
   function GetOption(AName, ADefault:string):string;
   var
     s:string;
@@ -136,10 +136,8 @@ var
     s := '';
     if FindCmdLineValue(AName, s) then
       Result :=AnsiDequotedStr(s, '"')
-    else if aReg.ValueExists(AName) then
-      Result := aReg.ReadString(AName)
     else
-      Result := ADefault;
+      Result := aIni.ReadString('options', AName, ADefault);
   end;
   
   function GetSwitch(AName, ADefault:string):string;//if found in cmd mean it is true
@@ -149,29 +147,26 @@ var
     s := '';
     if FindCmdLineValue(AName, s) then
       Result := 'True'
-    else if aReg.ValueExists(AName) then
-      Result := aReg.ReadString(AName)
     else
-      Result := ADefault;
+      Result := aIni.ReadString('options',AName, ADefault);
   end;
 
 var
   aAutoRun:Boolean;
 begin
-  ScatServer := TmnScatServer.Create(Self);
+  ScatServer := TScatServer.Create(Self);
   ScatServer.OnBeforeOpen := ScatServerBeforeOpen;
   ScatServer.OnAfterClose := ScatServerAfterClose;
   ScatServer.OnChanged :=  ScatServerChanged;
   ScatServer.OnLog := ScatServerLog;
 
-  aReg := TRegistry.Create;
+  aIni := TIniFile.Create(Application.Location + 'config.ini');
   try
-    aReg.OpenKey('software\miniScatServer\Options', True);
     RootEdit.Text := GetOption('root', '.\html');
-    PortEdit.Text := GetOption('port', '80');
+    PortEdit.Text := GetOption('port', '81');
     aAutoRun := StrToBoolDef(GetSwitch('run', ''), False);
   finally
-    aReg.Free;
+    aIni.Free;
   end;
   if aAutoRun then
      ScatServer.Start;
@@ -179,17 +174,16 @@ end;
 
 procedure TMain.FormDestroy(Sender: TObject);
 var
-  aReg:TRegistry;
+  aIni:TIniFile;
 begin
   if ParamCount = 0 then
   begin
-    aReg := TRegistry.Create;
+    aIni := TIniFile.Create(Application.Location+'config.ini');
     try
-      aReg.OpenKey('software\miniScatServer\Options', True);
-      aReg.WriteString('root', RootEdit.Text);
-      aReg.WriteString('port', PortEdit.Text);
+      aIni.WriteString('options', 'root', RootEdit.Text);
+      aIni.WriteString('options', 'port', PortEdit.Text);
     finally
-      aReg.Free;
+      aIni.Free;
     end;
   end
 end;
