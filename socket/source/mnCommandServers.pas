@@ -39,6 +39,8 @@ type
   published
   end;
 
+  { TmnCommand }
+
   TmnCommand = class(TObject)
   private
     FName: string;
@@ -52,6 +54,8 @@ type
   protected
     FWorking: Boolean;
     procedure Execute; virtual;
+    function Connected: Boolean;
+    procedure Shutdown;
   public
     constructor Create(Connection: TmnCommandConnection; const Params: string); virtual;
     //GetCommandName: make name for command when register it, useful when log the name of it
@@ -110,7 +114,6 @@ type
   private
     FCommands: TmnCommandClasses;
   protected
-    procedure Notification(AComponent: TComponent; operation: TOperation); override;
     function CreateListener: TmnListener; override;
   public
     constructor Create(AOwner: TComponent); override;
@@ -132,11 +135,6 @@ end;
 destructor TmnCommandServer.Destroy;
 begin
   FCommands.Free;
-  inherited;
-end;
-
-procedure TmnCommandServer.Notification(AComponent: TComponent; Operation: TOperation);
-begin
   inherited;
 end;
 
@@ -312,6 +310,17 @@ end;
 
 procedure TmnCommand.Execute;
 begin
+end;
+
+function TmnCommand.Connected: Boolean;
+begin
+  Result := (Connection <> nil) and (Connection.Connected);
+end;
+
+procedure TmnCommand.Shutdown;
+begin
+  if Connected and (Connection.Stream <> nil) then
+    Connection.Stream.Socket.Shutdown(sdBoth);
 end;
 
 class function TmnCommand.GetCommandName: string;

@@ -217,6 +217,8 @@ type
     procedure SaveToFile(const FileName: string);
     function Add(AName, AValue: string): TmnField; overload;
     function Add(AField: TmnField): Integer; overload;
+    //This will split the name and value
+    function AddItem(S: string; Separator: string): TmnField; overload;
     function ByName(vName: string): TmnField;
     function IsExists(vName: string): Boolean;
     procedure Clean; virtual;
@@ -224,6 +226,9 @@ type
   end;
 
 implementation
+
+uses
+  mnUtils;
 
 { TmnCustomField }
 
@@ -786,6 +791,26 @@ begin
   Add(Result);
 end;
 
+function TmnFields.AddItem(S: string; Separator: string): TmnField;
+var
+  p: Integer;
+  aName: string;
+  aValue: string;
+begin
+  p := Pos(Separator, S);
+  if p > 0 then
+  begin
+    aName := Copy(S, 1, P - 1);
+    aValue := Copy(S, P + 1, MaxInt)
+  end
+  else
+  begin
+    aName := '';
+    aValue := S;
+  end;
+  Add(aName, aValue);
+end;
+
 procedure TmnFields.SaveToStream(Stream: TStream);
 begin
   raise Exception.Create('Not implemented yet');
@@ -805,12 +830,12 @@ begin
   F.Value := AValue;
 end;
 
-function TmnFields._AddRef: Integer;
+function TmnFields._AddRef: Integer; stdcall;
 begin
   Result := 0;
 end;
 
-function TmnFields._Release: Integer;
+function TmnFields._Release: Integer; stdcall;
 begin
   Result := 0;
 end;

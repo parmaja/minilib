@@ -54,17 +54,21 @@ type
 
     Host: string;
     Path: string;
+
+    procedure Process(RequestStream: TmnCustomStream); virtual;
     procedure DoExecute; override;
   end;
 {**
   Files Commands
 *}
 
+  { TscatGetCommand }
+
   TscatGetCommand = class(TscatWebCommand)
   protected
   public
     constructor Create(Connection: TmnCommandConnection; const Params: string); override;
-    procedure DoExecute; override;
+    procedure Process(RequestStream: TmnCustomStream); override;
   end;
 
   TscatPutCommand = class(TscatCommand)
@@ -145,11 +149,32 @@ begin
   Connection.Stream.WriteString(Body);
 end;
 
+procedure TscatWebCommand.Process(RequestStream: TmnCustomStream);
+begin
+  RequestStream.WriteString('HTTP/1.0 404 Not Found');
+end;
+
 procedure TscatWebCommand.DoExecute;
+var
+  l: string;
 begin
   inherited DoExecute;
   Root := Server.DocumentRoot;
   Host := Header['Host'];
+  while Connected do
+  begin
+    l := Connection.Stream.ReadLine;
+
+    Header.AddItem(l, ':');
+    if l = '' then
+      break;
+  end;
+  try
+    Process(Connection.Stream);
+  finally
+  end;
+  if Connected then
+    Shutdown;
 end;
 
 { TscatServer }
@@ -229,7 +254,7 @@ begin
     Result := 'application/binary';
 end;
 
-procedure TscatGetCommand.DoExecute;
+procedure TscatGetCommand.Process(RequestStream: TmnCustomStream);
 var
   DocSize: Int64;
   aDocStream: TFileStream;
@@ -251,25 +276,20 @@ begin
 
   if FileExists(aDocument) then
   begin
-    with Connection do
+    if Connected then
     begin
+      aAnswerContentType := DocumentToContentType(aDocument);
+      aDocStream := TFileStream.Create(aDocument, fmOpenRead or fmShareDenyWrite);
+      DocSize := aDocStream.Size;
       if Connected then
-      begin
-        aAnswerContentType := DocumentToContentType(aDocument);
-        aDocStream := TFileStream.Create(aDocument, fmOpenRead or fmShareDenyWrite);
-        DocSize := aDocStream.Size;
-        if Connected then
-          Stream.WriteString('HTTP/1.1 200 OK' + sEndOfLine +
-            'Content-Type: ' + DocumentToContentType(aDocument) + sEndOfLine +
-            'Content-Length: ' + IntToStr(DocSize) + sEndOfLine +
-            sEndOfLine);
-        if Connected then
-          Stream.WriteStream(aDocStream);
-        aDocStream.Free;
-      end;
+        RequestStream.WriteString('HTTP/1.1 200 OK' + sEndOfLine +
+          'Content-Type: ' + DocumentToContentType(aDocument) + sEndOfLine +
+          'Content-Length: ' + IntToStr(DocSize) + sEndOfLine +
+          sEndOfLine);
       if Connected then
-        Stream.Socket.Shutdown(sdBoth);
-    end
+        RequestStream.WriteStream(aDocStream);
+      aDocStream.Free;
+    end;
   end
   else
     Answer404;

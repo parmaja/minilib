@@ -25,7 +25,7 @@ const
 
 const
   OPEN_IDENTIFIER_CHARS = ['A'..'Z', 'a'..'z', '_'];
-  IDENTIFIER_CHARS = OPEN_IDENTIFIER_CHARS + ['0'..'9', '-', '.', ':']; //for : xdebug send tag like xdebug:message
+  IDENTIFIER_CHARS = OPEN_IDENTIFIER_CHARS + ['0'..'9', '-', '.', ':']; // : xdebug send tag like xdebug:message
   sXMLAnsiOpen = '<?xml '; //with the space
   sCloseComment = '-->';
   sCDATA = 'CDATA';
@@ -50,7 +50,6 @@ function CreateAttStrings(const Attributes: string): TStrings;
 procedure ReadAttStrings(Strings: TStrings; const Attributes: string);
 
 function CutStr(const ID, S: string; Dequote: Boolean = False): string;
-function StringsToString(Strings: TStrings; LineBreak: string = sLineBreak): string;
 function URIToFileName(const URI: string): string;
 function FileNameToURI(FileName: string): string;
 function IncludeSlash(const S: string): string;
@@ -173,19 +172,6 @@ begin
   Result := MidStr(S, Length(ID) + 1, MaxInt);
   if Dequote then
     Result := DequoteStr(Trim(Result));
-end;
-
-function StringsToString(Strings: TStrings; LineBreak: string): string;
-var
-  i: Integer;
-begin
-  Result := '';
-  for i := 0 to Strings.Count - 1 do
-  begin
-    if Result <> '' then
-      Result := Result + LineBreak;
-    Result := Result + Strings[i];
-  end;
 end;
 
 function URIToFileName(const URI: string): string;

@@ -28,8 +28,12 @@ function StrHave(S: string; Separators: TSysCharSet): Boolean; deprecated;
 
 function QuoteStr(Str: string; QuoteChar: string = '"'): string;
 
+{**
+  Resume: if false then stop, default is true
+*}
 type
-  TStrToStringsCallbackProc = procedure(Sender: Pointer; S: string);
+  TStrToStringsCallbackProc = procedure(Sender: Pointer; S: string; var Resume: Boolean);
+
 {**
   IgnoreInitialWhiteSpace: Ignore the first chars of this white space, not need it
 *}
@@ -37,10 +41,23 @@ type
 function StrToStringsCallback(Sender: Pointer; CallBackProc: TStrToStringsCallbackProc; Content: string; Separators: TSysCharSet; IgnoreInitialWhiteSpace: TSysCharSet = []; DequoteValues: Boolean = False; Quotes: TSysCharSet = ['''', '"']): Integer;
 function StrToStrings(Content: string; Strings: TStrings; Separators: TSysCharSet; WhiteSpace: TSysCharSet = [#0, #13, #10]; DequoteValues: Boolean = False; Quotes: TSysCharSet = ['''', '"']): Integer;
 
-function CompareLeftStr(const Str: string; const WithStr: string; Start: Integer=1): Boolean;
+{
+  Break string to Strings list items at #10 or #13 or #13#10
+}
+
+type
+  TBreakToStringsCallBack = procedure(S: string; vObject: TObject);
+
+procedure BreakToStrings(S: string; IncludeLineBreaks: Boolean; CallBackProc: TBreakToStringsCallBack; vObject: TObject); overload; deprecated;
+procedure BreakToStrings(S: string; vStrings: TStrings; IncludeLineBreaks: Boolean = False); overload; deprecated;
+
+function StringsToString(Strings: TStrings; LineBreak: string = sLineBreak): string;
+
+function CompareLeftStr(const Str: string; const WithStr: string; Start: Integer = 1): Boolean;
+
 //Index started from 0
-function SubStr(const Str: String; vSeperator: Char; vIndex: Integer = 0): String; overload;
 function SubStr(const Str: String; vSeperator: Char; vFromIndex, vToIndex: Integer): String; overload;
+function SubStr(const Str: String; vSeperator: Char; vIndex: Integer = 0): String; overload;
 
 function PeriodToString(vPeriod: Double; WithSeconds: Boolean): string;
 function DequoteStr(Str: string; QuoteChar: string = '"'): string; overload;
@@ -58,17 +75,6 @@ type
   TAlignStrOptions = set of (alsLeft, alsRight, alsCut); {TODO left+right=center TODO use righttoleft}
 
 function AlignStr(const S: string; Count: Integer; Options: TAlignStrOptions = [alsLeft]; vChar: Char = ' '): string; overload;
-
-{
-  Break string to Strings list items at #10 or #13 or #13#10 
-}
-
-type
-  TBreakToStringsCallBack = procedure(S: string; vObject: TObject);
-
-procedure BreakToStrings(S: string; IncludeLineBreaks: Boolean; CallBackProc: TBreakToStringsCallBack; vObject: TObject); overload; deprecated;
-
-procedure BreakToStrings(S: string; vStrings: TStrings; IncludeLineBreaks: Boolean = False); overload; deprecated;
 
 {
   Useful to make your project path related (Portable)
@@ -153,7 +159,7 @@ begin
   end;
 end;
 
-function QuoteStr(Str, QuoteChar: string): string;
+function QuoteStr(Str: string; QuoteChar: string): string;
 begin
   if Str = '' then
     Result := QuoteChar + QuoteChar
@@ -301,9 +307,10 @@ f1,f2,,f4
 ,f2,f3,f4
 }
 
-function StrToStringsCallback(Sender: Pointer; CallBackProc: TStrToStringsCallbackProc; Content: string; Separators, IgnoreInitialWhiteSpace: TSysCharSet; DequoteValues: Boolean; Quotes: TSysCharSet): Integer;
+function StrToStringsCallback(Sender: Pointer; CallBackProc: TStrToStringsCallbackProc; Content: string; Separators: TSysCharSet; IgnoreInitialWhiteSpace: TSysCharSet; DequoteValues: Boolean; Quotes: TSysCharSet): Integer;
 var
   Start, Cur, P: Integer;
+  Resume: Boolean;
   InQuote: Boolean;
   QuoteChar: Char;
   S: string;
@@ -351,8 +358,11 @@ begin
           if P > 0 then
             S := Copy(S, 1, P) + DequoteStr(Copy(S, P + 1, MaxInt));
         end;
-        CallBackProc(Sender, S);
+        Resume := True;
+        CallBackProc(Sender, S, Resume);
         Inc(Result);
+        if not Resume then
+          break;
       end;
       Cur := Cur + 1;
     until Cur > Length(Content) + 1;
@@ -609,6 +619,19 @@ end;
 procedure BreakToStrings(S: string; vStrings: TStrings; IncludeLineBreaks: Boolean = False);
 begin
   BreakToStrings(S, IncludeLineBreaks, @BreakStringsCallBack, vStrings);
+end;
+
+function StringsToString(Strings: TStrings; LineBreak: string): string;
+var
+  i: Integer;
+begin
+  Result := '';
+  for i := 0 to Strings.Count - 1 do
+  begin
+    if Result <> '' then
+      Result := Result + LineBreak;
+    Result := Result + Strings[i];
+  end;
 end;
 
 function PeriodToString(vPeriod: Double; WithSeconds: Boolean): string;
