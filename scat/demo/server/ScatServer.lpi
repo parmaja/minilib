@@ -43,7 +43,7 @@
         <PackageName Value="LCL"/>
       </Item5>
     </RequiredPackages>
-    <Units Count="2">
+    <Units Count="3">
       <Unit0>
         <Filename Value="ScatServer.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -55,6 +55,10 @@
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
       </Unit1>
+      <Unit2>
+        <Filename Value="..\..\..\lib\mnStreams.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit2>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
@@ -62,7 +66,7 @@
     <PathDelim Value="\"/>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)"/>
-      <OtherUnitFiles Value="..\..\src"/>
+      <OtherUnitFiles Value="..\..\src;..\..\..\lib"/>
     </SearchPaths>
     <Parsing>
       <SyntaxOptions>

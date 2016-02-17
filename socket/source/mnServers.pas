@@ -46,6 +46,8 @@ type
   TmnOnLog = procedure(const S: string) of object;
   TmnOnListenerNotify = procedure(Listener: TmnListener) of object;
 
+  { TmnListener }
+
   TmnListener = class(TmnLockThread) // thread to watch for incoming requests
   private
     FAttempt: Integer;
@@ -65,6 +67,7 @@ type
     procedure SyncLog;
     procedure SyncChanged;
     function CreateConnection(vSocket: TmnCustomSocket): TmnServerConnection; virtual;
+    procedure Created; virtual;
     procedure Prepare; virtual; // called before add a new connection
     procedure DropConnections; virtual;
     procedure Execute; override;
@@ -297,6 +300,10 @@ begin
   Result := TmnServerConnection.Create(vSocket);
 end;
 
+procedure TmnListener.Created;
+begin
+end;
+
 destructor TmnListener.Destroy;
 begin
   FreeAndNil(FList);
@@ -393,7 +400,9 @@ end;
 procedure TmnListener.Prepare;
 begin
   if FServer <> nil then
+  begin
     FServer.DoPrepare(Self);
+  end;
 end;
 
 procedure TmnListener.Remove(Connection: TmnServerConnection);
@@ -467,6 +476,7 @@ begin
         FListener.FServer := Self;
         FListener.FPort := FPort;
         FListener.FAddress := Address;
+        FListener.Created;
         FListener.Start;
         FActive := True;
       except

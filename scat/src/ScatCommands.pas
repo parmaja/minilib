@@ -17,7 +17,29 @@ interface
 
 uses
   SysUtils, Classes, syncobjs,
-  mnFields, mnUtils, mnSockets, mnServers, mnCommandServers, mnStreams, mnXML;
+  mnFields, mnUtils, mnSockets, mnServers, mnCommandServers, mnStreams, mnSocketStreams, mnXML;
+
+{**
+-------------------
+GET http://localhost/index.html HTTP/1.1
+Host: localhost
+Connection: Close
+
+Post Body
+-------------------
+
+-------------------
+method path?params http_version
+headers[0]->Host: localhost
+headers[1]->Connection: Close
+headers[2]
+-------------------
+
+*}
+
+{**
+  Ref: https://www.ntu.edu.sg/home/ehchua/programming/webprogramming/HTTP_Basics.html
+*}
 
 type
   TscatServer = class;
@@ -30,34 +52,41 @@ type
 
   TscatCommand = class(TmnCommand)
   private
+    FMethod: string;
+    FURI: string;
     FParams: TmnFields;
+    FVersion: string;
     FHeader: TmnFields;
     function GetServer: TscatServer;
   protected
     procedure DoExecute; virtual;
     procedure Execute; override;
   public
-    property Server:TscatServer read GetServer;
-    constructor Create(Connection: TmnCommandConnection; const Params: string); override;
+    property Server: TscatServer read GetServer;
+    constructor Create(Connection: TmnCommandConnection); override;
     destructor Destroy; override;
+    property Method: string read FMethod;
+    property URI: string read FURI;
     property Params: TmnFields read FParams;
+    property Version: string read FVersion;
     property Header: TmnFields read FHeader;
   end;
 
   { TscatWebCommand }
 
   TscatWebCommand = class(TscatCommand)
+  private
+    procedure ParseRequest;
   protected
     procedure Answer404;
   public
-    Root: string;
-
-    Host: string;
+    Root: string; //Document root folder
     Path: string;
-
-    procedure Process(RequestStream: TmnCustomStream); virtual;
+    Host: string;
+    procedure Respond(RequestStream: TmnCustomStream); virtual;
     procedure DoExecute; override;
   end;
+
 {**
   Files Commands
 *}
@@ -67,14 +96,12 @@ type
   TscatGetCommand = class(TscatWebCommand)
   protected
   public
-    constructor Create(Connection: TmnCommandConnection; const Params: string); override;
-    procedure Process(RequestStream: TmnCustomStream); override;
+    procedure Respond(RequestStream: TmnCustomStream); override;
   end;
 
   TscatPutCommand = class(TscatCommand)
   protected
   public
-    constructor Create(Connection: TmnCommandConnection; const Params: string); override;
     procedure DoExecute; override;
   end;
 
@@ -93,6 +120,23 @@ type
   TscatDeleteFileCommand = class(TscatCommand)
   protected
     procedure DoExecute; override;
+  public
+  end;
+
+  { TScatConnection }
+
+  TScatConnection = class(TmnCommandConnection)
+  protected
+    function CreateStream(Socket: TmnCustomSocket): TmnSocketStream; override;
+  public
+  end;
+
+  { TScatListener }
+
+  TScatListener = class(TmnCommandListener)
+  private
+  protected
+    function CreateConnection(vSocket: TmnCustomSocket): TmnServerConnection; override;
   public
   end;
 
@@ -127,14 +171,19 @@ implementation
 uses
   mnXMLUtils, mnXMLRttiProfile;
 
-var
-  FscatServer: TscatServer = nil;
+{ TScatConnection }
 
-function scatServer: TscatServer;
+function TScatConnection.CreateStream(Socket: TmnCustomSocket): TmnSocketStream;
 begin
-  if FscatServer = nil then
-    FscatServer := TscatServer.Create(nil);
-  Result := FscatServer;
+  Result :=inherited CreateStream(Socket);
+  Result.EndOfLine := sWinEndOfLine;
+end;
+
+{ TScatListener }
+
+function TScatListener.CreateConnection(vSocket: TmnCustomSocket): TmnServerConnection;
+begin
+  Result := TScatConnection.Create(vSocket);
 end;
 
 { TscatWebCommand }
@@ -149,7 +198,45 @@ begin
   Connection.Stream.WriteString(Body);
 end;
 
-procedure TscatWebCommand.Process(RequestStream: TmnCustomStream);
+procedure TscatWebCommand.ParseRequest;
+var
+  I, J: Integer;
+  aParams: string;
+begin
+  I := 1;
+  while (I <= Length(URI)) and (URI[I] = ' ') do
+    Inc(I);
+  J := I;
+  while (I <= Length(URI)) and (URI[I] <> ' ') do
+    Inc(I);
+
+  Path := Copy(URI, J, I - J);
+
+  Inc(I);
+  while (I <= Length(URI)) and (URI[I] = ' ') do
+    Inc(I);
+  J := I;
+  while (I <= Length(URI)) and (URI[I] <> ' ') do
+    Inc(I);
+  FVersion := Trim(UpperCase(Copy(URI, J, I - J)));
+  if FVersion = '' then
+    FVersion := 'HTTP/1.0';
+
+  if Path[1] = '/' then
+    Delete(Path, 1, 1);
+
+    { Find parameters }
+  J := Pos('?', Path);
+  if J <= 0 then
+    aParams := ''
+  else
+  begin
+    aParams := Copy(Path, J + 1, Length(Path));
+    Path := Copy(Path, 1, J - 1);
+  end;
+end;
+
+procedure TscatWebCommand.Respond(RequestStream: TmnCustomStream);
 begin
   RequestStream.WriteString('HTTP/1.0 404 Not Found');
 end;
@@ -158,9 +245,7 @@ procedure TscatWebCommand.DoExecute;
 var
   l: string;
 begin
-  inherited DoExecute;
-  Root := Server.DocumentRoot;
-  Host := Header['Host'];
+  inherited;
   while Connected do
   begin
     l := Connection.Stream.ReadLine;
@@ -169,8 +254,11 @@ begin
     if l = '' then
       break;
   end;
+
+  Root := Server.DocumentRoot;
+  Host := Header['Host'];
   try
-    Process(Connection.Stream);
+    Respond(Connection.Stream);
   finally
   end;
   if Connected then
@@ -220,18 +308,10 @@ end;
 
 function TscatServer.CreateListener: TmnListener;
 begin
-  Result := inherited CreateListener;
-{  Result := TmnScatListener.Create;
-  TmnScatListener(Result).DocumentRoot := ExcludeTrailingPathDelimiter(FDocumentRoot);
-  TmnScatListener(Result).DefaultDocument.Assign(FDefaultDocument);}
+  Result := TScatListener.Create;
 end;
 
 { TscatGetCommand }
-
-constructor TscatGetCommand.Create(Connection: TmnCommandConnection; const Params: string);
-begin
-  inherited;
-end;
 
 function DocumentToContentType(FileName: string): string;
 var
@@ -254,7 +334,7 @@ begin
     Result := 'application/binary';
 end;
 
-procedure TscatGetCommand.Process(RequestStream: TmnCustomStream);
+procedure TscatGetCommand.Respond(RequestStream: TmnCustomStream);
 var
   DocSize: Int64;
   aDocStream: TFileStream;
@@ -262,14 +342,8 @@ var
   aAnswerContentType: string;
   aProxyRequest: Boolean;
 begin
-  aProxyRequest := False;
-  aDocument := ExcludeTrailingPathDelimiter(Root);
-  if aProxyRequest then
-    aDocument := IncludeTrailingPathDelimiter(aDocument) + IncludeTrailingPathDelimiter(Host) + Path
-  else
-    aDocument := IncludeTrailingPathDelimiter(aDocument) + Path;
-
-  aDocument := StringReplace(aDocument, '/', PathDelim, [rfReplaceAll]);
+  aDocument := IncludeTrailingPathDelimiter(Root) + Path;
+  aDocument := StringReplace(aDocument, '/', PathDelim, [rfReplaceAll]);//correct it for linux
 
 {  if aDocument[Length(aDocument)] = PathDelim then //get the default file if it not defined
     aDocument := GetDocument(aDocument);}
@@ -308,13 +382,12 @@ end;
 
 { TscatCommand }
 
-constructor TscatCommand.Create(Connection: TmnCommandConnection; const Params: string);
+constructor TscatCommand.Create(Connection: TmnCommandConnection);
 begin
   inherited;
   Connection.Stream.Timeout := -1;
   FParams := TmnFields.Create;
   FHeader := TmnFields.Create;
-  StrToStringsCallback(FParams, @FieldsCallBack, Params, [#0, #13, #10], [' ']);
 end;
 
 destructor TscatCommand.Destroy;
@@ -334,8 +407,19 @@ begin
 end;
 
 procedure TscatCommand.Execute;
+var
+  aRequests: TStringList;
 begin
   inherited;
+  aRequests := TStringList.Create;
+  try
+    StrToStrings(Request, aRequests, [' '], []);
+    FMethod := aRequests[0];
+    FURI := aRequests[1];
+    FVersion := aRequests[2];
+  finally
+    aRequests.Free;
+  end;
   {$ifdef DEBUG_MODE}
 //    Server.Listener.Log(Connection, GetCommandName + ': Started on port ' + Server.Port);
   try
@@ -364,12 +448,6 @@ begin
 end;
 
 { TscatPutCommand }
-
-constructor TscatPutCommand.Create(Connection: TmnCommandConnection;
-  const Params: string);
-begin
-  inherited;
-end;
 
 procedure TscatPutCommand.DoExecute;
 var
@@ -426,6 +504,5 @@ end;
 initialization
   scatLock := TCriticalSection.Create;
 finalization
-  FreeAndNil(FscatServer);
   scatLock.Free;
 end.

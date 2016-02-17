@@ -17,7 +17,7 @@ uses
   Forms,
   LCLIntf,
   SysUtils,
-  MainForm in 'MainForm.pas' {Main};
+  MainForm in 'MainForm.pas', mnStreams {Main};
 
 begin
   Application.Initialize;
