@@ -76,7 +76,7 @@ type
     property KeepAlive: Boolean read FKeepAlive write FKeepAlive default False;
     //Single command not launch another command if there is a privouse live command, depend on KeepAlive
     property Single: Boolean read FSingle write FSingle;
-    //Prepare will be called in lucking mode
+    //Prepare called after created in lucking mode
     procedure Prepare; virtual;
   end;
 

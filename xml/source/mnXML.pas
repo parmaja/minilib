@@ -697,7 +697,7 @@ end;
 
 procedure TmnXMLAttributes.Append(vAttributes: string);
 begin
-  StrToStringsCallback(Self, @StrToAttributesCallbackProc, vAttributes, [' '], [#0, #13, #10]);
+  StrToStringsCallback(vAttributes, Self, @StrToAttributesCallbackProc, [' '], [#0, #13, #10]);
 end;
 
 procedure TmnXMLAttributes.AssignFrom(vAttributes: string);

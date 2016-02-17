@@ -29,7 +29,7 @@ Post Body
 -------------------
 
 -------------------
-method path?params http_version
+method URI[path?params] http_version
 headers[0]->Host: localhost
 headers[1]->Connection: Close
 headers[2]
@@ -56,34 +56,44 @@ type
     FURI: string;
     FParams: TmnFields;
     FVersion: string;
-    FHeader: TmnFields;
+    FRequestHeader: TmnFields;
+    FRespondHeader: TmnFields;
+    FHeaderSent: Boolean;
     function GetServer: TscatServer;
+    function GetStream: TmnSocketStream;
+    procedure Enter;
+    procedure Leave;
   protected
     procedure DoExecute; virtual;
     procedure Execute; override;
   public
     property Server: TscatServer read GetServer;
+    property Stream: TmnSocketStream read GetStream;
     constructor Create(Connection: TmnCommandConnection); override;
     destructor Destroy; override;
     property Method: string read FMethod;
     property URI: string read FURI;
     property Params: TmnFields read FParams;
     property Version: string read FVersion;
-    property Header: TmnFields read FHeader;
+    property RequestHeader: TmnFields read FRequestHeader;
+    procedure StartHeader(AValue: string); virtual;
+    procedure SendHeader(AName, AValue: string); virtual;
+    procedure EndHeader;
   end;
 
   { TscatWebCommand }
 
   TscatWebCommand = class(TscatCommand)
   private
-    procedure ParseRequest;
+    procedure ParseURI;
   protected
+    function GetDefaultDocument(Root: string): string;
     procedure Answer404;
   public
     Root: string; //Document root folder
     Path: string;
     Host: string;
-    procedure Respond(RequestStream: TmnCustomStream); virtual;
+    procedure Respond; virtual;
     procedure DoExecute; override;
   end;
 
@@ -96,7 +106,7 @@ type
   TscatGetCommand = class(TscatWebCommand)
   protected
   public
-    procedure Respond(RequestStream: TmnCustomStream); override;
+    procedure Respond; override;
   end;
 
   TscatPutCommand = class(TscatCommand)
@@ -171,11 +181,24 @@ implementation
 uses
   mnXMLUtils, mnXMLRttiProfile;
 
+procedure ParamsCallBack(vObject: TObject; S: string);
+var
+  Name, Value: string;
+  p: Integer;
+begin
+  p := pos('=', s);
+  Name := Copy(s, 1, p - 1);
+  Value := DequoteStr(Copy(s, p + 1, MaxInt));
+  (vObject as TmnFields).Add(Name, Value);
+end;
+
+
 { TScatConnection }
 
 function TScatConnection.CreateStream(Socket: TmnCustomSocket): TmnSocketStream;
 begin
   Result :=inherited CreateStream(Socket);
+  Result.EOFOnError := True;
   Result.EndOfLine := sWinEndOfLine;
 end;
 
@@ -192,13 +215,16 @@ procedure TscatWebCommand.Answer404;
 var
   Body: string;
 begin
+  StartHeader('HTTP/1.1 200 OK');
+  SendHeader('Content-Type', 'text/html');
+  EndHeader;
   Body := '<HTML><HEAD><TITLE>404 Not Found</TITLE></HEAD>' +
     '<BODY><H1>404 Not Found</H1>The requested URL ' + //FDocument +
-    ' was not found on this server.<P><h1>Powerd by Mini Web Server</h3></BODY></HTML>' + sEndOfLine;
+    ' was not found on this server.<P><h1>Powerd by Mini Web Server</h3></BODY></HTML>';
   Connection.Stream.WriteString(Body);
 end;
 
-procedure TscatWebCommand.ParseRequest;
+procedure TscatWebCommand.ParseURI;
 var
   I, J: Integer;
   aParams: string;
@@ -222,7 +248,7 @@ begin
   if FVersion = '' then
     FVersion := 'HTTP/1.0';
 
-  if Path[1] = '/' then
+  if Path[1] = '/' then //Not sure
     Delete(Path, 1, 1);
 
     { Find parameters }
@@ -233,12 +259,28 @@ begin
   begin
     aParams := Copy(Path, J + 1, Length(Path));
     Path := Copy(Path, 1, J - 1);
+    StrToStringsCallback(aParams, Params, @ParamsCallBack);
   end;
 end;
 
-procedure TscatWebCommand.Respond(RequestStream: TmnCustomStream);
+function TscatWebCommand.GetDefaultDocument(Root: string): string;
+var
+  i: Integer;
 begin
-  RequestStream.WriteString('HTTP/1.0 404 Not Found');
+  //TODO baaad you need to luck before access
+  for i := 0 to Server.DefaultDocument.Count - 1 do
+  begin
+    if FileExists(Root + Server.DefaultDocument[i]) then
+    begin
+      Result := Root + Server.DefaultDocument[i];
+    end;
+  end;
+end;
+
+
+procedure TscatWebCommand.Respond;
+begin
+  Stream.WriteString('HTTP/1.0 404 Not Found');
 end;
 
 procedure TscatWebCommand.DoExecute;
@@ -250,15 +292,16 @@ begin
   begin
     l := Connection.Stream.ReadLine;
 
-    Header.AddItem(l, ':');
+    RequestHeader.AddItem(l, ':');
     if l = '' then
       break;
   end;
 
   Root := Server.DocumentRoot;
-  Host := Header['Host'];
+  Host := RequestHeader['Host'];
   try
-    Respond(Connection.Stream);
+    ParseURI;
+    Respond;
   finally
   end;
   if Connected then
@@ -334,7 +377,7 @@ begin
     Result := 'application/binary';
 end;
 
-procedure TscatGetCommand.Respond(RequestStream: TmnCustomStream);
+procedure TscatGetCommand.Respond;
 var
   DocSize: Int64;
   aDocStream: TFileStream;
@@ -345,8 +388,8 @@ begin
   aDocument := IncludeTrailingPathDelimiter(Root) + Path;
   aDocument := StringReplace(aDocument, '/', PathDelim, [rfReplaceAll]);//correct it for linux
 
-{  if aDocument[Length(aDocument)] = PathDelim then //get the default file if it not defined
-    aDocument := GetDocument(aDocument);}
+ if aDocument[Length(aDocument)] = PathDelim then //get the default file if it not defined
+    aDocument := GetDefaultDocument(aDocument);
 
   if FileExists(aDocument) then
   begin
@@ -354,30 +397,25 @@ begin
     begin
       aAnswerContentType := DocumentToContentType(aDocument);
       aDocStream := TFileStream.Create(aDocument, fmOpenRead or fmShareDenyWrite);
-      DocSize := aDocStream.Size;
-      if Connected then
-        RequestStream.WriteString('HTTP/1.1 200 OK' + sEndOfLine +
-          'Content-Type: ' + DocumentToContentType(aDocument) + sEndOfLine +
-          'Content-Length: ' + IntToStr(DocSize) + sEndOfLine +
-          sEndOfLine);
-      if Connected then
-        RequestStream.WriteStream(aDocStream);
-      aDocStream.Free;
+      try
+        DocSize := aDocStream.Size;
+        if Connected then
+        begin
+          StartHeader('HTTP/1.1 200 OK');
+          SendHeader('Content-Type', DocumentToContentType(aDocument));
+          SendHeader('Content-Length', IntToStr(DocSize));
+          EndHeader;
+        end;
+
+        if Connected then
+          Stream.WriteStream(aDocStream);
+      finally
+        aDocStream.Free;
+      end;
     end;
   end
   else
     Answer404;
-end;
-
-procedure FieldsCallBack(vObject: TObject; S: string);
-var
-  Name, Value: string;
-  p: Integer;
-begin
-  p := pos('=', s);
-  Name := Copy(s, 1, p - 1);
-  Value := DequoteStr(Copy(s, p + 1, MaxInt));
-  (vObject as TmnFields).Add(Name, Value);
 end;
 
 { TscatCommand }
@@ -385,21 +423,57 @@ end;
 constructor TscatCommand.Create(Connection: TmnCommandConnection);
 begin
   inherited;
+  Locking := False;
   Connection.Stream.Timeout := -1;
   FParams := TmnFields.Create;
-  FHeader := TmnFields.Create;
+  FRequestHeader := TmnFields.Create;
+  FRespondHeader := TmnFields.Create;
 end;
 
 destructor TscatCommand.Destroy;
 begin
   FParams.Free;
-  FHeader.Free;
+  FRequestHeader.Free;
+  FRespondHeader.Free;
   inherited;
+end;
+
+procedure TscatCommand.StartHeader(AValue: string);
+begin
+  if FHeaderSent then
+    raise Exception.Create('Header is sent');
+  Stream.WriteLine(AValue);
+end;
+
+procedure TscatCommand.SendHeader(AName, AValue: string);
+begin
+  Stream.WriteLine(AName + ': ' + AValue);
+end;
+
+procedure TscatCommand.EndHeader;
+begin
+  Stream.WriteLine('');
+  FHeaderSent := True;
 end;
 
 function TscatCommand.GetServer: TscatServer;
 begin
   Result := (inherited Server as TscatServer);
+end;
+
+function TscatCommand.GetStream: TmnSocketStream;
+begin
+  Result := Connection.Stream;
+end;
+
+procedure TscatCommand.Enter;
+begin
+  Connection.Listener.Enter;
+end;
+
+procedure TscatCommand.Leave;
+begin
+  Connection.Listener.Leave;
 end;
 
 procedure TscatCommand.DoExecute;

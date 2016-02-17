@@ -38,8 +38,8 @@ type
   IgnoreInitialWhiteSpace: Ignore the first chars of this white space, not need it
 *}
 
-function StrToStringsCallback(Sender: Pointer; CallBackProc: TStrToStringsCallbackProc; Content: string; Separators: TSysCharSet; IgnoreInitialWhiteSpace: TSysCharSet = []; DequoteValues: Boolean = False; Quotes: TSysCharSet = ['''', '"']): Integer;
-function StrToStrings(Content: string; Strings: TStrings; Separators: TSysCharSet; WhiteSpace: TSysCharSet = [#0, #13, #10]; DequoteValues: Boolean = False; Quotes: TSysCharSet = ['''', '"']): Integer;
+function StrToStringsCallback(Content: string; Sender: Pointer; CallBackProc: TStrToStringsCallbackProc; Separators: TSysCharSet = [#0, #13, #10]; IgnoreInitialWhiteSpace: TSysCharSet = [' ']; DequoteValues: Boolean = False; Quotes: TSysCharSet = ['''', '"']): Integer;
+function StrToStrings(Content: string; Strings: TStrings; Separators: TSysCharSet = [#0, #13, #10]; IgnoreInitialWhiteSpace: TSysCharSet = [' ']; DequoteValues: Boolean = False; Quotes: TSysCharSet = ['''', '"']): Integer;
 
 {
   Break string to Strings list items at #10 or #13 or #13#10
@@ -307,7 +307,7 @@ f1,f2,,f4
 ,f2,f3,f4
 }
 
-function StrToStringsCallback(Sender: Pointer; CallBackProc: TStrToStringsCallbackProc; Content: string; Separators: TSysCharSet; IgnoreInitialWhiteSpace: TSysCharSet; DequoteValues: Boolean; Quotes: TSysCharSet): Integer;
+function StrToStringsCallback(Content: string; Sender: Pointer; CallBackProc: TStrToStringsCallbackProc; Separators: TSysCharSet; IgnoreInitialWhiteSpace: TSysCharSet; DequoteValues: Boolean; Quotes: TSysCharSet): Integer;
 var
   Start, Cur, P: Integer;
   Resume: Boolean;
@@ -374,13 +374,13 @@ begin
   TStrings(Sender).Add(S); //Be sure sender is TStrings
 end;
 
-function StrToStrings(Content: string; Strings: TStrings; Separators: TSysCharSet; WhiteSpace: TSysCharSet = [#0, #13, #10]; DequoteValues: Boolean = False; Quotes: TSysCharSet = ['''', '"']): Integer;
+function StrToStrings(Content: string; Strings: TStrings; Separators: TSysCharSet; IgnoreInitialWhiteSpace: TSysCharSet; DequoteValues: Boolean = False; Quotes: TSysCharSet = ['''', '"']): Integer;
 begin
   if (Strings = nil) then
     raise Exception.Create('StrToStrings: Strings is nil');
   Strings.BeginUpdate;
   try
-    Result := StrToStringsCallback(Strings, @StrToStringsCallbackProc, Content, Separators, WhiteSpace, DequoteValues, Quotes);
+    Result := StrToStringsCallback(Content, Strings, @StrToStringsCallbackProc, Separators, IgnoreInitialWhiteSpace, DequoteValues, Quotes);
   finally
     Strings.EndUpdate;
   end;
@@ -611,14 +611,14 @@ begin
   end;
 end;
 
-procedure BreakStringsCallBack(S: string; vObject: TObject);
+procedure BreakStringsProc(S: string; vObject: TObject);
 begin
   (vObject as TStrings).Add(S);
 end;
 
 procedure BreakToStrings(S: string; vStrings: TStrings; IncludeLineBreaks: Boolean = False);
 begin
-  BreakToStrings(S, IncludeLineBreaks, @BreakStringsCallBack, vStrings);
+  BreakToStrings(S, IncludeLineBreaks, @BreakStringsProc, vStrings);
 end;
 
 function StringsToString(Strings: TStrings; LineBreak: string): string;
