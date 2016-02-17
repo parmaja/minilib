@@ -16,7 +16,7 @@ unit mnHttpServer;
 interface
 
 uses
-  SysUtils, Classes, mnSockets, mnServers, mnStreams;
+  SysUtils, Classes, mnSockets, mnServers, mnStreams, mnConnections;
 
 type
   THttpConnection = class;
@@ -63,7 +63,7 @@ type
   protected
     procedure Process; override;
   public
-    constructor Create(Socket: TmnCustomSocket); override;
+    constructor Create(vConnector: TmnConnector; Socket: TmnCustomSocket); override;
     destructor Destroy; override;
     property Method: string read FMethod;
     property Version: string read FVersion;
@@ -147,7 +147,7 @@ begin
   inherited;
 end;
 
-constructor THttpConnection.Create(Socket: TmnCustomSocket);
+constructor THttpConnection.Create(vConnector: TmnConnector; Socket: TmnCustomSocket);
 begin
   inherited;
   FRequestHeader := TStringList.Create;
@@ -448,7 +448,7 @@ end;
 
 function TmnHttpListener.CreateConnection(vSocket: TmnCustomSocket): TmnServerConnection;
 begin
-  Result := THttpConnection.Create(vSocket);
+  Result := THttpConnection.Create(Self, vSocket);
   (Result as THttpConnection).DocumentRoot := FDocumentRoot;
 end;
 

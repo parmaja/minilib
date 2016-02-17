@@ -16,7 +16,8 @@ unit mnCommandServers;
 interface
 
 uses
-  SysUtils, Classes, Contnrs, mnSockets, mnSocketStreams, mnServers;
+  SysUtils, Classes, Contnrs,
+  mnSockets, mnConnections, mnSocketStreams, mnServers;
 
 type
   TmnCommandExceotion = class(Exception);
@@ -34,9 +35,8 @@ type
   public
   protected
     procedure Process; override;
-    function CreateStream(Socket: TmnCustomSocket): TmnSocketStream; override;
   public
-    constructor Create(Socket: TmnCustomSocket); override;
+    constructor Create(vConnector: TmnConnector; Socket: TmnCustomSocket); override;
     destructor Destroy; override;
   published
   end;
@@ -110,6 +110,7 @@ type
     FCommands: TmnCommandClasses; //refrence to TmnCommandServer.FCommands
   protected
     function CreateConnection(vSocket: TmnCustomSocket): TmnServerConnection; override;
+    function CreateStream(Socket: TmnCustomSocket): TmnSocketStream; override;
     procedure ParseCommand(const Line: string; out Method, Params: string); virtual;
   public
     constructor Create; override;
@@ -149,16 +150,10 @@ begin
   inherited;
 end;
 
-constructor TmnCommandConnection.Create(Socket: TmnCustomSocket);
+constructor TmnCommandConnection.Create(vConnector: TmnConnector; Socket: TmnCustomSocket);
 begin
   inherited;
   KeepAlive := True;
-end;
-
-function TmnCommandConnection.CreateStream(Socket: TmnCustomSocket): TmnSocketStream;
-begin
-  Result := inherited CreateStream(Socket);
-  Result.Timeout := -1;
 end;
 
 destructor TmnCommandConnection.Destroy;
@@ -271,7 +266,13 @@ end;
 
 function TmnCommandListener.CreateConnection(vSocket: TmnCustomSocket): TmnServerConnection;
 begin
-  Result := TmnCommandConnection.Create(vSocket);
+  Result := TmnCommandConnection.Create(Self, vSocket);
+end;
+
+function TmnCommandListener.CreateStream(Socket: TmnCustomSocket): TmnSocketStream;
+begin
+  Result := inherited CreateStream(Socket);
+  Result.Timeout := -1;
 end;
 
 procedure TmnCommandListener.ParseCommand(const Line: string; out Method, Params: string);

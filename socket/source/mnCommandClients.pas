@@ -16,15 +16,18 @@ unit mnCommandClients;
 interface
 
 uses
-  SysUtils, Classes, mnSockets, mnClients;
+  SysUtils, Classes, mnSockets, mnClients, mnConnections;
 
 type
+
+  { TmnCommandClientConnection }
+
   TmnCommandClientConnection = class(TmnClientConnection)
   private
   protected
     procedure Process; override;
   public
-    constructor Create(Socket: TmnCustomSocket); override;
+    constructor Create(vConnector: TmnConnector; vSocket: TmnCustomSocket); override;
     destructor Destroy; override;
   end;
 
@@ -45,8 +48,6 @@ type
   protected
     function CreateCaller: TmnCaller; override;
   public
-    constructor Create(AOwner: TComponent); override;
-    destructor Destroy; override;
   published
     property OnCreateCaller: TmnOnCreateCaller read FOnCreateCaller write FOnCreateCaller;
   end;
@@ -55,7 +56,7 @@ implementation
 
 { TmnCommandClientConnection }
 
-constructor TmnCommandClientConnection.Create(Socket: TmnCustomSocket);
+constructor TmnCommandClientConnection.Create(vConnector: TmnConnector; vSocket: TmnCustomSocket);
 begin
   inherited;
   KeepAlive := True;
@@ -91,7 +92,7 @@ end;
 
 function TmnCommandCaller.CreateConnection(Socket: TmnCustomSocket): TmnClientConnection;
 begin
-  Result := TmnCommandClientConnection.Create(Socket);
+  Result := TmnCommandClientConnection.Create(Self, Socket);
 end;
 
 destructor TmnCommandCaller.Destroy;
@@ -101,11 +102,6 @@ end;
 
 { TmnHttpClient }
 
-constructor TmnCommandClient.Create(AOwner: TComponent);
-begin
-  inherited;
-end;
-
 function TmnCommandClient.CreateCaller: TmnCaller;
 begin
   Result := nil;
@@ -113,11 +109,6 @@ begin
     FOnCreateCaller(Result);
   if Result = nil then
     Result := TmnCommandCaller.Create;
-end;
-
-destructor TmnCommandClient.Destroy;
-begin
-  inherited;
 end;
 
 end.

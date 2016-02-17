@@ -22,23 +22,24 @@ interface
 uses
   Classes,
   SysUtils,
-  mnSockets, mnHttpClient,
+  mnSockets, mnSocketStreams, mnHttpClient,
   mnConnections;
 
 type
   TmnServer = class;
   TmnListener = class;
 
+  { TmnServerConnection }
+
   TmnServerConnection = class(TmnConnection)
   private
-    FListener: TmnListener;
-    procedure SetListener(const Value: TmnListener);
+    function GetListener: TmnListener;
   protected
     procedure Execute; override;
   public
-    constructor Create(Socket: TmnCustomSocket); override;
+    constructor Create(vConnector: TmnConnector; Socket: TmnCustomSocket); override;
     destructor Destroy; override;
-    property Listener: TmnListener read FListener write SetListener;
+    property Listener: TmnListener read GetListener;
   end;
 
   TmnServerConnectionClass = class of TmnServerConnection;
@@ -48,7 +49,7 @@ type
 
   { TmnListener }
 
-  TmnListener = class(TmnLockThread) // thread to watch for incoming requests
+  TmnListener = class(TmnConnector) // thread to watch for incoming requests
   private
     FAttempt: Integer;
     FSocket: TmnCustomSocket;
@@ -148,10 +149,14 @@ implementation
 
 { TmnServerConnection }
 
-constructor TmnServerConnection.Create(Socket: TmnCustomSocket);
+constructor TmnServerConnection.Create(vConnector: TmnConnector; Socket: TmnCustomSocket);
 begin
   inherited;
   FreeOnTerminate := True;
+  if Listener <> nil then
+  begin
+    Listener.Add(Self);
+  end;
 end;
 
 destructor TmnServerConnection.Destroy;
@@ -159,25 +164,17 @@ begin
   inherited;
 end;
 
+function TmnServerConnection.GetListener: TmnListener;
+begin
+  Result := Connector as TmnListener;
+end;
+
 procedure TmnServerConnection.Execute;
 begin
   inherited;
-  Listener := nil;
-end;
-
-procedure TmnServerConnection.SetListener(const Value: TmnListener);
-begin
-  if FListener <> Value then
+  if Listener <> nil then
   begin
-    if FListener <> nil then
-    begin
-      FListener.Remove(Self);
-    end;
-    FListener := Value;
-    if FListener <> nil then
-    begin
-      FListener.Add(Self);
-    end;
+    Listener.Remove(Self);
   end;
 end;
 
@@ -297,7 +294,7 @@ end;
 
 function TmnListener.CreateConnection(vSocket: TmnCustomSocket): TmnServerConnection;
 begin
-  Result := TmnServerConnection.Create(vSocket);
+  Result := TmnServerConnection.Create(Self, vSocket);
 end;
 
 procedure TmnListener.Created;
@@ -357,7 +354,6 @@ begin
               try
                 Prepare;
                 aConnection := CreateConnection(aSocket);
-                aConnection.Listener := Self;
               finally
                 Leave;
               end;

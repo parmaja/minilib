@@ -227,9 +227,6 @@ type
 
 implementation
 
-uses
-  mnUtils;
-
 { TmnCustomField }
 
 procedure TmnCustomField.CheckIsNil;
@@ -808,7 +805,7 @@ begin
     aName := '';
     aValue := S;
   end;
-  Add(aName, aValue);
+  Result := Add(aName, aValue);
 end;
 
 procedure TmnFields.SaveToStream(Stream: TStream);

@@ -54,16 +54,17 @@ type
     property Address: string read FAddress write SetAddress;
   end;
 
+  { TmnClientConnection }
+
   TmnClientConnection = class(TmnConnection)
   private
-    FCaller: TmnCaller;
-    procedure SetCaller(const Value: TmnCaller);
+    function GetCaller: TmnCaller;
   protected
     procedure Execute; override;
   public
-    constructor Create(Socket: TmnCustomSocket); override;
+    constructor Create(vConnector: TmnConnector; vSocket: TmnCustomSocket); override;
     destructor Destroy; override;
-    property Caller: TmnCaller read FCaller write SetCaller;
+    property Caller: TmnCaller read GetCaller;
   end;
 
   TmnClientConnectionClass = class of TmnClientConnection;
@@ -71,7 +72,7 @@ type
   TmnOnLog = procedure(Connection: TmnConnection; const S: string) of object;
   TmnOnCallerNotify = procedure(Caller: TmnCaller) of object;
 
-  TmnCaller = class(TmnLockThread) // thread to watch for incoming requests
+  TmnCaller = class(TmnConnector) // thread to watch for outgoing requests
   private
     FPort: string;
     FAddress: string;
@@ -105,7 +106,7 @@ type
     property OnChanged: TmnOnCallerNotify read FOnChanged write FOnChanged;
   end;
 
-  TmnClient = class(TComponent)
+  TmnClient = class(TObject)
   private
     FActive: Boolean;
     FPort: string;
@@ -123,9 +124,8 @@ type
     procedure DoBeforeOpen; virtual;
     procedure DoAfterClose; virtual;
   public
-    constructor Create(AOwner: TComponent); override;
+    constructor Create; virtual;
     destructor Destroy; override;
-    procedure Loaded; override;
     procedure Start;
     procedure Stop;
     procedure Open;
@@ -150,16 +150,20 @@ var
 function mnClient: TmnClient;
 begin
   if FmnClient = nil then
-    FmnClient := TmnClient.Create(nil);
+    FmnClient := TmnClient.Create;
   Result := FmnClient;
 end;
 
 { TmnClientConnection }
 
-constructor TmnClientConnection.Create(Socket: TmnCustomSocket);
+constructor TmnClientConnection.Create(vConnector: TmnConnector; vSocket: TmnCustomSocket);
 begin
   inherited;
   FreeOnTerminate := True;
+  if Caller <> nil then
+  begin
+    Caller.Add(Self);
+  end;
 end;
 
 destructor TmnClientConnection.Destroy;
@@ -170,50 +174,23 @@ end;
 procedure TmnClientConnection.Execute;
 begin
   inherited;
-  Caller := nil;
-end;
-
-procedure TmnClientConnection.SetCaller(const Value: TmnCaller);
-begin
-  if FCaller <> Value then
+  if Caller <> nil then
   begin
-    if FCaller <> nil then
-    begin
-      FCaller.Remove(Self);
-    end;
-    FCaller := Value;
-    if FCaller <> nil then
-    begin
-      FCaller.Add(Self);
-    end;
+    Caller.Remove(Self);
   end;
 end;
 
-procedure TmnClient.SetActive(const Value: boolean);
+function TmnClientConnection.GetCaller: TmnCaller;
 begin
-  if not (csDesigning in ComponentState) then
-  begin
-    FActive := Value;
-  end
-  else
-  begin
-    if Value and not FActive then
-      Start
-    else if not Value and FActive then
-      Stop;
-  end;
+  Result := Connector as TmnCaller;
 end;
 
-{ TmnClient }
-
-procedure TmnClient.Loaded;
+procedure TmnClient.SetActive(const Value: Boolean);
 begin
-  inherited;
-  if not (csDesigning in ComponentState) then
-  begin
-    if FActive then
-      Start;
-  end;
+  if Value and not FActive then
+    Start
+  else if not Value and FActive then
+    Stop;
 end;
 
 { TmnCaller }
@@ -249,7 +226,7 @@ end;
 
 function TmnCaller.CreateConnection(Socket: TmnCustomSocket): TmnClientConnection;
 begin
-  Result := TmnClientConnection.Create(Socket);
+  Result := TmnClientConnection.Create(Self, Socket);
 end;
 
 destructor TmnCaller.Destroy;
@@ -318,7 +295,6 @@ end;
 procedure TmnCaller.Stop;
 begin
   Terminate;
-//  Resume; deprecated
 end;
 
 procedure TmnCaller.Shutdown;
@@ -358,13 +334,12 @@ begin
     vAddress := FAddress;
   aSocket := WallSocket.Connect([], vPort, vAddress);
   Result := CreateConnection(aSocket);
-  Result.Caller := Self;
   Result.Start;
 end;
 
 { TmnClient }
 
-constructor TmnClient.Create(AOwner: TComponent);
+constructor TmnClient.Create;
 begin
   inherited;
   FAddress := '0.0.0.0';
@@ -413,7 +388,7 @@ end;
 
 function TmnClient.CreateCaller: TmnCaller;
 begin
-  Result := TmnCaller.Create;
+  Result := TmnCaller.Create();
 end;
 
 procedure TmnClient.SetAddress(const Value: string);

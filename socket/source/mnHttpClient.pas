@@ -121,7 +121,7 @@ type
     FPort: string;
     FAddress: string;
   public
-    constructor Create(AOwner: TComponent); override;
+    constructor Create; override;
     destructor Destroy; override;
     function Connected: Boolean;
     property Request: TmnHttpRequest read FRequest write FRequest;
@@ -134,8 +134,6 @@ type
 
   TmnHttpClient = class(TmnCustomHttpClient)
   public
-    constructor Create(AOwner: TComponent); override;
-    destructor Destroy; override;
     procedure Get(const vUrl: string);
   end;
 
@@ -247,7 +245,7 @@ begin
   Result := FStream.Connected;
 end;
 
-constructor TmnCustomHttpClient.Create(AOwner: TComponent);
+constructor TmnCustomHttpClient.Create;
 begin
   inherited;
   //WallSocket.Startup;
@@ -342,16 +340,6 @@ begin
 end;
 
 { TmnHttpClient }
-
-constructor TmnHttpClient.Create(AOwner: TComponent);
-begin
-  inherited;
-end;
-
-destructor TmnHttpClient.Destroy;
-begin
-  inherited;
-end;
 
 procedure TmnHttpClient.Get(const vUrl: string);
 var

@@ -133,20 +133,12 @@ type
   public
   end;
 
-  { TScatConnection }
-
-  TScatConnection = class(TmnCommandConnection)
-  protected
-    function CreateStream(Socket: TmnCustomSocket): TmnSocketStream; override;
-  public
-  end;
-
   { TScatListener }
 
   TScatListener = class(TmnCommandListener)
   private
   protected
-    function CreateConnection(vSocket: TmnCustomSocket): TmnServerConnection; override;
+    function CreateStream(Socket: TmnCustomSocket): TmnSocketStream; override;
   public
   end;
 
@@ -161,7 +153,7 @@ type
     FDocumentRoot: string;
     FDefaultDocument: TStringList;
   protected
-    procedure SetDefaultDoc(const Value: TStringList);
+    procedure SetDefaultDocument(const Value: TStringList);
     procedure DoBeforeOpen; override;
     procedure DoAfterClose; override;
     function CreateListener: TmnListener; override;
@@ -169,7 +161,7 @@ type
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
     property DocumentRoot: string read FDocumentRoot write FDocumentRoot;
-    property DefaultDocument: TStringList read FDefaultDocument write SetDefaultDoc;
+    property DefaultDocument: TStringList read FDefaultDocument write SetDefaultDocument;
   published
   end;
 
@@ -192,21 +184,11 @@ begin
   (vObject as TmnFields).Add(Name, Value);
 end;
 
-
-{ TScatConnection }
-
-function TScatConnection.CreateStream(Socket: TmnCustomSocket): TmnSocketStream;
+function TScatListener.CreateStream(Socket: TmnCustomSocket): TmnSocketStream;
 begin
-  Result :=inherited CreateStream(Socket);
+  Result := inherited CreateStream(Socket);
   Result.EOFOnError := True;
   Result.EndOfLine := sWinEndOfLine;
-end;
-
-{ TScatListener }
-
-function TScatListener.CreateConnection(vSocket: TmnCustomSocket): TmnServerConnection;
-begin
-  Result := TScatConnection.Create(vSocket);
 end;
 
 { TscatWebCommand }
@@ -290,8 +272,7 @@ begin
   inherited;
   while Connected do
   begin
-    l := Connection.Stream.ReadLine;
-
+    l := Stream.ReadLine;
     RequestHeader.AddItem(l, ':');
     if l = '' then
       break;
@@ -334,7 +315,7 @@ begin
   inherited;
 end;
 
-procedure TscatServer.SetDefaultDoc(const Value: TStringList);
+procedure TscatServer.SetDefaultDocument(const Value: TStringList);
 begin
   FDefaultDocument.Assign(Value);
 end;

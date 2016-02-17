@@ -40,22 +40,32 @@ type
     procedure Leave;
   end;
 
+  TmnConnection = class;
+
+  { TmnConnector }
+
+  TmnConnector = class(TmnLockThread)
+  protected
+    function CreateStream(Socket: TmnCustomSocket): TmnSocketStream; virtual;
+  end;
+
   { TmnConnection }
 
   TmnConnection = class(TmnThread)
   private
+    FConnector: TmnConnector;
     FStream: TmnSocketStream;
     FKeepAlive: Boolean;
     function GetConnected: Boolean;
     procedure SetConnected(const Value: Boolean);
   protected
+    property Connector: TmnConnector read FConnector;
     procedure Prepare; virtual;
     procedure Process; virtual;
     procedure Execute; override;
     procedure Unprepare; virtual;
-    function CreateStream(Socket: TmnCustomSocket): TmnSocketStream; virtual;
   public
-    constructor Create(Socket: TmnCustomSocket); virtual;
+    constructor Create(vConnector: TmnConnector; vSocket: TmnCustomSocket); virtual;
     destructor Destroy; override;
     procedure Connect; virtual;
     procedure Disconnect; virtual;
@@ -90,6 +100,13 @@ procedure mnCheckError(Value: Integer);
 begin
   if Value > 0 then
     raise EmnException.Create('WinSocket, error #' + IntToStr(Value));
+end;
+
+{ TmnConnector }
+
+function TmnConnector.CreateStream(Socket: TmnCustomSocket): TmnSocketStream;
+begin
+  Result := TmnSocketStream.Create(Socket);
 end;
 
 procedure TmnConnection.Execute;
@@ -163,10 +180,11 @@ begin
   Disconnect;
 end;
 
-constructor TmnConnection.Create(Socket: TmnCustomSocket);
+constructor TmnConnection.Create(vConnector: TmnConnector; vSocket: TmnCustomSocket);
 begin
   inherited Create;
-  FStream := CreateStream(Socket);
+  FConnector := vConnector;
+  FStream := vConnector.CreateStream(vSocket);
 end;
 
 destructor TmnConnection.Destroy;
@@ -215,11 +233,6 @@ end;
 
 procedure TmnConnection.Connect;
 begin
-end;
-
-function TmnConnection.CreateStream(Socket: TmnCustomSocket): TmnSocketStream;
-begin
-  Result := TmnSocketStream.Create(Socket);
 end;
 
 procedure TmnConnection.Prepare;
