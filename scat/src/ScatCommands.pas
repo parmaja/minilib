@@ -248,13 +248,15 @@ end;
 function TscatWebCommand.GetDefaultDocument(Root: string): string;
 var
   i: Integer;
+  aFile: string;
 begin
   //TODO baaad you need to luck before access
   for i := 0 to Server.DefaultDocument.Count - 1 do
   begin
-    if FileExists(Root + Server.DefaultDocument[i]) then
+    aFile := Root + Server.DefaultDocument[i];
+    if FileExists(aFile) then
     begin
-      Result := Root + Server.DefaultDocument[i];
+      Result := aFile;
     end;
   end;
 end;
@@ -346,6 +348,8 @@ begin
     Ext := Copy(Ext, 2, Length(Ext));
   if (Ext = 'htm') or (Ext = 'html') or (Ext = 'shtml') or (Ext = 'dhtml') then
     Result := 'text/html'
+  else if Ext = 'css' then
+    Result := 'text/css'
   else if Ext = 'gif' then
     Result := 'image/gif'
   else if Ext = 'bmp' then
