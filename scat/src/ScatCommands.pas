@@ -497,9 +497,9 @@ end;
 procedure TscatServerInfoCommand.DoExecute;
 begin
   Connection.Stream.WriteCommand('OK');
-  Connection.Stream.WriteLn('Server is running on port: ' + Server.Port);
-  //Connection.Stream.WriteLn('the server is: "' + Application.ExeName + '"');
-  Connection.Stream.WriteLn('');
+  Connection.Stream.WriteLine('Server is running on port: ' + Server.Port);
+  //Connection.Stream.WriteLine('the server is: "' + Application.ExeName + '"');
+  Connection.Stream.WriteLine('');
 end;
 
 { TscatPutCommand }

@@ -68,9 +68,8 @@ type
     procedure SyncLog;
     procedure SyncChanged;
     function CreateConnection(vSocket: TmnCustomSocket): TmnServerConnection; virtual;
-    procedure Created; virtual;
-    procedure Prepare; virtual; // called before add a new connection
     procedure DropConnections; virtual;
+    procedure Prepare; virtual;
     procedure Execute; override;
     procedure Changed; virtual;
     procedure Remove(Connection: TmnServerConnection); virtual;
@@ -126,7 +125,7 @@ type
   public
     constructor Create;
     destructor Destroy; override;
-    procedure Start;
+    procedure Start(vListener: TmnListener = nil);
     procedure Stop;
     procedure Open;
     procedure Close;
@@ -136,6 +135,7 @@ type
     property Port: string read FPort write SetPort;
     property Address: string read FAddress write SetAddress;
     property Active: boolean read FActive write SetActive default False;
+
     property OnBeforeOpen: TNotifyEvent read FOnBeforeOpen write FOnBeforeOpen;
     property OnAfterOpen: TNotifyEvent read FOnAfterOpen write FOnAfterOpen;
     property OnAfterClose: TNotifyEvent read FOnAfterClose write FOnAfterClose;
@@ -178,7 +178,7 @@ begin
   end;
 end;
 
-procedure TmnServer.SetActive(const Value: boolean);
+procedure TmnServer.SetActive(const Value: Boolean);
 begin
   if Value and not FActive then
     Start
@@ -280,10 +280,6 @@ begin
   Result := TmnServerConnection.Create(Self, vSocket);
 end;
 
-procedure TmnListener.Created;
-begin
-end;
-
 destructor TmnListener.Destroy;
 begin
   FreeAndNil(FList);
@@ -335,7 +331,8 @@ begin
             try
               Enter; //because we add connection to a thread list
               try
-                Prepare;
+                if FServer <> nil then
+                  FServer.DoPrepare(Self);
                 aConnection := CreateConnection(aSocket);
               finally
                 Leave;
@@ -378,10 +375,6 @@ end;
 
 procedure TmnListener.Prepare;
 begin
-  if FServer <> nil then
-  begin
-    FServer.DoPrepare(Self);
-  end;
 end;
 
 procedure TmnListener.Remove(Connection: TmnServerConnection);
@@ -443,20 +436,22 @@ begin
   inherited;
 end;
 
-procedure TmnServer.Start;
+procedure TmnServer.Start(vListener: TmnListener);
 begin
-  DoStart;
   if (FListener = nil) then // if its already active, dont start again
   begin
     try
+      DoStart;
       DoBeforeOpen;
       try
-        FListener := CreateListener;
+        FListener := vListener;
+        if FListener = nil then
+          FListener := CreateListener;
         FListener.OnLog := OnLog;
         FListener.FServer := Self;
         FListener.FPort := FPort;
         FListener.FAddress := Address;
-        FListener.Created;
+        FListener.Prepare;
         FListener.Start;
         FActive := True;
       except

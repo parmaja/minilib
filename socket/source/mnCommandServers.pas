@@ -115,7 +115,7 @@ type
     destructor Destroy; override;
     //Name here will corrected with registered item name for example Get -> GET
     function GetCommandClass(var Name: string): TmnCommandClass;
-    procedure Created; override;
+    procedure Prepare; override;
   end;
 
   TmnCommandServer = class(TmnServer)
@@ -320,7 +320,7 @@ begin
     Result := nil;
 end;
 
-procedure TmnCommandListener.Created;
+procedure TmnCommandListener.Prepare;
 begin
   FCommands := (Server as TmnCommandServer).FCommands;
 end;
