@@ -154,7 +154,7 @@ var
 var
   aAutoRun:Boolean;
 begin
-  ScatServer := TScatServer.Create(Self);
+  ScatServer := TScatServer.Create;
   ScatServer.OnBeforeOpen := ScatServerBeforeOpen;
   ScatServer.OnAfterClose := ScatServerAfterClose;
   ScatServer.OnChanged :=  ScatServerChanged;

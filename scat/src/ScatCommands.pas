@@ -17,7 +17,7 @@ interface
 
 uses
   SysUtils, Classes, syncobjs,
-  mnFields, mnUtils, mnSockets, mnServers, mnCommandServers, mnStreams, mnSocketStreams, mnXML;
+  mnFields, mnUtils, mnSockets, mnServers, mnCommandServers, mnStreams, mnSocketStreams;
 
 {**
 -------------------
@@ -158,7 +158,7 @@ type
     procedure DoAfterClose; override;
     function CreateListener: TmnListener; override;
   public
-    constructor Create(AOwner: TComponent); override;
+    constructor Create;
     destructor Destroy; override;
     property DocumentRoot: string read FDocumentRoot write FDocumentRoot;
     property DefaultDocument: TStringList read FDefaultDocument write SetDefaultDocument;
@@ -169,9 +169,6 @@ var
   scatLock: TCriticalSection = nil;
 
 implementation
-
-uses
-  mnXMLUtils, mnXMLRttiProfile;
 
 procedure ParamsCallBack(vObject: TObject; S: string);
 var
@@ -293,7 +290,7 @@ end;
 
 { TscatServer }
 
-constructor TscatServer.Create(AOwner: TComponent);
+constructor TscatServer.Create;
 begin
   inherited;
   FDefaultDocument := TStringList.Create;
@@ -409,7 +406,6 @@ constructor TscatCommand.Create(Connection: TmnCommandConnection);
 begin
   inherited;
   Locking := False;
-  Connection.Stream.Timeout := -1;
   FParams := TmnFields.Create;
   FRequestHeader := TmnFields.Create;
   FRespondHeader := TmnFields.Create;

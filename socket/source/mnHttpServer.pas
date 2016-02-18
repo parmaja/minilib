@@ -112,10 +112,9 @@ type
     FDefaultDocument: TStringList;
     procedure SetDefaultDoc(const Value: TStringList);
   protected
-    procedure Notification(AComponent: TComponent; operation: TOperation); override;
     function CreateListener: TmnListener; override;
   public
-    constructor Create(AOwner: TComponent); override;
+    constructor Create;
     destructor Destroy; override;
   published
     property DocumentRoot: string read FDocumentRoot write FDocumentRoot;
@@ -124,7 +123,7 @@ type
 
 implementation
 
-constructor TmnHttpServer.Create(AOwner: TComponent);
+constructor TmnHttpServer.Create;
 begin
   inherited;
   FDefaultDocument := TStringList.Create;
@@ -139,11 +138,6 @@ end;
 destructor TmnHttpServer.Destroy;
 begin
   FreeAndNil(FDefaultDocument);
-  inherited;
-end;
-
-procedure TmnHttpServer.Notification(AComponent: TComponent; Operation: TOperation);
-begin
   inherited;
 end;
 

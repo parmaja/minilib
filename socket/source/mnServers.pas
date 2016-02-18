@@ -95,7 +95,7 @@ type
 
   { TmnServer }
 
-  TmnServer = class(TComponent)
+  TmnServer = class(TObject)
   private
     FPort: string;
     FActive: Boolean;
@@ -113,6 +113,7 @@ type
     procedure SetPort(const Value: string);
     function GetCount: Integer;
   protected
+    IsDestroying: Boolean;
     function CreateListener: TmnListener; virtual;
     procedure DoChanged(vListener: TmnListener); virtual;
     procedure DoPrepare(vListener: TmnListener); virtual;
@@ -123,9 +124,8 @@ type
     procedure DoStart; virtual;
     procedure DoStop; virtual;
   public
-    constructor Create(AOwner: TComponent); override;
+    constructor Create;
     destructor Destroy; override;
-    procedure Loaded; override;
     procedure Start;
     procedure Stop;
     procedure Open;
@@ -180,34 +180,17 @@ end;
 
 procedure TmnServer.SetActive(const Value: boolean);
 begin
-  if (csDesigning in ComponentState) or (csLoading in ComponentState) then
-  begin
-    FActive := Value;
-  end
-  else
-  begin
-    if Value and not FActive then
-      Start
-    else if not Value and FActive then
-      Stop;
-  end;
+  if Value and not FActive then
+    Start
+  else if not Value and FActive then
+    Stop;
 end;
 
 { TmnServer }
 
-procedure TmnServer.Loaded;
-begin
-  inherited;
-  if not (csDesigning in ComponentState) then
-  begin
-    if FActive then
-      Start;
-  end;
-end;
-
 procedure TmnServer.DoChanged(vListener: TmnListener);
 begin
-  if not (csDestroying in ComponentState) then
+  if not (IsDestroying) then
   begin
     if Assigned(FOnChanged) then
       FOnChanged(vListener);
@@ -216,7 +199,7 @@ end;
 
 procedure TmnServer.DoPrepare(vListener: TmnListener);
 begin
-  if not (csDestroying in ComponentState) then
+  if not (IsDestroying) then
   begin
     if Assigned(FOnPrepare) then
       FOnPrepare(vListener);
@@ -225,7 +208,7 @@ end;
 
 procedure TmnServer.DoBeforeClose;
 begin
-  if not (csDestroying in ComponentState) then
+  if not (IsDestroying) then
   begin
     if Assigned(FOnBeforeClose) then
       FOnBeforeClose(Self);
@@ -242,7 +225,7 @@ end;
 
 procedure TmnServer.DoAfterOpen;
 begin
-  if not (csDestroying in ComponentState) then
+  if not (IsDestroying) then
   begin
     if Assigned(FOnAfterOpen) then
       FOnAfterOpen(Self);
@@ -447,14 +430,15 @@ end;
 
 { TmnServer }
 
-constructor TmnServer.Create(AOwner: TComponent);
+constructor TmnServer.Create;
 begin
-  inherited;
+  inherited Create;
   FAddress := '0.0.0.0';
 end;
 
 destructor TmnServer.Destroy;
 begin
+  IsDestroying := True;
   Stop;
   inherited;
 end;
@@ -552,7 +536,7 @@ end;
 
 procedure TmnServer.DoBeforeOpen;
 begin
-  if not (csDestroying in ComponentState) then
+  if not (IsDestroying) then
   begin
     if Assigned(FOnBeforeOpen) then
       FOnBeforeOpen(Self);
@@ -561,7 +545,7 @@ end;
 
 procedure TmnServer.DoAfterClose;
 begin
-  if not (csDestroying in ComponentState) then
+  if not (IsDestroying) then
   begin
     if Assigned(FOnAfterClose) then
       FOnAfterClose(Self);

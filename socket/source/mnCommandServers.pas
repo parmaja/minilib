@@ -105,8 +105,6 @@ type
 
   TmnCommandListener = class(TmnListener)
   private
-    FAddress: string;
-    FPort: Integer;
     FCommands: TmnCommandClasses; //refrence to TmnCommandServer.FCommands
   protected
     function CreateConnection(vSocket: TmnCustomSocket): TmnServerConnection; override;
@@ -115,8 +113,6 @@ type
   public
     constructor Create; override;
     destructor Destroy; override;
-    property Port: Integer read FPort write FPort;
-    property Address: string read FAddress write FAddress;
     //Name here will corrected with registered item name for example Get -> GET
     function GetCommandClass(var Name: string): TmnCommandClass;
     procedure Created; override;
@@ -128,7 +124,7 @@ type
   protected
     function CreateListener: TmnListener; override;
   public
-    constructor Create(AOwner: TComponent); override;
+    constructor Create;
     destructor Destroy; override;
     function RegisterCommand(vName: string; CommandClass: TmnCommandClass): Integer; overload;
     function RegisterCommand(CommandClass: TmnCommandClass): Integer; overload;
@@ -137,7 +133,7 @@ type
 
 implementation
 
-constructor TmnCommandServer.Create(AOwner: TComponent);
+constructor TmnCommandServer.Create;
 begin
   inherited;
   FCommands := TmnCommandClasses.Create(True);
