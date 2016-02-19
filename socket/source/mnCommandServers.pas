@@ -63,7 +63,6 @@ type
     constructor Create(Connection: TmnCommandConnection); virtual;
     //GetCommandName: make name for command when register it, useful when log the name of it
     class function GetCommandName: string; virtual;
-    property Server: TmnServer read FServer;
     property Connection: TmnCommandConnection read FConnection;
     property Name: string read FName;
     property Request: string read FRequest; //Full of first line of header
@@ -78,6 +77,7 @@ type
     property Single: Boolean read FSingle write FSingle;
     //Prepare called after created in lucking mode
     procedure Prepare; virtual;
+    property Server: TmnServer read FServer;
   end;
 
   TmnCommandClass = class of TmnCommand;
@@ -118,7 +118,7 @@ type
     procedure Prepare; override;
   end;
 
-  TmnCommandServer = class(TmnServer)
+  TmnCommandServer = class(TmnEventServer)
   private
     FCommands: TmnCommandClasses;
   protected

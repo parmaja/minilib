@@ -52,11 +52,11 @@ type
   TmnListener = class(TmnConnector) // thread to watch for incoming requests
   private
     FAttempts: Integer;
+    FTries: Integer;
     FSocket: TmnCustomSocket;
     FPort: string;
     FAddress: string;
     FList: TmnConnectionList;
-    FOnLog: TmnOnLog;
     FServer: TmnServer;
     procedure Connect;
     procedure Disconnect;
@@ -86,7 +86,6 @@ type
     property Socket: TmnCustomSocket read FSocket;
     property Count: Integer read GetCount;
     property Options: TmnOptions read FOptions;
-    property OnLog: TmnOnLog read FOnLog write FOnLog;
     //if listener connection down by network it will reconnect again
     property Attempts: Integer read FAttempts write FAttempts;
   end;
@@ -99,13 +98,6 @@ type
     FAddress: string;
     FActive: Boolean;
     FListener: TmnListener;
-    FOnBeforeOpen: TNotifyEvent;
-    FOnAfterOpen: TNotifyEvent;
-    FOnBeforeClose: TNotifyEvent;
-    FOnAfterClose: TNotifyEvent;
-    FOnLog: TmnOnLog;
-    FOnChanged: TmnOnListenerNotify;
-    FOnAccepted: TmnOnListenerNotify;
     procedure SetActive(const Value: Boolean);
     procedure SetAddress(const Value: string);
     procedure SetPort(const Value: string);
@@ -113,6 +105,7 @@ type
   protected
     IsDestroying: Boolean;
     function CreateListener: TmnListener; virtual;
+    procedure DoLog(const S: string); virtual;
     procedure DoChanged(vListener: TmnListener); virtual;
     procedure DoAccepted(vListener: TmnListener); virtual;
     procedure DoBeforeOpen; virtual;
@@ -131,12 +124,34 @@ type
     procedure Close;
     property Listener: TmnListener read FListener;
     property Count: Integer read GetCount;
-  published
+
     property Port: string read FPort write SetPort;
     property Address: string read FAddress write SetAddress;
 
     property Active: boolean read FActive write SetActive default False;
 
+  end;
+
+  { TmnEventServer }
+
+  TmnEventServer = class(TmnServer)
+  private
+    FOnBeforeOpen: TNotifyEvent;
+    FOnAfterOpen: TNotifyEvent;
+    FOnBeforeClose: TNotifyEvent;
+    FOnAfterClose: TNotifyEvent;
+    FOnLog: TmnOnLog;
+    FOnChanged: TmnOnListenerNotify;
+    FOnAccepted: TmnOnListenerNotify;
+  protected
+    procedure DoLog(const S: string); override;
+    procedure DoChanged(vListener: TmnListener); override;
+    procedure DoAccepted(vListener: TmnListener); override;
+    procedure DoBeforeOpen; override;
+    procedure DoAfterOpen; override;
+    procedure DoBeforeClose; override;
+    procedure DoAfterClose; override;
+  published
     property OnBeforeOpen: TNotifyEvent read FOnBeforeOpen write FOnBeforeOpen;
     property OnAfterOpen: TNotifyEvent read FOnAfterOpen write FOnAfterOpen;
     property OnAfterClose: TNotifyEvent read FOnAfterClose write FOnAfterClose;
@@ -147,6 +162,78 @@ type
   end;
 
 implementation
+
+{ TmnEventServer }
+
+procedure TmnEventServer.DoLog(const S: string);
+begin
+  inherited DoLog(S);
+  if not (IsDestroying) then
+  begin
+    if Assigned(FOnLog) then
+      FOnLog(S);
+  end;
+end;
+
+procedure TmnEventServer.DoChanged(vListener: TmnListener);
+begin
+  inherited DoChanged(vListener);
+  if not (IsDestroying) then
+  begin
+    if Assigned(FOnChanged) then
+      FOnChanged(vListener);
+  end;
+end;
+
+procedure TmnEventServer.DoAccepted(vListener: TmnListener);
+begin
+  inherited DoAccepted(vListener);
+  if not (IsDestroying) then
+  begin
+    if Assigned(FOnAccepted) then
+      FOnAccepted(vListener);
+  end;
+end;
+
+procedure TmnEventServer.DoBeforeOpen;
+begin
+  inherited DoBeforeOpen;
+  if not (IsDestroying) then
+  begin
+    if Assigned(FOnBeforeOpen) then
+      FOnBeforeOpen(Self);
+  end;
+end;
+
+procedure TmnEventServer.DoAfterOpen;
+begin
+  inherited DoAfterOpen;
+  if not (IsDestroying) then
+  begin
+    if Assigned(FOnAfterOpen) then
+      FOnAfterOpen(Self);
+  end;
+end;
+
+procedure TmnEventServer.DoBeforeClose;
+begin
+  inherited DoBeforeClose;
+  if not (IsDestroying) then
+  begin
+    if Assigned(FOnBeforeClose) then
+      FOnBeforeClose(Self);
+  end;
+end;
+
+procedure TmnEventServer.DoAfterClose;
+begin
+  inherited DoAfterClose;
+  if not (IsDestroying) then
+  begin
+    if Assigned(FOnAfterClose) then
+      FOnAfterClose(Self);
+  end;
+end;
 
 { TmnServerConnection }
 
@@ -191,29 +278,14 @@ end;
 
 procedure TmnServer.DoChanged(vListener: TmnListener);
 begin
-  if not (IsDestroying) then
-  begin
-    if Assigned(FOnChanged) then
-      FOnChanged(vListener);
-  end;
 end;
 
 procedure TmnServer.DoAccepted(vListener: TmnListener);
 begin
-  if not (IsDestroying) then
-  begin
-    if Assigned(FOnAccepted) then
-      FOnAccepted(vListener);
-  end;
 end;
 
 procedure TmnServer.DoBeforeClose;
 begin
-  if not (IsDestroying) then
-  begin
-    if Assigned(FOnBeforeClose) then
-      FOnBeforeClose(Self);
-  end;
 end;
 
 function TmnServer.GetCount: Integer;
@@ -226,11 +298,6 @@ end;
 
 procedure TmnServer.DoAfterOpen;
 begin
-  if not (IsDestroying) then
-  begin
-    if Assigned(FOnAfterOpen) then
-      FOnAfterOpen(Self);
-  end;
 end;
 
 { TmnListener }
@@ -301,6 +368,7 @@ var
   aSocket: TmnCustomSocket;
   aConnection: TmnServerConnection;
 begin
+  FTries := FAttempts;
   Connect;
   while Connected and not Terminated do
   begin
@@ -321,9 +389,9 @@ begin
           if (aSocket = nil) then
           begin
             //must attempt for new socket 3 times
-            if (FAttempts > 0) and (not Socket.Active) then
+            if (FTries > 0) and (not Socket.Active) then
             begin
-              FAttempts := FAttempts - 1;
+              FTries := FTries - 1;
               Connect;
             end;
           end
@@ -451,7 +519,7 @@ begin
         FListener := vListener;
         if FListener = nil then
           FListener := CreateListener;
-        FListener.OnLog := OnLog;
+//        FListener.OnLog := OnLog;
         FListener.FServer := Self;
         FListener.FPort := FPort;
         FListener.FAddress := Address;
@@ -496,8 +564,8 @@ end;
 
 procedure TmnListener.SyncLog;
 begin
-  if Assigned(FOnLog) then
-    FOnLog(FLogMessage);
+  if FServer <> nil then
+    FServer.DoLog(FLogMessage);
   FLogMessage :='';
 end;
 
@@ -520,6 +588,10 @@ begin
   Result := TmnListener.Create;
 end;
 
+procedure TmnServer.DoLog(const S: string);
+begin
+end;
+
 procedure TmnServer.SetAddress(const Value: string);
 begin
   if Active then
@@ -536,20 +608,10 @@ end;
 
 procedure TmnServer.DoBeforeOpen;
 begin
-  if not (IsDestroying) then
-  begin
-    if Assigned(FOnBeforeOpen) then
-      FOnBeforeOpen(Self);
-  end;
 end;
 
 procedure TmnServer.DoAfterClose;
 begin
-  if not (IsDestroying) then
-  begin
-    if Assigned(FOnAfterClose) then
-      FOnAfterClose(Self);
-  end;
 end;
 
 procedure TmnServer.DoStart;
