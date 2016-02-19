@@ -51,7 +51,7 @@ type
 
   TmnListener = class(TmnConnector) // thread to watch for incoming requests
   private
-    FAttempt: Integer;
+    FAttempts: Integer;
     FSocket: TmnCustomSocket;
     FPort: string;
     FAddress: string;
@@ -67,29 +67,28 @@ type
     FLogMessage: string;
     procedure SyncLog;
     procedure SyncChanged;
-    function CreateConnection(vSocket: TmnCustomSocket): TmnServerConnection; virtual;
+
     procedure DropConnections; virtual;
+    procedure LogMessage(S: string); virtual;
     procedure Prepare; virtual;
     procedure Execute; override;
     procedure Changed; virtual;
     procedure Remove(Connection: TmnServerConnection); virtual;
     procedure Add(Connection: TmnServerConnection); virtual;
+    function CreateConnection(vSocket: TmnCustomSocket): TmnServerConnection; virtual;
   public
     constructor Create; virtual;
     destructor Destroy; override;
-    {$ifndef FPC} //already found in FPC 2.4.4
-    procedure Start;
-    {$endif}
     procedure Stop;
-    procedure Log(S: string);
+    procedure Log(S: string); virtual;
     property Server: TmnServer read FServer;
     property Connected: Boolean read GetConnected;
     property Socket: TmnCustomSocket read FSocket;
     property Count: Integer read GetCount;
     property Options: TmnOptions read FOptions;
     property OnLog: TmnOnLog read FOnLog write FOnLog;
-    //if listener connection down by network it reconnect again
-    property Attempt: Integer read FAttempt write FAttempt;
+    //if listener connection down by network it will reconnect again
+    property Attempts: Integer read FAttempts write FAttempts;
   end;
 
   { TmnServer }
@@ -97,16 +96,16 @@ type
   TmnServer = class(TObject)
   private
     FPort: string;
+    FAddress: string;
     FActive: Boolean;
     FListener: TmnListener;
-    FAddress: string;
     FOnBeforeOpen: TNotifyEvent;
     FOnAfterOpen: TNotifyEvent;
     FOnBeforeClose: TNotifyEvent;
     FOnAfterClose: TNotifyEvent;
     FOnLog: TmnOnLog;
     FOnChanged: TmnOnListenerNotify;
-    FOnPrepare: TmnOnListenerNotify;
+    FOnAccepted: TmnOnListenerNotify;
     procedure SetActive(const Value: Boolean);
     procedure SetAddress(const Value: string);
     procedure SetPort(const Value: string);
@@ -115,7 +114,7 @@ type
     IsDestroying: Boolean;
     function CreateListener: TmnListener; virtual;
     procedure DoChanged(vListener: TmnListener); virtual;
-    procedure DoPrepare(vListener: TmnListener); virtual;
+    procedure DoAccepted(vListener: TmnListener); virtual;
     procedure DoBeforeOpen; virtual;
     procedure DoAfterOpen; virtual;
     procedure DoBeforeClose; virtual;
@@ -124,6 +123,7 @@ type
     procedure DoStop; virtual;
   public
     constructor Create;
+    procedure BeforeDestruction; override;
     destructor Destroy; override;
     procedure Start(vListener: TmnListener = nil);
     procedure Stop;
@@ -134,6 +134,7 @@ type
   published
     property Port: string read FPort write SetPort;
     property Address: string read FAddress write SetAddress;
+
     property Active: boolean read FActive write SetActive default False;
 
     property OnBeforeOpen: TNotifyEvent read FOnBeforeOpen write FOnBeforeOpen;
@@ -142,7 +143,7 @@ type
     property OnBeforeClose: TNotifyEvent read FOnBeforeClose write FOnBeforeClose;
     property OnLog: TmnOnLog read FOnLog write FOnLog;
     property OnChanged: TmnOnListenerNotify read FOnChanged write FOnChanged;
-    property OnPrepare: TmnOnListenerNotify read FOnPrepare write FOnPrepare;
+    property OnAccepted: TmnOnListenerNotify read FOnAccepted write FOnAccepted;
   end;
 
 implementation
@@ -197,12 +198,12 @@ begin
   end;
 end;
 
-procedure TmnServer.DoPrepare(vListener: TmnListener);
+procedure TmnServer.DoAccepted(vListener: TmnListener);
 begin
   if not (IsDestroying) then
   begin
-    if Assigned(FOnPrepare) then
-      FOnPrepare(vListener);
+    if Assigned(FOnAccepted) then
+      FOnAccepted(vListener);
   end;
 end;
 
@@ -248,7 +249,7 @@ end;
 procedure TmnListener.Changed;
 begin
   {$ifndef NoLog}
-  {$ifdef Synchrcmd
+  {$ifdef Synchronize
   onize}
   Synchronize(Self, SyncChanged);
   {$else}
@@ -272,7 +273,7 @@ constructor TmnListener.Create;
 begin
   inherited;
   FList := TmnConnectionList.Create;
-  FAttempt := 0; // 3 times
+  FAttempts := 0; // 3 times
 end;
 
 function TmnListener.CreateConnection(vSocket: TmnCustomSocket): TmnServerConnection;
@@ -320,9 +321,9 @@ begin
           if (aSocket = nil) then
           begin
             //must attempt for new socket 3 times
-            if (FAttempt > 0) and (not Socket.Active) then
+            if (FAttempts > 0) and (not Socket.Active) then
             begin
-              FAttempt := FAttempt - 1;
+              FAttempts := FAttempts - 1;
               Connect;
             end;
           end
@@ -332,7 +333,7 @@ begin
               Enter; //because we add connection to a thread list
               try
                 if FServer <> nil then
-                  FServer.DoPrepare(Self);
+                  FServer.DoAccepted(Self);
                 aConnection := CreateConnection(aSocket);
               finally
                 Leave;
@@ -364,6 +365,7 @@ end;
 procedure TmnListener.Log(S: string);
 begin
   {$ifndef NoLog}
+  LogMessage(S);
   FLogMessage := S;
   {$ifdef Synchronize}
   Synchronize(Self, SyncLog);
@@ -388,13 +390,6 @@ begin
   end;
   Changed;
 end;
-
-{$ifndef FPC} //already found in FPC 2.4.4
-procedure TmnListener.Start;
-begin
-  Resume;
-end;
-{$endif}
 
 procedure TmnListener.DropConnections;
 var
@@ -421,6 +416,10 @@ begin
   end;
 end;
 
+procedure TmnListener.LogMessage(S: string);
+begin
+end;
+
 { TmnServer }
 
 constructor TmnServer.Create;
@@ -429,9 +428,14 @@ begin
   FAddress := '0.0.0.0';
 end;
 
-destructor TmnServer.Destroy;
+procedure TmnServer.BeforeDestruction;
 begin
   IsDestroying := True;
+  inherited BeforeDestruction;
+end;
+
+destructor TmnServer.Destroy;
+begin
   Stop;
   inherited;
 end;
@@ -494,6 +498,7 @@ procedure TmnListener.SyncLog;
 begin
   if Assigned(FOnLog) then
     FOnLog(FLogMessage);
+  FLogMessage :='';
 end;
 
 procedure TmnServer.Stop;

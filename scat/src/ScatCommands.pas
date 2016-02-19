@@ -364,8 +364,6 @@ var
   DocSize: Int64;
   aDocStream: TFileStream;
   aDocument: string;
-  aAnswerContentType: string;
-  aProxyRequest: Boolean;
 begin
   aDocument := IncludeTrailingPathDelimiter(Root) + Path;
   aDocument := StringReplace(aDocument, '/', PathDelim, [rfReplaceAll]);//correct it for linux
@@ -377,7 +375,6 @@ begin
   begin
     if Connected then
     begin
-      aAnswerContentType := DocumentToContentType(aDocument);
       aDocStream := TFileStream.Create(aDocument, fmOpenRead or fmShareDenyWrite);
       try
         DocSize := aDocStream.Size;
