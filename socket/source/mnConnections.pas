@@ -87,8 +87,6 @@ type
     procedure SetItems(Index: Integer; const Value: TmnConnection);
   protected
   public
-    constructor Create;
-    destructor Destroy; override;
     property Items[Index: Integer]: TmnConnection read GetItems write SetItems; default;
   end;
 
@@ -149,18 +147,6 @@ end;
 
 procedure TmnConnection.Process;
 begin
-end;
-
-{ TSockeTmnServerConnection }
-
-constructor TmnConnectionList.Create;
-begin
-  inherited;
-end;
-
-destructor TmnConnectionList.Destroy;
-begin
-  inherited;
 end;
 
 function TmnConnectionList.GetItems(Index: Integer): TmnConnection;

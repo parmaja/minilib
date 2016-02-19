@@ -64,7 +64,7 @@ type
     function GetCount: Integer;
   protected
     FOptions: TmnOptions;
-    FLogMessage: string;
+    FMessage: string;
     procedure SyncLog;
     procedure SyncChanged;
 
@@ -77,7 +77,7 @@ type
     procedure Add(Connection: TmnServerConnection); virtual;
     function CreateConnection(vSocket: TmnCustomSocket): TmnServerConnection; virtual;
   public
-    constructor Create; virtual;
+    constructor Create;
     destructor Destroy; override;
     procedure Stop;
     procedure Log(S: string); virtual;
@@ -90,13 +90,17 @@ type
     property Attempts: Integer read FAttempts write FAttempts;
   end;
 
+  {**
+    mnServer in the future can manage more than listener
+    So put shared info into the Server
+  *}
   { TmnServer }
 
   TmnServer = class(TObject)
   private
+    FActive: Boolean;
     FPort: string;
     FAddress: string;
-    FActive: Boolean;
     FListener: TmnListener;
     procedure SetActive(const Value: Boolean);
     procedure SetAddress(const Value: string);
@@ -434,7 +438,7 @@ procedure TmnListener.Log(S: string);
 begin
   {$ifndef NoLog}
   LogMessage(S);
-  FLogMessage := S;
+  FMessage := S;
   {$ifdef Synchronize}
   Synchronize(Self, SyncLog);
   {$else}
@@ -565,8 +569,8 @@ end;
 procedure TmnListener.SyncLog;
 begin
   if FServer <> nil then
-    FServer.DoLog(FLogMessage);
-  FLogMessage :='';
+    FServer.DoLog(FMessage);
+  FMessage :='';
 end;
 
 procedure TmnServer.Stop;

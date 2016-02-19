@@ -101,21 +101,23 @@ type
     property Items[Index: Integer]: TmnCommandClassItem read GetItem write SetItem; default;
   end;
 
+  TmnCommandServer = class;
+
   { TmnCommandListener }
 
   TmnCommandListener = class(TmnListener)
   private
-    FCommands: TmnCommandClasses; //refrence to TmnCommandServer.FCommands
+    function GetServer: TmnCommandServer;
   protected
     function CreateConnection(vSocket: TmnCustomSocket): TmnServerConnection; override;
     function CreateStream(Socket: TmnCustomSocket): TmnSocketStream; override;
     procedure ParseCommand(const Line: string; out Method, Params: string); virtual;
+    property Server: TmnCommandServer read GetServer;
   public
-    constructor Create; override;
+    constructor Create;
     destructor Destroy; override;
     //Name here will corrected with registered item name for example Get -> GET
     function GetCommandClass(var Name: string): TmnCommandClass;
-    procedure Prepare; override;
   end;
 
   TmnCommandServer = class(TmnEventServer)
@@ -123,12 +125,12 @@ type
     FCommands: TmnCommandClasses;
   protected
     function CreateListener: TmnListener; override;
+    property Commands: TmnCommandClasses read FCommands;
   public
     constructor Create;
     destructor Destroy; override;
     function RegisterCommand(vName: string; CommandClass: TmnCommandClass): Integer; overload;
     function RegisterCommand(CommandClass: TmnCommandClass): Integer; overload;
-  published
   end;
 
 implementation
@@ -260,6 +262,11 @@ end;
 
 { TmnCommandListener }
 
+function TmnCommandListener.GetServer: TmnCommandServer;
+begin
+  Result := inherited Server as TmnCommandServer;
+end;
+
 function TmnCommandListener.CreateConnection(vSocket: TmnCustomSocket): TmnServerConnection;
 begin
   Result := TmnCommandConnection.Create(Self, vSocket);
@@ -301,6 +308,8 @@ end;
 
 function TmnCommandServer.RegisterCommand(vName: string; CommandClass: TmnCommandClass): Integer;
 begin
+  if Active then
+    raise TmnCommandExceotion.Create('Server is Active');
   if FCommands.Find(vName) <> nil then
     raise TmnCommandExceotion.Create('Command already exists: ' + vName);
   Result := FCommands.Add(UpperCase(vName), CommandClass);
@@ -310,7 +319,7 @@ function TmnCommandListener.GetCommandClass(var Name: string): TmnCommandClass;
 var
   aItem: TmnCommandClassItem;
 begin
-  aItem := FCommands.Find(Name);
+  aItem := Server.Commands.Find(Name);
   if aItem <> nil then
   begin
     Name := aItem.Name;
@@ -318,11 +327,6 @@ begin
   end
   else
     Result := nil;
-end;
-
-procedure TmnCommandListener.Prepare;
-begin
-  FCommands := (Server as TmnCommandServer).FCommands;
 end;
 
 { TmnCommand }
@@ -397,7 +401,7 @@ end;
 
 function TmnCommandServer.RegisterCommand(CommandClass: TmnCommandClass): Integer;
 begin
-  Result := RegisterCommand(UpperCase(CommandClass.GetCommandName), CommandClass);
+  Result := RegisterCommand(CommandClass.GetCommandName, CommandClass);
 end;
 
 end.

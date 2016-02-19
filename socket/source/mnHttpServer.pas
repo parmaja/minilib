@@ -96,7 +96,7 @@ type
     function GetDocument(Root: string): string;
     function CreateConnection(vSocket: TmnCustomSocket): TmnServerConnection; override;
   public
-    constructor Create; override;
+    constructor Create;
     destructor Destroy; override;
     property Port: Integer read FPort write FPort;
     property Address: string read FAddress write FAddress;
