@@ -55,7 +55,6 @@ type
   private
     FConnector: TmnConnector;
     FStream: TmnSocketStream;
-    FKeepAlive: Boolean;
     function GetConnected: Boolean;
     procedure SetConnected(const Value: Boolean);
   protected
@@ -75,8 +74,6 @@ type
     procedure Start;
     {$endif}
     procedure Stop; virtual;
-    //KeepAlive: do not disconnect when finish process
-    property KeepAlive: Boolean read FKeepAlive write FKeepAlive;
     property Connected: Boolean read GetConnected write SetConnected;
     property Stream: TmnSocketStream read FStream;
   end;
@@ -115,10 +112,8 @@ begin
     try
       Process;
     except
-      Disconnect;
+      Disconnect; //TODO: Do we need to disconnect when we have exception? maybe we need to add option for it
     end;
-    if not KeepAlive and not Terminated and Connected then
-      Disconnect;
   end;
   Unprepare;
 end;

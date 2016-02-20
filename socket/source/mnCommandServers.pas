@@ -31,12 +31,11 @@ type
 
   TmnCommandConnection = class(TmnServerConnection)
   private
-    FCommandObject: TmnCommand;
+    FCommand: TmnCommand;
   public
   protected
     procedure Process; override;
   public
-    constructor Create(vConnector: TmnConnector; Socket: TmnCustomSocket); override;
     destructor Destroy; override;
   published
   end;
@@ -50,7 +49,6 @@ type
     FKeepAlive: Boolean;
     FServer: TmnServer;
     FConcur: Boolean;
-    FSingle: Boolean;
     FConnection: TmnCommandConnection;
     FLocking: Boolean;
     FRaiseExceptions: Boolean;
@@ -71,10 +69,8 @@ type
     property Locking: Boolean read FLocking write FLocking default True;
     //Concur: Synchronize the connection thread, when use it in GUI application
     property Concur: Boolean read FConcur write FConcur default False;
-    //KeepAlive keey the command object after disconnect, not completed yet!
+    //KeepAlive keep the command object after disconnect, not completed yet!
     property KeepAlive: Boolean read FKeepAlive write FKeepAlive default False;
-    //Single command not launch another command if there is a privouse live command, depend on KeepAlive
-    property Single: Boolean read FSingle write FSingle;
     //Prepare called after created in lucking mode
     procedure Prepare; virtual;
     property Server: TmnServer read FServer;
@@ -111,7 +107,7 @@ type
   protected
     function CreateConnection(vSocket: TmnCustomSocket): TmnServerConnection; override;
     function CreateStream(Socket: TmnCustomSocket): TmnSocketStream; override;
-    procedure ParseCommand(const Line: string; out Method, Params: string); virtual;
+    procedure ExtractCommandName(const Line: string; out Method: string); virtual;
     property Server: TmnCommandServer read GetServer;
   public
     constructor Create;
@@ -148,15 +144,9 @@ begin
   inherited;
 end;
 
-constructor TmnCommandConnection.Create(vConnector: TmnConnector; Socket: TmnCustomSocket);
-begin
-  inherited;
-  KeepAlive := True;
-end;
-
 destructor TmnCommandConnection.Destroy;
 begin
-  FreeAndNil(FCommandObject);
+  FreeAndNil(FCommand);
   inherited;
 end;
 
@@ -173,24 +163,23 @@ begin
   inherited;
   if Connected then
   begin
-    if FCommandObject = nil then
+    if FCommand = nil then
     begin
       if Connected then
       begin
-
         aRequest := Stream.ReadLine;
-        (Listener as TmnCommandListener).ParseCommand(aRequest, aCommand, aParams);
+        (Listener as TmnCommandListener).ExtractCommandName(aRequest, aCommand);
 
         Listener.Enter;
         try
           aClass := (Listener as TmnCommandListener).GetCommandClass(aCommand);
           if aClass <> nil then
           begin
-            FCommandObject := aClass.Create(Self);
-            FCommandObject.FName := aCommand; //Already correct with GetCommandClass
-            FCommandObject.FRequest := aRequest;
-            FCommandObject.FServer := Listener.Server;
-            FCommandObject.Prepare;
+            FCommand := aClass.Create(Self);
+            FCommand.FName := aCommand; //Already correct with GetCommandClass
+            FCommand.FRequest := aRequest;
+            FCommand.FServer := Listener.Server;
+            FCommand.Prepare;
           end;
           //TODO make a default command if not found
         finally
@@ -198,27 +187,27 @@ begin
         end;
       end;
 
-      if FCommandObject <> nil then
+      if FCommand <> nil then
       begin
         try
-          FCommandObject.FWorking := True; //TODO
-          if FCommandObject.Locking then
+          FCommand.FWorking := True; //TODO
+          if FCommand.Locking then
             Listener.Enter;
           try
-            if FCommandObject.Concur then
-              Synchronize(FCommandObject.Execute)
+            if FCommand.Concur then
+              Synchronize(FCommand.Execute)
             else
-              FCommandObject.Execute;
+              FCommand.Execute;
           finally
-            FCommandObject.FWorking := False;
-            if FCommandObject.Locking then
+            FCommand.FWorking := False;
+            if FCommand.Locking then
               Listener.Leave;
           end;
         except
-          if FCommandObject.RaiseExceptions then
+          if FCommand.RaiseExceptions then
             raise;
         end;
-        if FCommandObject.KeepAlive then
+        if FCommand.KeepAlive then
         begin
         //TODO
         end
@@ -226,7 +215,7 @@ begin
         begin
           if Stream.Connected then
             Stream.Disconnect;
-          FreeAndNil(FCommandObject);
+          FreeAndNil(FCommand);
         end;
       end
       else
@@ -278,21 +267,15 @@ begin
   Result.Timeout := -1;
 end;
 
-procedure TmnCommandListener.ParseCommand(const Line: string; out Method, Params: string);
+procedure TmnCommandListener.ExtractCommandName(const Line: string; out Method: string);
 var
   p: Integer;
 begin
   p := Pos(' ', Line);
   if p > 0 then
-  begin
-    Method := Trim(Copy(Line, 1, p - 1));
-    Params := Trim(Copy(Line, p + 1, MaxInt));
-  end
+    Method := Trim(Copy(Line, 1, p - 1))
   else
-  begin
     Method := Trim(Line);
-    Params := '';
-  end;
 end;
 
 constructor TmnCommandListener.Create;

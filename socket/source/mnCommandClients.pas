@@ -27,8 +27,6 @@ type
   protected
     procedure Process; override;
   public
-    constructor Create(vConnector: TmnConnector; vSocket: TmnCustomSocket); override;
-    destructor Destroy; override;
   end;
 
   TmnCommandCaller = class(TmnCaller)
@@ -56,17 +54,6 @@ implementation
 
 { TmnCommandClientConnection }
 
-constructor TmnCommandClientConnection.Create(vConnector: TmnConnector; vSocket: TmnCustomSocket);
-begin
-  inherited;
-  KeepAlive := True;
-end;
-
-destructor TmnCommandClientConnection.Destroy;
-begin
-  inherited;
-end;
-
 procedure TmnCommandClientConnection.Process;
 var
   s: string;
@@ -87,7 +74,6 @@ end;
 constructor TmnCommandCaller.Create;
 begin
   inherited;
-
 end;
 
 function TmnCommandCaller.CreateConnection(Socket: TmnCustomSocket): TmnClientConnection;
