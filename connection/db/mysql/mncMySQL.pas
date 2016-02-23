@@ -1218,7 +1218,7 @@ begin
         MYSQL_TYPE_VARCHAR,MYSQL_TYPE_VAR_STRING, MYSQL_TYPE_STRING:
         begin
           real_length := FResults.Buffers[i].length;
-          if real_length <= SizeOf(FResults.Buffers[i].buf) then
+          if real_length <= SizeOf(FResults.Buffers[i].buf.AsRaw) then
             s := FResults.Buffers[i].buf.AsString
           else
           begin
