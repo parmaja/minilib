@@ -374,7 +374,7 @@ begin
   TStrings(Sender).Add(S); //Be sure sender is TStrings
 end;
 
-function StrToStrings(Content: string; Strings: TStrings; Separators: TSysCharSet; IgnoreInitialWhiteSpace: TSysCharSet; DequoteValues: Boolean = False; Quotes: TSysCharSet = ['''', '"']): Integer;
+function StrToStrings(Content: string; Strings: TStrings; Separators: TSysCharSet; IgnoreInitialWhiteSpace: TSysCharSet; DequoteValues: Boolean; Quotes: TSysCharSet): Integer;
 begin
   if (Strings = nil) then
     raise Exception.Create('StrToStrings: Strings is nil');
