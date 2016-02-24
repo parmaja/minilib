@@ -44,7 +44,6 @@ type
 
   TmnCommand = class(TObject)
   private
-    //FName: string;
     FRequest: string;
     FKeepAlive: Boolean;
     FServer: TmnServer;
@@ -63,7 +62,6 @@ type
     //GetCommandName: make name for command when register it, useful when log the name of it
     class function GetCommandName: string; virtual;
     property Connection: TmnCommandConnection read FConnection;
-    //property Name: string read FName;
     property Request: string read FRequest; //Full of first line of header
     property RaiseExceptions: Boolean read FRaiseExceptions write FRaiseExceptions default False;
     //Lock the server listener when execute the command
