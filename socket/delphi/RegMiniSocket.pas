@@ -26,7 +26,7 @@ implementation
 
 procedure Register;
 begin
-  RegisterComponents('Mini Socket', [TmnCommandServer, TmnCommandClient{, TmnHttpServer}]);
+  //RegisterComponents('Mini Socket', [TmnCommandServer, TmnCommandClient{, TmnHttpServer}]);
 end;
 
 end.

@@ -44,7 +44,7 @@ type
 
   TmnCommand = class(TObject)
   private
-    FName: string;
+    //FName: string;
     FRequest: string;
     FKeepAlive: Boolean;
     FServer: TmnServer;
@@ -57,12 +57,13 @@ type
     procedure Execute; virtual;
     function Connected: Boolean;
     procedure Shutdown;
+    procedure DoPrepare(const vCommand: string); virtual;
   public
     constructor Create(Connection: TmnCommandConnection); virtual;
     //GetCommandName: make name for command when register it, useful when log the name of it
     class function GetCommandName: string; virtual;
     property Connection: TmnCommandConnection read FConnection;
-    property Name: string read FName;
+    //property Name: string read FName;
     property Request: string read FRequest; //Full of first line of header
     property RaiseExceptions: Boolean read FRaiseExceptions write FRaiseExceptions default False;
     //Lock the server listener when execute the command
@@ -72,7 +73,7 @@ type
     //KeepAlive keep the command object after disconnect, not completed yet!
     property KeepAlive: Boolean read FKeepAlive write FKeepAlive default False;
     //Prepare called after created in lucking mode
-    procedure Prepare; virtual;
+    procedure Prepare(const vCommand: string);
     property Server: TmnServer read FServer;
   end;
 
@@ -176,10 +177,10 @@ begin
           if aClass <> nil then
           begin
             FCommand := aClass.Create(Self);
-            FCommand.FName := aCommand; //Already correct with GetCommandClass
+            //FCommand.FName := aCommand; //Already correct with GetCommandClass
             FCommand.FRequest := aRequest;
             FCommand.FServer := Listener.Server;
-            FCommand.Prepare;
+            FCommand.Prepare(aCommand);
           end;
           //TODO make a default command if not found
         finally
@@ -321,6 +322,10 @@ begin
   FConnection := Connection;
 end;
 
+procedure TmnCommand.DoPrepare(const vCommand: string);
+begin
+end;
+
 procedure TmnCommand.Execute;
 begin
 end;
@@ -341,8 +346,9 @@ begin
   Result := ClassName;
 end;
 
-procedure TmnCommand.Prepare;
+procedure TmnCommand.Prepare(const vCommand: string);
 begin
+  DoPrepare(vCommand);
 end;
 
 { TmnCommandClasses }
