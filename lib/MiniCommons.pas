@@ -7,9 +7,8 @@ unit MiniCommons;
 interface
 
 uses
-  mnFields, mnParams, mnStreams, mnUtils, mnBase64, minibidi, MsgBox, 
-  HejriDates, HejriUtils, mnDrivers, mnLogs, UniDates, mnClasses, 
-  LazarusPackageIntf;
+  HejriDates, HejriUtils, minibidi, mnBase64, mnClasses, mnDrivers, mnFields, 
+  mnLogs, mnParams, mnStreams, mnUtils, MsgBox, UniDates, LazarusPackageIntf;
 
 implementation
 

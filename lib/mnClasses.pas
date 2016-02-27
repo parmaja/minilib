@@ -28,6 +28,8 @@ type
     property Items[Index: Integer]: _Object_ read GetItem; default;
     procedure Added(Item: _Object_); virtual;
     function Add(Item: _Object_): Integer;
+    procedure Created; virtual;
+    procedure AfterConstruction; override;
   end;
 
   GListItems<_Object_> = class(TObjectList)
@@ -39,13 +41,11 @@ type
     function Add(Item: _Object_): Integer;
   end;
 
-  GNamedItems<_Object_> = class(TObjectList)
+  GNamedItems<_Object_> = class(GItems<_Object_>)
   private
-    function GetItem(Index: Integer): _Object_;
   public
-    property Items[Index: Integer]: _Object_ read GetItem; default;
-    function Add(Item: _Object_): Integer;
-    function  Find(const Name: string): _Object_;
+    function Find(const Name: string): _Object_;
+    function IndexOfName(vName: string): Integer;
   end;
 {
   FreePascal:
@@ -73,6 +73,16 @@ begin
   Added(Item);
 end;
 
+procedure GItems<_Object_>.Created;
+begin
+end;
+
+procedure GItems<_Object_>.AfterConstruction;
+begin
+  inherited;
+  Created;
+end;
+
 { GListItems }
 
 function GListItems<_Object_>.GetItem(Index: Integer): _Object_;
@@ -92,16 +102,6 @@ end;
 
 { GNamedItems }
 
-function GNamedItems<_Object_>.GetItem(Index: Integer): _Object_;
-begin
-  Result := _Object_(inherited Items[Index]);
-end;
-
-function GNamedItems<_Object_>.Add(Item: _Object_): Integer;
-begin
-  inherited Add(Item);
-end;
-
 function  GNamedItems<_Object_>.Find(const Name: string): _Object_;
 var
   i: Integer;
@@ -115,6 +115,22 @@ begin
       break;
     end;
   end;
+end;
+
+function GNamedItems<_Object_>.IndexOfName(vName: string): Integer;
+var
+  i: integer;
+begin
+  Result := -1;
+  if vName <> '' then
+    for i := 0 to Count - 1 do
+    begin
+      if SameText(Items[i].Name, vName) then
+      begin
+        Result := i;
+        break;
+      end;
+    end;
 end;
 
 end.
