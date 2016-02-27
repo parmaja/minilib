@@ -8,7 +8,8 @@ interface
 
 uses
   mnFields, mnParams, mnStreams, mnUtils, mnBase64, minibidi, MsgBox, 
-  HejriDates, HejriUtils, mnDrivers, mnLogs, UniDates, LazarusPackageIntf;
+  HejriDates, HejriUtils, mnDrivers, mnLogs, UniDates, mnClasses, 
+  LazarusPackageIntf;
 
 implementation
 

@@ -1,9 +1,11 @@
 unit mnFields;
-{-----------------------------------------------------------------------------
- Author:    zaher
- Purpose:
- History:
------------------------------------------------------------------------------}
+{**
+ *  This file is part of the "Mini Library"
+ *
+ * @license   modifiedLGPL (modified of http://www.gnu.org/licenses/lgpl.html)
+ *            See the file COPYING.MLGPL, included in this distribution,
+ * @author    Zaher Dirkey <zaher at parmaja dot com>
+ *}
 
 {$IFDEF fpc}
 {$MODE delphi}{$H+}
@@ -907,4 +909,3 @@ begin
 end;
 
 end.
-
