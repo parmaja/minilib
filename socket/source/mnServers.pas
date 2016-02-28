@@ -108,6 +108,7 @@ type
     function GetCount: Integer;
   protected
     IsDestroying: Boolean;
+    function DoCreateListener: TmnListener; virtual;
     function CreateListener: TmnListener; virtual;
     procedure DoLog(const S: string); virtual;
     procedure DoChanged(vListener: TmnListener); virtual;
@@ -122,7 +123,7 @@ type
     constructor Create;
     procedure BeforeDestruction; override;
     destructor Destroy; override;
-    procedure Start(vListener: TmnListener = nil);
+    procedure Start;
     procedure Stop;
     procedure Open;
     procedure Close;
@@ -512,7 +513,7 @@ begin
   inherited;
 end;
 
-procedure TmnServer.Start(vListener: TmnListener);
+procedure TmnServer.Start;
 begin
   if (FListener = nil) then // if its already active, dont start again
   begin
@@ -520,9 +521,7 @@ begin
       DoStart;
       DoBeforeOpen;
       try
-        FListener := vListener;
-        if FListener = nil then
-          FListener := CreateListener;
+        FListener := CreateListener;
 //        FListener.OnLog := OnLog;
         FListener.FServer := Self;
         FListener.FPort := FPort;
@@ -587,9 +586,14 @@ begin
   DoStop;
 end;
 
-function TmnServer.CreateListener: TmnListener;
+function TmnServer.DoCreateListener: TmnListener;
 begin
   Result := TmnListener.Create;
+end;
+
+function TmnServer.CreateListener: TmnListener;
+begin
+  Result := DoCreateListener;
 end;
 
 procedure TmnServer.DoLog(const S: string);

@@ -49,11 +49,6 @@ function Log: TLogDispatcher;
 
 implementation
 
-{$ifdef FPC}
-uses
-  iostream;
-{$endif}
-
 var
   FLog: TLogDispatcher = nil;
 

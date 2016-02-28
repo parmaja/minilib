@@ -106,12 +106,15 @@ type
 
   TOnHttpServerEvent = procedure(Sender: TObject; Socket: THttpConnection) of object;
 
+  { TmnHttpServer }
+
   TmnHttpServer = class(TmnServer)
   private
     FDocumentRoot: string;
     FDefaultDocument: TStringList;
     procedure SetDefaultDoc(const Value: TStringList);
   protected
+    function DoCreateListener: TmnListener; override;
     function CreateListener: TmnListener; override;
   public
     constructor Create;
@@ -400,9 +403,14 @@ begin
   FDefaultDocument.Assign(Value);
 end;
 
-function TmnHttpServer.CreateListener: TmnListener;
+function TmnHttpServer.DoCreateListener: TmnListener;
 begin
   Result := TmnHttpListener.Create;
+end;
+
+function TmnHttpServer.CreateListener: TmnListener;
+begin
+  Result := inherited CreateListener;
   TmnHttpListener(Result).DocumentRoot := ExcludeTrailingPathDelimiter(FDocumentRoot);
   TmnHttpListener(Result).DefaultDocument.Assign(FDefaultDocument);
 end;
