@@ -522,7 +522,6 @@ begin
       DoBeforeOpen;
       try
         FListener := CreateListener;
-//        FListener.OnLog := OnLog;
         FListener.FServer := Self;
         FListener.FPort := FPort;
         FListener.FAddress := Address;

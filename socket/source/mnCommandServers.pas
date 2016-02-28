@@ -103,7 +103,7 @@ type
 
   TmnCommandServer = class;
 
-  { TmnCommandListener }
+  { TmnCustomCommandListener }
 
   TmnCustomCommandListener = class(TmnListener)
   private
@@ -113,11 +113,12 @@ type
     function ParseRequest(const Request: string): TmnRequest; virtual;
   public
     constructor Create;
-    destructor Destroy; override;
     //Name here will corrected with registered item name for example Get -> GET
-    function GetCommandClass(var Name: string): TmnCommandClass; virtual; abstract;
-    function CreateCommand(Connection: TmnCommandConnection; var Name: string): TmnCommand;
+    function GetCommandClass(var CommandName: string): TmnCommandClass; virtual; abstract;
+    function CreateCommand(Connection: TmnCommandConnection; var CommandName: string): TmnCommand;
   end;
+
+  { TmnCommandListener }
 
   TmnCommandListener = class(TmnCustomCommandListener)
   private
@@ -125,7 +126,7 @@ type
   protected
     property Server: TmnCommandServer read GetServer;
   public
-    function GetCommandClass(var Name: string): TmnCommandClass; override;
+    function GetCommandClass(var CommandName: string): TmnCommandClass; override;
   end;
 
   TmnCommandServer = class(TmnEventServer)
@@ -152,14 +153,14 @@ begin
   Result := inherited Server as TmnCommandServer;
 end;
 
-function TmnCommandListener.GetCommandClass(var Name: string): TmnCommandClass;
+function TmnCommandListener.GetCommandClass(var CommandName: string): TmnCommandClass;
 var
   aItem: TmnCommandClassItem;
 begin
-  aItem := Server.Commands.Find(Name);
+  aItem := Server.Commands.Find(CommandName);
   if aItem <> nil then
   begin
-    Name := aItem.Name;
+    CommandName := aItem.Name;
     Result := aItem.CommandClass;
   end
   else
@@ -304,25 +305,20 @@ begin
   FOptions := FOptions + [soReuseAddr];
 end;
 
-destructor TmnCustomCommandListener.Destroy;
-begin
-  inherited;
-end;
-
 function TmnCommandServer.RegisterCommand(vName: string; CommandClass: TmnCommandClass): Integer;
 begin
   if Active then
     raise TmnCommandExceotion.Create('Server is Active');
   if FCommands.Find(vName) <> nil then
     raise TmnCommandExceotion.Create('Command already exists: ' + vName);
-  Result := FCommands.Add(UpperCase(vName), CommandClass);
+  Result := FCommands.Add(vName, CommandClass);
 end;
 
-function TmnCustomCommandListener.CreateCommand(Connection: TmnCommandConnection; var Name: string): TmnCommand;
+function TmnCustomCommandListener.CreateCommand(Connection: TmnCommandConnection; var CommandName: string): TmnCommand;
 var
   aClass: TmnCommandClass;
 begin
-  aClass := GetCommandClass(Name);
+  aClass := GetCommandClass(CommandName);
   if aClass <> nil then
   begin
     Result := aClass.Create(Connection);

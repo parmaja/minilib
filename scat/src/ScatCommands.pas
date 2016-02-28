@@ -16,7 +16,7 @@ unit ScatCommands;
 interface
 
 uses
-  SysUtils, Classes, syncobjs,
+  SysUtils, Classes,
   mnFields, mnUtils, mnSockets, mnServers, mnCommandServers, ScatServers, mnStreams, mnSocketStreams;
 
 type
@@ -73,7 +73,12 @@ type
   public
   end;
 
+  { TscatWebModule }
+
   TscatWebModule = class(TscatModule)
+  public
+    constructor Create(Server: TscatServer);
+    function Match(Path: string): Boolean; override;
   end;
 
 implementation
@@ -87,6 +92,19 @@ begin
   Name := Copy(s, 1, p - 1);
   Value := DequoteStr(Copy(s, p + 1, MaxInt));
   (vObject as TmnFields).Add(Name, Value);
+end;
+
+{ TscatWebModule }
+
+constructor TscatWebModule.Create(Server: TscatServer);
+begin
+  inherited;
+  Commands.Add('GET', TscatGetCommand);
+end;
+
+function TscatWebModule.Match(Path: string): Boolean;
+begin
+  //TODO
 end;
 
 { TscatWebCommand }
