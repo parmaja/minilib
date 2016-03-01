@@ -110,10 +110,9 @@ type
 
   TmnCustomCommandListener = class(TmnListener)
   private
-  protected
     function CreateConnection(vSocket: TmnCustomSocket): TmnServerConnection; override;
     function CreateStream(Socket: TmnCustomSocket): TmnSocketStream; override;
-    function ParseRequest(const Request: string): TmnRequest; virtual;
+    function ParseRequest(const Request: string): TmnRequest; virtual; abstract;
   public
     constructor Create;
     //Name here will corrected with registered item name for example Get -> GET
@@ -128,6 +127,7 @@ type
     function GetServer: TmnCommandServer;
   protected
     property Server: TmnCommandServer read GetServer;
+    function ParseRequest(const Request: string): TmnRequest; override;
   public
     function GetCommandClass(var CommandName: string): TmnCommandClass; override;
   end;
@@ -151,9 +151,26 @@ uses
 
 { TmnCommandListener }
 
-function TmnCommandListener.GetServer: TmnCommandServer;
+function TmnCommandListener.ParseRequest(const Request: string): TmnRequest;
+var
+  aRequests: TStringList;
 begin
-  Result := inherited Server as TmnCommandServer;
+  Finalize(Result);
+  aRequests := TStringList.Create;
+  try
+    StrToStrings(Request, aRequests, [' '], []);
+    if aRequests.Count > 0 then
+    begin
+      Result.Name := aRequests[0];
+      Result.Method := Result.Name;
+    end;
+    if aRequests.Count > 1 then
+      Result.Path := aRequests[1];
+    if aRequests.Count > 1 then
+      Result.Version := aRequests[2];
+  finally
+    aRequests.Free;
+  end;
 end;
 
 function TmnCommandListener.GetCommandClass(var CommandName: string): TmnCommandClass;
@@ -278,28 +295,15 @@ begin
   Result := TmnCommandConnection.Create(Self, vSocket);
 end;
 
+function TmnCommandListener.GetServer: TmnCommandServer;
+begin
+  Result := inherited Server as TmnCommandServer;
+end;
+
 function TmnCustomCommandListener.CreateStream(Socket: TmnCustomSocket): TmnSocketStream;
 begin
   Result := inherited CreateStream(Socket);
   Result.Timeout := -1;
-end;
-
-function TmnCustomCommandListener.ParseRequest(const Request: string): TmnRequest;
-var
-  aRequests: TStringList;
-begin
-  inherited;
-  Finalize(Result);
-  aRequests := TStringList.Create;
-  try
-    StrToStrings(Request, aRequests, [' '], []);
-    Result.Name := aRequests[0];
-    Result.Method := Result.Name;
-    Result.Path := aRequests[1];
-    Result.Version := aRequests[2];
-  finally
-    aRequests.Free;
-  end;
 end;
 
 constructor TmnCustomCommandListener.Create;

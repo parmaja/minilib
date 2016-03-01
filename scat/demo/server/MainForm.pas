@@ -155,6 +155,7 @@ var
   aAutoRun:Boolean;
 begin
   ScatServer := TScatServer.Create;
+  ScatServer.RegisterCommand('GET', TscatGetCommand);
   ScatServer.OnBeforeOpen := ScatServerBeforeOpen;
   ScatServer.OnAfterClose := ScatServerAfterClose;
   ScatServer.OnChanged :=  ScatServerChanged;
