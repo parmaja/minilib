@@ -21,7 +21,7 @@ type
 
   { GItems }
 
-  GItems<_Object_> = class(TObjectList)
+  GItems<_Object_{$ifndef FPC}: class{$endif}> = class(TObjectList)
   private
     function GetItem(Index: Integer): _Object_;
   public
@@ -32,21 +32,14 @@ type
     procedure AfterConstruction; override;
   end;
 
-  GListItems<_Object_> = class(TObjectList)
-  private
-    function GetItem(Index: Integer): _Object_;
-    procedure SetItem(Index: Integer; const Value: _Object_);
-  public
-    property Items[Index: Integer]: _Object_ read GetItem write SetItem; default;
-    function Add(Item: _Object_): Integer;
-  end;
-
+  {$ifdef FPC}
   GNamedItems<_Object_> = class(GItems<_Object_>)
   private
   public
     function Find(const Name: string): _Object_;
     function IndexOfName(vName: string): Integer;
   end;
+  {$endif}
 {
   FreePascal:
 
@@ -83,23 +76,7 @@ begin
   Created;
 end;
 
-{ GListItems }
-
-function GListItems<_Object_>.GetItem(Index: Integer): _Object_;
-begin
-  Result := _Object_(inherited Items[Index]);
-end;
-
-procedure GListItems<_Object_>.SetItem(Index: Integer; const Value: _Object_);
-begin
-  Items[Index] := Value;
-end;
-
-function GListItems<_Object_>.Add(Item: _Object_): Integer;
-begin
-  inherited Add(Item);
-end;
-
+{$ifdef FPC}
 { GNamedItems }
 
 function  GNamedItems<_Object_>.Find(const Name: string): _Object_;
@@ -132,5 +109,6 @@ begin
       end;
     end;
 end;
+{$endif}
 
 end.
