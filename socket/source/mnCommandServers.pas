@@ -166,7 +166,7 @@ begin
     end;
     if aRequests.Count > 1 then
       Result.Path := aRequests[1];
-    if aRequests.Count > 1 then
+    if aRequests.Count > 2 then
       Result.Version := aRequests[2];
   finally
     aRequests.Free;
