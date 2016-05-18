@@ -33,8 +33,9 @@
         </CompilerMessages>
       </Other>
     </CompilerOptions>
+    <Description Value="Mini Connection, DB and Streams"/>
     <Version Major="1" Release="1"/>
-    <Files Count="4">
+    <Files Count="29">
       <Item1>
         <Filename Value="mncConnections.pas"/>
         <UnitName Value="mncConnections"/>
@@ -51,6 +52,90 @@
         <Filename Value="mncCommons.pas"/>
         <UnitName Value="mncCommons"/>
       </Item4>
+      <Item5>
+        <Filename Value="mncDB.pas"/>
+        <UnitName Value="mncDB"/>
+      </Item5>
+      <Item6>
+        <Filename Value="mncMetas.pas"/>
+        <UnitName Value="mncMetas"/>
+      </Item6>
+      <Item7>
+        <Filename Value="mncSQL.pas"/>
+        <UnitName Value="mncSQL"/>
+      </Item7>
+      <Item8>
+        <Filename Value="mysql\mncMySQL.pas"/>
+        <UnitName Value="mncMySQL"/>
+      </Item8>
+      <Item9>
+        <Filename Value="mysql\mncMySQLdyn.pp"/>
+        <UnitName Value="mncMySQLdyn"/>
+      </Item9>
+      <Item10>
+        <Filename Value="mysql\mysql.inc"/>
+        <Type Value="Include"/>
+      </Item10>
+      <Item11>
+        <Filename Value="postgre\mncPGHeader.pas"/>
+        <UnitName Value="mncPGHeader"/>
+      </Item11>
+      <Item12>
+        <Filename Value="postgre\mncPostgre.pas"/>
+        <UnitName Value="mncPostgre"/>
+      </Item12>
+      <Item13>
+        <Filename Value="postgre\pg.inc"/>
+        <Type Value="Include"/>
+      </Item13>
+      <Item14>
+        <Filename Value="firebird\mncSQLDA.pas"/>
+        <UnitName Value="mncSQLDA"/>
+      </Item14>
+      <Item15>
+        <Filename Value="firebird\readme.txt"/>
+        <Type Value="Text"/>
+      </Item15>
+      <Item16>
+        <Filename Value="firebird\mncFBBlob.pas"/>
+        <UnitName Value="mncFBBlob"/>
+      </Item16>
+      <Item17>
+        <Filename Value="firebird\mncFBClient.pas"/>
+        <UnitName Value="mncFBClient"/>
+      </Item17>
+      <Item18>
+        <Filename Value="firebird\mncFBErrors.inc"/>
+        <Type Value="Include"/>
+      </Item18>
+      <Item19>
+        <Filename Value="firebird\mncFBErrors.pas"/>
+        <UnitName Value="mncFBErrors"/>
+      </Item19>
+      <Item20>
+        <Filename Value="firebird\mncFBHeader.pas"/>
+        <UnitName Value="mncFBHeader"/>
+      </Item20>
+      <Item21>
+        <Filename Value="firebird\mncFBMetas.pas"/>
+        <UnitName Value="mncFBMetas"/>
+      </Item21>
+      <Item22>
+        <Filename Value="firebird\mncFBStrings.pas"/>
+        <UnitName Value="mncFBStrings"/>
+      </Item22>
+      <Item23>
+        <Filename Value="firebird\mncFBTypes.pas"/>
+        <UnitName Value="mncFBTypes"/>
+      </Item23>
+      <Item24>
+        <Filename Value="firebird\mncFBUtils.pas"/>
+        <UnitName Value="mncFBUtils"/>
+      </Item24>
+      <Item25>
+        <Filename Value="firebird\mncFirebird.pas"/>
+        <UnitName Value="mncFirebird"/>
+      </Item25>
     </Files>
     <RequiredPkgs Count="2">
       <Item1>

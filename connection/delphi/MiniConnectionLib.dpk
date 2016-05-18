@@ -34,16 +34,16 @@ requires
   MiniCommonsLib;
 
 contains
-  mncConnections in '..\source\mncConnections.pas',
-  mncCSV in '..\source\mncCSV.pas',
-  mncSQL in '..\db\mncSQL.pas',
-  mncDB in '..\db\mncDB.pas',
-  mncSQLite in '..\db\sqlite\mncSQLite.pas',
-  mncSQLiteHeader in '..\db\sqlite\mncSQLiteHeader.pas',
-  mncPGHeader in '..\db\postgre\mncPGHeader.pas',
-  mncPostgre in '..\db\postgre\mncPostgre.pas',
-  mncCommons in '..\source\mncCommons.pas',
-  mncMetas in '..\db\mncMetas.pas',
-  mncSQLiteMetas in '..\db\sqlite\mncSQLiteMetas.pas';
+  mncConnections in '..\src\mncConnections.pas',
+  mncCSV in '..\src\mncCSV.pas',
+  mncSQL in '..\src\mncSQL.pas',
+  mncDB in '..\src\mncDB.pas',
+  mncSQLite in '..\src\sqlite\mncSQLite.pas',
+  mncSQLiteHeader in '..\src\sqlite\mncSQLiteHeader.pas',
+  mncPGHeader in '..\src\postgre\mncPGHeader.pas',
+  mncPostgre in '..\src\postgre\mncPostgre.pas',
+  mncCommons in '..\src\mncCommons.pas',
+  mncMetas in '..\src\mncMetas.pas',
+  mncSQLiteMetas in '..\src\sqlite\mncSQLiteMetas.pas';
 
 end.

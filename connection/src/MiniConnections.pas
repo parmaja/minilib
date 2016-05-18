@@ -4,10 +4,14 @@
 
 unit MiniConnections;
 
+{$warn 5023 off : no warning about unused units}
 interface
 
 uses
-  mncConnections, mncCSV, mncCSVExchanges, mncCommons, LazarusPackageIntf;
+  mncConnections, mncCSV, mncCSVExchanges, mncCommons, mncDB, mncMetas, 
+  mncSQL, mncMySQL, mncMySQLdyn, mncPGHeader, mncPostgre, mncSQLDA, mncFBBlob, 
+  mncFBClient, mncFBErrors, mncFBHeader, mncFBMetas, mncFBStrings, mncFBTypes, 
+  mncFBUtils, mncFirebird, LazarusPackageIntf;
 
 implementation
 
