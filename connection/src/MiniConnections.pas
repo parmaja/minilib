@@ -4,21 +4,15 @@
 
 unit MiniConnections;
 
-{$warn 5023 off : no warning about unused units}
 interface
 
 uses
   mncConnections, mncCSV, mncCSVExchanges, mncCommons, mncDB, mncMetas, 
   mncSQL, mncMySQL, mncMySQLdyn, mncPGHeader, mncPostgre, mncSQLDA, mncFBBlob, 
   mncFBClient, mncFBErrors, mncFBHeader, mncFBMetas, mncFBStrings, mncFBTypes, 
-  mncFBUtils, mncFirebird, LazarusPackageIntf;
+  mncFBUtils, mncFirebird, CSVOptionsForms, mncSQLite, ParamsForms, 
+  mncSQLiteHeader, mncSQLiteMetas;
 
 implementation
 
-procedure Register;
-begin
-end;
-
-initialization
-  RegisterPackage('MiniConnections', @Register);
 end.

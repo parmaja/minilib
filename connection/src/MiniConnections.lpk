@@ -3,13 +3,12 @@
   <Package Version="4">
     <PathDelim Value="\"/>
     <Name Value="MiniConnections"/>
-    <Type Value="RunAndDesignTime"/>
     <CompilerOptions>
       <Version Value="11"/>
       <PathDelim Value="\"/>
       <SearchPaths>
         <IncludeFiles Value="$(ProjOutDir)"/>
-        <OtherUnitFiles Value="."/>
+        <OtherUnitFiles Value=".;ui;sqlite;mysql;postgre;firebird"/>
         <UnitOutputDirectory Value="units\$(TargetCPU)-$(TargetOS)"/>
       </SearchPaths>
       <Parsing>
@@ -35,7 +34,7 @@
     </CompilerOptions>
     <Description Value="Mini Connection, DB and Streams"/>
     <Version Major="1" Release="1"/>
-    <Files Count="29">
+    <Files Count="34">
       <Item1>
         <Filename Value="mncConnections.pas"/>
         <UnitName Value="mncConnections"/>
@@ -136,15 +135,38 @@
         <Filename Value="firebird\mncFirebird.pas"/>
         <UnitName Value="mncFirebird"/>
       </Item25>
+      <Item30>
+        <Filename Value="ui\CSVOptionsForms.pas"/>
+        <UnitName Value="CSVOptionsForms"/>
+      </Item30>
+      <Item31>
+        <Filename Value="sqlite\mncSQLite.pas"/>
+        <UnitName Value="mncSQLite"/>
+      </Item31>
+      <Item32>
+        <Filename Value="ui\ParamsForms.pas"/>
+        <UnitName Value="ParamsForms"/>
+      </Item32>
+      <Item33>
+        <Filename Value="sqlite\mncSQLiteHeader.pas"/>
+        <UnitName Value="mncSQLiteHeader"/>
+      </Item33>
+      <Item34>
+        <Filename Value="sqlite\mncSQLiteMetas.pas"/>
+        <UnitName Value="mncSQLiteMetas"/>
+      </Item34>
     </Files>
-    <RequiredPkgs Count="2">
+    <RequiredPkgs Count="3">
       <Item1>
-        <PackageName Value="MiniCommons"/>
+        <PackageName Value="LCL"/>
       </Item1>
       <Item2>
+        <PackageName Value="MiniCommons"/>
+      </Item2>
+      <Item3>
         <PackageName Value="FCL"/>
         <MinVersion Major="1" Valid="True"/>
-      </Item2>
+      </Item3>
     </RequiredPkgs>
     <UsageOptions>
       <UnitPath Value="$(PkgOutDir)"/>
