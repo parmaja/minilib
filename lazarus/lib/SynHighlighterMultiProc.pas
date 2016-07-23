@@ -17,8 +17,11 @@ uses
   SynEdit, SynEditTypes, SynEditHighlighter, SynHighlighterHashEntries;
 
 type
-  TtkTokenKind = (tkUnknown, tkNull, tkSpace, tkComment, tkDocument, tkIdentifier, tkSymbol, tkNumber,
+  TtkTokenKind = (tkUnknown, tkNull, tkSpace, tkComment, tkDocument, tkIdentifier, tkSymbol, tkNumber, //tkControl, //like {};
     tkString, tkValue, tkText, tkKeyword, tkFunction, tkVariable, tkProcessor);
+
+  //Common range used for some syntax
+  TCommonRangeState = (rscUnknown, rscComment, rscCommentPlus, rscDocument, rscStringSQ, rscStringDQ, rscStringBQ); //BackQuote
 
   TProcTableProc = procedure of object;
 
@@ -48,6 +51,7 @@ type
     function KeyHash(ToHash: PChar): integer; virtual;
     function IdentKind(MayBe: PChar): TtkTokenKind; virtual;
     function GetEndOfLineAttribute: TSynHighlighterAttributes; virtual;
+
   public
     FStringLen: integer;
     FToIdent: PChar;
@@ -64,6 +68,50 @@ type
     property Parent: TSynMultiProcSyn read FParent;
     property Name: string read FName write FName;
     property Index: integer read FIndex;
+  end;
+
+  { TCommonSynProcessor }
+
+  TCommonSynProcessor = class(TSynProcessor)
+  private
+    FRange: TCommonRangeState;
+  protected
+    //LastRange: Bad Idea but let us try
+    LastRange: TCommonRangeState;
+  public
+    procedure ResetRange; override;
+    function GetRange: Byte; override;
+    procedure SetRange(Value: Byte); override;
+    procedure SetRange(Value: TCommonRangeState); overload;
+
+    property Range: TCommonRangeState read FRange;
+
+    //Common procs
+    procedure InternalCommentProc; //   /* */
+    procedure InternalCommentPlusProc;//    /+ +/
+
+    procedure SLCommentProc; //Single Line Comment //comment or #comment depend on who started
+    procedure CommentProc;
+    procedure CommentPlusProc;
+    procedure DocumentProc;
+
+    procedure StringProc;
+    procedure StringSQProc;
+    procedure StringDQProc;
+    procedure StringBQProc;
+
+    procedure UnknownProc;
+    procedure NullProc;
+    procedure CRProc;
+    procedure LFProc;
+    procedure SpaceProc;
+
+    procedure SymbolProc;
+    procedure ControlProc;
+    procedure NumberProc;
+
+    procedure MakeIdentTable; override;
+    procedure MakeMethodTables; override;
   end;
 
   TSynProcessors = class(TObjectList)
@@ -259,6 +307,220 @@ var
 begin
   HashValue := KeyHash(PChar(AKeyword));
   FKeywords[HashValue] := TSynHashEntry.Create(AKeyword, AKind);
+end;
+
+
+{ TCommonSynProcessor }
+
+function TCommonSynProcessor.GetRange: Byte;
+begin
+  Result := Byte(Range);
+end;
+
+procedure TCommonSynProcessor.ResetRange;
+begin
+  inherited;
+  SetRange(rscUnknown);
+  LastRange := rscUnknown;
+end;
+
+procedure TCommonSynProcessor.SetRange(Value: Byte);
+begin
+  SetRange(TCommonRangeState(Value));
+end;
+
+procedure TCommonSynProcessor.SetRange(Value: TCommonRangeState);
+begin
+  if FRange <> Value then
+    LastRange := FRange;
+  FRange := Value;
+end;
+
+procedure TCommonSynProcessor.InternalCommentProc;
+begin
+  begin
+    while not (Parent.FLine[Parent.Run] in [#0, #10, #13]) do
+    begin
+      if (Parent.FLine[Parent.Run] = '*') and (Parent.FLine[Parent.Run + 1] = '/') then
+      begin
+        SetRange(rscUnKnown);//TODO
+        Inc(Parent.Run, 2);
+        break;
+      end;
+      Inc(Parent.Run);
+    end;
+  end;
+end;
+
+procedure TCommonSynProcessor.InternalCommentPlusProc;
+begin
+  while not (Parent.FLine[Parent.Run] in [#0, #10, #13]) do
+  begin
+    if (Parent.FLine[Parent.Run] = '+') and (Parent.FLine[Parent.Run + 1] = '/') then
+    begin
+      SetRange(rscUnknown);
+      Inc(Parent.Run, 2);
+      break;
+    end;
+    Inc(Parent.Run);
+  end;
+end;
+
+procedure TCommonSynProcessor.SLCommentProc;
+begin
+  Parent.FTokenID := tkComment;
+  repeat
+    Inc(Parent.Run);
+  until Parent.FLine[Parent.Run] in [#0, #10, #13];
+end;
+
+procedure TCommonSynProcessor.CommentProc;
+begin
+  Parent.FTokenID := tkComment;
+  SetRange(rscComment);
+  InternalCommentProc;
+end;
+
+procedure TCommonSynProcessor.CommentPlusProc;
+begin
+  Parent.FTokenID := tkComment;
+  SetRange(rscCommentPlus);
+  InternalCommentPlusProc;
+end;
+
+procedure TCommonSynProcessor.DocumentProc;
+begin
+  Parent.FTokenID := tkDocument;
+  SetRange(rscDocument);
+  InternalCommentProc;
+end;
+
+procedure TCommonSynProcessor.StringProc;
+
+  function IsEscaped: boolean;
+  var
+    iFirstSlashPos: integer;
+  begin
+    iFirstSlashPos := Parent.Run - 1;
+    while (iFirstSlashPos > 0) and (Parent.FLine[iFirstSlashPos] = '\') do
+      Dec(iFirstSlashPos);
+    Result := (Parent.Run - iFirstSlashPos + 1) mod 2 <> 0;
+  end;
+
+var
+  iCloseChar: char;
+begin
+  Parent.FTokenID := tkString;
+  case Range of
+    rscStringSQ: iCloseChar := '''';
+    rscStringDQ: iCloseChar := '"';
+    rscStringBQ: iCloseChar := '`';
+  end;
+
+  while not (Parent.FLine[Parent.Run] in [#0, #10, #13]) do
+  begin
+    if (Parent.FLine[Parent.Run] = iCloseChar) and (not IsEscaped) then
+    begin
+      SetRange(rscUnKnown);
+      inc(Parent.Run);
+      break;
+    end;
+    Inc(Parent.Run);
+  end;
+end;
+
+procedure TCommonSynProcessor.StringDQProc;
+begin
+  SetRange(rscStringDQ);
+  Inc(Parent.Run);
+  StringProc;
+end;
+
+procedure TCommonSynProcessor.StringBQProc;
+begin
+  SetRange(rscStringBQ);
+  Inc(Parent.Run);
+  StringProc;
+end;
+
+procedure TCommonSynProcessor.UnknownProc;
+begin
+  inc(Parent.Run);
+  Parent.FTokenID := tkUnknown;
+end;
+
+procedure TCommonSynProcessor.NullProc;
+begin
+  Parent.FTokenID := tkNull;
+end;
+
+procedure TCommonSynProcessor.CRProc;
+begin
+  Parent.FTokenID := tkSpace;
+  Inc(Parent.Run);
+  if Parent.FLine[Parent.Run] = #10 then
+    Inc(Parent.Run);
+end;
+
+procedure TCommonSynProcessor.LFProc;
+begin
+  Parent.FTokenID := tkSpace;
+  inc(Parent.Run);
+end;
+
+procedure TCommonSynProcessor.SpaceProc;
+begin
+  Parent.FTokenID := tkSpace;
+  repeat
+    Inc(Parent.Run);
+  until (Parent.FLine[Parent.Run] > #32) or (Parent.FLine[Parent.Run] in [#0, #10, #13]);
+end;
+
+procedure TCommonSynProcessor.SymbolProc;
+begin
+  Inc(Parent.Run);
+  Parent.FTokenID := tkSymbol;
+end;
+
+procedure TCommonSynProcessor.ControlProc;
+begin
+  Inc(Parent.Run);
+  Parent.FTokenID := tkSymbol;
+end;
+
+procedure TCommonSynProcessor.NumberProc;
+begin
+  inc(Parent.Run);
+  Parent.FTokenID := tkNumber;
+  while Parent.FLine[Parent.Run] in ['0'..'9', '.', '-', 'E', 'x'] do
+  begin
+    case Parent.FLine[Parent.Run] of
+      '.':
+        if Parent.FLine[Parent.Run + 1] = '.' then
+          break;
+    end;
+    inc(Parent.Run);
+  end;
+end;
+
+procedure TCommonSynProcessor.MakeIdentTable;
+begin
+  inherited MakeIdentTable;
+end;
+
+procedure TCommonSynProcessor.MakeMethodTables;
+begin
+  inherited;
+  ProcTable[#0] := @NullProc;
+  ProcTable[#10] := @LFProc;
+  ProcTable[#13] := @CRProc;
+end;
+
+procedure TCommonSynProcessor.StringSQProc;
+begin
+  SetRange(rscStringSQ);
+  Inc(Parent.Run);
+  StringProc;
 end;
 
 procedure TSynMultiProcSyn.MakeMethodTables;
@@ -547,7 +809,6 @@ end;
 
 procedure TSynProcessor.MakeMethodTables;
 begin
-
 end;
 
 procedure TSynProcessor.Next;
@@ -734,6 +995,7 @@ begin
   for i := 0 to Processors.Count - 1 do
     Processors[i].InitIdent;
 end;
+
 
 end.
 

@@ -22,57 +22,23 @@ uses
   SynEditHighlighter, SynHighlighterHashEntries, SynHighlighterMultiProc;
 
 type
-  TCppRangeState = (rsCppUnknown, rsCppComment, rsCppCommentPlus, rsCppDocument, rsCppStringSQ, rsCppStringDQ, rsCppStringBQ); //BackQuote
 
   { TDProcessor }
 
-  TCppProcessor = class(TSynProcessor)
-  private
+  TCppProcessor = class(TCommonSynProcessor)
   protected
-    FRange: TCppRangeState;
-    //LastRange: Bad Idea but let us try
-    LastRange: TCppRangeState;
     function GetIdentChars: TSynIdentChars; override;
-    procedure ResetRange; override;
-    function GetRange: Byte; override;
-    procedure SetRange(Value: Byte); override;
-    procedure SetRange(Value: TCppRangeState); overload;
     function KeyHash(ToHash: PChar): Integer; override;
-    procedure InternalCommentProc;
-    procedure InternalCommentPlusProc;
     function GetEndOfLineAttribute: TSynHighlighterAttributes; override;
   public
     procedure QuestionProc;
-    procedure AndSymbolProc;
-    procedure HashLineCommentProc;
-    procedure CommentProc;
-    procedure CommentPlusProc;
-    procedure DocumentProc;
     procedure SlashProc;
-    procedure StringProc;
-    procedure StringSQProc;
-    procedure StringDQProc;
-    procedure StringBQProc;
-    procedure EqualProc;
     procedure IdentProc;
-    procedure CRProc;
-    procedure LFProc;
     procedure GreaterProc;
     procedure LowerProc;
-    procedure MinusProc;
-    procedure NullProc;
-    procedure NumberProc;
-    procedure OrSymbolProc;
-    procedure PlusProc;
-    procedure SpaceProc;
-    procedure SymbolProc;
-    procedure SymbolAssignProc;
-    procedure VariableProc;
-    procedure UnknownProc;
+
     procedure SetLine(const NewValue: string; LineNumber: integer); override;
     procedure Next; override;
-
-    property Range: TCppRangeState read FRange;
 
     procedure InitIdent; override;
     procedure MakeMethodTables; override;
@@ -144,73 +110,6 @@ begin
     HashCharTable[c] := 2 + Ord(c) - Ord('A');
 end;
 
-procedure TCppProcessor.AndSymbolProc;
-begin
-  Parent.FTokenID := tkSymbol;
-  Inc(Parent.Run);
-  if Parent.FLine[Parent.Run] in ['=', '&'] then
-    Inc(Parent.Run);
-end;
-
-procedure TCppProcessor.HashLineCommentProc;
-begin
-  Parent.FTokenID := tkComment;
-  Inc(Parent.Run);
-  repeat
-    Inc(Parent.Run);
-  until Parent.FLine[Parent.Run] in [#0, #10, #13];
-end;
-
-procedure TCppProcessor.StringProc;
-
-  function IsEscaped: boolean;
-  var
-    iFirstSlashPos: integer;
-  begin
-    iFirstSlashPos := Parent.Run - 1;
-    while (iFirstSlashPos > 0) and (Parent.FLine[iFirstSlashPos] = '\') do
-      Dec(iFirstSlashPos);
-    Result := (Parent.Run - iFirstSlashPos + 1) mod 2 <> 0;
-  end;
-
-var
-  iCloseChar: char;
-begin
-  Parent.FTokenID := tkString;
-  case Range of
-    rsCppStringSQ: iCloseChar := '''';
-    rsCppStringDQ: iCloseChar := '"';
-    rsCppStringBQ: iCloseChar := '`';
-  end;
-
-  while not (Parent.FLine[Parent.Run] in [#0, #10, #13]) do
-  begin
-    if (Parent.FLine[Parent.Run] = iCloseChar) and (not IsEscaped) then
-    begin
-      SetRange(rsCppUnKnown);
-      inc(Parent.Run);
-      break;
-    end;
-    Inc(Parent.Run);
-  end;
-end;
-
-procedure TCppProcessor.CRProc;
-begin
-  Parent.FTokenID := tkSpace;
-  Inc(Parent.Run);
-  if Parent.FLine[Parent.Run] = #10 then
-    Inc(Parent.Run);
-end;
-
-procedure TCppProcessor.EqualProc;
-begin
-  Parent.FTokenID := tkSymbol;
-  Inc(Parent.Run);
-  if Parent.FLine[Parent.Run] in ['=', '>'] then
-    Inc(Parent.Run);
-end;
-
 procedure TCppProcessor.GreaterProc;
 begin
   Parent.FTokenID := tkSymbol;
@@ -233,12 +132,6 @@ begin
       inc(Parent.Run);
 end;
 
-procedure TCppProcessor.LFProc;
-begin
-  Parent.FTokenID := tkSpace;
-  inc(Parent.Run);
-end;
-
 procedure TCppProcessor.LowerProc;
 begin
   Parent.FTokenID := tkSymbol;
@@ -254,60 +147,13 @@ begin
   end;
 end;
 
-procedure TCppProcessor.MinusProc;
-begin
-  Parent.FTokenID := tkSymbol;
-  Inc(Parent.Run);
-  if Parent.FLine[Parent.Run] in ['=', '-'] then
-    Inc(Parent.Run);
-end;
-
-procedure TCppProcessor.NullProc;
-begin
-  Parent.FTokenID := tkNull;
-end;
-
-procedure TCppProcessor.NumberProc;
-begin
-  inc(Parent.Run);
-  Parent.FTokenID := tkNumber;
-  while Parent.FLine[Parent.Run] in ['0'..'9', '.', '-', 'E', 'x'] do
-  begin
-    case Parent.FLine[Parent.Run] of
-      '.':
-        if Parent.FLine[Parent.Run + 1] = '.' then
-          break;
-    end;
-    inc(Parent.Run);
-  end;
-end;
-
-procedure TCppProcessor.OrSymbolProc;
-begin
-  Parent.FTokenID := tkSymbol;
-  Inc(Parent.Run);
-  if Parent.FLine[Parent.Run] in ['=', '|'] then
-    Inc(Parent.Run);
-end;
-
-procedure TCppProcessor.PlusProc;
-begin
-  Parent.FTokenID := tkSymbol;
-  Inc(Parent.Run);
-  if Parent.FLine[Parent.Run] in ['=', '+'] then
-    Inc(Parent.Run);
-end;
-
 procedure TCppProcessor.SlashProc;
 begin
   Inc(Parent.Run);
   case Parent.FLine[Parent.Run] of
     '/':
       begin
-        Parent.FTokenID := tkComment;
-        repeat
-          Inc(Parent.Run);
-        until Parent.FLine[Parent.Run] in [#0, #10, #13];
+        SLCommentProc;
       end;
     '*':
       begin
@@ -317,126 +163,42 @@ begin
         else
           CommentProc;
       end;
-    '+':
-      begin
-        Inc(Parent.Run);
-        if Parent.FLine[Parent.Run] = '+' then
-          DocumentProc
-        else
-          CommentPlusProc;
-      end;
-    '=':
-      begin
-        Inc(Parent.Run);
-        Parent.FTokenID := tkSymbol;
-      end;
   else
     Parent.FTokenID := tkSymbol;
   end;
 end;
 
-procedure TCppProcessor.SpaceProc;
-begin
-  Parent.FTokenID := tkSpace;
-  repeat
-    Inc(Parent.Run);
-  until (Parent.FLine[Parent.Run] > #32) or (Parent.FLine[Parent.Run] in [#0, #10, #13]);
-end;
-
-procedure TCppProcessor.SymbolProc;
-begin
-  Inc(Parent.Run);
-  Parent.FTokenID := tkSymbol;
-end;
-
-procedure TCppProcessor.SymbolAssignProc;
-begin
-  Parent.FTokenID := tkSymbol;
-  Inc(Parent.Run);
-  if Parent.FLine[Parent.Run] = '=' then
-    Inc(Parent.Run);
-end;
-
-procedure TCppProcessor.VariableProc;
-var
-  i: integer;
-begin
-  Parent.FTokenID := tkVariable;
-  i := Parent.Run;
-  repeat
-    Inc(i);
-  until not (Identifiers[Parent.FLine[i]]);
-  Parent.Run := i;
-end;
-
-procedure TCppProcessor.UnknownProc;
-begin
-  inc(Parent.Run);
-  Parent.FTokenID := tkUnknown;
-end;
-
 procedure TCppProcessor.SetLine(const NewValue: string; LineNumber: integer);
 begin
   inherited;
-  LastRange := rsCppUnknown;
-end;
-
-procedure TCppProcessor.CommentProc;
-begin
-  Parent.FTokenID := tkComment;
-  SetRange(rsCppComment);
-  InternalCommentProc;
-end;
-
-procedure TCppProcessor.CommentPlusProc;
-begin
-  Parent.FTokenID := tkComment;
-  SetRange(rsCppCommentPlus);
-  InternalCommentPlusProc;
-end;
-
-procedure TCppProcessor.DocumentProc;
-begin
-  Parent.FTokenID := tkDocument;
-  SetRange(rsCppDocument);
-  InternalCommentProc;
+  LastRange := rscUnknown;
 end;
 
 procedure TCppProcessor.MakeMethodTables;
 var
   I: Char;
 begin
+  inherited;
   for I := #0 to #255 do
     case I of
-      #0: ProcTable[I] := @NullProc;
-      #10: ProcTable[I] := @LFProc;
-      #13: ProcTable[I] := @CRProc;
       '?': ProcTable[I] := @QuestionProc;
       '''': ProcTable[I] := @StringSQProc;
       '"': ProcTable[I] := @StringDQProc;
       '`': ProcTable[I] := @StringBQProc;
-      '#': ProcTable[I] := @HashLineCommentProc;
+      //'#': ProcTable[I] := @HashLineCommentProc;
       '/': ProcTable[I] := @SlashProc;
-      '=': ProcTable[I] := @EqualProc;
       '>': ProcTable[I] := @GreaterProc;
       '<': ProcTable[I] := @LowerProc;
-      '-': ProcTable[I] := @MinusProc;
-      '|': ProcTable[I] := @OrSymbolProc;
-      '+': ProcTable[I] := @PlusProc;
-      '&': ProcTable[I] := @AndSymbolProc;
-      '$': ProcTable[I] := @VariableProc;
       'A'..'Z', 'a'..'z', '_':
         ProcTable[I] := @IdentProc;
       '0'..'9':
         ProcTable[I] := @NumberProc;
       #1..#9, #11, #12, #14..#32:
         ProcTable[I] := @SpaceProc;
-      '^', '%', '*', '!':
-        ProcTable[I] := @SymbolAssignProc;
-      '{', '}', '.', ',', ';', '(', ')', '[', ']', '~':
+      '-','=', '|', '+', '&','$','^', '%', '*', '!', '#':
         ProcTable[I] := @SymbolProc;
-    else
-      ProcTable[I] := @UnknownProc;
+      '{', '}', '.', ',', ';', '(', ')', '[', ']', '~':
+        ProcTable[I] := @ControlProc;
     end;
 end;
 
@@ -456,83 +218,43 @@ begin
 end;
 
 procedure TCppProcessor.Next;
+var
+  aProc: procedure of object;
 begin
   Parent.FTokenPos := Parent.Run;
   case Range of
-    rsCppComment:
+    rscComment:
     begin
       if (Parent.FLine[Parent.Run] in [#0, #10, #13]) then
         ProcTable[Parent.FLine[Parent.Run]]
       else
         CommentProc;
     end;
-    rsCppCommentPlus:
+    rscCommentPlus:
     begin
       if (Parent.FLine[Parent.Run] in [#0, #10, #13]) then
         ProcTable[Parent.FLine[Parent.Run]]
       else
         CommentPlusProc;
     end;
-    rsCppDocument:
+    rscDocument:
     begin
       if (Parent.FLine[Parent.Run] in [#0, #10, #13]) then
         ProcTable[Parent.FLine[Parent.Run]]
       else
         DocumentProc;
     end;
-    rsCppStringSQ, rsCppStringDQ, rsCppStringBQ:
+    rscStringSQ, rscStringDQ, rscStringBQ:
       if (Parent.FLine[Parent.Run] in [#0, #10, #13]) then
         ProcTable[Parent.FLine[Parent.Run]]
       else
         StringProc;
   else
-    ProcTable[Parent.FLine[Parent.Run]];
+    if ProcTable[Parent.FLine[Parent.Run]] = nil then
+      UnknownProc
+    else
+      ProcTable[Parent.FLine[Parent.Run]];
   end;
-end;
-
-procedure TCppProcessor.StringDQProc;
-begin
-  SetRange(rsCppStringDQ);
-  Inc(Parent.Run);
-  StringProc;
-end;
-
-procedure TCppProcessor.StringBQProc;
-begin
-  SetRange(rsCppStringBQ);
-  Inc(Parent.Run);
-  StringProc;
-end;
-
-procedure TCppProcessor.StringSQProc;
-begin
-  SetRange(rsCppStringSQ);
-  Inc(Parent.Run);
-  StringProc;
-end;
-
-function TCppProcessor.GetRange: Byte;
-begin
-  Result := Byte(Range);
-end;
-
-procedure TCppProcessor.ResetRange;
-begin
-  inherited;
-  SetRange(rsCppUnknown);
-  LastRange := rsCppUnknown;
-end;
-
-procedure TCppProcessor.SetRange(Value: Byte);
-begin
-  SetRange(TCppRangeState(Value));
-end;
-
-procedure TCppProcessor.SetRange(Value: TCppRangeState);
-begin
-  if FRange <> Value then
-    LastRange := FRange;
-  FRange := Value;
 end;
 
 procedure TCppProcessor.InitIdent;
@@ -540,7 +262,7 @@ begin
   inherited;
   EnumerateKeywords(Ord(tkKeyword), sDKeywords, TSynValidStringChars, @DoAddKeyword);
   EnumerateKeywords(Ord(tkFunction), sDFunctions, TSynValidStringChars, @DoAddKeyword);
-  SetRange(rsCppUnknown);
+  SetRange(rscUnknown);
 end;
 
 function TCppProcessor.KeyHash(ToHash: PChar): Integer;
@@ -554,37 +276,9 @@ begin
   fStringLen := ToHash - fToIdent;
 end;
 
-procedure TCppProcessor.InternalCommentProc;
-begin
-  while not (Parent.FLine[Parent.Run] in [#0, #10, #13]) do
-  begin
-    if (Parent.FLine[Parent.Run] = '*') and (Parent.FLine[Parent.Run + 1] = '/') then
-    begin
-      SetRange(rsCppUnknown);
-      Inc(Parent.Run, 2);
-      break;
-    end;
-    Inc(Parent.Run);
-  end;
-end;
-
-procedure TCppProcessor.InternalCommentPlusProc;
-begin
-  while not (Parent.FLine[Parent.Run] in [#0, #10, #13]) do
-  begin
-    if (Parent.FLine[Parent.Run] = '+') and (Parent.FLine[Parent.Run + 1] = '/') then
-    begin
-      SetRange(rsCppUnknown);
-      Inc(Parent.Run, 2);
-      break;
-    end;
-    Inc(Parent.Run);
-  end;
-end;
-
 function TCppProcessor.GetEndOfLineAttribute: TSynHighlighterAttributes;
 begin
-  if (Range = rsCppDocument) or (LastRange = rsCppDocument) then
+  if (Range = rscDocument) or (LastRange = rscDocument) then
     Result := Parent.DocumentAttri
   else
     Result := inherited GetEndOfLineAttribute;
