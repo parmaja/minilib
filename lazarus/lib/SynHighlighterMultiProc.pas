@@ -85,11 +85,13 @@ type
     procedure SetRange(Value: TCommonRangeState); overload;
 
     property Range: TCommonRangeState read FRange;
+    procedure SetLine(const NewValue: string; LineNumber: integer); override;
 
     //Common procs
     procedure InternalCommentProc; //   /* */
     procedure InternalCommentPlusProc;//    /+ +/
 
+    procedure WordProc; //Identifire started with char like #define
     procedure SLCommentProc; //Single Line Comment //comment or #comment depend on who started
     procedure CommentProc;
     procedure CommentPlusProc;
@@ -336,6 +338,12 @@ begin
   FRange := Value;
 end;
 
+procedure TCommonSynProcessor.SetLine(const NewValue: string; LineNumber: integer);
+begin
+  inherited;
+  LastRange := rscUnknown;
+end;
+
 procedure TCommonSynProcessor.InternalCommentProc;
 begin
   begin
@@ -364,6 +372,14 @@ begin
     end;
     Inc(Parent.Run);
   end;
+end;
+
+procedure TCommonSynProcessor.WordProc;
+begin
+  Inc(Parent.Run);
+  repeat
+    Inc(Parent.Run);
+  until Parent.FLine[Parent.Run] in [#0, #10, #13, ' '];
 end;
 
 procedure TCommonSynProcessor.SLCommentProc;
@@ -509,11 +525,23 @@ begin
 end;
 
 procedure TCommonSynProcessor.MakeMethodTables;
+var
+  c: ansichar;
 begin
   inherited;
   ProcTable[#0] := @NullProc;
   ProcTable[#10] := @LFProc;
   ProcTable[#13] := @CRProc;
+
+  for c in [#1..#9, #11, #12, #14..#32] do
+    ProcTable[c] := @SpaceProc;
+
+  for c in ['-','=', '|', '+', '&','$','^', '%', '*', '!', '#'] do
+    ProcTable[c] := @SymbolProc;
+
+  for c in ['{', '}', '.', ',', ';', '(', ')', '[', ']', '~'] do
+    ProcTable[c] := @ControlProc;
+
 end;
 
 procedure TCommonSynProcessor.StringSQProc;

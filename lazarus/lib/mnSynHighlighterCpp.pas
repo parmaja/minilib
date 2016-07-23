@@ -25,6 +25,8 @@ type
 
   { TDProcessor }
 
+  { TCppProcessor }
+
   TCppProcessor = class(TCommonSynProcessor)
   protected
     function GetIdentChars: TSynIdentChars; override;
@@ -32,12 +34,12 @@ type
     function GetEndOfLineAttribute: TSynHighlighterAttributes; override;
   public
     procedure QuestionProc;
+    procedure DirectiveProc;
     procedure SlashProc;
     procedure IdentProc;
     procedure GreaterProc;
     procedure LowerProc;
 
-    procedure SetLine(const NewValue: string; LineNumber: integer); override;
     procedure Next; override;
 
     procedure InitIdent; override;
@@ -82,7 +84,7 @@ const
       '        lines ? sumLength / lines : 0);'#13#10+
       '}'#13#10;
 
-{$INCLUDE 'DKeywords.inc'}
+{$INCLUDE 'CppKeywords.inc'}
 
 implementation
 
@@ -168,12 +170,6 @@ begin
   end;
 end;
 
-procedure TCppProcessor.SetLine(const NewValue: string; LineNumber: integer);
-begin
-  inherited;
-  LastRange := rscUnknown;
-end;
-
 procedure TCppProcessor.MakeMethodTables;
 var
   I: Char;
@@ -185,7 +181,7 @@ begin
       '''': ProcTable[I] := @StringSQProc;
       '"': ProcTable[I] := @StringDQProc;
       '`': ProcTable[I] := @StringBQProc;
-      //'#': ProcTable[I] := @HashLineCommentProc;
+      '#': ProcTable[I] := @DirectiveProc;
       '/': ProcTable[I] := @SlashProc;
       '>': ProcTable[I] := @GreaterProc;
       '<': ProcTable[I] := @LowerProc;
@@ -193,12 +189,6 @@ begin
         ProcTable[I] := @IdentProc;
       '0'..'9':
         ProcTable[I] := @NumberProc;
-      #1..#9, #11, #12, #14..#32:
-        ProcTable[I] := @SpaceProc;
-      '-','=', '|', '+', '&','$','^', '%', '*', '!', '#':
-        ProcTable[I] := @SymbolProc;
-      '{', '}', '.', ',', ';', '(', ')', '[', ']', '~':
-        ProcTable[I] := @ControlProc;
     end;
 end;
 
@@ -217,38 +207,32 @@ begin
   end;
 end;
 
+procedure TCppProcessor.DirectiveProc;
+begin
+  Parent.FTokenID := tkProcessor;
+  WordProc;
+end;
+
 procedure TCppProcessor.Next;
-var
-  aProc: procedure of object;
 begin
   Parent.FTokenPos := Parent.Run;
-  case Range of
+  if (Parent.FLine[Parent.Run] in [#0, #10, #13]) then
+    ProcTable[Parent.FLine[Parent.Run]]
+  else case Range of
     rscComment:
     begin
-      if (Parent.FLine[Parent.Run] in [#0, #10, #13]) then
-        ProcTable[Parent.FLine[Parent.Run]]
-      else
-        CommentProc;
+      CommentProc;
     end;
     rscCommentPlus:
     begin
-      if (Parent.FLine[Parent.Run] in [#0, #10, #13]) then
-        ProcTable[Parent.FLine[Parent.Run]]
-      else
-        CommentPlusProc;
+      CommentPlusProc;
     end;
     rscDocument:
     begin
-      if (Parent.FLine[Parent.Run] in [#0, #10, #13]) then
-        ProcTable[Parent.FLine[Parent.Run]]
-      else
-        DocumentProc;
+      DocumentProc;
     end;
     rscStringSQ, rscStringDQ, rscStringBQ:
-      if (Parent.FLine[Parent.Run] in [#0, #10, #13]) then
-        ProcTable[Parent.FLine[Parent.Run]]
-      else
-        StringProc;
+      StringProc;
   else
     if ProcTable[Parent.FLine[Parent.Run]] = nil then
       UnknownProc
@@ -260,8 +244,8 @@ end;
 procedure TCppProcessor.InitIdent;
 begin
   inherited;
-  EnumerateKeywords(Ord(tkKeyword), sDKeywords, TSynValidStringChars, @DoAddKeyword);
-  EnumerateKeywords(Ord(tkFunction), sDFunctions, TSynValidStringChars, @DoAddKeyword);
+  EnumerateKeywords(Ord(tkKeyword), sCppKeywords, TSynValidStringChars, @DoAddKeyword);
+  EnumerateKeywords(Ord(tkFunction), sCppFunctions, TSynValidStringChars, @DoAddKeyword);
   SetRange(rscUnknown);
 end;
 

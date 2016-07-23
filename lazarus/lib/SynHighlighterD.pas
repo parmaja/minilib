@@ -38,7 +38,6 @@ type
     procedure GreaterProc;
     procedure LowerProc;
 
-    procedure SetLine(const NewValue: string; LineNumber: integer); override;
     procedure Next; override;
 
     procedure InitIdent; override;
@@ -169,12 +168,6 @@ begin
   end;
 end;
 
-procedure TDProcessor.SetLine(const NewValue: string; LineNumber: integer);
-begin
-  inherited;
-  LastRange := rscUnknown;
-end;
-
 procedure TDProcessor.MakeMethodTables;
 var
   I: Char;
@@ -186,7 +179,6 @@ begin
       '''': ProcTable[I] := @StringSQProc;
       '"': ProcTable[I] := @StringDQProc;
       '`': ProcTable[I] := @StringBQProc;
-      //'#': ProcTable[I] := @HashLineCommentProc;
       '/': ProcTable[I] := @SlashProc;
       '>': ProcTable[I] := @GreaterProc;
       '<': ProcTable[I] := @LowerProc;
@@ -194,12 +186,6 @@ begin
         ProcTable[I] := @IdentProc;
       '0'..'9':
         ProcTable[I] := @NumberProc;
-      #1..#9, #11, #12, #14..#32:
-        ProcTable[I] := @SpaceProc;
-      '-','=', '|', '+', '&','$','^', '%', '*', '!', '#':
-        ProcTable[I] := @SymbolProc;
-      '{', '}', '.', ',', ';', '(', ')', '[', ']', '~':
-        ProcTable[I] := @ControlProc;
     end;
 end;
 
@@ -221,33 +207,23 @@ end;
 procedure TDProcessor.Next;
 begin
   Parent.FTokenPos := Parent.Run;
-  case Range of
+  if (Parent.FLine[Parent.Run] in [#0, #10, #13]) then
+    ProcTable[Parent.FLine[Parent.Run]]
+  else case Range of
     rscComment:
     begin
-      if (Parent.FLine[Parent.Run] in [#0, #10, #13]) then
-        ProcTable[Parent.FLine[Parent.Run]]
-      else
-        CommentProc;
+      CommentProc;
     end;
     rscCommentPlus:
     begin
-      if (Parent.FLine[Parent.Run] in [#0, #10, #13]) then
-        ProcTable[Parent.FLine[Parent.Run]]
-      else
-        CommentPlusProc;
+      CommentPlusProc;
     end;
     rscDocument:
     begin
-      if (Parent.FLine[Parent.Run] in [#0, #10, #13]) then
-        ProcTable[Parent.FLine[Parent.Run]]
-      else
-        DocumentProc;
+      DocumentProc;
     end;
     rscStringSQ, rscStringDQ, rscStringBQ:
-      if (Parent.FLine[Parent.Run] in [#0, #10, #13]) then
-        ProcTable[Parent.FLine[Parent.Run]]
-      else
-        StringProc;
+      StringProc;
   else
     if ProcTable[Parent.FLine[Parent.Run]] = nil then
       UnknownProc
