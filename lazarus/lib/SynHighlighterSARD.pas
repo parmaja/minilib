@@ -29,7 +29,6 @@ type
     FProcTable: array[#0..#255] of TProcTableProc;
     FRange: TRangeState;
     FLine: PChar;
-    FStringLen: Integer;
     FTokenPos: Integer;
     FTokenID: TtkTokenKind;
     FCommentAttri: TSynHighlighterAttributes;
@@ -97,7 +96,7 @@ type
 const
 
   // Objects
-  SARDObjects =
+  sSARDObjects =
     'string,str,integer,int,float,color,datetime'+
     'avg,cast,count,max,min,sum,upper'+
     'abs,'+
@@ -163,7 +162,7 @@ end;
 constructor TSARDSyn.Create;
 begin
   inherited;
-  EnumerateKeywords(Ord(tkObject), SARDObjects, GetIdentChars, @DoAddKeyword);
+  EnumerateKeywords(Ord(tkObject), sSARDObjects, GetIdentChars, @DoAddKeyword);
 end;
 
 procedure TSynSARDSyn.MakeProcTables;
@@ -281,7 +280,7 @@ end;
 procedure TSynSARDSyn.IdentProc;
 begin
   FTokenID := SARDSyn.IdentKind((FLine + Run));
-  inc(Run, FStringLen);
+  inc(Run);
   while not (FLine[Run] in [#0, #10, #13]) and IsIdentifiers(FLine[Run]) do
     Inc(Run);
 end;
