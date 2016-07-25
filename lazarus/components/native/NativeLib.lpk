@@ -3,6 +3,7 @@
   <Package Version="4">
     <PathDelim Value="\"/>
     <Name Value="NativeLib"/>
+    <Type Value="RunAndDesignTime"/>
     <CompilerOptions>
       <Version Value="11"/>
       <PathDelim Value="\"/>
@@ -26,14 +27,10 @@
           <ShowHints Value="False"/>
           <ShowGenInfo Value="False"/>
         </Verbosity>
-        <CompilerMessages>
-          <UseMsgFile Value="True"/>
-        </CompilerMessages>
-        <CompilerPath Value="$(CompPath)"/>
       </Other>
     </CompilerOptions>
     <Version Major="1" Release="1" Build="1"/>
-    <Files Count="9">
+    <Files Count="10">
       <Item1>
         <Filename Value="ntvRegCtrls.pas"/>
         <HasRegisterProc Value="True"/>
@@ -74,8 +71,11 @@
         <Filename Value="ntvSplitters.pas"/>
         <UnitName Value="ntvSplitters"/>
       </Item9>
+      <Item10>
+        <Filename Value="ntvImgBtns.pas"/>
+        <UnitName Value="ntvImgBtns"/>
+      </Item10>
     </Files>
-    <Type Value="RunAndDesignTime"/>
     <RequiredPkgs Count="2">
       <Item1>
         <PackageName Value="MiniCommons"/>

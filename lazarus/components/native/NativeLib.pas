@@ -4,11 +4,12 @@
 
 unit NativeLib;
 
+{$warn 5023 off : no warning about unused units}
 interface
 
 uses
   ntvRegCtrls, ntvPageControls, ntvProgressBars, ntvDotMatrix, ntvTabSets, 
-  ntvTabs, ntvSplitters, LazarusPackageIntf;
+  ntvTabs, ntvSplitters, ntvImgBtns, LazarusPackageIntf;
 
 implementation
 
