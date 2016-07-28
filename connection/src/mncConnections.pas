@@ -300,6 +300,8 @@ type
     function Add(vIndex: Integer; vName: string; vType: TmncDataType; FieldClass: TmncColumnClass = nil): TmncColumn; overload;
     function Add(vName: string; vType: TmncDataType): TmncColumn; overload;
     function Add(vColumn: TmncColumn): Integer; overload;
+    procedure Clone(FromColumns: TmncColumns; AsDataType: TmncDataType); overload;
+    procedure Clone(FromColumns: TmncColumns); overload;
     property Items[Index: Integer]: TmncColumn read GetItem; default;
   end;
 
@@ -1295,6 +1297,22 @@ end;
 function TmncColumns.Add(vColumn: TmncColumn): Integer;
 begin
   Result := inherited Add(vColumn);
+end;
+
+procedure TmncColumns.Clone(FromColumns: TmncColumns; AsDataType: TmncDataType);
+var
+  i: Integer;
+begin
+  for i := 0 to FromColumns.Count -1 do
+    Add(FromColumns[i].Name, AsDataType);
+end;
+
+procedure TmncColumns.Clone(FromColumns: TmncColumns);
+var
+  i: Integer;
+begin
+  for i := 0 to FromColumns.Count -1 do
+    Add(FromColumns[i].Name, FromColumns[i].DataType);
 end;
 
 function TmncColumns.Find(vName: string): TmncItem;
