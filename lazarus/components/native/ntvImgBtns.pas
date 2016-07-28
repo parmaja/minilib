@@ -3,7 +3,7 @@ unit ntvImgBtns;
 interface
 
 uses
-  Messages, SysUtils, Variants, Classes, Graphics, Themes,
+  Messages, SysUtils, Variants, Classes, Graphics, Themes, ImgList,
   Controls, StdCtrls, Forms;
 
 type
@@ -17,17 +17,20 @@ type
     FDown: boolean;
     FChecked: Boolean;
     FAutoCheck: Boolean;
-    FImageIndex: Integer;
-    FImageList: TImageList;
+    FImageIndex: TImageIndex;
+    FImages: TImageList;
+    FImageChangeLink: TChangeLink;
     FStyle: TntvImgBtnStyle;
     FActive: Boolean;
     procedure SetDown(Value: Boolean);
     procedure SetCaption(Value: TCaption);
     procedure SetChecked(const Value: Boolean);
-    procedure SetImageIndex(const Value: Integer);
-    procedure SetImageList(const Value: TImageList);
+    procedure SetImageIndex(const Value: TImageIndex);
+    procedure SetImages(const Value: TImageList);
     procedure SetStyle(const Value: TntvImgBtnStyle);
     procedure SetActive(const Value: Boolean);
+
+    procedure ImageListChange(Sender: TObject);
   protected
     procedure MouseLeave; override;
     procedure MouseEnter; override;
@@ -47,8 +50,8 @@ type
   published
     property Action;
     property Caption: TCaption read FCaption write SetCaption;
-    property ImageList: TImageList read FImageList write SetImageList;
-    property ImageIndex: Integer read FImageIndex write SetImageIndex default -1;
+    property Images: TImageList read FImages write SetImages;
+    property ImageIndex: TImageIndex read FImageIndex write SetImageIndex default -1;
     property Style: TntvImgBtnStyle read FStyle write SetStyle;
     property BidiMode;
     property ParentBidiMode;
@@ -145,6 +148,8 @@ constructor TntvImgBtn.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
   ControlStyle := ControlStyle + [csSetCaption, csClickEvents, csDoubleClicks];
+  FImageChangeLink := TChangeLink.Create;
+  FImageChangeLink.OnChange := @ImageListChange;
   Width := 60;
   Height := 22;
 end;
@@ -157,6 +162,7 @@ end;
 
 destructor TntvImgBtn.Destroy;
 begin
+  FreeAndNil(FImageChangeLink);
   inherited Destroy;
 end;
 
@@ -206,8 +212,8 @@ begin
 
   InflateRect(aRect, -1, -1);
 
-  if ((ImageList <> nil) and (ImageIndex >= 0)) then
-    aImageWidth := ImageList.Width
+  if ((Images <> nil) and (ImageIndex >= 0)) then
+    aImageWidth := Images.Width
   else
     aImageWidth := aRect.Bottom - aRect.Top;
 
@@ -231,16 +237,16 @@ begin
 
   if aImageWidth <> 0 then
   begin
-    if (FImageList <> nil) and (FImageIndex >= 0) then
+    if (FImages <> nil) and (FImageIndex >= 0) then
     begin
       if Down then
         OffsetRect(aRect, 1, 1);
-      x := aRect.Left + ((aRect.Right - aRect.Left) div 2) - (FImageList.Width div 2);
-      y := aRect.Top + ((aRect.Bottom - aRect.Top) div 2) - (FImageList.Height div 2);
+      x := aRect.Left + ((aRect.Right - aRect.Left) div 2) - (FImages.Width div 2);
+      y := aRect.Top + ((aRect.Bottom - aRect.Top) div 2) - (FImages.Height div 2);
       if Active and Enabled then
-        ImageList.Draw(Canvas, X, Y, ImageIndex, gdeShadowed)
+        Images.Draw(Canvas, X, Y, ImageIndex, gdeShadowed)
       else
-        ImageList.Draw(Canvas, X, Y, ImageIndex, Enabled);
+        Images.Draw(Canvas, X, Y, ImageIndex, Enabled);
     end
   end;
 end;
@@ -268,7 +274,7 @@ begin
   end;
 end;
 
-procedure TntvImgBtn.SetImageIndex(const Value: Integer);
+procedure TntvImgBtn.SetImageIndex(const Value: TImageIndex);
 begin
   if FImageIndex <> Value then
   begin
@@ -277,12 +283,21 @@ begin
   end;
 end;
 
-procedure TntvImgBtn.SetImageList(const Value: TImageList);
+procedure TntvImgBtn.SetImages(const Value: TImageList);
 begin
-  if (FImageList <> Value) then
+  if FImages = Value then
+    exit;
+
+  if FImages <> nil then
   begin
-    FImageList := Value;
-    Invalidate;
+    FImages.UnRegisterChanges(FImageChangeLink);
+    FImages.RemoveFreeNotification(Self);
+  end;
+  FImages := Value;
+  if FImages <> nil then
+  begin
+    FImages.RegisterChanges(FImageChangeLink);
+    FImages.FreeNotification(Self);
   end;
 end;
 
@@ -290,9 +305,9 @@ procedure TntvImgBtn.Notification(AComponent: TComponent;
   Operation: TOperation);
 begin
   inherited;
-  if (Operation = opRemove) and (AComponent = FImageList) then
+  if (Operation = opRemove) and (AComponent = FImages) then
   begin
-    FImageList := nil;
+    FImages := nil;
   end;
 end;
 
@@ -308,6 +323,11 @@ begin
     FActive := Value;
     Invalidate;
   end;
+end;
+
+procedure TntvImgBtn.ImageListChange(Sender: TObject);
+begin
+  Invalidate;
 end;
 
 end.
