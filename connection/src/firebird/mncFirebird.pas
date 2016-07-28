@@ -30,10 +30,18 @@ const
 
 type
 
+  TFBErrorHandle = (
+    eonExecute, //Not yet
+    eonDisconnect //Do not raise error when disconnect
+  );
+
+  TFBErrorHandles = set of TFBErrorHandle;
+
   { TmncFBConnection }
 
   TmncFBConnection = class(TmncSQLConnection)
   private
+    FErrorHandles: TFBErrorHandles;
     FHandle: TISC_DB_HANDLE;
     FCharacterSet: string;
     FRole: string;
@@ -67,6 +75,7 @@ type
     //todo 'character set WIN1252 collate WIN_PTBR';
     property Handle: TISC_DB_HANDLE read FHandle;
     property IsReadOnly: Boolean read GetIsReadOnly;
+    property ErrorHandles: TFBErrorHandles read FErrorHandles write FErrorHandles;
   end;
 
   { TmncFBSession }
@@ -273,6 +282,7 @@ uses
 constructor TmncFBConnection.Create;
 begin
   inherited Create;
+  FErrorHandles := [eonExecute, eonDisconnect];
 end;
 
 class function TmncFBConnection.Model: TmncConnectionModel;
@@ -432,7 +442,7 @@ var
 begin
 {  for i := 0 to FEventNotifiers.Count - 1 do
     IFBEventNotifier(FEventNotifiers[i]).UnRegisterEvents;}
-  if (Call(FBClient.isc_detach_database(@StatusVector, @FHandle), StatusVector, False) > 0) then
+  if (eonDisconnect in ErrorHandles) and (Call(FBClient.isc_detach_database(@StatusVector, @FHandle), StatusVector, False) > 0) then
     FBRaiseError(StatusVector)
   else
     FHandle := nil;

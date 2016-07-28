@@ -918,7 +918,7 @@ end;
 
 function TmncSQLVAR.GetAsString: string;
 var
-  sz: Pointer;
+  sz: PAnsiChar;
   str_len: Integer;
   ss: TStringStream;
 begin
