@@ -309,6 +309,7 @@ type
   private
   protected
   public
+    property AsUtf8String;
   published
     //property IsBlob;
     //property BlobType;

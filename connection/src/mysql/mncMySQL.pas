@@ -153,9 +153,8 @@ type
   protected
     FValues: TMySQLBinds;
     function CreateBind: TmncBind; override;
-    procedure Clear; override;
   public
-
+    procedure Clear; override;
     property Items[Index: Integer]: TmncMySQLBind read GetItem; default;
   end;
 

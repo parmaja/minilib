@@ -106,6 +106,7 @@ type
     Fisc_get_client_major_version: Tisc_get_client_major_version;
     Fisc_get_client_minor_version: Tisc_get_client_minor_version;
     FInstancePath: string;
+
     FName: string;
   protected
     procedure LoadClientLibrary;
@@ -116,7 +117,7 @@ type
     function GetInstanceName: string; virtual; abstract;
     function GetClientName: string; virtual; abstract;
   public
-    constructor Create; virtual;
+    constructor Create;
     destructor Destroy; override;
 
     function isc_attach_database(status_vector: PISC_STATUS; db_name_length: Short;
@@ -292,24 +293,28 @@ type
     function GetInstanceName: string; override;
     function GetIsEmbed: Boolean; override;
   public
-    constructor Create; override;
+    constructor Create;
   end;
+
+  { TFBEmbed }
 
   TFBEmbed = class(TCustomFBClient)
   private
+    FClientName: string;
   protected
     function GetClientName: string; override;
     function GetInstanceName: string; override;
     function GetIsEmbed: Boolean; override;
   public
-    constructor Create; override;
+    constructor Create(AClientName: string);
   end;
 
-procedure RegisterFBClient(FBClientClass: TFBClientClass);
-function FBClientRegistered: Boolean;
+procedure SetFBClient(NewFBClient: TCustomFBClient);
+function IsFBClientSet: Boolean;
 function FBClient: TCustomFBClient;
-procedure InitEmbedMode;
+
 procedure InitClientMode;
+procedure InitEmbedMode(ClientName: string = '');
 
 { Library Initialization }
 //let the system kill the library
@@ -320,42 +325,35 @@ uses
   Registry;
 
 var
-  FFBClientClass: TFBClientClass = nil;
   FFBClient: TCustomFBClient = nil;
 
-procedure RegisterFBClient(FBClientClass: TFBClientClass);
+procedure SetFBClient(NewFBClient: TCustomFBClient);
 begin
   if Assigned(FFBClient) then
     raise EFBClientError.Create('FBClient class is already registerd');
-  FFBClientClass := FBClientClass;
+  FFBClient := NewFBClient;
+  FFBClient.CheckLoaded;
 end;
 
-function FBClientRegistered: Boolean;
+function IsFBClientSet: Boolean;
 begin
   Result := Assigned(FFBClient);
 end;
 
-procedure InitEmbedMode;
-begin
-  RegisterFBClient(TFBEmbed);
-  FBClient;
-end;
-
 procedure InitClientMode;
 begin
-  RegisterFBClient(TFBClient);
-  FBClient;
+  SetFBClient(TFBClient.Create);
+end;
+
+procedure InitEmbedMode(ClientName: string);
+begin
+  SetFBClient(TFBEmbed.Create(ClientName));
 end;
 
 function FBClient: TCustomFBClient;
 begin
   if not Assigned(FFBClient) then
-  begin
-    if not Assigned(FFBClientClass) then
-      FFBClientClass := TFBClient;
-    FFBClient := FFBClientClass.Create;
-    FFBClient.CheckLoaded;
-  end;
+    InitClientMode;
   Result := FFBClient;
 end;
 
@@ -989,18 +987,25 @@ begin
 end;
 
 constructor TFBClient.Create;
+{$ifdef WINDOWS}
 var
   Reg: TRegistry;
+{$endif}
 begin
   inherited;
+  {$ifdef WINDOWS}
   Reg := TRegistry.Create;
-  Reg.Access := KEY_READ;
-  Reg.RootKey := HKEY_LOCAL_MACHINE;
-  if Reg.OpenKey(REGSTR_PATH_FB + '\Instances', False) and Reg.ValueExists(GetInstanceName) then
-    FInstancePath := IncludeTrailingPathDelimiter(Reg.ReadString(GetInstanceName))
-  else
-    FInstancePath := '';
-  Reg.Free;
+  try
+    Reg.Access := KEY_READ;
+    Reg.RootKey := HKEY_LOCAL_MACHINE;
+    if Reg.OpenKey(REGSTR_PATH_FB + '\Instances', False) and Reg.ValueExists(GetInstanceName) then
+      FInstancePath := IncludeTrailingPathDelimiter(Reg.ReadString(GetInstanceName))
+    else
+      FInstancePath := '';
+    finally
+      Reg.Free;
+    end;
+  {$endif}
 end;
 
 function TFBClient.GetInstanceName: string;
@@ -1010,7 +1015,7 @@ end;
 
 function TFBClient.GetClientName: string;
 begin
-  Result := FBClient_DLL;
+  Result := FBClient_LIB;
 end;
 
 constructor TCustomFBClient.Create;
@@ -1042,15 +1047,19 @@ end;
 
 { TFBEmbed }
 
-constructor TFBEmbed.Create;
+constructor TFBEmbed.Create(AClientName: string);
 begin
-  inherited;
+  inherited Create;
+  if AClientName = '' then
+    FClientName := FBEmbed_LIB
+  else
+    FClientName := AClientName;
   FInstancePath := '';
 end;
 
 function TFBEmbed.GetClientName: string;
 begin
-  Result := FBEmbed_DLL;
+  Result := FClientName;
 end;
 
 function TFBEmbed.GetInstanceName: string;

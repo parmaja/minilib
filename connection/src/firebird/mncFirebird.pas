@@ -63,7 +63,8 @@ type
     function GetVersion: string;
     procedure Execute(SQL: string); override;
     property Role: string read FRole write FRole;
-    property CharacterSet: string read FCharacterSet write FCharacterSet;
+    property CharacterSet: string read FCharacterSet write FCharacterSet; //ex: WIN1252
+    //todo 'character set WIN1252 collate WIN_PTBR';
     property Handle: TISC_DB_HANDLE read FHandle;
     property IsReadOnly: Boolean read GetIsReadOnly;
   end;
