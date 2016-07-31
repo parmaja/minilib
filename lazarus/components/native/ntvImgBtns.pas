@@ -3,7 +3,7 @@ unit ntvImgBtns;
 interface
 
 uses
-  Messages, SysUtils, Variants, Classes, Graphics, Themes, ImgList,
+  Messages, SysUtils, Variants, Classes, Graphics, Themes, ImgList, mnUtils,
   Controls, StdCtrls, Forms;
 
 type
@@ -79,7 +79,7 @@ type
 implementation
 
 uses
-  Types, GraphType;
+  Types, GraphType, Menus;
 
 procedure TntvImgBtn.SetDown(Value: Boolean);
 begin
@@ -103,23 +103,19 @@ procedure TntvImgBtn.MouseLeave;
 begin
   inherited;
   if not (csDesigning in ComponentState) then
-    if Style = ibsToolbar then
-    begin
       Active := False;
-    end;
 end;
 
 procedure TntvImgBtn.MouseEnter;
 begin
   inherited;
-  if Style = ibsToolbar then
-    Active := True;
+  Active := True;
 end;
 
 procedure TntvImgBtn.MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 begin
   Down := True;
-  inherited MouseDown(Button, Shift, X, Y);
+  inherited;
 end;
 
 procedure TntvImgBtn.MouseMove(Shift: TShiftState; X, Y: Integer);
@@ -135,7 +131,7 @@ begin
     else
       Down := False;
   end;
-  inherited MouseMove(Shift, X, Y);
+  inherited;
 end;
 
 procedure TntvImgBtn.MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
@@ -178,10 +174,13 @@ var
     with Canvas do
     begin
       Brush.Style := bsClear;
-      //InitMemory(TS, SizeOf(TS));
+      Finalize(TS);
       with TS do
       begin
-        Alignment := BidiFlipAlignment(taLeftJustify, UseRightToLeftAlignment);
+        if aImageWidth = 0 then
+          Alignment := BidiFlipAlignment(taCenter)
+        else
+          Alignment := BidiFlipAlignment(taLeftJustify, UseRightToLeftAlignment);
         WordBreak := False;
         SingleLine:= True;
         Clipping := True;
@@ -203,11 +202,20 @@ var
 begin
   inherited;
   aRect := ClientRect;
-  if Active then
+  if not Enabled then
+    ThemeServices.DrawElement(Canvas.Handle, ThemeServices.GetElementDetails(ttbButtonDisabled), aRect)
+  else if Down then
+    ThemeServices.DrawElement(Canvas.Handle, ThemeServices.GetElementDetails(ttbButtonPressed), aRect)
+  else if Active then
+    ThemeServices.DrawElement(Canvas.Handle, ThemeServices.GetElementDetails(ttbButtonHot), aRect)
+  else
+    ThemeServices.DrawElement(Canvas.Handle, ThemeServices.GetElementDetails(ttbButtonNormal), aRect);
+
+  if Style = ibsNormal then
   begin
-    ThemeServices.DrawElement(Canvas.Handle, ThemeServices.GetElementDetails(ttbButtonHot), aRect);
-    //Canvas.Pen.Color := clHotLight;
-    //Canvas.Frame(aRect);
+    Canvas.Pen.Color := cl3DShadow;
+    Canvas.Pen.Style := psSolid;
+    Canvas.Frame(aRect);
   end;
 
   InflateRect(aRect, -1, -1);
@@ -215,7 +223,7 @@ begin
   if ((Images <> nil) and (ImageIndex >= 0)) then
     aImageWidth := Images.Width
   else
-    aImageWidth := aRect.Bottom - aRect.Top;
+    aImageWidth := 0;
 
   aCaptionRect := aRect;
   if Caption <> '' then
@@ -230,7 +238,7 @@ begin
       aCaptionRect.Left := aCaptionRect.Left + aImageWidth;
       aRect.Right := aCaptionRect.Left;
     end;
-    if Down then
+  //  if Down then
       OffsetRect(aCaptionRect, 1, 1);
     DrawButtonText(aCaptionRect);
   end;
@@ -258,10 +266,13 @@ begin
   inherited;
   if PopupMenu <> nil then
   begin
-    Pt.X := BoundsRect.Left;
-    Pt.Y := BoundsRect.Bottom;
-    Pt := Parent.ClientToScreen(Pt);
-    PopupMenu.Popup(Pt.X, Pt.Y);
+    if not Down then
+    begin
+      Pt.X := BoundsRect.Left;
+      Pt.Y := BoundsRect.Bottom;
+      Pt := Parent.ClientToScreen(Pt);
+      PopupMenu.Popup(Pt.X, Pt.Y);
+    end;
   end;
 end;
 

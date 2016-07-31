@@ -26,21 +26,27 @@ const
   sMacEndOfLine = #$0D;
 
 type
+  {$ifdef FPC}
+    TFileSize = Longint;
+  {$else}
+    TFileSize = Cardinal;
+  {$endif}
+
   EmnStreamException = class(Exception);
 
   { TmnCustomStream }
 
   TmnCustomStream = class(TStream)
   private
-    FBufferSize: Cardinal;
+    FBufferSize: TFileSize;
   protected
     function IsActive: Boolean; virtual;
   public
     function ReadString(Count: Longint = 255): string;
-    function WriteString(const Value: string): Cardinal;
+    function WriteString(const Value: string): TFileSize;
     function ReadStream(Dest: TStream): Longint;
     function WriteStream(Source: TStream): Longint;
-    property BufferSize: Cardinal read FBufferSize write FBufferSize;
+    property BufferSize: TFileSize read FBufferSize write FBufferSize;
   end;
 
   { TmnBufferStream }
@@ -68,7 +74,7 @@ type
     function Read(var Buffer; Count: Longint): Longint; override; final;
     function Write(const Buffer; Count: Longint): Longint; override; final;
 
-    function ReadBufferUntil(const Match: PByte; MatchSize: Word; ExcludeMatch: Boolean; out Buffer: Pointer; out BufferSize: Cardinal; out Matched: Boolean): Boolean;
+    function ReadBufferUntil(const Match: PByte; MatchSize: Word; ExcludeMatch: Boolean; out Buffer: Pointer; out BufferSize: TFileSize; out Matched: Boolean): Boolean;
 
     function ReadUntil(const Match: ansistring; ExcludeMatch: Boolean; out Buffer: ansistring; var Matched: Boolean): Boolean; overload;
     function ReadUntil(const Match: widestring; ExcludeMatch: Boolean; out Buffer: widestring; var Matched: Boolean): Boolean; overload;
@@ -85,13 +91,13 @@ type
     {$ifdef FPC}
     //no Ansi, it is UTF8
     {$else}
-    function WriteLine(const S: ansistring; EOL: ansistring = ''): Cardinal; overload;
+    function WriteLine(const S: ansistring; EOL: ansistring = ''): TFileSize; overload;
     {$endif}
-    function WriteLine(const S: widestring; EOL: widestring = ''): Cardinal; overload;
-    function WriteLine(const S: unicodestring; EOL: unicodestring = ''): Cardinal; overload;
-    function WriteLine(const S: utf8string; EOL: utf8string = ''): Cardinal; overload;
+    function WriteLine(const S: widestring; EOL: widestring = ''): TFileSize; overload;
+    function WriteLine(const S: unicodestring; EOL: unicodestring = ''): TFileSize; overload;
+    function WriteLine(const S: utf8string; EOL: utf8string = ''): TFileSize; overload;
 
-    function WriteLn(const S: string): Cardinal; overload; deprecated;
+    function WriteLn(const S: string): TFileSize; overload; deprecated;
 
     procedure ReadCommand(out Command: string; out Params: string);
 
@@ -99,11 +105,11 @@ type
     procedure WriteCommand(const Command: string; const Format: string; const Params: array of const); overload;
     procedure WriteCommand(const Command: string; const Params: string); overload;
 
-    function WriteEOL: Cardinal; overload;
+    function WriteEOL: TFileSize; overload;
 
     procedure ReadStrings(Value: TStrings; const vEOL: string); overload;
     procedure ReadStrings(Value: TStrings); overload;
-    function WriteStrings(const Value: TStrings): Cardinal; overload;
+    function WriteStrings(const Value: TStrings): TFileSize; overload;
 
     property EOF: Boolean read FEOF;
 
@@ -136,17 +142,17 @@ implementation
 const
   cBufferSize = 2048;
 
-function ByteLength(s: ansistring): Cardinal; overload;
+function ByteLength(s: ansistring): TFileSize; overload;
 begin
   Result := Length(s) * SizeOf(AnsiChar);
 end;
 
-function ByteLength(s: utf8string): Cardinal; overload;
+function ByteLength(s: utf8string): TFileSize; overload;
 begin
   Result := Length(s) * SizeOf(AnsiChar);
 end;
 
-function ByteLength(s: unicodestring): Cardinal; overload;
+function ByteLength(s: unicodestring): TFileSize; overload;
 begin
 {$ifdef FPC}
   Result := Length(s) * SizeOf(UnicodeChar);
@@ -155,14 +161,14 @@ begin
 {$endif}
 end;
 
-function ByteLength(s: widestring): Cardinal; overload;
+function ByteLength(s: widestring): TFileSize; overload;
 begin
   Result := Length(s) * SizeOf(WideChar);
 end;
 
 { TmnBufferStream }
 
-function TmnCustomStream.WriteString(const Value: string): Cardinal;
+function TmnCustomStream.WriteString(const Value: string): TFileSize;
 begin
   Result := Write(Pointer(Value)^, ByteLength(Value));
 end;
@@ -184,7 +190,7 @@ end;
 function TmnCustomStream.ReadStream(Dest: TStream): Longint;
 var
   aBuffer: pchar;
-  n: Cardinal;
+  n: TFileSize;
 begin
   {$ifdef FPC} //less hint in fpc
   aBuffer := nil;
@@ -206,7 +212,7 @@ end;
 function TmnCustomStream.WriteStream(Source: TStream): Longint;
 var
   aBuffer: pchar;
-  n: Cardinal;
+  n: TFileSize;
 begin
   GetMem(aBuffer, BufferSize);
   Result := 0;
@@ -224,7 +230,7 @@ end;
 
 {$ifdef FPC}
 {$else}
-function TmnBufferStream.WriteLine(const S: ansistring; EOL: ansistring): Cardinal;
+function TmnBufferStream.WriteLine(const S: ansistring; EOL: ansistring): TFileSize;
 begin
   if EOL = '' then
     EOL := ansistring(EndOfLine);
@@ -234,7 +240,7 @@ begin
   Result := Result + Write(Pointer(EOL)^, ByteLength(EOL));
 end;
 {$endif}
-function TmnBufferStream.WriteLine(const S: widestring; EOL: widestring): Cardinal;
+function TmnBufferStream.WriteLine(const S: widestring; EOL: widestring): TFileSize;
 begin
   if EOL = '' then
     EOL := widestring(EndOfLine);
@@ -244,7 +250,7 @@ begin
   Result := Result + Write(Pointer(EOL)^, ByteLength(EOL));
 end;
 
-function TmnBufferStream.WriteLine(const S: unicodestring; EOL: unicodestring): Cardinal;
+function TmnBufferStream.WriteLine(const S: unicodestring; EOL: unicodestring): TFileSize;
 begin
   if EOL = '' then
     EOL := unicodestring(EndOfLine);
@@ -254,7 +260,7 @@ begin
   Result := Result + Write(Pointer(EOL)^, ByteLength(EOL));
 end;
 
-function TmnBufferStream.WriteLine(const S: utf8string; EOL: utf8string): Cardinal;
+function TmnBufferStream.WriteLine(const S: utf8string; EOL: utf8string): TFileSize;
 begin
   if EOL = '' then
     EOL := utf8string(EndOfLine);
@@ -264,12 +270,12 @@ begin
   Result := Result + Write(Pointer(EOL)^, ByteLength(EOL));
 end;
 
-function TmnBufferStream.WriteLn(const S: string): Cardinal;
+function TmnBufferStream.WriteLn(const S: string): TFileSize;
 begin
   Result := WriteLine(S);
 end;
 
-function TmnBufferStream.WriteStrings(const Value: TStrings): Cardinal;
+function TmnBufferStream.WriteStrings(const Value: TStrings): TFileSize;
 var
   i: Integer;
 begin
@@ -304,7 +310,7 @@ function TmnBufferStream.ReadLine(out S: widestring; ExcludeEOL: Boolean; EOL: w
 var
   m: Boolean;
   res: Pointer;
-  len: Cardinal;
+  len: TFileSize;
 begin
   if EOL = '' then
     EOL := widestring(EndOfLine);
@@ -317,7 +323,7 @@ function TmnBufferStream.ReadLine(out S: utf8string; ExcludeEOL: Boolean; EOL: u
 var
   m: Boolean;
   res: Pointer;
-  len: Cardinal;
+  len: TFileSize;
 begin
   if EOL = '' then
     EOL := utf8string(EndOfLine);
@@ -330,7 +336,7 @@ function TmnBufferStream.ReadLine(out S: unicodestring; ExcludeEOL: Boolean; EOL
 var
   m: Boolean;
   res: Pointer;
-  len: Cardinal;
+  len: TFileSize;
 begin
   if EOL = '' then
     EOL := unicodestring(EndOfLine);
@@ -347,7 +353,7 @@ function TmnBufferStream.ReadLine(out S: ansistring; ExcludeEOL: Boolean; EOL: a
 var
   m: Boolean;
   res: Pointer;
-  len: Cardinal;
+  len: TFileSize;
 begin
   if EOL = '' then
     EOL := ansistring(EndOfLine);
@@ -366,7 +372,7 @@ begin
   ReadLine(Result);
 end;
 
-function TmnBufferStream.WriteEOL: Cardinal;
+function TmnBufferStream.WriteEOL: TFileSize;
 begin
   Result := Write(Pointer(EndOfLine)^, ByteLength(EndOfLine));
 end;
@@ -431,7 +437,7 @@ end;
 
 procedure TmnBufferStream.LoadBuffer;
 var
-  aSize: Cardinal;
+  aSize: TFileSize;
 begin
   if FPos < FEnd then
     raise EmnStreamException.Create('Buffer is not empty to load');
@@ -483,11 +489,11 @@ begin
   Result := (FPos < FEnd);
 end;
 
-function TmnBufferStream.ReadBufferUntil(const Match: PByte; MatchSize: Word; ExcludeMatch: Boolean; out Buffer: Pointer; out BufferSize: Cardinal; out Matched: Boolean): Boolean;
+function TmnBufferStream.ReadBufferUntil(const Match: PByte; MatchSize: Word; ExcludeMatch: Boolean; out Buffer: Pointer; out BufferSize: TFileSize; out Matched: Boolean): Boolean;
 var
   P: PByte;
   mt: PByte;
-  c, l: cardinal;
+  c, l: TFileSize;
   t: PByte;
 begin
   if (Match = nil) or (MatchSize = 0) then
@@ -538,7 +544,7 @@ end;
 function TmnBufferStream.ReadUntil(const Match: ansistring; ExcludeMatch: Boolean; out Buffer: ansistring; var Matched: Boolean): Boolean;
 var
   Res: Pointer;
-  len: Cardinal;
+  len: TFileSize;
 begin
   if Match = '' then
     raise Exception.Create('Match is empty!');
@@ -550,7 +556,7 @@ end;
 function TmnBufferStream.ReadUntil(const Match: widestring; ExcludeMatch: Boolean; out Buffer: widestring; var Matched: Boolean): Boolean;
 var
   Res: Pointer;
-  len: Cardinal;
+  len: TFileSize;
 begin
   if Match = '' then
     raise Exception.Create('Match is empty!');
