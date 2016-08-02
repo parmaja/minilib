@@ -25,13 +25,14 @@ type
   end;
 
   { TmnConsoleThread }
-
+{//TODO delete it
   TmnConsoleThread = class(TThread)
   private
     FOnWrite: TmnOnWrite;
     FParameters: TStrings;
     procedure SetParameters(AValue: TStrings);
   protected
+    property OnWrite: TmnOnWrite read FOnWrite write FOnWrite;
   public
     Process: TProcess;
     Status: Integer;
@@ -41,8 +42,8 @@ type
     destructor Destroy; override;
     procedure Execute; override;
     Property Parameters : TStrings Read FParameters Write SetParameters;
-    property OnWrite: TmnOnWrite read FOnWrite write FOnWrite;
   end;
+}
 
 implementation
 
@@ -127,7 +128,7 @@ begin
 end;
 
 { TmnConsoleThread }
-
+{
 procedure TmnConsoleThread.SetParameters(AValue: TStrings);
 begin
   FParameters.Assign(AValue);
@@ -170,6 +171,7 @@ begin
     FreeAndNil(ProcessObject);
   end;
 end;
+}
 
 end.
 

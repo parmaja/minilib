@@ -266,13 +266,10 @@ begin
   inherited;
   if PopupMenu <> nil then
   begin
-    if not Down then
-    begin
-      Pt.X := BoundsRect.Left;
-      Pt.Y := BoundsRect.Bottom;
-      Pt := Parent.ClientToScreen(Pt);
-      PopupMenu.Popup(Pt.X, Pt.Y);
-    end;
+    Pt.X := BoundsRect.Left;
+    Pt.Y := BoundsRect.Bottom;
+    Pt := Parent.ClientToScreen(Pt);
+    PopupMenu.Popup(Pt.X, Pt.Y);
   end;
 end;
 

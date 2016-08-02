@@ -1,10 +1,11 @@
-<?xml version="1.0"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <CONFIG>
   <Package Version="4">
     <PathDelim Value="\"/>
     <Name Value="MiniSockets"/>
+    <Type Value="RunAndDesignTime"/>
     <CompilerOptions>
-      <Version Value="10"/>
+      <Version Value="11"/>
       <PathDelim Value="\"/>
       <SearchPaths>
         <UnitOutputDirectory Value="..\units\$(TargetCPU)-$(TargetOS)"/>
@@ -17,18 +18,11 @@
       </Parsing>
       <Linking>
         <Debugging>
-          <GenerateDebugInfo Value="True"/>
           <DebugInfoType Value="dsStabs"/>
         </Debugging>
       </Linking>
-      <Other>
-        <CompilerMessages>
-          <UseMsgFile Value="True"/>
-        </CompilerMessages>
-        <CompilerPath Value="$(CompPath)"/>
-      </Other>
     </CompilerOptions>
-    <Version Build="1" Major="1" Release="1"/>
+    <Version Major="1" Release="1" Build="1"/>
     <Files Count="8">
       <Item1>
         <Filename Value="mnClients.pas"/>
@@ -63,15 +57,10 @@
         <UnitName Value="mnSocketStreams"/>
       </Item8>
     </Files>
-    <Type Value="RunAndDesignTime"/>
-    <RequiredPkgs Count="2">
+    <RequiredPkgs Count="1">
       <Item1>
         <PackageName Value="MiniCommons"/>
       </Item1>
-      <Item2>
-        <PackageName Value="FCL"/>
-        <MinVersion Major="1" Valid="True"/>
-      </Item2>
     </RequiredPkgs>
     <UsageOptions>
       <UnitPath Value="$(PkgOutDir)"/>

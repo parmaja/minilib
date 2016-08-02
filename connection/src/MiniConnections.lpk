@@ -34,7 +34,7 @@
     </CompilerOptions>
     <Description Value="Mini Connection, DB and Streams"/>
     <Version Major="1" Release="1"/>
-    <Files Count="34">
+    <Files Count="30">
       <Item1>
         <Filename Value="mncConnections.pas"/>
         <UnitName Value="mncConnections"/>
@@ -135,38 +135,34 @@
         <Filename Value="firebird\mncFirebird.pas"/>
         <UnitName Value="mncFirebird"/>
       </Item25>
-      <Item30>
+      <Item26>
         <Filename Value="ui\CSVOptionsForms.pas"/>
         <UnitName Value="CSVOptionsForms"/>
-      </Item30>
-      <Item31>
+      </Item26>
+      <Item27>
         <Filename Value="sqlite\mncSQLite.pas"/>
         <UnitName Value="mncSQLite"/>
-      </Item31>
-      <Item32>
+      </Item27>
+      <Item28>
         <Filename Value="ui\ParamsForms.pas"/>
         <UnitName Value="ParamsForms"/>
-      </Item32>
-      <Item33>
+      </Item28>
+      <Item29>
         <Filename Value="sqlite\mncSQLiteHeader.pas"/>
         <UnitName Value="mncSQLiteHeader"/>
-      </Item33>
-      <Item34>
+      </Item29>
+      <Item30>
         <Filename Value="sqlite\mncSQLiteMetas.pas"/>
         <UnitName Value="mncSQLiteMetas"/>
-      </Item34>
+      </Item30>
     </Files>
-    <RequiredPkgs Count="3">
+    <RequiredPkgs Count="2">
       <Item1>
         <PackageName Value="LCL"/>
       </Item1>
       <Item2>
         <PackageName Value="MiniCommons"/>
       </Item2>
-      <Item3>
-        <PackageName Value="FCL"/>
-        <MinVersion Major="1" Valid="True"/>
-      </Item3>
     </RequiredPkgs>
     <UsageOptions>
       <UnitPath Value="$(PkgOutDir)"/>

@@ -3,6 +3,7 @@
   <Package Version="4">
     <PathDelim Value="\"/>
     <Name Value="MiniXML"/>
+    <Type Value="RunAndDesignTime"/>
     <Author Value="Zaher Dirkey"/>
     <CompilerOptions>
       <Version Value="11"/>
@@ -20,10 +21,6 @@
         <Verbosity>
           <ShoLineNum Value="True"/>
         </Verbosity>
-        <CompilerMessages>
-          <UseMsgFile Value="True"/>
-        </CompilerMessages>
-        <CompilerPath Value="$(CompPath)"/>
       </Other>
     </CompilerOptions>
     <Description Value="MiniLib XML reader/writer, rtti profiler"/>
@@ -75,15 +72,10 @@
         <UnitName Value="mnXMLWriter"/>
       </Item11>
     </Files>
-    <Type Value="RunAndDesignTime"/>
-    <RequiredPkgs Count="2">
+    <RequiredPkgs Count="1">
       <Item1>
         <PackageName Value="MiniCommons"/>
       </Item1>
-      <Item2>
-        <PackageName Value="FCL"/>
-        <MinVersion Major="1"/>
-      </Item2>
     </RequiredPkgs>
     <UsageOptions>
       <UnitPath Value="$(PkgOutDir)"/>

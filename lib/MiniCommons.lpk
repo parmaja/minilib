@@ -2,7 +2,6 @@
 <CONFIG>
   <Package Version="4">
     <Name Value="MiniCommons"/>
-    <Type Value="RunAndDesignTime"/>
     <Author Value="Zaher Dirkey"/>
     <CompilerOptions>
       <Version Value="11"/>
@@ -32,7 +31,7 @@
         </CompilerMessages>
       </Other>
     </CompilerOptions>
-    <Description Value="MiniLib common units"/>
+    <Description Value="MiniLib common "/>
     <License Value="ModifiedLGPL"/>
     <Version Major="1" Release="1"/>
     <Files Count="14">

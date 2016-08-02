@@ -82,20 +82,13 @@
         <UnitName Value="mnSynHighlighterCpp"/>
       </Item17>
     </Files>
-    <RequiredPkgs Count="4">
+    <RequiredPkgs Count="2">
       <Item1>
         <PackageName Value="MiniCommons"/>
       </Item1>
       <Item2>
         <PackageName Value="SynEdit"/>
       </Item2>
-      <Item3>
-        <PackageName Value="LCL"/>
-      </Item3>
-      <Item4>
-        <PackageName Value="FCL"/>
-        <MinVersion Major="1" Release="1" Valid="True"/>
-      </Item4>
     </RequiredPkgs>
     <UsageOptions>
       <UnitPath Value="$(PkgOutDir)"/>
