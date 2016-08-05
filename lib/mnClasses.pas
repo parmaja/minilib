@@ -33,11 +33,28 @@ type
   end;
 
   {$ifdef FPC}
+
+  { TEnumerator }
+{
+  TEnumerator<_Object_> = object
+  private
+    FItems: _Object_;
+    FCurrent: _Object_;
+    FIndex: Integer;
+  public
+    constructor Create;
+    function MoveNext: Boolean;
+    property Current: Pointer read FCurrent;
+  end;}
+
+  { GNamedItems }
+
   GNamedItems<_Object_> = class(GItems<_Object_>)
   private
   public
     function Find(const Name: string): _Object_;
     function IndexOfName(vName: string): Integer;
+    //function GetEnumerator: specialize TEnumerator<_Object_>;
   end;
   {$endif}
 {
@@ -62,7 +79,7 @@ end;
 
 function GItems<_Object_>.Add(Item: _Object_): Integer;
 begin
-  inherited Add(Item);
+  Result := inherited Add(Item);
   Added(Item);
 end;
 
@@ -109,6 +126,35 @@ begin
       end;
     end;
 end;
+{
+function GNamedItems<_Object_>.GetEnumerator: specialize TEnumerator<_Object_>;
+begin
+  Result:=_Object_.Create;
+  Result.FItems := Self;
+end;}
+
+{
+operator enumerator (GNamedItems: GNamedItems<_Object_>): TEnumerator<_Object_>;
+begin
+  Result.Create;
+end;}
+
+{ TEnumerator }
+{
+constructor TEnumerator<_Object_>.Create;
+begin
+  inherited;
+end;
+
+function TEnumerator<_Object_>.MoveNext: Boolean;
+begin
+  Inc(FIndex);
+  if FIndex > FItems then
+    FCurrent := FItems[FIndex]
+  else
+    FCurrent := nil;
+end;
+ }
 {$endif}
 
 end.

@@ -110,9 +110,10 @@ type
 
   TmnCustomCommandListener = class(TmnListener)
   private
+    function ParseRequest(const Request: string): TmnRequest; virtual; abstract;
+  protected
     function CreateConnection(vSocket: TmnCustomSocket): TmnServerConnection; override;
     function CreateStream(Socket: TmnCustomSocket): TmnSocketStream; override;
-    function ParseRequest(const Request: string): TmnRequest; virtual; abstract;
   public
     constructor Create;
     //Name here will corrected with registered item name for example Get -> GET

@@ -76,8 +76,8 @@ type
 
     function ReadBufferUntil(const Match: PByte; MatchSize: Word; ExcludeMatch: Boolean; out Buffer: Pointer; out BufferSize: TFileSize; out Matched: Boolean): Boolean;
 
-    function ReadUntil(const Match: ansistring; ExcludeMatch: Boolean; out Buffer: ansistring; var Matched: Boolean): Boolean; overload;
-    function ReadUntil(const Match: widestring; ExcludeMatch: Boolean; out Buffer: widestring; var Matched: Boolean): Boolean; overload;
+    function ReadUntil(const Match: ansistring; ExcludeMatch: Boolean; out Buffer: ansistring; out Matched: Boolean): Boolean; overload;
+    function ReadUntil(const Match: widestring; ExcludeMatch: Boolean; out Buffer: widestring; out Matched: Boolean): Boolean; overload;
 
     function ReadLine(out S: ansistring; ExcludeEOL: Boolean = True; EOL: ansistring = ''): Boolean; overload;
     function ReadLine(out S: widestring; ExcludeEOL: Boolean = True; EOL: widestring = ''): Boolean; overload;
@@ -541,7 +541,7 @@ begin
     Result := False;
 end;
 
-function TmnBufferStream.ReadUntil(const Match: ansistring; ExcludeMatch: Boolean; out Buffer: ansistring; var Matched: Boolean): Boolean;
+function TmnBufferStream.ReadUntil(const Match: ansistring; ExcludeMatch: Boolean; out Buffer: ansistring; out Matched: Boolean): Boolean;
 var
   Res: Pointer;
   len: TFileSize;
@@ -553,7 +553,7 @@ begin
   FreeMem(Res);
 end;
 
-function TmnBufferStream.ReadUntil(const Match: widestring; ExcludeMatch: Boolean; out Buffer: widestring; var Matched: Boolean): Boolean;
+function TmnBufferStream.ReadUntil(const Match: widestring; ExcludeMatch: Boolean; out Buffer: widestring; out Matched: Boolean): Boolean;
 var
   Res: Pointer;
   len: TFileSize;
