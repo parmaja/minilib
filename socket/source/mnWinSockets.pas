@@ -137,6 +137,9 @@ var
   c: Integer;
 begin
   CheckActive;
+  {$ifdef FPC}
+  Finalize(FSet);
+  {$endif}
   FD_ZERO(FSet);
   FD_SET(FHandle, FSet);
   if Check = slRead then
@@ -277,6 +280,9 @@ var
 begin
   CheckActive;
   Size := SizeOf(SockAddrIn);
+  {$ifdef FPC}
+  Finalize(SockAddrIn);
+  {$endif}
   if getpeername(FHandle, SockAddrIn, Size) = 0 then
     Result := inet_ntoa(SockAddrIn.sin_addr)
   else
@@ -292,6 +298,9 @@ var
 begin
   CheckActive;
   Size := SizeOf(SockAddrIn);
+  {$ifdef FPC}
+  Finalize(SockAddrIn);
+  {$endif}
   if getpeername(FHandle, SockAddrIn, Size) = 0 then
   begin
     aHostEnt := gethostbyaddr(@SockAddrIn.sin_addr.s_addr, 4, PF_INET);
@@ -373,11 +382,9 @@ begin
   Startup;
 end;
 
+function TmnWallSocket.Bind(Options: TmnOptions; const Port: ansistring; const Address: ansistring): TmnCustomSocket;
 const
   SO_TRUE: Longbool = True;
-  SO_FALSE: Longbool = False;
-
-function TmnWallSocket.Bind(Options: TmnOptions; const Port: ansistring; const Address: ansistring): TmnCustomSocket;
 var
   aHandle: TSocket;
   aSockAddr: TSockAddr;
@@ -405,7 +412,7 @@ begin
   else
   begin
     aSockAddr.sin_addr.s_addr := inet_addr(PAnsiChar(Address));
-    if ((aSockAddr.sin_addr.s_addr - INADDR_NONE)=0)or(aSockAddr.sin_addr.s_addr=SOCKET_ERROR) then
+    if ((aSockAddr.sin_addr.s_addr - INADDR_NONE) = 0) or (aSockAddr.sin_addr.s_addr = SOCKET_ERROR) then
     begin
       aHostEnt := gethostbyname(PAnsiChar(Address));
       if aHostEnt <> nil then
@@ -465,7 +472,7 @@ begin
   aSockAddr.sin_port := htons(LookupPort(Port));
 
   aSockAddr.sin_addr.s_addr := inet_addr(PAnsiChar(Address));
-  if ((aSockAddr.sin_addr.s_addr - INADDR_NONE)=0)or(aSockAddr.sin_addr.s_addr=SOCKET_ERROR) then
+  if ((aSockAddr.sin_addr.s_addr - INADDR_NONE) = 0) or (aSockAddr.sin_addr.s_addr = SOCKET_ERROR) then
   begin
     aHostEnt := gethostbyname(PAnsiChar(Address));
     if aHostEnt <> nil then
