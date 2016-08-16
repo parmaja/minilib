@@ -134,7 +134,6 @@ type
     property Align;
     property Anchors;
     property BiDiMode;
-    property Caption;
     property Color;
     property Constraints;
     property DockSite;
