@@ -25,7 +25,7 @@ interface
 uses
   Classes, SysUtils, Variants, StrUtils,
   mncDB, mncPGHeader,
-  mnUtils, mnStreams, mncConnections, mncSQL, mncCommons, mncMetas;
+  mnUtils, mncConnections, mncSQL, mncCommons, mncMetas;
 
 type
 
@@ -1085,7 +1085,7 @@ begin
   FConnection.InternalConnect(FHandle);
   FConnection.Execute(FHandle, 'LISTEN "%s";', [vChannel]);
   FConnection.FEventListener := Self;
-  Resume;
+  Start;
 end;
 
 destructor TPGListenThread.Destroy;
@@ -1368,8 +1368,6 @@ end;
 
 procedure TmncPGCursorCommand.DoClose;
 begin
-  inherited;
-
 end;
 
 procedure TmncPGCursorCommand.DoExecute;

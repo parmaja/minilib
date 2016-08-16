@@ -27,6 +27,9 @@
           <ShowHints Value="False"/>
           <ShowGenInfo Value="False"/>
         </Verbosity>
+        <CompilerMessages>
+          <IgnoredMessages idx5024="True"/>
+        </CompilerMessages>
       </Other>
     </CompilerOptions>
     <Version Major="1" Release="1" Build="1"/>
@@ -76,14 +79,17 @@
         <UnitName Value="ntvImgBtns"/>
       </Item10>
     </Files>
-    <RequiredPkgs Count="2">
+    <RequiredPkgs Count="3">
       <Item1>
-        <PackageName Value="MiniCommons"/>
+        <PackageName Value="MiniLib"/>
       </Item1>
       <Item2>
+        <PackageName Value="MiniCommons"/>
+      </Item2>
+      <Item3>
         <PackageName Value="IDEIntf"/>
         <MinVersion Major="1" Valid="True"/>
-      </Item2>
+      </Item3>
     </RequiredPkgs>
     <UsageOptions>
       <UnitPath Value="$(PkgOutDir)"/>

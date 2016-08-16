@@ -7,20 +7,28 @@ interface
 uses
   Classes, SysUtils, Graphics;
 
-function Lighten(Color: TColor; Amount: Integer): TColor;
+//Amount is 0..100 percent value
+function Lighten(Color: TColor; Amount: SmallInt): TColor;
+function Darken(Color: TColor; Amount: SmallInt): TColor;
+
 function MixColors(Color1, Color2: TColor; W1: Integer): TColor;
 function BlendColor(Color1, Color2: TColor; W1: Integer): TColor;
 function InverseColor(Color: TColor): TColor;
+
 function GrayLevelColor(const Color: TColor): Integer;
+function IsDarkColor(const Color: TColor): Boolean;
+
+//Bring Black or White depend on the color passed
 function OppositeColor(const Color: TColor): TColor;
 
 implementation
 
-function Lighten(Color: TColor; Amount: Integer): TColor;
+function Lighten(Color: TColor; Amount: SmallInt): TColor;
 var
   C: Integer;
   R, G, B: Integer;
 begin
+  Amount := ($FF * Amount) div 100;
   C := ColorToRgb(Color);
   R := C and $FF + Amount;
   G := C shr 8 and $FF + Amount;
@@ -38,6 +46,11 @@ begin
   else if B > 255 then
     B := 255;
   Result := R or (G shl 8) or (B shl 16);
+end;
+
+function Darken(Color: TColor; Amount: SmallInt): TColor;
+begin
+  Lighten(Color, - Amount);
 end;
 
 function MixColors(Color1, Color2: TColor; W1: Integer): TColor;
@@ -100,9 +113,14 @@ begin
   Result := (77 * (Color and $FF) + 151 * (Color shr 8 and $FF) + 28 * (Color shr 16 and $FF)) shr 8;
 end;
 
+function IsDarkColor(const Color: TColor): Boolean;
+begin
+  Result := GrayLevelColor(Color) < 128;
+end;
+
 function OppositeColor(const Color: TColor): TColor;
 begin
-  if GrayLevelColor(Color) < 128 then
+  if IsDarkColor(Color) then
     Result := clWhite
   else
     Result := clBlack;

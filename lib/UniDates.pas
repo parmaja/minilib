@@ -18,8 +18,7 @@ unit UniDates;
 interface
 
 uses
-  Classes, SysUtils, DateUtils, Contnrs,
-  Math;
+  Classes, SysUtils, DateUtils, Contnrs, Math;
 
 type
   {

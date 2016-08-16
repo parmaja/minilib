@@ -195,6 +195,9 @@ type
 
 implementation
 
+uses
+  ColorUtils;
+
 //It draw last pixle
 
 procedure MyPolyline(Canvas:TCanvas; Points: PPoint; Count: Integer);
@@ -312,6 +315,10 @@ procedure TntvTabDrawCart.DoPaint(vItem: TntvTabItem; Canvas: TCanvas; var vRect
 var
   aTextRect: TRect;
   mw: Integer;
+  function GetEdgeColor: TColor;
+  begin
+    Result := MixColors(Canvas.Font.Color, NormalColor, 100);
+  end;
 
   procedure DrawPrevious;
   var
@@ -345,7 +352,7 @@ var
       Pen.Color := Brush.Color;
       Polygon(points.p, points.Count);
 
-      Pen.Color := Font.Color;
+      Pen.Color := GetEdgeColor;
       MyPolyline(canvas, points.p, points.Count -1);
     end;
   end;
@@ -392,7 +399,7 @@ begin
     else
       Brush.Color := NormalColor;
 
-    Pen.Color := Font.Color;
+    Pen.Color := GetEdgeColor;
 
     if tbfRightToLeft in vFlags then
     begin
@@ -425,7 +432,7 @@ begin
     Polygon(points.p, points.Count);
 
     //Draw Border
-    Pen.Color := Font.Color;
+    Pen.Color := GetEdgeColor;
 
     if (tdsLast in vState) then
       MyPolyline(canvas, points.p, points.Count)

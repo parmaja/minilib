@@ -12,9 +12,8 @@ interface
 
 uses
   LCLProc, LCLIntf, LCLType,
-  Classes, SysUtils, FileUtil, LResources, Forms, Controls, Graphics, Dialogs,
-  StdCtrls,
-  mncConnections, mncCSVExchanges;
+  Classes, SysUtils, FileUtil, StdCtrls, LResources, Forms, Controls, Graphics, Dialogs,
+  mncConnections;
 
 type
 

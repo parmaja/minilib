@@ -32,12 +32,13 @@ type
   protected
     FName: String;
     FTitle: String;
+    //Note Answer should have initial value, can passed as default value to user
     //Return an index of Choise/Button
     function ShowMessage(const vText: string; Choices: array of TmsgSelect; DefaultChoice: Integer; CancelChoice: Integer; Kind: TmsgKind): Integer; virtual; abstract;
     function ShowMessage(var Answer: string; const vText: string; Choices: array of TmsgSelect; DefaultChoice: Integer; CancelChoice: Integer; Kind: TmsgKind): Integer; virtual; abstract;
     //Short style of message
     function ShowMessage(const vText: string; Choices: TmsgChoices; DefaultChoice: TmsgChoice; CancelChoice: TmsgChoice; Kind: TmsgKind): TmsgChoice;
-    function ShowMessage(out Answer: string; const vText: string; Choices: TmsgChoices; DefaultChoice: TmsgChoice; CancelChoice: TmsgChoice; Kind: TmsgKind): TmsgChoice;
+    function ShowMessage(var Answer: string; const vText: string; Choices: TmsgChoices; DefaultChoice: TmsgChoice; CancelChoice: TmsgChoice; Kind: TmsgKind): TmsgChoice;
     //Status messages
     procedure ShowStatus(vText: string; Sender: TObject = nil); virtual; abstract;
     procedure UpdateStatus(vText: string; Sender: TObject = nil); virtual; abstract;
@@ -66,7 +67,7 @@ type
     function ShowMessage(const vText: string; Choices: array of TmsgSelect; DefaultChoice: Integer; CancelChoice: Integer; Kind: TmsgKind): Integer;
     function ShowMessage(var Answer: string; const vText: string; Choices: array of TmsgSelect; DefaultChoice: Integer; CancelChoice: Integer; Kind: TmsgKind): Integer;
     function ShowMessage(const vText: string; Choices: TmsgChoices; DefaultChoice: TmsgChoice; CancelChoice: TmsgChoice; Kind: TmsgKind): TmsgChoice;
-    function ShowMessage(out Answer: string; const vText: string; Choices: TmsgChoices; DefaultChoice: TmsgChoice; CancelChoice: TmsgChoice; Kind: TmsgKind): TmsgChoice;
+    function ShowMessage(var Answer: string; const vText: string; Choices: TmsgChoices; DefaultChoice: TmsgChoice; CancelChoice: TmsgChoice; Kind: TmsgKind): TmsgChoice;
 
     property Current: TMsgPrompt read FCurrent write SetCurrent;
     function Find(vName: String): TMsgPrompt;
@@ -79,7 +80,7 @@ type
     procedure EnumItems(vItems: TStrings);
     property Items[Index: Integer]: TMsgPrompt read GetItem;
 
-    function Input(out Answer: string; const vText: string): Boolean;
+    function Input(var Answer: string; const vText: string): Boolean;
     function Password(var Answer: string; const vText: string): Boolean;
 
     function Ask(const vText: string; Choices: TmsgChoices; DefaultChoice: TmsgChoice; CancelChoice: TmsgChoice; Kind: TmsgKind = msgkNormal): TmsgChoice;
@@ -189,7 +190,7 @@ begin
   Result := C[ShowMessage(vText, c, DefaultIndex, CancelIndex, Kind)].Choice;
 end;
 
-function TMsgPrompt.ShowMessage(out Answer: string; const vText: string; Choices: TmsgChoices; DefaultChoice: TmsgChoice; CancelChoice: TmsgChoice; Kind: TmsgKind): TmsgChoice;
+function TMsgPrompt.ShowMessage(var Answer: string; const vText: string; Choices: TmsgChoices; DefaultChoice: TmsgChoice; CancelChoice: TmsgChoice; Kind: TmsgKind): TmsgChoice;
 var
   a: TmsgChoice;
   c: array of TmsgSelect;
@@ -279,7 +280,7 @@ begin
   Result := ShowMessage(vText, [msgcOK, msgcCancel], msgcOK, msgcCancel, msgkWarning) = msgcOK;
 end;
 
-function TMsgBox.Input(out Answer: string; const vText: string): Boolean;
+function TMsgBox.Input(var Answer: string; const vText: string): Boolean;
 begin
   Result := ShowMessage(Answer, vText, [msgcOK, msgcCancel], msgcOk, msgcCancel, msgkConfirmation) = msgcOK
 end;
@@ -366,7 +367,7 @@ begin
     Result := DefaultChoice;
 end;
 
-function TMsgBox.ShowMessage(out Answer: string; const vText: string; Choices: TmsgChoices; DefaultChoice: TmsgChoice; CancelChoice: TmsgChoice; Kind: TmsgKind): TmsgChoice;
+function TMsgBox.ShowMessage(var Answer: string; const vText: string; Choices: TmsgChoices; DefaultChoice: TmsgChoice; CancelChoice: TmsgChoice; Kind: TmsgKind): TmsgChoice;
 begin
   if CancelChoice = msgcUnknown then
     CancelChoice := DefaultChoice;

@@ -21,6 +21,11 @@
           <DebugInfoType Value="dsStabs"/>
         </Debugging>
       </Linking>
+      <Other>
+        <CompilerMessages>
+          <IgnoredMessages idx5024="True"/>
+        </CompilerMessages>
+      </Other>
     </CompilerOptions>
     <Version Major="1" Release="1" Build="1"/>
     <Files Count="8">

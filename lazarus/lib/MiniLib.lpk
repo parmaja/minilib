@@ -10,6 +10,11 @@
         <OtherUnitFiles Value="."/>
         <UnitOutputDirectory Value="units/$(TargetCPU)-$(TargetOS)"/>
       </SearchPaths>
+      <Other>
+        <CompilerMessages>
+          <IgnoredMessages idx5024="True"/>
+        </CompilerMessages>
+      </Other>
     </CompilerOptions>
     <Description Value="MiniLib FreePascal/Lazarus library"/>
     <Files Count="16">
