@@ -15,7 +15,7 @@ interface
 
 uses
   LMessages, SysUtils, Classes, Graphics, Controls, Variants,
-  LCLIntf, LCLType, IntfGraphics, FPimage, GraphType,
+  LCLIntf, LCLType, IntfGraphics, FPimage, GraphType, ntvThemes,
   Types;
 
 type
@@ -38,12 +38,10 @@ type
   TntvCustomSplitter = class(TGraphicControl)
   private
     FAutoSnap: boolean;
-    FLoweredColor: TColor;
     FMouseInControl: Boolean;
     FOnCanOffset: TCanOffsetEvent;
     FOnCanResize: TCanResizeEvent;
     FOnMoved: TNotifyEvent;
-    FRaisedColor: TColor;
     FResizeAnchor: TAnchorKind;
     FResizeStyle: TntvResizeStyle;
     FSplitDragging: Boolean;
@@ -87,8 +85,6 @@ type
     property OnCanOffset: TCanOffsetEvent read FOnCanOffset write FOnCanOffset;
     property OnCanResize: TCanResizeEvent read FOnCanResize write FOnCanResize;
     property OnMoved: TNotifyEvent read FOnMoved write FOnMoved;
-    property RaisedColor: TColor read FRaisedColor write FRaisedColor default cl3DHilight;
-    property LoweredColor:TColor read FLoweredColor write FLoweredColor default cl3DShadow;
   end;
 
   TntvSplitter = class(TntvCustomSplitter)
@@ -115,7 +111,7 @@ type
 implementation
 
 uses
-  Math, Themes;
+  Math;
 
 { TntvCustomSplitter }
 
@@ -321,10 +317,7 @@ begin
     NewRect.TopLeft := Parent.ClientToScreen(NewRect.TopLeft);
     NewRect.BottomRight := Parent.ClientToScreen(NewRect.BottomRight);
 
-    if ResizeStyle = nrsLine then
-      Pattern := GetStockObject(BLACK_BRUSH)
-    else
-      Pattern := ThemeServices.DottedBrush;
+    Pattern := GetStockObject(BLACK_BRUSH);
 
     FSplitterWindow := CreateRubberband(NewRect, Pattern);
   end;
@@ -467,13 +460,13 @@ begin
   case Style of
     spsRaisedLine:
       begin
-        C1 := FRaisedColor;
-        C2 := FLoweredColor;
+        C1 := ntvTheme.Painter.RaisedColor;
+        C2 := ntvTheme.Painter.LoweredColor;
       end;
     spsLoweredLine:
       begin
-        C1 := FLoweredColor;
-        C2 := FRaisedColor;
+        C1 := ntvTheme.Painter.LoweredColor;
+        C2 := ntvTheme.Painter.RaisedColor;
       end;
     else
     begin
@@ -549,8 +542,6 @@ begin
   FMouseInControl := False;
   FResizeAnchor := akLeft;
   FStyle := spsLoweredLine;
-  FRaisedColor := cl3DHilight;
-  FLoweredColor := cl3DShadow;
   Width := 5;
 end;
 

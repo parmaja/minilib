@@ -3,11 +3,11 @@ unit ntvImgBtns;
 interface
 
 uses
-  Messages, SysUtils, Variants, Classes, Graphics, Themes, ImgList, mnUtils,
+  Messages, SysUtils, Variants, Classes, Graphics, Themes, ImgList, mnUtils, ntvThemes,
   Controls, StdCtrls, Forms;
 
 type
-  TntvImgBtnStyle = (ibsNormal, ibsToolbar);
+  TntvImgBtnStyle = (ibsNormal, ibsInvertMask);
 
   { TntvImgBtn }
 
@@ -52,7 +52,7 @@ type
     property Caption: TCaption read FCaption write SetCaption;
     property Images: TImageList read FImages write SetImages;
     property ImageIndex: TImageIndex read FImageIndex write SetImageIndex default -1;
-    property Style: TntvImgBtnStyle read FStyle write SetStyle;
+    property Style: TntvImgBtnStyle read FStyle write SetStyle default ibsNormal;
     property BidiMode;
     property ParentBidiMode;
     property Anchors;
@@ -167,58 +167,18 @@ var
   X, Y: integer;
   aImageWidth: Integer;
   aCaptionRect, aRect: TRect;
-  procedure DrawButtonText(TextBounds: TRect);
-  var
-    TS: TTextStyle;
-  begin
-    with Canvas do
-    begin
-      Brush.Style := bsClear;
-      Finalize(TS);
-      with TS do
-      begin
-        if aImageWidth = 0 then
-          Alignment := BidiFlipAlignment(taCenter)
-        else
-          Alignment := BidiFlipAlignment(taLeftJustify, UseRightToLeftAlignment);
-        WordBreak := False;
-        SingleLine:= True;
-        Clipping := True;
-        ShowPrefix := False;
-        SystemFont := False;
-        RightToLeft := UseRightToLeftReading;
-        ExpandTabs := True;
-      end;
-
-      if not Enabled then
-      begin
-        Font.Color := clBtnShadow;
-        Canvas.TextRect(TextBounds, TextBounds.Left, TextBounds.Top, Caption, TS);
-      end
-      else
-        Canvas.TextRect(TextBounds, TextBounds.Left, TextBounds.Top, Caption, TS);
-    end;
-  end;
 begin
-  inherited;
+  //inherited;
   aRect := ClientRect;
-  if not Enabled then
-    ThemeServices.DrawElement(Canvas.Handle, ThemeServices.GetElementDetails(ttbButtonDisabled), aRect)
-  else if Down then
-    ThemeServices.DrawElement(Canvas.Handle, ThemeServices.GetElementDetails(ttbButtonPressed), aRect)
-  else if Active then
-    ThemeServices.DrawElement(Canvas.Handle, ThemeServices.GetElementDetails(ttbButtonHot), aRect)
-  else
-    ThemeServices.DrawElement(Canvas.Handle, ThemeServices.GetElementDetails(ttbButtonNormal), aRect);
 
-  if Style = ibsNormal then
+  if Active then
   begin
-    Canvas.Pen.Color := cl3DShadow;
-    Canvas.Pen.Style := psSolid;
-    Canvas.Frame(aRect);
-  end;
-
-  InflateRect(aRect, -1, -1);
+    Canvas.Brush.Color := ntvTheme.Painter.RaisedColor;
+    Canvas.Brush.Style := bsSolid;
+    Canvas.FillRect(ClientRect);
+  end
+  else
+    inherited;
 
   if ((Images <> nil) and (ImageIndex >= 0)) then
     aImageWidth := Images.Width
@@ -226,6 +186,7 @@ begin
     aImageWidth := 0;
 
   aCaptionRect := aRect;
+
   if Caption <> '' then
   begin
     if UseRightToLeftAlignment then
@@ -238,9 +199,7 @@ begin
       aCaptionRect.Left := aCaptionRect.Left + aImageWidth;
       aRect.Right := aCaptionRect.Left;
     end;
-  //  if Down then
-      OffsetRect(aCaptionRect, 1, 1);
-    DrawButtonText(aCaptionRect);
+    ntvTheme.Painter.DrawButton(Canvas, Caption, aImageWidth, aCaptionRect, DrawStates(Enabled, Down, False), UseRightToLeftAlignment);
   end;
 
   if aImageWidth <> 0 then
@@ -251,10 +210,7 @@ begin
         OffsetRect(aRect, 1, 1);
       x := aRect.Left + ((aRect.Right - aRect.Left) div 2) - (FImages.Width div 2);
       y := aRect.Top + ((aRect.Bottom - aRect.Top) div 2) - (FImages.Height div 2);
-      if Active and Enabled then
-        Images.Draw(Canvas, X, Y, ImageIndex, gdeShadowed)
-      else
-        Images.Draw(Canvas, X, Y, ImageIndex, Enabled);
+      Images.Draw(Canvas, X, Y, ImageIndex, Enabled);
     end
   end;
 end;
