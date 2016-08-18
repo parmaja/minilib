@@ -164,7 +164,6 @@ end;
 
 procedure TntvImgBtn.Paint;
 var
-  X, Y: integer;
   aImageWidth: Integer;
   aCaptionRect, aRect: TRect;
 begin
@@ -208,9 +207,7 @@ begin
     begin
       if Down then
         OffsetRect(aRect, 1, 1);
-      x := aRect.Left + ((aRect.Right - aRect.Left) div 2) - (FImages.Width div 2);
-      y := aRect.Top + ((aRect.Bottom - aRect.Top) div 2) - (FImages.Height div 2);
-      Images.Draw(Canvas, X, Y, ImageIndex, Enabled);
+      ntvTheme.Painter.DrawImage(Canvas, FImages, FImageIndex, aRect, DrawStates(Enabled, Down, False));
     end
   end;
 end;

@@ -58,9 +58,9 @@ type
     function CheckNewSize(var NewSize: Integer): Boolean; virtual;
     function CheckOffset(var NewOffset: Integer): Boolean; virtual;
 
-    procedure MouseDown(Button: TMouseButton; Shift:TShiftState; X,Y:Integer); override;
     procedure MouseEnter; override;
     procedure MouseLeave; override;
+    procedure MouseDown(Button: TMouseButton; Shift:TShiftState; X,Y:Integer); override;
     procedure MouseMove(Shift: TShiftState; X,Y: Integer); override;
     procedure MouseUp(Button: TMouseButton; Shift:TShiftState; X,Y:Integer); override;
 
@@ -226,7 +226,6 @@ var
 
 var
   NewSize: Integer;
-  i: Integer;
 begin
   if Offset = 0 then
     Exit;
@@ -357,15 +356,15 @@ begin
     Cursor := crVSplit;
 end;
 
-procedure TntvCustomSplitter.MouseDown(Button: TMouseButton; Shift: TShiftState; X,
-  Y: Integer);
+procedure TntvCustomSplitter.MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 var
   MousePos: TPoint;
 begin
-  inherited MouseDown(Button, Shift, X, Y);
+  inherited;
   // While resizing X, Y are not valid. Use absolute mouse position.
   if Button = mbLeft then
   begin
+    MousePos := Point(X, Y);
     GetCursorPos(MousePos);
     StartSplitterMove(MousePos);
   end;
@@ -376,9 +375,10 @@ var
   Offset: Integer;
   MousePos: TPoint;
 begin
-  inherited MouseMove(Shift, X, Y);
+  inherited;
   if (ssLeft in Shift) and (Parent <> nil) and (FSplitDragging) then
   begin
+    MousePos := Point(X, Y);
     // While resizing X, Y are not valid. Use the absolute mouse position.
     GetCursorPos(MousePos);
     case ResizeAnchor of
@@ -399,7 +399,8 @@ procedure TntvCustomSplitter.MouseUp(Button: TMouseButton; Shift: TShiftState; X
 var
   MousePos: TPoint;
 begin
-  inherited MouseUp(Button, Shift, X, Y);
+  inherited;
+  MousePos := Point(X, Y);
   GetCursorPos(MousePos);
   StopSplitterMove(MousePos);
 end;
@@ -512,7 +513,7 @@ end;
 
 procedure TntvCustomSplitter.MouseEnter;
 begin
-  inherited MouseEnter;
+  inherited;
   if csDesigning in ComponentState then exit;
 
   if not FMouseInControl and Enabled and (GetCapture = 0) then
@@ -524,7 +525,7 @@ end;
 
 procedure TntvCustomSplitter.MouseLeave;
 begin
-  inherited MouseLeave;
+  inherited;
   if csDesigning in ComponentState then exit;
 
   if FMouseInControl then

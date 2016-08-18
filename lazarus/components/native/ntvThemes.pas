@@ -11,7 +11,8 @@ unit ntvThemes;
 interface
 
 uses
-  Classes, Controls, SysUtils, Contnrs, Graphics, mnClasses,
+  Classes, Controls, SysUtils, Contnrs, Graphics, ImgList, GraphType,
+  mnClasses,
   LCLType, LCLIntf;
 
 type
@@ -46,6 +47,7 @@ type
     procedure DrawButtonText(Canvas: TCanvas; Text: string; ImageWidth: Integer; Rect: TRect; States: TdrawStates; UseRightToLeft: Boolean); virtual;
     procedure DrawButtonEdge(Canvas: TCanvas; Rect: TRect; States: TdrawStates); virtual;
     procedure DrawButton(Canvas: TCanvas; Text: string; ImageWidth: Integer; Rect: TRect; States: TdrawStates; UseRightToLeft: Boolean); virtual;
+    procedure DrawImage(Canvas: TCanvas; ImageList:TImageList; ImageIndex: TImageIndex; Rect: TRect; States: TdrawStates); virtual;
     property Name: string read FName write SetName;
   published
     property LoweredColor: TColor read FLoweredColor write FLoweredColor;
@@ -214,6 +216,15 @@ begin
   DrawButtonEdge(Canvas, Rect, States);
   InflateRect(Rect, -1 , -1);
   DrawButtonText(Canvas, Text, ImageWidth, Rect, States, UseRightToLeft);
+end;
+
+procedure TntvThemePainter.DrawImage(Canvas: TCanvas; ImageList: TImageList; ImageIndex: TImageIndex; Rect: TRect; States: TdrawStates);
+var
+  X, Y: integer;
+begin
+  x := Rect.Left + ((Rect.Right - Rect.Left) div 2) - (ImageList.Width div 2);
+  y := Rect.Top + ((Rect.Bottom - Rect.Top) div 2) - (ImageList.Height div 2);
+  ImageList.Draw(Canvas, x, y, ImageIndex, gdeNormal);
 end;
 
 procedure TntvThemePainter.DrawRect(Canvas: TCanvas; const Rect: TRect; Color, BorderColor: TColor);
