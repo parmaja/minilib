@@ -14,7 +14,7 @@ interface
 
 uses
   SysUtils, Graphics, Controls,
-  SynEdit, Classes, SynEditTypes, SynEditHighlighter, SynHighlighterHashEntries, SynHighlighterMultiProc;
+  SynEdit, Classes, SynEditTypes, SynEditHighlighter, SynHighlighterHashEntries, mnSynHighlighterMultiProc;
 
 type
   THTMLRangeState = (rshtmlText, rshtmlAmpersand, rshtmlComment, rshtmlKeyword, rshtmlParam,

@@ -1,4 +1,4 @@
-unit SynHighlighterMultiProc;
+unit mnSynHighlighterMultiProc;
 {$mode objfpc}{$H+}
 {**
  *

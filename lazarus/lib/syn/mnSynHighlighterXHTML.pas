@@ -1,4 +1,4 @@
-unit SynHighlighterXHTML;
+unit mnSynHighlighterXHTML;
 {$mode objfpc}{$H+}
 {**
  *
@@ -14,7 +14,7 @@ interface
 
 uses
   Classes, SysUtils, Controls, Graphics,
-  SynEdit, SynEditTypes, SynEditHighlighter, SynHighlighterMultiProc;
+  SynEdit, SynEditTypes, SynEditHighlighter, mnSynHighlighterMultiProc;
 
 type
 

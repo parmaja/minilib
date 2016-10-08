@@ -1,4 +1,4 @@
-unit SynHighlighterFirebird;
+unit mnSynHighlighterFirebird;
 {$mode objfpc}{$H+}
 {**
  *
@@ -14,7 +14,7 @@ interface
 
 uses
   SysUtils, Classes, Graphics,
-  SynEditTypes, SynEditHighlighter, SynHighlighterHashEntries, SynUtils;
+  SynEditTypes, SynEditHighlighter, SynHighlighterHashEntries, mnSynUtils;
 
 type
   TtkTokenKind = (tkComment, tkDatatype, tkObject, tkException,

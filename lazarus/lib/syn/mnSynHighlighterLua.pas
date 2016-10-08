@@ -1,4 +1,4 @@
-unit SynHighlighterD;
+unit mnSynHighlighterLua;
 {$mode objfpc}{$H+}
 {**
  *
@@ -19,13 +19,13 @@ interface
 uses
   Classes, SysUtils,
   SynEdit, SynEditTypes,
-  SynEditHighlighter, SynHighlighterHashEntries, SynHighlighterMultiProc;
+  SynEditHighlighter, SynHighlighterHashEntries, mnSynHighlighterMultiProc;
 
 type
 
-  { TDProcessor }
+  { TLuaProcessor }
 
-  TDProcessor = class(TCommonSynProcessor)
+  TLuaProcessor = class(TCommonSynProcessor)
   private
   protected
     function GetIdentChars: TSynIdentChars; override;
@@ -33,7 +33,9 @@ type
     function GetEndOfLineAttribute: TSynHighlighterAttributes; override;
   public
     procedure QuestionProc;
-    procedure SlashProc;
+    procedure DirectiveProc;
+    procedure DashProc;
+    procedure LuaCommentProc;
     procedure IdentProc;
     procedure GreaterProc;
     procedure LowerProc;
@@ -45,9 +47,9 @@ type
     procedure MakeIdentTable; override;
   end;
 
-  { TSynDSyn }
+  { TmnSynLuaSyn }
 
-  TSynDSyn = class(TSynMultiProcSyn)
+  TmnSynLuaSyn = class(TSynMultiProcSyn)
   private
   protected
     function GetIdentChars: TSynIdentChars; override;
@@ -62,34 +64,27 @@ type
 
 const
 
-  SYNS_LangD = 'D';
-  SYNS_FilterD = 'D Lang Files (*.d;*.dd)|*.d;*.dd';
+  SYNS_LangLua = 'Lua';
+  SYNS_FilterLua = 'Lua Lang Files (*.c;*.Lua;*.h;*.ino)|*.c;*.Lua;*.h;*.ino';
 
-  cDSample =
-      'import std.stdio;'#13#10+
-      '// Computes average line length for standard input.'#13#10+
-      ''#13#10+
-      'void main()'#13#10+
-      '{'#13#10+
-      '    ulong lines = 0;'#13#10+
-      '    double sumLength = 0;'#13#10+
-      '    foreach (line; stdin.byLine())'#13#10+
-      '    {'#13#10+
-      '        ++lines;'#13#10+
-      '        sumLength += line.length;'#13#10+
-      '    }'#13#10+
-      '    writeln("Average line length: ",'#13#10+
-      '        lines ? sumLength / lines : 0);'#13#10+
-      '}'#13#10;
+  cLuaSample =
+      '-- defines a factorial function'#13#10+
+      'function fact (n)'#13#10+
+      '  if n == 0 then'#13#10+
+      '    return 1'#13#10+
+      '  else'#13#10+
+      '    return n * fact(n-1)'#13#10+
+      '  end'#13#10+
+      'end'#13#10;
 
-{$INCLUDE 'DKeywords.inc'}
+{$INCLUDE 'LuaKeywords.inc'}
 
 implementation
 
 uses
   mnUtils;
 
-procedure TDProcessor.MakeIdentTable;
+procedure TLuaProcessor.MakeIdentTable;
 var
   c: char;
 begin
@@ -110,7 +105,7 @@ begin
     HashCharTable[c] := 2 + Ord(c) - Ord('A');
 end;
 
-procedure TDProcessor.GreaterProc;
+procedure TLuaProcessor.GreaterProc;
 begin
   Parent.FTokenID := tkSymbol;
   Inc(Parent.Run);
@@ -118,7 +113,7 @@ begin
     Inc(Parent.Run);
 end;
 
-procedure TDProcessor.IdentProc;
+procedure TLuaProcessor.IdentProc;
 begin
   Parent.FTokenID := IdentKind((Parent.FLine + Parent.Run));
   inc(Parent.Run, FStringLen);
@@ -132,7 +127,7 @@ begin
       inc(Parent.Run);
 end;
 
-procedure TDProcessor.LowerProc;
+procedure TLuaProcessor.LowerProc;
 begin
   Parent.FTokenID := tkSymbol;
   Inc(Parent.Run);
@@ -147,28 +142,46 @@ begin
   end;
 end;
 
-procedure TDProcessor.SlashProc;
+procedure TLuaProcessor.DashProc;
 begin
   Inc(Parent.Run);
   case Parent.FLine[Parent.Run] of
-    '/':
-      begin
-        SLCommentProc;
-      end;
-    '*':
+    '-':
       begin
         Inc(Parent.Run);
-        if Parent.FLine[Parent.Run] = '*' then
-          DocumentProc
+        if Parent.FLine[Parent.Run] = '[' then
+        begin
+          Inc(Parent.Run);
+          if Parent.FLine[Parent.Run] = '[' then
+            LuaCommentProc
+          else
+            SLCommentProc
+        end
         else
-          CommentProc;
+          SLCommentProc;
       end;
   else
     Parent.FTokenID := tkSymbol;
   end;
 end;
 
-procedure TDProcessor.MakeMethodTables;
+procedure TLuaProcessor.LuaCommentProc;
+begin
+  Parent.FTokenID := tkComment;
+  SetRange(rscComment);
+  while not (Parent.FLine[Parent.Run] in [#0, #10, #13]) do
+  begin
+    if (Parent.FLine[Parent.Run] = ']') and (Parent.FLine[Parent.Run + 1] = ']') then
+    begin
+      SetRange(rscUnKnown);//TODO
+      Inc(Parent.Run, 2);
+      break;
+    end;
+    Inc(Parent.Run);
+  end;
+end;
+
+procedure TLuaProcessor.MakeMethodTables;
 var
   I: Char;
 begin
@@ -178,8 +191,8 @@ begin
       '?': ProcTable[I] := @QuestionProc;
       '''': ProcTable[I] := @StringSQProc;
       '"': ProcTable[I] := @StringDQProc;
-      '`': ProcTable[I] := @StringBQProc;
-      '/': ProcTable[I] := @SlashProc;
+      '#': ProcTable[I] := @DirectiveProc;
+      '-': ProcTable[I] := @DashProc;
       '>': ProcTable[I] := @GreaterProc;
       '<': ProcTable[I] := @LowerProc;
       'A'..'Z', 'a'..'z', '_':
@@ -189,7 +202,7 @@ begin
     end;
 end;
 
-procedure TDProcessor.QuestionProc;
+procedure TLuaProcessor.QuestionProc;
 begin
   Inc(Parent.Run);
   case Parent.FLine[Parent.Run] of
@@ -204,7 +217,13 @@ begin
   end;
 end;
 
-procedure TDProcessor.Next;
+procedure TLuaProcessor.DirectiveProc;
+begin
+  Parent.FTokenID := tkProcessor;
+  WordProc;
+end;
+
+procedure TLuaProcessor.Next;
 begin
   Parent.FTokenPos := Parent.Run;
   if (Parent.FLine[Parent.Run] in [#0, #10, #13]) then
@@ -212,11 +231,7 @@ begin
   else case Range of
     rscComment:
     begin
-      CommentProc;
-    end;
-    rscCommentPlus:
-    begin
-      CommentPlusProc;
+      LuaCommentProc;
     end;
     rscDocument:
     begin
@@ -232,15 +247,15 @@ begin
   end;
 end;
 
-procedure TDProcessor.InitIdent;
+procedure TLuaProcessor.InitIdent;
 begin
   inherited;
-  EnumerateKeywords(Ord(tkKeyword), sDKeywords, TSynValidStringChars, @DoAddKeyword);
-  EnumerateKeywords(Ord(tkFunction), sDFunctions, TSynValidStringChars, @DoAddKeyword);
+  EnumerateKeywords(Ord(tkKeyword), sLuaKeywords, TSynValidStringChars, @DoAddKeyword);
+  EnumerateKeywords(Ord(tkFunction), sLuaFunctions, TSynValidStringChars, @DoAddKeyword);
   SetRange(rscUnknown);
 end;
 
-function TDProcessor.KeyHash(ToHash: PChar): Integer;
+function TLuaProcessor.KeyHash(ToHash: PChar): Integer;
 begin
   Result := 0;
   while ToHash^ in ['_', '0'..'9', 'a'..'z', 'A'..'Z'] do
@@ -251,7 +266,7 @@ begin
   fStringLen := ToHash - fToIdent;
 end;
 
-function TDProcessor.GetEndOfLineAttribute: TSynHighlighterAttributes;
+function TLuaProcessor.GetEndOfLineAttribute: TSynHighlighterAttributes;
 begin
   if (Range = rscDocument) or (LastRange = rscDocument) then
     Result := Parent.DocumentAttri
@@ -259,40 +274,41 @@ begin
     Result := inherited GetEndOfLineAttribute;
 end;
 
-function TDProcessor.GetIdentChars: TSynIdentChars;
+function TLuaProcessor.GetIdentChars: TSynIdentChars;
 begin
-  Result := TSynValidStringChars + ['$'];
+  Result := TSynValidStringChars;
 end;
 
-constructor TSynDSyn.Create(AOwner: TComponent);
+constructor TmnSynLuaSyn.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
-  FDefaultFilter := SYNS_FilterD;
+  FDefaultFilter := SYNS_FilterLua;
 end;
 
-procedure TSynDSyn.InitProcessors;
+procedure TmnSynLuaSyn.InitProcessors;
 begin
   inherited;
-  Processors.Add(TDProcessor.Create(Self, 'D'));
+  Processors.Add(TLuaProcessor.Create(Self, 'Lua'));
 
-  Processors.MainProcessor := 'D';
-  Processors.DefaultProcessor := 'D';
+  Processors.MainProcessor := 'Lua';
+  Processors.DefaultProcessor := 'Lua';
 end;
 
-function TSynDSyn.GetIdentChars: TSynIdentChars;
+function TmnSynLuaSyn.GetIdentChars: TSynIdentChars;
 begin
   //  Result := TSynValidStringChars + ['&', '#', ';', '$'];
   Result := TSynValidStringChars + ['&', '#', '$'];
 end;
 
-class function TSynDSyn.GetLanguageName: string;
+class function TmnSynLuaSyn.GetLanguageName: string;
 begin
-  Result := SYNS_LangD;
+  Result := 'Lua';
 end;
 
-function TSynDSyn.GetSampleSource: string;
+function TmnSynLuaSyn.GetSampleSource: string;
 begin
-  Result := cDSample;
+  Result := cLuaSample;
 end;
 
 end.
+

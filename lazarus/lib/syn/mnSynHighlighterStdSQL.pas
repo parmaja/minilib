@@ -1,4 +1,4 @@
-unit SynHighlighterStdSQL;
+unit mnSynHighlighterStdSQL;
 {$mode objfpc}{$H+}
 {**
  *
@@ -14,7 +14,7 @@ interface
 
 uses
   SysUtils, Controls, Graphics,
-  Classes, SynEditTypes, SynEditHighlighter, SynHighlighterHashEntries, SynUtils;
+  Classes, SynEditTypes, SynEditHighlighter, SynHighlighterHashEntries, mnSynUtils;
 
 type
   TtkTokenKind = (tkComment, tkDatatype, tkObject,
