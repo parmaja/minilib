@@ -17,8 +17,8 @@ uses
   SynEdit, SynEditTypes, SynEditHighlighter, SynHighlighterHashEntries;
 
 type
-  TtkTokenKind = (tkUnknown, tkNull, tkSpace, tkComment, tkDocument, tkIdentifier, tkSymbol, tkNumber, //tkControl, //like {};
-    tkString, tkValue, tkText, tkKeyword, tkFunction, tkVariable, tkProcessor);
+  TtkTokenKind = (tkUnknown, tkNull, tkSpace, tkComment, tkDocument, tkIdentifier, tkKeyword, tkFunction, tkSymbol, tkNumber, //tkControl, //like {};
+    tkString, tkValue, tkText, tkVariable, tkProcessor);
 
   //Common range used for some syntax
   TCommonRangeState = (rscUnknown, rscComment, rscCommentPlus, rscDocument, rscStringSQ, rscStringDQ, rscStringBQ); //BackQuote
@@ -346,17 +346,15 @@ end;
 
 procedure TCommonSynProcessor.InternalCommentProc;
 begin
+  while not (Parent.FLine[Parent.Run] in [#0, #10, #13]) do
   begin
-    while not (Parent.FLine[Parent.Run] in [#0, #10, #13]) do
+    if (Parent.FLine[Parent.Run] = '*') and (Parent.FLine[Parent.Run + 1] = '/') then
     begin
-      if (Parent.FLine[Parent.Run] = '*') and (Parent.FLine[Parent.Run + 1] = '/') then
-      begin
-        SetRange(rscUnKnown);//TODO
-        Inc(Parent.Run, 2);
-        break;
-      end;
-      Inc(Parent.Run);
+      SetRange(rscUnKnown);//TODO
+      Inc(Parent.Run, 2);
+      break;
     end;
+    Inc(Parent.Run);
   end;
 end;
 
