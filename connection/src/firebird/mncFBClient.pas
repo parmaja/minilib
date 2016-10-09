@@ -18,7 +18,7 @@ unit mncFBClient;
 interface
 
 uses
-  SysUtils, Windows, Classes, mncFBHeader, mncFBTypes;
+  SysUtils, Classes, dynlibs, mncFBHeader, mncFBTypes;
 
 type
   EFBClientError = class(Exception)
@@ -26,7 +26,7 @@ type
 
   TCustomFBClient = class(TObject)
   private
-    FLibrary: THandle;
+    FLibrary: TLibHandle;
     FClientVersion: Single;
     FBLOB_get: TBLOB_get;
     FBLOB_put: TBLOB_put;
@@ -389,7 +389,7 @@ begin
     end;
   end;
 
-  if (FLibrary > HINSTANCE_ERROR) then
+  if (FLibrary <> 0) then
   begin
     CurLibrary := FLibrary;
     
@@ -476,7 +476,7 @@ end;
 
 procedure TCustomFBClient.FreeClientLibrary;
 begin
-  if FLibrary > HINSTANCE_ERROR then
+  if FLibrary <> 0 then
   begin
     FreeLibrary(FLibrary);
     FLibrary := 0;
@@ -485,9 +485,9 @@ end;
 
 function TCustomFBClient.LoadClient: Boolean;
 begin
-  if (FLibrary <= HINSTANCE_ERROR) then
+  if (FLibrary <> 0) then
     LoadClientLibrary;
-  if (FLibrary <= HINSTANCE_ERROR) then
+  if (FLibrary <> 0) then
     Result := False
   else
     Result := True;
