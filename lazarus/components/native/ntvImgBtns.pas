@@ -172,7 +172,7 @@ begin
 
   if Active then
   begin
-    Canvas.Brush.Color := ntvTheme.Painter.RaisedColor;
+    Canvas.Brush.Color := ntvTheme.Painter.ActiveColor;
     Canvas.Brush.Style := bsSolid;
     Canvas.FillRect(ClientRect);
   end

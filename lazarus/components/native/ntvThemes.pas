@@ -33,6 +33,7 @@ type
 
   TntvThemePainter = class(TObject)
   private
+    FActiveColor: TColor;
     FEngine: TntvThemeEngine;
     FLoweredColor: TColor;
     FName: string;
@@ -52,6 +53,7 @@ type
   published
     property LoweredColor: TColor read FLoweredColor write FLoweredColor;
     property RaisedColor: TColor read FRaisedColor write FRaisedColor;
+    property ActiveColor: TColor read FActiveColor write FActiveColor;
   end;
 
   TntvThemePainters = class(specialize GNamedItems<TntvThemePainter>)
