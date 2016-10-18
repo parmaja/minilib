@@ -21,7 +21,7 @@ type
     tkString, tkValue, tkText, tkVariable, tkProcessor);
 
   //Common range used for some syntax
-  TCommonRangeState = (rscUnknown, rscComment, rscCommentPlus, rscDocument, rscStringSQ, rscStringDQ, rscStringBQ); //BackQuote
+  TCommonRangeState = (rscUnknown, rscComment, rscCommentPlus, rscDocument, rscStringSQ, rscStringDQ, rscStringBQ, rscStringSpecial); //BackQuote
 
   TProcTableProc = procedure of object;
 
@@ -539,7 +539,6 @@ begin
 
   for c in ['{', '}', '.', ',', ';', '(', ')', '[', ']', '~'] do
     ProcTable[c] := @ControlProc;
-
 end;
 
 procedure TCommonSynProcessor.StringSQProc;

@@ -38,11 +38,17 @@
       'while';
 
   sLuaFunctions =
+    'integer,'+
+    'string,'+
+    'boolean,'+
     //namespaces
     'io,'+
+    'require,'+
     //functions
     'print,'+
     'tonumber,'+
+    'input,'+
+    'type,'+
     'read,'+
     'write';
 

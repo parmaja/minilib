@@ -35,6 +35,8 @@ type
     procedure QuestionProc;
     procedure DirectiveProc;
     procedure DashProc;
+    procedure BracketProc;
+    procedure StringSpecialProc;
     procedure LuaCommentProc;
     procedure IdentProc;
     procedure GreaterProc;
@@ -165,6 +167,38 @@ begin
   end;
 end;
 
+procedure TLuaProcessor.BracketProc;
+begin
+  Inc(Parent.Run);
+  case Parent.FLine[Parent.Run] of
+    '[':
+      begin
+        SetRange(rscStringSpecial);
+        Inc(Parent.Run);
+        StringSpecialProc;
+      end
+  else
+    Parent.FTokenID := tkSymbol;
+  end;
+
+end;
+
+procedure TLuaProcessor.StringSpecialProc;
+begin
+  Parent.FTokenID := tkString;
+  SetRange(rscStringSpecial);
+  while not (Parent.FLine[Parent.Run] in [#0, #10, #13]) do
+  begin
+    if (Parent.FLine[Parent.Run] = ']') and (Parent.FLine[Parent.Run + 1] = ']') then
+    begin
+      SetRange(rscUnKnown);//TODO
+      Inc(Parent.Run, 2);
+      break;
+    end;
+    Inc(Parent.Run);
+  end;
+end;
+
 procedure TLuaProcessor.LuaCommentProc;
 begin
   Parent.FTokenID := tkComment;
@@ -191,6 +225,7 @@ begin
       '?': ProcTable[I] := @QuestionProc;
       '''': ProcTable[I] := @StringSQProc;
       '"': ProcTable[I] := @StringDQProc;
+      '[': ProcTable[I] := @BracketProc;
       '#': ProcTable[I] := @DirectiveProc;
       '-': ProcTable[I] := @DashProc;
       '>': ProcTable[I] := @GreaterProc;
@@ -239,6 +274,8 @@ begin
     end;
     rscStringSQ, rscStringDQ, rscStringBQ:
       StringProc;
+    rscStringSpecial:
+      StringSpecialProc;
   else
     if ProcTable[Parent.FLine[Parent.Run]] = nil then
       UnknownProc
