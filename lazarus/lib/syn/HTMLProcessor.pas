@@ -690,7 +690,7 @@ begin
     inc(Result, HashCharTable[ToHash^]);
     inc(ToHash);
   end;
-  fStringLen := ToHash - fToIdent;
+  FStringLen := ToHash - FToIdent;
 end;
 
 function THTMLProcessor.GetIdentChars: TSynIdentChars;

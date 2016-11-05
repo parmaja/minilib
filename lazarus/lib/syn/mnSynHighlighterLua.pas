@@ -29,7 +29,6 @@ type
   private
   protected
     function GetIdentChars: TSynIdentChars; override;
-    function KeyHash(ToHash: PChar): Integer; override;
     function GetEndOfLineAttribute: TSynHighlighterAttributes; override;
   public
     procedure QuestionProc;
@@ -104,7 +103,7 @@ begin
   for c := 'a' to 'z' do
     HashCharTable[c] := 2 + Ord(c) - Ord('a');
   for c := 'A' to 'Z' do
-    HashCharTable[c] := 2 + Ord(c) - Ord('A');
+    HashCharTable[c] := 2 + Ord('z') + Ord(c) - Ord('A');
 end;
 
 procedure TLuaProcessor.GreaterProc;
@@ -226,7 +225,7 @@ begin
       '''': ProcTable[I] := @StringSQProc;
       '"': ProcTable[I] := @StringDQProc;
       '[': ProcTable[I] := @BracketProc;
-      '#': ProcTable[I] := @DirectiveProc;
+      //'#': ProcTable[I] := @DirectiveProc;
       '-': ProcTable[I] := @DashProc;
       '>': ProcTable[I] := @GreaterProc;
       '<': ProcTable[I] := @LowerProc;
@@ -290,17 +289,6 @@ begin
   EnumerateKeywords(Ord(tkKeyword), sLuaKeywords, TSynValidStringChars, @DoAddKeyword);
   EnumerateKeywords(Ord(tkFunction), sLuaFunctions, TSynValidStringChars, @DoAddKeyword);
   SetRange(rscUnknown);
-end;
-
-function TLuaProcessor.KeyHash(ToHash: PChar): Integer;
-begin
-  Result := 0;
-  while ToHash^ in ['_', '0'..'9', 'a'..'z', 'A'..'Z'] do
-  begin
-    inc(Result, HashCharTable[ToHash^]);
-    inc(ToHash);
-  end;
-  fStringLen := ToHash - fToIdent;
 end;
 
 function TLuaProcessor.GetEndOfLineAttribute: TSynHighlighterAttributes;
