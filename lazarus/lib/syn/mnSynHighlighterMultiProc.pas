@@ -264,7 +264,7 @@ begin
   pKey1 := fToIdent;
   // Note: FStringLen is always > 0 !
   pKey2 := pointer(aKey);
-  for i := 1 to fStringLen do
+  for i := 1 to FStringLen do
   begin
     if HashCharTable[pKey1^] <> HashCharTable[pKey2^] then
     begin
@@ -281,13 +281,13 @@ function TSynProcessor.IdentKind(MayBe: PChar): TtkTokenKind;
 var
   Entry: TSynHashEntry;
 begin
-  fToIdent := MayBe;
+  FToIdent := MayBe;
   Entry := FKeywords[KeyHash(MayBe)];
   while Assigned(Entry) do
   begin
-    if Entry.KeywordLen > fStringLen then
+    if Entry.KeywordLen > FStringLen then
       break
-    else if Entry.KeywordLen = fStringLen then
+    else if Entry.KeywordLen = FStringLen then
       if KeyComp(Entry.Keyword) then
       begin
         Result := TtkTokenKind(Entry.Kind);
@@ -310,7 +310,6 @@ begin
   HashValue := KeyHash(PChar(AKeyword));
   FKeywords[HashValue] := TSynHashEntry.Create(AKeyword, AKind);
 end;
-
 
 { TCommonSynProcessor }
 
@@ -506,7 +505,7 @@ procedure TCommonSynProcessor.NumberProc;
 begin
   inc(Parent.Run);
   Parent.FTokenID := tkNumber;
-  while Parent.FLine[Parent.Run] in ['0'..'9', '.', '-', 'E', 'x'] do
+  while Parent.FLine[Parent.Run] in ['0'..'9', '.', 'A'..'Z', 'a'..'z'] do //C format hex
   begin
     case Parent.FLine[Parent.Run] of
       '.':
@@ -879,7 +878,7 @@ begin
     inc(Result, HashCharTable[ToHash^]);
     inc(ToHash);
   end;
-  FStringLen := ToHash - fToIdent;
+  FStringLen := ToHash - FToIdent;
 end;
 
 procedure TSynProcessor.InitIdent;

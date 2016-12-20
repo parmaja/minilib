@@ -14,40 +14,44 @@
 }
 
   sLuaKeywords =
-      'and,'+
-      'break,'+
-      'do,'+
-      'else,'+
-      'elseif,'+
-      'end,'+
-      'false,'+
-      'for,'+
-      'function,'+
-      'if,'+
-      'in,'+
-      'local,'+
-      'nil,'+
-      'not,'+
-      'or,'+
-      'repeat,'+
-      'return,'+
-      'terra,'+ //special
-      'then,'+
-      'true,'+
-      'until,'+
-      'while';
+    'and,'+
+    'break,'+
+    'do,'+
+    'else,'+
+    'elseif,'+
+    'end,'+
+    'false,'+
+    'for,'+
+    'function,'+
+    'if,'+
+    'in,'+
+    'local,'+
+    'nil,'+
+    'not,'+
+    'or,'+
+    'repeat,'+
+    'return,'+
+    'terra,'+ //special
+    'then,'+
+    'true,'+
+    'until,'+
+    'while';
 
   sLuaFunctions =
     'integer,'+
     'string,'+
     'boolean,'+
+    'char,'+
     //namespaces
     'io,'+
+    'self,'+
     'require,'+
+    'module,'+
     //functions
     'print,'+
     'tonumber,'+
     'input,'+
+    'output,'+
     'type,'+
     'read,'+
     'write';
