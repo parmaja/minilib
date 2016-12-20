@@ -54,6 +54,9 @@
     'output,'+
     'type,'+
     'read,'+
-    'write';
+    'write,'+
+    //BASIC
+    'int,'+
+    'writeln';
 
 
