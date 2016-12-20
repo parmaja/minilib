@@ -46,15 +46,23 @@
     'io,'+
     'self,'+
     'require,'+
+    'assert,'+
     'module,'+
     //functions
     'print,'+
     'tonumber,'+
+    'tostring,'+
     'input,'+
     'output,'+
     'type,'+
     'read,'+
     'write,'+
+    'setmetatable,'+
+    'getmetatable,'+
+    'rawset,'+
+    'rawget,'+
+    'error,'+
+    'table,'+
     //BASIC
     'int,'+
     'writeln';

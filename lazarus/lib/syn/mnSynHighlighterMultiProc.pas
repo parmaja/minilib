@@ -382,9 +382,10 @@ end;
 procedure TCommonSynProcessor.SLCommentProc;
 begin
   Parent.FTokenID := tkComment;
-  repeat
+  while not (Parent.FLine[Parent.Run] in [#0, #10, #13]) do
+  begin
     Inc(Parent.Run);
-  until Parent.FLine[Parent.Run] in [#0, #10, #13];
+  end
 end;
 
 procedure TCommonSynProcessor.CommentProc;
