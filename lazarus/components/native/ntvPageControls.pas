@@ -93,6 +93,7 @@ type
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
+    procedure ActivateControl;
     property ActiveControl: TControl read GetActiveControl write SetActiveControl;
     property PageItem[Control: TControl]: TntvPageItem read GetPageItem;
   published
@@ -165,6 +166,36 @@ begin
   inherited;
 end;
 
+procedure TntvPageControl.ActivateControl;
+var
+  ParentForm: TCustomForm;
+  aList: TFPList;
+  i: Integer;
+begin
+  if (ActiveControl is TWinControl) and (ActiveControl as TWinControl).CanFocus then
+  begin
+    ParentForm := GetParentForm(Self);
+    if ParentForm <> nil then
+    begin
+      aList := TFPList.Create;
+      try
+        (ActiveControl as TWinControl).GetTabOrderList(aList);
+        aList.Add(ActiveControl as TWinControl);
+        for i := 0 to aList.Count - 1 do
+        begin
+          if (TControl(aList[i]) as TWinControl).CanFocus and (TControl(aList[i]) as TWinControl).TabStop then
+          begin
+            ParentForm.ActiveControl := TControl(aList[i]) as TWinControl;
+            break;
+          end;
+        end;
+      finally
+        aList.Free;
+      end;
+    end;
+  end
+end;
+
 procedure TntvPageControl.CreateParams(var Params: TCreateParams);
 begin
   inherited CreateParams(Params);
@@ -204,10 +235,6 @@ begin
 end;
 
 procedure TntvPageControl.BringControl(vControl: TControl; vSetFocus: Boolean);
-var
-  ParentForm: TCustomForm;
-  aList: TFPList;
-  i: Integer;
 begin
   if vControl <> nil then
     with vControl do
@@ -218,30 +245,7 @@ begin
         Align := alClient;
       if not (csLoading in ComponentState) and (vSetFocus) and (not Self.Focused) and (vControl is TWinControl) then
       begin
-        ParentForm := GetParentForm(Self);
-        if ParentForm <> nil then
-        begin
-          if TabStop and ((vControl as TWinControl).CanFocus) then
-            ParentForm.ActiveControl := vControl as TWinControl
-          else
-          begin
-            if ((vControl as TWinControl).CanFocus) then
-              aList := TFPList.Create;
-            try
-              (vControl as TWinControl).GetTabOrderList(aList);
-              for i := 0 to aList.Count - 1 do
-              begin
-                if (TControl(aList[i]) as TWinControl).CanFocus and (TControl(aList[i]) as TWinControl).TabStop then
-                begin
-                  ParentForm.ActiveControl := TControl(aList[i]) as TWinControl;
-                  break;
-                end;
-              end;
-            finally
-              aList.Free;
-            end;
-          end;
-        end;
+        ActivateControl;
       end;
     end;
 end;

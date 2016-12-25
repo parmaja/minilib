@@ -45,6 +45,8 @@ type
     property Control: TCustomControl read FControl write FControl;
   end;
 
+  TOnGetColor = procedure(Sender: TObject; var Color: TColor) of object;
+
   { TntvCustomTabSet }
 
   TntvCustomTabSet = class(TCustomControl)
@@ -53,6 +55,7 @@ type
     FItems: TntvTabs;
     FHeaderHeight: Integer;
     FInternalHeaderHeight: Integer;
+    FOnGetColor: TOnGetColor;
     FOnTabSelected: TOnTabSelected;
     FOnTabSelect: TOnTabSelect;
     FShowBorder: Boolean;
@@ -130,6 +133,7 @@ type
     property Items: TntvTabs read FItems write FItems;
     property OnTabSelected: TOnTabSelected read FOnTabSelected write FOnTabSelected;
     property OnTabSelect: TOnTabSelect read FOnTabSelect write FOnTabSelect;
+    property OnGetColor: TOnGetColor read FOnGetColor write FOnGetColor; //TODO
 
     property Align;
     property Anchors;
@@ -184,6 +188,7 @@ type
     property Items;
     property OnTabSelect;
     property OnTabSelected;
+    property OnGetColor;
 
     property Align;
     property Anchors;
