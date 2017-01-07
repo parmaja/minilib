@@ -43,11 +43,12 @@
     'boolean,'+
     'char,'+
     //namespaces
-    'io,'+
-    'self,'+
     'require,'+
     'assert,'+
     'module,'+
+    'io,'+
+    'math,'+
+    'self,'+
     //functions
     'print,'+
     'tonumber,'+
@@ -66,5 +67,3 @@
     //BASIC
     'int,'+
     'writeln';
-
-

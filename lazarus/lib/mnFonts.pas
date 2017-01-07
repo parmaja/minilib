@@ -11,11 +11,10 @@ unit mnFonts;
  *            See the file COPYING.MLGPL, included in this distribution,
  * @author    Zaher Dirkey <zaher at parmaja dot com>
  *}
-
 interface
 
 uses
-  {$ifdef windows}
+  {$ifdef wince}
   Windows,
   {$endif}
   SysUtils, Classes, Graphics, FPCanvas, IniFiles;
@@ -34,7 +33,7 @@ type
     function DoGetTextWidth(Text: String): Integer; override;
 
     function DrawCharCanvas(const Target; x, y:Integer; c: char): Boolean;
-    {$ifdef windows}
+    {$ifdef wince}
     function DrawCharDC(const Target; x, y:Integer; c: char): Boolean;
     {$endif}
 
@@ -53,7 +52,7 @@ type
     procedure Generate(FontName: String = 'Courier'; FontSize: integer = 10);
 
     procedure PrintText(ACanvas: TFPCustomCanvas; x, y: Integer; Text: String);
-    {$ifdef windows}
+    {$ifdef wince}
     procedure PrintText(DC: HDC; x, y: Integer; Text: String);
     {$endif}
     procedure LoadFromFile(FileName: String);
@@ -87,7 +86,7 @@ begin
   Result := Length(Text) * CharWidth;
 end;
 
-{$ifdef windows}
+{$ifdef wince}
 function TmnfRasterFont.DrawCharDC(const Target; x, y: Integer; c: char): Boolean;
 var
   index: Integer;
@@ -171,7 +170,7 @@ begin
   PrintString(@DrawCharCanvas, ACanvas, x, y, Text);
 end;
 
-{$ifdef windows}
+{$ifdef wince}
 procedure TmnfRasterFont.PrintText(DC: HDC; x, y: Integer; Text: String);
 begin
   PrintString(@DrawCharDC, Dc, x, y, Text);
