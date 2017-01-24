@@ -47,6 +47,8 @@
     'assert,'+
     'module,'+
     'io,'+
+    'pairs,'+
+    'ipairs,'+
     'math,'+
     'self,'+
     //functions
