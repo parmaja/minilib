@@ -1,4 +1,4 @@
-unit SynUtils;
+unit mnSynUtils;
 {$mode delphi}
 {**
  *  Light PHP Edit project

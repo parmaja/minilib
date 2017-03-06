@@ -14,7 +14,7 @@ interface
 
 uses
   SysUtils, Graphics, Controls,
-  SynEdit, Classes, SynEditTypes, SynEditHighlighter, SynHighlighterHashEntries, SynHighlighterMultiProc;
+  SynEdit, Classes, SynEditTypes, SynEditHighlighter, SynHighlighterHashEntries, mnSynHighlighterMultiProc;
 
 type
   THTMLRangeState = (rshtmlText, rshtmlAmpersand, rshtmlComment, rshtmlKeyword, rshtmlParam,
@@ -690,7 +690,7 @@ begin
     inc(Result, HashCharTable[ToHash^]);
     inc(ToHash);
   end;
-  fStringLen := ToHash - fToIdent;
+  FStringLen := ToHash - FToIdent;
 end;
 
 function THTMLProcessor.GetIdentChars: TSynIdentChars;

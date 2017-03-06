@@ -50,7 +50,7 @@ end;
 
 function Darken(Color: TColor; Amount: SmallInt): TColor;
 begin
-  Lighten(Color, - Amount);
+  Result := Lighten(Color, - Amount);
 end;
 
 function MixColors(Color1, Color2: TColor; W1: Integer): TColor;

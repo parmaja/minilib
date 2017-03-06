@@ -45,7 +45,6 @@ type
 
   TmnWallSocket = class(TmnCustomWallSocket)
   private
-    FCount: Integer;
     function LookupPort(Port: string): Word;
   public
     constructor Create; override;
@@ -309,7 +308,7 @@ begin
 //  fpsetsockopt(aHandle, SOL_SOCKET, SO_NOSIGPIPE, PChar(@SO_TRUE), SizeOf(SO_TRUE));
 
   aAddr.sin_family := AF_INET;
-  aAddr.sin_port := ShortHostToNet(StrToIntDef(Port, 0));
+  aAddr.sin_port := htons(StrToIntDef(Port, 0));
   if Address = '' then
     aAddr.sin_addr.s_addr := INADDR_ANY
   else
@@ -341,7 +340,7 @@ begin
 //  fpsetsockopt(aHandle, SOL_SOCKET, SO_NOSIGPIPE, PChar(@SO_TRUE), SizeOf(SO_TRUE));
 
   aAddr.sin_family := AF_INET;
-  aAddr.sin_port := ShortHostToNet(StrToIntDef(Port, 0));
+  aAddr.sin_port := htons(StrToIntDef(Port, 0));
   if Address = '' then
     aAddr.sin_addr.s_addr := INADDR_ANY
   else
@@ -353,4 +352,4 @@ end;
 
 end.
 
-//StrToHostAddr
+//StrToHostAddr

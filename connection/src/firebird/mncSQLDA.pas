@@ -1512,12 +1512,12 @@ procedure TmncSQLVAR.SetAsGUID(const AValue: TGUID);
 begin
 end;
 
-function TmncSQLVAR._AddRef: longint; stdcall;
+function TmncSQLVAR._AddRef: longint;
 begin
   Result := -1;
 end;
 
-function TmncSQLVAR._Release: longint; stdcall;
+function TmncSQLVAR._Release: longint;
 begin
   Result := -1
 end;

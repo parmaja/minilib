@@ -1,4 +1,4 @@
-unit SynHighlighterSARD;
+unit mnSynHighlighterSARD;
 {$mode objfpc}{$H+}
 {**
  *
@@ -14,7 +14,7 @@ interface
 
 uses
   SysUtils, Classes, Graphics,
-  SynEditTypes, SynEditHighlighter, SynHighlighterHashEntries, SynUtils;
+  SynEditTypes, SynEditHighlighter, SynHighlighterHashEntries, mnSynUtils;
 
 type
   TtkTokenKind = (tkNull, tkComment, tkObject, {TODO: tkEmbedComment, tkPreprocessor, Escape char \n \r \64 }tkIdentifier, tkNumber, tkSpace, tkString, tkSymbol, tkUnknown);

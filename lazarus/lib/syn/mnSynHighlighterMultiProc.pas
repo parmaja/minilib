@@ -1,4 +1,4 @@
-unit SynHighlighterMultiProc;
+unit mnSynHighlighterMultiProc;
 {$mode objfpc}{$H+}
 {**
  *
@@ -17,11 +17,11 @@ uses
   SynEdit, SynEditTypes, SynEditHighlighter, SynHighlighterHashEntries;
 
 type
-  TtkTokenKind = (tkUnknown, tkNull, tkSpace, tkComment, tkDocument, tkIdentifier, tkSymbol, tkNumber, //tkControl, //like {};
-    tkString, tkValue, tkText, tkKeyword, tkFunction, tkVariable, tkProcessor);
+  TtkTokenKind = (tkUnknown, tkNull, tkSpace, tkComment, tkDocument, tkIdentifier, tkKeyword, tkFunction, tkSymbol, tkNumber, //tkControl, //like {};
+    tkString, tkValue, tkText, tkVariable, tkProcessor);
 
   //Common range used for some syntax
-  TCommonRangeState = (rscUnknown, rscComment, rscCommentPlus, rscDocument, rscStringSQ, rscStringDQ, rscStringBQ); //BackQuote
+  TCommonRangeState = (rscUnknown, rscComment, rscCommentPlus, rscDocument, rscStringSQ, rscStringDQ, rscStringBQ, rscStringSpecial); //BackQuote
 
   TProcTableProc = procedure of object;
 
@@ -264,7 +264,7 @@ begin
   pKey1 := fToIdent;
   // Note: FStringLen is always > 0 !
   pKey2 := pointer(aKey);
-  for i := 1 to fStringLen do
+  for i := 1 to FStringLen do
   begin
     if HashCharTable[pKey1^] <> HashCharTable[pKey2^] then
     begin
@@ -281,13 +281,13 @@ function TSynProcessor.IdentKind(MayBe: PChar): TtkTokenKind;
 var
   Entry: TSynHashEntry;
 begin
-  fToIdent := MayBe;
+  FToIdent := MayBe;
   Entry := FKeywords[KeyHash(MayBe)];
   while Assigned(Entry) do
   begin
-    if Entry.KeywordLen > fStringLen then
+    if Entry.KeywordLen > FStringLen then
       break
-    else if Entry.KeywordLen = fStringLen then
+    else if Entry.KeywordLen = FStringLen then
       if KeyComp(Entry.Keyword) then
       begin
         Result := TtkTokenKind(Entry.Kind);
@@ -310,7 +310,6 @@ begin
   HashValue := KeyHash(PChar(AKeyword));
   FKeywords[HashValue] := TSynHashEntry.Create(AKeyword, AKind);
 end;
-
 
 { TCommonSynProcessor }
 
@@ -346,17 +345,15 @@ end;
 
 procedure TCommonSynProcessor.InternalCommentProc;
 begin
+  while not (Parent.FLine[Parent.Run] in [#0, #10, #13]) do
   begin
-    while not (Parent.FLine[Parent.Run] in [#0, #10, #13]) do
+    if (Parent.FLine[Parent.Run] = '*') and (Parent.FLine[Parent.Run + 1] = '/') then
     begin
-      if (Parent.FLine[Parent.Run] = '*') and (Parent.FLine[Parent.Run + 1] = '/') then
-      begin
-        SetRange(rscUnKnown);//TODO
-        Inc(Parent.Run, 2);
-        break;
-      end;
-      Inc(Parent.Run);
+      SetRange(rscUnKnown);//TODO
+      Inc(Parent.Run, 2);
+      break;
     end;
+    Inc(Parent.Run);
   end;
 end;
 
@@ -385,9 +382,10 @@ end;
 procedure TCommonSynProcessor.SLCommentProc;
 begin
   Parent.FTokenID := tkComment;
-  repeat
+  while not (Parent.FLine[Parent.Run] in [#0, #10, #13]) do
+  begin
     Inc(Parent.Run);
-  until Parent.FLine[Parent.Run] in [#0, #10, #13];
+  end
 end;
 
 procedure TCommonSynProcessor.CommentProc;
@@ -508,7 +506,7 @@ procedure TCommonSynProcessor.NumberProc;
 begin
   inc(Parent.Run);
   Parent.FTokenID := tkNumber;
-  while Parent.FLine[Parent.Run] in ['0'..'9', '.', '-', 'E', 'x'] do
+  while Parent.FLine[Parent.Run] in ['0'..'9', '.', 'A'..'Z', 'a'..'z'] do //C format hex
   begin
     case Parent.FLine[Parent.Run] of
       '.':
@@ -541,7 +539,6 @@ begin
 
   for c in ['{', '}', '.', ',', ';', '(', ')', '[', ']', '~'] do
     ProcTable[c] := @ControlProc;
-
 end;
 
 procedure TCommonSynProcessor.StringSQProc;
@@ -882,7 +879,7 @@ begin
     inc(Result, HashCharTable[ToHash^]);
     inc(ToHash);
   end;
-  FStringLen := ToHash - fToIdent;
+  FStringLen := ToHash - FToIdent;
 end;
 
 procedure TSynProcessor.InitIdent;

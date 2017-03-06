@@ -1,4 +1,4 @@
-unit SynHighlighterD;
+unit mnSynHighlighterCpp;
 {$mode objfpc}{$H+}
 {**
  *
@@ -19,20 +19,20 @@ interface
 uses
   Classes, SysUtils,
   SynEdit, SynEditTypes,
-  SynEditHighlighter, SynHighlighterHashEntries, SynHighlighterMultiProc;
+  SynEditHighlighter, SynHighlighterHashEntries, mnSynHighlighterMultiProc;
 
 type
 
-  { TDProcessor }
+  { TCppProcessor }
 
-  TDProcessor = class(TCommonSynProcessor)
-  private
+  TCppProcessor = class(TCommonSynProcessor)
   protected
     function GetIdentChars: TSynIdentChars; override;
     function KeyHash(ToHash: PChar): Integer; override;
     function GetEndOfLineAttribute: TSynHighlighterAttributes; override;
   public
     procedure QuestionProc;
+    procedure DirectiveProc;
     procedure SlashProc;
     procedure IdentProc;
     procedure GreaterProc;
@@ -45,9 +45,9 @@ type
     procedure MakeIdentTable; override;
   end;
 
-  { TSynDSyn }
+  { TmnSynCppSyn }
 
-  TSynDSyn = class(TSynMultiProcSyn)
+  TmnSynCppSyn = class(TSynMultiProcSyn)
   private
   protected
     function GetIdentChars: TSynIdentChars; override;
@@ -62,10 +62,10 @@ type
 
 const
 
-  SYNS_LangD = 'D';
-  SYNS_FilterD = 'D Lang Files (*.d;*.dd)|*.d;*.dd';
+  SYNS_LangCpp = 'Cpp';
+  SYNS_FilterCpp = 'Cpp Lang Files (*.c;*.cpp;*.h;*.ino)|*.c;*.cpp;*.h;*.ino';
 
-  cDSample =
+  cCppSample =
       'import std.stdio;'#13#10+
       '// Computes average line length for standard input.'#13#10+
       ''#13#10+
@@ -82,14 +82,14 @@ const
       '        lines ? sumLength / lines : 0);'#13#10+
       '}'#13#10;
 
-{$INCLUDE 'DKeywords.inc'}
+{$INCLUDE 'CppKeywords.inc'}
 
 implementation
 
 uses
   mnUtils;
 
-procedure TDProcessor.MakeIdentTable;
+procedure TCppProcessor.MakeIdentTable;
 var
   c: char;
 begin
@@ -110,7 +110,7 @@ begin
     HashCharTable[c] := 2 + Ord(c) - Ord('A');
 end;
 
-procedure TDProcessor.GreaterProc;
+procedure TCppProcessor.GreaterProc;
 begin
   Parent.FTokenID := tkSymbol;
   Inc(Parent.Run);
@@ -118,7 +118,7 @@ begin
     Inc(Parent.Run);
 end;
 
-procedure TDProcessor.IdentProc;
+procedure TCppProcessor.IdentProc;
 begin
   Parent.FTokenID := IdentKind((Parent.FLine + Parent.Run));
   inc(Parent.Run, FStringLen);
@@ -132,7 +132,7 @@ begin
       inc(Parent.Run);
 end;
 
-procedure TDProcessor.LowerProc;
+procedure TCppProcessor.LowerProc;
 begin
   Parent.FTokenID := tkSymbol;
   Inc(Parent.Run);
@@ -147,7 +147,7 @@ begin
   end;
 end;
 
-procedure TDProcessor.SlashProc;
+procedure TCppProcessor.SlashProc;
 begin
   Inc(Parent.Run);
   case Parent.FLine[Parent.Run] of
@@ -168,7 +168,7 @@ begin
   end;
 end;
 
-procedure TDProcessor.MakeMethodTables;
+procedure TCppProcessor.MakeMethodTables;
 var
   I: Char;
 begin
@@ -179,6 +179,7 @@ begin
       '''': ProcTable[I] := @StringSQProc;
       '"': ProcTable[I] := @StringDQProc;
       '`': ProcTable[I] := @StringBQProc;
+      '#': ProcTable[I] := @DirectiveProc;
       '/': ProcTable[I] := @SlashProc;
       '>': ProcTable[I] := @GreaterProc;
       '<': ProcTable[I] := @LowerProc;
@@ -189,7 +190,7 @@ begin
     end;
 end;
 
-procedure TDProcessor.QuestionProc;
+procedure TCppProcessor.QuestionProc;
 begin
   Inc(Parent.Run);
   case Parent.FLine[Parent.Run] of
@@ -204,7 +205,13 @@ begin
   end;
 end;
 
-procedure TDProcessor.Next;
+procedure TCppProcessor.DirectiveProc;
+begin
+  Parent.FTokenID := tkProcessor;
+  WordProc;
+end;
+
+procedure TCppProcessor.Next;
 begin
   Parent.FTokenPos := Parent.Run;
   if (Parent.FLine[Parent.Run] in [#0, #10, #13]) then
@@ -232,15 +239,15 @@ begin
   end;
 end;
 
-procedure TDProcessor.InitIdent;
+procedure TCppProcessor.InitIdent;
 begin
   inherited;
-  EnumerateKeywords(Ord(tkKeyword), sDKeywords, TSynValidStringChars, @DoAddKeyword);
-  EnumerateKeywords(Ord(tkFunction), sDFunctions, TSynValidStringChars, @DoAddKeyword);
+  EnumerateKeywords(Ord(tkKeyword), sCppKeywords, TSynValidStringChars, @DoAddKeyword);
+  EnumerateKeywords(Ord(tkFunction), sCppFunctions, TSynValidStringChars, @DoAddKeyword);
   SetRange(rscUnknown);
 end;
 
-function TDProcessor.KeyHash(ToHash: PChar): Integer;
+function TCppProcessor.KeyHash(ToHash: PChar): Integer;
 begin
   Result := 0;
   while ToHash^ in ['_', '0'..'9', 'a'..'z', 'A'..'Z'] do
@@ -251,7 +258,7 @@ begin
   fStringLen := ToHash - fToIdent;
 end;
 
-function TDProcessor.GetEndOfLineAttribute: TSynHighlighterAttributes;
+function TCppProcessor.GetEndOfLineAttribute: TSynHighlighterAttributes;
 begin
   if (Range = rscDocument) or (LastRange = rscDocument) then
     Result := Parent.DocumentAttri
@@ -259,40 +266,41 @@ begin
     Result := inherited GetEndOfLineAttribute;
 end;
 
-function TDProcessor.GetIdentChars: TSynIdentChars;
+function TCppProcessor.GetIdentChars: TSynIdentChars;
 begin
   Result := TSynValidStringChars + ['$'];
 end;
 
-constructor TSynDSyn.Create(AOwner: TComponent);
+constructor TmnSynCppSyn.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
-  FDefaultFilter := SYNS_FilterD;
+  FDefaultFilter := SYNS_FilterCpp;
 end;
 
-procedure TSynDSyn.InitProcessors;
+procedure TmnSynCppSyn.InitProcessors;
 begin
   inherited;
-  Processors.Add(TDProcessor.Create(Self, 'D'));
+  Processors.Add(TCppProcessor.Create(Self, 'Cpp'));
 
-  Processors.MainProcessor := 'D';
-  Processors.DefaultProcessor := 'D';
+  Processors.MainProcessor := 'Cpp';
+  Processors.DefaultProcessor := 'Cpp';
 end;
 
-function TSynDSyn.GetIdentChars: TSynIdentChars;
+function TmnSynCppSyn.GetIdentChars: TSynIdentChars;
 begin
   //  Result := TSynValidStringChars + ['&', '#', ';', '$'];
   Result := TSynValidStringChars + ['&', '#', '$'];
 end;
 
-class function TSynDSyn.GetLanguageName: string;
+class function TmnSynCppSyn.GetLanguageName: string;
 begin
-  Result := SYNS_LangD;
+  Result := SYNS_LangCpp;
 end;
 
-function TSynDSyn.GetSampleSource: string;
+function TmnSynCppSyn.GetSampleSource: string;
 begin
-  Result := cDSample;
+  Result := cCppSample;
 end;
 
 end.
+

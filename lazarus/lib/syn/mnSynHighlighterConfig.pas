@@ -1,6 +1,7 @@
-unit SynHighlighterApache;
+unit mnSynHighlighterConfig;
 {$mode objfpc}{$H+}
 {**
+ *  MiniLib project
  *
  *  This file is part of the "Mini Library"
  *
@@ -14,16 +15,16 @@ interface
 
 uses
   Classes, Graphics,
-  SynEditTypes, SynEditHighlighter, SynUtils;
+  SynEditTypes, SynEditHighlighter, mnSynUtils;
 
 
 type
   TtkTokenKind = (tkComment, tkText, tkSection, tkKey, tkNull, tkNumber,
     tkSpace, tkString, tkSymbol, tkUnknown);
 
-  { TSynApacheSyn }
+  { TSynINISyn }
 
-  TSynApacheSyn = class(TSynCustomHighlighter)
+  TSynConfigSyn = class(TSynCustomHighlighter)
   private
     FLine: PChar;
     FLineNumber: Integer;
@@ -39,18 +40,18 @@ type
     FSpaceAttri: TSynHighlighterAttributes;
     FStringAttri: TSynHighlighterAttributes;
     FSymbolAttri: TSynHighlighterAttributes;
-    procedure LFProc;
-    procedure NullProc;
     procedure SectionOpenProc;
+    procedure KeyProc;
     procedure CRProc;
     procedure EqualProc;
-    procedure KeyProc;
     procedure TextProc;
+    procedure LFProc;
+    procedure NullProc;
     procedure NumberProc;
     procedure CommentProc;
     procedure SpaceProc;
-    procedure DQStringProc;  // ""
-    procedure SQStringProc; // ''
+    procedure StringProc;  // ""
+    procedure StringProc1; // ''
     procedure MakeMethodTables;
   protected
     function GetIdentChars: TSynIdentChars; override;
@@ -61,7 +62,6 @@ type
   public
     constructor Create(AOwner: TComponent); override;
     function GetDefaultAttribute(Index: integer): TSynHighlighterAttributes; override;
-    procedure ResetRange; override;
     function GetEol: Boolean; override;
     function GetTokenID: TtkTokenKind;
     procedure SetLine(const NewValue: String; LineNumber:Integer); override;
@@ -82,18 +82,12 @@ type
     property SymbolAttri : TSynHighlighterAttributes read FSymbolAttri write FSymbolAttri;
   end;
 
-const
-  sApacheKeywords =
-    'IfModule,'+
-    'Include,'+
-    'ServerRoot';
-
 implementation
 
 uses
   SynEditStrConst;
 
-procedure TSynApacheSyn.MakeMethodTables;
+procedure TSynConfigSyn.MakeMethodTables;
 var
   i: Char;
 begin
@@ -102,20 +96,20 @@ begin
       #0      : FProcTable[i] := @NullProc;
       #10 {LF}: FProcTable[i] := @LFProc;
       #13 {CR}: FProcTable[i] := @CRProc;
-      '"' : FProcTable[i] := @DQStringProc;
-      '''': FProcTable[i] := @SQStringProc;
+      #34 {"} : FProcTable[i] := @StringProc;
+      #39 {'} : FProcTable[i] := @StringProc1;
       '0'..'9': FProcTable[i] := @NumberProc;
       '#' : FProcTable[i] := @CommentProc;
-      //';' : FProcTable[i] := @CommentProc;
+      ';' : FProcTable[i] := @CommentProc;
       '=' : FProcTable[i] := @EqualProc;
-      '<' : FProcTable[i] := @SectionOpenProc;
+      '[' : FProcTable[i] := @SectionOpenProc;
       #1..#9, #11, #12, #14..#32: FProcTable[i] := @SpaceProc;
     else
       FProcTable[i] := @TextProc;
     end;
 end;
 
-constructor TSynApacheSyn.Create(AOwner: TComponent);
+constructor TSynConfigSyn.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
   FCommentAttri := TSynHighlighterAttributes.Create(SYNS_AttrComment);
@@ -143,7 +137,7 @@ begin
   MakeMethodTables;
 end; { Create }
 
-procedure TSynApacheSyn.SetLine(const NewValue: String; LineNumber:Integer);
+procedure TSynConfigSyn.SetLine(const NewValue: String; LineNumber:Integer);
 begin
   inherited;
   FLine := PChar(NewValue);
@@ -152,25 +146,29 @@ begin
   Next;
 end; { SetLine }
 
-procedure TSynApacheSyn.SectionOpenProc;
+procedure TSynConfigSyn.SectionOpenProc;
 begin
+  // if it is not column 0 mark as tkText and get out of here
+  if Run > 0 then
+  begin
+    FTokenID := tkText;
+    inc(Run);
+    Exit;
+  end;
+
+  // this is column 0 ok it is a Section
   FTokenID := tkSection;
   inc(Run);
   while FLine[Run] <> #0 do
     case FLine[Run] of
-      '>':
-      begin
-        inc(Run);
-        break
-      end;
+      ']': begin inc(Run); break end;
       #10: break;
       #13: break;
-    else
-      inc(Run);
+    else inc(Run);
     end;
 end;
 
-procedure TSynApacheSyn.CRProc;
+procedure TSynConfigSyn.CRProc;
 begin
   FTokenID := tkSpace;
   Case FLine[Run + 1] of
@@ -179,13 +177,13 @@ begin
   end;
 end;
 
-procedure TSynApacheSyn.EqualProc;
+procedure TSynConfigSyn.EqualProc;
 begin
   inc(Run);
   FTokenID := tkSymbol;
 end;
 
-procedure TSynApacheSyn.KeyProc;
+procedure TSynConfigSyn.KeyProc;
 begin
   FTokenID := tkKey;
   inc(Run);
@@ -200,7 +198,7 @@ begin
     end;
 end;
 
-procedure TSynApacheSyn.TextProc;
+procedure TSynConfigSyn.TextProc;
 begin
   if Run = 0 then
     KeyProc
@@ -214,18 +212,18 @@ begin
   end;
 end;
 
-procedure TSynApacheSyn.LFProc;
+procedure TSynConfigSyn.LFProc;
 begin
   FTokenID := tkSpace;
   inc(Run);
 end;
 
-procedure TSynApacheSyn.NullProc;
+procedure TSynConfigSyn.NullProc;
 begin
   FTokenID := tkNull;
 end;
 
-procedure TSynApacheSyn.NumberProc;
+procedure TSynConfigSyn.NumberProc;
 begin
   if Run = 0 then
     KeyProc
@@ -238,8 +236,16 @@ begin
 end;
 
 // ;
-procedure TSynApacheSyn.CommentProc;
+procedure TSynConfigSyn.CommentProc;
 begin
+  // if it is not column 0 mark as tkText and get out of here
+  if Run > 0 then
+  begin
+    FTokenID := tkText;
+    inc(Run);
+    Exit;
+  end;
+
   // this is column 0 ok it is a comment
   FTokenID := tkComment;
   inc(Run);
@@ -251,7 +257,7 @@ begin
     end;
 end;
 
-procedure TSynApacheSyn.SpaceProc;
+procedure TSynConfigSyn.SpaceProc;
 begin
   inc(Run);
   FTokenID := tkSpace;
@@ -260,7 +266,7 @@ begin
 end;
 
 // ""
-procedure TSynApacheSyn.DQStringProc;
+procedure TSynConfigSyn.StringProc;
 begin
   FTokenID := tkString;
   if (FLine[Run + 1] = #34) and (FLine[Run + 2] = #34) then inc(Run, 2);
@@ -276,7 +282,7 @@ begin
 end;
 
 // ''
-procedure TSynApacheSyn.SQStringProc;
+procedure TSynConfigSyn.StringProc1;
 begin
   FTokenID := tkString;
   if (FLine[Run + 1] = #39) and (FLine[Run + 2] = #39) then inc(Run, 2);
@@ -289,13 +295,13 @@ begin
   if FLine[Run] <> #0 then inc(Run);
 end;
 
-procedure TSynApacheSyn.Next;
+procedure TSynConfigSyn.Next;
 begin
   FTokenPos := Run;
   fProcTable[fLine[Run]];
 end;
 
-function TSynApacheSyn.GetDefaultAttribute(Index: integer): TSynHighlighterAttributes;
+function TSynConfigSyn.GetDefaultAttribute(Index: integer): TSynHighlighterAttributes;
 begin
   case Index of
     SYN_ATTR_COMMENT: Result := fCommentAttri;
@@ -308,17 +314,12 @@ begin
   end;
 end;
 
-procedure TSynApacheSyn.ResetRange;
-begin
-  inherited ResetRange;
-end;
-
-function TSynApacheSyn.GetEol: Boolean;
+function TSynConfigSyn.GetEol: Boolean;
 begin
   Result := fTokenId = tkNull;
 end;
 
-function TSynApacheSyn.GetToken: String;
+function TSynConfigSyn.GetToken: String;
 var
   Len: LongInt;
 begin
@@ -326,18 +327,18 @@ begin
   SetString(Result, (FLine + FTokenPos), Len);
 end;
 
-procedure TSynApacheSyn.GetTokenEx(out TokenStart: PChar; out TokenLength: integer);
+procedure TSynConfigSyn.GetTokenEx(out TokenStart: PChar; out TokenLength: integer);
 begin
   TokenLength := Run - FTokenPos;
   TokenStart := FLine + FTokenPos;
 end;
 
-function TSynApacheSyn.GetTokenID: TtkTokenKind;
+function TSynConfigSyn.GetTokenID: TtkTokenKind;
 begin
   Result := fTokenId;
 end;
 
-function TSynApacheSyn.GetTokenAttribute: TSynHighlighterAttributes;
+function TSynConfigSyn.GetTokenAttribute: TSynHighlighterAttributes;
 begin
   case FTokenID of
     tkComment: Result := FCommentAttri;
@@ -353,40 +354,42 @@ begin
   end;
 end;
 
-function TSynApacheSyn.GetTokenKind: integer;
+function TSynConfigSyn.GetTokenKind: integer;
 begin
   Result := Ord(fTokenId);
 end;
 
-function TSynApacheSyn.GetTokenPos: Integer;
+function TSynConfigSyn.GetTokenPos: Integer;
 begin
  Result := FTokenPos;
 end;
 
-function TSynApacheSyn.GetIdentChars: TSynIdentChars;
+function TSynConfigSyn.GetIdentChars: TSynIdentChars;
 begin
   Result := TSynValidStringChars;
 end;
 
-function TSynApacheSyn.IsFilterStored: Boolean;
+function TSynConfigSyn.IsFilterStored: Boolean;
 begin
   Result := FDefaultFilter <> SYNS_FilterINI;
 end;
 
-class function TSynApacheSyn.GetLanguageName: string;
+class function TSynConfigSyn.GetLanguageName: string;
 begin
-  Result := 'Apache';
+  Result := 'INI';
 end;
 
-function TSynApacheSyn.GetSampleSource: String;
+function TSynConfigSyn.GetSampleSource: String;
 begin
   Result := '# Syntax highlighting'#13#10+
-            '<Section>'#13#10+
-            'DocumentRoot "d:/httpd"'+#13#10+
-            'Listen 80'#13#10+
-            '</Section>'#13#10;
+            '[Options]'#13#10+
+            'Visible = true'+#13#10+
+            'Protected = false'+#13#10+
+            'Port = 80'#13#10+
+            'Host = "server"'#13#10+
+            ';End of INI'#13#10;
 end;
 
 initialization
-  RegisterPlaceableHighlighter(TSynApacheSyn);
+  RegisterPlaceableHighlighter(TSynConfigSyn);
 end.

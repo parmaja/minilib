@@ -7,7 +7,7 @@
     <CompilerOptions>
       <Version Value="11"/>
       <SearchPaths>
-        <OtherUnitFiles Value="."/>
+        <OtherUnitFiles Value=".;syn"/>
         <UnitOutputDirectory Value="units/$(TargetCPU)-$(TargetOS)"/>
       </SearchPaths>
       <Other>
@@ -16,72 +16,76 @@
         </CompilerMessages>
       </Other>
     </CompilerOptions>
-    <Description Value="MiniLib FreePascal/Lazarus library"/>
-    <Files Count="16">
+    <Description Value="MiniLib Lazarus library"/>
+    <Files Count="17">
       <Item1>
-        <Filename Value="HTMLProcessor.pas"/>
-        <UnitName Value="HTMLProcessor"/>
-      </Item1>
-      <Item2>
-        <Filename Value="HTMLKeywords.inc"/>
-        <Type Value="Include"/>
-      </Item2>
-      <Item3>
-        <Filename Value="PHPProcessor.pas"/>
-        <UnitName Value="PHPProcessor"/>
-      </Item3>
-      <Item4>
         <Filename Value="PHPUtils.pas"/>
         <UnitName Value="PHPUtils"/>
-      </Item4>
-      <Item5>
+      </Item1>
+      <Item2>
         <Filename Value="GUIMsgBox.pp"/>
         <UnitName Value="GUIMsgBox"/>
-      </Item5>
-      <Item6>
-        <Filename Value="PHPKeywords.inc"/>
-        <Type Value="Include"/>
-      </Item6>
-      <Item7>
+      </Item2>
+      <Item3>
         <Filename Value="mnFonts.pas"/>
         <UnitName Value="mnFonts"/>
-      </Item7>
-      <Item8>
+      </Item3>
+      <Item4>
         <Filename Value="ColorUtils.pas"/>
         <UnitName Value="ColorUtils"/>
+      </Item4>
+      <Item5>
+        <Filename Value="syn/mnSynHighlighterSARD.pas"/>
+        <UnitName Value="mnSynHighlighterSARD"/>
+      </Item5>
+      <Item6>
+        <Filename Value="syn/mnSynHighlighterStdSQL.pas"/>
+        <UnitName Value="mnSynHighlighterStdSQL"/>
+      </Item6>
+      <Item7>
+        <Filename Value="syn/mnSynHighlighterXHTML.pas"/>
+        <UnitName Value="mnSynHighlighterXHTML"/>
+      </Item7>
+      <Item8>
+        <Filename Value="syn/mnSynUtils.pas"/>
+        <UnitName Value="SynUtils"/>
       </Item8>
       <Item9>
-        <Filename Value="SynHighlighterApache.pas"/>
-        <UnitName Value="SynHighlighterApache"/>
+        <Filename Value="syn/PHPProcessor.pas"/>
+        <UnitName Value="PHPProcessor"/>
       </Item9>
       <Item10>
-        <Filename Value="SynHighlighterXHTML.pas"/>
-        <UnitName Value="SynHighlighterXHTML"/>
+        <Filename Value="syn/HTMLProcessor.pas"/>
+        <UnitName Value="HTMLProcessor"/>
       </Item10>
       <Item11>
-        <Filename Value="SynHighlighterFirebird.pas"/>
-        <UnitName Value="SynHighlighterFirebird"/>
+        <Filename Value="syn/mnSynHighlighterApache.pas"/>
+        <UnitName Value="mnSynHighlighterApache"/>
       </Item11>
       <Item12>
-        <Filename Value="SynHighlighterSARD.pas"/>
-        <UnitName Value="SynHighlighterSARD"/>
+        <Filename Value="syn/mnSynHighlighterConfig.pas"/>
+        <UnitName Value="mnSynHighlighterConfig"/>
       </Item12>
       <Item13>
-        <Filename Value="SynHighlighterD.pas"/>
-        <UnitName Value="SynHighlighterD"/>
+        <Filename Value="syn/mnSynHighlighterCpp.pas"/>
+        <UnitName Value="mnSynHighlighterCpp"/>
       </Item13>
       <Item14>
-        <Filename Value="SynHighlighterConfig.pas"/>
-        <UnitName Value="SynHighlighterConfig"/>
+        <Filename Value="syn/mnSynHighlighterD.pas"/>
+        <UnitName Value="mnSynHighlighterD"/>
       </Item14>
       <Item15>
-        <Filename Value="SynHighlighterStdSQL.pas"/>
-        <UnitName Value="SynHighlighterStdSQL"/>
+        <Filename Value="syn/mnSynHighlighterFirebird.pas"/>
+        <UnitName Value="mnSynHighlighterFirebird"/>
       </Item15>
       <Item16>
-        <Filename Value="mnSynHighlighterCpp.pas"/>
-        <UnitName Value="mnSynHighlighterCpp"/>
+        <Filename Value="syn/mnSynHighlighterLua.pas"/>
+        <UnitName Value="mnSynHighlighterLua"/>
       </Item16>
+      <Item17>
+        <Filename Value="syn/mnSynHighlighterMultiProc.pas"/>
+        <UnitName Value="mnSynHighlighterMultiProc"/>
+      </Item17>
     </Files>
     <RequiredPkgs Count="2">
       <Item1>
