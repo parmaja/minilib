@@ -1952,9 +1952,12 @@ begin
           if (aParams.FetchMode = fmFirst) then
           begin
             //if (s.ClassID = sciDetails) then //improve add referance on first accepted ...
-            r := s.NewReference;
-            s.DoBeginFill(r);
-            s.AddTitles;
+            if aParams.AcceptMode <> acmSkipAll then
+            begin
+              r := s.NewReference;
+              s.DoBeginFill(r);
+              s.AddTitles;
+            end;
           end
           else
           begin
