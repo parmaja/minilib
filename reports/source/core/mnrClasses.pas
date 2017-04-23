@@ -471,10 +471,11 @@ type
     FAppendDetailTotals: Boolean;
     FAppendReportTotals: Boolean;
     FAppendDetailTitles: Boolean;
+    FAppendPageTitles: Boolean;
     FAppendReportTitles: Boolean;
     FSectionLoopWay: TmnrSectionLoopWay;
     FAppendPageTotals: Boolean;
-    FHitAppendReportTitles: Boolean;
+    FHitAppendTitles: Boolean;
 
     function GetNext: TmnrSection;
     function GetNodes: TmnrSections;
@@ -526,14 +527,15 @@ type
     function FindDesignCellName(const vName: string): TmnrDesignCell;
     //function FindDesignCellGuid(const vGuid: string): TmnrDesignCell;
 
-    procedure AddTitles;
     procedure AddReportTitles;
+    procedure AddDetailTitles;
     procedure ClearSubTotals;
   published
     property AppendDetailTotals: Boolean read FAppendDetailTotals write FAppendDetailTotals default False;
     property AppendPageTotals: Boolean read FAppendPageTotals write FAppendPageTotals default False;
     property AppendReportTotals: Boolean read FAppendReportTotals write FAppendReportTotals default False;
     property AppendDetailTitles: Boolean read FAppendDetailTitles write FAppendDetailTitles default False;
+    property AppendPageTitles: Boolean read FAppendPageTitles write FAppendPageTitles default False;
     property AppendReportTitles: Boolean read FAppendReportTitles write FAppendReportTitles default False;
   end;
 
@@ -548,7 +550,6 @@ type
 
     procedure DoAppendReportTotals(vSection: TmnrSection);
     procedure DoAppendPageTotals(vSection: TmnrSection);
-    procedure DoAppendReportTitles(vSection: TmnrSection);
     function DoCreateSection: TmnrSection; virtual;
 
   public
@@ -1095,11 +1096,9 @@ begin
   InitRequests; //must be after start
   FCanceled := False;
   try
-    //Sections.DoAppendReportTitles(ReportTitles);
     Sections.Loop;
     Sections.DoAppendPageTotals(FooterPage);
   except
-    //Clear;
     raise;
   end;
 end;
@@ -1470,14 +1469,15 @@ end;
 
 procedure TmnrSection.AddReportTitles;
 begin
-  if AppendReportTitles and not FHitAppendReportTitles then
+  if not FHitAppendTitles then
   begin
-    FHitAppendReportTitles := True;
-    DoAppendTitles(Report.ReportTitles);
+    FHitAppendTitles := True;
+    if AppendPageTitles then DoAppendTitles(Report.HeaderPage);
+    if AppendReportTitles then DoAppendTitles(Report.ReportTitles);
   end;
 end;
 
-procedure TmnrSection.AddTitles;
+procedure TmnrSection.AddDetailTitles;
 begin
   if AppendDetailTitles then DoAppendTitles(Report.DetailTitles);
 end;
@@ -1497,9 +1497,10 @@ begin
   FAppendDetailTotals := False;
   FAppendReportTotals := False;
   FAppendDetailTitles := False;
+  FAppendPageTitles   := False;
   FAppendReportTitles := False;
-  FAppendPageTotals := False;
-  FSectionLoopWay := slwAuto;
+  FAppendPageTotals   := False;
+  FSectionLoopWay     := slwAuto;
 end;
 
 destructor TmnrSection.Destroy;
@@ -1678,7 +1679,7 @@ begin
   begin
     s.Items.Clear;
     s.ReferencesRows.Clear;
-    s.FHitAppendReportTitles := False;
+    s.FHitAppendTitles := False;
     if s.Sections<>nil then s.Sections.ClearItems;
 
     s := s.Next;
@@ -1736,7 +1737,7 @@ begin
           begin
             r := s.NewReference;
             s.DoBeginFill(r);
-            s.AddTitles;
+            s.AddDetailTitles;
           end;
 
           if aParams.AcceptMode = acmAccept then
@@ -1807,20 +1808,6 @@ begin
       s.DoAppendToPageTotals(vSection);
     end;
     s.Sections.DoAppendPageTotals(vSection);
-    s := s.Next;
-  end;
-end;
-
-procedure TmnrSections.DoAppendReportTitles(vSection: TmnrSection);
-var
-  s: TmnrSection;
-begin
-  s := First;
-  while s <> nil do
-  begin
-    if s.AppendReportTitles then
-      s.DoAppendTitles(vSection);
-    s.Sections.DoAppendReportTitles(vSection);
     s := s.Next;
   end;
 end;
@@ -1922,7 +1909,6 @@ begin
 
     s.AddReportTitles;
 
-
     case s.LoopWay of
       slwSingle:
       begin
@@ -1956,7 +1942,7 @@ begin
             begin
               r := s.NewReference;
               s.DoBeginFill(r);
-              s.AddTitles;
+              s.AddDetailTitles;
             end;
           end
           else
@@ -1966,7 +1952,7 @@ begin
               r := s.NewReference;
               s.DoBeginFill(r);
               if aParams.AcceptMode = acmAccept then
-                s.AddTitles;
+                s.AddDetailTitles;
             end;
           end;
 
