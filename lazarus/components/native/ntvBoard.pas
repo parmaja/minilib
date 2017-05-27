@@ -347,7 +347,6 @@ type
     procedure AfterCreate(X, Y: Integer; Dummy: Boolean); override;
   end;
 
-procedure Register;
 procedure RegisterElements(const Layout: String; TElements: array of TElementClass);
 
 var
@@ -357,11 +356,6 @@ implementation
 
 uses
   Types;
-
-procedure Register;
-begin
-  RegisterComponents('Native', [TntvBoard]);
-end;
 
 procedure CorrectRect(var vRect: TRect);
 var
@@ -1498,8 +1492,6 @@ begin
   inherited;
   FBoundRect := Value;
 end;
-
-{ TSingleBoard }
 
 initialization
   ElementClasses := TList.Create;
