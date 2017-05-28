@@ -32,7 +32,7 @@ type
 
   THaft = class(TObject)
   private
-    function PtToHaftRect(P: TPoint): TRect;
+    function PointToHaftRect(P: TPoint): TRect;
   protected
     Point: TPoint;
     procedure Paint(vCanvas: TCanvas); virtual;
@@ -65,6 +65,8 @@ type
     procedure SetContainer(const Value: TContainer);
     function GetModified: Boolean;
   protected
+    function ScalePoint(P: TPoint): TPoint;
+    function ScaleRect(R: TRect): TRect;
 
     procedure MouseMove(Shift: TShiftState; X, Y: Integer); virtual;
     procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer); virtual;
@@ -87,7 +89,6 @@ type
     procedure CatchMouse(X, Y: Integer); virtual;
     property Captured: Boolean read FCaptured write FCaptured;
     property Modified: Boolean read GetModified write SetModified;
-    procedure Refresh; virtual;
     procedure Invalidate; virtual;
 
     procedure SetCursor(Shift: TShiftState; X, Y: Integer); virtual;
@@ -116,6 +117,8 @@ type
 
   TCustomBoard = class;
 
+  { TContainer }
+
   TContainer = class(TComponent)
   private
     FElements: TElements;
@@ -132,12 +135,10 @@ type
     Board: TCustomBoard;
     Index: Integer;
     procedure Clear; virtual;
-    procedure Refresh; virtual;
+    procedure Invalidate; virtual;
     procedure Change; virtual;
     function GetLayoutByPoint(X, Y: Integer): TLayout; virtual;
     function GetLayoutByIndex(vIndex: Integer): TLayout; virtual;
-    procedure ExcludeClipRect(vCanvas: TCanvas); virtual;
-    procedure InvalidateRect(const vRect: TRect); virtual;
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
     procedure Init; virtual;
@@ -161,7 +162,6 @@ type
   protected
     procedure SetBoundRect(const Value: TRect); override;
   public
-    procedure ExcludeClipRect(vCanvas: TCanvas); override;
     function GetLayoutByIndex(vIndex: Integer): TLayout; override;
     function GetLayoutByPoint(X, Y: Integer): TLayout; override;
     constructor Create(AOwner: TComponent); override;
@@ -199,13 +199,14 @@ type
     function HitTest(X, Y: Integer; out vElement: TElement): Boolean; override;
     procedure Paint(vCanvas: TCanvas); override;
     procedure PaintBackground(vCanvas: TCanvas); override;
-    procedure ExcludeClipRect(vCanvas: TCanvas); override;
     property LayoutList: TLayoutList read FLayoutList;
     property Background: TColor read FBackground write FBackground;
     property Items[vIndex: Integer]: TLayout read GetItem write SetItem; default;
   published
     property Caption: String read FCaption write FCaption;
   end;
+
+  TBoardUpdate = set of (brdInvalidate);
 
   { TCustomBoard }
 
@@ -217,16 +218,21 @@ type
     FCurrentLayout: TContainer;
     FLayouts: TLayouts;
     FDesignElement: TElement;
+    FStateUpdate: TBoardUpdate;
+    FUpdateCount: Integer;
     procedure SetDesignElement(const Value: TElement);
     procedure SetCurrentLayout(const Value: TContainer);
     procedure SetOffset(AValue: TPoint);
     procedure SetScaleSize(AValue: Integer);
     procedure SetSnapSize(AValue: Integer);
   protected
+    function MapToCanvas(P: TPoint): TPoint;
+    function MapToScreen(P: TPoint): TPoint;
     procedure WMGetDlgCode(var message: TWMGetDlgCode); message WM_GETDLGCODE;
     procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer); override;
     procedure MouseMove(Shift: TShiftState; X, Y: Integer); override;
     procedure MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: Integer); override;
+    function DoMouseWheel(Shift: TShiftState; WheelDelta: Integer; MousePos: TPoint): Boolean; override;
     procedure KeyDown(var Key: Word; Shift: TShiftState); override;
     procedure Paint; override;
 
@@ -235,8 +241,15 @@ type
     procedure DoExit; override;
     procedure Change; virtual;
     procedure Reset; virtual;
+
     procedure PreviousDesginElement;
     procedure NextDesginElement;
+    procedure DeleteDesginElement;
+
+    procedure BeginUpdate;
+    procedure Update(vStateUpdate: TBoardUpdate);
+    procedure CheckUpdate;
+    procedure EndUpdate;
   public
     NextElement: TElementClass;
     constructor Create(AOwner: TComponent); override;
@@ -467,15 +480,15 @@ end;
 
 procedure THaft.Paint(vCanvas: TCanvas);
 begin
-  vCanvas.Rectangle(PtToHaftRect(Point));
+  vCanvas.Rectangle(PointToHaftRect(Point));
 end;
 
 function THaft.HitTest(P: TPoint): Boolean;
 begin
-  Result := PtInRect(PtToHaftRect(Point), P);
+  Result := PtInRect(PointToHaftRect(Point), P);
 end;
 
-function THaft.PtToHaftRect(P: TPoint): TRect;
+function THaft.PointToHaftRect(P: TPoint): TRect;
 begin
   Result := Rect(P.X - cHaftSize, P.Y - cHaftSize, P.X + cHaftSize, P.Y + cHaftSize);
 end;
@@ -517,16 +530,6 @@ destructor TLayouts.Destroy;
 begin
   FreeAndNil(FLayoutList);
   inherited;
-end;
-
-procedure TLayouts.ExcludeClipRect(vCanvas: TCanvas);
-var
-  i: Integer;
-begin
-  for i := 0 to FLayoutList.Count - 1 do
-  begin
-    FLayoutList[i].ExcludeClipRect(vCanvas);
-  end;
 end;
 
 function TLayouts.HitTest(X, Y: Integer; out vElement: TElement): Boolean;
@@ -644,13 +647,13 @@ end;
 procedure TCustomBoard.DoEnter;
 begin
   inherited;
-  //Invalidate;
+  //Update([brdInvalidate]);
 end;
 
 procedure TCustomBoard.DoExit;
 begin
   inherited;
-  //Invalidate;
+  //Update([brdInvalidate]);
 end;
 
 procedure TCustomBoard.Loaded;
@@ -700,6 +703,15 @@ begin
     DesignElement.MouseUp(Button, Shift, X, Y);
 end;
 
+function TCustomBoard.DoMouseWheel(Shift: TShiftState; WheelDelta: Integer; MousePos: TPoint): Boolean;
+begin
+  Result := inherited DoMouseWheel(Shift, WheelDelta, MousePos);
+  if WheelDelta < 0 then
+    ScaleSize := ScaleSize - 1
+  else if WheelDelta > 0 then
+    ScaleSize := ScaleSize + 1
+end;
+
 procedure TCustomBoard.KeyDown(var Key: Word; Shift: TShiftState);
 var
   e: Integer;
@@ -709,6 +721,17 @@ begin
     case Key of
       VK_ESCAPE :  DesignElement := nil;
       VK_TAB :  NextDesginElement;
+      VK_DELETE: DeleteDesginElement;
+      VK_1:
+      begin
+        BeginUpdate;
+        try
+          Offset := Point(0, 0);
+          ScaleSize := 0;
+        finally
+          EndUpdate;
+        end
+      end;
     end
   else if Shift = [ssShift] then
     case Key of
@@ -716,23 +739,23 @@ begin
     end
   else if Shift = [ssCtrl] then
     case Key of
-      VK_NEXT :
+      VK_PRIOR :
         if DesignElement <> nil then
         begin
           e := CurrentLayout.Elements.IndexOf(DesignElement);
           if e < CurrentLayout.Elements.Count - 1 then
             CurrentLayout.Elements.Move(e, e + 1);
           Key := 0;
-          Invalidate;
+          Update([brdInvalidate]);
         end;
-      VK_PRIOR :
+      VK_NEXT :
         if DesignElement <> nil then
         begin
           e := CurrentLayout.Elements.IndexOf(DesignElement);
           if e > 0 then
             CurrentLayout.Elements.Move(e - 1, e);
           Key := 0;
-          Invalidate;
+          Update([brdInvalidate]);
         end;
     end;
 end;
@@ -796,6 +819,50 @@ begin
   end;
 end;
 
+procedure TCustomBoard.DeleteDesginElement;
+var
+  e: Integer;
+begin
+  if CurrentLayout.Elements.Count > 0 then
+  begin
+    if DesignElement <> nil then
+    begin
+      CurrentLayout.Elements.Remove(DesignElement);
+      FDesignElement := nil; //FDesignElement
+      Update([brdInvalidate]);
+    end;
+  end;
+end;
+
+procedure TCustomBoard.BeginUpdate;
+begin
+
+end;
+
+procedure TCustomBoard.Update(vStateUpdate: TBoardUpdate);
+begin
+  FStateUpdate := FStateUpdate + vStateUpdate;
+  CheckUpdate;
+end;
+
+procedure TCustomBoard.CheckUpdate;
+begin
+  if FUpdateCount = 0 then
+  begin
+    if brdInvalidate in FStateUpdate then
+      Invalidate;
+    FStateUpdate := [];
+  end;
+end;
+
+procedure TCustomBoard.EndUpdate;
+begin
+  FUpdateCount := FUpdateCount  - 1;
+  if FUpdateCount < 0 then
+    raise Exception.Create('Board: Update count less than 0');
+  CheckUpdate;
+end;
+
 procedure TCustomBoard.Resize;
 begin
   inherited;
@@ -809,28 +876,42 @@ end;
 procedure TCustomBoard.SetCurrentLayout(const Value: TContainer);
 begin
   FCurrentLayout := Value;
-  Refresh;
+  Update([brdInvalidate]);
 end;
 
 procedure TCustomBoard.SetOffset(AValue: TPoint);
 begin
   if FOffset =AValue then Exit;
   FOffset := AValue;
-  Invalidate;
+  Update([brdInvalidate]);
 end;
 
 procedure TCustomBoard.SetScaleSize(AValue: Integer);
 begin
   if FScaleSize =AValue then Exit;
   FScaleSize := AValue;
-  Invalidate;
+  Update([brdInvalidate]);
 end;
 
 procedure TCustomBoard.SetSnapSize(AValue: Integer);
 begin
   if FSnapSize =AValue then Exit;
   FSnapSize := AValue;
-  Invalidate;
+  Update([brdInvalidate]);
+end;
+
+function TCustomBoard.MapToCanvas(P: TPoint): TPoint;
+begin
+  P.x := P.x + Offset.x;
+  P.y := P.y + Offset.y;
+  Result := P;
+end;
+
+function TCustomBoard.MapToScreen(P: TPoint): TPoint;
+begin
+  P.x := P.x - Offset.x;
+  P.y := P.y - Offset.y;
+  Result := P;
 end;
 
 procedure TCustomBoard.WMGetDlgCode(var message: TWMGetDlgCode);
@@ -926,11 +1007,6 @@ end;
 procedure TElement.Paint(vCanvas: TCanvas; vRect: TRect);
 begin
 
-end;
-
-procedure TElement.Refresh;
-begin
-  Container.Refresh;
 end;
 
 { TCariesElement }
@@ -1139,18 +1215,10 @@ begin
     Board.Cursor := Value;
 end;
 
-procedure TContainer.Refresh;
+procedure TContainer.Invalidate;
 begin
   if Board <> nil then
-    Board.Refresh;
-end;
-
-procedure TContainer.InvalidateRect(const vRect: TRect);
-begin
-  if Board <> nil then
-  begin
-    InvalidateFrame(Board.Handle, @vRect, False, 0);
-  end;
+    Board.Update([brdInvalidate]);
 end;
 
 procedure TCustomBoard.SetDesignElement(const Value: TElement);
@@ -1158,7 +1226,7 @@ begin
   if FDesignElement <> Value then
   begin
     FDesignElement := Value;
-    Invalidate;
+    Update([brdInvalidate]);
   end;
 end;
 
@@ -1234,11 +1302,6 @@ begin
   Result := nil;
 end;
 
-procedure TContainer.ExcludeClipRect(vCanvas: TCanvas);
-begin
-
-end;
-
 function TContainer.GetLayoutByIndex(vIndex: Integer): TLayout;
 begin
   Result := nil;
@@ -1266,7 +1329,7 @@ end;
 
 procedure TElement.Invalidate;
 begin
-  Container.Refresh;
+  Container.Invalidate;
 end;
 
 function TElement.InHaft(X, Y: Integer; out vHaftIndex: Integer): Boolean;
@@ -1387,6 +1450,23 @@ end;
 function TElement.GetModified: Boolean;
 begin
   Result := FModified > 0;
+end;
+
+function TElement.ScalePoint(P: TPoint): TPoint;
+begin
+  with Container.Board do
+  begin
+    P.x := P.x + P.x * ScaleSize;
+    P.y := P.y + P.y * ScaleSize;
+  end;
+  Result := P;
+end;
+
+function TElement.ScaleRect(R: TRect): TRect;
+begin
+  R.TopLeft := ScalePoint(R.TopLeft);
+  R.BottomRight := ScalePoint(R.BottomRight);
+  Result := R;
 end;
 
 procedure TElement.AfterConstruction;
@@ -1606,13 +1686,6 @@ begin
     FLayouts := (AOwner as TLayouts);
     Index := FLayouts.FLayoutList.Add(Self);
   end;
-end;
-
-procedure TLayout.ExcludeClipRect(vCanvas: TCanvas);
-begin
-  with BoundRect do
-    LCLIntf.ExcludeClipRect(vCanvas.Handle, Left, Top, Right, Bottom);
-  inherited;
 end;
 
 function TLayout.GetLayoutByIndex(vIndex: Integer): TLayout;
