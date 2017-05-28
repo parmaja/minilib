@@ -18,6 +18,9 @@ uses
 const
   OblongCursors: array[0..7] of TCursor = (crSizeNWSE, crSizeNS, crSizeNESW, crSizeWE, crSizeNWSE, crSizeNS, crSizeNESW, crSizeWE);
   cHaftSize = 4;
+  cBoardWidth = 600;
+  cBoardHeight = 400;
+  cSnapSize = 10;
 
 type
   TPointArray = array of TPoint;
@@ -67,6 +70,8 @@ type
   protected
     function ScalePoint(P: TPoint): TPoint;
     function ScaleRect(R: TRect): TRect;
+    function SnapPoint(P: TPoint): TPoint;
+    function SnapRect(R: TRect): TRect;
 
     procedure MouseMove(Shift: TShiftState; X, Y: Integer); virtual;
     procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer); virtual;
@@ -171,6 +176,13 @@ type
     property Enabled: Boolean read FEnabled write FEnabled default True;
   end;
 
+  { TPageLayout }
+
+  TPageLayout = class(TLayout)
+  protected
+    procedure PaintBackground(vCanvas: TCanvas); override;
+  end;
+
   TLayoutList = class(TObjectList)
   private
     function GetItem(Index: Integer): TLayout;
@@ -212,6 +224,8 @@ type
 
   TCustomBoard = class(TCustomControl)
   private
+    FBoardHeight: Integer;
+    FBoardWidth: Integer;
     FSnapSize: Integer;
     FScaleSize: Integer;
     FOffset: TPoint;
@@ -220,10 +234,15 @@ type
     FDesignElement: TElement;
     FStateUpdate: TBoardUpdate;
     FUpdateCount: Integer;
+
+    FScrollBars: TScrollStyle;
+    procedure SetBoardHeight(AValue: Integer);
+    procedure SetBoardWidth(AValue: Integer);
     procedure SetDesignElement(const Value: TElement);
     procedure SetCurrentLayout(const Value: TContainer);
     procedure SetOffset(AValue: TPoint);
     procedure SetScaleSize(AValue: Integer);
+    procedure SetScrollBars(AValue: TScrollStyle);
     procedure SetSnapSize(AValue: Integer);
   protected
     function MapToCanvas(P: TPoint): TPoint;
@@ -250,6 +269,7 @@ type
     procedure Update(vStateUpdate: TBoardUpdate);
     procedure CheckUpdate;
     procedure EndUpdate;
+    procedure SizeChanged;
   public
     NextElement: TElementClass;
     constructor Create(AOwner: TComponent); override;
@@ -257,10 +277,13 @@ type
     procedure Loaded; override;
     property DesignElement: TElement read FDesignElement write SetDesignElement;
     property CurrentLayout: TContainer read FCurrentLayout write SetCurrentLayout;
-    property SnapSize: Integer read FSnapSize write SetSnapSize;
-    property ScaleSize: Integer read FScaleSize write SetScaleSize;
     property Offset: TPoint read FOffset write SetOffset;
   published
+    property SnapSize: Integer read FSnapSize write SetSnapSize default cSnapSize;
+    property ScaleSize: Integer read FScaleSize write SetScaleSize default 0;
+    property BoardWidth: Integer read FBoardWidth write SetBoardWidth default cBoardWidth;
+    property BoardHeight: Integer read FBoardHeight write SetBoardHeight default cBoardHeight;
+    property ScrollBars: TScrollStyle read FScrollBars write SetScrollBars default ssBoth;
     property Color default clWindow;
     property Align;
     property Anchors;
@@ -421,6 +444,29 @@ begin
   end;
 end;
 
+{ TPageLayout }
+
+procedure TPageLayout.PaintBackground(vCanvas: TCanvas);
+var
+  x, y: Integer;
+begin
+  inherited;
+  vCanvas.Pen.Color := clSilver;
+  vCanvas.Frame(0, 0, Board.BoardWidth, Board.BoardHeight);
+  x := 0;
+  while x < Board.BoardWidth - 1 do
+  begin
+    vCanvas.Line(x, 0, x, Board.BoardHeight - 1);
+    x := x + 10;
+  end;
+  y := 0;
+  while y < Board.BoardHeight - 1 do
+  begin
+    vCanvas.Line(0, y, Board.BoardWidth - 1, y);
+    y := y + 10;
+  end;
+end;
+
 { TCircleElement }
 
 constructor TCircleElement.Create(AOwner: TComponent);
@@ -516,9 +562,9 @@ begin
   inherited;
   Background := $00DEE9FA;
   FLayoutList := TLayoutList.Create;
-  with TLayout.Create(Self) do
+  with TPageLayout.Create(Self) do
   begin
-    FName := 'Top';
+    FName := 'Page';
   end;
   {with TLayout.Create(Self) do
   begin
@@ -630,6 +676,10 @@ constructor TCustomBoard.Create(AOwner: TComponent);
 begin
   inherited;
   ControlStyle := ControlStyle + [csOpaque];
+  FScrollBars := ssBoth;
+  FBoardWidth := cBoardWidth;
+  FBoardHeight := cBoardHeight;
+  FSnapSize := cSnapSize;
   DoubleBuffered := False;
   FLayouts := TLayouts.Create(Self);
   FLayouts.Init;
@@ -767,8 +817,8 @@ begin
   inherited;
   Canvas.Brush.Color := Color;
   Canvas.Brush.Style := bsSolid;
-  Canvas.FillRect(ClientRect);
   Canvas.Brush.Color := clWindow;
+//  Canvas.FillRect(ClientRect);
   FLayouts.PaintBackground(Canvas);
   FLayouts.Paint(Canvas);
 end;
@@ -863,6 +913,11 @@ begin
   CheckUpdate;
 end;
 
+procedure TCustomBoard.SizeChanged;
+begin
+
+end;
+
 procedure TCustomBoard.Resize;
 begin
   inherited;
@@ -891,6 +946,12 @@ begin
   if FScaleSize =AValue then Exit;
   FScaleSize := AValue;
   Update([brdInvalidate]);
+end;
+
+procedure TCustomBoard.SetScrollBars(AValue: TScrollStyle);
+begin
+  if FScrollBars =AValue then Exit;
+  FScrollBars :=AValue;
 end;
 
 procedure TCustomBoard.SetSnapSize(AValue: Integer);
@@ -1129,6 +1190,7 @@ begin
       Inc(FBoundRect.Left, DX);
     end;
   end;
+  FBoundRect := SnapRect(FBoundRect);
   Invalidate;
 end;
 
@@ -1228,6 +1290,19 @@ begin
     FDesignElement := Value;
     Update([brdInvalidate]);
   end;
+end;
+
+procedure TCustomBoard.SetBoardHeight(AValue: Integer);
+begin
+  if FBoardHeight =AValue then Exit;
+  FBoardHeight :=AValue;
+  SizeChanged;
+end;
+
+procedure TCustomBoard.SetBoardWidth(AValue: Integer);
+begin
+  if FBoardWidth =AValue then Exit;
+  FBoardWidth :=AValue;
 end;
 
 procedure TContainer.PaintBackground(vCanvas: TCanvas);
@@ -1466,6 +1541,23 @@ function TElement.ScaleRect(R: TRect): TRect;
 begin
   R.TopLeft := ScalePoint(R.TopLeft);
   R.BottomRight := ScalePoint(R.BottomRight);
+  Result := R;
+end;
+
+function TElement.SnapPoint(P: TPoint): TPoint;
+begin
+  with Container.Board do
+  begin
+    P.x := P.x div SnapSize * SnapSize;
+    P.y := P.y div SnapSize * SnapSize;
+  end;
+  Result := P;
+end;
+
+function TElement.SnapRect(R: TRect): TRect;
+begin
+  R.TopLeft := SnapPoint(R.TopLeft);
+  R.BottomRight := SnapPoint(R.BottomRight);
   Result := R;
 end;
 
