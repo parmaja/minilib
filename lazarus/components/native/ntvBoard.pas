@@ -10,7 +10,7 @@ unit ntvBoard;
 interface
 
 uses
-  Messages, SysUtils, Classes, Controls, LCLIntf,
+  Messages, SysUtils, Classes, Controls, LCLIntf, LCLType,
   Forms, Graphics, Contnrs, ImgList,
   StdCtrls, ExtCtrls,
   mnClasses;
@@ -82,8 +82,8 @@ type
     destructor Destroy; override;
     procedure Loaded; override;
     procedure AfterCreate(X, Y: Integer; Dummy: Boolean); virtual;
-    function PtInHaft(X, Y: Integer; out vHaftIndex: Integer): Boolean; overload; virtual;
-    function PtInHaft(X, Y: Integer): Boolean; overload;
+    function InHaft(X, Y: Integer; out vHaftIndex: Integer): Boolean; overload; virtual;
+    function InHaft(X, Y: Integer): Boolean; overload;
     procedure CatchMouse(X, Y: Integer); virtual;
     property Captured: Boolean read FCaptured write FCaptured;
     property Modified: Boolean read GetModified write SetModified;
@@ -118,7 +118,7 @@ type
 
   TContainer = class(TComponent)
   private
-    FElementList: TElements;
+    FElements: TElements;
     FBoundRect: TRect;
     function GetCursor: TCursor;
     procedure SetCursor(const Value: TCursor);
@@ -144,7 +144,7 @@ type
     function HitTest(X, Y: Integer; out vElement: TElement): Boolean; virtual;
     procedure Paint(vCanvas: TCanvas); virtual;
     procedure PaintBackground(vCanvas: TCanvas); virtual;
-    property ElementList: TElements read FElementList;
+    property Elements: TElements read FElements;
     property BoundRect: TRect read FBoundRect write SetBoundRect;
     property Cursor: TCursor read GetCursor write SetCursor;
     property Width: Integer read GetWidth;
@@ -211,15 +211,23 @@ type
 
   TCustomBoard = class(TCustomControl)
   private
+    FSnapSize: Integer;
+    FScaleSize: Integer;
+    FOffset: TPoint;
     FCurrentLayout: TContainer;
     FLayouts: TLayouts;
     FDesignElement: TElement;
     procedure SetDesignElement(const Value: TElement);
     procedure SetCurrentLayout(const Value: TContainer);
+    procedure SetOffset(AValue: TPoint);
+    procedure SetScaleSize(AValue: Integer);
+    procedure SetSnapSize(AValue: Integer);
   protected
+    procedure WMGetDlgCode(var message: TWMGetDlgCode); message WM_GETDLGCODE;
     procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer); override;
     procedure MouseMove(Shift: TShiftState; X, Y: Integer); override;
     procedure MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: Integer); override;
+    procedure KeyDown(var Key: Word; Shift: TShiftState); override;
     procedure Paint; override;
 
     procedure Resize; override;
@@ -227,6 +235,8 @@ type
     procedure DoExit; override;
     procedure Change; virtual;
     procedure Reset; virtual;
+    procedure PreviousDesginElement;
+    procedure NextDesginElement;
   public
     NextElement: TElementClass;
     constructor Create(AOwner: TComponent); override;
@@ -234,6 +244,9 @@ type
     procedure Loaded; override;
     property DesignElement: TElement read FDesignElement write SetDesignElement;
     property CurrentLayout: TContainer read FCurrentLayout write SetCurrentLayout;
+    property SnapSize: Integer read FSnapSize write SetSnapSize;
+    property ScaleSize: Integer read FScaleSize write SetScaleSize;
+    property Offset: TPoint read FOffset write SetOffset;
   published
     property Color default clWindow;
     property Align;
@@ -316,6 +329,15 @@ type
   public
     constructor Create(AOwner: TComponent); overload; override;
     procedure Paint(vCanvas: TCanvas; vRect: TRect); override;
+    property Color: TColor read FColor write FColor default clGreen;
+  end;
+
+  { TCircleElement }
+
+  TCircleElement = class(TOblongElement)
+  public
+    constructor Create(AOwner: TComponent); overload; override;
+    procedure Paint(vCanvas: TCanvas; vRect: TRect); override;
     property Color: TColor read FColor write FColor default clBlue;
   end;
 
@@ -384,6 +406,22 @@ begin
     ElementClasses.Add(TElements[i]);
     RegisterClass(TElements[i]);
   end;
+end;
+
+{ TCircleElement }
+
+constructor TCircleElement.Create(AOwner: TComponent);
+begin
+  inherited Create(AOwner);
+  Color := clBlue;
+end;
+
+procedure TCircleElement.Paint(vCanvas: TCanvas; vRect: TRect);
+begin
+  inherited;
+  vCanvas.Brush.Color := Color;
+  vCanvas.Brush.Style := bsSolid;
+  vCanvas.Ellipse(FBoundRect);
 end;
 
 { THafts }
@@ -514,6 +552,8 @@ begin
   begin
     FLayoutList[i].Paint(vCanvas);
   end;
+  if Board.DesignElement <> nil then
+    Board.DesignElement.Hafts.Paint(vCanvas);
 end;
 
 procedure TLayouts.PaintBackground(vCanvas: TCanvas);
@@ -594,7 +634,6 @@ begin
   Width := 100;
   Height := 100;
   Color := clWindow;
-  NextElement := TRectangleElement;
 end;
 
 destructor TCustomBoard.Destroy;
@@ -605,13 +644,13 @@ end;
 procedure TCustomBoard.DoEnter;
 begin
   inherited;
-  Invalidate;
+  //Invalidate;
 end;
 
 procedure TCustomBoard.DoExit;
 begin
   inherited;
-  Invalidate;
+  //Invalidate;
 end;
 
 procedure TCustomBoard.Loaded;
@@ -630,7 +669,7 @@ begin
     DesignElement := NextElement.CreateBy(CurrentLayout, X, Y);
     NextElement := nil;
   end
-  else if (DesignElement = nil) or not ((DesignElement.Captured) or (DesignElement.PtInHaft(X, Y))) then
+  else if (DesignElement = nil) or not ((DesignElement.Captured) or (DesignElement.InHaft(X, Y))) then
   begin
     CurrentLayout.HitTest(X, Y, aElement);
     DesignElement := aElement;
@@ -645,7 +684,7 @@ var
 begin
   inherited;
   aElement := DesignElement;
-  if (aElement = nil) or not ((aElement.Captured) or (aElement.PtInHaft(X, Y))) then
+  if (aElement = nil) or not ((aElement.Captured) or (aElement.InHaft(X, Y))) then
     CurrentLayout.HitTest(X, Y, aElement);
 
   if aElement <> nil then
@@ -659,6 +698,43 @@ begin
   inherited;
   if DesignElement <> nil then
     DesignElement.MouseUp(Button, Shift, X, Y);
+end;
+
+procedure TCustomBoard.KeyDown(var Key: Word; Shift: TShiftState);
+var
+  e: Integer;
+begin
+  inherited;
+  if Shift = [] then
+    case Key of
+      VK_ESCAPE :  DesignElement := nil;
+      VK_TAB :  NextDesginElement;
+    end
+  else if Shift = [ssShift] then
+    case Key of
+      VK_TAB :  PreviousDesginElement;
+    end
+  else if Shift = [ssCtrl] then
+    case Key of
+      VK_NEXT :
+        if DesignElement <> nil then
+        begin
+          e := CurrentLayout.Elements.IndexOf(DesignElement);
+          if e < CurrentLayout.Elements.Count - 1 then
+            CurrentLayout.Elements.Move(e, e + 1);
+          Key := 0;
+          Invalidate;
+        end;
+      VK_PRIOR :
+        if DesignElement <> nil then
+        begin
+          e := CurrentLayout.Elements.IndexOf(DesignElement);
+          if e > 0 then
+            CurrentLayout.Elements.Move(e - 1, e);
+          Key := 0;
+          Invalidate;
+        end;
+    end;
 end;
 
 //BasePaint
@@ -678,6 +754,48 @@ procedure TCustomBoard.Reset;
 begin
 end;
 
+procedure TCustomBoard.PreviousDesginElement;
+var
+  e: Integer;
+begin
+  if CurrentLayout.Elements.Count > 0 then
+  begin
+    if DesignElement = nil then
+      DesignElement := CurrentLayout.Elements[CurrentLayout.Elements.Count - 1]
+    else
+    begin
+      e := CurrentLayout.Elements.IndexOf(DesignElement);
+      if e < 0 then
+        DesignElement := CurrentLayout.Elements[CurrentLayout.Elements.Count - 1]
+      else if e > 0 then
+        DesignElement := CurrentLayout.Elements[e - 1]
+      else
+        DesignElement := CurrentLayout.Elements[CurrentLayout.Elements.Count - 1]
+    end;
+  end;
+end;
+
+procedure TCustomBoard.NextDesginElement;
+var
+  e: Integer;
+begin
+  if CurrentLayout.Elements.Count > 0 then
+  begin
+    if DesignElement = nil then
+      DesignElement := CurrentLayout.Elements[0]
+    else
+    begin
+      e := CurrentLayout.Elements.IndexOf(DesignElement);
+      if e < 0 then
+        DesignElement := CurrentLayout.Elements[0]
+      else if e < CurrentLayout.Elements.Count - 1 then
+        DesignElement := CurrentLayout.Elements[e + 1]
+      else
+        DesignElement := CurrentLayout.Elements[0];
+    end;
+  end;
+end;
+
 procedure TCustomBoard.Resize;
 begin
   inherited;
@@ -692,6 +810,33 @@ procedure TCustomBoard.SetCurrentLayout(const Value: TContainer);
 begin
   FCurrentLayout := Value;
   Refresh;
+end;
+
+procedure TCustomBoard.SetOffset(AValue: TPoint);
+begin
+  if FOffset =AValue then Exit;
+  FOffset := AValue;
+  Invalidate;
+end;
+
+procedure TCustomBoard.SetScaleSize(AValue: Integer);
+begin
+  if FScaleSize =AValue then Exit;
+  FScaleSize := AValue;
+  Invalidate;
+end;
+
+procedure TCustomBoard.SetSnapSize(AValue: Integer);
+begin
+  if FSnapSize =AValue then Exit;
+  FSnapSize := AValue;
+  Invalidate;
+end;
+
+procedure TCustomBoard.WMGetDlgCode(var message: TWMGetDlgCode);
+begin
+  inherited;
+  message.Result := message.Result or DLGC_WANTARROWS or DLGC_WANTTAB or DLGC_WANTALLKEYS;
 end;
 
 { TElements }
@@ -727,17 +872,23 @@ begin
   Result := False;
 end;
 
-procedure TElement.MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
-begin
-  CatchMouse(X, Y);
-  PtInHaft(X, Y, FHaftIndex);
-  Captured := True;
-end;
-
 procedure TElement.Modify(Shift: TShiftState; X, Y: Integer);
 begin
   Move(X - FDesignX, Y - FDesignY);
   Modifing;
+end;
+
+procedure TElement.SetCursor(Shift: TShiftState; X, Y: Integer);
+begin
+  Container.Cursor := crDefault;
+end;
+
+procedure TElement.MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+begin
+  CatchMouse(X, Y);
+  if Container.Board .DesignElement = Self then
+    InHaft(X, Y, FHaftIndex);
+  Captured := True;
 end;
 
 procedure TElement.MouseMove(Shift: TShiftState; X, Y: Integer);
@@ -748,17 +899,12 @@ begin
       Modified := True;
     Modify(Shift, X, Y);
   end
-  else
+  else if Container.Board.DesignElement = Self then
   begin
-    PtInHaft(X, Y, FHaftIndex);
+    InHaft(X, Y, FHaftIndex);
     SetCursor(Shift, X, Y);
   end;
   CatchMouse(X, Y);
-end;
-
-procedure TElement.SetCursor(Shift: TShiftState; X, Y: Integer);
-begin
-  Container.Cursor := crDefault;
 end;
 
 procedure TElement.MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
@@ -853,7 +999,6 @@ end;
 procedure TOblongElement.AfterCreate(X, Y: Integer; Dummy: Boolean);
 begin
   inherited;
-  Color := clRed;
   if Dummy then
   begin
     FHaftIndex := 4;
@@ -943,8 +1088,8 @@ end;
 
 destructor TContainer.Destroy;
 begin
-  if FElementList.Count > 0 then
-    FreeAndNil(FElementList);
+  if FElements.Count > 0 then
+    FreeAndNil(FElements);
   inherited;
 end;
 
@@ -952,10 +1097,9 @@ procedure TContainer.Paint(vCanvas: TCanvas);
 var
   i: Integer;
 begin
-  for i := 0 to ElementList.Count - 1 do
+  for i := 0 to Elements.Count - 1 do
   begin
-    ElementList[i].Paint(vCanvas, BoundRect);
-    ElementList[i].Hafts.Paint(vCanvas);
+    Elements[i].Paint(vCanvas, BoundRect);
   end;
 end;
 
@@ -965,11 +1109,11 @@ var
 begin
   Result := False;
   vElement := nil;
-  for i := 0 to ElementList.Count - 1 do
+  for i := Elements.Count - 1 downto 0 do
   begin
-    if ElementList[i].HitTest(X, Y) then
+    if Elements[i].HitTest(X, Y) then
     begin
-      vElement := ElementList[i];
+      vElement := Elements[i];
       Result := True;
       break;
     end;
@@ -1014,6 +1158,7 @@ begin
   if FDesignElement <> Value then
   begin
     FDesignElement := Value;
+    Invalidate;
   end;
 end;
 
@@ -1025,7 +1170,7 @@ procedure TContainer.ReadElement(Reader: TReader);
 var
   aElement: TElement;
 begin
-  ElementList.Clear;
+  Elements.Clear;
   Reader.ReadListBegin;
   while not Reader.EndOfList do
   begin
@@ -1043,9 +1188,9 @@ var
   i: Integer;
 begin
   Writer.WriteListBegin;
-  for i := 0 to ElementList.Count - 1 do
+  for i := 0 to Elements.Count - 1 do
   begin
-    Writer.WriteComponent(ElementList[i]);
+    Writer.WriteComponent(Elements[i]);
   end;
   Writer.WriteListEnd;
 end;
@@ -1053,7 +1198,7 @@ end;
 constructor TContainer.Create(AOwner: TComponent);
 begin
   inherited Create(nil);
-  FElementList := TElements.Create;
+  FElements := TElements.Create;
   if (AOwner <> nil) then
   begin
     if (AOwner is TCustomBoard) then
@@ -1071,7 +1216,7 @@ end;
 
 procedure TContainer.Clear;
 begin
-  ElementList.Clear;
+  Elements.Clear;
 end;
 
 function TContainer.GetHeight: Integer;
@@ -1124,7 +1269,7 @@ begin
   Container.Refresh;
 end;
 
-function TElement.PtInHaft(X, Y: Integer; out vHaftIndex: Integer): Boolean;
+function TElement.InHaft(X, Y: Integer; out vHaftIndex: Integer): Boolean;
 begin
   Result := Hafts.HitTest(Point(x, y), vHaftIndex);
 end;
@@ -1145,11 +1290,11 @@ begin
     Container.Board.DesignElement := nil;
 end;
 
-function TElement.PtInHaft(X, Y: Integer): Boolean;
+function TElement.InHaft(X, Y: Integer): Boolean;
 var
   i: Integer;
 begin
-  Result := PtInHaft(X, Y, i);
+  Result := InHaft(X, Y, i);
 end;
 
 procedure TElement.SetModified(const Value: Boolean);
@@ -1215,10 +1360,10 @@ begin
   begin
     if FContainer <> nil then
     begin
-      FContainer.ElementList.Extract(Self);
+      FContainer.Elements.Extract(Self);
     end;
     FContainer := Value;
-    FContainer.ElementList.Add(Self);
+    FContainer.Elements.Add(Self);
   end;
 end;
 
@@ -1263,7 +1408,7 @@ end;
 procedure TEllipseElement.Paint(vCanvas: TCanvas; vRect: TRect);
 begin
   inherited;
-  vCanvas.Brush.Color := clRed;
+  vCanvas.Brush.Color := Color;
   vCanvas.Ellipse(FBoundRect);
 end;
 
@@ -1272,7 +1417,7 @@ end;
 constructor TRectangleElement.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
-  FColor := clBlue;
+  FColor := clGreen;
 end;
 
 procedure TRectangleElement.Paint(vCanvas: TCanvas; vRect: TRect);
