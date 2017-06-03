@@ -54,7 +54,7 @@ type
 
   { TElement }
 
-  TElement = class(TComponent)
+  TElement = class(TPersistent)
   private
     FCaptured: Boolean;
     FDesignX: Integer;
@@ -64,6 +64,7 @@ type
     FHaftIndex: Integer;
     FContainer: TContainer;
     FModified: Integer;
+    FVisible: Boolean;
     function GetSelected: Boolean;
     procedure SetSelected(const Value: Boolean);
     procedure SetModified(const Value: Boolean);
@@ -75,8 +76,8 @@ type
     function SnapPoint(P: TPoint): TPoint;
     function SnapRect(R: TRect): TRect;
 
-    procedure MouseMove(Shift: TShiftState; X, Y: Integer); virtual;
     procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer); virtual;
+    procedure MouseMove(Shift: TShiftState; X, Y: Integer); virtual;
     procedure MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: Integer); virtual;
     procedure BeginModify; virtual;
     procedure Modifing; virtual;
@@ -85,17 +86,18 @@ type
     function GetClientRect: TRect; virtual;
     procedure CreateHaftList; virtual;
   public
-    constructor Create(AOwner: TComponent); overload; override;
-    constructor CreateBy(AOwner: TComponent; X: Integer = 0; Y: Integer = 0); overload; virtual;
+    constructor Create(AOwner: TContainer); overload; virtual;
+    constructor Create(AOwner: TContainer; X: Integer; Y: Integer); overload; virtual;
     procedure AfterConstruction; override;
     destructor Destroy; override;
-    procedure Loaded; override;
+    procedure Loaded; virtual;
     procedure AfterCreate(X, Y: Integer; Dummy: Boolean); virtual;
     function InHaft(X, Y: Integer; out vHaftIndex: Integer): Boolean; overload; virtual;
     function InHaft(X, Y: Integer): Boolean; overload;
     procedure CatchMouse(X, Y: Integer); virtual;
     property Captured: Boolean read FCaptured write FCaptured;
     property Modified: Boolean read GetModified write SetModified;
+    property Visible: Boolean read FVisible write FVisible default true;
     procedure Invalidate; virtual;
 
     procedure SetCursor(Shift: TShiftState; X, Y: Integer); virtual;
@@ -118,7 +120,6 @@ type
     function GetItem(Index: Integer): TElement;
     procedure SetItem(Index: Integer; const Value: TElement);
   public
-    procedure MouseMove(Shift: TShiftState; X, Y: Integer); virtual;
     property Items[Index: Integer]: TElement read GetItem write SetItem; default;
   end;
 
@@ -139,8 +140,6 @@ type
     FBoundRect: TRect;
     function GetCursor: TCursor;
     procedure SetCursor(const Value: TCursor);
-    procedure ReadElement(Reader: TReader);
-    procedure WriteElement(Writer: TWriter);
     function GetHeight: Integer;
     function GetWidth: Integer;
   protected
@@ -150,13 +149,13 @@ type
   public
     Board: TCustomBoard;
     Index: Integer;
+    constructor Create(AOwner: TComponent); override;
+    destructor Destroy; override;
     procedure Clear; virtual;
     procedure Invalidate; virtual;
     procedure Change; virtual;
     function GetLayoutByPoint(X, Y: Integer): TLayout; virtual;
     function GetLayoutByIndex(vIndex: Integer): TLayout; virtual;
-    constructor Create(AOwner: TComponent); override;
-    destructor Destroy; override;
     procedure Init; virtual;
     function HitTest(X, Y: Integer; out vElement: TElement): Boolean; virtual;
     property Elements: TElements read FElements;
@@ -334,7 +333,7 @@ type
 
   { TOblongElement }
 
-  TOblongElement = class(TElement)
+  TSizableElement = class(TElement)
   private
     FBoundRect: TRect;
     function GetWidth: Integer;
@@ -362,7 +361,7 @@ type
 
   { TEllipseElement }
 
-  TEllipseElement = class(TOblongElement)
+  TEllipseElement = class(TSizableElement)
   public
     procedure AfterCreate(X, Y: Integer; Dummy: Boolean); override;
     procedure Paint(vCanvas: TCanvas; vRect: TRect); override;
@@ -370,20 +369,30 @@ type
 
   { TRectangleElement }
 
-  TRectangleElement = class(TOblongElement)
+  TRectangleElement = class(TSizableElement)
   public
-    constructor Create(AOwner: TComponent); overload; override;
+    constructor Create(AOwner: TContainer); override;
     procedure Paint(vCanvas: TCanvas; vRect: TRect); override;
     property Color: TColor read FColor write FColor default clGreen;
   end;
 
   { TCircleElement }
 
-  TCircleElement = class(TOblongElement)
+  TCircleElement = class(TSizableElement)
   public
-    constructor Create(AOwner: TComponent); overload; override;
+    constructor Create(AOwner: TContainer); override;
     procedure Paint(vCanvas: TCanvas; vRect: TRect); override;
     property Color: TColor read FColor write FColor default clBlue;
+  end;
+
+  { TPNGImageElement }
+
+  TPNGImageElement = class(TSizableElement)
+  public
+    Image: TPortableNetworkGraphic;
+    constructor Create(AOwner: TContainer); override;
+    destructor Destroy; override;
+    procedure Paint(vCanvas: TCanvas; vRect: TRect); override;
   end;
 
   { TDebateElement }
@@ -409,8 +418,7 @@ type
     procedure EndModify; override;
     procedure DoPaint(vCanvas: TCanvas; vRect: TRect); virtual;
     procedure Paint(vCanvas: TCanvas; vRect: TRect); override;
-    constructor Create(AOwner: TComponent); override;
-    constructor CreateBy(AOwner: TComponent; X: Integer = 0; Y: Integer = 0); override;
+    constructor Create(AOwner: TContainer); override;
     procedure AfterCreate(X, Y: Integer; Dummy: Boolean); override;
   end;
 
@@ -453,6 +461,25 @@ begin
   end;
 end;
 
+{ TPNGImageElement }
+
+constructor TPNGImageElement.Create(AOwner: TContainer);
+begin
+  inherited;
+  Image := TPortableNetworkGraphic.Create;
+end;
+
+destructor TPNGImageElement.Destroy;
+begin
+  FreeAndNil(Image);
+  inherited Destroy;
+end;
+
+procedure TPNGImageElement.Paint(vCanvas: TCanvas; vRect: TRect);
+begin
+  inherited Paint(vCanvas, vRect);
+end;
+
 { TSelected }
 
 procedure TSelected.Switch(vElement: TElement);
@@ -491,9 +518,9 @@ end;
 
 { TCircleElement }
 
-constructor TCircleElement.Create(AOwner: TComponent);
+constructor TCircleElement.Create(AOwner: TContainer);
 begin
-  inherited Create(AOwner);
+  inherited;
   Color := clBlue;
 end;
 
@@ -548,13 +575,13 @@ end;
 
 procedure THaft.Paint(vCanvas: TCanvas; MainSelected: Boolean);
 begin
-  vCanvas.Pen.Color := clWhite;
-  vCanvas.Brush.Color := clBlack;
+  vCanvas.Pen.Color := clGray;
   vCanvas.Brush.Style := bsSolid;
   if MainSelected then
-    vCanvas.Rectangle(PointToHaftRect(Point))
+    vCanvas.Brush.Color := clBlack
   else
-    vCanvas.Ellipse(PointToHaftRect(Point));
+    vCanvas.Brush.Color := clSilver;
+  vCanvas.Rectangle(PointToHaftRect(Point))
 end;
 
 function THaft.HitTest(P: TPoint): Boolean;
@@ -734,7 +761,7 @@ begin
     if NextElement <> nil then
     begin
       Selected.Clear;
-      DesignElement := NextElement.CreateBy(CurrentLayout, X, Y);
+      DesignElement := NextElement.Create(CurrentLayout, X, Y);
       NextElement := nil;
     end
     else if (DesignElement = nil) or not ((DesignElement.Captured) or (DesignElement.InHaft(X, Y))) then
@@ -848,7 +875,6 @@ begin
   Canvas.Brush.Color := Color;
   Canvas.Brush.Style := bsSolid;
   Canvas.Brush.Color := clWindow;
-//  Canvas.FillRect(ClientRect);
   FLayouts.PaintBackground(Canvas);
   FLayouts.Paint(Canvas);
 end;
@@ -1019,10 +1045,6 @@ begin
   Result := TElement(inherited Items[Index]);
 end;
 
-procedure TElements.MouseMove(Shift: TShiftState; X, Y: Integer);
-begin
-end;
-
 procedure TElements.SetItem(Index: Integer; const Value: TElement);
 begin
   inherited Items[Index] := Value;
@@ -1122,9 +1144,9 @@ begin
   vCanvas.Polygon(Polygon);
 end;
 
-{ TOblongElement }
+{ TSizableElement }
 
-procedure TOblongElement.CreateHaftList;
+procedure TSizableElement.CreateHaftList;
 begin
   inherited;
   FHafts.Clear;
@@ -1141,7 +1163,7 @@ begin
   end;
 end;
 
-function TOblongElement.HitTest(X, Y: Integer): Boolean;
+function TSizableElement.HitTest(X, Y: Integer): Boolean;
 begin
   if PtInRect(FBoundRect, Point(X, Y)) then
     Result := True
@@ -1149,22 +1171,22 @@ begin
     Result := False;
 end;
 
-function TOblongElement.GetHeight: Integer;
+function TSizableElement.GetHeight: Integer;
 begin
   Result := Bottom - Top;
 end;
 
-function TOblongElement.GetWidth: Integer;
+function TSizableElement.GetWidth: Integer;
 begin
   Result := Right - Left;
 end;
 
-procedure TOblongElement.Paint(vCanvas: TCanvas; vRect: TRect);
+procedure TSizableElement.Paint(vCanvas: TCanvas; vRect: TRect);
 begin
   inherited;
 end;
 
-procedure TOblongElement.AfterCreate(X, Y: Integer; Dummy: Boolean);
+procedure TSizableElement.AfterCreate(X, Y: Integer; Dummy: Boolean);
 begin
   inherited;
   if Dummy then
@@ -1176,7 +1198,7 @@ begin
     FBoundRect := Rect(X, Y, X + 20, Y + 20);
 end;
 
-procedure TOblongElement.Move(DX, DY: Integer);
+procedure TSizableElement.Move(DX, DY: Integer);
 begin
   inherited;
   case FHaftIndex of
@@ -1225,7 +1247,7 @@ begin
   Invalidate;
 end;
 
-procedure TOblongElement.SetCursor(Shift: TShiftState; X, Y: Integer);
+procedure TSizableElement.SetCursor(Shift: TShiftState; X, Y: Integer);
 begin
   if FHaftIndex >= 0 then
   begin
@@ -1235,18 +1257,18 @@ begin
     Container.Cursor := crDefault;
 end;
 
-procedure TOblongElement.BeginModify;
+procedure TSizableElement.BeginModify;
 begin
   inherited;
 end;
 
-procedure TOblongElement.EndModify;
+procedure TSizableElement.EndModify;
 begin
   CorrectRect(FBoundRect);
   inherited;
 end;
 
-procedure TOblongElement.Loaded;
+procedure TSizableElement.Loaded;
 begin
   inherited;
   CorrectRect(FBoundRect);
@@ -1257,6 +1279,7 @@ end;
 
 destructor TContainer.Destroy;
 begin
+  Elements.Clear;
   FreeAndNil(FElements);
   inherited;
 end;
@@ -1353,35 +1376,6 @@ procedure TContainer.PaintBackground(vCanvas: TCanvas);
 begin
 end;
 
-procedure TContainer.ReadElement(Reader: TReader);
-var
-  aElement: TElement;
-begin
-  Elements.Clear;
-  Reader.ReadListBegin;
-  while not Reader.EndOfList do
-  begin
-    Reader.Owner := Self;
-    Reader.Root := Self;
-    aElement := Reader.ReadComponent(nil) as TElement;
-    if aElement <> nil then
-      aElement.Loaded;
-  end;
-  Reader.ReadListEnd;
-end;
-
-procedure TContainer.WriteElement(Writer: TWriter);
-var
-  i: Integer;
-begin
-  Writer.WriteListBegin;
-  for i := 0 to Elements.Count - 1 do
-  begin
-    Writer.WriteComponent(Elements[i]);
-  end;
-  Writer.WriteListEnd;
-end;
-
 constructor TContainer.Create(AOwner: TComponent);
 begin
   inherited Create(nil);
@@ -1432,7 +1426,7 @@ end;
 
 { TElement }
 
-constructor TElement.CreateBy(AOwner: TComponent; X: Integer; Y: Integer);
+constructor TElement.Create(AOwner: TContainer; X: Integer; Y: Integer);
 begin
   Create(AOwner);
   if Container.Board.NextElement <> nil then
@@ -1517,10 +1511,11 @@ begin
   Invalidate;
 end;
 
-constructor TElement.Create(AOwner: TComponent);
+constructor TElement.Create(AOwner: TContainer);
 begin
-  inherited Create(nil);
+  inherited Create;
   FHafts := THafts.Create;
+  FVisible := True;
   Container := AOwner as TContainer; //do not use FContainer
   if Container.Board <> nil then
     if Container.Board.NextElement = nil then
@@ -1541,9 +1536,7 @@ begin
   if Value <> FContainer then
   begin
     if FContainer <> nil then
-    begin
       FContainer.Elements.Extract(Self);
-    end;
     FContainer := Value;
     if FContainer <> nil then
       FContainer.Elements.Add(Self);
@@ -1634,7 +1627,7 @@ end;
 
 { TRectangleElement }
 
-constructor TRectangleElement.Create(AOwner: TComponent);
+constructor TRectangleElement.Create(AOwner: TContainer);
 begin
   inherited Create(AOwner);
   FColor := clGreen;
@@ -1724,7 +1717,7 @@ begin
     OffsetRect(DesignRect, X - (DesignRect.Right - DesignRect.Left) div 2, Y - (DesignRect.Bottom - DesignRect.Top) div 2);
 end;
 
-constructor THeavyElement.Create(AOwner: TComponent);
+constructor THeavyElement.Create(AOwner: TContainer);
 begin
   if not (AOwner is TLayout) then
     raise Exception.Create('Must Create On Layout')
@@ -1733,17 +1726,6 @@ begin
     inherited;
     DesignRect := GetBounds;
   end;
-end;
-
-constructor THeavyElement.CreateBy(AOwner: TComponent; X: Integer; Y: Integer);
-var
-  aLayout: TLayout;
-begin
-  if AOwner is TLayout then
-    aLayout := AOwner as TLayout
-  else
-    aLayout := (AOwner as TContainer).Board.FLayouts[0];//TODO use Current layout
-  inherited CreateBy(aLayout, X, Y);
 end;
 
 procedure THeavyElement.CreateHaftList;
