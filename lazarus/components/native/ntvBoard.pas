@@ -16,8 +16,8 @@ uses
   mnClasses;
 
 const
-  OblongCursors: array[0..7] of TCursor = (crSizeNWSE, crSizeNS, crSizeNESW, crSizeWE, crSizeNWSE, crSizeNS, crSizeNESW, crSizeWE);
-  cHaftSize = 4;
+  cWedgeCursors: array[0..7] of TCursor = (crSizeNWSE, crSizeNS, crSizeNESW, crSizeWE, crSizeNWSE, crSizeNS, crSizeNESW, crSizeWE);
+  cWedgeSize = 4;
   cBoardWidth = 600;
   cBoardHeight = 400;
   cSnapSize = 10;
@@ -29,27 +29,40 @@ type
   TLayouts = class;
   TElement = class;
   TElements = class;
+  TReceiver = class;
   TContainer = class;
 
-  { THaft }
+  { TReceiver }
 
-  THaft = class(TObject)
+  TReceiver = class(TObject)
+  public
+    Finished: Boolean; //temporary
+    function MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer): Boolean; virtual;
+    function MouseMove(Shift: TShiftState; X, Y: Integer): Boolean; virtual;
+    function MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: Integer): Boolean; virtual;
+    function MouseWheel(Shift: TShiftState; WheelDelta: Integer; MousePos: TPoint): Boolean; virtual;
+    function KeyDown(var Key: Word; Shift: TShiftState): Boolean; virtual;
+  end;
+
+  { TWedge wedge stake pin}
+
+  TWedge = class(TObject)
   private
-    function PointToHaftRect(P: TPoint): TRect;
+    function PointToWedgeRect(P: TPoint): TRect;
   protected
     Point: TPoint;
     procedure Paint(vCanvas: TCanvas; MainSelected: Boolean); virtual;
     function HitTest(P: TPoint): Boolean; virtual;
   end;
 
-  { THafts }
+  { TWedges }
 
-  THafts = class(specialize GItems<THaft>)
+  TWedges = class(specialize GItems<TWedge>)
   private
   public
-    function Add(x, y: Integer): THaft;
+    function Add(x, y: Integer): TWedge;
     procedure Paint(vCanvas: TCanvas; MainSelected: Boolean); virtual;
-    function HitTest(P: TPoint; out vHaftIndex: Integer): Boolean;
+    function HitTest(P: TPoint; out vWedgeIndex: Integer): Boolean;
   end;
 
   { TElement }
@@ -60,8 +73,8 @@ type
     FDesignX: Integer;
     FDesignY: Integer;
     FColor: TColor;
-    FHafts: THafts;
-    FHaftIndex: Integer;
+    FWedges: TWedges;
+    FWedgeIndex: Integer;
     FContainer: TContainer;
     FModified: Integer;
     FVisible: Boolean;
@@ -84,7 +97,7 @@ type
     procedure EndModify; virtual;
     procedure Change; virtual;
     function GetClientRect: TRect; virtual;
-    procedure CreateHaftList; virtual;
+    procedure CreateWedgeList; virtual;
   public
     constructor Create(AOwner: TContainer); overload; virtual;
     constructor Create(AOwner: TContainer; X: Integer; Y: Integer); overload; virtual;
@@ -92,8 +105,8 @@ type
     destructor Destroy; override;
     procedure Loaded; virtual;
     procedure AfterCreate(X, Y: Integer; Dummy: Boolean); virtual;
-    function InHaft(X, Y: Integer; out vHaftIndex: Integer): Boolean; overload; virtual;
-    function InHaft(X, Y: Integer): Boolean; overload;
+    function InWedge(X, Y: Integer; out vWedgeIndex: Integer): Boolean; overload; virtual;
+    function InWedge(X, Y: Integer): Boolean; overload;
     procedure CatchMouse(X, Y: Integer); virtual;
     property Captured: Boolean read FCaptured write FCaptured;
     property Modified: Boolean read GetModified write SetModified;
@@ -110,7 +123,7 @@ type
     property DesignX: Integer read FDesignX;
     property DesignY: Integer read FDesignY;
     property Container: TContainer read FContainer write SetContainer;
-    property Hafts: THafts read FHafts;
+    property Wedges: TWedges read FWedges;
   end;
 
   TElementClass = class of TElement;
@@ -224,6 +237,7 @@ type
     property Caption: String read FCaption write FCaption;
   end;
 
+  TOnGetCreateElement= procedure (Sender: TObject; X, Y: Integer; var vElement: TElement) of object;
   TBoardUpdate = set of (brdInvalidate);
 
   { TCustomBoard }
@@ -232,6 +246,7 @@ type
   private
     FBoardHeight: Integer;
     FBoardWidth: Integer;
+    FOnGetCreateElement: TOnGetCreateElement;
     FSnapSize: Integer;
     FScaleSize: Integer;
     FOffset: TPoint;
@@ -252,6 +267,9 @@ type
     procedure SetScrollBars(AValue: TScrollStyle);
     procedure SetSnapSize(AValue: Integer);
   protected
+    Receiver: TReceiver;
+    procedure PostReceiver(AReceiver: TReceiver);
+    function CheckReciver: Boolean;
     function MapToCanvas(P: TPoint): TPoint;
     function MapToScreen(P: TPoint): TPoint;
     procedure WMGetDlgCode(var message: TWMGetDlgCode); message WM_GETDLGCODE;
@@ -268,8 +286,8 @@ type
     procedure Change; virtual;
     procedure Reset; virtual;
 
-    procedure PreviousDesginElement;
     procedure NextDesginElement;
+    procedure PreviousDesginElement;
     procedure DeleteDesginElement;
 
     procedure BeginUpdate;
@@ -277,8 +295,9 @@ type
     procedure CheckUpdate;
     procedure EndUpdate;
     procedure SizeChanged;
+
+    function DoGetCreateElement(X, Y: Integer; out vElement: TElement): Boolean; virtual;
   public
-    NextElement: TElementClass;
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
     procedure Loaded; override;
@@ -306,6 +325,7 @@ type
     property DragMode;
     property Enabled;
     property Visible;
+    property OnGetCreateElement: TOnGetCreateElement read FOnGetCreateElement write FOnGetCreateElement;
   end;
 
   TntvBoard = class(TCustomBoard)
@@ -322,7 +342,7 @@ type
     procedure AfterCreate(X, Y: Integer; Dummy: Boolean); override;
     procedure Move(DX, DY: Integer); override;
     procedure Paint(vCanvas: TCanvas; vRect: TRect); override;
-    procedure CreateHaftList; override;
+    procedure CreateWedgeList; override;
   end;
 
   TCariesElement = class(TPolygonElement)
@@ -331,9 +351,9 @@ type
     procedure Paint(vCanvas: TCanvas; vRect: TRect); override;
   end;
 
-  { TOblongElement }
+  { TSizableElement }
 
-  TSizableElement = class(TElement)
+  TSizableElement = class abstract(TElement)
   private
     FBoundRect: TRect;
     function GetWidth: Integer;
@@ -343,7 +363,7 @@ type
     procedure EndModify; override;
   public
     procedure Loaded; override;
-    procedure CreateHaftList; override;
+    procedure CreateWedgeList; override;
     procedure SetCursor(Shift: TShiftState; X, Y: Integer); override;
     function HitTest(X, Y: Integer): Boolean; override;
 
@@ -412,7 +432,7 @@ type
     DesignRect: TRect;
   public
     procedure Move(DX, DY: Integer); override;
-    procedure CreateHaftList; override;
+    procedure CreateWedgeList; override;
     procedure SetCursor(Shift: TShiftState; X, Y: Integer); override;
     function HitTest(X, Y: Integer): Boolean; override;
     procedure EndModify; override;
@@ -459,6 +479,33 @@ begin
     ElementClasses.Add(TElements[i]);
     RegisterClass(TElements[i]);
   end;
+end;
+
+{ TReceiver }
+
+function TReceiver.MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer): Boolean;
+begin
+  Result := False;
+end;
+
+function TReceiver.MouseMove(Shift: TShiftState; X, Y: Integer): Boolean;
+begin
+  Result := False;
+end;
+
+function TReceiver.MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: Integer): Boolean;
+begin
+  Result := False;
+end;
+
+function TReceiver.MouseWheel(Shift: TShiftState; WheelDelta: Integer; MousePos: TPoint): Boolean;
+begin
+  Result := False;
+end;
+
+function TReceiver.KeyDown(var Key: Word; Shift: TShiftState): Boolean;
+begin
+  Result := False;
 end;
 
 { TPNGImageElement }
@@ -532,17 +579,17 @@ begin
   vCanvas.Ellipse(FBoundRect);
 end;
 
-{ THafts }
+{ TWedges }
 
-function THafts.Add(x, y: Integer): THaft;
+function TWedges.Add(x, y: Integer): TWedge;
 begin
-  Result := THaft.Create;
+  Result := TWedge.Create;
   Result.Point.x := x;
   Result.Point.y := y;
   inherited Add(Result);
 end;
 
-procedure THafts.Paint(vCanvas: TCanvas; MainSelected: Boolean);
+procedure TWedges.Paint(vCanvas: TCanvas; MainSelected: Boolean);
 var
   i: Integer;
 begin
@@ -554,26 +601,26 @@ begin
   end;
 end;
 
-function THafts.HitTest(P: TPoint; out vHaftIndex: Integer): Boolean;
+function TWedges.HitTest(P: TPoint; out vWedgeIndex: Integer): Boolean;
 var
   i: Integer;
 begin
-  vHaftIndex := -1;
+  vWedgeIndex := -1;
   Result := False;
   for i := 0 to Count - 1 do
   begin
     if Items[i].HitTest(P) then
     begin
-      vHaftIndex := i;
+      vWedgeIndex := i;
       Result := True;
       break;
     end;
   end;
 end;
 
-{ THaft }
+{ TWedge }
 
-procedure THaft.Paint(vCanvas: TCanvas; MainSelected: Boolean);
+procedure TWedge.Paint(vCanvas: TCanvas; MainSelected: Boolean);
 begin
   vCanvas.Pen.Color := clGray;
   vCanvas.Brush.Style := bsSolid;
@@ -581,17 +628,17 @@ begin
     vCanvas.Brush.Color := clBlack
   else
     vCanvas.Brush.Color := clSilver;
-  vCanvas.Rectangle(PointToHaftRect(Point))
+  vCanvas.Rectangle(PointToWedgeRect(Point))
 end;
 
-function THaft.HitTest(P: TPoint): Boolean;
+function TWedge.HitTest(P: TPoint): Boolean;
 begin
-  Result := PtInRect(PointToHaftRect(Point), P);
+  Result := PtInRect(PointToWedgeRect(Point), P);
 end;
 
-function THaft.PointToHaftRect(P: TPoint): TRect;
+function TWedge.PointToWedgeRect(P: TPoint): TRect;
 begin
-  Result := Rect(P.X - cHaftSize, P.Y - cHaftSize, P.X + cHaftSize, P.Y + cHaftSize);
+  Result := Rect(P.X - cWedgeSize, P.Y - cWedgeSize, P.X + cWedgeSize, P.Y + cWedgeSize);
 end;
 
 { TLayouts }
@@ -658,7 +705,7 @@ begin
   end;
   for i := 0 to Board.Selected.Count - 1 do
   begin
-    Board.Selected[i].Hafts.Paint(vCanvas, i = 0);
+    Board.Selected[i].Wedges.Paint(vCanvas, i = 0);
   end
 end;
 
@@ -723,6 +770,7 @@ destructor TCustomBoard.Destroy;
 begin
   FreeAndNil(FLayouts);
   FreeAndNil(FSelected);
+  FreeAndNil(Receiver);
   inherited;
 end;
 
@@ -747,42 +795,45 @@ end;
 procedure TCustomBoard.MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 var
   aElement: TElement;
+  aNewElement: Boolean;
 begin
-  aElement := nil;
   inherited;
-  if (Button = mbLeft) and (Shift = [ssLeft, ssShift]) then
+  if not CheckReciver or not Receiver.MouseDown(Button, Shift, X, Y) then
   begin
-    if CurrentLayout.HitTest(X, Y, aElement) then
-      Selected.Switch(aElement);
-    Update([brdInvalidate]);
-  end
-  else if (Button = mbLeft) and (Shift = [ssLeft]) then
-  begin
-    if NextElement <> nil then
+    aElement := nil;
+    if (Button = mbLeft) and (Shift = [ssLeft, ssShift]) then
     begin
-      Selected.Clear;
-      DesignElement := NextElement.Create(CurrentLayout, X, Y);
-      NextElement := nil;
+      if CurrentLayout.HitTest(X, Y, aElement) then
+        Selected.Switch(aElement);
+      Update([brdInvalidate]);
     end
-    else if (DesignElement = nil) or not ((DesignElement.Captured) or (DesignElement.InHaft(X, Y))) then
+    else if (Button = mbLeft) and (Shift = [ssLeft]) then
     begin
-      Selected.Clear;
-      if CurrentLayout.HitTest(X, Y, aElement) then
-        DesignElement := aElement
-      else
-        Update([brdInvalidate]);
-    end;
-
-    if DesignElement <> nil then
-      DesignElement.MouseDown(Button, Shift, X, Y);
-  end
-  else
-  begin
-    if (Button = mbRight) and (Shift = [ssRight]) then
-    begin
-      if CurrentLayout.HitTest(X, Y, aElement) then
+      if DoGetCreateElement(X, Y, aElement) then
+      begin
+        Selected.Clear;
         DesignElement := aElement;
-    end;
+      end
+      else if (DesignElement = nil) or not ((DesignElement.Captured) or (DesignElement.InWedge(X, Y))) then
+      begin
+        Selected.Clear;
+        if CurrentLayout.HitTest(X, Y, aElement) then
+          DesignElement := aElement
+        else
+          Update([brdInvalidate]);
+      end;
+
+      if DesignElement <> nil then
+        DesignElement.MouseDown(Button, Shift, X, Y);
+    end
+    else
+    begin
+      if (Button = mbRight) and (Shift = [ssRight]) then
+      begin
+        if CurrentLayout.HitTest(X, Y, aElement) then
+          DesignElement := aElement;
+      end;
+    end
   end
 end;
 
@@ -791,30 +842,40 @@ var
   aElement: TElement;
 begin
   inherited;
-  aElement := DesignElement;
-  if (aElement = nil) or not ((aElement.Captured) or (aElement.InHaft(X, Y))) then
-    CurrentLayout.HitTest(X, Y, aElement);
+  if not CheckReciver or not Receiver.MouseMove(Shift, X, Y) then
+  begin
+    aElement := DesignElement;
+    if (aElement = nil) or not ((aElement.Captured) or (aElement.InWedge(X, Y))) then
+      CurrentLayout.HitTest(X, Y, aElement);
 
-  if aElement <> nil then
-    aElement.MouseMove(Shift, X, Y)
-  else
-    Cursor := crDefault;
+    if aElement <> nil then
+      aElement.MouseMove(Shift, X, Y)
+    else
+      Cursor := crDefault;
+  end;
 end;
 
 procedure TCustomBoard.MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 begin
   inherited;
-  if DesignElement <> nil then
-    DesignElement.MouseUp(Button, Shift, X, Y);
+  if not CheckReciver or not Receiver.MouseUp(Button, Shift, X, Y) then
+  begin
+    if DesignElement <> nil then
+      DesignElement.MouseUp(Button, Shift, X, Y);
+  end;
 end;
 
 function TCustomBoard.DoMouseWheel(Shift: TShiftState; WheelDelta: Integer; MousePos: TPoint): Boolean;
 begin
-  Result := inherited DoMouseWheel(Shift, WheelDelta, MousePos);
-  if WheelDelta < 0 then
-    ScaleSize := ScaleSize - 1
-  else if WheelDelta > 0 then
-    ScaleSize := ScaleSize + 1
+  inherited;
+  if not CheckReciver or not Receiver.MouseWheel(Shift, WheelDelta, MousePos) then
+  begin
+    Result := inherited DoMouseWheel(Shift, WheelDelta, MousePos);
+    if WheelDelta < 0 then
+      ScaleSize := ScaleSize - 1
+    else if WheelDelta > 0 then
+      ScaleSize := ScaleSize + 1
+  end;
 end;
 
 procedure TCustomBoard.KeyDown(var Key: Word; Shift: TShiftState);
@@ -822,47 +883,50 @@ var
   e: Integer;
 begin
   inherited;
-  if Shift = [] then
-    case Key of
-      VK_ESCAPE: DesignElement := nil;
-      VK_TAB: NextDesginElement;
-      VK_DELETE: DeleteDesginElement;
-      VK_1:
-      begin
-        BeginUpdate;
-        try
-          Offset := Point(0, 0);
-          ScaleSize := 0;
-        finally
-          EndUpdate;
-        end
+  if not CheckReciver or not Receiver.KeyDown(Key, Shift) then
+  begin
+    if Shift = [] then
+      case Key of
+        VK_ESCAPE: DesignElement := nil;
+        VK_TAB: NextDesginElement;
+        VK_DELETE: DeleteDesginElement;
+        VK_1:
+        begin
+          BeginUpdate;
+          try
+            Offset := Point(0, 0);
+            ScaleSize := 0;
+          finally
+            EndUpdate;
+          end
+        end;
+      end
+    else if Shift = [ssShift] then
+      case Key of
+        VK_TAB :  PreviousDesginElement;
+      end
+    else if Shift = [ssCtrl] then
+      case Key of
+        VK_PRIOR :
+          if DesignElement <> nil then
+          begin
+            e := CurrentLayout.Elements.IndexOf(DesignElement);
+            if e < CurrentLayout.Elements.Count - 1 then
+              CurrentLayout.Elements.Move(e, e + 1);
+            Key := 0;
+            Update([brdInvalidate]);
+          end;
+        VK_NEXT :
+          if DesignElement <> nil then
+          begin
+            e := CurrentLayout.Elements.IndexOf(DesignElement);
+            if e > 0 then
+              CurrentLayout.Elements.Move(e - 1, e);
+            Key := 0;
+            Update([brdInvalidate]);
+          end;
       end;
-    end
-  else if Shift = [ssShift] then
-    case Key of
-      VK_TAB :  PreviousDesginElement;
-    end
-  else if Shift = [ssCtrl] then
-    case Key of
-      VK_PRIOR :
-        if DesignElement <> nil then
-        begin
-          e := CurrentLayout.Elements.IndexOf(DesignElement);
-          if e < CurrentLayout.Elements.Count - 1 then
-            CurrentLayout.Elements.Move(e, e + 1);
-          Key := 0;
-          Update([brdInvalidate]);
-        end;
-      VK_NEXT :
-        if DesignElement <> nil then
-        begin
-          e := CurrentLayout.Elements.IndexOf(DesignElement);
-          if e > 0 then
-            CurrentLayout.Elements.Move(e - 1, e);
-          Key := 0;
-          Update([brdInvalidate]);
-        end;
-    end;
+  end;
 end;
 
 //BasePaint
@@ -893,6 +957,7 @@ begin
       DesignElement := CurrentLayout.Elements[CurrentLayout.Elements.Count - 1]
     else
     begin
+      Selected.Clear;
       e := CurrentLayout.Elements.IndexOf(DesignElement);
       if e < 0 then
         DesignElement := CurrentLayout.Elements[CurrentLayout.Elements.Count - 1]
@@ -914,6 +979,7 @@ begin
       DesignElement := CurrentLayout.Elements[0]
     else
     begin
+      Selected.Clear;
       e := CurrentLayout.Elements.IndexOf(DesignElement);
       if e < 0 then
         DesignElement := CurrentLayout.Elements[0]
@@ -975,6 +1041,16 @@ begin
 
 end;
 
+function TCustomBoard.DoGetCreateElement(X, Y: Integer; out vElement: TElement): Boolean;
+begin
+  vElement := nil;
+  if Assigned(FOnGetCreateElement) then
+  begin
+    FOnGetCreateElement(Self, X, Y, vElement);
+  end;
+  Result := vElement <> nil;
+end;
+
 procedure TCustomBoard.Resize;
 begin
   inherited;
@@ -1018,6 +1094,24 @@ begin
   Update([brdInvalidate]);
 end;
 
+procedure TCustomBoard.PostReceiver(AReceiver: TReceiver);
+begin
+  if (Receiver = nil) or not Receiver.Finished then
+  begin
+    FreeAndNil(Receiver);
+    Receiver := AReceiver;
+  end
+  else
+    raise Exception.Create('You cant post receiver now');
+end;
+
+function TCustomBoard.CheckReciver: Boolean;
+begin
+  if (Receiver <> nil) and Receiver.Finished then
+    FreeAndNil(Receiver);
+  Result := Receiver <> nil;
+end;
+
 function TCustomBoard.MapToCanvas(P: TPoint): TPoint;
 begin
   P.x := P.x + Offset.x;
@@ -1058,7 +1152,7 @@ begin
   FDesignY := Y;
 end;
 
-procedure TElement.CreateHaftList;
+procedure TElement.CreateWedgeList;
 begin
 end;
 
@@ -1082,7 +1176,7 @@ procedure TElement.MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Int
 begin
   CatchMouse(X, Y);
   if Container.Board .DesignElement = Self then
-    InHaft(X, Y, FHaftIndex);
+    InWedge(X, Y, FWedgeIndex);
   Captured := True;
 end;
 
@@ -1096,7 +1190,7 @@ begin
   end
   else if Container.Board.DesignElement = Self then
   begin
-    InHaft(X, Y, FHaftIndex);
+    InWedge(X, Y, FWedgeIndex);
     SetCursor(Shift, X, Y);
   end;
   CatchMouse(X, Y);
@@ -1105,7 +1199,7 @@ end;
 procedure TElement.MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 begin
   Captured := False;
-  FHaftIndex := -1;
+  FWedgeIndex := -1;
   CatchMouse(X, Y);
   if Modified then
     Modified := False
@@ -1146,11 +1240,11 @@ end;
 
 { TSizableElement }
 
-procedure TSizableElement.CreateHaftList;
+procedure TSizableElement.CreateWedgeList;
 begin
   inherited;
-  FHafts.Clear;
-  with FHafts do
+  FWedges.Clear;
+  with FWedges do
   begin
     Add(Left, Top);
     Add(Left + Width div 2, Top);
@@ -1191,7 +1285,7 @@ begin
   inherited;
   if Dummy then
   begin
-    FHaftIndex := 4;
+    FWedgeIndex := 4;
     FBoundRect := Rect(X, Y, X, Y);
   end
   else
@@ -1201,7 +1295,7 @@ end;
 procedure TSizableElement.Move(DX, DY: Integer);
 begin
   inherited;
-  case FHaftIndex of
+  case FWedgeIndex of
     -1:
     begin
       OffsetRect(FBoundRect, DX, DY);
@@ -1249,9 +1343,9 @@ end;
 
 procedure TSizableElement.SetCursor(Shift: TShiftState; X, Y: Integer);
 begin
-  if FHaftIndex >= 0 then
+  if FWedgeIndex >= 0 then
   begin
-    Container.Cursor := OblongCursors[FHaftIndex];
+    Container.Cursor := cWedgeCursors[FWedgeIndex];
   end
   else
     Container.Cursor := crDefault;
@@ -1342,6 +1436,7 @@ var
 begin
   if GetDesignElement <> Value then
   begin
+    //Selected.Clear; todo
     i := Selected.IndexOf(Value);
     if i < 0 then
       Selected.Insert(0, Value)
@@ -1429,11 +1524,7 @@ end;
 constructor TElement.Create(AOwner: TContainer; X: Integer; Y: Integer);
 begin
   Create(AOwner);
-  if Container.Board.NextElement <> nil then
-  begin
-    AfterCreate(X, Y, True);
-    Invalidate;
-  end;
+  AfterCreate(X, Y, True);
 end;
 
 procedure TElement.AfterCreate(X, Y: Integer; Dummy: Boolean);
@@ -1445,9 +1536,9 @@ begin
   Container.Invalidate;
 end;
 
-function TElement.InHaft(X, Y: Integer; out vHaftIndex: Integer): Boolean;
+function TElement.InWedge(X, Y: Integer; out vWedgeIndex: Integer): Boolean;
 begin
-  Result := Hafts.HitTest(Point(x, y), vHaftIndex);
+  Result := Wedges.HitTest(Point(x, y), vWedgeIndex);
 end;
 
 function TElement.GetSelected: Boolean;
@@ -1466,11 +1557,11 @@ begin
     Container.Board.DesignElement := nil;
 end;
 
-function TElement.InHaft(X, Y: Integer): Boolean;
+function TElement.InWedge(X, Y: Integer): Boolean;
 var
   i: Integer;
 begin
-  Result := InHaft(X, Y, i);
+  Result := InWedge(X, Y, i);
 end;
 
 procedure TElement.SetModified(const Value: Boolean);
@@ -1501,7 +1592,7 @@ end;
 
 procedure TElement.Modifing;
 begin
-  CreateHaftList;
+  CreateWedgeList;
   Invalidate;
 end;
 
@@ -1514,15 +1605,9 @@ end;
 constructor TElement.Create(AOwner: TContainer);
 begin
   inherited Create;
-  FHafts := THafts.Create;
+  FWedges := TWedges.Create;
   FVisible := True;
   Container := AOwner as TContainer; //do not use FContainer
-  if Container.Board <> nil then
-    if Container.Board.NextElement = nil then
-    begin
-      AfterCreate(0, 0, False);
-      Invalidate;
-    end;
 end;
 
 procedure TElement.Loaded;
@@ -1547,13 +1632,13 @@ destructor TElement.Destroy;
 begin
   Container.Board.Selected.Remove(Self);
   Container := nil; //remove my self from elements list
-  FreeAndNil(FHafts);
+  FreeAndNil(FWedges);
   inherited;
 end;
 
 procedure TElement.Change;
 begin
-  CreateHaftList;
+  CreateWedgeList;
   Container.Change;
 end;
 
@@ -1644,14 +1729,14 @@ end;
 
 { TPolygonElement }
 
-procedure TPolygonElement.CreateHaftList;
+procedure TPolygonElement.CreateWedgeList;
 var
   i: Integer;
 begin
   inherited;
   for i := 0 to Length(Polygon) -1 do
   begin
-    FHafts.Add(Polygon[i].x, Polygon[i].y);
+    FWedges.Add(Polygon[i].x, Polygon[i].y);
   end
 end;
 
@@ -1728,19 +1813,19 @@ begin
   end;
 end;
 
-procedure THeavyElement.CreateHaftList;
+procedure THeavyElement.CreateWedgeList;
 begin
   inherited;
   with DesignRect do
   begin
-    FHafts.Add(Left, Top);
-    FHafts.Add(Left + (Right - Left) div 2, Top);
-    FHafts.Add(Right, Top);
-    FHafts.Add(Right, Top + (Bottom - Top) div 2);
-    FHafts.Add(Right, Bottom);
-    FHafts.Add(Left + (Right - Left) div 2, Bottom);
-    FHafts.Add(Left, Bottom);
-    FHafts.Add(Left, Top + (Bottom - Top) div 2);
+    FWedges.Add(Left, Top);
+    FWedges.Add(Left + (Right - Left) div 2, Top);
+    FWedges.Add(Right, Top);
+    FWedges.Add(Right, Top + (Bottom - Top) div 2);
+    FWedges.Add(Right, Bottom);
+    FWedges.Add(Left + (Right - Left) div 2, Bottom);
+    FWedges.Add(Left, Bottom);
+    FWedges.Add(Left, Top + (Bottom - Top) div 2);
   end;
 end;
 
