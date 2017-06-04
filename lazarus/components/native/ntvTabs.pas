@@ -356,8 +356,6 @@ var
       MyPolyline(canvas, points.p, points.Count -1);
     end;
   end;
-const
-  len = 5;
 var
   points: TMyPoints;
 begin
@@ -798,14 +796,7 @@ begin
 end;
 
 procedure TntvTabs.DrawButtons(Canvas: TCanvas; var vRect: TRect; vFlags: TntvFlags);
-const
-  FillColor: array[boolean] of TColor = (clDkGray, clBlack);
-var
-  aRect: TRect;
 begin
-  with Canvas do
-  begin
-  end;
 end;
 
 procedure TntvTabs.DrawTab(Canvas: TCanvas; Index: Integer; vRect: TRect; vFlags: TntvFlags);

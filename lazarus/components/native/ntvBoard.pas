@@ -358,6 +358,8 @@ type
     FBoundRect: TRect;
     function GetWidth: Integer;
     function GetHeight: Integer;
+    procedure SetHeight(AValue: Integer);
+    procedure SetWidth(AValue: Integer);
   protected
     procedure BeginModify; override;
     procedure EndModify; override;
@@ -366,12 +368,15 @@ type
     procedure CreateWedgeList; override;
     procedure SetCursor(Shift: TShiftState; X, Y: Integer); override;
     function HitTest(X, Y: Integer): Boolean; override;
+    procedure SetBoundRect(NewBounds: TRect);
 
     procedure Move(DX, DY: Integer); override;
     procedure Paint(vCanvas: TCanvas; vRect: TRect); override;
     procedure AfterCreate(X, Y: Integer; Dummy: Boolean); override;
-    property Width: Integer read GetWidth;
-    property Height: Integer read GetHeight;
+    property Width: Integer read GetWidth write SetWidth;
+    property Height: Integer read GetHeight write SetHeight;
+    property BoundRect: TRect read FBoundRect write SetBoundRect;
+    procedure CorrectSize; virtual;
   published
     property Top: Integer read FBoundRect.Top write FBoundRect.Top;
     property Left: Integer read FBoundRect.Left write FBoundRect.Left;
@@ -547,7 +552,8 @@ var
   x, y: Integer;
 begin
   inherited;
-  vCanvas.Pen.Color := clSilver;
+  vCanvas.Pen.Color := $E0E0E0;
+  vCanvas.Pen.Width := 1;
   vCanvas.Frame(0, 0, Board.BoardWidth, Board.BoardHeight);
   x := 0;
   while x < Board.BoardWidth - 1 do
@@ -574,6 +580,8 @@ end;
 procedure TCircleElement.Paint(vCanvas: TCanvas; vRect: TRect);
 begin
   inherited;
+  vCanvas.Pen.Color := clBlack;
+  vCanvas.Pen.Width := 3;
   vCanvas.Brush.Color := Color;
   vCanvas.Brush.Style := bsSolid;
   vCanvas.Ellipse(FBoundRect);
@@ -623,6 +631,7 @@ end;
 procedure TWedge.Paint(vCanvas: TCanvas; MainSelected: Boolean);
 begin
   vCanvas.Pen.Color := clGray;
+  vCanvas.Pen.Width := 1;
   vCanvas.Brush.Style := bsSolid;
   if MainSelected then
     vCanvas.Brush.Color := clBlack
@@ -795,7 +804,6 @@ end;
 procedure TCustomBoard.MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 var
   aElement: TElement;
-  aNewElement: Boolean;
 begin
   inherited;
   if not CheckReciver or not Receiver.MouseDown(Button, Shift, X, Y) then
@@ -936,9 +944,9 @@ begin
   inherited;
   Canvas.Pen.Color := clBlack;
   Canvas.Pen.Style := psSolid;
+  Canvas.Pen.Width := 1;
   Canvas.Brush.Color := Color;
   Canvas.Brush.Style := bsSolid;
-  Canvas.Brush.Color := clWindow;
   FLayouts.PaintBackground(Canvas);
   FLayouts.Paint(Canvas);
 end;
@@ -957,8 +965,8 @@ begin
       DesignElement := CurrentLayout.Elements[CurrentLayout.Elements.Count - 1]
     else
     begin
-      Selected.Clear;
       e := CurrentLayout.Elements.IndexOf(DesignElement);
+      Selected.Clear;
       if e < 0 then
         DesignElement := CurrentLayout.Elements[CurrentLayout.Elements.Count - 1]
       else if e > 0 then
@@ -979,8 +987,8 @@ begin
       DesignElement := CurrentLayout.Elements[0]
     else
     begin
-      Selected.Clear;
       e := CurrentLayout.Elements.IndexOf(DesignElement);
+      Selected.Clear;
       if e < 0 then
         DesignElement := CurrentLayout.Elements[0]
       else if e < CurrentLayout.Elements.Count - 1 then
@@ -1270,6 +1278,16 @@ begin
   Result := Bottom - Top;
 end;
 
+procedure TSizableElement.SetHeight(AValue: Integer);
+begin
+  FBoundRect.Bottom := FBoundRect.Top + AValue;
+end;
+
+procedure TSizableElement.SetWidth(AValue: Integer);
+begin
+  FBoundRect.Right := FBoundRect.Left + AValue;
+end;
+
 function TSizableElement.GetWidth: Integer;
 begin
   Result := Right - Left;
@@ -1290,6 +1308,15 @@ begin
   end
   else
     FBoundRect := Rect(X, Y, X + 20, Y + 20);
+end;
+
+procedure TSizableElement.SetBoundRect(NewBounds: TRect);
+begin
+  FBoundRect := NewBounds;
+end;
+
+procedure TSizableElement.CorrectSize;
+begin
 end;
 
 procedure TSizableElement.Move(DX, DY: Integer);
@@ -1337,7 +1364,6 @@ begin
       Inc(FBoundRect.Left, DX);
     end;
   end;
-  //FBoundRect := SnapRect(FBoundRect);
   Invalidate;
 end;
 
@@ -1722,6 +1748,7 @@ procedure TRectangleElement.Paint(vCanvas: TCanvas; vRect: TRect);
 begin
   inherited;
   vCanvas.Pen.Color := clBlack;
+  vCanvas.Pen.Width := 3;
   vCanvas.Brush.Color := Color;
   vCanvas.Brush.Style := bsSolid;
   vCanvas.Rectangle(FBoundRect);
