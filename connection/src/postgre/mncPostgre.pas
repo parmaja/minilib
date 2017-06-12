@@ -827,6 +827,7 @@ var
   P: pointer;
   f: Integer;//Result Field format
 begin
+  Values := nil;
   if FStatment <> nil then
     PQclear(FStatment);
   try
@@ -887,7 +888,7 @@ procedure TmncPGCommand.DoPrepare;
 var
   c: PPGconn;
   r: PPGresult;
-  f: Integer;
+//  f: Integer;
   s: UTF8String;
 begin
   FHandle := Session.NewToken;
@@ -1046,22 +1047,18 @@ end;
 { TmncPGDDLCommand }
 
 procedure TmncPGDDLCommand.DoExecute;
-var
-  Values: TArrayOfPChar;
 begin
   if FStatment <> nil then
     PQclear(FStatment);
   try
     FStatment := PQexec(Session.DBHandle, PChar(SQL.Text));
   finally
-    FreeParamValues(Values);
   end;
   FStatus := PQresultStatus(FStatment);
   FTuples := PQntuples(FStatment);
 
   if FStatus <> PGRES_TUPLES_OK then
     HitDone;
-
   try
     RaiseError(FStatment);
   except
