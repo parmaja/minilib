@@ -31,12 +31,15 @@ type
   TElements = class;
   TReceiver = class;
   TContainer = class;
+  TCustomBoard = class;
 
   { TReceiver }
 
   TReceiver = class(TObject)
   public
     Finished: Boolean; //temporary
+    Board: TCustomBoard;
+    constructor Create(ABoard: TCustomBoard);
     function MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer): Boolean; virtual;
     function MouseMove(Shift: TShiftState; X, Y: Integer): Boolean; virtual;
     function MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: Integer): Boolean; virtual;
@@ -51,7 +54,7 @@ type
     function PointToWedgeRect(P: TPoint): TRect;
   protected
     Point: TPoint;
-    procedure Paint(vCanvas: TCanvas; MainSelected: Boolean); virtual;
+    procedure Paint(vCanvas: TCanvas; Active: Boolean); virtual;
     function HitTest(P: TPoint): Boolean; virtual;
   end;
 
@@ -61,7 +64,7 @@ type
   private
   public
     function Add(x, y: Integer): TWedge;
-    procedure Paint(vCanvas: TCanvas; MainSelected: Boolean); virtual;
+    procedure Paint(vCanvas: TCanvas; Active: Boolean); virtual;
     function HitTest(P: TPoint; out vWedgeIndex: Integer): Boolean;
   end;
 
@@ -70,19 +73,13 @@ type
   TElement = class(TPersistent)
   private
     FCaptured: Boolean;
-    FDesignX: Integer;
-    FDesignY: Integer;
     FColor: TColor;
-    FWedges: TWedges;
-    FWedgeIndex: Integer;
     FContainer: TContainer;
-    FModified: Integer;
+    FUpdateCount: Integer;
     FVisible: Boolean;
     function GetSelected: Boolean;
     procedure SetSelected(const Value: Boolean);
-    procedure SetModified(const Value: Boolean);
     procedure SetContainer(const Value: TContainer);
-    function GetModified: Boolean;
   protected
     function ScalePoint(P: TPoint): TPoint;
     function ScaleRect(R: TRect): TRect;
@@ -92,38 +89,34 @@ type
     procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer); virtual;
     procedure MouseMove(Shift: TShiftState; X, Y: Integer); virtual;
     procedure MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: Integer); virtual;
-    procedure BeginModify; virtual;
-    procedure Modifing; virtual;
-    procedure EndModify; virtual;
+
+    procedure BeginUpdate; virtual;
+    procedure Updating; virtual;
+    procedure EndUpdate; virtual;
+    procedure Update(Shift: TShiftState; X, Y: Integer); virtual;
+
     procedure Change; virtual;
-    function GetClientRect: TRect; virtual;
-    procedure CreateWedgeList; virtual;
   public
     constructor Create(AOwner: TContainer); overload; virtual;
     constructor Create(AOwner: TContainer; X: Integer; Y: Integer); overload; virtual;
-    procedure AfterConstruction; override;
     destructor Destroy; override;
-    procedure Loaded; virtual;
+    procedure AfterConstruction; override;
     procedure AfterCreate(X, Y: Integer; Dummy: Boolean); virtual;
-    function InWedge(X, Y: Integer; out vWedgeIndex: Integer): Boolean; overload; virtual;
-    function InWedge(X, Y: Integer): Boolean; overload;
-    procedure CatchMouse(X, Y: Integer); virtual;
+
     property Captured: Boolean read FCaptured write FCaptured;
-    property Modified: Boolean read GetModified write SetModified;
     property Visible: Boolean read FVisible write FVisible default true;
+
     procedure Invalidate; virtual;
 
     procedure SetCursor(Shift: TShiftState; X, Y: Integer); virtual;
-    procedure Modify(Shift: TShiftState; X, Y: Integer); virtual;
-    procedure Paint(vCanvas: TCanvas; vRect: TRect); virtual;
-    procedure Move(DX, DY: Integer); virtual;
+    procedure Paint(vCanvas: TCanvas); virtual;
+    procedure PaintFrontage(vCanvas: TCanvas; Active: Boolean); virtual;
+
     function HitTest(X, Y: Integer): Boolean; virtual;
+
     property Color: TColor read FColor write FColor;
     property Selected: Boolean read GetSelected write SetSelected;
-    property DesignX: Integer read FDesignX;
-    property DesignY: Integer read FDesignY;
     property Container: TContainer read FContainer write SetContainer;
-    property Wedges: TWedges read FWedges;
   end;
 
   TElementClass = class of TElement;
@@ -142,8 +135,6 @@ type
   public
     procedure Switch(vElement: TElement);
   end;
-
-  TCustomBoard = class;
 
   { TContainer }
 
@@ -170,7 +161,7 @@ type
     function GetLayoutByPoint(X, Y: Integer): TLayout; virtual;
     function GetLayoutByIndex(vIndex: Integer): TLayout; virtual;
     procedure Init; virtual;
-    function HitTest(X, Y: Integer; out vElement: TElement): Boolean; virtual;
+    function ElementAt(X, Y: Integer; out vElement: TElement): Boolean;
     property Elements: TElements read FElements;
     property BoundRect: TRect read FBoundRect write SetBoundRect;
     property Cursor: TCursor read GetCursor write SetCursor;
@@ -187,7 +178,6 @@ type
     FName: string;
   protected
     procedure SetBoundRect(const Value: TRect); override;
-    procedure PaintBackground(vCanvas: TCanvas); override;
   public
     function GetLayoutByIndex(vIndex: Integer): TLayout; override;
     function GetLayoutByPoint(X, Y: Integer): TLayout; override;
@@ -227,7 +217,7 @@ type
     destructor Destroy; override;
     procedure Clear; override;
     procedure Assign(Source: TPersistent); override;
-    function HitTest(X, Y: Integer; out vElement: TElement): Boolean; override;
+    function ElementAt(X, Y: Integer; out vElement: TElement): Boolean;
     procedure Paint(vCanvas: TCanvas); override;
     procedure PaintBackground(vCanvas: TCanvas); override;
     property LayoutList: TLayoutList read FLayoutList;
@@ -257,10 +247,10 @@ type
     FSelected: TSelected;
 
     FScrollBars: TScrollStyle;
-    function GetDesignElement: TElement;
+    function GetActiveElement: TElement;
     procedure SetBoardHeight(AValue: Integer);
     procedure SetBoardWidth(AValue: Integer);
-    procedure SetDesignElement(const Value: TElement);
+    procedure SetActiveElement(const Value: TElement);
     procedure SetCurrentLayout(const Value: TContainer);
     procedure SetOffset(AValue: TPoint);
     procedure SetScaleSize(AValue: Integer);
@@ -291,7 +281,7 @@ type
     procedure DeleteDesginElement;
 
     procedure BeginUpdate;
-    procedure Update(vStateUpdate: TBoardUpdate);
+    procedure Update(vStateUpdate: TBoardUpdate); reintroduce;
     procedure CheckUpdate;
     procedure EndUpdate;
     procedure SizeChanged;
@@ -301,7 +291,7 @@ type
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
     procedure Loaded; override;
-    property DesignElement: TElement read GetDesignElement write SetDesignElement;
+    property ActiveElement: TElement read GetActiveElement write SetActiveElement;
     property CurrentLayout: TContainer read FCurrentLayout write SetCurrentLayout;
     property Offset: TPoint read FOffset write SetOffset;
     property Selected: TSelected read FSelected;
@@ -331,52 +321,63 @@ type
   TntvBoard = class(TCustomBoard)
   end;
 
-//-----------------------------------
+{---------------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------------------------}
 
-  { TPolygonElement }
+  { TMoveReceiver }
 
-  TPolygonElement = class(TElement)
-  private
-    Polygon: TPointArray;
+  TMoveReceiver = class(TReceiver)
   public
-    procedure AfterCreate(X, Y: Integer; Dummy: Boolean); override;
-    procedure Move(DX, DY: Integer); override;
-    procedure Paint(vCanvas: TCanvas; vRect: TRect); override;
-    procedure CreateWedgeList; override;
-  end;
-
-  TCariesElement = class(TPolygonElement)
-  public
-    procedure AfterCreate(X, Y: Integer; Dummy: Boolean); override;
-    procedure Paint(vCanvas: TCanvas; vRect: TRect); override;
+    function MouseMove(Shift: TShiftState; X, Y: Integer): Boolean; override;
   end;
 
   { TSizableElement }
 
   TSizableElement = class abstract(TElement)
   private
+    FDesignX: Integer;
+    FDesignY: Integer;
+    FWedgeIndex: Integer;
+    FWedges: TWedges;
     FBoundRect: TRect;
     function GetWidth: Integer;
     function GetHeight: Integer;
     procedure SetHeight(AValue: Integer);
     procedure SetWidth(AValue: Integer);
   protected
-    procedure BeginModify; override;
-    procedure EndModify; override;
+    procedure Update(Shift: TShiftState; X, Y: Integer); override;
+    procedure CatchMouse(X, Y: Integer); virtual;
+    procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer); override;
+    procedure MouseMove(Shift: TShiftState; X, Y: Integer); override;
+    procedure MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: Integer); override;
+    procedure BeginUpdate; override;
+    procedure Updating; override;
+    procedure EndUpdate; override;
+    procedure Change; override;
+
+    function WedgeAt(X, Y: Integer; out vWedgeIndex: Integer): Boolean; overload; virtual;
+    function WedgeAt(X, Y: Integer): Boolean; overload;
   public
-    procedure Loaded; override;
-    procedure CreateWedgeList; override;
+    constructor Create(AOwner: TContainer); override;
+    destructor Destroy; override;
+    procedure CreateWedgeList; virtual;
     procedure SetCursor(Shift: TShiftState; X, Y: Integer); override;
     function HitTest(X, Y: Integer): Boolean; override;
     procedure SetBoundRect(NewBounds: TRect);
 
-    procedure Move(DX, DY: Integer); override;
-    procedure Paint(vCanvas: TCanvas; vRect: TRect); override;
+    procedure Move(DX, DY: Integer); virtual;
+    procedure Paint(vCanvas: TCanvas); override;
+    procedure PaintFrontage(vCanvas: TCanvas; Active: Boolean); override;
     procedure AfterCreate(X, Y: Integer; Dummy: Boolean); override;
     property Width: Integer read GetWidth write SetWidth;
     property Height: Integer read GetHeight write SetHeight;
     property BoundRect: TRect read FBoundRect write SetBoundRect;
     procedure CorrectSize; virtual;
+    property DesignX: Integer read FDesignX;
+    property DesignY: Integer read FDesignY;
+    property Wedges: TWedges read FWedges;
   published
     property Top: Integer read FBoundRect.Top write FBoundRect.Top;
     property Left: Integer read FBoundRect.Left write FBoundRect.Left;
@@ -389,7 +390,7 @@ type
   TEllipseElement = class(TSizableElement)
   public
     procedure AfterCreate(X, Y: Integer; Dummy: Boolean); override;
-    procedure Paint(vCanvas: TCanvas; vRect: TRect); override;
+    procedure Paint(vCanvas: TCanvas); override;
   end;
 
   { TRectangleElement }
@@ -397,7 +398,7 @@ type
   TRectangleElement = class(TSizableElement)
   public
     constructor Create(AOwner: TContainer); override;
-    procedure Paint(vCanvas: TCanvas; vRect: TRect); override;
+    procedure Paint(vCanvas: TCanvas); override;
     property Color: TColor read FColor write FColor default clGreen;
   end;
 
@@ -406,7 +407,7 @@ type
   TCircleElement = class(TSizableElement)
   public
     constructor Create(AOwner: TContainer); override;
-    procedure Paint(vCanvas: TCanvas; vRect: TRect); override;
+    procedure Paint(vCanvas: TCanvas); override;
     property Color: TColor read FColor write FColor default clBlue;
   end;
 
@@ -417,20 +418,12 @@ type
     Image: TPortableNetworkGraphic;
     constructor Create(AOwner: TContainer); override;
     destructor Destroy; override;
-    procedure Paint(vCanvas: TCanvas; vRect: TRect); override;
-  end;
-
-  { TDebateElement }
-
-  TDebateElement = class(TPolygonElement)
-  public
-    procedure AfterCreate(X, Y: Integer; Dummy: Boolean); override;
-    procedure Paint(vCanvas: TCanvas; vRect: TRect); override;
+    procedure Paint(vCanvas: TCanvas); override;
   end;
 
   { THeavyElement }
 
-  THeavyElement = class(TElement)
+  THeavyElement = class(TSizableElement)
   private
     function GetBounds: TRect;
   protected
@@ -440,11 +433,37 @@ type
     procedure CreateWedgeList; override;
     procedure SetCursor(Shift: TShiftState; X, Y: Integer); override;
     function HitTest(X, Y: Integer): Boolean; override;
-    procedure EndModify; override;
-    procedure DoPaint(vCanvas: TCanvas; vRect: TRect); virtual;
-    procedure Paint(vCanvas: TCanvas; vRect: TRect); override;
+    procedure EndUpdate; override;
+    procedure DoPaint(vCanvas: TCanvas); virtual;
+    procedure Paint(vCanvas: TCanvas); override;
     constructor Create(AOwner: TContainer); override;
     procedure AfterCreate(X, Y: Integer; Dummy: Boolean); override;
+  end;
+
+  { TPolygonElement }
+
+  TPolygonElement = class(TSizableElement)
+  private
+    Polygon: TPointArray;
+  public
+    procedure AfterCreate(X, Y: Integer; Dummy: Boolean); override;
+    procedure Move(DX, DY: Integer); override;
+    procedure Paint(vCanvas: TCanvas); override;
+    procedure CreateWedgeList; override;
+  end;
+
+  TCariesElement = class(TPolygonElement)
+  public
+    procedure AfterCreate(X, Y: Integer; Dummy: Boolean); override;
+    procedure Paint(vCanvas: TCanvas); override;
+  end;
+
+  { TDebateElement }
+
+  TDebateElement = class(TPolygonElement)
+  public
+    procedure AfterCreate(X, Y: Integer; Dummy: Boolean); override;
+    procedure Paint(vCanvas: TCanvas); override;
   end;
 
 procedure RegisterElements(const Layout: String; TElements: array of TElementClass);
@@ -486,7 +505,22 @@ begin
   end;
 end;
 
+{ TMoveReceiver }
+
+function TMoveReceiver.MouseMove(Shift: TShiftState; X, Y: Integer): Boolean;
+begin
+
+end;
+
 { TReceiver }
+
+constructor TReceiver.Create(ABoard: TCustomBoard);
+begin
+  inherited Create;
+  if ABoard = nil then
+    raise Exception.Create('You cant create TReceiver without owner');
+  Board := ABoard;
+end;
 
 function TReceiver.MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer): Boolean;
 begin
@@ -527,9 +561,9 @@ begin
   inherited Destroy;
 end;
 
-procedure TPNGImageElement.Paint(vCanvas: TCanvas; vRect: TRect);
+procedure TPNGImageElement.Paint(vCanvas: TCanvas);
 begin
-  inherited Paint(vCanvas, vRect);
+  inherited;
 end;
 
 { TSelected }
@@ -577,11 +611,11 @@ begin
   Color := clBlue;
 end;
 
-procedure TCircleElement.Paint(vCanvas: TCanvas; vRect: TRect);
+procedure TCircleElement.Paint(vCanvas: TCanvas);
 begin
   inherited;
   vCanvas.Pen.Color := clBlack;
-  vCanvas.Pen.Width := 3;
+  vCanvas.Pen.Width := 1;
   vCanvas.Brush.Color := Color;
   vCanvas.Brush.Style := bsSolid;
   vCanvas.Ellipse(FBoundRect);
@@ -597,7 +631,7 @@ begin
   inherited Add(Result);
 end;
 
-procedure TWedges.Paint(vCanvas: TCanvas; MainSelected: Boolean);
+procedure TWedges.Paint(vCanvas: TCanvas; Active: Boolean);
 var
   i: Integer;
 begin
@@ -605,7 +639,7 @@ begin
   vCanvas.Brush.Color := clBlack;
   for i := 0 to Count - 1 do
   begin
-    Items[i].Paint(vCanvas, MainSelected);
+    Items[i].Paint(vCanvas, Active);
   end;
 end;
 
@@ -628,12 +662,12 @@ end;
 
 { TWedge }
 
-procedure TWedge.Paint(vCanvas: TCanvas; MainSelected: Boolean);
+procedure TWedge.Paint(vCanvas: TCanvas; Active: Boolean);
 begin
   vCanvas.Pen.Color := clGray;
   vCanvas.Pen.Width := 1;
   vCanvas.Brush.Style := bsSolid;
-  if MainSelected then
+  if Active then
     vCanvas.Brush.Color := clBlack
   else
     vCanvas.Brush.Color := clSilver;
@@ -689,15 +723,15 @@ begin
   inherited;
 end;
 
-function TLayouts.HitTest(X, Y: Integer; out vElement: TElement): Boolean;
+function TLayouts.ElementAt(X, Y: Integer; out vElement: TElement): Boolean;
 var
   i: Integer;
 begin
-  Result := inherited HitTest(X, Y, vElement);
+  Result := False;
   if not Result then
     for i := 0 to FLayoutList.Count - 1 do
     begin
-      Result := FLayoutList[i].HitTest(X, Y, vElement);
+      Result := FLayoutList[i].ElementAt(X, Y, vElement);
       if Result then
         break;
     end;
@@ -714,7 +748,7 @@ begin
   end;
   for i := 0 to Board.Selected.Count - 1 do
   begin
-    Board.Selected[i].Wedges.Paint(vCanvas, i = 0);
+    Board.Selected[i].PaintFrontage(vCanvas, i = 0);
   end
 end;
 
@@ -811,7 +845,7 @@ begin
     aElement := nil;
     if (Button = mbLeft) and (Shift = [ssLeft, ssShift]) then
     begin
-      if CurrentLayout.HitTest(X, Y, aElement) then
+      if CurrentLayout.ElementAt(X, Y, aElement) then
         Selected.Switch(aElement);
       Update([brdInvalidate]);
     end
@@ -819,27 +853,22 @@ begin
     begin
       if DoGetCreateElement(X, Y, aElement) then
       begin
-        Selected.Clear;
-        DesignElement := aElement;
+        ActiveElement := aElement;
       end
-      else if (DesignElement = nil) or not ((DesignElement.Captured) or (DesignElement.InWedge(X, Y))) then
+      else //if (ActiveElement = nil) or not (ActiveElement.Captured) then
       begin
-        Selected.Clear;
-        if CurrentLayout.HitTest(X, Y, aElement) then
-          DesignElement := aElement
-        else
-          Update([brdInvalidate]);
+        CurrentLayout.ElementAt(X, Y, aElement);
+        ActiveElement := aElement; //Set it to nil will clear selected
       end;
-
-      if DesignElement <> nil then
-        DesignElement.MouseDown(Button, Shift, X, Y);
+      if ActiveElement <> nil then
+        ActiveElement.MouseDown(Button, Shift, X, Y);
     end
     else
     begin
       if (Button = mbRight) and (Shift = [ssRight]) then
       begin
-        if CurrentLayout.HitTest(X, Y, aElement) then
-          DesignElement := aElement;
+        if CurrentLayout.ElementAt(X, Y, aElement) then
+          ActiveElement := aElement;
       end;
     end
   end
@@ -852,9 +881,9 @@ begin
   inherited;
   if not CheckReciver or not Receiver.MouseMove(Shift, X, Y) then
   begin
-    aElement := DesignElement;
-    if (aElement = nil) or not ((aElement.Captured) or (aElement.InWedge(X, Y))) then
-      CurrentLayout.HitTest(X, Y, aElement);
+    aElement := ActiveElement;
+    if (aElement = nil) or not (aElement.Captured) then
+      CurrentLayout.ElementAt(X, Y, aElement);
 
     if aElement <> nil then
       aElement.MouseMove(Shift, X, Y)
@@ -868,8 +897,8 @@ begin
   inherited;
   if not CheckReciver or not Receiver.MouseUp(Button, Shift, X, Y) then
   begin
-    if DesignElement <> nil then
-      DesignElement.MouseUp(Button, Shift, X, Y);
+    if ActiveElement <> nil then
+      ActiveElement.MouseUp(Button, Shift, X, Y);
   end;
 end;
 
@@ -895,7 +924,7 @@ begin
   begin
     if Shift = [] then
       case Key of
-        VK_ESCAPE: DesignElement := nil;
+        VK_ESCAPE: ActiveElement := nil;
         VK_TAB: NextDesginElement;
         VK_DELETE: DeleteDesginElement;
         VK_1:
@@ -916,18 +945,18 @@ begin
     else if Shift = [ssCtrl] then
       case Key of
         VK_PRIOR :
-          if DesignElement <> nil then
+          if ActiveElement <> nil then
           begin
-            e := CurrentLayout.Elements.IndexOf(DesignElement);
+            e := CurrentLayout.Elements.IndexOf(ActiveElement);
             if e < CurrentLayout.Elements.Count - 1 then
               CurrentLayout.Elements.Move(e, e + 1);
             Key := 0;
             Update([brdInvalidate]);
           end;
         VK_NEXT :
-          if DesignElement <> nil then
+          if ActiveElement <> nil then
           begin
-            e := CurrentLayout.Elements.IndexOf(DesignElement);
+            e := CurrentLayout.Elements.IndexOf(ActiveElement);
             if e > 0 then
               CurrentLayout.Elements.Move(e - 1, e);
             Key := 0;
@@ -961,18 +990,18 @@ var
 begin
   if CurrentLayout.Elements.Count > 0 then
   begin
-    if DesignElement = nil then
-      DesignElement := CurrentLayout.Elements[CurrentLayout.Elements.Count - 1]
+    if ActiveElement = nil then
+      ActiveElement := CurrentLayout.Elements[CurrentLayout.Elements.Count - 1]
     else
     begin
-      e := CurrentLayout.Elements.IndexOf(DesignElement);
+      e := CurrentLayout.Elements.IndexOf(ActiveElement);
       Selected.Clear;
       if e < 0 then
-        DesignElement := CurrentLayout.Elements[CurrentLayout.Elements.Count - 1]
+        ActiveElement := CurrentLayout.Elements[CurrentLayout.Elements.Count - 1]
       else if e > 0 then
-        DesignElement := CurrentLayout.Elements[e - 1]
+        ActiveElement := CurrentLayout.Elements[e - 1]
       else
-        DesignElement := CurrentLayout.Elements[CurrentLayout.Elements.Count - 1]
+        ActiveElement := CurrentLayout.Elements[CurrentLayout.Elements.Count - 1]
     end;
   end;
 end;
@@ -983,18 +1012,18 @@ var
 begin
   if CurrentLayout.Elements.Count > 0 then
   begin
-    if DesignElement = nil then
-      DesignElement := CurrentLayout.Elements[0]
+    if ActiveElement = nil then
+      ActiveElement := CurrentLayout.Elements[0]
     else
     begin
-      e := CurrentLayout.Elements.IndexOf(DesignElement);
+      e := CurrentLayout.Elements.IndexOf(ActiveElement);
       Selected.Clear;
       if e < 0 then
-        DesignElement := CurrentLayout.Elements[0]
+        ActiveElement := CurrentLayout.Elements[0]
       else if e < CurrentLayout.Elements.Count - 1 then
-        DesignElement := CurrentLayout.Elements[e + 1]
+        ActiveElement := CurrentLayout.Elements[e + 1]
       else
-        DesignElement := CurrentLayout.Elements[0];
+        ActiveElement := CurrentLayout.Elements[0];
     end;
   end;
 end;
@@ -1154,25 +1183,14 @@ end;
 
 { TElement }
 
-procedure TElement.CatchMouse(X, Y: Integer);
-begin
-  FDesignX := X;
-  FDesignY := Y;
-end;
-
-procedure TElement.CreateWedgeList;
-begin
-end;
-
 function TElement.HitTest(X, Y: Integer): Boolean;
 begin
   Result := False;
 end;
 
-procedure TElement.Modify(Shift: TShiftState; X, Y: Integer);
+procedure TElement.Update(Shift: TShiftState; X, Y: Integer);
 begin
-  Move(X - FDesignX, Y - FDesignY);
-  Modifing;
+  Updating;
 end;
 
 procedure TElement.SetCursor(Shift: TShiftState; X, Y: Integer);
@@ -1182,47 +1200,28 @@ end;
 
 procedure TElement.MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 begin
-  CatchMouse(X, Y);
-  if Container.Board .DesignElement = Self then
-    InWedge(X, Y, FWedgeIndex);
-  Captured := True;
+  //Captured := True;
 end;
 
 procedure TElement.MouseMove(Shift: TShiftState; X, Y: Integer);
 begin
   if Captured then
   begin
-    if not Modified then
-      Modified := True;
-    Modify(Shift, X, Y);
-  end
-  else if Container.Board.DesignElement = Self then
-  begin
-    InWedge(X, Y, FWedgeIndex);
-    SetCursor(Shift, X, Y);
+    Update(Shift, X, Y);
   end;
-  CatchMouse(X, Y);
 end;
 
 procedure TElement.MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
 begin
   Captured := False;
-  FWedgeIndex := -1;
-  CatchMouse(X, Y);
-  if Modified then
-    Modified := False
-  else
-    Invalidate;
 end;
 
-procedure TElement.Move(DX, DY: Integer);
+procedure TElement.Paint(vCanvas: TCanvas);
 begin
-
 end;
 
-procedure TElement.Paint(vCanvas: TCanvas; vRect: TRect);
+procedure TElement.PaintFrontage(vCanvas: TCanvas; Active: Boolean);
 begin
-
 end;
 
 { TCariesElement }
@@ -1239,7 +1238,7 @@ begin
   Polygon[2].Y := 30;
 end;
 
-procedure TCariesElement.Paint(vCanvas: TCanvas; vRect: TRect);
+procedure TCariesElement.Paint(vCanvas: TCanvas);
 begin
   inherited;
   vCanvas.Brush.Color := clGreen;
@@ -1288,26 +1287,74 @@ begin
   FBoundRect.Right := FBoundRect.Left + AValue;
 end;
 
+procedure TSizableElement.Update(Shift: TShiftState; X, Y: Integer);
+begin
+  Move(X - FDesignX, Y - FDesignY);
+  inherited;
+end;
+
+procedure TSizableElement.MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+begin
+  inherited;
+  if Container.Board.ActiveElement = Self then
+    WedgeAt(X, Y, FWedgeIndex);
+  CatchMouse(X, Y);
+end;
+
+procedure TSizableElement.MouseMove(Shift: TShiftState; X, Y: Integer);
+begin
+  inherited;
+  if Captured and (Container.Board.ActiveElement = Self) then
+  begin
+    WedgeAt(X, Y, FWedgeIndex);
+    Container.Cursor := cWedgeCursors[FWedgeIndex];
+  end;
+  CatchMouse(X, Y);
+end;
+
+procedure TSizableElement.MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+begin
+  inherited;
+  FWedgeIndex := -1;
+  CatchMouse(X, Y);
+end;
+
+procedure TSizableElement.CatchMouse(X, Y: Integer);
+begin
+  FDesignX := X;
+  FDesignY := Y;
+end;
+
 function TSizableElement.GetWidth: Integer;
 begin
   Result := Right - Left;
 end;
 
-procedure TSizableElement.Paint(vCanvas: TCanvas; vRect: TRect);
+procedure TSizableElement.Paint(vCanvas: TCanvas);
 begin
   inherited;
+end;
+
+procedure TSizableElement.PaintFrontage(vCanvas: TCanvas; Active: Boolean);
+var
+  i: Integer;
+begin
+  inherited PaintFrontage(vCanvas, Active);
+  for i := 0 to Wedges.Count - 1 do
+  begin
+    Wedges.Paint(vCanvas, Active);
+  end;
 end;
 
 procedure TSizableElement.AfterCreate(X, Y: Integer; Dummy: Boolean);
 begin
   inherited;
-  if Dummy then
+  {if Dummy then
   begin
-    FWedgeIndex := 4;
     FBoundRect := Rect(X, Y, X, Y);
   end
-  else
-    FBoundRect := Rect(X, Y, X + 20, Y + 20);
+  else}
+    FBoundRect := Rect(X, Y, X + 50, Y + 50);
 end;
 
 procedure TSizableElement.SetBoundRect(NewBounds: TRect);
@@ -1322,6 +1369,8 @@ end;
 procedure TSizableElement.Move(DX, DY: Integer);
 begin
   inherited;
+  OffsetRect(FBoundRect, DX, DY);
+  exit;
   case FWedgeIndex of
     -1:
     begin
@@ -1377,25 +1426,54 @@ begin
     Container.Cursor := crDefault;
 end;
 
-procedure TSizableElement.BeginModify;
+procedure TSizableElement.BeginUpdate;
 begin
   inherited;
 end;
 
-procedure TSizableElement.EndModify;
+procedure TSizableElement.Updating;
+begin
+  inherited Updating;
+  CreateWedgeList;
+end;
+
+procedure TSizableElement.EndUpdate;
 begin
   CorrectRect(FBoundRect);
   inherited;
 end;
 
-procedure TSizableElement.Loaded;
+procedure TSizableElement.Change;
 begin
   inherited;
-  CorrectRect(FBoundRect);
+  CreateWedgeList;
+end;
+
+function TSizableElement.WedgeAt(X, Y: Integer; out vWedgeIndex: Integer): Boolean;
+begin
+  Result := Wedges.HitTest(Point(x, y), vWedgeIndex);
+end;
+
+function TSizableElement.WedgeAt(X, Y: Integer): Boolean;
+var
+  i: Integer;
+begin
+  Result := WedgeAt(X, Y, i);
+end;
+
+constructor TSizableElement.Create(AOwner: TContainer);
+begin
+  inherited Create(AOwner);
+  FWedges := TWedges.Create;
+end;
+
+destructor TSizableElement.Destroy;
+begin
+  FreeAndNil(FWedges);
+  inherited Destroy;
 end;
 
 { TContainer }
-
 
 destructor TContainer.Destroy;
 begin
@@ -1410,11 +1488,11 @@ var
 begin
   for i := 0 to Elements.Count - 1 do
   begin
-    Elements[i].Paint(vCanvas, BoundRect);
+    Elements[i].Paint(vCanvas);
   end;
 end;
 
-function TContainer.HitTest(X, Y: Integer; out vElement: TElement): Boolean;
+function TContainer.ElementAt(X, Y: Integer; out vElement: TElement): Boolean;
 var
   i: Integer;
 begin
@@ -1438,16 +1516,12 @@ end;
 
 function TContainer.GetCursor: TCursor;
 begin
-  if Board <> nil then
-    Result := Board.Cursor
-  else
-    Result := crDefault;
+  Result := Board.Cursor;
 end;
 
 procedure TContainer.SetCursor(const Value: TCursor);
 begin
-  if Board <> nil then
-    Board.Cursor := Value;
+  Board.Cursor := Value;
 end;
 
 procedure TContainer.Invalidate;
@@ -1456,18 +1530,21 @@ begin
     Board.Update([brdInvalidate]);
 end;
 
-procedure TCustomBoard.SetDesignElement(const Value: TElement);
+procedure TCustomBoard.SetActiveElement(const Value: TElement);
 var
   i: Integer;
 begin
-  if GetDesignElement <> Value then
+  if GetActiveElement <> Value then
   begin
-    //Selected.Clear; todo
+    Selected.Clear;
+    if Value <> nil then
+      Selected.Add(Value);
+    {
     i := Selected.IndexOf(Value);
     if i < 0 then
       Selected.Insert(0, Value)
     else
-      Selected.Move(i, 0);
+      Selected.Move(i, 0);}
     Update([brdInvalidate]);
   end;
 end;
@@ -1479,7 +1556,7 @@ begin
   SizeChanged;
 end;
 
-function TCustomBoard.GetDesignElement: TElement;
+function TCustomBoard.GetActiveElement: TElement;
 begin
   if Selected.Count > 0 then
     Result := Selected[0]
@@ -1562,15 +1639,10 @@ begin
   Container.Invalidate;
 end;
 
-function TElement.InWedge(X, Y: Integer; out vWedgeIndex: Integer): Boolean;
-begin
-  Result := Wedges.HitTest(Point(x, y), vWedgeIndex);
-end;
-
 function TElement.GetSelected: Boolean;
 begin
   if Container.Board <> nil then
-    Result := Container.Board.DesignElement = Self
+    Result := Container.Board.ActiveElement = Self
   else
     Result := False;
 end;
@@ -1578,68 +1650,37 @@ end;
 procedure TElement.SetSelected(const Value: Boolean);
 begin
   if Value and (Container.Board <> nil) then
-    Container.Board.DesignElement := Self
+    Container.Board.ActiveElement := Self
   else
-    Container.Board.DesignElement := nil;
+    Container.Board.ActiveElement := nil;
 end;
 
-function TElement.InWedge(X, Y: Integer): Boolean;
-var
-  i: Integer;
+procedure TElement.BeginUpdate;
 begin
-  Result := InWedge(X, Y, i);
+  FUpdateCount := FUpdateCount  + 1;
+  Invalidate;
 end;
 
-procedure TElement.SetModified(const Value: Boolean);
+procedure TElement.Updating;
 begin
-  if Value then
+  Invalidate;
+end;
+
+procedure TElement.EndUpdate;
+begin
+  FUpdateCount := FUpdateCount  - 1;
+  if FUpdateCount = 0 then
   begin
-    Inc(FModified);
-    if FModified = 1 then
-      BeginModify;
-  end
-  else
-  begin
-    if FModified <= 0 then
-      raise Exception.Create('Modified Counter Unexcepted')
-    else
-    begin
-      Dec(FModified);
-      if FModified = 0 then
-        EndModify;
-    end;
+    Change;
+    Invalidate;
   end;
-end;
-
-procedure TElement.BeginModify;
-begin
-  Invalidate;
-end;
-
-procedure TElement.Modifing;
-begin
-  CreateWedgeList;
-  Invalidate;
-end;
-
-procedure TElement.EndModify;
-begin
-  Change;
-  Invalidate;
 end;
 
 constructor TElement.Create(AOwner: TContainer);
 begin
   inherited Create;
-  FWedges := TWedges.Create;
   FVisible := True;
   Container := AOwner as TContainer; //do not use FContainer
-end;
-
-procedure TElement.Loaded;
-begin
-  inherited;
-  Invalidate;
 end;
 
 procedure TElement.SetContainer(const Value: TContainer);
@@ -1658,24 +1699,12 @@ destructor TElement.Destroy;
 begin
   Container.Board.Selected.Remove(Self);
   Container := nil; //remove my self from elements list
-  FreeAndNil(FWedges);
   inherited;
 end;
 
 procedure TElement.Change;
 begin
-  CreateWedgeList;
   Container.Change;
-end;
-
-function TElement.GetClientRect: TRect;
-begin
-  Result := Rect(0, 0, 0, 0);
-end;
-
-function TElement.GetModified: Boolean;
-begin
-  Result := FModified > 0;
 end;
 
 function TElement.ScalePoint(P: TPoint): TPoint;
@@ -1728,12 +1757,12 @@ begin
     FBoundRect := Rect(X, Y, X + 10, Y + 10);
 end;
 
-procedure TEllipseElement.Paint(vCanvas: TCanvas; vRect: TRect);
+procedure TEllipseElement.Paint(vCanvas: TCanvas);
 begin
   inherited;
   vCanvas.Pen.Color := clBlack;
   vCanvas.Brush.Color := Color;
-  vCanvas.Ellipse(FBoundRect);
+  vCanvas.Ellipse(BoundRect);
 end;
 
 { TRectangleElement }
@@ -1744,11 +1773,11 @@ begin
   FColor := clGreen;
 end;
 
-procedure TRectangleElement.Paint(vCanvas: TCanvas; vRect: TRect);
+procedure TRectangleElement.Paint(vCanvas: TCanvas);
 begin
   inherited;
   vCanvas.Pen.Color := clBlack;
-  vCanvas.Pen.Width := 3;
+  vCanvas.Pen.Width := 1;
   vCanvas.Brush.Color := Color;
   vCanvas.Brush.Style := bsSolid;
   vCanvas.Rectangle(FBoundRect);
@@ -1787,7 +1816,7 @@ begin
   Invalidate;
 end;
 
-procedure TPolygonElement.Paint(vCanvas: TCanvas; vRect: TRect);
+procedure TPolygonElement.Paint(vCanvas: TCanvas);
 begin
   inherited;
 end;
@@ -1813,7 +1842,7 @@ begin
 end;
 
 
-procedure TDebateElement.Paint(vCanvas: TCanvas; vRect: TRect);
+procedure TDebateElement.Paint(vCanvas: TCanvas);
 begin
   inherited;
   vCanvas.Brush.Color := clInfoBk;
@@ -1856,11 +1885,11 @@ begin
   end;
 end;
 
-procedure THeavyElement.DoPaint(vCanvas: TCanvas; vRect: TRect);
+procedure THeavyElement.DoPaint(vCanvas: TCanvas);
 begin
 end;
 
-procedure THeavyElement.EndModify;
+procedure THeavyElement.EndUpdate;
 begin
   Invalidate;
   DesignRect := GetBounds;
@@ -1885,7 +1914,7 @@ begin
   Invalidate;
 end;
 
-procedure THeavyElement.Paint(vCanvas: TCanvas; vRect: TRect);
+procedure THeavyElement.Paint(vCanvas: TCanvas);
 begin
   inherited;
   if Captured then
@@ -1894,7 +1923,7 @@ begin
     vCanvas.Rectangle(DesignRect);
   end
   else
-    DoPaint(vCanvas, vRect);
+    DoPaint(vCanvas);
 end;
 
 procedure THeavyElement.SetCursor(Shift: TShiftState; X, Y: Integer);
@@ -1925,11 +1954,6 @@ begin
   Result := Self;
 end;
 
-procedure TLayout.PaintBackground(vCanvas: TCanvas);
-begin
-  inherited;
-end;
-
 { TLayout }
 
 procedure TLayout.SetBoundRect(const Value: TRect);
@@ -1945,5 +1969,3 @@ initialization
 finalization
   FreeAndNil(ElementClasses);
 end.
-
-
