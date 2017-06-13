@@ -86,9 +86,9 @@ type
     function SnapPoint(P: TPoint): TPoint;
     function SnapRect(R: TRect): TRect;
 
-    procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer); virtual;
-    procedure MouseMove(Shift: TShiftState; X, Y: Integer); virtual;
-    procedure MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: Integer); virtual;
+    function MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer): Boolean; virtual;
+    function MouseMove(Shift: TShiftState; X, Y: Integer): Boolean; virtual;
+    function MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: Integer): Boolean; virtual;
 
     procedure BeginUpdate; virtual;
     procedure Updating; virtual;
@@ -326,11 +326,26 @@ type
 ---------------------------------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------------------------------}
 
-  { TMoveReceiver }
+  TSizableElement = class;
 
-  TMoveReceiver = class(TReceiver)
+  { TVisualReceiver }
+
+  TVisualReceiver = class(TReceiver)
   public
+    Element: TSizableElement;
+    constructor Create(ABoard: TCustomBoard; AElement: TSizableElement);
+  end;
+
+{ TMoveReceiver }
+
+  TMoveReceiver = class(TVisualReceiver)
+  private
+  protected
+    LastX, LastY: Integer;
+  public
+    function MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer): Boolean; override;
     function MouseMove(Shift: TShiftState; X, Y: Integer): Boolean; override;
+    function MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: Integer): Boolean; override;
   end;
 
   { TSizableElement }
@@ -349,9 +364,9 @@ type
   protected
     procedure Update(Shift: TShiftState; X, Y: Integer); override;
     procedure CatchMouse(X, Y: Integer); virtual;
-    procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer); override;
-    procedure MouseMove(Shift: TShiftState; X, Y: Integer); override;
-    procedure MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: Integer); override;
+    function MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer): Boolean; override;
+    function MouseMove(Shift: TShiftState; X, Y: Integer): Boolean; override;
+    function MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: Integer): Boolean; override;
     procedure BeginUpdate; override;
     procedure Updating; override;
     procedure EndUpdate; override;
@@ -505,11 +520,37 @@ begin
   end;
 end;
 
+{ TVisualReceiver }
+
+constructor TVisualReceiver.Create(ABoard: TCustomBoard; AElement: TSizableElement);
+begin
+  inherited Create(ABoard);
+  Element := AElement;
+end;
+
 { TMoveReceiver }
+
+function TMoveReceiver.MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer): Boolean;
+begin
+  inherited MouseDown(Button, Shift, X, Y);
+  LastX := X;
+  LastY := Y;
+  Result := True;
+end;
 
 function TMoveReceiver.MouseMove(Shift: TShiftState; X, Y: Integer): Boolean;
 begin
+  Element.Move(X - LastX, Y - LastY);
+  LastX := X;
+  LastY := Y;
+  Result := True;
+end;
 
+function TMoveReceiver.MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: Integer): Boolean;
+begin
+  inherited;
+  Finished := True;
+  Result := True;
 end;
 
 { TReceiver }
@@ -843,33 +884,32 @@ begin
   if not CheckReciver or not Receiver.MouseDown(Button, Shift, X, Y) then
   begin
     aElement := nil;
-    if (Button = mbLeft) and (Shift = [ssLeft, ssShift]) then
+    if (Button = mbLeft) and (Shift = [ssLeft]) then //Normal Click
+    begin
+      if DoGetCreateElement(X, Y, aElement) then //Do we need to create new component?!
+        ActiveElement := aElement
+      else if (ActiveElement = nil) then
+      begin
+        CurrentLayout.ElementAt(X, Y, aElement);
+        ActiveElement := aElement; //Set it to nil will clear selected
+      end;
+
+      if (ActiveElement = nil) or not ActiveElement.MouseDown(Button, Shift, X, Y) then
+      begin
+        CurrentLayout.ElementAt(X, Y, aElement);
+        ActiveElement := aElement; //Set it to nil will clear selected
+      end;
+    end
+    else if (Button = mbLeft) and (Shift = [ssLeft, ssShift]) then
     begin
       if CurrentLayout.ElementAt(X, Y, aElement) then
         Selected.Switch(aElement);
       Update([brdInvalidate]);
     end
-    else if (Button = mbLeft) and (Shift = [ssLeft]) then
+    else if (Button = mbRight) and (Shift = [ssRight]) then
     begin
-      if DoGetCreateElement(X, Y, aElement) then
-      begin
+      if CurrentLayout.ElementAt(X, Y, aElement) then
         ActiveElement := aElement;
-      end
-      else //if (ActiveElement = nil) or not (ActiveElement.Captured) then
-      begin
-        CurrentLayout.ElementAt(X, Y, aElement);
-        ActiveElement := aElement; //Set it to nil will clear selected
-      end;
-      if ActiveElement <> nil then
-        ActiveElement.MouseDown(Button, Shift, X, Y);
-    end
-    else
-    begin
-      if (Button = mbRight) and (Shift = [ssRight]) then
-      begin
-        if CurrentLayout.ElementAt(X, Y, aElement) then
-          ActiveElement := aElement;
-      end;
     end
   end
 end;
@@ -881,15 +921,11 @@ begin
   inherited;
   if not CheckReciver or not Receiver.MouseMove(Shift, X, Y) then
   begin
-    aElement := ActiveElement;
-    if (aElement = nil) or not (aElement.Captured) then
-      CurrentLayout.ElementAt(X, Y, aElement);
-
-    if aElement <> nil then
-      aElement.MouseMove(Shift, X, Y)
-    else
+    if (ActiveElement = nil) or not ActiveElement.MouseMove(Shift, X, Y) then
       Cursor := crDefault;
-  end;
+  end
+  else
+    Cursor := crDefault;
 end;
 
 procedure TCustomBoard.MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
@@ -1198,22 +1234,25 @@ begin
   Container.Cursor := crDefault;
 end;
 
-procedure TElement.MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+function TElement.MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer): Boolean;
 begin
   //Captured := True;
+  Result := False;
 end;
 
-procedure TElement.MouseMove(Shift: TShiftState; X, Y: Integer);
+function TElement.MouseMove(Shift: TShiftState; X, Y: Integer): Boolean;
 begin
   if Captured then
   begin
     Update(Shift, X, Y);
   end;
+  Result := False;
 end;
 
-procedure TElement.MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+function TElement.MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: Integer): Boolean;
 begin
   Captured := False;
+  Result := False;
 end;
 
 procedure TElement.Paint(vCanvas: TCanvas);
@@ -1293,30 +1332,46 @@ begin
   inherited;
 end;
 
-procedure TSizableElement.MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+function TSizableElement.MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer): Boolean;
 begin
   inherited;
-  if Container.Board.ActiveElement = Self then
-    WedgeAt(X, Y, FWedgeIndex);
-  CatchMouse(X, Y);
-end;
-
-procedure TSizableElement.MouseMove(Shift: TShiftState; X, Y: Integer);
-begin
-  inherited;
-  if Captured and (Container.Board.ActiveElement = Self) then
+  if WedgeAt(X, Y, FWedgeIndex) then
   begin
-    WedgeAt(X, Y, FWedgeIndex);
-    Container.Cursor := cWedgeCursors[FWedgeIndex];
+    CatchMouse(X, Y);
+    Result := True;
+  end
+  else
+  begin
+    if HitTest(X, Y) then
+    begin
+      Container.Board.PostReceiver(TMoveReceiver.Create(Container.Board, Self));
+      Container.Board.Receiver.MouseDown(Button, Shift, X, Y);
+      Result := True;
+    end
+    else
+      Result := False;
   end;
-  CatchMouse(X, Y);
 end;
 
-procedure TSizableElement.MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: Integer);
+function TSizableElement.MouseMove(Shift: TShiftState; X, Y: Integer): Boolean;
+begin
+  inherited;
+  if WedgeAt(X, Y, FWedgeIndex) then
+  begin
+    Container.Cursor := cWedgeCursors[FWedgeIndex];
+    CatchMouse(X, Y);
+    Result := True;
+  end
+  else
+    Result := False;
+end;
+
+function TSizableElement.MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: Integer): Boolean;
 begin
   inherited;
   FWedgeIndex := -1;
   CatchMouse(X, Y);
+  Result := False; //not sure
 end;
 
 procedure TSizableElement.CatchMouse(X, Y: Integer);
@@ -1370,6 +1425,7 @@ procedure TSizableElement.Move(DX, DY: Integer);
 begin
   inherited;
   OffsetRect(FBoundRect, DX, DY);
+  Change;
   exit;
   case FWedgeIndex of
     -1:
@@ -1589,8 +1645,8 @@ end;
 
 procedure TContainer.Change;
 begin
-  if Board <> nil then
-    Board.Change;
+  Board.Change;
+  Invalidate;
 end;
 
 procedure TContainer.Clear;
