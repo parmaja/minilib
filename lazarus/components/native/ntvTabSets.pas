@@ -107,11 +107,11 @@ type
     class function GetControlClassDefaultSize: TSize; override;
     function GetFlags: TntvFlags;
     function CreateTabs: TntvTabs; virtual;
+    procedure Paint; override;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
     procedure EraseBackground(DC: HDC); override;
-    procedure Paint; override;
 
     procedure First;
     procedure Next;

@@ -348,7 +348,6 @@ function TmncCSVCommand.ReadLine(out Strings: TStringList): Boolean;
 var
   s: string;
   ansi: ansistring;
-  utf8: utf8string;
 begin
   Result := (FCSVStream <> nil) and not FCSVStream.EOF;
   if Result then

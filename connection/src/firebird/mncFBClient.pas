@@ -485,9 +485,9 @@ end;
 
 function TCustomFBClient.LoadClient: Boolean;
 begin
-  if (FLibrary <> 0) then
+  if (FLibrary = 0) then
     LoadClientLibrary;
-  if (FLibrary <> 0) then
+  if (FLibrary = 0) then
     Result := False
   else
     Result := True;

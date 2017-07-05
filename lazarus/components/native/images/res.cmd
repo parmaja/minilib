@@ -1,2 +1,2 @@
-W:\programs\lazarus\tools\lazres ..\ntvCtrlsLib.lrs TntvDotMatrix.png TntvPageControl.png TntvSplitter.png
+D:\dev\lazarus\tools\lazres.exe ..\ntvCtrlsLib.lrs TntvDotMatrix.png TntvPageControl.png TntvSplitter.png TntvProgressBar.png TntvTextDotMatrix.png TntvTabSet.png  TntvBoard.png TntvImgBtn.png
 pause

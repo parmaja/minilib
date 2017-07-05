@@ -74,7 +74,7 @@ type
   private
     FBufferSize: Integer;
   protected
-    function Apply(Fields: TFieldsInfo; Index:Integer; Value:string): Boolean; virtual;
+    procedure Apply(Fields: TFieldsInfo; Index:Integer; Value:string); virtual;
   public
     constructor Create;
     procedure DoExecute; override;
@@ -92,7 +92,7 @@ end;
 
 { TmncCSVImport }
 
-function TmncCSVImport.Apply(Fields: TFieldsInfo; Index: Integer; Value: string): Boolean;
+procedure TmncCSVImport.Apply(Fields: TFieldsInfo; Index: Integer; Value: string);
 begin
   if Value = '' then
     Fields[Index].Param.Clear
