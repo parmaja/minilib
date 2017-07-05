@@ -23,11 +23,7 @@ type
   public
     procedure SaveReport; override;
     procedure LoadReport; override;
-  end;
 
-  TReportDesigner = class(TCustomReportDesigner)
-  public
-    function CreateDesigner: TComponent; override;
   end;
 
   TSimpleDetailsReport = class(TmnrCustomReport)
@@ -92,11 +88,13 @@ begin
   t := GetTickCount;
   r := TSimpleDetailsReport.Create;
   try
+    r.Prepare;
+
     r.Generate;
     ShowMessage('Create in '+IntToStr(GetTickCount-t));
 
     t := GetTickCount;
-    r.ExportCSV('c:\1.csv');
+    r.ExportCSV('c:\temp\1.csv');
     ShowMessage('Export in '+IntToStr(GetTickCount-t));
 
     t := GetTickCount;
@@ -316,13 +314,6 @@ begin
   RegisterRequest('Name', RequestName);
   RegisterRequest('Code', RequestCode);
   RegisterRequest('Value', RequestValue);
-end;
-
-{ TReportDesigner }
-
-function TReportDesigner.CreateDesigner: TComponent;
-begin
-  Result := TDesignerForm.Create(Application);
 end;
 
 { TSimpleProfiler }

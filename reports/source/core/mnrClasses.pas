@@ -681,6 +681,7 @@ type
 
     procedure Prepare; //for design and generate
     procedure Generate;
+    procedure Desgin;
     property Profiler: TmnrProfiler read GetProfiler;
     function ProfilerClass: TmnrProfilerClass;
 
@@ -692,7 +693,6 @@ type
     property Cells[vRow, vCol: Integer]: TmnrCell read GetCells;
 
     function CreateReportDesgin: ImnrReportDesigner; virtual;
-    procedure Desgin;
     procedure Clear; virtual;
 
     property HeaderReport: TmnrSection read GetHeaderReport;
@@ -746,6 +746,8 @@ var
 begin
   aReport := vClass.Create;
   try
+    aReport.Prepare;
+
     aDesigner := aReport.CreateReportDesgin;
     if aDesigner<>nil then
       aDesigner.DesignReport(aReport)
@@ -761,6 +763,7 @@ end;
 
 procedure TmnrCustomReport.Load;
 begin
+  Clear;
   DoLoad;
 end;
 
@@ -793,8 +796,8 @@ begin
 
   InitSections(FSections);
 
-  Created;
   FWorking := True;
+  Created;
 end;
 
 procedure TmnrCustomReport.InitLayouts(vGroups: TmnrGroups);
@@ -864,7 +867,9 @@ var
 begin
   aDesigner := CreateReportDesgin;
   if aDesigner<>nil then
-    aDesigner.DesignReport(Self);
+    aDesigner.DesignReport(Self)
+  else
+    Free;
 end;
 
 destructor TmnrCustomReport.Destroy;
@@ -985,11 +990,11 @@ end;
 
 procedure TmnrCustomReport.Generate;
 begin
-  Prepare;
+  //Prepare; call externally
   FWorking := True;
   try
     //SetParams(Params);
-    Load;
+    //Load;
     Start;
     Loop;
   finally //handle safe finish ........
@@ -1107,6 +1112,7 @@ procedure TmnrCustomReport.Prepare;
 begin
   DoPrepare;
   InitLayouts(Groups);
+  Load;
 end;
 
 procedure TmnrCustomReport.RegisterRequest(const vName: string; vOnRequest: TOnRequest);

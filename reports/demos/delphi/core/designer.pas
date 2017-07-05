@@ -89,9 +89,9 @@ procedure TDesignerForm.DesignReport(vReport: TmnrCustomReport);
 begin
   FReport := vReport;
   try
-    FReport.Prepare;
+    //FReport.Prepare;
     FReport.Designer := Self;
-    FReport.Load;
+    //FReport.Load;
   except
     FreeAndNil(FReport);
     raise;
