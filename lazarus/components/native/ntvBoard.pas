@@ -33,6 +33,10 @@ type
   TContainer = class;
   TCustomBoard = class;
 
+  TReceiverClass = class of TReceiver;
+
+  TSizableElement = class;
+
   { TReceiver }
 
   TReceiver = class(TObject)
@@ -48,12 +52,17 @@ type
   end;
 
   { TWedge wedge stake pin}
+  TWedgeInfo = record
+    ReceiverClass: TReceiverClass;
+    Cursor: TCursor;
+  end;
 
   TWedge = class(TObject)
   private
     function PointToWedgeRect(P: TPoint): TRect;
   protected
     Point: TPoint;
+    Info: TWedgeInfo;
     procedure Paint(vCanvas: TCanvas; Active: Boolean); virtual;
     function IsOver(P: TPoint): Boolean; virtual;
   end;
@@ -63,9 +72,18 @@ type
   TWedges = class(specialize GItems<TWedge>)
   private
   public
-    function Add(x, y: Integer): TWedge;
-    procedure Paint(vCanvas: TCanvas; Active: Boolean); virtual;
-    function FindAt(P: TPoint; out vWedgeIndex: Integer): Boolean;
+    function Add(x, y: Integer; Cursor: TCursor = crDefault; ReceiverClass: TReceiverClass = nil): TWedge;
+    procedure Paint(Element: TSizableElement; vCanvas: TCanvas; Active: Boolean); virtual;
+    procedure UpdateItems(Element: TSizableElement); virtual;
+    function FindAt(Element: TSizableElement; P: TPoint; out vWedgeIndex: Integer): Boolean;
+  end;
+
+  { TSizeWedges }
+
+  TSizeWedges = class(TWedges)
+  public
+    procedure UpdateItems(Element: TSizableElement); override;
+    constructor Create;
   end;
 
   { TElement }
@@ -230,6 +248,7 @@ type
 
   TCustomBoard = class(TCustomControl)
   private
+    FSizeWedges: TSizeWedges;
     FBoardHeight: Integer;
     FBoardWidth: Integer;
     FOnGetCreateElement: TOnGetCreateElement;
@@ -283,6 +302,8 @@ type
     procedure SizeChanged;
 
     function DoGetCreateElement(X, Y: Integer; out vElement: TElement): Boolean; virtual;
+
+    property SizeWedges: TSizeWedges read FSizeWedges;
   public
     constructor Create(AOwner: TComponent); override;
     destructor Destroy; override;
@@ -321,8 +342,6 @@ type
 ---------------------------------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------------------------------
 ---------------------------------------------------------------------------------------------------------}
-
-  TSizableElement = class;
 
   { TVisualReceiver }
 
@@ -373,7 +392,6 @@ type
 
   TSizableElement = class abstract(TVisualElement)
   private
-    FWedges: TWedges;
     FBoundRect: TRect;
     function GetWidth: Integer;
     function GetHeight: Integer;
@@ -388,9 +406,6 @@ type
     procedure Updating; override;
     procedure EndUpdate; override;
     procedure Change; override;
-
-    function WedgeAt(X, Y: Integer; out vWedgeIndex: Integer): Boolean; overload; virtual;
-    function WedgeAt(X, Y: Integer): Boolean; overload;
   public
     constructor Create(AOwner: TContainer); override;
     destructor Destroy; override;
@@ -407,7 +422,6 @@ type
     property Height: Integer read GetHeight write SetHeight;
     property BoundRect: TRect read FBoundRect write SetBoundRect;
     procedure CorrectSize; virtual;
-    property Wedges: TWedges read FWedges;
   published
     property Top: Integer read FBoundRect.Top write FBoundRect.Top;
     property Left: Integer read FBoundRect.Left write FBoundRect.Left;
@@ -534,6 +548,29 @@ begin
   end;
 end;
 
+{ TSizeWedges }
+
+procedure TSizeWedges.UpdateItems(Element: TSizableElement);
+begin
+  inherited;
+  with Element do
+  begin
+    Self.Add(Left, Top);
+    Self.Add(Left + Width div 2, Top);
+    Self.Add(Right, Top);
+    Self.Add(Right, Top + Height div 2);
+    Self.Add(Right, Bottom);
+    Self.Add(Left + Width div 2, Bottom);
+    Self.Add(Left, Bottom);
+    Self.Add(Left, Top + Height div 2);
+  end
+end;
+
+constructor TSizeWedges.Create;
+begin
+  inherited;
+end;
+
 { TVisualElement }
 
 constructor TVisualElement.Create(AOwner: TContainer);
@@ -586,8 +623,14 @@ begin
 end;
 
 function TMoveReceiver.MouseMove(Shift: TShiftState; X, Y: Integer): Boolean;
+var
+  i: Integer;
 begin
-  Element.Move(X - LastX, Y - LastY);
+  for i := 0 to Board.Selected.Count -1 do
+  begin
+    if Board.Selected[i] is TSizableElement then
+      (Board.Selected[i] as TSizableElement).Move(X - LastX, Y - LastY);
+  end;
   LastX := X;
   LastY := Y;
   Result := True;
@@ -711,19 +754,22 @@ end;
 
 { TWedges }
 
-function TWedges.Add(x, y: Integer): TWedge;
+function TWedges.Add(x, y: Integer; Cursor: TCursor; ReceiverClass: TReceiverClass): TWedge;
 begin
   Result := TWedge.Create;
   Result.Point.x := x;
   Result.Point.y := y;
+  Result.Info.Cursor := Cursor;
+  Result.Info.ReceiverClass := ReceiverClass;
   inherited Add(Result);
 end;
 
-procedure TWedges.Paint(vCanvas: TCanvas; Active: Boolean);
+procedure TWedges.Paint(Element: TSizableElement; vCanvas: TCanvas; Active: Boolean);
 var
   i: Integer;
 begin
   inherited;
+  UpdateItems(Element);
   vCanvas.Brush.Color := clBlack;
   for i := 0 to Count - 1 do
   begin
@@ -731,10 +777,16 @@ begin
   end;
 end;
 
-function TWedges.FindAt(P: TPoint; out vWedgeIndex: Integer): Boolean;
+procedure TWedges.UpdateItems(Element: TSizableElement);
+begin
+  Clear;
+end;
+
+function TWedges.FindAt(Element: TSizableElement; P: TPoint; out vWedgeIndex: Integer): Boolean;
 var
   i: Integer;
 begin
+  UpdateItems(Element);
   vWedgeIndex := -1;
   Result := False;
   for i := 0 to Count - 1 do
@@ -834,9 +886,11 @@ begin
   begin
     FLayoutList[i].Paint(vCanvas);
   end;
+
   for i := 0 to Board.Selected.Count - 1 do
   begin
-    Board.Selected[i].PaintFrames(vCanvas, i = 0);
+    if (Board.Selected[i] is TSizableElement) then //selected should be always TSizableElement
+      Board.SizeWedges.Paint(Board.Selected[i] as TSizableElement, vCanvas, i = 0);
   end
 end;
 
@@ -888,6 +942,7 @@ begin
   FBoardHeight := cBoardHeight;
   FSnapSize := cSnapSize;
   DoubleBuffered := False;
+  FSizeWedges := TSizeWedges.Create;
   FSelected := TSelected.Create(False); //before layouts
   FLayouts := TLayouts.Create(Self);
   FLayouts.Init;
@@ -901,6 +956,7 @@ destructor TCustomBoard.Destroy;
 begin
   FreeAndNil(FLayouts);
   FreeAndNil(FSelected);
+  FreeAndNil(FSizeWedges);
   FreeAndNil(Receiver);
   inherited;
 end;
@@ -1325,18 +1381,6 @@ end;
 procedure TSizableElement.CreateWedgeList;
 begin
   inherited;
-  FWedges.Clear;
-  with FWedges do
-  begin
-    Add(Left, Top);
-    Add(Left + Width div 2, Top);
-    Add(Right, Top);
-    Add(Right, Top + Height div 2);
-    Add(Right, Bottom);
-    Add(Left + Width div 2, Bottom);
-    Add(Left, Bottom);
-    Add(Left, Top + Height div 2);
-  end;
 end;
 
 function TSizableElement.IsOver(X, Y: Integer): Boolean;
@@ -1372,7 +1416,7 @@ var
   i: Integer;
 begin
   inherited;
-  if WedgeAt(X, Y, i) then
+  if Container.Board.SizeWedges.FindAt(Self, Point(X, Y), i) then
   begin
     Result := True;
   end
@@ -1394,9 +1438,9 @@ var
   i: Integer;
 begin
   inherited;
-  if WedgeAt(X, Y, i) then
+  if Container.Board.SizeWedges.FindAt(Self, Point(X, Y), i) then
   begin
-    Container.Cursor := cWedgeCursors[i];
+    Container.Cursor := cWedgeCursors[i];//use Wedget object, but now it is not permanent object :(
     Result := True;
   end
   else
@@ -1420,14 +1464,8 @@ begin
 end;
 
 procedure TSizableElement.PaintFrames(vCanvas: TCanvas; Active: Boolean);
-var
-  i: Integer;
 begin
   inherited PaintFrames(vCanvas, Active);
-  for i := 0 to Wedges.Count - 1 do
-  begin
-    Wedges.Paint(vCanvas, Active);
-  end;
 end;
 
 procedure TSizableElement.AfterCreate(X, Y: Integer; Dummy: Boolean);
@@ -1524,27 +1562,13 @@ begin
   CreateWedgeList;
 end;
 
-function TSizableElement.WedgeAt(X, Y: Integer; out vWedgeIndex: Integer): Boolean;
-begin
-  Result := Wedges.FindAt(Point(x, y), vWedgeIndex);
-end;
-
-function TSizableElement.WedgeAt(X, Y: Integer): Boolean;
-var
-  i: Integer;
-begin
-  Result := WedgeAt(X, Y, i);
-end;
-
 constructor TSizableElement.Create(AOwner: TContainer);
 begin
   inherited Create(AOwner);
-  FWedges := TWedges.Create;
 end;
 
 destructor TSizableElement.Destroy;
 begin
-  FreeAndNil(FWedges);
   inherited Destroy;
 end;
 
@@ -1876,7 +1900,7 @@ begin
   inherited;
   for i := 0 to Length(Polygon) -1 do
   begin
-    FWedges.Add(Polygon[i].x, Polygon[i].y);
+    //FWedges.Add(Polygon[i].x, Polygon[i].y);
   end
 end;
 
@@ -1958,14 +1982,14 @@ begin
   inherited;
   with DesignRect do
   begin
-    FWedges.Add(Left, Top);
+{    FWedges.Add(Left, Top);
     FWedges.Add(Left + (Right - Left) div 2, Top);
     FWedges.Add(Right, Top);
     FWedges.Add(Right, Top + (Bottom - Top) div 2);
     FWedges.Add(Right, Bottom);
     FWedges.Add(Left + (Right - Left) div 2, Bottom);
     FWedges.Add(Left, Bottom);
-    FWedges.Add(Left, Top + (Bottom - Top) div 2);
+    FWedges.Add(Left, Top + (Bottom - Top) div 2);}
   end;
 end;
 
