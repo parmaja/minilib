@@ -214,7 +214,9 @@ type
     function GetTitle: string; virtual;
     function GetNumber: Integer; virtual;
     function GetLayouts: TmnrLayouts;
+
   public
+
     function DisplayText: string; override;
     property Next: TmnrLayout read GetNext;
     property Prior: TmnrLayout read GetPrior;
@@ -2423,7 +2425,7 @@ begin
   begin
     Result := First;
     while Result <> nil do
-      if SameText(Result.Name, vName) then
+      if SameText(Result.Name, vName) or SameText(Result.Name+IntToStr(Result.Number), vName) then //for layouts with same name but different numbers "example descriptors" :)
         Break
       else
         Result := Result.Next;
