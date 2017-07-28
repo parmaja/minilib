@@ -626,7 +626,7 @@ type
   protected
     FWorking: Boolean;
     function Canceled: Boolean;
-    procedure HandleNewRow(vRow: TmnrRowNode); virtual;
+    function HandleNewRow(vRow: TmnrRowNode):Boolean; virtual;
     procedure DoInitSections(vSections: TmnrSections); virtual;
     procedure InitSections(vSections: TmnrSections); //virtual;
     procedure InitLayouts(vGroups: TmnrGroups); virtual;
@@ -1089,7 +1089,7 @@ begin
   Result := FSections;
 end;
 
-procedure TmnrCustomReport.HandleNewRow(vRow: TmnrRowNode);
+function TmnrCustomReport.HandleNewRow(vRow: TmnrRowNode): Boolean;
 begin
 end;
 
@@ -1249,10 +1249,11 @@ begin
       end;
       //todo make arow pass as var and if report handle row and free it then do nothing
       Report.HandleNewRow(aRow);
-      with vSection.Items.Add do
-      begin
-        FRow := aRow;
-      end;
+      if aRow <> nil then
+        with vSection.Items.Add do
+        begin
+          FRow := aRow;
+        end;
 
       r := r.Next;
     end;
