@@ -151,6 +151,7 @@ type
     function GetByIndex(vIndex: Integer): TmnrCell;
   public
     function GetCellByIndex(I: Integer): TmnrCell;
+    function FindCell(vName: string): TmnrCell;
     property Next: TmnrRow read GetNext;
     property Prior: TmnrRow read GetPrior;
     property ReferencesRow: TmnrReferencesRow read GetReferencesRow;
@@ -302,6 +303,7 @@ type
     FCount: Integer;
     FReference: TmnrReference;
     FHidden: Boolean;
+    FAlias: string;
     function GetWidth: Integer;
   protected
     function GetNext: TmnrDesignCell;
@@ -348,6 +350,7 @@ type
     property Hidden: Boolean read FHidden write FHidden;
   published
     property Name: string read FName write SetName;
+    property Alias: string read FAlias write FAlias;
     property Width: Integer read GetWidth write SetWidth default DEFAULT_CELL_WIDTH;
     property Number: Integer read FNumber write FNumber default 0; //used in exploded cells
     property AppendTotals: Boolean read FAppendTotals write FAppendTotals default False;
@@ -2036,6 +2039,24 @@ begin
   else
     Result.FID := vID;
   //Result.FLoopWay := vLoopWay;
+end;
+
+function TmnrRow.FindCell(vName: string): TmnrCell;
+var
+  c: TmnrCell;
+begin
+  Result := nil;
+  if First <> nil then
+  begin
+    c := First as TmnrCell;
+    repeat
+      if SameText(c.DesignCell.Name, vName) then
+        Result := c
+      else if SameText((c.DesignCell as TmnrDesignCell).Alias, vName) then
+        Result := c;
+      c := c.Next as TmnrCell;
+    until (Result <> nil) or (c = nil);
+  end;
 end;
 
 function TmnrRow.GetByIndex(vIndex: Integer): TmnrCell;
