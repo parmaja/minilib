@@ -626,6 +626,7 @@ type
   protected
     FWorking: Boolean;
     function Canceled: Boolean;
+    procedure AcceptNewRow(vRow: TmnrRow; var Accepted: Boolean); virtual;
     function HandleNewRow(vRow: TmnrRowNode):Boolean; virtual;
     procedure DoInitSections(vSections: TmnrSections); virtual;
     procedure InitSections(vSections: TmnrSections); //virtual;
@@ -767,6 +768,11 @@ procedure TmnrCustomReport.Load;
 begin
   Clear;
   DoLoad;
+end;
+
+procedure TmnrCustomReport.AcceptNewRow(vRow: TmnrRow; var Accepted: Boolean);
+begin
+  Accepted := True;
 end;
 
 procedure TmnrCustomReport.Cancel;
@@ -1538,6 +1544,7 @@ var
   l: TmnrLayout;
   aRow: TmnrRow;
   //c: TmnrCell;
+  Accepted: Boolean;
 begin
   r := DesignRows.First;
   if r <> nil then
@@ -1569,11 +1576,19 @@ begin
       end;
 
       //todo make arow pass as var and if report handle row and free it then do nothing
-      Report.HandleNewRow(aRow);
-      with Items.Add do
+      Accepted := True;
+      Report.AcceptNewRow(aRow, Accepted);
+      if Accepted then
       begin
-        FRow := aRow;
-      end;
+        Report.HandleNewRow(aRow);
+        if aRow <> nil then //maybe HandleNewRow free it too
+          with Items.Add do
+          begin
+            FRow := aRow;
+          end;
+      end
+      else
+        FreeAndNil(aRow); //no need it if not accepted
 
       r := r.Next;
     end;
