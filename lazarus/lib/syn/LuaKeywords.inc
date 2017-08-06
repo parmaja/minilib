@@ -68,4 +68,5 @@
     'table,'+
     //BASIC
     'int,'+
+    'readln'+
     'writeln';
