@@ -151,6 +151,7 @@ type
     function GetByIndex(vIndex: Integer): TmnrCell;
   public
     function GetCellByIndex(I: Integer): TmnrCell;
+    function FindCell(vName: string): TmnrCell;
     property Next: TmnrRow read GetNext;
     property Prior: TmnrRow read GetPrior;
     property ReferencesRow: TmnrReferencesRow read GetReferencesRow;
@@ -302,6 +303,7 @@ type
     FCount: Integer;
     FReference: TmnrReference;
     FHidden: Boolean;
+    FAlias: string;
     function GetWidth: Integer;
   protected
     function GetNext: TmnrDesignCell;
@@ -348,6 +350,7 @@ type
     property Hidden: Boolean read FHidden write FHidden;
   published
     property Name: string read FName write SetName;
+    property Alias: string read FAlias write FAlias;
     property Width: Integer read GetWidth write SetWidth default DEFAULT_CELL_WIDTH;
     property Number: Integer read FNumber write FNumber default 0; //used in exploded cells
     property AppendTotals: Boolean read FAppendTotals write FAppendTotals default False;
@@ -626,6 +629,7 @@ type
   protected
     FWorking: Boolean;
     function Canceled: Boolean;
+    procedure AcceptNewRow(vRow: TmnrRow; var Accepted: Boolean); virtual;
     function HandleNewRow(vRow: TmnrRowNode):Boolean; virtual;
     procedure DoInitSections(vSections: TmnrSections); virtual;
     procedure InitSections(vSections: TmnrSections); //virtual;
@@ -767,6 +771,11 @@ procedure TmnrCustomReport.Load;
 begin
   Clear;
   DoLoad;
+end;
+
+procedure TmnrCustomReport.AcceptNewRow(vRow: TmnrRow; var Accepted: Boolean);
+begin
+  Accepted := True;
 end;
 
 procedure TmnrCustomReport.Cancel;
@@ -1538,6 +1547,7 @@ var
   l: TmnrLayout;
   aRow: TmnrRow;
   //c: TmnrCell;
+  Accepted: Boolean;
 begin
   r := DesignRows.First;
   if r <> nil then
@@ -1569,11 +1579,19 @@ begin
       end;
 
       //todo make arow pass as var and if report handle row and free it then do nothing
-      Report.HandleNewRow(aRow);
-      with Items.Add do
+      Accepted := True;
+      Report.AcceptNewRow(aRow, Accepted);
+      if Accepted then
       begin
-        FRow := aRow;
-      end;
+        Report.HandleNewRow(aRow);
+        if aRow <> nil then //maybe HandleNewRow free it too
+          with Items.Add do
+          begin
+            FRow := aRow;
+          end;
+      end
+      else
+        FreeAndNil(aRow); //no need it if not accepted
 
       r := r.Next;
     end;
@@ -2021,6 +2039,24 @@ begin
   else
     Result.FID := vID;
   //Result.FLoopWay := vLoopWay;
+end;
+
+function TmnrRow.FindCell(vName: string): TmnrCell;
+var
+  c: TmnrCell;
+begin
+  Result := nil;
+  if First <> nil then
+  begin
+    c := First as TmnrCell;
+    repeat
+      if SameText(c.DesignCell.Name, vName) then
+        Result := c
+      else if SameText((c.DesignCell as TmnrDesignCell).Alias, vName) then
+        Result := c;
+      c := c.Next as TmnrCell;
+    until (Result <> nil) or (c = nil);
+  end;
 end;
 
 function TmnrRow.GetByIndex(vIndex: Integer): TmnrCell;
