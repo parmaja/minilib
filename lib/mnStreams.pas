@@ -87,6 +87,7 @@ type
     function ReadLine: string; overload;
 
     function ReadLn: string; overload; deprecated;
+    function ReadAnsiString(vCount: Integer): AnsiString;
 
     {$ifdef FPC}
     //no Ansi, it is UTF8
@@ -459,7 +460,7 @@ end;
 function TmnBufferStream.Read(var Buffer; Count: Integer): Longint;
 var
   c, aCount: Longint;
-  P: PChar;
+  P: PAnsiChar;
 begin
   P := @Buffer;
   aCount := 0;
@@ -480,6 +481,12 @@ begin
     Inc(FPos, c);
   end;
   Result := aCount;
+end;
+
+function TmnBufferStream.ReadAnsiString(vCount: Integer): AnsiString;
+begin
+  SetLength(Result, vCount);
+  Read(PAnsichar(Result)^, vCount);
 end;
 
 function TmnBufferStream.CheckBuffer: Boolean;
