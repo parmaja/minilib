@@ -55,7 +55,10 @@ begin
     Caption := Title;
 
     QuoteCharList.Text := vCSVIE.QuoteChar;
-    DelimiterList.Text := vCSVIE.DelimiterChar;
+    if vCSVIE.DelimiterChar < #32 then
+      DelimiterList.Text := '#'+IntToStr(ord(vCSVIE.DelimiterChar))
+    else
+      DelimiterList.Text := vCSVIE.DelimiterChar;
     HeaderList.ItemIndex := Ord(vCSVIE.HeaderLine);
     ANSIFileChk.Checked := vCSVIE.ANSIContents;
     SkipColumnEdit.Text := IntToStr(vCSVIE.SkipColumn);
@@ -63,8 +66,12 @@ begin
       EOLCharList.ItemIndex := 0
     else if vCSVIE.EndOfLine = sUnixEndOfLine then
       EOLCharList.ItemIndex := 1
+    else if vCSVIE.EndOfLine = sMacEndOfLine then
+      EOLCharList.ItemIndex := 2
+    else if vCSVIE.EndOfLine = sGSEndOfLine then
+      EOLCharList.ItemIndex := 3
     else
-      EOLCharList.ItemIndex := 0;
+      EOLCharList.ItemIndex := 0;//
 
     Result := ShowModal = mrOK;
     if Result then
@@ -94,10 +101,11 @@ begin
 
 
       case EOLCharList.ItemIndex of
-        1: vCSVIE.EndOfLine := #10;
-        2: vCSVIE.EndOfLine := #13;
+        1: vCSVIE.EndOfLine := sUnixEndOfLine;
+        2: vCSVIE.EndOfLine := sMacEndOfLine;
+        3: vCSVIE.EndOfLine := sGSEndOfLine;
         else
-          vCSVIE.EndOfLine := #13#10;
+          vCSVIE.EndOfLine := sWinEndOfLine;
       end;
       vCSVIE.ANSIContents := ANSIFileChk.Checked;
       vCSVIE.SkipColumn := StrToIntDef(SkipColumnEdit.Text, 0);
@@ -118,18 +126,20 @@ begin
   DelimiterList.Items.Add(',');
   DelimiterList.Items.Add('|');
   DelimiterList.Items.Add('#9');
+  DelimiterList.Items.Add('#29');
   DelimiterList.Text := ';';
   DelimiterList.ItemIndex := 0;
 
   EOLCharList.Items.Add('Windows');
   EOLCharList.Items.Add('Unix');
   EOLCharList.Items.Add('Mac');
+  EOLCharList.Items.Add('GS');
   EOLCharList.ItemIndex := 0;
 
   QuoteCharList.Items.Add('');
   QuoteCharList.Items.Add('"');
   QuoteCharList.Items.Add('''');
-  EOLCharList.ItemIndex := 0;
+  QuoteCharList.ItemIndex := 0;
 end;
 
 procedure TCSVOptionsForm.OkBtnClick(Sender: TObject);

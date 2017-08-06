@@ -24,6 +24,7 @@ const
   sWinEndOfLine = #$0D#$0A;
   sUnixEndOfLine = #$0A;
   sMacEndOfLine = #$0D;
+  sGSEndOfLine = #$1E;
 
 type
   {$ifdef FPC}
@@ -190,7 +191,7 @@ end;
 
 function TmnCustomStream.ReadStream(Dest: TStream): Longint;
 var
-  aBuffer: pchar;
+  aBuffer: PByte;
   n: TFileSize;
 begin
   {$ifdef FPC} //less hint in fpc
@@ -212,7 +213,7 @@ end;
 
 function TmnCustomStream.WriteStream(Source: TStream): Longint;
 var
-  aBuffer: PAnsiChar;
+  aBuffer: PByte;
   n: TFileSize;
 begin
   GetMem(aBuffer, BufferSize);
@@ -460,7 +461,7 @@ end;
 function TmnBufferStream.Read(var Buffer; Count: Integer): Longint;
 var
   c, aCount: Longint;
-  P: PAnsiChar;
+  P: PByte;
 begin
   P := @Buffer;
   aCount := 0;
