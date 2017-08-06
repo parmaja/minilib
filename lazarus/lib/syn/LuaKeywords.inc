@@ -42,8 +42,8 @@
     'string,'+
     'boolean,'+
     'char,'+
-    //namespaces
     'require,'+
+    //namespaces
     'assert,'+
     'module,'+
     'io,'+

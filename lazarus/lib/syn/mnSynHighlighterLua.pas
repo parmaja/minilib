@@ -66,11 +66,11 @@ type
 const
 
   SYNS_LangLua = 'Lua';
-  SYNS_FilterLua = 'Lua Lang Files (*.c;*.Lua;*.h;*.ino)|*.c;*.Lua;*.h;*.ino';
+  SYNS_FilterLua = 'Lua Lang Files (*.c;*.lua)|*.c;*.lua';
 
   cLuaSample =
       '-- defines a factorial function'#13#10+
-      'function fact (n)'#13#10+
+      'function fact(n)'#13#10+
       '  if n == 0 then'#13#10+
       '    return 1'#13#10+
       '  else'#13#10+
