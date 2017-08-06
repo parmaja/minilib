@@ -331,7 +331,9 @@ begin
   begin
     Result := aClass.Create(Connection);
     Result.FServer := Server;
-  end;
+  end
+  else
+    Result := nil;
   //TODO make a default command if not found
 end;
 

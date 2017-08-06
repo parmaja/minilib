@@ -211,7 +211,7 @@ end;
 
 function TmnCustomStream.WriteStream(Source: TStream): Longint;
 var
-  aBuffer: pchar;
+  aBuffer: PAnsiChar;
   n: TFileSize;
 begin
   GetMem(aBuffer, BufferSize);
@@ -236,8 +236,8 @@ begin
     EOL := ansistring(EndOfLine);
   Result := 0;
   if s <> '' then
-    Result := Write(Pointer(S)^, ByteLength(S));
-  Result := Result + Write(Pointer(EOL)^, ByteLength(EOL));
+    Result := Write(Pointer(S)^, Length(S));
+  Result := Result + Write(Pointer(EOL)^, Length(EOL));
 end;
 {$endif}
 function TmnBufferStream.WriteLine(const S: widestring; EOL: widestring): TFileSize;
