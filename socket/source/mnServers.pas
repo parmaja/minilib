@@ -378,45 +378,43 @@ begin
   while Connected and not Terminated do
   begin
     try
+      if (Socket.Select(10000, slRead) = erNone) and not Terminated then
+        aSocket := Socket.Accept
+      else
+        aSocket := nil;
+      Enter;
+      try
+        //Just a stop to finish proc outside
+      finally
+        Leave;
+      end;
+      if not Terminated then
       begin
-        if (Socket.Select(10000, slRead) = erNone) and not Terminated then
-          aSocket := Socket.Accept
-        else
-          aSocket := nil;
-        Enter;
-        try
-          //Just a stop to finish proc outside
-        finally
-          Leave;
-        end;
-        if not Terminated then
+        if (aSocket = nil) then
         begin
-          if (aSocket = nil) then
+          //must attempt for new socket 3 times
+          if (FTries > 0) and (not Socket.Active) then
           begin
-            //must attempt for new socket 3 times
-            if (FTries > 0) and (not Socket.Active) then
-            begin
-              FTries := FTries - 1;
-              Connect;
-            end;
-          end
-          else
-          begin
+            FTries := FTries - 1;
+            Connect;
+          end;
+        end
+        else
+        begin
+          try
+            Enter; //because we add connection to a thread list
             try
-              Enter; //because we add connection to a thread list
-              try
-                if FServer <> nil then
-                  FServer.DoAccepted(Self);
-                aConnection := CreateConnection(aSocket);
-              finally
-                Leave;
-              end;
-              aConnection.Start; //moved here need some test
+              if FServer <> nil then
+                FServer.DoAccepted(Self);
+              aConnection := CreateConnection(aSocket);
             finally
+              Leave;
             end;
+            aConnection.Start; //moved here need some test
+          finally
           end;
         end;
-      end
+      end;
     finally
     end;
   end;

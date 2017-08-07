@@ -63,6 +63,9 @@ type
     procedure Process; virtual;
     procedure Execute; override;
     procedure Unprepare; virtual;
+
+    procedure DoHandleException(E: Exception); virtual;
+    procedure HandleException(E: Exception);
   public
     constructor Create(vConnector: TmnConnector; vSocket: TmnCustomSocket); virtual;
     destructor Destroy; override;
@@ -112,7 +115,11 @@ begin
     try
       Process;
     except
-      Disconnect; //TODO: Do we need to disconnect when we have exception? maybe we need to add option for it
+      on E: Exception do
+      begin
+        HandleException(E);
+        Disconnect; //TODO: Do we need to disconnect when we have exception? maybe we need to add option for it
+      end;
     end;
   end;
   Unprepare;
@@ -198,6 +205,11 @@ begin
   Result := FStream.Connected;
 end;
 
+procedure TmnConnection.HandleException(E: Exception);
+begin
+  DoHandleException(E);
+end;
+
 procedure TmnConnection.SetConnected(const Value: Boolean);
 begin
   if Value then
@@ -210,6 +222,11 @@ procedure TmnConnection.Disconnect;
 begin
   if FStream.Connected then
     FStream.Disconnect;
+end;
+
+procedure TmnConnection.DoHandleException(E: Exception);
+begin
+
 end;
 
 procedure TmnConnection.Connect;
