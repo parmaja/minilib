@@ -29,7 +29,7 @@ type
 
   TmnrIntegerLayout = class(TmnrLayout)
   protected
-    procedure ScaleCell(vCell: TmnrCell); override;
+    procedure ScaleCell(vCell: TmnrCell; Invert: Boolean); override;
   protected
     function CreateCell(vRow: TmnrRow): TmnrCell; override;
   end;
@@ -165,9 +165,8 @@ type
     function GetAsString: string; override;
   end;
 
-  TmnrCurrencyReportCell = class(TmnrCell)
+  TmnrBaseCurrencyReportCell = class(TmnrCell)
   private
-    FValue: Currency;
     FData: Integer;
   protected
     function GetAsBoolean: Boolean; override;
@@ -193,12 +192,25 @@ type
     function DisplayText: string; override;
   end;
 
-  TmnrPageTotalCell = class(TmnrCurrencyReportCell)
+  TmnrCurrencyReportCell = class(TmnrBaseCurrencyReportCell)
+  private
+    FValue: Currency;
+  protected
+    function GetAsCurrency: Currency; override;
+    procedure SetAsCurrency(const Value: Currency); override;
+  end;
+
+  TmnrReportTotalCell = class(TmnrBaseCurrencyReportCell)
   protected
     function GetAsCurrency: Currency; override;
   end;
 
-  TmnrToPageTotalCell = class(TmnrCurrencyReportCell)
+  TmnrPageTotalCell = class(TmnrBaseCurrencyReportCell)
+  protected
+    function GetAsCurrency: Currency; override;
+  end;
+
+  TmnrToPageTotalCell = class(TmnrBaseCurrencyReportCell)
   protected
     function GetAsCurrency: Currency; override;
   end;
@@ -319,7 +331,7 @@ begin
   Result := TmnrIntegerReportCell.Create(vRow);
 end;
 
-procedure TmnrIntegerLayout.ScaleCell(vCell: TmnrCell);
+procedure TmnrIntegerLayout.ScaleCell(vCell: TmnrCell; Invert: Boolean);
 var
   v: Double;
 begin
@@ -328,6 +340,8 @@ begin
     if AppendTotals then
     begin
       v           := vCell.AsDouble;
+      if Invert then
+        v := -v;
       SubTotal    := SubTotal + v;
       Total       := Total + v;
       PageTotal   := PageTotal + v;
@@ -522,9 +536,9 @@ begin
   Result := TmnrCurrencyReportCell.Create(vRow);
 end;
 
-{ TmnrCurrencyReportCell }
+{ TmnrBaseCurrencyReportCell }
 
-function TmnrCurrencyReportCell.DisplayText: string;
+function TmnrBaseCurrencyReportCell.DisplayText: string;
 begin
   if AsCurrency=0 then
     Result := ''
@@ -532,89 +546,88 @@ begin
     Result := inherited DisplayText;
 end;
 
-function TmnrCurrencyReportCell.GetAsBoolean: Boolean;
+function TmnrBaseCurrencyReportCell.GetAsBoolean: Boolean;
 begin
   Result := AsCurrency <> 0;
 end;
 
-function TmnrCurrencyReportCell.GetAsCurrency: Currency;
+function TmnrBaseCurrencyReportCell.GetAsCurrency: Currency;
 begin
-  Result := FValue;
+  Result := 0; //abstract
 end;
 
-function TmnrCurrencyReportCell.GetAsData: Integer;
+function TmnrBaseCurrencyReportCell.GetAsData: Integer;
 begin
   Result := FData;
 end;
 
-function TmnrCurrencyReportCell.GetAsDateTime: TDateTime;
+function TmnrBaseCurrencyReportCell.GetAsDateTime: TDateTime;
 begin
   Result := AsCurrency;
 end;
 
-function TmnrCurrencyReportCell.GetAsDouble: Double;
+function TmnrBaseCurrencyReportCell.GetAsDouble: Double;
 begin
   Result := AsCurrency;
 end;
 
-function TmnrCurrencyReportCell.GetAsInteger: Longint;
+function TmnrBaseCurrencyReportCell.GetAsInteger: Longint;
 begin
   Result := Trunc(AsCurrency);
 end;
 
-function TmnrCurrencyReportCell.GetAsString: string;
+function TmnrBaseCurrencyReportCell.GetAsString: string;
 begin
   Result := CurrToStr(AsCurrency);
 end;
 
-function TmnrCurrencyReportCell.GetAsVariant: Variant;
+function TmnrBaseCurrencyReportCell.GetAsVariant: Variant;
 begin
   Result := AsCurrency;
 end;
 
-function TmnrCurrencyReportCell.GetIsNull: Boolean;
+function TmnrBaseCurrencyReportCell.GetIsNull: Boolean;
 begin
   Result := False;
 end;
 
-procedure TmnrCurrencyReportCell.SetAsBoolean(const Value: Boolean);
+procedure TmnrBaseCurrencyReportCell.SetAsBoolean(const Value: Boolean);
 begin
-  FValue := Ord(Value);
+  AsCurrency := Ord(Value);
 end;
 
-procedure TmnrCurrencyReportCell.SetAsCurrency(const Value: Currency);
+procedure TmnrBaseCurrencyReportCell.SetAsCurrency(const Value: Currency);
 begin
-  FValue := Value;
 end;
 
-procedure TmnrCurrencyReportCell.SetAsData(const Value: Integer);
+procedure TmnrBaseCurrencyReportCell.SetAsData(const Value: Integer);
 begin
   FData := Value;
 end;
 
-procedure TmnrCurrencyReportCell.SetAsDateTime(const Value: TDateTime);
+procedure TmnrBaseCurrencyReportCell.SetAsDateTime(const Value: TDateTime);
 begin
-  FValue := Value;
+  AsCurrency := Value;
 end;
 
-procedure TmnrCurrencyReportCell.SetAsDouble(const Value: Double);
+procedure TmnrBaseCurrencyReportCell.SetAsDouble(const Value: Double);
 begin
-  FValue := Value;
+  AsCurrency := Value;
 end;
 
-procedure TmnrCurrencyReportCell.SetAsInteger(const Value: Integer);
+procedure TmnrBaseCurrencyReportCell.SetAsInteger(const Value: Integer);
 begin
-  FValue := Value;
+  AsCurrency := Value;
 end;
 
-procedure TmnrCurrencyReportCell.SetAsString(const Value: string);
+procedure TmnrBaseCurrencyReportCell.SetAsString(const Value: string);
 begin
-  FValue := StrToCurrDef(Value, 0);
+  AsCurrency := StrToCurrDef(Value, 0);
 end;
 
-procedure TmnrCurrencyReportCell.SetAsVariant(const Value: Variant);
+procedure TmnrBaseCurrencyReportCell.SetAsVariant(const Value: Variant);
 begin
-  FValue := Value;
+  AsCurrency := Value;
 end;
 
 { TmnrDoubleLayout }
@@ -830,6 +843,25 @@ end;
 function TmnrToPageTotalCell.GetAsCurrency: Currency;
 begin
   Result := DesignCell.ToPageTotal;
+end;
+
+{ TmnrTotalCell }
+
+function TmnrReportTotalCell.GetAsCurrency: Currency;
+begin
+  Result := DesignCell.Total;
+end;
+
+{ TmnrCurrencyReportCell }
+
+function TmnrCurrencyReportCell.GetAsCurrency: Currency;
+begin
+  Result := FValue;
+end;
+
+procedure TmnrCurrencyReportCell.SetAsCurrency(const Value: Currency);
+begin
+  FValue := Value;
 end;
 
 initialization

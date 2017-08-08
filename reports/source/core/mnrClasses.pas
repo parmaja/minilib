@@ -152,6 +152,8 @@ type
   public
     function GetCellByIndex(I: Integer): TmnrCell;
     function FindCell(vName: string): TmnrCell;
+    procedure ScaleCells;
+    procedure DescaleCells;
     property Next: TmnrRow read GetNext;
     property Prior: TmnrRow read GetPrior;
     property ReferencesRow: TmnrReferencesRow read GetReferencesRow;
@@ -204,7 +206,7 @@ type
     function GetPrior: TmnrLayout;
     procedure DoRequest(vCell: TmnrCell); virtual;
     function CreateCell(vRow: TmnrRow): TmnrCell; virtual;
-    procedure ScaleCell(vCell: TmnrCell); virtual;
+    procedure ScaleCell(vCell: TmnrCell; Invert: Boolean); virtual;
     function DoCreateDesignCell(vRow: TmnrDesignRow): TmnrDesignCell; virtual;
     procedure DoCellsExchanged(vCell1, vCell2: TmnrCell); virtual;
 
@@ -347,6 +349,7 @@ type
     procedure UnLock;
     function Locked: Boolean;
     procedure ScaleCell(vCell: TmnrCell); virtual;
+    procedure DescaleCell(vCell: TmnrCell); virtual;
     property Hidden: Boolean read FHidden write FHidden;
   published
     property Name: string read FName write SetName;
@@ -1242,8 +1245,8 @@ begin
           end
           else
           begin
-            c := d.CurrencyCellClass.Create(aRow);
-            //c := l.CreateCell(aRow);
+            //c := TmnrReportTotalCell.Create(aRow); todo to use it instead, we need to understand why CurrencyCellClass.Create(aRow)?
+            c := d.CurrencyCellClass.Create(aRow); //if we do that we will lose the speical format in display text
             if d.AppendTotals  then
               c.AsCurrency := d.SubTotal;
           end;
@@ -1354,7 +1357,7 @@ begin
           end
           else
           begin
-            c := TmnrCurrencyReportCell.Create(aRow);
+            c := TmnrReportTotalCell.Create(aRow);
             c.AsCurrency := d.Total;
           end;
           c.FDesignCell := d;
@@ -1585,10 +1588,13 @@ begin
       begin
         Report.HandleNewRow(aRow);
         if aRow <> nil then //maybe HandleNewRow free it too
+        begin
+          aRow.ScaleCells;//Zaher
           with Items.Add do
           begin
             FRow := aRow;
           end;
+        end;
       end
       else
         FreeAndNil(aRow); //no need it if not accepted
@@ -2041,6 +2047,21 @@ begin
   //Result.FLoopWay := vLoopWay;
 end;
 
+procedure TmnrRow.DescaleCells;
+var
+  c: TmnrCell;
+begin
+  if First <> nil then
+  begin
+    c := First as TmnrCell;
+    repeat
+      if (c.DesignCell <> nil) and not Locked then
+        c.DesignCell.DescaleCell(c);
+      c := c.Next as TmnrCell;
+    until (c = nil);
+  end;
+end;
+
 function TmnrRow.FindCell(vName: string): TmnrCell;
 var
   c: TmnrCell;
@@ -2056,6 +2077,21 @@ begin
         Result := c;
       c := c.Next as TmnrCell;
     until (Result <> nil) or (c = nil);
+  end;
+end;
+
+procedure TmnrRow.ScaleCells;
+var
+  c: TmnrCell;
+begin
+  if First <> nil then
+  begin
+    c := First as TmnrCell;
+    repeat
+      if (c.DesignCell <> nil) and not Locked then
+        c.DesignCell.ScaleCell(c);
+      c := c.Next as TmnrCell;
+    until (c = nil);
   end;
 end;
 
@@ -2220,7 +2256,8 @@ begin
       Result.FDesignCell := vDesignCell;
       if (vDesignCell<>nil) then  Result.FReference :=  vDesignCell.Reference;
       DoRequest(Result);
-      if (vRow<>nil) and (vDesignCell<>nil) and not vRow.Locked then vDesignCell.ScaleCell(Result);
+{      if (vRow<>nil) and (vDesignCell<>nil) and not vRow.Locked then
+        vDesignCell.ScaleCell(Result);} //moved to FillNow
       Report.DoNewCell(Result);
     except
       FreeAndNil(Result);
@@ -2236,7 +2273,7 @@ begin
   DoRequest(vCell);
 end;
 
-procedure TmnrLayout.ScaleCell(vCell: TmnrCell);
+procedure TmnrLayout.ScaleCell(vCell: TmnrCell; Invert: Boolean);
 begin
 
 end;
@@ -2550,6 +2587,15 @@ begin
   Result := TmnrCurrencyReportCell;
 end;
 
+procedure TmnrDesignCell.DescaleCell(vCell: TmnrCell);
+begin
+  if not Locked then
+  begin
+    Layout.ScaleCell(vCell, True);
+    Dec(FCount)
+  end;
+end;
+
 destructor TmnrDesignCell.Destroy;
 begin
 
@@ -2634,7 +2680,7 @@ procedure TmnrDesignCell.ScaleCell(vCell: TmnrCell);
 begin
   if not Locked then
   begin
-    Layout.ScaleCell(vCell);
+    Layout.ScaleCell(vCell, False);
     Inc(FCount)
   end;
 end;
