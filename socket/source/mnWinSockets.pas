@@ -403,6 +403,7 @@ begin
   {$ENDIF}
 {$ELSE}
     WinSock.setsockopt(aHandle, SOL_SOCKET, SO_REUSEADDR, PAnsiChar(@SO_TRUE), SizeOf(SO_TRUE));
+    WinSock.setsockopt(aHandle, IPPROTO_TCP, TCP_NODELAY, PAnsiChar(@SO_TRUE), SizeOf(SO_TRUE));
 {$ENDIF}
 
   aSockAddr.sin_family := AF_INET;
@@ -459,6 +460,8 @@ begin
 end;
 
 function TmnWallSocket.Connect(Options: TmnOptions; const Port, Address: ansistring): TmnCustomSocket;
+const
+  SO_TRUE: Longbool = True;
 var
   aHandle: TSocket;
   aSockAddr: TSockAddr;
@@ -467,6 +470,8 @@ begin
   aHandle := socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
   if aHandle = INVALID_SOCKET then
     raise EmnException.Create('Failed to connect socket, Error #' + Inttostr(WSAGetLastError));
+
+  WinSock.setsockopt(aHandle, IPPROTO_TCP, TCP_NODELAY, PAnsiChar(@SO_TRUE), SizeOf(SO_TRUE));
 
   aSockAddr.sin_family := AF_INET;
   aSockAddr.sin_port := htons(LookupPort(Port));
