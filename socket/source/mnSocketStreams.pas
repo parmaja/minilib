@@ -46,6 +46,7 @@ type
     procedure Connect;
     procedure Disconnect;
     procedure Shutdown;
+    procedure Close; //alias for Disconnect
     function WaitToRead: Boolean; overload;
     function WaitToWrite: Boolean; overload;
     function WaitToRead(Timeout: Longint = -1): Boolean; overload; //select
@@ -143,6 +144,11 @@ end;
 function TmnSocketStream.GetConnected: Boolean;
 begin
   Result := (Socket <> nil);
+end;
+
+procedure TmnSocketStream.Close;
+begin
+  Disconnect;
 end;
 
 procedure TmnSocketStream.Connect;
