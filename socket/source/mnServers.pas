@@ -63,7 +63,7 @@ type
     function GetConnected: Boolean;
     function GetCount: Integer;
   protected
-    FOptions: TmnOptions;
+    FOptions: TmnsoOptions;
     FMessage: string;
     procedure SyncLog;
     procedure SyncChanged;
@@ -85,7 +85,7 @@ type
     property Connected: Boolean read GetConnected;
     property Socket: TmnCustomSocket read FSocket;
     property Count: Integer read GetCount;
-    property Options: TmnOptions read FOptions;
+    property Options: TmnsoOptions read FOptions;
     //if listener connection down by network it will reconnect again
     property Attempts: Integer read FAttempts write FAttempts;
   end;

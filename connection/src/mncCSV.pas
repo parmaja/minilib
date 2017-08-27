@@ -420,7 +420,7 @@ begin
   if Session.CSVOptions.ANSIContents then
   begin
     {$ifdef fpc}
-    ansi := UTF8Decode(s);
+    ansi := Utf8ToAnsi(s);
     {$else}
     ansi := AnsiString(s);//Here you can fix the bug
     {$endif}

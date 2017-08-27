@@ -302,9 +302,6 @@ begin
   if soReuseAddr in Options then
     fpsetsockopt(aHandle, SOL_SOCKET, SO_REUSEADDR, PChar(@SO_TRUE), SizeOf(SO_TRUE));
 
-  if soKeepAlive in Options then
-    fpsetsockopt(aHandle, SOL_SOCKET, SO_KEEPALIVE, PChar(@SO_TRUE), SizeOf(SO_TRUE));
-
 //  fpsetsockopt(aHandle, SOL_SOCKET, SO_NOSIGPIPE, PChar(@SO_TRUE), SizeOf(SO_TRUE));
 
   aAddr.sin_family := AF_INET;
@@ -336,6 +333,13 @@ begin
   aHandle := fpsocket(AF_INET, SOCK_STREAM, 0{IPPROTO_TCP});
   if aHandle = INVALID_SOCKET then
     raise EmnException.Create('Failed to connect socket');
+
+  if soNoDelay in Options then
+    fpsetsockopt(aHandle, IPPROTO_TCP, TCP_NODELAY, PAnsiChar(@SO_TRUE), SizeOf(SO_TRUE));
+
+//http://support.microsoft.com/default.aspx?kbid=140325
+  if soKeepAlive in Options then
+    fpsetsockopt(aHandle, SOL_SOCKET, SO_KEEPALIVE, PChar(@SO_TRUE), SizeOf(SO_TRUE));
 
 //  fpsetsockopt(aHandle, SOL_SOCKET, SO_NOSIGPIPE, PChar(@SO_TRUE), SizeOf(SO_TRUE));
 

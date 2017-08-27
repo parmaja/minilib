@@ -25,8 +25,8 @@ type
   TmnError = (erNone, erTimout, erFail, erClosed, erInvalid);
   TSelectCheck = (slRead, slWrite);
 
-  TmnOption = (soBroadcast, soDebug, soDontLinger, soDontRoute, soKeepAlive, soOOBInLine, soReuseAddr, soNoDelay, soBlocking, soAcceptConn);
-  TmnOptions = set of TmnOption;
+  TmnsoOption = (soBroadcast, soDebug, soDontLinger, soDontRoute, soKeepAlive, soOOBInLine, soReuseAddr, soNoDelay, soBlocking, soAcceptConn);
+  TmnsoOptions = set of TmnsoOption;
 
   { TmnCustomSocket }
 
@@ -69,8 +69,8 @@ type
   public
     constructor Create; virtual;
     destructor Destroy; override;
-    function Bind(Options: TmnOptions; const Port: ansistring; const Address: ansistring = ''): TmnCustomSocket; virtual; abstract;
-    function Connect(Options: TmnOptions; const Port: ansistring; const Address: ansistring = ''): TmnCustomSocket; virtual; abstract;
+    function Bind(Options: TmnsoOptions; const Port: ansistring; const Address: ansistring = ''): TmnCustomSocket; virtual; abstract;
+    function Connect(Options: TmnsoOptions; const Port: ansistring; const Address: ansistring = ''): TmnCustomSocket; virtual; abstract;
   end;
 
 function WallSocket: TmnCustomWallSocket;

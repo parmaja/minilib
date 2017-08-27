@@ -61,8 +61,8 @@ type
   public
     constructor Create; override;
     destructor Destroy; override;
-    function Bind(Options: TmnOptions; const Port: ansistring; const Address: ansistring = ''): TmnCustomSocket; override;
-    function Connect(Options: TmnOptions; const Port: ansistring; const Address: ansistring = ''): TmnCustomSocket; override;
+    function Bind(Options: TmnsoOptions; const Port: ansistring; const Address: ansistring = ''): TmnCustomSocket; override;
+    function Connect(Options: TmnsoOptions; const Port: ansistring; const Address: ansistring = ''): TmnCustomSocket; override;
     procedure Startup;
     procedure Cleanup;
   end;
@@ -382,7 +382,7 @@ begin
   Startup;
 end;
 
-function TmnWallSocket.Bind(Options: TmnOptions; const Port: ansistring; const Address: ansistring): TmnCustomSocket;
+function TmnWallSocket.Bind(Options: TmnsoOptions; const Port: ansistring; const Address: ansistring): TmnCustomSocket;
 const
   SO_TRUE: Longbool = True;
 var
@@ -395,15 +395,12 @@ begin
     raise EmnException.Create('Failed to create a socket, Error #' + Inttostr(WSAGetLastError));
 
   if soReuseAddr in Options then
-  {$message hint 'use keepalive'}
-  //http://support.microsoft.com/default.aspx?kbid=140325
 {$IFDEF FPC}
   {$IFNDEF WINCE}
     WinSock2.setsockopt(aHandle, SOL_SOCKET, SO_REUSEADDR, PChar(@SO_TRUE), SizeOf(SO_TRUE));
   {$ENDIF}
 {$ELSE}
     WinSock.setsockopt(aHandle, SOL_SOCKET, SO_REUSEADDR, PAnsiChar(@SO_TRUE), SizeOf(SO_TRUE));
-    WinSock.setsockopt(aHandle, IPPROTO_TCP, TCP_NODELAY, PAnsiChar(@SO_TRUE), SizeOf(SO_TRUE));
 {$ENDIF}
 
   aSockAddr.sin_family := AF_INET;
@@ -459,7 +456,7 @@ begin
   Inc(FCount)
 end;
 
-function TmnWallSocket.Connect(Options: TmnOptions; const Port, Address: ansistring): TmnCustomSocket;
+function TmnWallSocket.Connect(Options: TmnsoOptions; const Port, Address: ansistring): TmnCustomSocket;
 const
   SO_TRUE: Longbool = True;
 var
@@ -471,7 +468,13 @@ begin
   if aHandle = INVALID_SOCKET then
     raise EmnException.Create('Failed to connect socket, Error #' + Inttostr(WSAGetLastError));
 
-  WinSock.setsockopt(aHandle, IPPROTO_TCP, TCP_NODELAY, PAnsiChar(@SO_TRUE), SizeOf(SO_TRUE));
+  if soNoDelay in Options then
+    WinSock.setsockopt(aHandle, IPPROTO_TCP, TCP_NODELAY, PAnsiChar(@SO_TRUE), SizeOf(SO_TRUE));
+
+//http://support.microsoft.com/default.aspx?kbid=140325
+  if soKeepAlive in Options then
+    fpsetsockopt(aHandle, SOL_SOCKET, SO_KEEPALIVE, PChar(@SO_TRUE), SizeOf(SO_TRUE));
+
 
   aSockAddr.sin_family := AF_INET;
   aSockAddr.sin_port := htons(LookupPort(Port));

@@ -84,7 +84,7 @@ type
     function GetConnected: Boolean;
     function GetCount: Integer;
   protected
-    FOptions: TmnOptions;
+    FOptions: TmnsoOptions;
     function CreateConnection(Socket: TmnCustomSocket): TmnClientConnection; virtual;
     procedure Shutdown;
     procedure Execute; override;
@@ -222,6 +222,7 @@ constructor TmnCaller.Create;
 begin
   inherited;
   FList := TmnConnectionList.Create;
+  FOptions := [soKeepAlive];
 end;
 
 function TmnCaller.CreateConnection(Socket: TmnCustomSocket): TmnClientConnection;
