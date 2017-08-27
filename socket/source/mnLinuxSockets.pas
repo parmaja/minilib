@@ -339,7 +339,7 @@ begin
 
 //http://support.microsoft.com/default.aspx?kbid=140325
   if soKeepAlive in Options then
-    fpsetsockopt(aHandle, SOL_SOCKET, SO_KEEPALIVE, PChar(@SO_TRUE), SizeOf(SO_TRUE));
+    fpsetsockopt(aHandle, SOL_SOCKET, SO_KEEPALIVE, PAnsiChar(@SO_TRUE), SizeOf(SO_TRUE));
 
 //  fpsetsockopt(aHandle, SOL_SOCKET, SO_NOSIGPIPE, PChar(@SO_TRUE), SizeOf(SO_TRUE));
 

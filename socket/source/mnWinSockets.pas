@@ -469,11 +469,11 @@ begin
     raise EmnException.Create('Failed to connect socket, Error #' + Inttostr(WSAGetLastError));
 
   if soNoDelay in Options then
-    WinSock.setsockopt(aHandle, IPPROTO_TCP, TCP_NODELAY, PAnsiChar(@SO_TRUE), SizeOf(SO_TRUE));
+    setsockopt(aHandle, IPPROTO_TCP, TCP_NODELAY, PAnsiChar(@SO_TRUE), SizeOf(SO_TRUE));
 
 //http://support.microsoft.com/default.aspx?kbid=140325
   if soKeepAlive in Options then
-    fpsetsockopt(aHandle, SOL_SOCKET, SO_KEEPALIVE, PChar(@SO_TRUE), SizeOf(SO_TRUE));
+    setsockopt(aHandle, SOL_SOCKET, SO_KEEPALIVE, PAnsiChar(@SO_TRUE), SizeOf(SO_TRUE));
 
 
   aSockAddr.sin_family := AF_INET;
