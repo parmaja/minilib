@@ -52,6 +52,7 @@ type
   TmnListener = class(TmnConnector) // thread to watch for incoming requests
   private
     FAttempts: Integer;
+    FTimeout: Integer;
     FTries: Integer;
     FSocket: TmnCustomSocket;
     FPort: string;
@@ -88,6 +89,7 @@ type
     property Options: TmnsoOptions read FOptions;
     //if listener connection down by network it will reconnect again
     property Attempts: Integer read FAttempts write FAttempts;
+    property Timeout: Integer read FTimeout write FTimeout default -1;
   end;
 
   {**
@@ -345,7 +347,8 @@ constructor TmnListener.Create;
 begin
   inherited;
   FList := TmnConnectionList.Create;
-  FAttempts := 0; // 3 times
+  FAttempts := 0;
+  FTimeout := -1;
 end;
 
 function TmnListener.CreateConnection(vSocket: TmnCustomSocket): TmnServerConnection;
@@ -378,7 +381,7 @@ begin
   while Connected and not Terminated do
   begin
     try
-      if (Socket.Select(10000, slRead) = erNone) and not Terminated then
+      if (Socket.Select(Timeout, slRead) = erNone) and not Terminated then
         aSocket := Socket.Accept
       else
         aSocket := nil;
@@ -392,12 +395,12 @@ begin
       begin
         if (aSocket = nil) then
         begin
-          //must attempt for new socket 3 times
-          if (FTries > 0) and (not Socket.Active) then
+          //only if we need retry mode, attempt to connect new socket, for 3 times as example, that if socket disconnected for wiered reason
+          if (not Connected) and (FAttempts > 0) and (FTries > 0) then
           begin
             FTries := FTries - 1;
             Connect;
-          end;
+          end; //else we will not continue look at "while" conditions
         end
         else
         begin

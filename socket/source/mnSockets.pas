@@ -37,7 +37,6 @@ type
     FShutdownState: TmnShutdown;
     function GetConnected: Boolean;
   protected
-    procedure FatalError(const Msg: string);
     procedure Error;
     function GetActive: Boolean; virtual; abstract;
     procedure CheckActive;
@@ -117,7 +116,10 @@ end;
 procedure TmnCustomSocket.CheckActive;
 begin
   if (Self = nil) or (not Active) then
-    FatalError('Socket is inactive');
+  begin
+    Close;
+    raise EmnException.Create('Socket is inactive');
+  end
 end;
 
 constructor TmnCustomSocket.Create;
@@ -144,12 +146,6 @@ end;
 function TmnCustomSocket.GetConnected: Boolean;
 begin
   Result := Active and (FShutdownState = sdNone)
-end;
-
-procedure TmnCustomSocket.FatalError(const Msg: string);
-begin
-  Close;
-  raise EmnException.Create(Msg);
 end;
 
 function TmnCustomSocket.Select(Timeout: Int64; Check: TSelectCheck): TmnError;
