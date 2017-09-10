@@ -158,7 +158,7 @@ var
 var
   aAutoRun:Boolean;
 begin
-  WebServer := TmnHttpServer.Create(Self);
+  WebServer := TmnHttpServer.Create();
   WebServer.OnBeforeOpen := WebServerBeforeOpen;
   WebServer.OnAfterClose := WebServerAfterClose;
   WebServer.OnChanged :=  WebServerChanged;
