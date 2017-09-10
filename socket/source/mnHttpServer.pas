@@ -356,8 +356,16 @@ begin
     Result := 'image/bmp'
   else if (Ext = 'jpg') or (Ext = 'jpeg') then
     Result := 'image/jpeg'
+  else if (Ext = 'png') then
+    Result := 'image/png'
   else if Ext = 'txt' then
     Result := 'text/plain'
+  else if Ext = 'svg' then
+    Result := 'image/svg+xml'
+  else if Ext = 'css' then
+    Result := 'text/css'
+  else if Ext = 'js' then
+    Result := 'text/js'
   else
     Result := 'application/binary';
 end;
@@ -377,6 +385,7 @@ begin
       if Connected then
         Stream.WriteString(FVersion + ' 200 OK' + sEndOfLine +
           'Content-Type: ' + FAnswerContentType + sEndOfLine +
+          'Connection: close' + sEndOfLine +
           'Content-Length: ' + IntToStr(DocSize) + sEndOfLine +
           sEndOfLine);
       if Connected then
