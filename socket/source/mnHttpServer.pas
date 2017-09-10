@@ -108,7 +108,7 @@ type
 
   { TmnHttpServer }
 
-  TmnHttpServer = class(TmnServer)
+  TmnHttpServer = class(TmnEventServer) //or TmnServer not sure now
   private
     FDocumentRoot: string;
     FDefaultDocument: TStringList;
