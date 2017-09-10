@@ -39,7 +39,7 @@ type
   protected
     procedure Error;
     function GetActive: Boolean; virtual; abstract;
-    procedure CheckActive;
+    procedure CheckActive; //this will force exception, cuz you should not use socket in api implmentation without active socket, i meant use it in api section only
     function DoSelect(Timeout: Int64; Check: TSelectCheck): TmnError; virtual; abstract;
     function DoShutdown(How: TmnShutdown): TmnError; virtual; abstract;
     property ShutdownState: TmnShutdown read FShutdownState;

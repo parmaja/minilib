@@ -143,7 +143,7 @@ end;
 
 function TmnSocketStream.GetConnected: Boolean;
 begin
-  Result := (Socket <> nil);
+  Result := (Socket <> nil) and (Socket.Connected);
 end;
 
 procedure TmnSocketStream.Close;
