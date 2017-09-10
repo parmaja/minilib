@@ -392,7 +392,7 @@ end;
 
 procedure THttpConnection.Process;
 begin
-  if Stream.Connected and Stream.WaitToRead(5000) then
+  if Stream.Connected and Stream.WaitToRead(Stream.Timeout) then
     ReceiveData;
 end;
 

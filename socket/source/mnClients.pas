@@ -222,7 +222,7 @@ constructor TmnCaller.Create;
 begin
   inherited;
   FList := TmnConnectionList.Create;
-  FOptions := [soNoDelay, soKeepAlive];
+  FOptions := [soNoDelay]; //you can use soKeepAlive
 end;
 
 function TmnCaller.CreateConnection(Socket: TmnCustomSocket): TmnClientConnection;

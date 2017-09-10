@@ -25,7 +25,7 @@ type
   TmnError = (erNone, erTimout, erFail, erClosed, erInvalid);
   TSelectCheck = (slRead, slWrite);
 
-  TmnsoOption = (soBroadcast, soDebug, soDontLinger, soDontRoute, soKeepAlive, soOOBInLine, soReuseAddr, soNoDelay, soBlocking, soAcceptConn);
+  TmnsoOption = (soBroadcast, soDebug, soDontLinger, soDontRoute, soOOBInLine, soReuseAddr, soKeepAlive, soNoDelay, soBlocking, soAcceptConn);
   TmnsoOptions = set of TmnsoOption;
 
   { TmnCustomSocket }
