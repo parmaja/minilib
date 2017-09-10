@@ -412,7 +412,7 @@ begin
   else
   begin
     aSockAddr.sin_addr.s_addr := inet_addr(PAnsiChar(Address));
-    if ((aSockAddr.sin_addr.s_addr - INADDR_NONE) = 0) or (aSockAddr.sin_addr.s_addr = Longint(SOCKET_ERROR)) then
+    if ((aSockAddr.sin_addr.s_addr - INADDR_NONE) = 0) or (aSockAddr.sin_addr.s_addr = u_long(SOCKET_ERROR)) then
     begin
       aHostEnt := gethostbyname(PAnsiChar(Address));
       if aHostEnt <> nil then

@@ -181,6 +181,8 @@ procedure TMain.FormDestroy(Sender: TObject);
 var
   aReg:TRegistry;
 begin
+  WebServer.Stop;
+  FreeAndNil(WebServer);
   if ParamCount = 0 then
   begin
     aReg := TRegistry.Create;
