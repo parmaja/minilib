@@ -18,6 +18,9 @@ interface
 uses
   SysUtils, Classes, mnSockets, mnServers, mnStreams, mnConnections;
 
+const
+  AllowKeepAlive = true;
+
 type
   THttpConnection = class;
   THttpConnectionClass = class of THttpConnection;
@@ -25,45 +28,36 @@ type
   THttpSendType = (httpSendHead, httpSendDoc);
   THttpConnectionState = (hcRequest, hcHeader, hcPostedData);
 
-  THttpConnection = class(TmnServerConnection)
+  { TRequestInfo }
+
+  TRequestInfo = class(TObject)
   private
-    function GetDocument(Document: string): string;
-  public
     FMethod: string;
     FVersion: string;
-    FPath: string;
-    FOrginalPath: string;
-    FParams: string;
     FRequestHeader: TStringList;
-    FState: THttpConnectionState;
-    FDocumentRoot: string;
-    FDocument: string;
-    FDocBuf: PChar;
     FAnswerContentType: string;
     FRequestContentLength: Integer;
     FRequestContentType: string;
+    FRequestConnection: string;
     FRequestAccept: string;
     FRequestReferer: string;
     FRequestAcceptLanguage: string;
     FRequestAcceptEncoding: string;
     FRequestUserAgent: string;
     FRequestHost: string;
-    FRequestConnection: string;
-    FAcceptPostedData: Boolean;
-    FHeaderStrings: TStringList;
     FRequestPort: string;
     FProxyRequest: Boolean;
-    procedure ReceiveData;
-    procedure ProcessRequest;
-    procedure ProcessGet;
-    procedure ProcessHead;
-    procedure ProcessPost;
-    procedure AnswerDocument;
-    procedure Answer404;
+    FOrginalPath: string;
+    FKeepAlive: Boolean;
+    FPath: string;
+    FParams: string;
+    FDocument: string;
+    FDocBuf: PChar;
   protected
-    procedure Process; override;
+    procedure ParseRequest;
+    procedure ParseHeader;
   public
-    constructor Create(vConnector: TmnConnector; Socket: TmnCustomSocket); override;
+    constructor Create;
     destructor Destroy; override;
     property Method: string read FMethod;
     property Version: string read FVersion;
@@ -78,11 +72,37 @@ type
     property RequestHost: string read FRequestHost;
     property RequestPort: string read FRequestPort;
     property RequestConnection: string read FRequestConnection;
-  published
-    property DocumentRoot: string read FDocumentRoot write FDocumentRoot;
+    property ProxyRequest: Boolean  read FProxyRequest;
+    property AnswerContentType: string read FAnswerContentType;
     property Document: string read FDocument write FDocument;
     property Path: string read FPath write FPath;
+    property KeepAlive: boolean read FKeepAlive;
     property Params: string read FParams write FParams;
+  end;
+
+  THttpConnection = class(TmnServerConnection)
+  private
+    FState: THttpConnectionState;
+    FDocumentRoot: string;
+    function GetDocument(Document: string): string;
+  public
+    FRequestInfo: TRequestInfo;
+    FUsedCount: Integer;
+    procedure ReceiveData;
+    procedure ProcessRequest;
+    procedure ProcessGet;
+    procedure ProcessHead;
+    procedure ProcessPost;
+    procedure AnswerDocument;
+    procedure Answer404;
+  protected
+    procedure Process; override;
+  public
+    constructor Create(vConnector: TmnConnector; Socket: TmnCustomSocket); override;
+    destructor Destroy; override;
+  published
+    property DocumentRoot: string read FDocumentRoot write FDocumentRoot;
+    property RequestInfo: TRequestInfo read FRequestInfo;
   end;
 
   TmnHttpListener = class(TmnListener)
@@ -126,6 +146,112 @@ type
 
 implementation
 
+{ TRequestInfo }
+
+constructor TRequestInfo.Create;
+begin
+  inherited;
+  FRequestHeader := TStringList.Create;
+  FProxyRequest := false;
+  FKeepAlive := false;
+end;
+
+destructor TRequestInfo.Destroy;
+begin
+  FreeAndNil(FRequestHeader);
+  if Assigned(FDocBuf) then
+  begin
+    FreeMem(FDocBuf);
+    FDocBuf := nil;
+  end;
+  inherited Destroy;
+end;
+
+procedure TRequestInfo.ParseRequest;
+var
+  I, J: Integer;
+  s: string;
+begin
+  s := FRequestHeader[0];
+  I := 1;
+  while (I <= Length(s)) and (s[I] <> ' ') do
+    Inc(I);
+  FMethod := UpperCase(Copy(s, 1, I - 1));
+  Inc(I);
+  while (I <= Length(s)) and (s[I] = ' ') do
+    Inc(I);
+  J := I;
+  while (I <= Length(s)) and (s[I] <> ' ') do
+    Inc(I);
+  FOrginalPath := Copy(s, J, I - J);
+  FPath := FOrginalPath;
+  J := Pos('//', FPath);
+  if J > 0 then
+  begin
+    FProxyRequest := true;
+    FPath := Copy(FPath, J + 1, MaxInt);
+  end;
+
+  if FPath[1] = '/' then
+    Delete(FPath, 1, 1);
+
+  { Find parameters }
+  J := Pos('?', FPath);
+  if J <= 0 then
+    FParams := ''
+  else
+  begin
+    FParams := Copy(FPath, J + 1, Length(FPath));
+    FPath := Copy(FPath, 1, J - 1);
+  end;
+  Inc(I);
+  while (I <= Length(s)) and (s[I] = ' ') do
+    Inc(I);
+  J := I;
+  while (I <= Length(s)) and (s[I] <> ' ') do
+    Inc(I);
+  FVersion := Trim(UpperCase(Copy(s, J, I - J)));
+  if FVersion = '' then
+    FVersion := 'HTTP/1.0';
+  FRequestHeader.Delete(0);
+end;
+
+procedure TRequestInfo.ParseHeader;
+var
+  i, j: Integer;
+  s: string;
+begin
+  for j := 0 to FRequestHeader.Count - 1 do
+  begin
+    s := FRequestHeader[j];
+    i := AnsiPos(':', s);
+    if i > 0 then
+    begin
+      FRequestHeader[j] := (Copy(s, 0, i - 1)) + '=' + TrimLeft(Copy(s, i + 1, MaxInt));
+    end;
+  end;
+  FRequestContentType := FRequestHeader.Values['Content-Type'];
+  FRequestConnection := FRequestHeader.Values['Connection'];
+  FRequestContentLength := StrToIntDef(FRequestHeader.Values['Content-Length'], 0);
+  FRequestAccept := FRequestHeader.Values['Accept'];
+  FRequestReferer := FRequestHeader.Values['Referer'];
+  FRequestAcceptLanguage := FRequestHeader.Values['Accept-Language'];
+  FRequestAcceptEncoding := FRequestHeader.Values['Accept-Encoding'];
+  FRequestUserAgent := FRequestHeader.Values['User-Agent'];
+  s := FRequestHeader.Values['Host'];
+  i := AnsiPos(':', s);
+  if i > 0 then
+  begin
+    FRequestPort := Copy(s, i + 1, MaxInt);
+    s := Copy(s, 0, i - 1);
+  end
+  else
+    FRequestPort := '';
+  FRequestHost := s;
+  if AllowKeepAlive then
+    FKeepAlive := SameText(FRequestConnection, 'Keep-Alive');
+end;
+
 constructor TmnHttpServer.Create;
 begin
   inherited;
@@ -147,19 +273,11 @@ end;
 constructor THttpConnection.Create(vConnector: TmnConnector; Socket: TmnCustomSocket);
 begin
   inherited;
-  FRequestHeader := TStringList.Create;
-  FState := hcRequest;
-  FProxyRequest := false;
+  Stream.EndOfLine := sWinEndOfLine;
 end;
 
 destructor THttpConnection.Destroy;
 begin
-  FreeAndNil(FRequestHeader);
-  if Assigned(FDocBuf) then
-  begin
-    FreeMem(FDocBuf);
-    FDocBuf := nil;
-  end;
   inherited;
 end;
 
@@ -176,88 +294,6 @@ end;
 { THttpConnection }
 
 procedure THttpConnection.ReceiveData;
-  procedure ParseRequest;
-  var
-    I, J: Integer;
-    s: string;
-  begin
-    s := FRequestHeader[0];
-    I := 1;
-    while (I <= Length(s)) and (s[I] <> ' ') do
-      Inc(I);
-    FMethod := UpperCase(Copy(s, 1, I - 1));
-    Inc(I);
-    while (I <= Length(s)) and (s[I] = ' ') do
-      Inc(I);
-    J := I;
-    while (I <= Length(s)) and (s[I] <> ' ') do
-      Inc(I);
-    FOrginalPath := Copy(s, J, I - J);
-    FPath := FOrginalPath;
-    J := Pos('//', FPath);
-    if J > 0 then
-    begin
-      FProxyRequest := true;
-      FPath := Copy(FPath, J + 1, MaxInt);
-    end;
-
-    if FPath[1] = '/' then
-      Delete(FPath, 1, 1);
-
-      { Find parameters }
-    J := Pos('?', FPath);
-    if J <= 0 then
-      FParams := ''
-    else
-    begin
-      FParams := Copy(FPath, J + 1, Length(FPath));
-      FPath := Copy(FPath, 1, J - 1);
-    end;
-    Inc(I);
-    while (I <= Length(s)) and (s[I] = ' ') do
-      Inc(I);
-    J := I;
-    while (I <= Length(s)) and (s[I] <> ' ') do
-      Inc(I);
-    FVersion := Trim(UpperCase(Copy(s, J, I - J)));
-    if FVersion = '' then
-      FVersion := 'HTTP/1.0';
-    FRequestHeader.Delete(0);
-  end;
-
-  procedure ParseHeader;
-  var
-    i, j: Integer;
-    s: string;
-  begin
-    for j := 0 to FRequestHeader.Count - 1 do
-    begin
-      s := FRequestHeader[j];
-      i := AnsiPos(':', s);
-      if i > 0 then
-      begin
-        FRequestHeader[j] := (Copy(s, 0, i - 1)) + '=' + TrimLeft(Copy(s, i + 1, MaxInt));
-      end;
-    end;
-    FRequestContentType := FRequestHeader.Values['Content-Type'];
-    FRequestContentLength := StrToIntDef(FRequestHeader.Values['Content-Length'], 0);
-    FRequestAccept := FRequestHeader.Values['Accept'];
-    FRequestReferer := FRequestHeader.Values['Referer'];
-    FRequestAcceptLanguage := FRequestHeader.Values['Accept-Language'];
-    FRequestAcceptEncoding := FRequestHeader.Values['Accept-Encoding'];
-    FRequestUserAgent := FRequestHeader.Values['User-Agent'];
-    s := FRequestHeader.Values['Host'];
-    i := AnsiPos(':', s);
-    if i > 0 then
-    begin
-      FRequestPort := Copy(s, i + 1, MaxInt);
-      s := Copy(s, 0, i - 1);
-    end
-    else
-      FRequestPort := '';
-    FRequestHost := s;
-    FRequestConnection := FRequestHeader.Values['Connection'];
-  end;
 var
   ln: string;
 begin
@@ -267,25 +303,17 @@ begin
 
   if FState = hcRequest then
   begin
-    FRequestContentType := '';
-    FRequestContentLength := 0;
-    FRequestAccept := '';
-    FRequestReferer := '';
-    FRequestAcceptLanguage := '';
-    FRequestAcceptEncoding := '';
-    FRequestUserAgent := '';
-    FRequestHost := '';
-    FRequestConnection := '';
-    Stream.ReadLine(ln, true, #13);
+    FRequestInfo := TRequestInfo.Create;
+    ln := Trim(Stream.ReadLine);
     while ln <> '' do
     begin
-      FRequestHeader.Add(ln);
-      ln := Stream.ReadLine;
+      RequestInfo.RequestHeader.Add(ln);
+      ln := Trim(Stream.ReadLine);
     end;
-    if FRequestHeader.Count > 0 then
+    if RequestInfo.RequestHeader.Count > 0 then
     begin
-      ParseRequest;
-      ParseHeader;
+      RequestInfo.ParseRequest;
+      RequestInfo.ParseHeader;
       FState := hcPostedData;
       ProcessRequest;
     end;
@@ -297,33 +325,37 @@ var
   Body: string;
 begin
   Body := '<HTML><HEAD><TITLE>404 Not Found</TITLE></HEAD>' +
-    '<BODY><H1>404 Not Found</H1>The requested URL ' + FDocument +
+    '<BODY><H1>404 Not Found</H1>The requested URL ' + RequestInfo.Document +
     ' was not found on this server.<P><h1>Powerd by Mini Web Server</h3></BODY></HTML>' + sEndOfLine;
   Stream.WriteString(Body);
 end;
 
 procedure THttpConnection.ProcessRequest;
+var
+  aDocument: string;
 begin
-  FDocument := ExcludeTrailingPathDelimiter(FDocumentRoot);
-  if FProxyRequest then
-    FDocument := IncludeTrailingPathDelimiter(FDocument) + IncludeTrailingPathDelimiter(FRequestHost) + FPath
+  aDocument := ExcludeTrailingPathDelimiter(FDocumentRoot);
+  if RequestInfo.ProxyRequest then
+    aDocument := IncludeTrailingPathDelimiter(aDocument) + IncludeTrailingPathDelimiter(RequestInfo.RequestHost) + RequestInfo.Path
   else
-    FDocument := IncludeTrailingPathDelimiter(FDocument) + FPath;
+    aDocument := IncludeTrailingPathDelimiter(aDocument) + RequestInfo.Path;
 
-  FDocument := StringReplace(FDocument, '/', PathDelim, [rfReplaceAll]);
+  RequestInfo.FDocument := StringReplace(RequestInfo.FDocument, '/', PathDelim, [rfReplaceAll]);
 
-  if FDocument[Length(FDocument)] = PathDelim then
-    FDocument := GetDocument(FDocument);
+  if aDocument[Length(aDocument)] = PathDelim then
+    aDocument := GetDocument(aDocument);
 
-  if FMethod = 'GET' then
+  RequestInfo.FDocument := aDocument;
+
+  if RequestInfo.Method = 'GET' then
     ProcessGet
-  else if FMethod = 'POST' then
+  else if RequestInfo.Method = 'POST' then
     ProcessPost
-  else if FMethod = 'HEAD' then
+  else if RequestInfo.Method = 'HEAD' then
     ProcessHead
   else
     Answer404;
-  Listener.Log(FDocument); //when i put this line first not work in WinCE!!!
+  Listener.Log(RequestInfo.Document); //when i put this line first not work in WinCE!!!
 end;
 
 procedure THttpConnection.ProcessPost;
@@ -375,25 +407,28 @@ var
   DocSize: Int64;
   aDocStream: TFileStream;
 begin
-  if FileExists(FDocument) then
+  if FileExists(RequestInfo.Document) then
   begin
     if Connected then
     begin
-      FAnswerContentType := DocumentToContentType(FDocument);
-      aDocStream := TFileStream.Create(FDocument, fmOpenRead or fmShareDenyWrite);
+      RequestInfo.FAnswerContentType := DocumentToContentType(RequestInfo.Document);
+      aDocStream := TFileStream.Create(RequestInfo.Document, fmOpenRead or fmShareDenyWrite);
       DocSize := aDocStream.Size;
       if Connected then
-        Stream.WriteString(FVersion + ' 200 OK' + sEndOfLine +
-          'Content-Type: ' + FAnswerContentType + sEndOfLine +
-          'Connection: close' + sEndOfLine +
-          'Content-Length: ' + IntToStr(DocSize) + sEndOfLine +
-          sEndOfLine);
+      begin
+          Stream.WriteString(RequestInfo.Version + ' 200 OK' + sEndOfLine);
+          Stream.WriteString('Content-Type: ' + RequestInfo.FAnswerContentType + sEndOfLine);
+          if not RequestInfo.KeepAlive then
+            Stream.WriteString('Connection: close' + sEndOfLine);
+          Stream.WriteString('Content-Length: ' + IntToStr(DocSize) + sEndOfLine);
+          Stream.WriteString(sEndOfLine);
+      end;
       if Connected then
         Stream.WriteStream(aDocStream);
       aDocStream.Free;
     end;
-    if Connected then
-      Stream.Socket.Shutdown(sdBoth);
+    if Connected and not RequestInfo.KeepAlive then
+      Stream.Socket.Terminate;
   end
   else
     Answer404;
@@ -401,8 +436,13 @@ end;
 
 procedure THttpConnection.Process;
 begin
-  if Stream.Connected and Stream.WaitToRead(Stream.Timeout) then
+  if Stream.WaitToRead(Stream.Timeout) then
+  begin
+    FState := hcRequest;
+    FUsedCount := FUsedCount + 1;
     ReceiveData;
+    FreeAndNil(FRequestInfo);
+  end;
 end;
 
 { THttpSocketServer }

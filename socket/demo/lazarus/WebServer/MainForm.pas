@@ -89,6 +89,7 @@ procedure TMain.StopBtnClick(Sender: TObject);
 begin
   WebServer.Stop;
   StartBtn.Enabled:=true;
+  FMax := 0;
 end;
 
 procedure TMain.WebServerBeforeOpen(Sender: TObject);
