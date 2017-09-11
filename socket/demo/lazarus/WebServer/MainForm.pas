@@ -22,6 +22,7 @@ type
 
   TMain = class(TForm)
     Bevel2: TBevel;
+    KeepAliveChk: TCheckBox;
     MainMenu1: TMainMenu;
     Memo: TMemo;
     MaxOfThreads: TLabel;
@@ -102,6 +103,7 @@ begin
   if (LeftStr(aRoot, 2)='.\') or (LeftStr(aRoot, 2)='./') then
     aRoot := ExtractFilePath(Application.ExeName) + Copy(aRoot, 3, MaxInt);
   WebServer.DocumentRoot := aRoot;
+  WebServer.AllowKeepAlive := KeepAliveChk.Checked;
   WebServer.Port := PortEdit.Text;
 end;
 
@@ -130,9 +132,9 @@ end;
 procedure TMain.FormCreate(Sender: TObject);
 var
   aReg:TRegistry;
-  function GetOption(AName, ADefault:string):string;
+  function GetOption(AName, ADefault: string): string; overload;
   var
-    s:string;
+    s: string;
   begin
     s := '';
     if FindCmdLineValue(AName, s) then
@@ -143,7 +145,20 @@ var
       Result := ADefault;
   end;
   
-  function GetSwitch(AName, ADefault:string):string;//if found in cmd mean it is true
+  function GetOption(AName:string; ADefault: boolean): boolean; overload;
+  var
+    s: string;
+  begin
+    s := '';
+    if FindCmdLineValue(AName, s) then
+      Result := SameText(AnsiDequotedStr(s, '"'), 'true')
+    else if aReg.ValueExists(AName) then
+      Result := aReg.ReadBool(AName)
+    else
+      Result := ADefault;
+  end;
+
+  function GetSwitch(AName, ADefault:string): string;//if found in cmd mean it is true
   var
     s:string;
   begin
@@ -170,6 +185,7 @@ begin
     aReg.OpenKey('software\miniWebServer\Options', True);
     RootEdit.Text := GetOption('root', '.\html');
     PortEdit.Text := GetOption('port', '80');
+    KeepAliveChk.Checked := GetOption('keepalive', true);
     aAutoRun := StrToBoolDef(GetSwitch('run', ''), False);
   finally
     aReg.Free;
@@ -191,6 +207,7 @@ begin
       aReg.OpenKey('software\miniWebServer\Options', True);
       aReg.WriteString('root', RootEdit.Text);
       aReg.WriteString('port', PortEdit.Text);
+      aReg.WriteBool('keepalive', KeepAliveChk.Checked);
     finally
       aReg.Free;
     end;

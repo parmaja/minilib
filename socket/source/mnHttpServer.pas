@@ -18,9 +18,6 @@ interface
 uses
   SysUtils, Classes, mnSockets, mnServers, mnStreams, mnConnections;
 
-const
-  AllowKeepAlive = true;
-
 type
   THttpConnection = class;
   THttpConnectionClass = class of THttpConnection;
@@ -80,10 +77,18 @@ type
     property Params: string read FParams write FParams;
   end;
 
+  TmnHttpListener = class;
+
+  TConfigInfo = record
+    DocumentRoot: string;
+    AllowKeepAlive: Boolean;
+  end;
+
+  { THttpConnection }
+
   THttpConnection = class(TmnServerConnection)
   private
     FState: THttpConnectionState;
-    FDocumentRoot: string;
     function GetDocument(Document: string): string;
   public
     FRequestInfo: TRequestInfo;
@@ -96,20 +101,19 @@ type
     procedure AnswerDocument;
     procedure Answer404;
   protected
+    function Listener: TmnHttpListener;
     procedure Process; override;
   public
     constructor Create(vConnector: TmnConnector; Socket: TmnCustomSocket); override;
     destructor Destroy; override;
-  published
-    property DocumentRoot: string read FDocumentRoot write FDocumentRoot;
     property RequestInfo: TRequestInfo read FRequestInfo;
   end;
 
+  { TmnHttpListener }
+
   TmnHttpListener = class(TmnListener)
   private
-    FDocumentRoot: string;
-    FAddress: string;
-    FPort: Integer;
+    FConfig: TConfigInfo;
     FDefaultDocument: TStringList;
     procedure SetDefaultDocument(const Value: TStringList);
   protected
@@ -118,9 +122,7 @@ type
   public
     constructor Create;
     destructor Destroy; override;
-    property Port: Integer read FPort write FPort;
-    property Address: string read FAddress write FAddress;
-    property DocumentRoot: string read FDocumentRoot write FDocumentRoot;
+    property Config: TConfigInfo read FConfig write FConfig;
     property DefaultDocument: TStringList read FDefaultDocument write SetDefaultDocument;
   end;
 
@@ -130,7 +132,7 @@ type
 
   TmnHttpServer = class(TmnEventServer) //or TmnServer not sure now
   private
-    FDocumentRoot: string;
+    FConfig: TConfigInfo;
     FDefaultDocument: TStringList;
     procedure SetDefaultDoc(const Value: TStringList);
   protected
@@ -139,8 +141,10 @@ type
   public
     constructor Create;
     destructor Destroy; override;
+    property Config: TConfigInfo read FConfig write FConfig;
   published
-    property DocumentRoot: string read FDocumentRoot write FDocumentRoot;
+    property DocumentRoot: string read FConfig.DocumentRoot write FConfig.DocumentRoot;
+    property AllowKeepAlive: Boolean read FConfig.AllowKeepAlive write FConfig.AllowKeepAlive;
     property DefaultDocument: TStringList read FDefaultDocument write SetDefaultDoc;
   end;
 
@@ -248,8 +252,7 @@ begin
   else
     FRequestPort := '';
   FRequestHost := s;
-  if AllowKeepAlive then
-    FKeepAlive := SameText(FRequestConnection, 'Keep-Alive');
+  FKeepAlive := SameText(FRequestConnection, 'Keep-Alive');
 end;
 
 constructor TmnHttpServer.Create;
@@ -261,7 +264,6 @@ begin
   FDefaultDocument.Add('index.htm');
   FDefaultDocument.Add('default.html');
   FDefaultDocument.Add('default.htm');
-  FDocumentRoot := '';
 end;
 
 destructor TmnHttpServer.Destroy;
@@ -310,10 +312,13 @@ begin
       RequestInfo.RequestHeader.Add(ln);
       ln := Trim(Stream.ReadLine);
     end;
+
     if RequestInfo.RequestHeader.Count > 0 then
     begin
       RequestInfo.ParseRequest;
       RequestInfo.ParseHeader;
+      if not Listener.Config.AllowKeepAlive then
+        RequestInfo.FKeepAlive := False;
       FState := hcPostedData;
       ProcessRequest;
     end;
@@ -330,11 +335,16 @@ begin
   Stream.WriteString(Body);
 end;
 
+function THttpConnection.Listener: TmnHttpListener;
+begin
+  Result := inherited Listener as TmnHttpListener;
+end;
+
 procedure THttpConnection.ProcessRequest;
 var
   aDocument: string;
 begin
-  aDocument := ExcludeTrailingPathDelimiter(FDocumentRoot);
+  aDocument := ExcludeTrailingPathDelimiter(Listener.Config.DocumentRoot);
   if RequestInfo.ProxyRequest then
     aDocument := IncludeTrailingPathDelimiter(aDocument) + IncludeTrailingPathDelimiter(RequestInfo.RequestHost) + RequestInfo.Path
   else
@@ -418,7 +428,7 @@ begin
       begin
           Stream.WriteString(RequestInfo.Version + ' 200 OK' + sEndOfLine);
           Stream.WriteString('Content-Type: ' + RequestInfo.FAnswerContentType + sEndOfLine);
-          if not RequestInfo.KeepAlive then
+          if RequestInfo.KeepAlive then
             Stream.WriteString('Connection: close' + sEndOfLine);
           Stream.WriteString('Content-Length: ' + IntToStr(DocSize) + sEndOfLine);
           Stream.WriteString(sEndOfLine);
@@ -440,8 +450,11 @@ begin
   begin
     FState := hcRequest;
     FUsedCount := FUsedCount + 1;
-    ReceiveData;
-    FreeAndNil(FRequestInfo);
+    try
+      ReceiveData;
+    finally
+      FreeAndNil(FRequestInfo);
+    end;
   end;
 end;
 
@@ -460,8 +473,9 @@ end;
 function TmnHttpServer.CreateListener: TmnListener;
 begin
   Result := inherited CreateListener;
-  TmnHttpListener(Result).DocumentRoot := ExcludeTrailingPathDelimiter(FDocumentRoot);
+  TmnHttpListener(Result).Config := Config;
   TmnHttpListener(Result).DefaultDocument.Assign(FDefaultDocument);
+  TmnHttpListener(Result).FConfig.DocumentRoot := ExcludeTrailingPathDelimiter(TmnHttpListener(Result).Config.DocumentRoot);
 end;
 
 procedure EnumDirList(const Path: string; Strings: TStrings);
@@ -500,7 +514,6 @@ end;
 function TmnHttpListener.CreateConnection(vSocket: TmnCustomSocket): TmnServerConnection;
 begin
   Result := THttpConnection.Create(Self, vSocket);
-  (Result as THttpConnection).DocumentRoot := FDocumentRoot;
 end;
 
 procedure TmnHttpListener.SetDefaultDocument(const Value: TStringList);

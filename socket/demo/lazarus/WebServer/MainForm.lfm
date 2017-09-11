@@ -1,16 +1,16 @@
 object Main: TMain
   Left = 312
-  Height = 227
+  Height = 297
   Top = 177
-  Width = 207
+  Width = 278
   HorzScrollBar.Page = 206
   VertScrollBar.Page = 207
   ActiveControl = StartBtn
   BorderIcons = [biSystemMenu, biMinimize]
   BorderStyle = bsSingle
   Caption = 'Mini Web Server'
-  ClientHeight = 207
-  ClientWidth = 207
+  ClientHeight = 277
+  ClientWidth = 278
   Font.CharSet = ARABIC_CHARSET
   Font.Color = clBlack
   Font.Height = -11
@@ -101,9 +101,9 @@ object Main: TMain
   end
   object Memo: TMemo
     Left = 2
-    Height = 101
-    Top = 103
-    Width = 202
+    Height = 147
+    Top = 127
+    Width = 273
     Anchors = [akTop, akLeft, akRight, akBottom]
     ReadOnly = True
     ScrollBars = ssVertical
@@ -112,7 +112,7 @@ object Main: TMain
   object StartBtn: TButton
     Left = 2
     Height = 22
-    Top = 77
+    Top = 101
     Width = 60
     BorderSpacing.InnerBorder = 4
     Caption = 'Start'
@@ -124,7 +124,7 @@ object Main: TMain
     Left = 43
     Height = 21
     Top = 6
-    Width = 161
+    Width = 232
     Anchors = [akTop, akLeft, akRight]
     TabOrder = 2
     Text = '.\html'
@@ -132,7 +132,7 @@ object Main: TMain
   object StopBtn: TButton
     Left = 65
     Height = 22
-    Top = 77
+    Top = 101
     Width = 60
     BorderSpacing.InnerBorder = 4
     Caption = 'Stop'
@@ -149,15 +149,23 @@ object Main: TMain
     Text = '81'
   end
   object ExitBtn: TButton
-    Left = 143
+    Left = 214
     Height = 22
-    Top = 77
+    Top = 101
     Width = 61
     Anchors = [akTop, akRight]
     BorderSpacing.InnerBorder = 4
     Caption = 'Exit'
     OnClick = ExitBtnClick
     TabOrder = 5
+  end
+  object KeepAliveChk: TCheckBox
+    Left = 10
+    Height = 19
+    Top = 75
+    Width = 70
+    Caption = 'Keep Alive'
+    TabOrder = 6
   end
   object MainMenu1: TMainMenu
     left = 40

@@ -19,6 +19,8 @@ uses
   SysUtils,
   MainForm in 'MainForm.pas' {Main};
 
+{$R *.res}
+
 begin
   Application.Initialize;
   if FindCmdLineSwitch('hide', True) then
