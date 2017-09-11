@@ -138,8 +138,8 @@ var
   TimeVal: TTimeVal;
   c: Integer;
 begin
-  //CheckActive; no need select will retruen error for it, as i tho
-  if FHandle <> INVALID_SOCKET then
+  //CheckActive; no need select will return error for it, as i tho
+  if FHandle = INVALID_SOCKET then
     Result := erClosed
   else
   begin

@@ -525,7 +525,7 @@ begin
         FListener := CreateListener;
         FListener.FServer := Self;
         FListener.FPort := FPort;
-        FListener.FAddress := Address;
+        FListener.FAddress := FAddress;
         FListener.Prepare;
         FListener.Start;
         FActive := True;

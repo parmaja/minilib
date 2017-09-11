@@ -76,7 +76,7 @@ function TmnSocketStream.DoWrite(const Buffer; Count: Longint): Longint;
 begin
   Result := 0;
   if not Connected then
-    DoError('SocketStream not connected')
+    DoError('SocketStream not connected for write')
   else if WaitToWrite(FTimeout) then
   begin
     if Socket.Send(Buffer, Count) >= erClosed then
@@ -98,7 +98,7 @@ function TmnSocketStream.DoRead(var Buffer; Count: Longint): Longint;
 begin
   Result := 0;
   if not Connected then
-    DoError('SocketStream not connected')
+    DoError('SocketStream not connected for read')
   else
   begin
     if WaitToRead(FTimeout) then
