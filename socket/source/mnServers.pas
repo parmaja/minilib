@@ -323,11 +323,15 @@ end;
 procedure TmnListener.Changed;
 begin
   {$ifndef NoLog}
-  {$ifdef Synchronize
-  onize}
+  {$ifdef Synchronize}
   Synchronize(Self, SyncChanged);
   {$else}
-  SyncChanged;
+  Enter;
+  try
+    SyncChanged;
+  finally
+    Leave;
+  end;
   {$endif}
   {$endif NoLog}
 end;
@@ -440,11 +444,18 @@ procedure TmnListener.Log(S: string);
 begin
   {$ifndef NoLog}
   LogMessage(S);
-  FMessage := S;
+
   {$ifdef Synchronize}
+  FMessage := S;
   Synchronize(Self, SyncLog);
   {$else}
-  SyncLog;
+  Enter;
+  try
+    FMessage := S;
+    SyncLog;
+  finally
+    Leave;
+  end;
   {$endif}
   {$endif NoLog}
 end;
