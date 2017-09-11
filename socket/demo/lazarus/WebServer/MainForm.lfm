@@ -2,7 +2,7 @@ object Main: TMain
   Left = 312
   Height = 297
   Top = 177
-  Width = 278
+  Width = 345
   HorzScrollBar.Page = 206
   VertScrollBar.Page = 207
   ActiveControl = StartBtn
@@ -10,7 +10,7 @@ object Main: TMain
   BorderStyle = bsSingle
   Caption = 'Mini Web Server'
   ClientHeight = 277
-  ClientWidth = 278
+  ClientWidth = 345
   Font.CharSet = ARABIC_CHARSET
   Font.Color = clBlack
   Font.Height = -11
@@ -100,14 +100,20 @@ object Main: TMain
     ParentFont = False
   end
   object Memo: TMemo
-    Left = 2
+    Left = 0
     Height = 147
     Top = 127
-    Width = 273
+    Width = 340
     Anchors = [akTop, akLeft, akRight, akBottom]
+    Font.Color = clBlack
+    Font.Height = -11
+    Font.Name = 'Courier New'
+    Font.Pitch = fpVariable
+    ParentFont = False
     ReadOnly = True
-    ScrollBars = ssVertical
+    ScrollBars = ssAutoBoth
     TabOrder = 1
+    WordWrap = False
   end
   object StartBtn: TButton
     Left = 2
@@ -124,7 +130,7 @@ object Main: TMain
     Left = 43
     Height = 21
     Top = 6
-    Width = 232
+    Width = 299
     Anchors = [akTop, akLeft, akRight]
     TabOrder = 2
     Text = '.\html'
@@ -149,7 +155,7 @@ object Main: TMain
     Text = '81'
   end
   object ExitBtn: TButton
-    Left = 214
+    Left = 281
     Height = 22
     Top = 101
     Width = 61

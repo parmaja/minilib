@@ -350,7 +350,7 @@ begin
   else
     aDocument := IncludeTrailingPathDelimiter(aDocument) + RequestInfo.Path;
 
-  RequestInfo.FDocument := StringReplace(RequestInfo.FDocument, '/', PathDelim, [rfReplaceAll]);
+  aDocument := StringReplace(aDocument, '/', PathDelim, [rfReplaceAll]);
 
   if aDocument[Length(aDocument)] = PathDelim then
     aDocument := GetDocument(aDocument);

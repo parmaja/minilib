@@ -401,6 +401,9 @@ begin
   if aHandle = INVALID_SOCKET then
     raise EmnException.Create('Failed to create a socket, Error #' + Inttostr(WSAGetLastError));
 
+  if soNoDelay in Options then
+    WinSock2.setsockopt(aHandle, IPPROTO_TCP, TCP_NODELAY, PAnsiChar(@SO_TRUE), SizeOf(SO_TRUE));
+
   if soReuseAddr in Options then
 {$IFDEF FPC}
   {$IFNDEF WINCE}
@@ -481,7 +484,6 @@ begin
 //http://support.microsoft.com/default.aspx?kbid=140325
   if soKeepAlive in Options then
     setsockopt(aHandle, SOL_SOCKET, SO_KEEPALIVE, PAnsiChar(@SO_TRUE), SizeOf(SO_TRUE));
-
 
   aSockAddr.sin_family := AF_INET;
   aSockAddr.sin_port := htons(LookupPort(Port));

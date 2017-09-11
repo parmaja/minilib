@@ -1,4 +1,5 @@
 unit MainForm;
+
 {**
  *  This file is part of the "Mini Library"
  *
@@ -47,7 +48,7 @@ type
     procedure FormDestroy(Sender: TObject);
   private
     WebServer: TmnHttpServer;
-    FMax:Integer;
+    FMax: Integer;
     procedure WebServerBeforeOpen(Sender: TObject);
     procedure WebServerAfterClose(Sender: TObject);
     procedure WebServerChanged(Listener: TmnListener);
@@ -89,28 +90,28 @@ end;
 procedure TMain.StopBtnClick(Sender: TObject);
 begin
   WebServer.Stop;
-  StartBtn.Enabled:=true;
+  StartBtn.Enabled := True;
   FMax := 0;
 end;
 
 procedure TMain.WebServerBeforeOpen(Sender: TObject);
 var
-  aRoot:string;
+  aRoot: String;
 begin
   StartBtn.Enabled := False;
   StopBtn.Enabled := True;
   aRoot := RootEdit.Text;
-  if (LeftStr(aRoot, 2)='.\') or (LeftStr(aRoot, 2)='./') then
+  if (LeftStr(aRoot, 2) = '.\') or (LeftStr(aRoot, 2) = './') then
     aRoot := ExtractFilePath(Application.ExeName) + Copy(aRoot, 3, MaxInt);
   WebServer.DocumentRoot := aRoot;
   WebServer.AllowKeepAlive := KeepAliveChk.Checked;
   WebServer.Port := PortEdit.Text;
 end;
 
-function FindCmdLineValue(Switch: string; var Value: string; const Chars: TSysCharSet = ['/','-']; Seprator: Char = '='): Boolean;
+function FindCmdLineValue(Switch: String; var Value: String; const Chars: TSysCharSet = ['/', '-']; Seprator: Char = '='): Boolean;
 var
   i, l: Integer;
-  s, c, w: string;
+  s, c, w: String;
 begin
   Result := False;
   l := Length(Switch);
@@ -131,23 +132,24 @@ end;
 
 procedure TMain.FormCreate(Sender: TObject);
 var
-  aReg:TRegistry;
-  function GetOption(AName, ADefault: string): string; overload;
+  aReg: TRegistry;
+
+  function GetOption(AName, ADefault: String): String; overload;
   var
-    s: string;
+    s: String;
   begin
     s := '';
     if FindCmdLineValue(AName, s) then
-      Result :=AnsiDequotedStr(s, '"')
+      Result := AnsiDequotedStr(s, '"')
     else if aReg.ValueExists(AName) then
       Result := aReg.ReadString(AName)
     else
       Result := ADefault;
   end;
-  
-  function GetOption(AName:string; ADefault: boolean): boolean; overload;
+
+  function GetOption(AName: String; ADefault: Boolean): Boolean; overload;
   var
-    s: string;
+    s: String;
   begin
     s := '';
     if FindCmdLineValue(AName, s) then
@@ -158,9 +160,9 @@ var
       Result := ADefault;
   end;
 
-  function GetSwitch(AName, ADefault:string): string;//if found in cmd mean it is true
+  function GetSwitch(AName, ADefault: String): String;//if found in cmd mean it is true
   var
-    s:string;
+    s: String;
   begin
     s := '';
     if FindCmdLineValue(AName, s) then
@@ -172,12 +174,12 @@ var
   end;
 
 var
-  aAutoRun:Boolean;
+  aAutoRun: Boolean;
 begin
   WebServer := TmnHttpServer.Create();
   WebServer.OnBeforeOpen := WebServerBeforeOpen;
   WebServer.OnAfterClose := WebServerAfterClose;
-  WebServer.OnChanged :=  WebServerChanged;
+  WebServer.OnChanged := WebServerChanged;
   WebServer.OnLog := WebServerLog;
 
   aReg := TRegistry.Create;
@@ -185,18 +187,18 @@ begin
     aReg.OpenKey('software\miniWebServer\Options', True);
     RootEdit.Text := GetOption('root', '.\html');
     PortEdit.Text := GetOption('port', '80');
-    KeepAliveChk.Checked := GetOption('keepalive', true);
+    KeepAliveChk.Checked := GetOption('keepalive', True);
     aAutoRun := StrToBoolDef(GetSwitch('run', ''), False);
   finally
     aReg.Free;
   end;
   if aAutoRun then
-     WebServer.Start;
+    WebServer.Start;
 end;
 
 procedure TMain.FormDestroy(Sender: TObject);
 var
-  aReg:TRegistry;
+  aReg: TRegistry;
 begin
   WebServer.Stop;
   FreeAndNil(WebServer);
@@ -211,12 +213,12 @@ begin
     finally
       aReg.Free;
     end;
-  end
+  end;
 end;
 
 procedure TMain.WebServerAfterClose(Sender: TObject);
 begin
-	StartBtn.Enabled := True;
+  StartBtn.Enabled := True;
   StopBtn.Enabled := False;
 end;
 
@@ -224,8 +226,8 @@ procedure TMain.WebServerChanged(Listener: TmnListener);
 begin
   if FMax < Listener.Count then
     FMax := Listener.Count;
-  NumberOfThreads.Caption:=IntToStr(Listener.Count);
-  MaxOfThreads.Caption:=IntToStr(FMax);
+  NumberOfThreads.Caption := IntToStr(Listener.Count);
+  MaxOfThreads.Caption := IntToStr(FMax);
 end;
 
 procedure TMain.WebServerLog(const S: String);
@@ -234,4 +236,3 @@ begin
 end;
 
 end.
-
