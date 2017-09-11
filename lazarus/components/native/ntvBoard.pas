@@ -1245,7 +1245,8 @@ end;
 
 procedure TCustomBoard.SetOffset(AValue: TPoint);
 begin
-  if FOffset =AValue then Exit;
+  if (FOffset.X = AValue.X) and (FOffset.Y = AValue.Y) then
+     Exit;
   FOffset := AValue;
   Update([brdInvalidate]);
 end;

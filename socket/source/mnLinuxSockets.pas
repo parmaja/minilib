@@ -43,14 +43,16 @@ type
     function GetRemoteName: string; override;
   end;
 
+  { TmnWallSocket }
+
   TmnWallSocket = class(TmnCustomWallSocket)
   private
     function LookupPort(Port: string): Word;
   public
     constructor Create; override;
     destructor Destroy; override;
-    function Bind(Options: TmnOptions; const Port: ansistring; const Address: ansistring = ''): TmnCustomSocket; override;
-    function Connect(Options: TmnOptions; const Port: ansistring; const Address: ansistring = ''): TmnCustomSocket; override;
+    function Bind(Options: TmnsoOptions; const Port: ansistring; const Address: ansistring = ''): TmnCustomSocket; override;
+    function Connect(Options: TmnsoOptions; const Port: ansistring; const Address: ansistring = ''): TmnCustomSocket; override;
   end;
 
 implementation
@@ -295,7 +297,8 @@ const
   SO_TRUE:Longbool=True;
   SO_FALSE:Longbool=False;
 
-function TmnWallSocket.Bind(Options: TmnOptions; const Port: ansistring; const Address: ansistring): TmnCustomSocket;
+function TmnWallSocket.Bind(Options: TmnsoOptions; const Port: ansistring;
+  const Address: ansistring): TmnCustomSocket;
 var
   aHandle: TSocket;
   aAddr : TINetSockAddr;
@@ -330,7 +333,8 @@ begin
   Result := StrToIntDef(Port, 0);
 end;
 
-function TmnWallSocket.Connect(Options: TmnOptions; const Port, Address: ansistring): TmnCustomSocket;
+function TmnWallSocket.Connect(Options: TmnsoOptions; const Port: ansistring;
+  const Address: ansistring): TmnCustomSocket;
 var
   aHandle: TSocket;
   aAddr : TINetSockAddr;
