@@ -428,7 +428,7 @@ begin
       begin
           Stream.WriteString(RequestInfo.Version + ' 200 OK' + sEndOfLine);
           Stream.WriteString('Content-Type: ' + RequestInfo.FAnswerContentType + sEndOfLine);
-          if RequestInfo.KeepAlive then
+          if not RequestInfo.KeepAlive then
             Stream.WriteString('Connection: close' + sEndOfLine);
           Stream.WriteString('Content-Length: ' + IntToStr(DocSize) + sEndOfLine);
           Stream.WriteString(sEndOfLine);
@@ -438,7 +438,7 @@ begin
       aDocStream.Free;
     end;
     if Connected and not RequestInfo.KeepAlive then
-      Stream.Socket.Terminate;
+      Stream.Close;
   end
   else
     Answer404;

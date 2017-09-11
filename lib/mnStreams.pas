@@ -34,6 +34,7 @@ type
   {$endif}
 
   EmnStreamException = class(Exception);
+  EmnStreamExceptionAbort = class(Exception); //can be ignored by ide
 
   { TmnCustomStream }
 
@@ -455,7 +456,7 @@ begin
   if FEOFOnError then
     FEOF := True
   else
-    raise EmnStreamException.Create(S);
+    raise EmnStreamExceptionAbort.Create(S);
 end;
 
 function TmnBufferStream.Read(var Buffer; Count: Integer): Longint;
