@@ -138,47 +138,52 @@ var
   TimeVal: TTimeVal;
   c: Integer;
 begin
-  CheckActive;
-  {$ifdef FPC}
-  Finalize(FSet);
-  {$endif}
-  FD_ZERO(FSet);
-  FD_SET(FHandle, FSet);
-  if Check = slRead then
-  begin
-    PSetRead := @FSet;
-    PSetWrite := nil;
-  end
+  //CheckActive; no need select will retruen error for it, as i tho
+  if FHandle <> INVALID_SOCKET then
+    Result := erClosed
   else
   begin
-    PSetRead := nil;
-    PSetWrite := @FSet;
-  end;
-  if Timeout = -1 then
-  begin
-  {$IFDEF FPC}
-    c := WinSock2.select(0, PSetRead, PSetWrite, nil, nil)
-  {$ELSE}
-    c := WinSock.select(0, PSetRead, PSetWrite, nil, nil)
-  {$ENDIF}
+    {$ifdef FPC}
+    Finalize(FSet);
+    {$endif}
+    FD_ZERO(FSet);
+    FD_SET(FHandle, FSet);
+    if Check = slRead then
+    begin
+      PSetRead := @FSet;
+      PSetWrite := nil;
+    end
+    else
+    begin
+      PSetRead := nil;
+      PSetWrite := @FSet;
+    end;
+    if Timeout = -1 then
+    begin
+    {$IFDEF FPC}
+      c := WinSock2.select(0, PSetRead, PSetWrite, nil, nil)
+    {$ELSE}
+      c := WinSock.select(0, PSetRead, PSetWrite, nil, nil)
+    {$ENDIF}
+    end
+    else
+    begin
+      TimeVal.tv_sec := Timeout div 1000;
+      TimeVal.tv_usec := (Timeout mod 1000) * 1000;
+    {$IFDEF FPC}
+      c := WinSock2.select(0, PSetRead, PSetWrite, nil, @TimeVal);
+    {$ELSE}
+      c := WinSock.select(0, PSetRead, PSetWrite, nil, @TimeVal);
+    {$ENDIF}
+    end;
+    if (c = 0) or (c = SOCKET_ERROR) then
+    begin
+      Error;
+      Result := erFail;
+    end
+    else
+      Result := erNone;
   end
-  else
-  begin
-    TimeVal.tv_sec := Timeout div 1000;
-    TimeVal.tv_usec := (Timeout mod 1000) * 1000;
-  {$IFDEF FPC}
-    c := WinSock2.select(0, PSetRead, PSetWrite, nil, @TimeVal);
-  {$ELSE}
-    c := WinSock.select(0, PSetRead, PSetWrite, nil, @TimeVal);
-  {$ENDIF}
-  end;
-  if (c = 0) or (c = SOCKET_ERROR) then
-  begin
-    Error;
-    Result := erFail;
-  end
-  else
-    Result := erNone;
 end;
 
 function TmnSocket.Valid(Value: Integer; WithZero: Boolean): Boolean;

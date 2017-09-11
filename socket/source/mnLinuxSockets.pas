@@ -120,30 +120,35 @@ var
   PSetRead, PSetWrite: PFDSet;
   c: Integer;
 begin
-  CheckActive;
-  fpfd_zero(FSet);
-  fpfd_set(FHandle, FSet);
-  if Check = slRead then
-  begin
-    PSetRead := @FSet;
-    PSetWrite := nil;
-  end
+  //CheckActive; no need select will retruen error for it, as i tho
+  if FHandle <> INVALID_SOCKET then
+    Result := erClosed
   else
   begin
-    PSetRead := nil;
-    PSetWrite := @FSet;
-  end;
+    fpfd_zero(FSet);
+    fpfd_set(FHandle, FSet);
+    if Check = slRead then
+    begin
+      PSetRead := @FSet;
+      PSetWrite := nil;
+    end
+    else
+    begin
+      PSetRead := nil;
+      PSetWrite := @FSet;
+    end;
 
-  if Timeout = -1 then
-    Timeout := 0;
-  c := fpselect(FHandle + 1, PSetRead, PSetWrite, PSetRead, Timeout); {$hint 'why FHandle + 1 not 1'}
-  if (c = 0) or (c = SOCKET_ERROR) then
-  begin
-    Error;
-    Result := erFail;
-  end
-  else
-    Result := erNone;
+    if Timeout = -1 then
+      Timeout := 0;
+    c := fpselect(FHandle + 1, PSetRead, PSetWrite, PSetRead, Timeout); {$hint 'why FHandle + 1 not 1'}
+    if (c = 0) or (c = SOCKET_ERROR) then
+    begin
+      Error;
+      Result := erFail;
+    end
+    else
+      Result := erNone;
+  end;
 end;
 
 function TmnSocket.Valid(Value: Integer; WithZero: Boolean): Boolean;
