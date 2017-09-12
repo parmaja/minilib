@@ -26,7 +26,6 @@ type
   TmnThread = class(TThread)
   public
     constructor Create;
-    destructor Destroy; override;
   end;
 
   TmnLockThread = class(TmnThread)
@@ -70,8 +69,8 @@ type
     destructor Destroy; override;
     procedure Connect; virtual;
     procedure Disconnect; virtual;
-    procedure Open; virtual;
-    procedure Close; virtual;
+    procedure Open; //Alias for Connect
+    procedure Close; //Alias for Disconnect
     {$ifndef FPC} //already found in FPC 2.4.4
     procedure Start;
     {$endif}
@@ -240,11 +239,6 @@ constructor TmnThread.Create;
 begin
   inherited Create(True);
   FreeOnTerminate := False;
-end;
-
-destructor TmnThread.Destroy;
-begin
-  inherited;
 end;
 
 end.

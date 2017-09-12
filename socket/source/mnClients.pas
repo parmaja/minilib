@@ -17,15 +17,18 @@ interface
 
 uses
   Classes,
+  {$ifndef FPC}
+  Types,
+  {$endif}
   SysUtils,
   mnSockets,
   mnSocketStreams, 
   mnConnections;
 
 type
+
 { TmnClient }
 
-  TmnClient = class;
   TmnCaller = class;
 
   TmnClientSocketStream = class(TmnSocketStream)
@@ -41,9 +44,12 @@ type
     property Address: string read FAddress write SetAddress;
   end;
 
+  TmnClientStream = class(TmnClientSocketStream)
+  end deprecated;
+
   { TmnClientConnection }
 
-  TmnClientConnection = class(TmnConnection)
+  TmnClientConnection = class(TmnConnection) //this child object in Caller
   private
     function GetCaller: TmnCaller;
   protected
@@ -59,7 +65,9 @@ type
   TmnOnLog = procedure(Connection: TmnConnection; const S: string) of object;
   TmnOnCallerNotify = procedure(Caller: TmnCaller) of object;
 
-  TmnCaller = class(TmnConnector) // thread to watch for outgoing requests
+  { TmnCaller }
+
+  TmnCaller = class(TmnConnector) // thread pooling to watch for outgoing requests
   private
     FPort: string;
     FAddress: string;
@@ -82,7 +90,9 @@ type
     constructor Create; virtual;
     destructor Destroy; override;
     {$ifndef FPC} //already found in FPC 2.4.4
+    {$if CompilerVersion < 18} // Delphi 2007 or later {$ifend}
     procedure Start;
+    {$endif}
     {$endif}
     procedure Stop;
     procedure Log(Connection: TmnConnection; S: string);
@@ -93,53 +103,7 @@ type
     property OnChanged: TmnOnCallerNotify read FOnChanged write FOnChanged;
   end;
 
-  TmnClient = class(TObject)
-  private
-    FActive: Boolean;
-    FPort: string;
-    FAddress: string;
-    FCaller: TmnCaller;
-    FOnBeforeOpen: TNotifyEvent;
-    FOnAfterClose: TNotifyEvent;
-    FOnLog: TmnOnLog;
-    FOnChanged: TmnOnCallerNotify;
-    procedure SetActive(const Value: Boolean);
-    procedure SetAddress(const Value: string);
-    procedure SetPort(const Value: string);
-  protected
-    function CreateCaller: TmnCaller; virtual;
-    procedure DoBeforeOpen; virtual;
-    procedure DoAfterClose; virtual;
-  public
-    constructor Create; virtual;
-    destructor Destroy; override;
-    procedure Start;
-    procedure Stop;
-    procedure Open;
-    procedure Close;
-  published
-    property Port: string read FPort write SetPort;
-    property Address: string read FAddress write SetAddress;
-    property Active: boolean read FActive write SetActive default False;
-    property OnBeforeOpen: TNotifyEvent read FOnBeforeOpen write FOnBeforeOpen;
-    property OnAfterClose: TNotifyEvent read FOnAfterClose write FOnAfterClose;
-    property OnLog: TmnOnLog read FOnLog write FOnLog;
-    property OnChanged: TmnOnCallerNotify read FOnChanged write FOnChanged;
-  end;
-
-function mnClient: TmnClient;
-
 implementation
-
-var
-  FmnClient: TmnClient = nil;
-
-function mnClient: TmnClient;
-begin
-  if FmnClient = nil then
-    FmnClient := TmnClient.Create;
-  Result := FmnClient;
-end;
 
 { TmnClientConnection }
 
@@ -170,14 +134,6 @@ end;
 function TmnClientConnection.GetCaller: TmnCaller;
 begin
   Result := Connector as TmnCaller;
-end;
-
-procedure TmnClient.SetActive(const Value: Boolean);
-begin
-  if Value and not FActive then
-    Start
-  else if not Value and FActive then
-    Stop;
 end;
 
 { TmnCaller }
@@ -233,7 +189,6 @@ end;
 procedure TmnCaller.Execute;
 begin
   Connect;
-//  Suspend; deprecated in FPC 2.4.4
   Shutdown;
   Disconnect;
 end;
@@ -274,10 +229,12 @@ begin
 end;
 
 {$ifndef FPC} //already found in FPC 2.4.4
+{$if CompilerVersion < 18} // Delphi 2007 or later {$ifend}
 procedure TmnCaller.Start;
 begin
   Resume;
 end;
+{$endif}
 {$endif}
 
 procedure TmnCaller.Stop;
@@ -325,96 +282,6 @@ begin
   Result.Start;
 end;
 
-{ TmnClient }
-
-constructor TmnClient.Create;
-begin
-  inherited;
-  FAddress := '0.0.0.0';
-end;
-
-destructor TmnClient.Destroy;
-begin
-  inherited;
-end;
-
-procedure TmnClient.Start;
-begin
-//  CheckInactive;
-  if (FCaller = nil) then // if its already active, dont start again
-  begin
-    try
-      DoBeforeOpen;
-      try
-        FCaller := CreateCaller;
-        FCaller.OnLog := OnLog;
-        FCaller.OnChanged := OnChanged;
-        FCaller.FPort := FPort;
-        FCaller.FAddress := Address;
-        FCaller.Start;
-        FActive := True;
-      except
-        FreeAndNil(FCaller);
-        raise;
-      end
-    finally
-    end;
-  end;
-end;
-
-procedure TmnClient.Stop;
-begin
-  if (FActive) then
-  begin
-    FCaller.Stop;
-    FCaller.WaitFor;
-    FreeAndNil(FCaller);
-    FActive := False;
-    DoAfterClose;
-  end;
-end;
-
-function TmnClient.CreateCaller: TmnCaller;
-begin
-  Result := TmnCaller.Create();
-end;
-
-procedure TmnClient.SetAddress(const Value: string);
-begin
-  if Active then
-    raise EmnException.Create('Can not change Address value when active');
-  FAddress := Value;
-end;
-
-procedure TmnClient.SetPort(const Value: string);
-begin
-  if Active then
-    raise EmnException.Create('Can not change Port value when active');
-  FPort := Value;
-end;
-
-procedure TmnClient.DoBeforeOpen;
-begin
-  if Assigned(FOnBeforeOpen) then
-    FOnBeforeOpen(Self);
-end;
-
-procedure TmnClient.DoAfterClose;
-begin
-  if Assigned(FOnAfterClose) then
-    FOnAfterClose(Self);
-end;
-
-procedure TmnClient.Close;
-begin
-  Stop;
-end;
-
-procedure TmnClient.Open;
-begin
-  Start;
-end;
-
 { TmnClientSocketStream }
 
 function TmnClientSocketStream.CreateSocket: TmnCustomSocket;
@@ -437,4 +304,3 @@ begin
 end;
 
 end.
-
