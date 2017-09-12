@@ -37,7 +37,7 @@ type
   protected
     procedure Execute; override;
   public
-    constructor Create(vConnector: TmnConnector; Socket: TmnCustomSocket); override;
+    constructor Create(vConnector: TmnConnections; Socket: TmnCustomSocket); override;
     destructor Destroy; override;
     property Listener: TmnListener read GetListener;
   end;
@@ -49,43 +49,38 @@ type
 
   { TmnListener }
 
-  TmnListener = class(TmnConnector) // thread to watch for incoming requests
+  TmnListener = class(TmnConnections) // thread to watch for incoming requests
   private
-    FAttempts: Integer;
     FTimeout: Integer;
+    FAttempts: Integer;
     FTries: Integer;
-    FSocket: TmnCustomSocket;
-    FPort: string;
-    FAddress: string;
-    FList: TmnConnectionList;
+    FSocket: TmnCustomSocket; //Listner socket waiting by call "select"
     FServer: TmnServer;
     procedure Connect;
     procedure Disconnect;
     function GetConnected: Boolean;
-    function GetCount: Integer;
   protected
     FOptions: TmnsoOptions;
     FMessage: string;
     procedure SyncLog;
     procedure SyncChanged;
-
     procedure DropConnections; virtual;
     procedure LogMessage(S: string); virtual;
+    procedure Changed; virtual;
+
     procedure Prepare; virtual;
     procedure Execute; override;
-    procedure Changed; virtual;
     procedure Remove(Connection: TmnServerConnection); virtual;
     procedure Add(Connection: TmnServerConnection); virtual;
     function CreateConnection(vSocket: TmnCustomSocket): TmnServerConnection; virtual;
   public
     constructor Create;
     destructor Destroy; override;
-    procedure Stop;
+    procedure Stop; override;
     procedure Log(S: string); virtual;
     property Server: TmnServer read FServer;
     property Connected: Boolean read GetConnected;
     property Socket: TmnCustomSocket read FSocket;
-    property Count: Integer read GetCount;
     property Options: TmnsoOptions read FOptions;
     //if listener connection down by network it will reconnect again
     property Attempts: Integer read FAttempts write FAttempts;
@@ -244,7 +239,7 @@ end;
 
 { TmnServerConnection }
 
-constructor TmnServerConnection.Create(vConnector: TmnConnector; Socket: TmnCustomSocket);
+constructor TmnServerConnection.Create(vConnector: TmnConnections; Socket: TmnCustomSocket);
 begin
   inherited;
   FreeOnTerminate := True;
@@ -313,7 +308,7 @@ procedure TmnListener.Add(Connection: TmnServerConnection);
 begin
   Enter;
   try
-    FList.Add(Connection);
+    List.Add(Connection);
     Changed;
   finally
     Leave;
@@ -350,7 +345,6 @@ end;
 constructor TmnListener.Create;
 begin
   inherited;
-  FList := TmnConnectionList.Create;
   FAttempts := 0;
   FTimeout := -1;
 end;
@@ -362,7 +356,6 @@ end;
 
 destructor TmnListener.Destroy;
 begin
-  FreeAndNil(FList);
   inherited;
 end;
 
@@ -435,11 +428,6 @@ begin
   Result := (FSocket <> nil) and FSocket.Active;
 end;
 
-function TmnListener.GetCount: Integer;
-begin
-  Result := FList.Count;
-end;
-
 procedure TmnListener.Log(S: string);
 begin
   {$ifndef NoLog}
@@ -469,7 +457,7 @@ begin
   Enter;
   try
     if Connection.FreeOnTerminate then
-      FList.Remove(Connection);
+      List.Remove(Connection);
   finally
     Leave;
   end;
@@ -482,20 +470,20 @@ var
 begin
   Enter;
   try
-    for i := 0 to FList.Count - 1 do
+    for i := 0 to List.Count - 1 do
     begin
-      FList[i].FreeOnTerminate := False;
-      FList[i].Stop;
+      List[i].FreeOnTerminate := False;
+      List[i].Stop;
     end;
   finally
     Leave;
   end;
   try
-    while FList.Count > 0 do
+    while List.Count > 0 do
     begin
-      FList[0].WaitFor;
-      FList[0].Free;
-      FList.Delete(0);
+      List[0].WaitFor;
+      List[0].Free;
+      List.Delete(0);
     end;
   finally
   end;

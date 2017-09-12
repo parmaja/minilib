@@ -104,7 +104,7 @@ type
     function Listener: TmnHttpListener;
     procedure Process; override;
   public
-    constructor Create(vConnector: TmnConnector; Socket: TmnCustomSocket); override;
+    constructor Create(vConnector: TmnConnections; Socket: TmnCustomSocket); override;
     destructor Destroy; override;
     property RequestInfo: TRequestInfo read FRequestInfo;
   end;
@@ -272,7 +272,7 @@ begin
   inherited;
 end;
 
-constructor THttpConnection.Create(vConnector: TmnConnector; Socket: TmnCustomSocket);
+constructor THttpConnection.Create(vConnector: TmnConnections; Socket: TmnCustomSocket);
 begin
   inherited;
   Stream.EndOfLine := sWinEndOfLine;

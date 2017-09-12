@@ -41,23 +41,44 @@ type
 
   TmnConnection = class;
 
-  { TmnConnector }
 
-  TmnConnector = class(TmnLockThread)
+  TmnConnectionList = class(TList)
+  private
+    function GetItems(Index: Integer): TmnConnection;
+    procedure SetItems(Index: Integer; const Value: TmnConnection);
   protected
+  public
+    property Items[Index: Integer]: TmnConnection read GetItems write SetItems; default;
+  end;
+
+  { TmnConnections }
+
+  TmnConnections = class(TmnLockThread)  //TmnListener and TmnCaller using it
+  private
+    FList: TmnConnectionList;
+  protected
+    FPort: string;
+    FAddress: string;
     function CreateStream(Socket: TmnCustomSocket): TmnSocketStream; virtual;
+    function GetCount: Integer;
+  public
+    constructor Create;
+    destructor Destroy; override;
+    procedure Stop; virtual;
+    property Count: Integer read GetCount;
+    property List: TmnConnectionList read FList;
   end;
 
   { TmnConnection }
 
   TmnConnection = class(TmnThread)
   private
-    FConnector: TmnConnector;
+    FConnector: TmnConnections;
     FStream: TmnSocketStream;
     function GetConnected: Boolean;
     procedure SetConnected(const Value: Boolean);
   protected
-    property Connector: TmnConnector read FConnector;
+    property Connector: TmnConnections read FConnector;
     procedure Prepare; virtual;
     procedure Process; virtual;
     procedure Execute; override;
@@ -65,7 +86,7 @@ type
 
     procedure HandleException(E: Exception); virtual;
   public
-    constructor Create(vConnector: TmnConnector; vSocket: TmnCustomSocket); virtual;
+    constructor Create(vConnector: TmnConnections; vSocket: TmnCustomSocket); virtual;
     destructor Destroy; override;
     procedure Connect; virtual;
     procedure Disconnect; virtual;
@@ -79,15 +100,6 @@ type
     property Stream: TmnSocketStream read FStream;
   end;
 
-  TmnConnectionList = class(TList)
-  private
-    function GetItems(Index: Integer): TmnConnection;
-    procedure SetItems(Index: Integer; const Value: TmnConnection);
-  protected
-  public
-    property Items[Index: Integer]: TmnConnection read GetItems write SetItems; default;
-  end;
-
 procedure mnCheckError(Value: Integer);
 
 implementation
@@ -98,11 +110,32 @@ begin
     raise EmnException.Create('WinSocket, error #' + IntToStr(Value));
 end;
 
-{ TmnConnector }
+{ TmnConnections }
 
-function TmnConnector.CreateStream(Socket: TmnCustomSocket): TmnSocketStream;
+function TmnConnections.CreateStream(Socket: TmnCustomSocket): TmnSocketStream;
 begin
   Result := TmnSocketStream.Create(Socket);
+end;
+
+constructor TmnConnections.Create;
+begin
+  inherited;
+  FList := TmnConnectionList.Create;
+end;
+
+destructor TmnConnections.Destroy;
+begin
+  FList.Free;
+  inherited;
+end;
+
+procedure TmnConnections.Stop;
+begin
+end;
+
+function TmnConnections.GetCount: Integer;
+begin
+  Result := FList.Count;
 end;
 
 procedure TmnConnection.Execute;
@@ -166,7 +199,7 @@ begin
   Disconnect;
 end;
 
-constructor TmnConnection.Create(vConnector: TmnConnector; vSocket: TmnCustomSocket);
+constructor TmnConnection.Create(vConnector: TmnConnections; vSocket: TmnCustomSocket);
 begin
   inherited Create;
   FConnector := vConnector;

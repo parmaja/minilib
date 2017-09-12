@@ -55,7 +55,7 @@ type
   protected
     procedure Execute; override;
   public
-    constructor Create(vConnector: TmnConnector; vSocket: TmnCustomSocket); override;
+    constructor Create(vConnector: TmnConnections; vSocket: TmnCustomSocket); override;
     destructor Destroy; override;
     property Caller: TmnCaller read GetCaller;
   end;
@@ -67,17 +67,13 @@ type
 
   { TmnCaller }
 
-  TmnCaller = class(TmnConnector) // thread pooling to watch for outgoing requests
+  TmnCaller = class(TmnConnections) // thread pooling to watch for outgoing requests
   private
-    FPort: string;
-    FAddress: string;
-    FList: TmnConnectionList;
     FOnLog: TmnOnLog;
     FOnChanged: TmnOnCallerNotify;
     procedure Connect;
     procedure Disconnect;
     function GetConnected: Boolean;
-    function GetCount: Integer;
   protected
     FOptions: TmnsoOptions;
     function CreateConnection(Socket: TmnCustomSocket): TmnClientConnection; virtual;
@@ -94,11 +90,11 @@ type
     procedure Start;
     {$endif}
     {$endif}
-    procedure Stop;
+    procedure Stop; override;
     procedure Log(Connection: TmnConnection; S: string);
     function AddConnection(vPort: string; vAddress: string): TmnClientConnection;
     property Connected: Boolean read GetConnected;
-    property Count: Integer read GetCount;
+
     property OnLog: TmnOnLog read FOnLog write FOnLog;
     property OnChanged: TmnOnCallerNotify read FOnChanged write FOnChanged;
   end;
@@ -107,7 +103,7 @@ implementation
 
 { TmnClientConnection }
 
-constructor TmnClientConnection.Create(vConnector: TmnConnector; vSocket: TmnCustomSocket);
+constructor TmnClientConnection.Create(vConnector: TmnConnections; vSocket: TmnCustomSocket);
 begin
   inherited;
   FreeOnTerminate := True;
@@ -142,7 +138,7 @@ procedure TmnCaller.Add(Connection: TmnClientConnection);
 begin
   Enter;
   try
-    FList.Add(Connection);
+    List.Add(Connection);
     Changed;
   finally
     Leave;
@@ -164,7 +160,6 @@ end;
 constructor TmnCaller.Create;
 begin
   inherited;
-  FList := TmnConnectionList.Create;
   FOptions := [soNoDelay]; //you can use soKeepAlive
 end;
 
@@ -175,7 +170,6 @@ end;
 
 destructor TmnCaller.Destroy;
 begin
-  FList.Free;
   inherited;
 end;
 
@@ -198,11 +192,6 @@ begin
   Result := Terminated;
 end;
 
-function TmnCaller.GetCount: Integer;
-begin
-  Result := FList.Count;
-end;
-
 procedure TmnCaller.Log(Connection: TmnConnection; S: string);
 begin
   if Assigned(FOnLog) then
@@ -221,7 +210,7 @@ begin
   Enter;
   try
     if Connection.FreeOnTerminate then
-      FList.Remove(Connection);
+      List.Remove(Connection);
     Changed;
   finally
     Leave;
@@ -248,21 +237,21 @@ var
 begin
   Enter;
   try
-    for i := 0 to FList.Count - 1 do
+    for i := 0 to List.Count - 1 do
     begin
-      FList[i].FreeOnTerminate := False;
-      FList[i].Terminate;
+      List[i].FreeOnTerminate := False;
+      List[i].Terminate;
     end;
   finally
     Leave;
   end;
   try
-    while FList.Count > 0 do
+    while List.Count > 0 do
     begin
-//      WaitForSingleObject(FList[0].Handle, INFINITE);
-      FList[0].WaitFor;
-      FList[0].Free;
-      FList.Delete(0);
+//      WaitForSingleObject(List[0].Handle, INFINITE);
+      List[0].WaitFor;
+      List[0].Free;
+      List.Delete(0);
     end;
     Changed;
   finally
