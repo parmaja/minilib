@@ -402,7 +402,7 @@ begin
     raise EmnException.Create('Failed to create a socket, Error #' + Inttostr(WSAGetLastError));
 
   if soNoDelay in Options then
-    WinSock2.setsockopt(aHandle, IPPROTO_TCP, TCP_NODELAY, PAnsiChar(@SO_TRUE), SizeOf(SO_TRUE));
+    setsockopt(aHandle, IPPROTO_TCP, TCP_NODELAY, PAnsiChar(@SO_TRUE), SizeOf(SO_TRUE));
 
   if soReuseAddr in Options then
 {$IFDEF FPC}
