@@ -113,7 +113,8 @@ type
 
   { TmnCustomHttpClient }
 
-  TmnCustomHttpClient = class(TmnClient)
+  //TmnCustomHttpClient = class(TmnClient)
+  TmnCustomHttpClient = class(TObject)
   private
     FStream: TmnClientStream;
     FRequest: TmnHttpRequest;
@@ -121,7 +122,7 @@ type
     FPort: string;
     FAddress: string;
   public
-    constructor Create; override;
+    constructor Create;
     destructor Destroy; override;
     function Connected: Boolean;
     property Request: TmnHttpRequest read FRequest write FRequest;

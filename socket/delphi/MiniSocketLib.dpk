@@ -42,7 +42,7 @@ contains
   mnConnections in '..\source\mnConnections.pas',
   mnCommandClients in '..\source\mnCommandClients.pas',
   mnCommandServers in '..\source\mnCommandServers.pas',
-	mnHttpClient in '..\source\mnHttpClient.pas',
+  mnHttpClient in '..\source\mnHttpClient.pas',
   mnClients in '..\source\mnClients.pas';
 
 end.
