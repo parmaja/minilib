@@ -73,12 +73,12 @@ type
 
   TmnConnection = class(TmnThread)
   private
-    FConnector: TmnConnections;
+    FOwner: TmnConnections;
     FStream: TmnSocketStream;
     function GetConnected: Boolean;
     procedure SetConnected(const Value: Boolean);
   protected
-    property Connector: TmnConnections read FConnector;
+    property Owner: TmnConnections read FOwner;
     procedure Prepare; virtual;
     procedure Process; virtual;
     procedure Execute; override;
@@ -86,7 +86,7 @@ type
 
     procedure HandleException(E: Exception); virtual;
   public
-    constructor Create(vConnector: TmnConnections; vSocket: TmnCustomSocket); virtual;
+    constructor Create(vOwner: TmnConnections; vSocket: TmnCustomSocket); virtual;
     destructor Destroy; override;
     procedure Connect; virtual;
     procedure Disconnect; virtual;
@@ -199,11 +199,12 @@ begin
   Disconnect;
 end;
 
-constructor TmnConnection.Create(vConnector: TmnConnections; vSocket: TmnCustomSocket);
+constructor TmnConnection.Create(vOwner: TmnConnections; vSocket: TmnCustomSocket);
 begin
   inherited Create;
-  FConnector := vConnector;
-  FStream := vConnector.CreateStream(vSocket);
+  FOwner := vOwner;
+  if FOwner <> nil then
+    FStream := vOwner.CreateStream(vSocket);
 end;
 
 destructor TmnConnection.Destroy;

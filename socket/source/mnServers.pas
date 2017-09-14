@@ -37,7 +37,7 @@ type
   protected
     procedure Execute; override;
   public
-    constructor Create(vConnector: TmnConnections; Socket: TmnCustomSocket); override;
+    constructor Create(vOwner: TmnConnections; Socket: TmnCustomSocket); override;
     destructor Destroy; override;
     property Listener: TmnListener read GetListener;
   end;
@@ -239,14 +239,12 @@ end;
 
 { TmnServerConnection }
 
-constructor TmnServerConnection.Create(vConnector: TmnConnections; Socket: TmnCustomSocket);
+constructor TmnServerConnection.Create(vOwner: TmnConnections; Socket: TmnCustomSocket);
 begin
   inherited;
   FreeOnTerminate := True;
   if Listener <> nil then
-  begin
     Listener.Add(Self);
-  end;
 end;
 
 destructor TmnServerConnection.Destroy;
@@ -256,16 +254,14 @@ end;
 
 function TmnServerConnection.GetListener: TmnListener;
 begin
-  Result := Connector as TmnListener;
+  Result := Owner as TmnListener;
 end;
 
 procedure TmnServerConnection.Execute;
 begin
   inherited;
   if Listener <> nil then
-  begin
     Listener.Remove(Self);
-  end;
 end;
 
 procedure TmnServer.SetActive(const Value: Boolean);

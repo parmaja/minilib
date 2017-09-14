@@ -29,7 +29,7 @@ type
 
 { TmnClient }
 
-  TmnCaller = class;
+  TmnClients = class;
 
   TmnClientSocketStream = class(TmnSocketStream)
   private
@@ -49,25 +49,25 @@ type
 
   { TmnClientConnection }
 
-  TmnClientConnection = class(TmnConnection) //this child object in Caller
+  TmnClientConnection = class(TmnConnection) //this child object in Clients
   private
-    function GetCaller: TmnCaller;
+    function GetOwner: TmnClients;
   protected
     procedure Execute; override;
   public
-    constructor Create(vConnector: TmnConnections; vSocket: TmnCustomSocket); override;
+    constructor Create(vOwner: TmnConnections; vSocket: TmnCustomSocket); override;
     destructor Destroy; override;
-    property Caller: TmnCaller read GetCaller;
+    property Owner: TmnClients read GetOwner;
   end;
 
   TmnClientConnectionClass = class of TmnClientConnection;
 
   TmnOnLog = procedure(Connection: TmnConnection; const S: string) of object;
-  TmnOnCallerNotify = procedure(Caller: TmnCaller) of object;
+  TmnOnCallerNotify = procedure(Caller: TmnClients) of object;
 
-  { TmnCaller }
+  { TmnClients }
 
-  TmnCaller = class(TmnConnections) // thread pooling to watch for outgoing requests
+  TmnClients = class(TmnConnections) // thread pooling to collect outgoing clients threads
   private
     FOnLog: TmnOnLog;
     FOnChanged: TmnOnCallerNotify;
@@ -103,14 +103,12 @@ implementation
 
 { TmnClientConnection }
 
-constructor TmnClientConnection.Create(vConnector: TmnConnections; vSocket: TmnCustomSocket);
+constructor TmnClientConnection.Create(vOwner: TmnConnections; vSocket: TmnCustomSocket);
 begin
   inherited;
   FreeOnTerminate := True;
-  if Caller <> nil then
-  begin
-    Caller.Add(Self);
-  end;
+  if Owner <> nil then
+    Owner.Add(Self);
 end;
 
 destructor TmnClientConnection.Destroy;
@@ -121,20 +119,18 @@ end;
 procedure TmnClientConnection.Execute;
 begin
   inherited;
-  if Caller <> nil then
-  begin
-    Caller.Remove(Self);
-  end;
+  if Owner <> nil then
+    Owner.Remove(Self);
 end;
 
-function TmnClientConnection.GetCaller: TmnCaller;
+function TmnClientConnection.GetOwner: TmnClients;
 begin
-  Result := Connector as TmnCaller;
+  Result := Owner as TmnClients;
 end;
 
-{ TmnCaller }
+{ TmnClients }
 
-procedure TmnCaller.Add(Connection: TmnClientConnection);
+procedure TmnClients.Add(Connection: TmnClientConnection);
 begin
   Enter;
   try
@@ -145,7 +141,7 @@ begin
   end;
 end;
 
-procedure TmnCaller.Changed;
+procedure TmnClients.Changed;
 begin
   if Assigned(FOnChanged) then
   begin
@@ -153,46 +149,46 @@ begin
   end;
 end;
 
-procedure TmnCaller.Connect;
+procedure TmnClients.Connect;
 begin
 end;
 
-constructor TmnCaller.Create;
+constructor TmnClients.Create;
 begin
   inherited;
   FOptions := [soNoDelay]; //you can use soKeepAlive
 end;
 
-function TmnCaller.CreateConnection(Socket: TmnCustomSocket): TmnClientConnection;
+function TmnClients.CreateConnection(Socket: TmnCustomSocket): TmnClientConnection;
 begin
   Result := TmnClientConnection.Create(Self, Socket);
 end;
 
-destructor TmnCaller.Destroy;
+destructor TmnClients.Destroy;
 begin
   inherited;
 end;
 
-procedure TmnCaller.Disconnect;
+procedure TmnClients.Disconnect;
 begin
   if Connected then
   begin
   end;
 end;
 
-procedure TmnCaller.Execute;
+procedure TmnClients.Execute;
 begin
   Connect;
   Shutdown;
   Disconnect;
 end;
 
-function TmnCaller.GetConnected: Boolean;
+function TmnClients.GetConnected: Boolean;
 begin
   Result := Terminated;
 end;
 
-procedure TmnCaller.Log(Connection: TmnConnection; S: string);
+procedure TmnClients.Log(Connection: TmnConnection; S: string);
 begin
   if Assigned(FOnLog) then
   begin
@@ -205,7 +201,7 @@ begin
   end;
 end;
 
-procedure TmnCaller.Remove(Connection: TmnClientConnection);
+procedure TmnClients.Remove(Connection: TmnClientConnection);
 begin
   Enter;
   try
@@ -219,19 +215,19 @@ end;
 
 {$ifndef FPC} //already found in FPC 2.4.4
 {$if CompilerVersion < 18} // Delphi 2007 or later {$ifend}
-procedure TmnCaller.Start;
+procedure TmnClients.Start;
 begin
   Resume;
 end;
 {$endif}
 {$endif}
 
-procedure TmnCaller.Stop;
+procedure TmnClients.Stop;
 begin
   Terminate;
 end;
 
-procedure TmnCaller.Shutdown;
+procedure TmnClients.Shutdown;
 var
   i: Integer;
 begin
@@ -258,7 +254,7 @@ begin
   end;
 end;
 
-function TmnCaller.AddConnection(vPort: string; vAddress: string): TmnClientConnection;
+function TmnClients.AddConnection(vPort: string; vAddress: string): TmnClientConnection;
 var
   aSocket: TmnCustomSocket;
 begin
