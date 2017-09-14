@@ -275,7 +275,7 @@ end;
 
 function TmnClientSocketStream.CreateSocket: TmnCustomSocket;
 begin
-  Result := WallSocket.Connect([], Port, Address)
+  Result := WallSocket.Connect([soReuseAddr, soNoDelay], Port, Address)
 end;
 
 procedure TmnClientSocketStream.SetAddress(const Value: string);

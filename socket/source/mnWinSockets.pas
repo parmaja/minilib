@@ -411,6 +411,7 @@ begin
   {$ENDIF}
 {$ELSE}
     WinSock.setsockopt(aHandle, SOL_SOCKET, SO_REUSEADDR, PAnsiChar(@SO_TRUE), SizeOf(SO_TRUE));
+    WinSock.setsockopt(aHandle, IPPROTO_TCP, TCP_NODELAY, PAnsiChar(@SO_TRUE), SizeOf(SO_TRUE));
 {$ENDIF}
 
   aSockAddr.sin_family := AF_INET;
