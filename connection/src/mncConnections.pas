@@ -173,6 +173,7 @@ type
     FConnection: TmncConnection;
     FStartCount: Integer;
     FAction: TmncSessionAction;
+    FCurrentAction: TmncSessionAction;
     FIsInit: Boolean;
     FParamsChanged: Boolean;
     procedure SetParams(const Value: TStrings);
@@ -1101,9 +1102,12 @@ begin
   Init;
   if sbhEmulate in Behaviors then
   begin
-     if Connection.FStartCount = 0 then
-       DoStart;
-      Inc(Connection.FStartCount);
+    if Connection.FStartCount = 0 then
+    begin
+      FCurrentAction := sdaCommit;
+      DoStart;
+    end;
+    Inc(Connection.FStartCount);
   end
   else if sbhMultiple in Behaviors then
     DoStart;
@@ -1129,8 +1133,14 @@ begin
       if Connection.FStartCount = 0 then
         raise EmncException.Create('Session not started yet!');
       Dec(Connection.FStartCount);
+     if (FCurrentAction > How) then
+        raise EmncException.Create('there is older action rollbacked!'); //in emulate mode you can't do rollback, then commit if we have 2 session started
+      FCurrentAction := How;
       if Connection.FStartCount = 0 then
+      begin
         DoStop(How, Retaining);
+        FCurrentAction := sdaCommit;
+      end;
     end;
   end
   else if sbhMultiple in Behaviors then
