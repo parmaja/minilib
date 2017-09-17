@@ -221,9 +221,9 @@ begin
     begin
       CommentProc;
     end;
-    rscCommentPlus:
+    rscGrandComment:
     begin
-      CommentPlusProc;
+      GrandCommentProc;
     end;
     rscDocument:
     begin

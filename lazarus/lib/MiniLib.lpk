@@ -35,28 +35,28 @@
         <UnitName Value="ColorUtils"/>
       </Item4>
       <Item5>
-        <Filename Value="syn/mnSynHighlighterSARD.pas"/>
-        <UnitName Value="mnSynHighlighterSARD"/>
+        <Filename Value="syn/mnSynUtils.pas"/>
+        <UnitName Value="mnSynUtils"/>
       </Item5>
       <Item6>
-        <Filename Value="syn/mnSynHighlighterStdSQL.pas"/>
-        <UnitName Value="mnSynHighlighterStdSQL"/>
-      </Item6>
-      <Item7>
-        <Filename Value="syn/mnSynHighlighterXHTML.pas"/>
-        <UnitName Value="mnSynHighlighterXHTML"/>
-      </Item7>
-      <Item8>
-        <Filename Value="syn/mnSynUtils.pas"/>
-        <UnitName Value="SynUtils"/>
-      </Item8>
-      <Item9>
         <Filename Value="syn/PHPProcessor.pas"/>
         <UnitName Value="PHPProcessor"/>
-      </Item9>
-      <Item10>
+      </Item6>
+      <Item7>
         <Filename Value="syn/HTMLProcessor.pas"/>
         <UnitName Value="HTMLProcessor"/>
+      </Item7>
+      <Item8>
+        <Filename Value="syn/mnSynHighlighterXHTML.pas"/>
+        <UnitName Value="mnSynHighlighterXHTML"/>
+      </Item8>
+      <Item9>
+        <Filename Value="syn/mnSynHighlighterSARD.pas"/>
+        <UnitName Value="mnSynHighlighterSARD"/>
+      </Item9>
+      <Item10>
+        <Filename Value="syn/mnSynHighlighterStdSQL.pas"/>
+        <UnitName Value="mnSynHighlighterStdSQL"/>
       </Item10>
       <Item11>
         <Filename Value="syn/mnSynHighlighterApache.pas"/>

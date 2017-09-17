@@ -21,7 +21,7 @@ type
     tkString, tkValue, tkText, tkVariable, tkProcessor);
 
   //Common range used for some syntax
-  TCommonRangeState = (rscUnknown, rscComment, rscCommentPlus, rscDocument, rscStringSQ, rscStringDQ, rscStringBQ, rscStringSpecial); //BackQuote
+  TCommonRangeState = (rscUnknown, rscComment, rscGrandComment, rscDocument, rscStringSQ, rscStringDQ, rscStringBQ, rscStringSpecial); //BackQuote
 
   TProcTableProc = procedure of object;
 
@@ -89,12 +89,12 @@ type
 
     //Common procs
     procedure InternalCommentProc; //   /* */
-    procedure InternalCommentPlusProc;//    /+ +/
+    procedure InternalGrandCommentProc; //    /+ +/
 
     procedure WordProc; //Identifire started with char like #define
     procedure SLCommentProc; //Single Line Comment //comment or #comment depend on who started
     procedure CommentProc;
-    procedure CommentPlusProc;
+    procedure GrandCommentProc;
     procedure DocumentProc;
 
     procedure StringProc;
@@ -357,7 +357,7 @@ begin
   end;
 end;
 
-procedure TCommonSynProcessor.InternalCommentPlusProc;
+procedure TCommonSynProcessor.InternalGrandCommentProc;
 begin
   while not (Parent.FLine[Parent.Run] in [#0, #10, #13]) do
   begin
@@ -395,11 +395,11 @@ begin
   InternalCommentProc;
 end;
 
-procedure TCommonSynProcessor.CommentPlusProc;
+procedure TCommonSynProcessor.GrandCommentProc;
 begin
   Parent.FTokenID := tkComment;
-  SetRange(rscCommentPlus);
-  InternalCommentPlusProc;
+  SetRange(rscGrandComment);
+  InternalGrandCommentProc;
 end;
 
 procedure TCommonSynProcessor.DocumentProc;

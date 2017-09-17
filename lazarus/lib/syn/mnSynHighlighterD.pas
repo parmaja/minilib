@@ -163,6 +163,14 @@ begin
         else
           CommentProc;
       end;
+    '+':
+      begin
+        Inc(Parent.Run);
+{        if Parent.FLine[Parent.Run] = '+' then
+          DocumentProc
+        else}
+          GrandCommentProc;
+      end
   else
     Parent.FTokenID := tkSymbol;
   end;
@@ -214,9 +222,9 @@ begin
     begin
       CommentProc;
     end;
-    rscCommentPlus:
+    rscGrandComment:
     begin
-      CommentPlusProc;
+      GrandCommentProc;
     end;
     rscDocument:
     begin

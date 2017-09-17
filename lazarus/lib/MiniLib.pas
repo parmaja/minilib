@@ -8,9 +8,9 @@ unit MiniLib;
 interface
 
 uses
-  PHPUtils, GUIMsgBox, mnFonts, ColorUtils, mnSynHighlighterSARD, 
-  mnSynHighlighterStdSQL, mnSynHighlighterXHTML, mnSynUtils, PHPProcessor, 
-  HTMLProcessor, mnSynHighlighterApache, mnSynHighlighterConfig, 
+  PHPUtils, GUIMsgBox, mnFonts, ColorUtils, mnSynUtils, PHPProcessor, 
+  HTMLProcessor, mnSynHighlighterXHTML, mnSynHighlighterSARD, 
+  mnSynHighlighterStdSQL, mnSynHighlighterApache, mnSynHighlighterConfig, 
   mnSynHighlighterCpp, mnSynHighlighterD, mnSynHighlighterFirebird, 
   mnSynHighlighterLua, mnSynHighlighterMultiProc, LazarusPackageIntf;
 
