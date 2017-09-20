@@ -78,7 +78,7 @@ begin
     begin
       case HeaderList.ItemIndex of
         1: vCSVIE.HeaderLine := hdrNormal;
-        2: vCSVIE.HeaderLine := hdrIgnore;
+        2: vCSVIE.HeaderLine := hdrSkip;
         else
           vCSVIE.HeaderLine := hdrNone;
       end;

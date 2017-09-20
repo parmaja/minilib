@@ -11,8 +11,7 @@ unit mncCSV;
 interface
 
 uses
-  Classes, SysUtils, Variants,
-  IniFiles,
+  Classes, SysUtils, Variants, IniFiles,
   mnUtils, mncConnections, mnStreams;
 
 type
@@ -21,7 +20,7 @@ type
     hdrNormal: Header is the first line contain field names
     hdrIgnore: Header found for import files but ignored, header not exported
   }
-  TmncCSVHeader = (hdrNone, hdrNormal, hdrIgnore);
+  TmncCSVHeader = (hdrNone, hdrSkip, hdrNormal);
   TmncEmptyLine = (
     elFetch, //Load it
     elSkip, //Ignore it
@@ -97,7 +96,7 @@ type
     procedure LoadRecord;
     procedure SaveRecord;
     function ReadLine(out Strings: TStringList): Boolean;
-    procedure WriteLine(S: string); //Because i am not trust with Strings.Text
+    procedure WriteLine(S: string); //Because i dont trust with Strings.Text
     procedure DoPrepare; override;
     procedure DoExecute; override;
     procedure DoNext; override;
@@ -417,12 +416,13 @@ end;
 
 procedure TmncCSVCommand.WriteLine(S: string);
 var
-  ansi: string;
+  ansi: RawByteString;
 begin
   if Session.CSVOptions.ANSIContents then
   begin
     {$ifdef fpc}
-    ansi := Utf8ToAnsi(s);
+    ansi := s;
+    SetCodePage(ansi, SystemAnsiCodePage, true);
     {$else}
     ansi := AnsiString(s);//Here you can fix the bug
     {$endif}

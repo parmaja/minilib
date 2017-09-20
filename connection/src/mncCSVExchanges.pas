@@ -245,7 +245,7 @@ begin
     end
     else
     begin
-      if HeaderLine = hdrIgnore then //eating the first line, Hummm
+      if HeaderLine = hdrSkip then //eating the first line, Hummm
       begin
         while not EOL do
         begin
