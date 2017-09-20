@@ -129,6 +129,10 @@ const
 {$endif}
 {$endif}
 
+{$ifdef FPC}
+var
+  SystemAnsiCodePage: Integer;
+{$endif}
 
 implementation
 
@@ -745,11 +749,11 @@ begin
 end;
 
 initialization
-  {$ifndef FPC}
+  {$ifdef FPC}
+    SystemAnsiCodePage := WideStringManager.GetStandardCodePageProc(scpAnsi);
+  {$else}
     {$if CompilerVersion < 22.0}
     GetLocaleFormatSettings(GetUserDefaultLCID, FFormatSettings)
     {$ifend}
   {$endif}
-
-
 end.

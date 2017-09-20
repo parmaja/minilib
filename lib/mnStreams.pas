@@ -83,6 +83,7 @@ type
     function ReadUntil(const Match: ansistring; ExcludeMatch: Boolean; out Buffer: ansistring; out Matched: Boolean): Boolean; overload;
     function ReadUntil(const Match: widestring; ExcludeMatch: Boolean; out Buffer: widestring; out Matched: Boolean): Boolean; overload;
 
+    function ReadLine(out S: rawbytestring; ExcludeEOL: Boolean = True; EOL: rawbytestring = ''): Boolean; overload;
     function ReadLine(out S: ansistring; ExcludeEOL: Boolean = True; EOL: ansistring = ''): Boolean; overload;
     function ReadLine(out S: widestring; ExcludeEOL: Boolean = True; EOL: widestring = ''): Boolean; overload;
     function ReadLine(out S: utf8string; ExcludeEOL: Boolean = True; EOL: utf8string = ''): Boolean; overload;
@@ -366,6 +367,20 @@ begin
   SetString(S, PAnsiChar(res), len div SizeOf(AnsiChar));
   FreeMem(res);
 end;
+
+function TmnBufferStream.ReadLine(out S: rawbytestring; ExcludeEOL: Boolean; EOL: rawbytestring): Boolean;
+var
+  m: Boolean;
+  res: Pointer;
+  len: TFileSize;
+begin
+  if EOL = '' then
+    EOL := EndOfLine;
+  Result := ReadBufferUntil(@eol[1], Length(eol), ExcludeEOL, res, len, m);
+  SetString(S, PAnsiChar(res), len);
+  FreeMem(res);
+end;
+
 
 function TmnBufferStream.ReadLine: string;
 begin
