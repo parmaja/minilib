@@ -88,7 +88,7 @@ type
     {$ifndef FPC} //already found in FPC 2.4.4
     {$if CompilerVersion < 18} // Delphi 2007 or later {$ifend}
     procedure Start;
-    {$endif}
+    {$ifend}
     {$endif}
     procedure Stop; override;
     procedure Log(Connection: TmnConnection; S: string);
@@ -271,7 +271,7 @@ end;
 
 function TmnClientSocketStream.CreateSocket: TmnCustomSocket;
 begin
-  Result := WallSocket.Connect([soReuseAddr, soNoDelay], Port, Address)
+  Result := WallSocket.Connect([soNoDelay], Port, Address)
 end;
 
 procedure TmnClientSocketStream.SetAddress(const Value: string);

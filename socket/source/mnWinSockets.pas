@@ -405,14 +405,15 @@ begin
     setsockopt(aHandle, IPPROTO_TCP, TCP_NODELAY, PAnsiChar(@SO_TRUE), SizeOf(SO_TRUE));
 
   if soReuseAddr in Options then
-{$IFDEF FPC}
-  {$IFNDEF WINCE}
-    WinSock2.setsockopt(aHandle, SOL_SOCKET, SO_REUSEADDR, PChar(@SO_TRUE), SizeOf(SO_TRUE));
-  {$ENDIF}
-{$ELSE}
-    WinSock.setsockopt(aHandle, SOL_SOCKET, SO_REUSEADDR, PAnsiChar(@SO_TRUE), SizeOf(SO_TRUE));
-    WinSock.setsockopt(aHandle, IPPROTO_TCP, TCP_NODELAY, PAnsiChar(@SO_TRUE), SizeOf(SO_TRUE));
-{$ENDIF}
+  begin
+    {$IFDEF FPC}
+      {$IFNDEF WINCE}
+        WinSock2.setsockopt(aHandle, SOL_SOCKET, SO_REUSEADDR, PChar(@SO_TRUE), SizeOf(SO_TRUE));
+      {$ENDIF}
+    {$ELSE}
+      WinSock.setsockopt(aHandle, SOL_SOCKET, SO_REUSEADDR, PAnsiChar(@SO_TRUE), SizeOf(SO_TRUE));
+    {$ENDIF}
+  end;
 
   aSockAddr.sin_family := AF_INET;
   aSockAddr.sin_port := htons(LookupPort(Port));
