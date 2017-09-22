@@ -749,13 +749,12 @@ begin
 end;
 
 initialization
+  {$ifdef FPC}
   {$ifdef windows}
   SystemAnsiCodePage := GetACP; //windows only
   {$else}
-  SystemAnsiCodePage := 1262; //scpAnsi has no meaning in linux, you can change it in your application
+  SystemAnsiCodePage := 1252; //scpAnsi has no meaning in linux, you can change it in your application
   {$endif}
-
-  {$ifdef FPC}
   {$else}
     {$if CompilerVersion < 22.0}
     GetLocaleFormatSettings(GetUserDefaultLCID, FFormatSettings)
