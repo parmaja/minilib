@@ -45,12 +45,12 @@ function StrToStrings(Content: string; Strings: TStrings; Separators: TSysCharSe
   Break string to Strings list items at #10 or #13 or #13#10
 }
 
-type
+{type
   TBreakToStringsCallBack = procedure(S: string; vObject: TObject);
 
 procedure BreakToStrings(S: string; IncludeLineBreaks: Boolean; CallBackProc: TBreakToStringsCallBack; vObject: TObject); overload; deprecated;
 procedure BreakToStrings(S: string; vStrings: TStrings; IncludeLineBreaks: Boolean = False); overload; deprecated;
-
+}
 function StringsToString(Strings: TStrings; LineBreak: string = sLineBreak): string;
 
 function CompareLeftStr(const Str: string; const WithStr: string; Start: Integer = 1): Boolean;
@@ -127,11 +127,6 @@ const
 {$else}
   DirectorySeparator: string = '/';
 {$endif}
-{$endif}
-
-{$ifdef FPC}
-var
-  SystemAnsiCodePage: Integer;
 {$endif}
 
 implementation
@@ -572,7 +567,7 @@ begin
     end;
   end;
 end;
-
+{
 procedure BreakToStrings(S: string; IncludeLineBreaks: Boolean; CallBackProc: TBreakToStringsCallBack; vObject: TObject);
 var
   t: string;
@@ -620,10 +615,10 @@ begin
   (vObject as TStrings).Add(S);
 end;
 
-procedure BreakToStrings(S: string; vStrings: TStrings; IncludeLineBreaks: Boolean = False);
+{procedure BreakToStrings(S: string; vStrings: TStrings; IncludeLineBreaks: Boolean = False);
 begin
   BreakToStrings(S, IncludeLineBreaks, @BreakStringsProc, vStrings);
-end;
+end;}
 
 function StringsToString(Strings: TStrings; LineBreak: string): string;
 var
@@ -750,7 +745,6 @@ end;
 
 initialization
   {$ifdef FPC}
-    SystemAnsiCodePage := WideStringManager.GetStandardCodePageProc(scpAnsi);
   {$else}
     {$if CompilerVersion < 22.0}
     GetLocaleFormatSettings(GetUserDefaultLCID, FFormatSettings)

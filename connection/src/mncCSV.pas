@@ -346,7 +346,8 @@ end;
 function TmncCSVCommand.ReadLine(out Strings: TStringList): Boolean;
 var
   s: string;
-  t: rawbytestring;
+  //t: rawbytestring;
+  t: ansistring;
 begin
   Result := (FCSVStream <> nil) and not FCSVStream.EOF;
   if Result then
@@ -358,10 +359,12 @@ begin
       begin
         Result := FCSVStream.ReadLine(t, False);
         {$ifdef fpc}
-        SetCodePage(t, SystemAnsiCodePage, false);
-        //SetCodePage(t, WideStringManager.GetStandardCodePageProc(scpAnsi), false);
-        {$endif}
+        //SetCodePage(t, SystemAnsiCodePage, false);
+        //or set in your project DefaultSystemCodePage := widestringmanager.GetStandardCodePageProc(scpAnsi);
+        s := AnsiToUtf8(t);//Here you can fix the bug
+        {$else}
         s := string(t);//Here you can fix the bug
+        {$endif}
       end
       else
         Result := FCSVStream.ReadLine(s, False);
@@ -416,13 +419,13 @@ end;
 
 procedure TmncCSVCommand.WriteLine(S: string);
 var
-  ansi: RawByteString;
+  ansi: AnsiString;
 begin
   if Session.CSVOptions.ANSIContents then
   begin
     {$ifdef fpc}
-    ansi := s;
-    SetCodePage(ansi, SystemAnsiCodePage, true);
+    ansi := Utf8ToAnsi(s);
+    //SetCodePage(ansi, SystemAnsiCodePage, true);
     {$else}
     ansi := AnsiString(s);//Here you can fix the bug
     {$endif}
