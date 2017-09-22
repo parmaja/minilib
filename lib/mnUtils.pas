@@ -15,7 +15,7 @@ unit mnUtils;
 interface
 
 uses
-  {$ifndef fpc}Windows, {$endif}
+  {$ifdef windows}Windows, {$endif}
   Classes, SysUtils, StrUtils, DateUtils, Types;
 
 const
@@ -127,6 +127,11 @@ const
 {$else}
   DirectorySeparator: string = '/';
 {$endif}
+{$endif}
+
+{$ifdef FPC}
+var
+  SystemAnsiCodePage: Integer; //used to convert from Ansi string, it is the default
 {$endif}
 
 implementation
@@ -744,6 +749,12 @@ begin
 end;
 
 initialization
+  {$ifdef windows}
+  SystemAnsiCodePage := GetACP; //windows only
+  {$else}
+  SystemAnsiCodePage := 1262; //scpAnsi has no meaning in linux, you can change it in your application
+  {$endif}
+
   {$ifdef FPC}
   {$else}
     {$if CompilerVersion < 22.0}
