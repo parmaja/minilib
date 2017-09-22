@@ -243,7 +243,10 @@ begin
   if Session.HeaderLine <> hdrNone then
   begin
     if (Mode = csvmWrite) then
-      SaveHeader
+    begin
+      if Session.HeaderLine <> hdrSkip then //do not save when it
+        SaveHeader;
+    end
     else
       LoadHeader;
   end;

@@ -119,7 +119,7 @@ procedure TCSVOptionsForm.FormCreate(Sender: TObject);
 begin
   HeaderList.Items.Add('No Header');
   HeaderList.Items.Add('Header contain fields');
-  HeaderList.Items.Add('Ignoer header in import');
+  HeaderList.Items.Add('Skip header');
   HeaderList.ItemIndex := 0;
 
   DelimiterList.Items.Add(';');
