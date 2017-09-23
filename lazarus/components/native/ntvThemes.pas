@@ -135,6 +135,7 @@ end;
 procedure TntvThemePainter.DrawText(Canvas: TCanvas; Text: string; Rect: TRect; Style: TTextStyle; UseRightToLeft: Boolean);
 begin
   Style.RightToLeft := UseRightToLeft;
+  Rect.Top := Rect.Top + 1; //idk why
   Canvas.TextRect(Rect, Rect.Left, Rect.Top, Text, Style);
 end;
 

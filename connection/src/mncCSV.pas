@@ -359,7 +359,7 @@ begin
     repeat
       if Session.CSVOptions.ANSIContents then
       begin
-        Result := FCSVStream.ReadLine(t, False);
+        Result := FCSVStream.ReadLineRawByte(t, False);
         {$ifdef fpc}
         SetCodePage(t, SystemAnsiCodePage, false);
         s := AnsiToUtf8(t);
@@ -420,20 +420,28 @@ end;
 
 procedure TmncCSVCommand.WriteLine(S: string);
 var
-  ansi: RawByteString;
+  raw: RawByteString;
 begin
   if Session.CSVOptions.ANSIContents then
   begin
     {$ifdef fpc}
-    SetCodePage(ansi, SystemAnsiCodePage, false);
-    ansi := Utf8ToAnsi(s);
+    raw := '';
+    SetCodePage(raw, SystemAnsiCodePage, false);
+    raw := Utf8ToAnsi(s);
     {$else}
-    ansi := AnsiString(s);//Here you can fix the bug
+    raw := AnsiString(s);//Here you can fix the bug
     {$endif}
-    FCSVStream.WriteLine(ansi);
+    FCSVStream.WriteLineRawByte(raw);
   end
   else
+  begin
+    {$ifdef FPC}
+    raw := s;
+    FCSVStream.WriteLineRawByte(raw);
+    {$else}
     FCSVStream.WriteLine(s);
+    {$endif}
+  end
 end;
 
 end.

@@ -170,17 +170,17 @@ var
 begin
   aStream := TmnWrapperStream.Create(TFileStream.Create(vFileName, fmCreate), sWinEndOfLine);
   try
-    aStream.WriteLine('# Hejri file date is csv file');
-    aStream.WriteLine('#---------------------------------');
-    aStream.WriteLine('# The format Hiri date without day number 1430-01 and the count of day in this month,');
-    aStream.WriteLine('# then only first line the date in greg date in ISO date format');
-    aStream.WriteLine('# you can ignore any line by use # in the first char of line');
-    aStream.WriteLine('# any empry line will be ignored.');
+    aStream.WriteLine(UTF8String('# Hejri file date is csv file'));
+    aStream.WriteLine(UTF8String('#---------------------------------'));
+    aStream.WriteLine(UTF8String('# The format Hiri date without day number 1430-01 and the count of day in this month,'));
+    aStream.WriteLine(UTF8String('# then only first line the date in greg date in ISO date format'));
+    aStream.WriteLine(UTF8String('# you can ignore any line by use # in the first char of line'));
+    aStream.WriteLine(UTF8String('# any empry line will be ignored.'));
     for i := 0 to Length(HejriItems.Items) - 1 do
     begin
       DecodeDate(HejriItems.Items[i].GregDate, y, m, d);
       if (i mod 12 + 1) = 1 then
-        aStream.WriteLine('');
+        aStream.WriteLine(UTF8String(''));
       Ln := Format('%.4d-%.2d;%.2d', [i div 12 + HejriItems.HejriYear, (i mod 12 + 1), HejriItems.Items[i].Days]);
 //      if i = 0 then
       if (i mod 12 + 1) = 1 then

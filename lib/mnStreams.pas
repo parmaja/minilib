@@ -27,11 +27,7 @@ const
   sGSEndOfLine = #$1E;
 
 type
-  {$ifdef FPC}
-    TFileSize = Longint;
-  {$else}
-    TFileSize = Cardinal;
-  {$endif}
+  TFileSize = Longint;
 
   EmnStreamException = class(Exception);
   EmnStreamExceptionAbort = class(Exception); //can be ignored by ide
@@ -83,10 +79,11 @@ type
     function ReadUntil(const Match: ansistring; ExcludeMatch: Boolean; out Buffer: ansistring; out Matched: Boolean): Boolean; overload;
     function ReadUntil(const Match: widestring; ExcludeMatch: Boolean; out Buffer: widestring; out Matched: Boolean): Boolean; overload;
 
-    function ReadLine(out S: rawbytestring; ExcludeEOL: Boolean = True; EOL: rawbytestring = ''): Boolean; overload;
+    function ReadLineRawByte(out S: rawbytestring; ExcludeEOL: Boolean = True; EOL: rawbytestring = ''): Boolean; overload;
+
     function ReadLine(out S: ansistring; ExcludeEOL: Boolean = True; EOL: ansistring = ''): Boolean; overload;
-    function ReadLine(out S: widestring; ExcludeEOL: Boolean = True; EOL: widestring = ''): Boolean; overload;
     function ReadLine(out S: utf8string; ExcludeEOL: Boolean = True; EOL: utf8string = ''): Boolean; overload;
+    function ReadLine(out S: widestring; ExcludeEOL: Boolean = True; EOL: widestring = ''): Boolean; overload;
     function ReadLine(out S: unicodestring; ExcludeEOL: Boolean = True; EOL: unicodestring = ''): Boolean; overload;
 
     function ReadLine: string; overload;
@@ -94,14 +91,12 @@ type
     function ReadLn: string; overload; deprecated;
     function ReadAnsiString(vCount: Integer): AnsiString;
 
-    {$ifdef FPC}
-    //no Ansi, it is UTF8
-    {$else}
+    function WriteLineRawByte(const S: rawbytestring; EOL: rawbytestring = ''): TFileSize; overload;
+
     function WriteLine(const S: ansistring; EOL: ansistring = ''): TFileSize; overload;
-    {$endif}
+    function WriteLine(const S: utf8string; EOL: utf8string = ''): TFileSize; overload;
     function WriteLine(const S: widestring; EOL: widestring = ''): TFileSize; overload;
     function WriteLine(const S: unicodestring; EOL: unicodestring = ''): TFileSize; overload;
-    function WriteLine(const S: utf8string; EOL: utf8string = ''): TFileSize; overload;
 
     function WriteLn(const S: string): TFileSize; overload; deprecated;
 
@@ -234,8 +229,6 @@ begin
   end;
 end;
 
-{$ifdef FPC}
-{$else}
 function TmnBufferStream.WriteLine(const S: ansistring; EOL: ansistring): TFileSize;
 begin
   if EOL = '' then
@@ -245,7 +238,17 @@ begin
     Result := Write(Pointer(S)^, Length(S));
   Result := Result + Write(Pointer(EOL)^, Length(EOL));
 end;
-{$endif}
+
+function TmnBufferStream.WriteLineRawByte(const S: rawbytestring; EOL: rawbytestring): TFileSize;
+begin
+  if EOL = '' then
+    EOL := rawbytestring(EndOfLine);
+  Result := 0;
+  if s <> '' then
+    Result := Write(Pointer(S)^, Length(S));
+  Result := Result + Write(Pointer(EOL)^, Length(EOL));
+end;
+
 function TmnBufferStream.WriteLine(const S: widestring; EOL: widestring): TFileSize;
 begin
   if EOL = '' then
@@ -368,19 +371,18 @@ begin
   FreeMem(res);
 end;
 
-function TmnBufferStream.ReadLine(out S: rawbytestring; ExcludeEOL: Boolean; EOL: rawbytestring): Boolean;
+function TmnBufferStream.ReadLineRawByte(out S: rawbytestring; ExcludeEOL: Boolean; EOL: rawbytestring): Boolean;
 var
   m: Boolean;
   res: Pointer;
   len: TFileSize;
 begin
   if EOL = '' then
-    EOL := EndOfLine;
+    EOL := rawbytestring(EndOfLine);
   Result := ReadBufferUntil(@eol[1], Length(eol), ExcludeEOL, res, len, m);
   SetString(S, PAnsiChar(res), len);
   FreeMem(res);
 end;
-
 
 function TmnBufferStream.ReadLine: string;
 begin

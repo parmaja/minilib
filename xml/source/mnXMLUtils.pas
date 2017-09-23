@@ -16,6 +16,9 @@ interface
 
 uses
   Classes, SysUtils, Typinfo, Variants,
+  {$ifdef FPC}
+  uriparser,
+  {$endif}
   mnUtils;
 
 const
@@ -175,6 +178,12 @@ begin
 end;
 
 function URIToFileName(const URI: string): string;
+{$ifdef FPC}
+begin
+  uriparser.URIToFilename(URI, Result);
+end;
+
+{$else}
 var
   i, l, p: integer;
 const
@@ -200,6 +209,7 @@ begin
     end;
   end;
 end;
+{$endif}
 
 function FileNameToURI(FileName: string): string;
 const
@@ -376,4 +386,3 @@ begin
 end;
 
 end.
-
