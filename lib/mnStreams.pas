@@ -58,7 +58,7 @@ type
     FEndOfLine: string;
     FEOFOnError: Boolean;
     procedure LoadBuffer;
-  private
+  protected
     FPos: PByte;
     FEnd: PByte;
   protected
@@ -154,8 +154,8 @@ type
     procedure Drop; virtual; abstract; //Shutdown
     procedure Disconnect; virtual; abstract;
     procedure Close; //alias for Disconnect
-    function WaitToRead(Timeout: Longint): Boolean; virtual; abstract; overload; //select
-    function WaitToWrite(Timeout: Longint): Boolean; virtual; abstract; overload; //select
+    function WaitToRead(Timeout: Longint): Boolean; overload; virtual; abstract;
+    function WaitToWrite(Timeout: Longint): Boolean; overload; virtual; abstract;
     function WaitToRead: Boolean; overload;
     function WaitToWrite: Boolean; overload;
     function Seek(Offset: Longint; Origin: Word): Longint; override;
