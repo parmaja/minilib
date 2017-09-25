@@ -22,39 +22,30 @@ uses
   mnSockets;
 
 const
-  cReadTimeout = 15000;
   cDataBuffSize = 8192;
   cBufferSize = 1024;
 
 type
   { TmnSocketStream }
 
-  TmnSocketStream = class(TmnBufferStream)
+  TmnSocketStream = class(TmnConnectionStream)
   private
-    FTimeout: Integer;
     FSocket: TmnCustomSocket;
-    function GetConnected: Boolean;
     procedure FreeSocket;
   protected
-    function IsActive: Boolean; override;
+    function GetConnected: Boolean; override;
     function CreateSocket: TmnCustomSocket; virtual;
     function DoRead(var Buffer; Count: Longint): Longint; override;
     function DoWrite(const Buffer; Count: Longint): Longint; override;
   public
     constructor Create(vSocket: TmnCustomSocket = nil); virtual;
     destructor Destroy; override;
-    procedure Connect;
-    procedure Stop;
-    procedure Disconnect;
-    procedure Close; //alias for Disconnect
-    function WaitToRead: Boolean; overload;
-    function WaitToWrite: Boolean; overload;
-    function WaitToRead(Timeout: Longint = -1): Boolean; overload; //select
-    function WaitToWrite(Timeout: Longint = -1): Boolean; overload; //select
-    function Seek(Offset: Longint; Origin: Word): Longint; override;
+    procedure Connect; override;
+    procedure Drop; override; //Shutdown
+    procedure Disconnect; override;
+    function WaitToRead(Timeout: Longint): Boolean; override; //select
+    function WaitToWrite(Timeout: Longint): Boolean; override; //select
     property Socket: TmnCustomSocket read FSocket;
-    property Timeout: Integer read FTimeout write FTimeout;
-    property Connected: Boolean read GetConnected;
   end;
 
   { TmnConnectionStream }
@@ -77,7 +68,7 @@ begin
   Result := 0;
   if not Connected then
     DoError('SocketStream not connected for write')
-  else if WaitToWrite(FTimeout) then
+  else if WaitToWrite(Timeout) then
   begin
     if Socket.Send(Buffer, Count) >= erClosed then
     begin
@@ -101,7 +92,7 @@ begin
     DoError('SocketStream not connected for read')
   else
   begin
-    if WaitToRead(FTimeout) then
+    if WaitToRead(Timeout) then
     begin
       if (Socket = nil) or (Socket.Receive(Buffer, Count) >= erClosed) then
       begin
@@ -119,36 +110,22 @@ begin
   end;
 end;
 
-function TmnSocketStream.Seek(Offset: Integer; Origin: Word): Longint;
-begin
-{$IFDEF FPC}
-  Result := 0;
-{$ENDIF}  
-  raise Exception.Create('not supported and we dont want to support it')
-end;
-
 constructor TmnSocketStream.Create(vSocket: TmnCustomSocket);
 begin
   inherited Create;
   FSocket := vSocket;
-  FTimeout := cReadTimeout;
 end;
 
 procedure TmnSocketStream.Disconnect;
 begin
   if (Socket <> nil) and Socket.Connected then
-    Stop; //may be not but in slow matchine disconnect to take as effects as need (POS in 98)
+    Drop; //may be not but in slow matchine disconnect to take as effects as need (POS in 98)
   FreeSocket;
 end;
 
 function TmnSocketStream.GetConnected: Boolean;
 begin
   Result := (Socket <> nil) and (Socket.Connected);
-end;
-
-procedure TmnSocketStream.Close;
-begin
-  Disconnect;
 end;
 
 procedure TmnSocketStream.Connect;
@@ -165,16 +142,6 @@ end;
 function TmnSocketStream.CreateSocket: TmnCustomSocket;
 begin
   Result := nil;//if server connect no need to create socket
-end;
-
-function TmnSocketStream.WaitToRead: Boolean;
-begin
-  Result := WaitToRead(Timeout);
-end;
-
-function TmnSocketStream.WaitToWrite: Boolean;
-begin
-  Result := WaitToWrite(Timeout);
 end;
 
 function TmnSocketStream.WaitToRead(Timeout: Integer): Boolean;
@@ -195,12 +162,7 @@ begin
   FreeAndNil(FSocket);
 end;
 
-function TmnSocketStream.IsActive: Boolean;
-begin
-  Result := Connected;
-end;
-
-procedure TmnSocketStream.Stop;
+procedure TmnSocketStream.Drop;
 begin
   if Socket <> nil then
     Socket.Shutdown(sdBoth);

@@ -19,6 +19,8 @@ uses
   Classes, SysUtils, StrUtils;
 
 const
+  cReadTimeout = 15000;
+
   sEndOfLine = #$0A;
 
   sWinEndOfLine = #$0D#$0A;
@@ -138,6 +140,29 @@ type
 
   TmnWrapperStreamClass = class of TmnWrapperStream;
 
+  { TmnConnectionStream }
+
+  TmnConnectionStream = class abstract(TmnBufferStream)
+  private
+    FTimeout: Integer;
+  protected
+    function GetConnected: Boolean; virtual; abstract;
+    function IsActive: Boolean; override;
+  public
+    constructor Create;
+    procedure Connect; virtual; abstract;
+    procedure Drop; virtual; abstract; //Shutdown
+    procedure Disconnect; virtual; abstract;
+    procedure Close; //alias for Disconnect
+    function WaitToRead(Timeout: Longint): Boolean; virtual; abstract; overload; //select
+    function WaitToWrite(Timeout: Longint): Boolean; virtual; abstract; overload; //select
+    function WaitToRead: Boolean; overload;
+    function WaitToWrite: Boolean; overload;
+    function Seek(Offset: Longint; Origin: Word): Longint; override;
+    property Timeout: Integer read FTimeout write FTimeout;
+    property Connected: Boolean read GetConnected;
+  end;
+
 implementation
 
 const
@@ -165,6 +190,42 @@ end;
 function ByteLength(s: widestring): TFileSize; overload;
 begin
   Result := Length(s) * SizeOf(WideChar);
+end;
+
+{ TmnConnectionStream }
+
+function TmnConnectionStream.IsActive: Boolean;
+begin
+  Result := GetConnected;
+end;
+
+constructor TmnConnectionStream.Create;
+begin
+  inherited Create;
+  FTimeout := cReadTimeout;
+end;
+
+procedure TmnConnectionStream.Close;
+begin
+  Disconnect;
+end;
+
+function TmnConnectionStream.WaitToRead: Boolean;
+begin
+  Result := WaitToRead(Timeout);
+end;
+
+function TmnConnectionStream.WaitToWrite: Boolean;
+begin
+  Result := WaitToWrite(Timeout);
+end;
+
+function TmnConnectionStream.Seek(Offset: Longint; Origin: Word): Longint;
+begin
+  {$IFDEF FPC}
+    Result := 0;
+  {$ENDIF}
+    raise Exception.Create('not supported and we dont want to support it')
 end;
 
 { TmnBufferStream }
