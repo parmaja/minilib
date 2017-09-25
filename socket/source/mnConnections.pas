@@ -60,9 +60,9 @@ type
   protected
     FPort: string;
     FAddress: string;
-    function CreateStream(Socket: TmnCustomSocket): TmnConnectionStream; virtual;
     function DoCreateConnection(vStream: TmnConnectionStream): TmnConnection; virtual;
     function CreateConnection(vSocket: TmnCustomSocket): TmnConnection;
+    function CreateStream(vSocket: TmnCustomSocket): TmnConnectionStream; virtual; //todo move it to another unit
     function GetCount: Integer;
   public
     constructor Create;
@@ -112,9 +112,9 @@ end;
 
 { TmnConnections }
 
-function TmnConnections.CreateStream(Socket: TmnCustomSocket): TmnConnectionStream;
+function TmnConnections.CreateStream(vSocket: TmnCustomSocket): TmnConnectionStream;
 begin
-  Result := TmnSocketStream.Create(Socket);
+  Result := TmnSocketStream.Create(vSocket);
 end;
 
 function TmnConnections.DoCreateConnection(vStream: TmnConnectionStream): TmnConnection;
