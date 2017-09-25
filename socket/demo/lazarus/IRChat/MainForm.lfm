@@ -1,0 +1,81 @@
+object MainFrm: TMainFrm
+  Left = 426
+  Height = 262
+  Top = 307
+  Width = 507
+  Caption = 'IRC chat'
+  ClientHeight = 262
+  ClientWidth = 507
+  LCLVersion = '1.9.0.0'
+  object SendBtn: TButton
+    Left = 426
+    Height = 25
+    Top = 231
+    Width = 75
+    Anchors = [akRight, akBottom]
+    Caption = 'Send'
+    Default = True
+    OnClick = SendBtnClick
+    TabOrder = 0
+  end
+  object SendEdit: TEdit
+    Left = 6
+    Height = 23
+    Top = 233
+    Width = 416
+    Anchors = [akLeft, akRight, akBottom]
+    OnKeyPress = SendEditKeyPress
+    TabOrder = 1
+  end
+  object MsgEdit: TMemo
+    Left = 6
+    Height = 124
+    Top = 41
+    Width = 495
+    Anchors = [akTop, akLeft, akRight, akBottom]
+    ScrollBars = ssAutoBoth
+    TabOrder = 2
+  end
+  object Button2: TButton
+    Left = 16
+    Height = 25
+    Top = 10
+    Width = 75
+    Caption = 'Connect'
+    OnClick = Button2Click
+    TabOrder = 3
+  end
+  object HostEdit: TEdit
+    Left = 108
+    Height = 23
+    Top = 11
+    Width = 220
+    TabOrder = 4
+    Text = 'localhost'
+  end
+  object LogEdit: TMemo
+    Left = 6
+    Height = 61
+    Top = 168
+    Width = 495
+    Anchors = [akLeft, akRight, akBottom]
+    ScrollBars = ssAutoBoth
+    TabOrder = 5
+  end
+  object RoomEdit: TEdit
+    Left = 394
+    Height = 23
+    Top = 11
+    Width = 85
+    TabOrder = 6
+    Text = '#parmaja'
+  end
+  object Label1: TLabel
+    Left = 346
+    Height = 15
+    Top = 15
+    Width = 32
+    Caption = 'Room'
+    ParentColor = False
+  end
+end
