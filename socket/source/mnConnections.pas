@@ -24,10 +24,15 @@ uses
   mnSocketStreams;
 
 type
+
+  { TmnThread }
+
   TmnThread = class(TThread)
   public
     constructor Create;
   end;
+
+  { TmnLockThread }
 
   TmnLockThread = class(TmnThread)
   private
@@ -42,6 +47,8 @@ type
 
   TmnConnection = class;
 
+
+  { TmnConnectionList }
 
   TmnConnectionList = class(TList)
   private
@@ -86,7 +93,7 @@ type
     procedure Process; virtual;
     procedure Execute; override;
     procedure Unprepare; virtual;
-
+    procedure SetStream(AValue: TmnConnectionStream);
     procedure HandleException(E: Exception); virtual;
   public
     constructor Create(vOwner: TmnConnections; vStream: TmnConnectionStream); virtual; //TODO use TmnBufferStream
@@ -98,7 +105,7 @@ type
     procedure Stop; virtual;
     procedure Release;
     property Connected: Boolean read GetConnected write SetConnected;
-    property Stream: TmnConnectionStream read FStream;
+    property Stream: TmnConnectionStream read FStream; //write SetStream; //not now
   end;
 
 procedure mnCheckError(Value: Integer);
@@ -246,7 +253,7 @@ end;
 
 function TmnConnection.GetConnected: Boolean;
 begin
-  Result := FStream.Connected;
+  Result := (FStream <> nil) and FStream.Connected;
 end;
 
 procedure TmnConnection.HandleException(E: Exception);
@@ -261,14 +268,25 @@ begin
     Close;
 end;
 
+procedure TmnConnection.SetStream(AValue: TmnConnectionStream);
+begin
+  if FStream <> nil then
+    raise exception.Create('We already have a stream');
+  FStream := AValue;
+end;
+
 procedure TmnConnection.Disconnect;
 begin
+  if FStream = nil then
+    raise Exception.Create('No stream to disconnect');
   if FStream.Connected then
     FStream.Disconnect;
 end;
 
 procedure TmnConnection.Connect;
 begin
+  if FStream <> nil then
+    FStream.Connect;
 end;
 
 procedure TmnConnection.Prepare;

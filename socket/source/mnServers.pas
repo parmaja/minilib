@@ -24,7 +24,6 @@ uses
   SysUtils,
   mnSockets,
   mnStreams,
-  mnSocketStreams,
   mnConnections;
 
 type

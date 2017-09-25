@@ -38,7 +38,7 @@ type
     function DoRead(var Buffer; Count: Longint): Longint; override;
     function DoWrite(const Buffer; Count: Longint): Longint; override;
   public
-    constructor Create(vSocket: TmnCustomSocket = nil); virtual;
+    constructor Create(vSocket: TmnCustomSocket = nil);
     destructor Destroy; override;
     procedure Connect; override;
     procedure Drop; override; //Shutdown

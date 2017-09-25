@@ -19,7 +19,7 @@ uses
   SysUtils, Classes, Contnrs,
   mnClasses,
   mnStreams,
-  mnSockets, mnConnections, mnSocketStreams, mnServers;
+  mnSockets, mnConnections, mnServers;
 
 type
   TmnCommandExceotion = class(Exception);

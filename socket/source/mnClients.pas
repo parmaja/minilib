@@ -32,6 +32,8 @@ type
 
   TmnClients = class;
 
+  { TmnClientSocketStream }
+
   TmnClientSocketStream = class(TmnSocketStream)
   private
     FAddress: string;
@@ -41,6 +43,7 @@ type
   protected
     function CreateSocket: TmnCustomSocket; override;
   public
+    constructor Create(const vAddress, vPort: string);
     property Port: string read FPort write SetPort;
     property Address: string read FAddress write SetAddress;
   end;
@@ -110,14 +113,14 @@ end;
 
 destructor TmnClientConnection.Destroy;
 begin
+  if Owner <> nil then
+    Owner.Remove(Self);
   inherited;
 end;
 
 procedure TmnClientConnection.Execute;
 begin
   inherited;
-  if Owner <> nil then
-    Owner.Remove(Self);
 end;
 
 function TmnClientConnection.GetOwner: TmnClients;
@@ -260,6 +263,13 @@ end;
 function TmnClientSocketStream.CreateSocket: TmnCustomSocket;
 begin
   Result := WallSocket.Connect([soNoDelay], Port, Address)
+end;
+
+constructor TmnClientSocketStream.Create(const vAddress, vPort: string);
+begin
+  inherited Create;
+  FAddress := vAddress;
+  FPort := vPort;
 end;
 
 procedure TmnClientSocketStream.SetAddress(const Value: string);
