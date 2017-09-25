@@ -125,7 +125,7 @@ end;
 
 function TmnClientConnection.GetOwner: TmnClients;
 begin
-  Result := Owner as TmnClients;
+  Result := (inherited Owner) as TmnClients;
 end;
 
 { TmnClients }
