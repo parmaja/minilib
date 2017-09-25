@@ -96,6 +96,7 @@ type
     procedure Open; //Alias for Connect
     procedure Close; //Alias for Disconnect
     procedure Stop; virtual;
+    procedure Release;
     property Connected: Boolean read GetConnected write SetConnected;
     property Stream: TmnConnectionStream read FStream;
   end;
@@ -232,6 +233,15 @@ procedure TmnConnection.Stop;
 begin
   Terminate;
   Disconnect;
+end;
+
+procedure TmnConnection.Release;
+begin
+  if FOwner <> nil then
+  begin
+    FOwner.List.Extract(Self);
+    FOwner := nil;
+  end;
 end;
 
 function TmnConnection.GetConnected: Boolean;
