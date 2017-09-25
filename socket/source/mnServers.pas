@@ -23,6 +23,7 @@ uses
   Classes,
   SysUtils,
   mnSockets,
+  mnStreams,
   mnSocketStreams,
   mnConnections;
 
@@ -38,7 +39,7 @@ type
   protected
     procedure Execute; override;
   public
-    constructor Create(vOwner: TmnConnections; vSocket: TmnSocketStream); override;
+    constructor Create(vOwner: TmnConnections; vStream: TmnConnectionStream); override;
     destructor Destroy; override;
     property Listener: TmnListener read GetListener;
   end;
@@ -61,7 +62,7 @@ type
     procedure Disconnect;
     function GetConnected: Boolean;
   protected
-    function DoCreateConnection(vStream: TmnSocketStream): TmnConnection; override;
+    function DoCreateConnection(vStream: TmnConnectionStream): TmnConnection; override;
   protected
     FOptions: TmnsoOptions;
     FMessage: string;
@@ -242,7 +243,7 @@ end;
 
 { TmnServerConnection }
 
-constructor TmnServerConnection.Create(vOwner: TmnConnections; vSocket: TmnSocketStream);
+constructor TmnServerConnection.Create(vOwner: TmnConnections; vStream: TmnConnectionStream);
 begin
   inherited;
   FreeOnTerminate := True;
@@ -348,7 +349,7 @@ begin
   FTimeout := -1;
 end;
 
-function TmnListener.DoCreateConnection(vStream: TmnSocketStream): TmnConnection;
+function TmnListener.DoCreateConnection(vStream: TmnConnectionStream): TmnConnection;
 begin
   Result := TmnServerConnection.Create(Self, vStream);
 end;

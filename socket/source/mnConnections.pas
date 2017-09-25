@@ -60,8 +60,8 @@ type
   protected
     FPort: string;
     FAddress: string;
-    function CreateStream(Socket: TmnCustomSocket): TmnSocketStream; virtual;
-    function DoCreateConnection(vStream: TmnSocketStream): TmnConnection; virtual;
+    function CreateStream(Socket: TmnCustomSocket): TmnConnectionStream; virtual;
+    function DoCreateConnection(vStream: TmnConnectionStream): TmnConnection; virtual;
     function CreateConnection(vSocket: TmnCustomSocket): TmnConnection;
     function GetCount: Integer;
   public
@@ -77,7 +77,7 @@ type
   TmnConnection = class(TmnThread)
   private
     FOwner: TmnConnections;
-    FStream: TmnSocketStream;
+    FStream: TmnConnectionStream;
     function GetConnected: Boolean;
     procedure SetConnected(const Value: Boolean);
   protected
@@ -89,7 +89,7 @@ type
 
     procedure HandleException(E: Exception); virtual;
   public
-    constructor Create(vOwner: TmnConnections; vStream: TmnSocketStream); virtual; //TODO use TmnBufferStream
+    constructor Create(vOwner: TmnConnections; vStream: TmnConnectionStream); virtual; //TODO use TmnBufferStream
     destructor Destroy; override;
     procedure Connect; virtual;
     procedure Disconnect; virtual;
@@ -97,7 +97,7 @@ type
     procedure Close; //Alias for Disconnect
     procedure Stop; virtual;
     property Connected: Boolean read GetConnected write SetConnected;
-    property Stream: TmnSocketStream read FStream;
+    property Stream: TmnConnectionStream read FStream;
   end;
 
 procedure mnCheckError(Value: Integer);
@@ -112,12 +112,12 @@ end;
 
 { TmnConnections }
 
-function TmnConnections.CreateStream(Socket: TmnCustomSocket): TmnSocketStream;
+function TmnConnections.CreateStream(Socket: TmnCustomSocket): TmnConnectionStream;
 begin
   Result := TmnSocketStream.Create(Socket);
 end;
 
-function TmnConnections.DoCreateConnection(vStream: TmnSocketStream): TmnConnection;
+function TmnConnections.DoCreateConnection(vStream: TmnConnectionStream): TmnConnection;
 begin
   Result := TmnConnection.Create(Self, vStream);
 end;
@@ -209,7 +209,7 @@ begin
   Disconnect;
 end;
 
-constructor TmnConnection.Create(vOwner: TmnConnections; vStream: TmnSocketStream);
+constructor TmnConnection.Create(vOwner: TmnConnections; vStream: TmnConnectionStream);
 begin
   inherited Create;
   FOwner := vOwner;

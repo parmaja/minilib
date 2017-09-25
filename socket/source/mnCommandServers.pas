@@ -18,6 +18,7 @@ interface
 uses
   SysUtils, Classes, Contnrs,
   mnClasses,
+  mnStreams,
   mnSockets, mnConnections, mnSocketStreams, mnServers;
 
 type
@@ -112,8 +113,8 @@ type
   private
     function ParseRequest(const Request: string): TmnRequest; virtual; abstract;
   protected
-    function DoCreateConnection(vStream: TmnSocketStream): TmnConnection; override;
-    function CreateStream(Socket: TmnCustomSocket): TmnSocketStream; override;
+    function DoCreateConnection(vStream: TmnConnectionStream): TmnConnection; override;
+    function CreateStream(Socket: TmnCustomSocket): TmnConnectionStream; override;
   public
     constructor Create;
     //Name here will corrected with registered item name for example Get -> GET
@@ -291,7 +292,7 @@ end;
 
 { TmnCustomCommandListener }
 
-function TmnCustomCommandListener.DoCreateConnection(vStream: TmnSocketStream): TmnConnection;
+function TmnCustomCommandListener.DoCreateConnection(vStream: TmnConnectionStream): TmnConnection;
 begin
   Result := TmnCommandConnection.Create(Self, vStream);
 end;
@@ -301,7 +302,7 @@ begin
   Result := inherited Server as TmnCommandServer;
 end;
 
-function TmnCustomCommandListener.CreateStream(Socket: TmnCustomSocket): TmnSocketStream;
+function TmnCustomCommandListener.CreateStream(Socket: TmnCustomSocket): TmnConnectionStream;
 begin
   Result := inherited CreateStream(Socket);
   Result.Timeout := -1;
@@ -362,7 +363,7 @@ end;
 procedure TmnCommand.Shutdown;
 begin
   if Connected and (Connection.Stream <> nil) then
-    Connection.Stream.Socket.Shutdown(sdBoth);
+    Connection.Stream.Drop;
 end;
 
 class function TmnCommand.GetCommandName: string;
