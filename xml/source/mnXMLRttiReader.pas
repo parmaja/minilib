@@ -396,7 +396,7 @@ var
 
   procedure ReadWideStringProp;
   begin
-    SetWideStrProp(Instance, PropInfo, Value);
+    SetWideStrProp(Instance, PropInfo, widestring(Value));
   end;
 
   procedure ReadStringProp;

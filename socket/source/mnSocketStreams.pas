@@ -44,7 +44,7 @@ type
     constructor Create(vSocket: TmnCustomSocket = nil); virtual;
     destructor Destroy; override;
     procedure Connect;
-    procedure Shutdown;
+    procedure Stop;
     procedure Disconnect;
     procedure Close; //alias for Disconnect
     function WaitToRead: Boolean; overload;
@@ -137,7 +137,7 @@ end;
 procedure TmnSocketStream.Disconnect;
 begin
   if (Socket <> nil) and Socket.Connected then
-    Shutdown; //may be not but in slow matchine disconnect to take as effects as need (POS in 98)
+    Stop; //may be not but in slow matchine disconnect to take as effects as need (POS in 98)
   FreeSocket;
 end;
 
@@ -200,7 +200,7 @@ begin
   Result := Connected;
 end;
 
-procedure TmnSocketStream.Shutdown;
+procedure TmnSocketStream.Stop;
 begin
   if Socket <> nil then
     Socket.Shutdown(sdBoth);

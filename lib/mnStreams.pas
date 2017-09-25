@@ -57,9 +57,9 @@ type
     FEOFOnError: Boolean;
     procedure LoadBuffer;
   private
-  protected
     FPos: PByte;
     FEnd: PByte;
+  protected
     procedure DoError(S: string); virtual;
     function DoRead(var Buffer; Count: Longint): Longint; virtual; abstract;
     function DoWrite(const Buffer; Count: Longint): Longint; virtual; abstract;
