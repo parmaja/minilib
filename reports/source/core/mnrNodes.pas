@@ -540,9 +540,9 @@ end;
 
 function TmnrBaseCurrencyReportCell.DisplayText: string;
 begin
-  if AsCurrency=0 then
+  {if AsCurrency=0 then
     Result := ''
-  else
+  else}
     Result := inherited DisplayText;
 end;
 
