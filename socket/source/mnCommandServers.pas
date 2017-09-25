@@ -112,7 +112,7 @@ type
   private
     function ParseRequest(const Request: string): TmnRequest; virtual; abstract;
   protected
-    function CreateConnection(vSocket: TmnCustomSocket): TmnServerConnection; override;
+    function DoCreateConnection(vStream: TmnSocketStream): TmnConnection; override;
     function CreateStream(Socket: TmnCustomSocket): TmnSocketStream; override;
   public
     constructor Create;
@@ -291,9 +291,9 @@ end;
 
 { TmnCustomCommandListener }
 
-function TmnCustomCommandListener.CreateConnection(vSocket: TmnCustomSocket): TmnServerConnection;
+function TmnCustomCommandListener.DoCreateConnection(vStream: TmnSocketStream): TmnConnection;
 begin
-  Result := TmnCommandConnection.Create(Self, vSocket);
+  Result := TmnCommandConnection.Create(Self, vStream);
 end;
 
 function TmnCommandListener.GetServer: TmnCommandServer;

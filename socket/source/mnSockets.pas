@@ -57,8 +57,8 @@ type
     property Active: Boolean read GetActive;
     property Connected: Boolean read GetConnected;
     property CloseWhenError: Boolean read FCloseWhenError write FCloseWhenError default True;
-    function GetLocalAddress: ansistring; virtual; abstract;
-    function GetRemoteAddress: ansistring; virtual; abstract;
+    function GetLocalAddress: AnsiString; virtual; abstract;
+    function GetRemoteAddress: AnsiString; virtual; abstract;
     function GetLocalName: string; virtual; abstract;
     function GetRemoteName: string; virtual; abstract;
   end;

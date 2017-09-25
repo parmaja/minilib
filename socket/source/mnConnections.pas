@@ -19,6 +19,7 @@ uses
   Classes,
   SysUtils,
   SyncObjs,
+  mnStreams,
   mnSockets,
   mnSocketStreams;
 
@@ -60,6 +61,8 @@ type
     FPort: string;
     FAddress: string;
     function CreateStream(Socket: TmnCustomSocket): TmnSocketStream; virtual;
+    function DoCreateConnection(vStream: TmnSocketStream): TmnConnection; virtual;
+    function CreateConnection(vSocket: TmnCustomSocket): TmnConnection;
     function GetCount: Integer;
   public
     constructor Create;
@@ -86,15 +89,12 @@ type
 
     procedure HandleException(E: Exception); virtual;
   public
-    constructor Create(vOwner: TmnConnections; vSocket: TmnCustomSocket); virtual;
+    constructor Create(vOwner: TmnConnections; vStream: TmnSocketStream); virtual; //TODO use TmnBufferStream
     destructor Destroy; override;
     procedure Connect; virtual;
     procedure Disconnect; virtual;
     procedure Open; //Alias for Connect
     procedure Close; //Alias for Disconnect
-    {$ifndef FPC} //already found in FPC 2.4.4
-    procedure Start;
-    {$endif}
     procedure Stop; virtual;
     property Connected: Boolean read GetConnected write SetConnected;
     property Stream: TmnSocketStream read FStream;
@@ -115,6 +115,16 @@ end;
 function TmnConnections.CreateStream(Socket: TmnCustomSocket): TmnSocketStream;
 begin
   Result := TmnSocketStream.Create(Socket);
+end;
+
+function TmnConnections.DoCreateConnection(vStream: TmnSocketStream): TmnConnection;
+begin
+  Result := TmnConnection.Create(Self, vStream);
+end;
+
+function TmnConnections.CreateConnection(vSocket: TmnCustomSocket): TmnConnection;
+begin
+  Result := DoCreateConnection(CreateStream(vSocket));
 end;
 
 constructor TmnConnections.Create;
@@ -199,12 +209,11 @@ begin
   Disconnect;
 end;
 
-constructor TmnConnection.Create(vOwner: TmnConnections; vSocket: TmnCustomSocket);
+constructor TmnConnection.Create(vOwner: TmnConnections; vStream: TmnSocketStream);
 begin
   inherited Create;
   FOwner := vOwner;
-  if FOwner <> nil then
-    FStream := vOwner.CreateStream(vSocket);
+  FStream := vStream;
 end;
 
 destructor TmnConnection.Destroy;
@@ -218,13 +227,6 @@ procedure TmnConnection.Open;
 begin
   Connect;
 end;
-
-{$ifndef FPC}
-procedure TmnConnection.Start;
-begin
-  Resume;
-end;
-{$endif}
 
 procedure TmnConnection.Stop;
 begin

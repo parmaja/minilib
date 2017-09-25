@@ -16,7 +16,7 @@ unit mnHttpServer;
 interface
 
 uses
-  SysUtils, Classes, mnSockets, mnServers, mnStreams, mnConnections;
+  SysUtils, Classes, mnSockets, mnServers, mnStreams, mnConnections, mnSocketStreams;
 
 type
   THttpConnection = class;
@@ -104,7 +104,7 @@ type
     function Listener: TmnHttpListener;
     procedure Process; override;
   public
-    constructor Create(vConnector: TmnConnections; Socket: TmnCustomSocket); override;
+    constructor Create(vConnector: TmnConnections; vSocket: TmnSocketStream); override;
     destructor Destroy; override;
     property RequestInfo: TRequestInfo read FRequestInfo;
   end;
@@ -118,7 +118,7 @@ type
     procedure SetDefaultDocument(const Value: TStringList);
   protected
     function GetDocument(Root: string): string;
-    function CreateConnection(vSocket: TmnCustomSocket): TmnServerConnection; override;
+    function DoCreateConnection(vStream: TmnSocketStream): TmnConnection; override;
   public
     constructor Create;
     destructor Destroy; override;
@@ -272,7 +272,7 @@ begin
   inherited;
 end;
 
-constructor THttpConnection.Create(vConnector: TmnConnections; Socket: TmnCustomSocket);
+constructor THttpConnection.Create(vConnector: TmnConnections; vSocket: TmnSocketStream);
 begin
   inherited;
   Stream.EndOfLine := sWinEndOfLine;
@@ -511,9 +511,9 @@ end;
 
 { TmnHttpListener }
 
-function TmnHttpListener.CreateConnection(vSocket: TmnCustomSocket): TmnServerConnection;
+function TmnHttpListener.DoCreateConnection(vStream: TmnSocketStream): TmnConnection;
 begin
-  Result := THttpConnection.Create(Self, vSocket);
+  Result := THttpConnection.Create(Self, vStream);
 end;
 
 procedure TmnHttpListener.SetDefaultDocument(const Value: TStringList);

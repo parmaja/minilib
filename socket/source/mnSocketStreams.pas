@@ -44,8 +44,8 @@ type
     constructor Create(vSocket: TmnCustomSocket = nil); virtual;
     destructor Destroy; override;
     procedure Connect;
-    procedure Disconnect;
     procedure Shutdown;
+    procedure Disconnect;
     procedure Close; //alias for Disconnect
     function WaitToRead: Boolean; overload;
     function WaitToWrite: Boolean; overload;
@@ -124,7 +124,7 @@ begin
 {$IFDEF FPC}
   Result := 0;
 {$ENDIF}  
-  raise Exception.Create('not supported')
+  raise Exception.Create('not supported and we dont want to support it')
 end;
 
 constructor TmnSocketStream.Create(vSocket: TmnCustomSocket);

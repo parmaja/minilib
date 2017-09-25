@@ -23,6 +23,7 @@ uses
   Classes,
   SysUtils,
   mnSockets,
+  mnSocketStreams,
   mnConnections;
 
 type
@@ -37,7 +38,7 @@ type
   protected
     procedure Execute; override;
   public
-    constructor Create(vOwner: TmnConnections; Socket: TmnCustomSocket); override;
+    constructor Create(vOwner: TmnConnections; vSocket: TmnSocketStream); override;
     destructor Destroy; override;
     property Listener: TmnListener read GetListener;
   end;
@@ -60,8 +61,11 @@ type
     procedure Disconnect;
     function GetConnected: Boolean;
   protected
+    function DoCreateConnection(vStream: TmnSocketStream): TmnConnection; override;
+  protected
     FOptions: TmnsoOptions;
     FMessage: string;
+
     procedure SyncLog;
     procedure SyncChanged;
     procedure DropConnections; virtual;
@@ -72,7 +76,6 @@ type
     procedure Execute; override;
     procedure Remove(Connection: TmnServerConnection); virtual;
     procedure Add(Connection: TmnServerConnection); virtual;
-    function CreateConnection(vSocket: TmnCustomSocket): TmnServerConnection; virtual;
   public
     constructor Create;
     destructor Destroy; override;
@@ -239,7 +242,7 @@ end;
 
 { TmnServerConnection }
 
-constructor TmnServerConnection.Create(vOwner: TmnConnections; Socket: TmnCustomSocket);
+constructor TmnServerConnection.Create(vOwner: TmnConnections; vSocket: TmnSocketStream);
 begin
   inherited;
   FreeOnTerminate := True;
@@ -345,9 +348,9 @@ begin
   FTimeout := -1;
 end;
 
-function TmnListener.CreateConnection(vSocket: TmnCustomSocket): TmnServerConnection;
+function TmnListener.DoCreateConnection(vStream: TmnSocketStream): TmnConnection;
 begin
-  Result := TmnServerConnection.Create(Self, vSocket);
+  Result := TmnServerConnection.Create(Self, vStream);
 end;
 
 destructor TmnListener.Destroy;
@@ -402,7 +405,7 @@ begin
             try
               if FServer <> nil then
                 FServer.DoAccepted(Self);
-              aConnection := CreateConnection(aSocket);
+              aConnection := CreateConnection(aSocket) as TmnServerConnection;
             finally
               Leave;
             end;

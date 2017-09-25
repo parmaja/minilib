@@ -55,7 +55,7 @@ type
   protected
     procedure Execute; override;
   public
-    constructor Create(vOwner: TmnConnections; vSocket: TmnCustomSocket); override;
+    constructor Create(vOwner: TmnConnections; vSocket: TmnSocketStream); override;
     destructor Destroy; override;
     property Owner: TmnClients read GetOwner;
   end;
@@ -75,8 +75,9 @@ type
     procedure Disconnect;
     function GetConnected: Boolean;
   protected
+    function DoCreateConnection(vStream: TmnSocketStream): TmnConnection; override;
+  protected
     FOptions: TmnsoOptions;
-    function CreateConnection(Socket: TmnCustomSocket): TmnClientConnection; virtual;
     procedure Shutdown;
     procedure Execute; override;
     procedure Changed;
@@ -85,11 +86,6 @@ type
   public
     constructor Create; virtual;
     destructor Destroy; override;
-    {$ifndef FPC} //already found in FPC 2.4.4
-    {$if CompilerVersion < 18} // Delphi 2007 or later {$ifend}
-    procedure Start;
-    {$ifend}
-    {$endif}
     procedure Stop; override;
     procedure Log(Connection: TmnConnection; S: string);
     function AddConnection(vPort: string; vAddress: string): TmnClientConnection;
@@ -103,7 +99,7 @@ implementation
 
 { TmnClientConnection }
 
-constructor TmnClientConnection.Create(vOwner: TmnConnections; vSocket: TmnCustomSocket);
+constructor TmnClientConnection.Create(vOwner: TmnConnections; vSocket: TmnSocketStream);
 begin
   inherited;
   FreeOnTerminate := True;
@@ -159,11 +155,6 @@ begin
   FOptions := [soNoDelay]; //you can use soKeepAlive
 end;
 
-function TmnClients.CreateConnection(Socket: TmnCustomSocket): TmnClientConnection;
-begin
-  Result := TmnClientConnection.Create(Self, Socket);
-end;
-
 destructor TmnClients.Destroy;
 begin
   inherited;
@@ -186,6 +177,11 @@ end;
 function TmnClients.GetConnected: Boolean;
 begin
   Result := Terminated;
+end;
+
+function TmnClients.DoCreateConnection(vStream: TmnSocketStream): TmnConnection;
+begin
+  Result := TmnClientConnection.Create(Self, vStream);
 end;
 
 procedure TmnClients.Log(Connection: TmnConnection; S: string);
@@ -212,15 +208,6 @@ begin
     Leave;
   end;
 end;
-
-{$ifndef FPC} //already found in FPC 2.4.4
-{$if CompilerVersion < 18} // Delphi 2007 or later {$ifend}
-procedure TmnClients.Start;
-begin
-  Resume;
-end;
-{$endif}
-{$endif}
 
 procedure TmnClients.Stop;
 begin
@@ -263,7 +250,7 @@ begin
   if vAddress = '' then
     vAddress := FAddress;
   aSocket := WallSocket.Connect([], vPort, vAddress);
-  Result := CreateConnection(aSocket);
+  Result := CreateConnection(aSocket) as TmnClientConnection;
   Result.Start;
 end;
 
