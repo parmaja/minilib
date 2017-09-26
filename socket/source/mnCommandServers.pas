@@ -311,7 +311,6 @@ end;
 constructor TmnCustomCommandListener.Create;
 begin
   inherited;
-  FOptions := FOptions + [soReuseAddr];
 end;
 
 function TmnCommandServer.RegisterCommand(vName: string; CommandClass: TmnCommandClass): Integer;
