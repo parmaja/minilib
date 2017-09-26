@@ -5,7 +5,7 @@ unit MainForm;
 interface
 
 uses
-  Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, Buttons, StdCtrls, mnIRC;
+  Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, Buttons, StdCtrls, mnIRCClients;
 
 type
 
@@ -24,7 +24,7 @@ type
     procedure SendBtnClick(Sender: TObject);
     procedure SendEditKeyPress(Sender: TObject; var Key: char);
   private
-    IRC: TmnIRC;
+    IRC: TmnIRCClient;
   public
     constructor Create(TheOwner: TComponent); override;
     destructor Destroy; override;
@@ -63,7 +63,7 @@ end;
 constructor TMainFrm.Create(TheOwner: TComponent);
 begin
   inherited Create(TheOwner);
-  IRC := TmnIRC.Create;
+  IRC := TmnIRCClient.Create;
   IRC.OnSendData := @DoSendData;
   IRC.OnReceiveData := @DoSendData;
   //IRC.OnLog := @DoLog;

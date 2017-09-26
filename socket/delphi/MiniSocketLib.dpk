@@ -43,6 +43,7 @@ contains
   mnCommandClients in '..\source\mnCommandClients.pas',
   mnCommandServers in '..\source\mnCommandServers.pas',
   mnHttpClient in '..\source\mnHttpClient.pas',
+  mnIRCClients in '..\source\mnIRCClients.pas',
   mnClients in '..\source\mnClients.pas';
 
 end.

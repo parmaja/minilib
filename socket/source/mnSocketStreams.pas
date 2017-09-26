@@ -22,8 +22,7 @@ uses
   mnSockets;
 
 const
-  cDataBuffSize = 8192;
-  cBufferSize = 1024;
+  WaitForEver: Longint = -1;
 
 type
   { TmnSocketStream }
@@ -51,6 +50,10 @@ type
   { TmnConnectionStream }
 
 implementation
+
+const
+  cDataBuffSize = 8192;
+  cBufferSize = 1024;
 
 { TmnStream }
 

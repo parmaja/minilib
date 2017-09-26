@@ -1,4 +1,4 @@
-unit mnIRC;
+unit mnIRCClients;
 {$M+}
 {$H+}
 {$IFDEF FPC}
@@ -9,7 +9,7 @@ unit mnIRC;
  *  This file is part of the "Mini Library"
  *  @license  modifiedLGPL (modified of http://www.gnu.org/licenses/lgpl.html)
  *            See the file COPYING.MLGPL, included in this distribution,
- *  @ported from orignal author Steve Williams
+ *  @ported from SlyIRC the orignal author Steve Williams
  *  @author by Zaher Dirkey <zaher at parmaja dot com>
  *}
 
@@ -30,7 +30,7 @@ const
   TOKEN_ENDOFTOKENS = ':';  { If the second or higher token starts with this character, it indicates that this token is all characters to the end of the string. }
 
 type
-  TmnIRC = class;
+  TmnIRCClient = class;
 
   TTokenSyntax = (tsResponse, tsMessage, tsCTCP);
 
@@ -76,9 +76,9 @@ type
   TIRCResponseHandlers = class(TObject)
   private
     FHandlers: TStringList;
-    FIRC: TmnIRC;
+    FIRC: TmnIRCClient;
   public
-    constructor Create(AIRC: TmnIRC);
+    constructor Create(AIRC: TmnIRCClient);
     destructor Destroy; override;
     function AddHandler(vName: String; vHandlerFunc: THandlerFunc): Integer;
     procedure DeleteHandler(Index: Integer);
@@ -98,7 +98,7 @@ type
 
   TmnIRCConnection = class(TmnClientConnection)
   private
-    FIRC: TmnIRC;
+    FIRC: TmnIRCClient;
   protected
     procedure DoData(const Data: string); virtual;
     procedure DoLog(const Data: string); virtual;
@@ -107,13 +107,13 @@ type
     procedure Connect; override;
   end;
 
-  TOnResponse = procedure(Sender: TObject; vTokens: TIRCTokens; var Suppress: Boolean) of object;
+  TOnResponse = procedure(Sender: TObject; vTokens: TIRCTokens) of object;
   TOnReceiveData = procedure(Sender: TObject; vResponse: String) of object;
 
   TOnReceive = procedure(Sender: TObject; vRoom, vMSG: String) of object;
   TOnSendData = procedure(Sender: TObject; vResponse: String) of object;
 
-  TmnIRC = class(TObject) //TmnClientConnection
+  TmnIRCClient = class(TObject) //TmnClientConnection
   private
     FOnLog: TOnSendData;
     FRealName: String;
@@ -157,10 +157,10 @@ type
     procedure SetUserModes(const Value: TUserModes);
     function CreateUserModeCommand(NewModes: TUserModes): String;
   protected
-    procedure ProcessResponse(vResponse: String; var Suppress: Boolean); virtual;
+    procedure ProcessResponse(vResponse: String); virtual;
     procedure DirectReceive(vResponse: String); virtual;
     procedure Receive(vRoom, vMsg: String); virtual;
-    procedure Response(vTokens: TIRCTokens; var Suppress: Boolean); virtual;
+    procedure Response(vTokens: TIRCTokens); virtual;
     procedure UserModeChanged;
     procedure AddHandlers;
     procedure RplPing(vTokens: TIRCTokens);
@@ -416,7 +416,7 @@ begin
   Handler^.HandlerFunc := vHandlerFunc;
 end;
 
-constructor TIRCResponseHandlers.Create(AIRC: TmnIRC);
+constructor TIRCResponseHandlers.Create(AIRC: TmnIRCClient);
 begin
   inherited Create;
   FHandlers := TStringList.Create;
@@ -479,9 +479,9 @@ begin
   DeleteHandler(IndexOfHandler(Response));
 end;
 
-{ TmnIRC }
+{ TmnIRCClient }
 
-procedure TmnIRC.Close;
+procedure TmnIRCClient.Close;
 begin
   { Try to leave nicely if we can. }
   if FState = isReady then
@@ -501,7 +501,7 @@ begin
   end;
 end;
 
-procedure TmnIRC.Connect;
+procedure TmnIRCClient.Connect;
 begin
   if Assigned(FConnection) and (FState = isNotConnected) then
   begin
@@ -516,7 +516,7 @@ begin
   end;
 end;
 
-constructor TmnIRC.Create;
+constructor TmnIRCClient.Create;
 begin
   inherited;
   FConnection := TmnIRCConnection.Create(nil, nil);
@@ -535,9 +535,7 @@ begin
   AddHandlers;
 end;
 
-procedure TmnIRC.DataAvailable(const Data: string);
-var
-  Suppress: Boolean;
+procedure TmnIRCClient.DataAvailable(const Data: string);
 begin
   { DirectReceive string and process. }
   if Length(Data) > 0 then
@@ -545,12 +543,11 @@ begin
     { Trigger the OnReceive event. }
     DirectReceive(Data);
     { Now process the response. }
-    Suppress := False;
-    ProcessResponse(Data, Suppress);
+    ProcessResponse(Data);
   end;
 end;
 
-destructor TmnIRC.Destroy;
+destructor TmnIRCClient.Destroy;
 begin
   Reset;
   FreeAndNil(FConnection); //+
@@ -559,48 +556,48 @@ begin
   inherited;
 end;
 
-procedure TmnIRC.Reset;
+procedure TmnIRCClient.Reset;
 begin
   SetState(isAborting);
   if Assigned(FConnection) then
     FConnection.Close;
 end;
 
-procedure TmnIRC.SendDirect(Command: String);
+procedure TmnIRCClient.SendDirect(Command: String);
 begin
   if Assigned(FOnSend) then
     FOnSend(Self, Command);
   if Assigned(FConnection) and (FState in [isRegistering, isReady]) then
-    FConnection.Stream.WriteString(Command + #13#10);
+    FConnection.Stream.WriteCommand(Command);
 end;
 
-procedure TmnIRC.Log(Message: String);
+procedure TmnIRCClient.Log(Message: String);
 begin
   if Assigned(FOnLog) then
     FOnLog(Self, Message);
 end;
 
-procedure TmnIRC.Send(Room, Text: String);
+procedure TmnIRCClient.Send(Room, Text: String);
 begin
   SendDirect(Format('PRIVMSG %s :%s', [Room, Text]));
 end;
 
-procedure TmnIRC.Join(Room: String);
+procedure TmnIRCClient.Join(Room: String);
 begin
   SendDirect(Format('JOIN %s', [Room]));
 end;
 
-procedure TmnIRC.Notice(Destination, Text: String);
+procedure TmnIRCClient.Notice(Destination, Text: String);
 begin
   SendDirect(Format('NOTICE %s :%s', [Destination, Text]));
 end;
 
-procedure TmnIRC.SessionClosed;
+procedure TmnIRCClient.SessionClosed;
 begin
   SetState(isNotConnected);
 end;
 
-procedure TmnIRC.SessionConnected;
+procedure TmnIRCClient.SessionConnected;
 begin
   SetState(isConnected);
   SetState(isRegistering);
@@ -613,14 +610,14 @@ begin
   SendDirect(Format('USER %s %s %s :%s', [FUsername, FUsername, FHost, FRealName]));
 end;
 
-procedure TmnIRC.SetAltNick(const Value: String);
+procedure TmnIRCClient.SetAltNick(const Value: String);
 begin
   FAltNick := Value;
 end;
 
-procedure TmnIRC.SetNick(const Value: String);
+procedure TmnIRCClient.SetNick(const Value: String);
 begin
-  if Length(Value) > 0 then
+  if Value <> '' then
   begin
     if FState in [isRegistering, isReady] then
     begin
@@ -631,53 +628,48 @@ begin
       end;
     end
     else
-    begin
       FNick := Value;
-    end;
   end;
 end;
 
-procedure TmnIRC.SetPassword(const Value: String);
+procedure TmnIRCClient.SetPassword(const Value: String);
 begin
   FPassword := Value;
 end;
 
-procedure TmnIRC.SetPort(const Value: String);
+procedure TmnIRCClient.SetPort(const Value: String);
 begin
   FPort := Value;
 end;
 
-procedure TmnIRC.SetRealName(const Value: String);
+procedure TmnIRCClient.SetRealName(const Value: String);
 begin
   FRealName := Value;
 end;
 
-procedure TmnIRC.SetHost(const Value: String);
+procedure TmnIRCClient.SetHost(const Value: String);
 begin
   FHost := Value;
 end;
 
-procedure TmnIRC.SetUsername(const Value: String);
+procedure TmnIRCClient.SetUsername(const Value: String);
 begin
   FUsername := Value;
 end;
 
-procedure TmnIRC.SetState(const Value: TmnIRCState);
+procedure TmnIRCClient.SetState(const Value: TmnIRCState);
 begin
   if Value <> FState then
   begin
-    { Trigger OnBeforeStateChange event. }
     if Assigned(FOnBeforeStateChange) then
       FOnBeforeStateChange(Self);
-    { Change the state. }
     FState := Value;
-    { Trigger OnAfterStateChange event. }
     if Assigned(FOnAfterStateChange) then
       FOnAfterStateChange(Self);
   end;
 end;
 
-function TmnIRC.GetUserModes: TUserModes;
+function TmnIRCClient.GetUserModes: TUserModes;
 begin
   if FState in [isRegistering, isReady] then
     Result := FActualUserModes
@@ -685,7 +677,7 @@ begin
     Result := FUserModes;
 end;
 
-procedure TmnIRC.SetUserModes(const Value: TUserModes);
+procedure TmnIRCClient.SetUserModes(const Value: TUserModes);
 var
   ModeString: String;
 begin
@@ -701,46 +693,44 @@ begin
   end;
 end;
 
-procedure TmnIRC.ProcessResponse(vResponse: String; var Suppress: Boolean);
+procedure TmnIRCClient.ProcessResponse(vResponse: String);
 begin
   FTokens.Syntax := tsResponse;
   FTokens.TokenString := vResponse;
   FHandlers.Handle(FTokens);
-  { Trigger OnResponse event. }
-  Suppress := False;
-  Response(FTokens, Suppress);
+  Response(FTokens);
 end;
 
-procedure TmnIRC.DirectReceive(vResponse: String);
+procedure TmnIRCClient.DirectReceive(vResponse: String);
 begin
   if Assigned(FOnReceiveData) then
     FOnReceiveData(Self, vResponse);
 end;
 
-procedure TmnIRC.Receive(vRoom, vMsg: String);
+procedure TmnIRCClient.Receive(vRoom, vMsg: String);
 begin
   if Assigned(FOnReceive) then
     FOnReceive(Self, vRoom, vMsg);
 end;
 
-procedure TmnIRC.Response(vTokens: TIRCTokens; var Suppress: Boolean);
+procedure TmnIRCClient.Response(vTokens: TIRCTokens);
 begin
   if Assigned(FOnResponse) then
-    FOnResponse(Self, vTokens, Suppress);
+    FOnResponse(Self, vTokens);
 end;
 
-procedure TmnIRC.UserModeChanged;
+procedure TmnIRCClient.UserModeChanged;
 begin
   if Assigned(FOnUserModeChanged) then
     FOnUserModeChanged(Self);
 end;
 
-procedure TmnIRC.Quit(Reason: String);
+procedure TmnIRCClient.Quit(Reason: String);
 begin
   SendDirect(Format('QUIT :%s', [Reason]));
 end;
 
-procedure TmnIRC.AddHandlers;
+procedure TmnIRCClient.AddHandlers;
 begin
   FHandlers.AddHandler('PING', RplPing);
   FHandlers.AddHandler('NICK', RplNick);
@@ -750,7 +740,7 @@ begin
   FHandlers.AddHandler('MODE', RplMode);
 end;
 
-function TmnIRC.GetHost: String;
+function TmnIRCClient.GetHost: String;
 begin
   if FState in [isRegistering, isReady] then
     Result := FActualHost
@@ -758,7 +748,7 @@ begin
     Result := FHost;
 end;
 
-function TmnIRC.GetNick: String;
+function TmnIRCClient.GetNick: String;
 begin
   if FState in [isRegistering, isReady] then
     Result := FActualNick
@@ -766,7 +756,7 @@ begin
     Result := FNick;
 end;
 
-function TmnIRC.ExtractNickFromAddress(Address: String): String;
+function TmnIRCClient.ExtractNickFromAddress(Address: String): String;
 var
   EndOfNick: Integer;
 begin
@@ -776,25 +766,25 @@ begin
     Result := Copy(Address, 1, EndOfNick - 1);
 end;
 
-procedure TmnIRC.RplNick(vTokens: TIRCTokens);
+procedure TmnIRCClient.RplNick(vTokens: TIRCTokens);
 begin
   { If it is our nick we are changing, then record the change. }
   if UpperCase(ExtractNickFromAddress(vTokens[0])) = UpperCase(FActualNick) then
     FActualNick := vTokens[2];
 end;
 
-procedure TmnIRC.RplPing(vTokens: TIRCTokens);
+procedure TmnIRCClient.RplPing(vTokens: TIRCTokens);
 begin
   { SendDirect the PONG reply to the PING. }
   SendDirect(Format('PONG %s', [vTokens[2]]));
 end;
 
-procedure TmnIRC.RplPrivMSG(vTokens: TIRCTokens);
+procedure TmnIRCClient.RplPrivMSG(vTokens: TIRCTokens);
 begin
   Receive(vTokens[2], vTokens[3]);
 end;
 
-procedure TmnIRC.RplWelcome1(vTokens: TIRCTokens);
+procedure TmnIRCClient.RplWelcome1(vTokens: TIRCTokens);
 begin
   { This should be the very first successful response we get, so set the actual
     host and nick from the values returned in the response. }
@@ -806,7 +796,7 @@ begin
     SendDirect(Format('MODE %s %s', [FActualNick, CreateUserModeCommand(FUserModes)]));
 end;
 
-procedure TmnIRC.ErrNicknameInUse(vTokens: TIRCTokens);
+procedure TmnIRCClient.ErrNicknameInUse(vTokens: TIRCTokens);
 begin
   { Handle nick conflicts during the registration process. }
   if FState = isRegistering then
@@ -820,7 +810,7 @@ end;
 
 { Create the mode command string to SendDirect to the server to modify the user's
   mode.  For example, "+i-s" to add invisible and remove server notices. }
-function TmnIRC.CreateUserModeCommand(NewModes: TUserModes): String;
+function TmnIRCClient.CreateUserModeCommand(NewModes: TUserModes): String;
 const
   ModeChars: array [umInvisible..umWallops] of Char = ('i', 'o', 's', 'w');
 var
@@ -852,7 +842,7 @@ begin
   end;
 end;
 
-procedure TmnIRC.RplMode(vTokens: TIRCTokens);
+procedure TmnIRCClient.RplMode(vTokens: TIRCTokens);
 var
   Index: Integer;
   ModeString: String;
