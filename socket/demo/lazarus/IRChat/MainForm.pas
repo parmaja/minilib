@@ -5,21 +5,25 @@ unit MainForm;
 interface
 
 uses
-  Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, Buttons, StdCtrls, mnIRCClients;
+  Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, Buttons,
+  StdCtrls, ExtCtrls, ntvSplitters, mnIRCClients;
 
 type
 
   { TMainFrm }
 
   TMainFrm = class(TForm)
-    RoomEdit: TEdit;
-    Label1: TLabel;
-    SendBtn: TButton;
     Button2: TButton;
-    SendEdit: TEdit;
     HostEdit: TEdit;
+    Label1: TLabel;
+    Panel1: TPanel;
     MsgEdit: TMemo;
     LogEdit: TMemo;
+    Panel2: TPanel;
+    RoomEdit: TEdit;
+    SendBtn: TButton;
+    SendEdit: TEdit;
+    Splitter1: TSplitter;
     procedure Button2Click(Sender: TObject);
     procedure SendBtnClick(Sender: TObject);
     procedure SendEditKeyPress(Sender: TObject; var Key: char);
@@ -44,6 +48,10 @@ implementation
 
 procedure TMainFrm.Button2Click(Sender: TObject);
 begin
+  IRC.Host := HostEdit.Text;
+  IRC.Port := '6667';
+  IRC.Nick := 'Zezo';
+  //IRC.Username := 'Zezo';
   IRC.Connect;
   IRC.Join(RoomEdit.Text);
 end;

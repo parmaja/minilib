@@ -71,7 +71,7 @@ begin
   Result := 0;
   if not Connected then
     DoError('SocketStream not connected for write')
-  else if WaitToWrite(Timeout) then //TODO writeTimeout
+  else if WaitToWrite(Timeout) then //TODO WriteTimeout
   begin
     if Socket.Send(Buffer, Count) >= erClosed then
     begin

@@ -226,7 +226,8 @@ end;
 
 destructor TmnConnection.Destroy;
 begin
-  Close;
+  if Connected then
+    Close;
   FreeAndNil(FStream);
   inherited;
 end;

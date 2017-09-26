@@ -559,7 +559,7 @@ end;
 procedure TmnIRCClient.Reset;
 begin
   SetState(isAborting);
-  if Assigned(FConnection) then
+  if Assigned(FConnection) and (FConnection.Connected) then
     FConnection.Close;
 end;
 

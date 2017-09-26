@@ -41,7 +41,7 @@ type
     function DoSelect(Timeout: Int64; Check: TSelectCheck): TmnError; override;
     function DoShutdown(How: TmnShutdown): TmnError; override;
   public
-    constructor Create(Handle: TSocket);
+    constructor Create(vHandle: TSocket);
     procedure Close; override;
     function Accept: TmnCustomSocket; override;
     function Listen: TmnError; override;
@@ -250,10 +250,10 @@ begin
     Result := TmnSocket.Create(aHandle);
 end;
 
-constructor TmnSocket.Create(Handle: TSocket);
+constructor TmnSocket.Create(vHandle: TSocket);
 begin
   inherited Create;
-  FHandle := Handle;
+  FHandle := vHandle;
 end;
 
 function TmnSocket.Listen: TmnError;
