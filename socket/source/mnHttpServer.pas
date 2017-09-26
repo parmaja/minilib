@@ -297,7 +297,7 @@ end;
 
 procedure THttpConnection.ReceiveData;
 var
-  ln: string;
+  ln: utf8string;
 begin
   if FState = hcPostedData then
   begin
@@ -306,11 +306,13 @@ begin
   if FState = hcRequest then
   begin
     FRequestInfo := TRequestInfo.Create;
-    ln := Trim(Stream.ReadLine);
+    Stream.ReadLine(ln);
+    ln := Trim(ln);
     while ln <> '' do
     begin
       RequestInfo.RequestHeader.Add(ln);
-      ln := Trim(Stream.ReadLine);
+      Stream.ReadLine(ln);
+      ln := Trim(ln);
     end;
 
     if RequestInfo.RequestHeader.Count > 0 then
@@ -327,12 +329,12 @@ end;
 
 procedure THttpConnection.Answer404;
 var
-  Body: string;
+  Body: utf8string;
 begin
   Body := '<HTML><HEAD><TITLE>404 Not Found</TITLE></HEAD>' +
     '<BODY><H1>404 Not Found</H1>The requested URL ' + RequestInfo.Document +
-    ' was not found on this server.<P><h1>Powerd by Mini Web Server</h3></BODY></HTML>' + sEndOfLine;
-  Stream.WriteString(Body);
+    ' was not found on this server.<P><h1>Powerd by Mini Web Server</h3></BODY></HTML>';
+  Stream.WriteLine(Body);
 end;
 
 function THttpConnection.Listener: TmnHttpListener;
@@ -426,12 +428,12 @@ begin
       DocSize := aDocStream.Size;
       if Connected then
       begin
-          Stream.WriteString(RequestInfo.Version + ' 200 OK' + sEndOfLine);
-          Stream.WriteString('Content-Type: ' + RequestInfo.FAnswerContentType + sEndOfLine);
+          Stream.WriteLine(utf8string(RequestInfo.Version + ' 200 OK'));
+          Stream.WriteLine(utf8string('Content-Type: ' + RequestInfo.FAnswerContentType));
           if not RequestInfo.KeepAlive then
-            Stream.WriteString('Connection: close' + sEndOfLine);
-          Stream.WriteString('Content-Length: ' + IntToStr(DocSize) + sEndOfLine);
-          Stream.WriteString(sEndOfLine);
+            Stream.WriteLine(utf8string('Connection: close'));
+          Stream.WriteLine(utf8string('Content-Length: ' + IntToStr(DocSize)));
+          Stream.WriteLine(utf8string(''));
       end;
       if Connected then
         Stream.WriteStream(aDocStream);
@@ -446,7 +448,7 @@ end;
 
 procedure THttpConnection.Process;
 begin
-  if Stream.WaitToRead(Stream.Timeout) then
+  if Stream.WaitToRead then
   begin
     FState := hcRequest;
     FUsedCount := FUsedCount + 1;

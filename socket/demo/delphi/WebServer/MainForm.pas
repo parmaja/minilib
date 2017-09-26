@@ -36,7 +36,7 @@ type
     procedure WebServerBeforeOpen(Sender: TObject);
     procedure WebServerAfterClose(Sender: TObject);
     procedure WebServerChanged(Listener: TmnListener);
-    procedure WebServerLog(Connection: TmnConnection; const S: string);
+    procedure WebServerLog(const S: string);
   public
   end;
 
@@ -105,11 +105,11 @@ var
   s: string;
   aReg: TRegistry;
 begin
-  WebServer := TmnHttpServer.Create(Self);
+  WebServer := TmnHttpServer.Create;
   WebServer.OnBeforeOpen := WebServerBeforeOpen;
   WebServer.OnAfterClose := WebServerAfterClose;
   WebServer.OnChanged := WebServerChanged;
-  WebServer.OnLog := WebServerLog; 
+  WebServer.OnLog := WebServerLog;
   RootEdit.Text := ExpandFileName(ExtractFilePath(Application.ExeName) + '..\..\lazarus\WebServer\html\');
   if ParamCount = 0 then
   begin
@@ -170,10 +170,10 @@ begin
   NumberOfThreads.Caption := IntToStr(Listener.Count);
 end;
 
-procedure TMain.WebServerLog(Connection: TmnConnection; const S: string);
+procedure TMain.WebServerLog(const s: string);
 begin
 //  Connection.Synchronize();
-  Memo.Lines.Add(Connection.Stream.Socket.GetRemoteAddress + ': ' + s);
+  Memo.Lines.Add(s);
 end;
 
 end.
