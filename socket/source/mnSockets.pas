@@ -33,7 +33,6 @@ type
   TmnCustomSocket = class(TObject)
   private
     FCloseWhenError: Boolean;
-    FClosing: Boolean;
     FShutdownState: TmnShutdown;
     function GetConnected: Boolean;
   protected
@@ -46,7 +45,6 @@ type
   public
     constructor Create;
     destructor Destroy; override;
-    procedure Terminate;
     function Shutdown(How: TmnShutdown): TmnError;
     procedure Close; virtual; abstract;
     function Send(const Buffer; var Count: Longint): TmnError; virtual; abstract;
@@ -151,15 +149,8 @@ end;
 function TmnCustomSocket.Select(Timeout: Int64; Check: TSelectCheck): TmnError;
 begin
   Result := DoSelect(Timeout, Check);
-  if (Result = erNone) and FClosing then
+  if (Result <> erNone) then
     Result := erClosed;
-end;
-
-procedure TmnCustomSocket.Terminate;
-begin
-  FClosing := True;
-  Shutdown(sdBoth);
-  Close;
 end;
 
 function TmnCustomSocket.Shutdown(How: TmnShutdown): TmnError;
