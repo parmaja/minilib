@@ -2,20 +2,21 @@
   This source is only used to compile and install the package.
  }
 
-unit MiniSockets; 
+unit MiniSockets;
 
+{$warn 5023 off : no warning about unused units}
 interface
 
 uses
-  mnClients, mnCommandClients, mnCommandServers, mnConnections, mnHttpServer, 
-  mnServers, mnSockets, mnSocketStreams, LazarusPackageIntf;
+  mnClients, mnCommandServers, mnConnections, mnServers, mnSockets, 
+  mnSocketStreams, mnIRCClients, mnHttpServer, LazarusPackageIntf;
 
 implementation
 
-procedure Register; 
+procedure Register;
 begin
-end; 
+end;
 
 initialization
-  RegisterPackage('MiniSockets', @Register); 
+  RegisterPackage('MiniSockets', @Register);
 end.

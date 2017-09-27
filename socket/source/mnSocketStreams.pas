@@ -51,10 +51,6 @@ type
 
 implementation
 
-const
-  cDataBuffSize = 8192;
-  cBufferSize = 1024;
-
 { TmnStream }
 
 destructor TmnSocketStream.Destroy;
