@@ -1,4 +1,4 @@
-unit mnCommandServers;
+unit mnConnectionCommands;
 {**
  *  This file is part of the "Mini Library"
  *

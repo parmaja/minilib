@@ -34,8 +34,8 @@
         <UnitName Value="mnClients"/>
       </Item1>
       <Item3>
-        <Filename Value="mnCommandServers.pas"/>
-        <UnitName Value="mnCommandServers"/>
+        <Filename Value="mnConnectionCommands.pas"/>
+        <UnitName Value="mnConnectionCommands"/>
       </Item3>
       <Item4>
         <Filename Value="mnConnections.pas"/>
