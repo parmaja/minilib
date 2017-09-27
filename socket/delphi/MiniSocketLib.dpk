@@ -40,8 +40,7 @@ contains
   mnSocketStreams in '..\source\mnSocketStreams.pas',
   mnServers in '..\source\mnServers.pas',
   mnConnections in '..\source\mnConnections.pas',
-  mnCommandClients in '..\source\mnCommandClients.pas',
-  mnCommandServers in '..\source\mnCommandServers.pas',
+  mnCommandServers in '..\source\mnConnectionCommands.pas',
   mnHttpClient in '..\source\mnHttpClient.pas',
   mnIRCClients in '..\source\mnIRCClients.pas',
   mnClients in '..\source\mnClients.pas';

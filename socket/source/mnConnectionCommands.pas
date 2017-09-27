@@ -1,4 +1,6 @@
 unit mnConnectionCommands;
+{$M+}{$H+}
+{$IFDEF FPC}{$MODE delphi}{$ENDIF}
 {**
  *  This file is part of the "Mini Library"
  *
@@ -6,12 +8,6 @@ unit mnConnectionCommands;
  *            See the file COPYING.MLGPL, included in this distribution,
  * @author    Zaher Dirkey <zaher at parmaja dot com>
  *}
-
-{$M+}
-{$H+}
-{$IFDEF FPC}
-{$MODE delphi}
-{$ENDIF}
 
 interface
 
@@ -114,7 +110,7 @@ type
     function ParseRequest(const Request: string): TmnRequest; virtual; abstract;
   protected
     function DoCreateConnection(vStream: TmnConnectionStream): TmnConnection; override;
-    function CreateStream(Socket: TmnCustomSocket): TmnConnectionStream; override;
+    procedure DoCreateStream(var Result: TmnConnectionStream; vSocket: TmnCustomSocket); override;
   public
     constructor Create;
     //Name here will corrected with registered item name for example Get -> GET
@@ -302,9 +298,9 @@ begin
   Result := inherited Server as TmnCommandServer;
 end;
 
-function TmnCustomCommandListener.CreateStream(Socket: TmnCustomSocket): TmnConnectionStream;
+procedure TmnCustomCommandListener.DoCreateStream(var Result: TmnConnectionStream; vSocket: TmnCustomSocket);
 begin
-  Result := inherited CreateStream(Socket);
+  inherited;
   Result.Timeout := -1;
 end;
 

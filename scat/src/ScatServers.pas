@@ -1,4 +1,6 @@
 unit ScatServers;
+{$M+}{$H+}
+{$IFDEF FPC}{$MODE delphi}{$ENDIF}
 {**
  *  This file is part of the "Mini Library"
  *
@@ -7,17 +9,11 @@ unit ScatServers;
  * @author    Zaher Dirkey <zaher at parmaja dot com>
  *}
 
-{$M+}
-{$H+}
-{$IFDEF FPC}
-{$MODE delphi}
-{$ENDIF}
-
 interface
 
 uses
   SysUtils, Classes, syncobjs,
-  mnFields, mnUtils, mnClasses, mnSockets, mnServers, mnCommandServers, mnStreams, mnSocketStreams;
+  mnFields, mnUtils, mnClasses, mnSockets, mnServers, mnConnectionCommands, mnStreams, mnSocketStreams;
 
 {**
 -------------------
@@ -57,7 +53,7 @@ type
     FRespondHeader: TmnFields;
     FHeaderSent: Boolean;
     function GetServer: TscatServer;
-    function GetStream: TmnSocketStream;
+    function GetStream: TmnConnectionStream;
     procedure Enter;
     procedure Leave;
   protected
@@ -65,7 +61,7 @@ type
     procedure Execute; override;
   public
     property Server: TscatServer read GetServer;
-    property Stream: TmnSocketStream read GetStream;
+    property Stream: TmnConnectionStream read GetStream;
     constructor Create(Connection: TmnCommandConnection); override;
     destructor Destroy; override;
     property Params: TmnFields read FParams;
@@ -97,7 +93,7 @@ type
   TScatListener = class(TmnCommandListener)
   private
   protected
-    function CreateStream(Socket: TmnCustomSocket): TmnSocketStream; override;
+    procedure DoCreateStream(var Result: TmnConnectionStream; vSocket: TmnCustomSocket); override;
   public
     function GetCommandClass(var CommandName: string): TmnCommandClass; override;
   public
@@ -179,7 +175,7 @@ end;
 
 procedure TscatCommand.EndHeader;
 begin
-  Stream.WriteLine('');
+  Stream.WriteLine(utf8string(''));
   FHeaderSent := True;
 end;
 
@@ -188,7 +184,7 @@ begin
   Result := (inherited Server as TscatServer);
 end;
 
-function TscatCommand.GetStream: TmnSocketStream;
+function TscatCommand.GetStream: TmnConnectionStream;
 begin
   Result := Connection.Stream;
 end;
@@ -227,9 +223,9 @@ begin
   {$endif}
 end;
 
-function TScatListener.CreateStream(Socket: TmnCustomSocket): TmnSocketStream;
+procedure TScatListener.DoCreateStream(var Result: TmnConnectionStream; vSocket: TmnCustomSocket);
 begin
-  Result := inherited CreateStream(Socket);
+  inherited;
   Result.EOFOnError := True;
   Result.EndOfLine := sWinEndOfLine;
 end;

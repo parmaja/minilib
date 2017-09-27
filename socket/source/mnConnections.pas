@@ -69,7 +69,8 @@ type
     FAddress: string;
     function DoCreateConnection(vStream: TmnConnectionStream): TmnConnection; virtual;
     function CreateConnection(vSocket: TmnCustomSocket): TmnConnection;
-    function CreateStream(vSocket: TmnCustomSocket): TmnConnectionStream; virtual; //todo move it to another unit
+    procedure DoCreateStream(var Result: TmnConnectionStream; vSocket: TmnCustomSocket); virtual; //todo move it to another unit
+    function CreateStream(vSocket: TmnCustomSocket): TmnConnectionStream;
     function GetCount: Integer;
   public
     constructor Create;
@@ -122,7 +123,7 @@ end;
 
 function TmnConnections.CreateStream(vSocket: TmnCustomSocket): TmnConnectionStream;
 begin
-  Result := TmnSocketStream.Create(vSocket);
+  DoCreateStream(Result, vSocket);
 end;
 
 function TmnConnections.DoCreateConnection(vStream: TmnConnectionStream): TmnConnection;
@@ -133,6 +134,11 @@ end;
 function TmnConnections.CreateConnection(vSocket: TmnCustomSocket): TmnConnection;
 begin
   Result := DoCreateConnection(CreateStream(vSocket));
+end;
+
+procedure TmnConnections.DoCreateStream(var Result: TmnConnectionStream; vSocket: TmnCustomSocket);
+begin
+  Result := TmnSocketStream.Create(vSocket);
 end;
 
 constructor TmnConnections.Create;

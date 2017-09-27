@@ -79,13 +79,13 @@ object MainFrm: TMainFrm
       Left = 4
       Height = 25
       Top = 3
-      Width = 75
+      Width = 85
       Caption = 'Connect'
       OnClick = Button2Click
       TabOrder = 0
     end
     object HostEdit: TEdit
-      Left = 96
+      Left = 91
       Height = 23
       Top = 4
       Width = 220
