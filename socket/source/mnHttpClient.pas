@@ -138,7 +138,7 @@ type
     procedure Get(const vUrl: string);
   end;
 
-  TmnCustomHttpStream = class(TmnClientStream)
+  TmnCustomHttpStream = class(TmnClientSocketStream)
   private
     FParams: string;
     FProtocol: string;
@@ -148,7 +148,7 @@ type
     function CreateSocket: TmnCustomSocket; override;
     function GetSize: Int64; override;
   public
-    constructor Create(vSocket: TmnCustomSocket = nil); override;
+    constructor Create(const vAddress, vPort: string);
     destructor Destroy; override;
     function Seek(Offset: Integer; Origin: Word): Integer; override;
     property Request: TmnHttpRequest read FRequest;
@@ -250,7 +250,7 @@ constructor TmnCustomHttpClient.Create;
 begin
   inherited;
   //WallSocket.Startup;
-  FStream := TmnClientStream.Create;
+  FStream := TmnClientStream.Create('', '80');
   FRequest := TmnHttpRequest.Create(FStream);
   FResponse := TmnHttpResponse.Create(FStream);
 end;
@@ -494,12 +494,14 @@ end;
 
 { TmnCustomHttpStream }
 
-constructor TmnCustomHttpStream.Create(vSocket: TmnCustomSocket);
+constructor TmnCustomHttpStream.Create(const vAddress, vPort: string);
 begin
   inherited;
+
   FRequest := TmnHttpRequest.Create(Self);
   FResponse := TmnHttpResponse.Create(Self);
   Request.UserAgent := 'Mozilla/4.0';
+
 end;
 
 function TmnCustomHttpStream.CreateSocket: TmnCustomSocket;
