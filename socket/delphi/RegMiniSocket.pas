@@ -16,7 +16,7 @@ unit RegMiniSocket;
 interface
 
 uses
-  SysUtils, Classes, mnCommandServers, mnCommandClients{, mnHttpServer};
+  SysUtils, Classes, mnCommandClients{, mnHttpServer};
 
 procedure Register;
 

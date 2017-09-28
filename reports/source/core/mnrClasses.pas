@@ -674,6 +674,9 @@ type
     function GetHeaderReport: TmnrSection;
     function GetHeaderPage: TmnrSection;
     procedure DoLoad; virtual;
+
+    procedure DoBeforeStart; virtual;
+    procedure DoAfterStart; virtual;
   public
     constructor Create;
 
@@ -833,6 +836,16 @@ end;
 function TmnrCustomReport.ProfilerClass: TmnrProfilerClass;
 begin
   Result := DoGetProfilerClass;
+end;
+
+procedure TmnrCustomReport.DoAfterStart;
+begin
+
+end;
+
+procedure TmnrCustomReport.DoBeforeStart;
+begin
+
 end;
 
 function TmnrCustomReport.DoCreateGroups: TmnrGroups;
@@ -1009,8 +1022,13 @@ begin
   try
     //SetParams(Params);
     //Load;
+    DoBeforeStart;
+    try
+      Start;
+    finally
+      DoAfterStart;
+    end;
 
-    Start;
     Loop;
   finally //handle safe finish ........
     FWorking := False;
