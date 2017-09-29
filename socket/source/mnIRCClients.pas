@@ -16,7 +16,7 @@ unit mnIRCClients;
 interface
 
 uses
-  Classes, mnSockets, mnClients, mnServers, mnConnections;
+  Classes, mnSockets, mnClients, mnServers, mnConnections, mnCommands;
 
 const
   sDefaultPort = '6667';

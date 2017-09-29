@@ -18,10 +18,10 @@ uses
   mnSockets, mnConnections, mnServers;
 
 type
-  TmnCommandExceotion = class(Exception);
+  TmnCommandException = class(Exception);
   TmnCommandConnection = class;
   TmnCommandConnectionClass = class of TmnCommandConnection;
-  TmnCommandConnectionState = (hcRequest, hcHeader, hcPostedData);
+  TmnCommandConnectionState = (hcRequest, hcHeader, hcPostedData); //TODO remove it
 
   TmnCommand = class;
 
@@ -312,9 +312,9 @@ end;
 function TmnCommandServer.RegisterCommand(vName: string; CommandClass: TmnCommandClass): Integer;
 begin
   if Active then
-    raise TmnCommandExceotion.Create('Server is Active');
+    raise TmnCommandException.Create('Server is Active');
   if FCommands.Find(vName) <> nil then
-    raise TmnCommandExceotion.Create('Command already exists: ' + vName);
+    raise TmnCommandException.Create('Command already exists: ' + vName);
   Result := FCommands.Add(vName, CommandClass);
 end;
 
