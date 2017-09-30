@@ -23,7 +23,7 @@ const
   sNickName = 'unknown';
   sOtherNickName = 'othername';
   sRealName = 'Real Name';
-  sRoom = 'test';
+  sChannel = 'test';
 
   MAX_TOKEN_LENGTH = 512;   //Defined in RFC1459 as the maximum length of a single token. }
   TOKEN_SEPARATOR = ' ';    { Separates tokens, except for the following case. }
@@ -110,7 +110,7 @@ type
   TOnResponse = procedure(Sender: TObject; vTokens: TIRCTokens) of object;
   TOnReceiveData = procedure(Sender: TObject; vResponse: String) of object;
 
-  TOnReceive = procedure(Sender: TObject; vRoom, vMSG: String) of object;
+  TOnReceive = procedure(Sender: TObject; vChannel, vMSG: String) of object;
   TOnSendData = procedure(Sender: TObject; vResponse: String) of object;
 
   TmnIRCClient = class(TObject) //TmnClientConnection
@@ -159,7 +159,7 @@ type
   protected
     procedure ProcessResponse(vResponse: String); virtual;
     procedure DirectReceive(vResponse: String); virtual;
-    procedure Receive(vRoom, vMsg: String); virtual;
+    procedure Receive(vChannel, vMsg: String); virtual;
     procedure Response(vTokens: TIRCTokens); virtual;
     procedure UserModeChanged;
     procedure AddHandlers;
@@ -177,8 +177,8 @@ type
     procedure SendDirect(Command: String);
 
     procedure Log(Message: String);
-    procedure Send(Room, Text: String);
-    procedure Join(Room: String);
+    procedure Send(Channel, Text: String);
+    procedure Join(Channel: String);
     procedure Notice(Destination, Text: String);
     procedure Quit(Reason: String);
     function ExtractNickFromAddress(Address: String): String;
@@ -577,14 +577,14 @@ begin
     FOnLog(Self, Message);
 end;
 
-procedure TmnIRCClient.Send(Room, Text: String);
+procedure TmnIRCClient.Send(Channel, Text: String);
 begin
-  SendDirect(Format('PRIVMSG %s :%s', [Room, Text]));
+  SendDirect(Format('PRIVMSG %s :%s', [Channel, Text]));
 end;
 
-procedure TmnIRCClient.Join(Room: String);
+procedure TmnIRCClient.Join(Channel: String);
 begin
-  SendDirect(Format('JOIN %s', [Room]));
+  SendDirect(Format('JOIN %s', [Channel]));
 end;
 
 procedure TmnIRCClient.Notice(Destination, Text: String);
@@ -707,10 +707,10 @@ begin
     FOnReceiveData(Self, vResponse);
 end;
 
-procedure TmnIRCClient.Receive(vRoom, vMsg: String);
+procedure TmnIRCClient.Receive(vChannel, vMsg: String);
 begin
   if Assigned(FOnReceive) then
-    FOnReceive(Self, vRoom, vMsg);
+    FOnReceive(Self, vChannel, vMsg);
 end;
 
 procedure TmnIRCClient.Response(vTokens: TIRCTokens);

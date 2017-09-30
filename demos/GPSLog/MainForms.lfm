@@ -1,0 +1,107 @@
+object Form1: TForm1
+  Left = 329
+  Height = 276
+  Top = 99
+  Width = 242
+  HorzScrollBar.Page = 391
+  VertScrollBar.Page = 256
+  Caption = 'GPS Mon'
+  ClientHeight = 256
+  ClientWidth = 242
+  Font.CharSet = ANSI_CHARSET
+  Font.Color = clBlack
+  Font.Height = -11
+  Font.Name = 'Tahoma'
+  Font.Pitch = fpVariable
+  Menu = MainMenu1
+  OnClose = FormClose
+  OnCreate = FormCreate
+  OnDestroy = FormDestroy
+  LCLVersion = '0.9.29'
+  object Label1: TLabel
+    Left = 15
+    Height = 14
+    Top = 12
+    Width = 24
+    Caption = 'COM'
+    ParentColor = False
+  end
+  object Label3: TLabel
+    Left = 14
+    Height = 14
+    Top = 36
+    Width = 25
+    Caption = 'Baud'
+    ParentColor = False
+  end
+  object StartBtn: TButton
+    Left = 14
+    Height = 25
+    Top = 60
+    Width = 75
+    Caption = 'Start'
+    OnClick = StartBtnClick
+    TabOrder = 0
+  end
+  object StopBtn: TButton
+    Left = 95
+    Height = 25
+    Top = 60
+    Width = 75
+    Caption = 'Stop'
+    OnClick = StopBtnClick
+    TabOrder = 1
+  end
+  object PortEdit: TComboBox
+    Left = 43
+    Height = 21
+    Top = 8
+    Width = 153
+    ItemHeight = 13
+    ItemIndex = 4
+    Items.Strings = (
+      'COM0'
+      'COM1'
+      'COM2'
+      'COM3'
+      'COM4'
+      'COM5'
+      'COM6'
+    )
+    TabOrder = 2
+    Text = 'COM4'
+  end
+  object BaudEdit: TComboBox
+    Left = 43
+    Height = 21
+    Top = 32
+    Width = 153
+    ItemHeight = 13
+    ItemIndex = 0
+    Items.Strings = (
+      '4800'
+      '9600'
+    )
+    TabOrder = 3
+    Text = '4800'
+  end
+  object LogLbl: TLabel
+    Left = 5
+    Height = 142
+    Top = 103
+    Width = 225
+    AutoSize = False
+    ParentColor = False
+  end
+  object MainMenu1: TMainMenu
+    left = 148
+    top = 172
+    object MenuItem1: TMenuItem
+      Caption = 'Exit'
+      OnClick = MenuItem1Click
+    end
+    object MenuItem3: TMenuItem
+      Caption = 'Tools'
+    end
+  end
+end
