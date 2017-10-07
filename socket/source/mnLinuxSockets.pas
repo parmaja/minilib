@@ -15,6 +15,7 @@ interface
 
 uses
   Classes,
+  netdb,
   SysUtils,
   sockets,
   mnSockets;
@@ -339,6 +340,8 @@ function TmnWallSocket.Connect(Options: TmnsoOptions; const Port: ansistring;
 var
   aHandle: TSocket;
   aAddr : TINetSockAddr;
+  ret: cint;
+  aHost: THostEntry;
 begin
   //nonblick connect  https://stackoverflow.com/questions/1543466/how-do-i-change-a-tcp-socket-to-be-non-blocking
   aHandle := fpsocket(AF_INET, SOCK_STREAM{TODO: for nonblock option: or O_NONBLOCK}, 0{IPPROTO_TCP});
@@ -359,9 +362,19 @@ begin
   if Address = '' then
     aAddr.sin_addr.s_addr := INADDR_ANY
   else
+  begin
     aAddr.sin_addr := StrToNetAddr(Address);
-  if fpconnect(aHandle, @aAddr, SizeOf(aAddr)) <> 0 then
-    raise EmnException.Create('Failed to connect the socket, Address "' + Address +'" Port "' + Port + '".');
+    if (aAddr.sin_addr.s_addr = 0) then
+    begin
+      if ResolveHostByName(Address, aHost) then
+      begin
+        aAddr.sin_addr.s_addr := aHost.Addr.s_addr;
+      end;
+    end;
+  end;
+  ret := fpconnect(aHandle, @aAddr, SizeOf(aAddr));
+  if ret = -1 then
+    raise EmnException.Create('Failed to connect the socket, error #' + IntToStr(SocketError) + '.'#13'Address "' + Address +'" Port "' + Port + '".');
   Result := TmnSocket.Create(aHandle)
 end;
 
