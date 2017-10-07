@@ -28,7 +28,7 @@ type
     function Valid(Value: Integer; WithZero: Boolean = False): Boolean;
     function Check(Value: Integer; WithZero: Boolean = False): Boolean;
     function GetActive: Boolean; override;
-    function DoSelect(Timeout: Int64; Check: TSelectCheck): TmnError; override;
+    function DoSelect(Timeout: Integer; Check: TSelectCheck): TmnError; override;
     function DoShutdown(How: TmnShutdown): TmnError; override;
   public
     constructor Create(Handle: TSocket);
@@ -116,7 +116,7 @@ begin
   end;
 end;
 
-function TmnSocket.DoSelect(Timeout: Int64; Check: TSelectCheck): TmnError;
+function TmnSocket.DoSelect(Timeout: Integer; Check: TSelectCheck): TmnError;
 var
   FSet: TFDSet;
   PSetRead, PSetWrite: PFDSet;
@@ -128,7 +128,7 @@ begin
   else
   begin
     fpfd_zero(FSet);
-    fpfd_set(FHandle, FSet);
+    fpfd_set(0, FSet);
     if Check = slRead then
     begin
       PSetRead := @FSet;
@@ -140,9 +140,7 @@ begin
       PSetWrite := @FSet;
     end;
 
-    if Timeout = -1 then
-      Timeout := 0;
-    c := fpselect(FHandle + 1, PSetRead, PSetWrite, PSetRead, Timeout); {$hint 'why FHandle + 1 not 1'}
+    c := fpselect(1, PSetRead, PSetWrite, PSetRead, Timeout);
     if (c = 0) or (c = SOCKET_ERROR) then
     begin
       Error;
@@ -295,7 +293,7 @@ end;
 
 const
   SO_TRUE:Longbool=True;
-  SO_FALSE:Longbool=False;
+//  SO_FALSE:Longbool=False;
 
 function TmnWallSocket.Bind(Options: TmnsoOptions; const Port: ansistring;
   const Address: ansistring): TmnCustomSocket;
@@ -342,7 +340,8 @@ var
   aHandle: TSocket;
   aAddr : TINetSockAddr;
 begin
-  aHandle := fpsocket(AF_INET, SOCK_STREAM, 0{IPPROTO_TCP});
+  //nonblick connect  https://stackoverflow.com/questions/1543466/how-do-i-change-a-tcp-socket-to-be-non-blocking
+  aHandle := fpsocket(AF_INET, SOCK_STREAM{TODO: for nonblock option: or O_NONBLOCK}, 0{IPPROTO_TCP});
   if aHandle = INVALID_SOCKET then
     raise EmnException.Create('Failed to connect socket');
 

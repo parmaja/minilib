@@ -7,11 +7,11 @@ unit mnSockets;
  * @author    Zaher Dirkey <zaher at parmaja dot com>
  *}
 
-{$M+}
-{$H+}
 {$IFDEF FPC}
 {$mode delphi}
 {$ENDIF}
+{$M+}
+{$H+}
 
 interface
 
@@ -39,7 +39,7 @@ type
     procedure Error;
     function GetActive: Boolean; virtual; abstract;
     procedure CheckActive; //this will force exception, cuz you should not use socket in api implmentation without active socket, i meant use it in api section only
-    function DoSelect(Timeout: Int64; Check: TSelectCheck): TmnError; virtual; abstract;
+    function DoSelect(Timeout: Integer; Check: TSelectCheck): TmnError; virtual; abstract;
     function DoShutdown(How: TmnShutdown): TmnError; virtual; abstract;
     property ShutdownState: TmnShutdown read FShutdownState;
   public
@@ -49,7 +49,7 @@ type
     procedure Close; virtual; abstract;
     function Send(const Buffer; var Count: Longint): TmnError; virtual; abstract;
     function Receive(var Buffer; var Count: Longint): TmnError; virtual; abstract;
-    function Select(Timeout: Int64; Check: TSelectCheck): TmnError;
+    function Select(Timeout: Integer; Check: TSelectCheck): TmnError;
     function Listen: TmnError; virtual; abstract;
     function Accept: TmnCustomSocket; virtual; abstract;
     property Active: Boolean read GetActive;
@@ -146,7 +146,7 @@ begin
   Result := Active and (FShutdownState = sdNone)
 end;
 
-function TmnCustomSocket.Select(Timeout: Int64; Check: TSelectCheck): TmnError;
+function TmnCustomSocket.Select(Timeout: Integer; Check: TSelectCheck): TmnError;
 begin
   Result := DoSelect(Timeout, Check);
   if (Result <> erNone) then

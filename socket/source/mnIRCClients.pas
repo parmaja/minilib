@@ -523,7 +523,7 @@ end;
 
 constructor TmnIRCClient.Create;
 begin
-  inherited;
+  inherited Create;
   FCommandClasses := TmnCommandClasses.Create;
   FConnection := TmnIRCConnection.Create(nil, nil);
   FConnection.FIRC := Self;

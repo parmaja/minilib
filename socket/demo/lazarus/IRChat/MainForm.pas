@@ -29,6 +29,7 @@ type
     procedure SendEditKeyPress(Sender: TObject; var Key: char);
   private
     IRC: TmnIRCClient;
+    procedure SendNow;
   public
     constructor Create(TheOwner: TComponent); override;
     destructor Destroy; override;
@@ -58,6 +59,11 @@ end;
 
 procedure TMainFrm.SendBtnClick(Sender: TObject);
 begin
+     SendNow;
+end;
+
+procedure TMainFrm.SendNow;
+begin
   IRC.Send(RoomEdit.Text, SendEdit.Text);
   SendEdit.Text := '';
 end;
@@ -65,7 +71,10 @@ end;
 procedure TMainFrm.SendEditKeyPress(Sender: TObject; var Key: char);
 begin
   if Key = #13 then
+  begin
     Key := #0;
+    SendNow;
+  end;
 end;
 
 constructor TMainFrm.Create(TheOwner: TComponent);

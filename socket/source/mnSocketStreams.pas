@@ -43,8 +43,8 @@ type
     procedure Connect; override;
     procedure Drop; override; //Shutdown
     procedure Disconnect; override;
-    function WaitToRead(Timeout: Longint): Boolean; override; //select
-    function WaitToWrite(Timeout: Longint): Boolean; override; //select
+    function WaitToRead(vTimeout: Longint): Boolean; override; //select
+    function WaitToWrite(vTimeout: Longint): Boolean; override; //select
     property Socket: TmnCustomSocket read FSocket;
     property Options: TmnsoOptions read FOptions write FOptions;
   end;
@@ -68,7 +68,7 @@ function TmnSocketStream.DoWrite(const Buffer; Count: Longint): Longint;
 begin
   Result := 0;
   if not Connected then
-    DoError('SocketStream not connected for write')
+    DoError('Write: SocketStream not connected.')
   else if WaitToWrite(Timeout) then //TODO WriteTimeout
   begin
     if Socket.Send(Buffer, Count) >= erClosed then
@@ -90,7 +90,7 @@ function TmnSocketStream.DoRead(var Buffer; Count: Longint): Longint;
 begin
   Result := 0;
   if not Connected then
-    DoError('SocketStream not connected for read')
+    DoError('Read: SocketStream not connected')
   else
   begin
     if WaitToRead(Timeout) then
@@ -146,17 +146,17 @@ begin
   Result := nil;//if server connect no need to create socket
 end;
 
-function TmnSocketStream.WaitToRead(Timeout: Integer): Boolean;
+function TmnSocketStream.WaitToRead(vTimeout: Integer): Boolean;
 var
   err:TmnError;
 begin
-  err := Socket.Select(Timeout, slRead);
+  err := Socket.Select(vTimeout, slRead);
   Result := err = erNone;
 end;
 
-function TmnSocketStream.WaitToWrite(Timeout: Integer): Boolean;
+function TmnSocketStream.WaitToWrite(vTimeout: Integer): Boolean;
 begin
-  Result := Socket.Select(Timeout, slWrite) = erNone;
+  Result := Socket.Select(vTimeout, slWrite) = erNone;
 end;
 
 procedure TmnSocketStream.FreeSocket;

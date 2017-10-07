@@ -38,7 +38,7 @@ type
     function Valid(Value: Integer; WithZero: Boolean = False): Boolean;
     function Check(Value: Integer; WithZero: Boolean = False): Boolean;
     function GetActive: Boolean; override;
-    function DoSelect(Timeout: Int64; Check: TSelectCheck): TmnError; override;
+    function DoSelect(Timeout: Integer; Check: TSelectCheck): TmnError; override;
     function DoShutdown(How: TmnShutdown): TmnError; override;
   public
     constructor Create(vHandle: TSocket);
@@ -131,7 +131,7 @@ begin
   end;
 end;
 
-function TmnSocket.DoSelect(Timeout: Int64; Check: TSelectCheck): TmnError;
+function TmnSocket.DoSelect(Timeout: Integer; Check: TSelectCheck): TmnError;
 var
   FSet: TFDSet;
   PSetRead, PSetWrite: PFDSet;
