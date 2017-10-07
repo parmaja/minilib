@@ -473,8 +473,8 @@ const
   SO_TRUE: Longbool = True;
 var
   aHandle: TSocket;
-  aSockAddr: TSockAddr;
-  aHostEnt: PHostEnt;
+  aAddr: TSockAddr;
+  aHost: PHostEnt;
   ret: Longint;
 const
   cNonBlockMode: DWord = 1;
@@ -498,26 +498,31 @@ begin
   if soKeepAlive in Options then
     setsockopt(aHandle, SOL_SOCKET, SO_KEEPALIVE, PAnsiChar(@SO_TRUE), SizeOf(SO_TRUE));
 
-  aSockAddr.sin_family := AF_INET;
-  aSockAddr.sin_port := htons(LookupPort(Port));
+  aAddr.sin_family := AF_INET;
+  aAddr.sin_port := htons(LookupPort(Port));
 
-  aSockAddr.sin_addr.s_addr := inet_addr(PAnsiChar(Address));
-  if ((aSockAddr.sin_addr.s_addr - INADDR_NONE) = 0) or (aSockAddr.sin_addr.s_addr = u_long(SOCKET_ERROR)) then
+  if Address = '' then
+    aAddr.sin_addr.s_addr := INADDR_ANY
+  else
   begin
-    aHostEnt := gethostbyname(PAnsiChar(Address));
-    if aHostEnt <> nil then
+    aAddr.sin_addr.s_addr := inet_addr(PAnsiChar(Address));
+    if (aAddr.sin_addr.s_addr = 0) or (aAddr.sin_addr.s_addr = u_long(SOCKET_ERROR)) then
     begin
-      aSockAddr.sin_addr.S_un_b.s_b1 := aHostEnt.h_addr^[0];
-      aSockAddr.sin_addr.S_un_b.s_b2 := aHostEnt.h_addr^[1];
-      aSockAddr.sin_addr.S_un_b.s_b3 := aHostEnt.h_addr^[2];
-      aSockAddr.sin_addr.S_un_b.s_b4 := aHostEnt.h_addr^[3];
-      aSockAddr.sin_family := aHostEnt.h_addrtype;
+      aHost := gethostbyname(PAnsiChar(Address));
+      if aHost <> nil then
+      begin
+        aAddr.sin_addr.S_un_b.s_b1 := aHost.h_addr^[0];
+        aAddr.sin_addr.S_un_b.s_b2 := aHost.h_addr^[1];
+        aAddr.sin_addr.S_un_b.s_b3 := aHost.h_addr^[2];
+        aAddr.sin_addr.S_un_b.s_b4 := aHost.h_addr^[3];
+        aAddr.sin_family := aHost.h_addrtype;
+      end;
     end;
   end;
 {$IFDEF FPC}
-  ret := WinSock2.connect(aHandle, aSockAddr, SizeOf(aSockAddr));
+  ret := WinSock2.connect(aHandle, aAddr, SizeOf(aAddr));
 {$ELSE}
-  ret := WinSock.connect(aHandle, aSockAddr, SizeOf(aSockAddr));
+  ret := WinSock.connect(aHandle, aAddr, SizeOf(aAddr));
 {$ENDIF}
   if (ret = SOCKET_ERROR) and not ((soNonBlockConnect in Options) and (WSAGetLastError = WSAEWOULDBLOCK)) then
     raise EmnException.Create('Failed to connect the socket, error #' + IntToStr(WSAGetLastError) + '.'#13'Address "' + Address +'" Port "' + Port + '".');

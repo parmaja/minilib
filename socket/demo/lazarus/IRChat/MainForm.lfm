@@ -37,8 +37,8 @@ object MainFrm: TMainFrm
     TabOrder = 2
     object SendEdit: TEdit
       Left = 6
-      Height = 25
-      Top = 2
+      Height = 23
+      Top = 4
       Width = 416
       Anchors = [akLeft, akRight, akBottom]
       OnKeyPress = SendEditKeyPress
@@ -51,7 +51,6 @@ object MainFrm: TMainFrm
       Width = 75
       Anchors = [akRight, akBottom]
       Caption = 'Send'
-      Default = True
       OnClick = SendBtnClick
       TabOrder = 1
     end
@@ -86,15 +85,16 @@ object MainFrm: TMainFrm
     end
     object HostEdit: TEdit
       Left = 95
-      Height = 25
+      Height = 23
       Top = 3
       Width = 220
+      OnKeyPress = HostEditKeyPress
       TabOrder = 1
       Text = '192.168.1.2'
     end
     object RoomEdit: TEdit
       Left = 382
-      Height = 25
+      Height = 23
       Top = 4
       Width = 85
       TabOrder = 2
@@ -104,7 +104,7 @@ object MainFrm: TMainFrm
       Left = 334
       Height = 15
       Top = 8
-      Width = 36
+      Width = 32
       Caption = 'Room'
       ParentColor = False
     end

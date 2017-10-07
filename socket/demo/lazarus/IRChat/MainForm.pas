@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, Buttons,
-  StdCtrls, ExtCtrls, ntvSplitters, mnIRCClients;
+  StdCtrls, ExtCtrls, mnIRCClients;
 
 type
 
@@ -25,17 +25,19 @@ type
     SendEdit: TEdit;
     Splitter1: TSplitter;
     procedure Button2Click(Sender: TObject);
+    procedure HostEditKeyPress(Sender: TObject; var Key: char);
     procedure SendBtnClick(Sender: TObject);
     procedure SendEditKeyPress(Sender: TObject; var Key: char);
   private
     IRC: TmnIRCClient;
+    procedure ConnectNow;
     procedure SendNow;
   public
     constructor Create(TheOwner: TComponent); override;
     destructor Destroy; override;
     procedure DoLog(Sender: TObject; AResponse: String);
     procedure DoSendData(Sender: TObject; AResponse: String);
-    procedure DoReceive(Sender: TObject; vRoom, vMSG: String);
+    procedure DoReceive(Sender: TObject; vChannel, vMSG: String);
   end;
 
 var
@@ -49,6 +51,11 @@ implementation
 
 procedure TMainFrm.Button2Click(Sender: TObject);
 begin
+  ConnectNow;
+end;
+
+procedure TMainFrm.ConnectNow;
+begin
   IRC.Host := HostEdit.Text;
   IRC.Port := '6667';
   IRC.Nick := 'Zezo';
@@ -57,9 +64,18 @@ begin
   IRC.Join(RoomEdit.Text);
 end;
 
+procedure TMainFrm.HostEditKeyPress(Sender: TObject; var Key: char);
+begin
+  if Key = #13 then
+  begin
+    Key := #0;
+    ConnectNow;
+  end;
+end;
+
 procedure TMainFrm.SendBtnClick(Sender: TObject);
 begin
-     SendNow;
+  SendNow;
 end;
 
 procedure TMainFrm.SendNow;
@@ -99,7 +115,7 @@ begin
   LogEdit.Lines.Add(AResponse);
 end;
 
-procedure TMainFrm.DoReceive(Sender: TObject; vRoom, vMSG: String);
+procedure TMainFrm.DoReceive(Sender: TObject; vChannel, vMSG: String);
 begin
   MsgEdit.Lines.Add(vMSG);
 end;
