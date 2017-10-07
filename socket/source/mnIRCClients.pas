@@ -99,12 +99,14 @@ type
   TmnIRCConnection = class(TmnClientConnection)
   private
     FIRC: TmnIRCClient;
+    FCommands: TmnCommands;
   protected
     procedure DoData(const Data: string); virtual;
     procedure DoLog(const Data: string); virtual;
     procedure Process; override;
   public
     procedure Connect; override;
+    property Commands: TmnCommands read FCommands;
   end;
 
   TOnResponse = procedure(Sender: TObject; vTokens: TIRCTokens) of object;
@@ -113,8 +115,11 @@ type
   TOnReceive = procedure(Sender: TObject; vChannel, vMSG: String) of object;
   TOnSendData = procedure(Sender: TObject; vResponse: String) of object;
 
+  { TmnIRCClient }
+
   TmnIRCClient = class(TObject) //TmnClientConnection
   private
+    FCommandClasses: TmnCommandClasses;
     FOnLog: TOnSendData;
     FRealName: String;
     FPort: String;
@@ -185,6 +190,7 @@ type
     property State: TmnIRCState read FState;
     property Connection: TmnIRCConnection read FConnection;
     property Handlers: TIRCResponseHandlers read FHandlers;
+    property CommandClasses: TmnCommandClasses read FCommandClasses;
   published
     property Host: String read GetHost write SetHost;
     property Port: String read FPort write SetPort;
@@ -242,7 +248,7 @@ end;
 
 procedure TmnIRCConnection.Connect;
 begin
-  SetStream(TmnClientSocketStream.Create(FIRC.Host, FIRC.Port));
+  SetStream(TmnClientSocketStream.Create(FIRC.Host, FIRC.Port, [soNoDelay, soNonBlockConnect]));
   Stream.Timeout := -1;
   Stream.EndOfLine := #10;
   inherited Connect;
@@ -509,7 +515,6 @@ begin
     FActualNick := FNick;
     FChangeNickTo := '';
     SetState(isResolvingHost);
-    //FSocket.DnsLookup(FHost);//zaher
     Connection.Connect;
     Connection.Start;
     SessionConnected;
@@ -519,6 +524,7 @@ end;
 constructor TmnIRCClient.Create;
 begin
   inherited;
+  FCommandClasses := TmnCommandClasses.Create;
   FConnection := TmnIRCConnection.Create(nil, nil);
   FConnection.FIRC := Self;
   FConnection.FreeOnTerminate := False;
@@ -553,6 +559,7 @@ begin
   FreeAndNil(FConnection); //+
   FreeAndNil(FTokens);
   FreeAndNil(FHandlers);
+  FreeAndNil(FCommandClasses);
   inherited;
 end;
 

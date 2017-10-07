@@ -43,7 +43,7 @@ type
   protected
     function CreateSocket: TmnCustomSocket; override;
   public
-    constructor Create(const vAddress, vPort: string);
+    constructor Create(const vAddress, vPort: string; vOptions: TmnsoOptions = [soNoDelay]);
     property Port: string read FPort write SetPort;
     property Address: string read FAddress write SetAddress;
   end;
@@ -262,14 +262,15 @@ end;
 
 function TmnClientSocketStream.CreateSocket: TmnCustomSocket;
 begin
-  Result := WallSocket.Connect([soNoDelay], Port, Address)
+  Result := WallSocket.Connect(Options, Port, Address)
 end;
 
-constructor TmnClientSocketStream.Create(const vAddress, vPort: string);
+constructor TmnClientSocketStream.Create(const vAddress, vPort: string; vOptions: TmnsoOptions);
 begin
   inherited Create;
   FAddress := vAddress;
   FPort := vPort;
+  Options := vOptions;
 end;
 
 procedure TmnClientSocketStream.SetAddress(const Value: string);

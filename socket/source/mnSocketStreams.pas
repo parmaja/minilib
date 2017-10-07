@@ -30,6 +30,7 @@ type
   TmnSocketStream = class(TmnConnectionStream)
   private
     FSocket: TmnCustomSocket;
+    FOptions: TmnsoOptions;
     procedure FreeSocket;
   protected
     function GetConnected: Boolean; override;
@@ -45,6 +46,7 @@ type
     function WaitToRead(Timeout: Longint): Boolean; override; //select
     function WaitToWrite(Timeout: Longint): Boolean; override; //select
     property Socket: TmnCustomSocket read FSocket;
+    property Options: TmnsoOptions read FOptions write FOptions;
   end;
 
   { TmnConnectionStream }
@@ -112,6 +114,7 @@ end;
 constructor TmnSocketStream.Create(vSocket: TmnCustomSocket);
 begin
   inherited Create;
+  FOptions := [soNoDelay];
   FSocket := vSocket;
 end;
 

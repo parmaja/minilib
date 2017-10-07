@@ -475,10 +475,21 @@ var
   aHandle: TSocket;
   aSockAddr: TSockAddr;
   aHostEnt: PHostEnt;
+  ret: Longint;
+const
+  cNonBlockMode: DWord = 1;
+  cBlockMode: DWord = 0;
 begin
   aHandle := socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
   if aHandle = INVALID_SOCKET then
     raise EmnException.Create('Failed to connect socket, Error #' + Inttostr(WSAGetLastError));
+
+  if soNonBlockConnect in Options then
+  begin
+    ret := ioctlsocket(aHandle, longint(FIONBIO), @cNonBlockMode);
+    if ret = Longint(SOCKET_ERROR) then
+      raise EmnException.Create('Failed to set nonblock socket, Error #' + Inttostr(WSAGetLastError));
+  end;
 
   if soNoDelay in Options then
     setsockopt(aHandle, IPPROTO_TCP, TCP_NODELAY, PAnsiChar(@SO_TRUE), SizeOf(SO_TRUE));
@@ -504,11 +515,19 @@ begin
     end;
   end;
 {$IFDEF FPC}
-  if WinSock2.connect(aHandle, aSockAddr, SizeOf(aSockAddr)) = SOCKET_ERROR then
+  ret := WinSock2.connect(aHandle, aSockAddr, SizeOf(aSockAddr));
 {$ELSE}
-  if WinSock.connect(aHandle, aSockAddr, SizeOf(aSockAddr)) = SOCKET_ERROR then
+  ret := WinSock.connect(aHandle, aSockAddr, SizeOf(aSockAddr));
 {$ENDIF}
-      raise EmnException.Create('Failed to connect the socket, error #' + IntToStr(WSAGetLastError) + '.'#13'Address "' + Address +'" Port "' + Port + '".');
+  if (ret = SOCKET_ERROR) and not ((soNonBlockConnect in Options) and (WSAGetLastError = WSAEWOULDBLOCK)) then
+    raise EmnException.Create('Failed to connect the socket, error #' + IntToStr(WSAGetLastError) + '.'#13'Address "' + Address +'" Port "' + Port + '".');
+
+  if soNonBlockConnect in Options then
+  begin
+    ret := ioctlsocket(aHandle, longint(FIONBIO), @cBlockMode);
+    if ret = Longint(SOCKET_ERROR) then
+      raise EmnException.Create('Failed to set nonblock socket, Error #' + Inttostr(WSAGetLastError));
+  end;
   Result := TmnSocket.Create(aHandle)
 end;
 

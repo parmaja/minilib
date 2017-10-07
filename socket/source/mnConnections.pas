@@ -86,6 +86,7 @@ type
   private
     FOwner: TmnConnections;
     FStream: TmnConnectionStream;
+    function GetActive: Boolean;
     function GetConnected: Boolean;
     procedure SetConnected(const Value: Boolean);
   protected
@@ -106,6 +107,7 @@ type
     procedure Stop; virtual;
     procedure Release;
     property Connected: Boolean read GetConnected write SetConnected;
+    property Active: Boolean read GetActive;
     property Stream: TmnConnectionStream read FStream; //write SetStream; //not now
   end;
 
@@ -261,6 +263,11 @@ end;
 function TmnConnection.GetConnected: Boolean;
 begin
   Result := (FStream <> nil) and FStream.Connected;
+end;
+
+function TmnConnection.GetActive: Boolean;
+begin
+  Result := Connected and not Terminated;
 end;
 
 procedure TmnConnection.HandleException(E: Exception);
