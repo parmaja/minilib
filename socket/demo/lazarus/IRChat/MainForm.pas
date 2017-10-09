@@ -130,7 +130,7 @@ begin
   IRC.OnLog := @DoLog;
   IRC.OnReceive := @DoReceive;
   MsgPageControl.ActivePageIndex := 0;
-  //LogEdit.Clear;
+  LogEdit.Clear;
 end;
 
 destructor TMainFrm.Destroy;

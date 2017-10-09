@@ -23,15 +23,7 @@ uses
   Classes, StrUtils, mnSockets, mnClients, mnStreams, mnConnections, mnCommands, mnUtils;
 
 const
-  sDefaultPort = '6667';
-  sNickName = 'unknown';
-  sOtherNickName = 'othername';
-  sRealName = 'Real Name';
-  sChannel = 'test';
-
-  MAX_TOKEN_LENGTH = 512;   //Defined in RFC1459 as the maximum length of a single token. }
   cTokenSeparator = ' ';    { Separates tokens, except for the following case. }
-  cTokenEnclose = ':';  { If the second or higher token starts with this character, it indicates that this token is all characters to the end of the string. }
 
 type
 
@@ -59,21 +51,18 @@ type
     FSource: string;
     FTarget: string;
 
-    FBuffer: array [0..MAX_TOKEN_LENGTH] of Char;
     procedure SetData(const Value: String);
-    function GetTokens(Index: Integer): String;
-    function GetTokensFrom(Index: Integer): String;
   protected
-    procedure Tokenize; virtual;
   public
     procedure Parse(vData: string); virtual;
     constructor Create;
     destructor Destroy; override;
     property Data: String read FData write SetData;
-    property Tokens[Index: Integer]: String read GetTokens; default;
-    property TokensFrom[Index: Integer]: String read GetTokensFrom;
     property Params:TStringList read FParams;
     property Count: Integer read FCount;
+    property Command: string read FCommand;
+    property Source: string read FSource;
+    property Message: string read FMessage;
   end;
 
   THandlerFunc = procedure(vTokens: TIRCTokens) of object;
@@ -143,7 +132,7 @@ type
 
   { TmnIRCClient }
 
-  TmnIRCClient = class(TObject) //TmnClientConnection
+  TmnIRCClient = class(TObject)
   private
     FOnLog: TOnLogData;
     FOnReceive: TOnReceive;
@@ -238,6 +227,13 @@ implementation
 uses
   SysUtils;
 
+const
+  sDefaultPort = '6667';
+  sNickName = 'unknown';
+  sOtherNickName = 'othername';
+  sRealName = 'Real Name';
+  sChannel = 'test';
+
 { TmnIRCCommand }
 
 constructor TmnIRCCommand.Create(Connection: TmnCommandConnection);
@@ -309,116 +305,13 @@ begin
   FreeAndNil(FParams);
 end;
 
-function TIRCTokens.GetTokens(Index: Integer): String;
-var
-  TokenStart, TokenEnd: PChar;
-begin
-  Result := '';
-  if Index < FCount then
-  begin
-    TokenStart := FTokens[Index];
-    if TokenStart = nil then
-      Exit;
-    TokenEnd := nil;
-    if Index < FTokens.Count - 1 then
-      TokenEnd := StrScan(TokenStart, cTokenSeparator);
-    if TokenEnd = nil then
-      { Use StrLCopy to protect against buffer overruns. }
-      StrLCopy(FBuffer, TokenStart, High(FBuffer))
-    else
-      StrLCopy(FBuffer, TokenStart, TokenEnd - TokenStart);
-    Result := StrPas(FBuffer);
-  end;
-end;
-
-function TIRCTokens.GetTokensFrom(Index: Integer): String;
-var
-  TokenStart: PChar;
-begin
-  Result := '';
-  if Index < FCount then
-  begin
-    TokenStart := FTokens[Index];
-    if TokenStart = nil then
-      Exit;
-    { Use StrLCopy to protect against buffer overruns. }
-    StrLCopy(FBuffer, TokenStart, High(FBuffer));
-    Result := StrPas(FBuffer);
-  end;
-end;
-
 procedure TIRCTokens.SetData(const Value: String);
 begin
   { If the string is a CTCP query, then skip the Ctrl-A characters at the start
     and end of the query. }
   FData := Value;
   if FData <> '' then
-    Tokenize;
-end;
-
-procedure TIRCTokens.Tokenize;
-var
-  TokenPtr: PChar;
-  EndOfTokens: Boolean;
-begin
-  FTokens.Clear;
-  FCount := 0;
-  TokenPtr := PChar(FData);
-  { Remove leading spaces. }
-  while (TokenPtr^ <> #0) and (TokenPtr^ = cTokenSeparator) do
-    Inc(TokenPtr);
-  { In case we reached the end of the string. }
-  if TokenPtr^ = #0 then
-    Exit;
-  if TokenPtr^ <> ':' then
-  begin
-    { No source address exists, so insert a nil string in its place. }
-    FTokens.Add(nil);
-    Inc(FCount);
-  end
-  else
-  begin
-    { Skip past the semi-colon in the source address. }
-    Inc(TokenPtr);
-  end;
-  { Add the token to the list. }
-  FTokens.Add(TokenPtr);
-  Inc(FCount);
-  while TokenPtr <> nil do
-  begin
-    { If the current token is a CTCP query, then look for the end of the
-      query instead of the token separator. }
-    if TokenPtr^ = #1 then
-    begin
-      TokenPtr := StrScan(TokenPtr + 1, #1);
-      { Move past the Ctrl-A to the next character. }
-      if TokenPtr <> nil then
-        Inc(TokenPtr);
-    end
-    else
-    begin
-      TokenPtr := StrScan(TokenPtr, cTokenSeparator);
-    end;
-    { Remove any redundant separator characters before the token. }
-    while (TokenPtr <> nil) and (TokenPtr^ <> #0) and (TokenPtr^ = cTokenSeparator) do
-      Inc(TokenPtr);
-    { Add it to the list if there Currently is another token. }
-    if TokenPtr <> nil then
-    begin
-      { Skip the end-of-tokens character if it exists. }
-      EndOfTokens := (TokenPtr^ = cTokenEnclose);
-      if EndOfTokens then
-        Inc(TokenPtr);
-      if TokenPtr^ <> #0 then
-      begin
-        FTokens.Add(TokenPtr);
-        Inc(FCount);
-      end;
-      { If there was an end-of-tokens character, then break out. }
-      if EndOfTokens then
-        Break;
-    end;
-  end;
+    Parse(FData);
 end;
 
 function ScanString(vStr: string; var vPos:Integer; out vCount: Integer; vChar: Char; vSkip: Boolean = False): Boolean;
@@ -577,7 +470,7 @@ var
   Index: Integer;
   Handler: PResponseHandler;
 begin
-  Index := IndexOfHandler(vTokens[1]);
+  Index := IndexOfHandler(vTokens.FCommand);
   if Index >= 0 then
   begin
     Handler := PResponseHandler(FHandlers.Objects[Index]);
@@ -857,27 +750,27 @@ end;
 procedure TmnIRCClient.RplNick(vTokens: TIRCTokens);
 begin
   { If it is our nick we are changing, then record the change. }
-  if UpperCase(ExtractNickFromAddress(vTokens[0])) = UpperCase(FCurrentNick) then
-    FCurrentNick := vTokens[2];
+  if UpperCase(ExtractNickFromAddress(vTokens.Source)) = UpperCase(FCurrentNick) then
+    FCurrentNick := vTokens.Params[0];
 end;
 
 procedure TmnIRCClient.RplPing(vTokens: TIRCTokens);
 begin
   { SendDirect the PONG reply to the PING. }
-  SendData(Format('PONG %s', [vTokens[2]]));
+  SendData(Format('PONG %s', [vTokens.Params[0]]));
 end;
 
 procedure TmnIRCClient.RplPrivMSG(vTokens: TIRCTokens);
 begin
-  Receive(vTokens[2], vTokens[3]);
+  Receive(vTokens.Params[0], vTokens.Params[1]);
 end;
 
 procedure TmnIRCClient.RplWelcome1(vTokens: TIRCTokens);
 begin
   { This should be the very first successful response we get, so set the Current
     host and nick from the values returned in the response. }
-  FCurrentHost := vTokens[0];
-  FCurrentNick := vTokens[2];
+  FCurrentHost := vTokens.Source;
+  FCurrentNick := vTokens.Params[0];
   SetState(isReady);
   { If a user mode is pre-set, then SendDirect the mode command. }
   if FUserModes <> [] then
@@ -937,10 +830,10 @@ var
   AddMode: Boolean;
 begin
   { Ignore channel mode changes.  Only interested in user mode changes. }
-  if vTokens[2] = FCurrentNick then
+  if vTokens.Params[0] = FCurrentNick then
   begin
     { Copy the token for efficiency reasons. }
-    ModeString := vTokens[3];
+    ModeString := vTokens.Params[1];
     AddMode := True;
     for Index := 1 to Length(ModeString) do
     begin
