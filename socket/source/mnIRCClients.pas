@@ -11,6 +11,10 @@ unit mnIRCClients;
  *            See the file COPYING.MLGPL, included in this distribution,
  *  @ported from SlyIRC the orignal author Steve Williams
  *  @author by Zaher Dirkey <zaher at parmaja dot com>
+
+
+    https://en.wikipedia.org/wiki/List_of_Internet_Relay_Chat_commands
+    https://stackoverflow.com/questions/12747781/irc-message-format-clarification
  *}
 
 interface
@@ -48,8 +52,13 @@ type
     FData: String;
     FCount: Integer;
     FTokens: TList;
-    FList: TStringList;
+    FParams: TStringList;
+    FCommand: string;
     FMessage: string;
+    FTime: string;
+    FSource: string;
+    FTarget: string;
+
     FBuffer: array [0..MAX_TOKEN_LENGTH] of Char;
     procedure SetData(const Value: String);
     function GetTokens(Index: Integer): String;
@@ -63,6 +72,7 @@ type
     property Data: String read FData write SetData;
     property Tokens[Index: Integer]: String read GetTokens; default;
     property TokensFrom[Index: Integer]: String read GetTokensFrom;
+    property Params:TStringList read FParams;
     property Count: Integer read FCount;
   end;
 
@@ -258,13 +268,13 @@ constructor TIRCTokens.Create;
 begin
   inherited;
   FTokens := TList.Create;
-  FList := TStringList.Create;
+  FParams := TStringList.Create;
 end;
 
 destructor TIRCTokens.Destroy;
 begin
   FreeAndNil(FTokens);
-  FreeAndNil(FList);
+  FreeAndNil(FParams);
 end;
 
 function TIRCTokens.GetTokens(Index: Integer): String;
@@ -379,62 +389,90 @@ begin
   end;
 end;
 
-procedure ScanString(vStr: string; var vPos: Integer; vChar: Char; vSkip: Boolean = False);
+function ScanString(vStr: string; var vPos:Integer; out vCount: Integer; vChar: Char; vSkip: Boolean = False): Boolean;
+var
+  start: Integer;
 begin
-  while (vPos < Length(vStr)) and (vStr[vPos] <> vChar) do
+  start := vPos;
+  while (vPos <= Length(vStr)) and (vStr[vPos] <> vChar) do
     Inc(vPos);
+  vCount := vPos - start;
+  { Remove any redundant }
   if vSkip then
-    while (vPos < Length(vStr)) and (vStr[vPos] = vChar) do
+    while (vPos <= Length(vStr)) and (vStr[vPos] = vChar) do
       Inc(vPos);
+  Result := vCount > 0;
 end;
 
 procedure TIRCTokens.Parse(vData: string);
+type
+  TParseState = (prefex, command, params, message);
 var
-  EndOfTokens: Boolean;
-  s: string;
-  i, j: Integer;
+  State: TParseState;
+  p: Integer;
+  Start, Count: Integer;
+  procedure AddIt(s: string);
+  begin
+    FParams.Add(s);
+  end;
 begin
-  FList.Clear;
-  i := 1;
-  j := 0;
-  if vData[i] <> ':' then
-    FList.Add('') //No source address exists, so insert a nil string in its place.
-  else
-    Inc(i); //Skip past the semi-colon in the source address.
-
-  while I < Length(vData) do
+  FParams.Clear;
+  State := prefex;
+  p := 1;
+  while p < Length(vData) do
   begin
     { If the current token is a CTCP query, then look for the end of the
       query instead of the token separator. }
-    j := i;
-    if vData[i] = #1 then
+    if vData[p] = '@' then
     begin
-      while (i < Length(vData)) and (vData[i] <> #1) do
-        Inc(i);
+      Inc(p); //skip it
+      Start := p;
+      ScanString(vData, p, Count, cTokenSeparator, True);
+      if Count > 0 then
+        FTime := MidStr(vData, Start, Count);
+      //Inc(State); no do not increase it, we still except prefix
+    end
+    else if vData[p] = ':' then
+    begin
+      if State > prefex then
+      begin
+        FMessage := MidStr(vData, p + 1, MaxInt);
+        State := message;
+        Break;
+      end
+      else
+      begin
+        Inc(p); //skip it
+        Start := p;
+        ScanString(vData, p, Count, cTokenSeparator, True);
+        if Count > 0 then
+          FSource := MidStr(vData, Start, Count);
+        Inc(State);
+      end
+    end
+    else if vData[p] = #1 then //CTCP idk what is this
+    begin
+      Start := p;
+      ScanString(vData, p, Count, #1);
+      if Count > 0 then
+        AddIt(MidStr(vData, Start, Count));
+      Inc(State);
     end
     else
     begin
-      while (i < Length(vData)) and (vData[i] <> cTokenSeparator) do
-        Inc(i);
-      { Remove any redundant separator characters before the token. }
-      while (i < Length(vData)) and (vData[i] = cTokenSeparator) do
-        Inc(i);
-    end;
-    { Add it to the list if there Currently is another token. }
-    if i < Length(vData) then
-    begin
-      { Skip the end-of-tokens character if it exists. }
-      EndOfTokens := (vData[i] = cTokenEnclose);
-      if EndOfTokens then
-        Inc(i);
-      if i < Length(vData) then
+      Start := p;
+      ScanString(vData, p, Count, cTokenSeparator, True);
+      if Count > 0 then
       begin
-        s := MidStr(vData, j, i - 1);
-        FList.Add(s);
-      end;
-      { If there was an end-of-tokens character, then break out. }
-      if EndOfTokens then
-        Break;
+        if State <= command then
+        begin
+          FCommand := MidStr(vData, Start, Count);
+          State := command;
+          Inc(State);
+        end
+        else
+          AddIt(MidStr(vData, Start, Count));
+      end
     end;
   end;
 end;
