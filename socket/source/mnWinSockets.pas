@@ -476,20 +476,13 @@ var
   aAddr: TSockAddr;
   aHost: PHostEnt;
   ret: Longint;
-const
-  cNonBlockMode: DWord = 1;
-  cBlockMode: DWord = 0;
+  aMode: u_long;
+  aTimeout: TTimeVal;
+  aWrite, aErr: TFDSet;
 begin
   aHandle := socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
   if aHandle = INVALID_SOCKET then
     raise EmnException.Create('Failed to connect socket, Error #' + Inttostr(WSAGetLastError));
-
-  if soNonBlockConnect in Options then
-  begin
-    ret := ioctlsocket(aHandle, longint(FIONBIO), @cNonBlockMode);
-    if ret = Longint(SOCKET_ERROR) then
-      raise EmnException.Create('Failed to set nonblock socket, Error #' + Inttostr(WSAGetLastError));
-  end;
 
   if soNoDelay in Options then
     setsockopt(aHandle, IPPROTO_TCP, TCP_NODELAY, PAnsiChar(@SO_TRUE), SizeOf(SO_TRUE));
@@ -497,6 +490,14 @@ begin
 //http://support.microsoft.com/default.aspx?kbid=140325
   if soKeepAlive in Options then
     setsockopt(aHandle, SOL_SOCKET, SO_KEEPALIVE, PAnsiChar(@SO_TRUE), SizeOf(SO_TRUE));
+
+  if soNonBlockConnect in Options then
+  begin
+    aMode := 1;
+    ret := ioctlsocket(aHandle, FIONBIO, aMode);
+    if ret = Longint(SOCKET_ERROR) then
+      raise EmnException.Create('Failed to set nonblock socket, Error #' + Inttostr(WSAGetLastError));
+  end;
 
   aAddr.sin_family := AF_INET;
   aAddr.sin_port := htons(LookupPort(Port));
@@ -529,10 +530,27 @@ begin
 
   if soNonBlockConnect in Options then
   begin
-    ret := ioctlsocket(aHandle, longint(FIONBIO), @cBlockMode);
+    aMode := 0;
+    ret := ioctlsocket(aHandle, FIONBIO, aMode);
     if ret = Longint(SOCKET_ERROR) then
       raise EmnException.Create('Failed to set nonblock socket, Error #' + Inttostr(WSAGetLastError));
+
+    FD_ZERO(aWrite);
+    FD_ZERO(aErr);
+    FD_SET(aHandle, aWrite);
+    FD_SET(aHandle, aErr);
+
+    // check if the socket is ready   \
+
+    aTimeout.tv_sec := 0;
+    aTimeout.tv_usec := 3000;
+
+    select(0, nil, @aWrite, @aErr, @aTimeout);
+    if not FD_ISSET(aHandle, aWrite) then
+
+      raise EmnException.Create('Failed to connect nonblock socket, Error #' + Inttostr(WSAGetLastError));
   end;
+
   Result := TmnSocket.Create(aHandle)
 end;
 
