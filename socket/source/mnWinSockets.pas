@@ -38,6 +38,7 @@ type
     function Valid(Value: Integer; WithZero: Boolean = False): Boolean;
     function Check(Value: Integer; WithZero: Boolean = False): Boolean;
     function GetActive: Boolean; override;
+    //Timeout millisecond
     function DoSelect(Timeout: Integer; Check: TSelectCheck): TmnError; override;
     function DoShutdown(How: TmnShutdown): TmnError; override;
   public
@@ -53,18 +54,22 @@ type
     function GetRemoteName: string; override;
   end;
 
+  { TmnWallSocket }
+
   TmnWallSocket = class(TmnCustomWallSocket)
   private
     FWSAData: TWSAData;
     FCount: Integer;
     function LookupPort(Port: string): Word;
+  protected
+    function Select(vHandle: TSocket; Timeout: Integer; Check: TSelectCheck): TmnError;
   public
     constructor Create; override;
     destructor Destroy; override;
     //Connect used by servers
     function Bind(Options: TmnsoOptions; const Port: ansistring; const Address: ansistring = ''): TmnCustomSocket; override;
     //Connect used by clients
-    function Connect(Options: TmnsoOptions; const Port: ansistring; const Address: ansistring = ''): TmnCustomSocket; override;
+    function Connect(Options: TmnsoOptions; Timeout: Integer; const Port: ansistring; const Address: ansistring = ''): TmnCustomSocket; override;
     procedure Startup;
     procedure Cleanup;
   end;
@@ -132,58 +137,10 @@ begin
 end;
 
 function TmnSocket.DoSelect(Timeout: Integer; Check: TSelectCheck): TmnError;
-var
-  FSet: TFDSet;
-  PSetRead, PSetWrite: PFDSet;
-  TimeVal: TTimeVal;
-  c: Integer;
 begin
-  //CheckActive; no need select will return error for it, as i tho
-  if FHandle = INVALID_SOCKET then
-    Result := erClosed
-  else
-  begin
-    {$ifdef FPC}
-    Finalize(FSet);
-    {$endif}
-    FD_ZERO(FSet);
-    FD_SET(FHandle, FSet);
-    if Check = slRead then
-    begin
-      PSetRead := @FSet;
-      PSetWrite := nil;
-    end
-    else
-    begin
-      PSetRead := nil;
-      PSetWrite := @FSet;
-    end;
-    if Timeout = -1 then
-    begin
-    {$IFDEF FPC}
-      c := WinSock2.select(0, PSetRead, PSetWrite, nil, nil)
-    {$ELSE}
-      c := WinSock.select(0, PSetRead, PSetWrite, nil, nil)
-    {$ENDIF}
-    end
-    else
-    begin
-      TimeVal.tv_sec := Timeout div 1000;
-      TimeVal.tv_usec := (Timeout mod 1000) * 1000;
-    {$IFDEF FPC}
-      c := WinSock2.select(0, PSetRead, PSetWrite, nil, @TimeVal);
-    {$ELSE}
-      c := WinSock.select(0, PSetRead, PSetWrite, nil, @TimeVal);
-    {$ENDIF}
-    end;
-    if (c = 0) or (c = SOCKET_ERROR) then
-    begin
-      Error;
-      Result := erFail;
-    end
-    else
-      Result := erNone;
-  end
+  Result := (WallSocket as TmnWallSocket).Select(FHandle, Timeout, Check);
+  if Result = erFail then
+    Error;
 end;
 
 function TmnSocket.Valid(Value: Integer; WithZero: Boolean): Boolean;
@@ -450,6 +407,58 @@ begin
   Cleanup;
 end;
 
+function TmnWallSocket.Select(vHandle: TSocket; Timeout: Integer; Check: TSelectCheck): TmnError;
+var
+  FSet: TFDSet;
+  PSetRead, PSetWrite: PFDSet;
+  TimeVal: TTimeVal;
+  c: Integer;
+begin
+  //CheckActive; no need select will return error for it, as i tho
+  if vHandle = INVALID_SOCKET then
+    Result := erClosed
+  else
+  begin
+    {$ifdef FPC}
+    Finalize(FSet);
+    {$endif}
+    FD_ZERO(FSet);
+    FD_SET(vHandle, FSet);
+    if Check = slRead then
+    begin
+      PSetRead := @FSet;
+      PSetWrite := nil;
+    end
+    else
+    begin
+      PSetRead := nil;
+      PSetWrite := @FSet;
+    end;
+    if Timeout = -1 then
+    begin
+    {$IFDEF FPC}
+      c := WinSock2.select(0, PSetRead, PSetWrite, nil, nil)
+    {$ELSE}
+      c := WinSock.select(0, PSetRead, PSetWrite, nil, nil)
+    {$ENDIF}
+    end
+    else
+    begin
+      TimeVal.tv_sec := Timeout div 1000;
+      TimeVal.tv_usec := (Timeout mod 1000) * 1000;
+    {$IFDEF FPC}
+      c := WinSock2.select(0, PSetRead, PSetWrite, nil, @TimeVal);
+    {$ELSE}
+      c := WinSock.select(0, PSetRead, PSetWrite, nil, @TimeVal);
+    {$ENDIF}
+    end;
+    if (c = 0) or (c = SOCKET_ERROR) then
+      Result := erFail
+    else
+      Result := erNone;
+  end
+end;
+
 function TmnWallSocket.LookupPort(Port: string): Word;
 begin
   Result := StrToIntDef(Port, 0);
@@ -468,7 +477,7 @@ begin
   Inc(FCount)
 end;
 
-function TmnWallSocket.Connect(Options: TmnsoOptions; const Port, Address: ansistring): TmnCustomSocket;
+function TmnWallSocket.Connect(Options: TmnsoOptions; Timeout: Integer; const Port: ansistring; const Address: ansistring): TmnCustomSocket;
 const
   SO_TRUE: Longbool = True;
 var
@@ -477,8 +486,6 @@ var
   aHost: PHostEnt;
   ret: Longint;
   aMode: u_long;
-  aTimeout: TTimeVal;
-  aWrite, aErr: TFDSet;
 begin
   aHandle := socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
   if aHandle = INVALID_SOCKET then
@@ -491,10 +498,10 @@ begin
   if soKeepAlive in Options then
     setsockopt(aHandle, SOL_SOCKET, SO_KEEPALIVE, PAnsiChar(@SO_TRUE), SizeOf(SO_TRUE));
 
-  if soNonBlockConnect in Options then
+  if soConnectTimeout in Options then
   begin
     aMode := 1;
-    ret := ioctlsocket(aHandle, FIONBIO, aMode);
+    ret := ioctlsocket(aHandle,  FIONBIO, aMode);
     if ret = Longint(SOCKET_ERROR) then
       raise EmnException.Create('Failed to set nonblock socket, Error #' + Inttostr(WSAGetLastError));
   end;
@@ -525,29 +532,17 @@ begin
 {$ELSE}
   ret := WinSock.connect(aHandle, aAddr, SizeOf(aAddr));
 {$ENDIF}
-  if (ret = SOCKET_ERROR) and not ((soNonBlockConnect in Options) and (WSAGetLastError = WSAEWOULDBLOCK)) then
+  if (ret = SOCKET_ERROR) and not ((soConnectTimeout in Options) and (WSAGetLastError = WSAEWOULDBLOCK)) then
     raise EmnException.Create('Failed to connect the socket, error #' + IntToStr(WSAGetLastError) + '.'#13'Address "' + Address +'" Port "' + Port + '".');
 
-  if soNonBlockConnect in Options then
+  if soConnectTimeout in Options then
   begin
     aMode := 0;
     ret := ioctlsocket(aHandle, FIONBIO, aMode);
     if ret = Longint(SOCKET_ERROR) then
       raise EmnException.Create('Failed to set nonblock socket, Error #' + Inttostr(WSAGetLastError));
 
-    FD_ZERO(aWrite);
-    FD_ZERO(aErr);
-    FD_SET(aHandle, aWrite);
-    FD_SET(aHandle, aErr);
-
-    // check if the socket is ready   \
-
-    aTimeout.tv_sec := 0;
-    aTimeout.tv_usec := 3000;
-
-    select(0, nil, @aWrite, @aErr, @aTimeout);
-    if not FD_ISSET(aHandle, aWrite) then
-
+    if Select(aHandle, Timeout, slWrite) <> erNone then
       raise EmnException.Create('Failed to connect nonblock socket, Error #' + Inttostr(WSAGetLastError));
   end;
 

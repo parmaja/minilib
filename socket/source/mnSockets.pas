@@ -25,7 +25,7 @@ type
   TmnError = (erNone, erTimout, erFail, erClosed, erInvalid);
   TSelectCheck = (slRead, slWrite);
 
-  TmnsoOption = (soBroadcast, soDebug, soDontLinger, soDontRoute, soOOBInLine, soReuseAddr, soKeepAlive, soNoDelay, soNonBlockConnect, soAcceptConn);
+  TmnsoOption = (soBroadcast, soDebug, soDontLinger, soDontRoute, soOOBInLine, soReuseAddr, soKeepAlive, soNoDelay, soConnectTimeout, soAcceptConn);
   TmnsoOptions = set of TmnsoOption;
 
   { TmnCustomSocket }
@@ -61,13 +61,13 @@ type
     function GetRemoteName: string; virtual; abstract;
   end;
 
-  TmnCustomWallSocket = class(TObject)
+  TmnCustomWallSocket = class abstract(TObject)
   private
   public
     constructor Create; virtual;
     destructor Destroy; override;
     function Bind(Options: TmnsoOptions; const Port: ansistring; const Address: ansistring = ''): TmnCustomSocket; virtual; abstract;
-    function Connect(Options: TmnsoOptions; const Port: ansistring; const Address: ansistring = ''): TmnCustomSocket; virtual; abstract;
+    function Connect(Options: TmnsoOptions; Timeout: Integer; const Port: ansistring; const Address: ansistring = ''): TmnCustomSocket; virtual; abstract;
   end;
 
 function WallSocket: TmnCustomWallSocket;

@@ -53,7 +53,7 @@ type
     constructor Create; override;
     destructor Destroy; override;
     function Bind(Options: TmnsoOptions; const Port: ansistring; const Address: ansistring = ''): TmnCustomSocket; override;
-    function Connect(Options: TmnsoOptions; const Port: ansistring; const Address: ansistring = ''): TmnCustomSocket; override;
+    function Connect(Options: TmnsoOptions; Timeout: Integer; const Port: ansistring; const Address: ansistring = ''): TmnCustomSocket; override;
   end;
 
 implementation
@@ -335,8 +335,7 @@ begin
   Result := StrToIntDef(Port, 0);
 end;
 
-function TmnWallSocket.Connect(Options: TmnsoOptions; const Port: ansistring;
-  const Address: ansistring): TmnCustomSocket;
+function TmnWallSocket.Connect(Options: TmnsoOptions; Timeout: Integer; const Port: ansistring; const Address: ansistring): TmnCustomSocket;
 var
   aHandle: TSocket;
   aAddr : TINetSockAddr;
@@ -344,6 +343,7 @@ var
   aHost: THostEntry;
 begin
   //nonblick connect  https://stackoverflow.com/questions/1543466/how-do-i-change-a-tcp-socket-to-be-non-blocking
+  //https://stackoverflow.com/questions/14254061/setting-time-out-for-connect-function-tcp-socket-programming-in-c-breaks-recv
   aHandle := fpsocket(AF_INET, SOCK_STREAM{TODO: for nonblock option: or O_NONBLOCK}, 0{IPPROTO_TCP});
   if aHandle = INVALID_SOCKET then
     raise EmnException.Create('Failed to connect socket');

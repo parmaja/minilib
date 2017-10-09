@@ -30,6 +30,13 @@ const
   cTokenEnclose = ':';  { If the second or higher token starts with this character, it indicates that this token is all characters to the end of the string. }
 
 type
+
+  { TIRCSocketStream }
+
+  TIRCSocketStream = Class(TmnClientSocketStream)
+  protected
+  end;
+
   TmnIRCClient = class;
 
   TIRCLogType = (lgMsg, lgSend, lgReceive);
@@ -239,7 +246,7 @@ end;
 
 procedure TmnIRCConnection.Connect;
 begin
-  SetStream(TmnClientSocketStream.Create(FIRC.Host, FIRC.Port, [soNoDelay, soNonBlockConnect]));
+  SetStream(TIRCSocketStream.Create(FIRC.Host, FIRC.Port, [soNoDelay, soConnectTimeout]));
   Stream.Timeout := -1;
   Stream.EndOfLine := #10;
   inherited Connect;
@@ -372,7 +379,7 @@ begin
   end;
 end;
 
-function ScanString(vStr: string; var vPos: Integer; vChar: Char; vSkip: Boolean = False): Boolean;
+procedure ScanString(vStr: string; var vPos: Integer; vChar: Char; vSkip: Boolean = False);
 begin
   while (vPos < Length(vStr)) and (vStr[vPos] <> vChar) do
     Inc(vPos);

@@ -246,15 +246,12 @@ begin
 end;
 
 function TmnClients.AddConnection(vPort: string; vAddress: string): TmnClientConnection;
-var
-  aSocket: TmnCustomSocket;
 begin
   if vPort = '' then
     vPort := FPort;
   if vAddress = '' then
     vAddress := FAddress;
-  aSocket := WallSocket.Connect([], vPort, vAddress);
-  Result := CreateConnection(aSocket) as TmnClientConnection;
+  Result := CreateConnection(nil) as TmnClientConnection;
   Result.Start;
 end;
 
@@ -262,7 +259,7 @@ end;
 
 function TmnClientSocketStream.CreateSocket: TmnCustomSocket;
 begin
-  Result := WallSocket.Connect(Options, Port, Address)
+  Result := WallSocket.Connect(Options, Timeout, Port, Address)
 end;
 
 constructor TmnClientSocketStream.Create(const vAddress, vPort: string; vOptions: TmnsoOptions);

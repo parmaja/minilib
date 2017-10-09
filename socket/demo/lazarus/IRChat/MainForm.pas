@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, Buttons,
-  StdCtrls, ExtCtrls, ComCtrls, mnIRCClients;
+  StdCtrls, ExtCtrls, ComCtrls, Menus, mnIRCClients;
 
 type
 
@@ -18,6 +18,8 @@ type
     HostEdit: TEdit;
     Label1: TLabel;
     LogEdit: TMemo;
+    MenuItem1: TMenuItem;
+    PopupMenu1: TPopupMenu;
     RoomMsgEdit: TMemo;
     MsgEdit: TMemo;
     MsgPageControl: TPageControl;
@@ -33,6 +35,7 @@ type
     procedure Button1Click(Sender: TObject);
     procedure Button2Click(Sender: TObject);
     procedure HostEditKeyPress(Sender: TObject; var Key: char);
+    procedure MenuItem1Click(Sender: TObject);
     procedure MsgPageControlChange(Sender: TObject);
     procedure SendBtnClick(Sender: TObject);
     procedure SendEditKeyPress(Sender: TObject; var Key: char);
@@ -90,6 +93,11 @@ begin
   end;
 end;
 
+procedure TMainFrm.MenuItem1Click(Sender: TObject);
+begin
+  LogEdit.Clear;
+end;
+
 procedure TMainFrm.MsgPageControlChange(Sender: TObject);
 begin
 
@@ -122,6 +130,7 @@ begin
   IRC.OnLog := @DoLog;
   IRC.OnReceive := @DoReceive;
   MsgPageControl.ActivePageIndex := 0;
+  LogEdit.Clear;
 end;
 
 destructor TMainFrm.Destroy;
