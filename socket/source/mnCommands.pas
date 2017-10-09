@@ -100,8 +100,10 @@ type
 
   TmnCommands = class(GItems<TmnCommand>)
   private
+    FCommandClasses: TmnCommandClasses;
   public
     function ParseRequest(const Request: string): TmnRequest; virtual;
+    property CommandClasses: TmnCommandClasses read FCommandClasses;
   end;
 
 implementation

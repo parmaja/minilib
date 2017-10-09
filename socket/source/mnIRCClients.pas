@@ -20,7 +20,7 @@ unit mnIRCClients;
 interface
 
 uses
-  Classes, StrUtils, mnSockets, mnClients, mnConnections, mnCommands, mnUtils;
+  Classes, StrUtils, mnSockets, mnClients, mnStreams, mnConnections, mnCommands, mnUtils;
 
 const
   sDefaultPort = '6667';
@@ -111,19 +111,31 @@ type
 
   TmnOnData = procedure(const Data: string) of object;
 
+  { TmnIRCCommand }
+
+  TmnIRCCommand = class(TmnCommand)
+  public
+    constructor Create(Connection: TmnCommandConnection); override;
+  end;
+
+  TmnIRCCommands = class(TmnCommands)
+  end;
+
   { TmnIRCConnection }
 
   TmnIRCConnection = class(TmnClientConnection)
   private
     FIRC: TmnIRCClient;
-    FCommands: TmnCommands;
+    FCommands: TmnIRCCommands;
   protected
     procedure DoReceive(const Data: string); virtual;
     procedure DoLog(const vData: string); virtual;
     procedure Process; override;
   public
+    constructor Create(vOwner: TmnConnections; vSocket: TmnConnectionStream); override;
+    destructor Destroy; override;
     procedure Connect; override;
-    property Commands: TmnCommands read FCommands;
+    property Commands: TmnIRCCommands read FCommands;
   end;
 
   TOnReceive = procedure(Sender: TObject; vChannel, vMSG: String) of object;
@@ -226,6 +238,13 @@ implementation
 uses
   SysUtils;
 
+{ TmnIRCCommand }
+
+constructor TmnIRCCommand.Create(Connection: TmnCommandConnection);
+begin
+  inherited;
+end;
+
 { TmnIRCConnection }
 
 procedure TmnIRCConnection.DoReceive(const Data: string);
@@ -248,10 +267,23 @@ begin
     Line := Trim(Stream.ReadLine);
     while Line <> '' do
     begin
+      //CreateCommand()
       DoReceive(Line);
       Line := Trim(Stream.ReadLine);
     end;
   end;
+end;
+
+constructor TmnIRCConnection.Create(vOwner: TmnConnections; vSocket: TmnConnectionStream);
+begin
+  inherited Create(vOwner, vSocket);
+  FCommands := TmnIRCCommands.Create;
+end;
+
+destructor TmnIRCConnection.Destroy;
+begin
+  FreeAndNil(FCommands);
+  inherited Destroy;
 end;
 
 procedure TmnIRCConnection.Connect;
