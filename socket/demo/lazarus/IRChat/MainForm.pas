@@ -13,6 +13,7 @@ type
   { TMainFrm }
 
   TMainFrm = class(TForm)
+    Button1: TButton;
     Button2: TButton;
     HostEdit: TEdit;
     Label1: TLabel;
@@ -29,6 +30,7 @@ type
     Splitter1: TSplitter;
     TabSheet1: TTabSheet;
     TabSheet2: TTabSheet;
+    procedure Button1Click(Sender: TObject);
     procedure Button2Click(Sender: TObject);
     procedure HostEditKeyPress(Sender: TObject; var Key: char);
     procedure MsgPageControlChange(Sender: TObject);
@@ -58,6 +60,15 @@ implementation
 procedure TMainFrm.Button2Click(Sender: TObject);
 begin
   ConnectNow;
+end;
+
+var
+  TestIndex: Integer = 0;
+
+procedure TMainFrm.Button1Click(Sender: TObject);
+begin
+  IRC.Tokens.Parse(LogEdit.Lines[TestIndex]);
+  Inc(TestIndex);
 end;
 
 procedure TMainFrm.ConnectNow;

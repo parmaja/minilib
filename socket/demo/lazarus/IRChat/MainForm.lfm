@@ -2,34 +2,34 @@ object MainFrm: TMainFrm
   Left = 482
   Height = 339
   Top = 230
-  Width = 507
+  Width = 511
   Caption = 'IRC chat'
   ClientHeight = 339
-  ClientWidth = 507
+  ClientWidth = 511
   LCLVersion = '1.9.0.0'
   object Panel1: TPanel
     Left = 0
     Height = 31
     Top = 308
-    Width = 507
+    Width = 511
     Align = alBottom
     BevelOuter = bvNone
     ClientHeight = 31
-    ClientWidth = 507
+    ClientWidth = 511
     TabOrder = 0
     object SendEdit: TEdit
       Left = 6
       Height = 23
       Top = 4
-      Width = 416
+      Width = 420
       Anchors = [akLeft, akRight, akBottom]
       OnKeyPress = SendEditKeyPress
       TabOrder = 0
     end
     object SendBtn: TButton
-      Left = 426
-      Height = 25
-      Top = 2
+      Left = 430
+      Height = 23
+      Top = 4
       Width = 75
       Anchors = [akRight, akBottom]
       Caption = 'Send'
@@ -42,7 +42,7 @@ object MainFrm: TMainFrm
     Left = 0
     Height = 5
     Top = 258
-    Width = 507
+    Width = 511
     Align = alBottom
     ResizeAnchor = akBottom
   end
@@ -50,18 +50,17 @@ object MainFrm: TMainFrm
     Left = 0
     Height = 30
     Top = 0
-    Width = 507
+    Width = 511
     Align = alTop
     BevelOuter = bvNone
     ClientHeight = 30
-    ClientWidth = 507
+    ClientWidth = 511
     TabOrder = 2
     object Button2: TButton
-      Left = 229
-      Height = 25
-      Top = 4
+      Left = 233
+      Height = 24
+      Top = 5
       Width = 85
-      Anchors = [akTop, akRight]
       Caption = '&Connect'
       OnClick = Button2Click
       TabOrder = 0
@@ -70,7 +69,7 @@ object MainFrm: TMainFrm
       Left = 319
       Height = 23
       Top = 5
-      Width = 184
+      Width = 188
       Anchors = [akTop, akLeft, akRight]
       OnKeyPress = HostEditKeyPress
       TabOrder = 1
@@ -79,7 +78,7 @@ object MainFrm: TMainFrm
     object RoomEdit: TEdit
       Left = 137
       Height = 23
-      Top = 4
+      Top = 5
       Width = 85
       OnKeyPress = HostEditKeyPress
       TabOrder = 2
@@ -100,17 +99,17 @@ object MainFrm: TMainFrm
       Width = 85
       OnKeyPress = HostEditKeyPress
       TabOrder = 3
-      Text = '#zezo'
+      Text = 'zezo'
     end
   end
   object MsgPageControl: TPageControl
     Left = 0
     Height = 228
     Top = 30
-    Width = 507
-    ActivePage = TabSheet1
+    Width = 511
+    ActivePage = TabSheet2
     Align = alClient
-    TabIndex = 0
+    TabIndex = 1
     TabOrder = 3
     OnChange = MsgPageControlChange
     object TabSheet1: TTabSheet
@@ -131,15 +130,69 @@ object MainFrm: TMainFrm
     object TabSheet2: TTabSheet
       Caption = 'Log'
       ClientHeight = 200
-      ClientWidth = 499
+      ClientWidth = 503
       object LogEdit: TMemo
         Left = 0
         Height = 200
         Top = 0
-        Width = 499
+        Width = 503
         Align = alClient
+        Anchors = [akTop, akLeft, akBottom]
+        Font.CharSet = ARABIC_CHARSET
+        Font.Height = -13
+        Font.Name = 'Courier New'
+        Font.Pitch = fpFixed
+        Font.Quality = fqDraft
+        Lines.Strings = (
+          'NICK zezo'
+          'USER username username 192.168.1.2 :Real Name'
+          'JOIN #parmaja'
+          ':zaher.home NOTICE * :*** Looking up your username'
+          ':zaher.home NOTICE * :*** Could not find your username'
+          ':zaher.home 001 zezo :Welcome to the Internet Relay Network zezo'
+          ':zaher.home 002 zezo :Your host is zaher.home, running version oragono-0.8.2'
+          ':zaher.home 003 zezo :This server was created Mon, 09 Oct 2017 13:36:36 EEST'
+          ':zaher.home 004 zezo zaher.home oragono-0.8.2 aiosE beIikntslE'
+          ':zaher.home 005 zezo PREFIX=(qaohv)~&@%+ RPCHAN=E CHANNELLEN=64 CHANTYPES=# EXCEPTS= MAXTARGETS=4 MODES= NICKLEN=32 STATUSMSG=~&@%+ TARGMAX=NAMES:1,LIST:1,KICK:1,WHOIS:1,USERHOST:10,PRIVMSG:4,TAGMSG:4,NOTICE:4,MONITOR: AWAYLEN=500 CASEMAPPING=rfc7613 ELIST=U :are supported by this server'
+          ':zaher.home 005 zezo INVEX= MAXLIST=beI:60 MONITOR=100 REGCALLBACKS= REGCREDTYPES=passphrase,certfp CHANMODES=beI,,lk,imntEs KICKLEN=1000 NETWORK=zaher.home RPUSER=E TOPICLEN=1000 REGCOMMANDS=CREATE,VERIFY :are supported by this server'
+          ':zaher.home 375 zezo :- zaher.home Message of the day -'
+          ':zaher.home 372 zezo :-'
+          ':zaher.home 372 zezo :-       ▄▄▄   ▄▄▄·  ▄▄ •        ▐ ▄'
+          ':zaher.home 372 zezo :- ▪     ▀▄ █·▐█ ▀█ ▐█ ▀ ▪▪     •█▌▐█▪'
+          ':zaher.home 372 zezo :-  ▄█▀▄ ▐▀▀▄ ▄█▀▀█ ▄█ ▀█▄ ▄█▀▄▪▐█▐▐▌ ▄█▀▄'
+          ':zaher.home 372 zezo :- ▐█▌.▐▌▐█•█▌▐█ ▪▐▌▐█▄▪▐█▐█▌ ▐▌██▐█▌▐█▌.▐▌'
+          ':zaher.home 372 zezo :-  ▀█▄▀▪.▀  ▀ ▀  ▀ ·▀▀▀▀  ▀█▄▀ ▀▀ █▪ ▀█▄▀▪'
+          ':zaher.home 372 zezo :-'
+          ':zaher.home 372 zezo :- This is the default Oragono MOTD.'
+          ':zaher.home 372 zezo :-'
+          ':zaher.home 376 zezo :End of MOTD command'
+          ':zezo!~username@192.168.1.2 221 zezo +'
+          ':zaher.home NOTICE zezo :This server is in debug mode and is logging all user I/O. If you do not wish for everything you send to be readable by the server owner(s), please disconnect.'
+          ':zezo!~username@192.168.1.2 JOIN #parmaja'
+          ':zaher.home 331 zezo #parmaja :No topic is set'
+          ':zaher.home 353 zezo = #parmaja @zezo'
+          ':zaher.home 366 zezo #parmaja :End of NAMES list'
+          ':zaher.home MODE #parmaja +o zezo'
+          'PRIVMSG #parmaja :hi'
+          ':zaherdirkey!~zaherdirkey@0::1 JOIN #parmaja'
+          'PRIVMSG #parmaja :Hi'
+          ':zaherdirkey!~zaherdirkey@0::1 PRIVMSG #parmaja :Hello'
+          'PING zezo'
+          'PONG zezo'
+        )
+        ParentFont = False
         ScrollBars = ssAutoBoth
         TabOrder = 0
+        WordWrap = False
+      end
+      object Button1: TButton
+        Left = 418
+        Height = 25
+        Top = 5
+        Width = 75
+        Caption = 'Test Token'
+        OnClick = Button1Click
+        TabOrder = 1
       end
     end
   end
@@ -147,7 +200,7 @@ object MainFrm: TMainFrm
     Left = 0
     Height = 45
     Top = 263
-    Width = 507
+    Width = 511
     Align = alBottom
     ReadOnly = True
     ScrollBars = ssAutoBoth

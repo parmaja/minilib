@@ -16,7 +16,7 @@ unit mnIRCClients;
 interface
 
 uses
-  Classes, mnSockets, mnClients, mnConnections, mnCommands;
+  Classes, StrUtils, mnSockets, mnClients, mnConnections, mnCommands, mnUtils;
 
 const
   sDefaultPort = '6667';
@@ -26,8 +26,8 @@ const
   sChannel = 'test';
 
   MAX_TOKEN_LENGTH = 512;   //Defined in RFC1459 as the maximum length of a single token. }
-  TOKEN_SEPARATOR = ' ';    { Separates tokens, except for the following case. }
-  TOKEN_ENDOFTOKENS = ':';  { If the second or higher token starts with this character, it indicates that this token is all characters to the end of the string. }
+  cTokenSeparator = ' ';    { Separates tokens, except for the following case. }
+  cTokenEnclose = ':';  { If the second or higher token starts with this character, it indicates that this token is all characters to the end of the string. }
 
 type
   TmnIRCClient = class;
@@ -41,6 +41,8 @@ type
     FData: String;
     FCount: Integer;
     FTokens: TList;
+    FList: TStringList;
+    FMessage: string;
     FBuffer: array [0..MAX_TOKEN_LENGTH] of Char;
     procedure SetData(const Value: String);
     function GetTokens(Index: Integer): String;
@@ -48,6 +50,7 @@ type
   protected
     procedure Tokenize; virtual;
   public
+    procedure Parse(vData: string); virtual;
     constructor Create;
     destructor Destroy; override;
     property Data: String read FData write SetData;
@@ -185,6 +188,7 @@ type
     property Connection: TmnIRCConnection read FConnection;
     property Handlers: TIRCResponseHandlers read FHandlers;
     property CommandClasses: TmnCommandClasses read FCommandClasses;
+    property Tokens: TIRCTokens read FTokens; //temp
   public
     property Host: String read GetHost write SetHost;
     property Port: String read FPort write SetPort;
@@ -245,13 +249,15 @@ end;
 
 constructor TIRCTokens.Create;
 begin
+  inherited;
   FTokens := TList.Create;
+  FList := TStringList.Create;
 end;
 
 destructor TIRCTokens.Destroy;
 begin
-  if Assigned(FTokens) then
-    FTokens.Free;
+  FreeAndNil(FTokens);
+  FreeAndNil(FList);
 end;
 
 function TIRCTokens.GetTokens(Index: Integer): String;
@@ -266,7 +272,7 @@ begin
       Exit;
     TokenEnd := nil;
     if Index < FTokens.Count - 1 then
-      TokenEnd := StrScan(TokenStart, TOKEN_SEPARATOR);
+      TokenEnd := StrScan(TokenStart, cTokenSeparator);
     if TokenEnd = nil then
       { Use StrLCopy to protect against buffer overruns. }
       StrLCopy(FBuffer, TokenStart, High(FBuffer))
@@ -297,7 +303,8 @@ begin
   { If the string is a CTCP query, then skip the Ctrl-A characters at the start
     and end of the query. }
   FData := Value;
-  Tokenize;
+  if FData <> '' then
+    Tokenize;
 end;
 
 procedure TIRCTokens.Tokenize;
@@ -307,63 +314,120 @@ var
 begin
   FTokens.Clear;
   FCount := 0;
-  if Length(FData) > 0 then
+  TokenPtr := PChar(FData);
+  { Remove leading spaces. }
+  while (TokenPtr^ <> #0) and (TokenPtr^ = cTokenSeparator) do
+    Inc(TokenPtr);
+  { In case we reached the end of the string. }
+  if TokenPtr^ = #0 then
+    Exit;
+  if TokenPtr^ <> ':' then
   begin
-    TokenPtr := PChar(FData);
-    { Remove leading spaces. }
-    while (TokenPtr^ <> #0) and (TokenPtr^ = TOKEN_SEPARATOR) do
-      Inc(TokenPtr);
-    { In case we reached the end of the string. }
-    if TokenPtr^ = #0 then
-      Exit;
-    if TokenPtr^ <> ':' then
+    { No source address exists, so insert a nil string in its place. }
+    FTokens.Add(nil);
+    Inc(FCount);
+  end
+  else
+  begin
+    { Skip past the semi-colon in the source address. }
+    Inc(TokenPtr);
+  end;
+  { Add the token to the list. }
+  FTokens.Add(TokenPtr);
+  Inc(FCount);
+  while TokenPtr <> nil do
+  begin
+    { If the current token is a CTCP query, then look for the end of the
+      query instead of the token separator. }
+    if TokenPtr^ = #1 then
     begin
-      { No source address exists, so insert a nil string in its place. }
-      FTokens.Add(nil);
-      Inc(FCount);
+      TokenPtr := StrScan(TokenPtr + 1, #1);
+      { Move past the Ctrl-A to the next character. }
+      if TokenPtr <> nil then
+        Inc(TokenPtr);
     end
     else
     begin
-      { Skip past the semi-colon in the source address. }
-      Inc(TokenPtr);
+      TokenPtr := StrScan(TokenPtr, cTokenSeparator);
     end;
-    { Add the token to the list. }
-    FTokens.Add(TokenPtr);
-    Inc(FCount);
-    while TokenPtr <> nil do
+    { Remove any redundant separator characters before the token. }
+    while (TokenPtr <> nil) and (TokenPtr^ <> #0) and (TokenPtr^ = cTokenSeparator) do
+      Inc(TokenPtr);
+    { Add it to the list if there Currently is another token. }
+    if TokenPtr <> nil then
     begin
-      { If the current token is a CTCP query, then look for the end of the
-        query instead of the token separator. }
-      if TokenPtr^ = #1 then
-      begin
-        TokenPtr := StrScan(TokenPtr + 1, #1);
-        { Move past the Ctrl-A to the next character. }
-        if TokenPtr <> nil then
-          Inc(TokenPtr);
-      end
-      else
-      begin
-        TokenPtr := StrScan(TokenPtr, TOKEN_SEPARATOR);
-      end;
-      { Remove any redundant separator characters before the token. }
-      while (TokenPtr <> nil) and (TokenPtr^ <> #0) and (TokenPtr^ = TOKEN_SEPARATOR) do
+      { Skip the end-of-tokens character if it exists. }
+      EndOfTokens := (TokenPtr^ = cTokenEnclose);
+      if EndOfTokens then
         Inc(TokenPtr);
-      { Add it to the list if there Currently is another token. }
-      if TokenPtr <> nil then
+      if TokenPtr^ <> #0 then
       begin
-        { Skip the end-of-tokens character if it exists. }
-        EndOfTokens := (TokenPtr^ = TOKEN_ENDOFTOKENS);
-        if EndOfTokens then
-          Inc(TokenPtr);
-        if TokenPtr^ <> #0 then
-        begin
-          FTokens.Add(TokenPtr);
-          Inc(FCount);
-        end;
-        { If there was an end-of-tokens character, then break out. }
-        if EndOfTokens then
-          Break;
+        FTokens.Add(TokenPtr);
+        Inc(FCount);
       end;
+      { If there was an end-of-tokens character, then break out. }
+      if EndOfTokens then
+        Break;
+    end;
+  end;
+end;
+
+function ScanString(vStr: string; var vPos: Integer; vChar: Char; vSkip: Boolean = False): Boolean;
+begin
+  while (vPos < Length(vStr)) and (vStr[vPos] <> vChar) do
+    Inc(vPos);
+  if vSkip then
+    while (vPos < Length(vStr)) and (vStr[vPos] = vChar) do
+      Inc(vPos);
+end;
+
+procedure TIRCTokens.Parse(vData: string);
+var
+  EndOfTokens: Boolean;
+  s: string;
+  i, j: Integer;
+begin
+  FList.Clear;
+  i := 1;
+  j := 0;
+  if vData[i] <> ':' then
+    FList.Add('') //No source address exists, so insert a nil string in its place.
+  else
+    Inc(i); //Skip past the semi-colon in the source address.
+
+  while I < Length(vData) do
+  begin
+    { If the current token is a CTCP query, then look for the end of the
+      query instead of the token separator. }
+    j := i;
+    if vData[i] = #1 then
+    begin
+      while (i < Length(vData)) and (vData[i] <> #1) do
+        Inc(i);
+    end
+    else
+    begin
+      while (i < Length(vData)) and (vData[i] <> cTokenSeparator) do
+        Inc(i);
+      { Remove any redundant separator characters before the token. }
+      while (i < Length(vData)) and (vData[i] = cTokenSeparator) do
+        Inc(i);
+    end;
+    { Add it to the list if there Currently is another token. }
+    if i < Length(vData) then
+    begin
+      { Skip the end-of-tokens character if it exists. }
+      EndOfTokens := (vData[i] = cTokenEnclose);
+      if EndOfTokens then
+        Inc(i);
+      if i < Length(vData) then
+      begin
+        s := MidStr(vData, j, i - 1);
+        FList.Add(s);
+      end;
+      { If there was an end-of-tokens character, then break out. }
+      if EndOfTokens then
+        Break;
     end;
   end;
 end;
