@@ -1,40 +1,22 @@
 object MainFrm: TMainFrm
   Left = 482
-  Height = 262
-  Top = 307
+  Height = 339
+  Top = 230
   Width = 507
   Caption = 'IRC chat'
-  ClientHeight = 262
+  ClientHeight = 339
   ClientWidth = 507
   LCLVersion = '1.9.0.0'
-  object MsgEdit: TMemo
-    Left = 0
-    Height = 135
-    Top = 30
-    Width = 507
-    Align = alClient
-    ScrollBars = ssAutoBoth
-    TabOrder = 0
-  end
-  object LogEdit: TMemo
-    Left = 0
-    Height = 61
-    Top = 170
-    Width = 507
-    Align = alBottom
-    ScrollBars = ssAutoBoth
-    TabOrder = 1
-  end
   object Panel1: TPanel
     Left = 0
     Height = 31
-    Top = 231
+    Top = 308
     Width = 507
     Align = alBottom
     BevelOuter = bvNone
     ClientHeight = 31
     ClientWidth = 507
-    TabOrder = 2
+    TabOrder = 0
     object SendEdit: TEdit
       Left = 6
       Height = 23
@@ -59,7 +41,7 @@ object MainFrm: TMainFrm
     Cursor = crVSplit
     Left = 0
     Height = 5
-    Top = 165
+    Top = 258
     Width = 507
     Align = alBottom
     ResizeAnchor = akBottom
@@ -73,40 +55,102 @@ object MainFrm: TMainFrm
     BevelOuter = bvNone
     ClientHeight = 30
     ClientWidth = 507
-    TabOrder = 4
+    TabOrder = 2
     object Button2: TButton
-      Left = 4
+      Left = 229
       Height = 25
-      Top = 3
+      Top = 4
       Width = 85
-      Caption = 'Connect'
+      Anchors = [akTop, akRight]
+      Caption = '&Connect'
       OnClick = Button2Click
       TabOrder = 0
     end
     object HostEdit: TEdit
-      Left = 95
+      Left = 319
       Height = 23
-      Top = 3
-      Width = 220
+      Top = 5
+      Width = 184
+      Anchors = [akTop, akLeft, akRight]
       OnKeyPress = HostEditKeyPress
       TabOrder = 1
       Text = '192.168.1.2'
     end
     object RoomEdit: TEdit
-      Left = 382
+      Left = 137
       Height = 23
       Top = 4
       Width = 85
+      OnKeyPress = HostEditKeyPress
       TabOrder = 2
       Text = '#parmaja'
     end
     object Label1: TLabel
-      Left = 334
+      Left = 97
       Height = 15
       Top = 8
       Width = 32
       Caption = 'Room'
       ParentColor = False
     end
+    object UserEdit: TEdit
+      Left = 4
+      Height = 23
+      Top = 5
+      Width = 85
+      OnKeyPress = HostEditKeyPress
+      TabOrder = 3
+      Text = '#zezo'
+    end
+  end
+  object MsgPageControl: TPageControl
+    Left = 0
+    Height = 228
+    Top = 30
+    Width = 507
+    ActivePage = TabSheet1
+    Align = alClient
+    TabIndex = 0
+    TabOrder = 3
+    OnChange = MsgPageControlChange
+    object TabSheet1: TTabSheet
+      Caption = 'Messages'
+      ClientHeight = 200
+      ClientWidth = 499
+      object MsgEdit: TMemo
+        Left = 0
+        Height = 200
+        Top = 0
+        Width = 499
+        Align = alClient
+        ReadOnly = True
+        ScrollBars = ssAutoBoth
+        TabOrder = 0
+      end
+    end
+    object TabSheet2: TTabSheet
+      Caption = 'Log'
+      ClientHeight = 200
+      ClientWidth = 499
+      object LogEdit: TMemo
+        Left = 0
+        Height = 200
+        Top = 0
+        Width = 499
+        Align = alClient
+        ScrollBars = ssAutoBoth
+        TabOrder = 0
+      end
+    end
+  end
+  object RoomMsgEdit: TMemo
+    Left = 0
+    Height = 45
+    Top = 263
+    Width = 507
+    Align = alBottom
+    ReadOnly = True
+    ScrollBars = ssAutoBoth
+    TabOrder = 4
   end
 end
