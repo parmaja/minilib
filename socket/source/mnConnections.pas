@@ -125,6 +125,7 @@ end;
 
 function TmnConnections.CreateStream(vSocket: TmnCustomSocket): TmnConnectionStream;
 begin
+  Result := nil;
   DoCreateStream(Result, vSocket);
 end;
 

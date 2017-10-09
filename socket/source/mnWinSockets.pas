@@ -379,7 +379,7 @@ begin
   else
   begin
     aSockAddr.sin_addr.s_addr := inet_addr(PAnsiChar(Address));
-    if ((aSockAddr.sin_addr.s_addr - INADDR_NONE) = 0) or (aSockAddr.sin_addr.s_addr = u_long(SOCKET_ERROR)) then
+    if ((aSockAddr.sin_addr.s_addr) = u_long(INADDR_NONE)) or (aSockAddr.sin_addr.s_addr = u_long(SOCKET_ERROR)) then
     begin
       aHostEnt := gethostbyname(PAnsiChar(Address));
       if aHostEnt <> nil then
@@ -501,7 +501,7 @@ begin
   if soConnectTimeout in Options then
   begin
     aMode := 1;
-    ret := ioctlsocket(aHandle,  FIONBIO, aMode);
+    ret := ioctlsocket(aHandle, {$ifdef FPC}Longint(FIONBIO){$else}FIONBIO{$endif}, aMode);
     if ret = Longint(SOCKET_ERROR) then
       raise EmnException.Create('Failed to set nonblock socket, Error #' + Inttostr(WSAGetLastError));
   end;
@@ -538,7 +538,7 @@ begin
   if soConnectTimeout in Options then
   begin
     aMode := 0;
-    ret := ioctlsocket(aHandle, FIONBIO, aMode);
+    ret := ioctlsocket(aHandle, {$ifdef FPC}Longint(FIONBIO){$else}FIONBIO{$endif}, aMode);
     if ret = Longint(SOCKET_ERROR) then
       raise EmnException.Create('Failed to set nonblock socket, Error #' + Inttostr(WSAGetLastError));
 
