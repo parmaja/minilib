@@ -496,7 +496,7 @@ end;
 
 constructor TmnCustomHttpStream.Create(const vAddress, vPort: string);
 begin
-  inherited;
+  inherited Create(vAddress, vPort);
 
   FRequest := TmnHttpRequest.Create(Self);
   FResponse := TmnHttpResponse.Create(Self);
