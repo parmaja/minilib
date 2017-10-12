@@ -811,7 +811,7 @@ begin
   FItems := DoCreateItems;
   FRowsListIndex := nil;
 
-  InitSections(FSections);
+  //InitSections(FSections);
 
   FWorking := True;
   Created;
@@ -1144,6 +1144,7 @@ end;
 procedure TmnrCustomReport.Prepare;
 begin
   DoPrepare;
+  InitSections(FSections);
   InitLayouts(Groups);
   Load;
 end;
