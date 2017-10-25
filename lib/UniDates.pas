@@ -118,7 +118,8 @@ function udtCompleteDateStr(S: String; vSeparator: Char = #0): String;
 function udtTimeToString(vTime: TDateTime): String;
 function udtStringToTime(vStr: String): TDateTime;
 
-function udtPeriodToString(vPeriod: Double; WithSeconds: Boolean): String;
+function udtPeriodToString(vFrom, vTo: Double; WithSeconds: Boolean): String; overload;
+function udtPeriodToString(vPeriod: Double; WithSeconds: Boolean): String; overload;
 function udtStringToPeriod(S: String): Double;
 function udtHourPeriodToString(vPeriod: Double): String;
 
@@ -272,6 +273,11 @@ begin
     Result := Result + GetFormatSettings.TimeSeparator + GetFormatSettings.TimePMString
   else
     Result := Result + GetFormatSettings.TimeSeparator + GetFormatSettings.TimeAMString;
+end;
+
+function udtPeriodToString(vFrom, vTo: Double; WithSeconds: Boolean): String; overload;
+begin
+  Result := udtPeriodToString(Abs(vTo-vFrom), WithSeconds);
 end;
 
 function udtPeriodToString(vPeriod: Double; WithSeconds: Boolean): String;
