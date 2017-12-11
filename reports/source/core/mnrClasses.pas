@@ -638,7 +638,7 @@ type
     procedure InitSections(vSections: TmnrSections); //virtual;
     procedure InitLayouts(vGroups: TmnrGroups); virtual;
     procedure InitRequests; virtual;
-    function CreateNewRow(vSection: TmnrSection): TmnrRow;
+    function CreateNewRow(vSection: TmnrSection; vReference: TmnrReferencesRow): TmnrRow;
     procedure Loop;
     //Apply param to report to use it in Queries or assign it to Variables
     //procedure SetParams(vParams: TmnrParams); virtual;
@@ -827,10 +827,11 @@ begin
 
 end;
 
-function TmnrCustomReport.CreateNewRow(vSection: TmnrSection): TmnrRow;
+function TmnrCustomReport.CreateNewRow(vSection: TmnrSection; vReference: TmnrReferencesRow): TmnrRow;
 begin
   Result := DoCreateNewRow(vSection);
   Result.FSection := vSection;
+  Result.FReferencesRow := vReference;
 end;
 
 function TmnrCustomReport.ProfilerClass: TmnrProfilerClass;
@@ -1249,7 +1250,7 @@ begin
     f := True;
     while r <> nil do
     begin
-      aRow := Report.CreateNewRow(vSection);
+      aRow := Report.CreateNewRow(vSection, nil);
       aRow.FLocked := True;
       aRow.FDesignRow := r;
       try
@@ -1307,7 +1308,7 @@ begin
     f := True;
     while r <> nil do
     begin
-      aRow := Report.CreateNewRow(vSection);
+      aRow := Report.CreateNewRow(vSection, nil);
       aRow.FLocked := True;
       aRow.FDesignRow := r;
       try
@@ -1361,7 +1362,7 @@ begin
     f := True;
     while r <> nil do
     begin
-      aRow := Report.CreateNewRow(vSection);
+      aRow := Report.CreateNewRow(vSection, nil);
       aRow.FLocked := True;
       aRow.FDesignRow := r;
       try
@@ -1414,7 +1415,7 @@ begin
   begin
     while r <> nil do
     begin
-      aRow := Report.CreateNewRow(vSection);
+      aRow := Report.CreateNewRow(vSection, nil);
       aRow.FDesignRow := r;
       try
         d := r.First;
@@ -1464,7 +1465,7 @@ begin
     f := True;
     while r <> nil do
     begin
-      aRow := Report.CreateNewRow(vSection);
+      aRow := Report.CreateNewRow(vSection, nil);
       aRow.FLocked := True;
       aRow.FDesignRow := r;
       try
@@ -1577,13 +1578,12 @@ begin
   begin
     while r <> nil do
     begin
-      aRow := Report.CreateNewRow(Self);
+      aRow := Report.CreateNewRow(Self, vReference);
       try
         aRow.FID := vParams.ID;
         aRow.FNumber := vParams.Number;
         aRow.FLocked := vParams.Locked;
         aRow.FRowIndex := vIndex;
-        aRow.FReferencesRow := vReference;
         aRow.FDesignRow := r;
         if vParams.Data<>nil then UpdateRowData(aRow, vParams.Data, r.Next=nil);
 
@@ -2012,6 +2012,8 @@ begin
           if aParams.AcceptMode = acmAccept then
           begin
             s.FillNow(aParams, aIdx, r);
+            if (s.ClassID = sciHeaderDetails) then
+              s.DoEndFill(r);
             s.Sections.Loop;
           end
           else if (aParams.AcceptMode = acmSkip) and (s.ClassID = sciHeaderDetails) then
