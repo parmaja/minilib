@@ -60,8 +60,6 @@ type
     property Items[Index: Integer]: TmncSession read GetItem write SetItem; default;
   end;
 
-  TmncCodePageConvert = (cpcNone, cpcAnsi, cpcUTF8, cpcUnicode);
-
   TmncCapability = (
     ccDB, //It is Database engine not just transfer data object
     ccSQL, //It is SQL engine, you know CSV or Paradox is not, we have no plan to support Paradox
