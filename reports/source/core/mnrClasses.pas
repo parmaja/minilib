@@ -118,9 +118,11 @@ type
     function GetDesignCell: TmnrDesignCell;
     function DoGetDisplayText: string; virtual;
     function DoCompare(vCell: TmnrCell): Integer; virtual;
+    procedure DoSumCell(vCell: TmnrCell); virtual;
   public
     function DisplayText: string; override;
     function Compare(vCell: TmnrCell): Integer;
+    procedure SumCell(vCell: TmnrCell);
     property Layout: TmnrLayout read GetLayout;
     property DesignCell: TmnrDesignCell read GetDesignCell;
     property Row: TmnrRow read GetRow;
@@ -2323,6 +2325,19 @@ begin
   Result := inherited DisplayText;
 end;
 
+procedure TmnrCell.DoSumCell(vCell: TmnrCell);
+var
+  s, c: string;
+begin
+  s := AsString;
+  c := vCell.AsString;
+  if (c<>'')or(s<>'') then
+  begin
+    if (c<>'')and(AnsiPos(c, s)<=0) then s := Format('%s '#151' %s', [c, s]);
+    AsString := s;
+  end;
+end;
+
 function TmnrCell.GetDesignCell: TmnrDesignCell;
 begin
   Result := FDesignCell;
@@ -2354,6 +2369,12 @@ end;
 function TmnrCell.GetRow: TmnrRow;
 begin
   Result := Nodes as TmnrRow;
+end;
+
+procedure TmnrCell.SumCell(vCell: TmnrCell);
+begin
+  //if not Layout.DenySumming then
+    DoSumCell(vCell);
 end;
 
 { TmnrReferencesRow }

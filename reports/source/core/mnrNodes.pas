@@ -78,6 +78,8 @@ type
     procedure SetAsInteger(const Value: Longint); override;
     procedure SetAsString(const Value: string); override;
     procedure SetAsVariant(const Value: Variant); override;
+    procedure DoSumCell(vCell: TmnrCell); override;
+
   end;
 
   TmnrTextReportCell = class(TmnrCell)
@@ -123,6 +125,8 @@ type
     procedure SetAsInteger(const Value: Longint); override;
     procedure SetAsString(const Value: string); override;
     procedure SetAsVariant(const Value: Variant); override;
+    procedure DoSumCell(vCell: TmnrCell); override;
+
 
   public
     function DisplayText: string; override;
@@ -156,6 +160,7 @@ type
     procedure SetAsInteger(const Value: Longint); override;
     procedure SetAsString(const Value: string); override;
     procedure SetAsVariant(const Value: Variant); override;
+
   public
     function DisplayText: string; override;
   end;
@@ -188,6 +193,8 @@ type
     procedure SetAsString(const Value: string); override;
     procedure SetAsVariant(const Value: Variant); override;
     procedure SetAsData(const Value: Integer); override;
+    procedure DoSumCell(vCell: TmnrCell); override;
+
   public
     function DisplayText: string; override;
   end;
@@ -236,6 +243,8 @@ type
     procedure SetAsInteger(const Value: Longint); override;
     procedure SetAsString(const Value: string); override;
     procedure SetAsVariant(const Value: Variant); override;
+    procedure DoSumCell(vCell: TmnrCell); override;
+
   end;
 
 implementation
@@ -360,6 +369,11 @@ begin
     Result:= ''
   else
     Result := inherited DisplayText;
+end;
+
+procedure TmnrIntegerReportCell.DoSumCell(vCell: TmnrCell);
+begin
+  AsInteger := AsInteger + vCell.AsInteger;
 end;
 
 function TmnrIntegerReportCell.GetAsBoolean: Boolean;
@@ -546,6 +560,11 @@ begin
     Result := inherited DisplayText;
 end;
 
+procedure TmnrBaseCurrencyReportCell.DoSumCell(vCell: TmnrCell);
+begin
+  AsCurrency := AsCurrency + vCell.AsCurrency;
+end;
+
 function TmnrBaseCurrencyReportCell.GetAsBoolean: Boolean;
 begin
   Result := AsCurrency <> 0;
@@ -639,6 +658,11 @@ end;
 
 { TmnrDoubleReportCell }
 
+procedure TmnrDoubleReportCell.DoSumCell(vCell: TmnrCell);
+begin
+  AsDouble := AsDouble + vCell.AsDouble;
+end;
+
 function TmnrDoubleReportCell.GetAsBoolean: Boolean;
 begin
   Result := AsDouble <> 0;
@@ -722,6 +746,12 @@ begin
 end;
 
 { TmnrBooleanReportCell }
+
+procedure TmnrBooleanReportCell.DoSumCell(vCell: TmnrCell);
+begin
+  //inherited;
+
+end;
 
 function TmnrBooleanReportCell.GetAsBoolean: Boolean;
 begin
