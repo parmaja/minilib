@@ -2089,17 +2089,22 @@ end;
 function TmnrRow.FindCell(vName: string): TmnrCell;
 var
   c: TmnrCell;
+  b: Boolean;
 begin
   Result := nil;
   if First <> nil then
   begin
     c := First as TmnrCell;
     repeat
-      if SameText(c.DesignCell.Name, vName) then
+      b := SameText(c.Layout.ClassName, vName);
+      b := b or SameText(c.DesignCell.Name, vName);
+      b := b or SameText((c.DesignCell as TmnrDesignCell).Alias, vName);
+
+      if b then
         Result := c
-      else if SameText((c.DesignCell as TmnrDesignCell).Alias, vName) then
-        Result := c;
-      c := c.Next as TmnrCell;
+      else
+        c := c.Next as TmnrCell;
+
     until (Result <> nil) or (c = nil);
   end;
 end;
