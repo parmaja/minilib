@@ -679,6 +679,7 @@ type
 
     procedure DoBeforeStart; virtual;
     procedure DoAfterStart; virtual;
+    procedure DoLoopError; virtual;
   public
     constructor Create;
 
@@ -938,6 +939,11 @@ begin
   DoReportLoaded;
 end;
 
+procedure TmnrCustomReport.DoLoopError;
+begin
+
+end;
+
 procedure TmnrCustomReport.DoNewCell(vCell: TmnrCell);
 begin
 
@@ -1032,7 +1038,13 @@ begin
       DoAfterStart;
     end;
 
-    Loop;
+    try
+      Loop;
+    except
+      DoLoopError;
+      raise;
+    end;
+
   finally //handle safe finish ........
     FWorking := False;
     Finish;
