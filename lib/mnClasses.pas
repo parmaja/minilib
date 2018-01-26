@@ -28,6 +28,7 @@ type
     property Items[Index: Integer]: _Object_ read GetItem; default;
     procedure Added(Item: _Object_); virtual;
     function Add(Item: _Object_): Integer;
+    function Last: _Object_;
     procedure Created; virtual;
     procedure AfterConstruction; override;
   end;
@@ -71,6 +72,11 @@ implementation
 function GItems<_Object_>.GetItem(Index: Integer): _Object_;
 begin
   Result := _Object_(inherited Items[Index]);
+end;
+
+function GItems<_Object_>.Last: _Object_;
+begin
+  Result := inherited Last as _Object_;
 end;
 
 procedure GItems<_Object_>.Added(Item: _Object_);
