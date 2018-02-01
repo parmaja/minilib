@@ -76,7 +76,7 @@ end;
 
 function GItems<_Object_>.Last: _Object_;
 begin
-  Result := inherited Last as _Object_;
+  Result := _Object_(inherited Last);
 end;
 
 procedure GItems<_Object_>.Added(Item: _Object_);
