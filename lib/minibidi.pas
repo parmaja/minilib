@@ -56,7 +56,7 @@ type
   TBidiOptions = set of (bdoApplyShape, bdoReorderCombining);
   TBidiLigatures = (bdlComplex, bdlSimple, bdlNone);
 
-function BidiString(var ws: widestring; Options: TBidiOptions = [bdoApplyShape]; Numbers: TBidiNumbers = bdnContext; Start: TBidiParagraph = bdpDefault; Ligatures: TBidiLigatures = bdlComplex): Integer;
+function BidiString(var ws: string; Options: TBidiOptions = [bdoApplyShape]; Numbers: TBidiNumbers = bdnContext; Start: TBidiParagraph = bdpDefault; Ligatures: TBidiLigatures = bdlComplex): Integer;
 
 function DoBidi(Line: PWideChar; Count: Integer; Options: TBidiOptions = [bdoApplyShape]; Numbers: TBidiNumbers = bdnContext; Start: TBidiParagraph = bdpDefault; Ligatures: TBidiLigatures = bdlComplex): Integer;
 
@@ -132,7 +132,7 @@ type
 
 {$I minibidi.inc}
 
-function BidiString(var ws: widestring; Options: TBidiOptions; Numbers: TBidiNumbers; Start: TBidiParagraph; Ligatures: TBidiLigatures): Integer;
+function BidiString(var ws: string; Options: TBidiOptions; Numbers: TBidiNumbers; Start: TBidiParagraph; Ligatures: TBidiLigatures): Integer;
 begin
   Result := DoBidi(PWideChar(ws), Length(ws), Options, Numbers, Start, Ligatures);
   SetLength(ws, Result);
