@@ -6,19 +6,23 @@
 {$H+}
 
 (************************************************************************
-*
+* Ported from minibidi.c
+* Original header
 * ------------
 * Description:
 * ------------
 * This is an implemention of Unicode's Bidirectional Algorithm
 * (known as UAX #9).
 *
-*   http://www.unicode.org/reports/tr9/
+* http://www.unicode.org/reports/tr9/
 *
 * Author: Ahmad Khalifa
 *
 ************************************************************************)
-
+{
+* Ported with improvements to Pascal by: Zaher Dirkey, zaher at gmail.com
+* License under MIT license
+*}
 {***********************************************************************
 
 http://cvs.arabeyes.org/viewcvs/projects/adawat/minibidi
@@ -28,9 +32,6 @@ http://svn.tartarus.org/sgt/putty/minibidi.c?r1=8097&view=log
 http://www.unicode.org/Public/PROGRAMS/BidiReferenceCpp/
 
 http://unicode.org/cldr/utility/bidi.jsp
-
-Ported to Pascal by Zaher Dirkey, zaher at parmaja.com
-License under MIT license
 
 ***********************************************************************}
 
@@ -56,7 +57,7 @@ type
   TBidiOptions = set of (bdoApplyShape, bdoReorderCombining);
   TBidiLigatures = (bdlComplex, bdlSimple, bdlNone);
 
-function BidiString(var ws: string; Options: TBidiOptions = [bdoApplyShape]; Numbers: TBidiNumbers = bdnContext; Start: TBidiParagraph = bdpDefault; Ligatures: TBidiLigatures = bdlComplex): Integer;
+function BidiString(var ws: {$ifdef FPC}widestring{$else}string{$endif}; Options: TBidiOptions = [bdoApplyShape]; Numbers: TBidiNumbers = bdnContext; Start: TBidiParagraph = bdpDefault; Ligatures: TBidiLigatures = bdlComplex): Integer;
 
 function DoBidi(Line: PWideChar; Count: Integer; Options: TBidiOptions = [bdoApplyShape]; Numbers: TBidiNumbers = bdnContext; Start: TBidiParagraph = bdpDefault; Ligatures: TBidiLigatures = bdlComplex): Integer;
 
@@ -77,14 +78,14 @@ const
 type
     { Shaping Types }
 
-    TShapeType =
-      (
-      stSL, { Left-Joining, doesnt exist in U+0600 - U+06FF }
-      stSR, { Right-Joining, ie has Isolated, Final }
-      stSD, { Dual-Joining, ie has Isolated, Final, Initial, Medial }
-      stSU, { Non-Joining }
-      stSC { Join-Causing, like U+0640 (TATWEEL) }
-      );
+  TShapeType =
+    (
+    stSL, { Left-Joining, doesnt exist in U+0600 - U+06FF }
+    stSR, { Right-Joining, ie has Isolated, Final }
+    stSD, { Dual-Joining, ie has Isolated, Final, Initial, Medial }
+    stSU, { Non-Joining }
+    stSC { Join-Causing, like U+0640 (TATWEEL) }
+    );
 
   { character Types }
   TCharacterType =
@@ -132,7 +133,7 @@ type
 
 {$I minibidi.inc}
 
-function BidiString(var ws: string; Options: TBidiOptions; Numbers: TBidiNumbers; Start: TBidiParagraph; Ligatures: TBidiLigatures): Integer;
+function BidiString(var ws: {$ifdef FPC}widestring{$else}string{$endif}; Options: TBidiOptions; Numbers: TBidiNumbers; Start: TBidiParagraph; Ligatures: TBidiLigatures): Integer;
 begin
   Result := DoBidi(PWideChar(ws), Length(ws), Options, Numbers, Start, Ligatures);
   SetLength(ws, Result);
