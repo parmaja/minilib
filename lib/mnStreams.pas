@@ -170,11 +170,14 @@ const
   cBufferSize = 2048;
 
 procedure CopyString(out S: utf8string; Buffer: Pointer; Len: Integer); overload;
+var
+  rb: rawbytestring;
 begin
   if Len <> 0 then
   begin
-    SetLength(S, Len);
-    Move(PByte(Buffer)^, PByte(S)^, Len);
+    SetLength(rb, Len);
+    Move(PByte(Buffer)^, PByte(rb)^, Len);
+    S := rb;
   end
   else
     S := '';
@@ -192,10 +195,16 @@ begin
 end;
 
 procedure CopyString(out S: unicodestring; Buffer: Pointer; Len: Integer); overload;
+var
+  rb: rawbytestring;
 begin
   if Len <> 0 then
   begin
+    {$ifdef FPC}
     SetLength(S, Len div SizeOf(unicodechar));
+    {$else}
+    SetLength(S, Len div SizeOf(char));
+    {$endif}
     Move(PByte(Buffer)^, PByte(S)^, Len);
   end
   else
@@ -282,9 +291,9 @@ end;
 
 function TmnConnectionStream.Seek(Offset: Longint; Origin: Word): Longint;
 begin
-  {$IFDEF FPC}
+  {$ifdef fpc}
     Result := 0;
-  {$ENDIF}
+  {$endif}
     raise Exception.Create('not supported and we dont want to support it')
 end;
 
