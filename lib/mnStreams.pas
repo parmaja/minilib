@@ -77,27 +77,28 @@ type
     function Write(const Buffer; Count: Longint): Longint; override; final;
 
     function ReadBufferUntil(const Match: PByte; MatchSize: Word; ExcludeMatch: Boolean; out Buffer: Pointer; out BufferSize: TFileSize; out Matched: Boolean): Boolean;
-
+    {$ifndef NEXTGEN}
     function ReadUntil(const Match: ansistring; ExcludeMatch: Boolean; out Buffer: ansistring; out Matched: Boolean): Boolean; overload;
     function ReadUntil(const Match: widestring; ExcludeMatch: Boolean; out Buffer: widestring; out Matched: Boolean): Boolean; overload;
-
-    function ReadLineRawByte(out S: rawbytestring; ExcludeEOL: Boolean = True; EOL: rawbytestring = ''): Boolean; overload;
-
     function ReadLine(out S: ansistring; ExcludeEOL: Boolean = True; EOL: ansistring = ''): Boolean; overload;
-    function ReadLine(out S: utf8string; ExcludeEOL: Boolean = True; EOL: utf8string = ''): Boolean; overload;
     function ReadLine(out S: widestring; ExcludeEOL: Boolean = True; EOL: widestring = ''): Boolean; overload;
+    {$endif}
+    function ReadLineRawByte(out S: rawbytestring; ExcludeEOL: Boolean = True; EOL: rawbytestring = ''): Boolean; overload;
+    function ReadLine(out S: utf8string; ExcludeEOL: Boolean = True; EOL: utf8string = ''): Boolean; overload;
     function ReadLine(out S: unicodestring; ExcludeEOL: Boolean = True; EOL: unicodestring = ''): Boolean; overload;
 
     function ReadLine: string; overload;
 
     function ReadLn: string; overload; deprecated;
+    {$ifndef NEXTGEN}
     function ReadAnsiString(vCount: Integer): AnsiString;
-
+    {$endif}
     function WriteLineRawByte(const S: rawbytestring; EOL: rawbytestring = ''): TFileSize; overload;
-
+    {$ifndef NEXTGEN}
     function WriteLine(const S: ansistring; EOL: ansistring = ''): TFileSize; overload;
-    function WriteLine(const S: utf8string; EOL: utf8string = ''): TFileSize; overload;
     function WriteLine(const S: widestring; EOL: widestring = ''): TFileSize; overload;
+    {$endif}
+    function WriteLine(const S: utf8string; EOL: utf8string = ''): TFileSize; overload;
     function WriteLine(const S: unicodestring; EOL: unicodestring = ''): TFileSize; overload;
 
     function WriteLn(const S: string): TFileSize; overload; deprecated;
@@ -168,15 +169,62 @@ implementation
 const
   cBufferSize = 2048;
 
-function ByteLength(s: ansistring): TFileSize; overload;
+procedure CopyString(out S: utf8string; Buffer: Pointer; Len: Integer); overload;
 begin
-  Result := Length(s) * SizeOf(AnsiChar);
+  if Len <> 0 then
+  begin
+    SetLength(S, Len);
+    Move(PByte(Buffer)^, PByte(S)^, Len);
+  end
+  else
+    S := '';
 end;
 
-function ByteLength(s: utf8string): TFileSize; overload;
+procedure CopyString(out S: rawbytestring; Buffer: Pointer; Len: Integer); overload;
 begin
-  Result := Length(s) * SizeOf(AnsiChar);
+  if Len <> 0 then
+  begin
+    SetLength(S, Len);
+    Move(PByte(Buffer)^, PByte(S)^, Len);
+  end
+  else
+    S := '';
 end;
+
+procedure CopyString(out S: unicodestring; Buffer: Pointer; Len: Integer); overload;
+begin
+  if Len <> 0 then
+  begin
+    SetLength(S, Len div SizeOf(unicodechar));
+    Move(PByte(Buffer)^, PByte(S)^, Len);
+  end
+  else
+    S := '';
+end;
+
+{$ifndef NEXTGEN}
+procedure CopyString(out S: ansistring; Buffer: Pointer; Len: Integer); overload;
+begin
+  if Len <> 0 then
+  begin
+    SetLength(S, Len div SizeOf(ansichar));
+    Move(PByte(Buffer)^, PByte(S)^, Len);
+  end
+  else
+    S := '';
+end;
+
+procedure CopyString(out S: widestring; Buffer: Pointer; Len: Integer); overload;
+begin
+  if Len <> 0 then
+  begin
+    SetLength(S, Len div SizeOf(widechar));
+    Move(PByte(Buffer)^, PByte(S)^, Len);
+  end
+  else
+    S := '';
+end;
+{$endif}
 
 function ByteLength(s: unicodestring): TFileSize; overload;
 begin
@@ -187,9 +235,21 @@ begin
 {$endif}
 end;
 
+{$ifndef NEXTGEN}
+function ByteLength(s: ansistring): TFileSize; overload;
+begin
+  Result := Length(s) * SizeOf(AnsiChar);
+end;
+
 function ByteLength(s: widestring): TFileSize; overload;
 begin
   Result := Length(s) * SizeOf(WideChar);
+end;
+{$endif}
+
+function ByteLength(s: utf8string): TFileSize; overload;
+begin
+  Result := Length(s);
 end;
 
 { TmnConnectionStream }
@@ -290,20 +350,11 @@ begin
   end;
 end;
 
+{$ifndef NEXTGEN}
 function TmnBufferStream.WriteLine(const S: ansistring; EOL: ansistring): TFileSize;
 begin
   if EOL = '' then
     EOL := ansistring(EndOfLine);
-  Result := 0;
-  if s <> '' then
-    Result := Write(Pointer(S)^, Length(S));
-  Result := Result + Write(Pointer(EOL)^, Length(EOL));
-end;
-
-function TmnBufferStream.WriteLineRawByte(const S: rawbytestring; EOL: rawbytestring): TFileSize;
-begin
-  if EOL = '' then
-    EOL := rawbytestring(EndOfLine);
   Result := 0;
   if s <> '' then
     Result := Write(Pointer(S)^, Length(S));
@@ -318,6 +369,17 @@ begin
   if s <> '' then
     Result := Write(Pointer(S)^, ByteLength(S));
   Result := Result + Write(Pointer(EOL)^, ByteLength(EOL));
+end;
+{$endif}
+
+function TmnBufferStream.WriteLineRawByte(const S: rawbytestring; EOL: rawbytestring): TFileSize;
+begin
+  if EOL = '' then
+    EOL := rawbytestring(EndOfLine);
+  Result := 0;
+  if s <> '' then
+    Result := Write(Pointer(S)^, Length(S));
+  Result := Result + Write(Pointer(EOL)^, Length(EOL));
 end;
 
 function TmnBufferStream.WriteLine(const S: unicodestring; EOL: unicodestring): TFileSize;
@@ -376,32 +438,6 @@ begin
   end;
 end;
 
-function TmnBufferStream.ReadLine(out S: widestring; ExcludeEOL: Boolean; EOL: widestring): Boolean;
-var
-  m: Boolean;
-  res: Pointer;
-  len: TFileSize;
-begin
-  if EOL = '' then
-    EOL := widestring(EndOfLine);
-  Result := ReadBufferUntil(@eol[1], ByteLength(eol), ExcludeEOL, res, len, m);
-  SetString(S, PWideChar(res), len div SizeOf(WideChar));
-  FreeMem(res);
-end;
-
-function TmnBufferStream.ReadLine(out S: utf8string; ExcludeEOL: Boolean; EOL: utf8string): Boolean;
-var
-  m: Boolean;
-  res: Pointer;
-  len: TFileSize;
-begin
-  if EOL = '' then
-    EOL := utf8string(EndOfLine);
-  Result := ReadBufferUntil(@eol[1], ByteLength(eol), ExcludeEOL, res, len, m);
-  SetString(S, PAnsiChar(res), len div SizeOf(AnsiChar));
-  FreeMem(res);
-end;
-
 function TmnBufferStream.ReadLine(out S: unicodestring; ExcludeEOL: Boolean; EOL: unicodestring): Boolean;
 var
   m: Boolean;
@@ -412,10 +448,28 @@ begin
     EOL := unicodestring(EndOfLine);
   Result := ReadBufferUntil(@eol[1], ByteLength(eol), ExcludeEOL, res, len, m);
   {$ifdef FPC}
-  SetString(S, PUnicodeChar(res), len div SizeOf(UnicodeChar));
+  CopyString(S, PUnicodeChar(res), len);
   {$else}
-  SetString(S, PWideChar(res), len div SizeOf(WideChar)); //TODO check if it widechat
+  {$ifdef NEXTGEN}
+  CopyString(S, PChar(res), len);
+  {$else}
+  CopyString(S, PWideChar(res), len); //TODO check if it widechat
   {$endif}
+  {$endif}
+  FreeMem(res);
+end;
+
+{$ifndef NEXTGEN}
+function TmnBufferStream.ReadLine(out S: widestring; ExcludeEOL: Boolean; EOL: widestring): Boolean;
+var
+  m: Boolean;
+  res: Pointer;
+  len: TFileSize;
+begin
+  if EOL = '' then
+    EOL := widestring(EndOfLine);
+  Result := ReadBufferUntil(@eol[1], ByteLength(eol), ExcludeEOL, res, len, m);
+  CopyString(S, res, len);
   FreeMem(res);
 end;
 
@@ -428,7 +482,27 @@ begin
   if EOL = '' then
     EOL := ansistring(EndOfLine);
   Result := ReadBufferUntil(@eol[1], ByteLength(eol), ExcludeEOL, res, len, m);
-  SetString(S, PAnsiChar(res), len div SizeOf(AnsiChar));
+  CopyString(S, res, len);
+  FreeMem(res);
+end;
+
+function TmnBufferStream.ReadAnsiString(vCount: Integer): AnsiString;
+begin
+  SetLength(Result, vCount);
+  Read(PAnsichar(Result)^, vCount);
+end;
+{$endif}
+
+function TmnBufferStream.ReadLine(out S: utf8string; ExcludeEOL: Boolean; EOL: utf8string): Boolean;
+var
+  m: Boolean;
+  res: Pointer;
+  len: TFileSize;
+begin
+  if EOL = '' then
+    EOL := utf8string(EndOfLine);
+  Result := ReadBufferUntil(@eol[1], ByteLength(eol), ExcludeEOL, res, len, m);
+  CopyString(S, res, len);
   FreeMem(res);
 end;
 
@@ -441,7 +515,7 @@ begin
   if EOL = '' then
     EOL := rawbytestring(EndOfLine);
   Result := ReadBufferUntil(@eol[1], Length(eol), ExcludeEOL, res, len, m);
-  SetString(S, PAnsiChar(res), len);
+  CopyString(S, res, len);
   FreeMem(res);
 end;
 
@@ -579,12 +653,6 @@ begin
   Result := aCount;
 end;
 
-function TmnBufferStream.ReadAnsiString(vCount: Integer): AnsiString;
-begin
-  SetLength(Result, vCount);
-  Read(PAnsichar(Result)^, vCount);
-end;
-
 function TmnBufferStream.CheckBuffer: Boolean;
 begin
   if FReadBuffer = nil then
@@ -646,6 +714,7 @@ begin
     Result := False;
 end;
 
+{$ifndef NEXTGEN}
 function TmnBufferStream.ReadUntil(const Match: ansistring; ExcludeMatch: Boolean; out Buffer: ansistring; out Matched: Boolean): Boolean;
 var
   Res: Pointer;
@@ -654,7 +723,7 @@ begin
   if Match = '' then
     raise Exception.Create('Match is empty!');
   Result := ReadBufferUntil(@Match[1], Length(Match), ExcludeMatch, Res, Len, Matched);
-  SetString(Buffer, PAnsiChar(Res), Len div SizeOf(AnsiChar));
+  CopyString(Buffer, Res, Len);
   FreeMem(Res);
 end;
 
@@ -666,9 +735,10 @@ begin
   if Match = '' then
     raise Exception.Create('Match is empty!');
   Result := ReadBufferUntil(@Match[1], Length(Match), ExcludeMatch, Res, Len, Matched);
-  SetString(Buffer, PWideChar(Res), Len div SizeOf(WideChar));
+  CopyString(Buffer, Res, Len);
   FreeMem(Res);
 end;
+{$endif}
 
 procedure TmnWrapperStream.SetStream(const Value: TStream);
 begin
