@@ -33,9 +33,9 @@ type
 
   TCipherBuffer = class(TObject)
   private
-    FStart: PAnsiChar;
-    FPosition: PAnsiChar; //end of Data ...
-    FEOS: PAnsiChar; //end of Buffer ...
+    FStart: PByte;
+    FPosition: PByte; //end of Data ...
+    FEOS: PByte; //end of Buffer ...
     function GetAsString: string;
   public
     constructor Create;
@@ -43,11 +43,11 @@ type
     procedure WriteBuffer(const vBuffer; vCount: Integer);
     function ReadBuffer(var vBuffer; vCount: Integer): Integer;
 
-    procedure PutChar(vChar: AnsiChar);
+    procedure PutChar(vChar: Byte);
     procedure IncPos(vCount: Integer=1);
-    property Start: PAnsiChar read FStart;
-    property Position: PAnsiChar read FPosition;
-    property EOS: PAnsiChar read FEOS; //end of Buffer ...
+    property Start: PByte read FStart;
+    property Position: PByte read FPosition;
+    property EOS: PByte read FEOS; //end of Buffer ...
     property AsString: string read GetAsString;
     procedure SaveToStream(Stream: TStream);
     procedure SaveToFile(FileName: TFileName);
@@ -264,7 +264,7 @@ end;
 
 procedure TCipherStream.SaveToStream(vStream: TStream);
 var
-  aBuf: AnsiString;
+  aBuf: TBytes;
   i: Integer;
 begin
   if FMode = cimWrite  then
@@ -274,12 +274,12 @@ begin
   try
     while True do
     begin
-      i := read(aBuf[1], cDefaultAlloc);
-      if i<>0 then vStream.Write(aBuf[1], i);
+      i := read(aBuf[0], cDefaultAlloc);
+      if i<>0 then vStream.Write(aBuf[0], i);
       if i<cDefaultAlloc then Break;
     end;
   finally
-    aBuf := '';
+    aBuf := nil;
   end;
 end;
 
@@ -558,7 +558,7 @@ end;
 
 procedure TCipherBuffer.DeleteReaded(vCount: Integer);
 var
-  t: PAnsiChar;
+  t: PByte;
 begin
   if vCount=Count then
     FPosition := FStart
@@ -579,7 +579,8 @@ end;
 
 function TCipherBuffer.GetAsString: string;
 begin
-  SetString(Result, Start, EOS - Start);
+  //SetString(Result, Start, EOS - Start);
+
 end;
 
 procedure TCipherBuffer.Grow(vCount: Integer);
@@ -606,7 +607,7 @@ begin
   Inc(FPosition, vCount);
 end;
 
-procedure TCipherBuffer.PutChar(vChar: AnsiChar);
+procedure TCipherBuffer.PutChar(vChar: Byte);
 begin
   FPosition^ := vChar;
   Inc(FPosition);

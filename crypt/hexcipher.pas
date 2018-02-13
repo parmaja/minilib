@@ -77,7 +77,7 @@ type
   end;
 
 const
-  cCharToHexArr: array[Byte] of String[2] = (
+  cCharToHexArr: array[Byte] of String = (
     '00', '01', '02', '03', '04', '05', '06', '07', '08', '09', '0A', '0B', '0C', '0D', '0E', '0F',
     '10', '11', '12', '13', '14', '15', '16', '17', '18', '19', '1A', '1B', '1C', '1D', '1E', '1F',
     '20', '21', '22', '23', '24', '25', '26', '27', '28', '29', '2A', '2B', '2C', '2D', '2E', '2F',
@@ -103,9 +103,46 @@ uses
 
 { THexCipher }
 
+const
+  //H2BValidSet = ['0'..'9','A'..'F','a'..'f'];
+  //H2BConvert: array['0'..'f'] of SmallInt = ( 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,-1,-1,-1,-1,-1,-1,-1,10,11,12,13,14,15,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,10,11,12,13,14,15);
+  H2BValidSet = [$30..$39,$41..$46,$61..$66];
+  H2BConvert: array[$30..$66] of SmallInt = ( 0, 1, 2, 3, 4, 5, 6, 7, 8, 9,-1,-1,-1,-1,-1,-1,-1,10,11,12,13,14,15,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,-1,10,11,12,13,14,15);
+
+function HexToBin(Text : PByte; Buffer: PByte; BufSize: longint): Integer;
+var
+  I: Integer;
+begin
+  I := BufSize;
+  while I > 0 do
+  begin
+    if not (Text[0] in H2BValidSet) or not (Text[1] in H2BValidset) then Break;
+    Buffer^ := (H2BConvert[Text[0]] shl 4) + H2BConvert[Text[1]];
+    Inc(Buffer);
+    Inc(Text, 2);
+    Dec(I);
+  end;
+  Result := BufSize - I;
+end;
+
+procedure BinToHex(Buffer: PByte; Text: PByte; BufSize: longint);
+const
+  Convert: array[0..15] of Byte = ($30,$31,$32,$33,$34,$35,$36,$37,$38,$39,$41,$42,$43,$44,$45,$46) ; //AnsiString('0123456789ABCDEF');
+var
+  I: Integer;
+begin
+  for I := 0 to BufSize - 1 do
+  begin
+    Text[0] := Convert[Buffer[I] shr 4];
+    Text[1] := Convert[Buffer[I] and $F];
+    Inc(Text, 2);
+  end;
+end;
+
+
 procedure THexCipher.Decrypt(const InBuffer; InCount: Integer; var OutBuffer; var OutCount: Integer);
 var
-  iP, oP: PAnsiChar;
+  iP, oP: PByte;
 begin
   OutCount := InCount div 2;
   iP := @InBuffer;
@@ -116,16 +153,16 @@ end;
 procedure THexCipher.Encrypt(const InBuffer; InCount: Integer; var OutBuffer; var OutCount: Integer);
 var
   i: Integer;
-  iP, oP: PAnsiChar;
+  iP, oP: PByte;
 begin
   OutCount := InCount * 2;
   iP := @InBuffer;
   oP := @OutBuffer;
   for i := 0 to InCount - 1 do
   begin
-    oP^ := cCharToHexArr[Ord(ip^)][1];
+    oP^ := Ord(cCharToHexArr[ip^][1]);
     Inc(oP);
-    oP^ := cCharToHexArr[Ord(ip^)][2];
+    oP^ := Ord(cCharToHexArr[ip^][2]);
     Inc(oP);
     Inc(iP);
   end;
@@ -202,7 +239,7 @@ end;
 
 function THexCipherStream.ReadmnBuffer: Boolean;
 var
-  aBuffer: AnsiString;
+  aBuffer: TBytes;
   c: Integer;
 begin
   if FPos<FCount then
@@ -216,19 +253,19 @@ begin
       begin
         c := SizeOf(TmnBuffer) div 2;
         SetLength(aBuffer, c);
-        FCount := inherited read(aBuffer[1], c);
+        FCount := inherited read(aBuffer[0], c);
         SetLength(aBuffer, FCount);
         if FCount<>0 then
-          Cipher.Encrypt(aBuffer[1], FCount, FBuffer[0], FCount);
+          Cipher.Encrypt(aBuffer[0], FCount, FBuffer[0], FCount);
       end;
       cyDecrypt:
       begin
         c := SizeOf(TmnBuffer) * 2;
         SetLength(aBuffer, c);
-        FCount := inherited read(aBuffer[1], c);
+        FCount := inherited read(aBuffer[0], c);
         SetLength(aBuffer, FCount);
         if FCount<>0 then
-          Cipher.Decrypt(aBuffer[1], FCount, FBuffer[0], FCount);
+          Cipher.Decrypt(aBuffer[0], FCount, FBuffer[0], FCount);
       end;
     end;
 
@@ -299,7 +336,7 @@ end;
 
 function TExHexCipher.Decrypt(InBuffer, OutBuffer: TCipherBuffer): Longint;
 var
-  iP, oP: PAnsiChar;
+  iP, oP: PByte;
   c: Integer;
 begin
   c := InBuffer.Count div 2;
@@ -313,7 +350,7 @@ end;
 
 function TExHexCipher.Encrypt(InBuffer, OutBuffer: TCipherBuffer): Longint;
 var
-  iP, oP: PAnsiChar;
+  iP, oP: PByte;
   c: Integer;
 begin
   Result := InBuffer.Count; //bytes readed from in buffer

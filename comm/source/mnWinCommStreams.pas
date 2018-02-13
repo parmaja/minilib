@@ -113,7 +113,7 @@ begin
     DCB.DCBlength := SizeOf(TDCB);
     DCB.XonLim := ReceiveBuffer div 4;
     DCB.XoffLim := DCB.XonLim;
-    DCB.EvtChar := EventChar;
+    DCB.EvtChar := AnsiChar(EventChar);
 
     //read settings
     if not GetCommState(FHandle, DCB) then

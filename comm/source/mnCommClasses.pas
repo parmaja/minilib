@@ -44,7 +44,7 @@ type
     FPort: string;
     FHandshake: THandshake;
     FDataBits: TDataBits;
-    FEventChar: AnsiChar;
+    FEventChar: Byte;
     FDiscardNull: Boolean;
     FTimeout: Cardinal;
     FFailTimeout: Boolean;
@@ -81,7 +81,7 @@ type
     property StopBits: TStopBits read FStopBits;
     property Handshake: THandshake read FHandshake write FHandshake default hsHardware;
 
-    property EventChar: AnsiChar read FEventChar write FEventChar default #13;
+    property EventChar: Byte read FEventChar write FEventChar default 13;
     property DiscardNull: Boolean read FDiscardNull write FDiscardNull default False;
 
     property ConnectMode: TmnCommConnectMode read FConnectMode write FConnectMode;
@@ -112,7 +112,7 @@ begin
   FParity := vParity;
   FStopBits := vStopBits;
   FHandshake := vHandshake;
-  FEventChar := #13;
+  FEventChar := 13;
   Created;
   if not Suspend then
     Open;
