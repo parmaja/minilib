@@ -13,8 +13,7 @@ interface
 
 uses
   SysUtils, Classes, Contnrs,
-  mnClasses,
-  mnStreams,
+  mnClasses, mnStreams,
   mnSockets, mnConnections, mnServers;
 
 type
@@ -94,7 +93,7 @@ type
 
   { TmnCommandClasses }
 
-  TmnCommandClasses = class(GItems<TmnCommandClassItem>)
+  TmnCommandClasses = class(TmnObjectList<TmnCommandClassItem>)
   private
   public
     function Find(const Name: string): TmnCommandClassItem;

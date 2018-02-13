@@ -64,7 +64,7 @@ type
 
   { GNamedItems }
 
-  GNamedItems<_Object_> = class(TmnObjectList<_Object_>)
+  TmnNamedObjectList<_Object_> = class(TmnObjectList<_Object_>)
   private
   public
     function Find(const Name: string): _Object_;
@@ -119,9 +119,9 @@ end;
 
 
 {$ifdef FPC}
-{ GNamedItems }
+{ TmnNamedObjectList }
 
-function  GNamedItems<_Object_>.Find(const Name: string): _Object_;
+function  TmnNamedObjectList<_Object_>.Find(const Name: string): _Object_;
 var
   i: Integer;
 begin
@@ -136,7 +136,7 @@ begin
   end;
 end;
 
-function GNamedItems<_Object_>.IndexOfName(vName: string): Integer;
+function TmnNamedObjectList<_Object_>.IndexOfName(vName: string): Integer;
 var
   i: integer;
 begin
@@ -152,14 +152,14 @@ begin
     end;
 end;
 {
-function GNamedItems<_Object_>.GetEnumerator: specialize TEnumerator<_Object_>;
+function TmnNamedObjectList<_Object_>.GetEnumerator: specialize TEnumerator<_Object_>;
 begin
   Result:=_Object_.Create;
   Result.FItems := Self;
 end;}
 
 {
-operator enumerator (GNamedItems: GNamedItems<_Object_>): TEnumerator<_Object_>;
+operator enumerator (TmnNamedObjectList: TmnNamedObjectList<_Object_>): TEnumerator<_Object_>;
 begin
   Result.Create;
 end;}

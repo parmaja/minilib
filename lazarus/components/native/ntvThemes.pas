@@ -56,7 +56,7 @@ type
     property ActiveColor: TColor read FActiveColor write FActiveColor;
   end;
 
-  TntvThemePainters = class(specialize GNamedItems<TntvThemePainter>)
+  TntvThemePainters = class(specialize TmnNamedObjectList<TntvThemePainter>)
   end;
 
   { TntvThemeEngine }

@@ -69,7 +69,7 @@ type
 
   { TWedges }
 
-  TWedges = class(specialize GItems<TWedge>)
+  TWedges = class(specialize TmnObjectList<TWedge>)
   private
   public
     function Add(x, y: Integer; Cursor: TCursor = crDefault; ReceiverClass: TReceiverClass = nil): TWedge;

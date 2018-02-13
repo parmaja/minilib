@@ -86,7 +86,7 @@ type
 
   { TmnCommandClasses }
 
-  TmnCommandClasses = class(GItems<TmnCommandClassItem>)
+  TmnCommandClasses = class(TmnObjectList<TmnCommandClassItem>)
   private
   public
     function Find(const Name: string): TmnCommandClassItem;
@@ -98,7 +98,7 @@ type
 
   { TmnCommands }
 
-  TmnCommands = class(GItems<TmnCommand>)
+  TmnCommands = class(TmnObjectList<TmnCommand>)
   private
     FCommandClasses: TmnCommandClasses;
   public
