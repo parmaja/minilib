@@ -15,23 +15,37 @@ unit mnClasses;
 interface
 
 uses
-  Classes, SysUtils, StrUtils, DateUtils, Types, Contnrs;
+  Classes, SysUtils, StrUtils, DateUtils, Types,
+  {$ifdef FPC}
+  Contnrs
+  {$else}
+  System.Generics.Collections
+  {$endif};
 
 type
 
-  { GItems }
 
-  GItems<_Object_{$ifndef FPC}: class{$endif}> = class(TObjectList)
+  {$ifdef FPC}
+  TmnObjectList<_Object_> = class(TObjectList)
+  {$else}
+  TmnObjectList<_Object_: class> = class(TObjectList<_Object_>)
+  {$endif}
   private
+    {$ifdef FPC}
     function GetItem(Index: Integer): _Object_;
+    {$endif}
   public
-    property Items[Index: Integer]: _Object_ read GetItem; default;
+    procedure AfterConstruction; override;
+    procedure Created; virtual;
     procedure Added(Item: _Object_); virtual;
     function Add(Item: _Object_): Integer;
+
+    {$ifdef FPC}
+    property Items[Index: Integer]: _Object_ read GetItem; default;
     function Last: _Object_;
-    procedure Created; virtual;
-    procedure AfterConstruction; override;
+    {$endif}
   end;
+
 
   {$ifdef FPC}
 
@@ -50,7 +64,7 @@ type
 
   { GNamedItems }
 
-  GNamedItems<_Object_> = class(GItems<_Object_>)
+  GNamedItems<_Object_> = class(TmnObjectList<_Object_>)
   private
   public
     function Find(const Name: string): _Object_;
@@ -61,43 +75,48 @@ type
 {
   FreePascal:
 
-    TMyItems = class(specialize GItems<TMyObject>)
+    TMyItems = class(specialize TmnObjectList<TMyObject>)
 
   Delphi:
 
-    TMyItems = class(GItems<TMyObject>)
+    TMyItems = class(TmnObjectList<TMyObject>)
 }
 implementation
 
-function GItems<_Object_>.GetItem(Index: Integer): _Object_;
+{$ifdef FPC}
+function TmnObjectList<_Object_>.GetItem(Index: Integer): _Object_;
 begin
   Result := _Object_(inherited Items[Index]);
 end;
 
-function GItems<_Object_>.Last: _Object_;
+function TmnObjectList<_Object_>.Last: _Object_;
 begin
   Result := _Object_(inherited Last);
 end;
+{$endif}
 
-procedure GItems<_Object_>.Added(Item: _Object_);
+
+procedure TmnObjectList<_Object_>.Added(Item: _Object_);
 begin
 end;
 
-function GItems<_Object_>.Add(Item: _Object_): Integer;
+function TmnObjectList<_Object_>.Add(Item: _Object_): Integer;
 begin
   Result := inherited Add(Item);
   Added(Item);
 end;
 
-procedure GItems<_Object_>.Created;
+procedure TmnObjectList<_Object_>.Created;
 begin
 end;
 
-procedure GItems<_Object_>.AfterConstruction;
+procedure TmnObjectList<_Object_>.AfterConstruction;
 begin
   inherited;
   Created;
 end;
+
+
 
 {$ifdef FPC}
 { GNamedItems }

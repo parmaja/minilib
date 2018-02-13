@@ -16,7 +16,7 @@ unit mnDrivers;
 interface
 
 uses
-  Classes, Contnrs, SysUtils;
+  Classes, mnClasses, SysUtils;
 
 type
 {$ifdef WI}
@@ -35,9 +35,7 @@ type
     DriverClass: TClass;
   end;
 
-  TmnDriversItems = class(TObjectList)
-  private
-    function GetItems(Index: Integer): TmnDriverItem;
+  TmnDriversItems = class(TmnObjectList<TmnDriverItem>)
   public
     function Find(const vCategory: string; const vName: string): TmnDriverItem; overload;
     function Find(const vName: string): TmnDriverItem; overload;
@@ -47,7 +45,6 @@ type
     procedure EnumCategory(const Category:string; vStrings: TStrings); overload;
     //You need to free the result list
     function EnumCategory(const Category:string): TmnDriversItems; overload;
-    property Items[Index:Integer]: TmnDriverItem read GetItems; default;
   end;
 
   { TmnDriversClasses }
@@ -72,11 +69,6 @@ begin
   Result := FmnDriversClasses;
 end;
 { TmnDriversClasses }
-
-function TmnDriversItems.GetItems(Index: Integer): TmnDriverItem;
-begin
-  Result := inherited Items[Index] as TmnDriverItem;
-end;
 
 function TmnDriversItems.IndexOf(const vName: string): Integer;
 var

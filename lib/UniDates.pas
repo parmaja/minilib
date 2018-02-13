@@ -18,7 +18,7 @@ unit UniDates;
 interface
 
 uses
-  Classes, SysUtils, DateUtils, Contnrs, Math;
+  Classes, SysUtils, DateUtils, Math, mnClasses;
 
 type
   {
@@ -48,14 +48,13 @@ type
 
   { TUniviersalDateSystems }
 
-  TUniviersalDateSystems = class(TObjectList)
+  TUniviersalDateSystems = class(TmnObjectList<TUniviersalDateSystem>)
   private
     FOptions: TUniviersalDateFlags;
     FCurrent: TUniviersalDateSystem;
     FCorrespond: TUniviersalDateSystem;
     procedure SetCurrent(const AValue: TUniviersalDateSystem);
     procedure SetCorrespond(const AValue: TUniviersalDateSystem);
-    function GetItem(Index: Integer): TUniviersalDateSystem;
   published
   public
     constructor Create;
@@ -66,7 +65,6 @@ type
     procedure Register(UniDateClass: TUniviersalDateSystemClass);
     function Find(vName: String): TUniviersalDateSystem;
     function Switch(vName: String; vCorrespond: String = ''): TUniviersalDateSystem;
-    property Items[Index: Integer]: TUniviersalDateSystem read GetItem; default;
     procedure EnumItems(vItems: TStrings);
   end;
 
@@ -621,11 +619,6 @@ begin
       break;
     end;
   end;
-end;
-
-function TUniviersalDateSystems.GetItem(Index: Integer): TUniviersalDateSystem;
-begin
-  Result := inherited Items[Index] as TUniviersalDateSystem;
 end;
 
 procedure TUniviersalDateSystems.Register(UniDateClass: TUniviersalDateSystemClass);

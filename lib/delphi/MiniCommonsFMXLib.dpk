@@ -1,0 +1,53 @@
+package MiniCommonsFMXLib;
+
+{$R *.res}
+{$IFDEF IMPLICITBUILDING This IFDEF should not be used by users}
+{$ALIGN 8}
+{$ASSERTIONS ON}
+{$BOOLEVAL OFF}
+{$DEBUGINFO ON}
+{$EXTENDEDSYNTAX ON}
+{$IMPORTEDDATA ON}
+{$IOCHECKS ON}
+{$LOCALSYMBOLS ON}
+{$LONGSTRINGS ON}
+{$OPENSTRINGS ON}
+{$OPTIMIZATION OFF}
+{$OVERFLOWCHECKS OFF}
+{$RANGECHECKS OFF}
+{$REFERENCEINFO ON}
+{$SAFEDIVIDE OFF}
+{$STACKFRAMES ON}
+{$TYPEDADDRESS OFF}
+{$VARSTRINGCHECKS ON}
+{$WRITEABLECONST OFF}
+{$MINENUMSIZE 1}
+{$IMAGEBASE $400000}
+{$DEFINE DEBUG}
+{$ENDIF IMPLICITBUILDING}
+{$DESCRIPTION 'Mini Commons Lib'}
+{$RUNONLY}
+{$IMPLICITBUILD OFF}
+
+requires
+  rtl;
+
+contains
+  IsAnsiStringModule in '..\..\lib\IsAnsiStringModule.pas',
+  mnClasses in '..\..\lib\mnClasses.pas',
+  mnCommThreads in '..\..\comm\source\mnCommThreads.pas',
+  mnCommClasses in '..\..\comm\source\mnCommClasses.pas',
+  ciphers in '..\..\crypt\ciphers.pas',
+  hexcipher in '..\..\crypt\hexcipher.pas',
+  snow2 in '..\..\crypt\snow2.pas',
+  snow2cipher in '..\..\crypt\snow2cipher.pas',
+  //tea in '..\..\crypt\tea.pas',
+  UniDates in '..\UniDates.pas',
+  mnStreams in '..\mnStreams.pas',
+  mnUtils in '..\mnUtils.pas',
+  HejriUtils in '..\HejriUtils.pas',
+  HejriDates in '..\HejriDates.pas',
+  mnDrivers in '..\mnDrivers.pas',
+  base36 in '..\base36.pas';
+
+end.

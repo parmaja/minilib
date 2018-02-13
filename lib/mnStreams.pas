@@ -77,12 +77,7 @@ type
     function Write(const Buffer; Count: Longint): Longint; override; final;
 
     function ReadBufferUntil(const Match: PByte; MatchSize: Word; ExcludeMatch: Boolean; out Buffer: Pointer; out BufferSize: TFileSize; out Matched: Boolean): Boolean;
-    {$ifndef NEXTGEN}
-    function ReadUntil(const Match: ansistring; ExcludeMatch: Boolean; out Buffer: ansistring; out Matched: Boolean): Boolean; overload;
-    function ReadUntil(const Match: widestring; ExcludeMatch: Boolean; out Buffer: widestring; out Matched: Boolean): Boolean; overload;
-    function ReadLine(out S: ansistring; ExcludeEOL: Boolean = True; EOL: ansistring = ''): Boolean; overload;
-    function ReadLine(out S: widestring; ExcludeEOL: Boolean = True; EOL: widestring = ''): Boolean; overload;
-    {$endif}
+
     function ReadLineRawByte(out S: rawbytestring; ExcludeEOL: Boolean = True; EOL: rawbytestring = ''): Boolean; overload;
     function ReadLine(out S: utf8string; ExcludeEOL: Boolean = True; EOL: utf8string = ''): Boolean; overload;
     function ReadLine(out S: unicodestring; ExcludeEOL: Boolean = True; EOL: unicodestring = ''): Boolean; overload;
@@ -90,18 +85,23 @@ type
     function ReadLine: string; overload;
 
     function ReadLn: string; overload; deprecated;
-    {$ifndef NEXTGEN}
-    function ReadAnsiString(vCount: Integer): AnsiString;
-    {$endif}
+
     function WriteLineRawByte(const S: rawbytestring; EOL: rawbytestring = ''): TFileSize; overload;
-    {$ifndef NEXTGEN}
-    function WriteLine(const S: ansistring; EOL: ansistring = ''): TFileSize; overload;
-    function WriteLine(const S: widestring; EOL: widestring = ''): TFileSize; overload;
-    {$endif}
     function WriteLine(const S: utf8string; EOL: utf8string = ''): TFileSize; overload;
     function WriteLine(const S: unicodestring; EOL: unicodestring = ''): TFileSize; overload;
 
     function WriteLn(const S: string): TFileSize; overload; deprecated;
+
+    {$ifndef NEXTGEN}
+    function ReadUntil(const Match: ansistring; ExcludeMatch: Boolean; out Buffer: ansistring; out Matched: Boolean): Boolean; overload;
+    function ReadUntil(const Match: widestring; ExcludeMatch: Boolean; out Buffer: widestring; out Matched: Boolean): Boolean; overload;
+    function ReadLine(out S: ansistring; ExcludeEOL: Boolean = True; EOL: ansistring = ''): Boolean; overload;
+    function ReadLine(out S: widestring; ExcludeEOL: Boolean = True; EOL: widestring = ''): Boolean; overload;
+    function ReadAnsiString(vCount: Integer): AnsiString;
+
+    function WriteLine(const S: ansistring; EOL: ansistring = ''): TFileSize; overload;
+    function WriteLine(const S: widestring; EOL: widestring = ''): TFileSize; overload;
+    {$endif}
 
     procedure ReadCommand(out Command: string; out Params: string);
 
