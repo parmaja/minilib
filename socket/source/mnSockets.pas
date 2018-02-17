@@ -90,17 +90,14 @@ uses
     {$endif}
     {$endif};
   {$else}
-    {$ifdef WINDOWS} //Win32 and WinCE
-      mnWinSockets //delphi is only Win32
+    {$if DEFINED(MSWINDOWS)} //Win32 and WinCE
+     mnWinSockets //delphi is only Win32
+    {$elseif DEFINED(LINUX)}
+     mnLinuxSockets
     {$else}
-      {$ifdef LINUX}
-      mnLinuxSockets
-      {$else}
-      mnPosixSockets
-      {$endif}
+     mnPosixSockets
     {$endif};
   {$endif}
-
 var
   FmnWallSocket: TmnCustomWallSocket = nil;
 

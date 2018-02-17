@@ -12,7 +12,7 @@ unit mnConnectionCommands;
 interface
 
 uses
-  SysUtils, Classes, Contnrs,
+  SysUtils, Classes,
   mnClasses, mnStreams,
   mnSockets, mnConnections, mnServers;
 

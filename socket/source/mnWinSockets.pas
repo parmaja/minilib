@@ -19,12 +19,12 @@ uses
   Classes,
   SysUtils,
 {$IFDEF FPC}
-{$IFDEF WINDOWS}
-  WinSock2,
-{$ELSE}
-  sockets,
-{$ENDIF}
-{$ELSE}
+  {$IFDEF WINDOWS}
+    WinSock2,
+  {$ELSE}
+    sockets,
+  {$ENDIF}
+{$ELSE} // DELPHI
   WinSock,
 {$ENDIF}
   mnSockets;
@@ -275,7 +275,7 @@ begin
   end
   else
     s := '';
-  Result := utf8string(s);
+  Result := string(s);
 end;
 
 function TmnSocket.GetLocalAddress: string;
@@ -378,10 +378,10 @@ begin
     aSockAddr.sin_addr.s_addr := INADDR_ANY
   else
   begin
-    aSockAddr.sin_addr.s_addr := inet_addr(PAnsiChar(Address));
+    aSockAddr.sin_addr.s_addr := inet_addr(PAnsiChar(AnsiString(Address)));
     if ((aSockAddr.sin_addr.s_addr) = u_long(INADDR_NONE)) or (aSockAddr.sin_addr.s_addr = u_long(SOCKET_ERROR)) then
     begin
-      aHostEnt := gethostbyname(PAnsiChar(Address));
+      aHostEnt := gethostbyname(PAnsiChar(AnsiString(Address)));
       if aHostEnt <> nil then
       begin
         aSockAddr.sin_addr.S_un_b.s_b1 := aHostEnt.h_addr^[0];
@@ -513,10 +513,10 @@ begin
     aAddr.sin_addr.s_addr := INADDR_ANY
   else
   begin
-    aAddr.sin_addr.s_addr := inet_addr(PAnsiChar(Address));
+    aAddr.sin_addr.s_addr := inet_addr(PAnsiChar(AnsiString(Address)));
     if (aAddr.sin_addr.s_addr = 0) or (aAddr.sin_addr.s_addr = u_long(SOCKET_ERROR)) then
     begin
-      aHost := gethostbyname(PAnsiChar(Address));
+      aHost := gethostbyname(PAnsiChar(AnsiString(Address)));
       if aHost <> nil then
       begin
         aAddr.sin_addr.S_un_b.s_b1 := aHost.h_addr^[0];

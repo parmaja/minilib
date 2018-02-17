@@ -33,7 +33,6 @@ requires
   rtl;
 
 contains
-  IsAnsiStringModule in '..\..\lib\IsAnsiStringModule.pas',
   mnClasses in '..\..\lib\mnClasses.pas',
   mnCommThreads in '..\..\comm\source\mnCommThreads.pas',
   mnCommClasses in '..\..\comm\source\mnCommClasses.pas',
