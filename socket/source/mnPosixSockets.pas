@@ -1,4 +1,4 @@
-unit mnLinuxSockets;
+unit mnPosixSockets;
 {**
  *  This file is part of the "Mini Library"
  *
@@ -16,16 +16,46 @@ interface
 
 uses
   Classes,
-  netdb,
+  Posix.SysSelect,
+  Posix.SysSocket,
+  Posix.Unistd,
   SysUtils,
-  sockets,
   mnSockets;
 
+const
+  IPPROTO_IP = 0;
+  IPPROTO_TCP = 6;
+  TCP_NODELAY = 1;
+  INADDR_ANY  = 0;
+  INADDR_NONE = $ffffffff;
+
 type
+  TSocket = integer;
+
+  TaddrIP4 = packed record
+    case boolean of
+       true: (s_addr  : int32);
+       false: (s_bytes : packed array[1..4] of byte);
+  end;
+
+  sockaddr_in = record
+    sin_family: sa_family_t;
+    sin_port: word;
+    sin_addr: TaddrIP4;
+    sin_zero: packed array [0..7] of Byte;
+  end;
+
+  TSockAddr = packed record
+    case integer of
+      0: (addr: sockaddr);
+      1: (addr_in: sockaddr_in);
+      //2: (addr_in6: sockaddr_in6)
+  end;
+
   TmnSocket = class(TmnCustomSocket)
   private
     FHandle: TSocket;
-    FAddress: TINetSockAddr;
+    FAddress: TSockAddr;
   protected
     function Valid(Value: Integer; WithZero: Boolean = False): Boolean;
     function Check(Value: Integer; WithZero: Boolean = False): Boolean;
@@ -39,8 +69,8 @@ type
     function Receive(var Buffer; var Count: Longint): TmnError; override;
     function Send(const Buffer; var Count: Longint): TmnError; override;
     function Listen: TmnError; override;
-    function GetLocalAddress: ansistring; override;
-    function GetRemoteAddress: ansistring; override;
+    function GetLocalAddress: string; override;
+    function GetRemoteAddress: string; override;
     function GetLocalName: string; override;
     function GetRemoteName: string; override;
   end;
@@ -53,18 +83,26 @@ type
   public
     constructor Create; override;
     destructor Destroy; override;
-    function Bind(Options: TmnsoOptions; const Port: ansistring; const Address: ansistring = ''): TmnCustomSocket; override;
-    function Connect(Options: TmnsoOptions; Timeout: Integer; const Port: ansistring; const Address: ansistring = ''): TmnCustomSocket; override;
+    function Bind(Options: TmnsoOptions; const Port: string; const Address: string = ''): TmnCustomSocket; override;
+    function Connect(Options: TmnsoOptions; Timeout: Integer; const Port: string; const Address: string = ''): TmnCustomSocket; override;
   end;
 
 implementation
 
 uses
-  BaseUnix;
+  mnUtils;
 
 const
   INVALID_SOCKET		= TSocket(NOT(0));
   SOCKET_ERROR			= -1;
+
+procedure StrToNetAddr(S: string; var addr: TaddrIP4);
+begin
+  addr.s_bytes[1] := StrToIntDef(substr(S, '.', 0),0);
+  addr.s_bytes[2] := StrToIntDef(substr(S, '.', 1),0);
+  addr.s_bytes[3] := StrToIntDef(substr(S, '.', 2),0);
+  addr.s_bytes[4] := StrToIntDef(substr(S, '.', 3),0);
+end;
 
 { TmnSocket }
 
@@ -73,7 +111,7 @@ var
   c: Integer;
 begin
   CheckActive;
-  c := fprecv(FHandle, @Buffer, Count, MSG_NOSIGNAL);
+  c := Posix.SysSocket.Recv(FHandle, Buffer, Count, MSG_NOSIGNAL);
   if c = 0 then
   begin
     Count := 0;
@@ -98,7 +136,7 @@ var
   c: Integer;
 begin
   CheckActive;
-  c := fpsend(FHandle, @Buffer, Count, MSG_NOSIGNAL);
+  c := Posix.SysSocket.Send(FHandle, Buffer, Count, MSG_NOSIGNAL);
   if c = 0 then
   begin
     Result := erClosed;
@@ -120,8 +158,7 @@ end;
 
 function TmnSocket.DoSelect(Timeout: Integer; Check: TSelectCheck): TmnError;
 var
-  FSet: TFDSet;
-  PSetRead, PSetWrite: PFDSet;
+  FSet: fd_set;
   c: Integer;
 begin
   //CheckActive; no need select will return error for it, as i tho
@@ -129,20 +166,13 @@ begin
     Result := erClosed
   else
   begin
-    fpfd_zero(FSet);
-    fpfd_set(0, FSet);
+    fd_zero(FSet);
+    _FD_SET(0, FSet);
     if Check = slRead then
-    begin
-      PSetRead := @FSet;
-      PSetWrite := nil;
-    end
+      c := Posix.SysSelect.Select(1, @FSet, nil, @FSet, @Timeout)
     else
-    begin
-      PSetRead := nil;
-      PSetWrite := @FSet;
-    end;
+      c := Posix.SysSelect.Select(1, nil, @FSet, nil, @Timeout);
 
-    c := fpselect(1, PSetRead, PSetWrite, PSetRead, Timeout);
     if (c = 0) or (c = SOCKET_ERROR) then
     begin
       Error;
@@ -169,7 +199,7 @@ procedure TmnSocket.Close;
 begin
   if Active then
   begin
-    closesocket(FHandle);
+    __close(FHandle);
     FHandle := INVALID_SOCKET;
   end;
 end;
@@ -181,7 +211,7 @@ var
   c: Integer;
 begin
   CheckActive;
-  c := fpshutdown(FHandle, cHow[How]);
+  c := Posix.SysSocket.shutdown(FHandle, cHow[How]);
   if c = SOCKET_ERROR then
   begin
     Result := erFail;
@@ -194,11 +224,11 @@ end;
 function TmnSocket.Accept: TmnCustomSocket;
 var
   aHandle: TSocket;
-  aSize: Integer;
+  aSize: Cardinal;
 begin
   CheckActive;
   aSize := SizeOf(FAddress);
-  aHandle := fpaccept(FHandle, @FAddress, @aSize);
+  aHandle := Posix.SysSocket.accept(FHandle, FAddress.addr, aSize);
   if aHandle < 0 then
     Result := nil
   else
@@ -216,7 +246,7 @@ var
   c: Integer;
 begin
   CheckActive;
-  c := fplisten(FHandle, 5);
+  c := Posix.SysSocket.listen(FHandle, 5);
   if c = SOCKET_ERROR then
   begin
     Error;
@@ -231,58 +261,40 @@ begin
   Result := not ((Value = SOCKET_ERROR) or (WithZero and (Value = 0)));
 end;
 
-function TmnSocket.GetRemoteAddress: ansistring;
+function TmnSocket.GetRemoteAddress: string;
 var
   SockAddr: TSockAddr;
   aSize: Integer;
 begin
   CheckActive;
-  aSize := SizeOf(SockAddr);
-  if fpGetPeerName(FHandle, @SockAddr, @aSize) = 0 then
-//    Result := NetAddrToStr(SockAddr.in_addr)
-  else
-    Result := '';
+  Result := '';
 end;
 
 function TmnSocket.GetRemoteName: string;
 var
   SockAddr: TSockAddr;
   Size: Integer;
-  s: ansistring;
 begin
   CheckActive;
-  Size := SizeOf(SockAddr);
-  if fpgetpeername(FHandle, @SockAddr, @Size) = 0 then
-  begin
-    s := '';//temp
-    //gethostbyaddr(@SockAddr.sin_addr.s_addr, 4, AF_INET);
-  end
-  else
-    s := '';
-  Result := s;
+  Result := '';
 end;
 
-function TmnSocket.GetLocalAddress: ansistring;
+function TmnSocket.GetLocalAddress: string;
 var
   SockAddr: TSockAddr;
   aSize: Integer;
 begin
   CheckActive;
-  aSize := SizeOf(SockAddr);
-  if fpGetSockName(FHandle, @SockAddr, @aSize) = 0 then
-//    Result := NetAddrToStr(SockAddr)
-  else
-    Result := '';
+  Result := '';
 end;
 
 function TmnSocket.GetLocalName: string;
 var
-  s: ansistring;
+  s: string;
 begin
   CheckActive;
   SetLength(s, 250);
-//  fpgethostname(PChar(s), Length(s));
-  s := '';//temp
+  s := '';
   Result := s;
 end;
 
@@ -297,31 +309,27 @@ const
   SO_TRUE:Longbool=True;
 //  SO_FALSE:Longbool=False;
 
-function TmnWallSocket.Bind(Options: TmnsoOptions; const Port: ansistring;
-  const Address: ansistring): TmnCustomSocket;
+function TmnWallSocket.Bind(Options: TmnsoOptions; const Port: string; const Address: string): TmnCustomSocket;
 var
   aHandle: TSocket;
-  aAddr : TINetSockAddr;
+  aAddr : TSockAddr;
 begin
-  aHandle := fpsocket(AF_INET, SOCK_STREAM, 0{IPPROTO_TCP});
+  aHandle := Posix.SysSocket.socket(AF_INET, SOCK_STREAM, 0{IPPROTO_TCP});
   if aHandle = INVALID_SOCKET then
     raise EmnException.Create('Failed to create a socket');
 
   if soReuseAddr in Options then
-    fpsetsockopt(aHandle, SOL_SOCKET, SO_REUSEADDR, PChar(@SO_TRUE), SizeOf(SO_TRUE));
+    Posix.SysSocket.setsockopt(aHandle, SOL_SOCKET, SO_REUSEADDR, SO_TRUE, SizeOf(SO_TRUE));
 
   if soNoDelay in Options then
-    fpsetsockopt(aHandle, IPPROTO_TCP, TCP_NODELAY, PAnsiChar(@SO_TRUE), SizeOf(SO_TRUE));
+    Posix.SysSocket.setsockopt(aHandle, IPPROTO_IP, TCP_NODELAY, SO_TRUE, SizeOf(SO_TRUE));
 
  //  fpsetsockopt(aHandle, SOL_SOCKET, SO_NOSIGPIPE, PChar(@SO_TRUE), SizeOf(SO_TRUE));
 
-  aAddr.sin_family := AF_INET;
-  aAddr.sin_port := htons(StrToIntDef(Port, 0));
-  if Address = '' then
-    aAddr.sin_addr.s_addr := INADDR_ANY
-  else
-    aAddr.sin_addr := StrToNetAddr(Address);
-  If  fpbind(aHandle,@aAddr, Sizeof(aAddr)) <> 0 then
+  aAddr.addr_in.sin_family := AF_INET;
+  aAddr.addr_in.sin_port := StrToIntDef(Port, 0);
+  StrToNetAddr(Address, aAddr.addr_in.sin_addr);
+  If Posix.SysSocket.bind(aHandle, aAddr.addr, Sizeof(aAddr)) <> 0 then
     raise EmnException.Create('failed to bind the socket, maybe another server is already use the same port (' + Port + ').');
   Result := TmnSocket.Create(aHandle);
 end;
@@ -336,46 +344,46 @@ begin
   Result := StrToIntDef(Port, 0);
 end;
 
-function TmnWallSocket.Connect(Options: TmnsoOptions; Timeout: Integer; const Port: ansistring; const Address: ansistring): TmnCustomSocket;
+function TmnWallSocket.Connect(Options: TmnsoOptions; Timeout: Integer; const Port: string; const Address: string): TmnCustomSocket;
 var
   aHandle: TSocket;
-  aAddr : TINetSockAddr;
-  ret: cint;
-  aHost: THostEntry;
+  aAddr : TSockAddr;
+  ret: integer;
+//  aHost: THostEntry;
 begin
   //nonblick connect  https://stackoverflow.com/questions/1543466/how-do-i-change-a-tcp-socket-to-be-non-blocking
   //https://stackoverflow.com/questions/14254061/setting-time-out-for-connect-function-tcp-socket-programming-in-c-breaks-recv
-  aHandle := fpsocket(AF_INET, SOCK_STREAM{TODO: for nonblock option: or O_NONBLOCK}, 0{IPPROTO_TCP});
+  aHandle := Posix.SysSocket.socket(AF_INET, SOCK_STREAM{TODO: for nonblock option: or O_NONBLOCK}, 0{IPPROTO_TCP});
   if aHandle = INVALID_SOCKET then
     raise EmnException.Create('Failed to connect socket');
 
   if soNoDelay in Options then
-    fpsetsockopt(aHandle, IPPROTO_TCP, TCP_NODELAY, PAnsiChar(@SO_TRUE), SizeOf(SO_TRUE));
+    setsockopt(aHandle, IPPROTO_TCP, TCP_NODELAY, SO_TRUE, SizeOf(SO_TRUE));
 
 //http://support.microsoft.com/default.aspx?kbid=140325
   if soKeepAlive in Options then
-    fpsetsockopt(aHandle, SOL_SOCKET, SO_KEEPALIVE, PAnsiChar(@SO_TRUE), SizeOf(SO_TRUE));
+    setsockopt(aHandle, SOL_SOCKET, SO_KEEPALIVE, SO_TRUE, SizeOf(SO_TRUE));
 
 //  fpsetsockopt(aHandle, SOL_SOCKET, SO_NOSIGPIPE, PChar(@SO_TRUE), SizeOf(SO_TRUE));
 
-  aAddr.sin_family := AF_INET;
-  aAddr.sin_port := htons(StrToIntDef(Port, 0));
+  aAddr.addr_in.sin_family := AF_INET;
+  aAddr.addr_in.sin_port := StrToIntDef(Port, 0);
   if Address = '' then
-    aAddr.sin_addr.s_addr := INADDR_ANY
+    aAddr.addr_in.sin_addr.s_addr := INADDR_ANY
   else
   begin
-    aAddr.sin_addr := StrToNetAddr(Address);
-    if (aAddr.sin_addr.s_addr = 0) then
+    StrToNetAddr(Address, aAddr.addr_in.sin_addr);
+    if (aAddr.addr_in.sin_addr.s_addr = 0) then
     begin
-      if ResolveHostByName(Address, aHost) then
+{      if ResolveHostByName(Address, aHost) then //DNS server
       begin
         aAddr.sin_addr.s_addr := aHost.Addr.s_addr;
-      end;
+      end;}
     end;
   end;
-  ret := fpconnect(aHandle, @aAddr, SizeOf(aAddr));
+  ret := Posix.SysSocket.connect(aHandle, aAddr.addr, SizeOf(aAddr));
   if ret = -1 then
-    raise EmnException.Create('Failed to connect the socket, error #' + IntToStr(SocketError) + '.'#13'Address "' + Address +'" Port "' + Port + '".');
+    raise EmnException.Create('Failed to connect the socket, error #' + IntToStr(ret) + '.'#13'Address "' + Address +'" Port "' + Port + '".');
   Result := TmnSocket.Create(aHandle)
 end;
 

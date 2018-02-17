@@ -61,8 +61,8 @@ type
     property Active: Boolean read GetActive;
     property Connected: Boolean read GetConnected;
     property CloseWhenError: Boolean read FCloseWhenError write FCloseWhenError default True;
-    function GetLocalAddress: AnsiString; virtual; abstract;
-    function GetRemoteAddress: AnsiString; virtual; abstract;
+    function GetLocalAddress: string; virtual; abstract;
+    function GetRemoteAddress: string; virtual; abstract;
     function GetLocalName: string; virtual; abstract;
     function GetRemoteName: string; virtual; abstract;
   end;
@@ -72,8 +72,8 @@ type
   public
     constructor Create; virtual;
     destructor Destroy; override;
-    function Bind(Options: TmnsoOptions; const Port: ansistring; const Address: ansistring = ''): TmnCustomSocket; virtual; abstract;
-    function Connect(Options: TmnsoOptions; Timeout: Integer; const Port: ansistring; const Address: ansistring = ''): TmnCustomSocket; virtual; abstract;
+    function Bind(Options: TmnsoOptions; const Port: string; const Address: string = ''): TmnCustomSocket; virtual; abstract;
+    function Connect(Options: TmnsoOptions; Timeout: Integer; const Port: string; const Address: string = ''): TmnCustomSocket; virtual; abstract;
   end;
 
 function WallSocket: TmnCustomWallSocket;
@@ -90,7 +90,15 @@ uses
     {$endif}
     {$endif};
   {$else}
-    mnWinSockets; //delphi is only Win32
+    {$ifdef WINDOWS} //Win32 and WinCE
+      mnWinSockets //delphi is only Win32
+    {$else}
+      {$ifdef LINUX}
+      mnLinuxSockets
+      {$else}
+      mnPosixSockets
+      {$endif}
+    {$endif};
   {$endif}
 
 var

@@ -48,8 +48,8 @@ type
     function Listen: TmnError; override;
     function Receive(var Buffer; var Count: Longint): TmnError; override;
     function Send(const Buffer; var Count: Longint): TmnError; override;
-    function GetLocalAddress: ansistring; override;
-    function GetRemoteAddress: ansistring; override;
+    function GetLocalAddress: string; override;
+    function GetRemoteAddress: string; override;
     function GetLocalName: string; override;
     function GetRemoteName: string; override;
   end;
@@ -67,9 +67,9 @@ type
     constructor Create; override;
     destructor Destroy; override;
     //Connect used by servers
-    function Bind(Options: TmnsoOptions; const Port: ansistring; const Address: ansistring = ''): TmnCustomSocket; override;
+    function Bind(Options: TmnsoOptions; const Port: string; const Address: string = ''): TmnCustomSocket; override;
     //Connect used by clients
-    function Connect(Options: TmnsoOptions; Timeout: Integer; const Port: ansistring; const Address: ansistring = ''): TmnCustomSocket; override;
+    function Connect(Options: TmnsoOptions; Timeout: Integer; const Port: string; const Address: string = ''): TmnCustomSocket; override;
     procedure Startup;
     procedure Cleanup;
   end;
@@ -237,7 +237,7 @@ begin
   Result := not ((Value = SOCKET_ERROR) or (WithZero and (Value = 0)));
 end;
 
-function TmnSocket.GetRemoteAddress: ansistring;
+function TmnSocket.GetRemoteAddress: string;
 var
   SockAddrIn: TSockAddrIn;
   Size: Integer;
@@ -275,10 +275,10 @@ begin
   end
   else
     s := '';
-  Result := string(s);
+  Result := utf8string(s);
 end;
 
-function TmnSocket.GetLocalAddress: ansistring;
+function TmnSocket.GetLocalAddress: string;
 var
   aName: AnsiString;
   aAddr: PAnsiChar;
@@ -346,7 +346,7 @@ begin
   Startup;
 end;
 
-function TmnWallSocket.Bind(Options: TmnsoOptions; const Port: ansistring; const Address: ansistring): TmnCustomSocket;
+function TmnWallSocket.Bind(Options: TmnsoOptions; const Port: string; const Address: string): TmnCustomSocket;
 const
   SO_TRUE: Longbool = True;
 var
@@ -477,7 +477,7 @@ begin
   Inc(FCount)
 end;
 
-function TmnWallSocket.Connect(Options: TmnsoOptions; Timeout: Integer; const Port: ansistring; const Address: ansistring): TmnCustomSocket;
+function TmnWallSocket.Connect(Options: TmnsoOptions; Timeout: Integer; const Port: string; const Address: string): TmnCustomSocket;
 const
   SO_TRUE: Longbool = True;
 var
