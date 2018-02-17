@@ -77,7 +77,7 @@ type
   private
     FCommands: TmnCommandClasses;
   public
-    constructor Create(Server: TscatServer);
+    constructor Create(const Server: TscatServer);
     destructor Destroy; override;
     property Commands: TmnCommandClasses read FCommands;
     function Match(Path: string): Boolean; virtual; abstract;
@@ -85,7 +85,7 @@ type
 
   TscatModuleClass = class of TscatModule;
 
-  TscatModules = class(specialize GItems<TscatModule>)
+  TscatModules = class(specialize TmnObjectList<TscatModule>)
   end;
 
   { TScatListener }
@@ -130,7 +130,7 @@ implementation
 
 { TscatModule }
 
-constructor TscatModule.Create(Server: TscatServer);
+constructor TscatModule.Create(const Server: TscatServer);
 begin
   inherited Create;
   FCommands := TmnCommandClasses.Create(True);
