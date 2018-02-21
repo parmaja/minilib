@@ -91,6 +91,7 @@ type
     function WriteLine(const S: unicodestring; EOL: unicodestring = ''): TFileSize; overload;
 
     function WriteLn(const S: string): TFileSize; overload; deprecated;
+    function ReadBytes(vCount: Integer): TBytes;
 
     {$ifndef NEXTGEN}
     function ReadUntil(const Match: ansistring; ExcludeMatch: Boolean; out Buffer: ansistring; out Matched: Boolean): Boolean; overload;
@@ -721,6 +722,12 @@ begin
   end;
   if not Matched and EOF and (BufferSize = 0) then
     Result := False;
+end;
+
+function TmnBufferStream.ReadBytes(vCount: Integer): TBytes;
+begin
+  SetLength(Result, vCount);
+  Read(Result[0], vCount);
 end;
 
 {$ifndef NEXTGEN}

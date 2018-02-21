@@ -17,9 +17,7 @@ Rename AcceptMode to Resume
 interface
 
 uses
-  SysUtils, Classes,
-  mnFields,
-  mnrLists;
+  SysUtils, Classes, mnrLists;
 
 const
   ID_SECTION_BASE          = 0;
