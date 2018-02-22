@@ -5,7 +5,7 @@ unit hexcipher;
  * @license   modifiedLGPL (modified of http://www.gnu.org/licenses/lgpl.html)
  *            See the file COPYING.MLGPL, included in this distribution,
  * @author    Zaher Dirkey <zaher at parmaja dot com>
- * @author    Belal Hamed <belalhamed at gmail dot com> 
+ * @author    Belal Hamed <belalhamed at gmail dot com>
  *
  * Synopsis:
  *   Hex Cipher convert from/to Hex text not that then cryption
@@ -22,7 +22,7 @@ unit hexcipher;
 interface
 
 uses
-  Classes, SysUtils, ciphers;
+  Classes, SysUtils, ciphers, Math;
 
 const
   //cMaxBuffer = 524287;
@@ -96,12 +96,48 @@ const
     'F0', 'F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8', 'F9', 'FA', 'FB', 'FC', 'FD', 'FE', 'FF'
   );
 
+function HexToBin(Text : PByte; Buffer: PByte; BufSize: longint): Integer; overload;
+procedure BinToHex(Buffer: PByte; Text: PByte; BufSize: longint); overload;
+function String2Hex(const vData: string): string; overload;
+function String2Hex(const vData: PByte; vCount: Integer): string; overload;
+function Hex2String(const vData: string): string; overload;
+
+
 implementation
 
-uses
-  Math;
 
 { THexCipher }
+
+function Hex2String(const vData: string): string; overload;
+var
+  b, r: TBytes;
+begin
+  if vData<>'' then
+  begin
+    b := TEncoding.ANSI.GetBytes(vData);
+    SetLength(r, Length(vData) div 2);
+
+    HexToBin(PByte(@b[0]), PByte(@r[0]), Length(r));
+    Result := TEncoding.Unicode.GetString(r);
+  end
+  else
+    Result := '';
+end;
+
+function String2Hex(const vData: string): string; overload;
+begin
+  if vData<>'' then
+    Result := String2Hex(PByte(vData), ByteLength(vData))
+  else
+    Result := '';
+end;
+
+function String2Hex(const vData: PByte; vCount: Integer): string;
+begin
+  SetLength(Result, 2*vCount);
+  BinToHex(vData, PByte(Result), vCount);
+end;
+
 
 const
   //H2BValidSet = ['0'..'9','A'..'F','a'..'f'];
@@ -116,7 +152,7 @@ begin
   I := BufSize;
   while I > 0 do
   begin
-    if not (Text[0] in H2BValidSet) or not (Text[1] in H2BValidset) then Break;
+    if not (Text^ in H2BValidSet) or not ((Text+1)^ in H2BValidset) then Break;
     Buffer^ := (H2BConvert[Text[0]] shl 4) + H2BConvert[Text[1]];
     Inc(Buffer);
     Inc(Text, 2);
@@ -130,12 +166,19 @@ const
   Convert: array[0..15] of Byte = ($30,$31,$32,$33,$34,$35,$36,$37,$38,$39,$41,$42,$43,$44,$45,$46) ; //AnsiString('0123456789ABCDEF');
 var
   I: Integer;
+  p: PByte;
 begin
+  p := Text;
   for I := 0 to BufSize - 1 do
   begin
-    Text[0] := Convert[Buffer[I] shr 4];
-    Text[1] := Convert[Buffer[I] and $F];
-    Inc(Text, 2);
+    p^ := Convert[Buffer[I] shr 4];
+    Inc(p);
+    p^ := 0;
+    Inc(p);
+    P^ := Convert[Buffer[I] and $F];
+    Inc(p);
+    p^ := 0;
+    Inc(p);
   end;
 end;
 

@@ -19,6 +19,7 @@ uses
   Posix.SysSelect,
   Posix.SysSocket,
   Posix.Unistd,
+  Posix.ArpaInet,
   SysUtils,
   mnSockets;
 
@@ -314,7 +315,7 @@ var
   aHandle: TSocket;
   aAddr : TSockAddr;
 begin
-  aHandle := Posix.SysSocket.socket(AF_INET, SOCK_STREAM, 0{IPPROTO_TCP});
+  aHandle := Posix.SysSocket.socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
   if aHandle = INVALID_SOCKET then
     raise EmnException.Create('Failed to create a socket');
 
@@ -357,8 +358,8 @@ begin
   if aHandle = INVALID_SOCKET then
     raise EmnException.Create('Failed to connect socket');
 
-  if soNoDelay in Options then
-    setsockopt(aHandle, IPPROTO_TCP, TCP_NODELAY, SO_TRUE, SizeOf(SO_TRUE));
+  //if soNoDelay in Options then
+    //setsockopt(aHandle, IPPROTO_TCP, TCP_NODELAY, SO_TRUE, SizeOf(SO_TRUE));
 
 //http://support.microsoft.com/default.aspx?kbid=140325
   if soKeepAlive in Options then
@@ -367,7 +368,7 @@ begin
 //  fpsetsockopt(aHandle, SOL_SOCKET, SO_NOSIGPIPE, PChar(@SO_TRUE), SizeOf(SO_TRUE));
 
   aAddr.addr_in.sin_family := AF_INET;
-  aAddr.addr_in.sin_port := StrToIntDef(Port, 0);
+  aAddr.addr_in.sin_port := htons(StrToIntDef(Port, 0));
   if Address = '' then
     aAddr.addr_in.sin_addr.s_addr := INADDR_ANY
   else
