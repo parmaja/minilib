@@ -20,6 +20,8 @@ uses
   Posix.SysSocket,
   Posix.Unistd,
   Posix.ArpaInet,
+  Posix.NetDB,
+  Posix.SysTime,
   SysUtils,
   mnSockets;
 
@@ -98,11 +100,14 @@ const
   SOCKET_ERROR			= -1;
 
 procedure StrToNetAddr(S: string; var addr: TaddrIP4);
+var
+  l: string;
 begin
-  addr.s_bytes[1] := StrToIntDef(substr(S, '.', 0),0);
-  addr.s_bytes[2] := StrToIntDef(substr(S, '.', 1),0);
-  addr.s_bytes[3] := StrToIntDef(substr(S, '.', 2),0);
-  addr.s_bytes[4] := StrToIntDef(substr(S, '.', 3),0);
+  l := S;
+  addr.s_bytes[1] := StrToIntDef(Fetch(S, '.'), 0);
+  addr.s_bytes[2] := StrToIntDef(Fetch(S, '.'), 0);
+  addr.s_bytes[3] := StrToIntDef(Fetch(S, '.'), 0);
+  addr.s_bytes[4] := StrToIntDef(Fetch(S, '.'), 0);
 end;
 
 { TmnSocket }
@@ -161,18 +166,33 @@ function TmnSocket.DoSelect(Timeout: Integer; Check: TSelectCheck): TmnError;
 var
   FSet: fd_set;
   c: Integer;
+
+  LTime: TimeVal;
+  LTimePtr: PTimeVal;
 begin
+
   //CheckActive; no need select will return error for it, as i tho
   if FHandle = INVALID_SOCKET then
     Result := erClosed
   else
   begin
+    if Timeout = -1 then
+    begin
+      LTimePtr := nil;
+    end
+    else
+    begin
+      LTime.tv_sec := Timeout div 1000;
+      LTime.tv_usec := (Timeout mod 1000) * 1000;
+      LTimePtr := @LTime;
+    end;
+
     fd_zero(FSet);
     _FD_SET(0, FSet);
     if Check = slRead then
-      c := Posix.SysSelect.Select(1, @FSet, nil, @FSet, @Timeout)
+      c := Posix.SysSelect.Select(FD_SETSIZE, @FSet, nil, nil, LTimePtr)
     else
-      c := Posix.SysSelect.Select(1, nil, @FSet, nil, @Timeout);
+      c := Posix.SysSelect.Select(FD_SETSIZE, nil, @FSet, nil, LTimePtr);
 
     if (c = 0) or (c = SOCKET_ERROR) then
     begin
@@ -304,6 +324,7 @@ end;
 constructor TmnWallSocket.Create;
 begin
   inherited;
+
 end;
 
 const
@@ -351,6 +372,11 @@ var
   aAddr : TSockAddr;
   ret: integer;
 //  aHost: THostEntry;
+
+  LAddrStore: sockaddr_storage;
+  LAddrIPv4 : SockAddr_In absolute LAddrStore;
+  //LAddrIPv6 : sockaddr_in6 absolute LAddrStore;
+  LAddr : sockaddr absolute LAddrStore;
 begin
   //nonblick connect  https://stackoverflow.com/questions/1543466/how-do-i-change-a-tcp-socket-to-be-non-blocking
   //https://stackoverflow.com/questions/14254061/setting-time-out-for-connect-function-tcp-socket-programming-in-c-breaks-recv
@@ -366,6 +392,7 @@ begin
     setsockopt(aHandle, SOL_SOCKET, SO_KEEPALIVE, SO_TRUE, SizeOf(SO_TRUE));
 
 //  fpsetsockopt(aHandle, SOL_SOCKET, SO_NOSIGPIPE, PChar(@SO_TRUE), SizeOf(SO_TRUE));
+
 
   aAddr.addr_in.sin_family := AF_INET;
   aAddr.addr_in.sin_port := htons(StrToIntDef(Port, 0));
@@ -383,6 +410,24 @@ begin
     end;
   end;
   ret := Posix.SysSocket.connect(aHandle, aAddr.addr, SizeOf(aAddr));
+
+  (*LAddrIPv4.sin_family := AF_INET;
+  LAddrIPv4.sin_port := htons(StrToIntDef(Port, 0));
+  if Address = '' then
+    aAddr.addr_in.sin_addr.s_addr := INADDR_ANY
+  else
+  begin
+    StrToNetAddr(Address, LAddrIPv4.sin_addr);
+    if (aAddr.addr_in.sin_addr.s_addr = 0) then
+    begin
+      //getaddrinfo()
+{      if ResolveHostByName(Address, aHost) then //DNS server
+      begin
+        aAddr.sin_addr.s_addr := aHost.Addr.s_addr;
+      end;}
+    end;
+  end;
+  ret := Posix.SysSocket.connect(aHandle, LAddr, SizeOf(LAddrIPv4));*)
   if ret = -1 then
     raise EmnException.Create('Failed to connect the socket, error #' + IntToStr(ret) + '.'#13'Address "' + Address +'" Port "' + Port + '".');
   Result := TmnSocket.Create(aHandle)

@@ -58,6 +58,7 @@ function CompareLeftStr(const Str: string; const WithStr: string; Start: Integer
 //Index started from 0
 function SubStr(const Str: String; vSeperator: Char; vFromIndex, vToIndex: Integer): String; overload;
 function SubStr(const Str: String; vSeperator: Char; vIndex: Integer = 0): String; overload;
+function Fetch(var AInput: string; const ADelim: string = '.'; const ADelete: Boolean = True; const ACaseSensitive: Boolean = True): string;
 
 function PeriodToString(vPeriod: Double; WithSeconds: Boolean): string;
 function DequoteStr(Str: string; QuoteChar: string = '"'): string; overload;
@@ -721,6 +722,34 @@ function SubStr(const Str: String; vSeperator: Char; vIndex: Integer): String;
 begin
   Result := SubStr(Str, vSeperator, vIndex, vIndex);
 end;
+
+function Fetch(var AInput: string; const ADelim: string; const ADelete: Boolean; const ACaseSensitive: Boolean): string;
+
+var
+  LPos: Integer;
+begin
+  if ADelim = #0 then begin
+    // AnsiPos does not work with #0
+    LPos := Pos(ADelim, AInput);
+  end else begin
+    LPos := Pos(ADelim, AInput);
+  end;
+  if LPos = 0 then begin
+    Result := AInput;
+    if ADelete then begin
+      AInput := '';    {Do not Localize}
+    end;
+  end
+  else begin
+    Result := Copy(AInput, 1, LPos - 1);
+    if ADelete then begin
+      //slower Delete(AInput, 1, LPos + Length(ADelim) - 1); because the
+      //remaining part is larger than the deleted
+      AInput := Copy(AInput, LPos + Length(ADelim), MaxInt);
+    end;
+  end;
+end;
+
 
 function IncludePathSeparator(const S: string): string;
 begin
