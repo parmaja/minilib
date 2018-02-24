@@ -22,6 +22,7 @@ uses
   Posix.ArpaInet,
   Posix.NetDB,
   Posix.SysTime,
+  Posix.NetinetIn,
   SysUtils,
   mnSockets;
 
@@ -371,12 +372,11 @@ var
   aHandle: TSocket;
   aAddr : TSockAddr;
   ret: integer;
-//  aHost: THostEntry;
+  h: Phostent;
 
-  LAddrStore: sockaddr_storage;
-  LAddrIPv4 : SockAddr_In absolute LAddrStore;
-  //LAddrIPv6 : sockaddr_in6 absolute LAddrStore;
-  LAddr : sockaddr absolute LAddrStore;
+  LHints: AddrInfo;
+  LRetVal: Integer;
+  LAddrInfo: pAddrInfo;
 begin
   //nonblick connect  https://stackoverflow.com/questions/1543466/how-do-i-change-a-tcp-socket-to-be-non-blocking
   //https://stackoverflow.com/questions/14254061/setting-time-out-for-connect-function-tcp-socket-programming-in-c-breaks-recv
@@ -403,10 +403,21 @@ begin
     StrToNetAddr(Address, aAddr.addr_in.sin_addr);
     if (aAddr.addr_in.sin_addr.s_addr = 0) then
     begin
-{      if ResolveHostByName(Address, aHost) then //DNS server
+      //h := gethostbyname(TMarshal.AsAnsi(Address));
+      //aAddr.addr_in.sin_addr.s_addr := UInt32(h.h_addr_list);
+
+      FillChar(LHints, SizeOf(LHints), 0);
+      LHints.ai_family := AF_INET;
+      LHints.ai_socktype := SOCK_STREAM;
+      LAddrInfo := nil;
+
+      LRetVal := getaddrinfo(MarshaledAString(TMarshal.AsAnsi(Address)), nil, LHints, LAddrInfo);
+      if LRetVal = 0 then
       begin
-        aAddr.sin_addr.s_addr := aHost.Addr.s_addr;
-      end;}
+        aAddr.addr_in.sin_addr.s_addr := Psockaddr_in(LAddrInfo^.ai_addr).sin_addr.s_addr;
+      end
+      else
+        raise EmnException.CreateFmt('Failed Get IP [%s]', [Address]);
     end;
   end;
   ret := Posix.SysSocket.connect(aHandle, aAddr.addr, SizeOf(aAddr));
