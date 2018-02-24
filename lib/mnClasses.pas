@@ -47,7 +47,7 @@ type
   end;
 
 
-  {$ifdef FPC}
+  {.$ifdef FPC}
 
   { TEnumerator }
 {
@@ -62,16 +62,28 @@ type
     property Current: Pointer read FCurrent;
   end;}
 
-  { GNamedItems }
+  { TmnNamedObjectList }
 
+  {$ifdef FPC}
   TmnNamedObjectList<_Object_> = class(TmnObjectList<_Object_>)
+  {$else}
+
+  TmnNamedObject = class(TObject)
+  private
+    FName: string;
+  public
+    property Name: string read FName write FName;
+  end;
+
+  TmnNamedObjectList<_Object_: TmnNamedObject> = class(TmnObjectList<_Object_>)
+  {$endif}
   private
   public
     function Find(const Name: string): _Object_;
     function IndexOfName(vName: string): Integer;
     //function GetEnumerator: specialize TEnumerator<_Object_>;
   end;
-  {$endif}
+  {.$endif}
 {
   FreePascal:
 
@@ -118,7 +130,7 @@ end;
 
 
 
-{$ifdef FPC}
+{/$ifdef FPC}
 { TmnNamedObjectList }
 
 function  TmnNamedObjectList<_Object_>.Find(const Name: string): _Object_;
@@ -180,6 +192,6 @@ begin
     FCurrent := nil;
 end;
  }
-{$endif}
+{.$endif}
 
 end.

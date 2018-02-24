@@ -545,7 +545,6 @@ begin
     if Select(aHandle, Timeout, slWrite) <> erNone then
       raise EmnException.Create('Failed to connect nonblock socket, Error #' + Inttostr(WSAGetLastError));
   end;
-
   Result := TmnSocket.Create(aHandle)
 end;
 
