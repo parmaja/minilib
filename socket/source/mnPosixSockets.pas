@@ -33,6 +33,14 @@ const
   INADDR_ANY  = 0;
   INADDR_NONE = $ffffffff;
 
+  {$IFDEF MACOS}
+  MSG_NOSIGNAL  = $20000;  // Do not generate SIGPIPE.
+                           // Works under MAC OS X, but is undocumented,
+                           // So FPC doesn't include it
+  {$ELSE}
+   MSG_NOSIGNAL  = $4000; // Do not generate SIGPIPE.
+  {$ENDIF}
+	
 type
   TSocket = integer;
 
