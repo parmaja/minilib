@@ -33,10 +33,16 @@ const
   INADDR_ANY  = 0;
   INADDR_NONE = $ffffffff;
 
-  {$IFDEF MACOS}
-  MSG_NOSIGNAL  = $20000;  // Do not generate SIGPIPE.
+  {$IFDEF OSX}
+  //MSG_NOSIGNAL  = $20000;  // Do not generate SIGPIPE.
+  MSG_NOSIGNAL  = 0;  // Do not generate SIGPIPE.
                            // Works under MAC OS X, but is undocumented,
                            // So FPC doesn't include it
+
+  FIONREAD = $4004667F; // oSX FIONREAD        = Posix.StrOpts.FIONREAD;
+
+  FIONBIO	 = $8004667E; //OSX FIONBIO         = Posix.StrOpts.FIONBIO;
+  FIOASYNC = $8004667D; //OSX  FIOASYNC        = Posix.StrOpts.FIOASYNC;  // not defined in XE2
   {$ELSE}
    MSG_NOSIGNAL  = $4000; // Do not generate SIGPIPE.
   {$ENDIF}
@@ -51,6 +57,10 @@ type
   end;
 
   sockaddr_in = record
+    {$ifdef OSX}
+		sin_len: UInt8;
+    {$endif}
+
     sin_family: sa_family_t;
     sin_port: word;
     sin_addr: TaddrIP4;
@@ -197,7 +207,7 @@ begin
     end;
 
     fd_zero(FSet);
-    _FD_SET(0, FSet);
+    _FD_SET(FHandle, FSet);
     if Check = slRead then
       c := Posix.SysSelect.Select(FD_SETSIZE, @FSet, nil, nil, LTimePtr)
     else
