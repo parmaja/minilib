@@ -1136,6 +1136,7 @@ end;
 
 function TmnrCustomReport.HandleNewRow(vRow: TmnrRowNode): Boolean;
 begin
+  Result := False;
 end;
 
 procedure TmnrCustomReport.Created;

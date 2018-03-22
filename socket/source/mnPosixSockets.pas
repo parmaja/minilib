@@ -33,7 +33,8 @@ const
   INADDR_ANY  = 0;
   INADDR_NONE = $ffffffff;
 
-  {$IFDEF OSX}
+
+  {$IF defined(MACOS) or defined(IOS)}
   //MSG_NOSIGNAL  = $20000;  // Do not generate SIGPIPE.
   MSG_NOSIGNAL  = 0;  // Do not generate SIGPIPE.
                            // Works under MAC OS X, but is undocumented,
@@ -46,7 +47,7 @@ const
   {$ELSE}
    MSG_NOSIGNAL  = $4000; // Do not generate SIGPIPE.
   {$ENDIF}
-	
+
 type
   TSocket = integer;
 
@@ -57,7 +58,7 @@ type
   end;
 
   sockaddr_in = record
-    {$ifdef OSX}
+    {$IF defined(OSX) or defined(IOS)}
 		sin_len: UInt8;
     {$endif}
 
@@ -162,6 +163,7 @@ var
 begin
   CheckActive;
   c := Posix.SysSocket.Send(FHandle, Buffer, Count, MSG_NOSIGNAL);
+
   if c = 0 then
   begin
     Result := erClosed;
@@ -207,11 +209,16 @@ begin
     end;
 
     fd_zero(FSet);
-    _FD_SET(FHandle, FSet);
+    //_FD_SET(FHandle, FSet);
+    _FD_SET(0, FSet);
     if Check = slRead then
       c := Posix.SysSelect.Select(FD_SETSIZE, @FSet, nil, nil, LTimePtr)
     else
       c := Posix.SysSelect.Select(FD_SETSIZE, nil, @FSet, nil, LTimePtr);
+    {if Check = slRead then
+      c := Posix.SysSelect.Select(FD_SETSIZE, @FSet, nil, nil, LTimePtr)
+    else
+      c := Posix.SysSelect.Select(FD_SETSIZE, nil, @FSet, nil, LTimePtr);}
 
     if (c = 0) or (c = SOCKET_ERROR) then
     begin
