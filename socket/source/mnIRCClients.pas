@@ -520,7 +520,7 @@ begin
     FCurrentNick := FNick;
     FChangeNickTo := '';
     SetState(isConnecting);
-    Connection.Connect;
+    Connection.Connect; //move it to Process
     Connection.Start;
     Connected;
   end;

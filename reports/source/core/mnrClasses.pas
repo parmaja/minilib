@@ -733,6 +733,7 @@ type
     constructor Create(vReport: TmnrCustomReport); virtual;
     procedure SaveReport; virtual;
     procedure LoadReport; virtual;
+    procedure NewReport(const vNewName: string); virtual;
     procedure DeleteReport(const vName: string); virtual;
     procedure CopyReport(const vName, vNewName: string); virtual;
 
@@ -2957,6 +2958,11 @@ begin
 end;
 
 procedure TmnrProfiler.LoadReport;
+begin
+
+end;
+
+procedure TmnrProfiler.NewReport(const vNewName: string);
 begin
 
 end;
