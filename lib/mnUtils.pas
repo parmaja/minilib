@@ -54,6 +54,7 @@ procedure BreakToStrings(S: string; vStrings: TStrings; IncludeLineBreaks: Boole
 function StringsToString(Strings: TStrings; LineBreak: string = sLineBreak): string;
 
 function CompareLeftStr(const Str: string; const WithStr: string; Start: Integer = 1): Boolean;
+function ContainsText(const SubStr, InStr: string): Boolean; //TODO, need one scan, not using uppercase
 
 //Index started from 0
 function SubStr(const Str: String; vSeperator: Char; vFromIndex, vToIndex: Integer): String; overload;
@@ -444,6 +445,11 @@ begin
   end;
 end;
 
+function ContainsText(const SubStr, InStr: string): Boolean;
+begin
+  Result := Pos(UpperCase(SubStr), UpperCase(InStr)) > 0; //Ewww
+end;
+
 function EscapeString(const S: string; Esc: string; Chars: array of Char; Escapes: array of string): string;
   function InChars(const Char: Char): Integer;
   var
@@ -724,7 +730,6 @@ begin
 end;
 
 function Fetch(var AInput: string; const ADelim: string; const ADelete: Boolean; const ACaseSensitive: Boolean): string;
-
 var
   LPos: Integer;
 begin
