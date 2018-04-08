@@ -688,7 +688,7 @@ begin
   Add(aName, aValue);
 end;
 
-procedure StrToAttributesCallbackProc(Sender: Pointer; S: string);
+procedure StrToAttributesCallbackProc(Sender: Pointer; Index:Integer; S: string; var Resume: Boolean);
 begin
   if S = '' then
     exit;
@@ -697,7 +697,7 @@ end;
 
 procedure TmnXMLAttributes.Append(vAttributes: string);
 begin
-  StrToStringsCallback(vAttributes, Self, @StrToAttributesCallbackProc, [' '], [#0, #13, #10]);
+  StrToStringsCallback(vAttributes, Self, StrToAttributesCallbackProc, [' '], [#0, #13, #10]);
 end;
 
 procedure TmnXMLAttributes.AssignFrom(vAttributes: string);

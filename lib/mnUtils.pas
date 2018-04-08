@@ -32,13 +32,17 @@ function QuoteStr(Str: string; QuoteChar: string = '"'): string;
   Resume: if false then stop, default is true
 *}
 type
-  TStrToStringsCallbackProc = procedure(Sender: Pointer; S: string; var Resume: Boolean);
+  TStrToStringsCallbackProc = procedure(Sender: Pointer; Index:Integer; S: string; var Resume: Boolean);
 
 {**
   IgnoreInitialWhiteSpace: Ignore the first chars of this white space, not need it
 *}
 
-function StrToStringsCallback(Content: string; Sender: Pointer; CallBackProc: TStrToStringsCallbackProc; Separators: TSysCharSet = [#0, #13, #10]; IgnoreInitialWhiteSpace: TSysCharSet = [' ']; DequoteValues: Boolean = False; Quotes: TSysCharSet = ['''', '"']): Integer;
+TStrToStringsOptions = set of (
+  stsoGroupSeparators //TODO, not tested yet, if one of separators come it will ignores chars in next separators like if separators = #13, #10, now #13#10 will considered as one line break
+); //
+
+function StrToStringsCallback(Content: string; Sender: Pointer; const CallBackProc: TStrToStringsCallbackProc; Separators: TSysCharSet = [#0, #13, #10]; IgnoreInitialWhiteSpace: TSysCharSet = [' ']; DequoteValues: Boolean = False; Quotes: TSysCharSet = ['''', '"']; vOptions: TStrToStringsOptions = []): Integer;
 function StrToStrings(Content: string; Strings: TStrings; Separators: TSysCharSet = [#0, #13, #10]; IgnoreInitialWhiteSpace: TSysCharSet = [' ']; DequoteValues: Boolean = False; Quotes: TSysCharSet = ['''', '"']): Integer;
 
 {
@@ -59,7 +63,7 @@ function ContainsText(const SubStr, InStr: string): Boolean; //TODO, need one sc
 //Index started from 0
 function SubStr(const Str: String; vSeperator: Char; vFromIndex, vToIndex: Integer): String; overload;
 function SubStr(const Str: String; vSeperator: Char; vIndex: Integer = 0): String; overload;
-function Fetch(var AInput: string; const ADelim: string = '.'; const ADelete: Boolean = True; const ACaseSensitive: Boolean = True): string;
+function Fetch(var AInput: string; const ADelim: string = '.'; const ADelete: Boolean = True; const ACaseSensitive: Boolean = True): string; deprecated;
 
 function PeriodToString(vPeriod: Double; WithSeconds: Boolean): string;
 function DequoteStr(Str: string; QuoteChar: string = '"'): string; overload;
@@ -313,15 +317,17 @@ f1,f2,,f4
 ,f2,f3,f4
 }
 
-function StrToStringsCallback(Content: string; Sender: Pointer; CallBackProc: TStrToStringsCallbackProc; Separators: TSysCharSet; IgnoreInitialWhiteSpace: TSysCharSet; DequoteValues: Boolean; Quotes: TSysCharSet): Integer;
+function StrToStringsCallback(Content: string; Sender: Pointer; const CallBackProc: TStrToStringsCallbackProc; Separators: TSysCharSet; IgnoreInitialWhiteSpace: TSysCharSet; DequoteValues: Boolean; Quotes: TSysCharSet; vOptions: TStrToStringsOptions): Integer;
 var
   Start, Cur, P: Integer;
   Resume: Boolean;
   InQuote: Boolean;
   QuoteChar: Char;
   S: string;
+  Index: Integer;
 begin
   Result := 0;
+  Index := 0;
   if (@CallBackProc = nil) then
     raise Exception.Create('StrToStrings: CallBackProc is nil');
   if (Content <> '') then
@@ -340,8 +346,13 @@ begin
       while True do
       begin
         //seek until the separator and skip the separator if inside quoting
-        while (Cur <= Length(Content)) and ((InQuote and not (Content[Cur] <> QuoteChar)) or (not CharInSet(Content[Cur], Separators))) do
+        while (Cur <= Length(Content)) and ((InQuote and not (Content[Cur] <> QuoteChar)) or (not (CharInSet(Content[Cur], Separators)))) do
           Cur := Cur + 1;
+
+        if stsoGroupSeparators in vOptions then
+          while (Cur <= Length(Content)) and ((InQuote and not (Content[Cur] <> QuoteChar)) or (CharInSet(Content[Cur], Separators))) do
+            Cur := Cur + 1;
+
         if (Cur <= Length(Content)) and CharInSet(Content[Cur], Quotes) then
         begin
           if (QuoteChar <> #0) and (QuoteChar = Content[Cur]) then
@@ -365,7 +376,8 @@ begin
             S := Copy(S, 1, P) + DequoteStr(Copy(S, P + 1, MaxInt));
         end;
         Resume := True;
-        CallBackProc(Sender, S, Resume);
+        CallBackProc(Sender, Index, S, Resume);
+        Index := Index + 1;
         Inc(Result);
         if not Resume then
           break;
@@ -375,7 +387,7 @@ begin
   end;
 end;
 
-procedure StrToStringsCallbackProc(Sender: Pointer; S: string);
+procedure StrToStringsCallbackProc(Sender: Pointer; Index: Integer; S: string; var Resume: Boolean);
 begin
   TStrings(Sender).Add(S); //Be sure sender is TStrings
 end;
@@ -386,7 +398,7 @@ begin
     raise Exception.Create('StrToStrings: Strings is nil');
   Strings.BeginUpdate;
   try
-    Result := StrToStringsCallback(Content, Strings, @StrToStringsCallbackProc, Separators, IgnoreInitialWhiteSpace, DequoteValues, Quotes);
+    Result := StrToStringsCallback(Content, Strings, StrToStringsCallbackProc, Separators, IgnoreInitialWhiteSpace, DequoteValues, Quotes);
   finally
     Strings.EndUpdate;
   end;

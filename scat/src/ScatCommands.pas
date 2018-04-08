@@ -155,7 +155,7 @@ begin
   begin
     aParams := Copy(Path, J + 1, Length(Path));
     Path := Copy(Path, 1, J - 1);
-    StrToStringsCallback(aParams, Params, @ParamsCallBack);
+    StrToStringsCallback(aParams, Params, ParamsCallBack);
   end;
 end;
 
