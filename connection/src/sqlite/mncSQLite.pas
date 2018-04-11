@@ -35,6 +35,7 @@ type
 
   TmncSQLiteConnection = class(TmncSQLConnection)
   private
+    FCorrectDateTime: Boolean;
     FDBHandle: PSqlite3;
     FExclusive: Boolean;
     FJournalMode: TmncJournalMode;
@@ -68,6 +69,7 @@ type
     property Synchronous: TmncSynchronous read FSynchronous write FSynchronous default syncDefault;
     property JournalMode: TmncJournalMode read FJournalMode write SetJournalMode default jrmDefault;
     property TempStore: TmncTempStore read FTempStore write SetTempStore default tmpDefault;
+    property CorrectDateTime: Boolean read FCorrectDateTime write FCorrectDateTime default False;
     {TODO
       ANALYZE
     }
@@ -256,16 +258,20 @@ begin
 end;
 
 function SQLTypeToType(vType: Integer; const MetaType: string): TmncDataType;
+  function isDate: Boolean;
+  begin
+    Result := SameText(MetaType, 'date') or SameText(MetaType, 'timestamp') or SameText(MetaType, 'datetime');
+  end;
 begin
   case vType of
     SQLITE_INTEGER:
-      if SameText(MetaType, 'date') then
+      if IsDate then
         Result := dtDate
       else//not yet
         Result := dtInteger;
     SQLITE_FLOAT:
     begin
-      if SameText(MetaType, 'date') then
+      if isDate then
         Result := dtDateTime
       else//not yet
         Result := dtFloat;
@@ -715,7 +721,9 @@ begin
       case VarType(Binds[i].Param.Value) of
         varDate:
         begin
-          buf.f := Binds[i].Param.Value;// - UnixDateDelta; todo
+          buf.f := Binds[i].Param.Value;
+          if Session.Connection.CorrectDateTime then
+            buf.f := buf.f - JulianEpoch;
           CheckError(sqlite3_bind_double(FStatment, i + 1, buf.f));
         end;
         varBoolean:
@@ -897,13 +905,17 @@ begin
         SQLITE_INTEGER:
         begin
           v.i := sqlite3_column_int(FStatment, i);
-{          if aColumn.DataType = ftDate then //todo
-            int := int - 1;}
+          if Session.Connection.CorrectDateTime then
+            if aColumn.DataType in [dtDate, dtTime, dtDateTime] then
+              v.i := trunc(v.i + JulianEpoch);
           aCurrent.Add(i, v.i);
         end;
         SQLITE_FLOAT:
         begin
           v.f := sqlite3_column_double(FStatment, i);
+          if Session.Connection.CorrectDateTime then
+            if aColumn.DataType in [dtDate, dtTime, dtDateTime] then
+              v.f := v.f + JulianEpoch;
           aCurrent.Add(i, v.f);
         end;
         SQLITE_BLOB:

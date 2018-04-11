@@ -37,11 +37,13 @@
     'until,'+
     'while';
 
+  sLuaTypes =
+  'integer,'+
+  'string,'+
+  'boolean,'+
+  'char';
+
   sLuaFunctions =
-    'integer,'+
-    'string,'+
-    'boolean,'+
-    'char,'+
     'require,'+
     //namespaces
     'assert,'+

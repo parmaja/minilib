@@ -287,6 +287,7 @@ procedure TLuaProcessor.InitIdent;
 begin
   inherited;
   EnumerateKeywords(Ord(tkKeyword), sLuaKeywords, TSynValidStringChars, @DoAddKeyword);
+  EnumerateKeywords(Ord(tkType), sLuaTypes, TSynValidStringChars, @DoAddKeyword);
   EnumerateKeywords(Ord(tkFunction), sLuaFunctions, TSynValidStringChars, @DoAddKeyword);
   SetRange(rscUnknown);
 end;

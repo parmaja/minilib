@@ -34,7 +34,7 @@ type
     FTokenPos: Integer;
     FTokenID: TtkTokenKind;
     FCommentAttri: TSynHighlighterAttributes;
-    FDataTypeAttri: TSynHighlighterAttributes;
+    FTypeAttri: TSynHighlighterAttributes;
     FObjectAttri: TSynHighlighterAttributes;
     FFunctionAttri: TSynHighlighterAttributes;
     FIdentifierAttri: TSynHighlighterAttributes;
@@ -90,7 +90,7 @@ type
     procedure SetRange(Value: Pointer); override;
   published
     property CommentAttri: TSynHighlighterAttributes read fCommentAttri write fCommentAttri;
-    property DataTypeAttri: TSynHighlighterAttributes read fDataTypeAttri write fDataTypeAttri;
+    property TypeAttri: TSynHighlighterAttributes read fTypeAttri write fTypeAttri;
     property ObjectAttri: TSynHighlighterAttributes read fObjectAttri write fObjectAttri;
     property FunctionAttri: TSynHighlighterAttributes read fFunctionAttri write fFunctionAttri;
     property IdentifierAttri: TSynHighlighterAttributes read fIdentifierAttri write fIdentifierAttri;
@@ -250,10 +250,10 @@ begin
   FCommentAttri.Style := [fsBold];
   FCommentAttri.Foreground := clMaroon;
   AddAttribute(FCommentAttri);
-  FDataTypeAttri := TSynHighlighterAttributes.Create(SYNS_AttrDataType);
-  FDataTypeAttri.Style := [fsBold];
-  FDataTypeAttri.Foreground := $00C56A31;
-  AddAttribute(FDataTypeAttri);
+  FTypeAttri := TSynHighlighterAttributes.Create(SYNS_AttrDataType);
+  FTypeAttri.Style := [fsBold];
+  FTypeAttri.Foreground := $00C56A31;
+  AddAttribute(FTypeAttri);
   FObjectAttri := TSynHighlighterAttributes.Create(SYNS_AttrObjects);
   FObjectAttri.Style := [fsBold];
   FObjectAttri.Foreground := clGreen;
@@ -625,7 +625,7 @@ function TSynStdSQLSyn.GetTokenAttribute: TSynHighlighterAttributes;
 begin
   case GetTokenID of
     tkComment: Result := FCommentAttri;
-    tkDatatype: Result := FDataTypeAttri;
+    tkDatatype: Result := FTypeAttri;
     tkObject: Result := FObjectAttri;
     tkFunction: Result := FFunctionAttri;
     tkIdentifier: Result := FIdentifierAttri;

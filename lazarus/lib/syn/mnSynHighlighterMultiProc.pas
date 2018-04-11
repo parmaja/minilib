@@ -17,7 +17,7 @@ uses
   SynEdit, SynEditTypes, SynEditHighlighter, SynHighlighterHashEntries;
 
 type
-  TtkTokenKind = (tkUnknown, tkNull, tkSpace, tkComment, tkDocument, tkIdentifier, tkKeyword, tkFunction, tkSymbol, tkNumber, //tkControl, //like {};
+  TtkTokenKind = (tkUnknown, tkNull, tkSpace, tkComment, tkDocument, tkIdentifier, tkKeyword, tkType, tkFunction, tkSymbol, tkNumber, //tkControl, //like {};
     tkString, tkValue, tkText, tkVariable, tkProcessor);
 
   //Common range used for some syntax
@@ -155,7 +155,8 @@ type
   private
     FCommentAttri: TSynHighlighterAttributes;
     FDocumentAttri: TSynHighlighterAttributes;
-    FValueAttri: TSynHighlighterAttributes;
+    FTypeAttri: TSynHighlighterAttributes;
+    //FValueAttri: TSynHighlighterAttributes;
     FFunctionAttri: TSynHighlighterAttributes;
     FIdentifierAttri: TSynHighlighterAttributes;
     FTextAttri: TSynHighlighterAttributes;
@@ -202,19 +203,19 @@ type
     procedure Next; override;
     procedure SetLine(const NewValue: string; LineNumber: integer); override;
   published
+    property WhitespaceAttri: TSynHighlighterAttributes read FWhitespaceAttri write FWhitespaceAttri;
     property CommentAttri: TSynHighlighterAttributes read FCommentAttri write FCommentAttri;
     property DocumentAttri: TSynHighlighterAttributes read FDocumentAttri write FDocumentAttri;
-    property ValueAttri: TSynHighlighterAttributes read FValueAttri write FValueAttri;
+    property KeywordAttri: TSynHighlighterAttributes read FKeywordAttri write FKeywordAttri;
+    property TypeAttri: TSynHighlighterAttributes read FTypeAttri write FTypeAttri;
     property FunctionAttri: TSynHighlighterAttributes read FFunctionAttri write FFunctionAttri;
     property IdentifierAttri: TSynHighlighterAttributes read FIdentifierAttri write FIdentifierAttri;
-    //property HtmlAttri: TSynHighlighterAttributes read FHtmlAttri write FHtmlAttri;
     property TextAttri: TSynHighlighterAttributes read FTextAttri write FTextAttri;
-    property KeywordAttri: TSynHighlighterAttributes read FKeywordAttri write FKeywordAttri;
     property NumberAttri: TSynHighlighterAttributes read FNumberAttri write FNumberAttri;
-    property WhitespaceAttri: TSynHighlighterAttributes read FWhitespaceAttri write FWhitespaceAttri;
     property StringAttri: TSynHighlighterAttributes read FStringAttri write FStringAttri;
     property SymbolAttri: TSynHighlighterAttributes read FSymbolAttri write FSymbolAttri;
     property VariableAttri: TSynHighlighterAttributes read FVariableAttri write FVariableAttri;
+    //property ValueAttri: TSynHighlighterAttributes read FValueAttri write FValueAttri;
     property ProcessorAttri: TSynHighlighterAttributes read fProcessorAttri write fProcessorAttri;
   end;
 
@@ -593,11 +594,6 @@ begin
   FDocumentAttri.Style := [fsBold];
   AddAttribute(FDocumentAttri);
 
-  FValueAttri := TSynHighlighterAttributes.Create(SYNS_AttrValue);
-  FValueAttri.Style := [fsBold];
-  FValueAttri.Foreground := $00985A89;
-  AddAttribute(fValueAttri);
-
   FIdentifierAttri := TSynHighlighterAttributes.Create(SYNS_AttrIdentifier);
   FIdentifierAttri.Foreground := $00A35949;
   AddAttribute(fIdentifierAttri);
@@ -607,10 +603,10 @@ begin
   FFunctionAttri.Foreground := $00926221;
   AddAttribute(FFunctionAttri);
 
-  {FHtmlAttri := TSynHighlighterAttributes.Create('HTML');
-  FHtmlAttri.Style := [fsBold];
-  FHtmlAttri.Foreground := $00AD655A;
-  AddAttribute(fHtmlAttri);}
+  FTypeAttri := TSynHighlighterAttributes.Create('Type');
+  FTypeAttri.Style := [];
+  FTypeAttri.Foreground := $00926221;
+  AddAttribute(FTypeAttri);
 
   FTextAttri := TSynHighlighterAttributes.Create('Text');
   AddAttribute(fTextAttri);
@@ -725,8 +721,8 @@ begin
   case GetTokenID of
     tkComment: Result := FCommentAttri;
     tkDocument: Result := FDocumentAttri;
-    tkValue: Result := FValueAttri;
     tkFunction: Result := FFunctionAttri;
+    tkType: Result := FTypeAttri;
     tkIdentifier: Result := FIdentifierAttri;
     tkText: Result := FTextAttri;
     tkKeyword: Result := FKeywordAttri;
