@@ -626,6 +626,7 @@ type
     FHeaderPage: TmnrSection;
     FFooterPage: TmnrSection;
     FFooterReport: TmnrSection;
+    FDesigningMode: Boolean;
 
     function GetProfiler: TmnrProfiler;
     function GetReportName: string;
@@ -678,6 +679,7 @@ type
     procedure DoBeforeStart; virtual;
     procedure DoAfterStart; virtual;
     procedure DoLoopError; virtual;
+    function DoCreateReportDesgin: ImnrReportDesigner; virtual;
   public
     constructor Create;
 
@@ -705,7 +707,8 @@ type
     property Rows[vRow: Integer]: TmnrRow read GetRows;
     property Cells[vRow, vCol: Integer]: TmnrCell read GetCells;
 
-    function CreateReportDesgin: ImnrReportDesigner; virtual;
+    function CreateReportDesgin: ImnrReportDesigner;
+    property DesigningMode: Boolean read FDesigningMode;
     procedure Clear; virtual;
 
     property HeaderReport: TmnrSection read GetHeaderReport;
@@ -805,6 +808,7 @@ end;
 constructor TmnrCustomReport.Create;
 begin
   inherited Create;
+  FDesigningMode := False;
 
   FProfiler := DoCreateProfiler;
   //FProfiler.FReport := Self;
@@ -871,9 +875,15 @@ begin
   Result := ProfilerClass.Create(Self);
 end;
 
-function TmnrCustomReport.CreateReportDesgin: ImnrReportDesigner;
+function TmnrCustomReport.DoCreateReportDesgin: ImnrReportDesigner;
 begin
   Result := nil;
+end;
+
+function TmnrCustomReport.CreateReportDesgin: ImnrReportDesigner;
+begin
+  FDesigningMode := True;
+  Result := DoCreateReportDesgin;
 end;
 
 procedure TmnrCustomReport.InitSections(vSections: TmnrSections);

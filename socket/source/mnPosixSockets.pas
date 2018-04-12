@@ -51,6 +51,7 @@ const
 type
   TSocket = integer;
 
+
   TaddrIP4 = packed record
     case boolean of
        true: (s_addr  : int32);
@@ -103,6 +104,7 @@ type
   TmnWallSocket = class(TmnCustomWallSocket)
   private
     function LookupPort(Port: string): Word;
+    function TestGetAddrInfo(const AHostName, AServiceName: string; const AHints: AddrInfo): PAddrInfo;
   public
     constructor Create; override;
     destructor Destroy; override;
@@ -209,8 +211,8 @@ begin
     end;
 
     fd_zero(FSet);
-    //_FD_SET(FHandle, FSet);
-    _FD_SET(0, FSet);
+    _FD_SET(FHandle, FSet);
+    //_FD_SET(0, FSet);
     if Check = slRead then
       c := Posix.SysSelect.Select(FD_SETSIZE, @FSet, nil, nil, LTimePtr)
     else
@@ -387,6 +389,29 @@ begin
   inherited;
 end;
 
+function TmnWallSocket.TestGetAddrInfo(const AHostName, AServiceName: string; const AHints: AddrInfo): PAddrInfo;
+var
+  M: TMarshaller;
+  LHost, LService: Pointer;
+  LRet: Integer;
+  LAddrInfo: PAddrInfo;
+begin
+  if (AHostName <> '') then
+    LHost := M.AsAnsi(AHostName).ToPointer
+  else
+    LHost := nil;
+
+  if (AServiceName <> '') then
+    LService := M.AsAnsi(AServiceName).ToPointer
+  else
+    LService := nil;
+
+  if Posix.NetDB.getaddrinfo(LHost, LService, AHints, Paddrinfo(LAddrInfo))=0 then
+    Result := LAddrInfo
+  else
+    Result := nil;
+end;
+
 function TmnWallSocket.LookupPort(Port: string): Word;
 begin
   Result := StrToIntDef(Port, 0);
@@ -402,10 +427,24 @@ var
   LHints: AddrInfo;
   LRetVal: Integer;
   LAddrInfo: pAddrInfo;
+  aInfo: AddrInfo;
 begin
   //nonblick connect  https://stackoverflow.com/questions/1543466/how-do-i-change-a-tcp-socket-to-be-non-blocking
   //https://stackoverflow.com/questions/14254061/setting-time-out-for-connect-function-tcp-socket-programming-in-c-breaks-recv
-  aHandle := Posix.SysSocket.socket(AF_INET, SOCK_STREAM{TODO: for nonblock option: or O_NONBLOCK}, 0{IPPROTO_TCP});
+
+  FillChar(aInfo, SizeOf(AddrInfo), 0);
+  aInfo.ai_family := AF_UNSPEC;
+  aInfo.ai_socktype := SOCK_STREAM;
+  aInfo.ai_protocol := IPPROTO_TCP;
+  LAddrInfo := TestGetAddrInfo(Address, Port, aInfo);
+
+  if LAddrInfo = nil then
+    raise EmnException.Create('Failed to get address');
+
+
+  //aHandle := Posix.SysSocket.socket(AF_INET, SOCK_STREAM{TODO: for nonblock option: or O_NONBLOCK}, IPPROTO_TCP);
+  aHandle := Posix.SysSocket.socket(LAddrInfo.ai_family, LAddrInfo.ai_socktype, LAddrInfo.ai_protocol);
+
   if aHandle = INVALID_SOCKET then
     raise EmnException.Create('Failed to connect socket');
 
