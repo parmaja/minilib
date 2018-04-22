@@ -34,6 +34,7 @@ requires
   vcl;
 
 contains
+  mnClasses in '..\mnClasses.pas',
   mnCommStreams in '..\..\comm\source\mnCommStreams.pas',
   mnCommThreads in '..\..\comm\source\mnCommThreads.pas',
   mnWinCommTypes in '..\..\comm\source\mnWinCommTypes.pas',

@@ -1291,7 +1291,7 @@ begin
           else
           begin
             //c := TmnrReportTotalCell.Create(aRow); todo to use it instead, we need to understand why CurrencyCellClass.Create(aRow)?
-            c := d.CurrencyCellClass.Create(aRow); //if we do that we will lose the speical format in display text
+            c := d.CurrencyCellClass.Create(aRow); //if we do that we will lose the special format in display text
             if d.AppendTotals  then
               c.AsCurrency := d.SubTotal;
           end;

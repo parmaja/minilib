@@ -26,6 +26,9 @@ type
 
 
   {$ifdef FPC}
+
+  { TmnObjectList }
+
   TmnObjectList<_Object_> = class(TObjectList)
   {$else}
   TmnObjectList<_Object_: class> = class(TObjectList<_Object_>)
@@ -39,6 +42,7 @@ type
     procedure Created; virtual;
     procedure Added(Item: _Object_); virtual;
     function Add(Item: _Object_): Integer;
+    function Extract(Item: _Object_): _Object_;
 
     {$ifdef FPC}
     property Items[Index: Integer]: _Object_ read GetItem; default;
@@ -118,6 +122,11 @@ begin
   Added(Item);
 end;
 
+function TmnObjectList<_Object_>.Extract(Item: _Object_): _Object_;
+begin
+  Result := _Object_(inherited Extract(Item));
+end;
+
 procedure TmnObjectList<_Object_>.Created;
 begin
 end;
@@ -128,9 +137,6 @@ begin
   Created;
 end;
 
-
-
-{/$ifdef FPC}
 { TmnNamedObjectList }
 
 function  TmnNamedObjectList<_Object_>.Find(const Name: string): _Object_;
@@ -192,6 +198,5 @@ begin
     FCurrent := nil;
 end;
  }
-{.$endif}
 
 end.

@@ -108,8 +108,20 @@ function ExpandToPath(FileName: string; Path: string; Root: string = ''): string
   sCRLF = #13#10 \r\n
 }
 
+const
+  cDefEscapeChars =  [#8, #9, #10, #13, '\', '"'];
+  cDefEscapeStrings = ['b', 't', 'n', 'r', '\', '"'];
+  cDefEscapePrefix = '\';
+
 function EscapeString(const S: string; Esc: string; Chars: array of Char; Escapes: array of string): string;
 function DescapeString(const S: string; Esc: string; Chars: array of Char; Escapes: array of string): string;
+
+function EscapeStringC(const S: string): string;
+function DescapeStringC(const S: string): string;
+
+//TODO pascal
+//function EscapeStringPas(const S: string): string;
+//function DescapeStringPas(const S: string): string;
 
 //IncludePathSeparator add the Delimiter when S not = ''
 function IncludePathSeparator(const S: string): string;
@@ -767,6 +779,15 @@ begin
   end;
 end;
 
+function EscapeStringC(const S: string): string;
+begin
+  Result := EscapeString(s, '\', [#8, #9, #10, #13, '\', '"'], ['b', 't', 'n', 'r', '\', '"']);
+end;
+
+function DescapeStringC(const S: string): string;
+begin
+  Result := DescapeString(s, '\', [#8, #9, #10, #13, '\', '"'], ['b', 't', 'n', 'r', '\', '"']);
+end;
 
 function IncludePathSeparator(const S: string): string;
 begin
