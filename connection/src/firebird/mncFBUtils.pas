@@ -24,6 +24,7 @@ const
   FBLocalBufferLength = 512;
   FBBigLocalBufferLength = FBLocalBufferLength * 2;
   FBHugeLocalBufferLength = FBBigLocalBufferLength * 20;
+  FBDateDelta = 15018;
 
 procedure FBRaiseError(Error: TFBError; const Args: array of const); overload;
 procedure FBRaiseError(const StatusVector: TStatusVector); overload;

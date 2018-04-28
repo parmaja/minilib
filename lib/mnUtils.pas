@@ -118,6 +118,7 @@ function DescapeString(const S: string; Esc: string; Chars: array of Char; Escap
 
 function EscapeStringC(const S: string): string;
 function DescapeStringC(const S: string): string;
+function ToUnixPathDelimiter(const S: string): string;
 
 //TODO pascal
 //function EscapeStringPas(const S: string): string;
@@ -789,10 +790,15 @@ begin
   Result := DescapeString(s, '\', [#8, #9, #10, #13, '\', '"'], ['b', 't', 'n', 'r', '\', '"']);
 end;
 
+function ToUnixPathDelimiter(const S: string): string;
+begin
+  Result := StringReplace(S, '\', '/', [rfReplaceAll]);
+end;
+
 function IncludePathSeparator(const S: string): string;
 begin
   if (s <> '') and (RightStr(S, 1) <> DirectorySeparator) then
-    Result := s + DirectorySeparator
+    Result := s + PathDelim
   else
     Result := s;
 end;

@@ -781,14 +781,11 @@ begin
         begin
           FBClient.isc_decode_date(PISC_QUAD(sqldata), @tm_date);
           try
-            Result := EncodeDate(Word(tm_date.tm_year + 1900), Word(tm_date.tm_mon + 1),
-              Word(tm_date.tm_mday));
+            Result := EncodeDate(Word(tm_date.tm_year + 1900), Word(tm_date.tm_mon + 1), Word(tm_date.tm_mday));
             if Result >= 0 then
-              Result := Result + EncodeTime(Word(tm_date.tm_hour), Word(tm_date.tm_min),
-                Word(tm_date.tm_sec), 0)
+              Result := Result + EncodeTime(Word(tm_date.tm_hour), Word(tm_date.tm_min), Word(tm_date.tm_sec), 0)
             else
-              Result := Result - EncodeTime(Word(tm_date.tm_hour), Word(tm_date.tm_min),
-                Word(tm_date.tm_sec), 0)
+              Result := Result - EncodeTime(Word(tm_date.tm_hour), Word(tm_date.tm_min), Word(tm_date.tm_sec), 0)
           except
             on E: EConvertError do
             begin

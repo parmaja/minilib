@@ -193,7 +193,7 @@ type
     function GetItem(Index: Integer): TmncFBField;
   protected
     function GetModified: Boolean;
-    function CreateField(vColumn: TmncColumn): TmncField; override;
+    function DoCreateField(vColumn: TmncColumn): TmncField; override;
     procedure Detach; override;
   public
     constructor Create(vColumns: TmncColumns); override;
@@ -937,7 +937,7 @@ begin
     end;
 end;
 
-function TmncFBFields.CreateField(vColumn: TmncColumn): TmncField;
+function TmncFBFields.DoCreateField(vColumn: TmncColumn): TmncField;
 begin
   Result := TmncFBField.Create(vColumn);
 end;

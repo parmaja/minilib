@@ -17,7 +17,8 @@
       </Other>
     </CompilerOptions>
     <Description Value="MiniLib Lazarus library"/>
-    <Files Count="17">
+    <Version Major="1"/>
+    <Files Count="19">
       <Item1>
         <Filename Value="PHPUtils.pas"/>
         <UnitName Value="PHPUtils"/>
@@ -86,6 +87,14 @@
         <Filename Value="syn/mnSynHighlighterMultiProc.pas"/>
         <UnitName Value="mnSynHighlighterMultiProc"/>
       </Item17>
+      <Item18>
+        <Filename Value="syn/mnSynHighlighterGo.pas"/>
+        <UnitName Value="mnSynHighlighterGo"/>
+      </Item18>
+      <Item19>
+        <Filename Value="syn/GoKeywords.inc"/>
+        <Type Value="Include"/>
+      </Item19>
     </Files>
     <RequiredPkgs Count="2">
       <Item1>

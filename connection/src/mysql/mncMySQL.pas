@@ -112,7 +112,7 @@ type
 
   TmncMySQLFields = class(TmncFields)
   protected
-    function CreateField(vColumn: TmncColumn): TmncField; override;
+    function DoCreateField(vColumn: TmncColumn): TmncField; override;
   end;
 
   { TmncMySQLParams }
@@ -465,7 +465,7 @@ end;
 
 { TmncMySQLFields }
 
-function TmncMySQLFields.CreateField(vColumn: TmncColumn): TmncField;
+function TmncMySQLFields.DoCreateField(vColumn: TmncColumn): TmncField;
 begin
   Result := TmncMySQLField.Create(vColumn);
 end;

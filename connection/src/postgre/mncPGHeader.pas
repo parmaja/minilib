@@ -81,7 +81,9 @@ type
     PGRES_BAD_RESPONSE, { an unexpected response was recv'd from
       the backend }
     PGRES_NONFATAL_ERROR,
-    PGRES_FATAL_ERROR
+    PGRES_FATAL_ERROR,
+    PGRES_COPY_BOTH,
+    PGRES_SINGLE_TUPLE
     );
 
 { String descriptions of the TExecStatusTypes }
@@ -243,6 +245,9 @@ type
   //PAnsiChar = PUtf8Char
   TPQPrepare = function(Handle: PPGconn; Name, Query: PAnsiChar; nParams: Integer; pTypes: Pointer): PPGresult; cdecl;
   TPQExecPrepared = function(Handle: PPGconn; Name: PChar; nParams: Integer; pValues, pLength, pFormats: Pointer; rFormat: Integer): PPGresult; cdecl;
+  TPQsendQueryPrepared = function(Handle: PPGconn; Name: PAnsiChar; nParams: Integer; pValues, pLength, pFormats: Pointer; rFormat: Integer): Integer; cdecl;
+  TPQsetSingleRowMode = function(Handle: PPGconn): Integer; cdecl;
+
   //p = params
   //r = result
 
@@ -360,7 +365,8 @@ var
   //belal
   PQPrepare: TPQPrepare;
   PQExecPrepared: TPQExecPrepared;
-
+  PQsendQueryPrepared: TPQsendQueryPrepared;
+  PQsetSingleRowMode: TPQsetSingleRowMode;
 
 //FirmOS: New defines
   PQescapeByteaConn: TPQescapeByteaConn;
@@ -481,6 +487,8 @@ begin
   PQmakeEmptyPGresult := GetAddress('PQmakeEmptyPGresult');
   PQPrepare := GetAddress('PQprepare');
   PQExecPrepared := GetAddress('PQexecPrepared');
+  PQsendQueryPrepared := GetAddress('PQsendQueryPrepared');
+  PQsetSingleRowMode := GetAddress('PQsetSingleRowMode');
 
 { === in fe-lobj.c === }
   lo_open := GetAddress('lo_open');

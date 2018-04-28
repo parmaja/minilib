@@ -34,14 +34,23 @@ type
   { TmncSQLConnection }
 
   TmncSQLConnection = class abstract(TmncConnection)
+  protected
+    procedure DoClone(vConn: TmncSQLConnection); virtual;
   public
     constructor Create;
-    procedure Execute(Command: string); virtual;
     function CreateSession: TmncSQLSession; virtual; abstract;
+
     function IsDatabaseExists(vName: string): Boolean; virtual; abstract;
     procedure CreateDatabase(const vName: string; CheckExists: Boolean = False); virtual; abstract;
     procedure DropDatabase(const vName: string; CheckExists: Boolean = False); virtual; abstract;
-    procedure Vacuum; virtual; abstract;
+
+    function Clone(const vResource: string): TmncSQLConnection; overload;
+    function Clone: TmncSQLConnection; overload;
+    procedure Execute(vCommand: string); virtual; overload;
+    procedure Execute(vCommand: string; vArgs: array of const); overload;
+    procedure CloneExecute(const vResource, vSQL: string; vArgs: array of const); overload;
+    procedure CloneExecute(const vResource, vSQL: string); overload;
+    procedure Vacuum; virtual; virtual;
   end;
 
   { TmncSQLMeta }
@@ -127,13 +136,64 @@ implementation
 
 { TmncSQLConnection }
 
+function TmncSQLConnection.Clone(const vResource: string): TmncSQLConnection;
+begin
+  Result := TmncSQLConnection(TmncConnectionClass(ClassType).Create);
+  try
+    Result.Resource := vResource;
+    Result.Port := Port;
+    Result.Host := Host;
+    Result.UserName := UserName;
+    Result.Password := Password;
+    DoClone(Result);
+    Result.Connect;
+  except
+    FreeAndNil(Result);
+  end;
+end;
+
+function TmncSQLConnection.Clone: TmncSQLConnection;
+begin
+  Result := Clone(Resource);
+end;
+
+procedure TmncSQLConnection.CloneExecute(const vResource, vSQL: string; vArgs: array of const);
+begin
+  CloneExecute(vResource, Format(vSQL, vArgs));
+end;
+
+procedure TmncSQLConnection.CloneExecute(const vResource, vSQL: string);
+var
+  aConn: TmncSQLConnection;
+begin
+  aConn := Clone(vResource);
+  try
+    aConn.Execute(vSQL);
+  finally
+    aConn.Free;
+  end;
+end;
+
+procedure TmncSQLConnection.Vacuum;
+begin
+end;
+
+procedure TmncSQLConnection.DoClone(vConn: TmncSQLConnection);
+begin
+end;
+
 constructor TmncSQLConnection.Create;
 begin
   inherited Create;
 end;
 
-procedure TmncSQLConnection.Execute(Command: string);
+procedure TmncSQLConnection.Execute(vCommand: string);
 begin
+end;
+
+procedure TmncSQLConnection.Execute(vCommand: string; vArgs: array of const);
+begin
+  Execute(Format(vCommand, vArgs));
 end;
 
 { TmncSQLProcessed }

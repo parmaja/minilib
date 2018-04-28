@@ -121,6 +121,9 @@ type
     procedure DoInit; virtual;
     procedure Init;
     property ParamsChanged: Boolean read FParamsChanged write FParamsChanged;
+    function QueryInterface({$IFDEF FPC}constref{$ELSE}const{$ENDIF} iid : tguid;out obj) : longint;{$IFNDEF MSWINDOWS}cdecl{$ELSE}stdcall{$ENDIF};
+    function _AddRef : longint;{$IFNDEF MSWINDOWS}cdecl{$ELSE}stdcall{$ENDIF};
+    function _Release : longint;{$IFNDEF MSWINDOWS}cdecl{$ELSE}stdcall{$ENDIF};
   public
     constructor Create;
     destructor Destroy; override;
@@ -225,10 +228,10 @@ type
 
   TmncItem = class(TmnCustomField)
   private
-    FDataType: TmncDataType;
     FBlobType: TmncBlobType;
     FIsBlob: Boolean;
   protected
+    FDataType: TmncDataType;
     function GetAsText: string; override;
     procedure SetAsText(const AValue: string); override;
     property IsBlob: Boolean read FIsBlob write FIsBlob default false;
@@ -379,9 +382,11 @@ type
     function GetField(Index: string): TmncField;
   protected
     function Find(vName: string): TmncItem; override;
-    function CreateField(vColumn: TmncColumn): TmncField; virtual; abstract;
+    function DoCreateField(vColumn: TmncColumn): TmncField; virtual; abstract;
   public
     constructor Create(vColumns: TmncColumns); virtual;
+    function CreateField(vColumn: TmncColumn): TmncField; overload;
+    function CreateField(vIndex: Integer): TmncField; overload;
     function FindField(vName: string): TmncField;
     function FieldByName(vName: string): TmncField;
     function Add(Column: TmncColumn; Value: Variant): TmncField; overload;
@@ -580,7 +585,7 @@ type
 
   TmncVariantFields = class(TmncFields)
   protected
-    function CreateField(vColumn: TmncColumn): TmncField; override;
+    function DoCreateField(vColumn: TmncColumn): TmncField; override;
   public
   end;
 
@@ -615,7 +620,7 @@ end;
 
 { TmncVariantFields }
 
-function TmncVariantFields.CreateField(vColumn: TmncColumn): TmncField;
+function TmncVariantFields.DoCreateField(vColumn: TmncColumn): TmncField;
 begin
   Result := TmncVariantField.Create(vColumn);
 end;
@@ -754,6 +759,21 @@ begin
     DoInit;
     FIsInit := True;
   end;
+end;
+
+function TmncConnection.QueryInterface(constref iid: tguid; out obj): longint; stdcall;
+begin
+
+end;
+
+function TmncConnection._AddRef: longint; stdcall;
+begin
+
+end;
+
+function TmncConnection._Release: longint; stdcall;
+begin
+
 end;
 
 { TmncCommand }
@@ -1250,6 +1270,16 @@ begin
   FColumns := vColumns;
   if FColumns = nil then
     raise EmncException.Create('vColumns must be not nil');
+end;
+
+function TmncFields.CreateField(vColumn: TmncColumn): TmncField;
+begin
+  Result := DoCreateField(vColumn);
+end;
+
+function TmncFields.CreateField(vIndex: Integer): TmncField;
+begin
+  Result := CreateField(Columns[vIndex]);
 end;
 
 function TmncFields.FindField(vName: string): TmncField;

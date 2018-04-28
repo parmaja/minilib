@@ -69,7 +69,7 @@ type
     property Synchronous: TmncSynchronous read FSynchronous write FSynchronous default syncDefault;
     property JournalMode: TmncJournalMode read FJournalMode write SetJournalMode default jrmDefault;
     property TempStore: TmncTempStore read FTempStore write SetTempStore default tmpDefault;
-    property CorrectDateTime: Boolean read FCorrectDateTime write FCorrectDateTime default False;
+    property CorrectDateTime: Boolean read FCorrectDateTime write FCorrectDateTime default True;
     {TODO
       ANALYZE
     }
@@ -125,7 +125,7 @@ type
 
   TmncSQLiteFields = class(TmncFields)
   protected
-    function CreateField(vColumn: TmncColumn): TmncField; override;
+    function DoCreateField(vColumn: TmncColumn): TmncField; override;
   end;
 
   { TmncSQLiteParams }
@@ -363,7 +363,7 @@ end;
 
 { TmncSQLiteFields }
 
-function TmncSQLiteFields.CreateField(vColumn: TmncColumn): TmncField;
+function TmncSQLiteFields.DoCreateField(vColumn: TmncColumn): TmncField;
 begin
   Result := TmncSQLiteField.Create(vColumn);
 end;
@@ -393,6 +393,7 @@ end;
 constructor TmncSQLiteConnection.Create;
 begin
   inherited Create;
+  FCorrectDateTime := True;
 end;
 
 class function TmncSQLiteConnection.Model: TmncConnectionModel;
