@@ -521,6 +521,7 @@ type
     procedure Step; virtual; //Called before DoNext
     property Request: TStrings read FRequest write SetRequest;
     property Binds: TmncBinds read FBinds; //for Dublicated names when pass the params when execute select * from t1 where f1 = ?p1 and f2 = ?p1 and f3=p2
+    function InternalExecute(vNext: Boolean): Boolean;
   public
     constructor Create; override;
     destructor Destroy; override;
@@ -536,9 +537,10 @@ type
     }
     procedure Prepare;
     function Execute: Boolean;
-    procedure Close;
     function Next: Boolean;
     function Done: Boolean;
+    function Run: Boolean; //Execute and Next for while loop() without using next at end of loop block //TODO not yet
+    procedure Close;
     procedure Clear; virtual;
     procedure Commit;
     procedure Rollback;
@@ -827,6 +829,18 @@ procedure TmncCommand.Step;
 begin
 end;
 
+function TmncCommand.InternalExecute(vNext: Boolean): Boolean;
+begin
+  if not FPrepared then
+    Prepare;
+  Clean;
+  DoExecute;
+  if not Done and vNext then //TODO Check it do we need not Done
+    Result := Next
+  else
+    Result := not Done;
+end;
+
 constructor TmncCommand.Create;
 begin
   inherited Create;
@@ -844,16 +858,17 @@ begin
   Result := GetDone;
 end;
 
+function TmncCommand.Run: Boolean;
+begin
+  if Done then
+    Result := InternalExecute(True)
+  else
+    Result := Next;
+end;
+
 function TmncCommand.Execute: Boolean;
 begin
-  if not FPrepared then
-    Prepare;
-  Clean;
-  DoExecute;
-  if not Done and FNextOnExecute then //TODO Check it do we need not Done
-    Result := Next
-  else
-    Result := not Done;
+  Result := InternalExecute(FNextOnExecute);
 end;
 
 function TmncCommand.FieldIsExist(Name: string): Boolean;

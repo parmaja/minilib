@@ -65,7 +65,10 @@ function SubStr(const Str: String; vSeperator: Char; vFromIndex, vToIndex: Integ
 function SubStr(const Str: String; vSeperator: Char; vIndex: Integer = 0): String; overload;
 function Fetch(var AInput: string; const ADelim: string = '.'; const ADelete: Boolean = True; const ACaseSensitive: Boolean = True): string; deprecated;
 
+//vPeriod is a datetime not tickcount
 function PeriodToString(vPeriod: Double; WithSeconds: Boolean): string;
+//Used by GetTickCount
+function TicksToString(vTicks: Int64): string;
 function DequoteStr(Str: string; QuoteChar: string = '"'): string; overload;
 function DequoteStrAuto(Str: string): string; overload; //deqoute use both of ' and "
 
@@ -706,6 +709,19 @@ begin
   end;
   if g then
     Result := '-' + Result;
+end;
+
+function TicksToString(vTicks: Int64): string;
+var
+  m, s, ms: Cardinal;
+begin
+  ms := vTicks;
+  s := (ms div 1000);
+  ms := (ms mod 1000);
+  m := (s div 60);
+  s := (s mod 60);
+  Result := Format('%2d:%2d:%3d', [m, s, ms]);
+  //Result := Format('%2d min  : %2d sec  : %2d msec', [m, s, ms]));
 end;
 
 procedure InitMemory(out V; Count: {$ifdef FPC}SizeInt{$else}Longint{$endif});

@@ -538,7 +538,7 @@ begin
   for c in ['-','=', '|', '+', '&','$','^', '%', '*', '!', '#'] do
     ProcTable[c] := @SymbolProc;
 
-  for c in ['{', '}', '.', ',', ';', '(', ')', '[', ']', '~'] do
+  for c in ['{', '}', '.', ',', ';', '(', ')', '[', ']', '~'] do //TODO remove '.'
     ProcTable[c] := @ControlProc;
 end;
 

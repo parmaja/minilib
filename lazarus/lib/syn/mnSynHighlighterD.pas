@@ -245,6 +245,7 @@ begin
   inherited;
   EnumerateKeywords(Ord(tkKeyword), sDKeywords, TSynValidStringChars, @DoAddKeyword);
   EnumerateKeywords(Ord(tkFunction), sDFunctions, TSynValidStringChars, @DoAddKeyword);
+  EnumerateKeywords(Ord(tkType), sDTypes, TSynValidStringChars, @DoAddKeyword);
   SetRange(rscUnknown);
 end;
 

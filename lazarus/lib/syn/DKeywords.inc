@@ -57,7 +57,7 @@
     'import,'+
     'in,'+
     'inout,'+
-    'int,'+
+    //'int,'+
     'interface,'+
     'invariant,'+
     'ireal,'+
@@ -91,6 +91,7 @@
     'typedef,'+
     'typeid,'+
     'typeof,'+
+    'ref,'+
     'ubyte,'+
     'ucent,'+
     'uint,'+
@@ -111,4 +112,6 @@
     'writeln,'+
     'write';
 
-
+  sDTypes =
+    'int,'+
+    'string';

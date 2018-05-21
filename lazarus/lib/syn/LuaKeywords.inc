@@ -69,6 +69,8 @@
     'error,'+
     'table,'+
     //BASIC
-    'int,'+
+{    'love,'+
+    'love.graphics,'+
+    'love.graphics.setColor,'+}
     'readln,'+
     'writeln';

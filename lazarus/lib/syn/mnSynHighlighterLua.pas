@@ -88,6 +88,7 @@ uses
 procedure TLuaProcessor.MakeIdentTable;
 var
   c: char;
+  i: integer;
 begin
   InitMemory(Identifiers, SizeOf(Identifiers));
   for c := 'a' to 'z' do
@@ -97,13 +98,18 @@ begin
   for c := '0' to '9' do
     Identifiers[c] := True;
   Identifiers['_'] := True;
+  //Identifiers['.'] := True;
 
   InitMemory(HashCharTable, SizeOf(HashCharTable));
-  HashCharTable['_'] := 1;
+  i := 1;
+  HashCharTable['_'] := i;
+  inc(i);
+  //HashCharTable['.'] := i;
+  //inc(i);
   for c := 'a' to 'z' do
-    HashCharTable[c] := 2 + Ord(c) - Ord('a');
+    HashCharTable[c] := i + Ord(c) - Ord('a');
   for c := 'A' to 'Z' do
-    HashCharTable[c] := 2 + Ord('z') + Ord(c) - Ord('A');
+    HashCharTable[c] := i + Ord('z') + Ord(c) - Ord('A');
 end;
 
 procedure TLuaProcessor.GreaterProc;
@@ -288,7 +294,7 @@ begin
   inherited;
   EnumerateKeywords(Ord(tkKeyword), sLuaKeywords, TSynValidStringChars, @DoAddKeyword);
   EnumerateKeywords(Ord(tkType), sLuaTypes, TSynValidStringChars, @DoAddKeyword);
-  EnumerateKeywords(Ord(tkFunction), sLuaFunctions, TSynValidStringChars, @DoAddKeyword);
+  EnumerateKeywords(Ord(tkFunction), sLuaFunctions, TSynValidStringChars + ['.'], @DoAddKeyword);
   SetRange(rscUnknown);
 end;
 

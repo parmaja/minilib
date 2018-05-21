@@ -9,8 +9,8 @@ unit mncPostgre;
  *
  * @license   modifiedLGPL (modified of http://www.gnu.org/licenses/lgpl.html)
  *            See the file COPYING.MLGPL, included in this distribution,
- * @author    Zaher Dirkey <zaher at parmaja dot com>
  * @author    Belal Hamed <belalhamed at gmail dot com>
+ * @author    Zaher Dirkey <zaher at parmaja dot com>
  * @comment   Only for postgre 8.x or later
  *}
 
@@ -101,10 +101,8 @@ type
     procedure DoDisconnect; override;
     function GetConnected:Boolean; override;
 
-    procedure DoResetConnection; virtual;
-    procedure ResetConnection(PGResult: PPGresult);
-
-
+    procedure DoResetConnection(var vResume: Boolean); virtual; //TODO wrong name
+    function ResetConnection(PGResult: PPGresult): Boolean;
   protected
     procedure RaiseError(Error: Boolean; const ExtraMsg: string = ''); overload;
     procedure RaiseError(PGResult: PPGresult); overload;
@@ -124,10 +122,7 @@ type
     function loUnlink(vOID: Integer): Integer;
     function loCopy(vOID: Integer): Integer; overload;
     //procedure AssignParams(vParams: IMiscParams);
-
     property Channel: string read FChannel write SetChannel;
-
-
   public
     constructor Create;
     destructor Destroy; override;
@@ -508,92 +503,26 @@ end;
 
 procedure TmncPGConnection.RaiseError(PGResult: PPGresult);
 var
-  //s : AnsiString;
-  //ExtraMsg: string;
+  s : AnsiString;
   t: TExecStatusType;
 begin
   t := PQresultStatus(PGResult);
   case t of
     PGRES_BAD_RESPONSE,PGRES_NONFATAL_ERROR, PGRES_FATAL_ERROR:
     begin
-      ResetConnection(PGResult);
-      //s := PQresultErrorMessage(PGResult);
-      //raise EmncException.Create('Postgre command: ' + s) {$ifdef fpc} at get_caller_frame(get_frame) {$endif};
+      if not ResetConnection(PGResult) then
+      begin
+        s := PQresultErrorMessage(PGResult);
+        raise EmncException.Create('Postgre command: ' + s) {$ifdef fpc} at get_caller_frame(get_frame) {$endif};
+      end;
     end;
   end;
 end;
 
-procedure TmncPGConnection.ResetConnection(PGResult: PPGresult);
-
-  function RunTest: Boolean;
-  {var
-    s : AnsiString;
-    r: PPGresult;
-    t: TExecStatusType;}
-  begin
-    {s := 'select 1';
-    r := PQexec(Handle, PAnsiChar(s));
-    try
-      t := PQresultStatus(r);
-      Result := t=PGRES_TUPLES_OK;
-    finally
-      PQclear(r);
-    end;}
-    Result := PQstatus(Handle)=CONNECTION_OK;
-  end;
-
-var
-  s : AnsiString;
-  i: Integer;
+function TmncPGConnection.ResetConnection(PGResult: PPGresult): Boolean;
 begin
-  while not RunTest do
-  begin
-    //if MsgBox.MsgWarning('Reset Connection --------->') then //todo move to gui
-//    begin
-      PQreset(Handle);
-      if RunTest then
-      begin
-        DoResetConnection;
-        Break;
-      end;
-{    end
-    else
-      Break;}
-  end;
-
-
-  (*s := 'select 1';
-  repeat
-    if MsgBox.MsgWarning('Reset Connection --------->') then
-    begin
-      try
-        PQreset(Handle);
-        r := PQexec(Handle, PAnsiChar(s));
-        try
-          t := PQresultStatus(r);
-          if t=PGRES_TUPLES_OK then
-          begin
-            DoResetConnection;
-            Break;
-          end;
-        finally
-          PQclear(r);
-        end;
-      except
-      end;
-      //
-    end
-    else
-    begin
-      Break;
-      //s := PQresultErrorMessage(PGResult);
-      //raise EmncException.Create('Postgre command: ' + s) {$ifdef fpc} at get_caller_frame(get_frame) {$endif};
-    end;
-  until (False);*)
-  //always raise error  is better :)
-
-  s := PQresultErrorMessage(PGResult);
-  raise EmncException.Create('Postgre command: ' + s) {$ifdef fpc} at get_caller_frame(get_frame) {$endif};
+  Result := False;
+  DoResetConnection(Result);
 end;
 
 procedure TmncPGConnection.RenameDatabase(const vName, vToName: string);
@@ -981,7 +910,7 @@ begin
 
 end;
 
-procedure TmncPGConnection.DoResetConnection;
+procedure TmncPGConnection.DoResetConnection(var vResume: Boolean);
 begin
 end;
 
