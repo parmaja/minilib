@@ -244,6 +244,7 @@ type
     function CreateDesignCell(vRow: TmnrDesignRow): TmnrDesignCell;
     property Layouts: TmnrLayouts read GetLayouts;
     property Report: TmnrCustomReport read GetReport;
+
   end;
 
   TmnrLayouts = class(TmnrLinkNodes)
@@ -2803,7 +2804,7 @@ begin
   Result := First;
   while Result<>nil do
   begin
-    if SameText(Result.Name, vName) then
+    if SameText(Result.Name, vName) or SameText(Result.Alias, vName) then
       Break
     else
       Result := Result.Next;
