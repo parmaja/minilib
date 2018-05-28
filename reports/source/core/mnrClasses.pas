@@ -352,6 +352,7 @@ type
     procedure ScaleCell(vCell: TmnrCell); virtual;
     procedure DescaleCell(vCell: TmnrCell); virtual;
     property Hidden: Boolean read FHidden write FHidden;
+    function AliasName: string;
   published
     property Name: string read FName write SetName;
     property Alias: string read FAlias write FAlias;
@@ -2121,7 +2122,7 @@ begin
     repeat
       b := SameText(c.Layout.ClassName, vName);
       b := b or SameText(c.DesignCell.Name, vName);
-      b := b or SameText((c.DesignCell as TmnrDesignCell).Alias, vName);
+      b := b or SameText((c.DesignCell as TmnrDesignCell).AliasName, vName);
 
       if b then
         Result := c
@@ -2631,6 +2632,14 @@ end;
 
 { TmnrDesignCell }
 
+function TmnrDesignCell.AliasName: string;
+begin
+  if Alias<>'' then
+    Result := Alias
+  else
+    Result := Layout.Name;
+end;
+
 procedure TmnrDesignCell.AssignTo(Dest: TPersistent);
 var
   d: TmnrDesignCell;
@@ -2804,7 +2813,7 @@ begin
   Result := First;
   while Result<>nil do
   begin
-    if SameText(Result.Name, vName) or SameText(Result.Alias, vName) then
+    if SameText(Result.Name, vName) or SameText(Result.AliasName, vName) then
       Break
     else
       Result := Result.Next;
