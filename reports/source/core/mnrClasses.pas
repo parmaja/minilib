@@ -384,6 +384,7 @@ type
     property Last: TmnrDesignCell read GetLast;
     property ByIndex[vIndex: Integer]: TmnrDesignCell read GetByIndex;
     function FindName(const vName: string): TmnrDesignCell;
+    procedure CollectCellNames(Strings: TStringList);
     procedure ClearSubTotals;
   end;
 
@@ -403,7 +404,7 @@ type
     property Section: TmnrSection read GetSection;
     property ByIndex[vIndex: Integer]: TmnrDesignRow read GetByIndex;
     function FindName(const vName: string): TmnrDesignCell;
-
+    procedure CollectCellNames(Strings: TStringList);
     procedure ClearSubTotals;
   end;
 
@@ -569,6 +570,7 @@ type
     property ByName[const vName: string]: TmnrSection read GetByName;
     function Find(const vName: string): TmnrSection;
     function FindDesignCellName(const vName: string): TmnrDesignCell;
+    procedure CollectCellNames(Strings: TStringList);
 
     property Report: TmnrCustomReport read GetReport;
     property First: TmnrSection read GetFirst;
@@ -1765,6 +1767,18 @@ begin
   end;
 end;
 
+procedure TmnrSections.CollectCellNames(Strings: TStringList);
+var
+  s: TmnrSection;
+begin
+  s := First;
+  while s <> nil do
+  begin
+    s.DesignRows.CollectCellNames(Strings);
+    s := s.Next;
+  end;
+end;
+
 procedure TmnrSections.ClearDesignItems;
 var
   s: TmnrSection;
@@ -2808,6 +2822,19 @@ begin
   end;
 end;
 
+procedure TmnrDesignRow.CollectCellNames(Strings: TStringList);
+var
+  Cell: TmnrDesignCell;
+begin
+  Cell := First;
+  while Cell <> nil do
+  begin
+    if Cell.Alias <> '' then
+      Strings.Add(Cell.Alias);
+    Cell := Cell.Next;
+  end;
+end;
+
 function TmnrDesignRow.FindName(const vName: string): TmnrDesignCell;
 begin
   Result := First;
@@ -2888,6 +2915,18 @@ begin
   while aRow<>nil do
   begin
     aRow.ClearSubTotals;
+    aRow := aRow.Next;
+  end;
+end;
+
+procedure TmnrDesignRows.CollectCellNames(Strings: TStringList);
+var
+  aRow: TmnrDesignRow;
+begin
+  aRow := First;
+  while aRow<>nil do
+  begin
+    aRow.CollectCellNames(Strings);
     aRow := aRow.Next;
   end;
 end;
