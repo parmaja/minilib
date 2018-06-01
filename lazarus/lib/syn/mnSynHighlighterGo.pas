@@ -29,7 +29,6 @@ type
   private
   protected
     function GetIdentChars: TSynIdentChars; override;
-    function KeyHash(ToHash: PChar): Integer; override;
     function GetEndOfLineAttribute: TSynHighlighterAttributes; override;
   public
     procedure QuestionProc;
@@ -41,7 +40,7 @@ type
     procedure Next; override;
 
     procedure InitIdent; override;
-    procedure MakeMethodTables; override;
+    procedure MakeProcTable; override;
     procedure MakeIdentTable; override;
   end;
 
@@ -50,7 +49,6 @@ type
   TSynGoSyn = class(TSynMultiProcSyn)
   private
   protected
-    function GetIdentChars: TSynIdentChars; override;
     function GetSampleSource: string; override;
   public
     class function GetLanguageName: string; override;
@@ -169,7 +167,7 @@ begin
   end;
 end;
 
-procedure TGoProcessor.MakeMethodTables;
+procedure TGoProcessor.MakeProcTable;
 var
   I: Char;
 begin
@@ -241,17 +239,6 @@ begin
   SetRange(rscUnknown);
 end;
 
-function TGoProcessor.KeyHash(ToHash: PChar): Integer;
-begin
-  Result := 0;
-  while ToHash^ in ['_', '0'..'9', 'a'..'z', 'A'..'Z'] do
-  begin
-    inc(Result, HashCharTable[ToHash^]);
-    inc(ToHash);
-  end;
-  fStringLen := ToHash - fToIdent;
-end;
-
 function TGoProcessor.GetEndOfLineAttribute: TSynHighlighterAttributes;
 begin
   if (Range = rscDocument) or (LastRange = rscDocument) then
@@ -278,12 +265,6 @@ begin
 
   Processors.MainProcessor := 'Go';
   Processors.DefaultProcessor := 'Go';
-end;
-
-function TSynGoSyn.GetIdentChars: TSynIdentChars;
-begin
-  //  Result := TSynValidStringChars + ['&', '#', ';', '$'];
-  Result := TSynValidStringChars + ['&', '#', '$'];
 end;
 
 class function TSynGoSyn.GetLanguageName: string;

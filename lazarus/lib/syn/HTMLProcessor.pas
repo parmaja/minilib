@@ -30,7 +30,6 @@ type
     procedure ResetRange; override;
     function GetRange: Byte; override;
     procedure SetRange(Value: Byte); override;
-    function KeyHash(ToHash: PChar): Integer; override;
   public
     procedure BraceOpenProc;
     procedure IdentProc;
@@ -47,7 +46,7 @@ type
 
     procedure Next; override;
     procedure InitIdent; override;
-    procedure MakeMethodTables; override;
+    procedure MakeProcTable; override;
     procedure MakeIdentTable; override;
   end;
 
@@ -312,7 +311,7 @@ implementation
 
 { THTMLProcessor }
 
-procedure THTMLProcessor.MakeMethodTables;
+procedure THTMLProcessor.MakeProcTable;
 var
   I: char;
 begin
@@ -680,17 +679,6 @@ begin
   EnumerateKeywords(Ord(tkKeyword), sHTMLKeywords, TSynValidStringChars, @DoAddKeyword);
   FRange := rshtmlText;
   FAndCode := -1;
-end;
-
-function THTMLProcessor.KeyHash(ToHash: PChar): Integer;
-begin
-  Result := 0;
-  while ToHash^ in ['!', '_', '0'..'9', 'a'..'z', 'A'..'Z'] do
-  begin
-    inc(Result, HashCharTable[ToHash^]);
-    inc(ToHash);
-  end;
-  FStringLen := ToHash - FToIdent;
 end;
 
 function THTMLProcessor.GetIdentChars: TSynIdentChars;

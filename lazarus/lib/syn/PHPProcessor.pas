@@ -36,7 +36,6 @@ type
     function GetRange: Byte; override;
     procedure SetRange(Value: Byte); override;
     procedure SetRange(Value: TPHPRangeState); overload;
-    function KeyHash(ToHash: PChar): Integer; override;
     procedure InternalCommentProc;
     function GetEndOfLineAttribute: TSynHighlighterAttributes; override;
   public
@@ -72,7 +71,7 @@ type
     property Range: TPHPRangeState read FRange;
 
     procedure InitIdent; override;
-    procedure MakeMethodTables; override;
+    procedure MakeProcTable; override;
     procedure MakeIdentTable; override;
   end;
 
@@ -360,7 +359,7 @@ begin
   InternalCommentProc;
 end;
 
-procedure TPHPProcessor.MakeMethodTables;
+procedure TPHPProcessor.MakeProcTable;
 var
   I: Char;
 begin
@@ -591,17 +590,6 @@ begin
   SetRange(rsphpUnknown);
 end;
 
-function TPHPProcessor.KeyHash(ToHash: PChar): Integer;
-begin
-  Result := 0;
-  while ToHash^ in ['_', '0'..'9', 'a'..'z', 'A'..'Z'] do
-  begin
-    inc(Result, HashCharTable[ToHash^]);
-    inc(ToHash);
-  end;
-  fStringLen := ToHash - fToIdent;
-end;
-
 procedure TPHPProcessor.InternalCommentProc;
 begin
   while not (Parent.FLine[Parent.Run] in [#0, #10, #13]) do
@@ -630,4 +618,7 @@ begin
 end;
 
 end.
+
+
+
 

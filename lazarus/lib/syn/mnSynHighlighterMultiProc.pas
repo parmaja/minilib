@@ -42,16 +42,16 @@ type
     FIndex: integer;
     FParent: TSynMultiProcSyn;
     function KeyComp(const aKey: string): boolean;
+    function KeyHash(ToHash: PChar): integer;
   protected
-    procedure DoAddKeyword(AKeyword: string; AKind: integer);
     function GetIdentChars: TSynIdentChars; virtual;
     procedure ResetRange; virtual;
     function GetRange: Byte; virtual;
     procedure SetRange(Value: Byte); virtual;
-    function KeyHash(ToHash: PChar): integer; virtual;
-    function IdentKind(MayBe: PChar): TtkTokenKind; virtual;
     function GetEndOfLineAttribute: TSynHighlighterAttributes; virtual;
 
+    procedure DoAddKeyword(AKeyword: string; AKind: integer);
+    function IdentKind(MayBe: PChar): TtkTokenKind;
   public
     FStringLen: integer;
     FToIdent: PChar;
@@ -64,7 +64,7 @@ type
     procedure SetLine(const NewValue: string; LineNumber: integer); virtual;
     procedure InitIdent; virtual;
     procedure MakeIdentTable; virtual;
-    procedure MakeMethodTables; virtual;
+    procedure MakeProcTable; virtual;
     property Parent: TSynMultiProcSyn read FParent;
     property Name: string read FName write FName;
     property Index: integer read FIndex;
@@ -113,7 +113,7 @@ type
     procedure NumberProc;
 
     procedure MakeIdentTable; override;
-    procedure MakeMethodTables; override;
+    procedure MakeProcTable; override;
   end;
 
   TSynProcessors = class(TObjectList)
@@ -156,7 +156,6 @@ type
     FCommentAttri: TSynHighlighterAttributes;
     FDocumentAttri: TSynHighlighterAttributes;
     FTypeAttri: TSynHighlighterAttributes;
-    //FValueAttri: TSynHighlighterAttributes;
     FFunctionAttri: TSynHighlighterAttributes;
     FIdentifierAttri: TSynHighlighterAttributes;
     FTextAttri: TSynHighlighterAttributes;
@@ -169,12 +168,12 @@ type
     FProcessorAttri: TSynHighlighterAttributes;
 
     procedure InitIdent;
-    procedure MakeMethodTables;
+    procedure MakeProcTable;
     procedure MakeIdentTable;
   protected
     FProcessors: TSynProcessors;
     procedure InitProcessors; virtual;
-    function GetIdentChars: TSynIdentChars; override;
+    function GetIdentChars: TSynIdentChars; override; final;
     function GetSampleSource: string; override;
   public
     class function GetLanguageName: string; override;
@@ -215,7 +214,6 @@ type
     property StringAttri: TSynHighlighterAttributes read FStringAttri write FStringAttri;
     property SymbolAttri: TSynHighlighterAttributes read FSymbolAttri write FSymbolAttri;
     property VariableAttri: TSynHighlighterAttributes read FVariableAttri write FVariableAttri;
-    //property ValueAttri: TSynHighlighterAttributes read FValueAttri write FValueAttri;
     property ProcessorAttri: TSynHighlighterAttributes read fProcessorAttri write fProcessorAttri;
   end;
 
@@ -262,7 +260,7 @@ var
   i: integer;
   pKey1, pKey2: PChar;
 begin
-  pKey1 := fToIdent;
+  pKey1 := FToIdent;
   // Note: FStringLen is always > 0 !
   pKey2 := pointer(aKey);
   for i := 1 to FStringLen do
@@ -523,7 +521,7 @@ begin
   inherited MakeIdentTable;
 end;
 
-procedure TCommonSynProcessor.MakeMethodTables;
+procedure TCommonSynProcessor.MakeProcTable;
 var
   c: ansichar;
 begin
@@ -549,12 +547,12 @@ begin
   StringProc;
 end;
 
-procedure TSynMultiProcSyn.MakeMethodTables;
+procedure TSynMultiProcSyn.MakeProcTable;
 var
   i: integer;
 begin
   for i := 0 to Processors.Count - 1 do
-    Processors[i].MakeMethodTables;
+    Processors[i].MakeProcTable;
 end;
 
 procedure TSynMultiProcSyn.MakeIdentTable;
@@ -639,7 +637,7 @@ begin
   SetAttributesOnChange(@DefHighlightChange);
   MakeIdentTable;
   InitIdent;
-  MakeMethodTables;
+  MakeProcTable;
   //FDefaultFilter := SYNS_FilterMultiProc;
 end;
 
@@ -782,8 +780,7 @@ end;
 
 function TSynMultiProcSyn.GetIdentChars: TSynIdentChars;
 begin
-  //  Result := TSynValidStringChars + ['&', '#', ';', '$'];
-  Result := TSynValidStringChars + ['&', '#', '$'];
+  Result := Processors.Current.GetIdentChars;
 end;
 
 class function TSynMultiProcSyn.GetLanguageName: string;
@@ -793,32 +790,7 @@ end;
 
 function TSynMultiProcSyn.GetSampleSource: string;
 begin
-  Result := '<!DOCTYPE html PUBLIC "-//W3C//DTD MultiProc 1.0 Strict//EN" "http://www.w3.org/TR/MultiProc1/DTD/MultiProc1-strict.dtd">'#13#10 +
-    '<html dir="ltr">'#13#10 +
-    '  <body class="normal">'#13#10 +
-    '  HTML and PHP syntax editor'#13#10 +
-    '<?php'#13#10 +
-    '// Syntax highlighting'#13#10 +
-    '/**'#13#10 +
-    ' It is a Documentation comments'#13#10 +
-    '*/'#13#10 +
-    '  function printNumber()'#13#10 +
-    '  {'#13#10 +
-    '    $number = 1234;'#13#10 +
-    '    print "The number is $number";'#13#10 +
-    '    /* '#13#10 +
-    '    Multi line comment '#13#10 +
-    '    */ '#13#10 +
-    '    for ($i = 0; $i <= $number; $i++)'#13#10 +
-    '    {'#13#10 +
-    '      $x++;'#13#10 +
-    '      $x--;'#13#10 +
-    '      $x += 1.0;'#13#10 +
-    '    }'#13#10 +
-    ' }'#13#10 +
-    '?>'#13#10 +
-    '  </body>'#13#10 +
-    '</html>'#13#10;
+  Result := '';
 end;
 
 { TSynProcessor }
@@ -828,7 +800,7 @@ begin
 
 end;
 
-procedure TSynProcessor.MakeMethodTables;
+procedure TSynProcessor.MakeProcTable;
 begin
 end;
 
@@ -870,7 +842,7 @@ end;
 function TSynProcessor.KeyHash(ToHash: PChar): integer;
 begin
   Result := 0;
-  while ToHash^ in ['_', '0'..'9', 'a'..'z', 'A'..'Z'] do
+  while ToHash^ in ['.', '!', '_', '0'..'9', 'a'..'z', 'A'..'Z'] do
   begin
     inc(Result, HashCharTable[ToHash^]);
     inc(ToHash);

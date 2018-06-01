@@ -28,7 +28,6 @@ type
   TCppProcessor = class(TCommonSynProcessor)
   protected
     function GetIdentChars: TSynIdentChars; override;
-    function KeyHash(ToHash: PChar): Integer; override;
     function GetEndOfLineAttribute: TSynHighlighterAttributes; override;
   public
     procedure QuestionProc;
@@ -41,7 +40,7 @@ type
     procedure Next; override;
 
     procedure InitIdent; override;
-    procedure MakeMethodTables; override;
+    procedure MakeProcTable; override;
     procedure MakeIdentTable; override;
   end;
 
@@ -50,7 +49,6 @@ type
   TmnSynCppSyn = class(TSynMultiProcSyn)
   private
   protected
-    function GetIdentChars: TSynIdentChars; override;
     function GetSampleSource: string; override;
   public
     class function GetLanguageName: string; override;
@@ -168,7 +166,7 @@ begin
   end;
 end;
 
-procedure TCppProcessor.MakeMethodTables;
+procedure TCppProcessor.MakeProcTable;
 var
   I: Char;
 begin
@@ -247,17 +245,6 @@ begin
   SetRange(rscUnknown);
 end;
 
-function TCppProcessor.KeyHash(ToHash: PChar): Integer;
-begin
-  Result := 0;
-  while ToHash^ in ['_', '0'..'9', 'a'..'z', 'A'..'Z'] do
-  begin
-    inc(Result, HashCharTable[ToHash^]);
-    inc(ToHash);
-  end;
-  fStringLen := ToHash - fToIdent;
-end;
-
 function TCppProcessor.GetEndOfLineAttribute: TSynHighlighterAttributes;
 begin
   if (Range = rscDocument) or (LastRange = rscDocument) then
@@ -284,12 +271,6 @@ begin
 
   Processors.MainProcessor := 'Cpp';
   Processors.DefaultProcessor := 'Cpp';
-end;
-
-function TmnSynCppSyn.GetIdentChars: TSynIdentChars;
-begin
-  //  Result := TSynValidStringChars + ['&', '#', ';', '$'];
-  Result := TSynValidStringChars + ['&', '#', '$'];
 end;
 
 class function TmnSynCppSyn.GetLanguageName: string;

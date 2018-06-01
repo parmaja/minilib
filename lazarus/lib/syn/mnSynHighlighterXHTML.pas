@@ -23,7 +23,6 @@ type
   TSynXHTMLSyn = class(TSynMultiProcSyn)
   private
   protected
-    function GetIdentChars: TSynIdentChars; override;
     function GetSampleSource: string; override;
   public
     class function GetLanguageName: string; override;
@@ -58,12 +57,6 @@ begin
 
   Processors.MainProcessor := 'html';
   Processors.DefaultProcessor := 'php';
-end;
-
-function TSynXHTMLSyn.GetIdentChars: TSynIdentChars;
-begin
-  //  Result := TSynValidStringChars + ['&', '#', ';', '$'];
-  Result := TSynValidStringChars + ['&', '#', '$'];
 end;
 
 class function TSynXHTMLSyn.GetLanguageName: string;

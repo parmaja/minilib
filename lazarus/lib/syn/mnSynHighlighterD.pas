@@ -29,7 +29,6 @@ type
   private
   protected
     function GetIdentChars: TSynIdentChars; override;
-    function KeyHash(ToHash: PChar): Integer; override;
     function GetEndOfLineAttribute: TSynHighlighterAttributes; override;
   public
     procedure QuestionProc;
@@ -41,7 +40,7 @@ type
     procedure Next; override;
 
     procedure InitIdent; override;
-    procedure MakeMethodTables; override;
+    procedure MakeProcTable; override;
     procedure MakeIdentTable; override;
   end;
 
@@ -50,7 +49,6 @@ type
   TSynDSyn = class(TSynMultiProcSyn)
   private
   protected
-    function GetIdentChars: TSynIdentChars; override;
     function GetSampleSource: string; override;
   public
     class function GetLanguageName: string; override;
@@ -101,6 +99,8 @@ begin
   for c := '0' to '9' do
     Identifiers[c] := True;
   Identifiers['_'] := True;
+
+  Identifiers['.'] := True;//zaher
 
   InitMemory(HashCharTable, SizeOf(HashCharTable));
   HashCharTable['_'] := 1;
@@ -176,7 +176,7 @@ begin
   end;
 end;
 
-procedure TDProcessor.MakeMethodTables;
+procedure TDProcessor.MakeProcTable;
 var
   I: Char;
 begin
@@ -249,17 +249,6 @@ begin
   SetRange(rscUnknown);
 end;
 
-function TDProcessor.KeyHash(ToHash: PChar): Integer;
-begin
-  Result := 0;
-  while ToHash^ in ['_', '0'..'9', 'a'..'z', 'A'..'Z'] do
-  begin
-    inc(Result, HashCharTable[ToHash^]);
-    inc(ToHash);
-  end;
-  fStringLen := ToHash - fToIdent;
-end;
-
 function TDProcessor.GetEndOfLineAttribute: TSynHighlighterAttributes;
 begin
   if (Range = rscDocument) or (LastRange = rscDocument) then
@@ -270,7 +259,7 @@ end;
 
 function TDProcessor.GetIdentChars: TSynIdentChars;
 begin
-  Result := TSynValidStringChars + ['$'];
+  Result := TSynValidStringChars + ['$', '.'];
 end;
 
 constructor TSynDSyn.Create(AOwner: TComponent);
@@ -286,12 +275,6 @@ begin
 
   Processors.MainProcessor := 'D';
   Processors.DefaultProcessor := 'D';
-end;
-
-function TSynDSyn.GetIdentChars: TSynIdentChars;
-begin
-  //  Result := TSynValidStringChars + ['&', '#', ';', '$'];
-  Result := TSynValidStringChars + ['&', '#', '$'];
 end;
 
 class function TSynDSyn.GetLanguageName: string;

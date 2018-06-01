@@ -44,7 +44,7 @@ type
     procedure Next; override;
 
     procedure InitIdent; override;
-    procedure MakeMethodTables; override;
+    procedure MakeProcTable; override;
     procedure MakeIdentTable; override;
   end;
 
@@ -53,7 +53,6 @@ type
   TmnSynLuaSyn = class(TSynMultiProcSyn)
   private
   protected
-    function GetIdentChars: TSynIdentChars; override;
     function GetSampleSource: string; override;
   public
     class function GetLanguageName: string; override;
@@ -220,7 +219,7 @@ begin
   end;
 end;
 
-procedure TLuaProcessor.MakeMethodTables;
+procedure TLuaProcessor.MakeProcTable;
 var
   I: Char;
 begin
@@ -324,12 +323,6 @@ begin
 
   Processors.MainProcessor := 'Lua';
   Processors.DefaultProcessor := 'Lua';
-end;
-
-function TmnSynLuaSyn.GetIdentChars: TSynIdentChars;
-begin
-  //  Result := TSynValidStringChars + ['&', '#', ';', '$'];
-  Result := TSynValidStringChars + ['&', '#', '$'];
 end;
 
 class function TmnSynLuaSyn.GetLanguageName: string;
