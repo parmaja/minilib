@@ -499,6 +499,7 @@ begin
   else
     begin
       Parent.FTokenID := ScanIdent(Parent.FLine + Parent.Run);//check here maybe no need to inc(run)
+      //Inc(Parent.Run);
       while not (Parent.FLine[Parent.Run] in [#0..#32, '=', '"', '>']) do
         Inc(Parent.Run);
     end;
@@ -554,23 +555,22 @@ begin
         iOpenChar := '"';
         Parent.fTokenID := tkString;
       end;
+    rshtmlValue:
+    begin
+      iOpenChar := Parent.FLine[Parent.Run];
+      if iOpenChar = '"' then
+        fRange := rshtmlStringDQ
+      else
+        fRange := rshtmlStringSQ;
+      Parent.fTokenID := tkString;
+      Inc(Parent.Run); { jumps over the opening char }
+    end
   else
     begin
       iOpenChar := Parent.FLine[Parent.Run];
-      if fRange = rshtmlValue then
-      begin
-        if iOpenChar = '"' then
-          fRange := rshtmlStringDQ
-        else
-          fRange := rshtmlStringSQ;
-        Parent.fTokenID := tkString;
-      end
-      else
-      begin
-        IdentProc;
-        Exit;
-      end;
+      IdentProc;
       Inc(Parent.Run); { jumps over the opening char }
+      Exit;
     end;
   end;
 
