@@ -14,7 +14,7 @@ interface
 
 uses
   Classes, SysUtils, Controls, Graphics,
-  SynEdit, SynEditTypes, SynEditHighlighter, mnSynHighlighterMultiProc;
+  SynEdit, SynEditHighlighter, mnSynHighlighterMultiProc;
 
 type
 

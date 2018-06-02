@@ -14,35 +14,40 @@ interface
 
 uses
   Classes, Contnrs, SysUtils, Controls, Graphics,
-  SynEdit, SynEditTypes, SynEditHighlighter, SynHighlighterHashEntries;
+  SynEdit, SynEditTypes, SynEditHighlighter;
 
 type
-  TtkTokenKind = (tkUnknown, tkNull, tkSpace, tkComment, tkDocument, tkIdentifier, tkKeyword, tkType, tkFunction, tkSymbol, tkNumber, //tkControl, //like {};
-    tkString, tkValue, tkText, tkVariable, tkProcessor);
+  TtkTokenKind = (tkUnknown, tkNull, tkSpace, tkComment, tkDocument, tkIdentifier, tkKeyword, tkType, tkFunction, tkSymbol, tkNumber,
+    tkString, tkText, tkVariable, tkProcessor); //tkControl, //like {};
 
   //Common range used for some syntax
   TCommonRangeState = (rscUnknown, rscComment, rscGrandComment, rscDocument, rscStringSQ, rscStringDQ, rscStringBQ, rscStringSpecial); //BackQuote
 
   TProcTableProc = procedure of object;
+  TProcTable = array[AnsiChar] of TProcTableProc;
 
   PIdentifierTable = ^TIdentifierTable;
   TIdentifierTable = array[AnsiChar] of bytebool;
 
-  PHashCharTable = ^THashCharTable;
-  THashCharTable = array[AnsiChar] of Integer;
-
   TSynMultiProcSyn = class;
+
+  { TTokenObject }
+
+  TTokenObject = class(TObject)
+    Keyword: string;
+    Kind: TtkTokenKind;
+  public
+    constructor Create(AKeyword: string; AKind: TtkTokenKind);
+  end;
 
   { TSynProcessor }
 
   TSynProcessor = class(TObject)
   private
-    FKeywords: TSynHashEntryList;
+    FKeywords: TFPObjectHashTable;
     FName: string;
     FIndex: integer;
     FParent: TSynMultiProcSyn;
-    function KeyComp(const aKey: string): boolean;
-    function KeyHash(ToHash: PChar): integer;
   protected
     function GetIdentChars: TSynIdentChars; virtual;
     procedure ResetRange; virtual;
@@ -51,20 +56,20 @@ type
     function GetEndOfLineAttribute: TSynHighlighterAttributes; virtual;
 
     procedure DoAddKeyword(AKeyword: string; AKind: integer);
-    function IdentKind(MayBe: PChar): TtkTokenKind;
+    function ScanIdent(const Str: string): TtkTokenKind;
   public
-    FStringLen: integer;
-    FToIdent: PChar;
-    Identifiers: TIdentifierTable;
-    HashCharTable: THashCharTable;
-    ProcTable: array[#0..#255] of TProcTableProc;
+    IdentTable: TIdentifierTable;
+    ProcTable: TProcTable;
     constructor Create(AParent: TSynMultiProcSyn; AName: string); virtual;
     destructor Destroy; override;
     procedure Next; virtual;
     procedure SetLine(const NewValue: string; LineNumber: integer); virtual;
     procedure InitIdent; virtual;
-    procedure MakeIdentTable; virtual;
+    procedure MakeIdentTable;
     procedure MakeProcTable; virtual;
+
+    procedure IdentProc; virtual;
+
     property Parent: TSynMultiProcSyn read FParent;
     property Name: string read FName write FName;
     property Index: integer read FIndex;
@@ -91,6 +96,7 @@ type
     procedure InternalCommentProc; //   /* */
     procedure InternalGrandCommentProc; //    /+ +/
 
+
     procedure WordProc; //Identifire started with char like #define
     procedure SLCommentProc; //Single Line Comment //comment or #comment depend on who started
     procedure CommentProc;
@@ -112,7 +118,6 @@ type
     procedure ControlProc;
     procedure NumberProc;
 
-    procedure MakeIdentTable; override;
     procedure MakeProcTable; override;
   end;
 
@@ -255,46 +260,33 @@ begin
   Current := r shr 16 and $FF;
 end;
 
-function TSynProcessor.KeyComp(const aKey: string): boolean;
-var
-  i: integer;
-  pKey1, pKey2: PChar;
+{ TTokenObject }
+
+constructor TTokenObject.Create(AKeyword: string; AKind: TtkTokenKind);
 begin
-  pKey1 := FToIdent;
-  // Note: FStringLen is always > 0 !
-  pKey2 := pointer(aKey);
-  for i := 1 to FStringLen do
-  begin
-    if HashCharTable[pKey1^] <> HashCharTable[pKey2^] then
-    begin
-      Result := False;
-      exit;
-    end;
-    Inc(pKey1);
-    Inc(pKey2);
-  end;
-  Result := True;
+  inherited Create;
+  Keyword := AKeyword;
+  Kind := AKind;
 end;
 
-function TSynProcessor.IdentKind(MayBe: PChar): TtkTokenKind;
+function TSynProcessor.ScanIdent(const Str: string): TtkTokenKind;
 var
-  Entry: TSynHashEntry;
+  Entry: TTokenObject;
+  IdentChars: TSynIdentChars;
+  AKeyword: string;
+  i: Integer;
 begin
-  FToIdent := MayBe;
-  Entry := FKeywords[KeyHash(MayBe)];
-  while Assigned(Entry) do
-  begin
-    if Entry.KeywordLen > FStringLen then
-      break
-    else if Entry.KeywordLen = FStringLen then
-      if KeyComp(Entry.Keyword) then
-      begin
-        Result := TtkTokenKind(Entry.Kind);
-        exit;
-      end;
-    Entry := Entry.Next;
-  end;
-  Result := tkIdentifier;
+  IdentChars := GetIdentChars;
+  i := 1;
+  while Str[i] in IdentChars do
+    Inc(i);
+  AKeyword := Copy(Str, 1, i - 1);
+  inc(Parent.Run, i - 1);
+  Entry := FKeywords.Items[AKeyword] as TTokenObject;
+  if Entry <> nil then
+    Result := Entry.Kind
+  else
+    Result := tkIdentifier;
 end;
 
 function TSynProcessor.GetEndOfLineAttribute: TSynHighlighterAttributes;
@@ -303,11 +295,8 @@ begin
 end;
 
 procedure TSynProcessor.DoAddKeyword(AKeyword: string; AKind: integer);
-var
-  HashValue: integer;
 begin
-  HashValue := KeyHash(PChar(AKeyword));
-  FKeywords[HashValue] := TSynHashEntry.Create(AKeyword, AKind);
+  FKeywords.Add(AKeyword, TTokenObject.Create(AKeyword, TtkTokenKind(AKind)));
 end;
 
 { TCommonSynProcessor }
@@ -516,11 +505,6 @@ begin
   end;
 end;
 
-procedure TCommonSynProcessor.MakeIdentTable;
-begin
-  inherited MakeIdentTable;
-end;
-
 procedure TCommonSynProcessor.MakeProcTable;
 var
   c: ansichar;
@@ -632,7 +616,7 @@ begin
   FProcessorAttri := TSynHighlighterAttributes.Create('Processor');
   FProcessorAttri.Style := [fsBold];
   FProcessorAttri.Foreground := $0000006C;
-  AddAttribute(fProcessorAttri);
+  AddAttribute(FProcessorAttri);
 
   SetAttributesOnChange(@DefHighlightChange);
   MakeIdentTable;
@@ -658,11 +642,8 @@ begin
 end;
 
 function TSynMultiProcSyn.IsKeyword(const AKeyword: string): boolean;
-var
-  tk: TtkTokenKind;
 begin
-  tk := Processors.Current.IdentKind(PChar(AKeyword));
-  Result := tk in [tkKeyword, tkFunction];
+  Result := (Processors.Current.FKeywords.Items[AKeyword] as TTokenObject).Kind in [tkKeyword, tkFunction];
 end;
 
 procedure TSynMultiProcSyn.Next;
@@ -796,12 +777,22 @@ end;
 { TSynProcessor }
 
 procedure TSynProcessor.MakeIdentTable;
+var
+  c: char;
+  chars: TSynIdentChars;
 begin
-
+  chars := GetIdentChars;
+  for c in chars do
+    IdentTable[c] := True;
 end;
 
 procedure TSynProcessor.MakeProcTable;
 begin
+end;
+
+procedure TSynProcessor.IdentProc;
+begin
+  Parent.FTokenID := ScanIdent(Parent.FLine + Parent.Run);
 end;
 
 procedure TSynProcessor.Next;
@@ -817,7 +808,7 @@ begin
   inherited Create;
   FName := AName;
   FParent := AParent;
-  FKeywords := TSynHashEntryList.Create;
+  FKeywords := TFPObjectHashTable.Create;
 end;
 
 destructor TSynProcessor.Destroy;
@@ -837,17 +828,6 @@ end;
 
 procedure TSynProcessor.SetRange(Value: Byte);
 begin
-end;
-
-function TSynProcessor.KeyHash(ToHash: PChar): integer;
-begin
-  Result := 0;
-  while ToHash^ in ['.', '!', '_', '0'..'9', 'a'..'z', 'A'..'Z'] do
-  begin
-    inc(Result, HashCharTable[ToHash^]);
-    inc(ToHash);
-  end;
-  FStringLen := ToHash - FToIdent;
 end;
 
 procedure TSynProcessor.InitIdent;
@@ -988,7 +968,6 @@ begin
   for i := 0 to Processors.Count - 1 do
     Processors[i].InitIdent;
 end;
-
 
 end.
 

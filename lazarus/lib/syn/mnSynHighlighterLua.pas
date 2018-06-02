@@ -37,7 +37,7 @@ type
     procedure BracketProc;
     procedure StringSpecialProc;
     procedure LuaCommentProc;
-    procedure IdentProc;
+
     procedure GreaterProc;
     procedure LowerProc;
 
@@ -45,7 +45,6 @@ type
 
     procedure InitIdent; override;
     procedure MakeProcTable; override;
-    procedure MakeIdentTable; override;
   end;
 
   { TmnSynLuaSyn }
@@ -84,53 +83,12 @@ implementation
 uses
   mnUtils;
 
-procedure TLuaProcessor.MakeIdentTable;
-var
-  c: char;
-  i: integer;
-begin
-  InitMemory(Identifiers, SizeOf(Identifiers));
-  for c := 'a' to 'z' do
-    Identifiers[c] := True;
-  for c := 'A' to 'Z' do
-    Identifiers[c] := True;
-  for c := '0' to '9' do
-    Identifiers[c] := True;
-  Identifiers['_'] := True;
-  //Identifiers['.'] := True;
-
-  InitMemory(HashCharTable, SizeOf(HashCharTable));
-  i := 1;
-  HashCharTable['_'] := i;
-  inc(i);
-  //HashCharTable['.'] := i;
-  //inc(i);
-  for c := 'a' to 'z' do
-    HashCharTable[c] := i + Ord(c) - Ord('a');
-  for c := 'A' to 'Z' do
-    HashCharTable[c] := i + Ord('z') + Ord(c) - Ord('A');
-end;
-
 procedure TLuaProcessor.GreaterProc;
 begin
   Parent.FTokenID := tkSymbol;
   Inc(Parent.Run);
   if Parent.FLine[Parent.Run] in ['=', '>'] then
     Inc(Parent.Run);
-end;
-
-procedure TLuaProcessor.IdentProc;
-begin
-  Parent.FTokenID := IdentKind((Parent.FLine + Parent.Run));
-  inc(Parent.Run, FStringLen);
-  if Parent.FTokenID = tkComment then
-  begin
-    while not (Parent.FLine[Parent.Run] in [#0, #10, #13]) do
-      Inc(Parent.Run);
-  end
-  else
-    while Identifiers[Parent.FLine[Parent.Run]] do
-      inc(Parent.Run);
 end;
 
 procedure TLuaProcessor.LowerProc;

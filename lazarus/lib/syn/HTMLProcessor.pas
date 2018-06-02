@@ -17,8 +17,7 @@ uses
   SynEdit, Classes, SynEditTypes, SynEditHighlighter, SynHighlighterHashEntries, mnSynHighlighterMultiProc;
 
 type
-  THTMLRangeState = (rshtmlText, rshtmlAmpersand, rshtmlComment, rshtmlKeyword, rshtmlParam,
-    rshtmlValue, rshtmlStringSQ, rshtmlStringDQ);
+  THTMLRangeState = (rshtmlText, rshtmlAmpersand, rshtmlComment, rshtmlKeyword, rshtmlParam, rshtmlValue, rshtmlStringSQ, rshtmlStringDQ);
 
   { THTMLProcessor }
 
@@ -32,7 +31,7 @@ type
     procedure SetRange(Value: Byte); override;
   public
     procedure BraceOpenProc;
-    procedure IdentProc;
+    procedure IdentProc; override;
     procedure StringProc;
     procedure AmpersandProc;
     procedure TextProc;
@@ -47,7 +46,6 @@ type
     procedure Next; override;
     procedure InitIdent; override;
     procedure MakeProcTable; override;
-    procedure MakeIdentTable; override;
   end;
 
 const
@@ -351,23 +349,6 @@ begin
   end;
 end;
 
-procedure THTMLProcessor.MakeIdentTable;
-var
-  i: Char;
-begin
-  for i := #0 to #255 do
-    case i of
-      'a'..'z', 'A'..'Z':
-        HashCharTable[i] := (Ord(UpCase(i)) - 64);
-      '!':
-        HashCharTable[i] := $7B;
-{      '/':
-       HashCharTable[i] := $7A;}
-    else
-      HashCharTable[Char(i)] := 0;
-    end;
-end;
-
 procedure THTMLProcessor.AmpersandProc;
 begin
   if fRange <> rshtmlAmpersand then
@@ -501,26 +482,26 @@ end;
 
 procedure THTMLProcessor.IdentProc;
 begin
-  case fRange of
+  case FRange of
     rshtmlKeyword:
       begin
-        fRange := rshtmlParam;
-        Parent.fTokenID := IdentKind((Parent.FLine + Parent.Run));
-        Inc(Parent.Run, fStringLen);
+        FRange := rshtmlParam;
+        inherited;
       end;
     rshtmlValue:
       begin
-        fRange := rshtmlParam;
-        Parent.fTokenID := tkValue;
+        FRange := rshtmlParam;
+        Parent.FTokenID := tkString;
         repeat
           Inc(Parent.Run);
         until (Parent.FLine[Parent.Run] in [#0..#32, '>']);
       end;
   else
-    Parent.fTokenID := IdentKind((Parent.FLine + Parent.Run));
-    repeat
-      Inc(Parent.Run);
-    until (Parent.FLine[Parent.Run] in [#0..#32, '=', '"', '>']);
+    begin
+      Parent.FTokenID := ScanIdent(Parent.FLine + Parent.Run);//check here maybe no need to inc(run)
+      while not (Parent.FLine[Parent.Run] in [#0..#32, '=', '"', '>']) do
+        Inc(Parent.Run);
+    end;
   end;
 end;
 
@@ -566,12 +547,12 @@ begin
     rshtmlStringSQ:
       begin
         iOpenChar := '''';
-        Parent.fTokenID := tkValue;
+        Parent.fTokenID := tkString;
       end;
     rshtmlStringDQ:
       begin
         iOpenChar := '"';
-        Parent.fTokenID := tkValue;
+        Parent.fTokenID := tkString;
       end;
   else
     begin
@@ -582,7 +563,7 @@ begin
           fRange := rshtmlStringDQ
         else
           fRange := rshtmlStringSQ;
-        Parent.fTokenID := tkValue;
+        Parent.fTokenID := tkString;
       end
       else
       begin

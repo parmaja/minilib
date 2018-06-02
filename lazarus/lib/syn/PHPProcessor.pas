@@ -50,7 +50,6 @@ type
     procedure StringDQProc;
     procedure VarExpansionProc;
     procedure EqualProc;
-    procedure IdentProc;
     procedure CRProc;
     procedure LFProc;
     procedure GreaterProc;
@@ -72,7 +71,6 @@ type
 
     procedure InitIdent; override;
     procedure MakeProcTable; override;
-    procedure MakeIdentTable; override;
   end;
 
 const
@@ -82,27 +80,6 @@ implementation
 
 uses
   mnUtils;
-
-procedure TPHPProcessor.MakeIdentTable;
-var
-  c: char;
-begin
-  InitMemory(Identifiers, SizeOf(Identifiers));
-  for c := 'a' to 'z' do
-    Identifiers[c] := True;
-  for c := 'A' to 'Z' do
-    Identifiers[c] := True;
-  for c := '0' to '9' do
-    Identifiers[c] := True;
-  Identifiers['_'] := True;
-
-  InitMemory(HashCharTable, SizeOf(HashCharTable));
-  HashCharTable['_'] := 1;
-  for c := 'a' to 'z' do
-    HashCharTable[c] := 2 + Ord(c) - Ord('a');
-  for c := 'A' to 'Z' do
-    HashCharTable[c] := 2 + Ord(c) - Ord('A');
-end;
 
 procedure TPHPProcessor.AndSymbolProc;
 begin
@@ -150,7 +127,7 @@ begin
       break;
     end;
     if (iCloseChar = '"') and (Parent.FLine[Parent.Run] = '$') and
-       ((Parent.FLine[Parent.Run + 1] = '{') or Identifiers[Parent.FLine[Parent.Run + 1]]) then
+       ((Parent.FLine[Parent.Run + 1] = '{') or IdentTable[Parent.FLine[Parent.Run + 1]]) then
     begin
       if (Parent.Run > 1) and (Parent.FLine[Parent.Run - 1] = '{') then { complex syntax }
         Dec(Parent.Run);
@@ -189,20 +166,6 @@ begin
   Inc(Parent.Run);
   if Parent.FLine[Parent.Run] in ['=', '>'] then
     Inc(Parent.Run);
-end;
-
-procedure TPHPProcessor.IdentProc;
-begin
-  Parent.FTokenID := IdentKind((Parent.FLine + Parent.Run));
-  inc(Parent.Run, FStringLen);
-  if Parent.FTokenID = tkComment then
-  begin
-    while not (Parent.FLine[Parent.Run] in [#0, #10, #13]) do
-      Inc(Parent.Run);
-  end
-  else
-    while Identifiers[Parent.FLine[Parent.Run]] do
-      inc(Parent.Run);
 end;
 
 procedure TPHPProcessor.LFProc;
@@ -329,7 +292,7 @@ begin
   i := Parent.Run;
   repeat
     Inc(i);
-  until not (Identifiers[Parent.FLine[i]]);
+  until not (IdentTable[Parent.FLine[i]]);
   Parent.Run := i;
 end;
 
@@ -489,7 +452,7 @@ begin
   end
   else
   begin
-    while Identifiers[Parent.FLine[Parent.Run]] do
+    while IdentTable[Parent.FLine[Parent.Run]] do
       Inc(Parent.Run);
     iOpenBrackets := 0;
     iTempRun := Parent.Run;
@@ -521,12 +484,12 @@ begin
       else
         break;
 
-      if not Identifiers[Parent.FLine[iTempRun]] then
+      if not IdentTable[Parent.FLine[iTempRun]] then
         break
       else
         repeat
           Inc(iTempRun);
-        until not Identifiers[Parent.FLine[iTempRun]];
+        until not IdentTable[Parent.FLine[iTempRun]];
 
       while Parent.FLine[iTempRun] = ']' do
       begin
@@ -585,7 +548,7 @@ begin
   EnumerateKeywords(Ord(tkKeyword), sPHPControls, TSynValidStringChars, @DoAddKeyword);
   EnumerateKeywords(Ord(tkKeyword), sPHPKeywords, TSynValidStringChars, @DoAddKeyword);
   EnumerateKeywords(Ord(tkFunction), sPHPFunctions, TSynValidStringChars, @DoAddKeyword);
-  EnumerateKeywords(Ord(tkValue), sPHPConstants, TSynValidStringChars, @DoAddKeyword);
+  EnumerateKeywords(Ord(tkFunction), sPHPConstants, TSynValidStringChars, @DoAddKeyword);
   EnumerateKeywords(Ord(tkVariable), sPHPVariables, TSynValidStringChars, @DoAddKeyword);
   SetRange(rsphpUnknown);
 end;

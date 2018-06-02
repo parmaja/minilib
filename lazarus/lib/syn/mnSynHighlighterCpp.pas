@@ -33,7 +33,7 @@ type
     procedure QuestionProc;
     procedure DirectiveProc;
     procedure SlashProc;
-    procedure IdentProc;
+
     procedure GreaterProc;
     procedure LowerProc;
 
@@ -41,7 +41,6 @@ type
 
     procedure InitIdent; override;
     procedure MakeProcTable; override;
-    procedure MakeIdentTable; override;
   end;
 
   { TmnSynCppSyn }
@@ -87,47 +86,12 @@ implementation
 uses
   mnUtils;
 
-procedure TCppProcessor.MakeIdentTable;
-var
-  c: char;
-begin
-  InitMemory(Identifiers, SizeOf(Identifiers));
-  for c := 'a' to 'z' do
-    Identifiers[c] := True;
-  for c := 'A' to 'Z' do
-    Identifiers[c] := True;
-  for c := '0' to '9' do
-    Identifiers[c] := True;
-  Identifiers['_'] := True;
-
-  InitMemory(HashCharTable, SizeOf(HashCharTable));
-  HashCharTable['_'] := 1;
-  for c := 'a' to 'z' do
-    HashCharTable[c] := 2 + Ord(c) - Ord('a');
-  for c := 'A' to 'Z' do
-    HashCharTable[c] := 2 + Ord(c) - Ord('A');
-end;
-
 procedure TCppProcessor.GreaterProc;
 begin
   Parent.FTokenID := tkSymbol;
   Inc(Parent.Run);
   if Parent.FLine[Parent.Run] in ['=', '>'] then
     Inc(Parent.Run);
-end;
-
-procedure TCppProcessor.IdentProc;
-begin
-  Parent.FTokenID := IdentKind((Parent.FLine + Parent.Run));
-  inc(Parent.Run, FStringLen);
-  if Parent.FTokenID = tkComment then
-  begin
-    while not (Parent.FLine[Parent.Run] in [#0, #10, #13]) do
-      Inc(Parent.Run);
-  end
-  else
-    while Identifiers[Parent.FLine[Parent.Run]] do
-      inc(Parent.Run);
 end;
 
 procedure TCppProcessor.LowerProc;
