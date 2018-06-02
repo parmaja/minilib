@@ -9,10 +9,10 @@ interface
 
 uses
   PHPUtils, GUIMsgBox, mnFonts, ColorUtils, mnSynUtils, PHPProcessor, 
-  HTMLProcessor, mnSynHighlighterXHTML, mnSynHighlighterSARD, 
-  mnSynHighlighterStdSQL, mnSynHighlighterApache, mnSynHighlighterConfig, 
-  mnSynHighlighterCpp, mnSynHighlighterD, mnSynHighlighterFirebird, 
-  mnSynHighlighterLua, mnSynHighlighterMultiProc, mnSynHighlighterGo, 
+  HTMLProcessor, mnSynHighlighterXHTML, mnSynHighlighterStdSQL, 
+  mnSynHighlighterApache, mnSynHighlighterConfig, mnSynHighlighterCpp, 
+  mnSynHighlighterD, mnSynHighlighterFirebird, mnSynHighlighterLua, 
+  mnSynHighlighterMultiProc, mnSynHighlighterGo, mnSynHighlighterSard, 
   LazarusPackageIntf;
 
 implementation

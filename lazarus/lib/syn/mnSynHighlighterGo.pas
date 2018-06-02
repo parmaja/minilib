@@ -1,6 +1,7 @@
 unit mnSynHighlighterGo;
 {$mode objfpc}{$H+}
 {**
+ * NOT COMPLETED
  *
  *  This file is part of the "Mini Library"
  *
@@ -8,11 +9,10 @@ unit mnSynHighlighterGo;
  * @license   modifiedLGPL (modified of http://www.gnu.org/licenses/lgpl.html)
  *            See the file COPYING.MLGPL, included in this distribution,
  * @author    Zaher Dirkey <zaher at parmaja dot com>
+ *
+ *    https://www.tutorialspoint.com/go/go_basic_syntax.htm
+ *
  *}
-
-{
-
-}
 
 interface
 
@@ -39,7 +39,7 @@ type
 
     procedure Next; override;
 
-    procedure InitIdent; override;
+    procedure Prepare; override;
     procedure MakeProcTable; override;
   end;
 
@@ -118,14 +118,6 @@ begin
         else
           CommentProc;
       end;
-    '+':
-      begin
-        Inc(Parent.Run);
-{        if Parent.FLine[Parent.Run] = '+' then
-          DocumentProc
-        else}
-          GrandCommentProc;
-      end
   else
     Parent.FTokenID := tkSymbol;
   end;
@@ -145,10 +137,10 @@ begin
       '/': ProcTable[I] := @SlashProc;
       '>': ProcTable[I] := @GreaterProc;
       '<': ProcTable[I] := @LowerProc;
-      'A'..'Z', 'a'..'z', '_':
-        ProcTable[I] := @IdentProc;
       '0'..'9':
         ProcTable[I] := @NumberProc;
+      'A'..'Z', 'a'..'z', '_':
+        ProcTable[I] := @IdentProc;
     end;
 end;
 
@@ -177,10 +169,6 @@ begin
     begin
       CommentProc;
     end;
-    rscGrandComment:
-    begin
-      GrandCommentProc;
-    end;
     rscDocument:
     begin
       DocumentProc;
@@ -195,7 +183,7 @@ begin
   end;
 end;
 
-procedure TGoProcessor.InitIdent;
+procedure TGoProcessor.Prepare;
 begin
   inherited;
   EnumerateKeywords(Ord(tkKeyword), sGoKeywords, TSynValidStringChars, @DoAddKeyword);
@@ -213,7 +201,7 @@ end;
 
 function TGoProcessor.GetIdentChars: TSynIdentChars;
 begin
-  Result := TSynValidStringChars + ['$'];
+  Result := TSynValidStringChars;
 end;
 
 constructor TSynGoSyn.Create(AOwner: TComponent);

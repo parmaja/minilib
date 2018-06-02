@@ -1,6 +1,7 @@
-unit mnSynHighlighterSARD;
+unit mnSynHighlighterSard;
 {$mode objfpc}{$H+}
 {**
+ * NOT COMPLETED
  *
  *  This file is part of the "Mini Library"
  *
@@ -8,580 +9,277 @@ unit mnSynHighlighterSARD;
  * @license   modifiedLGPL (modified of http://www.gnu.org/licenses/lgpl.html)
  *            See the file COPYING.MLGPL, included in this distribution,
  * @author    Zaher Dirkey <zaher at parmaja dot com>
+ *
  *}
 
 interface
 
 uses
-  SysUtils, Classes, Graphics,
-  SynEditTypes, SynEditHighlighter, SynHighlighterHashEntries, mnSynUtils;
+  Classes, SysUtils,
+  SynEdit, SynEditTypes,
+  SynEditHighlighter, mnSynHighlighterMultiProc;
 
 type
-  TtkTokenKind = (tkNull, tkComment, tkObject, {TODO: tkEmbedComment, tkPreprocessor, Escape char \n \r \64 }tkIdentifier, tkNumber, tkSpace, tkString, tkSymbol, tkUnknown);
 
-  TRangeState = (rsUnknown, rsEmbedComment, rsComment, rsPreprocessor, rsSQString, rsDQString);
+  { TSardProcessor }
 
-  { TSynSARDSyn }
-
-  TSynSARDSyn = class(TSynCustomHighlighter)
+  TSardProcessor = class(TCommonSynProcessor)
   private
-    Run: LongInt;
-    FProcTable: array[#0..#255] of TProcTableProc;
-    FRange: TRangeState;
-    FLine: PChar;
-    FTokenPos: Integer;
-    FTokenID: TtkTokenKind;
-    FCommentAttri: TSynHighlighterAttributes;
-    FObjectAttri: TSynHighlighterAttributes;
-    FIdentifierAttri: TSynHighlighterAttributes;
-    FNumberAttri: TSynHighlighterAttributes;
-    FSpaceAttri: TSynHighlighterAttributes;
-    FStringAttri: TSynHighlighterAttributes;
-    FSymbolAttri: TSynHighlighterAttributes;
-    procedure ScanTo(EndString: String; AKind: TtkTokenKind);
-    procedure SQStringProc;
-    procedure DQStringProc;
-    procedure SingleCommentProc;
-    procedure NormalCommentProc;
-    procedure EmbedCommentProc;
-    procedure PreprocessorProc;
-    procedure CRProc;
-    procedure EqualProc;
-    procedure GreaterProc;
-    procedure IdentProc;
-    procedure LFProc;
-    procedure LowerProc;
-    procedure NullProc;
-    procedure NumberProc;
-    procedure OrSymbolProc;
-    procedure SlashProc;
-    procedure BlockOpenProc;
-    procedure SpaceProc;
-    procedure SymbolProc;
-    procedure MakeProcTables;
-    function IsIdentifiers(C: Char): Boolean;
   protected
     function GetIdentChars: TSynIdentChars; override;
+    function GetEndOfLineAttribute: TSynHighlighterAttributes; override;
+  public
+    procedure Created; override;
+    procedure QuestionProc;
+    procedure SlashProc;
+    procedure BlockProc;
+
+    procedure GreaterProc;
+    procedure LowerProc;
+    procedure DeclareProc;
+
+    procedure Next; override;
+
+    procedure Prepare; override;
+    procedure MakeProcTable; override;
+  end;
+
+  { TSynDSyn }
+
+  TSynSardSyn = class(TSynMultiProcSyn)
+  private
+  protected
     function GetSampleSource: string; override;
   public
     class function GetLanguageName: string; override;
   public
     constructor Create(AOwner: TComponent); override;
-    destructor Destroy; override;
-    procedure Assign(Source: TPersistent); override;
-    function GetDefaultAttribute(Index: integer): TSynHighlighterAttributes; override;
-    function GetEol: Boolean; override;
-    function GetRange: Pointer; override;
-    function GetToken: string; override;
-    procedure GetTokenEx(out TokenStart: PChar; out TokenLength: Integer); override;
-    function GetTokenAttribute: TSynHighlighterAttributes; override;
-    function GetTokenID: TtkTokenKind;
-    function GetTokenKind: integer; override;
-    function GetTokenPos: Integer; override;
-    function IsKeyword(const AKeyword: string): boolean; override;
-    procedure Next; override;
-    procedure ResetRange; override;
-    procedure SetLine(const NewValue: string; LineNumber: Integer); override;
-    procedure SetRange(Value: Pointer); override;
+    procedure InitProcessors; override;
   published
-    property CommentAttri: TSynHighlighterAttributes read FCommentAttri write FCommentAttri;
-    property ObjectAttri: TSynHighlighterAttributes read FObjectAttri write FObjectAttri;
-    property IdentifierAttri: TSynHighlighterAttributes read FIdentifierAttri write FIdentifierAttri;
-    property NumberAttri: TSynHighlighterAttributes read FNumberAttri write FNumberAttri;
-    property SpaceAttri: TSynHighlighterAttributes read FSpaceAttri write FSpaceAttri;
-    property StringAttri: TSynHighlighterAttributes read FStringAttri write FStringAttri;
-    property SymbolAttri: TSynHighlighterAttributes read FSymbolAttri write FSymbolAttri;
   end;
 
 const
 
-  // Objects
-  sSARDObjects =
-    'string,str,integer,int,float,color,datetime'+
-    'avg,cast,count,max,min,sum,upper'+
-    'abs,'+
-    'cos,cot,'+
-    'exp,floor,hash,ln,log,lpad,'+
-    'mod,pi,power,'+
-    'rand,replace,reverse,round,rpad,'+
-    'sign,sin,sinh,sqrt,tan,tanh,trunc';
+  SYNS_LangSard = 'Sard';
+  SYNS_FilterSard = 'Sard Lang Files (*.sard)|*.sard';
 
-  // types
-  //SARDTypes = 'integer,float,string,boolean,color,datetime';
-
-type
-
-  { TSARDSyn }
-
-  TSARDSyn = class(TSynPersistent)
-   private
-   protected
-     function GetDefaultKind: Integer; override;
-   public
-     function IdentKind(MayBe: PChar; out L: Integer): TtkTokenKind; overload;
-     function IdentKind(MayBe: PChar): TtkTokenKind; overload;
-     constructor Create; override;
-   end;
-
-function SARDSyn: TSARDSyn;
+  cSardSample =  '/*'
+                +'    This examples are worked, and this comment will ignored, not compiled or parsed as we say.'#13
+                +'  */'#13
+                +''#13
+                +'  //Single Line comment'#13
+                +'  CalcIt:Integer(p1, p2){'#13
+                +'      :=p1 * p2 / 2;'#13
+                +'    };'#13
+                +''#13
+                +'  x := {'#13
+                +'        y := 0;'#13
+                +'        x := CalcIt(x, y);'#13
+                +'        := y + x+ 500 * %10; //this is a result return of the block'#13
+                +'    }; //do not forget to add ; here'#13
+                +''#13
+                +'  f := 10.0;'#13
+                +'  f := z + 5.5;'#13
+                +''#13
+                +'  {* Embeded block comment *};'#13
+                +''#13
+                +'  := "Result:" + x + '' It is an example:'#13
+                +'    Multi Line String'#13
+                +'  '';'#13;
 
 implementation
 
 uses
-  SynEditStrConst;
+  mnUtils;
 
-var
-  FSARDSyn: TSARDSyn = nil;
-
-function SARDSyn: TSARDSyn;
+procedure TSardProcessor.GreaterProc;
 begin
-  if FSARDSyn = nil then
-    FSARDSyn := TSARDSyn.Create;
-  Result := FSARDSyn;
+  Parent.FTokenID := tkSymbol;
+  Inc(Parent.Run);
+  if Parent.FLine[Parent.Run] in ['=', '>'] then
+    Inc(Parent.Run);
 end;
 
-{ TSARDSyn }
-
-function TSARDSyn.GetDefaultKind: Integer;
+procedure TSardProcessor.LowerProc;
 begin
-  Result := ord(tkIdentifier);
+  Parent.FTokenID := tkSymbol;
+  Inc(Parent.Run);
+  case Parent.FLine[Parent.Run] of
+    '=': Inc(Parent.Run);
+    '<':
+      begin
+        Inc(Parent.Run);
+        if Parent.FLine[Parent.Run] = '=' then
+          Inc(Parent.Run);
+      end;
+  end;
 end;
 
-function TSARDSyn.IdentKind(MayBe: PChar; out L: Integer): TtkTokenKind;
+procedure TSardProcessor.DeclareProc;
 begin
-  Result := TtkTokenKind(GetIdentKind(MayBe, L));
+  Parent.FTokenID := tkSymbol;
+  Inc(Parent.Run);
+  case Parent.FLine[Parent.Run] of
+    '=': Inc(Parent.Run);
+    ':':
+      begin
+        Inc(Parent.Run);
+        if Parent.FLine[Parent.Run] = '=' then
+          Inc(Parent.Run);
+      end;
+  end;
 end;
 
-function TSARDSyn.IdentKind(MayBe: PChar): TtkTokenKind;
-var
-  L: Integer;
+procedure TSardProcessor.SlashProc;
 begin
-  Result := TtkTokenKind(GetIdentKind(MayBe, L));
+  Inc(Parent.Run);
+  case Parent.FLine[Parent.Run] of
+    '/':
+      begin
+        SLCommentProc;
+      end;
+    '*':
+      begin
+        Inc(Parent.Run);
+        if Parent.FLine[Parent.Run] = '*' then
+          DocumentProc
+        else
+          CommentProc;
+      end;
+  else
+    Parent.FTokenID := tkSymbol;
+  end;
 end;
 
-constructor TSARDSyn.Create;
+procedure TSardProcessor.BlockProc;
 begin
-  inherited;
-  EnumerateKeywords(Ord(tkObject), sSARDObjects, GetIdentChars, @DoAddKeyword);
+  Inc(Parent.Run);
+  case Parent.FLine[Parent.Run] of
+    '*': SpecialCommentProc;
+  else
+    Parent.FTokenID := tkSymbol;
+  end;
 end;
 
-procedure TSynSARDSyn.MakeProcTables;
+procedure TSardProcessor.MakeProcTable;
 var
   I: Char;
 begin
+  inherited;
   for I := #0 to #255 do
     case I of
-      #0: FProcTable[I] := @NullProc;
-      #10: FProcTable[I] := @LFProc;
-      #13: FProcTable[I] := @CRProc;
-      '=': FProcTable[I] := @EqualProc;
-      '>': FProcTable[I] := @GreaterProc;
-      '<': FProcTable[I] := @LowerProc;
-      '/': FProcTable[I] := @SlashProc;
-      '{': FProcTable[I] := @BlockOpenProc;
-      '|': FProcTable[I] := @OrSymbolProc;
-      '''': FProcTable[I] := @SQStringProc;
-      '"': FProcTable[I] := @DQStringProc;
+      '?': ProcTable[I] := @QuestionProc;
+      '''': ProcTable[I] := @StringSQProc;
+      '"': ProcTable[I] := @StringDQProc;
+      '`': ProcTable[I] := @StringBQProc;
+      '/': ProcTable[I] := @SlashProc;
+      '{': ProcTable[I] := @BlockProc;
+      '>': ProcTable[I] := @GreaterProc;
+      '<': ProcTable[I] := @LowerProc;
+      ':': ProcTable[I] := @DeclareProc;
       '0'..'9':
-        FProcTable[I] := @NumberProc;
-      #1..#9, #11, #12, #14..#32:
-        FProcTable[I] := @SpaceProc;
-      '+', '-', '^', '%', '*', '!', '}', ':', '.', ',', ';', '?', '(', ')', '[', ']', '~', '&':
-        FProcTable[I] := @SymbolProc;
-    else
-      FProcTable[I] := @IdentProc;
+        ProcTable[I] := @NumberProc;
+      'A'..'Z', 'a'..'z', '_':
+        ProcTable[I] := @IdentProc;
     end;
 end;
 
-constructor TSynSARDSyn.Create(AOwner: TComponent);
+procedure TSardProcessor.QuestionProc;
+begin
+  Inc(Parent.Run);
+  case Parent.FLine[Parent.Run] of
+    '>':
+      begin
+        Parent.Processors.Switch(Parent.Processors.MainProcessor);
+        Inc(Parent.Run);
+        Parent.FTokenID := tkProcessor;
+      end
+  else
+    Parent.FTokenID := tkSymbol;
+  end;
+end;
+
+procedure TSardProcessor.Next;
+begin
+  Parent.FTokenPos := Parent.Run;
+  if (Parent.FLine[Parent.Run] in [#0, #10, #13]) then
+    ProcTable[Parent.FLine[Parent.Run]]
+  else case Range of
+    rscComment:
+    begin
+      CommentProc;
+    end;
+    rscDocument:
+    begin
+      DocumentProc;
+    end;
+    rscStringSQ, rscStringDQ, rscStringBQ:
+      StringProc;
+  else
+    if ProcTable[Parent.FLine[Parent.Run]] = nil then
+      UnknownProc
+    else
+      ProcTable[Parent.FLine[Parent.Run]];
+  end;
+end;
+
+procedure TSardProcessor.Prepare;
+begin
+  inherited;
+//  EnumerateKeywords(Ord(tkKeyword), sSardKeywords, TSynValidStringChars, @DoAddKeyword);
+//  EnumerateKeywords(Ord(tkFunction), sSardFunctions, TSynValidStringChars, @DoAddKeyword);
+  SetRange(rscUnknown);
+end;
+
+function TSardProcessor.GetEndOfLineAttribute: TSynHighlighterAttributes;
+begin
+  if (Range = rscDocument) or (LastRange = rscDocument) then
+    Result := Parent.DocumentAttri
+  else
+    Result := inherited GetEndOfLineAttribute;
+end;
+
+procedure TSardProcessor.Created;
+begin
+  inherited Created;
+  CloseSpecialComment := '*}';
+end;
+
+function TSardProcessor.GetIdentChars: TSynIdentChars;
+begin
+  Result := TSynValidStringChars;
+end;
+
+constructor TSynSardSyn.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
-  FCommentAttri := TSynHighlighterAttributes.Create(SYNS_AttrComment);
-  FCommentAttri.Foreground := clMaroon;
-  FCommentAttri.Style := [];
-  AddAttribute(FCommentAttri);
-  FObjectAttri := TSynHighlighterAttributes.Create('Object');
-  FObjectAttri.Style := [fsBold];
-  FObjectAttri.Foreground := $00C56A31;
-  AddAttribute(FObjectAttri);
-  FIdentifierAttri := TSynHighlighterAttributes.Create(SYNS_AttrIdentifier);
-  FIdentifierAttri.Foreground := clBlack;
-  AddAttribute(FIdentifierAttri);
-  FNumberAttri := TSynHighlighterAttributes.Create(SYNS_AttrNumber);
-  AddAttribute(FNumberAttri);
-  FSpaceAttri := TSynHighlighterAttributes.Create(SYNS_AttrSpace);
-  AddAttribute(FSpaceAttri);
-  FStringAttri := TSynHighlighterAttributes.Create(SYNS_AttrString);
-  AddAttribute(FStringAttri);
-  FSymbolAttri := TSynHighlighterAttributes.Create(SYNS_AttrSymbol);
-  AddAttribute(FSymbolAttri);
-  SetAttributesOnChange(@DefHighlightChange);
-  FDefaultFilter := 'SARD Files (*.sard)|*.sard';
-  FRange := rsUnknown;
-  MakeProcTables;
+  FDefaultFilter := SYNS_FilterSard;
 end;
 
-destructor TSynSARDSyn.Destroy;
+procedure TSynSardSyn.InitProcessors;
 begin
   inherited;
+  Processors.Add(TSardProcessor.Create(Self, 'Sard'));
+
+  Processors.MainProcessor := 'Sard';
+  Processors.DefaultProcessor := 'Sard';
 end;
 
-procedure TSynSARDSyn.Assign(Source: TPersistent);
+class function TSynSardSyn.GetLanguageName: string;
 begin
-  inherited Assign(Source);
+  Result := SYNS_LangSard;
 end;
 
-procedure TSynSARDSyn.SetLine(const NewValue: string; LineNumber: Integer);
+function TSynSardSyn.GetSampleSource: string;
 begin
-  inherited;
-  FLine := PChar(NewValue);
-  Run := 0;
-  Next;
+  Result := cSardSample;
 end;
 
-procedure TSynSARDSyn.SQStringProc;
-begin
-  FRange := rsSQString;
-  Inc(Run);
-  ScanTo('''', tkString);
-end;
-
-procedure TSynSARDSyn.DQStringProc;
-begin
-  FRange := rsDQString;
-  Inc(Run);
-  ScanTo('"', tkString);
-end;
-
-procedure TSynSARDSyn.CRProc;
-begin
-  FTokenID := tkSpace;
-  Inc(Run);
-  if FLine[Run] = #10 then
-    Inc(Run);
-end;
-
-procedure TSynSARDSyn.EqualProc;
-begin
-  FTokenID := tkSymbol;
-  Inc(Run);
-  if FLine[Run] in ['=', '>'] then
-    Inc(Run);
-end;
-
-procedure TSynSARDSyn.GreaterProc;
-begin
-  FTokenID := tkSymbol;
-  Inc(Run);
-  if FLine[Run] in ['=', '>'] then
-    Inc(Run);
-end;
-
-procedure TSynSARDSyn.IdentProc;
-begin
-  FTokenID := SARDSyn.IdentKind((FLine + Run));
-  inc(Run);
-  while not (FLine[Run] in [#0, #10, #13]) and IsIdentifiers(FLine[Run]) do
-    Inc(Run);
-end;
-
-procedure TSynSARDSyn.LFProc;
-begin
-  FTokenID := tkSpace;
-  inc(Run);
-end;
-
-procedure TSynSARDSyn.LowerProc;
-begin
-  FTokenID := tkSymbol;
-  Inc(Run);
-  case FLine[Run] of
-    '=': Inc(Run);
-    '<':
-      begin
-        Inc(Run);
-        if FLine[Run] = '=' then
-          Inc(Run);
-      end;
-  end;
-end;
-
-procedure TSynSARDSyn.NullProc;
-begin
-  FTokenID := tkNull;
-end;
-
-procedure TSynSARDSyn.NumberProc;
-begin
-  inc(Run);
-  FTokenID := tkNumber;
-  while FLine[Run] in ['0'..'9', '.'] do
-    inc(Run);
-end;
-
-procedure TSynSARDSyn.OrSymbolProc;
-begin
-  FTokenID := tkSymbol;
-  Inc(Run);
-  if FLine[Run] in ['=', '|'] then
-    Inc(Run);
-end;
-
-procedure TSynSARDSyn.SlashProc;
-begin
-  Inc(Run);
-  case FLine[Run] of
-    '/':
-      begin
-        SingleCommentProc;
-      end;
-    '*':
-      begin
-        FRange := rsComment;
-        FTokenID := tkComment;
-        NormalCommentProc;
-      end;
-  else
-    FTokenID := tkSymbol;
-  end;
-end;
-
-procedure TSynSARDSyn.BlockOpenProc;
-begin
-  Inc(Run);
-  case FLine[Run] of
-    '?':
-      begin
-        FRange := rsPreprocessor;
-        FTokenID := tkComment;
-        Inc(Run);
-        PreprocessorProc;
-      end;
-    '*':
-      begin
-        FRange := rsEmbedComment;
-        FTokenID := tkComment;
-        Inc(Run);
-        EmbedCommentProc;
-      end;
-  else
-    FTokenID := tkSymbol;
-  end;
-end;
-
-procedure TSynSARDSyn.SpaceProc;
-begin
-  FTokenID := tkSpace;
-  repeat
-    Inc(Run);
-  until (FLine[Run] > #32) or (FLine[Run] in [#0, #10, #13]);
-end;
-
-procedure TSynSARDSyn.SymbolProc;
-begin
-  Inc(Run);
-  FTokenID := tkSymbol;
-end;
-
-function TSynSARDSyn.IsIdentifiers(C: Char): Boolean;
-begin
-  Result := not (C in [' ', #13, #10, #0, '{', '}', ':', ',', ';', '?', '(', ')', '[', ']',
-          '~', '^', '%', '*', '!', '=', '>', '<', '-', '|', '+', '/', '&',  '''', '"']);
-end;
-
-procedure TSynSARDSyn.ScanTo(EndString: String; AKind: TtkTokenKind);
-var
-  l: Integer;
-begin
-  l := Length(EndString);
-  FTokenID := AKind;
-  while not (FLine[Run] in [#0, #10, #13]) do
-  begin
-    if (FLine[Run] = EndString[1]) and ((l < 2) or (FLine[Run + 1] = EndString[2])) then
-    begin
-      FRange := rsUnknown;
-      Inc(Run, l);
-      break;
-    end;
-    Inc(Run);
-  end;
-end;
-
-procedure TSynSARDSyn.SingleCommentProc;
-begin
-  FTokenID := tkComment;
-  repeat
-    Inc(Run);
-  until FLine[Run] in [#0, #10, #13];
-end;
-
-procedure TSynSARDSyn.NormalCommentProc;
-begin
-  ScanTo('*/', tkComment);
-end;
-
-procedure TSynSARDSyn.EmbedCommentProc;
-begin
-  ScanTo('*}', tkComment);
-end;
-
-procedure TSynSARDSyn.PreprocessorProc;
-begin
-  ScanTo('?}', tkComment);
-end;
-
-function TSynSARDSyn.IsKeyword(const AKeyword: string): boolean;
-var
-  tk: TtkTokenKind;
-begin
-  tk := SARDSyn.IdentKind(PChar(AKeyword));
-  Result := tk in [tkObject];
-end;
-
-procedure TSynSARDSyn.Next;
-begin
-  FTokenPos := Run;
-  if (FLine[Run] in [#0, #10, #13]) then
-    FProcTable[FLine[Run]]
-  else
-  begin
-    case FRange of
-      rsPreprocessor:
-          PreprocessorProc;
-      rsComment:
-          NormalCommentProc;
-      rsEmbedComment:
-          EmbedCommentProc;
-      rsSQString:
-          ScanTo('''', tkString);
-      rsDQString:
-          ScanTo('"', tkString);
-    else
-      FProcTable[FLine[Run]];
-    end;
-  end;
-end;
-
-function TSynSARDSyn.GetDefaultAttribute(Index: integer):
-  TSynHighlighterAttributes;
-begin
-  case Index of
-    SYN_ATTR_COMMENT: Result := FCommentAttri;
-    SYN_ATTR_KEYWORD: Result := FObjectAttri;
-    SYN_ATTR_IDENTIFIER: Result := FIdentifierAttri;
-    SYN_ATTR_STRING: Result := FStringAttri;
-    SYN_ATTR_WHITESPACE: Result := FSpaceAttri;
-    SYN_ATTR_SYMBOL: Result := FSymbolAttri;
-  else
-    Result := nil;
-  end;
-end;
-
-function TSynSARDSyn.GetEol: Boolean;
-begin
-  Result := FTokenID = tkNull;
-end;
-
-function TSynSARDSyn.GetRange: Pointer;
-begin
-  Result := Pointer(PtrUInt(FRange));
-end;
-
-function TSynSARDSyn.GetToken: string;
-var
-  Len: LongInt;
-begin
-  Len := Run - FTokenPos;
-  Setstring(Result, (FLine + FTokenPos), Len);
-end;
-
-procedure TSynSARDSyn.GetTokenEx(out TokenStart: PChar; out TokenLength: Integer);
-begin
-  TokenLength := Run - FTokenPos;
-  TokenStart := FLine + FTokenPos;
-end;
-
-function TSynSARDSyn.GetTokenID: TtkTokenKind;
-begin
-  Result := FTokenID;
-end;
-
-function TSynSARDSyn.GetTokenAttribute: TSynHighlighterAttributes;
-begin
-  case GetTokenID of
-    tkComment: Result := FCommentAttri;
-    tkObject: Result := FObjectAttri;
-    tkIdentifier: Result := FIdentifierAttri;
-    tkNumber: Result := FNumberAttri;
-    tkSpace: Result := FSpaceAttri;
-    tkString: Result := FStringAttri;
-    tkSymbol: Result := FSymbolAttri;
-    tkUnknown: Result := FIdentifierAttri;
-  else
-    Result := nil;
-  end;
-end;
-
-function TSynSARDSyn.GetTokenKind: integer;
-begin
-  Result := Ord(FTokenID);
-end;
-
-function TSynSARDSyn.GetTokenPos: Integer;
-begin
-  Result := FTokenPos;
-end;
-
-procedure TSynSARDSyn.ResetRange;
-begin
-  FRange := rsUnknown;
-end;
-
-procedure TSynSARDSyn.SetRange(Value: Pointer);
-begin
-  FRange := TRangeState(PtrUInt(Value));
-end;
-
-function TSynSARDSyn.GetIdentChars: TSynIdentChars;
-begin
-  Result := SARDSyn.GetIdentChars
-end;
-
-class function TSynSARDSyn.GetLanguageName: string;
-begin
-  Result := 'SARD script';
-end;
-
-function TSynSARDSyn.GetSampleSource: string;
-begin
-  Result := '/*'
-            +'    This examples are worked, and this comment will ignored, not compiled or parsed as we say.'#13
-            +'  */'#13
-            +''#13
-            +'  //Single Line comment'#13
-            +'  CalcIt:Integer(p1, p2){'#13
-            +'      :=p1 * p2 / 2;'#13
-            +'    };'#13
-            +''#13
-            +'  x := {'#13
-            +'        y := 0;'#13
-            +'        x := CalcIt(x, y);'#13
-            +'        := y + x+ 500 * %10; //this is a result return of the block'#13
-            +'    }; //do not forget to add ; here'#13
-            +''#13
-            +'  f := 10.0;'#13
-            +'  f := z + 5.5;'#13
-            +''#13
-            +'  {* Embeded block comment *};'#13
-            +''#13
-            +'  := "Result:" + x + '' It is an example:'#13
-            +'    Multi Line String'#13
-            +'  '';'#13;
-end;
+end.
 
 initialization
-  RegisterPlaceableHighlighter(TSynSARDSyn);
+  RegisterPlaceableHighlighter(TSynSardSyn);
 finalization
-  FreeAndNil(FSARDSyn);
+  FreeAndNil(FSardSyn);
 end.
 

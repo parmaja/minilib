@@ -96,14 +96,14 @@ begin
       #0      : FProcTable[i] := @NullProc;
       #10 {LF}: FProcTable[i] := @LFProc;
       #13 {CR}: FProcTable[i] := @CRProc;
-      #34 {"} : FProcTable[i] := @StringProc;
-      #39 {'} : FProcTable[i] := @StringProc1;
-      '0'..'9': FProcTable[i] := @NumberProc;
+      #1..#9, #11, #12, #14..#32: FProcTable[i] := @SpaceProc;
+      '"'  : FProcTable[i] := @StringProc;
+      '''' : FProcTable[i] := @StringProc1;
       '#' : FProcTable[i] := @CommentProc;
       ';' : FProcTable[i] := @CommentProc;
       '=' : FProcTable[i] := @EqualProc;
       '[' : FProcTable[i] := @SectionOpenProc;
-      #1..#9, #11, #12, #14..#32: FProcTable[i] := @SpaceProc;
+      '0'..'9': FProcTable[i] := @NumberProc;
     else
       FProcTable[i] := @TextProc;
     end;
@@ -135,7 +135,7 @@ begin
 
   FDefaultFilter := SYNS_FilterINI;
   MakeMethodTables;
-end; { Create }
+end;
 
 procedure TSynConfigSyn.SetLine(const NewValue: String; LineNumber:Integer);
 begin
@@ -144,7 +144,7 @@ begin
   Run := 0;
   FLineNumber := LineNumber;
   Next;
-end; { SetLine }
+end;
 
 procedure TSynConfigSyn.SectionOpenProc;
 begin

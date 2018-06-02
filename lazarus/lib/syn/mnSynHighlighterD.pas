@@ -39,7 +39,7 @@ type
 
     procedure Next; override;
 
-    procedure InitIdent; override;
+    procedure Prepare; override;
     procedure MakeProcTable; override;
   end;
 
@@ -128,10 +128,7 @@ begin
     '+':
       begin
         Inc(Parent.Run);
-{        if Parent.FLine[Parent.Run] = '+' then
-          DocumentProc
-        else}
-          GrandCommentProc;
+        SpecialCommentProc;
       end
   else
     Parent.FTokenID := tkSymbol;
@@ -184,9 +181,9 @@ begin
     begin
       CommentProc;
     end;
-    rscGrandComment:
+    rscSpecialComment:
     begin
-      GrandCommentProc;
+      SpecialCommentProc;
     end;
     rscDocument:
     begin
@@ -202,7 +199,7 @@ begin
   end;
 end;
 
-procedure TDProcessor.InitIdent;
+procedure TDProcessor.Prepare;
 begin
   inherited;
   EnumerateKeywords(Ord(tkKeyword), sDKeywords, TSynValidStringChars, @DoAddKeyword);

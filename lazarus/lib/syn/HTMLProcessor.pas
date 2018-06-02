@@ -44,7 +44,7 @@ type
     procedure SpaceProc;
 
     procedure Next; override;
-    procedure InitIdent; override;
+    procedure Prepare; override;
     procedure MakeProcTable; override;
   end;
 
@@ -654,7 +654,7 @@ begin
   end;
 end;
 
-procedure THTMLProcessor.InitIdent;
+procedure THTMLProcessor.Prepare;
 begin
   inherited;
   EnumerateKeywords(Ord(tkKeyword), sHTMLKeywords, TSynValidStringChars, @DoAddKeyword);

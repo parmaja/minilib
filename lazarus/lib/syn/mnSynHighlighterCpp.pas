@@ -39,7 +39,7 @@ type
 
     procedure Next; override;
 
-    procedure InitIdent; override;
+    procedure Prepare; override;
     procedure MakeProcTable; override;
   end;
 
@@ -183,9 +183,9 @@ begin
     begin
       CommentProc;
     end;
-    rscGrandComment:
+    rscSpecialComment:
     begin
-      GrandCommentProc;
+      SpecialCommentProc;
     end;
     rscDocument:
     begin
@@ -201,7 +201,7 @@ begin
   end;
 end;
 
-procedure TCppProcessor.InitIdent;
+procedure TCppProcessor.Prepare;
 begin
   inherited;
   EnumerateKeywords(Ord(tkKeyword), sCppKeywords, TSynValidStringChars, @DoAddKeyword);

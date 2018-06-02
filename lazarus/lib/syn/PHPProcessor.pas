@@ -69,7 +69,7 @@ type
 
     property Range: TPHPRangeState read FRange;
 
-    procedure InitIdent; override;
+    procedure Prepare; override;
     procedure MakeProcTable; override;
   end;
 
@@ -542,7 +542,7 @@ begin
   FRange := Value;
 end;
 
-procedure TPHPProcessor.InitIdent;
+procedure TPHPProcessor.Prepare;
 begin
   inherited;
   EnumerateKeywords(Ord(tkKeyword), sPHPControls, TSynValidStringChars, @DoAddKeyword);

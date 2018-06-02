@@ -10,10 +10,6 @@ unit mnSynHighlighterLua;
  * @author    Zaher Dirkey <zaher at parmaja dot com>
  *}
 
-{
-
-}
-
 interface
 
 uses
@@ -43,7 +39,7 @@ type
 
     procedure Next; override;
 
-    procedure InitIdent; override;
+    procedure Prepare; override;
     procedure MakeProcTable; override;
   end;
 
@@ -192,10 +188,10 @@ begin
       '-': ProcTable[I] := @DashProc;
       '>': ProcTable[I] := @GreaterProc;
       '<': ProcTable[I] := @LowerProc;
-      'A'..'Z', 'a'..'z', '_':
-        ProcTable[I] := @IdentProc;
       '0'..'9':
         ProcTable[I] := @NumberProc;
+      'A'..'Z', 'a'..'z', '_':
+        ProcTable[I] := @IdentProc;
     end;
 end;
 
@@ -246,7 +242,7 @@ begin
   end;
 end;
 
-procedure TLuaProcessor.InitIdent;
+procedure TLuaProcessor.Prepare;
 begin
   inherited;
   EnumerateKeywords(Ord(tkKeyword), sLuaKeywords, TSynValidStringChars, @DoAddKeyword);
@@ -265,7 +261,7 @@ end;
 
 function TLuaProcessor.GetIdentChars: TSynIdentChars;
 begin
-  Result := TSynValidStringChars;
+  Result := TSynValidStringChars + ['.'];
 end;
 
 constructor TmnSynLuaSyn.Create(AOwner: TComponent);
@@ -294,4 +290,3 @@ begin
 end;
 
 end.
-

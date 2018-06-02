@@ -18,10 +18,11 @@ uses
 
 type
   TtkTokenKind = (tkUnknown, tkNull, tkSpace, tkComment, tkDocument, tkIdentifier, tkKeyword, tkType, tkFunction, tkSymbol, tkNumber,
-    tkString, tkText, tkVariable, tkProcessor); //tkControl, //like {};
+    tkString, tkText, tkVariable, tkProcessor);
 
   //Common range used for some syntax
-  TCommonRangeState = (rscUnknown, rscComment, rscGrandComment, rscDocument, rscStringSQ, rscStringDQ, rscStringBQ, rscStringSpecial); //BackQuote
+  TCommonRangeState = (rscUnknown, rscComment, rscSpecialComment, rscDocument, rscStringSQ, rscStringDQ, rscStringBQ {BackQuote}, rscStringSpecial);
+  TCommonRangeStates = set of TCommonRangeState;
 
   TProcTableProc = procedure of object;
   TProcTable = array[AnsiChar] of TProcTableProc;
@@ -49,6 +50,8 @@ type
     FIndex: integer;
     FParent: TSynMultiProcSyn;
   protected
+    StringCEscaped: TCommonRangeStates;
+    StringMultiLine: TCommonRangeStates;
     function GetIdentChars: TSynIdentChars; virtual;
     procedure ResetRange; virtual;
     function GetRange: Byte; virtual;
@@ -56,7 +59,9 @@ type
     function GetEndOfLineAttribute: TSynHighlighterAttributes; virtual;
 
     procedure DoAddKeyword(AKeyword: string; AKind: integer);
-    function ScanIdent(const Str: string): TtkTokenKind;
+    function ScanIdent(const Identifier: string): TtkTokenKind; //this will move Line.Run and bring Identifire kind
+    function ScanMatch(const MatchWith: string): Boolean; //this will move Line.Run if matched
+    procedure Created; virtual;
   public
     IdentTable: TIdentifierTable;
     ProcTable: TProcTable;
@@ -64,8 +69,7 @@ type
     destructor Destroy; override;
     procedure Next; virtual;
     procedure SetLine(const NewValue: string; LineNumber: integer); virtual;
-    procedure InitIdent; virtual;
-    procedure MakeIdentTable;
+    procedure Prepare; virtual;
     procedure MakeProcTable; virtual;
 
     procedure IdentProc; virtual;
@@ -83,7 +87,10 @@ type
   protected
     //LastRange: Bad Idea but let us try
     LastRange: TCommonRangeState;
+    CloseComment: string;
+    CloseSpecialComment: string;
   public
+    procedure Created; override;
     procedure ResetRange; override;
     function GetRange: Byte; override;
     procedure SetRange(Value: Byte); override;
@@ -94,13 +101,12 @@ type
 
     //Common procs
     procedure InternalCommentProc; //   /* */
-    procedure InternalGrandCommentProc; //    /+ +/
-
+    procedure InternalSpecialCommentProc; //    /+ +/
 
     procedure WordProc; //Identifire started with char like #define
     procedure SLCommentProc; //Single Line Comment //comment or #comment depend on who started
-    procedure CommentProc;
-    procedure GrandCommentProc;
+    procedure CommentProc; //Mutli line comment
+    procedure SpecialCommentProc;
     procedure DocumentProc;
 
     procedure StringProc;
@@ -172,9 +178,7 @@ type
     FVariableAttri: TSynHighlighterAttributes;
     FProcessorAttri: TSynHighlighterAttributes;
 
-    procedure InitIdent;
-    procedure MakeProcTable;
-    procedure MakeIdentTable;
+    procedure Prepare;
   protected
     FProcessors: TSynProcessors;
     procedure InitProcessors; virtual;
@@ -269,7 +273,7 @@ begin
   Kind := AKind;
 end;
 
-function TSynProcessor.ScanIdent(const Str: string): TtkTokenKind;
+function TSynProcessor.ScanIdent(const Identifier: string): TtkTokenKind;
 var
   Entry: TTokenObject;
   IdentChars: TSynIdentChars;
@@ -278,15 +282,43 @@ var
 begin
   IdentChars := GetIdentChars;
   i := 1;
-  while Str[i] in IdentChars do
+  while Identifier[i] in IdentChars do
     Inc(i);
-  AKeyword := Copy(Str, 1, i - 1);
+  AKeyword := Copy(Identifier, 1, i - 1);
   inc(Parent.Run, i - 1);
   Entry := FKeywords.Items[AKeyword] as TTokenObject;
   if Entry <> nil then
     Result := Entry.Kind
   else
     Result := tkIdentifier;
+end;
+
+function TSynProcessor.ScanMatch(const MatchWith: string): Boolean;
+var
+  i, c: integer;
+begin
+  Result := False;
+  i := Parent.Run;
+  c := 1;
+  repeat
+    if (Parent.FLine[i] <> MatchWith[c]) then
+        break;
+    if c = Length(MatchWith) then
+    begin
+      Result := True;
+      break;
+    end;
+    Inc(c);
+    Inc(i);
+  until (Parent.FLine[i] in [#0, #10, #13]);
+
+  if Result then
+    Inc(Parent.Run, Length(MatchWith));
+end;
+
+procedure TSynProcessor.Created;
+begin
+
 end;
 
 function TSynProcessor.GetEndOfLineAttribute: TSynHighlighterAttributes;
@@ -304,6 +336,13 @@ end;
 function TCommonSynProcessor.GetRange: Byte;
 begin
   Result := Byte(Range);
+end;
+
+procedure TCommonSynProcessor.Created;
+begin
+  inherited Created;
+  CloseComment := '*/';
+  CloseSpecialComment := '+/';//for D but u can change it
 end;
 
 procedure TCommonSynProcessor.ResetRange;
@@ -335,24 +374,22 @@ procedure TCommonSynProcessor.InternalCommentProc;
 begin
   while not (Parent.FLine[Parent.Run] in [#0, #10, #13]) do
   begin
-    if (Parent.FLine[Parent.Run] = '*') and (Parent.FLine[Parent.Run + 1] = '/') then
+    if ScanMatch(CloseComment) then
     begin
-      SetRange(rscUnKnown);//TODO
-      Inc(Parent.Run, 2);
+      SetRange(rscUnKnown);
       break;
     end;
     Inc(Parent.Run);
   end;
 end;
 
-procedure TCommonSynProcessor.InternalGrandCommentProc;
+procedure TCommonSynProcessor.InternalSpecialCommentProc;
 begin
   while not (Parent.FLine[Parent.Run] in [#0, #10, #13]) do
   begin
-    if (Parent.FLine[Parent.Run] = '+') and (Parent.FLine[Parent.Run + 1] = '/') then
+    if ScanMatch(CloseSpecialComment) then
     begin
       SetRange(rscUnknown);
-      Inc(Parent.Run, 2);
       break;
     end;
     Inc(Parent.Run);
@@ -383,11 +420,11 @@ begin
   InternalCommentProc;
 end;
 
-procedure TCommonSynProcessor.GrandCommentProc;
+procedure TCommonSynProcessor.SpecialCommentProc;
 begin
   Parent.FTokenID := tkComment;
-  SetRange(rscGrandComment);
-  InternalGrandCommentProc;
+  SetRange(rscSpecialComment);
+  InternalSpecialCommentProc;
 end;
 
 procedure TCommonSynProcessor.DocumentProc;
@@ -403,10 +440,13 @@ procedure TCommonSynProcessor.StringProc;
   var
     iFirstSlashPos: integer;
   begin
-    iFirstSlashPos := Parent.Run - 1;
-    while (iFirstSlashPos > 0) and (Parent.FLine[iFirstSlashPos] = '\') do
-      Dec(iFirstSlashPos);
-    Result := (Parent.Run - iFirstSlashPos + 1) mod 2 <> 0;
+    if (Range in StringCEscaped) then
+    begin
+      iFirstSlashPos := Parent.Run - 1;
+      while (iFirstSlashPos > 0) and (Parent.FLine[iFirstSlashPos] = '\') do
+        Dec(iFirstSlashPos);
+      Result := (Parent.Run - iFirstSlashPos + 1) mod 2 <> 0;
+    end;
   end;
 
 var
@@ -520,7 +560,7 @@ begin
   for c in ['-','=', '|', '+', '&','$','^', '%', '*', '!', '#'] do
     ProcTable[c] := @SymbolProc;
 
-  for c in ['{', '}', '.', ',', ';', '(', ')', '[', ']', '~'] do //TODO remove '.'
+  for c in ['{', '}', '.', ',', ';', '(', ')', '[', ']', '~'] do
     ProcTable[c] := @ControlProc;
 end;
 
@@ -531,25 +571,8 @@ begin
   StringProc;
 end;
 
-procedure TSynMultiProcSyn.MakeProcTable;
-var
-  i: integer;
-begin
-  for i := 0 to Processors.Count - 1 do
-    Processors[i].MakeProcTable;
-end;
-
-procedure TSynMultiProcSyn.MakeIdentTable;
-var
-  i: integer;
-begin
-  for i := 0 to Processors.Count - 1 do
-    Processors[i].MakeIdentTable;
-end;
-
 procedure TSynMultiProcSyn.InitProcessors;
 begin
-
 end;
 
 constructor TSynMultiProcSyn.Create(AOwner: TComponent);
@@ -619,9 +642,7 @@ begin
   AddAttribute(FProcessorAttri);
 
   SetAttributesOnChange(@DefHighlightChange);
-  MakeIdentTable;
-  InitIdent;
-  MakeProcTable;
+  Prepare;
   //FDefaultFilter := SYNS_FilterMultiProc;
 end;
 
@@ -776,16 +797,6 @@ end;
 
 { TSynProcessor }
 
-procedure TSynProcessor.MakeIdentTable;
-var
-  c: char;
-  chars: TSynIdentChars;
-begin
-  chars := GetIdentChars;
-  for c in chars do
-    IdentTable[c] := True;
-end;
-
 procedure TSynProcessor.MakeProcTable;
 begin
 end;
@@ -809,6 +820,9 @@ begin
   FName := AName;
   FParent := AParent;
   FKeywords := TFPObjectHashTable.Create;
+  StringCEscaped := [rscStringSQ, rscStringDQ, rscStringBQ];
+  StringMultiLine := [];
+  Created;
 end;
 
 destructor TSynProcessor.Destroy;
@@ -830,8 +844,14 @@ procedure TSynProcessor.SetRange(Value: Byte);
 begin
 end;
 
-procedure TSynProcessor.InitIdent;
+procedure TSynProcessor.Prepare;
+var
+  c: char;
+  chars: TSynIdentChars;
 begin
+  chars := GetIdentChars;
+  for c in chars do
+    IdentTable[c] := True;
 end;
 
 function TSynProcessor.GetIdentChars: TSynIdentChars;
@@ -961,13 +981,15 @@ begin
   SetCurrent(Items[Index]);
 end;
 
-procedure TSynMultiProcSyn.InitIdent;
+procedure TSynMultiProcSyn.Prepare;
 var
   i: integer;
 begin
   for i := 0 to Processors.Count - 1 do
-    Processors[i].InitIdent;
+    Processors[i].Prepare;
+
+  for i := 0 to Processors.Count - 1 do
+    Processors[i].MakeProcTable;
 end;
 
 end.
-
