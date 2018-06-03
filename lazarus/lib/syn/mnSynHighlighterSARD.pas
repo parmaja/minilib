@@ -179,6 +179,7 @@ begin
       ':': ProcTable[I] := @DeclareProc;
       '0'..'9':
         ProcTable[I] := @NumberProc;
+    //else
       'A'..'Z', 'a'..'z', '_':
         ProcTable[I] := @IdentProc;
     end;

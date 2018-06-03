@@ -26,13 +26,13 @@ type
   protected
     function GetIdentChars: TSynIdentChars; override;
     function GetEndOfLineAttribute: TSynHighlighterAttributes; override;
+    procedure Created; override;
   public
     procedure QuestionProc;
     procedure DirectiveProc;
     procedure DashProc;
     procedure BracketProc;
-    procedure StringSpecialProc;
-    procedure LuaCommentProc;
+    procedure SpecialStringProc;
 
     procedure GreaterProc;
     procedure LowerProc;
@@ -109,13 +109,16 @@ begin
     '-':
       begin
         Inc(Parent.Run);
-        if Parent.FLine[Parent.Run] = '[' then
+        if Parent.FLine[Parent.Run] = '*' then
+          SLDocumentProc
+        else if ScanMatch('TODO') then
+          SLDocumentProc
+        else if ScanMatch('[[') then
         begin
-          Inc(Parent.Run);
-          if Parent.FLine[Parent.Run] = '[' then
-            LuaCommentProc
+          if Parent.FLine[Parent.Run] = '*' then
+            DocumentProc
           else
-            SLCommentProc
+            CommentProc;
         end
         else
           SLCommentProc;
@@ -131,9 +134,9 @@ begin
   case Parent.FLine[Parent.Run] of
     '[':
       begin
-        SetRange(rscStringSpecial);
+        SetRange(rscSpecialString);
         Inc(Parent.Run);
-        StringSpecialProc;
+        SpecialStringProc;
       end
   else
     Parent.FTokenID := tkSymbol;
@@ -141,32 +144,15 @@ begin
 
 end;
 
-procedure TLuaProcessor.StringSpecialProc;
+procedure TLuaProcessor.SpecialStringProc;
 begin
   Parent.FTokenID := tkString;
-  SetRange(rscStringSpecial);
+  SetRange(rscSpecialString);
   while not (Parent.FLine[Parent.Run] in [#0, #10, #13]) do
   begin
-    if (Parent.FLine[Parent.Run] = ']') and (Parent.FLine[Parent.Run + 1] = ']') then
+    if ScanMatch(']]') then
     begin
-      SetRange(rscUnKnown);//TODO
-      Inc(Parent.Run, 2);
-      break;
-    end;
-    Inc(Parent.Run);
-  end;
-end;
-
-procedure TLuaProcessor.LuaCommentProc;
-begin
-  Parent.FTokenID := tkComment;
-  SetRange(rscComment);
-  while not (Parent.FLine[Parent.Run] in [#0, #10, #13]) do
-  begin
-    if (Parent.FLine[Parent.Run] = ']') and (Parent.FLine[Parent.Run + 1] = ']') then
-    begin
-      SetRange(rscUnKnown);//TODO
-      Inc(Parent.Run, 2);
+      SetRange(rscUnKnown);
       break;
     end;
     Inc(Parent.Run);
@@ -184,7 +170,6 @@ begin
       '''': ProcTable[I] := @StringSQProc;
       '"': ProcTable[I] := @StringDQProc;
       '[': ProcTable[I] := @BracketProc;
-      //'#': ProcTable[I] := @DirectiveProc;
       '-': ProcTable[I] := @DashProc;
       '>': ProcTable[I] := @GreaterProc;
       '<': ProcTable[I] := @LowerProc;
@@ -224,7 +209,7 @@ begin
   else case Range of
     rscComment:
     begin
-      LuaCommentProc;
+      CommentProc;
     end;
     rscDocument:
     begin
@@ -232,8 +217,8 @@ begin
     end;
     rscStringSQ, rscStringDQ, rscStringBQ:
       StringProc;
-    rscStringSpecial:
-      StringSpecialProc;
+    rscSpecialString:
+      SpecialStringProc;
   else
     if ProcTable[Parent.FLine[Parent.Run]] = nil then
       UnknownProc
@@ -257,6 +242,12 @@ begin
     Result := Parent.DocumentAttri
   else
     Result := inherited GetEndOfLineAttribute;
+end;
+
+procedure TLuaProcessor.Created;
+begin
+  inherited Created;
+  CloseComment := ']]';
 end;
 
 function TLuaProcessor.GetIdentChars: TSynIdentChars;

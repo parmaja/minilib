@@ -33,6 +33,7 @@ type
   public
     procedure QuestionProc;
     procedure SlashProc;
+    procedure AtProc;
 
     procedure GreaterProc;
     procedure LowerProc;
@@ -115,7 +116,13 @@ begin
   case Parent.FLine[Parent.Run] of
     '/':
       begin
-        SLCommentProc;
+        Inc(Parent.Run);
+        if Parent.FLine[Parent.Run] = '*' then
+          SLDocumentProc
+        else if ScanMatch('TODO') then
+          SLDocumentProc
+        else
+          SLCommentProc;
       end;
     '*':
       begin
@@ -128,11 +135,21 @@ begin
     '+':
       begin
         Inc(Parent.Run);
-        SpecialCommentProc;
+        if Parent.FLine[Parent.Run] = '+' then
+          SpecialDocumentProc
+        else
+          SpecialCommentProc;
       end
   else
     Parent.FTokenID := tkSymbol;
   end;
+end;
+
+procedure TDProcessor.AtProc;
+begin
+  Inc(Parent.Run);
+  Parent.FTokenID := tkVariable;
+  WordProc;
 end;
 
 procedure TDProcessor.MakeProcTable;
@@ -143,6 +160,7 @@ begin
   for I := #33 to #255 do
     case I of
       '?': ProcTable[I] := @QuestionProc;
+      '@': ProcTable[I] := @AtProc;
       '''': ProcTable[I] := @StringSQProc;
       '"': ProcTable[I] := @StringDQProc;
       '`': ProcTable[I] := @StringBQProc;
@@ -189,6 +207,10 @@ begin
     begin
       DocumentProc;
     end;
+    rscSpecialDocument:
+    begin
+      SpecialDocumentProc;
+    end;
     rscStringSQ, rscStringDQ, rscStringBQ:
       StringProc;
   else
@@ -210,7 +232,7 @@ end;
 
 function TDProcessor.GetEndOfLineAttribute: TSynHighlighterAttributes;
 begin
-  if (Range = rscDocument) or (LastRange = rscDocument) then
+  if (Range in [rscDocument, rscSpecialDocument]) or (LastRange in [rscDocument, rscSpecialDocument]) then
     Result := Parent.DocumentAttri
   else
     Result := inherited GetEndOfLineAttribute;

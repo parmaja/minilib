@@ -25,7 +25,7 @@ type
 
   { TSynStdSQLSyn }
 
-  TSynStdSQLSyn = class(TSynCustomHighlighter)
+  TmnSynStdSQLSyn = class(TSynCustomHighlighter)
   private
     Run: LongInt;
     FProcTable: array[AnsiChar] of TProcTableProc;
@@ -126,7 +126,7 @@ const
     'date,time,datetime,julianday,strftime';
 
   // types
-  StdSQLTypes = 'blob,char,character,decimal,double,float,integer,' +
+  StdSQLTypes = 'blob,char,character,decimal,double,float,boolean,real,integer,' +
     'numeric,precision,smallint,timestamp,varchar';
 
   type
@@ -207,7 +207,7 @@ begin
 end;
 
 
-procedure TSynStdSQLSyn.MakeProcTables;
+procedure TmnSynStdSQLSyn.MakeProcTables;
 var
   I: Char;
 begin
@@ -243,7 +243,7 @@ begin
     end;
 end;
 
-constructor TSynStdSQLSyn.Create(AOwner: TComponent);
+constructor TmnSynStdSQLSyn.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
   FCommentAttri := TSynHighlighterAttributes.Create(SYNS_AttrComment);
@@ -287,7 +287,7 @@ begin
   MakeProcTables;
 end;
 
-procedure TSynStdSQLSyn.SetLine(const NewValue: string; LineNumber: Integer);
+procedure TmnSynStdSQLSyn.SetLine(const NewValue: string; LineNumber: Integer);
 begin
   inherited;
   FLine := PChar(NewValue);
@@ -295,7 +295,7 @@ begin
   Next;
 end;
 
-procedure TSynStdSQLSyn.AndSymbolProc;
+procedure TmnSynStdSQLSyn.AndSymbolProc;
 begin
   FTokenID := tkSymbol;
   Inc(Run);
@@ -303,7 +303,7 @@ begin
     Inc(Run);
 end;
 
-procedure TSynStdSQLSyn.SQStringProc;
+procedure TmnSynStdSQLSyn.SQStringProc;
 begin
   if FLine[Run] = #0 then
     NullProc
@@ -325,7 +325,7 @@ begin
   end;
 end;
 
-procedure TSynStdSQLSyn.DQStringProc;
+procedure TmnSynStdSQLSyn.DQStringProc;
 begin
   if FLine[Run] = #0 then
     NullProc
@@ -347,7 +347,7 @@ begin
   end;
 end;
 
-procedure TSynStdSQLSyn.CRProc;
+procedure TmnSynStdSQLSyn.CRProc;
 begin
   FTokenID := tkSpace;
   Inc(Run);
@@ -355,7 +355,7 @@ begin
     Inc(Run);
 end;
 
-procedure TSynStdSQLSyn.EqualProc;
+procedure TmnSynStdSQLSyn.EqualProc;
 begin
   FTokenID := tkSymbol;
   Inc(Run);
@@ -363,7 +363,7 @@ begin
     Inc(Run);
 end;
 
-procedure TSynStdSQLSyn.GreaterProc;
+procedure TmnSynStdSQLSyn.GreaterProc;
 begin
   FTokenID := tkSymbol;
   Inc(Run);
@@ -371,7 +371,7 @@ begin
     Inc(Run);
 end;
 
-procedure TSynStdSQLSyn.IdentProc;
+procedure TmnSynStdSQLSyn.IdentProc;
 var
   L: Integer;
 begin
@@ -387,13 +387,13 @@ begin
       inc(Run);
 end;
 
-procedure TSynStdSQLSyn.LFProc;
+procedure TmnSynStdSQLSyn.LFProc;
 begin
   FTokenID := tkSpace;
   inc(Run);
 end;
 
-procedure TSynStdSQLSyn.LowerProc;
+procedure TmnSynStdSQLSyn.LowerProc;
 begin
   FTokenID := tkSymbol;
   Inc(Run);
@@ -408,7 +408,7 @@ begin
   end;
 end;
 
-procedure TSynStdSQLSyn.MinusProc;
+procedure TmnSynStdSQLSyn.MinusProc;
 begin
   Inc(Run);
   if FLine[Run] = '-' then
@@ -422,12 +422,12 @@ begin
     FTokenID := tkSymbol;
 end;
 
-procedure TSynStdSQLSyn.NullProc;
+procedure TmnSynStdSQLSyn.NullProc;
 begin
   FTokenID := tkNull;
 end;
 
-procedure TSynStdSQLSyn.NumberProc;
+procedure TmnSynStdSQLSyn.NumberProc;
 begin
   inc(Run);
   FTokenID := tkNumber;
@@ -442,7 +442,7 @@ begin
   end;
 end;
 
-procedure TSynStdSQLSyn.OrSymbolProc;
+procedure TmnSynStdSQLSyn.OrSymbolProc;
 begin
   FTokenID := tkSymbol;
   Inc(Run);
@@ -450,7 +450,7 @@ begin
     Inc(Run);
 end;
 
-procedure TSynStdSQLSyn.PlusProc;
+procedure TmnSynStdSQLSyn.PlusProc;
 begin
   FTokenID := tkSymbol;
   Inc(Run);
@@ -458,7 +458,7 @@ begin
     Inc(Run);
 end;
 
-procedure TSynStdSQLSyn.SlashProc;
+procedure TmnSynStdSQLSyn.SlashProc;
 begin
   Inc(Run);
   case FLine[Run] of
@@ -486,7 +486,7 @@ begin
   end;
 end;
 
-procedure TSynStdSQLSyn.SpaceProc;
+procedure TmnSynStdSQLSyn.SpaceProc;
 begin
   FTokenID := tkSpace;
   repeat
@@ -494,13 +494,13 @@ begin
   until (FLine[Run] > #32) or (FLine[Run] in [#0, #10, #13]);
 end;
 
-procedure TSynStdSQLSyn.SymbolProc;
+procedure TmnSynStdSQLSyn.SymbolProc;
 begin
   Inc(Run);
   FTokenID := tkSymbol;
 end;
 
-procedure TSynStdSQLSyn.SymbolAssignProc;
+procedure TmnSynStdSQLSyn.SymbolAssignProc;
 begin
   FTokenID := tkSymbol;
   Inc(Run);
@@ -508,7 +508,7 @@ begin
     Inc(Run);
 end;
 
-procedure TSynStdSQLSyn.VariableProc;
+procedure TmnSynStdSQLSyn.VariableProc;
 var
   i: integer;
 begin
@@ -523,7 +523,7 @@ begin
   end;
 end;
 
-procedure TSynStdSQLSyn.UnknownProc;
+procedure TmnSynStdSQLSyn.UnknownProc;
 begin
   inc(Run);
   while (FLine[Run] in [#128..#191]) OR // continued utf8 subcode
@@ -531,7 +531,7 @@ begin
   FTokenID := tkUnknown;
 end;
 
-procedure TSynStdSQLSyn.CommentProc;
+procedure TmnSynStdSQLSyn.CommentProc;
 begin
   case FLine[Run] of
     #0: NullProc;
@@ -553,7 +553,7 @@ begin
   end;
 end;
 
-function TSynStdSQLSyn.IsKeyword(const AKeyword: string): boolean;
+function TmnSynStdSQLSyn.IsKeyword(const AKeyword: string): boolean;
 var
   tk: TtkTokenKind;
 begin
@@ -561,7 +561,7 @@ begin
   Result := tk in [tkDatatype, tkFunction, tkKey, tkObject];
 end;
 
-procedure TSynStdSQLSyn.Next;
+procedure TmnSynStdSQLSyn.Next;
 begin
   FTokenPos := Run;
   case FRange of
@@ -576,7 +576,7 @@ begin
   end;
 end;
 
-function TSynStdSQLSyn.GetDefaultAttribute(Index: integer):
+function TmnSynStdSQLSyn.GetDefaultAttribute(Index: integer):
   TSynHighlighterAttributes;
 begin
   case Index of
@@ -591,17 +591,17 @@ begin
   end;
 end;
 
-function TSynStdSQLSyn.GetEol: Boolean;
+function TmnSynStdSQLSyn.GetEol: Boolean;
 begin
   Result := FTokenID = tkNull;
 end;
 
-function TSynStdSQLSyn.GetRange: Pointer;
+function TmnSynStdSQLSyn.GetRange: Pointer;
 begin
   Result := Pointer(PtrUInt(FRange));
 end;
 
-function TSynStdSQLSyn.GetToken: string;
+function TmnSynStdSQLSyn.GetToken: string;
 var
   Len: LongInt;
 begin
@@ -610,18 +610,18 @@ begin
   SetString(Result, (FLine + FTokenPos), Len);
 end;
 
-procedure TSynStdSQLSyn.GetTokenEx(out TokenStart: PChar; out TokenLength: integer);
+procedure TmnSynStdSQLSyn.GetTokenEx(out TokenStart: PChar; out TokenLength: integer);
 begin
   TokenLength := Run - FTokenPos;
   TokenStart := FLine + FTokenPos;
 end;
 
-function TSynStdSQLSyn.GetTokenID: TtkTokenKind;
+function TmnSynStdSQLSyn.GetTokenID: TtkTokenKind;
 begin
   Result := FTokenID;
 end;
 
-function TSynStdSQLSyn.GetTokenAttribute: TSynHighlighterAttributes;
+function TmnSynStdSQLSyn.GetTokenAttribute: TSynHighlighterAttributes;
 begin
   case GetTokenID of
     tkComment: Result := FCommentAttri;
@@ -641,37 +641,37 @@ begin
   end;
 end;
 
-function TSynStdSQLSyn.GetTokenKind: integer;
+function TmnSynStdSQLSyn.GetTokenKind: integer;
 begin
   Result := Ord(FTokenID);
 end;
 
-function TSynStdSQLSyn.GetTokenPos: Integer;
+function TmnSynStdSQLSyn.GetTokenPos: Integer;
 begin
   Result := FTokenPos;
 end;
 
-procedure TSynStdSQLSyn.ResetRange;
+procedure TmnSynStdSQLSyn.ResetRange;
 begin
   FRange := rsUnknown;
 end;
 
-procedure TSynStdSQLSyn.SetRange(Value: Pointer);
+procedure TmnSynStdSQLSyn.SetRange(Value: Pointer);
 begin
   FRange := TRangeState(PtrUInt(Value));
 end;
 
-function TSynStdSQLSyn.GetIdentChars: TSynIdentChars;
+function TmnSynStdSQLSyn.GetIdentChars: TSynIdentChars;
 begin
   Result := StdSQLSyn.GetIdentChars
 end;
 
-class function TSynStdSQLSyn.GetLanguageName: string;
+class function TmnSynStdSQLSyn.GetLanguageName: string;
 begin
   Result := SYNS_LangSQL;
 end;
 
-function TSynStdSQLSyn.GetSampleSource: string;
+function TmnSynStdSQLSyn.GetSampleSource: string;
 begin
   Result := '/* SQL Example*/'#13#10 +
     #13#10 +
@@ -687,7 +687,7 @@ begin
 end;
 
 initialization
-  RegisterPlaceableHighlighter(TSynStdSQLSyn);
+  RegisterPlaceableHighlighter(TmnSynStdSQLSyn);
 finalization
   FreeAndNil(FStdSQLSyn);
 end.

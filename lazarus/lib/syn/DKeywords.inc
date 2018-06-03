@@ -109,6 +109,7 @@
   sDFunctions =
     'read,'+
     'readln,'+
+    'to,'+
     'writeln,'+
     'write';
 

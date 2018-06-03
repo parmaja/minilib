@@ -21,7 +21,7 @@ type
     tkString, tkText, tkVariable, tkProcessor);
 
   //Common range used for some syntax
-  TCommonRangeState = (rscUnknown, rscComment, rscSpecialComment, rscDocument, rscStringSQ, rscStringDQ, rscStringBQ {BackQuote}, rscStringSpecial);
+  TCommonRangeState = (rscUnknown, rscComment, rscSpecialComment, rscDocument, rscSpecialDocument, rscStringSQ, rscStringDQ, rscStringBQ {BackQuote}, rscSpecialString);
   TCommonRangeStates = set of TCommonRangeState;
 
   TProcTableProc = procedure of object;
@@ -59,8 +59,12 @@ type
     function GetEndOfLineAttribute: TSynHighlighterAttributes; virtual;
 
     procedure DoAddKeyword(AKeyword: string; AKind: integer);
+    function IsIdentifier(c: Char): Boolean; virtual;
+
     function ScanIdent(const Identifier: string): TtkTokenKind; //this will move Line.Run and bring Identifire kind
     function ScanMatch(const MatchWith: string): Boolean; //this will move Line.Run if matched
+    procedure ScanToEOL;
+
     procedure Created; virtual;
   public
     IdentTable: TIdentifierTable;
@@ -89,8 +93,8 @@ type
     LastRange: TCommonRangeState;
     CloseComment: string;
     CloseSpecialComment: string;
-  public
     procedure Created; override;
+  public
     procedure ResetRange; override;
     function GetRange: Byte; override;
     procedure SetRange(Value: Byte); override;
@@ -104,10 +108,13 @@ type
     procedure InternalSpecialCommentProc; //    /+ +/
 
     procedure WordProc; //Identifire started with char like #define
+
     procedure SLCommentProc; //Single Line Comment //comment or #comment depend on who started
     procedure CommentProc; //Mutli line comment
-    procedure SpecialCommentProc;
+    procedure SLDocumentProc;
     procedure DocumentProc;
+    procedure SpecialCommentProc;
+    procedure SpecialDocumentProc;
 
     procedure StringProc;
     procedure StringSQProc;
@@ -242,7 +249,9 @@ uses
 
 function RangeToProcessor(Range: Pointer): Byte;
 begin
+  {$PUSH}{$HINTS OFF}
   Result := PtrUInt(Range) and $FF;
+  {$POP}
 end;
 
 function MixRange(Index, Main, Current: byte): Pointer;
@@ -276,13 +285,11 @@ end;
 function TSynProcessor.ScanIdent(const Identifier: string): TtkTokenKind;
 var
   Entry: TTokenObject;
-  IdentChars: TSynIdentChars;
   AKeyword: string;
   i: Integer;
 begin
-  IdentChars := GetIdentChars;
   i := 1;
-  while Identifier[i] in IdentChars do
+  while IsIdentifier(Identifier[i]) do
     Inc(i);
   AKeyword := Copy(Identifier, 1, i - 1);
   inc(Parent.Run, i - 1);
@@ -301,7 +308,7 @@ begin
   i := Parent.Run;
   c := 1;
   repeat
-    if (Parent.FLine[i] <> MatchWith[c]) then
+    if (LowerCase(Parent.FLine[i]) <> LowerCase(MatchWith[c])) then
         break;
     if c = Length(MatchWith) then
     begin
@@ -314,6 +321,14 @@ begin
 
   if Result then
     Inc(Parent.Run, Length(MatchWith));
+end;
+
+procedure TSynProcessor.ScanToEOL;
+begin
+  while not (Parent.FLine[Parent.Run] in [#0, #10, #13]) do
+  begin
+    Inc(Parent.Run);
+  end
 end;
 
 procedure TSynProcessor.Created;
@@ -329,6 +344,11 @@ end;
 procedure TSynProcessor.DoAddKeyword(AKeyword: string; AKind: integer);
 begin
   FKeywords.Add(AKeyword, TTokenObject.Create(AKeyword, TtkTokenKind(AKind)));
+end;
+
+function TSynProcessor.IsIdentifier(c: Char): Boolean;
+begin
+  Result := IdentTable[c];
 end;
 
 { TCommonSynProcessor }
@@ -398,19 +418,14 @@ end;
 
 procedure TCommonSynProcessor.WordProc;
 begin
-  Inc(Parent.Run);
-  repeat
+  while not (Parent.FLine[Parent.Run] in [#0, #10, #13]) and IsIdentifier(Parent.FLine[Parent.Run]) do
     Inc(Parent.Run);
-  until Parent.FLine[Parent.Run] in [#0, #10, #13, ' '];
 end;
 
 procedure TCommonSynProcessor.SLCommentProc;
 begin
   Parent.FTokenID := tkComment;
-  while not (Parent.FLine[Parent.Run] in [#0, #10, #13]) do
-  begin
-    Inc(Parent.Run);
-  end
+  ScanToEOL;
 end;
 
 procedure TCommonSynProcessor.CommentProc;
@@ -418,6 +433,12 @@ begin
   Parent.FTokenID := tkComment;
   SetRange(rscComment);
   InternalCommentProc;
+end;
+
+procedure TCommonSynProcessor.SLDocumentProc;
+begin
+  Parent.FTokenID := tkDocument;
+  ScanToEOL;
 end;
 
 procedure TCommonSynProcessor.SpecialCommentProc;
@@ -432,6 +453,13 @@ begin
   Parent.FTokenID := tkDocument;
   SetRange(rscDocument);
   InternalCommentProc;
+end;
+
+procedure TCommonSynProcessor.SpecialDocumentProc;
+begin
+  Parent.FTokenID := tkDocument;
+  SetRange(rscSpecialDocument);
+  InternalSpecialCommentProc;
 end;
 
 procedure TCommonSynProcessor.StringProc;
@@ -531,16 +559,17 @@ begin
 end;
 
 procedure TCommonSynProcessor.NumberProc;
+var
+  LastChar: Char;
 begin
   inc(Parent.Run);
   Parent.FTokenID := tkNumber;
-  while Parent.FLine[Parent.Run] in ['0'..'9', '.', 'A'..'Z', 'a'..'z'] do //C format hex
+  LastChar := #0;
+  while Parent.FLine[Parent.Run] in ['.', '0'..'9', 'A'..'Z', 'a'..'z'] do //C format hex
   begin
-    case Parent.FLine[Parent.Run] of
-      '.':
-        if Parent.FLine[Parent.Run + 1] = '.' then
-          break;
-    end;
+    if (LastChar = '.') and (Parent.FLine[Parent.Run] = '.') then
+       break;
+    LastChar := Parent.FLine[Parent.Run];
     inc(Parent.Run);
   end;
 end;
@@ -581,8 +610,6 @@ begin
 
   FProcessors := TSynProcessors.Create;
   InitProcessors;
-
-  //FProcessors.Add(TPlainProcessor.Create(Self, ''));
 
   FProcessors.Switch(FProcessors.MainProcessor);
 
@@ -643,7 +670,6 @@ begin
 
   SetAttributesOnChange(@DefHighlightChange);
   Prepare;
-  //FDefaultFilter := SYNS_FilterMultiProc;
 end;
 
 destructor TSynMultiProcSyn.Destroy;
@@ -886,10 +912,9 @@ begin
     begin
       Parent.FTokenID := tkUnknown;
       repeat
-        if (Parent.FLine[Parent.Run] = '?') and (Parent.FLine[Parent.Run + 1] = '>') then
+        if ScanMatch('?>') then
         begin
           Parent.Processors.Switch(Parent.Processors.MainProcessor);
-          Inc(Parent.Run, 2);
           break;
         end;
         Inc(Parent.Run);

@@ -552,7 +552,7 @@ type
     property Parsed: Boolean read FParsed;
     property Prepared: Boolean read FPrepared;
     property Columns: TmncColumns read FColumns write SetColumns;
-    property Fields: TmncFields read FFields write SetFields; //Current record loaded in memory
+    property Fields: TmncFields read FFields write SetFields; //Current record loaded in memory, it is nil sometime if no data, do not access it if no data exists
     property Field[Index: string]: TmncField read GetField;
     property Params: TmncParams read FParams write SetParams;
     property Param[Index: string]: TmncParam read GetParam;
@@ -1309,6 +1309,8 @@ end;
 
 function TmncFields.GetItem(Index: Integer): TmncField;
 begin
+  if Self = nil then
+    raise EmncException.Create('Fields is nil');
   Result := (inherited Items[Index]) as TmncField;
 end;
 
