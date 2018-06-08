@@ -1172,7 +1172,7 @@ end;
 
 procedure TmncMySQLCommand.FetchValues;
 var
-  i: Integer;
+  i, c: Integer;
 {$ifdef fpc}
   s: string;
 {$else}
@@ -1187,7 +1187,8 @@ begin
   if Columns.Count > 0 then
   begin
     aCurrent := CreateFields(Columns);
-    for i := 0 to Columns.Count - 1 do
+    c := Columns.Count;
+    for i := 0 to c - 1 do
     begin
       aColumn := Columns[i];
       aType := aColumn.FieldType;
@@ -1241,6 +1242,7 @@ begin
         MYSQL_TYPE_TINY_BLOB, MYSQL_TYPE_MEDIUM_BLOB, MYSQL_TYPE_LONG_BLOB,
         MYSQL_TYPE_BLOB, MYSQL_TYPE_GEOMETRY:
         begin
+          aCurrent.Add(i, '');
         end;
       end;
     end;
