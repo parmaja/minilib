@@ -4,12 +4,12 @@ Lazarus folder library not worked at all with Delphi.
 
 === Compile ===
 
-Free Pascal  2.6.2
-Delphi 2007 ansi
+Free Pascal  3.0.4
+Delphi XE and Above
 
 === Branches ===
 
-Use "release" branch instead of "truck"
+Use "release" branch instead of "trunk"
 The "release" branch not modified directly by developers, it is only we merge to it from the truck.
 
 
