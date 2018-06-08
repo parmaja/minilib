@@ -40,8 +40,10 @@ type
   end;
 
   IFields = interface(IStreamPersist)
+    function GetCount: Integer;
     function GetValues(Index: string): Variant;
     property Values[Index: string]: Variant read GetValues;
+    property Count: Integer read GetCount;
   end;
 
   { TmnCustomField }
