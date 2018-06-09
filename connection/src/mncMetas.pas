@@ -17,7 +17,7 @@ interface
 
 uses
   SysUtils, Classes, Contnrs,
-  mncCommons;
+  mncCommons, mncORM;
 
 type
   TschmKind = (sokNone, sokMeta, sokData,
@@ -30,9 +30,9 @@ type
   TschmEnumOption = (ekExtra, ekAlter, ekSystem, ekSort);
   TschmEnumOptions = set of TschmEnumOption;
 
-  { TmncMetaParam }
+  { TmncMetaAttribute }
 
-  TmncMetaParam = class(TObject)
+  TmncMetaAttribute = class(TObject)
   private
     FName: string;
     FValue: string;
@@ -45,16 +45,16 @@ type
 
   TmncMetaAttributes = class(TObjectList)
   private
-    function GetItem(Index: Integer): TmncMetaParam;
+    function GetItem(Index: Integer): TmncMetaAttribute;
     function GetValues(Index: string): string;
-    procedure SetItem(Index: Integer; const Value: TmncMetaParam);
+    procedure SetItem(Index: Integer; const Value: TmncMetaAttribute);
   public
     constructor Create(Names, Values: array of string); overload;
     constructor Create; overload;
-    function Find(const Name: string): TmncMetaParam;
-    function Add(Param: TmncMetaParam): Integer; overload;
-    function Add(Name:string; Value: string=''): TmncMetaParam; overload;
-    property Items[Index: Integer]: TmncMetaParam read GetItem write SetItem;
+    function Find(const Name: string): TmncMetaAttribute;
+    function Add(Param: TmncMetaAttribute): Integer; overload;
+    function Add(Name:string; Value: string=''): TmncMetaAttribute; overload;
+    property Items[Index: Integer]: TmncMetaAttribute read GetItem write SetItem;
     property Values[Index: string]: string read GetValues; default;
   end;
 
@@ -276,14 +276,14 @@ end;
 
 { TmncMetaAttributes }
 
-function TmncMetaAttributes.GetItem(Index: Integer): TmncMetaParam;
+function TmncMetaAttributes.GetItem(Index: Integer): TmncMetaAttribute;
 begin
-  Result := inherited Items[Index] as TmncMetaParam;
+  Result := inherited Items[Index] as TmncMetaAttribute;
 end;
 
 function TmncMetaAttributes.GetValues(Index: string): string;
 var
-  aItem: TmncMetaParam;
+  aItem: TmncMetaAttribute;
 begin
   if Self = nil then
     Result := ''
@@ -297,7 +297,7 @@ begin
   end;
 end;
 
-procedure TmncMetaAttributes.SetItem(Index: Integer; const Value: TmncMetaParam);
+procedure TmncMetaAttributes.SetItem(Index: Integer; const Value: TmncMetaAttribute);
 begin
   inherited Items[Index] := Value;
 end;
@@ -323,7 +323,7 @@ begin
   Create([], []);
 end;
 
-function TmncMetaAttributes.Find(const Name: string): TmncMetaParam;
+function TmncMetaAttributes.Find(const Name: string): TmncMetaAttribute;
 var
   i: Integer;
 begin
@@ -338,14 +338,14 @@ begin
   end;
 end;
 
-function TmncMetaAttributes.Add(Param: TmncMetaParam): Integer;
+function TmncMetaAttributes.Add(Param: TmncMetaAttribute): Integer;
 begin
   Result := inherited Add(Param);
 end;
 
-function TmncMetaAttributes.Add(Name, Value: string): TmncMetaParam;
+function TmncMetaAttributes.Add(Name, Value: string): TmncMetaAttribute;
 begin
-  Result := TmncMetaParam.Create;
+  Result := TmncMetaAttribute.Create;
   Result.Name := Name;
   Result.Value := Value;
   Add(Result);

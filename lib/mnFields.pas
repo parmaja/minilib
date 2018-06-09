@@ -40,10 +40,13 @@ type
   end;
 
   IFields = interface(IStreamPersist)
-    function GetCount: Integer;
     function GetValues(Index: string): Variant;
     property Values[Index: string]: Variant read GetValues;
+
+    function GetCount: Integer;
     property Count: Integer read GetCount;
+
+    function GetIField(FieldName: string): IField;
   end;
 
   { TmnCustomField }
@@ -114,7 +117,7 @@ type
     function GetIsNull: Boolean; virtual;
     procedure SetIsNull(const AValue: Boolean); virtual;
     function GetIsEmpty: Boolean; virtual;
-
+  public
     property Value: Variant read GetValue write SetValue;
     property AsVariant: Variant read GetValue write SetValue;
     //* AsAnsiString: Convert strign to utf8 it is special for Lazarus
@@ -212,7 +215,8 @@ type
     function CreateField: TmnField; virtual;
     procedure SetValues(Index: string; const AValue: Variant);
     function GetValues(Index: string): Variant;
-    function Find(vName: string): TmnField; virtual;
+    function FindField(vName: string): TmnField; virtual;
+    function GetIField(FieldName: string): IField;
   public
     function QueryInterface({$ifdef FPC}constref{$else}const{$endif} iid : TGuid; out Obj):HResult; {$ifdef WINDOWS}stdcall{$else}cdecl{$endif};
     procedure LoadFromStream(Stream: TStream); virtual;
@@ -736,14 +740,14 @@ end;
 
 function TmnFields.ByName(vName: string): TmnField;
 begin
-  Result := Find(vName);
+  Result := FindField(vName);
   if Result = nil then
     raise Exception.Create('Field "' + vName + '" not found');
 end;
 
 function TmnFields.IsExists(vName: string): Boolean;
 begin
-  Result := Find(vName) <> nil;
+  Result := FindField(vName) <> nil;
 end;
 
 procedure TmnFields.LoadFromFile(const FileName: string);
@@ -821,7 +825,7 @@ procedure TmnFields.SetValues(Index: string; const AValue: Variant);
 var
   F: TmnField;
 begin
-  F := Find(Index);
+  F := FindField(Index);
   if F = nil then
   begin
     F := CreateField;
@@ -831,12 +835,12 @@ begin
   F.Value := AValue;
 end;
 
-function TmnFields._AddRef: Integer;
+function TmnFields._AddRef: Integer; stdcall;
 begin
   Result := 0;
 end;
 
-function TmnFields._Release: Integer;
+function TmnFields._Release: Integer; stdcall;
 begin
   Result := 0;
 end;
@@ -856,7 +860,7 @@ begin
   end;
 end;
 
-function TmnFields.Find(vName: string): TmnField;
+function TmnFields.FindField(vName: string): TmnField;
 var
   i: Integer;
 begin
@@ -871,11 +875,16 @@ begin
   end;
 end;
 
+function TmnFields.GetIField(FieldName: string): IField;
+begin
+  Result := FindField(FieldName);
+end;
+
 function TmnFields.GetValues(Index: string): Variant;
 var
   F: TmnField;
 begin
-  F := Find(Index);
+  F := FindField(Index);
   if F <> nil then
     Result := F.Value
   else

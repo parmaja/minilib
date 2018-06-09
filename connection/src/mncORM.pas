@@ -18,7 +18,7 @@ interface
 uses
   Classes, SysUtils, Contnrs,
   mnClasses,
-  mncConnections, mncCommons, mncMetas;
+  mncConnections, mncCommons;
 
 type
   TormObject = class;
@@ -27,54 +27,69 @@ type
 
   TormObject = class(TmnNamedObjectList<TormObject>)
   private
+    FComment: string;
     FName: string;
+    FParent: TormObject;
+    FRoot: TormObject;
   public
-    function This: TormObject; //I wish i have templates/meta programming in pascal
-    constructor Create(AName: string);
+    constructor Create(AParent: TormObject; AName: string);
     property Name: string read FName write FName;
+    property Comment: string read FComment write FComment;
+    function This: TormObject; //I wish i have templates/meta programming in pascal
+    property Parent: TormObject read FParent;
+    property Root: TormObject read FRoot;
   end;
 
   { TormSchema }
 
   TormSchema = class(TormObject)
   public
-    function This: TormSchema;
     constructor Create(AName: string);
+    function This: TormSchema;
   end;
 
   { TormDatabase }
 
   TormDatabase = class(TormObject)
   public
-    function This: TormDatabase;
     constructor Create(ASchema: TormSchema; AName: string);
+    function This: TormDatabase;
   end;
 
   { TormTable }
 
   TormTable = class(TormObject)
   public
-    function This: TormTable;
     constructor Create(ADatabase: TormDatabase; AName: string);
+    function This: TormTable;
   end;
 
   TormFieldOption = (
     foID, //PRIMARY and AUTO
+    foReferenced,
+    foInternal, //Do not display for end user
+    foSummed, //
     foIndexed
   );
 
   TormFieldOptions = set of TormFieldOption;
+  TormFieldType = (ftString, ftBoolean, ftInteger, ftCurrency, ftFloat, ftDate, ftTime, ftDateTime, ftMemo, ftBlob);
 
   { TormField }
 
   TormField = class(TormObject)
   private
-    FDataType: TmncDataType;
+    FFieldType: TormFieldType;
     FOptions: TormFieldOptions;
+    FRefTableName: string;
+    FRefFieldName: string;
+    FRefField: TormField;
   public
-    constructor Create(ATable: TormTable; AName: string; ADataType: TmncDataType; AOptions: TormFieldOptions);
+    constructor Create(ATable: TormTable; AName: string; AFieldType: TormFieldType; AOptions: TormFieldOptions = []);
+    function Parent: TormTable;
+    procedure Reference(ATableName: string; AFieldName: string);
     property Options: TormFieldOptions read FOptions write FOptions;
-    property DataType: TmncDataType read FDataType write FDataType;
+    property FieldType: TormFieldType read FFieldType write FFieldType;
   end;
 
   { TormInsert }
@@ -101,12 +116,21 @@ end;
 
 { TormField }
 
-constructor TormField.Create(ATable: TormTable; AName: string; ADataType: TmncDataType; AOptions: TormFieldOptions);
+constructor TormField.Create(ATable: TormTable; AName: string; AFieldType: TormFieldType; AOptions: TormFieldOptions);
 begin
-  inherited Create(AName);
-  ATable.Add(Self);
+  inherited Create(ATable, AName);
   FOptions := AOptions;
-  FDataType := ADataType;
+  FFieldType := AFieldType;
+end;
+
+function TormField.Parent: TormTable;
+begin
+  Result := inherited Parent as TormTable;
+end;
+
+procedure TormField.Reference(ATableName: string; AFieldName: string);
+begin
+
 end;
 
 { TormTable }
@@ -118,8 +142,7 @@ end;
 
 constructor TormTable.Create(ADatabase: TormDatabase; AName: string);
 begin
-  inherited Create(AName);
-  ADatabase.Add(Self);
+  inherited Create(ADatabase, AName);
 end;
 
 { TormSchema }
@@ -131,7 +154,7 @@ end;
 
 constructor TormSchema.Create(AName: string);
 begin
-  inherited Create(AName);
+  inherited Create(nil, AName);
 end;
 
 { TormObject }
@@ -141,9 +164,17 @@ begin
   Result := Self;
 end;
 
-constructor TormObject.Create(AName: string);
+constructor TormObject.Create(AParent: TormObject; AName: string);
 begin
-
+  inherited Create;
+  if AParent <> nil then
+  begin
+    FParent := AParent;
+    AParent.Add(Self);
+    FRoot := AParent.Root;
+  end
+  else
+    FRoot := Self;
 end;
 
 { TormDatabase }
@@ -155,9 +186,7 @@ end;
 
 constructor TormDatabase.Create(ASchema: TormSchema; AName: string);
 begin
-  inherited Create(AName);
-  ASchema.Add(Self);
-
+  inherited Create(ASchema, AName);
 end;
 
 end.

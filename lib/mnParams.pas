@@ -58,7 +58,6 @@ type
     procedure SetName(const Value: string);
     function GetText: string;
     procedure SetText(const Value: string);
-    function GetCount: Integer;
 
     procedure SetChild(Value: TObject);
     function GetChild: TObject;
@@ -108,6 +107,7 @@ type
     function GetItems(Index: Integer): TIParam;
     procedure SetItems(Index: Integer; const Value: TIParam);
     function GetParam(Index: string): TIParam;
+    function GetIField(FieldName: string): IField;
     function GetValues(Index: string): Variant;
     procedure SetChild(Value: TObject);
     function GetChild: TObject;
@@ -190,6 +190,11 @@ begin
   Result := Find(Index);
   if Result = nil then
     raise Exception.Create('"' + Index + '" param not found');
+end;
+
+function TIParams.GetIField(FieldName: string): IField;
+begin
+  Result := Find(FieldName);
 end;
 
 function TIParams.IndexOf(const Name: string): Integer;

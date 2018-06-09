@@ -17,13 +17,9 @@ interface
 
 uses
   SysUtils, Classes, Contnrs,
-  mncCommons, mncConnections;
+  mncCommons, mncConnections, mncMetas, mncORM;
 
 type
-  //TmncDBType = (dbSQLite, dbMySQL, dbPosgre, dbFirebird);
-
-  TmncConnectionClass = class of TmncConnection;
-
   { TmncEngine }
 
   TmncEngine = class(TObject)
@@ -31,6 +27,7 @@ type
     Name: string;
     Title: string;
     ConnectionClass: TmncConnectionClass;
+    MataClass: TmncMetaClass;
   end;
 
 { TmncEngines }
@@ -42,7 +39,7 @@ type
     function Add(vConnectionClass: TmncConnectionClass): TmncEngine;
     function Find(vName: string): TmncEngine;
     function IndexOf(vName: string): Integer;
-    function CreateByName(vName: string): TmncConnection;
+    function CreateConnection(vModel: string): TmncConnection; deprecated;
     property Items[Index:Integer]: TmncEngine read GetItems; default;
   end;
 
@@ -107,16 +104,16 @@ begin
   end;
 end;
 
-function TmncEngines.CreateByName(vName: string): TmncConnection;
+function TmncEngines.CreateConnection(vModel: string): TmncConnection;
 var
   P: TmncEngine;
 begin
   Result := nil;
-  P := Find(vName);
+  P := Find(vModel);
   if P <> nil then
     Result := P.ConnectionClass.Create
   else
-    raise EmncException.Create('Engine ' + vName + ' not found');
+    raise EmncException.Create('Model ' + vModel + ' not found');
 end;
 
 initialization
