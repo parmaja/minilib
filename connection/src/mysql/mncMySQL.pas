@@ -937,9 +937,9 @@ begin
           end;
           varCurrency:
           begin
-            Binds.FValues[i].buffer := Binds[i].AllocBuffer(SizeOf(t64)); //TODO it should be not MYSQL_TYPE_NEWDECIMAL
-            Binds.FValues[i].buffer_length := 0;
-            Binds.FValues[i].buffer_type := MYSQL_TYPE_NEWDECIMAL;
+            Binds.FValues[i].buffer := Binds[i].AllocBuffer(SizeOf(d)); //TODO MYSQL_TYPE_NEWDECIMAL
+            Binds.FValues[i].buffer_length := SizeOf(d);
+            Binds.FValues[i].buffer_type := MYSQL_TYPE_DOUBLE;
           end;
           varDouble:
           begin
@@ -990,8 +990,8 @@ begin
           end;
           varCurrency:
           begin
-            t64 := Binds[i].Param.Value;
-            Binds[i].CopyBuffer(t64, SizeOf(t64)); //TODO it should be not MYSQL_TYPE_NEWDECIMAL
+            d := Binds[i].Param.Value;
+            Binds[i].CopyBuffer(d, SizeOf(d));
           end;
           varDouble:
           begin
@@ -1143,9 +1143,15 @@ begin
 
         aColumn.MetaType := MetaType;
         aColumn.Size := Field.length;
+        aColumn.Decimals := Field.decimals;
 
-        if FieldType in [MYSQL_TYPE_NEWDECIMAL] then
-          FieldType := MYSQL_TYPE_DOUBLE;
+        if (FieldType in [MYSQL_TYPE_DECIMAL, MYSQL_TYPE_NEWDECIMAL]) then
+        begin
+          if (Field.decimals > 4) then
+            FieldType := MYSQL_TYPE_DOUBLE
+          else
+            FieldType := MYSQL_TYPE_DOUBLE; //we should take it as integer/bigint then divide it but no way
+        end;
 
         aColumn.FieldType := FieldType;
 
@@ -1183,6 +1189,7 @@ var
   aColumn: TmncMySQLColumn;
   real_length: culong;
   bind: MYSQL_BIND;
+  cr: Currency;
 begin
   if Columns.Count > 0 then
   begin
@@ -1198,23 +1205,25 @@ begin
         MYSQL_TYPE_BIT: aCurrent.Add(i, FResults.Buffers[i].buf.AsInteger <> 0);
         MYSQL_TYPE_TINY: aCurrent.Add(i, FResults.Buffers[i].buf.AsInteger);
         MYSQL_TYPE_SHORT: aCurrent.Add(i, FResults.Buffers[i].buf.AsInteger);
-        MYSQL_TYPE_LONG: aCurrent.Add(i, FResults.Buffers[i].buf.AsInteger);
-        MYSQL_TYPE_INT24: aCurrent.Add(i, FResults.Buffers[i].buf.AsBig);
-        MYSQL_TYPE_LONGLONG: aCurrent.Add(i, FResults.Buffers[i].buf.AsBig);
+        MYSQL_TYPE_LONG:
+            aCurrent.Add(i, FResults.Buffers[i].buf.AsInteger);
+        MYSQL_TYPE_INT24:
+          aCurrent.Add(i, FResults.Buffers[i].buf.AsBig);
+        MYSQL_TYPE_LONGLONG:
+          aCurrent.Add(i, FResults.Buffers[i].buf.AsBig);
         MYSQL_TYPE_FLOAT:
-        begin
           aCurrent.Add(i, FResults.Buffers[i].buf.AsFloat); //float is bad //TODO need cfloat to single
-        end;
         MYSQL_TYPE_DOUBLE:
-        begin
           aCurrent.Add(i, FResults.Buffers[i].buf.AsDouble);
-        end;
+        {MYSQL_TYPE_DECIMAL, MYSQL_TYPE_NEWDECIMAL:
+        //* ref: https://dev.mysql.com/doc/refman/5.0/en/fixed-point-types.html
+        //* ref: http://stackoverflow.com/questions/6831217/double-vs-decimal-in-mysql
+          aCurrent.Add(i, FResults.Buffers[i].buf.AsDouble);}
         MYSQL_TYPE_YEAR : aCurrent.Add(i, FResults.Buffers[i].buf.AsInteger);
         MYSQL_TYPE_TIMESTAMP, MYSQL_TYPE_DATETIME, MYSQL_TYPE_NEWDATE,  MYSQL_TYPE_DATE,
         MYSQL_TYPE_TIME, MYSQL_TYPE_TIMESTAMP2, MYSQL_TYPE_DATETIME2, MYSQL_TYPE_TIME2:
-        begin
           aCurrent.Add(i, MySQLDateTimeToDateTime(FResults.Buffers[i].buf.AsDateTime));
-        end;
+        MYSQL_TYPE_DECIMAL, MYSQL_TYPE_NEWDECIMAL, //yes it is a string
         MYSQL_TYPE_VARCHAR,MYSQL_TYPE_VAR_STRING, MYSQL_TYPE_STRING:
         begin
           real_length := FResults.Buffers[i].length;
@@ -1229,13 +1238,15 @@ begin
             bind.buffer_length := real_length;
             CheckError(mysql_stmt_fetch_column(FStatment, @bind, i, 0));
           end;
-          aCurrent.Add(i, s);
+          if aType in [MYSQL_TYPE_DECIMAL, MYSQL_TYPE_NEWDECIMAL] then
+          begin
+            cr := StrToCurrDef(s, 0);
+            aCurrent.Add(i, cr);
+          end
+          else
+            aCurrent.Add(i, s);
         end;
 
-        MYSQL_TYPE_DECIMAL, MYSQL_TYPE_NEWDECIMAL:
-        //* ref: https://dev.mysql.com/doc/refman/5.0/en/fixed-point-types.html
-        //* ref: http://stackoverflow.com/questions/6831217/double-vs-decimal-in-mysql
-          aCurrent.Add(i, FResults.Buffers[i].buf.AsDouble);
         MYSQL_TYPE_ENUM: aCurrent.Add(i, FResults.Buffers[i].buf.AsInteger);
         MYSQL_TYPE_SET: aCurrent.Add(i, FResults.Buffers[i].buf.AsInteger);
 

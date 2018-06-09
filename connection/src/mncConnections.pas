@@ -121,12 +121,12 @@ type
     procedure DoInit; virtual;
     procedure Init;
     property ParamsChanged: Boolean read FParamsChanged write FParamsChanged;
-    function QueryInterface({$IFDEF FPC}constref{$ELSE}const{$ENDIF} iid : tguid;out obj) : longint;{$IFNDEF MSWINDOWS}cdecl{$ELSE}stdcall{$ENDIF};
     function _AddRef : longint;{$IFNDEF MSWINDOWS}cdecl{$ELSE}stdcall{$ENDIF};
     function _Release : longint;{$IFNDEF MSWINDOWS}cdecl{$ELSE}stdcall{$ENDIF};
   public
     constructor Create;
     destructor Destroy; override;
+    function QueryInterface({$IFDEF FPC}constref{$ELSE}const{$ENDIF} iid : tguid;out obj) : longint;{$IFNDEF MSWINDOWS}cdecl{$ELSE}stdcall{$ENDIF};
     class function Model: TmncConnectionModel; virtual; abstract;
     function IsModel(vName: string): Boolean;
     procedure Connect;
@@ -246,7 +246,7 @@ type
 
   { TmncItems }
 
-  TmncItems = class(TmnCustomFields)
+  TmncItems = class(TmnFields)
   private
     function GetItem(Index: Integer): TmncItem; overload;
   protected
@@ -255,7 +255,6 @@ type
     function Add(AColumn: TmncItem): Integer; overload;
     function ItemByName(vName: string): TmncItem;
     function IsExists(vName: string): Boolean;
-    procedure Clean; virtual;
     property Items[Index: Integer]: TmncItem read GetItem;
   end;
 
@@ -267,6 +266,7 @@ type
 
   TmncColumn = class(TmncItem)
   private
+    FDecimals: Integer;
     FName: string;
     FIndex: Integer;
     FMaxSize: Integer;
@@ -278,6 +278,7 @@ type
     procedure SetValue(const AValue: Variant); override;
     procedure SetSize(AValue: Int64); virtual;
     procedure SetType(vType: TmncDataType);
+    procedure SetDecimals(AValue: Integer);
   published
     property Index: Integer read FIndex write FIndex;
     property Name: string read FName write FName;
@@ -285,6 +286,7 @@ type
     property MetaType: string read FMetaType write FMetaType;
     //Size, in sqlite every value have own length not depends on the Meta
     property Size: Int64 read FSize write SetSize; //TODO: I am thinking to move it to TmncItem
+    property Decimals: Integer read FDecimals write SetDecimals;
     property Options: TmnDataOptions read FOptions write FOptions default [];
     property MaxSize: Integer read FMaxSize write FMaxSize;
   end;
@@ -387,7 +389,6 @@ type
     constructor Create(vColumns: TmncColumns); virtual;
     function CreateField(vColumn: TmncColumn): TmncField; overload;
     function CreateField(vIndex: Integer): TmncField; overload;
-    function FindField(vName: string): TmncField;
     function FieldByName(vName: string): TmncField;
     function Add(Column: TmncColumn; Value: Variant): TmncField; overload;
     function Add(Column: TmncColumn): TmncField; overload;
@@ -765,17 +766,20 @@ end;
 
 function TmncConnection.QueryInterface(constref iid: tguid; out obj): longint; stdcall;
 begin
-
+  if GetInterface(IID, Obj) then
+    Result := 0
+  else
+    Result := E_NOINTERFACE;
 end;
 
 function TmncConnection._AddRef: longint; stdcall;
 begin
-
+  Result := 0;
 end;
 
 function TmncConnection._Release: longint; stdcall;
 begin
-
+  Result := 0;
 end;
 
 { TmncCommand }
@@ -1267,7 +1271,7 @@ end;
 
 function TmncFields.FieldByName(vName: string): TmncField;
 begin
-  Result := FindField(vName);
+  Result := Find(vName) as TmncField;
   if Result = nil then
     raise EmncException.Create('Field "' + vName + '" not found');
 end;
@@ -1295,11 +1299,6 @@ end;
 function TmncFields.CreateField(vIndex: Integer): TmncField;
 begin
   Result := CreateField(Columns[vIndex]);
-end;
-
-function TmncFields.FindField(vName: string): TmncField;
-begin
-  Result := Find(vName) as TmncField;
 end;
 
 function TmncFields.GetField(Index: string): TmncField;
@@ -1513,6 +1512,12 @@ begin
   FDataType := vType;
 end;
 
+procedure TmncColumn.SetDecimals(AValue: Integer);
+begin
+  if FDecimals =AValue then Exit;
+  FDecimals :=AValue;
+end;
+
 function TmncColumn.GetValue: Variant;
 begin
   Result := null;
@@ -1645,16 +1650,6 @@ end;
 function TmncItems.IsExists(vName: string): Boolean;
 begin
   Result := Find(vName) <> nil;
-end;
-
-procedure TmncItems.Clean;
-var
-  i: Integer;
-begin
-  for i := 0 to Count - 1 do
-  begin
-    Items[i].Clear;
-  end;
 end;
 
 initialization

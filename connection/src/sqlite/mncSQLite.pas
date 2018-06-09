@@ -836,7 +836,6 @@ end;
 procedure TmncSQLiteCommand.DoClose;
 begin
   CheckError(sqlite3_finalize(FStatment));
-//  CheckError(sqlite3_clear_bindings(FStatment));//not found in SQLite3 for WinCE
   FStatment := nil;  
 end;
 
@@ -853,7 +852,6 @@ var
   FieldType: Integer;
   MetaType: PChar;
   aColumn: TmncColumn;
-  //aSize: Integer;
 begin
   Columns.Clear;
   c := sqlite3_column_count(FStatment);

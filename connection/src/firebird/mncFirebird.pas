@@ -1319,6 +1319,7 @@ begin
                 for i := 0 to Fields.SQLDA^.sqld - 1 do
                 begin
                   aColumn := Columns.Add(p^.aliasname, SQLTypeToDataType(p^.sqltype));
+                  aColumn.Decimals := p^.sqlscale;
                   //aColumn.Name := FBDequoteName(aColumn.Name);
                   aField := Fields.Add(aColumn) as TmncFBField;
                   aField.SQLVAR.XSQLVar := p;
