@@ -128,7 +128,8 @@ type
     destructor Destroy; override;
 
     function CreateSession: TmncSQLSession; override;
-    class function Model: TmncConnectionModel; override;
+    class function Capabilities: TmncCapabilities; override;
+    class function Name: string; override;
     property Handle: PPGconn read FHandle;
     procedure Execute(vCommand: string); overload; override;
 
@@ -730,13 +731,14 @@ begin
   Result := lo_unlink(Handle, vOID);
 end;
 
-class function TmncPGConnection.Model: TmncConnectionModel;
+class function TmncPGConnection.Capabilities: TmncCapabilities;
 begin
-  Result.Name := 'PostgreSQL';
-  Result.Title := 'Postgre Database';
-  Result.Capabilities := [ccDB, ccSQL, ccNetwork, ccTransaction];
-  //Result.SchemaClass := nil;
-  //Result.Mode := smConnection;
+  Result:= [ccDB, ccSQL, ccNetwork, ccTransaction];
+end;
+
+class function TmncPGConnection.Name: string;
+begin
+  Result := 'PostgreSQL';
 end;
 
 procedure TmncPGConnection.Notify(vPID: Integer; const vName, vData: string);
@@ -2026,4 +2028,6 @@ begin
   PQclear(FStatement);
 end;
 
+initialization
+  mncDB.Engines.RegisterConnection('PostgreSQL', 'PostgreSQL Database', TmncPGConnection);
 end.

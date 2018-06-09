@@ -56,104 +56,104 @@
         <UnitName Value="mncDB"/>
       </Item5>
       <Item6>
-        <Filename Value="mncMetas.pas"/>
-        <UnitName Value="mncMetas"/>
-      </Item6>
-      <Item7>
         <Filename Value="mncSQL.pas"/>
         <UnitName Value="mncSQL"/>
-      </Item7>
-      <Item8>
+      </Item6>
+      <Item7>
         <Filename Value="mysql\mncMySQL.pas"/>
         <UnitName Value="mncMySQL"/>
-      </Item8>
-      <Item9>
+      </Item7>
+      <Item8>
         <Filename Value="mysql\mncMySQLdyn.pp"/>
         <UnitName Value="mncMySQLdyn"/>
-      </Item9>
-      <Item10>
+      </Item8>
+      <Item9>
         <Filename Value="mysql\mysql.inc"/>
         <Type Value="Include"/>
-      </Item10>
-      <Item11>
+      </Item9>
+      <Item10>
         <Filename Value="postgre\mncPGHeader.pas"/>
         <UnitName Value="mncPGHeader"/>
-      </Item11>
-      <Item12>
+      </Item10>
+      <Item11>
         <Filename Value="postgre\mncPostgre.pas"/>
         <UnitName Value="mncPostgre"/>
-      </Item12>
-      <Item13>
+      </Item11>
+      <Item12>
         <Filename Value="postgre\pg.inc"/>
         <Type Value="Include"/>
-      </Item13>
-      <Item14>
+      </Item12>
+      <Item13>
         <Filename Value="firebird\mncSQLDA.pas"/>
         <UnitName Value="mncSQLDA"/>
-      </Item14>
-      <Item15>
+      </Item13>
+      <Item14>
         <Filename Value="firebird\readme.txt"/>
         <Type Value="Text"/>
-      </Item15>
-      <Item16>
+      </Item14>
+      <Item15>
         <Filename Value="firebird\mncFBBlob.pas"/>
         <UnitName Value="mncFBBlob"/>
-      </Item16>
-      <Item17>
+      </Item15>
+      <Item16>
         <Filename Value="firebird\mncFBClient.pas"/>
         <UnitName Value="mncFBClient"/>
-      </Item17>
-      <Item18>
+      </Item16>
+      <Item17>
         <Filename Value="firebird\mncFBErrors.inc"/>
         <Type Value="Include"/>
-      </Item18>
-      <Item19>
+      </Item17>
+      <Item18>
         <Filename Value="firebird\mncFBErrors.pas"/>
         <UnitName Value="mncFBErrors"/>
-      </Item19>
-      <Item20>
+      </Item18>
+      <Item19>
         <Filename Value="firebird\mncFBHeader.pas"/>
         <UnitName Value="mncFBHeader"/>
-      </Item20>
-      <Item21>
-        <Filename Value="firebird\mncFBMetas.pas"/>
-        <UnitName Value="mncFBMetas"/>
-      </Item21>
-      <Item22>
+      </Item19>
+      <Item20>
         <Filename Value="firebird\mncFBStrings.pas"/>
         <UnitName Value="mncFBStrings"/>
-      </Item22>
-      <Item23>
+      </Item20>
+      <Item21>
         <Filename Value="firebird\mncFBTypes.pas"/>
         <UnitName Value="mncFBTypes"/>
-      </Item23>
-      <Item24>
+      </Item21>
+      <Item22>
         <Filename Value="firebird\mncFBUtils.pas"/>
         <UnitName Value="mncFBUtils"/>
-      </Item24>
-      <Item25>
+      </Item22>
+      <Item23>
         <Filename Value="firebird\mncFirebird.pas"/>
         <UnitName Value="mncFirebird"/>
-      </Item25>
-      <Item26>
+      </Item23>
+      <Item24>
         <Filename Value="ui\CSVOptionsForms.pas"/>
         <UnitName Value="CSVOptionsForms"/>
-      </Item26>
-      <Item27>
+      </Item24>
+      <Item25>
         <Filename Value="sqlite\mncSQLite.pas"/>
         <UnitName Value="mncSQLite"/>
-      </Item27>
-      <Item28>
+      </Item25>
+      <Item26>
         <Filename Value="ui\ParamsForms.pas"/>
         <UnitName Value="ParamsForms"/>
-      </Item28>
-      <Item29>
+      </Item26>
+      <Item27>
         <Filename Value="sqlite\mncSQLiteHeader.pas"/>
         <UnitName Value="mncSQLiteHeader"/>
+      </Item27>
+      <Item28>
+        <Filename Value="firebird\mncFBMeta.pas"/>
+        <UnitName Value="mncFBMeta"/>
+      </Item28>
+      <Item29>
+        <Filename Value="mysql\mncMySQLMeta.pas"/>
+        <UnitName Value="mncMySQLMeta"/>
       </Item29>
       <Item30>
-        <Filename Value="sqlite\mncSQLiteMetas.pas"/>
-        <UnitName Value="mncSQLiteMetas"/>
+        <Filename Value="sqlite\mncSQLiteMeta.pas"/>
+        <UnitName Value="mncSQLiteMeta"/>
       </Item30>
     </Files>
     <RequiredPkgs Count="2">

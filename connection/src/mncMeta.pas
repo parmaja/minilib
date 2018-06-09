@@ -1,4 +1,4 @@
-unit mncMetas;
+unit mncMeta;
 {**
  *  This file is part of the "Mini Connections"
  *
@@ -352,4 +352,3 @@ begin
 end;
 
 end.
-

@@ -77,12 +77,6 @@ type
 
   TmncCapabilities = set of TmncCapability;
 
-  TmncConnectionModel = record
-    Name: string;
-    Title: string;
-    Capabilities: TmncCapabilities;
-  end;
-
   TmncState = (
       cstCreated  //When use autocreate and it is created
     );
@@ -127,8 +121,8 @@ type
     constructor Create;
     destructor Destroy; override;
     function QueryInterface({$IFDEF FPC}constref{$ELSE}const{$ENDIF} iid : tguid;out obj) : longint;{$IFNDEF MSWINDOWS}cdecl{$ELSE}stdcall{$ENDIF};
-    class function Model: TmncConnectionModel; virtual; abstract;
-    function IsModel(vName: string): Boolean;
+    class function Capabilities: TmncCapabilities; virtual; abstract;
+    class function Name: string; virtual; abstract;
     procedure Connect;
     procedure Disconnect;
     procedure Open; //Alias for Connect
@@ -695,11 +689,6 @@ begin
   inherited;
 end;
 
-function TmncConnection.IsModel(vName: string): Boolean;
-begin
-  Result := SameText(vName, Model.Name);
-end;
-
 procedure TmncConnection.Disconnect;
 begin
   CheckActive;
@@ -1064,13 +1053,13 @@ var
   aBehaviors: TmncSessionBehaviors;
 begin
   aBehaviors := [];
-  if ccStrict in vConnection.Model.Capabilities then
+  if ccStrict in vConnection.Capabilities then
     aBehaviors := aBehaviors + [sbhStrict];
-  if ccTransaction in vConnection.Model.Capabilities then
+  if ccTransaction in vConnection.Capabilities then
   begin
 {    if ccMultiConnection in vConnection.Model.Capabilities then //deprecated
       aBehaviors := aBehaviors + [sbhMultiple, sbhIndependent]
-    else }if ccMultiTransaction in vConnection.Model.Capabilities then
+    else }if ccMultiTransaction in vConnection.Capabilities then
       aBehaviors := aBehaviors + [sbhMultiple]
     else
       aBehaviors := aBehaviors + [sbhEmulate]

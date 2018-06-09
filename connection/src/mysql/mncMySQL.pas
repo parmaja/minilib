@@ -17,7 +17,7 @@ interface
 
 uses
   Classes, SysUtils, Variants, ctypes,
-  mncCommons, mncMetas, mncMySQLdyn,
+  mncCommons, mncMeta, mncMySQLdyn,
   mncConnections, mncSQL;
 
 type
@@ -44,7 +44,8 @@ type
     procedure DoInit; override;
   public
     constructor Create;
-    class function Model: TmncConnectionModel; override;
+    class function Capabilities: TmncCapabilities; override;
+    class function Name: string; override;
     function CreateSession: TmncSQLSession; overload; override; 
     procedure Interrupt;
     procedure SetCharsetName(Charset: string);
@@ -504,12 +505,14 @@ begin
   FMultiCursors := True;
 end;
 
-class function TmncMySQLConnection.Model: TmncConnectionModel;
+class function TmncMySQLConnection.Capabilities: TmncCapabilities;
 begin
-  Result.Name := 'MySQL';
-  Result.Title := 'MySQL Database';
-  Result.Capabilities := [ccDB, ccSQL, ccTransaction];
-  //Result.MetaClass := TmncMySQLMeta;//TOdo
+  Result := [ccDB, ccSQL, ccTransaction];
+end;
+
+class function TmncMySQLConnection.Name: string;
+begin
+  Result := 'MySQL';
 end;
 
 function TmncMySQLConnection.CreateSession: TmncSQLSession;
@@ -1282,5 +1285,5 @@ begin
 end;
 
 initialization
-  mncDB.Engines.Add(TmncMySQLConnection);
+  mncDB.Engines.RegisterConnection('MySQL', 'MySQL Database', TmncMySQLConnection);
 end.

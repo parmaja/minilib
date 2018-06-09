@@ -22,7 +22,7 @@ interface
 
 uses
   Classes, SysUtils, Contnrs,
-  mncConnections, mncCommons, mncMetas;
+  mncConnections, mncCommons, mncMeta;
 
 type
   TmncParseSQLOptions = set of (psoGenerateParams, psoAddParamsID, psoAddParamsNames);

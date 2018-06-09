@@ -22,7 +22,7 @@ interface
 uses
   Classes, SysUtils, Variants,
   mncConnections, mncSQL,
-  mncFBTypes, mncFBHeader, mncFBErrors, mncFBUtils, mncFBClient, mncMetas,
+  mncFBTypes, mncFBHeader, mncFBErrors, mncFBUtils, mncFBClient, mncMeta,
   mncSQLDA;
 
 const
@@ -61,7 +61,8 @@ type
     procedure DoInit; override;
   public
     constructor Create;
-    class function Model: TmncConnectionModel; override;
+    class function Capabilities: TmncCapabilities; override;
+    class function Name: string; override;
     function CreateSession: TmncSQLSession; override;
     procedure CreateDatabase(const vName: string; CheckExists: Boolean = False); override;
     procedure DropDatabase(const vName: string; CheckExists: Boolean = False); override;
@@ -288,11 +289,14 @@ begin
   {$endif}
 end;
 
-class function TmncFBConnection.Model: TmncConnectionModel;
+class function TmncFBConnection.Capabilities: TmncCapabilities;
 begin
-  Result.Name := 'FirebirdSQL';
-  Result.Title := 'Firebird SQL Database';
-  Result.Capabilities := [ccDB, ccSQL, ccStrict, ccTransaction, ccMultiTransaction, ccNetwork];
+  Result := [ccDB, ccSQL, ccStrict, ccTransaction, ccMultiTransaction, ccNetwork];
+end;
+
+class function TmncFBConnection.Name: string;
+begin
+  Result := 'FirebirdSQL';
 end;
 
 function TmncFBConnection.CreateSession: TmncSQLSession;
@@ -1344,5 +1348,5 @@ begin
 end;
 
 initialization
-  mncDB.Engines.Add(TmncFBConnection);
+  mncDB.Engines.RegisterConnection('FirebirdSQL', 'FirebirdSQL Database', TmncFBConnection);
 end.

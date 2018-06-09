@@ -52,7 +52,8 @@ type
     procedure DoDisconnect; override;
     function GetConnected: Boolean; override;
   public
-    class function Model: TmncConnectionModel; override;
+    class function Capabilities: TmncCapabilities; override;
+    class function Name: string; override;
     constructor Create;
   end;
 
@@ -172,11 +173,14 @@ begin
   Result := FConnected;
 end;
 
-class function TmncCSVConnection.Model: TmncConnectionModel;
+class function TmncCSVConnection.Capabilities: TmncCapabilities;
 begin
-  Result.Name := 'CSV';
-  Result.Title := 'CSV Files';
-  Result.Capabilities := [];
+  Result := [];
+end;
+
+class function TmncCSVConnection.Name: string;
+begin
+  Result := 'CSV';
 end;
 
 procedure TmncCSVConnection.DoDisconnect;

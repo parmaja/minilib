@@ -17,7 +17,7 @@ interface
 
 uses
   SysUtils, Classes, Contnrs,
-  mncCommons, mncConnections, mncMetas, mncORM;
+  mncCommons, mncConnections, mncMeta, mncORM;
 
 type
   { TmncEngine }
@@ -36,10 +36,12 @@ type
   private
     function GetItems(Index: Integer): TmncEngine;
   public
-    function Add(vConnectionClass: TmncConnectionClass): TmncEngine;
+    function RegisterConnection(vName, vTitle: string; vConnectionClass: TmncConnectionClass): TmncEngine;
+    function RegisterMeta(vName, vTitle: string; vMetaClass: TmncMetaClass): TmncEngine;
     function Find(vName: string): TmncEngine;
     function IndexOf(vName: string): Integer;
-    function CreateConnection(vModel: string): TmncConnection; deprecated;
+    function CreateConnection(vModel: string): TmncConnection;
+    function CreateMeta(vModel: string): TmncMeta;
     property Items[Index:Integer]: TmncEngine read GetItems; default;
   end;
 
@@ -64,14 +66,30 @@ begin
   Result := inherited Items[Index] as TmncEngine;
 end;
 
-function TmncEngines.Add(vConnectionClass: TmncConnectionClass): TmncEngine;
+function TmncEngines.RegisterConnection(vName, vTitle: string; vConnectionClass: TmncConnectionClass): TmncEngine;
 begin
-  Result := TmncEngine.Create;
-  Result.Name := vConnectionClass.Model.Name;
-  Result.Title := vConnectionClass.Model.Title;
+  Result := Find(vName);
+  if Result = nil then
+  begin
+    Result := TmncEngine.Create;
+    Result.Name := vName;
+    Result.Title := vTitle;
+    inherited Add(Result);
+  end;
   Result.ConnectionClass := vConnectionClass;
-  inherited Add(Result);
-  //mnDriversClasses.Add('Engines', 'SerialEngines', 'Serial Engine', vConnectionClass);//TODO
+end;
+
+function TmncEngines.RegisterMeta(vName, vTitle: string; vMetaClass: TmncMetaClass): TmncEngine;
+begin
+  Result := Find(vName);
+  if Result = nil then
+  begin
+    Result := TmncEngine.Create;
+    Result.Name := vName;
+    Result.Title := vTitle;
+    inherited Add(Result);
+  end;
+  Result.MataClass := vMetaClass;
 end;
 
 function TmncEngines.Find(vName: string): TmncEngine;
@@ -112,6 +130,18 @@ begin
   P := Find(vModel);
   if P <> nil then
     Result := P.ConnectionClass.Create
+  else
+    raise EmncException.Create('Model ' + vModel + ' not found');
+end;
+
+function TmncEngines.CreateMeta(vModel: string): TmncMeta;
+var
+  P: TmncEngine;
+begin
+  Result := nil;
+  P := Find(vModel);
+  if P <> nil then
+    Result := P.MataClass.Create
   else
     raise EmncException.Create('Model ' + vModel + ' not found');
 end;

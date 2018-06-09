@@ -1,4 +1,4 @@
-unit mncSQLiteMetas;
+unit mncMySQLMeta;
 {**
  *  This file is part of the "Mini Connections"
  *
@@ -17,17 +17,17 @@ interface
 
 uses
   SysUtils, Classes,
-  mncMetas, mncConnections, mncSQLite;
+  mncMeta, mncConnections, mncMySQL;
 
 type
-  { TmncSQLiteMeta }
+  { TmncMySQLMeta }
 
-  TmncSQLiteMeta = class(TmncMeta)
+  TmncMySQLMeta = class(TmncMeta)
   private
     function GetSession: TmncSession;
     procedure SetSession(AValue: TmncSession);
   protected
-    function CreateCMD(SQL: string): TmncSQLiteCommand;
+    function CreateCMD(SQL: string): TmncMySQLCommand;
     procedure EnumCMD(Meta: TmncMetaItems; vKind: TschmKind; SQL: string; Fields: array of string); overload;//use field 'name'
     procedure EnumCMD(Meta: TmncMetaItems; vKind: TschmKind; SQL: string); overload;
     procedure FetchCMD(Strings:TStringList; SQL: string);//use field 'name'
@@ -54,25 +54,25 @@ implementation
 
 { TmncMetaItems }
 
-function TmncSQLiteMeta.GetSession: TmncSession;
+function TmncMySQLMeta.GetSession: TmncSession;
 begin
   Result := Link as TmncSession;
 end;
 
-procedure TmncSQLiteMeta.SetSession(AValue: TmncSession);
+procedure TmncMySQLMeta.SetSession(AValue: TmncSession);
 begin
   inherited Link := AValue;
 end;
 
-function TmncSQLiteMeta.CreateCMD(SQL: string): TmncSQLiteCommand;
+function TmncMySQLMeta.CreateCMD(SQL: string): TmncMySQLCommand;
 begin
-  Result := TmncSQLiteCommand.CreateBy(Session);
+  Result := TmncMySQLCommand.CreateBy(Session);
   Result.SQL.Text := SQL;
 end;
 
-procedure TmncSQLiteMeta.EnumCMD(Meta: TmncMetaItems; vKind: TschmKind; SQL: string; Fields: array of string);
+procedure TmncMySQLMeta.EnumCMD(Meta: TmncMetaItems; vKind: TschmKind; SQL: string; Fields: array of string);
 var
-  aCMD: TmncSQLiteCommand;
+  aCMD: TmncMySQLCommand;
   aItem: TmncMetaItem;
   i: Integer;
 begin
@@ -92,14 +92,14 @@ begin
   end;
 end;
 
-procedure TmncSQLiteMeta.EnumCMD(Meta: TmncMetaItems; vKind: TschmKind; SQL: string);
+procedure TmncMySQLMeta.EnumCMD(Meta: TmncMetaItems; vKind: TschmKind; SQL: string);
 begin
   EnumCMD(Meta, vKind, SQL, []);
 end;
 
-procedure TmncSQLiteMeta.FetchCMD(Strings: TStringList; SQL: string);
+procedure TmncMySQLMeta.FetchCMD(Strings: TStringList; SQL: string);
 var
-  aCMD: TmncSQLiteCommand;
+  aCMD: TmncMySQLCommand;
 begin
   aCMD := CreateCMD(SQL);
   try
@@ -114,7 +114,7 @@ begin
   end;
 end;
 
-function TmncSQLiteMeta.GetSortSQL(Options: TschmEnumOptions): string;
+function TmncMySQLMeta.GetSortSQL(Options: TschmEnumOptions): string;
 begin
   if ekSort in Options then
     Result := ' order by name'
@@ -122,65 +122,57 @@ begin
     Result := '';
 end;
 
-procedure TmncSQLiteMeta.EnumTables(Meta: TmncMetaItems; Options: TschmEnumOptions);
+procedure TmncMySQLMeta.EnumTables(Meta: TmncMetaItems; Options: TschmEnumOptions);
 begin
-  EnumCMD(Meta, sokTable, 'select name from sqlite_master where type = ''table''' + GetSortSQL(Options));
+  EnumCMD(Meta, sokTable, 'select name from MySQL_master where type = ''table''' + GetSortSQL(Options));
 end;
 
-procedure TmncSQLiteMeta.EnumViews(Meta: TmncMetaItems; Options: TschmEnumOptions);
+procedure TmncMySQLMeta.EnumViews(Meta: TmncMetaItems; Options: TschmEnumOptions);
 begin
-  EnumCMD(Meta, sokView, 'select name from sqlite_master where type = ''view'''+ GetSortSQL(Options));
+  EnumCMD(Meta, sokView, 'select name from MySQL_master where type = ''view'''+ GetSortSQL(Options));
 end;
 
-procedure TmncSQLiteMeta.EnumProcedures(Meta: TmncMetaItems;
+procedure TmncMySQLMeta.EnumProcedures(Meta: TmncMetaItems; Options: TschmEnumOptions);
+begin
+end;
+
+procedure TmncMySQLMeta.EnumSequences(Meta: TmncMetaItems; Options: TschmEnumOptions);
+begin
+end;
+
+procedure TmncMySQLMeta.EnumFunctions(Meta: TmncMetaItems; Options: TschmEnumOptions);
+begin
+end;
+
+procedure TmncMySQLMeta.EnumExceptions(Meta: TmncMetaItems; Options: TschmEnumOptions);
+begin
+end;
+
+procedure TmncMySQLMeta.EnumDomains(Meta: TmncMetaItems;
   Options: TschmEnumOptions);
 begin
 
 end;
 
-procedure TmncSQLiteMeta.EnumSequences(Meta: TmncMetaItems;
-  Options: TschmEnumOptions);
-begin
-
-end;
-
-procedure TmncSQLiteMeta.EnumFunctions(Meta: TmncMetaItems;
-  Options: TschmEnumOptions);
-begin
-
-end;
-
-procedure TmncSQLiteMeta.EnumExceptions(Meta: TmncMetaItems;
-  Options: TschmEnumOptions);
-begin
-
-end;
-
-procedure TmncSQLiteMeta.EnumDomains(Meta: TmncMetaItems;
-  Options: TschmEnumOptions);
-begin
-
-end;
-
-procedure TmncSQLiteMeta.EnumConstraints(Meta: TmncMetaItems;
+procedure TmncMySQLMeta.EnumConstraints(Meta: TmncMetaItems;
   SQLName: string; Options: TschmEnumOptions);
 begin
 
 end;
 
-procedure TmncSQLiteMeta.EnumTriggers(Meta: TmncMetaItems;
+procedure TmncMySQLMeta.EnumTriggers(Meta: TmncMetaItems;
   SQLName: string; Options: TschmEnumOptions);
 var
   s: string;
 begin
-  s := 'select name from sqlite_master where type = ''trigger''';
+  s := 'select name from MySQL_master where type = ''trigger''';
   if SQLName <> '' then
     s := s + ' and tbl_name = ''' +SQLName+ '''';
   s := s +  GetSortSQL(Options);
   EnumCMD(Meta, sokTrigger, s);
 end;
 
-procedure TmncSQLiteMeta.EnumIndices(Meta: TmncMetaItems; SQLName: string;
+procedure TmncMySQLMeta.EnumIndices(Meta: TmncMetaItems; SQLName: string;
   Options: TschmEnumOptions);
 var
   s: string;
@@ -193,23 +185,23 @@ begin
   end
   else
   begin
-    s := 'select name from sqlite_master where type = ''index''' + GetSortSQL(Options);
+    s := 'select name from MySQL_master where type = ''index''' + GetSortSQL(Options);
     EnumCMD(Meta, sokIndex, s);
   end;
 end;
 
-procedure TmncSQLiteMeta.GetTriggerSource(Strings: TStringList; SQLName: string; Options: TschmEnumOptions);
+procedure TmncMySQLMeta.GetTriggerSource(Strings: TStringList; SQLName: string; Options: TschmEnumOptions);
 var
   s: string;
 begin
-  s := 'select "sql" as name from sqlite_master where type = ''trigger''';
+  s := 'select "sql" as name from MySQL_master where type = ''trigger''';
   s := s + ' and name = ''' +SQLName+ '''';
   FetchCMD(Strings, s);
 end;
 
-procedure TmncSQLiteMeta.GetIndexInfo(Meta: TmncMetaItems; SQLName: string; Options: TschmEnumOptions);
+procedure TmncMySQLMeta.GetIndexInfo(Meta: TmncMetaItems; SQLName: string; Options: TschmEnumOptions);
 var
-  aCMD: TmncSQLiteCommand;
+  aCMD: TmncMySQLCommand;
   aItem: TmncMetaItem;
 begin
   aCMD := CreateCMD('PRAGMA index_info('''+ SQLName +''')');
@@ -241,9 +233,9 @@ begin
   end;
 end;
 
-procedure TmncSQLiteMeta.EnumFields(Meta: TmncMetaItems; SQLName: string; Options: TschmEnumOptions);
+procedure TmncMySQLMeta.EnumFields(Meta: TmncMetaItems; SQLName: string; Options: TschmEnumOptions);
 var
-  aCMD: TmncSQLiteCommand;
+  aCMD: TmncMySQLCommand;
   aItem: TmncMetaItem;
 begin
   aCMD := CreateCMD('pragma table_info(''' + (SQLName) + ''')' + GetSortSQL(Options));
@@ -268,4 +260,3 @@ begin
 end;
 
 end.
-

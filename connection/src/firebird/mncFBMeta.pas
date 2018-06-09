@@ -1,4 +1,4 @@
-unit mncFBMetas;
+unit mncFBMeta;
 {**
  *  This file is part of the "Mini Connections"
  *
@@ -17,7 +17,7 @@ interface
 
 uses
   SysUtils, Classes,
-  mncMetas, mncConnections, mncFBUtils, mncFirebird;
+  mncMeta, mncConnections, mncFBUtils, mncFirebird;
 
 type
 
@@ -401,4 +401,3 @@ begin
 end;
 
 end.
-

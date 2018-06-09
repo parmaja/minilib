@@ -17,7 +17,7 @@ interface
 
 uses
   Classes, SysUtils, Variants,
-  mncSQLiteHeader, mncCommons, mncMetas,
+  mncSQLiteHeader, mncCommons, mncMeta,
   mnUtils, mncConnections, mncSQL;
 
 const
@@ -55,7 +55,8 @@ type
     procedure DoInit; override;
   public
     constructor Create;
-    class function Model: TmncConnectionModel; override;
+    class function Capabilities: TmncCapabilities; override;
+    class function Name: string; override;
     function CreateSession: TmncSQLSession; overload; override; 
     procedure Interrupt;
     procedure CreateDatabase(const vName: string; CheckExists: Boolean =False); override;
@@ -396,11 +397,14 @@ begin
   FCorrectDateTime := True;
 end;
 
-class function TmncSQLiteConnection.Model: TmncConnectionModel;
+class function TmncSQLiteConnection.Capabilities: TmncCapabilities;
 begin
-  Result.Name := 'SQLite';
-  Result.Title := 'SQLite Database';
-  Result.Capabilities := [ccDB, ccSQL, ccTransaction];
+  Result := [ccDB, ccSQL, ccTransaction];
+end;
+
+class function TmncSQLiteConnection.Name: string;
+begin
+  Result := 'SQLite';
 end;
 
 function TmncSQLiteConnection.CreateSession: TmncSQLSession;
@@ -961,5 +965,5 @@ begin
 end;
 
 initialization
-  mncDB.Engines.Add(TmncSQLiteConnection);
+  mncDB.Engines.RegisterConnection('SQLite', 'SQLite Database', TmncSQLiteConnection);
 end.
