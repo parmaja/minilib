@@ -16,7 +16,7 @@ unit mncCommons;
 interface
 
 uses
-  SysUtils, Classes, Contnrs;
+  SysUtils, Classes, Contnrs, mnClasses;
 
 type
   EmncException = class(Exception)
@@ -25,22 +25,18 @@ type
   TmncObject = class(TObject)
   end;
 
-  TmncLinkObject = class;
+  TmncLinks = class;
 
-  { TmncLinks }
+  { TmncLinksObject }
 
-  TmncLinks = class(TObjectList)
+  TmncLinksObject = class(TmncObject)
   private
-    function GetItem(Index: Integer): TmncLinkObject;
-    procedure SetItem(Index: Integer; const Value: TmncLinkObject);
-  protected
+    FLinks: TmncLinks;
   public
-    procedure Close;
-    procedure Unlink;
-    property Items[Index: Integer]: TmncLinkObject read GetItem write SetItem; default;
+    constructor Create;
+    destructor Destroy; override;
+    property Links: TmncLinks read FLinks;
   end;
-
-  TmncLinksObject = class;
 
   { TmncLinkObject }
 
@@ -59,15 +55,14 @@ type
     property Link: TmncLinksObject read FLink write SetLink;
   end;
 
-  { TmncLinksObject }
+  { TmncLinks }
 
-  TmncLinksObject = class(TmncObject)
+  TmncLinks = class(TmnObjectList<TmncLinkObject>)
   private
-    FLinks: TmncLinks;
+  protected
   public
-    constructor Create;
-    destructor Destroy; override;
-    property Links: TmncLinks read FLinks;
+    procedure Close;
+    procedure Unlink;
   end;
 
 implementation
@@ -107,16 +102,6 @@ begin
     Items[0].Link := nil;
 end;
 
-function TmncLinks.GetItem(Index: Integer): TmncLinkObject;
-begin
-  Result := inherited Items[Index] as TmncLinkObject;
-end;
-
-procedure TmncLinks.SetItem(Index: Integer; const Value: TmncLinkObject);
-begin
-  inherited Items[Index] := Value;
-end;
-
 procedure TmncLinkObject.SetLink(const Value: TmncLinksObject);
 begin
   if FLink <> Value then
@@ -152,7 +137,7 @@ end;
 constructor TmncLinkObject.CreateBy(vLink: TmncLinksObject);
 begin
   Create;
-  Link := vLink;//TODO check if it a session like this If is TmncSession
+  Link := vLink;
 end;
 
 end.

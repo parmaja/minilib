@@ -196,8 +196,6 @@ begin
 end;
 
 procedure CopyString(out S: unicodestring; Buffer: Pointer; Len: Integer); overload;
-var
-  rb: rawbytestring;
 begin
   if Len <> 0 then
   begin
