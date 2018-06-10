@@ -86,6 +86,8 @@ type
     property Items[Index: Integer]: TmncMetaItem read GetItem write SetItem; default;
   end;
 
+  TmncSQLCallback = procedure (SQL: string);
+
 { TmncMeta }
 
   TmncMeta = class(TmncLinkObject)
@@ -111,6 +113,8 @@ type
     procedure GetTriggerSource(Strings:TStringList; SQLName: string; Options: TschmEnumOptions = []); virtual;
     procedure GetViewSource(Strings: TStringList; SQLName: string; Options: TschmEnumOptions = []); virtual;
     procedure GetIndexInfo(Meta: TmncMetaItems; SQLName: string; Options: TschmEnumOptions = []); virtual;
+
+    procedure GenerateSchema(ormSchema: TormSchema; Callback: TmncSQLCallback); virtual;
   published
     property IncludeHeader: Boolean read FIncludeHeader write FIncludeHeader default False;
   end;
@@ -272,6 +276,11 @@ end;
 
 procedure TmncMeta.GetIndexInfo(Meta: TmncMetaItems; SQLName: string; Options: TschmEnumOptions);
 begin
+end;
+
+procedure TmncMeta.GenerateSchema(ormSchema: TormSchema; Callback: TmncSQLCallback);
+begin
+
 end;
 
 { TmncMetaAttributes }

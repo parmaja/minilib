@@ -251,7 +251,7 @@ function MySQLTypeToString(vType: enum_field_types): String;
 implementation
 
 uses
-  mncMySQLMetas, mncDB;
+  mncMySQLMeta, mncDB;
 
 const
   cMaxString = 255;
@@ -1285,5 +1285,5 @@ begin
 end;
 
 initialization
-  mncDB.Engines.RegisterConnection('MySQL', 'MySQL Database', TmncMySQLConnection);
+  DB.RegisterConnection('MySQL', 'MySQL Database', TmncMySQLConnection);
 end.

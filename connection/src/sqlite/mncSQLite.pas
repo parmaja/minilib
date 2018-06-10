@@ -208,7 +208,7 @@ function SQLiteSynchronousToStr(Synchronous: TmncSynchronous): string;
 implementation
 
 uses
-  mncDB, mncSQLiteMetas;
+  mncDB, mncSQLiteMeta;
 
 function SQLiteJournalModeToStr(JournalMode: TmncJournalMode): string;
 begin
@@ -965,5 +965,5 @@ begin
 end;
 
 initialization
-  mncDB.Engines.RegisterConnection('SQLite', 'SQLite Database', TmncSQLiteConnection);
+  DB.RegisterConnection('SQLite', 'SQLite Database', TmncSQLiteConnection);
 end.

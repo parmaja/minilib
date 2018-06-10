@@ -276,7 +276,7 @@ type
 implementation
 
 uses
-  mncFBMetas, mncDB;
+  mncFBMeta, mncDB;
 
 { TmncFBConnection }
 
@@ -1348,5 +1348,5 @@ begin
 end;
 
 initialization
-  mncDB.Engines.RegisterConnection('FirebirdSQL', 'FirebirdSQL Database', TmncFBConnection);
+  DB.RegisterConnection('FirebirdSQL', 'FirebirdSQL Database', TmncFBConnection);
 end.

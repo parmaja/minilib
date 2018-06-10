@@ -2029,5 +2029,5 @@ begin
 end;
 
 initialization
-  mncDB.Engines.RegisterConnection('PostgreSQL', 'PostgreSQL Database', TmncPGConnection);
+  DB.RegisterConnection('PostgreSQL', 'PostgreSQL Database', TmncPGConnection);
 end.

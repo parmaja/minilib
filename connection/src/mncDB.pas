@@ -45,14 +45,14 @@ type
     property Items[Index:Integer]: TmncEngine read GetItems; default;
   end;
 
-function Engines: TmncEngines;
+function DB: TmncEngines;
 
 implementation
 
 var
   FmncEngines: TmncEngines = nil;
 
-function Engines: TmncEngines;
+function DB: TmncEngines;
 begin
   if FmncEngines = nil then
     FmncEngines := TmncEngines.Create;
