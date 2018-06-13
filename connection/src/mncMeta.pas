@@ -17,7 +17,7 @@ interface
 
 uses
   SysUtils, Classes, Contnrs,
-  mncCommons, mncORM;
+  mnFields, mncCommons, mncORM;
 
 type
   TschmKind = (sokNone, sokMeta, sokData,
@@ -30,32 +30,9 @@ type
   TschmEnumOption = (ekExtra, ekAlter, ekSystem, ekSort);
   TschmEnumOptions = set of TschmEnumOption;
 
-  { TmncMetaAttribute }
-
-  TmncMetaAttribute = class(TObject)
+  TmncMetaAttributes = class(TmnFields)
   private
-    FName: string;
-    FValue: string;
   public
-    property Name: string read FName write FName;
-    property Value: string read FValue write FValue;
-  end;
-
-  { TmncMetaAttributes }
-
-  TmncMetaAttributes = class(TObjectList)
-  private
-    function GetItem(Index: Integer): TmncMetaAttribute;
-    function GetValues(Index: string): string;
-    procedure SetItem(Index: Integer; const Value: TmncMetaAttribute);
-  public
-    constructor Create(Names, Values: array of string); overload;
-    constructor Create; overload;
-    function Find(const Name: string): TmncMetaAttribute;
-    function Add(Param: TmncMetaAttribute): Integer; overload;
-    function Add(Name:string; Value: string=''): TmncMetaAttribute; overload;
-    property Items[Index: Integer]: TmncMetaAttribute read GetItem write SetItem;
-    property Values[Index: string]: string read GetValues; default;
   end;
 
   { TmncMetaItem }
@@ -119,6 +96,14 @@ type
     property IncludeHeader: Boolean read FIncludeHeader write FIncludeHeader default False;
   end;
 
+
+  { TormStdDatabase }
+
+  TormStdDatabase = class(TormDatabase)
+  public
+    function GenerateSQL(vSQL: TStringList): Boolean; override;
+  end;
+
   TmncMetaClass = class of TmncMeta;
 
   TmncMetaType = record
@@ -127,6 +112,13 @@ type
   end;
 
 implementation
+
+{ TormStdDatabase }
+
+function TormStdDatabase.GenerateSQL(vSQL: TStringList): Boolean;
+begin
+  vSQL.Add('create database ' + Name);
+end;
 
 { TmncMetaItems }
 
@@ -279,85 +271,13 @@ begin
 end;
 
 procedure TmncMeta.GenerateSchema(ormSchema: TormSchema; Callback: TmncSQLCallback);
-begin
-
-end;
-
-{ TmncMetaAttributes }
-
-function TmncMetaAttributes.GetItem(Index: Integer): TmncMetaAttribute;
-begin
-  Result := inherited Items[Index] as TmncMetaAttribute;
-end;
-
-function TmncMetaAttributes.GetValues(Index: string): string;
 var
-  aItem: TmncMetaAttribute;
+  o: TormObject;
 begin
-  if Self = nil then
-    Result := ''
-  else
+  for o in ormSchema do
   begin
-    aItem := Find(Index);
-    if aItem = nil then
-      Result := ''
-    else
-      Result := aItem.Value;
+
   end;
-end;
-
-procedure TmncMetaAttributes.SetItem(Index: Integer; const Value: TmncMetaAttribute);
-begin
-  inherited Items[Index] := Value;
-end;
-
-constructor TmncMetaAttributes.Create(Names, Values: array of string);
-var
-  i: Integer;
-  v: string;
-begin
-  inherited Create(True);
-  for i := 0 to Length(Names) - 1 do
-  begin
-    if i < Length(Values) then
-      v := Values[i]
-    else
-      v := '';
-    Add(Names[i], v);
-  end;
-end;
-
-constructor TmncMetaAttributes.Create;
-begin
-  Create([], []);
-end;
-
-function TmncMetaAttributes.Find(const Name: string): TmncMetaAttribute;
-var
-  i: Integer;
-begin
-  Result := nil;
-  for i := 0 to Count - 1 do
-  begin
-    if SameText(Name, Items[i].Name) then
-    begin
-      Result := Items[i];
-      break;
-    end;
-  end;
-end;
-
-function TmncMetaAttributes.Add(Param: TmncMetaAttribute): Integer;
-begin
-  Result := inherited Add(Param);
-end;
-
-function TmncMetaAttributes.Add(Name, Value: string): TmncMetaAttribute;
-begin
-  Result := TmncMetaAttribute.Create;
-  Result.Name := Name;
-  Result.Value := Value;
-  Add(Result);
 end;
 
 end.

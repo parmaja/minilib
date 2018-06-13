@@ -33,6 +33,7 @@ type
     FRoot: TormObject;
   public
     constructor Create(AParent: TormObject; AName: string);
+    function GenerateSQL(vSQL: TStringList): Boolean; virtual;
     property Name: string read FName write FName;
     property Comment: string read FComment write FComment;
     function This: TormObject; //I wish i have templates/meta programming in pascal
@@ -175,6 +176,11 @@ begin
   end
   else
     FRoot := Self;
+end;
+
+function TormObject.GenerateSQL(vSQL: TStringList): Boolean;
+begin
+  Result := False; //TODO raise exceptopm
 end;
 
 { TormDatabase }

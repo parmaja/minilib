@@ -23,13 +23,11 @@ uses
   {$endif};
 
 type
-
-
   {$ifdef FPC}
 
   { TmnObjectList }
 
-  TmnObjectList<_Object_> = class(TObjectList, IEnumerator<_Object_>)
+  TmnObjectList<_Object_> = class(TObjectList)
   {$else}
   TmnObjectList<_Object_: class> = class(TObjectList<_Object_>)
   {$endif}
@@ -38,13 +36,25 @@ type
     function GetItem(Index: Integer): _Object_;
     {$endif}
   protected
+    type
+
+      { TmnObjectEnumerator }
+
+      TmnObjectEnumerator = class(TObject)
+      private
+        Index: Integer;
+        List: TmnObjectList<_Object_>;
+        function GetCurrent: _Object_;
+      public
+        function MoveNext: Boolean;
+        procedure Reset;
+        property Current: _Object_ read GetCurrent;
+      end;
+
     function _AddRef: Integer; {$ifdef WINDOWS}stdcall{$else}cdecl{$endif};
     function _Release: Integer; {$ifdef WINDOWS}stdcall{$else}cdecl{$endif};
 
-    function GetCurrent: _Object_;
-    function MoveNext: Boolean;
-    procedure Reset;
-    property Current: _Object_ read GetCurrent;
+
   public
     function QueryInterface({$ifdef FPC}constref{$else}const{$endif} iid : TGuid; out Obj):HResult; {$ifdef WINDOWS}stdcall{$else}cdecl{$endif};
     procedure AfterConstruction; override;
@@ -52,6 +62,7 @@ type
     procedure Added(Item: _Object_); virtual;
     function Add(Item: _Object_): Integer;
     function Extract(Item: _Object_): _Object_;
+    function GetEnumerator: TmnObjectEnumerator;
 
     {$ifdef FPC}
     property Items[Index: Integer]: _Object_ read GetItem; default;
@@ -130,19 +141,10 @@ begin
   Result := 0;
 end;
 
-function TmnObjectList<_Object_>.GetCurrent: _Object_;
+function TmnObjectList<_Object_>.GetEnumerator: TmnObjectEnumerator;
 begin
-
-end;
-
-function TmnObjectList<_Object_>.MoveNext: Boolean;
-begin
-
-end;
-
-procedure TmnObjectList<_Object_>.Reset;
-begin
-
+  Result := TmnObjectEnumerator.Create;
+  Result.List := Self;
 end;
 
 function TmnObjectList<_Object_>.QueryInterface({$ifdef FPC}constref{$else}const{$endif} iid : TGuid; out Obj):HResult;
@@ -210,6 +212,24 @@ begin
       end;
     end;
 end;
+
+{ TmnObjectList.TmnObjectEnumerator }
+
+function TmnObjectList<_Object_>.TmnObjectEnumerator.GetCurrent: _Object_;
+begin
+  Result := List.Items[Index];
+end;
+
+function TmnObjectList<_Object_>.TmnObjectEnumerator.MoveNext: Boolean;
+begin
+  Inc(Index);
+end;
+
+procedure TmnObjectList<_Object_>.TmnObjectEnumerator.Reset;
+begin
+  Index := 0;
+end;
+
 {
 function TmnNamedObjectList<_Object_>.GetEnumerator: specialize TEnumerator<_Object_>;
 begin
