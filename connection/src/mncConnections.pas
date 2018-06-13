@@ -485,6 +485,7 @@ type
     FParsed: Boolean;
     FPrepared: Boolean;
     FNextOnExecute: Boolean;
+    function GetValues(Index: string): Variant;
     procedure SetRequest(const Value: TStrings);
     procedure SetColumns(const Value: TmncColumns);
     procedure SetFields(const Value: TmncFields);
@@ -513,7 +514,7 @@ type
     function CreateColumns: TmncColumns; virtual;
     function CreateParams: TmncParams; virtual; abstract;
     function CreateBinds: TmncBinds; virtual;
-    procedure Step; virtual; //Called before DoNext
+    procedure Fetch; virtual; //Called before DoNext
     property Request: TStrings read FRequest write SetRequest;
     property Binds: TmncBinds read FBinds; //for Dublicated names when pass the params when execute select * from t1 where f1 = ?p1 and f2 = ?p1 and f3=p2
     function InternalExecute(vNext: Boolean): Boolean;
@@ -534,7 +535,7 @@ type
     function Execute: Boolean;
     function Next: Boolean;
     function Done: Boolean;
-    function Run: Boolean; //Execute and Next for while loop() without using next at end of loop block //TODO not yet
+    function Step: Boolean; //Execute and Next for while loop() without using next at end of loop block //TODO not yet
     procedure Close;
     procedure Clear; virtual;
     procedure Commit;
@@ -551,6 +552,7 @@ type
     property Field[Index: string]: TmncField read GetField;
     property Params: TmncParams read FParams write SetParams;
     property Param[Index: string]: TmncParam read GetParam;
+    property Values[Index: string]: Variant read GetValues;
   end;
 
 { Simple classes usful for rapid implmetation }
@@ -818,7 +820,7 @@ begin
   Result := TmncBinds.Create;
 end;
 
-procedure TmncCommand.Step;
+procedure TmncCommand.Fetch;
 begin
 end;
 
@@ -851,7 +853,7 @@ begin
   Result := GetDone;
 end;
 
-function TmncCommand.Run: Boolean;
+function TmncCommand.Step: Boolean;
 begin
   if Done then
     Result := InternalExecute(True)
@@ -933,7 +935,7 @@ end;
 
 function TmncCommand.Next: Boolean;
 begin
-  Step;
+  Fetch;
   DoNext;
   Result := not Done;
 end;
@@ -1005,6 +1007,16 @@ procedure TmncCommand.SetRequest(const Value: TStrings);
 begin
   FRequest.Assign(Value);
   //TODO OnRequestChanged;
+end;
+
+function TmncCommand.GetValues(Index: string): Variant;
+begin
+  if not Prepared then
+    Prepare;
+  if Fields <> nil then
+    Result := Fields.Values[Index]
+  else
+    raise EmncException.Create('Current record not found');
 end;
 
 procedure TmncLinkSession.SetSession(AValue: TmncSession);

@@ -103,7 +103,7 @@ type
     procedure DoParse; override;
     procedure DoUnparse; override;
     procedure ParseSQL(Options: TmncParseSQLOptions; ParamChar: string = '?');
-    procedure Step; override;
+    procedure Fetch; override;
     procedure Clean; override; //Clean and reset stamemnt like Done or Ready called in Execute before DoExecute and after Prepare
     procedure HitDone;   //Make it true
     procedure HitReady; //Make it False
@@ -444,7 +444,7 @@ begin
   end;
 end;
 
-procedure TmncSQLCommand.Step;
+procedure TmncSQLCommand.Fetch;
 begin
   inherited;
   Inc(FFetched);
