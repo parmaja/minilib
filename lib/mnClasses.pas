@@ -29,7 +29,7 @@ type
 
   { TmnObjectList }
 
-  TmnObjectList<_Object_> = class(TObjectList)
+  TmnObjectList<_Object_> = class(TObjectList, IEnumerator<_Object_>)
   {$else}
   TmnObjectList<_Object_: class> = class(TObjectList<_Object_>)
   {$endif}
@@ -37,7 +37,16 @@ type
     {$ifdef FPC}
     function GetItem(Index: Integer): _Object_;
     {$endif}
+  protected
+    function _AddRef: Integer; {$ifdef WINDOWS}stdcall{$else}cdecl{$endif};
+    function _Release: Integer; {$ifdef WINDOWS}stdcall{$else}cdecl{$endif};
+
+    function GetCurrent: _Object_;
+    function MoveNext: Boolean;
+    procedure Reset;
+    property Current: _Object_ read GetCurrent;
   public
+    function QueryInterface({$ifdef FPC}constref{$else}const{$endif} iid : TGuid; out Obj):HResult; {$ifdef WINDOWS}stdcall{$else}cdecl{$endif};
     procedure AfterConstruction; override;
     procedure Created; virtual;
     procedure Added(Item: _Object_); virtual;
@@ -111,6 +120,38 @@ begin
 end;
 {$endif}
 
+function TmnObjectList<_Object_>._AddRef: Integer;
+begin
+  Result := 0;
+end;
+
+function TmnObjectList<_Object_>._Release: Integer;
+begin
+  Result := 0;
+end;
+
+function TmnObjectList<_Object_>.GetCurrent: _Object_;
+begin
+
+end;
+
+function TmnObjectList<_Object_>.MoveNext: Boolean;
+begin
+
+end;
+
+procedure TmnObjectList<_Object_>.Reset;
+begin
+
+end;
+
+function TmnObjectList<_Object_>.QueryInterface({$ifdef FPC}constref{$else}const{$endif} iid : TGuid; out Obj):HResult;
+begin
+  if GetInterface(IID, Obj) then
+    Result := 0
+  else
+    Result := E_NOINTERFACE;
+end;
 
 procedure TmnObjectList<_Object_>.Added(Item: _Object_);
 begin
