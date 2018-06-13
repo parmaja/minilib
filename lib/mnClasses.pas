@@ -23,18 +23,16 @@ uses
   {$endif};
 
 type
-  {$ifdef FPC}
-
   { TmnObjectList }
 
+  {$ifdef FPC}
   TmnObjectList<_Object_> = class(TObjectList)
   {$else}
   TmnObjectList<_Object_: class> = class(TObjectList<_Object_>)
   {$endif}
   private
-    {$ifdef FPC}
     function GetItem(Index: Integer): _Object_;
-    {$endif}
+    procedure SetItem(Index: Integer; AObject: _Object_);
   protected
 
     function _AddRef: Integer; {$ifdef WINDOWS}stdcall{$else}cdecl{$endif};
@@ -49,34 +47,15 @@ type
     function Add(Item: _Object_): Integer;
     function Extract(Item: _Object_): _Object_;
 
-    {$ifdef FPC}
-    property Items[Index: Integer]: _Object_ read GetItem; default;
+    property Items[Index: Integer]: _Object_ read GetItem write SetItem; default;
     function Last: _Object_;
-    {$endif}
   end;
-
-
-  {.$ifdef FPC}
-
-  { TEnumerator }
-{
-  TEnumerator<_Object_> = object
-  private
-    FItems: _Object_;
-    FCurrent: _Object_;
-    FIndex: Integer;
-  public
-    constructor Create;
-    function MoveNext: Boolean;
-    property Current: Pointer read FCurrent;
-  end;}
 
   { TmnNamedObjectList }
 
   {$ifdef FPC}
   TmnNamedObjectList<_Object_> = class(TmnObjectList<_Object_>)
   {$else}
-
   TmnNamedObject = class(TObject)
   private
     FName: string;
@@ -90,31 +69,24 @@ type
   public
     function Find(const Name: string): _Object_;
     function IndexOfName(vName: string): Integer;
-    //function GetEnumerator: specialize TEnumerator<_Object_>;
   end;
-  {.$endif}
-{
-  FreePascal:
 
-    TMyItems = class(specialize TmnObjectList<TMyObject>)
-
-  Delphi:
-
-    TMyItems = class(TmnObjectList<TMyObject>)
-}
 implementation
 
-{$ifdef FPC}
 function TmnObjectList<_Object_>.GetItem(Index: Integer): _Object_;
 begin
   Result := _Object_(inherited Items[Index]);
+end;
+
+procedure TmnObjectList<_Object_>.SetItem(Index: Integer; AObject: _Object_);
+begin
+  inherited Items[Index] := AObject;
 end;
 
 function TmnObjectList<_Object_>.Last: _Object_;
 begin
   Result := _Object_(inherited Last);
 end;
-{$endif}
 
 function TmnObjectList<_Object_>._AddRef: Integer;
 begin
@@ -191,36 +163,5 @@ begin
       end;
     end;
 end;
-
-
-{
-function TmnNamedObjectList<_Object_>.GetEnumerator: specialize TEnumerator<_Object_>;
-begin
-  Result:=_Object_.Create;
-  Result.FItems := Self;
-end;}
-
-{
-operator enumerator (TmnNamedObjectList: TmnNamedObjectList<_Object_>): TEnumerator<_Object_>;
-begin
-  Result.Create;
-end;}
-
-{ TEnumerator }
-{
-constructor TEnumerator<_Object_>.Create;
-begin
-  inherited;
-end;
-
-function TEnumerator<_Object_>.MoveNext: Boolean;
-begin
-  Inc(FIndex);
-  if FIndex > FItems then
-    FCurrent := FItems[FIndex]
-  else
-    FCurrent := nil;
-end;
- }
 
 end.
