@@ -217,6 +217,7 @@ type
     function GetValues(Index: string): Variant;
     function FindField(vName: string): TmnField; virtual;
     function GetIField(FieldName: string): IField;
+    function GetCount: Integer;
   public
     function QueryInterface({$ifdef FPC}constref{$else}const{$endif} iid : TGuid; out Obj):HResult; {$ifdef WINDOWS}stdcall{$else}cdecl{$endif};
     procedure LoadFromStream(Stream: TStream); virtual;
@@ -873,6 +874,11 @@ begin
       break;
     end;
   end;
+end;
+
+function TmnFields.GetCount: Integer;
+begin
+  Result := Count;
 end;
 
 function TmnFields.GetIField(FieldName: string): IField;
