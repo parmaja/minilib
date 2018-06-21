@@ -91,17 +91,9 @@ type
     procedure GetViewSource(Strings: TStringList; SQLName: string; Options: TschmEnumOptions = []); virtual;
     procedure GetIndexInfo(Meta: TmncMetaItems; SQLName: string; Options: TschmEnumOptions = []); virtual;
 
-    procedure GenerateSchema(ormSchema: TormSchema; Callback: TmncSQLCallback); virtual;
+    procedure GenerateSchema(ormSchema: TormSpace; Callback: TmncSQLCallback); virtual;
   published
     property IncludeHeader: Boolean read FIncludeHeader write FIncludeHeader default False;
-  end;
-
-
-  { TormStdDatabase }
-
-  TormStdDatabase = class(TormDatabase)
-  public
-    function GenerateSQL(vSQL: TStringList): Boolean; override;
   end;
 
   TmncMetaClass = class of TmncMeta;
@@ -112,13 +104,6 @@ type
   end;
 
 implementation
-
-{ TormStdDatabase }
-
-function TormStdDatabase.GenerateSQL(vSQL: TStringList): Boolean;
-begin
-  vSQL.Add('create database ' + Name);
-end;
 
 { TmncMetaItems }
 
@@ -270,14 +255,8 @@ procedure TmncMeta.GetIndexInfo(Meta: TmncMetaItems; SQLName: string; Options: T
 begin
 end;
 
-procedure TmncMeta.GenerateSchema(ormSchema: TormSchema; Callback: TmncSQLCallback);
-var
-  o: TormObject;
+procedure TmncMeta.GenerateSchema(ormSchema: TormSpace; Callback: TmncSQLCallback);
 begin
-  for o in ormSchema do
-  begin
-
-  end;
 end;
 
 end.

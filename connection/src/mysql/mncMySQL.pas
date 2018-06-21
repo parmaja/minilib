@@ -1256,7 +1256,7 @@ begin
         MYSQL_TYPE_TINY_BLOB, MYSQL_TYPE_MEDIUM_BLOB, MYSQL_TYPE_LONG_BLOB,
         MYSQL_TYPE_BLOB, MYSQL_TYPE_GEOMETRY:
         begin
-          aCurrent.Add(i, '');
+          aCurrent.Add(i, varUnknown);
         end;
       end;
     end;

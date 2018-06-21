@@ -9,7 +9,6 @@ unit mnFields;
 
 {$IFDEF fpc}
 {$MODE delphi}{$H+}
-{.$INTERFACES CORBA}
 {$ELSE}
 {$DEFINE WINDOWS}
 {$M+}
