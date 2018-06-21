@@ -1,0 +1,57 @@
+object Form1: TForm1
+  Left = 349
+  Height = 240
+  Top = 273
+  Width = 331
+  Caption = 'Form1'
+  ClientHeight = 240
+  ClientWidth = 331
+  LCLVersion = '0.9.29'
+  object Memo1: TMemo
+    Left = 7
+    Height = 134
+    Top = 7
+    Width = 318
+    Anchors = [akTop, akLeft, akRight]
+    Font.CharSet = ANSI_CHARSET
+    Font.Color = clBlack
+    Font.Height = -13
+    Font.Name = 'Courier New'
+    Font.Pitch = fpFixed
+    Font.Quality = fqDraft
+    ParentFont = False
+    ScrollBars = ssBoth
+    TabOrder = 1
+  end
+  object Button1: TButton
+    Left = 7
+    Height = 25
+    Top = 206
+    Width = 75
+    Anchors = [akLeft, akBottom]
+    Caption = 'Close'
+    OnClick = Button1Click
+    TabOrder = 2
+  end
+  object Button3: TButton
+    Left = 9
+    Height = 25
+    Top = 146
+    Width = 75
+    Caption = 'Convert'
+    Default = True
+    OnClick = Button3Click
+    TabOrder = 3
+  end
+  object Edit1: TEdit
+    Left = 157
+    Height = 21
+    Top = 147
+    Width = 166
+    Anchors = [akTop, akLeft, akRight]
+    BidiMode = bdRightToLeft
+    ParentBidiMode = False
+    TabOrder = 0
+    Text = 'م'
+  end
+end
