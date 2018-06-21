@@ -185,7 +185,7 @@ end;
 
 function TormSpace.TormObject.GenerateSQL(vSQL: TStringList): Boolean;
 begin
-  Result := False; //TODO raise exceptopm
+  Result := False; //TODO raise exception
 end;
 
 { TormDatabase }
