@@ -1,0 +1,28 @@
+object MainForm: TMainForm
+  Left = 344
+  Height = 380
+  Top = 162
+  Width = 496
+  Caption = 'MainForm'
+  ClientHeight = 380
+  ClientWidth = 496
+  LCLVersion = '1.9.0.0'
+  object CreateDB1Btn: TButton
+    Left = 10
+    Height = 25
+    Top = 5
+    Width = 146
+    Caption = 'Create DB 1'
+    OnClick = CreateDB1BtnClick
+    TabOrder = 0
+  end
+  object CreateDB2Btn: TButton
+    Left = 160
+    Height = 25
+    Top = 5
+    Width = 146
+    Caption = 'Create DB 2'
+    OnClick = CreateDB2BtnClick
+    TabOrder = 1
+  end
+end
