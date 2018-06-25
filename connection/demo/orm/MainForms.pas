@@ -20,7 +20,7 @@ type
   private
 
   public
-
+    Connection: TmncSQLiteConnection;
   end;
 
 var

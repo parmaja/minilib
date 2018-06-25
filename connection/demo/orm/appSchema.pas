@@ -23,8 +23,8 @@ begin
   Result := ORMClass.Create;
 
   with Result do
-    with TormSchema.Create('Schema') do
-      with TormDatabase.Create(This, 'Database') do
+    with TormDatabase.Create('Database') do
+      with TormSchema.Create(This, 'Schema') do
       begin
         with TormTable.Create(This, 'Employees') do
         begin
@@ -46,8 +46,8 @@ begin
   Result := ORMClass.Create;
 
   with Result do
-    with CreateSchema('Schema') do
-      with CreateDatabase(This, 'Database') do
+    with CreateDatabase('Database') do
+      with CreateSchema(This, 'Schema') do
       begin
         with CreateTable(This, 'Employees') do
         begin

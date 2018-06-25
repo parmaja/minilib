@@ -91,7 +91,7 @@ type
     procedure GetViewSource(Strings: TStringList; SQLName: string; Options: TschmEnumOptions = []); virtual;
     procedure GetIndexInfo(Meta: TmncMetaItems; SQLName: string; Options: TschmEnumOptions = []); virtual;
 
-    procedure GenerateSchema(ormSchema: TormSpace; Callback: TmncSQLCallback); virtual;
+    procedure GenerateSchema(ORM: TmncORM; Callback: TmncSQLCallback); virtual;
   published
     property IncludeHeader: Boolean read FIncludeHeader write FIncludeHeader default False;
   end;
@@ -255,7 +255,7 @@ procedure TmncMeta.GetIndexInfo(Meta: TmncMetaItems; SQLName: string; Options: T
 begin
 end;
 
-procedure TmncMeta.GenerateSchema(ormSchema: TormSpace; Callback: TmncSQLCallback);
+procedure TmncMeta.GenerateSchema(ORM: TmncORM; Callback: TmncSQLCallback);
 begin
 end;
 

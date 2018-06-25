@@ -34,7 +34,7 @@
     </CompilerOptions>
     <Description Value="Mini Connection, DB and Streams"/>
     <Version Major="1" Release="1"/>
-    <Files Count="30">
+    <Files Count="31">
       <Item1>
         <Filename Value="mncConnections.pas"/>
         <UnitName Value="mncConnections"/>
@@ -155,6 +155,10 @@
         <Filename Value="mncSQLUtils.pas"/>
         <UnitName Value="mncSQLUtils"/>
       </Item30>
+      <Item31>
+        <Filename Value="sqlite\mncSQLiteORM.pas"/>
+        <UnitName Value="mncSQLiteORM"/>
+      </Item31>
     </Files>
     <RequiredPkgs Count="2">
       <Item1>

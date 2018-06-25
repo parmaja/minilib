@@ -21,156 +21,168 @@ uses
   mncConnections, mncCommons;
 
 type
-  TormSpace = class(TObject)
-  type
-    TormObject = class;
 
-    { TormObject }
+  { TmncORM }
 
-    TormObject = class(TmnNamedObjectList<TormObject>)
-    private
-      FComment: string;
-      FName: string;
-      FParent: TormObject;
-      FRoot: TormObject;
-    public
-      constructor Create(AParent: TormObject; AName: string);
-      function GenerateSQL(vSQL: TStringList): Boolean; virtual;
-      property Name: string read FName write FName;
-      property Comment: string read FComment write FComment;
-      function This: TormObject; //I wish i have templates/meta programming in pascal
-      property Parent: TormObject read FParent;
-      property Root: TormObject read FRoot;
-    end;
+  TmncORM = class(TObject)
+  protected
+    type
+      TormObject = class;
 
-    { TormSchema }
+      { TormObject }
 
-    TormSchema = class(TormObject)
-    public
-      constructor Create(AName: string);
-      function This: TormSchema;
-    end;
+      TormObject = class(TmnNamedObjectList<TormObject>)
+      private
+        FComment: string;
+        FName: string;
+        FParent: TormObject;
+        FRoot: TormObject;
+      public
+        constructor Create(AParent: TormObject; AName: string);
+        function GenerateSQL(vSQL: TStringList): Boolean; virtual;
+        property Name: string read FName write FName;
+        property Comment: string read FComment write FComment;
+        function This: TormObject; //I wish i have templates/meta programming in pascal
+        property Parent: TormObject read FParent;
+        property Root: TormObject read FRoot;
+      end;
+  public
+    type
+      { TormDatabase }
 
-    { TormDatabase }
+      TormDatabase = class(TormObject)
+      public
+        constructor Create(AName: string);
+        function This: TormDatabase;
+      end;
 
-    TormDatabase = class(TormObject)
-    public
-      constructor Create(ASchema: TormSchema; AName: string);
-      function This: TormDatabase;
-    end;
+      { TormSchema }
 
-    { TormTable }
+      TormSchema = class(TormObject)
+      public
+        constructor Create(ADatabase: TormDatabase; AName: string);
+        function This: TormSchema;
+      end;
 
-    TormTable = class(TormObject)
-    public
-      constructor Create(ADatabase: TormDatabase; AName: string);
-      function This: TormTable;
-    end;
+      { TormTable }
 
-    TormFieldOption = (
-      foID, //PRIMARY and AUTO
-      foReferenced,
-      foInternal, //Do not display for end user
-      foSummed, //
-      foIndexed
-    );
+      TormTable = class(TormObject)
+      public
+        constructor Create(ASchema: TormSchema; AName: string);
+        function This: TormTable;
+      end;
 
-    TormFieldOptions = set of TormFieldOption;
-    TormFieldType = (ftString, ftBoolean, ftInteger, ftCurrency, ftFloat, ftDate, ftTime, ftDateTime, ftMemo, ftBlob);
+      TormFieldOption = (
+        foID, //PRIMARY and AUTO
+        foReferenced,
+        foInternal, //Do not display for end user
+        foSummed, //
+        foIndexed
+      );
 
-    { TormField }
+      TormFieldOptions = set of TormFieldOption;
+      TormFieldType = (ftString, ftBoolean, ftInteger, ftCurrency, ftFloat, ftDate, ftTime, ftDateTime, ftMemo, ftBlob);
 
-    TormField = class(TormObject)
-    private
-      FFieldType: TormFieldType;
-      FOptions: TormFieldOptions;
-      FRefTableName: string;
-      FRefFieldName: string;
-      FRefField: TormField;
-    public
-      constructor Create(ATable: TormTable; AName: string; AFieldType: TormFieldType; AOptions: TormFieldOptions = []);
-      function Parent: TormTable;
-      procedure Reference(ATableName: string; AFieldName: string);
-      property Options: TormFieldOptions read FOptions write FOptions;
-      property FieldType: TormFieldType read FFieldType write FFieldType;
-    end;
+      { TormField }
 
-    { TormInsert }
+      TormField = class(TormObject)
+      private
+        FFieldSize: Integer;
+        FFieldType: TormFieldType;
+        FOptions: TormFieldOptions;
+        FRefTableName: string;
+        FRefFieldName: string;
+        FRefField: TormField;
+      public
+        constructor Create(ATable: TormTable; AName: string; AFieldType: TormFieldType; AOptions: TormFieldOptions = []);
+        function Parent: TormTable;
+        procedure Reference(ATableName: string; AFieldName: string);
+        property Options: TormFieldOptions read FOptions write FOptions;
+        property FieldType: TormFieldType read FFieldType write FFieldType;
+        property FieldSize: Integer read FFieldSize write FFieldSize;
+      end;
 
-    TormInsert = class(TormObject)
-    public
-      function This: TormInsert;
-      constructor Create(AFields, AValues: Array of String);
-    end;
+      { TormInsert }
+
+      TormInsert = class(TormObject)
+      public
+        function This: TormInsert;
+        constructor Create(AFields, AValues: Array of String);
+      end;
+  public
+    function CreateDatabase(AName: string): TormDatabase; virtual; abstract;
+    function CreateSchema(ADatabase: TormDatabase; AName: string): TormSchema; virtual; abstract;
+    function CreateTable(ASchema: TormSchema; AName: string): TormTable; virtual; abstract;
+    function CreateField(ATable: TormTable; AName: string; AFieldType: TormFieldType; AOptions: TormFieldOptions = []): TormField; virtual; abstract;
   end;
 
-  TormSpaceClass = class of TormSpace;
+  TmncORMClass = class of TmncORM;
 
 implementation
 
 { TormInsert }
 
-function TormSpace.TormInsert.This: TormInsert;
+function TmncORM.TormInsert.This: TormInsert;
 begin
   Result := Self;
 end;
 
-constructor TormSpace.TormInsert.Create(AFields, AValues: array of String);
+constructor TmncORM.TormInsert.Create(AFields, AValues: array of String);
 begin
 
 end;
 
 { TormField }
 
-constructor TormSpace.TormField.Create(ATable: TormTable; AName: string; AFieldType: TormFieldType; AOptions: TormFieldOptions);
+constructor TmncORM.TormField.Create(ATable: TormTable; AName: string; AFieldType: TormFieldType; AOptions: TormFieldOptions);
 begin
   inherited Create(ATable, AName);
   FOptions := AOptions;
   FFieldType := AFieldType;
 end;
 
-function TormSpace.TormField.Parent: TormTable;
+function TmncORM.TormField.Parent: TormTable;
 begin
   Result := inherited Parent as TormTable;
 end;
 
-procedure TormSpace.TormField.Reference(ATableName: string; AFieldName: string);
+procedure TmncORM.TormField.Reference(ATableName: string; AFieldName: string);
 begin
 
 end;
 
 { TormTable }
 
-function TormSpace.TormTable.This: TormTable;
+function TmncORM.TormTable.This: TormTable;
 begin
   Result := Self;
 end;
 
-constructor TormSpace.TormTable.Create(ADatabase: TormDatabase; AName: string);
+constructor TmncORM.TormTable.Create(ASchema: TormSchema; AName: string);
 begin
-  inherited Create(ADatabase, AName);
+  inherited Create(ASchema, AName);
 end;
 
 { TormSchema }
 
-function TormSpace.TormSchema.This: TormSchema;
+function TmncORM.TormSchema.This: TormSchema;
 begin
   Result := Self;
 end;
 
-constructor TormSpace.TormSchema.Create(AName: string);
+constructor TmncORM.TormSchema.Create(ADatabase: TormDatabase; AName: string);
 begin
-  inherited Create(nil, AName);
+  inherited Create(ADatabase, AName);
 end;
 
 { TormObject }
 
-function TormSpace.TormObject.This: TormObject;
+function TmncORM.TormObject.This: TormObject;
 begin
   Result := Self;
 end;
 
-constructor TormSpace.TormObject.Create(AParent: TormObject; AName: string);
+constructor TmncORM.TormObject.Create(AParent: TormObject; AName: string);
 begin
   inherited Create;
   if AParent <> nil then
@@ -183,21 +195,21 @@ begin
     FRoot := Self;
 end;
 
-function TormSpace.TormObject.GenerateSQL(vSQL: TStringList): Boolean;
+function TmncORM.TormObject.GenerateSQL(vSQL: TStringList): Boolean;
 begin
   Result := False; //TODO raise exception
 end;
 
 { TormDatabase }
 
-function TormSpace.TormDatabase.This: TormDatabase;
+function TmncORM.TormDatabase.This: TormDatabase;
 begin
   Result := Self;
 end;
 
-constructor TormSpace.TormDatabase.Create(ASchema: TormSchema; AName: string);
+constructor TmncORM.TormDatabase.Create(AName: string);
 begin
-  inherited Create(ASchema, AName);
+  inherited Create(nil, AName);
 end;
 
 end.
