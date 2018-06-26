@@ -25,16 +25,19 @@
       <FormatVersion Value="2"/>
       <Modes Count="0"/>
     </RunParams>
-    <RequiredPackages Count="3">
+    <RequiredPackages Count="4">
       <Item1>
-        <PackageName Value="MiniConnections"/>
+        <PackageName Value="SynEdit"/>
       </Item1>
       <Item2>
-        <PackageName Value="MiniCommons"/>
+        <PackageName Value="MiniConnections"/>
       </Item2>
       <Item3>
-        <PackageName Value="LCL"/>
+        <PackageName Value="MiniCommons"/>
       </Item3>
+      <Item4>
+        <PackageName Value="LCL"/>
+      </Item4>
     </RequiredPackages>
     <Units Count="3">
       <Unit0>
@@ -45,6 +48,7 @@
         <Filename Value="MainForms.pas"/>
         <IsPartOfProject Value="True"/>
         <ComponentName Value="MainForm"/>
+        <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
       </Unit1>
       <Unit2>

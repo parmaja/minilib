@@ -39,11 +39,11 @@ type
     function _Release: Integer; {$ifdef WINDOWS}stdcall{$else}cdecl{$endif};
 
 
+    procedure Added(Item: _Object_); virtual;
+    procedure Created; virtual;
   public
     function QueryInterface({$ifdef FPC}constref{$else}const{$endif} iid : TGuid; out Obj):HResult; {$ifdef WINDOWS}stdcall{$else}cdecl{$endif};
     procedure AfterConstruction; override;
-    procedure Created; virtual;
-    procedure Added(Item: _Object_); virtual;
     function Add(Item: _Object_): Integer;
     function Extract(Item: _Object_): _Object_;
 

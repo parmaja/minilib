@@ -17,59 +17,80 @@ interface
 
 uses
   Classes, SysUtils, Contnrs,
-  mnClasses,
+  mnClasses, rttiutils,
   mncConnections, mncCommons;
 
 type
 
+   TormObject = class;
+
+   { TormObject }
+
+   TormObject = class(TmnNamedObjectList<TormObject>)
+   private
+     FComment: string;
+     FName: string;
+     FParent: TormObject;
+     FRoot: TormObject;
+     FTags: string;
+   protected
+     procedure Added(Item: TormObject); override;
+   public
+     constructor Create(AParent: TormObject; AName: string);
+     property Comment: string read FComment write FComment;
+     function DoSQL(vSQL: TStrings; Params: TStringList): Boolean; virtual;
+     function GenerateSQL(vSQL: TStrings; Params: TStringList): Boolean; virtual;
+     function This: TormObject; //I wish i have templates/meta programming in pascal
+     property Root: TormObject read FRoot;
+     property Parent: TormObject read FParent;
+
+     property Name: string read FName write FName;
+     property Tags: string read FTags write FTags; //etc: 'Key,Data'
+   end;
+
   { TmncORM }
 
-  TmncORM = class(TObject)
+  TmncORM = class(TormObject)
   protected
-    type
-      TormObject = class;
-
-      { TormObject }
-
-      TormObject = class(TmnNamedObjectList<TormObject>)
-      private
-        FComment: string;
-        FName: string;
-        FParent: TormObject;
-        FRoot: TormObject;
-      public
-        constructor Create(AParent: TormObject; AName: string);
-        function GenerateSQL(vSQL: TStringList): Boolean; virtual;
-        property Name: string read FName write FName;
-        property Comment: string read FComment write FComment;
-        function This: TormObject; //I wish i have templates/meta programming in pascal
-        property Parent: TormObject read FParent;
-        property Root: TormObject read FRoot;
-      end;
   public
     type
-      { TormDatabase }
+      TormObjectClass = class of TormObject;
 
-      TormDatabase = class(TormObject)
+      { TDatabase }
+
+      TDatabase = class(TormObject)
       public
-        constructor Create(AName: string);
-        function This: TormDatabase;
+        constructor Create(AORM:TmncORM; AName: string);
+        function This: TDatabase;
       end;
 
       { TormSchema }
 
-      TormSchema = class(TormObject)
+      TSchema = class(TormObject)
       public
-        constructor Create(ADatabase: TormDatabase; AName: string);
-        function This: TormSchema;
+        constructor Create(ADatabase: TDatabase; AName: string);
+        function This: TSchema;
       end;
 
-      { TormTable }
+      TFields = class;
 
-      TormTable = class(TormObject)
+      { TTable }
+
+      TTable = class(TormObject)
+      protected
+        procedure Added(Item: TormObject); override;
       public
-        constructor Create(ASchema: TormSchema; AName: string);
-        function This: TormTable;
+        Fields: TFields;
+        constructor Create(ASchema: TSchema; AName: string);
+        function This: TTable;
+      end;
+
+      { TFields }
+
+      TFields = class(TormObject)
+      public
+        constructor Create(ATable: TTable);
+        function This: TFields;
       end;
 
       TormFieldOption = (
@@ -83,106 +104,194 @@ type
       TormFieldOptions = set of TormFieldOption;
       TormFieldType = (ftString, ftBoolean, ftInteger, ftCurrency, ftFloat, ftDate, ftTime, ftDateTime, ftMemo, ftBlob);
 
-      { TormField }
+      { TField }
 
-      TormField = class(TormObject)
+      TField = class(TormObject)
       private
         FFieldSize: Integer;
         FFieldType: TormFieldType;
         FOptions: TormFieldOptions;
         FRefTableName: string;
         FRefFieldName: string;
-        FRefField: TormField;
+        FRefField: TField;
       public
-        constructor Create(ATable: TormTable; AName: string; AFieldType: TormFieldType; AOptions: TormFieldOptions = []);
-        function Parent: TormTable;
+        constructor Create(AFields: TFields; AName: string; AFieldType: TormFieldType; AOptions: TormFieldOptions = []);
+        function Parent: TTable;
         procedure Reference(ATableName: string; AFieldName: string);
         property Options: TormFieldOptions read FOptions write FOptions;
         property FieldType: TormFieldType read FFieldType write FFieldType;
         property FieldSize: Integer read FFieldSize write FFieldSize;
       end;
 
-      { TormInsert }
+      { StoredProcedure }
 
-      TormInsert = class(TormObject)
+      TStoredProcedure = class(TormObject)
+      private
+        FCode: string;
       public
-        function This: TormInsert;
-        constructor Create(AFields, AValues: Array of String);
+        property Code: string read FCode write FCode;
       end;
+
+      { Trigger }
+
+      TTrigger = class(TormObject)
+      private
+        FCode: string;
+      public
+        property Code: string read FCode write FCode;
+      end;
+
   public
-    function CreateDatabase(AName: string): TormDatabase; virtual; abstract;
-    function CreateSchema(ADatabase: TormDatabase; AName: string): TormSchema; virtual; abstract;
-    function CreateTable(ASchema: TormSchema; AName: string): TormTable; virtual; abstract;
-    function CreateField(ATable: TormTable; AName: string; AFieldType: TormFieldType; AOptions: TormFieldOptions = []): TormField; virtual; abstract;
+    type
+      TRegObject = class(TObject)
+      public
+         ObjectClass: TormObjectClass;
+      end;
+
+      { TRegObjects }
+
+      TRegObjects = class(TmnObjectList<TRegObject>)
+      public
+        function FindDerived(AObjectClass: TormObjectClass): TormObjectClass;
+      end;
+   private
+      FObjectClasses: TRegObjects;
+
+   public
+    constructor Create(AName: string); virtual;
+    function This: TmncORM;
+
+    function CreateDatabase(AName: string): TDatabase; virtual; abstract;
+    function CreateSchema(ADatabase: TDatabase; AName: string): TSchema; virtual; abstract;
+    function CreateTable(ASchema: TSchema; AName: string): TTable; virtual; abstract;
+    function CreateField(ATable: TTable; AName: string; AFieldType: TormFieldType; AOptions: TormFieldOptions = []): TField; virtual; abstract;
+
+    procedure Register(AObjectClass: TormObjectClass);
+    property ObjectClasses: TRegObjects read FObjectClasses;
   end;
 
   TmncORMClass = class of TmncORM;
 
 implementation
 
-{ TormInsert }
+{ TmncORM.TRegObjects }
 
-function TmncORM.TormInsert.This: TormInsert;
+function TmncORM.TRegObjects.FindDerived(AObjectClass: TormObjectClass): TormObjectClass;
+var
+  o: TRegObject;
+begin
+  for o in Self do
+  begin
+    if AObjectClass.ClassParent = o.ObjectClass then
+    begin
+      Result := o.ObjectClass;
+      break;
+    end;
+  end;
+end;
+
+{ TmncORM.TFields }
+
+constructor TmncORM.TFields.Create(ATable: TTable);
+begin
+  inherited Create(ATable, '');
+end;
+
+function TmncORM.TFields.This: TFields;
 begin
   Result := Self;
 end;
 
-constructor TmncORM.TormInsert.Create(AFields, AValues: array of String);
-begin
+{ TmncORM }
 
+constructor TmncORM.Create(AName: string);
+begin
+  inherited Create(nil, AName);
+  FObjectClasses := TRegObjects.Create;
 end;
 
-{ TormField }
-
-constructor TmncORM.TormField.Create(ATable: TormTable; AName: string; AFieldType: TormFieldType; AOptions: TormFieldOptions);
+function TmncORM.This: TmncORM;
 begin
-  inherited Create(ATable, AName);
+  Result := Self;
+end;
+
+procedure TmncORM.Register(AObjectClass: TormObjectClass);
+var
+  aRegObject: TRegObject;
+begin
+  aRegObject := TRegObject.Create;
+  aRegObject.ObjectClass := AObjectClass;
+  ObjectClasses.Add(aRegObject);
+end;
+
+{ TField }
+
+constructor TmncORM.TField.Create(AFields: TFields; AName: string; AFieldType: TormFieldType; AOptions: TormFieldOptions);
+begin
+  inherited Create(AFields, AName);
   FOptions := AOptions;
   FFieldType := AFieldType;
 end;
 
-function TmncORM.TormField.Parent: TormTable;
+function TmncORM.TField.Parent: TTable;
 begin
-  Result := inherited Parent as TormTable;
+  Result := inherited Parent as TTable;
 end;
 
-procedure TmncORM.TormField.Reference(ATableName: string; AFieldName: string);
+procedure TmncORM.TField.Reference(ATableName: string; AFieldName: string);
 begin
-
 end;
 
-{ TormTable }
+{ TTable }
 
-function TmncORM.TormTable.This: TormTable;
+function TmncORM.TTable.This: TTable;
 begin
   Result := Self;
 end;
 
-constructor TmncORM.TormTable.Create(ASchema: TormSchema; AName: string);
+procedure TmncORM.TTable.Added(Item: TormObject);
+begin
+  inherited Added(Item);
+  if Item is TFields then
+  begin
+    if Fields = nil then
+      Fields := Item as TFields
+    else
+      raise Exception.Create('You cannot add Fields twice')
+  end;
+end;
+
+constructor TmncORM.TTable.Create(ASchema: TSchema; AName: string);
 begin
   inherited Create(ASchema, AName);
+  //TFields := TFields.Create(Self);
 end;
 
-{ TormSchema }
+{ TSchema }
 
-function TmncORM.TormSchema.This: TormSchema;
+function TmncORM.TSchema.This: TSchema;
 begin
   Result := Self;
 end;
 
-constructor TmncORM.TormSchema.Create(ADatabase: TormDatabase; AName: string);
+constructor TmncORM.TSchema.Create(ADatabase: TDatabase; AName: string);
 begin
   inherited Create(ADatabase, AName);
 end;
 
 { TormObject }
 
-function TmncORM.TormObject.This: TormObject;
+function TormObject.This: TormObject;
 begin
   Result := Self;
 end;
 
-constructor TmncORM.TormObject.Create(AParent: TormObject; AName: string);
+procedure TormObject.Added(Item: TormObject);
+begin
+  inherited Added(Item);
+end;
+
+constructor TormObject.Create(AParent: TormObject; AName: string);
 begin
   inherited Create;
   if AParent <> nil then
@@ -195,21 +304,33 @@ begin
     FRoot := Self;
 end;
 
-function TmncORM.TormObject.GenerateSQL(vSQL: TStringList): Boolean;
+function TormObject.DoSQL(vSQL: TStrings; Params: TStringList): Boolean;
 begin
-  Result := False; //TODO raise exception
+  Result := False;
 end;
 
-{ TormDatabase }
+function TormObject.GenerateSQL(vSQL: TStrings; Params: TStringList): Boolean;
+var
+  o: TormObject;
+begin
+  Result := DoSQL(vSQL, Params);
+  for o in Self do
+  begin
+    o.GenerateSQL(vSQL, Params);
+  end;
+  //Result := False; //TODO raise exception
+end;
 
-function TmncORM.TormDatabase.This: TormDatabase;
+{ TDatabase }
+
+function TmncORM.TDatabase.This: TDatabase;
 begin
   Result := Self;
 end;
 
-constructor TmncORM.TormDatabase.Create(AName: string);
+constructor TmncORM.TDatabase.Create(AORM: TmncORM; AName: string);
 begin
-  inherited Create(nil, AName);
+  inherited Create(AORM, AName);
 end;
 
 end.
