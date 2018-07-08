@@ -7,16 +7,15 @@ unit mncSQLiteORM;
  * @author    Zaher Dirkey <zaher at parmaja dot com>
  *}
 
-{$M+}
-{$H+}
 {$IFDEF FPC}
 {$mode delphi}
 {$ENDIF}
+{$H+}{$M+}
 
 interface
 
 uses
-  SysUtils, Classes,
+  SysUtils, Classes, mnUtils,
   mncMeta, mncORM, mncSQLite;
 
 type
@@ -27,98 +26,130 @@ type
   protected
     type
 
-      { TormDatabaseSQLite }
+      { TDatabaseSQLite }
 
-      TormDatabaseSQLite = class(TDatabase)
+      TDatabaseSQLite = class(TormHelper)
       public
-        function DoSQL(vSQL: TStrings; Params: TStringList): Boolean; override;
+        function ProduceSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean; override;
       end;
 
-      { TormSchemaSQLite }
+      { TSchemaSQLite }
 
-      TormSchemaSQLite = class(TSchema)
+      TSchemaSQLite = class(TormHelper)
       public
-        function DoSQL(vSQL: TStrings; Params: TStringList): Boolean; override;
+        function ProduceSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean; override;
       end;
 
-      { TormTableSQLite }
+      { TTableSQLite }
 
-      TormTableSQLite = class(TTable)
+      TTableSQLite = class(TormHelper)
       public
-        function DoSQL(vSQL: TStrings; Params: TStringList): Boolean; override;
+        function ProduceSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean; override;
       end;
 
-      { TormFieldSQLite }
+      { TFieldsSQLite }
 
-      TormFieldSQLite = class(TField)
+      TFieldsSQLite = class(TormHelper)
       public
-        function DoSQL(vSQL: TStrings; Params: TStringList): Boolean; override;
+        function ProduceSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean; override;
+      end;
+
+      { TFieldSQLite }
+
+      TFieldSQLite = class(TormHelper)
+      public
+        function ProduceSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean; override;
       end;
   protected
+    class function FieldTypeToString(FieldType:TormFieldType; FieldSize: Integer): String;
     procedure Created; override;
   public
-    function CreateDatabase(AName: string): TDatabase; override;
-    function CreateSchema(ADatabase: TDatabase; AName: string): TSchema; override;
-    function CreateTable(ASchema: TSchema; AName: string): TTable; override;
-    function CreateField(ATable: TTable; AName: string; AFieldType: TormFieldType; AOptions: TormFieldOptions = []): TField; override;
   end;
 
 implementation
 
-{ TmncORMSQLite.TormFieldSQLite }
+{ TmncORMSQLite.TFieldsSQLite }
 
-function TmncORMSQLite.TormFieldSQLite.DoSQL(vSQL: TStrings; Params: TStringList): Boolean;
+function TmncORMSQLite.TFieldsSQLite.ProduceSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
 begin
+  GenerateObjects(AObject, SQL, vLevel);
   Result := True;
 end;
 
-{ TmncORMSQLite.TormTableSQLite }
+{ TmncORMSQLite.TFieldSQLite }
 
-function TmncORMSQLite.TormTableSQLite.DoSQL(vSQL: TStrings; Params: TStringList): Boolean;
+function TmncORMSQLite.TFieldSQLite.ProduceSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
 begin
+//  vSQL.Send(LevelStr(vLevel) + Name + ' as Integer'); bug in fpc needs to reproduce but i can
+  with AObject as TField do
+  begin
+    SQL.Add(LevelStr(vLevel) + Name + ' as '+ FieldTypeToString(FieldType, FieldSize));
+  end;
   Result := True;
 end;
 
-{ TmncORMSQLite.TormDatabaseSQLite }
+{ TmncORMSQLite.TTableSQLite }
 
-function TmncORMSQLite.TormDatabaseSQLite.DoSQL(vSQL: TStrings; Params: TStringList): Boolean;
+function TmncORMSQLite.TTableSQLite.ProduceSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
+var
+  Field: TField;
 begin
-  Result := True; //in sqlite no need to create, hmmm ok , let me find it on internet
+  Result := True;
+  with AObject as TTable do
+  begin
+    SQL.Add('create table ' + Name);
+    SQL.Add('(');
+    for Field in Fields do
+    begin
+      SQL.Params.Values['Table'] := Name;
+      Field.GenerateSQL(SQL, vLevel + 1);
+    end;
+    SQL.Add(')');
+  end;
 end;
 
-{ TmncORMSQLite.TormSchemaSQLite }
+{ TmncORMSQLite.TDatabaseSQLite }
 
-function TmncORMSQLite.TormSchemaSQLite.DoSQL(vSQL: TStrings; Params: TStringList): Boolean;
+function TmncORMSQLite.TDatabaseSQLite.ProduceSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
 begin
-  Result := True; //nothing to do
+  GenerateObjects(AObject, SQL, vLevel);
+  Result := True;
+end;
+
+{ TmncORMSQLite.SchemaSQLite }
+
+function TmncORMSQLite.TSchemaSQLite.ProduceSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
+begin
+  GenerateObjects(AObject, SQL, vLevel);
+  Result := True;
 end;
 
 { TmncORMSQLite }
 
-function TmncORMSQLite.CreateSchema(ADatabase: TDatabase; AName: string): TSchema;
+class function TmncORMSQLite.FieldTypeToString(FieldType: TormFieldType; FieldSize: Integer): String;
 begin
-  Result := TormSchemaSQLite.Create(ADatabase, AName);
+  case FieldType of
+    ftString: Result := 'varchar('+IntToStr(FieldSize)+')';
+    ftBoolean: Result := 'boolean';
+    ftInteger: Result := 'integer';
+    ftCurrency: Result := 'decimal(12, 4)';
+    ftFloat: Result := 'float';
+    ftDate: Result := 'date';
+    ftTime: Result := 'time';
+    ftDateTime: Result := 'datetime';
+    ftMemo: Result := 'text';
+    ftBlob: Result := 'text';
+  end;
 end;
 
 procedure TmncORMSQLite.Created;
 begin
   inherited Created;
-  //Register(TormFieldSQLite);
-end;
-
-function TmncORMSQLite.CreateDatabase(AName: string): TDatabase;
-begin
-  Result := TormDatabaseSQLite.Create(Self, AName);
-end;
-
-function TmncORMSQLite.CreateTable(ASchema: TSchema; AName: string): TTable;
-begin
-  Result := TormTableSQLite.Create(ASchema, AName);
-end;
-
-function TmncORMSQLite.CreateField(ATable: TTable; AName: string; AFieldType: TormFieldType; AOptions: TormFieldOptions): TField;
-begin
-  Result := TormFieldSQLite.Create(ATable.Fields, AName, AFieldType, AOptions);
+  Register(TDatabase ,TDatabaseSQLite);
+  Register(TSchema, TSchemaSQLite);
+  Register(TTable, TTableSQLite);
+  Register(TFields, TFieldsSQLite);
+  Register(TField, TFieldSQLite);
 end;
 
 end.

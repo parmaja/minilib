@@ -13,7 +13,7 @@ uses
   mncFBHeader, mncFBStrings, mncFBTypes, mncFBUtils, mncFirebird, 
   CSVOptionsForms, mncSQLite, ParamsForms, mncSQLiteHeader, mncFBMeta, 
   mncSQLiteMeta, mncMySQLdyn, mncMySQLMeta, mncMySQL, mncMeta, mncORM, 
-  mncSQLUtils, mncSQLiteORM;
+  mncSQLUtils, mncSQLiteORM, mncMySQLORM;
 
 implementation
 
