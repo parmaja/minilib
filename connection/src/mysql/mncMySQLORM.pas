@@ -94,6 +94,8 @@ begin
   with AObject as TField do
   begin
     SQL.Add(LevelStr(vLevel) + Name + ' as '+ FieldTypeToString(FieldType, FieldSize));
+    if (foNotNull in Options) or (foPrimary in Options) then
+      SQL.Add(' not null');
     if foSequenced in Options then
       SQL.Add(' auto_increment');
     if not VarIsEmpty(DefaultValue) then
@@ -112,21 +114,70 @@ end;
 function TmncORMMySQL.TTableMySQL.ProduceSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
 var
   Field: TField;
+  S: string;
 begin
   Result := True;
   with AObject as TTable do
   begin
 
-    SQL.Add('create table ' + Name);
+    SQL.Add(LevelStr(vLevel) + 'create table ' + Name);
     SQL.Add('(', [cboEndLine]);
     SQL.Params.Values['Table'] := Name;
     Fields.GenerateSQL(SQL, vLevel + 1);
-    SQL.Add('', [cboEndLine]);
-    SQL.Add(')', [cboEndLine, cboEndChunk]);
+
+    //collect primary keys
+    S := '';
+    for Field in Fields do
+    begin
+      if Field.Primary then
+      begin
+        if S <> '' then
+          S := S + ', ';
+        S := S + Field.Name;
+      end;
+    end;
+
+    if S <> '' then
+    begin
+      SQL.Add(',', [cboEndLine]);
+      SQL.Add(LevelStr(vLevel + 1) + 'primary key (' + S + ')', []);
+    end;
 
     for Field in Fields do
     begin
+      if Field.ReferenceInfo.Table <> nil then
+      begin
+        SQL.Add(',', [cboEndLine]);
+        S := 'foreign key Ref' + Name + Field.ReferenceInfo.Table.Name + Field.ReferenceInfo.Field.Name + '(' + Field.Name + ')'
+                +' references ' + Field.ReferenceInfo.Table.Name + '(' + Field.ReferenceInfo.Field.Name + ')';
+
+        if rfoDelete in Field.ReferenceInfo.Options then
+        begin
+          if rfoRestrict in Field.ReferenceInfo.Options then
+            S := S + ' on delete restrict'
+          else
+            S := S + ' on delete cascade'
+        end
+        else
+          S := S + ' on delete set null';
+
+        if rfoUpdate in Field.ReferenceInfo.Options then
+        begin
+          if rfoRestrict in Field.ReferenceInfo.Options then
+            S := S + ' on update restrict'
+          else
+            S := S + ' on update cascade';
+        end
+        else
+          S := S + ' on update set null';
+
+        SQL.Add(LevelStr(vLevel + 1) + S , []);
+      end;
     end;
+    SQL.Add('', [cboEndLine]);
+    SQL.Add(')', [cboEndLine]);
+    SQL.Add('', [cboEndChunk]);
+    SQL.Params.Values['Table'] := '';
   end;
 end;
 

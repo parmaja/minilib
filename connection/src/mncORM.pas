@@ -22,6 +22,7 @@ uses
 type
 
   TormObject = class;
+  TormObjectClass = class of TormObject;
 
   { TormObject }
 
@@ -34,6 +35,8 @@ type
     FTags: String;
   protected
     procedure Added(Item: TormObject); override;
+    procedure Check; virtual;
+    function FindChild(ObjectClass: TormObjectClass; AName: string; RaiseException: Boolean = false): TormObject;
   public
     constructor Create(AParent: TormObject; AName: String);
     property Comment: String read FComment write FComment;
@@ -69,6 +72,7 @@ type
   public
     type
     TormSQLObject = class;
+    TormSQLObjectClass = class of TormSQLObject;
 
     { TormHelper }
 
@@ -90,8 +94,6 @@ type
       function GenerateSQL(SQL: TCallbackObject; vLevel: Integer): Boolean;
     end;
 
-    TormObjectClass = class of TormSQLObject;
-
     { TDatabase }
 
     TDatabase = class(TormSQLObject)
@@ -108,7 +110,10 @@ type
       function This: TSchema;
     end;
 
+    TField = class;
     TFields = class;
+    TIndexes = class;
+    TReferences = class;
 
     { TTable }
 
@@ -117,6 +122,8 @@ type
       procedure Added(Item: TormObject); override;
     public
       Fields: TFields;
+      Indexes: TIndexes;
+      References: TReferences;
       constructor Create(ASchema: TSchema; AName: String);
       function This: TTable;
     end;
@@ -127,6 +134,22 @@ type
     public
       constructor Create(ATable: TTable);
       function This: TFields;
+    end;
+
+    { TIndexes }
+
+    TIndexes = class(TormSQLObject)
+    public
+      constructor Create(ATable: TTable);
+      function This: TIndexes;
+    end;
+
+    { TReferences }
+
+    TReferences = class(TormSQLObject)
+    public
+      constructor Create(ATable: TTable);
+      function This: TReferences;
     end;
 
     TormFieldOption = (
@@ -141,6 +164,19 @@ type
 
     TormFieldOptions = set of TormFieldOption;
     TormFieldType = (ftString, ftBoolean, ftInteger, ftCurrency, ftFloat, ftDate, ftTime, ftDateTime, ftMemo, ftBlob);
+    TormReferenceOptions = set of (rfoDelete, rfoUpdate, rfoRestrict);
+
+    TReferenceInfoStr = record
+      Table: string;
+      Field: string;
+      Options: TormReferenceOptions;
+    end;
+
+    TReferenceInfoLink = record
+      Table: TTable;
+      Field: TField;
+      Options: TormReferenceOptions;
+    end;
 
     { TField }
 
@@ -150,21 +186,22 @@ type
       FFieldSize: Integer;
       FFieldType: TormFieldType;
       FOptions: TormFieldOptions;
-      FRefTableName: String;
-      FRefFieldName: String;
-      FRefField: TField;
       function GetIndexed: Boolean;
       function GetPrimary: Boolean;
       function GetSequenced: Boolean;
       procedure SetIndexed(AValue: Boolean);
       procedure SetPrimary(AValue: Boolean);
       procedure SetSequenced(AValue: Boolean);
+    protected
+      ReferenceInfoStr: TReferenceInfoStr;
+      procedure Check; override;
     public
+      ReferenceInfo: TReferenceInfoLink;
       constructor Create(AFields: TFields; AName: String; AFieldType: TormFieldType; AOptions: TormFieldOptions = []);
       function Parent: TTable;
-      procedure Reference(ATableName: String; AFieldName: String);
       property Options: TormFieldOptions read FOptions write FOptions;
       property DefaultValue: Variant read FDefaultValue write FDefaultValue;
+      procedure ReferenceTo(TableName, FieldName: string; Options: TormReferenceOptions);
 
       property FieldType: TormFieldType read FFieldType write FFieldType;
       property FieldSize: Integer read FFieldSize write FFieldSize;
@@ -213,7 +250,6 @@ type
     FObjectClasses: TRegObjects;
 
   protected
-
   public
     constructor Create(AName: String); virtual;
     destructor Destroy; override;
@@ -236,6 +272,32 @@ type
 function LevelStr(vLevel: Integer): String;
 
 implementation
+
+{ TmncORM.TReferences }
+
+constructor TmncORM.TReferences.Create(ATable: TTable);
+begin
+  inherited Create(ATable, '');
+  ATable.References := Self;
+end;
+
+function TmncORM.TReferences.This: TReferences;
+begin
+  Result := Self;
+end;
+
+{ TmncORM.TIndexes }
+
+constructor TmncORM.TIndexes.Create(ATable: TTable);
+begin
+  inherited Create(ATable, '');
+  ATable.Indexes := Self;
+end;
+
+function TmncORM.TIndexes.This: TIndexes;
+begin
+  Result := Self;
+end;
 
 { TCallbackObject }
 
@@ -277,8 +339,10 @@ begin
   if HelperClass <> nil then
   begin
     helper := HelperClass.Create;
-    helper.ProduceSQL(self, SQL, vLevel);
-  end;
+    Result := helper.ProduceSQL(self, SQL, vLevel);
+  end
+  else
+    Result := False;
 end;
 
 { TmncORM.TormHelper }
@@ -416,6 +480,16 @@ begin
     Options := Options - [foSequenced];
 end;
 
+procedure TmncORM.TField.Check;
+begin
+  if ReferenceInfoStr.Table <> '' then
+    ReferenceInfo.Table := Root.FindChild(TTable, ReferenceInfoStr.Table, true) as TTable;
+  if ReferenceInfoStr.Field <> '' then
+    ReferenceInfo.Field := Root.FindChild(TField, ReferenceInfoStr.Field, true) as TField;
+  ReferenceInfo.Options := ReferenceInfoStr.Options;
+  inherited Check;
+end;
+
 constructor TmncORM.TField.Create(AFields: TFields; AName: String; AFieldType: TormFieldType; AOptions: TormFieldOptions);
 begin
   inherited Create(AFields, AName);
@@ -428,8 +502,11 @@ begin
   Result := inherited Parent as TTable;
 end;
 
-procedure TmncORM.TField.Reference(ATableName: String; AFieldName: String);
+procedure TmncORM.TField.ReferenceTo(TableName, FieldName: string; Options: TormReferenceOptions);
 begin
+  ReferenceInfoStr.Table := TableName;
+  ReferenceInfoStr.Field := FieldName;
+  ReferenceInfoStr.Options := Options;
 end;
 
 { TTable }
@@ -480,6 +557,38 @@ procedure TormObject.Added(Item: TormObject);
 begin
   inherited Added(Item);
 end;
+
+procedure TormObject.Check;
+var
+  o: TormObject;
+begin
+  for o in Self do
+    o.Check;
+end;
+
+function TormObject.FindChild(ObjectClass: TormObjectClass; AName: string; RaiseException: Boolean): TormObject;
+var
+  o: TormObject;
+begin
+  Result := nil;
+  for o in Self do
+  begin
+    if (o.ClassType = ObjectClass) and (SameText(o.Name, AName)) then
+    begin
+      Result := o;
+      exit;
+    end;
+  end;
+  for o in Self do
+  begin
+    Result := o.FindChild(ObjectClass, AName);
+    if Result <> nil then
+      exit;
+  end;
+  if RaiseException and (Result = nil) then
+    raise Exception.Create(ObjectClass.ClassName + ': ' + AName +  ' not exists');
+end;
+
 
 function LevelStr(vLevel: Integer): String;
 begin
@@ -559,6 +668,7 @@ begin
   SQLCB.Add('');
   GenerateSQL(SQLCB);
   FreeAndNil(SQLCB);
+  Result := True;
 end;
 
 function TmncORM.GenerateSQL(Callback: TCallbackObject): Boolean;
@@ -567,6 +677,7 @@ var
   o: TormSQLObject;
   helper: TormHelper;
 begin
+  Check;
   AParams := TStringList.Create;
   try
     for o in Self do

@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, SynEdit,
-  mncDB, mncSQLite, mncORM, mncMeta, mncSQLiteORM, appSchema;
+  SynHighlighterSQL, mncDB, mncSQLite, mncORM, mncMySQLORM, appSchema;
 
 type
 
@@ -16,6 +16,7 @@ type
     CreateDB1Btn: TButton;
     CreateDB2Btn: TButton;
     SynEdit1: TSynEdit;
+    SynSQLSyn1: TSynSQLSyn;
     procedure CreateDB1BtnClick(Sender: TObject);
     procedure CreateDB2BtnClick(Sender: TObject);
   private
@@ -37,14 +38,14 @@ implementation
 
 procedure TMainForm.CreateDB1BtnClick(Sender: TObject);
 begin
-  ORM := CreateSchema1(TmncORMSQLite);
-  ORM.GenerateSQL(SynEdit1.Lines, nil);
+  ORM := CreateSchema1(TmncORMMySQL);
+  ORM.GenerateSQL(SynEdit1.Lines);
 end;
 
 procedure TMainForm.CreateDB2BtnClick(Sender: TObject);
 begin
-  ORM := CreateSchema2(TmncORMSQLite);
-  ORM.GenerateSQL(SynEdit1.Lines, nil);
+  ORM := CreateSchema2(TmncORMMySQL);
+  ORM.GenerateSQL(SynEdit1.Lines);
 end;
 
 end.

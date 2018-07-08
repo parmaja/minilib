@@ -1,11 +1,11 @@
 object MainForm: TMainForm
   Left = 344
-  Height = 380
+  Height = 385
   Top = 162
-  Width = 496
+  Width = 719
   Caption = 'MainForm'
-  ClientHeight = 380
-  ClientWidth = 496
+  ClientHeight = 385
+  ClientWidth = 719
   LCLVersion = '1.9.0.0'
   object CreateDB1Btn: TButton
     Left = 10
@@ -27,9 +27,9 @@ object MainForm: TMainForm
   end
   inline SynEdit1: TSynEdit
     Left = 10
-    Height = 339
+    Height = 344
     Top = 35
-    Width = 480
+    Width = 703
     Anchors = [akTop, akLeft, akRight, akBottom]
     Font.Height = -13
     Font.Name = 'Courier New'
@@ -42,6 +42,7 @@ object MainForm: TMainForm
     Gutter.MouseActions = <>
     RightGutter.Width = 0
     RightGutter.MouseActions = <>
+    Highlighter = SynSQLSyn1
     Keystrokes = <    
       item
         Command = ecUp
@@ -466,9 +467,6 @@ object MainForm: TMainForm
     MouseActions = <>
     MouseTextActions = <>
     MouseSelActions = <>
-    Lines.Strings = (
-      'SynEdit1'
-    )
     VisibleSpecialChars = [vscSpace, vscTabAtLast]
     SelectedColor.BackPriority = 50
     SelectedColor.ForePriority = 50
@@ -524,5 +522,12 @@ object MainForm: TMainForm
         MouseActionsCollapsed = <>
       end
     end
+  end
+  object SynSQLSyn1: TSynSQLSyn
+    DefaultFilter = 'SQL Files (*.sql)|*.sql'
+    Enabled = False
+    SQLDialect = sqlMySQL
+    left = 258
+    top = 47
   end
 end

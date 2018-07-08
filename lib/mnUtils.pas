@@ -63,7 +63,7 @@ function ContainsText(const SubStr, InStr: string): Boolean; //TODO, need one sc
 //Index started from 0
 function SubStr(const Str: String; vSeperator: Char; vFromIndex, vToIndex: Integer): String; overload;
 function SubStr(const Str: String; vSeperator: Char; vIndex: Integer = 0): String; overload;
-function Fetch(var AInput: string; const ADelim: string = '.'; const ADelete: Boolean = True; const ACaseSensitive: Boolean = True): string; deprecated;
+function FetchStr(var AInput: string; const ADelim: string = '.'; const ADelete: Boolean = True; const ACaseSensitive: Boolean = True): string; deprecated;
 
 //vPeriod is a datetime not tickcount
 function PeriodToString(vPeriod: Double; WithSeconds: Boolean): string;
@@ -770,7 +770,7 @@ begin
   Result := SubStr(Str, vSeperator, vIndex, vIndex);
 end;
 
-function Fetch(var AInput: string; const ADelim: string; const ADelete: Boolean; const ACaseSensitive: Boolean): string;
+function FetchStr(var AInput: string; const ADelim: string; const ADelete: Boolean; const ACaseSensitive: Boolean): string;
 var
   LPos: Integer;
 begin
