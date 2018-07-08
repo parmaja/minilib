@@ -21,6 +21,7 @@ uses
 
 type
 
+  TmncORM = class;
   TormObject = class;
   TormObjectClass = class of TormObject;
 
@@ -31,7 +32,7 @@ type
     FComment: String;
     FName: String;
     FParent: TormObject;
-    FRoot: TormObject;
+    FRoot: TmncORM;
     FTags: String;
   protected
     procedure Added(Item: TormObject); override;
@@ -41,7 +42,7 @@ type
     constructor Create(AParent: TormObject; AName: String);
     property Comment: String read FComment write FComment;
     function This: TormObject; //I wish i have templates/meta programming in pascal
-    property Root: TormObject read FRoot;
+    property Root: TmncORM read FRoot;
     property Parent: TormObject read FParent;
 
     property Name: String read FName write FName;
@@ -91,15 +92,19 @@ type
       HelperClass: TormHelperClass;
       procedure Created; override;
     public
+      function GenName: string; virtual;
       function GenerateSQL(SQL: TCallbackObject; vLevel: Integer): Boolean;
     end;
 
     { TDatabase }
 
     TDatabase = class(TormSQLObject)
+    private
+      FVersion: integer;
     public
       constructor Create(AORM: TmncORM; AName: String);
       function This: TDatabase;
+      property Version: integer read FVersion write FVersion;
     end;
 
     { TormSchema }
@@ -121,10 +126,11 @@ type
     protected
       procedure Added(Item: TormObject); override;
     public
+      Prefix: string; //used to added to generated field name, need more tests
       Fields: TFields;
       Indexes: TIndexes;
       References: TReferences;
-      constructor Create(ASchema: TSchema; AName: String);
+      constructor Create(ASchema: TSchema; AName: String; APrefix: string = '');
       function This: TTable;
     end;
 
@@ -163,7 +169,7 @@ type
     );
 
     TormFieldOptions = set of TormFieldOption;
-    TormFieldType = (ftString, ftBoolean, ftInteger, ftCurrency, ftFloat, ftDate, ftTime, ftDateTime, ftMemo, ftBlob);
+    TormFieldType = (ftString, ftBoolean, ftInteger, ftBigInteger, ftCurrency, ftFloat, ftDate, ftTime, ftDateTime, ftText, ftBlob);
     TormReferenceOptions = set of (rfoDelete, rfoUpdate, rfoRestrict);
 
     TReferenceInfoStr = record
@@ -185,6 +191,7 @@ type
       FDefaultValue: Variant;
       FFieldSize: Integer;
       FFieldType: TormFieldType;
+      FIndex: string;
       FOptions: TormFieldOptions;
       function GetIndexed: Boolean;
       function GetPrimary: Boolean;
@@ -195,10 +202,12 @@ type
     protected
       ReferenceInfoStr: TReferenceInfoStr;
       procedure Check; override;
+      function Table: TTable;
     public
       ReferenceInfo: TReferenceInfoLink;
       constructor Create(AFields: TFields; AName: String; AFieldType: TormFieldType; AOptions: TormFieldOptions = []);
-      function Parent: TTable;
+      function GenName: string; override;
+      function Parent: TFields;
       property Options: TormFieldOptions read FOptions write FOptions;
       property DefaultValue: Variant read FDefaultValue write FDefaultValue;
       procedure ReferenceTo(TableName, FieldName: string; Options: TormReferenceOptions);
@@ -209,6 +218,8 @@ type
       property Indexed: Boolean read GetIndexed write SetIndexed;
       property Primary: Boolean read GetPrimary write SetPrimary;
       property Sequenced: Boolean read GetSequenced write SetSequenced;
+
+      property Index: string read FIndex write FIndex;// this will group this field have same values into one index with that index name
     end;
 
     { StoredProcedure }
@@ -248,6 +259,8 @@ type
 
   private
     FObjectClasses: TRegObjects;
+    FQuoteChar: string;
+    FUsePrefexes: Boolean;
 
   protected
   public
@@ -265,6 +278,8 @@ type
 
     procedure Register(AObjectClass: TormObjectClass; AHelperClass: TormHelperClass);
     property ObjectClasses: TRegObjects read FObjectClasses;
+    property QuoteChar: string read FQuoteChar write FQuoteChar; //Empty, it will be used with GenName
+    property UsePrefexes: Boolean read FUsePrefexes write FUsePrefexes; //option to use Prefex in Field names
   end;
 
   TmncORMClass = class of TmncORM;
@@ -278,7 +293,8 @@ implementation
 constructor TmncORM.TReferences.Create(ATable: TTable);
 begin
   inherited Create(ATable, '');
-  ATable.References := Self;
+  if ATable <> nil then
+    ATable.References := Self;
 end;
 
 function TmncORM.TReferences.This: TReferences;
@@ -291,7 +307,8 @@ end;
 constructor TmncORM.TIndexes.Create(ATable: TTable);
 begin
   inherited Create(ATable, '');
-  ATable.Indexes := Self;
+  if ATable <> nil then
+    ATable.Indexes := Self;
 end;
 
 function TmncORM.TIndexes.This: TIndexes;
@@ -330,6 +347,11 @@ begin
   inherited Created;
   if (FRoot <> nil) then
     HelperClass := (Root as TmncORM).ObjectClasses.FindHelper(TormObjectClass(ClassType));
+end;
+
+function TmncORM.TormSQLObject.GenName: string;
+begin
+  Result := Name;
 end;
 
 function TmncORM.TormSQLObject.GenerateSQL(SQL: TCallbackObject; vLevel: Integer): Boolean;
@@ -382,7 +404,8 @@ end;
 constructor TmncORM.TFields.Create(ATable: TTable);
 begin
   inherited Create(ATable, '');
-  ATable.Fields := Self;
+  if ATable <> nil then
+    ATable.Fields := Self;
 end;
 
 function TmncORM.TFields.This: TFields;
@@ -395,6 +418,7 @@ end;
 constructor TmncORM.Create(AName: String);
 begin
   inherited Create(nil, AName);
+  FRoot := Self;
   FObjectClasses := TRegObjects.Create;
 end;
 
@@ -490,6 +514,11 @@ begin
   inherited Check;
 end;
 
+function TmncORM.TField.Table: TTable;
+begin
+  Result := Parent.Parent as TTable;
+end;
+
 constructor TmncORM.TField.Create(AFields: TFields; AName: String; AFieldType: TormFieldType; AOptions: TormFieldOptions);
 begin
   inherited Create(AFields, AName);
@@ -497,9 +526,21 @@ begin
   FFieldType := AFieldType;
 end;
 
-function TmncORM.TField.Parent: TTable;
+function TmncORM.TField.GenName: string;
 begin
-  Result := inherited Parent as TTable;
+  Result := inherited GenName;
+  if (Table <> nil) then
+  begin
+    if Root.UsePrefexes then
+      Result := Table.Prefix + Result;
+    if Root.QuoteChar <> '' then
+      Result := Root.QuoteChar + Result + Root.QuoteChar;
+  end;
+end;
+
+function TmncORM.TField.Parent: TFields;
+begin
+  Result := inherited Parent as TFields;
 end;
 
 procedure TmncORM.TField.ReferenceTo(TableName, FieldName: string; Options: TormReferenceOptions);
@@ -528,9 +569,10 @@ begin
   end;
 end;
 
-constructor TmncORM.TTable.Create(ASchema: TSchema; AName: String);
+constructor TmncORM.TTable.Create(ASchema: TSchema; AName: String; APrefix: string);
 begin
   inherited Create(ASchema, AName);
+  Prefix := APrefix;
   //TFields := TFields.Create(Self); //hmmmmmm :J
 end;
 
@@ -604,9 +646,7 @@ begin
     FParent := AParent;
     AParent.Add(Self);
     FRoot := AParent.Root;
-  end
-  else
-    FRoot := Self;
+  end;
 end;
 
 { TDatabase }
@@ -664,8 +704,6 @@ var
 begin
   SQLCB := TSQLCallbackObject.Create;
   SQLCB.SQL := vSQL;
-  SQLCB.Add('--SQL Generated By ORM object', [cboEndChunk]);
-  SQLCB.Add('');
   GenerateSQL(SQLCB);
   FreeAndNil(SQLCB);
   Result := True;

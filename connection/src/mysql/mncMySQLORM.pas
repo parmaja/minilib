@@ -89,11 +89,16 @@ end;
 { TmncORMMySQL.TFieldMySQL }
 
 function TmncORMMySQL.TFieldMySQL.ProduceSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
+var
+  fs: Integer;
 begin
 //  vSQL.Add(LevelStr(vLevel) + Name + ' as Integer'); bug in fpc needs to reproduce but i can
   with AObject as TField do
   begin
-    SQL.Add(LevelStr(vLevel) + Name + ' as '+ FieldTypeToString(FieldType, FieldSize));
+    fs := FieldSize;
+    if fs = 0 then
+      fs := 60;
+    SQL.Add(LevelStr(vLevel) + GenName + ' '+ FieldTypeToString(FieldType, fs));
     if (foNotNull in Options) or (foPrimary in Options) then
       SQL.Add(' not null');
     if foSequenced in Options then
@@ -113,43 +118,73 @@ end;
 
 function TmncORMMySQL.TTableMySQL.ProduceSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
 var
+  i: integer;
   Field: TField;
+  Keys: string;
+  IndexList: TStringList;
+  IndexName, IndexFields: string;
   S: string;
 begin
   Result := True;
   with AObject as TTable do
   begin
 
-    SQL.Add(LevelStr(vLevel) + 'create table ' + Name);
+    SQL.Add(LevelStr(vLevel) + 'create table ' + GenName);
     SQL.Add('(', [cboEndLine]);
-    SQL.Params.Values['Table'] := Name;
+    SQL.Params.Values['Table'] := GenName;
     Fields.GenerateSQL(SQL, vLevel + 1);
 
-    //collect primary keys
-    S := '';
+    IndexList := TStringList.Create;
+    //collect primary keys and indexes
+    Keys := '';
     for Field in Fields do
     begin
       if Field.Primary then
       begin
-        if S <> '' then
-          S := S + ', ';
-        S := S + Field.Name;
+        if Keys <> '' then
+          Keys := Keys + ', ';
+        Keys := Keys + Field.GenName;
+      end
+      else if (Field.Indexed) or (Field.Index <> '') then
+      begin
+        if (Field.Index <> '') then
+          IndexName := Field.Index
+        else
+          IndexName :=  'Idx_' + Field.GenName;
+
+        IndexFields := IndexList.Values[IndexName];
+        if IndexFields <> '' then
+          IndexFields := IndexFields + ' ,';
+        IndexFields := IndexFields + Field.GenName;
+        IndexList.Values[IndexName] := IndexFields;
       end;
     end;
 
-    if S <> '' then
+    if IndexList.Count > 0 then
+    begin
+      for i := 0 to IndexList.Count -1 do
+      begin
+        IndexName := IndexList.Names[i];
+        IndexFields := IndexList.ValueFromIndex[i];
+        SQL.Add(',', [cboEndLine]);
+        SQL.Add(LevelStr(vLevel + 1) + 'index ' + IndexName + '(' + IndexFields + ')');
+      end;
+    end;
+
+    if Keys <> '' then
     begin
       SQL.Add(',', [cboEndLine]);
-      SQL.Add(LevelStr(vLevel + 1) + 'primary key (' + S + ')', []);
+      SQL.Add(LevelStr(vLevel + 1) + 'primary key (' + Keys + ')', []);
     end;
+    FreeAndNil(Indexes);
 
     for Field in Fields do
     begin
       if Field.ReferenceInfo.Table <> nil then
       begin
         SQL.Add(',', [cboEndLine]);
-        S := 'foreign key Ref' + Name + Field.ReferenceInfo.Table.Name + Field.ReferenceInfo.Field.Name + '(' + Field.Name + ')'
-                +' references ' + Field.ReferenceInfo.Table.Name + '(' + Field.ReferenceInfo.Field.Name + ')';
+        S := 'foreign key Ref_' + GenName + Field.ReferenceInfo.Table.GenName + Field.ReferenceInfo.Field.GenName + '(' + Field.GenName + ')'
+                +' references ' + Field.ReferenceInfo.Table.GenName + '(' + Field.ReferenceInfo.Field.GenName + ')';
 
         if rfoDelete in Field.ReferenceInfo.Options then
         begin
@@ -210,7 +245,7 @@ begin
     ftDate: Result := 'date';
     ftTime: Result := 'time';
     ftDateTime: Result := 'datetime';
-    ftMemo: Result := 'text';
+    ftText: Result := 'text';
     ftBlob: Result := 'text';
   end;
 end;

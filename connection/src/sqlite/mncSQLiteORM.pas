@@ -137,7 +137,7 @@ begin
     ftDate: Result := 'date';
     ftTime: Result := 'time';
     ftDateTime: Result := 'datetime';
-    ftMemo: Result := 'text';
+    ftText: Result := 'text';
     ftBlob: Result := 'text';
   end;
 end;

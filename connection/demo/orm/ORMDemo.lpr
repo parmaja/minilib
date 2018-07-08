@@ -7,7 +7,7 @@ uses
   cthreads,
   {$ENDIF}{$ENDIF}
   Interfaces, // this includes the LCL widgetset
-  Forms, MainForms, appSchema, mncORM, mncSQLiteORM
+  Forms, MainForms, appSchema, mncORM, mncMySQLORM, mncSQLiteORM
   { you can add units after this };
 
 {$R *.res}
