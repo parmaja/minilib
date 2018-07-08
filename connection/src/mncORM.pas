@@ -37,7 +37,7 @@ type
   protected
     procedure Added(Item: TormObject); override;
     procedure Check; virtual;
-    function FindChild(ObjectClass: TormObjectClass; AName: string; RaiseException: Boolean = false): TormObject;
+    function FindObject(ObjectClass: TormObjectClass; AName: string; RaiseException: Boolean = false): TormObject;
   public
     constructor Create(AParent: TormObject; AName: String);
     property Comment: String read FComment write FComment;
@@ -120,6 +120,8 @@ type
     TIndexes = class;
     TReferences = class;
 
+    TFieldFilter = set of (ffNoSelect);
+
     { TTable }
 
     TTable = class(TormSQLObject)
@@ -131,6 +133,7 @@ type
       Indexes: TIndexes;
       References: TReferences;
       constructor Create(ASchema: TSchema; AName: String; APrefix: string = '');
+      function ForSelect(AFilter: TFieldFilter; Keys: array of string; ExtraFields: array of string): string;
       function This: TTable;
     end;
 
@@ -191,6 +194,7 @@ type
       FDefaultValue: Variant;
       FFieldSize: Integer;
       FFieldType: TormFieldType;
+      FFilter: TFieldFilter;
       FIndex: string;
       FOptions: TormFieldOptions;
       function GetIndexed: Boolean;
@@ -209,6 +213,7 @@ type
       function GenName: string; override;
       function Parent: TFields;
       property Options: TormFieldOptions read FOptions write FOptions;
+      property Filter: TFieldFilter read FFilter write FFilter;
       property DefaultValue: Variant read FDefaultValue write FDefaultValue;
       procedure ReferenceTo(TableName, FieldName: string; Options: TormReferenceOptions);
 
@@ -507,9 +512,9 @@ end;
 procedure TmncORM.TField.Check;
 begin
   if ReferenceInfoStr.Table <> '' then
-    ReferenceInfo.Table := Root.FindChild(TTable, ReferenceInfoStr.Table, true) as TTable;
+    ReferenceInfo.Table := Root.FindObject(TTable, ReferenceInfoStr.Table, true) as TTable;
   if ReferenceInfoStr.Field <> '' then
-    ReferenceInfo.Field := Root.FindChild(TField, ReferenceInfoStr.Field, true) as TField;
+    ReferenceInfo.Field := Root.FindObject(TField, ReferenceInfoStr.Field, true) as TField;
   ReferenceInfo.Options := ReferenceInfoStr.Options;
   inherited Check;
 end;
@@ -576,6 +581,48 @@ begin
   //TFields := TFields.Create(Self); //hmmmmmm :J
 end;
 
+function TmncORM.TTable.ForSelect(AFilter: TFieldFilter; Keys: array of string; ExtraFields: array of string): string;
+var
+  f: TField;
+var
+  i: Integer;
+  b: Boolean;
+begin
+  Result := 'select ';
+  b := False;
+  for i := 0 to Length(ExtraFields) - 1 do
+  begin
+    if b then
+      Result := Result + ', '
+    else
+      b := True;
+    Result := Result + ExtraFields[i];
+  end;
+
+  for f in Fields do
+  begin
+    if (AFilter = []) or (AFilter = f.Filter) then
+    begin
+      if b then
+        Result := Result + ', '
+      else
+        b := True;
+      Result := Result + f.GenName;
+    end;
+  end;
+
+  Result := Result + ' from ' + Self.GenName + ' ';
+  for i := 0 to Length(Keys) - 1 do
+  begin
+    if i = 0 then
+      Result := Result + ' where '
+    else
+      Result := Result + ' and ';
+    Result := Result + Keys[i] + '=?' + Keys[i];
+  end;
+
+end;
+
 { TSchema }
 
 function TmncORM.TSchema.This: TSchema;
@@ -608,7 +655,7 @@ begin
     o.Check;
 end;
 
-function TormObject.FindChild(ObjectClass: TormObjectClass; AName: string; RaiseException: Boolean): TormObject;
+function TormObject.FindObject(ObjectClass: TormObjectClass; AName: string; RaiseException: Boolean): TormObject;
 var
   o: TormObject;
 begin
@@ -623,7 +670,7 @@ begin
   end;
   for o in Self do
   begin
-    Result := o.FindChild(ObjectClass, AName);
+    Result := o.FindObject(ObjectClass, AName);
     if Result <> nil then
       exit;
   end;
