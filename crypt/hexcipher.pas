@@ -173,11 +173,7 @@ begin
   begin
     p^ := Convert[Buffer[I] shr 4];
     Inc(p);
-    p^ := 0;
-    Inc(p);
     P^ := Convert[Buffer[I] and $F];
-    Inc(p);
-    p^ := 0;
     Inc(p);
   end;
 end;
@@ -397,7 +393,7 @@ var
   c: Integer;
 begin
   Result := InBuffer.Count; //bytes readed from in buffer
-  c := Result * 2;
+  c := Result * 2; //2*2 uncode*hex
   OutBuffer.Grow(c);
   iP := InBuffer.Start;
   oP := OutBuffer.Position;
