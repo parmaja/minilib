@@ -22,9 +22,9 @@ unit mncPostgre;
 interface
 
 uses
-  Classes, SysUtils, Variants, StrUtils, Contnrs, SyncObjs,
-  mncCommons, mncConnections, mncSQL, mnUtils,
-  mncDB, mncPGHeader, DateUtils, mnClasses;
+  Classes, SysUtils, Variants, StrUtils, Contnrs, SyncObjs, DateUtils,
+  mncCommons, mncConnections, mncSQL, mnUtils, mnClasses,
+  mncDB, mncPGHeader, mncMeta;
 
 const
   cBufferSize          = 2048;
@@ -176,6 +176,7 @@ type
   public
     constructor Create(vConnection: TmncConnection); override;
     destructor Destroy; override;
+    function CreateMeta: TmncMeta; override;
     procedure Execute(const vSQL: string);
     function CreateCommand: TmncSQLCommand; override;
     property Exclusive: Boolean read FExclusive write SetExclusive;
@@ -313,7 +314,7 @@ type
     procedure FetchFields(vRes: PPGresult);
     procedure FetchValues(vRes: PPGresult; vTuple: Integer);
     function FetchValue(vRes: PPGresult; vTuple: Integer; vIndex: Integer): string; overload;
-    function FetchValue(vRes: PPGresult; vTuple: Integer; vIndex: Integer; var Value: string): Boolean; overload;
+    function FetchValue(vRes: PPGresult; vTuple: Integer; vIndex: Integer; out Value: string): Boolean; overload;
     procedure RaiseError(PGResult: PPGresult);
     procedure CreateParamValues(var Result: TArrayOfPChar);
     procedure FreeParamValues(var Result: TArrayOfPChar);
@@ -348,7 +349,7 @@ type
     function IsSingleRowMode: Boolean;
     procedure ClearStatement; virtual;
   public
-    function GetRowsChanged: Integer;
+    function GetRowsChanged: Integer; override;
     function GetLastInsertID: Int64;
     property Statement: PPGresult read FStatement;//opened by PQexecPrepared
     property RecordCount: Integer read GetRecordCount;
@@ -389,7 +390,7 @@ function DecodeBytea(vStr: PByte; vLen: Cardinal): string; overload;
 implementation
 
 uses
-  Math;
+  Math, mncPGMeta;
 
 var
   fTokenID: Cardinal = 0;
@@ -397,11 +398,6 @@ var
 function BEtoN(Val: Integer): Integer;
 begin
   Result := Val;
-end;
-
-function EncodeBytea(const vStr: string): string;
-begin
-  Result := EncodeBytea(PByte(vStr), ByteLength(vStr));
 end;
 
 function EncodeBytea(vStr: PByte; vLen: Cardinal): string; overload;
@@ -426,9 +422,10 @@ begin
   end;
 end;
 
-function DecodeBytea(const vStr: string): string;
+
+function EncodeBytea(const vStr: string): string;
 begin
-  Result := DecodeBytea(PByte(vStr), ByteLength(vStr));
+  Result := EncodeBytea(PByte(vStr), ByteLength(vStr));
 end;
 
 function DecodeBytea(vStr: PByte; vLen: Cardinal): string; overload;
@@ -444,6 +441,11 @@ begin
   finally
     PQFreemem(e);
   end;
+end;
+
+function DecodeBytea(const vStr: string): string;
+begin
+  Result := DecodeBytea(PByte(vStr), ByteLength(vStr));
 end;
 
 function PGDateToDateTime(const vStr: string): TDateTime;
@@ -780,10 +782,7 @@ var
   aHost, aPort: AnsiString;
   aDB, aUser, aPass: AnsiString;
   aSsl, aSslComp: AnsiString;
-  aAppName: AnsiString;
   aUrl: AnsiString;
-
-
 begin
   if not Assigned(PQsetdbLogin) then
   	raise EmncException.Create('PQsetdbLogin not assigned');
@@ -975,6 +974,11 @@ begin
   inherited;
 end;
 
+function TmncPGSession.CreateMeta: TmncMeta;
+begin
+  Result := TmncPGMeta.CreateBy(Self);
+end;
+
 procedure TmncPGSession.DoStart;
 begin
 	//TODO: Use session params to pass it here
@@ -1088,6 +1092,7 @@ var
   P: pointer;
   f: Integer;//Result Field format
 begin
+  Values := nil;
   if FStatement <> nil then PQclear(FStatement);
   try
     if Params.Count > 0 then
@@ -1594,7 +1599,6 @@ end;
 
 procedure TPGListenThread.Execute;
 begin
-  inherited;
   while not Terminated do
   begin
     PQconsumeInput(FHandle);
@@ -1718,7 +1722,7 @@ begin
   FetchValue(vRes, vTuple, vIndex, Result);
 end;
 
-function TmncCustomPGCommand.FetchValue(vRes: PPGresult; vTuple: Integer; vIndex: Integer; var Value: string): Boolean;
+function TmncCustomPGCommand.FetchValue(vRes: PPGresult; vTuple: Integer; vIndex: Integer; out Value: string): Boolean;
 
     function _BRead(vSrc: PAnsiChar; vCount: Longint): Integer;
     var
@@ -1751,10 +1755,10 @@ function TmncCustomPGCommand.FetchValue(vRes: PPGresult; vTuple: Integer; vIndex
       end;
     end;
 var
-  t: Int64;
-  d: Double;
+  //t: Int64;
+  //d: Double;
   //aType: Integer;
-  aFieldSize: Integer;
+  //aFieldSize: Integer;
   p: PAnsiChar;
 begin
   Result := PQgetisnull(vRes, vTuple, vIndex) = 0;
@@ -1885,8 +1889,6 @@ end;
 
 procedure TmncPGCursorCommand.DoClose;
 begin
-  inherited;
-
 end;
 
 procedure TmncPGCursorCommand.DoExecute;
@@ -1896,6 +1898,7 @@ var
   aStatement: PPGresult;
 begin
   try
+    Values := nil;
     if Params.Count > 0 then
     begin
       CreateParamValues(Values);
