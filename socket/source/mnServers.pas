@@ -308,10 +308,10 @@ begin
   Enter;
   try
     List.Add(Connection);
-    Changed;
   finally
     Leave;
   end;
+  Changed;
 end;
 
 procedure TmnListener.Changed;
