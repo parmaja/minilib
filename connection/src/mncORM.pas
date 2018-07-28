@@ -16,7 +16,7 @@ unit mncORM;
 interface
 
 uses
-  Classes, SysUtils, Contnrs,
+  Classes, SysUtils, Contnrs, Variants,
   mnClasses,mncConnections, mncCommons;
 
 type
@@ -130,6 +130,7 @@ type
     public
       Prefix: string; //used to added to generated field name, need more tests
       Fields: TFields;
+      VirtualFields: TFields;
       Indexes: TIndexes;
       References: TReferences;
       constructor Create(ASchema: TSchema; AName: String; APrefix: string = '');
@@ -137,12 +138,17 @@ type
       function This: TTable;
     end;
 
-    { TFields }
-
     TFields = class(TormSQLObject)
     public
       constructor Create(ATable: TTable);
       function This: TFields;
+    end;
+
+    { TVirtualFields }
+
+    TVirtualFields = class(TFields)
+    public
+      function This: TVirtualFields;
     end;
 
     { TIndexes }
@@ -197,6 +203,7 @@ type
       FFilter: TFieldFilter;
       FIndex: string;
       FOptions: TormFieldOptions;
+      FTitle: string;
       function GetIndexed: Boolean;
       function GetPrimary: Boolean;
       function GetSequenced: Boolean;
@@ -216,6 +223,8 @@ type
       property Filter: TFieldFilter read FFilter write FFilter;
       property DefaultValue: Variant read FDefaultValue write FDefaultValue;
       procedure ReferenceTo(TableName, FieldName: string; Options: TormReferenceOptions);
+
+      property Title: string read FTitle write FTitle;
 
       property FieldType: TormFieldType read FFieldType write FFieldType;
       property FieldSize: Integer read FFieldSize write FFieldSize;
@@ -245,6 +254,24 @@ type
       property Code: String read FCode write FCode;
     end;
 
+    TFieldValue = class(TormObject)
+    public
+      Value: Variant;
+    end;
+
+    { TInsertData }
+
+    TInsertData = class(TormSQLObject)
+    private
+    protected
+      FTable: TTable;
+      procedure Check; override;
+    public
+      constructor Create(ADatabase: TDatabase; ATableName: string);
+      procedure AddValue(FieldName, FieldValue: Variant);
+      property Table: TTable read FTable;
+    end;
+
   public
     type
 
@@ -263,6 +290,7 @@ type
     end;
 
   private
+    FImpact: Boolean;
     FObjectClasses: TRegObjects;
     FQuoteChar: string;
     FUsePrefexes: Boolean;
@@ -285,13 +313,63 @@ type
     property ObjectClasses: TRegObjects read FObjectClasses;
     property QuoteChar: string read FQuoteChar write FQuoteChar; //Empty, it will be used with GenName
     property UsePrefexes: Boolean read FUsePrefexes write FUsePrefexes; //option to use Prefex in Field names
+    property Impact: Boolean read FImpact write FImpact; //use inline peroperty of members
   end;
 
   TmncORMClass = class of TmncORM;
 
 function LevelStr(vLevel: Integer): String;
+function ValueToStr(vValue: Variant): string;
 
 implementation
+
+{ TmncORM.TFields }
+
+constructor TmncORM.TFields.Create(ATable: TTable);
+begin
+  inherited Create(ATable, '');
+  if (ATable <> nil) then
+  begin
+    if (Self is TVirtualFields) then
+      ATable.VirtualFields := Self
+    else
+      ATable.Fields := Self;
+  end;
+end;
+
+function TmncORM.TFields.This: TFields;
+begin
+  Result := Self;
+end;
+
+{ TmncORM.TVirtualFields }
+
+function TmncORM.TVirtualFields.This: TVirtualFields;
+begin
+  Result := Self;
+end;
+
+{ TmncORM.TInsertData }
+
+procedure TmncORM.TInsertData.Check;
+begin
+  inherited Check;
+  if FTable = nil then
+    FTable := Root.FindObject(TTable, Name, true) as TTable;
+end;
+
+constructor TmncORM.TInsertData.Create(ADatabase: TDatabase; ATableName: string);
+begin
+  inherited Create(ADatabase, ATableName);
+end;
+
+procedure TmncORM.TInsertData.AddValue(FieldName, FieldValue: Variant);
+begin
+  with TFieldValue.Create(Self, FieldName) do
+  begin
+    Value := FieldValue;
+  end;
+end;
 
 { TmncORM.TReferences }
 
@@ -372,8 +450,6 @@ begin
     Result := False;
 end;
 
-{ TmncORM.TormHelper }
-
 { TmncORM.TRegObjects }
 
 function TmncORM.TRegObjects.FindDerived(AObjectClass: TormObjectClass): TormObjectClass;
@@ -402,20 +478,6 @@ begin
       break;
     end;
   end;
-end;
-
-{ TmncORM.TFields }
-
-constructor TmncORM.TFields.Create(ATable: TTable);
-begin
-  inherited Create(ATable, '');
-  if ATable <> nil then
-    ATable.Fields := Self;
-end;
-
-function TmncORM.TFields.This: TFields;
-begin
-  Result := Self;
 end;
 
 { TmncORM }
@@ -512,9 +574,13 @@ end;
 procedure TmncORM.TField.Check;
 begin
   if ReferenceInfoStr.Table <> '' then
+  begin
     ReferenceInfo.Table := Root.FindObject(TTable, ReferenceInfoStr.Table, true) as TTable;
-  if ReferenceInfoStr.Field <> '' then
-    ReferenceInfo.Field := Root.FindObject(TField, ReferenceInfoStr.Field, true) as TField;
+    if ReferenceInfo.Table = nil then
+      raise Exception.Create(ReferenceInfoStr.Table + ' not exists');
+    if ReferenceInfoStr.Field <> '' then
+      ReferenceInfo.Field := ReferenceInfo.Table.FindObject(TField, ReferenceInfoStr.Field, true) as TField;
+  end;
   ReferenceInfo.Options := ReferenceInfoStr.Options;
   inherited Check;
 end;
@@ -527,6 +593,7 @@ end;
 constructor TmncORM.TField.Create(AFields: TFields; AName: String; AFieldType: TormFieldType; AOptions: TormFieldOptions);
 begin
   inherited Create(AFields, AName);
+  FTitle := AName;
   FOptions := AOptions;
   FFieldType := AFieldType;
 end;
@@ -565,13 +632,6 @@ end;
 procedure TmncORM.TTable.Added(Item: TormObject);
 begin
   inherited Added(Item);
-  if Item is TFields then
-  begin
-    if Fields = nil then
-      Fields := Item as TFields
-    else
-      raise Exception.Create('You cannot Send Fields twice');
-  end;
 end;
 
 constructor TmncORM.TTable.Create(ASchema: TSchema; AName: String; APrefix: string);
@@ -682,6 +742,19 @@ end;
 function LevelStr(vLevel: Integer): String;
 begin
   Result := StringOfChar(' ', vLevel * 4);
+end;
+
+function ValueToStr(vValue: Variant): string;
+begin
+  if not VarIsEmpty(vValue) then
+  begin
+    if VarType(vValue) = varString then
+      Result := '''' + vValue + ''''
+    else
+      Result := VarToStr(vValue);
+  end
+  else
+    Result := '''''';
 end;
 
 constructor TormObject.Create(AParent: TormObject; AName: String);

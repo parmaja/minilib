@@ -263,6 +263,20 @@ function SQLTypeToType(vType: Integer; const MetaType: string): TmncDataType;
   begin
     Result := SameText(MetaType, 'date') or SameText(MetaType, 'timestamp') or SameText(MetaType, 'datetime');
   end;
+
+  function isCurrency: Boolean;
+  var
+    s: string;
+  begin
+    Result := false;
+    s := SubStr(MetaType, '(');
+    if SameText(s, 'decimal') then
+    begin
+      s := SubStr(MetaType, ',', 1);
+      if s <> '' then
+        Result := StrToIntDef(s, 0) < 5; //4 or less
+    end;
+  end;
 begin
   case vType of
     SQLITE_INTEGER:
@@ -274,6 +288,8 @@ begin
     begin
       if isDate then
         Result := dtDateTime
+      {else if isCurrency then
+        Result := dtCurrency} //not yet
       else//not yet
         Result := dtFloat;
     end;
@@ -874,6 +890,7 @@ var
   v: record case byte of
     0: (i: Integer);
     1: (f: Double);
+    2: (d: TDateTime);
   end;
   i: Integer;
   c: Integer;
@@ -908,18 +925,28 @@ begin
         SQLITE_INTEGER:
         begin
           v.i := sqlite3_column_int(FStatment, i);
-          if Session.Connection.CorrectDateTime then
-            if aColumn.DataType in [dtDate, dtTime, dtDateTime] then
+          if aColumn.DataType in [dtDate, dtTime, dtDateTime] then
+          begin
+            if Session.Connection.CorrectDateTime then
               v.i := trunc(v.i + JulianEpoch);
-          aCurrent.Add(i, v.i);
+            v.d := v.i;
+            aCurrent.Add(i, v.d);
+          end
+          else
+            aCurrent.Add(i, v.i);
         end;
         SQLITE_FLOAT:
         begin
           v.f := sqlite3_column_double(FStatment, i);
-          if Session.Connection.CorrectDateTime then
-            if aColumn.DataType in [dtDate, dtTime, dtDateTime] then
+          if aColumn.DataType in [dtDate, dtTime, dtDateTime] then
+          begin
+            if Session.Connection.CorrectDateTime then
               v.f := v.f + JulianEpoch;
-          aCurrent.Add(i, v.f);
+            v.d := v.f;
+            aCurrent.Add(i, v.d);
+          end
+          else
+            aCurrent.Add(i, v.f);
         end;
         SQLITE_BLOB:
         begin

@@ -48,6 +48,8 @@ begin
 
         with TTable.Create(This, 'Entries') do
         begin
+          Prefix := 'Ent';
+          UsePrefexes := True;
           with TFields.Create(This) do
           begin
             with TField.Create(This, 'ID', ftInteger) do
@@ -56,12 +58,14 @@ begin
             end;
             with TField.Create(This, 'EmployeeID', ftInteger) do
             begin
+              Index := 'EmpIndex';
               ReferenceTo('Employees', 'ID', [rfoDelete, rfoUpdate]);
               FieldSize := 60;
-              Options := [foIndexed, foReferenced];
+              Options := [foReferenced];
             end;
             with TField.Create(This, 'Value', ftCurrency) do
             begin
+              Index := 'EmpIndex';
               Options := [foSummed];
             end;
           end;

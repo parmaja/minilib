@@ -15,8 +15,7 @@ unit mncMySQLORM;
 interface
 
 uses
-  SysUtils, Classes, mnUtils, Variants,
-  mncMeta, mncORM, mncMySQL;
+  SysUtils, Classes, mnUtils, Variants, mncORM;
 
 type
 
@@ -60,6 +59,13 @@ type
       public
         function ProduceSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean; override;
       end;
+
+      { TInsertDataMySQL }
+
+      TInsertDataMySQL = class(TormHelper)
+      public
+        function ProduceSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean; override;
+      end;
   protected
     class function FieldTypeToString(FieldType:TormFieldType; FieldSize: Integer): String;
     procedure Created; override;
@@ -67,6 +73,39 @@ type
   end;
 
 implementation
+
+{ TmncORMMySQL.TInsertDataMySQL }
+
+function TmncORMMySQL.TInsertDataMySQL.ProduceSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
+var
+  o: TormObject;
+  i: Integer;
+begin
+  i := 0;
+  with AObject as TInsertData do
+  begin
+    SQL.Add('insert into ' + Table.GenName + '(' );
+    for o in this do
+    begin
+      if i > 0 then
+        SQL.Add(',', []);
+      SQL.Add(Table.Prefix + (o as TFieldValue).Name); //todo need to use genname
+      Inc(i);
+    end;
+    SQL.Add(') values (');
+
+    i := 0;
+    for o in this do
+    begin
+      if i > 0 then
+        SQL.Add(',', []);
+      SQL.Add(ValueToStr((o as TFieldValue).Value));
+      Inc(i);
+    end;
+    SQL.Add(')', [cboEndChunk, cboEndLine]);
+  end;
+  Result := True;
+end;
 
 { TmncORMMySQL.TFieldsMySQL }
 
@@ -106,7 +145,7 @@ begin
     if not VarIsEmpty(DefaultValue) then
     begin
       if VarType(DefaultValue) = varString then
-        SQL.Add(' default "' + DefaultValue + '"')
+        SQL.Add(' default ''' + DefaultValue + '''')
       else
         SQL.Add(' default ' + VarToStr(DefaultValue));
     end;
@@ -160,6 +199,12 @@ begin
       end;
     end;
 
+    if Keys <> '' then
+    begin
+      SQL.Add(',', [cboEndLine]);
+      SQL.Add(LevelStr(vLevel + 1) + 'primary key (' + Keys + ')', []);
+    end;
+
     if IndexList.Count > 0 then
     begin
       for i := 0 to IndexList.Count -1 do
@@ -171,11 +216,6 @@ begin
       end;
     end;
 
-    if Keys <> '' then
-    begin
-      SQL.Add(',', [cboEndLine]);
-      SQL.Add(LevelStr(vLevel + 1) + 'primary key (' + Keys + ')', []);
-    end;
     FreeAndNil(Indexes);
 
     for Field in Fields do
@@ -258,6 +298,7 @@ begin
   Register(TTable, TTableMySQL);
   Register(TFields, TFieldsMySQL);
   Register(TField, TFieldMySQL);
+  Register(TInsertData, TInsertDataMySQL);
 end;
 
 end.
