@@ -29,42 +29,42 @@ type
 
       TDatabaseMySQL = class(TormHelper)
       public
-        function ProduceSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean; override;
+        function CreateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean; override;
       end;
 
       { TSchemaMySQL }
 
       TSchemaMySQL = class(TormHelper)
       public
-        function ProduceSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean; override;
+        function CreateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean; override;
       end;
 
       { TTableMySQL }
 
-      TTableMySQL = class(TormHelper)
+      TTableMySQL = class(TormTableHelper)
       public
-        function ProduceSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean; override;
+        function CreateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean; override;
       end;
 
       { TFieldsMySQL }
 
       TFieldsMySQL = class(TormHelper)
       public
-        function ProduceSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean; override;
+        function CreateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean; override;
       end;
 
       { TFieldMySQL }
 
       TFieldMySQL = class(TormHelper)
       public
-        function ProduceSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean; override;
+        function CreateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean; override;
       end;
 
       { TInsertDataMySQL }
 
       TInsertDataMySQL = class(TormHelper)
       public
-        function ProduceSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean; override;
+        function CreateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean; override;
       end;
   protected
     class function FieldTypeToString(FieldType:TormFieldType; FieldSize: Integer): String;
@@ -76,7 +76,7 @@ implementation
 
 { TmncORMMySQL.TInsertDataMySQL }
 
-function TmncORMMySQL.TInsertDataMySQL.ProduceSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
+function TmncORMMySQL.TInsertDataMySQL.CreateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
 var
   o: TormObject;
   i: Integer;
@@ -109,7 +109,7 @@ end;
 
 { TmncORMMySQL.TFieldsMySQL }
 
-function TmncORMMySQL.TFieldsMySQL.ProduceSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
+function TmncORMMySQL.TFieldsMySQL.CreateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
 var
   o: TormObject;
   i: Integer;
@@ -127,7 +127,7 @@ end;
 
 { TmncORMMySQL.TFieldMySQL }
 
-function TmncORMMySQL.TFieldMySQL.ProduceSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
+function TmncORMMySQL.TFieldMySQL.CreateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
 var
   fs: Integer;
 begin
@@ -155,7 +155,7 @@ end;
 
 { TmncORMMySQL.TTableMySQL }
 
-function TmncORMMySQL.TTableMySQL.ProduceSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
+function TmncORMMySQL.TTableMySQL.CreateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
 var
   i: integer;
   Field: TField;
@@ -258,7 +258,7 @@ end;
 
 { TmncORMMySQL.TDatabaseMySQL }
 
-function TmncORMMySQL.TDatabaseMySQL.ProduceSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
+function TmncORMMySQL.TDatabaseMySQL.CreateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
 begin
   GenerateObjects(AObject, SQL, vLevel);
   Result := True;
@@ -266,7 +266,7 @@ end;
 
 { TmncORMMySQL.SchemaMySQL }
 
-function TmncORMMySQL.TSchemaMySQL.ProduceSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
+function TmncORMMySQL.TSchemaMySQL.CreateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
 begin
   GenerateObjects(AObject, SQL, vLevel);
   Result := True;

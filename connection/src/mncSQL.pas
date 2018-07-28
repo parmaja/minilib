@@ -88,6 +88,7 @@ type
 
   TmncSQLCommand = class abstract(TmncCommand)
   private
+    FFetchBlob: Boolean;
     FReady: Boolean;
     FFetched: Int64;
     FDone: Boolean;
@@ -116,6 +117,7 @@ type
     property Done: Boolean read GetDone;
     property Ready: Boolean read FReady;
     property Fetched: Int64 read FFetched;
+    property FetchBlobs: Boolean read FFetchBlob write FFetchBlob default false;
   end;
 
   { TmncSQLGenerator }
@@ -472,6 +474,7 @@ constructor TmncSQLCommand.Create;
 begin
   inherited Create;
   SQLProcessed := TmncSQLProcessed.Create(True);
+  FFetchBlob := false;
 end;
 
 destructor TmncSQLCommand.Destroy;

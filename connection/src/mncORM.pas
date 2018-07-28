@@ -75,21 +75,43 @@ type
     TormSQLObject = class;
     TormSQLObjectClass = class of TormSQLObject;
 
+    TFieldFilter = set of (
+      ffSelect,
+      ffView, //show it to end user
+      ffData
+    );
+
+    TTable = class;
+
     { TormHelper }
 
     TormHelper = class(TObject)
+    private
+
     protected
       procedure GenerateObjects(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer);
-      function ProduceSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean; virtual; abstract;
+      function CreateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean; virtual; abstract;
     end;
 
     TormHelperClass = class of TormHelper;
 
+    TormTableHelper = class(TormHelper)
+    protected
+      //temporary here, must moved to Table helper
+      function SelectSQL(AObject: TTable; AFilter: TFieldFilter; Keys: array of string; ExtraFields: array of string): string; virtual;
+      function InsertSQL(AObject: TTable; AFilter: TFieldFilter; ExtraFields: array of string): string; virtual;
+      function UpdateSQL(AObject: TTable; AFilter: TFieldFilter; Keys: array of string; ExtraFields: array of string): string; virtual;
+      function SaveSQL(AObject: TTable; AFilter: TFieldFilter; Updating, Returning: Boolean; Keys: array of string): string; virtual;
+    end;
+
     { TormSQLObject }
 
     TormSQLObject = class(TormObject)
+    private
+      FHelperClass: TormHelperClass;
     protected
-      HelperClass: TormHelperClass;
+      procedure SetHelperClass(AValue: TormHelperClass); virtual;
+      property HelperClass: TormHelperClass read FHelperClass write SetHelperClass;
       procedure Created; override;
     public
       function GenName: string; virtual;
@@ -120,13 +142,12 @@ type
     TIndexes = class;
     TReferences = class;
 
-    TFieldFilter = set of (ffNoSelect);
-
     { TTable }
 
     TTable = class(TormSQLObject)
     protected
       procedure Added(Item: TormObject); override;
+      procedure SetHelperClass(AValue: TormHelperClass); override;
     public
       Prefix: string; //used to added to generated field name, need more tests
       Fields: TFields;
@@ -134,7 +155,9 @@ type
       Indexes: TIndexes;
       References: TReferences;
       constructor Create(ASchema: TSchema; AName: String; APrefix: string = '');
-      function ForSelect(AFilter: TFieldFilter; Keys: array of string; ExtraFields: array of string): string;
+      function SelectSQL(AFilter: TFieldFilter; Keys: array of string; ExtraFields: array of string): string;
+      function SaveSQL(Updating, Returning: Boolean; AFilter: TFieldFilter; Keys: array of string): string;
+      function GenAliases(Strings: TStringList): string;
       function This: TTable;
     end;
 
@@ -423,7 +446,192 @@ begin
     (o as TormSQLObject).GenerateSQL(SQL, vLevel);
 end;
 
+function TmncORM.TormTableHelper.SelectSQL(AObject: TTable; AFilter: TFieldFilter; Keys: array of string; ExtraFields: array of string): string;
+var
+  f: TField;
+var
+  i: Integer;
+  b: Boolean;
+begin
+  with AObject  do
+  begin
+    Result := 'select ';
+    b := False;
+    for i := 0 to Length(ExtraFields) - 1 do
+    begin
+      if b then
+        Result := Result + ', '
+      else
+        b := True;
+      Result := Result + ExtraFields[i];
+    end;
+
+    for f in Fields do
+    begin
+      if (AFilter = []) or (AFilter <= f.Filter) then
+      begin
+        if b then
+          Result := Result + ', '
+        else
+          b := True;
+        Result := Result + f.GenName;
+      end;
+    end;
+
+    Result := Result + ' from ' + This.GenName + ' ';
+    for i := 0 to Length(Keys) - 1 do
+    begin
+      if i = 0 then
+        Result := Result + ' where '
+      else
+        Result := Result + ' and ';
+      Result := Result + Keys[i] + '=?' + Keys[i];
+    end;
+  end;
+
+end;
+
+function TmncORM.TormTableHelper.UpdateSQL(AObject: TTable; AFilter: TFieldFilter; Keys: array of string; ExtraFields: array of string): string;
+var
+  f: TField;
+var
+  i: Integer;
+  b: Boolean;
+begin
+  with AObject  do
+  begin
+    with AObject as TTable do
+    begin
+      Result := 'update ' + GenName + ' set '#13;
+      b := False;
+      for i := 0 to Length(ExtraFields) - 1 do
+      begin
+        if b then
+          Result := Result + ', '
+        else
+          b := True;
+        Result := Result + ExtraFields[i] + '=?' + ExtraFields[i];
+      end;
+
+      for f in Fields do
+      begin
+        if (AFilter = []) or (AFilter <= f.Filter) then
+        begin
+          if b then
+            Result := Result + ', '
+          else
+            b := True;
+          Result := Result + f.GenName + '=?' + f.GenName;
+        end;
+      end;
+
+      for i := 0 to Length(Keys) - 1 do
+      begin
+        if i = 0 then
+          Result := Result + #13'where '
+        else
+          Result := Result + ' and ';
+        Result := Result + Keys[i] + '=?' + Keys[i];
+      end;
+    end;
+  end;
+end;
+
+function TmncORM.TormTableHelper.InsertSQL(AObject: TTable; AFilter: TFieldFilter; ExtraFields: array of string): string;
+var
+  f: TField;
+var
+  i: Integer;
+  b: Boolean;
+begin
+  with AObject do
+  begin
+    Result := 'insert into ' + GenName + ' (';
+    b := False;
+    for i := 0 to Length(ExtraFields) - 1 do
+    begin
+      if b then
+        Result := Result + ', '
+      else
+        b := True;
+      Result := Result + ExtraFields[i];
+    end;
+
+    for f in Fields do
+    begin
+      if (AFilter = []) or (AFilter <= f.Filter) then
+      begin
+        if b then
+            Result := Result + ', '
+          else
+            b := True;
+          Result := Result + f.GenName;
+       end;
+    end;
+
+    b := False;
+    Result := Result + ') '#13'values (';
+    for i := 0 to Length(ExtraFields) - 1 do
+    begin
+      if b then
+        Result := Result + ', '
+      else
+        b := True;
+      Result := Result + '?' + ExtraFields[i];
+    end;
+
+    for f in Fields do
+    begin
+      if b then
+        Result := Result + ', '
+      else
+        b := True;
+      Result := Result + '?' + f.GenName;
+    end;
+    Result := Result + ')';
+  end;
+end;
+
+function TmncORM.TormTableHelper.SaveSQL(AObject: TTable; AFilter: TFieldFilter; Updating, Returning: Boolean; Keys: array of string): string;
+var
+  i:Integer;
+  b:Boolean;
+begin
+  with AObject do
+  begin
+    if Updating then
+      Result := UpdateSQL(AObject, AFilter, Keys, [])
+    else
+    begin
+      if Returning then
+        Result := InsertSQL(AObject, AFilter, []) //not sure how to work with this
+      else
+        Result := InsertSQL(AObject, AFilter, []);
+    end;
+
+    if not Updating and Returning and (Length(Keys) <> 0) then
+    begin
+      Result := Result + #13 + 'returning ';
+      b := False;
+      for i := 0 to Length(Keys) - 1 do
+      begin
+        if b then
+          Result := Result + ', '
+        else
+          b := True;
+        Result := Result + Keys[i];
+      end;
+    end;
+  end;
+end;
+
 { TmncORM.TormSQLObject }
+
+procedure TmncORM.TormSQLObject.SetHelperClass(AValue: TormHelperClass);
+begin
+  if FHelperClass =AValue then Exit;
+  FHelperClass :=AValue;
+end;
 
 procedure TmncORM.TormSQLObject.Created;
 begin
@@ -444,7 +652,7 @@ begin
   if HelperClass <> nil then
   begin
     helper := HelperClass.Create;
-    Result := helper.ProduceSQL(self, SQL, vLevel);
+    Result := helper.CreateSQL(self, SQL, vLevel);
   end
   else
     Result := False;
@@ -596,6 +804,7 @@ begin
   FTitle := AName;
   FOptions := AOptions;
   FFieldType := AFieldType;
+  FFilter := [ffSelect, ffView, ffData];
 end;
 
 function TmncORM.TField.GenName: string;
@@ -634,6 +843,14 @@ begin
   inherited Added(Item);
 end;
 
+procedure TmncORM.TTable.SetHelperClass(AValue: TormHelperClass);
+begin
+  if not (AValue.InheritsFrom(TormTableHelper)) then
+    raise Exception.Create('Helper should be TableHelper');
+
+  inherited SetHelperClass(AValue);
+end;
+
 constructor TmncORM.TTable.Create(ASchema: TSchema; AName: String; APrefix: string);
 begin
   inherited Create(ASchema, AName);
@@ -641,46 +858,40 @@ begin
   //TFields := TFields.Create(Self); //hmmmmmm :J
 end;
 
-function TmncORM.TTable.ForSelect(AFilter: TFieldFilter; Keys: array of string; ExtraFields: array of string): string;
+function TmncORM.TTable.SelectSQL(AFilter: TFieldFilter; Keys: array of string; ExtraFields: array of string): string;
+var
+  helper: TormHelper;
+begin
+  if HelperClass <> nil then
+  begin
+    helper := HelperClass.Create;
+    Result := (helper as TormTableHelper).SelectSQL(Self, AFilter, Keys, ExtraFields);
+  end
+  else
+    Result := '';
+end;
+
+function TmncORM.TTable.SaveSQL(Updating, Returning: Boolean; AFilter: TFieldFilter; Keys: array of string): string;
+var
+  helper: TormHelper;
+begin
+  if HelperClass <> nil then
+  begin
+    helper := HelperClass.Create;
+    Result := (helper as TormTableHelper).SaveSQL(Self, AFilter, Updating, Returning, Keys);
+  end
+  else
+    Result := '';
+end;
+
+function TmncORM.TTable.GenAliases(Strings: TStringList): string;
 var
   f: TField;
-var
-  i: Integer;
-  b: Boolean;
 begin
-  Result := 'select ';
-  b := False;
-  for i := 0 to Length(ExtraFields) - 1 do
-  begin
-    if b then
-      Result := Result + ', '
-    else
-      b := True;
-    Result := Result + ExtraFields[i];
-  end;
-
   for f in Fields do
   begin
-    if (AFilter = []) or (AFilter = f.Filter) then
-    begin
-      if b then
-        Result := Result + ', '
-      else
-        b := True;
-      Result := Result + f.GenName;
-    end;
+    Strings.Add(f.GenName + '=' + f.Title);
   end;
-
-  Result := Result + ' from ' + Self.GenName + ' ';
-  for i := 0 to Length(Keys) - 1 do
-  begin
-    if i = 0 then
-      Result := Result + ' where '
-    else
-      Result := Result + ' and ';
-    Result := Result + Keys[i] + '=?' + Keys[i];
-  end;
-
 end;
 
 { TSchema }
@@ -843,7 +1054,7 @@ begin
       if o.HelperClass <> nil then
       begin
         helper := o.HelperClass.Create;
-        helper.ProduceSQL(o, Callback, 0);
+        helper.CreateSQL(o, Callback, 0);
       end;
     end;
   finally

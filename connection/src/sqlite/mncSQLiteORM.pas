@@ -29,42 +29,42 @@ type
 
       TDatabaseSQLite = class(TormHelper)
       public
-        function ProduceSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean; override;
+        function CreateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean; override;
       end;
 
       { TSchemaSQLite }
 
       TSchemaSQLite = class(TormHelper)
       public
-        function ProduceSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean; override;
+        function CreateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean; override;
       end;
 
       { TTableSQLite }
 
-      TTableSQLite = class(TormHelper)
+      TTableSQLite = class(TormTableHelper)
       public
-        function ProduceSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean; override;
+        function CreateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean; override;
       end;
 
       { TFieldsSQLite }
 
       TFieldsSQLite = class(TormHelper)
       public
-        function ProduceSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean; override;
+        function CreateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean; override;
       end;
 
       { TFieldSQLite }
 
       TFieldSQLite = class(TormHelper)
       public
-        function ProduceSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean; override;
+        function CreateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean; override;
       end;
 
       { TInsertDataSQLite }
 
       TInsertDataSQLite = class(TormHelper)
       public
-        function ProduceSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean; override;
+        function CreateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean; override;
       end;
   protected
     class function FieldTypeToString(FieldType:TormFieldType; FieldSize: Integer): String;
@@ -76,7 +76,7 @@ implementation
 
 { TmncORMSQLite.TInsertDataSQLite }
 
-function TmncORMSQLite.TInsertDataSQLite.ProduceSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
+function TmncORMSQLite.TInsertDataSQLite.CreateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
 var
   o: TormObject;
   i: Integer;
@@ -109,7 +109,7 @@ end;
 
 { TmncORMSQLite.TFieldsSQLite }
 
-function TmncORMSQLite.TFieldsSQLite.ProduceSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
+function TmncORMSQLite.TFieldsSQLite.CreateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
 var
   o: TormObject;
   i: Integer;
@@ -127,7 +127,7 @@ end;
 
 { TmncORMSQLite.TFieldSQLite }
 
-function TmncORMSQLite.TFieldSQLite.ProduceSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
+function TmncORMSQLite.TFieldSQLite.CreateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
 var
   fs: Integer;
 begin
@@ -160,7 +160,7 @@ end;
 
 { TmncORMSQLite.TTableSQLite }
 
-function TmncORMSQLite.TTableSQLite.ProduceSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
+function TmncORMSQLite.TTableSQLite.CreateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
 var
   i: integer;
   Field: TField;
@@ -268,7 +268,7 @@ end;
 
 { TmncORMSQLite.TDatabaseSQLite }
 
-function TmncORMSQLite.TDatabaseSQLite.ProduceSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
+function TmncORMSQLite.TDatabaseSQLite.CreateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
 begin
   GenerateObjects(AObject, SQL, vLevel);
   Result := True;
@@ -276,7 +276,7 @@ end;
 
 { TmncORMSQLite.SchemaSQLite }
 
-function TmncORMSQLite.TSchemaSQLite.ProduceSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
+function TmncORMSQLite.TSchemaSQLite.CreateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
 begin
   GenerateObjects(AObject, SQL, vLevel);
   Result := True;

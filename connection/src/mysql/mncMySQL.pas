@@ -1116,10 +1116,19 @@ var
   c: Integer;
   aName: string;
   FieldType: enum_field_types;
-  MetaType: string;
   aColumn: TmncMySQLColumn;
   Res : PMYSQL_RES;
   Field: PMYSQL_FIELD;
+  function IsBlob(n : longint) : boolean;
+  begin
+    Result :=(n and BLOB_FLAG)<>0;
+  end;
+
+  function IsBinary(n : longint) : boolean;
+  begin
+    Result :=(n and BINARY_FLAG)<>0;
+  end;
+
 begin
   Columns.Clear;
 
@@ -1138,15 +1147,15 @@ begin
       begin
         aName :=  Field.name;
         FieldType := Field.ftype;
-        MetaType := MySQLTypeToString(FieldType);
 
         aColumn := TmncMySQLColumn.Create(aName, MySQLTypeToType(FieldType));
 
         Columns.Add(aColumn);
 
-        aColumn.MetaType := MetaType;
+        aColumn.MetaType := MySQLTypeToString(FieldType);
         aColumn.Size := Field.length;
         aColumn.Decimals := Field.decimals;
+        //aColumn.IsBlob := IsBlob(Field.flags);
 
         if (FieldType in [MYSQL_TYPE_DECIMAL, MYSQL_TYPE_NEWDECIMAL]) then
         begin
@@ -1193,6 +1202,22 @@ var
   real_length: culong;
   bind: MYSQL_BIND;
   cr: Currency;
+  procedure FetchString;
+  begin
+    real_length := FResults.Buffers[i].length;
+
+    if real_length <= SizeOf(FResults.Buffers[i].buf.AsRaw) then
+      s := FResults.Buffers[i].buf.AsString
+    else
+    begin
+      SetLength(s, real_length);
+      FillByte(bind, sizeof(bind), 0);
+
+      bind.buffer := @s[1];
+      bind.buffer_length := real_length;
+      CheckError(mysql_stmt_fetch_column(FStatment, @bind, i, 0));
+    end;
+  end;
 begin
   if Columns.Count > 0 then
   begin
@@ -1229,18 +1254,8 @@ begin
         MYSQL_TYPE_DECIMAL, MYSQL_TYPE_NEWDECIMAL, //yes it is a string
         MYSQL_TYPE_VARCHAR,MYSQL_TYPE_VAR_STRING, MYSQL_TYPE_STRING:
         begin
-          real_length := FResults.Buffers[i].length;
-          if real_length <= SizeOf(FResults.Buffers[i].buf.AsRaw) then
-            s := FResults.Buffers[i].buf.AsString
-          else
-          begin
-            SetLength(s, real_length);
-            FillByte(bind, sizeof(bind), 0);
+          FetchString;
 
-            bind.buffer := @s[1];
-            bind.buffer_length := real_length;
-            CheckError(mysql_stmt_fetch_column(FStatment, @bind, i, 0));
-          end;
           if aType in [MYSQL_TYPE_DECIMAL, MYSQL_TYPE_NEWDECIMAL] then
           begin
             cr := StrToCurrDef(s, 0);
@@ -1253,10 +1268,20 @@ begin
         MYSQL_TYPE_ENUM: aCurrent.Add(i, FResults.Buffers[i].buf.AsInteger);
         MYSQL_TYPE_SET: aCurrent.Add(i, FResults.Buffers[i].buf.AsInteger);
 
-        MYSQL_TYPE_TINY_BLOB, MYSQL_TYPE_MEDIUM_BLOB, MYSQL_TYPE_LONG_BLOB,
-        MYSQL_TYPE_BLOB, MYSQL_TYPE_GEOMETRY:
+        MYSQL_TYPE_TINY_BLOB, MYSQL_TYPE_MEDIUM_BLOB, MYSQL_TYPE_LONG_BLOB, MYSQL_TYPE_BLOB:
         begin
-          aCurrent.Add(i, varUnknown);
+          if FetchBlobs then
+          begin
+            FetchString;
+            aCurrent.Add(i, s);
+          end
+          else
+            aCurrent.Add(i, Unassigned);
+        end;
+
+        MYSQL_TYPE_GEOMETRY:
+        begin
+          aCurrent.Add(i, Unassigned);
         end;
       end;
     end;

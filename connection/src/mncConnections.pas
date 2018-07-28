@@ -222,14 +222,10 @@ type
 
   TmncItem = class(TmnCustomField)
   private
-    FBlobType: TmncBlobType;
-    FIsBlob: Boolean;
   protected
     FDataType: TmncDataType;
     function GetAsText: string; override;
     procedure SetAsText(const AValue: string); override;
-    property IsBlob: Boolean read FIsBlob write FIsBlob default false;
-    property BlobType: TmncBlobType read FBlobType write FBlobType default blobBinary;
     property DataType: TmncDataType read FDataType default dtUnknown;
   public
     function IsNumber: Boolean;
@@ -282,6 +278,8 @@ type
     property Size: Int64 read FSize write SetSize; //TODO: I am thinking to move it to TmncItem
     property Decimals: Integer read FDecimals write SetDecimals;
     property Options: TmnDataOptions read FOptions write FOptions default [];
+    //property IsBlob;
+    //property BlobType;
     property MaxSize: Integer read FMaxSize write FMaxSize;
   end;
 
@@ -1610,7 +1608,7 @@ end;
 
 function TmncItem.GetAsText: string;
 begin
-  if (IsBlob) and (BlobType = blobText) then
+  if DataType in [dtBlob] then
     Result := AsHex
   else
     Result := inherited GetAsText;
@@ -1618,7 +1616,7 @@ end;
 
 procedure TmncItem.SetAsText(const AValue: string);
 begin
-  if (IsBlob) and (BlobType = blobText) then
+  if DataType in [dtBlob] then
     AsHex := AValue
   else
     inherited SetAsText(AValue);
