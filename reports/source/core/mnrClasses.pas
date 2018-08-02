@@ -503,7 +503,7 @@ type
     function DoCreateSections: TmnrSections;
     function GetSections: TmnrSections;
 
-    procedure UpdateRowData(vRow: TmnrRow; vData: TObject; vLastDesignRow: Boolean); virtual;
+    procedure DoUpdateRowData(vRow: TmnrRow; vData: TObject; vLastDesignRow: Boolean); virtual;
     function GetCaption: string; virtual;
     function GetReport: TmnrCustomReport;
     procedure DoBeginFill(vReference: TmnrReferencesRow); virtual;
@@ -1610,7 +1610,7 @@ begin
         aRow.FLocked := vParams.Locked;
         aRow.FRowIndex := vIndex;
         aRow.FDesignRow := r;
-        if vParams.Data<>nil then UpdateRowData(aRow, vParams.Data, r.Next=nil);
+        if vParams.Data<>nil then DoUpdateRowData(aRow, vParams.Data, r.Next=nil);
 
         d := r.First;
         while d <> nil do
@@ -1741,7 +1741,7 @@ begin
   inherited SetNodes(Value);
 end;
 
-procedure TmnrSection.UpdateRowData(vRow: TmnrRow; vData: TObject; vLastDesignRow: Boolean);
+procedure TmnrSection.DoUpdateRowData(vRow: TmnrRow; vData: TObject; vLastDesignRow: Boolean);
 begin
 
 end;
