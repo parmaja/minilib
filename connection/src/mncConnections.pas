@@ -110,7 +110,9 @@ type
     procedure CheckActive;
     procedure CheckInactive;
     procedure DoConnect; virtual; abstract;
+    procedure DoConnected; virtual;
     procedure DoDisconnect; virtual; abstract;
+    procedure DoDisconnected; virtual;
     function GetConnected: Boolean; virtual; abstract;
     procedure DoInit; virtual;
     procedure Init;
@@ -202,7 +204,7 @@ type
     procedure CommitRetaining;
     procedure RollbackRetaining;
     property Behaviors: TmncSessionBehaviors read FBehaviors;
-    property Action: TmncSessionAction read FAction write FAction;
+    property Action: TmncSessionAction read FAction write FAction; //todo zaher i dont like the name
     property Connection: TmncConnection read FConnection write SetConnection;
     property Active: Boolean read GetActive write SetActive;
     property Params: TStrings read FParams write SetParams;
@@ -663,8 +665,12 @@ begin
   Init;
   CheckInactive;
   DoConnect;
-  if Assigned(OnConnected) then
-    OnConnected(Self);
+  if Connected then
+  begin
+    DoConnected;
+    if Assigned(OnConnected) then
+      OnConnected(Self);
+  end;
 end;
 
 constructor TmncConnection.Create;
@@ -693,8 +699,12 @@ procedure TmncConnection.Disconnect;
 begin
   CheckActive;
   DoDisconnect;
-  if Assigned(OnDisconnected) then
-    OnDisconnected(Self);
+  if not Connected then
+  begin
+    DoDisconnected;
+    if Assigned(OnDisconnected) then
+      OnDisconnected(Self);
+  end;
 end;
 
 procedure TmncConnection.Open;
@@ -738,6 +748,14 @@ procedure TmncConnection.CheckInactive;
 begin
   if Connected then
     raise EmncException.Create('Connection not connected');
+end;
+
+procedure TmncConnection.DoConnected;
+begin
+end;
+
+procedure TmncConnection.DoDisconnected;
+begin
 end;
 
 procedure TmncConnection.DoInit;

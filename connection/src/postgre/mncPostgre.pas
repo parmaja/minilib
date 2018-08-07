@@ -17,14 +17,14 @@ unit mncPostgre;
 {*TODO
   - Retrieving Query Results Row-By-Row
       http://www.postgresql.org/docs/9.2/static/libpq-single-row-mode.html
+
 }
 
 interface
 
 uses
-  Classes, SysUtils, Variants, StrUtils, Contnrs, SyncObjs, DateUtils,
-  mncCommons, mncConnections, mncSQL, mnUtils, mnClasses,
-  mncDB, mncPGHeader, mncMeta;
+  Classes, SysUtils, Variants, StrUtils, Contnrs, SyncObjs, DateUtils, UniDates,
+  mncCommons, mncConnections, mncSQL, mnUtils, mnClasses, mncDB, mncPGHeader, mncMeta;
 
 const
   cBufferSize          = 2048;
@@ -67,19 +67,9 @@ type
 
   end;
 
-  IPGAPI = interface(IInterface)
-    ['{C44CFB52-A9DF-4617-8EDE-77EE2B883B82}']
-    function loImport(const vFileName: string): Integer; overload;
-    function loImport(vStream: TStream; vOID: Integer): Integer; overload;
-    function loExport(vOID: Integer; const vFileName: string): Integer; overload;
-    function loExport(vOID: Integer; const vStream: TStream): Integer; overload;
-    function loUnlink(vOID: Integer): Integer;
-    function loCopy(vOID: Integer): Integer;
-  end;
-
   { TmncPGConnection }
 
-  TmncPGConnection = class(TmncSQLConnection, IPGAPI)
+  TmncPGConnection = class(TmncSQLConnection)
   private
     FHandle: PPGconn;
     FChannel: string;
@@ -99,10 +89,12 @@ type
     procedure InternalDisconnect(var vHandle: PPGconn);
     procedure DoConnect; override;
     procedure DoDisconnect; override;
+    procedure DoConnected; virtual;
     function GetConnected:Boolean; override;
 
-    procedure DoResetConnection(var vResume: Boolean); virtual; //TODO wrong name
+    procedure DoResetConnection(PGResult: PPGresult; var vResume: Boolean); virtual;
     function ResetConnection(PGResult: PPGresult): Boolean;
+
   protected
     procedure RaiseError(Error: Boolean; const ExtraMsg: string = ''); overload;
     procedure RaiseError(PGResult: PPGresult); overload;
@@ -121,15 +113,14 @@ type
 
     function loUnlink(vOID: Integer): Integer;
     function loCopy(vOID: Integer): Integer; overload;
-    //procedure AssignParams(vParams: IMiscParams);
+
     property Channel: string read FChannel write SetChannel;
   public
     constructor Create;
     destructor Destroy; override;
 
     function CreateSession: TmncSQLSession; override;
-    class function Capabilities: TmncCapabilities; override;
-    class function Name: string; override;
+    class function Capabilities: TmncCapabilities; override; class function Name: string; override;
     property Handle: PPGconn read FHandle;
     procedure Execute(vCommand: string); overload; override;
 
@@ -137,17 +128,14 @@ type
     //TODO: Reconnect  use PQReset
     procedure CreateDatabase(CheckExists: Boolean = False); overload;
     procedure CreateDatabase(const vName: string; CheckExists: Boolean = False); overload; override;
-
     procedure DropDatabase(const vName: string; CheckExists: Boolean = False); overload; override;
-
     procedure RenameDatabase(const vName, vToName: string); overload;
     function IsDatabaseExists(vName: string): Boolean; override;
-    //function UniqueDBName(const vBase: string): string; override;
     function EnumDatabases: TStrings;
-
-    function loCopy(vSrc: TmncPGConnection; vOID: Integer): Integer; overload;
-
     procedure TerminateConnections(const vResource: string);
+
+    //function UniqueDBName(const vBase: string): string; override; //zaher, do not copy
+    function loCopy(vSrc: TmncPGConnection; vOID: Integer): Integer; overload;
 
     property ClientEncoding: string read FClientEncoding write FClientEncoding;
     property ByteaOutput: string read FByteaOutput write FByteaOutput;
@@ -261,8 +249,6 @@ type
     function Find(vName: string): TmncItem; override;
     property Command: TmncCustomPGCommand read FCommand;
 
-
-
   public
     constructor Create(vColumns: TmncColumns); override;
     destructor Destroy; override;
@@ -270,7 +256,7 @@ type
     function IsNull: Boolean;
   end;
 
-  TPGColumn = class(TmncColumn)
+  TmncPGColumn = class(TmncColumn)
   private
     FPGType: Integer;
     FFieldSize: Integer;
@@ -280,13 +266,13 @@ type
     property FieldSize: Integer read FFieldSize write FFieldSize;
   end;
 
-  TPGColumns = class(TmncColumns)
+  TmncPGColumns = class(TmncColumns)
   private
-    function GetItem(Index: Integer): TPGColumn;
+    function GetItem(Index: Integer): TmncPGColumn;
   protected
   public
     function Add(vName: string; vPGType, vSize: Integer): TmncColumn; overload;
-    property Items[Index: Integer]: TPGColumn read GetItem; default;
+    property Items[Index: Integer]: TmncPGColumn read GetItem; default;
   end;
 
   { TmncPGCommand }
@@ -302,7 +288,7 @@ type
     FStatus: TExecStatusType;
     FBOF: Boolean;
     FEOF: Boolean;
-    function GetColumns: TPGColumns;
+    function GetColumns: TmncPGColumns;
 
     function GetParamChar: string; override;
     property Connection: TmncPGConnection read GetConnection;
@@ -326,7 +312,7 @@ type
     property Status: TExecStatusType read FStatus;
     property Handle: ansistring read FHandle;//used for name in PQprepare
     property ResultFormat: TmpgResultFormat read FResultFormat write FResultFormat default mrfText;
-    property Columns: TPGColumns read GetColumns;
+    property Columns: TmncPGColumns read GetColumns;
   end;
 
   TmncPGCommand = class(TmncCustomPGCommand)
@@ -337,7 +323,7 @@ type
     FSingleRowMode: Boolean;
     function GetRecordCount: Integer;
   protected
-
+    procedure DeallocateStatement;
     function FetchStatement: Boolean;
     procedure InternalClose; virtual;
     procedure DoPrepare; override;
@@ -422,7 +408,6 @@ begin
   end;
 end;
 
-
 function EncodeBytea(const vStr: string): string;
 begin
   Result := EncodeBytea(PByte(vStr), ByteLength(vStr));
@@ -446,48 +431,6 @@ end;
 function DecodeBytea(const vStr: string): string;
 begin
   Result := DecodeBytea(PByte(vStr), ByteLength(vStr));
-end;
-
-function PGDateToDateTime(const vStr: string): TDateTime;
-
-  function _DecodeDate(const T: string): TDateTime;
-  var
-    Y, M, D: Word;
-  begin
-    Y := StrToIntDef(SubStr(T, '-', 0), 0);
-    M := StrToIntDef(SubStr(T, '-', 1), 0);
-    D := StrToIntDef(SubStr(T, '-', 2), 0);
-    Result := EncodeDate(Y, M, D);
-  end;
-
-  function _DecodeTime(const T: string): TDateTime;
-  var
-    H, N, S: Word;
-  begin
-    H := StrToIntDef(SubStr(T, ':', 0), 0);
-    N := StrToIntDef(SubStr(T, ':', 1), 0);
-    S := Trunc(StrToCurrDef(SubStr(T, ':', 2), 0));
-    Result := EncodeTime(H, N, S, 0);
-  end;
-
-var
-  aDate, aTime: String;
-begin
-  try
-    aDate := SubStr(vStr, ' ', 0);
-    aTime := SubStr(vStr, ' ', 1);
-    if aTime='' then
-    begin
-      if Pos(':', aDate)>0 then
-        Result := _DecodeTime(aDate)
-      else
-        Result := _DecodeDate(aDate)
-    end
-    else
-      Result := _DecodeDate(aDate) + _DecodeTime(aTime);
-  except
-    Result := 0;
-  end;
 end;
 
 procedure TmncPGConnection.RaiseError(Error: Boolean; const ExtraMsg: string);
@@ -525,12 +468,52 @@ end;
 function TmncPGConnection.ResetConnection(PGResult: PPGresult): Boolean;
 begin
   Result := False;
-  DoResetConnection(Result);
+  DoResetConnection(PGResult, Result);
+end;
+
+procedure TmncPGConnection.DropDatabase(const vName: string; CheckExists: Boolean = False);
+begin
+  //TODO check
+  CloneExecute('postgres', 'drop database if exists %s;', [vName]);
 end;
 
 procedure TmncPGConnection.RenameDatabase(const vName, vToName: string);
 begin
   CloneExecute('postgres', 'alter database %s rename to %s', [vName, vToName]);
+end;
+
+function TmncPGConnection.EnumDatabases: TStrings;
+var
+  aTr: TmncSQLSession;
+  aCMD: TmncSQLCommand;
+begin
+  Result := TStringList.Create;
+  try
+    aTr := CreateSession;
+    try
+      aCMD := aTr.CreateCommand;
+      try
+        aCMD.SQL.Text := 'select datname from pg_database where datistemplate = false';
+        aCMD.Execute;
+        while not aCMD.Done do
+        begin
+          Result.Add(aCMD.Field['datname'].AsString);
+          aCMD.Next;
+        end;
+      finally
+        aCMD.Free;
+      end;
+    finally
+      aTr.Free;
+    end;
+  except
+    FreeAndNil(Result);
+  end;
+end;
+
+procedure TmncPGConnection.TerminateConnections(const vResource: string);
+begin
+  CloneExecute('postgres', 'select pg_terminate_backend(pid) from pg_stat_activity where datname = ''%s''', [vResource]);
 end;
 
 procedure TmncPGConnection.SetChannel(const Value: string);
@@ -541,11 +524,6 @@ begin
     if Connected then
       Listen(FChannel);
   end;
-end;
-
-procedure TmncPGConnection.TerminateConnections(const vResource: string);
-begin
-  CloneExecute('postgres', 'select pg_terminate_backend(pid) from pg_stat_activity where datname = ''%s''', [vResource]);
 end;
 
 { TmncPGConnection }
@@ -648,10 +626,10 @@ var
 begin
   //if vUseStream then
   begin
-    if FileExists(vFileName) then
+    if FileExists(vFileName) then //zaher, belal why?
     begin
       f := TFileStream.Create(vFileName, fmOpenWrite or fmShareDenyNone);
-      f .Size := 0;
+      f.Size := 0;
     end
     else
       f := TFileStream.Create(vFileName, fmCreate or fmShareDenyNone);
@@ -751,7 +729,7 @@ end;
 procedure TmncPGConnection.InternalConnect(var vHandle: PPGconn);
 begin
   if AutoCreate then
-  	CreateDatabase(Resource);
+  	CreateDatabase(Resource, True);
   vHandle := CreateConnection;
   try
     RaiseError(PQstatus(vHandle) = CONNECTION_BAD);
@@ -795,7 +773,7 @@ begin
     aPort := '5432'
   else
     aPort := Port;
-  aDB := LowerCase(vDatabase);//TODO no sure
+  aDB := LowerCase(vDatabase); //TODO no sure
   aUser := UserName;
   aPass := Password;
   if UseSSL then
@@ -864,6 +842,14 @@ begin
   Listen(Channel);
 end;
 
+procedure TmncPGConnection.DoConnected;
+begin
+  inherited;
+  if ClientEncoding<>'' then Execute('set client_encoding to ''%s'';', [ClientEncoding]);
+  if ByteaOutput<>'' then Execute('set bytea_output = ''%s'';', [ByteaOutput]);
+  if DateStyle<>'' then Execute('set datestyle to ''%s'';', [DateStyle]);
+end;
+
 procedure TmncPGConnection.DoClone(vConn: TmncSQLConnection);
 begin
   inherited;
@@ -901,9 +887,6 @@ end;
 procedure TmncPGConnection.DoInit;
 begin
   inherited;
-  if ClientEncoding<>'' then Execute('set client_encoding to ''%s'';', [ClientEncoding]);
-  if ByteaOutput<>'' then Execute('set bytea_output = ''%s'';', [ByteaOutput]);
-  if DateStyle<>'' then Execute('set datestyle to ''%s'';', [DateStyle]);
 end;
 
 procedure TmncPGConnection.DoNotify(vPID: Integer; const vName, vData: string);
@@ -911,49 +894,17 @@ begin
 
 end;
 
-procedure TmncPGConnection.DoResetConnection(var vResume: Boolean);
+procedure TmncPGConnection.DoResetConnection(PGResult: PPGresult; var vResume: Boolean);
 begin
-end;
-
-procedure TmncPGConnection.DropDatabase(const vName: string; CheckExists: Boolean = False);
-begin
-  CloneExecute('postgres', 'drop database if exists %s;', [vName]);
-end;
-
-function TmncPGConnection.EnumDatabases: TStrings;
-var
-  aTr: TmncSQLSession;
-  aCMD: TmncSQLCommand;
-begin
-  Result := TStringList.Create;
-  try
-    aTr := CreateSession;
-    try
-      aCMD := aTr.CreateCommand;
-      try
-        aCMD.SQL.Text := 'select datname from pg_database where datistemplate = false';
-        aCMD.Execute;
-        while not aCMD.Done do
-        begin
-          Result.Add(aCMD.Field['datname'].AsString);
-          aCMD.Next;
-        end;
-      finally
-        aCMD.Free;
-      end;
-    finally
-      aTr.Free;
-    end;
-  except
-    FreeAndNil(Result);
-  end;
 end;
 
 procedure TmncPGConnection.Execute(vCommand: string);
 var
+  s: utf8string;
   r: PPGresult;
 begin
-  r := PQexec(FHandle, PAnsiChar(vCommand));
+  s := vCommand;
+  r := PQexec(FHandle, PChar(s));
   try
     RaiseError(r);
   finally
@@ -967,11 +918,6 @@ function TmncPGSession.CreateCommand: TmncSQLCommand;
 begin
   Result := TmncPGCommand.CreateBy(Self);
   //Result := TmncPGCopyOutCommand.CreateBy(Self);
-end;
-
-destructor TmncPGSession.Destroy;
-begin
-  inherited;
 end;
 
 function TmncPGSession.CreateMeta: TmncMeta;
@@ -1017,6 +963,11 @@ constructor TmncPGSession.Create(vConnection: TmncConnection);
 begin
   inherited;
   FIsolated := True;
+end;
+
+destructor TmncPGSession.Destroy;
+begin
+  inherited;
 end;
 
 function TmncPGSession.GetConnection: TmncPGConnection;
@@ -1216,12 +1167,29 @@ end;
 
 procedure TmncPGCommand.ClearStatement;
 begin
-  //PQclear(FStatement);
-  TPGClearThread.Create(FStatement); //tooo slow in ddl command  :(
+  PQclear(FStatement);
+  //TPGClearThread.Create(FStatement); //tooo slow in ddl command  :(
+end;
+
+procedure TmncPGCommand.DeallocateStatement;
+var
+  s: UTF8String;
+  r: PPGresult;
+begin
+  if Prepared then
+  begin
+    try
+      s := UTF8Encode('deallocate ' + FHandle);
+      r := PQexec(Session.DBHandle, PAnsiChar(s));
+      PQclear(r);
+    except
+    end;
+  end;
 end;
 
 procedure TmncPGCommand.DoClose;
 begin
+  DeallocateStatement;
   InternalClose;
 end;
 
@@ -1308,7 +1276,7 @@ end;
 
 function TmncPostgreField.GetAsCurrency: Currency;
 begin
-  //Result := StrToCurrEx(GetData, 0);
+  //Result := StrToCurrNumber(AsString);
   Result := StrToCurrDef(AsString, 0);
 end;
 
@@ -1319,12 +1287,13 @@ end;
 
 function TmncPostgreField.GetAsDateTime: TDateTime;
 begin
-  Result := PGDateToDateTime(AsString);
+  Result := udtISOStrToDate(AsString);
   //Result := inherited GetAsDateTime;
 end;
 
 function TmncPostgreField.GetAsDouble: Double;
 begin
+  //Result := StrToDoubleNumber(GetData); //zaher check mauybe needit
   Result := StrToFloatDef(GetData, 0);
 end;
 
@@ -1367,7 +1336,11 @@ begin
     if FDataLen<>0 then
     begin
       SetString(s, FData, FDataLen);
+      {$ifdef FPC}
       Result := s;
+      {$else}
+      Result := UTF8ToString(s);
+      {$endif}
     end
     else
       Result := '';
@@ -1494,18 +1467,18 @@ begin
     end;
 end;
 
-{ TPGColumns }
+{ TmncPGColumns }
 
-function TPGColumns.Add(vName: string; vPGType, vSize: Integer): TmncColumn;
+function TmncPGColumns.Add(vName: string; vPGType, vSize: Integer): TmncColumn;
 begin
-  Result := inherited Add(Count, vName, dtUnknown, TPGColumn);
-  TPGColumn(Result).PGType := vPGType;
-  TPGColumn(Result).FieldSize := vSize;
+  Result := inherited Add(Count, vName, dtUnknown, TmncPGColumn);
+  TmncPGColumn(Result).PGType := vPGType;
+  TmncPGColumn(Result).FieldSize := vSize;
 end;
 
-function TPGColumns.GetItem(Index: Integer): TPGColumn;
+function TmncPGColumns.GetItem(Index: Integer): TmncPGColumn;
 begin
-  Result := TPGColumn(inherited Items[Index]);
+  Result := TmncPGColumn(inherited Items[Index]);
 end;
 
 { TmncPGDDLCommand }
@@ -1633,7 +1606,7 @@ end;
 
 function TmncCustomPGCommand.CreateColumns: TmncColumns;
 begin
-  Result := TPGColumns.Create;
+  Result := TmncPGColumns.Create;
 end;
 
 function TmncCustomPGCommand.CreateFields(vColumns: TmncColumns): TmncFields;
@@ -1765,7 +1738,11 @@ begin
   if Result then
   begin
     p := PQgetvalue(vRes, vTuple, vIndex);
+    {$ifdef FPC}
     Value := p;
+    {$else}
+    Value := UTF8ToString(p);
+    {$endif}
     {if ResultFormat=mrfText then
       Value := UTF8ToString(p)
     else
@@ -1850,9 +1827,9 @@ begin
   SetLength(Result, 0);
 end;
 
-function TmncCustomPGCommand.GetColumns: TPGColumns;
+function TmncCustomPGCommand.GetColumns: TmncPGColumns;
 begin
-  Result := inherited Columns as TPGColumns
+  Result := inherited Columns as TmncPGColumns
 end;
 
 function TmncCustomPGCommand.GetConnection: TmncPGConnection;
@@ -1994,9 +1971,9 @@ begin
   FBOF := True;
 end;
 
-{ TPGColumn }
+{ TmncPGColumn }
 
-procedure TPGColumn.SetPGType(const Value: Integer);
+procedure TmncPGColumn.SetPGType(const Value: Integer);
 begin
   FPGType := Value;
   case Value of
@@ -2022,7 +1999,6 @@ end;
 
 destructor TPGClearThread.Destroy;
 begin
-
   inherited;
 end;
 

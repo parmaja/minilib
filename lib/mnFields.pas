@@ -50,7 +50,7 @@ type
 
   { TmnCustomField }
 
-  TmnCustomField = class(TInterfacedObject, IField)
+  TmnCustomField = class abstract(TInterfacedObject, IField)
   private
     procedure CheckIsNil;
     function ReadAsHex: string;
