@@ -782,10 +782,10 @@ begin
     D := StrToIntDef(SubStr(T, vDateSeparator, 2), D);
 
     T := SubStr(ISODate, TimeDivider, 1);//skip the date text
-    T := SubStr(T, '+', 1);//skip the date text
+    T := SubStr(T, '+', 0);//skip the date text
     H := StrToIntDef(SubStr(T, ':', 0), 0);
     N := StrToIntDef(SubStr(T, ':', 1), 0);
-    S := StrToIntDef(SubStr(T, ':', 2), 0);
+    S := Trunc(StrToFloatDef(SubStr(T, ':', 2), 0));
   except
     raise Exception.Create('Not valid DateTime');
   end;
