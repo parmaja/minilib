@@ -23,8 +23,9 @@ unit mncPostgre;
 interface
 
 uses
-  Classes, SysUtils, Variants, StrUtils, Contnrs, SyncObjs, DateUtils, UniDates,
-  mncCommons, mncConnections, mncSQL, mnUtils, mnClasses, mncDB, mncPGHeader, mncMeta;
+  Classes, SysUtils, Variants, StrUtils, Contnrs, SyncObjs, DateUtils,
+  mnUtils,
+  mncCommons, mncConnections, mncSQL, mnClasses, mncDB, mncPGHeader, mncMeta;
 
 const
   cBufferSize          = 2048;
@@ -89,7 +90,7 @@ type
     procedure InternalDisconnect(var vHandle: PPGconn);
     procedure DoConnect; override;
     procedure DoDisconnect; override;
-    procedure DoConnected; virtual;
+    procedure DoConnected; override;
     function GetConnected:Boolean; override;
 
     procedure DoResetConnection(PGResult: PPGresult; var vResume: Boolean); virtual;
@@ -845,9 +846,12 @@ end;
 procedure TmncPGConnection.DoConnected;
 begin
   inherited;
-  if ClientEncoding<>'' then Execute('set client_encoding to ''%s'';', [ClientEncoding]);
-  if ByteaOutput<>'' then Execute('set bytea_output = ''%s'';', [ByteaOutput]);
-  if DateStyle<>'' then Execute('set datestyle to ''%s'';', [DateStyle]);
+  if ClientEncoding <> '' then
+    Execute('set client_encoding to ''%s'';', [ClientEncoding]);
+  if ByteaOutput <> '' then
+    Execute('set bytea_output = ''%s'';', [ByteaOutput]);
+  if DateStyle <> '' then
+    Execute('set datestyle to ''%s'';', [DateStyle]);
 end;
 
 procedure TmncPGConnection.DoClone(vConn: TmncSQLConnection);
@@ -1287,7 +1291,7 @@ end;
 
 function TmncPostgreField.GetAsDateTime: TDateTime;
 begin
-  Result := udtISOStrToDate(AsString);
+  Result := ISOStrToDate(AsString);
   //Result := inherited GetAsDateTime;
 end;
 

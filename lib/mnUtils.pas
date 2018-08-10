@@ -69,8 +69,7 @@ function FetchStr(var AInput: string; const ADelim: string = '.'; const ADelete:
 function PeriodToString(vPeriod: Double; WithSeconds: Boolean): string;
 //Used by GetTickCount
 function TicksToString(vTicks: Int64): string;
-function DequoteStr(Str: string; QuoteChar: string = '"'): string; overload;
-function DequoteStrAuto(Str: string): string; overload; //deqoute use both of ' and "
+function DequoteStr(Str: string; QuoteChar: string = #0): string;
 
 function RepeatString(const Str: string; Count: Integer): string;
 {* VarReplace
@@ -151,6 +150,13 @@ const
 {$endif}
 {$endif}
 
+//Ported from UniDates
+
+procedure ISOStrToDate(ISODate: String; out Y, M, D, H, N, S: Word; vDateSeparator: Char = '-'; TimeDivider: Char = #0; UseDefault: Boolean = False); overload;
+function ISOStrToDate(ISODate: String; vDateSeparator: Char = '-'; TimeDivider: Char = #0; UseDefault: Boolean = False): TDateTime; overload;
+
+function ISODateToStr(DateTime: TDateTime; vDateSeparator: Char = '-'; TimeDivider: Char = ' '; WithTime: Boolean = False): String; overload;
+
 {$ifdef FPC}
 var
   SystemAnsiCodePage: Integer; //used to convert from Ansi string, it is the default
@@ -206,13 +212,20 @@ begin
   end;
 end;
 
-function DequoteStrAuto(Str: string): string;
+function DequoteStr(Str: string; QuoteChar: string = #0): string;
 begin
   if Str = '' then
     Result := ''
   else
   begin
-    if Str[1] = '"' then
+    if (QuoteChar > #0) and (Str[1] = QuoteChar) then
+    begin
+      if Str[Length(Str)] =QuoteChar then
+        Result := MidStr(Str, 2, Length(Str) - 2)
+      else
+        Result := MidStr(Str, 2, Length(Str) - 1)
+    end
+    else if Str[1] = '"' then
     begin
       if Str[Length(Str)] = '"' then
         Result := MidStr(Str, 2, Length(Str) - 2)
@@ -305,24 +318,6 @@ begin
   end;
   check;
   Result := S;
-end;
-
-function DequoteStr(Str: string; QuoteChar: string): string;
-begin
-  if Str = '' then
-    Result := ''
-  else
-  begin
-    if (QuoteChar > #0) and (Str[1] = QuoteChar) then
-    begin
-      if Str[Length(Str)] = QuoteChar then
-        Result := MidStr(Str, 2, Length(Str) - 2)
-      else
-        Result := MidStr(Str, 2, Length(Str) - 1)
-    end
-    else
-      Result := Str;
-  end;
 end;
 
 {
@@ -835,6 +830,61 @@ begin
     Result := FFormatSettings;
     {$ifend}
   {$endif}
+end;
+
+
+procedure ISOStrToDate(ISODate: String; out Y, M, D, H, N, S: Word; vDateSeparator, TimeDivider: Char; UseDefault: Boolean);
+var
+  T: String;
+begin
+  try
+    if TimeDivider = #0 then
+    begin
+      if Pos('T', ISODate) > 0 then
+        TimeDivider := 'T'
+      else
+        TimeDivider := ' ';
+    end;
+
+    if UseDefault then
+      DecodeDate(Now, Y, M, D)
+    else
+      DecodeDate(0, Y, M, D);
+    T := SubStr(ISODate, TimeDivider, 0);//skip the time text
+
+    Y := StrToIntDef(SubStr(T, vDateSeparator, 0), Y);
+    M := StrToIntDef(SubStr(T, vDateSeparator, 1), M);
+    D := StrToIntDef(SubStr(T, vDateSeparator, 2), D);
+
+    T := SubStr(ISODate, TimeDivider, 1);//skip the date text
+    T := SubStr(T, '+', 0);//skip the date text
+    H := StrToIntDef(SubStr(T, ':', 0), 0);
+    N := StrToIntDef(SubStr(T, ':', 1), 0);
+    S := Trunc(StrToFloatDef(SubStr(T, ':', 2), 0));
+  except
+    raise Exception.Create('Not valid DateTime');
+  end;
+end;
+
+function ISOStrToDate(ISODate: String; vDateSeparator: Char; TimeDivider: Char; UseDefault: Boolean): TDateTime;
+var
+  Y, M, D, H, N, S: Word;
+begin
+  ISOStrToDate(ISODate, Y, M, D, H, N, S, vDateSeparator, TimeDivider, UseDefault);
+  Result := EncodeDate(Y, M, D) + EncodeTime(H, N, S, 0);
+end;
+
+function ISODateToStr(DateTime: TDateTime; vDateSeparator: Char; TimeDivider: Char; WithTime: Boolean): String;
+var
+  Y, M, D, H, N, S, O: Word;
+begin
+  DecodeDate(DateTime, Y, M, D);
+  Result := AlignStr(IntToStr(Y), 4, [alsRight],'0') + vDateSeparator +  AlignStr(IntToStr(M), 2, [alsRight],'0') + vDateSeparator + AlignStr(IntToStr(D), 2, [alsRight], '0');
+  if WithTime then
+  begin
+    DecodeTime(DateTime, H, N, S, O);
+    Result := Result + TimeDivider + AlignStr(IntToStr(H), 2, [alsRight],'0') + ':' + AlignStr(IntToStr(N), 2, [alsRight],'0') + ':' + AlignStr(IntToStr(S), 2, [alsRight],'0');
+  end;
 end;
 
 initialization

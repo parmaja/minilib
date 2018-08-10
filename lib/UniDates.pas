@@ -13,6 +13,8 @@ unit UniDates;
  Support:
   Gregorian
   Hejri in HejriUtils
+
+ TODO: add Gregorian to TUniviersalDateSystems like current but the basic date
 }
 
 interface
