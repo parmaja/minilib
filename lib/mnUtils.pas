@@ -835,7 +835,7 @@ end;
 
 procedure ISOStrToDate(ISODate: String; out Y, M, D, H, N, S: Word; vDateSeparator, TimeDivider: Char; UseDefault: Boolean);
 var
-  T: String;
+  Dt, Tm: String;
 begin
   try
     if TimeDivider = #0 then
@@ -850,17 +850,32 @@ begin
       DecodeDate(Now, Y, M, D)
     else
       DecodeDate(0, Y, M, D);
-    T := SubStr(ISODate, TimeDivider, 0);//skip the time text
 
-    Y := StrToIntDef(SubStr(T, vDateSeparator, 0), Y);
-    M := StrToIntDef(SubStr(T, vDateSeparator, 1), M);
-    D := StrToIntDef(SubStr(T, vDateSeparator, 2), D);
+    Dt := SubStr(ISODate, TimeDivider, 0);
+    Tm := SubStr(ISODate, TimeDivider, 1);
+    if Tm = '' then //one part
+    begin
+      if Pos(':', Dt) > 0 then //detect if it a time
+      begin
+        Tm := Dt;
+        Dt := '';
+      end
+    end;
 
-    T := SubStr(ISODate, TimeDivider, 1);//skip the date text
-    T := SubStr(T, '+', 0);//skip the date text
-    H := StrToIntDef(SubStr(T, ':', 0), 0);
-    N := StrToIntDef(SubStr(T, ':', 1), 0);
-    S := Trunc(StrToFloatDef(SubStr(T, ':', 2), 0));
+    if Dt <> '' then
+    begin
+      Y := StrToIntDef(SubStr(Dt, vDateSeparator, 0), Y);
+      M := StrToIntDef(SubStr(Dt, vDateSeparator, 1), M);
+      D := StrToIntDef(SubStr(Dt, vDateSeparator, 2), D);
+    end;
+
+    if Tm <> '' then
+    begin
+      Tm := SubStr(Tm, '+', 0);//skip time zone after plus
+      H := StrToIntDef(SubStr(Tm, ':', 0), 0);
+      N := StrToIntDef(SubStr(Tm, ':', 1), 0);
+      S := Round(StrToFloatDef(SubStr(Tm, ':', 2), 0));
+    end;
   except
     raise Exception.Create('Not valid DateTime');
   end;
