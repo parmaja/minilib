@@ -875,6 +875,12 @@ begin
       H := StrToIntDef(SubStr(Tm, ':', 0), 0);
       N := StrToIntDef(SubStr(Tm, ':', 1), 0);
       S := Round(StrToFloatDef(SubStr(Tm, ':', 2), 0));
+    end
+    else
+    begin
+      H := 0;
+      N := 0;
+      S := 0;
     end;
   except
     raise Exception.Create('Not valid DateTime');
