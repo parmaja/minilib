@@ -679,6 +679,8 @@ type
 
     procedure DoBeforeStart; virtual;
     procedure DoAfterStart; virtual;
+    procedure DoBeforeLoop; virtual;
+    procedure DoAfterLoop; virtual;
     procedure DoLoopError; virtual;
     function DoCreateReportDesgin: ImnrReportDesigner; virtual;
   public
@@ -846,12 +848,22 @@ begin
   Result := DoGetProfilerClass;
 end;
 
+procedure TmnrCustomReport.DoBeforeStart;
+begin
+
+end;
+
 procedure TmnrCustomReport.DoAfterStart;
 begin
 
 end;
 
-procedure TmnrCustomReport.DoBeforeStart;
+procedure TmnrCustomReport.DoBeforeLoop;
+begin
+
+end;
+
+procedure TmnrCustomReport.DoAfterLoop;
 begin
 
 end;
@@ -1048,11 +1060,16 @@ begin
       DoAfterStart;
     end;
 
+    DoBeforeLoop;
     try
-      Loop;
-    except
-      DoLoopError;
-      raise;
+      try
+        Loop;
+      except
+        DoLoopError;
+        raise;
+      end;
+    finally
+      DoAfterLoop;
     end;
 
   finally //handle safe finish ........
