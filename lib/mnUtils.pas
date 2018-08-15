@@ -874,7 +874,8 @@ begin
       Tm := SubStr(Tm, '+', 0);//skip time zone after plus
       H := StrToIntDef(SubStr(Tm, ':', 0), 0);
       N := StrToIntDef(SubStr(Tm, ':', 1), 0);
-      S := Round(StrToFloatDef(SubStr(Tm, ':', 2), 0));
+      //S := Round(StrToFloatDef(SubStr(Tm, ':', 2), 0)); //case 59.500s to round to 60 ->Error
+      S := Trunc(StrToFloatDef(SubStr(Tm, ':', 2), 0));
     end
     else
     begin
