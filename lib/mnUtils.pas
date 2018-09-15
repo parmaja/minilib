@@ -456,14 +456,16 @@ begin
   if (Length(Str) - Start + 1) < Length(WithStr) then
   begin
     Result := False;
-    exit;
-  end;
-  for i := 1 to Length(WithStr) do
+  end
+  else
   begin
-    if Str[Start + i - 1] <> WithStr[i] then
+    for i := 1 to Length(WithStr) do
     begin
-      Result := False;
-      break;
+      if Str[Start + i - 1] <> WithStr[i] then
+      begin
+        Result := False;
+        break;
+      end;
     end;
   end;
 end;

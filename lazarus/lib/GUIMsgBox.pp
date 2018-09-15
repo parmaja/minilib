@@ -23,8 +23,13 @@ type
     FSenderObject: TObject;
     FOwnerControls: TComponent;
   protected
+    MsgPanel: TPanel;
+    InputPanel: TPanel;
+    ButtonsPanel: TPanel;
     TextBox: TEdit;
-    LabelMsg: TLabel;
+    ListBox: TListBox;
+    MsgLabel: TLabel;
+    MsgImage: TImage;
     ChoiceIndex: Integer;
     IsStatus: Boolean;
     procedure KeyDown(var Key: Word; Shift: TShiftState); override;
@@ -48,7 +53,8 @@ type
     FStatusForms: TObjectList;
   protected
     function ShowMessage(const vText: string; Choices: array of TMsgSelect; DefaultChoice: Integer; CancelChoice: Integer; Kind: TMsgKind): Integer; override;
-    function ShowMessage(var vResult: string; const vText: string; Choices: array of TMsgSelect; DefaultChoice: Integer; CancelChoice: Integer; Kind: TMsgKind): Integer; override;
+    function ShowInput(var Answer: string; const vText: string; Choices: array of TMsgSelect; DefaultChoice: Integer; CancelChoice: Integer; Kind: TMsgKind): Integer; override;
+    function ShowList(var Answer: Integer; const vText: string; vStrings:TStrings; Choices: array of TmsgSelect; DefaultChoice: Integer; CancelChoice: Integer): Integer; override;
     procedure ShowStatus(vText: string; Sender: TObject = nil); override;
     procedure UpdateStatus(vText: string; Sender: TObject = nil); override;
     procedure HideStatus(Sender: TObject); override;
@@ -104,39 +110,20 @@ begin
 end;
 
 const
-  IconIDs: array[TMsgKind] of Integer = (idDialogConfirm, idDialogWarning, idDialogError, idDialogInfo, idDialogConfirm, idDialogInfo, idDialogInfo, idDialogInfo);
+  IconIDs: array[TMsgKind] of Integer = (idDialogConfirm, idDialogWarning, idDialogError, idDialogInfo, idDialogConfirm, idDialogInfo, idDialogInfo, idDialogInfo, idDialogInfo);
 
 procedure TGUIMsgBox.CreateFormObjects(vForm: TMsgForm; const vMsg, vTitle: string; Choices: array of TMsgSelect; DefaultChoice, CancelChoice: Integer);
 const
-  cHorzMargin = 5;
-  cVertMargin = 5;
+  cMargin = 2;
 
-  cHorzSpacing = 5;
-  cVertSpacing = 5;
-  cButtonSpacing = 5;
-  {$ifdef LINUX}
-  cButtonHeight = 32;
-  cButtonMargin = 5;
-  cIconSize = 48;
-  {$else}
-  cButtonMargin = 0;
-  cButtonHeight = 28;
-  cIconSize = 32;
-  {$endif}
-  procedure FlipRect(var Rect: TRect; Width: Integer);
-  begin
-    OffsetRect(Rect, Width - Rect.Right - Rect.Left, 0);
-  end;
+  cSpacing = 4;
+
 var
-  ButtonWidth, ButtonCount, ButtonsWidth,
-    i, X: Integer;
+  i: Integer;
   B: TMsgSelect;
   IconID: Integer;
-  aRect: TRect;
-  TextRect: TRect;
+  aButtonHeight: Integer;
   aButton: TCustomButton;
-  aClientWidth: Integer;
-  aClientHeight: Integer;
   aIcon: TCustomBitmap;
 begin
   with vForm do
@@ -158,142 +145,151 @@ begin
         Caption := vTitle;
     end;
 
-    TextRect := Rect(0, 0, Screen.Width div 2, 0);
-
-    DrawText(Canvas.Handle, PChar(vMsg), Length(vMsg), TextRect, DT_EXPANDTABS or DT_CALCRECT or DT_WORDBREAK{ or DrawTextBiDiModeFlagsReadingOnly});
-    aClientWidth := TextRect.Right;
-    aClientHeight := TextRect.Bottom;
-
     IconID := IconIDs[FMsgKind];
-    aClientWidth := aClientWidth + cIconSize + cHorzSpacing; //add icon width
 
-    if aClientWidth < cIconSize then
-      aClientWidth := cIconSize;
-    if aClientHeight < cIconSize then
-      aClientHeight := cIconSize;
+    ChildSizing.HorizontalSpacing := cMargin;
+    ChildSizing.VerticalSpacing := cMargin;
 
-    if FMsgKind = msgkStatus then
-      aClientWidth := aClientWidth + cHorzSpacing;
-
-    ButtonWidth := MinButtonWidth;
-    ButtonCount := Length(Choices);
-
-    if ButtonCount <> 0 then
-      ButtonsWidth := (ButtonWidth + cButtonMargin * 2) * ButtonCount + cButtonSpacing * (ButtonCount - 1)
-    else
-      ButtonsWidth := 0;
-
-    aClientWidth := Max(aClientWidth, ButtonsWidth);
-
-    aClientWidth := aClientWidth + cHorzMargin * 2;
-
-    with TImage.Create(FOwnerControls) do
+    MsgPanel := TPanel.Create(FOwnerControls);
+    with MsgPanel do
     begin
-      Name := 'Image';
       Parent := vForm;
-      aIcon := GetDialogIcon(IconID);
-      Picture.Graphic := aIcon;
-      FreeAndNil(aIcon);
-      aRect.Left := cHorzMargin;
-      aRect.Top := cVertMargin;
-      aRect.Right := aRect.Left + cIconSize;
-      aRect.Bottom := aRect.Top + cIconSize;
-      if vForm.UseRightToLeftAlignment then
-        FlipRect(aRect, aClientWidth);
-      BoundsRect := aRect;
+      Font := vForm.Font;
+      Caption := '';
+      BiDiMode := vForm.BiDiMode;
+      //Align := alClient;
+      BevelInner := bvNone;
+      BevelOuter := bvNone;
+      BorderWidth := cSpacing;
+      //AutoSize := true;
+      ChildSizing.HorizontalSpacing := cSpacing;
+      ChildSizing.VerticalSpacing := cSpacing;
+      Width := Canvas.TextWidth(vMsg);
+      aButtonHeight := Canvas.TextHeight('WOK');
     end;
 
-    LabelMsg := TLabel.Create(FOwnerControls);
-    with LabelMsg do
+    MsgImage := TImage.Create(FOwnerControls);
+    with MsgImage do
+    begin
+      Name := 'Image';
+      Parent := MsgPanel;
+      Center := true;
+
+      aIcon := GetDialogIcon(IconID);
+      Picture.Graphic := aIcon;
+      Width := Picture.Width;
+      FreeAndNil(aIcon);
+
+      if vForm.UseRightToLeftAlignment then
+        Align := alRight
+      else
+        Align := alLeft;
+    end;
+
+    MsgLabel := TLabel.Create(FOwnerControls);
+    with MsgLabel do
     begin
       Name := 'Message';
-      Parent := vForm;
-      WordWrap := True;
+      Parent := MsgPanel;
+      //WordWrap := True;
+      Left := 0;
+      Top := 0;
+      AutoSize := true;
       Caption := vMsg;
-      AutoSize := False;
       Layout := tlCenter;
       if (vMsg <> '') and (UpperCase(vMsg[1]) >= 'A') and (UpperCase(vMsg[1]) <= 'Z') then
         BiDiMode := bdLeftToRight
       else
         BiDiMode := vForm.Bidimode;
-      aRect.Left := cHorzMargin + cIconSize + cVertSpacing;
-      aRect.Top := cVertMargin;
-      aRect.Right := aRect.Left + TextRect.Right;
       if FMsgKind = msgkStatus then
       begin
-        Layout := tlCenter;
         Alignment := taCenter;
-        aClientHeight := aClientHeight + cVertMargin;
-        aRect.Bottom := aRect.Top + aClientHeight - cVertMargin - cVertMargin;
-      end
-      else
-        aRect.Bottom := aRect.Top + aClientHeight;
-        //aRect.Bottom := aRect.Top + TextRect.Bottom;//if not layout = center
-      if vForm.UseRightToLeftAlignment then
-        FlipRect(aRect, aClientWidth);
-      BoundsRect := aRect;
+      end;
+      Align := alClient;
     end;
+
+    MsgPanel.Align := alClient;
+    MsgPanel.AutoSize := true;
+    AutoSize := true;
 
     if FMsgKind = msgkStatus then
     begin
     end
     else
     begin
-      aClientHeight := aClientHeight + cVertMargin;
-
-      with TBevel.Create(FOwnerControls) do
+      if FMsgKind in [msgkInput, msgkPassword, msgkList] then
       begin
-        Parent := vForm;
-        Shape := bsBottomLine;
-        BiDiMode := vForm.BiDiMode;
-        aRect.Left := cHorzMargin;
-        aRect.Right := aClientWidth - cHorzMargin * 2;
-        aRect.Top := aClientHeight + cVertMargin;
-        aRect.Bottom := aRect.Top + 2;
-        aClientHeight := aRect.Bottom;
-        BoundsRect := aRect;
-      end;
-
-      if FMsgKind = msgkInput then
-      begin
-        //aClientHeight := aClientHeight + cHorzSpacing;
+        InputPanel := TPanel.Create(FOwnerControls);
+        with InputPanel do
+        begin
+          Parent := vForm;
+          TabStop := False;
+          Align := alBottom;
+          Caption := '';
+          BevelInner := bvNone;
+          BevelOuter := bvNone;
+          BorderWidth := cMargin;
+          AutoSize := True;
+          ChildSizing.VerticalSpacing := cMargin;
+          ChildSizing.HorizontalSpacing := cMargin;
+        end;
 
         TextBox := TEdit.Create(FOwnerControls);
         with TextBox do
         begin
-          Parent := vForm;
-          aRect.Left := cHorzMargin;
-          aRect.Right := aClientWidth - cHorzMargin * 2;
-          aRect.Top := aClientHeight + cVertMargin;
-          aRect.Bottom := aRect.Top + 22;
-          aClientHeight := aRect.Bottom;
-          BoundsRect := aRect;
+          Parent := InputPanel;
+          Align := alBottom;
           BiDiMode := vForm.BiDiMode;
+          //BorderSpacing.Around := cMargin;
           TabOrder := 0;
         end;
-        {$ifdef LINUX}
-        if ButtonCount <> 0 then
-          aClientHeight := aClientHeight + cHorzSpacing;
-        {$endif}
+
+        if FMsgKind = msgkList then
+        begin
+          ListBox := TListBox.Create(FOwnerControls);
+          with ListBox do
+          begin
+            Parent := InputPanel;
+            Align := alClient;
+            BiDiMode := vForm.BiDiMode;
+           // BorderSpacing.Around := cMargin;
+            TabOrder := 0;
+          end;
+        end;
       end;
 
-      if ButtonCount <> 0 then
-        aClientHeight := aClientHeight + cHorzSpacing;
+      ButtonsPanel := TPanel.Create(FOwnerControls);
+      with ButtonsPanel do
+      begin
+        Parent := vForm;
+        TabStop := False;
+        Align := alBottom;
+        Caption := '';
+        BevelInner := bvNone;
+        BevelOuter := bvNone;
+        BorderWidth := cMargin;
+        Height := aButtonHeight + 16;
+        Top := vForm.ClientHeight;
+        ChildSizing.VerticalSpacing := cMargin;
+        ChildSizing.HorizontalSpacing := cMargin;
+      end;
 
-      X := (aClientWidth - ButtonsWidth) div 2;
       for i := 0 to Length(Choices) -1 do
       begin
         B := Choices[i];
         aButton := CreateButton(FOwnerControls, B);
         with aButton do
         begin
-          Tag := i;//need for result
-          OnClick := @ButtonClick;
+          Parent := ButtonsPanel;
+          Tag := i; //need for result
           TabStop := True;
           Font := Canvas.Font;
+          Constraints.MinWidth := MinButtonWidth;
+          AutoSize := true;
           BidiMode := vForm.BidiMode;
           Name := 'Button' + IntToStr(i);
-          Parent := vForm;
+          OnClick := @ButtonClick;
+
           if (i = DefaultChoice) then
           begin
             if (FMsgKind = msgkError) then
@@ -307,22 +303,13 @@ begin
           end;
           {if (i = CancelChoice) then //we use KeyDown
             Cancel := True;}
-          aRect.Left := X;
-          aRect.Top := aClientHeight;
-          aRect.Right := aRect.Left + ButtonWidth + cButtonMargin * 2;
-          aRect.Bottom := aRect.Top + cButtonHeight;
-          if aButton.UseRightToLeftReading then
-            FlipRect(aRect, aClientWidth);
-          BoundsRect := aRect;
-          Inc(X, ButtonWidth + cButtonSpacing + cButtonMargin * 2);
+          if UseRightToLeftReading then
+            Align := alLeft
+          else
+            Align := alRight;
         end;
       end;
-      aClientHeight := aClientHeight + cButtonHeight;
     end;
-
-    aClientHeight := aClientHeight + cVertMargin;
-    ClientWidth := aClientWidth;
-    ClientHeight := aClientHeight;
     Left := (Screen.Width div 2) - (Width div 2);
     Top := (Screen.Height div 2) - (Height div 2);
   end;
@@ -369,7 +356,7 @@ begin
   inherited;
   if ((Shift = [ssCtrl]) and (Key = Word('C'))) or (((Shift = [ssCtrl]) and (Key = VK_INSERT))) then
   begin
-    Clipboard.AsText := LabelMsg.Caption;
+    Clipboard.AsText := MsgLabel.Caption;
   end
   else if not IsStatus and (Shift = []) and (Key = VK_ESCAPE) then
     Close;
@@ -471,7 +458,7 @@ begin
   end;
 end;
 
-function TGUIMsgBox.ShowMessage(var vResult: string; const vText: string; Choices: array of TMsgSelect; DefaultChoice: Integer; CancelChoice: Integer; Kind: TMsgKind): Integer;
+function TGUIMsgBox.ShowInput(var Answer: string; const vText: string; Choices: array of TMsgSelect; DefaultChoice: Integer; CancelChoice: Integer; Kind: TMsgKind): Integer;
 var
   aMsgForm: TMsgForm;
 begin
@@ -479,11 +466,30 @@ begin
   CreateFormObjects(aMsgForm, vText, Application.Title, Choices, DefaultChoice, CancelChoice);
   with aMsgForm do
   try
-    TextBox.Text := vResult;
+    TextBox.Text := Answer;
     if Kind = msgkPassword then
       TextBox.PasswordChar := '*';
     Result := ShowNow(CancelChoice);
-    vResult := TextBox.Text;
+    Answer := TextBox.Text;
+  finally
+    Free;
+  end;
+end;
+
+function TGUIMsgBox.ShowList(var Answer: Integer; const vText: string; vStrings: TStrings; Choices: array of TmsgSelect; DefaultChoice: Integer; CancelChoice: Integer): Integer;
+var
+  aMsgForm: TMsgForm;
+begin
+  aMsgForm := CreateForm(msgkList);
+  CreateFormObjects(aMsgForm, vText, Application.Title, Choices, DefaultChoice, CancelChoice);
+  with aMsgForm do
+  try
+    ListBox.Items.Assign(vStrings);
+    if Answer < ListBox.Items.Count then
+      ListBox.ItemIndex := Answer;
+    Result := ShowNow(CancelChoice);
+    if Result then
+      Answer := ListBox.ItemIndex;
   finally
     Free;
   end;

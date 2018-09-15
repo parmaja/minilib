@@ -291,12 +291,12 @@ begin
   with Message do
   begin
     if not (csLoading in ComponentState) then
-      if Inserting and (Control is TControl) then
+      if Inserting then
       begin
-        Items.AddControl(Control as TControl);
-        ShowControl(Control as TControl);
-        if (Control as TControl).Parent = Self then
-          (Control as TControl).Align := alClient;
+        Items.AddControl(Control);
+        ShowControl(Control);
+        if Control.Parent = Self then
+          Control.Align := alClient;
         Result := 1;
       end
   end;

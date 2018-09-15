@@ -19,6 +19,7 @@ type
     Button4: TButton;
     Button5: TButton;
     Button6: TButton;
+    Button7: TButton;
     Timer1: TTimer;
     procedure Button1Click(Sender: TObject);
     procedure Button2Click(Sender: TObject);
@@ -26,6 +27,7 @@ type
     procedure Button4Click(Sender: TObject);
     procedure Button5Click(Sender: TObject);
     procedure Button6Click(Sender: TObject);
+    procedure Button7Click(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
   private    { private declarations }
   public
@@ -77,10 +79,29 @@ procedure TForm1.Button6Click(Sender: TObject);
 var
   r: integer;
 begin
-  r := Msg.Ask('Before Exit', ['Save', 'Discard', 'Dont close'], 2);
+  r := Msg.Ask('Before Exit', ['Save', 'Discard', 'Dont close you mother maker'], 2);
   Msg.Show(IntToStr(r));
   {r := Msg.Ask('Again Before Exit', [Choice('Save', msgcOK), Choice('Discard', msgcDiscard), Choice('Dont close', msgcCancel)], 2);
   Msg.Show(IntToStr(r));}
+end;
+
+procedure TForm1.Button7Click(Sender: TObject);
+var
+  Strings: TStringList;
+  i: Integer;
+begin
+  Strings := TStringList.Create;
+  Strings.Add('Test1');
+  Strings.Add('Test2');
+  Strings.Add('Test3');
+  Strings.Add('Test4');
+  try
+    i := 2;
+    Msg.List(i, 'Select one', Strings);
+    Msg.Show('it is' + Strings[i]);
+  finally
+    Strings.Free;
+  end;
 end;
 
 procedure TForm1.Timer1Timer(Sender: TObject);
@@ -90,4 +111,4 @@ begin
 end;
 
 end.
-
+

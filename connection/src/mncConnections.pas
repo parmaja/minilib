@@ -14,7 +14,7 @@ unit mncConnections;
 {$ENDIF}
 
 {
-  We Columns Fields and Params
+  Columns Fields and Params
   Columns has info about Fields, like Name, Size, Type etc...,
   while Fields have only the values, the idea, is you can use one Columns with multiple records,
   record here is the Fields
@@ -29,9 +29,6 @@ uses
   mnFields, mncCommons;
 
 type
-  TmncModel = class(TObject) //inherited it for every connection type
-  end;
-
   TmncSession = class;
   TmncCommand = class;
 

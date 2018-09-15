@@ -15,7 +15,7 @@ uses
   SysUtils, Variants, Classes, Contnrs;
 
 type
-  TmsgKind = (msgkNormal, msgkWarning, msgkError, msgkInformation, msgkConfirmation, msgkInput, msgkPassword, msgkStatus);
+  TmsgKind = (msgkNormal, msgkWarning, msgkError, msgkInformation, msgkConfirmation, msgkInput, msgkPassword, msgkList, msgkStatus);
 
   TmsgChoice = (msgcUnknown, msgcYes, msgcNo, msgcOK, msgcCancel, msgcAbort, msgcRetry, msgcIgnore, msgcDiscard, msgcClose, msgcNone, msgcAll, msgcNoToAll, msgcYesToAll, msgcHelp);
   TmsgChoices = set of TmsgChoice;
@@ -35,10 +35,12 @@ type
     //Note Answer should have initial value, can passed as default value to user
     //Return an index of Choise/Button
     function ShowMessage(const vText: string; Choices: array of TmsgSelect; DefaultChoice: Integer; CancelChoice: Integer; Kind: TmsgKind): Integer; virtual; abstract;
-    function ShowMessage(var Answer: string; const vText: string; Choices: array of TmsgSelect; DefaultChoice: Integer; CancelChoice: Integer; Kind: TmsgKind): Integer; virtual; abstract;
+    function ShowInput(var Answer: string; const vText: string; Choices: array of TmsgSelect; DefaultChoice: Integer; CancelChoice: Integer; Kind: TmsgKind): Integer; virtual; abstract;
+    function ShowList(var Answer: Integer; const vText: string; vStrings: TStrings; Choices: array of TmsgSelect; DefaultChoice: Integer; CancelChoice: Integer): Integer; virtual; abstract;
     //Short style of message
     function ShowMessage(const vText: string; Choices: TmsgChoices; DefaultChoice: TmsgChoice; CancelChoice: TmsgChoice; Kind: TmsgKind): TmsgChoice;
-    function ShowMessage(var Answer: string; const vText: string; Choices: TmsgChoices; DefaultChoice: TmsgChoice; CancelChoice: TmsgChoice; Kind: TmsgKind): TmsgChoice;
+    function ShowInput(var Answer: string; const vText: string; Choices: TmsgChoices; DefaultChoice: TmsgChoice; CancelChoice: TmsgChoice; Kind: TmsgKind): TmsgChoice;
+    function ShowList(var Answer: Integer; const vText: string; vStrings: TStrings; Choices: TmsgChoices; DefaultChoice: TmsgChoice; CancelChoice: TmsgChoice): TmsgChoice;
     //Status messages
     procedure ShowStatus(vText: string; Sender: TObject = nil); virtual; abstract;
     procedure UpdateStatus(vText: string; Sender: TObject = nil); virtual; abstract;
@@ -65,9 +67,10 @@ type
     procedure SetLocked(const Value: Boolean);
   protected
     function ShowMessage(const vText: string; Choices: array of TmsgSelect; DefaultChoice: Integer; CancelChoice: Integer; Kind: TmsgKind): Integer;
-    function ShowMessage(var Answer: string; const vText: string; Choices: array of TmsgSelect; DefaultChoice: Integer; CancelChoice: Integer; Kind: TmsgKind): Integer;
+    function ShowInput(var Answer: string; const vText: string; Choices: array of TmsgSelect; DefaultChoice: Integer; CancelChoice: Integer; Kind: TmsgKind): Integer;
+    function ShowInput(var Answer: string; const vText: string; Choices: TmsgChoices; DefaultChoice: TmsgChoice; CancelChoice: TmsgChoice; Kind: TmsgKind): TmsgChoice;
+    function ShowList(var Answer: Integer; const vText: string; vStrings:TStrings; Choices: TmsgChoices; DefaultChoice: TmsgChoice; CancelChoice: TmsgChoice): TmsgChoice;
     function ShowMessage(const vText: string; Choices: TmsgChoices; DefaultChoice: TmsgChoice; CancelChoice: TmsgChoice; Kind: TmsgKind): TmsgChoice;
-    function ShowMessage(var Answer: string; const vText: string; Choices: TmsgChoices; DefaultChoice: TmsgChoice; CancelChoice: TmsgChoice; Kind: TmsgKind): TmsgChoice;
 
     property Current: TMsgPrompt read FCurrent write SetCurrent;
     function Find(vName: String): TMsgPrompt;
@@ -82,6 +85,7 @@ type
 
     function Input(var Answer: string; const vText: string): Boolean;
     function Password(var Answer: string; const vText: string): Boolean;
+    function List(var Answer: Integer; vText: string; Strings: TStringList): Boolean;
 
     function Ask(const vText: string; Choices: TmsgChoices; DefaultChoice: TmsgChoice; CancelChoice: TmsgChoice; Kind: TmsgKind = msgkNormal): TmsgChoice;
     function Ask(const vText: string; Choices: array of TmsgSelect; DefaultChoice: Integer; CancelChoice: Integer = -1; Kind: TmsgKind = msgkNormal): Integer;
@@ -101,8 +105,8 @@ type
     function Warning(const vText: string): Boolean;
     function Hint(const vText: string): Boolean;
 
-    procedure Show(vVar: Variant);
-    procedure List(Strings: TStringList; Kind: TmsgKind);
+    procedure Show(vVar: Variant); overload;
+    procedure Show(vStrings: TStrings); overload;
 
     procedure ShowStatus(Sender: TObject; const vText: string);
     procedure HideStatus(Sender: TObject);
@@ -130,7 +134,7 @@ type
   private
   protected
     function ShowMessage(const vText: string; Choices: array of TmsgSelect; DefaultChoice: Integer; CancelChoice: Integer; Kind: TmsgKind): Integer; override;
-    function ShowMessage(var Answer: string; const vText: string; Choices: array of TmsgSelect; DefaultChoice: Integer; CancelChoice: Integer; Kind: TmsgKind): Integer; override;
+    function ShowInput(var Answer: string; const vText: string; Choices: array of TmsgSelect; DefaultChoice: Integer; CancelChoice: Integer; Kind: TmsgKind): Integer; override;
     procedure ShowStatus(vText: string; Sender: TObject = nil); override;
     procedure HideStatus(Sender: TObject = nil); override;
     procedure Created; override;
@@ -190,7 +194,7 @@ begin
   Result := C[ShowMessage(vText, c, DefaultIndex, CancelIndex, Kind)].Choice;
 end;
 
-function TMsgPrompt.ShowMessage(var Answer: string; const vText: string; Choices: TmsgChoices; DefaultChoice: TmsgChoice; CancelChoice: TmsgChoice; Kind: TmsgKind): TmsgChoice;
+function TMsgPrompt.ShowInput(var Answer: string; const vText: string; Choices: TmsgChoices; DefaultChoice: TmsgChoice; CancelChoice: TmsgChoice; Kind: TmsgKind): TmsgChoice;
 var
   a: TmsgChoice;
   c: array of TmsgSelect;
@@ -215,7 +219,35 @@ begin
       i := i + 1;
     end;
   end;
-  Result := C[ShowMessage(Answer, vText, c, DefaultIndex, CancelIndex, Kind)].Choice;
+  Result := C[ShowInput(Answer, vText, c, DefaultIndex, CancelIndex, Kind)].Choice;
+end;
+
+function TMsgPrompt.ShowList(var Answer: Integer; const vText: string; vStrings: TStrings; Choices: TmsgChoices; DefaultChoice: TmsgChoice; CancelChoice: TmsgChoice): TmsgChoice;
+var
+  a: TmsgChoice;
+  c: array of TmsgSelect;
+  i: Integer;
+  DefaultIndex: Integer;
+  CancelIndex: Integer;
+begin
+  c := nil;
+  DefaultIndex := 0;
+  CancelIndex := 0;
+  i := 0;
+  for a := low(TmsgChoices) to High(TmsgChoices) do
+  begin
+    if a in Choices then
+    begin
+      SetLength(c, i + 1);
+      c[i] := Choice(ChoiceCaptions[a], a);
+      if DefaultChoice = a then
+        DefaultIndex := i;
+      if CancelChoice = a then
+        CancelIndex := i;
+      i := i + 1;
+    end;
+  end;
+  Result := C[ShowList(Answer, vText, vStrings, c, DefaultIndex, CancelIndex)].Choice;
 end;
 
 constructor TMsgPrompt.Create;
@@ -282,12 +314,12 @@ end;
 
 function TMsgBox.Input(var Answer: string; const vText: string): Boolean;
 begin
-  Result := ShowMessage(Answer, vText, [msgcOK, msgcCancel], msgcOk, msgcCancel, msgkConfirmation) = msgcOK
+  Result := ShowInput(Answer, vText, [msgcOK, msgcCancel], msgcOk, msgcCancel, msgkConfirmation) = msgcOK
 end;
 
 function TMsgBox.Password(var Answer: string; const vText: string): Boolean;
 begin
-  Result := ShowMessage(Answer, vText, [msgcOK, msgcCancel], msgcOk, msgcCancel, msgkPassword) = msgcOK
+  Result := ShowInput(Answer, vText, [msgcOK, msgcCancel], msgcOk, msgcCancel, msgkPassword) = msgcOK
 end;
 
 function TMsgBox.Yes(const vText: string): Boolean;
@@ -325,24 +357,29 @@ begin
   ShowMessage(VarToStr(vVar), [msgcOK], msgcOK, msgcOK, msgkInformation)
 end;
 
-procedure TMsgBox.List(Strings: TStringList; Kind: TmsgKind);
+procedure TMsgBox.Show(vStrings: TStrings);
 var
   s: string;
   i, c: Integer;
 begin
   s := '';
-  c := Strings.Count;
+  c := vStrings.Count;
   if c > 30 then
     c := 30;
   for i := 0 to c - 1 do
   begin
     if s <> '' then
       s := s + #13;
-    s := s + Strings[i];
+    s := s + vStrings[i];
   end;
-  if c < Strings.Count then
+  if c < vStrings.Count then
     s := s + #13 + '...';
-  ShowMessage(s, [msgcOK], msgcOK, msgcOK, Kind);
+  ShowMessage(s, [msgcOK], msgcOK, msgcOK, msgkInformation);
+end;
+
+function TMsgBox.List(var Answer: Integer; vText: string; Strings: TStringList): Boolean;
+begin
+  Result := ShowList(Answer, vText, Strings, [msgcOK, msgcCancel], msgcOK, msgcCancel) = msgcOk;
 end;
 
 procedure TMsgBox.HideStatus(Sender: TObject);
@@ -367,22 +404,32 @@ begin
     Result := DefaultChoice;
 end;
 
-function TMsgBox.ShowMessage(var Answer: string; const vText: string; Choices: TmsgChoices; DefaultChoice: TmsgChoice; CancelChoice: TmsgChoice; Kind: TmsgKind): TmsgChoice;
+function TMsgBox.ShowInput(var Answer: string; const vText: string; Choices: TmsgChoices; DefaultChoice: TmsgChoice; CancelChoice: TmsgChoice; Kind: TmsgKind): TmsgChoice;
 begin
   if CancelChoice = msgcUnknown then
     CancelChoice := DefaultChoice;
   if not Locked and (FCurrent <> nil) then
-    Result := FCurrent.ShowMessage(Answer, vText, Choices, DefaultChoice, CancelChoice, Kind)
+    Result := FCurrent.ShowInput(Answer, vText, Choices, DefaultChoice, CancelChoice, Kind)
   else
     Result := DefaultChoice;
 end;
 
-function TMsgBox.ShowMessage(var Answer: string; const vText: string; Choices: array of TmsgSelect; DefaultChoice: Integer; CancelChoice: Integer; Kind: TmsgKind): Integer;
+function TMsgBox.ShowList(var Answer: Integer; const vText: string; vStrings: TStrings; Choices: TmsgChoices; DefaultChoice: TmsgChoice; CancelChoice: TmsgChoice): TmsgChoice;
+begin
+  if CancelChoice = msgcUnknown then
+    CancelChoice := DefaultChoice;
+  if not Locked and (FCurrent <> nil) then
+    Result := FCurrent.ShowList(Answer, vText, vStrings, Choices, DefaultChoice, CancelChoice)
+  else
+    Result := DefaultChoice;
+end;
+
+function TMsgBox.ShowInput(var Answer: string; const vText: string; Choices: array of TmsgSelect; DefaultChoice: Integer; CancelChoice: Integer; Kind: TmsgKind): Integer;
 begin
   if CancelChoice < 0 then
     CancelChoice := DefaultChoice;
   if not Locked and (FCurrent <> nil) then
-    Result := FCurrent.ShowMessage(Answer, vText, Choices, DefaultChoice, CancelChoice, Kind)
+    Result := FCurrent.ShowInput(Answer, vText, Choices, DefaultChoice, CancelChoice, Kind)
   else
     Result := DefaultChoice;
 end;
@@ -537,7 +584,7 @@ begin
   end;
 end;
 
-function TMsgConsole.ShowMessage(var Answer: string; const vText: string; Choices: array of TmsgSelect; DefaultChoice: Integer; CancelChoice: Integer; Kind: TmsgKind): Integer;
+function TMsgConsole.ShowInput(var Answer: string; const vText: string; Choices: array of TmsgSelect; DefaultChoice: Integer; CancelChoice: Integer; Kind: TmsgKind): Integer;
 {var
   OldMode: Cardinal;}
 begin

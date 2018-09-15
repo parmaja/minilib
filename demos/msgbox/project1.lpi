@@ -1,24 +1,17 @@
-<?xml version="1.0"?>
+<?xml version="1.0" encoding="UTF-8"?>
 <CONFIG>
   <ProjectOptions>
-    <Version Value="9"/>
+    <Version Value="11"/>
     <PathDelim Value="\"/>
     <General>
       <MainUnit Value="0"/>
       <ResourceType Value="res"/>
       <UseXPManifest Value="True"/>
       <Icon Value="0"/>
-      <ActiveWindowIndexAtStart Value="0"/>
     </General>
     <i18n>
       <EnableI18N LFM="False"/>
     </i18n>
-    <VersionInfo>
-      <StringTable ProductVersion=""/>
-    </VersionInfo>
-    <MacroValues Count="1">
-      <Macro1 Name="LCLWidgetType" Value="gtk2"/>
-    </MacroValues>
     <BuildModes Count="2" Active="Linux">
       <Item1 Name="Default" Default="True"/>
       <Item2 Name="Linux">
@@ -40,12 +33,6 @@
               </Win32>
             </Options>
           </Linking>
-          <Other>
-            <CompilerMessages>
-              <UseMsgFile Value="True"/>
-            </CompilerMessages>
-            <CompilerPath Value="$(CompPath)"/>
-          </Other>
         </CompilerOptions>
       </Item2>
     </BuildModes>
@@ -55,25 +42,28 @@
       <ExcludeFileFilter Value="*.(bak|ppu|o|so);*~;backup"/>
     </PublishOptions>
     <RunParams>
-      <local>
-        <FormatVersion Value="1"/>
-        <LaunchingApplication PathPlusParams="\usr\bin\xterm -T 'Lazarus Run Output' -e $(LazarusDir)\tools\runwait.sh $(TargetCmdLine)"/>
-      </local>
+      <FormatVersion Value="2"/>
+      <Modes Count="1">
+        <Mode0 Name="default">
+          <local>
+            <LaunchingApplication PathPlusParams="\usr\bin\xterm -T 'Lazarus Run Output' -e $(LazarusDir)\tools\runwait.sh $(TargetCmdLine)"/>
+          </local>
+        </Mode0>
+      </Modes>
     </RunParams>
     <RequiredPackages Count="1">
       <Item1>
         <PackageName Value="LCL"/>
       </Item1>
     </RequiredPackages>
-    <Units Count="46">
+    <Units Count="54">
       <Unit0>
         <Filename Value="project1.lpr"/>
         <IsPartOfProject Value="True"/>
-        <UnitName Value="project1"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="1"/>
-        <CursorPos X="1" Y="20"/>
-        <UsageCount Value="38"/>
+        <EditorIndex Value="5"/>
+        <CursorPos X="15" Y="10"/>
+        <UsageCount Value="44"/>
+        <Loaded Value="True"/>
       </Unit0>
       <Unit1>
         <Filename Value="unit1.pas"/>
@@ -81,75 +71,54 @@
         <ComponentName Value="Form1"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
-        <UnitName Value="unit1"/>
-        <EditorIndex Value="0"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="38"/>
-        <CursorPos X="70" Y="59"/>
-        <UsageCount Value="38"/>
+        <TopLine Value="74"/>
+        <CursorPos X="29" Y="100"/>
+        <UsageCount Value="44"/>
         <Loaded Value="True"/>
         <LoadedDesigner Value="True"/>
       </Unit1>
       <Unit2>
         <Filename Value="W:\work\delphi\lib\MiscLib\MsgBoxers.pas"/>
-        <UnitName Value="MsgBoxers"/>
-        <WindowIndex Value="0"/>
         <TopLine Value="160"/>
-        <CursorPos X="1" Y="185"/>
+        <CursorPos Y="185"/>
         <UsageCount Value="10"/>
       </Unit2>
       <Unit3>
         <Filename Value="..\..\lib\MsgBoxes.pas"/>
-        <UnitName Value="MsgBoxes"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="1"/>
         <CursorPos X="3" Y="14"/>
         <UsageCount Value="9"/>
       </Unit3>
       <Unit4>
         <Filename Value="..\..\lib\MsgBoxes.pp"/>
-        <UnitName Value="MsgBoxes"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="1"/>
-        <CursorPos X="9" Y="1"/>
+        <CursorPos X="9"/>
         <UsageCount Value="15"/>
       </Unit4>
       <Unit5>
         <Filename Value="W:\programs\lazarus\lcl\forms.pp"/>
         <UnitName Value="Forms"/>
-        <WindowIndex Value="0"/>
         <TopLine Value="568"/>
         <CursorPos X="29" Y="585"/>
         <UsageCount Value="10"/>
       </Unit5>
       <Unit6>
         <Filename Value="W:\work\delphi\lib\MiscLib\MiscUtils.pas"/>
-        <UnitName Value="MiscUtils"/>
-        <WindowIndex Value="0"/>
         <TopLine Value="898"/>
         <CursorPos X="21" Y="916"/>
         <UsageCount Value="9"/>
       </Unit6>
       <Unit7>
         <Filename Value="W:\work\delphi\lib\MiscLib\MsgErrors.pas"/>
-        <UnitName Value="MsgErrors"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="1"/>
-        <CursorPos X="1" Y="1"/>
         <UsageCount Value="9"/>
       </Unit7>
       <Unit8>
         <Filename Value="W:\programs\lazarus\lcl\controls.pp"/>
         <UnitName Value="Controls"/>
-        <WindowIndex Value="0"/>
         <TopLine Value="142"/>
         <CursorPos X="39" Y="160"/>
         <UsageCount Value="10"/>
       </Unit8>
       <Unit9>
         <Filename Value="..\..\lazarus\lib\DefMsgBoxes.pas"/>
-        <UnitName Value="DefMsgBoxes"/>
-        <WindowIndex Value="0"/>
         <TopLine Value="148"/>
         <CursorPos X="34" Y="154"/>
         <UsageCount Value="9"/>
@@ -157,7 +126,6 @@
       <Unit10>
         <Filename Value="W:\programs\lazarus\lcl\stdctrls.pp"/>
         <UnitName Value="StdCtrls"/>
-        <WindowIndex Value="0"/>
         <TopLine Value="1383"/>
         <CursorPos X="28" Y="1401"/>
         <UsageCount Value="11"/>
@@ -165,85 +133,64 @@
       <Unit11>
         <Filename Value="W:\programs\lazarus\lcl\lcltype.pp"/>
         <UnitName Value="LCLType"/>
-        <WindowIndex Value="0"/>
         <TopLine Value="1746"/>
         <CursorPos X="18" Y="1768"/>
         <UsageCount Value="11"/>
       </Unit11>
       <Unit12>
         <Filename Value="W:\programs\lazarus\lcl\include\customform.inc"/>
-        <WindowIndex Value="0"/>
         <TopLine Value="2119"/>
         <CursorPos X="3" Y="2128"/>
         <UsageCount Value="10"/>
       </Unit12>
       <Unit13>
         <Filename Value="..\..\lazarus\lib\FormMsgBoxes.pas"/>
-        <UnitName Value="FormMsgBoxes"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="1"/>
-        <CursorPos X="9" Y="1"/>
+        <CursorPos X="9"/>
         <UsageCount Value="9"/>
       </Unit13>
       <Unit14>
         <Filename Value="..\..\lazarus\lib\CMDMsgBoxes.pas"/>
         <UnitName Value="MsgConsoles"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="1"/>
         <CursorPos X="21" Y="13"/>
         <UsageCount Value="9"/>
       </Unit14>
       <Unit15>
         <Filename Value="..\..\lazarus\lib\CMDMsgBoxes.pp"/>
-        <UnitName Value="CMDMsgBoxes"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="1"/>
-        <CursorPos X="1" Y="1"/>
         <UsageCount Value="9"/>
       </Unit15>
       <Unit16>
         <Filename Value="..\..\lib\UniDates.pas"/>
-        <UnitName Value="UniDates"/>
-        <WindowIndex Value="0"/>
         <TopLine Value="650"/>
         <CursorPos X="30" Y="664"/>
         <UsageCount Value="9"/>
       </Unit16>
       <Unit17>
         <Filename Value="P:\programs\fpc\2.4\src\packages\fcl-base\src\contnrs.pp"/>
-        <UnitName Value="contnrs"/>
-        <WindowIndex Value="0"/>
         <TopLine Value="59"/>
         <CursorPos X="17" Y="80"/>
         <UsageCount Value="9"/>
       </Unit17>
       <Unit18>
         <Filename Value="W:\programs\lazarus\lcl\include\control.inc"/>
-        <WindowIndex Value="0"/>
         <TopLine Value="2329"/>
-        <CursorPos X="1" Y="2338"/>
+        <CursorPos Y="2338"/>
         <UsageCount Value="15"/>
       </Unit18>
       <Unit19>
         <Filename Value="W:\programs\lazarus\lcl\include\buttoncontrol.inc"/>
-        <WindowIndex Value="0"/>
         <TopLine Value="54"/>
-        <CursorPos X="1" Y="63"/>
+        <CursorPos Y="63"/>
         <UsageCount Value="15"/>
       </Unit19>
       <Unit20>
         <Filename Value="..\..\lazarus\lib\GUIMsgBoxes.pp"/>
         <UnitName Value="FormMsgBoxes"/>
-        <WindowIndex Value="0"/>
         <TopLine Value="455"/>
-        <CursorPos X="1" Y="497"/>
+        <CursorPos Y="497"/>
         <UsageCount Value="9"/>
       </Unit20>
       <Unit21>
         <Filename Value="..\..\lazarus\lib\GUIMsgBoxes.pas"/>
-        <UnitName Value="GUIMsgBoxes"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="1"/>
         <CursorPos X="49" Y="37"/>
         <UsageCount Value="15"/>
         <Bookmarks Count="1">
@@ -252,38 +199,30 @@
       </Unit21>
       <Unit22>
         <Filename Value="W:\programs\lazarus\lcl\include\buttons.inc"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="1"/>
-        <CursorPos X="1" Y="1"/>
         <UsageCount Value="14"/>
       </Unit22>
       <Unit23>
         <Filename Value="W:\programs\lazarus\lcl\include\icon.inc"/>
-        <WindowIndex Value="0"/>
         <TopLine Value="663"/>
-        <CursorPos X="1" Y="684"/>
+        <CursorPos Y="684"/>
         <UsageCount Value="11"/>
       </Unit23>
       <Unit24>
         <Filename Value="W:\programs\lazarus\lcl\dialogs.pp"/>
         <UnitName Value="Dialogs"/>
-        <WindowIndex Value="0"/>
         <TopLine Value="519"/>
         <CursorPos X="10" Y="539"/>
         <UsageCount Value="11"/>
       </Unit24>
       <Unit25>
         <Filename Value="W:\programs\lazarus\lcl\include\messagedialogs.inc"/>
-        <WindowIndex Value="0"/>
         <TopLine Value="142"/>
         <CursorPos X="6" Y="145"/>
         <UsageCount Value="11"/>
       </Unit25>
       <Unit26>
         <Filename Value="W:\programs\lazarus\lcl\dialog_icons.lrs"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="1"/>
-        <CursorPos X="42" Y="1"/>
+        <CursorPos X="42"/>
         <UsageCount Value="11"/>
       </Unit26>
       <Unit27>
@@ -292,7 +231,6 @@
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
         <UnitName Value="Unit1"/>
-        <WindowIndex Value="0"/>
         <TopLine Value="58"/>
         <CursorPos X="25" Y="88"/>
         <UsageCount Value="11"/>
@@ -300,97 +238,78 @@
       <Unit28>
         <Filename Value="W:\programs\lazarus\lcl\extctrls.pp"/>
         <UnitName Value="ExtCtrls"/>
-        <WindowIndex Value="0"/>
         <TopLine Value="489"/>
         <CursorPos X="3" Y="510"/>
         <UsageCount Value="11"/>
       </Unit28>
       <Unit29>
         <Filename Value="W:\work\delphi\lib\MiscLib\MsgBoxes.pas"/>
-        <UnitName Value="MsgBoxes"/>
-        <WindowIndex Value="0"/>
         <TopLine Value="58"/>
-        <CursorPos X="1" Y="93"/>
+        <CursorPos Y="93"/>
         <UsageCount Value="10"/>
       </Unit29>
       <Unit30>
         <Filename Value="P:\programs\fpc\2.4\src\rtl\morphos\graphics.pas"/>
-        <UnitName Value="graphics"/>
-        <WindowIndex Value="0"/>
         <TopLine Value="2178"/>
         <CursorPos X="40" Y="2201"/>
         <UsageCount Value="11"/>
       </Unit30>
       <Unit31>
         <Filename Value="W:\programs\lazarus\lcl\include\customlabel.inc"/>
-        <WindowIndex Value="0"/>
         <TopLine Value="58"/>
         <CursorPos X="14" Y="74"/>
         <UsageCount Value="11"/>
       </Unit31>
       <Unit32>
         <Filename Value="W:\programs\lazarus\lcl\include\winapih.inc"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="1"/>
-        <CursorPos X="1" Y="5"/>
+        <CursorPos Y="5"/>
         <UsageCount Value="11"/>
       </Unit32>
       <Unit33>
         <Filename Value="W:\programs\lazarus\lcl\include\winapi.inc"/>
-        <WindowIndex Value="0"/>
         <TopLine Value="214"/>
         <CursorPos X="3" Y="216"/>
         <UsageCount Value="11"/>
       </Unit33>
       <Unit34>
         <Filename Value="..\..\lazarus\lib\GUIMsgBox.pp"/>
-        <UnitName Value="GUIMsgBox"/>
         <IsVisibleTab Value="True"/>
-        <EditorIndex Value="1"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="392"/>
-        <CursorPos X="7" Y="415"/>
-        <UsageCount Value="14"/>
+        <EditorIndex Value="2"/>
+        <TopLine Value="229"/>
+        <CursorPos X="14" Y="255"/>
+        <UsageCount Value="17"/>
         <Bookmarks Count="1">
-          <Item0 X="34" Y="415" ID="1"/>
+          <Item0 X="22" Y="251" ID="1"/>
         </Bookmarks>
         <Loaded Value="True"/>
       </Unit34>
       <Unit35>
         <Filename Value="..\..\lib\CMDMsgBox.pp"/>
-        <UnitName Value="CMDMsgBox"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="1"/>
         <CursorPos X="3" Y="14"/>
         <UsageCount Value="10"/>
       </Unit35>
       <Unit36>
         <Filename Value="..\..\lib\MsgBox.pp"/>
-        <UnitName Value="MsgBox"/>
-        <EditorIndex Value="4"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="153"/>
-        <CursorPos X="1" Y="189"/>
-        <UsageCount Value="14"/>
+        <EditorIndex Value="3"/>
+        <TopLine Value="70"/>
+        <CursorPos X="23" Y="70"/>
+        <UsageCount Value="17"/>
         <Loaded Value="True"/>
       </Unit36>
       <Unit37>
         <Filename Value="P:\programs\fpc\2.4\src\rtl\win\wininc\messages.inc"/>
-        <WindowIndex Value="0"/>
         <TopLine Value="1185"/>
         <CursorPos X="5" Y="1203"/>
         <UsageCount Value="10"/>
       </Unit37>
       <Unit38>
         <Filename Value="P:\programs\fpc\2.4\src\rtl\objpas\classes\classesh.inc"/>
-        <WindowIndex Value="0"/>
         <TopLine Value="278"/>
         <CursorPos X="5" Y="287"/>
         <UsageCount Value="10"/>
       </Unit38>
       <Unit39>
         <Filename Value="P:\programs\fpc\2.4\src\rtl\objpas\classes\lists.inc"/>
-        <WindowIndex Value="0"/>
         <TopLine Value="651"/>
         <CursorPos X="3" Y="654"/>
         <UsageCount Value="10"/>
@@ -398,15 +317,11 @@
       <Unit40>
         <Filename Value="W:\prog\programs\fpc\2.4\src\packages\fcl-image\src\clipping.pp"/>
         <UnitName Value="Clipping"/>
-        <WindowIndex Value="0"/>
-        <TopLine Value="1"/>
-        <CursorPos X="1" Y="1"/>
         <UsageCount Value="10"/>
       </Unit40>
       <Unit41>
         <Filename Value="W:\programs\lazarus\lcl\clipbrd.pp"/>
         <UnitName Value="Clipbrd"/>
-        <WindowIndex Value="0"/>
         <TopLine Value="220"/>
         <CursorPos X="19" Y="236"/>
         <UsageCount Value="11"/>
@@ -414,7 +329,6 @@
       <Unit42>
         <Filename Value="w:\programs\lazarus\lcl\graphics.pp"/>
         <UnitName Value="Graphics"/>
-        <WindowIndex Value="0"/>
         <TopLine Value="72"/>
         <CursorPos X="33" Y="94"/>
         <UsageCount Value="13"/>
@@ -422,152 +336,209 @@
       <Unit43>
         <Filename Value="w:\programs\lazarus\lcl\buttons.pp"/>
         <UnitName Value="Buttons"/>
-        <WindowIndex Value="0"/>
         <TopLine Value="123"/>
         <CursorPos X="52" Y="137"/>
         <UsageCount Value="12"/>
       </Unit43>
       <Unit44>
-        <Filename Value="..\..\..\..\..\..\programs\lazarus\lcl\forms.pp"/>
+        <Filename Value="M:\programs\lazarus\lcl\forms.pp"/>
         <UnitName Value="Forms"/>
-        <EditorIndex Value="2"/>
-        <WindowIndex Value="0"/>
+        <EditorIndex Value="-1"/>
         <TopLine Value="34"/>
         <CursorPos X="35" Y="70"/>
         <UsageCount Value="11"/>
-        <Loaded Value="True"/>
       </Unit44>
       <Unit45>
-        <Filename Value="..\..\..\..\..\..\programs\lazarus\lcl\include\customform.inc"/>
-        <EditorIndex Value="3"/>
-        <WindowIndex Value="0"/>
+        <Filename Value="M:\programs\lazarus\lcl\include\customform.inc"/>
+        <EditorIndex Value="-1"/>
         <TopLine Value="23"/>
         <CursorPos X="8" Y="55"/>
         <UsageCount Value="10"/>
-        <Loaded Value="True"/>
       </Unit45>
+      <Unit46>
+        <Filename Value="d:\dev\lazarus\lcl\include\control.inc"/>
+        <EditorIndex Value="11"/>
+        <TopLine Value="2945"/>
+        <CursorPos Y="2965"/>
+        <UsageCount Value="12"/>
+        <Loaded Value="True"/>
+      </Unit46>
+      <Unit47>
+        <Filename Value="d:\dev\lazarus\lcl\extctrls.pp"/>
+        <UnitName Value="ExtCtrls"/>
+        <EditorIndex Value="8"/>
+        <TopLine Value="1070"/>
+        <CursorPos X="14" Y="1094"/>
+        <UsageCount Value="12"/>
+        <Loaded Value="True"/>
+      </Unit47>
+      <Unit48>
+        <Filename Value="d:\dev\lazarus\lcl\controls.pp"/>
+        <UnitName Value="Controls"/>
+        <EditorIndex Value="9"/>
+        <TopLine Value="165"/>
+        <CursorPos X="15" Y="185"/>
+        <UsageCount Value="12"/>
+        <Loaded Value="True"/>
+      </Unit48>
+      <Unit49>
+        <Filename Value="d:\dev\lazarus\components\lazutils\graphtype.pp"/>
+        <UnitName Value="GraphType"/>
+        <EditorIndex Value="10"/>
+        <TopLine Value="13"/>
+        <CursorPos X="11" Y="43"/>
+        <UsageCount Value="12"/>
+        <Loaded Value="True"/>
+      </Unit49>
+      <Unit50>
+        <Filename Value="d:\dev\lazarus\lcl\graphics.pp"/>
+        <UnitName Value="Graphics"/>
+        <EditorIndex Value="6"/>
+        <TopLine Value="1115"/>
+        <CursorPos X="14" Y="1133"/>
+        <UsageCount Value="11"/>
+        <Loaded Value="True"/>
+      </Unit50>
+      <Unit51>
+        <Filename Value="d:\dev\lazarus\lcl\include\canvas.inc"/>
+        <EditorIndex Value="7"/>
+        <TopLine Value="1828"/>
+        <CursorPos X="13" Y="1837"/>
+        <UsageCount Value="11"/>
+        <Loaded Value="True"/>
+      </Unit51>
+      <Unit52>
+        <Filename Value="d:\dev\lazarus\lcl\stdctrls.pp"/>
+        <UnitName Value="StdCtrls"/>
+        <EditorIndex Value="4"/>
+        <TopLine Value="901"/>
+        <CursorPos X="3" Y="914"/>
+        <UsageCount Value="11"/>
+        <Loaded Value="True"/>
+      </Unit52>
+      <Unit53>
+        <Filename Value="d:\dev\fpc\3.0\src\rtl\objpas\classes\classesh.inc"/>
+        <EditorIndex Value="1"/>
+        <TopLine Value="334"/>
+        <CursorPos X="5" Y="347"/>
+        <UsageCount Value="11"/>
+        <Loaded Value="True"/>
+      </Unit53>
     </Units>
-    <JumpHistory Count="30" HistoryIndex="29">
+    <JumpHistory Count="29" HistoryIndex="28">
       <Position1>
-        <Filename Value="..\..\..\..\..\..\programs\lazarus\lcl\include\customform.inc"/>
-        <Caret Line="309" Column="29" TopLine="273"/>
+        <Filename Value="..\..\lazarus\lib\GUIMsgBox.pp"/>
+        <Caret Line="56" Column="150" TopLine="23"/>
       </Position1>
       <Position2>
-        <Filename Value="..\..\..\..\..\..\programs\lazarus\lcl\include\customform.inc"/>
-        <Caret Line="310" Column="9" TopLine="274"/>
+        <Filename Value="..\..\lazarus\lib\GUIMsgBox.pp"/>
+        <Caret Line="65" Column="135" TopLine="32"/>
       </Position2>
       <Position3>
-        <Filename Value="..\..\..\..\..\..\programs\lazarus\lcl\include\customform.inc"/>
-        <Caret Line="312" Column="23" TopLine="276"/>
+        <Filename Value="..\..\lazarus\lib\GUIMsgBox.pp"/>
+        <Caret Line="114" Column="142" TopLine="81"/>
       </Position3>
       <Position4>
-        <Filename Value="..\..\..\..\..\..\programs\lazarus\lcl\include\customform.inc"/>
-        <Caret Line="313" Column="13" TopLine="277"/>
+        <Filename Value="..\..\lazarus\lib\GUIMsgBox.pp"/>
+        <Caret Line="285" Column="32" TopLine="253"/>
       </Position4>
       <Position5>
-        <Filename Value="..\..\..\..\..\..\programs\lazarus\lcl\include\customform.inc"/>
-        <Caret Line="315" Column="21" TopLine="279"/>
+        <Filename Value="..\..\lazarus\lib\GUIMsgBox.pp"/>
+        <Caret Line="427" Column="120" TopLine="394"/>
       </Position5>
       <Position6>
-        <Filename Value="..\..\..\..\..\..\programs\lazarus\lcl\include\customform.inc"/>
-        <Caret Line="317" Column="28" TopLine="281"/>
+        <Filename Value="..\..\lazarus\lib\GUIMsgBox.pp"/>
+        <Caret Line="285" Column="20" TopLine="266"/>
       </Position6>
       <Position7>
-        <Filename Value="..\..\..\..\..\..\programs\lazarus\lcl\include\customform.inc"/>
-        <Caret Line="318" Column="11" TopLine="282"/>
+        <Filename Value="..\..\lazarus\lib\GUIMsgBox.pp"/>
+        <Caret Line="427" Column="120" TopLine="394"/>
       </Position7>
       <Position8>
-        <Filename Value="..\..\..\..\..\..\programs\lazarus\lcl\include\customform.inc"/>
-        <Caret Line="448" Column="21" TopLine="412"/>
+        <Filename Value="..\..\lazarus\lib\GUIMsgBox.pp"/>
+        <Caret Line="432" Column="93" TopLine="399"/>
       </Position8>
       <Position9>
-        <Filename Value="..\..\..\..\..\..\programs\lazarus\lcl\include\customform.inc"/>
-        <Caret Line="452" Column="62" TopLine="416"/>
+        <Filename Value="..\..\lazarus\lib\GUIMsgBox.pp"/>
+        <Caret Line="436" Column="35" TopLine="403"/>
       </Position9>
       <Position10>
-        <Filename Value="..\..\..\..\..\..\programs\lazarus\lcl\include\customform.inc"/>
-        <Caret Line="467" Column="15" TopLine="431"/>
+        <Filename Value="..\..\lazarus\lib\GUIMsgBox.pp"/>
+        <Caret Line="442" Column="138" TopLine="409"/>
       </Position10>
       <Position11>
-        <Filename Value="..\..\..\..\..\..\programs\lazarus\lcl\include\customform.inc"/>
-        <Caret Line="520" Column="29" TopLine="484"/>
+        <Filename Value="..\..\lazarus\lib\GUIMsgBox.pp"/>
+        <Caret Line="447" Column="93" TopLine="414"/>
       </Position11>
       <Position12>
-        <Filename Value="..\..\..\..\..\..\programs\lazarus\lcl\include\customform.inc"/>
-        <Caret Line="1129" Column="9" TopLine="1093"/>
+        <Filename Value="..\..\lazarus\lib\GUIMsgBox.pp"/>
+        <Caret Line="453" Column="35" TopLine="420"/>
       </Position12>
       <Position13>
-        <Filename Value="..\..\..\..\..\..\programs\lazarus\lcl\include\customform.inc"/>
-        <Caret Line="1131" Column="8" TopLine="1095"/>
+        <Filename Value="..\..\lazarus\lib\GUIMsgBox.pp"/>
+        <Caret Line="460" Column="158" TopLine="427"/>
       </Position13>
       <Position14>
-        <Filename Value="..\..\..\..\..\..\programs\lazarus\lcl\include\customform.inc"/>
-        <Caret Line="1132" Column="86" TopLine="1096"/>
+        <Filename Value="..\..\lazarus\lib\GUIMsgBox.pp"/>
+        <Caret Line="465" Column="93" TopLine="432"/>
       </Position14>
       <Position15>
-        <Filename Value="..\..\..\..\..\..\programs\lazarus\lcl\include\customform.inc"/>
-        <Caret Line="1136" Column="10" TopLine="1100"/>
+        <Filename Value="..\..\lazarus\lib\GUIMsgBox.pp"/>
+        <Caret Line="471" Column="35" TopLine="438"/>
       </Position15>
       <Position16>
-        <Filename Value="..\..\..\..\..\..\programs\lazarus\lcl\include\customform.inc"/>
-        <Caret Line="1139" Column="11" TopLine="1103"/>
+        <Filename Value="..\..\lazarus\lib\GUIMsgBox.pp"/>
       </Position16>
       <Position17>
-        <Filename Value="..\..\..\..\..\..\programs\lazarus\lcl\include\customform.inc"/>
-        <Caret Line="1748" Column="14" TopLine="1712"/>
+        <Filename Value="..\..\lazarus\lib\GUIMsgBox.pp"/>
+        <Caret Line="34" Column="22"/>
       </Position17>
       <Position18>
-        <Filename Value="..\..\..\..\..\..\programs\lazarus\lcl\include\customform.inc"/>
-        <Caret Line="1807" Column="21" TopLine="1771"/>
+        <Filename Value="..\..\lazarus\lib\GUIMsgBox.pp"/>
+        <Caret Line="340" Column="3" TopLine="335"/>
       </Position18>
       <Position19>
-        <Filename Value="..\..\..\..\..\..\programs\lazarus\lcl\include\customform.inc"/>
-        <Caret Line="1811" Column="61" TopLine="1775"/>
+        <Filename Value="..\..\lazarus\lib\GUIMsgBox.pp"/>
       </Position19>
       <Position20>
-        <Filename Value="..\..\..\..\..\..\programs\lazarus\lcl\include\customform.inc"/>
-        <Caret Line="1814" Column="117" TopLine="1778"/>
+        <Filename Value="..\..\lazarus\lib\GUIMsgBox.pp"/>
+        <Caret Line="34" Column="22"/>
       </Position20>
       <Position21>
-        <Filename Value="..\..\..\..\..\..\programs\lazarus\lcl\include\customform.inc"/>
-        <Caret Line="1815" Column="58" TopLine="1779"/>
+        <Filename Value="..\..\lazarus\lib\GUIMsgBox.pp"/>
+        <Caret Line="74" Column="22" TopLine="41"/>
       </Position21>
       <Position22>
-        <Filename Value="..\..\..\..\..\..\programs\lazarus\lcl\include\customform.inc"/>
-        <Caret Line="1" Column="1" TopLine="1"/>
+        <Filename Value="unit1.pas"/>
+        <Caret Line="100" Column="29" TopLine="74"/>
       </Position22>
       <Position23>
-        <Filename Value="..\..\..\..\..\..\programs\lazarus\lcl\include\customform.inc"/>
-        <Caret Line="29" Column="30" TopLine="1"/>
+        <Filename Value="..\..\lazarus\lib\GUIMsgBox.pp"/>
+        <Caret Line="245" Column="12" TopLine="233"/>
       </Position23>
       <Position24>
-        <Filename Value="..\..\..\..\..\..\programs\lazarus\lcl\include\customform.inc"/>
-        <Caret Line="31" Column="28" TopLine="1"/>
+        <Filename Value="..\..\lazarus\lib\GUIMsgBox.pp"/>
+        <Caret Line="28" Column="17" TopLine="6"/>
       </Position24>
       <Position25>
-        <Filename Value="..\..\..\..\..\..\programs\lazarus\lcl\forms.pp"/>
-        <Caret Line="525" Column="15" TopLine="503"/>
+        <Filename Value="..\..\lazarus\lib\GUIMsgBox.pp"/>
+        <Caret Line="221" Column="36" TopLine="213"/>
       </Position25>
       <Position26>
-        <Filename Value="..\..\..\..\..\..\programs\lazarus\lcl\forms.pp"/>
-        <Caret Line="1" Column="1" TopLine="1"/>
+        <Filename Value="..\..\lazarus\lib\GUIMsgBox.pp"/>
+        <Caret Line="260" Column="36" TopLine="228"/>
       </Position26>
       <Position27>
-        <Filename Value="..\..\..\..\..\..\programs\lazarus\lcl\forms.pp"/>
-        <Caret Line="70" Column="9" TopLine="34"/>
+        <Filename Value="..\..\lazarus\lib\GUIMsgBox.pp"/>
       </Position27>
       <Position28>
-        <Filename Value="..\..\..\..\..\..\programs\lazarus\lcl\forms.pp"/>
-        <Caret Line="383" Column="13" TopLine="347"/>
+        <Filename Value="..\..\lazarus\lib\GUIMsgBox.pp"/>
+        <Caret Line="158" Column="21" TopLine="137"/>
       </Position28>
       <Position29>
-        <Filename Value="..\..\..\..\..\..\programs\lazarus\lcl\forms.pp"/>
-        <Caret Line="1" Column="1" TopLine="1"/>
-      </Position29>
-      <Position30>
         <Filename Value="..\..\lazarus\lib\GUIMsgBox.pp"/>
-        <Caret Line="345" Column="26" TopLine="342"/>
-      </Position30>
+        <Caret Line="226" Column="36" TopLine="190"/>
+      </Position29>
     </JumpHistory>
   </ProjectOptions>
   <CompilerOptions>
@@ -578,7 +549,7 @@
     </Target>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)"/>
-      <OtherUnitFiles Value="W:\home\pascal\lib\minilib\lib;W:\home\pascal\lib\minilib\lazarus\lib"/>
+      <OtherUnitFiles Value="W:\home\pascal\lib\minilib\lib\;W:\home\pascal\lib\minilib\lazarus\lib\"/>
       <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>
     <Linking>
@@ -588,13 +559,6 @@
         </Win32>
       </Options>
     </Linking>
-    <Other>
-      <CompilerMessages>
-        <UseMsgFile Value="True"/>
-      </CompilerMessages>
-      <CompilerPath Value="$(CompPath)"/>
-    </Other>
-    <LCLWidgetType Value="gtk2"/>
   </CompilerOptions>
   <Debugging>
     <Exceptions Count="3">
@@ -609,5 +573,4 @@
       </Item3>
     </Exceptions>
   </Debugging>
-  <EditorMacros Count="0"/>
-</CONFIG>
+</CONFIG>

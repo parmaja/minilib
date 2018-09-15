@@ -206,7 +206,7 @@ var
 begin
   i := -1;
   j := Length(CharLookup);
-
+  Result := ctON;
   while (j - i > 1) do
   begin
     k := (i + j) div 2;
@@ -217,10 +217,9 @@ begin
     else
     begin
       Result := CharLookup[k].CT;
-      exit;
+      break;
     end;
   end;
-
     {*
      * If we reach here, the character was not in any of the
      * intervals listed in the lookup table. This means we return
@@ -229,7 +228,6 @@ begin
      * also the table above has deliberately left out any
      * characters _explicitly_ listed as ON (to save space!).
      *}
-  Result := ctON;
 end;
 
 { Finds the index of a run with level equals tlevel }
@@ -349,6 +347,7 @@ var
 begin
   i := -1;
   j := Length(MirrorLookup);
+  ch := #0;
   while (j - i > 1) do
   begin
     k := (i + j) div 2;
@@ -359,7 +358,7 @@ begin
     else if (ch = MirrorLookup[k].Idx) then
     begin
       ch := MirrorLookup[k].Mr;
-      exit;
+      break;
     end;
   end;
 end;
