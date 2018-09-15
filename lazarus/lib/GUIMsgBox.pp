@@ -22,6 +22,7 @@ type
     FMsgKind: TMsgKind;
     FSenderObject: TObject;
     FOwnerControls: TComponent;
+    FDefaultChoice: Integer;
   protected
     MsgPanel: TPanel;
     InputPanel: TPanel;
@@ -33,8 +34,9 @@ type
     ChoiceIndex: Integer;
     IsStatus: Boolean;
     procedure KeyDown(var Key: Word; Shift: TShiftState); override;
+    procedure OnListBoxDblClick(Sender: TObject);
     procedure WMGetDlgCode(var Message: TWMGetDlgCode); message WM_GETDLGCODE;
-    function ShowNow(DefaultChoiceIndex: Integer): Integer;
+    function ShowNow(vCancelChoiceIndex: Integer): Integer;
     procedure DoClose(var CloseAction: TCloseAction); override;
     procedure DoShow; override;
     procedure DoHide; override;
@@ -54,7 +56,7 @@ type
   protected
     function ShowMessage(const vText: string; Choices: array of TMsgSelect; DefaultChoice: Integer; CancelChoice: Integer; Kind: TMsgKind): Integer; override;
     function ShowInput(var Answer: string; const vText: string; Choices: array of TMsgSelect; DefaultChoice: Integer; CancelChoice: Integer; Kind: TMsgKind): Integer; override;
-    function ShowList(var Answer: Integer; const vText: string; vStrings:TStrings; Choices: array of TmsgSelect; DefaultChoice: Integer; CancelChoice: Integer): Integer; override;
+    function ShowList(var Answer: Integer; const vText: string; vStrings:TStrings; Choices: array of TmsgSelect; DefaultChoice: Integer; CancelChoice: Integer; Kind: TmsgKind): Integer; override;
     procedure ShowStatus(vText: string; Sender: TObject = nil); override;
     procedure UpdateStatus(vText: string; Sender: TObject = nil); override;
     procedure HideStatus(Sender: TObject); override;
@@ -63,7 +65,7 @@ type
     function CreateForm(Kind: TMsgKind): TMsgForm; virtual;
     function FindSender(Sender: TObject): Integer;
 
-    procedure CreateFormObjects(vForm: TMsgForm; const vMsg, vTitle: string; Choices: array of TMsgSelect; DefaultChoice, CancelChoice: Integer); virtual;
+    procedure CreateFormObjects(vForm: TMsgForm; const vMsg, vTitle: string; Choices: array of TMsgSelect; DefaultChoice, CancelChoice: Integer; vKind: TmsgKind = msgkNormal); virtual;
     procedure Created; override;
   public
     constructor Create; override;
@@ -112,7 +114,7 @@ end;
 const
   IconIDs: array[TMsgKind] of Integer = (idDialogConfirm, idDialogWarning, idDialogError, idDialogInfo, idDialogConfirm, idDialogInfo, idDialogInfo, idDialogInfo, idDialogInfo);
 
-procedure TGUIMsgBox.CreateFormObjects(vForm: TMsgForm; const vMsg, vTitle: string; Choices: array of TMsgSelect; DefaultChoice, CancelChoice: Integer);
+procedure TGUIMsgBox.CreateFormObjects(vForm: TMsgForm; const vMsg, vTitle: string; Choices: array of TMsgSelect; DefaultChoice, CancelChoice: Integer; vKind: TmsgKind);
 const
   cMargin = 2;
 
@@ -128,6 +130,7 @@ var
 begin
   with vForm do
   begin
+    FDefaultChoice := DefaultChoice;
     FOwnerControls.Free;
     FOwnerControls := TComponent.Create(vForm);
     Font := Screen.MenuFont;
@@ -234,14 +237,17 @@ begin
           ChildSizing.HorizontalSpacing := cMargin;
         end;
 
-        TextBox := TEdit.Create(FOwnerControls);
-        with TextBox do
+        if (FMsgKind in [msgkInput, msgkPassword]) or (vKind in [msgkInput, msgkPassword]) then
         begin
-          Parent := InputPanel;
-          Align := alBottom;
-          BiDiMode := vForm.BiDiMode;
-          //BorderSpacing.Around := cMargin;
-          TabOrder := 0;
+          TextBox := TEdit.Create(FOwnerControls);
+          with TextBox do
+          begin
+            Parent := InputPanel;
+            Align := alBottom;
+            BiDiMode := vForm.BiDiMode;
+            //BorderSpacing.Around := cMargin;
+            TabOrder := 0;
+          end;
         end;
 
         if FMsgKind = msgkList then
@@ -252,6 +258,7 @@ begin
             Parent := InputPanel;
             Align := alClient;
             BiDiMode := vForm.BiDiMode;
+            OnDblClick := @OnListBoxDblClick;
            // BorderSpacing.Around := cMargin;
             TabOrder := 0;
           end;
@@ -336,11 +343,13 @@ begin
     CloseAction := caHide;
 end;
 
-function TMsgForm.ShowNow(DefaultChoiceIndex: Integer): Integer;
+function TMsgForm.ShowNow(vCancelChoiceIndex: Integer): Integer;
+var
+  mr: Integer;
 begin
   Position := poMainFormCenter;
-  ChoiceIndex := DefaultChoiceIndex;
-  ShowModal;
+  ChoiceIndex := vCancelChoiceIndex;
+  mr := ShowModal;
   Result := ChoiceIndex;
 end;
 
@@ -360,6 +369,12 @@ begin
   end
   else if not IsStatus and (Shift = []) and (Key = VK_ESCAPE) then
     Close;
+end;
+
+procedure TMsgForm.OnListBoxDblClick(Sender: TObject);
+begin
+  ChoiceIndex := FDefaultChoice;
+  Close;
 end;
 
 procedure TMsgForm.WMGetDlgCode(var Message: TWMGetDlgCode);
@@ -476,7 +491,7 @@ begin
   end;
 end;
 
-function TGUIMsgBox.ShowList(var Answer: Integer; const vText: string; vStrings: TStrings; Choices: array of TmsgSelect; DefaultChoice: Integer; CancelChoice: Integer): Integer;
+function TGUIMsgBox.ShowList(var Answer: Integer; const vText: string; vStrings: TStrings; Choices: array of TmsgSelect; DefaultChoice: Integer; CancelChoice: Integer; Kind: TmsgKind): Integer;
 var
   aMsgForm: TMsgForm;
 begin
@@ -488,8 +503,7 @@ begin
     if Answer < ListBox.Items.Count then
       ListBox.ItemIndex := Answer;
     Result := ShowNow(CancelChoice);
-    if Result then
-      Answer := ListBox.ItemIndex;
+    Answer := ListBox.ItemIndex;
   finally
     Free;
   end;

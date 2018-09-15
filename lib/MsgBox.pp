@@ -36,11 +36,11 @@ type
     //Return an index of Choise/Button
     function ShowMessage(const vText: string; Choices: array of TmsgSelect; DefaultChoice: Integer; CancelChoice: Integer; Kind: TmsgKind): Integer; virtual; abstract;
     function ShowInput(var Answer: string; const vText: string; Choices: array of TmsgSelect; DefaultChoice: Integer; CancelChoice: Integer; Kind: TmsgKind): Integer; virtual; abstract;
-    function ShowList(var Answer: Integer; const vText: string; vStrings: TStrings; Choices: array of TmsgSelect; DefaultChoice: Integer; CancelChoice: Integer): Integer; virtual; abstract;
+    function ShowList(var Answer: Integer; const vText: string; vStrings: TStrings; Choices: array of TmsgSelect; DefaultChoice: Integer; CancelChoice: Integer; Kind: TmsgKind): Integer; virtual; abstract;
     //Short style of message
     function ShowMessage(const vText: string; Choices: TmsgChoices; DefaultChoice: TmsgChoice; CancelChoice: TmsgChoice; Kind: TmsgKind): TmsgChoice;
     function ShowInput(var Answer: string; const vText: string; Choices: TmsgChoices; DefaultChoice: TmsgChoice; CancelChoice: TmsgChoice; Kind: TmsgKind): TmsgChoice;
-    function ShowList(var Answer: Integer; const vText: string; vStrings: TStrings; Choices: TmsgChoices; DefaultChoice: TmsgChoice; CancelChoice: TmsgChoice): TmsgChoice;
+    function ShowList(var Answer: Integer; const vText: string; vStrings: TStrings; Choices: TmsgChoices; DefaultChoice: TmsgChoice; CancelChoice: TmsgChoice; Kind: TmsgKind): TmsgChoice;
     //Status messages
     procedure ShowStatus(vText: string; Sender: TObject = nil); virtual; abstract;
     procedure UpdateStatus(vText: string; Sender: TObject = nil); virtual; abstract;
@@ -69,7 +69,7 @@ type
     function ShowMessage(const vText: string; Choices: array of TmsgSelect; DefaultChoice: Integer; CancelChoice: Integer; Kind: TmsgKind): Integer;
     function ShowInput(var Answer: string; const vText: string; Choices: array of TmsgSelect; DefaultChoice: Integer; CancelChoice: Integer; Kind: TmsgKind): Integer;
     function ShowInput(var Answer: string; const vText: string; Choices: TmsgChoices; DefaultChoice: TmsgChoice; CancelChoice: TmsgChoice; Kind: TmsgKind): TmsgChoice;
-    function ShowList(var Answer: Integer; const vText: string; vStrings:TStrings; Choices: TmsgChoices; DefaultChoice: TmsgChoice; CancelChoice: TmsgChoice): TmsgChoice;
+    function ShowList(var Answer: Integer; const vText: string; vStrings:TStrings; Choices: TmsgChoices; DefaultChoice: TmsgChoice; CancelChoice: TmsgChoice; Kind: TmsgKind): TmsgChoice;
     function ShowMessage(const vText: string; Choices: TmsgChoices; DefaultChoice: TmsgChoice; CancelChoice: TmsgChoice; Kind: TmsgKind): TmsgChoice;
 
     property Current: TMsgPrompt read FCurrent write SetCurrent;
@@ -85,7 +85,7 @@ type
 
     function Input(var Answer: string; const vText: string): Boolean;
     function Password(var Answer: string; const vText: string): Boolean;
-    function List(var Answer: Integer; vText: string; Strings: TStringList): Boolean;
+    function List(var Answer: Integer; vText: string; Strings: TStringList; Kind: TmsgKind = msgkNormal): Boolean;
 
     function Ask(const vText: string; Choices: TmsgChoices; DefaultChoice: TmsgChoice; CancelChoice: TmsgChoice; Kind: TmsgKind = msgkNormal): TmsgChoice;
     function Ask(const vText: string; Choices: array of TmsgSelect; DefaultChoice: Integer; CancelChoice: Integer = -1; Kind: TmsgKind = msgkNormal): Integer;
@@ -222,7 +222,7 @@ begin
   Result := C[ShowInput(Answer, vText, c, DefaultIndex, CancelIndex, Kind)].Choice;
 end;
 
-function TMsgPrompt.ShowList(var Answer: Integer; const vText: string; vStrings: TStrings; Choices: TmsgChoices; DefaultChoice: TmsgChoice; CancelChoice: TmsgChoice): TmsgChoice;
+function TMsgPrompt.ShowList(var Answer: Integer; const vText: string; vStrings: TStrings; Choices: TmsgChoices; DefaultChoice: TmsgChoice; CancelChoice: TmsgChoice; Kind: TmsgKind): TmsgChoice;
 var
   a: TmsgChoice;
   c: array of TmsgSelect;
@@ -247,7 +247,7 @@ begin
       i := i + 1;
     end;
   end;
-  Result := C[ShowList(Answer, vText, vStrings, c, DefaultIndex, CancelIndex)].Choice;
+  Result := C[ShowList(Answer, vText, vStrings, c, DefaultIndex, CancelIndex, Kind)].Choice;
 end;
 
 constructor TMsgPrompt.Create;
@@ -377,9 +377,9 @@ begin
   ShowMessage(s, [msgcOK], msgcOK, msgcOK, msgkInformation);
 end;
 
-function TMsgBox.List(var Answer: Integer; vText: string; Strings: TStringList): Boolean;
+function TMsgBox.List(var Answer: Integer; vText: string; Strings: TStringList; Kind: TmsgKind): Boolean;
 begin
-  Result := ShowList(Answer, vText, Strings, [msgcOK, msgcCancel], msgcOK, msgcCancel) = msgcOk;
+  Result := ShowList(Answer, vText, Strings, [msgcOK, msgcCancel], msgcOK, msgcCancel, Kind) = msgcOk;
 end;
 
 procedure TMsgBox.HideStatus(Sender: TObject);
@@ -414,12 +414,12 @@ begin
     Result := DefaultChoice;
 end;
 
-function TMsgBox.ShowList(var Answer: Integer; const vText: string; vStrings: TStrings; Choices: TmsgChoices; DefaultChoice: TmsgChoice; CancelChoice: TmsgChoice): TmsgChoice;
+function TMsgBox.ShowList(var Answer: Integer; const vText: string; vStrings: TStrings; Choices: TmsgChoices; DefaultChoice: TmsgChoice; CancelChoice: TmsgChoice; Kind: TmsgKind): TmsgChoice;
 begin
   if CancelChoice = msgcUnknown then
     CancelChoice := DefaultChoice;
   if not Locked and (FCurrent <> nil) then
-    Result := FCurrent.ShowList(Answer, vText, vStrings, Choices, DefaultChoice, CancelChoice)
+    Result := FCurrent.ShowList(Answer, vText, vStrings, Choices, DefaultChoice, CancelChoice, Kind)
   else
     Result := DefaultChoice;
 end;
