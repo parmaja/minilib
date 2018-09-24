@@ -54,7 +54,6 @@ type
     function CreateCell(vRow: TmnrRow): TmnrCell; override;
   end;
 
-
 //************************ CELLS ************************
 
 

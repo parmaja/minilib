@@ -1,6 +1,5 @@
 unit mnrLists;
 
-
 {$IFDEF FPC}
 {$MODE delphi}
 {$H+}
@@ -27,6 +26,10 @@ type
     FFirst: TmnrNode;
     FLast: TmnrNode;
   protected
+    function QueryInterface(const IID: TGUID; out Obj): HResult; stdcall;
+    function _AddRef: Integer; stdcall;
+    function _Release: Integer; stdcall;
+
     procedure SetNodes(const Value: TmnrNode);
     function GetNodes: TmnrNode;
     procedure Link(vNode: TmnrNode); virtual;
@@ -400,6 +403,13 @@ begin
   if Prior<>nil then MoveBefore(Prior);
 end;
 
+function TmnrNode.QueryInterface(const IID: TGUID; out Obj): HResult;
+const
+  E_NOINTERFACE = HResult($80004002);
+begin
+  if GetInterface(IID, Obj) then Result := 0 else Result := E_NOINTERFACE;
+end;
+
 procedure TmnrNode.MoveDown;
 begin
   if Next<>nil then MoveAfter(Next);
@@ -462,6 +472,16 @@ begin
   if vNode.Prior<>nil then vNode.Prior.Next := vNode.Next;
   if vNode.Next<>nil then vNode.Next.Prior := vNode.Prior;
   DecCount(vNode.Count);
+end;
+
+function TmnrNode._AddRef: Integer;
+begin
+  Result := -1;
+end;
+
+function TmnrNode._Release: Integer;
+begin
+  Result := -1;
 end;
 
 { TmnrNodes }
