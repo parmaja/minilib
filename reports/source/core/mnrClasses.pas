@@ -207,6 +207,7 @@ type
     procedure DoRequest(vCell: TmnrCell); virtual;
     function CreateCell(vRow: TmnrRow): TmnrCell; virtual;
     procedure ScaleCell(vCell: TmnrCell; Invert: Boolean); virtual;
+    procedure InitDesignCell(vDesignCell: TmnrDesignCell); virtual;
     function DoCreateDesignCell(vRow: TmnrDesignRow): TmnrDesignCell; virtual;
     procedure DoCellsExchanged(vCell1, vCell2: TmnrCell); virtual;
 
@@ -2233,7 +2234,8 @@ function TmnrLayout.CreateDesignCell(vRow: TmnrDesignRow): TmnrDesignCell;
 begin
   Result := DoCreateDesignCell(vRow);
   Result.Name := Name;
-  Result.Layout := Self;  
+  Result.Layout := Self;
+  InitDesignCell(Result);
 end;
 
 function TmnrLayout.DisplayText: string;
@@ -2313,6 +2315,11 @@ end;
 function TmnrLayout.GetTitle: string;
 begin
   Result := FName;
+end;
+
+procedure TmnrLayout.InitDesignCell(vDesignCell: TmnrDesignCell);
+begin
+
 end;
 
 function TmnrLayout.NewCell(vDesignCell: TmnrDesignCell; vRow: TmnrRow): TmnrCell;
