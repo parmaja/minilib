@@ -356,7 +356,7 @@ begin
           WriteInt64Prop;
         tkFloat:
           WriteFloatProp;
-        tkWString:
+        tkWString, tkUString:
           WriteWideStringProp;
         tkString, tkLString:
           WriteStringProp;

@@ -340,7 +340,7 @@ begin
         Result := IsDefaultOrdProp;
       tkFloat:
         Result := IsDefaultFloatProp;
-      tkWString:
+      tkWString, tkUString:
         Result := IsDefaultWideStrProp;
       tkString, tkLString:
         Result := IsDefaultStrProp;

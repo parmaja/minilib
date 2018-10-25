@@ -277,7 +277,7 @@ var
   aDouble:Double;
 begin
   //need to improve this function
-  if ValueType = 'String' then
+  if (ValueType = 'String') or (ValueType = 'UString') then
     Result := Value
   else if ValueType = 'OleStr' then
     Result := Value
@@ -452,7 +452,7 @@ begin
       else
         ReadFloatProp;
     end;
-    tkWString:
+    tkWString, tkUString:
       ReadWideStringProp;
     tkLString, tkString:
       ReadStringProp;
