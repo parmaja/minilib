@@ -308,6 +308,7 @@ type
     FReference: TmnrReference;
     FHidden: Boolean;
     FAlias: string;
+    FExplodeID: Integer;
     function GetWidth: Integer;
   protected
     function GetNext: TmnrDesignCell;
@@ -359,6 +360,7 @@ type
     property Alias: string read FAlias write FAlias;
     property Width: Integer read GetWidth write SetWidth default DEFAULT_CELL_WIDTH;
     property Number: Integer read FNumber write FNumber default 0; //used in exploded cells
+    property ExplodeID: Integer read FExplodeID write FExplodeID default 0;
     property AppendTotals: Boolean read FAppendTotals write FAppendTotals default False;
   end;
 
@@ -385,6 +387,7 @@ type
     property Last: TmnrDesignCell read GetLast;
     property ByIndex[vIndex: Integer]: TmnrDesignCell read GetByIndex;
     function FindName(const vName: string): TmnrDesignCell;
+    procedure EnumByName(List: TList; const vName: string);
     procedure ClearSubTotals;
   end;
 
@@ -404,6 +407,7 @@ type
     property Section: TmnrSection read GetSection;
     property ByIndex[vIndex: Integer]: TmnrDesignRow read GetByIndex;
     function FindName(const vName: string): TmnrDesignCell;
+    procedure EnumByName(List: TList; const vName: string);
     procedure ClearSubTotals;
   end;
 
@@ -569,6 +573,7 @@ type
     property ByName[const vName: string]: TmnrSection read GetByName;
     function Find(const vName: string): TmnrSection;
     function FindDesignCellName(const vName: string): TmnrDesignCell;
+    procedure EnumByName(List: TList; const vName: string);
 
     property Report: TmnrCustomReport read GetReport;
     property First: TmnrSection read GetFirst;
@@ -1913,6 +1918,21 @@ begin
   Result := TmnrSection.Create(Self);
 end;
 
+procedure TmnrSections.EnumByName(List: TList; const vName: string);
+var
+  s: TmnrSection;
+  Cell: TmnrDesignCell;
+begin
+  Cell := nil;
+  s := First;
+  while s <> nil do
+  begin
+    s.DesignRows.EnumByName(List, vName);
+    s.Sections.EnumByName(List, vName);
+    s := s.Next;
+  end;
+end;
+
 function TmnrSections.Find(const vName: string): TmnrSection;
 var
   p: TmnrSection;
@@ -2831,6 +2851,19 @@ begin
   end;
 end;
 
+procedure TmnrDesignRow.EnumByName(List: TList; const vName: string);
+var
+  Cell: TmnrDesignCell;
+begin
+  Cell := First;
+  while Cell <> nil do
+  begin
+    if SameText(Cell.Name, vName) or SameText(Cell.AliasName, vName) then
+      List.Add(Cell);
+    Cell := Cell.Next;
+  end;
+end;
+
 function TmnrDesignRow.FindName(const vName: string): TmnrDesignCell;
 begin
   Result := First;
@@ -2919,6 +2952,18 @@ constructor TmnrDesignRows.Create(vSection: TmnrSection);
 begin
   inherited Create;
   FSection := vSection;
+end;
+
+procedure TmnrDesignRows.EnumByName(List: TList; const vName: string);
+var
+  aRow: TmnrDesignRow;
+begin
+  aRow := First;
+  while aRow<>nil do
+  begin
+    aRow.EnumByName(List, vName);
+    aRow := aRow.Next;
+  end;
 end;
 
 function TmnrDesignRows.FindName(const vName: string): TmnrDesignCell;
