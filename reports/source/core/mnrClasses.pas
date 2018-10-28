@@ -308,7 +308,7 @@ type
     FReference: TmnrReference;
     FHidden: Boolean;
     FAlias: string;
-    FExplodeID: Integer;
+    //FExplodeID: Integer;
     function GetWidth: Integer;
   protected
     function GetNext: TmnrDesignCell;
@@ -360,7 +360,7 @@ type
     property Alias: string read FAlias write FAlias;
     property Width: Integer read GetWidth write SetWidth default DEFAULT_CELL_WIDTH;
     property Number: Integer read FNumber write FNumber default 0; //used in exploded cells
-    property ExplodeID: Integer read FExplodeID write FExplodeID default 0;
+    //property ExplodeID: Integer read FExplodeID write FExplodeID default 0;
     property AppendTotals: Boolean read FAppendTotals write FAppendTotals default False;
   end;
 
