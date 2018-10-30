@@ -23,6 +23,8 @@ uses
   Posix.NetDB,
   Posix.SysTime,
   Posix.NetinetIn,
+  Posix.Fcntl,
+  Posix.Errno,
   SysUtils,
   mnSockets;
 
@@ -34,7 +36,7 @@ const
   INADDR_NONE = $ffffffff;
 
 
-  {$IF defined(MACOS) or defined(IOS)}
+  {$if defined(MACOS) or defined(IOS)}
   //MSG_NOSIGNAL  = $20000;  // Do not generate SIGPIPE.
   MSG_NOSIGNAL  = 0;  // Do not generate SIGPIPE.
                            // Works under MAC OS X, but is undocumented,
@@ -44,9 +46,9 @@ const
 
   FIONBIO	 = $8004667E; //OSX FIONBIO         = Posix.StrOpts.FIONBIO;
   FIOASYNC = $8004667D; //OSX  FIOASYNC        = Posix.StrOpts.FIOASYNC;  // not defined in XE2
-  {$ELSE}
+  {$else}
    MSG_NOSIGNAL  = $4000; // Do not generate SIGPIPE.
-  {$ENDIF}
+  {$ifend}
 
 type
   TSocket = integer;
@@ -59,9 +61,9 @@ type
   end;
 
   sockaddr_in = record
-    {$IF defined(OSX) or defined(IOS)}
+    {$if defined(OSX) or defined(IOS)}
 		sin_len: UInt8;
-    {$endif}
+    {$ifend}
 
     sin_family: sa_family_t;
     sin_port: word;
@@ -86,6 +88,7 @@ type
     function GetActive: Boolean; override;
     function DoSelect(Timeout: Integer; Check: TSelectCheck): TmnError; override;
     function DoShutdown(How: TmnShutdown): TmnError; override;
+    function PosixSend(vBuf: Pointer; vLen: Integer): Integer;
   public
     constructor Create(Handle: TSocket);
     procedure Close; override;
@@ -126,10 +129,10 @@ var
   l: string;
 begin
   l := S;
-  addr.s_bytes[1] := StrToIntDef(Fetch(S, '.'), 0);
-  addr.s_bytes[2] := StrToIntDef(Fetch(S, '.'), 0);
-  addr.s_bytes[3] := StrToIntDef(Fetch(S, '.'), 0);
-  addr.s_bytes[4] := StrToIntDef(Fetch(S, '.'), 0);
+  addr.s_bytes[1] := StrToIntDef(FetchStr(S, '.'), 0);
+  addr.s_bytes[2] := StrToIntDef(FetchStr(S, '.'), 0);
+  addr.s_bytes[3] := StrToIntDef(FetchStr(S, '.'), 0);
+  addr.s_bytes[4] := StrToIntDef(FetchStr(S, '.'), 0);
 end;
 
 { TmnSocket }
@@ -139,6 +142,7 @@ var
   c: Integer;
 begin
   CheckActive;
+
   c := Posix.SysSocket.Recv(FHandle, Buffer, Count, MSG_NOSIGNAL);
   if c = 0 then
   begin
@@ -163,8 +167,10 @@ function TmnSocket.Send(const Buffer; var Count: Integer): TmnError;
 var
   c: Integer;
 begin
+
   CheckActive;
   c := Posix.SysSocket.Send(FHandle, Buffer, Count, MSG_NOSIGNAL);
+  //c := PosixSend(@Buffer, Count);
 
   if c = 0 then
   begin
@@ -193,6 +199,8 @@ var
   LTime: TimeVal;
   LTimePtr: PTimeVal;
 begin
+   //Result := erNone;
+   //exit;
 
   //CheckActive; no need select will return error for it, as i tho
   if FHandle = INVALID_SOCKET then
@@ -212,11 +220,10 @@ begin
 
     fd_zero(FSet);
     _FD_SET(FHandle, FSet);
-    //_FD_SET(0, FSet);
     if Check = slRead then
-      c := Posix.SysSelect.Select(FD_SETSIZE, @FSet, nil, nil, LTimePtr)
+      c := Posix.SysSelect.Select(FHandle+1, @FSet, nil, nil, LTimePtr)
     else
-      c := Posix.SysSelect.Select(FD_SETSIZE, nil, @FSet, nil, LTimePtr);
+      c := Posix.SysSelect.Select(FHandle+1, nil, @FSet, nil, LTimePtr);
     {if Check = slRead then
       c := Posix.SysSelect.Select(FD_SETSIZE, @FSet, nil, nil, LTimePtr)
     else
@@ -305,6 +312,35 @@ begin
     Result := erNone;
 end;
 
+function TmnSocket.PosixSend(vBuf: Pointer; vLen: Integer): Integer;
+var
+  aBuf: PByte;
+  aSent, aError: Integer;
+begin
+  Result := 0;
+
+  aBuf := vBuf;
+  while (Result < vLen) do
+  begin
+    aSent := Posix.SysSocket.Send(FHandle, aBuf^, vLen - Result, MSG_NOSIGNAL);
+
+    if (aSent < 0) then
+    begin
+      aError := GetLastError;
+
+      if (aError = EINTR) then
+        Continue
+      else if (aError = EAGAIN) or (aError = EWOULDBLOCK) then
+        Break
+      else
+        Exit(-1);
+    end;
+
+    Inc(Result, aSent);
+    Inc(aBuf, aSent);
+  end;
+end;
+
 function TmnSocket.Check(Value: Integer; WithZero: Boolean): Boolean;
 begin
   Result := not ((Value = SOCKET_ERROR) or (WithZero and (Value = 0)));
@@ -357,7 +393,7 @@ end;
 
 const
   SO_TRUE:Longbool=True;
-//  SO_FALSE:Longbool=False;
+  SO_FALSE:Longbool=False;
 
 function TmnWallSocket.Bind(Options: TmnsoOptions; const Port: string; const Address: string): TmnCustomSocket;
 var
@@ -387,6 +423,18 @@ end;
 destructor TmnWallSocket.Destroy;
 begin
   inherited;
+end;
+
+function SetNonBlock(ASocket: THandle; ANonBlock: Boolean): Integer;
+var
+  LFlag: Cardinal;
+begin
+  LFlag := fcntl(ASocket, F_GETFL);
+  if ANonBlock then
+    LFlag := LFlag and not O_SYNC or O_NONBLOCK
+  else
+    LFlag := LFlag and not O_NONBLOCK or O_SYNC;
+  Result := fcntl(ASocket, F_SETFL, LFlag);
 end;
 
 function TmnWallSocket.TestGetAddrInfo(const AHostName, AServiceName: string; const AHints: AddrInfo): PAddrInfo;
@@ -450,10 +498,16 @@ begin
 
   //if soNoDelay in Options then
     //setsockopt(aHandle, IPPROTO_TCP, TCP_NODELAY, SO_TRUE, SizeOf(SO_TRUE));
+  //setsockopt(aHandle, IPPROTO_TCP, TCP_NODELAY, SO_TRUE, SizeOf(SO_TRUE));
+
 
 //http://support.microsoft.com/default.aspx?kbid=140325
-  if soKeepAlive in Options then
-    setsockopt(aHandle, SOL_SOCKET, SO_KEEPALIVE, SO_TRUE, SizeOf(SO_TRUE));
+  //if soKeepAlive in Options then
+    //setsockopt(aHandle, SOL_SOCKET, SO_KEEPALIVE, SO_TRUE, SizeOf(SO_TRUE));
+
+  //SetNonBlock(aHandle, True);
+  //setsockopt(aHandle, SOL_SOCKET, SO_NOSIGPIPE, SO_TRUE, SizeOf(SO_TRUE));
+
 
 //  fpsetsockopt(aHandle, SOL_SOCKET, SO_NOSIGPIPE, PChar(@SO_TRUE), SizeOf(SO_TRUE));
 
@@ -484,6 +538,7 @@ begin
         raise EmnException.CreateFmt('Failed Get IP [%s]', [Address]);
     end;
   end;
+
   ret := Posix.SysSocket.connect(aHandle, aAddr.addr, SizeOf(aAddr));
 
   (*LAddrIPv4.sin_family := AF_INET;
@@ -504,7 +559,7 @@ begin
   end;
   ret := Posix.SysSocket.connect(aHandle, LAddr, SizeOf(LAddrIPv4));*)
   if ret = -1 then
-    raise EmnException.Create('Failed to connect the socket, error #' + IntToStr(ret) + '.'#13'Address "' + Address +'" Port "' + Port + '".');
+    raise EmnException.CreateFmt('Failed to connect the socket, error #%d.'#13'Address "%s" Port "%s".', [ret, Address, Port]);
   Result := TmnSocket.Create(aHandle)
 end;
 
