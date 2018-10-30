@@ -1,3 +1,4 @@
+
 unit GUIMsgBox;
 {$mode objfpc}{$H+}
 {-----------------------------------------------------------------------------
@@ -116,8 +117,7 @@ const
 
 procedure TGUIMsgBox.CreateFormObjects(vForm: TMsgForm; const vMsg, vTitle: string; Choices: array of TMsgSelect; DefaultChoice, CancelChoice: Integer; vKind: TmsgKind);
 const
-  cMargin = 2;
-
+  cMargin = 5;
   cSpacing = 4;
 
 var
@@ -150,7 +150,7 @@ begin
 
     IconID := IconIDs[FMsgKind];
 
-    ChildSizing.HorizontalSpacing := cMargin;
+    ChildSizing.HorizontalSpacing := cMargin * 2;
     ChildSizing.VerticalSpacing := cMargin;
 
     MsgPanel := TPanel.Create(FOwnerControls);
@@ -167,8 +167,8 @@ begin
       //AutoSize := true;
       ChildSizing.HorizontalSpacing := cSpacing;
       ChildSizing.VerticalSpacing := cSpacing;
-      Width := Canvas.TextWidth(vMsg);
-      aButtonHeight := Canvas.TextHeight('WOK');
+      Width := Canvas.TextWidth(vMsg) + cMargin;
+      aButtonHeight := Canvas.TextHeight('WOK') + cMargin * 2;
     end;
 
     MsgImage := TImage.Create(FOwnerControls);
@@ -275,7 +275,7 @@ begin
         BevelInner := bvNone;
         BevelOuter := bvNone;
         BorderWidth := cMargin;
-        Height := aButtonHeight + 16;
+        Height := aButtonHeight + (cMargin * 2);
         Top := vForm.ClientHeight;
         ChildSizing.VerticalSpacing := cMargin;
         ChildSizing.HorizontalSpacing := cMargin;
