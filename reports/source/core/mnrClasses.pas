@@ -242,7 +242,7 @@ type
     //property DesignerCell: TmnrDesignCell read FDesignerCell write FDesignerCell;
     //property Total: Double read GetTotal;
     //property PageTotal: Double read GetPageTotal;
-    function CreateDesignCell(vRow: TmnrDesignRow; InitIt: Boolean = false): TmnrDesignCell;
+    function CreateDesignCell(vRow: TmnrDesignRow; InitIt: Boolean = False): TmnrDesignCell;
     property Layouts: TmnrLayouts read GetLayouts;
     property Report: TmnrCustomReport read GetReport;
 
@@ -361,7 +361,7 @@ type
     property Width: Integer read GetWidth write SetWidth default DEFAULT_CELL_WIDTH;
     property Number: Integer read FNumber write FNumber default 0; //used in exploded cells
     //property ExplodeID: Integer read FExplodeID write FExplodeID default 0;
-    property AppendTotals: Boolean read FAppendTotals write FAppendTotals default false;
+    property AppendTotals: Boolean read FAppendTotals write FAppendTotals default False;
   end;
 
   TmnrDesignRow = class(TmnrRowNode)
