@@ -5,14 +5,15 @@ unit unit1;
 interface
 
 uses
-  Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, StdCtrls,
-  ExtCtrls, MsgBox, GUIMsgBox;
+  Classes, SysUtils, FileUtil, AnchorDockPanel, Forms, Controls, Graphics,
+  Dialogs, StdCtrls, ExtCtrls, MsgBox, GUIMsgBox;
 
 type
 
   { TForm1 }
 
   TForm1 = class(TForm)
+    Bevel1: TBevel;
     Button1: TButton;
     Button2: TButton;
     Button3: TButton;
@@ -20,6 +21,7 @@ type
     Button5: TButton;
     Button6: TButton;
     Button7: TButton;
+    Button8: TButton;
     Timer1: TTimer;
     procedure Button1Click(Sender: TObject);
     procedure Button2Click(Sender: TObject);
@@ -28,6 +30,7 @@ type
     procedure Button5Click(Sender: TObject);
     procedure Button6Click(Sender: TObject);
     procedure Button7Click(Sender: TObject);
+    procedure Button8Click(Sender: TObject);
     procedure Timer1Timer(Sender: TObject);
   private    { private declarations }
   public
@@ -102,6 +105,11 @@ begin
   finally
     Strings.Free;
   end;
+end;
+
+procedure TForm1.Button8Click(Sender: TObject);
+begin
+  Msg.YesNoCancel('Are you sure');
 end;
 
 procedure TForm1.Timer1Timer(Sender: TObject);

@@ -118,7 +118,7 @@ const
 procedure TGUIMsgBox.CreateFormObjects(vForm: TMsgForm; const vMsg, vTitle: string; Choices: array of TMsgSelect; DefaultChoice, CancelChoice: Integer; vKind: TmsgKind);
 const
   cMargin = 5;
-  cSpacing = 4;
+  cSpacing = 2;
 
 var
   i: Integer;
@@ -160,15 +160,13 @@ begin
       Font := vForm.Font;
       Caption := '';
       BiDiMode := vForm.BiDiMode;
-      //Align := alClient;
       BevelInner := bvNone;
       BevelOuter := bvNone;
-      BorderWidth := cSpacing;
-      //AutoSize := true;
+      BorderWidth := cMargin;
       ChildSizing.HorizontalSpacing := cSpacing;
       ChildSizing.VerticalSpacing := cSpacing;
-      Width := Canvas.TextWidth(vMsg) + cMargin;
-      aButtonHeight := Canvas.TextHeight('WOK') + cMargin * 2;
+      Width := Canvas.TextWidth(vMsg) + cMargin + cSpacing;
+      aButtonHeight := Canvas.TextHeight('WOK') + cSpacing;
     end;
 
     MsgImage := TImage.Create(FOwnerControls);
@@ -181,6 +179,7 @@ begin
       aIcon := GetDialogIcon(IconID);
       Picture.Graphic := aIcon;
       Width := Picture.Width;
+
       FreeAndNil(aIcon);
 
       if vForm.UseRightToLeftAlignment then
@@ -197,6 +196,7 @@ begin
       //WordWrap := True;
       Left := 0;
       Top := 0;
+      BorderSpacing.Around := cMargin;
       AutoSize := true;
       Caption := vMsg;
       Layout := tlCenter;
@@ -233,8 +233,8 @@ begin
           BevelOuter := bvNone;
           BorderWidth := cMargin;
           AutoSize := True;
-          ChildSizing.VerticalSpacing := cMargin;
-          ChildSizing.HorizontalSpacing := cMargin;
+          //ChildSizing.VerticalSpacing := cSpacing;
+          //ChildSizing.HorizontalSpacing := cSpacing;
         end;
 
         if (FMsgKind in [msgkInput, msgkPassword]) or (vKind in [msgkInput, msgkPassword]) then
@@ -245,7 +245,6 @@ begin
             Parent := InputPanel;
             Align := alBottom;
             BiDiMode := vForm.BiDiMode;
-            //BorderSpacing.Around := cMargin;
             TabOrder := 0;
           end;
         end;
@@ -259,10 +258,16 @@ begin
             Align := alClient;
             BiDiMode := vForm.BiDiMode;
             OnDblClick := @OnListBoxDblClick;
-           // BorderSpacing.Around := cMargin;
             TabOrder := 0;
           end;
         end;
+      end;
+
+      with TBevel.Create(FOwnerControls) do
+      begin
+        Parent := vForm;
+        Align := alBottom;
+        Height := 2;
       end;
 
       ButtonsPanel := TPanel.Create(FOwnerControls);
@@ -275,10 +280,10 @@ begin
         BevelInner := bvNone;
         BevelOuter := bvNone;
         BorderWidth := cMargin;
-        Height := aButtonHeight + (cMargin * 2);
+        Height := BorderWidth + aButtonHeight * 2;
         Top := vForm.ClientHeight;
-        ChildSizing.VerticalSpacing := cMargin;
-        ChildSizing.HorizontalSpacing := cMargin;
+        ChildSizing.VerticalSpacing := cSpacing;
+        ChildSizing.HorizontalSpacing := cSpacing;
       end;
 
       for i := 0 to Length(Choices) -1 do

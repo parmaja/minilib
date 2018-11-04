@@ -7,7 +7,7 @@ uses
   cthreads,
   {$ENDIF}{$ENDIF}
   Interfaces, // this includes the LCL widgetset
-  Forms, unit1;
+  Forms, anchordockpkg, unit1;
 
 {$R *.res}
 
