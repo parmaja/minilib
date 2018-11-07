@@ -615,6 +615,8 @@ type
     procedure ProcessDrop(vNode: TmnrLayout);
   end;
 
+  TmnrExportOptions = set of (mnrExportDisplayText);
+
   TmnrCustomReport = class(TPersistent) //belal: must be tobject but {$m+) not working need fix 
   private
     FCanceled: Boolean;
@@ -729,9 +731,9 @@ type
     property FooterPage: TmnrSection read GetFooterPage;
     property FooterReport: TmnrSection read GetFooterReport;
 
-    procedure ExportCSV(const vFile: TFileName); overload; virtual;//test purpose only
-    procedure ExportCSV(const vStream: TStream); overload; virtual;//test purpose only
-    procedure ExportCSV(const vStream: TStream; vItems: TmnrRows); overload; virtual;//test purpose only
+    procedure ExportCSV(const vFile: TFileName; ExportOptions: TmnrExportOptions = []); overload; virtual;//test purpose only
+    procedure ExportCSV(const vStream: TStream; ExportOptions: TmnrExportOptions = []); overload; virtual;//test purpose only
+    procedure ExportCSV(const vStream: TStream; vItems: TmnrRows; ExportOptions: TmnrExportOptions = []); overload; virtual;//test purpose only
     property ReportName: string read GetReportName;
   end;
 
@@ -987,7 +989,7 @@ begin
 
 end;
 
-procedure TmnrCustomReport.ExportCSV(const vStream: TStream; vItems: TmnrRows);
+procedure TmnrCustomReport.ExportCSV(const vStream: TStream; vItems: TmnrRows; ExportOptions: TmnrExportOptions);
 
   procedure WriteStr(const vStr: string);
   begin
@@ -1004,7 +1006,10 @@ begin
     n := r.First;
     while n <> nil do
     begin
-      WriteStr(n.AsString);
+      if mnrExportDisplayText in ExportOptions then
+        WriteStr(n.DisplayText)
+      else
+        WriteStr(n.AsString);
       n := n.Next;
       if n <> nil then
         WriteStr(';');
@@ -1016,18 +1021,18 @@ begin
   end;
 end;
 
-procedure TmnrCustomReport.ExportCSV(const vStream: TStream);
+procedure TmnrCustomReport.ExportCSV(const vStream: TStream; ExportOptions: TmnrExportOptions);
 begin
-  ExportCSV(vStream, Items);
+  ExportCSV(vStream, Items, ExportOptions);
 end;
 
-procedure TmnrCustomReport.ExportCSV(const vFile: TFileName);
+procedure TmnrCustomReport.ExportCSV(const vFile: TFileName; ExportOptions: TmnrExportOptions);
 var
   f: TFileStream;
 begin
   f := TFileStream.Create(vFile, fmCreate);
   try
-    ExportCSV(f);
+    ExportCSV(f, ExportOptions);
   finally
     f.Free;
   end;
