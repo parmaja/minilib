@@ -736,16 +736,18 @@ end;
 function SubStr(const Str: String; vSeperator: Char; vFromIndex, vToIndex: Integer): String;
 var
   Index, B, E: Integer;
+  p: PChar;
 begin
   Index := 0;
   B := 0;
   E := 1;
+  P := PChar(Str);
   while E <= Length(Str) do
   begin
     if (B = 0) and (Index = vFromIndex) then
       B := E;
-    
-    if Str[E] = vSeperator then
+
+    if p^ = vSeperator then
       Inc(Index);
 
     if Index = vToIndex + 1 then
@@ -754,6 +756,7 @@ begin
       Break;
     end;
     Inc(E);
+    Inc(p);
   end;
 
   if B <> 0 then
