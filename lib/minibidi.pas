@@ -347,7 +347,6 @@ var
 begin
   i := -1;
   j := Length(MirrorLookup);
-  ch := #0;
   while (j - i > 1) do
   begin
     k := (i + j) div 2;
