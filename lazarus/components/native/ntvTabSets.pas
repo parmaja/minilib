@@ -178,6 +178,8 @@ type
   TntvTabSet = class(TntvCustomTabSet)
   published
     property StoreIndex;
+    property ChildSizing;
+    property BorderSpacing;
     property ShowButtons;
     property ShowBorder;
     property ShowTabs;

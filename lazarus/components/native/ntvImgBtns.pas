@@ -55,6 +55,8 @@ type
     property Style: TntvImgBtnStyle read FStyle write SetStyle default ibsNormal;
     property BidiMode;
     property ParentBidiMode;
+    property ParentColor;
+    property ParentFont;
     property Anchors;
     property Align;
     property Font;
@@ -148,6 +150,7 @@ begin
   FImageChangeLink.OnChange := @ImageListChange;
   Width := 60;
   Height := 22;
+  FImageIndex := -1;
 end;
 
 procedure TntvImgBtn.DblClick;

@@ -95,9 +95,11 @@ type
     destructor Destroy; override;
     procedure ActivateControl;
     property ActiveControl: TControl read GetActiveControl write SetActiveControl;
-    property PageItem[Control: TControl]: TntvPageItem read GetPageItem;
+    property Page[Control: TControl]: TntvPageItem read GetPageItem;
   published
     property Margin: Integer read FMargin write SetMargin default 3;
+    property ChildSizing;
+    property BorderSpacing;
     property StoreIndex;
     property ShowButtons;
     property ShowTabs;

@@ -53,7 +53,11 @@ type
     procedure SetResizeControl(AValue: TControl);
     procedure SetStyle(AValue: TntvSplitterStyle);
   protected
-    procedure AlignTo(Control:TControl);
+    procedure OnControlChanged(Sender: TObject);
+
+    procedure AnchorSideChanged(TheAnchorSide: TAnchorSide); override;
+    procedure AlignTo(AControl:TControl);
+    procedure BoundsChanged; override;
     function AdaptAnchors(const aAnchors: TAnchors): TAnchors;
     function CheckNewSize(var NewSize: Integer): Boolean; virtual;
     function CheckOffset(var NewOffset: Integer): Boolean; virtual;
@@ -281,12 +285,41 @@ begin
   FStyle :=AValue;
 end;
 
-procedure TntvCustomSplitter.AlignTo(Control: TControl);
+procedure TntvCustomSplitter.OnControlChanged(Sender: TObject);
 begin
-  if Control <> nil then
+  if Visible and (FResizeControl <> nil) then
   begin
-    Align := Control.Align;
+    case FResizeControl.Align of
+      alLeft:
+        Left := FResizeControl.Left + FResizeControl.Width + 1;
+      alRight:
+        Left := FResizeControl.Left - Width - 1;
+      alTop:
+        Top := FResizeControl.Top + FResizeControl.Height + 1;
+      alBottom:
+        Top := FResizeControl.Top - Height - 1;
+    end;
   end;
+end;
+
+procedure TntvCustomSplitter.AnchorSideChanged(TheAnchorSide: TAnchorSide);
+begin
+  inherited;
+end;
+
+procedure TntvCustomSplitter.AlignTo(AControl: TControl);
+begin
+  if AControl <> nil then
+  begin
+    Align := AControl.Align;
+//    FResizeControl.AddHandlerOnChangeBounds(@OnControlChanged);
+//    FResizeControl.AddHandlerOnVisibleChanged(@OnControlChanged);
+  end;
+end;
+
+procedure TntvCustomSplitter.BoundsChanged;
+begin
+  inherited BoundsChanged;
 end;
 
 procedure TntvCustomSplitter.SetResizeAnchor(const AValue: TAnchorKind);
