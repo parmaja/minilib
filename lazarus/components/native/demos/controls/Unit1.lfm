@@ -1,213 +1,229 @@
 object Form1: TForm1
-  Left = 274
+  Left = 609
   Height = 362
-  Top = 21
-  Width = 418
-  ActiveControl = Edit2
+  Top = 181
+  Width = 528
   Caption = 'Form1'
   ClientHeight = 362
-  ClientWidth = 418
+  ClientWidth = 528
   OnCreate = FormCreate
   ParentBiDiMode = False
-  LCLVersion = '1.5'
-  object Button1: TButton
-    Left = 7
-    Height = 25
-    Top = 329
-    Width = 75
-    Anchors = [akLeft, akBottom]
-    Caption = 'Create'
-    OnClick = Button1Click
-    TabOrder = 5
-  end
-  object Button2: TButton
-    Left = 84
-    Height = 25
-    Top = 329
-    Width = 75
-    Anchors = [akLeft, akBottom]
-    Caption = 'Add'
-    OnClick = Button2Click
+  LCLVersion = '2.1.0.0'
+  object Panel1: TPanel
+    Left = 119
+    Height = 312
+    Top = 0
+    Width = 409
+    Align = alClient
+    BevelOuter = bvNone
+    ClientHeight = 312
+    ClientWidth = 409
     TabOrder = 0
-  end
-  object Button3: TButton
-    Left = 326
-    Height = 25
-    Top = 326
-    Width = 75
-    Anchors = [akLeft, akBottom]
-    Caption = 'Create all'
-    OnClick = Button3Click
-    TabOrder = 1
-  end
-  object Button4: TButton
-    Left = 11
-    Height = 25
-    Top = 41
-    Width = 75
-    Caption = 'Draw Tabs'
-    OnClick = Button4Click
-    TabOrder = 2
-  end
-  object TestPanel: TPanel
-    Left = 8
-    Height = 34
-    Top = 5
-    Width = 314
-    Anchors = [akTop, akLeft, akRight]
-    BevelInner = bvSpace
-    BevelOuter = bvSpace
-    Caption = 'TestPanel'
-    TabOrder = 3
-  end
-  object Button5: TButton
-    Left = 238
-    Height = 25
-    Top = 326
-    Width = 75
-    Caption = 'Button5'
-    OnClick = Button5Click
-    TabOrder = 4
-  end
-  object ntvPageControl1: TntvPageControl
-    Left = 17
-    Height = 146
-    Top = 99
-    Width = 298
-    StoreIndex = False
-    ShowButtons = False
-    ShowBorder = False
-    Items = <    
-      item
-        Caption = 'Panel1'
-        Name = 'Panel1'
-        Enabled = False
-        AutoWidth = True
-        Control = Panel1
-      end    
-      item
+    object Button4: TButton
+      Left = 11
+      Height = 25
+      Top = 41
+      Width = 75
+      Caption = 'Draw Tabs'
+      OnClick = Button4Click
+      TabOrder = 0
+    end
+    object ntvPageControl1: TntvPageControl
+      Left = 17
+      Height = 146
+      Top = 99
+      Width = 298
+      StoreIndex = False
+      ShowButtons = False
+      ShowBorder = False
+      Items = <      
+        item
+          Caption = 'Panel1'
+          Name = 'Panel1'
+          Enabled = False
+          AutoWidth = True
+          Control = Panel6
+        end      
+        item
+          Caption = 'Panel2'
+          Name = 'Panel2'
+          Enabled = False
+          AutoWidth = True
+          Control = Panel2
+        end      
+        item
+          Caption = 'Panel3'
+          Name = 'Panel3'
+          AutoWidth = True
+          Control = Panel3
+        end      
+        item
+          Caption = 'Panel4'
+          Name = 'Panel4'
+          AutoWidth = True
+          Control = Panel4
+        end      
+        item
+          Caption = 'Panel5'
+          Name = 'Panel5'
+          AutoWidth = True
+          Control = Panel5
+        end>
+      TabOrder = 1
+      object Panel2: TPanel
+        Left = 3
+        Height = 120
+        Top = 23
+        Width = 292
+        Align = alClient
         Caption = 'Panel2'
-        Name = 'Panel2'
-        Enabled = False
-        AutoWidth = True
-        Control = Panel2
-      end    
-      item
+        ClientHeight = 120
+        ClientWidth = 292
+        TabOrder = 1
+        object Edit1: TEdit
+          Left = 11
+          Height = 23
+          Top = 11
+          Width = 80
+          TabOrder = 0
+          Text = 'Edit1'
+        end
+      end
+      object Panel3: TPanel
+        Left = 3
+        Height = 120
+        Top = 23
+        Width = 292
+        Align = alClient
         Caption = 'Panel3'
-        Name = 'Panel3'
-        AutoWidth = True
-        Control = Panel3
-      end    
-      item
+        TabOrder = 2
+      end
+      object Panel4: TPanel
+        Left = 3
+        Height = 120
+        Top = 23
+        Width = 292
+        Align = alClient
         Caption = 'Panel4'
-        Name = 'Panel4'
-        AutoWidth = True
-        Control = Panel4
-      end    
-      item
+        TabOrder = 3
+      end
+      object Panel5: TPanel
+        Left = 3
+        Height = 120
+        Top = 23
+        Width = 292
+        Align = alClient
         Caption = 'Panel5'
-        Name = 'Panel5'
-        AutoWidth = True
-        Control = Panel5
-      end>
-    Caption = 'ntvPageControl1'
-    TabOrder = 6
-    object Panel4: TPanel
-      Left = 3
-      Height = 122
-      Top = 21
-      Width = 292
-      Align = alClient
-      Caption = 'Panel4'
-      TabOrder = 3
+        TabOrder = 4
+      end
+      object Panel6: TPanel
+        Left = 3
+        Height = 120
+        Top = 23
+        Width = 292
+        Align = alClient
+        Caption = 'Panel1'
+        ClientHeight = 120
+        ClientWidth = 292
+        TabOrder = 0
+        object Edit2: TEdit
+          Left = 46
+          Height = 23
+          Top = 12
+          Width = 80
+          TabOrder = 0
+          Text = 'Edit2'
+        end
+      end
     end
-    object Panel5: TPanel
-      Left = 3
-      Height = 122
-      Top = 21
-      Width = 292
-      Align = alClient
-      Caption = 'Panel5'
-      TabOrder = 4
-    end
-    object Panel3: TPanel
-      Left = 3
-      Height = 122
-      Top = 21
-      Width = 292
-      Align = alClient
-      Caption = 'Panel3'
+    object ntvProgressBar1: TntvProgressBar
+      Left = 16
+      Height = 16
+      Top = 70
+      Width = 150
+      Position = 30
+      SubPosition = 5
+      Color = clGray
+      Font.Color = clWhite
       TabOrder = 2
     end
-    object Panel2: TPanel
-      Left = 3
-      Height = 122
-      Top = 21
-      Width = 292
-      Align = alClient
-      Caption = 'Panel2'
-      ClientHeight = 122
-      ClientWidth = 292
-      TabOrder = 1
-      object Edit1: TEdit
-        Left = 11
-        Height = 21
-        Top = 11
-        Width = 80
-        TabOrder = 0
-        Text = 'Edit1'
-      end
+    object ntvPageControl2: TntvPageControl
+      Left = 9
+      Height = 22
+      Top = 266
+      Width = 321
+      StoreIndex = False
+      ShowButtons = False
+      ShowBorder = False
+      Items = <>
+      TabOrder = 3
     end
-    object Panel1: TPanel
-      Left = 3
-      Height = 122
-      Top = 21
-      Width = 292
-      Align = alClient
-      Caption = 'Panel1'
-      ClientHeight = 122
-      ClientWidth = 292
+    object Button6: TButton
+      Left = 321
+      Height = 25
+      Top = 222
+      Width = 75
+      Caption = 'Bidi'
+      OnClick = Button6Click
+      TabOrder = 4
+    end
+  end
+  object Panel7: TPanel
+    Left = 0
+    Height = 50
+    Top = 312
+    Width = 528
+    Align = alBottom
+    BevelOuter = bvNone
+    ClientHeight = 50
+    ClientWidth = 528
+    TabOrder = 1
+    object Button1: TButton
+      Left = 15
+      Height = 25
+      Top = 12
+      Width = 75
+      Anchors = [akLeft, akBottom]
+      Caption = 'Create'
+      OnClick = Button1Click
       TabOrder = 0
-      object Edit2: TEdit
-        Left = 46
-        Height = 21
-        Top = 12
-        Width = 80
-        TabOrder = 0
-        Text = 'Edit2'
-      end
+    end
+    object Button2: TButton
+      Left = 92
+      Height = 25
+      Top = 12
+      Width = 75
+      Anchors = [akLeft, akBottom]
+      Caption = 'Add'
+      OnClick = Button2Click
+      TabOrder = 1
+    end
+    object Button3: TButton
+      Left = 334
+      Height = 25
+      Top = 12
+      Width = 75
+      Anchors = [akLeft, akBottom]
+      Caption = 'Create all'
+      OnClick = Button3Click
+      TabOrder = 2
+    end
+    object Button5: TButton
+      Left = 246
+      Height = 25
+      Top = 12
+      Width = 75
+      Caption = 'Button5'
+      OnClick = Button5Click
+      TabOrder = 3
     end
   end
-  object ntvProgressBar1: TntvProgressBar
-    Left = 16
-    Height = 16
-    Top = 70
-    Width = 150
-    Position = 30
-    SubPosition = 5
-    Color = clGray
-    Font.Color = clWhite
-    TabOrder = 7
-  end
-  object ntvPageControl2: TntvPageControl
-    Left = 9
-    Height = 22
-    Top = 262
-    Width = 321
-    StoreIndex = False
-    ShowButtons = False
-    ShowBorder = False
-    Items = <>
-    Caption = 'ntvPageControl2'
-    TabOrder = 8
-  end
-  object Button6: TButton
-    Left = 321
-    Height = 25
-    Top = 222
-    Width = 75
-    Caption = 'Bidi'
-    OnClick = Button6Click
-    TabOrder = 9
+  object ntvPanel1: TntvPanel
+    Left = 0
+    Height = 312
+    Top = 0
+    Width = 119
+    Align = alLeft
+    ResizeStyle = nrsUpdate
   end
 end

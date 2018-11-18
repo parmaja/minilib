@@ -9,7 +9,8 @@ interface
 
 uses
   ntvRegCtrls, ntvPageControls, ntvProgressBars, ntvDotMatrix, ntvTabSets, 
-  ntvTabs, ntvSplitters, ntvImgBtns, ntvThemes, ntvBoard, LazarusPackageIntf;
+  ntvTabs, ntvSplitters, ntvImgBtns, ntvThemes, ntvBoard, ntvPanels, 
+  LazarusPackageIntf;
 
 implementation
 

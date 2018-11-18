@@ -157,7 +157,7 @@ type
     procedure Invalidate; virtual;
     function IndexToState(Index: Integer): TTabDrawStates;
     function DoCreateTabDraw: TntvTabDraw; virtual;
-    function CreateTabDraw: TntvTabDraw;
+    function CreateTabDraw: TntvTabDraw; virtual;
 
     procedure DrawButtons(Canvas: TCanvas; var vRect: TRect; vFlags: TntvFlags); //TODO
     procedure DrawTab(Canvas: TCanvas; Index: Integer; vRect: TRect; vFlags: TntvFlags);

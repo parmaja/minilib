@@ -161,6 +161,8 @@ constructor TntvPageControl.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
   FMargin := 3;
+  with GetControlClassDefaultSize do
+    SetInitialBounds(0, 0, CX, CY);
 end;
 
 destructor TntvPageControl.Destroy;

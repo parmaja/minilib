@@ -25,7 +25,6 @@
         <Verbosity>
           <ShowNotes Value="False"/>
           <ShowHints Value="False"/>
-          <ShowGenInfo Value="False"/>
         </Verbosity>
         <CompilerMessages>
           <IgnoredMessages idx5024="True"/>
@@ -33,7 +32,7 @@
       </Other>
     </CompilerOptions>
     <Version Major="1" Release="1" Build="1"/>
-    <Files Count="12">
+    <Files Count="13">
       <Item1>
         <Filename Value="ntvRegCtrls.pas"/>
         <HasRegisterProc Value="True"/>
@@ -86,6 +85,10 @@
         <Filename Value="ntvBoard.pas"/>
         <UnitName Value="ntvBoard"/>
       </Item12>
+      <Item13>
+        <Filename Value="ntvPanels.pas"/>
+        <UnitName Value="ntvPanels"/>
+      </Item13>
     </Files>
     <RequiredPkgs Count="3">
       <Item1>
@@ -104,7 +107,6 @@
     </UsageOptions>
     <PublishOptions>
       <Version Value="2"/>
-      <IgnoreBinaries Value="False"/>
     </PublishOptions>
   </Package>
 </CONFIG>

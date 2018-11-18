@@ -14,9 +14,10 @@ unit Unit1;
 interface
 
 uses
-  LResources, Forms, Classes, SysUtils, ComCtrls, StdCtrls, ntvPageControls, ntvTabSets, LMessages,
-  ntvRegCtrls, ntvProgressBars, types, Graphics,
-  LCLType, LCLProc, Controls, ExtCtrls, ExtendedNotebook, DividerBevel, ntvTabs;
+  LResources, Forms, Classes, SysUtils, ComCtrls, StdCtrls, ntvPageControls,
+  ntvTabSets, LMessages, ntvRegCtrls, ntvProgressBars, types, Graphics, Grids,
+  LCLType, LCLProc, Controls, ExtCtrls, ExtendedNotebook,
+  DividerBevel, ntvTabs, ntvPanels;
 
 type
   { TForm1 }
@@ -32,6 +33,7 @@ type
     Edit2: TEdit;
     ntvPageControl1: TntvPageControl;
     ntvPageControl2: TntvPageControl;
+    ntvPanel1: TntvPanel;
     ntvProgressBar1: TntvProgressBar;
     ntvTabSet1: TntvTabSet;
     Panel1: TPanel;
@@ -39,7 +41,8 @@ type
     Panel3: TPanel;
     Panel4: TPanel;
     Panel5: TPanel;
-    TestPanel: TPanel;
+    Panel6: TPanel;
+    Panel7: TPanel;
     procedure Button1Click(Sender: TObject);
     procedure Button2Click(Sender: TObject);
     procedure Button3Click(Sender: TObject);
@@ -200,9 +203,9 @@ begin
     end;
 
     Tabs.Position := tpBottom;
-    aRect := TestPanel.ClientRect;
+    {aRect := TestPanel.ClientRect;
     InflateRect(aRect, -5, -5);
-    Tabs.Paint(TestPanel.Canvas, aRect, []); //tbfRightToLeft
+    Tabs.Paint(TestPanel.Canvas, aRect, []); //tbfRightToLeft}
   finally
     Tabs.Free;
   end;
