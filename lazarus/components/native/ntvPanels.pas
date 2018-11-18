@@ -11,13 +11,15 @@ unit ntvPanels;
  *}
 
 {$mode objfpc}{$H+}
-
+{$define USE_NTV_THEME}
 interface
 
 uses
   SysUtils, Classes, Graphics, Controls, Variants,
-  LCLIntf, LCLType, IntfGraphics, FPimage, GraphType, ntvThemes,
-  Types;
+  {$ifdef USE_NTV_THEME}
+  ntvThemes,
+  {$endif USE_NTV_THEME}
+  LCLIntf, LCLType, GraphType;
 
 type
   { TntvCustomPanel }
@@ -477,13 +479,23 @@ begin
   case ResizeBevel of
     spsRaisedLine:
     begin
+      {$ifdef USE_NTV_THEME}
       C1 := ntvTheme.Painter.RaisedColor;
       C2 := ntvTheme.Painter.LoweredColor;
+      {$else}
+      C1 := clBtnHiLight;
+      C2 := clBtnShadow;
+      {$endif}
     end;
     spsLoweredLine:
     begin
+      {$ifdef USE_NTV_THEME}
       C1 := ntvTheme.Painter.LoweredColor;
       C2 := ntvTheme.Painter.RaisedColor;
+      {$else}
+      C1 := clBtnShadow;
+      C2 := clBtnHiLight;
+      {$endif}
     end;
     else
     begin
