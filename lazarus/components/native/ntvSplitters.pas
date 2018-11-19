@@ -1,4 +1,5 @@
 unit ntvSplitters;
+
 {**
  *  This file is part of the "Mini Library"
  *
@@ -10,12 +11,16 @@ unit ntvSplitters;
  *}
 
 {$mode objfpc}{$H+}
+{$define USE_NTV_THEME}
 
 interface
 
 uses
-  LMessages, SysUtils, Classes, Graphics, Controls, Variants,
-  LCLIntf, LCLType, IntfGraphics, FPimage, GraphType, ntvThemes,
+  SysUtils, Classes, Graphics, Controls, Variants,
+  LCLIntf, LCLType, IntfGraphics, FPimage, GraphType,
+  {$ifdef USE_NTV_THEME}
+  ntvThemes,
+  {$endif USE_NTV_THEME}
   Types;
 
 type
@@ -23,21 +28,18 @@ type
 
   TntvResizeStyle = (
     nrsLine,     // draw a line, don't update splitter position during moving
-    nrsNone,     // draw nothing and don't update splitter position during moving
-    nrsPattern,  // draw a dot pattern, don't update splitter position during moving
-    nrsUpdate    // draw nothing, update splitter position during moving
-  );
+    nrsUpdate,    // draw nothing, update splitter position during moving
+    nrsNone     // draw nothing and don't update splitter position during moving
+    );
 
-  TCanOffsetEvent = procedure(Sender: TObject; var NewOffset: Integer;
-    var Accept: Boolean) of object;
-  TCanResizeEvent = procedure(Sender: TObject; var NewSize: Integer;
-    var Accept: Boolean) of object;
+  TCanOffsetEvent = procedure(Sender: TObject; var NewOffset: Integer; var Accept: Boolean) of object;
+  TCanResizeEvent = procedure(Sender: TObject; var NewSize: Integer; var Accept: Boolean) of object;
 
   TntvSplitterStyle = (spsSpace, spsLoweredLine, spsRaisedLine);
 
   TntvCustomSplitter = class(TGraphicControl)
   private
-    FAutoSnap: boolean;
+    FAutoSnap: Boolean;
     FMouseInControl: Boolean;
     FOnCanOffset: TCanOffsetEvent;
     FOnCanResize: TCanResizeEvent;
@@ -45,8 +47,8 @@ type
     FResizeAnchor: TAnchorKind;
     FResizeStyle: TntvResizeStyle;
     FSplitDragging: Boolean;
-    FSplitterStartMouseXY: TPoint; // in screen coordinates
-    FSplitterStartLeftTop: TPoint; // in screen coordinates
+    FSplitterPoint: TPoint; // in screen coordinates
+    FSplitterStartPoint: TPoint; // in screen coordinates
     FResizeControl: TControl;
     FSplitterWindow: HWND;
     FStyle: TntvSplitterStyle;
@@ -56,7 +58,7 @@ type
     procedure OnControlChanged(Sender: TObject);
 
     procedure AnchorSideChanged(TheAnchorSide: TAnchorSide); override;
-    procedure AlignTo(AControl:TControl);
+    procedure AlignTo(AControl: TControl);
     procedure BoundsChanged; override;
     function AdaptAnchors(const aAnchors: TAnchors): TAnchors;
     function CheckNewSize(var NewSize: Integer): Boolean; virtual;
@@ -64,24 +66,24 @@ type
 
     procedure MouseEnter; override;
     procedure MouseLeave; override;
-    procedure MouseDown(Button: TMouseButton; Shift:TShiftState; X,Y:Integer); override;
-    procedure MouseMove(Shift: TShiftState; X,Y: Integer); override;
-    procedure MouseUp(Button: TMouseButton; Shift:TShiftState; X,Y:Integer); override;
+    procedure MouseDown(Button: TMouseButton; Shift: TShiftState; X, Y: Integer); override;
+    procedure MouseMove(Shift: TShiftState; X, Y: Integer); override;
+    procedure MouseUp(Button: TMouseButton; Shift: TShiftState; X, Y: Integer); override;
 
     procedure Paint; override;
     procedure Notification(AComponent: TComponent; Operation: TOperation); override;
     procedure SetAlign(Value: TAlign); override;
     procedure SetAnchors(const AValue: TAnchors); override;
     procedure SetResizeAnchor(const AValue: TAnchorKind); virtual;
-    procedure StartSplitterMove(const MouseXY: TPoint);
-    procedure StopSplitterMove(const MouseXY: TPoint);
+    procedure StartSplitterMove(const MousePos: TPoint);
+    procedure StopSplitterMove(const MousePos: TPoint);
     procedure UpdateCursor;
   public
     constructor Create(TheOwner: TComponent); override;
     procedure Loaded; override;
     procedure MoveSplitter(Offset: Integer);
   public
-    property AutoSnap: boolean read FAutoSnap write FAutoSnap default False;
+    property AutoSnap: Boolean read FAutoSnap write FAutoSnap default False;
     property Style: TntvSplitterStyle read FStyle write SetStyle default spsLoweredLine;
     property ResizeAnchor: TAnchorKind read FResizeAnchor write SetResizeAnchor default akLeft;
     property ResizeStyle: TntvResizeStyle read FResizeStyle write FResizeStyle default nrsUpdate;
@@ -123,6 +125,7 @@ procedure TntvCustomSplitter.MoveSplitter(Offset: Integer);
 var
   aMinSize: Integer;
   aMaxSize: Integer;
+
   function GetParentClientSize: Integer;
   begin
     case ResizeAnchor of
@@ -134,9 +137,9 @@ var
   function GetControlMinPos(Control: TControl): Integer;
   begin
     case ResizeAnchor of
-      akLeft,akRight: Result := Control.Left;
-      akTop,akBottom: Result := Control.Top;
-    end
+      akLeft, akRight: Result := Control.Left;
+      akTop, akBottom: Result := Control.Top;
+    end;
   end;
 
   function GetControlSize(Control: TControl): Integer;
@@ -214,7 +217,7 @@ var
   begin
     NewSize := GetControlSize(ResizeControl);
     case ResizeAnchor of
-      akLeft, akTop:     Inc(NewSize, Offset);
+      akLeft, akTop: Inc(NewSize, Offset);
       akRight, akBottom: Dec(NewSize, Offset);
     end;
 
@@ -249,8 +252,7 @@ begin
   case ResizeAnchor of
     akLeft, akTop:
     begin
-      aMaxSize := GetControlSize(ResizeControl) - GetControlMinPos(ResizeControl)
-                  + GetParentClientSize - GetControlSize(ResizeControl)
+      aMaxSize := GetControlSize(ResizeControl) - GetControlMinPos(ResizeControl) + GetParentClientSize - GetControlSize(ResizeControl);
     end;
     akRight, akBottom:
     begin
@@ -270,10 +272,11 @@ end;
 
 procedure TntvCustomSplitter.SetResizeControl(AValue: TControl);
 begin
-  if FResizeControl =AValue then Exit;
+  if FResizeControl = AValue then
+    Exit;
   if FResizeControl <> nil then
     FResizeControl.RemoveFreeNotification(Self);
-  FResizeControl :=AValue;
+  FResizeControl := AValue;
   if FResizeControl <> nil then
     FResizeControl.FreeNotification(Self);
   AlignTo(FResizeControl);
@@ -281,8 +284,9 @@ end;
 
 procedure TntvCustomSplitter.SetStyle(AValue: TntvSplitterStyle);
 begin
-  if FStyle =AValue then Exit;
-  FStyle :=AValue;
+  if FStyle = AValue then
+    Exit;
+  FStyle := AValue;
 end;
 
 procedure TntvCustomSplitter.OnControlChanged(Sender: TObject);
@@ -312,8 +316,8 @@ begin
   if AControl <> nil then
   begin
     Align := AControl.Align;
-//    FResizeControl.AddHandlerOnChangeBounds(@OnControlChanged);
-//    FResizeControl.AddHandlerOnVisibleChanged(@OnControlChanged);
+    //    FResizeControl.AddHandlerOnChangeBounds(@OnControlChanged);
+    //    FResizeControl.AddHandlerOnVisibleChanged(@OnControlChanged);
   end;
 end;
 
@@ -324,7 +328,8 @@ end;
 
 procedure TntvCustomSplitter.SetResizeAnchor(const AValue: TAnchorKind);
 begin
-  if FResizeAnchor = AValue then Exit;
+  if FResizeAnchor = AValue then
+    Exit;
   FResizeAnchor := AValue;
   if not (csLoading in ComponentState) then
   begin
@@ -333,7 +338,7 @@ begin
   end;
 end;
 
-procedure TntvCustomSplitter.StartSplitterMove(const MouseXY: TPoint);
+procedure TntvCustomSplitter.StartSplitterMove(const MousePos: TPoint);
 var
   NewRect: TRect;
   Pattern: HBrush;
@@ -341,9 +346,9 @@ begin
   if FSplitDragging then
     Exit;
   FSplitDragging := True;
-  FSplitterStartMouseXY := MouseXY;
-  FSplitterStartLeftTop := Point(Left, Top);
-  if ResizeStyle in [nrsLine, nrsPattern] then
+  FSplitterPoint := MousePos;
+  FSplitterStartPoint := Point(Left, Top);
+  if ResizeStyle in [nrsLine] then
   begin
     NewRect := BoundsRect;
     NewRect.TopLeft := Parent.ClientToScreen(NewRect.TopLeft);
@@ -355,7 +360,7 @@ begin
   end;
 end;
 
-procedure TntvCustomSplitter.StopSplitterMove(const MouseXY: TPoint);
+procedure TntvCustomSplitter.StopSplitterMove(const MousePos: TPoint);
 var
   Offset: Integer;
 begin
@@ -363,11 +368,11 @@ begin
   begin
     case ResizeAnchor of
       akLeft, akRight:
-        Offset := (MouseXY.X - FSplitterStartMouseXY.X) - (Self.Left - FSplitterStartLeftTop.X);
+        Offset := (MousePos.X - FSplitterPoint.X) - (Self.Left - FSplitterStartPoint.X);
       akTop, akBottom:
-        Offset := (MouseXY.Y - FSplitterStartMouseXY.Y) - (Self.Top - FSplitterStartLeftTop.Y);
-    else
-      Offset := 0;
+        Offset := (MousePos.Y - FSplitterPoint.Y) - (Self.Top - FSplitterStartPoint.Y);
+      else
+        Offset := 0;
     end;
 
     FSplitDragging := False;
@@ -376,7 +381,7 @@ begin
 
     if Assigned(OnMoved) then
       OnMoved(Self);
-    if ResizeStyle in [nrsLine, nrsPattern] then
+    if ResizeStyle in [nrsLine] then
       DestroyRubberBand(FSplitterWindow);
   end;
 end;
@@ -416,11 +421,11 @@ begin
     GetCursorPos(MousePos);
     case ResizeAnchor of
       akLeft, akRight:
-        Offset := (MousePos.X - FSplitterStartMouseXY.X) - (Self.Left - FSplitterStartLeftTop.X);
+        Offset := (MousePos.X - FSplitterPoint.X) - (Self.Left - FSplitterStartPoint.X);
       akTop, akBottom:
-        Offset := (MousePos.Y - FSplitterStartMouseXY.Y) - (Self.Top - FSplitterStartLeftTop.Y);
-    else
-      Offset := 0;
+        Offset := (MousePos.Y - FSplitterPoint.Y) - (Self.Top - FSplitterStartPoint.Y);
+      else
+        Offset := 0;
     end;
 
     if Offset <> 0 then
@@ -442,9 +447,9 @@ procedure TntvCustomSplitter.SetAlign(Value: TAlign);
 begin
   inherited;
   case Value of
-    alLeft:   ResizeAnchor := akLeft;
-    alTop:    ResizeAnchor := akTop;
-    alRight:  ResizeAnchor := akRight;
+    alLeft: ResizeAnchor := akLeft;
+    alTop: ResizeAnchor := akTop;
+    alRight: ResizeAnchor := akRight;
     alBottom: ResizeAnchor := akBottom;
   end;
 end;
@@ -453,8 +458,9 @@ procedure TntvCustomSplitter.SetAnchors(const AValue: TAnchors);
 var
   NewValue: TAnchors;
 begin
-  NewValue:=AdaptAnchors(AValue);
-  if NewValue = Anchors then exit;
+  NewValue := AdaptAnchors(AValue);
+  if NewValue = Anchors then
+    exit;
   inherited SetAnchors(NewValue);
 end;
 
@@ -462,9 +468,9 @@ function TntvCustomSplitter.AdaptAnchors(const aAnchors: TAnchors): TAnchors;
 begin
   Result := aAnchors;
   case Align of
-    alLeft:   Result := Result - [akRight] + [akLeft];
-    alTop:    Result := Result - [akBottom] + [akTop];
-    alRight:  Result := Result + [akRight] - [akLeft];
+    alLeft: Result := Result - [akRight] + [akLeft];
+    alTop: Result := Result - [akBottom] + [akTop];
+    alRight: Result := Result + [akRight] - [akLeft];
     alBottom: Result := Result + [akBottom] - [akTop];
   end;
 end;
@@ -493,15 +499,25 @@ begin
   Canvas.FillRect(ClientRect);
   case Style of
     spsRaisedLine:
-      begin
-        C1 := ntvTheme.Painter.RaisedColor;
-        C2 := ntvTheme.Painter.LoweredColor;
-      end;
+    begin
+      {$ifdef USE_NTV_THEME}
+      C1 := ntvTheme.Painter.RaisedColor;
+      C2 := ntvTheme.Painter.LoweredColor;
+      {$else}
+      C1 := clBtnHiLight;
+      C2 := clBtnShadow;
+      {$endif}
+    end;
     spsLoweredLine:
-      begin
-        C1 := ntvTheme.Painter.LoweredColor;
-        C2 := ntvTheme.Painter.RaisedColor;
-      end;
+    begin
+      {$ifdef USE_NTV_THEME}
+      C1 := ntvTheme.Painter.LoweredColor;
+      C2 := ntvTheme.Painter.RaisedColor;
+      {$else}
+      C1 := clBtnShadow;
+      C2 := clBtnHiLight;
+      {$endif}
+    end;
     else
     begin
       inherited;
@@ -513,8 +529,8 @@ begin
     case ResizeAnchor of
       akTop, akBottom:
       begin
-        Pen.Color := C1;
         y := (Bottom - Top) div 2;
+        Pen.Color := C1;
         MoveTo(Left, y);
         LineTo(Right - 1, y);
         Pen.Color := C2;
@@ -523,8 +539,8 @@ begin
       end;
       akLeft, akRight:
       begin
-        Pen.Color:=C1;
         x := (Right - Left) div 2;
+        Pen.Color := C1;
         MoveTo(x, Top);
         LineTo(x, Bottom - 1);
         Pen.Color := C2;
@@ -547,7 +563,8 @@ end;
 procedure TntvCustomSplitter.MouseEnter;
 begin
   inherited;
-  if csDesigning in ComponentState then exit;
+  if csDesigning in ComponentState then
+    exit;
 
   if not FMouseInControl and Enabled and (GetCapture = 0) then
   begin
@@ -559,7 +576,8 @@ end;
 procedure TntvCustomSplitter.MouseLeave;
 begin
   inherited;
-  if csDesigning in ComponentState then exit;
+  if csDesigning in ComponentState then
+    exit;
 
   if FMouseInControl then
   begin
@@ -586,4 +604,3 @@ begin
 end;
 
 end.
-

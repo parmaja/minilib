@@ -16,7 +16,7 @@ interface
 uses
   LResources, Forms, Classes, SysUtils, ComCtrls, StdCtrls, ntvPageControls,
   ntvTabSets, LMessages, ntvRegCtrls, ntvProgressBars, types, Graphics, Grids,
-  LCLType, LCLProc, Controls, ExtCtrls, ExtendedNotebook,
+  LCLType, LCLProc, Controls, ExtCtrls, ExtendedNotebook, ntvSplitters,
   DividerBevel, ntvTabs, ntvPanels;
 
 type
@@ -34,6 +34,7 @@ type
     ntvPageControl1: TntvPageControl;
     ntvPageControl2: TntvPageControl;
     ntvPanel1: TntvPanel;
+    ntvPanel2: TntvPanel;
     ntvProgressBar1: TntvProgressBar;
     ntvTabSet1: TntvTabSet;
     Panel1: TPanel;

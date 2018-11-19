@@ -45,14 +45,13 @@
         <PackageName Value="LCL"/>
       </Item4>
     </RequiredPackages>
-    <Units Count="175">
+    <Units Count="179">
       <Unit0>
         <Filename Value="project1.lpr"/>
         <IsPartOfProject Value="True"/>
-        <EditorIndex Value="8"/>
+        <EditorIndex Value="-1"/>
         <CursorPos X="26" Y="12"/>
-        <UsageCount Value="166"/>
-        <Loaded Value="True"/>
+        <UsageCount Value="171"/>
       </Unit0>
       <Unit1>
         <Filename Value="Unit1.pas"/>
@@ -60,8 +59,8 @@
         <ComponentName Value="Form1"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
-        <CursorPos X="40" Y="8"/>
-        <UsageCount Value="166"/>
+        <CursorPos X="51" Y="38"/>
+        <UsageCount Value="171"/>
         <Loaded Value="True"/>
         <LoadedDesigner Value="True"/>
       </Unit1>
@@ -76,19 +75,17 @@
       </Unit3>
       <Unit4>
         <Filename Value="..\..\ntvRegCtrls.pas"/>
-        <EditorIndex Value="7"/>
+        <EditorIndex Value="-1"/>
         <TopLine Value="41"/>
         <CursorPos X="31" Y="54"/>
         <UsageCount Value="35"/>
-        <Loaded Value="True"/>
       </Unit4>
       <Unit5>
         <Filename Value="..\..\ntvPageControls.pas"/>
-        <EditorIndex Value="10"/>
+        <EditorIndex Value="-1"/>
         <TopLine Value="56"/>
         <CursorPos X="76" Y="81"/>
         <UsageCount Value="65"/>
-        <Loaded Value="True"/>
       </Unit5>
       <Unit6>
         <Filename Value="..\..\ntvProgressBar.pas"/>
@@ -695,14 +692,13 @@
       <Unit112>
         <Filename Value="..\..\ntvTabs.pas"/>
         <IsPartOfProject Value="True"/>
-        <EditorIndex Value="12"/>
+        <EditorIndex Value="-1"/>
         <TopLine Value="135"/>
         <CursorPos X="50" Y="160"/>
-        <UsageCount Value="134"/>
+        <UsageCount Value="139"/>
         <Bookmarks Count="1">
           <Item0 X="35" Y="626" ID="2"/>
         </Bookmarks>
-        <Loaded Value="True"/>
       </Unit112>
       <Unit113>
         <Filename Value="V:\programs\FPC\2.4\src\rtl\objpas\classes\classesh.inc"/>
@@ -749,12 +745,11 @@
       <Unit121>
         <Filename Value="..\..\ntvTabSets.pas"/>
         <IsPartOfProject Value="True"/>
-        <EditorIndex Value="11"/>
-        <UsageCount Value="99"/>
+        <EditorIndex Value="-1"/>
+        <UsageCount Value="104"/>
         <Bookmarks Count="1">
           <Item0 Y="24" ID="3"/>
         </Bookmarks>
-        <Loaded Value="True"/>
       </Unit121>
       <Unit122>
         <Filename Value="W:\programs\lazarus\ide\lazarus.pp"/>
@@ -915,11 +910,9 @@
         <ComponentName Value="Form2"/>
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
-        <EditorIndex Value="9"/>
+        <EditorIndex Value="-1"/>
         <CursorPos X="6" Y="34"/>
-        <UsageCount Value="62"/>
-        <Loaded Value="True"/>
-        <LoadedDesigner Value="True"/>
+        <UsageCount Value="67"/>
       </Unit148>
       <Unit149>
         <Filename Value="P:\dev\lazarus\lcl\include\control.inc"/>
@@ -942,11 +935,10 @@
       <Unit152>
         <Filename Value="P:\dev\lazarus\lcl\graphics.pp"/>
         <UnitName Value="Graphics"/>
-        <EditorIndex Value="13"/>
+        <EditorIndex Value="-1"/>
         <TopLine Value="1040"/>
         <CursorPos X="15" Y="1042"/>
         <UsageCount Value="24"/>
-        <Loaded Value="True"/>
       </Unit152>
       <Unit153>
         <Filename Value="P:\dev\lazarus\lcl\include\winapih.inc"/>
@@ -1018,11 +1010,13 @@
       </Unit164>
       <Unit165>
         <Filename Value="..\..\ntvPanels.pas"/>
-        <IsVisibleTab Value="True"/>
-        <EditorIndex Value="5"/>
-        <TopLine Value="462"/>
-        <CursorPos X="21" Y="486"/>
-        <UsageCount Value="12"/>
+        <EditorIndex Value="2"/>
+        <TopLine Value="449"/>
+        <CursorPos Y="497"/>
+        <UsageCount Value="15"/>
+        <Bookmarks Count="1">
+          <Item0 Y="345" ID="1"/>
+        </Bookmarks>
         <Loaded Value="True"/>
       </Unit165>
       <Unit166>
@@ -1034,22 +1028,20 @@
       <Unit167>
         <Filename Value="d:\dev\lazarus\lcl\extctrls.pp"/>
         <UnitName Value="ExtCtrls"/>
-        <EditorIndex Value="1"/>
+        <EditorIndex Value="-1"/>
         <TopLine Value="1029"/>
         <CursorPos X="25" Y="1054"/>
         <UsageCount Value="11"/>
         <Bookmarks Count="1">
           <Item0 Y="1049" ID="1"/>
         </Bookmarks>
-        <Loaded Value="True"/>
       </Unit167>
       <Unit168>
         <Filename Value="d:\dev\lazarus\lcl\include\custompanel.inc"/>
-        <EditorIndex Value="2"/>
+        <EditorIndex Value="-1"/>
         <TopLine Value="119"/>
         <CursorPos X="14" Y="123"/>
         <UsageCount Value="11"/>
-        <Loaded Value="True"/>
       </Unit168>
       <Unit169>
         <Filename Value="d:\dev\fpc\3.0\src\rtl\inc\typshrdh.inc"/>
@@ -1060,10 +1052,11 @@
       <Unit170>
         <Filename Value="d:\dev\lazarus\lcl\controls.pp"/>
         <UnitName Value="Controls"/>
-        <EditorIndex Value="-1"/>
-        <TopLine Value="2358"/>
-        <CursorPos X="3" Y="2383"/>
-        <UsageCount Value="11"/>
+        <EditorIndex Value="7"/>
+        <TopLine Value="1629"/>
+        <CursorPos X="15" Y="1655"/>
+        <UsageCount Value="14"/>
+        <Loaded Value="True"/>
       </Unit170>
       <Unit171>
         <Filename Value="d:\dev\lazarus\lcl\grids.pas"/>
@@ -1075,148 +1068,176 @@
       </Unit171>
       <Unit172>
         <Filename Value="d:\dev\lazarus\lcl\include\lclintfh.inc"/>
-        <EditorIndex Value="6"/>
-        <TopLine Value="35"/>
-        <CursorPos X="11" Y="60"/>
+        <EditorIndex Value="3"/>
+        <TopLine Value="30"/>
+        <CursorPos X="10" Y="55"/>
         <UsageCount Value="10"/>
         <Loaded Value="True"/>
       </Unit172>
       <Unit173>
         <Filename Value="d:\dev\lazarus\lcl\graphics.pp"/>
         <UnitName Value="Graphics"/>
-        <EditorIndex Value="3"/>
+        <EditorIndex Value="-1"/>
         <TopLine Value="229"/>
         <CursorPos X="11" Y="247"/>
         <UsageCount Value="10"/>
-        <Loaded Value="True"/>
       </Unit173>
       <Unit174>
         <Filename Value="d:\dev\lazarus\lcl\include\canvas.inc"/>
-        <EditorIndex Value="4"/>
+        <EditorIndex Value="-1"/>
         <TopLine Value="1034"/>
         <CursorPos X="3" Y="1043"/>
         <UsageCount Value="10"/>
-        <Loaded Value="True"/>
       </Unit174>
+      <Unit175>
+        <Filename Value="d:\dev\lazarus\lcl\include\control.inc"/>
+        <EditorIndex Value="6"/>
+        <TopLine Value="1627"/>
+        <CursorPos Y="1651"/>
+        <UsageCount Value="12"/>
+        <Loaded Value="True"/>
+      </Unit175>
+      <Unit176>
+        <Filename Value="..\..\ntvSplitters.pas"/>
+        <IsVisibleTab Value="True"/>
+        <EditorIndex Value="1"/>
+        <TopLine Value="488"/>
+        <CursorPos Y="520"/>
+        <UsageCount Value="12"/>
+        <Loaded Value="True"/>
+      </Unit176>
+      <Unit177>
+        <Filename Value="d:\dev\fpc\3.0\src\rtl\objpas\classes\classesh.inc"/>
+        <EditorIndex Value="5"/>
+        <TopLine Value="2062"/>
+        <CursorPos X="10" Y="2087"/>
+        <UsageCount Value="11"/>
+        <Loaded Value="True"/>
+      </Unit177>
+      <Unit178>
+        <Filename Value="d:\dev\lazarus\lcl\include\intfbaselcl.inc"/>
+        <EditorIndex Value="4"/>
+        <TopLine Value="117"/>
+        <CursorPos X="3" Y="119"/>
+        <UsageCount Value="10"/>
+        <Loaded Value="True"/>
+      </Unit178>
     </Units>
-    <JumpHistory Count="30" HistoryIndex="28">
+    <JumpHistory Count="30" HistoryIndex="29">
       <Position1>
-        <Filename Value="..\..\ntvPanels.pas"/>
-        <Caret Line="367" TopLine="342"/>
+        <Filename Value="..\..\ntvSplitters.pas"/>
+        <Caret Line="343" Column="25" TopLine="300"/>
       </Position1>
       <Position2>
-        <Filename Value="..\..\ntvPanels.pas"/>
-        <Caret Line="366" TopLine="342"/>
+        <Filename Value="..\..\ntvSplitters.pas"/>
+        <Caret Line="365" Column="55" TopLine="322"/>
       </Position2>
       <Position3>
-        <Filename Value="..\..\ntvPanels.pas"/>
+        <Filename Value="..\..\ntvSplitters.pas"/>
+        <Caret Line="367" Column="55" TopLine="324"/>
       </Position3>
       <Position4>
-        <Filename Value="..\..\ntvPanels.pas"/>
-        <Caret Line="73" Column="21" TopLine="30"/>
+        <Filename Value="..\..\ntvSplitters.pas"/>
+        <Caret Line="418" Column="55" TopLine="375"/>
       </Position4>
       <Position5>
-        <Filename Value="..\..\ntvPanels.pas"/>
-        <Caret Line="279" Column="33" TopLine="271"/>
+        <Filename Value="..\..\ntvSplitters.pas"/>
+        <Caret Line="420" Column="55" TopLine="377"/>
       </Position5>
       <Position6>
-        <Filename Value="..\..\ntvPanels.pas"/>
-        <Caret Line="277" Column="7" TopLine="254"/>
+        <Filename Value="..\..\ntvSplitters.pas"/>
       </Position6>
       <Position7>
-        <Filename Value="..\..\ntvPanels.pas"/>
-        <Caret Line="76" Column="15" TopLine="49"/>
+        <Filename Value="..\..\ntvSplitters.pas"/>
+        <Caret Line="48" Column="26" TopLine="5"/>
       </Position7>
       <Position8>
-        <Filename Value="..\..\ntvPanels.pas"/>
-        <Caret Line="469" Column="32" TopLine="426"/>
+        <Filename Value="..\..\ntvSplitters.pas"/>
+        <Caret Line="344" Column="3" TopLine="301"/>
       </Position8>
       <Position9>
-        <Filename Value="d:\dev\lazarus\lcl\extctrls.pp"/>
-        <Caret Line="1054" Column="5" TopLine="1032"/>
+        <Filename Value="..\..\ntvSplitters.pas"/>
+        <Caret Line="420" Column="92" TopLine="377"/>
       </Position9>
       <Position10>
-        <Filename Value="d:\dev\lazarus\lcl\include\custompanel.inc"/>
-        <Caret Line="121" Column="3" TopLine="101"/>
+        <Filename Value="..\..\ntvSplitters.pas"/>
       </Position10>
       <Position11>
         <Filename Value="..\..\ntvPanels.pas"/>
-        <Caret Line="500" Column="27" TopLine="482"/>
+        <Caret Line="326" Column="5" TopLine="283"/>
       </Position11>
       <Position12>
         <Filename Value="..\..\ntvPanels.pas"/>
-        <Caret Line="19" Column="25" TopLine="18"/>
+        <Caret Line="49" Column="5" TopLine="25"/>
       </Position12>
       <Position13>
-        <Filename Value="..\..\ntvPanels.pas"/>
-        <Caret Line="14" Column="3"/>
+        <Filename Value="..\..\ntvSplitters.pas"/>
+        <Caret Line="47" Column="5" TopLine="5"/>
       </Position13>
       <Position14>
-        <Filename Value="d:\dev\lazarus\lcl\extctrls.pp"/>
-        <Caret Line="1054" Column="25" TopLine="1029"/>
+        <Filename Value="..\..\ntvPanels.pas"/>
+        <Caret Line="49" Column="19" TopLine="25"/>
       </Position14>
       <Position15>
-        <Filename Value="d:\dev\lazarus\lcl\include\custompanel.inc"/>
-        <Caret Line="123" Column="14" TopLine="119"/>
+        <Filename Value="..\..\ntvPanels.pas"/>
       </Position15>
       <Position16>
-        <Filename Value="d:\dev\lazarus\lcl\graphics.pp"/>
-        <Caret Line="1092" Column="15" TopLine="1069"/>
+        <Filename Value="..\..\ntvPanels.pas"/>
+        <Caret Line="49" Column="19" TopLine="6"/>
       </Position16>
       <Position17>
-        <Filename Value="d:\dev\lazarus\lcl\include\canvas.inc"/>
-        <Caret Line="1043" Column="3" TopLine="1034"/>
+        <Filename Value="..\..\ntvSplitters.pas"/>
       </Position17>
       <Position18>
-        <Filename Value="..\..\ntvPanels.pas"/>
-        <Caret Line="482" Column="42" TopLine="457"/>
+        <Filename Value="..\..\ntvSplitters.pas"/>
+        <Caret Line="47" Column="27" TopLine="26"/>
       </Position18>
       <Position19>
-        <Filename Value="..\..\ntvPanels.pas"/>
-        <Caret Line="20" Column="11"/>
+        <Filename Value="..\..\ntvSplitters.pas"/>
+        <Caret Line="343" Column="3" TopLine="300"/>
       </Position19>
       <Position20>
-        <Filename Value="..\..\ntvPanels.pas"/>
-        <Caret Line="21" Column="24"/>
+        <Filename Value="..\..\ntvSplitters.pas"/>
+        <Caret Line="420" Column="47" TopLine="377"/>
       </Position20>
       <Position21>
-        <Filename Value="..\..\ntvPanels.pas"/>
-        <Caret Line="482" Column="21" TopLine="439"/>
+        <Filename Value="..\..\ntvSplitters.pas"/>
       </Position21>
       <Position22>
         <Filename Value="..\..\ntvPanels.pas"/>
-        <Caret Line="483" Column="21" TopLine="440"/>
+        <Caret Line="318" Column="19" TopLine="275"/>
       </Position22>
       <Position23>
         <Filename Value="..\..\ntvPanels.pas"/>
-        <Caret Line="487" Column="21" TopLine="444"/>
+        <Caret Line="22"/>
       </Position23>
       <Position24>
-        <Filename Value="..\..\ntvPanels.pas"/>
-        <Caret Line="482" Column="28" TopLine="457"/>
+        <Filename Value="..\..\ntvSplitters.pas"/>
+        <Caret Line="21" TopLine="4"/>
       </Position24>
       <Position25>
         <Filename Value="..\..\ntvPanels.pas"/>
+        <Caret Line="15"/>
       </Position25>
       <Position26>
-        <Filename Value="..\..\ntvPanels.pas"/>
-        <Caret Line="14" Column="3"/>
+        <Filename Value="..\..\ntvSplitters.pas"/>
+        <Caret Line="14"/>
       </Position26>
       <Position27>
         <Filename Value="..\..\ntvPanels.pas"/>
-        <Caret Line="487" Column="13" TopLine="463"/>
+        <Caret Line="19" Column="24"/>
       </Position27>
       <Position28>
         <Filename Value="..\..\ntvPanels.pas"/>
-        <Caret Line="486" Column="17" TopLine="462"/>
+        <Caret Line="21" Column="24"/>
       </Position28>
       <Position29>
-        <Filename Value="..\..\ntvPanels.pas"/>
-        <Caret Line="496" Column="17" TopLine="462"/>
+        <Filename Value="..\..\ntvSplitters.pas"/>
+        <Caret Line="596" Column="5" TopLine="546"/>
       </Position29>
       <Position30>
-        <Filename Value="d:\dev\lazarus\lcl\graphics.pp"/>
-        <Caret Line="247" Column="11" TopLine="229"/>
+        <Filename Value="..\..\ntvSplitters.pas"/>
+        <Caret Line="26" TopLine="26"/>
       </Position30>
     </JumpHistory>
   </ProjectOptions>
@@ -1242,15 +1263,6 @@
     </Linking>
   </CompilerOptions>
   <Debugging>
-    <BreakPoints Count="1">
-      <Item1>
-        <Kind Value="bpkSource"/>
-        <WatchScope Value="wpsLocal"/>
-        <WatchKind Value="wpkWrite"/>
-        <Source Value="Unit1.pas"/>
-        <Line Value="189"/>
-      </Item1>
-    </BreakPoints>
     <Watches Count="1">
       <Item1>
         <Expression Value="self"/>

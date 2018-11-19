@@ -13,11 +13,11 @@ object Form1: TForm1
     Left = 119
     Height = 312
     Top = 0
-    Width = 409
+    Width = 290
     Align = alClient
     BevelOuter = bvNone
     ClientHeight = 312
-    ClientWidth = 409
+    ClientWidth = 290
     TabOrder = 0
     object Button4: TButton
       Left = 11
@@ -219,11 +219,23 @@ object Form1: TForm1
     end
   end
   object ntvPanel1: TntvPanel
+    Left = 409
+    Height = 312
+    Top = 0
+    Width = 119
+    Align = alRight
+    ParentShowHint = False
+    ShowHint = True
+    ResizeStyle = nrsUpdate
+  end
+  object ntvPanel2: TntvPanel
     Left = 0
     Height = 312
     Top = 0
     Width = 119
     Align = alLeft
+    ParentShowHint = False
+    ShowHint = True
     ResizeStyle = nrsUpdate
   end
 end
