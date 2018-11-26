@@ -830,7 +830,7 @@ begin
 
   //InitSections(FSections);
 
-  FWorking := True;
+  FWorking := False;
   Created;
 end;
 
