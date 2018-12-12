@@ -615,7 +615,7 @@ type
     procedure ProcessDrop(vNode: TmnrLayout);
   end;
 
-  TmnrExportOptions = set of (mnrExportDisplayText);
+  TmnrExportOptions = set of (mnrExportDisplayText, mnrTAB, mnrBOM);
 
   TmnrCustomReport = class(TPersistent) //belal: must be tobject but {$m+) not working need fix 
   private
@@ -1012,7 +1012,12 @@ begin
         WriteStr(n.AsString);
       n := n.Next;
       if n <> nil then
-        WriteStr(';');
+      begin
+        if mnrTAB in ExportOptions then
+          WriteStr(#9)
+        else
+          WriteStr(';');
+      end;
     end;
 
     r := r.Next;

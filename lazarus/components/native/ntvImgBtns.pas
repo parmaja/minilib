@@ -171,6 +171,7 @@ var
   aCaptionRect, aRect: TRect;
 begin
   //inherited;
+  Canvas.Font.Assign(Self.Font);
   aRect := ClientRect;
 
   if Active then

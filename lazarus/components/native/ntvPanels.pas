@@ -92,6 +92,7 @@ type
     property Constraints;
     property Height;
     property ParentColor;
+    property ParentFont;
     property ParentShowHint;
     property PopupMenu;
     property ShowHint;
@@ -302,7 +303,8 @@ procedure TntvCustomPanel.SetSplitterSize(AValue: Integer);
 begin
   if FSplitterSize <> AValue then
   begin
-    FSplitterSize :=AValue;
+    FSplitterSize := AValue;
+    ReAlign;
   end;
 end;
 
@@ -318,10 +320,10 @@ begin
     FSplitterPoint := MousePos;
     P := GetSplitterRect.TopLeft;
     case Align of
-      alLeft: P.x := P.x + FSplitterSize;
-      //alRight: P.x := P.x + FSplitterSize;
-      alTop: P.y := P.y + FSplitterSize;
-//      alBottom: P.y := P.y + FSplitterSize;
+      alLeft: P.x := P.x + SplitterSize;
+      //alRight: P.x := P.x + SplitterSize;
+      alTop: P.y := P.y + SplitterSize;
+//      alBottom: P.y := P.y + SplitterSize;
     end;
     FSplitterStartPoint := ClientToParent(P);
     if ResizeStyle in [nrsLine] then
