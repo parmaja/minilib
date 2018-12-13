@@ -1295,24 +1295,24 @@ end;
 
 procedure TmnrSection.DoAppendDetailTotals(vSection: TmnrSection);
 var
-  r: TmnrDesignRow;
+  aDesignRow: TmnrDesignRow;
   d: TmnrDesignCell;
   l: TmnrLayout;
   aRow: TmnrRow;
   f: Boolean; //first
   c: TmnrCell;
 begin
-  r := DesignRows.First;
-  if r <> nil then
+  aDesignRow := DesignRows.First;
+  if aDesignRow <> nil then
   begin
     f := True;
-    while r <> nil do
+    while aDesignRow <> nil do
     begin
       aRow := Report.CreateNewRow(vSection, nil);
       aRow.FLocked := True;
-      aRow.FDesignRow := r;
+      aRow.FDesignRow := aDesignRow;
       try
-        d := r.First;
+        d := aDesignRow.First;
         while d <> nil do
         begin
           l := d.Layout;
@@ -1346,31 +1346,31 @@ begin
           FRow := aRow;
         end;
 
-      r := r.Next;
+      aDesignRow := aDesignRow.Next;
     end;
   end;
 end;
 
 procedure TmnrSection.DoAppendPageTotals(vSection: TmnrSection);
 var
-  r: TmnrDesignRow;
+  aDesignRow: TmnrDesignRow;
   d: TmnrDesignCell;
   l: TmnrLayout;
   aRow: TmnrRow;
   f: Boolean; //first
   c: TmnrCell;
 begin
-  r := DesignRows.First;
-  if r <> nil then
+  aDesignRow := DesignRows.First;
+  if aDesignRow <> nil then
   begin
     f := True;
-    while r <> nil do
+    while aDesignRow <> nil do
     begin
       aRow := Report.CreateNewRow(vSection, nil);
       aRow.FLocked := True;
-      aRow.FDesignRow := r;
+      aRow.FDesignRow := aDesignRow;
       try
-        d := r.First;
+        d := aDesignRow.First;
         while d <> nil do
         begin
           l := d.Layout;
@@ -1400,31 +1400,31 @@ begin
         FRow := aRow;
       end;
 
-      r := r.Next;
+      aDesignRow := aDesignRow.Next;
     end;
   end;
 end;
 
 procedure TmnrSection.DoAppendReportTotals(vSection: TmnrSection);
 var
-  r: TmnrDesignRow;
+  aDesignRow: TmnrDesignRow;
   d: TmnrDesignCell;
   l: TmnrLayout;
   aRow: TmnrRow;
   f: Boolean; //first
   c: TmnrCell;
 begin
-  r := DesignRows.First;
-  if r <> nil then
+  aDesignRow := DesignRows.First;
+  if aDesignRow <> nil then
   begin
     f := True;
-    while r <> nil do
+    while aDesignRow <> nil do
     begin
       aRow := Report.CreateNewRow(vSection, nil);
       aRow.FLocked := True;
-      aRow.FDesignRow := r;
+      aRow.FDesignRow := aDesignRow;
       try
-        d := r.First;
+        d := aDesignRow.First;
         while d <> nil do
         begin
           l := d.Layout;
@@ -1455,28 +1455,28 @@ begin
         FRow := aRow;
       end;
 
-      r := r.Next;
+      aDesignRow := aDesignRow.Next;
     end;
   end;
 end;
 
 procedure TmnrSection.DoAppendTitles(vSection: TmnrSection);
 var
-  r: TmnrDesignRow;
+  aDesignRow: TmnrDesignRow;
   d: TmnrDesignCell;
   l: TmnrLayout;
   aRow: TmnrRow;
   c: TmnrCell;
 begin
-  r := DesignRows.First;
-  if r <> nil then
+  aDesignRow := DesignRows.First;
+  if aDesignRow <> nil then
   begin
-    while r <> nil do
+    while aDesignRow <> nil do
     begin
       aRow := Report.CreateNewRow(vSection, nil);
-      aRow.FDesignRow := r;
+      aRow.FDesignRow := aDesignRow;
       try
-        d := r.First;
+        d := aDesignRow.First;
         while d <> nil do
         begin
           l := d.Layout;
@@ -1503,31 +1503,31 @@ begin
       begin
         FRow := aRow;
       end;
-      r := r.Next;
+      aDesignRow := aDesignRow.Next;
     end;
   end;
 end;
 
 procedure TmnrSection.DoAppendToPageTotals(vSection: TmnrSection);
 var
-  r: TmnrDesignRow;
+  aDesignRow: TmnrDesignRow;
   d: TmnrDesignCell;
   l: TmnrLayout;
   aRow: TmnrRow;
   f: Boolean; //first
   c: TmnrCell;
 begin
-  r := DesignRows.First;
-  if r <> nil then
+  aDesignRow := DesignRows.First;
+  if aDesignRow <> nil then
   begin
     f := True;
-    while r <> nil do
+    while aDesignRow <> nil do
     begin
       aRow := Report.CreateNewRow(vSection, nil);
       aRow.FLocked := True;
-      aRow.FDesignRow := r;
+      aRow.FDesignRow := aDesignRow;
       try
-        d := r.First;
+        d := aDesignRow.First;
         while d <> nil do
         begin
           l := d.Layout;
@@ -1557,7 +1557,7 @@ begin
         FRow := aRow;
       end;
 
-      r := r.Next;
+      aDesignRow := aDesignRow.Next;
     end;
   end;
 end;
@@ -1624,17 +1624,17 @@ end;
 
 procedure TmnrSection.FillNow(vParams: TmnrFetch; vIndex: Integer; vReference: TmnrReferencesRow);
 var
-  r: TmnrDesignRow;
+  aDesignRow: TmnrDesignRow;
   d: TmnrDesignCell;
   l: TmnrLayout;
   aRow: TmnrRow;
   //c: TmnrCell;
   Accepted: Boolean;
 begin
-  r := DesignRows.First;
-  if r <> nil then
+  aDesignRow := DesignRows.First;
+  if aDesignRow <> nil then
   begin
-    while r <> nil do
+    while aDesignRow <> nil do
     begin
       aRow := Report.CreateNewRow(Self, vReference);
       try
@@ -1642,10 +1642,10 @@ begin
         aRow.FNumber := vParams.Number;
         aRow.FLocked := vParams.Locked;
         aRow.FRowIndex := vIndex;
-        aRow.FDesignRow := r;
-        if vParams.Data<>nil then DoUpdateRowData(aRow, vParams.Data, r.Next=nil);
+        aRow.FDesignRow := aDesignRow;
+        if vParams.Data<>nil then DoUpdateRowData(aRow, vParams.Data, aDesignRow.Next=nil);
 
-        d := r.First;
+        d := aDesignRow.First;
         while d <> nil do
         begin
           l := d.Layout;
@@ -1677,7 +1677,7 @@ begin
       else
         FreeAndNil(aRow); //no need it if not accepted
 
-      r := r.Next;
+      aDesignRow := aDesignRow.Next;
     end;
   end;
 end;
@@ -1745,17 +1745,17 @@ end;
 
 function TmnrSection.NewReference: TmnrReferencesRow;
 var
-  r: TmnrDesignRow;
+  aDesignRow: TmnrDesignRow;
   d: TmnrDesignCell;
   l: TmnrLayout;
 begin
   Result := ReferencesRows.Add;
-  r := DesignRows.First;
-  if r <> nil then
+  aDesignRow := DesignRows.First;
+  if aDesignRow <> nil then
   begin
-    while r <> nil do
+    while aDesignRow <> nil do
     begin
-      d := r.First;
+      d := aDesignRow.First;
       while d <> nil do
       begin
         {l := d.Layout;
@@ -1764,7 +1764,7 @@ begin
         d.FReference := Result.Add;
         d := d.Next;
       end;
-      r := r.Next;
+      aDesignRow := aDesignRow.Next;
     end;
   end;
 end;
