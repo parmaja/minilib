@@ -10,6 +10,8 @@ uses
   Classes,
   Forms, Unit1, NativeLib, LResources, lazcontrols, ntvTabs, ntvTabSets, Unit2;
 
+{$R *.res}
+
 begin
   Application.Initialize;
   Application.BidiMode := bdLeftToRight;

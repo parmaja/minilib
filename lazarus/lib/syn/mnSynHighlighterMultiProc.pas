@@ -59,7 +59,7 @@ type
     function GetEndOfLineAttribute: TSynHighlighterAttributes; virtual;
 
     procedure DoAddKeyword(AKeyword: string; AKind: integer);
-    function IsIdentifier(c: Char): Boolean; virtual;
+    function IsIdentifier(c: AnsiChar): Boolean; virtual;
 
     function ScanIdent(const Identifier: string): TtkTokenKind; //this will move Line.Run and bring Identifire kind
     function ScanMatch(const MatchWith: string): Boolean; //this will move Line.Run if matched
@@ -289,7 +289,7 @@ var
   i: Integer;
 begin
   i := 1;
-  while IsIdentifier(Identifier[i]) do
+  while (i <= Length(Identifier)) and IsIdentifier(Identifier[i]) do
     Inc(i);
   AKeyword := Copy(Identifier, 1, i - 1);
   inc(Parent.Run, i - 1);
@@ -346,7 +346,7 @@ begin
   FKeywords.Add(AKeyword, TTokenObject.Create(AKeyword, TtkTokenKind(AKind)));
 end;
 
-function TSynProcessor.IsIdentifier(c: Char): Boolean;
+function TSynProcessor.IsIdentifier(c: AnsiChar): Boolean;
 begin
   Result := IdentTable[c];
 end;
