@@ -938,7 +938,7 @@ begin
   FGroups.Free;
   FSections.Free;
   FItems.Free;
-  FRowsListIndex.Free;
+  FreeAndNil(FRowsListIndex);
   FreeAndNil(FProfiler);
   inherited;
 end;
@@ -1054,6 +1054,7 @@ end;
 
 procedure TmnrCustomReport.Finish;
 begin
+  FreeAndNil(FRowsListIndex); //in case of refill
   FRowsListIndex := TmnrRowsIndex.Create(Self);
 end;
 
