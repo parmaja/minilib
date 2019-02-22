@@ -25,16 +25,16 @@
     </RunParams>
     <RequiredPackages Count="6">
       <Item1>
-        <PackageName Value="NativeLib"/>
+        <PackageName Value="MiniCtrls"/>
       </Item1>
       <Item2>
-        <PackageName Value="MiniXML"/>
+        <PackageName Value="NativeLib"/>
       </Item2>
       <Item3>
-        <PackageName Value="MiniSockets"/>
+        <PackageName Value="MiniXML"/>
       </Item3>
       <Item4>
-        <PackageName Value="MiniLib"/>
+        <PackageName Value="MiniSockets"/>
       </Item4>
       <Item5>
         <PackageName Value="MiniCommons"/>

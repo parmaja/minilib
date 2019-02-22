@@ -1,33 +1,34 @@
 object MainFrm: TMainFrm
   Left = 482
-  Height = 339
+  Height = 447
   Top = 230
-  Width = 511
+  Width = 583
   Caption = 'IRC chat'
-  ClientHeight = 339
-  ClientWidth = 511
-  LCLVersion = '1.9.0.0'
+  ClientHeight = 447
+  ClientWidth = 583
+  LCLVersion = '2.1.0.0'
   object Panel1: TPanel
     Left = 0
     Height = 31
-    Top = 308
-    Width = 511
+    Top = 416
+    Width = 583
     Align = alBottom
     BevelOuter = bvNone
     ClientHeight = 31
-    ClientWidth = 511
+    ClientWidth = 583
     TabOrder = 0
     object SendEdit: TEdit
       Left = 6
       Height = 23
       Top = 4
-      Width = 420
+      Width = 492
       Anchors = [akLeft, akRight, akBottom]
+      BorderSpacing.Around = 5
       OnKeyPress = SendEditKeyPress
       TabOrder = 0
     end
     object SendBtn: TButton
-      Left = 430
+      Left = 502
       Height = 23
       Top = 4
       Width = 75
@@ -41,8 +42,8 @@ object MainFrm: TMainFrm
     Cursor = crVSplit
     Left = 0
     Height = 5
-    Top = 258
-    Width = 511
+    Top = 356
+    Width = 583
     Align = alBottom
     ResizeAnchor = akBottom
   end
@@ -50,11 +51,11 @@ object MainFrm: TMainFrm
     Left = 0
     Height = 30
     Top = 0
-    Width = 511
+    Width = 583
     Align = alTop
     BevelOuter = bvNone
     ClientHeight = 30
-    ClientWidth = 511
+    ClientWidth = 583
     TabOrder = 2
     object Button2: TButton
       Left = 233
@@ -69,7 +70,7 @@ object MainFrm: TMainFrm
       Left = 319
       Height = 23
       Top = 5
-      Width = 188
+      Width = 260
       Anchors = [akTop, akLeft, akRight]
       OnKeyPress = HostEditKeyPress
       TabOrder = 1
@@ -99,28 +100,28 @@ object MainFrm: TMainFrm
       Width = 85
       OnKeyPress = HostEditKeyPress
       TabOrder = 3
-      Text = 'zezo'
+      Text = 'zaher'
     end
   end
   object MsgPageControl: TPageControl
     Left = 0
-    Height = 228
+    Height = 171
     Top = 30
-    Width = 511
-    ActivePage = TabSheet2
+    Width = 583
+    ActivePage = TabSheet1
     Align = alClient
-    TabIndex = 1
+    TabIndex = 0
     TabOrder = 3
     OnChange = MsgPageControlChange
     object TabSheet1: TTabSheet
       Caption = 'Messages'
-      ClientHeight = 200
-      ClientWidth = 499
+      ClientHeight = 143
+      ClientWidth = 575
       object MsgEdit: TMemo
         Left = 0
-        Height = 200
+        Height = 143
         Top = 0
-        Width = 499
+        Width = 575
         Align = alClient
         ReadOnly = True
         ScrollBars = ssAutoBoth
@@ -128,12 +129,12 @@ object MainFrm: TMainFrm
       end
     end
     object TabSheet2: TTabSheet
-      Caption = 'Log'
-      ClientHeight = 200
+      Caption = 'Test'
+      ClientHeight = 148
       ClientWidth = 503
-      object LogEdit: TMemo
+      object LogEdit2: TMemo
         Left = 0
-        Height = 200
+        Height = 148
         Top = 0
         Width = 503
         Align = alClient
@@ -184,33 +185,56 @@ object MainFrm: TMainFrm
         PopupMenu = PopupMenu1
         ReadOnly = True
         ScrollBars = ssAutoBoth
-        TabOrder = 0
+        TabOrder = 1
         WordWrap = False
       end
       object Button1: TButton
-        Left = 418
+        Left = 396
         Height = 25
-        Top = 5
+        Top = 8
         Width = 75
         Caption = 'Test Token'
         OnClick = Button1Click
-        TabOrder = 1
+        TabOrder = 0
       end
     end
   end
   object RoomMsgEdit: TMemo
-    Left = 0
+    Left = 5
     Height = 45
-    Top = 263
-    Width = 511
+    Top = 366
+    Width = 573
     Align = alBottom
+    BorderSpacing.Around = 5
     ReadOnly = True
     ScrollBars = ssAutoBoth
     TabOrder = 4
   end
+  object LogEdit: TMemo
+    Left = 5
+    Height = 145
+    Top = 206
+    Width = 573
+    Align = alBottom
+    Anchors = [akTop, akLeft, akBottom]
+    BorderSpacing.Around = 5
+    Color = clBlack
+    Font.CharSet = ARABIC_CHARSET
+    Font.Color = clWhite
+    Font.Height = -13
+    Font.Name = 'Courier New'
+    Font.Pitch = fpFixed
+    Font.Quality = fqDraft
+    ParentFont = False
+    PopupMenu = PopupMenu1
+    ReadOnly = True
+    ScrollBars = ssAutoBoth
+    TabOrder = 5
+    WordWrap = False
+  end
   object PopupMenu1: TPopupMenu
-    left = 85
-    top = 130
+    left = 276
+    top = 217
     object MenuItem1: TMenuItem
       Caption = 'Clear'
       OnClick = MenuItem1Click

@@ -20,7 +20,9 @@ unit mnIRCClients;
 interface
 
 uses
-  Classes, StrUtils, mnSockets, mnClients, mnStreams, mnConnections, mnCommands, mnUtils;
+  Classes, StrUtils,
+  mnClasses,
+  mnSockets, mnClients, mnStreams, mnConnections, mnCommands, mnUtils;
 
 const
   cTokenSeparator = ' ';    { Separates tokens, except for the following case. }
@@ -67,19 +69,17 @@ type
 
   THandlerFunc = procedure(vTokens: TIRCTokens) of object;
 
-  PResponseHandler = ^TResponseHandler;
-
   { TResponseHandler }
 
-  TResponseHandler = record
+  TResponseHandler = class(TObject)
+  public
     Name: String;
     HandlerFunc: THandlerFunc;
-    PrevHandler: PResponseHandler;
   end;
 
   { TIRCResponseHandlers }
 
-  TIRCResponseHandlers = class(TObject)
+  TIRCResponseHandlers = class(TmnNamedObjectList<TResponseHandler>)
   private
     FHandlers: TStringList;
     FIRC: TmnIRCClient;
@@ -87,9 +87,6 @@ type
     constructor Create(AIRC: TmnIRCClient);
     destructor Destroy; override;
     function AddHandler(vName: String; vHandlerFunc: THandlerFunc): Integer;
-    procedure DeleteHandler(Index: Integer);
-    procedure RemoveHandler(Response: String);
-    function IndexOfHandler(vName: String): Integer;
     procedure Handle(vTokens: TIRCTokens);
   end;
 
@@ -362,6 +359,7 @@ begin
       if State > prefex then
       begin
         FMessage := MidStr(vData, p + 1, MaxInt);
+        AddIt(FMessage);
         State := message;
         Break;
       end
@@ -406,28 +404,17 @@ end;
 
 function TIRCResponseHandlers.AddHandler(vName: String; vHandlerFunc: THandlerFunc): Integer;
 var
-  Handler: PResponseHandler;
+  AHandler: TResponseHandler;
 begin
-  Result := IndexOfHandler(vName);
+  Result := IndexOfName(vName);
   if Result >= 0 then
   begin
-    { Create the new handler record. }
-    New(Handler);
-    { Add the link to the previous handler. }
-    Handler^.PrevHandler := PResponseHandler(FHandlers.Objects[Result]);
-    { Replace the handler in the existing item. }
-    FHandlers.Objects[Result] := TObject(Handler);
-  end
-  else
-  begin
-    { Create the handler record. }
-    New(Handler);
-    Handler^.PrevHandler := nil;
-    { Add it to the list. }
-    Result := FHandlers.AddObject(vName, TObject(Handler));
+    //not sure if we want more than one handler
   end;
-  Handler^.Name := vName;
-  Handler^.HandlerFunc := vHandlerFunc;
+  AHandler := TResponseHandler.Create;
+  AHandler.Name := vName;
+  AHandler.HandlerFunc := vHandlerFunc;
+  Result := Add(AHandler);
 end;
 
 constructor TIRCResponseHandlers.Create(AIRC: TmnIRCClient);
@@ -439,58 +426,20 @@ begin
   FIRC := AIRC;
 end;
 
-procedure TIRCResponseHandlers.DeleteHandler(Index: Integer);
-var
-  Handler: PResponseHandler;
-begin
-  if (Index >= 0) and (Index < FHandlers.Count) then
-  begin
-    Handler := PResponseHandler(FHandlers.Objects[Index]);
-    { If chained, then simply remove the newest link in the chain. }
-    if Handler^.PrevHandler <> nil then
-      FHandlers.Objects[Index] := TObject(Handler^.PrevHandler)
-    else
-      FHandlers.Delete(Index);
-    { Free the memory used by the newest link. }
-    Dispose(Handler);
-  end;
-end;
-
 destructor TIRCResponseHandlers.Destroy;
 begin
-  { Free all the handlers. }
-  while FHandlers.Count > 0 do
-    DeleteHandler(0);
-  FHandlers.Free;
   inherited;
 end;
 
 procedure TIRCResponseHandlers.Handle(vTokens: TIRCTokens);
 var
-  Index: Integer;
-  Handler: PResponseHandler;
+  AHandler: TResponseHandler;
 begin
-  Index := IndexOfHandler(vTokens.FCommand);
-  if Index >= 0 then
+  for AHandler in Self do
   begin
-    Handler := PResponseHandler(FHandlers.Objects[Index]);
-    while Assigned(Handler) do
-    begin
-      if Assigned(Handler^.HandlerFunc) then
-        Handler^.HandlerFunc(vTokens);
-      Handler := Handler^.PrevHandler;
-    end;
+    if SameText(vTokens.FCommand, AHandler.Name) then
+      AHandler.HandlerFunc(vTokens);
   end;
-end;
-
-function TIRCResponseHandlers.IndexOfHandler(vName: String): Integer;
-begin
-  Result := FHandlers.IndexOf(vName);
-end;
-
-procedure TIRCResponseHandlers.RemoveHandler(Response: String);
-begin
-  DeleteHandler(IndexOfHandler(Response));
 end;
 
 { TmnIRCClient }

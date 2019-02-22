@@ -18,6 +18,7 @@ type
     HostEdit: TEdit;
     Label1: TLabel;
     LogEdit: TMemo;
+    LogEdit2: TMemo;
     MenuItem1: TMenuItem;
     PopupMenu1: TPopupMenu;
     RoomMsgEdit: TMemo;
@@ -26,12 +27,12 @@ type
     Panel1: TPanel;
     Panel2: TPanel;
     RoomEdit: TEdit;
+    TabSheet2: TTabSheet;
     UserEdit: TEdit;
     SendBtn: TButton;
     SendEdit: TEdit;
     Splitter1: TSplitter;
     TabSheet1: TTabSheet;
-    TabSheet2: TTabSheet;
     procedure Button1Click(Sender: TObject);
     procedure Button2Click(Sender: TObject);
     procedure HostEditKeyPress(Sender: TObject; var Key: char);
@@ -70,7 +71,7 @@ var
 
 procedure TMainFrm.Button1Click(Sender: TObject);
 begin
-  IRC.Tokens.Parse(LogEdit.Lines[TestIndex]);
+  IRC.Tokens.Parse(LogEdit2.Lines[TestIndex]);
   Inc(TestIndex);
 end;
 
