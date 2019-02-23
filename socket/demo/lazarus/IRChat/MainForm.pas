@@ -13,21 +13,18 @@ type
   { TMainFrm }
 
   TMainFrm = class(TForm)
-    Button1: TButton;
     Button2: TButton;
     HostEdit: TEdit;
     Label1: TLabel;
+    UserListBox: TListBox;
     LogEdit: TMemo;
-    LogEdit2: TMemo;
     MenuItem1: TMenuItem;
     PopupMenu1: TPopupMenu;
-    RoomMsgEdit: TMemo;
     MsgEdit: TMemo;
     MsgPageControl: TPageControl;
     Panel1: TPanel;
     Panel2: TPanel;
     RoomEdit: TEdit;
-    TabSheet2: TTabSheet;
     UserEdit: TEdit;
     SendBtn: TButton;
     SendEdit: TEdit;
@@ -66,13 +63,8 @@ begin
   ConnectNow;
 end;
 
-var
-  TestIndex: Integer = 0;
-
 procedure TMainFrm.Button1Click(Sender: TObject);
 begin
-  IRC.Tokens.Parse(LogEdit2.Lines[TestIndex]);
-  Inc(TestIndex);
 end;
 
 procedure TMainFrm.ConnectNow;

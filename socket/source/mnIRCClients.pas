@@ -44,27 +44,30 @@ type
   TIRCTokens = class(TObject)
   private
     FData: String;
-    FCount: Integer;
+
+    FTime: string;
     FTokens: TList;
     FParams: TStringList;
     FCommand: string;
-    FMessage: string;
-    FTime: string;
+    FText: string;
     FSource: string;
     FTarget: string;
 
     procedure SetData(const Value: String);
   protected
-  public
+    property Data: String read FData write SetData;
     procedure Parse(vData: string); virtual;
+  public
     constructor Create;
     destructor Destroy; override;
-    property Data: String read FData write SetData;
-    property Params:TStringList read FParams;
-    property Count: Integer read FCount;
-    property Command: string read FCommand;
+
     property Source: string read FSource;
-    property Message: string read FMessage;
+    property Target: string read FTarget;
+
+    property Command: string read FCommand;
+    property Text: string read FText;
+
+    property Params: TStringList read FParams;
   end;
 
   THandlerFunc = procedure(vTokens: TIRCTokens) of object;
@@ -74,6 +77,7 @@ type
   TResponseHandler = class(TObject)
   public
     Name: String;
+    Code: String;
     HandlerFunc: THandlerFunc;
   end;
 
@@ -81,12 +85,12 @@ type
 
   TIRCResponseHandlers = class(TmnNamedObjectList<TResponseHandler>)
   private
-    FHandlers: TStringList;
     FIRC: TmnIRCClient;
   public
     constructor Create(AIRC: TmnIRCClient);
     destructor Destroy; override;
-    function AddHandler(vName: String; vHandlerFunc: THandlerFunc): Integer;
+    function AddHandler(vName, vCode: String; vHandlerFunc: THandlerFunc): Integer;
+    function AddSubHandler(vParent, vName: String; vHandlerFunc: THandlerFunc): Integer;
     procedure Handle(vTokens: TIRCTokens);
   end;
 
@@ -227,9 +231,6 @@ uses
 const
   sDefaultPort = '6667';
   sNickName = 'unknown';
-  sOtherNickName = 'othername';
-  sRealName = 'Real Name';
-  sChannel = 'test';
 
 { TmnIRCCommand }
 
@@ -358,8 +359,8 @@ begin
     begin
       if State > prefex then
       begin
-        FMessage := MidStr(vData, p + 1, MaxInt);
-        AddIt(FMessage);
+        FText := MidStr(vData, p + 1, MaxInt);
+        AddIt(FText);
         State := message;
         Break;
       end
@@ -402,7 +403,7 @@ end;
 
 { TIRCResponseHandlers }
 
-function TIRCResponseHandlers.AddHandler(vName: String; vHandlerFunc: THandlerFunc): Integer;
+function TIRCResponseHandlers.AddHandler(vName, vCode: String; vHandlerFunc: THandlerFunc): Integer;
 var
   AHandler: TResponseHandler;
 begin
@@ -413,16 +414,19 @@ begin
   end;
   AHandler := TResponseHandler.Create;
   AHandler.Name := vName;
+  AHandler.Code := vCode;
   AHandler.HandlerFunc := vHandlerFunc;
   Result := Add(AHandler);
+end;
+
+function TIRCResponseHandlers.AddSubHandler(vParent, vName: String; vHandlerFunc: THandlerFunc): Integer;
+begin
+
 end;
 
 constructor TIRCResponseHandlers.Create(AIRC: TmnIRCClient);
 begin
   inherited Create;
-  FHandlers := TStringList.Create;
-  FHandlers.Sorted := True;
-  FHandlers.Duplicates := dupError;
   FIRC := AIRC;
 end;
 
@@ -485,8 +489,8 @@ begin
   FHost := 'localhost';
   FPort := sDefaultPort;
   FNick := sNickName;
-  FAltNick := sOtherNickName;
-  FRealName := sRealName;
+  FAltNick := '';
+  FRealName := '';
   FUsername := 'username';
   FPassword := '';
   FState := isDisconnected;
@@ -662,12 +666,12 @@ end;
 
 procedure TmnIRCClient.AddHandlers;
 begin
-  FHandlers.AddHandler('PING', RplPing);
-  FHandlers.AddHandler('NICK', RplNick);
-  FHandlers.AddHandler('PRIVMSG', RplPrivMSG);
-  FHandlers.AddHandler('WELCOME', RplWelcome1);
-  FHandlers.AddHandler('ERR_NICKNAMEINUSE', RplErrNicknameInUse);
-  FHandlers.AddHandler('MODE', RplMode);
+  FHandlers.AddHandler('PING', '', RplPing);
+  FHandlers.AddHandler('NICK', '', RplNick);
+  FHandlers.AddHandler('PRIVMSG', '', RplPrivMSG);
+  FHandlers.AddHandler('WELCOME', '', RplWelcome1);
+  FHandlers.AddHandler('ERR_NICKNAMEINUSE', '', RplErrNicknameInUse);
+  FHandlers.AddHandler('MODE', '', RplMode);
 end;
 
 function TmnIRCClient.GetHost: String;
