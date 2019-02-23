@@ -39,16 +39,16 @@ type
 
   TIRCLogType = (lgMsg, lgSend, lgReceive);
 
-  { TIRCTokens }
+  { TIRCCommand }
 
-  TIRCTokens = class(TObject)
+  TIRCCommand = class(TObject)
   private
+    FCode: string;
     FData: String;
+    FName: string;
 
     FTime: string;
-    FTokens: TList;
     FParams: TStringList;
-    FCommand: string;
     FText: string;
     FSource: string;
     FTarget: string;
@@ -64,17 +64,18 @@ type
     property Source: string read FSource;
     property Target: string read FTarget;
 
-    property Command: string read FCommand;
+    property Name: string read FName;
+    property Code: string read FCode;
     property Text: string read FText;
 
     property Params: TStringList read FParams;
   end;
 
-  THandlerFunc = procedure(vTokens: TIRCTokens) of object;
+  THandlerFunc = procedure(vCommand: TIRCCommand) of object;
 
-  { TResponseHandler }
+  { TIRCHandler }
 
-  TResponseHandler = class(TObject)
+  TIRCHandler = class(TObject)
   public
     Name: String;
     Code: String;
@@ -83,7 +84,7 @@ type
 
   { TIRCResponseHandlers }
 
-  TIRCResponseHandlers = class(TmnNamedObjectList<TResponseHandler>)
+  TIRCHandlers = class(TmnNamedObjectList<TIRCHandler>)
   private
     FIRC: TmnIRCClient;
   public
@@ -91,7 +92,7 @@ type
     destructor Destroy; override;
     function AddHandler(vName, vCode: String; vHandlerFunc: THandlerFunc): Integer;
     function AddSubHandler(vParent, vName: String; vHandlerFunc: THandlerFunc): Integer;
-    procedure Handle(vTokens: TIRCTokens);
+    procedure Handle(ACommand: TIRCCommand);
   end;
 
   TmnIRCState = (isDisconnected, isConnecting, isRegistering, isReady, isDisconnecting);
@@ -156,9 +157,8 @@ type
 
     FState: TmnIRCState;
     FConnection: TmnIRCConnection;
-    FTokens: TIRCTokens;
     FCommandClasses: TmnCommandClasses;
-    FHandlers: TIRCResponseHandlers;
+    FHandlers: TIRCHandlers;
     procedure SetAltNick(const Value: String);
     procedure SetNick(const Value: String);
     function GetNick: String;
@@ -184,12 +184,14 @@ type
     procedure UserModeChanged;
     procedure AddHandlers;
 
-    procedure RplPing(vTokens: TIRCTokens);
-    procedure RplPrivMSG(vTokens: TIRCTokens);
-    procedure RplNick(vTokens: TIRCTokens);
-    procedure RplWelcome1(vTokens: TIRCTokens);
-    procedure RplErrNicknameInUse(vTokens: TIRCTokens);
-    procedure RplMode(vTokens: TIRCTokens);
+    procedure RplPing(vCommand: TIRCCommand);
+    procedure RplPrivMSG(vCommand: TIRCCommand);
+    procedure RplTopic(vCommand: TIRCCommand);
+    procedure RplNick(vCommand: TIRCCommand);
+    procedure RplWelcome1(vCommand: TIRCCommand);
+    procedure RplErrNicknameInUse(vCommand: TIRCCommand);
+    procedure RplMode(vCommand: TIRCCommand);
+    procedure Rpl372(vCommand: TIRCCommand);
   public
     constructor Create;
     destructor Destroy; override;
@@ -205,9 +207,8 @@ type
     function ExtractNickFromAddress(Address: String): String;
     property State: TmnIRCState read FState;
     property Connection: TmnIRCConnection read FConnection;
-    property Handlers: TIRCResponseHandlers read FHandlers;
+    property Handlers: TIRCHandlers read FHandlers;
     property CommandClasses: TmnCommandClasses read FCommandClasses;
-    property Tokens: TIRCTokens read FTokens; //temp
   public
     property Host: String read GetHost write SetHost;
     property Port: String read FPort write SetPort;
@@ -261,7 +262,6 @@ begin
     Line := Trim(Stream.ReadLine);
     while Line <> '' do
     begin
-      //CreateCommand()
       DoReceive(Line);
       Line := Trim(Stream.ReadLine);
     end;
@@ -288,22 +288,20 @@ begin
   inherited Connect;
 end;
 
-{ TIRCTokens }
+{ TIRCCommand }
 
-constructor TIRCTokens.Create;
+constructor TIRCCommand.Create;
 begin
   inherited;
-  FTokens := TList.Create;
   FParams := TStringList.Create;
 end;
 
-destructor TIRCTokens.Destroy;
+destructor TIRCCommand.Destroy;
 begin
-  FreeAndNil(FTokens);
   FreeAndNil(FParams);
 end;
 
-procedure TIRCTokens.SetData(const Value: String);
+procedure TIRCCommand.SetData(const Value: String);
 begin
   { If the string is a CTCP query, then skip the Ctrl-A characters at the start
     and end of the query. }
@@ -327,7 +325,7 @@ begin
   Result := vCount > 0;
 end;
 
-procedure TIRCTokens.Parse(vData: string);
+procedure TIRCCommand.Parse(vData: string);
 type
   TParseState = (prefex, command, params, message);
 var
@@ -390,7 +388,7 @@ begin
       begin
         if State <= command then
         begin
-          FCommand := MidStr(vData, Start, Count);
+          FName := MidStr(vData, Start, Count);
           State := command;
           Inc(State);
         end
@@ -401,48 +399,48 @@ begin
   end;
 end;
 
-{ TIRCResponseHandlers }
+{ TIRCHandlers }
 
-function TIRCResponseHandlers.AddHandler(vName, vCode: String; vHandlerFunc: THandlerFunc): Integer;
+function TIRCHandlers.AddHandler(vName, vCode: String; vHandlerFunc: THandlerFunc): Integer;
 var
-  AHandler: TResponseHandler;
+  AHandler: TIRCHandler;
 begin
   Result := IndexOfName(vName);
   if Result >= 0 then
   begin
     //not sure if we want more than one handler
   end;
-  AHandler := TResponseHandler.Create;
+  AHandler := TIRCHandler.Create;
   AHandler.Name := vName;
   AHandler.Code := vCode;
   AHandler.HandlerFunc := vHandlerFunc;
   Result := Add(AHandler);
 end;
 
-function TIRCResponseHandlers.AddSubHandler(vParent, vName: String; vHandlerFunc: THandlerFunc): Integer;
+function TIRCHandlers.AddSubHandler(vParent, vName: String; vHandlerFunc: THandlerFunc): Integer;
 begin
 
 end;
 
-constructor TIRCResponseHandlers.Create(AIRC: TmnIRCClient);
+constructor TIRCHandlers.Create(AIRC: TmnIRCClient);
 begin
-  inherited Create;
+  inherited Create(True);
   FIRC := AIRC;
 end;
 
-destructor TIRCResponseHandlers.Destroy;
+destructor TIRCHandlers.Destroy;
 begin
   inherited;
 end;
 
-procedure TIRCResponseHandlers.Handle(vTokens: TIRCTokens);
+procedure TIRCHandlers.Handle(ACommand: TIRCCommand);
 var
-  AHandler: TResponseHandler;
+  AHandler: TIRCHandler;
 begin
   for AHandler in Self do
   begin
-    if SameText(vTokens.FCommand, AHandler.Name) then
-      AHandler.HandlerFunc(vTokens);
+    if SameText(ACommand.FName, AHandler.Name) then
+      AHandler.HandlerFunc(ACommand);
   end;
 end;
 
@@ -494,8 +492,7 @@ begin
   FUsername := 'username';
   FPassword := '';
   FState := isDisconnected;
-  FTokens := TIRCTokens.Create;
-  FHandlers := TIRCResponseHandlers.Create(Self);
+  FHandlers := TIRCHandlers.Create(Self);
   AddHandlers;
 end;
 
@@ -503,7 +500,6 @@ destructor TmnIRCClient.Destroy;
 begin
   Reset;
   FreeAndNil(FConnection); //+
-  FreeAndNil(FTokens);
   FreeAndNil(FHandlers);
   FreeAndNil(FCommandClasses);
   inherited;
@@ -641,10 +637,17 @@ begin
 end;
 
 procedure TmnIRCClient.ReceiveData(vData: String);
+var
+  ACommand: TIRCCommand;
 begin
   Log(lgReceive, vData);
-  FTokens.Data := vData;
-  FHandlers.Handle(FTokens);
+  ACommand := TIRCCommand.Create;
+  ACommand.Data := vData;
+  try
+    FHandlers.Handle(ACommand);
+  finally
+    FreeAndNil(ACommand);
+  end;
 end;
 
 procedure TmnIRCClient.Receive(vChannel, vMsg: String);
@@ -672,6 +675,8 @@ begin
   FHandlers.AddHandler('WELCOME', '', RplWelcome1);
   FHandlers.AddHandler('ERR_NICKNAMEINUSE', '', RplErrNicknameInUse);
   FHandlers.AddHandler('MODE', '', RplMode);
+  FHandlers.AddHandler('372', '372', Rpl372);
+  FHandlers.AddHandler('332 ', '332 ', RplTopic);
 end;
 
 function TmnIRCClient.GetHost: String;
@@ -700,37 +705,42 @@ begin
     Result := Copy(Address, 1, EndOfNick - 1);
 end;
 
-procedure TmnIRCClient.RplNick(vTokens: TIRCTokens);
+procedure TmnIRCClient.RplNick(vCommand: TIRCCommand);
 begin
   { If it is our nick we are changing, then record the change. }
-  if UpperCase(ExtractNickFromAddress(vTokens.Source)) = UpperCase(FCurrentNick) then
-    FCurrentNick := vTokens.Params[0];
+  if UpperCase(ExtractNickFromAddress(vCommand.Source)) = UpperCase(FCurrentNick) then
+    FCurrentNick := vCommand.Params[0];
 end;
 
-procedure TmnIRCClient.RplPing(vTokens: TIRCTokens);
+procedure TmnIRCClient.RplPing(vCommand: TIRCCommand);
 begin
   { SendDirect the PONG reply to the PING. }
-  SendData(Format('PONG %s', [vTokens.Params[0]]));
+  SendData(Format('PONG %s', [vCommand.Params[0]]));
 end;
 
-procedure TmnIRCClient.RplPrivMSG(vTokens: TIRCTokens);
+procedure TmnIRCClient.RplPrivMSG(vCommand: TIRCCommand);
 begin
-  Receive(vTokens.Params[0], vTokens.Params[1]);
+  Receive(vCommand.Params[0], vCommand.Params[1]);
 end;
 
-procedure TmnIRCClient.RplWelcome1(vTokens: TIRCTokens);
+procedure TmnIRCClient.RplTopic(vCommand: TIRCCommand);
+begin
+  //Receive('', vCommand.Text);
+end;
+
+procedure TmnIRCClient.RplWelcome1(vCommand: TIRCCommand);
 begin
   { This should be the very first successful response we get, so set the Current
     host and nick from the values returned in the response. }
-  FCurrentHost := vTokens.Source;
-  FCurrentNick := vTokens.Params[0];
+  FCurrentHost := vCommand.Source;
+  FCurrentNick := vCommand.Params[0];
   SetState(isReady);
   { If a user mode is pre-set, then SendDirect the mode command. }
   if FUserModes <> [] then
     SendData(Format('MODE %s %s', [FCurrentNick, CreateUserModeCommand(FUserModes)]));
 end;
 
-procedure TmnIRCClient.RplErrNicknameInUse(vTokens: TIRCTokens);
+procedure TmnIRCClient.RplErrNicknameInUse(vCommand: TIRCCommand);
 begin
   { Handle nick conflicts during the registration process. }
   if FState = isRegistering then
@@ -776,17 +786,17 @@ begin
   end;
 end;
 
-procedure TmnIRCClient.RplMode(vTokens: TIRCTokens);
+procedure TmnIRCClient.RplMode(vCommand: TIRCCommand);
 var
   Index: Integer;
   ModeString: String;
   AddMode: Boolean;
 begin
   { Ignore channel mode changes.  Only interested in user mode changes. }
-  if vTokens.Params[0] = FCurrentNick then
+  if vCommand.Params[0] = FCurrentNick then
   begin
     { Copy the token for efficiency reasons. }
-    ModeString := vTokens.Params[1];
+    ModeString := vCommand.Params[1];
     AddMode := True;
     for Index := 1 to Length(ModeString) do
     begin
@@ -819,6 +829,11 @@ begin
     end;
     UserModeChanged;
   end;
+end;
+
+procedure TmnIRCClient.Rpl372(vCommand: TIRCCommand);
+begin
+  Receive('', vCommand.Text);
 end;
 
 end.

@@ -16,6 +16,8 @@ type
     Button2: TButton;
     HostEdit: TEdit;
     Label1: TLabel;
+    ServerMsgEdit: TMemo;
+    TabSheet2: TTabSheet;
     UserListBox: TListBox;
     LogEdit: TMemo;
     MenuItem1: TMenuItem;
@@ -135,7 +137,10 @@ end;
 
 procedure TMainFrm.DoReceive(Sender: TObject; vChannel, vMSG: String);
 begin
-  MsgEdit.Lines.Add(vMSG);
+  if vChannel = '' then
+    ServerMsgEdit.Lines.Add(vMSG)
+  else
+    MsgEdit.Lines.Add(vMSG);
 end;
 
 procedure TMainFrm.DoLog(Sender: TObject; vLogType: TIRCLogType; vMsg: String);

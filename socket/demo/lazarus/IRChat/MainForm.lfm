@@ -108,9 +108,9 @@ object MainFrm: TMainFrm
     Height = 245
     Top = 30
     Width = 453
-    ActivePage = TabSheet1
+    ActivePage = TabSheet2
     Align = alClient
-    TabIndex = 0
+    TabIndex = 1
     TabOrder = 3
     OnChange = MsgPageControlChange
     object TabSheet1: TTabSheet
@@ -126,6 +126,29 @@ object MainFrm: TMainFrm
         ReadOnly = True
         ScrollBars = ssAutoBoth
         TabOrder = 0
+      end
+    end
+    object TabSheet2: TTabSheet
+      Caption = 'Server'
+      ClientHeight = 217
+      ClientWidth = 445
+      object ServerMsgEdit: TMemo
+        Left = 0
+        Height = 217
+        Top = 0
+        Width = 445
+        Align = alClient
+        Font.CharSet = ANSI_CHARSET
+        Font.Color = clBlack
+        Font.Height = -12
+        Font.Name = 'Courier New'
+        Font.Pitch = fpFixed
+        Font.Quality = fqDraft
+        ParentFont = False
+        ReadOnly = True
+        ScrollBars = ssAutoBoth
+        TabOrder = 0
+        WordWrap = False
       end
     end
   end
