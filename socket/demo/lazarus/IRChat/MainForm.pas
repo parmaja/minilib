@@ -85,7 +85,8 @@ begin
   IRC.Host := HostEdit.Text;
   IRC.Port := '6667';
   IRC.Nick := UserEdit.Text;
-  //IRC.Username := 'Zezo';
+  IRC.Username := UserEdit.Text;
+  IRC.Password := PasswordEdit.Text;
   IRC.Connect;
   IRC.Join(RoomEdit.Text);
 end;
