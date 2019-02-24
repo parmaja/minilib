@@ -1,146 +1,185 @@
 object MainFrm: TMainFrm
   Left = 482
-  Height = 447
+  Height = 427
   Top = 230
-  Width = 631
+  Width = 609
   Caption = 'IRC chat'
-  ClientHeight = 447
-  ClientWidth = 631
+  ClientHeight = 427
+  ClientWidth = 609
   LCLVersion = '2.1.0.0'
   object Panel1: TPanel
-    Left = 0
-    Height = 31
-    Top = 416
-    Width = 631
+    Left = 2
+    Height = 24
+    Top = 401
+    Width = 605
     Align = alBottom
+    BorderSpacing.Around = 2
     BevelOuter = bvNone
-    ClientHeight = 31
-    ClientWidth = 631
-    TabOrder = 0
+    ClientHeight = 24
+    ClientWidth = 605
+    TabOrder = 1
     object SendEdit: TEdit
-      Left = 6
-      Height = 23
-      Top = 4
-      Width = 540
+      Left = 55
+      Height = 24
+      Top = 0
+      Width = 498
+      Align = alClient
       Anchors = [akLeft, akRight, akBottom]
-      BorderSpacing.Around = 5
       OnKeyPress = SendEditKeyPress
       TabOrder = 0
     end
     object SendBtn: TButton
-      Left = 550
-      Height = 23
-      Top = 4
-      Width = 75
+      Left = 553
+      Height = 24
+      Top = 0
+      Width = 52
+      Align = alRight
       Anchors = [akRight, akBottom]
+      AutoSize = True
       Caption = 'Send'
       OnClick = SendBtnClick
       TabOrder = 1
+    end
+    object NicknameBtn: TButton
+      Left = 0
+      Height = 24
+      Top = 0
+      Width = 55
+      Align = alLeft
+      Anchors = [akRight, akBottom]
+      Caption = 'Name'
+      TabOrder = 2
     end
   end
   object Splitter1: TSplitter
     Cursor = crVSplit
     Left = 0
-    Height = 10
-    Top = 275
-    Width = 631
+    Height = 4
+    Top = 284
+    Width = 609
     Align = alBottom
+    Beveled = True
     ResizeAnchor = akBottom
   end
   object Panel2: TPanel
     Left = 0
-    Height = 30
+    Height = 56
     Top = 0
-    Width = 631
+    Width = 609
     Align = alTop
     BevelOuter = bvNone
-    ClientHeight = 30
-    ClientWidth = 631
-    TabOrder = 2
-    object Button2: TButton
-      Left = 233
+    ClientHeight = 56
+    ClientWidth = 609
+    TabOrder = 0
+    object ConnectBtn: TButton
+      Left = 518
       Height = 24
-      Top = 5
+      Top = 4
       Width = 85
+      Anchors = [akTop, akRight]
       Caption = '&Connect'
-      OnClick = Button2Click
-      TabOrder = 0
+      OnClick = ConnectBtnClick
+      TabOrder = 3
     end
     object HostEdit: TEdit
       Left = 319
       Height = 23
       Top = 5
-      Width = 308
+      Width = 197
       Anchors = [akTop, akLeft, akRight]
       OnKeyPress = HostEditKeyPress
-      TabOrder = 1
+      TabOrder = 2
       Text = '192.168.1.2'
     end
     object RoomEdit: TEdit
-      Left = 137
+      Left = 319
       Height = 23
-      Top = 5
-      Width = 85
+      Top = 31
+      Width = 109
+      Anchors = [akTop, akLeft, akRight]
       OnKeyPress = HostEditKeyPress
-      TabOrder = 2
+      TabOrder = 4
       Text = '#parmaja'
     end
     object Label1: TLabel
-      Left = 97
+      Left = 276
       Height = 15
-      Top = 8
+      Top = 36
       Width = 32
       Caption = 'Room'
       ParentColor = False
     end
     object UserEdit: TEdit
-      Left = 4
+      Left = 73
       Height = 23
       Top = 5
-      Width = 85
+      Width = 135
       OnKeyPress = HostEditKeyPress
-      TabOrder = 3
+      TabOrder = 0
       Text = 'zaher'
+    end
+    object Label3: TLabel
+      Left = 13
+      Height = 15
+      Top = 34
+      Width = 50
+      Caption = 'Password'
+      ParentColor = False
+    end
+    object Label4: TLabel
+      Left = 276
+      Height = 15
+      Top = 9
+      Width = 25
+      Caption = 'Host'
+      ParentColor = False
+    end
+    object JoinBtn: TButton
+      Left = 430
+      Height = 24
+      Top = 30
+      Width = 85
+      Anchors = [akTop, akRight]
+      Caption = '&Join'
+      OnClick = ConnectBtnClick
+      TabOrder = 5
+    end
+    object PasswordEdit: TEdit
+      Left = 72
+      Height = 23
+      Top = 31
+      Width = 136
+      EchoMode = emPassword
+      OnKeyPress = HostEditKeyPress
+      PasswordChar = '*'
+      TabOrder = 1
     end
   end
   object MsgPageControl: TPageControl
-    Left = 0
-    Height = 245
-    Top = 30
-    Width = 453
-    ActivePage = TabSheet2
+    Left = 2
+    Height = 224
+    Top = 58
+    Width = 459
+    ActivePage = TabSheet1
     Align = alClient
+    BorderSpacing.Around = 2
     TabIndex = 1
     TabOrder = 3
     OnChange = MsgPageControlChange
-    object TabSheet1: TTabSheet
-      Caption = 'Messages'
-      ClientHeight = 217
-      ClientWidth = 445
-      object MsgEdit: TMemo
-        Left = 0
-        Height = 217
-        Top = 0
-        Width = 445
-        Align = alClient
-        ReadOnly = True
-        ScrollBars = ssAutoBoth
-        TabOrder = 0
-      end
-    end
     object TabSheet2: TTabSheet
       Caption = 'Server'
-      ClientHeight = 217
-      ClientWidth = 445
+      ClientHeight = 196
+      ClientWidth = 473
       object ServerMsgEdit: TMemo
         Left = 0
-        Height = 217
+        Height = 196
         Top = 0
-        Width = 445
+        Width = 473
         Align = alClient
+        Color = 15132390
         Font.CharSet = ANSI_CHARSET
         Font.Color = clBlack
-        Font.Height = -12
+        Font.Height = -11
         Font.Name = 'Courier New'
         Font.Pitch = fpFixed
         Font.Quality = fqDraft
@@ -151,15 +190,30 @@ object MainFrm: TMainFrm
         WordWrap = False
       end
     end
+    object TabSheet1: TTabSheet
+      Caption = 'Room'
+      ClientHeight = 196
+      ClientWidth = 451
+      object MsgEdit: TMemo
+        Left = 0
+        Height = 196
+        Top = 0
+        Width = 451
+        Align = alClient
+        ReadOnly = True
+        ScrollBars = ssAutoBoth
+        TabOrder = 0
+      end
+    end
   end
   object LogEdit: TMemo
-    Left = 5
-    Height = 121
+    Left = 2
+    Height = 109
     Top = 290
-    Width = 621
+    Width = 605
     Align = alBottom
     Anchors = [akTop, akLeft, akBottom]
-    BorderSpacing.Around = 5
+    BorderSpacing.Around = 2
     Color = clBlack
     Font.CharSet = ARABIC_CHARSET
     Font.Color = clWhite
@@ -168,22 +222,40 @@ object MainFrm: TMainFrm
     Font.Pitch = fpFixed
     Font.Quality = fqDraft
     ParentFont = False
-    PopupMenu = PopupMenu1
+    PopupMenu = LogPopupMenu
     ReadOnly = True
     ScrollBars = ssAutoBoth
     TabOrder = 4
     WordWrap = False
   end
   object UserListBox: TListBox
-    Left = 453
-    Height = 245
-    Top = 30
-    Width = 178
+    Left = 469
+    Height = 224
+    Top = 58
+    Width = 138
     Align = alRight
+    BorderSpacing.Around = 2
     ItemHeight = 0
     TabOrder = 5
   end
-  object PopupMenu1: TPopupMenu
+  object Label2: TLabel
+    Left = 13
+    Height = 15
+    Top = 9
+    Width = 53
+    Caption = 'Username'
+    ParentColor = False
+  end
+  object Splitter2: TSplitter
+    Left = 463
+    Height = 228
+    Top = 56
+    Width = 4
+    Align = alRight
+    Beveled = True
+    ResizeAnchor = akRight
+  end
+  object LogPopupMenu: TPopupMenu
     left = 276
     top = 217
     object MenuItem1: TMenuItem

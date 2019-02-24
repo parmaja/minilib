@@ -71,28 +71,47 @@ type
     property Params: TStringList read FParams;
   end;
 
-  THandlerFunc = procedure(vCommand: TIRCCommand) of object;
-
   { TIRCHandler }
 
   TIRCHandler = class(TObject)
+  private
+    FClient: TmnIRCClient;
+  protected
+    procedure DoReceive(vCommand: TIRCCommand); virtual; abstract;
+    procedure Receive(vCommand: TIRCCommand); virtual;
   public
     Name: String;
     Code: String;
-    HandlerFunc: THandlerFunc;
+    constructor Create(AClient: TmnIRCClient);
+    property Client: TmnIRCClient read FClient;
   end;
 
-  { TIRCResponseHandlers }
+  TIRCHandlerClass = class of TIRCHandler;
 
-  TIRCHandlers = class(TmnNamedObjectList<TIRCHandler>)
+  { TCustomIRCHandlers }
+
+  //We should use base class TmnCommandClasses, TODO
+
+  TCustomIRCHandlers = class(TmnNamedObjectList<TIRCHandler>)
   private
-    FIRC: TmnIRCClient;
+    FClient: TmnIRCClient;
   public
-    constructor Create(AIRC: TmnIRCClient);
+    constructor Create(AClient: TmnIRCClient);
     destructor Destroy; override;
-    function AddHandler(vName, vCode: String; vHandlerFunc: THandlerFunc): Integer;
-    function AddSubHandler(vParent, vName: String; vHandlerFunc: THandlerFunc): Integer;
+    function Add(vName, vCode: String; AClass: TIRCHandlerClass): Integer;
     procedure Handle(ACommand: TIRCCommand);
+    property Client: TmnIRCClient read FClient;
+  end;
+
+  { TIRCHandlers }
+
+  //Preeminent handlers
+  TIRCHandlers = class(TCustomIRCHandlers);
+
+  { TIRCPoolHandlers }
+
+  //Temporary commands, when received it will deleted
+  TIRCPoolHandlers = class(TCustomIRCHandlers)
   end;
 
   TmnIRCState = (isDisconnected, isConnecting, isRegistering, isReady, isDisconnecting);
@@ -102,22 +121,11 @@ type
 
   TmnOnData = procedure(const Data: string) of object;
 
-  { TmnIRCCommand }
-
-  TmnIRCCommand = class(TmnCommand)
-  public
-    constructor Create(Connection: TmnCommandConnection); override;
-  end;
-
-  TmnIRCCommands = class(TmnCommands)
-  end;
-
   { TmnIRCConnection }
 
   TmnIRCConnection = class(TmnClientConnection)
   private
     FIRC: TmnIRCClient;
-    FCommands: TmnIRCCommands;
   protected
     procedure DoReceive(const Data: string); virtual;
     procedure DoLog(const vData: string); virtual;
@@ -126,7 +134,6 @@ type
     constructor Create(vOwner: TmnConnections; vSocket: TmnConnectionStream); override;
     destructor Destroy; override;
     procedure Connect; override;
-    property Commands: TmnIRCCommands read FCommands;
   end;
 
   TOnReceive = procedure(Sender: TObject; vChannel, vMSG: String) of object;
@@ -157,8 +164,8 @@ type
 
     FState: TmnIRCState;
     FConnection: TmnIRCConnection;
-    FCommandClasses: TmnCommandClasses;
     FHandlers: TIRCHandlers;
+    FPoolHandlers: TIRCPoolHandlers;
     procedure SetAltNick(const Value: String);
     procedure SetNick(const Value: String);
     function GetNick: String;
@@ -179,19 +186,11 @@ type
     procedure ReceiveData(vData: String); virtual;
     procedure SendData(vData: String);
 
-    procedure Receive(vChannel, vMsg: String); virtual;
+    procedure ChannelReceive(vChannel, vMsg: String); virtual;
 
     procedure UserModeChanged;
-    procedure AddHandlers;
+    procedure InitHandlers;
 
-    procedure RplPing(vCommand: TIRCCommand);
-    procedure RplPrivMSG(vCommand: TIRCCommand);
-    procedure RplTopic(vCommand: TIRCCommand);
-    procedure RplNick(vCommand: TIRCCommand);
-    procedure RplWelcome1(vCommand: TIRCCommand);
-    procedure RplErrNicknameInUse(vCommand: TIRCCommand);
-    procedure RplMode(vCommand: TIRCCommand);
-    procedure Rpl372(vCommand: TIRCCommand);
   public
     constructor Create;
     destructor Destroy; override;
@@ -200,15 +199,14 @@ type
 
     procedure Log(vLogType: TIRCLogType; Message: String);
 
-    procedure Send(Channel, Text: String);
+    procedure ChannelSend(Channel, Text: String);
     procedure Join(Channel: String);
     procedure Notice(Destination, Text: String);
     procedure Quit(Reason: String);
-    function ExtractNickFromAddress(Address: String): String;
     property State: TmnIRCState read FState;
     property Connection: TmnIRCConnection read FConnection;
     property Handlers: TIRCHandlers read FHandlers;
-    property CommandClasses: TmnCommandClasses read FCommandClasses;
+    property PoolHandlers: TIRCPoolHandlers read FPoolHandlers;
   public
     property Host: String read GetHost write SetHost;
     property Port: String read FPort write SetPort;
@@ -224,6 +222,62 @@ type
     property OnUserModeChanged: TNotifyEvent read FOnUserModeChanged write FOnUserModeChanged;
   end;
 
+  { TPing_IRCHandler }
+
+  TPing_IRCHandler = class(TIRCHandler)
+  protected
+    procedure DoReceive(vCommand: TIRCCommand); override;
+  end;
+
+  { TPRIVMSG_IRCHandler }
+
+  TPRIVMSG_IRCHandler = class(TIRCHandler)
+  protected
+    procedure DoReceive(vCommand: TIRCCommand); override;
+  end;
+
+  { TMOTD_IRCHandler }
+
+  TMOTD_IRCHandler = class(TIRCHandler)
+  protected
+    procedure DoReceive(vCommand: TIRCCommand); override;
+  end;
+
+  { TTOPIC_IRCHandler }
+
+  TTOPIC_IRCHandler = class(TIRCHandler)
+  protected
+    procedure DoReceive(vCommand: TIRCCommand); override;
+  end;
+
+  { TWELCOME_IRCHandler }
+
+  TWELCOME_IRCHandler = class(TIRCHandler)
+  protected
+    procedure DoReceive(vCommand: TIRCCommand); override;
+  end;
+
+  { TNICK_IRCHandler }
+
+  TNICK_IRCHandler = class(TIRCHandler)
+  protected
+    procedure DoReceive(vCommand: TIRCCommand); override;
+  end;
+
+  { TMODE_IRCHandler }
+
+  TMODE_IRCHandler = class(TIRCHandler)
+  protected
+    procedure DoReceive(vCommand: TIRCCommand); override;
+  end;
+
+  { TErrNicknameInUse_IRCHandler }
+
+  TErrNicknameInUse_IRCHandler = class(TIRCHandler)
+  protected
+    procedure DoReceive(vCommand: TIRCCommand); override;
+  end;
+
 implementation
 
 uses
@@ -231,13 +285,148 @@ uses
 
 const
   sDefaultPort = '6667';
-  sNickName = 'unknown';
+  sNickName = 'guest';
 
-{ TmnIRCCommand }
-
-constructor TmnIRCCommand.Create(Connection: TmnCommandConnection);
+function ExtractNickFromAddress(Address: String): String;
+var
+  EndOfNick: Integer;
 begin
-  inherited;
+  Result := '';
+  EndOfNick := Pos('!', Address);
+  if EndOfNick > 0 then
+    Result := Copy(Address, 1, EndOfNick - 1);
+end;
+
+{ TErrNicknameInUse_IRCHandler }
+
+procedure TErrNicknameInUse_IRCHandler.DoReceive(vCommand: TIRCCommand);
+begin
+  { Handle nick conflicts during the registration process. }
+  with Client do
+    if FState = isRegistering then
+    begin
+      if FChangeNickTo = FNick then
+        SetNick(FAltNick)
+      else
+        Quit('Nick conflict');
+    end;
+end;
+
+{ TMODE_IRCHandler }
+
+procedure TMODE_IRCHandler.DoReceive(vCommand: TIRCCommand);
+var
+  Index: Integer;
+  ModeString: String;
+  AddMode: Boolean;
+begin
+  { Ignore channel mode changes.  Only interested in user mode changes. }
+  with Client do
+    if vCommand.Params[0] = FCurrentNick then
+    begin
+      { Copy the token for efficiency reasons. }
+      ModeString := vCommand.Params[1];
+      AddMode := True;
+      for Index := 1 to Length(ModeString) do
+      begin
+        case ModeString[Index] of
+          '+':
+            AddMode := True;
+          '-':
+            AddMode := False;
+          'i':
+            if AddMode then
+              FCurrentUserModes := FCurrentUserModes + [umInvisible]
+            else
+              FCurrentUserModes := FCurrentUserModes - [umInvisible];
+          'o':
+            if AddMode then
+              FCurrentUserModes := FCurrentUserModes + [umOperator]
+            else
+              FCurrentUserModes := FCurrentUserModes - [umOperator];
+          's':
+            if AddMode then
+              FCurrentUserModes := FCurrentUserModes + [umServerNotices]
+            else
+              FCurrentUserModes := FCurrentUserModes - [umServerNotices];
+          'w':
+            if AddMode then
+              FCurrentUserModes := FCurrentUserModes + [umWallops]
+            else
+              FCurrentUserModes := FCurrentUserModes - [umWallops];
+        end;
+      end;
+      UserModeChanged;
+    end;
+end;
+
+
+{ TNICK_IRCHandler }
+
+procedure TNICK_IRCHandler.DoReceive(vCommand: TIRCCommand);
+begin
+  { If it is our nick we are changing, then record the change. }
+  if UpperCase(ExtractNickFromAddress(vCommand.Source)) = UpperCase(Client.FCurrentNick) then
+    Client.FCurrentNick := vCommand.Params[0];
+end;
+
+{ TWELCOME_IRCHandler }
+
+procedure TWELCOME_IRCHandler.DoReceive(vCommand: TIRCCommand);
+begin
+  with Client do
+  begin
+    { This should be the very first successful response we get, so set the Current
+      host and nick from the values returned in the response. }
+    FCurrentHost := vCommand.Source;
+    FCurrentNick := vCommand.Params[0];
+    SetState(isReady);
+    { If a user mode is pre-set, then SendDirect the mode command. }
+    if FUserModes <> [] then
+      SendData(Format('MODE %s %s', [FCurrentNick, CreateUserModeCommand(FUserModes)]));
+  end;
+end;
+
+{ TTOPIC_IRCHandler }
+
+procedure TTOPIC_IRCHandler.DoReceive(vCommand: TIRCCommand);
+begin
+
+end;
+
+{ TMOTD_IRCHandler }
+
+procedure TMOTD_IRCHandler.DoReceive(vCommand: TIRCCommand);
+begin
+  Client.ChannelReceive('', vCommand.Text);
+end;
+
+{ TIRCHandler }
+
+procedure TIRCHandler.Receive(vCommand: TIRCCommand);
+begin
+  DoReceive(vCommand);
+  Client.Log(lgMsg, Name + ' triggered');
+end;
+
+constructor TIRCHandler.Create(AClient: TmnIRCClient);
+begin
+  FClient := AClient;
+end;
+
+{ TPRIVMSG_IRCHandler }
+
+procedure TPRIVMSG_IRCHandler.DoReceive(vCommand: TIRCCommand);
+begin
+  Client.ChannelReceive(vCommand.Params[0], vCommand.Params[1]);
+end;
+
+{ TPing_IRCHandler }
+
+procedure TPing_IRCHandler.DoReceive(vCommand: TIRCCommand);
+begin
+  { SendDirect the PONG reply to the PING. }
+  Client.SendData(Format('PONG %s', [vCommand.Params[0]]));
 end;
 
 { TmnIRCConnection }
@@ -271,12 +460,10 @@ end;
 constructor TmnIRCConnection.Create(vOwner: TmnConnections; vSocket: TmnConnectionStream);
 begin
   inherited Create(vOwner, vSocket);
-  FCommands := TmnIRCCommands.Create;
 end;
 
 destructor TmnIRCConnection.Destroy;
 begin
-  FreeAndNil(FCommands);
   inherited Destroy;
 end;
 
@@ -399,9 +586,9 @@ begin
   end;
 end;
 
-{ TIRCHandlers }
+{ TCustomIRCHandlers }
 
-function TIRCHandlers.AddHandler(vName, vCode: String; vHandlerFunc: THandlerFunc): Integer;
+function TCustomIRCHandlers.Add(vName, vCode: String; AClass: TIRCHandlerClass): Integer;
 var
   AHandler: TIRCHandler;
 begin
@@ -410,37 +597,31 @@ begin
   begin
     //not sure if we want more than one handler
   end;
-  AHandler := TIRCHandler.Create;
+  AHandler := AClass.Create(Client);
   AHandler.Name := vName;
   AHandler.Code := vCode;
-  AHandler.HandlerFunc := vHandlerFunc;
-  Result := Add(AHandler);
+  Result := inherited Add(AHandler);
 end;
 
-function TIRCHandlers.AddSubHandler(vParent, vName: String; vHandlerFunc: THandlerFunc): Integer;
-begin
-
-end;
-
-constructor TIRCHandlers.Create(AIRC: TmnIRCClient);
+constructor TCustomIRCHandlers.Create(AClient: TmnIRCClient);
 begin
   inherited Create(True);
-  FIRC := AIRC;
+  FClient := AClient;
 end;
 
-destructor TIRCHandlers.Destroy;
+destructor TCustomIRCHandlers.Destroy;
 begin
   inherited;
 end;
 
-procedure TIRCHandlers.Handle(ACommand: TIRCCommand);
+procedure TCustomIRCHandlers.Handle(ACommand: TIRCCommand);
 var
   AHandler: TIRCHandler;
 begin
   for AHandler in Self do
   begin
-    if SameText(ACommand.FName, AHandler.Name) then
-      AHandler.HandlerFunc(ACommand);
+    if SameText(ACommand.FName, AHandler.Name) or SameText(ACommand.FName, AHandler.Code)  then
+      AHandler.Receive(ACommand);
   end;
 end;
 
@@ -480,7 +661,6 @@ end;
 constructor TmnIRCClient.Create;
 begin
   inherited Create;
-  FCommandClasses := TmnCommandClasses.Create;
   FConnection := TmnIRCConnection.Create(nil, nil);
   FConnection.FIRC := Self;
   FConnection.FreeOnTerminate := False;
@@ -493,7 +673,8 @@ begin
   FPassword := '';
   FState := isDisconnected;
   FHandlers := TIRCHandlers.Create(Self);
-  AddHandlers;
+  FPoolHandlers := TIRCPoolHandlers.Create(Self);
+  InitHandlers;
 end;
 
 destructor TmnIRCClient.Destroy;
@@ -501,7 +682,7 @@ begin
   Reset;
   FreeAndNil(FConnection); //+
   FreeAndNil(FHandlers);
-  FreeAndNil(FCommandClasses);
+  FreeAndNil(FPoolHandlers);
   inherited;
 end;
 
@@ -525,7 +706,7 @@ begin
     FOnLog(Self, vLogType, Message);
 end;
 
-procedure TmnIRCClient.Send(Channel, Text: String);
+procedure TmnIRCClient.ChannelSend(Channel, Text: String);
 begin
   SendData(Format('PRIVMSG %s :%s', [Channel, Text]));
 end;
@@ -650,7 +831,7 @@ begin
   end;
 end;
 
-procedure TmnIRCClient.Receive(vChannel, vMsg: String);
+procedure TmnIRCClient.ChannelReceive(vChannel, vMsg: String);
 begin
   if Assigned(FOnReceive) then
     FOnReceive(Self, vChannel, vMsg);
@@ -667,16 +848,17 @@ begin
   SendData(Format('QUIT :%s', [Reason]));
 end;
 
-procedure TmnIRCClient.AddHandlers;
+procedure TmnIRCClient.InitHandlers;
 begin
-  FHandlers.AddHandler('PING', '', RplPing);
-  FHandlers.AddHandler('NICK', '', RplNick);
-  FHandlers.AddHandler('PRIVMSG', '', RplPrivMSG);
-  FHandlers.AddHandler('WELCOME', '', RplWelcome1);
-  FHandlers.AddHandler('ERR_NICKNAMEINUSE', '', RplErrNicknameInUse);
-  FHandlers.AddHandler('MODE', '', RplMode);
-  FHandlers.AddHandler('372', '372', Rpl372);
-  FHandlers.AddHandler('332 ', '332 ', RplTopic);
+  FHandlers.Add('PRIVMSG', 'PRIVMSG', TPRIVMSG_IRCHandler);
+  FHandlers.Add('PING', 'PING', TPING_IRCHandler);
+  FHandlers.Add('MOTD', '372', TMOTD_IRCHandler);
+  FHandlers.Add('TOPIC', '332', TMOTD_IRCHandler);
+  FHandlers.Add('NICK', 'NICK', TNICK_IRCHandler);
+  FHandlers.Add('WELCOME', 'WELCOME', TWELCOME_IRCHandler);
+  FHandlers.Add('MODE', 'MODE', TMODE_IRCHandler);
+  FHandlers.Add('TOPIC ', '332 ', TTOPIC_IRCHandler);
+  FHandlers.Add('ERR_NICKNAMEINUSE', 'ERR_NICKNAMEINUSE', TErrNicknameInUse_IRCHandler);
 end;
 
 function TmnIRCClient.GetHost: String;
@@ -693,63 +875,6 @@ begin
     Result := FCurrentNick
   else
     Result := FNick;
-end;
-
-function TmnIRCClient.ExtractNickFromAddress(Address: String): String;
-var
-  EndOfNick: Integer;
-begin
-  Result := '';
-  EndOfNick := Pos('!', Address);
-  if EndOfNick > 0 then
-    Result := Copy(Address, 1, EndOfNick - 1);
-end;
-
-procedure TmnIRCClient.RplNick(vCommand: TIRCCommand);
-begin
-  { If it is our nick we are changing, then record the change. }
-  if UpperCase(ExtractNickFromAddress(vCommand.Source)) = UpperCase(FCurrentNick) then
-    FCurrentNick := vCommand.Params[0];
-end;
-
-procedure TmnIRCClient.RplPing(vCommand: TIRCCommand);
-begin
-  { SendDirect the PONG reply to the PING. }
-  SendData(Format('PONG %s', [vCommand.Params[0]]));
-end;
-
-procedure TmnIRCClient.RplPrivMSG(vCommand: TIRCCommand);
-begin
-  Receive(vCommand.Params[0], vCommand.Params[1]);
-end;
-
-procedure TmnIRCClient.RplTopic(vCommand: TIRCCommand);
-begin
-  //Receive('', vCommand.Text);
-end;
-
-procedure TmnIRCClient.RplWelcome1(vCommand: TIRCCommand);
-begin
-  { This should be the very first successful response we get, so set the Current
-    host and nick from the values returned in the response. }
-  FCurrentHost := vCommand.Source;
-  FCurrentNick := vCommand.Params[0];
-  SetState(isReady);
-  { If a user mode is pre-set, then SendDirect the mode command. }
-  if FUserModes <> [] then
-    SendData(Format('MODE %s %s', [FCurrentNick, CreateUserModeCommand(FUserModes)]));
-end;
-
-procedure TmnIRCClient.RplErrNicknameInUse(vCommand: TIRCCommand);
-begin
-  { Handle nick conflicts during the registration process. }
-  if FState = isRegistering then
-  begin
-    if FChangeNickTo = FNick then
-      SetNick(FAltNick)
-    else
-      Quit('Nick conflict');
-  end;
 end;
 
 { Create the mode command string to SendDirect to the server to modify the user's
@@ -784,56 +909,6 @@ begin
         Result := Result + ModeChars[Mode];
     end;
   end;
-end;
-
-procedure TmnIRCClient.RplMode(vCommand: TIRCCommand);
-var
-  Index: Integer;
-  ModeString: String;
-  AddMode: Boolean;
-begin
-  { Ignore channel mode changes.  Only interested in user mode changes. }
-  if vCommand.Params[0] = FCurrentNick then
-  begin
-    { Copy the token for efficiency reasons. }
-    ModeString := vCommand.Params[1];
-    AddMode := True;
-    for Index := 1 to Length(ModeString) do
-    begin
-      case ModeString[Index] of
-        '+':
-          AddMode := True;
-        '-':
-          AddMode := False;
-        'i':
-          if AddMode then
-            FCurrentUserModes := FCurrentUserModes + [umInvisible]
-          else
-            FCurrentUserModes := FCurrentUserModes - [umInvisible];
-        'o':
-          if AddMode then
-            FCurrentUserModes := FCurrentUserModes + [umOperator]
-          else
-            FCurrentUserModes := FCurrentUserModes - [umOperator];
-        's':
-          if AddMode then
-            FCurrentUserModes := FCurrentUserModes + [umServerNotices]
-          else
-            FCurrentUserModes := FCurrentUserModes - [umServerNotices];
-        'w':
-          if AddMode then
-            FCurrentUserModes := FCurrentUserModes + [umWallops]
-          else
-            FCurrentUserModes := FCurrentUserModes - [umWallops];
-      end;
-    end;
-    UserModeChanged;
-  end;
-end;
-
-procedure TmnIRCClient.Rpl372(vCommand: TIRCCommand);
-begin
-  Receive('', vCommand.Text);
 end;
 
 end.

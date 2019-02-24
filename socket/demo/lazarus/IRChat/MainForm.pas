@@ -5,23 +5,33 @@ unit MainForm;
 interface
 
 uses
-  Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, Buttons,
+  Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, Buttons, IniFiles,
   StdCtrls, ExtCtrls, ComCtrls, Menus, mnIRCClients;
 
 type
+  TMyIRCClient = class(TmnIRCClient)
+  public
+  end;
 
   { TMainFrm }
 
   TMainFrm = class(TForm)
-    Button2: TButton;
+    ConnectBtn: TButton;
+    JoinBtn: TButton;
     HostEdit: TEdit;
     Label1: TLabel;
+    Label2: TLabel;
+    Label3: TLabel;
+    Label4: TLabel;
+    PasswordEdit: TEdit;
+    NicknameBtn: TButton;
     ServerMsgEdit: TMemo;
+    Splitter2: TSplitter;
     TabSheet2: TTabSheet;
     UserListBox: TListBox;
     LogEdit: TMemo;
     MenuItem1: TMenuItem;
-    PopupMenu1: TPopupMenu;
+    LogPopupMenu: TPopupMenu;
     MsgEdit: TMemo;
     MsgPageControl: TPageControl;
     Panel1: TPanel;
@@ -33,14 +43,14 @@ type
     Splitter1: TSplitter;
     TabSheet1: TTabSheet;
     procedure Button1Click(Sender: TObject);
-    procedure Button2Click(Sender: TObject);
+    procedure ConnectBtnClick(Sender: TObject);
     procedure HostEditKeyPress(Sender: TObject; var Key: char);
     procedure MenuItem1Click(Sender: TObject);
     procedure MsgPageControlChange(Sender: TObject);
     procedure SendBtnClick(Sender: TObject);
     procedure SendEditKeyPress(Sender: TObject; var Key: char);
   private
-    IRC: TmnIRCClient;
+    IRC: TMyIRCClient;
     procedure ConnectNow;
     procedure SendNow;
   public
@@ -60,9 +70,10 @@ implementation
 
 { TMainFrm }
 
-procedure TMainFrm.Button2Click(Sender: TObject);
+procedure TMainFrm.ConnectBtnClick(Sender: TObject);
 begin
   ConnectNow;
+  SendEdit.SetFocus;
 end;
 
 procedure TMainFrm.Button1Click(Sender: TObject);
@@ -105,7 +116,7 @@ end;
 
 procedure TMainFrm.SendNow;
 begin
-  IRC.Send(RoomEdit.Text, SendEdit.Text);
+  IRC.ChannelSend(RoomEdit.Text, SendEdit.Text);
   SendEdit.Text := '';
 end;
 
@@ -119,9 +130,22 @@ begin
 end;
 
 constructor TMainFrm.Create(TheOwner: TComponent);
+var
+  ini: TIniFile;
 begin
   inherited Create(TheOwner);
-  IRC := TmnIRCClient.Create;
+  ini := TIniFile.Create(Application.Location + 'setting.ini');
+  try
+    UserEdit.Text := Ini.ReadString('User', 'Username', '');
+    PasswordEdit.Text := Ini.ReadString('User', 'Password', '');
+    RoomEdit.Text := Ini.ReadString('User', 'Room', '');
+    HostEdit.Text := Ini.ReadString('User', 'Host', '');
+    Width := Ini.ReadInteger('Window', 'Width', Width);
+    Height := Ini.ReadInteger('Window', 'Height', Height);
+  finally
+    FreeAndNil(ini);
+  end;
+  IRC := TMyIRCClient.Create;
   IRC.OnLog := @DoLog;
   IRC.OnReceive := @DoReceive;
   MsgPageControl.ActivePageIndex := 0;
@@ -129,9 +153,23 @@ begin
 end;
 
 destructor TMainFrm.Destroy;
+var
+  ini: TIniFile;
 begin
   IRC.Close;
   IRC.Free;
+  ini := TIniFile.Create(Application.Location + 'setting.ini');
+  try
+    Ini.WriteInteger('Window', 'Width', Width);
+    Ini.WriteInteger('Window', 'Height', Height);
+
+    Ini.WriteString('User', 'Username', UserEdit.Text);
+    Ini.WriteString('User', 'Password', PasswordEdit.Text);
+    Ini.WriteString('User', 'Room', RoomEdit.Text);
+    Ini.WriteString('User', 'Host', HostEdit.Text);
+  finally
+    FreeAndNil(ini);
+  end;
   inherited Destroy;
 end;
 
