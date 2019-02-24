@@ -195,7 +195,7 @@ type
     constructor Create;
     destructor Destroy; override;
     procedure Connect;
-    procedure Close;
+    procedure Disconnect;
 
     procedure Log(vLogType: TIRCLogType; Message: String);
 
@@ -627,7 +627,7 @@ end;
 
 { TmnIRCClient }
 
-procedure TmnIRCClient.Close;
+procedure TmnIRCClient.Disconnect;
 begin
   { Try to leave nicely if we can. }
   if FState = isReady then
@@ -729,7 +729,7 @@ end;
 procedure TmnIRCClient.Connected;
 begin
   SetState(isRegistering);
-  { If a password exists, SendDirect it first. }
+  { If a password exists, SendDirect it first }
   if FPassword <> '' then
     SendData(Format('PASS %s', [FPassword]));
   { SendDirect nick. }

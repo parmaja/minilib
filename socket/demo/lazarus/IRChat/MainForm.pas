@@ -25,6 +25,7 @@ type
     Label4: TLabel;
     PasswordEdit: TEdit;
     NicknameBtn: TButton;
+    SendEdit: TEdit;
     ServerMsgEdit: TMemo;
     Splitter2: TSplitter;
     TabSheet2: TTabSheet;
@@ -39,7 +40,6 @@ type
     RoomEdit: TEdit;
     UserEdit: TEdit;
     SendBtn: TButton;
-    SendEdit: TEdit;
     Splitter1: TSplitter;
     TabSheet1: TTabSheet;
     procedure Button1Click(Sender: TObject);
@@ -156,7 +156,7 @@ destructor TMainFrm.Destroy;
 var
   ini: TIniFile;
 begin
-  IRC.Close;
+  IRC.Disconnect;
   IRC.Free;
   ini := TIniFile.Create(Application.Location + 'setting.ini');
   try
