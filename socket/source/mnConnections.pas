@@ -91,6 +91,11 @@ type
     procedure SetConnected(const Value: Boolean);
   protected
     property Owner: TmnConnections read FOwner;
+    procedure Created; virtual;
+    procedure Opening; virtual;
+    procedure Closing; virtual;
+    procedure Opened; virtual;
+    procedure Closed; virtual;
     procedure Prepare; virtual;
     procedure Process; virtual;
     procedure Execute; override;
@@ -101,7 +106,7 @@ type
     constructor Create(vOwner: TmnConnections; vStream: TmnConnectionStream); virtual; //TODO use TmnBufferStream
     destructor Destroy; override;
     procedure Connect; virtual;
-    procedure Disconnect; virtual;
+    procedure Disconnect(Safe: Boolean = true); virtual; // don't raise exception, now by default true
     procedure Open; //Alias for Connect
     procedure Close; //Alias for Disconnect
     procedure Stop; virtual;
@@ -231,6 +236,7 @@ begin
   inherited Create;
   FOwner := vOwner;
   FStream := vStream;
+  Created;
 end;
 
 destructor TmnConnection.Destroy;
@@ -283,6 +289,31 @@ begin
     Close;
 end;
 
+procedure TmnConnection.Created;
+begin
+
+end;
+
+procedure TmnConnection.Opening;
+begin
+
+end;
+
+procedure TmnConnection.Closing;
+begin
+
+end;
+
+procedure TmnConnection.Opened;
+begin
+
+end;
+
+procedure TmnConnection.Closed;
+begin
+
+end;
+
 procedure TmnConnection.SetStream(AValue: TmnConnectionStream);
 begin
   if FStream <> nil then
@@ -290,18 +321,22 @@ begin
   FStream := AValue;
 end;
 
-procedure TmnConnection.Disconnect;
+procedure TmnConnection.Disconnect(Safe: Boolean);
 begin
-  if FStream = nil then
+  Closing;
+  if not Safe and (FStream = nil) then
     raise Exception.Create('No stream to disconnect');
-  if FStream.Connected then
+  if (FStream <> nil) and FStream.Connected then
     FStream.Disconnect;
+  Closed;
 end;
 
 procedure TmnConnection.Connect;
 begin
+  Opening;
   if FStream <> nil then
     FStream.Connect;
+  Opened;
 end;
 
 procedure TmnConnection.Prepare;

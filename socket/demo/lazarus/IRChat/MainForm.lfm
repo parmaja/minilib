@@ -2,24 +2,24 @@ object MainFrm: TMainFrm
   Left = 482
   Height = 427
   Top = 230
-  Width = 575
+  Width = 799
   Caption = 'IRC chat'
   ClientHeight = 427
-  ClientWidth = 575
+  ClientWidth = 799
   LCLVersion = '2.1.0.0'
   object Panel1: TPanel
     Left = 2
     Height = 24
     Top = 401
-    Width = 571
+    Width = 795
     Align = alBottom
     BorderSpacing.Around = 2
     BevelOuter = bvNone
     ClientHeight = 24
-    ClientWidth = 571
+    ClientWidth = 795
     TabOrder = 1
     object SendBtn: TButton
-      Left = 519
+      Left = 743
       Height = 24
       Top = 0
       Width = 52
@@ -44,7 +44,7 @@ object MainFrm: TMainFrm
       Left = 58
       Height = 24
       Top = 0
-      Width = 461
+      Width = 685
       Align = alClient
       Anchors = [akLeft, akRight, akBottom]
       AutoSize = False
@@ -57,23 +57,22 @@ object MainFrm: TMainFrm
     Left = 0
     Height = 4
     Top = 284
-    Width = 575
+    Width = 799
     Align = alBottom
-    Beveled = True
     ResizeAnchor = akBottom
   end
   object Panel2: TPanel
     Left = 0
     Height = 56
     Top = 0
-    Width = 575
+    Width = 799
     Align = alTop
     BevelOuter = bvNone
     ClientHeight = 56
-    ClientWidth = 575
+    ClientWidth = 799
     TabOrder = 0
     object ConnectBtn: TButton
-      Left = 484
+      Left = 708
       Height = 24
       Top = 4
       Width = 85
@@ -86,7 +85,7 @@ object MainFrm: TMainFrm
       Left = 319
       Height = 23
       Top = 5
-      Width = 163
+      Width = 387
       Anchors = [akTop, akLeft, akRight]
       OnKeyPress = HostEditKeyPress
       TabOrder = 2
@@ -96,7 +95,7 @@ object MainFrm: TMainFrm
       Left = 319
       Height = 23
       Top = 31
-      Width = 75
+      Width = 299
       Anchors = [akTop, akLeft, akRight]
       OnKeyPress = HostEditKeyPress
       TabOrder = 4
@@ -136,7 +135,7 @@ object MainFrm: TMainFrm
       ParentColor = False
     end
     object JoinBtn: TButton
-      Left = 396
+      Left = 620
       Height = 24
       Top = 30
       Width = 85
@@ -160,7 +159,7 @@ object MainFrm: TMainFrm
     Left = 2
     Height = 224
     Top = 58
-    Width = 425
+    Width = 649
     ActivePage = TabSheet1
     Align = alClient
     BorderSpacing.Around = 2
@@ -194,12 +193,12 @@ object MainFrm: TMainFrm
     object TabSheet1: TTabSheet
       Caption = 'Room'
       ClientHeight = 196
-      ClientWidth = 417
+      ClientWidth = 641
       object MsgEdit: TMemo
         Left = 0
         Height = 196
         Top = 0
-        Width = 417
+        Width = 641
         Align = alClient
         ReadOnly = True
         ScrollBars = ssAutoBoth
@@ -211,7 +210,7 @@ object MainFrm: TMainFrm
     Left = 2
     Height = 109
     Top = 290
-    Width = 571
+    Width = 795
     Align = alBottom
     Anchors = [akTop, akLeft, akBottom]
     BorderSpacing.Around = 2
@@ -230,7 +229,7 @@ object MainFrm: TMainFrm
     WordWrap = False
   end
   object UserListBox: TListBox
-    Left = 435
+    Left = 659
     Height = 224
     Top = 58
     Width = 138
@@ -248,12 +247,11 @@ object MainFrm: TMainFrm
     ParentColor = False
   end
   object Splitter2: TSplitter
-    Left = 429
+    Left = 653
     Height = 228
     Top = 56
     Width = 4
     Align = alRight
-    Beveled = True
     ResizeAnchor = akRight
   end
   object LogPopupMenu: TPopupMenu

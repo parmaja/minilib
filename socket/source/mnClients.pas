@@ -57,9 +57,8 @@ type
   private
     function GetOwner: TmnClients;
   protected
-    procedure Execute; override;
   public
-    constructor Create(vOwner: TmnConnections; vSocket: TmnConnectionStream); override;
+    constructor Create(vOwner: TmnConnections; vSocket: TmnConnectionStream = nil); override;
     destructor Destroy; override;
     property Owner: TmnClients read GetOwner;
   end;
@@ -115,11 +114,6 @@ destructor TmnClientConnection.Destroy;
 begin
   if Owner <> nil then
     Owner.Remove(Self);
-  inherited;
-end;
-
-procedure TmnClientConnection.Execute;
-begin
   inherited;
 end;
 

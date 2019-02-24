@@ -22,7 +22,7 @@ interface
 uses
   Classes, StrUtils,
   mnClasses,
-  mnSockets, mnClients, mnStreams, mnConnections, mnCommands, mnUtils;
+  mnSockets, mnClients, mnStreams, mnConnections, mnCommands, mnUtils, syncobjs;
 
 const
   cTokenSeparator = ' ';    { Separates tokens, except for the following case. }
@@ -108,11 +108,18 @@ type
   //Preeminent handlers
   TIRCHandlers = class(TCustomIRCHandlers);
 
-  { TIRCPoolHandlers }
+  { TIRCQueueHandlers }
 
   //Temporary commands, when received it will deleted
-  TIRCPoolHandlers = class(TCustomIRCHandlers)
+  TIRCQueueHandlers = class(TCustomIRCHandlers)
   end;
+
+  TIRCRaw = class(TObject)
+  public
+    Text: string;
+  end;
+
+  TIRCQueueRaws = class(TmnObjectList<TIRCRaw>);
 
   TmnIRCState = (isDisconnected, isConnecting, isRegistering, isReady, isDisconnecting);
 
@@ -126,14 +133,20 @@ type
   TmnIRCConnection = class(TmnClientConnection)
   private
     FIRC: TmnIRCClient;
+    FHost: string;
+    FPort: string;
   protected
     procedure DoReceive(const Data: string); virtual;
     procedure DoLog(const vData: string); virtual;
+    procedure ProcessRaws;
     procedure Process; override;
+    procedure SendRaw(S: string);
   public
     constructor Create(vOwner: TmnConnections; vSocket: TmnConnectionStream); override;
     destructor Destroy; override;
     procedure Connect; override;
+    property Host: string read FHost;
+    property Port: string read FPort;
   end;
 
   TOnReceive = procedure(Sender: TObject; vChannel, vMSG: String) of object;
@@ -157,7 +170,6 @@ type
 
     FChangeNickTo: String;
     FCurrentNick: String;
-    FCurrentHost: String;
     FCurrentUserModes: TUserModes;
 
     FUserModes: TUserModes;
@@ -165,7 +177,9 @@ type
     FState: TmnIRCState;
     FConnection: TmnIRCConnection;
     FHandlers: TIRCHandlers;
-    FPoolHandlers: TIRCPoolHandlers;
+    FQueueHandlers: TIRCQueueHandlers;
+    FQueueRaws: TIRCQueueRaws;
+    FLock: TCriticalSection;
     procedure SetAltNick(const Value: String);
     procedure SetNick(const Value: String);
     function GetNick: String;
@@ -173,7 +187,6 @@ type
     procedure SetPort(const Value: String);
     procedure SetRealName(const Value: String);
     procedure SetHost(const Value: String);
-    function GetHost: String;
     procedure Connected;
     procedure Disconnected;
     procedure SetState(const Value: TmnIRCState);
@@ -206,9 +219,11 @@ type
     property State: TmnIRCState read FState;
     property Connection: TmnIRCConnection read FConnection;
     property Handlers: TIRCHandlers read FHandlers;
-    property PoolHandlers: TIRCPoolHandlers read FPoolHandlers;
+    property QueueHandlers: TIRCQueueHandlers read FQueueHandlers;
+    property QueueRaws: TIRCQueueRaws read FQueueRaws;
+    property Lock: TCriticalSection read FLock;
   public
-    property Host: String read GetHost write SetHost;
+    property Host: String read FHost write SetHost;
     property Port: String read FPort write SetPort;
     property Nick: String read GetNick write SetNick;
     property AltNick: String read FAltNick write SetAltNick;
@@ -376,12 +391,8 @@ procedure TWELCOME_IRCHandler.DoReceive(vCommand: TIRCCommand);
 begin
   with Client do
   begin
-    { This should be the very first successful response we get, so set the Current
-      host and nick from the values returned in the response. }
-    FCurrentHost := vCommand.Source;
     FCurrentNick := vCommand.Params[0];
     SetState(isReady);
-    { If a user mode is pre-set, then SendDirect the mode command. }
     if FUserModes <> [] then
       SendData(Format('MODE %s %s', [FCurrentNick, CreateUserModeCommand(FUserModes)]));
   end;
@@ -441,6 +452,22 @@ begin
   FIRC.Log(lgMsg, vData);
 end;
 
+procedure TmnIRCConnection.ProcessRaws;
+var
+  i: Integer;
+begin
+  FIRC.Lock.Enter;
+  try
+    for i := 0 to FIRC.QueueRaws.Count do
+    begin
+      SendRaw(FIRC.QueueRaws[i].Text);
+    end;
+    FIRC.QueueRaws.Clear;
+  finally
+    FIRC.Lock.Leave;
+  end;
+end;
+
 procedure TmnIRCConnection.Process;
 var
   Line: string;
@@ -457,6 +484,12 @@ begin
   end;
 end;
 
+procedure TmnIRCConnection.SendRaw(S: string);
+begin
+  if Stream <> nil then
+    Stream.WriteLine(S);
+end;
+
 constructor TmnIRCConnection.Create(vOwner: TmnConnections; vSocket: TmnConnectionStream);
 begin
   inherited Create(vOwner, vSocket);
@@ -464,12 +497,12 @@ end;
 
 destructor TmnIRCConnection.Destroy;
 begin
-  inherited Destroy;
+  inherited;
 end;
 
 procedure TmnIRCConnection.Connect;
 begin
-  SetStream(TIRCSocketStream.Create(FIRC.Host, FIRC.Port, [soNoDelay, soConnectTimeout]));
+  SetStream(TIRCSocketStream.Create(Host, Port, [soNoDelay, soConnectTimeout]));
   Stream.Timeout := -1;
   Stream.EndOfLine := #10;
   inherited Connect;
@@ -629,7 +662,7 @@ end;
 
 procedure TmnIRCClient.Disconnect;
 begin
-  { Try to leave nicely if we can. }
+  { Try to leave nicely if we can }
   if FState = isReady then
   begin
     SetState(isDisconnecting);
@@ -638,7 +671,7 @@ begin
   else
   begin
     SetState(isDisconnecting);
-    if FConnection.Connected then
+    if FConnection.Active then
       FConnection.Close;
     Disconnected;
   end;
@@ -648,10 +681,11 @@ procedure TmnIRCClient.Connect;
 begin
   if (FState = isDisconnected) then
   begin
-    FCurrentHost := FHost;
     FCurrentNick := FNick;
     FChangeNickTo := '';
     SetState(isConnecting);
+    Connection.FHost := Host;
+    Connection.FPort := Port;
     Connection.Connect; //move it to Process
     Connection.Start;
     Connected;
@@ -661,6 +695,7 @@ end;
 constructor TmnIRCClient.Create;
 begin
   inherited Create;
+  FLock := TCriticalSection.Create;
   FConnection := TmnIRCConnection.Create(nil, nil);
   FConnection.FIRC := Self;
   FConnection.FreeOnTerminate := False;
@@ -673,7 +708,8 @@ begin
   FPassword := '';
   FState := isDisconnected;
   FHandlers := TIRCHandlers.Create(Self);
-  FPoolHandlers := TIRCPoolHandlers.Create(Self);
+  FQueueHandlers := TIRCQueueHandlers.Create(Self);
+  FQueueRaws := TIRCQueueRaws.Create(True);
   InitHandlers;
 end;
 
@@ -681,8 +717,10 @@ destructor TmnIRCClient.Destroy;
 begin
   Reset;
   FreeAndNil(FConnection); //+
+  FreeAndNil(FQueueRaws);
   FreeAndNil(FHandlers);
-  FreeAndNil(FPoolHandlers);
+  FreeAndNil(FQueueHandlers);
+  FreeAndNil(FLock);
   inherited;
 end;
 
@@ -696,7 +734,7 @@ end;
 procedure TmnIRCClient.SendData(vData: String);
 begin
   if Assigned(FConnection) and (FState in [isRegistering, isReady]) then
-    FConnection.Stream.WriteLine(vData);
+    FConnection.SendRaw(vData);
   Log(lgSend, vData)
 end;
 
@@ -859,14 +897,6 @@ begin
   FHandlers.Add('MODE', 'MODE', TMODE_IRCHandler);
   FHandlers.Add('TOPIC ', '332 ', TTOPIC_IRCHandler);
   FHandlers.Add('ERR_NICKNAMEINUSE', 'ERR_NICKNAMEINUSE', TErrNicknameInUse_IRCHandler);
-end;
-
-function TmnIRCClient.GetHost: String;
-begin
-  if FState in [isRegistering, isReady] then
-    Result := FCurrentHost
-  else
-    Result := FHost;
 end;
 
 function TmnIRCClient.GetNick: String;
