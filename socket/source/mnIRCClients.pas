@@ -25,10 +25,27 @@ interface
 uses
   Classes, StrUtils,
   mnClasses,
-  mnSockets, mnClients, mnStreams, mnConnections, mnCommands, mnUtils, syncobjs;
+  mnSockets, mnSocketStreams, mnClients, mnStreams, mnConnections, mnUtils, syncobjs;
 
 const
   cTokenSeparator = ' ';    { Separates tokens, except for the following case. }
+
+  //https://www.alien.net.au/irc/irc2numerics.html
+  IRC_RPL_WELCOME = 001;
+  IRC_RPL_WHOISUSER = 311;
+  IRC_RPL_ENDOFWHO = 315;
+  IRC_RPL_WHOISACCOUNT = 330;
+  IRC_RPL_TOPIC = 332;
+  IRC_RPL_TOPICWHOTIME = 333;
+  IRC_RPL_NAMREPLY = 353;
+  IRC_RPL_WHOSPCRPL = 354;
+  IRC_RPL_ENDOFNAMES = 366;
+  IRC_RPL_MOTDSTART = 375;
+  IRC_RPL_INFO = 371;
+  IRC_RPL_MOTD = 372;
+  IRC_RPL_INFOSTART = 373;
+  IRC_RPL_ENDOFINFO = 374;
+  IRC_RPL_ENDOFMOTD = 376;
 
 type
 
@@ -40,6 +57,7 @@ type
 
   TmnIRCClient = class;
 
+  TIRCMsgType = (mtNotice, mtSend, mtReceive);
   TIRCLogType = (lgMsg, lgSend, lgReceive);
 
   { TIRCCommand }
@@ -47,7 +65,7 @@ type
   TIRCCommand = class(TObject)
   private
     FRaw: String;
-    FCode: string;
+    //FCode: string;
     FName: string;
 
     FTime: string;
@@ -57,7 +75,7 @@ type
     FParams: TStringList;
   protected
     property Raw: String read FRaw;
-    procedure Parse(vData: string); virtual;
+    procedure Parse(vData: string); virtual; deprecated;
   public
     constructor Create;
     destructor Destroy; override;
@@ -65,9 +83,8 @@ type
     property Source: string read FSource;
     property Target: string read FTarget;
 
-    property Name: string read FName;
-    property Code: string read FCode;
-    property Text: string read FText;
+    property Name: string read FName;//Name or Code
+    property Text: string read FText; //Rest body of msg after : also added as last param
 
     property Params: TStringList read FParams;
   end;
@@ -79,12 +96,15 @@ type
     FClient: TmnIRCClient;
   protected
     procedure DoReceive(vCommand: TIRCCommand); virtual; abstract;
+    function Accept(S: string): Boolean; virtual;
     procedure Receive(vCommand: TIRCCommand); virtual;
+    property Client: TmnIRCClient read FClient;
+    procedure DoParse(vCommand: TIRCCommand; vData: string); virtual;
+    procedure Parse(vCommand: TIRCCommand; vData: string);
   public
     Name: String;
-    Code: String;
-    constructor Create(AClient: TmnIRCClient);
-    property Client: TmnIRCClient read FClient;
+    Code: Integer;
+    constructor Create(AClient: TmnIRCClient); virtual;
   end;
 
   TIRCReceiverClass = class of TIRCReceiver;
@@ -99,7 +119,7 @@ type
   public
     constructor Create(AClient: TmnIRCClient);
     destructor Destroy; override;
-    function Add(vName, vCode: String; AClass: TIRCReceiverClass): Integer;
+    function Add(vName: String; vCode: Integer; AClass: TIRCReceiverClass): Integer;
     procedure Receive(ACommand: TIRCCommand);
     property Client: TmnIRCClient read FClient;
   end;
@@ -107,7 +127,10 @@ type
   { TIRCReceivers }
 
   //Preeminent Receivers
-  TIRCReceivers = class(TCustomIRCReceivers);
+  TIRCReceivers = class(TCustomIRCReceivers)
+  public
+    procedure Parse(vData: string);
+  end;
 
   { TIRCQueueReceivers }
 
@@ -233,6 +256,8 @@ type
     procedure SendRaw(vData: String);
 
     procedure ChannelReceive(vChannel, vMsg: String); virtual;
+    procedure Topic(vChannel, vTopic: String); virtual;
+    procedure UserList(AUserList: TStrings); virtual;
 
     procedure UserModeChanged;
     procedure InitReceivers;
@@ -324,11 +349,53 @@ type
     procedure DoReceive(vCommand: TIRCCommand); override;
   end;
 
+  { TIRCUserName }
+
+  TIRCUserName = class(TObject)
+  public
+    Name: string;
+    Mode: string;//todo
+  end;
+
+  { TIRCUserNames }
+
+  TIRCUserNames = class(TmnNamedObjectList<TIRCUserName>)
+  private
+  public
+    Name: string; //Channel name
+  end;
+
+  { TIRCChannelUserNames }
+
+  TIRCChannelUserNames = class(TmnNamedObjectList<TIRCUserNames>)
+  public
+  end;
+
+  { TNAMREPLY_IRCReceiver }
+
+  TNAMREPLY_IRCReceiver = class(TIRCReceiver)
+  protected
+    Users: TIRCChannelUserNames;
+  public
+    constructor Create(AClient: TmnIRCClient); override;
+    destructor Destroy; override;
+    function Accept(S: string): Boolean; override;
+    procedure DoReceive(vCommand: TIRCCommand); override;
+  end;
+
   { TErrNicknameInUse_IRCReceiver }
 
   TErrNicknameInUse_IRCReceiver = class(TIRCReceiver)
   protected
     procedure DoReceive(vCommand: TIRCCommand); override;
+  end;
+
+  { TRAW_UserCommand }
+
+  TRaw_UserCommand = class(TIRCUserCommand)
+  protected
+    procedure Send(S: string); override;
+  public
   end;
 
   { TJoin_UserCommand }
@@ -348,6 +415,21 @@ const
   sDefaultPort = '6667';
   sNickName = 'guest';
 
+function ScanString(vStr: string; var vPos:Integer; out vCount: Integer; vChar: Char; vSkip: Boolean = False): Boolean;
+var
+  start: Integer;
+begin
+  start := vPos;
+  while (vPos <= Length(vStr)) and (vStr[vPos] <> vChar) do
+    Inc(vPos);
+  vCount := vPos - start;
+  { Remove any redundant }
+  if vSkip then
+    while (vPos <= Length(vStr)) and (vStr[vPos] = vChar) do
+      Inc(vPos);
+  Result := vCount > 0;
+end;
+
 function ExtractNickFromAddress(Address: String): String;
 var
   EndOfNick: Integer;
@@ -356,6 +438,132 @@ begin
   EndOfNick := Pos('!', Address);
   if EndOfNick > 0 then
     Result := Copy(Address, 1, EndOfNick - 1);
+end;
+
+{ TIRCReceivers }
+
+procedure TIRCReceivers.Parse(vData: string);
+type
+  TParseState = (prefix, command);
+var
+  State: TParseState;
+  p: Integer;
+  Start, Count: Integer;
+  //AName, ATime, AText, ASource: string;
+  aCommand: TIRCCommand;
+  aReceiver: TIRCReceiver;
+  ABody: string;
+begin
+  if vData <> '' then
+  begin
+    aCommand := TIRCCommand.Create;
+    try
+      State := prefix;
+      p := 1;
+      while p < Length(vData) do
+      begin
+        { If the current token is a CTCP query, then look for the end of the query instead of the token separator }
+        if vData[p] = '@' then
+        begin
+          Inc(p); //skip it
+          Start := p;
+          if ScanString(vData, p, Count, cTokenSeparator, True) then
+            aCommand.FTime := MidStr(vData, Start, Count);
+          //Inc(State); no do not increase it, we still except prefix
+        end
+        else if vData[p] = #1 then //CTCP idk what is this
+        begin
+          Inc(p); //skip it
+          //Start := p;
+          //find CTCP command and pass the full line
+//          Break;
+//          Inc(State); //nop
+        end
+        else if vData[p] = ':' then
+        begin
+          if State < command then
+          begin
+            Inc(p); //skip it
+            Start := p;
+            if ScanString(vData, p, Count, cTokenSeparator, True) then
+              aCommand.FSource := MidStr(vData, Start, Count);
+            Inc(State);
+          end
+          else
+            raise Exception.Create('Wrong place of ":"');
+        end
+        else
+        begin
+          Start := p;
+          if ScanString(vData, p, Count, cTokenSeparator, True) then
+          begin
+            aCommand.FName := MidStr(vData, Start, Count);
+            ABody := MidStr(vData, Start + Count + 1, MaxInt);
+            State := command;
+            Inc(State);
+          end;
+          break;
+        end;
+      end;
+
+      for aReceiver in Self do
+      begin
+        if aReceiver.Accept(aCommand.Name) then
+        begin
+          aReceiver.Parse(aCommand, ABody);
+          aReceiver.Receive(aCommand);
+        end;
+      end;
+
+    finally
+      FreeAndNil(aCommand);
+    end;
+  end;
+end;
+
+{ TRaw_UserCommand }
+
+procedure TRaw_UserCommand.Send(S: string);
+begin
+  Client.SendRaw(S);
+end;
+
+{ TNAMREPLY_IRCReceiver }
+
+constructor TNAMREPLY_IRCReceiver.Create(AClient: TmnIRCClient);
+begin
+  inherited;
+  Users := TIRCChannelUserNames.Create(True);
+end;
+
+destructor TNAMREPLY_IRCReceiver.Destroy;
+begin
+  inherited;
+  FreeAndNil(Users);
+end;
+
+function TNAMREPLY_IRCReceiver.Accept(S: string): Boolean;
+begin
+  Result := inherited Accept(S);
+  if S = IntToStr(IRC_RPL_ENDOFNAMES) then
+  begin
+    Result := True;
+    //Pass the list and remove it
+  end;
+end;
+
+procedure TNAMREPLY_IRCReceiver.DoReceive(vCommand: TIRCCommand);
+begin
+  // triggered by raw /NAMES
+  //:server 353 zaher = #support user1
+  //:server 353 zaherdirkey = ##support :user1 user2 user3
+  Client.Lock.Enter;
+  try
+    if vCommand.Name <> IntToStr(IRC_RPL_ENDOFNAMES) then
+      Client.Log(lgMsg, ' User: ' + vCommand.Params[2]);
+  finally
+    Client.Lock.Leave;
+  end;
 end;
 
 { TIRCUserCommands }
@@ -487,7 +695,50 @@ end;
 procedure TIRCReceiver.Receive(vCommand: TIRCCommand);
 begin
   DoReceive(vCommand);
-  Client.Log(lgMsg, Name + ' triggered');
+  //Client.Log(lgMsg, Name + ' triggered');
+end;
+
+procedure TIRCReceiver.DoParse(vCommand: TIRCCommand; vData: string);
+var
+  p: Integer;
+  Start, Count: Integer;
+  procedure AddIt(s: string);
+  begin
+    vCommand.Params.Add(s);
+  end;
+begin
+  vCommand.Params.Clear;
+  if vData <> '' then
+  begin
+    p := 1;
+    while p < Length(vData) do
+    begin
+      if vData[p] = ':' then
+      begin
+        vCommand.FText := MidStr(vData, p + 1, MaxInt);
+        AddIt(vCommand.Text);
+        Break;
+      end
+      else
+      begin
+        Start := p;
+        ScanString(vData, p, Count, cTokenSeparator, True);
+        if Count > 0 then
+          AddIt(MidStr(vData, Start, Count));
+      end;
+    end;
+  end;
+end;
+
+procedure TIRCReceiver.Parse(vCommand: TIRCCommand; vData: string);
+begin
+  DoParse(vCommand, vData);
+  //Client.Log(lgMsg, '--->' + vData);
+end;
+
+function TIRCReceiver.Accept(S: string): Boolean;
+begin
+  Result := SameText(S, Name) or ((Code > 0) and SameText(S, IntToStr(Code)));
 end;
 
 constructor TIRCReceiver.Create(AClient: TmnIRCClient);
@@ -574,7 +825,7 @@ end;
 procedure TmnIRCConnection.Connect;
 begin
   SetStream(TIRCSocketStream.Create(Host, Port, [soNoDelay, soConnectTimeout]));
-  Stream.Timeout := -1;
+  Stream.Timeout := WaitForEver;// 5 * 1000;
   Stream.EndOfLine := #10;
   inherited Connect;
 end;
@@ -592,24 +843,9 @@ begin
   FreeAndNil(FParams);
 end;
 
-function ScanString(vStr: string; var vPos:Integer; out vCount: Integer; vChar: Char; vSkip: Boolean = False): Boolean;
-var
-  start: Integer;
-begin
-  start := vPos;
-  while (vPos <= Length(vStr)) and (vStr[vPos] <> vChar) do
-    Inc(vPos);
-  vCount := vPos - start;
-  { Remove any redundant }
-  if vSkip then
-    while (vPos <= Length(vStr)) and (vStr[vPos] = vChar) do
-      Inc(vPos);
-  Result := vCount > 0;
-end;
-
 procedure TIRCCommand.Parse(vData: string);
 type
-  TParseState = (prefex, command, params, message);
+  TParseState = (prefix, command, params, text);
 var
   State: TParseState;
   p: Integer;
@@ -623,7 +859,7 @@ begin
   FParams.Clear;
   if vData <> '' then
   begin
-    State := prefex;
+    State := prefix;
     p := 1;
     while p < Length(vData) do
     begin
@@ -640,11 +876,11 @@ begin
       end
       else if vData[p] = ':' then
       begin
-        if State > prefex then
+        if State > prefix then
         begin
           FText := MidStr(vData, p + 1, MaxInt);
           AddIt(FText);
-          State := message;
+          State := text;
           Break;
         end
         else
@@ -687,7 +923,7 @@ end;
 
 { TCustomIRCReceivers }
 
-function TCustomIRCReceivers.Add(vName, vCode: String; AClass: TIRCReceiverClass): Integer;
+function TCustomIRCReceivers.Add(vName: String; vCode: Integer; AClass: TIRCReceiverClass): Integer;
 var
   AReceiver: TIRCReceiver;
 begin
@@ -719,7 +955,7 @@ var
 begin
   for AReceiver in Self do
   begin
-    if SameText(ACommand.FName, AReceiver.Name) or SameText(ACommand.FName, AReceiver.Code)  then
+    if AReceiver.Accept(ACommand.Name) then
       AReceiver.Receive(ACommand);
   end;
 end;
@@ -951,23 +1187,34 @@ begin
 end;
 
 procedure TmnIRCClient.ReceiveRaw(vData: String);
-var
-  ACommand: TIRCCommand;
+{var
+  ACommand: TIRCCommand;}
 begin
   Log(lgReceive, vData);
-  ACommand := TIRCCommand.Create;
+  Receivers.Parse(vData);
+  {ACommand := TIRCCommand.Create;
   ACommand.Parse(vData);
   try
     Receivers.Receive(ACommand);
   finally
     FreeAndNil(ACommand);
-  end;
+  end;}
 end;
 
 procedure TmnIRCClient.ChannelReceive(vChannel, vMsg: String);
 begin
   if Assigned(FOnReceive) then
     FOnReceive(Self, vChannel, vMsg);
+end;
+
+procedure TmnIRCClient.Topic(vChannel, vTopic: String);
+begin
+
+end;
+
+procedure TmnIRCClient.UserList(AUserList: TStrings);
+begin
+
 end;
 
 procedure TmnIRCClient.UserModeChanged;
@@ -983,19 +1230,20 @@ end;
 
 procedure TmnIRCClient.InitReceivers;
 begin
-  Receivers.Add('PRIVMSG', 'PRIVMSG', TPRIVMSG_IRCReceiver);
-  Receivers.Add('PING', 'PING', TPING_IRCReceiver);
-  Receivers.Add('MOTD', '372', TMOTD_IRCReceiver);
-  Receivers.Add('TOPIC', '332', TMOTD_IRCReceiver);
-  Receivers.Add('NICK', 'NICK', TNICK_IRCReceiver);
-  Receivers.Add('WELCOME', 'WELCOME', TWELCOME_IRCReceiver);
-  Receivers.Add('MODE', 'MODE', TMODE_IRCReceiver);
-  Receivers.Add('TOPIC ', '332 ', TTOPIC_IRCReceiver);
-  Receivers.Add('ERR_NICKNAMEINUSE', 'ERR_NICKNAMEINUSE', TErrNicknameInUse_IRCReceiver);
+  Receivers.Add('PRIVMSG', 0, TPRIVMSG_IRCReceiver);
+  Receivers.Add('PING', 0, TPING_IRCReceiver);
+  Receivers.Add('MOTD', IRC_RPL_MOTD, TMOTD_IRCReceiver);
+  Receivers.Add('TOPIC', IRC_RPL_TOPIC, TTOPIC_IRCReceiver);
+  Receivers.Add('NICK', 0, TNICK_IRCReceiver);
+  Receivers.Add('WELCOME', IRC_RPL_WELCOME, TWELCOME_IRCReceiver);
+  Receivers.Add('MODE', 0, TMODE_IRCReceiver);
+  Receivers.Add('NAMREPLY', IRC_RPL_NAMREPLY, TNAMREPLY_IRCReceiver);
+  Receivers.Add('ERR_NICKNAMEINUSE', 0, TErrNicknameInUse_IRCReceiver);
 end;
 
 procedure TmnIRCClient.InitUserCommands;
 begin
+  UserCommands.Add(TRaw_UserCommand.Create('Raw', Self));
   UserCommands.Add(TJoin_UserCommand.Create('Join', Self));
 end;
 

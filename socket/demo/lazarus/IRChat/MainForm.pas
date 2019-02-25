@@ -185,7 +185,7 @@ end;
 procedure TMainFrm.DoLog(Sender: TObject; vLogType: TIRCLogType; vMsg: String);
 begin
   case vLogType of
-    lgMsg: LogEdit.Lines.Add('#'+vMsg);
+    lgMsg: LogEdit.Lines.Add(vMsg);
     lgSend: LogEdit.Lines.Add('>'+vMsg);
     lgReceive: LogEdit.Lines.Add('<'+vMsg);
   end;
