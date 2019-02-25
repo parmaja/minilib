@@ -9,14 +9,19 @@ uses
   StdCtrls, ExtCtrls, ComCtrls, Menus, mnIRCClients;
 
 type
+
+  { TMyIRCClient }
+
   TMyIRCClient = class(TmnIRCClient)
   public
+    procedure ReceiveNames(vChannel: string; vUserNames: TIRCChannelUserNames); override;
   end;
 
   { TMainFrm }
 
   TMainFrm = class(TForm)
     ConnectBtn: TButton;
+    TopicEdit: TEdit;
     JoinBtn: TButton;
     HostEdit: TEdit;
     Label1: TLabel;
@@ -56,7 +61,7 @@ type
   public
     constructor Create(TheOwner: TComponent); override;
     destructor Destroy; override;
-    procedure DoReceive(Sender: TObject; vChannel, vMSG: String);
+    procedure DoReceive(Sender: TObject; vMsgType: TIRCMsgType; vChannel, vMSG: String);
 
     procedure DoLog(Sender: TObject; vLogType: TIRCLogType; vMsg: String);
   end;
@@ -67,6 +72,20 @@ var
 implementation
 
 {$R *.lfm}
+
+{ TMyIRCClient }
+
+procedure TMyIRCClient.ReceiveNames(vChannel: string; vUserNames: TIRCChannelUserNames);
+var
+  i: Integer;
+begin
+  inherited;
+  MainFrm.UserListBox.Clear;
+  for i := 0 to vUserNames.Count -1 do
+  begin
+    MainFrm.UserListBox.Items.Add(vUserNames[i].Name);
+  end;
+end;
 
 { TMainFrm }
 
@@ -174,12 +193,21 @@ begin
   inherited Destroy;
 end;
 
-procedure TMainFrm.DoReceive(Sender: TObject; vChannel, vMSG: String);
+procedure TMainFrm.DoReceive(Sender: TObject; vMsgType: TIRCMsgType; vChannel, vMSG: String);
 begin
-  if vChannel = '' then
-    ServerMsgEdit.Lines.Add(vMSG)
+  case vMsgType of
+    mtWelcome:
+      MsgEdit.Lines.Add(vMSG);
+    mtNotice:
+      MsgEdit.Lines.Add(vMSG);
+    mtTopic:
+      TopicEdit.Text := vMSG;
   else
-    MsgEdit.Lines.Add(vMSG);
+    if vChannel = '' then
+      ServerMsgEdit.Lines.Add(vMSG)
+    else
+      MsgEdit.Lines.Add(vMSG);
+  end;
 end;
 
 procedure TMainFrm.DoLog(Sender: TObject; vLogType: TIRCLogType; vMsg: String);

@@ -169,12 +169,12 @@ object MainFrm: TMainFrm
     object TabSheet2: TTabSheet
       Caption = 'Server'
       ClientHeight = 196
-      ClientWidth = 417
+      ClientWidth = 641
       object ServerMsgEdit: TMemo
         Left = 0
         Height = 196
         Top = 0
-        Width = 417
+        Width = 641
         Align = alClient
         Color = 15132390
         Font.CharSet = ANSI_CHARSET
@@ -196,13 +196,22 @@ object MainFrm: TMainFrm
       ClientWidth = 641
       object MsgEdit: TMemo
         Left = 0
-        Height = 196
-        Top = 0
+        Height = 173
+        Top = 23
         Width = 641
         Align = alClient
         ReadOnly = True
         ScrollBars = ssAutoBoth
         TabOrder = 0
+      end
+      object TopicEdit: TEdit
+        Left = 0
+        Height = 23
+        Top = 0
+        Width = 641
+        Align = alTop
+        ReadOnly = True
+        TabOrder = 1
       end
     end
   end
@@ -255,8 +264,8 @@ object MainFrm: TMainFrm
     ResizeAnchor = akRight
   end
   object LogPopupMenu: TPopupMenu
-    left = 276
-    top = 217
+    left = 454
+    top = 189
     object MenuItem1: TMenuItem
       Caption = 'Clear'
       OnClick = MenuItem1Click
