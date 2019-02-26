@@ -91,7 +91,7 @@ type
 
   { TIRCReceiver }
 
-  TIRCReceiver = class(TObject)
+  TIRCReceiver = class(TmnNamedObject)
   private
     FClient: TmnIRCClient;
   protected
@@ -102,7 +102,6 @@ type
     procedure DoParse(vCommand: TIRCCommand; vData: string); virtual;
     procedure Parse(vCommand: TIRCCommand; vData: string);
   public
-    Name: String;
     Code: Integer;
     constructor Create(AClient: TmnIRCClient); virtual;
   end;
@@ -140,15 +139,13 @@ type
 
   { TIRCUserCommand }
 
-  TIRCUserCommand = class(TObject)
+  TIRCUserCommand = class(TmnNamedObject)
   private
     FClient: TmnIRCClient;
-    FName: string;
   protected
     procedure Send(S: string); virtual; abstract;
   public
     constructor Create(AName: string; AClient: TmnIRCClient);
-    property Name: string read FName;
     property Client: TmnIRCClient read FClient;
   end;
 
@@ -171,9 +168,8 @@ type
 
   { TIRCUserName }
 
-  TIRCUserName = class(TObject)
+  TIRCUserName = class(TmnNamedObject)
   public
-    Name: string;
     Mode: string;//todo
   end;
 
@@ -188,8 +184,9 @@ type
 
   { TIRCUserNamesList }
 
-  TIRCUserNamesList = class(TmnNamedObjectList<TIRCChannelUserNames>)
+  TIRCUserNamesList = class(TmnObjectList<TIRCChannelUserNames>)
   public
+    function Find(const Name: string): TIRCChannelUserNames;
     procedure Add(vChannel, vUserName: string); overload;
   end;
 
@@ -297,7 +294,7 @@ type
 
     procedure Log(vLogType: TIRCLogType; Message: String);
 
-    procedure ChannelSend(Channel, vMsg: String);
+    procedure ChannelSend(vChannel, vMsg: String);
 
     procedure Join(Channel: String);
     procedure Notice(Destination, Text: String);
@@ -471,6 +468,21 @@ begin
   aUserNames.Add(vUserName);
 end;
 
+function TIRCUserNamesList.Find(const Name: string): TIRCChannelUserNames;
+var
+  i: Integer;
+begin
+  Result := nil;
+  for i := 0 to Count - 1 do
+  begin
+    if SameText(Items[i].Name, Name) then
+    begin
+      Result := Items[i];
+      break;
+    end;
+  end;
+end;
+
 { TIRCReceivers }
 
 procedure TIRCReceivers.Parse(vData: string);
@@ -637,7 +649,7 @@ constructor TIRCUserCommand.Create(AName: string; AClient: TmnIRCClient);
 begin
   inherited Create;
   FClient := AClient;
-  FName := AName;
+  Name := AName;
 end;
 
 { TJoin_UserCommand }
@@ -1108,7 +1120,7 @@ begin
     FOnLog(Self, vLogType, Message);
 end;
 
-procedure TmnIRCClient.ChannelSend(Channel, vMsg: String);
+procedure TmnIRCClient.ChannelSend(vChannel, vMsg: String);
 var
   aCMD: TIRCUserCommand;
   aCMDProcessed: Boolean;
