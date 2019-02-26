@@ -739,8 +739,8 @@ begin
   with Client do
   begin
     Client.ReceiveMessage(mtWelcome, vCommand.Params[0], vCommand.Params[1]);
-    //FCurrentNick := vCommand.Params[0];
-    //SetState(isReady);
+    SetState(isReady);
+    FCurrentNick := vCommand.Params[0];
     //if FUserModes <> [] then
       //SendRaw(Format('MODE %s %s', [FCurrentNick, CreateUserModeCommand(FUserModes)]));
   end;
@@ -1147,7 +1147,10 @@ begin
   end;
 
   if not aCMDProcessed then
-    SendRaw(Format('PRIVMSG %s :%s', [Channel, vMsg]));
+  begin
+    SendRaw(Format('PRIVMSG %s :%s', [vChannel, vMsg]));
+    ReceiveMessage(mtSend, vChannel, vMsg);
+  end;
 end;
 
 procedure TmnIRCClient.Join(Channel: String);
