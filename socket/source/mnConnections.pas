@@ -92,10 +92,6 @@ type
   protected
     property Owner: TmnConnections read FOwner;
     procedure Created; virtual;
-    procedure Opening; virtual;
-    procedure Closing; virtual;
-    procedure Opened; virtual;
-    procedure Closed; virtual;
     procedure Prepare; virtual;
     procedure Process; virtual;
     procedure Execute; override;
@@ -294,26 +290,6 @@ begin
 
 end;
 
-procedure TmnConnection.Opening;
-begin
-
-end;
-
-procedure TmnConnection.Closing;
-begin
-
-end;
-
-procedure TmnConnection.Opened;
-begin
-
-end;
-
-procedure TmnConnection.Closed;
-begin
-
-end;
-
 procedure TmnConnection.SetStream(AValue: TmnConnectionStream);
 begin
   if FStream <> nil then
@@ -323,20 +299,16 @@ end;
 
 procedure TmnConnection.Disconnect(Safe: Boolean);
 begin
-  Closing;
   if not Safe and (FStream = nil) then
     raise Exception.Create('No stream to disconnect');
   if (FStream <> nil) and FStream.Connected then
     FStream.Disconnect;
-  Closed;
 end;
 
 procedure TmnConnection.Connect;
 begin
-  Opening;
   if FStream <> nil then
     FStream.Connect;
-  Opened;
 end;
 
 procedure TmnConnection.Prepare;

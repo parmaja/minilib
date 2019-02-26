@@ -52,9 +52,6 @@ type
 
   { TmnNamedObjectList }
 
-  {$ifdef FPC}
-  TmnNamedObjectList<_Object_> = class(TmnObjectList<_Object_>)
-  {$else}
   TmnNamedObject = class(TObject)
   private
     FName: string;
@@ -62,6 +59,9 @@ type
     property Name: string read FName write FName;
   end;
 
+  {$ifdef FPC}
+  TmnNamedObjectList<_Object_> = class(TmnObjectList<_Object_>)
+  {$else}
   TmnNamedObjectList<_Object_: TmnNamedObject> = class(TmnObjectList<_Object_>)
   {$endif}
   private
