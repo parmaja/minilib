@@ -192,9 +192,11 @@ type
   { TIRCQueueRaws }
 
   TIRCQueueRaws = class(TmnObjectList<TIRCRaw>)
+  public
+    procedure Add(Raw: string); overload;
   end;
 
-  TmnIRCState = (isDisconnected, isConnecting, isRegistering, isReady, isDisconnecting);
+  TmnIRCState = (isDisconnected, isRegistering, isReady);
 
   TUserMode = (umInvisible, umOperator, umServerNotices, umWallops);
   TUserModes = set of TUserMode;
@@ -205,17 +207,18 @@ type
 
   TmnIRCConnection = class(TmnClientConnection)
   private
-    FIRCClient: TmnIRCClient;
+    FClient: TmnIRCClient;
     FHost: string;
     FPort: string;
     procedure ProcessRaws;
   protected
     procedure DoReceive(const Data: string); virtual;
     procedure DoLog(const vData: string); virtual;
+    procedure Prepare; override;
     procedure Process; override;
     procedure Unprepare; override;
     procedure SendRaw(S: string);
-    property IRCClient: TmnIRCClient read FIRCClient;
+    property Client: TmnIRCClient read FClient;
   public
     constructor Create(vOwner: TmnConnections; vSocket: TmnConnectionStream); override;
     destructor Destroy; override;
@@ -240,11 +243,9 @@ type
     FPassword: String;
     FUsername: String;
     FRealName: String;
-    FAltNick: String;
     FNick: String;
-
-    FChangeNickTo: String;
     FCurrentNick: String;
+
     FCurrentUserModes: TUserModes;
 
     FUserModes: TUserModes;
@@ -257,9 +258,7 @@ type
     FUserCommands: TIRCUserCommands;
     FLock: TCriticalSection;
     FUseUserCommands: Boolean;
-    procedure SetAltNick(const Value: String);
-    procedure SetNick(const Value: String);
-    function GetNick: String;
+    function GetActive: Boolean;
     procedure SetPassword(const Value: String);
     procedure SetPort(const Value: String);
     procedure SetRealName(const Value: String);
@@ -267,15 +266,15 @@ type
     procedure Connected;
     procedure Disconnected;
     procedure SetState(const Value: TmnIRCState);
-    procedure Reset;
+    procedure Close;
     procedure SetUsername(const Value: String);
     function GetUserModes: TUserModes;
     procedure SetUserModes(const Value: TUserModes);
     function CreateUserModeCommand(NewModes: TUserModes): String;
   protected
     procedure ReceiveRaw(vData: String); virtual;
-    procedure SendRaw(vData: String);
-
+    procedure SendRaw(vData: String; vQueueAt: TmnIRCState = isDisconnected);
+    procedure StateChanged; virtual;
     procedure ChannelReceive(vChannel, vMsg: String); virtual;
     procedure ReceiveMessage(vMsgType: TIRCMsgType; vChannel, vMsg: String); virtual;
     procedure ReceiveNames(vChannel: string; vUserNames: TIRCChannelUserNames); virtual;
@@ -296,6 +295,7 @@ type
 
     procedure ChannelSend(vChannel, vMsg: String);
 
+    procedure SetNick(const Value: String);
     procedure Join(Channel: String);
     procedure Notice(Destination, Text: String);
     procedure Quit(Reason: String);
@@ -306,11 +306,11 @@ type
     property QueueRaws: TIRCQueueRaws read FQueueRaws;
     property UserCommands: TIRCUserCommands read FUserCommands;
     property Lock: TCriticalSection read FLock;
+    property Active: Boolean read GetActive;
   public
     property Host: String read FHost write SetHost;
     property Port: String read FPort write SetPort;
-    property Nick: String read GetNick write SetNick;
-    property AltNick: String read FAltNick write SetAltNick;
+    property Nick: String read FNick write FNick;
     property RealName: String read FRealName write SetRealName;
     property Password: String read FPassword write SetPassword;
     property Username: String read FUsername write SetUsername;
@@ -441,6 +441,17 @@ begin
     Result := Copy(Address, 1, EndOfNick - 1);
 end;
 
+{ TIRCQueueRaws }
+
+procedure TIRCQueueRaws.Add(Raw: string);
+var
+  Item: TIRCRaw;
+begin
+  Item := TIRCRaw.Create;
+  Item.Text := Raw;
+  Add(Item);
+end;
+
 { TIRCChannelUserNames }
 
 procedure TIRCChannelUserNames.Add(vUserName: string);
@@ -569,7 +580,7 @@ end;
 
 procedure TRaw_UserCommand.Send(S: string);
 begin
-  Client.SendRaw(S);
+  Client.SendRaw(S, isRegistering);
 end;
 
 { TNAMREPLY_IRCReceiver }
@@ -656,7 +667,7 @@ end;
 
 procedure TJoin_UserCommand.Send(S: string);
 begin
-  Client.SendRaw('JOIN ' + S);
+  Client.SendRaw('JOIN ' + S, isReady);
 end;
 
 { TErrNicknameInUse_IRCReceiver }
@@ -667,10 +678,8 @@ begin
   with Client do
     if FState = isRegistering then
     begin
-      if FChangeNickTo = FNick then
-        SetNick(FAltNick)
-      else
-        Quit('Nick conflict');
+//      SetNick(FAltNick);
+//        Quit('Nick conflict');
     end;
 end;
 
@@ -684,7 +693,7 @@ var
 begin
   { Ignore channel mode changes.  Only interested in user mode changes. }
   with Client do
-    if vCommand.Params[0] = FCurrentNick then
+    if vCommand.Params[0] = FNick then
     begin
       { Copy the token for efficiency reasons. }
       ModeString := vCommand.Params[1];
@@ -727,9 +736,7 @@ end;
 
 procedure TNICK_IRCReceiver.DoReceive(vCommand: TIRCCommand);
 begin
-  { If it is our nick we are changing, then record the change. }
-  if UpperCase(ExtractNickFromAddress(vCommand.Source)) = UpperCase(Client.FCurrentNick) then
-    Client.FCurrentNick := vCommand.Params[0];
+  Client.FCurrentNick := vCommand.Params[0];
 end;
 
 { TWELCOME_IRCReceiver }
@@ -808,7 +815,7 @@ end;
 
 function TIRCReceiver.Accept(S: string): Boolean;
 begin
-  Result := SameText(S, Name) or ((Code > 0) and SameText(S, IntToStr(Code)));
+  Result := ((Name <> '') and SameText(S, Name)) or ((Code > 0) and (StrToIntDef(S, 0) = Code));
 end;
 
 constructor TIRCReceiver.Create(AClient: TmnIRCClient);
@@ -835,27 +842,34 @@ end;
 
 procedure TmnIRCConnection.DoReceive(const Data: string);
 begin
-  FIRCClient.ReceiveRaw(Data);
+  FClient.ReceiveRaw(Data);
 end;
 
 procedure TmnIRCConnection.DoLog(const vData: string);
 begin
-  FIRCClient.Log(lgMsg, vData);
+  FClient.Log(lgMsg, vData);
+end;
+
+procedure TmnIRCConnection.Prepare;
+begin
+  inherited Prepare;
+  Connect;
+  Client.Connected;
 end;
 
 procedure TmnIRCConnection.ProcessRaws;
 var
   i: Integer;
 begin
-  FIRCClient.Lock.Enter;
+  Client.Lock.Enter;
   try
-    for i := 0 to FIRCClient.QueueRaws.Count - 1 do
+    for i := 0 to Client.QueueRaws.Count - 1 do
     begin
-      SendRaw(FIRCClient.QueueRaws[i].Text);
+      SendRaw(Client.QueueRaws[i].Text);
     end;
-    FIRCClient.QueueRaws.Clear;
+    Client.QueueRaws.Clear;
   finally
-    FIRCClient.Lock.Leave;
+    Client.Lock.Leave;
   end;
 end;
 
@@ -879,14 +893,18 @@ end;
 procedure TmnIRCConnection.Unprepare;
 begin
   inherited;
-  {if Connected then
-    Disconnect(true);}
+  if Connected then
+    Disconnect(true);
+  FClient.Disconnected;
 end;
 
 procedure TmnIRCConnection.SendRaw(S: string);
 begin
   if Stream <> nil then
+  begin
     Stream.WriteLine(S);
+    Client.Log(lgSend, S);
+  end
 end;
 
 constructor TmnIRCConnection.Create(vOwner: TmnConnections; vSocket: TmnConnectionStream);
@@ -1042,33 +1060,22 @@ end;
 
 procedure TmnIRCClient.Disconnect;
 begin
-  { Try to leave nicely if we can }
   if FState = isReady then
-  begin
-    SetState(isDisconnecting);
-    SendRaw('QUIT');
-  end
+    SendRaw('QUIT')
   else
-  begin
-    SetState(isDisconnecting);
-    if FConnection.Active then
-      FConnection.Close;
-    Disconnected;
-  end;
+    Close;
 end;
 
 procedure TmnIRCClient.Connect;
 begin
-  if (FState = isDisconnected) then
+  if (FState = isDisconnected) or (FConnection = nil) then
   begin
-    FCurrentNick := FNick;
-    FChangeNickTo := '';
-    SetState(isConnecting);
+    FConnection := TmnIRCConnection.Create(nil, nil);
+    FConnection.FClient := Self;
+    FConnection.FreeOnTerminate := true; //i will free my self
     Connection.FHost := Host;
     Connection.FPort := Port;
-    Connection.Connect; //move it to Process
     Connection.Start;
-    Connected;
   end;
 end;
 
@@ -1076,14 +1083,10 @@ constructor TmnIRCClient.Create;
 begin
   inherited Create;
   FLock := TCriticalSection.Create;
-  FConnection := TmnIRCConnection.Create(nil, nil);
-  FConnection.FIRCClient := Self;
-  FConnection.FreeOnTerminate := False;
   FUseUserCommands := True;
   FHost := 'localhost';
   FPort := sDefaultPort;
   FNick := sNickName;
-  FAltNick := '';
   FRealName := '';
   FUsername := 'username';
   FPassword := '';
@@ -1098,7 +1101,7 @@ end;
 
 destructor TmnIRCClient.Destroy;
 begin
-  Reset;
+  Close;
   FreeAndNil(FConnection); //+
   FreeAndNil(FUserCommands);
   FreeAndNil(FQueueRaws);
@@ -1108,18 +1111,28 @@ begin
   inherited;
 end;
 
-procedure TmnIRCClient.Reset;
+procedure TmnIRCClient.Close;
 begin
-  SetState(isDisconnecting);
   if Assigned(FConnection) and (FConnection.Connected) then
+  begin
     FConnection.Close;
+  end;
 end;
 
-procedure TmnIRCClient.SendRaw(vData: String);
+procedure TmnIRCClient.SendRaw(vData: String; vQueueAt: TmnIRCState);
 begin
-  if Assigned(FConnection) and (FState in [isRegistering, isReady]) then
-    FConnection.SendRaw(vData);
-  Log(lgSend, vData)
+  if Assigned(FConnection) then
+  begin
+    if (FState >= vQueueAt) then
+      FConnection.SendRaw(vData)
+    else
+      QueueRaws.Add(vData);
+  end;
+end;
+
+procedure TmnIRCClient.StateChanged;
+begin
+
 end;
 
 procedure TmnIRCClient.Log(vLogType: TIRCLogType; Message: String);
@@ -1156,41 +1169,34 @@ begin
 
   if not aCMDProcessed then
   begin
-    SendRaw(Format('PRIVMSG %s :%s', [vChannel, vMsg]));
+    SendRaw(Format('PRIVMSG %s :%s', [vChannel, vMsg]), isReady);
     ReceiveMessage(mtSend, vChannel, vMsg);
   end;
 end;
 
 procedure TmnIRCClient.Join(Channel: String);
 begin
-  SendRaw(Format('JOIN %s', [Channel]));
+  SendRaw(Format('JOIN %s', [Channel]), isReady);
 end;
 
 procedure TmnIRCClient.Notice(Destination, Text: String);
 begin
-  SendRaw(Format('NOTICE %s :%s', [Destination, Text]));
+  SendRaw(Format('NOTICE %s :%s', [Destination, Text]), isReady);
 end;
 
 procedure TmnIRCClient.Disconnected;
 begin
   SetState(isDisconnected);
+  FConnection := nil;//it will free self
 end;
 
 procedure TmnIRCClient.Connected;
 begin
   SetState(isRegistering);
-  { If a password exists, SendDirect it first }
   if FPassword <> '' then
     SendRaw(Format('PASS %s', [FPassword]));
-  { SendDirect nick. }
   SetNick(FNick);
-  { SendDirect registration. }
   SendRaw(Format('USER %s %s %s :%s', [FUsername, FUsername, FHost, FRealName]));
-end;
-
-procedure TmnIRCClient.SetAltNick(const Value: String);
-begin
-  FAltNick := Value;
 end;
 
 procedure TmnIRCClient.SetNick(const Value: String);
@@ -1198,21 +1204,18 @@ begin
   if Value <> '' then
   begin
     if FState in [isRegistering, isReady] then
-    begin
-      if Value <> FChangeNickTo then
-      begin
-        SendRaw(Format('NICK %s', [Value]));
-        FChangeNickTo := Value;
-      end;
-    end
-    else
-      FNick := Value;
-  end;
+      SendRaw(Format('NICK %s', [Value]));
+  end
 end;
 
 procedure TmnIRCClient.SetPassword(const Value: String);
 begin
   FPassword := Value;
+end;
+
+function TmnIRCClient.GetActive: Boolean;
+begin
+  Result := (FConnection <> nil) and FConnection.Active;
 end;
 
 procedure TmnIRCClient.SetPort(const Value: String);
@@ -1240,6 +1243,7 @@ begin
   if Value <> FState then
   begin
     FState := Value;
+    StateChanged;
   end;
 end;
 
@@ -1327,14 +1331,6 @@ procedure TmnIRCClient.InitUserCommands;
 begin
   UserCommands.Add(TRaw_UserCommand.Create('Raw', Self));
   UserCommands.Add(TJoin_UserCommand.Create('Join', Self));
-end;
-
-function TmnIRCClient.GetNick: String;
-begin
-  if FState in [isRegistering, isReady] then
-    Result := FCurrentNick
-  else
-    Result := FNick;
 end;
 
 { Create the mode command string to SendDirect to the server to modify the user's

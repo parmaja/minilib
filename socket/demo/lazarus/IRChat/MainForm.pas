@@ -15,6 +15,7 @@ type
   TMyIRCClient = class(TmnIRCClient)
   public
     procedure ReceiveNames(vChannel: string; vUserNames: TIRCChannelUserNames); override;
+    procedure StateChanged; override;
   end;
 
   { TMainFrm }
@@ -87,12 +88,27 @@ begin
   end;
 end;
 
+procedure TMyIRCClient.StateChanged;
+begin
+  inherited StateChanged;
+  case State of
+    isDisconnected: MainFrm.ConnectBtn.Caption := 'Connect';
+    isRegistering: MainFrm.ConnectBtn.Caption := 'Disconnect...';
+    isReady: MainFrm.ConnectBtn.Caption := 'Disconnect';
+  end;
+end;
+
 { TMainFrm }
 
 procedure TMainFrm.ConnectBtnClick(Sender: TObject);
 begin
-  ConnectNow;
-  SendEdit.SetFocus;
+  if IRC.Active then
+    IRC.Disconnect
+  else
+  begin
+    ConnectNow;
+    SendEdit.SetFocus;
+  end;
 end;
 
 procedure TMainFrm.Button1Click(Sender: TObject);
