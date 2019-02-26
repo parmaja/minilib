@@ -23,9 +23,8 @@ unit mnIRCClients;
 interface
 
 uses
-  Classes, StrUtils,
-  mnClasses,
-  mnSockets, mnSocketStreams, mnClients, mnStreams, mnConnections, mnUtils, syncobjs;
+  Classes, StrUtils, syncobjs,
+  mnClasses, mnSockets, mnSocketStreams, mnClients, mnStreams, mnConnections, mnUtils;
 
 const
   cTokenSeparator = ' ';    { Separates tokens, except for the following case. }
@@ -209,11 +208,12 @@ type
     FIRCClient: TmnIRCClient;
     FHost: string;
     FPort: string;
+    procedure ProcessRaws;
   protected
     procedure DoReceive(const Data: string); virtual;
     procedure DoLog(const vData: string); virtual;
-    procedure ProcessRaws;
     procedure Process; override;
+    procedure Unprepare; override;
     procedure SendRaw(S: string);
     property IRCClient: TmnIRCClient read FIRCClient;
   public
@@ -876,6 +876,13 @@ begin
   end;
 end;
 
+procedure TmnIRCConnection.Unprepare;
+begin
+  inherited;
+  {if Connected then
+    Disconnect(true);}
+end;
+
 procedure TmnIRCConnection.SendRaw(S: string);
 begin
   if Stream <> nil then
@@ -894,8 +901,9 @@ end;
 
 procedure TmnIRCConnection.Connect;
 begin
-  SetStream(TIRCSocketStream.Create(Host, Port, [soNoDelay, soConnectTimeout]));
-  Stream.Timeout := WaitForEver;// 5 * 1000;
+  SetStream(TIRCSocketStream.Create(Host, Port, [soNoDelay, soKeepIfTimout, soConnectTimeout]));
+  Stream.Timeout := 5 * 1000;
+  //Stream.Timeout := WaitForEver;// 5 * 1000;
   Stream.EndOfLine := #10;
   inherited Connect;
 end;

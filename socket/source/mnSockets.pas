@@ -29,6 +29,7 @@ type
     soReuseAddr,
     soKeepAlive,
     soNoDelay,
+    soKeepIfTimout, //Keep socket if read timeout without error
     soConnectTimeout //Connect will use Timeout to wait it
     //soBroadcast, soDebug, soDontLinger, soDontRoute, soOOBInLine, soAcceptConn
     );

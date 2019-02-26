@@ -143,7 +143,12 @@ begin
     end;
 
     c := fpselect(1, PSetRead, PSetWrite, PSetRead, Timeout);
-    if (c = 0) or (c = SOCKET_ERROR) then
+    if (c = SOCKET_ERROR) then
+    begin
+      Error;
+      Result := erFail;
+    end
+    else if (c = 0) then
     begin
       Error;
       Result := erFail;

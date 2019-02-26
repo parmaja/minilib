@@ -287,7 +287,6 @@ end;
 
 procedure TmnConnection.Created;
 begin
-
 end;
 
 procedure TmnConnection.SetStream(AValue: TmnConnectionStream);

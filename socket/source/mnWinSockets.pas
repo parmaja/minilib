@@ -452,7 +452,9 @@ begin
       c := WinSock.select(0, PSetRead, PSetWrite, nil, @TimeVal);
     {$ENDIF}
     end;
-    if (c = 0) or (c = SOCKET_ERROR) then
+    if (c = SOCKET_ERROR) then
+      Result := erFail
+    else if (c = 0) then
       Result := erFail
     else
       Result := erNone;

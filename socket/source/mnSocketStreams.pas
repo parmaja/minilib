@@ -81,7 +81,8 @@ begin
   end
   else
   begin
-    FreeSocket;
+    if not (soKeepIfTimout in Options) then //TODO are we need it really!
+      FreeSocket;
     Result := 0;
   end
 end;
@@ -105,7 +106,8 @@ begin
     end
     else
     begin
-      FreeSocket;
+      if not (soKeepIfTimout in Options) then //TODO are we need it really!
+        FreeSocket;
       Result := 0;
     end;
   end;
