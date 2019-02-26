@@ -151,7 +151,7 @@ var
   err:TmnError;
 begin
   err := Socket.Select(vTimeout, slRead);
-  if soFailReadTimout in Options then
+  if not (soKeepIfReadTimout in Options) then
     Result := err < erTimout
   else	
   	Result := err <= erTimout;
