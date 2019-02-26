@@ -455,7 +455,7 @@ begin
     if (c = SOCKET_ERROR) then
       Result := erFail
     else if (c = 0) then
-      Result := erFail
+      Result := erTimout
     else
       Result := erNone;
   end

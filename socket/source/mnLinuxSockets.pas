@@ -149,10 +149,7 @@ begin
       Result := erFail;
     end
     else if (c = 0) then
-    begin
-      Error;
-      Result := erFail;
-    end
+      Result := erTimout
     else
       Result := erNone;
   end;

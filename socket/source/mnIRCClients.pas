@@ -901,7 +901,7 @@ end;
 
 procedure TmnIRCConnection.Connect;
 begin
-  SetStream(TIRCSocketStream.Create(Host, Port, [soNoDelay, soKeepIfTimout, soConnectTimeout]));
+  SetStream(TIRCSocketStream.Create(Host, Port, [soNoDelay, soFailReadTimout, soConnectTimeout]));
   Stream.Timeout := 5 * 1000;
   //Stream.Timeout := WaitForEver;// 5 * 1000;
   Stream.EndOfLine := #10;

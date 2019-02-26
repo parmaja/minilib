@@ -71,7 +71,7 @@ begin
     DoError('Write: SocketStream not connected.')
   else if WaitToWrite(Timeout) then //TODO WriteTimeout
   begin
-    if Socket.Send(Buffer, Count) >= erClosed then
+    if Socket.Send(Buffer, Count) >= erFail then
     begin
       FreeSocket;
       Result := 0;
@@ -81,8 +81,7 @@ begin
   end
   else
   begin
-    if not (soKeepIfTimout in Options) then //TODO are we need it really!
-      FreeSocket;
+    FreeSocket;
     Result := 0;
   end
 end;
@@ -96,7 +95,7 @@ begin
   begin
     if WaitToRead(Timeout) then
     begin
-      if (Socket = nil) or (Socket.Receive(Buffer, Count) >= erClosed) then
+      if (Socket = nil) or (Socket.Receive(Buffer, Count) >= erFail) then
       begin
         FreeSocket;
         Result := 0;
@@ -106,8 +105,7 @@ begin
     end
     else
     begin
-      if not (soKeepIfTimout in Options) then //TODO are we need it really!
-        FreeSocket;
+      FreeSocket;
       Result := 0;
     end;
   end;
@@ -153,12 +151,18 @@ var
   err:TmnError;
 begin
   err := Socket.Select(vTimeout, slRead);
-  Result := err = erNone;
+  if soFailReadTimout in Options then
+    Result := err < erTimout
+  else	
+  	Result := err <= erTimout;
 end;
 
 function TmnSocketStream.WaitToWrite(vTimeout: Integer): Boolean;
+var
+  err:TmnError;
 begin
-  Result := Socket.Select(vTimeout, slWrite) = erNone;
+  err := Socket.Select(vTimeout, slWrite);
+  Result := err < erTimout; //yes less than Timout, write should be sent
 end;
 
 procedure TmnSocketStream.FreeSocket;

@@ -29,7 +29,7 @@ type
     soReuseAddr,
     soKeepAlive,
     soNoDelay,
-    soKeepIfTimout, //Keep socket if read timeout without error
+    soFailReadTimout, //Keep socket if read timeout without error
     soConnectTimeout //Connect will use Timeout to wait it
     //soBroadcast, soDebug, soDontLinger, soDontRoute, soOOBInLine, soAcceptConn
     );
@@ -161,8 +161,8 @@ end;
 function TmnCustomSocket.Select(Timeout: Integer; Check: TSelectCheck): TmnError;
 begin
   Result := DoSelect(Timeout, Check);
-  if (Result <> erNone) then
-    Result := erClosed;
+  {if (Result <> erNone) then
+    Result := erClosed;}
 end;
 
 function TmnCustomSocket.Shutdown(How: TmnShutdown): TmnError;
