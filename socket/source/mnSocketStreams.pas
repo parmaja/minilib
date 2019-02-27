@@ -138,7 +138,10 @@ begin
     raise EmnStreamException.Create('Socket must be nil');
   FSocket := CreateSocket;
   if FSocket = nil then
-    raise EmnStreamException.Create('Connected fail');
+    if soSafeConnect in Options then
+      exit
+    else
+      raise EmnStreamException.Create('Connected fail');
 end;
 
 function TmnSocketStream.CreateSocket: TmnCustomSocket;

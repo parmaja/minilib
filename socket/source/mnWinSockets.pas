@@ -356,7 +356,10 @@ var
 begin
   aHandle := socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
   if aHandle = INVALID_SOCKET then
-    raise EmnException.Create('Failed to create a socket, Error #' + Inttostr(WSAGetLastError));
+    if soSafeConnect in Options then
+      exit(nil)
+    else
+      raise EmnException.Create('Failed to create a socket, Error #' + Inttostr(WSAGetLastError));
 
   if soNoDelay in Options then
     setsockopt(aHandle, IPPROTO_TCP, TCP_NODELAY, PAnsiChar(@SO_TRUE), SizeOf(SO_TRUE));
@@ -397,6 +400,9 @@ begin
 {$ELSE}
   if WinSock.bind(aHandle, aSockAddr, SizeOf(aSockAddr)) = SOCKET_ERROR then
 {$ENDIF}
+  if soSafeConnect in Options then
+    exit(nil)
+  else
     raise EmnException.Create('failed to bind the socket, error #' + IntToStr(WSAGetLastError) + '.'#13#13'another server is already use the same port (' + Port + ').');
   Result := TmnSocket.Create(aHandle);
 end;
@@ -491,7 +497,10 @@ var
 begin
   aHandle := socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
   if aHandle = INVALID_SOCKET then
-    raise EmnException.Create('Failed to connect socket, Error #' + Inttostr(WSAGetLastError));
+    if soSafeConnect in Options then
+      exit(nil)
+    else
+      raise EmnException.Create('Failed to connect socket, Error #' + Inttostr(WSAGetLastError));
 
   if soNoDelay in Options then
     setsockopt(aHandle, IPPROTO_TCP, TCP_NODELAY, PAnsiChar(@SO_TRUE), SizeOf(SO_TRUE));
@@ -505,7 +514,10 @@ begin
     aMode := 1;
     ret := ioctlsocket(aHandle, {$ifdef FPC}Longint(FIONBIO){$else}FIONBIO{$endif}, aMode);
     if ret = Longint(SOCKET_ERROR) then
-      raise EmnException.Create('Failed to set nonblock socket, Error #' + Inttostr(WSAGetLastError));
+      if soSafeConnect in Options then
+        exit(nil)
+      else
+        raise EmnException.Create('Failed to set nonblock socket, Error #' + Inttostr(WSAGetLastError));
   end;
 
   aAddr.sin_family := AF_INET;
@@ -535,16 +547,25 @@ begin
   ret := WinSock.connect(aHandle, aAddr, SizeOf(aAddr));
 {$ENDIF}
   if (ret = SOCKET_ERROR) and not ((soConnectTimeout in Options) and (WSAGetLastError = WSAEWOULDBLOCK)) then
-    raise EmnException.Create('Failed to connect the socket, error #' + IntToStr(WSAGetLastError) + '.'#13'Address "' + Address +'" Port "' + Port + '".');
+    if soSafeConnect in Options then
+      exit(nil)
+    else
+      raise EmnException.Create('Failed to connect the socket, error #' + IntToStr(WSAGetLastError) + '.'#13'Address "' + Address +'" Port "' + Port + '".');
 
   if soConnectTimeout in Options then
   begin
     aMode := 0;
     ret := ioctlsocket(aHandle, {$ifdef FPC}Longint(FIONBIO){$else}FIONBIO{$endif}, aMode);
     if ret = Longint(SOCKET_ERROR) then
-      raise EmnException.Create('Failed to set nonblock socket, Error #' + Inttostr(WSAGetLastError));
+      if soSafeConnect in Options then
+        exit(nil)
+      else
+        raise EmnException.Create('Failed to set nonblock socket, Error #' + Inttostr(WSAGetLastError));
 
     if Select(aHandle, Timeout, slWrite) <> erNone then
+      if soSafeConnect in Options then
+      exit(nil)
+    else
       raise EmnException.Create('Failed to connect nonblock socket, Error #' + Inttostr(WSAGetLastError));
   end;
   Result := TmnSocket.Create(aHandle)

@@ -900,11 +900,13 @@ end;
 
 procedure TmnIRCConnection.SendRaw(S: string);
 begin
-  if Stream <> nil then
+  if Stream.Connected then
   begin
     Stream.WriteLine(S);
     Client.Log(lgSend, S);
   end
+  else
+    Client.Log(lgMsg, 'not connected');
 end;
 
 constructor TmnIRCConnection.Create(vOwner: TmnConnections; vSocket: TmnConnectionStream);
@@ -919,7 +921,7 @@ end;
 
 procedure TmnIRCConnection.Connect;
 begin
-  SetStream(TIRCSocketStream.Create(Host, Port, [soNoDelay, soKeepIfReadTimout, soConnectTimeout]));
+  SetStream(TIRCSocketStream.Create(Host, Port, [soNoDelay, soSafeConnect, soKeepIfReadTimout, soConnectTimeout]));
   Stream.Timeout := 5 * 1000;
   //Stream.Timeout := WaitForEver;// 5 * 1000;
   Stream.EndOfLine := #10;

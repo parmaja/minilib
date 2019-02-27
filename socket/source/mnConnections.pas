@@ -168,20 +168,23 @@ end;
 
 procedure TmnConnection.Execute;
 begin
-  Prepare;
-  while not Terminated and Connected do
-  begin
-    try
-      Process;
-    except
-      on E: Exception do
-      begin
-        HandleException(E);
-        //Disconnect; //TODO: Do we need to disconnect when we have exception? maybe we need to add option for it
+  try
+    Prepare;
+    while not Terminated and Connected do
+    begin
+      try
+        Process;
+      except
+        on E: Exception do
+        begin
+          HandleException(E);
+          //Disconnect; //TODO: Do we need to disconnect when we have exception? maybe we need to add option for it
+        end;
       end;
     end;
+  finally
+    Unprepare;
   end;
-  Unprepare;
 end;
 
 constructor TmnLockThread.Create;

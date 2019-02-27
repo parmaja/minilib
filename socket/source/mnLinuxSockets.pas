@@ -307,7 +307,10 @@ var
 begin
   aHandle := fpsocket(AF_INET, SOCK_STREAM, 0{IPPROTO_TCP});
   if aHandle = INVALID_SOCKET then
-    raise EmnException.Create('Failed to create a socket');
+    if soSafeConnect in Options then
+      exit(nil)
+    else
+      raise EmnException.Create('Failed to create a socket');
 
   if soReuseAddr in Options then
     fpsetsockopt(aHandle, SOL_SOCKET, SO_REUSEADDR, PChar(@SO_TRUE), SizeOf(SO_TRUE));
@@ -323,8 +326,11 @@ begin
     aAddr.sin_addr.s_addr := INADDR_ANY
   else
     aAddr.sin_addr := StrToNetAddr(Address);
-  If  fpbind(aHandle,@aAddr, Sizeof(aAddr)) <> 0 then
-    raise EmnException.Create('failed to bind the socket, maybe another server is already use the same port (' + Port + ').');
+  if fpbind(aHandle,@aAddr, Sizeof(aAddr)) <> 0 then
+    if soSafeConnect in Options then
+      exit(nil)
+    else
+      raise EmnException.Create('failed to bind the socket, maybe another server is already use the same port (' + Port + ').');
   Result := TmnSocket.Create(aHandle);
 end;
 
@@ -349,7 +355,10 @@ begin
   //https://stackoverflow.com/questions/14254061/setting-time-out-for-connect-function-tcp-socket-programming-in-c-breaks-recv
   aHandle := fpsocket(AF_INET, SOCK_STREAM{TODO: for nonblock option: or O_NONBLOCK}, 0{IPPROTO_TCP});
   if aHandle = INVALID_SOCKET then
-    raise EmnException.Create('Failed to connect socket');
+    if soSafeConnect in Options then
+      exit(nil)
+    else
+      raise EmnException.Create('Failed to connect socket');
 
   if soNoDelay in Options then
     fpsetsockopt(aHandle, IPPROTO_TCP, TCP_NODELAY, PAnsiChar(@SO_TRUE), SizeOf(SO_TRUE));
@@ -377,7 +386,10 @@ begin
   end;
   ret := fpconnect(aHandle, @aAddr, SizeOf(aAddr));
   if ret = -1 then
-    raise EmnException.Create('Failed to connect the socket, error #' + IntToStr(SocketError) + '.'#13'Address "' + Address +'" Port "' + Port + '".');
+    if soSafeConnect in Options then
+      exit(nil)
+    else
+      raise EmnException.Create('Failed to connect the socket, error #' + IntToStr(SocketError) + '.'#13'Address "' + Address +'" Port "' + Port + '".');
   Result := TmnSocket.Create(aHandle)
 end;
 
