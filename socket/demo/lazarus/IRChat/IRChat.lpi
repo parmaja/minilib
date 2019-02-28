@@ -23,25 +23,28 @@
         <Mode0 Name="default"/>
       </Modes>
     </RunParams>
-    <RequiredPackages Count="6">
+    <RequiredPackages Count="7">
       <Item1>
-        <PackageName Value="MiniCtrls"/>
+        <PackageName Value="SynEdit"/>
       </Item1>
       <Item2>
-        <PackageName Value="NativeLib"/>
+        <PackageName Value="MiniCtrls"/>
       </Item2>
       <Item3>
-        <PackageName Value="MiniXML"/>
+        <PackageName Value="NativeLib"/>
       </Item3>
       <Item4>
-        <PackageName Value="MiniSockets"/>
+        <PackageName Value="MiniXML"/>
       </Item4>
       <Item5>
-        <PackageName Value="MiniCommons"/>
+        <PackageName Value="MiniSockets"/>
       </Item5>
       <Item6>
-        <PackageName Value="LCL"/>
+        <PackageName Value="MiniCommons"/>
       </Item6>
+      <Item7>
+        <PackageName Value="LCL"/>
+      </Item7>
     </RequiredPackages>
     <Units Count="3">
       <Unit0>

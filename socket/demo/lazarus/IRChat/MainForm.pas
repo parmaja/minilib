@@ -44,15 +44,18 @@ type
     procedure Button1Click(Sender: TObject);
     procedure ConnectBtnClick(Sender: TObject);
     procedure HostEditKeyPress(Sender: TObject; var Key: char);
+    procedure JoinBtnClick(Sender: TObject);
     procedure MenuItem1Click(Sender: TObject);
     procedure MsgPageControlChange(Sender: TObject);
     procedure SendBtnClick(Sender: TObject);
     procedure SendEditKeyPress(Sender: TObject; var Key: char);
   private
     IRC: TMyIRCClient;
+    function CurrentRoom: string;
     procedure ConnectNow;
     procedure SendNow;
-    function NeedRoom(ARoomName: string; ActiveIt: Boolean = false): TChatRoomFrame;
+    function NeedRoom(vRoomName: string; ActiveIt: Boolean = false): TChatRoomFrame;
+    procedure SetNick(ANick: string);
   public
     constructor Create(TheOwner: TComponent); override;
     destructor Destroy; override;
@@ -74,6 +77,8 @@ begin
   inherited;
   if scChannelNames in vStates then
     MainFrm.ReceiveNames(vChannel, Session.Channels.Find(vChannel));
+  if scNick in vStates then
+    MainFrm.SetNick(Session.Nick);
   if scProgress in vStates then
     case Progress of
       prgDisconnected: MainFrm.ConnectBtn.Caption := 'Connect';
@@ -124,6 +129,11 @@ begin
   end;
 end;
 
+procedure TMainFrm.JoinBtnClick(Sender: TObject);
+begin
+  IRC.Join(RoomEdit.Text);
+end;
+
 procedure TMainFrm.MenuItem1Click(Sender: TObject);
 begin
   LogEdit.Clear;
@@ -141,27 +151,33 @@ end;
 
 procedure TMainFrm.SendNow;
 begin
-  IRC.ChannelSend(RoomEdit.Text, SendEdit.Text);
+  IRC.ChannelSend(CurrentRoom, SendEdit.Text);
   SendEdit.Text := '';
 end;
 
-function TMainFrm.NeedRoom(ARoomName: string; ActiveIt: Boolean): TChatRoomFrame;
+function TMainFrm.NeedRoom(vRoomName: string; ActiveIt: Boolean): TChatRoomFrame;
 var
   i, Index: Integer;
   TabSheet: TTabSheet;
-  IsRoom: Boolean;
+  ARoomName: string;
+  AIsRoom: Boolean;
 begin
+  if vRoomName = '*' then
+    vRoomName := '';
+
+  ARoomName := vRoomName;
   if LeftStr(ARoomName, 1) = '#' then
   begin
     ARoomName := MidStr(ARoomName, 2, MaxInt);
-    IsRoom := True;
+    AIsRoom := True;
   end
   else
-    IsRoom := False;
+    AIsRoom := False;
+
   index := -1;
   for i := 0 to MsgPageControl.PageCount - 1 do
   begin
-    if SameText(MsgPageControl.Pages[i].Name, ARoomName + 'Room') then
+    if SameText(MsgPageControl.Pages[i].Name, ARoomName + '_Room') then
     begin
       Index := i;
       break;
@@ -176,23 +192,29 @@ begin
       Parent := TabSheet;
       Visible := True;
       Align := alClient;
-      Name := 'Room';
+      RoomName := vRoomName;
+      IsRoom := AIsRoom;
     end;
-    TabSheet.Name := ARoomName + 'Room';
+    TabSheet.Name := ARoomName + '_Room';
     if ARoomName = '' then
-      TabSheet.Caption := 'Server'
+      TabSheet.Caption := '[Server]'
     else
-      TabSheet.Caption := ARoomName;
-    Result := TabSheet.FindChildControl('Room') as TChatRoomFrame;
+      TabSheet.Caption := vRoomName;
+    Result := TabSheet.Controls[0] as TChatRoomFrame;
   end
   else
   begin
     TabSheet := MsgPageControl.Pages[Index];
-    Result := TabSheet.FindChildControl('Room') as TChatRoomFrame;
+    Result := TabSheet.Controls[0] as TChatRoomFrame;
   end;
 
   if ActiveIt and (Index >= 0) then
     MsgPageControl.ActivePageIndex := Index;
+end;
+
+procedure TMainFrm.SetNick(ANick: string);
+begin
+  NicknameBtn.Caption := ANick;
 end;
 
 procedure TMainFrm.SendEditKeyPress(Sender: TObject; var Key: char);
@@ -201,6 +223,14 @@ begin
   begin
     Key := #0;
     SendNow;
+  end;
+end;
+
+function TMainFrm.CurrentRoom: string;
+begin
+  if MsgPageControl.ActivePage <> nil then
+  begin
+    Result := (MsgPageControl.ActivePage.Controls[0] as TChatRoomFrame).RoomName;
   end;
 end;
 
