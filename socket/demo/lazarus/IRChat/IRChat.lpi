@@ -43,7 +43,7 @@
         <PackageName Value="LCL"/>
       </Item6>
     </RequiredPackages>
-    <Units Count="2">
+    <Units Count="3">
       <Unit0>
         <Filename Value="IRChat.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -55,6 +55,13 @@
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
       </Unit1>
+      <Unit2>
+        <Filename Value="ChatRoomFrames.pas"/>
+        <IsPartOfProject Value="True"/>
+        <ComponentName Value="ChatRoomFrame"/>
+        <HasResources Value="True"/>
+        <ResourceBaseClass Value="Frame"/>
+      </Unit2>
     </Units>
   </ProjectOptions>
   <CompilerOptions>

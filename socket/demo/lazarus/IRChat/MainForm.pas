@@ -5,7 +5,7 @@ unit MainForm;
 interface
 
 uses
-  Classes, SysUtils, FileUtil, Forms, Controls, Graphics, Dialogs, Buttons, IniFiles,
+  Classes, SysUtils, StrUtils, FileUtil, Forms, Controls, Graphics, Dialogs, Buttons, IniFiles, ChatRoomFrames,
   StdCtrls, ExtCtrls, ComCtrls, Menus, mnIRCClients;
 
 type
@@ -14,15 +14,14 @@ type
 
   TMyIRCClient = class(TmnIRCClient)
   public
-    procedure ReceiveNames(vChannel: string; vUserNames: TIRCChannelUserNames); override;
-    procedure StateChanged; override;
+    procedure DoChanged(vStates: TIRCStates; vChannel: string); override;
+    procedure DoReceive(vMsgType: TIRCMsgType; vChannel, vMsg: String); override;
   end;
 
   { TMainFrm }
 
   TMainFrm = class(TForm)
     ConnectBtn: TButton;
-    TopicEdit: TEdit;
     JoinBtn: TButton;
     HostEdit: TEdit;
     Label1: TLabel;
@@ -32,14 +31,9 @@ type
     PasswordEdit: TEdit;
     NicknameBtn: TButton;
     SendEdit: TEdit;
-    ServerMsgEdit: TMemo;
-    Splitter2: TSplitter;
-    TabSheet2: TTabSheet;
-    UserListBox: TListBox;
     LogEdit: TMemo;
     MenuItem1: TMenuItem;
     LogPopupMenu: TPopupMenu;
-    MsgEdit: TMemo;
     MsgPageControl: TPageControl;
     Panel1: TPanel;
     Panel2: TPanel;
@@ -47,7 +41,6 @@ type
     UserEdit: TEdit;
     SendBtn: TButton;
     Splitter1: TSplitter;
-    TabSheet1: TTabSheet;
     procedure Button1Click(Sender: TObject);
     procedure ConnectBtnClick(Sender: TObject);
     procedure HostEditKeyPress(Sender: TObject; var Key: char);
@@ -59,12 +52,12 @@ type
     IRC: TMyIRCClient;
     procedure ConnectNow;
     procedure SendNow;
+    function NeedRoom(ARoomName: string; ActiveIt: Boolean = false): TChatRoomFrame;
   public
     constructor Create(TheOwner: TComponent); override;
     destructor Destroy; override;
-    procedure DoReceive(Sender: TObject; vMsgType: TIRCMsgType; vChannel, vMSG: String);
-
-    procedure DoLog(Sender: TObject; vLogType: TIRCLogType; vMsg: String);
+    procedure DoReceive(vMsgType: TIRCMsgType; vChannel, vMSG: String);
+    procedure ReceiveNames(vChannel: string; vUserNames: TIRCChannel);
   end;
 
 var
@@ -76,26 +69,22 @@ implementation
 
 { TMyIRCClient }
 
-procedure TMyIRCClient.ReceiveNames(vChannel: string; vUserNames: TIRCChannelUserNames);
-var
-  i: Integer;
+procedure TMyIRCClient.DoChanged(vStates: TIRCStates; vChannel: string);
 begin
   inherited;
-  MainFrm.UserListBox.Clear;
-  for i := 0 to vUserNames.Count -1 do
-  begin
-    MainFrm.UserListBox.Items.Add(vUserNames[i].Name);
-  end;
+  if scChannelNames in vStates then
+    MainFrm.ReceiveNames(vChannel, Session.Channels.Find(vChannel));
+  if scProgress in vStates then
+    case Progress of
+      prgDisconnected: MainFrm.ConnectBtn.Caption := 'Connect';
+      prgRegistering: MainFrm.ConnectBtn.Caption := 'Disconnect...';
+      prgReady: MainFrm.ConnectBtn.Caption := 'Disconnect';
+    end;
 end;
 
-procedure TMyIRCClient.StateChanged;
+procedure TMyIRCClient.DoReceive(vMsgType: TIRCMsgType; vChannel, vMsg: String);
 begin
-  inherited StateChanged;
-  case State of
-    isDisconnected: MainFrm.ConnectBtn.Caption := 'Connect';
-    isRegistering: MainFrm.ConnectBtn.Caption := 'Disconnect...';
-    isReady: MainFrm.ConnectBtn.Caption := 'Disconnect';
-  end;
+  MainFrm.DoReceive(vMsgType, vChannel, vMsg);
 end;
 
 { TMainFrm }
@@ -156,6 +145,56 @@ begin
   SendEdit.Text := '';
 end;
 
+function TMainFrm.NeedRoom(ARoomName: string; ActiveIt: Boolean): TChatRoomFrame;
+var
+  i, Index: Integer;
+  TabSheet: TTabSheet;
+  IsRoom: Boolean;
+begin
+  if LeftStr(ARoomName, 1) = '#' then
+  begin
+    ARoomName := MidStr(ARoomName, 2, MaxInt);
+    IsRoom := True;
+  end
+  else
+    IsRoom := False;
+  index := -1;
+  for i := 0 to MsgPageControl.PageCount - 1 do
+  begin
+    if SameText(MsgPageControl.Pages[i].Name, ARoomName + 'Room') then
+    begin
+      Index := i;
+      break;
+    end;
+  end;
+
+  if Index < 0 then
+  begin
+    TabSheet := MsgPageControl.AddTabSheet;
+    with TChatRoomFrame.Create(TabSheet) do
+    begin
+      Parent := TabSheet;
+      Visible := True;
+      Align := alClient;
+      Name := 'Room';
+    end;
+    TabSheet.Name := ARoomName + 'Room';
+    if ARoomName = '' then
+      TabSheet.Caption := 'Server'
+    else
+      TabSheet.Caption := ARoomName;
+    Result := TabSheet.FindChildControl('Room') as TChatRoomFrame;
+  end
+  else
+  begin
+    TabSheet := MsgPageControl.Pages[Index];
+    Result := TabSheet.FindChildControl('Room') as TChatRoomFrame;
+  end;
+
+  if ActiveIt and (Index >= 0) then
+    MsgPageControl.ActivePageIndex := Index;
+end;
+
 procedure TMainFrm.SendEditKeyPress(Sender: TObject; var Key: char);
 begin
   if Key = #13 then
@@ -182,8 +221,6 @@ begin
     FreeAndNil(ini);
   end;
   IRC := TMyIRCClient.Create;
-  IRC.OnLog := @DoLog;
-  IRC.OnReceive := @DoReceive;
   MsgPageControl.ActivePageIndex := 0;
   LogEdit.Clear;
 end;
@@ -209,29 +246,43 @@ begin
   inherited Destroy;
 end;
 
-procedure TMainFrm.DoReceive(Sender: TObject; vMsgType: TIRCMsgType; vChannel, vMSG: String);
+procedure TMainFrm.DoReceive(vMsgType: TIRCMsgType; vChannel, vMSG: String);
+var
+  ChatRoom: TChatRoomFrame;
 begin
-  case vMsgType of
-    mtWelcome:
-      MsgEdit.Lines.Add(vMSG);
-    mtNotice:
-      MsgEdit.Lines.Add(vMSG);
-    mtTopic:
-      TopicEdit.Text := vMSG;
-  else
-    if vChannel = '' then
-      ServerMsgEdit.Lines.Add(vMSG)
+  ChatRoom := NeedRoom(vChannel);
+  if ChatRoom <> nil then
+    with ChatRoom do
+  begin
+    case vMsgType of
+      mtLog:
+        LogEdit.Lines.Add(vMSG);
+      mtWelcome:
+        MsgEdit.Lines.Add(vMSG);
+      mtNotice:
+        MsgEdit.Lines.Add(vMSG);
+      mtTopic:
+        TopicEdit.Text := vMSG;
     else
-      MsgEdit.Lines.Add(vMSG);
+        MsgEdit.Lines.Add(vMSG);
+    end;
   end;
 end;
 
-procedure TMainFrm.DoLog(Sender: TObject; vLogType: TIRCLogType; vMsg: String);
+procedure TMainFrm.ReceiveNames(vChannel: string; vUserNames: TIRCChannel);
+var
+  ChatRoom: TChatRoomFrame;
+  i: Integer;
 begin
-  case vLogType of
-    lgMsg: LogEdit.Lines.Add(vMsg);
-    lgSend: LogEdit.Lines.Add('>'+vMsg);
-    lgReceive: LogEdit.Lines.Add('<'+vMsg);
+  ChatRoom := NeedRoom(vChannel);
+  if ChatRoom <> nil then
+    with ChatRoom do
+  begin
+    UserListBox.Clear;
+    for i := 0 to vUserNames.Count -1 do
+    begin
+      UserListBox.Items.Add(vUserNames[i].Name);
+    end;
   end;
 end;
 

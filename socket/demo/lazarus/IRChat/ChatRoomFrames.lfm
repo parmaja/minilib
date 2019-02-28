@@ -1,0 +1,55 @@
+object ChatRoomFrame: TChatRoomFrame
+  Left = 0
+  Height = 204
+  Top = 0
+  Width = 389
+  ClientHeight = 204
+  ClientWidth = 389
+  TabOrder = 0
+  DesignLeft = 411
+  DesignTop = 284
+  object TopicEdit: TEdit
+    Left = 0
+    Height = 23
+    Top = 0
+    Width = 389
+    Align = alTop
+    ReadOnly = True
+    TabOrder = 0
+  end
+  object MsgEdit: TMemo
+    Left = 0
+    Height = 181
+    Top = 23
+    Width = 243
+    Align = alClient
+    Font.CharSet = ARABIC_CHARSET
+    Font.Color = clBlack
+    Font.Height = -15
+    Font.Name = 'Courier New'
+    Font.Pitch = fpFixed
+    Font.Quality = fqDraft
+    ParentFont = False
+    ReadOnly = True
+    ScrollBars = ssAutoBoth
+    TabOrder = 1
+  end
+  object UserListBox: TListBox
+    Left = 249
+    Height = 177
+    Top = 25
+    Width = 138
+    Align = alRight
+    BorderSpacing.Around = 2
+    ItemHeight = 0
+    TabOrder = 2
+  end
+  object Splitter2: TSplitter
+    Left = 243
+    Height = 181
+    Top = 23
+    Width = 4
+    Align = alRight
+    ResizeAnchor = akRight
+  end
+end
