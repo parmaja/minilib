@@ -229,11 +229,13 @@ begin
     else
       c := Posix.SysSelect.Select(FD_SETSIZE, nil, @FSet, nil, LTimePtr);}
 
-    if (c = 0) or (c = SOCKET_ERROR) then
+    if (c = SOCKET_ERROR) then
     begin
       Error;
       Result := erFail;
     end
+    else if (c = 0) then
+      Result := erTimout
     else
       Result := erNone;
   end;
@@ -402,7 +404,10 @@ var
 begin
   aHandle := Posix.SysSocket.socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
   if aHandle = INVALID_SOCKET then
-    raise EmnException.Create('Failed to create a socket');
+    if soSafeConnect in Options then
+      exit(nil)
+    else
+      raise EmnException.Create('Failed to create a socket');
 
   if soReuseAddr in Options then
     Posix.SysSocket.setsockopt(aHandle, SOL_SOCKET, SO_REUSEADDR, SO_TRUE, SizeOf(SO_TRUE));
@@ -416,7 +421,10 @@ begin
   aAddr.addr_in.sin_port := StrToIntDef(Port, 0);
   StrToNetAddr(Address, aAddr.addr_in.sin_addr);
   If Posix.SysSocket.bind(aHandle, aAddr.addr, Sizeof(aAddr)) <> 0 then
-    raise EmnException.Create('failed to bind the socket, maybe another server is already use the same port (' + Port + ').');
+    if soSafeConnect in Options then
+      exit(nil)
+    else
+      raise EmnException.Create('failed to bind the socket, maybe another server is already use the same port (' + Port + ').');
   Result := TmnSocket.Create(aHandle);
 end;
 
@@ -487,14 +495,20 @@ begin
   LAddrInfo := TestGetAddrInfo(Address, Port, aInfo);
 
   if LAddrInfo = nil then
-    raise EmnException.Create('Failed to get address');
+    if soSafeConnect in Options then
+      exit(nil)
+    else
+      raise EmnException.Create('Failed to get address');
 
 
   //aHandle := Posix.SysSocket.socket(AF_INET, SOCK_STREAM{TODO: for nonblock option: or O_NONBLOCK}, IPPROTO_TCP);
   aHandle := Posix.SysSocket.socket(LAddrInfo.ai_family, LAddrInfo.ai_socktype, LAddrInfo.ai_protocol);
 
   if aHandle = INVALID_SOCKET then
-    raise EmnException.Create('Failed to connect socket');
+    if soSafeConnect in Options then
+      exit(nil)
+    else
+      raise EmnException.Create('Failed to connect socket');
 
   //if soNoDelay in Options then
     //setsockopt(aHandle, IPPROTO_TCP, TCP_NODELAY, SO_TRUE, SizeOf(SO_TRUE));
@@ -535,7 +549,10 @@ begin
         aAddr.addr_in.sin_addr.s_addr := Psockaddr_in(LAddrInfo^.ai_addr).sin_addr.s_addr;
       end
       else
-        raise EmnException.CreateFmt('Failed Get IP [%s]', [Address]);
+        if soSafeConnect in Options then
+          exit(nil)
+        else
+          raise EmnException.CreateFmt('Failed Get IP [%s]', [Address]);
     end;
   end;
 
@@ -559,7 +576,10 @@ begin
   end;
   ret := Posix.SysSocket.connect(aHandle, LAddr, SizeOf(LAddrIPv4));*)
   if ret = -1 then
-    raise EmnException.CreateFmt('Failed to connect the socket, error #%d.'#13'Address "%s" Port "%s".', [ret, Address, Port]);
+    if soSafeConnect in Options then
+      exit(nil)
+    else
+      raise EmnException.CreateFmt('Failed to connect the socket, error #%d.'#13'Address "%s" Port "%s".', [ret, Address, Port]);
   Result := TmnSocket.Create(aHandle)
 end;
 
