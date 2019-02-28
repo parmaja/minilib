@@ -5,8 +5,9 @@ unit MainForm;
 interface
 
 uses
-  Classes, SysUtils, StrUtils, FileUtil, Forms, Controls, Graphics, Dialogs, Buttons, IniFiles, ChatRoomFrames,
-  StdCtrls, ExtCtrls, ComCtrls, Menus, mnIRCClients;
+  Classes, SysUtils, StrUtils, FileUtil, Forms, Controls, Graphics, Dialogs, Buttons, IniFiles,
+  StdCtrls, ExtCtrls, ComCtrls, Menus, LCLType,
+  ChatRoomFrames, mnIRCClients;
 
 type
 
@@ -14,8 +15,8 @@ type
 
   TMyIRCClient = class(TmnIRCClient)
   public
-    procedure DoChanged(vStates: TIRCStates; vChannel: string); override;
-    procedure DoReceive(vMsgType: TIRCMsgType; vChannel, vMsg: String); override;
+    procedure DoChanged(vStates: TIRCStates; vChannel: string; vNick: string); override;
+    procedure DoReceive(vMsgType: TIRCMsgType; vChannel, vUser, vMsg: String); override;
   end;
 
   { TMainFrm }
@@ -28,21 +29,23 @@ type
     Label2: TLabel;
     Label3: TLabel;
     Label4: TLabel;
-    PasswordEdit: TEdit;
+    MsgPageControl: TPageControl;
     NicknameBtn: TButton;
-    SendEdit: TEdit;
+    Panel1: TPanel;
+    Panel3: TPanel;
+    PasswordEdit: TEdit;
     LogEdit: TMemo;
     MenuItem1: TMenuItem;
     LogPopupMenu: TPopupMenu;
-    MsgPageControl: TPageControl;
-    Panel1: TPanel;
     Panel2: TPanel;
     RoomEdit: TEdit;
-    UserEdit: TEdit;
     SendBtn: TButton;
+    SendEdit: TEdit;
+    UserEdit: TEdit;
     Splitter1: TSplitter;
     procedure Button1Click(Sender: TObject);
     procedure ConnectBtnClick(Sender: TObject);
+    procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure HostEditKeyPress(Sender: TObject; var Key: char);
     procedure JoinBtnClick(Sender: TObject);
     procedure MenuItem1Click(Sender: TObject);
@@ -59,7 +62,7 @@ type
   public
     constructor Create(TheOwner: TComponent); override;
     destructor Destroy; override;
-    procedure DoReceive(vMsgType: TIRCMsgType; vChannel, vMSG: String);
+    procedure DoReceive(vMsgType: TIRCMsgType; vChannel, vUser, vMSG: String);
     procedure ReceiveNames(vChannel: string; vUserNames: TIRCChannel);
   end;
 
@@ -72,22 +75,29 @@ implementation
 
 { TMyIRCClient }
 
-procedure TMyIRCClient.DoChanged(vStates: TIRCStates; vChannel: string);
+procedure TMyIRCClient.DoChanged(vStates: TIRCStates; vChannel: string; vNick: string);
 begin
   inherited;
   if scChannelNames in vStates then
     MainFrm.ReceiveNames(vChannel, Session.Channels.Find(vChannel));
-  if scNick in vStates then
+  if scUserInfo in vStates then
+  begin
     MainFrm.SetNick(Session.Nick);
+  end;
   if scProgress in vStates then
     case Progress of
-      prgDisconnected: MainFrm.ConnectBtn.Caption := 'Connect';
+      prgDisconnected:
+      begin
+        MainFrm.ConnectBtn.Caption := 'Connect';
+        while MainFrm.MsgPageControl.PageCount > 0 do
+          MainFrm.MsgPageControl.Page[0].Free;
+      end;
       prgRegistering: MainFrm.ConnectBtn.Caption := 'Disconnect...';
       prgReady: MainFrm.ConnectBtn.Caption := 'Disconnect';
     end;
 end;
 
-procedure TMyIRCClient.DoReceive(vMsgType: TIRCMsgType; vChannel, vMsg: String);
+procedure TMyIRCClient.DoReceive(vMsgType: TIRCMsgType; vChannel, vUser, vMsg: String);
 begin
   MainFrm.DoReceive(vMsgType, vChannel, vMsg);
 end;
@@ -102,6 +112,17 @@ begin
   begin
     ConnectNow;
     SendEdit.SetFocus;
+  end;
+end;
+
+procedure TMainFrm.FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+begin
+  if (Key = VK_TAB) then
+  begin
+    if Shift = [ssCtrl] then
+      MsgPageControl.SelectNextPage(True)
+    else if Shift = [ssCtrl, ssShift] then
+      MsgPageControl.SelectNextPage(False);
   end;
 end;
 
@@ -190,11 +211,13 @@ begin
     with TChatRoomFrame.Create(TabSheet) do
     begin
       Parent := TabSheet;
-      Visible := True;
       Align := alClient;
       RoomName := vRoomName;
+      Visible := True;
+
       IsRoom := AIsRoom;
     end;
+    ActiveIt := True; //force to focus it
     TabSheet.Name := ARoomName + '_Room';
     if ARoomName = '' then
       TabSheet.Caption := '[Server]'
@@ -208,8 +231,8 @@ begin
     Result := TabSheet.Controls[0] as TChatRoomFrame;
   end;
 
-  if ActiveIt and (Index >= 0) then
-    MsgPageControl.ActivePageIndex := Index;
+  if (TabSheet <> nil) and ActiveIt then
+    MsgPageControl.PageIndex := TabSheet.PageIndex;
 end;
 
 procedure TMainFrm.SetNick(ANick: string);
@@ -247,6 +270,7 @@ begin
     HostEdit.Text := Ini.ReadString('User', 'Host', '');
     Width := Ini.ReadInteger('Window', 'Width', Width);
     Height := Ini.ReadInteger('Window', 'Height', Height);
+    LogEdit.Height := Ini.ReadInteger('Window', 'LogHeight', LogEdit.Height);
   finally
     FreeAndNil(ini);
   end;
@@ -265,6 +289,7 @@ begin
   try
     Ini.WriteInteger('Window', 'Width', Width);
     Ini.WriteInteger('Window', 'Height', Height);
+    Ini.WriteInteger('Window', 'LogHeight', LogEdit.Height);
 
     Ini.WriteString('User', 'Username', UserEdit.Text);
     Ini.WriteString('User', 'Password', PasswordEdit.Text);
@@ -293,6 +318,12 @@ begin
         MsgEdit.Lines.Add(vMSG);
       mtTopic:
         TopicEdit.Text := vMSG;
+      mtJoin:
+        MsgEdit.Lines.Add(vMSG + ' is joined');
+      mtPart:
+        MsgEdit.Lines.Add(vMSG + ' is parted');
+      mtQuit:
+        MsgEdit.Lines.Add(vMSG + ' is quit');
     else
         MsgEdit.Lines.Add(vMSG);
     end;

@@ -35,10 +35,10 @@ object ChatRoomFrame: TChatRoomFrame
     TabOrder = 1
   end
   object Splitter2: TSplitter
-    Left = 407
+    Left = 405
     Height = 306
     Top = 23
-    Width = 4
+    Width = 6
     Align = alRight
     ResizeAnchor = akRight
   end
@@ -46,12 +46,17 @@ object ChatRoomFrame: TChatRoomFrame
     Left = 0
     Height = 306
     Top = 23
-    Width = 407
+    Width = 405
     Align = alClient
+    Font.Height = -13
+    Font.Name = 'Courier New'
+    Font.Pitch = fpFixed
+    Font.Quality = fqNonAntialiased
     ParentColor = False
+    ParentFont = False
     TabOrder = 3
     Gutter.Visible = False
-    Gutter.Width = 59
+    Gutter.Width = 57
     Gutter.MouseActions = <>
     RightGutter.Width = 0
     RightGutter.MouseActions = <>
@@ -507,7 +512,7 @@ object ChatRoomFrame: TChatRoomFrame
         MouseActions = <>
       end
       object SynGutterLineNumber1: TSynGutterLineNumber
-        Width = 19
+        Width = 17
         MouseActions = <>
         MarkupInfo.Background = clBtnFace
         MarkupInfo.Foreground = clNone

@@ -46,6 +46,7 @@ const
   IRC_RPL_INFOSTART = 373;
   IRC_RPL_ENDOFINFO = 374;
   IRC_RPL_ENDOFMOTD = 376;
+  IRC_ERR_NICKNAMEINUSE = 433;
 
 type
 
@@ -59,9 +60,14 @@ type
 
   TmnIRCProgress = (prgDisconnected, prgRegistering, prgReady);
 
-  TIRCState = (scProgress, scNick, scUserModes, scChannelModes, scChannelNames);
+  TIRCState = (
+    scProgress,
+    scUserInfo, //Nickname and UserModes
+    scChannelModes,
+    scChannelNames
+  );
   TIRCStates = set of TIRCState;
-  TIRCMsgType = (mtLog, mtNotice, mtWelcome, mtTopic, mtSend, mtReceive);
+  TIRCMsgType = (mtLog, mtNotice, mtWelcome, mtTopic, mtSend, mtReceive, mtJoin, mtPart, mtQuit);
   TIRCLogType = (lgMsg, lgSend, lgReceive);
 
   { TIRCCommand }
@@ -279,21 +285,19 @@ type
     procedure SetUserModes(const Value: TUserModes);
     function BuildUserModeCommand(NewModes: TUserModes): String;
   protected
+    NickIndex: Integer;
     procedure SetState(const Value: TmnIRCProgress);
 
-    procedure Changed(vStates: TIRCStates; vChannel: string = '');
-    procedure Receive(vMsgType: TIRCMsgType; vChannel, vMsg: String); virtual;
+    procedure Changed(vStates: TIRCStates; vChannel: string = ''; vNick: string = '');
+    procedure Receive(vMsgType: TIRCMsgType; vChannel, vUser, vMsg: String); virtual;
 
     procedure ReceiveRaw(vData: String); virtual;
     procedure SendRaw(vData: String; vQueueAt: TmnIRCProgress = prgDisconnected);
-    procedure ChannelReceive(vChannel, vMsg: String); virtual;
 
-    procedure DoChanged(vStates: TIRCStates; vChannel: string); virtual;
-    procedure DoReceive(vMsgType: TIRCMsgType; vChannel, vMsg: String); virtual;
+    procedure DoChanged(vStates: TIRCStates; vChannel: string; vNick: string); virtual;
+    procedure DoReceive(vMsgType: TIRCMsgType; vChannel, vUser, vMsg: String); virtual;
 
-    procedure InitReceivers;
-    procedure InitUserCommands;
-
+    procedure Init; virtual;
     property Connection: TmnIRCConnection read FConnection;
   public
     constructor Create;
@@ -497,7 +501,7 @@ begin
   Client.FSession.Nick := vCommand.Params[0];
   //if FModes <> [] then
     //SendRaw(Format('MODE %s %s', [FSession.Nick, BuildUserModeCommand(FModes)]));
-  Client.Changed([scNick, scUserModes]);
+  Client.Changed([scUserInfo]);
 end;
 
 { TNOTICE_IRCReceiver }
@@ -510,29 +514,53 @@ end;
 { TQUIT_IRCReceiver }
 
 procedure TQUIT_IRCReceiver.DoReceive(vCommand: TIRCCommand);
+var
+  ANick: string;
+  p, c: Integer;
 begin
-  Client.ChannelReceive('', vCommand.Raw);
+  p := 1;
+  if ScanString(vCommand.Source, p, c, '!', true) then
+  begin
+    ANick := MidStr(vCommand.Source, 1, c);
+    Client.Receive(mtQuit, vCommand.Params[0], ANick);
+  end;
 end;
 
 { TPART_IRCReceiver }
 
 procedure TPART_IRCReceiver.DoReceive(vCommand: TIRCCommand);
+var
+  ANick: string;
+  p, c: Integer;
 begin
-  Client.ChannelReceive('', vCommand.Raw);
+  p := 1;
+  if ScanString(vCommand.Source, p, c, '!', true) then
+  begin
+    ANick := MidStr(vCommand.Source, 1, c);
+    Client.Receive(mtPart, vCommand.Params[0], ANick);
+  end;
 end;
 
 { TJOIN_IRCReceiver }
 
 procedure TJOIN_IRCReceiver.DoReceive(vCommand: TIRCCommand);
+var
+  ANick: string;
+  p, c: Integer;
 begin
-  Client.ChannelReceive('', vCommand.Raw);
+  p := 1;
+  if ScanString(vCommand.Source, p, c, '!', true) then
+  begin
+    ANick := MidStr(vCommand.Source, 1, c);
+    Client.Receive(mtJoin, vCommand.Params[0], ANick);
+  end;
 end;
 
 { TCTCP_PRIVMSG_IRCReceiver }
 
 procedure TCTCP_PRIVMSG_IRCReceiver.DoReceive(vCommand: TIRCCommand);
 begin
-  Client.ChannelReceive(vCommand.Params[0], vCommand.Params[1]);
+  Client.Receive(mtReceive, vCommand.Params[0], vCommand.Params[1]);
 end;
 
 { TIRCQueueRaws }
@@ -768,12 +796,16 @@ end;
 
 procedure TErrNicknameInUse_IRCReceiver.DoReceive(vCommand: TIRCCommand);
 begin
-  { Handle nick conflicts during the registration process. }
   with Client do
     if FProgress = prgRegistering then
     begin
-//      SetNick(FAltNick);
-//        Quit('Nick conflict');
+      if NickIndex >= Nicks.Count then
+        Quit('Nick conflict')
+      else
+      begin
+        SetNick(Nicks[NickIndex]);
+        Inc(NickIndex)
+      end;
     end;
 end;
 
@@ -819,7 +851,7 @@ begin
               FSession.Modes := FSession.Modes - [umWallops];
         end;
       end;
-      Changed([scUserModes]);//TODO need channel name
+      Changed([scUserInfo]);//TODO need channel name
     end;
 end;
 
@@ -829,7 +861,7 @@ end;
 procedure TNICK_IRCReceiver.DoReceive(vCommand: TIRCCommand);
 begin
   Client.FSession.Nick := vCommand.Params[0];
-  Client.Changed([scNick]);
+  Client.Changed([scUserInfo]);
 end;
 
 { TWELCOME_IRCReceiver }
@@ -854,7 +886,7 @@ end;
 
 procedure TMOTD_IRCReceiver.DoReceive(vCommand: TIRCCommand);
 begin
-  Client.ChannelReceive('', vCommand.Text);
+  Client.Receive(mtReceive, '', vCommand.Text);
 end;
 
 { TIRCReceiver }
@@ -916,7 +948,7 @@ end;
 
 procedure TPRIVMSG_IRCReceiver.DoReceive(vCommand: TIRCCommand);
 begin
-  Client.ChannelReceive(vCommand.Params[0], vCommand.Params[1]);
+  Client.Receive(mtReceive, vCommand.Params[0], vCommand.Params[1]);
 end;
 
 { TPing_IRCReceiver }
@@ -1096,11 +1128,12 @@ end;
 
 procedure TmnIRCClient.Connect;
 begin
-  if (FProgress = prgDisconnected) or (FConnection = nil) then
+  if (FProgress = prgDisconnected) then
   begin
+    FreeAndNil(FConnection);
     FConnection := TmnIRCConnection.Create(nil, nil);
     FConnection.FClient := Self;
-    FConnection.FreeOnTerminate := true; //i will free my self
+    FConnection.FreeOnTerminate := false;
     Connection.FHost := Host;
     Connection.FPort := Port;
     Connection.Start;
@@ -1127,8 +1160,7 @@ begin
   FQueueReceivers := TIRCQueueReceivers.Create(Self);
   FUserCommands :=TIRCUserCommands.Create(Self);
   FQueueRaws := TIRCQueueRaws.Create(True);
-  InitReceivers;
-  InitUserCommands;
+  Init;
 end;
 
 destructor TmnIRCClient.Destroy;
@@ -1150,8 +1182,7 @@ begin
   if Assigned(FConnection) and (FConnection.Connected) then
   begin
     FConnection.Close;
-    if FConnection <> nil then
-      FConnection.WaitFor;
+    FConnection.WaitFor;
   end;
 end;
 
@@ -1212,17 +1243,16 @@ end;
 procedure TmnIRCClient.Disconnected;
 begin
   SetState(prgDisconnected);
-  FConnection := nil;//it will free self
 end;
 
 procedure TmnIRCClient.Connected;
 begin
   SetState(prgRegistering);
-{  if FPassword <> '' then
-    SendRaw(Format('PASS %s', [FPassword]));}
   SetNick(FNick);
   SendRaw(Format('USER %s 0 * :%s', [FUsername, FRealName]));
   SendRaw(Format('NS IDENTIFY %s %s', [FUsername, FPassword]));
+  {  if FPassword <> '' then
+      SendRaw(Format('PASS %s', [FPassword]));}
 end;
 
 procedure TmnIRCClient.SetNick(const ANick: String);
@@ -1307,17 +1337,12 @@ begin
   Receivers.Parse(vData);
 end;
 
-procedure TmnIRCClient.ChannelReceive(vChannel, vMsg: String);
-begin
-  Receive(mtReceive, vChannel, vMsg);
-end;
-
-procedure TmnIRCClient.DoChanged(vStates: TIRCStates; vChannel: string);
+procedure TmnIRCClient.DoChanged(vStates: TIRCStates; vChannel: string; vNick: string);
 begin
 
 end;
 
-procedure TmnIRCClient.DoReceive(vMsgType: TIRCMsgType; vChannel, vMsg: String);
+procedure TmnIRCClient.DoReceive(vMsgType: TIRCMsgType; vChannel, vUser, vMsg: String);
 begin
 end;
 
@@ -1358,17 +1383,17 @@ begin
   end;
 end;
 
-procedure TmnIRCClient.Changed(vStates: TIRCStates; vChannel: string);
+procedure TmnIRCClient.Changed(vStates: TIRCStates; vChannel: string; vNick: string);
 begin
-  DoChanged(vStates, vChannel);
+  DoChanged(vStates, vChannel, vNick);
 end;
 
-procedure TmnIRCClient.Receive(vMsgType: TIRCMsgType; vChannel, vMsg: String);
+procedure TmnIRCClient.Receive(vMsgType: TIRCMsgType; vChannel, vUser, vMsg: String);
 begin
-  DoReceive(vMsgType, vChannel, vMsg)
+  DoReceive(vMsgType, vChannel, vUser, vMsg)
 end;
 
-procedure TmnIRCClient.InitReceivers;
+procedure TmnIRCClient.Init;
 begin
   Receivers.Add('PRIVMSG', 0, TPRIVMSG_IRCReceiver);
   Receivers.Add('NOTICE', 0, TNOTICE_IRCReceiver);
@@ -1378,17 +1403,19 @@ begin
   Receivers.Add('NICK', 0, TNICK_IRCReceiver);
   Receivers.Add('WELCOME', IRC_RPL_WELCOME, TWELCOME_IRCReceiver);
   Receivers.Add('MYINFO', IRC_RPL_MYINFO, TMYINFO_IRCReceiver);
+  Receivers.Add('JOIN', 0, TJOIN_IRCReceiver);
+  Receivers.Add('PART', 0, TPART_IRCReceiver);
+  Receivers.Add('QUIT', 0, TQUIT_IRCReceiver);
   Receivers.Add('MODE', 0, TMODE_IRCReceiver);
   Receivers.Add('NAMREPLY', IRC_RPL_NAMREPLY, TNAMREPLY_IRCReceiver);
-  Receivers.Add('ERR_NICKNAMEINUSE', 0, TErrNicknameInUse_IRCReceiver);
+  Receivers.Add('ERR_NICKNAMEINUSE', IRC_ERR_NICKNAMEINUSE, TErrNicknameInUse_IRCReceiver);
 
   Receivers.Add('PRIVMSG', 0, TCTCP_PRIVMSG_IRCReceiver, True);
-end;
 
-procedure TmnIRCClient.InitUserCommands;
-begin
   UserCommands.Add(TRaw_UserCommand.Create('Raw', Self));
+  UserCommands.Add(TRaw_UserCommand.Create('Msg', Self)); //Alias of Raw
   UserCommands.Add(TJoin_UserCommand.Create('Join', Self));
+  UserCommands.Add(TJoin_UserCommand.Create('j', Self)); //alias of Join
 end;
 
 end.
