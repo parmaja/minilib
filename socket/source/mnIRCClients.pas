@@ -74,14 +74,19 @@ type
 
   TIRCCommand = class(TObject)
   private
+    FAddress: string;
+    FChannel: string;
+    FNick: string;
     FRaw: String;
     FName: string;
 
     FTime: string;
-    FText: string;
+
     FSource: string;
     FTarget: string;
+
     FParams: TStringList;
+    FText: string;
   protected
     property Raw: String read FRaw;
   public
@@ -91,10 +96,14 @@ type
     property Source: string read FSource;
     property Target: string read FTarget;
 
+    property Channel: string read FChannel;
+    property Nick: string read FNick;
+    property Address: string read FAddress;
+
     property Name: string read FName;//Name or Code
-    property Text: string read FText; //Rest body of msg after : also added as last param
 
     property Params: TStringList read FParams;
+    property Text: string read FText; //Rest body of msg after : also added as last param
   end;
 
   { TIRCReceiver }
@@ -114,6 +123,13 @@ type
   public
     Code: Integer;
     constructor Create(AClient: TmnIRCClient); virtual;
+  end;
+
+  { TIRCUserReceiver }
+
+  TIRCUserReceiver= class(TIRCReceiver)
+  protected
+    procedure DoParse(vCommand: TIRCCommand; vData: string); override;
   end;
 
   TIRCReceiverClass = class of TIRCReceiver;
@@ -344,7 +360,7 @@ type
 
   { TPRIVMSG_IRCReceiver }
 
-  TPRIVMSG_IRCReceiver = class(TIRCReceiver)
+  TPRIVMSG_IRCReceiver = class(TIRCUserReceiver)
   protected
     procedure DoReceive(vCommand: TIRCCommand); override;
   end;
@@ -358,21 +374,21 @@ type
 
   { TJOIN_IRCReceiver }
 
-  TJOIN_IRCReceiver = class(TIRCReceiver)
+  TJOIN_IRCReceiver = class(TIRCUserReceiver)
   protected
     procedure DoReceive(vCommand: TIRCCommand); override;
   end;
 
   { TPART_IRCReceiver }
 
-  TPART_IRCReceiver = class(TIRCReceiver)
+  TPART_IRCReceiver = class(TIRCUserReceiver)
   protected
     procedure DoReceive(vCommand: TIRCCommand); override;
   end;
 
   { TQUIT_IRCReceiver }
 
-  TQUIT_IRCReceiver = class(TIRCReceiver)
+  TQUIT_IRCReceiver = class(TIRCUserReceiver)
   protected
     procedure DoReceive(vCommand: TIRCCommand); override;
   end;
@@ -460,6 +476,14 @@ type
   public
   end;
 
+  { TSend_UserCommand }
+
+  TSend_UserCommand = class(TIRCUserCommand)
+  protected
+    procedure Send(S: string); override;
+  public
+  end;
+
 implementation
 
 uses
@@ -484,6 +508,18 @@ begin
   Result := vCount > 0;
 end;
 
+procedure ParseUserInfo(Source: string; out Nick, Address: string);
+var
+  p, c: Integer;
+begin
+  p := 1;
+  if ScanString(Source, p, c, '!', true) then
+  begin
+    Nick := MidStr(Source, 1, c);
+    Address := MidStr(Source, c + 1, MaxInt);
+  end;
+end;
+
 function ExtractNickFromAddress(Address: String): String;
 var
   EndOfNick: Integer;
@@ -492,6 +528,27 @@ begin
   EndOfNick := Pos('!', Address);
   if EndOfNick > 0 then
     Result := Copy(Address, 1, EndOfNick - 1);
+end;
+
+{ TSend_UserCommand }
+
+procedure TSend_UserCommand.Send(S: string);
+begin
+  Client.SendRaw('PRIVMSG ' + S, prgReady);
+end;
+
+{ TIRCUserReceiver }
+
+procedure TIRCUserReceiver.DoParse(vCommand: TIRCCommand; vData: string);
+begin
+  inherited DoParse(vCommand, vData);
+  ParseUserInfo(vCommand.Source, vCommand.FNick, vCommand.FAddress);
+  vCommand.FTarget := vCommand.Params[0];
+  vCommand.Params.Delete(0);
+  if LeftStr(vCommand.Target, 1) = '#' then
+    vCommand.FChannel := vCommand.Target
+  else
+    vCommand.FChannel := vCommand.Nick;
 end;
 
 { TMYINFO_IRCReceiver }
@@ -508,59 +565,35 @@ end;
 
 procedure TNOTICE_IRCReceiver.DoReceive(vCommand: TIRCCommand);
 begin
-  Client.Receive(mtReceive, vCommand.Params[0], vCommand.Params[1]);
+  Client.Receive(mtReceive, vCommand.Params[0], '', vCommand.Params[1]);
 end;
 
 { TQUIT_IRCReceiver }
 
 procedure TQUIT_IRCReceiver.DoReceive(vCommand: TIRCCommand);
-var
-  ANick: string;
-  p, c: Integer;
 begin
-  p := 1;
-  if ScanString(vCommand.Source, p, c, '!', true) then
-  begin
-    ANick := MidStr(vCommand.Source, 1, c);
-    Client.Receive(mtQuit, vCommand.Params[0], ANick);
-  end;
+  Client.Receive(mtQuit, vCommand.Channel, vCommand.Nick, '');
 end;
 
 { TPART_IRCReceiver }
 
 procedure TPART_IRCReceiver.DoReceive(vCommand: TIRCCommand);
-var
-  ANick: string;
-  p, c: Integer;
 begin
-  p := 1;
-  if ScanString(vCommand.Source, p, c, '!', true) then
-  begin
-    ANick := MidStr(vCommand.Source, 1, c);
-    Client.Receive(mtPart, vCommand.Params[0], ANick);
-  end;
+  Client.Receive(mtPart, vCommand.Channel, vCommand.Nick, vCommand.Params[0]);
 end;
 
 { TJOIN_IRCReceiver }
 
 procedure TJOIN_IRCReceiver.DoReceive(vCommand: TIRCCommand);
-var
-  ANick: string;
-  p, c: Integer;
 begin
-  p := 1;
-  if ScanString(vCommand.Source, p, c, '!', true) then
-  begin
-    ANick := MidStr(vCommand.Source, 1, c);
-    Client.Receive(mtJoin, vCommand.Params[0], ANick);
-  end;
+  Client.Receive(mtJoin, vCommand.Channel, vCommand.Nick, '');
 end;
 
 { TCTCP_PRIVMSG_IRCReceiver }
 
 procedure TCTCP_PRIVMSG_IRCReceiver.DoReceive(vCommand: TIRCCommand);
 begin
-  Client.Receive(mtReceive, vCommand.Params[0], vCommand.Params[1]);
+  Client.Receive(mtReceive, vCommand.Params[0], '', vCommand.Params[1]);
 end;
 
 { TIRCQueueRaws }
@@ -870,7 +903,7 @@ procedure TWELCOME_IRCReceiver.DoReceive(vCommand: TIRCCommand);
 begin
   with Client do
   begin
-    Client.Receive(mtWelcome, vCommand.Params[0], vCommand.Params[1]);
+    Client.Receive(mtWelcome, vCommand.Params[0], '', vCommand.Params[1]);
     SetState(prgReady);
   end;
 end;
@@ -879,14 +912,14 @@ end;
 
 procedure TTOPIC_IRCReceiver.DoReceive(vCommand: TIRCCommand);
 begin
-  Client.Receive(mtTopic, vCommand.Params[1], vCommand.Params[2]);
+  Client.Receive(mtTopic, vCommand.Params[1], '', vCommand.Params[2]);
 end;
 
 { TMOTD_IRCReceiver }
 
 procedure TMOTD_IRCReceiver.DoReceive(vCommand: TIRCCommand);
 begin
-  Client.Receive(mtReceive, '', vCommand.Text);
+  Client.Receive(mtReceive, '', '', vCommand.Text);
 end;
 
 { TIRCReceiver }
@@ -948,7 +981,7 @@ end;
 
 procedure TPRIVMSG_IRCReceiver.DoReceive(vCommand: TIRCCommand);
 begin
-  Client.Receive(mtReceive, vCommand.Params[0], vCommand.Params[1]);
+  Client.Receive(mtReceive, vCommand.Channel, vCommand.Nick, vCommand.Params[0]);
 end;
 
 { TPing_IRCReceiver }
@@ -1123,7 +1156,7 @@ end;
 
 procedure TmnIRCClient.Log(Message: String);
 begin
-  Receive(mtLog, '', Message);
+  Receive(mtLog, '', '', Message);
 end;
 
 procedure TmnIRCClient.Connect;
@@ -1226,7 +1259,7 @@ begin
   if not aCMDProcessed then
   begin
     SendRaw(Format('PRIVMSG %s :%s', [vChannel, vMsg]), prgReady);
-    Receive(mtSend, vChannel, vMsg);
+    Receive(mtSend, vChannel, Session.Nick, vMsg);
   end;
 end;
 
@@ -1416,6 +1449,7 @@ begin
   UserCommands.Add(TRaw_UserCommand.Create('Msg', Self)); //Alias of Raw
   UserCommands.Add(TJoin_UserCommand.Create('Join', Self));
   UserCommands.Add(TJoin_UserCommand.Create('j', Self)); //alias of Join
+  UserCommands.Add(TSend_UserCommand.Create('Send', Self));
 end;
 
 end.

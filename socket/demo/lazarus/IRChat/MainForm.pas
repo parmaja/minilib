@@ -62,7 +62,7 @@ type
   public
     constructor Create(TheOwner: TComponent); override;
     destructor Destroy; override;
-    procedure DoReceive(vMsgType: TIRCMsgType; vChannel, vUser, vMSG: String);
+    procedure DoReceive(vMsgType: TIRCMsgType; vChannel, vUser, vMsg: String);
     procedure ReceiveNames(vChannel: string; vUserNames: TIRCChannel);
   end;
 
@@ -99,7 +99,7 @@ end;
 
 procedure TMyIRCClient.DoReceive(vMsgType: TIRCMsgType; vChannel, vUser, vMsg: String);
 begin
-  MainFrm.DoReceive(vMsgType, vChannel, vMsg);
+  MainFrm.DoReceive(vMsgType, vChannel, vUser, vMsg);
 end;
 
 { TMainFrm }
@@ -301,7 +301,7 @@ begin
   inherited Destroy;
 end;
 
-procedure TMainFrm.DoReceive(vMsgType: TIRCMsgType; vChannel, vMSG: String);
+procedure TMainFrm.DoReceive(vMsgType: TIRCMsgType; vChannel, vUser, vMsg: String);
 var
   ChatRoom: TChatRoomFrame;
 begin
@@ -319,13 +319,13 @@ begin
       mtTopic:
         TopicEdit.Text := vMSG;
       mtJoin:
-        MsgEdit.Lines.Add(vMSG + ' is joined');
+        MsgEdit.Lines.Add(vUser + ' is joined: ' + vMsg);
       mtPart:
-        MsgEdit.Lines.Add(vMSG + ' is parted');
+        MsgEdit.Lines.Add(vUser + ' is parted: ' + vMsg);
       mtQuit:
-        MsgEdit.Lines.Add(vMSG + ' is quit');
+        MsgEdit.Lines.Add(vUser + ' is quit: ' + vMsg);
     else
-        MsgEdit.Lines.Add(vMSG);
+        MsgEdit.Lines.Add(vUser + ': ' + vMSG);
     end;
   end;
 end;
