@@ -706,8 +706,10 @@ begin
   vCommand.Params.Delete(0);
   if LeftStr(vCommand.Target, 1) = '#' then
     vCommand.FChannel := vCommand.Target
+  else if vCommand.FAddress <> '' then
+    vCommand.FChannel := vCommand.Nick
   else
-    vCommand.FChannel := vCommand.Nick;
+    vCommand.FChannel := '';
 end;
 
 { TMYINFO_IRCReceiver }
