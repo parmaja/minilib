@@ -198,7 +198,7 @@ begin
   index := -1;
   for i := 0 to MsgPageControl.PageCount - 1 do
   begin
-    if SameText(MsgPageControl.Pages[i].Name, ARoomName + '_Room') then
+    if SameText((MsgPageControl.Pages[i].Controls[0] as TChatRoomFrame).RoomName, vRoomName) then
     begin
       Index := i;
       break;
@@ -218,7 +218,7 @@ begin
       IsRoom := AIsRoom;
     end;
     ActiveIt := True; //force to focus it
-    TabSheet.Name := ARoomName + '_Room';
+    //TabSheet.Name := ARoomName + '_Room';
     if ARoomName = '' then
       TabSheet.Caption := '[Server]'
     else
@@ -314,17 +314,19 @@ begin
         LogEdit.Lines.Add(vMSG);
       mtWelcome:
         MsgEdit.Lines.Add(vMSG);
-      mtNotice:
-        MsgEdit.Lines.Add(vMSG);
       mtTopic:
         TopicEdit.Text := vMSG;
       mtJoin:
-        MsgEdit.Lines.Add(vUser + ' is joined: ' + vMsg);
+        MsgEdit.Lines.Add(vUser + ' is joined');
       mtPart:
         MsgEdit.Lines.Add(vUser + ' is parted: ' + vMsg);
       mtQuit:
         MsgEdit.Lines.Add(vUser + ' is quit: ' + vMsg);
-    else
+      mtNotice:
+        MsgEdit.Lines.Add(vMSG);
+      mtCTCPNotice, mtCTCPMessage:
+        MsgEdit.Lines.Add(vMSG);
+    else //mtMessage
         MsgEdit.Lines.Add(vUser + ': ' + vMSG);
     end;
   end;
