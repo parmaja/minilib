@@ -202,6 +202,7 @@ object MainFrm: TMainFrm
         Align = alClient
         Anchors = [akLeft, akRight, akBottom]
         AutoSize = False
+        OnKeyDown = SendEditKeyDown
         OnKeyPress = SendEditKeyPress
         TabOrder = 2
       end

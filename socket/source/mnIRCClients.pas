@@ -72,7 +72,7 @@ type
   );
 
   TIRCStates = set of TIRCState;
-  TIRCMsgType = (mtLog, mtNotice, mtMessage, mtSend, mtCTCPNotice, mtCTCPMessage, mtWelcome, mtTopic, mtJoin, mtPart, mtQuit);
+  TIRCMsgType = (mtLog, mtNotice, mtMessage, mtMOTD, mtSend, mtCTCPNotice, mtCTCPMessage, mtWelcome, mtTopic, mtJoin, mtPart, mtQuit);
   TIRCLogType = (lgMsg, lgSend, lgReceive);
 
   { TIRCCommand }
@@ -172,11 +172,11 @@ type
 
   { TIRCUserCommand }
 
-  TIRCUserCommand = class(TmnNamedObject)
+  TIRCUserCommand = class abstract(TmnNamedObject)
   private
     FClient: TmnIRCClient;
   protected
-    procedure Send(S: string); virtual; abstract;
+    procedure Send(vChannel: string; vMsg: string); virtual; abstract;
   public
     constructor Create(AName: string; AClient: TmnIRCClient);
     property Client: TmnIRCClient read FClient;
@@ -201,14 +201,20 @@ type
 
   { TIRCUserName }
 
-  TIRCUserMode = set of (umVoice, umHalfOp, umOp, umAdmin, umOwner, umFake);
+  TIRCUserLevel = set of (umVoice, umHalfOp, umOp, umAdmin, umOwner, umFake);
+
+  TIRCUserMode = (umInvisible, umOperator, umServerNotices, umWallops);
+  TIRCUserModes = set of TIRCUserMode;
+
+  TIRCChannelMode = (cmTopicProtection);
+  TIRCChannelModes = set of TIRCChannelMode;
 
   TIRCUserName = class(TmnNamedObject)
   protected
     procedure ParseName(const AUser: string);
   public
     DisplayName: string; //without prefix
-    Mode: TIRCUserMode;
+    Mode: TIRCUserLevel;
     //Mode: string;//todo
   end;
 
@@ -220,9 +226,9 @@ type
     Adding: Boolean;
   public
     Name: string; //Channel name
+    UserModes: TIRCUserModes;
     procedure Add(vUserName: string); overload;
   end;
-
 
   { TIRCChannels }
 
@@ -238,9 +244,6 @@ type
   public
     procedure Add(Raw: string); overload;
   end;
-
-  TUserMode = (umInvisible, umOperator, umServerNotices, umWallops);
-  TUserModes = set of TUserMode;
 
   TmnOnData = procedure(const Data: string) of object;
 
@@ -276,7 +279,11 @@ type
   TIRCSession = record
     Channels: TIRCChannels;
     Nick: string;
-    Modes: TUserModes;
+    UserModes: TIRCUserModes;
+    ChannelModes: TIRCChannelModes;
+    Version: string;
+    Server: string;
+    //procedure Clear;//todo
   end;
 
   { TmnIRCClient }
@@ -290,7 +297,7 @@ type
     FUsername: String;
     FRealName: String;
     FNick: String;
-    FModes: TUserModes;
+    FModes: TIRCUserModes;
     FProgress: TmnIRCProgress;
     FSession: TIRCSession;
     FConnection: TmnIRCConnection;
@@ -310,9 +317,9 @@ type
     procedure Disconnected;
     procedure Close;
     procedure SetUsername(const Value: String);
-    function GetUserModes: TUserModes;
-    procedure SetUserModes(const Value: TUserModes);
-    function BuildUserModeCommand(NewModes: TUserModes): String;
+    function GeTIRCUserModes: TIRCUserModes;
+    procedure SeTIRCUserModes(const Value: TIRCUserModes);
+    function BuildUserModeCommand(NewModes: TIRCUserModes): String;
   protected
     NickIndex: Integer;
     procedure SetState(const Value: TmnIRCProgress);
@@ -341,7 +348,7 @@ type
     procedure SetNick(const ANick: String);
     procedure SetTopic(AChannel: String; const ATopic: String);
     procedure Join(Channel: String; Password: string = '');
-    procedure Notice(Destination, Text: String);
+    procedure Notice(vChannel, vMsg: String);
     procedure Quit(Reason: String);
 
     property Progress: TmnIRCProgress read FProgress;
@@ -359,7 +366,7 @@ type
     property RealName: String read FRealName write SetRealName;
     property Password: String read FPassword write SetPassword;
     property Username: String read FUsername write SetUsername;
-    property UserModes: TUserModes read GetUserModes write SetUserModes;
+    property UserModes: TIRCUserModes read GeTIRCUserModes write SeTIRCUserModes;
     property Session: TIRCSession read FSession;
     property UseUserCommands: Boolean read FUseUserCommands write FUseUserCommands default True;
   end;
@@ -372,19 +379,24 @@ type
     procedure DoReceive(vCommand: TIRCCommand); override;
   end;
 
-  { TPRIVMSG_IRCReceiver }
+  { TIRCMsgReceiver }
 
-  TPRIVMSG_IRCReceiver = class(TIRCUserReceiver)
+  TIRCMsgReceiver = class abstract(TIRCUserReceiver) //just for inheritance
   protected
     procedure Parse(vCommand: TIRCCommand; vData: string); override;
+  end;
+
+  { TPRIVMSG_IRCReceiver }
+
+  TPRIVMSG_IRCReceiver = class(TIRCMsgReceiver)
+  protected
     procedure DoReceive(vCommand: TIRCCommand); override;
   end;
 
   { TNOTICE_IRCReceiver }
 
-  TNOTICE_IRCReceiver = class(TIRCReceiver)
+  TNOTICE_IRCReceiver = class(TIRCMsgReceiver)
   protected
-    procedure Parse(vCommand: TIRCCommand; vData: string); override;
     procedure DoReceive(vCommand: TIRCCommand); override;
   end;
 
@@ -473,7 +485,7 @@ type
 
   TRaw_UserCommand = class(TIRCUserCommand)
   protected
-    procedure Send(S: string); override;
+    procedure Send(vChannel: string; vMsg: string); override;
   public
   end;
 
@@ -481,7 +493,7 @@ type
 
   TJoin_UserCommand = class(TIRCUserCommand)
   protected
-    procedure Send(S: string); override;
+    procedure Send(vChannel: string; vMsg: string); override;
   public
   end;
 
@@ -489,7 +501,23 @@ type
 
   TSend_UserCommand = class(TIRCUserCommand)
   protected
-    procedure Send(S: string); override;
+    procedure Send(vChannel: string; vMsg: string); override;
+  public
+  end;
+
+  { TNotice_UserCommand }
+
+  TNotice_UserCommand = class(TIRCUserCommand)
+  protected
+    procedure Send(vChannel: string; vMsg: string); override;
+  public
+  end;
+
+  { TCNotice_UserCommand }
+
+  TCNotice_UserCommand = class(TIRCUserCommand) //CTCP
+  protected
+    procedure Send(vChannel: string; vMsg: string); override;
   public
   end;
 
@@ -529,6 +557,66 @@ begin
   end;
 end;
 
+procedure StringToUserMode(ModeStr: string; var Modes: TIRCUserModes);
+var
+  Index: Integer;
+  Add: Boolean;
+  procedure AddIt(Mode: TIRCUserMode);
+  begin
+    if Add then
+      Modes := Modes + [Mode]
+    else
+      Modes := Modes - [Mode];
+  end;
+begin
+  Add := True;
+  for Index := 1 to Length(ModeStr) do
+  begin
+    case ModeStr[Index] of
+      '+':
+        Add := True;
+      '-':
+        Add := False;
+      'i':
+        AddIt(umInvisible);
+      'o':
+        AddIt(umOperator);
+      's':
+        AddIt(umServerNotices);
+      'w':
+        AddIt(umWallops);
+    end;
+  end;
+end;
+
+//* https://wiki.zandronum.com/IRC:Channel_Modes
+
+procedure StringToChannelMode(ModeStr: string; var Modes: TIRCChannelModes);
+var
+  Index: Integer;
+  Add: Boolean;
+  procedure AddIt(Mode: TIRCChannelMode);
+  begin
+    if Add then
+      Modes := Modes + [Mode]
+    else
+      Modes := Modes - [Mode];
+  end;
+begin
+  Add := True;
+  for Index := 1 to Length(ModeStr) do
+  begin
+    case ModeStr[Index] of
+      '+':
+        Add := True;
+      '-':
+        Add := False;
+      't':
+        AddIt(cmTopicProtection);
+    end;
+  end;
+end;
+
 function ExtractNickFromAddress(Address: String): String;
 var
   EndOfNick: Integer;
@@ -537,6 +625,34 @@ begin
   EndOfNick := Pos('!', Address);
   if EndOfNick > 0 then
     Result := Copy(Address, 1, EndOfNick - 1);
+end;
+
+{ TCNotice_UserCommand }
+
+procedure TCNotice_UserCommand.Send(vChannel: string; vMsg: string);
+begin
+  Client.SendRaw('NOTICE ' + vChannel + ' :' + #01 + vMsg + #01, prgReady);
+end;
+
+{ TIRCMsgReceiver }
+
+procedure TIRCMsgReceiver.Parse(vCommand: TIRCCommand; vData: string);
+begin
+  inherited Parse(vCommand, vData);
+  vCommand.FMsg := vCommand.Params[0];
+  vCommand.Params.Delete(0);
+  if LeftStr(vCommand.FMsg, 1) = #01 then
+  begin
+    vCommand.FCTCP := True;
+    vCommand.FMsg := DequoteStr(vCommand.FMsg, #01);
+  end;
+end;
+
+{ TNotice_UserCommand }
+
+procedure TNotice_UserCommand.Send(vChannel: string; vMsg: string);
+begin
+  Client.SendRaw('NOTICE ' + vChannel + ' :' + vMsg, prgReady);
 end;
 
 { TIRCUserName }
@@ -575,9 +691,9 @@ end;
 
 { TSend_UserCommand }
 
-procedure TSend_UserCommand.Send(S: string);
+procedure TSend_UserCommand.Send(vChannel: string; vMsg: string);
 begin
-  Client.SendRaw('PRIVMSG ' + S, prgReady);
+  Client.SendRaw('PRIVMSG ' + vMsg, prgReady);
 end;
 
 { TIRCUserReceiver }
@@ -599,27 +715,18 @@ end;
 procedure TMYINFO_IRCReceiver.DoReceive(vCommand: TIRCCommand);
 begin
   Client.FSession.Nick := vCommand.Params[0];
-  //if FModes <> [] then
-    //SendRaw(Format('MODE %s %s', [FSession.Nick, BuildUserModeCommand(FModes)]));
+  Client.FSession.Server := vCommand.Params[1];
+  Client.FSession.Version := vCommand.Params[2];
+  StringToUserMode(vCommand.Params[3], Client.FSession.UserModes);
+  StringToChannelMode(vCommand.Params[2], Client.FSession.ChannelModes);
   Client.Changed([scUserInfo]);
 end;
 
 { TNOTICE_IRCReceiver }
 
-procedure TNOTICE_IRCReceiver.Parse(vCommand: TIRCCommand; vData: string);
-begin
-  inherited Parse(vCommand, vData);
-
-  vCommand.FChannel := vCommand.Params[0];
-  vCommand.Params.Delete(0);
-
-  vCommand.FMsg := vCommand.Params[0];
-  vCommand.Params.Delete(0);
-end;
-
 procedure TNOTICE_IRCReceiver.DoReceive(vCommand: TIRCCommand);
 begin
-  Client.Receive(mtNotice, vCommand.Channel, '', vCommand.Msg);
+  Client.Receive(mtNotice, vCommand.Channel, vCommand.Nick, vCommand.Msg);
 end;
 
 { TQUIT_IRCReceiver }
@@ -771,9 +878,9 @@ end;
 
 { TRaw_UserCommand }
 
-procedure TRaw_UserCommand.Send(S: string);
+procedure TRaw_UserCommand.Send(vChannel: string; vMsg: string);
 begin
-  Client.SendRaw(S, prgRegistering);
+  Client.SendRaw(vMsg, prgRegistering);
 end;
 
 { TNAMREPLY_IRCReceiver }
@@ -859,9 +966,9 @@ end;
 
 { TJoin_UserCommand }
 
-procedure TJoin_UserCommand.Send(S: string);
+procedure TJoin_UserCommand.Send(vChannel: string; vMsg: string);
 begin
-  Client.SendRaw('JOIN ' + S, prgReady);
+  Client.SendRaw('JOIN ' + vMsg, prgReady);
 end;
 
 { TErrNicknameInUse_IRCReceiver }
@@ -885,48 +992,13 @@ end;
 
 procedure TMODE_IRCReceiver.DoReceive(vCommand: TIRCCommand);
 var
-  Index: Integer;
-  ModeString: String;
-  AddMode: Boolean;
+  aChannel: TIRCChannel;
 begin
-  with Client do
-    if vCommand.Params[0] = FNick then
-    begin
-      ModeString := vCommand.Params[1];
-      AddMode := True;
-      for Index := 1 to Length(ModeString) do
-      begin
-        case ModeString[Index] of
-          '+':
-            AddMode := True;
-          '-':
-            AddMode := False;
-          'i':
-            if AddMode then
-              FSession.Modes := FSession.Modes + [umInvisible]
-            else
-              FSession.Modes := FSession.Modes - [umInvisible];
-          'o':
-            if AddMode then
-              FSession.Modes := FSession.Modes + [umOperator]
-            else
-              FSession.Modes := FSession.Modes - [umOperator];
-          's':
-            if AddMode then
-              FSession.Modes := FSession.Modes + [umServerNotices]
-            else
-              FSession.Modes := FSession.Modes - [umServerNotices];
-          'w':
-            if AddMode then
-              FSession.Modes := FSession.Modes + [umWallops]
-            else
-              FSession.Modes := FSession.Modes - [umWallops];
-        end;
-      end;
-      Changed([scUserInfo]);//TODO need channel name
-    end;
+  vCommand.FChannel := vCommand.Params[1];
+  aChannel := Client.FSession.Channels.Found(vCommand.Channel);
+  StringToUserMode(vCommand.Params[1], aChannel.UserModes);
+  Client.Changed([scUserInfo], vCommand.Channel);
 end;
-
 
 { TNICK_IRCReceiver }
 
@@ -958,7 +1030,7 @@ end;
 
 procedure TMOTD_IRCReceiver.DoReceive(vCommand: TIRCCommand);
 begin
-  Client.Receive(mtMessage, '', '', vCommand.Text);
+  Client.Receive(mtMOTD, '', '', vCommand.Text);
 end;
 
 { TIRCReceiver }
@@ -1018,18 +1090,6 @@ begin
 end;
 
 { TPRIVMSG_IRCReceiver }
-
-procedure TPRIVMSG_IRCReceiver.Parse(vCommand: TIRCCommand; vData: string);
-begin
-  inherited Parse(vCommand, vData);
-  vCommand.FMsg := vCommand.Params[0];
-  vCommand.Params.Delete(0);
-  if LeftStr(vCommand.FMsg, 1) = #01 then
-  begin
-    vCommand.FCTCP := True;
-    vCommand.FMsg := DequoteStr(vCommand.FMsg, #01);
-  end;
-end;
 
 procedure TPRIVMSG_IRCReceiver.DoReceive(vCommand: TIRCCommand);
 begin
@@ -1307,7 +1367,7 @@ begin
       begin
         if SameText(aCmd.Name, m) then
         begin
-          aCmd.Send(s);
+          aCmd.Send(vChannel, s);
           aCMDProcessed := True;
         end;
       end;
@@ -1326,16 +1386,17 @@ begin
   SendRaw(Format('JOIN %s %s', [Channel, Password]), prgReady);
 end;
 
-procedure TmnIRCClient.Notice(Destination, Text: String);
+procedure TmnIRCClient.Notice(vChannel, vMsg: String);
 begin
-  SendRaw(Format('NOTICE %s :%s', [Destination, Text]), prgReady);
+  SendRaw(Format('NOTICE %s :%s', [vChannel, vMsg]), prgReady);
 end;
 
 procedure TmnIRCClient.Disconnected;
 begin
   SetState(prgDisconnected);
   FSession.Nick := '';
-  FSession.Modes := [];
+  FSession.UserModes := [];
+  FSession.ChannelModes := [];
   FSession.Channels.Clear;
 end;
 
@@ -1343,10 +1404,10 @@ procedure TmnIRCClient.Connected;
 begin
   SetState(prgRegistering);
   SetNick(FNick);
-  SendRaw(Format('USER %s 0 * :%s', [FUsername, FRealName]));
-  SendRaw(Format('NS IDENTIFY %s %s', [FUsername, FPassword]));
   {  if FPassword <> '' then
       SendRaw(Format('PASS %s', [FPassword]));}
+  SendRaw(Format('USER %s 0 * :%s', [FUsername, FRealName]));
+  SendRaw(Format('NS IDENTIFY %s %s', [FUsername, FPassword]));
 end;
 
 procedure TmnIRCClient.SetNick(const ANick: String);
@@ -1407,12 +1468,12 @@ begin
   end;
 end;
 
-function TmnIRCClient.GetUserModes: TUserModes;
+function TmnIRCClient.GeTIRCUserModes: TIRCUserModes;
 begin
   Result := FModes;
 end;
 
-procedure TmnIRCClient.SetUserModes(const Value: TUserModes);
+procedure TmnIRCClient.SeTIRCUserModes(const Value: TIRCUserModes);
 var
   ModeString: String;
 begin
@@ -1445,31 +1506,31 @@ begin
   SendRaw(Format('QUIT :%s', [Reason]));
 end;
 
-function TmnIRCClient.BuildUserModeCommand(NewModes: TUserModes): String;
+function TmnIRCClient.BuildUserModeCommand(NewModes: TIRCUserModes): String;
 const
   ModeChars: array [umInvisible..umWallops] of Char = ('i', 'o', 's', 'w');
 var
-  ModeDiff: TUserModes;
-  Mode: TUserMode;
+  ModeDiff: TIRCUserModes;
+  Mode: TIRCUserMode;
 begin
   Result := '';
 
-  ModeDiff := FSession.Modes - NewModes;
+  ModeDiff := FSession.UserModes - NewModes;
   if ModeDiff <> [] then
   begin
     Result := Result + '-';
-    for Mode := Low(TUserMode) to High(TUserMode) do
+    for Mode := Low(TIRCUserMode) to High(TIRCUserMode) do
     begin
       if Mode in ModeDiff then
         Result := Result + ModeChars[Mode];
     end;
   end;
 
-  ModeDiff := NewModes - FSession.Modes;
+  ModeDiff := NewModes - FSession.UserModes;
   if ModeDiff <> [] then
   begin
     Result := Result + '+';
-    for Mode := Low(TUserMode) to High(TUserMode) do
+    for Mode := Low(TIRCUserMode) to High(TIRCUserMode) do
     begin
       if Mode in ModeDiff then
         Result := Result + ModeChars[Mode];
@@ -1510,6 +1571,8 @@ begin
   UserCommands.Add(TJoin_UserCommand.Create('Join', Self));
   UserCommands.Add(TJoin_UserCommand.Create('j', Self)); //alias of Join
   UserCommands.Add(TSend_UserCommand.Create('Send', Self));
+  UserCommands.Add(TNotice_UserCommand.Create('Notice', Self));
+  UserCommands.Add(TCNotice_UserCommand.Create('CNotice', Self));
 end;
 
 end.

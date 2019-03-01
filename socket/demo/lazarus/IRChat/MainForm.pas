@@ -51,9 +51,15 @@ type
     procedure MenuItem1Click(Sender: TObject);
     procedure MsgPageControlChange(Sender: TObject);
     procedure SendBtnClick(Sender: TObject);
+    procedure SendEditKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure SendEditKeyPress(Sender: TObject; var Key: char);
   private
     IRC: TMyIRCClient;
+    Recents: TStringList;
+    RecentsIndex: Integer;
+    procedure RecentUp;
+    procedure RecentDown;
+    procedure AddRecent(S: string);
     function CurrentRoom: string;
     procedure ConnectNow;
     procedure SendNow;
@@ -170,9 +176,21 @@ begin
   SendNow;
 end;
 
+procedure TMainFrm.SendEditKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+begin
+  if Shift = [] then
+  begin
+    case Key of
+      VK_UP: RecentUp;
+      VK_DOWN: RecentDown;
+    end;
+  end;
+end;
+
 procedure TMainFrm.SendNow;
 begin
   IRC.ChannelSend(CurrentRoom, SendEdit.Text);
+  AddRecent(SendEdit.Text);
   SendEdit.Text := '';
 end;
 
@@ -249,6 +267,50 @@ begin
   end;
 end;
 
+procedure TMainFrm.RecentUp;
+begin
+  if Recents.Count > 0 then
+  begin
+    if RecentsIndex > 0 then
+    begin
+      RecentsIndex := RecentsIndex - 1;
+      SendEdit.Text := Recents[RecentsIndex];
+    end
+    else
+    begin
+      RecentsIndex := Recents.Count - 1;
+      SendEdit.Text := '';
+    end;
+  end;
+end;
+
+procedure TMainFrm.RecentDown;
+begin
+  if Recents.Count > 0 then
+  begin
+    if RecentsIndex < Recents.Count - 1 then
+    begin
+      RecentsIndex := RecentsIndex + 1;
+      SendEdit.Text := Recents[RecentsIndex];
+    end
+    else
+    begin
+      RecentsIndex := 0;
+      SendEdit.Text := '';
+    end;
+  end;
+end;
+
+procedure TMainFrm.AddRecent(S: string);
+var
+  i: Integer;
+begin
+  i := Recents.IndexOf(S);
+  if i >= 0 then
+    Recents.Delete(i);
+  Recents.Add(S);
+end;
+
 function TMainFrm.CurrentRoom: string;
 begin
   if MsgPageControl.ActivePage <> nil then
@@ -261,7 +323,8 @@ constructor TMainFrm.Create(TheOwner: TComponent);
 var
   ini: TIniFile;
 begin
-  inherited Create(TheOwner);
+  inherited;
+  Recents := TStringList.Create;
   ini := TIniFile.Create(Application.Location + 'setting.ini');
   try
     UserEdit.Text := Ini.ReadString('User', 'Username', '');
@@ -298,7 +361,8 @@ begin
   finally
     FreeAndNil(ini);
   end;
-  inherited Destroy;
+  FreeAndNil(Recents);
+  inherited;
 end;
 
 procedure TMainFrm.DoReceive(vMsgType: TIRCMsgType; vChannel, vUser, vMsg: String);
@@ -308,28 +372,32 @@ begin
   ChatRoom := NeedRoom(vChannel);
   if ChatRoom <> nil then
     with ChatRoom do
-  begin
-    case vMsgType of
-      mtLog:
-        LogEdit.Lines.Add(vMSG);
-      mtWelcome:
-        MsgEdit.Lines.Add(vMSG);
-      mtTopic:
-        TopicEdit.Text := vMSG;
-      mtJoin:
-        MsgEdit.Lines.Add(vUser + ' is joined');
-      mtPart:
-        MsgEdit.Lines.Add(vUser + ' is parted: ' + vMsg);
-      mtQuit:
-        MsgEdit.Lines.Add(vUser + ' is quit: ' + vMsg);
-      mtNotice:
-        MsgEdit.Lines.Add(vMSG);
-      mtCTCPNotice, mtCTCPMessage:
-        MsgEdit.Lines.Add(vMSG);
-    else //mtMessage
-        MsgEdit.Lines.Add(vUser + ': ' + vMSG);
-    end;
-  end;
+      begin
+        case vMsgType of
+          mtLog:
+            LogEdit.Lines.Add(vMSG);
+          mtWelcome:
+            MsgEdit.Lines.Add(vMSG);
+          mtMOTD:
+            MsgEdit.Lines.Add(vMSG);
+          mtTopic:
+            TopicEdit.Text := vMSG;
+          mtJoin:
+            MsgEdit.Lines.Add(vUser + ' is joined');
+          mtPart:
+            MsgEdit.Lines.Add(vUser + ' is parted: ' + vMsg);
+          mtQuit:
+            MsgEdit.Lines.Add(vUser + ' is quit: ' + vMsg);
+          mtNotice:
+            MsgEdit.Lines.Add('[' + vUser + '] ' + vMSG);
+          mtCTCPNotice, mtCTCPMessage:
+            MsgEdit.Lines.Add(vMSG);
+          mtMessage:
+            MsgEdit.Lines.Add(vUser + ': ' + vMSG);
+        else //mtMessage
+            LogEdit.Lines.Add(vMSG);
+        end;
+      end;
 end;
 
 procedure TMainFrm.ReceiveNames(vChannel: string; vUserNames: TIRCChannel);
