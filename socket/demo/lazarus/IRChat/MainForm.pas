@@ -274,12 +274,15 @@ begin
     if RecentsIndex > 0 then
     begin
       RecentsIndex := RecentsIndex - 1;
-      SendEdit.Text := Recents[RecentsIndex];
+      if RecentsIndex = 0 then
+        SendEdit.Text := ''
+      else
+        SendEdit.Text := Recents[RecentsIndex - 1];
     end
     else
     begin
-      RecentsIndex := Recents.Count - 1;
-      SendEdit.Text := '';
+      RecentsIndex := Recents.Count;
+      SendEdit.Text := Recents[RecentsIndex - 1];
     end;
   end;
 end;
@@ -288,10 +291,10 @@ procedure TMainFrm.RecentDown;
 begin
   if Recents.Count > 0 then
   begin
-    if RecentsIndex < Recents.Count - 1 then
+    if RecentsIndex < Recents.Count then
     begin
       RecentsIndex := RecentsIndex + 1;
-      SendEdit.Text := Recents[RecentsIndex];
+      SendEdit.Text := Recents[RecentsIndex - 1];
     end
     else
     begin
@@ -350,9 +353,12 @@ begin
   IRC.Free;
   ini := TIniFile.Create(Application.Location + 'setting.ini');
   try
-    Ini.WriteInteger('Window', 'Width', Width);
-    Ini.WriteInteger('Window', 'Height', Height);
-    Ini.WriteInteger('Window', 'LogHeight', LogEdit.Height);
+    if WindowState <> wsMaximized then
+    begin
+      Ini.WriteInteger('Window', 'Width', Width);
+      Ini.WriteInteger('Window', 'Height', Height);
+      Ini.WriteInteger('Window', 'LogHeight', LogEdit.Height);
+    end;
 
     Ini.WriteString('User', 'Username', UserEdit.Text);
     Ini.WriteString('User', 'Password', PasswordEdit.Text);
@@ -392,7 +398,7 @@ begin
             MsgEdit.Lines.Add('[' + vUser + '] ' + vMSG);
           mtCTCPNotice, mtCTCPMessage:
             MsgEdit.Lines.Add(vMSG);
-          mtMessage:
+          mtMessage, mtSend:
             MsgEdit.Lines.Add(vUser + ': ' + vMSG);
         else //mtMessage
             LogEdit.Lines.Add(vMSG);

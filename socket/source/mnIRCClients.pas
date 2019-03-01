@@ -439,6 +439,7 @@ type
 
   TWELCOME_IRCReceiver = class(TIRCReceiver)
   protected
+    procedure AddParam(vCommand: TIRCCommand; AIndex: Integer; AValue: string); override;
     procedure DoReceive(vCommand: TIRCCommand); override;
   end;
 
@@ -500,6 +501,14 @@ type
   { TSend_UserCommand }
 
   TSend_UserCommand = class(TIRCUserCommand)
+  protected
+    procedure Send(vChannel: string; vMsg: string); override;
+  public
+  end;
+
+  { TMe_UserCommand }
+
+  TMe_UserCommand = class(TIRCUserCommand)
   protected
     procedure Send(vChannel: string; vMsg: string); override;
   public
@@ -625,6 +634,13 @@ begin
   EndOfNick := Pos('!', Address);
   if EndOfNick > 0 then
     Result := Copy(Address, 1, EndOfNick - 1);
+end;
+
+{ TMe_UserCommand }
+
+procedure TMe_UserCommand.Send(vChannel: string; vMsg: string);
+begin
+  Client.SendRaw('PRIVMSG ' + vChannel + ' :' + #01 + vMsg + #01, prgReady);
 end;
 
 { TCNotice_UserCommand }
@@ -1012,11 +1028,20 @@ end;
 
 { TWELCOME_IRCReceiver }
 
+procedure TWELCOME_IRCReceiver.AddParam(vCommand: TIRCCommand; AIndex: Integer; AValue: string);
+begin
+  inherited;
+  case AIndex of
+    0: vCommand.FNick := AValue;
+    1: vCommand.FMsg := AValue;
+  end;
+end;
+
 procedure TWELCOME_IRCReceiver.DoReceive(vCommand: TIRCCommand);
 begin
   with Client do
   begin
-    Client.Receive(mtWelcome, vCommand.Params[0], '', vCommand.Params[1]);
+    Client.Receive(mtWelcome, '', vCommand.Nick, vCommand.Msg);
     SetState(prgReady);
   end;
 end;
@@ -1409,7 +1434,7 @@ begin
   {  if FPassword <> '' then
       SendRaw(Format('PASS %s', [FPassword]));}
   SendRaw(Format('USER %s 0 * :%s', [FUsername, FRealName]));
-  SendRaw(Format('NS IDENTIFY %s %s', [FUsername, FPassword]));
+  SendRaw(Format('NICKSERV IDENTIFY %s %s', [FUsername, FPassword]));
 end;
 
 procedure TmnIRCClient.SetNick(const ANick: String);
@@ -1573,6 +1598,7 @@ begin
   UserCommands.Add(TJoin_UserCommand.Create('Join', Self));
   UserCommands.Add(TJoin_UserCommand.Create('j', Self)); //alias of Join
   UserCommands.Add(TSend_UserCommand.Create('Send', Self));
+  UserCommands.Add(TMe_UserCommand.Create('me', Self));
   UserCommands.Add(TNotice_UserCommand.Create('Notice', Self));
   UserCommands.Add(TCNotice_UserCommand.Create('CNotice', Self));
 end;

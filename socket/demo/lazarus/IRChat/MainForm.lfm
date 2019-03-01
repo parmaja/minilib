@@ -2,10 +2,10 @@ object MainFrm: TMainFrm
   Left = 482
   Height = 459
   Top = 230
-  Width = 663
+  Width = 647
   Caption = 'IRC chat'
   ClientHeight = 459
-  ClientWidth = 663
+  ClientWidth = 647
   KeyPreview = True
   OnKeyDown = FormKeyDown
   LCLVersion = '2.1.0.0'
@@ -14,7 +14,7 @@ object MainFrm: TMainFrm
     Left = 0
     Height = 6
     Top = 282
-    Width = 663
+    Width = 647
     Align = alBottom
     ResizeAnchor = akBottom
   end
@@ -22,14 +22,14 @@ object MainFrm: TMainFrm
     Left = 0
     Height = 56
     Top = 0
-    Width = 663
+    Width = 647
     Align = alTop
     BevelOuter = bvNone
     ClientHeight = 56
-    ClientWidth = 663
+    ClientWidth = 647
     TabOrder = 0
     object ConnectBtn: TButton
-      Left = 572
+      Left = 556
       Height = 24
       Top = 4
       Width = 85
@@ -42,7 +42,7 @@ object MainFrm: TMainFrm
       Left = 319
       Height = 23
       Top = 5
-      Width = 251
+      Width = 235
       Anchors = [akTop, akLeft, akRight]
       OnKeyPress = HostEditKeyPress
       TabOrder = 2
@@ -52,7 +52,7 @@ object MainFrm: TMainFrm
       Left = 319
       Height = 23
       Top = 31
-      Width = 163
+      Width = 235
       Anchors = [akTop, akLeft, akRight]
       OnKeyPress = HostEditKeyPress
       TabOrder = 4
@@ -92,7 +92,7 @@ object MainFrm: TMainFrm
       ParentColor = False
     end
     object JoinBtn: TButton
-      Left = 484
+      Left = 556
       Height = 24
       Top = 30
       Width = 85
@@ -116,7 +116,7 @@ object MainFrm: TMainFrm
     Left = 2
     Height = 167
     Top = 290
-    Width = 659
+    Width = 643
     Align = alBottom
     BorderSpacing.Around = 2
     Color = clBlack
@@ -145,17 +145,17 @@ object MainFrm: TMainFrm
     Left = 0
     Height = 226
     Top = 56
-    Width = 663
+    Width = 647
     Align = alClient
     Caption = 'Panel3'
     ClientHeight = 226
-    ClientWidth = 663
+    ClientWidth = 647
     TabOrder = 3
     object MsgPageControl: TPageControl
       Left = 3
       Height = 194
       Top = 3
-      Width = 657
+      Width = 641
       Align = alClient
       BorderSpacing.Around = 2
       TabOrder = 0
@@ -165,15 +165,15 @@ object MainFrm: TMainFrm
       Left = 3
       Height = 24
       Top = 199
-      Width = 657
+      Width = 641
       Align = alBottom
       BorderSpacing.Around = 2
       BevelOuter = bvNone
       ClientHeight = 24
-      ClientWidth = 657
+      ClientWidth = 641
       TabOrder = 1
       object SendBtn: TButton
-        Left = 605
+        Left = 589
         Height = 24
         Top = 0
         Width = 52
@@ -198,7 +198,7 @@ object MainFrm: TMainFrm
         Left = 58
         Height = 24
         Top = 0
-        Width = 547
+        Width = 531
         Align = alClient
         Anchors = [akLeft, akRight, akBottom]
         AutoSize = False
