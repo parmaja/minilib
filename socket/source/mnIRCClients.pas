@@ -33,7 +33,8 @@ uses
 const
   cTokenSeparator = ' ';    { Separates tokens, except for the following case. }
 
-  //https://www.alien.net.au/irc/irc2numerics.html
+  //* https://www.alien.net.au/irc/irc2numerics.html
+
   IRC_RPL_WELCOME = 001;
   IRC_RPL_MYINFO = 004;
   IRC_RPL_WHOISUSER = 311;
@@ -51,6 +52,10 @@ const
   IRC_RPL_ENDOFINFO = 374;
   IRC_RPL_ENDOFMOTD = 376;
   IRC_ERR_NICKNAMEINUSE = 433;
+
+  IRC_RPL_HELPSTART = 704;
+  IRC_RPL_HELPTXT = 705;
+  IRC_RPL_ENDOFHELP = 706;
 
 type
 
@@ -214,7 +219,8 @@ type
     procedure ParseName(const AUser: string);
   public
     DisplayName: string; //without prefix
-    Mode: TIRCUserLevel;
+    Level: TIRCUserLevel;
+    UserModes: TIRCUserModes;
     //Mode: string;//todo
   end;
 
@@ -286,10 +292,13 @@ type
     //procedure Clear;//todo
   end;
 
+  TIRCAuth = (authPASS, authIDENTIFY);
+
   { TmnIRCClient }
 
   TmnIRCClient = class(TObject)
   private
+    FAuth: TIRCAuth;
     FNicks: TStringList;
     FPort: String;
     FHost: String;
@@ -308,6 +317,7 @@ type
     FLock: TCriticalSection;
     FUseUserCommands: Boolean;
     function GetActive: Boolean;
+    procedure SetAuth(AValue: TIRCAuth);
     procedure SetNicks(AValue: TStringList);
     procedure SetPassword(const Value: String);
     procedure SetPort(const Value: String);
@@ -317,8 +327,6 @@ type
     procedure Disconnected;
     procedure Close;
     procedure SetUsername(const Value: String);
-    function GeTIRCUserModes: TIRCUserModes;
-    procedure SeTIRCUserModes(const Value: TIRCUserModes);
     function BuildUserModeCommand(NewModes: TIRCUserModes): String;
   protected
     NickIndex: Integer;
@@ -345,6 +353,7 @@ type
 
     procedure ChannelSend(vChannel, vMsg: String);
 
+    procedure SetMode(const Value: TIRCUserModes);
     procedure SetNick(const ANick: String);
     procedure SetTopic(AChannel: String; const ATopic: String);
     procedure Join(Channel: String; Password: string = '');
@@ -366,9 +375,9 @@ type
     property RealName: String read FRealName write SetRealName;
     property Password: String read FPassword write SetPassword;
     property Username: String read FUsername write SetUsername;
-    property UserModes: TIRCUserModes read GeTIRCUserModes write SeTIRCUserModes;
     property Session: TIRCSession read FSession;
     property UseUserCommands: Boolean read FUseUserCommands write FUseUserCommands default True;
+    property Auth: TIRCAuth read FAuth write SetAuth;
   end;
 
   { TPing_IRCReceiver }
@@ -469,8 +478,15 @@ type
   TNAMREPLY_IRCReceiver = class(TIRCReceiver)
   protected
   public
-    constructor Create(AClient: TmnIRCClient); override;
-    destructor Destroy; override;
+    function Accept(S: string): Boolean; override;
+    procedure DoReceive(vCommand: TIRCCommand); override;
+  end;
+
+  { THELP_IRCReceiver }
+
+  THELP_IRCReceiver = class(TIRCReceiver)
+  protected
+  public
     function Accept(S: string): Boolean; override;
     procedure DoReceive(vCommand: TIRCCommand); override;
   end;
@@ -509,6 +525,22 @@ type
   { TMe_UserCommand }
 
   TMe_UserCommand = class(TIRCUserCommand)
+  protected
+    procedure Send(vChannel: string; vMsg: string); override;
+  public
+  end;
+
+  { THelp_UserCommand }
+
+  THelp_UserCommand = class(TIRCUserCommand)
+  protected
+    procedure Send(vChannel: string; vMsg: string); override;
+  public
+  end;
+
+  { THistory_UserCommand }
+
+  THistory_UserCommand = class(TIRCUserCommand)
   protected
     procedure Send(vChannel: string; vMsg: string); override;
   public
@@ -636,11 +668,42 @@ begin
     Result := Copy(Address, 1, EndOfNick - 1);
 end;
 
+{ THistory_UserCommand }
+
+procedure THistory_UserCommand.Send(vChannel: string; vMsg: string);
+begin
+  Client.SendRaw('HISTORY ' + vChannel + ' ' + vMsg, prgReady);
+end;
+
+{ THELP_IRCReceiver }
+
+function THELP_IRCReceiver.Accept(S: string): Boolean;
+begin
+  Result := inherited Accept(S);
+  if (S = IntToStr(IRC_RPL_HELPTXT))
+    or (S = IntToStr(IRC_RPL_ENDOFHELP)) then
+  begin
+    Result := True;
+  end;
+end;
+
+procedure THELP_IRCReceiver.DoReceive(vCommand: TIRCCommand);
+begin
+  Client.Receive(mtWelcome, '', '', vCommand.Text);
+end;
+
+{ THelp_UserCommand }
+
+procedure THelp_UserCommand.Send(vChannel: string; vMsg: string);
+begin
+  Client.SendRaw('HELP ' + vMsg, prgReady);
+end;
+
 { TMe_UserCommand }
 
 procedure TMe_UserCommand.Send(vChannel: string; vMsg: string);
 begin
-  Client.SendRaw('PRIVMSG ' + vChannel + ' :' + #01 + vMsg + #01, prgReady);
+  Client.SendRaw('PRIVMSG ' + vChannel + ' :' + #01 + 'ACTION ' + vMsg + #01, prgReady);
 end;
 
 { TCNotice_UserCommand }
@@ -678,22 +741,22 @@ var
   c: Char;
   i: Integer;
 begin
-  Mode := [];
+  Level := [];
   for i := Low(AUser) to High(AUser) do
   begin
     c := AUser[i];
     if CharInSet(c, ['&', '~', '%', '+', '@']) then
     begin
       if AUser[i] = '~' then
-        Mode := Mode + [umOwner, umOp, umHalfOp, umAdmin]
+        Level:= Level + [umOwner, umOp, umHalfOp, umAdmin]
       else if AUser[i] = '&' then
-        Mode := Mode + [umOp, umHalfOp, umAdmin]
+        Level := Level + [umOp, umHalfOp, umAdmin]
       else if AUser[i] = '@' then
-        Mode := Mode + [umOp, umHalfOp]
+        Level := Level + [umOp, umHalfOp]
       else if AUser[i] = '%' then
-        Mode := Mode + [umHalfOp]
+        Level := Level + [umHalfOp]
       else if AUser[i] = '+' then
-        Mode := Mode + [umVoice];
+        Level := Level + [umVoice];
     end
     else
     begin
@@ -903,16 +966,6 @@ end;
 
 { TNAMREPLY_IRCReceiver }
 
-constructor TNAMREPLY_IRCReceiver.Create(AClient: TmnIRCClient);
-begin
-  inherited;
-end;
-
-destructor TNAMREPLY_IRCReceiver.Destroy;
-begin
-  inherited;
-end;
-
 function TNAMREPLY_IRCReceiver.Accept(S: string): Boolean;
 begin
   Result := inherited Accept(S);
@@ -1041,7 +1094,7 @@ procedure TWELCOME_IRCReceiver.DoReceive(vCommand: TIRCCommand);
 begin
   with Client do
   begin
-    Client.Receive(mtWelcome, '', vCommand.Nick, vCommand.Msg);
+    Receive(mtWelcome, '', vCommand.Nick, vCommand.Msg);
     SetState(prgReady);
   end;
 end;
@@ -1390,6 +1443,7 @@ begin
     begin
       m := MidStr(vMsg, 2, c);
       s := MidStr(vMsg,  3 + c, MaxInt);
+      aCmd := nil;
       for aCmd in UserCommands do
       begin
         if SameText(aCmd.Name, m) then
@@ -1397,6 +1451,11 @@ begin
           aCmd.Send(vChannel, s);
           aCMDProcessed := True;
         end;
+      end;
+      if not aCMDProcessed then
+      begin
+        SendRaw(Format(UpperCase(m) + ' %s :%s', [vChannel, s]), prgReady);
+        aCMDProcessed := True;
       end;
     end;
   end;
@@ -1431,10 +1490,14 @@ procedure TmnIRCClient.Connected;
 begin
   SetState(prgRegistering);
   SetNick(FNick);
-  {  if FPassword <> '' then
-      SendRaw(Format('PASS %s', [FPassword]));}
   SendRaw(Format('USER %s 0 * :%s', [FUsername, FRealName]));
-  SendRaw(Format('NICKSERV IDENTIFY %s %s', [FUsername, FPassword]));
+  if FPassword <> '' then
+  begin
+    if Auth = authPass then
+      SendRaw(Format('PASS %s', [FPassword]))
+    else if Auth = authIDENTIFY then
+      SendRaw(Format('NICKSERV IDENTIFY %s %s', [FUsername, FPassword]));
+  end;
 end;
 
 procedure TmnIRCClient.SetNick(const ANick: String);
@@ -1459,6 +1522,12 @@ end;
 function TmnIRCClient.GetActive: Boolean;
 begin
   Result := (FConnection <> nil) and FConnection.Active;
+end;
+
+procedure TmnIRCClient.SetAuth(AValue: TIRCAuth);
+begin
+  if FAuth =AValue then Exit;
+  FAuth :=AValue;
 end;
 
 procedure TmnIRCClient.SetNicks(AValue: TStringList);
@@ -1495,22 +1564,13 @@ begin
   end;
 end;
 
-function TmnIRCClient.GeTIRCUserModes: TIRCUserModes;
-begin
-  Result := FModes;
-end;
-
-procedure TmnIRCClient.SeTIRCUserModes(const Value: TIRCUserModes);
+procedure TmnIRCClient.SetMode(const Value: TIRCUserModes);
 var
   ModeString: String;
 begin
-  if FProgress > prgDisconnected then
-  begin
-    ModeString := BuildUserModeCommand(Value);
-    if Length(ModeString) > 0 then
-      SendRaw(Format('MODE %s %s', [FSession.Nick, ModeString]));
-  end;
-  FModes := Value;
+  ModeString := BuildUserModeCommand(Value);
+  if Length(ModeString) > 0 then
+    SendRaw(Format('MODE %s %s', [FSession.Nick, ModeString]), prgRegistering);
 end;
 
 procedure TmnIRCClient.ReceiveRaw(vData: String);
@@ -1591,6 +1651,9 @@ begin
   Receivers.Add('PART', 0, TPART_IRCReceiver);
   Receivers.Add('QUIT', 0, TQUIT_IRCReceiver);
   Receivers.Add('NAMREPLY', IRC_RPL_NAMREPLY, TNAMREPLY_IRCReceiver);
+
+  Receivers.Add('HELPSTART', IRC_RPL_HELPSTART, THELP_IRCReceiver);
+
   Receivers.Add('ERR_NICKNAMEINUSE', IRC_ERR_NICKNAMEINUSE, TErrNicknameInUse_IRCReceiver);
 
   UserCommands.Add(TRaw_UserCommand.Create('Raw', Self));
@@ -1598,9 +1661,10 @@ begin
   UserCommands.Add(TJoin_UserCommand.Create('Join', Self));
   UserCommands.Add(TJoin_UserCommand.Create('j', Self)); //alias of Join
   UserCommands.Add(TSend_UserCommand.Create('Send', Self));
-  UserCommands.Add(TMe_UserCommand.Create('me', Self));
+  UserCommands.Add(TMe_UserCommand.Create('Me', Self));
   UserCommands.Add(TNotice_UserCommand.Create('Notice', Self));
   UserCommands.Add(TCNotice_UserCommand.Create('CNotice', Self));
+  UserCommands.Add(THELP_UserCommand.Create('HELP', Self));
 end;
 
 end.

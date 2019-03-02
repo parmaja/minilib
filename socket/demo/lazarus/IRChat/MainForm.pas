@@ -312,6 +312,7 @@ begin
   if i >= 0 then
     Recents.Delete(i);
   Recents.Add(S);
+  RecentsIndex := 0;
 end;
 
 function TMainFrm.CurrentRoom: string;
@@ -399,7 +400,11 @@ begin
           mtCTCPNotice, mtCTCPMessage:
             MsgEdit.Lines.Add(vMSG);
           mtMessage, mtSend:
+          begin
             MsgEdit.Lines.Add(vUser + ': ' + vMSG);
+            MsgEdit.ScrollBy(0, 1);
+
+          end;
         else //mtMessage
             LogEdit.Lines.Add(vMSG);
         end;

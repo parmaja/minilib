@@ -12,7 +12,7 @@ type
   { TChatRoomFrame }
 
   TChatRoomFrame = class(TFrame)
-    MsgEdit: TSynEdit;
+    MsgEdit: TMemo;
     Splitter2: TSplitter;
     TopicEdit: TEdit;
     UserListBox: TListBox;
