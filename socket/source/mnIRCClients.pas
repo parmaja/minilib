@@ -13,6 +13,8 @@ unit mnIRCClients;
  *  @author by Zaher Dirkey <zaher at parmaja dot com>
 
 
+    http://chi.cs.uchicago.edu/chirc/irc_examples.html
+
     https://en.wikipedia.org/wiki/List_of_Internet_Relay_Chat_commands
     https://stackoverflow.com/questions/12747781/irc-message-format-clarification
 
@@ -67,7 +69,7 @@ type
 
   TmnIRCClient = class;
 
-  TmnIRCProgress = (prgDisconnected, prgRegistering, prgReady);
+  TIRCProgress = (prgDisconnected, prgConnected, prgReady);
 
   TIRCState = (
     scProgress,
@@ -201,17 +203,25 @@ type
 
   TIRCRaw = class(TObject)
   public
-    Text: string;
+    When: TIRCProgress;
+    Raw: string;
+  end;
+
+  { TIRCQueueRaws }
+
+  TIRCQueueRaws = class(TmnObjectList<TIRCRaw>)
+  public
+    procedure Add(Raw: string; When: TIRCProgress); overload;
   end;
 
   { TIRCUserName }
 
-  TIRCUserLevel = set of (umVoice, umHalfOp, umOp, umAdmin, umOwner, umFake);
+  TIRCUserLevel = set of (ulVoice, ulHalfOp, ulOp, ulAdmin, ulOwner, ulFake);
 
-  TIRCUserMode = (umInvisible, umOperator, umServerNotices, umWallops);
+  TIRCUserMode = (umInvisible, umAway, umVoice, umHalfOp, umOp, umWallOp, umAdmin, umOwner, umFake, umServerNotices, umSSL);
   TIRCUserModes = set of TIRCUserMode;
 
-  TIRCChannelMode = (cmTopicProtection);
+  TIRCChannelMode = (cmKey, cmInviteOnly, cmModerated, cmNoOutside, cmRegisteredOnly, cmSecret, cmTopicProtection);
   TIRCChannelModes = set of TIRCChannelMode;
 
   TIRCUserName = class(TmnNamedObject)
@@ -221,7 +231,6 @@ type
     DisplayName: string; //without prefix
     Level: TIRCUserLevel;
     UserModes: TIRCUserModes;
-    //Mode: string;//todo
   end;
 
   { TIRCChannel }
@@ -244,13 +253,6 @@ type
     function Found(vChannel: string): TIRCChannel;
   end;
 
-  { TIRCQueueRaws }
-
-  TIRCQueueRaws = class(TmnObjectList<TIRCRaw>)
-  public
-    procedure Add(Raw: string); overload;
-  end;
-
   TmnOnData = procedure(const Data: string) of object;
 
   { TmnIRCConnection }
@@ -260,19 +262,19 @@ type
     FClient: TmnIRCClient;
     FHost: string;
     FPort: string;
-    _Line: string; //for sync
-    _Log: string;
-    procedure SendRaws;
-    procedure Log(ALine: string);
-    procedure ClientLog; //To Sync
+    _Log: string; //for synch
+    _Line: string; //for synch
   protected
     procedure Prepare; override;
     procedure Process; override;
     procedure Unprepare; override;
 
-    procedure ReceiveRaw; //To Sync, to be out of thread
+    procedure SendLog; //To Sybch
+    procedure ReceiveRaw; //To Synch, to be out of thread
+    procedure SendRaws;
     procedure SendRaw(S: string); //this called by client out of thread
 
+    procedure Log(ALine: string);
     property Client: TmnIRCClient read FClient;
   public
     constructor Create(vOwner: TmnConnections; vSocket: TmnConnectionStream); override;
@@ -285,14 +287,14 @@ type
   TIRCSession = record
     Channels: TIRCChannels;
     Nick: string;
-    UserModes: TIRCUserModes;
-    ChannelModes: TIRCChannelModes;
-    Version: string;
+    AllowedUserModes: TIRCUserModes;
+    AllowedChannelModes: TIRCChannelModes;
+    ServerVersion: string;
     Server: string;
     //procedure Clear;//todo
   end;
 
-  TIRCAuth = (authPASS, authIDENTIFY);
+  TIRCAuth = (authNone, authPASS, authIDENTIFY);
 
   { TmnIRCClient }
 
@@ -306,8 +308,7 @@ type
     FUsername: String;
     FRealName: String;
     FNick: String;
-    FModes: TIRCUserModes;
-    FProgress: TmnIRCProgress;
+    FProgress: TIRCProgress;
     FSession: TIRCSession;
     FConnection: TmnIRCConnection;
     FReceivers: TIRCReceivers;
@@ -327,16 +328,16 @@ type
     procedure Disconnected;
     procedure Close;
     procedure SetUsername(const Value: String);
-    function BuildUserModeCommand(NewModes: TIRCUserModes): String;
+    //function BuildUserModeCommand(NewModes: TIRCUserModes): String;
   protected
     NickIndex: Integer;
-    procedure SetState(const Value: TmnIRCProgress);
+    procedure SetState(const Value: TIRCProgress);
 
     procedure Changed(vStates: TIRCStates; vChannel: string = ''; vNick: string = '');
     procedure Receive(vMsgType: TIRCMsgType; vChannel, vUser, vMsg: String); virtual;
 
     procedure ReceiveRaw(vData: String); virtual;
-    procedure SendRaw(vData: String; vQueueAt: TmnIRCProgress = prgDisconnected);
+    procedure SendRaw(vData: String; vQueueAt: TIRCProgress = prgDisconnected);
 
     procedure DoChanged(vStates: TIRCStates; vChannel: string; vNick: string); virtual;
     procedure DoReceive(vMsgType: TIRCMsgType; vChannel, vUser, vMsg: String); virtual;
@@ -349,8 +350,6 @@ type
     procedure Connect;
     procedure Disconnect;
 
-    procedure Log(Message: String);
-
     procedure ChannelSend(vChannel, vMsg: String);
 
     procedure SetMode(const Value: TIRCUserModes);
@@ -360,7 +359,7 @@ type
     procedure Notice(vChannel, vMsg: String);
     procedure Quit(Reason: String);
 
-    property Progress: TmnIRCProgress read FProgress;
+    property Progress: TIRCProgress read FProgress;
     property Receivers: TIRCReceivers read FReceivers;
     property QueueReceivers: TIRCQueueReceivers read FQueueReceivers;
     property QueueRaws: TIRCQueueRaws read FQueueRaws;
@@ -514,6 +513,14 @@ type
   public
   end;
 
+  { TMode_UserCommand }
+
+  TMode_UserCommand = class(TIRCUserCommand)
+  protected
+    procedure Send(vChannel: string; vMsg: string); override;
+  public
+  end;
+
   { TSend_UserCommand }
 
   TSend_UserCommand = class(TIRCUserCommand)
@@ -620,12 +627,20 @@ begin
         Add := False;
       'i':
         AddIt(umInvisible);
+      'a':
+        AddIt(umAway);
+      'v':
+        AddIt(umVoice);
+      'h':
+        AddIt(umHalfOp);
       'o':
-        AddIt(umOperator);
+        AddIt(umOp);
+      'w':
+        AddIt(umWallOp);
       's':
         AddIt(umServerNotices);
-      'w':
-        AddIt(umWallops);
+      'Z':
+        AddIt(umSSL);
     end;
   end;
 end;
@@ -654,6 +669,18 @@ begin
         Add := False;
       't':
         AddIt(cmTopicProtection);
+      'k':
+        AddIt(cmKey);
+      'I':
+        AddIt(cmInviteOnly);
+      'm':
+        AddIt(cmModerated);
+      'n':
+        AddIt(cmNoOutside);
+      'R':
+        AddIt(cmRegisteredOnly);
+      's':
+        AddIt(cmSecret);
     end;
   end;
 end;
@@ -666,6 +693,13 @@ begin
   EndOfNick := Pos('!', Address);
   if EndOfNick > 0 then
     Result := Copy(Address, 1, EndOfNick - 1);
+end;
+
+{ TMode_UserCommand }
+
+procedure TMode_UserCommand.Send(vChannel: string; vMsg: string);
+begin
+  Client.SendRaw('MODE ' + vChannel + ' '+ vMsg, prgReady);
 end;
 
 { THistory_UserCommand }
@@ -748,15 +782,15 @@ begin
     if CharInSet(c, ['&', '~', '%', '+', '@']) then
     begin
       if AUser[i] = '~' then
-        Level:= Level + [umOwner, umOp, umHalfOp, umAdmin]
+        Level:= Level + [ulOwner, ulOp, ulHalfOp, ulAdmin]
       else if AUser[i] = '&' then
-        Level := Level + [umOp, umHalfOp, umAdmin]
+        Level := Level + [ulOp, ulHalfOp, ulAdmin]
       else if AUser[i] = '@' then
-        Level := Level + [umOp, umHalfOp]
+        Level := Level + [ulOp, ulHalfOp]
       else if AUser[i] = '%' then
-        Level := Level + [umHalfOp]
+        Level := Level + [ulHalfOp]
       else if AUser[i] = '+' then
-        Level := Level + [umVoice];
+        Level := Level + [ulVoice];
     end
     else
     begin
@@ -797,9 +831,9 @@ procedure TMYINFO_IRCReceiver.DoReceive(vCommand: TIRCCommand);
 begin
   Client.FSession.Nick := vCommand.Params[0];
   Client.FSession.Server := vCommand.Params[1];
-  Client.FSession.Version := vCommand.Params[2];
-  StringToUserMode(vCommand.Params[3], Client.FSession.UserModes);
-  StringToChannelMode(vCommand.Params[2], Client.FSession.ChannelModes);
+  Client.FSession.ServerVersion := vCommand.Params[2];
+  StringToUserMode(vCommand.Params[3], Client.FSession.AllowedUserModes);
+  StringToChannelMode(vCommand.Params[4], Client.FSession.AllowedChannelModes);
   Client.Changed([scUserInfo]);
 end;
 
@@ -833,12 +867,13 @@ end;
 
 { TIRCQueueRaws }
 
-procedure TIRCQueueRaws.Add(Raw: string);
+procedure TIRCQueueRaws.Add(Raw: string; When: TIRCProgress);
 var
   Item: TIRCRaw;
 begin
   Item := TIRCRaw.Create;
-  Item.Text := Raw;
+  Item.When := When;
+  Item.Raw := Raw;
   Add(Item);
 end;
 
@@ -961,7 +996,7 @@ end;
 
 procedure TRaw_UserCommand.Send(vChannel: string; vMsg: string);
 begin
-  Client.SendRaw(vMsg, prgRegistering);
+  Client.SendRaw(vMsg, prgConnected);
 end;
 
 { TNAMREPLY_IRCReceiver }
@@ -1047,7 +1082,7 @@ end;
 procedure TErrNicknameInUse_IRCReceiver.DoReceive(vCommand: TIRCCommand);
 begin
   with Client do
-    if FProgress = prgRegistering then
+    if FProgress = prgConnected then
     begin
       if NickIndex >= Nicks.Count then
         Quit('Nick conflict')
@@ -1197,47 +1232,51 @@ procedure TmnIRCConnection.Prepare;
 begin
   inherited Prepare;
   Connect;
-  Synchronize(Client.Connected);
+  Queue(Client.Connected);
 end;
 
 procedure TmnIRCConnection.SendRaws;
 var
   i: Integer;
 begin
-  //Client.Lock.Enter;
+  Client.Lock.Enter;
   try
-    for i := 0 to Client.QueueRaws.Count - 1 do
+    i := 0;
+    while i < Client.QueueRaws.Count do
     begin
-      SendRaw(Client.QueueRaws[i].Text);
+      if Client.QueueRaws[i].When <= Client.Progress then
+      begin
+        SendRaw(Client.QueueRaws[i].Raw);
+        Client.QueueRaws.Delete(i);
+      end
+      else
+        inc(i);
     end;
-    Client.QueueRaws.Clear;
   finally
-    //Client.Lock.Leave;
+    Client.Lock.Leave;
   end;
 end;
 
 procedure TmnIRCConnection.Log(ALine: string);
 begin
   _Log := ALine;
-  Synchronize(ClientLog);
+  Synchronize(SendLog);
   _Log := '';
-end;
-
-procedure TmnIRCConnection.ClientLog;
-begin
-  Client.Log(_Log);
 end;
 
 procedure TmnIRCConnection.Process;
 begin
   inherited Process;
-  Synchronize(SendRaws);
+  SendRaws;
   if Stream.WaitToRead(Stream.Timeout) then
   begin
     _Line := Trim(Stream.ReadLine);
     while (_Line <> '') and Active do
     begin
+      {$IF FPC_FULLVERSION>=30101}
+      {$endif}
       Synchronize(ReceiveRaw);
+      SendRaws;
       _Line := Trim(Stream.ReadLine);
     end;
   end;
@@ -1251,6 +1290,11 @@ begin
   Synchronize(Client.Disconnected);
 end;
 
+procedure TmnIRCConnection.SendLog;
+begin
+  Client.Receive(mtLog, '', '', _Log);
+end;
+
 procedure TmnIRCConnection.ReceiveRaw;
 begin
   Client.ReceiveRaw(_Line);
@@ -1261,10 +1305,10 @@ begin
   if Stream.Connected then
   begin
     Stream.WriteLine(S);
-    Client.Log('>' + S);
+    Log('>' + S);
   end
   else
-    Client.Log('not connected');
+    Log('not connected');
 end;
 
 constructor TmnIRCConnection.Create(vOwner: TmnConnections; vSocket: TmnConnectionStream);
@@ -1282,7 +1326,7 @@ begin
   Log('Connecting...');
   SetStream(TIRCSocketStream.Create(Host, Port, [soNoDelay, soSafeConnect, soKeepIfReadTimout, soConnectTimeout]));
   Stream.Timeout := 5 * 1000;
-  //Stream.Timeout := WaitForEver;// 5 * 1000;
+  //Stream.Timeout := WaitForEver;
   Stream.EndOfLine := #10;
   inherited;
   if Connected then
@@ -1352,11 +1396,6 @@ begin
   Close;
 end;
 
-procedure TmnIRCClient.Log(Message: String);
-begin
-  Receive(mtLog, '', '', Message);
-end;
-
 procedure TmnIRCClient.Connect;
 begin
   if (FProgress = prgDisconnected) then
@@ -1417,14 +1456,21 @@ begin
   end;
 end;
 
-procedure TmnIRCClient.SendRaw(vData: String; vQueueAt: TmnIRCProgress);
+procedure TmnIRCClient.SendRaw(vData: String; vQueueAt: TIRCProgress);
 begin
   if Assigned(FConnection) then
   begin
-    if (FProgress >= vQueueAt) then
+    if (vQueueAt <= Progress) then
       FConnection.SendRaw(vData)
     else
-      QueueRaws.Add(vData);
+    begin
+      Lock.Enter;
+      try
+        QueueRaws.Add(vData, vQueueAt);
+      finally
+        Lock.Leave;
+      end;
+    end;
   end;
 end;
 
@@ -1481,14 +1527,14 @@ procedure TmnIRCClient.Disconnected;
 begin
   SetState(prgDisconnected);
   FSession.Nick := '';
-  FSession.UserModes := [];
-  FSession.ChannelModes := [];
+  FSession.AllowedUserModes := [];
+  FSession.AllowedChannelModes := [];
   FSession.Channels.Clear;
 end;
 
 procedure TmnIRCClient.Connected;
 begin
-  SetState(prgRegistering);
+  SetState(prgConnected);
   SetNick(FNick);
   SendRaw(Format('USER %s 0 * :%s', [FUsername, FRealName]));
   if FPassword <> '' then
@@ -1504,7 +1550,7 @@ procedure TmnIRCClient.SetNick(const ANick: String);
 begin
   if ANick <> '' then
   begin
-    if FProgress in [prgRegistering, prgReady] then
+    if FProgress in [prgConnected, prgReady] then
       SendRaw(Format('NICK %s', [ANick]));
   end
 end;
@@ -1555,7 +1601,7 @@ begin
   FUsername := Value;
 end;
 
-procedure TmnIRCClient.SetState(const Value: TmnIRCProgress);
+procedure TmnIRCClient.SetState(const Value: TIRCProgress);
 begin
   if Value <> FProgress then
   begin
@@ -1568,14 +1614,14 @@ procedure TmnIRCClient.SetMode(const Value: TIRCUserModes);
 var
   ModeString: String;
 begin
-  ModeString := BuildUserModeCommand(Value);
+  {ModeString := BuildUserModeCommand(Value);
   if Length(ModeString) > 0 then
-    SendRaw(Format('MODE %s %s', [FSession.Nick, ModeString]), prgRegistering);
+    SendRaw(Format('MODE %s %s', [FSession.Nick, ModeString]), prgConnected);}
 end;
 
 procedure TmnIRCClient.ReceiveRaw(vData: String);
 begin
-  Log('<' + vData);
+  Receive(mtLog, '', '', '<' + vData);
   Receivers.Parse(vData);
 end;
 
@@ -1593,9 +1639,9 @@ begin
   SendRaw(Format('QUIT :%s', [Reason]));
 end;
 
-function TmnIRCClient.BuildUserModeCommand(NewModes: TIRCUserModes): String;
+{function TmnIRCClient.BuildUserModeCommand(NewModes: TIRCUserModes): String;
 const
-  ModeChars: array [umInvisible..umWallops] of Char = ('i', 'o', 's', 'w');
+  ModeChars: array [umInvisible..umWallOp] of Char = ('i', 'o', 's', 'w');
 var
   ModeDiff: TIRCUserModes;
   Mode: TIRCUserMode;
@@ -1623,7 +1669,7 @@ begin
         Result := Result + ModeChars[Mode];
     end;
   end;
-end;
+end;}
 
 procedure TmnIRCClient.Changed(vStates: TIRCStates; vChannel: string; vNick: string);
 begin
@@ -1660,6 +1706,7 @@ begin
   UserCommands.Add(TRaw_UserCommand.Create('Msg', Self)); //Alias of Raw
   UserCommands.Add(TJoin_UserCommand.Create('Join', Self));
   UserCommands.Add(TJoin_UserCommand.Create('j', Self)); //alias of Join
+  UserCommands.Add(TMode_UserCommand.Create('Mode', Self));
   UserCommands.Add(TSend_UserCommand.Create('Send', Self));
   UserCommands.Add(TMe_UserCommand.Create('Me', Self));
   UserCommands.Add(TNotice_UserCommand.Create('Notice', Self));

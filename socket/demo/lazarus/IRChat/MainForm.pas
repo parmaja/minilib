@@ -98,7 +98,7 @@ begin
         while MainFrm.MsgPageControl.PageCount > 0 do
           MainFrm.MsgPageControl.Page[0].Free;
       end;
-      prgRegistering: MainFrm.ConnectBtn.Caption := 'Disconnect...';
+      prgConnected: MainFrm.ConnectBtn.Caption := 'Disconnect...';
       prgReady: MainFrm.ConnectBtn.Caption := 'Disconnect';
     end;
 end;
@@ -140,6 +140,7 @@ procedure TMainFrm.ConnectNow;
 begin
   IRC.Host := HostEdit.Text;
   IRC.Port := '6667';
+  IRC.Auth := authIDENTIFY;
   IRC.Nick := UserEdit.Text;
   IRC.Username := UserEdit.Text;
   IRC.Password := PasswordEdit.Text;
@@ -328,6 +329,8 @@ var
   ini: TIniFile;
 begin
   inherited;
+  {$macro on}
+  Caption := Caption + ' ' + IntToStr(FPC_FULLVERSION);
   Recents := TStringList.Create;
   ini := TIniFile.Create(Application.Location + 'setting.ini');
   try
@@ -381,8 +384,6 @@ begin
     with ChatRoom do
       begin
         case vMsgType of
-          mtLog:
-            LogEdit.Lines.Add(vMSG);
           mtWelcome:
             MsgEdit.Lines.Add(vMSG);
           mtMOTD:
@@ -403,9 +404,8 @@ begin
           begin
             MsgEdit.Lines.Add(vUser + ': ' + vMSG);
             MsgEdit.ScrollBy(0, 1);
-
           end;
-        else //mtMessage
+        else
             LogEdit.Lines.Add(vMSG);
         end;
       end;
