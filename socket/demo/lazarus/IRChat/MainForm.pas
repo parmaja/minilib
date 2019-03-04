@@ -142,6 +142,7 @@ begin
   IRC.Port := '6667';
   IRC.Auth := authIDENTIFY;
   IRC.Nick := UserEdit.Text;
+  IRC.RealName := UserEdit.Text;
   IRC.Username := UserEdit.Text;
   IRC.Password := PasswordEdit.Text;
   IRC.Connect;

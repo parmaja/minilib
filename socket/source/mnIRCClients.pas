@@ -79,7 +79,7 @@ type
   );
 
   TIRCStates = set of TIRCState;
-  TIRCMsgType = (mtLog, mtNotice, mtMessage, mtMOTD, mtSend, mtCTCPNotice, mtCTCPMessage, mtWelcome, mtTopic, mtJoin, mtPart, mtQuit);
+  TIRCMsgType = (mtLog, mtMessage, mtNotice, mtMOTD, mtSend, mtCTCPNotice, mtCTCPMessage, mtWelcome, mtTopic, mtJoin, mtPart, mtQuit);
   TIRCLogType = (lgMsg, lgSend, lgReceive);
 
   { TIRCCommand }
@@ -198,13 +198,14 @@ type
   public
     When: TIRCProgress;
     Raw: string;
+    IsLog: Boolean;
   end;
 
   { TIRCQueueRaws }
 
   TIRCQueueRaws = class(TmnObjectList<TIRCRaw>)
   public
-    procedure Add(Raw: string; When: TIRCProgress); overload;
+    procedure Add(IsLog: Boolean; Raw: string; When: TIRCProgress = prgConnected); overload; //if MsgType log it will be log, if not it will be parsed
   end;
 
   { TIRCUserName }
@@ -256,6 +257,7 @@ type
     FHost: string;
     FPort: string;
   protected
+    procedure Log(S: string);
     procedure Prepare; override;
     procedure Process; override;
     procedure Unprepare; override;
@@ -327,6 +329,7 @@ type
     procedure Changed(vStates: TIRCStates; vChannel: string = ''; vNick: string = '');
     procedure Receive(vMsgType: TIRCMsgType; vChannel, vUser, vMsg: String); virtual;
 
+    procedure Log(S: string);
     procedure ReceiveRaw(vData: String); virtual;
     procedure SendRaw(vData: String; vQueueAt: TIRCProgress = prgDisconnected);
 
@@ -816,7 +819,7 @@ end;
 
 procedure TIRCUserReceiver.Parse(vCommand: TIRCCommand; vData: string);
 begin
-  inherited Parse(vCommand, vData);
+  inherited;
   ParseUserInfo(vCommand.Source, vCommand.FNick, vCommand.FAddress);
   vCommand.FTarget := vCommand.Params[0];
   vCommand.Params.Delete(0);
@@ -870,13 +873,14 @@ end;
 
 { TIRCQueueRaws }
 
-procedure TIRCQueueRaws.Add(Raw: string; When: TIRCProgress);
+procedure TIRCQueueRaws.Add(IsLog: Boolean; Raw: string; When: TIRCProgress);
 var
   Item: TIRCRaw;
 begin
   Item := TIRCRaw.Create;
   Item.When := When;
   Item.Raw := Raw;
+  Item.IsLog := IsLog;
   Add(Item);
 end;
 
@@ -1227,6 +1231,17 @@ end;
 
 { TmnIRCConnection }
 
+procedure TmnIRCConnection.Log(S: string);
+begin
+  Client.Lock.Enter;
+  try
+    Client.QueueReceives.Add(True, S, prgDisconnected);
+  finally
+    Client.Lock.Leave;
+  end;
+  Queue(ReceiveRaws);
+end;
+
 procedure TmnIRCConnection.Prepare;
 begin
   inherited Prepare;
@@ -1287,7 +1302,7 @@ begin
 
     Client.Lock.Enter;
     try
-      Client.QueueReceives.Add(aLine, prgConnected);
+      Client.QueueReceives.Add(false, aLine, prgConnected);
     finally
       Client.Lock.Leave;
     end;
@@ -1311,9 +1326,9 @@ end;
 procedure TmnIRCConnection.ReceiveRaws;
 var
   i: Integer;
-  temp: TStringList;
+  temp: TIRCQueueRaws;
 begin
-  temp := TStringList.Create;
+  temp := TIRCQueueRaws.Create;
   try
     Client.Lock.Enter; //do not lock for long time
     try
@@ -1322,7 +1337,7 @@ begin
       begin
         if Client.QueueReceives[i].When <= Client.Progress then
         begin
-          temp.Add(Client.QueueReceives[i].Raw);
+          temp.Add(Client.QueueReceives[i].IsLog, Client.QueueReceives[i].Raw, Client.QueueReceives[i].When);
           Client.QueueReceives.Delete(i);
         end
         else
@@ -1334,7 +1349,10 @@ begin
 
     for i := 0 to temp.Count -1 do
     begin
-      Client.ReceiveRaw(temp[i]);
+      if temp[i].IsLog then
+        Client.Log(temp[i].Raw)
+      else
+        Client.ReceiveRaw(temp[i].Raw);
     end;
   finally
     FreeAndNil(temp);
@@ -1346,7 +1364,7 @@ begin
   if Stream.Connected then
   begin
     Stream.WriteLine(S);
-    Client.Receive(mtLog, '', '', S); //it is in main thread
+    Client.Log(S); //it is in main thread
   end;
 end;
 
@@ -1362,16 +1380,16 @@ end;
 
 procedure TmnIRCConnection.Connect;
 begin
-  //Log('Connecting...');
+  Log('Connecting...');
   SetStream(TIRCSocketStream.Create(Host, Port, [soNoDelay, soSafeConnect, soKeepIfReadTimout, soSetReadTimeout, soConnectTimeout]));
   Stream.Timeout := 5 * 1000;
   //Stream.Timeout := WaitForEver;
   Stream.EndOfLine := #10;
   inherited;
-  {if Connected then
+  if Connected then
     Log('Connected successed')
   else
-    Log('Connected failed');}
+    Log('Connected failed');
 end;
 
 { TIRCCommand }
@@ -1505,7 +1523,7 @@ begin
     begin
       Lock.Enter;
       try
-        QueueSends.Add(vData, vQueueAt);
+        QueueSends.Add(False, vData, vQueueAt);
       finally
         Lock.Leave;
       end;
@@ -1660,7 +1678,7 @@ end;
 
 procedure TmnIRCClient.ReceiveRaw(vData: String);
 begin
-  Receive(mtLog, '', '', '<' + vData);
+  Log('<' + vData);
   Receivers.Parse(vData);
 end;
 
@@ -1718,6 +1736,11 @@ end;
 procedure TmnIRCClient.Receive(vMsgType: TIRCMsgType; vChannel, vUser, vMsg: String);
 begin
   DoReceive(vMsgType, vChannel, vUser, vMsg)
+end;
+
+procedure TmnIRCClient.Log(S: string);
+begin
+  Receive(mtLog, '', '', S);
 end;
 
 procedure TmnIRCClient.Init;
