@@ -378,6 +378,7 @@ end;
 procedure TMainFrm.DoReceive(vMsgType: TIRCMsgType; vChannel, vUser, vMsg: String);
 var
   ChatRoom: TChatRoomFrame;
+  i: Integer;
 begin
   ChatRoom := NeedRoom(vChannel);
   if ChatRoom <> nil then
@@ -391,9 +392,19 @@ begin
           mtTopic:
             TopicEdit.Text := vMSG;
           mtJoin:
+          begin
             MsgEdit.Lines.Add(vUser + ' is joined');
+            i := UserListBox.items.IndexOf(vUser);
+            if i < 0 then
+              UserListBox.items.Add(vUser);
+          end;
           mtPart:
+          begin
             MsgEdit.Lines.Add(vUser + ' is parted: ' + vMsg);
+            i := UserListBox.items.IndexOf(vUser);
+            if i>=0 then
+              UserListBox.items.Delete(i);
+          end;
           mtQuit:
             MsgEdit.Lines.Add(vUser + ' is quit: ' + vMsg);
           mtNotice:
