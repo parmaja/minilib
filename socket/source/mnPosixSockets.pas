@@ -147,8 +147,9 @@ begin
   if c = 0 then
   begin
     Count := 0;
-    Result := erClosed;
-    Close;
+    Result := erTimout; //maybe closed, but we will pass it as timeout, the caller will close it depend on options
+    //Result := erClosed;
+    //Close;
   end
   else if not Check(c) then
   begin

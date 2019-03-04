@@ -87,6 +87,8 @@ begin
 end;
 
 function TmnSocketStream.DoRead(var Buffer; Count: Longint): Longint;
+var
+  err: TmnError;
 begin
   Result := 0;
   if not Connected then
@@ -95,13 +97,19 @@ begin
   begin
     if WaitToRead(Timeout) then
     begin
-      if (Socket = nil) or (Socket.Receive(Buffer, Count) >= erFail) then
-      begin
-        FreeSocket;
-        Result := 0;
-      end
+      if (Socket = nil) then
+        Result := 0
       else
-        Result := Count;
+      begin
+        err := Socket.Receive(Buffer, Count);
+        if (err >= erFail) or ((err = erTimout) and not (soKeepIfReadTimout in Options)) then
+        begin
+          FreeSocket;
+          Result := 0;
+        end
+        else
+          Result := Count;
+      end;
     end
     else
     begin

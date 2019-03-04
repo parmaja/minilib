@@ -35,8 +35,8 @@ type
     FHandle: TSocket;
     FAddress: TSockAddr;
   protected
-    function Valid(Value: Integer; WithZero: Boolean = False): Boolean;
-    function Check(Value: Integer; WithZero: Boolean = False): Boolean;
+    function Valid(Value: Integer): Boolean;
+    function Check(Value: Integer): Boolean;
     function GetActive: Boolean; override;
     //Timeout millisecond
     function DoSelect(Timeout: Integer; Check: TSelectCheck): TmnError; override;
@@ -91,8 +91,9 @@ begin
   if c = 0 then
   begin
     Count := 0;
-    Result := erClosed;
-    Close;
+    Result := erTimout; //maybe closed, but we will pass it as timeout, the caller will close it depend on options
+    //Result := erClosed;
+    //Close;
   end
   else if not Check(c) then
   begin
@@ -143,9 +144,9 @@ begin
     Error;
 end;
 
-function TmnSocket.Valid(Value: Integer; WithZero: Boolean): Boolean;
+function TmnSocket.Valid(Value: Integer): Boolean;
 begin
-  Result := Check(Value, WithZero);
+  Result := Check(Value);
   if not Result then
     Error;
 end;
@@ -232,9 +233,9 @@ begin
     Result := erNone;
 end;
 
-function TmnSocket.Check(Value: Integer; WithZero: Boolean): Boolean;
+function TmnSocket.Check(Value: Integer): Boolean;
 begin
-  Result := not ((Value = SOCKET_ERROR) or (WithZero and (Value = 0)));
+  Result := not (Value = SOCKET_ERROR);
 end;
 
 function TmnSocket.GetRemoteAddress: string;
@@ -286,6 +287,9 @@ var
   aHostEnt: PHostEnt;
 begin
   CheckActive;
+  {$IFDEF FPC}
+  aName := '';
+  {$endif}
   SetLength(aName, 250);
 {$IFDEF FPC}
   WinSock2.gethostname(PChar(aName), Length(aName));
@@ -321,6 +325,9 @@ var
   s: ansistring;
 begin
   CheckActive;
+  {$IFDEF FPC}
+  s := '';
+  {$endif}
   SetLength(s, 250);
 {$IFDEF FPC}
   WinSock2.gethostname(PChar(s), Length(s));
@@ -510,9 +517,10 @@ begin
   if soKeepAlive in Options then
     setsockopt(aHandle, SOL_SOCKET, SO_KEEPALIVE, PAnsiChar(@SO_TRUE), SizeOf(SO_TRUE));
 
-  if soReadTimeout in Options then
+  if soSetReadTimeout in Options then
   begin
     DW := Timeout;
+    //* https://stackoverflow.com/questions/2876024/linux-is-there-a-read-or-recv-from-socket-with-timeout
     setsockopt(aHandle, SOL_SOCKET, SO_RCVTIMEO, @DW, SizeOf(DW));
   end;
 

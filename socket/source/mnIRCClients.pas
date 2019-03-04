@@ -1272,11 +1272,13 @@ var
   aLine: string;
 begin
   inherited Process;
-  SendRaws;
-  if Stream.WaitToRead(Stream.Timeout) then
-  begin
+  Queue(SendRaws);
+  //if Stream.WaitToRead(Stream.Timeout) then
+  //if Stream.WaitToRead(WaitForEver) then
+  //begin
     Stream.ReadLine(aLine, True);
     aLine := Trim(aLine);
+
     while (aLine <> '') and Active do
     begin
       {.$IF FPC_FULLVERSION>=30101}
@@ -1289,12 +1291,14 @@ begin
       finally
         Client.Lock.Leave;
       end;
+
       Queue(ReceiveRaws);
       Queue(SendRaws);
+
       Stream.ReadLine(aLine, True);
       aLine := Trim(aLine);
     end;
-  end;
+  //end;
 end;
 
 procedure TmnIRCConnection.Unprepare;
@@ -1360,9 +1364,9 @@ end;
 procedure TmnIRCConnection.Connect;
 begin
   //Log('Connecting...');
-  SetStream(TIRCSocketStream.Create(Host, Port, [soNoDelay, soSafeConnect, soKeepIfReadTimout, soConnectTimeout]));
-  //Stream.Timeout := 5 * 1000;
-  Stream.Timeout := WaitForEver;
+  SetStream(TIRCSocketStream.Create(Host, Port, [soNoDelay, soSafeConnect, soKeepIfReadTimout, soSetReadTimeout, soConnectTimeout]));
+  Stream.Timeout := 1 * 1000;
+  //Stream.Timeout := WaitForEver;
   Stream.EndOfLine := #10;
   inherited;
   {if Connected then
