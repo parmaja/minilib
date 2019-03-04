@@ -81,6 +81,7 @@ implementation
 function TmnSocket.Receive(var Buffer; var Count: Integer): TmnError;
 var
   c: Integer;
+  errno: longint;
 begin
   CheckActive;
 {$IFDEF FPC}
@@ -91,20 +92,25 @@ begin
   if c = 0 then
   begin
     Count := 0;
-    Result := erTimout; //maybe closed, but we will pass it as timeout, the caller will close it depend on options
-    //Result := erClosed;
-    //Close;
+    Result := erClosed;
+    Close;
   end
   else if not Check(c) then
   begin
     Count := 0;
-    Result := erInvalid;
-    Error;
+    errno := WSAGetLastError();
+    if errno = WSAETIMEDOUT then
+      Result := erTimeout //maybe closed, but we will pass it as timeout, the caller will close it depend on options
+    else
+    begin
+      Result := erInvalid;
+      Error;
+    end;
   end
   else
   begin
     Count := c;
-    Result := erNone;
+    Result := erSuccess;
   end;
 end;
 
@@ -133,7 +139,7 @@ begin
   else
   begin
     Count := c;
-    Result := erNone;
+    Result := erSuccess;
   end;
 end;
 
@@ -187,7 +193,7 @@ begin
     RaiseLastOSError;
   end
   else
-    Result := erNone;
+    Result := erSuccess;
 end;
 
 function TmnSocket.Accept: TmnCustomSocket;
@@ -230,7 +236,7 @@ begin
     Result := erFail;
   end
   else
-    Result := erNone;
+    Result := erSuccess;
 end;
 
 function TmnSocket.Check(Value: Integer): Boolean;
@@ -468,9 +474,9 @@ begin
     if (c = SOCKET_ERROR) then
       Result := erFail
     else if (c = 0) then
-      Result := erTimout
+      Result := erTimeout
     else
-      Result := erNone;
+      Result := erSuccess;
   end
 end;
 
@@ -501,7 +507,7 @@ var
   aHost: PHostEnt;
   ret: Longint;
   aMode: u_long;
-  DW: Integer;
+  DW: Longint;
 begin
   aHandle := socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
   if aHandle = INVALID_SOCKET then
@@ -577,7 +583,7 @@ begin
       else
         raise EmnException.Create('Failed to set nonblock socket, Error #' + Inttostr(WSAGetLastError));
 
-    if Select(aHandle, Timeout, slWrite) <> erNone then
+    if Select(aHandle, Timeout, slWrite) <> erSuccess then
       if soSafeConnect in Options then
       exit(nil)
     else

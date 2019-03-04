@@ -43,8 +43,8 @@ type
     procedure Connect; override;
     procedure Drop; override; //Shutdown
     procedure Disconnect; override;
-    function WaitToRead(vTimeout: Longint): Boolean; override; //select
-    function WaitToWrite(vTimeout: Longint): Boolean; override; //select
+    function WaitToRead(vTimeout: Longint): TmnConnectionError; override; //select
+    function WaitToWrite(vTimeout: Longint): TmnConnectionError; override; //select
     property Socket: TmnCustomSocket read FSocket;
     property Options: TmnsoOptions read FOptions write FOptions;
   end;
@@ -69,9 +69,9 @@ begin
   Result := 0;
   if not Connected then
     DoError('Write: SocketStream not connected.')
-  else if WaitToWrite(Timeout) then //TODO WriteTimeout
+  else if WaitToWrite(Timeout) = cerSuccess then //TODO WriteTimeout
   begin
-    if Socket.Send(Buffer, Count) >= erFail then
+    if Socket.Send(Buffer, Count) >= erTimeout then //yes in send we take timeout as error, we cant try again
     begin
       FreeSocket;
       Result := 0;
@@ -89,20 +89,22 @@ end;
 function TmnSocketStream.DoRead(var Buffer; Count: Longint): Longint;
 var
   err: TmnError;
+  werr: TmnConnectionError;
 begin
   Result := 0;
   if not Connected then
     DoError('Read: SocketStream not connected')
   else
   begin
-    if WaitToRead(Timeout) then
+    werr := WaitToRead(Timeout);
+    if (werr = cerSuccess) or ((werr = cerTimeout) and (soKeepIfReadTimout in Options)) then
     begin
       if (Socket = nil) then
         Result := 0
       else
       begin
         err := Socket.Receive(Buffer, Count);
-        if (err >= erFail) or ((err = erTimout) and not (soKeepIfReadTimout in Options)) then
+        if not ((err = erSuccess) or ((err = erTimeout) and (soKeepIfReadTimout in Options))) then
         begin
           FreeSocket;
           Result := 0;
@@ -159,21 +161,26 @@ end;
 
 function TmnSocketStream.WaitToRead(vTimeout: LongInt): Boolean;
 var
-  err:TmnError;
+  err: TmnError;
 begin
   err := Socket.Select(vTimeout, slRead);
-  if not (soKeepIfReadTimout in Options) then
-    Result := err < erTimout
+  if err = erSuccess then
+    Result := cerSuccess
+  else if (err = erTimeout) and (soKeepIfReadTimout in Options) then
+    Result := cerTimeout
   else	
-  	Result := err <= erTimout;
+  	Result := cerError;
 end;
 
 function TmnSocketStream.WaitToWrite(vTimeout: LongInt): Boolean;
 var
-  err:TmnError;
+  err: TmnError;
 begin
   err := Socket.Select(vTimeout, slWrite);
-  Result := err < erTimout; //yes less than Timout, write should be sent
+  if err = erSuccess then
+    Result := cerSuccess
+  else
+  	Result := cerError;
 end;
 
 procedure TmnSocketStream.FreeSocket;

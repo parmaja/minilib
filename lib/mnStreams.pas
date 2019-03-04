@@ -144,6 +144,8 @@ type
 
   { TmnConnectionStream }
 
+  TmnConnectionError = (cerSuccess, cerTimeout, cerError);
+
   TmnConnectionStream = class abstract(TmnBufferStream)
   private
     FTimeout: Integer;
@@ -156,8 +158,8 @@ type
     procedure Drop; virtual; abstract; //Shutdown
     procedure Disconnect; virtual; abstract;
     procedure Close; //alias for Disconnect
-    function WaitToRead(Timeout: Longint): Boolean; overload; virtual; abstract;
-    function WaitToWrite(Timeout: Longint): Boolean; overload; virtual; abstract;
+    function WaitToRead(Timeout: Longint): TmnConnectionError; overload; virtual; abstract;
+    function WaitToWrite(Timeout: Longint): TmnConnectionError; overload; virtual; abstract;
     function WaitToRead: Boolean; overload;
     function WaitToWrite: Boolean; overload;
     function Seek(Offset: Longint; Origin: Word): Longint; override;
@@ -280,12 +282,12 @@ end;
 
 function TmnConnectionStream.WaitToRead: Boolean;
 begin
-  Result := WaitToRead(Timeout);
+  Result := WaitToRead(Timeout) = cerSuccess;
 end;
 
 function TmnConnectionStream.WaitToWrite: Boolean;
 begin
-  Result := WaitToWrite(Timeout);
+  Result := WaitToWrite(Timeout) = cerSuccess;
 end;
 
 function TmnConnectionStream.Seek(Offset: Longint; Origin: Word): Longint;

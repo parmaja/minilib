@@ -22,7 +22,7 @@ uses
 type
   EmnException = class(Exception);
   TmnShutdown = (sdNone, sdReceive, sdSend, sdBoth);
-  TmnError = (erNone, erTimout, erFail, erClosed, erInvalid);
+  TmnError = (erSuccess, erTimeout, erFail, erClosed, erInvalid);
   TSelectCheck = (slRead, slWrite);
 
   TmnsoOption = (
@@ -172,11 +172,11 @@ begin
   if How > sdNone then
   begin
     Result := DoShutdown(How);
-    if Result = erNone then
+    if Result = erSuccess then
       FShutdownState := How;
   end
   else
-    Result := erNone;
+    Result := erSuccess;
 end;
 
 initialization

@@ -77,20 +77,21 @@ begin
   if c = 0 then
   begin
     Count := 0;
-    Result := erTimout; //maybe closed, but we will pass it as timeout, the caller will close it depend on options
-    //Result := erClosed;
-    //Close;
+    Result := erClosed;
+    Close;
   end
   else if not Check(c) then
   begin
     Count := 0;
+    //TODO copy it from windows
+    //Result := erTimout; //maybe closed, but we will pass it as timeout, the caller will close it depend on options
     Result := erInvalid;
     Error;
   end
   else
   begin
     Count := c;
-    Result := erNone;
+    Result := erSuccess;
   end;
 end;
 
@@ -115,7 +116,7 @@ begin
   else
   begin
     Count := c;
-    Result := erNone;
+    Result := erSuccess;
   end;
 end;
 
@@ -152,7 +153,7 @@ begin
     else if (c = 0) then
       Result := erTimout
     else
-      Result := erNone;
+      Result := erSuccess;
   end;
 end;
 
@@ -191,7 +192,7 @@ begin
 //    RaiseLastOSError; do not raise an error, maybe it is disconnected by the other side
   end
   else
-    Result := erNone;
+    Result := erSuccess;
 end;
 
 function TmnSocket.Accept: TmnCustomSocket;
@@ -226,7 +227,7 @@ begin
     Result := erFail;
   end
   else
-    Result := erNone;
+    Result := erSuccess;
 end;
 
 function TmnSocket.Check(Value: Integer; WithZero: Boolean): Boolean;

@@ -1273,32 +1273,31 @@ var
 begin
   inherited Process;
   Queue(SendRaws);
-  //if Stream.WaitToRead(Stream.Timeout) then
-  //if Stream.WaitToRead(WaitForEver) then
-  //begin
-    Stream.ReadLine(aLine, True);
-    aLine := Trim(aLine);
 
-    while (aLine <> '') and Active do
-    begin
+  Stream.ReadLine(aLine, True);
+  aLine := Trim(aLine);
+
+  while (aLine <> '') and Active do
+  begin
+    {$ifdef FPC}
       {.$IF FPC_FULLVERSION>=30101}
         //For future when Anonymous enabled in FPC
       {.$endif}
+    {$endif}
 
-      Client.Lock.Enter;
-      try
-        Client.QueueReceives.Add(aLine, prgConnected);
-      finally
-        Client.Lock.Leave;
-      end;
-
-      Queue(ReceiveRaws);
-      Queue(SendRaws);
-
-      Stream.ReadLine(aLine, True);
-      aLine := Trim(aLine);
+    Client.Lock.Enter;
+    try
+      Client.QueueReceives.Add(aLine, prgConnected);
+    finally
+      Client.Lock.Leave;
     end;
-  //end;
+
+    Queue(ReceiveRaws);
+    Queue(SendRaws);
+
+    Stream.ReadLine(aLine, True);
+    aLine := Trim(aLine);
+  end;
 end;
 
 procedure TmnIRCConnection.Unprepare;
@@ -1365,7 +1364,7 @@ procedure TmnIRCConnection.Connect;
 begin
   //Log('Connecting...');
   SetStream(TIRCSocketStream.Create(Host, Port, [soNoDelay, soSafeConnect, soKeepIfReadTimout, soSetReadTimeout, soConnectTimeout]));
-  Stream.Timeout := 1 * 1000;
+  Stream.Timeout := 5 * 1000;
   //Stream.Timeout := WaitForEver;
   Stream.EndOfLine := #10;
   inherited;

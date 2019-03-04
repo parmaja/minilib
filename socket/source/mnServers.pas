@@ -377,7 +377,7 @@ begin
   while Connected and not Terminated do
   begin
     try
-      if (Socket.Select(Timeout, slRead) = erNone) and not Terminated then
+      if (Socket.Select(Timeout, slRead) = erSuccess) and not Terminated then
         aSocket := Socket.Accept
       else
         aSocket := nil;
