@@ -484,6 +484,7 @@ var
   LRetVal: Integer;
   LAddrInfo: pAddrInfo;
   aInfo: AddrInfo;
+  DW: DWORD;
 begin
   //nonblick connect  https://stackoverflow.com/questions/1543466/how-do-i-change-a-tcp-socket-to-be-non-blocking
   //https://stackoverflow.com/questions/14254061/setting-time-out-for-connect-function-tcp-socket-programming-in-c-breaks-recv
@@ -518,6 +519,13 @@ begin
 //http://support.microsoft.com/default.aspx?kbid=140325
   //if soKeepAlive in Options then
     //setsockopt(aHandle, SOL_SOCKET, SO_KEEPALIVE, SO_TRUE, SizeOf(SO_TRUE));
+
+  if soReadTimeout in Options then
+  begin
+    DW := Timeout;
+    setsockopt(aHandle, SOL_SOCKET, SO_RCVTIMEO, DW, SizeOf(DW));
+  end;
+
 
   //SetNonBlock(aHandle, True);
   //setsockopt(aHandle, SOL_SOCKET, SO_NOSIGPIPE, SO_TRUE, SizeOf(SO_TRUE));

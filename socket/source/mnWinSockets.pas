@@ -494,6 +494,7 @@ var
   aHost: PHostEnt;
   ret: Longint;
   aMode: u_long;
+  DW: DWORD;
 begin
   aHandle := socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
   if aHandle = INVALID_SOCKET then
@@ -508,6 +509,12 @@ begin
 //http://support.microsoft.com/default.aspx?kbid=140325
   if soKeepAlive in Options then
     setsockopt(aHandle, SOL_SOCKET, SO_KEEPALIVE, PAnsiChar(@SO_TRUE), SizeOf(SO_TRUE));
+
+  if soReadTimeout in Options then
+  begin
+    DW := Timeout;
+    setsockopt(aHandle, SOL_SOCKET, SO_RCVTIMEO, @DW, SizeOf(DW));
+  end;
 
   if soConnectTimeout in Options then
   begin

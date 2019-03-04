@@ -350,6 +350,7 @@ var
   aAddr : TINetSockAddr;
   ret: cint;
   aHost: THostEntry;
+  time: ttimeval;
 begin
   //nonblick connect  https://stackoverflow.com/questions/1543466/how-do-i-change-a-tcp-socket-to-be-non-blocking
   //https://stackoverflow.com/questions/14254061/setting-time-out-for-connect-function-tcp-socket-programming-in-c-breaks-recv
@@ -366,6 +367,13 @@ begin
 //http://support.microsoft.com/default.aspx?kbid=140325
   if soKeepAlive in Options then
     fpsetsockopt(aHandle, SOL_SOCKET, SO_KEEPALIVE, PAnsiChar(@SO_TRUE), SizeOf(SO_TRUE));
+
+  if soReadTimeout in Options then
+  begin
+    time.tv_sec:=Timeout div 1000;
+    time.tv_usec:=(Timeout mod 1000) * 1000;
+    setsockopt(aHandle, SOL_SOCKET, SO_RCVTIMEO, @time, SizeOf(time));
+  end;
 
 //  fpsetsockopt(aHandle, SOL_SOCKET, SO_NOSIGPIPE, PChar(@SO_TRUE), SizeOf(SO_TRUE));
 
