@@ -494,7 +494,7 @@ var
   aHost: PHostEnt;
   ret: Longint;
   aMode: u_long;
-  DW: DWORD;
+  DW: Integer;
 begin
   aHandle := socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
   if aHandle = INVALID_SOCKET then

@@ -1279,9 +1279,9 @@ begin
     aLine := Trim(aLine);
     while (aLine <> '') and Active do
     begin
-      {$IF FPC_FULLVERSION>=30101}
+      {.$IF FPC_FULLVERSION>=30101}
         //For future when Anonymous enabled in FPC
-      {$endif}
+      {.$endif}
 
       Client.Lock.Enter;
       try
