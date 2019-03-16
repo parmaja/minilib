@@ -159,7 +159,7 @@ begin
   Result := nil;//if server connect no need to create socket
 end;
 
-function TmnSocketStream.WaitToRead(vTimeout: LongInt): Boolean;
+function TmnSocketStream.WaitToRead(vTimeout: Longint): TmnConnectionError;
 var
   err: TmnError;
 begin
@@ -172,7 +172,7 @@ begin
   	Result := cerError;
 end;
 
-function TmnSocketStream.WaitToWrite(vTimeout: LongInt): Boolean;
+function TmnSocketStream.WaitToWrite(vTimeout: Longint): TmnConnectionError;
 var
   err: TmnError;
 begin
