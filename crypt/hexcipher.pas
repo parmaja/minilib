@@ -47,32 +47,31 @@ type
   THexCipher = class(TCipher)
   protected
   public
-    procedure Encrypt(const InBuffer; InCount: Integer; var OutBuffer; var OutCount: Integer); override;
-    procedure Decrypt(const InBuffer; InCount: Integer; var OutBuffer; var OutCount: Integer); override;
+    procedure Encrypt(const InBuffer; InCount: LongInt; var OutBuffer; var OutCount: LongInt); override;
+    procedure Decrypt(const InBuffer; InCount: LongInt; var OutBuffer; var OutCount: LongInt); override;
   end;
 
   THexCipherStream = class(TCipherStream)
   private
     FBuffer: TmnBuffer;
     FPos: Integer;
-    FCount: Integer;
+    FCount: LongInt;
 
     function GetCipher: THexCipher;
     procedure SetCipher(const Value: THexCipher);
   protected
     function ReadmnBuffer: Boolean;
     function ReadChar(var B: Byte): Boolean;
-    function ReadOutBuffer(var Buffer; Count: Integer): Integer;
-
-    function WritemnBuffer(const Buffer; Count: Integer): Integer;
+    function ReadOutBuffer(var Buffer; Count: LongInt): LongInt;
+    function WritemnBuffer(const Buffer; Count: LongInt): LongInt;
 
     function DoCreateCipher: TCipher; override;
     procedure Init; override;
     procedure Prepare; override;
   public
     destructor Destroy; override;
-    function Read(var Buffer; Count: Integer): Integer; override;
-    function Write(const Buffer; Count: Integer): Integer; override;
+    function Read(var Buffer; Count: Longint): Longint; override;
+    function Write(const Buffer; Count: Longint): Longint; override;
     property Cipher: THexCipher read GetCipher write SetCipher;
   end;
 
@@ -179,7 +178,7 @@ begin
 end;
 
 
-procedure THexCipher.Decrypt(const InBuffer; InCount: Integer; var OutBuffer; var OutCount: Integer);
+procedure THexCipher.Decrypt(const InBuffer; InCount: LongInt; var OutBuffer; var OutCount: LongInt);
 var
   iP, oP: PByte;
 begin
@@ -189,7 +188,7 @@ begin
   HexToBin(ip, op, OutCount);
 end;
 
-procedure THexCipher.Encrypt(const InBuffer; InCount: Integer; var OutBuffer; var OutCount: Integer);
+procedure THexCipher.Encrypt(const InBuffer; InCount: LongInt; var OutBuffer; var OutCount: LongInt);
 var
   i: Integer;
   iP, oP: PByte;
@@ -219,7 +218,7 @@ begin
   inherited;
 end;
 
-function THexCipherStream.Read(var Buffer; Count: Integer): Integer;
+function THexCipherStream.Read(var Buffer; Count: Longint): Longint;
 begin
   Result := ReadOutBuffer(Buffer, Count);
 end;
@@ -229,12 +228,12 @@ begin
   inherited SetCipher(Value);
 end;
 
-function THexCipherStream.Write(const Buffer; Count: Integer): Integer;
+function THexCipherStream.Write(const Buffer; Count: Longint): Longint;
 begin
   Result := WritemnBuffer(Buffer, Count);
 end;
 
-function THexCipherStream.WritemnBuffer(const Buffer; Count: Integer): Integer;
+function THexCipherStream.WritemnBuffer(const Buffer; Count: LongInt): LongInt;
 var
   aBuffer, cBuffer: string;
   c: Integer;
@@ -313,7 +312,7 @@ begin
   end;
 end;
 
-function THexCipherStream.ReadOutBuffer(var Buffer; Count: Integer): Integer;
+function THexCipherStream.ReadOutBuffer(var Buffer; Count: LongInt): LongInt;
 var
   p: PByte;
   i, c: Integer;

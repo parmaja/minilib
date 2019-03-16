@@ -137,7 +137,7 @@ end;
 
 { TmnSocket }
 
-function TmnSocket.Receive(var Buffer; var Count: Integer): TmnError;
+function TmnSocket.Receive(var Buffer; var Count: LongInt): TmnError;
 var
   c: Integer;
 begin
@@ -163,7 +163,7 @@ begin
   end;
 end;
 
-function TmnSocket.Send(const Buffer; var Count: Integer): TmnError;
+function TmnSocket.Send(const Buffer; var Count: LongInt): TmnError;
 var
   c: Integer;
 begin
@@ -484,7 +484,7 @@ var
   LRetVal: Integer;
   LAddrInfo: pAddrInfo;
   aInfo: AddrInfo;
-  DW: DWORD;
+  DW: Integer;
 begin
   //nonblick connect  https://stackoverflow.com/questions/1543466/how-do-i-change-a-tcp-socket-to-be-non-blocking
   //https://stackoverflow.com/questions/14254061/setting-time-out-for-connect-function-tcp-socket-programming-in-c-breaks-recv

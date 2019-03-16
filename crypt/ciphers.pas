@@ -68,8 +68,8 @@ type
       Some Ciphers will create memory for out buffer if you passed nil to OutBuffer
       so it need to free it (OutBuffer) after calling this functions
     }
-    procedure Encrypt(const InBuffer; InCount: Integer; var OutBuffer; var OutCount: Integer); virtual; abstract;
-    procedure Decrypt(const InBuffer; InCount: Integer; var OutBuffer; var OutCount: Integer); virtual; abstract;
+    procedure Encrypt(const InBuffer; InCount: LongInt; var OutBuffer; var OutCount: LongInt); virtual; abstract;
+    procedure Decrypt(const InBuffer; InCount: LongInt; var OutBuffer; var OutCount: LongInt); virtual; abstract;
   end;
 
 
@@ -153,8 +153,8 @@ type
     //if Owned = true, then AStream automatically destroyed by TCipherStream
     constructor Create(AStream: TStream; Way: TCipherWay; Mode: TCipherMode; Owned: Boolean = True);
     destructor Destroy; override;
-    function Read(var Buffer; Count: Longint): Longint; override;
-    function Write(const Buffer; Count: Longint): Longint; override;
+    function Read(var Buffer; Count: Longint): Longint; overload; override;
+    function Write(const Buffer; Count: Longint): Longint; overload; override;
     property Way: TCipherWay read FWay;
     property Mode: TCipherMode read FMode;
     property Cipher: TCipher read GetCipher write SetCipher;
@@ -255,7 +255,7 @@ begin
 
 end;
 
-function TCipherStream.Read(var Buffer; Count: Integer): Longint;
+function TCipherStream.Read(var Buffer; Count: Longint): Longint;
 begin
   if FMode = cimWrite  then
     raise ECipherException.Create('Stream created for Write');
@@ -294,7 +294,7 @@ begin
   end;
 end;
 
-function TCipherStream.Write(const Buffer; Count: Integer): Longint;
+function TCipherStream.Write(const Buffer; Count: Longint): Longint;
 begin
   if FMode = cimRead  then
     raise ECipherException.Create('Stream created for Read');
@@ -311,7 +311,7 @@ end;
 
 { TExCipher }
 
-procedure TExCipher.AddData(const vBuffer; vCount: Integer);
+procedure TExCipher.AddData(const vBuffer; vCount: Longint);
 //var
   ///p: PChar;
 begin
@@ -387,7 +387,7 @@ begin
   Result := 0;
 end;
 
-function TExCipher.Read(var vBuffer; vCount: Integer): Longint;
+function TExCipher.Read(var vBuffer; vCount: Longint): Longint;
 var
   p: PChar;
   i, c: Integer;
@@ -445,7 +445,7 @@ begin
   end;}
 end;
 
-function TExCipher.Write(const vBuffer; vCount: Integer): Longint;
+function TExCipher.Write(const vBuffer; vCount: Longint): Longint;
 begin
   AddData(vBuffer, vCount);
   UpdateBuffer;
@@ -530,7 +530,7 @@ begin
 
 end;
 
-function TexCipherStream.Read(var vBuffer; vCount: Integer): Longint;
+function TexCipherStream.Read(var vBuffer; vCount: Longint): Longint;
 begin
   if FMode = cimWrite  then
     raise ECipherException.Create('Stream created for Read');
@@ -548,7 +548,7 @@ begin
   end;
 end;
 
-function TexCipherStream.Write(const vBuffer; vCount: Integer): Longint;
+function TexCipherStream.Write(const vBuffer; vCount: Longint): Longint;
 begin
   if FMode = cimRead  then
     raise ECipherException.Create('Stream created for Write');
@@ -643,7 +643,7 @@ begin
   Stream.write(Start^, Position - Start);
 end;
 
-function TCipherBuffer.Seek(Offset: Integer; Origin: Word): Longint;
+function TCipherBuffer.Seek(Offset: Longint; Origin: Word): Longint;
 begin
   case Origin of
     soFromBeginning: FPosition := FStart + Offset;

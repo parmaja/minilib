@@ -66,12 +66,12 @@ type
     function GetKeyStream: u32;
     function GetByte: Byte;
     function GetByte2: Byte;
-    procedure StreamBlock(const InBuffer; InCount: Integer; var OutBuffer; var OutCount: Integer); virtual;
+    procedure StreamBlock(const InBuffer; InCount: LongInt; var OutBuffer; var OutCount: LongInt); virtual;
     procedure LoadKey(Key: TSnowKeyBuf; KeySize: TSnowKeyBufSize; IV3, IV2, IV1, IV0: u32);
   public
     constructor Create;
-    procedure Encrypt(const InBuffer; InCount: Integer; var OutBuffer; var OutCount: Integer); override;
-    procedure Decrypt(const InBuffer; InCount: Integer; var OutBuffer; var OutCount: Integer); override;
+    procedure Encrypt(const InBuffer; InCount: LongInt; var OutBuffer; var OutCount: LongInt); override;
+    procedure Decrypt(const InBuffer; InCount: LongInt; var OutBuffer; var OutCount: LongInt); override;
   end;
 
   TSnow2CipherStream = class(TCipherStream)
@@ -87,8 +87,8 @@ type
     procedure Prepare; override;
   public
     destructor Destroy; override;
-    function Read(var Buffer; Count: Integer): Integer; override;
-    function Write(const Buffer; Count: Integer): Integer; override;
+    function Read(var Buffer; Count: Longint): Longint; override;
+    function Write(const Buffer; Count: Longint): Longint; override;
     property Cipher: TSnow2Cipher read GetCipher write SetCipher;
   end;
 
@@ -116,7 +116,7 @@ begin
   KeySize := key128;
 end;
 
-function TSnow2CipherStream.Read(var Buffer; Count: Integer): Integer;
+function TSnow2CipherStream.Read(var Buffer; Count: Longint): Longint;
 begin
   Result := inherited Read(Buffer, Count);
   if Result<>0 then
@@ -133,7 +133,7 @@ begin
   inherited SetCipher(Value);
 end;
 
-function TSnow2CipherStream.Write(const Buffer; Count: Integer): Integer;
+function TSnow2CipherStream.Write(const Buffer; Count: LongInt): LongInt;
 var
   st: string;
 begin
@@ -173,12 +173,12 @@ begin
   Index := 0;// started with 16 for load the block;
 end;
 
-procedure TSnow2Cipher.Decrypt(const InBuffer; InCount: Integer; var OutBuffer; var OutCount: Integer);
+procedure TSnow2Cipher.Decrypt(const InBuffer; InCount: LongInt; var OutBuffer; var OutCount: LongInt);
 begin
   StreamBlock(InBuffer, InCount, OutBuffer, OutCount);
 end;
 
-procedure TSnow2Cipher.Encrypt(const InBuffer; InCount: Integer; var OutBuffer; var OutCount: Integer);
+procedure TSnow2Cipher.Encrypt(const InBuffer; InCount: LongInt; var OutBuffer; var OutCount: LongInt);
 begin
   StreamBlock(InBuffer, InCount, OutBuffer, OutCount);
 end;
@@ -246,7 +246,7 @@ begin
   LoadBlock;
 end;
 
-procedure TSnow2Cipher.StreamBlock(const InBuffer; InCount: Integer; var OutBuffer; var OutCount: Integer);
+procedure TSnow2Cipher.StreamBlock(const InBuffer; InCount: LongInt; var OutBuffer; var OutCount: LongInt);
 var
   i: Integer;
   s, d: PByte;
