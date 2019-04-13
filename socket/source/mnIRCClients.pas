@@ -257,6 +257,7 @@ type
     FHost: string;
     FPort: string;
   protected
+    function CreateSocket: TIRCSocketStream;
     procedure Log(S: string);
     procedure Prepare; override;
     procedure Process; override;
@@ -1231,6 +1232,14 @@ end;
 
 { TmnIRCConnection }
 
+function TmnIRCConnection.CreateSocket: TIRCSocketStream;
+begin
+  Result := TIRCSocketStream.Create(Host, Port, [soNoDelay, soSafeConnect, soKeepIfReadTimout, soSetReadTimeout, soConnectTimeout]);
+  Result.Timeout := 5 * 1000;
+  //Result.Timeout := WaitForEver;
+  Result.EndOfLine := #10;
+end;
+
 procedure TmnIRCConnection.Log(S: string);
 begin
   Client.Lock.Enter;
@@ -1381,10 +1390,7 @@ end;
 procedure TmnIRCConnection.Connect;
 begin
   Log('Connecting...');
-  SetStream(TIRCSocketStream.Create(Host, Port, [soNoDelay, soSafeConnect, soKeepIfReadTimout, soSetReadTimeout, soConnectTimeout]));
-  Stream.Timeout := 5 * 1000;
-  //Stream.Timeout := WaitForEver;
-  Stream.EndOfLine := #10;
+  SetStream(CreateSocket);
   inherited;
   if Connected then
     Log('Connected successed')

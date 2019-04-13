@@ -5,6 +5,9 @@ unit zktClients;
  * @license   MIT (modified of https://opensource.org/licenses/MIT)
  *            See the file COPYING.MLGPL, included in this distribution,
  * @author    Zaher Dirkey <zaher at parmaja dot com>
+ *
+ *   Based on multiple php, py library, thanks for all
+ *
  *}
 {
   https://www.developpez.net/forums/d1588609/environnements-developpement/delphi/composants-vcl/composant-non-visuel-pullsdk-zkteko/
@@ -99,23 +102,24 @@ type
     FPort: string;
   protected
     FSocket: TZKTSocketStream;
-    FSessionId: Integer;
     FReceivedData: string;
     FStartData: Integer;
     FUserData: TBytes;
     FAttendanceData: TBytes;
     FCurrentReplyId: Integer;
+    FSessionId: Integer;
     function GetReplayID: Integer;
     function CreateSocket: TZKTSocketStream; virtual;
     function CheckSum(Buf: TBytes): Word;
     function CreateHeader(command, chksum, session_id, reply_id: Word; command_string: AnsiString): TBytes;
+    function ExecCommand(command: Word; CommandString: string = ''; OffsetData: Integer = 8): Boolean; virtual;
   public
     constructor Create(vHost: string; vPort: string = '4370'); virtual;
     function Connect: Boolean;
     property Host: string read FHost;
     property Port: string read FPort;
     procedure Send(Buf: TBytes);
-    function Recv(out Buf: TBytes): Boolean;
+    function Recv: TBytes;
   end;
 
 implementation
@@ -220,7 +224,7 @@ function TZKTClient.CheckSum(Buf: TBytes): Word;
 var
   i, c: Integer;
   w: word;
-  Sum: Word;
+  Sum: Integer;
 begin
   Sum := 0;
   i := 0;
@@ -234,9 +238,11 @@ begin
     i := i + 2;
     c := c  - 2;
   end;
+
   if c > 0 then //it is 1 btw
     Sum := Sum + Buf[Buf.Count - 1];
-  if Sum > USHRT_MAX then
+
+  while Sum > USHRT_MAX do
       Sum := Sum - USHRT_MAX;
 
   Sum := not Sum;
@@ -260,6 +266,14 @@ begin
   Writeln('CheckSum: ' + IntToStr(c));
 end;
 
+function TZKTClient.ExecCommand(command: Word; CommandString: string; OffsetData: Integer): Boolean;
+var
+  chksum: Word;
+begin
+  OffsetData := OffsetData + FStartData;
+  //session_id := SessionId;
+end;
+
 function TZKTClient.GetReplayID: Integer;
 begin
   Inc(FCurrentReplyId);
@@ -269,29 +283,29 @@ end;
 function TZKTClient.CreateSocket: TZKTSocketStream;
 begin
   Result := TZKTSocketStream.Create(Host, Port, [soNoDelay, soSafeConnect, soKeepIfReadTimout, soSetReadTimeout, soConnectTimeout]);
+  Result.Timeout := 1000;
+  //Result.Timeout := WaitForEver;
+  Result.EndOfLine := #10;
 end;
 
 constructor TZKTClient.Create(vHost: string; vPort: string);
 begin
   inherited Create;
-//  timeout_sec := 5;
+//timeout_sec := 5;
 //timeout_usec := 500000;
   FHost := vHost;
   FPort := vPort;
   FStartData := 8;
-  //FSocket = socket_create(AF_INET, SOCK_STREAM, SOL_TCP);
-  //setTimeout(sec, usec);
-  //socket_connect($this->socket, $ip, $port);
 end;
 
 procedure TZKTClient.Send(Buf: TBytes);
 begin
-  //socket
+  FSocket.WriteBytes(Buf);
 end;
 
-function TZKTClient.Recv(out Buf: TBytes): Boolean;
+function TZKTClient.Recv: TBytes;
 begin
-
+  Result := FSocket.ReadBytes(1024);
 end;
 
 function TZKTClient.Connect: Boolean;
@@ -301,8 +315,7 @@ var
   chksum: Integer;
   session_id: Integer;
   reply_id: integer;
-  Buf: TBytes;
-  received_data: TBytes;
+  Buf, Respond: TBytes;
 begin
   command := CMD_CONNECT;
   command_string := '';
@@ -314,8 +327,10 @@ begin
   if FSocket = nil then
     FSocket := CreateSocket;
   FSocket.Connect;
-  FSocket.WriteBuffer(Buf, Buf.Count);
-  //FSocket.Read()
+  Send(Buf);
+  Respond := Recv;
+  Respond.DumpHex;
+  //FSocket.ReadBytes()
   //reply_id := GetReplayID;
 //  Recv(received_data);
 end;
