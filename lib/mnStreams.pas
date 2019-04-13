@@ -61,14 +61,14 @@ type
   protected
     FPos: PByte;
     FEnd: PByte;
+    FBuffering: Boolean;
+    procedure CreateBuffer;
+    procedure FreeBuffer;
+    function CheckBuffer: Boolean;
   protected
     procedure DoError(S: string); virtual;
     function DoRead(var Buffer; Count: Longint): Longint; virtual; abstract;
     function DoWrite(const Buffer; Count: Longint): Longint; virtual; abstract;
-
-    procedure CreateBuffer;
-    procedure FreeBuffer;
-    function CheckBuffer: Boolean;
   public
     constructor Create(AEndOfLine: string = sUnixEndOfLine);
     destructor Destroy; override;
@@ -118,6 +118,7 @@ type
     procedure ReadStrings(Value: TStrings); overload;
     function WriteStrings(const Value: TStrings): TFileSize; overload;
 
+    property Buffering: Boolean read FBuffering write FBuffering default True; //temporary
     property EOF: Boolean read FEOF;
 
     property EndOfLine: string read FEndOfLine write FEndOfLine;
@@ -602,6 +603,7 @@ constructor TmnBufferStream.Create(AEndOfLine: string);
 begin
   inherited Create;
   FReadBufferSize := cBufferSize;
+  FBuffering := True;
   FEndOfLine := AEndOfLine;
   CreateBuffer;
 end;
@@ -647,25 +649,32 @@ var
   c, aCount: Longint;
   P: PByte;
 begin
-  if FReadBuffer = nil then
-    CreateBuffer;
-  P := @Buffer;
-  aCount := 0;
-  while (Count > 0) and not EOF do
+  if not Buffering then
   begin
-    c := FEnd - FPos;
-    if c = 0 then
+    aCount := DoRead(Buffer, Count);
+  end
+  else
+  begin
+    if FReadBuffer = nil then
+      CreateBuffer;
+    P := @Buffer;
+    aCount := 0;
+    while (Count > 0) and not EOF do
     begin
-      LoadBuffer;
-      Continue;//new
+      c := FEnd - FPos;
+      if c = 0 then
+      begin
+        LoadBuffer;
+        Continue;//new
+      end;
+      if c > Count then // is FReadBuffer enough for Count
+        c := Count;
+      Count := Count - c;
+      aCount := aCount + c;
+      System.Move(FPos^, P^, c);
+      Inc(P, c);
+      Inc(FPos, c);
     end;
-    if c > Count then // is FReadBuffer enough for Count
-      c := Count;
-    Count := Count - c;
-    aCount := aCount + c;
-    System.Move(FPos^, P^, c);
-    Inc(P, c);
-    Inc(FPos, c);
   end;
   Result := aCount;
 end;

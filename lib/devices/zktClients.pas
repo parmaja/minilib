@@ -229,6 +229,7 @@ begin
   begin
     Write(IntToHex(Self[i], 2));
   end;
+  WriteLn();
 end;
 
 { TZKTClient }
@@ -311,6 +312,7 @@ end;
 function TZKTClient.CreateSocket: TZKTSocketStream;
 begin
   Result := TZKTSocketStream.Create(Host, Port, [soSetReadTimeout, soKeepIfReadTimeout]);
+  Result.Buffering := False;
   Result.Timeout := 1000;
   //Result.Timeout := WaitForEver;
   Result.EndOfLine := #10;
