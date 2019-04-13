@@ -123,8 +123,8 @@ type
     function GetReplayID: Integer;
     function CreateSocket: TZKTSocketStream; virtual;
     function CheckSum(Buf: TBytes): Word;
-    function CreateHeader(Command, session_id, ReplyId: Word; CommandString: AnsiString): TBytes;
-    function ExecCommand(Command: Word; CommandString: string = ''): Boolean; virtual;
+    function CreateHeader(Command, session_id, ReplyId: Word; CommandData: AnsiString): TBytes;
+    function ExecCommand(Command: Word; CommandData: string; out RespondData: TBytes): Boolean; virtual;
   public
     constructor Create(vHost: string; vPort: string = '4370'); virtual;
     function Connect: Boolean;
@@ -285,7 +285,7 @@ begin
   Result := Sum;
 end;
 
-function TZKTClient.CreateHeader(Command, session_id, ReplyId: Word; CommandString: AnsiString): TBytes;
+function TZKTClient.CreateHeader(Command, session_id, ReplyId: Word; CommandData: AnsiString): TBytes;
 var
   c: Integer;
   l: DWord;
@@ -295,7 +295,7 @@ begin
   Result.Add(Word(0));
   Result.Add(session_id);
   Result.Add(ReplyId);
-  Result.Add(CommandString);
+  Result.Add(CommandData);
   c := CheckSum(Result);
   l := Result.Count;
   //reply_id := reply_id + 1;
@@ -308,24 +308,25 @@ begin
   Result.Add(Word(c));
   Result.Add(session_id);
   Result.Add(ReplyId);
-  Result.Add(CommandString);
+  Result.Add(CommandData);
 
   Writeln('CheckSum: ' + IntToStr(c));
   Result.DumpHex;
 end;
 
-function TZKTClient.ExecCommand(Command: Word; CommandString: string): Boolean;
+function TZKTClient.ExecCommand(Command: Word; CommandData: string; out RespondData: TBytes): Boolean;
 var
   reply_id: integer;
   Buf, Respond: TBytes;
 begin
   reply_id := GetReplayID;
-  Buf := CreateHeader(Command, FSessionId, reply_id, CommandString);
+  Buf := CreateHeader(Command, FSessionId, reply_id, CommandData);
 
   Send(Buf);
   Respond := Recv;
   Respond.DumpHex;
   Result := reply_id = Respond.GetWord(OFFSET_HEADER + INDEX_REPLY_ID);
+  RespondData := Copy(Respond, OFFSET_DATA, Length(Respond) - OFFSET_DATA);
 end;
 
 function TZKTClient.GetReplayID: Integer;
@@ -393,14 +394,17 @@ end;
 
 function TZKTClient.GetVersion: string;
 var
-  S: string;
+  Data: TBytes;
 begin
-  ExecCommand(CMD_VERSION);
+  ExecCommand(CMD_VERSION, '', Data);
+  Result := StringOf(Data);
 end;
 
 procedure TZKTClient.TestVoice;
+var
+  Data: TBytes;
 begin
-  ExecCommand(CMD_TESTVOICE, #0#0);
+  ExecCommand(CMD_TESTVOICE, #0#0, Data);
 end;
 
 end.
