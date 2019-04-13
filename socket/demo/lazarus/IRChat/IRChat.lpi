@@ -24,28 +24,34 @@
         <Mode0 Name="default"/>
       </Modes>
     </RunParams>
-    <RequiredPackages Count="7">
+    <RequiredPackages Count="9">
       <Item1>
-        <PackageName Value="SynEdit"/>
+        <PackageName Value="FrameViewer09"/>
       </Item1>
       <Item2>
-        <PackageName Value="MiniCtrls"/>
+        <PackageName Value="TurboPowerIPro"/>
       </Item2>
       <Item3>
-        <PackageName Value="NativeLib"/>
+        <PackageName Value="SynEdit"/>
       </Item3>
       <Item4>
-        <PackageName Value="MiniXML"/>
+        <PackageName Value="MiniCtrls"/>
       </Item4>
       <Item5>
-        <PackageName Value="MiniSockets"/>
+        <PackageName Value="NativeLib"/>
       </Item5>
       <Item6>
-        <PackageName Value="MiniCommons"/>
+        <PackageName Value="MiniXML"/>
       </Item6>
       <Item7>
-        <PackageName Value="LCL"/>
+        <PackageName Value="MiniSockets"/>
       </Item7>
+      <Item8>
+        <PackageName Value="MiniCommons"/>
+      </Item8>
+      <Item9>
+        <PackageName Value="LCL"/>
+      </Item9>
     </RequiredPackages>
     <Units Count="3">
       <Unit0>

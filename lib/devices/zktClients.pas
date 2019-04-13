@@ -75,6 +75,14 @@ const
   LEVEL_MANAGER = 12;      // 0000 1100
   LEVEL_SUPERMANAGER = 14; // 0000 1110
 
+  OFFSET_HEADER = 8;
+  OFFSET_DATA = 8;
+
+  INDEX_CMD = 0;
+  INDEX_CHECKSUM = 2;
+  INDEX_SESSION_ID = 4;
+  INDEX_REPLY_ID = 6;
+
 type
 
   { TByteHelper }
@@ -87,6 +95,8 @@ type
     procedure Add(Value: DWord); overload;
     procedure Add(Value: AnsiString); overload;
     procedure Add(Value: TBytes); overload;
+    //Index is byte offset
+    function GetWord(Index: Integer): WORD; overload;
     function Count: Integer;
     procedure Dump;
     procedure DumpHex;
@@ -113,11 +123,14 @@ type
     function GetReplayID: Integer;
     function CreateSocket: TZKTSocketStream; virtual;
     function CheckSum(Buf: TBytes): Word;
-    function CreateHeader(command, session_id, reply_id: Word; command_string: AnsiString): TBytes;
-    function ExecCommand(command: Word; CommandString: string = ''; OffsetData: Integer = 8): Boolean; virtual;
+    function CreateHeader(Command, session_id, ReplyId: Word; CommandString: AnsiString): TBytes;
+    function ExecCommand(Command: Word; CommandString: string = ''): Boolean; virtual;
   public
     constructor Create(vHost: string; vPort: string = '4370'); virtual;
     function Connect: Boolean;
+    function Disconnect: Boolean;
+    function GetVersion: string;
+    procedure TestVoice;
     property Host: string read FHost;
     property Port: string read FPort;
     procedure Send(Buf: TBytes);
@@ -204,6 +217,11 @@ begin
   end;
 end;
 
+function TByteHelper.GetWord(Index: Integer): WORD;
+begin
+  Result := Self[Index + 1] shl 8 or Self[Index];
+end;
+
 function TByteHelper.Count: Integer;
 begin
   Result := Length(Self);
@@ -267,7 +285,7 @@ begin
   Result := Sum;
 end;
 
-function TZKTClient.CreateHeader(command, session_id, reply_id: Word; command_string: AnsiString): TBytes;
+function TZKTClient.CreateHeader(Command, session_id, ReplyId: Word; CommandString: AnsiString): TBytes;
 var
   c: Integer;
   l: DWord;
@@ -276,8 +294,8 @@ begin
   Result.Add(command);
   Result.Add(Word(0));
   Result.Add(session_id);
-  Result.Add(reply_id);
-  Result.Add(command_string);
+  Result.Add(ReplyId);
+  Result.Add(CommandString);
   c := CheckSum(Result);
   l := Result.Count;
   //reply_id := reply_id + 1;
@@ -289,18 +307,25 @@ begin
   Result.Add(command);
   Result.Add(Word(c));
   Result.Add(session_id);
-  Result.Add(reply_id);
-  Result.Add(command_string);
+  Result.Add(ReplyId);
+  Result.Add(CommandString);
 
   Writeln('CheckSum: ' + IntToStr(c));
   Result.DumpHex;
 end;
 
-function TZKTClient.ExecCommand(command: Word; CommandString: string; OffsetData: Integer): Boolean;
+function TZKTClient.ExecCommand(Command: Word; CommandString: string): Boolean;
+var
+  reply_id: integer;
+  Buf, Respond: TBytes;
 begin
-  OffsetData := OffsetData + FStartData;
-  //session_id := SessionId;
-  Result := True;
+  reply_id := GetReplayID;
+  Buf := CreateHeader(Command, FSessionId, reply_id, CommandString);
+
+  Send(Buf);
+  Respond := Recv;
+  Respond.DumpHex;
+  Result := reply_id = Respond.GetWord(OFFSET_HEADER + INDEX_REPLY_ID);
 end;
 
 function TZKTClient.GetReplayID: Integer;
@@ -321,8 +346,6 @@ end;
 constructor TZKTClient.Create(vHost: string; vPort: string);
 begin
   inherited Create;
-//timeout_sec := 5;
-//timeout_usec := 500000;
   FHost := vHost;
   FPort := vPort;
   FStartData := 8;
@@ -340,17 +363,11 @@ end;
 
 function TZKTClient.Connect: Boolean;
 var
-  command: Integer;
-  command_string: string;
-  session_id: Integer;
   reply_id: integer;
   Buf, Respond: TBytes;
 begin
-  command := CMD_CONNECT;
-  command_string := '';
-  session_id := 0;
   reply_id := 0;
-  Buf := CreateHeader(command, session_id, reply_id, command_string);
+  Buf := CreateHeader(CMD_CONNECT, FSessionId, reply_id, '');
 
   if FSocket = nil then
     FSocket := CreateSocket;
@@ -361,10 +378,29 @@ begin
     Send(Buf);
     Respond := Recv;
     Respond.DumpHex;
+    FSessionId := Respond.GetWord(OFFSET_HEADER + INDEX_SESSION_ID);
+    Result := reply_id = Respond.GetWord(OFFSET_HEADER + INDEX_REPLY_ID);//just for checking
   end;
-  //FSocket.ReadBytes()
-  //reply_id := GetReplayID;
-//  Recv(received_data);
+end;
+
+function TZKTClient.Disconnect: Boolean;
+begin
+  FSocket.Disconnect;
+  FreeAndNil(FSocket);
+  FSessionId := 0;
+  FCurrentReplyId := 0;
+end;
+
+function TZKTClient.GetVersion: string;
+var
+  S: string;
+begin
+  ExecCommand(CMD_VERSION);
+end;
+
+procedure TZKTClient.TestVoice;
+begin
+  ExecCommand(CMD_TESTVOICE, #0#0);
 end;
 
 end.
