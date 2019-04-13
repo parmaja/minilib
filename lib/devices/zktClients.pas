@@ -24,7 +24,7 @@ interface
 
 uses
   Classes, SysUtils, StrUtils,
-  mnClients, mnSockets;
+  mnClients, mnSockets, mnSocketStreams;
 
 const
   CMD_CONNECT = 1000;
@@ -81,8 +81,10 @@ type
 
   TByteHelper = record helper for TBytes
   public
+    procedure Clear;
     procedure Add(Value: Byte); overload;
     procedure Add(Value: Word); overload;
+    procedure Add(Value: DWord); overload;
     procedure Add(Value: AnsiString); overload;
     procedure Add(Value: TBytes); overload;
     function Count: Integer;
@@ -111,7 +113,7 @@ type
     function GetReplayID: Integer;
     function CreateSocket: TZKTSocketStream; virtual;
     function CheckSum(Buf: TBytes): Word;
-    function CreateHeader(command, chksum, session_id, reply_id: Word; command_string: AnsiString): TBytes;
+    function CreateHeader(command, session_id, reply_id: Word; command_string: AnsiString): TBytes;
     function ExecCommand(command: Word; CommandString: string = ''; OffsetData: Integer = 8): Boolean; virtual;
   public
     constructor Create(vHost: string; vPort: string = '4370'); virtual;
@@ -145,6 +147,11 @@ CMD=CMD_ACK_OK,CMD_ACK_ERROR,CMD_DATA,CMD_UNKNOWN
 
 { TByteHelper }
 
+procedure TByteHelper.Clear;
+begin
+  SetLength(Self, 0);
+end;
+
 procedure TByteHelper.Add(Value: Byte);
 var
   index: integer;
@@ -163,6 +170,12 @@ begin
   Self[index] := lo(Value);
   inc(index);
   Self[index] := hi(Value);
+end;
+
+procedure TByteHelper.Add(Value: DWord);
+begin
+  Add(lo(Value));
+  Add(hi(Value));
 end;
 
 procedure TByteHelper.Add(Value: AnsiString);
@@ -224,7 +237,7 @@ function TZKTClient.CheckSum(Buf: TBytes): Word;
 var
   i, c: Integer;
   w: word;
-  Sum: Integer;
+  Sum: Word;
 begin
   Sum := 0;
   i := 0;
@@ -233,8 +246,8 @@ begin
   begin
     w := Buf[i + 1] shl 8 or Buf[i];
     Sum := Sum + w;
-    if Sum > USHRT_MAX then
-        Sum := Sum - USHRT_MAX;
+    {if Sum > USHRT_MAX then
+        Sum := Sum - USHRT_MAX;}
     i := i + 2;
     c := c  - 2;
   end;
@@ -242,36 +255,51 @@ begin
   if c > 0 then //it is 1 btw
     Sum := Sum + Buf[Buf.Count - 1];
 
-  while Sum > USHRT_MAX do
-      Sum := Sum - USHRT_MAX;
+{  while Sum > USHRT_MAX do
+      Sum := Sum - USHRT_MAX;}
 
   Sum := not Sum;
 
-  while Sum < 0 do
-      Sum := Sum + USHRT_MAX;
+  {while Sum < 0 do
+      Sum := Sum + USHRT_MAX;}
 
   Result := Sum;
 end;
 
-function TZKTClient.CreateHeader(command, chksum, session_id, reply_id: Word; command_string: AnsiString): TBytes;
+function TZKTClient.CreateHeader(command, session_id, reply_id: Word; command_string: AnsiString): TBytes;
 var
   c: Integer;
+  l: DWord;
 begin
+  SetLength(Result, 0);
   Result.Add(command);
-  Result.Add(chksum);
+  Result.Add(Word(0));
   Result.Add(session_id);
   Result.Add(reply_id);
   Result.Add(command_string);
   c := CheckSum(Result);
+  l := Result.Count;
+  //reply_id := reply_id + 1;
+
+  Result.Clear;
+  Result.Add(Word(20560));
+  Result.Add(Word(32130));
+  Result.Add(l);
+  Result.Add(command);
+  Result.Add(Word(c));
+  Result.Add(session_id);
+  Result.Add(reply_id);
+  Result.Add(command_string);
+
   Writeln('CheckSum: ' + IntToStr(c));
+  Result.DumpHex;
 end;
 
 function TZKTClient.ExecCommand(command: Word; CommandString: string; OffsetData: Integer): Boolean;
-var
-  chksum: Word;
 begin
   OffsetData := OffsetData + FStartData;
   //session_id := SessionId;
+  Result := True;
 end;
 
 function TZKTClient.GetReplayID: Integer;
@@ -282,7 +310,7 @@ end;
 
 function TZKTClient.CreateSocket: TZKTSocketStream;
 begin
-  Result := TZKTSocketStream.Create(Host, Port, [soNoDelay, soSafeConnect, soKeepIfReadTimout, soSetReadTimeout, soConnectTimeout]);
+  Result := TZKTSocketStream.Create(Host, Port, [soSetReadTimeout, soKeepIfReadTimeout]);
   Result.Timeout := 1000;
   //Result.Timeout := WaitForEver;
   Result.EndOfLine := #10;
@@ -312,28 +340,32 @@ function TZKTClient.Connect: Boolean;
 var
   command: Integer;
   command_string: string;
-  chksum: Integer;
   session_id: Integer;
   reply_id: integer;
   Buf, Respond: TBytes;
 begin
   command := CMD_CONNECT;
   command_string := '';
-  chksum := 0;
   session_id := 0;
-  reply_id := -1 + USHRT_MAX;
-  Buf := CreateHeader(command, chksum, session_id, reply_id, command_string);
+  reply_id := 0;
+  Buf := CreateHeader(command, session_id, reply_id, command_string);
 
   if FSocket = nil then
     FSocket := CreateSocket;
+
   FSocket.Connect;
-  Send(Buf);
-  Respond := Recv;
-  Respond.DumpHex;
+  if FSocket.Connected then
+  begin
+    Send(Buf);
+    Respond := Recv;
+    Respond.DumpHex;
+  end;
   //FSocket.ReadBytes()
   //reply_id := GetReplayID;
 //  Recv(received_data);
 end;
 
 end.
-
+//  checksum: 64535
+//  Sent: 5050827D08000000E80317FC00000000
+//        5050827D08000000E80317FC00000000

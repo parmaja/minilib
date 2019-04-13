@@ -1234,7 +1234,7 @@ end;
 
 function TmnIRCConnection.CreateSocket: TIRCSocketStream;
 begin
-  Result := TIRCSocketStream.Create(Host, Port, [soNoDelay, soSafeConnect, soKeepIfReadTimout, soSetReadTimeout, soConnectTimeout]);
+  Result := TIRCSocketStream.Create(Host, Port, [soNoDelay, soSafeConnect, soKeepIfReadTimeout, soSetReadTimeout, soConnectTimeout]);
   Result.Timeout := 5 * 1000;
   //Result.Timeout := WaitForEver;
   Result.EndOfLine := #10;

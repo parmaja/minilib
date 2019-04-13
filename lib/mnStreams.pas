@@ -421,7 +421,7 @@ end;
 
 procedure TmnBufferStream.WriteBytes(Buffer: TBytes);
 begin
-  WriteBuffer((@Buffer[0])^, Length(Buffer));
+  WriteBuffer(Pointer(Buffer)^, Length(Buffer));
 end;
 
 function TmnBufferStream.WriteStrings(const Value: TStrings): TFileSize;
@@ -734,7 +734,7 @@ end;
 function TmnBufferStream.ReadBytes(vCount: Integer): TBytes;
 begin
   SetLength(Result, vCount);
-  vCount := Read(Result[0], vCount);
+  vCount := Read(Pointer(Result)^, vCount);
   SetLength(Result, vCount);
 end;
 
