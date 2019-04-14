@@ -12,6 +12,8 @@ unit zktClients;
 {
   https://www.developpez.net/forums/d1588609/environnements-developpement/delphi/composants-vcl/composant-non-visuel-pullsdk-zkteko/
   https://www.board4all.biz/threads/question-how-to-control-board-inbio-160-with-delphi.624395/
+  https://github.com/RK-Rohan/ZK2OB/tree/master/zklib
+  https://searchcode.com/file/47825527/zkem/zkem.py
 }
 
 {$M+}
@@ -40,11 +42,29 @@ const
   CMD_VERSION = 1100;
   CMD_CHANGE_SPEED = 1101;
 
+  CMD_PREPARE_DATA = 1500;
+  CMD_DATA = 1501;
+  CMD_FREE_DATA	=	1502;	{ Free the transfered data }
+  CMD_QUERY_DATA = 1503;
+  CMD_READ_DATA	= 1504;
+
+  CMD_UPDATEFILE = 1700;
+  CMD_READFILE = 1702;
+
+  CMD_CHECKUDISKUPDATEPACKPAGE =1709;
+  CMD_OPTIONS_DECIPHERING	=1710;
+  CMD_OPTIONS_ENCRYPT	= 1711;
+
   CMD_ACK_OK = 2000;
   CMD_ACK_ERROR = 2001;
   CMD_ACK_DATA = 2002;
-  CMD_PREPARE_DATA = 1500;
-  CMD_DATA = 1501;
+  CMD_ACK_UNKNOWN	= $FFFF;	{ Return Unknown Command }
+
+  CMD_GET_PHOTO_COUNT = 2013;
+  CMD_GET_PHOTO_BYNAME = 2014;
+  CMD_CLEAR_PHOTO_BY_TIME =	2015;
+  CMD_GET_PHOTONAMES_BY_TIME = 2016;
+
 
   CMD_USER_WRQ = 8;
   CMD_USERTEMP_RRQ = 9;
@@ -78,12 +98,25 @@ const
   OFFSET_HEADER = 8;
   OFFSET_DATA = 8;
 
+
   INDEX_CMD = 0;
   INDEX_CHECKSUM = 2;
   INDEX_SESSION_ID = 4;
   INDEX_REPLY_ID = 6;
 
 type
+  TZKTHeader = packed record
+    Commnad: WORD;
+    CheckSum: WORD;
+    SessionID: WORD;
+    ReplayID: WORD;
+  end;
+
+  TZKTPacket = packed record
+    Commnad: WORD;
+    Header: TZKTHeader;
+    Data: TBytes;
+  end;
 
   { TByteHelper }
 
@@ -128,8 +161,12 @@ type
   public
     constructor Create(vHost: string; vPort: string = '4370'); virtual;
     function Connect: Boolean;
-    function Disconnect: Boolean;
+    procedure Disconnect;
     function GetVersion: string;
+    function GetSizeAddendance(out ASize: Integer): Boolean;
+    function GetAddendance(out Strings: TStringList): Boolean;
+    procedure DisableDevice;
+    procedure EnableDevice;
     procedure TestVoice;
     property Host: string read FHost;
     property Port: string read FPort;
@@ -261,27 +298,16 @@ begin
   Sum := 0;
   i := 0;
   c := Buf.Count;
-  while i < Buf.Count - 1 do //yes <= not < we
+  while i < Buf.Count - 1 do //yes <= not <
   begin
     w := Buf[i + 1] shl 8 or Buf[i];
     Sum := Sum + w;
-    {if Sum > USHRT_MAX then
-        Sum := Sum - USHRT_MAX;}
     i := i + 2;
     c := c  - 2;
   end;
-
   if c > 0 then //it is 1 btw
     Sum := Sum + Buf[Buf.Count - 1];
-
-{  while Sum > USHRT_MAX do
-      Sum := Sum - USHRT_MAX;}
-
   Sum := not Sum;
-
-  {while Sum < 0 do
-      Sum := Sum + USHRT_MAX;}
-
   Result := Sum;
 end;
 
@@ -298,7 +324,6 @@ begin
   Result.Add(CommandData);
   c := CheckSum(Result);
   l := Result.Count;
-  //reply_id := reply_id + 1;
 
   Result.Clear;
   Result.Add(Word(20560));
@@ -326,7 +351,7 @@ begin
   Respond := Recv;
   Respond.DumpHex;
   Result := reply_id = Respond.GetWord(OFFSET_HEADER + INDEX_REPLY_ID);
-  RespondData := Copy(Respond, OFFSET_DATA, Length(Respond) - OFFSET_DATA);
+  RespondData := Copy(Respond, OFFSET_HEADER + OFFSET_DATA, Length(Respond) - OFFSET_DATA);
 end;
 
 function TZKTClient.GetReplayID: Integer;
@@ -384,8 +409,11 @@ begin
   end;
 end;
 
-function TZKTClient.Disconnect: Boolean;
+procedure TZKTClient.Disconnect;
+var
+  Data: TBytes;
 begin
+  ExecCommand(CMD_EXIT, '', Data);
   FSocket.Disconnect;
   FreeAndNil(FSocket);
   FSessionId := 0;
@@ -400,6 +428,44 @@ begin
   Result := StringOf(Data);
 end;
 
+function TZKTClient.GetSizeAddendance(out ASize: Integer): Boolean;
+var
+  Data: TBytes;
+begin
+  ExecCommand(CMD_PREPARE_DATA, '', Data);
+  if Data.Count > 0 then
+    ASize := PDWord(Pointer(Data))^
+  else
+    ASize := 0;
+  Result := False;
+end;
+
+function TZKTClient.GetAddendance(out Strings: TStringList): Boolean;
+var
+  ASize: Integer;
+  Data: TBytes;
+  S: string;
+begin
+  GetSizeAddendance(ASize);
+  ExecCommand(CMD_ATTLOG_RRQ, '', Data);
+//  Strings.Text := StringOf(Data);
+  Result := True;
+end;
+
+procedure TZKTClient.DisableDevice;
+var
+  Data: TBytes;
+begin
+  ExecCommand(CMD_DISABLEDEVICE, #0#0, Data);
+end;
+
+procedure TZKTClient.EnableDevice;
+var
+  Data: TBytes;
+begin
+  ExecCommand(CMD_ENABLEDEVICE, #0#0, Data);
+end;
+
 procedure TZKTClient.TestVoice;
 var
   Data: TBytes;
@@ -408,6 +474,3 @@ begin
 end;
 
 end.
-//  checksum: 64535
-//  Sent: 5050827D08000000E80317FC00000000
-//        5050827D08000000E80317FC00000000
