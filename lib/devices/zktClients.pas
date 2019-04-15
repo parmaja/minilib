@@ -46,8 +46,8 @@ const
   CMD_PREPARE_DATA = 1500;
   CMD_DATA = 1501;
   CMD_FREE_DATA	=	1502;	{ Free the transfered data }
-  CMD_QUERY_DATA = 1503;
-  CMD_READ_DATA	= 1504;
+  CMD_QUERY_DATA = 1503; //CMD_DATA_WRRQ
+  CMD_READ_DATA	= 1504; //CMD_DATA_RDY
 
   CMD_UPDATEFILE = 1700;
   CMD_READFILE = 1702;
@@ -113,12 +113,27 @@ type
     ReplayID: WORD;
   end;
 
-  TZKTPacket = packed record
+  TZKTPayload = packed record
     Start: DWORD; //5050827d;
     Size: WORD;
     Reserved: WORD; //Zero
     Header: TZKTHeader;
-    Data: array[0..1] of WORD;
+  end;
+
+  PZKTPayload = ^TZKTPayload;
+
+{  TZKTRespond = record
+    TZKTPayload
+    Data: Bytes;
+  end;}
+
+  TZKAttData = packed record
+    UID: WORD;
+    UserID: array[0..23] of char; //hex bytes
+    State: Byte;
+    Time: DWORD;
+    Verified: Byte;
+    Reserved: string[7];
   end;
 
   { TByteHelper }
@@ -156,11 +171,16 @@ type
     FAttendanceData: TBytes;
     FCurrentReplyId: Integer;
     FSessionId: Integer;
+    procedure Send(Buf: TBytes);
+    function Recv: TBytes;
     function GetReplayID: Integer;
     function CreateSocket: TZKTSocketStream; virtual;
     function CheckSum(Buf: TBytes): Word;
     function CreateHeader(Command, session_id, ReplyId: Word; CommandData: AnsiString): TBytes;
-    function ExecCommand(Command, ReplyId: Word; CommandData: string; out RespondData: TBytes): Boolean; virtual;
+    function ExecCommand(Command, ReplyId: Word; CommandData: string; out Payload: TZKTPayload; out RespondData: TBytes): Boolean; virtual; overload;
+    function ExecCommand(Command, ReplyId: Word; CommandData: string; out RespondData: TBytes): Boolean; overload;
+    function ExecCommand(Command, ReplyId: Word; CommandData: string): Boolean; overload;
+    function ReceiveData(out Payload: TZKTPayload; out Data: TBytes): Boolean;
   public
     constructor Create(vHost: string; vPort: string = '4370'); virtual;
     function Connect: Boolean;
@@ -173,8 +193,6 @@ type
     procedure TestVoice;
     property Host: string read FHost;
     property Port: string read FPort;
-    procedure Send(Buf: TBytes);
-    function Recv: TBytes;
   end;
 
 implementation
@@ -338,27 +356,34 @@ begin
   Result.Add(ReplyId);
   Result.Add(CommandData);
 
-  Writeln('CheckSum: ' + IntToStr(c));
+  //Writeln('CheckSum: ' + IntToStr(c));
   Result.DumpHex;
+end;
+
+function TZKTClient.ExecCommand(Command, ReplyId: Word; CommandData: string; out Payload: TZKTPayload; out RespondData: TBytes): Boolean;
+var
+  Buf: TBytes;
+begin
+  Buf := CreateHeader(Command, FSessionId, ReplyId, CommandData);
+  Send(Buf);
+  Result := ReceiveData(Payload, RespondData);
+  if Result then
+    Result := ReplyId = Payload.Header.ReplayID;
 end;
 
 function TZKTClient.ExecCommand(Command, ReplyId: Word; CommandData: string; out RespondData: TBytes): Boolean;
 var
-  reply_id: integer;
-  Buf, Respond: TBytes;
+  Payload: TZKTPayload;
 begin
-  Buf := CreateHeader(Command, FSessionId, ReplyId, CommandData);
+  Result := ExecCommand(Command, ReplyId, CommandData, Payload, RespondData);
+end;
 
-  Send(Buf);
-  Respond := Recv;
-  Respond.DumpHex;
-  if Respond.Count > 0 then
-  begin
-    Result := reply_id = Respond.GetWord(OFFSET_HEADER + INDEX_REPLY_ID);
-    RespondData := Copy(Respond, OFFSET_HEADER + OFFSET_DATA, Length(Respond) - OFFSET_DATA);
-  end
-  else
-    Result := False;
+function TZKTClient.ExecCommand(Command, ReplyId: Word; CommandData: string): Boolean;
+var
+  Payload: TZKTPayload;
+  RespondData: TBytes;
+begin
+  Result := ExecCommand(Command, ReplyId, CommandData, Payload, RespondData);
 end;
 
 function TZKTClient.GetReplayID: Integer;
@@ -392,6 +417,27 @@ end;
 function TZKTClient.Recv: TBytes;
 begin
   Result := FSocket.ReadBytes(4 + 8 + 1024); //Start, Header, Data buffer
+end;
+
+function TZKTClient.ReceiveData(out Payload: TZKTPayload; out Data: TBytes): Boolean;
+var
+  Respond: TBytes;
+  P: PZKTPayload;
+begin
+  Respond := Recv;
+  //Respond.DumpHex;
+  Result := Respond.Count > 0;
+  if Result then
+  begin
+    P := Pointer(Respond);
+    Payload := P^;
+    Data := Copy(Respond, SizeOf(TZKTPayload), MaxInt);
+  end
+  else
+  begin
+    Finalize(Payload);
+    Data := nil
+  end
 end;
 
 function TZKTClient.Connect: Boolean;
@@ -451,16 +497,39 @@ function TZKTClient.GetAddendance(out Strings: TStringList): Boolean;
 var
   ASize: Integer;
   Data: TBytes;
-  S: string;
-  Respond: TBytes;
+  Payload: TZKTPayload;
+  PD: ^TZKAttData;
+  n, i: Integer;
 begin
-  GetSizeAddendance(ASize);
-  ExecCommand(CMD_ATTLOG_RRQ, GetReplayID, '', Data);
-  Writeln('Another:');
-  //Respond := Recv;
-  //Respond.DumpHex;
-//  Strings.Text := StringOf(Data);
-  Result := True;
+  //GetSizeAddendance(ASize);
+  Result := ExecCommand(CMD_ATTLOG_RRQ, GetReplayID, '', Data);
+  Writeln('Init:');
+  Data.DumpHex;
+  //ReceiveData(Payload, Data);
+  n := 0;
+  while ReceiveData(Payload, Data) do
+  begin
+    Data.Dump;
+    Writeln('Data:' + IntToStr(Data.Count));
+    if n = 0 then
+      PD := pointer(Data) + 4;
+    WriteLn(IntToStr(SizeOf(PD^)));
+    i := Data.Count div SizeOf(TZKAttData);
+
+    while i > 0 do
+    begin
+      {Write(IntToStr(PD.UID));
+      Write(' ');
+      Write(PD.UserID);
+      Write(' ');
+      WriteLn(PD.State);
+      Inc(PD);}
+      Dec(i);
+    end;
+    Inc(n);
+    if n > 1 then
+      break;
+  end;
 end;
 
 procedure TZKTClient.DisableDevice;
@@ -485,3 +554,19 @@ begin
 end;
 
 end.
+
+{
+CMD_ATTLOG_RRQ
+62,0,49,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,74,45,240,36,255,0,0,0,0,0,0,0,0
+63,0,50,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,193,45,240,36,255,0,0,0,0,0,0,0,0
+64,0,50,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,46,46,240,36,255,0,0,0,0,0,0,0,0
+
+68150000
+3E00310000000000000000000000000000000000000000000000014A2DF024FF0000000000000000
+3F0032000000000000000000000000000000000000000000000001C12DF024FF0000000000000000
+4000320000000000000000000000000000000000000000000000012E2EF024FF0000000000000000
+410032000000000000000000000000000000000000000000000001BF2EF024FF0000000000000000
+420033000000000000000000000000000000000000000000000001C52EF024FF0000000000000000
+4300310000000000000000000000000000000000000000000000014E2FF024FF0000000000000000
+
+}
