@@ -10,6 +10,7 @@ unit zktClients;
  *
  *}
 {
+  https://github.com/adrobinoga/zk-protocol/blob/master/protocol.md
   https://www.developpez.net/forums/d1588609/environnements-developpement/delphi/composants-vcl/composant-non-visuel-pullsdk-zkteko/
   https://www.board4all.biz/threads/question-how-to-control-board-inbio-160-with-delphi.624395/
   https://github.com/RK-Rohan/ZK2OB/tree/master/zklib
@@ -113,9 +114,11 @@ type
   end;
 
   TZKTPacket = packed record
-    Commnad: WORD;
+    Start: DWORD; //5050827d;
+    Size: WORD;
+    Reserved: WORD; //Zero
     Header: TZKTHeader;
-    Data: TBytes;
+    Data: array[0..1] of WORD;
   end;
 
   { TByteHelper }
@@ -157,7 +160,7 @@ type
     function CreateSocket: TZKTSocketStream; virtual;
     function CheckSum(Buf: TBytes): Word;
     function CreateHeader(Command, session_id, ReplyId: Word; CommandData: AnsiString): TBytes;
-    function ExecCommand(Command: Word; CommandData: string; out RespondData: TBytes): Boolean; virtual;
+    function ExecCommand(Command, ReplyId: Word; CommandData: string; out RespondData: TBytes): Boolean; virtual;
   public
     constructor Create(vHost: string; vPort: string = '4370'); virtual;
     function Connect: Boolean;
@@ -339,19 +342,23 @@ begin
   Result.DumpHex;
 end;
 
-function TZKTClient.ExecCommand(Command: Word; CommandData: string; out RespondData: TBytes): Boolean;
+function TZKTClient.ExecCommand(Command, ReplyId: Word; CommandData: string; out RespondData: TBytes): Boolean;
 var
   reply_id: integer;
   Buf, Respond: TBytes;
 begin
-  reply_id := GetReplayID;
-  Buf := CreateHeader(Command, FSessionId, reply_id, CommandData);
+  Buf := CreateHeader(Command, FSessionId, ReplyId, CommandData);
 
   Send(Buf);
   Respond := Recv;
   Respond.DumpHex;
-  Result := reply_id = Respond.GetWord(OFFSET_HEADER + INDEX_REPLY_ID);
-  RespondData := Copy(Respond, OFFSET_HEADER + OFFSET_DATA, Length(Respond) - OFFSET_DATA);
+  if Respond.Count > 0 then
+  begin
+    Result := reply_id = Respond.GetWord(OFFSET_HEADER + INDEX_REPLY_ID);
+    RespondData := Copy(Respond, OFFSET_HEADER + OFFSET_DATA, Length(Respond) - OFFSET_DATA);
+  end
+  else
+    Result := False;
 end;
 
 function TZKTClient.GetReplayID: Integer;
@@ -384,7 +391,7 @@ end;
 
 function TZKTClient.Recv: TBytes;
 begin
-  Result := FSocket.ReadBytes(1024);
+  Result := FSocket.ReadBytes(4 + 8 + 1024); //Start, Header, Data buffer
 end;
 
 function TZKTClient.Connect: Boolean;
@@ -413,7 +420,7 @@ procedure TZKTClient.Disconnect;
 var
   Data: TBytes;
 begin
-  ExecCommand(CMD_EXIT, '', Data);
+  ExecCommand(CMD_EXIT, GetReplayID, '', Data);
   FSocket.Disconnect;
   FreeAndNil(FSocket);
   FSessionId := 0;
@@ -424,7 +431,7 @@ function TZKTClient.GetVersion: string;
 var
   Data: TBytes;
 begin
-  ExecCommand(CMD_VERSION, '', Data);
+  ExecCommand(CMD_VERSION, GetReplayID, '', Data);
   Result := StringOf(Data);
 end;
 
@@ -432,7 +439,7 @@ function TZKTClient.GetSizeAddendance(out ASize: Integer): Boolean;
 var
   Data: TBytes;
 begin
-  ExecCommand(CMD_PREPARE_DATA, '', Data);
+  ExecCommand(CMD_PREPARE_DATA, GetReplayID, '', Data);
   if Data.Count > 0 then
     ASize := PDWord(Pointer(Data))^
   else
@@ -445,9 +452,13 @@ var
   ASize: Integer;
   Data: TBytes;
   S: string;
+  Respond: TBytes;
 begin
   GetSizeAddendance(ASize);
-  ExecCommand(CMD_ATTLOG_RRQ, '', Data);
+  ExecCommand(CMD_ATTLOG_RRQ, GetReplayID, '', Data);
+  Writeln('Another:');
+  //Respond := Recv;
+  //Respond.DumpHex;
 //  Strings.Text := StringOf(Data);
   Result := True;
 end;
@@ -456,21 +467,21 @@ procedure TZKTClient.DisableDevice;
 var
   Data: TBytes;
 begin
-  ExecCommand(CMD_DISABLEDEVICE, #0#0, Data);
+  ExecCommand(CMD_DISABLEDEVICE, GetReplayID, #0#0, Data);
 end;
 
 procedure TZKTClient.EnableDevice;
 var
   Data: TBytes;
 begin
-  ExecCommand(CMD_ENABLEDEVICE, #0#0, Data);
+  ExecCommand(CMD_ENABLEDEVICE, GetReplayID, #0#0, Data);
 end;
 
 procedure TZKTClient.TestVoice;
 var
   Data: TBytes;
 begin
-  ExecCommand(CMD_TESTVOICE, #0#0, Data);
+  ExecCommand(CMD_TESTVOICE, GetReplayID, #0#0, Data);
 end;
 
 end.
