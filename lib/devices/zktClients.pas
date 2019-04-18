@@ -132,11 +132,11 @@ type
 
   TZKAttData = packed record
     Number: WORD;
-    UserID: array[0..23] of char; //hex bytes
+    UserID: array[0..23] of char;
     Verified: Byte;
     Time: DWORD;
     State: DWORD;
-    Reserved: string[6];
+    Reserved: array[0..4] of char;
   end;
 
   TZKUserData = packed record
@@ -658,6 +658,7 @@ begin
   if Result then
   begin
     PAtt := Pointer(Data);
+    WriteLn(SizeOf(TZKAttData));
     i := Data.Count div SizeOf(TZKAttData);
     while i > 0 do
     begin
@@ -685,9 +686,7 @@ begin
   Result := ExecCommand(CMD_USERTEMP_RRQ, NewReplayID, '', Payload, Data);
   if Result then
   begin
-    Data.DumpHex(72);
     PUser := Pointer(Data);
-    Writeln(SizeOf(TZKUserData));
     i := Data.Count div SizeOf(TZKUserData);
     while i > 0 do
     begin
