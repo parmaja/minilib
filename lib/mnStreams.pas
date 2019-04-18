@@ -649,7 +649,7 @@ var
   c, aCount: Longint;
   P: PByte;
 begin
-  if not Buffering then
+  if not Buffering or (BufferSize = 0) then
   begin
     aCount := DoRead(Buffer, Count);
   end
