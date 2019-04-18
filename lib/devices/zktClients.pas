@@ -96,14 +96,13 @@ const
   LEVEL_MANAGER = 12;      // 0000 1100
   LEVEL_SUPERMANAGER = 14; // 0000 1110
 
-  OFFSET_HEADER = 8;
-  OFFSET_DATA = 8;
-
-
-  INDEX_CMD = 0;
-  INDEX_CHECKSUM = 2;
-  INDEX_SESSION_ID = 4;
-  INDEX_REPLY_ID = 6;
+  {
+  verification_lookup =
+      0:  "Check In (Code)",
+      8:  "Check In (Fingerprint)",
+      32: "Check Out (Code)",
+      40: "Check Out (Fingerprint)",
+  }
 
 type
   TZKHeader = packed record
@@ -132,25 +131,45 @@ type
   end;}
 
   TZKAttData = packed record
-    UID: WORD;
+    Number: WORD;
     UserID: array[0..23] of char; //hex bytes
-    State: Byte;
-    Time: DWORD;
     Verified: Byte;
-    Reserved: string[7];
+    Time: DWORD;
+    State: DWORD;
+    Reserved: string[6];
   end;
 
-  TAttendance = class(TObject)
+  TZKUserData = packed record
+    ID: WORD;
+    Role: Byte;
+    Password: array[0..7] of char;
+    Name: array[0..27] of char;
+    Unkown: array[0..8] of char; //Unkown
+    UserID: array[0..23] of char;
+  end;
+
+  TZKAttendance = class(TObject)
   public
-    Index: Integer;
-    ID: string;
-    Name: string;
+    Number: Integer;
+    UserID: string;
     Time: TDateTime;
     State: Integer;
     Verified: Integer;
   end;
 
-  TAttendances = class(TmnObjectList<TAttendance>)
+  TZKAttendances = class(TmnObjectList<TZKAttendance>)
+  public
+  end;
+
+  TZKUser = class(TObject)
+  public
+    ID: Integer;
+    UserID: string;
+    Name: string;
+    Password: string;
+  end;
+
+  TZKUsers = class(TmnObjectList<TZKUser>)
   public
   end;
 
@@ -166,15 +185,15 @@ type
     procedure Clear;
     procedure Add(Value: Byte); overload;
     procedure Add(Value: Word); overload;
-    procedure Add(Value: DWord); overload;
     procedure Add(Value: AnsiString); overload;
     procedure Add(Value: TBytes); overload;
     procedure Add(Value: TZKPayload); overload;
     //Index is byte offset
     function GetWord(Index: Integer): WORD; overload;
     function Count: Integer;
+    function ToString: string;
     procedure Dump;
-    procedure DumpHex;
+    procedure DumpHex(BytesInLine: Integer = 0);
   end;
 
   TZKSocketStream = Class(TmnClientSocketStream)
@@ -206,7 +225,7 @@ type
     function ExecCommand(Command, ReplyId: Word; CommandData: string): Boolean; overload;
     function ExecCommand(Command, ReplyId: Word): Boolean; overload;
     function ReceiveData(out Payload: TZKPayload; out Data: TBytes): Boolean; deprecated;
-    function ReceiveBuffer(out Buffer; Size: Integer): Boolean;
+    function ReceiveBuffer(var Buffer; Size: Integer): Boolean;
     function ReceiveBytes(Size: Integer; out Data: TBytes): Boolean;
     function ReceiveHeader(out Payload: TZKPayload): Boolean;
   public
@@ -214,10 +233,11 @@ type
     function Connect: Boolean;
     procedure Disconnect;
     function GetVersion: string;
-    function GetAddendances(Attendances: TAttendances): Boolean;
-    procedure DisableDevice;
     procedure EnableDevice;
+    procedure DisableDevice;
     procedure TestVoice;
+    function GetAddendances(Attendances: TZKAttendances): Boolean;
+    function GetUsers(Users: TZKUsers): Boolean;
     property Host: string read FHost;
     property Port: string read FPort;
   end;
@@ -246,8 +266,6 @@ Device->PC
 |--------|--------|--------|--------|--------|--------|--------|--------|---
 |       CMD       |    Check Sum    |      Data1      |     Reply ID    |Data2
 
-CMD=CMD_ACK_OK,CMD_ACK_ERROR,CMD_DATA,CMD_UNKNOWN
-
 *}
 
 { TByteHelper }
@@ -275,12 +293,6 @@ begin
   Self[index] := lo(Value);
   inc(index);
   Self[index] := hi(Value);
-end;
-
-procedure TByteHelper.Add(Value: DWord);
-begin
-  Add(lo(Value));
-  Add(hi(Value));
 end;
 
 procedure TByteHelper.Add(Value: AnsiString);
@@ -328,6 +340,11 @@ begin
   Result := Length(Self);
 end;
 
+function TByteHelper.ToString: string;
+begin
+  Result := PChar(Self);
+end;
+
 procedure TByteHelper.Dump;
 var
   i: Integer;
@@ -340,13 +357,21 @@ begin
   end;
 end;
 
-procedure TByteHelper.DumpHex;
+procedure TByteHelper.DumpHex(BytesInLine: Integer);
 var
   i: Integer;
+  c: Integer;
 begin
+  c := 0;
   for i := 0  to Count -1 do
   begin
     Write(IntToHex(Self[i], 2));
+    Inc(c);
+    if (BytesInLine > 0) and (c >= (BytesInLine)) then
+    begin
+      c := 0;
+      WriteLn();
+    end;
   end;
   WriteLn();
 end;
@@ -401,10 +426,11 @@ function TZKClient.ExecCommand(Command, ReplyId: Word; CommandData: string; out 
 var
   Packet: TBytes;
   CMD: Integer;
-  SizeInfo: TZKDataSize;
+  //SizeInfo: TZKDataSize;
   aSize: DWord;
 begin
   RespondData := nil;
+  aSize := 0;
   Packet := CreatePacket(Command, FSessionId, ReplyId, CommandData);
   Send(Packet);
   Result := ReceiveHeader(Payload);
@@ -421,18 +447,18 @@ begin
             FSessionId := Payload.Header.SessionID;
           ReceiveBytes(Payload.DataSize, RespondData);
         end;
-        CMD_ACK_DATA:
-        begin
-          //ReceiveBytes(Payload.DataSize, RespondData);
-        end;
         CMD_PREPARE_DATA:
         begin
           ReceiveBytes(Payload.DataSize, RespondData);
           ReceiveHeader(Payload);
-          if Payload.Header.Commnad = CMD_DATA then
+          Result := Payload.Header.Commnad = CMD_DATA;
+          if Result then
           begin
             ReceiveBuffer(aSize, SizeOf(aSize));
             ReceiveBytes(aSize, RespondData);
+            ReceiveHeader(Payload);
+            Result := (Payload.Header.ReplayID = ReplyId) and (Payload.Header.Commnad = CMD_ACK_OK);
+            //Payload.Header.SessionID is wrong   FSessionID
           end;
         end;
       end;
@@ -459,10 +485,11 @@ function TZKClient.ExecCommand(Command, ReplyId: Word): Boolean;
 var
   CommandData: string;
 begin
+  CommandData := '';
   Result := ExecCommand(Command, ReplyId, CommandData);
 end;
 
-function TZKClient.ReceiveBuffer(out Buffer; Size: Integer): Boolean;
+function TZKClient.ReceiveBuffer(var Buffer; Size: Integer): Boolean;
 var
   c: Integer;
 begin
@@ -538,6 +565,7 @@ function TZKClient.ReceiveHeader(out Payload: TZKPayload): Boolean;
 var
   c: Integer;
 begin
+  Finalize(Payload);
   c := FSocket.Read(Payload, SizeOf(Payload));
   Result := c > 0;
 end;
@@ -551,9 +579,10 @@ begin
 
   FSocket.Connect;
 
-  if FSocket.Connected then
+  Result := FSocket.Connected;
+  if Result then
   begin
-    ExecCommand(CMD_CONNECT, NewReplayID);
+    Result := ExecCommand(CMD_CONNECT, NewReplayID);
   end;
 end;
 
@@ -572,18 +601,11 @@ function TZKClient.GetVersion: string;
 var
   Data: TBytes;
 begin
-  ExecCommand(CMD_VERSION, NewReplayID, '', Data);
-  Result := StringOf(Data);
+  if ExecCommand(CMD_VERSION, NewReplayID, '', Data) then
+    Result := Data.ToString
+  else
+    Result := '';
 end;
-
-{
-verification_lookup =
-    0:  "Check In (Code)",
-    8:  "Check In (Fingerprint)",
-    32: "Check Out (Code)",
-    40: "Check Out (Fingerprint)",
-}
-
 
 function DecodeTime(ATime: DWORD): TDateTime;
 var
@@ -601,34 +623,6 @@ begin
     ATime := ATime div 12;
     t.Year := ATime + 2000;
     Result := SystemTimeToDateTime(t);
-end;
-
-
-function TZKClient.GetAddendances(Attendances: TAttendances): Boolean;
-var
-  ASize: DWord;
-  Data: TBytes;
-  Payload: TZKPayload;
-  PAtt: ^TZKAttData;
-  i: Integer;
-  Attendance: TAttendance;
-begin
-  Result := ExecCommand(CMD_ATTLOG_RRQ, NewReplayID, '', Payload, Data);
-  //Data.DumpHex;
-  PAtt := Pointer(Data);
-  i := Data.Count div SizeOf(TZKAttData);
-  while i > 0 do
-  begin
-    Attendance := TAttendance.Create;
-    Attendance.Index:= PAtt.UID;
-    Attendance.Name := PAtt.UserID;
-    Attendance.Time := DecodeTime(PAtt.Time);
-    Attendance.State := PAtt.State;
-    Attendance.Verified := PAtt.Verified;
-    Attendances.Add(Attendance);
-    Inc(PAtt);
-    Dec(i);
-  end;
 end;
 
 procedure TZKClient.DisableDevice;
@@ -652,14 +646,69 @@ begin
   ExecCommand(CMD_TESTVOICE, NewReplayID, #0#0, Data);
 end;
 
+function TZKClient.GetAddendances(Attendances: TZKAttendances): Boolean;
+var
+  Data: TBytes;
+  Payload: TZKPayload;
+  PAtt: ^TZKAttData;
+  aAttendance: TZKAttendance;
+  i: Integer;
+begin
+  Result := ExecCommand(CMD_ATTLOG_RRQ, NewReplayID, '', Payload, Data);
+  if Result then
+  begin
+    PAtt := Pointer(Data);
+    i := Data.Count div SizeOf(TZKAttData);
+    while i > 0 do
+    begin
+      aAttendance := TZKAttendance.Create;
+      aAttendance.Number:= PAtt.Number;
+      aAttendance.UserID := PAtt.UserID;
+      aAttendance.Time := DecodeTime(PAtt.Time);
+      aAttendance.State := PAtt.State;
+      aAttendance.Verified := PAtt.Verified;
+      Attendances.Add(aAttendance);
+      Inc(PAtt);
+      Dec(i);
+    end;
+  end;
+end;
+
+function TZKClient.GetUsers(Users: TZKUsers): Boolean;
+var
+  Data: TBytes;
+  Payload: TZKPayload;
+  PUser: ^TZKUserData;
+  aUser: TZKUser;
+  i: Integer;
+begin
+  Result := ExecCommand(CMD_USERTEMP_RRQ, NewReplayID, '', Payload, Data);
+  if Result then
+  begin
+    Data.DumpHex(72);
+    PUser := Pointer(Data);
+    Writeln(SizeOf(TZKUserData));
+    i := Data.Count div SizeOf(TZKUserData);
+    while i > 0 do
+    begin
+      aUser := TZKUser.Create;
+      aUser.ID:= PUser.ID;
+      aUser.Name := PUser.Name;
+      aUser.Password := PUser.Password;
+      aUser.UserID := PUser.UserID;
+      Users.Add(aUser);
+      Inc(PUser);
+      Dec(i);
+    end;
+  end;
+end;
+
 end.
 
 {
+AttLog
 CMD_ATTLOG_RRQ
-62,0,49,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,74,45,240,36,255,0,0,0,0,0,0,0,0
-63,0,50,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,193,45,240,36,255,0,0,0,0,0,0,0,0
-64,0,50,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,46,46,240,36,255,0,0,0,0,0,0,0,0
-
+40
 68150000
 3E00310000000000000000000000000000000000000000000000014A2DF024FF0000000000000000
 3F0032000000000000000000000000000000000000000000000001C12DF024FF0000000000000000
@@ -668,4 +717,12 @@ CMD_ATTLOG_RRQ
 420033000000000000000000000000000000000000000000000001C52EF024FF0000000000000000
 4300310000000000000000000000000000000000000000000000014E2FF024FF0000000000000000
 
+Users
+CMD_USERTEMP_RRQ
+72
+0100 00 3132330000000000 5A616865720000000000000000000000000000000000000000000000 010000010000000000 310000000000000000000000000000000000000000000000
+0200 00 00 32 33 00 000000004F6D6172000000000000000000000000000000000000000000000000010000010000000000320000000000000000000000000000000000000000000000
+0300 00 03 23 30 00 000000041796100000000000000000000000000000000000000000000000000010000010000000000330000000000000000000000000000000000000000000000
+04000000323300000000004C696E61000000000000000000000000000000000000000000000000010000010000000000340000000000000000000000000000000000000000000000
+050000343536000000000048756461000000000000000000000000000000000000000000000000010000010000000000350000000000000000000000000000000000000000000000
 }
