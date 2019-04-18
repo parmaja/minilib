@@ -25,6 +25,8 @@ uses
 type
   { TmnObjectList }
 
+  //USAGE: TMyObjectList = class(TmnObjectList<TMyObject>)
+
   {$ifdef FPC}
   TmnObjectList<_Object_> = class(TObjectList)
   {$else}
@@ -58,6 +60,8 @@ type
   public
     property Name: string read FName write FName;
   end;
+
+  //USAGE: TMyNamedObjectList = class(TmnNamedObjectList<TMyNamedObject>)
 
   {$ifdef FPC}
   TmnNamedObjectList<_Object_> = class(TmnObjectList<_Object_>)

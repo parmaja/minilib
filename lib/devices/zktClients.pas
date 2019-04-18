@@ -27,7 +27,7 @@ interface
 
 uses
   Classes, SysUtils, StrUtils,
-  mnClients, mnSockets, mnSocketStreams;
+  mnClasses, mnClients, mnSockets, mnSocketStreams;
 
 const
   CMD_CONNECT = 1000;
@@ -115,8 +115,7 @@ type
 
   TZKTPayload = packed record
     Start: DWORD; //5050827d;
-    Size: WORD;
-    Reserved: WORD; //Zero
+    Size: DWORD;
     Header: TZKTHeader;
   end;
 
@@ -136,6 +135,19 @@ type
     Reserved: string[7];
   end;
 
+  TAttendance = class(TObject)
+  public
+    Index: Integer;
+    ID: string;
+    Name: string;
+    Time: TDateTime;
+    State: Boolean;
+  end;
+
+  TAttendances = class(TmnObjectList<TAttendance>)
+  public
+  end;
+
   { TByteHelper }
 
   TByteHelper = record helper for TBytes
@@ -146,6 +158,7 @@ type
     procedure Add(Value: DWord); overload;
     procedure Add(Value: AnsiString); overload;
     procedure Add(Value: TBytes); overload;
+    procedure Add(Value: TZKTPayload); overload;
     //Index is byte offset
     function GetWord(Index: Integer): WORD; overload;
     function Count: Integer;
@@ -175,8 +188,8 @@ type
     function Recv: TBytes;
     function GetReplayID: Integer;
     function CreateSocket: TZKTSocketStream; virtual;
-    function CheckSum(Buf: TBytes): Word;
-    function CreateHeader(Command, session_id, ReplyId: Word; CommandData: AnsiString): TBytes;
+    function CheckSum(Buf: TBytes; Offset: Integer): Word;
+    function CreatePacket(Command, SessionId, ReplyId: Word; CommandData: AnsiString): TBytes;
     function ExecCommand(Command, ReplyId: Word; CommandData: string; out Payload: TZKTPayload; out RespondData: TBytes): Boolean; virtual; overload;
     function ExecCommand(Command, ReplyId: Word; CommandData: string; out RespondData: TBytes): Boolean; overload;
     function ExecCommand(Command, ReplyId: Word; CommandData: string): Boolean; overload;
@@ -187,7 +200,7 @@ type
     procedure Disconnect;
     function GetVersion: string;
     function GetSizeAddendance(out ASize: Integer): Boolean;
-    function GetAddendance(out Strings: TStringList): Boolean;
+    function GetAddendances(Attendances: TAttendances): Boolean;
     procedure DisableDevice;
     procedure EnableDevice;
     procedure TestVoice;
@@ -275,6 +288,15 @@ begin
   end;
 end;
 
+procedure TByteHelper.Add(Value: TZKTPayload);
+var
+  index: integer;
+begin
+  index := Length(Self);
+  SetLength(Self, Index + SizeOf(Value));
+  PZKTPayload(@Self[index])^ := Value;
+end;
+
 function TByteHelper.GetWord(Index: Integer): WORD;
 begin
   Result := Self[Index + 1] shl 8 or Self[Index];
@@ -310,14 +332,14 @@ end;
 
 { TZKTClient }
 
-function TZKTClient.CheckSum(Buf: TBytes): Word;
+function TZKTClient.CheckSum(Buf: TBytes; Offset: Integer): Word;
 var
   i, c: Integer;
   w: word;
   Sum: Word;
 begin
   Sum := 0;
-  i := 0;
+  i := Offset;
   c := Buf.Count;
   while i < Buf.Count - 1 do //yes <= not <
   begin
@@ -332,15 +354,30 @@ begin
   Result := Sum;
 end;
 
-function TZKTClient.CreateHeader(Command, session_id, ReplyId: Word; CommandData: AnsiString): TBytes;
+function TZKTClient.CreatePacket(Command, SessionId, ReplyId: Word; CommandData: AnsiString): TBytes;
 var
   c: Integer;
   l: DWord;
+  Packet: PZKTPayload;
 begin
-  SetLength(Result, 0);
-  Result.Add(command);
+  SetLength(Result, SizeOf(TZKTPayload));
+  Packet := Pointer(Result);
+  Packet.Start := $5050827d;
+  Packet.Size := 0;
+  Packet.Header.Commnad := Command;
+  Packet.Header.CheckSum := 0;
+  Packet.Header.ReplayID := ReplyId;
+  Packet.Header.SessionID := SessionId;
+
+  Result.Add(CommandData);
+
+  Result.DumpHex;
+  //c := CheckSum(Result, @Packet.Header - @Packet);
+
+  {SetLength(Result, 0);
+  Result.Add(Command);
   Result.Add(Word(0));
-  Result.Add(session_id);
+  Result.Add(SessionId);
   Result.Add(ReplyId);
   Result.Add(CommandData);
   c := CheckSum(Result);
@@ -350,21 +387,19 @@ begin
   Result.Add(Word(20560));
   Result.Add(Word(32130));
   Result.Add(l);
+
   Result.Add(command);
   Result.Add(Word(c));
-  Result.Add(session_id);
+  Result.Add(SessionId);
   Result.Add(ReplyId);
-  Result.Add(CommandData);
-
-  //Writeln('CheckSum: ' + IntToStr(c));
-  Result.DumpHex;
+  Result.Add(CommandData);}
 end;
 
 function TZKTClient.ExecCommand(Command, ReplyId: Word; CommandData: string; out Payload: TZKTPayload; out RespondData: TBytes): Boolean;
 var
   Buf: TBytes;
 begin
-  Buf := CreateHeader(Command, FSessionId, ReplyId, CommandData);
+  Buf := CreatePacket(Command, FSessionId, ReplyId, CommandData);
   Send(Buf);
   Result := ReceiveData(Payload, RespondData);
   if Result then
@@ -425,7 +460,6 @@ var
   P: PZKTPayload;
 begin
   Respond := Recv;
-  //Respond.DumpHex;
   Result := Respond.Count > 0;
   if Result then
   begin
@@ -446,7 +480,7 @@ var
   Buf, Respond: TBytes;
 begin
   reply_id := 0;
-  Buf := CreateHeader(CMD_CONNECT, FSessionId, reply_id, '');
+  Buf := CreatePacket(CMD_CONNECT, FSessionId, reply_id, '');
 
   if FSocket = nil then
     FSocket := CreateSocket;
@@ -456,7 +490,6 @@ begin
   begin
     Send(Buf);
     Respond := Recv;
-    Respond.DumpHex;
     FSessionId := Respond.GetWord(OFFSET_HEADER + INDEX_SESSION_ID);
     Result := reply_id = Respond.GetWord(OFFSET_HEADER + INDEX_REPLY_ID);//just for checking
   end;
@@ -492,38 +525,51 @@ begin
     ASize := 0;
   Result := False;
 end;
+{
+verification_lookup =
+    0:  "Check In (Code)",
+    8:  "Check In (Fingerprint)",
+    32: "Check Out (Code)",
+    40: "Check Out (Fingerprint)",
+}
 
-function TZKTClient.GetAddendance(out Strings: TStringList): Boolean;
+function TZKTClient.GetAddendances(Attendances: TAttendances): Boolean;
 var
-  ASize: Integer;
+  ASize: DWord;
   Data: TBytes;
   Payload: TZKTPayload;
   PD: ^TZKAttData;
-  n, i: Integer;
+  c, n, i: Integer;
+  Attendance: TAttendance;
+  Buffer: PByte;
 begin
-  //GetSizeAddendance(ASize);
-  Result := ExecCommand(CMD_ATTLOG_RRQ, GetReplayID, '', Data);
-  Writeln('Init:');
-  Data.DumpHex;
-  //ReceiveData(Payload, Data);
+  Result := ExecCommand(CMD_ATTLOG_RRQ, GetReplayID, '', Payload, Data);
+  //Writeln('Init:');
+  ASize := PDWord(Pointer(Data))^;
+  WriteLn('Size :' + IntToStr(ASize));
+  Buffer := GetMem(ASize);
+ // Data.Dump;
+  WriteLn('First Commnad: '  + IntToStr(Payload.Header.Commnad));
+  WriteLn('First ReplayID: '  + IntToStr(Payload.Header.ReplayID));
   n := 0;
   while ReceiveData(Payload, Data) do
   begin
-    Data.Dump;
-    Writeln('Data:' + IntToStr(Data.Count));
+    //Data.Dump;
+    WriteLn('Commnad: '  + IntToStr(Payload.Header.Commnad));
+    WriteLn('ReplayID: '  + IntToStr(Payload.Header.ReplayID));
+    //Writeln('Data:' + IntToStr(Data.Count));
     if n = 0 then
       PD := pointer(Data) + 4;
-    WriteLn(IntToStr(SizeOf(PD^)));
     i := Data.Count div SizeOf(TZKAttData);
-
     while i > 0 do
     begin
-      {Write(IntToStr(PD.UID));
-      Write(' ');
-      Write(PD.UserID);
-      Write(' ');
-      WriteLn(PD.State);
-      Inc(PD);}
+      Attendance := TAttendance.Create;
+      Attendance.Index:= PD.UID;
+      Attendance.Name := PD.UserID;
+      Attendance.Time := PD.Time;
+      Attendance.State := PD.State > 0;
+      Attendances.Add(Attendance);
+      Inc(PD);
       Dec(i);
     end;
     Inc(n);

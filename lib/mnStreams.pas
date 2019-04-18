@@ -92,8 +92,8 @@ type
 
     function WriteLn(const S: string): TFileSize; overload; deprecated;
 
-    procedure WriteBytes(Buffer: TBytes);
     function ReadBytes(vCount: Integer): TBytes;
+    procedure WriteBytes(Buffer: TBytes);
 
     {$ifndef NEXTGEN}
     function ReadUntil(const Match: ansistring; ExcludeMatch: Boolean; out Buffer: ansistring; out Matched: Boolean): Boolean; overload;
