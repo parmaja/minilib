@@ -15,12 +15,15 @@ unit zktClients;
   https://www.board4all.biz/threads/question-how-to-control-board-inbio-160-with-delphi.624395/
   https://github.com/RK-Rohan/ZK2OB/tree/master/zklib
   https://searchcode.com/file/47825527/zkem/zkem.py
+
+  Test on ZKTeco 350 "Ver 6.60 Sep 23 2015"
 }
 
 {$M+}
 {$H+}
 {$IFDEF FPC}
 {$mode delphi}
+{$WARN 5024 OFF : Parameter "$1" not used}
 {$ENDIF}
 
 interface
@@ -66,7 +69,6 @@ const
   CMD_CLEAR_PHOTO_BY_TIME =	2015;
   CMD_GET_PHOTONAMES_BY_TIME = 2016;
 
-
   CMD_USER_WRQ = 8;
   CMD_USERTEMP_RRQ = 9;
   CMD_USERTEMP_WRQ = 10;
@@ -89,8 +91,6 @@ const
   CMD_GET_TIME = 201;
   CMD_SET_TIME = 202;
 
-  USHRT_MAX = 65535;
-
   LEVEL_USER = 0;          // 0000 0000
   LEVEL_ENROLLER = 2;       // 0000 0010
   LEVEL_MANAGER = 12;      // 0000 1100
@@ -108,7 +108,7 @@ type
   TZKHeader = packed record
     Commnad: WORD;
     CheckSum: WORD;
-    SessionID: WORD;
+    SessionID: WORD; //or some data on respond
     ReplayID: WORD;
   end;
 
@@ -135,8 +135,9 @@ type
     UserID: array[0..23] of char;
     Verified: Byte;
     Time: DWORD;
-    State: DWORD;
-    Reserved: array[0..4] of char;
+    State: Byte;
+    WorkCode: Byte;
+    Reserved: array[0..6] of char;
   end;
 
   TZKUserData = packed record
@@ -144,9 +145,9 @@ type
     Role: Byte;
     Password: array[0..7] of char;
     Name: array[0..27] of char;
-    Card: array[0..4] of char;
-    Group: Word;
-    TimeZone: Word;
+    Card: array[0..4] of char; //NotSure
+    Group: Word; //NotSure
+    TimeZone: Word; //NotSure
     UserID: array[0..23] of char;
   end;
 
@@ -156,6 +157,7 @@ type
     UserID: string;
     Time: TDateTime;
     State: Integer;
+    WorkCode: Integer;
     Verified: Integer;
   end;
 
@@ -169,6 +171,10 @@ type
     UserID: string;
     Name: string;
     Password: string;
+    Card: string;
+    Role: Integer;
+    Group: Integer;
+    TimeZone: Integer;
   end;
 
   TZKUsers = class(TmnObjectList<TZKUser>)
@@ -420,7 +426,6 @@ begin
   Packet.Header.ReplayID := ReplyId;
   Packet.Header.SessionID := SessionId;
   c := CheckSum(Result, SizeOf(Packet.Start) + SizeOf(Packet.Size));
-//  c := CheckSum(Result,  @Packet - @Packet.Header);
   Packet.Header.CheckSum := c;
 end;
 
@@ -460,7 +465,6 @@ begin
             ReceiveBytes(aSize, RespondData);
             ReceiveHeader(Payload);
             Result := (Payload.Header.ReplayID = ReplyId) and (Payload.Header.Commnad = CMD_ACK_OK);
-            //Payload.Header.SessionID is wrong   FSessionID
           end;
         end;
       end;
@@ -628,24 +632,18 @@ begin
 end;
 
 procedure TZKClient.DisableDevice;
-var
-  Data: TBytes;
 begin
-  ExecCommand(CMD_DISABLEDEVICE, NewReplayID, #0#0, Data);
+  ExecCommand(CMD_DISABLEDEVICE, NewReplayID, #0#0);
 end;
 
 procedure TZKClient.EnableDevice;
-var
-  Data: TBytes;
 begin
-  ExecCommand(CMD_ENABLEDEVICE, NewReplayID, #0#0, Data);
+  ExecCommand(CMD_ENABLEDEVICE, NewReplayID, #0#0);
 end;
 
 procedure TZKClient.TestVoice;
-var
-  Data: TBytes;
 begin
-  ExecCommand(CMD_TESTVOICE, NewReplayID, #0#0, Data);
+  ExecCommand(CMD_TESTVOICE, NewReplayID, #0#0);
 end;
 
 function TZKClient.GetAddendances(Attendances: TZKAttendances): Boolean;
@@ -659,6 +657,7 @@ begin
   Result := ExecCommand(CMD_ATTLOG_RRQ, NewReplayID, '', Payload, Data);
   if Result then
   begin
+    //Data.DumpHex(40);
     PAtt := Pointer(Data);
     WriteLn(SizeOf(TZKAttData));
     i := Data.Count div SizeOf(TZKAttData);
@@ -669,6 +668,7 @@ begin
       aAttendance.UserID := PAtt.UserID;
       aAttendance.Time := DecodeTime(PAtt.Time);
       aAttendance.State := PAtt.State;
+      aAttendance.WorkCode := PAtt.WorkCode;
       aAttendance.Verified := PAtt.Verified;
       Attendances.Add(aAttendance);
       Inc(PAtt);
@@ -688,6 +688,7 @@ begin
   Result := ExecCommand(CMD_USERTEMP_RRQ, NewReplayID, '', Payload, Data);
   if Result then
   begin
+    //Data.DumpHex(72);
     PUser := Pointer(Data);
     Writeln(SizeOf(TZKUserData));
     i := Data.Count div SizeOf(TZKUserData);
@@ -697,7 +698,11 @@ begin
       aUser.Number := PUser.ID;
       aUser.Name := PUser.Name;
       aUser.Password := PUser.Password;
+      aUser.Role := PUser.Role;
       aUser.UserID := PUser.UserID;
+      aUser.Card := PUser.Card;
+      aUser.Group := PUser.Group;
+      aUser.TimeZone := PUser.TimeZone;
       Users.Add(aUser);
       Inc(PUser);
       Dec(i);
@@ -722,9 +727,9 @@ CMD_ATTLOG_RRQ
 Users
 CMD_USERTEMP_RRQ
 72
-0100 00 31323300 00000000 5A616865720000000000000000000000000000000000000000000000 010000 010000000000 310000000000000000000000000000000000000000000000
+0100 00 31323300 00000000 5A616865720000000000000000000000000000000000000000000000 0100 00 010000000000 310000000000000000000000000000000000000000000000
 02000000323300000000004F6D6172000000000000000000000000000000000000000000000000010000010000000000320000000000000000000000000000000000000000000000
-03000003233000000000041796100000000000000000000000000000000000000000000000000010000010000000000330000000000000000000000000000000000000000000000
+030000003233000000000041796100000000000000000000000000000000000000000000000000010000010000000000330000000000000000000000000000000000000000000000
 04000000323300000000004C696E61000000000000000000000000000000000000000000000000010000010000000000340000000000000000000000000000000000000000000000
 050000343536000000000048756461000000000000000000000000000000000000000000000000010000010000000000350000000000000000000000000000000000000000000000
 }
