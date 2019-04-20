@@ -2,27 +2,27 @@
 <CONFIG>
   <ProjectSession>
     <PathDelim Value="\"/>
-    <Version Value="11"/>
+    <Version Value="12"/>
     <BuildModes Active="Default"/>
-    <Units Count="22">
+    <Units Count="27">
       <Unit0>
         <Filename Value="zkt.lpr"/>
         <IsPartOfProject Value="True"/>
         <IsVisibleTab Value="True"/>
-        <TopLine Value="30"/>
-        <CursorPos X="27" Y="60"/>
-        <UsageCount Value="78"/>
+        <TopLine Value="25"/>
+        <CursorPos X="150" Y="50"/>
+        <UsageCount Value="82"/>
         <Loaded Value="True"/>
       </Unit0>
       <Unit1>
         <Filename Value="..\zktClients.pas"/>
         <IsPartOfProject Value="True"/>
         <EditorIndex Value="1"/>
-        <TopLine Value="689"/>
-        <CursorPos X="20" Y="714"/>
-        <UsageCount Value="75"/>
+        <TopLine Value="742"/>
+        <CursorPos X="20" Y="767"/>
+        <UsageCount Value="79"/>
         <Bookmarks Count="1">
-          <Item0 X="21" Y="146" ID="1"/>
+          <Item0 X="15" Y="149" ID="1"/>
         </Bookmarks>
         <Loaded Value="True"/>
       </Unit1>
@@ -32,7 +32,7 @@
         <EditorIndex Value="-1"/>
         <TopLine Value="63"/>
         <CursorPos X="25" Y="63"/>
-        <UsageCount Value="73"/>
+        <UsageCount Value="77"/>
         <Bookmarks Count="1">
           <Item0 X="5" Y="654" ID="2"/>
         </Bookmarks>
@@ -72,10 +72,9 @@
       </Unit6>
       <Unit7>
         <Filename Value="..\..\..\..\..\programs\fpc\3.0\src\rtl\inc\systemh.inc"/>
-        <EditorIndex Value="-1"/>
-        <TopLine Value="748"/>
-        <CursorPos X="11" Y="773"/>
-        <UsageCount Value="16"/>
+        <EditorIndex Value="6"/>
+        <UsageCount Value="17"/>
+        <Loaded Value="True"/>
       </Unit7>
       <Unit8>
         <Filename Value="..\..\..\socket\source\mnIRCClients.pas"/>
@@ -155,15 +154,16 @@
       </Unit17>
       <Unit18>
         <Filename Value="..\..\..\..\..\programs\fpc\3.0\src\rtl\objpas\sysutils\sysunih.inc"/>
-        <EditorIndex Value="-1"/>
+        <EditorIndex Value="2"/>
         <TopLine Value="20"/>
-        <CursorPos X="19" Y="66"/>
-        <UsageCount Value="6"/>
+        <CursorPos X="10" Y="64"/>
+        <UsageCount Value="11"/>
+        <Loaded Value="True"/>
       </Unit18>
       <Unit19>
         <Filename Value="..\..\mnClasses.pas"/>
-        <EditorIndex Value="2"/>
-        <UsageCount Value="17"/>
+        <EditorIndex Value="9"/>
+        <UsageCount Value="19"/>
         <Loaded Value="True"/>
       </Unit19>
       <Unit20>
@@ -180,127 +180,165 @@
         <CursorPos X="20" Y="4362"/>
         <UsageCount Value="12"/>
       </Unit21>
+      <Unit22>
+        <Filename Value="..\..\mnUtils.pas"/>
+        <EditorIndex Value="8"/>
+        <TopLine Value="154"/>
+        <CursorPos X="83" Y="154"/>
+        <UsageCount Value="12"/>
+        <Loaded Value="True"/>
+      </Unit22>
+      <Unit23>
+        <Filename Value="..\..\..\..\..\programs\fpc\3.0\src\packages\rtl-objpas\src\inc\strutils.pp"/>
+        <EditorIndex Value="7"/>
+        <TopLine Value="1922"/>
+        <CursorPos X="11" Y="1924"/>
+        <UsageCount Value="12"/>
+        <Loaded Value="True"/>
+      </Unit23>
+      <Unit24>
+        <Filename Value="..\..\..\..\..\programs\fpc\3.0\src\rtl\objpas\sysutils\sysuni.inc"/>
+        <EditorIndex Value="3"/>
+        <TopLine Value="494"/>
+        <CursorPos X="43" Y="496"/>
+        <UsageCount Value="11"/>
+        <Loaded Value="True"/>
+      </Unit24>
+      <Unit25>
+        <Filename Value="..\..\..\..\..\programs\fpc\3.0\src\rtl\objpas\sysutils\sysencodingh.inc"/>
+        <EditorIndex Value="4"/>
+        <TopLine Value="46"/>
+        <CursorPos X="14" Y="71"/>
+        <UsageCount Value="11"/>
+        <Loaded Value="True"/>
+      </Unit25>
+      <Unit26>
+        <Filename Value="..\..\..\..\..\programs\fpc\3.0\src\rtl\objpas\sysutils\sysencoding.inc"/>
+        <EditorIndex Value="5"/>
+        <TopLine Value="224"/>
+        <CursorPos X="3" Y="232"/>
+        <UsageCount Value="11"/>
+        <Loaded Value="True"/>
+      </Unit26>
     </Units>
     <JumpHistory Count="30" HistoryIndex="29">
       <Position1>
         <Filename Value="..\zktClients.pas"/>
-        <Caret Line="618" Column="36" TopLine="583"/>
+        <Caret Line="699" Column="31" TopLine="674"/>
       </Position1>
       <Position2>
         <Filename Value="..\zktClients.pas"/>
-        <Caret Line="453" Column="57" TopLine="426"/>
+        <Caret Line="686" Column="37" TopLine="673"/>
       </Position2>
       <Position3>
         <Filename Value="..\zktClients.pas"/>
-        <Caret Line="691" Column="54" TopLine="656"/>
+        <Caret Line="699" Column="30" TopLine="688"/>
       </Position3>
       <Position4>
         <Filename Value="..\zktClients.pas"/>
-        <Caret Line="245" Column="14" TopLine="222"/>
+        <Caret Line="792" Column="22" TopLine="772"/>
       </Position4>
       <Position5>
         <Filename Value="..\zktClients.pas"/>
-        <Caret Line="660" Column="187" TopLine="646"/>
       </Position5>
       <Position6>
         <Filename Value="..\zktClients.pas"/>
-        <Caret Line="732" Column="2" TopLine="682"/>
+        <Caret Line="426" Column="14" TopLine="383"/>
       </Position6>
       <Position7>
         <Filename Value="..\zktClients.pas"/>
-        <Caret Line="246" Column="5" TopLine="227"/>
+        <Caret Line="429" Column="10" TopLine="386"/>
       </Position7>
       <Position8>
         <Filename Value="..\zktClients.pas"/>
-        <Caret Line="669" Column="19" TopLine="647"/>
+        <Caret Line="715" TopLine="672"/>
       </Position8>
       <Position9>
         <Filename Value="..\zktClients.pas"/>
-        <Caret Line="76" Column="14" TopLine="59"/>
+        <Caret Line="743" TopLine="702"/>
       </Position9>
       <Position10>
-        <Filename Value="zkt.lpr"/>
-        <Caret Line="39" Column="16" TopLine="2"/>
+        <Filename Value="..\zktClients.pas"/>
+        <Caret Line="770" Column="22" TopLine="745"/>
       </Position10>
       <Position11>
-        <Filename Value="..\zktClients.pas"/>
-        <Caret Line="245" Column="15" TopLine="221"/>
+        <Filename Value="zkt.lpr"/>
+        <Caret Line="71" Column="72" TopLine="41"/>
       </Position11>
       <Position12>
         <Filename Value="..\zktClients.pas"/>
-        <Caret Line="636" Column="3" TopLine="633"/>
+        <Caret Line="790" Column="3" TopLine="759"/>
       </Position12>
       <Position13>
         <Filename Value="..\zktClients.pas"/>
-        <Caret Line="233" Column="14" TopLine="208"/>
+        <Caret Line="819" Column="87" TopLine="771"/>
       </Position13>
       <Position14>
         <Filename Value="..\zktClients.pas"/>
-        <Caret Line="487" Column="13" TopLine="482"/>
+        <Caret Line="148" Column="5" TopLine="125"/>
       </Position14>
       <Position15>
         <Filename Value="..\zktClients.pas"/>
-        <Caret Line="231" Column="14" TopLine="206"/>
+        <Caret Line="822" Column="2" TopLine="772"/>
       </Position15>
       <Position16>
         <Filename Value="..\zktClients.pas"/>
-        <Caret Line="96" Column="56" TopLine="87"/>
+        <Caret Line="154" TopLine="126"/>
       </Position16>
       <Position17>
         <Filename Value="..\zktClients.pas"/>
-        <Caret Line="701" Column="17" TopLine="685"/>
+        <Caret Line="821" Column="88" TopLine="785"/>
       </Position17>
       <Position18>
         <Filename Value="..\zktClients.pas"/>
-        <Caret Line="249" Column="35" TopLine="223"/>
       </Position18>
       <Position19>
         <Filename Value="..\zktClients.pas"/>
-        <Caret Line="716" Column="3" TopLine="691"/>
+        <Caret Line="219" Column="20" TopLine="176"/>
       </Position19>
       <Position20>
         <Filename Value="..\zktClients.pas"/>
-        <Caret Line="248" Column="14" TopLine="225"/>
+        <Caret Line="413" Column="28" TopLine="370"/>
       </Position20>
       <Position21>
         <Filename Value="..\zktClients.pas"/>
-        <Caret Line="689" TopLine="680"/>
+        <Caret Line="486" Column="14" TopLine="444"/>
       </Position21>
       <Position22>
         <Filename Value="..\zktClients.pas"/>
-        <Caret Line="249" Column="14" TopLine="224"/>
+        <Caret Line="836" Column="2" TopLine="786"/>
       </Position22>
       <Position23>
         <Filename Value="..\zktClients.pas"/>
-        <Caret Line="716" Column="25" TopLine="691"/>
+        <Caret Line="827" TopLine="786"/>
       </Position23>
       <Position24>
         <Filename Value="..\zktClients.pas"/>
-        <Caret Line="55" Column="3" TopLine="30"/>
+        <Caret Line="815" Column="89" TopLine="786"/>
       </Position24>
       <Position25>
         <Filename Value="..\zktClients.pas"/>
-        <Caret Line="71" Column="15" TopLine="32"/>
+        <Caret Line="149" Column="15" TopLine="126"/>
       </Position25>
       <Position26>
         <Filename Value="..\zktClients.pas"/>
-        <Caret Line="716" Column="36" TopLine="691"/>
+        <Caret Line="825" Column="2" TopLine="775"/>
       </Position26>
       <Position27>
         <Filename Value="..\zktClients.pas"/>
-        <Caret Line="708" Column="7" TopLine="691"/>
+        <Caret Line="153" Column="7" TopLine="124"/>
       </Position27>
       <Position28>
-        <Filename Value="zkt.lpr"/>
-        <Caret Line="69" Column="27" TopLine="27"/>
+        <Filename Value="..\zktClients.pas"/>
+        <Caret Line="744" Column="13" TopLine="719"/>
       </Position28>
       <Position29>
         <Filename Value="..\zktClients.pas"/>
-        <Caret Line="716" Column="5" TopLine="691"/>
+        <Caret Line="178" Column="18" TopLine="153"/>
       </Position29>
       <Position30>
-        <Filename Value="zkt.lpr"/>
-        <Caret Line="60" Column="3" TopLine="30"/>
+        <Filename Value="..\zktClients.pas"/>
+        <Caret Line="767" Column="20" TopLine="742"/>
       </Position30>
     </JumpHistory>
     <RunParams>
