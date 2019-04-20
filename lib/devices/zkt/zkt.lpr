@@ -81,7 +81,7 @@ begin
         cmdUsers : ListUsers;
         cmdSetUser :
         begin
-            if Client.SetUser(6, '6', 'Tester') then
+            if Client.SetUser(10, '10', 'Belal') then
               WriteLn('Added successfull')
             else
               WriteLn('Add failed');

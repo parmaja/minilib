@@ -32,6 +32,7 @@ type
     soKeepIfReadTimeout, //Keep socket if read timeout without error
     soSafeConnect, //Do not raise expcetion on connect
     soSetReadTimeout, //Set socket read timout
+    //soDontWaitBeforeRead, //
     soConnectTimeout //Connect will use Timeout to wait it
     //soBroadcast, soDebug, soDontLinger, soDontRoute, soOOBInLine, soAcceptConn
     );
