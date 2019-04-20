@@ -197,6 +197,7 @@ type
     procedure Clear;
     procedure Add(Value: Byte); overload;
     procedure Add(Value: Word); overload;
+    procedure Add(Value: DWord); overload;
     procedure Add(Value: AnsiString); overload;
     procedure Add(Value: AnsiString; PadSize: Integer; PadChar: AnsiChar = #0); overload;
     procedure Add(Value: TBytes); overload;
@@ -204,6 +205,7 @@ type
     procedure AddBuffer(const Value; Size: Integer); overload;
     //Index is byte offset
     function GetWord(Index: Integer): WORD; overload;
+    function GetDWord(Index: Integer): DWORD; overload;
     function Count: Integer;
     function ToString: ansistring;
     procedure Dump;
@@ -255,6 +257,8 @@ type
     function GetUsers(Users: TZKUsers): Boolean;
     function SetUser(User: TZKUser): Boolean; overload;
     function SetUser(UserNumber: Integer; UserID: string; UserName: string): Boolean; overload;
+    function SetTime(ATime: TDateTime): Boolean;
+    function GetTime(out ATime: TDateTime): Boolean;
     property Host: string read FHost;
     property Port: string read FPort;
 
@@ -320,6 +324,15 @@ begin
   Self[index] := hi(Value);
 end;
 
+procedure TByteHelper.Add(Value: DWord);
+var
+  index: integer;
+begin
+  index := Length(Self);
+  SetLength(Self, Index + SizeOf(Value));
+  PDWORD(@Self[index])^ := Value;
+end;
+
 procedure TByteHelper.Add(Value: AnsiString);
 var
   i, index: integer;
@@ -376,7 +389,12 @@ end;
 
 function TByteHelper.GetWord(Index: Integer): WORD;
 begin
-  Result := Self[Index + 1] shl 8 or Self[Index];
+  Result := PWord(@Self[Index])^;
+end;
+
+function TByteHelper.GetDWord(Index: Integer): DWORD;
+begin
+  Result := PDWord(@Self[Index])^;
 end;
 
 function TByteHelper.Count: Integer;
@@ -430,7 +448,7 @@ var
 begin
   Sum := 0;
   i := Offset;
-  c := Buf.Count;
+  c := Buf.Count - Offset;
   while i < Buf.Count - 1 do //yes <= not <
   begin
     w := Buf[i + 1] shl 8 or Buf[i];
@@ -475,7 +493,6 @@ function TZKClient.ExecCommand(Command, ReplyId: Word; CommandData: TBytes; out 
 var
   Packet: TBytes;
   CMD: Integer;
-  //SizeInfo: TZKDataSize;
   aSize: DWord;
 begin
   FLastError := '';
@@ -662,7 +679,7 @@ begin
     Result := '';
 end;
 
-function DecodeTime(ATime: DWORD): TDateTime;
+function ZKDecodeTime(ATime: DWORD): TDateTime;
 var
   t: TSystemTime;
 begin
@@ -674,10 +691,18 @@ begin
     ATime := ATime div 24;
     t.Day := ATime mod 31 + 1;
     ATime := ATime div 31;
-    t.Month := ATime mod 12+1;
+    t.Month := ATime mod 12 + 1;
     ATime := ATime div 12;
     t.Year := ATime + 2000;
     Result := SystemTimeToDateTime(t);
+end;
+
+function ZKEncodeTime(ATime: TDateTime): DWord;
+var
+  t: TSystemTime;
+begin
+  DateTimeToSystemTime(ATime, t);
+  Result := ((t.year mod 100) * 12 * 31 + ((t.month - 1) * 31) + t.day - 1) * (24 * 60 * 60) + (t.hour * 60 + t.minute) * 60 + t.second;
 end;
 
 procedure TZKClient.DisableDevice;
@@ -714,7 +739,7 @@ begin
       aAttendance := TZKAttendance.Create;
       aAttendance.Number:= PAtt.Number;
       aAttendance.UserID := PAtt.UserID;
-      aAttendance.Time := DecodeTime(PAtt.Time);
+      aAttendance.Time := ZKDecodeTime(PAtt.Time);
       aAttendance.State := PAtt.State;
       aAttendance.WorkCode := PAtt.WorkCode;
       aAttendance.Verified := PAtt.Verified;
@@ -770,10 +795,9 @@ begin
   UserData.Password := User.Password;
   UserData.Role := User.Role;
   UserData.UserID := User.UserID;
+  UserData.Group := User.Group;
   UserData.Card := 1;
-  //UserData.Group := 1;
-  //UserData.Group := User.Group;
-  //UserData.TimeZone := User.TimeZone;
+  UserData.TimeZone := User.TimeZone;
   CommandBytes.AddBuffer(UserData, SizeOf(TZKUserData));
   //CommandBytes.DumpHex(72);
   Result := ExecCommand(CMD_USER_WRQ, NewReplayID, CommandBytes);
@@ -792,6 +816,27 @@ begin
   finally
     aUser.Free;
   end;
+end;
+
+function TZKClient.SetTime(ATime: TDateTime): Boolean;
+var
+  CommandData: TBytes;
+begin
+  CommandData := nil;
+  CommandData.Add(ZKEncodeTime(ATime));
+  Result := ExecCommand(CMD_SET_TIME, NewReplayID, CommandData);
+end;
+
+function TZKClient.GetTime(out ATime: TDateTime): Boolean;
+var
+  Data: TBytes;
+  Payload: TZKPayload;
+begin
+  Result := ExecCommand(CMD_GET_TIME, NewReplayID, nil, Payload, Data);
+  if Result then
+    ATime := ZKDecodeTime(Data.GetDWord(0))
+  else
+    ATime := 0;
 end;
 
 end.
@@ -817,27 +862,7 @@ CMD_USERTEMP_RRQ
 04000000323300000000004C696E61000000000000000000000000000000000000000000000000010000010000000000340000000000000000000000000000000000000000000000
 050000343536000000000048756461000000000000000000000000000000000000000000000000010000010000000000350000000000000000000000000000000000000000000000
 
-TZKUserData = packed record
-  ID: WORD;
-  Role: Byte;
-  Password: array[0..7] of char;
-  Name: array[0..27] of char;
-  Card: array[0..4] of char; //NotSure
-
-  Group: Word; //NotSure
-  TimeZone: Word; //NotSure
-
-  UserID: array[0..7] of char;
-  Unknown: array[0..15] of char;
-end;
-050000343536000000000048756461000000000000000000000000000000000000000000000000010000010000000000350000000000000000000000000000000000000000000000
-09000000353600353637385A415A41390000000000000000000000000000000000000000000000010000000000000000390000000000000000000000000000000000000000000000
-09000000000000000000005a415a41390000000000000000000000000000000000000000000000010000000000000000390000000000000000000000000000000000000000000000
-060000000000000000000054657374657200000000000000000000000000000000000000000000010000010000000000360000000000000000000000000000000000000000000000
-
-PHP
-5050827d5000000008007455bcbb020009000000000000000000005a415a41390000000000000000000000000000000000000000000000010000000000000000390000000000000000000000000000000000000000000000
-Mine
-5050827D5000000008007555BCBB020009000000000000000000005A415A41390000000000000000000000000000000000000000000000010000000000000000390000000000000000000000000000000000000000000000
 
 }
+
+

@@ -55,17 +55,20 @@ var
     end;
   end;
 type
-  TAppCmd = (cmdNone, cmdVersion, cmdTestVoice, cmdAttLog, cmdUsers, cmdSetUser);
+  TAppCmd = (cmdNone, cmdVersion, cmdTestVoice, cmdAttLog, cmdUsers, cmdSetUser, cmdSetTime, cmdGetTime);
 var
   cmd: TAppCmd;
   cmdStr: string;
+  ATime: TDateTime;
 begin
   repeat
     WriteLn(Ord(cmdVersion), ' - Version');
     WriteLn(Ord(cmdTestVoice), ' - Test Voice');
-    WriteLn(Ord(cmdUsers), ' - List Users');
     WriteLn(Ord(cmdAttLog), ' - List Attendance Log');
+    WriteLn(Ord(cmdUsers), ' - List Users');
     WriteLn(Ord(cmdSetUser), ' - Set tester User');
+    WriteLn(Ord(cmdSetTime), ' - Set Time to now');
+    WriteLn(Ord(cmdGetTime), ' - Get Time');
     Write('Enter Command: ');
     Readln(cmdStr);
     cmd := TAppCmd(StrToIntDef(cmdStr, 0));
@@ -73,15 +76,21 @@ begin
     begin
       Client := TZKClient.Create('192.168.1.201');
       Client.Connect;
-    //  WriteLn(Client.GetVersion);
       case cmd of
         cmdVersion: WriteLn(Client.GetVersion);
         cmdTestVoice: Client.TestVoice;
         cmdAttLog: ListAttendances;
         cmdUsers : ListUsers;
+        cmdSetTime:
+          Client.SetTime(Now);
+        cmdGetTime:
+        begin
+          Client.GetTime(ATime);
+          WriteLn(FormatDateTime('YYYY-MM-DD HH:NN', ATime));
+        end;
         cmdSetUser :
         begin
-            if Client.SetUser(10, '10', 'Belal') then
+            if Client.SetUser(10, '10', 'Tester') then
               WriteLn('Added successfull')
             else
               WriteLn('Add failed');
