@@ -6,16 +6,16 @@ uses {$IFDEF UNIX} {$IFDEF UseCThreads}
   cthreads, {$ENDIF} {$ENDIF}
   //Crt,
   SysUtils,
+  StrUtils,
   Classes,
   zktClients,
   mnStreams;
 
 var
   Client: TZKClient;
-  Users: TZKUsers;
-  i: Integer;
   procedure ListAttendances;
   var
+    i: Integer;
     Attendances: TZKAttendances;
   begin
     Attendances:=TZKAttendances.Create;
@@ -32,17 +32,12 @@ var
       FreeAndNil(Attendances);
     end;
   end;
-begin
-  Client := TZKClient.Create('192.168.1.201');
-  Client.Connect;
-  WriteLn(Client.GetVersion);
-  Client.DisableDevice;
-  //Client.TestVoice;
-  try
-    ListAttendances;
-    WriteLn('Press any to exit');
-    ReadLn();
 
+  procedure ListUsers;
+  var
+    i: Integer;
+    Users: TZKUsers;
+  begin
     Users := TZKUsers.Create;
     Client.GetUsers(Users);
     try
@@ -53,12 +48,41 @@ begin
     finally
       FreeAndNil(Users);
     end;
-  finally
-    Client.EnableDevice;
   end;
-  Client.Free;
-  WriteLn();
-  WriteLn('Press any to exit');
-  ReadLn();
+type
+  TAppCmd = (cmdNone, cmdVersion, cmdTestVoice, cmdAttLog, cmdUsers);
+var
+  cmd: TAppCmd;
+  cmdStr: string;
+begin
+  repeat
+    WriteLn(Ord(cmdVersion), ' - Version');
+    WriteLn(Ord(cmdTestVoice), ' - Test Voice');
+    WriteLn(Ord(cmdUsers), ' - List Users');
+    WriteLn(Ord(cmdAttLog), ' - List Attendance Log');
+    Write('Enter Command: ');
+    Readln(cmdStr);
+    cmd := TAppCmd(StrToIntDef(cmdStr, 0));
+    if cmd > cmdNone then
+    begin
+      Client := TZKClient.Create('192.168.1.201');
+      Client.Connect;
+    //  WriteLn(Client.GetVersion);
+      try
+        Client.DisableDevice;
+        case cmd of
+          cmdVersion: WriteLn(Client.GetVersion);
+          cmdTestVoice: Client.TestVoice;
+          cmdAttLog: ListAttendances;
+          cmdUsers : ListUsers;
+        end;
+      finally
+        Client.EnableDevice;
+      end;
+      Client.Free;
+      WriteLn();
+      WriteLn('Press any to exit');
+    end;
+  until cmd = cmdNone;
 end.
 

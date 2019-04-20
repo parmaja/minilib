@@ -43,11 +43,11 @@
         <IsPartOfProject Value="True"/>
       </Unit0>
       <Unit1>
-        <Filename Value="..\..\..\..\minilib\lib\devices\zktClients.pas"/>
+        <Filename Value="..\zktClients.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit1>
       <Unit2>
-        <Filename Value="..\..\..\..\minilib\lib\mnStreams.pas"/>
+        <Filename Value="..\..\mnStreams.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit2>
     </Units>

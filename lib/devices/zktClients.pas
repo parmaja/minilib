@@ -69,7 +69,7 @@ const
   CMD_CLEAR_PHOTO_BY_TIME =	2015;
   CMD_GET_PHOTONAMES_BY_TIME = 2016;
 
-  CMD_USER_WRQ = 8;
+  CMD_USER_WRQ = 8; //aka CMD_SET_USER
   CMD_USERTEMP_RRQ = 9;
   CMD_USERTEMP_WRQ = 10;
   CMD_OPTIONS_RRQ = 11;
@@ -246,6 +246,7 @@ type
     procedure TestVoice;
     function GetAddendances(Attendances: TZKAttendances): Boolean;
     function GetUsers(Users: TZKUsers): Boolean;
+    function SetUser(User: TZKUser): Boolean;
     property Host: string read FHost;
     property Port: string read FPort;
   end;
@@ -708,6 +709,11 @@ begin
       Dec(i);
     end;
   end;
+end;
+
+function TZKClient.SetUser(User: TZKUser): Boolean;
+begin
+  //Result := ExecCommand(CMD_USER_WRQ, NewReplayID, '', Payload, Data);
 end;
 
 end.
