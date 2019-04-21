@@ -60,17 +60,8 @@ var
   cmd: TAppCmd;
   cmdStr: string;
   ATime: TDateTime;
-  d: DWord;
 begin
   repeat
-    //d := TZKClient.GetCommKey(999999, 1234);
-    //WriteLn(d);
-    //WriteLn(IntToHex(d, 4));
-    //4f884f53
-    //03A013C5 for $ad5d
-    //b9 a5 ea 43  for 0 session a5 e2
-    //8a 16 d9 70   for 1 session a5 e2
-
     WriteLn(Ord(cmdVersion), ' - Version');
     WriteLn(Ord(cmdTestVoice), ' - Test Voice');
     WriteLn(Ord(cmdAttLog), ' - List Attendance Log');

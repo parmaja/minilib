@@ -537,7 +537,6 @@ begin
       if (Command = CMD_CONNECT) then
       begin
         FSessionId := Payload.Header.SessionID;
-        WriteLn(IntToHex(FSessionId, 4));
       end;
       case CMD of
         CMD_ACK_OK:
@@ -685,7 +684,7 @@ end;
 
 function TZKClient.Recv: TBytes;
 begin
-  Result := FSocket.ReadBytes(4 + 8 + 1024); //Start, Header, Data buffer
+  Result := FSocket.ReadBytes(4 + 8 + 1024);
 end;
 
 function TZKClient.ReceiveData(out Payload: TZKPayload; out Data: TBytes): Boolean;
@@ -749,7 +748,7 @@ begin
     begin
       if Result then
       begin
-        CommandData.Clear;
+        CommandData := nil;
         CommandData := ToBytes('SDKBuild=1'#0);
         Result := ExecCommand(CMD_OPTIONS_WRQ, NewReplyID, CommandData);
       end;
