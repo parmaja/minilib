@@ -55,7 +55,7 @@ var
     end;
   end;
 type
-  TAppCmd = (cmdNone, cmdVersion, cmdTestVoice, cmdAttLog, cmdUsers, cmdSetUser, cmdSetTime, cmdGetTime);
+  TAppCmd = (cmdNone, cmdVersion, cmdTestVoice, cmdAttLog, cmdUsers, cmdSetUser, cmdSetTime, cmdGetTime, cmdClearAttLog);
 var
   cmd: TAppCmd;
   cmdStr: string;
@@ -69,6 +69,7 @@ begin
     WriteLn(Ord(cmdSetUser), ' - Set User');
     WriteLn(Ord(cmdSetTime), ' - Set Time to now');
     WriteLn(Ord(cmdGetTime), ' - Get Time');
+    WriteLn(Ord(cmdClearAttLog), ' - Clear AttLog');
     Write('Enter Command: ');
     Readln(cmdStr);
     cmd := TAppCmd(StrToIntDef(cmdStr, 0));
@@ -92,12 +93,17 @@ begin
             Client.GetTime(ATime);
             WriteLn(FormatDateTime('YYYY-MM-DD HH:NN', ATime));
           end;
-          cmdSetUser :
+          cmdSetUser:
           begin
               if Client.SetUser(10, '10', 'Tester') then
                 WriteLn('Added successfull')
               else
                 WriteLn('Add failed');
+          end;
+          cmdClearAttLog:
+          begin
+            if Client.ClearAttLog then
+              WriteLn('Clear successfull')
           end;
         end;
         Client.Free;

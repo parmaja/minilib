@@ -280,6 +280,7 @@ type
     function SetUser(UserNumber: Integer; UserID: string; UserName: string): Boolean; overload;
     function SetTime(ATime: TDateTime): Boolean;
     function GetTime(out ATime: TDateTime): Boolean;
+    function ClearAttLog: Boolean;
     property Host: string read FHost;
     property Port: string read FPort;
     property Key: DWord read FKey;
@@ -936,6 +937,11 @@ begin
     ATime := ZKDecodeTime(Data.GetDWord(0))
   else
     ATime := 0;
+end;
+
+function TZKClient.ClearAttLog: Boolean;
+begin
+  Result := ExecCommand(CMD_CLEAR_ATTLOG, NewReplyID);
 end;
 
 end.
