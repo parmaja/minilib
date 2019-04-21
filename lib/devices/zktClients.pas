@@ -10,11 +10,13 @@ unit zktClients;
  *
  *}
 {
-  https://github.com/adrobinoga/zk-protocol/blob/master/protocol.md
-  https://www.developpez.net/forums/d1588609/environnements-developpement/delphi/composants-vcl/composant-non-visuel-pullsdk-ZKeko/
-  https://www.board4all.biz/threads/question-how-to-control-board-inbio-160-with-delphi.624395/
-  https://github.com/RK-Rohan/ZK2OB/tree/master/zklib
-  https://searchcode.com/file/47825527/zkem/zkem.py
+  Many thanks to
+    https://github.com/carlosang2/ZKLibrary/blob/master/zklibrary.php
+    https://github.com/adrobinoga/zk-protocol/blob/master/protocol.md
+    https://www.developpez.net/forums/d1588609/environnements-developpement/delphi/composants-vcl/composant-non-visuel-pullsdk-ZKeko/
+    https://www.board4all.biz/threads/question-how-to-control-board-inbio-160-with-delphi.624395/
+    https://github.com/RK-Rohan/ZK2OB/tree/master/zklib
+    https://searchcode.com/file/47825527/zkem/zkem.py
 
   Test on ZKTeco 350 "Ver 6.60 Sep 23 2015"
 }
@@ -33,7 +35,7 @@ uses
   mnClasses, mnClients, mnSockets, mnSocketStreams;
 
 const
-  CMD_CONNECT = 1000;
+  CMD_CONNECT = 1000; //03E8
   CMD_EXIT = 1001;
   CMD_ENABLEDEVICE = 1002;
   CMD_DISABLEDEVICE = 1003;
@@ -42,9 +44,12 @@ const
   CMD_SLEEP = 1006;
   CMD_RESUME = 1007;
   CMD_TEST_TEMP = 1011;
+  CMD_REFRESHDATA = 1013;
   CMD_TESTVOICE = 1017;
   CMD_VERSION = 1100;
   CMD_CHANGE_SPEED = 1101;
+  CMD_AUTH = 1102; //044E
+
 
   CMD_PREPARE_DATA = 1500;
   CMD_DATA = 1501;
@@ -62,6 +67,12 @@ const
   CMD_ACK_OK = 2000;
   CMD_ACK_ERROR = 2001;
   CMD_ACK_DATA = 2002;
+  CMD_ACK_RETRY = 2003;
+  CMD_ACK_REPEAT = 2004;
+  CMD_ACK_UNAUTH = 2005;
+  CMD_ACK_ERROR_DATA = $fffb;
+  CMD_ACK_ERROR_INIT = $fffc;
+  CMD_ACK_ERROR_CMD = $fffd;
   CMD_ACK_UNKNOWN	= $FFFF;	{ Return Unknown Command }
 
   CMD_GET_PHOTO_COUNT = 2013;
@@ -91,6 +102,14 @@ const
   CMD_GET_TIME = 201;
   CMD_SET_TIME = 202;
 
+  FCT_ATTLOG = 1;
+  FCT_FINGERTMP = 2;
+  FCT_OPLOG = 4;
+  FCT_USER = 5;
+  FCT_SMS = 6;
+  FCT_UDATA = 7;
+  FCT_WORKCODE = 8;
+
   LEVEL_USER = 0;          // 0000 0000
   LEVEL_ENROLLER = 2;       // 0000 0010
   LEVEL_MANAGER = 12;      // 0000 1100
@@ -109,7 +128,7 @@ type
     Commnad: WORD;
     CheckSum: WORD;
     SessionID: WORD; //or some data on respond
-    ReplayID: WORD;
+    ReplyID: WORD;
   end;
 
   PZKHeader = ^TZKHeader;
@@ -221,6 +240,7 @@ type
   TZKClient = class(TObject)
   private
     FHost: string;
+    FKey: DWord;
     FLastError: string;
     FPort: string;
   protected
@@ -230,10 +250,10 @@ type
     FUserData: TBytes;
     FAttendanceData: TBytes;
     FReplyId: Integer;
-    FSessionId: Integer;
+    FSessionId: WORD;
     procedure Send(Buf: TBytes);
     function Recv: TBytes;
-    function NewReplayID: Integer;
+    function NewReplyID: Integer;
     function CreateSocket: TZKSocketStream; virtual;
     function CheckSum(Buf: TBytes; Offset: Integer = 0): Word;
     function CreatePacket(Command, SessionId, ReplyId: Word; CommandData: TBytes): TBytes;
@@ -243,12 +263,13 @@ type
     function ExecCommand(Command, ReplyId: Word): Boolean; overload;
     function ReceiveData(out Payload: TZKPayload; out Data: TBytes): Boolean; deprecated;
     function ReceiveBuffer(var Buffer; Size: Integer): Boolean;
-    function ReceiveBytes(Size: Integer; out Data: TBytes): Boolean;
+    function ReceiveBytes(out Data: TBytes; Size: Integer): Boolean;
     function ReceiveHeader(out Payload: TZKPayload): Boolean;
   public
-    constructor Create(vHost: string; vPort: string = '4370'); virtual;
+    class function GetCommKey(Key: DWORD; SessionID: WORD): DWORD;
+    constructor Create(vKey: DWord; vHost: string; vPort: string = '4370'); virtual;
     function Connect: Boolean;
-    procedure Disconnect;
+    function Disconnect: Boolean;
     function GetVersion: string;
     procedure EnableDevice;
     procedure DisableDevice;
@@ -261,6 +282,8 @@ type
     function GetTime(out ATime: TDateTime): Boolean;
     property Host: string read FHost;
     property Port: string read FPort;
+    property Key: DWord read FKey;
+    property SessionID: Word read FSessionID write FSessionID; //todo only readonly
 
     property LastError: string read FLastError;
   end;
@@ -284,7 +307,7 @@ end;
 
 PC->Device
 
-Reply ID is a flag to identify the replayed data from device. So while send data
+Reply ID is a flag to identify the Replyed data from device. So while send data
 to device, let ReplyID++ to keep every cmd have a different id.
 
 |--------|--------|--------|--------|--------|--------|--------|--------|---
@@ -349,11 +372,14 @@ end;
 procedure TByteHelper.Add(Value: AnsiString; PadSize: Integer; PadChar: AnsiChar);
 begin
   Add(Value);
-  PadSize := PadSize - Length(Value);
-  if PadSize < 0 then
-    raise Exception.Create('Bad pad size');
-  if PadSize > 0 then
-    Add(StringOfChar(PadChar, PadSize));
+  if Length(Value) > PadSize then
+    Value := LeftStr(Value, PadSize)
+  else
+  begin
+    PadSize := PadSize - Length(Value);
+    if PadSize > 0 then
+      Add(StringOfChar(PadChar, PadSize));
+  end;
 end;
 
 procedure TByteHelper.Add(Value: TBytes);
@@ -483,7 +509,7 @@ begin
 
   Packet.Header.Commnad := Command;
   Packet.Header.CheckSum := 0;
-  Packet.Header.ReplayID := ReplyId;
+  Packet.Header.ReplyID := ReplyId;
   Packet.Header.SessionID := SessionId;
   c := CheckSum(Result, SizeOf(Packet.Start) + SizeOf(Packet.Size));
   Packet.Header.CheckSum := c;
@@ -494,6 +520,7 @@ var
   Packet: TBytes;
   CMD: Integer;
   aSize: DWord;
+  ACommandData: TBytes;
 begin
   FLastError := '';
   RespondData := nil;
@@ -503,39 +530,67 @@ begin
   Result := ReceiveHeader(Payload);
   if Result then
   begin
-    Result := ReplyId = Payload.Header.ReplayID;
+    Result := ReplyId = Payload.Header.ReplyID;
     if Result then
     begin
       CMD := Payload.Header.Commnad;
+      if (Command = CMD_CONNECT) then
+      begin
+        FSessionId := Payload.Header.SessionID;
+        WriteLn(IntToHex(FSessionId, 4));
+      end;
       case CMD of
         CMD_ACK_OK:
         begin
-          if (Command = CMD_CONNECT) and (FSessionId = 0) then
-            FSessionId := Payload.Header.SessionID;
-          ReceiveBytes(Payload.DataSize, RespondData);
+          ReceiveBytes(RespondData, Payload.DataSize);
         end;
         CMD_ACK_ERROR:
         begin
-          ReceiveBytes(Payload.DataSize, RespondData);
-          FLastError := RespondData.ToString;
+          ReceiveBytes(RespondData, Payload.DataSize);
+          FLastError := 'ZK: ' + RespondData.ToString;
           Result := False;
+        end;
+        CMD_ACK_UNAUTH:
+        begin
+          CommandData := nil;
+          if Key <> 0 then
+          begin
+            ACommandData := nil;
+            ACommandData.Add(GetCommKey(Key, SessionID));
+            Packet := CreatePacket(CMD_AUTH, FSessionId, NewReplyID, ACommandData);
+            Send(Packet);
+            ReceiveHeader(Payload);
+            Result := Payload.Header.Commnad = CMD_ACK_OK;
+          end
+          else
+          begin
+             Result := False;
+             FLastError := 'ZK: Unauth';
+          end;
         end;
         CMD_PREPARE_DATA:
         begin
-          ReceiveBytes(Payload.DataSize, RespondData);
+          ReceiveBytes(RespondData, Payload.DataSize);
           ReceiveHeader(Payload);
           Result := Payload.Header.Commnad = CMD_DATA;
           if Result then
           begin
             ReceiveBuffer(aSize, SizeOf(aSize));
-            ReceiveBytes(aSize, RespondData);
+            ReceiveBytes(RespondData, aSize);
             ReceiveHeader(Payload);
-            Result := (Payload.Header.ReplayID = ReplyId) and (Payload.Header.Commnad = CMD_ACK_OK);
+            Result := (Payload.Header.ReplyID = ReplyId) and (Payload.Header.Commnad = CMD_ACK_OK);
           end;
+        end;
+        else
+        begin
+          FLastError := 'ZK: No Ack';
+          Result := False;
         end;
       end;
     end;
-  end;
+  end
+  else
+    FLastError := 'ZK: Timeout';
 end;
 
 function TZKClient.ExecCommand(Command, ReplyId: Word; CommandData: TBytes; out RespondData: TBytes): Boolean;
@@ -569,10 +624,10 @@ begin
   Result := c > 0;
 end;
 
-function TZKClient.NewReplayID: Integer;
+function TZKClient.NewReplyID: Integer;
 begin
-  Inc(FReplyId);
   Result := FReplyId;
+  Inc(FReplyId);
 end;
 
 function TZKClient.CreateSocket: TZKSocketStream;
@@ -581,12 +636,46 @@ begin
   Result.Timeout := 5000;
 end;
 
-constructor TZKClient.Create(vHost: string; vPort: string);
+constructor TZKClient.Create(vKey: DWord; vHost: string; vPort: string);
 begin
   inherited Create;
   FHost := vHost;
   FPort := vPort;
+  FKey := vKey;
   FStartData := 8;
+end;
+
+class function TZKClient.GetCommKey(Key: DWORD; SessionID: WORD): DWORD;
+var
+  i: Integer;
+  Temp: DWORD;
+  R: array[0..3] of byte absolute Result;
+  T: array[0..3] of byte absolute temp;
+const
+  Ticks = 50;
+begin
+  Result := 0;
+  for i := 0 to 31 do
+  begin
+    if (Key and (1 shl i)) > 0 then
+      Result := (Result shl 1) or 1
+    else
+      Result := (Result shl 1);
+  end;
+  Result := Result + SessionId;
+  Temp := Result;
+  R[0] := T[0] xor ord('Z');
+  R[1] := T[1] xor ord('K');
+  R[2] := T[2] xor ord('S');
+  R[3] := T[3] xor ord('O');
+
+  Result := ((Result and $0000FFFF) shl 16) or ((Result and $FFFF0000) shr 16);
+
+  Temp := Result;
+  R[0] := T[0] xor Ticks;
+  R[1] := T[1] xor Ticks;
+  R[2] := Ticks;
+  R[3] := T[3] xor Ticks;
 end;
 
 procedure TZKClient.Send(Buf: TBytes);
@@ -619,7 +708,7 @@ begin
   end
 end;
 
-function TZKClient.ReceiveBytes(Size: Integer; out Data: TBytes): Boolean;
+function TZKClient.ReceiveBytes(out Data: TBytes; Size: Integer): Boolean;
 var
   c: Integer;
 begin
@@ -643,6 +732,8 @@ begin
 end;
 
 function TZKClient.Connect: Boolean;
+var
+  CommandData: TBytes;
 begin
   FSessionId := 0;
   FReplyId := 0;
@@ -650,30 +741,39 @@ begin
     FSocket := CreateSocket;
 
   FSocket.Connect;
-
   Result := FSocket.Connected;
   if Result then
   begin
-    Result := ExecCommand(CMD_CONNECT, NewReplayID);
+    Result := ExecCommand(CMD_CONNECT, NewReplyID);
+    if Result then
+    begin
+      if Result then
+      begin
+        CommandData.Clear;
+        CommandData := ToBytes('SDKBuild=1'#0);
+        Result := ExecCommand(CMD_OPTIONS_WRQ, NewReplyID, CommandData);
+      end;
+    end;
   end;
 end;
 
-procedure TZKClient.Disconnect;
+function TZKClient.Disconnect: Boolean;
 var
   Data: TBytes;
 begin
-  ExecCommand(CMD_EXIT, NewReplayID, nil, Data);
+  Result := ExecCommand(CMD_EXIT, NewReplyID, nil, Data);
   FSocket.Disconnect;
   FreeAndNil(FSocket);
   FSessionId := 0;
   FReplyId := 0;
+  FLastError := '';
 end;
 
 function TZKClient.GetVersion: string;
 var
   Data: TBytes;
 begin
-  if ExecCommand(CMD_VERSION, NewReplayID, nil, Data) then
+  if ExecCommand(CMD_VERSION, NewReplyID, nil, Data) then
     Result := Data.ToString
   else
     Result := '';
@@ -707,17 +807,17 @@ end;
 
 procedure TZKClient.DisableDevice;
 begin
-  ExecCommand(CMD_DISABLEDEVICE, NewReplayID, ToBytes(#0#0));
+  ExecCommand(CMD_DISABLEDEVICE, NewReplyID, ToBytes(#0#0));
 end;
 
 procedure TZKClient.EnableDevice;
 begin
-  ExecCommand(CMD_ENABLEDEVICE, NewReplayID, ToBytes(#0#0));
+  ExecCommand(CMD_ENABLEDEVICE, NewReplyID, ToBytes(#0#0));
 end;
 
 procedure TZKClient.TestVoice;
 begin
-  ExecCommand(CMD_TESTVOICE, NewReplayID, ToBytes(#0#0));
+  ExecCommand(CMD_TESTVOICE, NewReplyID, ToBytes(#0#0));
 end;
 
 function TZKClient.GetAddendances(Attendances: TZKAttendances): Boolean;
@@ -728,7 +828,7 @@ var
   aAttendance: TZKAttendance;
   i: Integer;
 begin
-  Result := ExecCommand(CMD_ATTLOG_RRQ, NewReplayID, nil, Payload, Data);
+  Result := ExecCommand(CMD_ATTLOG_RRQ, NewReplyID, nil, Payload, Data);
   if Result then
   begin
     //Data.DumpHex(40);
@@ -758,7 +858,7 @@ var
   aUser: TZKUser;
   i: Integer;
 begin
-  Result := ExecCommand(CMD_USERTEMP_RRQ, NewReplayID, nil, Payload, Data);
+  Result := ExecCommand(CMD_USERTEMP_RRQ, NewReplyID, nil, Payload, Data);
   if Result then
   begin
     //Data.DumpHex(72);
@@ -800,7 +900,7 @@ begin
   UserData.TimeZone := User.TimeZone;
   CommandBytes.AddBuffer(UserData, SizeOf(TZKUserData));
   //CommandBytes.DumpHex(72);
-  Result := ExecCommand(CMD_USER_WRQ, NewReplayID, CommandBytes);
+  Result := ExecCommand(CMD_USER_WRQ, NewReplyID, CommandBytes);
 end;
 
 function TZKClient.SetUser(UserNumber: Integer; UserID: string; UserName: string): Boolean;
@@ -824,7 +924,7 @@ var
 begin
   CommandData := nil;
   CommandData.Add(ZKEncodeTime(ATime));
-  Result := ExecCommand(CMD_SET_TIME, NewReplayID, CommandData);
+  Result := ExecCommand(CMD_SET_TIME, NewReplyID, CommandData);
 end;
 
 function TZKClient.GetTime(out ATime: TDateTime): Boolean;
@@ -832,7 +932,7 @@ var
   Data: TBytes;
   Payload: TZKPayload;
 begin
-  Result := ExecCommand(CMD_GET_TIME, NewReplayID, nil, Payload, Data);
+  Result := ExecCommand(CMD_GET_TIME, NewReplyID, nil, Payload, Data);
   if Result then
     ATime := ZKDecodeTime(Data.GetDWord(0))
   else

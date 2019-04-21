@@ -60,13 +60,22 @@ var
   cmd: TAppCmd;
   cmdStr: string;
   ATime: TDateTime;
+  d: DWord;
 begin
   repeat
+    //d := TZKClient.GetCommKey(999999, 1234);
+    //WriteLn(d);
+    //WriteLn(IntToHex(d, 4));
+    //4f884f53
+    //03A013C5 for $ad5d
+    //b9 a5 ea 43  for 0 session a5 e2
+    //8a 16 d9 70   for 1 session a5 e2
+
     WriteLn(Ord(cmdVersion), ' - Version');
     WriteLn(Ord(cmdTestVoice), ' - Test Voice');
     WriteLn(Ord(cmdAttLog), ' - List Attendance Log');
     WriteLn(Ord(cmdUsers), ' - List Users');
-    WriteLn(Ord(cmdSetUser), ' - Set tester User');
+    WriteLn(Ord(cmdSetUser), ' - Set User');
     WriteLn(Ord(cmdSetTime), ' - Set Time to now');
     WriteLn(Ord(cmdGetTime), ' - Get Time');
     Write('Enter Command: ');
@@ -74,31 +83,36 @@ begin
     cmd := TAppCmd(StrToIntDef(cmdStr, 0));
     if cmd > cmdNone then
     begin
-      Client := TZKClient.Create('192.168.1.201');
-      Client.Connect;
-      case cmd of
-        cmdVersion: WriteLn(Client.GetVersion);
-        cmdTestVoice: Client.TestVoice;
-        cmdAttLog: ListAttendances;
-        cmdUsers : ListUsers;
-        cmdSetTime:
-          Client.SetTime(Now);
-        cmdGetTime:
-        begin
-          Client.GetTime(ATime);
-          WriteLn(FormatDateTime('YYYY-MM-DD HH:NN', ATime));
+      Client := TZKClient.Create(999999, '192.168.1.201');
+      if not Client.Connect then
+        WriteLn('Can not connect')
+      else
+      begin
+        WriteLn('Connected');
+        case cmd of
+          cmdVersion: WriteLn(Client.GetVersion);
+          cmdTestVoice: Client.TestVoice;
+          cmdAttLog: ListAttendances;
+          cmdUsers : ListUsers;
+          cmdSetTime:
+            Client.SetTime(Now);
+          cmdGetTime:
+          begin
+            Client.GetTime(ATime);
+            WriteLn(FormatDateTime('YYYY-MM-DD HH:NN', ATime));
+          end;
+          cmdSetUser :
+          begin
+              if Client.SetUser(10, '10', 'Tester') then
+                WriteLn('Added successfull')
+              else
+                WriteLn('Add failed');
+          end;
         end;
-        cmdSetUser :
-        begin
-            if Client.SetUser(10, '10', 'Tester') then
-              WriteLn('Added successfull')
-            else
-              WriteLn('Add failed');
-        end;
+        Client.Free;
+        WriteLn();
+        WriteLn('Press any to exit');
       end;
-      Client.Free;
-      WriteLn();
-      WriteLn('Press any to exit');
     end;
   until cmd = cmdNone;
 end.
