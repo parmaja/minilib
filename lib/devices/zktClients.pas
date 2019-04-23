@@ -5,6 +5,7 @@ unit zktClients;
  * @license   MIT (modified of https://opensource.org/licenses/MIT)
  *            See the file COPYING.MLGPL, included in this distribution,
  * @author    Zaher Dirkey <zaher at parmaja dot com>
+ * @help      Belal Al Hamed, helped me with reverse eng it
  *
  *   Based on multiple php, py library, thanks for all
  *
@@ -125,7 +126,7 @@ const
 
 type
   TZKHeader = packed record
-    Commnad: WORD;
+    Command: WORD;
     CheckSum: WORD;
     SessionID: WORD; //or some data on respond
     ReplyID: WORD;
@@ -508,7 +509,7 @@ begin
   Packet.Start := $7d825050;
   Packet.Size := Length(Result) - (SizeOf(Packet.Start) + SizeOf(Packet.Size));
 
-  Packet.Header.Commnad := Command;
+  Packet.Header.Command := Command;
   Packet.Header.CheckSum := 0;
   Packet.Header.ReplyID := ReplyId;
   Packet.Header.SessionID := SessionId;
@@ -534,7 +535,7 @@ begin
     Result := ReplyId = Payload.Header.ReplyID;
     if Result then
     begin
-      CMD := Payload.Header.Commnad;
+      CMD := Payload.Header.Command;
       if (Command = CMD_CONNECT) then
       begin
         FSessionId := Payload.Header.SessionID;
@@ -560,7 +561,7 @@ begin
             Packet := CreatePacket(CMD_AUTH, FSessionId, NewReplyID, ACommandData);
             Send(Packet);
             ReceiveHeader(Payload);
-            Result := Payload.Header.Commnad = CMD_ACK_OK;
+            Result := Payload.Header.Command = CMD_ACK_OK;
           end
           else
           begin
@@ -572,13 +573,13 @@ begin
         begin
           ReceiveBytes(RespondData, Payload.DataSize);
           ReceiveHeader(Payload);
-          Result := Payload.Header.Commnad = CMD_DATA;
+          Result := Payload.Header.Command = CMD_DATA;
           if Result then
           begin
             ReceiveBuffer(aSize, SizeOf(aSize));
             ReceiveBytes(RespondData, aSize);
             ReceiveHeader(Payload);
-            Result := (Payload.Header.ReplyID = ReplyId) and (Payload.Header.Commnad = CMD_ACK_OK);
+            Result := (Payload.Header.ReplyID = ReplyId) and (Payload.Header.Command = CMD_ACK_OK);
           end;
         end;
         else
