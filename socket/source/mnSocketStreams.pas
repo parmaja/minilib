@@ -97,14 +97,14 @@ begin
   else
   begin
     werr := WaitToRead(Timeout);
-    if (werr = cerSuccess) or ((werr = cerTimeout) and (soKeepIfReadTimeout in Options)) then
+    if (werr = cerSuccess) or ((werr = cerTimeout) and (soSafeReadTimeout in Options)) then
     begin
       if (Socket = nil) then
         Result := 0
       else
       begin
         err := Socket.Receive(Buffer, Count);
-        if not ((err = erSuccess) or ((err = erTimeout) and (soKeepIfReadTimeout in Options))) then
+        if not ((err = erSuccess) or ((err = erTimeout) and (soSafeReadTimeout in Options))) then
         begin
           FreeSocket;
           Result := 0;
@@ -124,7 +124,7 @@ end;
 constructor TmnSocketStream.Create(vSocket: TmnCustomSocket);
 begin
   inherited Create;
-  FOptions := [soNoDelay];
+  FOptions := [soNoDelay, soWaitBeforeRead];
   FSocket := vSocket;
 end;
 
@@ -166,7 +166,7 @@ begin
   err := Socket.Select(vTimeout, slRead);
   if err = erSuccess then
     Result := cerSuccess
-  else if (err = erTimeout) and (soKeepIfReadTimeout in Options) then
+  else if (err = erTimeout) and (soSafeReadTimeout in Options) then
     Result := cerTimeout
   else	
   	Result := cerError;

@@ -61,7 +61,6 @@ type
   protected
     FPos: PByte;
     FEnd: PByte;
-    FBuffering: Boolean;
     procedure CreateBuffer;
     procedure FreeBuffer;
     function CheckBuffer: Boolean;
@@ -72,6 +71,9 @@ type
   public
     constructor Create(AEndOfLine: string = sUnixEndOfLine);
     destructor Destroy; override;
+
+    function DirectRead(var Buffer; Count: Longint): Longint;
+    function DirectWrite(const Buffer; Count: Longint): Longint;
 
     function Read(var Buffer; Count: Longint): Longint; override; final;
     function Write(const Buffer; Count: Longint): Longint; override; final;
@@ -118,7 +120,6 @@ type
     procedure ReadStrings(Value: TStrings); overload;
     function WriteStrings(const Value: TStrings): TFileSize; overload;
 
-    property Buffering: Boolean read FBuffering write FBuffering default True; //temporary
     property EOF: Boolean read FEOF;
 
     property EndOfLine: string read FEndOfLine write FEndOfLine;
@@ -599,11 +600,20 @@ begin
   inherited;
 end;
 
+function TmnBufferStream.DirectRead(var Buffer; Count: Longint): Longint;
+begin
+  Result := DoRead(Buffer, Count);
+end;
+
+function TmnBufferStream.DirectWrite(const Buffer; Count: Longint): Longint;
+begin
+  Result := DoWrite(Buffer, Count);
+end;
+
 constructor TmnBufferStream.Create(AEndOfLine: string);
 begin
   inherited Create;
   FReadBufferSize := cBufferSize;
-  FBuffering := True;
   FEndOfLine := AEndOfLine;
   CreateBuffer;
 end;
@@ -649,10 +659,8 @@ var
   c, aCount: Longint;
   P: PByte;
 begin
-  if not Buffering or (BufferSize = 0) then
-  begin
-    aCount := DoRead(Buffer, Count);
-  end
+  if (BufferSize = 0) then
+    aCount := DoRead(Buffer, Count)
   else
   begin
     if FReadBuffer = nil then

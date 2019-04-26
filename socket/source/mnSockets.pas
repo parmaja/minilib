@@ -29,12 +29,12 @@ type
     soReuseAddr,
     soKeepAlive,
     soNoDelay,
-    soKeepIfReadTimeout, //Keep socket if read timeout without error
-    soSafeConnect, //Do not raise expcetion on connect
-    soSetReadTimeout, //Set socket read timout
-    //soDontWaitBeforeRead, //
-    soConnectTimeout //Connect will use Timeout to wait it
     //soBroadcast, soDebug, soDontLinger, soDontRoute, soOOBInLine, soAcceptConn
+    soSetReadTimeout, //Set socket read timeout
+    soWaitBeforeRead, //Wait for data come before read, that double the time wait if you set SetReadTimeout if no data come
+    soConnectTimeout, //Connect will use Timeout to wait it
+    soSafeReadTimeout, //Keep socket connected if read timeout without error
+    soSafeConnect //Do not raise expcetion on connect
     );
   TmnsoOptions = set of TmnsoOption;
 
