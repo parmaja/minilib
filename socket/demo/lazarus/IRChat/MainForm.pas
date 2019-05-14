@@ -5,8 +5,8 @@ unit MainForm;
 interface
 
 uses
-  Classes, SysUtils, StrUtils, FileUtil, Forms, Controls, Graphics, Dialogs, Buttons, IniFiles,
-  StdCtrls, ExtCtrls, ComCtrls, Menus, LCLType,
+  Classes, SysUtils, StrUtils, FileUtil, Forms, Controls, Graphics,
+  Dialogs, Buttons, IniFiles, StdCtrls, ExtCtrls, ComCtrls, Menus, LCLType,
   ChatRoomFrames, mnIRCClients;
 
 type

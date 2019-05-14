@@ -1,4 +1,4 @@
-unit mncSQLUtils;
+unit mncSQLUtils deprecated;
 {**
  *  This file is part of the "Mini Connections"
  *

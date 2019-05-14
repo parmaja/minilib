@@ -20,7 +20,7 @@ object Main: TMain
   OnCreate = FormCreate
   OnDestroy = FormDestroy
   OnHide = FormHide
-  LCLVersion = '1.9.0.0'
+  LCLVersion = '2.1.0.0'
   object Bevel1: TBevel
     Left = 43
     Height = 18
@@ -174,8 +174,8 @@ object Main: TMain
     TabOrder = 6
   end
   object MainMenu1: TMainMenu
-    left = 40
-    top = 120
+    left = 42
+    top = 131
     object MenuItem1: TMenuItem
       Caption = 'Exit'
       OnClick = MenuItem1Click

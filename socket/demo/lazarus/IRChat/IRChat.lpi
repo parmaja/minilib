@@ -1,11 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CONFIG>
   <ProjectOptions>
-    <Version Value="11"/>
+    <Version Value="12"/>
     <PathDelim Value="\"/>
     <General>
+      <Flags>
+        <CompatibilityMode Value="True"/>
+      </Flags>
       <SessionStorage Value="InProjectDir"/>
-      <MainUnit Value="0"/>
       <Title Value="IRChat"/>
       <Scaled Value="True"/>
       <ResourceType Value="res"/>
@@ -24,34 +26,37 @@
         <Mode0 Name="default"/>
       </Modes>
     </RunParams>
-    <RequiredPackages Count="9">
+    <RequiredPackages Count="10">
       <Item1>
-        <PackageName Value="FrameViewer09"/>
+        <PackageName Value="lazreport"/>
       </Item1>
       <Item2>
-        <PackageName Value="TurboPowerIPro"/>
+        <PackageName Value="FrameViewer09"/>
       </Item2>
       <Item3>
-        <PackageName Value="SynEdit"/>
+        <PackageName Value="TurboPowerIPro"/>
       </Item3>
       <Item4>
-        <PackageName Value="MiniCtrls"/>
+        <PackageName Value="SynEdit"/>
       </Item4>
       <Item5>
-        <PackageName Value="NativeLib"/>
+        <PackageName Value="MiniCtrls"/>
       </Item5>
       <Item6>
-        <PackageName Value="MiniXML"/>
+        <PackageName Value="NativeLib"/>
       </Item6>
       <Item7>
-        <PackageName Value="MiniSockets"/>
+        <PackageName Value="MiniXML"/>
       </Item7>
       <Item8>
-        <PackageName Value="MiniCommons"/>
+        <PackageName Value="MiniSockets"/>
       </Item8>
       <Item9>
-        <PackageName Value="LCL"/>
+        <PackageName Value="MiniCommons"/>
       </Item9>
+      <Item10>
+        <PackageName Value="LCL"/>
+      </Item10>
     </RequiredPackages>
     <Units Count="3">
       <Unit0>

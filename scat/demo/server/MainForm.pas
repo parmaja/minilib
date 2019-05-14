@@ -12,8 +12,8 @@ unit MainForm;
 interface
 
 uses
-  LCLIntf, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
-  IniFiles, StdCtrls, ExtCtrls, mnSockets, mnServers, ScatCommands, ScatServers,
+  LCLIntf, SysUtils, Classes, Graphics, Controls, Forms, Dialogs, IniFiles,
+  StdCtrls, ExtCtrls, mnSockets, mnServers, ScatCommands, ScatServers,
   LResources, Buttons, Menus;
 
 type
@@ -21,21 +21,22 @@ type
   { TMain }
 
   TMain = class(TForm)
-    Bevel2: TBevel;
-    MainMenu1: TMainMenu;
-    Memo: TMemo;
-    MaxOfThreads: TLabel;
-    MenuItem1: TMenuItem;
-    StartBtn: TButton;
-    RootEdit: TEdit;
-    Label1: TLabel;
-    StopBtn: TButton;
-    Label2: TLabel;
-    PortEdit: TEdit;
-    NumberOfThreadsLbl: TLabel;
-    NumberOfThreads: TLabel;
     Bevel1: TBevel;
+    Bevel2: TBevel;
     ExitBtn: TButton;
+    Label1: TLabel;
+    Label2: TLabel;
+    MainMenu1: TMainMenu;
+    MaxOfThreads: TLabel;
+    Memo: TMemo;
+    MenuItem1: TMenuItem;
+    NumberOfThreads: TLabel;
+    NumberOfThreadsLbl: TLabel;
+    Panel1: TPanel;
+    PortEdit: TEdit;
+    RootEdit: TEdit;
+    StartBtn: TButton;
+    StopBtn: TButton;
     procedure ExitBtnClick(Sender: TObject);
     procedure FormHide(Sender: TObject);
     procedure MenuItem1Click(Sender: TObject);
@@ -45,7 +46,7 @@ type
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
   private
-    ScatServer: TScatServer;
+    ScatServer: TscatWebServer;
     FMax:Integer;
     procedure ScatServerBeforeOpen(Sender: TObject);
     procedure ScatServerAfterClose(Sender: TObject);
@@ -154,8 +155,8 @@ var
 var
   aAutoRun:Boolean;
 begin
-  ScatServer := TScatServer.Create;
-  ScatServer.RegisterCommand('GET', TscatGetCommand);
+  ScatServer := TscatWebServer.Create;
+  ScatServer.RegisterCommand('GET', TscatGetFileCommand);
   ScatServer.OnBeforeOpen := ScatServerBeforeOpen;
   ScatServer.OnAfterClose := ScatServerAfterClose;
   ScatServer.OnChanged :=  ScatServerChanged;

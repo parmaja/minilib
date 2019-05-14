@@ -106,6 +106,7 @@ type
 
     function WriteLine(const S: ansistring; EOL: ansistring = ''): TFileSize; overload;
     function WriteLine(const S: widestring; EOL: widestring = ''): TFileSize; overload;
+    function WriteLine(EOL: widestring = ''): TFileSize; overload;
     {$endif}
 
     procedure ReadCommand(out Command: string; out Params: string);
@@ -369,9 +370,10 @@ function TmnBufferStream.WriteLine(const S: ansistring; EOL: ansistring): TFileS
 begin
   if EOL = '' then
     EOL := ansistring(EndOfLine);
-  Result := 0;
   if s <> '' then
-    Result := Write(Pointer(S)^, Length(S));
+    Result := Write(Pointer(S)^, Length(S))
+  else
+    Result := 0;
   Result := Result + Write(Pointer(EOL)^, Length(EOL));
 end;
 
@@ -379,11 +381,20 @@ function TmnBufferStream.WriteLine(const S: widestring; EOL: widestring): TFileS
 begin
   if EOL = '' then
     EOL := widestring(EndOfLine);
-  Result := 0;
   if s <> '' then
-    Result := Write(Pointer(S)^, ByteLength(S));
+    Result := Write(Pointer(S)^, ByteLength(S))
+  else
+    Result := 0;
   Result := Result + Write(Pointer(EOL)^, ByteLength(EOL));
 end;
+
+function TmnBufferStream.WriteLine(EOL: widestring): TFileSize;
+begin
+  if EOL = '' then
+    EOL := widestring(EndOfLine);
+  Result := Result + Write(Pointer(EOL)^, ByteLength(EOL));
+end;
+
 {$endif}
 
 function TmnBufferStream.WriteLineRawByte(const S: rawbytestring; EOL: rawbytestring): TFileSize;

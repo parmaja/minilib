@@ -17,7 +17,7 @@ interface
 
 uses
   SysUtils, Classes,
-  mnFields, mnUtils, mnSockets, mnServers, mnCommandServers, ScatServers, mnStreams, mnSocketStreams;
+  mnFields, mnUtils, mnSockets, mnServers, ScatServers, mnStreams, mnSocketStreams;
 
 type
 
@@ -27,6 +27,7 @@ type
   private
     procedure ParseURI;
   protected
+    function GetServer: TscatWebServer;
     function GetDefaultDocument(Root: string): string;
     procedure Answer404;
   public
@@ -35,15 +36,16 @@ type
     Host: string;
     procedure Respond; virtual;
     procedure DoExecute; override;
+    property Server: TscatWebServer read GetServer;
   end;
 
 {**
   Files Commands
 *}
 
-  { TscatGetCommand }
+  { TscatGetFileCommand }
 
-  TscatGetCommand = class(TscatWebCommand)
+  TscatGetFileCommand = class(TscatWebCommand)
   protected
   public
     procedure Respond; override;
@@ -98,8 +100,7 @@ end;
 
 constructor TscatWebModule.Create(Server: TscatServer);
 begin
-  inherited;
-  Commands.Add('GET', TscatGetCommand);
+  Commands.Add('GET', TscatGetFileCommand);
 end;
 
 function TscatWebModule.Match(Path: string): Boolean;
@@ -155,8 +156,13 @@ begin
   begin
     aParams := Copy(Path, J + 1, Length(Path));
     Path := Copy(Path, 1, J - 1);
-    StrToStringsCallback(aParams, Params, ParamsCallBack);
+    StrToStringsCallback(aParams, Params, @ParamsCallBack);
   end;
+end;
+
+function TscatWebCommand.GetServer: TscatWebServer;
+begin
+  Result := (inherited Server as TscatWebServer);
 end;
 
 function TscatWebCommand.GetDefaultDocument(Root: string): string;
@@ -204,7 +210,7 @@ begin
     Shutdown;
 end;
 
-{ TscatGetCommand }
+{ TscatGetFileCommand }
 
 function DocumentToContentType(FileName: string): string;
 var
@@ -229,7 +235,7 @@ begin
     Result := 'application/binary';
 end;
 
-procedure TscatGetCommand.Respond;
+procedure TscatGetFileCommand.Respond;
 var
   DocSize: Int64;
   aDocStream: TFileStream;
@@ -274,7 +280,7 @@ begin
   Connection.Stream.WriteCommand('OK');
   Connection.Stream.WriteLine('Server is running on port: ' + Server.Port);
   //Connection.Stream.WriteLine('the server is: "' + Application.ExeName + '"');
-  Connection.Stream.WriteLine('');
+  Connection.Stream.WriteLine;
 end;
 
 { TscatPutCommand }
@@ -332,7 +338,7 @@ begin
 end;
 {
 RegisterCommand('Info', TscatServerInfoCommand);
-RegisterCommand('GET', TscatGetCommand);
+RegisterCommand('GET', TscatGetFileCommand);
 RegisterCommand('PUT', TscatPutCommand);
 RegisterCommand('DIR', TscatDirCommand);
 RegisterCommand('DEL', TscatDeleteFileCommand);

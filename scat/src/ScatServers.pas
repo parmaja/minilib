@@ -1,6 +1,8 @@
 unit ScatServers;
 {$M+}{$H+}
-{$IFDEF FPC}{$MODE delphi}{$ENDIF}
+{$IFDEF FPC}
+{$MODE delphi}
+{$ENDIF}
 {**
  *  This file is part of the "Mini Library"
  *
@@ -85,7 +87,7 @@ type
 
   TscatModuleClass = class of TscatModule;
 
-  TscatModules = class(specialize TmnObjectList<TscatModule>)
+  TscatModules = class(TmnObjectList<TscatModule>)
   end;
 
   { TScatListener }
@@ -106,6 +108,13 @@ type
   { TscatServer }
 
   TscatServer = class(TmnCommandServer)
+  public
+    procedure RegisterModuleClass(AModule: TscatModuleClass);
+  end;
+
+  { TscatWebServer }
+
+  TscatWebServer = class(TscatServer)
   private
     FDocumentRoot: string;
     FDefaultDocument: TStringList;
@@ -117,7 +126,6 @@ type
   public
     constructor Create;
     destructor Destroy; override;
-    procedure RegisterModuleClass(AModule: TscatModuleClass);
     property DocumentRoot: string read FDocumentRoot write FDocumentRoot;
     property DefaultDocument: TStringList read FDefaultDocument write SetDefaultDocument;
   published
@@ -127,6 +135,13 @@ var
   scatLock: TCriticalSection = nil;
 
 implementation
+
+{ TscatServer }
+
+procedure TscatServer.RegisterModuleClass(AModule: TscatModuleClass);
+begin
+
+end;
 
 { TscatModule }
 
@@ -236,9 +251,9 @@ begin
 end;
 
 
-{ TscatServer }
+{ TscatWebServer }
 
-constructor TscatServer.Create;
+constructor TscatWebServer.Create;
 begin
   inherited;
   FDefaultDocument := TStringList.Create;
@@ -250,33 +265,28 @@ begin
   FDocumentRoot := '';
 end;
 
-destructor TscatServer.Destroy;
+destructor TscatWebServer.Destroy;
 begin
   FreeAndNil(FDefaultDocument);
   inherited;
 end;
 
-procedure TscatServer.RegisterModuleClass(AModule: TscatModuleClass);
-begin
-
-end;
-
-procedure TscatServer.SetDefaultDocument(const Value: TStringList);
+procedure TscatWebServer.SetDefaultDocument(const Value: TStringList);
 begin
   FDefaultDocument.Assign(Value);
 end;
 
-procedure TscatServer.DoBeforeOpen;
+procedure TscatWebServer.DoBeforeOpen;
 begin
   inherited;
 end;
 
-procedure TscatServer.DoAfterClose;
+procedure TscatWebServer.DoAfterClose;
 begin
   inherited;
 end;
 
-function TscatServer.DoCreateListener: TmnListener;
+function TscatWebServer.DoCreateListener: TmnListener;
 begin
   Result := TScatListener.Create;
 end;

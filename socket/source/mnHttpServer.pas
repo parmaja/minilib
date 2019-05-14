@@ -98,7 +98,7 @@ type
     procedure ProcessGet;
     procedure ProcessHead;
     procedure ProcessPost;
-    procedure AnswerDocument;
+    procedure AnswerDocument; virtual;
     procedure Answer404;
   protected
     function Listener: TmnHttpListener;
@@ -143,6 +143,7 @@ type
     destructor Destroy; override;
     property Config: TConfigInfo read FConfig write FConfig;
   published
+    // Select root of the html directory
     property DocumentRoot: string read FConfig.DocumentRoot write FConfig.DocumentRoot;
     property AllowKeepAlive: Boolean read FConfig.AllowKeepAlive write FConfig.AllowKeepAlive;
     property DefaultDocument: TStringList read FDefaultDocument write SetDefaultDoc;

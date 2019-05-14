@@ -17,7 +17,7 @@ uses
   Forms,
   LCLIntf,
   SysUtils,
-  MainForm in 'MainForm.pas';
+  MainForm in 'MainForm.pas', FrameViewer09;
 
 begin
   Application.Initialize;
