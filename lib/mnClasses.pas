@@ -23,6 +23,16 @@ uses
   {$endif};
 
 type
+
+  { TmnObject }
+
+  TmnObject = class(TObject)
+  protected
+    procedure Created; virtual;
+  public
+    procedure AfterConstruction; override;
+  end;
+
   { TmnObjectList }
 
   //USAGE: TMyObjectList = class(TmnObjectList<TMyObject>)
@@ -165,6 +175,19 @@ begin
         break;
       end;
     end;
+end;
+
+{ TmnObject }
+
+procedure TmnObject.Created;
+begin
+
+end;
+
+procedure TmnObject.AfterConstruction;
+begin
+  inherited AfterConstruction;
+  Created;
 end;
 
 end.

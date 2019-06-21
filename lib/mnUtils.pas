@@ -21,6 +21,7 @@ uses
 const
   sUTF8BOM: array[1..3] of Char = (#$EF, #$BB, #$BF);
 
+procedure Nothing;
 {
   StrHave: test the string if it have Separators
 }
@@ -60,10 +61,15 @@ function StringsToString(Strings: TStrings; LineBreak: string = sLineBreak): str
 function CompareLeftStr(const Str: string; const WithStr: string; Start: Integer = 1): Boolean;
 function ContainsText(const SubStr, InStr: string): Boolean; //TODO, need one scan, not using uppercase
 
+//Copy, MidStr but From To index
+function SubStr(const AText: String; const AFromIndex, AToIndex: Integer): String; overload;
 //Index started from 0
 function SubStr(const Str: String; vSeperator: Char; vFromIndex, vToIndex: Integer): String; overload;
 function SubStr(const Str: String; vSeperator: Char; vIndex: Integer = 0): String; overload;
 function FetchStr(var AInput: string; const ADelim: string = '.'; const ADelete: Boolean = True; const ACaseSensitive: Boolean = True): string; deprecated;
+
+function StrInArray(const Str: String; const ArrayOfString : Array of String; CaseInsensitive: Boolean = False) : Boolean;
+function CharInArray(const C: string; const ArrayOfChar : array of Char; CaseInsensitive: Boolean = False) : Boolean;
 
 //vPeriod is a datetime not tickcount
 function PeriodToString(vPeriod: Double; WithSeconds: Boolean): string;
@@ -139,8 +145,6 @@ function GetFormatSettings: TFormatSettings;
 
 
 {$ifdef FPC}
-{ This function founded in FPC 2.7.1, remove it please when this version released}
-function CharInSet(C: Char; Separators: TSysCharSet): Boolean;
 {$else}
 const
 {$ifdef MSWINDOWS}
@@ -165,16 +169,16 @@ var
 implementation
 
 {$ifdef FPC}
-function CharInSet(C: Char; Separators: TSysCharSet): Boolean;
-begin
-  Result := C in Separators;
-end;
 {$else}
   {$if CompilerVersion < 22}
   var
     FFormatSettings: TFormatSettings;
   {$ifend}
 {$endif}
+
+procedure Nothing;
+begin
+end;
 
 function StrHave(S: string; Separators: TSysCharSet): Boolean;
 var
@@ -733,6 +737,11 @@ begin
   {$endif}
 end;
 
+function SubStr(const AText: String; const AFromIndex, AToIndex: Integer): String;
+begin
+  Result := Copy(AText, AFromIndex, AToIndex - AFromIndex + 1);
+end;
+
 function SubStr(const Str: String; vSeperator: Char; vFromIndex, vToIndex: Integer): String;
 var
   Index, B, E: Integer;
@@ -794,6 +803,40 @@ begin
   end;
 end;
 
+function StrInArray(const Str: String; const ArrayOfString: array of String; CaseInsensitive: Boolean): Boolean;
+var
+ itm : String;
+begin
+  for itm in ArrayOfString do
+  begin
+    if CaseInsensitive then
+    begin
+      if SameText(Str, itm) then
+        exit(true);
+    end
+    else if Str = itm then
+       exit(true);
+  end;
+  Result := false;
+end;
+
+function CharInArray(const C: string; const ArrayOfChar: array of Char; CaseInsensitive: Boolean): Boolean;
+var
+ itm : String;
+begin
+  for itm in ArrayOfChar do
+  begin
+    if CaseInsensitive then
+    begin
+      if UpperCase(C) = UpperCase(itm) then
+        exit(true);
+    end
+    else if C = itm then
+       exit(true);
+  end;
+  Result := false;
+end;
+
 function EscapeStringC(const S: string): string;
 begin
   Result := EscapeString(s, '\', [#8, #9, #10, #13, '\', '"'], ['b', 't', 'n', 'r', '\', '"']);
@@ -836,7 +879,7 @@ begin
 end;
 
 
-procedure ISOStrToDate(ISODate: String; out Y, M, D, H, N, S: Word; vDateSeparator, TimeDivider: Char; UseDefault: Boolean);
+procedure ISOStrToDate(ISODate: String; out Y, M, D, H, N, S: Word; vDateSeparator: Char; TimeDivider: Char; UseDefault: Boolean);
 var
   Dt, Tm: String;
 begin
