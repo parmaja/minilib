@@ -1633,6 +1633,7 @@ var
   Accepted: Boolean;
 begin
   aDesignRow := DesignRows.First;
+  aRow := nil;
   if aDesignRow <> nil then
   begin
     while aDesignRow <> nil do
@@ -1656,27 +1657,30 @@ begin
           d := d.Next;
         end;
       except
-        aRow.Free;
+        FreeAndNil(aRow);
         raise;
       end;
 
-      //todo make arow pass as var and if report handle row and free it then do nothing
-      Accepted := True;
-      Report.AcceptNewRow(aRow, Accepted);
-      if Accepted then
+      //todo make arrow pass as var and if report handle row and free it then do nothing
+      if aRow <> nil then
       begin
-        Report.HandleNewRow(aRow);
-        if aRow <> nil then //maybe HandleNewRow free it too
+        Accepted := True;
+        Report.AcceptNewRow(aRow, Accepted);
+        if Accepted then
         begin
-          aRow.ScaleCells;//Zaher
-          with Items.Add do
+          Report.HandleNewRow(aRow);
+          if aRow <> nil then //maybe HandleNewRow free it too
           begin
-            FRow := aRow;
+            aRow.ScaleCells;//Zaher
+            with Items.Add do
+            begin
+              FRow := aRow;
+            end;
           end;
-        end;
-      end
-      else
-        FreeAndNil(aRow); //no need it if not accepted
+        end
+        else
+          FreeAndNil(aRow); //no need it if not accepted
+      end;
 
       aDesignRow := aDesignRow.Next;
     end;
