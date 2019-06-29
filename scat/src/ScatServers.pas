@@ -87,7 +87,18 @@ type
 
   TscatModuleClass = class of TscatModule;
 
-  TscatModules = class(TmnObjectList<TscatModule>)
+  { TscatModuleClassItem }
+
+  TscatModuleClassItem = class(TObject)
+  private
+    FModuleClass: TscatModuleClass;
+    FName: string;
+  public
+    property Name: string read FName;
+    property ModuleClass: TscatModuleClass read FModuleClass;
+  end;
+
+  TscatModules = class(TmnObjectList<TscatModuleClassItem>)
   end;
 
   { TScatListener }
@@ -109,6 +120,9 @@ type
 
   TscatServer = class(TmnCommandServer)
   public
+    FModules: TmnModuleClasses;
+    constructor Create;
+    destructor Destroy; override;
     procedure RegisterModuleClass(AModule: TscatModuleClass);
   end;
 
@@ -137,6 +151,18 @@ var
 implementation
 
 { TscatServer }
+
+constructor TscatServer.Create;
+begin
+  inherited;
+  FModules := TmnModuleClasses.Create(True);
+end;
+
+destructor TscatServer.Destroy;
+begin
+  FreeAndNil(FModules);
+  inherited Destroy;
+end;
 
 procedure TscatServer.RegisterModuleClass(AModule: TscatModuleClass);
 begin

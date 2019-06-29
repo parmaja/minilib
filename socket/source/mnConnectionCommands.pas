@@ -82,21 +82,18 @@ type
 
   TmnCommandClass = class of TmnCommand;
 
-  TmnCommandClassItem = class(TObject)
+  TmnCommandClassItem = class(TmnNamedObject)
   private
-    FName: string;
     FCommandClass: TmnCommandClass;
   public
-    property Name: string read FName;
     property CommandClass: TmnCommandClass read FCommandClass;
   end;
 
   { TmnCommandClasses }
 
-  TmnCommandClasses = class(TmnObjectList<TmnCommandClassItem>)
+  TmnCommandClasses = class(TmnNamedObjectList<TmnCommandClassItem>)
   private
   public
-    function Find(const Name: string): TmnCommandClassItem;
     function Add(const Name: string; CommandClass: TmnCommandClass): Integer;
   end;
 
@@ -352,29 +349,12 @@ begin
   DoPrepare;
 end;
 
-{ TmnCommandClasses }
-
-function TmnCommandClasses.Find(const Name: string): TmnCommandClassItem;
-var
-  i: Integer;
-begin
-  Result := nil;
-  for i := 0 to Count - 1 do
-  begin
-    if SameText(Items[i].Name, Name) then
-    begin
-      Result := Items[i];
-      break;
-    end;
-  end;
-end;
-
 function TmnCommandClasses.Add(const Name: string; CommandClass: TmnCommandClass): Integer;
 var
   aItem: TmnCommandClassItem;
 begin
   aItem := TmnCommandClassItem.Create;
-  aItem.FName := UpperCase(Name);
+  aItem.Name := UpperCase(Name);
   aItem.FCommandClass := CommandClass;
   Result := inherited Add(aItem);
 end;

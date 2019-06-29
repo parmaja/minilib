@@ -64,7 +64,7 @@ type
 
   { TmnNamedObjectList }
 
-  TmnNamedObject = class(TObject)
+  TmnNamedObject = class(TmnObject)
   private
     FName: string;
   public

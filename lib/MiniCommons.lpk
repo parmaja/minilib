@@ -34,7 +34,7 @@
     <Description Value="MiniLib common "/>
     <License Value="ModifiedLGPL"/>
     <Version Major="1" Release="1"/>
-    <Files Count="14">
+    <Files Count="15">
       <Item1>
         <Filename Value="HejriDates.pas"/>
         <UnitName Value="HejriDates"/>
@@ -91,6 +91,10 @@
         <Filename Value="UniDates.pas"/>
         <UnitName Value="UniDates"/>
       </Item14>
+      <Item15>
+        <Filename Value="mnRTTIUtils.pas"/>
+        <UnitName Value="mnRTTIUtils"/>
+      </Item15>
     </Files>
     <RequiredPkgs Count="1">
       <Item1>

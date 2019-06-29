@@ -4,11 +4,12 @@
 
 unit MiniCommons;
 
+{$warn 5023 off : no warning about unused units}
 interface
 
 uses
   HejriDates, HejriUtils, minibidi, mnBase64, mnClasses, mnDrivers, mnFields, 
-  mnLogs, mnParams, mnStreams, mnUtils, MsgBox, UniDates;
+  mnLogs, mnParams, mnStreams, mnUtils, MsgBox, uniDates, mnRTTIUtils;
 
 implementation
 
