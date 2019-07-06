@@ -309,7 +309,11 @@ var
     //(Owner as TmnXMLRttiReader).Stack.Push((Owner as TmnXMLRttiReader).CreateFiler(PropInfo^.Name, aObject, True));
   end;
 begin
+  if Instance = nil then
+    raise Exception.Create('Instance is null');
   PropType := GetPropTypeInfo(PropInfo);
+  if PropType = nil then
+    raise Exception.Create('PropType is null');
   TypeData := GetTypeData(PropType);
   case PropType^.Kind of
     tkInteger:
@@ -353,8 +357,12 @@ procedure SetPropertyValue(Instance: TObject; const PropName: string; const Valu
 var
   PropInfo: PPropInfo;
 begin
+  if Instance = nil then
+    raise Exception.Create('Instance is null');
   //need to test the speed
   PropInfo := GetPropInfo(Instance.ClassInfo, PropName);
+  if PropInfo = nil then
+    raise Exception.Create('PropInfo is null');
   if (PropInfo^.GetProc <> nil) and //i removed IsStoredProp for reader must not check if stored, it is already have default value and not stored
     ((PropInfo^.SetProc <> nil) or
       ((GetOrdProp(Instance, PropInfo) <> 0) and //Must be not null when read properties or must have a SetProc
