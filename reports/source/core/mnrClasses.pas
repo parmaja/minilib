@@ -2372,12 +2372,15 @@ begin
         vDesignCell.ScaleCell(Result);} //moved to FillNow
       Report.DoNewCell(Result);
     except
-      FreeAndNil(Result);
-      raise;
+      on E: Exception do
+      begin
+        FreeAndNil(Result);
+        raise Exception.CreateFmt('%s'#13'[%s] %s', [vDesignCell.DisplayText, Name, E.Message]);
+      end;
     end;
   end
   else
-    raise Exception.Create(Format('Error Creating Cell for %s', [Name]));
+    raise Exception.CreateFmt('Error Creating Cell for %s', [Name]);
 end;
 
 procedure TmnrLayout.Request(vCell: TmnrCell);

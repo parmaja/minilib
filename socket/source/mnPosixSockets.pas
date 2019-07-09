@@ -237,7 +237,7 @@ begin
       Result := erFail;
     end
     else if (c = 0) then
-      Result := erTimout
+      Result := erTimeout
     else
       Result := erSuccess;
   end;
@@ -522,7 +522,7 @@ begin
   //if soKeepAlive in Options then
     //setsockopt(aHandle, SOL_SOCKET, SO_KEEPALIVE, SO_TRUE, SizeOf(SO_TRUE));
 
-  if soReadTimeout in Options then
+  if soConnectTimeout in Options then
   begin
     DW := Timeout;
     setsockopt(aHandle, SOL_SOCKET, SO_RCVTIMEO, DW, SizeOf(DW));
