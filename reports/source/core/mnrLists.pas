@@ -207,12 +207,19 @@ type
   end;
 
 
+function CurrentNodesCount: Cardinal;
+
 implementation
 
-{$IFOPT D+}
+
 var
   FNodesCount: Cardinal = 0;
-{$ENDIF}
+
+function CurrentNodesCount: Cardinal;
+begin
+  Result := FNodesCount;
+end;
+
 
 { TmnrNode }
 
@@ -246,7 +253,7 @@ begin
   FNext := nil;
   Nodes := vNodes;
   {$IFOPT D+}
-  //Inc(FNodesCount);
+  Inc(FNodesCount);
   {$ENDIF}
 end;
 
@@ -259,7 +266,7 @@ destructor TmnrNode.Destroy;
 begin
   if FNodes<>nil then Detach;
   {$IFOPT D+}
-  //Dec(FNodesCount);
+  Dec(FNodesCount);
   {$ENDIF}
   inherited;
 end;
