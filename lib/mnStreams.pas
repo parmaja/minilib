@@ -88,6 +88,7 @@ type
 
     function ReadLn: string; overload; deprecated;
 
+    function WriteLine(EOL: widestring = ''): TFileSize; overload;
     function WriteLineRawByte(const S: rawbytestring; EOL: rawbytestring = ''): TFileSize; overload;
     function WriteLine(const S: utf8string; EOL: utf8string = ''): TFileSize; overload;
     function WriteLine(const S: unicodestring; EOL: unicodestring = ''): TFileSize; overload;
@@ -100,13 +101,13 @@ type
     {$ifndef NEXTGEN}
     function ReadUntil(const Match: ansistring; ExcludeMatch: Boolean; out Buffer: ansistring; out Matched: Boolean): Boolean; overload;
     function ReadUntil(const Match: widestring; ExcludeMatch: Boolean; out Buffer: widestring; out Matched: Boolean): Boolean; overload;
+
     function ReadLine(out S: ansistring; ExcludeEOL: Boolean = True; EOL: ansistring = ''): Boolean; overload;
     function ReadLine(out S: widestring; ExcludeEOL: Boolean = True; EOL: widestring = ''): Boolean; overload;
     function ReadAnsiString(vCount: Integer): AnsiString;
 
     function WriteLine(const S: ansistring; EOL: ansistring = ''): TFileSize; overload;
     function WriteLine(const S: widestring; EOL: widestring = ''): TFileSize; overload;
-    function WriteLine(EOL: widestring = ''): TFileSize; overload;
     {$endif}
 
     procedure ReadCommand(out Command: string; out Params: string);
@@ -388,14 +389,14 @@ begin
   Result := Result + Write(Pointer(EOL)^, ByteLength(EOL));
 end;
 
+{$endif}
+
 function TmnBufferStream.WriteLine(EOL: widestring): TFileSize;
 begin
   if EOL = '' then
     EOL := widestring(EndOfLine);
   Result := Result + Write(Pointer(EOL)^, ByteLength(EOL));
 end;
-
-{$endif}
 
 function TmnBufferStream.WriteLineRawByte(const S: rawbytestring; EOL: rawbytestring): TFileSize;
 begin
@@ -601,6 +602,11 @@ end;
 procedure TmnBufferStream.WriteCommand(const Command, Format: string; const Params: array of const);
 begin
   WriteCommand(Command, SysUtils.Format(Format, Params));
+end;
+
+function TmnBufferStream.WriteLine: TFileSize;
+begin
+  WriteLine('');
 end;
 
 { TmnBufferStream }
