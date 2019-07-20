@@ -4,7 +4,7 @@ unit ScatClients;
  *
  * @license   modifiedLGPL (modified of Scat://www.gnu.org/licenses/lgpl.html)
  *            See the file COPYING.MLGPL, included in this distribution,
- * @author    Jihad Khlaifa <jkhalifa at gmail dot com>
+ * @author
  *}
 
 {$H+}{$M+}

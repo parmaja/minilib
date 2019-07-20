@@ -604,11 +604,6 @@ begin
   WriteCommand(Command, SysUtils.Format(Format, Params));
 end;
 
-function TmnBufferStream.WriteLine: TFileSize;
-begin
-  WriteLine('');
-end;
-
 { TmnBufferStream }
 
 destructor TmnBufferStream.Destroy;

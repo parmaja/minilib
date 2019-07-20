@@ -17,7 +17,8 @@ interface
 
 uses
   SysUtils, Classes,
-  mnFields, mnUtils, mnSockets, mnServers, ScatServers, mnStreams, mnSocketStreams;
+  mnFields, mnUtils, mnSockets, mnServers, mnStreams, mnSocketStreams,
+  ScatServers;
 
 type
 
@@ -280,7 +281,7 @@ begin
   Connection.Stream.WriteCommand('OK');
   Connection.Stream.WriteLine('Server is running on port: ' + Server.Port);
   //Connection.Stream.WriteLine('the server is: "' + Application.ExeName + '"');
-  Connection.Stream.WriteLine;
+  Connection.Stream.WriteLine('');
 end;
 
 { TscatPutCommand }
