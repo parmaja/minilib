@@ -573,6 +573,7 @@ type
     property ByName[const vName: string]: TmnrSection read GetByName;
     function Find(const vName: string): TmnrSection;
     function FindDesignCellName(const vName: string): TmnrDesignCell;
+    function RefRowsCount: Integer;
     procedure EnumByName(List: TList; const vName: string);
 
     property Report: TmnrCustomReport read GetReport;
@@ -2128,6 +2129,21 @@ begin
       end; //case slwMulti:
 
     end;
+    s := s.Next;
+  end;
+end;
+
+function TmnrSections.RefRowsCount: Integer;
+var
+  s: TmnrSection;
+begin
+  Result := 0;
+  s := First;
+  while s <> nil do
+  begin
+    Inc(Result, s.ReferencesRows.Count);
+    Inc(Result, s.Sections.RefRowsCount);
+
     s := s.Next;
   end;
 end;
