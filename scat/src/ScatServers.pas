@@ -120,7 +120,7 @@ type
 
   TscatServer = class(TmnCommandServer)
   public
-    //FModules: TmnModuleClasses;
+    FModules: TscatModules;
     constructor Create;
     destructor Destroy; override;
     procedure RegisterModuleClass(AModule: TscatModuleClass);
@@ -155,12 +155,12 @@ implementation
 constructor TscatServer.Create;
 begin
   inherited;
-  //FModules := TmnModuleClasses.Create(True);
+  FModules := TscatModules.Create(True);
 end;
 
 destructor TscatServer.Destroy;
 begin
-//  FreeAndNil(FModules);
+  FreeAndNil(FModules);
   inherited Destroy;
 end;
 

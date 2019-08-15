@@ -47,7 +47,6 @@ type
     Request: string; //Full of first line of header
   end;
 
-
   { TmnCommand }
 
   TmnCommand = class(TObject)
