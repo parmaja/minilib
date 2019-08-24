@@ -1,4 +1,4 @@
-unit mnConnectionCommands;
+unit mnModules;
 {$M+}{$H+}
 {$IFDEF FPC}{$MODE delphi}{$ENDIF}
 {**
