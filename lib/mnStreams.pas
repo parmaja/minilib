@@ -180,7 +180,7 @@ const
 
 procedure CopyString(out S: utf8string; Buffer: Pointer; Len: Integer); overload;
 var
-  rb: rawbytestring;
+  rb: RawByteString;
 begin
   if Len <> 0 then
   begin
@@ -192,7 +192,7 @@ begin
     S := '';
 end;
 
-procedure CopyString(out S: rawbytestring; Buffer: Pointer; Len: Integer); overload;
+procedure CopyString(out S: RawByteString; Buffer: Pointer; Len: Integer); overload;
 begin
   if Len <> 0 then
   begin
@@ -398,10 +398,10 @@ begin
   Result := Result + Write(Pointer(EOL)^, ByteLength(EOL));
 end;
 
-function TmnBufferStream.WriteLineRawByte(const S: rawbytestring; EOL: rawbytestring): TFileSize;
+function TmnBufferStream.WriteLineRawByte(const S: RawByteString; EOL: RawByteString): TFileSize;
 begin
   if EOL = '' then
-    EOL := rawbytestring(EndOfLine);
+    EOL := RawByteString(EndOfLine);
   Result := 0;
   if s <> '' then
     Result := Write(Pointer(S)^, Length(S));
@@ -537,14 +537,14 @@ begin
   FreeMem(res);
 end;
 
-function TmnBufferStream.ReadLineRawByte(out S: rawbytestring; ExcludeEOL: Boolean; EOL: rawbytestring): Boolean;
+function TmnBufferStream.ReadLineRawByte(out S: RawByteString; ExcludeEOL: Boolean; EOL: RawByteString): Boolean;
 var
   m: Boolean;
   res: Pointer;
   len: TFileSize;
 begin
   if EOL = '' then
-    EOL := rawbytestring(EndOfLine);
+    EOL := RawByteString(EndOfLine);
   Result := ReadBufferUntil(@eol[1], Length(eol), ExcludeEOL, res, len, m);
   CopyString(S, res, len);
   FreeMem(res);
