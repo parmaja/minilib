@@ -101,7 +101,7 @@ begin
   aRoot := RootEdit.Text;
   if (LeftStr(aRoot, 2)='.\') or (LeftStr(aRoot, 2)='./') then
     aRoot := ExtractFilePath(Application.ExeName) + Copy(aRoot, 3, MaxInt);
-  ScatServer.DocumentRoot := aRoot;
+  ScatServer.WebModule.DocumentRoot := aRoot;
   ScatServer.Port := PortEdit.Text;
 end;
 
@@ -156,7 +156,6 @@ var
   aAutoRun:Boolean;
 begin
   ScatServer := TscatWebServer.Create;
-  ScatServer.RegisterCommand('GET', TscatGetFileCommand);
   ScatServer.OnBeforeOpen := ScatServerBeforeOpen;
   ScatServer.OnAfterClose := ScatServerAfterClose;
   ScatServer.OnChanged :=  ScatServerChanged;

@@ -8,8 +8,8 @@ unit MiniSockets;
 interface
 
 uses
-  mnClients, mnConnectionCommands, mnConnections, mnServers, mnSockets, 
-  mnSocketStreams, mnIRCClients, mnHttpServer, LazarusPackageIntf;
+  mnClients, mnConnections, mnServers, mnSockets, mnSocketStreams, 
+  mnIRCClients, mnHttpServer, mnModules, LazarusPackageIntf;
 
 implementation
 

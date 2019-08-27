@@ -85,6 +85,7 @@ type
     function ReadLine(out S: unicodestring; ExcludeEOL: Boolean = True; EOL: unicodestring = ''): Boolean; overload;
 
     function ReadLine: string; overload;
+    function ReadLineRawByte: RawByteString; overload;
 
     function ReadLn: string; overload; deprecated;
 
@@ -558,6 +559,11 @@ end;
 function TmnBufferStream.ReadLn: string;
 begin
   ReadLine(Result);
+end;
+
+function TmnBufferStream.ReadLineRawByte: RawByteString;
+begin
+  ReadLineRawByte(Result, True);
 end;
 
 function TmnBufferStream.WriteEOL: TFileSize;

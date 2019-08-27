@@ -34,32 +34,32 @@
         <UnitName Value="mnClients"/>
       </Item1>
       <Item3>
-        <Filename Value="mnConnectionCommands.pas"/>
-        <UnitName Value="mnConnectionCommands"/>
-      </Item3>
-      <Item4>
         <Filename Value="mnConnections.pas"/>
         <UnitName Value="mnConnections"/>
-      </Item4>
-      <Item5>
+      </Item3>
+      <Item4>
         <Filename Value="mnServers.pas"/>
         <UnitName Value="mnServers"/>
-      </Item5>
-      <Item6>
+      </Item4>
+      <Item5>
         <Filename Value="mnSockets.pas"/>
         <UnitName Value="mnSockets"/>
-      </Item6>
-      <Item7>
+      </Item5>
+      <Item6>
         <Filename Value="mnSocketStreams.pas"/>
         <UnitName Value="mnSocketStreams"/>
-      </Item7>
-      <Item8>
+      </Item6>
+      <Item7>
         <Filename Value="mnIRCClients.pas"/>
         <UnitName Value="mnIRCClients"/>
-      </Item8>
-      <Item9>
+      </Item7>
+      <Item8>
         <Filename Value="mnHttpServer.pas"/>
         <UnitName Value="mnHttpServer"/>
+      </Item8>
+      <Item9>
+        <Filename Value="mnModules.pas"/>
+        <UnitName Value="mnModules"/>
       </Item9>
     </Files>
     <RequiredPkgs Count="1">
@@ -72,7 +72,6 @@
     </UsageOptions>
     <PublishOptions>
       <Version Value="2"/>
-      <IgnoreBinaries Value="False"/>
     </PublishOptions>
   </Package>
 </CONFIG>

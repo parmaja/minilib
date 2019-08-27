@@ -44,6 +44,9 @@ type
     Result: Success or error and message of error
   }
 
+  TmnCommandState = (cmdsHeadSent, cmdsHeaderSent, cmdsContentsSent, cmdsEnd);
+  TmnCommandStates = set of TmnCommandState;
+
   { TmnCommand }
 
   TmnCommand = class(TmnObject)
@@ -53,23 +56,31 @@ type
     FLocking: Boolean;
     FRaiseExceptions: Boolean;
     FRequestHeader: TmnFields;
-    FRepondHeader: TmnFields;
-    FInStream: TmnBufferStream;
-    FOutStream: TmnBufferStream;
+    FRespondHeader: TmnFields;
+    FRequestStream: TmnBufferStream;
+    FRespondStream: TmnBufferStream;
+    FStates: TmnCommandStates;
     procedure SetModule(const Value: TmnModule); virtual;
     procedure SetRequestHeader(const Value: TmnFields);
+    function GetActive: Boolean;
   protected
     FWorking: Boolean;
+
+    procedure Prepare; virtual;
     procedure Execute; virtual;
-    function Active: Boolean;
-    procedure Shutdown; //maybe shudown moved to Module who will shutdown after execute
-    procedure DoPrepare; virtual;
-    property InStream: TmnBufferStream read FInStream;
-    property OutStream: TmnBufferStream read FOutStream;
+    procedure SendHeader; virtual;
+    procedure Respond; virtual;
+    procedure Unprepare; virtual; //Shutdown it;
+
+    property RequestStream: TmnBufferStream read FRequestStream;
+    property RespondStream: TmnBufferStream read FRespondStream;
+    procedure SendHead(AHead: string); virtual;
+    procedure PostHeader(AName, AValue: string); virtual;
   public
-    constructor Create(AModule: TmnModule; InStream: TmnBufferStream = nil; OutStream: TmnBufferStream = nil); virtual;
+    constructor Create(AModule: TmnModule; RequestStream: TmnBufferStream = nil; RespondStream: TmnBufferStream = nil); virtual;
     destructor Destroy; override;
 
+    property Active: Boolean read GetActive;
     //GetCommandName: make name for command when register it, useful when log the name of it
     property Module: TmnModule read FModule write SetModule;
     property Request: TmnRequest read FRequest;
@@ -77,9 +88,9 @@ type
     //Lock the server listener when execute the command
     property Locking: Boolean read FLocking write FLocking default False; //deprecated;
     //Prepare called after created in lucking mode
-    procedure Prepare;
     property RequestHeader: TmnFields read FRequestHeader write SetRequestHeader;
-    property RepondHeader: TmnFields read FRepondHeader;
+    property RespondHeader: TmnFields read FRespondHeader;
+    property States: TmnCommandStates read FStates;
   end;
 
   TmnCommandClass = class of TmnCommand;
@@ -104,9 +115,14 @@ type
     Module have protocol name must match when parse request, before selecting
   }
 
+  TmnModules = class;
+
+  { TmnModule }
+
   TmnModule = class(TmnNamedObject)
   private
     FCommands: TmnCommandClasses;
+    FModules: TmnModules;
     FParams: TStringList;
   protected
     DefaultCommand: TmnCommandClass;
@@ -114,15 +130,19 @@ type
     function GetActive: Boolean; virtual;
     function GetCommandClass(var CommandName: string): TmnCommandClass; virtual;
     procedure Created; override;
+    procedure CreateCommands; virtual;
   public
+    constructor Create(AModules: TmnModules); virtual;
     destructor Destroy; override;
+    function Match(ARequest: TmnRequest): Boolean; virtual;
     function RegisterCommand(vName: string; CommandClass: TmnCommandClass; ADefaultCommand: Boolean = False): Integer; overload;
-    function CreateCommand(CommandName: string; ARequest: TmnRequest; AInStream: TmnBufferStream = nil; AOutStream: TmnBufferStream = nil): TmnCommand;
-    procedure ExecuteCommand(CommandName: string; AInStream: TmnBufferStream = nil; AOutStream: TmnBufferStream = nil; RequestString: TArray<String> = []);
+    function CreateCommand(CommandName: string; ARequest: TmnRequest; ARequestStream: TmnBufferStream = nil; ARespondStream: TmnBufferStream = nil): TmnCommand;
+    procedure ExecuteCommand(CommandName: string; ARequestStream: TmnBufferStream = nil; ARespondStream: TmnBufferStream = nil; RequestString: TArray<String> = nil);
     procedure ParseHeader(RequestHeader: TmnFields; Stream: TmnBufferStream); virtual;
     property Commands: TmnCommandClasses read FCommands;
     property Active: Boolean read GetActive;
     property Params: TStringList read FParams;
+    property Modules: TmnModules read FModules;
   end;
 
   TmnModules = class(TmnNamedObjectList<TmnModule>)
@@ -283,34 +303,75 @@ end;
 
 { TmnCommand }
 
-constructor TmnCommand.Create(AModule: TmnModule; InStream, OutStream: TmnBufferStream);
+constructor TmnCommand.Create(AModule: TmnModule; RequestStream: TmnBufferStream; RespondStream: TmnBufferStream);
 begin
   inherited Create;
   FLocking := False;
   FModule := Module;
-  FInStream := InStream;
-  FOutStream := FOutStream;
+  FRequestStream := RequestStream;
+  FRespondStream := FRespondStream;
   FRequestHeader := TmnFields.Create;
-  FRepondHeader := TmnFields.Create;
+  FRespondHeader := TmnFields.Create;
   Created;
 end;
 
 destructor TmnCommand.Destroy;
 begin
   FreeAndNil(FRequestHeader);
-  FreeAndNil(FRepondHeader);
+  FreeAndNil(FRespondHeader);
   inherited;
 end;
 
-procedure TmnCommand.DoPrepare;
+procedure TmnCommand.Prepare;
 begin
+end;
+
+procedure TmnCommand.SendHeader;
+begin
+end;
+
+procedure TmnCommand.Respond;
+begin
+end;
+
+procedure TmnCommand.Unprepare;
+begin
+end;
+
+procedure TmnCommand.SendHead(AHead: string);
+begin
+  RespondStream.WriteLine(AHead);
+  FStates := FStates + [cmdsHeadSent];
+end;
+
+procedure TmnCommand.PostHeader(AName, AValue: string);
+begin
+  if cmdsHeadSent in FStates then
+    raise Exception.Create('Header is sent');
 end;
 
 procedure TmnCommand.Execute;
 begin
+  SendHeader;
+  FStates := FStates + [cmdsHeaderSent];
+  {$ifdef DEBUG_MODE}
+//    Server.Listener.Log(Connection, GetCommandName + ': Started on port ' + Server.Port);
+  try
+  {$endif}
+    Respond;
+  {$ifdef DEBUG_MODE}
+  except
+    on E:Exception do
+    begin
+//      Server.Listener.Log(Connection, GetCommandName + ': Error ' + E.Message);
+      raise;
+    end;
+  end;
+//    Server.Listener.Log(Connection, GetCommandName + ': Finished');
+  {$endif}
 end;
 
-function TmnCommand.Active: Boolean;
+function TmnCommand.GetActive: Boolean;
 begin
   Result := (Module <> nil) and (Module.Active);
 end;
@@ -329,17 +390,6 @@ begin
   end;
 end;
 
-procedure TmnCommand.Shutdown;
-begin
-{  if Connected and (Connection.Stream <> nil) then
-    Connection.Stream.Drop;}
-end;
-
-procedure TmnCommand.Prepare;
-begin
-  DoPrepare;
-end;
-
 function TmnCommandClasses.Add(const Name: string; CommandClass: TmnCommandClass): Integer;
 var
   aItem: TmnCommandClassItem;
@@ -352,7 +402,7 @@ end;
 
 { TmnModule }
 
-function TmnModule.CreateCommand(CommandName: string; ARequest: TmnRequest; AInStream: TmnBufferStream; AOutStream: TmnBufferStream): TmnCommand;
+function TmnModule.CreateCommand(CommandName: string; ARequest: TmnRequest; ARequestStream: TmnBufferStream; ARespondStream: TmnBufferStream): TmnCommand;
 var
   aClass: TmnCommandClass;
 begin
@@ -360,14 +410,15 @@ begin
   if aClass <> nil then
   begin
     Result := aClass.Create(Self);
+    Result.FModule := Self;
     Result.FRequest := ARequest;
-    Result.FInStream := AInStream;
-    Result.FOutStream := AOutStream;
+    Result.FRequestStream := ARequestStream;
+    Result.FRespondStream := ARespondStream;
   end
   else
     Result := nil;
   if Result <> nil then
-    ParseHeader(Result.RequestHeader, AInStream);
+    ParseHeader(Result.RequestHeader, ARequestStream);
 end;
 
 function TmnModule.GetCommandClass(var CommandName: string): TmnCommandClass;
@@ -392,12 +443,12 @@ begin
   begin
     while not Stream.EOF do
     begin
-      line := Stream.ReadLine;
+      line := Stream.ReadLineRawByte;
       if line = '' then
         break
       else
       begin
-        RequestHeader.Add(SubStr(Line, ':', 0), SubStr(Line, ':', 1));
+        RequestHeader.AddItem(line, ':');
       end;
     end;
   end;
@@ -408,6 +459,18 @@ begin
   inherited;
   FParams := TStringList.Create;
   FCommands := TmnCommandClasses.Create;
+  CreateCommands;
+end;
+
+procedure TmnModule.CreateCommands;
+begin
+
+end;
+
+constructor TmnModule.Create(AModules: TmnModules);
+begin
+  inherited Create;
+  FModules := AModules;
 end;
 
 destructor TmnModule.Destroy;
@@ -417,15 +480,21 @@ begin
   inherited;
 end;
 
-procedure TmnModule.ExecuteCommand(CommandName: string; AInStream: TmnBufferStream; AOutStream: TmnBufferStream; RequestString: TArray<String>);
+function TmnModule.Match(ARequest: TmnRequest): Boolean;
+begin
+end;
+
+procedure TmnModule.ExecuteCommand(CommandName: string; ARequestStream: TmnBufferStream; ARespondStream: TmnBufferStream; RequestString: TArray<String>);
 var
   Command: TmnCommand;
   ARequest: TmnRequest;
 begin
   Finalize(ARequest);
-  Command := CreateCommand(CommandName, ARequest, AInStream, AOutStream);
+  Command := CreateCommand(CommandName, ARequest, ARequestStream, ARespondStream);
   if Command <> nil then //todo
+  begin
     Command.Execute;
+  end;
 end;
 
 function TmnModule.GetActive: Boolean;
