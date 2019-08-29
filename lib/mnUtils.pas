@@ -66,6 +66,7 @@ function SubStr(const AText: String; const AFromIndex, AToIndex: Integer): Strin
 //Index started from 0
 function SubStr(const Str: String; vSeperator: Char; vFromIndex, vToIndex: Integer): String; overload;
 function SubStr(const Str: String; vSeperator: Char; vIndex: Integer = 0): String; overload;
+
 function FetchStr(var AInput: string; const ADelim: string = '.'; const ADelete: Boolean = True; const ACaseSensitive: Boolean = True): string; deprecated;
 
 function StrInArray(const Str: String; const ArrayOfString : Array of String; CaseInsensitive: Boolean = False) : Boolean;

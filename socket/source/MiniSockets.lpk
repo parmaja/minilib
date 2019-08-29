@@ -3,7 +3,6 @@
   <Package Version="4">
     <PathDelim Value="\"/>
     <Name Value="MiniSockets"/>
-    <Type Value="RunAndDesignTime"/>
     <CompilerOptions>
       <Version Value="11"/>
       <PathDelim Value="\"/>
@@ -27,8 +26,9 @@
         </CompilerMessages>
       </Other>
     </CompilerOptions>
+    <Description Value="Simple Socket wrapper"/>
     <Version Major="1" Release="1" Build="1"/>
-    <Files Count="9">
+    <Files Count="10">
       <Item1>
         <Filename Value="mnClients.pas"/>
         <UnitName Value="mnClients"/>
@@ -61,6 +61,10 @@
         <Filename Value="mnModules.pas"/>
         <UnitName Value="mnModules"/>
       </Item9>
+      <Item10>
+        <Filename Value="mnWebModules.pas"/>
+        <UnitName Value="mnWebModules"/>
+      </Item10>
     </Files>
     <RequiredPkgs Count="1">
       <Item1>

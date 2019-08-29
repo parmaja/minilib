@@ -9,14 +9,8 @@ interface
 
 uses
   mnClients, mnConnections, mnServers, mnSockets, mnSocketStreams, 
-  mnIRCClients, mnHttpServer, mnModules, LazarusPackageIntf;
+  mnIRCClients, mnHttpServer, mnModules, mnWebModules;
 
 implementation
 
-procedure Register;
-begin
-end;
-
-initialization
-  RegisterPackage('MiniSockets', @Register);
 end.
