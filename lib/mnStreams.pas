@@ -90,7 +90,8 @@ type
     function ReadLn: string; overload; deprecated;
 
     function WriteLine(EOL: widestring = ''): TFileSize; overload;
-    function WriteLineRawByte(const S: rawbytestring; EOL: rawbytestring = ''): TFileSize; overload;
+    function WriteLineRawByte(const S: rawbytestring): TFileSize; overload;
+    function WriteLineUTF8(const S: UTF8String): TFileSize; overload;
     function WriteLine(const S: utf8string; EOL: utf8string = ''): TFileSize; overload;
     function WriteLine(const S: unicodestring; EOL: unicodestring = ''): TFileSize; overload;
 
@@ -399,10 +400,23 @@ begin
   Result := Result + Write(Pointer(EOL)^, ByteLength(EOL));
 end;
 
-function TmnBufferStream.WriteLineRawByte(const S: RawByteString; EOL: RawByteString): TFileSize;
+function TmnBufferStream.WriteLineRawByte(const S: RawByteString): TFileSize;
+var
+  EOL: RawByteString;
 begin
   if EOL = '' then
     EOL := RawByteString(EndOfLine);
+  Result := 0;
+  if s <> '' then
+    Result := Write(Pointer(S)^, Length(S));
+  Result := Result + Write(Pointer(EOL)^, Length(EOL));
+end;
+
+function TmnBufferStream.WriteLineUTF8(const S: UTF8String): TFileSize;
+var
+  EOL: UTF8String;
+begin
+  EOL := EndOfLine;
   Result := 0;
   if s <> '' then
     Result := Write(Pointer(S)^, Length(S));

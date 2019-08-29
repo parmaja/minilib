@@ -211,6 +211,7 @@ type
   private
     function _AddRef: Integer; {$ifdef WINDOWS}stdcall{$else}cdecl{$endif};
     function _Release: Integer; {$ifdef WINDOWS}stdcall{$else}cdecl{$endif};
+    function GetFieldByName(Index: string): TmnField;
   protected
     function CreateField: TmnField; virtual;
     procedure SetValues(Index: string; const AValue: Variant);
@@ -231,6 +232,7 @@ type
     function ByName(vName: string): TmnField;
     function IsExists(vName: string): Boolean;
     procedure Clean; virtual;
+    property FieldByName[Index: string]: TmnField read GetFieldByName;
     property Values[Index: string]: Variant read GetValues write SetValues; default;
   end;
 
@@ -879,6 +881,11 @@ end;
 function TmnFields.GetCount: Integer;
 begin
   Result := Count;
+end;
+
+function TmnFields.GetFieldByName(Index: string): TmnField;
+begin
+  Result := ByName(Index);
 end;
 
 function TmnFields.GetIField(FieldName: string): IField;

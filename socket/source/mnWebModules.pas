@@ -47,13 +47,25 @@ type
 
   TmodWebModule = class;
 
-  { TmodWebCommand }
+  TmodHttpCommand = class(TmnCommand)
+  private
+    FCookies: TmnParams;
+  protected
+    procedure Created; override;
+    procedure SendHeader; override;
+    procedure Prepare; override;
+  public
+    destructor Destroy; override;
+    property Cookies: TmnParams read FCookies;
+  end;
 
-  TmodWebCommand = class(TmnCommand)
+  { TmodURICommand }
+
+  TmodURICommand = class(TmodHttpCommand)
   private
     function GetModule: TmodWebModule;
   protected
-    Path: string;
+    URIPath: string;
     URIParams: TStringList;
     function GetDefaultDocument(Root: string): string;
     procedure Close;
@@ -100,11 +112,8 @@ type
   private
     FWebModule: TmodWebModule;
   protected
-    procedure DoBeforeOpen; override;
-    procedure DoAfterClose; override;
   public
-    constructor Create;
-    destructor Destroy; override;
+    constructor Create; override;
     property WebModule: TmodWebModule read FWebModule;
   end;
 
@@ -114,7 +123,7 @@ type
 
   { TmodGetFileCommand }
 
-  TmodGetFileCommand = class(TmodWebCommand)
+  TmodGetFileCommand = class(TmodURICommand)
   protected
   public
     procedure Respond; override;
@@ -122,25 +131,25 @@ type
 
   { TmodPutCommand }
 
-  TmodPutCommand = class(TmodWebCommand)
+  TmodPutCommand = class(TmodURICommand)
   protected
   public
     procedure Respond; override;
   end;
 
-  TmodServerInfoCommand = class(TmodWebCommand)
+  TmodServerInfoCommand = class(TmodURICommand)
   protected
     procedure Respond; override;
   public
   end;
 
-  TmodDirCommand = class(TmodWebCommand)
+  TmodDirCommand = class(TmodURICommand)
   protected
     procedure Respond; override;
   public
   end;
 
-  TmodDeleteFileCommand = class(TmodWebCommand)
+  TmodDeleteFileCommand = class(TmodURICommand)
   protected
     procedure Respond; override;
   public
@@ -149,16 +158,7 @@ type
 var
   modLock: TCriticalSection = nil;
 
-function ParsePath(aRequest: string; out Name: string; out URIPath: string; URIParams: TStringList): Boolean;
-
 implementation
-
-function ParsePath(aRequest: string; out Name: string; out URIPath: string; URIParams: TStringList): Boolean;
-begin
-  ParseURI(aRequest, URIPath, URIParams);
-  Name := SubStr(URIPath, '/', 0);
-  URIPath := Copy(URIPath, Length(Name) + 1, MaxInt);
-end;
 
 { TmodWebModule }
 
@@ -219,9 +219,9 @@ begin
   Result := SameText(Name, aName) and SameText(SubStr(ARequest.Protcol, '/', 0),  'http');
 end;
 
-{ TmodWebCommand }
+{ TmodURICommand }
 
-procedure TmodWebCommand.RespondNotFound;
+procedure TmodURICommand.RespondNotFound;
 var
   Body: string;
 begin
@@ -233,17 +233,17 @@ begin
   RespondStream.WriteString(Body);
 end;
 
-function TmodWebCommand.GetModule: TmodWebModule;
+function TmodURICommand.GetModule: TmodWebModule;
 begin
   Result := (inherited Module) as TmodWebModule;
 end;
 
-procedure TmodWebCommand.Unprepare;
+procedure TmodURICommand.Unprepare;
 begin
   RespondStream.Close;
 end;
 
-function TmodWebCommand.GetDefaultDocument(Root: string): string;
+function TmodURICommand.GetDefaultDocument(Root: string): string;
 var
   i: Integer;
   aFile: string;
@@ -259,27 +259,27 @@ begin
   end;
 end;
 
-procedure TmodWebCommand.Close;
+procedure TmodURICommand.Close;
 begin
   RespondStream.Close;
 end;
 
-procedure TmodWebCommand.Respond;
+procedure TmodURICommand.Respond;
 begin
   RespondNotFound;
 end;
 
-procedure TmodWebCommand.Prepare;
+procedure TmodURICommand.Prepare;
 var
   aName: string;
 begin
   inherited Prepare;
-  ParsePath(Request.URI, aName, Path, URIParams);
+  ParsePath(Request.URI, aName, URIPath, URIParams);
   Root := Module.DocumentRoot;
-  Host := RequestHeader['Host'];
+  Host := RequestHeader['Host'].AsString;
 end;
 
-procedure TmodWebCommand.Created;
+procedure TmodURICommand.Created;
 begin
   inherited Created;
   URIParams := TStringList.Create;
@@ -310,6 +310,8 @@ begin
     Result := 'image/svg+xml'
   else if Ext = 'css' then
     Result := 'text/css'
+  else if Ext = 'json' then
+    Result := 'application/json'
   else if Ext = 'js' then
     Result := 'text/js'
   else
@@ -322,7 +324,7 @@ var
   aDocStream: TFileStream;
   aDocument: string;
 begin
-  aDocument := IncludeTrailingPathDelimiter(Root) + '.' + Path;
+  aDocument := IncludeTrailingPathDelimiter(Root) + '.' + URIPath;
   aDocument := StringReplace(aDocument, '/', PathDelim, [rfReplaceAll]);//correct it for linux
   aDocument := ExpandFileName(aDocument);
 
@@ -419,9 +421,9 @@ begin
   RespondStream.WriteCommand('OK');
 end;
 
-{ TmodWebCommand }
+{ TmodURICommand }
 
-destructor TmodWebCommand.Destroy;
+destructor TmodURICommand.Destroy;
 begin
   URIParams.Free;
   inherited;
@@ -432,7 +434,7 @@ end;
 constructor TmodWebServer.Create;
 begin
   inherited;
-  FWebModule := TmodWebModule.Create('web', Modules, 'http/1.0');
+  FWebModule := TmodWebModule.Create('web', 'http/1.0', Modules);
   FWebModule.FServer := Self;
   Port := '80';
   with FWebModule do
@@ -445,18 +447,29 @@ begin
   end;
 end;
 
-destructor TmodWebServer.Destroy;
+{ TmodHttpCommand }
+
+procedure TmodHttpCommand.Created;
 begin
+  inherited;
+  FCookies := TmnParams.Create;
+end;
+
+destructor TmodHttpCommand.Destroy;
+begin
+  FreeAndNil(FCookies);
   inherited;
 end;
 
-procedure TmodWebServer.DoBeforeOpen;
+procedure TmodHttpCommand.Prepare;
 begin
   inherited;
+
 end;
 
-procedure TmodWebServer.DoAfterClose;
+procedure TmodHttpCommand.SendHeader;
 begin
+  PostHeader('Cookies', Cookies.ToString);
   inherited;
 end;
 
