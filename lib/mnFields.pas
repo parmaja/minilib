@@ -181,6 +181,7 @@ type
     function GetAsString: string; override;
     procedure SetAsString(const AValue: string); override;
   public
+    function GetFullString(Seperator: string = '='): String;
   published
     property Value;
     property IsEmpty;
@@ -922,6 +923,11 @@ end;
 procedure TmnField.SetAsString(const AValue: string);
 begin
   FValue := AValue;
+end;
+
+function TmnField.GetFullString(Seperator: string): String;
+begin
+  Result := Name + Seperator + AsString;
 end;
 
 end.

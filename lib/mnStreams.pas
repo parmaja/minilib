@@ -164,7 +164,7 @@ type
     procedure Connect; virtual; abstract;
     procedure Drop; virtual; abstract; //Shutdown
     procedure Disconnect; virtual; abstract;
-    procedure Close; //alias for Disconnect
+    procedure Close;
     function WaitToRead(Timeout: Longint): TmnConnectionError; overload; virtual; abstract;
     function WaitToWrite(Timeout: Longint): TmnConnectionError; overload; virtual; abstract;
     function WaitToRead: Boolean; overload;

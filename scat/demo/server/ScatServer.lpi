@@ -9,6 +9,11 @@
       </Flags>
       <SessionStorage Value="InProjectDir"/>
       <ResourceType Value="res"/>
+      <UseXPManifest Value="True"/>
+      <XPManifest>
+        <TextName Value="MiniWebServer"/>
+        <TextDesc Value="just Demo of web server using minisockets"/>
+      </XPManifest>
     </General>
     <BuildModes Count="1">
       <Item1 Name="Windows" Default="True"/>

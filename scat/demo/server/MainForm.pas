@@ -46,7 +46,7 @@ type
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
   private
-    ScatServer: TscatWebServer;
+    ScatServer: TmodWebServer;
     FMax:Integer;
     procedure ScatServerBeforeOpen(Sender: TObject);
     procedure ScatServerAfterClose(Sender: TObject);
@@ -155,7 +155,7 @@ var
 var
   aAutoRun:Boolean;
 begin
-  ScatServer := TscatWebServer.Create;
+  ScatServer := TmodWebServer.Create;
   ScatServer.OnBeforeOpen := ScatServerBeforeOpen;
   ScatServer.OnAfterClose := ScatServerAfterClose;
   ScatServer.OnChanged :=  ScatServerChanged;

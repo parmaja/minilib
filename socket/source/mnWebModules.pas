@@ -2,7 +2,7 @@ unit mnWebModules;
 {**
  *  This file is part of the "Mini Library"
  *
- * @license   modifiedLGPL (modified of Scat://www.gnu.org/licenses/lgpl.html)
+ * @license   modifiedLGPL (modified of mod://www.gnu.org/licenses/lgpl.html)
  *            See the file COPYING.MLGPL, included in this distribution,
  * @author    Zaher Dirkey <zaher at parmaja dot com>
  *}
@@ -45,39 +45,37 @@ uses
 
 type
 
-  TscatWebModule = class;
+  TmodWebModule = class;
 
-  { TscatWebCommand }
+  { TmodWebCommand }
 
-  TscatWebCommand = class(TmnCommand)
+  TmodWebCommand = class(TmnCommand)
   private
-    function GetModule: TscatWebModule;
+    function GetModule: TmodWebModule;
   protected
-    URIPath: string;
+    Path: string;
     URIParams: TStringList;
     function GetDefaultDocument(Root: string): string;
-    procedure Shutdown;
-    procedure Answer404;
+    procedure Close;
+    procedure RespondNotFound;
     procedure Respond; override;
     procedure Prepare; override;
     procedure Unprepare; override;
-    procedure Execute; override;
     procedure Created; override;
   public
     Root: string; //Document root folder
     Host: string;
-    Connection : TmnCommandConnection;
     destructor Destroy; override;
-    property Module: TscatWebModule read GetModule;
+    property Module: TmodWebModule read GetModule;
   end;
 
-  TscatWebServer = class;
+  TmodWebServer = class;
 
-  { TscatWebModule }
+  { TmodWebModule }
 
-  TscatWebModule = class(TmnModule)
+  TmodWebModule = class(TmnModule)
   private
-    FServer: TscatWebServer;
+    FServer: TmodWebServer;
     procedure SetDefaultDocument(AValue: TStringList);
     procedure SetDocumentRoot(AValue: string);
   protected
@@ -91,65 +89,65 @@ type
     function Match(ARequest: TmnRequest): Boolean; override;
   public
     destructor Destroy; override;
-    property Server: TscatWebServer read FServer;
+    property Server: TmodWebServer read FServer;
     property DocumentRoot: string read FDocumentRoot write SetDocumentRoot;
     property DefaultDocument: TStringList read FDefaultDocument write SetDefaultDocument;
   end;
 
-  { TscatWebServer }
+  { TmodWebServer }
 
-  TscatWebServer = class(TmnCommandServer)
+  TmodWebServer = class(TmnModuleServer)
   private
-    FWebModule: TscatWebModule;
+    FWebModule: TmodWebModule;
   protected
     procedure DoBeforeOpen; override;
     procedure DoAfterClose; override;
   public
     constructor Create;
     destructor Destroy; override;
-    property WebModule: TscatWebModule read FWebModule;
+    property WebModule: TmodWebModule read FWebModule;
   end;
 
   {**
     Files Commands
   *}
 
-    { TscatGetFileCommand }
+  { TmodGetFileCommand }
 
-    TscatGetFileCommand = class(TscatWebCommand)
-    protected
-    public
-      procedure Respond; override;
-    end;
+  TmodGetFileCommand = class(TmodWebCommand)
+  protected
+  public
+    procedure Respond; override;
+  end;
 
-    { TscatPutCommand }
+  { TmodPutCommand }
 
-    TscatPutCommand = class(TscatWebCommand)
-    protected
-    public
-      procedure Respond; override;
-    end;
+  TmodPutCommand = class(TmodWebCommand)
+  protected
+  public
+    procedure Respond; override;
+  end;
 
-    TscatServerInfoCommand = class(TscatWebCommand)
-    protected
-      procedure Respond; override;
-    public
-    end;
+  TmodServerInfoCommand = class(TmodWebCommand)
+  protected
+    procedure Respond; override;
+  public
+  end;
 
-    TscatDirCommand = class(TscatWebCommand)
-    protected
-      procedure Respond; override;
-    public
-    end;
+  TmodDirCommand = class(TmodWebCommand)
+  protected
+    procedure Respond; override;
+  public
+  end;
 
-    TscatDeleteFileCommand = class(TscatWebCommand)
-    protected
-      procedure Respond; override;
-    public
-    end;
+  TmodDeleteFileCommand = class(TmodWebCommand)
+  protected
+    procedure Respond; override;
+  public
+  end;
 
 var
-  scatLock: TCriticalSection = nil;
+  modLock: TCriticalSection = nil;
 
 function ParsePath(aRequest: string; out Name: string; out URIPath: string; URIParams: TStringList): Boolean;
 
@@ -162,65 +160,72 @@ begin
   URIPath := Copy(URIPath, Length(Name) + 1, MaxInt);
 end;
 
-{ TscatWebModule }
+{ TmodWebModule }
 
-procedure TscatWebModule.SetDocumentRoot(AValue: string);
+procedure TmodWebModule.SetDocumentRoot(AValue: string);
 begin
   if FDocumentRoot =AValue then Exit;
   FDocumentRoot :=AValue;
 end;
 
-procedure TscatWebModule.SetDefaultDocument(AValue: TStringList);
+procedure TmodWebModule.SetDefaultDocument(AValue: TStringList);
 begin
   FDefaultDocument.Assign(AValue);
 end;
 
-function TscatWebModule.GetActive: Boolean;
+function TmodWebModule.GetActive: Boolean;
 begin
   Result := Server.Active;
 end;
 
-procedure TscatWebModule.Created;
+procedure TmodWebModule.Created;
 begin
   inherited;
   FDefaultDocument := TStringList.Create;
 end;
 
-procedure TscatWebModule.CreateCommands;
+procedure TmodWebModule.CreateCommands;
 begin
   inherited;
-  Commands.Add('GET', TscatGetFileCommand);
+  RegisterCommand('GET', TmodGetFileCommand, true);
+  RegisterCommand('Info', TmodServerInfoCommand);
+  {
+  RegisterCommand('GET', TmodGetFileCommand);
+  RegisterCommand('PUT', TmodPutCommand);
+  RegisterCommand('DIR', TmodDirCommand);
+  RegisterCommand('DEL', TmodDeleteFileCommand);
+  }
 end;
 
-destructor TscatWebModule.Destroy;
+destructor TmodWebModule.Destroy;
 begin
   FreeAndNil(FDefaultDocument);
   inherited Destroy;
 end;
 
-procedure TscatWebModule.ParseRequest(var ARequest: TmnRequest);
+procedure TmodWebModule.ParseRequest(var ARequest: TmnRequest);
 var
   aName, aPath: string;
 begin
-  ParsePath(ARequest.Path, aName, aPath, nil);
+  ParsePath(ARequest.URI, aName, aPath, nil);
   ARequest.Command := ARequest.Method;
 end;
 
-function TscatWebModule.Match(ARequest: TmnRequest): Boolean;
+function TmodWebModule.Match(ARequest: TmnRequest): Boolean;
 var
   aName, aPath: string;
 begin
-  ParsePath(ARequest.Path, aName, aPath, nil);
+  ParsePath(ARequest.URI, aName, aPath, nil);
   Result := SameText(Name, aName) and SameText(SubStr(ARequest.Protcol, '/', 0),  'http');
 end;
 
-{ TscatWebCommand }
+{ TmodWebCommand }
 
-procedure TscatWebCommand.Answer404;
+procedure TmodWebCommand.RespondNotFound;
 var
   Body: string;
 begin
-  SendHead('HTTP/1.1 200 OK');
+  SendRespond('HTTP/1.1 200 OK');
   PostHeader('Content-Type', 'text/html');
   Body := '<HTML><HEAD><TITLE>404 Not Found</TITLE></HEAD>' +
     '<BODY><H1>404 Not Found</H1>The requested URL ' + //FDocument +
@@ -228,16 +233,17 @@ begin
   RespondStream.WriteString(Body);
 end;
 
-function TscatWebCommand.GetModule: TscatWebModule;
+function TmodWebCommand.GetModule: TmodWebModule;
 begin
-  Result := Module as TscatWebModule;
+  Result := (inherited Module) as TmodWebModule;
 end;
 
-procedure TscatWebCommand.Unprepare;
+procedure TmodWebCommand.Unprepare;
 begin
+  RespondStream.Close;
 end;
 
-function TscatWebCommand.GetDefaultDocument(Root: string): string;
+function TmodWebCommand.GetDefaultDocument(Root: string): string;
 var
   i: Integer;
   aFile: string;
@@ -253,46 +259,33 @@ begin
   end;
 end;
 
-procedure TscatWebCommand.Shutdown;
+procedure TmodWebCommand.Close;
 begin
-  if (Connection <> nil) and Connection.Connected and (Connection.Stream <> nil) then
-    Connection.Stream.Drop;
+  RespondStream.Close;
 end;
 
-procedure TscatWebCommand.Respond;
+procedure TmodWebCommand.Respond;
 begin
-  RespondStream.WriteString('HTTP/1.0 404 Not Found');
+  RespondNotFound;
 end;
 
-procedure TscatWebCommand.Prepare;
+procedure TmodWebCommand.Prepare;
 var
   aName: string;
 begin
   inherited Prepare;
-  ParsePath(Request.Path, aName, URIPath, URIParams);
-end;
-
-procedure TscatWebCommand.Execute;
-var
-  l: string;
-begin
-  inherited;
+  ParsePath(Request.URI, aName, Path, URIParams);
   Root := Module.DocumentRoot;
   Host := RequestHeader['Host'];
-  try
-    Respond;
-  finally
-  end;
-  Shutdown;
 end;
 
-procedure TscatWebCommand.Created;
+procedure TmodWebCommand.Created;
 begin
   inherited Created;
   URIParams := TStringList.Create;
 end;
 
-{ TscatGetFileCommand }
+{ TmodGetFileCommand }
 
 function DocumentToContentType(FileName: string): string;
 var
@@ -317,13 +310,13 @@ begin
     Result := 'application/binary';
 end;
 
-procedure TscatGetFileCommand.Respond;
+procedure TmodGetFileCommand.Respond;
 var
   DocSize: Int64;
   aDocStream: TFileStream;
   aDocument: string;
 begin
-  aDocument := IncludeTrailingPathDelimiter(Root) + URIPath;
+  aDocument := IncludeTrailingPathDelimiter(Root) + Path;
   aDocument := StringReplace(aDocument, '/', PathDelim, [rfReplaceAll]);//correct it for linux
 
  if aDocument[Length(aDocument)] = PathDelim then //get the default file if it not defined
@@ -338,11 +331,13 @@ begin
         DocSize := aDocStream.Size;
         if Active then
         begin
-          SendHead('HTTP/1.1 200 OK');
+          SendRespond('HTTP/1.1 200 OK');
           PostHeader('Content-Type', DocumentToContentType(aDocument));
           PostHeader('Content-Length', IntToStr(DocSize));
         end;
 
+        SendHeader;
+        aDocStream.Seek(0, soFromBeginning);
         if Active then
           RespondStream.WriteStream(aDocStream);
       finally
@@ -351,26 +346,26 @@ begin
     end;
   end
   else
-    Answer404;
+    inherited;
 end;
 
-{ TscatServerInfoCommand }
+{ TmodServerInfoCommand }
 
-procedure TscatServerInfoCommand.Respond;
+procedure TmodServerInfoCommand.Respond;
 begin
-  SendHead('OK');
-  Connection.Stream.WriteLine('Server is running on port: ' + Module.Server.Port);
-  //Connection.Stream.WriteLine('the server is: "' + Application.ExeName + '"');
+  SendRespond('OK');
+  RespondStream.WriteLine('Server is running on port: ' + Module.Server.Port);
+  //RespondStream.WriteLine('the server is: "' + Application.ExeName + '"');
 end;
 
-{ TscatPutCommand }
+{ TmodPutCommand }
 
-procedure TscatPutCommand.Respond;
+procedure TmodPutCommand.Respond;
 var
   aFile: TFileStream;
   aFileName: string;
 begin
-  Connection.Stream.WriteCommand('OK');
+  RespondStream.WriteCommand('OK');
   aFileName := URIParams.Values['FileName'];
   {aFile := TFileStream.Create(DocumentRoot + aFileName, fmCreate);
   try
@@ -380,15 +375,15 @@ begin
   end;}
 end;
 
-{ TscatDirCommand }
+{ TmodDirCommand }
 
-procedure TscatDirCommand.Respond;
+procedure TmodDirCommand.Respond;
 var
 //  i: Integer;
 //  aStrings: TStringList;
   aPath, aFilter: string;
 begin
-  Connection.Stream.WriteCommand('OK');
+  RespondStream.WriteCommand('OK');
   aFilter := URIParams.Values['Filter'];
   //aPath := IncludeTrailingPathDelimiter(DocumentRoot);
   if aFilter = '' then
@@ -405,52 +400,32 @@ begin
   end;}
 end;
 
-{ TscatDeleteFileCommand }
+{ TmodDeleteFileCommand }
 
-procedure TscatDeleteFileCommand.Respond;
+procedure TmodDeleteFileCommand.Respond;
 var
   aFileName: string;
 begin
   {aFileName := IncludeTrailingPathDelimiter(DocumentRoot) + Params.Values['FileName'];
   if FileExists(aFileName) then
     DeleteFile(aFileName);}
-  Connection.Stream.WriteCommand('OK');
+  RespondStream.WriteCommand('OK');
 end;
-{
-RegisterCommand('Info', TscatServerInfoCommand);
-RegisterCommand('GET', TscatGetFileCommand);
-RegisterCommand('PUT', TscatPutCommand);
-RegisterCommand('DIR', TscatDirCommand);
-RegisterCommand('DEL', TscatDeleteFileCommand);
-}
 
-{ TscatWebCommand }
+{ TmodWebCommand }
 
-destructor TscatWebCommand.Destroy;
+destructor TmodWebCommand.Destroy;
 begin
   URIParams.Free;
   inherited;
 end;
 
-{procedure TScatListener.DoCreateStream(var Result: TmnConnectionStream; vSocket: TmnCustomSocket);
+{ TmodWebServer }
+
+constructor TmodWebServer.Create;
 begin
   inherited;
-  Result.EOFOnError := True;
-  Result.EndOfLine := sWinEndOfLine;
-end;
-
-function TScatListener.GetCommandClass(var CommandName: string): TmnCommandClass;
-begin
-  inherited;
-end;}
-
-
-{ TscatWebServer }
-
-constructor TscatWebServer.Create;
-begin
-  inherited;
-  FWebModule := TscatWebModule.Create('web', Modules, 'http/1.0');
+  FWebModule := TmodWebModule.Create('web', Modules, 'http/1.0');
   FWebModule.FServer := Self;
   Port := '80';
   with FWebModule do
@@ -463,28 +438,23 @@ begin
   end;
 end;
 
-destructor TscatWebServer.Destroy;
+destructor TmodWebServer.Destroy;
 begin
   inherited;
 end;
 
-procedure TscatWebServer.DoBeforeOpen;
+procedure TmodWebServer.DoBeforeOpen;
 begin
   inherited;
 end;
 
-procedure TscatWebServer.DoAfterClose;
+procedure TmodWebServer.DoAfterClose;
 begin
   inherited;
 end;
-
-{function TscatWebServer.DoCreateListener: TmnListener;
-begin
-  Result := TScatListener.Create;
-end;}
 
 initialization
-  scatLock := TCriticalSection.Create;
+  modLock := TCriticalSection.Create;
 finalization
-  scatLock.Free;
+  modLock.Free;
 end.

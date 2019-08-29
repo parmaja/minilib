@@ -126,12 +126,12 @@ object Main: TMain
       ParentFont = False
     end
     object StartBtn: TButton
-      Left = 2
+      Left = 4
       Height = 22
       Top = 77
       Width = 60
       BorderSpacing.InnerBorder = 4
-      Caption = 'Start'
+      Caption = '&Start'
       Default = True
       OnClick = StartBtnClick
       TabOrder = 0
@@ -151,7 +151,7 @@ object Main: TMain
       Top = 77
       Width = 60
       BorderSpacing.InnerBorder = 4
-      Caption = 'Stop'
+      Caption = 'S&top'
       Enabled = False
       OnClick = StopBtnClick
       TabOrder = 2
