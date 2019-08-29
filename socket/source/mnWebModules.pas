@@ -296,16 +296,22 @@ begin
     Ext := Copy(Ext, 2, Length(Ext));
   if (Ext = 'htm') or (Ext = 'html') or (Ext = 'shtml') or (Ext = 'dhtml') then
     Result := 'text/html'
-  else if Ext = 'css' then
-    Result := 'text/css'
   else if Ext = 'gif' then
     Result := 'image/gif'
   else if Ext = 'bmp' then
     Result := 'image/bmp'
   else if (Ext = 'jpg') or (Ext = 'jpeg') then
     Result := 'image/jpeg'
+  else if (Ext = 'png') then
+    Result := 'image/png'
   else if Ext = 'txt' then
     Result := 'text/plain'
+  else if Ext = 'svg' then
+    Result := 'image/svg+xml'
+  else if Ext = 'css' then
+    Result := 'text/css'
+  else if Ext = 'js' then
+    Result := 'text/js'
   else
     Result := 'application/binary';
 end;
@@ -316,8 +322,9 @@ var
   aDocStream: TFileStream;
   aDocument: string;
 begin
-  aDocument := IncludeTrailingPathDelimiter(Root) + Path;
+  aDocument := IncludeTrailingPathDelimiter(Root) + '.' + Path;
   aDocument := StringReplace(aDocument, '/', PathDelim, [rfReplaceAll]);//correct it for linux
+  aDocument := ExpandFileName(aDocument);
 
  if aDocument[Length(aDocument)] = PathDelim then //get the default file if it not defined
     aDocument := GetDefaultDocument(aDocument);
@@ -337,7 +344,7 @@ begin
         end;
 
         SendHeader;
-        aDocStream.Seek(0, soFromBeginning);
+
         if Active then
           RespondStream.WriteStream(aDocStream);
       finally

@@ -568,7 +568,7 @@ begin
   begin
      ACommand.RespondStream.WriteLine(item.GetFullString(': '));
   end;
-  ACommand.RespondStream.WriteLine(Modules.EndOfLine);
+  ACommand.RespondStream.WriteLine(UTF8String(''));
 end;
 
 procedure TmnModule.ParseRequest(var ARequest: TmnRequest);
@@ -614,6 +614,7 @@ begin
   finally
     FreeAndNil(aCMD);
   end;
+  Result := true;
 end;
 
 procedure TmnModule.ExecuteCommand(CommandName: string; ARequestStream: TmnConnectionStream; ARespondStream: TmnConnectionStream; RequestString: TArray<String>);
