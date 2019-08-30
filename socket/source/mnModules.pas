@@ -241,15 +241,15 @@ type
     property Modules: TmnModules read FModules;
   end;
 
-function ParseURI(Request: string; out URIPath: string; URIParams: TStringList): Boolean;
-procedure ParsePath(aRequest: string; out Name: string; out URIPath: string; URIParams: TStringList);
+function ParseURI(Request: string; out URIPath: string; URIParams: TmnParams): Boolean;
+procedure ParsePath(aRequest: string; out Name: string; out URIPath: string; URIParams: TmnParams);
 
 implementation
 
 uses
   mnUtils;
 
-procedure ParamsCallBack(vObject: TObject; S: string);
+procedure ParamsCallBack(Sender: Pointer; Index:Integer; S: string; var Resume: Boolean);
 var
   Name, Value: string;
   p: Integer;
@@ -257,10 +257,10 @@ begin
   p := pos('=', s);
   Name := Copy(s, 1, p - 1);
   Value := DequoteStr(Copy(s, p + 1, MaxInt));
-  (vObject as TmnParams).Add(Name, Value);
+  (TObject(Sender) as TmnParams).Add(Name, Value);
 end;
 
-function ParseURI(Request: string; out URIPath: string; URIParams: TStringList): Boolean;
+function ParseURI(Request: string; out URIPath: string; URIParams: TmnParams): Boolean;
 var
   I, J: Integer;
   aParams: string;
@@ -296,11 +296,11 @@ begin
     aParams := Copy(URIPath, J + 1, Length(URIPath));
     URIPath := Copy(URIPath, 1, J - 1);
     if URIParams <> nil then
-      StrToStringsCallback(aParams, URIParams, @ParamsCallBack);
+      StrToStringsCallback(aParams, URIParams, @ParamsCallBack, ['&'], [' '], true);
   end;
 end;
 
-procedure ParsePath(aRequest: string; out Name: string; out URIPath: string; URIParams: TStringList);
+procedure ParsePath(aRequest: string; out Name: string; out URIPath: string; URIParams: TmnParams);
 begin
   ParseURI(aRequest, URIPath, URIParams);
   Name := SubStr(URIPath, '/', 0);
@@ -383,14 +383,14 @@ end;
 
 procedure TmnModuleServer.DoBeforeOpen;
 begin
-  inherited DoStart;
+  inherited;
   Modules.Active := True;
 end;
 
 procedure TmnModuleServer.DoAfterClose;
 begin
   Modules.Active := False;
-  inherited DoStop;
+  inherited;
 end;
 
 { TmnCustomCommandListener }
@@ -687,7 +687,6 @@ end;
 
 function TmnModules.GetActive: Boolean;
 begin
-
 end;
 
 procedure TmnModules.SetEOFOnError(AValue: Boolean);

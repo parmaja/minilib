@@ -50,13 +50,16 @@ type
   TmodHttpCommand = class(TmnCommand)
   private
     FCookies: TmnParams;
+    FURIParams: TmnParams;
   protected
+    URIPath: string;
     procedure Created; override;
     procedure SendHeader; override;
     procedure Prepare; override;
   public
     destructor Destroy; override;
     property Cookies: TmnParams read FCookies;
+    property URIParams: TmnParams read FURIParams;
   end;
 
   { TmodURICommand }
@@ -65,8 +68,6 @@ type
   private
     function GetModule: TmodWebModule;
   protected
-    URIPath: string;
-    URIParams: TStringList;
     function GetDefaultDocument(Root: string): string;
     procedure Close;
     procedure RespondNotFound;
@@ -273,7 +274,7 @@ procedure TmodURICommand.Prepare;
 var
   aName: string;
 begin
-  inherited Prepare;
+  inherited;
   ParsePath(Request.URI, aName, URIPath, URIParams);
   Root := Module.DocumentRoot;
   Host := RequestHeader['Host'].AsString;
@@ -282,7 +283,6 @@ end;
 procedure TmodURICommand.Created;
 begin
   inherited Created;
-  URIParams := TStringList.Create;
 end;
 
 { TmodGetFileCommand }
@@ -425,7 +425,6 @@ end;
 
 destructor TmodURICommand.Destroy;
 begin
-  URIParams.Free;
   inherited;
 end;
 
@@ -453,18 +452,22 @@ procedure TmodHttpCommand.Created;
 begin
   inherited;
   FCookies := TmnParams.Create;
+  FURIParams := TmnParams.Create;
 end;
 
 destructor TmodHttpCommand.Destroy;
 begin
   FreeAndNil(FCookies);
+  FreeAndNil(FURIParams);
   inherited;
 end;
 
 procedure TmodHttpCommand.Prepare;
+var
+  aName: string;
 begin
   inherited;
-
+  ParsePath(Request.URI, aName, URIPath, URIParams);
 end;
 
 procedure TmodHttpCommand.SendHeader;
