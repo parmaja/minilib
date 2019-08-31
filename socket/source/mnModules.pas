@@ -25,14 +25,18 @@ type
   TmnModuleConnection = class;
   TmnModuleConnectionClass = class of TmnModuleConnection;
 
+  { TmnParams }
+
   TmnParams = class(TmnFields)
   private
+    FDelimiter: string;
     FSeperator: string;
     function GetAsString: string;
     procedure SetAsString(const Value: string);
   public
     property FieldByName; default;
-    property Seperator: string read FSeperator write FSeperator;
+    property Seperator: string read FSeperator write FSeperator; //value
+    property Delimiter: string read FDelimiter write FDelimiter; //eol
     property AsString: string read GetAsString write SetAsString;
   end;
 
@@ -687,6 +691,7 @@ end;
 
 function TmnModules.GetActive: Boolean;
 begin
+  Result := True;
 end;
 
 procedure TmnModules.SetEOFOnError(AValue: Boolean);
@@ -745,9 +750,12 @@ function TmnParams.GetAsString: string;
 var
   item: TmnField;
 begin
+  Result := '';
   for item in Self do
   begin
-//    Result := Result
+    if Result <> '' then
+      Result := Result + Delimiter;
+    Result := Result + Item.Name + Seperator + ' ' + Item.AsString;
   end;
 end;
 

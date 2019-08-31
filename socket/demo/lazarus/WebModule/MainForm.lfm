@@ -1,0 +1,187 @@
+object Main: TMain
+  Left = 142
+  Height = 366
+  Top = 188
+  Width = 536
+  HorzScrollBar.Page = 206
+  VertScrollBar.Page = 207
+  BorderIcons = [biSystemMenu, biMinimize]
+  BorderStyle = bsSingle
+  Caption = 'Module Web Server'
+  ClientHeight = 346
+  ClientWidth = 536
+  Font.CharSet = ARABIC_CHARSET
+  Font.Color = clBlack
+  Font.Height = -11
+  Font.Name = 'Tahoma'
+  Font.Pitch = fpVariable
+  Menu = MainMenu1
+  OnCreate = FormCreate
+  OnDestroy = FormDestroy
+  OnHide = FormHide
+  LCLVersion = '2.1.0.0'
+  object Memo: TMemo
+    Left = 0
+    Height = 241
+    Top = 105
+    Width = 536
+    Align = alClient
+    Anchors = [akLeft, akBottom]
+    Font.CharSet = ARABIC_CHARSET
+    Font.Color = clBlack
+    Font.Height = -11
+    Font.Name = 'Courier New'
+    Font.Pitch = fpFixed
+    Font.Quality = fqDraft
+    ParentFont = False
+    ReadOnly = True
+    ScrollBars = ssVertical
+    TabOrder = 0
+  end
+  object Panel1: TPanel
+    Left = 0
+    Height = 105
+    Top = 0
+    Width = 536
+    Align = alTop
+    ClientHeight = 105
+    ClientWidth = 536
+    TabOrder = 1
+    object Bevel1: TBevel
+      Left = 43
+      Height = 18
+      Top = 53
+      Width = 78
+    end
+    object Label1: TLabel
+      Left = 11
+      Height = 13
+      Top = 11
+      Width = 23
+      Caption = 'Root'
+      Font.CharSet = ARABIC_CHARSET
+      Font.Color = clBlack
+      Font.Height = -11
+      Font.Name = 'Tahoma'
+      Font.Pitch = fpVariable
+      ParentColor = False
+      ParentFont = False
+    end
+    object Label2: TLabel
+      Left = 14
+      Height = 13
+      Top = 33
+      Width = 20
+      Caption = 'Port'
+      ParentColor = False
+    end
+    object NumberOfThreadsLbl: TLabel
+      Left = 5
+      Height = 13
+      Top = 54
+      Width = 29
+      Caption = 'Count'
+      Font.CharSet = ARABIC_CHARSET
+      Font.Color = clBlack
+      Font.Height = -11
+      Font.Name = 'Tahoma'
+      Font.Pitch = fpVariable
+      ParentColor = False
+      ParentFont = False
+    end
+    object NumberOfThreads: TLabel
+      Left = 49
+      Height = 13
+      Top = 55
+      Width = 65
+      AutoSize = False
+      Caption = '0'
+      Font.CharSet = ANSI_CHARSET
+      Font.Color = clBlack
+      Font.Height = -11
+      Font.Name = 'Tahoma'
+      Font.Pitch = fpVariable
+      ParentColor = False
+      ParentFont = False
+    end
+    object Bevel2: TBevel
+      Left = 123
+      Height = 18
+      Top = 53
+      Width = 78
+    end
+    object MaxOfThreads: TLabel
+      Left = 129
+      Height = 13
+      Top = 55
+      Width = 65
+      AutoSize = False
+      Caption = '0'
+      Font.CharSet = ANSI_CHARSET
+      Font.Color = clBlack
+      Font.Height = -11
+      Font.Name = 'Tahoma'
+      Font.Pitch = fpVariable
+      ParentColor = False
+      ParentFont = False
+    end
+    object StartBtn: TButton
+      Left = 4
+      Height = 22
+      Top = 77
+      Width = 60
+      BorderSpacing.InnerBorder = 4
+      Caption = '&Start'
+      Default = True
+      OnClick = StartBtnClick
+      TabOrder = 0
+    end
+    object RootEdit: TEdit
+      Left = 43
+      Height = 21
+      Top = 6
+      Width = 490
+      Anchors = [akTop, akLeft, akRight]
+      TabOrder = 1
+      Text = '.\html'
+    end
+    object StopBtn: TButton
+      Left = 65
+      Height = 22
+      Top = 77
+      Width = 60
+      BorderSpacing.InnerBorder = 4
+      Caption = 'S&top'
+      Enabled = False
+      OnClick = StopBtnClick
+      TabOrder = 2
+    end
+    object PortEdit: TEdit
+      Left = 43
+      Height = 21
+      Top = 29
+      Width = 78
+      TabOrder = 3
+      Text = '81'
+    end
+    object ExitBtn: TButton
+      Left = 472
+      Height = 22
+      Top = 77
+      Width = 61
+      Anchors = [akTop, akRight]
+      BorderSpacing.InnerBorder = 4
+      Caption = 'Exit'
+      OnClick = ExitBtnClick
+      TabOrder = 4
+    end
+  end
+  object MainMenu1: TMainMenu
+    left = 281
+    top = 18
+    object MenuItem1: TMenuItem
+      Caption = 'Exit'
+      OnClick = MenuItem1Click
+    end
+  end
+end
