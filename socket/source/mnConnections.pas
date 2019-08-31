@@ -63,6 +63,7 @@ type
 
   TmnConnections = class(TmnLockThread)  //TmnListener and TmnCaller using it
   private
+    FLastID: Int64;
     FList: TmnConnectionList;
   protected
     FPort: string;
@@ -77,6 +78,7 @@ type
     destructor Destroy; override;
     procedure Stop; virtual;
     property Count: Integer read GetCount;
+    property LastID: Int64 read FLastID;
     property List: TmnConnectionList read FList;
   end;
 
@@ -84,6 +86,7 @@ type
 
   TmnConnection = class(TmnThread)
   private
+    FID: Integer;
     FOwner: TmnConnections;
     FStream: TmnConnectionStream;
     function GetActive: Boolean;
@@ -110,6 +113,7 @@ type
     property Connected: Boolean read GetConnected write SetConnected;
     property Active: Boolean read GetActive;
     property Stream: TmnConnectionStream read FStream; //write SetStream; //not now
+    property ID: Integer read FID;
   end;
 
 procedure mnCheckError(Value: Integer);
@@ -137,7 +141,9 @@ end;
 
 function TmnConnections.CreateConnection(vSocket: TmnCustomSocket): TmnConnection;
 begin
+  Inc(FLastID);
   Result := DoCreateConnection(CreateStream(vSocket));
+  Result.FID := FLastID;
 end;
 
 procedure TmnConnections.DoCreateStream(var Result: TmnConnectionStream; vSocket: TmnCustomSocket);

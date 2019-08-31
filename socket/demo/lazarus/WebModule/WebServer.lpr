@@ -17,7 +17,7 @@ uses
   Forms,
   LCLIntf,
   SysUtils,
-  MainForm in 'MainForm.pas', FrameViewer09;
+  MainForm in 'MainForm.pas';
 
 {$R *.res}
 

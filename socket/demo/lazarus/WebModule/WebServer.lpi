@@ -12,7 +12,7 @@
       <UseXPManifest Value="True"/>
       <XPManifest>
         <TextName Value="MiniWebServer"/>
-        <TextDesc Value="just Demo of web server using minisockets"/>
+        <TextDesc Value="just a demo of web server using minisockets"/>
       </XPManifest>
     </General>
     <BuildModes Count="1">
@@ -23,38 +23,37 @@
     </PublishOptions>
     <RunParams>
       <local>
+        <CommandLineParams Value="-run"/>
         <LaunchingApplication PathPlusParams="\usr\X11R6\bin\xterm -T &apos;Lazarus Run Output&apos; -e $(LazarusDir)\tools\runwait.sh $(TargetCmdLine)"/>
       </local>
       <FormatVersion Value="2"/>
       <Modes Count="1">
         <Mode0 Name="default">
           <local>
+            <CommandLineParams Value="-run"/>
             <LaunchingApplication PathPlusParams="\usr\X11R6\bin\xterm -T &apos;Lazarus Run Output&apos; -e $(LazarusDir)\tools\runwait.sh $(TargetCmdLine)"/>
           </local>
         </Mode0>
       </Modes>
     </RunParams>
-    <RequiredPackages Count="6">
+    <RequiredPackages Count="5">
       <Item1>
-        <PackageName Value="FrameViewer09"/>
+        <PackageName Value="MiniXML"/>
       </Item1>
       <Item2>
-        <PackageName Value="MiniXML"/>
+        <PackageName Value="MiniConnections"/>
       </Item2>
       <Item3>
-        <PackageName Value="MiniConnections"/>
+        <PackageName Value="MiniSockets"/>
       </Item3>
       <Item4>
-        <PackageName Value="MiniSockets"/>
+        <PackageName Value="MiniComm"/>
       </Item4>
       <Item5>
-        <PackageName Value="MiniComm"/>
-      </Item5>
-      <Item6>
         <PackageName Value="LCL"/>
-      </Item6>
+      </Item5>
     </RequiredPackages>
-    <Units Count="2">
+    <Units Count="3">
       <Unit0>
         <Filename Value="WebServer.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -66,6 +65,10 @@
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
       </Unit1>
+      <Unit2>
+        <Filename Value="..\..\..\source\mnHttpClient.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit2>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
@@ -73,7 +76,6 @@
     <PathDelim Value="\"/>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)"/>
-      <OtherUnitFiles Value="..\..\src"/>
     </SearchPaths>
     <Parsing>
       <SyntaxOptions>

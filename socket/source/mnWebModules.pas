@@ -52,7 +52,6 @@ type
   TmodHttpCommand = class(TmnCommand)
   private
     FCookies: TmnParams;
-    FKeepAlive: Boolean;
     FURIParams: TmnParams;
   protected
     URIPath: string;
@@ -64,7 +63,6 @@ type
     destructor Destroy; override;
     property Cookies: TmnParams read FCookies;
     property URIParams: TmnParams read FURIParams;
-    property KeepAlive: Boolean read FKeepAlive write FKeepAlive;
   end;
 
   { TmodURICommand }
@@ -74,7 +72,6 @@ type
     function GetModule: TmodWebModule;
   protected
     function GetDefaultDocument(Root: string): string;
-    procedure Close;
     procedure RespondNotFound;
     procedure Respond(var Result: TmnExecuteResults); override;
     procedure Prepare; override;
@@ -127,9 +124,9 @@ type
     Files Commands
   *}
 
-  { TmodGetFileCommand }
+  { TmodHttpGetCommand }
 
-  TmodGetFileCommand = class(TmodURICommand)
+  TmodHttpGetCommand = class(TmodURICommand)
   protected
   public
     procedure Respond(var Result: TmnExecuteResults); override;
@@ -194,15 +191,16 @@ procedure TmodWebModule.Created;
 begin
   inherited;
   FDefaultDocument := TStringList.Create;
+  UseKeepAlive := true;
 end;
 
 procedure TmodWebModule.CreateCommands;
 begin
   inherited;
-  RegisterCommand('GET', TmodGetFileCommand, true);
+  RegisterCommand('GET', TmodHttpGetCommand, true);
   RegisterCommand('Info', TmodServerInfoCommand);
   {
-  RegisterCommand('GET', TmodGetFileCommand);
+  RegisterCommand('GET', TmodHttpGetCommand);
   RegisterCommand('PUT', TmodPutCommand);
   RegisterCommand('DIR', TmodDirCommand);
   RegisterCommand('DEL', TmodDeleteFileCommand);
@@ -252,7 +250,7 @@ end;
 
 procedure TmodURICommand.Unprepare;
 begin
-  RespondStream.Close;
+
 end;
 
 function TmodURICommand.GetDefaultDocument(Root: string): string;
@@ -271,11 +269,6 @@ begin
   end;
 end;
 
-procedure TmodURICommand.Close;
-begin
-  RespondStream.Close;
-end;
-
 procedure TmodURICommand.Respond(var Result: TmnExecuteResults);
 begin
   inherited;
@@ -283,13 +276,12 @@ end;
 
 procedure TmodURICommand.Prepare;
 var
-  aName: string;
+  S: string;
 begin
   inherited;
-  ParsePath(Request.URI, aName, URIPath, URIParams);
+  ParsePath(Request.URI, S, URIPath, URIParams);
   Root := Module.DocumentRoot;
   Host := RequestHeader['Host'].AsString;
-  KeepAlive := SameText(RequestHeader['Connection'].AsString, 'Keep-Alive');
 end;
 
 procedure TmodURICommand.Created;
@@ -297,7 +289,7 @@ begin
   inherited Created;
 end;
 
-{ TmodGetFileCommand }
+{ TmodHttpGetCommand }
 
 function DocumentToContentType(FileName: string): string;
 var
@@ -330,7 +322,7 @@ begin
     Result := 'application/binary';
 end;
 
-procedure TmodGetFileCommand.Respond(var Result: TmnExecuteResults);
+procedure TmodHttpGetCommand.Respond(var Result: TmnExecuteResults);
 var
   DocSize: Int64;
   aDocStream: TFileStream;
@@ -450,7 +442,7 @@ end;
 constructor TmodWebServer.Create;
 begin
   inherited;
-  FWebModule := TmodWebModule.Create('web', 'http/1.0', Modules);
+  FWebModule := TmodWebModule.Create('web', 'http/1.1', Modules);
   FWebModule.FServer := Self;
   Port := '80';
   with FWebModule do
@@ -488,10 +480,32 @@ begin
 end;
 
 procedure TmodHttpCommand.Respond(var Result: TmnExecuteResults);
+var
+  aParams: TmnParams;
 begin
   inherited;
-  if KeepAlive then
-    Result := Result + [erKeepAlive];
+  if Module.UseKeepAlive and RequestHeader.IsExists('Connection') then
+  begin
+    Result.Timout := Module.KeepAliveTimeOut;
+
+    if SameText(RequestHeader['Connection'].AsString, 'Keep-Alive') then
+    begin
+      if RequestHeader.IsExists('Keep-Alive') then
+      begin
+        aParams := TmnParams.Create;
+        try
+          //Keep-Alive: timeout=5, max=1000
+          aParams.Seperator := '=';
+          aParams.Delimiter := ',';
+          aParams.AsString := RequestHeader['Keep-Alive'].AsString;
+          Result.Timout := aParams['timeout'].AsInteger;
+        finally
+          aParams.Free;
+        end;
+      end;
+      Result.Status := Result.Status + [erKeepAlive];
+    end;
+  end;
 end;
 
 procedure TmodHttpCommand.SendHeader;

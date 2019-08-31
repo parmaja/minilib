@@ -1,11 +1,11 @@
 unit mnHttpClient;
-{**
- *  This file is part of the "Mini Library"
- *
- * @license   modifiedLGPL (modified of http://www.gnu.org/licenses/lgpl.html)
- *            See the file COPYING.MLGPL, included in this distribution,
- * @author    Jihad Khlaifa <jkhalifa at gmail dot com>
- *}
+{ **
+  *  This file is part of the "Mini Library"
+  *
+  * @license   modifiedLGPL (modified of http://www.gnu.org/licenses/lgpl.html)
+  *            See the file COPYING.MLGPL, included in this distribution,
+  * @author    Jihad Khlaifa <jkhalifa at gmail dot com>
+  * }
 
 {$H+}{$M+}
 {$ifdef fpc}
@@ -19,11 +19,7 @@ uses
 
 type
 
-  {$ifdef fpc}
-  TmnHttpUrl = object
-  {$else}
   TmnHttpUrl = record
-  {$endif}
     Protocol: string;
     Host: string;
     Port: string;
@@ -31,8 +27,10 @@ type
     procedure Create(const vURL: string); overload;
     procedure Create(const vProtocol, vHost, vPort, vParams: string); overload;
 
-    procedure Encode(const vURL: string; var vProtocol, vHost, vPort, vParams: string);
-    function GetUrlPart(var vPos: PChar; var vCount: Integer; const vTo: string; const vStops: TSysCharSet = []): string;
+    procedure Encode(const vURL: string; var vProtocol, vHost, vPort,
+      vParams: string);
+    function GetUrlPart(var vPos: PChar; var vCount: Integer; const vTo: string;
+      const vStops: TSysCharSet = []): string;
 
     function GetProtocol: string;
     function GetHost: string;
@@ -113,10 +111,10 @@ type
 
   { TmnCustomHttpClient }
 
-  //TmnCustomHttpClient = class(TmnClient)
+  // TmnCustomHttpClient = class(TmnClient)
   TmnCustomHttpClient = class(TObject)
   private
-    FStream: TmnClientStream;
+    FStream: TmnClientSocketStream;
     FRequest: TmnHttpRequest;
     FResponse: TmnHttpResponse;
     FPort: string;
@@ -135,7 +133,7 @@ type
 
   TmnHttpClient = class(TmnCustomHttpClient)
   public
-    procedure Get(const vUrl: string);
+    procedure Get(const vURL: string);
   end;
 
   TmnCustomHttpStream = class(TmnClientSocketStream)
@@ -156,13 +154,10 @@ type
 
     property Protocol: string read FProtocol write FProtocol;
     property Params: string read FParams write FParams;
-    procedure Get(const vUrl: string);
+    procedure Get(const vURL: string);
   end;
 
 implementation
-
-const
-  sEOL = #$A;
 
 { TmnCustomHttpHeader }
 
@@ -208,7 +203,7 @@ procedure TmnCustomHttpHeader.ReadHeaders;
 var
   s: string;
 begin
-  //if FStream.Connected then
+  // if FStream.Connected then
   begin
     FStream.ReadLine(s, True);
     s := Trim(s);
@@ -216,7 +211,7 @@ begin
       Headers.Add(s);
       FStream.ReadLine(s, True);
       s := Trim(s);
-    until {FStream.Connected or} (s = '');
+    until { FStream.Connected or } (s = '');
   end;
   DoReadHeaders;
   s := Headers.Values['Set-Cookie'];
@@ -235,7 +230,7 @@ begin
   for I := 0 to Cookies.Count - 1 do
     s := Cookies[I] + ';';
   if s <> '' then
-    WriteLn('Cookie: ' + s);
+    Writeln('Cookie: ' + s);
   FStream.WriteLine;
 end;
 
@@ -249,9 +244,8 @@ end;
 constructor TmnCustomHttpClient.Create;
 begin
   inherited;
-  //WallSocket.Startup;
-  FStream := TmnClientStream.Create('', '80');
-  FStream.EndOfLine := sEOL;
+  FStream := TmnClientSocketStream.Create('', '80');
+  FStream.EndOfLine := sWinEndOfLine;
   FRequest := TmnHttpRequest.Create(FStream);
   FResponse := TmnHttpResponse.Create(FStream);
 end;
@@ -300,7 +294,7 @@ end;
 
 function TmnHttpRequest.Write(const Buffer; Count: Longint): Longint;
 begin
-  Result := FStream.Write(Buffer, Count); 
+  Result := FStream.Write(Buffer, Count);
 end;
 
 function TmnHttpRequest.Writeln(const Value: string): Cardinal;
@@ -343,18 +337,18 @@ end;
 
 { TmnHttpClient }
 
-procedure TmnHttpClient.Get(const vUrl: string);
+procedure TmnHttpClient.Get(const vURL: string);
 var
   u: TmnHttpUrl;
 begin
-  u.Create(vUrl);
+  u.Create(vURL);
   Request.Host := u.GetHost;
   Request.UserAgent := 'Mozilla/4.0';
 
-  FStream.Address := u.GetHost; //Should be published
-  FStream.Port := u.GetPort; //Should be published
+  FStream.Address := u.GetHost; // Should be published
+  FStream.Port := u.GetPort; // Should be published
   FStream.Connect;
-  FStream.WriteLine('GET' + ' ' + u.GetParams +  ' ' + 'HTTP/1.0');
+  FStream.WriteLine('GET' + ' ' + u.GetParams + ' ' + 'HTTP/1.0');
   FRequest.WriteHeaders;
   if FStream.Connected then
     FResponse.ReadHeaders;
@@ -364,7 +358,7 @@ end;
 
 procedure TmnHttpUrl.Create(const vURL: string);
 begin
-  Encode(vURL, Protocol,Host, Port, Params);
+  Encode(vURL, Protocol, Host, Port, Params);
 end;
 
 procedure TmnHttpUrl.Create(const vProtocol, vHost, vPort, vParams: string);
@@ -375,7 +369,8 @@ begin
   Params := vParams;
 end;
 
-procedure TmnHttpUrl.Encode(const vURL: string; var vProtocol, vHost, vPort, vParams: string);
+procedure TmnHttpUrl.Encode(const vURL: string; var vProtocol, vHost, vPort,
+  vParams: string);
 var
   p: PChar;
   l: Integer;
@@ -387,14 +382,15 @@ begin
 
   p := PChar(vURL);
   l := Length(vURL);
-  if l>0 then vProtocol := GetUrlPart(p, l, '://', ['.']);
-  if l>0 then
+  if l > 0 then
+    vProtocol := GetUrlPart(p, l, '://', ['.']);
+  if l > 0 then
   begin
     vHost := GetUrlPart(p, l, ':', ['/']);
-    if vHost<>'' then
+    if vHost <> '' then
     begin
       vPort := GetUrlPart(p, l, '/', []);
-      if vPort='' then
+      if vPort = '' then
       begin
         SetString(vPort, p, l);
         l := 0;
@@ -403,19 +399,20 @@ begin
     else
     begin
       vHost := GetUrlPart(p, l, '/', []);
-      if vHost='' then
+      if vHost = '' then
       begin
         SetString(vHost, p, l);
         l := 0;
       end;
     end;
   end;
-  if l>0 then SetString(vParams, p, l);
+  if l > 0 then
+    SetString(vParams, p, l);
 end;
 
 function TmnHttpUrl.GetProtocol: string;
 begin
-  if Protocol<>'' then
+  if Protocol <> '' then
     Result := Protocol
   else
     Result := 'http';
@@ -428,7 +425,7 @@ end;
 
 function TmnHttpUrl.GetPort: string;
 begin
-  if Port<>'' then
+  if Port <> '' then
     Result := Port
   else
     Result := '80';
@@ -436,8 +433,8 @@ end;
 
 function TmnHttpUrl.GetParams: string;
 begin
-  if Params<>'' then
-    Result := '/'+Params
+  if Params <> '' then
+    Result := '/' + Params
   else
     Result := '/';
 end;
@@ -446,12 +443,12 @@ function TmnHttpUrl.GetUrlPart(var vPos: PChar; var vCount: Integer; const vTo: 
 
   function _IsMatch(vSrc, vDst: PChar; ACount: Integer): Boolean;
   var
-    i: Integer;
+    I: Integer;
   begin
     Result := True;
     for I := 0 to ACount - 1 do
     begin
-      if vSrc^<>vDst^ then
+      if vSrc^ <> vDst^ then
       begin
         Result := False;
         Break;
@@ -467,14 +464,15 @@ var
   aFound: Boolean;
 begin
   l := Length(vTo);
-  d := Pchar(vTo);
+  d := PChar(vTo);
   p := vPos;
   e := vPos;
   Inc(e, vCount - l);
   aFound := False;
-  while p<e do
+  while p < e do
   begin
-    if (p^ in vStops) then Break;
+    if (p^ in vStops) then
+      Break;
     if (p^ = d^) and _IsMatch(p, d, l) then
     begin
       aFound := True;
@@ -485,9 +483,9 @@ begin
 
   if aFound then
   begin
-    SetString(Result, vPos, p-vPos);
-    Dec(vCount, l + (p-vPos));
-    Inc(vPos, l + (p-vPos));
+    SetString(Result, vPos, p - vPos);
+    Dec(vCount, l + (p - vPos));
+    Inc(vPos, l + (p - vPos));
   end
   else
     Result := '';
@@ -517,19 +515,19 @@ begin
   inherited;
 end;
 
-procedure TmnCustomHttpStream.Get(const vUrl: string);
+procedure TmnCustomHttpStream.Get(const vURL: string);
 var
   u: TmnHttpUrl;
 begin
-  u.Create(vUrl);
+  u.Create(vURL);
   Protocol := u.GetProtocol;
   Address := u.GetHost;
   Port := u.GetPort;
   Params := u.GetParams;
   Connect;
-  //FRequest.Connection := 'Keep-Alive';
+  // FRequest.Connection := 'Keep-Alive';
   FRequest.Host := Address;
-  WriteLn('GET' + ' ' + Params +  ' ' + 'HTTP/1.0');
+  Writeln('GET' + ' ' + Params + ' ' + 'HTTP/1.0');
   FRequest.WriteHeaders;
   if Connected then
     FResponse.ReadHeaders;
@@ -542,8 +540,7 @@ end;
 
 function TmnCustomHttpStream.Seek(Offset: Integer; Origin: Word): Integer;
 begin
-  Result := 0;// for loading from this stream like Image.loadfrom streaM
+  Result := 0; // for loading from this stream like Image.loadfrom streaM
 end;
 
 end.
-

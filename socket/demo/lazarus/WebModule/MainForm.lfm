@@ -48,13 +48,13 @@ object Main: TMain
     ClientWidth = 536
     TabOrder = 1
     object Bevel1: TBevel
-      Left = 43
+      Left = 47
       Height = 18
       Top = 53
       Width = 78
     end
     object Label1: TLabel
-      Left = 11
+      Left = 15
       Height = 13
       Top = 11
       Width = 23
@@ -68,7 +68,7 @@ object Main: TMain
       ParentFont = False
     end
     object Label2: TLabel
-      Left = 14
+      Left = 18
       Height = 13
       Top = 33
       Width = 20
@@ -76,7 +76,7 @@ object Main: TMain
       ParentColor = False
     end
     object NumberOfThreadsLbl: TLabel
-      Left = 5
+      Left = 9
       Height = 13
       Top = 54
       Width = 29
@@ -90,7 +90,7 @@ object Main: TMain
       ParentFont = False
     end
     object NumberOfThreads: TLabel
-      Left = 49
+      Left = 53
       Height = 13
       Top = 55
       Width = 65
@@ -103,15 +103,16 @@ object Main: TMain
       Font.Pitch = fpVariable
       ParentColor = False
       ParentFont = False
+      OnClick = NumberOfThreadsClick
     end
     object Bevel2: TBevel
-      Left = 123
+      Left = 128
       Height = 18
       Top = 53
       Width = 78
     end
     object MaxOfThreads: TLabel
-      Left = 129
+      Left = 133
       Height = 13
       Top = 55
       Width = 65
@@ -137,10 +138,10 @@ object Main: TMain
       TabOrder = 0
     end
     object RootEdit: TEdit
-      Left = 43
+      Left = 47
       Height = 21
       Top = 6
-      Width = 490
+      Width = 480
       Anchors = [akTop, akLeft, akRight]
       TabOrder = 1
       Text = '.\html'
@@ -157,7 +158,7 @@ object Main: TMain
       TabOrder = 2
     end
     object PortEdit: TEdit
-      Left = 43
+      Left = 47
       Height = 21
       Top = 29
       Width = 78
@@ -176,9 +177,36 @@ object Main: TMain
       TabOrder = 4
     end
   end
+  object Bevel3: TBevel
+    Left = 237
+    Height = 18
+    Top = 53
+    Width = 78
+  end
+  object LastIDLabel: TLabel
+    Left = 243
+    Height = 13
+    Top = 55
+    Width = 65
+    AutoSize = False
+    Caption = '0'
+    Font.CharSet = ANSI_CHARSET
+    Font.Color = clBlack
+    Font.Height = -11
+    Font.Name = 'Tahoma'
+    Font.Pitch = fpVariable
+    ParentColor = False
+    ParentFont = False
+  end
+  object Bevel4: TBevel
+    Left = 127
+    Height = 18
+    Top = 53
+    Width = 78
+  end
   object MainMenu1: TMainMenu
-    left = 281
-    top = 18
+    left = 379
+    top = 10
     object MenuItem1: TMenuItem
       Caption = 'Exit'
       OnClick = MenuItem1Click

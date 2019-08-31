@@ -23,11 +23,14 @@ type
   TMain = class(TForm)
     Bevel1: TBevel;
     Bevel2: TBevel;
+    Bevel3: TBevel;
+    Bevel4: TBevel;
     ExitBtn: TButton;
     Label1: TLabel;
     Label2: TLabel;
     MainMenu1: TMainMenu;
     MaxOfThreads: TLabel;
+    LastIDLabel: TLabel;
     Memo: TMemo;
     MenuItem1: TMenuItem;
     NumberOfThreads: TLabel;
@@ -40,14 +43,16 @@ type
     procedure ExitBtnClick(Sender: TObject);
     procedure FormHide(Sender: TObject);
     procedure MenuItem1Click(Sender: TObject);
+    procedure NumberOfThreadsClick(Sender: TObject);
     procedure StartBtnClick(Sender: TObject);
     procedure StayOnTopChkChange(Sender: TObject);
     procedure StopBtnClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
   private
-    ScatServer: TmodWebServer;
+    Server: TmodWebServer;
     FMax:Integer;
+    procedure UpdateStatus;
     procedure ScatServerBeforeOpen(Sender: TObject);
     procedure ScatServerAfterClose(Sender: TObject);
     procedure ScatServerChanged(Listener: TmnListener);
@@ -64,7 +69,7 @@ implementation
 
 procedure TMain.StartBtnClick(Sender: TObject);
 begin
-  ScatServer.Start;
+  Server.Start;
 end;
 
 procedure TMain.FormHide(Sender: TObject);
@@ -74,6 +79,11 @@ end;
 procedure TMain.MenuItem1Click(Sender: TObject);
 begin
   Close;
+end;
+
+procedure TMain.NumberOfThreadsClick(Sender: TObject);
+begin
+  UpdateStatus;
 end;
 
 procedure TMain.ExitBtnClick(Sender: TObject);
@@ -88,7 +98,7 @@ end;
 
 procedure TMain.StopBtnClick(Sender: TObject);
 begin
-  ScatServer.Stop;
+  Server.Stop;
   StartBtn.Enabled:=true;
 end;
 
@@ -101,8 +111,8 @@ begin
   aRoot := RootEdit.Text;
   if (LeftStr(aRoot, 2)='.\') or (LeftStr(aRoot, 2)='./') then
     aRoot := ExtractFilePath(Application.ExeName) + Copy(aRoot, 3, MaxInt);
-  ScatServer.WebModule.DocumentRoot := aRoot;
-  ScatServer.Port := PortEdit.Text;
+  Server.WebModule.DocumentRoot := aRoot;
+  Server.Port := PortEdit.Text;
 end;
 
 function FindCmdLineValue(Switch: string; var Value: string; const Chars: TSysCharSet = ['/','-']; Seprator: Char = '='): Boolean;
@@ -155,11 +165,11 @@ var
 var
   aAutoRun:Boolean;
 begin
-  ScatServer := TmodWebServer.Create;
-  ScatServer.OnBeforeOpen := ScatServerBeforeOpen;
-  ScatServer.OnAfterClose := ScatServerAfterClose;
-  ScatServer.OnChanged :=  ScatServerChanged;
-  ScatServer.OnLog := ScatServerLog;
+  Server := TmodWebServer.Create;
+  Server.OnBeforeOpen := ScatServerBeforeOpen;
+  Server.OnAfterClose := ScatServerAfterClose;
+  Server.OnChanged :=  ScatServerChanged;
+  Server.OnLog := ScatServerLog;
 
   aIni := TIniFile.Create(Application.Location + 'config.ini');
   try
@@ -170,7 +180,7 @@ begin
     aIni.Free;
   end;
   if aAutoRun then
-     ScatServer.Start;
+     Server.Start;
 end;
 
 procedure TMain.FormDestroy(Sender: TObject);
@@ -189,6 +199,12 @@ begin
   end
 end;
 
+procedure TMain.UpdateStatus;
+begin
+  NumberOfThreads.Caption := IntToStr(Server.Listener.Count);
+  LastIDLabel.Caption := IntToStr(Server.Listener.LastID);
+end;
+
 procedure TMain.ScatServerAfterClose(Sender: TObject);
 begin
 	StartBtn.Enabled := True;
@@ -199,8 +215,8 @@ procedure TMain.ScatServerChanged(Listener: TmnListener);
 begin
   if FMax < Listener.Count then
     FMax := Listener.Count;
-  NumberOfThreads.Caption:=IntToStr(Listener.Count);
   MaxOfThreads.Caption:=IntToStr(FMax);
+  UpdateStatus;
 end;
 
 procedure TMain.ScatServerLog(const S: String);

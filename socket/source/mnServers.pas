@@ -14,7 +14,6 @@ unit mnServers;
 {$ELSE}
 {$ENDIF}
 
-{.$define Synchronize}
 {.$define NoLog}
 
 interface
@@ -67,7 +66,7 @@ type
     FMessage: string;
 
     procedure SyncLog;
-    procedure SyncChanged;
+    procedure PostChanged;
     procedure DropConnections; virtual;
     procedure LogMessage(S: string); virtual;
     procedure Changed; virtual;
@@ -172,7 +171,7 @@ implementation
 
 procedure TmnEventServer.DoLog(const S: string);
 begin
-  inherited DoLog(S);
+  inherited;
   if not (IsDestroying) then
   begin
     if Assigned(FOnLog) then
@@ -182,7 +181,7 @@ end;
 
 procedure TmnEventServer.DoChanged(vListener: TmnListener);
 begin
-  inherited DoChanged(vListener);
+  inherited;
   if not (IsDestroying) then
   begin
     if Assigned(FOnChanged) then
@@ -192,7 +191,7 @@ end;
 
 procedure TmnEventServer.DoAccepted(vListener: TmnListener);
 begin
-  inherited DoAccepted(vListener);
+  inherited;
   if not (IsDestroying) then
   begin
     if Assigned(FOnAccepted) then
@@ -202,7 +201,7 @@ end;
 
 procedure TmnEventServer.DoBeforeOpen;
 begin
-  inherited DoBeforeOpen;
+  inherited;
   if not (IsDestroying) then
   begin
     if Assigned(FOnBeforeOpen) then
@@ -212,7 +211,7 @@ end;
 
 procedure TmnEventServer.DoAfterOpen;
 begin
-  inherited DoAfterOpen;
+  inherited;
   if not (IsDestroying) then
   begin
     if Assigned(FOnAfterOpen) then
@@ -222,7 +221,7 @@ end;
 
 procedure TmnEventServer.DoBeforeClose;
 begin
-  inherited DoBeforeClose;
+  inherited;
   if not (IsDestroying) then
   begin
     if Assigned(FOnBeforeClose) then
@@ -317,16 +316,12 @@ end;
 procedure TmnListener.Changed;
 begin
   {$ifndef NoLog}
-  {$ifdef Synchronize}
-  Synchronize(Self, SyncChanged);
-  {$else}
   Enter;
   try
-    SyncChanged;
+    Queue(PostChanged);
   finally
     Leave;
   end;
-  {$endif}
   {$endif NoLog}
 end;
 
@@ -431,11 +426,6 @@ procedure TmnListener.Log(S: string);
 begin
   {$ifndef NoLog}
   LogMessage(S);
-
-  {$ifdef Synchronize}
-  FMessage := S;
-  Synchronize(Self, SyncLog);
-  {$else}
   Enter;
   try
     FMessage := S;
@@ -443,7 +433,6 @@ begin
   finally
     Leave;
   end;
-  {$endif}
   {$endif NoLog}
 end;
 
@@ -557,7 +546,7 @@ begin
   end;
 end;
 
-procedure TmnListener.SyncChanged;
+procedure TmnListener.PostChanged;
 begin
   if FServer <> nil then
     FServer.DoChanged(Self);

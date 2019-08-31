@@ -48,9 +48,6 @@ type
     property Address: string read FAddress write SetAddress;
   end;
 
-  TmnClientStream = class(TmnClientSocketStream)
-  end deprecated;
-
   { TmnClientConnection }
 
   TmnClientConnection = class(TmnConnection) //this child object in Clients
