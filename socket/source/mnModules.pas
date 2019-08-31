@@ -42,6 +42,9 @@ type
     property Seperator: string read FSeperator write FSeperator; //value
     property Delimiter: Char read FDelimiter write FDelimiter; //eol
     property AsString: string read GetAsString write SetAsString;
+    function ReadInteger(Name: string; Def: Integer = 0): Integer;
+    function ReadString(Name: string; Def: String = ''): String;
+    function ReadBoolean(Name: string; Def: Boolean = False): Boolean;
   end;
 
   TmnCommand = class;
@@ -793,6 +796,39 @@ begin
   inherited Create;
   Seperator := '=';
   Delimiter := #13;
+end;
+
+function TmnParams.ReadInteger(Name: string; Def: Integer): Integer;
+var
+  Field: TmnField;
+begin
+  Field := FindField(Name);
+  if Field <> nil then
+    Result := Field.AsInteger
+  else
+    Result := Def;
+end;
+
+function TmnParams.ReadString(Name: string; Def: String): String;
+var
+  Field: TmnField;
+begin
+  Field := FindField(Name);
+  if Field <> nil then
+    Result := Field.AsString
+  else
+    Result := Def;
+end;
+
+function TmnParams.ReadBoolean(Name: string; Def: Boolean): Boolean;
+var
+  Field: TmnField;
+begin
+  Field := FindField(Name);
+  if Field <> nil then
+    Result := Field.AsBoolean
+  else
+    Result := Def;
 end;
 
 end.

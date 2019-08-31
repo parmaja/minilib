@@ -281,7 +281,7 @@ begin
   inherited;
   ParsePath(Request.URI, S, URIPath, URIParams);
   Root := Module.DocumentRoot;
-  Host := RequestHeader['Host'].AsString;
+  Host := RequestHeader.ReadString('Host');
 end;
 
 procedure TmodURICommand.Created;
@@ -484,27 +484,23 @@ var
   aParams: TmnParams;
 begin
   inherited;
-  if Module.UseKeepAlive and RequestHeader.IsExists('Connection') then
+  if Module.UseKeepAlive and SameText(RequestHeader.ReadString('Connection'), 'Keep-Alive') then
   begin
     Result.Timout := Module.KeepAliveTimeOut;
-
-    if SameText(RequestHeader['Connection'].AsString, 'Keep-Alive') then
+    if RequestHeader.IsExists('Keep-Alive') then
     begin
-      if RequestHeader.IsExists('Keep-Alive') then
-      begin
-        aParams := TmnParams.Create;
-        try
-          //Keep-Alive: timeout=5, max=1000
-          aParams.Seperator := '=';
-          aParams.Delimiter := ',';
-          aParams.AsString := RequestHeader['Keep-Alive'].AsString;
-          Result.Timout := aParams['timeout'].AsInteger;
-        finally
-          aParams.Free;
-        end;
+      aParams := TmnParams.Create;
+      try
+        //Keep-Alive: timeout=5, max=1000
+        aParams.Seperator := '=';
+        aParams.Delimiter := ',';
+        aParams.AsString := RequestHeader['Keep-Alive'].AsString;
+        Result.Timout := aParams['timeout'].AsInteger;
+      finally
+        aParams.Free;
       end;
-      Result.Status := Result.Status + [erKeepAlive];
     end;
+    Result.Status := Result.Status + [erKeepAlive];
   end;
 end;
 

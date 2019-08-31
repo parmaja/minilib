@@ -216,9 +216,9 @@ type
     function CreateField: TmnField; virtual;
     procedure SetValues(Index: string; const AValue: Variant);
     function GetValues(Index: string): Variant;
-    function FindField(vName: string): TmnField; virtual;
     function GetIField(FieldName: string): IField;
     function GetCount: Integer;
+    function FindField(vName: string): TmnField; virtual; //no exception
   public
     function QueryInterface({$ifdef FPC}constref{$else}const{$endif} iid : TGuid; out Obj):HResult; {$ifdef WINDOWS}stdcall{$else}cdecl{$endif};
     procedure LoadFromStream(Stream: TStream); virtual;
@@ -229,8 +229,8 @@ type
     function Add(AField: TmnField): Integer; overload;
     //This will split the name and value
     function AddItem(S: string; Separator: string; Trim: Boolean = False): TmnField; overload;
-    function ByName(vName: string): TmnField;
     function IsExists(vName: string): Boolean;
+    function ByName(vName: string): TmnField; //with exception if not exists
     procedure Clean; virtual;
     property FieldByName[Index: string]: TmnField read GetFieldByName;
     property Values[Index: string]: Variant read GetValues write SetValues; default;
@@ -601,7 +601,7 @@ end;
 
 function TmnCustomField.ReadAsWideString: widestring;
 begin
-  Result := GetAsString;//the compiler will convert it
+  Result := widestring(GetAsString);//the compiler will convert it
 end;
 
 function TmnCustomField.ReadIsEmpty: Boolean;
@@ -627,7 +627,7 @@ end;
 
 procedure TmnCustomField.WriteAsWideString(const AValue: widestring);
 begin
-  SetAsString(AValue);
+  SetAsString(String(AValue));
 end;
 
 procedure TmnCustomField.WriteAsBoolean(const AValue: Boolean);
