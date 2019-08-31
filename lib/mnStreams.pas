@@ -79,46 +79,48 @@ type
     function Write(const Buffer; Count: Longint): Longint; override; final;
 
     function ReadBufferUntil(const Match: PByte; MatchSize: Word; ExcludeMatch: Boolean; out Buffer: Pointer; out BufferSize: TFileSize; out Matched: Boolean): Boolean;
-
-    function ReadLineRawByte(out S: rawbytestring; ExcludeEOL: Boolean = True; EOL: rawbytestring = ''): Boolean; overload;
-    function ReadLine(out S: utf8string; ExcludeEOL: Boolean = True; EOL: utf8string = ''): Boolean; overload;
-    function ReadLine(out S: unicodestring; ExcludeEOL: Boolean = True; EOL: unicodestring = ''): Boolean; overload;
-
-    function ReadLine: string; overload;
-    function ReadLineRawByte: RawByteString; overload;
-
-    function ReadLn: string; overload; deprecated;
-
-    function WriteLine(EOL: widestring = ''): TFileSize; overload;
-    function WriteLineRawByte(const S: rawbytestring): TFileSize; overload;
-    function WriteLineUTF8(const S: UTF8String): TFileSize; overload;
-    function WriteLine(const S: utf8string; EOL: utf8string = ''): TFileSize; overload;
-    function WriteLine(const S: unicodestring; EOL: unicodestring = ''): TFileSize; overload;
-
-    function WriteLn(const S: string): TFileSize; overload; deprecated;
-
-    function ReadBytes(vCount: Integer): TBytes;
-    procedure WriteBytes(Buffer: TBytes);
-
     {$ifndef NEXTGEN}
     function ReadUntil(const Match: ansistring; ExcludeMatch: Boolean; out Buffer: ansistring; out Matched: Boolean): Boolean; overload;
     function ReadUntil(const Match: widestring; ExcludeMatch: Boolean; out Buffer: widestring; out Matched: Boolean): Boolean; overload;
-
-    function ReadLine(out S: ansistring; ExcludeEOL: Boolean = True; EOL: ansistring = ''): Boolean; overload;
-    function ReadLine(out S: widestring; ExcludeEOL: Boolean = True; EOL: widestring = ''): Boolean; overload;
-    function ReadAnsiString(vCount: Integer): AnsiString;
-
-    function WriteLine(const S: ansistring; EOL: ansistring = ''): TFileSize; overload;
-    function WriteLine(const S: widestring; EOL: widestring = ''): TFileSize; overload;
     {$endif}
+
+    function ReadLine: string; overload;
+    function ReadLine(out S: utf8string; ExcludeEOL: Boolean = True): Boolean; overload;
+    function ReadLine(out S: unicodestring; ExcludeEOL: Boolean = True): Boolean; overload;
+
+    function ReadLineRawByte(out S: rawbytestring; ExcludeEOL: Boolean = True): Boolean; overload;
+    function ReadLineRawByte: RawByteString; overload;
+
+    {$ifndef NEXTGEN}
+    function ReadLine(out S: ansistring; ExcludeEOL: Boolean = True): Boolean; overload;
+    function ReadLine(out S: widestring; ExcludeEOL: Boolean = True): Boolean; overload;
+    function ReadAnsiString(vCount: Integer): AnsiString;
+    {$endif}
+
+    //function ReadLn: string; overload; deprecated;
+
+    function WriteLine: TFileSize; overload;
+    function WriteLine(const S: utf8string): TFileSize; overload;
+    function WriteLine(const S: unicodestring): TFileSize; overload;
+
+    function WriteLineRawByte(const S: rawbytestring): TFileSize; overload;
+    function WriteLineUTF8(const S: UTF8String): TFileSize; overload;
+
+    {$ifndef NEXTGEN}
+    function WriteLine(const S: ansistring): TFileSize; overload;
+    function WriteLine(const S: widestring): TFileSize; overload;
+    {$endif}
+
+    //function WriteLn(const S: string): TFileSize; overload; deprecated;
+
+    function ReadBytes(vCount: Integer): TBytes;
+    procedure WriteBytes(Buffer: TBytes);
 
     procedure ReadCommand(out Command: string; out Params: string);
 
     procedure WriteCommand(const Command: string); overload;
     procedure WriteCommand(const Command: string; const Format: string; const Params: array of const); overload;
     procedure WriteCommand(const Command: string; const Params: string); overload;
-
-    function WriteEOL: TFileSize; overload;
 
     procedure ReadStrings(Value: TStrings; const vEOL: string); overload;
     procedure ReadStrings(Value: TStrings); overload;
@@ -369,10 +371,11 @@ begin
 end;
 
 {$ifndef NEXTGEN}
-function TmnBufferStream.WriteLine(const S: ansistring; EOL: ansistring): TFileSize;
+function TmnBufferStream.WriteLine(const S: ansistring): TFileSize;
+var
+  EOL: ansistring;
 begin
-  if EOL = '' then
-    EOL := ansistring(EndOfLine);
+  EOL := EndOfLine;
   if s <> '' then
     Result := Write(Pointer(S)^, Length(S))
   else
@@ -380,10 +383,11 @@ begin
   Result := Result + Write(Pointer(EOL)^, Length(EOL));
 end;
 
-function TmnBufferStream.WriteLine(const S: widestring; EOL: widestring): TFileSize;
+function TmnBufferStream.WriteLine(const S: widestring): TFileSize;
+var
+  EOL: widestring;
 begin
-  if EOL = '' then
-    EOL := widestring(EndOfLine);
+  EOL := widestring(EndOfLine);
   if s <> '' then
     Result := Write(Pointer(S)^, ByteLength(S))
   else
@@ -393,19 +397,11 @@ end;
 
 {$endif}
 
-function TmnBufferStream.WriteLine(EOL: widestring): TFileSize;
-begin
-  if EOL = '' then
-    EOL := widestring(EndOfLine);
-  Result := Result + Write(Pointer(EOL)^, ByteLength(EOL));
-end;
-
 function TmnBufferStream.WriteLineRawByte(const S: RawByteString): TFileSize;
 var
   EOL: RawByteString;
 begin
-  if EOL = '' then
-    EOL := RawByteString(EndOfLine);
+  EOL := RawByteString(EndOfLine);
   Result := 0;
   if s <> '' then
     Result := Write(Pointer(S)^, Length(S));
@@ -423,30 +419,32 @@ begin
   Result := Result + Write(Pointer(EOL)^, Length(EOL));
 end;
 
-function TmnBufferStream.WriteLine(const S: unicodestring; EOL: unicodestring): TFileSize;
+function TmnBufferStream.WriteLine(const S: unicodestring): TFileSize;
+var
+  EOL: unicodestring;
 begin
-  if EOL = '' then
-    EOL := unicodestring(EndOfLine);
+  EOL := unicodestring(EndOfLine);
   Result := 0;
   if s <> '' then
     Result := Write(Pointer(S)^, ByteLength(S));
   Result := Result + Write(Pointer(EOL)^, ByteLength(EOL));
 end;
 
-function TmnBufferStream.WriteLine(const S: utf8string; EOL: utf8string): TFileSize;
+function TmnBufferStream.WriteLine(const S: utf8string): TFileSize;
+var
+  EOL: utf8string;
 begin
-  if EOL = '' then
-    EOL := utf8string(EndOfLine);
   Result := 0;
+  EOL := EndOfLine;
   if s <> '' then
     Result := Write(Pointer(S)^, ByteLength(S));
   Result := Result + Write(Pointer(EOL)^, ByteLength(EOL));
 end;
 
-function TmnBufferStream.WriteLn(const S: string): TFileSize;
+{function TmnBufferStream.WriteLn(const S: string): TFileSize;
 begin
   Result := WriteLine(S);
-end;
+end;}
 
 procedure TmnBufferStream.WriteBytes(Buffer: TBytes);
 begin
@@ -484,14 +482,14 @@ begin
   end;
 end;
 
-function TmnBufferStream.ReadLine(out S: unicodestring; ExcludeEOL: Boolean; EOL: unicodestring): Boolean;
+function TmnBufferStream.ReadLine(out S: unicodestring; ExcludeEOL: Boolean): Boolean;
 var
   m: Boolean;
   res: Pointer;
   len: TFileSize;
+  EOL: unicodestring;
 begin
-  if EOL = '' then
-    EOL := unicodestring(EndOfLine);
+  EOL := unicodestring(EndOfLine);
   Result := ReadBufferUntil(@eol[1], ByteLength(eol), ExcludeEOL, res, len, m);
   {$ifdef FPC}
   CopyString(S, PUnicodeChar(res), len);
@@ -506,27 +504,27 @@ begin
 end;
 
 {$ifndef NEXTGEN}
-function TmnBufferStream.ReadLine(out S: widestring; ExcludeEOL: Boolean; EOL: widestring): Boolean;
+function TmnBufferStream.ReadLine(out S: widestring; ExcludeEOL: Boolean): Boolean;
 var
   m: Boolean;
   res: Pointer;
   len: TFileSize;
+  EOL: widestring;
 begin
-  if EOL = '' then
-    EOL := widestring(EndOfLine);
+  EOL := widestring(EndOfLine);
   Result := ReadBufferUntil(@eol[1], ByteLength(eol), ExcludeEOL, res, len, m);
   CopyString(S, res, len);
   FreeMem(res);
 end;
 
-function TmnBufferStream.ReadLine(out S: ansistring; ExcludeEOL: Boolean; EOL: ansistring): Boolean;
+function TmnBufferStream.ReadLine(out S: ansistring; ExcludeEOL: Boolean): Boolean;
 var
   m: Boolean;
   res: Pointer;
   len: TFileSize;
+  EOL: ansistring;
 begin
-  if EOL = '' then
-    EOL := ansistring(EndOfLine);
+  EOL := ansistring(EndOfLine);
   Result := ReadBufferUntil(@eol[1], ByteLength(eol), ExcludeEOL, res, len, m);
   CopyString(S, res, len);
   FreeMem(res);
@@ -539,27 +537,27 @@ begin
 end;
 {$endif}
 
-function TmnBufferStream.ReadLine(out S: utf8string; ExcludeEOL: Boolean; EOL: utf8string): Boolean;
+function TmnBufferStream.ReadLine(out S: utf8string; ExcludeEOL: Boolean): Boolean;
 var
   m: Boolean;
   res: Pointer;
   len: TFileSize;
+  EOL: utf8string;
 begin
-  if EOL = '' then
-    EOL := utf8string(EndOfLine);
+  EOL := utf8string(EndOfLine);
   Result := ReadBufferUntil(@eol[1], ByteLength(eol), ExcludeEOL, res, len, m);
   CopyString(S, res, len);
   FreeMem(res);
 end;
 
-function TmnBufferStream.ReadLineRawByte(out S: RawByteString; ExcludeEOL: Boolean; EOL: RawByteString): Boolean;
+function TmnBufferStream.ReadLineRawByte(out S: RawByteString; ExcludeEOL: Boolean): Boolean;
 var
   m: Boolean;
   res: Pointer;
   len: TFileSize;
+  EOL: RawByteString;
 begin
-  if EOL = '' then
-    EOL := RawByteString(EndOfLine);
+  EOL := RawByteString(EndOfLine);
   Result := ReadBufferUntil(@eol[1], Length(eol), ExcludeEOL, res, len, m);
   CopyString(S, res, len);
   FreeMem(res);
@@ -570,17 +568,17 @@ begin
   ReadLine(Result);
 end;
 
-function TmnBufferStream.ReadLn: string;
+{function TmnBufferStream.ReadLn: string;
 begin
   ReadLine(Result);
-end;
+end;}
 
 function TmnBufferStream.ReadLineRawByte: RawByteString;
 begin
   ReadLineRawByte(Result, True);
 end;
 
-function TmnBufferStream.WriteEOL: TFileSize;
+function TmnBufferStream.WriteLine: TFileSize;
 begin
   Result := Write(Pointer(EndOfLine)^, ByteLength(EndOfLine));
 end;
