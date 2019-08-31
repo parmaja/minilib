@@ -210,11 +210,11 @@ var
 begin
   //if FStream.Connected then
   begin
-    FStream.ReadLine(s, True, sEOL);
+    FStream.ReadLine(s, True);
     s := Trim(s);
     repeat
       Headers.Add(s);
-      FStream.ReadLine(s, True, sEOL);
+      FStream.ReadLine(s, True);
       s := Trim(s);
     until {FStream.Connected or} (s = '');
   end;
@@ -231,12 +231,12 @@ var
 begin
   DoWriteHeaders;
   for I := 0 to Headers.Count - 1 do
-    FStream.WriteLine(Headers[I], sEOL);
+    FStream.WriteLine(Headers[I]);
   for I := 0 to Cookies.Count - 1 do
     s := Cookies[I] + ';';
   if s <> '' then
     WriteLn('Cookie: ' + s);
-  FStream.WriteLine(sEOL);
+  FStream.WriteLine;
 end;
 
 { TmnCustomHttpClient }
@@ -251,6 +251,7 @@ begin
   inherited;
   //WallSocket.Startup;
   FStream := TmnClientStream.Create('', '80');
+  FStream.EndOfLine := sEOL;
   FRequest := TmnHttpRequest.Create(FStream);
   FResponse := TmnHttpResponse.Create(FStream);
 end;
@@ -304,7 +305,7 @@ end;
 
 function TmnHttpRequest.Writeln(const Value: string): Cardinal;
 begin
-  Result := FStream.WriteLine(Value, sEOL);
+  Result := FStream.WriteLine(Value);
 end;
 
 { TmnHttpResponse }
@@ -337,7 +338,7 @@ end;
 
 function TmnHttpResponse.ReadLn: string;
 begin
-  FStream.ReadLine(Result, True, sEOL);
+  FStream.ReadLine(Result, True);
 end;
 
 { TmnHttpClient }

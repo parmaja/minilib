@@ -228,7 +228,7 @@ type
     function Add(AName, AValue: string): TmnField; overload;
     function Add(AField: TmnField): Integer; overload;
     //This will split the name and value
-    function AddItem(S: string; Separator: string): TmnField; overload;
+    function AddItem(S: string; Separator: string; Trim: Boolean = False): TmnField; overload;
     function ByName(vName: string): TmnField;
     function IsExists(vName: string): Boolean;
     procedure Clean; virtual;
@@ -799,7 +799,7 @@ begin
   Add(Result);
 end;
 
-function TmnFields.AddItem(S: string; Separator: string): TmnField;
+function TmnFields.AddItem(S: string; Separator: string; Trim: Boolean): TmnField;
 var
   p: Integer;
   aName: string;
@@ -816,6 +816,8 @@ begin
     aName := '';
     aValue := S;
   end;
+  if Trim then
+    aValue := TrimLeft(aValue);
   Result := Add(aName, aValue);
 end;
 
