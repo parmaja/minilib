@@ -47,19 +47,24 @@ type
 
   TmodWebModule = class;
 
+  { TmodHttpCommand }
+
   TmodHttpCommand = class(TmnCommand)
   private
     FCookies: TmnParams;
+    FKeepAlive: Boolean;
     FURIParams: TmnParams;
   protected
     URIPath: string;
     procedure Created; override;
     procedure SendHeader; override;
     procedure Prepare; override;
+    procedure Respond(var Result: TmnExecuteResults); override;
   public
     destructor Destroy; override;
     property Cookies: TmnParams read FCookies;
     property URIParams: TmnParams read FURIParams;
+    property KeepAlive: Boolean read FKeepAlive write FKeepAlive;
   end;
 
   { TmodURICommand }
@@ -71,7 +76,7 @@ type
     function GetDefaultDocument(Root: string): string;
     procedure Close;
     procedure RespondNotFound;
-    procedure Respond; override;
+    procedure Respond(var Result: TmnExecuteResults); override;
     procedure Prepare; override;
     procedure Unprepare; override;
     procedure Created; override;
@@ -127,7 +132,7 @@ type
   TmodGetFileCommand = class(TmodURICommand)
   protected
   public
-    procedure Respond; override;
+    procedure Respond(var Result: TmnExecuteResults); override;
   end;
 
   { TmodPutCommand }
@@ -135,24 +140,30 @@ type
   TmodPutCommand = class(TmodURICommand)
   protected
   public
-    procedure Respond; override;
+    procedure Respond(var Result: TmnExecuteResults); override;
   end;
+
+  { TmodServerInfoCommand }
 
   TmodServerInfoCommand = class(TmodURICommand)
   protected
-    procedure Respond; override;
+    procedure Respond(var Result: TmnExecuteResults); override;
   public
   end;
+
+  { TmodDirCommand }
 
   TmodDirCommand = class(TmodURICommand)
   protected
-    procedure Respond; override;
+    procedure Respond(var Result: TmnExecuteResults); override;
   public
   end;
 
+  { TmodDeleteFileCommand }
+
   TmodDeleteFileCommand = class(TmodURICommand)
   protected
-    procedure Respond; override;
+    procedure Respond(var Result: TmnExecuteResults); override;
   public
   end;
 
@@ -229,7 +240,7 @@ begin
   SendRespond('HTTP/1.1 200 OK');
   PostHeader('Content-Type', 'text/html');
   Body := '<HTML><HEAD><TITLE>404 Not Found</TITLE></HEAD>' +
-    '<BODY><H1>404 Not Found</H1>The requested URL ' + //FDocument +
+    '<BODY><H1>404 Not Found</H1>The requested URL ' +
     ' was not found on this server.<P><h1>Powerd by Mini Web Server</h3></BODY></HTML>';
   RespondStream.WriteString(Body);
 end;
@@ -265,9 +276,9 @@ begin
   RespondStream.Close;
 end;
 
-procedure TmodURICommand.Respond;
+procedure TmodURICommand.Respond(var Result: TmnExecuteResults);
 begin
-  RespondNotFound;
+  inherited;
 end;
 
 procedure TmodURICommand.Prepare;
@@ -278,6 +289,7 @@ begin
   ParsePath(Request.URI, aName, URIPath, URIParams);
   Root := Module.DocumentRoot;
   Host := RequestHeader['Host'].AsString;
+  KeepAlive := SameText(RequestHeader['Connection'].AsString, 'Keep-Alive');
 end;
 
 procedure TmodURICommand.Created;
@@ -318,12 +330,13 @@ begin
     Result := 'application/binary';
 end;
 
-procedure TmodGetFileCommand.Respond;
+procedure TmodGetFileCommand.Respond(var Result: TmnExecuteResults);
 var
   DocSize: Int64;
   aDocStream: TFileStream;
   aDocument: string;
 begin
+  inherited;
   aDocument := IncludeTrailingPathDelimiter(Root) + '.' + URIPath;
   aDocument := StringReplace(aDocument, '/', PathDelim, [rfReplaceAll]);//correct it for linux
   aDocument := ExpandFileName(aDocument);
@@ -355,13 +368,14 @@ begin
     end;
   end
   else
-    inherited;
+    RespondNotFound;
 end;
 
 { TmodServerInfoCommand }
 
-procedure TmodServerInfoCommand.Respond;
+procedure TmodServerInfoCommand.Respond(var Result: TmnExecuteResults);
 begin
+  inherited;
   SendRespond('OK');
   RespondStream.WriteLine('Server is running on port: ' + Module.Server.Port);
   //RespondStream.WriteLine('the server is: "' + Application.ExeName + '"');
@@ -369,11 +383,12 @@ end;
 
 { TmodPutCommand }
 
-procedure TmodPutCommand.Respond;
+procedure TmodPutCommand.Respond(var Result: TmnExecuteResults);
 var
   aFile: TFileStream;
   aFileName: string;
 begin
+  inherited;
   RespondStream.WriteCommand('OK');
   aFileName := URIParams.Values['FileName'];
   {aFile := TFileStream.Create(DocumentRoot + aFileName, fmCreate);
@@ -386,12 +401,13 @@ end;
 
 { TmodDirCommand }
 
-procedure TmodDirCommand.Respond;
+procedure TmodDirCommand.Respond(var Result: TmnExecuteResults);
 var
 //  i: Integer;
 //  aStrings: TStringList;
   aPath, aFilter: string;
 begin
+  inherited;
   RespondStream.WriteCommand('OK');
   aFilter := URIParams.Values['Filter'];
   //aPath := IncludeTrailingPathDelimiter(DocumentRoot);
@@ -411,10 +427,11 @@ end;
 
 { TmodDeleteFileCommand }
 
-procedure TmodDeleteFileCommand.Respond;
+procedure TmodDeleteFileCommand.Respond(var Result: TmnExecuteResults);
 var
   aFileName: string;
 begin
+  inherited;
   {aFileName := IncludeTrailingPathDelimiter(DocumentRoot) + Params.Values['FileName'];
   if FileExists(aFileName) then
     DeleteFile(aFileName);}
@@ -468,6 +485,13 @@ var
 begin
   inherited;
   ParsePath(Request.URI, aName, URIPath, URIParams);
+end;
+
+procedure TmodHttpCommand.Respond(var Result: TmnExecuteResults);
+begin
+  inherited;
+  if KeepAlive then
+    Result := Result + [erKeepAlive];
 end;
 
 procedure TmodHttpCommand.SendHeader;

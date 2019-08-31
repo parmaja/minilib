@@ -71,6 +71,9 @@ type
 
   TmnCommandStates = set of TmnCommandState;
 
+  TmnExecuteResult = (erSuccess, erKeepAlive);
+  TmnExecuteResults = set of TmnExecuteResult;
+
   { TmnCommand }
 
   TmnCommand = class(TmnObject)
@@ -82,14 +85,17 @@ type
     FRespondHeader: TmnParams;
     FRequestStream: TmnConnectionStream;
     FRespondStream: TmnConnectionStream;
+    FContentSize: Int64;
+    FKeepAlive: Boolean;
+
     FStates: TmnCommandStates;
     procedure SetModule(const Value: TmnModule); virtual;
     procedure SetRequestHeader(const Value: TmnParams);
     function GetActive: Boolean;
   protected
     procedure Prepare; virtual;
-    procedure Execute;
-    procedure Respond; virtual;
+    procedure Respond(var Result: TmnExecuteResults); virtual;
+    function Execute: TmnExecuteResults; virtual;
     procedure Unprepare; virtual; //Shutdown it;
 
     property RequestStream: TmnConnectionStream read FRequestStream;
@@ -105,11 +111,12 @@ type
     //GetCommandName: make name for command when register it, useful when log the name of it
     property Module: TmnModule read FModule write SetModule;
     property Request: TmnRequest read FRequest;
-    property RaiseExceptions: Boolean read FRaiseExceptions write FRaiseExceptions default False;
     //Lock the server listener when execute the command
     //Prepare called after created in lucking mode
     property RequestHeader: TmnParams read FRequestHeader write SetRequestHeader;
     property RespondHeader: TmnParams read FRespondHeader;
+    property ContentSize: Int64 read FContentSize write FContentSize; //todo
+    property RaiseExceptions: Boolean read FRaiseExceptions write FRaiseExceptions default False;
     property States: TmnCommandStates read FStates;
   end;
 
@@ -165,7 +172,7 @@ type
   public
     constructor Create(AName: string; AProtcol: string; AModules: TmnModules); virtual;
     destructor Destroy; override;
-    function Execute(ARequest: TmnRequest; ARequestStream: TmnConnectionStream = nil; ARespondStream: TmnConnectionStream = nil): Boolean;
+    function Execute(ARequest: TmnRequest; ARequestStream: TmnConnectionStream = nil; ARespondStream: TmnConnectionStream = nil): TmnExecuteResults;
     procedure ExecuteCommand(CommandName: string; ARequestStream: TmnConnectionStream = nil; ARespondStream: TmnConnectionStream = nil; RequestString: TArray<String> = nil); deprecated;
     function RegisterCommand(vName: string; CommandClass: TmnCommandClass; ADefaultCommand: Boolean = False): Integer; overload;
 
@@ -339,6 +346,7 @@ var
   aRequestLine: string;
   aRequest: TmnRequest;
   aModule: TmnModule;
+  Result: TmnExecuteResults;
 begin
   inherited;
   if Connected then
@@ -360,14 +368,14 @@ begin
 
         try
           try
-            aModule.Execute(aRequest, Stream, Stream);
+            Result := aModule.Execute(aRequest, Stream, Stream);
           finally
           end;
         except
 {          if FCommand.RaiseExceptions then
             raise;}
         end;
-        if Stream.Connected then
+        if not (erKeepAlive in Result) and Stream.Connected then
           Stream.Disconnect;
       end;
     end;
@@ -450,7 +458,7 @@ begin
   Module.SendHeader(Self);
 end;
 
-procedure TmnCommand.Respond;
+procedure TmnCommand.Respond(var Result: TmnExecuteResults);
 begin
 end;
 
@@ -473,13 +481,14 @@ begin
   RespondHeader.Add(AName, AValue);
 end;
 
-procedure TmnCommand.Execute;
+function TmnCommand.Execute: TmnExecuteResults;
 begin
   {$ifdef DEBUG_MODE}
 //    Server.Listener.Log(Connection, GetCommandName + ': Started on port ' + Server.Port);
   try
   {$endif}
-    Respond;
+    Result := []; //default to be not keep alive, not sure, TODO
+    Respond(Result);
   {$ifdef DEBUG_MODE}
   except
     on E:Exception do
@@ -624,22 +633,23 @@ begin
   Result := SameText(Protcol, ARequest.Protcol);
 end;
 
-function TmnModule.Execute(ARequest: TmnRequest; ARequestStream: TmnConnectionStream; ARespondStream: TmnConnectionStream): Boolean;
+function TmnModule.Execute(ARequest: TmnRequest; ARequestStream: TmnConnectionStream; ARespondStream: TmnConnectionStream): TmnExecuteResults;
 var
   aCMD: TmnCommand;
 begin
+  Result := [erSuccess];
   ParseRequest(ARequest);
   aCMD := CreateCommand(ARequest.Command, ARequest, ARequestStream, ARespondStream);
   if aCMD = nil then
     raise TmnModuleException.Create('Can not find command: ' + ARequest.Command);
   try
     aCMD.Prepare;
-    aCMD.Execute;
+    Result := aCMD.Execute;
     aCMD.Unprepare;
+    Result := Result + [erSuccess];
   finally
     FreeAndNil(aCMD);
   end;
-  Result := true;
 end;
 
 procedure TmnModule.ExecuteCommand(CommandName: string; ARequestStream: TmnConnectionStream; ARespondStream: TmnConnectionStream; RequestString: TArray<String>);
