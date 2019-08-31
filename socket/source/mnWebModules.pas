@@ -52,6 +52,7 @@ type
   TmodHttpCommand = class(TmnCommand)
   private
     FCookies: TmnParams;
+    FKeepAlive: Boolean;
     FURIParams: TmnParams;
   protected
     URIPath: string;
@@ -63,6 +64,7 @@ type
     destructor Destroy; override;
     property Cookies: TmnParams read FCookies;
     property URIParams: TmnParams read FURIParams;
+    property KeepAlive: Boolean read FKeepAlive;
   end;
 
   { TmodURICommand }
@@ -477,6 +479,12 @@ var
 begin
   inherited;
   ParsePath(Request.URI, aName, URIPath, URIParams);
+  if Module.UseKeepAlive and SameText(RequestHeader.ReadString('Connection'), 'Keep-Alive') then
+  begin
+    FKeepAlive := True;
+    PostHeader('Connection', 'Keep-Alive');
+    PostHeader('Keep-Alive', 'timout=' + IntToStr(Module.KeepAliveTimeOut) + ', max=100');
+  end;
 end;
 
 procedure TmodHttpCommand.Respond(var Result: TmnExecuteResults);
@@ -487,7 +495,7 @@ begin
   if Module.UseKeepAlive and SameText(RequestHeader.ReadString('Connection'), 'Keep-Alive') then
   begin
     Result.Timout := Module.KeepAliveTimeOut;
-    if RequestHeader.IsExists('Keep-Alive') then
+    if RequestHeader.IsExists('Keep-Alive') then //idk if really sent from client
     begin
       aParams := TmnParams.Create;
       try
