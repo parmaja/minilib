@@ -134,6 +134,13 @@ type
     procedure Respond(var Result: TmnExecuteResults); override;
   end;
 
+  { TmodHttpPostCommand }
+
+  TmodHttpPostCommand = class(TmodHttpGetCommand)
+  public
+    procedure Respond(var Result: TmnExecuteResults); override;
+  end;
+
   { TmodPutCommand }
 
   TmodPutCommand = class(TmodURICommand)
@@ -171,6 +178,13 @@ var
 
 implementation
 
+{ TmodHttpPostCommand }
+
+procedure TmodHttpPostCommand.Respond(var Result: TmnExecuteResults);
+begin
+  inherited;
+end;
+
 { TmodWebModule }
 
 procedure TmodWebModule.SetDocumentRoot(AValue: string);
@@ -200,6 +214,7 @@ procedure TmodWebModule.CreateCommands;
 begin
   inherited;
   RegisterCommand('GET', TmodHttpGetCommand, true);
+  RegisterCommand('POST', TmodHttpGetCommand, true);
   RegisterCommand('Info', TmodServerInfoCommand);
   {
   RegisterCommand('GET', TmodHttpGetCommand);
@@ -372,7 +387,7 @@ begin
   inherited;
   SendRespond('OK');
   RespondStream.WriteLine('Server is running on port: ' + Module.Server.Port);
-  //RespondStream.WriteLine('the server is: "' + Application.ExeName + '"');
+  RespondStream.WriteLine('the server is: "' + ParamStr(0) + '"');
 end;
 
 { TmodPutCommand }
@@ -385,38 +400,38 @@ begin
   inherited;
   RespondStream.WriteCommand('OK');
   aFileName := URIParams.Values['FileName'];
-  {aFile := TFileStream.Create(DocumentRoot + aFileName, fmCreate);
+  aFile := TFileStream.Create(Root + aFileName, fmCreate);
   try
-    Connection.Stream.ReadStream(aFile);
+    RespondStream.ReadStream(aFile);
   finally
     aFile.Free;
-  end;}
+  end;
 end;
 
 { TmodDirCommand }
 
 procedure TmodDirCommand.Respond(var Result: TmnExecuteResults);
 var
-//  i: Integer;
-//  aStrings: TStringList;
+  i: Integer;
+  aStrings: TStringList;
   aPath, aFilter: string;
 begin
   inherited;
   RespondStream.WriteCommand('OK');
   aFilter := URIParams.Values['Filter'];
-  //aPath := IncludeTrailingPathDelimiter(DocumentRoot);
+  aPath := IncludeTrailingPathDelimiter(Root);
   if aFilter = '' then
     aFilter := '*.*';
-{   aStrings := TStringList.Create;
+   aStrings := TStringList.Create;
   try
-    EnumFileList(aPath + aFilter, aStrings);
+    //EnumFileList(aPath + aFilter, aStrings);
     for i := 0 to aStrings.Count - 1 do
     begin
-      Connection.Stream.WriteLn(IntToStr(i) + ': ' + aStrings[i]);
+      RespondStream.WriteLine(IntToStr(i) + ': ' + aStrings[i]);
     end;
   finally
     aStrings.Free;
-  end;}
+  end;
 end;
 
 { TmodDeleteFileCommand }
@@ -426,9 +441,9 @@ var
   aFileName: string;
 begin
   inherited;
-  {aFileName := IncludeTrailingPathDelimiter(DocumentRoot) + Params.Values['FileName'];
+  aFileName := IncludeTrailingPathDelimiter(Root) + URIPath;
   if FileExists(aFileName) then
-    DeleteFile(aFileName);}
+    DeleteFile(aFileName);
   RespondStream.WriteCommand('OK');
 end;
 
@@ -483,7 +498,7 @@ begin
   begin
     FKeepAlive := True;
     PostHeader('Connection', 'Keep-Alive');
-    PostHeader('Keep-Alive', 'timout=' + IntToStr(Module.KeepAliveTimeOut) + ', max=100');
+    PostHeader('Keep-Alive', 'timout=' + IntToStr(Module.KeepAliveTimeOut div 5000) + ', max=100');
   end;
 end;
 
@@ -514,7 +529,7 @@ end;
 
 procedure TmodHttpCommand.SendHeader;
 begin
-  PostHeader('Cookies', Cookies.ToString);
+  PostHeader('Cookies', Cookies.AsString);
   inherited;
 end;
 

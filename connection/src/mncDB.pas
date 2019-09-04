@@ -42,6 +42,7 @@ type
     function IndexOf(vName: string): Integer;
     function CreateConnection(vModel: string): TmncConnection;
     function CreateMeta(vModel: string): TmncMeta;
+    procedure EnumConnectionsModels(Strings: TStrings);
     property Items[Index:Integer]: TmncEngine read GetItems; default;
   end;
 
@@ -144,6 +145,16 @@ begin
     Result := P.MataClass.Create
   else
     raise EmncException.Create('Model ' + vModel + ' not found');
+end;
+
+procedure TmncEngines.EnumConnectionsModels(Strings: TStrings);
+var
+  item: TmncEngine;
+begin
+  for item in Self do
+  begin
+    Strings.Add(Item.Title);
+  end;
 end;
 
 initialization

@@ -29,7 +29,7 @@ type
     Label1: TLabel;
     Label2: TLabel;
     MainMenu1: TMainMenu;
-    MaxOfThreads: TLabel;
+    MaxOfThreadsLabel: TLabel;
     LastIDLabel: TLabel;
     Memo: TMemo;
     MenuItem1: TMenuItem;
@@ -100,6 +100,8 @@ procedure TMain.StopBtnClick(Sender: TObject);
 begin
   Server.Stop;
   StartBtn.Enabled:=true;
+  MaxOfThreadsLabel.Caption := '0';
+  LastIDLabel.Caption := '0';
 end;
 
 procedure TMain.ScatServerBeforeOpen(Sender: TObject);
@@ -215,7 +217,7 @@ procedure TMain.ScatServerChanged(Listener: TmnListener);
 begin
   if FMax < Listener.Count then
     FMax := Listener.Count;
-  MaxOfThreads.Caption:=IntToStr(FMax);
+  MaxOfThreadsLabel.Caption:=IntToStr(FMax);
   UpdateStatus;
 end;
 

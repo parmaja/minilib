@@ -20,6 +20,12 @@ object Main: TMain
   OnDestroy = FormDestroy
   OnHide = FormHide
   LCLVersion = '2.1.0.0'
+  object Bevel4: TBevel
+    Left = 127
+    Height = 18
+    Top = 53
+    Width = 78
+  end
   object Memo: TMemo
     Left = 0
     Height = 241
@@ -111,7 +117,7 @@ object Main: TMain
       Top = 53
       Width = 78
     end
-    object MaxOfThreads: TLabel
+    object MaxOfThreadsLabel: TLabel
       Left = 133
       Height = 13
       Top = 55
@@ -197,12 +203,6 @@ object Main: TMain
     Font.Pitch = fpVariable
     ParentColor = False
     ParentFont = False
-  end
-  object Bevel4: TBevel
-    Left = 127
-    Height = 18
-    Top = 53
-    Width = 78
   end
   object MainMenu1: TMainMenu
     left = 379

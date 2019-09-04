@@ -223,7 +223,7 @@ type
 
     property Active: Boolean read GetActive write SetActive;
     property EndOfLine: string read FEndOfLine write SetEndOfLine;
-    property EOFOnError: Boolean read FEOFOnError write SetEOFOnError default True;
+    //property EOFOnError: Boolean read FEOFOnError write SetEOFOnError default True;
   end;
 
 //--- Server ---
@@ -367,7 +367,7 @@ var
 begin
   inherited;
   aRequestLine := TrimRight(Stream.ReadLineRawByte);
-  if Connected and (aRequestLine <> '') then //aRequestLine empty when timeout but no disconnected
+  if Connected and (aRequestLine <> '') then //aRequestLine empty when timeout but not disconnected
   begin
     aRequest := (Listener.Server as TmnModuleServer).Modules.ParseRequest(aRequestLine);
     aModule := (Listener.Server as TmnModuleServer).Modules.Match(aRequest);
@@ -406,7 +406,7 @@ end;
 procedure TmnModuleServer.StreamCreated(AStream: TmnBufferStream);
 begin
   AStream.EndOfLine := Modules.EndOfLine;
-  AStream.EOFOnError := Modules.EOFOnError;
+  //AStream.EOFOnError := Modules.EOFOnError;
 end;
 
 procedure TmnModuleServer.DoBeforeOpen;

@@ -54,7 +54,7 @@ type
   TmnBufferStream = class(TmnCustomStream)
   strict private
     FReadBuffer: PByte;
-    FEOF: Boolean;
+    FDone: Boolean;
     FEndOfLine: string;
     FEOFOnError: Boolean;
     procedure LoadBuffer;
@@ -122,14 +122,14 @@ type
     procedure WriteCommand(const Command: string; const Format: string; const Params: array of const); overload;
     procedure WriteCommand(const Command: string; const Params: string); overload;
 
-    procedure ReadStrings(Value: TStrings; const vEOL: string); overload;
     procedure ReadStrings(Value: TStrings); overload;
     function WriteStrings(const Value: TStrings): TFileSize; overload;
 
-    property EOF: Boolean read FEOF;
+    property Done: Boolean read FDone;
+    property EOF: Boolean read FDone; {$ifdef FPC} deprecated; {$endif} //alias of Done
 
     property EndOfLine: string read FEndOfLine write FEndOfLine;
-    property EOFOnError: Boolean read FEOFOnError write FEOFOnError default False;
+    property EOFOnError1: Boolean read FEOFOnError write FEOFOnError default False;
   end;
 
   { TmnWrapperStream }
@@ -441,11 +441,6 @@ begin
   Result := Result + Write(Pointer(EOL)^, ByteLength(EOL));
 end;
 
-{function TmnBufferStream.WriteLn(const S: string): TFileSize;
-begin
-  Result := WriteLine(S);
-end;}
-
 procedure TmnBufferStream.WriteBytes(Buffer: TBytes);
 begin
   WriteBuffer(Pointer(Buffer)^, Length(Buffer));
@@ -583,7 +578,7 @@ begin
   Result := Write(Pointer(EndOfLine)^, ByteLength(EndOfLine));
 end;
 
-procedure TmnBufferStream.ReadStrings(Value: TStrings; const vEOL: string);
+procedure TmnBufferStream.ReadStrings(Value: TStrings);
 var
   s: string;
 begin
@@ -592,11 +587,6 @@ begin
     if ReadLine(s) then
       Value.Add(s);
   end;
-end;
-
-procedure TmnBufferStream.ReadStrings(Value: TStrings);
-begin
-  ReadStrings(Value, EndOfLine);
 end;
 
 function TmnBufferStream.Write(const Buffer; Count: Longint): Longint;
@@ -658,13 +648,13 @@ begin
   aSize := DoRead(FReadBuffer^, FReadBufferSize);
   FEnd := FPos + aSize;
   if aSize = 0 then
-    FEOF := True;
+    FDone := True;
 end;
 
 procedure TmnBufferStream.DoError(S: string);
 begin
   if FEOFOnError then
-    FEOF := True
+    FDone := True
   else
     raise EmnStreamExceptionAbort.Create(S);
 end;
