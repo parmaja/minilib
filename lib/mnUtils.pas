@@ -34,6 +34,7 @@ function QuoteStr(Str: string; QuoteChar: string = '"'): string;
 *}
 type
   TStrToStringsCallbackProc = procedure(Sender: Pointer; Index:Integer; S: string; var Resume: Boolean);
+  TArgumentsCallbackProc = procedure(Sender: Pointer; Index:Integer; Name, Value: string; var Resume: Boolean);
 
 {**
   IgnoreInitialWhiteSpace: Ignore the first chars of this white space, not need it
@@ -48,6 +49,16 @@ function StrToStrings(Content: string; Strings: TStrings; Separators: TSysCharSe
 
 procedure StrToStringsCallbackProc(Sender: Pointer; Index: Integer; S: string; var Resume: Boolean);
 procedure StrToStringsDeqouteCallbackProc(Sender: Pointer; Index:Integer; S: string; var Resume: Boolean);
+
+{
+  examples:
+  -t -s -v: value test
+
+  -t -s --value: "value test"
+
+}
+function ParseArgumentsCallback(Content: string; const CallBackProc: TArgumentsCallbackProc; Sender: Pointer = nil; WhiteSpaces: TSysCharSet = [' ', #9]; Quotes: TSysCharSet = ['''', '"']; Switches: TSysCharSet = ['-', '/']; ValueSeperators: TSysCharSet = [':', '=']): Integer;
+function ParseArguments(Content: string; Strings: TStrings; WhiteSpaces: TSysCharSet = [' ', #9]; Quotes: TSysCharSet = ['''', '"']; Switches: TSysCharSet = ['-', '/']; ValueSeperators: TSysCharSet = [':', '=']): Integer;
 
 {
   Break string to Strings list items at #10 or #13 or #13#10
@@ -392,10 +403,6 @@ begin
         while (Cur <= Length(Content)) and ((InQuote and not (Content[Cur] <> QuoteChar)) or (not (CharInSet(Content[Cur], Separators)))) do
           Cur := Cur + 1;
 
-        if stsoGroupSeparators in vOptions then
-          while (Cur <= Length(Content)) and ((InQuote and not (Content[Cur] <> QuoteChar)) or (CharInSet(Content[Cur], Separators))) do
-            Cur := Cur + 1;
-
         if (Cur <= Length(Content)) and CharInSet(Content[Cur], Quotes) then
         begin
           if (QuoteChar <> #0) and (QuoteChar = Content[Cur]) then
@@ -434,6 +441,114 @@ begin
   finally
     Strings.EndUpdate;
   end;
+end;
+
+procedure ArgumentsCallbackProc(Sender: Pointer; Index:Integer; Name, Value: string; var Resume: Boolean);
+begin
+  (TObject(Sender) as TStrings).Add(Name + (TObject(Sender) as TStrings).NameValueSeparator + Value);
+end;
+
+//  -t   --test cmd1 cmd2 -t: value -t:value -t value
+function ParseArgumentsCallback(Content: string; const CallBackProc: TArgumentsCallbackProc; Sender: Pointer; WhiteSpaces: TSysCharSet; Quotes: TSysCharSet; Switches: TSysCharSet; ValueSeperators: TSysCharSet): Integer;
+var
+  Start, Cur: Integer;
+  Resume: Boolean;
+  Index: Integer;
+  Name: string;
+  Value: string;
+  QuoteChar: Char;
+  S: string;
+  NextIsValue: Boolean;
+begin
+  Result := 0;
+  Index := 0;
+  Name := '';
+  Value := '';
+  NextIsValue := False;
+  if (@CallBackProc = nil) then
+    raise Exception.Create('ParseArguments: CallBackProc is nil');
+  if (Content <> '') then
+  begin
+    Cur := 1;
+    repeat
+      //bypass white spaces
+      while (Cur <= Length(Content)) and CharInSet(Content[Cur], WhiteSpaces) do
+        Cur := Cur + 1;
+
+      //start from the first char
+      Start := Cur - 1;
+      QuoteChar := #0;
+
+      if (Cur <= Length(Content)) and CharInSet(Content[Cur], Quotes) then
+      begin
+        QuoteChar := Content[Cur];
+        Cur := Cur + 1;
+      end;
+
+      while (Cur <= Length(Content)) and (not CharInSet(Content[Cur], WhiteSpaces) or (QuoteChar <> #0)) do
+      begin
+        if (QuoteChar <> #0) and (Content[Cur] = QuoteChar) then
+        begin
+          Cur := Cur + 1;
+          break;
+        end
+        else if not NextIsValue and CharInSet(Content[Cur], ValueSeperators) then
+        begin
+          Cur := Cur + 1;
+          break;
+        end;
+
+        Cur := Cur + 1;
+      end;
+
+      QuoteChar := #0;
+
+      if (Cur >= Start) then
+      begin
+        S := Copy(Content, Start + 1, Cur - Start - 1);
+        if S <> '' then
+        begin
+          if NextIsValue then
+          begin
+            if CharInSet(S[1], Switches) then
+              raise Exception.Create('Value excepted not a switch');
+            Value := S;
+            NextIsValue := False;
+          end
+          else
+          begin
+            Name := S;
+            Value := '';
+            if CharInSet(Name[1], Switches) and CharInSet(Name[Length(Name)], ValueSeperators) then
+            begin
+              Name := Copy(Name, 1, Length(Name) -1);
+              NextIsValue := True;
+            end
+            else
+              NextIsValue := False;
+          end;
+
+          if not NextIsValue then
+          begin
+            Resume := True;
+            if CharInSet(Name[1], Switches) and (Name[1] = Name[2]) then
+              Name := Copy(Name, 2, Length(Name)); //change double switch to one switch
+            CallBackProc(Sender, Index, Name, DequoteStr(Value), Resume);
+            Index := Index + 1;
+            Inc(Result);
+            if not Resume then
+              break;
+          end;
+         end;
+      end;
+      //Cur := Cur + 1;
+    until Cur > Length(Content);
+  end;
+end;
+
+function ParseArguments(Content: string; Strings: TStrings; WhiteSpaces: TSysCharSet; Quotes: TSysCharSet; Switches: TSysCharSet; ValueSeperators: TSysCharSet): Integer;
+begin
+  ParseArgumentsCallback(Content, @ArgumentsCallbackProc, Strings, WhiteSpaces, Quotes, Switches, ValueSeperators);
 end;
 
 function ExpandToPath(FileName: string; Path: string; Root: string): string;

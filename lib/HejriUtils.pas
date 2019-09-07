@@ -115,7 +115,7 @@ begin
       aDate := HejriItems.StartDate;
       i := 0;
       HejriItems.Items := nil;
-      while not aStream.EOF {and (i < Length(HejriItems.Items))} do
+      while not aStream.Done {and (i < Length(HejriItems.Items))} do
       begin
         ln := Trim(aStream.ReadLine);
         if (ln = '') or (LeftStr(ln, 1) = '#') or (LeftStr(ln, 1) = ';') then
