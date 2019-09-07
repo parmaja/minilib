@@ -43,8 +43,11 @@ TStrToStringsOptions = set of (
   stsoGroupSeparators //TODO, not tested yet, if one of separators come it will ignores chars in next separators like if separators = #13, #10, now #13#10 will considered as one line break
 ); //
 
-function StrToStringsCallback(Content: string; Sender: Pointer; const CallBackProc: TStrToStringsCallbackProc; Separators: TSysCharSet = [#0, #13, #10]; IgnoreInitialWhiteSpace: TSysCharSet = [' ']; DequoteValues: Boolean = False; Quotes: TSysCharSet = ['''', '"']; vOptions: TStrToStringsOptions = []): Integer;
-function StrToStrings(Content: string; Strings: TStrings; Separators: TSysCharSet = [#0, #13, #10]; IgnoreInitialWhiteSpace: TSysCharSet = [' ']; DequoteValues: Boolean = False; Quotes: TSysCharSet = ['''', '"']): Integer;
+function StrToStringsCallback(Content: string; Sender: Pointer; const CallBackProc: TStrToStringsCallbackProc; Separators: TSysCharSet = [#0, #13, #10]; IgnoreInitialWhiteSpace: TSysCharSet = [' ']; Quotes: TSysCharSet = ['''', '"']; vOptions: TStrToStringsOptions = []): Integer;
+function StrToStrings(Content: string; Strings: TStrings; Separators: TSysCharSet = [#0, #13, #10]; IgnoreInitialWhiteSpace: TSysCharSet = [' ']; Quotes: TSysCharSet = ['''', '"']): Integer;
+
+procedure StrToStringsCallbackProc(Sender: Pointer; Index: Integer; S: string; var Resume: Boolean);
+procedure StrToStringsDeqouteCallbackProc(Sender: Pointer; Index:Integer; S: string; var Resume: Boolean);
 
 {
   Break string to Strings list items at #10 or #13 or #13#10
@@ -333,7 +336,31 @@ f1,f2,,f4
 ,f2,f3,f4
 }
 
-function StrToStringsCallback(Content: string; Sender: Pointer; const CallBackProc: TStrToStringsCallbackProc; Separators: TSysCharSet; IgnoreInitialWhiteSpace: TSysCharSet; DequoteValues: Boolean; Quotes: TSysCharSet; vOptions: TStrToStringsOptions): Integer;
+procedure StrToStringsCallbackProc(Sender: Pointer; Index: Integer; S: string; var Resume: Boolean);
+begin
+  TStrings(Sender).Add(S); //Be sure sender is TStrings
+end;
+
+procedure StrToStringsDeqouteCallbackProc(Sender: Pointer; Index:Integer; S: string; var Resume: Boolean);
+var
+  Name, Value: string;
+  p: Integer;
+begin
+  p := pos('=', s);
+  if p >= 0 then
+  begin
+    Name := Copy(s, 1, p - 1);
+    Value := DequoteStr(Copy(s, p + 1, MaxInt));
+  end
+  else
+  begin
+    Name := S;
+    Value := '';
+  end;
+  (TObject(Sender) as TStrings).Add(Name + (TObject(Sender) as TStrings).NameValueSeparator + Value);
+end;
+
+function StrToStringsCallback(Content: string; Sender: Pointer; const CallBackProc: TStrToStringsCallbackProc; Separators: TSysCharSet; IgnoreInitialWhiteSpace: TSysCharSet; Quotes: TSysCharSet; vOptions: TStrToStringsOptions): Integer;
 var
   Start, Cur, P: Integer;
   Resume: Boolean;
@@ -385,12 +412,12 @@ begin
       if (Cur >= Start) then
       begin
         S := Copy(Content, Start + 1, Cur - Start - 1);
-        if DequoteValues then
+        {if DequoteValues then wrong not here we dequote values because what if not using = and use : instead?
         begin
-          P := Pos('=', S);
+          P := Pos('=', S); //wrong
           if P > 0 then
             S := Copy(S, 1, P) + DequoteStr(Copy(S, P + 1, MaxInt));
-        end;
+        end;}
         Resume := True;
         CallBackProc(Sender, Index, S, Resume);
         Index := Index + 1;
@@ -403,18 +430,13 @@ begin
   end;
 end;
 
-procedure StrToStringsCallbackProc(Sender: Pointer; Index: Integer; S: string; var Resume: Boolean);
-begin
-  TStrings(Sender).Add(S); //Be sure sender is TStrings
-end;
-
-function StrToStrings(Content: string; Strings: TStrings; Separators: TSysCharSet; IgnoreInitialWhiteSpace: TSysCharSet; DequoteValues: Boolean; Quotes: TSysCharSet): Integer;
+function StrToStrings(Content: string; Strings: TStrings; Separators: TSysCharSet; IgnoreInitialWhiteSpace: TSysCharSet; Quotes: TSysCharSet): Integer;
 begin
   if (Strings = nil) then
     raise Exception.Create('StrToStrings: Strings is nil');
   Strings.BeginUpdate;
   try
-    Result := StrToStringsCallback(Content, Strings, StrToStringsCallbackProc, Separators, IgnoreInitialWhiteSpace, DequoteValues, Quotes);
+    Result := StrToStringsCallback(Content, Strings, StrToStringsCallbackProc, Separators, IgnoreInitialWhiteSpace, Quotes);
   finally
     Strings.EndUpdate;
   end;
@@ -953,6 +975,76 @@ begin
   begin
     DecodeTime(DateTime, H, N, S, O);
     Result := Result + TimeDivider + AlignStr(IntToStr(H), 2, [alsRight],'0') + ':' + AlignStr(IntToStr(N), 2, [alsRight],'0') + ':' + AlignStr(IntToStr(S), 2, [alsRight],'0');
+  end;
+end;
+
+function StrToStringsCallback(Content: string; Sender: Pointer; const CallBackProc: TStrToStringsCallbackProc; Separators: TSysCharSet; IgnoreInitialWhiteSpace: TSysCharSet; Quotes: TSysCharSet; vOptions: TStrToStringsOptions): Integer;
+var
+  Start, Cur, P: Integer;
+  Resume: Boolean;
+  InQuote: Boolean;
+  QuoteChar: Char;
+  S: string;
+  Index: Integer;
+begin
+  Result := 0;
+  Index := 0;
+  if (@CallBackProc = nil) then
+    raise Exception.Create('StrToStrings: CallBackProc is nil');
+  if (Content <> '') then
+  begin
+    Cur := 1;
+    InQuote := False;
+    QuoteChar := #0;
+    repeat
+      //bypass white spaces
+      if IgnoreInitialWhiteSpace <> [] then
+        while (Cur <= Length(Content)) and CharInSet(Content[Cur], IgnoreInitialWhiteSpace) do
+          Cur := Cur + 1;
+
+      //start from the first char
+      Start := Cur - 1;
+      while True do
+      begin
+        //seek until the separator and skip the separator if inside quoting
+        while (Cur <= Length(Content)) and ((InQuote and not (Content[Cur] <> QuoteChar)) or (not (CharInSet(Content[Cur], Separators)))) do
+          Cur := Cur + 1;
+
+        if stsoGroupSeparators in vOptions then
+          while (Cur <= Length(Content)) and ((InQuote and not (Content[Cur] <> QuoteChar)) or (CharInSet(Content[Cur], Separators))) do
+            Cur := Cur + 1;
+
+        if (Cur <= Length(Content)) and CharInSet(Content[Cur], Quotes) then
+        begin
+          if (QuoteChar <> #0) and (QuoteChar = Content[Cur]) then
+            QuoteChar := #0
+          else if QuoteChar = #0 then
+            QuoteChar := Content[Cur];
+          InQuote := QuoteChar <> #0;
+          Cur := Cur + 1;
+        end
+        else
+          Break;
+      end;
+
+      if (Cur >= Start) then
+      begin
+        S := Copy(Content, Start + 1, Cur - Start - 1);
+        {if DequoteValues then wrong not here we dequote values because what if not using = and use : instead?
+        begin
+          P := Pos('=', S); //wrong
+          if P > 0 then
+            S := Copy(S, 1, P) + DequoteStr(Copy(S, P + 1, MaxInt));
+        end;}
+        Resume := True;
+        CallBackProc(Sender, Index, S, Resume);
+        Index := Index + 1;
+        Inc(Result);
+        if not Resume then
+          break;
+      end;
+      Cur := Cur + 1;
+    until Cur > Length(Content) + 1;
   end;
 end;
 

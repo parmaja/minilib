@@ -303,7 +303,7 @@ begin
     try
       for i := 0 to aStrings.Count - 1 do
       begin
-        Columns.Add(i, trim(aStrings[i]), dtString);
+        Columns.Add(i, trim(DequoteStr(aStrings[i])), dtString);
       end;
     finally
       aStrings.Free;
@@ -327,7 +327,7 @@ begin
     try
       while (i < aStrings.Count) {and (i < Columns.Count)} do //TODO check it
       begin
-        aRecord.Add(i, aStrings[i]);
+        aRecord.Add(i, DequoteStr(aStrings[i]));
         Inc(i); 
       end;
     finally
@@ -355,7 +355,7 @@ var
   s: string;
   t: rawbytestring;
 begin
-  Result := (FCSVStream <> nil) and not FCSVStream.EOF;
+  Result := (FCSVStream <> nil) and not FCSVStream.Done;
   if Result then
   begin
     s := '';
@@ -378,7 +378,7 @@ begin
 
     Result := Result and not ((s = '') and (EmptyLine = elDone));
     if Result then
-      StrToStrings(s, Strings, [Session.DelimiterChar], [#0, #13, #10], True, [Session.QuoteChar])
+      StrToStrings(s, Strings, [Session.DelimiterChar], [#0, #13, #10], [Session.QuoteChar])
     else
       FreeAndNil(Strings);
   end

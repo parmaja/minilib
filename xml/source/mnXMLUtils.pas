@@ -161,7 +161,7 @@ end;
 
 procedure ReadAttStrings(Strings: TStrings; const Attributes: string);
 begin
-  StrToStrings(Attributes, Strings, [' '], [#0, #13, #10], True);
+  StrToStringsCallback(Attributes, Strings, @StrToStringsDeqouteCallbackProc, [' '], [#0, #13, #10]);
 end;
 
 function CreateAttStrings(const Attributes: string): TStrings;

@@ -284,8 +284,16 @@ var
   p: Integer;
 begin
   p := pos('=', s);
-  Name := Copy(s, 1, p - 1);
-  Value := DequoteStr(Copy(s, p + 1, MaxInt));
+  if p >= 0 then
+  begin
+    Name := Copy(s, 1, p - 1);
+    Value := DequoteStr(Copy(s, p + 1, MaxInt));
+  end
+  else
+  begin
+    Name := S;
+    Value := '';
+  end;
   (TObject(Sender) as TmnParams).Add(Name, Value);
 end;
 
@@ -325,7 +333,7 @@ begin
     aParams := Copy(URIPath, J + 1, Length(URIPath));
     URIPath := Copy(URIPath, 1, J - 1);
     if URIParams <> nil then
-      StrToStringsCallback(aParams, URIParams, @ParamsCallBack, ['&'], [' '], true);
+      StrToStringsCallback(aParams, URIParams, @ParamsCallBack, ['&'], [' ']);
   end;
 end;
 
@@ -587,7 +595,7 @@ var
 begin
   if Stream <> nil then
   begin
-    while not Stream.EOF do
+    while not Stream.Done do
     begin
       line := Stream.ReadLineRawByte;
       if line = '' then
@@ -788,7 +796,7 @@ end;
 
 procedure TmnParams.SetAsString(const Value: string);
 begin
-  StrToStringsCallback(Value, Self, @ParamsCallBack, [Self.Delimiter], [' '], true);
+  StrToStringsCallback(Value, Self, @ParamsCallBack, [Self.Delimiter], [' ']);
 end;
 
 constructor TmnParams.Create;
