@@ -49,21 +49,21 @@ type
 
   { TmodHttpCommand }
 
-  TmodHttpCommand = class(TmnCommand)
+  TmodHttpCommand = class(TmodCommand)
   private
-    FCookies: TmnParams;
+    FCookies: TmodParams;
     FKeepAlive: Boolean;
-    FURIParams: TmnParams;
+    FURIParams: TmodParams;
   protected
     URIPath: string;
     procedure Created; override;
     procedure SendHeader; override;
     procedure Prepare; override;
-    procedure Respond(var Result: TmnExecuteResults); override;
+    procedure Respond(var Result: TmodExecuteResults); override;
   public
     destructor Destroy; override;
-    property Cookies: TmnParams read FCookies;
-    property URIParams: TmnParams read FURIParams;
+    property Cookies: TmodParams read FCookies;
+    property URIParams: TmodParams read FURIParams;
     property KeepAlive: Boolean read FKeepAlive;
   end;
 
@@ -75,7 +75,7 @@ type
   protected
     function GetDefaultDocument(Root: string): string;
     procedure RespondNotFound;
-    procedure Respond(var Result: TmnExecuteResults); override;
+    procedure Respond(var Result: TmodExecuteResults); override;
     procedure Prepare; override;
     procedure Unprepare; override;
     procedure Created; override;
@@ -90,7 +90,7 @@ type
 
   { TmodWebModule }
 
-  TmodWebModule = class(TmnModule)
+  TmodWebModule = class(TmodModule)
   private
     FServer: TmodWebServer;
     procedure SetDefaultDocument(AValue: TStringList);
@@ -102,8 +102,8 @@ type
     procedure Created; override;
     procedure CreateCommands; override;
 
-    procedure ParseRequest(var ARequest: TmnRequest); override;
-    function Match(ARequest: TmnRequest): Boolean; override;
+    procedure ParseRequest(var ARequest: TmodRequest); override;
+    function Match(ARequest: TmodRequest): Boolean; override;
   public
     destructor Destroy; override;
     property Server: TmodWebServer read FServer;
@@ -113,7 +113,7 @@ type
 
   { TmodWebServer }
 
-  TmodWebServer = class(TmnModuleServer)
+  TmodWebServer = class(TmodModuleServer)
   private
     FWebModule: TmodWebModule;
   protected
@@ -131,14 +131,14 @@ type
   TmodHttpGetCommand = class(TmodURICommand)
   protected
   public
-    procedure Respond(var Result: TmnExecuteResults); override;
+    procedure Respond(var Result: TmodExecuteResults); override;
   end;
 
   { TmodHttpPostCommand }
 
   TmodHttpPostCommand = class(TmodHttpGetCommand)
   public
-    procedure Respond(var Result: TmnExecuteResults); override;
+    procedure Respond(var Result: TmodExecuteResults); override;
   end;
 
   { TmodPutCommand }
@@ -146,14 +146,14 @@ type
   TmodPutCommand = class(TmodURICommand)
   protected
   public
-    procedure Respond(var Result: TmnExecuteResults); override;
+    procedure Respond(var Result: TmodExecuteResults); override;
   end;
 
   { TmodServerInfoCommand }
 
   TmodServerInfoCommand = class(TmodURICommand)
   protected
-    procedure Respond(var Result: TmnExecuteResults); override;
+    procedure Respond(var Result: TmodExecuteResults); override;
   public
   end;
 
@@ -161,7 +161,7 @@ type
 
   TmodDirCommand = class(TmodURICommand)
   protected
-    procedure Respond(var Result: TmnExecuteResults); override;
+    procedure Respond(var Result: TmodExecuteResults); override;
   public
   end;
 
@@ -169,7 +169,7 @@ type
 
   TmodDeleteFileCommand = class(TmodURICommand)
   protected
-    procedure Respond(var Result: TmnExecuteResults); override;
+    procedure Respond(var Result: TmodExecuteResults); override;
   public
   end;
 
@@ -180,7 +180,7 @@ implementation
 
 { TmodHttpPostCommand }
 
-procedure TmodHttpPostCommand.Respond(var Result: TmnExecuteResults);
+procedure TmodHttpPostCommand.Respond(var Result: TmodExecuteResults);
 begin
   inherited;
 end;
@@ -230,7 +230,7 @@ begin
   inherited Destroy;
 end;
 
-procedure TmodWebModule.ParseRequest(var ARequest: TmnRequest);
+procedure TmodWebModule.ParseRequest(var ARequest: TmodRequest);
 var
   aName, aPath: string;
 begin
@@ -238,7 +238,7 @@ begin
   ARequest.Command := ARequest.Method;
 end;
 
-function TmodWebModule.Match(ARequest: TmnRequest): Boolean;
+function TmodWebModule.Match(ARequest: TmodRequest): Boolean;
 var
   aName, aPath: string;
 begin
@@ -286,7 +286,7 @@ begin
   end;
 end;
 
-procedure TmodURICommand.Respond(var Result: TmnExecuteResults);
+procedure TmodURICommand.Respond(var Result: TmodExecuteResults);
 begin
   inherited;
 end;
@@ -339,7 +339,7 @@ begin
     Result := 'application/binary';
 end;
 
-procedure TmodHttpGetCommand.Respond(var Result: TmnExecuteResults);
+procedure TmodHttpGetCommand.Respond(var Result: TmodExecuteResults);
 var
   DocSize: Int64;
   aDocStream: TFileStream;
@@ -382,7 +382,7 @@ end;
 
 { TmodServerInfoCommand }
 
-procedure TmodServerInfoCommand.Respond(var Result: TmnExecuteResults);
+procedure TmodServerInfoCommand.Respond(var Result: TmodExecuteResults);
 begin
   inherited;
   SendRespond('OK');
@@ -392,7 +392,7 @@ end;
 
 { TmodPutCommand }
 
-procedure TmodPutCommand.Respond(var Result: TmnExecuteResults);
+procedure TmodPutCommand.Respond(var Result: TmodExecuteResults);
 var
   aFile: TFileStream;
   aFileName: string;
@@ -410,7 +410,7 @@ end;
 
 { TmodDirCommand }
 
-procedure TmodDirCommand.Respond(var Result: TmnExecuteResults);
+procedure TmodDirCommand.Respond(var Result: TmodExecuteResults);
 var
   i: Integer;
   aStrings: TStringList;
@@ -436,7 +436,7 @@ end;
 
 { TmodDeleteFileCommand }
 
-procedure TmodDeleteFileCommand.Respond(var Result: TmnExecuteResults);
+procedure TmodDeleteFileCommand.Respond(var Result: TmodExecuteResults);
 var
   aFileName: string;
 begin
@@ -477,8 +477,8 @@ end;
 procedure TmodHttpCommand.Created;
 begin
   inherited;
-  FCookies := TmnParams.Create;
-  FURIParams := TmnParams.Create;
+  FCookies := TmodParams.Create;
+  FURIParams := TmodParams.Create;
 end;
 
 destructor TmodHttpCommand.Destroy;
@@ -502,9 +502,9 @@ begin
   end;
 end;
 
-procedure TmodHttpCommand.Respond(var Result: TmnExecuteResults);
+procedure TmodHttpCommand.Respond(var Result: TmodExecuteResults);
 var
-  aParams: TmnParams;
+  aParams: TmodParams;
 begin
   inherited;
   if Module.UseKeepAlive and SameText(RequestHeader.ReadString('Connection'), 'Keep-Alive') then
@@ -512,7 +512,7 @@ begin
     Result.Timout := Module.KeepAliveTimeOut;
     if RequestHeader.IsExists('Keep-Alive') then //idk if really sent from client
     begin
-      aParams := TmnParams.Create;
+      aParams := TmodParams.Create;
       try
         //Keep-Alive: timeout=5, max=1000
         aParams.Seperator := '=';

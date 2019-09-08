@@ -233,6 +233,7 @@ type
     function ByName(vName: string): TmnField; //with exception if not exists
     procedure Clean; virtual;
     property FieldByName[Index: string]: TmnField read GetFieldByName;
+    property Exists[Index: string]: Boolean read IsExists;
     property Values[Index: string]: Variant read GetValues write SetValues; default;
   end;
 
