@@ -58,8 +58,10 @@ procedure StrToStringsDeqouteCallbackProc(Sender: Pointer; Index:Integer; S: str
 
 }
 
-function ParseArgumentsCallback(Content: string; const CallBackProc: TArgumentsCallbackProc; Sender: Pointer = nil; Switches: TSysCharSet = ['-', '/']; WhiteSpaces: TSysCharSet = [' ', #9]; Quotes: TSysCharSet = ['''', '"'];  ValueSeperators: TSysCharSet = [':', '=']): Integer;
-function ParseArguments(Content: string; Strings: TStrings; Switches: TSysCharSet = ['-', '/']; WhiteSpaces: TSysCharSet = [' ', #9]; Quotes: TSysCharSet = ['''', '"']; ValueSeperators: TSysCharSet = [':', '=']): Integer;
+function ParseArgumentsCallback(Content: string; const CallBackProc: TArgumentsCallbackProc; Sender: Pointer; Switches: array of char; WhiteSpaces: TSysCharSet = [' ', #9]; Quotes: TSysCharSet = ['''', '"'];  ValueSeperators: TSysCharSet = [':', '=']): Integer; overload;
+function ParseArgumentsCallback(Content: string; const CallBackProc: TArgumentsCallbackProc; Sender: Pointer): Integer; overload;
+function ParseArguments(Content: string; Strings: TStrings; Switches: TArray<Char>; WhiteSpaces: TSysCharSet = [' ', #9]; Quotes: TSysCharSet = ['''', '"']; ValueSeperators: TSysCharSet = [':', '=']): Integer; overload;
+function ParseArguments(Content: string; Strings: TStrings ): Integer; overload;
 
 {
   Break string to Strings list items at #10 or #13 or #13#10
@@ -450,7 +452,7 @@ begin
 end;
 
 //  -t   --test cmd1 cmd2 -t: value -t:value -t value
-function ParseArgumentsCallback(Content: string; const CallBackProc: TArgumentsCallbackProc; Sender: Pointer; Switches: TSysCharSet; WhiteSpaces: TSysCharSet; Quotes: TSysCharSet; ValueSeperators: TSysCharSet): Integer;
+function ParseArgumentsCallback(Content: string; const CallBackProc: TArgumentsCallbackProc; Sender: Pointer; Switches: array of char; WhiteSpaces: TSysCharSet; Quotes: TSysCharSet; ValueSeperators: TSysCharSet): Integer;
 var
   Start, Cur: Integer;
   Resume: Boolean;
@@ -511,7 +513,7 @@ begin
         begin
           if NextIsValue then
           begin
-            if CharInSet(S[1], Switches) then
+            if CharInArray(S[1], Switches) then
               raise Exception.Create('Value excepted not a switch');
             Value := S;
             NextIsValue := False;
@@ -520,7 +522,7 @@ begin
           begin
             Name := S;
             Value := '';
-            if CharInSet(Name[1], Switches) and CharInSet(Name[Length(Name)], ValueSeperators) then
+            if CharInArray(Name[1], Switches) and CharInSet(Name[Length(Name)], ValueSeperators) then
             begin
               Name := Copy(Name, 1, Length(Name) -1);
               NextIsValue := True;
@@ -532,12 +534,12 @@ begin
           if not NextIsValue then
           begin
             Resume := True;
-            if CharInSet(Name[1], Switches) then
+            if CharInArray(Name[1], Switches) then
             begin
               if (Name[1] = Name[2]) then
                 Name := Copy(Name, 2, Length(Name)); //change double switch to one switch
-              if Name[1] <> '-' then //should be first element in Switches, but i cant convert it to array right now
-                Name[1] := '-';
+              if Name[1] <> Switches[0] then //should be first element in Switches, but i cant convert it to array right now
+                Name[1] := Switches[0];
             end;
             CallBackProc(Sender, Index, Name, DequoteStr(Value), Resume);
             Index := Index + 1;
@@ -551,10 +553,19 @@ begin
     until Cur > Length(Content);
   end;
 end;
-
-function ParseArguments(Content: string; Strings: TStrings; Switches: TSysCharSet; WhiteSpaces: TSysCharSet; Quotes: TSysCharSet; ValueSeperators: TSysCharSet): Integer;
+function ParseArgumentsCallback(Content: string; const CallBackProc: TArgumentsCallbackProc; Sender: Pointer): Integer; overload;
 begin
-  ParseArgumentsCallback(Content, @ArgumentsCallbackProc, Strings, Switches, WhiteSpaces, Quotes, ValueSeperators);
+  Result := ParseArgumentsCallback(Content, @CallBackProc, Sender, ['-', '/']);
+end;
+
+function ParseArguments(Content: string; Strings: TStrings; Switches: TArray<Char>; WhiteSpaces: TSysCharSet; Quotes: TSysCharSet; ValueSeperators: TSysCharSet): Integer;
+begin
+  Result := ParseArgumentsCallback(Content, @ArgumentsCallbackProc, Strings, Switches, WhiteSpaces, Quotes, ValueSeperators);
+end;
+
+function ParseArguments(Content: string; Strings: TStrings): Integer;
+begin
+  Result := ParseArgumentsCallback(Content, @ArgumentsCallbackProc, Strings);
 end;
 
 function ExpandToPath(FileName: string; Path: string; Root: string): string;
