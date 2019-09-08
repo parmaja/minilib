@@ -1,4 +1,4 @@
-unit mnModules;
+﻿unit mnModules;
 {$M+}{$H+}
 {$IFDEF FPC}{$MODE delphi}{$ENDIF}
 {**
@@ -10,7 +10,17 @@ unit mnModules;
  *
  *  https://www.w3.org/Protocols/rfc2616/rfc2616-sec5.html
  *
- *}
+ *
+ }
+ {
+           userinfo       host      port
+          ┌──┴───┐ ┌──────┴──────┐ ┌┴┐
+  https://john.doe@www.example.com:123/forum/questions/?tag=networking&order=newest#top
+  └─┬─┘   └───────────┬──────────────┘└───────┬───────┘ └───────────┬─────────────┘ └┬┘
+  scheme          authority                  path                 query           fragment
+
+  https://en.wikipedia.org/wiki/Uniform_Resource_Identifier
+ }
 
 interface
 
@@ -50,12 +60,14 @@ type
   TmodCommand = class;
 
   TmodRequest = record
-    Command: string;
-
-    Module: string;
     Method: string;
     URI: string;
     Protcol: string;
+
+    Path: string;
+    Module: string;
+    Command: string;
+
     Raw: string; //Full of first line of header
   end;
 
@@ -94,7 +106,6 @@ type
 
   TmodCommand = class(TmnObject)
   private
-    FRequest: TmodRequest;
     FModule: TmodModule;
     FRaiseExceptions: Boolean;
     FRequestHeader: TmodParams;
@@ -108,11 +119,12 @@ type
     procedure SetRequestHeader(const Value: TmodParams);
     function GetActive: Boolean;
   protected
-    procedure Prepare; virtual;
+    Request: TmodRequest;
+    procedure Prepare(var Result: TmodExecuteResults); virtual;
     procedure RespondError(ErrorNumber: Integer; ErrorMessage: string); virtual;
     procedure Respond(var Result: TmodExecuteResults); virtual;
     function Execute: TmodExecuteResults; virtual;
-    procedure Unprepare; virtual; //Shutdown it;
+    procedure Unprepare(var Result: TmodExecuteResults); virtual; //Shutdown it;
 
     property RequestStream: TmnBufferStream read FRequestStream;
     property RespondStream: TmnBufferStream read FRespondStream;
@@ -126,7 +138,6 @@ type
     property Active: Boolean read GetActive;
     //GetCommandName: make name for command when register it, useful when log the name of it
     property Module: TmodModule read FModule write SetModule;
-    property Request: TmodRequest read FRequest;
     //Lock the server listener when execute the command
     //Prepare called after created in lucking mode
     property RequestHeader: TmodParams read FRequestHeader write SetRequestHeader;
@@ -183,10 +194,8 @@ type
     function CreateCommand(CommandName: string; ARequest: TmodRequest; ARequestStream: TmnBufferStream = nil; ARespondStream: TmnBufferStream = nil): TmodCommand; overload;
 
     procedure ParseHeader(RequestHeader: TmodParams; Stream: TmnBufferStream); virtual;
-    procedure ParseRequest(var ARequest: TmodRequest); virtual;
+    procedure ParseRequest(var ARequest: TmodRequest; ACommand: TmodCommand = nil); virtual;
     function Match(ARequest: TmodRequest): Boolean; virtual;
-
-
   public
     constructor Create(AName: string; AProtcol: string; AModules: TmodModules); virtual;
     destructor Destroy; override;
@@ -212,7 +221,6 @@ type
     FActive: Boolean;
     procedure SetActive(AValue: Boolean);
     procedure SetEndOfLine(AValue: string);
-    procedure SetEOFOnError(AValue: Boolean);
   protected
     function GetActive: Boolean; virtual;
     procedure Created; override;
@@ -224,7 +232,6 @@ type
 
     property Active: Boolean read GetActive write SetActive;
     property EndOfLine: string read FEndOfLine write SetEndOfLine;
-    //property EOFOnError: Boolean read FEOFOnError write SetEOFOnError default True;
   end;
 
 //--- Server ---
@@ -342,7 +349,7 @@ procedure ParsePath(aRequest: string; out Name: string; out URIPath: string; URI
 begin
   ParseURI(aRequest, URIPath, URIParams);
   Name := SubStr(URIPath, '/', 0);
-  URIPath := Copy(URIPath, Length(Name) + 1, MaxInt);
+  URIPath := Copy(URIPath, Length(Name) + 2, MaxInt);
 end;
 
 { TmodModuleListener }
@@ -380,21 +387,20 @@ begin
   begin
     aRequest := (Listener.Server as TmodModuleServer).Modules.ParseRequest(aRequestLine);
     aModule := (Listener.Server as TmodModuleServer).Modules.Match(aRequest);
-    if (aModule = nil) and ((Listener.Server as TmodModuleServer).Modules.Count > 0) then
-      aModule := (Listener.Server as TmodModuleServer).Modules[0]; //fall back
+{    if (aModule = nil) and ((Listener.Server as TmodModuleServer).Modules.Count > 0) then
+      aModule := (Listener.Server as TmodModuleServer).Modules[0]; //fall back}
     if (aModule = nil) then
     begin
       Stream.Disconnect; //if failed
-      raise TmodModuleException.Create('Nothing todo!');
+      //raise TmodModuleException.Create('Nothing todo!');
     end;
 
     try
-      try
+      if aModule <> nil then
         Result := aModule.Execute(aRequest, Stream, Stream);
-      finally
-      end;
-    except
+    finally
     end;
+
     if Stream.Connected then
     begin
       if (erKeepAlive in Result.Status) then
@@ -467,8 +473,9 @@ begin
   inherited;
 end;
 
-procedure TmodCommand.Prepare;
+procedure TmodCommand.Prepare(var Result: TmodExecuteResults);
 begin
+  Module.ParseRequest(Request, Self);
 end;
 
 procedure TmodCommand.SendHeader;
@@ -489,7 +496,7 @@ procedure TmodCommand.RespondError(ErrorNumber: Integer; ErrorMessage: string);
 begin
 end;
 
-procedure TmodCommand.Unprepare;
+procedure TmodCommand.Unprepare(var Result: TmodExecuteResults);
 begin
 end;
 
@@ -515,7 +522,9 @@ begin
   try
   {$endif}
     Result.Status := []; //default to be not keep alive, not sure, TODO
+    Prepare(Result);
     Respond(Result);
+    Unprepare(Result);
   {$ifdef DEBUG_MODE}
   except
     on E:Exception do
@@ -568,7 +577,7 @@ begin
   begin
     Result := aClass.Create(Self);
     Result.FModule := Self;
-    Result.FRequest := ARequest;
+    Result.Request := ARequest;
     Result.FRequestStream := ARequestStream;
     Result.FRespondStream := ARespondStream;
   end
@@ -632,7 +641,7 @@ begin
   ACommand.RespondStream.WriteLineUTF8(UTF8String(''));
 end;
 
-procedure TmodModule.ParseRequest(var ARequest: TmodRequest);
+procedure TmodModule.ParseRequest(var ARequest: TmodRequest; ACommand: TmodCommand);
 begin
   ARequest.Command := ARequest.Method;
 end;
@@ -672,9 +681,7 @@ begin
     raise TmodModuleException.Create('Can not find command: ' + ARequest.Command);
   try
     try
-      aCMD.Prepare;
       Result := aCMD.Execute;
-      aCMD.Unprepare;
       Result.Status := Result.Status + [erSuccess];
     except
       on E: Exception do
@@ -735,14 +742,6 @@ end;
 function TmodModules.GetActive: Boolean;
 begin
   Result := True;
-end;
-
-procedure TmodModules.SetEOFOnError(AValue: Boolean);
-begin
-  if FEOFOnError =AValue then Exit;
-  if Active then
-    raise TmodModuleException.Create('You can''t change EOFOnError while server is active');
-  FEOFOnError :=AValue;
 end;
 
 procedure TmodModules.Created;

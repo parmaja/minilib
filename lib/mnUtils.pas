@@ -490,10 +490,13 @@ begin
 
       while (Cur <= Length(Content)) and (not CharInSet(Content[Cur], WhiteSpaces) or (QuoteChar <> #0)) do
       begin
-        if (QuoteChar <> #0) and (Content[Cur] = QuoteChar) then
+        if (QuoteChar <> #0) then
         begin
-          Cur := Cur + 1;
-          break;
+          if (Content[Cur] = QuoteChar) then
+          begin
+            Cur := Cur + 1;
+            break;
+          end;
         end
         else if not NextIsValue and CharInSet(Content[Cur], ValueSeperators) then
         begin
@@ -541,7 +544,7 @@ begin
               if Name[1] <> Switches[0] then //should be first element in Switches, but i cant convert it to array right now
                 Name[1] := Switches[0];
             end;
-            CallBackProc(Sender, Index, Name, DequoteStr(Value), Resume);
+            CallBackProc(Sender, Index, DequoteStr(Name), DequoteStr(Value), Resume);
             Index := Index + 1;
             Inc(Result);
             if not Resume then

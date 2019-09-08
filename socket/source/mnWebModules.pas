@@ -55,16 +55,15 @@ type
     FKeepAlive: Boolean;
     FURIParams: TmodParams;
   protected
-    URIPath: string;
     procedure Created; override;
     procedure SendHeader; override;
-    procedure Prepare; override;
-    procedure Respond(var Result: TmodExecuteResults); override;
+    procedure Prepare(var Result: TmodExecuteResults); override;
+    procedure Unprepare(var Result: TmodExecuteResults); override;
   public
     destructor Destroy; override;
     property Cookies: TmodParams read FCookies;
     property URIParams: TmodParams read FURIParams;
-    property KeepAlive: Boolean read FKeepAlive;
+    property KeepAlive: Boolean read FKeepAlive write FKeepAlive;
   end;
 
   { TmodURICommand }
@@ -76,8 +75,7 @@ type
     function GetDefaultDocument(Root: string): string;
     procedure RespondNotFound;
     procedure Respond(var Result: TmodExecuteResults); override;
-    procedure Prepare; override;
-    procedure Unprepare; override;
+    procedure Prepare(var Result: TmodExecuteResults); override;
     procedure Created; override;
   public
     Root: string; //Document root folder
@@ -102,7 +100,7 @@ type
     procedure Created; override;
     procedure CreateCommands; override;
 
-    procedure ParseRequest(var ARequest: TmodRequest); override;
+    procedure ParseRequest(var ARequest: TmodRequest; ACommand: TmodCommand = nil); override;
     function Match(ARequest: TmodRequest): Boolean; override;
   public
     destructor Destroy; override;
@@ -230,20 +228,21 @@ begin
   inherited Destroy;
 end;
 
-procedure TmodWebModule.ParseRequest(var ARequest: TmodRequest);
+procedure TmodWebModule.ParseRequest(var ARequest: TmodRequest; ACommand: TmodCommand);
 var
-  aName, aPath: string;
+  aPath: string;
 begin
-  ParsePath(ARequest.URI, aName, aPath, nil);
+  if (ACommand <> nil) and (ACommand is TmodHttpCommand) then
+    ParsePath(ARequest.URI, ARequest.Module, aPath, (ACommand as TmodHttpCommand).URIParams)
+  else
+    ParsePath(ARequest.URI, ARequest.Module, aPath, nil);
   ARequest.Command := ARequest.Method;
 end;
 
 function TmodWebModule.Match(ARequest: TmodRequest): Boolean;
-var
-  aName, aPath: string;
 begin
-  ParsePath(ARequest.URI, aName, aPath, nil);
-  Result := SameText(Name, aName) and SameText(SubStr(ARequest.Protcol, '/', 0),  'http');
+  ParseRequest(ARequest);
+  Result := SameText(Name, ARequest.Module) and SameText(SubStr(ARequest.Protcol, '/', 0),  'http');
 end;
 
 { TmodURICommand }
@@ -254,20 +253,17 @@ var
 begin
   SendRespond('HTTP/1.1 200 OK');
   PostHeader('Content-Type', 'text/html');
+  SendHeader;
   Body := '<HTML><HEAD><TITLE>404 Not Found</TITLE></HEAD>' +
     '<BODY><H1>404 Not Found</H1>The requested URL ' +
     ' was not found on this server.<P><h1>Powerd by Mini Web Server</h3></BODY></HTML>';
   RespondStream.WriteString(Body);
+  KeepAlive := False;
 end;
 
 function TmodURICommand.GetModule: TmodWebModule;
 begin
   Result := (inherited Module) as TmodWebModule;
-end;
-
-procedure TmodURICommand.Unprepare;
-begin
-
 end;
 
 function TmodURICommand.GetDefaultDocument(Root: string): string;
@@ -291,12 +287,11 @@ begin
   inherited;
 end;
 
-procedure TmodURICommand.Prepare;
+procedure TmodURICommand.Prepare(var Result: TmodExecuteResults);
 var
   S: string;
 begin
   inherited;
-  ParsePath(Request.URI, S, URIPath, URIParams);
   Root := Module.DocumentRoot;
   Host := RequestHeader.ReadString('Host');
 end;
@@ -345,8 +340,7 @@ var
   aDocStream: TFileStream;
   aDocument: string;
 begin
-  inherited;
-  aDocument := IncludeTrailingPathDelimiter(Root) + '.' + URIPath;
+  aDocument := IncludeTrailingPathDelimiter(Root) + '.' + Request.Path;
   aDocument := StringReplace(aDocument, '/', PathDelim, [rfReplaceAll]);//correct it for linux
   aDocument := ExpandFileName(aDocument);
 
@@ -378,6 +372,7 @@ begin
   end
   else
     RespondNotFound;
+  inherited;
 end;
 
 { TmodServerInfoCommand }
@@ -441,7 +436,7 @@ var
   aFileName: string;
 begin
   inherited;
-  aFileName := IncludeTrailingPathDelimiter(Root) + URIPath;
+  aFileName := IncludeTrailingPathDelimiter(Root) + Request.Path;
   if FileExists(aFileName) then
     DeleteFile(aFileName);
   RespondStream.WriteCommand('OK');
@@ -488,26 +483,23 @@ begin
   inherited;
 end;
 
-procedure TmodHttpCommand.Prepare;
-var
-  aName: string;
+procedure TmodHttpCommand.Prepare(var Result: TmodExecuteResults);
 begin
   inherited;
-  ParsePath(Request.URI, aName, URIPath, URIParams);
   if Module.UseKeepAlive and SameText(RequestHeader.ReadString('Connection'), 'Keep-Alive') then
   begin
-    FKeepAlive := True;
+    KeepAlive := True;
     PostHeader('Connection', 'Keep-Alive');
     PostHeader('Keep-Alive', 'timout=' + IntToStr(Module.KeepAliveTimeOut div 5000) + ', max=100');
   end;
 end;
 
-procedure TmodHttpCommand.Respond(var Result: TmodExecuteResults);
+procedure TmodHttpCommand.Unprepare(var Result: TmodExecuteResults);
 var
   aParams: TmodParams;
 begin
   inherited;
-  if Module.UseKeepAlive and SameText(RequestHeader.ReadString('Connection'), 'Keep-Alive') then
+  if KeepAlive and Module.UseKeepAlive and SameText(RequestHeader.ReadString('Connection'), 'Keep-Alive') then
   begin
     Result.Timout := Module.KeepAliveTimeOut;
     if RequestHeader.IsExists('Keep-Alive') then //idk if really sent from client
