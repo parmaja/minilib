@@ -57,8 +57,9 @@ procedure StrToStringsDeqouteCallbackProc(Sender: Pointer; Index:Integer; S: str
   -t -s --value: "value test"
 
 }
-function ParseArgumentsCallback(Content: string; const CallBackProc: TArgumentsCallbackProc; Sender: Pointer = nil; WhiteSpaces: TSysCharSet = [' ', #9]; Quotes: TSysCharSet = ['''', '"']; Switches: TSysCharSet = ['-', '/']; ValueSeperators: TSysCharSet = [':', '=']): Integer;
-function ParseArguments(Content: string; Strings: TStrings; WhiteSpaces: TSysCharSet = [' ', #9]; Quotes: TSysCharSet = ['''', '"']; Switches: TSysCharSet = ['-', '/']; ValueSeperators: TSysCharSet = [':', '=']): Integer;
+
+function ParseArgumentsCallback(Content: string; const CallBackProc: TArgumentsCallbackProc; Sender: Pointer = nil; Switches: TSysCharSet = ['-', '/']; WhiteSpaces: TSysCharSet = [' ', #9]; Quotes: TSysCharSet = ['''', '"'];  ValueSeperators: TSysCharSet = [':', '=']): Integer;
+function ParseArguments(Content: string; Strings: TStrings; Switches: TSysCharSet = ['-', '/']; WhiteSpaces: TSysCharSet = [' ', #9]; Quotes: TSysCharSet = ['''', '"']; ValueSeperators: TSysCharSet = [':', '=']): Integer;
 
 {
   Break string to Strings list items at #10 or #13 or #13#10
@@ -449,7 +450,7 @@ begin
 end;
 
 //  -t   --test cmd1 cmd2 -t: value -t:value -t value
-function ParseArgumentsCallback(Content: string; const CallBackProc: TArgumentsCallbackProc; Sender: Pointer; WhiteSpaces: TSysCharSet; Quotes: TSysCharSet; Switches: TSysCharSet; ValueSeperators: TSysCharSet): Integer;
+function ParseArgumentsCallback(Content: string; const CallBackProc: TArgumentsCallbackProc; Sender: Pointer; Switches: TSysCharSet; WhiteSpaces: TSysCharSet; Quotes: TSysCharSet; ValueSeperators: TSysCharSet): Integer;
 var
   Start, Cur: Integer;
   Resume: Boolean;
@@ -531,8 +532,13 @@ begin
           if not NextIsValue then
           begin
             Resume := True;
-            if CharInSet(Name[1], Switches) and (Name[1] = Name[2]) then
-              Name := Copy(Name, 2, Length(Name)); //change double switch to one switch
+            if CharInSet(Name[1], Switches) then
+            begin
+              if (Name[1] = Name[2]) then
+                Name := Copy(Name, 2, Length(Name)); //change double switch to one switch
+              if Name[1] <> '-' then //should be first element in Switches, but i cant convert it to array right now
+                Name[1] := '-';
+            end;
             CallBackProc(Sender, Index, Name, DequoteStr(Value), Resume);
             Index := Index + 1;
             Inc(Result);
@@ -546,9 +552,9 @@ begin
   end;
 end;
 
-function ParseArguments(Content: string; Strings: TStrings; WhiteSpaces: TSysCharSet; Quotes: TSysCharSet; Switches: TSysCharSet; ValueSeperators: TSysCharSet): Integer;
+function ParseArguments(Content: string; Strings: TStrings; Switches: TSysCharSet; WhiteSpaces: TSysCharSet; Quotes: TSysCharSet; ValueSeperators: TSysCharSet): Integer;
 begin
-  ParseArgumentsCallback(Content, @ArgumentsCallbackProc, Strings, WhiteSpaces, Quotes, Switches, ValueSeperators);
+  ParseArgumentsCallback(Content, @ArgumentsCallbackProc, Strings, Switches, WhiteSpaces, Quotes, ValueSeperators);
 end;
 
 function ExpandToPath(FileName: string; Path: string; Root: string): string;
