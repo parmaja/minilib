@@ -233,9 +233,9 @@ var
   aPath: string;
 begin
   if (ACommand <> nil) and (ACommand is TmodHttpCommand) then
-    ParsePath(ARequest.URI, ARequest.Module, aPath, (ACommand as TmodHttpCommand).URIParams)
+    ParsePath(ARequest.URI, ARequest.Module, ARequest.Path, (ACommand as TmodHttpCommand).URIParams)
   else
-    ParsePath(ARequest.URI, ARequest.Module, aPath, nil);
+    ParsePath(ARequest.URI, ARequest.Module, ARequest.Path, nil);
   ARequest.Command := ARequest.Method;
 end;
 
@@ -342,10 +342,9 @@ var
 begin
   aDocument := IncludeTrailingPathDelimiter(Root) + '.' + Request.Path;
   aDocument := StringReplace(aDocument, '/', PathDelim, [rfReplaceAll]);//correct it for linux
+  if aDocument[Length(aDocument)] = PathDelim then //get the default file if it not defined
+     aDocument := GetDefaultDocument(aDocument);
   aDocument := ExpandFileName(aDocument);
-
- if aDocument[Length(aDocument)] = PathDelim then //get the default file if it not defined
-    aDocument := GetDefaultDocument(aDocument);
 
   if FileExists(aDocument) then
   begin

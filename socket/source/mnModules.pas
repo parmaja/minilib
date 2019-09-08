@@ -349,7 +349,7 @@ procedure ParsePath(aRequest: string; out Name: string; out URIPath: string; URI
 begin
   ParseURI(aRequest, URIPath, URIParams);
   Name := SubStr(URIPath, '/', 0);
-  URIPath := Copy(URIPath, Length(Name) + 2, MaxInt);
+  URIPath := Copy(URIPath, Length(Name) + 1, MaxInt);
 end;
 
 { TmodModuleListener }
