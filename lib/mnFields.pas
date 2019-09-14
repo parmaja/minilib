@@ -213,8 +213,6 @@ type
   private
     function _AddRef: Integer; {$ifdef WINDOWS}stdcall{$else}cdecl{$endif};
     function _Release: Integer; {$ifdef WINDOWS}stdcall{$else}cdecl{$endif};
-
-    function GetFieldByName(Index: string): TmnField;
     //function GetItem(Index: Integer): TmnField;
   protected
     function CreateField: TmnField; virtual;
@@ -235,12 +233,13 @@ type
     function Put(AName, AValue: string): TmnField; overload;
     function IsExists(vName: string): Boolean;
     function FindField(vName: string): TmnField; virtual; //no exception
-    function ByName(vName: string): TmnField; //with exception if not exists
+//    function ByName(vName: string): TmnField; deprecated; //with exception if not exists
+    function FindByName(vName: string): TmnField; //with exception if not exists
     function IndexOfName(vName: string): Integer;
     function RemoveByName(vName: string): Boolean;
     //todo IndexOfName, IndexOf
     procedure Clean; virtual;
-    property FieldByName[Index: string]: TmnField read GetFieldByName;
+    property FieldByName[Index: string]: TmnField read FindByName;
     //property Items[Index: Integer]: TmnField read GetItem;
     property Exists[Index: string]: Boolean read IsExists;
     property Values[Index: string]: Variant read GetValues write SetValues; default;
@@ -756,12 +755,12 @@ begin
   Result := inherited Add(AField);
 end;
 
-function TmnFields.ByName(vName: string): TmnField;
+{function TmnFields.ByName(vName: string): TmnField;
 begin
   Result := FindField(vName);
   if Result = nil then
     raise Exception.Create('Field "' + vName + '" not found');
-end;
+end;}
 
 function TmnFields.IndexOfName(vName: string): Integer;
 var
@@ -794,7 +793,6 @@ begin
     Stream.Free;
   end;
 end;
-
 
 procedure TmnFields.LoadFromStream(Stream: TStream);
 begin
@@ -892,12 +890,12 @@ begin
   F.Value := AValue;
 end;
 
-function TmnFields._AddRef: Integer;
+function TmnFields._AddRef: Integer; stdcall;
 begin
   Result := 0;
 end;
 
-function TmnFields._Release: Integer;
+function TmnFields._Release: Integer; stdcall;
 begin
   Result := 0;
 end;
@@ -937,9 +935,11 @@ begin
   Result := Count;
 end;
 
-function TmnFields.GetFieldByName(Index: string): TmnField;
+function TmnFields.FindByName(vName: string): TmnField;
 begin
-  Result := ByName(Index);
+  Result := FindField(vName);
+  if Result = nil then
+    raise Exception.Create('Field "' + vName + '" not found');
 end;
 
 function TmnFields.GetIField(FieldName: string): IField;

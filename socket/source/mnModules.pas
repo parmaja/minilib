@@ -74,7 +74,7 @@ type
     URI: utf8string;
     Protcol: string;
 
-    Path: string;
+    Path: UTF8String;
     Module: string;
     Command: string;
 
@@ -296,8 +296,8 @@ type
     property Modules: TmodModules read FModules;
   end;
 
-function ParseURI(Request: string; out URIPath: string; URIParams: TmodParams): Boolean;
-procedure ParsePath(aRequest: string; out Name: string; out URIPath: string; URIParams: TmodParams);
+function ParseURI(Request: string; out URIPath: UTF8String; URIParams: TmodParams): Boolean;
+procedure ParsePath(aRequest: string; out Name: string; out URIPath: UTF8String; URIParams: TmodParams);
 
 implementation
 
@@ -323,7 +323,7 @@ begin
   (TObject(Sender) as TmodParams).Add(Name, Value);
 end;
 
-function ParseURI(Request: string; out URIPath: string; URIParams: TmodParams): Boolean;
+function ParseURI(Request: string; out URIPath: UTF8String; URIParams: TmodParams): Boolean;
 var
   I, J: Integer;
   aParams: string;
@@ -363,7 +363,7 @@ begin
   end;
 end;
 
-procedure ParsePath(aRequest: string; out Name: string; out URIPath: string; URIParams: TmodParams);
+procedure ParsePath(aRequest: string; out Name: string; out URIPath: UTF8String; URIParams: TmodParams);
 begin
   ParseURI(aRequest, URIPath, URIParams);
   Name := SubStr(URIPath, '/', 0);
@@ -420,7 +420,9 @@ begin
     else
     try
       if aModule <> nil then
+      begin
         Result := aModule.Execute(aRequest, Stream, Stream);
+      end;
     finally
     end;
 
@@ -695,7 +697,6 @@ begin
   FParams := TStringList.Create;
   FCommands := TmodCommandClasses.Create;
   FKeepAliveTimeOut := cDefaultKeepAliveTimeOut; //TODO move module
-  CreateCommands;
 end;
 
 destructor TmodModule.Destroy;
@@ -714,6 +715,8 @@ function TmodModule.Execute(ARequest: TmodRequest; ARequestStream: TmnBufferStre
 var
   aCMD: TmodCommand;
 begin
+  if Commands.Count = 0 then
+      CreateCommands;
   Result.Status := [erSuccess];
   ParseRequest(ARequest);
   aCMD := CreateCommand(ARequest.Command, ARequest, ARequestStream, ARespondStream);
