@@ -85,9 +85,10 @@ type
     procedure WriteAsDateTime(const AValue: TDateTime);
     function ReadAsTime: TDateTime;
     procedure WriteAsTime(const AValue: TDateTime);
-    function ReadIsEmpty: Boolean;
     function ReadIsNull: Boolean;
     procedure WriteIsNull(const AValue: Boolean);
+    function ReadIsEmpty: Boolean;
+    function ReadIsExists: Boolean;
   protected
     function GetValue: Variant; virtual; abstract;
     procedure SetValue(const AValue: Variant); virtual; abstract;
@@ -141,6 +142,7 @@ type
 
     property IsNull: Boolean read ReadIsNull write WriteIsNull;
     property IsEmpty: Boolean read ReadIsEmpty;
+    property IsExists: Boolean read ReadIsExists;
 
     procedure LoadFromStream(Stream: TStream); virtual;
     procedure SaveToStream(Stream: TStream); virtual;
@@ -211,28 +213,35 @@ type
   private
     function _AddRef: Integer; {$ifdef WINDOWS}stdcall{$else}cdecl{$endif};
     function _Release: Integer; {$ifdef WINDOWS}stdcall{$else}cdecl{$endif};
+
     function GetFieldByName(Index: string): TmnField;
+    //function GetItem(Index: Integer): TmnField;
   protected
     function CreateField: TmnField; virtual;
     procedure SetValues(Index: string; const AValue: Variant);
     function GetValues(Index: string): Variant;
     function GetIField(FieldName: string): IField;
     function GetCount: Integer;
-    function FindField(vName: string): TmnField; virtual; //no exception
   public
     function QueryInterface({$ifdef FPC}constref{$else}const{$endif} iid : TGuid; out Obj):HResult; {$ifdef WINDOWS}stdcall{$else}cdecl{$endif};
     procedure LoadFromStream(Stream: TStream); virtual;
     procedure SaveToStream(Stream: TStream); virtual;
     procedure LoadFromFile(const FileName: string);
     procedure SaveToFile(const FileName: string);
-    function Add(AName, AValue: string): TmnField; overload;
-    function Add(AField: TmnField): Integer; overload;
-    //This will split the name and value
     function AddItem(S: string; Separator: string; Trim: Boolean = False): TmnField; overload;
+    function Add(AField: TmnField): Integer; overload;
+    function Add(AName, AValue: string): TmnField; overload;
+    //This will split the name and value
+    function Put(AName, AValue: string): TmnField; overload;
     function IsExists(vName: string): Boolean;
+    function FindField(vName: string): TmnField; virtual; //no exception
     function ByName(vName: string): TmnField; //with exception if not exists
+    function IndexOfName(vName: string): Integer;
+    function RemoveByName(vName: string): Boolean;
+    //todo IndexOfName, IndexOf
     procedure Clean; virtual;
     property FieldByName[Index: string]: TmnField read GetFieldByName;
+    //property Items[Index: Integer]: TmnField read GetItem;
     property Exists[Index: string]: Boolean read IsExists;
     property Values[Index: string]: Variant read GetValues write SetValues; default;
   end;
@@ -605,6 +614,11 @@ begin
   Result := widestring(GetAsString);//the compiler will convert it
 end;
 
+function TmnCustomField.ReadIsExists: Boolean;
+begin
+  Result := Self <> nil;
+end;
+
 function TmnCustomField.ReadIsEmpty: Boolean;
 begin
   if Self <> nil then
@@ -749,6 +763,21 @@ begin
     raise Exception.Create('Field "' + vName + '" not found');
 end;
 
+function TmnFields.IndexOfName(vName: string): Integer;
+var
+  i: Integer;
+begin
+  Result := -1;
+  for i := 0 to Count - 1 do
+  begin
+    if SameText(vName, (Items[i] as TmnField).Name) then
+    begin
+      Result := i;
+      break;
+    end;
+  end;
+end;
+
 function TmnFields.IsExists(vName: string): Boolean;
 begin
   Result := FindField(vName) <> nil;
@@ -778,6 +807,16 @@ begin
     Result := 0
   else
     Result := E_NOINTERFACE;
+end;
+
+function TmnFields.RemoveByName(vName: string): Boolean;
+var
+  index: Integer;
+begin
+  index := IndexOfName(vName);
+  Result := Index > 0;
+  if Result then
+    Delete(Index);
 end;
 
 procedure TmnFields.SaveToFile(const FileName: string);
@@ -825,6 +864,18 @@ end;
 procedure TmnFields.SaveToStream(Stream: TStream);
 begin
   raise Exception.Create('Not implemented yet');
+end;
+
+function TmnFields.Put(AName, AValue: string): TmnField;
+begin
+  Result := FindField(AName);
+  if Result = nil then
+  begin
+    Result := CreateField;
+    Add(Result);
+    Result.FName := AName;
+  end;
+  Result.FValue := AValue;
 end;
 
 procedure TmnFields.SetValues(Index: string; const AValue: Variant);
@@ -895,6 +946,11 @@ function TmnFields.GetIField(FieldName: string): IField;
 begin
   Result := FindField(FieldName);
 end;
+
+{function TmnFields.GetItem(Index: Integer): TmnField;
+begin
+  Result := (inherited GetItem(Index)) as TmnField;
+end;}
 
 function TmnFields.GetValues(Index: string): Variant;
 var

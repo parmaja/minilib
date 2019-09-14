@@ -40,7 +40,7 @@ interface
 
 uses
   SysUtils, Classes, syncobjs,
-  mnFields, mnUtils, mnSockets, mnServers, mnStreams,
+  mnFields, mnUtils, mnSockets, mnServers, mnStreams, zlib,
   mnModules;
 
 type
@@ -101,7 +101,7 @@ type
     procedure CreateCommands; override;
 
     procedure ParseRequest(var ARequest: TmodRequest; ACommand: TmodCommand = nil); override;
-    function Match(ARequest: TmodRequest): Boolean; override;
+    function Match(var ARequest: TmodRequest): Boolean; override;
   public
     destructor Destroy; override;
     property Server: TmodWebServer read FServer;
@@ -109,9 +109,21 @@ type
     property DefaultDocument: TStringList read FDefaultDocument write SetDefaultDocument;
   end;
 
+  TmodWebModules = class(TmodModules)
+  protected
+  public
+    function ParseRequest(const Request: string): TmodRequest; override;
+  end;
+
   { TmodWebServer }
 
-  TmodWebServer = class(TmodModuleServer)
+  TmodCustomWebServer = class(TmodModuleServer)
+  protected
+    function CreateModules: TmodModules; override;
+  public
+  end;
+
+  TmodWebServer = class(TmodCustomWebServer)
   private
     FWebModule: TmodWebModule;
   protected
@@ -176,6 +188,36 @@ var
 
 implementation
 
+//TODO slow function needs to improvements
+//https://stackoverflow.com/questions/1549213/whats-the-correct-encoding-of-http-get-request-strings
+
+function URIDecode(const S: AnsiString; CodePage: Word = CP_UTF8): string;
+var
+  c: AnsiChar;
+  D: Ansistring;
+  i: Integer;
+  R: RawByteString;
+begin
+  Result := '';
+  i := Low(S);
+  R := '';
+  while i <= High(S) do
+  begin
+    C := S[i];
+    if C = '%' then
+    begin
+      D := copy(S, i + 1, 2);
+      R := R + AnsiChar(StrToInt('$'+D));
+      inc(i, 2);
+    end
+    else
+      R := R + c;
+    Inc(i);
+  end;
+  SetCodePage(R, CP_UTF8, False);
+  Result := R;
+end;
+
 { TmodHttpPostCommand }
 
 procedure TmodHttpPostCommand.Respond(var Result: TmodExecuteResults);
@@ -229,8 +271,6 @@ begin
 end;
 
 procedure TmodWebModule.ParseRequest(var ARequest: TmodRequest; ACommand: TmodCommand);
-var
-  aPath: string;
 begin
   if (ACommand <> nil) and (ACommand is TmodHttpCommand) then
     ParsePath(ARequest.URI, ARequest.Module, ARequest.Path, (ACommand as TmodHttpCommand).URIParams)
@@ -239,7 +279,7 @@ begin
   ARequest.Command := ARequest.Method;
 end;
 
-function TmodWebModule.Match(ARequest: TmodRequest): Boolean;
+function TmodWebModule.Match(var ARequest: TmodRequest): Boolean;
 begin
   ParseRequest(ARequest);
   Result := SameText(Name, ARequest.Module) and SameText(SubStr(ARequest.Protcol, '/', 0),  'http');
@@ -288,8 +328,6 @@ begin
 end;
 
 procedure TmodURICommand.Prepare(var Result: TmodExecuteResults);
-var
-  S: string;
 begin
   inherited;
   Root := Module.DocumentRoot;
@@ -466,6 +504,11 @@ begin
   end;
 end;
 
+function TmodCustomWebServer.CreateModules: TmodModules;
+begin
+  Result := TmodWebModules.Create;
+end;
+
 { TmodHttpCommand }
 
 procedure TmodHttpCommand.Created;
@@ -498,6 +541,8 @@ var
   aParams: TmodParams;
 begin
   inherited;
+  if not RespondHeader.Exists['Content-Length'] then
+    KeepAlive := False;
   if KeepAlive and Module.UseKeepAlive and SameText(RequestHeader.ReadString('Connection'), 'Keep-Alive') then
   begin
     Result.Timout := Module.KeepAliveTimeOut;
@@ -520,8 +565,17 @@ end;
 
 procedure TmodHttpCommand.SendHeader;
 begin
-  PostHeader('Cookies', Cookies.AsString);
+  if Cookies.Count > 0 then
+    PostHeader('Cookies', Cookies.AsString);
   inherited;
+end;
+
+{ TmodCustomWebModules }
+
+function TmodWebModules.ParseRequest(const Request: string): TmodRequest;
+begin
+  Result := inherited ParseRequest(Request);
+  Result.URI := URIDecode(Result.URI);
 end;
 
 initialization

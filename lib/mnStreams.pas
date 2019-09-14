@@ -64,6 +64,7 @@ type
     procedure CreateBuffer;
     procedure FreeBuffer;
     function CheckBuffer: Boolean;
+
   protected
     procedure DoError(S: string); virtual;
     function DoRead(var Buffer; Count: Longint): Longint; virtual; abstract;
@@ -302,9 +303,9 @@ end;
 
 function TmnConnectionStream.Seek(Offset: Longint; Origin: Word): Longint;
 begin
-  {$ifdef fpc}
-    Result := 0;
-  {$endif}
+  if Origin = Ord(soCurrent) then
+    Result := 0
+  else
     raise Exception.Create('not supported and we dont want to support it')
 end;
 
@@ -799,6 +800,7 @@ begin
   CopyString(Buffer, Res, Len);
   FreeMem(Res);
 end;
+
 {$endif}
 
 procedure TmnWrapperStream.SetStream(const Value: TStream);

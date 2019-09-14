@@ -1049,7 +1049,8 @@ var
   f: Integer;//Result Field format
 begin
   Values := nil;
-  if FStatement <> nil then PQclear(FStatement);
+  if FStatement <> nil then
+    PQclear(FStatement);
   try
     if Params.Count > 0 then
     begin

@@ -1,5 +1,8 @@
 unit mncORM;
-
+{$IFDEF FPC}
+{$mode delphi}
+{$ENDIF}
+{$H+}{$M+}
 {**
  *  This file is part of the "Mini Connections"
  *
@@ -7,11 +10,6 @@ unit mncORM;
  *            See the file COPYING.MLGPL, included in this distribution,
  * @author    Zaher Dirkey <zaher at parmaja dot com>
  *}
-
-{$IFDEF FPC}
-{$mode delphi}
-{$ENDIF}
-{$H+}{$M+}
 
 interface
 

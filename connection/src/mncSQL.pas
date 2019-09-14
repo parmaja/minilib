@@ -22,6 +22,7 @@ interface
 
 uses
   Classes, SysUtils, Contnrs,
+  mnClasses,
   mncConnections, mncCommons, mncMeta;
 
 type
@@ -29,7 +30,6 @@ type
 
   TmncSQLSession = class;
   TmncSQLCommand = class;
-  TmncSQLGenerator = class;
 
   { TmncSQLConnection }
 
@@ -120,21 +120,36 @@ type
     property FetchBlobs: Boolean read FFetchBlob write FFetchBlob default false;
   end;
 
-  { TmncSQLGenerator }
-
-  TmncSQLGenerator = class(TmncObject)
+  TmncSQLText = class(TmnNamedObject)
   public
-    function Select(Table: string; Fields: array of string; Keys: array of string; ExtraFields: array of string): string; overload; virtual; abstract; 
-    function Select(Table: string; Fields: array of string; Keys: array of string): string; overload;
-    function Update(Table: string; Fields: array of string; Keys: array of string; ExtraFields: array of string): string; overload; virtual; abstract; 
-    function Update(Table: string; Fields: array of string; Keys: array of string): string; overload;
-    function Insert(Table: string; Fields: array of string; ExtraFields: array of string): string; overload; virtual; abstract;
-    function Insert(Table: string; Fields: array of string): string; overload;
-    function UpdateOrInsert(Updating, Returning:Boolean; Table: string; Fields: array of string; Keys: array of string): string; overload;
-    function Delete(Table: string; Keys: array of string): string; overload;
+    Text: string;
+  end;
+
+  { TmncSQLResource }
+
+  TmncSQLResource = class(TmnNamedObjectList<TmncSQLText>)
+  protected
+    procedure LoadLine(Line: string);
+  public
+    procedure LoadFromStrings(Strings: TStringList);
+    procedure LoadFromFiles(Strings: TStringList);
   end;
 
 implementation
+
+{ TmncSQLResource }
+
+procedure TmncSQLResource.LoadLine(Line: string);
+begin
+end;
+
+procedure TmncSQLResource.LoadFromStrings(Strings: TStringList);
+begin
+end;
+
+procedure TmncSQLResource.LoadFromFiles(Strings: TStringList);
+begin
+end;
 
 { TmncSQLConnection }
 
@@ -219,36 +234,6 @@ begin
   r.ID := vID;
   r.Name := vName;
   inherited Add(r);
-end;
-
-{ TmncSQLGenerator }
-
-function TmncSQLGenerator.Select(Table: string; Fields: array of string;
-  Keys: array of string): string;
-begin
-
-end;
-
-function TmncSQLGenerator.Update(Table: string; Fields: array of string;
-  Keys: array of string): string;
-begin
-
-end;
-
-function TmncSQLGenerator.Insert(Table: string; Fields: array of string): string;
-begin
-
-end;
-
-function TmncSQLGenerator.UpdateOrInsert(Updating, Returning: Boolean;
-  Table: string; Fields: array of string; Keys: array of string): string;
-begin
-
-end;
-
-function TmncSQLGenerator.Delete(Table: string; Keys: array of string): string;
-begin
-
 end;
 
 function TmncSQLCommand.GetSQL: TStrings;

@@ -20,6 +20,12 @@
   scheme          authority                  path                 query           fragment
 
   https://en.wikipedia.org/wiki/Uniform_Resource_Identifier
+
+  REST tools
+  https://resttesttest.com
+  https://httpbin.org
+  http://dummy.restapiexample.com/
+
  }
 
 interface
@@ -46,8 +52,11 @@ type
     FDelimiter: Char;
     function GetAsString: string;
     procedure SetAsString(const Value: string);
+    function GetItem(Index: Integer): TmnField;
   public
     constructor Create;
+    procedure LoadFromStream(Stream: TStream); override;
+    procedure SaveToStream(Stream: TStream); override;
     property FieldByName; default;
     property Seperator: string read FSeperator write FSeperator; //value
     property Delimiter: Char read FDelimiter write FDelimiter; //eol
@@ -55,13 +64,14 @@ type
     function ReadInteger(Name: string; Def: Integer = 0): Integer;
     function ReadString(Name: string; Def: String = ''): String;
     function ReadBoolean(Name: string; Def: Boolean = False): Boolean;
+    property Items[Index: Integer]: TmnField read GetItem;
   end;
 
   TmodCommand = class;
 
   TmodRequest = record
     Method: string;
-    URI: string;
+    URI: utf8string;
     Protcol: string;
 
     Path: string;
@@ -129,7 +139,12 @@ type
     property RequestStream: TmnBufferStream read FRequestStream;
     property RespondStream: TmnBufferStream read FRespondStream;
     procedure SendRespond(ALine: string); virtual;
+    //Add new header, can dublicate
     procedure PostHeader(AName, AValue: string); virtual;
+    //Update header by name
+    procedure SetHeader(AName, AValue: string); virtual;
+    //Update header by name but adding new value to old value
+    procedure PutHeader(AName, AValue: string); virtual;
     procedure SendHeader; virtual;
   public
     constructor Create(AModule: TmodModule; RequestStream: TmnBufferStream = nil; RespondStream: TmnBufferStream = nil); virtual;
@@ -195,12 +210,12 @@ type
 
     procedure ParseHeader(RequestHeader: TmodParams; Stream: TmnBufferStream); virtual;
     procedure ParseRequest(var ARequest: TmodRequest; ACommand: TmodCommand = nil); virtual;
-    function Match(ARequest: TmodRequest): Boolean; virtual;
+    function Match(var ARequest: TmodRequest): Boolean; virtual;
   public
     constructor Create(AName: string; AProtcol: string; AModules: TmodModules); virtual;
     destructor Destroy; override;
     function Execute(ARequest: TmodRequest; ARequestStream: TmnBufferStream = nil; ARespondStream: TmnBufferStream = nil): TmodExecuteResults;
-    procedure ExecuteCommand(CommandName: string; ARequestStream: TmnBufferStream = nil; ARespondStream: TmnBufferStream = nil; RequestString: TArray<String> = nil); deprecated;
+    procedure ExecuteCommand(CommandName: string; ARequestStream: TmnBufferStream = nil; ARespondStream: TmnBufferStream = nil; RequestString: TArray<String> = nil);
     function RegisterCommand(vName: string; CommandClass: TmodCommandClass; ADefaultCommand: Boolean = False): Integer; overload;
 
     property Commands: TmodCommandClasses read FCommands;
@@ -216,9 +231,10 @@ type
 
   TmodModules = class(TmnNamedObjectList<TmodModule>)
   private
-    FEndOfLine: string;
     FEOFOnError: Boolean;
     FActive: Boolean;
+    FEndOfLine: string;
+    FDefaultModule: TmodModule;
     procedure SetActive(AValue: Boolean);
     procedure SetEndOfLine(AValue: string);
   protected
@@ -226,12 +242,13 @@ type
     procedure Created; override;
   public
     function ParseRequest(const Request: string): TmodRequest; virtual;
-    function Match(ARequest: TmodRequest): TmodModule; virtual;
+    function Match(var ARequest: TmodRequest): TmodModule; virtual;
 
     function Add(const Name: string; AModule:TmodModule): Integer; overload;
 
     property Active: Boolean read GetActive write SetActive;
-    property EndOfLine: string read FEndOfLine write SetEndOfLine;
+    property EndOfLine: string read FEndOfLine write SetEndOfLine; //TODO move to module
+    property DefaultModule: TmodModule read FDefaultModule write FDefaultModule;
   end;
 
 //--- Server ---
@@ -272,6 +289,7 @@ type
     procedure StreamCreated(AStream: TmnBufferStream); virtual;
     procedure DoBeforeOpen; override;
     procedure DoAfterClose; override;
+    function CreateModules: TmodModules; virtual;
   public
     constructor Create; virtual;
     destructor Destroy; override;
@@ -357,8 +375,13 @@ end;
 constructor TmodModuleServer.Create;
 begin
   inherited;
-  FModules := TmodModules.Create;
+  FModules := CreateModules;
   Port := '81';
+end;
+
+function TmodModuleServer.CreateModules: TmodModules;
+begin
+  Result := TmodModules.Create
 end;
 
 destructor TmodModuleServer.Destroy;
@@ -387,14 +410,14 @@ begin
   begin
     aRequest := (Listener.Server as TmodModuleServer).Modules.ParseRequest(aRequestLine);
     aModule := (Listener.Server as TmodModuleServer).Modules.Match(aRequest);
-{    if (aModule = nil) and ((Listener.Server as TmodModuleServer).Modules.Count > 0) then
-      aModule := (Listener.Server as TmodModuleServer).Modules[0]; //fall back}
+    if (aModule = nil) and ((Listener.Server as TmodModuleServer).Modules.Count > 0) then
+      aModule := (Listener.Server as TmodModuleServer).Modules.DefaultModule; //fall back
+
     if (aModule = nil) then
     begin
       Stream.Disconnect; //if failed
-      //raise TmodModuleException.Create('Nothing todo!');
-    end;
-
+    end
+    else
     try
       if aModule <> nil then
         Result := aModule.Execute(aRequest, Stream, Stream);
@@ -542,6 +565,20 @@ begin
   Result := (Module <> nil) and (Module.Active);
 end;
 
+procedure TmodCommand.PutHeader(AName, AValue: string);
+begin
+  if cmdsHeaderSent in FStates then
+    raise TmodModuleException.Create('Header is sent');
+  RespondHeader.Put(AName, AValue);
+end;
+
+procedure TmodCommand.SetHeader(AName, AValue: string);
+begin
+  if cmdsHeaderSent in FStates then
+    raise TmodModuleException.Create('Header is sent');
+  RespondHeader.Put(AName, AValue);
+end;
+
 procedure TmodCommand.SetModule(const Value: TmodModule);
 begin
   FModule := Value;
@@ -633,10 +670,13 @@ end;
 procedure TmodModule.SendHeader(ACommand: TmodCommand);
 var
   item: TmnField;
+  s: string;
 begin
   for item in ACommand.RespondHeader do
   begin
-     ACommand.RespondStream.WriteLineUTF8(item.GetFullString(': '));
+    s := item.GetFullString(': ');
+    //WriteLn(s);
+    ACommand.RespondStream.WriteLineUTF8(S);
   end;
   ACommand.RespondStream.WriteLineUTF8(UTF8String(''));
 end;
@@ -665,7 +705,7 @@ begin
   inherited;
 end;
 
-function TmodModule.Match(ARequest: TmodRequest): Boolean;
+function TmodModule.Match(var ARequest: TmodRequest): Boolean;
 begin
   Result := SameText(Protcol, ARequest.Protcol);
 end;
@@ -729,8 +769,8 @@ procedure TmodModules.SetEndOfLine(AValue: string);
 begin
   if FEndOfLine =AValue then
     Exit;
-  if Active then
-    raise TmodModuleException.Create('You can''t change EOL while server is active');
+{  if Active then
+    raise TmodModuleException.Create('You can''t change EOL while server is active');}
   FEndOfLine :=AValue;
 end;
 
@@ -771,11 +811,13 @@ begin
   Result.Raw := Request;
 end;
 
-function TmodModules.Match(ARequest: TmodRequest): TmodModule;
+function TmodModules.Match(var ARequest: TmodRequest): TmodModule;
 var
   item: TmodModule;
+  SaveRequest: TmodRequest;
 begin
   Result := nil;
+  SaveRequest := ARequest;
   for item in Self do
   begin
     if item.Match(ARequest) then
@@ -783,6 +825,7 @@ begin
       Result := item;
       break;
     end;
+    ARequest := SaveRequest;
   end;
 end;
 
@@ -798,6 +841,44 @@ begin
     if Result <> '' then
       Result := Result + Delimiter;
     Result := Result + Item.Name + Seperator + ' ' + Item.AsString;
+  end;
+end;
+
+function TmodParams.GetItem(Index: Integer): TmnField;
+begin
+  Result := (inherited GetItem(Index)) as TmnField;
+end;
+
+procedure TmodParams.LoadFromStream(Stream: TStream);
+var
+  Strings: TStringList;
+  Line: string;
+begin
+  Strings := TStringList.Create;
+  try
+    Strings.LoadFromStream(Stream);
+    Clear;
+    for line in Strings do
+    begin
+      AddItem(Line, Strings.NameValueSeparator, True);
+    end;
+  finally
+    Strings.Free;
+  end;
+end;
+
+procedure TmodParams.SaveToStream(Stream: TStream);
+var
+  Strings: TStringList;
+  i: Integer;
+begin
+  Strings := TStringList.Create;
+  try
+    for i := 0 to Count - 1 do
+      Strings.Add(Self.Items[i].GetFullString);
+    Strings.SaveToStream(Stream);
+  finally
+    Strings.Free;
   end;
 end;
 
