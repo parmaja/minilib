@@ -51,26 +51,27 @@ type
 
   TmnListener = class(TmnConnections) // thread to watch for incoming requests
   private
+    FLogging: Boolean;
     FTimeout: Integer;
     FAttempts: Integer;
     FTries: Integer;
     FSocket: TmnCustomSocket; //Listner socket waiting by call "select"
     FServer: TmnServer;
+    FLogMessages: TStringList;
     procedure Connect;
     procedure Disconnect;
     function GetConnected: Boolean;
   protected
     function DoCreateConnection(vStream: TmnConnectionStream): TmnConnection; override;
+    property LogMessages: TStringList read FLogMessages;
   protected
     FOptions: TmnsoOptions;
-    FMessage: string;
 
-    procedure SyncLog;
+    procedure PostLogs;
     procedure PostChanged;
-    procedure DropConnections; virtual;
-    procedure LogMessage(S: string); virtual;
     procedure Changed; virtual;
 
+    procedure DropConnections; virtual;
     procedure Prepare; virtual;
     procedure Execute; override;
     procedure Remove(Connection: TmnServerConnection); virtual;
@@ -87,6 +88,7 @@ type
     //if listener connection down by network it will reconnect again
     property Attempts: Integer read FAttempts write FAttempts;
     property Timeout: Integer read FTimeout write FTimeout default -1;
+    property Logging: Boolean read FLogging write FLogging default false;
   end;
 
   {**
@@ -315,14 +317,7 @@ end;
 
 procedure TmnListener.Changed;
 begin
-  {$ifndef NoLog}
-  Enter;
-  try
-    Queue(PostChanged);
-  finally
-    Leave;
-  end;
-  {$endif NoLog}
+  Queue(PostChanged);
 end;
 
 procedure TmnListener.Connect;
@@ -339,6 +334,7 @@ end;
 constructor TmnListener.Create;
 begin
   inherited;
+  FLogMessages := TStringList.Create;
   FAttempts := 0;
   FTimeout := -1;
 end;
@@ -348,8 +344,35 @@ begin
   Result := TmnServerConnection.Create(Self, vStream);
 end;
 
+procedure TmnListener.PostLogs;
+var
+  b: Boolean;
+  s: String;
+begin
+  if FServer <> nil then
+  repeat
+    b := false;
+    Enter;
+    try
+      b := LogMessages.Count > 0;
+      if b then
+      begin
+        s := LogMessages[0];
+        LogMessages.Delete(0);
+      end
+      else
+        s := '';
+    finally
+      Leave;
+    end;
+    if b then
+      FServer.DoLog(s);
+  until not b;
+end;
+
 destructor TmnListener.Destroy;
 begin
+  FreeAndNil(FLogMessages);
   inherited;
 end;
 
@@ -404,6 +427,7 @@ begin
             finally
               Leave;
             end;
+            //Log('Starting: ' + aConnection.ClassName);
             aConnection.Start; //moved here need some test
           finally
           end;
@@ -424,16 +448,16 @@ end;
 
 procedure TmnListener.Log(S: string);
 begin
-  {$ifndef NoLog}
-  LogMessage(S);
-  Enter;
-  try
-    FMessage := S;
-    SyncLog;
-  finally
-    Leave;
+  if Logging then
+  begin
+    Enter;
+    try
+      LogMessages.Add(S);
+    finally
+      Leave;
+    end;
+    Queue(PostLogs);
   end;
-  {$endif NoLog}
 end;
 
 procedure TmnListener.Prepare;
@@ -475,10 +499,6 @@ begin
     end;
   finally
   end;
-end;
-
-procedure TmnListener.LogMessage(S: string);
-begin
 end;
 
 { TmnServer }
@@ -550,13 +570,6 @@ procedure TmnListener.PostChanged;
 begin
   if FServer <> nil then
     FServer.DoChanged(Self);
-end;
-
-procedure TmnListener.SyncLog;
-begin
-  if FServer <> nil then
-    FServer.DoLog(FMessage);
-  FMessage :='';
 end;
 
 procedure TmnServer.Stop;

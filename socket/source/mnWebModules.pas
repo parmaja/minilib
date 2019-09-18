@@ -204,6 +204,11 @@ begin
   while i <= High(S) do
   begin
     C := S[i];
+    {if C = '+' then
+    begin
+      R := R + ' ';
+    end
+    else}
     if C = '%' then
     begin
       D := copy(S, i + 1, 2);
@@ -493,6 +498,7 @@ begin
   inherited;
   FWebModule := TmodWebModule.Create('web', 'http/1.1', Modules);
   FWebModule.FServer := Self;
+  Modules.DefaultModule := FWebModule;
   Port := '80';
   with FWebModule do
   begin

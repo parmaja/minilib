@@ -57,13 +57,13 @@ type
     constructor Create;
     procedure LoadFromStream(Stream: TStream); override;
     procedure SaveToStream(Stream: TStream); override;
+    function ReadInteger(Name: string; Def: Integer = 0): Integer;
+    function ReadString(Name: string; Def: String = ''): String;
+    function ReadBoolean(Name: string; Def: Boolean = False): Boolean;
     property FieldByName; default;
     property Seperator: string read FSeperator write FSeperator; //value
     property Delimiter: Char read FDelimiter write FDelimiter; //eol
     property AsString: string read GetAsString write SetAsString;
-    function ReadInteger(Name: string; Def: Integer = 0): Integer;
-    function ReadString(Name: string; Def: String = ''): String;
-    function ReadBoolean(Name: string; Def: Boolean = False): Boolean;
     property Items[Index: Integer]: TmnField read GetItem;
   end;
 
@@ -542,24 +542,10 @@ end;
 
 function TmodCommand.Execute: TmodExecuteResults;
 begin
-  {$ifdef DEBUG_MODE}
-//    Server.Listener.Log(Connection, GetCommandName + ': Started on port ' + Server.Port);
-  try
-  {$endif}
-    Result.Status := []; //default to be not keep alive, not sure, TODO
-    Prepare(Result);
-    Respond(Result);
-    Unprepare(Result);
-  {$ifdef DEBUG_MODE}
-  except
-    on E:Exception do
-    begin
-//      Server.Listener.Log(Connection, GetCommandName + ': Error ' + E.Message);
-      raise;
-    end;
-  end;
-//    Server.Listener.Log(Connection, GetCommandName + ': Finished');
-  {$endif}
+  Result.Status := []; //default to be not keep alive, not sure, TODO
+  Prepare(Result);
+  Respond(Result);
+  Unprepare(Result);
 end;
 
 function TmodCommand.GetActive: Boolean;
@@ -861,7 +847,7 @@ begin
   try
     Strings.LoadFromStream(Stream);
     Clear;
-    for line in Strings do
+      for line in Strings do
     begin
       AddItem(Line, Strings.NameValueSeparator, True);
     end;
