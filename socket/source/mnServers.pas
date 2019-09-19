@@ -51,7 +51,6 @@ type
 
   TmnListener = class(TmnConnections) // thread to watch for incoming requests
   private
-    FLogging: Boolean;
     FTimeout: Integer;
     FAttempts: Integer;
     FTries: Integer;
@@ -88,7 +87,6 @@ type
     //if listener connection down by network it will reconnect again
     property Attempts: Integer read FAttempts write FAttempts;
     property Timeout: Integer read FTimeout write FTimeout default -1;
-    property Logging: Boolean read FLogging write FLogging default false;
   end;
 
   {**
@@ -103,6 +101,7 @@ type
     FPort: string;
     FAddress: string;
     FListener: TmnListener;
+    FLogging: Boolean;
     procedure SetActive(const Value: Boolean);
     procedure SetAddress(const Value: string);
     procedure SetPort(const Value: string);
@@ -124,6 +123,8 @@ type
     constructor Create;
     procedure BeforeDestruction; override;
     destructor Destroy; override;
+    //Server.Log This called from outside of any threads, i mean you should be in the main thread to call it, if not use Listener.Log
+    procedure Log(const S: string);
     procedure Start;
     procedure Stop;
     procedure Open;
@@ -135,6 +136,7 @@ type
     property Address: string read FAddress write SetAddress;
 
     property Active: boolean read FActive write SetActive default False;
+    property Logging: Boolean read FLogging write FLogging default false;
 
   end;
 
@@ -448,7 +450,7 @@ end;
 
 procedure TmnListener.Log(S: string);
 begin
-  if Logging then
+  if Server.Logging then
   begin
     Enter;
     try
@@ -521,20 +523,26 @@ begin
   inherited;
 end;
 
+procedure TmnServer.Log(const S: string);
+begin
+  DoLog(S);
+end;
+
 procedure TmnServer.Start;
 begin
   if (FListener = nil) then // if its already active, dont start again
   begin
     try
       DoStart;
-      DoBeforeOpen;
       try
         FListener := CreateListener;
         FListener.FServer := Self;
         FListener.FPort := FPort;
         FListener.FAddress := FAddress;
+        DoBeforeOpen;
         FListener.Prepare;
         FListener.Start;
+        Log('Server started at port: ' + Port);
         FActive := True;
       except
         FreeAndNil(FListener);
@@ -583,6 +591,7 @@ begin
     FActive := False;
     DoAfterClose;
   end;
+  Log('Server stopped');
   DoStop;
 end;
 
