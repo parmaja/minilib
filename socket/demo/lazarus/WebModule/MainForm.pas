@@ -21,21 +21,21 @@ type
   { TMain }
 
   TMain = class(TForm)
-    Bevel1: TBevel;
-    Bevel2: TBevel;
-    Bevel3: TBevel;
-    Bevel4: TBevel;
     ExitBtn: TButton;
     Label1: TLabel;
     Label2: TLabel;
-    MainMenu1: TMainMenu;
-    MaxOfThreadsLabel: TLabel;
+    Label3: TLabel;
+    Label4: TLabel;
     LastIDLabel: TLabel;
+    MainMenu: TMainMenu;
+    MaxOfThreadsLabel: TLabel;
     Memo: TMemo;
     MenuItem1: TMenuItem;
     NumberOfThreads: TLabel;
     NumberOfThreadsLbl: TLabel;
     Panel1: TPanel;
+    Panel2: TPanel;
+    Panel3: TPanel;
     PortEdit: TEdit;
     RootEdit: TEdit;
     StartBtn: TButton;
@@ -53,10 +53,10 @@ type
     Server: TmodWebServer;
     FMax:Integer;
     procedure UpdateStatus;
-    procedure ScatServerBeforeOpen(Sender: TObject);
-    procedure ScatServerAfterClose(Sender: TObject);
-    procedure ScatServerChanged(Listener: TmnListener);
-    procedure ScatServerLog(const S: String);
+    procedure ModuleServerBeforeOpen(Sender: TObject);
+    procedure ModuleServerAfterClose(Sender: TObject);
+    procedure ModuleServerChanged(Listener: TmnListener);
+    procedure ModuleServerLog(const S: String);
   public
   end;
 
@@ -104,7 +104,7 @@ begin
   LastIDLabel.Caption := '0';
 end;
 
-procedure TMain.ScatServerBeforeOpen(Sender: TObject);
+procedure TMain.ModuleServerBeforeOpen(Sender: TObject);
 var
   aRoot:string;
 begin
@@ -168,10 +168,11 @@ var
   aAutoRun:Boolean;
 begin
   Server := TmodWebServer.Create;
-  Server.OnBeforeOpen := ScatServerBeforeOpen;
-  Server.OnAfterClose := ScatServerAfterClose;
-  Server.OnChanged :=  ScatServerChanged;
-  Server.OnLog := ScatServerLog;
+  Server.OnBeforeOpen := ModuleServerBeforeOpen;
+  Server.OnAfterClose := ModuleServerAfterClose;
+  Server.OnChanged :=  ModuleServerChanged;
+  Server.OnLog := ModuleServerLog;
+  Server.Logging := True;
 
   aIni := TIniFile.Create(Application.Location + 'config.ini');
   try
@@ -207,13 +208,13 @@ begin
   LastIDLabel.Caption := IntToStr(Server.Listener.LastID);
 end;
 
-procedure TMain.ScatServerAfterClose(Sender: TObject);
+procedure TMain.ModuleServerAfterClose(Sender: TObject);
 begin
 	StartBtn.Enabled := True;
   StopBtn.Enabled := False;
 end;
 
-procedure TMain.ScatServerChanged(Listener: TmnListener);
+procedure TMain.ModuleServerChanged(Listener: TmnListener);
 begin
   if FMax < Listener.Count then
     FMax := Listener.Count;
@@ -221,7 +222,7 @@ begin
   UpdateStatus;
 end;
 
-procedure TMain.ScatServerLog(const S: String);
+procedure TMain.ModuleServerLog(const S: String);
 begin
   Memo.Lines.Add(s);
 end;

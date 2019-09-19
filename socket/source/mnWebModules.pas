@@ -59,6 +59,7 @@ type
     procedure SendHeader; override;
     procedure Prepare(var Result: TmodExecuteResults); override;
     procedure Unprepare(var Result: TmodExecuteResults); override;
+    procedure Respond(var Result: TmodExecuteResults); override;
   public
     destructor Destroy; override;
     property Cookies: TmodParams read FCookies;
@@ -102,6 +103,7 @@ type
 
     procedure ParseRequest(var ARequest: TmodRequest; ACommand: TmodCommand = nil); override;
     function Match(var ARequest: TmodRequest): Boolean; override;
+    procedure Log(S: string); override;
   public
     destructor Destroy; override;
     property Server: TmodWebServer read FServer;
@@ -288,6 +290,12 @@ function TmodWebModule.Match(var ARequest: TmodRequest): Boolean;
 begin
   ParseRequest(ARequest);
   Result := SameText(Name, ARequest.Module) and SameText(SubStr(ARequest.Protcol, '/', 0),  'http');
+end;
+
+procedure TmodWebModule.Log(S: string);
+begin
+  inherited;
+  Server.Listener.Log(S);
 end;
 
 { TmodURICommand }
@@ -567,6 +575,12 @@ begin
     end;
     Result.Status := Result.Status + [erKeepAlive];
   end;
+end;
+
+procedure TmodHttpCommand.Respond(var Result: TmodExecuteResults);
+begin
+  inherited Respond(Result);
+  Log(Request.Raw);
 end;
 
 procedure TmodHttpCommand.SendHeader;

@@ -59,7 +59,7 @@ var
 begin
   Line := 1;
   try
-    while not Stream.EOF and not Completed do
+    while not Stream.Done and not Completed do
     begin
       Text := '';
       if Stream.ReadLine(Text, False) then

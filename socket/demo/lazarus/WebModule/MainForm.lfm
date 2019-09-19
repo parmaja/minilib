@@ -1,7 +1,7 @@
 object Main: TMain
-  Left = 142
+  Left = 507
   Height = 366
-  Top = 188
+  Top = 219
   Width = 536
   HorzScrollBar.Page = 206
   VertScrollBar.Page = 207
@@ -15,17 +15,11 @@ object Main: TMain
   Font.Height = -11
   Font.Name = 'Tahoma'
   Font.Pitch = fpVariable
-  Menu = MainMenu1
+  Menu = MainMenu
   OnCreate = FormCreate
   OnDestroy = FormDestroy
   OnHide = FormHide
   LCLVersion = '2.1.0.0'
-  object Bevel4: TBevel
-    Left = 127
-    Height = 18
-    Top = 53
-    Width = 78
-  end
   object Memo: TMemo
     Left = 0
     Height = 241
@@ -53,11 +47,52 @@ object Main: TMain
     ClientHeight = 105
     ClientWidth = 536
     TabOrder = 1
-    object Bevel1: TBevel
-      Left = 47
-      Height = 18
-      Top = 53
-      Width = 78
+    object Panel2: TPanel
+      Left = 1
+      Height = 25
+      Top = 79
+      Width = 534
+      Align = alBottom
+      BevelOuter = bvNone
+      ClientHeight = 25
+      ClientWidth = 534
+      TabOrder = 2
+      object ExitBtn: TButton
+        Left = 473
+        Height = 25
+        Top = 0
+        Width = 61
+        Align = alRight
+        Anchors = [akTop, akRight]
+        BorderSpacing.InnerBorder = 4
+        Caption = 'Exit'
+        OnClick = ExitBtnClick
+        TabOrder = 0
+      end
+      object StopBtn: TButton
+        Left = 60
+        Height = 25
+        Top = 0
+        Width = 60
+        Align = alLeft
+        BorderSpacing.InnerBorder = 4
+        Caption = 'S&top'
+        Enabled = False
+        OnClick = StopBtnClick
+        TabOrder = 1
+      end
+      object StartBtn: TButton
+        Left = 0
+        Height = 25
+        Top = 0
+        Width = 60
+        Align = alLeft
+        BorderSpacing.InnerBorder = 4
+        Caption = '&Start'
+        Default = True
+        OnClick = StartBtnClick
+        TabOrder = 2
+      end
     end
     object Label1: TLabel
       Left = 15
@@ -81,132 +116,152 @@ object Main: TMain
       Caption = 'Port'
       ParentColor = False
     end
-    object NumberOfThreadsLbl: TLabel
-      Left = 9
-      Height = 13
-      Top = 54
-      Width = 29
-      Caption = 'Count'
-      Font.CharSet = ARABIC_CHARSET
-      Font.Color = clBlack
-      Font.Height = -11
-      Font.Name = 'Tahoma'
-      Font.Pitch = fpVariable
-      ParentColor = False
-      ParentFont = False
-    end
-    object NumberOfThreads: TLabel
-      Left = 53
-      Height = 13
-      Top = 55
-      Width = 65
-      AutoSize = False
-      Caption = '0'
-      Font.CharSet = ANSI_CHARSET
-      Font.Color = clBlack
-      Font.Height = -11
-      Font.Name = 'Tahoma'
-      Font.Pitch = fpVariable
-      ParentColor = False
-      ParentFont = False
-      OnClick = NumberOfThreadsClick
-    end
-    object Bevel2: TBevel
-      Left = 128
-      Height = 18
-      Top = 53
-      Width = 78
-    end
-    object MaxOfThreadsLabel: TLabel
-      Left = 133
-      Height = 13
-      Top = 55
-      Width = 65
-      AutoSize = False
-      Caption = '0'
-      Font.CharSet = ANSI_CHARSET
-      Font.Color = clBlack
-      Font.Height = -11
-      Font.Name = 'Tahoma'
-      Font.Pitch = fpVariable
-      ParentColor = False
-      ParentFont = False
-    end
-    object StartBtn: TButton
-      Left = 4
-      Height = 22
-      Top = 77
-      Width = 60
-      BorderSpacing.InnerBorder = 4
-      Caption = '&Start'
-      Default = True
-      OnClick = StartBtnClick
-      TabOrder = 0
-    end
     object RootEdit: TEdit
       Left = 47
       Height = 21
       Top = 6
       Width = 480
       Anchors = [akTop, akLeft, akRight]
-      TabOrder = 1
+      TabOrder = 0
       Text = '.\html'
-    end
-    object StopBtn: TButton
-      Left = 65
-      Height = 22
-      Top = 77
-      Width = 60
-      BorderSpacing.InnerBorder = 4
-      Caption = 'S&top'
-      Enabled = False
-      OnClick = StopBtnClick
-      TabOrder = 2
     end
     object PortEdit: TEdit
       Left = 47
       Height = 21
       Top = 29
       Width = 78
-      TabOrder = 3
+      TabOrder = 1
       Text = '81'
     end
-    object ExitBtn: TButton
-      Left = 472
-      Height = 22
-      Top = 77
-      Width = 61
-      Anchors = [akTop, akRight]
-      BorderSpacing.InnerBorder = 4
-      Caption = 'Exit'
-      OnClick = ExitBtnClick
-      TabOrder = 4
+    object Panel3: TPanel
+      Left = 1
+      Height = 26
+      Top = 53
+      Width = 534
+      Align = alBottom
+      BevelOuter = bvNone
+      ClientHeight = 26
+      ClientWidth = 534
+      TabOrder = 3
+      object LastIDLabel: TLabel
+        Left = 221
+        Height = 20
+        Top = 3
+        Width = 60
+        Align = alLeft
+        AutoSize = False
+        BorderSpacing.Around = 3
+        Caption = '0'
+        Color = 13224393
+        Font.CharSet = ANSI_CHARSET
+        Font.Color = clBlack
+        Font.Height = 13
+        Font.Name = 'Tahoma'
+        Font.Pitch = fpVariable
+        Layout = tlCenter
+        ParentColor = False
+        ParentFont = False
+        ShowAccelChar = False
+        Transparent = False
+      end
+      object Label4: TLabel
+        Left = 184
+        Height = 20
+        Top = 3
+        Width = 34
+        Align = alLeft
+        BorderSpacing.Around = 3
+        Caption = 'Last ID'
+        Font.CharSet = ARABIC_CHARSET
+        Font.Color = clBlack
+        Font.Height = -11
+        Font.Name = 'Tahoma'
+        Font.Pitch = fpVariable
+        Layout = tlCenter
+        ParentColor = False
+        ParentFont = False
+      end
+      object Label3: TLabel
+        Left = 98
+        Height = 20
+        Top = 3
+        Width = 20
+        Align = alLeft
+        BorderSpacing.Around = 3
+        Caption = 'Max'
+        Font.CharSet = ARABIC_CHARSET
+        Font.Color = clBlack
+        Font.Height = -11
+        Font.Name = 'Tahoma'
+        Font.Pitch = fpVariable
+        Layout = tlCenter
+        ParentColor = False
+        ParentFont = False
+      end
+      object MaxOfThreadsLabel: TLabel
+        Left = 121
+        Height = 20
+        Top = 3
+        Width = 60
+        Align = alLeft
+        AutoSize = False
+        BorderSpacing.Around = 3
+        Caption = '0'
+        Color = 13224393
+        Font.CharSet = ANSI_CHARSET
+        Font.Color = clBlack
+        Font.Height = 13
+        Font.Name = 'Tahoma'
+        Font.Pitch = fpVariable
+        Layout = tlCenter
+        ParentColor = False
+        ParentFont = False
+        ShowAccelChar = False
+        Transparent = False
+      end
+      object NumberOfThreads: TLabel
+        Left = 35
+        Height = 20
+        Top = 3
+        Width = 60
+        Align = alLeft
+        AutoSize = False
+        BorderSpacing.Around = 3
+        Caption = '0'
+        Color = 13224393
+        Font.CharSet = ANSI_CHARSET
+        Font.Color = clBlack
+        Font.Height = 13
+        Font.Name = 'Tahoma'
+        Font.Pitch = fpVariable
+        Layout = tlCenter
+        ParentColor = False
+        ParentFont = False
+        ShowAccelChar = False
+        Transparent = False
+        OnClick = NumberOfThreadsClick
+      end
+      object NumberOfThreadsLbl: TLabel
+        Left = 3
+        Height = 20
+        Top = 3
+        Width = 29
+        Align = alLeft
+        BorderSpacing.Around = 3
+        Caption = 'Count'
+        Font.CharSet = ARABIC_CHARSET
+        Font.Color = clBlack
+        Font.Height = -11
+        Font.Name = 'Tahoma'
+        Font.Pitch = fpVariable
+        Layout = tlCenter
+        ParentColor = False
+        ParentFont = False
+      end
     end
   end
-  object Bevel3: TBevel
-    Left = 237
-    Height = 18
-    Top = 53
-    Width = 78
-  end
-  object LastIDLabel: TLabel
-    Left = 243
-    Height = 13
-    Top = 55
-    Width = 65
-    AutoSize = False
-    Caption = '0'
-    Font.CharSet = ANSI_CHARSET
-    Font.Color = clBlack
-    Font.Height = -11
-    Font.Name = 'Tahoma'
-    Font.Pitch = fpVariable
-    ParentColor = False
-    ParentFont = False
-  end
-  object MainMenu1: TMainMenu
-    left = 379
-    top = 10
+  object MainMenu: TMainMenu
+    left = 350
     object MenuItem1: TMenuItem
       Caption = 'Exit'
       OnClick = MenuItem1Click

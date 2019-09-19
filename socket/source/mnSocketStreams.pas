@@ -66,9 +66,12 @@ end;
 
 function TmnSocketStream.DoWrite(const Buffer; Count: Longint): Longint;
 begin
-  Result := 0;
   if not Connected then
-    DoError('Write: SocketStream not connected.')
+  begin
+    FreeSocket;
+    Result := 0;
+    //DoError('Write: SocketStream not connected.') //we can't decide if it is error or disconnected gracefully, you need to check connected before write, maybe socket shutdown for write only
+  end
   else if WaitToWrite(Timeout) = cerSuccess then //TODO WriteTimeout
   begin
     if Socket.Send(Buffer, Count) >= erTimeout then //yes in send we take timeout as error, we cant try again
@@ -93,7 +96,7 @@ var
 begin
   Result := 0;
   if not Connected then
-    DoError('Read: SocketStream not connected')
+    ReadError //set EOF or raise error, not sure about raising error
   else
   begin
     werr := WaitToRead(Timeout);

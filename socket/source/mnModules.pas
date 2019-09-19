@@ -146,6 +146,8 @@ type
     //Update header by name but adding new value to old value
     procedure PutHeader(AName, AValue: string); virtual;
     procedure SendHeader; virtual;
+
+    procedure Log(S: string); virtual;
   public
     constructor Create(AModule: TmodModule; RequestStream: TmnBufferStream = nil; RespondStream: TmnBufferStream = nil); virtual;
     destructor Destroy; override;
@@ -211,6 +213,7 @@ type
     procedure ParseHeader(RequestHeader: TmodParams; Stream: TmnBufferStream); virtual;
     procedure ParseRequest(var ARequest: TmodRequest; ACommand: TmodCommand = nil); virtual;
     function Match(var ARequest: TmodRequest): Boolean; virtual;
+    procedure Log(S: string); virtual;
   public
     constructor Create(AName: string; AProtcol: string; AModules: TmodModules); virtual;
     destructor Destroy; override;
@@ -240,6 +243,7 @@ type
   protected
     function GetActive: Boolean; virtual;
     procedure Created; override;
+    procedure Log(S: string); virtual;
   public
     function ParseRequest(const Request: string): TmodRequest; virtual;
     function Match(var ARequest: TmodRequest): TmodModule; virtual;
@@ -513,6 +517,11 @@ begin
   Module.SendHeader(Self);
 end;
 
+procedure TmodCommand.Log(S: string);
+begin
+  Module.Log(S);
+end;
+
 procedure TmodCommand.Respond(var Result: TmodExecuteResults);
 begin
 end;
@@ -697,6 +706,11 @@ begin
   Result := SameText(Protcol, ARequest.Protcol);
 end;
 
+procedure TmodModule.Log(S: string);
+begin
+  Modules.Log(S);
+end;
+
 function TmodModule.Execute(ARequest: TmodRequest; ARequestStream: TmnBufferStream; ARespondStream: TmnBufferStream): TmodExecuteResults;
 var
   aCMD: TmodCommand;
@@ -778,6 +792,10 @@ begin
   inherited;
   FEOFOnError := True;
   FEndOfLine := sWinEndOfLine; //for http protocol
+end;
+
+procedure TmodModules.Log(S: string);
+begin
 end;
 
 function TmodModules.ParseRequest(const Request: string): TmodRequest;

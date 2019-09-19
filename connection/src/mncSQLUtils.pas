@@ -91,13 +91,6 @@ const
     '"' //sqlPostgres
     );
 
-  SQLMode_Param: array[TSQLMode] of string = (
-    '?', //sqlePlan
-    '?', //sqlSQLite
-    '?', //sqlFirebird
-    '?' //sqlPostgres
-    );
-
   SQLMode_Bool_Values: array[TSQLMode] of array[Boolean] of string = (
     ('False', 'True'), //sqlePlan
     ('false', 'true'), //sqlSQLite

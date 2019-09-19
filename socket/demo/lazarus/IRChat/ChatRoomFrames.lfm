@@ -45,29 +45,13 @@ object ChatRoomFrame: TChatRoomFrame
     ResizeAnchor = akRight
   end
   object MsgEdit: TMemo
-    Left = 220
+    Left = 3
     Height = 297
     Top = 29
-    Width = 180
+    Width = 397
     Align = alClient
     BorderSpacing.Around = 3
     OnDblClick = MsgEditDblClick
     TabOrder = 3
-  end
-  object HtmlViewer1: THtmlViewer
-    Left = 0
-    Height = 300
-    Top = 29
-    Width = 217
-    BorderStyle = htFocused
-    HistoryMaxCount = 0
-    NoSelect = False
-    PrintMarginBottom = 2
-    PrintMarginLeft = 2
-    PrintMarginRight = 2
-    PrintMarginTop = 2
-    PrintScale = 1
-    Align = alLeft
-    TabOrder = 4
   end
 end

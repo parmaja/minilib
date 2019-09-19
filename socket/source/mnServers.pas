@@ -79,6 +79,7 @@ type
     constructor Create;
     destructor Destroy; override;
     procedure Stop; override;
+    // Use this function when you are in a thread do not use Server.Log
     procedure Log(S: string); virtual;
     property Server: TmnServer read FServer;
     property Connected: Boolean read GetConnected;
@@ -533,14 +534,14 @@ begin
   if (FListener = nil) then // if its already active, dont start again
   begin
     try
-      DoStart;
+      DoBeforeOpen;
       try
         FListener := CreateListener;
         FListener.FServer := Self;
         FListener.FPort := FPort;
         FListener.FAddress := FAddress;
-        DoBeforeOpen;
         FListener.Prepare;
+        DoStart;
         FListener.Start;
         Log('Server started at port: ' + Port);
         FActive := True;

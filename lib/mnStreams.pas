@@ -49,6 +49,14 @@ type
     property BufferSize: TFileSize read FReadBufferSize write FReadBufferSize;
   end;
 
+  { TmnStreamProxy }
+
+  TmnStreamProxy = class(TObject)
+  protected
+    function Read(vStream: TStream; var Buffer; BufferCount: Longint; out Count, RealCount: longint): Boolean; virtual;
+    function Write(vStream: TStream; const Buffer; BufferCount: Longint; out Count, RealCount: longint): Boolean; virtual;
+  end;
+
   { TmnBufferStream }
 
   TmnBufferStream = class(TmnCustomStream)
@@ -56,7 +64,7 @@ type
     FReadBuffer: PByte;
     FDone: Boolean;
     FEndOfLine: string;
-    FEOFOnError: Boolean;
+    FProxy: TmnStreamProxy;
     procedure LoadBuffer;
   protected
     FPos: PByte;
@@ -66,7 +74,8 @@ type
     function CheckBuffer: Boolean;
 
   protected
-    procedure DoError(S: string); virtual;
+    procedure ReadError; virtual;
+    //Override it but do not use it in your code, use DirectRead or DirectWrite
     function DoRead(var Buffer; Count: Longint): Longint; virtual; abstract;
     function DoWrite(const Buffer; Count: Longint): Longint; virtual; abstract;
   public
@@ -130,7 +139,6 @@ type
     property EOF: Boolean read FDone; {$ifdef FPC} deprecated; {$endif} //alias of Done
 
     property EndOfLine: string read FEndOfLine write FEndOfLine;
-    property EOFOnError1: Boolean read FEOFOnError write FEOFOnError default False;
   end;
 
   { TmnWrapperStream }
@@ -271,6 +279,18 @@ end;
 function ByteLength(s: utf8string): TFileSize; overload;
 begin
   Result := Length(s);
+end;
+
+{ TmnStreamProxy }
+
+function TmnStreamProxy.Read(vStream: TStream; var Buffer; BufferCount: Longint; out Count, RealCount: longint): Boolean;
+begin
+
+end;
+
+function TmnStreamProxy.Write(vStream: TStream; const Buffer; BufferCount: Longint; out Count, RealCount: longint): Boolean;
+begin
+
 end;
 
 { TmnConnectionStream }
@@ -592,7 +612,7 @@ end;
 
 function TmnBufferStream.Write(const Buffer; Count: Longint): Longint;
 begin
-  Result := DoWrite(Buffer, Count);//TODO must be buffered
+  Result := DirectWrite(Buffer, Count);//TODO must be buffered
 end;
 
 procedure TmnBufferStream.WriteCommand(const Command, Params: string);
@@ -622,13 +642,23 @@ begin
 end;
 
 function TmnBufferStream.DirectRead(var Buffer; Count: Longint): Longint;
+var
+  RealCount: longint;
 begin
-  Result := DoRead(Buffer, Count);
+  if FProxy <> nil then
+    FProxy.Read(Self, Buffer, Count, Result, RealCount)
+  else
+    Result := DoRead(Buffer, Count);
 end;
 
 function TmnBufferStream.DirectWrite(const Buffer; Count: Longint): Longint;
+var
+  RealCount: longint;
 begin
-  Result := DoWrite(Buffer, Count);
+  if FProxy <> nil then
+    FProxy.Write(Self, Buffer, Count, Result, RealCount)
+  else
+    Result := DoWrite(Buffer, Count);
 end;
 
 constructor TmnBufferStream.Create(AEndOfLine: string);
@@ -646,18 +676,15 @@ begin
   if FPos < FEnd then
     raise EmnStreamException.Create('Buffer is not empty to load');
   FPos := FReadBuffer;
-  aSize := DoRead(FReadBuffer^, FReadBufferSize);
+  aSize := DirectRead(FReadBuffer^, FReadBufferSize);
   FEnd := FPos + aSize;
   if aSize = 0 then
     FDone := True;
 end;
 
-procedure TmnBufferStream.DoError(S: string);
+procedure TmnBufferStream.ReadError;
 begin
-  if FEOFOnError then
-    FDone := True
-  else
-    raise EmnStreamExceptionAbort.Create(S);
+  FDone := True;
 end;
 
 procedure TmnBufferStream.CreateBuffer;
@@ -681,7 +708,7 @@ var
   P: PByte;
 begin
   if (BufferSize = 0) then
-    aCount := DoRead(Buffer, Count)
+    aCount := DirectRead(Buffer, Count)
   else
   begin
     if FReadBuffer = nil then
