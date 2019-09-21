@@ -830,8 +830,9 @@ begin
     raise EmnStreamException.Create('Buffer is not empty to load');
   FPos := FReadBuffer;
   aSize := DirectRead(FReadBuffer^, FReadBufferSize);
-  FEnd := FPos + aSize;
-  if aSize = 0 then
+  if aSize > 0 then
+    FEnd := FPos + aSize;
+  if aSize = 0 then    //TODO what if we have Timeout?
     Close([cloRead]);
 end;
 
