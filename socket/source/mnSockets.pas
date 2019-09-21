@@ -21,7 +21,8 @@ uses
 
 type
   EmnException = class(Exception);
-  TmnShutdown = (sdNone, sdReceive, sdSend, sdBoth);
+  TmnShutdown = (sdReceive, sdSend);
+  TmnShutdowns = set of TmnShutdown;
   TmnError = (erSuccess, erTimeout, erFail, erClosed, erInvalid);
   TSelectCheck = (slRead, slWrite);
 
@@ -43,19 +44,19 @@ type
   TmnCustomSocket = class(TObject)
   private
     FCloseWhenError: Boolean;
-    FShutdownState: TmnShutdown;
+    FShutdownState: TmnShutdowns;
     function GetConnected: Boolean;
   protected
     procedure Error;
     function GetActive: Boolean; virtual; abstract;
     procedure CheckActive; //this will force exception, cuz you should not use socket in api implmentation without active socket, i meant use it in api section only
     function DoSelect(Timeout: Integer; Check: TSelectCheck): TmnError; virtual; abstract;
-    function DoShutdown(How: TmnShutdown): TmnError; virtual; abstract;
-    property ShutdownState: TmnShutdown read FShutdownState;
+    function DoShutdown(How: TmnShutdowns): TmnError; virtual; abstract;
+    property ShutdownState: TmnShutdowns read FShutdownState;
   public
     constructor Create;
     destructor Destroy; override;
-    function Shutdown(How: TmnShutdown): TmnError;
+    function Shutdown(How: TmnShutdowns): TmnError;
     procedure Close; virtual; abstract;
     function Send(const Buffer; var Count: Longint): TmnError; virtual; abstract;
     function Receive(var Buffer; var Count: Longint): TmnError; virtual; abstract;
@@ -158,7 +159,7 @@ end;
 
 function TmnCustomSocket.GetConnected: Boolean;
 begin
-  Result := Active and (FShutdownState = sdNone)
+  Result := Active and ([sdReceive, sdSend] <> FShutdownState)
 end;
 
 function TmnCustomSocket.Select(Timeout: Integer; Check: TSelectCheck): TmnError;
@@ -168,13 +169,13 @@ begin
     Result := erClosed;}
 end;
 
-function TmnCustomSocket.Shutdown(How: TmnShutdown): TmnError;
+function TmnCustomSocket.Shutdown(How: TmnShutdowns): TmnError;
 begin
-  if How > sdNone then
+  if How <> [] then
   begin
     Result := DoShutdown(How);
     if Result = erSuccess then
-      FShutdownState := How;
+      FShutdownState := FShutdownState + How;
   end
   else
     Result := erSuccess;

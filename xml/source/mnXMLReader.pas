@@ -36,6 +36,9 @@ type
 
 implementation
 
+uses
+  mnStreams;
+
 { TmnXMLReader }
 
 procedure TmnXMLReader.DoStart;
@@ -59,7 +62,7 @@ var
 begin
   Line := 1;
   try
-    while not Stream.Done and not Completed do
+    while not (cloRead in Stream.Done) and not Completed do
     begin
       Text := '';
       if Stream.ReadLine(Text, False) then

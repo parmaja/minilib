@@ -31,7 +31,7 @@ type
     function Check(Value: Integer; WithZero: Boolean = False): Boolean;
     function GetActive: Boolean; override;
     function DoSelect(Timeout: Integer; Check: TSelectCheck): TmnError; override;
-    function DoShutdown(How: TmnShutdown): TmnError; override;
+    function DoShutdown(How: TmnShutdowns): TmnError; override;
   public
     constructor Create(Handle: TSocket);
     procedure Close; override;
@@ -178,14 +178,20 @@ begin
   end;
 end;
 
-function TmnSocket.DoShutdown(How: TmnShutdown): TmnError;
-const
-  cHow: array[TmnShutdown] of Integer = (0, SHUT_RD, SHUT_WR, SHUT_RDWR);
+function TmnSocket.DoShutdown(How: TmnShutdowns): TmnError;
 var
   c: Integer;
+  iHow: Integer;
 begin
+  if [sdReceive, sdSend] = How then
+    iHow := SD_BOTH
+  else if sdReceive in How then
+    iHow := SD_RECEIVE
+  else if sdSend in How then
+    iHow := SD_SEND;
+
   CheckActive;
-  c := fpshutdown(FHandle, cHow[How]);
+  c := fpshutdown(FHandle, iHow);
   if c = SOCKET_ERROR then
   begin
     Result := erFail;

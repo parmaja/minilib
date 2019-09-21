@@ -37,11 +37,12 @@ type
     function CreateSocket: TmnCustomSocket; virtual;
     function DoRead(var Buffer; Count: Longint): Longint; override;
     function DoWrite(const Buffer; Count: Longint): Longint; override;
+    procedure DoCloseWrite; override;
+    procedure DoCloseRead; override;
   public
     constructor Create(vSocket: TmnCustomSocket = nil);
     destructor Destroy; override;
     procedure Connect; override;
-    procedure Drop; override; //Shutdown
     procedure Disconnect; override;
     function WaitToRead(vTimeout: Longint): TmnConnectionError; override; //select
     function WaitToWrite(vTimeout: Longint): TmnConnectionError; override; //select
@@ -89,6 +90,20 @@ begin
   end
 end;
 
+procedure TmnSocketStream.DoCloseWrite;
+begin
+  inherited;
+  if Socket <> nil then
+    Socket.Shutdown([sdSend]);
+end;
+
+procedure TmnSocketStream.DoCloseRead;
+begin
+  inherited;
+  if Socket <> nil then
+    Socket.Shutdown([sdReceive]);
+end;
+
 function TmnSocketStream.DoRead(var Buffer; Count: Longint): Longint;
 var
   err: TmnError;
@@ -134,7 +149,7 @@ end;
 procedure TmnSocketStream.Disconnect;
 begin
   if (Socket <> nil) and Socket.Connected then
-    Drop; //may be not but in slow matchine disconnect to take as effects as need (POS in 98)
+    Close; //may be not but in slow matchine disconnect to take as effects as need (POS in 98)
   FreeSocket;
 end;
 
@@ -189,12 +204,6 @@ end;
 procedure TmnSocketStream.FreeSocket;
 begin
   FreeAndNil(FSocket);
-end;
-
-procedure TmnSocketStream.Drop;
-begin
-  if Socket <> nil then
-    Socket.Shutdown(sdBoth);
 end;
 
 end.

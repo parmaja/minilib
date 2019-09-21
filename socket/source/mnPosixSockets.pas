@@ -87,7 +87,7 @@ type
     function Check(Value: Integer; WithZero: Boolean = False): Boolean;
     function GetActive: Boolean; override;
     function DoSelect(Timeout: Integer; Check: TSelectCheck): TmnError; override;
-    function DoShutdown(How: TmnShutdown): TmnError; override;
+    function DoShutdown(How: TmnShutdowns): TmnError; override;
     function PosixSend(vBuf: Pointer; vLen: Integer): Integer;
   public
     constructor Create(Handle: TSocket);
@@ -265,13 +265,19 @@ begin
 end;
 
 function TmnSocket.DoShutdown(How: TmnShutdown): TmnError;
-const
-  cHow: array[TmnShutdown] of Integer = (0, SHUT_RD, SHUT_WR, SHUT_RDWR);
 var
   c: Integer;
+  iHow: Integer;
 begin
+  if [sdReceive, sdSend] = How then
+    iHow := SD_BOTH
+  else if sdReceive in How then
+    iHow := SD_RECEIVE
+  else if sdSend in How then
+    iHow := SD_SEND;
+
   CheckActive;
-  c := Posix.SysSocket.shutdown(FHandle, cHow[How]);
+  c := Posix.SysSocket.shutdown(FHandle, iHow);
   if c = SOCKET_ERROR then
   begin
     Result := erFail;

@@ -641,7 +641,7 @@ var
 begin
   if Stream <> nil then
   begin
-    while not Stream.Done do
+    while not (cloRead in Stream.Done) do
     begin
       line := Stream.ReadLineRawByte;
       if line = '' then

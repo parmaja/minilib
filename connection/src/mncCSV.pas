@@ -355,7 +355,7 @@ var
   s: string;
   t: rawbytestring;
 begin
-  Result := (FCSVStream <> nil) and not FCSVStream.Done;
+  Result := (FCSVStream <> nil) and not (cloRead in FCSVStream.Done);
   if Result then
   begin
     s := '';

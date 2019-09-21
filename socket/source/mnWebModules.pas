@@ -40,12 +40,28 @@ interface
 
 uses
   SysUtils, Classes, syncobjs,
-  mnFields, mnUtils, mnSockets, mnServers, mnStreams, zlib,
+  mnFields, mnUtils, mnSockets, mnSocketStreams, mnServers, mnStreams, zlib, {$ifdef FPC}zstream,{$endif}
   mnModules;
 
 type
 
   TmodWebModule = class;
+
+  { TmnGZWriteStreamProxy }
+
+  TmnDeflateWriteStreamProxy = class(TmnStreamOverProxy)
+  private
+    FZStream:z_stream;
+    FBuffer:pointer;
+    const
+      cBufsize = 16384;
+  protected
+  public
+    constructor Create(Level: TCompressionlevel; ASkipheader: Boolean = False);
+    destructor Destroy; override;
+    function Write(const Buffer; Count: Longint; out ResultCount, RealCount: longint): Boolean; override;
+    procedure CloseWrite; override;
+  end;
 
   { TmodHttpCommand }
 
@@ -54,10 +70,11 @@ type
     FCookies: TmodParams;
     FKeepAlive: Boolean;
     FURIParams: TmodParams;
+    FCompressIt: Boolean;
   protected
     procedure Created; override;
-    procedure SendHeader; override;
     procedure Prepare(var Result: TmodExecuteResults); override;
+    procedure SendHeader; override;
     procedure Unprepare(var Result: TmodExecuteResults); override;
     procedure Respond(var Result: TmodExecuteResults); override;
   public
@@ -65,6 +82,8 @@ type
     property Cookies: TmodParams read FCookies;
     property URIParams: TmodParams read FURIParams;
     property KeepAlive: Boolean read FKeepAlive write FKeepAlive;
+    //Compress on the fly, now we use deflate
+    property CompressIt: Boolean read FCompressIt write FCompressIt;
   end;
 
   { TmodURICommand }
@@ -223,6 +242,102 @@ begin
   end;
   SetCodePage(R, CP_UTF8, False);
   Result := R;
+end;
+
+{ TmnDeflateWriteStreamProxy }
+
+function TmnDeflateWriteStreamProxy.Write(const Buffer; Count: Longint; out ResultCount, RealCount: longint): Boolean;
+var
+  err:smallint;
+  Writen, R: longint;
+begin
+  FZStream.next_in := @Buffer;
+  FZStream.avail_in := Count;
+  while FZStream.avail_in <> 0 do
+  begin
+    if FZStream.avail_out = 0 then
+    begin
+      { Flush the buffer to the stream and update progress }
+      Over.Write(FBuffer^, cBufsize, Writen, R);
+      { reset output buffer }
+      FZStream.next_out := FBuffer;
+      FZStream.avail_out := cBufsize;
+    end;
+    err := deflate(FZStream, Z_NO_FLUSH);
+    if err <> Z_OK then
+      raise Exception.Create(zerror(err));
+  end;
+  ResultCount := Count;
+  Result := True;
+end;
+
+procedure TmnDeflateWriteStreamProxy.CloseWrite;
+var
+  err: smallint;
+  Written, R: longint;
+begin
+  {Compress remaining data still in internal zlib data buffers.}
+  repeat
+    if FZStream.avail_out = 0 then
+    begin
+      { Flush the buffer to the stream and update progress }
+      Over.Write(FBuffer^, cBufsize, Written, R);
+      { reset output buffer }
+      FZStream.next_out := FBuffer;
+      FZStream.avail_out := cbufsize;
+    end;
+    err := deflate(FZStream, Z_FINISH);
+    if err = Z_STREAM_END then
+      break;
+    if (err <> Z_OK) then
+      raise Exception.create(zerror(err));
+  until false;
+
+  if FZStream.avail_out < cBufsize then
+  begin
+    Over.Write(FBuffer^, cBufsize - FZStream.avail_out, Written, R);
+  end;
+  inherited;
+end;
+
+constructor TmnDeflateWriteStreamProxy.Create(Level: TCompressionlevel; ASkipheader: Boolean);
+var
+  err: smallint;
+  l: smallint;
+const
+  MAX_WBITS = 15;
+  DEF_MEM_LEVEL = 8;
+begin
+  inherited Create;
+  GetMem(FBuffer, cBufsize);
+
+  FZStream.next_out := FBuffer;
+  FZStream.avail_out := cBufsize;
+
+  case level of
+    clnone:
+      l := Z_NO_COMPRESSION;
+    clfastest:
+      l := Z_BEST_SPEED;
+    cldefault:
+      l := Z_DEFAULT_COMPRESSION;
+    clmax:
+      l := Z_BEST_COMPRESSION;
+  end;
+
+  if ASkipheader then
+    err := deflateInit2(FZStream, l, Z_DEFLATED, -MAX_WBITS, DEF_MEM_LEVEL, 0)
+  else
+    err := deflateInit(FZStream,l);
+  if err <> Z_OK then
+    raise Exception.create(zerror(err));
+end;
+
+destructor TmnDeflateWriteStreamProxy.Destroy;
+begin
+  deflateEnd(FZStream);
+  freemem(FBuffer);
+  inherited destroy;
 end;
 
 { TmodHttpPostCommand }
@@ -548,6 +663,11 @@ begin
     PostHeader('Connection', 'Keep-Alive');
     PostHeader('Keep-Alive', 'timout=' + IntToStr(Module.KeepAliveTimeOut div 5000) + ', max=100');
   end;
+  if FCompressIt then
+  begin
+//  Accept-Encoding: gzip, deflate, br}
+    PostHeader('Content-Encoding', 'deflate');
+  end;
 end;
 
 procedure TmodHttpCommand.Unprepare(var Result: TmodExecuteResults);
@@ -584,10 +704,17 @@ begin
 end;
 
 procedure TmodHttpCommand.SendHeader;
+var
+  gz: TmnDeflateWriteStreamProxy;
 begin
   if Cookies.Count > 0 then
     PostHeader('Cookies', Cookies.AsString);
   inherited;
+  if CompressIt then
+  begin
+    gz := TmnDeflateWriteStreamProxy.Create(clDefault);
+    RespondStream.AddProxy(gz);
+  end;
 end;
 
 { TmodCustomWebModules }

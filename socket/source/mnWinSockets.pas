@@ -40,7 +40,7 @@ type
     function GetActive: Boolean; override;
     //Timeout millisecond
     function DoSelect(Timeout: Integer; Check: TSelectCheck): TmnError; override;
-    function DoShutdown(How: TmnShutdown): TmnError; override;
+    function DoShutdown(How: TmnShutdowns): TmnError; override;
   public
     constructor Create(vHandle: TSocket);
     procedure Close; override;
@@ -175,17 +175,23 @@ begin
   end;
 end;
 
-function TmnSocket.DoShutdown(How: TmnShutdown): TmnError;
-const
-  cHow: array[TmnShutdown] of Integer = (0, SD_RECEIVE, SD_SEND, SD_BOTH);
+function TmnSocket.DoShutdown(How: TmnShutdowns): TmnError;
 var
   c: Integer;
+  iHow: Integer;
 begin
+  if [sdReceive, sdSend] = How then
+    iHow := SD_BOTH
+  else if sdReceive in How then
+    iHow := SD_RECEIVE
+  else if sdSend in How then
+    iHow := SD_SEND;
+
   CheckActive;
 {$IFDEF FPC}
-  c := WinSock2.Shutdown(FHandle, cHow[How]);
+  c := WinSock2.Shutdown(FHandle, iHow);
 {$ELSE}
-  c := WinSock.Shutdown(FHandle, cHow[How]);
+  c := WinSock.Shutdown(FHandle, iHow);
 {$ENDIF}
   if c = SOCKET_ERROR then
   begin

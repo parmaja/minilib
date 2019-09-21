@@ -440,7 +440,7 @@ end;
 
 function TmncSQLiteConnection.IsDatabaseExists(vName: string): Boolean;
 begin
-  //TODO
+  Result := FileExists(vName);
 end;
 
 procedure TmncSQLiteConnection.Vacuum;
