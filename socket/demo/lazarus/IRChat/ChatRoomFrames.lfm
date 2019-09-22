@@ -52,6 +52,7 @@ object ChatRoomFrame: TChatRoomFrame
     Align = alClient
     BorderSpacing.Around = 3
     OnDblClick = MsgEditDblClick
+    ReadOnly = True
     TabOrder = 3
   end
 end

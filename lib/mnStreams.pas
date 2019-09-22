@@ -96,6 +96,7 @@ type
     FReadBuffer: PByte;
     FDone: TmnStreamClose;
     FEndOfLine: string;
+    FZeroClose: Boolean;
     procedure LoadBuffer;
   protected
     FPos: PByte;
@@ -197,6 +198,8 @@ type
     property EOF: Boolean read GetEOF; {$ifdef FPC} deprecated; {$endif} //alias of Done
 
     property EndOfLine: string read FEndOfLine write FEndOfLine;
+    //if read zero length, close it, or that mean we have timeout system
+    property ZeroClose: Boolean read FZeroClose write FZeroClose;
   end;
 
   { TmnWrapperStream }
@@ -817,6 +820,7 @@ end;
 constructor TmnBufferStream.Create(AEndOfLine: string);
 begin
   inherited Create;
+  FZeroClose := True;
   FReadBufferSize := cBufferSize;
   FEndOfLine := AEndOfLine;
   CreateBuffer;
@@ -830,9 +834,11 @@ begin
     raise EmnStreamException.Create('Buffer is not empty to load');
   FPos := FReadBuffer;
   aSize := DirectRead(FReadBuffer^, FReadBufferSize);
-  if aSize > 0 then
-    FEnd := FPos + aSize;
-  if aSize = 0 then    //TODO what if we have Timeout?
+  if aSize > 0 then //-1 not effects here
+    FEnd := FPos + aSize
+  else
+    FEnd := FPos;
+  if (aSize = 0) and ZeroClose then //what if we have Timeout?
     Close([cloRead]);
 end;
 

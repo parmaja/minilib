@@ -929,7 +929,7 @@ end;
 
 procedure TIRCReceivers.Parse(vData: string);
 type
-  TParseState = (prefix, command);
+  TParseState = (prefix, command, message);
 var
   p: Integer;
   aState: TParseState;
@@ -1235,6 +1235,7 @@ end;
 function TmnIRCConnection.CreateSocket: TIRCSocketStream;
 begin
   Result := TIRCSocketStream.Create(Host, Port, [soNoDelay, soSafeConnect, soSafeReadTimeout, soSetReadTimeout, soConnectTimeout]);
+  Result.ZeroClose := False;
   Result.Timeout := 5 * 1000;
   //Result.Timeout := WaitForEver;
   Result.EndOfLine := #10;
@@ -1293,7 +1294,7 @@ end;
 
 procedure TmnIRCConnection.Process;
 var
-  aLine: string;
+  aLine: utf8string;
 begin
   inherited Process;
   Queue(SendRaws);
