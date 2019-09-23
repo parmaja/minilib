@@ -79,6 +79,8 @@ type
     Command: string;
 
     Raw: string; //Full of first line of header
+
+    Client: string;
   end;
 
   TmodModule = class;
@@ -243,7 +245,6 @@ type
   protected
     function GetActive: Boolean; virtual;
     procedure Created; override;
-    procedure Log(S: string); virtual;
   public
     function ParseRequest(const Request: string): TmodRequest; virtual;
     function Match(var ARequest: TmodRequest): TmodModule; virtual;
@@ -425,6 +426,7 @@ begin
     try
       if aModule <> nil then
       begin
+        aRequest.Client := Client;
         Result := aModule.Execute(aRequest, Stream, Stream);
       end;
     finally
@@ -708,7 +710,6 @@ end;
 
 procedure TmodModule.Log(S: string);
 begin
-  Modules.Log(S);
 end;
 
 function TmodModule.Execute(ARequest: TmodRequest; ARequestStream: TmnBufferStream; ARespondStream: TmnBufferStream): TmodExecuteResults;
@@ -794,10 +795,6 @@ begin
   FEndOfLine := sWinEndOfLine; //for http protocol
 end;
 
-procedure TmodModules.Log(S: string);
-begin
-end;
-
 function TmodModules.ParseRequest(const Request: string): TmodRequest;
 var
   aRequests: TStringList;
@@ -865,7 +862,7 @@ begin
   try
     Strings.LoadFromStream(Stream);
     Clear;
-      for line in Strings do
+    for line in Strings do
     begin
       AddItem(Line, Strings.NameValueSeparator, True);
     end;

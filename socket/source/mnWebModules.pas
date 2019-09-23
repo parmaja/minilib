@@ -700,7 +700,7 @@ end;
 procedure TmodHttpCommand.Respond(var Result: TmodExecuteResults);
 begin
   inherited Respond(Result);
-  Log(Request.Raw);
+  Log(Request.Client + ': ' + Request.Raw);
 end;
 
 procedure TmodHttpCommand.SendHeader;
