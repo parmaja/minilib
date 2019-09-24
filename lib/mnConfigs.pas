@@ -37,7 +37,7 @@ type
     function ReadInteger(Name: string; Def: Integer = 0): Integer;
     function ReadString(Name: string; Def: String = ''): String;
     function ReadBoolean(Name: string; Def: Boolean = False): Boolean;
-    property FieldByName; default;
+    property Field; default;
     property Separator: string read FSeparator write FSeparator; //value
     property Delimiter: Char read FDelimiter write FDelimiter; //eol
     property AsString: string read GetAsString write SetAsString;
@@ -51,7 +51,7 @@ type
 
   TmnConfig = class(TmnObjectList<TmnSection>)
   private
-    FRoot: TmnSection;
+    FDefault: TmnSection;
     function GetParams(Index: string): TmnSection;
   public
     constructor Create;
@@ -70,7 +70,7 @@ type
     function ReadBoolean(Name: string; Def: Boolean = False): Boolean; overload;
 
     property Params[Index: string]: TmnSection read GetParams; default;
-    property Root: TmnSection read FRoot;
+    property Default: TmnSection read FDefault;
   end;
 
 procedure ParamsCallBack(Sender: Pointer; Index:Integer; S: string; var Resume: Boolean);
@@ -198,8 +198,8 @@ end;
 constructor TmnConfig.Create;
 begin
   inherited Create;
-  FRoot := TmnSection.Create;
-  FRoot.Name := ''; //ok i know it is already empty
+  FDefault := TmnSection.Create;
+  FDefault.Name := ''; //ok i know it is already empty
 end;
 
 function TmnConfig.Find(const Name: string): TmnSection;
@@ -208,7 +208,7 @@ var
 begin
   Result := nil;
   if Name = '' then
-    Result := FRoot
+    Result := FDefault
   else
   for i := 0 to Count - 1 do
   begin
@@ -256,7 +256,7 @@ var
   end;
 begin
   Clear;
-  aLastSection := FRoot;
+  aLastSection := FDefault;
   Strings := TmnWrapperStream.Create(Stream, False);
   try
     while not Strings.EndOfStream do
@@ -310,7 +310,10 @@ var
   Field: TmnField;
 begin
   ASection := Find(Section);
-  if ASection <> nil then
+  if (ASection = nil) and InheriteIt then
+    ASection := FDefault;
+
+  if (ASection <> nil) then
   begin
     Field := ASection.FindField(Name);
     if Field = nil then

@@ -240,7 +240,7 @@ type
     //todo IndexOfName, IndexOf
     procedure Clean; virtual;
     property FieldByName[Index: string]: TmnField read FindByName;
-    //property Items[Index: Integer]: TmnField read GetItem;
+    property Field[Index: string]: TmnField read FindField;
     property Exists[Index: string]: Boolean read IsExists;
     property Values[Index: string]: Variant read GetValues write SetValues; default;
   end;
