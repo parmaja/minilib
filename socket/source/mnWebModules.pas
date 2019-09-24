@@ -40,7 +40,7 @@ interface
 
 uses
   SysUtils, Classes, syncobjs,
-  mnFields, mnUtils, mnSockets, mnSocketStreams, mnServers, mnStreams, zlib, {$ifdef FPC}zstream,{$endif}
+  mnFields, mnConfigs, mnUtils, mnSockets, mnSocketStreams, mnServers, mnStreams, zlib, {$ifdef FPC}zstream,{$endif}
   mnModules;
 
 type
@@ -67,9 +67,9 @@ type
 
   TmodHttpCommand = class(TmodCommand)
   private
-    FCookies: TmodParams;
+    FCookies: TmnParams;
     FKeepAlive: Boolean;
-    FURIParams: TmodParams;
+    FURIParams: TmnParams;
     FCompressIt: Boolean;
   protected
     procedure Created; override;
@@ -79,8 +79,8 @@ type
     procedure Respond(var Result: TmodExecuteResults); override;
   public
     destructor Destroy; override;
-    property Cookies: TmodParams read FCookies;
-    property URIParams: TmodParams read FURIParams;
+    property Cookies: TmnParams read FCookies;
+    property URIParams: TmnParams read FURIParams;
     property KeepAlive: Boolean read FKeepAlive write FKeepAlive;
     //Compress on the fly, now we use deflate
     property CompressIt: Boolean read FCompressIt write FCompressIt;
@@ -643,8 +643,8 @@ end;
 procedure TmodHttpCommand.Created;
 begin
   inherited;
-  FCookies := TmodParams.Create;
-  FURIParams := TmodParams.Create;
+  FCookies := TmnParams.Create;
+  FURIParams := TmnParams.Create;
 end;
 
 destructor TmodHttpCommand.Destroy;
@@ -672,7 +672,7 @@ end;
 
 procedure TmodHttpCommand.Unprepare(var Result: TmodExecuteResults);
 var
-  aParams: TmodParams;
+  aParams: TmnParams;
 begin
   inherited;
   if not RespondHeader.Exists['Content-Length'] then
@@ -682,10 +682,10 @@ begin
     Result.Timout := Module.KeepAliveTimeOut;
     if RequestHeader.IsExists('Keep-Alive') then //idk if really sent from client
     begin
-      aParams := TmodParams.Create;
+      aParams := TmnParams.Create;
       try
         //Keep-Alive: timeout=5, max=1000
-        aParams.Seperator := '=';
+        aParams.Separator := '=';
         aParams.Delimiter := ',';
         aParams.AsString := RequestHeader['Keep-Alive'].AsString;
         Result.Timout := aParams['timeout'].AsInteger;

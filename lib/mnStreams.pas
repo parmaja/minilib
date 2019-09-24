@@ -130,7 +130,7 @@ type
     function DoWrite(const Buffer; Count: Longint): Longint; virtual; abstract;
     procedure DoCloseRead; virtual;
     procedure DoCloseWrite; virtual;
-    function GetEOF: Boolean;
+    function GetEndOfStream: Boolean;
 
     property Proxy: TmnStreamProxy read FProxy;
   public
@@ -195,7 +195,8 @@ type
     function WriteStrings(const Value: TStrings): TFileSize; overload;
 
     property Done: TmnStreamClose read FDone;
-    property EOF: Boolean read GetEOF; {$ifdef FPC} deprecated; {$endif} //alias of Done
+    property EOF: Boolean read GetEndOfStream; {$ifdef FPC} deprecated; {$endif} //alias of Done
+    property EndOfStream: Boolean read GetEndOfStream; {$ifdef FPC} deprecated; {$endif}
 
     property EndOfLine: string read FEndOfLine write FEndOfLine;
     //if read zero length, close it, or that mean we have timeout system
@@ -857,7 +858,7 @@ begin
 
 end;
 
-function TmnBufferStream.GetEOF: Boolean;
+function TmnBufferStream.GetEndOfStream: Boolean;
 begin
   Result := cloRead in Done;
 end;

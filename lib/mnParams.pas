@@ -7,6 +7,7 @@ unit mnParams;
 {$IFDEF FPC}
 {$MODE delphi}{$H+}
 {$ENDIF}
+
 interface
 
 uses

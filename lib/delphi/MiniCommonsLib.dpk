@@ -51,6 +51,7 @@ contains
   HejriUtils in '..\HejriUtils.pas',
   HejriDates in '..\HejriDates.pas',
   mnFields in '..\mnFields.pas',
+  mnConfigs in '..\mnConfigs.pas',
   mnDrivers in '..\mnDrivers.pas',
   base36 in '..\base36.pas',
   ucp864 in '..\..\unicodes\source\ucp864.pas',

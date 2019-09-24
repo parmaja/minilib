@@ -31,8 +31,8 @@
 interface
 
 uses
-  SysUtils, Classes,
-  mnClasses, mnStreams, mnFields,
+  SysUtils, Classes, StrUtils,
+  mnClasses, mnStreams, mnFields, mnConfigs,
   mnSockets, mnConnections, mnServers;
 
 const
@@ -43,29 +43,6 @@ type
 
   TmodModuleConnection = class;
   TmodModuleConnectionClass = class of TmodModuleConnection;
-
-  { TmodParams }
-
-  TmodParams = class(TmnFields)
-  private
-    FSeperator: string;
-    FDelimiter: Char;
-    function GetAsString: string;
-    procedure SetAsString(const Value: string);
-    function GetItem(Index: Integer): TmnField;
-  public
-    constructor Create;
-    procedure LoadFromStream(Stream: TStream); override;
-    procedure SaveToStream(Stream: TStream); override;
-    function ReadInteger(Name: string; Def: Integer = 0): Integer;
-    function ReadString(Name: string; Def: String = ''): String;
-    function ReadBoolean(Name: string; Def: Boolean = False): Boolean;
-    property FieldByName; default;
-    property Seperator: string read FSeperator write FSeperator; //value
-    property Delimiter: Char read FDelimiter write FDelimiter; //eol
-    property AsString: string read GetAsString write SetAsString;
-    property Items[Index: Integer]: TmnField read GetItem;
-  end;
 
   TmodCommand = class;
 
@@ -120,15 +97,15 @@ type
   private
     FModule: TmodModule;
     FRaiseExceptions: Boolean;
-    FRequestHeader: TmodParams;
-    FRespondHeader: TmodParams;
+    FRequestHeader: TmnParams;
+    FRespondHeader: TmnParams;
     FRequestStream: TmnBufferStream;
     FRespondStream: TmnBufferStream;
     FContentSize: Int64;
 
     FStates: TmodCommandStates;
     procedure SetModule(const Value: TmodModule); virtual;
-    procedure SetRequestHeader(const Value: TmodParams);
+    procedure SetRequestHeader(const Value: TmnParams);
     function GetActive: Boolean;
   protected
     Request: TmodRequest;
@@ -159,8 +136,8 @@ type
     property Module: TmodModule read FModule write SetModule;
     //Lock the server listener when execute the command
     //Prepare called after created in lucking mode
-    property RequestHeader: TmodParams read FRequestHeader write SetRequestHeader;
-    property RespondHeader: TmodParams read FRespondHeader;
+    property RequestHeader: TmnParams read FRequestHeader write SetRequestHeader;
+    property RespondHeader: TmnParams read FRespondHeader;
     property ContentSize: Int64 read FContentSize write FContentSize; //todo
     property RaiseExceptions: Boolean read FRaiseExceptions write FRaiseExceptions default False;
     property States: TmodCommandStates read FStates;
@@ -212,7 +189,7 @@ type
 
     function CreateCommand(CommandName: string; ARequest: TmodRequest; ARequestStream: TmnBufferStream = nil; ARespondStream: TmnBufferStream = nil): TmodCommand; overload;
 
-    procedure ParseHeader(RequestHeader: TmodParams; Stream: TmnBufferStream); virtual;
+    procedure ParseHeader(RequestHeader: TmnParams; Stream: TmnBufferStream); virtual;
     procedure ParseRequest(var ARequest: TmodRequest; ACommand: TmodCommand = nil); virtual;
     function Match(var ARequest: TmodRequest): Boolean; virtual;
     procedure Log(S: string); virtual;
@@ -301,34 +278,15 @@ type
     property Modules: TmodModules read FModules;
   end;
 
-function ParseURI(Request: string; out URIPath: UTF8String; URIParams: TmodParams): Boolean;
-procedure ParsePath(aRequest: string; out Name: string; out URIPath: UTF8String; URIParams: TmodParams);
+function ParseURI(Request: string; out URIPath: UTF8String; URIParams: TmnParams): Boolean;
+procedure ParsePath(aRequest: string; out Name: string; out URIPath: UTF8String; URIParams: TmnParams);
 
 implementation
 
 uses
   mnUtils;
 
-procedure ParamsCallBack(Sender: Pointer; Index:Integer; S: string; var Resume: Boolean);
-var
-  Name, Value: string;
-  p: Integer;
-begin
-  p := pos('=', s);
-  if p >= 0 then
-  begin
-    Name := Copy(s, 1, p - 1);
-    Value := DequoteStr(Copy(s, p + 1, MaxInt));
-  end
-  else
-  begin
-    Name := S;
-    Value := '';
-  end;
-  (TObject(Sender) as TmodParams).Add(Name, Value);
-end;
-
-function ParseURI(Request: string; out URIPath: UTF8String; URIParams: TmodParams): Boolean;
+function ParseURI(Request: string; out URIPath: UTF8String; URIParams: TmnParams): Boolean;
 var
   I, J: Integer;
   aParams: string;
@@ -368,7 +326,7 @@ begin
   end;
 end;
 
-procedure ParsePath(aRequest: string; out Name: string; out URIPath: UTF8String; URIParams: TmodParams);
+procedure ParsePath(aRequest: string; out Name: string; out URIPath: UTF8String; URIParams: TmnParams);
 begin
   ParseURI(aRequest, URIPath, URIParams);
   Name := SubStr(URIPath, '/', 0);
@@ -493,8 +451,8 @@ begin
   FRequestStream := RequestStream; //do not free
   FRespondStream := FRespondStream; //do not free
 
-  FRequestHeader := TmodParams.Create;
-  FRespondHeader := TmodParams.Create;
+  FRequestHeader := TmnParams.Create;
+  FRespondHeader := TmnParams.Create;
 end;
 
 destructor TmodCommand.Destroy;
@@ -583,7 +541,7 @@ begin
   FModule := Value;
 end;
 
-procedure TmodCommand.SetRequestHeader(const Value: TmodParams);
+procedure TmodCommand.SetRequestHeader(const Value: TmnParams);
 begin
   if FRequestHeader <> Value then
   begin
@@ -637,7 +595,7 @@ begin
     Result := DefaultCommand;
 end;
 
-procedure TmodModule.ParseHeader(RequestHeader: TmodParams; Stream: TmnBufferStream);
+procedure TmodModule.ParseHeader(RequestHeader: TmnParams; Stream: TmnBufferStream);
 var
   line: string;
 begin
@@ -831,104 +789,6 @@ begin
     end;
     ARequest := SaveRequest;
   end;
-end;
-
-{ TmodParams }
-
-function TmodParams.GetAsString: string;
-var
-  item: TmnField;
-begin
-  Result := '';
-  for item in Self do
-  begin
-    if Result <> '' then
-      Result := Result + Delimiter;
-    Result := Result + Item.Name + Seperator + ' ' + Item.AsString;
-  end;
-end;
-
-function TmodParams.GetItem(Index: Integer): TmnField;
-begin
-  Result := (inherited GetItem(Index)) as TmnField;
-end;
-
-procedure TmodParams.LoadFromStream(Stream: TStream);
-var
-  Strings: TStringList;
-  Line: string;
-begin
-  Strings := TStringList.Create;
-  try
-    Strings.LoadFromStream(Stream);
-    Clear;
-    for line in Strings do
-    begin
-      AddItem(Line, Strings.NameValueSeparator, True);
-    end;
-  finally
-    Strings.Free;
-  end;
-end;
-
-procedure TmodParams.SaveToStream(Stream: TStream);
-var
-  Strings: TStringList;
-  i: Integer;
-begin
-  Strings := TStringList.Create;
-  try
-    for i := 0 to Count - 1 do
-      Strings.Add(Self.Items[i].GetFullString);
-    Strings.SaveToStream(Stream);
-  finally
-    Strings.Free;
-  end;
-end;
-
-procedure TmodParams.SetAsString(const Value: string);
-begin
-  StrToStringsCallback(Value, Self, @ParamsCallBack, [Self.Delimiter], [' ']);
-end;
-
-constructor TmodParams.Create;
-begin
-  inherited Create;
-  Seperator := '=';
-  Delimiter := #13;
-end;
-
-function TmodParams.ReadInteger(Name: string; Def: Integer): Integer;
-var
-  Field: TmnField;
-begin
-  Field := FindField(Name);
-  if Field <> nil then
-    Result := Field.AsInteger
-  else
-    Result := Def;
-end;
-
-function TmodParams.ReadString(Name: string; Def: String): String;
-var
-  Field: TmnField;
-begin
-  Field := FindField(Name);
-  if Field <> nil then
-    Result := Field.AsString
-  else
-    Result := Def;
-end;
-
-function TmodParams.ReadBoolean(Name: string; Def: Boolean): Boolean;
-var
-  Field: TmnField;
-begin
-  Field := FindField(Name);
-  if Field <> nil then
-    Result := Field.AsBoolean
-  else
-    Result := Def;
 end;
 
 end.
