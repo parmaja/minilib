@@ -218,7 +218,7 @@ end;
 procedure TmnCommand.Shutdown;
 begin
   if Connected and (Connection.Stream <> nil) then
-    Connection.Stream.Drop;
+    Connection.Stream.Close;
 end;
 
 class function TmnCommand.GetCommandName: string;
