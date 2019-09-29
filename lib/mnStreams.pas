@@ -196,7 +196,7 @@ type
 
     property Done: TmnStreamClose read FDone;
     property EOF: Boolean read GetEndOfStream; {$ifdef FPC} deprecated; {$endif} //alias of Done
-    property EndOfStream: Boolean read GetEndOfStream; {$ifdef FPC} deprecated; {$endif}
+    property EndOfStream: Boolean read GetEndOfStream;
 
     property EndOfLine: string read FEndOfLine write FEndOfLine;
     //if read zero length, close it, or that mean we have timeout system

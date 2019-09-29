@@ -17,10 +17,10 @@ interface
 uses
   Classes, SysUtils, StrUtils, DateUtils, Types,
   {$ifdef FPC}
-  Contnrs
+  Contnrs;
   {$else}
-  System.Generics.Collections
-  {$endif};
+  System.Generics.Collections;
+  {$endif}
 
 type
 
@@ -50,12 +50,23 @@ type
     function _AddRef: Integer; {$ifdef WINDOWS}stdcall{$else}cdecl{$endif};
     function _Release: Integer; {$ifdef WINDOWS}stdcall{$else}cdecl{$endif};
 
+    {$ifdef FPC}
+    procedure Notify(Ptr: Pointer; Action: TListNotification); override;
+    {$else}
+    procedure Notify(const Value: _Object_; Action: TCollectionNotification); override;
+    {$endif}
+    //override this function of u want to check the item or create it before returning it
+    function Require(Index: Integer): _Object_; virtual;
+
+    {$H-}procedure Removing(Item: _Object_); virtual;{$H+}
     {$H-}procedure Added(Item: _Object_); virtual;{$H+}
+
     procedure Created; virtual;
   public
     function QueryInterface({$ifdef FPC}constref{$else}const{$endif} iid : TGuid; out Obj):HResult; {$ifdef WINDOWS}stdcall{$else}cdecl{$endif};
     procedure AfterConstruction; override;
     function Add(Item: _Object_): Integer;
+    procedure Insert(Index: Integer; Item: _Object_);
     function Extract(Item: _Object_): _Object_;
 
     property Items[Index: Integer]: _Object_ read GetItem write SetItem; default;
@@ -88,7 +99,7 @@ implementation
 
 function TmnObjectList<_Object_>.GetItem(Index: Integer): _Object_;
 begin
-  Result := _Object_(inherited Items[Index]);
+  Result := Require(Index);
 end;
 
 procedure TmnObjectList<_Object_>.SetItem(Index: Integer; AObject: _Object_);
@@ -101,17 +112,48 @@ begin
   Result := _Object_(inherited Last);
 end;
 
-function TmnObjectList<_Object_>._AddRef: Integer;
+{$ifdef FPC}
+procedure TmnObjectList<_Object_>.Notify(Ptr: Pointer; Action: TListNotification);
+begin
+  if (Action in [lnExtracted, lnDeleted]) then
+    Removing(_Object_(Ptr));
+  inherited;
+  if (Action = lnAdded) then
+    Added(_Object_(Ptr));
+end;
+
+function TmnObjectList<_Object_>.Require(Index: Integer): _Object_;
+begin
+  Result := _Object_(inherited Items[Index]);
+end;
+
+{$else}
+procedure TmnObjectList<_Object_>.Notify(const Value: _Object_; Action: TCollectionNotification);
+begin
+  if (Action in [cnExtracted, cnRemoved]) then
+    Removing(Value);
+  inherited;
+  if (Action = cnAdded) then
+    Added(Value);
+end;
+{$endif}
+
+function TmnObjectList<_Object_>._AddRef: Integer; {$ifdef WINDOWS}stdcall{$else}cdecl{$endif};
 begin
   Result := 0;
 end;
 
-function TmnObjectList<_Object_>._Release: Integer;
+function TmnObjectList<_Object_>._Release: Integer; {$ifdef WINDOWS}stdcall{$else}cdecl{$endif};
 begin
   Result := 0;
 end;
 
-function TmnObjectList<_Object_>.QueryInterface({$ifdef FPC}constref{$else}const{$endif} iid : TGuid; out Obj):HResult;
+procedure TmnObjectList<_Object_>.Removing(Item: _Object_);
+begin
+
+end;
+
+function TmnObjectList<_Object_>.QueryInterface({$ifdef FPC}constref{$else}const{$endif} iid : TGuid; out Obj): HResult; {$ifdef WINDOWS}stdcall{$else}cdecl{$endif};
 begin
   if GetInterface(IID, Obj) then
     Result := 0
@@ -126,7 +168,11 @@ end;
 function TmnObjectList<_Object_>.Add(Item: _Object_): Integer;
 begin
   Result := inherited Add(Item);
-  Added(Item);
+end;
+
+procedure TmnObjectList<_Object_>.Insert(Index: Integer; Item: _Object_);
+begin
+  inherited Insert(Index, Item);
 end;
 
 function TmnObjectList<_Object_>.Extract(Item: _Object_): _Object_;
