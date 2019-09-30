@@ -52,11 +52,11 @@ type
 
     {$ifdef FPC}
     procedure Notify(Ptr: Pointer; Action: TListNotification); override;
+    function Require(Index: Integer): _Object_; virtual;
     {$else}
     procedure Notify(const Value: _Object_; Action: TCollectionNotification); override;
     {$endif}
     //override this function of u want to check the item or create it before returning it
-    function Require(Index: Integer): _Object_; virtual;
 
     {$H-}procedure Removing(Item: _Object_); virtual;{$H+}
     {$H-}procedure Added(Item: _Object_); virtual;{$H+}
@@ -99,7 +99,11 @@ implementation
 
 function TmnObjectList<_Object_>.GetItem(Index: Integer): _Object_;
 begin
+  {$ifdef FPC}
   Result := Require(Index);
+  {$else}
+  Result := _Object_(inherited Items[Index]);
+  {$endif}
 end;
 
 procedure TmnObjectList<_Object_>.SetItem(Index: Integer; AObject: _Object_);
