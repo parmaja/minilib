@@ -126,11 +126,6 @@ begin
     Added(_Object_(Ptr));
 end;
 
-function TmnObjectList<_Object_>.Require(Index: Integer): _Object_;
-begin
-  Result := _Object_(inherited Items[Index]);
-end;
-
 {$else}
 procedure TmnObjectList<_Object_>.Notify(const Value: _Object_; Action: TCollectionNotification);
 begin
@@ -141,6 +136,11 @@ begin
     Added(Value);
 end;
 {$endif}
+
+function TmnObjectList<_Object_>.Require(Index: Integer): _Object_;
+begin
+  Result := _Object_(inherited Items[Index]);
+end;
 
 function TmnObjectList<_Object_>._AddRef: Integer; {$ifdef WINDOWS}stdcall{$else}cdecl{$endif};
 begin
