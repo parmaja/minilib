@@ -278,6 +278,11 @@ type
     property Modules: TmodModules read FModules;
   end;
 
+  TmnFieldHelper = class helper for TmnField
+  public
+    function Have(AValue: string; vSeperator: string = ';'): Boolean;
+  end;
+
 function ParseURI(Request: string; out URIPath: UTF8String; URIParams: TmnParams): Boolean;
 procedure ParsePath(aRequest: string; out Name: string; out URIPath: UTF8String; URIParams: TmnParams);
 
@@ -788,6 +793,26 @@ begin
       break;
     end;
     ARequest := SaveRequest;
+  end;
+end;
+
+{ TmnFieldHelper }
+
+function TmnFieldHelper.Have(AValue: string; vSeperator: string): Boolean;
+var
+  SubValues : TStringList;
+begin
+  if Self = nil then
+    Result := false
+  else
+  begin
+    SubValues := TStringList.Create;
+    try
+      StrToStrings(AsString, SubValues, [';'], []);
+      Result := SubValues.IndexOf(AValue) >=0;
+    finally
+      SubValues.Free;
+    end;
   end;
 end;
 

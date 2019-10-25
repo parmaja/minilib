@@ -71,6 +71,7 @@ type
     FKeepAlive: Boolean;
     FURIParams: TmnParams;
     FCompressIt: Boolean;
+    FContentLength: Integer;
   protected
     procedure Created; override;
     procedure Prepare(var Result: TmodExecuteResults); override;
@@ -84,6 +85,7 @@ type
     property KeepAlive: Boolean read FKeepAlive write FKeepAlive;
     //Compress on the fly, now we use deflate
     property CompressIt: Boolean read FCompressIt write FCompressIt;
+    property ContentLength: Integer read FContentLength write FContentLength;
   end;
 
   { TmodURICommand }
@@ -168,6 +170,8 @@ type
   { TmodHttpPostCommand }
 
   TmodHttpPostCommand = class(TmodHttpGetCommand)
+  protected
+    Contents: TMemoryStream;
   public
     procedure Respond(var Result: TmodExecuteResults); override;
   end;
@@ -344,6 +348,14 @@ end;
 
 procedure TmodHttpPostCommand.Respond(var Result: TmodExecuteResults);
 begin
+  if SameText(Request.Method, 'POST') and (RequestHeader['Content-Type'].Have('application/json')) then
+  begin
+    Contents := TMemoryStream.Create;
+    if RequestStream <> nil then
+      RequestStream.ReadStream(Contents, ContentLength);
+    Contents.Position := 0; //it is memory btw
+    //Contents.SaveToFile('d:\temp\json.json');
+  end;
   inherited;
 end;
 
@@ -376,7 +388,7 @@ procedure TmodWebModule.CreateCommands;
 begin
   inherited;
   RegisterCommand('GET', TmodHttpGetCommand, true);
-  RegisterCommand('POST', TmodHttpGetCommand, true);
+  RegisterCommand('POST', TmodHttpPostCommand, true);
   RegisterCommand('Info', TmodServerInfoCommand);
   {
   RegisterCommand('GET', TmodHttpGetCommand);
@@ -562,7 +574,7 @@ begin
   aFileName := URIParams.Values['FileName'];
   aFile := TFileStream.Create(Root + aFileName, fmCreate);
   try
-    RespondStream.ReadStream(aFile);
+    RespondStream.ReadStream(aFile, ContentLength);
   finally
     aFile.Free;
   end;
@@ -574,12 +586,13 @@ procedure TmodDirCommand.Respond(var Result: TmodExecuteResults);
 var
   i: Integer;
   aStrings: TStringList;
-  aPath, aFilter: string;
+  //aPath: string;
+  aFilter: string;
 begin
   inherited;
   RespondStream.WriteCommand('OK');
   aFilter := URIParams.Values['Filter'];
-  aPath := IncludeTrailingPathDelimiter(Root);
+  //aPath := IncludeTrailingPathDelimiter(Root);
   if aFilter = '' then
     aFilter := '*.*';
    aStrings := TStringList.Create;
@@ -668,6 +681,8 @@ begin
 //  Accept-Encoding: gzip, deflate, br}
     PostHeader('Content-Encoding', 'deflate');
   end;
+  if (RequestHeader['Content-Length'].IsExists) then
+    ContentLength := RequestHeader['Content-Length'].AsInteger;
 end;
 
 procedure TmodHttpCommand.Unprepare(var Result: TmodExecuteResults);

@@ -121,7 +121,6 @@ begin
   if (Action = lnAdded) then
     Added(_Object_(Ptr));
 end;
-
 {$else}
 procedure TmnObjectList<_Object_>.Notify(const Value: _Object_; Action: TCollectionNotification);
 begin
