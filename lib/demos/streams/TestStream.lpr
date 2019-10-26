@@ -145,7 +145,9 @@ begin
   HexProxy := TmnStreamHexProxy.Create;
   Stream.AddProxy(HexProxy);
   try
-    Stream.WriteString('0123456789');
+    Stream.WriteLineUTF8('0123456789');
+    Stream.WriteLineUTF8('0123456789');
+    Stream.WriteLineUTF8('0123456789');
   finally
     FreeAndNil(Stream);
   end;
@@ -155,8 +157,11 @@ begin
   HexProxy := TmnStreamHexProxy.Create;
   Stream.AddProxy(HexProxy);
   try
-    S := Stream.ReadString(10);
-    WriteLn('"' + S + '"');
+    while not Stream.EndOfStream do
+    begin
+      S := Stream.ReadString(10);
+      WriteLn('"' + Trim(S) + '"');
+    end;
   finally
     FreeAndNil(Stream);
   end;

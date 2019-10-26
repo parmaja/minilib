@@ -1097,7 +1097,7 @@ function TmnStreamHexProxy.HexEncode(const Buffer; Count: Longint; out ResultCou
     if c < 10 then
       Result := ord('0') + c
     else
-      Result := ord('A') + c;
+      Result := ord('A') + c - 10;
   end;
 var
   BufSize: Integer;
