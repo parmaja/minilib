@@ -33,7 +33,7 @@ type
 
   { TmnClientSocketStream }
 
-  TmnClientSocketStream = class(TmnSocketStream)
+  TmnClientSocket = class(TmnSocketStream)
   private
     FAddress: string;
     FPort: string;
@@ -46,6 +46,8 @@ type
     property Port: string read FPort write SetPort;
     property Address: string read FAddress write SetAddress;
   end;
+
+  TmnClientSocketStream = TmnClientSocket deprecated;
 
   { TmnClientConnection }
 
@@ -245,14 +247,14 @@ begin
   Result.Start;
 end;
 
-{ TmnClientSocketStream }
+{ TmnClientSocket }
 
-function TmnClientSocketStream.CreateSocket: TmnCustomSocket;
+function TmnClientSocket.CreateSocket: TmnCustomSocket;
 begin
   Result := WallSocket.Connect(Options, Timeout, Port, Address)
 end;
 
-constructor TmnClientSocketStream.Create(const vAddress, vPort: string; vOptions: TmnsoOptions);
+constructor TmnClientSocket.Create(const vAddress, vPort: string; vOptions: TmnsoOptions);
 begin
   inherited Create;
   FAddress := vAddress;
@@ -260,7 +262,7 @@ begin
   Options := vOptions;
 end;
 
-procedure TmnClientSocketStream.SetAddress(const Value: string);
+procedure TmnClientSocket.SetAddress(const Value: string);
 begin
   if FAddress = Value then Exit;
   if Connected then
@@ -268,7 +270,7 @@ begin
   FAddress := Value;
 end;
 
-procedure TmnClientSocketStream.SetPort(const Value: string);
+procedure TmnClientSocket.SetPort(const Value: string);
 begin
   if FPort =Value then Exit;
   if Connected then

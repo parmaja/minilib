@@ -30,7 +30,7 @@ interface
 
 uses
   Classes, StrUtils, syncobjs,
-  mnClasses, mnSockets, mnSocketStreams, mnClients, mnStreams, mnConnections, mnUtils;
+  mnClasses, mnSockets, mnClients, mnStreams, mnConnections, mnUtils;
 
 const
   cTokenSeparator = ' ';    { Separates tokens, except for the following case. }

@@ -35,7 +35,6 @@ requires
 
 contains
   mnSockets in '..\source\mnSockets.pas',
-  mnSocketStreams in '..\source\mnSocketStreams.pas',
   mnPosixSockets in '..\source\mnPosixSockets.pas',
   mnServers in '..\source\mnServers.pas',
   mnConnections in '..\source\mnConnections.pas',

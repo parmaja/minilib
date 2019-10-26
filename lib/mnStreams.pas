@@ -245,6 +245,27 @@ type
     property Timeout: Integer read FTimeout write FTimeout;
   end;
 
+
+  { TmnStreamHexProxy }
+
+  TmnStreamHexProxy = class(TmnStreamOverProxy)
+  private
+  protected
+    type
+      TmnMethodProxyEncode = (
+        mpeEncode,
+        mpeDecode
+      );
+  protected
+    function HexDecode(var Buffer; Count: Longint; out ResultCount, RealCount: longint): Boolean;
+    function HexEncode(const Buffer; Count: Longint; out ResultCount, RealCount: longint): Boolean;
+  public
+
+    Method: TmnMethodProxyEncode;
+    function Read(var Buffer; Count: Longint; out ResultCount, RealCount: longint): Boolean; override;
+    function Write(const Buffer; Count: Longint; out ResultCount, RealCount: longint): Boolean; override;
+  end;
+
 const
   ReadWriteBufferSize = 1024;
 
@@ -1066,6 +1087,103 @@ begin
   if FStreamOwned then
       FStream.Free;
   inherited;
+end;
+
+{ TmnStreamHexProxy }
+
+function TmnStreamHexProxy.HexEncode(const Buffer; Count: Longint; out ResultCount, RealCount: longint): Boolean;
+  function DigiToChar(c: Byte):Byte; inline;
+  begin
+    if c < 10 then
+      Result := ord('0') + c
+    else
+      Result := ord('A') + c;
+  end;
+var
+  BufSize: Integer;
+  Buf: PByteArray;
+  b, c: Byte;
+  i, p: Integer;
+begin
+  Result := True;
+  BufSize := Count * 2;
+  GetMem(Buf, BufSize);
+  try
+    p := 0;
+    for i := 0 to Count -1 do
+    begin
+      b := PByteArray(@Buffer)^[i];
+
+      c := (b shr 4) and $F;
+      Buf^[p] := DigiToChar(c);
+      inc(p);
+
+      c := b and $F;
+      Buf^[p] := DigiToChar(c);
+      inc(p);
+
+    end;
+    Over.Write(Buf^, BufSize, ResultCount, RealCount);
+  finally
+    FreeMem(Buf);
+  end;
+end;
+
+function TmnStreamHexProxy.HexDecode(var Buffer; Count: Longint; out ResultCount, RealCount: longint): Boolean;
+
+  function CharToDigi(c: Byte):Byte; inline;
+  begin
+    if (c >= ord('a')) and (c <= ord('f')) then
+      Result := c - ord('a') + 10
+    else if (c >= ord('A')) and (c <= ord('f')) then
+      Result := c - ord('A') + 10
+    else if c >= ord('0') then
+      Result := c - ord('0')
+    else
+      Result := 0; //wrong char
+  end;
+
+var
+  BufSize, ReadSize: Integer;
+  Buf: PByteArray;
+  b, c: Byte;
+  i, p: Integer;
+begin
+  Result := True;
+  BufSize := Count * 2;
+  GetMem(Buf, BufSize);
+  Over.Read(Buf^, BufSize, BufSize, RealCount);
+  ResultCount := BufSize div 2;
+  try
+    p := 0;
+    for i := 0 to ResultCount -1 do
+    begin
+
+      c := Buf^[p];
+      b := (CharToDigi(c) shl 4);
+      inc(p);
+
+      c := Buf^[p];
+      b := b or CharToDigi(c);
+      inc(p);
+
+      PByteArray(@Buffer)^[i] := b;
+    end;
+  finally
+    FreeMem(Buf);
+  end;
+end;
+
+function TmnStreamHexProxy.Read(var Buffer; Count: Longint; out ResultCount, RealCount: longint): Boolean;
+begin
+  HexDecode(Buffer, Count, ResultCount, RealCount);
+  Result := True;
+end;
+
+function TmnStreamHexProxy.Write(const Buffer; Count: Longint; out ResultCount, RealCount: longint): Boolean;
+begin
+  HexEncode(Buffer, Count, ResultCount, RealCount);
+  Result := True;
 end;
 
 end.

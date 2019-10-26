@@ -40,7 +40,7 @@ interface
 
 uses
   SysUtils, Classes, syncobjs,
-  mnFields, mnConfigs, mnUtils, mnSockets, mnSocketStreams, mnServers, mnStreams, zlib, {$ifdef FPC}zstream,{$endif}
+  mnFields, mnConfigs, mnUtils, mnSockets, mnServers, mnStreams, zlib, {$ifdef FPC}zstream,{$endif}
   mnModules;
 
 type

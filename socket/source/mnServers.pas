@@ -29,11 +29,11 @@ type
 
   { TmnServerSocketStream }
 {
-  This Class is for begginer to play simple example of socket server, it accept one connection only
+  This Class is for beginner to play simple example of socket server, it accept one connection only
   If you want multiple connection, use TmnServer
 }
 
-  TmnServerSocketStream = class(TmnSocketStream)
+  TmnServerSocket = class(TmnSocketStream)
   private
     FAddress: string;
     FPort: string;
@@ -197,9 +197,9 @@ type
 
 implementation
 
-{ TmnServerSocketStream }
+{ TmnServerSocket }
 
-procedure TmnServerSocketStream.SetAddress(Value: string);
+procedure TmnServerSocket.SetAddress(Value: string);
 begin
   if FAddress = Value then Exit;
   if Connected then
@@ -207,7 +207,7 @@ begin
   FAddress := Value;
 end;
 
-procedure TmnServerSocketStream.SetPort(Value: string);
+procedure TmnServerSocket.SetPort(Value: string);
 begin
   if FPort =Value then Exit;
   if Connected then
@@ -215,13 +215,13 @@ begin
   FPort := Value;
 end;
 
-procedure TmnServerSocketStream.FreeSocket;
+procedure TmnServerSocket.FreeSocket;
 begin
   inherited FreeSocket;
   FreeAndNil(FListenerSocket);
 end;
 
-function TmnServerSocketStream.CreateSocket: TmnCustomSocket;
+function TmnServerSocket.CreateSocket: TmnCustomSocket;
 begin
   FListenerSocket := WallSocket.Bind(Options, Port, Address);
   if FListenerSocket <> nil then
@@ -235,7 +235,7 @@ begin
     Result := nil;
 end;
 
-constructor TmnServerSocketStream.Create(const vAddress, vPort: string; vOptions: TmnsoOptions);
+constructor TmnServerSocket.Create(const vAddress, vPort: string; vOptions: TmnsoOptions);
 begin
   inherited Create;
   FAddress := vAddress;

@@ -188,7 +188,9 @@ begin
   else if sdReceive in How then
     iHow := SD_RECEIVE
   else if sdSend in How then
-    iHow := SD_SEND;
+    iHow := SD_SEND
+  else
+    iHow := 0;
 
   CheckActive;
 {$IFDEF FPC}

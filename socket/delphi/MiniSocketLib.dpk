@@ -35,15 +35,14 @@ requires
   MiniCommonsLib;
 
 contains
-  mnWinSockets in '..\source\mnWinSockets.pas',
   mnSockets in '..\source\mnSockets.pas',
-  mnSocketStreams in '..\source\mnSocketStreams.pas',
   mnServers in '..\source\mnServers.pas',
   mnCommands in '..\source\mnCommands.pas',
   mnConnections in '..\source\mnConnections.pas',
   mnModules in '..\source\mnModules.pas',
   mnHttpClient in '..\source\mnHttpClient.pas',
   mnIRCClients in '..\source\mnIRCClients.pas',
+  mnWinSockets in '..\source\mnWinSockets.pas',
   mnClients in '..\source\mnClients.pas';
 
 end.

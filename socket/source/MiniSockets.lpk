@@ -45,10 +45,6 @@
         <Filename Value="mnSockets.pas"/>
         <UnitName Value="mnSockets"/>
       </Item5>
-      <Item6>
-        <Filename Value="mnSocketStreams.pas"/>
-        <UnitName Value="mnSocketStreams"/>
-      </Item6>
       <Item7>
         <Filename Value="mnIRCClients.pas"/>
         <UnitName Value="mnIRCClients"/>

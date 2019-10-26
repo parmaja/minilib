@@ -6,7 +6,8 @@ uses
   {$IFDEF UNIX}
   cthreads,
   {$ENDIF}
-  Classes, SysUtils, CustApp, hexcipher,
+  Classes, SysUtils, CustApp,
+  hexcipher,
   mnStreams, mnSockets, mnClients, mnServers;
 
 type
@@ -26,13 +27,15 @@ type
   protected
     procedure Execute; override;
   public
-
   end;
 
   { TTestStream }
 
   TTestStream = class(TCustomApplication)
   protected
+    procedure Example1;
+    procedure Example2;
+    procedure Example3;
     procedure DoRun; override;
   public
     constructor Create(TheOwner: TComponent); override;
@@ -43,18 +46,18 @@ type
 
 procedure TThreadReciever.Execute;
 var
-  Stream: TmnServerSocketStream;
+  Stream: TmnServerSocket;
   s: string;
 begin
   WriteLn('Server started');
-  Stream := TmnServerSocketStream.Create('localhost', '82');
+  Stream := TmnServerSocket.Create('localhost', '82');
   Stream.Connect;
   try
     while true do
     begin
       s := Trim(Stream.ReadLine);
       WriteLn(s);
-      if (s = '') or not Stream.Connected then
+      if not Stream.Connected then
         break;
     end;
     Stream.Disconnect;
@@ -67,11 +70,11 @@ end;
 
 procedure TThreadSender.Execute;
 var
-  Stream: TmnClientSocketStream;
+  Stream: TmnClientSocket;
   S: string;
   i: Integer;
 begin
-  Stream := TmnClientSocketStream.Create('localhost', '82');
+  Stream := TmnClientSocket.Create('localhost', '82');
   try
     Stream.Connect;
     if Stream.Connected then
@@ -90,22 +93,11 @@ end;
 
 { TTestStream }
 
-procedure TTestStream.DoRun;
+procedure TTestStream.Example1;
 var
   Stream: TmnBufferStream;
-  Reciever: TThreadReciever;
-  Sender: TThreadSender;
   s: string;
 begin
-  Reciever := TThreadReciever.Create(True);
-  Reciever.Start;
-  Sleep(1000);
-
-  Sender := TThreadSender.Create(True);
-  Sender.Start;
-  Reciever.WaitFor;
-  Sender.WaitFor;
-
   Stream := TmnWrapperStream.Create(TFileStream.Create(Location + 'test.txt', fmOpenRead));
   try
     Stream.BufferSize := 5;
@@ -126,9 +118,48 @@ begin
   finally
     FreeAndNil(Stream);
   end;
-  Write('Press Enter to Exit');
-  ReadLn();
-  Terminate;
+end;
+
+procedure TTestStream.Example2;
+var
+  Reciever: TThreadReciever;
+  Sender: TThreadSender;
+begin
+  Reciever := TThreadReciever.Create(True);
+  Reciever.Start;
+  Sleep(1000);
+
+  Sender := TThreadSender.Create(True);
+  Sender.Start;
+  Sender.WaitFor;
+  Reciever.WaitFor;
+end;
+
+procedure TTestStream.Example3;
+var
+  Stream: TmnBufferStream;
+  HexProxy: TmnStreamHexProxy;
+  S: string;
+begin
+  Stream := TmnWrapperStream.Create(TFileStream.Create(Location + 'test_hex.txt', fmCreate or fmOpenWrite));
+  HexProxy := TmnStreamHexProxy.Create;
+  Stream.AddProxy(HexProxy);
+  try
+    Stream.WriteString('0123456789');
+  finally
+    FreeAndNil(Stream);
+  end;
+
+
+  Stream := TmnWrapperStream.Create(TFileStream.Create(Location + 'test_hex.txt', fmOpenRead));
+  HexProxy := TmnStreamHexProxy.Create;
+  Stream.AddProxy(HexProxy);
+  try
+    S := Stream.ReadString(10);
+    WriteLn('"' + S + '"');
+  finally
+    FreeAndNil(Stream);
+  end;
 end;
 
 constructor TTestStream.Create(TheOwner: TComponent);
@@ -140,6 +171,17 @@ end;
 destructor TTestStream.Destroy;
 begin
   inherited Destroy;
+end;
+
+procedure TTestStream.DoRun;
+begin
+  try
+    Example3;
+  finally
+    Write('Press Enter to Exit');
+    ReadLn();
+    Terminate;
+  end;
 end;
 
 var
