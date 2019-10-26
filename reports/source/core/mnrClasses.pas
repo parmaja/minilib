@@ -219,6 +219,15 @@ type
     function GetNumber: Integer; virtual;
     function GetLayouts: TmnrLayouts;
 
+    function GetAsBoolean: Boolean; override;
+    function GetAsCurrency: Currency; override;
+    function GetAsDateTime: TDateTime; override;
+    function GetAsDouble: Double; override;
+    function GetAsInteger: Longint; override;
+    function GetAsString: string; override;
+    function GetAsVariant: Variant; override;
+    function GetAsData: Integer; override;
+
   public
 
     function DisplayText: string; override;
@@ -245,7 +254,6 @@ type
     function CreateDesignCell(vRow: TmnrDesignRow; InitIt: Boolean = False): TmnrDesignCell;
     property Layouts: TmnrLayouts read GetLayouts;
     property Report: TmnrCustomReport read GetReport;
-
   end;
 
   TmnrLayouts = class(TmnrLinkNodes)
@@ -2311,6 +2319,102 @@ begin
     FOnRequest(vCell);
 end;
 
+function TmnrLayout.GetAsBoolean: Boolean;
+var
+  aCell: TmnrCell;
+begin
+  aCell := NewCell(nil, nil);
+  try
+    Result := aCell.AsBoolean;
+  finally
+    aCell.Free;
+  end;
+end;
+
+function TmnrLayout.GetAsCurrency: Currency;
+var
+  aCell: TmnrCell;
+begin
+  aCell := NewCell(nil, nil);
+  try
+    Result := aCell.AsCurrency;
+  finally
+    aCell.Free;
+  end;
+end;
+
+function TmnrLayout.GetAsDateTime: TDateTime;
+var
+  aCell: TmnrCell;
+begin
+  aCell := NewCell(nil, nil);
+  try
+    Result := aCell.AsDateTime;
+  finally
+    aCell.Free;
+  end;
+end;
+
+function TmnrLayout.GetAsDouble: Double;
+var
+  aCell: TmnrCell;
+begin
+  aCell := NewCell(nil, nil);
+  try
+    Result := aCell.AsDouble;
+  finally
+    aCell.Free;
+  end;
+end;
+
+function TmnrLayout.GetAsInteger: Longint;
+var
+  aCell: TmnrCell;
+begin
+  aCell := NewCell(nil, nil);
+  try
+    Result := aCell.AsInteger;
+  finally
+    aCell.Free;
+  end;
+end;
+
+function TmnrLayout.GetAsString: string;
+var
+  aCell: TmnrCell;
+begin
+  aCell := NewCell(nil, nil);
+  try
+    Result := aCell.AsString;
+  finally
+    aCell.Free;
+  end;
+end;
+
+function TmnrLayout.GetAsVariant: Variant;
+var
+  aCell: TmnrCell;
+begin
+  aCell := NewCell(nil, nil);
+  try
+    Result := aCell.AsVariant;
+  finally
+    aCell.Free;
+  end;
+end;
+
+function TmnrLayout.GetAsData: Integer;
+var
+  aCell: TmnrCell;
+begin
+  aCell := NewCell(nil, nil);
+  try
+    Result := aCell.AsData;
+  finally
+    aCell.Free;
+  end;
+end;
+
 function TmnrLayout.GetDataName: string;
 begin
   Result := FDataName;
@@ -2386,12 +2490,17 @@ begin
       DoRequest(Result);
 {      if (vRow<>nil) and (vDesignCell<>nil) and not vRow.Locked then
         vDesignCell.ScaleCell(Result);} //moved to FillNow
-      Report.DoNewCell(Result);
+
+      if vDesignCell<>nil then //ignore formula and layout get as (string currency .....)
+        Report.DoNewCell(Result);
     except
       on E: Exception do
       begin
         FreeAndNil(Result);
-        raise Exception.CreateFmt('%s'#13'[%s] %s', [vDesignCell.DisplayText, Name, E.Message]);
+        if vDesignCell<>nil then
+          raise Exception.CreateFmt('%s'#13'[%s] %s', [vDesignCell.DisplayText, Name, E.Message])
+        else
+          raise Exception.CreateFmt('[%s] %s', [Name, E.Message]);
       end;
     end;
   end
