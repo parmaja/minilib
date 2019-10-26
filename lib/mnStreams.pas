@@ -42,8 +42,8 @@ type
     function GetConnected: Boolean; virtual; //Socket or COM ports have Connected override
   public
     //Count = 0 , load until eof
-    function ReadString(Count: TFileSize = 0): RawByteString;
-    function WriteString(const Value: RawByteString): TFileSize;
+    function ReadString(Count: TFileSize = 0): String;
+    function WriteString(const Value: String): TFileSize;
     function ReadStream(AStream: TStream; Count: TFileSize = 0): TFileSize;
     function WriteStream(AStream: TStream; Count: TFileSize = 0): TFileSize;
     property Connected: Boolean read GetConnected;
@@ -453,7 +453,7 @@ end;
 
 { TmnBufferStream }
 
-function TmnCustomStream.WriteString(const Value: RawByteString): TFileSize;
+function TmnCustomStream.WriteString(const Value: String): TFileSize;
 begin
   Result := Write(Pointer(Value)^, ByteLength(Value));
 end;
@@ -463,7 +463,7 @@ begin
   Result := True;
 end;
 
-function TmnCustomStream.ReadString(Count: TFileSize): RawByteString;
+function TmnCustomStream.ReadString(Count: TFileSize): String;
 var
   aBuffer: PByte;
   S: RawByteString;
@@ -1213,5 +1213,3 @@ begin
 end;
 
 end.
-
-
