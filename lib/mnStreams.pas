@@ -522,7 +522,7 @@ begin
 
         AStream.Write(aBuffer^, c);
       end;
-      if Count = 0 then
+      if (c = 0) and (Count = 0) then
         break;
     end;
   finally

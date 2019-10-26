@@ -36,6 +36,7 @@ type
     procedure Example1;
     procedure Example2;
     procedure Example3;
+    procedure Example4;
     procedure DoRun; override;
   public
     constructor Create(TheOwner: TComponent); override;
@@ -159,11 +160,42 @@ begin
   try
     while not Stream.EndOfStream do
     begin
-      S := Stream.ReadString(10);
+      S := Stream.ReadLine;
       WriteLn('"' + Trim(S) + '"');
     end;
   finally
     FreeAndNil(Stream);
+  end;
+end;
+
+procedure TTestStream.Example4;
+var
+  aImageFile: TFileStream;
+  Stream: TmnBufferStream;
+  HexProxy: TmnStreamHexProxy;
+begin
+  WriteLn('Read image to hex file');
+  aImageFile := TFileStream.Create(Location + 'image.jpg', fmOpenRead);
+  Stream := TmnWrapperStream.Create(TFileStream.Create(Location + 'image_hex.txt', fmCreate or fmOpenWrite));
+  HexProxy := TmnStreamHexProxy.Create;
+  Stream.AddProxy(HexProxy);
+  try
+    Stream.WriteStream(aImageFile);
+  finally
+    FreeAndNil(Stream);
+    FreeAndNil(aImageFile);
+  end;
+
+  WriteLn('Read hex file to image');
+  aImageFile := TFileStream.Create(Location + 'image_copy.jpg', fmCreate or fmOpenWrite);
+  Stream := TmnWrapperStream.Create(TFileStream.Create(Location + 'image_hex.txt', fmOpenRead));
+  HexProxy := TmnStreamHexProxy.Create;
+  Stream.AddProxy(HexProxy);
+  try
+    Stream.ReadStream(aImageFile)
+  finally
+    FreeAndNil(Stream);
+    FreeAndNil(aImageFile);
   end;
 end;
 
@@ -181,7 +213,7 @@ end;
 procedure TTestStream.DoRun;
 begin
   try
-    Example3;
+    Example4;
   finally
     Write('Press Enter to Exit');
     ReadLn();
