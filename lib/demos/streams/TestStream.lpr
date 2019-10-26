@@ -7,7 +7,6 @@ uses
   cthreads,
   {$ENDIF}
   Classes, SysUtils, CustApp,
-  hexcipher,
   mnStreams, mnSockets, mnClients, mnServers;
 
 type
@@ -34,9 +33,10 @@ type
   TTestStream = class(TCustomApplication)
   protected
     procedure Example1;
-    procedure Example2;
-    procedure Example3;
-    procedure Example4;
+    procedure Example2; //Socket threads
+    procedure Example3; //Hex lines
+    procedure Example4; //Hex image
+    procedure Example5; //Hex image2 images and read one
     procedure DoRun; override;
   public
     constructor Create(TheOwner: TComponent); override;
@@ -199,6 +199,44 @@ begin
   end;
 end;
 
+procedure TTestStream.Example5;
+var
+  aImageFile: TFileStream;
+  Stream: TmnBufferStream;
+  HexProxy: TmnStreamHexProxy;
+  aSize: Integer;
+begin
+  WriteLn('Read image to hex file');
+  aImageFile := TFileStream.Create(Location + 'image.jpg', fmOpenRead);
+  Stream := TmnWrapperStream.Create(TFileStream.Create(Location + 'image_hex.txt', fmCreate or fmOpenWrite));
+  HexProxy := TmnStreamHexProxy.Create;
+  Stream.AddProxy(HexProxy);
+  try
+    Stream.WriteStream(aImageFile);
+    aSize := aImageFile.Size;
+    aImageFile.Position := 0;
+    Stream.WriteStream(aImageFile);
+  finally
+    FreeAndNil(Stream);
+    FreeAndNil(aImageFile);
+  end;
+
+  WriteLn('Read hex file to image');
+  Stream := TmnWrapperStream.Create(TFileStream.Create(Location + 'image_hex.txt', fmOpenRead));
+  HexProxy := TmnStreamHexProxy.Create;
+  Stream.AddProxy(HexProxy);
+  try
+    aImageFile := TFileStream.Create(Location + 'image_copy1.jpg', fmCreate or fmOpenWrite);
+    Stream.ReadStream(aImageFile, aSize);
+    FreeAndNil(aImageFile);
+    aImageFile := TFileStream.Create(Location + 'image_copy2.jpg', fmCreate or fmOpenWrite);
+    Stream.ReadStream(aImageFile, aSize);
+    FreeAndNil(aImageFile);
+  finally
+    FreeAndNil(Stream);
+  end;
+end;
+
 constructor TTestStream.Create(TheOwner: TComponent);
 begin
   inherited Create(TheOwner);
@@ -213,7 +251,7 @@ end;
 procedure TTestStream.DoRun;
 begin
   try
-    Example4;
+    Example5;
   finally
     Write('Press Enter to Exit');
     ReadLn();
