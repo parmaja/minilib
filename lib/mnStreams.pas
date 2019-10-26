@@ -535,9 +535,10 @@ end;
 function TmnCustomStream.WriteStream(AStream: TStream; Count: TFileSize): TFileSize;
 var
   aBuffer: PByte;
-  l, c: Integer;
+  l, c, Size: Integer;
 begin
   Result := 0;
+  Size := Count;
   {$ifdef FPC} //less hint in fpc
   aBuffer := nil;
   {$endif}
@@ -545,20 +546,20 @@ begin
   try
     while Connected do //todo use Done
     begin
-      if (Count > 0) and (Count < ReadWriteBufferSize) then
-        l := Count
+      if (Count > 0) and (Size < ReadWriteBufferSize) then
+        l := Size
       else
         l := ReadWriteBufferSize;
       c := AStream.Read(aBuffer^, l);
       if c > 0 then
       begin
         if Count > 0 then
-          Count := Count - c;
+          Size := Size - c;
         Result := Result + c;
 
         Write(aBuffer^, c);
       end;
-      if (c = 0) and (Count = 0) then
+      if (c = 0) or ((Count > 0) and (Size = 0)) then
         break;
     end;
   finally
