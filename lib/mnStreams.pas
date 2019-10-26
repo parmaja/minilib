@@ -42,10 +42,12 @@ type
     function GetConnected: Boolean; virtual; //Socket or COM ports have Connected override
   public
     //Count = 0 , load until eof
-    function ReadString(Count: TFileSize = 0): String;
-    function WriteString(const Value: String): TFileSize;
-    function ReadStream(AStream: TStream; Count: TFileSize = 0): TFileSize;
-    function WriteStream(AStream: TStream; Count: TFileSize = 0): TFileSize;
+    function ReadString(Count: TFileSize = 0): String; overload;
+    function WriteString(const Value: String): TFileSize; overload;
+    function ReadStream(AStream: TStream; Count: TFileSize = 0): TFileSize; overload;
+    function WriteStream(AStream: TStream; Count: TFileSize = 0): TFileSize; overload;
+    function ReadStream(AStream: TStream; Count: TFileSize; out RealCount: Integer): TFileSize; overload;
+    function WriteStream(AStream: TStream; Count: TFileSize; out RealCount: Integer): TFileSize; overload;
     property Connected: Boolean read GetConnected;
   end;
 
@@ -500,10 +502,18 @@ end;
 
 function TmnCustomStream.ReadStream(AStream: TStream; Count: TFileSize): TFileSize;
 var
+  RealCount: TFileSize;
+begin
+  Result := ReadStream(AStream, Count, RealCount);
+end;
+
+function TmnCustomStream.ReadStream(AStream: TStream; Count: TFileSize; out RealCount: Integer): TFileSize;
+var
   aBuffer: PByte;
   l, c, Size: Integer;
 begin
   Result := 0;
+  RealCount := 0;
   Size := Count;
   {$ifdef FPC} //less hint in fpc
   aBuffer := nil;
@@ -522,7 +532,7 @@ begin
         if Count > 0 then
           Size := Size - c;
         Result := Result + c;
-        AStream.Write(aBuffer^, c);
+        RealCount := RealCount + AStream.Write(aBuffer^, c);
       end;
       if (c = 0) or ((Count > 0) and (Size = 0)) then
         break;
@@ -534,10 +544,18 @@ end;
 
 function TmnCustomStream.WriteStream(AStream: TStream; Count: TFileSize): TFileSize;
 var
+  RealCount: TFileSize;
+begin
+  Result := WriteStream(AStream, Count, RealCount);
+end;
+
+function TmnCustomStream.WriteStream(AStream: TStream; Count: TFileSize; out RealCount: Integer): TFileSize;
+var
   aBuffer: PByte;
   l, c, Size: Integer;
 begin
   Result := 0;
+  RealCount := 0;
   Size := Count;
   {$ifdef FPC} //less hint in fpc
   aBuffer := nil;
@@ -556,8 +574,7 @@ begin
         if Count > 0 then
           Size := Size - c;
         Result := Result + c;
-
-        Write(aBuffer^, c);
+        RealCount := RealCount + Write(aBuffer^, c);
       end;
       if (c = 0) or ((Count > 0) and (Size = 0)) then
         break;
@@ -1118,12 +1135,13 @@ end;
 { TmnStreamHexProxy }
 
 function TmnStreamHexProxy.HexEncode(const Buffer; Count: Longint; out ResultCount, RealCount: longint): Boolean;
-  function DigiToChar(c: Byte):Byte; inline;
+
+  function DigiToChar(c: Byte): Byte; inline;
   begin
     if c < 10 then
-      Result := ord('0') + c
+      Result := ord(AnsiChar('0')) + c
     else
-      Result := ord('A') + c - 10;
+      Result :=  ord(AnsiChar('A')) + (c - 10);
   end;
 var
   BufSize: Integer;
@@ -1159,12 +1177,12 @@ function TmnStreamHexProxy.HexDecode(var Buffer; Count: Longint; out ResultCount
 
   function CharToDigi(c: Byte):Byte; inline;
   begin
-    if (c >= ord('a')) and (c <= ord('f')) then
-      Result := c - ord('a') + 10
-    else if (c >= ord('A')) and (c <= ord('f')) then
-      Result := c - ord('A') + 10
-    else if c >= ord('0') then
-      Result := c - ord('0')
+    if (c >= ord(AnsiChar('a'))) and (c <= ord(AnsiChar('f'))) then
+      Result := c - ord(AnsiChar('a')) + 10
+    else if (c >= ord(AnsiChar('A'))) and (c <= ord(AnsiChar('f'))) then
+      Result := c - ord(AnsiChar('A')) + 10
+    else if c >= ord(AnsiChar('0')) then
+      Result := c - ord(AnsiChar('0'))
     else
       Result := 0; //wrong char
   end;

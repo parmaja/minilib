@@ -32,7 +32,7 @@ type
 
   TTestStream = class(TCustomApplication)
   protected
-    procedure Example1;
+    procedure Example1; //read write line with small buffer
     procedure Example2; //Socket threads
     procedure Example3; //Hex lines
     procedure Example4; //Hex image
@@ -180,7 +180,7 @@ begin
   HexProxy := TmnStreamHexProxy.Create;
   Stream.AddProxy(HexProxy);
   try
-    Stream.WriteStream(aImageFile);
+    WriteLn('Size write: ' + IntToStr(Stream.WriteStream(aImageFile)));
   finally
     FreeAndNil(Stream);
     FreeAndNil(aImageFile);
@@ -192,7 +192,7 @@ begin
   HexProxy := TmnStreamHexProxy.Create;
   Stream.AddProxy(HexProxy);
   try
-    Stream.ReadStream(aImageFile)
+    WriteLn('Size read: ' + IntToStr(Stream.ReadStream(aImageFile)));
   finally
     FreeAndNil(Stream);
     FreeAndNil(aImageFile);
@@ -251,7 +251,7 @@ end;
 procedure TTestStream.DoRun;
 begin
   try
-    Example5;
+    Example4;
   finally
     Write('Press Enter to Exit');
     ReadLn();
