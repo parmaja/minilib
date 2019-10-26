@@ -53,7 +53,6 @@ type
   protected
     procedure DoConnect; virtual; abstract;
     procedure DoDisconnect; virtual; abstract;
-    function GetConnected: Boolean; virtual; abstract;
     procedure CheckConnected;
     procedure Created; virtual;
     function InternalRead(var Buffer; Count: Integer): Integer; virtual; abstract;

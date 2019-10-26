@@ -20,8 +20,7 @@ uses
   SysUtils,
   SyncObjs,
   mnStreams,
-  mnSockets,
-  mnSocketStreams;
+  mnSockets;
 
 type
 

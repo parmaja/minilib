@@ -86,7 +86,7 @@ begin
       if not UseWait or (FCommStream.WaitRead) then;
       begin
         if not Terminated and FCommStream.Connected then
-          StringArrived(FCommStream.ReadString);
+          StringArrived(FCommStream.ReadString(255)); {$Warning Why it is 255? }
       end;
     end;
   finally

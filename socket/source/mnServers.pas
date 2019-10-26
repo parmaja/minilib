@@ -26,6 +26,29 @@ uses
   mnConnections;
 
 type
+
+  { TmnServerSocketStream }
+{
+  This Class is for begginer to play simple example of socket server, it accept one connection only
+  If you want multiple connection, use TmnServer
+}
+
+  TmnServerSocketStream = class(TmnSocketStream)
+  private
+    FAddress: string;
+    FPort: string;
+    FListenerSocket: TmnCustomSocket;
+    procedure SetAddress(Value: string);
+    procedure SetPort(Value: string);
+  protected
+    procedure FreeSocket; override;
+    function CreateSocket: TmnCustomSocket; override;
+  public
+    constructor Create(const vAddress, vPort: string; vOptions: TmnsoOptions = [soNoDelay]);
+    property Port: string read FPort write SetPort;
+    property Address: string read FAddress write SetAddress;
+  end;
+
   TmnServer = class;
   TmnListener = class;
 
@@ -173,6 +196,52 @@ type
   end;
 
 implementation
+
+{ TmnServerSocketStream }
+
+procedure TmnServerSocketStream.SetAddress(Value: string);
+begin
+  if FAddress = Value then Exit;
+  if Connected then
+    raise EmnException.Create('Can not change Port value when active');
+  FAddress := Value;
+end;
+
+procedure TmnServerSocketStream.SetPort(Value: string);
+begin
+  if FPort =Value then Exit;
+  if Connected then
+    raise EmnException.Create('Can not change Port value when active');
+  FPort := Value;
+end;
+
+procedure TmnServerSocketStream.FreeSocket;
+begin
+  inherited FreeSocket;
+  FreeAndNil(FListenerSocket);
+end;
+
+function TmnServerSocketStream.CreateSocket: TmnCustomSocket;
+begin
+  FListenerSocket := WallSocket.Bind(Options, Port, Address);
+  if FListenerSocket <> nil then
+  begin
+    FListenerSocket.Listen;
+    Result := FListenerSocket.Accept;
+    if Result = nil then
+      FreeAndNil(FListenerSocket);
+  end
+  else
+    Result := nil;
+end;
+
+constructor TmnServerSocketStream.Create(const vAddress, vPort: string; vOptions: TmnsoOptions);
+begin
+  inherited Create;
+  FAddress := vAddress;
+  FPort := vPort;
+  Options := vOptions;
+end;
 
 { TmnEventServer }
 

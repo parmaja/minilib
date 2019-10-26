@@ -101,9 +101,7 @@ function String2Hex(const vData: string): string; overload;
 function String2Hex(const vData: PByte; vCount: Integer): string; overload;
 function Hex2String(const vData: string): string; overload;
 
-
 implementation
-
 
 { THexCipher }
 
@@ -136,7 +134,6 @@ begin
   SetLength(Result, 2*vCount);
   BinToHex(vData, PByte(Result), vCount);
 end;
-
 
 const
   //H2BValidSet = ['0'..'9','A'..'F','a'..'f'];
@@ -176,7 +173,6 @@ begin
     Inc(p);
   end;
 end;
-
 
 procedure THexCipher.Decrypt(const InBuffer; InCount: LongInt; var OutBuffer; var OutCount: LongInt);
 var
@@ -367,8 +363,6 @@ destructor THexCipherStream.Destroy;
 begin
   inherited;
 end;
-
-
 
 { TExHexCipher }
 

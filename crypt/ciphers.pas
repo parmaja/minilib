@@ -4,7 +4,6 @@ unit ciphers;
  *
  * @license   modifiedLGPL (modified of http://www.gnu.org/licenses/lgpl.html)
  *            See the file COPYING.MLGPL, included in this distribution,
- * @author    Zaher Dirkey <zaher at parmaja dot com>
  * @author    Belal Hamed <belalhamed at gmail dot com>
  *}
 
@@ -72,13 +71,11 @@ type
     procedure Decrypt(const InBuffer; InCount: LongInt; var OutBuffer; var OutCount: LongInt); virtual; abstract;
   end;
 
-
   TCipherMode = (cimRead, cimWrite);
 
-  //Create the stream fro Encrypt/Decrypt if mixed with Mode you will have 4 state for that stream
-  //most of developer need only 2 state, Write+Encrypt and Read+Decrypt, but not for me :)
+  //Create the stream for Encrypt/Decrypt if mixed with Mode you will have 4 states for that stream
+  //most of developers needs only 2 states, Write + Encrypt and Read + Decrypt, but not for me :)
   TCipherWay = (cyEncrypt, cyDecrypt);
-
 
   TExCipher = class(TObject)
   private

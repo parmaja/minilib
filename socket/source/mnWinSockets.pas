@@ -76,6 +76,9 @@ type
 
 implementation
 
+const
+  cBacklog = 5;
+
 { TmnSocket }
 
 function TmnSocket.Receive(var Buffer; var Count: Integer): TmnError;
@@ -232,9 +235,9 @@ var
 begin
   CheckActive;
 {$IFDEF FPC}
-  c := WinSock2.listen(FHandle, 5);
+  c := WinSock2.listen(FHandle, cBacklog);
 {$ELSE}
-  c := WinSock.listen(FHandle, 5);
+  c := WinSock.listen(FHandle, cBacklog);
 {$ENDIF}
   if c = SOCKET_ERROR then
   begin

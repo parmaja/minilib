@@ -23,7 +23,6 @@ uses
   SysUtils,
   mnSockets,
   mnStreams,
-  mnSocketStreams, 
   mnConnections;
 
 type
@@ -263,6 +262,7 @@ end;
 
 procedure TmnClientSocketStream.SetAddress(const Value: string);
 begin
+  if FAddress = Value then Exit;
   if Connected then
     raise EmnException.Create('Can not change Port value when active');
   FAddress := Value;
@@ -270,6 +270,7 @@ end;
 
 procedure TmnClientSocketStream.SetPort(const Value: string);
 begin
+  if FPort =Value then Exit;
   if Connected then
     raise EmnException.Create('Can not change Port value when active');
   FPort := Value;
