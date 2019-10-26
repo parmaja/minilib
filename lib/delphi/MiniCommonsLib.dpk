@@ -36,7 +36,7 @@ requires
 contains
   mnClasses in '..\mnClasses.pas',
   mnCommStreams in '..\..\comm\source\mnCommStreams.pas',
-  mnCommThreads in '..\..\comm\source\mnCommThreads.pas',
+  //mnCommThreads in '..\..\comm\source\mnCommThreads.pas',
   mnWinCommTypes in '..\..\comm\source\mnWinCommTypes.pas',
   mnCommClasses in '..\..\comm\source\mnCommClasses.pas',
   mnWinCommStreams in '..\..\comm\source\mnWinCommStreams.pas',
