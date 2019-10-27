@@ -57,8 +57,8 @@ type
 
   TmnStreamProxy = class abstract(TObject)
   private
+    FOver: TmnStreamProxy;
     FEnabled: Boolean;
-    FSuperior: TmnStreamOverProxy;
     procedure SetEnabled(AValue: Boolean);
     procedure CloseReadAll; virtual;
     procedure CloseWriteAll; virtual;
@@ -67,7 +67,7 @@ type
     procedure CloseWrite; virtual; abstract;
     function DoRead(var Buffer; Count: Longint; out ResultCount, RealCount: longint): Boolean; virtual; abstract;
     function DoWrite(const Buffer; Count: Longint; out ResultCount, RealCount: longint): Boolean; virtual; abstract;
-    property Superior: TmnStreamOverProxy read FSuperior;
+    property Over: TmnStreamProxy read FOver;
   public
     //RealCount passed to Original Stream to retrive the real size of write or read, do not assign or modifiy it
     destructor Destroy; override;
@@ -82,7 +82,6 @@ type
 
   TmnStreamOverProxy = class abstract(TmnStreamProxy)
   private
-    FOver: TmnStreamProxy;
     procedure CloseReadAll; override; final;
     procedure CloseWriteAll; override; final;
   protected
@@ -90,7 +89,6 @@ type
     procedure CloseWrite; override;
     function DoRead(var Buffer; Count: Longint; out ResultCount, RealCount: longint): Boolean; override;
     function DoWrite(const Buffer; Count: Longint; out ResultCount, RealCount: longint): Boolean; override;
-    property Over: TmnStreamProxy read FOver;
   public
     //Inhrite it please
     constructor Create;
@@ -408,8 +406,8 @@ end;
 
 destructor TmnStreamProxy.Destroy;
 begin
-  if FSuperior <> nil then
-    FSuperior.Free; //do not use FreeAndNil
+  if FOver <> nil then
+    FreeAndNil(FOver);
   inherited;
 end;
 
@@ -944,7 +942,6 @@ begin
   end;
 
   AProxy.FOver := FProxy;
-  AProxy.FOver.FSuperior := AProxy;
   FProxy := AProxy;
 end;
 

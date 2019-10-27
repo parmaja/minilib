@@ -249,12 +249,12 @@ begin
   WriteLn('Read image to gz file');
   aImageFile := TFileStream.Create(Location + 'image.jpg', fmOpenRead);
   Stream := TmnWrapperStream.Create(TFileStream.Create(Location + 'image.gz', fmCreate or fmOpenWrite));
-  GzProxy := TmnDeflateStreamProxy.Create(9, true);
+  GzProxy := TmnDeflateStreamProxy.Create([cprsRead, cprsWrite], 9, true);
   Stream.AddProxy(GzProxy);
   HexProxy := TmnHexStreamProxy.Create;
   Stream.AddProxy(HexProxy);
 
-  GzProxy.Disable;
+  //GzProxy.Disable;
   try
     WriteLn('Size write: ' + IntToStr(Stream.WriteStream(aImageFile)));
   finally
@@ -265,12 +265,12 @@ begin
   WriteLn('Read gz file to image');
   aImageFile := TFileStream.Create(Location + 'image_copy.jpg', fmCreate or fmOpenWrite);
   Stream := TmnWrapperStream.Create(TFileStream.Create(Location + 'image.gz', fmOpenRead));
-  GzProxy := TmnDeflateStreamProxy.Create(9, true);
+  GzProxy := TmnDeflateStreamProxy.Create([cprsRead, cprsWrite], 9, true);
   Stream.AddProxy(GzProxy);
   HexProxy := TmnHexStreamProxy.Create;
   Stream.AddProxy(HexProxy);
 
-  GzProxy.Disable;
+  //GzProxy.Disable;
   try
     WriteLn('Size read: ' + IntToStr(Stream.ReadStream(aImageFile)));
   finally
