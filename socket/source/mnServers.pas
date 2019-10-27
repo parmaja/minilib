@@ -382,6 +382,7 @@ begin
   finally
     Leave;
   end;
+  Changed;
 end;
 
 procedure TmnListener.Changed;
@@ -497,7 +498,7 @@ begin
             finally
               Leave;
             end;
-            Changed;
+            //Log('Starting: ' + aConnection.ClassName);
             aConnection.Start; //moved here need some test
           finally
           end;
