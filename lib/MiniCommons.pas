@@ -10,7 +10,7 @@ interface
 uses
   HejriDates, HejriUtils, minibidi, mnBase64, mnClasses, mnDrivers, mnFields, 
   mnLogs, mnParams, mnStreams, mnUtils, MsgBox, uniDates, mnRTTIUtils, 
-  mnConfigs;
+  mnConfigs, mnStreamUtils;
 
 implementation
 

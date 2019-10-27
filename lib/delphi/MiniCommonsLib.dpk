@@ -47,6 +47,7 @@ contains
   //tea in '..\..\crypt\tea.pas',
   UniDates in '..\UniDates.pas',
   mnStreams in '..\mnStreams.pas',
+  mnStreamUtils in '..\mnStreamUtils.pas',
   mnUtils in '..\mnUtils.pas',
   HejriUtils in '..\HejriUtils.pas',
   HejriDates in '..\HejriDates.pas',

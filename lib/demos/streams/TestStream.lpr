@@ -248,7 +248,7 @@ begin
   WriteLn('Read image to gz file');
   aImageFile := TFileStream.Create(Location + 'image.jpg', fmOpenRead);
   Stream := TmnWrapperStream.Create(TFileStream.Create(Location + 'image.gz', fmCreate or fmOpenWrite));
-  Proxy := TmnDeflateStreamProxy.Create(clmax, true);
+  Proxy := TmnDeflateStreamProxy.Create(9, true);
   Stream.AddProxy(Proxy);
   HexProxy := TmnHexStreamProxy.Create;
   Stream.AddProxy(HexProxy);
@@ -263,7 +263,7 @@ begin
   WriteLn('Read gz file to image');
   aImageFile := TFileStream.Create(Location + 'image_copy.jpg', fmCreate or fmOpenWrite);
   Stream := TmnWrapperStream.Create(TFileStream.Create(Location + 'image.gz', fmOpenRead));
-  Proxy := TmnDeflateStreamProxy.Create(clMax, true);
+  Proxy := TmnDeflateStreamProxy.Create(9, true);
   Stream.AddProxy(Proxy);
   HexProxy := TmnHexStreamProxy.Create;
   Stream.AddProxy(HexProxy);

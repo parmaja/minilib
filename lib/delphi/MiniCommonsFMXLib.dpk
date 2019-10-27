@@ -42,6 +42,7 @@ contains
   snow2cipher in '..\..\crypt\snow2cipher.pas',
   UniDates in '..\UniDates.pas',
   mnStreams in '..\mnStreams.pas',
+  mnStreamUtils in '..\mnStreamUtils.pas',
   mnUtils in '..\mnUtils.pas',
   mnConfigs in '..\mnConfigs.pas',
   HejriUtils in '..\HejriUtils.pas',

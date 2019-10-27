@@ -51,7 +51,7 @@ type
     procedure InternalCloseWrite;
     procedure InternalCloseRead;
   public
-    constructor Create(Level: TCompressLevel; GZip: Boolean = False);
+    constructor Create(Level: TCompressLevel = 9; GZip: Boolean = False);
     destructor Destroy; override;
     function Write(const Buffer; Count: Longint; out ResultCount, RealCount: Longint): Boolean; override;
     function Read(var Buffer; Count: Longint; out ResultCount, RealCount: Longint): Boolean; override;
@@ -85,7 +85,7 @@ begin
       end;
       err := deflate(ZStream, Z_NO_FLUSH);
       if err <> Z_OK then
-        raise Exception.Create(zerror(err));
+        raise Exception.Create(String(zerror(err)));
     end;
     ResultCount := Count;
     Result := True;
@@ -115,7 +115,7 @@ begin
       if err = Z_STREAM_END then
         break;
       if err <> Z_OK then
-        raise Exception.Create(zerror(err));
+        raise Exception.Create(String(zerror(err)));
     end;
     ResultCount := Count - ZStream.avail_out;
   end;
@@ -156,7 +156,7 @@ begin
         if err = Z_STREAM_END then
           break;
         if (err <> Z_OK) then
-          raise Exception.Create(zerror(err));
+          raise Exception.Create(String(zerror(err)));
       until False;
 
       if ZStream.avail_out < BufSize then
@@ -199,7 +199,7 @@ begin
         WindowBits := WindowBits + 16;
       err := deflateInit2(ZStream, FLevel, Z_DEFLATED, WindowBits, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY);
       if err <> Z_OK then
-        raise Exception.Create(zerror(err));
+        raise Exception.Create(String(zerror(err)));
     end;
 end;
 
@@ -221,7 +221,7 @@ begin
         WindowBits := WindowBits + 16;
       err := inflateInit2(ZStream, WindowBits);
       if err <> Z_OK then
-        raise Exception.Create(zerror(err));
+        raise Exception.Create(String(zerror(err)));
     end;
 end;
 
