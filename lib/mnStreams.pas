@@ -847,8 +847,8 @@ end;
 destructor TmnBufferStream.Destroy;
 begin
   Close;
-  FreeBuffer;
   FreeAndNil(FInternalProxy);
+  FreeBuffer;
   inherited;
 end;
 
@@ -1126,10 +1126,15 @@ begin
 end;
 
 destructor TmnWrapperStream.Destroy;
+var
+  AOwned: Boolean;
+  AStream: TStream;
 begin
-  if FStreamOwned then
-      FStream.Free;
-  inherited;
+  AOwned := FStreamOwned;
+  AStream := FStream;
+  inherited;    //Sometime need to close into FStream
+  if AOwned then
+    FreeAndNil(AStream);
 end;
 
 { TmnStreamHexProxy }
