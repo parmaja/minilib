@@ -24,14 +24,13 @@ uses
   mnStreams;
 
 type
-
-  { TmnDeflateWriteStreamProxy }
+  TCompressLevel = 0..9;
 
   { TmnDeflateStreamProxy }
 
   TmnDeflateStreamProxy = class(TmnStreamOverProxy)
   private
-    FLevel: TCompressionlevel;
+    FLevel: TCompressLevel;
     FGZip: Boolean;
   private
     WriteInfo: record
@@ -52,7 +51,7 @@ type
     procedure InternalCloseWrite;
     procedure InternalCloseRead;
   public
-    constructor Create(Level: TCompressionlevel; GZip: Boolean = False);
+    constructor Create(Level: TCompressLevel; GZip: Boolean = False);
     destructor Destroy; override;
     function Write(const Buffer; Count: Longint; out ResultCount, RealCount: Longint): Boolean; override;
     function Read(var Buffer; Count: Longint; out ResultCount, RealCount: Longint): Boolean; override;
@@ -116,7 +115,7 @@ begin
       if err = Z_STREAM_END then
         break;
       if err <> Z_OK then
-        raise Edecompressionerror.Create(zerror(err));
+        raise Exception.Create(zerror(err));
     end;
     ResultCount := Count - ZStream.avail_out;
   end;
@@ -185,7 +184,6 @@ end;
 procedure TmnDeflateStreamProxy.InitWrite;
 var
   err: Smallint;
-  l: Smallint;
   WindowBits: Integer;
 begin
   with WriteInfo do
@@ -196,21 +194,10 @@ begin
       ZStream.next_out := ZBuffer;
       ZStream.avail_out := BufSize;
 
-      case FLevel of
-        clnone:
-          l := Z_NO_COMPRESSION;
-        clfastest:
-          l := Z_BEST_SPEED;
-        cldefault:
-          l := Z_DEFAULT_COMPRESSION;
-        clmax:
-          l := Z_BEST_COMPRESSION;
-      end;
-
       WindowBits := MAX_WBITS;
       if FGZip then
         WindowBits := WindowBits + 16;
-      err := deflateInit2(ZStream, l, Z_DEFLATED, WindowBits, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY);
+      err := deflateInit2(ZStream, FLevel, Z_DEFLATED, WindowBits, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY);
       if err <> Z_OK then
         raise Exception.Create(zerror(err));
     end;
@@ -238,7 +225,7 @@ begin
     end;
 end;
 
-constructor TmnDeflateStreamProxy.Create(Level: TCompressionlevel; GZip: Boolean);
+constructor TmnDeflateStreamProxy.Create(Level: TCompressLevel; GZip: Boolean);
 begin
   inherited Create;
   FLevel := Level;
