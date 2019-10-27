@@ -19,24 +19,25 @@ unit mnStreamUtils;
 interface
 
 uses
-  Classes, SysUtils, zlib, 
+  Classes, SysUtils, zlib,
   mnStreams;
 
 type
-  TCompressLevel = 0..9;
+  TmnCompressLevel = 0..9;
+  TmnStreamCompress = set of (cprsRead, cprsWrite);
 
   { TmnDeflateStreamProxy }
 
   TmnDeflateStreamProxy = class(TmnStreamOverProxy)
   private
-    FLevel: TCompressLevel;
+    FLevel: TmnCompressLevel;
     FGZip: Boolean;
   private
     DeflateInfo: record
       ZStream: z_stream;
       ZBuffer: pointer;
     end;
-    FBufSize: Integer;
+    FBufSize: Cardinal;
     InflateInfo: record
       ZStream: z_stream;
       ZBuffer: pointer;
@@ -45,93 +46,102 @@ type
     DEF_MEM_LEVEL = 8;
     MAX_WBITS = 15;
   protected
+    FCompress: TmnStreamCompress;
     procedure InitDeflate;
     procedure InitInflate;
-  public
-    constructor Create(Level: TCompressLevel = 9; GZip: Boolean = False);
-    destructor Destroy; override;
-    function Write(const Buffer; Count: Longint; out ResultCount, RealCount: Longint): Boolean; override;
-    function Read(var Buffer; Count: Longint; out ResultCount, RealCount: Longint): Boolean; override;
-    procedure CloseDeflate; //close it after finishing compress a stream or partial a stream
-    procedure CloseInflate;
     procedure CloseWrite; override;
     procedure CloseRead; override;
-    property BufSize: Integer read FBufSize write FBufSize;
+    function DoWrite(const Buffer; Count: Longint; out ResultCount, RealCount: Longint): Boolean; override;
+    function DoRead(var Buffer; Count: Longint; out ResultCount, RealCount: Longint): Boolean; override;
+  public
+    constructor Create(ACompress: TmnStreamCompress; Level: TmnCompressLevel = 9; GZip: Boolean = False);
+    destructor Destroy; override;
+    procedure CloseDeflate; //close it after finishing compress a stream or partial a stream
+    procedure CloseInflate;
+    property BufSize: Cardinal read FBufSize write FBufSize;
   end;
 
 implementation
 
 { TmnDeflateWriteStreamProxy }
 
-function TmnDeflateStreamProxy.Write(const Buffer; Count: Longint; out ResultCount, RealCount: Longint): Boolean;
+function TmnDeflateStreamProxy.DoWrite(const Buffer; Count: Longint; out ResultCount, RealCount: Longint): Boolean;
 var
   err: Smallint;
   HaveWrite: Longint;
 begin
-  InitDeflate; //init it if not initialized
-  with DeflateInfo do
+  if cprsWrite in FCompress then
   begin
-    ZStream.next_in := @Buffer;
-    ZStream.avail_in := Count;
-    while ZStream.avail_in <> 0 do
+    InitDeflate; //init it if not initialized
+    with DeflateInfo do
     begin
-      if ZStream.avail_out = 0 then
+      ZStream.next_in := @Buffer;
+      ZStream.avail_in := Count;
+      while ZStream.avail_in <> 0 do
       begin
-        { Flush the buffer to the stream and update progress }
-        Over.Write(ZBuffer^, BufSize, HaveWrite, RealCount);
-        { reset output buffer }
-        ZStream.next_out := ZBuffer;
-        ZStream.avail_out := BufSize;
+        if ZStream.avail_out = 0 then
+        begin
+          { Flush the buffer to the stream and update progress }
+          Over.Write(ZBuffer^, BufSize, HaveWrite, RealCount);
+          { reset output buffer }
+          ZStream.next_out := ZBuffer;
+          ZStream.avail_out := BufSize;
+        end;
+        err := deflate(ZStream, Z_NO_FLUSH);
+        if err <> Z_OK then
+          raise Exception.Create(String(zerror(err)));
       end;
-      err := deflate(ZStream, Z_NO_FLUSH);
-      if err <> Z_OK then
-        raise Exception.Create(String(zerror(err)));
+      ResultCount := Count;
+      Result := True;
     end;
-    ResultCount := Count;
-    Result := True;
-  end;
+  end
+  else
+    Result := Over.Write(Buffer, Count, ResultCount, RealCount);
 end;
 
-function TmnDeflateStreamProxy.Read(var Buffer; Count: Longint; out ResultCount, RealCount: Longint): Boolean;
+function TmnDeflateStreamProxy.DoRead(var Buffer; Count: Longint; out ResultCount, RealCount: Longint): Boolean;
 var
   err: Smallint;
   HaveRead: Longint;
 begin
-  InitInflate; //init it if not initialized
-  with InflateInfo do
+  if cprsRead in FCompress then
   begin
-    ZStream.next_out := @buffer;
-    ZStream.avail_out := Count;
-    while ZStream.avail_out <> 0 do
+    InitInflate; //init it if not initialized
+    with InflateInfo do
     begin
-      if ZStream.avail_in = 0 then
+      ZStream.next_out := @buffer;
+      ZStream.avail_out := Count;
+      while ZStream.avail_out <> 0 do
       begin
-        {Refill the buffer.}
-        ZStream.next_in := ZBuffer;
-        Over.Read(Zbuffer^, BufSize, HaveRead, RealCount);
-        ZStream.avail_in := HaveRead;
+        if ZStream.avail_in = 0 then
+        begin
+          {Refill the buffer.}
+          ZStream.next_in := ZBuffer;
+          Over.Read(Zbuffer^, BufSize, HaveRead, RealCount);
+          ZStream.avail_in := HaveRead;
+        end;
+        err := inflate(ZStream, Z_NO_FLUSH);
+        if err = Z_STREAM_END then
+          break;
+        if err <> Z_OK then
+          raise Exception.Create(String(zerror(err)));
       end;
-      err := inflate(ZStream, Z_NO_FLUSH);
-      if err = Z_STREAM_END then
-        break;
-      if err <> Z_OK then
-        raise Exception.Create(String(zerror(err)));
+      ResultCount := Count - ZStream.avail_out;
     end;
-    ResultCount := Count - ZStream.avail_out;
-  end;
-  Result := True;
+    Result := True;
+  end
+  else
+    Result := Over.Read(Buffer, Count, ResultCount, RealCount);
 end;
 
 procedure TmnDeflateStreamProxy.CloseWrite;
 begin
   CloseDeflate;
-  inherited;
 end;
 
 procedure TmnDeflateStreamProxy.CloseRead;
 begin
   CloseInflate;
-  inherited CloseRead;
 end;
 
 procedure TmnDeflateStreamProxy.CloseDeflate;
@@ -139,7 +149,9 @@ var
   err: Smallint;
   Written, R: Longint;
 begin
-  with DeflateInfo do
+  if cprsWrite in FCompress then
+  begin
+    with DeflateInfo do
     if ZBuffer <> nil then
     begin
       {Compress remaining data still in internal zlib data buffers.}
@@ -168,17 +180,19 @@ begin
       FreeMem(ZBuffer);
       ZBuffer := nil;
     end;
+  end;
 end;
 
 procedure TmnDeflateStreamProxy.CloseInflate;
 begin
-  with InflateInfo do
-    if ZBuffer <> nil then
-    begin
-      InflateEnd(ZStream);
-      FreeMem(ZBuffer);
-      ZBuffer := nil;
-    end;
+  if cprsRead in FCompress then
+    with InflateInfo do
+      if ZBuffer <> nil then
+      begin
+        InflateEnd(ZStream);
+        FreeMem(ZBuffer);
+        ZBuffer := nil;
+      end;
 end;
 
 procedure TmnDeflateStreamProxy.InitDeflate;
@@ -225,12 +239,13 @@ begin
     end;
 end;
 
-constructor TmnDeflateStreamProxy.Create(Level: TCompressLevel; GZip: Boolean);
+constructor TmnDeflateStreamProxy.Create(ACompress: TmnStreamCompress; Level: TmnCompressLevel; GZip: Boolean);
 begin
   inherited Create;
   FBufSize := 16384;
   FLevel := Level;
   FGZip := GZip;
+  FCompress := ACompress;
 end;
 
 destructor TmnDeflateStreamProxy.Destroy;

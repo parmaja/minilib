@@ -18,7 +18,7 @@ interface
 
 uses
   Classes, SysUtils, DateUtils, Variants, Contnrs, StrUtils,
-  mnUtils, mnStreams, mnClasses, mnFields, mnParams;
+  mnUtils, mnStreams, mnClasses, mnFields;
 
 type
   { TmodParams }

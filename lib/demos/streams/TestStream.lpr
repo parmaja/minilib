@@ -243,16 +243,18 @@ var
   aImageFile: TFileStream;
   Stream: TmnBufferStream;
   HexProxy: TmnHexStreamProxy;
-  Proxy: TmnDeflateStreamProxy;
+  GzProxy: TmnDeflateStreamProxy;
 begin
+  //image.gz is a compressed file of hex file of image
   WriteLn('Read image to gz file');
   aImageFile := TFileStream.Create(Location + 'image.jpg', fmOpenRead);
   Stream := TmnWrapperStream.Create(TFileStream.Create(Location + 'image.gz', fmCreate or fmOpenWrite));
-  Proxy := TmnDeflateStreamProxy.Create(9, true);
-  Stream.AddProxy(Proxy);
+  GzProxy := TmnDeflateStreamProxy.Create(9, true);
+  Stream.AddProxy(GzProxy);
   HexProxy := TmnHexStreamProxy.Create;
   Stream.AddProxy(HexProxy);
 
+  GzProxy.Disable;
   try
     WriteLn('Size write: ' + IntToStr(Stream.WriteStream(aImageFile)));
   finally
@@ -263,10 +265,12 @@ begin
   WriteLn('Read gz file to image');
   aImageFile := TFileStream.Create(Location + 'image_copy.jpg', fmCreate or fmOpenWrite);
   Stream := TmnWrapperStream.Create(TFileStream.Create(Location + 'image.gz', fmOpenRead));
-  Proxy := TmnDeflateStreamProxy.Create(9, true);
-  Stream.AddProxy(Proxy);
+  GzProxy := TmnDeflateStreamProxy.Create(9, true);
+  Stream.AddProxy(GzProxy);
   HexProxy := TmnHexStreamProxy.Create;
   Stream.AddProxy(HexProxy);
+
+  GzProxy.Disable;
   try
     WriteLn('Size read: ' + IntToStr(Stream.ReadStream(aImageFile)));
   finally

@@ -16,7 +16,7 @@ unit mnStreams;
 interface
 
 uses
-  Classes, SysUtils, StrUtils;
+  Classes, SysUtils;
 
 const
   cReadTimeout = 15000;
@@ -56,35 +56,46 @@ type
   { TmnStreamProxy }
 
   TmnStreamProxy = class abstract(TObject)
-  protected
+  private
+    FEnabled: Boolean;
     FSuperior: TmnStreamOverProxy;
-  public
-    //RealCount passed to Original Stream to retrive the real size of write or read, do not assign or modifiy it
-    function Read(var Buffer; Count: Longint; out ResultCount, RealCount: longint): Boolean; virtual; abstract;
-    function Write(const Buffer; Count: Longint; out ResultCount, RealCount: longint): Boolean; virtual; abstract;
+    procedure SetEnabled(AValue: Boolean);
+    procedure CloseReadAll; virtual;
+    procedure CloseWriteAll; virtual;
+  protected
     procedure CloseRead; virtual; abstract;
     procedure CloseWrite; virtual; abstract;
-    destructor Destroy; override;
+    function DoRead(var Buffer; Count: Longint; out ResultCount, RealCount: longint): Boolean; virtual; abstract;
+    function DoWrite(const Buffer; Count: Longint; out ResultCount, RealCount: longint): Boolean; virtual; abstract;
     property Superior: TmnStreamOverProxy read FSuperior;
+  public
+    //RealCount passed to Original Stream to retrive the real size of write or read, do not assign or modifiy it
+    destructor Destroy; override;
+    function Read(var Buffer; Count: Longint; out ResultCount, RealCount: longint): Boolean; virtual;
+    function Write(const Buffer; Count: Longint; out ResultCount, RealCount: longint): Boolean; virtual;
+    procedure Enable;
+    procedure Disable;
+    property Enabled: Boolean read FEnabled write SetEnabled;
   end;
 
   { TmnStreamOverProxy }
 
-  TmnStreamOverProxy = class(TmnStreamProxy)
+  TmnStreamOverProxy = class abstract(TmnStreamProxy)
   private
     FOver: TmnStreamProxy;
+    procedure CloseReadAll; override; final;
+    procedure CloseWriteAll; override; final;
   protected
-  public
-    //Override but do not inherit it
-    function Read(var Buffer; Count: Longint; out ResultCount, RealCount: longint): Boolean; override;
-    //Override but do not inherit it
-    function Write(const Buffer; Count: Longint; out ResultCount, RealCount: longint): Boolean; override;
-
-    //Inhrite it please
     procedure CloseRead; override;
     procedure CloseWrite; override;
-    constructor Create;
+    function DoRead(var Buffer; Count: Longint; out ResultCount, RealCount: longint): Boolean; override;
+    function DoWrite(const Buffer; Count: Longint; out ResultCount, RealCount: longint): Boolean; override;
     property Over: TmnStreamProxy read FOver;
+  public
+    //Inhrite it please
+    constructor Create;
+    function Read(var Buffer; Count: Longint; out ResultCount, RealCount: longint): Boolean; override; final;
+    function Write(const Buffer; Count: Longint; out ResultCount, RealCount: longint): Boolean; override; final;
   end;
 
   TmnStreamClose = set of (
@@ -113,20 +124,21 @@ type
     type
       { TmnInitialStreamProxy }
 
-      TmnInitialStreamProxy = class(TmnStreamProxy)
+      TmnInitialStreamProxy = class sealed(TmnStreamProxy)
+      private
       protected
         FStream: TmnBufferStream;
-      public
-        function Read(var Buffer; Count: Longint; out ResultCount, RealCount: longint): Boolean; override;
-        function Write(const Buffer; Count: Longint; out ResultCount, RealCount: longint): Boolean; override;
+
         procedure CloseRead; override;
         procedure CloseWrite; override;
+        function DoRead(var Buffer; Count: Longint; out ResultCount, RealCount: longint): Boolean; override;
+        function DoWrite(const Buffer; Count: Longint; out ResultCount, RealCount: longint): Boolean; override;
+      public
         constructor Create(AStream: TmnBufferStream);
       end;
 
     procedure SetReadBufferSize(AValue: TFileSize);
   protected
-    FInternalProxy: TmnStreamProxy;
     FProxy: TmnStreamProxy;
 
     procedure ReadError; virtual;
@@ -142,7 +154,7 @@ type
     constructor Create(AEndOfLine: string = sUnixEndOfLine);
     destructor Destroy; override;
 
-    procedure AddProxy(AProxy: TmnStreamOverProxy; AsFirst: Boolean = False);
+    procedure AddProxy(AProxy: TmnStreamOverProxy);
 
     function DirectRead(var Buffer; Count: Longint): Longint;
     function DirectWrite(const Buffer; Count: Longint): Longint;
@@ -263,11 +275,11 @@ type
   protected
     function HexDecode(var Buffer; Count: Longint; out ResultCount, RealCount: longint): Boolean;
     function HexEncode(const Buffer; Count: Longint; out ResultCount, RealCount: longint): Boolean;
+    function DoRead(var Buffer; Count: Longint; out ResultCount, RealCount: longint): Boolean; override;
+    function DoWrite(const Buffer; Count: Longint; out ResultCount, RealCount: longint): Boolean; override;
   public
 
     Method: TmnMethodProxyEncode;
-    function Read(var Buffer; Count: Longint; out ResultCount, RealCount: longint): Boolean; override;
-    function Write(const Buffer; Count: Longint; out ResultCount, RealCount: longint): Boolean; override;
   end;
 
 const
@@ -362,6 +374,38 @@ end;
 
 { TmnStreamProxy }
 
+procedure TmnStreamProxy.SetEnabled(AValue: Boolean);
+begin
+  if FEnabled =AValue then
+    Exit;
+  FEnabled := AValue;
+  if not FEnabled then
+  begin
+    CloseRead;
+    CloseWrite;
+  end;
+end;
+
+procedure TmnStreamProxy.CloseReadAll;
+begin
+  CloseRead;
+end;
+
+procedure TmnStreamProxy.CloseWriteAll;
+begin
+  CloseWrite;
+end;
+
+function TmnStreamProxy.Read(var Buffer; Count: Longint; out ResultCount, RealCount: longint): Boolean;
+begin
+  Result := DoRead(Buffer, Count, ResultCount, RealCount);
+end;
+
+function TmnStreamProxy.Write(const Buffer; Count: Longint; out ResultCount, RealCount: longint): Boolean;
+begin
+  Result := DoWrite(Buffer, Count, ResultCount, RealCount);
+end;
+
 destructor TmnStreamProxy.Destroy;
 begin
   if FSuperior <> nil then
@@ -369,16 +413,26 @@ begin
   inherited;
 end;
 
+procedure TmnStreamProxy.Enable;
+begin
+  Enabled := True;
+end;
+
+procedure TmnStreamProxy.Disable;
+begin
+  Enabled := False;
+end;
+
 { TmnInitialStreamProxy }
 
-function TmnBufferStream.TmnInitialStreamProxy.Read(var Buffer; Count: Longint; out ResultCount, RealCount: longint): Boolean;
+function TmnBufferStream.TmnInitialStreamProxy.DoRead(var Buffer; Count: Longint; out ResultCount, RealCount: longint): Boolean;
 begin
   ResultCount := FStream.DoRead(Buffer, Count);
   RealCount := ResultCount;
   Result := True;
 end;
 
-function TmnBufferStream.TmnInitialStreamProxy.Write(const Buffer; Count: Longint; out ResultCount, RealCount: longint): Boolean;
+function TmnBufferStream.TmnInitialStreamProxy.DoWrite(const Buffer; Count: Longint; out ResultCount, RealCount: longint): Boolean;
 begin
   ResultCount := FStream.DoWrite(Buffer, Count);
   RealCount := ResultCount;
@@ -403,29 +457,58 @@ end;
 
 { TmnStreamOverProxy }
 
-function TmnStreamOverProxy.Read(var Buffer; Count: Longint; out ResultCount, RealCount: longint): Boolean;
+function TmnStreamOverProxy.DoRead(var Buffer; Count: Longint; out ResultCount, RealCount: longint): Boolean;
 begin
   Result := FOver.Read(Buffer, Count, ResultCount, RealCount);
 end;
 
-function TmnStreamOverProxy.Write(const Buffer; Count: Longint; out ResultCount, RealCount: longint): Boolean;
+function TmnStreamOverProxy.DoWrite(const Buffer; Count: Longint; out ResultCount, RealCount: longint): Boolean;
 begin
   Result := FOver.Write(Buffer, Count, ResultCount, RealCount);
 end;
 
+function TmnStreamOverProxy.Read(var Buffer; Count: Longint; out ResultCount, RealCount: longint): Boolean;
+begin
+  if Enabled then
+    Result := inherited Read(Buffer, Count, ResultCount, RealCount)
+  else
+    Result := FOver.Read(Buffer, Count, ResultCount, RealCount);
+end;
+
+function TmnStreamOverProxy.Write(const Buffer; Count: Longint; out ResultCount, RealCount: longint): Boolean;
+begin
+  if Enabled then
+    Result := inherited Write(Buffer, Count, ResultCount, RealCount)
+  else
+    Result := FOver.Write(Buffer, Count, ResultCount, RealCount)
+end;
+
+procedure TmnStreamOverProxy.CloseReadAll;
+begin
+  inherited;
+  if FOver <> nil then
+    FOver.CloseReadAll;
+end;
+
+procedure TmnStreamOverProxy.CloseWriteAll;
+begin
+  inherited;
+  if FOver <> nil then
+    FOver.CloseWriteAll;
+end;
+
 procedure TmnStreamOverProxy.CloseRead;
 begin
-  FOver.CloseRead;
 end;
 
 procedure TmnStreamOverProxy.CloseWrite;
 begin
-  FOver.CloseWrite;
 end;
 
 constructor TmnStreamOverProxy.Create;
 begin
   inherited Create;
+  FEnabled := True;
 end;
 
 { TmnConnectionStream }
@@ -827,7 +910,7 @@ begin
   if not (cloRead in Done) and (cloRead in ACloseWhat) then
   begin
     if FProxy <> nil then
-      FProxy.CloseRead
+      FProxy.CloseReadAll
     else
       DoCloseRead;
     FDone := FDone + [cloRead];
@@ -836,7 +919,7 @@ begin
   if not (cloWrite in Done) and (cloWrite in ACloseWhat) then
   begin
     if FProxy <> nil then
-      FProxy.CloseWrite
+      FProxy.CloseWriteAll
     else
       DoCloseWrite;
     FDone := FDone + [cloWrite];
@@ -848,31 +931,21 @@ end;
 destructor TmnBufferStream.Destroy;
 begin
   Close;
-  FreeAndNil(FInternalProxy);
+  FreeAndNil(FProxy);
   FreeBuffer;
   inherited;
 end;
 
-procedure TmnBufferStream.AddProxy(AProxy: TmnStreamOverProxy; AsFirst: Boolean);
+procedure TmnBufferStream.AddProxy(AProxy: TmnStreamOverProxy);
 begin
-  if FInternalProxy = nil then
+  if FProxy = nil then
   begin
-    FInternalProxy := TmnInitialStreamProxy.Create(Self);
-    FProxy := FInternalProxy;
+    FProxy := TmnInitialStreamProxy.Create(Self);
   end;
 
-  if AsFirst then
-  begin
-    AProxy.FOver := FInternalProxy;
-    FInternalProxy.FSuperior .FOver := AProxy;
-    FInternalProxy.FSuperior := AProxy;
-  end
-  else
-  begin
-    AProxy.FOver := FProxy;
-    AProxy.FOver.FSuperior := AProxy;
-    FProxy := AProxy;
-  end;
+  AProxy.FOver := FProxy;
+  AProxy.FOver.FSuperior := AProxy;
+  FProxy := AProxy;
 end;
 
 function TmnBufferStream.DirectRead(var Buffer; Count: Longint): Longint;
@@ -1224,13 +1297,13 @@ begin
   end;
 end;
 
-function TmnHexStreamProxy.Read(var Buffer; Count: Longint; out ResultCount, RealCount: longint): Boolean;
+function TmnHexStreamProxy.DoRead(var Buffer; Count: Longint; out ResultCount, RealCount: longint): Boolean;
 begin
   HexDecode(Buffer, Count, ResultCount, RealCount);
   Result := True;
 end;
 
-function TmnHexStreamProxy.Write(const Buffer; Count: Longint; out ResultCount, RealCount: longint): Boolean;
+function TmnHexStreamProxy.DoWrite(const Buffer; Count: Longint; out ResultCount, RealCount: longint): Boolean;
 begin
   HexEncode(Buffer, Count, ResultCount, RealCount);
   Result := True;
