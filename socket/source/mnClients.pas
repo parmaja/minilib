@@ -7,8 +7,7 @@ unit mnClients;
  * @author    Zaher Dirkey <zaher at parmaja dot com>
  *}
 
-{$M+}
-{$H+}
+{$M+}{$H+}
 {$IFDEF FPC}
 {$mode delphi}
 {$ENDIF}
@@ -16,14 +15,8 @@ unit mnClients;
 interface
 
 uses
-  Classes,
-  {$ifndef FPC}
-  Types,
-  {$endif}
-  SysUtils,
-  mnSockets,
-  mnStreams,
-  mnConnections;
+  Classes, {$ifndef FPC} Types, {$endif} SysUtils,
+  mnSockets, mnStreams, mnConnections;
 
 type
 

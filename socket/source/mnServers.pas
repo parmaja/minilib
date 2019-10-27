@@ -7,8 +7,7 @@ unit mnServers;
  * @author    Zaher Dirkey <zaher at parmaja dot com>
  *}
 
-{$M+}
-{$H+}
+{$M+}{$H+}
 {$IFDEF FPC}
 {$MODE delphi}
 {$ELSE}
@@ -19,11 +18,8 @@ unit mnServers;
 interface
 
 uses
-  Classes,
-  SysUtils,
-  mnSockets,
-  mnStreams,
-  mnConnections;
+  Classes, SysUtils,
+  mnSockets, mnStreams, mnConnections;
 
 type
 

@@ -7,25 +7,9 @@ uses
   cthreads,
   {$ENDIF}
   Classes, SysUtils, CustApp, zdeflate, zlib, zstream,
-  mnStreams, mnSockets, mnClients, mnServers;
+  mnStreams, mnStreamUtils, mnSockets, mnClients, mnServers;
 
 type
-
-  { TmnDeflateWriteStreamProxy }
-
-  TmnDeflateWriteStreamProxy = class(TmnStreamOverProxy)
-  private
-    FZStream: z_stream;
-    FBuffer:pointer;
-    const
-      cBufsize = 16384;
-  protected
-  public
-    constructor Create(Level: TCompressionlevel; GZip: Boolean = False);
-    destructor Destroy; override;
-    function Write(const Buffer; Count: Longint; out ResultCount, RealCount: longint): Boolean; override;
-    procedure CloseWrite; override;
-  end;
 
   { ThreadSender }
 
@@ -59,104 +43,6 @@ type
     constructor Create(TheOwner: TComponent); override;
     destructor Destroy; override;
   end;
-
-  { TmnDeflateWriteStreamProxy }
-
-function TmnDeflateWriteStreamProxy.Write(const Buffer; Count: Longint; out ResultCount, RealCount: longint): Boolean;
-var
-  err:smallint;
-  Writen, R: longint;
-begin
-  FZStream.next_in := @Buffer;
-  FZStream.avail_in := Count;
-  while FZStream.avail_in <> 0 do
-  begin
-    if FZStream.avail_out = 0 then
-    begin
-      { Flush the buffer to the stream and update progress }
-      Over.Write(FBuffer^, cBufsize, Writen, R);
-      { reset output buffer }
-      FZStream.next_out := FBuffer;
-      FZStream.avail_out := cBufsize;
-    end;
-    err := deflate(FZStream, Z_NO_FLUSH);
-    if err <> Z_OK then
-      raise Exception.Create(zerror(err));
-  end;
-  ResultCount := Count;
-  Result := True;
-end;
-
-procedure TmnDeflateWriteStreamProxy.CloseWrite;
-var
-  err: smallint;
-  Written, R: longint;
-begin
-  {Compress remaining data still in internal zlib data buffers.}
-  repeat
-    if FZStream.avail_out = 0 then
-    begin
-      { Flush the buffer to the stream and update progress }
-      Over.Write(FBuffer^, cBufsize, Written, R);
-      { reset output buffer }
-      FZStream.next_out := FBuffer;
-      FZStream.avail_out := cbufsize;
-    end;
-    err := deflate(FZStream, Z_FINISH);
-    if err = Z_STREAM_END then
-      break;
-    if (err <> Z_OK) then
-      raise Exception.create(zerror(err));
-  until false;
-
-  if FZStream.avail_out < cBufsize then
-  begin
-    Over.Write(FBuffer^, cBufsize - FZStream.avail_out, Written, R);
-  end;
-  inherited;
-end;
-
-constructor TmnDeflateWriteStreamProxy.Create(Level: TCompressionlevel; GZip: Boolean);
-var
-  err: smallint;
-  l: smallint;
-  WindowBits: Integer;
-const
-  MAX_WBITS = 15;
-  DEF_MEM_LEVEL = 8;
-begin
-  inherited Create;
-  GetMem(FBuffer, cBufsize);
-
-  FZStream.next_out := FBuffer;
-  FZStream.avail_out := cBufsize;
-
-  case level of
-    clnone:
-      l := Z_NO_COMPRESSION;
-    clfastest:
-      l := Z_BEST_SPEED;
-    cldefault:
-      l := Z_DEFAULT_COMPRESSION;
-    clmax:
-      l := Z_BEST_COMPRESSION;
-  end;
-
-  WindowBits := MAX_WBITS;
-  if GZip then
-    WindowBits := WindowBits + 16;
-  err := deflateInit2(FZStream, l, Z_DEFLATED, WindowBits, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY);
-  if err <> Z_OK then
-    raise Exception.Create(zerror(err));
-end;
-
-destructor TmnDeflateWriteStreamProxy.Destroy;
-begin
-  deflateEnd(FZStream);
-  freemem(FBuffer);
-  inherited destroy;
-end;
-
 
 { TThreadReciever }
 
@@ -254,11 +140,11 @@ end;
 procedure TTestStream.Example3;
 var
   Stream: TmnBufferStream;
-  Proxy: TmnStreamHexProxy;
+  Proxy: TmnHexStreamProxy;
   S: string;
 begin
   Stream := TmnWrapperStream.Create(TFileStream.Create(Location + 'test_hex.txt', fmCreate or fmOpenWrite));
-  Proxy := TmnStreamHexProxy.Create;
+  Proxy := TmnHexStreamProxy.Create;
   Stream.AddProxy(Proxy);
   try
     Stream.WriteLineUTF8('0123456789');
@@ -270,7 +156,7 @@ begin
 
 
   Stream := TmnWrapperStream.Create(TFileStream.Create(Location + 'test_hex.txt', fmOpenRead));
-  Proxy := TmnStreamHexProxy.Create;
+  Proxy := TmnHexStreamProxy.Create;
   Stream.AddProxy(Proxy);
   try
     while not Stream.EndOfStream do
@@ -287,12 +173,12 @@ procedure TTestStream.Example4;
 var
   aImageFile: TFileStream;
   Stream: TmnBufferStream;
-  Proxy: TmnStreamHexProxy;
+  Proxy: TmnHexStreamProxy;
 begin
   WriteLn('Read image to hex file');
   aImageFile := TFileStream.Create(Location + 'image.jpg', fmOpenRead);
   Stream := TmnWrapperStream.Create(TFileStream.Create(Location + 'image_hex.txt', fmCreate or fmOpenWrite));
-  Proxy := TmnStreamHexProxy.Create;
+  Proxy := TmnHexStreamProxy.Create;
   Stream.AddProxy(Proxy);
   try
     WriteLn('Size write: ' + IntToStr(Stream.WriteStream(aImageFile)));
@@ -304,7 +190,7 @@ begin
   WriteLn('Read hex file to image');
   aImageFile := TFileStream.Create(Location + 'image_copy.jpg', fmCreate or fmOpenWrite);
   Stream := TmnWrapperStream.Create(TFileStream.Create(Location + 'image_hex.txt', fmOpenRead));
-  Proxy := TmnStreamHexProxy.Create;
+  Proxy := TmnHexStreamProxy.Create;
   Stream.AddProxy(Proxy);
   try
     WriteLn('Size read: ' + IntToStr(Stream.ReadStream(aImageFile)));
@@ -318,13 +204,13 @@ procedure TTestStream.Example5;
 var
   aImageFile: TFileStream;
   Stream: TmnBufferStream;
-  Proxy: TmnStreamHexProxy;
+  Proxy: TmnHexStreamProxy;
   aSize: Integer;
 begin
   WriteLn('Read image to hex file');
   aImageFile := TFileStream.Create(Location + 'image.jpg', fmOpenRead);
   Stream := TmnWrapperStream.Create(TFileStream.Create(Location + 'image_hex.txt', fmCreate or fmOpenWrite));
-  Proxy := TmnStreamHexProxy.Create;
+  Proxy := TmnHexStreamProxy.Create;
   Stream.AddProxy(Proxy);
   try
     Stream.WriteStream(aImageFile);
@@ -338,7 +224,7 @@ begin
 
   WriteLn('Read hex file to image');
   Stream := TmnWrapperStream.Create(TFileStream.Create(Location + 'image_hex.txt', fmOpenRead));
-  Proxy := TmnStreamHexProxy.Create;
+  Proxy := TmnHexStreamProxy.Create;
   Stream.AddProxy(Proxy);
   try
     aImageFile := TFileStream.Create(Location + 'image_copy1.jpg', fmCreate or fmOpenWrite);
@@ -356,13 +242,16 @@ procedure TTestStream.Example6;
 var
   aImageFile: TFileStream;
   Stream: TmnBufferStream;
-  Proxy: TmnDeflateWriteStreamProxy;
+  HexProxy: TmnHexStreamProxy;
+  Proxy: TmnDeflateStreamProxy;
 begin
   WriteLn('Read image to gz file');
   aImageFile := TFileStream.Create(Location + 'image.jpg', fmOpenRead);
   Stream := TmnWrapperStream.Create(TFileStream.Create(Location + 'image.gz', fmCreate or fmOpenWrite));
-  Proxy := TmnDeflateWriteStreamProxy.Create(clmax, true);
+  Proxy := TmnDeflateStreamProxy.Create(clmax, true);
   Stream.AddProxy(Proxy);
+  HexProxy := TmnHexStreamProxy.Create;
+  Stream.AddProxy(HexProxy);
 
   try
     WriteLn('Size write: ' + IntToStr(Stream.WriteStream(aImageFile)));
@@ -371,17 +260,19 @@ begin
     FreeAndNil(aImageFile);
   end;
 
-  {WriteLn('Read gz file to image');
+  WriteLn('Read gz file to image');
   aImageFile := TFileStream.Create(Location + 'image_copy.jpg', fmCreate or fmOpenWrite);
   Stream := TmnWrapperStream.Create(TFileStream.Create(Location + 'image.gz', fmOpenRead));
-  Proxy := TmnDeflateWriteStreamProxy.Create(clmax, false);
+  Proxy := TmnDeflateStreamProxy.Create(clMax, true);
   Stream.AddProxy(Proxy);
+  HexProxy := TmnHexStreamProxy.Create;
+  Stream.AddProxy(HexProxy);
   try
     WriteLn('Size read: ' + IntToStr(Stream.ReadStream(aImageFile)));
   finally
     FreeAndNil(Stream);
     FreeAndNil(aImageFile);
-  end;}
+  end;
 end;
 
 constructor TTestStream.Create(TheOwner: TComponent);
@@ -410,7 +301,7 @@ var
   Application: TTestStream;
 begin
   Application :=TTestStream.Create(nil);
-  Application.Title :='Test Strean';
+  Application.Title :='Test Stream';
   Application.Run;
   Application.Free;
 end.

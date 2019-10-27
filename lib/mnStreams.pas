@@ -59,6 +59,7 @@ type
   protected
     FSuperior: TmnStreamOverProxy;
   public
+    //RealCount passed to Original Stream to retrive the real size of write or read, do not assign or modifiy it
     function Read(var Buffer; Count: Longint; out ResultCount, RealCount: longint): Boolean; virtual; abstract;
     function Write(const Buffer; Count: Longint; out ResultCount, RealCount: longint): Boolean; virtual; abstract;
     procedure CloseRead; virtual; abstract;
@@ -251,7 +252,7 @@ type
 
   { TmnStreamHexProxy }
 
-  TmnStreamHexProxy = class(TmnStreamOverProxy)
+  TmnHexStreamProxy = class(TmnStreamOverProxy)
   private
   protected
     type
@@ -373,14 +374,14 @@ end;
 function TmnBufferStream.TmnInitialStreamProxy.Read(var Buffer; Count: Longint; out ResultCount, RealCount: longint): Boolean;
 begin
   ResultCount := FStream.DoRead(Buffer, Count);
-  RealCount := Count;
+  RealCount := ResultCount;
   Result := True;
 end;
 
 function TmnBufferStream.TmnInitialStreamProxy.Write(const Buffer; Count: Longint; out ResultCount, RealCount: longint): Boolean;
 begin
   ResultCount := FStream.DoWrite(Buffer, Count);
-  RealCount := Count;
+  RealCount := ResultCount;
   Result := True;
 end;
 
@@ -1137,9 +1138,9 @@ begin
     FreeAndNil(AStream);
 end;
 
-{ TmnStreamHexProxy }
+{ TmnHexStreamProxy }
 
-function TmnStreamHexProxy.HexEncode(const Buffer; Count: Longint; out ResultCount, RealCount: longint): Boolean;
+function TmnHexStreamProxy.HexEncode(const Buffer; Count: Longint; out ResultCount, RealCount: longint): Boolean;
 
   function DigiToChar(c: Byte): Byte; inline;
   begin
@@ -1178,7 +1179,7 @@ begin
   end;
 end;
 
-function TmnStreamHexProxy.HexDecode(var Buffer; Count: Longint; out ResultCount, RealCount: longint): Boolean;
+function TmnHexStreamProxy.HexDecode(var Buffer; Count: Longint; out ResultCount, RealCount: longint): Boolean;
 
   function CharToDigi(c: Byte):Byte; inline;
   begin
@@ -1223,13 +1224,13 @@ begin
   end;
 end;
 
-function TmnStreamHexProxy.Read(var Buffer; Count: Longint; out ResultCount, RealCount: longint): Boolean;
+function TmnHexStreamProxy.Read(var Buffer; Count: Longint; out ResultCount, RealCount: longint): Boolean;
 begin
   HexDecode(Buffer, Count, ResultCount, RealCount);
   Result := True;
 end;
 
-function TmnStreamHexProxy.Write(const Buffer; Count: Longint; out ResultCount, RealCount: longint): Boolean;
+function TmnHexStreamProxy.Write(const Buffer; Count: Longint; out ResultCount, RealCount: longint): Boolean;
 begin
   HexEncode(Buffer, Count, ResultCount, RealCount);
   Result := True;
