@@ -19,7 +19,7 @@ unit mnStreamUtils;
 interface
 
 uses
-  Classes, SysUtils, zlib, mnBase64,
+  Classes, SysUtils, zlib, 
   mnStreams;
 
 type
