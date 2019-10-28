@@ -56,6 +56,7 @@ type
     FURIParams: TmnParams;
     FCompressIt: Boolean;
     FContentLength: Integer;
+    DeflateProxy: TmnDeflateStreamProxy;
   protected
     procedure Created; override;
     procedure Prepare(var Result: TmodExecuteResults); override;
@@ -96,6 +97,7 @@ type
 
   TmodWebModule = class(TmodModule)
   private
+    FCompressing: Boolean;
     FServer: TmodWebServer;
     procedure SetDefaultDocument(AValue: TStringList);
     procedure SetDocumentRoot(AValue: string);
@@ -111,6 +113,7 @@ type
     procedure Log(S: string); override;
   public
     destructor Destroy; override;
+    property Compressing: Boolean read FCompressing write FCompressing;
     property Server: TmodWebServer read FServer;
     property DocumentRoot: string read FDocumentRoot write SetDocumentRoot;
     property DefaultDocument: TStringList read FDefaultDocument write SetDefaultDocument;
@@ -270,6 +273,7 @@ begin
   inherited;
   FDefaultDocument := TStringList.Create;
   UseKeepAlive := true;
+  //Compressing := True;
 end;
 
 procedure TmodWebModule.CreateCommands;
@@ -564,9 +568,10 @@ begin
     PostHeader('Connection', 'Keep-Alive');
     PostHeader('Keep-Alive', 'timout=' + IntToStr(Module.KeepAliveTimeOut div 5000) + ', max=100');
   end;
-  if FCompressIt then
+
+  FCompressIt := (Module as TmodWebModule).Compressing and RequestHeader['Accept-Encoding'].Have('deflate', [',']);
+  if CompressIt then
   begin
-//  Accept-Encoding: gzip, deflate, br}
     PostHeader('Content-Encoding', 'deflate');
   end;
   if (RequestHeader['Content-Length'].IsExists) then
@@ -598,6 +603,10 @@ begin
     end;
     Result.Status := Result.Status + [erKeepAlive];
   end;
+  if DeflateProxy <> nil then
+  begin
+    DeflateProxy.Disable;
+  end;
 end;
 
 procedure TmodHttpCommand.Respond(var Result: TmodExecuteResults);
@@ -607,16 +616,20 @@ begin
 end;
 
 procedure TmodHttpCommand.SendHeader;
-var
-  gz: TmnDeflateStreamProxy;
 begin
   if Cookies.Count > 0 then
     PostHeader('Cookies', Cookies.AsString);
   inherited;
+
   if CompressIt then
   begin
-    gz := TmnDeflateStreamProxy.Create(9);
-    RespondStream.AddProxy(gz);
+    if DeflateProxy = nil then
+    begin
+      DeflateProxy := TmnDeflateStreamProxy.Create([cprsWrite], 9, false);
+      RespondStream.AddProxy(DeflateProxy);
+    end
+    else
+      DeflateProxy.Enable;
   end;
 end;
 
@@ -631,5 +644,5 @@ end;
 initialization
   modLock := TCriticalSection.Create;
 finalization
-  modLock.Free;
+  FreeAndNil(modLock);
 end.

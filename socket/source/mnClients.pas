@@ -40,7 +40,7 @@ type
     property Address: string read FAddress write SetAddress;
   end;
 
-  TmnClientSocketStream = TmnClientSocket deprecated;
+  TmnClientSocketStream = TmnClientSocket;
 
   { TmnClientConnection }
 

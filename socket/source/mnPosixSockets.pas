@@ -83,19 +83,18 @@ type
     FHandle: TSocket;
     FAddress: TSockAddr;
   protected
-    function Valid(Value: Integer; WithZero: Boolean = False): Boolean;
     function Check(Value: Integer; WithZero: Boolean = False): Boolean;
     function GetActive: Boolean; override;
     function DoSelect(Timeout: Integer; Check: TSelectCheck): TmnError; override;
     function DoShutdown(How: TmnShutdowns): TmnError; override;
     function PosixSend(vBuf: Pointer; vLen: Integer): Integer;
+    function DoListen: TmnError; override;
+    function DoReceive(var Buffer; var Count: Longint): TmnError; override;
+    function DoSend(const Buffer; var Count: Longint): TmnError; override;
   public
     constructor Create(Handle: TSocket);
     procedure Close; override;
     function Accept: TmnCustomSocket; override;
-    function Receive(var Buffer; var Count: Longint): TmnError; override;
-    function Send(const Buffer; var Count: Longint): TmnError; override;
-    function Listen: TmnError; override;
     function GetLocalAddress: string; override;
     function GetRemoteAddress: string; override;
     function GetLocalName: string; override;
@@ -137,7 +136,7 @@ end;
 
 { TmnSocket }
 
-function TmnSocket.Receive(var Buffer; var Count: LongInt): TmnError;
+function TmnSocket.DoReceive(var Buffer; var Count: LongInt): TmnError;
 var
   c: Integer;
 begin
@@ -156,7 +155,6 @@ begin
     //TODO copy it from windows
     //Result := erTimout; //maybe closed, but we will pass it as timeout, the caller will close it depend on options
     Result := erInvalid;
-    Error;
   end
   else
   begin
@@ -165,7 +163,7 @@ begin
   end;
 end;
 
-function TmnSocket.Send(const Buffer; var Count: LongInt): TmnError;
+function TmnSocket.DoSend(const Buffer; var Count: LongInt): TmnError;
 var
   c: Integer;
 begin
@@ -184,7 +182,6 @@ begin
   begin
     Count := 0;
     Result := erInvalid;
-    Error;
   end
   else
   begin
@@ -232,22 +229,12 @@ begin
       c := Posix.SysSelect.Select(FD_SETSIZE, nil, @FSet, nil, LTimePtr);}
 
     if (c = SOCKET_ERROR) then
-    begin
-      Error;
-      Result := erFail;
-    end
+      Result := erInvalid
     else if (c = 0) then
       Result := erTimeout
     else
       Result := erSuccess;
   end;
-end;
-
-function TmnSocket.Valid(Value: Integer; WithZero: Boolean): Boolean;
-begin
-  Result := Check(Value, WithZero);
-  if not Result then
-    Error;
 end;
 
 function TmnSocket.GetActive: Boolean;
@@ -279,10 +266,7 @@ begin
   CheckActive;
   c := Posix.SysSocket.shutdown(FHandle, iHow);
   if c = SOCKET_ERROR then
-  begin
-    Result := erFail;
-//    RaiseLastOSError; do not raise an error, maybe it is disconnected by the other side
-  end
+    Result := erInvalid
   else
     Result := erSuccess;
 end;
@@ -307,17 +291,14 @@ begin
   FHandle := Handle;
 end;
 
-function TmnSocket.Listen: TmnError;
+function TmnSocket.DoListen: TmnError;
 var
   c: Integer;
 begin
   CheckActive;
   c := Posix.SysSocket.listen(FHandle, 5);
   if c = SOCKET_ERROR then
-  begin
-    Error;
-    Result := erFail;
-  end
+    Result := erInvalid
   else
     Result := erSuccess;
 end;

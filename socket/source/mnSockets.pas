@@ -24,7 +24,7 @@ type
   EmnException = class(Exception);
   TmnShutdown = (sdReceive, sdSend);
   TmnShutdowns = set of TmnShutdown;
-  TmnError = (erSuccess, erTimeout, erFail, erClosed, erInvalid);
+  TmnError = (erSuccess, erTimeout, erClosed, erInvalid);
   TSelectCheck = (slRead, slWrite);
 
   TmnsoOption = (
@@ -46,29 +46,29 @@ type
 
   TmnCustomSocket = class abstract(TObject)
   private
-    FCloseWhenError: Boolean;
     FShutdownState: TmnShutdowns;
     function GetConnected: Boolean;
   protected
-    procedure Error;
     function GetActive: Boolean; virtual; abstract;
     procedure CheckActive; //this will force exception, cuz you should not use socket in api implmentation without active socket, i meant use it in api section only
     function DoSelect(Timeout: Integer; Check: TSelectCheck): TmnError; virtual; abstract;
     function DoShutdown(How: TmnShutdowns): TmnError; virtual; abstract;
+    function DoListen: TmnError; virtual; abstract;
+    function DoSend(const Buffer; var Count: Longint): TmnError; virtual; abstract;
+    function DoReceive(var Buffer; var Count: Longint): TmnError; virtual; abstract;
     property ShutdownState: TmnShutdowns read FShutdownState;
   public
     constructor Create;
     destructor Destroy; override;
     function Shutdown(How: TmnShutdowns): TmnError;
     procedure Close; virtual; abstract;
-    function Send(const Buffer; var Count: Longint): TmnError; virtual; abstract;
-    function Receive(var Buffer; var Count: Longint): TmnError; virtual; abstract;
+    function Send(const Buffer; var Count: Longint): TmnError;
+    function Receive(var Buffer; var Count: Longint): TmnError;
     function Select(Timeout: Integer; Check: TSelectCheck): TmnError;
-    function Listen: TmnError; virtual; abstract;
+    function Listen: TmnError;
     function Accept: TmnCustomSocket; virtual; abstract;
     property Active: Boolean read GetActive;
     property Connected: Boolean read GetConnected;
-    property CloseWhenError: Boolean read FCloseWhenError write FCloseWhenError default True;
     function GetLocalAddress: string; virtual; abstract;
     function GetRemoteAddress: string; virtual; abstract;
     function GetLocalName: string; virtual; abstract;
@@ -178,7 +178,6 @@ end;
 constructor TmnCustomSocket.Create;
 begin
   inherited;
-  FCloseWhenError := True;
 end;
 
 destructor TmnCustomSocket.Destroy;
@@ -190,22 +189,37 @@ begin
   inherited;
 end;
 
-procedure TmnCustomSocket.Error;
-begin
-  if FCloseWhenError then
-    Close;
-end;
-
 function TmnCustomSocket.GetConnected: Boolean;
 begin
   Result := Active and ([sdReceive, sdSend] <> FShutdownState)
 end;
 
+function TmnCustomSocket.Listen: TmnError;
+begin
+  Result := DoListen;
+  if Result > erTimeout then
+    Close;
+end;
+
+function TmnCustomSocket.Receive(var Buffer; var Count: Longint): TmnError;
+begin
+  Result := DoReceive(Buffer, Count);
+  if Result > erTimeout then
+    Close;
+end;
+
 function TmnCustomSocket.Select(Timeout: Integer; Check: TSelectCheck): TmnError;
 begin
   Result := DoSelect(Timeout, Check);
-  {if (Result <> erNone) then
-    Result := erClosed;}
+  if Result > erTimeout then
+    Close;
+end;
+
+function TmnCustomSocket.Send(const Buffer; var Count: Longint): TmnError;
+begin
+  Result := DoSend(Buffer, Count);
+  if Result > erTimeout then
+    Close;
 end;
 
 function TmnCustomSocket.Shutdown(How: TmnShutdowns): TmnError;
@@ -214,7 +228,10 @@ begin
   begin
     Result := DoShutdown(How);
     if Result = erSuccess then
-      FShutdownState := FShutdownState + How;
+      FShutdownState := FShutdownState + How
+    else
+      if Result > erTimeout then
+        Close;
   end
   else
     Result := erSuccess;

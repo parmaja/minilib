@@ -36,24 +36,27 @@
         </Mode0>
       </Modes>
     </RunParams>
-    <RequiredPackages Count="5">
+    <RequiredPackages Count="6">
       <Item1>
-        <PackageName Value="MiniXML"/>
+        <PackageName Value="MiniCommons"/>
       </Item1>
       <Item2>
-        <PackageName Value="MiniConnections"/>
+        <PackageName Value="MiniXML"/>
       </Item2>
       <Item3>
-        <PackageName Value="MiniSockets"/>
+        <PackageName Value="MiniConnections"/>
       </Item3>
       <Item4>
-        <PackageName Value="MiniComm"/>
+        <PackageName Value="MiniSockets"/>
       </Item4>
       <Item5>
-        <PackageName Value="LCL"/>
+        <PackageName Value="MiniComm"/>
       </Item5>
+      <Item6>
+        <PackageName Value="LCL"/>
+      </Item6>
     </RequiredPackages>
-    <Units Count="3">
+    <Units Count="4">
       <Unit0>
         <Filename Value="WebServer.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -69,6 +72,10 @@
         <Filename Value="..\..\..\source\mnHttpClient.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit2>
+      <Unit3>
+        <Filename Value="..\..\..\..\crypt\snow2.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit3>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
@@ -76,6 +83,7 @@
     <PathDelim Value="\"/>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)"/>
+      <OtherUnitFiles Value="..\..\..\..\crypt"/>
     </SearchPaths>
     <Parsing>
       <SyntaxOptions>

@@ -9,9 +9,8 @@ unit MainForm;
 interface
 
 uses
-  Windows, Messages, SysUtils, Classes, Graphics, Controls, Forms, Dialogs,
-  Registry, StdCtrls, ExtCtrls, mnConnections, mnSockets, mnServers,
-  mnHttpServer;
+  Windows, Messages, SysUtils, StrUtils, Classes, Graphics, Controls, Forms, Dialogs,
+  Registry, IniFiles, StdCtrls, ExtCtrls, mnConnections, mnSockets, mnServers, mnWebModules;
 
 type
   TMain = class(TForm)
@@ -23,20 +22,26 @@ type
     Label2: TLabel;
     PortEdit: TEdit;
     StayOnTopChk: TCheckBox;
-    NumberOfThreadsLbl: TLabel;
+    Panel3: TPanel;
+    LastIDLabel: TLabel;
+    Label4: TLabel;
+    Label3: TLabel;
+    MaxOfThreadsLabel: TLabel;
     NumberOfThreads: TLabel;
-    Bevel1: TBevel;
+    NumberOfThreadsLbl: TLabel;
     procedure StartBtnClick(Sender: TObject);
     procedure StopBtnClick(Sender: TObject);
     procedure StayOnTopChkClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
   private
-    WebServer: TmnHttpServer;
-    procedure WebServerBeforeOpen(Sender: TObject);
-    procedure WebServerAfterClose(Sender: TObject);
-    procedure WebServerChanged(Listener: TmnListener);
-    procedure WebServerLog(const S: string);
+    FMax:Integer;
+    Server: TmodWebServer;
+    procedure UpdateStatus;
+    procedure ModuleServerBeforeOpen(Sender: TObject);
+    procedure ModuleServerAfterClose(Sender: TObject);
+    procedure ModuleServerChanged(Listener: TmnListener);
+    procedure ModuleServerLog(const S: string);
   public
   end;
 
@@ -49,23 +54,32 @@ implementation
 
 procedure TMain.StartBtnClick(Sender: TObject);
 begin
-  WebServer.Start;
+  Server.Start;
 end;
 
 procedure TMain.StopBtnClick(Sender: TObject);
 begin
-  WebServer.Stop;
+  Server.Stop;
   StartBtn.Enabled := true;
 end;
 
-procedure TMain.WebServerBeforeOpen(Sender: TObject);
+procedure TMain.UpdateStatus;
 begin
-  Memo.Clear;
-  StartBtn.Enabled := false;
+  NumberOfThreads.Caption := IntToStr(Server.Listener.Count);
+  LastIDLabel.Caption := IntToStr(Server.Listener.LastID);
+end;
+
+procedure TMain.ModuleServerBeforeOpen(Sender: TObject);
+var
+  aRoot:string;
+begin
+  StartBtn.Enabled := False;
   StopBtn.Enabled := True;
-  WebServer.DocumentRoot := RootEdit.Text;
-  WebServer.Port := PortEdit.Text;
-//  WebServer.VirtualDomains := VirtualDomainsChk.Checked;
+  aRoot := RootEdit.Text;
+  if (LeftStr(aRoot, 2)='.\') or (LeftStr(aRoot, 2)='./') then
+    aRoot := ExtractFilePath(Application.ExeName) + Copy(aRoot, 3, MaxInt);
+  Server.WebModule.DocumentRoot := aRoot;
+  Server.Port := PortEdit.Text;
 end;
 
 function FindCmdLineValue(Switch: string; var Value: string; const Chars: TSysCharSet = ['/', '-']; Seprator: Char = ' '; IgnoreCase: Boolean = true): Boolean;
@@ -102,37 +116,49 @@ end;
 
 procedure TMain.FormCreate(Sender: TObject);
 var
-  s: string;
-  aReg: TRegistry;
-begin
-  WebServer := TmnHttpServer.Create;
-  WebServer.OnBeforeOpen := WebServerBeforeOpen;
-  WebServer.OnAfterClose := WebServerAfterClose;
-  WebServer.OnChanged := WebServerChanged;
-  WebServer.OnLog := WebServerLog;
-  RootEdit.Text := ExpandFileName(ExtractFilePath(Application.ExeName) + '..\..\lazarus\WebServer\html\');
-  if ParamCount = 0 then
+  aIni: TIniFile;
+  function GetOption(AName, ADefault:string):string;
+  var
+    s:string;
   begin
-    aReg := TRegistry.Create;
-    try
-      aReg.OpenKey('software\miniWebServer\Options', True);
-      if aReg.ValueExists('DocumentRoot') then
-        RootEdit.Text := aReg.ReadString('DocumentRoot');
-      if aReg.ValueExists('Port') then
-        PortEdit.Text := aReg.ReadString('Port');
-    finally
-      aReg.Free;
-    end;
-  end
-  else
-  begin
-    if FindCmdLineValue('root', s) then
-      RootEdit.Text := AnsiDequotedStr(s, '"');
-    if FindCmdLineValue('port', s) then
-      PortEdit.Text := s;
-    if FindCmdLineSwitch('run', true) then
-      WebServer.Start;
+    s := '';
+    if FindCmdLineValue(AName, s) then
+      Result :=AnsiDequotedStr(s, '"')
+    else
+      Result := aIni.ReadString('options', AName, ADefault);
   end;
+
+  function GetSwitch(AName, ADefault:string):string;//if found in cmd mean it is true
+  var
+    s:string;
+  begin
+    s := '';
+    if FindCmdLineValue(AName, s) then
+      Result := 'True'
+    else
+      Result := aIni.ReadString('options',AName, ADefault);
+  end;
+
+var
+  aAutoRun:Boolean;
+begin
+  Server := TmodWebServer.Create;
+  Server.OnBeforeOpen := ModuleServerBeforeOpen;
+  Server.OnAfterClose := ModuleServerAfterClose;
+  Server.OnChanged :=  ModuleServerChanged;
+  Server.OnLog := ModuleServerLog;
+  Server.Logging := True;
+
+  aIni := TIniFile.Create(ExtractFilePath(Application.ExeName) + 'config.ini');
+  try
+    RootEdit.Text := GetOption('root', '.\html');
+    PortEdit.Text := GetOption('port', '81');
+    aAutoRun := StrToBoolDef(GetSwitch('run', ''), False);
+  finally
+    aIni.Free;
+  end;
+  if aAutoRun then
+     Server.Start;
 end;
 
 procedure TMain.StayOnTopChkClick(Sender: TObject);
@@ -159,20 +185,22 @@ begin
   end
 end;
 
-procedure TMain.WebServerAfterClose(Sender: TObject);
+procedure TMain.ModuleServerAfterClose(Sender: TObject);
 begin
   StartBtn.Enabled := True;
   StopBtn.Enabled := False;
 end;
 
-procedure TMain.WebServerChanged(Listener: TmnListener);
+procedure TMain.ModuleServerChanged(Listener: TmnListener);
 begin
-  NumberOfThreads.Caption := IntToStr(Listener.Count);
+  if FMax < Listener.Count then
+    FMax := Listener.Count;
+  MaxOfThreadsLabel.Caption:=IntToStr(FMax);
+  UpdateStatus;
 end;
 
-procedure TMain.WebServerLog(const s: string);
+procedure TMain.ModuleServerLog(const s: string);
 begin
-//  Connection.Synchronize();
   Memo.Lines.Add(s);
 end;
 

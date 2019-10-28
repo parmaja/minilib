@@ -35,19 +35,18 @@ type
     FHandle: TSocket;
     FAddress: TSockAddr;
   protected
-    function Valid(Value: Integer): Boolean;
     function Check(Value: Integer): Boolean;
     function GetActive: Boolean; override;
     //Timeout millisecond
     function DoSelect(Timeout: Integer; Check: TSelectCheck): TmnError; override;
     function DoShutdown(How: TmnShutdowns): TmnError; override;
+    function DoListen: TmnError; override;
+    function DoReceive(var Buffer; var Count: Longint): TmnError; override;
+    function DoSend(const Buffer; var Count: Longint): TmnError; override;
   public
     constructor Create(vHandle: TSocket);
     procedure Close; override;
     function Accept: TmnCustomSocket; override;
-    function Listen: TmnError; override;
-    function Receive(var Buffer; var Count: Longint): TmnError; override;
-    function Send(const Buffer; var Count: Longint): TmnError; override;
     function GetLocalAddress: string; override;
     function GetRemoteAddress: string; override;
     function GetLocalName: string; override;
@@ -81,7 +80,7 @@ const
 
 { TmnSocket }
 
-function TmnSocket.Receive(var Buffer; var Count: Integer): TmnError;
+function TmnSocket.DoReceive(var Buffer; var Count: Integer): TmnError;
 var
   c: Integer;
   errno: longint;
@@ -105,10 +104,7 @@ begin
     if errno = WSAETIMEDOUT then
       Result := erTimeout //maybe closed, but we will pass it as timeout, the caller will close it depend on options
     else
-    begin
-      Result := erInvalid;
-      Error;
-    end;
+      Result := erInvalid
   end
   else
   begin
@@ -117,7 +113,7 @@ begin
   end;
 end;
 
-function TmnSocket.Send(const Buffer; var Count: Integer): TmnError;
+function TmnSocket.DoSend(const Buffer; var Count: Integer): TmnError;
 var
   c: Integer;
 begin
@@ -137,7 +133,6 @@ begin
   begin
     Count := 0;
     Result := erInvalid;
-    Error;
   end
   else
   begin
@@ -149,15 +144,6 @@ end;
 function TmnSocket.DoSelect(Timeout: Integer; Check: TSelectCheck): TmnError;
 begin
   Result := (WallSocket as TmnWallSocket).Select(FHandle, Timeout, Check);
-  if Result = erFail then
-    Error;
-end;
-
-function TmnSocket.Valid(Value: Integer): Boolean;
-begin
-  Result := Check(Value);
-  if not Result then
-    Error;
 end;
 
 function TmnSocket.GetActive: Boolean;
@@ -199,10 +185,7 @@ begin
   c := WinSock.Shutdown(FHandle, iHow);
 {$ENDIF}
   if c = SOCKET_ERROR then
-  begin
-    Result := erFail;
-    RaiseLastOSError;
-  end
+    Result := erInvalid
   else
     Result := erSuccess;
 end;
@@ -231,7 +214,7 @@ begin
   FHandle := vHandle;
 end;
 
-function TmnSocket.Listen: TmnError;
+function TmnSocket.DoListen: TmnError;
 var
   c: Integer;
 begin
@@ -242,10 +225,7 @@ begin
   c := WinSock.listen(FHandle, cBacklog);
 {$ENDIF}
   if c = SOCKET_ERROR then
-  begin
-    Error;
-    Result := erFail;
-  end
+    Result := erInvalid
   else
     Result := erSuccess;
 end;
@@ -483,7 +463,7 @@ begin
     {$ENDIF}
     end;
     if (c = SOCKET_ERROR) then
-      Result := erFail
+      Result := erInvalid
     else if (c = 0) then
       Result := erTimeout
     else

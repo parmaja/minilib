@@ -278,9 +278,11 @@ type
     property Modules: TmodModules read FModules;
   end;
 
+  { TmnFieldHelper }
+
   TmnFieldHelper = class helper for TmnField
   public
-    function Have(AValue: string; vSeperator: string = ';'): Boolean;
+    function Have(AValue: string; vSeperators: TSysCharSet = [';']): Boolean;
   end;
 
 function ParseURI(Request: string; out URIPath: UTF8String; URIParams: TmnParams): Boolean;
@@ -454,7 +456,7 @@ begin
   inherited Create;
   FModule := AModule;
   FRequestStream := RequestStream; //do not free
-  FRespondStream := FRespondStream; //do not free
+  FRespondStream := RequestStream; //do not free
 
   FRequestHeader := TmnParams.Create;
   FRespondHeader := TmnParams.Create;
@@ -798,7 +800,7 @@ end;
 
 { TmnFieldHelper }
 
-function TmnFieldHelper.Have(AValue: string; vSeperator: string): Boolean;
+function TmnFieldHelper.Have(AValue: string; vSeperators: TSysCharSet): Boolean;
 var
   SubValues : TStringList;
 begin
@@ -808,7 +810,7 @@ begin
   begin
     SubValues := TStringList.Create;
     try
-      StrToStrings(AsString, SubValues, [';'], []);
+      StrToStrings(AsString, SubValues, vSeperators, [' ']);
       Result := SubValues.IndexOf(AValue) >=0;
     finally
       SubValues.Free;

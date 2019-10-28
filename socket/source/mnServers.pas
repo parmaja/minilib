@@ -395,7 +395,6 @@ begin
   if not Terminated then
   begin
     FSocket := WallSocket.Bind(FOptions, FPort, FAddress);
-    FSocket.CloseWhenError := False;
     if Connected then
       Socket.Listen;
   end;
