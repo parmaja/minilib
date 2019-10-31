@@ -97,7 +97,6 @@ type
 
   TmodWebModule = class(TmodModule)
   private
-    FCompressing: Boolean;
     FServer: TmodWebServer;
     procedure SetDefaultDocument(AValue: TStringList);
     procedure SetDocumentRoot(AValue: string);
@@ -113,7 +112,6 @@ type
     procedure Log(S: string); override;
   public
     destructor Destroy; override;
-    property Compressing: Boolean read FCompressing write FCompressing;
     property Server: TmodWebServer read FServer;
     property DocumentRoot: string read FDocumentRoot write SetDocumentRoot;
     property DefaultDocument: TStringList read FDefaultDocument write SetDefaultDocument;
@@ -569,7 +567,7 @@ begin
     PostHeader('Keep-Alive', 'timout=' + IntToStr(Module.KeepAliveTimeOut div 5000) + ', max=100');
   end;
 
-  FCompressIt := (Module as TmodWebModule).Compressing and RequestHeader['Accept-Encoding'].Have('deflate', [',']);
+  FCompressIt := Module.Compressing and RequestHeader['Accept-Encoding'].Have('deflate', [',']);
   if CompressIt then
   begin
     PostHeader('Content-Encoding', 'deflate');

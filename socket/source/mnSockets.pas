@@ -297,7 +297,11 @@ begin
     ReadError //set EOF or raise error, not sure about raising error
   else
   begin
-    werr := WaitToRead(Timeout);
+    if soWaitBeforeRead in Options then
+      werr := WaitToRead(Timeout)
+    else
+      werr := cerSuccess;
+
     if (werr = cerSuccess) or ((werr = cerTimeout) and (soSafeReadTimeout in Options)) then
     begin
       if (Socket = nil) then

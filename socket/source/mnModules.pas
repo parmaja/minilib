@@ -177,6 +177,7 @@ type
     FParams: TStringList;
     FProtcol: string;
     FUseKeepAlive: Boolean;
+    FCompressing: Boolean;
   protected
     DefaultCommand: TmodCommandClass;
     //Name here will corrected with registered item name for example Get -> GET
@@ -207,6 +208,7 @@ type
     property Protcol: string read FProtcol;
     property KeepAliveTimeOut: Integer read FKeepAliveTimeOut write FKeepAliveTimeOut;
     property UseKeepAlive: Boolean read FUseKeepAlive write FUseKeepAlive default False;
+    property Compressing: Boolean read FCompressing write FCompressing;
   end;
 
   { TmodModules }
