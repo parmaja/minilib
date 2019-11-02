@@ -14,8 +14,6 @@ unit mnStreamUtils;
 {$MODE delphi}
 {$ENDIF}
 
-{.$define NoLog}
-
 interface
 
 uses

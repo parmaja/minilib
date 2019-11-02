@@ -270,8 +270,8 @@ procedure TmodWebModule.Created;
 begin
   inherited;
   FDefaultDocument := TStringList.Create;
-  UseKeepAlive := true;
-  //Compressing := True;
+  //UseKeepAlive := true;
+  Compressing := True;
 end;
 
 procedure TmodWebModule.CreateCommands;
@@ -425,7 +425,8 @@ begin
         begin
           SendRespond('HTTP/1.1 200 OK');
           PostHeader('Content-Type', DocumentToContentType(aDocument));
-          PostHeader('Content-Length', IntToStr(DocSize));
+          if KeepAlive then
+            PostHeader('Content-Length', IntToStr(10));
         end;
 
         SendHeader;
@@ -567,7 +568,7 @@ begin
     PostHeader('Keep-Alive', 'timout=' + IntToStr(Module.KeepAliveTimeOut div 5000) + ', max=100');
   end;
 
-  FCompressIt := Module.Compressing and RequestHeader['Accept-Encoding'].Have('deflate', [',']);
+  FCompressIt := (Module as TmodWebModule).Compressing and RequestHeader['Accept-Encoding'].Have('deflate', [',']);
   if CompressIt then
   begin
     PostHeader('Content-Encoding', 'deflate');
