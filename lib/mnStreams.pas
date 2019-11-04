@@ -42,7 +42,9 @@ type
     function GetConnected: Boolean; virtual; //Socket or COM ports have Connected override
   public
     //Count = 0 , load until eof
-    function ReadString(Count: TFileSize = 0): String; overload;
+    function ReadString(Count: TFileSize = 0): RawByteString; overload;
+    function ReadString(Count: TFileSize; CodePage: Word): RawByteString; overload;
+    function ReadBufferBytes(Count: TFileSize = 0): TBytes; overload;
     function WriteString(const Value: String): TFileSize; overload;
     function ReadStream(AStream: TStream; Count: TFileSize = 0): TFileSize; overload;
     function WriteStream(AStream: TStream; Count: TFileSize = 0): TFileSize; overload;
@@ -191,6 +193,7 @@ type
     function WriteLineUTF8(const S: UTF8String): TFileSize; overload;
 
     {$ifndef NEXTGEN}
+    function WriteLineAnsiString(const S: ansistring): TFileSize; overload;
     function WriteLine(const S: ansistring): TFileSize; overload;
     function WriteLine(const S: widestring): TFileSize; overload;
     {$endif}
@@ -547,10 +550,10 @@ begin
   Result := True;
 end;
 
-function TmnCustomStream.ReadString(Count: TFileSize): String;
+function TmnCustomStream.ReadString(Count: TFileSize): RawByteString;
 var
   aBuffer: PByte;
-  S: RawByteString;
+  p: Integer;
   l, c, Size: Integer;
 begin
   Result := '';
@@ -560,6 +563,7 @@ begin
   {$endif}
   GetMem(aBuffer, ReadWriteBufferSize);
   try
+    p := 0;
     while Connected do
     begin
       if (Count > 0) and (Size < ReadWriteBufferSize) then
@@ -571,8 +575,9 @@ begin
       begin
         if Count > 0 then
           Size := Size - c;
-        SetString(S, PChar(aBuffer), c);
-        Result:= Result + S
+        SetLength(Result, p + c);
+        Move(aBuffer^, (PByte(Result) + p)^, c);
+        p := p + c;
       end;
       if (c = 0) or ((Count > 0) and (Size = 0)) then
         break;
@@ -582,11 +587,54 @@ begin
   end;
 end;
 
+function TmnCustomStream.ReadString(Count: TFileSize; CodePage: Word): RawByteString;
+begin
+  Result := ReadString(Count);
+  SetCodePage(Result, CodePage, False);
+end;
+
 function TmnCustomStream.ReadStream(AStream: TStream; Count: TFileSize): TFileSize;
 var
   RealCount: TFileSize;
 begin
   Result := ReadStream(AStream, Count, RealCount);
+end;
+
+function TmnCustomStream.ReadBufferBytes(Count: TFileSize): TBytes;
+var
+  aBuffer: PByte;
+  p: Integer;
+  l, c, Size: Integer;
+begin
+  Result := nil;
+  Size := Count;
+  {$ifdef FPC} //less hint in fpc
+  aBuffer := nil;
+  {$endif}
+  GetMem(aBuffer, ReadWriteBufferSize);
+  try
+    p := 0;
+    while Connected do
+    begin
+      if (Count > 0) and (Size < ReadWriteBufferSize) then
+        l := Size
+      else
+        l := ReadWriteBufferSize;
+      c := Read(aBuffer^, l);
+      if c > 0 then
+      begin
+        if Count > 0 then
+          Size := Size - c;
+        SetLength(Result, p + c);
+        Move(aBuffer^, Result[p], c);
+        p := p + c;
+      end;
+      if (c = 0) or ((Count > 0) and (Size = 0)) then
+        break;
+    end;
+  finally
+    FreeMem(aBuffer);
+  end;
 end;
 
 function TmnCustomStream.ReadStream(AStream: TStream; Count: TFileSize; out RealCount: Integer): TFileSize;
@@ -667,7 +715,7 @@ begin
 end;
 
 {$ifndef NEXTGEN}
-function TmnBufferStream.WriteLine(const S: ansistring): TFileSize;
+function TmnBufferStream.WriteLineAnsiString(const S: ansistring): TFileSize;
 var
   EOL: ansistring;
 begin
@@ -677,6 +725,11 @@ begin
   else
     Result := 0;
   Result := Result + Write(Pointer(EOL)^, Length(EOL));
+end;
+
+function TmnBufferStream.WriteLine(const S: ansistring): TFileSize;
+begin
+  Result := WriteLineAnsiString(S);
 end;
 
 function TmnBufferStream.WriteLine(const S: widestring): TFileSize;

@@ -77,10 +77,9 @@ begin
     if Result then
     begin
       case HeaderList.ItemIndex of
-        1: vCSVIE.HeaderLine := hdrNormal;
-        2: vCSVIE.HeaderLine := hdrSkip;
-        else
-          vCSVIE.HeaderLine := hdrNone;
+        0: vCSVIE.HeaderLine := hdrNone;
+        1: vCSVIE.HeaderLine := hdrSkip;
+        2: vCSVIE.HeaderLine := hdrNormal;
       end;
       s := DelimiterList.Text;
       if s = '' then
@@ -118,8 +117,8 @@ end;
 procedure TCSVOptionsForm.FormCreate(Sender: TObject);
 begin
   HeaderList.Items.Add('No Header');
-  HeaderList.Items.Add('Header contain fields');
   HeaderList.Items.Add('Skip header');
+  HeaderList.Items.Add('Header contain fields');
   HeaderList.ItemIndex := 0;
 
   DelimiterList.Items.Add(';');

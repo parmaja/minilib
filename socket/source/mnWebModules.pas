@@ -568,7 +568,7 @@ begin
     PostHeader('Keep-Alive', 'timout=' + IntToStr(Module.KeepAliveTimeOut div 5000) + ', max=100');
   end;
 
-  FCompressIt := (Module as TmodWebModule).Compressing and RequestHeader['Accept-Encoding'].Have('deflate', [',']);
+  FCompressIt := Module.Compressing and RequestHeader['Accept-Encoding'].Have('deflate', [',']);
   if CompressIt then
   begin
     PostHeader('Content-Encoding', 'deflate');
