@@ -32,7 +32,7 @@ unit zktClients;
 interface
 
 uses
-  Classes, SysUtils,
+  Classes, SysUtils, StrUtils,
   mnClasses, mnClients, mnSockets;
 
 const
@@ -137,8 +137,8 @@ type
   { TZKPayload }
 
   TZKPayload = packed record
-    Start: DWORD; //5050827d;
-    Size: DWORD;
+    Start: LongWord; //5050827d;
+    Size: LongWord;
     Header: TZKHeader;
     function DataSize: Integer;
   end;
@@ -152,33 +152,33 @@ type
 
   TZKAttData = packed record
     Number: WORD;
-    UserID: array[0..23] of char;
+    UserID: array[0..23] of AnsiChar;
     Verified: Byte;
-    Time: DWORD;
+    Time: LongWord;
     State: Byte;
     WorkCode: Byte;
-    Reserved: array[0..6] of char;
+    Reserved: array[0..6] of AnsiChar;
   end;
 
   TZKUserData = packed record
     ID: WORD;
     Role: Byte;
-    Password: array[0..7] of char;
-    Name: array[0..27] of char;
-    //Card: array[0..4] of char; //NotSure
+    Password: array[0..7] of AnsiChar;
+    Name: array[0..27] of AnsiChar;
+    //Card: array[0..4] of AnsiChar; //NotSure
     Card:Word;
     B1: Byte;
     Group: Word; //NotSure
     W1: Word; //NotSure
     TimeZone: Word; //NotSure
-    UserID: array[0..7] of char;
-    Unknown: array[0..15] of char;
+    UserID: array[0..7] of AnsiChar;
+    Unknown: array[0..15] of AnsiChar;
   end;
 
   TZKAttendance = class(TObject)
   public
     Number: Integer;
-    UserID: string;
+    UserID: AnsiString;
     Time: TDateTime;
     State: Integer;
     WorkCode: Integer;
@@ -192,9 +192,9 @@ type
   TZKUser = class(TObject)
   public
     Number: Integer;
-    UserID: string;
-    Name: string;
-    Password: string;
+    UserID: AnsiString;
+    Name: AnsiString;
+    Password: AnsiString;
     Card: Integer;
     Role: Integer;
     Group: Integer;
@@ -206,8 +206,8 @@ type
   end;
 
   TZKDataSize = record
-    Size: DWORD;
-    Reserved: DWORD;
+    Size: LongWord;
+    Reserved: LongWord;
   end;
 
   { TByteHelper }
@@ -217,7 +217,7 @@ type
     procedure Clear;
     procedure Add(Value: Byte); overload;
     procedure Add(Value: Word); overload;
-    procedure Add(Value: DWord); overload;
+    procedure Add(Value: LongWord); overload;
     procedure Add(Value: AnsiString); overload;
     procedure Add(Value: AnsiString; PadSize: Integer; PadChar: AnsiChar = #0); overload;
     procedure Add(Value: TBytes); overload;
@@ -225,11 +225,13 @@ type
     procedure AddBuffer(const Value; Size: Integer); overload;
     //Index is byte offset
     function GetWord(Index: Integer): WORD; overload;
-    function GetDWord(Index: Integer): DWORD; overload;
+    function GetDWord(Index: Integer): LongWord; overload;
     function Count: Integer;
-    function ToString: ansistring;
+    function ToString: AnsiString;
     procedure Dump;
+    {$ifdef DEBUG}
     procedure DumpHex(BytesInLine: Integer = 0);
+    {$endif}
   end;
 
   TZKSocketStream = Class(TmnClientSocketStream)
@@ -240,13 +242,13 @@ type
 
   TZKClient = class(TObject)
   private
-    FHost: string;
-    FKey: DWord;
-    FLastError: string;
-    FPort: string;
+    FHost: AnsiString;
+    FKey: LongWord;
+    FLastError: AnsiString;
+    FPort: AnsiString;
   protected
     FSocket: TZKSocketStream;
-    FReceivedData: string;
+    FReceivedData: AnsiString;
     FStartData: Integer;
     FUserData: TBytes;
     FAttendanceData: TBytes;
@@ -258,7 +260,7 @@ type
     function CreateSocket: TZKSocketStream; virtual;
     function CheckSum(Buf: TBytes; Offset: Integer = 0): Word;
     function CreatePacket(Command, SessionId, ReplyId: Word; CommandData: TBytes): TBytes;
-    function ExecCommand(Command, ReplyId: Word; CommandData: TBytes; out Payload: TZKPayload; out RespondData: TBytes): Boolean; virtual; overload;
+    function ExecCommand(Command, ReplyId: Word; CommandData: TBytes; out Payload: TZKPayload; out RespondData: TBytes): Boolean; overload; virtual;
     function ExecCommand(Command, ReplyId: Word; CommandData: TBytes; out RespondData: TBytes): Boolean; overload;
     function ExecCommand(Command, ReplyId: Word; CommandData: TBytes): Boolean; overload;
     function ExecCommand(Command, ReplyId: Word): Boolean; overload;
@@ -267,33 +269,46 @@ type
     function ReceiveBytes(out Data: TBytes; Size: Integer): Boolean;
     function ReceiveHeader(out Payload: TZKPayload): Boolean;
   public
-    class function GetCommKey(Key: DWORD; SessionID: WORD): DWORD;
-    constructor Create(vKey: DWord; vHost: string; vPort: string = '4370'); virtual;
+    class function GetCommKey(Key: LongWord; SessionID: WORD): LongWord;
+    constructor Create(vKey: LongWord; vHost: AnsiString; vPort: AnsiString = '4370'); virtual;
     function Connect: Boolean;
     function Disconnect: Boolean;
-    function GetVersion: string;
+    function GetVersion: AnsiString;
     procedure EnableDevice;
     procedure DisableDevice;
     procedure TestVoice;
     function GetAddendances(Attendances: TZKAttendances): Boolean;
     function GetUsers(Users: TZKUsers): Boolean;
     function SetUser(User: TZKUser): Boolean; overload;
-    function SetUser(UserNumber: Integer; UserID: string; UserName: string): Boolean; overload;
+    function SetUser(UserNumber: Integer; UserID: AnsiString; UserName: AnsiString): Boolean; overload;
     function SetTime(ATime: TDateTime): Boolean;
     function GetTime(out ATime: TDateTime): Boolean;
     function ClearAttLog: Boolean;
-    property Host: string read FHost;
-    property Port: string read FPort;
-    property Key: DWord read FKey;
+    property Host: AnsiString read FHost;
+    property Port: AnsiString read FPort;
+    property Key: LongWord read FKey;
     property SessionID: Word read FSessionID write FSessionID; //todo only readonly
 
-    property LastError: string read FLastError;
+    property LastError: AnsiString read FLastError;
   end;
 
 implementation
 
+type
+  TSystemTime = record
+     Year : WORD;
+     Month : WORD;
+     DayOfWeek : WORD;
+     Day : WORD;
+     Hour : WORD;
+     Minute : WORD;
+     Second : WORD;
+     Millisecond : WORD;
+  end;
+
 function ToBytes(S: AnsiString): TBytes;
 begin
+  Result := nil;
   SetLength(Result, Length(S));
   Move(Pointer(S)^, Pointer(Result)^, Length(S));
 end;
@@ -349,13 +364,13 @@ begin
   Self[index] := hi(Value);
 end;
 
-procedure TByteHelper.Add(Value: DWord);
+procedure TByteHelper.Add(Value: LongWord);
 var
   index: integer;
 begin
   index := Length(Self);
   SetLength(Self, Index + SizeOf(Value));
-  PDWORD(@Self[index])^ := Value;
+  PLongWord(@Self[index])^ := Value;
 end;
 
 procedure TByteHelper.Add(Value: AnsiString);
@@ -420,9 +435,9 @@ begin
   Result := PWord(@Self[Index])^;
 end;
 
-function TByteHelper.GetDWord(Index: Integer): DWORD;
+function TByteHelper.GetDWord(Index: Integer): LongWord;
 begin
-  Result := PDWord(@Self[Index])^;
+  Result := PLongWord(@Self[Index])^;
 end;
 
 function TByteHelper.Count: Integer;
@@ -447,6 +462,7 @@ begin
   end;
 end;
 
+{$ifdef DEBUG}
 procedure TByteHelper.DumpHex(BytesInLine: Integer);
 var
   i: Integer;
@@ -460,11 +476,12 @@ begin
     if (BytesInLine > 0) and (c >= (BytesInLine)) then
     begin
       c := 0;
-      WriteLn();
+      WriteLn('');
     end;
   end;
-  WriteLn();
+  WriteLn('');
 end;
+{$endif}
 
 { TZKClient }
 
@@ -501,6 +518,7 @@ var
   c: Integer;
   Packet: PZKPayload;
 begin
+  Result := nil;
   SetLength(Result, SizeOf(TZKPayload));
   Result.Add(CommandData);
 
@@ -521,7 +539,7 @@ function TZKClient.ExecCommand(Command, ReplyId: Word; CommandData: TBytes; out 
 var
   Packet: TBytes;
   CMD: Integer;
-  aSize: DWord;
+  aSize: LongWord;
   ACommandData: TBytes;
 begin
   FLastError := '';
@@ -637,7 +655,7 @@ begin
   Result.Timeout := 5000;
 end;
 
-constructor TZKClient.Create(vKey: DWord; vHost: string; vPort: string);
+constructor TZKClient.Create(vKey: LongWord; vHost: AnsiString; vPort: AnsiString);
 begin
   inherited Create;
   FHost := vHost;
@@ -646,10 +664,10 @@ begin
   FStartData := 8;
 end;
 
-class function TZKClient.GetCommKey(Key: DWORD; SessionID: WORD): DWORD;
+class function TZKClient.GetCommKey(Key: LongWord; SessionID: WORD): LongWord;
 var
   i: Integer;
-  Temp: DWORD;
+  Temp: LongWord;
   R: array[0..3] of byte absolute Result;
   T: array[0..3] of byte absolute temp;
 const
@@ -713,6 +731,7 @@ function TZKClient.ReceiveBytes(out Data: TBytes; Size: Integer): Boolean;
 var
   c: Integer;
 begin
+  Data := nil;
   if Size > 0 then
   begin
     SetLength(Data, Size);
@@ -770,7 +789,7 @@ begin
   FLastError := '';
 end;
 
-function TZKClient.GetVersion: string;
+function TZKClient.GetVersion: AnsiString;
 var
   Data: TBytes;
 begin
@@ -780,7 +799,7 @@ begin
     Result := '';
 end;
 
-function ZKDecodeTime(ATime: DWORD): TDateTime;
+function ZKDecodeTime(ATime: LongWord): TDateTime;
 var
   t: TSystemTime;
 begin
@@ -795,14 +814,15 @@ begin
     t.Month := ATime mod 12 + 1;
     ATime := ATime div 12;
     t.Year := ATime + 2000;
-    Result := SystemTimeToDateTime(t);
+    Result := EncodeDate(t.Year, t.Month, t.Day) + EncodeTime(t.Hour, t.Minute, t.Second, t.Millisecond);
 end;
 
-function ZKEncodeTime(ATime: TDateTime): DWord;
+function ZKEncodeTime(ATime: TDateTime): LongWord;
 var
   t: TSystemTime;
 begin
-  DateTimeToSystemTime(ATime, t);
+  DecodeDate(ATime, t.Year, t.Month, t.Day);
+  DecodeTime(ATime, t.Hour, t.Minute, t.Second, t.Millisecond);
   Result := ((t.year mod 100) * 12 * 31 + ((t.month - 1) * 31) + t.day - 1) * (24 * 60 * 60) + (t.hour * 60 + t.minute) * 60 + t.second;
 end;
 
@@ -892,10 +912,16 @@ begin
   Finalize(UserData);
   FillChar(UserData, SizeOf(UserData), #0);
   UserData.ID := User.Number;
+  {$ifdef FPC}
   UserData.Name := User.Name;
   UserData.Password := User.Password;
-  UserData.Role := User.Role;
   UserData.UserID := User.UserID;
+  {$else}
+  StrLCopy(UserData.Name, PAnsiChar(User.Name), SizeOf(UserData.Name));
+  StrLCopy(UserData.Password, PAnsiChar(User.Name), SizeOf(UserData.Password));
+  StrLCopy(UserData.UserID, PAnsiChar(User.UserID), SizeOf(UserData.UserID));
+  {$endif}
+  UserData.Role := User.Role;
   UserData.Group := User.Group;
   UserData.Card := 1;
   UserData.TimeZone := User.TimeZone;
@@ -904,7 +930,7 @@ begin
   Result := ExecCommand(CMD_USER_WRQ, NewReplyID, CommandBytes);
 end;
 
-function TZKClient.SetUser(UserNumber: Integer; UserID: string; UserName: string): Boolean;
+function TZKClient.SetUser(UserNumber: Integer; UserID: AnsiString; UserName: AnsiString): Boolean;
 var
   aUser: TZKUser;
 begin

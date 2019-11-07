@@ -20,7 +20,12 @@ type
     hdrNormal: Header is the first line contain field names
     hdrIgnore: Header found for import files but ignored, header not exported
   }
-  TmncCSVHeader = (hdrNone, hdrSkip, hdrNormal);
+  TmncCSVHeader = (
+    hdrNone,
+    hdrSkip,
+    hdrNormal
+  );
+
   TmncEmptyLine = (
     elFetch, //Load it
     elSkip, //Ignore it
@@ -429,13 +434,15 @@ begin
   if Session.CSVOptions.ANSIContents then
   begin
     {$ifdef fpc}
-    raw := '';
+    FCSVStream.WriteLineAnsiString(s);
+
+    {raw := '';
     SetCodePage(raw, SystemAnsiCodePage, false);
-    raw := Utf8ToAnsi(s);
+    raw := Utf8ToAnsi(s);}
     {$else}
     raw := AnsiString(s);//Here you can fix the bug
-    {$endif}
     FCSVStream.WriteLineRawByte(raw);
+    {$endif}
   end
   else
   begin

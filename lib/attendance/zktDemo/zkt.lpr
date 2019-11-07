@@ -105,6 +105,10 @@ begin
             if Client.ClearAttLog then
               WriteLn('Clear successfull')
           end;
+          else
+          begin
+            //not yet
+          end;
         end;
         Client.Free;
         WriteLn();
