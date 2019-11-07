@@ -45,6 +45,7 @@
       <Unit1>
         <Filename Value="..\zktClients.pas"/>
         <IsPartOfProject Value="True"/>
+        <UnitName Value="zktlients"/>
       </Unit1>
       <Unit2>
         <Filename Value="..\..\mnStreams.pas"/>
@@ -60,7 +61,7 @@
     </Target>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)"/>
-      <OtherUnitFiles Value="..\..\..\..\minilib\lib\devices;..\..\..\..\minilib\lib"/>
+      <OtherUnitFiles Value="..\..\..\..\minilib\lib;.."/>
       <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
     </SearchPaths>
   </CompilerOptions>

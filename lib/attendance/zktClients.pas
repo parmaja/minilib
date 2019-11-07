@@ -1,4 +1,4 @@
-unit zktlients;
+unit zktClients;
 {**
  *  This file is part of the "Mini Library"
  *
@@ -33,7 +33,7 @@ interface
 
 uses
   Classes, SysUtils,
-  mnClasses, mnClients, mnSockets, mnSocketStreams;
+  mnClasses, mnClients, mnSockets;
 
 const
   CMD_CONNECT = 1000; //03E8
