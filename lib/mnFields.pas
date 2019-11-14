@@ -114,8 +114,8 @@ type
     function GetAsTime: TDateTime; virtual;
     procedure SetAsTime(const AValue: TDateTime); virtual;
 
-    function GetIsNull: Boolean; virtual;
-    procedure SetIsNull(const AValue: Boolean); virtual;
+    function GetIsNull: Boolean; virtual; abstract;
+    procedure SetIsNull(const AValue: Boolean); virtual; abstract;
     function GetIsEmpty: Boolean; virtual;
   public
     property Value: Variant read GetValue write SetValue;
@@ -155,7 +155,7 @@ type
   public
     constructor Create;
     procedure Assign(vField: TmnCustomField); virtual;
-    procedure Clear; virtual;//make value null
+    procedure Clear; virtual;//make value null //should be abstract
     procedure Empty; virtual;//make value empty
   end;
 
@@ -178,6 +178,8 @@ type
     FName: string;
     FValue: Variant;
   protected
+    function GetIsNull: Boolean; override;
+    procedure SetIsNull(const AValue: Boolean); override;
     function GetValue: Variant; override;
     procedure SetValue(const AValue: Variant); override;
     function GetAsString: string; override;
@@ -257,7 +259,8 @@ end;
 
 procedure TmnCustomField.Clear;
 begin
-  Value := Null;
+//  Value := Null;
+  IsNull := True;
 end;
 
 function TmnCustomField.GetAsBoolean: Boolean;
@@ -315,16 +318,16 @@ begin
   Result := VarIsClear(Value) or (VarType(Value) in [varEmpty, varNull, varUnknown]);
 end;
 
-function TmnCustomField.GetIsNull: Boolean;
+{function TmnCustomField.GetIsNull: Boolean;
 begin
   Result := (VarType(Value) in [varNull]);
-end;
+end;}
 
-procedure TmnCustomField.SetIsNull(const AValue: Boolean);
+{procedure TmnCustomField.SetIsNull(const AValue: Boolean);
 begin
   if AValue then
     Clear;
-end;
+end;}
 
 procedure TmnCustomField.LoadFromFile(const FileName: string);
 var
@@ -964,6 +967,16 @@ begin
 end;
 
 { TmnField }
+
+function TmnField.GetIsNull: Boolean;
+begin
+  Result := VarIsNull(Value);
+end;
+
+procedure TmnField.SetIsNull(const AValue: Boolean);
+begin
+  Value := Null;
+end;
 
 function TmnField.GetValue: Variant;
 begin

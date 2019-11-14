@@ -88,25 +88,12 @@ type
 
   { TmncMySQLField }
 
-  TmncMySQLField = class(TmncField)
-  private
-    FValue: Variant;
-  protected
-    function GetValue: Variant; override;
-    procedure SetValue(const AValue: Variant); override;
+  TmncMySQLField = class(TmncVariantField)
   end;
 
   { TmncMySQLParam }
 
-  TmncMySQLParam = class(TmncParam)
-  private
-    FValue: Variant;
-  protected
-    function GetValue: Variant; override;
-    procedure SetValue(const AValue: Variant); override;
-  public
-    constructor Create; override;
-    destructor Destroy; override;
+  TmncMySQLParam = class(TmncVariantParam)
   end;
 
   { TmncMySQLFields }
@@ -432,36 +419,6 @@ procedure TmncMySQLBinds.Clear;
 begin
   inherited Clear;
   FValues := nil;
-end;
-
-function TmncMySQLParam.GetValue: Variant;
-begin
-  Result := FValue;
-end;
-
-procedure TmncMySQLParam.SetValue(const AValue: Variant);
-begin
-  FValue := AValue;
-end;
-
-constructor TmncMySQLParam.Create;
-begin
-  inherited;
-end;
-
-destructor TmncMySQLParam.Destroy;
-begin
-  inherited;
-end;
-
-function TmncMySQLField.GetValue: Variant;
-begin
-  Result := FValue;
-end;
-
-procedure TmncMySQLField.SetValue(const AValue: Variant);
-begin
-  FValue := AValue;
 end;
 
 { TmncMySQLFields }

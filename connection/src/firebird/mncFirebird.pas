@@ -286,6 +286,8 @@ begin
   FErrorHandles := [eonExecute, eonDisconnect];
   {$ifdef FPC}
   FCharacterSet := 'UTF8';
+  {$else}
+  FCharacterSet := 'UTF-16';
   {$endif}
 end;
 

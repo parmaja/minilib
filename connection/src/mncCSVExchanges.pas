@@ -219,6 +219,7 @@ var
   EOL: Boolean;
   Fields: TFieldsInfo;
 begin
+  Fields := nil;
   aEOL := EndOfLine[1];
   GetMem(aBuffer, BufferSize);
   try

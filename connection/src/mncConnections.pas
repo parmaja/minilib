@@ -217,7 +217,7 @@ type
   TmnParam have Name and have Value
 }
 
-  { TmncCustomColumn }
+  { TmncItem }
 
   TmncItem = class(TmnCustomField)
   private
@@ -263,6 +263,8 @@ type
     FMetaType: string;
     FSize: Int64;
   protected
+    procedure SetIsNull(const AValue: Boolean); override;
+    function GetIsNull: Boolean; override;
     function GetValue: Variant; override;
     procedure SetValue(const AValue: Variant); override;
     procedure SetSize(AValue: Int64); virtual;
@@ -560,6 +562,8 @@ type
   private
     FValue: Variant;
   protected
+    procedure SetIsNull(const AValue: Boolean); override;
+    function GetIsNull: Boolean; override;
     function GetValue: Variant; override;
     procedure SetValue(const AValue: Variant); override;
   public
@@ -571,6 +575,8 @@ type
   private
     FValue: Variant;
   protected
+    procedure SetIsNull(const AValue: Boolean); override;
+    function GetIsNull: Boolean; override;
     function GetValue: Variant; override;
     procedure SetValue(const AValue: Variant); override;
   public
@@ -623,6 +629,16 @@ end;
 
 { TmncVariantParam }
 
+procedure TmncVariantParam.SetIsNull(const AValue: Boolean);
+begin
+  Value := Null;
+end;
+
+function TmncVariantParam.GetIsNull: Boolean;
+begin
+  Result := VarIsNull(Value);
+end;
+
 function TmncVariantParam.GetValue: Variant;
 begin
   Result := FValue;
@@ -634,6 +650,16 @@ begin
 end;
 
 { TmncVarianField }
+
+procedure TmncVariantField.SetIsNull(const AValue: Boolean);
+begin
+  Value := Null;
+end;
+
+function TmncVariantField.GetIsNull: Boolean;
+begin
+  Result := VarIsNull(Value);
+end;
 
 function TmncVariantField.GetValue: Variant;
 begin
@@ -960,6 +986,7 @@ begin
   CheckStarted;
   DoPrepare;
   FPrepared := True;
+  Params.Clean;
 end;
 
 function TmncCommand.DetachFields: TmncFields;
@@ -1530,6 +1557,16 @@ procedure TmncColumn.SetDecimals(AValue: Integer);
 begin
   if FDecimals =AValue then Exit;
   FDecimals :=AValue;
+end;
+
+procedure TmncColumn.SetIsNull(const AValue: Boolean);
+begin
+  raise EmncException.Create('Field have no value, You must not use it, try use Fields!') {$ifdef fpc}at get_caller_addr(get_frame){$endif};
+end;
+
+function TmncColumn.GetIsNull: Boolean;
+begin
+  raise EmncException.Create('Field have no value, You must not use it, try use Fields!');
 end;
 
 function TmncColumn.GetValue: Variant;

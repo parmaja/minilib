@@ -176,19 +176,12 @@ type
 
   TArrayOfPChar = array of PAnsiChar;
 
-  TmncPostgreParam = class(TmncParam)
+  TmncPostgreParam = class(TmncVariantParam)
   private
-    FValue: Variant;
   protected
-    function GetValue: Variant; override;
-    procedure SetValue(const AValue: Variant); override;
     procedure SetAsString(const AValue: string); override;
     procedure SetAsDate(const AValue: TDateTime); override;
     procedure SetAsDateTime(const AValue: TDateTime); override;
-
-  public
-    constructor Create; override;
-    destructor Destroy; override;
   end;
 
   TmncPostgreParams = class(TmncParams)
@@ -560,7 +553,7 @@ var
   s: ansistring;
 begin
   Result := lo_creat(Handle, INV_READ or INV_WRITE);
-  if Result<>0 then
+  if Result <> 0 then
   begin
     fdd := lo_open(Handle, Result, INV_WRITE or INV_READ);
     if (fdd<>-1) then
@@ -1217,24 +1210,9 @@ end;
 
 { TmncPostgreParam }
 
-constructor TmncPostgreParam.Create;
-begin
-  inherited;
-end;
-
-destructor TmncPostgreParam.Destroy;
-begin
-  inherited;
-end;
-
-function TmncPostgreParam.GetValue: Variant;
-begin
-  Result := FValue;
-end;
-
 procedure TmncPostgreParam.SetAsDate(const AValue: TDateTime);
 begin
-  if AValue=0 then
+  if AValue = 0 then
     Clear
   else
     inherited;
@@ -1242,7 +1220,7 @@ end;
 
 procedure TmncPostgreParam.SetAsDateTime(const AValue: TDateTime);
 begin
-  if AValue=0 then
+  if AValue = 0 then
     Clear
   else
     inherited;
@@ -1254,11 +1232,6 @@ begin
     Clear
   else
     inherited;
-end;
-
-procedure TmncPostgreParam.SetValue(const AValue: Variant);
-begin
-  FValue := AValue;
 end;
 
 { TmncPostgreParams }

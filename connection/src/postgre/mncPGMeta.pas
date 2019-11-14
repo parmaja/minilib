@@ -46,7 +46,7 @@ type
     procedure EnumIndices(Meta: TmncMetaItems; MemberName: string = ''; Options: TschmEnumOptions = []); override;
     //source
     procedure GetTriggerSource(Strings:TStringList; MemberName: string; Options: TschmEnumOptions = []); override;
-    procedure GetIndexInfo(Meta: TmncMetaItems; MemberName: string; Options: TschmEnumOptions = []);
+    procedure GetIndexInfo(Meta: TmncMetaItems; MemberName: string; Options: TschmEnumOptions = []); override;
   end;
 
 implementation

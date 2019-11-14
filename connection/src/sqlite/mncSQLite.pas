@@ -101,25 +101,12 @@ type
 
   { TmncSQLiteField }
 
-  TmncSQLiteField = class(TmncField)
-  private
-    FValue: Variant;
-  protected
-    function GetValue: Variant; override;
-    procedure SetValue(const AValue: Variant); override;
+  TmncSQLiteField = class(TmncVariantField)
   end;
 
   { TmncSQLiteParam }
 
-  TmncSQLiteParam = class(TmncParam)
-  private
-    FValue: Variant;
-  protected
-    function GetValue: Variant; override;
-    procedure SetValue(const AValue: Variant); override;
-  public
-    constructor Create; override;
-    destructor Destroy; override;
+  TmncSQLiteParam = class(TmncVariantParam)
   end;
 
   { TmncSQLiteFields }
@@ -319,26 +306,6 @@ begin
   Result := TmncSQLiteBind.Create;
 end;
 
-function TmncSQLiteParam.GetValue: Variant;
-begin
-  Result := FValue;
-end;
-
-procedure TmncSQLiteParam.SetValue(const AValue: Variant);
-begin
-  FValue := AValue;
-end;
-
-constructor TmncSQLiteParam.Create;
-begin
-  inherited;
-end;
-
-destructor TmncSQLiteParam.Destroy;
-begin
-  inherited;
-end;
-
 function TmncSQLiteBind.GetBufferAllocated: Boolean;
 begin
   Result := Buffer <> nil;
@@ -366,16 +333,6 @@ destructor TmncSQLiteBind.Destroy;
 begin
   FreeBuffer;
   inherited;
-end;
-
-function TmncSQLiteField.GetValue: Variant;
-begin
-  Result := FValue;
-end;
-
-procedure TmncSQLiteField.SetValue(const AValue: Variant);
-begin
-  FValue := AValue;
 end;
 
 { TmncSQLiteFields }
@@ -960,6 +917,11 @@ begin
           begin
             v.i := sqlite3_column_bytes(FStatment, i);
             SetString(str, PChar(sqlite3_column_blob(FStatment, i)), v.i);
+          end
+          else if aColumn.DataType in [dtDate, dtTime, dtDateTime] then
+          begin
+            str := sqlite3_column_text(FStatment, i);
+            v.d := ISOStrToDate(str);
           end
           else
             str := sqlite3_column_text(FStatment, i);
