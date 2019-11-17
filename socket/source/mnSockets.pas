@@ -34,6 +34,7 @@ type
     //soBroadcast, soDebug, soDontLinger, soDontRoute, soOOBInLine, soAcceptConn
     soSetReadTimeout, //Set socket read timeout
     soWaitBeforeRead, //Wait for data come before read, that double the time wait if you set SetReadTimeout if no data come
+    soWaitBeforeWrite, //Wait for ready before write, idk what for
     soConnectTimeout, //Connect will use Timeout to wait it
     soSafeReadTimeout, //Keep socket connected if read timeout without error
     soSafeConnect //Do not raise expcetion on connect
@@ -256,7 +257,7 @@ begin
     Result := 0;
     //DoError('Write: SocketStream not connected.') //we can't decide if it is error or disconnected gracefully, you need to check connected before write, maybe socket shutdown for write only
   end
-  else if WaitToWrite(Timeout) = cerSuccess then //TODO WriteTimeout
+  else if not (soWaitBeforeWrite in Options) or (WaitToWrite(Timeout) = cerSuccess) then //TODO WriteTimeout
   begin
     if Socket.Send(Buffer, Count) >= erTimeout then //yes in send we take timeout as error, we cant try again
     begin
@@ -329,7 +330,7 @@ end;
 constructor TmnSocketStream.Create(vSocket: TmnCustomSocket);
 begin
   inherited Create;
-  FOptions := [soNoDelay, soWaitBeforeRead];
+  FOptions := [soNoDelay, soWaitBeforeRead, soWaitBeforeWrite];
   FSocket := vSocket;
 end;
 
