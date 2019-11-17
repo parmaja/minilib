@@ -92,7 +92,6 @@ type
     constructor Create(vConnection: TmncConnection); override;
     destructor Destroy; override;
     function CreateCommand: TmncSQLCommand; override;
-    function CreateMeta: TmncMeta; override;
     procedure Execute(SQL: string);
     function GetLastRowID: Int64;
     function GetRowsChanged: Integer;
@@ -469,11 +468,6 @@ begin
   Result.Session := Self;
 end;
 
-function TmncSQLiteSession.CreateMeta: TmncMeta;
-begin
-  Result := TmncSQLiteMeta.CreateBy(Self);
-end;
-
 procedure TmncSQLiteSession.Execute(SQL: string);
 begin
   Connection.Execute(SQL);
@@ -779,7 +773,7 @@ begin
   end
   else
     CheckError(FLastStepResult);
-  HitReady;
+  HitUnready;
 end;
 
 procedure TmncSQLiteCommand.DoPrepare;

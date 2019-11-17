@@ -267,4 +267,6 @@ begin
   end;
 end;
 
+initialization
+  Meta.RegisterMeta('SQLite', 'SQLite Database', TmncSQLiteMeta, TmncSQLiteConnection);
 end.

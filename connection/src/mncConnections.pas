@@ -1566,7 +1566,8 @@ end;
 
 function TmncColumn.GetIsNull: Boolean;
 begin
-  raise EmncException.Create('Field have no value, You must not use it, try use Fields!');
+    Result := False;
+  //raise EmncException.Create('Field have no value, You must not use it, try use Fields!');
 end;
 
 function TmncColumn.GetValue: Variant;

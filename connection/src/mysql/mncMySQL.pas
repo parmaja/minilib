@@ -81,7 +81,6 @@ type
     constructor Create(vConnection: TmncConnection); override;
     destructor Destroy; override;
     function CreateCommand: TmncSQLCommand; override;
-    function CreateMeta: TmncMeta; override;
     procedure Execute(SQL: string);
     property Connection: TmncMySQLConnection read GetConnection write SetConnection;
   end;
@@ -646,11 +645,6 @@ begin
   Result.Session := Self;
 end;
 
-function TmncMySQLSession.CreateMeta: TmncMeta;
-begin
-  Result := TmncMySQLMeta.CreateBy(Self);
-end;
-
 procedure TmncMySQLSession.Execute(SQL: string);
 begin
   Connection.Execute(SQL);
@@ -996,7 +990,7 @@ begin
     else
       HitDone;
   end;
-  HitReady;
+  HitUnready;
 end;
 
 procedure TmncMySQLCommand.DoPrepare;

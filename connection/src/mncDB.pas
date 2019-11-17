@@ -17,7 +17,7 @@ interface
 
 uses
   SysUtils, Classes, Contnrs,
-  mncCommons, mncConnections, mncMeta, mncORM;
+  mncCommons, mncConnections, mncORM;
 
 type
   { TmncEngine }
@@ -27,7 +27,6 @@ type
     Name: string;
     Title: string;
     ConnectionClass: TmncConnectionClass;
-    MataClass: TmncMetaClass;
   end;
 
 { TmncEngines }
@@ -37,11 +36,9 @@ type
     function GetItems(Index: Integer): TmncEngine;
   public
     function RegisterConnection(vName, vTitle: string; vConnectionClass: TmncConnectionClass): TmncEngine;
-    function RegisterMeta(vName, vTitle: string; vMetaClass: TmncMetaClass): TmncEngine;
     function Find(vName: string): TmncEngine;
     function IndexOf(vName: string): Integer;
     function CreateConnection(vModel: string): TmncConnection;
-    function CreateMeta(vModel: string): TmncMeta;
     procedure EnumConnectionsModels(Strings: TStrings);
     property Items[Index:Integer]: TmncEngine read GetItems; default;
   end;
@@ -70,27 +67,14 @@ end;
 function TmncEngines.RegisterConnection(vName, vTitle: string; vConnectionClass: TmncConnectionClass): TmncEngine;
 begin
   Result := Find(vName);
-  if Result = nil then
-  begin
-    Result := TmncEngine.Create;
-    Result.Name := vName;
-    Result.Title := vTitle;
-    inherited Add(Result);
-  end;
-  Result.ConnectionClass := vConnectionClass;
-end;
+  if Result <> nil then
+    raise exception.Create(vName + ' is already registered');
 
-function TmncEngines.RegisterMeta(vName, vTitle: string; vMetaClass: TmncMetaClass): TmncEngine;
-begin
-  Result := Find(vName);
-  if Result = nil then
-  begin
-    Result := TmncEngine.Create;
-    Result.Name := vName;
-    Result.Title := vTitle;
-    inherited Add(Result);
-  end;
-  Result.MataClass := vMetaClass;
+  Result := TmncEngine.Create;
+  Result.Name := vName;
+  Result.Title := vTitle;
+  Result.ConnectionClass := vConnectionClass;
+  inherited Add(Result);
 end;
 
 function TmncEngines.Find(vName: string): TmncEngine;
@@ -131,18 +115,6 @@ begin
   P := Find(vModel);
   if P <> nil then
     Result := P.ConnectionClass.Create
-  else
-    raise EmncException.Create('Model ' + vModel + ' not found');
-end;
-
-function TmncEngines.CreateMeta(vModel: string): TmncMeta;
-var
-  P: TmncEngine;
-begin
-  Result := nil;
-  P := Find(vModel);
-  if P <> nil then
-    Result := P.MataClass.Create
   else
     raise EmncException.Create('Model ' + vModel + ' not found');
 end;

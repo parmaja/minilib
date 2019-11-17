@@ -128,4 +128,6 @@ procedure TmncPGMeta.EnumFields(Meta: TmncMetaItems; MemberName: string; Options
 begin
 end;
 
+initialization
+  Meta.RegisterMeta('Postgres', 'PostgresSQL Database', TmncPGMeta, TmncPGConnection);
 end.

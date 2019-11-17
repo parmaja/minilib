@@ -400,4 +400,6 @@ begin
   end;
 end;
 
+initialization
+  Meta.RegisterMeta('Firebird', 'FirebirdSQL Database', TmncFBMeta, TmncFBConnection);
 end.

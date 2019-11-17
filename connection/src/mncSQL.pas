@@ -23,7 +23,7 @@ interface
 uses
   Classes, SysUtils, Contnrs,
   mnClasses,
-  mncConnections, mncCommons, mncMeta;
+  mncConnections, mncCommons;
 
 type
   TmncParseSQLOptions = set of (psoGenerateParams, psoAddParamsID, psoAddParamsNames);
@@ -53,17 +53,11 @@ type
     procedure Vacuum; virtual; virtual;
   end;
 
-  { TmncSQLMeta }
-
-  TmncSQLMeta = class(TmncMeta)
-  end;
-
   { TmncSQLSession }
 
   TmncSQLSession = class abstract(TmncSession)
   public
     function CreateCommand: TmncSQLCommand; virtual; abstract;
-    function CreateMeta: TmncMeta; virtual; abstract;
   end;
 
   TmncSQLName = class(TObject)
@@ -89,9 +83,9 @@ type
   TmncSQLCommand = class abstract(TmncCommand)
   private
     FFetchBlob: Boolean;
-    FReady: Boolean;
     FFetched: Int64;
-    FDone: Boolean;
+    FReady: Boolean; //BOF
+    FDone: Boolean; //EOF
     function GetSQL: TStrings;
   protected
     SQLProcessed: TmncSQLProcessed;
@@ -106,8 +100,8 @@ type
     procedure ParseSQL(Options: TmncParseSQLOptions; ParamChar: string = '?');
     procedure Fetch; override;
     procedure Clean; override; //Clean and reset stamemnt like Done or Ready called in Execute before DoExecute and after Prepare
-    procedure HitDone;   //Make it true
-    procedure HitReady; //Make it False
+    procedure HitDone;   //Make it FDone True
+    procedure HitUnready; //Make it FReady False
   public
     constructor Create; override;
     destructor Destroy; override;
@@ -450,7 +444,7 @@ begin
   FDone := True;
 end;
 
-procedure TmncSQLCommand.HitReady;
+procedure TmncSQLCommand.HitUnready;
 begin
   FReady := False;
 end;

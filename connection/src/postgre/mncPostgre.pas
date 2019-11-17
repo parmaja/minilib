@@ -25,7 +25,7 @@ interface
 uses
   Classes, SysUtils, Variants, StrUtils, Contnrs, SyncObjs, DateUtils,
   mnUtils,
-  mncCommons, mncConnections, mncSQL, mnClasses, mncDB, mncPGHeader, mncMeta;
+  mncCommons, mncConnections, mncSQL, mnClasses, mncDB, mncPGHeader;
 
 const
   cBufferSize          = 2048;
@@ -165,7 +165,6 @@ type
   public
     constructor Create(vConnection: TmncConnection); override;
     destructor Destroy; override;
-    function CreateMeta: TmncMeta; override;
     procedure Execute(const vSQL: string);
     function CreateCommand: TmncSQLCommand; override;
     property Exclusive: Boolean read FExclusive write SetExclusive;
@@ -915,11 +914,6 @@ function TmncPGSession.CreateCommand: TmncSQLCommand;
 begin
   Result := TmncPGCommand.CreateBy(Self);
   //Result := TmncPGCopyOutCommand.CreateBy(Self);
-end;
-
-function TmncPGSession.CreateMeta: TmncMeta;
-begin
-  Result := TmncPGMeta.CreateBy(Self);
 end;
 
 procedure TmncPGSession.DoStart;

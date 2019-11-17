@@ -98,7 +98,6 @@ type
     constructor Create(vConnection: TmncConnection); override;
     destructor Destroy; override;
     function CreateCommand: TmncSQLCommand; override;
-    function CreateMeta: TmncMeta; override;
     procedure Execute(SQL: string);
     property Handle: TISC_TR_HANDLE read FHandle;
     property TPB: PChar read FTPB;
@@ -471,14 +470,16 @@ begin
   Result := TmncFBCommand.CreateBy(Self);
 end;
 
-function TmncFBSession.CreateMeta: TmncMeta;
-begin
-  Result := TmncFBMeta.CreateBy(Self)
-end;
-
 procedure TmncFBSession.Execute(SQL: string);
+var
+  tr_handle: TISC_TR_HANDLE;
+  StatusVector: TStatusVector;
 begin
-  Connection.Execute(SQL);
+  tr_handle := nil;
+  try
+    Call(FBClient.isc_dsql_execute_immediate(@StatusVector, @Connection.FHandle, @FHandle, 0, PChar(SQL), FB_DIALECT, nil), StatusVector, True);
+  finally
+  end;
 end;
 
 procedure TmncFBSession.DoStart;
@@ -1079,13 +1080,13 @@ begin
           Call(FBClient.isc_dsql_execute2(@StatusVector,
             @Session.Handle, @FHandle, FB_DIALECT,
             BindsData, (Params as TmncFBParams).SQLDA), StatusVector, True);
-          HitReady;
+          HitUnready;
         end
     else
       Call(FBClient.isc_dsql_execute(@StatusVector,
         @Session.Handle, @FHandle, FB_DIALECT,
         BindsData), StatusVector, True);
-      HitReady;
+      HitUnready;
     end;
   finally
     DeallocateBinds(BindsData);
@@ -1108,7 +1109,7 @@ begin
     else if (fetch_res > 0) then
       FBRaiseError(StatusVector)
     else
-      HitReady;
+      HitUnready;
   end;
 end;
 
