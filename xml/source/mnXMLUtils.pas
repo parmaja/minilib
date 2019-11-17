@@ -359,6 +359,9 @@ begin
       tkBool:
         Result := IsDefaultBoolProp;
 {$ENDIF}
+      else
+      begin
+      end;
     end;
   end;
 end;

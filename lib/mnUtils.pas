@@ -873,7 +873,7 @@ begin
   ms := (ms mod 1000);
   m := (s div 60);
   s := (s mod 60);
-  Result := Format('%2d:%2d:%3d', [m, s, ms]);
+  Result := Format('%2d:%2d:%4d', [m, s, ms]);
   //Result := Format('%2d min  : %2d sec  : %2d msec', [m, s, ms]));
 end;
 
