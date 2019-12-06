@@ -1268,9 +1268,9 @@ function TmnHexStreamProxy.HexEncode(const Buffer; Count: Longint; out ResultCou
   function DigiToChar(c: Byte): Byte; inline;
   begin
     if c < 10 then
-      Result := ord(AnsiChar('0')) + c
+      Result := $30 + c //ord(AnsiChar('0')) = $30
     else
-      Result :=  ord(AnsiChar('A')) + (c - 10);
+      Result := $41 + (c - 10); //ord(AnsiChar('A')) = $41
   end;
 var
   BufSize: Integer;
@@ -1306,12 +1306,17 @@ function TmnHexStreamProxy.HexDecode(var Buffer; Count: Longint; out ResultCount
 
   function CharToDigi(c: Byte):Byte; inline;
   begin
-    if (c >= ord(AnsiChar('a'))) and (c <= ord(AnsiChar('f'))) then
-      Result := c - ord(AnsiChar('a')) + 10
-    else if (c >= ord(AnsiChar('A'))) and (c <= ord(AnsiChar('f'))) then
-      Result := c - ord(AnsiChar('A')) + 10
-    else if c >= ord(AnsiChar('0')) then
-      Result := c - ord(AnsiChar('0'))
+    //ord(AnsiChar('0')) = $30
+    //ord(AnsiChar('A')) = $41
+    //ord(AnsiChar('a')) = $61
+    //ord(AnsiChar('f')) = $66
+
+    if (c >=$61) and (c <= $66) then
+      Result := (c - $61) + 10
+    else if (c >= $41) and (c <= $66) then
+      Result := (c - $41) + 10
+    else if (c >= $30) then
+      Result := (c - $30)
     else
       Result := 0; //wrong char
   end;

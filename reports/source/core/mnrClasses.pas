@@ -1307,7 +1307,6 @@ procedure TmnrSection.DoAppendDetailTotals(vSection: TmnrSection);
 var
   aDesignRow: TmnrDesignRow;
   d: TmnrDesignCell;
-  l: TmnrLayout;
   aRow: TmnrRow;
   f: Boolean; //first
   c: TmnrCell;
@@ -1325,7 +1324,6 @@ begin
         d := aDesignRow.First;
         while d <> nil do
         begin
-          l := d.Layout;
           if f and not d.AppendTotals then
           begin
             f := False;
@@ -1365,7 +1363,6 @@ procedure TmnrSection.DoAppendPageTotals(vSection: TmnrSection);
 var
   aDesignRow: TmnrDesignRow;
   d: TmnrDesignCell;
-  l: TmnrLayout;
   aRow: TmnrRow;
   f: Boolean; //first
   c: TmnrCell;
@@ -1383,7 +1380,6 @@ begin
         d := aDesignRow.First;
         while d <> nil do
         begin
-          l := d.Layout;
           if f and not d.AppendTotals then
           begin
             f := False;
@@ -1419,7 +1415,6 @@ procedure TmnrSection.DoAppendReportTotals(vSection: TmnrSection);
 var
   aDesignRow: TmnrDesignRow;
   d: TmnrDesignCell;
-  l: TmnrLayout;
   aRow: TmnrRow;
   f: Boolean; //first
   c: TmnrCell;
@@ -1437,7 +1432,6 @@ begin
         d := aDesignRow.First;
         while d <> nil do
         begin
-          l := d.Layout;
           if f and not d.AppendTotals then
           begin
             f := False;
@@ -1522,7 +1516,6 @@ procedure TmnrSection.DoAppendToPageTotals(vSection: TmnrSection);
 var
   aDesignRow: TmnrDesignRow;
   d: TmnrDesignCell;
-  l: TmnrLayout;
   aRow: TmnrRow;
   f: Boolean; //first
   c: TmnrCell;
@@ -1540,7 +1533,6 @@ begin
         d := aDesignRow.First;
         while d <> nil do
         begin
-          l := d.Layout;
           if f and not d.AppendTotals then
           begin
             f := False;
@@ -1654,7 +1646,8 @@ begin
         aRow.FLocked := vParams.Locked;
         aRow.FRowIndex := vIndex;
         aRow.FDesignRow := aDesignRow;
-        if vParams.Data<>nil then DoUpdateRowData(aRow, vParams.Data, aDesignRow.Next=nil);
+        //note data may be nil
+        DoUpdateRowData(aRow, vParams.Data, aDesignRow.Next=nil);
 
         d := aDesignRow.First;
         while d <> nil do
@@ -1761,7 +1754,6 @@ function TmnrSection.NewReference: TmnrReferencesRow;
 var
   aDesignRow: TmnrDesignRow;
   d: TmnrDesignCell;
-  l: TmnrLayout;
 begin
   Result := ReferencesRows.Add;
   aDesignRow := DesignRows.First;
@@ -1945,9 +1937,7 @@ end;
 procedure TmnrSections.EnumByName(List: TList; const vName: string);
 var
   s: TmnrSection;
-  Cell: TmnrDesignCell;
 begin
-  Cell := nil;
   s := First;
   while s <> nil do
   begin

@@ -87,6 +87,7 @@ type
     function GetActive: Boolean; override;
     function DoSelect(Timeout: Integer; Check: TSelectCheck): TmnError; override;
     function DoShutdown(How: TmnShutdowns): TmnError; override;
+
     function PosixSend(vBuf: Pointer; vLen: Integer): Integer;
     function DoListen: TmnError; override;
     function DoReceive(var Buffer; var Count: Longint): TmnError; override;
@@ -251,17 +252,17 @@ begin
   end;
 end;
 
-function TmnSocket.DoShutdown(How: TmnShutdown): TmnError;
+function TmnSocket.DoShutdown(How: TmnShutdowns): TmnError;
 var
   c: Integer;
   iHow: Integer;
 begin
   if [sdReceive, sdSend] = How then
-    iHow := SD_BOTH
+    iHow := SHUT_RDWR
   else if sdReceive in How then
-    iHow := SD_RECEIVE
+    iHow := SHUT_RD
   else if sdSend in How then
-    iHow := SD_SEND;
+    iHow := SHUT_WR;
 
   CheckActive;
   c := Posix.SysSocket.shutdown(FHandle, iHow);
