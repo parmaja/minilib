@@ -7,7 +7,7 @@ uses
   cthreads,
   {$ENDIF}
   Classes, SysUtils, CustApp, zdeflate, zlib, zstream,
-  mnStreams, mnStreamUtils, mnSockets, mnClients, mnServers;
+  mnUtils, mnStreams, mnStreamUtils, mnSockets, mnClients, mnServers;
 
 type
 
@@ -53,6 +53,8 @@ var
 begin
   WriteLn('Server started');
   Stream := TmnServerSocket.Create('localhost', '82');
+  Stream.Timeout := WaitForEver;
+  Stream.Options := Stream.Options - [soWaitBeforeRead, soWaitBeforeWrite];
   Stream.Connect;
   try
     while true do
@@ -75,18 +77,26 @@ var
   Stream: TmnClientSocket;
   S: string;
   i: Integer;
+  t: int64;
+const
+  ACount: Integer = 2000;
 begin
   Stream := TmnClientSocket.Create('localhost', '82');
+  Stream.Timeout := WaitForEver;
+  Stream.Options := Stream.Options - [soWaitBeforeRead, soWaitBeforeWrite];
   try
     Stream.Connect;
     if Stream.Connected then
-    for i := 0 to 10 do
     begin
       s := '0123456789';
       Stream.WriteLine(s);
-      if not Stream.Connected then
-        break;
+        if not Stream.Connected then
+          break;
+      end;
     end;
+    t := GetTickCount64 - t;
+    WriteLn(t.ToString);
+    WriteLn(TicksToString(t));
     Stream.Disconnect;
   finally
     Stream.Free;
@@ -102,7 +112,7 @@ var
 begin
   Stream := TmnWrapperStream.Create(TFileStream.Create(Location + 'test.txt', fmOpenRead));
   try
-    Stream.BufferSize := 5;
+    Stream.ReadBufferSize := 5;
     s := Stream.ReadLine;
     WriteLn(S);
     s := Stream.ReadLine;
@@ -293,7 +303,7 @@ end;
 procedure TTestStream.DoRun;
 begin
   try
-    Example6;
+    Example2;
   finally
     Write('Press Enter to Exit');
     ReadLn();
@@ -304,7 +314,7 @@ end;
 var
   Application: TTestStream;
 begin
-  Application :=TTestStream.Create(nil);
+  Application := TTestStream.Create(nil);
   Application.Title :='Test Stream';
   Application.Run;
   Application.Free;

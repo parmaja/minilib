@@ -15,7 +15,7 @@ interface
 
 uses
   Classes, SysUtils, Contnrs, Variants,
-  mnClasses,mncConnections, mncCommons;
+  mnClasses;
 
 type
 
@@ -25,7 +25,7 @@ type
 
   { TormObject }
 
-  TormObject = class(TmnNamedObjectList<TormObject>)
+  TormObject = class(TmnObjectList<TormObject>)
   private
     FComment: String;
     FName: String;
@@ -38,6 +38,10 @@ type
     function FindObject(ObjectClass: TormObjectClass; AName: string; RaiseException: Boolean = false): TormObject;
   public
     constructor Create(AParent: TormObject; AName: String);
+
+    function Find(const Name: string): TormObject;
+    function IndexOfName(vName: string): Integer;
+
     property Comment: String read FComment write FComment;
     function This: TormObject; //I wish i have templates/meta programming in pascal
     property Root: TmncORM read FRoot;
@@ -446,8 +450,7 @@ end;
 
 function TmncORM.TormTableHelper.SelectSQL(AObject: TTable; AFilter: TFieldFilter; Keys: array of string; ExtraFields: array of string): string;
 var
-  f: TField;
-var
+  o: TormObject;
   i: Integer;
   b: Boolean;
 begin
@@ -464,15 +467,15 @@ begin
       Result := Result + ExtraFields[i];
     end;
 
-    for f in Fields do
+    for o in Fields do
     begin
-      if (AFilter = []) or (AFilter <= f.Filter) then
+      if (AFilter = []) or (AFilter <= (o as TField).Filter) then
       begin
         if b then
           Result := Result + ', '
         else
           b := True;
-        Result := Result + f.GenName;
+        Result := Result + (o as TField).GenName;
       end;
     end;
 
@@ -491,8 +494,7 @@ end;
 
 function TmncORM.TormTableHelper.UpdateSQL(AObject: TTable; AFilter: TFieldFilter; Keys: array of string; ExtraFields: array of string): string;
 var
-  f: TField;
-var
+  o: TormObject;
   i: Integer;
   b: Boolean;
 begin
@@ -511,15 +513,15 @@ begin
         Result := Result + ExtraFields[i] + '=?' + ExtraFields[i];
       end;
 
-      for f in Fields do
+      for o in Fields do
       begin
-        if (AFilter = []) or (AFilter <= f.Filter) then
+        if (AFilter = []) or (AFilter <= (o as TField).Filter) then
         begin
           if b then
             Result := Result + ', '
           else
             b := True;
-          Result := Result + f.GenName + '=?' + f.GenName;
+          Result := Result + (o as TField).GenName + '=?' + (o as TField).GenName;
         end;
       end;
 
@@ -537,8 +539,7 @@ end;
 
 function TmncORM.TormTableHelper.InsertSQL(AObject: TTable; AFilter: TFieldFilter; ExtraFields: array of string): string;
 var
-  f: TField;
-var
+  o: TormObject;
   i: Integer;
   b: Boolean;
 begin
@@ -555,15 +556,15 @@ begin
       Result := Result + ExtraFields[i];
     end;
 
-    for f in Fields do
+    for o in Fields do
     begin
-      if (AFilter = []) or (AFilter <= f.Filter) then
+      if (AFilter = []) or (AFilter <= (o as TField).Filter) then
       begin
         if b then
             Result := Result + ', '
           else
             b := True;
-          Result := Result + f.GenName;
+          Result := Result + (o as TField).GenName;
        end;
     end;
 
@@ -578,13 +579,13 @@ begin
       Result := Result + '?' + ExtraFields[i];
     end;
 
-    for f in Fields do
+    for o in Fields do
     begin
       if b then
         Result := Result + ', '
       else
         b := True;
-      Result := Result + '?' + f.GenName;
+      Result := Result + '?' + (o as TField).GenName;
     end;
     Result := Result + ')';
   end;
@@ -884,11 +885,11 @@ end;
 
 function TmncORM.TTable.GenAliases(Strings: TStringList): string;
 var
-  f: TField;
+  o: TormObject;
 begin
-  for f in Fields do
+  for o in Fields do
   begin
-    Strings.Add(f.GenName + '=' + f.Title);
+    Strings.Add((o as TField).GenName + '=' + (o as TField).Title);
   end;
 end;
 
@@ -924,6 +925,21 @@ begin
     o.Check;
 end;
 
+function TormObject.Find(const Name: string): TormObject;
+var
+  i: Integer;
+begin
+  Result := nil;
+  for i := 0 to Count - 1 do
+  begin
+    if SameText(Items[i].Name, Name) then
+    begin
+      Result := Items[i];
+      break;
+    end;
+  end;
+end;
+
 function TormObject.FindObject(ObjectClass: TormObjectClass; AName: string; RaiseException: Boolean): TormObject;
 var
   o: TormObject;
@@ -947,6 +963,22 @@ begin
     raise Exception.Create(ObjectClass.ClassName + ': ' + AName +  ' not exists');
 end;
 
+
+function TormObject.IndexOfName(vName: string): Integer;
+var
+  i: integer;
+begin
+  Result := -1;
+  if vName <> '' then
+    for i := 0 to Count - 1 do
+    begin
+      if SameText(Items[i].Name, vName) then
+      begin
+        Result := i;
+        break;
+      end;
+    end;
+end;
 
 function LevelStr(vLevel: Integer): String;
 begin
@@ -1041,7 +1073,7 @@ end;
 function TmncORM.GenerateSQL(Callback: TCallbackObject): Boolean;
 var
   AParams: TStringList;
-  o: TormSQLObject;
+  o: TormObject;
   helper: TormHelper;
 begin
   Check;
@@ -1049,10 +1081,10 @@ begin
   try
     for o in Self do
     begin
-      if o.HelperClass <> nil then
+      if (o as TormSQLObject).HelperClass <> nil then
       begin
-        helper := o.HelperClass.Create;
-        helper.CreateSQL(o, Callback, 0);
+        helper := (o as TormSQLObject).HelperClass.Create;
+        helper.CreateSQL((o as TormSQLObject), Callback, 0);
       end;
     end;
   finally

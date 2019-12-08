@@ -234,7 +234,7 @@ type
     property EndOfLine: string read FEndOfLine write FEndOfLine;
     //if read zero length, close it, or that mean we have timeout system
     property ZeroClose: Boolean read FZeroClose write FZeroClose;
-    property BufferSize: TFileSize read FReadBuffer.Size write SetReadBufferSize; deprecated;
+    property BufferSize: TFileSize read FReadBuffer.Size write SetReadBufferSize; //deprecated;
     property ReadBufferSize: TFileSize read FReadBuffer.Size write SetReadBufferSize;
     property WriteBufferSize: TFileSize read FWriteBuffer.Size write SetWriteBufferSize; //TODO not yet
   end;

@@ -15,7 +15,7 @@ unit mncMySQLORM;
 interface
 
 uses
-  SysUtils, Classes, mnUtils, Variants, mncORM;
+  SysUtils, Classes, Variants, mncORM;
 
 type
 
@@ -67,7 +67,7 @@ type
         function CreateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean; override;
       end;
   protected
-    class function FieldTypeToString(FieldType:TormFieldType; FieldSize: Integer): String;
+    class function FieldTypeToString(FieldType: TmncORM.TormFieldType; FieldSize: Integer): String;
     procedure Created; override;
   public
   end;
@@ -158,6 +158,7 @@ end;
 function TmncORMMySQL.TTableMySQL.CreateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
 var
   i: integer;
+  o: TormObject;
   Field: TField;
   Keys: string;
   IndexList: TStringList;
@@ -176,8 +177,9 @@ begin
     IndexList := TStringList.Create;
     //collect primary keys and indexes
     Keys := '';
-    for Field in Fields do
+    for o in Fields do
     begin
+      Field := o as TField;
       if Field.Primary then
       begin
         if Keys <> '' then
@@ -218,8 +220,9 @@ begin
 
     FreeAndNil(Indexes);
 
-    for Field in Fields do
+    for o in Fields do
     begin
+      Field := o as TField;
       if Field.ReferenceInfo.Table <> nil then
       begin
         SQL.Add(',', [cboEndLine]);
@@ -274,7 +277,7 @@ end;
 
 { TmncORMMySQL }
 
-class function TmncORMMySQL.FieldTypeToString(FieldType: TormFieldType; FieldSize: Integer): String;
+class function TmncORMMySQL.FieldTypeToString(FieldType: TmncORM.TormFieldType; FieldSize: Integer): String;
 begin
   case FieldType of
     ftString: Result := 'varchar('+IntToStr(FieldSize)+')';

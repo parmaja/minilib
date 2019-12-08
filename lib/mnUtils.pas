@@ -61,8 +61,9 @@ procedure StrToStringsDeqouteCallbackProc(Sender: Pointer; Index:Integer; S: str
 function ParseArgumentsCallback(Content: string; const CallBackProc: TArgumentsCallbackProc; Sender: Pointer; Switches: array of char; WhiteSpaces: TSysCharSet = [' ', #9]; Quotes: TSysCharSet = ['''', '"'];  ValueSeperators: TSysCharSet = [':', '=']): Integer; overload;
 function ParseArgumentsCallback(Content: string; const CallBackProc: TArgumentsCallbackProc; Sender: Pointer): Integer; overload;
 function ParseArguments(Content: string; Strings: TStrings; Switches: TArray<Char>; WhiteSpaces: TSysCharSet = [' ', #9]; Quotes: TSysCharSet = ['''', '"']; ValueSeperators: TSysCharSet = [':', '=']): Integer; overload;
-function ParseArguments(Content: string; Strings: TStrings ): Integer; overload;
-
+function ParseArguments(Content: string; Strings: TStrings): Integer; overload;
+//TODO
+function ParseParamsAsArguments(const CallBackProc: TArgumentsCallbackProc; Sender: Pointer; Switches: array of char; ValueSeperators: TSysCharSet = [':', '=']): Integer; overload;
 {
   Break string to Strings list items at #10 or #13 or #13#10
 }
@@ -556,6 +557,7 @@ begin
     until Cur > Length(Content);
   end;
 end;
+
 function ParseArgumentsCallback(Content: string; const CallBackProc: TArgumentsCallbackProc; Sender: Pointer): Integer; overload;
 begin
   Result := ParseArgumentsCallback(Content, @CallBackProc, Sender, ['-', '/']);
@@ -588,6 +590,11 @@ begin
   end
   else
     Result := '';
+end;
+
+function ParseParamsAsArguments(const CallBackProc: TArgumentsCallbackProc; Sender: Pointer; Switches: array of char; ValueSeperators: TSysCharSet = [':', '=']): Integer; overload;
+begin
+  //TODO
 end;
 
 procedure cMoveStr(var Start: Integer; var Dest: string; const Source: string);
