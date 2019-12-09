@@ -122,7 +122,7 @@ type
       procedure CreateBuffer;
       procedure FreeBuffer;
     end;
-  strict private
+  protected
     FReadBuffer: TBuffer;
     FWriteBuffer: TBuffer;
   strict private
@@ -132,6 +132,7 @@ type
     procedure LoadReadBuffer;
     procedure SaveWriteBuffer; //kinda flush
   protected
+    function CheckReadBuffer: Boolean; //check it in belal job
   private
     type
       { TmnInitialStreamProxy }
@@ -398,6 +399,15 @@ begin
   GetMem(Buffer, Size);
   Pos := Buffer;
   Stop := Buffer;
+end;
+
+function TmnBufferStream.CheckReadBuffer: Boolean;
+begin
+  if FReadBuffer.Buffer = nil then
+    FReadBuffer.CreateBuffer;
+  if not (FReadBuffer.Pos < FReadBuffer.Stop) then
+    LoadReadBuffer;
+  Result := (FReadBuffer.Pos < FReadBuffer.Stop);
 end;
 
 procedure TmnBufferStream.TBuffer.FreeBuffer;
