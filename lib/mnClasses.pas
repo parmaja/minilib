@@ -71,6 +71,7 @@ type
 
     property Items[Index: Integer]: _Object_ read GetItem write SetItem; default;
     function Last: _Object_;
+    function First: _Object_;
   end;
 
   { TmnNamedObjectList }
@@ -109,7 +110,10 @@ end;
 
 function TmnObjectList<_Object_>.Last: _Object_;
 begin
-  Result := _Object_(inherited Last);
+  if Count<>0 then
+    Result := _Object_(inherited Last)
+  else
+    Result := nil;
 end;
 
 {$ifdef FPC}
@@ -177,6 +181,14 @@ end;
 function TmnObjectList<_Object_>.Extract(Item: _Object_): _Object_;
 begin
   Result := _Object_(inherited Extract(Item));
+end;
+
+function TmnObjectList<_Object_>.First: _Object_;
+begin
+  if Count<>0 then
+    Result := _Object_(inherited First)
+  else
+    Result := nil;
 end;
 
 procedure TmnObjectList<_Object_>.Created;

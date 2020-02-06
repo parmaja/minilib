@@ -33,7 +33,7 @@ interface
 uses
   SysUtils, Classes, StrUtils,
   mnClasses, mnStreams, mnFields, mnConfigs,
-  mnSockets, mnConnections, mnServers;
+  mnSockets, mnConnections, mnServers, System.Net.URLClient, System.NetEncoding;
 
 const
   cDefaultKeepAliveTimeOut = 5000; //TODO move module
@@ -296,10 +296,54 @@ uses
   mnUtils;
 
 function ParseURI(Request: string; out URIPath: UTF8String; URIParams: TmnParams): Boolean;
+
+  procedure ParseParams(const APramas: string; Encode: Boolean);
+  var
+    LParts: TArray<string>;
+    I: Integer;
+    Pos: Integer;
+    aName, aValue: string;
+  begin
+    LParts := APramas.Split([Char(';'), Char('&')]);
+
+    for I := 0 to Length(LParts) - 1 do
+    begin
+      Pos := LParts[I].IndexOf(Char('='));
+      if Pos > 0 then
+      begin
+        if Encode then
+        begin
+          aName := TNetEncoding.URL.EncodeQuery(LParts[I].Substring(0, Pos));
+          aValue := TNetEncoding.URL.EncodeQuery(LParts[I].Substring(Pos + 1));
+        end
+        else
+        begin
+          aName := LParts[I].Substring(0, Pos);
+          aValue := LParts[I].Substring(Pos + 1);
+        end;
+      end
+      else
+      begin
+        if Encode then
+          aName := TNetEncoding.URL.EncodeQuery(LParts[I])
+        else
+          aName := LParts[I];
+        aValue := '';
+      end;
+      URIParams.Add(aName, DequoteStr(aValue, '"'));
+    end;
+  end;
+
 var
   I, J: Integer;
   aParams: string;
 begin
+
+  if Request <> '' then
+    if Request[1] = '/' then //Not sure
+      Delete(Request, 1, 1);
+
+
   I := 1;
   while (I <= Length(Request)) and (Request[I] = ' ') do
     Inc(I);
@@ -309,30 +353,24 @@ begin
 
   URIPath := Copy(Request, J, I - J);
 
-  Inc(I);
-  while (I <= Length(Request)) and (Request[I] = ' ') do
-    Inc(I);
-  J := I;
-  while (I <= Length(Request)) and (Request[I] <> ' ') do
-    Inc(I);
-
   if URIPath <> '' then
     if URIPath[1] = '/' then //Not sure
       Delete(URIPath, 1, 1);
 
   Result := URIPath <> '';
 
-    { Find parameters }
+  { Find parameters }
+  {belal taskeej getting params in case of params has space}
   J := Pos('?', URIPath);
-  if J <= 0 then
-    aParams := ''
-  else
+  if J > 0 then
   begin
-    aParams := Copy(URIPath, J + 1, Length(URIPath));
+    aParams := Copy(Request, J + 1, Length(Request));
     URIPath := Copy(URIPath, 1, J - 1);
     if URIParams <> nil then
+      //ParseParams(aParams, False);
       StrToStringsCallback(aParams, URIParams, @ParamsCallBack, ['&'], [' ']);
   end;
+
 end;
 
 procedure ParsePath(aRequest: string; out Name: string; out URIPath: UTF8String; URIParams: TmnParams);

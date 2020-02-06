@@ -285,16 +285,21 @@ type
     FReport: TmnrCustomReport;
     function GetFirst: TmnrLayouts;
     function GetLast: TmnrLayouts;
+  protected
+    procedure DoInitLayouts; virtual;
+
   public
-    constructor Create(vReport: TmnrCustomReport);
+    constructor Create;
     function Add: TmnrLayouts;
     property First: TmnrLayouts read GetFirst;
     property Last: TmnrLayouts read GetLast;
     function Find(const vName: string): TmnrLayouts;
     function FindLayout(const vName: string): TmnrLayout;
     property Report: TmnrCustomReport read FReport;
+    procedure InitLayouts;
 
     function CreateLayout(const vGroup: string; vClass: TmnrLayoutClass; const vName: string; vOnRequest: TOnRequest = nil; vNumber: Integer = 0; vTag: Integer = 0; vIncludeSections: TmnrSectionClassIDs = []; vExcludeSections: TmnrSectionClassIDs = []): TmnrLayout;
+    procedure CreateRequest(const vName: string; vOnRequest: TOnRequest);
   end;
 
   TmnrDesignCell = class(TmnrLinkNode)
@@ -838,6 +843,7 @@ begin
   FRowsListIndex := nil;
 
   //InitSections(FSections);
+  FGroups.FReport := Self;
 
   FWorking := False;
   Created;
@@ -887,7 +893,7 @@ end;
 
 function TmnrCustomReport.DoCreateGroups: TmnrGroups;
 begin
-  Result := TmnrGroups.Create(Self);
+  Result := TmnrGroups.Create;
 end;
 
 function TmnrCustomReport.DoCreateItems: TmnrRows;
@@ -1214,7 +1220,7 @@ procedure TmnrCustomReport.Prepare;
 begin
   DoPrepare;
   InitSections(FSections);
-  InitLayouts(Groups);
+  Groups.InitLayouts;
   Load;
 end;
 
@@ -3294,10 +3300,10 @@ begin
   Result := TmnrLayouts.Create(Self);
 end;
 
-constructor TmnrGroups.Create(vReport: TmnrCustomReport);
+constructor TmnrGroups.Create;
 begin
   inherited Create(nil);
-  FReport := vReport;
+
 end;
 
 function TmnrGroups.CreateLayout(const vGroup: string; vClass: TmnrLayoutClass; const vName: string; vOnRequest: TOnRequest; vNumber: Integer; vTag: Integer; vIncludeSections, vExcludeSections: TmnrSectionClassIDs): TmnrLayout;
@@ -3311,6 +3317,23 @@ begin
     aLayouts.Name := vGroup;
   end;
   Result := aLayouts.CreateLayout(vClass, vName, vOnRequest, vNumber, vTag, vIncludeSections, vExcludeSections);
+end;
+
+procedure TmnrGroups.CreateRequest(const vName: string; vOnRequest: TOnRequest);
+var
+  l: TmnrLayout;
+begin
+  l := FindLayout(vName);
+  if l<>nil then
+  begin
+    if not Assigned(l.OnRequest) then
+      l.OnRequest := vOnRequest
+  end;
+end;
+
+procedure TmnrGroups.DoInitLayouts;
+begin
+  Report.InitLayouts(Self); //belal: to do remove (self)
 end;
 
 function TmnrGroups.Find(const vName: string): TmnrLayouts;
@@ -3352,6 +3375,11 @@ end;
 function TmnrGroups.GetLast: TmnrLayouts;
 begin
   Result := TmnrLayouts(inherited GetLast);
+end;
+
+procedure TmnrGroups.InitLayouts;
+begin
+  DoInitLayouts;
 end;
 
 initialization
