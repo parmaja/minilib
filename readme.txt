@@ -3,6 +3,15 @@ A Mirror repository of original one at sourceforge for who live in banned countr
 
 Library used for FreePascal 3.0.4 or later or DelphiXE
 
+=== Folders ===
+
+lib: most common utils functions 
+comm: ComPort like COM1 COM2 and serial ports
+connection: it is a database wrappers for SQLite, FirebirdSQL, MySQL, PostgreSQL
+socket: Socket tcp/ip client and server objects, includes webserver and simple REST server
+xml: XML file/stream reader, line by line not use huge memory to parse it.
+
+
 === Compile ===
 
 Free Pascal  3.0.4
