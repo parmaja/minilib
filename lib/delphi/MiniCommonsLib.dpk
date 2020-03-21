@@ -55,7 +55,7 @@ contains
   mnConfigs in '..\mnConfigs.pas',
   mnDrivers in '..\mnDrivers.pas',
   base36 in '..\base36.pas',
-	mnDebugs '..\mnDebugs.pas',
+	mnDebugs in '..\mnDebugs.pas',
   ucp864 in '..\..\unicodes\source\ucp864.pas',
   ucp1250 in '..\..\unicodes\source\ucp1250.pas',
   ucp1252 in '..\..\unicodes\source\ucp1252.pas',
