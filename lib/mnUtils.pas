@@ -508,8 +508,6 @@ begin
         Cur := Cur + 1;
       end;
 
-      QuoteChar := #0;
-
       if (Cur >= Start) then
       begin
         S := Copy(Content, Start + 1, Cur - Start - 1);

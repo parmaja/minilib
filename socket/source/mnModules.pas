@@ -33,7 +33,7 @@ interface
 uses
   SysUtils, Classes, StrUtils,
   mnClasses, mnStreams, mnFields, mnConfigs,
-  mnSockets, mnConnections, mnServers, System.Net.URLClient, System.NetEncoding;
+  mnSockets, mnConnections, mnServers;
 
 const
   cDefaultKeepAliveTimeOut = 5000; //TODO move module
@@ -296,44 +296,6 @@ uses
   mnUtils;
 
 function ParseURI(Request: string; out URIPath: UTF8String; URIParams: TmnParams): Boolean;
-
-  procedure ParseParams(const APramas: string; Encode: Boolean);
-  var
-    LParts: TArray<string>;
-    I: Integer;
-    Pos: Integer;
-    aName, aValue: string;
-  begin
-    LParts := APramas.Split([Char(';'), Char('&')]);
-
-    for I := 0 to Length(LParts) - 1 do
-    begin
-      Pos := LParts[I].IndexOf(Char('='));
-      if Pos > 0 then
-      begin
-        if Encode then
-        begin
-          aName := TNetEncoding.URL.EncodeQuery(LParts[I].Substring(0, Pos));
-          aValue := TNetEncoding.URL.EncodeQuery(LParts[I].Substring(Pos + 1));
-        end
-        else
-        begin
-          aName := LParts[I].Substring(0, Pos);
-          aValue := LParts[I].Substring(Pos + 1);
-        end;
-      end
-      else
-      begin
-        if Encode then
-          aName := TNetEncoding.URL.EncodeQuery(LParts[I])
-        else
-          aName := LParts[I];
-        aValue := '';
-      end;
-      URIParams.Add(aName, DequoteStr(aValue, '"'));
-    end;
-  end;
-
 var
   I, J: Integer;
   aParams: string;
