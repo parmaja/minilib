@@ -74,245 +74,254 @@ type
   protected
   public
     type
-    TormSQLObject = class;
-    TormSQLObjectClass = class of TormSQLObject;
+      TormSQLObject = class;
+      TormSQLObjectClass = class of TormSQLObject;
 
-    TFieldFilter = set of (
-      ffSelect,
-      ffView, //show it to end user
-      ffData
-    );
+      TFieldFilter = set of (
+        ffSelect,
+        ffView, //show it to end user
+        ffData
+      );
 
-    TTable = class;
+      TTable = class;
 
-    { TormHelper }
+      { TormHelper }
 
-    TormHelper = class(TObject)
-    private
+      TormHelper = class(TObject)
+      private
 
-    protected
-      procedure GenerateObjects(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer);
-      function CreateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean; virtual; abstract;
-    end;
+      protected
+        procedure GenerateObjects(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer);
+        function CreateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean; virtual; abstract;
+      end;
 
-    TormHelperClass = class of TormHelper;
+      TormHelperClass = class of TormHelper;
 
-    TormTableHelper = class(TormHelper)
-    protected
-      //temporary here, must moved to Table helper
-      function SelectSQL(AObject: TTable; AFilter: TFieldFilter; Keys: array of string; ExtraFields: array of string): string; virtual;
-      function InsertSQL(AObject: TTable; AFilter: TFieldFilter; ExtraFields: array of string): string; virtual;
-      function UpdateSQL(AObject: TTable; AFilter: TFieldFilter; Keys: array of string; ExtraFields: array of string): string; virtual;
-      function SaveSQL(AObject: TTable; AFilter: TFieldFilter; Updating, Returning: Boolean; Keys: array of string): string; virtual;
-    end;
+      TormTableHelper = class(TormHelper)
+      protected
+        //temporary here, must moved to Table helper
+        function SelectSQL(AObject: TTable; AFilter: TFieldFilter; Keys: array of string; ExtraFields: array of string): string; virtual;
+        function InsertSQL(AObject: TTable; AFilter: TFieldFilter; ExtraFields: array of string): string; virtual;
+        function UpdateSQL(AObject: TTable; AFilter: TFieldFilter; Keys: array of string; ExtraFields: array of string): string; virtual;
+        function SaveSQL(AObject: TTable; AFilter: TFieldFilter; Updating, Returning: Boolean; Keys: array of string): string; virtual;
+      end;
 
-    { TormSQLObject }
+      { TormSQLObject }
 
-    TormSQLObject = class(TormObject)
-    private
-      FHelperClass: TormHelperClass;
-    protected
-      procedure SetHelperClass(AValue: TormHelperClass); virtual;
-      property HelperClass: TormHelperClass read FHelperClass write SetHelperClass;
-      procedure Created; override;
+      TormSQLObject = class(TormObject)
+      private
+        FHelperClass: TormHelperClass;
+      protected
+        procedure SetHelperClass(AValue: TormHelperClass); virtual;
+        property HelperClass: TormHelperClass read FHelperClass write SetHelperClass;
+        procedure Created; override;
+      public
+        function SQLName: string; virtual;
+        function QuotedSQLName: string; virtual;
+        function GenerateSQL(SQL: TCallbackObject; vLevel: Integer): Boolean;
+      end;
+
+      { TDatabase }
+
+      TDatabase = class(TormSQLObject)
+      private
+        FVersion: integer;
+      public
+        constructor Create(AORM: TmncORM; AName: String);
+        function This: TDatabase;
+        property Version: integer read FVersion write FVersion;
+      end;
+
+      { TormSchema }
+
+      TSchema = class(TormSQLObject)
+      public
+        constructor Create(ADatabase: TDatabase; AName: String);
+        function This: TSchema;
+      end;
+
+      TField = class;
+      TFields = class;
+      TIndexes = class;
+      TReferences = class;
+
+      { TTable }
+
+      TTable = class(TormSQLObject)
+      protected
+        procedure Added(Item: TormObject); override;
+        procedure SetHelperClass(AValue: TormHelperClass); override;
+      public
+        Prefix: string; //used to added to generated field name, need more tests
+        Fields: TFields;
+        VirtualFields: TFields;
+        Indexes: TIndexes;
+        References: TReferences;
+        constructor Create(ASchema: TSchema; AName: String; APrefix: string = '');
+        function SelectSQL(AFilter: TFieldFilter; Keys: array of string; ExtraFields: array of string): string;
+        function SaveSQL(Updating, Returning: Boolean; AFilter: TFieldFilter; Keys: array of string): string;
+        function GenAliases(Strings: TStringList): string;
+        function This: TTable;
+      end;
+
+      TFields = class(TormSQLObject)
+      public
+        constructor Create(ATable: TTable);
+        function This: TFields;
+      end;
+
+      { TVirtualFields }
+
+      TVirtualFields = class(TFields)
+      public
+        function This: TVirtualFields;
+      end;
+
+      { TIndexes }
+
+      TIndexes = class(TormSQLObject)
+      public
+        constructor Create(ATable: TTable);
+        function This: TIndexes;
+      end;
+
+      { TReferences }
+
+      TReferences = class(TormSQLObject)
+      public
+        constructor Create(ATable: TTable);
+        function This: TReferences;
+      end;
+
+      TormFieldOption = (
+        foReferenced,
+        foInternal, //Do not display for end user
+        foPrimary,
+        foSequenced, //or AutoInc
+        foNotNull, //or required
+        foUnique,
+        foIndexed
+      );
+
+      TormFieldOptions = set of TormFieldOption;
+      TormFieldType = (ftString, ftBoolean, ftSmallInteger, ftInteger, ftBigInteger, ftCurrency, ftFloat, ftDate, ftTime, ftDateTime, ftText, ftBlob);
+
+      TormReferenceOption = (
+        rfoNothing,
+        rfoRestrict,
+        rfoCascade,
+        rfoSetNull
+      );
+
+      TReferenceInfoStr = record
+        Table: string;
+        Field: string;
+        UpdateOptions: TormReferenceOption;
+        DeleteOptions: TormReferenceOption;
+      end;
+
+      TReferenceInfoLink = record
+        Table: TTable;
+        Field: TField;
+        UpdateOptions: TormReferenceOption;
+        DeleteOptions: TormReferenceOption;
+      end;
+
+      { TField }
+
+      TField = class(TormSQLObject)
+      private
+        FDefaultValue: Variant;
+        FFieldSize: Integer;
+        FFieldType: TormFieldType;
+        FFilter: TFieldFilter;
+        FIndex: string;
+        FOptions: TormFieldOptions;
+        FTitle: string;
+        function GetIndexed: Boolean;
+        function GetPrimary: Boolean;
+        function GetSequenced: Boolean;
+        procedure SetIndexed(AValue: Boolean);
+        procedure SetPrimary(AValue: Boolean);
+        procedure SetSequenced(AValue: Boolean);
+      protected
+        ReferenceInfoStr: TReferenceInfoStr;
+        procedure Check; override;
+        function Table: TTable;
+      public
+        ReferenceInfo: TReferenceInfoLink;
+        constructor Create(AFields: TFields; AName: String; AFieldType: TormFieldType; AOptions: TormFieldOptions = []);
+        function SQLName: string; override;
+        function Parent: TFields;
+        property Options: TormFieldOptions read FOptions write FOptions;
+        property Filter: TFieldFilter read FFilter write FFilter;
+        property DefaultValue: Variant read FDefaultValue write FDefaultValue;
+        procedure ReferenceTo(TableName, FieldName: string; UpdateOptions, DeleteOptions: TormReferenceOption);
+
+        property Title: string read FTitle write FTitle;
+
+        property FieldType: TormFieldType read FFieldType write FFieldType;
+        property FieldSize: Integer read FFieldSize write FFieldSize;
+
+        property Indexed: Boolean read GetIndexed write SetIndexed;
+        property Primary: Boolean read GetPrimary write SetPrimary;
+        property Sequenced: Boolean read GetSequenced write SetSequenced;
+
+        property Index: string read FIndex write FIndex;// this will group this field have same values into one index with that index name
+      end;
+
+      { StoredProcedure }
+
+      TStoredProcedure = class(TormSQLObject)
+      private
+        FCode: String;
+      public
+        property Code: String read FCode write FCode;
+      end;
+
+      { Trigger }
+
+      TTrigger = class(TormSQLObject)
+      private
+        FCode: String;
+      public
+        property Code: String read FCode write FCode;
+      end;
+
+      TFieldValue = class(TormObject)
+      public
+        Value: Variant;
+      end;
+
+      { TInsertData }
+
+      TInsertData = class(TormSQLObject)
+      private
+      protected
+        FTable: TTable;
+        procedure Check; override;
+      public
+        constructor Create(ADatabase: TDatabase; ATableName: string);
+        procedure AddValue(FieldName, FieldValue: Variant);
+        property Table: TTable read FTable;
+      end;
+
     public
-      function GenName: string; virtual;
-      function GenerateSQL(SQL: TCallbackObject; vLevel: Integer): Boolean;
-    end;
+      type
 
-    { TDatabase }
+      TRegObject = class(TObject)
+      public
+        ObjectClass: TormObjectClass;
+        HelperClass: TormHelperClass;
+      end;
 
-    TDatabase = class(TormSQLObject)
-    private
-      FVersion: integer;
-    public
-      constructor Create(AORM: TmncORM; AName: String);
-      function This: TDatabase;
-      property Version: integer read FVersion write FVersion;
-    end;
+      { TRegObjects }
 
-    { TormSchema }
-
-    TSchema = class(TormSQLObject)
-    public
-      constructor Create(ADatabase: TDatabase; AName: String);
-      function This: TSchema;
-    end;
-
-    TField = class;
-    TFields = class;
-    TIndexes = class;
-    TReferences = class;
-
-    { TTable }
-
-    TTable = class(TormSQLObject)
-    protected
-      procedure Added(Item: TormObject); override;
-      procedure SetHelperClass(AValue: TormHelperClass); override;
-    public
-      Prefix: string; //used to added to generated field name, need more tests
-      Fields: TFields;
-      VirtualFields: TFields;
-      Indexes: TIndexes;
-      References: TReferences;
-      constructor Create(ASchema: TSchema; AName: String; APrefix: string = '');
-      function SelectSQL(AFilter: TFieldFilter; Keys: array of string; ExtraFields: array of string): string;
-      function SaveSQL(Updating, Returning: Boolean; AFilter: TFieldFilter; Keys: array of string): string;
-      function GenAliases(Strings: TStringList): string;
-      function This: TTable;
-    end;
-
-    TFields = class(TormSQLObject)
-    public
-      constructor Create(ATable: TTable);
-      function This: TFields;
-    end;
-
-    { TVirtualFields }
-
-    TVirtualFields = class(TFields)
-    public
-      function This: TVirtualFields;
-    end;
-
-    { TIndexes }
-
-    TIndexes = class(TormSQLObject)
-    public
-      constructor Create(ATable: TTable);
-      function This: TIndexes;
-    end;
-
-    { TReferences }
-
-    TReferences = class(TormSQLObject)
-    public
-      constructor Create(ATable: TTable);
-      function This: TReferences;
-    end;
-
-    TormFieldOption = (
-      foReferenced,
-      foInternal, //Do not display for end user
-      foSummed, //
-      foPrimary,
-      foSequenced, //or AutoInc
-      foNotNull, //or required
-      foIndexed
-    );
-
-    TormFieldOptions = set of TormFieldOption;
-    TormFieldType = (ftString, ftBoolean, ftInteger, ftBigInteger, ftCurrency, ftFloat, ftDate, ftTime, ftDateTime, ftText, ftBlob);
-    TormReferenceOptions = set of (rfoDelete, rfoUpdate, rfoRestrict);
-
-    TReferenceInfoStr = record
-      Table: string;
-      Field: string;
-      Options: TormReferenceOptions;
-    end;
-
-    TReferenceInfoLink = record
-      Table: TTable;
-      Field: TField;
-      Options: TormReferenceOptions;
-    end;
-
-    { TField }
-
-    TField = class(TormSQLObject)
-    private
-      FDefaultValue: Variant;
-      FFieldSize: Integer;
-      FFieldType: TormFieldType;
-      FFilter: TFieldFilter;
-      FIndex: string;
-      FOptions: TormFieldOptions;
-      FTitle: string;
-      function GetIndexed: Boolean;
-      function GetPrimary: Boolean;
-      function GetSequenced: Boolean;
-      procedure SetIndexed(AValue: Boolean);
-      procedure SetPrimary(AValue: Boolean);
-      procedure SetSequenced(AValue: Boolean);
-    protected
-      ReferenceInfoStr: TReferenceInfoStr;
-      procedure Check; override;
-      function Table: TTable;
-    public
-      ReferenceInfo: TReferenceInfoLink;
-      constructor Create(AFields: TFields; AName: String; AFieldType: TormFieldType; AOptions: TormFieldOptions = []);
-      function GenName: string; override;
-      function Parent: TFields;
-      property Options: TormFieldOptions read FOptions write FOptions;
-      property Filter: TFieldFilter read FFilter write FFilter;
-      property DefaultValue: Variant read FDefaultValue write FDefaultValue;
-      procedure ReferenceTo(TableName, FieldName: string; Options: TormReferenceOptions);
-
-      property Title: string read FTitle write FTitle;
-
-      property FieldType: TormFieldType read FFieldType write FFieldType;
-      property FieldSize: Integer read FFieldSize write FFieldSize;
-
-      property Indexed: Boolean read GetIndexed write SetIndexed;
-      property Primary: Boolean read GetPrimary write SetPrimary;
-      property Sequenced: Boolean read GetSequenced write SetSequenced;
-
-      property Index: string read FIndex write FIndex;// this will group this field have same values into one index with that index name
-    end;
-
-    { StoredProcedure }
-
-    TStoredProcedure = class(TormSQLObject)
-    private
-      FCode: String;
-    public
-      property Code: String read FCode write FCode;
-    end;
-
-    { Trigger }
-
-    TTrigger = class(TormSQLObject)
-    private
-      FCode: String;
-    public
-      property Code: String read FCode write FCode;
-    end;
-
-    TFieldValue = class(TormObject)
-    public
-      Value: Variant;
-    end;
-
-    { TInsertData }
-
-    TInsertData = class(TormSQLObject)
-    private
-    protected
-      FTable: TTable;
-      procedure Check; override;
-    public
-      constructor Create(ADatabase: TDatabase; ATableName: string);
-      procedure AddValue(FieldName, FieldValue: Variant);
-      property Table: TTable read FTable;
-    end;
-
-  public
-    type
-
-    TRegObject = class(TObject)
-    public
-      ObjectClass: TormObjectClass;
-      HelperClass: TormHelperClass;
-    end;
-
-    { TRegObjects }
-
-    TRegObjects = class(TmnObjectList<TRegObject>)
-    public
-      function FindDerived(AObjectClass: TormObjectClass): TormObjectClass;
-      function FindHelper(AObjectClass: TormObjectClass): TormHelperClass;
-    end;
+      TRegObjects = class(TmnObjectList<TRegObject>)
+      public
+        function FindDerived(AObjectClass: TormObjectClass): TormObjectClass;
+        function FindHelper(AObjectClass: TormObjectClass): TormHelperClass;
+      end;
 
   private
     FImpact: Boolean;
@@ -336,7 +345,7 @@ type
 
     procedure Register(AObjectClass: TormObjectClass; AHelperClass: TormHelperClass);
     property ObjectClasses: TRegObjects read FObjectClasses;
-    property QuoteChar: string read FQuoteChar write FQuoteChar; //Empty, it will be used with GenName
+    property QuoteChar: string read FQuoteChar write FQuoteChar; //Empty, it will be used with SQLName
     property UsePrefexes: Boolean read FUsePrefexes write FUsePrefexes; //option to use Prefex in Field names
     property Impact: Boolean read FImpact write FImpact; //use inline peroperty of members
   end;
@@ -475,11 +484,11 @@ begin
           Result := Result + ', '
         else
           b := True;
-        Result := Result + (o as TField).GenName;
+        Result := Result + (o as TField).SQLName;
       end;
     end;
 
-    Result := Result + ' from ' + This.GenName + ' ';
+    Result := Result + ' from ' + This.SQLName + ' ';
     for i := 0 to Length(Keys) - 1 do
     begin
       if i = 0 then
@@ -502,7 +511,7 @@ begin
   begin
     with AObject as TTable do
     begin
-      Result := 'update ' + GenName + ' set '#13;
+      Result := 'update ' + SQLName + ' set '#13;
       b := False;
       for i := 0 to Length(ExtraFields) - 1 do
       begin
@@ -521,7 +530,7 @@ begin
             Result := Result + ', '
           else
             b := True;
-          Result := Result + (o as TField).GenName + '=?' + (o as TField).GenName;
+          Result := Result + (o as TField).SQLName + '=?' + (o as TField).SQLName;
         end;
       end;
 
@@ -545,7 +554,7 @@ var
 begin
   with AObject do
   begin
-    Result := 'insert into ' + GenName + ' (';
+    Result := 'insert into ' + SQLName + ' (';
     b := False;
     for i := 0 to Length(ExtraFields) - 1 do
     begin
@@ -564,7 +573,7 @@ begin
             Result := Result + ', '
           else
             b := True;
-          Result := Result + (o as TField).GenName;
+          Result := Result + (o as TField).SQLName;
        end;
     end;
 
@@ -585,7 +594,7 @@ begin
         Result := Result + ', '
       else
         b := True;
-      Result := Result + '?' + (o as TField).GenName;
+      Result := Result + '?' + (o as TField).SQLName;
     end;
     Result := Result + ')';
   end;
@@ -639,7 +648,7 @@ begin
     HelperClass := (Root as TmncORM).ObjectClasses.FindHelper(TormObjectClass(ClassType));
 end;
 
-function TmncORM.TormSQLObject.GenName: string;
+function TmncORM.TormSQLObject.SQLName: string;
 begin
   Result := Name;
 end;
@@ -655,6 +664,13 @@ begin
   end
   else
     Result := False;
+end;
+
+function TmncORM.TormSQLObject.QuotedSQLName: string;
+begin
+  Result := SQLName;
+  if Root.QuoteChar <> '' then
+    Result := Root.QuoteChar + Result + Root.QuoteChar;
 end;
 
 { TmncORM.TRegObjects }
@@ -679,7 +695,7 @@ var
 begin
   for o in Self do
   begin
-    if o.ObjectClass = AObjectClass then
+    if AObjectClass.InheritsFrom(o.ObjectClass) then
     begin
       Result := o.HelperClass;
       break;
@@ -693,11 +709,13 @@ constructor TmncORM.Create(AName: String);
 begin
   inherited Create(nil, AName);
   FRoot := Self;
+  FUsePrefexes := True;
   FObjectClasses := TRegObjects.Create;
 end;
 
 destructor TmncORM.Destroy;
 begin
+  FreeAndNil(FObjectClasses);
   inherited Destroy;
 end;
 
@@ -788,7 +806,8 @@ begin
     if ReferenceInfoStr.Field <> '' then
       ReferenceInfo.Field := ReferenceInfo.Table.FindObject(TField, ReferenceInfoStr.Field, true) as TField;
   end;
-  ReferenceInfo.Options := ReferenceInfoStr.Options;
+  ReferenceInfo.UpdateOptions := ReferenceInfoStr.UpdateOptions;
+  ReferenceInfo.DeleteOptions := ReferenceInfoStr.DeleteOptions;
   inherited Check;
 end;
 
@@ -804,17 +823,17 @@ begin
   FOptions := AOptions;
   FFieldType := AFieldType;
   FFilter := [ffSelect, ffView, ffData];
+  if AFieldType = ftString then
+    FFieldSize := 60;
 end;
 
-function TmncORM.TField.GenName: string;
+function TmncORM.TField.SQLName: string;
 begin
-  Result := inherited GenName;
+  Result := inherited SQLName;
   if (Table <> nil) then
   begin
     if Root.UsePrefexes then
       Result := Table.Prefix + Result;
-    if Root.QuoteChar <> '' then
-      Result := Root.QuoteChar + Result + Root.QuoteChar;
   end;
 end;
 
@@ -823,11 +842,12 @@ begin
   Result := inherited Parent as TFields;
 end;
 
-procedure TmncORM.TField.ReferenceTo(TableName, FieldName: string; Options: TormReferenceOptions);
+procedure TmncORM.TField.ReferenceTo(TableName, FieldName: string; UpdateOptions, DeleteOptions: TormReferenceOption);
 begin
   ReferenceInfoStr.Table := TableName;
   ReferenceInfoStr.Field := FieldName;
-  ReferenceInfoStr.Options := Options;
+  ReferenceInfoStr.UpdateOptions := UpdateOptions;
+  ReferenceInfoStr.DeleteOptions := DeleteOptions;
 end;
 
 { TTable }
@@ -889,7 +909,7 @@ var
 begin
   for o in Fields do
   begin
-    Strings.Add((o as TField).GenName + '=' + (o as TField).Title);
+    Strings.Add((o as TField).SQLName + '=' + (o as TField).Title);
   end;
 end;
 
@@ -947,7 +967,7 @@ begin
   Result := nil;
   for o in Self do
   begin
-    if (o.ClassType = ObjectClass) and (SameText(o.Name, AName)) then
+    if (o.InheritsFrom(ObjectClass) and (SameText(o.Name, AName))) then
     begin
       Result := o;
       exit;
@@ -960,9 +980,8 @@ begin
       exit;
   end;
   if RaiseException and (Result = nil) then
-    raise Exception.Create(ObjectClass.ClassName + ': ' + AName +  ' not exists');
+    raise Exception.Create(ObjectClass.ClassName + ': ' + AName +  ' not exists in ' + Name);
 end;
-
 
 function TormObject.IndexOfName(vName: string): Integer;
 var
@@ -1085,6 +1104,7 @@ begin
       begin
         helper := (o as TormSQLObject).HelperClass.Create;
         helper.CreateSQL((o as TormSQLObject), Callback, 0);
+        helper.Free;
       end;
     end;
   finally

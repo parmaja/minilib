@@ -2,11 +2,14 @@ unit mncSQLiteORM;
 {**
  *  This file is part of the "Mini Connections"
  *
- * @license   modifiedLGPL (modified of http://www.gnu.org/licenses/lgpl.html)
+ * @license   modifiedLGPL modified of http://www.gnu.org/licenses/lgpl.html
  *            See the file COPYING.MLGPL, included in this distribution,
  * @author    Zaher Dirkey <zaher at parmaja dot com>
  *}
-
+{
+  TODO:
+    use foUnique
+}
 {$IFDEF FPC}
 {$mode delphi}
 {$ENDIF}
@@ -84,7 +87,7 @@ begin
   i := 0;
   with AObject as TInsertData do
   begin
-    SQL.Add('insert into ' + Table.GenName + '(' );
+    SQL.Add('insert into ' + Table.QuotedSQLName + '(' );
     for o in this do
     begin
       if i > 0 then
@@ -137,7 +140,7 @@ begin
     fs := FieldSize;
     if fs = 0 then
       fs := 60;
-    SQL.Add(LevelStr(vLevel) + GenName + ' '+ FieldTypeToString(FieldType, fs));
+    SQL.Add(LevelStr(vLevel) + QuotedSQLName + ' '+ FieldTypeToString(FieldType, fs));
     if (foNotNull in Options) or (foPrimary in Options) then
       SQL.Add(' not null');
     if Root.Impact then
@@ -163,6 +166,7 @@ end;
 function TmncORMSQLite.TTableSQLite.CreateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
 var
   i: integer;
+  o: TormObject;
   Field: TField;
   Keys: string;
   IndexList: TStringList;
@@ -173,71 +177,65 @@ begin
   with AObject as TTable do
   begin
 
-    SQL.Add(LevelStr(vLevel) + 'create table ' + GenName);
+    SQL.Add(LevelStr(vLevel) + 'create table ' + QuotedSQLName);
     SQL.Add('(', [cboEndLine]);
-    SQL.Params.Values['Table'] := GenName;
+    SQL.Params.Values['Table'] := SQLName;
     Fields.GenerateSQL(SQL, vLevel + 1);
 
     IndexList := TStringList.Create;
     //collect primary keys and indexes
     Keys := '';
-    for Field in Fields do
+    for o in Fields do
     begin
+      Field := o as TField;
       if Field.Primary then
       begin
         if Keys <> '' then
           Keys := Keys + ', ';
-        Keys := Keys + Field.GenName;
-        if not Root.Impact and Field.Sequenced then
-          Keys := Keys + ' autoincrement';
+        Keys := Keys + Field.QuotedSQLName;
       end
       else if (Field.Indexed) or (Field.Index <> '') then
       begin
         if (Field.Index <> '') then
           IndexName := Field.Index
         else
-          IndexName :=  'Idx_' + Field.GenName;
+          IndexName :=  'Idx_' + Field.SQLName;
 
         IndexFields := IndexList.Values[IndexName];
         if IndexFields <> '' then
           IndexFields := IndexFields + ' ,';
-        IndexFields := IndexFields + Field.GenName;
+        IndexFields := IndexFields + Field.SQLName;
         IndexList.Values[IndexName] := IndexFields;
       end;
     end;
 
-    if not Root.Impact and (Keys <> '') then
+    if Keys <> '' then
     begin
       SQL.Add(',', [cboEndLine]);
       SQL.Add(LevelStr(vLevel + 1) + 'primary key (' + Keys + ')', []);
     end;
 
-    for Field in Fields do
+    for o in Fields do
     begin
+      Field := o as TField;
       if Field.ReferenceInfo.Table <> nil then
       begin
         SQL.Add(',', [cboEndLine]);
-        S := 'foreign key (' + Field.GenName + ')'
-                +' references ' + Field.ReferenceInfo.Table.GenName + '(' + Field.ReferenceInfo.Field.GenName + ')';
+        S := 'foreign key Ref_' + SQLName + Field.ReferenceInfo.Table.Name + Field.ReferenceInfo.Field.Name + '(' + Field.QuotedSQLName + ')'
+                +' references ' + Field.ReferenceInfo.Table.QuotedSQLName + '(' + Field.ReferenceInfo.Field.QuotedSQLName + ')';
 
-        if rfoDelete in Field.ReferenceInfo.Options then
-        begin
-          if rfoRestrict in Field.ReferenceInfo.Options then
-            S := S + ' on delete restrict'
-          else
-            S := S + ' on delete cascade'
-        end
-        else
+        if rfoRestrict = Field.ReferenceInfo.DeleteOptions then
+          S := S + ' on delete restrict'
+        else if rfoCascade = Field.ReferenceInfo.DeleteOptions then
+          S := S + ' on delete cascade'
+        else if rfoSetNull = Field.ReferenceInfo.DeleteOptions then
           S := S + ' on delete set null';
 
-        if rfoUpdate in Field.ReferenceInfo.Options then
-        begin
-          if rfoRestrict in Field.ReferenceInfo.Options then
-            S := S + ' on update restrict'
-          else
-            S := S + ' on update cascade';
-        end
-        else
+        if rfoRestrict = Field.ReferenceInfo.UpdateOptions then
+          S := S + ' on update restrict'
+        else if rfoCascade = Field.ReferenceInfo.UpdateOptions then
+          S := S + ' on update cascade'
+        else if rfoSetNull = Field.ReferenceInfo.UpdateOptions then
           S := S + ' on update set null';
 
         SQL.Add(LevelStr(vLevel + 1) + S , []);
@@ -256,7 +254,7 @@ begin
       begin
         IndexName := IndexList.Names[i];
         IndexFields := IndexList.ValueFromIndex[i];
-        SQL.Add(LevelStr(vLevel) + 'create index ' + IndexName + ' on ' + GenName + '(' + IndexFields + ')');
+        SQL.Add(LevelStr(vLevel) + 'create index ' + IndexName + ' on ' + SQLName + '(' + IndexFields + ')');
 //        SQL.Add('', [cboEndLine]);
         SQL.Add('', [cboEndChunk]);
       end;
@@ -289,7 +287,9 @@ begin
   case FieldType of
     ftString: Result := 'varchar('+IntToStr(FieldSize)+')';
     ftBoolean: Result := 'boolean';
+    ftSmallInteger: Result := 'smllint';
     ftInteger: Result := 'integer';
+    ftBigInteger: Result := 'bigint';
     ftCurrency: Result := 'decimal(12, 4)';
     ftFloat: Result := 'float';
     ftDate: Result := 'date';
@@ -312,3 +312,4 @@ begin
 end;
 
 end.
+

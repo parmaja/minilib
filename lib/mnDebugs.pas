@@ -42,6 +42,7 @@ end;
 procedure TmnDebug.Write(S: string);
 begin
   {$ifndef FPC}
+  s := IntToStr(GetTickCount) + ': ' +s;
   OutputDebugString(PWideChar(S));
   {$else}
   {$endif}
