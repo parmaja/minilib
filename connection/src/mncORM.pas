@@ -352,6 +352,63 @@ type
 
   TmncORMClass = class of TmncORM;
 
+//Common fields
+
+  TNameField = class(TmncORM.TField)
+  public
+    constructor Create(AFields: TmncORM.TFields; AName: String = '');
+  end;
+
+  TStringField = class(TmncORM.TField)
+  public
+    constructor Create(AFields: TmncORM.TFields; AName: String; AOptions: TmncORM.TormFieldOptions = []);
+  end;
+
+  TDateTimeField = class(TmncORM.TField)
+  public
+    constructor Create(AFields: TmncORM.TFields; AName: String; AOptions: TmncORM.TormFieldOptions = []);
+  end;
+
+  TIntegerField = class(TmncORM.TField)
+  public
+    constructor Create(AFields: TmncORM.TFields; AName: String; AOptions: TmncORM.TormFieldOptions = []);
+  end;
+
+  TBooleanField = class(TmncORM.TField)
+  public
+    constructor Create(AFields: TmncORM.TFields; AName: String);
+  end;
+
+  TCurrencyField = class(TmncORM.TField)
+  public
+    constructor Create(AFields: TmncORM.TFields; AName: String);
+  end;
+
+  TCommentField = class(TmncORM.TField)
+  public
+    constructor Create(AFields: TmncORM.TFields; AName: String = '');
+  end;
+
+  TIDField = class(TmncORM.TField)
+  public
+    constructor Create(AFields: TmncORM.TFields; AName: String = '');
+  end;
+
+  TRefIDField = class(TmncORM.TField) //Abort it it used in detail table
+  public
+    constructor Create(AFields: TmncORM.TFields; AName, AMasterTable: String; AMasterID: string = ''; AOptions: TmncORM.TormFieldOptions = []);
+  end;
+
+  TRefStringField = class(TmncORM.TField) //Abort it it used in detail table
+  public
+    constructor Create(AFields: TmncORM.TFields; AName, AMasterTable: String; AMasterField: string; AOptions: TmncORM.TormFieldOptions = []);
+  end;
+
+  TRefDetailField = class(TmncORM.TField) //Delete record when master deleted
+  public
+    constructor Create(AFields: TmncORM.TFields; AName, AMasterTable: String; AMasterID: string = '');
+  end;
+
 function LevelStr(vLevel: Integer): String;
 function ValueToStr(vValue: Variant): string;
 
@@ -1115,6 +1172,101 @@ begin
     FreeAndNil(AParams);
   end;
   Result := True;
+end;
+
+// Common Fields
+
+constructor TIDField.Create(AFields: TmncORM.TFields; AName: String);
+begin
+  if AName = '' then
+    AName := 'ID';
+  inherited Create(AFields, AName, ftInteger, [foIndexed, foSequenced, foPrimary, foInternal, foNotNull]);
+end;
+
+{ TCommentField }
+
+constructor TCommentField.Create(AFields: TmncORM.TFields; AName: String);
+begin
+  if AName = '' then
+    AName := 'Comment';
+  inherited Create(AFields, AName, ftString, []);
+  FieldSize := 250;
+end;
+
+{ TStringField }
+
+constructor TStringField.Create(AFields: TmncORM.TFields; AName: String; AOptions: TmncORM.TormFieldOptions);
+begin
+  inherited Create(AFields, AName, ftString, AOptions);
+  FieldSize := 60;
+end;
+
+{ TNameField }
+
+constructor TNameField.Create(AFields: TmncORM.TFields; AName: String);
+begin
+  if AName = '' then
+    AName := 'Name';
+  inherited Create(AFields, AName, ftString, [foIndexed, foNotNull]);
+  FieldSize := 60;
+end;
+
+{ TBooleanField }
+
+constructor TBooleanField.Create(AFields: TmncORM.TFields; AName: String);
+begin
+  inherited Create(AFields, AName, ftBoolean, [foNotNull]);
+  DefaultValue := 0;
+end;
+
+{ TRefIDField }
+
+constructor TRefIDField.Create(AFields: TmncORM.TFields; AName, AMasterTable: String; AMasterID: string; AOptions: TmncORM.TormFieldOptions);
+begin
+  if AMasterID = '' then
+    AMasterID := 'ID';
+  inherited Create(AFields, AName, ftInteger, AOptions + [foReferenced]);
+  ReferenceTo(AMasterTable, AMasterID, rfoRestrict, rfoRestrict);
+end;
+
+{ TRefDetailField }
+
+constructor TRefDetailField.Create(AFields: TmncORM.TFields; AName, AMasterTable, AMasterID: string);
+begin
+  if AMasterID = '' then
+    AMasterID := 'ID';
+  inherited Create(AFields, AName, ftInteger, [foReferenced]);
+  ReferenceTo(AMasterTable, AMasterID, rfoRestrict, rfoCascade);
+end;
+
+{ TIntegerField }
+
+constructor TIntegerField.Create(AFields: TmncORM.TFields; AName: String; AOptions: TmncORM.TormFieldOptions);
+begin
+  inherited Create(AFields, AName, ftInteger, AOptions);
+end;
+
+{ TDateTimeField }
+
+constructor TDateTimeField.Create(AFields: TmncORM.TFields; AName: String; AOptions: TmncORM.TormFieldOptions);
+begin
+  inherited Create(AFields, AName, ftDateTime, AOptions);
+end;
+
+{ TRefStringField }
+
+constructor TRefStringField.Create(AFields: TmncORM.TFields; AName, AMasterTable, AMasterField: string; AOptions: TmncORM.TormFieldOptions);
+begin
+  inherited Create(AFields, AName, ftString, AOptions + [foReferenced]);
+  ReferenceTo(AMasterTable, AMasterField, rfoRestrict, rfoRestrict);
+end;
+
+{ TCurrencyField }
+
+constructor TCurrencyField.Create(AFields: TmncORM.TFields; AName: String);
+begin
+  inherited Create(AFields, AName, ftCurrency, [foNotNull]);
+  DefaultValue := 0;
 end;
 
 end.
