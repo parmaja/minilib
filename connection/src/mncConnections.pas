@@ -256,6 +256,7 @@ type
   TmncColumn = class(TmncItem)
   private
     FDecimals: Integer;
+    FFullName: string;
     FName: string;
     FIndex: Integer;
     FMaxSize: Integer;
@@ -272,6 +273,7 @@ type
     procedure SetDecimals(AValue: Integer);
   published
     property Index: Integer read FIndex write FIndex;
+    property FullName: string read FFullName write FFullName; //TODO
     property Name: string read FName write FName;
     property DataType;
     property MetaType: string read FMetaType write FMetaType;
@@ -1380,6 +1382,7 @@ begin
   Result := FieldClass.Create;
   Result.Index := vIndex;
   Result.Name := vName;
+  Result.FullName := vName;
   Result.FDataType := vType;
   inherited Add(Result);
 end;

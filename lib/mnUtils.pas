@@ -180,6 +180,8 @@ function ISOStrToDate(ISODate: String; vDateSeparator: Char = '-'; TimeDivider: 
 
 function ISODateToStr(DateTime: TDateTime; vDateSeparator: Char = '-'; TimeDivider: Char = ' '; WithTime: Boolean = False): String; overload;
 
+function AnsiToUnicode(S: rawbytestring; CodePage: Integer = 0): string;
+
 {$ifdef FPC}
 var
   SystemAnsiCodePage: Integer; //used to convert from Ansi string, it is the default
@@ -1110,6 +1112,14 @@ begin
     DecodeTime(DateTime, H, N, S, O);
     Result := Result + TimeDivider + AlignStr(IntToStr(H), 2, [alsRight],'0') + ':' + AlignStr(IntToStr(N), 2, [alsRight],'0') + ':' + AlignStr(IntToStr(S), 2, [alsRight],'0');
   end;
+end;
+
+function AnsiToUnicode(S: rawbytestring; CodePage: Integer): string;
+begin
+  if CodePage = 0 then
+    CodePage := SystemAnsiCodePage;
+  SetCodePage(S, 1256, False);
+  Result := S;
 end;
 
 initialization

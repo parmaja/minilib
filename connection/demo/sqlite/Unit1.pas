@@ -1,5 +1,5 @@
 unit Unit1;
-
+{$codepage utf8}
 interface
 
 uses     
@@ -19,6 +19,7 @@ type
     SelectDSBtn: TButton;
     procedure Button2Click(Sender: TObject);
     procedure Button1Click(Sender: TObject);
+    procedure FormCreate(Sender: TObject);
     procedure SelectBtnClick(Sender: TObject);
     procedure SelectDSBtnClick(Sender: TObject);
   private
@@ -46,31 +47,34 @@ begin
     try
       Session.Start;
       Cmd :=  TmncSQLiteCommand.Create;
+      Cmd.Session := Session;
       try
         
         Cmd.SQL.Text := 'insert into companies';
         Cmd.SQL.Add('(id, name, nationality)');
         Cmd.SQL.Add('values (?id, ?name, ?nationality)');
         Cmd.Prepare;
-        {Cmd.Params['id'] := Null;
-        Cmd.Params['name'] := 'ÒÇåÑ';
-        Cmd.Params['nationality'] := 22;
+        Cmd.Param['id'].Clear;
+        Cmd.Param['name'].AsString := 'Ø²Ø§Ù‡Ø±';
+        Cmd.Param['nationality'].AsInteger := 22;
         Cmd.Execute;
 
-        Cmd.Params['id'] := Null;
+{        Cmd.Params['id'] := Null;
         Cmd.Params['name'] := 'Hamed2';
         Cmd.Params['nationality'] := 222;
         Cmd.Execute;
         Cmd.Close;
-        Session.Commit;
-        Cmd.SQL.Text := 'select * from companies';
+        Session.Commit;}
+
+
+        {Cmd.SQL.Text := 'select * from companies';
         Cmd.SQL.Add('where name = ?name');
         Cmd.Prepare;
-        Cmd.Param['name'].AsString := 'zaher';}
+        Cmd.Param['name'].AsString := 'zaher'
         if Cmd.Execute then
           ShowMessage(Cmd.Field['name'].AsString)
         else
-          ShowMessage('not found');
+          ShowMessage('not found');}
 
       finally
 //        Cmd.Free;
@@ -82,6 +86,11 @@ begin
   finally
     Conn.Free;
   end;
+end;
+
+procedure TForm1.FormCreate(Sender: TObject);
+begin
+
 end;
 
 procedure TForm1.SelectBtnClick(Sender: TObject);
@@ -106,7 +115,7 @@ begin
       //Cmd.Param['name'].AsString := 'Ferrari';
       if Cmd.Execute then
       begin
-        while not Cmd.EOF do
+        while not Cmd.Done do
         begin
           ListBox1.Items.Add(Cmd.Field['name'].AsString);
           Cmd.Next;
@@ -145,7 +154,7 @@ begin
       Cmd1.Param['name'].AsString := 'Ferrari';
       if Cmd1.Execute then
       begin
-        while not Cmd1.EOF do
+        while not Cmd1.Done do
         begin
           ListBox1.Items.Add(Cmd1.Field['name'].AsString);
           Cmd1.Next;
@@ -162,7 +171,7 @@ begin
         Cmd2.Param['name'].AsString := 'Audi';
         if Cmd2.Execute then
         begin
-          while not Cmd2.EOF do
+          while not Cmd2.Done do
           begin
             ListBox1.Items.Add(Cmd2.Field['name'].AsString);
             Cmd2.Next;
@@ -207,7 +216,7 @@ begin
 //      Cmd.Param['name'].AsString := 'Ferrari';
       if Cmd.Execute then
       begin
-        while not Cmd.EOF do
+        while not Cmd.Done do
         begin
           ListBox1.Items.Add(Cmd.Field['id'].AsString + ' - ' + Cmd.Field['name'].AsString);
           im := Cmd.Field['image'].AsString;

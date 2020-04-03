@@ -183,84 +183,89 @@ begin
     Fields.GenerateSQL(SQL, vLevel + 1);
 
     IndexList := TStringList.Create;
-    //collect primary keys and indexes
-    Keys := '';
-    for o in Fields do
-    begin
-      Field := o as TField;
-      if Field.Primary then
+    try
+      //collect primary keys and indexes
+      Keys := '';
+      for o in Fields do
       begin
-        if Keys <> '' then
-          Keys := Keys + ', ';
-        Keys := Keys + Field.QuotedSQLName;
-      end
-      else if (Field.Indexed) or (Field.Index <> '') then
-      begin
-        if (Field.Index <> '') then
-          IndexName := Field.Index
-        else
-          IndexName :=  'Idx_' + Field.SQLName;
+        Field := o as TField;
+        if Field.Primary then
+        begin
+          if Keys <> '' then
+            Keys := Keys + ', ';
+          Keys := Keys + Field.QuotedSQLName;
+        end
+        else if (Field.Indexed) or (Field.Index <> '') then
+        begin
+          if (Field.Index <> '') then
+            IndexName := Field.Index
+          else
+            if not Root.UsePrefexes then //Yes, if not using prefix we will force use it here
+              IndexName :=  'Idx_' + Prefix + Field.SQLName
+            else
+              IndexName :=  'Idx_' + Field.SQLName;
 
-        IndexFields := IndexList.Values[IndexName];
-        if IndexFields <> '' then
-          IndexFields := IndexFields + ' ,';
-        IndexFields := IndexFields + Field.SQLName;
-        IndexList.Values[IndexName] := IndexFields;
+          IndexFields := IndexList.Values[IndexName];
+          if IndexFields <> '' then
+            IndexFields := IndexFields + ' ,';
+          IndexFields := IndexFields + Field.SQLName;
+          IndexList.Values[IndexName] := IndexFields;
+        end;
       end;
-    end;
 
-    if Keys <> '' then
-    begin
-      SQL.Add(',', [cboEndLine]);
-      SQL.Add(LevelStr(vLevel + 1) + 'primary key (' + Keys + ')', []);
-    end;
-
-    for o in Fields do
-    begin
-      Field := o as TField;
-      if Field.ReferenceInfo.Table <> nil then
+      if Keys <> '' then
       begin
         SQL.Add(',', [cboEndLine]);
-        S := 'foreign key Ref_' + SQLName + Field.ReferenceInfo.Table.Name + Field.ReferenceInfo.Field.Name + '(' + Field.QuotedSQLName + ')'
-                +' references ' + Field.ReferenceInfo.Table.QuotedSQLName + '(' + Field.ReferenceInfo.Field.QuotedSQLName + ')';
-
-        if rfoRestrict = Field.ReferenceInfo.DeleteOptions then
-          S := S + ' on delete restrict'
-        else if rfoCascade = Field.ReferenceInfo.DeleteOptions then
-          S := S + ' on delete cascade'
-        else if rfoSetNull = Field.ReferenceInfo.DeleteOptions then
-          S := S + ' on delete set null';
-
-        if rfoRestrict = Field.ReferenceInfo.UpdateOptions then
-          S := S + ' on update restrict'
-        else if rfoCascade = Field.ReferenceInfo.UpdateOptions then
-          S := S + ' on update cascade'
-        else if rfoSetNull = Field.ReferenceInfo.UpdateOptions then
-          S := S + ' on update set null';
-
-        SQL.Add(LevelStr(vLevel + 1) + S , []);
+        SQL.Add(LevelStr(vLevel + 1) + 'primary key (' + Keys + ')', []);
       end;
-    end;
 
-    SQL.Add('', [cboEndLine]);
-    SQL.Add(')', [cboEndLine]);
-    SQL.Add('', [cboEndChunk]);
-    SQL.Params.Values['Table'] := '';
-
-
-    if IndexList.Count > 0 then
-    begin
-      for i := 0 to IndexList.Count -1 do
+      for o in Fields do
       begin
-        IndexName := IndexList.Names[i];
-        IndexFields := IndexList.ValueFromIndex[i];
-        SQL.Add(LevelStr(vLevel) + 'create index ' + IndexName + ' on ' + SQLName + '(' + IndexFields + ')');
-//        SQL.Add('', [cboEndLine]);
-        SQL.Add('', [cboEndChunk]);
-      end;
-    end;
+        Field := o as TField;
+        if Field.ReferenceInfo.Table <> nil then
+        begin
+          SQL.Add(',', [cboEndLine]);
+          S := 'foreign key Ref_' + SQLName + Field.ReferenceInfo.Table.Name + Field.ReferenceInfo.Field.Name + '(' + Field.QuotedSQLName + ')'
+                  +' references ' + Field.ReferenceInfo.Table.QuotedSQLName + '(' + Field.ReferenceInfo.Field.QuotedSQLName + ')';
 
-    FreeAndNil(Indexes);
+          if rfoRestrict = Field.ReferenceInfo.DeleteOptions then
+            S := S + ' on delete restrict'
+          else if rfoCascade = Field.ReferenceInfo.DeleteOptions then
+            S := S + ' on delete cascade'
+          else if rfoSetNull = Field.ReferenceInfo.DeleteOptions then
+            S := S + ' on delete set null';
+
+          if rfoRestrict = Field.ReferenceInfo.UpdateOptions then
+            S := S + ' on update restrict'
+          else if rfoCascade = Field.ReferenceInfo.UpdateOptions then
+            S := S + ' on update cascade'
+          else if rfoSetNull = Field.ReferenceInfo.UpdateOptions then
+            S := S + ' on update set null';
+
+          SQL.Add(LevelStr(vLevel + 1) + S , []);
+        end;
+      end;
+
+      SQL.Add('', [cboEndLine]);
+      SQL.Add(')', [cboEndLine]);
+      SQL.Add('', [cboEndChunk]);
+      SQL.Params.Values['Table'] := '';
+
+
+      if IndexList.Count > 0 then
+      begin
+        for i := 0 to IndexList.Count -1 do
+        begin
+          IndexName := IndexList.Names[i];
+          IndexFields := IndexList.ValueFromIndex[i];
+          SQL.Add(LevelStr(vLevel) + 'create index ' + IndexName + ' on ' + SQLName + '(' + IndexFields + ')');
+  //        SQL.Add('', [cboEndLine]);
+          SQL.Add('', [cboEndChunk]);
+        end;
+      end;
+    finally
+      FreeAndNil(IndexList);
+    end;
   end;
 end;
 

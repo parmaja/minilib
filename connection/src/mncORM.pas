@@ -202,8 +202,8 @@ type
         foUnique,
         foIndexed
       );
-
       TormFieldOptions = set of TormFieldOption;
+
       TormFieldType = (ftString, ftBoolean, ftSmallInteger, ftInteger, ftBigInteger, ftCurrency, ftFloat, ftDate, ftTime, ftDateTime, ftText, ftBlob);
 
       TormReferenceOption = (
@@ -660,7 +660,11 @@ begin
   if HelperClass <> nil then
   begin
     helper := HelperClass.Create;
-    Result := helper.CreateSQL(self, SQL, vLevel);
+    try
+      Result := helper.CreateSQL(self, SQL, vLevel);
+    finally
+      helper.Free;
+    end;
   end
   else
     Result := False;

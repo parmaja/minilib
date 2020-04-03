@@ -221,10 +221,10 @@ begin
     {$ifdef WINCE}
       Result := 'MEMORY'; //or MEMORY
     {$else}
-      Result := 'DEFAULT';
+      Result := '0'; //Default
     {$endif}
-    tmpFile: Result := 'FILE';
-    tmpMemory: Result := 'MEMORY';
+    tmpFile: Result := '1'; //FILE
+    tmpMemory: Result := '2'; //MEMORY
   end;
 end;
 
@@ -585,8 +585,8 @@ end;
 
 procedure TmncSQLiteConnection.InitPragma;
 begin
-  Execute('PRAGMA full_column_names=0');
-  Execute('PRAGMA short_column_names=1');
+  //Execute('PRAGMA full_column_names=0'); //deprecated
+  //Execute('PRAGMA short_column_names=1'); //deprecated
   Execute('PRAGMA encoding="UTF-8"');
   Execute('PRAGMA foreign_keys=ON');
 
