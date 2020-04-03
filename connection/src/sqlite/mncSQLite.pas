@@ -155,7 +155,7 @@ type
   TmncSQLiteCommand = class(TmncSQLCommand)
   private
     FStatment: Psqlite3_stmt;
-    FTail: pchar;
+    FTail: PByte;
     FLastStepResult: longint;
     function GetBinds: TmncSQLiteBinds;
     function GetConnection: TmncSQLiteConnection;
@@ -401,7 +401,8 @@ end;
 
 procedure TmncSQLiteConnection.Vacuum;
 begin
-  Execute('vacuum');
+  if Connected then
+    Execute('vacuum');
 end;
 
 procedure TmncSQLiteConnection.DropDatabase(const vName: string; CheckExists: Boolean);
@@ -412,7 +413,7 @@ end;
 
 function TmncSQLiteConnection.GetVersion: string;
 var
-  p: PChar;
+  p: PUTF8Char;
 begin
   p := sqlite3_version();
   if p <> nil then
@@ -437,7 +438,7 @@ begin
       raise EmncException.Create('Database not exist: "' + Resource + '"');
   end;
   //  CheckError(sqlite3_enable_shared_cache(1));
-  CheckError(sqlite3_open_v2(PChar(Resource), @FDBHandle, f, nil), Resource);
+  CheckError(sqlite3_open_v2(PUtf8Char(UTF8Encode(Resource)), @FDBHandle, f, nil), Resource);
   InitPragma;
 end;
 
@@ -470,7 +471,7 @@ end;
 
 procedure TmncSQLiteSession.Execute(SQL: string);
 begin
-  Connection.Execute(SQL);
+  Connection.Execute(UTF8Encode(SQL));
 end;
 
 procedure TmncSQLiteSession.DoStart;
@@ -490,13 +491,13 @@ end;
 
 procedure TmncSQLiteConnection.Execute(Command: string);
 var
- lMsg  : PChar;
+ lMsg  : PUtf8Char;
  s : Utf8String;
  r  : integer;
 begin
   lMSg := nil;
   s := Command;
-  r := sqlite3_exec(FDBHandle, PChar(s), nil, nil, @lMsg);
+  r := sqlite3_exec(FDBHandle, PUtf8Char(s), nil, nil, @lMsg);
   if lMSg <> nil then
   begin
     s := lMsg;
@@ -732,9 +733,9 @@ begin
               s := ''
             else
               s := v + #0;
-            Binds[i].AllocBuffer(PChar(s)^, Length(s));
+            Binds[i].AllocBuffer(PUtf8Char(s)^, Length(s));
           end;
-          CheckError(sqlite3_bind_text(FStatment, i + 1, PChar(Binds[i].Buffer), -1, nil)); //up to #0
+          CheckError(sqlite3_bind_text(FStatment, i + 1, PAnsiChar(Binds[i].Buffer), -1, nil)); //up to #0
           //CheckError(sqlite3_bind_text(FStatment, i + 1, PChar(Binds[i].Buffer), Binds[i].BufferSize, nil)); not work with empty string not null
         end;
       end;
@@ -744,13 +745,15 @@ end;
 
 procedure TmncSQLiteCommand.DoExecute;
 begin
+  if FStatment <> nil then
+    CheckError(sqlite3_reset(FStatment));
   ApplyParams;
   FLastStepResult := sqlite3_step(FStatment);
   if (FLastStepResult = SQLITE_DONE) then
   begin
     HitDone;
     CheckError(sqlite3_reset(FStatment));
-  end
+  end;
 end;
 
 procedure TmncSQLiteCommand.DoNext;
@@ -846,7 +849,7 @@ var
   i: Integer;
   c: Integer;
 {$ifdef fpc}
-  str: string;
+  str: utf8string;
 {$else}
   str: utf8string;
 {$endif}
@@ -857,6 +860,7 @@ var
 begin
   //belal why not use Columns ????
   //c := Columns.Count;
+  str := '';
   c := sqlite3_column_count(FStatment);
   if c > 0 then
   begin
@@ -902,7 +906,8 @@ begin
         SQLITE_BLOB:
         begin
           v.i := sqlite3_column_bytes(FStatment, i);
-          SetString(str, PChar(sqlite3_column_blob(FStatment, i)), v.i);
+          SetLength(str, v.i);
+          Move(PByte(sqlite3_column_blob(FStatment, i))^, PByte(str)^, v.i);
           aCurrent.Add(i, str);
         end;
         SQLITE_TEXT:
@@ -910,7 +915,8 @@ begin
           if SameText(aColumn.MetaType, 'Blob') then
           begin
             v.i := sqlite3_column_bytes(FStatment, i);
-            SetString(str, PChar(sqlite3_column_blob(FStatment, i)), v.i);
+            SetLength(str, v.i);
+            Move(PByte(sqlite3_column_blob(FStatment, i))^, PByte(str)^, v.i);
           end
           else if aColumn.DataType in [dtDate, dtTime, dtDateTime] then
           begin
@@ -919,7 +925,7 @@ begin
           end
           else
             str := sqlite3_column_text(FStatment, i);
-          aCurrent.Add(i, str);
+            aCurrent.Add(i, str);
         end
         else
         begin

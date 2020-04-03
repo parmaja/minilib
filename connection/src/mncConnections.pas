@@ -262,6 +262,7 @@ type
     FMaxSize: Integer;
     FOptions: TmnDataOptions;
     FMetaType: string;
+    FScale: Word;
     FSize: Int64;
   protected
     procedure SetIsNull(const AValue: Boolean); override;
@@ -279,6 +280,7 @@ type
     property MetaType: string read FMetaType write FMetaType;
     //Size, in sqlite every value have own length not depends on the Meta
     property Size: Int64 read FSize write SetSize; //TODO: I am thinking to move it to TmncItem
+    property Scale: Word read FScale write FScale;
     property Decimals: Integer read FDecimals write SetDecimals;
     property Options: TmnDataOptions read FOptions write FOptions default [];
     //property IsBlob;
@@ -385,8 +387,8 @@ type
     function CreateField(vColumn: TmncColumn): TmncField; overload;
     function CreateField(vIndex: Integer): TmncField; overload;
     function FieldByName(vName: string): TmncField;
-    function Add(Column: TmncColumn; Value: Variant): TmncField; overload;
     function Add(Column: TmncColumn): TmncField; overload;
+    function Add(Column: TmncColumn; Value: Variant): TmncField; overload;
     function Add(Index: Integer; Value: Variant): TmncField; overload;
     property Columns: TmncColumns read FColumns;
     property Field[Index: string]: TmncField read GetField; default;
@@ -498,7 +500,7 @@ type
     procedure SetActive(const Value: Boolean); override;
     procedure CheckActive;
     procedure CheckInactive;
-    procedure CheckStarted; //Check the session is started
+    procedure CheckStarted; // Check the session is started if need transaction
     function GetDone: Boolean; virtual; abstract;
     procedure DoParse; virtual; abstract;
     procedure DoUnparse; virtual;
@@ -949,8 +951,11 @@ begin
   if (Session = nil) then
     raise EmncException.Create('Session not assigned');
   //Raise an exception if not active when it is strict
+  {
   if (sbhStrict in Session.Behaviors) and not Session.Active then
+  //we do not need to check if active, some command not need active transaction, like 'set transaction' in firebird
     raise EmncException.Create('Session is not active/started');
+  }
 end;
 
 procedure TmncCommand.DoUnparse;
@@ -988,7 +993,8 @@ begin
   CheckStarted;
   DoPrepare;
   FPrepared := True;
-  Params.Clean;
+  if Params <> nil then
+    Params.Clean;
 end;
 
 function TmncCommand.DetachFields: TmncFields;
@@ -1295,10 +1301,8 @@ end;
 
 function TmncFields.Add(Column: TmncColumn; Value: Variant): TmncField;
 begin
-  Result := CreateField(Column) as TmncField;
+  Result := Add(Column);
   Result.Value := Value;
-  Result.Column := Column;
-  inherited Add(Result);
 end;
 
 function TmncFields.Add(Index: Integer; Value: Variant): TmncField;
@@ -1322,7 +1326,7 @@ end;
 function TmncFields.Add(Column: TmncColumn): TmncField;
 begin
   Result := CreateField(Column) as TmncField;
-  Result.Column:= Column;
+  Result.Column := Column;
   inherited Add(Result);
 end;
 
