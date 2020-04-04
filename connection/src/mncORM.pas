@@ -91,8 +91,9 @@ type
       private
 
       protected
-        procedure GenerateObjects(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer);
-        function CreateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean; virtual; abstract;
+        procedure GenerateObjects(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer); deprecated;
+        //CreateSQL becarfull if u want to call inherited it after overriding
+        function  CreateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean; virtual;
       end;
 
       TormHelperClass = class of TormHelper;
@@ -507,6 +508,14 @@ end;
 { TmncORM.TormHelper }
 
 procedure TmncORM.TormHelper.GenerateObjects(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer);
+var
+  o: TormObject;
+begin
+  for o in AObject do
+    (o as TormSQLObject).GenerateSQL(SQL, vLevel);
+end;
+
+function TmncORM.TormHelper.CreateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
 var
   o: TormObject;
 begin

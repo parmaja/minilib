@@ -32,14 +32,12 @@ type
 
       TDatabaseSQLite = class(TormHelper)
       public
-        function CreateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean; override;
       end;
 
       { TSchemaSQLite }
 
       TSchemaSQLite = class(TormHelper)
       public
-        function CreateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean; override;
       end;
 
       { TTableSQLite }
@@ -267,22 +265,6 @@ begin
       FreeAndNil(IndexList);
     end;
   end;
-end;
-
-{ TmncORMSQLite.TDatabaseSQLite }
-
-function TmncORMSQLite.TDatabaseSQLite.CreateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
-begin
-  GenerateObjects(AObject, SQL, vLevel);
-  Result := True;
-end;
-
-{ TmncORMSQLite.SchemaSQLite }
-
-function TmncORMSQLite.TSchemaSQLite.CreateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
-begin
-  GenerateObjects(AObject, SQL, vLevel);
-  Result := True;
 end;
 
 { TmncORMSQLite }

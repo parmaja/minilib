@@ -32,14 +32,12 @@ type
 
       TDatabaseMySQL = class(TormHelper)
       public
-        function CreateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean; override;
       end;
 
       { TSchemaMySQL }
 
       TSchemaMySQL = class(TormHelper)
       public
-        function CreateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean; override;
       end;
 
       { TTableMySQL }
@@ -259,22 +257,6 @@ begin
       FreeAndNil(IndexList);
     end;
   end;
-end;
-
-{ TmncORMMySQL.TDatabaseMySQL }
-
-function TmncORMMySQL.TDatabaseMySQL.CreateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
-begin
-  GenerateObjects(AObject, SQL, vLevel);
-  Result := True;
-end;
-
-{ TmncORMMySQL.SchemaMySQL }
-
-function TmncORMMySQL.TSchemaMySQL.CreateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
-begin
-  GenerateObjects(AObject, SQL, vLevel);
-  Result := True;
 end;
 
 { TmncORMMySQL }
