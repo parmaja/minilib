@@ -85,23 +85,23 @@ type
 
       TTable = class;
 
-      { TormHelper }
+      { TormGenerator }
 
-      TormHelper = class(TObject)
+      TormGenerator = class(TObject)
       private
       protected
         procedure DefaultGenerateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer);
         function DoGenerateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean; virtual;
       public
         procedure GenerateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer);
-        constructor Create; virtual; //usfull for creating it by HelperClass.Create
+        constructor Create; virtual; //usfull for creating it by GeneratorClass.Create
       end;
 
-      TormHelperClass = class of TormHelper;
+      TormGeneratorClass = class of TormGenerator;
 
-      TormTableHelper = class(TormHelper)
+      TormTableGenerator = class(TormGenerator)
       protected
-        //temporary here, must moved to Table helper
+        //temporary here, must moved to Table Generator
         function SelectSQL(AObject: TTable; AFilter: TFieldFilter; Keys: array of string; ExtraFields: array of string): string; virtual;
         function InsertSQL(AObject: TTable; AFilter: TFieldFilter; ExtraFields: array of string): string; virtual;
         function UpdateSQL(AObject: TTable; AFilter: TFieldFilter; Keys: array of string; ExtraFields: array of string): string; virtual;
@@ -112,10 +112,10 @@ type
 
       TormSQLObject = class(TormObject)
       private
-        FHelperClass: TormHelperClass;
+        FGeneratorClass: TormGeneratorClass;
       protected
-        procedure SetHelperClass(AValue: TormHelperClass); virtual;
-        property HelperClass: TormHelperClass read FHelperClass write SetHelperClass;
+        procedure SetGeneratorClass(AValue: TormGeneratorClass); virtual;
+        property GeneratorClass: TormGeneratorClass read FGeneratorClass write SetGeneratorClass;
         procedure Created; override;
       public
         function SQLName: string; virtual;
@@ -152,7 +152,7 @@ type
       TTable = class(TormSQLObject)
       protected
         procedure Added(Item: TormObject); override;
-        procedure SetHelperClass(AValue: TormHelperClass); override;
+        procedure SetGeneratorClass(AValue: TormGeneratorClass); override;
       public
         Prefix: string; //used to added to generated field name, need more tests
         Fields: TFields;
@@ -314,7 +314,7 @@ type
         TRegObject = class(TObject)
         public
           ObjectClass: TormObjectClass;
-          HelperClass: TormHelperClass;
+          GeneratorClass: TormGeneratorClass;
         end;
 
         { TRegObjects }
@@ -322,7 +322,7 @@ type
         TRegObjects = class(TmnObjectList<TRegObject>)
         public
           function FindDerived(AObjectClass: TormObjectClass): TormObjectClass;
-          function FindHelper(AObjectClass: TormObjectClass): TormHelperClass;
+          function FindGenerator(AObjectClass: TormObjectClass): TormGeneratorClass;
         end;
 
   private
@@ -345,7 +345,7 @@ type
     function GenerateSQL(Callback: TCallbackObject): Boolean; overload;
     function GenerateSQL(vSQL: TStrings): Boolean; overload;
 
-    procedure RegisterHelper(AObjectClass: TormObjectClass; AHelperClass: TormHelperClass);
+    procedure RegisterGenerator(AObjectClass: TormObjectClass; AGeneratorClass: TormGeneratorClass);
     property ObjectClasses: TRegObjects read FObjectClasses;
     property QuoteChar: string read FQuoteChar write FQuoteChar; //Empty, it will be used with SQLName
     property UsePrefexes: Boolean read FUsePrefexes write FUsePrefexes; //option to use Prefex in Field names
@@ -506,9 +506,9 @@ begin
   inherited Destroy;
 end;
 
-{ TmncORM.TormHelper }
+{ TmncORM.TormGenerator }
 
-procedure TmncORM.TormHelper.DefaultGenerateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer);
+procedure TmncORM.TormGenerator.DefaultGenerateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer);
 var
   o: TormObject;
 begin
@@ -516,23 +516,23 @@ begin
     (o as TormSQLObject).GenSQL(SQL, vLevel);
 end;
 
-function TmncORM.TormHelper.DoGenerateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
+function TmncORM.TormGenerator.DoGenerateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
 begin
   Result := False;
 end;
 
-procedure TmncORM.TormHelper.GenerateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer);
+procedure TmncORM.TormGenerator.GenerateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer);
 begin
   if not DoGenerateSQL(AObject, SQL, vLevel) then
     DefaultGenerateSQL(AObject, SQL, vLevel);
 end;
 
-constructor TmncORM.TormHelper.Create;
+constructor TmncORM.TormGenerator.Create;
 begin
   inherited Create;
 end;
 
-function TmncORM.TormTableHelper.SelectSQL(AObject: TTable; AFilter: TFieldFilter; Keys: array of string; ExtraFields: array of string): string;
+function TmncORM.TormTableGenerator.SelectSQL(AObject: TTable; AFilter: TFieldFilter; Keys: array of string; ExtraFields: array of string): string;
 var
   o: TormObject;
   i: Integer;
@@ -576,7 +576,7 @@ begin
 
 end;
 
-function TmncORM.TormTableHelper.UpdateSQL(AObject: TTable; AFilter: TFieldFilter; Keys: array of string; ExtraFields: array of string): string;
+function TmncORM.TormTableGenerator.UpdateSQL(AObject: TTable; AFilter: TFieldFilter; Keys: array of string; ExtraFields: array of string): string;
 var
   o: TormObject;
   i: Integer;
@@ -621,7 +621,7 @@ begin
   end;
 end;
 
-function TmncORM.TormTableHelper.InsertSQL(AObject: TTable; AFilter: TFieldFilter; ExtraFields: array of string): string;
+function TmncORM.TormTableGenerator.InsertSQL(AObject: TTable; AFilter: TFieldFilter; ExtraFields: array of string): string;
 var
   o: TormObject;
   i: Integer;
@@ -675,7 +675,7 @@ begin
   end;
 end;
 
-function TmncORM.TormTableHelper.SaveSQL(AObject: TTable; AFilter: TFieldFilter; Updating, Returning: Boolean; Keys: array of string): string;
+function TmncORM.TormTableGenerator.SaveSQL(AObject: TTable; AFilter: TFieldFilter; Updating, Returning: Boolean; Keys: array of string): string;
 var
   i:Integer;
   b:Boolean;
@@ -710,17 +710,17 @@ end;
 
 { TmncORM.TormSQLObject }
 
-procedure TmncORM.TormSQLObject.SetHelperClass(AValue: TormHelperClass);
+procedure TmncORM.TormSQLObject.SetGeneratorClass(AValue: TormGeneratorClass);
 begin
-  if FHelperClass =AValue then Exit;
-  FHelperClass :=AValue;
+  if FGeneratorClass =AValue then Exit;
+  FGeneratorClass :=AValue;
 end;
 
 procedure TmncORM.TormSQLObject.Created;
 begin
   inherited Created;
   if (FRoot <> nil) then
-    HelperClass := (Root as TmncORM).ObjectClasses.FindHelper(TormObjectClass(ClassType));
+    GeneratorClass := (Root as TmncORM).ObjectClasses.FindGenerator(TormObjectClass(ClassType));
 end;
 
 function TmncORM.TormSQLObject.SQLName: string;
@@ -730,15 +730,15 @@ end;
 
 procedure TmncORM.TormSQLObject.GenSQL(SQL: TCallbackObject; vLevel: Integer);
 var
-  helper: TormHelper;
+  Generator: TormGenerator;
 begin
-  if HelperClass <> nil then
+  if GeneratorClass <> nil then
   begin
-    helper := HelperClass.Create;
+    Generator := GeneratorClass.Create;
     try
-      helper.GenerateSQL(self, SQL, vLevel);
+      Generator.GenerateSQL(self, SQL, vLevel);
     finally
-      helper.Free;
+      Generator.Free;
     end;
   end;
 end;
@@ -767,16 +767,16 @@ begin
   end;
 end;
 
-function TmncORM.TRegObjects.FindHelper(AObjectClass: TormObjectClass): TormHelperClass;
+function TmncORM.TRegObjects.FindGenerator(AObjectClass: TormObjectClass): TormGeneratorClass;
 var
   o: TRegObject;
 begin
-  Result := TormHelper;
+  Result := TormGenerator;
   for o in Self do
   begin
     if AObjectClass.InheritsFrom(o.ObjectClass) then
     begin
-      Result := o.HelperClass;
+      Result := o.GeneratorClass;
       break;
     end;
   end;
@@ -824,13 +824,13 @@ begin
   Result := TField.Create(ATable.Fields, AName, AFieldType, AOptions);
 end;
 
-procedure TmncORM.RegisterHelper(AObjectClass: TormObjectClass; AHelperClass: TormHelperClass);
+procedure TmncORM.RegisterGenerator(AObjectClass: TormObjectClass; AGeneratorClass: TormGeneratorClass);
 var
   aRegObject: TRegObject;
 begin
   aRegObject := TRegObject.Create;
   aRegObject.ObjectClass := AObjectClass;
-  aRegObject.HelperClass := AHelperClass;
+  aRegObject.GeneratorClass := AGeneratorClass;
   ObjectClasses.Add(aRegObject);
 end;
 
@@ -941,12 +941,12 @@ begin
   inherited Added(Item);
 end;
 
-procedure TmncORM.TTable.SetHelperClass(AValue: TormHelperClass);
+procedure TmncORM.TTable.SetGeneratorClass(AValue: TormGeneratorClass);
 begin
-  if not (AValue.InheritsFrom(TormTableHelper)) then
-    raise Exception.Create('Helper should be TableHelper');
+  if not (AValue.InheritsFrom(TormTableGenerator)) then
+    raise Exception.Create('Generator should be TableGenerator');
 
-  inherited SetHelperClass(AValue);
+  inherited SetGeneratorClass(AValue);
 end;
 
 constructor TmncORM.TTable.Create(ASchema: TSchema; AName: String; APrefix: string);
@@ -958,12 +958,12 @@ end;
 
 function TmncORM.TTable.SelectSQL(AFilter: TFieldFilter; Keys: array of string; ExtraFields: array of string): string;
 var
-  helper: TormHelper;
+  Generator: TormGenerator;
 begin
-  if HelperClass <> nil then
+  if GeneratorClass <> nil then
   begin
-    helper := HelperClass.Create;
-    Result := (helper as TormTableHelper).SelectSQL(Self, AFilter, Keys, ExtraFields);
+    Generator := GeneratorClass.Create;
+    Result := (Generator as TormTableGenerator).SelectSQL(Self, AFilter, Keys, ExtraFields);
   end
   else
     Result := '';
@@ -971,12 +971,12 @@ end;
 
 function TmncORM.TTable.SaveSQL(Updating, Returning: Boolean; AFilter: TFieldFilter; Keys: array of string): string;
 var
-  helper: TormHelper;
+  Generator: TormGenerator;
 begin
-  if HelperClass <> nil then
+  if GeneratorClass <> nil then
   begin
-    helper := HelperClass.Create;
-    Result := (helper as TormTableHelper).SaveSQL(Self, AFilter, Updating, Returning, Keys);
+    Generator := GeneratorClass.Create;
+    Result := (Generator as TormTableGenerator).SaveSQL(Self, AFilter, Updating, Returning, Keys);
   end
   else
     Result := '';
@@ -1183,7 +1183,7 @@ var
   AParams: TStringList;
   o: TormObject;
   sqlObject: TormSQLObject;
-  helper: TormHelper;
+  Generator: TormGenerator;
 begin
   Check;
   AParams := TStringList.Create;
@@ -1191,13 +1191,13 @@ begin
     for o in Self do
     begin
       sqlObject := (o as TormSQLObject);
-      if sqlObject.HelperClass <> nil then
+      if sqlObject.GeneratorClass <> nil then
       begin
-        helper := sqlObject.HelperClass.Create;
+        Generator := sqlObject.GeneratorClass.Create;
         try
-          helper.GenerateSQL(sqlObject, Callback, 0);
+          Generator.GenerateSQL(sqlObject, Callback, 0);
         finally
-          helper.Free;
+          Generator.Free;
         end;
       end;
     end;

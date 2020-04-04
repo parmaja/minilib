@@ -30,40 +30,40 @@ type
 
       { TDatabaseMySQL }
 
-      TDatabaseMySQL = class(TormHelper)
+      TDatabaseMySQL = class(TormGenerator)
       public
       end;
 
       { TSchemaMySQL }
 
-      TSchemaMySQL = class(TormHelper)
+      TSchemaMySQL = class(TormGenerator)
       public
       end;
 
       { TTableMySQL }
 
-      TTableMySQL = class(TormTableHelper)
+      TTableMySQL = class(TormTableGenerator)
       public
         function DoGenerateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean; override;
       end;
 
       { TFieldsMySQL }
 
-      TFieldsMySQL = class(TormHelper)
+      TFieldsMySQL = class(TormGenerator)
       public
         function DoGenerateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean; override;
       end;
 
       { TFieldMySQL }
 
-      TFieldMySQL = class(TormHelper)
+      TFieldMySQL = class(TormGenerator)
       public
         function DoGenerateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean; override;
       end;
 
       { TInsertDataMySQL }
 
-      TInsertDataMySQL = class(TormHelper)
+      TInsertDataMySQL = class(TormGenerator)
       public
         function DoGenerateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean; override;
       end;
@@ -282,12 +282,12 @@ end;
 procedure TmncORMMySQL.Created;
 begin
   inherited Created;
-  RegisterHelper(TDatabase, TDatabaseMySQL);
-  RegisterHelper(TSchema, TSchemaMySQL);
-  RegisterHelper(TTable, TTableMySQL);
-  RegisterHelper(TFields, TFieldsMySQL);
-  RegisterHelper(TField, TFieldMySQL);
-  RegisterHelper(TInsertData, TInsertDataMySQL);
+  RegisterGenerator(TDatabase, TDatabaseMySQL);
+  RegisterGenerator(TSchema, TSchemaMySQL);
+  RegisterGenerator(TTable, TTableMySQL);
+  RegisterGenerator(TFields, TFieldsMySQL);
+  RegisterGenerator(TField, TFieldMySQL);
+  RegisterGenerator(TInsertData, TInsertDataMySQL);
 end;
 
 end.

@@ -30,40 +30,40 @@ type
 
       { TDatabaseSQLite }
 
-      TDatabaseSQLite = class(TormHelper)
+      TDatabaseSQLite = class(TormGenerator)
       public
       end;
 
       { TSchemaSQLite }
 
-      TSchemaSQLite = class(TormHelper)
+      TSchemaSQLite = class(TormGenerator)
       public
       end;
 
       { TTableSQLite }
 
-      TTableSQLite = class(TormTableHelper)
+      TTableSQLite = class(TormTableGenerator)
       public
         function DoGenerateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean; override;
       end;
 
       { TFieldsSQLite }
 
-      TFieldsSQLite = class(TormHelper)
+      TFieldsSQLite = class(TormGenerator)
       public
         function DoGenerateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean; override;
       end;
 
       { TFieldSQLite }
 
-      TFieldSQLite = class(TormHelper)
+      TFieldSQLite = class(TormGenerator)
       public
         function DoGenerateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean; override;
       end;
 
       { TInsertDataSQLite }
 
-      TInsertDataSQLite = class(TormHelper)
+      TInsertDataSQLite = class(TormGenerator)
       public
         function DoGenerateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean; override;
       end;
@@ -290,12 +290,12 @@ end;
 procedure TmncORMSQLite.Created;
 begin
   inherited Created;
-  //RegisterHelper(TDatabase ,TDatabaseSQLite);
-  //RegisterHelper(TSchema, TSchemaSQLite);
-  RegisterHelper(TTable, TTableSQLite);
-  RegisterHelper(TFields, TFieldsSQLite);
-  RegisterHelper(TField, TFieldSQLite);
-  RegisterHelper(TInsertData, TInsertDataSQLite);
+  //RegisterGenerator(TDatabase ,TDatabaseSQLite);
+  //RegisterGenerator(TSchema, TSchemaSQLite);
+  RegisterGenerator(TTable, TTableSQLite);
+  RegisterGenerator(TFields, TFieldsSQLite);
+  RegisterGenerator(TField, TFieldSQLite);
+  RegisterGenerator(TInsertData, TInsertDataSQLite);
 end;
 
 end.
