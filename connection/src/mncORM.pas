@@ -89,11 +89,12 @@ type
 
       TormHelper = class(TObject)
       private
-
       protected
-        procedure GenerateObjects(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer); deprecated;
-        //CreateSQL becarfull if u want to call inherited it after overriding
-        function  CreateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean; virtual;
+        procedure DefaultGenerateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer);
+        function DoGenerateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean; virtual;
+      public
+        procedure GenerateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer);
+        constructor Create; virtual; //usfull for creating it by HelperClass.Create
       end;
 
       TormHelperClass = class of TormHelper;
@@ -119,7 +120,7 @@ type
       public
         function SQLName: string; virtual;
         function QuotedSQLName: string; virtual;
-        function GenerateSQL(SQL: TCallbackObject; vLevel: Integer): Boolean;
+        procedure GenSQL(SQL: TCallbackObject; vLevel: Integer);
       end;
 
       { TDatabase }
@@ -161,7 +162,7 @@ type
         constructor Create(ASchema: TSchema; AName: String; APrefix: string = '');
         function SelectSQL(AFilter: TFieldFilter; Keys: array of string; ExtraFields: array of string): string;
         function SaveSQL(Updating, Returning: Boolean; AFilter: TFieldFilter; Keys: array of string): string;
-        function GenAliases(Strings: TStringList): string;
+        procedure GenAliases(Strings: TStringList);
         function This: TTable;
       end;
 
@@ -310,19 +311,19 @@ type
     public
       type
 
-      TRegObject = class(TObject)
-      public
-        ObjectClass: TormObjectClass;
-        HelperClass: TormHelperClass;
-      end;
+        TRegObject = class(TObject)
+        public
+          ObjectClass: TormObjectClass;
+          HelperClass: TormHelperClass;
+        end;
 
-      { TRegObjects }
+        { TRegObjects }
 
-      TRegObjects = class(TmnObjectList<TRegObject>)
-      public
-        function FindDerived(AObjectClass: TormObjectClass): TormObjectClass;
-        function FindHelper(AObjectClass: TormObjectClass): TormHelperClass;
-      end;
+        TRegObjects = class(TmnObjectList<TRegObject>)
+        public
+          function FindDerived(AObjectClass: TormObjectClass): TormObjectClass;
+          function FindHelper(AObjectClass: TormObjectClass): TormHelperClass;
+        end;
 
   private
     FImpact: Boolean;
@@ -344,7 +345,7 @@ type
     function GenerateSQL(Callback: TCallbackObject): Boolean; overload;
     function GenerateSQL(vSQL: TStrings): Boolean; overload;
 
-    procedure Register(AObjectClass: TormObjectClass; AHelperClass: TormHelperClass);
+    procedure RegisterHelper(AObjectClass: TormObjectClass; AHelperClass: TormHelperClass);
     property ObjectClasses: TRegObjects read FObjectClasses;
     property QuoteChar: string read FQuoteChar write FQuoteChar; //Empty, it will be used with SQLName
     property UsePrefexes: Boolean read FUsePrefexes write FUsePrefexes; //option to use Prefex in Field names
@@ -507,20 +508,28 @@ end;
 
 { TmncORM.TormHelper }
 
-procedure TmncORM.TormHelper.GenerateObjects(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer);
+procedure TmncORM.TormHelper.DefaultGenerateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer);
 var
   o: TormObject;
 begin
   for o in AObject do
-    (o as TormSQLObject).GenerateSQL(SQL, vLevel);
+    (o as TormSQLObject).GenSQL(SQL, vLevel);
 end;
 
-function TmncORM.TormHelper.CreateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
-var
-  o: TormObject;
+function TmncORM.TormHelper.DoGenerateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
 begin
-  for o in AObject do
-    (o as TormSQLObject).GenerateSQL(SQL, vLevel);
+  Result := False;
+end;
+
+procedure TmncORM.TormHelper.GenerateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer);
+begin
+  if not DoGenerateSQL(AObject, SQL, vLevel) then
+    DefaultGenerateSQL(AObject, SQL, vLevel);
+end;
+
+constructor TmncORM.TormHelper.Create;
+begin
+  inherited Create;
 end;
 
 function TmncORM.TormTableHelper.SelectSQL(AObject: TTable; AFilter: TFieldFilter; Keys: array of string; ExtraFields: array of string): string;
@@ -719,7 +728,7 @@ begin
   Result := Name;
 end;
 
-function TmncORM.TormSQLObject.GenerateSQL(SQL: TCallbackObject; vLevel: Integer): Boolean;
+procedure TmncORM.TormSQLObject.GenSQL(SQL: TCallbackObject; vLevel: Integer);
 var
   helper: TormHelper;
 begin
@@ -727,13 +736,11 @@ begin
   begin
     helper := HelperClass.Create;
     try
-      Result := helper.CreateSQL(self, SQL, vLevel);
+      helper.GenerateSQL(self, SQL, vLevel);
     finally
       helper.Free;
     end;
-  end
-  else
-    Result := False;
+  end;
 end;
 
 function TmncORM.TormSQLObject.QuotedSQLName: string;
@@ -749,6 +756,7 @@ function TmncORM.TRegObjects.FindDerived(AObjectClass: TormObjectClass): TormObj
 var
   o: TRegObject;
 begin
+  Result := nil;
   for o in Self do
   begin
     if o.ObjectClass.ClassParent = AObjectClass then
@@ -763,6 +771,7 @@ function TmncORM.TRegObjects.FindHelper(AObjectClass: TormObjectClass): TormHelp
 var
   o: TRegObject;
 begin
+  Result := TormHelper;
   for o in Self do
   begin
     if AObjectClass.InheritsFrom(o.ObjectClass) then
@@ -815,7 +824,7 @@ begin
   Result := TField.Create(ATable.Fields, AName, AFieldType, AOptions);
 end;
 
-procedure TmncORM.Register(AObjectClass: TormObjectClass; AHelperClass: TormHelperClass);
+procedure TmncORM.RegisterHelper(AObjectClass: TormObjectClass; AHelperClass: TormHelperClass);
 var
   aRegObject: TRegObject;
 begin
@@ -973,7 +982,7 @@ begin
     Result := '';
 end;
 
-function TmncORM.TTable.GenAliases(Strings: TStringList): string;
+procedure TmncORM.TTable.GenAliases(Strings: TStringList);
 var
   o: TormObject;
 begin
@@ -1116,14 +1125,22 @@ type
   { TSQLCallbackObject }
 
   TSQLCallbackObject = class(TCallbackObject)
-  public
+  private
     Buffer: string;
-    SQL: TStrings;
+  public
+    SQL: TStrings; //Reference to SQL
+    constructor Create(ASQL: TStrings);
     destructor Destroy; override;
     procedure Add(S: string; Options: TCallbackObjectOptions = []); override;
   end;
 
 { TSQLCallbackObject }
+
+constructor TSQLCallbackObject.Create(ASQL: TStrings);
+begin
+  inherited Create;
+  SQL := ASQL;
+end;
 
 destructor TSQLCallbackObject.Destroy;
 begin
@@ -1152,10 +1169,12 @@ function TmncORM.GenerateSQL(vSQL: TStrings): Boolean;
 var
   SQLCB: TSQLCallbackObject;
 begin
-  SQLCB := TSQLCallbackObject.Create;
-  SQLCB.SQL := vSQL;
-  GenerateSQL(SQLCB);
-  FreeAndNil(SQLCB);
+  SQLCB := TSQLCallbackObject.Create(vSQL);
+  try
+    GenerateSQL(SQLCB);
+  finally
+    FreeAndNil(SQLCB);
+  end;
   Result := True;
 end;
 
@@ -1163,6 +1182,7 @@ function TmncORM.GenerateSQL(Callback: TCallbackObject): Boolean;
 var
   AParams: TStringList;
   o: TormObject;
+  sqlObject: TormSQLObject;
   helper: TormHelper;
 begin
   Check;
@@ -1170,11 +1190,15 @@ begin
   try
     for o in Self do
     begin
-      if (o as TormSQLObject).HelperClass <> nil then
+      sqlObject := (o as TormSQLObject);
+      if sqlObject.HelperClass <> nil then
       begin
-        helper := (o as TormSQLObject).HelperClass.Create;
-        helper.CreateSQL((o as TormSQLObject), Callback, 0);
-        helper.Free;
+        helper := sqlObject.HelperClass.Create;
+        try
+          helper.GenerateSQL(sqlObject, Callback, 0);
+        finally
+          helper.Free;
+        end;
       end;
     end;
   finally

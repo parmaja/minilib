@@ -44,28 +44,28 @@ type
 
       TTableMySQL = class(TormTableHelper)
       public
-        function CreateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean; override;
+        function DoGenerateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean; override;
       end;
 
       { TFieldsMySQL }
 
       TFieldsMySQL = class(TormHelper)
       public
-        function CreateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean; override;
+        function DoGenerateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean; override;
       end;
 
       { TFieldMySQL }
 
       TFieldMySQL = class(TormHelper)
       public
-        function CreateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean; override;
+        function DoGenerateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean; override;
       end;
 
       { TInsertDataMySQL }
 
       TInsertDataMySQL = class(TormHelper)
       public
-        function CreateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean; override;
+        function DoGenerateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean; override;
       end;
   protected
     class function FieldTypeToString(FieldType: TmncORM.TormFieldType; FieldSize: Integer): String;
@@ -77,7 +77,7 @@ implementation
 
 { TmncORMMySQL.TInsertDataMySQL }
 
-function TmncORMMySQL.TInsertDataMySQL.CreateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
+function TmncORMMySQL.TInsertDataMySQL.DoGenerateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
 var
   o: TormObject;
   i: Integer;
@@ -110,7 +110,7 @@ end;
 
 { TmncORMMySQL.TFieldsMySQL }
 
-function TmncORMMySQL.TFieldsMySQL.CreateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
+function TmncORMMySQL.TFieldsMySQL.DoGenerateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
 var
   o: TormObject;
   i: Integer;
@@ -120,7 +120,7 @@ begin
   begin
     if i > 0 then //not first line
       SQL.Add(',', [cboEndLine]);
-    (o as TormSQLObject).GenerateSQL(SQL, vLevel);
+    (o as TormSQLObject).GenSQL(SQL, vLevel);
     Inc(i);
   end;
   Result := True;
@@ -128,7 +128,7 @@ end;
 
 { TmncORMMySQL.TFieldMySQL }
 
-function TmncORMMySQL.TFieldMySQL.CreateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
+function TmncORMMySQL.TFieldMySQL.DoGenerateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
 var
   fs: Integer;
 begin
@@ -156,7 +156,7 @@ end;
 
 { TmncORMMySQL.TTableMySQL }
 
-function TmncORMMySQL.TTableMySQL.CreateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
+function TmncORMMySQL.TTableMySQL.DoGenerateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
 var
   i: integer;
   o: TormObject;
@@ -173,7 +173,7 @@ begin
     SQL.Add(LevelStr(vLevel) + 'create table ' + QuotedSQLName);
     SQL.Add('(', [cboEndLine]);
     SQL.Params.Values['Table'] := SQLName;
-    Fields.GenerateSQL(SQL, vLevel + 1);
+    Fields.GenSQL(SQL, vLevel + 1);
 
     IndexList := TStringList.Create;
     try
@@ -282,12 +282,12 @@ end;
 procedure TmncORMMySQL.Created;
 begin
   inherited Created;
-  Register(TDatabase ,TDatabaseMySQL);
-  Register(TSchema, TSchemaMySQL);
-  Register(TTable, TTableMySQL);
-  Register(TFields, TFieldsMySQL);
-  Register(TField, TFieldMySQL);
-  Register(TInsertData, TInsertDataMySQL);
+  RegisterHelper(TDatabase, TDatabaseMySQL);
+  RegisterHelper(TSchema, TSchemaMySQL);
+  RegisterHelper(TTable, TTableMySQL);
+  RegisterHelper(TFields, TFieldsMySQL);
+  RegisterHelper(TField, TFieldMySQL);
+  RegisterHelper(TInsertData, TInsertDataMySQL);
 end;
 
 end.

@@ -365,7 +365,6 @@ begin
   end;
 end;
 
-
 function MySQLTypeToString(vType: enum_field_types): String;
 begin
   case vType of

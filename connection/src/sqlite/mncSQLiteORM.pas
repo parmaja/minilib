@@ -44,28 +44,28 @@ type
 
       TTableSQLite = class(TormTableHelper)
       public
-        function CreateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean; override;
+        function DoGenerateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean; override;
       end;
 
       { TFieldsSQLite }
 
       TFieldsSQLite = class(TormHelper)
       public
-        function CreateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean; override;
+        function DoGenerateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean; override;
       end;
 
       { TFieldSQLite }
 
       TFieldSQLite = class(TormHelper)
       public
-        function CreateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean; override;
+        function DoGenerateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean; override;
       end;
 
       { TInsertDataSQLite }
 
       TInsertDataSQLite = class(TormHelper)
       public
-        function CreateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean; override;
+        function DoGenerateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean; override;
       end;
   protected
     class function FieldTypeToString(FieldType:TormFieldType; FieldSize: Integer): String;
@@ -77,7 +77,7 @@ implementation
 
 { TmncORMSQLite.TInsertDataSQLite }
 
-function TmncORMSQLite.TInsertDataSQLite.CreateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
+function TmncORMSQLite.TInsertDataSQLite.DoGenerateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
 var
   o: TormObject;
   i: Integer;
@@ -110,7 +110,7 @@ end;
 
 { TmncORMSQLite.TFieldsSQLite }
 
-function TmncORMSQLite.TFieldsSQLite.CreateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
+function TmncORMSQLite.TFieldsSQLite.DoGenerateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
 var
   o: TormObject;
   i: Integer;
@@ -120,7 +120,7 @@ begin
   begin
     if i > 0 then //not first line
       SQL.Add(',', [cboEndLine]);
-    (o as TormSQLObject).GenerateSQL(SQL, vLevel);
+    (o as TormSQLObject).GenSQL(SQL, vLevel);
     Inc(i);
   end;
   Result := True;
@@ -128,7 +128,7 @@ end;
 
 { TmncORMSQLite.TFieldSQLite }
 
-function TmncORMSQLite.TFieldSQLite.CreateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
+function TmncORMSQLite.TFieldSQLite.DoGenerateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
 var
   fs: Integer;
 begin
@@ -161,7 +161,7 @@ end;
 
 { TmncORMSQLite.TTableSQLite }
 
-function TmncORMSQLite.TTableSQLite.CreateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
+function TmncORMSQLite.TTableSQLite.DoGenerateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
 var
   i: integer;
   o: TormObject;
@@ -178,7 +178,7 @@ begin
     SQL.Add(LevelStr(vLevel) + 'create table ' + QuotedSQLName);
     SQL.Add('(', [cboEndLine]);
     SQL.Params.Values['Table'] := SQLName;
-    Fields.GenerateSQL(SQL, vLevel + 1);
+    Fields.GenSQL(SQL, vLevel + 1);
 
     IndexList := TStringList.Create;
     try
@@ -290,12 +290,12 @@ end;
 procedure TmncORMSQLite.Created;
 begin
   inherited Created;
-  Register(TDatabase ,TDatabaseSQLite);
-  Register(TSchema, TSchemaSQLite);
-  Register(TTable, TTableSQLite);
-  Register(TFields, TFieldsSQLite);
-  Register(TField, TFieldSQLite);
-  Register(TInsertData, TInsertDataSQLite);
+  //RegisterHelper(TDatabase ,TDatabaseSQLite);
+  //RegisterHelper(TSchema, TSchemaSQLite);
+  RegisterHelper(TTable, TTableSQLite);
+  RegisterHelper(TFields, TFieldsSQLite);
+  RegisterHelper(TField, TFieldSQLite);
+  RegisterHelper(TInsertData, TInsertDataSQLite);
 end;
 
 end.

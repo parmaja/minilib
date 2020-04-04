@@ -17,7 +17,7 @@ interface
 
 uses
   SysUtils, Classes,
-  mncMeta, mncORM, mncConnections, mncSQLite;
+  mncMeta, mncConnections, mncSQLite;
 
 type
   { TmncSQLiteMeta }
