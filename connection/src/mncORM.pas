@@ -210,23 +210,28 @@ type
 
       TormReferenceOption = (
         rfoNothing,
-        rfoRestrict,
-        rfoCascade,
-        rfoSetNull
+        rfoSetNull,
+        rfoReject,
+        rfoCascade //Update it if changed, delete it if modified
+      );
+
+      TormReferenceOptions = (
+        rfDetail, //Delete when delete master, Cascade on modify
+        rfElement //Reject when delete master, Cascade on modify
       );
 
       TReferenceInfoStr = record
         Table: string;
         Field: string;
-        UpdateOptions: TormReferenceOption;
-        DeleteOptions: TormReferenceOption;
+        UpdateOption: TormReferenceOption;
+        DeleteOption: TormReferenceOption;
       end;
 
       TReferenceInfoLink = record
         Table: TTable;
         Field: TField;
-        UpdateOptions: TormReferenceOption;
-        DeleteOptions: TormReferenceOption;
+        UpdateOption: TormReferenceOption;
+        DeleteOption: TormReferenceOption;
       end;
 
       { TField }
@@ -237,7 +242,7 @@ type
         FFieldSize: Integer;
         FFieldType: TormFieldType;
         FFilter: TFieldFilter;
-        FIndex: string;
+        FIndexName: string;
         FOptions: TormFieldOptions;
         FTitle: string;
         function GetIndexed: Boolean;
@@ -258,7 +263,8 @@ type
         property Options: TormFieldOptions read FOptions write FOptions;
         property Filter: TFieldFilter read FFilter write FFilter;
         property DefaultValue: Variant read FDefaultValue write FDefaultValue;
-        procedure ReferenceTo(TableName, FieldName: string; UpdateOptions, DeleteOptions: TormReferenceOption);
+        procedure ReferenceTo(TableName, FieldName: string; UpdateOption, DeleteOption: TormReferenceOption); overload;
+        procedure ReferenceTo(TableName, FieldName: string; Option: TormReferenceOptions); overload;
 
         property Title: string read FTitle write FTitle;
 
@@ -269,7 +275,8 @@ type
         property Primary: Boolean read GetPrimary write SetPrimary;
         property Sequenced: Boolean read GetSequenced write SetSequenced;
 
-        property Index: string read FIndex write FIndex;// this will group this field have same values into one index with that index name
+        // this will group this field have same values into one index with that index name
+        property IndexName: string read FIndexName write FIndexName;
       end;
 
       { StoredProcedure }
@@ -337,10 +344,10 @@ type
     destructor Destroy; override;
     function This: TmncORM;
 
-    function CreateDatabase(AName: String): TDatabase;
-    function CreateSchema(ADatabase: TDatabase; AName: String): TSchema;
-    function CreateTable(ASchema: TSchema; AName: String): TTable;
-    function CreateField(ATable: TTable; AName: String; AFieldType: TormFieldType; AOptions: TormFieldOptions = []): TField;
+    function AddDatabase(AName: String): TDatabase;
+    function AddSchema(ADatabase: TDatabase; AName: String): TSchema;
+    function AddTable(ASchema: TSchema; AName: String): TTable;
+    function AddField(ATable: TTable; AName: String; AFieldType: TormFieldType; AOptions: TormFieldOptions = []): TField;
 
     function GenerateSQL(Callback: TCallbackObject): Boolean; overload;
     function GenerateSQL(vSQL: TStrings): Boolean; overload;
@@ -356,14 +363,18 @@ type
 
 //Common fields
 
+  { TNameField }
+
   TNameField = class(TmncORM.TField)
   public
-    constructor Create(AFields: TmncORM.TFields; AName: String = '');
+    constructor Create(AFields: TmncORM.TFields; AName: String; AFieldSize: Integer = 60);
   end;
+
+  { TStringField }
 
   TStringField = class(TmncORM.TField)
   public
-    constructor Create(AFields: TmncORM.TFields; AName: String; AOptions: TmncORM.TormFieldOptions = []);
+    constructor Create(AFields: TmncORM.TFields; AName: String; AOptions: TmncORM.TormFieldOptions = []; AFieldSize: Integer = 60);
   end;
 
   TDateTimeField = class(TmncORM.TField)
@@ -803,23 +814,23 @@ begin
   Result := Self;
 end;
 
-function TmncORM.CreateDatabase(AName: String): TDatabase;
+function TmncORM.AddDatabase(AName: String): TDatabase;
 begin
   Result := TDatabase.Create(Self, AName);
 end;
 
-function TmncORM.CreateSchema(ADatabase: TDatabase; AName: String): TSchema;
+function TmncORM.AddSchema(ADatabase: TDatabase; AName: String): TSchema;
 begin
   Result := TSchema.Create(ADatabase, AName);
 end;
 
-function TmncORM.CreateTable(ASchema: TSchema; AName: String): TTable;
+function TmncORM.AddTable(ASchema: TSchema; AName: String): TTable;
 begin
   Result := TTable.Create(ASchema, AName);
   TFields.Create(Result); //will be assigned to Fields in TFields.Create
 end;
 
-function TmncORM.CreateField(ATable: TTable; AName: String; AFieldType: TormFieldType; AOptions: TormFieldOptions): TField;
+function TmncORM.AddField(ATable: TTable; AName: String; AFieldType: TormFieldType; AOptions: TormFieldOptions): TField;
 begin
   Result := TField.Create(ATable.Fields, AName, AFieldType, AOptions);
 end;
@@ -885,8 +896,8 @@ begin
     if ReferenceInfoStr.Field <> '' then
       ReferenceInfo.Field := ReferenceInfo.Table.FindObject(TField, ReferenceInfoStr.Field, true) as TField;
   end;
-  ReferenceInfo.UpdateOptions := ReferenceInfoStr.UpdateOptions;
-  ReferenceInfo.DeleteOptions := ReferenceInfoStr.DeleteOptions;
+  ReferenceInfo.UpdateOption := ReferenceInfoStr.UpdateOption;
+  ReferenceInfo.DeleteOption := ReferenceInfoStr.DeleteOption;
   inherited Check;
 end;
 
@@ -921,12 +932,31 @@ begin
   Result := inherited Parent as TFields;
 end;
 
-procedure TmncORM.TField.ReferenceTo(TableName, FieldName: string; UpdateOptions, DeleteOptions: TormReferenceOption);
+procedure TmncORM.TField.ReferenceTo(TableName, FieldName: string; UpdateOption, DeleteOption: TormReferenceOption);
 begin
   ReferenceInfoStr.Table := TableName;
   ReferenceInfoStr.Field := FieldName;
-  ReferenceInfoStr.UpdateOptions := UpdateOptions;
-  ReferenceInfoStr.DeleteOptions := DeleteOptions;
+  ReferenceInfoStr.UpdateOption := UpdateOption;
+  ReferenceInfoStr.DeleteOption := DeleteOption;
+end;
+
+procedure TmncORM.TField.ReferenceTo(TableName, FieldName: string; Option: TormReferenceOptions);
+begin
+  ReferenceInfoStr.Table := TableName;
+  ReferenceInfoStr.Field := FieldName;
+  case Option of
+    rfElement:
+    begin
+      ReferenceInfoStr.UpdateOption := rfoCascade;
+      ReferenceInfoStr.DeleteOption := rfoReject;
+    end;
+    rfDetail:
+    begin
+      ReferenceInfoStr.UpdateOption := rfoCascade;
+      ReferenceInfoStr.DeleteOption := rfoCascade;
+    end;
+  end;
+
 end;
 
 { TTable }
@@ -1228,20 +1258,20 @@ end;
 
 { TStringField }
 
-constructor TStringField.Create(AFields: TmncORM.TFields; AName: String; AOptions: TmncORM.TormFieldOptions);
+constructor TStringField.Create(AFields: TmncORM.TFields; AName: String; AOptions: TmncORM.TormFieldOptions; AFieldSize: Integer);
 begin
   inherited Create(AFields, AName, ftString, AOptions);
-  FieldSize := 60;
+  FieldSize := AFieldSize;
 end;
 
 { TNameField }
 
-constructor TNameField.Create(AFields: TmncORM.TFields; AName: String);
+constructor TNameField.Create(AFields: TmncORM.TFields; AName: String; AFieldSize: Integer);
 begin
   if AName = '' then
     AName := 'Name';
   inherited Create(AFields, AName, ftString, [foIndexed, foNotNull]);
-  FieldSize := 60;
+  FieldSize := AFieldSize;
 end;
 
 { TBooleanField }
@@ -1259,7 +1289,7 @@ begin
   if AMasterID = '' then
     AMasterID := 'ID';
   inherited Create(AFields, AName, ftInteger, AOptions + [foReferenced]);
-  ReferenceTo(AMasterTable, AMasterID, rfoRestrict, rfoRestrict);
+  ReferenceTo(AMasterTable, AMasterID, rfoReject, rfoReject);
 end;
 
 { TRefDetailField }
@@ -1269,7 +1299,7 @@ begin
   if AMasterID = '' then
     AMasterID := 'ID';
   inherited Create(AFields, AName, ftInteger, [foReferenced]);
-  ReferenceTo(AMasterTable, AMasterID, rfoRestrict, rfoCascade);
+  ReferenceTo(AMasterTable, AMasterID, rfoReject, rfoCascade);
 end;
 
 { TIntegerField }
@@ -1291,7 +1321,7 @@ end;
 constructor TRefStringField.Create(AFields: TmncORM.TFields; AName, AMasterTable, AMasterField: string; AOptions: TmncORM.TormFieldOptions);
 begin
   inherited Create(AFields, AName, ftString, AOptions + [foReferenced]);
-  ReferenceTo(AMasterTable, AMasterField, rfoRestrict, rfoRestrict);
+  ReferenceTo(AMasterTable, AMasterField, rfoReject, rfoReject);
 end;
 
 { TCurrencyField }

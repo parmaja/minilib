@@ -163,7 +163,7 @@ var
   Field: TField;
   Keys: string;
   IndexList: TStringList;
-  IndexName, IndexFields: string;
+  aIndexName, aIndexFields: string;
   S: string;
 begin
   Result := True;
@@ -188,21 +188,21 @@ begin
             Keys := Keys + ', ';
           Keys := Keys + Field.QuotedSQLName;
         end
-        else if (Field.Indexed) or (Field.Index <> '') then
+        else if (Field.Indexed) or (Field.IndexName <> '') then
         begin
-          if (Field.Index <> '') then
-            IndexName := Field.Index
+          if (Field.IndexName <> '') then
+            aIndexName := Field.IndexName
           else
             if not Root.UsePrefexes then //Yes, if not using prefix we will force use it here
-              IndexName :=  'Idx_' + Prefix + Field.SQLName
+              aIndexName :=  'Idx_' + Prefix + Field.SQLName
             else
-              IndexName :=  'Idx_' + Field.SQLName;
+              aIndexName :=  'Idx_' + Field.SQLName;
 
-          IndexFields := IndexList.Values[IndexName];
-          if IndexFields <> '' then
-            IndexFields := IndexFields + ' ,';
-          IndexFields := IndexFields + Field.SQLName;
-          IndexList.Values[IndexName] := IndexFields;
+          aIndexFields := IndexList.Values[aIndexName];
+          if aIndexFields <> '' then
+            aIndexFields := aIndexFields + ' ,';
+          aIndexFields := aIndexFields + Field.SQLName;
+          IndexList.Values[aIndexName] := aIndexFields;
         end;
       end;
 
@@ -216,10 +216,10 @@ begin
       begin
         for i := 0 to IndexList.Count -1 do
         begin
-          IndexName := IndexList.Names[i];
-          IndexFields := IndexList.ValueFromIndex[i];
+          aIndexName := IndexList.Names[i];
+          aIndexFields := IndexList.ValueFromIndex[i];
           SQL.Add(',', [cboEndLine]);
-          SQL.Add(LevelStr(vLevel + 1) + 'index ' + IndexName + '(' + IndexFields + ')');
+          SQL.Add(LevelStr(vLevel + 1) + 'index ' + aIndexName + '(' + aIndexFields + ')');
         end;
       end;
 
@@ -232,18 +232,18 @@ begin
           S := 'foreign key Ref_' + SQLName + Field.ReferenceInfo.Table.Name + Field.ReferenceInfo.Field.Name + '(' + Field.QuotedSQLName + ')'
                   +' references ' + Field.ReferenceInfo.Table.QuotedSQLName + '(' + Field.ReferenceInfo.Field.QuotedSQLName + ')';
 
-          if rfoRestrict = Field.ReferenceInfo.DeleteOptions then
+          if rfoReject = Field.ReferenceInfo.DeleteOption then
             S := S + ' on delete restrict'
-          else if rfoCascade = Field.ReferenceInfo.DeleteOptions then
+          else if rfoCascade = Field.ReferenceInfo.DeleteOption then
             S := S + ' on delete cascade'
-          else if rfoSetNull = Field.ReferenceInfo.DeleteOptions then
+          else if rfoSetNull = Field.ReferenceInfo.DeleteOption then
             S := S + ' on delete set null';
 
-          if rfoRestrict = Field.ReferenceInfo.UpdateOptions then
+          if rfoReject = Field.ReferenceInfo.UpdateOption then
             S := S + ' on update restrict'
-          else if rfoCascade = Field.ReferenceInfo.UpdateOptions then
+          else if rfoCascade = Field.ReferenceInfo.UpdateOption then
             S := S + ' on update cascade'
-          else if rfoSetNull = Field.ReferenceInfo.UpdateOptions then
+          else if rfoSetNull = Field.ReferenceInfo.UpdateOption then
             S := S + ' on update set null';
 
           SQL.Add(LevelStr(vLevel + 1) + S , []);
