@@ -77,10 +77,10 @@ type
     procedure DoStart; override;
     procedure DoStop(How: TmncSessionAction; Retaining: Boolean); override;
     function GetActive: Boolean; override;
+    function InternalCreateCommand: TmncSQLCommand; override;
   public
     constructor Create(vConnection: TmncConnection); override;
     destructor Destroy; override;
-    function CreateCommand: TmncSQLCommand; override;
     procedure Execute(SQL: string);
     property Connection: TmncMySQLConnection read GetConnection write SetConnection;
   end;
@@ -237,7 +237,7 @@ function MySQLTypeToString(vType: enum_field_types): String;
 implementation
 
 uses
-  mncDB, mncMySQLMeta, mncMySQLORM;
+  mncDB, mncMySQLORM;
 
 const
   cMaxString = 255;
@@ -638,10 +638,9 @@ begin
   inherited;
 end;
 
-function TmncMySQLSession.CreateCommand: TmncSQLCommand;
+function TmncMySQLSession.InternalCreateCommand: TmncSQLCommand;
 begin
   Result := TmncMySQLCommand.Create;
-  Result.Session := Self;
 end;
 
 procedure TmncMySQLSession.Execute(SQL: string);

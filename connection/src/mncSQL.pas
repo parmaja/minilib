@@ -6,7 +6,6 @@ unit mncSQL;
  *            See the file COPYING.MLGPL, included in this distribution,
  * @author    Zaher Dirkey <zaher at parmaja dot com>
  *}
-
 {$M+}
 {$H+}
 {$IFDEF FPC}
@@ -21,7 +20,7 @@ unit mncSQL;
 interface
 
 uses
-  Classes, SysUtils, Contnrs,
+  Classes, SysUtils, Contnrs, StrUtils,
   mnClasses,
   mncConnections, mncCommons;
 
@@ -51,13 +50,27 @@ type
     procedure CloneExecute(const vResource, vSQL: string; vArgs: array of const); overload;
     procedure CloneExecute(const vResource, vSQL: string); overload;
     procedure Vacuum; virtual; virtual;
+      {
+      GetParamChar: Called to take the real param char depend on the sql engine to replace it with this new one.
+                    by default it is ?
+    }
+    function GetParamChar: string; virtual;
+    //ScriptSeperator
+    function ScriptSeperator: string; virtual;
   end;
 
   { TmncSQLSession }
 
   TmncSQLSession = class abstract(TmncSession)
+  private
+    function GetConnection: TmncSQLConnection;
+    procedure SetConnection(AValue: TmncSQLConnection);
+  protected
+    function InternalCreateCommand: TmncSQLCommand; virtual; abstract;
   public
-    function CreateCommand: TmncSQLCommand; virtual; abstract;
+    function CreateCommand: TmncSQLCommand;
+    procedure ExecuteScript(AStrings: TStrings; AutoCommit: Boolean = False);
+    property Connection: TmncSQLConnection read GetConnection write SetConnection;
   end;
 
   TmncSQLName = class(TObject)
@@ -84,19 +97,17 @@ type
   private
     FFetchBlob: Boolean;
     FFetched: Int64;
+    FParamPrefix: Char;
     FProcessSQL: Boolean;
     FReady: Boolean; //BOF
     FDone: Boolean; //EOF
     FProcessedSQL: TmncProcessedSQL;
+    function GetSession: TmncSQLSession;
+    procedure SetSession(AValue: TmncSQLSession);
     function GetSQL: TStrings;
+    procedure SetParamPrefix(AValue: Char);
   protected
-
-    {
-      GetParamChar: Called to take the real param char depend on the sql engine to replace it with this new one.
-                    by default it is ?
-    }
     function GetDone: Boolean; override;
-    function GetParamChar: string; virtual;
     procedure DoParse; override;
     procedure DoUnparse; override;
     procedure ParseSQL(Options: TmncParseSQLOptions; ParamChar: string = '?');
@@ -114,10 +125,15 @@ type
     property Ready: Boolean read FReady;
     property Fetched: Int64 read FFetched;
     property FetchBlobs: Boolean read FFetchBlob write FFetchBlob default false;
+    //ParamPrefix is ? to use it to open param and match it before convert it to engine paramprefix
+    property ParamPrefix: Char read FParamPrefix write SetParamPrefix default '?';
     property ProcessSQL: Boolean read FProcessSQL write FProcessSQL default True; //TODO
     property ProcessedSQL: TmncProcessedSQL read FProcessedSQL;
+
+    property Session: TmncSQLSession read GetSession write SetSession;
   end;
 
+  //TODO
   TmncSQLText = class(TmnNamedObject)
   public
     Text: string;
@@ -125,6 +141,7 @@ type
 
   { TmncSQLResource }
 
+  //TODO
   TmncSQLResource = class(TmnNamedObjectList<TmncSQLText>)
   protected
     procedure LoadLine(Line: string);
@@ -134,6 +151,59 @@ type
   end;
 
 implementation
+
+{ TmncSQLSession }
+
+function TmncSQLSession.GetConnection: TmncSQLConnection;
+begin
+  Result := inherited Connection as TmncSQLConnection;
+end;
+
+procedure TmncSQLSession.SetConnection(AValue: TmncSQLConnection);
+begin
+  inherited Connection := AValue;
+end;
+
+function TmncSQLSession.CreateCommand: TmncSQLCommand;
+begin
+  CheckActive;
+  Result := InternalCreateCommand;
+  Result.Session := Self;
+end;
+
+procedure TmncSQLSession.ExecuteScript(AStrings: TStrings; AutoCommit: Boolean);
+var
+  CMD: TmncSQLCommand;
+  i: Integer;
+  ScriptSeperator: string;
+begin
+  ScriptSeperator := Connection.ScriptSeperator;
+  CMD := CreateCommand;
+  try
+    CMD.ProcessSQL := False;
+    for i := 0 to AStrings.Count -1 do
+    begin
+      if SameText(LeftStr(AStrings[i], Length(ScriptSeperator)), ScriptSeperator) then
+      begin
+        CMD.Execute;
+        CMD.Close;
+        CMD.SQL.Clear;
+        if AutoCommit then
+          CommitRetaining;
+      end
+      else
+        CMD.SQL.Add(AStrings[i]);
+    end;
+    if CMD.SQL.Count > 0 then
+    begin
+      CMD.Execute;
+      if AutoCommit then
+        CommitRetaining;
+    end;
+  finally
+    CMD.Free;
+  end;
+end;
 
 { TmncSQLResource }
 
@@ -193,6 +263,16 @@ procedure TmncSQLConnection.Vacuum;
 begin
 end;
 
+function TmncSQLConnection.GetParamChar: string;
+begin
+  Result := '?';
+end;
+
+function TmncSQLConnection.ScriptSeperator: string;
+begin
+  Result := '^';
+end;
+
 procedure TmncSQLConnection.DoClone(vConn: TmncSQLConnection);
 begin
 end;
@@ -239,14 +319,25 @@ begin
   Result := FRequest;//just alias
 end;
 
+function TmncSQLCommand.GetSession: TmncSQLSession;
+begin
+  Result := inherited Session as TmncSQLSession;
+end;
+
+procedure TmncSQLCommand.SetParamPrefix(AValue: Char);
+begin
+  if FParamPrefix =AValue then Exit;
+  FParamPrefix :=AValue;
+end;
+
+procedure TmncSQLCommand.SetSession(AValue: TmncSQLSession);
+begin
+  inherited Session := AValue;
+end;
+
 function TmncSQLCommand.GetDone: Boolean;
 begin
   Result := FDone;
-end;
-
-function TmncSQLCommand.GetParamChar: string;
-begin
-  Result := '?';
 end;
 
 procedure TmncSQLCommand.DoParse;
@@ -285,147 +376,155 @@ var
 begin
   if (SQL.Text = '') then
     raise EmncException.Create('Empty SQL to parse!');
-  //TODO stored procedures and trigger must not check param in budy procedure
-  ProcessedSQL.Clear;
-  sParamName := '';
-  try
-    iParam := 1;
-    cQuoteChar := '''';
-    sSQL := Trim(SQL.Text) + ' ';//zaher that dummy
-    i := 1;
-    iCurState := DefaultState;
-    iCurParamState := ParamDefaultState;
-    { Now, traverse through the SQL string, character by character,
-     picking out the parameters and formatting correctly for Firebird }
-    LenSQL := Length(sSQL);
-    while (i <= LenSQL) do
-    begin
-      { Get the current token and a look-ahead }
-      cCurChar := sSQL[i];
-      if i = LenSQL then
-        cNextChar := #0
-      else
-        cNextChar := sSQL[i + 1];
-      { Now act based on the current state }
-      case iCurState of
-        DefaultState:
-          begin
-            case cCurChar of
-              '''', '"':
-                begin
-                  cQuoteChar := cCurChar;
-                  iCurState := QuoteState;
-                end;
-              '?':
-                begin
-                  iCurState := ParamState;
-                  AddToSQL(GetParamChar);//here we can replace it with new param char for example % for some sql engine
+  if ProcessSQL then
+  begin
+    //TODO stored procedures and trigger must not check param in budy procedure
+    ProcessedSQL.Clear;
+    sParamName := '';
+    try
+      iParam := 1;
+      cQuoteChar := '''';
+      sSQL := Trim(SQL.Text) + ' ';//zaher that dummy
+      i := 1;
+      iCurState := DefaultState;
+      iCurParamState := ParamDefaultState;
+      { Now, traverse through the SQL string, character by character,
+       picking out the parameters and formatting correctly for Firebird }
+      LenSQL := Length(sSQL);
+      while (i <= LenSQL) do
+      begin
+        { Get the current token and a look-ahead }
+        cCurChar := sSQL[i];
+        if i = LenSQL then
+          cNextChar := #0
+        else
+          cNextChar := sSQL[i + 1];
+        { Now act based on the current state }
+        case iCurState of
+          DefaultState:
+            begin
+              if (cCurChar = '''' )or (cCurChar = '"') then
+              begin
+                cQuoteChar := cCurChar;
+                iCurState := QuoteState;
+              end
+              else if cCurChar = ParamPrefix then
+              begin
+                iCurState := ParamState;
+                AddToSQL((Session.Connection as TmncSQLConnection).GetParamChar);//here we can replace it with new param char for example % for some sql engine
 {                  if psoAddParamsID in Options then
-                    AddToSQL();}
-                end;
-              '/': if (cNextChar = '*') then
+                  AddToSQL();}
+              end
+              else if cCurChar = '/' then
+              begin
+                if (cNextChar = '*') then
                 begin
                   AddToSQL(cCurChar);
                   Inc(i);
                   iCurState := CommentState;
                 end;
-            end;
-          end;
-        CommentState:
-          begin
-            if (cNextChar = #0) then
-              raise EmncException.Create('Done in comment detected: ' + IntToStr(i))
-            else if (cCurChar = '*') then
-            begin
-              if (cNextChar = '/') then
-                iCurState := DefaultState;
-            end;
-          end;
-        QuoteState:
-          begin
-            if cNextChar = #0 then
-              raise EmncException.Create('Done in string detected: ' + IntToStr(i))
-            else if (cCurChar = cQuoteChar) then
-            begin
-              if (cNextChar = cQuoteChar) then
-              begin
-                AddToSQL(cCurChar);
-                Inc(i);
-              end
-              else
-                iCurState := DefaultState;
-            end;
-          end;
-        ParamState:
-          begin
-          { collect the name of the parameter }
-            if iCurParamState = ParamDefaultState then
-            begin
-              if cCurChar = '"' then
-                iCurParamState := ParamQuoteState
-              else if (cCurChar in ['A'..'Z', 'a'..'z', '0'..'9', '_', ' ']) then //Quoted can include spaces
-              begin
-                sParamName := sParamName + cCurChar;
-                if psoAddParamsNames in Options then
-                  AddToSQL(cCurChar);
-              end
-              else if psoGenerateParams in Options then//if passed ? (ParamChar) without name of params
-              begin
-                sParamName := '_Param_' + IntToStr(iParam);
-                Inc(iParam);
-                iCurState := DefaultState;
-                ProcessedSQL.Add(iParam, sParamName);
-                sParamName := '';
-              end
-              else
-                raise EmncException.Create('Parameter name expected');
-            end
-            else
-            begin
-            { determine if Quoted parameter name is finished }
-              if cCurChar = '"' then
-              begin
-                Inc(i);
-                ProcessedSQL.Add(iParam, sParamName);
-                SParamName := '';
-                iCurParamState := ParamDefaultState;
-                iCurState := DefaultState;
-              end
-              else
-                sParamName := sParamName + cCurChar
-            end;
-          { determine if the unquoted parameter name is finished }
-            if (iCurParamState <> ParamQuoteState) and
-              (iCurState <> DefaultState) then
-            begin
-              if not (cNextChar in ['A'..'Z', 'a'..'z', '0'..'9', '_']) then
-              begin
-                Inc(i);
-                iCurState := DefaultState;
-                if psoAddParamsID in Options then
-                begin
-                  AddToSQL(IntToStr(iParam));
-                  Inc(iParam);
-                end;
-                //slNames.Add(UpperCase(sParamName));
-                ProcessedSQL.Add(iParam, sParamName);
-                sParamName := '';
               end;
             end;
-          end;
+          CommentState:
+            begin
+              if (cNextChar = #0) then
+                raise EmncException.Create('Done in comment detected: ' + IntToStr(i))
+              else if (cCurChar = '*') then
+              begin
+                if (cNextChar = '/') then
+                  iCurState := DefaultState;
+              end;
+            end;
+          QuoteState:
+            begin
+              if cNextChar = #0 then
+                raise EmncException.Create('Done in string detected: ' + IntToStr(i))
+              else if (cCurChar = cQuoteChar) then
+              begin
+                if (cNextChar = cQuoteChar) then
+                begin
+                  AddToSQL(cCurChar);
+                  Inc(i);
+                end
+                else
+                  iCurState := DefaultState;
+              end;
+            end;
+          ParamState:
+            begin
+            { collect the name of the parameter }
+              if iCurParamState = ParamDefaultState then
+              begin
+                if cCurChar = '"' then
+                  iCurParamState := ParamQuoteState
+                else if (cCurChar in ['A'..'Z', 'a'..'z', '0'..'9', '_', ' ']) then //Quoted can include spaces
+                begin
+                  sParamName := sParamName + cCurChar;
+                  if psoAddParamsNames in Options then
+                    AddToSQL(cCurChar);
+                end
+                else if psoGenerateParams in Options then//if passed ? (ParamChar) without name of params
+                begin
+                  sParamName := '_Param_' + IntToStr(iParam);
+                  Inc(iParam);
+                  iCurState := DefaultState;
+                  ProcessedSQL.Add(iParam, sParamName);
+                  sParamName := '';
+                end
+                else
+                  raise EmncException.Create('Parameter name expected');
+              end
+              else
+              begin
+              { determine if Quoted parameter name is finished }
+                if cCurChar = '"' then
+                begin
+                  Inc(i);
+                  ProcessedSQL.Add(iParam, sParamName);
+                  SParamName := '';
+                  iCurParamState := ParamDefaultState;
+                  iCurState := DefaultState;
+                end
+                else
+                  sParamName := sParamName + cCurChar
+              end;
+            { determine if the unquoted parameter name is finished }
+              if (iCurParamState <> ParamQuoteState) and
+                (iCurState <> DefaultState) then
+              begin
+                if not (cNextChar in ['A'..'Z', 'a'..'z', '0'..'9', '_']) then
+                begin
+                  Inc(i);
+                  iCurState := DefaultState;
+                  if psoAddParamsID in Options then
+                  begin
+                    AddToSQL(IntToStr(iParam));
+                    Inc(iParam);
+                  end;
+                  //slNames.Add(UpperCase(sParamName));
+                  ProcessedSQL.Add(iParam, sParamName);
+                  sParamName := '';
+                end;
+              end;
+            end;
+        end;
+        if iCurState <> ParamState then
+          AddToSQL(sSQL[i]);
+        Inc(i);
       end;
-      if iCurState <> ParamState then
-        AddToSQL(sSQL[i]);
-      Inc(i);
+      Params.Clear;
+      Binds.Clear;
+      for i := 0 to ProcessedSQL.Count - 1 do
+      begin
+        aParam := Params.Found(ProcessedSQL[i].Name);//it will auto create it if not founded
+        Binds.Add(aParam);
+      end;
+    finally
     end;
-    Params.Clear; 
-    Binds.Clear;
-    for i := 0 to ProcessedSQL.Count - 1 do
-    begin
-      aParam := Params.Found(ProcessedSQL[i].Name);//it will auto create it if not founded
-      Binds.Add(aParam);
-    end;
-  finally
+  end
+  else
+  begin
+    ProcessedSQL.SQL := SQL.Text;
   end;
 end;
 
@@ -458,7 +557,8 @@ begin
   inherited Create;
   FProcessedSQL := TmncProcessedSQL.Create(True);
   FProcessSQL := True;
-  FFetchBlob := false;
+  FFetchBlob := False;
+  FParamPrefix := '?';
 end;
 
 destructor TmncSQLCommand.Destroy;

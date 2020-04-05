@@ -18,7 +18,8 @@ unit mncSQLiteORM;
 interface
 
 uses
-  SysUtils, Classes, mnUtils, Variants, mncORM;
+  SysUtils, Classes, mnUtils, Variants,
+  mncORM, mncConnections, mncSQLite;
 
 type
 
@@ -71,6 +72,7 @@ type
     class function FieldTypeToString(FieldType:TormFieldType; FieldSize: Integer): String;
     procedure Created; override;
   public
+    class function GetConnectionClass: TmncConnectionClass; override;
   end;
 
 implementation
@@ -296,6 +298,11 @@ begin
   RegisterGenerator(TFields, TFieldsSQLite);
   RegisterGenerator(TField, TFieldSQLite);
   RegisterGenerator(TInsertData, TInsertDataSQLite);
+end;
+
+class function TmncSQLiteORM.GetConnectionClass: TmncConnectionClass;
+begin
+  Result := TmncSQLiteConnection;
 end;
 
 end.

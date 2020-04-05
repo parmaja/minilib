@@ -18,11 +18,14 @@ unit mncMySQLORM;
 interface
 
 uses
-  SysUtils, Classes, Variants, mncORM;
+  SysUtils, Classes, Variants,
+  mncORM, mncConnections, mncMySQL;
 
 type
 
   { TmncORMMySQL }
+
+  { TmncMySQLORM }
 
   TmncMySQLORM = class(TmncORM)
   protected
@@ -71,6 +74,7 @@ type
     class function FieldTypeToString(FieldType: TmncORM.TormFieldType; FieldSize: Integer): String;
     procedure Created; override;
   public
+    class function GetConnectionClass: TmncConnectionClass; override;
   end;
 
 implementation
@@ -288,6 +292,11 @@ begin
   RegisterGenerator(TFields, TFieldsMySQL);
   RegisterGenerator(TField, TFieldMySQL);
   RegisterGenerator(TInsertData, TInsertDataMySQL);
+end;
+
+class function TmncMySQLORM.GetConnectionClass: TmncConnectionClass;
+begin
+  Result := TmncMySQLConnection;
 end;
 
 end.

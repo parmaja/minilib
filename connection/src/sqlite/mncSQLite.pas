@@ -88,10 +88,10 @@ type
     procedure DoStart; override;
     procedure DoStop(How: TmncSessionAction; Retaining: Boolean); override;
     function GetActive: Boolean; override;
+    function InternalCreateCommand: TmncSQLCommand; override;
   public
     constructor Create(vConnection: TmncConnection); override;
     destructor Destroy; override;
-    function CreateCommand: TmncSQLCommand; override;
     procedure Execute(SQL: string);
     function GetLastRowID: Int64;
     function GetRowsChanged: Integer;
@@ -463,10 +463,9 @@ begin
   inherited;
 end;
 
-function TmncSQLiteSession.CreateCommand: TmncSQLCommand;
+function TmncSQLiteSession.InternalCreateCommand: TmncSQLCommand;
 begin
   Result := TmncSQLiteCommand.Create;
-  Result.Session := Self;
 end;
 
 procedure TmncSQLiteSession.Execute(SQL: string);

@@ -12,6 +12,10 @@ unit mnUtils;
 {$ENDIF}
 {$M+}{$H+}
 
+{$ifdef mswindows}
+{$define windows}
+{$endif}
+
 interface
 
 uses
@@ -62,8 +66,7 @@ function ParseArgumentsCallback(Content: string; const CallBackProc: TArgumentsC
 function ParseArgumentsCallback(Content: string; const CallBackProc: TArgumentsCallbackProc; Sender: Pointer): Integer; overload;
 function ParseArguments(Content: string; Strings: TStrings; Switches: TArray<Char>; WhiteSpaces: TSysCharSet = [' ', #9]; Quotes: TSysCharSet = ['''', '"']; ValueSeperators: TSysCharSet = [':', '=']): Integer; overload;
 function ParseArguments(Content: string; Strings: TStrings): Integer; overload;
-//TODO
-function ParseParamsAsArguments(const CallBackProc: TArgumentsCallbackProc; Sender: Pointer; Switches: array of char; ValueSeperators: TSysCharSet = [':', '=']): Integer; overload;
+
 {
   Break string to Strings list items at #10 or #13 or #13#10
 }
@@ -182,10 +185,8 @@ function ISODateToStr(DateTime: TDateTime; vDateSeparator: Char = '-'; TimeDivid
 
 function AnsiToUnicode(S: rawbytestring; CodePage: Integer = 0): string;
 
-{$ifdef FPC}
 var
   SystemAnsiCodePage: Integer; //used to convert from Ansi string, it is the default
-{$endif}
 
 implementation
 
@@ -590,11 +591,6 @@ begin
   end
   else
     Result := '';
-end;
-
-function ParseParamsAsArguments(const CallBackProc: TArgumentsCallbackProc; Sender: Pointer; Switches: array of char; ValueSeperators: TSysCharSet = [':', '=']): Integer; overload;
-begin
-  //TODO
 end;
 
 procedure cMoveStr(var Start: Integer; var Dest: string; const Source: string);
@@ -1123,15 +1119,9 @@ begin
 end;
 
 initialization
-  {$ifdef FPC}
   {$ifdef windows}
   SystemAnsiCodePage := GetACP; //windows only
   {$else}
   SystemAnsiCodePage := 1252; //scpAnsi has no meaning in linux, you can change it in your application
-  {$endif}
-  {$else}
-    {$if CompilerVersion < 22.0}
-    GetLocaleFormatSettings(GetUserDefaultLCID, FFormatSettings)
-    {$ifend}
   {$endif}
 end.

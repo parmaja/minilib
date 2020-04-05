@@ -15,7 +15,7 @@ interface
 
 uses
   Classes, SysUtils, Contnrs, Variants,
-  mnClasses;
+  mnClasses, mncConnections;
 
 type
 
@@ -353,6 +353,10 @@ type
     function GenerateSQL(vSQL: TStrings): Boolean; overload;
 
     procedure RegisterGenerator(AObjectClass: TormObjectClass; AGeneratorClass: TormGeneratorClass);
+
+    class function GetConnectionClass: TmncConnectionClass; virtual; abstract;
+    class function CreateConnection: TmncConnection;
+
     property ObjectClasses: TRegObjects read FObjectClasses;
     property QuoteChar: string read FQuoteChar write FQuoteChar; //Empty, it will be used with SQLName
     property UsePrefexes: Boolean read FUsePrefexes write FUsePrefexes; //option to use Prefex in Field names
@@ -843,6 +847,11 @@ begin
   aRegObject.ObjectClass := AObjectClass;
   aRegObject.GeneratorClass := AGeneratorClass;
   ObjectClasses.Add(aRegObject);
+end;
+
+class function TmncORM.CreateConnection: TmncConnection;
+begin
+  Result := GetConnectionClass.Create;
 end;
 
 { TField }

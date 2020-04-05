@@ -94,10 +94,10 @@ type
     procedure DoStart; override;
     procedure DoStop(How: TmncSessionAction; Retaining: Boolean); override;
     function GetActive: Boolean; override;
+    function InternalCreateCommand: TmncSQLCommand; override;
   public
     constructor Create(vConnection: TmncConnection); override;
     destructor Destroy; override;
-    function CreateCommand: TmncSQLCommand; override;
     procedure Execute(SQL: string);
     property Handle: TISC_TR_HANDLE read FHandle;
     property TPB: PChar read FTPB;
@@ -465,7 +465,7 @@ begin
   inherited;
 end;
 
-function TmncFBSession.CreateCommand: TmncSQLCommand;
+function TmncFBSession.InternalCreateCommand: TmncSQLCommand;
 begin
   Result := TmncFBCommand.CreateBy(Self);
 end;

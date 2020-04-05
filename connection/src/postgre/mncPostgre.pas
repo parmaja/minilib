@@ -134,6 +134,7 @@ type
     function IsDatabaseExists(vName: string): Boolean; override;
     function EnumDatabases: TStrings;
     procedure TerminateConnections(const vResource: string);
+    function GetParamChar: string; override;
 
     //function UniqueDBName(const vBase: string): string; override; //zaher, do not copy
     function loCopy(vSrc: TmncPGConnection; vOID: Integer): Integer; overload;
@@ -162,11 +163,11 @@ type
     function NewToken: string;//used for new command name
     procedure DoStart; override;
     procedure DoStop(How: TmncSessionAction; Retaining: Boolean); override;
+    function InternalCreateCommand: TmncSQLCommand; override;
   public
     constructor Create(vConnection: TmncConnection); override;
     destructor Destroy; override;
     procedure Execute(const vSQL: string);
-    function CreateCommand: TmncSQLCommand; override;
     property Exclusive: Boolean read FExclusive write SetExclusive;
     property Connection: TmncPGConnection read GetConnection write SetConnection;
     property DBHandle: PPGconn read GetDBHandle;
@@ -283,7 +284,6 @@ type
     FEOF: Boolean;
     function GetColumns: TmncPGColumns;
 
-    function GetParamChar: string; override;
     property Connection: TmncPGConnection read GetConnection;
     property Session: TmncPGSession read GetSession write SetSession;
     function CreateColumns: TmncColumns; override;
@@ -507,6 +507,11 @@ end;
 procedure TmncPGConnection.TerminateConnections(const vResource: string);
 begin
   CloneExecute('postgres', 'select pg_terminate_backend(pid) from pg_stat_activity where datname = ''%s''', [vResource]);
+end;
+
+function TmncPGConnection.GetParamChar: string;
+begin
+  Result := '$';
 end;
 
 procedure TmncPGConnection.SetChannel(const Value: string);
@@ -910,7 +915,7 @@ end;
 
 { TmncPGSession }
 
-function TmncPGSession.CreateCommand: TmncSQLCommand;
+function TmncPGSession.InternalCreateCommand: TmncSQLCommand;
 begin
   Result := TmncPGCommand.CreateBy(Self);
   //Result := TmncPGCopyOutCommand.CreateBy(Self);
@@ -1808,11 +1813,6 @@ end;
 function TmncCustomPGCommand.GetConnection: TmncPGConnection;
 begin
   Result := Session.Connection as TmncPGConnection;
-end;
-
-function TmncCustomPGCommand.GetParamChar: string;
-begin
-  Result := '$';
 end;
 
 function TmncCustomPGCommand.GetSession: TmncPGSession;
