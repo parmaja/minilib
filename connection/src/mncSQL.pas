@@ -55,6 +55,7 @@ type
                     by default it is ?
     }
     function GetParamChar: string; virtual;
+    function GetExtension: string; virtual;
     //ScriptSeperator
     function ScriptSeperator: string; virtual;
   end;
@@ -266,6 +267,11 @@ end;
 function TmncSQLConnection.GetParamChar: string;
 begin
   Result := '?';
+end;
+
+function TmncSQLConnection.GetExtension: string;
+begin
+  Result := '';
 end;
 
 function TmncSQLConnection.ScriptSeperator: string;

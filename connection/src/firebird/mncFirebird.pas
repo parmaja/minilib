@@ -77,6 +77,7 @@ type
     property Handle: TISC_DB_HANDLE read FHandle;
     property IsReadOnly: Boolean read GetIsReadOnly;
     property ErrorHandles: TFBErrorHandles read FErrorHandles write FErrorHandles;
+    function GetExtension: string; override;
   end;
 
   { TmncFBSession }
@@ -547,6 +548,11 @@ begin
     Call(FBClient.isc_dsql_execute_immediate(@StatusVector, @FHandle, @tr_handle, 0, PChar(SQL), FB_DIALECT, nil), StatusVector, True);
   finally
   end;
+end;
+
+function TmncFBConnection.GetExtension: string;
+begin
+  Result := 'fdb';
 end;
 
 function TmncFBSession.GetActive: Boolean;

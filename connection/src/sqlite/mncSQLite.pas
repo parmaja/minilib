@@ -75,6 +75,7 @@ type
       ANALYZE
     }
     property DBHandle: PSqlite3 read FDBHandle;
+    function GetExtension: string; override;
   end;
 
   { TmncSQLiteSession }
@@ -503,6 +504,11 @@ begin
     sqlite3_free(lMSg);
   end;
   CheckError(r, s);
+end;
+
+function TmncSQLiteConnection.GetExtension: string;
+begin
+  Result := 'sqlite';
 end;
 
 function TmncSQLiteSession.GetLastRowID: Int64;

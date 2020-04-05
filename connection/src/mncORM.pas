@@ -211,6 +211,7 @@ type
       TormReferenceOption = (
         rfoNothing,
         rfoSetNull,
+        rfoSetDefault, //TODO
         rfoReject,
         rfoCascade //Update it if changed, delete it if modified
       );
@@ -1298,7 +1299,7 @@ begin
   if AMasterID = '' then
     AMasterID := 'ID';
   inherited Create(AFields, AName, ftInteger, AOptions + [foReferenced]);
-  ReferenceTo(AMasterTable, AMasterID, rfoReject, rfoReject);
+  ReferenceTo(AMasterTable, AMasterID, rfoCascade, rfoReject);
 end;
 
 { TRefDetailField }

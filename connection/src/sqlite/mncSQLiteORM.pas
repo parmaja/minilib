@@ -200,10 +200,7 @@ begin
           if (Field.IndexName <> '') then
             aIndexName := Field.IndexName
           else
-            if not Root.UsePrefexes then //Yes, if not using prefix we will force use it here
-              aIndexName :=  'Idx_' + Prefix + Field.SQLName
-            else
-              aIndexName :=  'Idx_' + Field.SQLName;
+            aIndexName :=  'Idx_' + Name + '_' + Field.SQLName;
 
           aIndexFields := IndexList.Values[aIndexName];
           if aIndexFields <> '' then
@@ -225,7 +222,7 @@ begin
         if Field.ReferenceInfo.Table <> nil then
         begin
           SQL.Add(',', [cboEndLine]);
-          S := 'foreign key Ref_' + SQLName + Field.ReferenceInfo.Table.Name + Field.ReferenceInfo.Field.Name + '(' + Field.QuotedSQLName + ')'
+          S := 'foreign key ' + '(' + Field.QuotedSQLName + ')'
                   +' references ' + Field.ReferenceInfo.Table.QuotedSQLName + '(' + Field.ReferenceInfo.Field.QuotedSQLName + ')';
 
           if rfoReject = Field.ReferenceInfo.DeleteOption then
