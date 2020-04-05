@@ -194,7 +194,7 @@ function SQLiteSynchronousToStr(Synchronous: TmncSynchronous): string;
 implementation
 
 uses
-  mncDB, mncSQLiteMeta;
+  mncDB, mncSQLiteORM, mncSQLiteMeta;
 
 function SQLiteJournalModeToStr(JournalMode: TmncJournalMode): string;
 begin
@@ -784,7 +784,7 @@ begin
   FLastStepResult := 0;
 //  sqlite3_prepare_v2
 //TODO: apply value of params if using injection mode
-  CheckError(sqlite3_prepare(Connection.DBHandle, PChar(SQLProcessed.SQL), -1 , @FStatment, @FTail));
+  CheckError(sqlite3_prepare(Connection.DBHandle, PChar(ProcessedSQL.SQL), -1 , @FStatment, @FTail));
 end;
 
 procedure TmncSQLiteCommand.DoRollback;
@@ -954,5 +954,5 @@ begin
 end;
 
 initialization
-  DB.RegisterConnection('SQLite', 'SQLite Database', TmncSQLiteConnection);
+  Engines.RegisterConnection('SQLite', 'SQLite Database', TmncSQLiteConnection, TmncSQLiteORM);
 end.

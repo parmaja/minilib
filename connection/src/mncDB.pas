@@ -27,6 +27,7 @@ type
     Name: string;
     Title: string;
     ConnectionClass: TmncConnectionClass;
+    ORMClass: TmncORMClass;
   end;
 
 { TmncEngines }
@@ -35,22 +36,22 @@ type
   private
     function GetItems(Index: Integer): TmncEngine;
   public
-    function RegisterConnection(vName, vTitle: string; vConnectionClass: TmncConnectionClass): TmncEngine;
+    function RegisterConnection(vName, vTitle: string; vConnectionClass: TmncConnectionClass; vORMClass: TmncORMClass = nil): TmncEngine;
     function Find(vName: string): TmncEngine;
     function IndexOf(vName: string): Integer;
     function CreateConnection(vModel: string): TmncConnection;
-    procedure EnumConnectionsModels(Strings: TStrings);
+    procedure EnumEngines(Strings: TStrings);
     property Items[Index:Integer]: TmncEngine read GetItems; default;
   end;
 
-function DB: TmncEngines;
+function Engines: TmncEngines;
 
 implementation
 
 var
   FmncEngines: TmncEngines = nil;
 
-function DB: TmncEngines;
+function Engines: TmncEngines;
 begin
   if FmncEngines = nil then
     FmncEngines := TmncEngines.Create;
@@ -64,7 +65,7 @@ begin
   Result := inherited Items[Index] as TmncEngine;
 end;
 
-function TmncEngines.RegisterConnection(vName, vTitle: string; vConnectionClass: TmncConnectionClass): TmncEngine;
+function TmncEngines.RegisterConnection(vName, vTitle: string; vConnectionClass: TmncConnectionClass; vORMClass: TmncORMClass): TmncEngine;
 begin
   Result := Find(vName);
   if Result <> nil then
@@ -74,6 +75,7 @@ begin
   Result.Name := vName;
   Result.Title := vTitle;
   Result.ConnectionClass := vConnectionClass;
+  Result.ORMClass := vORMClass;
   inherited Add(Result);
 end;
 
@@ -119,18 +121,17 @@ begin
     raise EmncException.Create('Model ' + vModel + ' not found');
 end;
 
-procedure TmncEngines.EnumConnectionsModels(Strings: TStrings);
+procedure TmncEngines.EnumEngines(Strings: TStrings);
 var
   item: TmncEngine;
 begin
   for item in Self do
   begin
-    Strings.Add(Item.Title);
+    Strings.AddObject(Item.Title, Item);
   end;
 end;
 
 initialization
-
 finalization
   FreeAndNil(FmncEngines);
 end.

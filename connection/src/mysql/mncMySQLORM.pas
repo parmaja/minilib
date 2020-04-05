@@ -24,7 +24,7 @@ type
 
   { TmncORMMySQL }
 
-  TmncORMMySQL = class(TmncORM)
+  TmncMySQLORM = class(TmncORM)
   protected
     type
 
@@ -75,9 +75,9 @@ type
 
 implementation
 
-{ TmncORMMySQL.TInsertDataMySQL }
+{ TmncMySQLORM.TInsertDataMySQL }
 
-function TmncORMMySQL.TInsertDataMySQL.DoGenerateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
+function TmncMySQLORM.TInsertDataMySQL.DoGenerateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
 var
   o: TormObject;
   i: Integer;
@@ -108,9 +108,9 @@ begin
   Result := True;
 end;
 
-{ TmncORMMySQL.TFieldsMySQL }
+{ TmncMySQLORM.TFieldsMySQL }
 
-function TmncORMMySQL.TFieldsMySQL.DoGenerateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
+function TmncMySQLORM.TFieldsMySQL.DoGenerateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
 var
   o: TormObject;
   i: Integer;
@@ -126,9 +126,9 @@ begin
   Result := True;
 end;
 
-{ TmncORMMySQL.TFieldMySQL }
+{ TmncMySQLORM.TFieldMySQL }
 
-function TmncORMMySQL.TFieldMySQL.DoGenerateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
+function TmncMySQLORM.TFieldMySQL.DoGenerateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
 var
   fs: Integer;
 begin
@@ -154,9 +154,9 @@ begin
   Result := True;
 end;
 
-{ TmncORMMySQL.TTableMySQL }
+{ TmncMySQLORM.TTableMySQL }
 
-function TmncORMMySQL.TTableMySQL.DoGenerateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
+function TmncMySQLORM.TTableMySQL.DoGenerateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
 var
   i: integer;
   o: TormObject;
@@ -259,9 +259,9 @@ begin
   end;
 end;
 
-{ TmncORMMySQL }
+{ TmncMySQLORM }
 
-class function TmncORMMySQL.FieldTypeToString(FieldType: TmncORM.TormFieldType; FieldSize: Integer): String;
+class function TmncMySQLORM.FieldTypeToString(FieldType: TmncORM.TormFieldType; FieldSize: Integer): String;
 begin
   case FieldType of
     ftString: Result := 'varchar('+IntToStr(FieldSize)+')';
@@ -279,7 +279,7 @@ begin
   end;
 end;
 
-procedure TmncORMMySQL.Created;
+procedure TmncMySQLORM.Created;
 begin
   inherited Created;
   RegisterGenerator(TDatabase, TDatabaseMySQL);

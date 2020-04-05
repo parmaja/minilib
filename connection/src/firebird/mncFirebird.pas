@@ -1257,7 +1257,7 @@ begin
   begin
     try
       Call(FBClient.isc_dsql_alloc_statement2(@StatusVector, @Connection.Handle, @FHandle), StatusVector, True);
-      Call(FBClient.isc_dsql_prepare(@StatusVector, @Session.Handle, @FHandle, 0, PAnsiChar(SQLProcessed.SQL), FB_DIALECT, nil), StatusVector, True);
+      Call(FBClient.isc_dsql_prepare(@StatusVector, @Session.Handle, @FHandle, 0, PAnsiChar(ProcessedSQL.SQL), FB_DIALECT, nil), StatusVector, True);
       { type of the statement }
       type_item := Char(isc_info_sql_stmt_type);
       Call(FBClient.isc_dsql_sql_info(@StatusVector, @FHandle, 1, @type_item, SizeOf(res_buffer), res_buffer), StatusVector, True);
@@ -1351,5 +1351,5 @@ begin
 end;
 
 initialization
-  DB.RegisterConnection('FirebirdSQL', 'FirebirdSQL Database', TmncFBConnection);
+  Engines.RegisterConnection('FirebirdSQL', 'FirebirdSQL Database', TmncFBConnection);
 end.

@@ -68,7 +68,7 @@ type
 
   { TmncSQLNames }
 
-  TmncSQLProcessed = class(TObjectList)
+  TmncProcessedSQL = class(TObjectList)
   private
     function GetItem(Index: Integer): TmncSQLName;
   public
@@ -84,11 +84,13 @@ type
   private
     FFetchBlob: Boolean;
     FFetched: Int64;
+    FProcessSQL: Boolean;
     FReady: Boolean; //BOF
     FDone: Boolean; //EOF
+    FProcessedSQL: TmncProcessedSQL;
     function GetSQL: TStrings;
   protected
-    SQLProcessed: TmncSQLProcessed;
+
     {
       GetParamChar: Called to take the real param char depend on the sql engine to replace it with this new one.
                     by default it is ?
@@ -112,6 +114,8 @@ type
     property Ready: Boolean read FReady;
     property Fetched: Int64 read FFetched;
     property FetchBlobs: Boolean read FFetchBlob write FFetchBlob default false;
+    property ProcessSQL: Boolean read FProcessSQL write FProcessSQL default True; //TODO
+    property ProcessedSQL: TmncProcessedSQL read FProcessedSQL;
   end;
 
   TmncSQLText = class(TmnNamedObject)
@@ -207,20 +211,20 @@ begin
   Execute(Format(vCommand, vArgs));
 end;
 
-{ TmncSQLProcessed }
+{ TmncProcessedSQL }
 
-function TmncSQLProcessed.GetItem(Index: Integer): TmncSQLName;
+function TmncProcessedSQL.GetItem(Index: Integer): TmncSQLName;
 begin
   Result := inherited Items[Index] as TmncSQLName;
 end;
 
-procedure TmncSQLProcessed.Clear;
+procedure TmncProcessedSQL.Clear;
 begin
   inherited Clear;
   SQL := '';
 end;
 
-procedure TmncSQLProcessed.Add(vID: Integer; vName: string);
+procedure TmncProcessedSQL.Add(vID: Integer; vName: string);
 var
   r: TmncSQLName;
 begin
@@ -253,7 +257,7 @@ end;
 procedure TmncSQLCommand.DoUnparse;
 begin
   inherited;
-  SQLProcessed.Clear;
+  ProcessedSQL.Clear;
   //maybe clear params, idk
 end;
 
@@ -274,7 +278,7 @@ const
 
   procedure AddToSQL(s: string);
   begin
-    SQLProcessed.SQL := SQLProcessed.SQL + s;
+    ProcessedSQL.SQL := ProcessedSQL.SQL + s;
   end;
 var
   aParam: TmncParam;
@@ -282,7 +286,7 @@ begin
   if (SQL.Text = '') then
     raise EmncException.Create('Empty SQL to parse!');
   //TODO stored procedures and trigger must not check param in budy procedure
-  SQLProcessed.Clear;
+  ProcessedSQL.Clear;
   sParamName := '';
   try
     iParam := 1;
@@ -370,7 +374,7 @@ begin
                 sParamName := '_Param_' + IntToStr(iParam);
                 Inc(iParam);
                 iCurState := DefaultState;
-                SQLProcessed.Add(iParam, sParamName);
+                ProcessedSQL.Add(iParam, sParamName);
                 sParamName := '';
               end
               else
@@ -382,7 +386,7 @@ begin
               if cCurChar = '"' then
               begin
                 Inc(i);
-                SQLProcessed.Add(iParam, sParamName);
+                ProcessedSQL.Add(iParam, sParamName);
                 SParamName := '';
                 iCurParamState := ParamDefaultState;
                 iCurState := DefaultState;
@@ -404,7 +408,7 @@ begin
                   Inc(iParam);
                 end;
                 //slNames.Add(UpperCase(sParamName));
-                SQLProcessed.Add(iParam, sParamName);
+                ProcessedSQL.Add(iParam, sParamName);
                 sParamName := '';
               end;
             end;
@@ -416,9 +420,9 @@ begin
     end;
     Params.Clear; 
     Binds.Clear;
-    for i := 0 to SQLProcessed.Count - 1 do
+    for i := 0 to ProcessedSQL.Count - 1 do
     begin
-      aParam := Params.Found(SQLProcessed[i].Name);//it will auto create it if not founded
+      aParam := Params.Found(ProcessedSQL[i].Name);//it will auto create it if not founded
       Binds.Add(aParam);
     end;
   finally
@@ -452,14 +456,15 @@ end;
 constructor TmncSQLCommand.Create;
 begin
   inherited Create;
-  SQLProcessed := TmncSQLProcessed.Create(True);
+  FProcessedSQL := TmncProcessedSQL.Create(True);
+  FProcessSQL := True;
   FFetchBlob := false;
 end;
 
 destructor TmncSQLCommand.Destroy;
 begin
   inherited;
-  FreeAndNil(SQLProcessed);
+  FreeAndNil(FProcessedSQL);
 end;
 
 function TmncSQLCommand.GetLastRowID: Int64;

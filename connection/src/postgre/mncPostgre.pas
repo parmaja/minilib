@@ -1131,7 +1131,7 @@ begin
   FHandle := Session.NewToken;
   ParseSQL([psoAddParamsID], '$');
   c := Session.DBHandle;
-  s := UTF8Encode(SQLProcessed.SQL);
+  s := UTF8Encode(ProcessedSQL.SQL);
 
   r := PQprepare(c, PAnsiChar(FHandle), PAnsiChar(s), 0 , nil);
   try
@@ -1913,7 +1913,7 @@ begin
   else
     b := '';
 
-  s := Format('declare %s %s cursor for %s', [Handle, b, SQLProcessed.SQL]);
+  s := Format('declare %s %s cursor for %s', [Handle, b, ProcessedSQL.SQL]);
   r := PQprepare(c, PAnsiChar(FHandle), PAnsiChar(s), 0 , nil);
   try
     RaiseError(r);
@@ -1981,5 +1981,5 @@ begin
 end;
 
 initialization
-  DB.RegisterConnection('PostgreSQL', 'PostgreSQL Database', TmncPGConnection);
+  Engines.RegisterConnection('PostgreSQL', 'PostgreSQL Database', TmncPGConnection);
 end.

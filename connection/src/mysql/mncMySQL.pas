@@ -237,7 +237,7 @@ function MySQLTypeToString(vType: enum_field_types): String;
 implementation
 
 uses
-  mncMySQLMeta, mncDB;
+  mncDB, mncMySQLMeta, mncMySQLORM;
 
 const
   cMaxString = 255;
@@ -1007,7 +1007,7 @@ begin
       aType := CURSOR_TYPE_READ_ONLY;
       CheckError(mysql_stmt_attr_set(FStatment, STMT_ATTR_CURSOR_TYPE, @aType));
     end;
-    CheckError(mysql_stmt_prepare(FStatment, PChar(SQLProcessed.SQL), Length(SQLProcessed.SQL)));
+    CheckError(mysql_stmt_prepare(FStatment, PChar(ProcessedSQL.SQL), Length(ProcessedSQL.SQL)));
   except
     on E: Exception do
     begin
@@ -1260,5 +1260,5 @@ begin
 end;
 
 initialization
-  DB.RegisterConnection('MySQL', 'MySQL Database', TmncMySQLConnection);
+  Engines.RegisterConnection('MySQL', 'MySQL Database', TmncMySQLConnection, tmncMySQLORM);
 end.

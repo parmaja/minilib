@@ -22,9 +22,9 @@ uses
 
 type
 
-  { TmncORMSQLite }
+  { TmncSQLiteORM }
 
-  TmncORMSQLite = class(TmncORM)
+  TmncSQLiteORM = class(TmncORM)
   protected
     type
 
@@ -75,9 +75,9 @@ type
 
 implementation
 
-{ TmncORMSQLite.TInsertDataSQLite }
+{ TmncSQLiteORM.TInsertDataSQLite }
 
-function TmncORMSQLite.TInsertDataSQLite.DoGenerateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
+function TmncSQLiteORM.TInsertDataSQLite.DoGenerateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
 var
   o: TormObject;
   i: Integer;
@@ -108,9 +108,9 @@ begin
   Result := True;
 end;
 
-{ TmncORMSQLite.TFieldsSQLite }
+{ TmncSQLiteORM.TFieldsSQLite }
 
-function TmncORMSQLite.TFieldsSQLite.DoGenerateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
+function TmncSQLiteORM.TFieldsSQLite.DoGenerateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
 var
   o: TormObject;
   i: Integer;
@@ -126,9 +126,9 @@ begin
   Result := True;
 end;
 
-{ TmncORMSQLite.TFieldSQLite }
+{ TmncSQLiteORM.TFieldSQLite }
 
-function TmncORMSQLite.TFieldSQLite.DoGenerateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
+function TmncSQLiteORM.TFieldSQLite.DoGenerateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
 var
   fs: Integer;
 begin
@@ -159,9 +159,9 @@ begin
   Result := True;
 end;
 
-{ TmncORMSQLite.TTableSQLite }
+{ TmncSQLiteORM.TTableSQLite }
 
-function TmncORMSQLite.TTableSQLite.DoGenerateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
+function TmncSQLiteORM.TTableSQLite.DoGenerateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
 var
   i: integer;
   o: TormObject;
@@ -267,9 +267,9 @@ begin
   end;
 end;
 
-{ TmncORMSQLite }
+{ TmncSQLiteORM }
 
-class function TmncORMSQLite.FieldTypeToString(FieldType: TormFieldType; FieldSize: Integer): String;
+class function TmncSQLiteORM.FieldTypeToString(FieldType: TormFieldType; FieldSize: Integer): String;
 begin
   case FieldType of
     ftString: Result := 'varchar('+IntToStr(FieldSize)+')';
@@ -287,7 +287,7 @@ begin
   end;
 end;
 
-procedure TmncORMSQLite.Created;
+procedure TmncSQLiteORM.Created;
 begin
   inherited Created;
   RegisterGenerator(TDatabase ,TDatabaseSQLite);
