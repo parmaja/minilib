@@ -222,7 +222,8 @@ begin
         if Field.ReferenceInfo.Table <> nil then
         begin
           SQL.Add(',', [cboEndLine]);
-          S := 'foreign key ' + '(' + Field.QuotedSQLName + ')'
+          //S := 'foreign key (' + Field.QuotedSQLName + ')'
+          S := 'constraint Ref_' + SQLName + Field.ReferenceInfo.Table.Name + Field.ReferenceInfo.Field.Name + ' foreign key (' + Field.QuotedSQLName + ')'
                   +' references ' + Field.ReferenceInfo.Table.QuotedSQLName + '(' + Field.ReferenceInfo.Field.QuotedSQLName + ')';
 
           if rfoReject = Field.ReferenceInfo.DeleteOption then

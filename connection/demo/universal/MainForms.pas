@@ -32,7 +32,7 @@ type
     ConnectBtn: TButton;
     EnginesCbo: TComboBox;
     CreateDB1Btn: TButton;
-    SynEdit1: TSynEdit;
+    SynEdit: TSynEdit;
     SynSQLSyn: TSynSQLSyn;
     procedure ConnectBtnClick(Sender: TObject);
     procedure CreateDB1BtnClick(Sender: TObject);
@@ -74,10 +74,11 @@ procedure TMainForm.CreateDB1BtnClick(Sender: TObject);
 begin
   if EnginesCbo.ItemIndex >= 0 then
   begin
+    SynEdit.Clear;
     FreeAndNil(Engine);
     Engine := TEngine.Create;
     Engine.ORM := CreateORM((EnginesCbo.Items.Objects[EnginesCbo.ItemIndex] as TmncEngine).ORMClass);
-    Engine.ORM.GenerateSQL(SynEdit1.Lines);
+    Engine.ORM.GenerateSQL(SynEdit.Lines);
     FreeAndNil(Engine);
   end;
 end;

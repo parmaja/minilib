@@ -230,7 +230,7 @@ begin
         if Field.ReferenceInfo.Table <> nil then
         begin
           SQL.Add(',', [cboEndLine]);
-          //S := 'foreign key ' + '(' + Field.QuotedSQLName + ')' //there is no name for forign key in sqlite
+          //S := 'foreign key (' + Field.QuotedSQLName + ')' //there is no name for forign key in sqlite
           S := 'foreign key Ref_' + SQLName + Field.ReferenceInfo.Table.Name + Field.ReferenceInfo.Field.Name + '(' + Field.QuotedSQLName + ')'
                   +' references ' + Field.ReferenceInfo.Table.QuotedSQLName + '(' + Field.ReferenceInfo.Field.QuotedSQLName + ')';
 
