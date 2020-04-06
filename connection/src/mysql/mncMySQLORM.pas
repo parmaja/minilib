@@ -23,11 +23,9 @@ uses
 
 type
 
-  { TmncORMMySQL }
-
   { TmncMySQLORM }
 
-  TmncMySQLORM = class(TmncORM)
+  TmncMySQLORM = class(TmncStdORM)
   protected
     type
 
@@ -45,16 +43,16 @@ type
 
       { TTableMySQL }
 
-      TTableMySQL = class(TormTableGenerator)
+      TTableMySQL = class(TTableStd)
       public
-        function DoGenerateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean; override;
+        constructor Create; override;
+        function GenForignKey(Table: TTable; Field: TField; AExternal: Boolean): string; override;
       end;
 
       { TFieldsMySQL }
 
-      TFieldsMySQL = class(TormGenerator)
+      TFieldsMySQL = class(TFieldsStd)
       public
-        function DoGenerateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean; override;
       end;
 
       { TFieldMySQL }
@@ -70,6 +68,7 @@ type
       public
         function DoGenerateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean; override;
       end;
+
   protected
     class function FieldTypeToString(FieldType: TmncORM.TormFieldType; FieldSize: Integer): String;
     procedure Created; override;
@@ -112,24 +111,6 @@ begin
   Result := True;
 end;
 
-{ TmncMySQLORM.TFieldsMySQL }
-
-function TmncMySQLORM.TFieldsMySQL.DoGenerateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
-var
-  o: TormObject;
-  i: Integer;
-begin
-  i := 0;
-  for o in AObject do
-  begin
-    if i > 0 then //not first line
-      SQL.Add(',', [cboEndLine]);
-    (o as TormSQLObject).GenSQL(SQL, vLevel);
-    Inc(i);
-  end;
-  Result := True;
-end;
-
 { TmncMySQLORM.TFieldMySQL }
 
 function TmncMySQLORM.TFieldMySQL.DoGenerateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
@@ -160,105 +141,17 @@ end;
 
 { TmncMySQLORM.TTableMySQL }
 
-function TmncMySQLORM.TTableMySQL.DoGenerateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
-var
-  i: integer;
-  o: TormObject;
-  Field: TField;
-  Keys: string;
-  IndexList: TStringList;
-  aIndexName, aIndexFields: string;
-  S: string;
+constructor TmncMySQLORM.TTableMySQL.Create;
 begin
-  Result := True;
-  with AObject as TTable do
-  begin
+  inherited Create;
+  InternalIndexes := True;
+end;
 
-    SQL.Add(LevelStr(vLevel) + 'create table ' + QuotedSQLName);
-    SQL.Add('(', [cboEndLine]);
-    SQL.Params.Values['Table'] := SQLName;
-    Fields.GenSQL(SQL, vLevel + 1);
-
-    IndexList := TStringList.Create;
-    try
-      //collect primary keys and indexes
-      Keys := '';
-      for o in Fields do
-      begin
-        Field := o as TField;
-        if Field.Primary then
-        begin
-          if Keys <> '' then
-            Keys := Keys + ', ';
-          Keys := Keys + Field.QuotedSQLName;
-        end
-        else if (Field.Indexed) or (Field.IndexName <> '') then
-        begin
-          if (Field.IndexName <> '') then
-            aIndexName := Field.IndexName
-          else
-            aIndexName :=  'Idx_' + Name + '_' + Field.SQLName;
-
-          aIndexFields := IndexList.Values[aIndexName];
-          if aIndexFields <> '' then
-            aIndexFields := aIndexFields + ' ,';
-          aIndexFields := aIndexFields + Field.SQLName;
-          IndexList.Values[aIndexName] := aIndexFields;
-        end;
-      end;
-
-      if Keys <> '' then
-      begin
-        SQL.Add(',', [cboEndLine]);
-        SQL.Add(LevelStr(vLevel + 1) + 'primary key (' + Keys + ')', []);
-      end;
-
-      if IndexList.Count > 0 then
-      begin
-        for i := 0 to IndexList.Count -1 do
-        begin
-          aIndexName := IndexList.Names[i];
-          aIndexFields := IndexList.ValueFromIndex[i];
-          SQL.Add(',', [cboEndLine]);
-          SQL.Add(LevelStr(vLevel + 1) + 'index ' + aIndexName + '(' + aIndexFields + ')');
-        end;
-      end;
-
-      for o in Fields do
-      begin
-        Field := o as TField;
-        if Field.ReferenceInfo.Table <> nil then
-        begin
-          SQL.Add(',', [cboEndLine]);
-          //S := 'foreign key (' + Field.QuotedSQLName + ')' //there is no name for forign key in sqlite
-          S := 'foreign key Ref_' + SQLName + Field.ReferenceInfo.Table.Name + Field.ReferenceInfo.Field.Name + '(' + Field.QuotedSQLName + ')'
-                  +' references ' + Field.ReferenceInfo.Table.QuotedSQLName + '(' + Field.ReferenceInfo.Field.QuotedSQLName + ')';
-
-          if rfoReject = Field.ReferenceInfo.DeleteOption then
-            S := S + ' on delete restrict'
-          else if rfoCascade = Field.ReferenceInfo.DeleteOption then
-            S := S + ' on delete cascade'
-          else if rfoSetNull = Field.ReferenceInfo.DeleteOption then
-            S := S + ' on delete set null';
-
-          if rfoReject = Field.ReferenceInfo.UpdateOption then
-            S := S + ' on update restrict'
-          else if rfoCascade = Field.ReferenceInfo.UpdateOption then
-            S := S + ' on update cascade'
-          else if rfoSetNull = Field.ReferenceInfo.UpdateOption then
-            S := S + ' on update set null';
-
-          SQL.Add(LevelStr(vLevel + 1) + S , []);
-        end;
-      end;
-      SQL.Add('', [cboEndLine]);
-      SQL.Add(')', [cboEndLine]);
-      SQL.Add('', [cboEndChunk]);
-      SQL.Params.Values['Table'] := '';
-    finally
-      FreeAndNil(IndexList);
-    end;
-  end;
+function TmncMySQLORM.TTableMySQL.GenForignKey(Table: TTable; Field: TField; AExternal: Boolean): string;
+begin
+  //Result := 'foreign key (' + Field.QuotedSQLName + ')' //there is no name for forign key in sqlite
+  Result := 'foreign key Ref_' + Table.SQLName + Field.ReferenceInfo.Table.Name + Field.ReferenceInfo.Field.Name + '(' + Field.QuotedSQLName + ')'
+          +' references ' + Field.ReferenceInfo.Table.QuotedSQLName + '(' + Field.ReferenceInfo.Field.QuotedSQLName + ')';
 end;
 
 { TmncMySQLORM }

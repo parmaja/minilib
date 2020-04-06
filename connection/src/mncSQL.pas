@@ -175,32 +175,44 @@ end;
 procedure TmncSQLSession.ExecuteScript(AStrings: TStrings; AutoCommit: Boolean);
 var
   CMD: TmncSQLCommand;
-  i: Integer;
+  c, i: Integer;
   ScriptSeperator: string;
+  procedure ExecuteNow;
+  begin
+    if CMD.SQL.Count > 0 then
+    try
+      CMD.Execute;
+      Inc(c);
+      if CMD.Active then
+        CMD.Close;
+      CMD.SQL.Clear;
+      if AutoCommit then
+        CommitRetaining;
+    except
+      on E: Exception do
+      begin
+        E.Message := E.Message + #13 + ' on script number ' + IntToStr(c);
+        raise;
+      end
+      else
+        Raise;
+    end;
+  end;
 begin
   ScriptSeperator := Connection.ScriptSeperator;
   CMD := CreateCommand;
   try
+    c := 1;
     CMD.ProcessSQL := False;
     for i := 0 to AStrings.Count -1 do
     begin
       if SameText(LeftStr(AStrings[i], Length(ScriptSeperator)), ScriptSeperator) then
-      begin
-        CMD.Execute;
-        CMD.Close;
-        CMD.SQL.Clear;
-        if AutoCommit then
-          CommitRetaining;
-      end
+        ExecuteNow
       else
         CMD.SQL.Add(AStrings[i]);
     end;
     if CMD.SQL.Count > 0 then
-    begin
-      CMD.Execute;
-      if AutoCommit then
-        CommitRetaining;
-    end;
+      ExecuteNow;
   finally
     CMD.Free;
   end;

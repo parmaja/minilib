@@ -768,13 +768,13 @@ end;
 procedure TmncConnection.CheckActive;
 begin
   if not Connected then
-    raise EmncException.Create('Connection already connected');
+    raise EmncException.Create('Connection is not connected');
 end;
 
 procedure TmncConnection.CheckInactive;
 begin
   if Connected then
-    raise EmncException.Create('Connection not connected');
+    raise EmncException.Create('Connection is connected');
 end;
 
 procedure TmncConnection.DoConnected;

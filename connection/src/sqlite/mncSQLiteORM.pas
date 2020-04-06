@@ -25,7 +25,7 @@ type
 
   { TmncSQLiteORM }
 
-  TmncSQLiteORM = class(TmncORM)
+  TmncSQLiteORM = class(TmncStdORM)
   protected
     type
 
@@ -43,21 +43,21 @@ type
 
       { TTableSQLite }
 
-      TTableSQLite = class(TormTableGenerator)
+      TTableSQLite = class(TTableStd)
       public
-        function DoGenerateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean; override;
+        constructor Create; override;
+        function GenForignKey(Table: TTable; Field: TField; AExternal: Boolean): string; virtual;
       end;
 
       { TFieldsSQLite }
 
-      TFieldsSQLite = class(TormGenerator)
+      TFieldsSQLite = class(TFieldsStd)
       public
-        function DoGenerateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean; override;
       end;
 
       { TFieldSQLite }
 
-      TFieldSQLite = class(TormGenerator)
+      TFieldSQLite = class(TFieldStd)
       public
         function DoGenerateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean; override;
       end;
@@ -68,6 +68,7 @@ type
       public
         function DoGenerateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean; override;
       end;
+
   protected
     class function FieldTypeToString(FieldType:TormFieldType; FieldSize: Integer): String;
     procedure Created; override;
@@ -110,24 +111,6 @@ begin
   Result := True;
 end;
 
-{ TmncSQLiteORM.TFieldsSQLite }
-
-function TmncSQLiteORM.TFieldsSQLite.DoGenerateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
-var
-  o: TormObject;
-  i: Integer;
-begin
-  i := 0;
-  for o in AObject do
-  begin
-    if i > 0 then //not first line
-      SQL.Add(',', [cboEndLine]);
-    (o as TormSQLObject).GenSQL(SQL, vLevel);
-    Inc(i);
-  end;
-  Result := True;
-end;
-
 { TmncSQLiteORM.TFieldSQLite }
 
 function TmncSQLiteORM.TFieldSQLite.DoGenerateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
@@ -143,13 +126,10 @@ begin
     SQL.Add(LevelStr(vLevel) + QuotedSQLName + ' '+ FieldTypeToString(FieldType, fs));
     if (foNotNull in Options) or (foPrimary in Options) then
       SQL.Add(' not null');
-    if Root.Impact then
-    begin
-      if (foPrimary in Options) then
-        SQL.Add(' primary key');
-      if (foSequenced in Options) then
-        SQL.Add(' autoincrement');
-    end;
+    if (foPrimary in Options) then
+      SQL.Add(' primary key');
+    if (foSequenced in Options) then
+      SQL.Add(' autoincrement');
     if not VarIsEmpty(DefaultValue) then
     begin
       if VarType(DefaultValue) = varString then
@@ -161,110 +141,17 @@ begin
   Result := True;
 end;
 
-{ TmncSQLiteORM.TTableSQLite }
-
-function TmncSQLiteORM.TTableSQLite.DoGenerateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
-var
-  i: integer;
-  o: TormObject;
-  Field: TField;
-  Keys: string;
-  IndexList: TStringList;
-  aIndexName, aIndexFields: string;
-  S: string;
+constructor TmncSQLiteORM.TTableSQLite.Create;
 begin
-  Result := True;
-  with AObject as TTable do
-  begin
+  inherited Create;
+  InternalIndexes := False;
+end;
 
-    SQL.Add(LevelStr(vLevel) + 'create table ' + QuotedSQLName);
-    SQL.Add('(', [cboEndLine]);
-    SQL.Params.Values['Table'] := SQLName;
-    Fields.GenSQL(SQL, vLevel + 1);
-
-    IndexList := TStringList.Create;
-    try
-      //collect primary keys and indexes
-      Keys := '';
-      for o in Fields do
-      begin
-        Field := o as TField;
-        if Field.Primary then
-        begin
-          if Keys <> '' then
-            Keys := Keys + ', ';
-          Keys := Keys + Field.QuotedSQLName;
-        end
-        else if (Field.Indexed) or (Field.IndexName <> '') then
-        begin
-          if (Field.IndexName <> '') then
-            aIndexName := Field.IndexName
-          else
-            aIndexName :=  'Idx_' + Name + '_' + Field.SQLName;
-
-          aIndexFields := IndexList.Values[aIndexName];
-          if aIndexFields <> '' then
-            aIndexFields := aIndexFields + ' ,';
-          aIndexFields := aIndexFields + Field.SQLName;
-          IndexList.Values[aIndexName] := aIndexFields;
-        end;
-      end;
-
-      if Keys <> '' then
-      begin
-        SQL.Add(',', [cboEndLine]);
-        SQL.Add(LevelStr(vLevel + 1) + 'primary key (' + Keys + ')', []);
-      end;
-
-      for o in Fields do
-      begin
-        Field := o as TField;
-        if Field.ReferenceInfo.Table <> nil then
-        begin
-          SQL.Add(',', [cboEndLine]);
-          //S := 'foreign key (' + Field.QuotedSQLName + ')'
-          S := 'constraint Ref_' + SQLName + Field.ReferenceInfo.Table.Name + Field.ReferenceInfo.Field.Name + ' foreign key (' + Field.QuotedSQLName + ')'
-                  +' references ' + Field.ReferenceInfo.Table.QuotedSQLName + '(' + Field.ReferenceInfo.Field.QuotedSQLName + ')';
-
-          if rfoReject = Field.ReferenceInfo.DeleteOption then
-            S := S + ' on delete restrict'
-          else if rfoCascade = Field.ReferenceInfo.DeleteOption then
-            S := S + ' on delete cascade'
-          else if rfoSetNull = Field.ReferenceInfo.DeleteOption then
-            S := S + ' on delete set null';
-
-          if rfoReject = Field.ReferenceInfo.UpdateOption then
-            S := S + ' on update restrict'
-          else if rfoCascade = Field.ReferenceInfo.UpdateOption then
-            S := S + ' on update cascade'
-          else if rfoSetNull = Field.ReferenceInfo.UpdateOption then
-            S := S + ' on update set null';
-
-          SQL.Add(LevelStr(vLevel + 1) + S , []);
-        end;
-      end;
-
-      SQL.Add('', [cboEndLine]);
-      SQL.Add(')', [cboEndLine]);
-      SQL.Add('', [cboEndChunk]);
-      SQL.Params.Values['Table'] := '';
-
-
-      if IndexList.Count > 0 then
-      begin
-        for i := 0 to IndexList.Count -1 do
-        begin
-          aIndexName := IndexList.Names[i];
-          aIndexFields := IndexList.ValueFromIndex[i];
-          SQL.Add(LevelStr(vLevel) + 'create index ' + aIndexName + ' on ' + SQLName + '(' + aIndexFields + ')');
-  //        SQL.Add('', [cboEndLine]);
-          SQL.Add('', [cboEndChunk]);
-        end;
-      end;
-    finally
-      FreeAndNil(IndexList);
-    end;
-  end;
+function TmncSQLiteORM.TTableSQLite.GenForignKey(Table: TTable; Field: TField; AExternal: Boolean): string;
+begin
+  //S := 'foreign key (' + Field.QuotedSQLName + ')'
+  Result := 'constraint Ref_' + Table.SQLName + Field.ReferenceInfo.Table.Name + Field.ReferenceInfo.Field.Name + ' foreign key (' + Field.QuotedSQLName + ')'
+          +' references ' + Field.ReferenceInfo.Table.QuotedSQLName + '(' + Field.ReferenceInfo.Field.QuotedSQLName + ')';
 end;
 
 { TmncSQLiteORM }
