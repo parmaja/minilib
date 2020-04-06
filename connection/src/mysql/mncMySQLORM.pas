@@ -45,8 +45,7 @@ type
 
       TTableMySQL = class(TTableStd)
       public
-        constructor Create; override;
-        function GenForignKey(Table: TTable; Field: TField; AExternal: Boolean): string; override;
+        function GenForignKey(Field: TField; AExternal: Boolean): string; override;
       end;
 
       { TFieldsMySQL }
@@ -114,16 +113,11 @@ end;
 { TmncMySQLORM.TFieldMySQL }
 
 function TmncMySQLORM.TFieldMySQL.DoGenerateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
-var
-  fs: Integer;
 begin
-//  vSQL.Add(LevelStr(vLevel) + Name + ' as Integer'); bug in fpc needs to reproduce but i can
+//  vSQL.Add(vLevel, Name + ' as Integer'); bug in fpc needs to reproduce but i can
   with AObject as TField do
   begin
-    fs := FieldSize;
-    if fs = 0 then
-      fs := 60;
-    SQL.Add(LevelStr(vLevel) + QuotedSQLName + ' '+ FieldTypeToString(FieldType, fs));
+    SQL.Add(vLevel, QuotedSQLName + ' '+ FieldTypeToString(FieldType, FieldSize));
     if (foNotNull in Options) or (foPrimary in Options) then
       SQL.Add(' not null');
     if foSequenced in Options then
@@ -141,16 +135,9 @@ end;
 
 { TmncMySQLORM.TTableMySQL }
 
-constructor TmncMySQLORM.TTableMySQL.Create;
+function TmncMySQLORM.TTableMySQL.GenForignKey(Field: TField; AExternal: Boolean): string;
 begin
-  inherited Create;
-  InternalIndexes := True;
-end;
-
-function TmncMySQLORM.TTableMySQL.GenForignKey(Table: TTable; Field: TField; AExternal: Boolean): string;
-begin
-  //Result := 'foreign key (' + Field.QuotedSQLName + ')' //there is no name for forign key in sqlite
-  Result := 'foreign key Ref_' + Table.SQLName + Field.ReferenceInfo.Table.Name + Field.ReferenceInfo.Field.Name + '(' + Field.QuotedSQLName + ')'
+  Result := 'foreign key REF_' + Field.Table.Name + Field.ReferenceInfo.Table.Name + Field.ReferenceInfo.Field.Name + '(' + Field.QuotedSQLName + ')'
           +' references ' + Field.ReferenceInfo.Table.QuotedSQLName + '(' + Field.ReferenceInfo.Field.QuotedSQLName + ')';
 end;
 

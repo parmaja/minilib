@@ -46,7 +46,7 @@ type
       TTableSQLite = class(TTableStd)
       public
         constructor Create; override;
-        function GenForignKey(Table: TTable; Field: TField; AExternal: Boolean): string; virtual;
+        function GenForignKey(Field: TField; AExternal: Boolean): string; virtual;
       end;
 
       { TFieldsSQLite }
@@ -114,16 +114,10 @@ end;
 { TmncSQLiteORM.TFieldSQLite }
 
 function TmncSQLiteORM.TFieldSQLite.DoGenerateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
-var
-  fs: Integer;
 begin
-//  vSQL.Add(LevelStr(vLevel) + Name + ' as Integer'); bug in fpc needs to reproduce but i can
   with AObject as TField do
   begin
-    fs := FieldSize;
-    if fs = 0 then
-      fs := 60;
-    SQL.Add(LevelStr(vLevel) + QuotedSQLName + ' '+ FieldTypeToString(FieldType, fs));
+    SQL.Add(vLevel, QuotedSQLName + ' '+ FieldTypeToString(FieldType, FieldSize));
     if (foNotNull in Options) or (foPrimary in Options) then
       SQL.Add(' not null');
     if (foPrimary in Options) then
@@ -144,13 +138,12 @@ end;
 constructor TmncSQLiteORM.TTableSQLite.Create;
 begin
   inherited Create;
-  InternalIndexes := False;
+  GenerateOptions := [tgnExternalIndexes];
 end;
 
-function TmncSQLiteORM.TTableSQLite.GenForignKey(Table: TTable; Field: TField; AExternal: Boolean): string;
+function TmncSQLiteORM.TTableSQLite.GenForignKey(Field: TField; AExternal: Boolean): string;
 begin
-  //S := 'foreign key (' + Field.QuotedSQLName + ')'
-  Result := 'constraint Ref_' + Table.SQLName + Field.ReferenceInfo.Table.Name + Field.ReferenceInfo.Field.Name + ' foreign key (' + Field.QuotedSQLName + ')'
+  Result := 'constraint REF_' + Field.Table.Name + '_' +  Field.ReferenceInfo.Table.Name + Field.ReferenceInfo.Field.Name + ' foreign key (' + Field.QuotedSQLName + ')'
           +' references ' + Field.ReferenceInfo.Table.QuotedSQLName + '(' + Field.ReferenceInfo.Field.QuotedSQLName + ')';
 end;
 
