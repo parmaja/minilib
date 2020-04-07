@@ -34,7 +34,7 @@ begin
             end;
             with TField.Create(This, 'Name', ftString) do begin
               FieldSize := 60;
-              Options := [foIndexed];
+              Options := [foUnique, foIndexed];
             end;
             with TField.Create(This, 'Address', ftCurrency) do begin
               DefaultValue := 0;
@@ -62,8 +62,15 @@ begin
         begin
           Prefix := 'Ent';
           with TFields.Create(This) do begin
+            with TField.Create(This, 'Period', ftInteger) do begin
+              Options := [foIndexed];
+              DefaultValue := 1;
+              IndexName := 'PeriodID';
+            end;
+
             with TField.Create(This, 'ID', ftInteger) do begin
-              Options := [foIndexed, foPrimary, foSequenced];
+              Options := [foPrimary, foIndexed, foUnique, foSequenced];
+              IndexName := 'PeriodID';
             end;
 
             with TRefIDField.Create(This, 'Employee', 'Employees', 'ID') do begin

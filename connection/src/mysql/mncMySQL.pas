@@ -43,7 +43,7 @@ type
     procedure CheckError(vMySQL: PMYSQL); overload;
     procedure DoInit; override;
   public
-    constructor Create;
+    constructor Create; override;
     class function Capabilities: TmncCapabilities; override;
     class function Name: string; override;
     function CreateSession: TmncSQLSession; overload; override; 
@@ -527,24 +527,24 @@ procedure TmncMySQLConnection.CreateDatabase(const vName: string; CheckExists: B
 var
   s: string;
 begin
-  CheckActive;
+  //CheckActive;
   s := 'Create Database ';
   if CheckExists then
     s := s + 'if not exists ';
   s := s + vName + ';';
-  Execute(s);
+  CloneExecute('mysql', s);
 end;
 
 procedure TmncMySQLConnection.DropDatabase(const vName: string; CheckExists: Boolean);
 var
   s: string;
 begin
-  CheckActive;
+  //CheckActive;
   s := 'drop database ';
   if CheckExists then
     s := s + 'if exists ';
   s := s + vName + ';';
-  Execute(s);
+  CloneExecute('mysql', s);
 end;
 
 procedure TmncMySQLConnection.Vacuum;
@@ -566,7 +566,6 @@ var
   timout: cuint;
   protocol: mysql_protocol_type;
 begin
-  //TODO AutoCreate
   //* ref: https://dev.mysql.com/doc/refman/5.0/en/mysql-real-connect.html
   FDBHandle := mysql_init(FDBHandle);
   try

@@ -46,7 +46,7 @@ type
       TTableSQLite = class(TTableStd)
       public
         constructor Create; override;
-        function GenForignKey(Field: TField; AExternal: Boolean): string; virtual;
+        function GenForignKey(Field: TField; AExternal: Boolean): string; override;
       end;
 
       { TFieldsSQLite }
@@ -120,7 +120,8 @@ begin
     SQL.Add(vLevel, QuotedSQLName + ' '+ FieldTypeToString(FieldType, FieldSize));
     if (foNotNull in Options) or (foPrimary in Options) then
       SQL.Add(' not null');
-    if (foPrimary in Options) then
+
+    if (foPrimary in Options) and (Table.Fields.PrimaryKeys = 1) then //one PK we will use it here
       SQL.Add(' primary key');
     if (foSequenced in Options) then
       SQL.Add(' autoincrement');
@@ -138,12 +139,14 @@ end;
 constructor TmncSQLiteORM.TTableSQLite.Create;
 begin
   inherited Create;
-  GenerateOptions := [tgnExternalIndexes];
+  GenerateOptions.PK := gnpAttribute;
+  GenerateOptions.FK := gnpInternal;
+  GenerateOptions.Indexes := gnpExternal;
 end;
 
 function TmncSQLiteORM.TTableSQLite.GenForignKey(Field: TField; AExternal: Boolean): string;
 begin
-  Result := 'constraint REF_' + Field.Table.Name + '_' +  Field.ReferenceInfo.Table.Name + Field.ReferenceInfo.Field.Name + ' foreign key (' + Field.QuotedSQLName + ')'
+  Result := 'constraint RF_' + Field.Table.Name + '_' +  Field.ReferenceInfo.Table.Name + Field.ReferenceInfo.Field.Name + ' foreign key (' + Field.QuotedSQLName + ')'
           +' references ' + Field.ReferenceInfo.Table.QuotedSQLName + '(' + Field.ReferenceInfo.Field.QuotedSQLName + ')';
 end;
 

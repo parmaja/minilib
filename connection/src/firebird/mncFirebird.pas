@@ -60,7 +60,7 @@ type
     function GetConnected: Boolean; override;
     procedure DoInit; override;
   public
-    constructor Create;
+    constructor Create; override;
     class function Capabilities: TmncCapabilities; override;
     class function Name: string; override;
     function CreateSession: TmncSQLSession; override;
@@ -293,7 +293,7 @@ end;
 
 class function TmncFBConnection.Capabilities: TmncCapabilities;
 begin
-  Result := [ccDB, ccSQL, ccStrict, ccTransaction, ccMultiTransaction, ccNetwork];
+  Result := [ccDB, ccAlias, ccPath, ccSQL, ccStrict, ccTransaction, ccMultiTransaction, ccNetwork];
 end;
 
 class function TmncFBConnection.Name: string;
@@ -552,7 +552,7 @@ end;
 
 function TmncFBConnection.GetExtension: string;
 begin
-  Result := 'fdb';
+  Result := '.fdb';
 end;
 
 function TmncFBSession.GetActive: Boolean;

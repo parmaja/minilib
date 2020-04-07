@@ -35,6 +35,7 @@ type
 
   TmncSQLiteConnection = class(TmncSQLConnection)
   private
+    FAutoCreate: Boolean;
     FCorrectDateTime: Boolean;
     FDBHandle: PSqlite3;
     FExclusive: Boolean;
@@ -54,7 +55,7 @@ type
     procedure CheckError(Error: Integer; const ExtraMsg: string = '');
     procedure DoInit; override;
   public
-    constructor Create;
+    constructor Create; override;
     class function Capabilities: TmncCapabilities; override;
     class function Name: string; override;
     function CreateSession: TmncSQLSession; overload; override; 
@@ -71,6 +72,7 @@ type
     property JournalMode: TmncJournalMode read FJournalMode write SetJournalMode default jrmDefault;
     property TempStore: TmncTempStore read FTempStore write SetTempStore default tmpDefault;
     property CorrectDateTime: Boolean read FCorrectDateTime write FCorrectDateTime default True;
+    property AutoCreate: Boolean read FAutoCreate write FAutoCreate default True;
     {TODO
       ANALYZE
     }
@@ -368,11 +370,12 @@ constructor TmncSQLiteConnection.Create;
 begin
   inherited Create;
   FCorrectDateTime := True;
+  FAutoCreate := True;
 end;
 
 class function TmncSQLiteConnection.Capabilities: TmncCapabilities;
 begin
-  Result := [ccDB, ccSQL, ccTransaction];
+  Result := [ccDB, ccPath, ccSQL, ccTransaction];
 end;
 
 class function TmncSQLiteConnection.Name: string;
@@ -508,7 +511,7 @@ end;
 
 function TmncSQLiteConnection.GetExtension: string;
 begin
-  Result := 'sqlite';
+  Result := '.sqlite';
 end;
 
 function TmncSQLiteSession.GetLastRowID: Int64;

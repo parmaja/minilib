@@ -5,7 +5,7 @@ unit MainForms;
 interface
 
 uses
-  Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls,
+  Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, ExtCtrls,
   IniFiles,
   SynEdit, SynHighlighterSQL,
   mncDB, mncConnections, mncSQL, mncSQLite, mncMySQL, mncFirebird,
@@ -30,10 +30,22 @@ type
 
   TMainForm = class(TForm)
     ConnectBtn: TButton;
-    EnginesCbo: TComboBox;
     CreateDB1Btn: TButton;
+    EnginesCbo: TComboBox;
+    HostEdit: TEdit;
+    DataEdit: TEdit;
+    Label2: TLabel;
+    Label3: TLabel;
+    Label4: TLabel;
+    Label5: TLabel;
+    Panel1: TPanel;
+    Label1: TLabel;
+    Panel2: TPanel;
+    PasswordEdit: TEdit;
     SynEdit: TSynEdit;
+    LogEdit: TSynEdit;
     SynSQLSyn: TSynSQLSyn;
+    UserEdit: TEdit;
     procedure ConnectBtnClick(Sender: TObject);
     procedure CreateDB1BtnClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
@@ -90,10 +102,17 @@ begin
   Engine.ORM := CreateORM((EnginesCbo.Items.Objects[EnginesCbo.ItemIndex] as TmncEngine).ORMClass);
   Engine.ORM.GenerateSQL(Engine.InitSQL);
   Engine.Connection := Engine.ORM.CreateConnection as TmncSQLConnection;
-  Engine.Connection.Resource := Application.Location + 'data.' + Engine.Connection.GetExtension;
-  DeleteFile(Engine.Connection.Resource);
-  Engine.Connection.AutoCreate := True;
+  if ccPath in Engine.Connection.Capabilities then
+    Engine.Connection.Resource := Application.Location + DataEdit.Text + Engine.Connection.GetExtension
+  else
+    Engine.Connection.Resource := DataEdit.Text;
+  Engine.Connection.Host := HostEdit.Text;
+  Engine.Connection.UserName := UserEdit.Text;
+  Engine.Connection.Password := PasswordEdit.Text;
+  Engine.Connection.DropDatabase(True);
+  Engine.Connection.CreateDatabase;
   Engine.Connection.Connect;
+  LogEdit.Text := Engine.Connection.Resource + ' connected';
   Engine.Session := Engine.Connection.CreateSession;
   Engine.Session.Start;
   Engine.Session.ExecuteScript(Engine.InitSQL);
@@ -107,6 +126,9 @@ begin
   try
     Width := IniFile.ReadInteger('Options', 'Width', Width);
     Height := IniFile.ReadInteger('Options', 'Height', Height);
+    HostEdit.Text := IniFile.ReadString('Options', 'Host', 'localhost');
+    UserEdit.Text := IniFile.ReadString('Options', 'User', '');
+    PasswordEdit.Text := IniFile.ReadString('Options', 'Password', '');
   finally
     IniFile.Free;
   end;
@@ -122,6 +144,9 @@ begin
   try
     IniFile.WriteInteger('Options', 'Width', Width);
     IniFile.WriteInteger('Options', 'Height', Height);
+    IniFile.WriteString('Options', 'Host', HostEdit.Text);
+    IniFile.WriteString('Options', 'User', UserEdit.Text);
+    IniFile.WriteString('Options', 'Password', PasswordEdit.Text);
   finally
     IniFile.Free;
   end;

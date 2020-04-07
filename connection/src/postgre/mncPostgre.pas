@@ -117,7 +117,7 @@ type
 
     property Channel: string read FChannel write SetChannel;
   public
-    constructor Create;
+    constructor Create; override;
     destructor Destroy; override;
 
     function CreateSession: TmncSQLSession; override;
@@ -726,8 +726,6 @@ end;
 
 procedure TmncPGConnection.InternalConnect(var vHandle: PPGconn);
 begin
-  if AutoCreate then
-  	CreateDatabase(Resource, True);
   vHandle := CreateConnection;
   try
     RaiseError(PQstatus(vHandle) = CONNECTION_BAD);

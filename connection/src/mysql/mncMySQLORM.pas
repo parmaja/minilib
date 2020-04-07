@@ -45,6 +45,7 @@ type
 
       TTableMySQL = class(TTableStd)
       public
+        constructor Create; override;
         function GenForignKey(Field: TField; AExternal: Boolean): string; override;
       end;
 
@@ -135,9 +136,17 @@ end;
 
 { TmncMySQLORM.TTableMySQL }
 
+constructor TmncMySQLORM.TTableMySQL.Create;
+begin
+  inherited Create;
+  GenerateOptions.PK := gnpInternal;
+  GenerateOptions.FK := gnpInternal;
+  GenerateOptions.Indexes := gnpExternal;
+end;
+
 function TmncMySQLORM.TTableMySQL.GenForignKey(Field: TField; AExternal: Boolean): string;
 begin
-  Result := 'foreign key REF_' + Field.Table.Name + Field.ReferenceInfo.Table.Name + Field.ReferenceInfo.Field.Name + '(' + Field.QuotedSQLName + ')'
+  Result := 'foreign key RF_' + Field.Table.Name + Field.ReferenceInfo.Table.Name + Field.ReferenceInfo.Field.Name + '(' + Field.QuotedSQLName + ')'
           +' references ' + Field.ReferenceInfo.Table.QuotedSQLName + '(' + Field.ReferenceInfo.Field.QuotedSQLName + ')';
 end;
 

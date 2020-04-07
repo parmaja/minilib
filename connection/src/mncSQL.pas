@@ -36,17 +36,20 @@ type
   protected
     procedure DoClone(vConn: TmncSQLConnection); virtual;
   public
-    constructor Create;
+    constructor Create; override;
     function CreateSession: TmncSQLSession; virtual; abstract;
 
     function IsDatabaseExists(vName: string): Boolean; virtual; abstract;
-    procedure CreateDatabase(const vName: string; CheckExists: Boolean = False); virtual; abstract;
-    procedure DropDatabase(const vName: string; CheckExists: Boolean = False); virtual; abstract;
+    procedure CreateDatabase(const vName: string; CheckExists: Boolean = False); virtual; abstract; overload;
+    procedure CreateDatabase(CheckExists: Boolean = False); overload;
+    procedure DropDatabase(const vName: string; CheckExists: Boolean = False); virtual; abstract; overload;
+    procedure DropDatabase(CheckExists: Boolean = False); overload;
 
-    function Clone(const vResource: string): TmncSQLConnection; overload;
-    function Clone: TmncSQLConnection; overload;
     procedure Execute(vCommand: string); virtual; overload;
     procedure Execute(vCommand: string; vArgs: array of const); overload;
+
+    function Clone(const vResource: string; AutoConnect: Boolean = True): TmncSQLConnection; overload;
+    function Clone(AutoConnect: Boolean = True): TmncSQLConnection; overload;
     procedure CloneExecute(const vResource, vSQL: string; vArgs: array of const); overload;
     procedure CloneExecute(const vResource, vSQL: string); overload;
     procedure Vacuum; virtual; virtual;
@@ -234,7 +237,7 @@ end;
 
 { TmncSQLConnection }
 
-function TmncSQLConnection.Clone(const vResource: string): TmncSQLConnection;
+function TmncSQLConnection.Clone(const vResource: string; AutoConnect: Boolean): TmncSQLConnection;
 begin
   Result := TmncSQLConnection(TmncConnectionClass(ClassType).Create);
   try
@@ -244,15 +247,16 @@ begin
     Result.UserName := UserName;
     Result.Password := Password;
     DoClone(Result);
-    Result.Connect;
+    if AutoConnect then
+      Result.Connect;
   except
     FreeAndNil(Result);
   end;
 end;
 
-function TmncSQLConnection.Clone: TmncSQLConnection;
+function TmncSQLConnection.Clone(AutoConnect: Boolean): TmncSQLConnection;
 begin
-  Result := Clone(Resource);
+  Result := Clone(Resource, AutoConnect);
 end;
 
 procedure TmncSQLConnection.CloneExecute(const vResource, vSQL: string; vArgs: array of const);
@@ -298,6 +302,16 @@ end;
 constructor TmncSQLConnection.Create;
 begin
   inherited Create;
+end;
+
+procedure TmncSQLConnection.CreateDatabase(CheckExists: Boolean);
+begin
+  CreateDatabase(Resource, CheckExists);
+end;
+
+procedure TmncSQLConnection.DropDatabase(CheckExists: Boolean);
+begin
+  DropDatabase(Resource, CheckExists);
 end;
 
 procedure TmncSQLConnection.Execute(vCommand: string);

@@ -59,6 +59,8 @@ type
 
   TmncCapability = (
     ccDB, //It is Database engine not just transfer data object
+    ccAlias, //Allow alias names in resrouce like Firebird
+    ccPath, //Allow path as file name in resrouce, like sqlite and Firebird
     ccSQL, //It is SQL engine, you know CSV or Paradox is not, we have no plan to support Paradox
     ccNetwork, //Can connect over network
     ccStrict, //Without it: it is no need to call Start and Stop (Commit/Rollback) this DB automatically do it (pg/SQLite allow it)
@@ -94,7 +96,6 @@ type
     FHost: string;
     FUserName: string;
     FAutoStart: Boolean;
-    FAutoCreate: Boolean;
     FSessions: TmncSessions;
     FStartCount: Integer;
     FIsInit: Boolean;
@@ -117,7 +118,7 @@ type
     function _AddRef : longint;{$IFNDEF MSWINDOWS}cdecl{$ELSE}stdcall{$ENDIF};
     function _Release : longint;{$IFNDEF MSWINDOWS}cdecl{$ELSE}stdcall{$ENDIF};
   public
-    constructor Create;
+    constructor Create; virtual;
     destructor Destroy; override;
     function QueryInterface({$IFDEF FPC}constref{$ELSE}const{$ENDIF} iid : tguid;out obj) : longint;{$IFNDEF MSWINDOWS}cdecl{$ELSE}stdcall{$ENDIF};
     class function Capabilities: TmncCapabilities; virtual; abstract;
@@ -132,7 +133,6 @@ type
     property AutoStart: Boolean read FAutoStart write FAutoStart; //AutoStart the Session when created
     property Connected: Boolean read GetConnected write SetConnected;
     property Active: Boolean read GetConnected write SetConnected;
-    property AutoCreate: Boolean read FAutoCreate write FAutoCreate default False;
     property States: TmncStates read FStates;
     property Host: string read FHost write FHost;
     property Port: string read FPort write FPort;
@@ -1184,7 +1184,8 @@ procedure TmncSession.InternalStart;
 begin
   if Active then //Even if not strict, you cant start the session more than one
     raise EmncException.Create('Session is already active.');
-  Connection.Init; //Sure if the connection is init, maybe it is not connected yet!
+  Connection.CheckActive;
+  //Connection.Init; //Sure if the connection is initialized, maybe it is not connected yet!
   Init;
   if sbhEmulate in Behaviors then
   begin

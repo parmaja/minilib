@@ -121,7 +121,7 @@ type
       public
         function SQLName: string; virtual; //WithPrefix
         function QuotedSQLName: string; virtual; //With Quotes
-        procedure GenSQL(SQL: TCallbackObject; vLevel: Integer);
+        procedure GenerateSQL(SQL: TCallbackObject; vLevel: Integer);
       end;
 
       { TDatabase }
@@ -167,10 +167,18 @@ type
         function This: TTable;
       end;
 
+      { TFields }
+
       TFields = class(TormSQLObject)
+      private
+        FForignKeys: Integer;
+        FPrimaryKeys: Integer;
       public
+        procedure Check; override;
         constructor Create(ATable: TTable);
         function This: TFields;
+        property PrimaryKeys: Integer read FPrimaryKeys;
+        property ForignKeys: Integer read FForignKeys;
       end;
 
       { TVirtualFields }
@@ -250,9 +258,11 @@ type
         function GetIndexed: Boolean;
         function GetPrimary: Boolean;
         function GetSequenced: Boolean;
+        function GetUnique: Boolean;
         procedure SetIndexed(AValue: Boolean);
         procedure SetPrimary(AValue: Boolean);
         procedure SetSequenced(AValue: Boolean);
+        procedure SetUnique(AValue: Boolean);
       protected
         ReferenceInfoStr: TReferenceInfoStr;
         procedure Check; override;
@@ -276,6 +286,7 @@ type
 
         property Indexed: Boolean read GetIndexed write SetIndexed;
         property Primary: Boolean read GetPrimary write SetPrimary;
+        property Unique: Boolean read GetUnique write SetUnique;
         property Sequenced: Boolean read GetSequenced write SetSequenced;
 
         // this will group this field have same values into one index with that index name
@@ -333,6 +344,16 @@ type
         public
           function FindDerived(AObjectClass: TormObjectClass): TormObjectClass;
           function FindGenerator(AObjectClass: TormObjectClass): TormGeneratorClass;
+        end;
+
+        TIndexGroup = class(TmnNamedObject)
+        public
+          Unique: Boolean;
+          Fields: string;
+        end;
+
+        TIndexGroups = class(TmnNamedObjectList<TIndexGroup>)
+        public
         end;
 
   private
@@ -448,7 +469,18 @@ type
       public
       end;
 
-      TGenerateOptions = set of (tgnExternalIndexes, tgnExternalFK, tgnExternalPK);
+      TGeneratePlace = (
+        gnpNone,
+        gnpAttribute,
+        gnpInternal,
+        gnpExternal
+      );
+
+      TGenerateOptions = record
+        PK: TGeneratePlace;
+        FK: TGeneratePlace;
+        Indexes: TGeneratePlace;
+      end;
 
       { TTableStd }
 
@@ -457,8 +489,8 @@ type
         GenerateOptions: TGenerateOptions;
         constructor Create; override;
 
-        procedure GenInternalIndexes(Table: TTable; IndexList: TStringList; SQL: TCallbackObject; vLevel: Integer); virtual;
-        procedure GenExternalIndexes(Table: TTable; IndexList: TStringList; SQL: TCallbackObject; vLevel: Integer); virtual;
+        procedure GenInternalIndexes(Table: TTable; IndexList: TIndexGroups; SQL: TCallbackObject; vLevel: Integer); virtual;
+        procedure GenExternalIndexes(Table: TTable; IndexList: TIndexGroups; SQL: TCallbackObject; vLevel: Integer); virtual;
         procedure GenInternalForignKeys(Fields: TFields; SQL: TCallbackObject; vLevel: Integer); virtual;
         procedure GenExternalForignKeys(Fields: TFields; SQL: TCallbackObject; vLevel: Integer); virtual;
 
@@ -490,38 +522,44 @@ implementation
 constructor TmncStdORM.TTableStd.Create;
 begin
   inherited Create;
-  GenerateOptions := [];
+  GenerateOptions.Indexes := gnpInternal;
+  GenerateOptions.FK := gnpInternal;
+  GenerateOptions.PK := gnpInternal;
 end;
 
-procedure TmncStdORM.TTableStd.GenInternalIndexes(Table: TTable; IndexList: TStringList; SQL: TCallbackObject; vLevel: Integer);
+procedure TmncStdORM.TTableStd.GenInternalIndexes(Table: TTable; IndexList: TIndexGroups; SQL: TCallbackObject; vLevel: Integer);
 var
   i: Integer;
-  aIndexName, aIndexFields: string;
+  aUnique: string;
 begin
   if IndexList.Count > 0 then
   begin
     for i := 0 to IndexList.Count -1 do
     begin
-      aIndexName := IndexList.Names[i];
-      aIndexFields := IndexList.ValueFromIndex[i];
       SQL.Add(',', [cboEndLine]);
-      SQL.Add(vLevel + 1, 'index ' + aIndexName + '(' + aIndexFields + ')');
+      if IndexList[i].Unique then
+        aUnique := 'unique '
+      else
+        aUnique := '';
+      SQL.Add(vLevel + 1, aUnique + 'index ' + IndexList[i].Name + '(' + IndexList[i].Fields + ')');
     end;
   end;
 end;
 
-procedure TmncStdORM.TTableStd.GenExternalIndexes(Table: TTable; IndexList: TStringList; SQL: TCallbackObject; vLevel: Integer);
+procedure TmncStdORM.TTableStd.GenExternalIndexes(Table: TTable; IndexList: TIndexGroups; SQL: TCallbackObject; vLevel: Integer);
 var
   i: Integer;
-  aIndexName, aIndexFields: string;
+  aUnique: string;
 begin
   if IndexList.Count > 0 then
   begin
     for i := 0 to IndexList.Count -1 do
     begin
-      aIndexName := IndexList.Names[i];
-      aIndexFields := IndexList.ValueFromIndex[i];
-      SQL.Add(vLevel, 'create index ' + aIndexName + ' on ' + Table.SQLName + '(' + aIndexFields + ')');
+      if IndexList[i].Unique then
+        aUnique := 'unique '
+      else
+        aUnique := '';
+      SQL.Add(vLevel, 'create ' + aUnique + 'index ' + IndexList[i].Name + ' on ' + Table.SQLName + '(' + IndexList[i].Fields + ')');
     end;
   end;
 end;
@@ -573,16 +611,17 @@ end;
 
 function TmncStdORM.TTableStd.GenPrimaryKey(Table: TTable; Keys: string): string;
 begin
-  Result := 'constraint PK_' + Table.Name + 'primary key (' + Keys + ')';
+  Result := 'constraint PK_' + Table.Name + ' primary key (' + Keys + ')';
 end;
 
 function TmncStdORM.TTableStd.DoGenerateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
 var
   o: TormObject;
   Field: TField;
-  Keys: string;
-  IndexList: TStringList;
-  aIndexName, aIndexFields: string;
+  PKeys: string;
+  IndexGroups: TIndexGroups;
+  aIndexGroup: TIndexGroup;
+  aIndexName: string;
   ATable: TTable;
 begin
   Result := True;
@@ -593,77 +632,85 @@ begin
     SQL.Add(vLevel, 'create table ' + QuotedSQLName);
     SQL.Add('(', [cboEndLine]);
     SQL.Params.Values['Table'] := SQLName;
-    Fields.GenSQL(SQL, vLevel + 1);
 
-    IndexList := TStringList.Create;
+    IndexGroups := TIndexGroups.Create;
     try
       //collect primary keys and indexes
-      Keys := '';
+      PKeys := '';
       for o in Fields do
       begin
         Field := o as TField;
         if Field.Primary then
         begin
-          if Keys <> '' then
-            Keys := Keys + ', ';
-          Keys := Keys + Field.QuotedSQLName;
-        end
-        else if (Field.Indexed) or (Field.IndexName <> '') then
+          if PKeys <> '' then
+            PKeys := PKeys + ', ';
+          PKeys := PKeys + Field.QuotedSQLName;
+        end;
+
+        if (Field.Indexed and not Field.Primary) or (Field.IndexName <> '') then
         begin
           if (Field.IndexName <> '') then
             aIndexName := Field.IndexName
           else
             aIndexName :=  'IDX_' + Name + '_' + Field.SQLName;
 
-          aIndexFields := IndexList.Values[aIndexName];
-          if aIndexFields <> '' then
-            aIndexFields := aIndexFields + ' ,';
-          aIndexFields := aIndexFields + Field.SQLName;
-          IndexList.Values[aIndexName] := aIndexFields;
+          aIndexGroup := IndexGroups.Find(aIndexName);
+          if aIndexGroup = nil then
+          begin
+            aIndexGroup := TIndexGroup.Create;
+            aIndexGroup.Name := aIndexName;
+            aIndexGroup.Unique := Field.Unique;
+            IndexGroups.Add(aIndexGroup);
+          end;
+          if aIndexGroup.Fields <> '' then
+            aIndexGroup.Fields := aIndexGroup.Fields + ' ,';
+          aIndexGroup.Fields := aIndexGroup.Fields + Field.SQLName;
         end;
       end;
 
-      if not (tgnExternalIndexes in GenerateOptions) then
-      begin
-        if Keys <> '' then
+      Fields.GenerateSQL(SQL, vLevel + 1);
+
+      if (GenerateOptions.PK = gnpInternal) or ((GenerateOptions.PK = gnpAttribute) and (Fields.PrimaryKeys > 1)) then //more than one PK fields
+        if (PKeys <> '') then
         begin
           SQL.Add(',', [cboEndLine]);
-          SQL.Add(vLevel + 1, GenPrimaryKey(ATable, Keys));
+          SQL.Add(vLevel + 1, GenPrimaryKey(ATable, PKeys));
         end;
 
-        if IndexList.Count > 0 then
-          GenInternalIndexes(ATable, IndexList, SQL, vLevel);
-
+      if (GenerateOptions.FK = gnpInternal) then
         GenInternalForignKeys(ATable.Fields, SQL, vLevel);
-      end;
+
+      if (GenerateOptions.Indexes = gnpInternal) then
+        if IndexGroups.Count > 0 then
+          GenInternalIndexes(ATable, IndexGroups, SQL, vLevel);
 
       SQL.Add('', [cboEndLine]);
       SQL.Add(')', [cboEndLine, cboEndChunk]);
       SQL.Params.Values['Table'] := '';
 
-      if (tgnExternalIndexes in GenerateOptions) then
-      begin
-        if Keys <> '' then
+      if (GenerateOptions.PK = gnpExternal) then
+        if PKeys <> '' then
         begin
-          SQL.Add(GenPrimaryKey(ATable, Keys), []); //not tested
+          SQL.Add(GenPrimaryKey(ATable, PKeys), []); //not tested
           SQL.Add('', [cboEndChunk]);
         end;
 
-        if IndexList.Count > 0 then
+      if (GenerateOptions.FK = gnpExternal) then
+        if IndexGroups.Count > 0 then
         begin
-          GenExternalIndexes(ATable, IndexList, SQL, vLevel);
+          GenExternalForignKeys(ATable.Fields, SQL, vLevel);
           SQL.Add('', [cboEndChunk]);
         end;
 
-       if IndexList.Count > 0 then
-       begin
-         GenExternalForignKeys(ATable.Fields, SQL, vLevel);
-         SQL.Add('', [cboEndChunk]);
-       end;
-    end;
+      if (GenerateOptions.Indexes = gnpExternal) then
+        if IndexGroups.Count > 0 then
+        begin
+          GenExternalIndexes(ATable, IndexGroups, SQL, vLevel);
+          SQL.Add('', [cboEndChunk]);
+        end;
 
     finally
-      FreeAndNil(IndexList);
+      FreeAndNil(IndexGroups);
     end;
   end;
 end;
@@ -678,13 +725,29 @@ begin
   begin
     if i > 0 then //not first line
       SQL.Add(',', [cboEndLine]);
-    (o as TormSQLObject).GenSQL(SQL, vLevel);
+    (o as TormSQLObject).GenerateSQL(SQL, vLevel);
     Inc(i);
   end;
   Result := True;
 end;
 
 { TmncORM.TFields }
+
+procedure TmncORM.TFields.Check;
+var
+  i: Integer;
+begin
+  inherited Check;
+  FPrimaryKeys := 0;
+  FForignKeys := 0;
+  for i := 0 to Count - 1 do
+  begin
+    if (Items[i] as TField).Primary then
+      Inc(FPrimaryKeys);
+    if (Items[i] as TField).ReferenceInfo.Table <> nil then
+      Inc(FForignKeys);
+  end;
+end;
 
 constructor TmncORM.TFields.Create(ATable: TTable);
 begin
@@ -786,7 +849,7 @@ var
   o: TormObject;
 begin
   for o in AObject do
-    (o as TormSQLObject).GenSQL(SQL, vLevel);
+    (o as TormSQLObject).GenerateSQL(SQL, vLevel);
 end;
 
 function TmncORM.TormGenerator.DoGenerateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
@@ -1001,7 +1064,7 @@ begin
   Result := Name;
 end;
 
-procedure TmncORM.TormSQLObject.GenSQL(SQL: TCallbackObject; vLevel: Integer);
+procedure TmncORM.TormSQLObject.GenerateSQL(SQL: TCallbackObject; vLevel: Integer);
 var
   Generator: TormGenerator;
 begin
@@ -1129,6 +1192,11 @@ begin
   Result := foSequenced in Options;
 end;
 
+function TmncORM.TField.GetUnique: Boolean;
+begin
+  Result := foUnique in Options;
+end;
+
 procedure TmncORM.TField.SetIndexed(AValue: Boolean);
 begin
   if AValue then
@@ -1151,6 +1219,14 @@ begin
     Options := Options + [foSequenced]
   else
     Options := Options - [foSequenced];
+end;
+
+procedure TmncORM.TField.SetUnique(AValue: Boolean);
+begin
+  if AValue then
+    Options := Options + [foUnique]
+  else
+    Options := Options - [foUnique];
 end;
 
 procedure TmncORM.TField.Check;
