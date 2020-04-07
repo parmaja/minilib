@@ -54,6 +54,9 @@ type
 
 implementation
 
+uses
+  mncDB;
+
 { TmncMetaItems }
 
 function TmncFBMeta.GetSession: TmncSession;
@@ -401,5 +404,5 @@ begin
 end;
 
 initialization
-  Meta.RegisterMeta('Firebird', 'FirebirdSQL Database', TmncFBMeta, TmncFBConnection);
+  Engines.RegisterMeta('Firebird', TmncFBMeta);
 end.

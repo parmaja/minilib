@@ -73,10 +73,12 @@ type
     class function FieldTypeToString(FieldType:TormFieldType; FieldSize: Integer): String;
     procedure Created; override;
   public
-    class function GetConnectionClass: TmncConnectionClass; override;
   end;
 
 implementation
+
+uses
+  mncDB;
 
 { TmncSQLiteORM.TInsertDataSQLite }
 
@@ -181,10 +183,7 @@ begin
   RegisterGenerator(TInsertData, TInsertDataSQLite);
 end;
 
-class function TmncSQLiteORM.GetConnectionClass: TmncConnectionClass;
-begin
-  Result := TmncSQLiteConnection;
-end;
-
+initialization
+  Engines.RegisterORM('SQLite', TmncSQLiteORM);
 end.
 

@@ -19,7 +19,7 @@ interface
 
 uses
   SysUtils, Classes, Variants,
-  mncORM, mncConnections, mncMySQL;
+  mncORM, mncConnections;
 
 type
 
@@ -73,10 +73,12 @@ type
     class function FieldTypeToString(FieldType: TmncORM.TormFieldType; FieldSize: Integer): String;
     procedure Created; override;
   public
-    class function GetConnectionClass: TmncConnectionClass; override;
   end;
 
 implementation
+
+uses
+  mncDB;
 
 { TmncMySQLORM.TInsertDataMySQL }
 
@@ -181,9 +183,6 @@ begin
   RegisterGenerator(TInsertData, TInsertDataMySQL);
 end;
 
-class function TmncMySQLORM.GetConnectionClass: TmncConnectionClass;
-begin
-  Result := TmncMySQLConnection;
-end;
-
+initialization
+  Engines.RegisterORM('MySQL', TmncMySQLORM);
 end.

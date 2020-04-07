@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CONFIG>
-  <Package Version="4">
+  <Package Version="5">
     <PathDelim Value="\"/>
     <Name Value="MiniConnections"/>
     <CompilerOptions>
@@ -34,150 +34,153 @@
     </CompilerOptions>
     <Description Value="Mini Connection, DB and Streams"/>
     <Version Major="1" Release="1"/>
-    <Files Count="32">
-      <Item1>
-        <Filename Value="mncConnections.pas"/>
-        <UnitName Value="mncConnections"/>
-      </Item1>
-      <Item2>
-        <Filename Value="mncCSV.pas"/>
-        <UnitName Value="mncCSV"/>
-      </Item2>
-      <Item3>
-        <Filename Value="mncCSVExchanges.pas"/>
-        <UnitName Value="mncCSVExchanges"/>
-      </Item3>
-      <Item4>
-        <Filename Value="mncCommons.pas"/>
-        <UnitName Value="mncCommons"/>
-      </Item4>
-      <Item5>
-        <Filename Value="mncDB.pas"/>
-        <UnitName Value="mncDB"/>
-      </Item5>
-      <Item6>
-        <Filename Value="mncSQL.pas"/>
-        <UnitName Value="mncSQL"/>
-      </Item6>
-      <Item7>
-        <Filename Value="postgre\mncPGHeader.pas"/>
-        <UnitName Value="mncPGHeader"/>
-      </Item7>
-      <Item8>
-        <Filename Value="postgre\mncPostgre.pas"/>
-        <UnitName Value="mncPostgre"/>
-      </Item8>
-      <Item9>
-        <Filename Value="firebird\mncSQLDA.pas"/>
-        <UnitName Value="mncSQLDA"/>
-      </Item9>
-      <Item10>
-        <Filename Value="firebird\mncFBBlob.pas"/>
-        <UnitName Value="mncFBBlob"/>
-      </Item10>
-      <Item11>
-        <Filename Value="firebird\mncFBClient.pas"/>
-        <UnitName Value="mncFBClient"/>
-      </Item11>
-      <Item12>
-        <Filename Value="firebird\mncFBErrors.pas"/>
-        <UnitName Value="mncFBErrors"/>
-      </Item12>
-      <Item13>
-        <Filename Value="firebird\mncFBHeader.pas"/>
-        <UnitName Value="mncFBHeader"/>
-      </Item13>
-      <Item14>
-        <Filename Value="firebird\mncFBStrings.pas"/>
-        <UnitName Value="mncFBStrings"/>
-      </Item14>
-      <Item15>
-        <Filename Value="firebird\mncFBTypes.pas"/>
-        <UnitName Value="mncFBTypes"/>
-      </Item15>
-      <Item16>
-        <Filename Value="firebird\mncFBUtils.pas"/>
-        <UnitName Value="mncFBUtils"/>
-      </Item16>
-      <Item17>
-        <Filename Value="firebird\mncFirebird.pas"/>
-        <UnitName Value="mncFirebird"/>
-      </Item17>
-      <Item18>
-        <Filename Value="ui\CSVOptionsForms.pas"/>
-        <UnitName Value="CSVOptionsForms"/>
-      </Item18>
-      <Item19>
-        <Filename Value="sqlite\mncSQLite.pas"/>
-        <UnitName Value="mncSQLite"/>
-      </Item19>
-      <Item20>
-        <Filename Value="ui\ParamsForms.pas"/>
-        <UnitName Value="ParamsForms"/>
-      </Item20>
-      <Item21>
-        <Filename Value="sqlite\mncSQLiteHeader.pas"/>
-        <UnitName Value="mncSQLiteHeader"/>
-      </Item21>
-      <Item22>
-        <Filename Value="firebird\mncFBMeta.pas"/>
-        <UnitName Value="mncFBMeta"/>
-      </Item22>
-      <Item23>
-        <Filename Value="sqlite\mncSQLiteMeta.pas"/>
-        <UnitName Value="mncSQLiteMeta"/>
-      </Item23>
-      <Item24>
-        <Filename Value="mysql\mncMySQLdyn.pp"/>
-        <UnitName Value="mncMySQLdyn"/>
-      </Item24>
-      <Item25>
-        <Filename Value="mysql\mncMySQLMeta.pas"/>
-        <UnitName Value="mncMySQLMeta"/>
-      </Item25>
-      <Item26>
-        <Filename Value="mysql\mncMySQL.pas"/>
-        <UnitName Value="mncMySQL"/>
-      </Item26>
-      <Item27>
+    <Files>
+      <Item>
         <Filename Value="MiniConnections.pas"/>
         <UnitName Value="MiniConnections"/>
-      </Item27>
-      <Item28>
+      </Item>
+      <Item>
+        <Filename Value="mncConnections.pas"/>
+        <UnitName Value="mncConnections"/>
+      </Item>
+      <Item>
+        <Filename Value="mncCSV.pas"/>
+        <UnitName Value="mncCSV"/>
+      </Item>
+      <Item>
+        <Filename Value="mncCSVExchanges.pas"/>
+        <UnitName Value="mncCSVExchanges"/>
+      </Item>
+      <Item>
+        <Filename Value="mncCommons.pas"/>
+        <UnitName Value="mncCommons"/>
+      </Item>
+      <Item>
+        <Filename Value="mncDB.pas"/>
+        <UnitName Value="mncDB"/>
+      </Item>
+      <Item>
         <Filename Value="mncMeta.pas"/>
         <UnitName Value="mncMeta"/>
-      </Item28>
-      <Item29>
+      </Item>
+      <Item>
         <Filename Value="mncORM.pas"/>
         <UnitName Value="mncORM"/>
-      </Item29>
-      <Item30>
-        <Filename Value="mncSQLUtils.pas"/>
-        <UnitName Value="mncSQLUtils"/>
-      </Item30>
-      <Item31>
+      </Item>
+      <Item>
+        <Filename Value="mncSQL.pas"/>
+        <UnitName Value="mncSQL"/>
+      </Item>
+      <Item>
+        <Filename Value="postgre\mncPostgre.pas"/>
+        <UnitName Value="mncPostgre"/>
+      </Item>
+      <Item>
+        <Filename Value="postgre\mncPGHeader.pas"/>
+        <UnitName Value="mncPGHeader"/>
+      </Item>
+      <Item>
+        <Filename Value="postgre\mncPGMeta.pas"/>
+        <UnitName Value="mncPGMeta"/>
+      </Item>
+      <Item>
+        <Filename Value="firebird\mncFBBlob.pas"/>
+        <UnitName Value="mncFBBlob"/>
+      </Item>
+      <Item>
+        <Filename Value="firebird\mncSQLDA.pas"/>
+        <UnitName Value="mncSQLDA"/>
+      </Item>
+      <Item>
+        <Filename Value="firebird\mncFBMeta.pas"/>
+        <UnitName Value="mncFBMeta"/>
+      </Item>
+      <Item>
+        <Filename Value="firebird\mncFBClient.pas"/>
+        <UnitName Value="mncFBClient"/>
+      </Item>
+      <Item>
+        <Filename Value="firebird\mncFBErrors.pas"/>
+        <UnitName Value="mncFBErrors"/>
+      </Item>
+      <Item>
+        <Filename Value="firebird\mncFBHeader.pas"/>
+        <UnitName Value="mncFBHeader"/>
+      </Item>
+      <Item>
+        <Filename Value="firebird\mncFBStrings.pas"/>
+        <UnitName Value="mncFBStrings"/>
+      </Item>
+      <Item>
+        <Filename Value="firebird\mncFBTypes.pas"/>
+        <UnitName Value="mncFBTypes"/>
+      </Item>
+      <Item>
+        <Filename Value="firebird\mncFBUtils.pas"/>
+        <UnitName Value="mncFBUtils"/>
+      </Item>
+      <Item>
+        <Filename Value="firebird\mncFirebird.pas"/>
+        <UnitName Value="mncFirebird"/>
+      </Item>
+      <Item>
+        <Filename Value="sqlite\mncSQLite.pas"/>
+        <UnitName Value="mncSQLite"/>
+      </Item>
+      <Item>
+        <Filename Value="sqlite\mncSQLiteHeader.pas"/>
+        <UnitName Value="mncSQLiteHeader"/>
+      </Item>
+      <Item>
+        <Filename Value="sqlite\mncSQLiteMeta.pas"/>
+        <UnitName Value="mncSQLiteMeta"/>
+      </Item>
+      <Item>
         <Filename Value="sqlite\mncSQLiteORM.pas"/>
         <UnitName Value="mncSQLiteORM"/>
-      </Item31>
-      <Item32>
+      </Item>
+      <Item>
+        <Filename Value="mysql\mncMySQLdyn.pp"/>
+        <UnitName Value="mncMySQLdyn"/>
+      </Item>
+      <Item>
+        <Filename Value="mysql\mncMySQLMeta.pas"/>
+        <UnitName Value="mncMySQLMeta"/>
+      </Item>
+      <Item>
+        <Filename Value="mysql\mncMySQL.pas"/>
+        <UnitName Value="mncMySQL"/>
+      </Item>
+      <Item>
         <Filename Value="mysql\mncMySQLORM.pas"/>
         <UnitName Value="mncMySQLORM"/>
-      </Item32>
+      </Item>
+      <Item>
+        <Filename Value="mncSQLUtils.pas"/>
+        <UnitName Value="mncSQLUtils"/>
+      </Item>
+      <Item>
+        <Filename Value="ui\ParamsForms.pas"/>
+        <UnitName Value="ParamsForms"/>
+      </Item>
+      <Item>
+        <Filename Value="ui\CSVOptionsForms.pas"/>
+        <UnitName Value="CSVOptionsForms"/>
+      </Item>
     </Files>
-    <RequiredPkgs Count="2">
-      <Item1>
+    <RequiredPkgs>
+      <Item>
         <PackageName Value="LCL"/>
-      </Item1>
-      <Item2>
+      </Item>
+      <Item>
         <PackageName Value="MiniCommons"/>
-      </Item2>
+      </Item>
     </RequiredPkgs>
     <UsageOptions>
       <UnitPath Value="$(PkgOutDir)"/>
     </UsageOptions>
     <PublishOptions>
       <Version Value="2"/>
-      <IgnoreBinaries Value="False"/>
     </PublishOptions>
     <CustomOptions Items="ExternHelp" Version="2">
       <_ExternHelp Items="Count"/>

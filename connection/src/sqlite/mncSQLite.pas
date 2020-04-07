@@ -962,5 +962,5 @@ begin
 end;
 
 initialization
-  Engines.RegisterConnection('SQLite', 'SQLite Database', TmncSQLiteConnection, TmncSQLiteORM);
+  Engines.RegisterConnection('SQLite', 'SQLite Database', TmncSQLiteConnection);
 end.

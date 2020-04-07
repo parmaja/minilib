@@ -8,12 +8,12 @@ unit MiniConnections;
 interface
 
 uses
-  mncConnections, mncCSV, mncCSVExchanges, mncCommons, mncDB, mncSQL, 
-  mncPGHeader, mncPostgre, mncSQLDA, mncFBBlob, mncFBClient, mncFBErrors, 
-  mncFBHeader, mncFBStrings, mncFBTypes, mncFBUtils, mncFirebird, 
-  CSVOptionsForms, mncSQLite, ParamsForms, mncSQLiteHeader, mncFBMeta, 
-  mncSQLiteMeta, mncMySQLdyn, mncMySQLMeta, mncMySQL, mncMeta, mncORM, 
-  mncSQLUtils, mncSQLiteORM, mncMySQLORM;
+  mncConnections, mncCSV, mncCSVExchanges, mncCommons, mncDB, mncMeta, mncORM, 
+  mncSQL, mncPostgre, mncPGHeader, mncPGMeta, mncFBBlob, mncSQLDA, mncFBMeta, 
+  mncFBClient, mncFBErrors, mncFBHeader, mncFBStrings, mncFBTypes, mncFBUtils, 
+  mncFirebird, mncSQLite, mncSQLiteHeader, mncSQLiteMeta, mncSQLiteORM, 
+  mncMySQLdyn, mncMySQLMeta, mncMySQL, mncMySQLORM, mncSQLUtils, ParamsForms, 
+  CSVOptionsForms;
 
 implementation
 

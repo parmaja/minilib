@@ -7,13 +7,15 @@ uses
   cthreads,
   {$ENDIF}{$ENDIF}
   Interfaces, // this includes the LCL widgetset
-  Forms, MainForms, appSchema, mncORM, mncFirebird, mncMySQLORM, mncSQLiteORM
+  Forms, MainForms, appSchema, mncORM, mncMeta, mncFirebird, mncMySQLORM,
+  mncSQLiteORM
   { you can add units after this };
 
 {$R *.res}
 
 begin
   RequireDerivedFormResource :=True;
+  Application.Title :='Universal';
   Application.Scaled :=True;
   Application.Initialize;
   Application.CreateForm(TMainForm, MainForm);

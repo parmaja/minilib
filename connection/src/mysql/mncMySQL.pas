@@ -16,7 +16,8 @@ unit mncMySQL;
 interface
 
 uses
-  Classes, SysUtils, Variants, ctypes,
+  Classes, SysUtils, Variants,
+  {$ifdef FPC} ctypes, {$endif}
   mncCommons, mncMeta, mncMySQLdyn,
   mncConnections, mncSQL;
 
@@ -1258,5 +1259,5 @@ begin
 end;
 
 initialization
-  Engines.RegisterConnection('MySQL', 'MySQL Database', TmncMySQLConnection, tmncMySQLORM);
+  Engines.RegisterConnection('MySQL', 'MySQL Database', TmncMySQLConnection);
 end.

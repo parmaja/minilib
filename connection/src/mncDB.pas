@@ -17,7 +17,7 @@ interface
 
 uses
   SysUtils, Classes, Contnrs,
-  mncCommons, mncConnections, mncORM;
+  mncCommons, mncConnections, mncORM, mncMeta;
 
 type
   { TmncEngine }
@@ -28,6 +28,7 @@ type
     Title: string;
     ConnectionClass: TmncConnectionClass;
     ORMClass: TmncORMClass;
+    MetaClass: TmncMetaClass;
   end;
 
 { TmncEngines }
@@ -36,11 +37,17 @@ type
   private
     function GetItems(Index: Integer): TmncEngine;
   public
-    function RegisterConnection(vName, vTitle: string; vConnectionClass: TmncConnectionClass; vORMClass: TmncORMClass = nil): TmncEngine;
-    function Find(vName: string): TmncEngine;
+    function RegisterConnection(vName, vTitle: string; vConnectionClass: TmncConnectionClass): TmncEngine;
+    function RegisterORM(vName: string; vORMClass: TmncORMClass): TmncEngine;
+    function RegisterMeta(vName: string; vMetaClass: TmncMetaClass): TmncEngine;
+    function Find(vName: string): TmncEngine; overload;
+    function Find(vORM: TmncORM): TmncEngine; overload;
     function IndexOf(vName: string): Integer;
-    function CreateConnection(vModel: string): TmncConnection;
-    procedure EnumEngines(Strings: TStrings);
+    function CreateConnection(vModel: string): TmncConnection; overload;
+    function CreateConnection(vORM: TmncORM): TmncConnection; overload;
+    procedure EnumConnections(Strings: TStrings);
+    procedure EnumORMs(Strings: TStrings);
+    procedure EnumMatas(Strings: TStrings);
     property Items[Index:Integer]: TmncEngine read GetItems; default;
   end;
 
@@ -65,18 +72,50 @@ begin
   Result := inherited Items[Index] as TmncEngine;
 end;
 
-function TmncEngines.RegisterConnection(vName, vTitle: string; vConnectionClass: TmncConnectionClass; vORMClass: TmncORMClass): TmncEngine;
+function TmncEngines.RegisterConnection(vName, vTitle: string; vConnectionClass: TmncConnectionClass): TmncEngine;
 begin
   Result := Find(vName);
-  if Result <> nil then
+  if (Result <> nil) and (Result.ConnectionClass <> nil) then
     raise exception.Create(vName + ' is already registered');
 
-  Result := TmncEngine.Create;
-  Result.Name := vName;
-  Result.Title := vTitle;
+  if Result = nil then
+  begin
+    Result := TmncEngine.Create;
+    Result.Name := vName;
+    inherited Add(Result);
+  end;
   Result.ConnectionClass := vConnectionClass;
+  Result.Title := vTitle;
+end;
+
+function TmncEngines.RegisterORM(vName: string; vORMClass: TmncORMClass): TmncEngine;
+begin
+  Result := Find(vName);
+  if (Result <> nil) and (Result.ORMClass <> nil) then
+    raise exception.Create(vName + ' is already registered');
+
+  if Result = nil then
+  begin
+    Result := TmncEngine.Create;
+    Result.Name := vName;
+    inherited Add(Result);
+  end;
   Result.ORMClass := vORMClass;
-  inherited Add(Result);
+end;
+
+function TmncEngines.RegisterMeta(vName: string; vMetaClass: TmncMetaClass): TmncEngine;
+begin
+  Result := Find(vName);
+  if (Result <> nil) and (Result.MetaClass <> nil) then
+    raise exception.Create(vName + ' is already registered');
+
+  if Result = nil then
+  begin
+    Result := TmncEngine.Create;
+    Result.Name := vName;
+    inherited Add(Result);
+  end;
+  Result.MetaClass := vMetaClass;
 end;
 
 function TmncEngines.Find(vName: string): TmncEngine;
@@ -87,6 +126,21 @@ begin
   for i := 0 to Count -1 do
   begin
     if SameText(vName, Items[i].Name) then
+    begin
+      Result := Items[i];
+      break;
+    end;
+  end;
+end;
+
+function TmncEngines.Find(vORM: TmncORM): TmncEngine;
+var
+  i: Integer;
+begin
+  Result := nil;
+  for i := 0 to Count -1 do
+  begin
+    if Items[i].ORMClass = vORM.ClassType then
     begin
       Result := Items[i];
       break;
@@ -121,13 +175,54 @@ begin
     raise EmncException.Create('Model ' + vModel + ' not found');
 end;
 
-procedure TmncEngines.EnumEngines(Strings: TStrings);
+function TmncEngines.CreateConnection(vORM: TmncORM): TmncConnection;
+var
+  P: TmncEngine;
+begin
+  Result := nil;
+  P := Find(vORM);
+  if P <> nil then
+    Result := P.ConnectionClass.Create
+  else
+    raise EmncException.Create('ORM class not not found');
+end;
+
+procedure TmncEngines.EnumConnections(Strings: TStrings);
 var
   item: TmncEngine;
 begin
   for item in Self do
   begin
-    Strings.AddObject(Item.Title, Item);
+    if item.ConnectionClass <> nil then
+      Strings.AddObject(Item.Title, Item);
+  end;
+end;
+
+procedure TmncEngines.EnumORMs(Strings: TStrings);
+var
+  item: TmncEngine;
+begin
+  for item in Self do
+  begin
+    if (item.ORMClass <> nil) then
+      if Item.Title <> '' then
+        Strings.AddObject(Item.Title, Item)
+      else
+        Strings.AddObject(Item.Name, Item)
+  end;
+end;
+
+procedure TmncEngines.EnumMatas(Strings: TStrings);
+var
+  item: TmncEngine;
+begin
+  for item in Self do
+  begin
+    if (item.MetaClass <> nil) then
+      if Item.Title <> '' then
+        Strings.AddObject(Item.Title, Item)
+      else
+        Strings.AddObject(Item.Name, Item)
   end;
 end;
 

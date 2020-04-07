@@ -51,6 +51,9 @@ type
 
 implementation
 
+uses
+  mncDB;
+
 { TmncMetaItems }
 
 function TmncPGMeta.CreateCMD(SQL: string): TmncPGCommand;
@@ -129,5 +132,5 @@ begin
 end;
 
 initialization
-  Meta.RegisterMeta('Postgres', 'PostgresSQL Database', TmncPGMeta, TmncPGConnection);
+  Engines.RegisterMeta('Postgres', TmncPGMeta);
 end.

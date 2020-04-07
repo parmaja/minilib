@@ -25,7 +25,7 @@ unit mncConnections;
 interface
 
 uses
-  Classes, SysUtils, DateUtils, Variants, Contnrs, SyncObjs,
+  Classes, SysUtils, DateUtils, Variants, Contnrs, SyncObjs, Types,
   mnFields, mncCommons;
 
 type
@@ -384,8 +384,8 @@ type
     function DoCreateField(vColumn: TmncColumn): TmncField; virtual; abstract;
   public
     constructor Create(vColumns: TmncColumns); virtual;
-    function CreateField(vColumn: TmncColumn): TmncField; overload;
-    function CreateField(vIndex: Integer): TmncField; overload;
+    function CreateField(vColumn: TmncColumn): TmncField; reintroduce; overload;
+    function CreateField(vIndex: Integer): TmncField; reintroduce; overload;
     function FieldByName(vName: string): TmncField;
     function Add(Column: TmncColumn): TmncField; overload;
     function Add(Column: TmncColumn; Value: Variant): TmncField; overload;
@@ -798,7 +798,7 @@ begin
   end;
 end;
 
-function TmncConnection.QueryInterface(constref iid: tguid; out obj): longint; stdcall;
+function TmncConnection.QueryInterface({$IFDEF FPC}constref{$ELSE}const{$ENDIF} iid : tguid;out obj) : longint;
 begin
   if GetInterface(IID, Obj) then
     Result := 0

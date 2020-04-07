@@ -15,7 +15,7 @@ interface
 
 uses
   Classes, SysUtils, Contnrs, Variants,
-  mnClasses, mncConnections;
+  mnClasses;
 
 type
 
@@ -63,7 +63,7 @@ type
     Index: Integer;
     constructor Create;
     destructor Destroy; override;
-    procedure Add(S: string; Options: TCallbackObjectOptions = []); virtual; abstract; overload;
+    procedure Add(S: string; Options: TCallbackObjectOptions = []); overload; virtual; abstract;
     procedure Add(Level: Integer; S: string; Options: TCallbackObjectOptions = []); overload;
     property CallbackObject: TObject read FCallbackObject write FCallbackObject;
     property Params: TStringList read FParams;
@@ -266,13 +266,13 @@ type
       protected
         ReferenceInfoStr: TReferenceInfoStr;
         procedure Check; override;
-        function Table: TTable;
       public
         ReferenceInfo: TReferenceInfoLink;
         constructor Create(AFields: TFields; AName: String; AFieldType: TormFieldType; AOptions: TormFieldOptions = []);
         function SQLName: string; override;
         function FullPathName: string;//no qoute please
         function Parent: TFields;
+        function Table: TTable;
         property Options: TormFieldOptions read FOptions write FOptions;
         property Filter: TFieldFilter read FFilter write FFilter;
         property DefaultValue: Variant read FDefaultValue write FDefaultValue;
@@ -377,9 +377,6 @@ type
     function GenerateSQL(vSQL: TStrings): Boolean; overload;
 
     procedure RegisterGenerator(AObjectClass: TormObjectClass; AGeneratorClass: TormGeneratorClass);
-
-    class function GetConnectionClass: TmncConnectionClass; virtual; abstract;
-    class function CreateConnection: TmncConnection;
 
     property ObjectClasses: TRegObjects read FObjectClasses;
     property QuoteChar: string read FQuoteChar write FQuoteChar; //Empty, it will be used with SQLName
@@ -559,7 +556,7 @@ begin
         aUnique := 'unique '
       else
         aUnique := '';
-      SQL.Add(vLevel, 'create ' + aUnique + 'index ' + IndexList[i].Name + ' on ' + Table.SQLName + '(' + IndexList[i].Fields + ')');
+      SQL.Add(vLevel, 'create ' + aUnique + 'index ' + IndexList[i].Name + ' on ' + Table.SQLName + '(' + IndexList[i].Fields + ')', [cboEndLine, cboEndChunk]);
     end;
   end;
 end;
@@ -593,7 +590,7 @@ begin
       else if rfoSetNull = Field.ReferenceInfo.UpdateOption then
         S := S + ' on update set null';
 
-      SQL.Add(vLevel + 1, S , []);
+      SQL.Add(vLevel + 1, S );
     end;
   end;
 end;
@@ -706,7 +703,6 @@ begin
         if IndexGroups.Count > 0 then
         begin
           GenExternalIndexes(ATable, IndexGroups, SQL, vLevel);
-          SQL.Add('', [cboEndChunk]);
         end;
 
     finally
@@ -1168,11 +1164,6 @@ begin
   aRegObject.ObjectClass := AObjectClass;
   aRegObject.GeneratorClass := AGeneratorClass;
   ObjectClasses.Add(aRegObject);
-end;
-
-class function TmncORM.CreateConnection: TmncConnection;
-begin
-  Result := GetConnectionClass.Create;
 end;
 
 { TField }

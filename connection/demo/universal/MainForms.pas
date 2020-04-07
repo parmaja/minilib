@@ -8,7 +8,7 @@ uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, ExtCtrls,
   IniFiles,
   SynEdit, SynHighlighterSQL,
-  mncDB, mncConnections, mncSQL, mncSQLite, mncMySQL, mncFirebird,
+  mncDB, mncConnections, mncSQL, mncSQLite, mncPostgre, mncMySQL, mncFirebird,
   mncORM, mncMySQLORM, mncSQLiteORM, {mncPGORM, mncFBORM}
   appSchema;
 
@@ -101,7 +101,7 @@ begin
   Engine := TEngine.Create;
   Engine.ORM := CreateORM((EnginesCbo.Items.Objects[EnginesCbo.ItemIndex] as TmncEngine).ORMClass);
   Engine.ORM.GenerateSQL(Engine.InitSQL);
-  Engine.Connection := Engine.ORM.CreateConnection as TmncSQLConnection;
+  Engine.Connection := Engines.CreateConnection(Engine.ORM) as TmncSQLConnection;
   if ccPath in Engine.Connection.Capabilities then
     Engine.Connection.Resource := Application.Location + DataEdit.Text + Engine.Connection.GetExtension
   else
@@ -132,7 +132,7 @@ begin
   finally
     IniFile.Free;
   end;
-  Engines.EnumEngines(EnginesCbo.Items);
+  Engines.EnumORMs(EnginesCbo.Items);
   EnginesCbo.ItemIndex := 0;
 end;
 

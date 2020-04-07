@@ -52,6 +52,9 @@ type
 
 implementation
 
+uses
+  mncDB;
+
 { TmncMetaItems }
 
 function TmncSQLiteMeta.GetSession: TmncSession;
@@ -268,5 +271,5 @@ begin
 end;
 
 initialization
-  Meta.RegisterMeta('SQLite', 'SQLite Database', TmncSQLiteMeta, TmncSQLiteConnection);
+  Engines.RegisterMeta('SQLite', TmncSQLiteMeta);
 end.
