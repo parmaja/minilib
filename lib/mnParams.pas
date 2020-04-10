@@ -53,6 +53,8 @@ type
     property IsEmpty: Boolean read GetIsEmpty;
   end;
 
+  { IParams }
+
   IParams = interface(IFields)['{4F35798E-8B1B-4FC2-9710-AAC058122A6D}']
     function GetRefCount: Integer;
     function GetName: string;
@@ -63,7 +65,7 @@ type
     procedure SetChild(Value: TObject);
     function GetChild: TObject;
     function GetItems(Index: Integer): TIParam;
-    function GetParam(Index: string): TIParam;
+    function GetParam(const Index: string): TIParam;
 
     function IsExist(const Name: string): Boolean;
     function IsEmpty(const Name: string): Boolean;
@@ -107,9 +109,9 @@ type
     procedure SetText(const Value: string);
     function GetItems(Index: Integer): TIParam;
     procedure SetItems(Index: Integer; const Value: TIParam);
-    function GetParam(Index: string): TIParam;
-    function GetIField(FieldName: string): IField;
-    function GetValues(Index: string): Variant;
+    function GetParam(const Index: string): TIParam;
+    function GetIField(const FieldName: string): IField;
+    function GetValues(const Index: string): Variant;
     procedure SetChild(Value: TObject);
     function GetChild: TObject;
   protected
@@ -186,14 +188,14 @@ begin
   Result := TIParam(FParams.Items[Index]);
 end;
 
-function TIParams.GetParam(Index: string): TIParam;
+function TIParams.GetParam(const Index: string): TIParam;
 begin
   Result := Find(Index);
   if Result = nil then
     raise Exception.Create('"' + Index + '" param not found');
 end;
 
-function TIParams.GetIField(FieldName: string): IField;
+function TIParams.GetIField(const FieldName: string): IField;
 begin
   Result := Find(FieldName);
 end;
@@ -435,7 +437,7 @@ begin
     Result := Format('%s%s=%s'#13#10, [Result, Items[i].Name, Items[i].AsString]);
 end;
 
-function TIParams.GetValues(Index: string): Variant;
+function TIParams.GetValues(const Index: string): Variant;
 var
   aParam: TIParam;
 begin

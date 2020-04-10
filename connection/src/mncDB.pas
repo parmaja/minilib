@@ -42,6 +42,7 @@ type
     function RegisterMeta(vName: string; vMetaClass: TmncMetaClass): TmncEngine;
     function Find(vName: string): TmncEngine; overload;
     function Find(vORM: TmncORM): TmncEngine; overload;
+    function Find(vConnection: TmncConnection): TmncEngine; overload;
     function IndexOf(vName: string): Integer;
     function CreateConnection(vModel: string): TmncConnection; overload;
     function CreateConnection(vORM: TmncORM): TmncConnection; overload;
@@ -141,6 +142,21 @@ begin
   for i := 0 to Count -1 do
   begin
     if Items[i].ORMClass = vORM.ClassType then
+    begin
+      Result := Items[i];
+      break;
+    end;
+  end;
+end;
+
+function TmncEngines.Find(vConnection: TmncConnection): TmncEngine;
+var
+  i: Integer;
+begin
+  Result := nil;
+  for i := 0 to Count -1 do
+  begin
+    if Items[i].ConnectionClass = vConnection.ClassType then
     begin
       Result := Items[i];
       break;

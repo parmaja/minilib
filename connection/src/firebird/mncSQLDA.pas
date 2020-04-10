@@ -1454,6 +1454,7 @@ var
   s: string;
 begin
   s := GetAsString;
+  Result := '';
   SetLength(Result, Length(s) * 2);
   BinToHex(PChar(s), @Result[1], Length(s));
 end;
@@ -1462,6 +1463,7 @@ procedure TmncSQLVAR.SetAsHex(const AValue: string);
 var
   s: string;
 begin
+  s := '';
   SetLength(s, Length(AValue) div 2);
   HexToBin(PChar(AValue), @s[1], Length(s));
   AsString := s;

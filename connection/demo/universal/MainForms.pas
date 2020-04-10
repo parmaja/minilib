@@ -9,7 +9,7 @@ uses
   IniFiles,
   SynEdit, SynHighlighterSQL,
   mncDB, mncConnections, mncSQL, mncSQLite, mncPostgre, mncMySQL, mncFirebird,
-  mncORM, mncMySQLORM, mncSQLiteORM, {mncPGORM, mncFBORM}
+  mncORM, mncMySQLORM, mncSQLiteORM, mncPGORM,{ mncFBORM}
   appSchema;
 
 type
@@ -97,25 +97,33 @@ end;
 
 procedure TMainForm.ConnectBtnClick(Sender: TObject);
 begin
-  FreeAndNil(Engine);
-  Engine := TEngine.Create;
-  Engine.ORM := CreateORM((EnginesCbo.Items.Objects[EnginesCbo.ItemIndex] as TmncEngine).ORMClass);
-  Engine.ORM.GenerateSQL(Engine.InitSQL);
-  Engine.Connection := Engines.CreateConnection(Engine.ORM) as TmncSQLConnection;
-  if ccPath in Engine.Connection.Capabilities then
-    Engine.Connection.Resource := Application.Location + DataEdit.Text + Engine.Connection.GetExtension
-  else
-    Engine.Connection.Resource := DataEdit.Text;
-  Engine.Connection.Host := HostEdit.Text;
-  Engine.Connection.UserName := UserEdit.Text;
-  Engine.Connection.Password := PasswordEdit.Text;
-  Engine.Connection.DropDatabase(True);
-  Engine.Connection.CreateDatabase;
-  Engine.Connection.Connect;
-  LogEdit.Text := Engine.Connection.Resource + ' connected';
-  Engine.Session := Engine.Connection.CreateSession;
-  Engine.Session.Start;
-  Engine.Session.ExecuteScript(Engine.InitSQL);
+  try
+    FreeAndNil(Engine);
+    Engine := TEngine.Create;
+    Engine.ORM := CreateORM((EnginesCbo.Items.Objects[EnginesCbo.ItemIndex] as TmncEngine).ORMClass);
+    Engine.ORM.GenerateSQL(Engine.InitSQL);
+    Engine.Connection := Engines.CreateConnection(Engine.ORM) as TmncSQLConnection;
+    if ccPath in Engine.Connection.Capabilities then
+      Engine.Connection.Resource := Application.Location + DataEdit.Text + Engine.Connection.GetExtension
+    else
+      Engine.Connection.Resource := DataEdit.Text;
+    Engine.Connection.Host := HostEdit.Text;
+    Engine.Connection.UserName := UserEdit.Text;
+    Engine.Connection.Password := PasswordEdit.Text;
+    Engine.Connection.DropDatabase(True);
+    Engine.Connection.CreateDatabase;
+    Engine.Connection.Connect;
+    LogEdit.Lines.Add(Engine.Connection.Resource + ' connected');
+    Engine.Session := Engine.Connection.CreateSession;
+    Engine.Session.Start;
+    Engine.Session.ExecuteScript(Engine.InitSQL);
+  except
+    on E: EXception do
+    begin
+      LogEdit.Lines.Add(E.Message);
+      raise;
+    end;
+  end;
 end;
 
 procedure TMainForm.FormCreate(Sender: TObject);

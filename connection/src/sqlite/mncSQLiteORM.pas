@@ -131,6 +131,8 @@ begin
     begin
       if VarType(DefaultValue) = varString then
         SQL.Add(' default ''' + DefaultValue + '''')
+      else if VarType(DefaultValue) = varBoolean then
+        SQL.Add(' default ' + IntToStr(Ord(Boolean(DefaultValue))))
       else
         SQL.Add(' default ' + VarToStr(DefaultValue));
     end;

@@ -39,7 +39,8 @@ type
     constructor Create; override;
     function CreateSession: TmncSQLSession; virtual; abstract;
 
-    function IsDatabaseExists(vName: string): Boolean; virtual; abstract;
+    function IsDatabaseExists(vName: string): Boolean; overload; virtual; abstract;
+    function IsDatabaseExists: Boolean; overload;
     procedure CreateDatabase(const vName: string; CheckExists: Boolean = False); virtual; abstract; overload;
     procedure CreateDatabase(CheckExists: Boolean = False); overload;
     procedure DropDatabase(const vName: string; CheckExists: Boolean = False); virtual; abstract; overload;
@@ -268,8 +269,9 @@ procedure TmncSQLConnection.CloneExecute(const vResource, vSQL: string);
 var
   aConn: TmncSQLConnection;
 begin
-  aConn := Clone(vResource);
+  aConn := Clone(vResource, False);
   try
+    aConn.Connect;
     aConn.Execute(vSQL);
   finally
     aConn.Free;
@@ -302,6 +304,11 @@ end;
 constructor TmncSQLConnection.Create;
 begin
   inherited Create;
+end;
+
+function TmncSQLConnection.IsDatabaseExists: Boolean;
+begin
+  Result := IsDatabaseExists(Resource);
 end;
 
 procedure TmncSQLConnection.CreateDatabase(CheckExists: Boolean);

@@ -41,13 +41,13 @@ type
   end;
 
   IFields = interface(IStreamPersist)
-    function GetValues(Index: string): Variant;
-    property Values[Index: string]: Variant read GetValues;
+    function GetValues(const Index: string): Variant;
+    property Values[const Index: string]: Variant read GetValues;
 
     function GetCount: Integer;
     property Count: Integer read GetCount;
 
-    function GetIField(FieldName: string): IField;
+    function GetIField(const FieldName: string): IField;
   end;
 
   { TmnCustomField }
@@ -220,9 +220,9 @@ type
     //function GetItem(Index: Integer): TmnField;
   protected
     function CreateField: TmnField; virtual;
-    procedure SetValues(Index: string; const AValue: Variant);
-    function GetValues(Index: string): Variant;
-    function GetIField(FieldName: string): IField;
+    procedure SetValues(const Index: string; const AValue: Variant);
+    function GetValues(const Index: string): Variant;
+    function GetIField(const FieldName: string): IField;
     function GetCount: Integer;
   public
     function QueryInterface({$ifdef FPC}constref{$else}const{$endif} iid : TGuid; out Obj):HResult; {$ifdef WINDOWS}stdcall{$else}cdecl{$endif};
@@ -234,19 +234,19 @@ type
     function Add(AField: TmnField): Integer; overload;
     function Add(AName, AValue: string): TmnField; overload;
     //This will split the name and value
-    function Put(AName, AValue: string): TmnField; overload;
-    function IsExists(vName: string): Boolean;
-    function FindField(vName: string): TmnField; virtual; //no exception
-//    function ByName(vName: string): TmnField; deprecated; //with exception if not exists
-    function FindByName(vName: string): TmnField; //with exception if not exists
-    function IndexOfName(vName: string): Integer;
-    function RemoveByName(vName: string): Boolean;
+    function Put(const AName, AValue: string): TmnField; overload;
+    function IsExists(const vName: string): Boolean;
+    function FindField(const vName: string): TmnField; virtual; //no exception
+//    function ByName(const vName: string): TmnField; deprecated; //with exception if not exists
+    function FindByName(const vName: string): TmnField; //with exception if not exists
+    function IndexOfName(const vName: string): Integer;
+    function RemoveByName(const vName: string): Boolean;
     //todo IndexOfName, IndexOf
     procedure Clean; virtual;
-    property FieldByName[Index: string]: TmnField read FindByName;
-    property Field[Index: string]: TmnField read FindField;
-    property Exists[Index: string]: Boolean read IsExists;
-    property Values[Index: string]: Variant read GetValues write SetValues; default;
+    property FieldByName[const Index: string]: TmnField read FindByName;
+    property Field[const Index: string]: TmnField read FindField;
+    property Exists[const Index: string]: Boolean read IsExists;
+    property Values[const Index: string]: Variant read GetValues write SetValues; default;
   end;
 
 implementation
@@ -767,7 +767,7 @@ begin
     raise Exception.Create('Field "' + vName + '" not found');
 end;}
 
-function TmnFields.IndexOfName(vName: string): Integer;
+function TmnFields.IndexOfName(const vName: string): Integer;
 var
   i: Integer;
 begin
@@ -782,7 +782,7 @@ begin
   end;
 end;
 
-function TmnFields.IsExists(vName: string): Boolean;
+function TmnFields.IsExists(const vName: string): Boolean;
 begin
   Result := FindField(vName) <> nil;
 end;
@@ -812,7 +812,7 @@ begin
     Result := E_NOINTERFACE;
 end;
 
-function TmnFields.RemoveByName(vName: string): Boolean;
+function TmnFields.RemoveByName(const vName: string): Boolean;
 var
   index: Integer;
 begin
@@ -869,7 +869,7 @@ begin
   raise Exception.Create('Not implemented yet');
 end;
 
-function TmnFields.Put(AName, AValue: string): TmnField;
+function TmnFields.Put(const AName, AValue: string): TmnField;
 begin
   Result := FindField(AName);
   if Result = nil then
@@ -881,7 +881,7 @@ begin
   Result.FValue := AValue;
 end;
 
-procedure TmnFields.SetValues(Index: string; const AValue: Variant);
+procedure TmnFields.SetValues(const Index: string; const AValue: Variant);
 var
   F: TmnField;
 begin
@@ -920,7 +920,7 @@ begin
   end;
 end;
 
-function TmnFields.FindField(vName: string): TmnField;
+function TmnFields.FindField(const vName: string): TmnField;
 var
   i: Integer;
 begin
@@ -940,14 +940,14 @@ begin
   Result := Count;
 end;
 
-function TmnFields.FindByName(vName: string): TmnField;
+function TmnFields.FindByName(const vName: string): TmnField;
 begin
   Result := FindField(vName);
   if Result = nil then
     raise Exception.Create('Field "' + vName + '" not found');
 end;
 
-function TmnFields.GetIField(FieldName: string): IField;
+function TmnFields.GetIField(const FieldName: string): IField;
 begin
   Result := FindField(FieldName);
 end;
@@ -957,7 +957,7 @@ begin
   Result := (inherited GetItem(Index)) as TmnField;
 end;}
 
-function TmnFields.GetValues(Index: string): Variant;
+function TmnFields.GetValues(const Index: string): Variant;
 var
   F: TmnField;
 begin

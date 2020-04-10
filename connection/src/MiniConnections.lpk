@@ -84,6 +84,10 @@
         <UnitName Value="mncPGMeta"/>
       </Item>
       <Item>
+        <Filename Value="postgre\mncPGORM.pas"/>
+        <UnitName Value="mncPGORM"/>
+      </Item>
+      <Item>
         <Filename Value="firebird\mncFBBlob.pas"/>
         <UnitName Value="mncFBBlob"/>
       </Item>

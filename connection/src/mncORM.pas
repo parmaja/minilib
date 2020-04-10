@@ -91,6 +91,7 @@ type
       TormGenerator = class(TObject)
       private
       protected
+        function VarBoolToStr(Value: Variant): string; virtual;
         procedure DefaultGenerateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer);
         function DoGenerateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean; virtual;
       public
@@ -839,6 +840,16 @@ begin
 end;
 
 { TmncORM.TormGenerator }
+
+function TmncORM.TormGenerator.VarBoolToStr(Value: Variant): string;
+begin
+  if VarType(Value) = varBoolean then
+    Result := BoolToStr(Boolean(Value), 'true', 'false')
+  else if VarType(Value) = VarString then
+    Result := Value
+  else
+    Result := BoolToStr(Integer(Value) <> 0, 'true', 'false')
+end;
 
 procedure TmncORM.TormGenerator.DefaultGenerateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer);
 var
@@ -1620,7 +1631,7 @@ end;
 constructor TBooleanField.Create(AFields: TmncORM.TFields; AName: String);
 begin
   inherited Create(AFields, AName, ftBoolean, [foNotNull]);
-  DefaultValue := 0;
+  DefaultValue := True;
 end;
 
 { TRefIDField }

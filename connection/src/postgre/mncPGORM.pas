@@ -1,4 +1,4 @@
-unit mncMySQLORM;
+unit mncPGORM;
 {**
  *  This file is part of the "Mini Connections"
  *
@@ -23,48 +23,48 @@ uses
 
 type
 
-  { TmncMySQLORM }
+  { TmncPGORM }
 
-  TmncMySQLORM = class(TmncStdORM)
+  TmncPGORM = class(TmncStdORM)
   protected
     type
 
-      { TDatabaseMySQL }
+      { TDatabasePG }
 
-      TDatabaseMySQL = class(TormGenerator)
+      TDatabasePG = class(TormGenerator)
       public
       end;
 
-      { TSchemaMySQL }
+      { TSchemaPG }
 
-      TSchemaMySQL = class(TormGenerator)
+      TSchemaPG = class(TormGenerator)
       public
       end;
 
-      { TTableMySQL }
+      { TTablePG }
 
-      TTableMySQL = class(TTableStd)
+      TTablePG = class(TTableStd)
       public
         constructor Create; override;
         function GenForignKey(Field: TField; AExternal: Boolean): string; override;
       end;
 
-      { TFieldsMySQL }
+      { TFieldsPG }
 
-      TFieldsMySQL = class(TFieldsStd)
+      TFieldsPG = class(TFieldsStd)
       public
       end;
 
-      { TFieldMySQL }
+      { TFieldPG }
 
-      TFieldMySQL = class(TormGenerator)
+      TFieldPG = class(TormGenerator)
       public
         function DoGenerateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean; override;
       end;
 
-      { TInsertDataMySQL }
+      { TInsertDataPG }
 
-      TInsertDataMySQL = class(TormGenerator)
+      TInsertDataPG = class(TormGenerator)
       public
         function DoGenerateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean; override;
       end;
@@ -80,9 +80,9 @@ implementation
 uses
   mncDB;
 
-{ TmncMySQLORM.TInsertDataMySQL }
+{ TmncPGORM.TInsertDataPG }
 
-function TmncMySQLORM.TInsertDataMySQL.DoGenerateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
+function TmncPGORM.TInsertDataPG.DoGenerateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
 var
   o: TormObject;
   i: Integer;
@@ -113,24 +113,39 @@ begin
   Result := True;
 end;
 
-{ TmncMySQLORM.TFieldMySQL }
+{ TmncPGORM.TFieldPG }
 
-function TmncMySQLORM.TFieldMySQL.DoGenerateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
+function TmncPGORM.TFieldPG.DoGenerateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer): Boolean;
+var
+  aType: string;
 begin
 //  vSQL.Add(vLevel, Name + ' as Integer'); bug in fpc needs to reproduce but i can
   with AObject as TField do
   begin
-    SQL.Add(vLevel, QuotedSQLName + ' '+ FieldTypeToString(FieldType, FieldSize));
+    if foSequenced in Options then
+    begin
+      case FieldType of
+        ftSmallInteger:
+          aType := 'smallserial';
+        ftInteger:
+          aType := 'serial';
+        ftBigInteger:
+          aType := 'bigserial';
+        else
+          aType := FieldTypeToString(FieldType, FieldSize);
+      end;
+    end
+    else
+      aType := FieldTypeToString(FieldType, FieldSize);
+    SQL.Add(vLevel, QuotedSQLName + ' '+ aType);
     if (foNotNull in Options) or (foPrimary in Options) then
       SQL.Add(' not null');
-    if foSequenced in Options then
-      SQL.Add(' auto_increment');
     if not VarIsEmpty(DefaultValue) then
     begin
       if VarType(DefaultValue) = varString then
         SQL.Add(' default ''' + DefaultValue + '''')
       else if VarType(DefaultValue) = varBoolean then
-        SQL.Add(' default ' + IntToStr(Ord(Boolean(DefaultValue))))
+        SQL.Add(' default ' + VarBoolToStr(DefaultValue))
       else
         SQL.Add(' default ' + VarToStr(DefaultValue));
     end;
@@ -138,9 +153,9 @@ begin
   Result := True;
 end;
 
-{ TmncMySQLORM.TTableMySQL }
+{ TmncPGORM.TTablePG }
 
-constructor TmncMySQLORM.TTableMySQL.Create;
+constructor TmncPGORM.TTablePG.Create;
 begin
   inherited Create;
   GenerateOptions.PK := gnpInternal;
@@ -148,15 +163,15 @@ begin
   GenerateOptions.Indexes := gnpExternal;
 end;
 
-function TmncMySQLORM.TTableMySQL.GenForignKey(Field: TField; AExternal: Boolean): string;
+function TmncPGORM.TTablePG.GenForignKey(Field: TField; AExternal: Boolean): string;
 begin
-  Result := 'foreign key RF_' + Field.Table.Name + Field.ReferenceInfo.Table.Name + Field.ReferenceInfo.Field.Name + '(' + Field.QuotedSQLName + ')'
+  Result := 'constraint RF_' + Field.Table.Name + '_' +  Field.ReferenceInfo.Table.Name + Field.ReferenceInfo.Field.Name + ' foreign key (' + Field.QuotedSQLName + ')'
           +' references ' + Field.ReferenceInfo.Table.QuotedSQLName + '(' + Field.ReferenceInfo.Field.QuotedSQLName + ')';
 end;
 
-{ TmncMySQLORM }
+{ TmncPGORM }
 
-class function TmncMySQLORM.FieldTypeToString(FieldType: TmncORM.TormFieldType; FieldSize: Integer): String;
+class function TmncPGORM.FieldTypeToString(FieldType: TmncORM.TormFieldType; FieldSize: Integer): String;
 begin
   case FieldType of
     ftString: Result := 'varchar('+IntToStr(FieldSize)+')';
@@ -174,17 +189,17 @@ begin
   end;
 end;
 
-procedure TmncMySQLORM.Created;
+procedure TmncPGORM.Created;
 begin
   inherited Created;
-  RegisterGenerator(TDatabase, TDatabaseMySQL);
-  RegisterGenerator(TSchema, TSchemaMySQL);
-  RegisterGenerator(TTable, TTableMySQL);
-  RegisterGenerator(TFields, TFieldsMySQL);
-  RegisterGenerator(TField, TFieldMySQL);
-  RegisterGenerator(TInsertData, TInsertDataMySQL);
+  RegisterGenerator(TDatabase, TDatabasePG);
+  RegisterGenerator(TSchema, TSchemaPG);
+  RegisterGenerator(TTable, TTablePG);
+  RegisterGenerator(TFields, TFieldsPG);
+  RegisterGenerator(TField, TFieldPG);
+  RegisterGenerator(TInsertData, TInsertDataPG);
 end;
 
 initialization
-  Engines.RegisterORM('MySQL', TmncMySQLORM);
+  Engines.RegisterORM('PostgreSQL', TmncPGORM);
 end.

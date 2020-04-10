@@ -83,26 +83,25 @@ type
     FUseSSL: Boolean;
     procedure SetChannel(const Value: string);
   protected
-    function CreateConnection: PPGconn; overload;
-    function CreateConnection(const vDatabase: string): PPGconn; overload;
-
-    procedure InternalConnect(var vHandle: PPGconn);
+    procedure InternalConnect(out vHandle: PPGconn; vDatabase: string = '');
     procedure InternalDisconnect(var vHandle: PPGconn);
     procedure DoConnect; override;
     procedure DoDisconnect; override;
     procedure DoConnected; override;
     function GetConnected:Boolean; override;
 
-    procedure DoResetConnection(PGResult: PPGresult; var vResume: Boolean); virtual;
-    function ResetConnection(PGResult: PPGresult): Boolean;
+    procedure DoResetConnection(PGResult: PPGresult; var vResume: Boolean); virtual; //zaher
+    function ResetConnection(PGResult: PPGresult): Boolean; //zaher
 
   protected
-    procedure RaiseError(Error: Boolean; const ExtraMsg: string = ''); overload;
-    procedure RaiseError(PGResult: PPGresult); overload;
+    procedure InternalRaiseError(vHandle: PPGconn; const ExtraMsg: string = ''); overload;
+    procedure RaiseError(Error: Boolean; const ExtraMsg: string = ''); overload; deprecated;
+    procedure RaiseResultError(PGResult: PPGresult); overload;
     procedure DoNotify(vPID: Integer; const vName, vData: string); virtual;
     procedure Notify(vPID: Integer; const vName, vData: string);
     procedure Listen(const vChannel: string);
     procedure DoInit; override;
+
     function DoGetNextIDSQL(const vName: string; vStep: Integer): string;//?
     procedure DoClone(vConn: TmncSQLConnection); override;
 
@@ -114,16 +113,16 @@ type
 
     function loUnlink(vOID: Integer): Integer;
     function loCopy(vOID: Integer): Integer; overload;
-
-    property Channel: string read FChannel write SetChannel;
+    property Channel: string read FChannel write SetChannel; //TODO make new classes for it
   public
     constructor Create; override;
     destructor Destroy; override;
 
     function CreateSession: TmncSQLSession; override;
-    class function Capabilities: TmncCapabilities; override; class function Name: string; override;
+    class function Capabilities: TmncCapabilities; override;
+    class function Name: string; override;
     property Handle: PPGconn read FHandle;
-    procedure Execute(vCommand: string); overload; override;
+    procedure Execute(vSQL: string); overload; override;
 
     procedure Interrupt;
     //TODO: Reconnect  use PQReset
@@ -182,6 +181,7 @@ type
     procedure SetAsString(const AValue: string); override;
     procedure SetAsDate(const AValue: TDateTime); override;
     procedure SetAsDateTime(const AValue: TDateTime); override;
+  public
   end;
 
   TmncPostgreParams = class(TmncParams)
@@ -240,7 +240,7 @@ type
     FCommand: TmncCustomPGCommand;
   protected
     function DoCreateField(vColumn: TmncColumn): TmncField; override;
-    function Find(vName: string): TmncItem; override;
+    function Find(const vName: string): TmncItem; override;
     property Command: TmncCustomPGCommand read FCommand;
 
   public
@@ -337,12 +337,10 @@ type
 
   TmncPGDDLCommand = class(TmncPGCommand)
   protected
-
     procedure DoPrepare; override;
     procedure DoExecute; override;
     procedure ClearStatement; override;
     procedure DoParse; override;
-
   end;
 
   TmncPGCursorCommand = class(TmncCustomPGCommand)
@@ -369,7 +367,7 @@ function DecodeBytea(vStr: PByte; vLen: Cardinal): string; overload;
 implementation
 
 uses
-  Math, mncPGMeta;
+  Math;
 
 var
   fTokenID: Cardinal = 0;
@@ -426,34 +424,37 @@ begin
   Result := DecodeBytea(PByte(vStr), ByteLength(vStr));
 end;
 
-procedure TmncPGConnection.RaiseError(Error: Boolean; const ExtraMsg: string);
+procedure TmncPGConnection.InternalRaiseError(vHandle: PPGconn; const ExtraMsg: string);
 var
   s : string;
 begin
-  if (Error) then
-  begin
-    //s := 'Postgre connection failed' + #13 + UTF8ToString(PQerrorMessage(FHandle));
-    s := 'Postgre connection failed' + #13 + PQerrorMessage(FHandle);
-    if ExtraMsg <> '' then
-      s := s + ' - ' + ExtraMsg;
-    raise EmncException.Create(s) {$ifdef fpc} at get_caller_frame(get_frame) {$endif};
-  end;
+  //s := 'Postgre connection failed' + #13 + UTF8ToString(PQerrorMessage(FHandle));
+  s := 'Postgre connection failed' + #13 + PQerrorMessage(vHandle);
+  if ExtraMsg <> '' then
+    s := s + ' - ' + ExtraMsg;
+  raise
+    EmncException.Create(s);
 end;
 
-procedure TmncPGConnection.RaiseError(PGResult: PPGresult);
+procedure TmncPGConnection.RaiseError(Error: Boolean; const ExtraMsg: string);
+begin
+  if (Error) then
+    InternalRaiseError(FHandle, ExtraMsg);
+end;
+
+procedure TmncPGConnection.RaiseResultError(PGResult: PPGresult);
 var
-  s : AnsiString;
+  //s : AnsiString;
+  //ExtraMsg: string;
   t: TExecStatusType;
 begin
   t := PQresultStatus(PGResult);
   case t of
     PGRES_BAD_RESPONSE,PGRES_NONFATAL_ERROR, PGRES_FATAL_ERROR:
     begin
-      if not ResetConnection(PGResult) then
-      begin
-        s := PQresultErrorMessage(PGResult);
-        raise EmncException.Create('Postgre command: ' + s) {$ifdef fpc} at get_caller_frame(get_frame) {$endif};
-      end;
+      ResetConnection(PGResult);
+      //s := PQresultErrorMessage(PGResult);
+      //raise EmncException.Create('Postgre command: ' + s);
     end;
   end;
 end;
@@ -544,7 +545,7 @@ begin
     FreeAndNil(FEventListener);
   end;
 
-  if vChannel<>'' then
+  if vChannel <> '' then
   begin
     TPGListenThread.Create(Self, vChannel);
   end;
@@ -560,20 +561,20 @@ begin
   if Result <> 0 then
   begin
     fdd := lo_open(Handle, Result, INV_WRITE or INV_READ);
-    if (fdd<>-1) then
+    if (fdd <> -1) then
     begin
       try
         fds := lo_open(vSrc.Handle, vOID, INV_READ);
-        if (fds<>-1) then
+        if (fds <> -1) then
         begin
           SetLength(s, cBufferSize);
           try
             while True do
             begin
               c := lo_read(vSrc.Handle, fds, PAnsiChar(s), cBufferSize);
-              if c>0 then
+              if c > 0 then
                 lo_write(Handle, fdd, PAnsiChar(s), c);
-              if c<cBufferSize then Break;
+              if c < cBufferSize then Break;
             end;
           finally
             SetLength(s, 0);
@@ -593,29 +594,36 @@ begin
 end;
 
 function TmncPGConnection.loExport(vOID: Integer; const vStream: TStream): Integer;
-
 var
   c, fds: Integer;
   s: ansistring;
 begin
-  fds := lo_open(Handle, vOID, INV_READ);
-  Result := 0;
-  if (fds<>-1) then
+  if vOID<>0 then
   begin
-    SetLength(s, cBufferSize);
-    try
-      while True do
-      begin
-        c := lo_read(Handle, fds, PAnsiChar(s), cBufferSize);
-        if c>0 then
-          vStream.Write(PAnsiChar(s)^, c);
-        if c<cBufferSize then Break;
+    fds := lo_open(Handle, vOID, INV_READ);
+    if (fds<>-1) then
+    begin
+      Result := 0;
+      SetLength(s, cBufferSize);
+      try
+        while True do
+        begin
+          c := lo_read(Handle, fds, PAnsiChar(s), cBufferSize);
+          Inc(Result, c);
+          if c>0 then
+            vStream.Write(PAnsiChar(s)^, c);
+          if c<cBufferSize then Break;
+        end;
+      finally
+        SetLength(s, 0);
+        //lo_close(Handle, fds);
       end;
-    finally
-      SetLength(s, 0);
-      //lo_close(Handle, fds);
-    end;
-  end;
+    end
+    else
+      Result := -1;
+  end
+  else
+    Result := 0;
 end;
 
 function TmncPGConnection.loExport(vOID: Integer; const vFileName: string): Integer;
@@ -724,34 +732,7 @@ begin
   DoNotify(vPID, vName, vData);
 end;
 
-procedure TmncPGConnection.InternalConnect(var vHandle: PPGconn);
-begin
-  vHandle := CreateConnection;
-  try
-    RaiseError(PQstatus(vHandle) = CONNECTION_BAD);
-  except
-    PQfinish(vHandle);
-    vHandle := nil;
-    raise;
-  end;
-end;
-
-procedure TmncPGConnection.InternalDisconnect(var vHandle: PPGconn);
-begin
-  try
-    PQfinish(vHandle);
-    vHandle := nil;
-  except
-    vHandle := nil;
-  end;
-end;
-
-function TmncPGConnection.CreateConnection: PPGconn;
-begin
-  Result := CreateConnection(Resource);
-end;
-
-function TmncPGConnection.CreateConnection(const vDatabase: string): PPGconn;
+procedure TmncPGConnection.InternalConnect(out vHandle: PPGconn; vDatabase: string);
 var
   aHost, aPort: AnsiString;
   aDB, aUser, aPass: AnsiString;
@@ -769,7 +750,11 @@ begin
     aPort := '5432'
   else
     aPort := Port;
-  aDB := LowerCase(vDatabase); //TODO no sure
+  //aDB := LowerCase(vDatabase); //TODO no sure //zaher: no it is wrong
+  if vDatabase <> '' then
+    aDB := vDatabase
+  else
+    aDB := Resource;
   aUser := UserName;
   aPass := Password;
   if UseSSL then
@@ -786,12 +771,32 @@ begin
   //Result := PQsetdbLogin(PAnsiChar(aHost), PAnsiChar(aPort), nil, nil, PAnsiChar(aDB), PAnsiChar(aUser), PAnsiChar(aPass));
   //aUrl := Format('postgresql://%s:%s@%s:%s/%s?sslmode=%s&sslcompression=%s&application_name=%s', [aUser, aPass, aHost, aPort, aDB, aSsl, aSslComp, AppName]);
   if SimpleConnection then
-    Result := PQsetdbLogin(PAnsiChar(aHost), PAnsiChar(aPort), nil, nil, PAnsiChar(aDB), PAnsiChar(aUser), PAnsiChar(aPass))
+    vHandle := PQsetdbLogin(PAnsiChar(aHost), PAnsiChar(aPort), nil, nil, PAnsiChar(aDB), PAnsiChar(aUser), PAnsiChar(aPass))
   else
   begin
-    aUrl := Format('user=%s password=''%s'' host=%s port=%s dbname=%s sslmode=%s sslcompression=%s application_name=''%s''', [aUser, aPass, aHost, aPort, aDB, aSsl, aSslComp, AppName]);
+    aUrl := Format('user=%s password=''%s'' host=%s port=%s dbname=''%s'' sslmode=%s sslcompression=%s application_name=''%s''', [aUser, aPass, aHost, aPort, aDB, aSsl, aSslComp, AppName]);
     //aUrl := Format('postgresql://%s:%s@%s:%s/%s?sslmode=%s&sslcompression=%s&application_name=%s', [aUser, aPass, aHost, aPort, aDB, aSsl, aSslComp, AppName]);
-    Result := PQconnectdb(PAnsiChar(aUrl));
+    vHandle := PQconnectdb(PAnsiChar(aUrl));
+  end;
+
+  try
+    if PQstatus(vHandle) = CONNECTION_BAD then
+      InternalRaiseError(vHandle);
+  except
+    PQfinish(vHandle);
+    vHandle := nil; //<-this mean something wrong in the code
+    raise;
+  end;
+end;
+
+procedure TmncPGConnection.InternalDisconnect(var vHandle: PPGconn);
+begin
+  try
+    PQfinish(vHandle);
+    vHandle := nil;
+  except
+    vHandle := nil;
+    //TODO Why there is no raise
   end;
 end;
 
@@ -815,14 +820,20 @@ function TmncPGConnection.IsDatabaseExists(vName: string): Boolean;
 var
   s: AnsiString;
   r: PPGresult;
+  conn: PPGconn;
 begin
-  s := Format('select 1 from pg_database where datname=''%s''', [LowerCase(vName)]);
-  r := PQexec(FHandle, PAnsiChar(s));
+  InternalConnect(conn, 'postgres');
   try
-    Result := (r<>nil) and (PQntuples(r) = 1);
-    RaiseError(r);
+    s := Format('select 1 from pg_database where datname=''%s''', [LowerCase(vName)]);
+    r := PQexec(conn, PAnsiChar(s));
+    try
+      Result := (r <> nil) and (PQntuples(r) = 1);
+      RaiseResultError(r);
+    finally
+      PQclear(r);
+    end;
   finally
-    PQclear(r);
+    PQfinish(conn);
   end;
 end;
 
@@ -897,15 +908,15 @@ procedure TmncPGConnection.DoResetConnection(PGResult: PPGresult; var vResume: B
 begin
 end;
 
-procedure TmncPGConnection.Execute(vCommand: string);
+procedure TmncPGConnection.Execute(vSQL: string);
 var
   s: utf8string;
   r: PPGresult;
 begin
-  s := vCommand;
-  r := PQexec(FHandle, PChar(s));
+  s := vSQL;
+  r := PQexec(FHandle, PAnsiChar(s));
   try
-    RaiseError(r);
+    RaiseResultError(r);
   finally
     PQclear(r);
   end;
@@ -1036,7 +1047,7 @@ procedure TmncPGCommand.DoExecute;
 var
   Values: TArrayOfPChar;
   P: pointer;
-  f: Integer;//Result Field format
+  f: Integer; //Result Field format
 begin
   Values := nil;
   if FStatement <> nil then
@@ -1058,8 +1069,8 @@ begin
     if IsSingleRowMode then
     begin
       PQsendQueryPrepared(Session.DBHandle, PAnsiChar(FHandle), Binds.Count, P, nil, nil, f);
-      f := PQsetSingleRowMode(Session.DBHandle);
-
+      PQsetSingleRowMode(Session.DBHandle);
+      //f := PQsetSingleRowMode(Session.DBHandle);
       //FStatement := PQgetResult(Session.DBHandle);
       FetchStatement;
     end
@@ -1269,7 +1280,7 @@ end;
 
 function TmncPostgreField.GetAsDouble: Double;
 begin
-  //Result := StrToDoubleNumber(GetData); //zaher check mauybe needit
+  //Result := StrToDoubleNumber(GetData); //zaher check maybe needit
   Result := StrToFloatDef(GetData, 0);
 end;
 
@@ -1425,7 +1436,7 @@ begin
     FFields := Self;
 end;
 
-function TmncPostgreFields.Find(vName: string): TmncItem;
+function TmncPostgreFields.Find(const vName: string): TmncItem;
 begin
   Result := inherited Find(vName);
 end;
@@ -1526,9 +1537,9 @@ begin
   FConnection := vConn;
   FChannel := vChannel;
   FConnection.InternalConnect(FHandle); //TODO should be outside of connection class
-  r := PQexec(FHandle, pansichar('LISTEN "' + vChannel + '";'));
+  r := PQexec(FHandle, PAnsiChar('LISTEN "' + vChannel + '";'));
   try
-    FConnection.RaiseError(r);
+    FConnection.RaiseResultError(r);
   finally
     PQclear(r);
   end;
@@ -1630,8 +1641,6 @@ begin
       GetMem(Result[i], Length(s) + 1);
       //StrMove(PAnsiChar(Result[i]), PAnsiChar(s), Length(s) + 1);
       Move(PAnsiChar(s)^, PAnsiChar(Result[i])^, Length(s) + 1);
-
-
     end;
   end;
 end;
@@ -1820,7 +1829,7 @@ end;
 
 procedure TmncCustomPGCommand.RaiseError(PGResult: PPGresult);
 begin
-  Connection.RaiseError(PGResult);
+  Connection.RaiseResultError(PGResult);
 end;
 
 procedure TmncCustomPGCommand.SetSession(const Value: TmncPGSession);
