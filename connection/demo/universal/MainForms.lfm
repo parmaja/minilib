@@ -2,7 +2,7 @@ object MainForm: TMainForm
   Left = 344
   Height = 385
   Top = 162
-  Width = 719
+  Width = 768
   BorderWidth = 3
   Caption = 'MainForm'
   ChildSizing.LeftRightSpacing = 3
@@ -10,7 +10,7 @@ object MainForm: TMainForm
   ChildSizing.HorizontalSpacing = 3
   ChildSizing.VerticalSpacing = 3
   ClientHeight = 385
-  ClientWidth = 719
+  ClientWidth = 768
   OnCreate = FormCreate
   OnDestroy = FormDestroy
   LCLVersion = '2.1.0.0'
@@ -18,7 +18,7 @@ object MainForm: TMainForm
     Left = 6
     Height = 239
     Top = 64
-    Width = 707
+    Width = 630
     Align = alClient
     Font.CharSet = ANSI_CHARSET
     Font.Height = -15
@@ -524,19 +524,19 @@ object MainForm: TMainForm
     Left = 6
     Height = 24
     Top = 6
-    Width = 707
+    Width = 756
     Align = alTop
     BevelOuter = bvNone
     ChildSizing.HorizontalSpacing = 3
     ChildSizing.VerticalSpacing = 3
     ClientHeight = 24
-    ClientWidth = 707
+    ClientWidth = 756
     TabOrder = 1
     object CreateDB1Btn: TButton
       Left = 408
       Height = 24
       Top = 0
-      Width = 146
+      Width = 100
       Align = alLeft
       Caption = 'Generate SQL'
       OnClick = CreateDB1BtnClick
@@ -554,10 +554,10 @@ object MainForm: TMainForm
       TabOrder = 1
     end
     object ConnectBtn: TButton
-      Left = 557
+      Left = 511
       Height = 24
       Top = 0
-      Width = 146
+      Width = 115
       Align = alLeft
       Caption = 'Connect and Create'
       OnClick = ConnectBtnClick
@@ -582,19 +582,29 @@ object MainForm: TMainForm
       Layout = tlCenter
       ParentColor = False
     end
+    object ConnectBtn1: TButton
+      Left = 629
+      Height = 24
+      Top = 0
+      Width = 76
+      Align = alLeft
+      Caption = 'Connect'
+      OnClick = ConnectBtn1Click
+      TabOrder = 4
+    end
   end
   object Panel2: TPanel
     Left = 8
     Height = 24
     Top = 35
-    Width = 703
+    Width = 752
     Align = alTop
     BorderSpacing.Around = 5
     BevelOuter = bvNone
     ChildSizing.HorizontalSpacing = 3
     ChildSizing.VerticalSpacing = 3
     ClientHeight = 24
-    ClientWidth = 703
+    ClientWidth = 752
     TabOrder = 2
     object Label2: TLabel
       Left = 0
@@ -659,7 +669,7 @@ object MainForm: TMainForm
     Left = 6
     Height = 73
     Top = 306
-    Width = 707
+    Width = 756
     Align = alBottom
     Font.CharSet = ANSI_CHARSET
     Font.Height = -15
@@ -1151,6 +1161,37 @@ object MainForm: TMainForm
         MouseActionsExpanded = <>
         MouseActionsCollapsed = <>
       end
+    end
+  end
+  object Panel3: TPanel
+    Left = 639
+    Height = 239
+    Top = 64
+    Width = 123
+    Align = alRight
+    BorderSpacing.Around = 3
+    BevelOuter = bvNone
+    ClientHeight = 239
+    ClientWidth = 123
+    TabOrder = 4
+    object AddRecordBtn: TButton
+      Left = 0
+      Height = 25
+      Top = 0
+      Width = 123
+      Align = alTop
+      Caption = 'Add Record'
+      OnClick = AddRecordBtnClick
+      TabOrder = 0
+    end
+    object Button2: TButton
+      Left = 0
+      Height = 25
+      Top = 25
+      Width = 123
+      Align = alTop
+      Caption = 'Delete Record'
+      TabOrder = 1
     end
   end
   object SynSQLSyn: TSynSQLSyn

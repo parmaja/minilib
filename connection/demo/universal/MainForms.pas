@@ -29,7 +29,10 @@ type
   { TMainForm }
 
   TMainForm = class(TForm)
+    AddRecordBtn: TButton;
+    Button2: TButton;
     ConnectBtn: TButton;
+    ConnectBtn1: TButton;
     CreateDB1Btn: TButton;
     EnginesCbo: TComboBox;
     HostEdit: TEdit;
@@ -41,16 +44,20 @@ type
     Panel1: TPanel;
     Label1: TLabel;
     Panel2: TPanel;
+    Panel3: TPanel;
     PasswordEdit: TEdit;
     SynEdit: TSynEdit;
     LogEdit: TSynEdit;
     SynSQLSyn: TSynSQLSyn;
     UserEdit: TEdit;
+    procedure AddRecordBtnClick(Sender: TObject);
+    procedure ConnectBtn1Click(Sender: TObject);
     procedure ConnectBtnClick(Sender: TObject);
     procedure CreateDB1BtnClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
   private
+    procedure Connect(CreateIt: Boolean);
   public
     Engine: TEngine;
   end;
@@ -97,6 +104,11 @@ end;
 
 procedure TMainForm.ConnectBtnClick(Sender: TObject);
 begin
+  Connect(True);
+end;
+
+procedure TMainForm.Connect(CreateIt: Boolean);
+begin
   try
     FreeAndNil(Engine);
     Engine := TEngine.Create;
@@ -110,13 +122,20 @@ begin
     Engine.Connection.Host := HostEdit.Text;
     Engine.Connection.UserName := UserEdit.Text;
     Engine.Connection.Password := PasswordEdit.Text;
-    Engine.Connection.DropDatabase(True);
-    Engine.Connection.CreateDatabase;
+    if CreateIt then
+    begin
+      LogEdit.Lines.Add(Engine.Connection.Resource + ' Droping');
+      Engine.Connection.DropDatabase(True);
+      LogEdit.Lines.Add(Engine.Connection.Resource + ' Creating');
+      Engine.Connection.CreateDatabase;
+      LogEdit.Lines.Add(Engine.Connection.Resource + ' is Created');
+    end;
     Engine.Connection.Connect;
-    LogEdit.Lines.Add(Engine.Connection.Resource + ' connected');
+    LogEdit.Lines.Add(Engine.Connection.Resource + ' is Connected');
     Engine.Session := Engine.Connection.CreateSession;
     Engine.Session.Start;
-    Engine.Session.ExecuteScript(Engine.InitSQL);
+    if CreateIt then
+      Engine.Session.ExecuteScript(Engine.InitSQL);
   except
     on E: EXception do
     begin
@@ -126,10 +145,33 @@ begin
   end;
 end;
 
+procedure TMainForm.AddRecordBtnClick(Sender: TObject);
+var
+  CMD: TmncSQLCommand;
+begin
+  CMD := Engine.Session.CreateCommand;
+  try
+    CMD.SQL.Text := 'insert into Companies(ID, Name, Address) values(?ID, ?Name, ?Address)';
+    CMD.Prepare;
+    CMD.Param['ID'].Value := 10;
+    CMD.Param['Name'].Value := 'Parmaja';
+    CMD.Execute;
+  finally
+    CMD.Free;
+  end;
+end;
+
+procedure TMainForm.ConnectBtn1Click(Sender: TObject);
+begin
+  Connect(False);
+end;
+
 procedure TMainForm.FormCreate(Sender: TObject);
 var
   IniFile: TIniFile;
 begin
+  Engines.EnumORMs(EnginesCbo.Items);
+  EnginesCbo.ItemIndex := 0;
   IniFile := TIniFile.Create(Application.Location + 'options.ini');
   try
     Width := IniFile.ReadInteger('Options', 'Width', Width);
@@ -137,11 +179,10 @@ begin
     HostEdit.Text := IniFile.ReadString('Options', 'Host', 'localhost');
     UserEdit.Text := IniFile.ReadString('Options', 'User', '');
     PasswordEdit.Text := IniFile.ReadString('Options', 'Password', '');
+    EnginesCbo.ItemIndex := EnginesCbo.Items.IndexOfObject(Engines.Find(IniFile.ReadString('Options', 'Engine', Engines[0].Name)));
   finally
     IniFile.Free;
   end;
-  Engines.EnumORMs(EnginesCbo.Items);
-  EnginesCbo.ItemIndex := 0;
 end;
 
 procedure TMainForm.FormDestroy(Sender: TObject);
@@ -155,6 +196,7 @@ begin
     IniFile.WriteString('Options', 'Host', HostEdit.Text);
     IniFile.WriteString('Options', 'User', UserEdit.Text);
     IniFile.WriteString('Options', 'Password', PasswordEdit.Text);
+    IniFile.WriteString('Options', 'Engine', (EnginesCbo.Items.Objects[EnginesCbo.ItemIndex] as TmncEngine).Name);
   finally
     IniFile.Free;
   end;
