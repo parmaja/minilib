@@ -1116,7 +1116,7 @@ begin
 
         aColumn.FieldType := FieldType;
 
-        FillByte(FResults.Binds[i], sizeof(FResults.Binds[i]), 0);
+        FillByte(FResults.Binds[i], SizeOf(FResults.Binds[i]), 0);
 
         FResults.Binds[i].buffer_type := FieldType;
 

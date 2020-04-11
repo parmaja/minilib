@@ -269,7 +269,7 @@ type
     property Items[Index: Integer]: TmncPGColumn read GetItem; default;
   end;
 
-  { TmncPGCommand }
+  { TmncCustomPGCommand }
 
   TmncCustomPGCommand = class(TmncSQLCommand)
   private
@@ -294,7 +294,7 @@ type
     procedure FetchValues(vRes: PPGresult; vTuple: Integer);
     function FetchValue(vRes: PPGresult; vTuple: Integer; vIndex: Integer): string; overload;
     function FetchValue(vRes: PPGresult; vTuple: Integer; vIndex: Integer; out Value: string): Boolean; overload;
-    procedure RaiseError(PGResult: PPGresult);
+    procedure RaiseResultError(PGResult: PPGresult);
     procedure CreateParamValues(var Result: TArrayOfPChar);
     procedure FreeParamValues(var Result: TArrayOfPChar);
 
@@ -432,29 +432,36 @@ begin
   s := 'Postgre connection failed' + #13 + PQerrorMessage(vHandle);
   if ExtraMsg <> '' then
     s := s + ' - ' + ExtraMsg;
-  raise
-    EmncException.Create(s);
+  raise EmncException.Create(s);
 end;
 
 procedure TmncPGConnection.RaiseError(Error: Boolean; const ExtraMsg: string);
 begin
-  if (Error) then
+  if Error then
     InternalRaiseError(FHandle, ExtraMsg);
 end;
 
 procedure TmncPGConnection.RaiseResultError(PGResult: PPGresult);
 var
-  //s : AnsiString;
-  //ExtraMsg: string;
+  s : AnsiString;
   t: TExecStatusType;
 begin
   t := PQresultStatus(PGResult);
   case t of
-    PGRES_BAD_RESPONSE,PGRES_NONFATAL_ERROR, PGRES_FATAL_ERROR:
+    PGRES_BAD_RESPONSE,
+    PGRES_NONFATAL_ERROR,
+    PGRES_FATAL_ERROR:
     begin
-      ResetConnection(PGResult);
-      //s := PQresultErrorMessage(PGResult);
-      //raise EmncException.Create('Postgre command: ' + s);
+      if (PQstatus(FHandle) = CONNECTION_BAD) and not ResetConnection(PGResult) then
+      begin
+        s := PQresultErrorMessage(PGResult);
+        raise EmncException.Create('Postgre lost connection with: ' + s);
+      end
+      else
+      begin
+        s := PQresultErrorMessage(PGResult);
+        raise EmncException.Create('Postgre command: ' + s);
+      end;
     end;
   end;
 end;
@@ -1097,7 +1104,7 @@ begin
   if FStatement<>nil then
   begin
     try
-      RaiseError(FStatement);
+      RaiseResultError(FStatement);
     except
       InternalClose;
       raise;
@@ -1143,13 +1150,13 @@ var
 begin
   FBOF := True;
   FHandle := Session.NewToken;
-  ParseSQL([psoAddParamsID], '$');
+  ParseSQL([psoAddParamsID]);
   c := Session.DBHandle;
   s := UTF8Encode(ProcessedSQL.SQL);
 
   r := PQprepare(c, PAnsiChar(FHandle), PAnsiChar(s), 0 , nil);
   try
-    RaiseError(r);
+    RaiseResultError(r);
   finally
     PQclear(r);
   end;
@@ -1487,7 +1494,7 @@ begin
   s := UTF8Encode(SQL.Text);
   r := PQexec(Session.DBHandle, PAnsiChar(s));
   try
-    RaiseError(r);
+    RaiseResultError(r);
   finally
     PQclear(r);
   end;
@@ -1827,7 +1834,7 @@ begin
   Result := inherited Session as TmncPGSession;
 end;
 
-procedure TmncCustomPGCommand.RaiseError(PGResult: PPGresult);
+procedure TmncCustomPGCommand.RaiseResultError(PGResult: PPGresult);
 begin
   Connection.RaiseResultError(PGResult);
 end;
@@ -1872,7 +1879,7 @@ begin
   FBOF := True;
   FEOF := not (FStatus in [PGRES_COMMAND_OK]);
   try
-    RaiseError(aStatement);
+    RaiseResultError(aStatement);
   except
     InternalClose;
     raise;
@@ -1913,7 +1920,7 @@ var
 begin
   FBOF := True;
   FHandle := Session.NewToken;
-  ParseSQL([psoAddParamsID], '$');
+  ParseSQL([psoAddParamsID]);
   c := Session.DBHandle;
   if ResultFormat=mrfBinary then
     b := 'binary'
@@ -1923,7 +1930,7 @@ begin
   s := Format('declare %s %s cursor for %s', [Handle, b, ProcessedSQL.SQL]);
   r := PQprepare(c, PAnsiChar(FHandle), PAnsiChar(s), 0 , nil);
   try
-    RaiseError(r);
+    RaiseResultError(r);
   finally
     PQclear(r);
   end;

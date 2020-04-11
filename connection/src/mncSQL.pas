@@ -115,7 +115,7 @@ type
     function GetDone: Boolean; override;
     procedure DoParse; override;
     procedure DoUnparse; override;
-    procedure ParseSQL(Options: TmncParseSQLOptions; ParamChar: string = '?');
+    procedure ParseSQL(Options: TmncParseSQLOptions);
     procedure Fetch; override;
     procedure Clean; override; //Clean and reset stamemnt like Done or Ready called in Execute before DoExecute and after Prepare
     procedure HitDone;   //Make it FDone True
@@ -391,7 +391,7 @@ begin
   //maybe clear params, idk
 end;
 
-procedure TmncSQLCommand.ParseSQL(Options: TmncParseSQLOptions; ParamChar: string = '?');
+procedure TmncSQLCommand.ParseSQL(Options: TmncParseSQLOptions);
 var
   cCurChar, cNextChar, cQuoteChar: Char;
   sSQL, sParamName: string;

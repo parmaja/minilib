@@ -460,6 +460,14 @@ type
     property Items[Index: Integer]: TmncBind read GetItem; default;
   end;
 
+  //TODO not yet
+  TmncCommandOption = (
+    cmoTruncate, //Truncate the string to fit into field size, not recomended if you are strict, you will lose data
+    cmoCorrectDate //Correct DateTime fields to be compatiple with SQL and Pascal
+  );
+
+  TmncCommandOptions = set of TmncCommandOption;
+
   {
     Look at
       Columns: Fields header, have Name, Size and Type of the field
@@ -483,6 +491,7 @@ type
   private
     FColumns: TmncColumns;
     FFields: TmncFields;
+    FOptions: TmncCommandOptions;
     FParams: TmncParams;
     FBinds: TmncBinds;
     FParsed: Boolean;
@@ -556,6 +565,7 @@ type
     property Params: TmncParams read FParams write SetParams;
     property Param[const Index: string]: TmncParam read GetParam;
     property Values[const Index: string]: Variant read GetValues;
+    property Options: TmncCommandOptions read FOptions write FOptions;
   end;
 
 { Simple classes usful for rapid implmetation }
