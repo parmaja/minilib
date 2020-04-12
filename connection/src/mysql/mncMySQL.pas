@@ -518,30 +518,29 @@ end;
 
 function TmncMySQLConnection.IsDatabaseExists(vName: string): Boolean;
 var
-  s: string;
-  conn: PMYSQL;
-  res: PMYSQL_RES;
-  row: MYSQL_ROW;
-  c: Integer;
+  aConn: TmncSQLConnection;
+  aSession: TmncSQLSession;
+  aCMD: TmncSQLCommand;
 begin
-  Result := False;
-  InternalConnect(conn, 'mysql');
-  s := 'select count(*) as aCount from information_meta.metata where Meta_name = '''+ vName + '''';
-  mysql_query(conn, PUtf8Char(s));
-  RaiseError(mysql_errno(conn), mysql_error(conn));
-  res := mysql_store_result(conn);
-  if res <> nil then
-  begin
-     c := mysql_num_fields(res);
-     row := mysql_fetch_row(res);
-     if c > 0 then
-     begin
-       Result := StrToIntDef(row[0], 0) > 0;
-     end;
-     mysql_free_result(res);
+  aConn := Clone('mysql', False);
+  try
+    aConn.Connect;
+    aSession := aConn.CreateSession;
+    aSession.Start;
+    aCMD := aSession.CreateCommand;
+    try
+      aCMD.SQL.Text := 'select Count(*) as Result from information_schema.schemata where schema_name = '''+ vName + '''';
+      if aCMD.Execute then
+      begin
+        Result := aCMD.Field['Result'].AsInteger > 0;
+      end;
+    finally
+      aCMD.Free;
+      aSession.Free;
+    end;
+  finally
+    aConn.Free;
   end;
-  mysql_close(conn);
-  //TODO
 end;
 
 procedure TmncMySQLConnection.CreateDatabase(const vName: string; CheckExists: Boolean);
@@ -592,6 +591,7 @@ begin
   //CheckError(mysql_options(vHandle, MYSQL_REPORT_DATA_TRUNCATION, @b));
   if Resource <> '' then
     SelectDatabase(Resource);
+  Execute('SET sql_mode=NO_AUTO_VALUE_ON_ZERO'); //eh idk if it wrong
   SetAutoCommit(false);
   InitPragma;
 end;
@@ -976,7 +976,7 @@ begin
           end;
           varInteger:
           begin
-            n := Ord(Integer(Binds[i].Param.Value));
+            n := Integer(Binds[i].Param.Value);
             Binds[i].CopyBuffer(n, SizeOf(n));
           end;
           varint64:
