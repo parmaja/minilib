@@ -36,6 +36,7 @@ type
   protected
     FDatabase: string;
     procedure InitPragma; virtual;
+    procedure InternalConnect(out vHandle: PMYSQL; vResource: string);
     procedure DoConnect; override;
     procedure DoDisconnect; override;
     function GetConnected:Boolean; override;
@@ -518,9 +519,28 @@ end;
 function TmncMySQLConnection.IsDatabaseExists(vName: string): Boolean;
 var
   s: string;
+  conn: PMYSQL;
+  res: PMYSQL_RES;
+  row: MYSQL_ROW;
+  c: Integer;
 begin
+  Result := False;
+  InternalConnect(conn, 'mysql');
   s := 'select count(*) as aCount from information_meta.metata where Meta_name = '''+ vName + '''';
-  CheckError(mysql_query(FDBHandle, PChar(s)));
+  mysql_query(conn, PUtf8Char(s));
+  RaiseError(mysql_errno(conn), mysql_error(conn));
+  res := mysql_store_result(conn);
+  if res <> nil then
+  begin
+     c := mysql_num_fields(res);
+     row := mysql_fetch_row(res);
+     if c > 0 then
+     begin
+       Result := StrToIntDef(row[0], 0) > 0;
+     end;
+     mysql_free_result(res);
+  end;
+  mysql_close(conn);
   //TODO
 end;
 
@@ -562,48 +582,17 @@ begin
 end;
 
 procedure TmncMySQLConnection.DoConnect;
-var
-  b: my_bool = 0;
-  timout: cuint;
-  protocol: mysql_protocol_type;
 begin
-  //* ref: https://dev.mysql.com/doc/refman/5.0/en/mysql-real-connect.html
-  FDBHandle := mysql_init(FDBHandle);
-  try
-    //mysql_options(&mysql,MYSQL_READ_DEFAULT_GROUP,"your_prog_name");
-{   Shared memory:
-    you need to setup server to use it
-    [mysqld]
-    shared_memory = ON
-    shared-memory-base-name=MYSQL
-}
-{
-    protocol := MYSQL_PROTOCOL_MEMORY;
-    CheckError(mysql_options(FDBHandle, MYSQL_OPT_PROTOCOL, @protocol));
-    CheckError(mysql_options(FDBHandle, MYSQL_SHARED_MEMORY_BASE_NAME, PAnsiChar('MYSQL')));
-}
-    {timout := 1;
-    CheckError(mysql_options(FDBHandle, MYSQL_OPT_CONNECT_TIMEOUT, @timout));}
-
-    CheckError(mysql_real_connect(FDBHandle, PAnsiChar(Host), PChar(UserName), PChar(Password), nil, 0, nil, CLIENT_MULTI_RESULTS)); //CLIENT_MULTI_STATEMENTS CLIENT_INTERACTIVE
-    if MultiCursors then
-      CheckError(mysql_set_server_option(FDBHandle, MYSQL_OPTION_MULTI_STATEMENTS_ON))
-    else
-      CheckError(mysql_set_server_option(FDBHandle, MYSQL_OPTION_MULTI_STATEMENTS_OFF));
-    SetCharsetName('utf8');
-    if Resource <> '' then
-      SelectDatabase(Resource);
-    SetAutoCommit(false);
-    //CheckError(mysql_options(FDBHandle, MYSQL_REPORT_DATA_TRUNCATION, @b));
-  except
-    on E:Exception do
-    begin
-      if FDBHandle <> nil then
-        mysql_close(FDBHandle);
-      FDBHandle := nil;
-      raise;
-    end;
-  end;
+  InternalConnect(FDBHandle, Resource);
+  if MultiCursors then
+    CheckError(mysql_set_server_option(FDBHandle, MYSQL_OPTION_MULTI_STATEMENTS_ON))
+  else
+    CheckError(mysql_set_server_option(FDBHandle, MYSQL_OPTION_MULTI_STATEMENTS_OFF));
+  CheckError(mysql_options(FDBHandle, MYSQL_SET_CHARSET_NAME, PChar('utf8')));
+  //CheckError(mysql_options(vHandle, MYSQL_REPORT_DATA_TRUNCATION, @b));
+  if Resource <> '' then
+    SelectDatabase(Resource);
+  SetAutoCommit(false);
   InitPragma;
 end;
 
@@ -735,6 +724,61 @@ end;
 
 procedure TmncMySQLConnection.InitPragma;
 begin
+end;
+
+procedure TmncMySQLConnection.InternalConnect(out vHandle: PMYSQL; vResource: string);
+var
+  aHost, aPort: AnsiString;
+  aResource, aUser, aPassword: AnsiString;
+  b: my_bool = 0;
+  timout: cuint;
+  protocol: mysql_protocol_type;
+begin
+  Init;
+  //* ref: https://dev.mysql.com/doc/refman/5.0/en/mysql-real-connect.html
+  vHandle := mysql_init(vHandle);
+  try
+    if Host = '' then
+      aHost := '127.0.0.1'
+    else
+      aHost := Host;
+    if Port = '' then
+      aPort := '5432'
+    else
+      aPort := Port;
+
+    if vResource <> '' then
+      aResource := vResource
+    else
+      aResource := Resource;
+    aUser := UserName;
+    aPassword := Password;
+
+    //mysql_options(&mysql,MYSQL_READ_DEFAULT_GROUP,"your_prog_name");
+{   Shared memory:
+    you need to setup server to use it
+    [mysqld]
+    shared_memory = ON
+    shared-memory-base-name=MYSQL
+}
+{
+    protocol := MYSQL_PROTOCOL_MEMORY;
+    CheckError(mysql_options(vHandle, MYSQL_OPT_PROTOCOL, @protocol));
+    CheckError(mysql_options(vHandle, MYSQL_SHARED_MEMORY_BASE_NAME, PAnsiChar('MYSQL')));
+}
+    {timout := 1;
+    CheckError(mysql_options(vHandle, MYSQL_OPT_CONNECT_TIMEOUT, @timout));}
+
+    CheckError(mysql_real_connect(vHandle, PAnsiChar(Host), PChar(UserName), PChar(Password), nil, 0, nil, CLIENT_MULTI_RESULTS)); //CLIENT_MULTI_STATEMENTS CLIENT_INTERACTIVE
+  except
+    on E:Exception do
+    begin
+      if FDBHandle <> nil then
+        mysql_close(vHandle);
+      vHandle := nil;
+      raise;
+    end;
+  end;
 end;
 
 procedure TmncMySQLSession.DoInit;

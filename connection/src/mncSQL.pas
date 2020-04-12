@@ -323,6 +323,7 @@ end;
 
 procedure TmncSQLConnection.Execute(vCommand: string);
 begin
+  raise Exception.Create('Execute is not suported in ' + Name);
 end;
 
 procedure TmncSQLConnection.Execute(vCommand: string; vArgs: array of const);

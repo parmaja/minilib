@@ -83,7 +83,7 @@ type
     FUseSSL: Boolean;
     procedure SetChannel(const Value: string);
   protected
-    procedure InternalConnect(out vHandle: PPGconn; vDatabase: string = '');
+    procedure InternalConnect(out vHandle: PPGconn; vResource: string = '');
     procedure InternalDisconnect(var vHandle: PPGconn);
     procedure DoConnect; override;
     procedure DoDisconnect; override;
@@ -792,10 +792,10 @@ begin
   DoNotify(vPID, vName, vData);
 end;
 
-procedure TmncPGConnection.InternalConnect(out vHandle: PPGconn; vDatabase: string);
+procedure TmncPGConnection.InternalConnect(out vHandle: PPGconn; vResource: string);
 var
   aHost, aPort: AnsiString;
-  aDB, aUser, aPass: AnsiString;
+  aResource, aUser, aPassword: AnsiString;
   aSsl, aSslComp: AnsiString;
   aUrl: AnsiString;
 begin
@@ -810,13 +810,13 @@ begin
     aPort := '5432'
   else
     aPort := Port;
-  //aDB := LowerCase(vDatabase); //TODO no sure //zaher: no it is wrong
-  if vDatabase <> '' then
-    aDB := vDatabase
+
+  if vResource <> '' then
+    aResource := vResource
   else
-    aDB := Resource;
+    aResource := Resource;
   aUser := UserName;
-  aPass := Password;
+  aPassword := Password;
   if UseSSL then
   begin
     aSsl := 'prefer';
@@ -831,10 +831,10 @@ begin
   //Result := PQsetdbLogin(PAnsiChar(aHost), PAnsiChar(aPort), nil, nil, PAnsiChar(aDB), PAnsiChar(aUser), PAnsiChar(aPass));
   //aUrl := Format('postgresql://%s:%s@%s:%s/%s?sslmode=%s&sslcompression=%s&application_name=%s', [aUser, aPass, aHost, aPort, aDB, aSsl, aSslComp, AppName]);
   if SimpleConnection then
-    vHandle := PQsetdbLogin(PAnsiChar(aHost), PAnsiChar(aPort), nil, nil, PAnsiChar(aDB), PAnsiChar(aUser), PAnsiChar(aPass))
+    vHandle := PQsetdbLogin(PAnsiChar(aHost), PAnsiChar(aPort), nil, nil, PAnsiChar(aResource), PAnsiChar(aUser), PAnsiChar(aPassword))
   else
   begin
-    aUrl := Format('user=%s password=''%s'' host=%s port=%s dbname=''%s'' sslmode=%s sslcompression=%s application_name=''%s''', [aUser, aPass, aHost, aPort, aDB, aSsl, aSslComp, AppName]);
+    aUrl := Format('user=%s password=''%s'' host=%s port=%s dbname=''%s'' sslmode=%s sslcompression=%s application_name=''%s''', [aUser, aPassword, aHost, aPort, aResource, aSsl, aSslComp, AppName]);
     //aUrl := Format('postgresql://%s:%s@%s:%s/%s?sslmode=%s&sslcompression=%s&application_name=%s', [aUser, aPass, aHost, aPort, aDB, aSsl, aSslComp, AppName]);
     vHandle := PQconnectdb(PAnsiChar(aUrl));
   end;
