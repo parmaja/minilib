@@ -91,16 +91,16 @@ type
   TmncMySQLField = class(TmncVariantField)
   end;
 
-  { TmncMySQLParam }
-
-  TmncMySQLParam = class(TmncVariantParam)
-  end;
-
   { TmncMySQLFields }
 
   TmncMySQLFields = class(TmncFields)
   protected
     function DoCreateField(vColumn: TmncColumn): TmncField; override;
+  end;
+
+  { TmncMySQLParam }
+
+  TmncMySQLParam = class(TmncVariantParam)
   end;
 
   { TmncMySQLParams }

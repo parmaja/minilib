@@ -16,7 +16,7 @@ object MainForm: TMainForm
   LCLVersion = '2.1.0.0'
   inline SynEdit: TSynEdit
     Left = 6
-    Height = 239
+    Height = 197
     Top = 64
     Width = 630
     Align = alClient
@@ -667,8 +667,8 @@ object MainForm: TMainForm
   end
   inline LogEdit: TSynEdit
     Left = 6
-    Height = 73
-    Top = 306
+    Height = 115
+    Top = 264
     Width = 756
     Align = alBottom
     Font.CharSet = ANSI_CHARSET
@@ -1165,13 +1165,13 @@ object MainForm: TMainForm
   end
   object Panel3: TPanel
     Left = 639
-    Height = 239
+    Height = 197
     Top = 64
     Width = 123
     Align = alRight
     BorderSpacing.Around = 3
     BevelOuter = bvNone
-    ClientHeight = 239
+    ClientHeight = 197
     ClientWidth = 123
     TabOrder = 4
     object AddRecordBtn: TButton
@@ -1187,11 +1187,22 @@ object MainForm: TMainForm
     object Button2: TButton
       Left = 0
       Height = 25
-      Top = 25
+      Top = 50
       Width = 123
       Align = alTop
       Caption = 'Delete Record'
+      OnClick = Button2Click
       TabOrder = 1
+    end
+    object AddRecordBtn1: TButton
+      Left = 0
+      Height = 25
+      Top = 25
+      Width = 123
+      Align = alTop
+      Caption = 'Read Record'
+      OnClick = AddRecordBtn1Click
+      TabOrder = 2
     end
   end
   object SynSQLSyn: TSynSQLSyn

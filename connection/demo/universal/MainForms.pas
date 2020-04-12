@@ -30,6 +30,7 @@ type
 
   TMainForm = class(TForm)
     AddRecordBtn: TButton;
+    AddRecordBtn1: TButton;
     Button2: TButton;
     ConnectBtn: TButton;
     ConnectBtn1: TButton;
@@ -50,7 +51,9 @@ type
     LogEdit: TSynEdit;
     SynSQLSyn: TSynSQLSyn;
     UserEdit: TEdit;
+    procedure AddRecordBtn1Click(Sender: TObject);
     procedure AddRecordBtnClick(Sender: TObject);
+    procedure Button2Click(Sender: TObject);
     procedure ConnectBtn1Click(Sender: TObject);
     procedure ConnectBtnClick(Sender: TObject);
     procedure CreateDB1BtnClick(Sender: TObject);
@@ -136,6 +139,7 @@ begin
     Engine.Session.Start;
     if CreateIt then
       Engine.Session.ExecuteScript(Engine.InitSQL);
+    Engine.Session.Commit(True);
   except
     on E: EXception do
     begin
@@ -151,11 +155,45 @@ var
 begin
   CMD := Engine.Session.CreateCommand;
   try
+    CMD.Options := CMD.Options + [cmoTruncate];
     CMD.SQL.Text := 'insert into Companies(ID, Name, Address) values(?ID, ?Name, ?Address)';
     CMD.Prepare;
     CMD.Param['ID'].Value := 10;
     CMD.Param['Name'].Value := 'Parmaja';
     CMD.Execute;
+  finally
+    CMD.Free;
+  end;
+end;
+
+procedure TMainForm.Button2Click(Sender: TObject);
+var
+  CMD: TmncSQLCommand;
+begin
+  CMD := Engine.Session.CreateCommand;
+  try
+    CMD.SQL.Text := 'delete from Companies where ID=?ID';
+    CMD.Prepare;
+    CMD.Param['ID'].Value := 10;
+    if CMD.Execute then
+      LogEdit.Lines.Add('Deleted');
+  finally
+    CMD.Free;
+  end;
+end;
+
+procedure TMainForm.AddRecordBtn1Click(Sender: TObject);
+var
+  CMD: TmncSQLCommand;
+begin
+  CMD := Engine.Session.CreateCommand;
+  try
+    CMD.SQL.Text := 'select * from Companies where ID=?ID';
+    CMD.Prepare;
+    CMD.Param['ID'].Value := 10;
+    if CMD.Execute then
+      LogEdit.Lines.Add(CMD.Field['Name'].AsString);
+
   finally
     CMD.Free;
   end;

@@ -175,19 +175,29 @@ type
 
   TArrayOfPChar = array of PAnsiChar;
 
+  { TmncPostgreParam }
+
   TmncPostgreParam = class(TmncVariantParam)
   private
+    FBuffer: string;
+    FFieldSize: Integer;
   protected
     procedure SetAsString(const AValue: string); override;
     procedure SetAsDate(const AValue: TDateTime); override;
     procedure SetAsDateTime(const AValue: TDateTime); override;
   public
+    property FieldSize: Integer read FFieldSize write FFieldSize;
+    property Buffer: string read FBuffer write FBuffer;
   end;
+
+  { TmncPostgreParams }
 
   TmncPostgreParams = class(TmncParams)
   protected
     function CreateParam: TmncParam; override;
   end;
+
+  { TmncPostgreField }
 
   TmncPostgreField = class(TmncField)
   private
@@ -197,8 +207,6 @@ type
     FValue: string;
     FIsNull: Boolean;
     FIsEmpty: Boolean;
-    FFields: TmncPostgreFields;
-    function GetCommand: TmncCustomPGCommand;
     function GetData: string;
   protected
     function GetValue: Variant; override;
@@ -230,10 +238,9 @@ type
     procedure SetAsDateTime(const AValue: TDateTime); override;
     procedure SetAsTime(const AValue: TDateTime); override;
     procedure SetIsNull(const AValue: Boolean); override;
-
-    property Fields: TmncPostgreFields read FFields;
-    property Command: TmncCustomPGCommand read GetCommand;
   end;
+
+  { TmncPostgreFields }
 
   TmncPostgreFields = class(TmncFields)
   private
@@ -250,6 +257,28 @@ type
     function IsNull: Boolean;
   end;
 
+  { TmncPGBind }
+
+  TmncPGBind = class(TmncBind)
+  private
+  protected
+  public
+  end;
+
+  { TmncPGBinds }
+
+  TmncPGBinds = class(TmncBinds)
+  private
+    function GetItem(Index: Integer): TmncPGBind;
+  protected
+    function CreateBind: TmncBind; override;
+  public
+    procedure Clear; override;
+    property Items[Index: Integer]: TmncPGBind read GetItem; default;
+  end;
+
+  { TmncPGColumn }
+
   TmncPGColumn = class(TmncColumn)
   private
     FPGType: Integer;
@@ -259,6 +288,8 @@ type
     property PGType: Integer read FPGType write SetPGType;
     property FieldSize: Integer read FFieldSize write FFieldSize;
   end;
+
+  { TmncPGColumns }
 
   TmncPGColumns = class(TmncColumns)
   private
@@ -276,6 +307,8 @@ type
     function GetConnection: TmncPGConnection;
     function GetSession: TmncPGSession;
     procedure SetSession(const Value: TmncPGSession);
+    function GetParams: TmncPostgreParams;
+    function GetBinds: TmncPGBinds;
   protected
     FHandle: ansistring;
     FResultFormat: TmpgResultFormat;
@@ -297,6 +330,9 @@ type
     procedure RaiseResultError(PGResult: PPGresult);
     procedure CreateParamValues(var Result: TArrayOfPChar);
     procedure FreeParamValues(var Result: TArrayOfPChar);
+    function CreateBinds: TmncBinds; override;
+    property Binds: TmncPGBinds read GetBinds;
+    property Params: TmncPostgreParams read GetParams;
 
   public
     constructor CreateBy(vSession:TmncPGSession);
@@ -422,6 +458,23 @@ end;
 function DecodeBytea(const vStr: string): string;
 begin
   Result := DecodeBytea(PByte(vStr), ByteLength(vStr));
+end;
+
+{ TmncPGBinds }
+
+function TmncPGBinds.GetItem(Index: Integer): TmncPGBind;
+begin
+  Result := inherited Items[Index] as TmncPGBind;
+end;
+
+function TmncPGBinds.CreateBind: TmncBind;
+begin
+  Result := TmncPGBind.Create;
+end;
+
+procedure TmncPGBinds.Clear;
+begin
+  inherited Clear;
 end;
 
 procedure TmncPGConnection.InternalRaiseError(vHandle: PPGconn; const ExtraMsg: string);
@@ -1060,7 +1113,7 @@ begin
   if FStatement <> nil then
     PQclear(FStatement);
   try
-    if Params.Count > 0 then
+    if Binds.Count > 0 then
     begin
       CreateParamValues(Values);
       P := @Values[0];
@@ -1147,6 +1200,8 @@ var
   c: PPGconn;
   r: PPGresult;
   s: UTF8String;
+  i: Integer;
+  z: Integer;
 begin
   FBOF := True;
   FHandle := Session.NewToken;
@@ -1154,13 +1209,27 @@ begin
   c := Session.DBHandle;
   s := UTF8Encode(ProcessedSQL.SQL);
 
-  r := PQprepare(c, PAnsiChar(FHandle), PAnsiChar(s), 0 , nil);
+  r := PQprepare(c, PAnsiChar(FHandle), PAnsiChar(s), Params.Count, nil);
   try
     RaiseResultError(r);
   finally
     PQclear(r);
   end;
 
+  r := PQdescribePrepared(Session.DBHandle, PAnsiChar(FHandle));
+  try
+    z := PQnparams(r);
+
+    for i := 0 to Params.Count - 1 do
+    begin
+      z := PQfsize(r, i);
+      (Params.Items[i] as TmncPostgreParam).FieldSize := z;
+    end;
+
+    RaiseResultError(r);
+  finally
+    PQclear(r);
+  end;
 end;
 
 function TmncPGCommand.FetchStatement: Boolean;
@@ -1316,11 +1385,6 @@ begin
   Result := Frac(AsDateTime);
 end;
 
-function TmncPostgreField.GetCommand: TmncCustomPGCommand;
-begin
-  Result := Fields.Command; //note must not be nil at any way
-end;
-
 function TmncPostgreField.GetData: string;
 var
   s: AnsiString;
@@ -1439,8 +1503,6 @@ end;
 function TmncPostgreFields.DoCreateField(vColumn: TmncColumn): TmncField;
 begin
   Result := TmncPostgreField.Create(vColumn);
-  with TmncPostgreField(Result) do
-    FFields := Self;
 end;
 
 function TmncPostgreFields.Find(const vName: string): TmncItem;
@@ -1481,7 +1543,6 @@ procedure TmncPGDDLCommand.ClearStatement;
 begin
   //inherited;
   //PQclear(FStatement);
-
 end;
 
 procedure TmncPGDDLCommand.DoExecute;
@@ -1575,7 +1636,7 @@ begin
       Synchronize(PostEvent);
       PQFreemem(FEvent);
     end;
-    Sleep(10); //belal: cpu usage .....
+    Sleep(10); //belal: cpu usage ..... //zaher: wrong
   end;
 end;
 
@@ -1624,26 +1685,30 @@ procedure TmncCustomPGCommand.CreateParamValues(var Result: TArrayOfPChar);
 var
   i: Integer;
   s: UTF8String;
-  sp, dp: TmncParam;
+  bind: TmncPGBind;
 begin
   FreeParamValues(Result);
   SetLength(Result, Binds.Count);
 
   for i := 0 to Binds.Count -1 do
   begin
-    sp := Binds.Items[i].Param;
-    dp := Params.FindParam(sp.Name);
+    bind := Binds.Items[i];
 
-    if (dp=nil)or(dp.IsNull) then
+    if (bind.Param = nil) or (bind.Param.IsNull) then
       Result[i] := nil
     else
     begin
-      case VarType(dp.Value) of
-        VarDate: s := UTF8Encode(FormatDateTime('yyyy-mm-dd hh:nn:ss', dp.Value));
-        varCurrency: s := CurrToStr(dp.Value);
-        varDouble: s := FloatToStr(dp.Value);
+      case VarType(bind.Param.Value) of
+        VarDate: s := UTF8Encode(FormatDateTime('yyyy-mm-dd hh:nn:ss', bind.Param.Value));
+        varCurrency: s := CurrToStr(bind.Param.Value);
+        varDouble: s := FloatToStr(bind.Param.Value);
         else
-          s := UTF8Encode(dp.Value);
+          begin
+            s := UTF8Encode(bind.Param.Value);
+            if (cmoTruncate in Options) and ((bind.Param as TmncPostgreParam).FieldSize > 0) then
+              s := MidStr(s, 1, (bind.Param as TmncPostgreParam).FieldSize)
+            else
+          end;
       end;
       GetMem(Result[i], Length(s) + 1);
       //StrMove(PAnsiChar(Result[i]), PAnsiChar(s), Length(s) + 1);
@@ -1819,6 +1884,11 @@ begin
   SetLength(Result, 0);
 end;
 
+function TmncCustomPGCommand.CreateBinds: TmncBinds;
+begin
+  Result := TmncPGBinds.Create;
+end;
+
 function TmncCustomPGCommand.GetColumns: TmncPGColumns;
 begin
   Result := inherited Columns as TmncPGColumns
@@ -1827,6 +1897,11 @@ end;
 function TmncCustomPGCommand.GetConnection: TmncPGConnection;
 begin
   Result := Session.Connection as TmncPGConnection;
+end;
+
+function TmncCustomPGCommand.GetParams: TmncPostgreParams;
+begin
+  Result := inherited Params as TmncPostgreParams;
 end;
 
 function TmncCustomPGCommand.GetSession: TmncPGSession;
@@ -1842,6 +1917,11 @@ end;
 procedure TmncCustomPGCommand.SetSession(const Value: TmncPGSession);
 begin
   inherited Session := Value;
+end;
+
+function TmncCustomPGCommand.GetBinds: TmncPGBinds;
+begin
+  Result := inherited Binds as TmncPGBinds;
 end;
 
 { TmncPGCursorCommand }
@@ -1917,18 +1997,26 @@ var
   s, b: ansistring;
   r: PPGresult;
   c: PPGconn;
+  i: Integer;
 begin
   FBOF := True;
   FHandle := Session.NewToken;
   ParseSQL([psoAddParamsID]);
   c := Session.DBHandle;
-  if ResultFormat=mrfBinary then
+
+  if ResultFormat = mrfBinary then
     b := 'binary'
   else
     b := '';
 
   s := Format('declare %s %s cursor for %s', [Handle, b, ProcessedSQL.SQL]);
   r := PQprepare(c, PAnsiChar(FHandle), PAnsiChar(s), 0 , nil);
+
+  for i := 0 to Params.Count - 1 do
+  begin
+    //Binds[i].FFieldSize := PQfsize(r, i); //TODO
+  end;
+
   try
     RaiseResultError(r);
   finally
