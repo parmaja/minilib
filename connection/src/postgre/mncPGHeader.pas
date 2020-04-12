@@ -245,6 +245,9 @@ type
   //PAnsiChar = PUtf8Char
   TPQPrepare = function(Handle: PPGconn; Name, Query: PAnsiChar; nParams: Integer; pTypes: Pointer): PPGresult; cdecl;
   TPQExecPrepared = function(Handle: PPGconn; Name: PChar; nParams: Integer; pValues, pLength, pFormats: Pointer; rFormat: Integer): PPGresult; cdecl;
+  TPQdescribePrepared = function(Handle: PPGconn; Name: PChar): PPGresult; cdecl;
+  TPQnparams  = function(Result: PPGresult): Integer; cdecl;
+  TPQparamtype = function(Result: PPGresult; param_num: Integer): Integer; cdecl;
   TPQsendQueryPrepared = function(Handle: PPGconn; Name: PAnsiChar; nParams: Integer; pValues, pLength, pFormats: Pointer; rFormat: Integer): Integer; cdecl;
   TPQsetSingleRowMode = function(Handle: PPGconn): Integer; cdecl;
 
@@ -365,6 +368,9 @@ var
   //belal
   PQPrepare: TPQPrepare;
   PQExecPrepared: TPQExecPrepared;
+  PQdescribePrepared: TPQdescribePrepared;
+  PQnparams: TPQnparams;
+  PQparamtype: TPQparamtype;
   PQsendQueryPrepared: TPQsendQueryPrepared;
   PQsetSingleRowMode: TPQsetSingleRowMode;
 
@@ -487,6 +493,9 @@ begin
   PQmakeEmptyPGresult := GetAddress('PQmakeEmptyPGresult');
   PQPrepare := GetAddress('PQprepare');
   PQExecPrepared := GetAddress('PQexecPrepared');
+  PQdescribePrepared := GetAddress('PQdescribePrepared');
+  PQnparams := GetAddress('PQnparams');
+  PQparamtype := GetAddress('PQparamtype');
   PQsendQueryPrepared := GetAddress('PQsendQueryPrepared');
   PQsetSingleRowMode := GetAddress('PQsetSingleRowMode');
 
