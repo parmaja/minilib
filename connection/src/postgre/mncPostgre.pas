@@ -1216,20 +1216,21 @@ begin
     PQclear(r);
   end;
 
-  r := PQdescribePrepared(Session.DBHandle, PAnsiChar(FHandle));
+  {r := PQdescribePrepared(Session.DBHandle, PAnsiChar(FHandle)); //TODO: To indecate the size of param, no chance to get it
   try
     z := PQnparams(r);
 
     for i := 0 to Params.Count - 1 do
     begin
-      z := PQfsize(r, i);
+      //z := PQparamtype(r, i);
+      z := PQfsize(r, i); //not works with params
       (Params.Items[i] as TmncPostgreParam).FieldSize := z;
     end;
 
     RaiseResultError(r);
   finally
     PQclear(r);
-  end;
+  end;}
 end;
 
 function TmncPGCommand.FetchStatement: Boolean;
