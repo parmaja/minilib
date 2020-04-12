@@ -156,7 +156,7 @@ begin
   CMD := Engine.Session.CreateCommand;
   try
     CMD.Options := CMD.Options + [cmoTruncate];
-    CMD.SQL.Text := 'insert into Companies(ID, Name, Address) values(?ID, ?Name, ?Address)';
+    CMD.SQL.Text := 'insert into Companies(ID, Name, Address) values(?ID, ?Name, ?Name)';
     CMD.Prepare;
     CMD.Param['ID'].Value := 10;
     CMD.Param['Name'].Value := 'Parmaja';

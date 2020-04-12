@@ -540,7 +540,6 @@ begin
                     AddToSQL(IntToStr(iParam));
                     Inc(iParam);
                   end;
-                  //slNames.Add(UpperCase(sParamName));
                   ProcessedSQL.Add(iParam, sParamName);
                   sParamName := '';
                 end;

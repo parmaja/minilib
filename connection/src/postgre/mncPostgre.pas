@@ -1587,7 +1587,6 @@ procedure TmncPGDDLCommand.DoParse;
 begin
   //inherited;
   //no paras needed
-
 end;
 
 procedure TmncPGDDLCommand.DoPrepare;
@@ -1695,7 +1694,7 @@ begin
   begin
     bind := Binds.Items[i];
 
-    if (bind.Param = nil) or (bind.Param.IsNull) then
+    if (bind.Param.IsNull) then
       Result[i] := nil
     else
     begin
