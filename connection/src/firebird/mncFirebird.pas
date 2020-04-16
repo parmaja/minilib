@@ -272,10 +272,7 @@ type
     //function GetPlan: string;
     function CreateFields(vColumns: TmncColumns): TmncFields; override;
     function CreateParams: TmncParams; override;
-
     function GetDone: Boolean; override;
-
-
   public
     procedure Clear; override;
     function GetRowsChanged: Integer; override;

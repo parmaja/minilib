@@ -533,7 +533,7 @@ object MainForm: TMainForm
     ClientWidth = 756
     TabOrder = 1
     object CreateDB1Btn: TButton
-      Left = 408
+      Left = 412
       Height = 24
       Top = 0
       Width = 100
@@ -554,7 +554,7 @@ object MainForm: TMainForm
       TabOrder = 1
     end
     object ConnectBtn: TButton
-      Left = 511
+      Left = 515
       Height = 24
       Top = 0
       Width = 115
@@ -564,7 +564,7 @@ object MainForm: TMainForm
       TabOrder = 2
     end
     object DataEdit: TEdit
-      Left = 287
+      Left = 291
       Height = 24
       Top = 0
       Width = 118
@@ -573,17 +573,19 @@ object MainForm: TMainForm
       Text = 'employees'
     end
     object Label5: TLabel
-      Left = 201
+      Left = 203
       Height = 24
       Top = 0
       Width = 83
       Align = alLeft
+      BorderSpacing.Left = 5
+      BorderSpacing.Right = 5
       Caption = 'Database Name'
       Layout = tlCenter
       ParentColor = False
     end
     object ConnectBtn1: TButton
-      Left = 629
+      Left = 633
       Height = 24
       Top = 0
       Width = 76
