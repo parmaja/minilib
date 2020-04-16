@@ -88,36 +88,8 @@
         <UnitName Value="mncPGORM"/>
       </Item>
       <Item>
-        <Filename Value="firebird\mncFBBlob.pas"/>
-        <UnitName Value="mncFBBlob"/>
-      </Item>
-      <Item>
-        <Filename Value="firebird\mncSQLDA.pas"/>
-        <UnitName Value="mncSQLDA"/>
-      </Item>
-      <Item>
         <Filename Value="firebird\mncFBMeta.pas"/>
         <UnitName Value="mncFBMeta"/>
-      </Item>
-      <Item>
-        <Filename Value="firebird\mncFBClient.pas"/>
-        <UnitName Value="mncFBClient"/>
-      </Item>
-      <Item>
-        <Filename Value="firebird\mncFBErrors.pas"/>
-        <UnitName Value="mncFBErrors"/>
-      </Item>
-      <Item>
-        <Filename Value="firebird\mncFBHeader.pas"/>
-        <UnitName Value="mncFBHeader"/>
-      </Item>
-      <Item>
-        <Filename Value="firebird\mncFBStrings.pas"/>
-        <UnitName Value="mncFBStrings"/>
-      </Item>
-      <Item>
-        <Filename Value="firebird\mncFBTypes.pas"/>
-        <UnitName Value="mncFBTypes"/>
       </Item>
       <Item>
         <Filename Value="firebird\mncFBUtils.pas"/>

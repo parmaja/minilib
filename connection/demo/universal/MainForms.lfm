@@ -1204,6 +1204,16 @@ object MainForm: TMainForm
       OnClick = AddRecordBtn1Click
       TabOrder = 2
     end
+    object Button3: TButton
+      Left = 0
+      Height = 25
+      Top = 75
+      Width = 123
+      Align = alTop
+      Caption = 'Execute'
+      OnClick = Button3Click
+      TabOrder = 3
+    end
   end
   object SynSQLSyn: TSynSQLSyn
     DefaultFilter = 'SQL Files (*.sql)|*.sql'

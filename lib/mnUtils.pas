@@ -184,6 +184,7 @@ function ISOStrToDate(ISODate: String; vDateSeparator: Char = '-'; TimeDivider: 
 function ISODateToStr(DateTime: TDateTime; vDateSeparator: Char = '-'; TimeDivider: Char = ' '; WithTime: Boolean = False): String; overload;
 
 function AnsiToUnicode(S: rawbytestring; CodePage: Integer = 0): string;
+function AnsiToUTF8(S: rawbytestring; CodePage: Integer = 0): utf8string;
 
 var
   SystemAnsiCodePage: Integer; //used to convert from Ansi string, it is the default
@@ -1114,7 +1115,15 @@ function AnsiToUnicode(S: rawbytestring; CodePage: Integer): string;
 begin
   if CodePage = 0 then
     CodePage := SystemAnsiCodePage;
-  SetCodePage(S, 1256, False);
+  SetCodePage(S, CodePage, False);
+  Result := S;
+end;
+
+function AnsiToUTF8(S: rawbytestring; CodePage: Integer = 0): utf8string;
+begin
+  if CodePage = 0 then
+    CodePage := SystemAnsiCodePage;
+  SetCodePage(S, CodePage, False);
   Result := S;
 end;
 

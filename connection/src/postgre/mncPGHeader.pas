@@ -393,7 +393,6 @@ var
   lo_export: Tlo_export;
   lo_truncate: Tlo_truncate;
 
-
 implementation
 
 const
@@ -406,7 +405,6 @@ const
 var
   fLibHandle: TLibHandle;
   fTryInitLib: Boolean = False;
-
 
 function GetAddress(const vProc: string): Pointer;
 begin
@@ -426,7 +424,6 @@ begin
   if fTryInitLib and (fLibHandle <> 0) then
     FreeLibrary(fLibHandle);
 end;
-
 
 procedure LoadLib;
 begin
@@ -518,6 +515,5 @@ initialization
   LoadLib;
 finalization
   FreeLib;
-
 end.
 

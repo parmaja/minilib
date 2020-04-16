@@ -800,7 +800,7 @@ var
   aUrl: AnsiString;
 begin
   if not Assigned(PQsetdbLogin) then
-  	raise EmncException.Create('PQsetdbLogin not assigned');
+  	raise EmncException.Create('Postgre not assigned');
 
   if Host = '' then
     aHost := '127.0.0.1'
@@ -987,7 +987,6 @@ end;
 function TmncPGSession.InternalCreateCommand: TmncSQLCommand;
 begin
   Result := TmncPGCommand.CreateBy(Self);
-  //Result := TmncPGCopyOutCommand.CreateBy(Self);
 end;
 
 procedure TmncPGSession.DoStart;
@@ -1173,6 +1172,7 @@ begin
     begin
       FetchFields(FStatement);
       FBOF := False;
+      FTuple := 0;
     end
     else
       inc(FTuple);
@@ -1190,9 +1190,7 @@ begin
       if not FEOF then
         FetchValues(FStatement, FTuple);
     end;
-  end
-  else
-    FEOF := True;
+  end;
 end;
 
 procedure TmncPGCommand.DoPrepare;

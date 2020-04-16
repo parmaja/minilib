@@ -32,6 +32,7 @@ type
     AddRecordBtn: TButton;
     AddRecordBtn1: TButton;
     Button2: TButton;
+    Button3: TButton;
     ConnectBtn: TButton;
     ConnectBtn1: TButton;
     CreateDB1Btn: TButton;
@@ -54,6 +55,7 @@ type
     procedure AddRecordBtn1Click(Sender: TObject);
     procedure AddRecordBtnClick(Sender: TObject);
     procedure Button2Click(Sender: TObject);
+    procedure Button3Click(Sender: TObject);
     procedure ConnectBtn1Click(Sender: TObject);
     procedure ConnectBtnClick(Sender: TObject);
     procedure CreateDB1BtnClick(Sender: TObject);
@@ -100,7 +102,8 @@ begin
     FreeAndNil(Engine);
     Engine := TEngine.Create;
     Engine.ORM := CreateORM((EnginesCbo.Items.Objects[EnginesCbo.ItemIndex] as TmncEngine).ORMClass);
-    Engine.ORM.GenerateSQL(SynEdit.Lines);
+    if Engine.ORM <> nil then
+      Engine.ORM.GenerateSQL(SynEdit.Lines);
     FreeAndNil(Engine);
   end;
 end;
@@ -116,9 +119,10 @@ begin
     FreeAndNil(Engine);
     Engine := TEngine.Create;
     Engine.ORM := CreateORM((EnginesCbo.Items.Objects[EnginesCbo.ItemIndex] as TmncEngine).ORMClass);
-    Engine.ORM.GenerateSQL(Engine.InitSQL);
-    Engine.Connection := Engines.CreateConnection(Engine.ORM) as TmncSQLConnection;
-    if ccPath in Engine.Connection.Capabilities then
+    if Engine.ORM <> nil then
+      Engine.ORM.GenerateSQL(Engine.InitSQL);
+    Engine.Connection := Engines.CreateConnection((EnginesCbo.Items.Objects[EnginesCbo.ItemIndex] as TmncEngine).Name) as TmncSQLConnection;
+    if (ccPath in Engine.Connection.Capabilities) and not (ccAlias in Engine.Connection.Capabilities) then
       Engine.Connection.Resource := Application.Location + DataEdit.Text + Engine.Connection.GetExtension
     else
       Engine.Connection.Resource := DataEdit.Text;
@@ -182,6 +186,27 @@ begin
   end;
 end;
 
+procedure TMainForm.Button3Click(Sender: TObject);
+var
+  CMD: TmncSQLCommand;
+begin
+  CMD := Engine.Session.CreateCommand;
+  try
+    CMD.SQL.Text := 'update "Materials" set "MatCode" = "MatCode" where "MatCode" = ''100200'' returning "MatID" ';
+    CMD.Prepare;
+    if CMD.Execute then
+    begin
+      while not CMD.Done do
+      begin
+        LogEdit.Lines.Add(CMD.Field['MatID'].AsString);
+        CMD.Next;
+      end;
+    end;
+  finally
+    CMD.Free;
+  end;
+end;
+
 procedure TMainForm.AddRecordBtn1Click(Sender: TObject);
 var
   CMD: TmncSQLCommand;
@@ -208,12 +233,14 @@ procedure TMainForm.FormCreate(Sender: TObject);
 var
   IniFile: TIniFile;
 begin
-  Engines.EnumORMs(EnginesCbo.Items);
+//  Engines.EnumORMs(EnginesCbo.Items);
+  Engines.EnumConnections(EnginesCbo.Items);
   EnginesCbo.ItemIndex := 0;
   IniFile := TIniFile.Create(Application.Location + 'options.ini');
   try
     Width := IniFile.ReadInteger('Options', 'Width', Width);
     Height := IniFile.ReadInteger('Options', 'Height', Height);
+    DataEdit.Text := IniFile.ReadString('Options', 'Database', 'employee');
     HostEdit.Text := IniFile.ReadString('Options', 'Host', 'localhost');
     UserEdit.Text := IniFile.ReadString('Options', 'User', '');
     PasswordEdit.Text := IniFile.ReadString('Options', 'Password', '');
@@ -221,16 +248,21 @@ begin
   finally
     IniFile.Free;
   end;
+  if FileExists(Application.Location + 'sql.sql') then
+    SynEdit.Lines.LoadFromFile(Application.Location + 'sql.sql');
 end;
 
 procedure TMainForm.FormDestroy(Sender: TObject);
 var
   IniFile: TIniFile;
 begin
+  //update "Materials" set "MatCode" = "MatCode" where "MatCode" = '100200' returning "MatID"
+  SynEdit.Lines.SaveToFile(Application.Location + 'sql.sql');
   IniFile := TIniFile.Create(Application.Location + 'options.ini');
   try
     IniFile.WriteInteger('Options', 'Width', Width);
     IniFile.WriteInteger('Options', 'Height', Height);
+    IniFile.WriteString('Options', 'Database', DataEdit.Text);
     IniFile.WriteString('Options', 'Host', HostEdit.Text);
     IniFile.WriteString('Options', 'User', UserEdit.Text);
     IniFile.WriteString('Options', 'Password', PasswordEdit.Text);

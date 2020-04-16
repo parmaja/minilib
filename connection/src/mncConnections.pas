@@ -883,7 +883,7 @@ begin
     Prepare;
   Clean;
   DoExecute;
-  if not Done and vNext then //TODO Check it do we need not Done
+  if vNext and not Done then //TODO Check it do we need not Done
     Result := Next
   else
     Result := not Done;
