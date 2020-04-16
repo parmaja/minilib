@@ -1,30 +1,36 @@
 unit mncFBUtils;
+{$IFDEF FPC}
+{$MODE delphi}
+{$ENDIF}
+{$M+}{$H+}
+
 {**
  *  This file is part of the "Mini Connections"
  *
  * @license   modifiedLGPL (modified of http://www.gnu.org/licenses/lgpl.html)
  *            See the file COPYING.MLGPL, included in this distribution,
+ * @author    Belal Hamed <belalhamed at gmail dot com>
  * @author    Zaher Dirkey <zaher at parmaja dot com>
+ * @comment   for Firebird 2.5
  *}
-
-{$M+}
-{$H+}
-{$IFDEF FPC}
-{$mode delphi}
-{$ENDIF}
 
 interface
 
 uses
   SysUtils, Classes,
   mncConnections,
-  mncFBClient, mncFBTypes, mncFBHeader, mncFBErrors, mncFBStrings;
+  mncFBHeaders, mncFBClasses, mncDB;
 
 const
   FBLocalBufferLength = 512;
   FBBigLocalBufferLength = FBLocalBufferLength * 2;
   FBHugeLocalBufferLength = FBBigLocalBufferLength * 20;
   FBDateDelta = 15018;
+
+type
+  TFBLocalBufferArray = array [0..FBLocalBufferLength-1] of Byte;
+  TFBBigLocalBufferArray = array [0..FBBigLocalBufferLength-1] of Byte;
+  TFBHugeLocalBufferArray = array [0..FBHugeLocalBufferLength-1] of Byte;
 
 procedure FBRaiseError(Error: TFBError; const Args: array of const); overload;
 procedure FBRaiseError(const StatusVector: TStatusVector); overload;
@@ -36,10 +42,15 @@ function GetStatusErrorMsg(const StatusVector: TStatusVector; Index: Integer; ou
 function StatusVectorAsText(const StatusVector: TStatusVector): string;
 
 procedure FBAlloc(var P; OldSize, NewSize: Integer; ZeroInit: Boolean = True);
-procedure FBFree(var P: Pointer);
+procedure FBFree(var P: Pointer); overload;
+procedure FBFree(var P: PShort); overload;
+procedure FBFree(var P: PXSQLDA); overload;
+
 
 function FBMax(n1, n2: Integer): Integer;
 function FBMin(n1, n2: Integer): Integer;
+function FBGetString(vArr: array of Byte): string; overload;
+function FBGetString(vArr: array of Byte; vIndex, vCount: Integer): string; overload;
 
 function FBScaleCurrency(Value: Int64; Scale: Integer): Currency;
 function FBScaleDouble(Value: Int64; Scale: Integer): Double;
@@ -53,10 +64,10 @@ function FormatIdentifier(Dialect: Integer; Value: string): string;
 function FormatIdentifierValue(Dialect: Integer; Value: string): string;
 function ExtractIdentifier(Dialect: Integer; Value: string): string;
 
-function FindTokenReq(Buffer: PChar; Flag: Byte): PChar;
-function GetInfoReqRecord(Buffer: PChar; Flag: Byte): Integer;
-function GetInfoReqString(Buffer: PChar; Flag: Byte; out Value: string): Boolean;
-function GetInfoReqInteger(Buffer: PChar; Flag: Byte; out Value: Integer): Boolean;
+function FindTokenReq(Buffer: PByte; Flag: Byte): PByte;
+function GetInfoReqRecord(Buffer: PByte; Flag: Byte): Integer;
+function GetInfoReqString(Buffer: PByte; Flag: Byte; out Value: string): Boolean;
+function GetInfoReqInteger(Buffer: PByte; Flag: Byte; out Value: Integer): Boolean;
 
 procedure SetFBDataBaseErrorMessages(Value: TFBDataBaseErrorMessages);
 function GetFBDataBaseErrorMessages: TFBDataBaseErrorMessages;
@@ -70,10 +81,14 @@ procedure FBDatabaseInfo(const UserName, Password, Role, CharacterSet: string; v
 procedure GenerateDPB(sl: TStrings; out DPB: AnsiString; var DPBLength: Short);
 procedure GenerateTPB(sl: TStrings; out TPB: AnsiString; var TPBLength: Short);
 
+function GenerateDPBEx(vParams: TStrings): TBytes;
+function GenerateTPBEx(vParams: TStrings): TBytes;
+
+
 function FBComposeConnectionString(DatabaseName, Host, Port: string; IsEmbed: Boolean): string;
 procedure FBDecomposeConnectionString(DatabaseName: string; var Host, FileName: string);
 
-function SQLTypeToDataType(SQLType: Integer):TmncDataType;
+function SQLTypeToDataType(SQLType: Integer): TmncDataType;
 
 implementation
 
@@ -91,6 +106,33 @@ begin
     result := n1
   else
     result := n2;
+end;
+
+function FBGetString(vArr: array of Byte): string;
+var
+  i: Integer;
+begin
+  for I := 0 to Length(vArr)-1 do
+    if vArr[i]=0 then
+    begin
+      Break;
+    end;
+
+  Result := FBGetString(vArr, 0, i);
+end;
+
+function FBGetString(vArr: array of Byte; vIndex, vCount: Integer): string;
+var
+  r: TBytes;
+begin
+  if vCount<>0 then
+  begin
+    SetLength(r, vCount);
+    Move(vArr[vIndex], r[0], vCount);
+    Result := TEncoding.UTF8.GetString(r);
+  end
+  else
+    Result := '';
 end;
 
 function FBScaleCurrency(Value: Int64; Scale: Integer): Currency;
@@ -269,14 +311,17 @@ var
   ErrorCode: Long;
 
   StatusVectorWalk: PISC_STATUS;
-  local_buffer: array[0..FBHugeLocalBufferLength - 1] of char;
+  local_buffer: TFBHugeLocalBufferArray;
   FBDataBaseErrorMessages: TFBDataBaseErrorMessages;
+
   procedure AddMsg(const vMsg: string);
   begin
     if Msg <> '' then
-      Msg := Msg + LineEnding;
+      Msg := Msg + sCRLF;
     Msg := Msg + vMsg;
   end;
+
+
 var
   ExceptionName, ExceptionMsg: string;
   ExceptionID: Long;
@@ -293,15 +338,15 @@ begin
     ErrorCode := 0;
   if (ShowSQLMessage in FBDataBaseErrorMessages) and (SqlCode <> -999) then
   begin
-    FBClient.isc_sql_interprete(SqlCode, local_buffer, FBLocalBufferLength);
-    AddMsg(string(local_buffer));
+    FBClient.isc_sql_interprete(SqlCode, @local_buffer[0], Length(local_buffer));
+    AddMsg(FBGetString(local_buffer));
   end;
 
   if (ShowFBMessage in FBDataBaseErrorMessages) then
   begin
     StatusVectorWalk := @StatusVector;
-    while (FBClient.isc_interprete(local_buffer, StatusVectorWalk) > 0) do//TODO use fb_interpret
-      AddMsg(string(local_buffer));
+    while (FBClient.isc_interprete(@local_buffer[0], StatusVectorWalk) > 0) do//TODO use fb_interpret
+      AddMsg(FBGetString(local_buffer));
   end;
 
   if (ShowSqlCode in FBDataBaseErrorMessages) then
@@ -318,8 +363,8 @@ begin
       raise EFBExceptionError.Create(SqlCode, ErrorCode, ExceptionID, ExceptionName, ExceptionMsg, Msg);
     end;
     -551: raise EFBRoleError.Create(SqlCode, ErrorCode, Msg);
-  else
-    raise EFBError.Create(SqlCode, ErrorCode, Msg);
+    else
+      raise EFBError.Create(SqlCode, ErrorCode, Msg);
   end;
 end;
 
@@ -338,7 +383,7 @@ var
   i: Integer;
   procedure NextP(i: Integer);
   begin
-    p := PISC_STATUS(PChar(p) + (i * SizeOf(ISC_STATUS)));
+    p := PISC_STATUS(PAnsiChar(p) + (i * SizeOf(ISC_STATUS)));
   end;
 begin
   p := @StatusVector;
@@ -367,7 +412,7 @@ var
   p: PISC_STATUS;
   procedure NextP(i: Integer);
   begin
-    p := PISC_STATUS(PChar(p) + (i * SizeOf(ISC_STATUS)));
+    p := PISC_STATUS(PAnsiChar(p) + (i * SizeOf(ISC_STATUS)));
   end;
 var
   c:Integer;
@@ -401,7 +446,7 @@ var
   p: PISC_STATUS;
   function NextP(i: Integer): PISC_STATUS;
   begin
-    p := PISC_STATUS(PChar(p) + (i * SizeOf(ISC_STATUS)));
+    p := PISC_STATUS(PAnsiChar(p) + (i * SizeOf(ISC_STATUS)));
     Result := p;
   end;
 var
@@ -420,7 +465,7 @@ begin
           Result := c >= Index;
           if Result then
           begin
-            Value := PChar(P)^;
+            Value := PAnsiChar(P)^;
             break;
           end;
           NextP(1);
@@ -436,7 +481,7 @@ var
   p: PISC_STATUS;
   function NextP(i: Integer): PISC_STATUS;
   begin
-    p := PISC_STATUS(PChar(p) + (i * SizeOf(ISC_STATUS)));
+    p := PISC_STATUS(PAnsiChar(p) + (i * SizeOf(ISC_STATUS)));
     Result := p;
   end;
 begin
@@ -445,12 +490,12 @@ begin
   while (p^ <> 0) do
     if (p^ = 3) then
     begin
-      Result := Result + Format('%d %d %d', [p^, NextP(1)^, NextP(1)^]) + LineEnding;
+      Result := Result + Format('%d %d %d', [p^, NextP(1)^, NextP(1)^]) + sCRLF;
       NextP(1);
     end
     else
     begin
-      Result := Result + Format('%d %d', [p^, NextP(1)^]) + LineEnding;
+      Result := Result + Format('%d %d', [p^, NextP(1)^]) + sCRLF;
       NextP(1);
     end;
 end;
@@ -461,14 +506,23 @@ var
 procedure FBAlloc(var P; OldSize, NewSize: Integer; ZeroInit: boolean);
 var
   i: Integer;
+  s, t: PByte;
 begin
-  if Assigned(Pointer(P)) then
-    ReallocMem(Pointer(P), NewSize)
+  s := PByte(P);
+
+  if Assigned(s) then
+    ReallocMem(s, NewSize)
   else
-    GetMem(Pointer(P), NewSize);
-  if ZeroInit and (NewSize > 0) then
+    GetMem(s, NewSize);
+
+  {if ZeroInit and (NewSize > 0) then
     for i := OldSize to NewSize - 1 do
-      PChar(P)[i] := #0;
+      s[i] := 0;}
+
+  if ZeroInit and (NewSize > 0) then
+    FillChar(s[OldSize], NewSize-OldSize, 0);
+
+  PByte(P) := s;
 end;
 
 procedure FBFree(var P: Pointer);
@@ -477,27 +531,37 @@ begin
   P := nil;
 end;
 
-function GetInfoReqRecord(Buffer: PChar; Flag: Byte): Integer;
+procedure FBFree(var P: PShort); overload;
+begin
+  FBFree(Pointer(p));
+end;
+
+procedure FBFree(var P: PXSQLDA); overload;
+begin
+  FBFree(Pointer(p));
+end;
+
+function GetInfoReqRecord(Buffer: PByte; Flag: Byte): Integer;
 var
-  p: PChar;
-  item: Char;
+  p: PByte;
+  item: Byte;
   l: Integer;
 begin
   // must use FindToken see _rb.cpp in IBPP
   p := Buffer;
   Result := -1;
-  if (p^ = Char(isc_info_sql_records)) then
+  if (p^ = isc_info_sql_records) then
   begin
     Inc(p);
 //    l := FBClient.isc_portable_integer(p, 2);
     Inc(p, 2);
     Item := p^;
-    while (Item <> Char(isc_info_end)) do
+    while (Item <> isc_info_end) do
     begin
       Inc(p);
       l := FBClient.isc_portable_integer(p, 2);
       Inc(p, 2);
-      if (Item = Char(Flag)) then
+      if (Item = Flag) then
       begin
         Result := FBClient.isc_portable_integer(p, l);
         break;
@@ -508,20 +572,20 @@ begin
   end;
 end;
 
-function FindTokenReq(Buffer: PChar; Flag: Byte): PChar;
+function FindTokenReq(Buffer: PByte; Flag: Byte): PByte;
 var
-  p: PChar;
-  Item: Char;
+  p: PByte;
+  Item: Byte;
   l: Integer;
 begin
   Result := nil;
   p := Buffer;
   Item := p^;
-  while (Item <> Char(isc_info_end)) do
+  while (Item <> isc_info_end) do
   begin
     Inc(p);
     l := FBClient.isc_portable_integer(p, 2);
-    if (Item = Char(Flag)) then
+    if (Item = Flag) then
     begin
       Result := p;
       break;
@@ -531,9 +595,9 @@ begin
   end;
 end;
 
-function GetInfoReqString(Buffer: PChar; Flag: Byte; out Value: string): Boolean;
+function GetInfoReqString(Buffer: PByte; Flag: Byte; out Value: string): Boolean;
 var
-  p: PChar;
+  p: PByte;
   l: Integer;
 begin
   Value := '';
@@ -543,13 +607,14 @@ begin
   begin
     l := FBClient.isc_portable_integer(p, 2);
     Inc(p, 2);
-    Value := Copy(p, 1, l);
+    //belal
+    //Value := Copy(p, 1, l);
   end;
 end;
 
-function GetInfoReqInteger(Buffer: PChar; Flag: Byte; out Value: Integer): Boolean;
+function GetInfoReqInteger(Buffer: PByte; Flag: Byte; out Value: Integer): Boolean;
 var
-  p: PChar;
+  p: PByte;
 begin
   Value := 0;
   p := FindTokenReq(Buffer, Flag);
@@ -704,6 +769,123 @@ begin
     vParams.Values[DPBConstantNames[isc_dpb_password]] := 'masterkey';
 end;
 
+function GenerateDPBEx(vParams: TStrings): TBytes;
+
+  procedure _Add(vData: Byte; var vIndex: Integer); overload;
+  var
+    l: Integer;
+  begin
+    l := Length(Result);
+    if vIndex>=l then SetLength(Result, l+512);
+    Result[vIndex] := vData;
+    Inc(vIndex);
+  end;
+
+  procedure _Add(vData: AnsiString; var vIndex: Integer); overload;
+  var
+    i: Integer;
+  begin
+    for I := 0 to Length(vData)-1 do
+      _Add(Ord(vData[i+1]), vIndex);
+  end;
+
+var
+  i, j, pval: Integer;
+  DPBVal: UShort;
+  ParamName, ParamValue: AnsiString;
+  aCount: Integer;
+begin
+  { The DPB is initially empty, with the exception that
+    the DPB version must be the first byte of the string. }
+
+  aCount := 0;
+  Result := nil;
+  _Add(isc_dpb_version1, aCount);
+
+  {Iterate through the textual database parameters, constructing
+   a DPB on-the-fly }
+  for i := 0 to vParams.Count - 1 do
+  begin
+    { Get the parameter's name and value from the list,
+      and make sure that the name is all lowercase with
+      no leading 'isc_dpb_' prefix
+    }
+    if (Trim(vParams.Names[i]) = '') then
+      continue;
+    ParamName := LowerCase(vParams.Names[i]);
+    ParamValue := Copy(vParams[i], Pos('=', vParams[i]) + 1, Length(vParams[i]));
+    if (Pos(DPBPrefix, ParamName) = 1) then
+      Delete(ParamName, 1, Length(DPBPrefix));
+     { We want to tranvParamsate the parameter name to some Integer
+       value. We do this by scanning through a list of known
+       database parameter names (DPBConstantNames, defined above) }
+    DPBVal := 0;
+    { Find the parameter }
+    for j := 1 to isc_dpb_last_dpb_constant do
+      if (ParamName = DPBConstantNames[j]) then
+      begin
+        DPBVal := j;
+        break;
+      end;
+     {  A database parameter either contains a string value (case 1)
+       or an Integer value (case 2)
+       or no value at all (case 3)
+       or an error needs to be generated (case else)  }
+    case DPBVal of
+      isc_dpb_user_name, isc_dpb_password, isc_dpb_password_enc,
+      isc_dpb_sys_user_name, isc_dpb_license, isc_dpb_encrypt_key,
+      isc_dpb_lc_messages, isc_dpb_lc_ctype, isc_dpb_set_db_charset,
+      isc_dpb_sql_role_name, isc_dpb_sql_dialect:
+      begin
+        if DPBVal = isc_dpb_sql_dialect then
+          ParamValue[1] := AnsiChar(Ord(ParamValue[1]) - 48);
+
+        _Add(DPBVal, aCount);
+        _Add(Length(ParamValue), aCount);
+        _Add(ParamValue, aCount);
+      end;
+      isc_dpb_num_buffers, isc_dpb_dbkey_scope, isc_dpb_force_write,
+      isc_dpb_no_reserve, isc_dpb_damaged, isc_dpb_verify:
+      begin
+        _Add(DPBVal, aCount);
+        _Add(1, aCount);
+        _Add(StrToInt(ParamValue), aCount);
+      end;
+      isc_dpb_sweep:
+      begin
+        _Add(DPBVal, aCount);
+        _Add(1, aCount);
+        _Add(isc_dpb_records, aCount);
+      end;
+      isc_dpb_sweep_interval:
+      begin
+        pval := StrToInt(ParamValue);
+        _Add(DPBVal, aCount);
+        _Add(4, aCount);
+        _Add(PByte(@pval)[0], aCount);
+        _Add(PByte(@pval)[1], aCount);
+        _Add(PByte(@pval)[2], aCount);
+        _Add(PByte(@pval)[3], aCount);
+      end;
+      isc_dpb_activate_shadow, isc_dpb_delete_shadow, isc_dpb_begin_log,
+      isc_dpb_quit_log:
+      begin
+        _Add(DPBVal, aCount);
+        _Add(1, aCount);
+        _Add(0, aCount);
+      end;
+      else
+      begin
+        if (DPBVal > 0) and (DPBVal <= isc_dpb_last_dpb_constant) then
+          FBRaiseError(fbceDPBConstantNotSupported, [DPBConstantNames[DPBVal]])
+        else
+          FBRaiseError(fbceDPBConstantUnknownEx, [vParams.Names[i]]);
+      end;
+    end;
+  end;
+  SetLength(Result, aCount);
+end;
+
 procedure GenerateDPB(sl: TStrings; out DPB: AnsiString; var DPBLength: Short);
 var
   i, j, pval: Integer;
@@ -751,7 +933,7 @@ begin
         isc_dpb_sql_role_name, isc_dpb_sql_dialect:
         begin
           if DPBVal = isc_dpb_sql_dialect then
-            ParamValue[1] := Char(Ord(ParamValue[1]) - 48);
+            ParamValue[1] := AnsiChar(Ord(ParamValue[1]) - 48);
           DPB := DPB +
             Char(DPBVal) +
             Char(Length(ParamValue)) +
@@ -781,10 +963,10 @@ begin
           DPB := DPB +
             Char(DPBVal) +
             #4 +
-            PChar(@pval)[0] +
-            PChar(@pval)[1] +
-            PChar(@pval)[2] +
-            PChar(@pval)[3];
+            PAnsiChar(@pval)[0] +
+            PAnsiChar(@pval)[1] +
+            PAnsiChar(@pval)[2] +
+            PAnsiChar(@pval)[3];
           Inc(DPBLength, 6);
         end;
       isc_dpb_activate_shadow, isc_dpb_delete_shadow, isc_dpb_begin_log,
@@ -812,6 +994,101 @@ end;
   of the transaction parameters, generate a transaction
   parameter buffer, and return it and its length in
   TPB and TPBLength, respectively. }
+
+function GenerateTPBEx(vParams: TStrings): TBytes;
+
+  procedure _Add(vData: Byte; var vIndex: Integer); overload;
+  var
+    l: Integer;
+  begin
+    l := Length(Result);
+    if vIndex>=l then SetLength(Result, l+512);
+
+    if vIndex=0 then
+    begin
+      Result[vIndex] := isc_tpb_version3;
+      Inc(vIndex);
+    end;
+
+    Result[vIndex] := vData;
+    Inc(vIndex);
+  end;
+
+  procedure _Add(vData: AnsiString; var vIndex: Integer); overload;
+  var
+    i: Integer;
+  begin
+    for I := 0 to Length(vData)-1 do
+      _Add(Ord(vData[i+1]), vIndex);
+  end;
+
+var
+  i, j, TPBVal, ParamLength: Integer;
+  s, ParamName, ParamValue: AnsiString;
+  aCount: Integer;
+begin
+  aCount := 0;
+  Result := nil;
+
+  for i := 0 to vParams.Count - 1 do
+  begin
+    s := Trim(vParams[i]);
+    if (s = '') then Continue;
+
+    j := Pos('=', s);
+    if (j = 0) then
+    begin
+      ParamName := LowerCase(s);
+      ParamValue := '';
+    end
+    else
+    begin
+      ParamName := LowerCase(Copy(s, 1, j));
+      ParamValue := Copy(s, j + 1, Length(s));
+    end;
+
+    if (Pos(TPBPrefix, ParamName) = 1) then
+      Delete(ParamName, 1, Length(TPBPrefix));
+
+    TPBVal := 0;
+
+    { Find the parameter }
+    for j := 1 to isc_tpb_last_tpb_constant do
+      if (ParamName = TPBConstantNames[j]) then
+      begin
+        TPBVal := j;
+        break;
+      end;
+
+    { Now act on it }
+    case TPBVal of
+      isc_tpb_consistency, isc_tpb_exclusive, isc_tpb_protected,
+      isc_tpb_concurrency, isc_tpb_shared, isc_tpb_wait, isc_tpb_nowait,
+      isc_tpb_read, isc_tpb_write, isc_tpb_ignore_limbo,
+      isc_tpb_read_committed, isc_tpb_rec_version, isc_tpb_no_rec_version,
+      isc_tpb_restart_requests, isc_tpb_no_auto_undo:
+        _Add(TPBVal, aCount);
+
+
+      isc_tpb_lock_read, isc_tpb_lock_write, isc_tpb_lock_timeout {fb2}:
+      begin
+        _Add(TPBVal, aCount);
+        _Add(Length(ParamValue), aCount);
+        _Add(ParamValue, aCount);
+
+      end;
+      else
+      begin
+        if (TPBVal > 0) and (TPBVal <= isc_tpb_last_tpb_constant) then
+          FBRaiseError(fbceTPBConstantNotSupported, [TPBConstantNames[TPBVal]])
+        else
+          FBRaiseError(fbceTPBConstantUnknownEx, [vParams.Names[i]]);
+      end;
+    end;
+  end;
+
+  SetLength(Result, aCount);
+end;
 
 procedure GenerateTPB(sl: TStrings; out TPB: AnsiString; var TPBLength: Short);
 var

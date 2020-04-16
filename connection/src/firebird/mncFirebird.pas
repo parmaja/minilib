@@ -1,29 +1,25 @@
 unit mncFirebird;
+{$IFDEF FPC}
+{$MODE delphi}
+{$ENDIF}
+{$M+}{$H+}
+
 {**
  *  This file is part of the "Mini Connections"
  *
  * @license   modifiedLGPL (modified of http://www.gnu.org/licenses/lgpl.html)
  *            See the file COPYING.MLGPL, included in this distribution,
+ * @author    Belal Hamed <belalhamed at gmail dot com>
  * @author    Zaher Dirkey <zaher at parmaja dot com>
+ * @comment   for Firebird 2.5
  *}
-
-{
-  Only FirebirdSQL 2.5 Dialect 3
-}
-
-{$M+}
-{$H+}
-{$IFDEF FPC}
-{$mode delphi}
-{$ENDIF}
 
 interface
 
 uses
   Classes, SysUtils, Variants,
   mncConnections, mncSQL,
-  mncFBTypes, mncFBHeader, mncFBErrors, mncFBUtils, mncFBClient, mncMeta,
-  mncSQLDA;
+  mncFBHeaders, mncFBClasses, mncFBUtils, mncDB;
 
 const
   FB_DIALECT = 3;
@@ -45,15 +41,14 @@ type
     FHandle: TISC_DB_HANDLE;
     FCharacterSet: string;
     FRole: string;
-    FDPB: PChar;
-    FDPBLength: Short;
     function GetIsReadOnly: Boolean;
   protected
+    function ExecDatabaseInfo(vCommand: Byte): TFBLocalBufferArray;
+
     function GetBaseLevel: Long;
     function GetDBSQLDialect: Integer;
-    function GetLongDatabaseInfo(Command: Integer): Integer;
 
-    function Call(ErrCode: ISC_STATUS; const StatusVector: TStatusVector; RaiseError: Boolean): ISC_STATUS;
+    function CheckErr(ErrCode: ISC_STATUS; const StatusVector: TStatusVector; RaiseError: Boolean): ISC_STATUS;
 
     procedure DoConnect; override;
     procedure DoDisconnect; override;
@@ -70,27 +65,26 @@ type
     procedure Vacuum; override;
 
     function GetVersion: string;
-    procedure Execute(SQL: string); override;
+    procedure Execute(vCommand: string); override;
     property Role: string read FRole write FRole;
     property CharacterSet: string read FCharacterSet write FCharacterSet; //ex: WIN1252 for Lazarus use UTF8
     //todo 'character set WIN1252 collate WIN_PTBR';
     property Handle: TISC_DB_HANDLE read FHandle;
     property IsReadOnly: Boolean read GetIsReadOnly;
     property ErrorHandles: TFBErrorHandles read FErrorHandles write FErrorHandles;
-    function GetExtension: string; override;
+    procedure SetVariable(const vName, vData: string);
   end;
 
-  { TmncFBSession }
+  { TmncFBTransaction }
 
   TmncFBSession = class(TmncSQLSession)
   private
     FHandle: TISC_TR_HANDLE;
-    FTPB: PChar;
-    FTPBLength: Short;
+    FTPB: TBytes;
     function GetConnection: TmncFBConnection;
     procedure SetConnection(const AValue: TmncFBConnection);
   protected
-    function Call(ErrCode: ISC_STATUS; const StatusVector: TStatusVector; RaiseError: Boolean): ISC_STATUS;
+    function CheckErr(ErrCode: ISC_STATUS; const StatusVector: TStatusVector; RaiseError: Boolean): ISC_STATUS;
     procedure DoInit; override;
     procedure DoStart; override;
     procedure DoStop(How: TmncSessionAction; Retaining: Boolean); override;
@@ -99,14 +93,11 @@ type
   public
     constructor Create(vConnection: TmncConnection); override;
     destructor Destroy; override;
-    procedure Execute(SQL: string);
+    procedure Execute(vSQL: string);
     property Handle: TISC_TR_HANDLE read FHandle;
-    property TPB: PChar read FTPB;
-    property TPBLength: Short read FTPBLength;
+    property TPB: TBytes read FTPB;
     property Connection: TmncFBConnection read GetConnection write SetConnection;
   end;
-
-  TmncFBTransaction = TmncFBSession;
 
   { TmncFBField }
 
@@ -224,29 +215,55 @@ type
 
   { TmncFBCommand }
 
-  TmncFBCommand = class(TmncSQLCommand)
+  TmncCustomFBCommand = class(TmncSQLCommand)
+  private
+    function GetConnection: TmncFBConnection;
+    function GetTransaction: TmncFBSession;
+    procedure SetTransaction(const Value: TmncFBSession);
+    function GetFBParams: TmncFBParams;
+  protected
+    function CheckErr(ErrCode: ISC_STATUS; StatusVector: TStatusVector; RaiseError: Boolean): ISC_STATUS;
+    function CreateParams: TmncParams; override;
+    property FBParams: TmncFBParams read GetFBParams;
+
+  public
+    property Connection: TmncFBConnection read GetConnection;
+    property Transaction: TmncFBSession read GetTransaction write SetTransaction;
+
+  end;
+
+  TmncFBDDLCommand = class(TmncCustomFBCommand)
+  private
+  protected
+    procedure DoPrepare; override;
+    procedure DoExecute; override;
+    procedure DoParse; override;
+    procedure DoNext; override;
+    function GetDone: Boolean; override;
+    function CreateColumns: TmncColumns; override;
+  end;
+
+  TmncFBCommand = class(TmncCustomFBCommand)
   private
     FHandle: TISC_STMT_HANDLE;
     FActive: Boolean;
     FCursor: string;
     FSQLType: TFBDSQLTypes;
-    function GetConnection: TmncFBConnection;
-    function GetSession: TmncFBSession;
+    FBOF: Boolean;
+    FEOF: Boolean;
     procedure SetCursor(AValue: string);
-    procedure SetSession(const AValue: TmncFBSession);
     procedure FreeHandle;
     //Very dangrouse functions, be sure not free it with SQLVAR sqldata and sqlind, becuase it is shared with params sqldata
-    procedure AllocateBinds(var XSQLDA: PXSQLDA);
+    procedure AllocateBinds(out XSQLDA: PXSQLDA);
     procedure DeallocateBinds(var XSQLDA: PXSQLDA);
+    function GetFBFields: TmncFBFields;
   protected
-    function Call(ErrCode: ISC_STATUS; StatusVector: TStatusVector; RaiseError: Boolean): ISC_STATUS;
     procedure CheckHandle;//TODO remove it
     procedure DoParse; override;
     procedure DoPrepare; override;
     procedure DoExecute; override;
     procedure DoNext; override;
     procedure DoUnprepare; override;
-    function GetDone: Boolean; override;
     function GetActive: Boolean; override;
     procedure SetActive(const Value: Boolean); override;
     procedure DoClose; override;
@@ -255,13 +272,18 @@ type
     //function GetPlan: string;
     function CreateFields(vColumns: TmncColumns): TmncFields; override;
     function CreateParams: TmncParams; override;
-    property Connection: TmncFBConnection read GetConnection;
-    property Session: TmncFBSession read GetSession write SetSession;
+
+    function GetDone: Boolean; override;
+
+
   public
     procedure Clear; override;
     function GetRowsChanged: Integer; override;
     property SQLType: TFBDSQLTypes read FSQLType;
     property Handle: TISC_STMT_HANDLE read FHandle;
+    procedure RunSQL(const vSQL: string);
+
+    property FBFields: TmncFBFields read GetFBFields;
     { Cursor name
       Optional you can use it
 
@@ -275,25 +297,24 @@ type
 
 implementation
 
-uses
-  mncFBMeta, mncDB;
-
 { TmncFBConnection }
 
 constructor TmncFBConnection.Create;
 begin
   inherited Create;
+
   FErrorHandles := [eonExecute, eonDisconnect];
+
   {$ifdef FPC}
   FCharacterSet := 'UTF8';
   {$else}
-  FCharacterSet := 'UTF-16';
+  FCharacterSet := 'UTF8';
   {$endif}
 end;
 
 class function TmncFBConnection.Capabilities: TmncCapabilities;
 begin
-  Result := [ccDB, ccAlias, ccPath, ccSQL, ccStrict, ccTransaction, ccMultiTransaction, ccNetwork];
+  Result:= [ccDB, ccAlias, ccPath, ccSQL, ccNetwork, ccTransaction];
 end;
 
 class function TmncFBConnection.Name: string;
@@ -307,8 +328,38 @@ begin
 end;
 
 procedure TmncFBConnection.CreateDatabase(const vName: string; CheckExists: Boolean);
+var
+  aUserName, aPassword: string;
+  aParams: TStringList;
+  ConnectString: UTF8String;
+  tr_handle: TISC_TR_HANDLE;
+  StatusVector: TStatusVector;
+  aHandle: TISC_DB_HANDLE;
 begin
-  //TODO
+  aParams := TStringList.Create;
+  try
+    aUserName := UserName;
+    aPassword := Password;
+
+    if aUserName <> '' then
+      aParams.Add(Format('USER ''%s''', [aUserName]));
+    if aPassword <> '' then
+      aParams.Add(Format('PASSWORD ''%s''', [aPassword]));
+    if CharacterSet <> '' then
+      aParams.Add(Format('DEFAULT CHARACTER SET %s', [UpperCase(CharacterSet)]));
+
+    ConnectString := 'CREATE DATABASE ''' + FBComposeConnectionString(vName, Host, Port, FBClient.IsEmbed) +  ''' ' + aParams.Text;
+  finally
+    aParams.Free;
+  end;
+
+  try
+    tr_handle := nil;
+    aHandle := nil;
+    CheckErr(FBClient.isc_dsql_execute_immediate(@StatusVector, @aHandle, @tr_handle, Length(ConnectString), PByte(ConnectString), FB_DIALECT, nil), StatusVector, True);
+    CheckErr(FBClient.isc_detach_database(@StatusVector, @aHandle), StatusVector, False);
+  finally
+  end;
 end;
 
 procedure TmncFBConnection.DropDatabase(const vName: string; CheckExists: Boolean);
@@ -321,6 +372,31 @@ begin
   //TODO
 end;
 
+procedure TmncFBConnection.SetVariable(const vName, vData: string);
+var
+  aTR: TmncFBSession;
+  s: string;
+begin
+  aTR := TmncFBSession.Create(Self);
+  try
+    aTR.Start;
+    s := Format('select RDB$SET_CONTEXT(''USER_SESSION'', ''%s'', ''%s'') from rdb$database', [vName, vData]);
+    aTR.Execute(s);
+    aTR.Commit;
+  finally
+    aTR.Free;
+  end;
+end;
+
+function TmncFBConnection.ExecDatabaseInfo(vCommand: Byte): TFBLocalBufferArray;
+var
+  StatusVector:TStatusVector;
+  aStatus: ISC_STATUS;
+begin
+  aStatus := FBClient.isc_database_info(@StatusVector, @FHandle, 1, @vCommand, FBLocalBufferLength, @Result[0]);
+  CheckErr(aStatus, StatusVector, True);
+end;
+
 procedure TmncFBConnection.Vacuum;
 begin
   //TODO
@@ -328,68 +404,46 @@ end;
 
 function TmncFBConnection.GetVersion: string;
 var
-  local_buffer: array[0..FBBigLocalBufferLength - 1] of Char;
-  DatabaseInfoCommand: Char;
-  StatusVector:TStatusVector;
+  aBuf: TFBLocalBufferArray;
 begin
-  DatabaseInfoCommand := Char(isc_info_version);
-  Call(FBClient.isc_database_info(@StatusVector, @FHandle, 1, @DatabaseInfoCommand,
-                        FBBigLocalBufferLength, local_buffer), StatusVector, True);
-  local_buffer[5 + Int(local_buffer[4])] := #0;
-  Result := String(PChar(@local_buffer[5]));
-end;
-
-function TmncFBConnection.GetLongDatabaseInfo(Command: Integer): Integer;
-var
-  l: Integer;
-  c: Char;
-  StatusVector: TStatusVector;
-  local_buffer: array[0..FBLocalBufferLength - 1] of Char;
-begin
-  c := Char(Command);
-  Call(FBClient.isc_database_info(@StatusVector, @Handle, 1, @c, FBLocalBufferLength, local_buffer), StatusVector, True);
-  l := FBClient.isc_vax_integer(@local_buffer[1], 2);
-  Result := FBClient.isc_vax_integer(@local_buffer[3], l);
+  aBuf := ExecDatabaseInfo(isc_info_version);
+  Result := FBGetString(aBuf, 5, Int(aBuf[4]));
 end;
 
 function TmncFBConnection.GetIsReadOnly: Boolean;
+var
+  aBuf: TFBLocalBufferArray;
+  aLen: Integer;
 begin
-  Result := GetLongDatabaseInfo(isc_info_db_read_only) <> 0;
+  aBuf := ExecDatabaseInfo(isc_info_db_read_only);
+  aLen := FBClient.isc_vax_integer(@aBuf[1], 2);
+  Result := FBClient.isc_vax_integer(@aBuf[3], aLen)<>0;
 end;
 
 function TmncFBConnection.GetBaseLevel: Long;
 var
-  local_buffer: array[0..FBLocalBufferLength - 1] of Char;
-  DatabaseInfoCommand: Char;
-  StatusVector: TStatusVector;
+  aBuf: TFBLocalBufferArray;
 begin
-  //CheckInactive;
-  DatabaseInfoCommand := Char(isc_info_base_level);
-  Call(FBClient.isc_database_info(@StatusVector, @FHandle, 1, @DatabaseInfoCommand,
-    FBLocalBufferLength, local_buffer), StatusVector, True);
-  Result := FBClient.isc_vax_integer(@local_buffer[4], 1);
+  aBuf := ExecDatabaseInfo(isc_info_base_level);
+  Result := FBClient.isc_vax_integer(@aBuf[4], 1);
 end;
 
 function TmncFBConnection.GetDBSQLDialect: Integer;
 var
-  local_buffer: array[0..FBLocalBufferLength - 1] of Char;
-  length: Integer;
-  DatabaseInfoCommand: Char;
-  StatusVector: TStatusVector;
+  aBuf: TFBLocalBufferArray;
+  aLen: Integer;
 begin
-  DatabaseInfoCommand := Char(isc_info_db_SQL_Dialect);
-  Call(FBClient.isc_database_info(@StatusVector, @FHandle, 1, @DatabaseInfoCommand,
-    FBLocalBufferLength, local_buffer), StatusVector, True);
-  if (local_buffer[0] <> Char(isc_info_db_SQL_dialect)) then
+  aBuf := ExecDatabaseInfo(isc_info_db_SQL_Dialect);
+  if (aBuf[0] <> isc_info_db_SQL_dialect) then
     Result := 1
   else
   begin
-    length := FBClient.isc_vax_integer(@local_buffer[1], 2);
-    Result := FBClient.isc_vax_integer(@local_buffer[3], length);
+    aLen := FBClient.isc_vax_integer(@aBuf[1], 2);
+    Result := FBClient.isc_vax_integer(@aBuf[3], aLen);
   end;
 end;
 
-function TmncFBConnection.Call(ErrCode: ISC_STATUS;  const StatusVector: TStatusVector; RaiseError: Boolean): ISC_STATUS;
+function TmncFBConnection.CheckErr(ErrCode: ISC_STATUS;  const StatusVector: TStatusVector; RaiseError: Boolean): ISC_STATUS;
 begin
   Result := ErrCode;
   if RaiseError and (CheckStatusVector(StatusVector, [isc_lost_db_connection]) or
@@ -408,31 +462,38 @@ end;
 
 procedure TmncFBConnection.DoConnect;
 var
-  DPB: string;
+  aDPBLength: Short;
+
+  DPB: AnsiString;
   //i: Integer;
-  aDatabaseName: AnsiString;
+  aDatabaseName: UTF8String;
   aParams: TStringList;
   StatusVector: TStatusVector;
+  aDPBs: TBytes;
+  aDPB: PByte;
 begin
   aParams := TStringList.Create;
   try
     aParams.Assign(Params);
     FBDatabaseInfo(UserName, Password, Role, CharacterSet, aParams);
-    GenerateDPB(aParams, DPB, FDPBLength);
+    aDPBs := GenerateDPBEx(aParams);
+    aDPBLength := Length(aDPBs);
   finally
     aParams.Free;
   end;
-  FBAlloc(FDPB, 0, FDPBLength);
-  Move(DPB[1], FDPB[0], FDPBLength);
-  aDatabaseName := FBComposeConnectionString(Resource, Host, Port, FBClient.IsEmbed);
-  if Call(FBClient.isc_attach_database(@StatusVector, Length(aDatabaseName),
-    PChar(aDatabaseName), @FHandle, FDPBLength, FDPB), StatusVector, False) > 0 then
-  begin
-    FHandle := nil;
-    FBRaiseError(StatusVector);
+
+  aDPB := PByte(@aDPBs[0]);
+  try
+    aDatabaseName := FBComposeConnectionString(Resource, Host, Port, FBClient.IsEmbed);
+    if CheckErr(FBClient.isc_attach_database(@StatusVector, Length(aDatabaseName), PByte(aDatabaseName), @FHandle, aDPBLength, aDPB), StatusVector, False) > 0 then
+    begin
+      FHandle := nil;
+      FBRaiseError(StatusVector);
+    end;
+    if (GetDBSQLDialect < FB_DIALECT) then
+      raise EFBError.Create(-1, 'This database not dialect 3, other dialects not supported')
+  finally
   end;
-  if (GetDBSQLDialect < FB_DIALECT) then
-    raise EFBError.Create(-1, 'This database not dialect 3, other dialects not supported')
 
 {    for i := 0 to FEventNotifiers.Count - 1 do
       if IFBEventNotifier(FEventNotifiers[i]).GetAutoRegister then
@@ -446,12 +507,9 @@ end;
 
 procedure TmncFBConnection.DoDisconnect;
 var
-//  i: Integer;
   StatusVector: TStatusVector;
 begin
-{  for i := 0 to FEventNotifiers.Count - 1 do
-    IFBEventNotifier(FEventNotifiers[i]).UnRegisterEvents;}
-  if (eonDisconnect in ErrorHandles) and (Call(FBClient.isc_detach_database(@StatusVector, @FHandle), StatusVector, False) > 0) then
+  if (eonDisconnect in ErrorHandles) and (CheckErr(FBClient.isc_detach_database(@StatusVector, @FHandle), StatusVector, False) > 0) then
     FBRaiseError(StatusVector)
   else
     FHandle := nil;
@@ -461,8 +519,7 @@ end;
 
 destructor TmncFBSession.Destroy;
 begin
-  FreeMem(FTPB);
-  FTPB := nil;
+
   inherited;
 end;
 
@@ -471,42 +528,43 @@ begin
   Result := TmncFBCommand.CreateBy(Self);
 end;
 
-procedure TmncFBSession.Execute(SQL: string);
+procedure TmncFBSession.Execute(vSQL: string);
 var
-  tr_handle: TISC_TR_HANDLE;
   StatusVector: TStatusVector;
+  s: UTF8String;
 begin
-  tr_handle := nil;
-  try
-    Call(FBClient.isc_dsql_execute_immediate(@StatusVector, @Connection.FHandle, @FHandle, 0, PChar(SQL), FB_DIALECT, nil), StatusVector, True);
-  finally
-  end;
+  s := UTF8Encode(vSQL);
+  CheckErr(FBClient.isc_dsql_execute_immediate(@StatusVector, @Connection.Handle, @FHandle, Length(s), PByte(s), FB_DIALECT, nil), StatusVector, True);
 end;
+
 
 procedure TmncFBSession.DoStart;
 var
   pteb: PISC_TEB_ARRAY;
-  TPB: string;
+  aTPB: PByte;
   StatusVector: TStatusVector;
+  aTPBs: TBytes;
 begin
   if ParamsChanged then
   begin
     ParamsChanged := False;
-    GenerateTPB(Params, TPB, FTPBLength);
-    if FTPBLength > 0 then
-    begin
-      FBAlloc(FTPB, 0, FTPBLength);
-      Move(TPB[1], FTPB[0], FTPBLength);
-    end;
+    FTPB := GenerateTPBEx(Params);
   end;
 
+  if Length(FTPB)=0 then
+    aTPB := nil
+  else
+    aTPB := PByte(@FTPB[0]);
+
+
+
   pteb := nil;
-  FBAlloc(pteb, 0, SizeOf(TISC_TEB));
+  FBAlloc(pteb, 0, SizeOf(TISC_TEB), False);
   try
     pteb^[0].db_handle := @(Connection.Handle);
-    pteb^[0].tpb_length := FTPBLength;
-    pteb^[0].tpb_address := FTPB;
-    if Call(FBClient.isc_start_multiple(@StatusVector, @FHandle, 1, PISC_TEB(pteb)), StatusVector, False) > 0 then
+    pteb^[0].tpb_length := Length(FTPB);
+    pteb^[0].tpb_address := aTPB;
+    if CheckErr(FBClient.isc_start_multiple(@StatusVector, @FHandle, 1, PISC_TEB(pteb)), StatusVector, False) > 0 then
     begin
       FHandle := nil;
       FBRaiseError(StatusVector);
@@ -524,35 +582,32 @@ begin
     sdaCommit:
     begin
       if not Retaining then
-        Call(FBClient.isc_commit_transaction(@StatusVector, @FHandle), StatusVector, False)
+        CheckErr(FBClient.isc_commit_transaction(@StatusVector, @FHandle), StatusVector, True)
       else
-        Call(FBClient.isc_commit_retaining(@StatusVector, @FHandle), StatusVector, True);
+        CheckErr(FBClient.isc_commit_retaining(@StatusVector, @FHandle), StatusVector, True);
     end;
     sdaRollback:
     begin
       if not Retaining then
-        Call(FBClient.isc_rollback_transaction(@StatusVector, @FHandle), StatusVector, True)
+        CheckErr(FBClient.isc_rollback_transaction(@StatusVector, @FHandle), StatusVector, True)
       else
-        Call(FBClient.isc_rollback_retaining(@StatusVector, @FHandle), StatusVector, True);
+        CheckErr(FBClient.isc_rollback_retaining(@StatusVector, @FHandle), StatusVector, True);
     end;
   end;
 end;
 
-procedure TmncFBConnection.Execute(SQL: string);
+procedure TmncFBConnection.Execute(vCommand: string);
 var
   tr_handle: TISC_TR_HANDLE;
   StatusVector: TStatusVector;
+  s: UTF8String;
 begin
   tr_handle := nil;
   try
-    Call(FBClient.isc_dsql_execute_immediate(@StatusVector, @FHandle, @tr_handle, 0, PChar(SQL), FB_DIALECT, nil), StatusVector, True);
+    s := UTF8Encode(vCommand);
+    CheckErr(FBClient.isc_dsql_execute_immediate(@StatusVector, @FHandle, @tr_handle, 0, PByte(s), FB_DIALECT, nil), StatusVector, True);
   finally
   end;
-end;
-
-function TmncFBConnection.GetExtension: string;
-begin
-  Result := '.fdb';
 end;
 
 function TmncFBSession.GetActive: Boolean;
@@ -565,7 +620,6 @@ begin
   inherited;
   FHandle := nil;
   FTPB := nil;
-  FTPBLength := 0;
 end;
 
 function TmncFBSession.GetConnection: TmncFBConnection;
@@ -582,11 +636,11 @@ begin
   inherited Connection := AValue;
 end;
 
-function TmncFBSession.Call(ErrCode: ISC_STATUS; const StatusVector: TStatusVector; RaiseError: Boolean): ISC_STATUS;
+function TmncFBSession.CheckErr(ErrCode: ISC_STATUS; const StatusVector: TStatusVector; RaiseError: Boolean): ISC_STATUS;
 begin
   Result := ErrCode;
   if CheckStatusVector(StatusVector, [isc_lost_db_connection]) then
-    Connection.Call(ErrCode, StatusVector, RaiseError)
+    Connection.CheckErr(ErrCode, StatusVector, RaiseError)
   else if RaiseError and (Result > 0) then
     FBRaiseError(StatusVector);
 end;
@@ -638,7 +692,10 @@ end;
 
 procedure TmncFBField.SetAsString(const AValue: string);
 begin
-  FSQLVAR.AsString := AValue;
+  if AValue='' then
+    Clear
+  else
+    FSQLVAR.AsString := AValue;
 end;
 
 function TmncFBField.GetAsInteger: Integer;
@@ -800,7 +857,9 @@ end;
 procedure TmncFBParams.Clear;
 begin
   inherited Clear;
-  InitSQLDA(FSQLDA, 0);
+
+
+  FreeSQLDA(FSQLDA);
 end;
 
 { TmncFBParam }
@@ -832,7 +891,10 @@ end;
 
 procedure TmncFBParam.SetAsString(const AValue: string);
 begin
-  FSQLVAR.AsString := AValue;
+  if AValue='' then
+    Clear
+  else
+    FSQLVAR.AsString := AValue;
 end;
 
 function TmncFBParam.GetAsInteger: Integer;
@@ -982,26 +1044,23 @@ end;
 procedure TmncFBFields.Clear;
 begin
   inherited Clear;
-  InitSQLDA(FSQLDA, 0);
+  FreeSQLDA(FSQLDA);
 end;
 
 { TmncFBCommand }
 
-function TmncFBCommand.GetSession: TmncFBSession;
+procedure TmncFBCommand.RunSQL(const vSQL: string);
 begin
-  Result := inherited Session as TmncFBSession;
+  Transaction.Execute(vSQL);
 end;
 
 procedure TmncFBCommand.SetCursor(AValue: string);
 begin
-  if FCursor =AValue then Exit;
-  CheckInactive;
-  FCursor :=AValue;
-end;
-
-procedure TmncFBCommand.SetSession(const AValue: TmncFBSession);
-begin
-  inherited Session := AValue;
+  if FCursor <> AValue then
+  begin
+    CheckInactive;
+    FCursor :=AValue;
+  end;
 end;
 
 procedure TmncFBCommand.FreeHandle;
@@ -1014,7 +1073,7 @@ begin
     begin
       //if Connection.Connected then
       begin
-        isc_res := Call(FBClient.isc_dsql_free_statement(@StatusVector, @FHandle, DSQL_drop), StatusVector, False);
+        isc_res := CheckErr(FBClient.isc_dsql_free_statement(@StatusVector, @FHandle, DSQL_drop), StatusVector, False);
         if (StatusVector[0] = 1) and (isc_res > 0) and (isc_res <> isc_bad_stmt_handle) and (isc_res <> isc_lost_db_connection) then
           FBRaiseError(StatusVector);
       end;
@@ -1027,16 +1086,22 @@ end;
 procedure TmncFBCommand.Clear;
 begin
   inherited;
+  FBOF := True;
 end;
 
 function TmncFBCommand.GetDone: Boolean;
 begin
-  Result := not FActive or inherited GetDone;
+  Result := FEOF;
+end;
+
+function TmncFBCommand.GetFBFields: TmncFBFields;
+begin
+  Result := Fields as TmncFBFields;
 end;
 
 function TmncFBCommand.GetRowsChanged: Integer;
 var
-  result_buffer: array[0..1048] of Char;
+  result_buffer: array[0..1048] of Byte;
   info_request: Char;
   StatusVector: TStatusVector;
 begin
@@ -1046,16 +1111,16 @@ begin
   begin
     info_request := Char(isc_info_sql_records);
     if FBClient.isc_dsql_sql_info(@StatusVector, @FHandle, 1, @info_request,
-      SizeOf(result_buffer), result_buffer) > 0 then
+      SizeOf(result_buffer), @result_buffer[0]) > 0 then
       FBRaiseError(StatusVector);
-    if (result_buffer[0] <> Char(isc_info_sql_records)) then
+    if (result_buffer[0] <> isc_info_sql_records) then
       Result := -1
     else
       case SQLType of
-        SQLSelect: Result := GetInfoReqRecord(result_buffer, isc_info_req_select_count);
-        SQLUpdate: Result := GetInfoReqRecord(result_buffer, isc_info_req_update_count);
-        SQLDelete: Result := GetInfoReqRecord(result_buffer, isc_info_req_delete_count);
-        SQLInsert: Result := GetInfoReqRecord(result_buffer, isc_info_req_insert_count);
+        SQLSelect: Result := GetInfoReqRecord(@result_buffer[0], isc_info_req_select_count);
+        SQLUpdate: Result := GetInfoReqRecord(@result_buffer[0], isc_info_req_update_count);
+        SQLDelete: Result := GetInfoReqRecord(@result_buffer[0], isc_info_req_delete_count);
+        SQLInsert: Result := GetInfoReqRecord(@result_buffer[0], isc_info_req_insert_count);
       else
         Result := -1;
       end;
@@ -1065,37 +1130,55 @@ end;
 procedure TmncFBCommand.DoExecute;
 var
   StatusVector: TStatusVector;
-  BindsData: PXSQLDA;
+  aData: PXSQLDA;
 begin
+  if Active then DoClose;
+  FBOF := True;
+  FEOF := False;
   CheckHandle;
-  BindsData := nil;
-  AllocateBinds(BindsData);
+  AllocateBinds(aData);
   try
     case FSQLType of
       SQLSelect:
-        begin
-          Call(FBClient.isc_dsql_execute2(@StatusVector,  @Session.Handle, @FHandle,
-            FB_DIALECT, BindsData, nil), StatusVector, True);
-
-          if FCursor <> '' then
-            Call(FBClient.isc_dsql_set_cursor_name(@StatusVector, @FHandle, PAnsiChar(FCursor), 0), StatusVector, True);
-          FActive := True;
-        end;
+      begin
+        CheckErr(FBClient.isc_dsql_execute2(@StatusVector,  @Transaction.Handle, @FHandle, FB_DIALECT, aData, nil), StatusVector, True);
+        if FCursor <> '' then
+          CheckErr(FBClient.isc_dsql_set_cursor_name(@StatusVector, @FHandle, PByte(FCursor), 0), StatusVector, True);
+        FActive := True;
+        FBOF := False;
+      end;
       SQLExecProcedure:
+      begin
+        if FBFields <> nil then
         begin
-          Call(FBClient.isc_dsql_execute2(@StatusVector,
-            @Session.Handle, @FHandle, FB_DIALECT,
-            BindsData, (Params as TmncFBParams).SQLDA), StatusVector, True);
-          HitUnready;
+          CheckErr(FBClient.isc_dsql_execute2(@StatusVector, @Transaction.Handle, @FHandle, FB_DIALECT, aData, FBFields.SQLDA), StatusVector, True);
+          FActive := True;
+          FBOF := True;
         end
-    else
-      Call(FBClient.isc_dsql_execute(@StatusVector,
-        @Session.Handle, @FHandle, FB_DIALECT,
-        BindsData), StatusVector, True);
-      HitUnready;
+        else
+        begin
+          CheckErr(FBClient.isc_dsql_execute2(@StatusVector, @Transaction.Handle, @FHandle, FB_DIALECT, aData, aData), StatusVector, True);
+          FEOF := True;
+        end;
+      end;
+      SQLCommit:
+      begin
+        CheckErr(FBClient.isc_dsql_execute(@StatusVector, @Transaction.Handle, @FHandle, FB_DIALECT, aData), StatusVector, True);
+        FEOF := True;
+      end;
+      SQLStartTransaction:
+      begin
+        CheckErr(FBClient.isc_dsql_execute(@StatusVector, @Transaction.Handle, @FHandle, FB_DIALECT, aData), StatusVector, True);
+        FEOF := True;
+      end;
+      else
+      begin
+        CheckErr(FBClient.isc_dsql_execute(@StatusVector, @Transaction.Handle, @FHandle, FB_DIALECT, aData), StatusVector, True);
+        FEOF := True;
+      end;
     end;
   finally
-    DeallocateBinds(BindsData);
+    DeallocateBinds(aData);
   end;
 end;
 
@@ -1104,24 +1187,36 @@ var
   fetch_res: ISC_STATUS;
   StatusVector: TStatusVector;
 begin
-  if not Done then
+  if FBOF then
   begin
-    fetch_res := Call(FBClient.isc_dsql_fetch(@StatusVector, @FHandle, FB_DIALECT, (Fields as TmncFBFields).FSQLDA), StatusVector, False);
-    if (fetch_res = 100) or (CheckStatusVector(StatusVector, [isc_dsql_cursor_err])) then
+    FBOF := False;
+  end
+  else
+  begin
+    if (FSQLType = SQLExecProcedure) then
     begin
-      HitDone;
+      FEOF := True;
       Fields.Clean;
-    end
-    else if (fetch_res > 0) then
-      FBRaiseError(StatusVector)
-    else
-      HitUnready;
+    end;
+  end;
+
+  if not FEOF  and (FSQLType <> SQLExecProcedure) then
+  begin
+      fetch_res := CheckErr(FBClient.isc_dsql_fetch(@StatusVector, @FHandle, FB_DIALECT, (Fields as TmncFBFields).FSQLDA), StatusVector, False);
+
+      if (fetch_res = 100) or (CheckStatusVector(StatusVector, [isc_dsql_cursor_err])) then
+      begin
+        FEOF := True;
+        Fields.Clean;
+      end
+      else if (fetch_res > 0) then
+        FBRaiseError(StatusVector)
   end;
 end;
 
 procedure TmncFBCommand.DoRollback;
 begin
-  Session.Rollback;
+  Transaction.Rollback;
 end;
 
 function TmncFBCommand.CreateFields(vColumns: TmncColumns): TmncFields;
@@ -1142,22 +1237,23 @@ begin
   try
     if (FHandle <> nil) and (SQLType in [SQLSelect, SQLSelectForUpdate, SQLExecProcedure]) {and FActive //zaher} then
     begin
-      isc_res := Call(FBClient.isc_dsql_free_statement(@StatusVector, @FHandle, DSQL_close), StatusVector, False);
+      isc_res := CheckErr(FBClient.isc_dsql_free_statement(@StatusVector, @FHandle, DSQL_close), StatusVector, False);
       if (StatusVector[0] = 1) and (isc_res > 0) and
         not CheckStatusVector(StatusVector, [isc_bad_stmt_handle, isc_dsql_cursor_close_err]) then
         if isc_res = isc_lost_db_connection then
-          Call(isc_res, StatusVector, True)
+          CheckErr(isc_res, StatusVector, True)
         else
           FBRaiseError(StatusVector);
     end;
   finally
+    FEOF := True;
     FActive := False;
   end;
 end;
 
 procedure TmncFBCommand.DoCommit;
 begin
-  Session.Commit;
+  Transaction.Commit;
 end;
 
 function TmncFBCommand.GetActive: Boolean;
@@ -1176,11 +1272,6 @@ begin
   end;
 end;
 
-function TmncFBCommand.GetConnection: TmncFBConnection;
-begin
-  Result := Session.Connection as TmncFBConnection;
-end;
-
 procedure TmncFBCommand.CheckHandle;
 begin
   //CheckTransaction;
@@ -1188,7 +1279,7 @@ begin
     FBRaiseError(fbceInvalidStatementHandle, [nil]);
 end;
 
-procedure TmncFBCommand.AllocateBinds(var XSQLDA: PXSQLDA);
+procedure TmncFBCommand.AllocateBinds(out XSQLDA: PXSQLDA);
 var
   i: Integer;
   p: PXSQLVAR;
@@ -1197,7 +1288,7 @@ begin
   XSQLDA := nil;
   if (Binds.Count > 0) then
   begin
-    x := (Params as TmncFBParams).SQLDA;
+    x := FBParams.SQLDA;
 
     InitSQLDA(XSQLDA, Binds.Count);
     move(x^, XSQLDA^, sizeof(TXSQLDA) - Sizeof(TXSQLVAR)); //minus first value because it is included with the size of TXSQLDA
@@ -1226,134 +1317,187 @@ begin
   inherited DoParse;
 end;
 
-function TmncFBCommand.Call(ErrCode: ISC_STATUS; StatusVector: TStatusVector; RaiseError: Boolean): ISC_STATUS;
-begin
-  Result := 0;
-  if (ErrCode > 0) and (Session <> nil) then
-    Result := Session.Call(ErrCode, StatusVector, RaiseError)
-  else if RaiseError and (ErrCode > 0) then
-    FBRaiseError(StatusVector);
-end;
-
 procedure TmncFBCommand.DoPrepare;
 var
-  res_buffer: array[0..7] of Char;
-  type_item: Char;
+  res_buffer: array[0..7] of Byte;
+  type_item: Byte;
   sql_type:Integer;
   StatusVector: TStatusVector;
   aData: PXSQLDA;
   p: PXSQLVAR;
   c: Integer;
   i: Integer;
-  function Fields: TmncFBFields;
-  begin
-    Result := (Self.Fields as TmncFBFields);
-  end;
 
-  function Params: TmncFBParams;
-  begin
-    Result := (Self.Params as TmncFBParams);
-  end;
 var
   aColumn: TmncColumn;
   aField: TmncFBField;
   aParam: TmncFBParam;
+  aSQL: UTF8String;
+
 begin
-  if not Prepared then//TODO remove this line
-  begin
-    try
-      Call(FBClient.isc_dsql_alloc_statement2(@StatusVector, @Connection.Handle, @FHandle), StatusVector, True);
-      Call(FBClient.isc_dsql_prepare(@StatusVector, @Session.Handle, @FHandle, 0, PAnsiChar(ProcessedSQL.SQL), FB_DIALECT, nil), StatusVector, True);
-      { type of the statement }
-      type_item := Char(isc_info_sql_stmt_type);
-      Call(FBClient.isc_dsql_sql_info(@StatusVector, @FHandle, 1, @type_item, SizeOf(res_buffer), res_buffer), StatusVector, True);
-      if not GetInfoReqInteger(res_buffer, isc_info_sql_stmt_type, sql_type) then
-        FBRaiseError(fbceUnknownError, [nil]);
-      FSQLType := TFBDSQLTypes(sql_type);
+  aSQL := UTF8Encode(ProcessedSQL.SQL);
+  try
+    CheckErr(FBClient.isc_dsql_alloc_statement2(@StatusVector, @Connection.Handle, @FHandle), StatusVector, True);
+    CheckErr(FBClient.isc_dsql_prepare(@StatusVector, @Transaction.Handle, @FHandle, 0, PByte(aSQL), FB_DIALECT, nil), StatusVector, True);
+    { type of the statement }
+    type_item := isc_info_sql_stmt_type;
+    CheckErr(FBClient.isc_dsql_sql_info(@StatusVector, @FHandle, 1, @type_item, SizeOf(res_buffer), @res_buffer[0]), StatusVector, True);
+    if not GetInfoReqInteger(@res_buffer[0], isc_info_sql_stmt_type, sql_type) then
+      FBRaiseError(fbceUnknownError, [nil]);
+    FSQLType := TFBDSQLTypes(sql_type);
 
-      case FSQLType of
-        SQLGetSegment, SQLPutSegment, SQLStartTransaction:
-          begin
-            FreeHandle;
-            FBRaiseError(fbceNotPermitted, [nil]);
+    case FSQLType of
+      SQLGetSegment, SQLPutSegment:
+      begin
+        FreeHandle;
+        FBRaiseError(fbceNotPermitted, [nil]);
+      end;
+      SQLCommit, SQLRollback, SQLStartTransaction,
+      SQLDDL, SQLSetSequence,
+      SQLSelect, SQLInsert, SQLUpdate, SQLDelete, SQLSelectForUpdate,
+      SQLExecProcedure:
+      begin
+        //Params is already created and have the items
+        InitSQLDA(FBParams.FSQLDA, Params.Count);
+
+        CheckErr(FBClient.isc_dsql_describe_bind(@StatusVector, @FHandle, FB_DIALECT, FBParams.FSQLDA), StatusVector, True);
+
+        p := @FBParams.FSQLDA^.sqlvar[0];
+        for i := 0 to Params.Count - 1 do
+        begin
+          aParam := (Params.Items[i] as TmncFBParam);
+
+          aParam.SQLVAR.XSQLVar := p;
+          aParam.SQLVAR.Attach(@Connection.Handle, @Transaction.Handle);
+          aParam.SQLVAR.Prepare;
+
+          p := Pointer(PAnsiChar(p) + XSQLVar_Size);
+        end;
+
+        //if (FSQLType in [SQLSelect, SQLSelectForUpdate, SQLExecProcedure]) then
+        begin
+          //Check if there is a result data
+          aData := nil;
+          InitSQLDA(aData, 0);
+          try
+            CheckErr(FBClient.isc_dsql_describe(@StatusVector, @FHandle, FB_DIALECT, aData), StatusVector, True);
+            c := aData^.sqld;
+          finally
+            FreeSQLDA(aData);
           end;
-        SQLCommit, SQLRollback,
-          SQLDDL, SQLSetSequence,
-          SQLSelect, SQLInsert, SQLUpdate, SQLDelete, SQLSelectForUpdate,
-          SQLExecProcedure:
+
+          if c = 0 then
           begin
-            //Params is already created and have the items
-            InitSQLDA(Params.FSQLDA, Params.Count);
+            Columns.Clear;
+            if Fields <> nil then
+              Fields.Clear;
+          end
+          else
+          begin
+            //Now we load a columns for it
+            if Self.Fields = nil then
+              Self.Fields := CreateFields(Columns) //need to create Fields because it have SQLDA buffer
+            else
+              Fields.Clear;
 
-            Call(FBClient.isc_dsql_describe_bind(@StatusVector, @FHandle, FB_DIALECT, Params.FSQLDA), StatusVector, True);
+            InitSQLDA(FBFields.FSQLDA, c);
+            aData := FBFields.FSQLDA;
 
-            p := @Params.FSQLDA^.sqlvar[0];
-            for i := 0 to Params.Count - 1 do
+            CheckErr(FBClient.isc_dsql_describe(@StatusVector, @FHandle, FB_DIALECT, aData), StatusVector, True);
+            p := @aData^.sqlvar[0];
+            for i := 0 to aData^.sqld - 1 do
             begin
-              aParam := (Params.Items[i] as TmncFBParam);
-
-              aParam.SQLVAR.XSQLVar := p;
-              aParam.SQLVAR.Attach(@Connection.Handle, @Session.Handle);
-              aParam.SQLVAR.Prepare;
+              aColumn := Columns.Add(p^.GetAliasName, SQLTypeToDataType(p^.sqltype));
+              aColumn.Scale := p^.sqlscale;
+              //aColumn.Name := FBDequoteName(aColumn.Name);
+              aField := Fields.Add(aColumn) as TmncFBField;
+              aField.SQLVAR.XSQLVar := p;
+              aField.SQLVAR.Attach(@Connection.Handle, @Transaction.Handle);
+              aField.SQLVAR.Prepare;
 
               p := Pointer(PAnsiChar(p) + XSQLVar_Size);
             end;
-
-            //if (FSQLType in [SQLSelect, SQLSelectForUpdate, SQLExecProcedure]) then
-            begin
-              //Check if there is a result data
-              aData := nil;
-              InitSQLDA(aData, 0);
-              try
-                Call(FBClient.isc_dsql_describe(@StatusVector, @FHandle, FB_DIALECT, aData), StatusVector, True);
-                c := aData^.sqld;
-              finally
-                FreeSQLDA(aData);
-              end;
-
-              if c = 0 then
-              begin
-                Columns.Clear;
-                if Fields <> nil then
-                  Fields.Clear;
-              end
-              else
-              begin
-                //Now we load a columns for it
-                if Self.Fields = nil then
-                  Self.Fields := CreateFields(Columns) //need to create Fields because it have SQLDA buffer
-                else
-                  Fields.Clear;
-
-                InitSQLDA(Fields.FSQLDA, c);
-
-                Call(FBClient.isc_dsql_describe(@StatusVector, @FHandle, FB_DIALECT, Fields.SQLDA), StatusVector, True);
-                p := @Fields.SQLDA^.sqlvar[0];
-                for i := 0 to Fields.SQLDA^.sqld - 1 do
-                begin
-                  aColumn := Columns.Add(p^.aliasname, SQLTypeToDataType(p^.sqltype));
-                  aColumn.Decimals := p^.sqlscale;
-                  //aColumn.Name := FBDequoteName(aColumn.Name);
-                  aField := Fields.Add(aColumn) as TmncFBField;
-                  aField.SQLVAR.XSQLVar := p;
-                  aField.SQLVAR.Attach(@Connection.Handle, @Session.Handle);
-                  aField.SQLVAR.Prepare;
-
-                  p := Pointer(PAnsiChar(p) + XSQLVar_Size);
-                end;
-              end;
-            end;
           end;
-       end;
-    except
-      on E: Exception do
-      begin
-        if (FHandle <> nil) then
-          FreeHandle;
-        raise;
+        end;
       end;
     end;
+  except
+    on E: Exception do
+    begin
+      if (FHandle <> nil) then
+        FreeHandle;
+      raise;
+    end;
   end;
+end;
+
+
+{ TmncCustomFBCommand }
+
+function TmncCustomFBCommand.CheckErr(ErrCode: ISC_STATUS; StatusVector: TStatusVector; RaiseError: Boolean): ISC_STATUS;
+begin
+  Result := 0;
+  if (ErrCode > 0) and (Transaction <> nil) then
+    Result := Transaction.CheckErr(ErrCode, StatusVector, RaiseError)
+  else if RaiseError and (ErrCode > 0) then
+    FBRaiseError(StatusVector);
+end;
+
+function TmncCustomFBCommand.CreateParams: TmncParams;
+begin
+  Result := nil;
+end;
+
+function TmncCustomFBCommand.GetConnection: TmncFBConnection;
+begin
+  Result := Transaction.Connection as TmncFBConnection;
+end;
+
+function TmncCustomFBCommand.GetFBParams: TmncFBParams;
+begin
+  Result := TmncFBParams(Params);
+end;
+
+function TmncCustomFBCommand.GetTransaction: TmncFBSession;
+begin
+  Result := inherited Session as TmncFBSession;
+end;
+
+procedure TmncCustomFBCommand.SetTransaction(const Value: TmncFBSession);
+begin
+  inherited Session := Value;
+end;
+
+{ TmncFBDDLCommand }
+
+function TmncFBDDLCommand.CreateColumns: TmncColumns;
+begin
+  Result := nil;
+end;
+
+procedure TmncFBDDLCommand.DoExecute;
+begin
+  Transaction.Execute(SQL.Text);
+end;
+
+procedure TmncFBDDLCommand.DoNext;
+begin
+
+end;
+
+procedure TmncFBDDLCommand.DoParse;
+begin
+
+end;
+
+procedure TmncFBDDLCommand.DoPrepare;
+begin
+
+end;
+
+function TmncFBDDLCommand.GetDone: Boolean;
+begin
+  Result := True;
 end;
 
 initialization
