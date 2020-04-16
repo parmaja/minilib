@@ -46,7 +46,7 @@ contains
   mncSQLiteMeta in '..\src\sqlite\mncSQLiteMeta.pas',
   mncPGHeader in '..\src\postgre\mncPGHeader.pas',
   mncPostgre in '..\src\postgre\mncPostgre.pas',
-  mncFBHeader in '..\src\postgre\mncFBHeader.pas',
-  mncFirebird in '..\src\postgre\mncFirebird.pas';
+  mncFBHeader in '..\src\firebird\mncFBHeader.pas',
+  mncFirebird in '..\src\firebird\mncFirebird.pas';
 
 end.
