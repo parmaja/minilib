@@ -41,19 +41,19 @@ type
 
     function IsDatabaseExists(vName: string): Boolean; overload; virtual; abstract;
     function IsDatabaseExists: Boolean; overload;
-    procedure CreateDatabase(const vName: string; CheckExists: Boolean = False); virtual; abstract; overload;
+    procedure CreateDatabase(const vName: string; CheckExists: Boolean = False); overload; virtual; abstract;
     procedure CreateDatabase(CheckExists: Boolean = False); overload;
-    procedure DropDatabase(const vName: string; CheckExists: Boolean = False); virtual; abstract; overload;
+    procedure DropDatabase(const vName: string; CheckExists: Boolean = False); overload; virtual; abstract;
     procedure DropDatabase(CheckExists: Boolean = False); overload;
 
-    procedure Execute(vCommand: string); virtual; overload;
+    procedure Execute(vCommand: string); overload; virtual;
     procedure Execute(vCommand: string; vArgs: array of const); overload;
 
     function Clone(const vResource: string; AutoConnect: Boolean = True): TmncSQLConnection; overload;
     function Clone(AutoConnect: Boolean = True): TmncSQLConnection; overload;
     procedure CloneExecute(const vResource, vSQL: string; vArgs: array of const); overload;
     procedure CloneExecute(const vResource, vSQL: string); overload;
-    procedure Vacuum; virtual; virtual;
+    procedure Vacuum; virtual;
       {
       GetParamChar: Called to take the real param char depend on the sql engine to replace it with this new one.
                     by default it is ?

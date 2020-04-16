@@ -35,15 +35,18 @@ requires
 
 contains
   mncConnections in '..\src\mncConnections.pas',
+  mncCommons in '..\src\mncCommons.pas',
+  mncMeta in '..\src\mncMeta.pas',
   mncCSV in '..\src\mncCSV.pas',
   mncSQL in '..\src\mncSQL.pas',
   mncDB in '..\src\mncDB.pas',
   mncSQLite in '..\src\sqlite\mncSQLite.pas',
   mncSQLiteHeader in '..\src\sqlite\mncSQLiteHeader.pas',
+  mncSQLiteORM in '..\src\sqlite\mncSQLiteORM.pas',
+  mncSQLiteMeta in '..\src\sqlite\mncSQLiteMeta.pas',
   mncPGHeader in '..\src\postgre\mncPGHeader.pas',
   mncPostgre in '..\src\postgre\mncPostgre.pas',
-  mncCommons in '..\src\mncCommons.pas',
-  mncMeta in '..\src\mncMeta.pas',
-  mncSQLiteMeta in '..\src\sqlite\mncSQLiteMeta.pas';
+  mncFBHeader in '..\src\postgre\mncFBHeader.pas',
+  mncFirebird in '..\src\postgre\mncFirebird.pas';
 
 end.

@@ -70,7 +70,7 @@ type
       end;
 
   protected
-    class function FieldTypeToString(FieldType:TormFieldType; FieldSize: Integer): String;
+    class function FieldTypeToString(FieldType: TmncORM.TormFieldType; FieldSize: Integer): String;
     procedure Created; override;
   public
   end;
@@ -156,7 +156,7 @@ end;
 
 { TmncSQLiteORM }
 
-class function TmncSQLiteORM.FieldTypeToString(FieldType: TormFieldType; FieldSize: Integer): String;
+class function TmncSQLiteORM.FieldTypeToString(FieldType: TmncORM.TormFieldType; FieldSize: Integer): String;
 begin
   case FieldType of
     ftString: Result := 'varchar('+IntToStr(FieldSize)+')';

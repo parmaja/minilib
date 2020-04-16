@@ -19,7 +19,7 @@ interface
 uses
   Classes, SysUtils, Variants,
   mncConnections, mncSQL,
-  mncFBHeaders, mncFBClasses, mncFBUtils, mncDB;
+  mncFBHeader, mncFBClasses, mncFBUtils, mncDB;
 
 const
   FB_DIALECT = 3;

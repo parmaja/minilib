@@ -19,7 +19,7 @@ interface
 uses
   SysUtils, Classes,
   mncConnections,
-  mncFBHeaders, mncFBClasses;
+  mncFBHeader, mncFBClasses;
 
 const
   FBLocalBufferLength = 512;

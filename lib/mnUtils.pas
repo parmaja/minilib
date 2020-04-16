@@ -23,6 +23,11 @@ uses
   Classes, SysUtils, StrUtils, DateUtils, Types;
 
 const
+  {$ifdef FPC}
+  {$else}
+  JulianEpoch = TDateTime(-2415018.5);  //check EpochAsJulianDate
+  {$endif}
+
   sUTF8BOM: array[1..3] of Char = (#$EF, #$BB, #$BF);
 
 procedure Nothing;

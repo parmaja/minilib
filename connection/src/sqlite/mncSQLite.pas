@@ -16,7 +16,7 @@ unit mncSQLite;
 interface
 
 uses
-  Classes, SysUtils, Variants,
+  Classes, SysUtils, Variants, DateUtils,
   mncSQLiteHeader, mncCommons, mncMeta,
   mnUtils, mncConnections, mncSQL;
 
@@ -792,7 +792,7 @@ begin
   FLastStepResult := 0;
 //  sqlite3_prepare_v2
 //TODO: apply value of params if using injection mode
-  CheckError(sqlite3_prepare(Connection.DBHandle, PChar(ProcessedSQL.SQL), -1 , @FStatment, @FTail));
+  CheckError(sqlite3_prepare(Connection.DBHandle, PAnsiChar(ProcessedSQL.SQL), -1 , @FStatment, @FTail));
 end;
 
 procedure TmncSQLiteCommand.DoRollback;
@@ -832,7 +832,7 @@ var
   c: Integer;
   aName: string;
   FieldType: Integer;
-  MetaType: PChar;
+  MetaType: PAnsiChar;
   aColumn: TmncColumn;
 begin
   Columns.Clear;

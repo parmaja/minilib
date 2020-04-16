@@ -844,11 +844,11 @@ end;
 function TmncORM.TormGenerator.VarBoolToStr(Value: Variant): string;
 begin
   if VarType(Value) = varBoolean then
-    Result := BoolToStr(Boolean(Value), 'true', 'false')
+    Result := BoolToStr(Boolean(Value), true)
   else if VarType(Value) = VarString then
     Result := Value
   else
-    Result := BoolToStr(Integer(Value) <> 0, 'true', 'false')
+    Result := BoolToStr(Integer(Value) <> 0, true)
 end;
 
 procedure TmncORM.TormGenerator.DefaultGenerateSQL(AObject: TormSQLObject; SQL: TCallbackObject; vLevel: Integer);
