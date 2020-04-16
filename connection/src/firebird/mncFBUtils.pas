@@ -19,7 +19,7 @@ interface
 uses
   SysUtils, Classes,
   mncConnections,
-  mncFBHeaders, mncFBClasses, mncDB;
+  mncFBHeaders, mncFBClasses;
 
 const
   FBLocalBufferLength = 512;
@@ -87,8 +87,6 @@ function GenerateTPBEx(vParams: TStrings): TBytes;
 
 function FBComposeConnectionString(DatabaseName, Host, Port: string; IsEmbed: Boolean): string;
 procedure FBDecomposeConnectionString(DatabaseName: string; var Host, FileName: string);
-
-function SQLTypeToDataType(SQLType: Integer): TmncDataType;
 
 implementation
 
@@ -1186,31 +1184,6 @@ begin
   begin
     Host := Copy(DatabaseName, 1, p - 1);
     FileName := Copy(DatabaseName, p + 1, Length(DatabaseName));
-  end;
-end;
-
-function SQLTypeToDataType(SQLType: Integer):TmncDataType;
-begin
-  case SQLType of
-    SQL_TEXT: Result := dtString;
-    SQL_DOUBLE: Result := dtFloat;
-    SQL_FLOAT: Result := dtFloat;
-    SQL_LONG: Result := dtInteger;
-    SQL_SHORT: Result := dtInteger;
-    SQL_TIMESTAMP: Result := dtDateTime;
-    SQL_BLOB: Result := dtBlob;
-    SQL_D_FLOAT: Result := dtFloat;
-    SQL_ARRAY: Result := dtUnknown;
-    SQL_QUAD: Result := dtBlob;
-    SQL_TYPE_TIME: Result := dtTime;
-    SQL_TYPE_DATE: Result := dtDate;
-    SQL_INT64: Result := dtInteger;
-    SQL_NULL: Result := dtUnknown;
-    //SQL_DATE: Result := dtDateTime;
-    SQL_BOOLEAN: Result := dtBoolean;
-    else
-      Result := dtUnknown;
-
   end;
 end;
 

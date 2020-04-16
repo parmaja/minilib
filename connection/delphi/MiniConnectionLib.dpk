@@ -43,7 +43,7 @@ contains
   mncPGHeader in '..\src\postgre\mncPGHeader.pas',
   mncPostgre in '..\src\postgre\mncPostgre.pas',
   mncCommons in '..\src\mncCommons.pas',
-  mncMetas in '..\src\mncMetas.pas',
-  mncSQLiteMetas in '..\src\sqlite\mncSQLiteMetas.pas';
+  mncMeta in '..\src\mncMeta.pas',
+  mncSQLiteMeta in '..\src\sqlite\mncSQLiteMeta.pas';
 
 end.
