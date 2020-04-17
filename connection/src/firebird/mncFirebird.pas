@@ -63,6 +63,7 @@ type
     procedure DropDatabase(const vName: string; CheckExists: Boolean = False); override;
     function IsDatabaseExists(vName: string): Boolean; override;
     procedure Vacuum; override;
+    function GetExtension: string; override;
 
     function GetVersion: string;
     procedure Execute(vCommand: string); override;
@@ -335,7 +336,7 @@ end;
 
 class function TmncFBConnection.Capabilities: TmncCapabilities;
 begin
-  Result:= [ccDB, ccAlias, ccPath, ccSQL, ccNetwork, ccTransaction];
+  Result:= [ccDB, ccAlias, ccPath, ccCreate, {ccDrop, }ccSQL, ccNetwork, ccTransaction];
 end;
 
 class function TmncFBConnection.Name: string;
@@ -384,8 +385,37 @@ begin
 end;
 
 procedure TmncFBConnection.DropDatabase(const vName: string; CheckExists: Boolean);
+var
+  aUserName, aPassword: string;
+  aParams: TStringList;
+  ConnectString: UTF8String;
+  tr_handle: TISC_TR_HANDLE;
+  StatusVector: TStatusVector;
+  aHandle: TISC_DB_HANDLE;
 begin
-  //TODO
+  aParams := TStringList.Create;
+  try
+    aUserName := UserName;
+    aPassword := Password;
+
+    if aUserName <> '' then
+      aParams.Add(Format('USER ''%s''', [aUserName]));
+    if aPassword <> '' then
+      aParams.Add(Format('PASSWORD ''%s''', [aPassword]));
+    if CharacterSet <> '' then
+      aParams.Add(Format('DEFAULT CHARACTER SET %s', [UpperCase(CharacterSet)]));
+
+    ConnectString := 'DROP DATABASE ''' + FBComposeConnectionString(vName, Host, Port, FBClient.IsEmbed) +  ''' ' + aParams.Text;
+  finally
+    aParams.Free;
+  end;
+
+  try
+    tr_handle := nil;
+    aHandle := nil;
+    CheckErr(FBClient.isc_dsql_execute_immediate(@StatusVector, @aHandle, @tr_handle, Length(ConnectString), PByte(ConnectString), FB_DIALECT, nil), StatusVector, True);
+  finally
+  end;
 end;
 
 function TmncFBConnection.IsDatabaseExists(vName: string): Boolean;
@@ -421,6 +451,11 @@ end;
 procedure TmncFBConnection.Vacuum;
 begin
   //TODO
+end;
+
+function TmncFBConnection.GetExtension: string;
+begin
+  Result := '.fdb';
 end;
 
 function TmncFBConnection.GetVersion: string;
@@ -1195,6 +1230,7 @@ begin
       else
       begin
         CheckErr(FBClient.isc_dsql_execute(@StatusVector, @Transaction.Handle, @FHandle, FB_DIALECT, aData), StatusVector, True);
+        FActive := True;
         FEOF := True;
       end;
     end;
