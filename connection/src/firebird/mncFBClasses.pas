@@ -834,7 +834,10 @@ end;
 procedure TmncSQLVAR.UpdateData(OldSize, NewSize: Integer);
 begin
   if NewSize = 0 then
-    FBFree(FXSQLVAR^.SqlData)
+  begin
+    if (FXSQLVAR <> nil) and (FXSQLVAR^.SqlData <> nil) then
+      FBFree(FXSQLVAR^.SqlData)
+  end
   else
     FBAlloc(FXSQLVAR^.SqlData, OldSize, NewSize);
 end;

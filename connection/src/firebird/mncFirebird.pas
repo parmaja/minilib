@@ -63,9 +63,8 @@ type
     procedure DropDatabase(const vName: string; CheckExists: Boolean = False); override;
     function IsDatabaseExists(vName: string): Boolean; override;
     procedure Vacuum; override;
-    function GetExtension: string; override;
-
     function GetVersion: string;
+    function GetExtension: string; override;
     procedure Execute(vCommand: string); override;
     property Role: string read FRole write FRole;
     property CharacterSet: string read FCharacterSet write FCharacterSet; //ex: WIN1252 for Lazarus use UTF8
@@ -344,6 +343,11 @@ begin
   Result := 'FirebirdSQL';
 end;
 
+function TmncFBConnection.GetExtension: string;
+begin
+  Result := '.fdb';
+end;
+
 function TmncFBConnection.CreateSession: TmncSQLSession;
 begin
   Result := TmncFBSession.Create(Self);
@@ -451,11 +455,6 @@ end;
 procedure TmncFBConnection.Vacuum;
 begin
   //TODO
-end;
-
-function TmncFBConnection.GetExtension: string;
-begin
-  Result := '.fdb';
 end;
 
 function TmncFBConnection.GetVersion: string;
@@ -593,7 +592,6 @@ begin
   CheckErr(FBClient.isc_dsql_execute_immediate(@StatusVector, @Connection.Handle, @FHandle, Length(s), PByte(s), FB_DIALECT, nil), StatusVector, True);
 end;
 
-
 procedure TmncFBSession.DoStart;
 var
   pteb: PISC_TEB_ARRAY;
@@ -611,8 +609,6 @@ begin
     aTPB := nil
   else
     aTPB := PByte(@FTPB[0]);
-
-
 
   pteb := nil;
   FBAlloc(pteb, 0, SizeOf(TISC_TEB), False);
@@ -1488,7 +1484,6 @@ begin
   end;
 end;
 
-
 { TmncCustomFBCommand }
 
 function TmncCustomFBCommand.CheckErr(ErrCode: ISC_STATUS; StatusVector: TStatusVector; RaiseError: Boolean): ISC_STATUS;
@@ -1533,7 +1528,7 @@ begin
 end;
 
 procedure TmncFBDDLCommand.DoExecute;
-begin
+sbegin
   Transaction.Execute(SQL.Text);
 end;
 
