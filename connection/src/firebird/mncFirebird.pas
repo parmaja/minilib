@@ -367,7 +367,7 @@ end;
 
 class function TmncFBConnection.Capabilities: TmncCapabilities;
 begin
-  Result:= [ccDB, ccAlias, ccPath, ccCreate, {ccDrop, }ccSQL, ccNetwork, ccTransaction];
+  Result:= [ccDB, ccAlias, ccPath, ccCreate, {ccDrop, }ccSQL, ccNetwork, ccTransaction, ccMultiTransaction];
 end;
 
 class function TmncFBConnection.Name: string;
@@ -1226,7 +1226,8 @@ begin
         end
         else
         begin
-          CheckErr(FBClient.isc_dsql_execute2(@StatusVector, @Transaction.Handle, @FHandle, FB_DIALECT, aData, aData), StatusVector, True);
+          //CheckErr(FBClient.isc_dsql_execute2(@StatusVector, @Transaction.Handle, @FHandle, FB_DIALECT, aData, aData), StatusVector, True);
+          CheckErr(FBClient.isc_dsql_execute2(@StatusVector, @Transaction.Handle, @FHandle, FB_DIALECT, aData, nil), StatusVector, True);
           FEOF := True;
         end;
       end;

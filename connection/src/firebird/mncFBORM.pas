@@ -202,7 +202,7 @@ class function TmncFBORM.FieldTypeToString(FieldType: TormFieldType; FieldSize: 
 begin
   case FieldType of
     ftString: Result := 'varchar('+IntToStr(FieldSize)+')';
-    ftBoolean: Result := 'boolean';
+    ftBoolean: Result := 'smallint'; //Boolean in FB 3
     ftSmallInteger: Result := 'smllint';
     ftInteger: Result := 'integer';
     ftBigInteger: Result := 'bigint';

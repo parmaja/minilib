@@ -846,9 +846,9 @@ begin
   Active := False;
   Session := nil; //already in Linked but must be sure before free other objects
   FreeAndNil(FRequest);
-  FreeAndNil(FFields);
-  FreeAndNil(FBinds);
   FreeAndNil(FParams);
+  FreeAndNil(FBinds); //If we r freeing binds before Params it crash in FB when freeing command
+  FreeAndNil(FFields);
   FreeAndNil(FColumns);
   inherited;
 end;

@@ -44,7 +44,7 @@ type
     function Find(vORM: TmncORM): TmncEngine; overload;
     function Find(vConnection: TmncConnection): TmncEngine; overload;
     function IndexOf(vName: string): Integer;
-    function CreateConnection(vModel: string): TmncConnection; overload;
+    function CreateConnection(vEngineName: string): TmncConnection; overload;
     function CreateConnection(vORM: TmncORM): TmncConnection; overload;
     procedure EnumConnections(Strings: TStrings);
     procedure EnumORMs(Strings: TStrings);
@@ -179,16 +179,16 @@ begin
   end;
 end;
 
-function TmncEngines.CreateConnection(vModel: string): TmncConnection;
+function TmncEngines.CreateConnection(vEngineName: string): TmncConnection;
 var
   P: TmncEngine;
 begin
   Result := nil;
-  P := Find(vModel);
+  P := Find(vEngineName);
   if P <> nil then
     Result := P.ConnectionClass.Create
   else
-    raise EmncException.Create('Model ' + vModel + ' not found');
+    raise EmncException.Create('Engine ' + vEngineName + ' not found');
 end;
 
 function TmncEngines.CreateConnection(vORM: TmncORM): TmncConnection;
