@@ -18,7 +18,7 @@ interface
 
 uses
   Windows, SysUtils, Classes, Variants,
-  mncFBHeader;
+  mnUtils, mncFBHeader;
 
 const
   DefaultBlobSegmentSize = 16 * 1024;
@@ -490,6 +490,8 @@ type
 
   end;
 
+  { TXSQLDAHelper }
+
   TXSQLDAHelper = record helper for TXSQLVAR
     procedure SetAliasName(const Value: string);
     procedure SetOwnName(const Value: string);
@@ -500,6 +502,8 @@ type
     function GetOwnName: string;
     function GetRelName: string;
     function GetSqlName: string;
+  protected
+    function BytesToString(const Bytes: array of Byte): string;
   end;
 
 procedure FreeSQLDA(var Data: PXSQLDA; Clean: Boolean = True);
@@ -718,7 +722,7 @@ begin
     p := @Data^.sqlvar[New];
     for i := New to old - 1 do
     begin
-      FBFree(p^.SqlData);
+      FBFree(p^.sqldata);
       FBFree(p^.SqlInd);
       p := Pointer(PByte(p) + XSQLVar_Size);
     end;
@@ -2899,29 +2903,38 @@ begin
   FModified := False;
 end;
 
+function TXSQLDAHelper.BytesToString(const Bytes: array of Byte): string;
+begin
+  {$ifdef FPC}
+  Result := UTF8ToString(Bytes);
+  {$else}
+  Result := TEncoding.UTF8.GetString(Bytes);
+  {$endif}
+end;
+
 { TXSQLDAHelper }
 
 function TXSQLDAHelper.GetAliasName: string;
 begin
-  Result := UTF8ToString(AliasName);
+  Result := BytesToString(AliasName);
   SetLength(Result, aliasname_length);
 end;
 
 function TXSQLDAHelper.GetOwnName: string;
 begin
-  Result := UTF8ToString(OwnName);
+  Result := BytesToString(OwnName);
   SetLength(Result, ownname_length);
 end;
 
 function TXSQLDAHelper.GetRelName: string;
 begin
-  Result := UTF8ToString(RelName);
+  Result := BytesToString(RelName);
   SetLength(Result, relname_length);
 end;
 
 function TXSQLDAHelper.GetSqlName: string;
 begin
-  Result := UTF8ToString(SqlName);
+  Result := BytesToString(SqlName);
   SetLength(Result, Sqlname_length);
 end;
 

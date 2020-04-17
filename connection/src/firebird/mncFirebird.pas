@@ -138,6 +138,24 @@ type
     property SQLVAR: TmncSQLVAR read FSQLVAR write FSQLVAR;
   end;
 
+  { TmncFBFields }
+
+  TmncFBFields = class(TmncFields)
+  private
+    FSQLDA: PXSQLDA;
+    function GetItem(Index: Integer): TmncFBField;
+  protected
+    function GetModified: Boolean;
+    function DoCreateField(vColumn: TmncColumn): TmncField; override;
+    procedure Detach; override;
+  public
+    constructor Create(vColumns: TmncColumns); override;
+    destructor Destroy; override;
+    procedure Clear; override;
+    property Items[Index: Integer]: TmncFBField read GetItem;
+    property SQLDA: PXSQLDA read FSQLDA;
+  end;
+
   { TFBSQLParam }
 
   TmncFBParam = class(TmncParam)
@@ -177,24 +195,6 @@ type
     property SQLVAR: TmncSQLVAR read FSQLVAR write FSQLVAR;
   end;
 
-  { TmncFBFields }
-
-  TmncFBFields = class(TmncFields)
-  private
-    FSQLDA: PXSQLDA;
-    function GetItem(Index: Integer): TmncFBField;
-  protected
-    function GetModified: Boolean;
-    function DoCreateField(vColumn: TmncColumn): TmncField; override;
-    procedure Detach; override;
-  public
-    constructor Create(vColumns: TmncColumns); override;
-    destructor Destroy; override;
-    procedure Clear; override;
-    property Items[Index: Integer]: TmncFBField read GetItem;
-    property SQLDA: PXSQLDA read FSQLDA;
-  end;
-
   { TmncFBParams }
 
   TmncFBParams = class(TmncParams)
@@ -213,34 +213,35 @@ type
     property SQLDA: PXSQLDA read FSQLDA;
   end;
 
-  { TmncFBCommand }
+  { TmncFBBinds }
+
+  TmncFBBinds = class(TmncBinds)
+  private
+    FSQLDA: PXSQLDA;
+  protected
+  public
+    property SQLDA: PXSQLDA read FSQLDA;
+  end;
+
+  { TmncCustomFBCommand }
 
   TmncCustomFBCommand = class(TmncSQLCommand)
   private
     function GetConnection: TmncFBConnection;
     function GetTransaction: TmncFBSession;
     procedure SetTransaction(const Value: TmncFBSession);
-    function GetFBParams: TmncFBParams;
+    function GetParams: TmncFBParams;
+    function GetBinds: TmncFBBinds;
   protected
+    function GetParseOptions: TmncParseSQLOptions; override;
     function CheckErr(ErrCode: ISC_STATUS; StatusVector: TStatusVector; RaiseError: Boolean): ISC_STATUS;
     function CreateParams: TmncParams; override;
-    property FBParams: TmncFBParams read GetFBParams;
-
+    property Params: TmncFBParams read GetParams;
+    property Binds: TmncFBBinds read GetBinds;
   public
     property Connection: TmncFBConnection read GetConnection;
     property Transaction: TmncFBSession read GetTransaction write SetTransaction;
 
-  end;
-
-  TmncFBDDLCommand = class(TmncCustomFBCommand)
-  private
-  protected
-    procedure DoPrepare; override;
-    procedure DoExecute; override;
-    procedure DoParse; override;
-    procedure DoNext; override;
-    function GetDone: Boolean; override;
-    function CreateColumns: TmncColumns; override;
   end;
 
   TmncFBCommand = class(TmncCustomFBCommand)
@@ -254,12 +255,12 @@ type
     procedure SetCursor(AValue: string);
     procedure FreeHandle;
     //Very dangrouse functions, be sure not free it with SQLVAR sqldata and sqlind, becuase it is shared with params sqldata
-    procedure AllocateBinds(out XSQLDA: PXSQLDA);
-    procedure DeallocateBinds(var XSQLDA: PXSQLDA);
-    function GetFBFields: TmncFBFields;
+    //procedure AllocateBinds(out XSQLDA: PXSQLDA);
+    //procedure DeallocateBinds(var XSQLDA: PXSQLDA);
+    function GetFields: TmncFBFields;
+    procedure SetFields(Value: TmncFBFields);
   protected
     procedure CheckHandle;//TODO remove it
-    procedure DoParse; override;
     procedure DoPrepare; override;
     procedure DoExecute; override;
     procedure DoNext; override;
@@ -272,6 +273,7 @@ type
     //function GetPlan: string;
     function CreateFields(vColumns: TmncColumns): TmncFields; override;
     function CreateParams: TmncParams; override;
+    function CreateBinds: TmncBinds; override;
     function GetDone: Boolean; override;
   public
     procedure Clear; override;
@@ -280,7 +282,7 @@ type
     property Handle: TISC_STMT_HANDLE read FHandle;
     procedure RunSQL(const vSQL: string);
 
-    property FBFields: TmncFBFields read GetFBFields;
+    property Fields: TmncFBFields read GetFields write SetFields;
     { Cursor name
       Optional you can use it
 
@@ -290,6 +292,17 @@ type
       http://tech.groups.yahoo.com/group/firebird-support/messages/65692?threaded=1&m=e&var=1&tidx=1
     }
     property Cursor: string read FCursor write SetCursor;
+  end;
+
+  TmncFBDDLCommand = class(TmncCustomFBCommand)
+  private
+  protected
+    procedure DoPrepare; override;
+    procedure DoExecute; override;
+    procedure DoParse; override;
+    procedure DoNext; override;
+    function GetDone: Boolean; override;
+    function CreateColumns: TmncColumns; override;
   end;
 
 implementation
@@ -1146,9 +1159,14 @@ begin
   Result := FEOF;
 end;
 
-function TmncFBCommand.GetFBFields: TmncFBFields;
+function TmncFBCommand.GetFields: TmncFBFields;
 begin
-  Result := Fields as TmncFBFields;
+  Result := inherited Fields as TmncFBFields;
+end;
+
+procedure TmncFBCommand.SetFields(Value: TmncFBFields);
+begin
+  inherited Fields := Value;
 end;
 
 function TmncFBCommand.GetRowsChanged: Integer;
@@ -1188,7 +1206,8 @@ begin
   FBOF := True;
   FEOF := False;
   CheckHandle;
-  AllocateBinds(aData);
+  aData := Binds.FSQLDA;
+  //AllocateBinds(aData);
   try
     case FSQLType of
       SQLSelect:
@@ -1201,9 +1220,9 @@ begin
       end;
       SQLExecProcedure:
       begin
-        if FBFields <> nil then
+        if Fields <> nil then
         begin
-          CheckErr(FBClient.isc_dsql_execute2(@StatusVector, @Transaction.Handle, @FHandle, FB_DIALECT, aData, FBFields.SQLDA), StatusVector, True);
+          CheckErr(FBClient.isc_dsql_execute2(@StatusVector, @Transaction.Handle, @FHandle, FB_DIALECT, aData, Fields.SQLDA), StatusVector, True);
           FActive := True;
           FBOF := True;
         end
@@ -1231,7 +1250,7 @@ begin
       end;
     end;
   finally
-    DeallocateBinds(aData);
+    //DeallocateBinds(aData);
   end;
 end;
 
@@ -1275,6 +1294,11 @@ end;
 function TmncFBCommand.CreateFields(vColumns: TmncColumns): TmncFields;
 begin
   Result := TmncFBFields.Create(vColumns);
+end;
+
+function TmncFBCommand.CreateBinds: TmncBinds;
+begin
+  Result := TmncFBBinds.Create;
 end;
 
 function TmncFBCommand.CreateParams: TmncParams;
@@ -1332,7 +1356,7 @@ begin
     FBRaiseError(fbceInvalidStatementHandle, [nil]);
 end;
 
-procedure TmncFBCommand.AllocateBinds(out XSQLDA: PXSQLDA);
+{procedure TmncFBCommand.AllocateBinds(out XSQLDA: PXSQLDA);
 var
   i: Integer;
   p: PXSQLVAR;
@@ -1341,7 +1365,7 @@ begin
   XSQLDA := nil;
   if (Binds.Count > 0) then
   begin
-    x := FBParams.SQLDA;
+    x := Params.SQLDA;
 
     InitSQLDA(XSQLDA, Binds.Count);
     move(x^, XSQLDA^, sizeof(TXSQLDA) - Sizeof(TXSQLVAR)); //minus first value because it is included with the size of TXSQLDA
@@ -1357,17 +1381,12 @@ end;
 procedure TmncFBCommand.DeallocateBinds(var XSQLDA: PXSQLDA);
 begin
   FreeSQLDA(XSQLDA, False);
-end;
+end;}
 
 procedure TmncFBCommand.DoUnprepare;
 begin
   inherited;
   FreeHandle;
-end;
-
-procedure TmncFBCommand.DoParse;
-begin
-  inherited DoParse;
 end;
 
 procedure TmncFBCommand.DoPrepare;
@@ -1411,11 +1430,11 @@ begin
       SQLExecProcedure:
       begin
         //Params is already created and have the items
-        InitSQLDA(FBParams.FSQLDA, Params.Count);
+        InitSQLDA(Params.FSQLDA, Binds.Count); //Binds > Params
 
-        CheckErr(FBClient.isc_dsql_describe_bind(@StatusVector, @FHandle, FB_DIALECT, FBParams.FSQLDA), StatusVector, True);
+        CheckErr(FBClient.isc_dsql_describe_bind(@StatusVector, @FHandle, FB_DIALECT, Params.FSQLDA), StatusVector, True);
 
-        p := @FBParams.FSQLDA^.sqlvar[0];
+        p := @Params.FSQLDA^.sqlvar[0];
         for i := 0 to Params.Count - 1 do
         begin
           aParam := (Params.Items[i] as TmncFBParam);
@@ -1448,13 +1467,13 @@ begin
           else
           begin
             //Now we load a columns for it
-            if Self.Fields = nil then
-              Self.Fields := CreateFields(Columns) //need to create Fields because it have SQLDA buffer
+            if Fields = nil then
+              Fields := CreateFields(Columns) as TmncFBFields //need to create Fields because it have SQLDA buffer
             else
               Fields.Clear;
 
-            InitSQLDA(FBFields.FSQLDA, c);
-            aData := FBFields.FSQLDA;
+            InitSQLDA(Fields.FSQLDA, c);
+            aData := Fields.FSQLDA;
 
             CheckErr(FBClient.isc_dsql_describe(@StatusVector, @FHandle, FB_DIALECT, aData), StatusVector, True);
             p := @aData^.sqlvar[0];
@@ -1505,9 +1524,19 @@ begin
   Result := Transaction.Connection as TmncFBConnection;
 end;
 
-function TmncCustomFBCommand.GetFBParams: TmncFBParams;
+function TmncCustomFBCommand.GetParams: TmncFBParams;
 begin
-  Result := TmncFBParams(Params);
+  Result := inherited Params as TmncFBParams;
+end;
+
+function TmncCustomFBCommand.GetBinds: TmncFBBinds;
+begin
+  Result := inherited Binds as TmncFBBinds;
+end;
+
+function TmncCustomFBCommand.GetParseOptions: TmncParseSQLOptions;
+begin
+  Result := [];
 end;
 
 function TmncCustomFBCommand.GetTransaction: TmncFBSession;
@@ -1528,7 +1557,7 @@ begin
 end;
 
 procedure TmncFBDDLCommand.DoExecute;
-sbegin
+begin
   Transaction.Execute(SQL.Text);
 end;
 
