@@ -8,7 +8,8 @@ uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, ExtCtrls,
   IniFiles,
   SynEdit, SynHighlighterSQL,
-  mncDB, mncConnections, mncSQL, mncSQLite, mncPostgre, mncMySQL, mncFirebird,
+  mncDB, mncConnections, mncSQL,
+  mncSQLite, mncPostgre, mncMySQL, mncFirebird,
   mncORM, mncMySQLORM, mncSQLiteORM, mncPGORM, mncFBORM,
   appSchema;
 
@@ -122,20 +123,27 @@ begin
     if Engine.ORM <> nil then
       Engine.ORM.GenerateSQL(Engine.InitSQL);
     Engine.Connection := Engines.CreateConnection((EnginesCbo.Items.Objects[EnginesCbo.ItemIndex] as TmncEngine).Name) as TmncSQLConnection;
-    if (ccPath in Engine.Connection.Capabilities) then
+    if (ccPath in Engine.Connection.Capabilities) or (HostEdit.Text = '') then
       Engine.Connection.Resource := Application.Location + DataEdit.Text + Engine.Connection.GetExtension
     else
       Engine.Connection.Resource := DataEdit.Text;
+
     Engine.Connection.Host := HostEdit.Text;
     Engine.Connection.UserName := UserEdit.Text;
     Engine.Connection.Password := PasswordEdit.Text;
     if CreateIt then
     begin
-      LogEdit.Lines.Add(Engine.Connection.Resource + ' Droping');
-      Engine.Connection.DropDatabase(True);
-      LogEdit.Lines.Add(Engine.Connection.Resource + ' Creating');
-      Engine.Connection.CreateDatabase;
-      LogEdit.Lines.Add(Engine.Connection.Resource + ' is Created');
+      if (ccDrop in Engine.Connection.Capabilities) then
+      begin
+        LogEdit.Lines.Add(Engine.Connection.Resource + ' Droping');
+        Engine.Connection.DropDatabase(True);
+      end;
+      if (ccCreate in Engine.Connection.Capabilities) then
+      begin
+        LogEdit.Lines.Add(Engine.Connection.Resource + ' Creating');
+        Engine.Connection.CreateDatabase;
+        LogEdit.Lines.Add(Engine.Connection.Resource + ' is Created');
+      end;
     end;
     Engine.Connection.Connect;
     LogEdit.Lines.Add(Engine.Connection.Resource + ' is Connected');

@@ -61,6 +61,8 @@ type
     ccDB, //It is Database engine not just transfer data object
     ccAlias, //Allow alias names in resrouce like Firebird
     ccPath, //Allow path as file name in resrouce, like sqlite and Firebird
+    ccCreate, //Allow create database
+    ccDrop, //Allow drop database
     ccSQL, //It is SQL engine, you know CSV or Paradox is not, we have no plan to support Paradox
     ccNetwork, //Can connect over network
     ccStrict, //Without it: it is no need to call Start and Stop (Commit/Rollback) this DB automatically do it (pg/SQLite allow it)

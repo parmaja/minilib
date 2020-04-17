@@ -779,7 +779,7 @@ end;
 
 class function TmncPGConnection.Capabilities: TmncCapabilities;
 begin
-  Result:= [ccDB, ccSQL, ccNetwork, ccTransaction];
+  Result:= [ccDB, ccSQL, ccCreate, ccDrop, ccNetwork, ccTransaction];
 end;
 
 class function TmncPGConnection.Name: string;

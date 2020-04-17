@@ -464,7 +464,7 @@ end;
 
 class function TmncMySQLConnection.Capabilities: TmncCapabilities;
 begin
-  Result := [ccDB, ccSQL, ccTransaction];
+  Result := [ccDB, ccSQL, ccCreate, ccDrop, ccTransaction];
 end;
 
 class function TmncMySQLConnection.Name: string;

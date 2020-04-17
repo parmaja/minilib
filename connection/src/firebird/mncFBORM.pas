@@ -130,13 +130,8 @@ begin
   with AObject as TField do
   begin
     SQL.Add(vLevel, QuotedSQLName + ' '+ FieldTypeToString(FieldType, FieldSize));
-    if (foNotNull in Options) or (foPrimary in Options) then
-      SQL.Add(' not null');
-
-    if (foPrimary in Options) and (Table.Fields.PrimaryKeys = 1) then //one PK we will use it here
-      SQL.Add(' primary key');
 {    if (foSequenced in Options) then
-      SQL.Add(' autoincrement');}
+      SQL.Add(' identity');} // identity in ver 3
     if not VarIsEmpty(DefaultValue) then
     begin
       if VarType(DefaultValue) = varString then
@@ -146,6 +141,11 @@ begin
       else
         SQL.Add(' default ' + VarToStr(DefaultValue));
     end;
+    if (foNotNull in Options) or (foPrimary in Options) then
+      SQL.Add(' not null');
+
+    if (foPrimary in Options) and (Table.Fields.PrimaryKeys = 1) then //one PK we will use it here
+      SQL.Add(' primary key');
   end;
   Result := True;
 end;
@@ -172,9 +172,9 @@ begin
     Field := o as TField;
     if Field.Sequenced then
     begin
-      Seq := 'SQ_' + Field.Name;
+      Seq := 'SQ_' + Field.FullPathName;
       SQL.Add(vLevel, 'create sequence ' + Seq, [cboEndChunk]);
-      SQL.Add(vLevel, 'create trigger ' + 'SQ_TR_' + Field.SQLName + ' for ' + Field.Table.QuotedSQLName, [cboEndLine]);
+      SQL.Add(vLevel, 'create trigger ' + 'SQ_TR_' + Field.FullPathName + ' for ' + Field.Table.QuotedSQLName, [cboEndLine]);
       SQL.Add(vLevel, 'active before insert position 0', [cboEndLine]);
       SQL.Add(vLevel, 'as', [cboEndLine]);
       SQL.Add(vLevel, 'begin', [cboEndLine]);

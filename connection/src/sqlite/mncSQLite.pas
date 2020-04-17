@@ -182,7 +182,7 @@ type
     function CreateBinds: TmncBinds; override;
     property Binds: TmncSQLiteBinds read GetBinds;
   public
-    property Connection:TmncSQLiteConnection read GetConnection;
+    property Connection: TmncSQLiteConnection read GetConnection;
     property Session: TmncSQLiteSession read GetSession write SetSession;
     procedure Clear; override;
     function GetRowsChanged: Integer; override;
@@ -375,7 +375,7 @@ end;
 
 class function TmncSQLiteConnection.Capabilities: TmncCapabilities;
 begin
-  Result := [ccDB, ccPath, ccSQL, ccTransaction];
+  Result := [ccDB, ccPath, ccSQL, ccCreate, ccDrop, ccTransaction];
 end;
 
 class function TmncSQLiteConnection.Name: string;

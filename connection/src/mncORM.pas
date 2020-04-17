@@ -577,19 +577,19 @@ begin
 
       S := GenForignKey(Field, False);
 
-      if rfoReject = Field.ReferenceInfo.DeleteOption then
-        S := S + ' on delete restrict'
-      else if rfoCascade = Field.ReferenceInfo.DeleteOption then
+      if rfoCascade = Field.ReferenceInfo.DeleteOption then
         S := S + ' on delete cascade'
       else if rfoSetNull = Field.ReferenceInfo.DeleteOption then
         S := S + ' on delete set null';
+      {else if rfoReject = Field.ReferenceInfo.DeleteOption then
+        S := S + ' on delete restrict'}
 
-      if rfoReject = Field.ReferenceInfo.UpdateOption then
-        S := S + ' on update restrict'
-      else if rfoCascade = Field.ReferenceInfo.UpdateOption then
+      if rfoCascade = Field.ReferenceInfo.UpdateOption then
         S := S + ' on update cascade'
       else if rfoSetNull = Field.ReferenceInfo.UpdateOption then
         S := S + ' on update set null';
+      {else if rfoReject = Field.ReferenceInfo.UpdateOption then
+        S := S + ' on update restrict';}
 
       SQL.Add(vLevel + 1, S );
     end;
@@ -1532,8 +1532,8 @@ end;
 procedure TSQLCallbackObject.Add(S: string; Options: TCallbackObjectOptions);
 begin
   Buffer := Buffer + S;
-  if (cboEndChunk in Options) and (SQL.Count > 0) then
-    Buffer := Buffer + ';';
+  {if (cboEndChunk in Options) and (SQL.Count > 0) then
+    Buffer := Buffer + ';';}
   if (cboEndLine in Options) or (cboEndChunk in Options) then
   begin
     if Buffer <> '' then

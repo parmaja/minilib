@@ -13,6 +13,7 @@ object MainForm: TMainForm
   ClientWidth = 768
   OnCreate = FormCreate
   OnDestroy = FormDestroy
+  Position = poDefault
   LCLVersion = '2.1.0.0'
   inline SynEdit: TSynEdit
     Left = 6
