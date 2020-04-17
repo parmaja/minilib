@@ -199,18 +199,13 @@ type
 
   TmncFBParams = class(TmncParams)
   private
-    FSQLDA: PXSQLDA;
     function GetItem(Index: Integer): TmncFBParam;
   protected
     function GetModified: Boolean;
     function CreateParam: TmncParam; override;
     procedure Detach; override;
   public
-    constructor Create; override;
-    destructor Destroy; override;
-    procedure Clear; override;
     property Items[Index: Integer]: TmncFBParam read GetItem;
-    property SQLDA: PXSQLDA read FSQLDA;
   end;
 
   { TmncFBBinds }
@@ -220,6 +215,9 @@ type
     FSQLDA: PXSQLDA;
   protected
   public
+    constructor Create; override;
+    destructor Destroy; override;
+    procedure Clear; override;
     property SQLDA: PXSQLDA read FSQLDA;
   end;
 
@@ -329,6 +327,27 @@ begin
     else
       Result := dtUnknown;
   end;
+end;
+
+{ TmncFBBinds }
+
+constructor TmncFBBinds.Create;
+begin
+  inherited Create;
+  InitSQLDA(FSQLDA, 0);
+end;
+
+destructor TmncFBBinds.Destroy;
+begin
+  Clear;
+  //FreeSQLDA(FSQLDA); already did in Clear;
+  inherited Destroy;
+end;
+
+procedure TmncFBBinds.Clear;
+begin
+  inherited Clear;
+  FreeSQLDA(FSQLDA);
 end;
 
 { TmncFBConnection }
@@ -906,27 +925,6 @@ begin
   end;
 end;
 
-constructor TmncFBParams.Create;
-begin
-  inherited;
-  InitSQLDA(FSQLDA, 0);
-end;
-
-destructor TmncFBParams.Destroy;
-begin
-  Clear;
-  //FreeSQLDA(FSQLDA); already did in Clear;
-  inherited;
-end;
-
-procedure TmncFBParams.Clear;
-begin
-  inherited Clear;
-
-
-  FreeSQLDA(FSQLDA);
-end;
-
 { TmncFBParam }
 
 function TmncFBParam.GetValue: Variant;
@@ -1430,14 +1428,14 @@ begin
       SQLExecProcedure:
       begin
         //Params is already created and have the items
-        InitSQLDA(Params.FSQLDA, Binds.Count); //Binds > Params
+        InitSQLDA(Binds.FSQLDA, Binds.Count); //Binds > Params
 
-        CheckErr(FBClient.isc_dsql_describe_bind(@StatusVector, @FHandle, FB_DIALECT, Params.FSQLDA), StatusVector, True);
+        CheckErr(FBClient.isc_dsql_describe_bind(@StatusVector, @FHandle, FB_DIALECT, Binds.FSQLDA), StatusVector, True);
 
-        p := @Params.FSQLDA^.sqlvar[0];
-        for i := 0 to Params.Count - 1 do
+        p := @Binds.FSQLDA^.sqlvar[0];
+        for i := 0 to Binds.Count - 1 do
         begin
-          aParam := (Params.Items[i] as TmncFBParam);
+          aParam := (Binds.Items[i].Param as TmncFBParam);
 
           aParam.SQLVAR.XSQLVar := p;
           aParam.SQLVAR.Attach(@Connection.Handle, @Transaction.Handle);

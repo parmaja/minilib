@@ -218,14 +218,27 @@ end;
 procedure TMainForm.AddRecordBtn1Click(Sender: TObject);
 var
   CMD: TmncSQLCommand;
+  i: Integer;
 begin
   CMD := Engine.Session.CreateCommand;
   try
-    CMD.SQL.Text := 'select * from Companies where ID=?ID';
+    Cmd.SQL.Add('select ID, Name, Name from Companies');
+    Cmd.Prepare;
+    CMD.Execute;
+    for i := 0 to CMD.Columns.Count - 1 do
+      LogEdit.Lines.Add(CMD.Columns[i].Name);
+
+    while not CMD.Done do
+    begin
+      CMD.Next;
+    end;
+
+
+{    CMD.SQL.Text := 'select * from Companies where ID=?ID';
     CMD.Prepare;
     CMD.Param['ID'].Value := 10;
     if CMD.Execute then
-      LogEdit.Lines.Add(CMD.Field['Name'].AsString);
+      LogEdit.Lines.Add(CMD.Field['Name'].AsString);}
 
   finally
     CMD.Free;

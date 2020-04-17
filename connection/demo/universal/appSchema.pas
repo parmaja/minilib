@@ -40,7 +40,7 @@ begin
                 FieldSize := 60;
                 Options := [foUnique, foIndexed];
               end;
-              with TField.Create(This, 'Address', ftCurrency) do begin
+              with TField.Create(This, 'Address', ftString) do begin
                 DefaultValue := 0;
               end;
             end;

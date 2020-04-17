@@ -113,6 +113,7 @@ type
     procedure SetParamPrefix(AValue: Char);
   protected
     function GetDone: Boolean; override;
+    function GetParseOptions: TmncParseSQLOptions; virtual;
     procedure DoParse; override;
     procedure DoUnparse; override;
     procedure ParseSQL(Options: TmncParseSQLOptions);
@@ -380,9 +381,14 @@ begin
   Result := FDone;
 end;
 
+function TmncSQLCommand.GetParseOptions: TmncParseSQLOptions;
+begin
+  Result := [];
+end;
+
 procedure TmncSQLCommand.DoParse;
 begin
-  ParseSQL([]);
+  ParseSQL(GetParseOptions);
 end;
 
 procedure TmncSQLCommand.DoUnparse;
