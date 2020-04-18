@@ -96,6 +96,7 @@
     </SearchPaths>
     <Linking>
       <Debugging>
+        <UseHeaptrc Value="True"/>
         <UseValgrind Value="True"/>
       </Debugging>
       <Options>
@@ -104,6 +105,9 @@
         </Win32>
       </Options>
     </Linking>
+    <Other>
+      <CustomOptions Value="-dDEBUG"/>
+    </Other>
   </CompilerOptions>
   <Debugging>
     <Exceptions Count="3">

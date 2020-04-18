@@ -502,11 +502,11 @@ type
     function GetOwnName: string;
     function GetRelName: string;
     function GetSqlName: string;
+    procedure Clean;
   protected
     function BytesToString(const Bytes: array of Byte): string;
   end;
 
-procedure FreeSQLDA(var Data: PXSQLDA; Clean: Boolean = True);
 function getb(p: PBSTREAM): Byte;
 function putb(x: Byte; p: PBSTREAM): Int;
 function putbx(x: Byte; p: PBSTREAM): Int;
@@ -514,9 +514,10 @@ function putbx(x: Byte; p: PBSTREAM): Int;
 procedure FBGetBlobInfo(hBlobHandle: PISC_BLOB_HANDLE; out NumSegments, MaxSegmentSize, TotalSize: Long; out BlobType: Short);
 procedure FBReadBlob(hBlobHandle: PISC_BLOB_HANDLE; buffer: PByte; BlobSize: Long);
 procedure FBWriteBlob(hBlobHandle: PISC_BLOB_HANDLE; buffer: PByte; BlobSize: Long);
-
 function FBGetBlob(DBHandle: TISC_DB_HANDLE; TRHandle: TISC_TR_HANDLE; BlobID: PISC_QUAD): PByte;
+
 procedure InitSQLDA(var Data: PXSQLDA; New: Integer; Clean: Boolean = True);
+procedure FreeSQLDA(var Data: PXSQLDA; Clean: Boolean = True);
 
 procedure SetFBClient(NewFBClient: TCustomFBClient);
 function IsFBClientSet: Boolean;
@@ -722,8 +723,7 @@ begin
     p := @Data^.sqlvar[New];
     for i := New to old - 1 do
     begin
-      FBFree(p^.sqldata);
-      FBFree(p^.SqlInd);
+      p^.Clean;
       p := Pointer(PByte(p) + XSQLVar_Size);
     end;
   end;
@@ -745,8 +745,7 @@ begin
       p := @Data^.sqlvar[0];
       for i := 0 to Data.sqln - 1 do
       begin
-        FBFree(p^.SqlData);
-        FBFree(p^.SqlInd);
+        p^.Clean;
         p := Pointer(PByte(p) + XSQLVar_Size);
       end;
     end;
@@ -2914,6 +2913,12 @@ end;
 
 { TXSQLDAHelper }
 
+procedure TXSQLDAHelper.Clean;
+begin
+  FBFree(sqldata);
+  FBFree(SqlInd);
+end;
+
 function TXSQLDAHelper.GetAliasName: string;
 begin
   Result := BytesToString(AliasName);
@@ -2975,9 +2980,6 @@ begin
 end;
 
 initialization
-
 finalization
-
-FreeAndNil(FFBClient);
-
+  FreeAndNil(FFBClient);
 end.

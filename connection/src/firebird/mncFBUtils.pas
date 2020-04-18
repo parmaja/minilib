@@ -513,10 +513,6 @@ begin
   else
     GetMem(s, NewSize);
 
-  {if ZeroInit and (NewSize > 0) then
-    for i := OldSize to NewSize - 1 do
-      s[i] := 0;}
-
   if ZeroInit and (NewSize > 0) then
     FillChar(s[OldSize], NewSize-OldSize, 0);
 
@@ -1192,4 +1188,3 @@ initialization
   FBDataBaseErrorMessages := [ShowSQLCode, ShowFBMessage, ShowSQLMessage];
 finalization
 end.
-

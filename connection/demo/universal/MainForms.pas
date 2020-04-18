@@ -169,9 +169,10 @@ begin
   try
     CMD.Options := CMD.Options + [cmoTruncate];
     CMD.SQL.Text := 'insert into Companies(ID, Name, Address) values(?ID, ?Name, ?Name)';
+
     CMD.Prepare;
     CMD.Param['ID'].Value := 10;
-    CMD.Param['Name'].Value := 'Parmaja';
+    CMD.Param['Name'].AsString := 'Test' + DateTimeToStr(Now);
     CMD.Execute;
   finally
     CMD.Free;

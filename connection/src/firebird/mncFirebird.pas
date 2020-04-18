@@ -160,6 +160,7 @@ type
 
   TmncFBParam = class(TmncParam)
   private
+    XSQLVAR: TXSQLVAR;
     FSQLVAR: TmncSQLVAR;
   protected
     function GetValue: Variant; override;
@@ -239,7 +240,6 @@ type
   public
     property Connection: TmncFBConnection read GetConnection;
     property Transaction: TmncFBSession read GetTransaction write SetTransaction;
-
   end;
 
   TmncFBCommand = class(TmncCustomFBCommand)
@@ -253,8 +253,9 @@ type
     procedure SetCursor(AValue: string);
     procedure FreeHandle;
     //Very dangrouse functions, be sure not free it with SQLVAR sqldata and sqlind, becuase it is shared with params sqldata
-    //procedure AllocateBinds(out XSQLDA: PXSQLDA);
-    //procedure DeallocateBinds(var XSQLDA: PXSQLDA);
+    //AllocateBinds apply param values into Binds SQLDA
+    procedure AllocateBinds(out XSQLDA: PXSQLDA);
+    procedure DeallocateBinds(var XSQLDA: PXSQLDA);
     function GetFields: TmncFBFields;
     procedure SetFields(Value: TmncFBFields);
   protected
@@ -329,35 +330,12 @@ begin
   end;
 end;
 
-{ TmncFBBinds }
-
-constructor TmncFBBinds.Create;
-begin
-  inherited Create;
-  InitSQLDA(FSQLDA, 0);
-end;
-
-destructor TmncFBBinds.Destroy;
-begin
-  Clear;
-  //FreeSQLDA(FSQLDA); already did in Clear;
-  inherited Destroy;
-end;
-
-procedure TmncFBBinds.Clear;
-begin
-  inherited Clear;
-  FreeSQLDA(FSQLDA);
-end;
-
 { TmncFBConnection }
 
 constructor TmncFBConnection.Create;
 begin
   inherited Create;
-
   FErrorHandles := [eonExecute, eonDisconnect];
-
   {$ifdef FPC}
   FCharacterSet := 'UTF8';
   {$else}
@@ -739,10 +717,12 @@ constructor TmncFBParam.Create;
 begin
   inherited;
   FSQLVAR := TmncSQLVAR.Create;
+  FSQLVAR.XSQLVar := @XSQLVAR;
 end;
 
 destructor TmncFBParam.Destroy;
 begin
+  XSQLVAR.Clean;
   FreeAndNil(FSQLVAR);
   inherited;
 end;
@@ -1094,7 +1074,7 @@ end;
 constructor TmncFBFields.Create(vColumns: TmncColumns);
 begin
   inherited;
-  InitSQLDA(FSQLDA, 0);
+  //InitSQLDA(FSQLDA, 0);
 end;
 
 destructor TmncFBFields.Destroy;
@@ -1108,6 +1088,26 @@ procedure TmncFBFields.Clear;
 begin
   inherited Clear;
   FreeSQLDA(FSQLDA);
+end;
+
+{ TmncFBBinds }
+
+procedure TmncFBBinds.Clear;
+begin
+  inherited Clear;
+  FreeSQLDA(FSQLDA, False);
+end;
+
+constructor TmncFBBinds.Create;
+begin
+  inherited;
+  //InitSQLDA(FSQLDA, 0, False);//no need
+end;
+
+destructor TmncFBBinds.Destroy;
+begin
+  Clear;
+  inherited;
 end;
 
 { TmncFBCommand }
@@ -1124,6 +1124,11 @@ begin
     CheckInactive;
     FCursor :=AValue;
   end;
+end;
+
+procedure TmncFBCommand.SetFields(Value: TmncFBFields);
+begin
+  inherited Fields := Value;
 end;
 
 procedure TmncFBCommand.FreeHandle;
@@ -1160,11 +1165,6 @@ end;
 function TmncFBCommand.GetFields: TmncFBFields;
 begin
   Result := inherited Fields as TmncFBFields;
-end;
-
-procedure TmncFBCommand.SetFields(Value: TmncFBFields);
-begin
-  inherited Fields := Value;
 end;
 
 function TmncFBCommand.GetRowsChanged: Integer;
@@ -1204,8 +1204,7 @@ begin
   FBOF := True;
   FEOF := False;
   CheckHandle;
-  aData := Binds.FSQLDA;
-  //AllocateBinds(aData);
+  AllocateBinds(aData);
   try
     case FSQLType of
       SQLSelect:
@@ -1249,7 +1248,7 @@ begin
       end;
     end;
   finally
-    //DeallocateBinds(aData);
+    DeallocateBinds(aData);
   end;
 end;
 
@@ -1355,23 +1354,25 @@ begin
     FBRaiseError(fbceInvalidStatementHandle, [nil]);
 end;
 
-{procedure TmncFBCommand.AllocateBinds(out XSQLDA: PXSQLDA);
+procedure TmncFBCommand.AllocateBinds(out XSQLDA: PXSQLDA);
 var
   i: Integer;
   p: PXSQLVAR;
   x: PXSQLDA;
+  aParam: TmncFBParam;
 begin
   XSQLDA := nil;
   if (Binds.Count > 0) then
   begin
-    x := Params.SQLDA;
+    x := Binds.SQLDA;
 
-    InitSQLDA(XSQLDA, Binds.Count);
+    InitSQLDA(XSQLDA, Binds.Count, False);
     move(x^, XSQLDA^, sizeof(TXSQLDA) - Sizeof(TXSQLVAR)); //minus first value because it is included with the size of TXSQLDA
     p := @XSQLDA^.sqlvar[0];
     for i :=0 to Binds.Count -1 do
     begin
-      move((Binds[i].Param as TmncFBParam).FSQLVAR.XSQLVar^, p^, sizeof(TXSQLVAR));
+      aParam := Binds[i].Param as TmncFBParam;
+      move(aParam.SQLVAR.XSQLVar^, p^, sizeof(TXSQLVAR));
       p := Pointer(PAnsiChar(p) + XSQLVar_Size);
     end;
   end;
@@ -1380,7 +1381,7 @@ end;
 procedure TmncFBCommand.DeallocateBinds(var XSQLDA: PXSQLDA);
 begin
   FreeSQLDA(XSQLDA, False);
-end;}
+end;
 
 procedure TmncFBCommand.DoUnprepare;
 begin
@@ -1429,19 +1430,19 @@ begin
       SQLExecProcedure:
       begin
         //Params is already created and have the items
-        InitSQLDA(Binds.FSQLDA, Binds.Count); //Binds > Params
-
+        InitSQLDA(Binds.FSQLDA, Binds.Count, False); //Binds > Params
         CheckErr(FBClient.isc_dsql_describe_bind(@StatusVector, @FHandle, FB_DIALECT, Binds.FSQLDA), StatusVector, True);
 
         p := @Binds.FSQLDA^.sqlvar[0];
         for i := 0 to Binds.Count - 1 do
         begin
           aParam := (Binds.Items[i].Param as TmncFBParam);
-
-          aParam.SQLVAR.XSQLVar := p;
-          aParam.SQLVAR.Attach(@Connection.Handle, @Transaction.Handle);
-          aParam.SQLVAR.Prepare;
-
+          if aParam.SQLVAR.XSQLVar.sqldata = nil then //we need to clean sqldata or not reassign it again for memory leak in case of duplicate params
+          begin
+            aParam.XSQLVAR := p^;
+            aParam.SQLVAR.Attach(@Connection.Handle, @Transaction.Handle);
+            aParam.SQLVAR.Prepare;
+          end;
           p := Pointer(PAnsiChar(p) + XSQLVar_Size);
         end;
 
