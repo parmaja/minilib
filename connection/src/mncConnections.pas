@@ -96,6 +96,7 @@ type
     FPort: string;
     FResource: string;
     FHost: string;
+    FRole: string;
     FUserName: string;
     FAutoStart: Boolean;
     FSessions: TmncSessions;
@@ -124,7 +125,7 @@ type
     destructor Destroy; override;
     function QueryInterface({$IFDEF FPC}constref{$ELSE}const{$ENDIF} iid : tguid;out obj) : longint;{$IFNDEF MSWINDOWS}cdecl{$ELSE}stdcall{$ENDIF};
     class function Capabilities: TmncCapabilities; virtual; abstract;
-    class function Name: string; virtual; abstract;
+    class function EngineName: string; virtual; abstract;
     procedure Connect;
     procedure Disconnect;
     procedure Open; //Alias for Connect
@@ -141,6 +142,7 @@ type
     property Resource: string read FResource write FResource; //can be a Database name or Alias or service name etc...
     property UserName: string read FUserName write FUserName;
     property Password: string read FPassword write FPassword;
+    property Role: string read FRole write FRole;
     property Params: TStrings read FParams write SetParams;
     property OnConnected: TNotifyEvent read FOnConnected write FOnConnected;
     property OnDisconnected: TNotifyEvent read FOnDisconnected write FOnDisconnected;

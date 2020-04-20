@@ -47,7 +47,7 @@ type
   public
     constructor Create; override;
     class function Capabilities: TmncCapabilities; override;
-    class function Name: string; override;
+    class function EngineName: string; override;
     function CreateSession: TmncSQLSession; overload; override; 
     procedure Interrupt;
     procedure SetCharsetName(Charset: string);
@@ -467,7 +467,7 @@ begin
   Result := [ccDB, ccSQL, ccCreate, ccDrop, ccTransaction];
 end;
 
-class function TmncMySQLConnection.Name: string;
+class function TmncMySQLConnection.EngineName: string;
 begin
   Result := 'MySQL';
 end;
@@ -1303,5 +1303,5 @@ begin
 end;
 
 initialization
-  Engines.RegisterConnection('MySQL', 'MySQL Database', TmncMySQLConnection);
+  Engines.RegisterConnection(TmncMySQLConnection.EngineName, 'MySQL Database', TmncMySQLConnection);
 end.

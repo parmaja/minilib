@@ -17,7 +17,7 @@ interface
 
 uses
   SysUtils, Classes, Contnrs,
-  mncCommons, mncConnections, mncORM, mncMeta;
+  mnUtils, mncCommons, mncConnections, mncORM, mncMeta;
 
 type
   { TmncEngine }
@@ -37,6 +37,11 @@ type
   private
     function GetItems(Index: Integer): TmncEngine;
   public
+    function ComposeConnectionString(EngineName, Resource, Host, User, Password, Role: string): string; overload;
+    function ComposeConnectionString(Connection: TmncConnection): string; overload;
+    procedure DecomposeConnectionString(Composed:string; out EngineName, Resource, Host, User, Password, Role: string); overload;
+    procedure DecomposeConnectionString(Composed:string; Connection: TmncConnection); overload;
+
     function RegisterConnection(vName, vTitle: string; vConnectionClass: TmncConnectionClass): TmncEngine;
     function RegisterORM(vName: string; vORMClass: TmncORMClass): TmncEngine;
     function RegisterMeta(vName: string; vMetaClass: TmncMetaClass): TmncEngine;
@@ -46,6 +51,7 @@ type
     function IndexOf(vName: string): Integer;
     function CreateConnection(vEngineName: string): TmncConnection; overload;
     function CreateConnection(vORM: TmncORM): TmncConnection; overload;
+    function CreateMeta(vConnection: TmncConnection): TmncMeta; overload;
     procedure EnumConnections(Strings: TStrings);
     procedure EnumORMs(Strings: TStrings);
     procedure EnumMatas(Strings: TStrings);
@@ -71,6 +77,40 @@ end;
 function TmncEngines.GetItems(Index: Integer): TmncEngine;
 begin
   Result := inherited Items[Index] as TmncEngine;
+end;
+
+function TmncEngines.ComposeConnectionString(EngineName, Resource, Host, User, Password, Role: string): string;
+begin
+  Result := 'Engine="'+EngineName+'",Resource="'+Resource+'",Host="'+Host+'",User="'+User+'",Password="'+Password+'",Role="'+Role+'"';
+end;
+
+function TmncEngines.ComposeConnectionString(Connection: TmncConnection): string;
+begin
+  with Connection do
+    Result := ComposeConnectionString(EngineName, Resource, Host, UserName, Password, Role);
+end;
+
+procedure TmncEngines.DecomposeConnectionString(Composed: string; out EngineName, Resource, Host, User, Password, Role: string);
+var
+  Strings: TStringList;
+begin
+  Strings := TStringList.Create;
+  try
+    StrToStrings(Composed, Strings, [',']);
+    Resource := DequoteStr(Strings.Values['Resource']);
+    Host := DequoteStr(Strings.Values['Host']);
+    User := DequoteStr(Strings.Values['User']);
+    Password := DequoteStr(Strings.Values['Password']);
+    Role := DequoteStr(Strings.Values['Role']);
+
+  finally
+    Strings.Free;
+  end;
+end;
+
+procedure TmncEngines.DecomposeConnectionString(Composed: string; Connection: TmncConnection);
+begin
+
 end;
 
 function TmncEngines.RegisterConnection(vName, vTitle: string; vConnectionClass: TmncConnectionClass): TmncEngine;
@@ -201,6 +241,18 @@ begin
     Result := P.ConnectionClass.Create
   else
     raise EmncException.Create('ORM class not not found');
+end;
+
+function TmncEngines.CreateMeta(vConnection: TmncConnection): TmncMeta;
+var
+  P: TmncEngine;
+begin
+  Result := nil;
+  P := Find(vConnection);
+  if P <> nil then
+    Result := P.MetaClass.Create
+  else
+    raise EmncException.Create('Meta class not not found');
 end;
 
 procedure TmncEngines.EnumConnections(Strings: TStrings);

@@ -722,7 +722,7 @@ begin
   end
   else
   begin
-    Finalize(Payload);
+    Initialize(Payload);
     Data := nil
   end
 end;
@@ -746,7 +746,7 @@ function TZKClient.ReceiveHeader(out Payload: TZKPayload): Boolean;
 var
   c: Integer;
 begin
-  Finalize(Payload);
+  Initialize(Payload);
   c := FSocket.Read(Payload, SizeOf(Payload));
   Result := c > 0;
 end;
@@ -909,7 +909,7 @@ var
   CommandBytes: TBytes;
 begin
   SetLength(CommandBytes, 0);
-  Finalize(UserData);
+  Initialize(UserData);
   FillChar(UserData, SizeOf(UserData), #0);
   UserData.ID := User.Number;
   {$ifdef FPC}

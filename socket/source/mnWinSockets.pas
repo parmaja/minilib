@@ -243,7 +243,7 @@ begin
   CheckActive;
   Size := SizeOf(SockAddrIn);
   {$ifdef FPC}
-  Finalize(SockAddrIn);
+  Initialize(SockAddrIn);
   {$endif}
   if getpeername(FHandle, SockAddrIn, Size) = 0 then
     Result := inet_ntoa(SockAddrIn.sin_addr)
@@ -261,7 +261,7 @@ begin
   CheckActive;
   Size := SizeOf(SockAddrIn);
   {$ifdef FPC}
-  Finalize(SockAddrIn);
+  Initialize(SockAddrIn);
   {$endif}
   if getpeername(FHandle, SockAddrIn, Size) = 0 then
   begin
@@ -430,7 +430,7 @@ begin
   else
   begin
     {$ifdef FPC}
-    Finalize(FSet);
+    Initialize(FSet);
     {$endif}
     FD_ZERO(FSet);
     FD_SET(vHandle, FSet);

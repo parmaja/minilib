@@ -76,7 +76,7 @@ type
     procedure AssignTo(Source: IParams);
     function Find(const Name: string): TIParam;
     property Items[Index: Integer]: TIParam read GetItems;
-    property Param[Index: string]: TIParam read GetParam; default;
+    property Param[const Index: string]: TIParam read GetParam; default;
     property Count: Integer read GetCount;
     property Name: string read GetName write SetName;
     property Text: string read GetText write SetText;
@@ -139,7 +139,7 @@ type
     //IParam can carry an object, and free it when IParam destroy
     property Child: TObject read GetChild write SetChild;
     property Items[Index: Integer]: TIParam read GetItems write SetItems;
-    property Param[Index: string]: TIParam read GetParam; default;
+    property Param[const Index: string]: TIParam read GetParam; default;
   end;
 
 function TIParams.Add(const Name: string; const Value: Variant): TIParam;

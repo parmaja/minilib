@@ -72,16 +72,6 @@ function ParseArgumentsCallback(Content: string; const CallBackProc: TArgumentsC
 function ParseArguments(Content: string; Strings: TStrings; Switches: TArray<Char>; WhiteSpaces: TSysCharSet = [' ', #9]; Quotes: TSysCharSet = ['''', '"']; ValueSeperators: TSysCharSet = [':', '=']): Integer; overload;
 function ParseArguments(Content: string; Strings: TStrings): Integer; overload;
 
-{
-  Break string to Strings list items at #10 or #13 or #13#10
-}
-
-{type
-  TBreakToStringsCallBack = procedure(S: string; vObject: TObject);
-
-procedure BreakToStrings(S: string; IncludeLineBreaks: Boolean; CallBackProc: TBreakToStringsCallBack; vObject: TObject); overload; deprecated;
-procedure BreakToStrings(S: string; vStrings: TStrings; IncludeLineBreaks: Boolean = False); overload; deprecated;
-}
 function StringsToString(Strings: TStrings; LineBreak: string = sLineBreak): string;
 
 function CompareLeftStr(const Str: string; const WithStr: string; Start: Integer = 1): Boolean;
@@ -769,58 +759,6 @@ begin
     end;
   end;
 end;
-{
-procedure BreakToStrings(S: string; IncludeLineBreaks: Boolean; CallBackProc: TBreakToStringsCallBack; vObject: TObject);
-var
-  t: string;
-  i, j, l: Integer;
-  LB: Integer;
-  procedure AddIt;
-  begin
-    CallBackProc(t, vObject);
-  end;
-begin
-  if not Assigned(CallBackProc) then
-    raise Exception.Create('CallBackProc is nil');
-  l := Length(S);
-  i := 1;
-  j := 1;
-  while (i <= l) do
-  begin
-    if CharInSet(S[i], [#13, #10]) then
-    begin
-      if IncludeLineBreaks then
-        LB := 0
-      else
-        LB := 1;
-      if (S[i] = #13) and (i < l) and (S[i + 1] = #10) then
-      begin
-        inc(i);
-        if not IncludeLineBreaks then
-          Inc(LB);
-      end;
-      t := MidStr(S, j, i - j - LB + 1);
-      j := i + 1;
-      AddIt;
-    end;
-    inc(i);
-  end;
-  if j < l then
-  begin
-    t := MidStr(S, j, l - j + 1);
-    AddIt;
-  end;
-end;
-
-procedure BreakStringsProc(S: string; vObject: TObject);
-begin
-  (vObject as TStrings).Add(S);
-end;
-
-{procedure BreakToStrings(S: string; vStrings: TStrings; IncludeLineBreaks: Boolean = False);
-begin
-  BreakToStrings(S, IncludeLineBreaks, @BreakStringsProc, vStrings);
-end;}
 
 function StringsToString(Strings: TStrings; LineBreak: string): string;
 var

@@ -707,7 +707,7 @@ procedure TmodModule.ExecuteCommand(CommandName: string; ARequestStream: TmnBuff
 var
   ARequest: TmodRequest;
 begin
-  Finalize(ARequest);
+  Initialize(ARequest);
   ARequest.Command := CommandName;
   Execute(ARequest, ARequestStream, ARespondStream);
 end;
@@ -766,7 +766,7 @@ function TmodModules.ParseRequest(const Request: string): TmodRequest;
 var
   aRequests: TStringList;
 begin
-  Finalize(Result);
+  Initialize(Result);
   aRequests := TStringList.Create;
   try
     StrToStrings(Request, aRequests, [' '], []);

@@ -25,6 +25,30 @@ uses
   mncConnections, mncCommons;
 
 type
+{TODO
+  ESQLError = class(Exception)
+  private
+    FSQLCode: Integer;
+    FErrorCode: Integer;
+  public
+    constructor Create(ASQLCode: Integer; Msg: string); overload;
+    constructor Create(ASQLCode: Integer; AErrorCode: Integer; Msg: string); overload;
+    property SQLCode: Integer read FSQLCode;
+    property ErrorCode: Integer read FErrorCode;
+  end;
+
+  ESQLExceptionError = class(ESQLError)
+  private
+    FExceptionID: Integer;
+    FExceptionMsg: string;
+    FExceptionName: string;
+  public
+    constructor Create(ASQLCode: Integer; AErrorCode: Integer; AExceptionID: Integer; AExceptionName, AExceptionMsg: string; Msg: string); overload;
+    property ExceptionID: Integer read FExceptionID;
+    property ExceptionName: string read FExceptionName;
+    property ExceptionMsg: string read FExceptionMsg;
+  end;}
+
   TmncParseSQLOptions = set of (psoGenerateParams, psoAddParamsID, psoAddParamsNames);
 
   TmncSQLSession = class;
@@ -157,7 +181,32 @@ type
   end;
 
 implementation
+(*
+{ ESQLError }
 
+constructor ESQLError.Create(ASQLCode: Integer; Msg: string);
+begin
+  inherited Create(Msg);
+  FSQLCode := ASQLCode;
+end;
+
+constructor ESQLError.Create(ASQLCode: Integer; AErrorCode: Integer; Msg: string);
+begin
+  inherited Create(Msg);
+  FSQLCode := ASQLCode;
+  FErrorCode := AErrorCode;
+end;
+
+{ ESQLExceptionError }
+
+constructor ESQLExceptionError.Create(ASQLCode: Integer; AErrorCode: Integer; AExceptionID: Integer; AExceptionName, AExceptionMsg: string; Msg: string);
+begin
+  inherited Create(ASQLCode, AErrorCode, Msg);
+  FExceptionID := AExceptionID;
+  FExceptionName := AExceptionName;
+  FExceptionMsg := AExceptionMsg;
+end;
+*)
 { TmncSQLSession }
 
 function TmncSQLSession.GetConnection: TmncSQLConnection;
@@ -324,7 +373,7 @@ end;
 
 procedure TmncSQLConnection.Execute(vCommand: string);
 begin
-  raise Exception.Create('Execute is not suported in ' + Name);
+  raise Exception.Create('Execute is not suported in ' + EngineName);
 end;
 
 procedure TmncSQLConnection.Execute(vCommand: string; vArgs: array of const);

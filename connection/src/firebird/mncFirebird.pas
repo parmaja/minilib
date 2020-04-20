@@ -57,7 +57,7 @@ type
   public
     constructor Create; override;
     class function Capabilities: TmncCapabilities; override;
-    class function Name: string; override;
+    class function EngineName: string; override;
     function CreateSession: TmncSQLSession; override;
     procedure CreateDatabase(const vName: string; CheckExists: Boolean = False); override;
     procedure DropDatabase(const vName: string; CheckExists: Boolean = False); override;
@@ -348,7 +348,7 @@ begin
   Result:= [ccDB, ccAlias, ccPath, ccCreate, {ccDrop, }ccSQL, ccNetwork, ccTransaction, ccMultiTransaction];
 end;
 
-class function TmncFBConnection.Name: string;
+class function TmncFBConnection.EngineName: string;
 begin
   Result := 'FirebirdSQL';
 end;
@@ -1582,5 +1582,5 @@ begin
 end;
 
 initialization
-  Engines.RegisterConnection('FirebirdSQL', 'FirebirdSQL Database', TmncFBConnection);
+  Engines.RegisterConnection(TmncFBConnection.EngineName, 'FirebirdSQL Database', TmncFBConnection);
 end.

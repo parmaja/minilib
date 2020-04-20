@@ -58,7 +58,7 @@ type
     function GetConnected: Boolean; override;
   public
     class function Capabilities: TmncCapabilities; override;
-    class function Name: string; override;
+    class function EngineName: string; override;
     constructor Create;
   end;
 
@@ -183,7 +183,7 @@ begin
   Result := [];
 end;
 
-class function TmncCSVConnection.Name: string;
+class function TmncCSVConnection.EngineName: string;
 begin
   Result := 'CSV';
 end;

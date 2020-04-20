@@ -295,7 +295,7 @@ function TmnCommands.ParseRequest(const Request: string): TmnRequest;
 var
   aRequests: TStringList;
 begin
-  Finalize(Result);
+  Initialize(Result);
   aRequests := TStringList.Create;
   try
     StrToStrings(Request, aRequests, [' '], []);

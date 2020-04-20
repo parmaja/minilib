@@ -12,7 +12,7 @@ unit mnDebugs;
 interface
 
 uses
-  {$ifndef FPC}
+  {$ifdef WINDOWS}
   Windows,
   {$else}
   {$endif}
@@ -41,9 +41,13 @@ end;
 
 procedure TmnDebug.Write(S: string);
 begin
-  {$ifndef FPC}
+  {$ifdef WINDOWS}
   s := IntToStr(GetTickCount) + ': ' +s;
+  {$ifdef FPC}
+  OutputDebugString(PAnsiChar(S));
+  {$else}
   OutputDebugString(PWideChar(S));
+  {$endif}
   {$else}
   {$endif}
 end;

@@ -57,7 +57,7 @@ type
   public
     constructor Create; override;
     class function Capabilities: TmncCapabilities; override;
-    class function Name: string; override;
+    class function EngineName: string; override;
     function CreateSession: TmncSQLSession; overload; override; 
     procedure Interrupt;
     procedure CreateDatabase(const vName: string; CheckExists: Boolean =False); override;
@@ -378,7 +378,7 @@ begin
   Result := [ccDB, ccPath, ccSQL, ccCreate, ccDrop, ccTransaction];
 end;
 
-class function TmncSQLiteConnection.Name: string;
+class function TmncSQLiteConnection.EngineName: string;
 begin
   Result := 'SQLite';
 end;
@@ -962,5 +962,5 @@ begin
 end;
 
 initialization
-  Engines.RegisterConnection('SQLite', 'SQLite Database', TmncSQLiteConnection);
+  Engines.RegisterConnection(TmncSQLiteConnection.EngineName, 'SQLite Database', TmncSQLiteConnection);
 end.

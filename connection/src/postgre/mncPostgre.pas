@@ -120,7 +120,7 @@ type
 
     function CreateSession: TmncSQLSession; override;
     class function Capabilities: TmncCapabilities; override;
-    class function Name: string; override;
+    class function EngineName: string; override;
     property Handle: PPGconn read FHandle;
     procedure Execute(vSQL: string); overload; override;
 
@@ -782,7 +782,7 @@ begin
   Result:= [ccDB, ccSQL, ccCreate, ccDrop, ccNetwork, ccTransaction];
 end;
 
-class function TmncPGConnection.Name: string;
+class function TmncPGConnection.EngineName: string;
 begin
   Result := 'PostgreSQL';
 end;
@@ -2081,5 +2081,5 @@ begin
 end;
 
 initialization
-  Engines.RegisterConnection('PostgreSQL', 'PostgreSQL Database', TmncPGConnection);
+  Engines.RegisterConnection(TmncPGConnection.EngineName, 'PostgreSQL Database', TmncPGConnection);
 end.
