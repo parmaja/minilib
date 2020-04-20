@@ -18,7 +18,6 @@ interface
 
 uses
   SysUtils, Classes,
-  mncConnections,
   mncFBHeader, mncFBClasses;
 
 const
