@@ -16,7 +16,7 @@ uses
   Windows,
   {$else}
   {$endif}
-  Classes, SysUtils, DateUtils, Math, mnClasses;
+  Classes, Types, SysUtils, Graphics, DateUtils, Math, mnClasses;
 
 type
   TmnDebug = record
