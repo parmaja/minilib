@@ -97,6 +97,7 @@ begin
   Strings := TStringList.Create;
   try
     StrToStrings(Composed, Strings, [',']);
+    EngineName := DequoteStr(Strings.Values['Engine']);
     Resource := DequoteStr(Strings.Values['Resource']);
     Host := DequoteStr(Strings.Values['Host']);
     User := DequoteStr(Strings.Values['User']);
