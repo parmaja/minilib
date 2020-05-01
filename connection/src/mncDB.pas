@@ -250,7 +250,7 @@ var
 begin
   Result := nil;
   P := Find(vConnection);
-  if P <> nil then
+  if (P <> nil)and(P.MetaClass<>nil) then
     Result := P.MetaClass.Create
   else
     raise EmncException.Create('Meta class not not found');

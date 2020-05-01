@@ -57,7 +57,7 @@ type
   TBidiOptions = set of (bdoApplyShape, bdoReorderCombining);
   TBidiLigatures = (bdlComplex, bdlSimple, bdlNone);
 
-function BidiString(var ws: {$ifdef FPC}widestring{$else}string{$endif}; Options: TBidiOptions = [bdoApplyShape]; Numbers: TBidiNumbers = bdnContext; Start: TBidiParagraph = bdpDefault; Ligatures: TBidiLigatures = bdlComplex): Integer;
+function BidiString(const ws: UnicodeString; Options: TBidiOptions = [bdoApplyShape]; Numbers: TBidiNumbers = bdnContext; Start: TBidiParagraph = bdpDefault; Ligatures: TBidiLigatures = bdlComplex): UnicodeString;
 
 function DoBidi(Line: PWideChar; Count: Integer; Options: TBidiOptions = [bdoApplyShape]; Numbers: TBidiNumbers = bdnContext; Start: TBidiParagraph = bdpDefault; Ligatures: TBidiLigatures = bdlComplex): Integer;
 
@@ -133,10 +133,14 @@ type
 
 {$I minibidi.inc}
 
-function BidiString(var ws: {$ifdef FPC}widestring{$else}string{$endif}; Options: TBidiOptions; Numbers: TBidiNumbers; Start: TBidiParagraph; Ligatures: TBidiLigatures): Integer;
+function BidiString(const ws: UnicodeString; Options: TBidiOptions; Numbers: TBidiNumbers; Start: TBidiParagraph; Ligatures: TBidiLigatures): UnicodeString;
+var
+  l: Integer;
+  s: UnicodeString;
 begin
-  Result := DoBidi(PWideChar(ws), Length(ws), Options, Numbers, Start, Ligatures);
-  SetLength(ws, Result);
+  Result := Copy(ws, 1, Length(ws)); //for new string not access ws :(
+  l := DoBidi(PWideChar(Result), Length(ws), Options, Numbers, Start, Ligatures);
+  SetLength(Result, l);
 end;
 
 {
