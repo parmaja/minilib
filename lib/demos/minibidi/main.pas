@@ -50,7 +50,7 @@ var
 begin
   Panel1.Canvas.Clear;
   w := UTF8Decode(Edit1.Text);
-  BidiString(w, [bdoApplyShape], bdnContext, bdpRightToLeft);
+  w := BidiString(w, [bdoApplyShape], bdnContext, bdpRightToLeft);
   Draw(w);
 end;
 

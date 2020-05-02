@@ -57,9 +57,9 @@ type
   TBidiOptions = set of (bdoApplyShape, bdoReorderCombining);
   TBidiLigatures = (bdlComplex, bdlSimple, bdlNone);
 
-function BidiString(const ws: UnicodeString; Options: TBidiOptions = [bdoApplyShape]; Numbers: TBidiNumbers = bdnContext; Start: TBidiParagraph = bdpDefault; Ligatures: TBidiLigatures = bdlComplex): UnicodeString;
+function BidiString(const Text: UnicodeString; Options: TBidiOptions = [bdoApplyShape]; Numbers: TBidiNumbers = bdnContext; Start: TBidiParagraph = bdpDefault; Ligatures: TBidiLigatures = bdlComplex): UnicodeString;
 
-function DoBidi(Line: PWideChar; Count: Integer; Options: TBidiOptions = [bdoApplyShape]; Numbers: TBidiNumbers = bdnContext; Start: TBidiParagraph = bdpDefault; Ligatures: TBidiLigatures = bdlComplex): Integer;
+function BidiText(Line: PWideChar; Count: Integer; Options: TBidiOptions = [bdoApplyShape]; Numbers: TBidiNumbers = bdnContext; Start: TBidiParagraph = bdpDefault; Ligatures: TBidiLigatures = bdlComplex): Integer;
 
 implementation
 
@@ -133,13 +133,12 @@ type
 
 {$I minibidi.inc}
 
-function BidiString(const ws: UnicodeString; Options: TBidiOptions; Numbers: TBidiNumbers; Start: TBidiParagraph; Ligatures: TBidiLigatures): UnicodeString;
+function BidiString(const Text: UnicodeString; Options: TBidiOptions; Numbers: TBidiNumbers; Start: TBidiParagraph; Ligatures: TBidiLigatures): UnicodeString;
 var
   l: Integer;
-  s: UnicodeString;
 begin
-  Result := Copy(ws, 1, Length(ws)); //for new string not access ws :(
-  l := DoBidi(PWideChar(Result), Length(ws), Options, Numbers, Start, Ligatures);
+  Result := UnicodeString(Text); //for new string can be changed safe by BidiText
+  l := BidiText(PWideChar(Result), Length(Result), Options, Numbers, Start, Ligatures);
   SetLength(Result, l);
 end;
 
@@ -648,7 +647,7 @@ end;
  * the Bidirectional algorithm to.
  }
 
-function DoBidi(Line: PWideChar; Count: Integer; Options: TBidiOptions; Numbers: TBidiNumbers; Start: TBidiParagraph; Ligatures: TBidiLigatures): Integer;
+function BidiText(Line: PWideChar; Count: Integer; Options: TBidiOptions; Numbers: TBidiNumbers; Start: TBidiParagraph; Ligatures: TBidiLigatures): Integer;
 var
   Types: PCharacterType;
   Levels: PLevel;
