@@ -181,6 +181,18 @@ function ISODateToStr(DateTime: TDateTime; vDateSeparator: Char = '-'; TimeDivid
 function AnsiToUnicode(S: rawbytestring; CodePage: Integer = 0): string;
 function StringAs(S: rawbytestring; CodePage: Integer = 0): utf8string;
 
+//Zero Based
+function StringOf(const Value: Array of Byte): string; overload;
+function StringOf(const Value: TBytes): string; overload;
+
+//Files Utils
+
+type
+  //If set Resume to false it will stop loop
+  TEnumFilesCallback = procedure(AObject: TObject; const FileName: string; Count, Level:Integer; IsDirectory: Boolean; var Resume: Boolean);
+
+procedure EnumFiles(FileList: TStringList; Folder, Filter: string);
+
 var
   SystemAnsiCodePage: Integer; //used to convert from Ansi string, it is the default
 
@@ -1068,6 +1080,44 @@ begin
     CodePage := SystemAnsiCodePage;
   SetCodePage(S, CodePage, False);
   Result := S;
+end;
+
+function StringOf(const Value: Array of Byte): string;
+var
+  Len:Integer;
+begin
+  Len:=Length(Value) div SizeOf(Char);
+  SetLength(Result, Len);
+  if Len > 0 then
+    Move(Value[0], Result[1], Len * SizeOf(Char));
+end;
+
+function StringOf(const Value: TBytes): string;
+var
+  Len:Integer;
+begin
+  Len:=Length(Value) div SizeOf(Char);
+  SetLength(Result, Len);
+  if Len > 0 then
+    Move(Value[0], Result[1], Len * SizeOf(Char));
+end;
+
+procedure EnumFiles(FileList: TStringList; Folder, Filter: string);
+var
+  R: integer;
+  SearchRec: TSearchRec;
+begin
+  Folder := IncludeTrailingPathDelimiter(Folder);
+  R := FindFirst(Folder + Filter, faAnyFile, SearchRec);
+  while R = 0 do
+  begin
+    if (SearchRec.Name <> '.') and (SearchRec.Name <> '..') then
+    begin
+      FileList.Add(SearchRec.Name);
+    end;
+    R := FindNext(SearchRec);
+  end;
+  FindClose(SearchRec);
 end;
 
 initialization

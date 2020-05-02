@@ -806,6 +806,7 @@ begin
     aHost := '127.0.0.1'
   else
     aHost := Host;
+
   if Port = '' then
     aPort := '5432'
   else
@@ -815,7 +816,12 @@ begin
     aResource := vResource
   else
     aResource := Resource;
-  aUser := UserName;
+
+  if UserName = '' then
+    aUser := 'postgres'
+  else
+    aUser := UserName;
+
   aPassword := Password;
   if UseSSL then
   begin

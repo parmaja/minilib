@@ -81,7 +81,7 @@ end;
 
 function TmncEngines.ComposeConnectionString(EngineName, Resource, Host, User, Password, Role: string): string;
 begin
-  Result := 'Engine="'+EngineName+'",Resource="'+Resource+'",Host="'+Host+'",User="'+User+'",Password="'+Password+'",Role="'+Role+'"';
+  Result := 'Resource="'+Resource+'",Engine="'+EngineName+'",Host="'+Host+'",User="'+User+'",Password="'+Password+'",Role="'+Role+'"';
 end;
 
 function TmncEngines.ComposeConnectionString(Connection: TmncConnection): string;
@@ -97,8 +97,8 @@ begin
   Strings := TStringList.Create;
   try
     StrToStrings(Composed, Strings, [',']);
-    EngineName := DequoteStr(Strings.Values['Engine']);
     Resource := DequoteStr(Strings.Values['Resource']);
+    EngineName := DequoteStr(Strings.Values['Engine']);
     Host := DequoteStr(Strings.Values['Host']);
     User := DequoteStr(Strings.Values['User']);
     Password := DequoteStr(Strings.Values['Password']);

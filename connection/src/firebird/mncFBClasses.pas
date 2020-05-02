@@ -504,7 +504,6 @@ type
     function GetSqlName: string;
     procedure Clean;
   protected
-    function BytesToString(const Bytes: array of Byte): string;
   end;
 
 function getb(p: PBSTREAM): Byte;
@@ -1411,7 +1410,11 @@ begin
       SQL_ARRAY: Result := '[Array]';
       SQL_BLOB:
       begin
+        {$ifdef FPC}
+        ss := TStringStream.Create('');
+        {$else}
         ss := TStringStream.Create('', TEncoding.UTF8);
+        {$endif}
         try
           SaveToStream(ss); // TODO not work witout handles
           Result := ss.DataString;
@@ -1773,7 +1776,11 @@ begin
         IsNull := True
       else
       begin
+        {$ifdef FPC}
+        ss := TStringStream.Create(AValue);
+        {$else}
         ss := TStringStream.Create(AValue, TEncoding.UTF8);
+        {$endif}
         try
           LoadFromStream(ss); // TODO not work without handles
         finally
@@ -2902,15 +2909,6 @@ begin
   FModified := False;
 end;
 
-function TXSQLDAHelper.BytesToString(const Bytes: array of Byte): string;
-begin
-  {$ifdef FPC}
-  Result := UTF8ToString(Bytes);
-  {$else}
-  Result := TEncoding.UTF8.GetString(Bytes);
-  {$endif}
-end;
-
 { TXSQLDAHelper }
 
 procedure TXSQLDAHelper.Clean;
@@ -2921,25 +2919,25 @@ end;
 
 function TXSQLDAHelper.GetAliasName: string;
 begin
-  Result := BytesToString(AliasName);
+  Result := PUTF8Char(@AliasName);
   SetLength(Result, aliasname_length);
 end;
 
 function TXSQLDAHelper.GetOwnName: string;
 begin
-  Result := BytesToString(OwnName);
+  Result := PUTF8Char(@OwnName);
   SetLength(Result, ownname_length);
 end;
 
 function TXSQLDAHelper.GetRelName: string;
 begin
-  Result := BytesToString(RelName);
+  Result := PUTF8Char(@RelName);
   SetLength(Result, relname_length);
 end;
 
 function TXSQLDAHelper.GetSqlName: string;
 begin
-  Result := BytesToString(SqlName);
+  Result := PUTF8Char(@SqlName);
   SetLength(Result, Sqlname_length);
 end;
 
@@ -2948,7 +2946,7 @@ var
   s: RawByteString;
 begin
   s := UTF8Encode(Value);
-  Move(PByte(s)^, PByte(AliasName[0])^, length(s));
+  Move(PByte(s)^, AliasName, length(s));
   aliasname_length := length(s);
 end;
 
@@ -2957,7 +2955,7 @@ var
   s: RawByteString;
 begin
   s := UTF8Encode(Value);
-  Move(PByte(s)^, PByte(OwnName[0])^, length(s));
+  Move(PByte(s)^, OwnName, length(s));
   ownname_length := length(s);
 end;
 
@@ -2966,7 +2964,7 @@ var
   s: RawByteString;
 begin
   s := UTF8Encode(Value);
-  Move(PByte(s)^, PByte(RelName[0])^, length(s));
+  Move(PByte(s)^, RelName, length(s));
   relname_length := length(s);
 end;
 
@@ -2975,7 +2973,7 @@ var
   s: RawByteString;
 begin
   s := UTF8Encode(Value);
-  Move(PByte(s)^, PByte(SqlName[0])^, length(s));
+  Move(PByte(s)^, SqlName, length(s));
   Sqlname_length := length(s);
 end;
 
