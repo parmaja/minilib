@@ -78,7 +78,7 @@ type
     procedure CloneExecute(const vResource, vSQL: string; vArgs: array of const); overload;
     procedure CloneExecute(const vResource, vSQL: string); overload;
     procedure Vacuum; virtual;
-      {
+    {
       GetParamChar: Called to take the real param char depend on the sql engine to replace it with this new one.
                     by default it is ?
     }

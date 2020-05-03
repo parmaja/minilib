@@ -17,18 +17,18 @@ interface
 
 uses
   SysUtils, Classes, Contnrs,
-  mnFields, mncCommons, mncConnections, mncORM;
+  mnFields, mncCommons, mncConnections, mncORM, mncSQL;
 
 type
-  TschmKind = (sokNone, sokMeta, sokData,
-               sokHost, sokDatabase, sokTable, sokView,
+  TmetaKind = (sokNone, sokMeta, sokData,
+               sokHost, sokDatabases, sokDatabase, sokTable, sokView,
                sokProcedure, sokFunction, sokException, sokRole,
                sokTrigger, sokSequence, sokForeign, sokIndex, sokConstraint,
                sokField, sokOperator, sokProperty,
                sokType, sokDomain);
 
-  TschmEnumOption = (ekExtra, ekAlter, ekSystem, ekSort);
-  TschmEnumOptions = set of TschmEnumOption;
+  TmetaEnumOption = (ekExtra, ekAlter, ekSystem, ekSort);
+  TmetaEnumOptions = set of TmetaEnumOption;
 
   TmncMetaAttributes = class(TmnFields)
   private
@@ -39,14 +39,14 @@ type
 
   TmncMetaItem = class(TObject)
   private
-    FKind: TschmKind;
+    FKind: TmetaKind;
     FName: string;
     FAttributes: TmncMetaAttributes;
   public
     constructor Create;
     destructor Destroy; override;
     property Name: string read FName write FName;
-    property Kind: TschmKind read FKind write FKind;
+    property Kind: TmetaKind read FKind write FKind;
     property Attributes: TmncMetaAttributes read FAttributes;
   end;
 
@@ -73,23 +73,23 @@ type
   protected
   public
     destructor Destroy; override;
-    procedure EnumObjects(Meta: TmncMetaItems; Kind: TschmKind; SQLName: string = ''; Options: TschmEnumOptions = []);
+    procedure EnumObjects(Meta: TmncMetaItems; Kind: TmetaKind; SQLName: string = ''; Options: TmetaEnumOptions = []);
     //---------------------
-    procedure EnumTables(Meta: TmncMetaItems; Options: TschmEnumOptions = []); virtual;
-    procedure EnumViews(Meta: TmncMetaItems; Options: TschmEnumOptions = []); virtual;
-    procedure EnumProcedures(Meta: TmncMetaItems; Options: TschmEnumOptions = []); virtual;
-    procedure EnumSequences(Meta: TmncMetaItems; Options: TschmEnumOptions = []); virtual;
-    procedure EnumFunctions(Meta: TmncMetaItems; Options: TschmEnumOptions = []); virtual;
-    procedure EnumExceptions(Meta: TmncMetaItems; Options: TschmEnumOptions = []); virtual;
-    procedure EnumDomains(Meta: TmncMetaItems; Options: TschmEnumOptions = []); virtual;
-    procedure EnumConstraints(Meta: TmncMetaItems; SQLName: string = ''; Options: TschmEnumOptions = []); virtual;
-    procedure EnumTriggers(Meta: TmncMetaItems; SQLName: string = ''; Options: TschmEnumOptions = []); virtual;
-    procedure EnumIndices(Meta: TmncMetaItems; SQLName: string = ''; Options: TschmEnumOptions = []); virtual;
-    procedure EnumFields(Meta: TmncMetaItems; SQLName: string; Options: TschmEnumOptions = []); virtual;
+    procedure EnumTables(Meta: TmncMetaItems; Options: TmetaEnumOptions = []); virtual;
+    procedure EnumViews(Meta: TmncMetaItems; Options: TmetaEnumOptions = []); virtual;
+    procedure EnumProcedures(Meta: TmncMetaItems; Options: TmetaEnumOptions = []); virtual;
+    procedure EnumSequences(Meta: TmncMetaItems; Options: TmetaEnumOptions = []); virtual;
+    procedure EnumFunctions(Meta: TmncMetaItems; Options: TmetaEnumOptions = []); virtual;
+    procedure EnumExceptions(Meta: TmncMetaItems; Options: TmetaEnumOptions = []); virtual;
+    procedure EnumDomains(Meta: TmncMetaItems; Options: TmetaEnumOptions = []); virtual;
+    procedure EnumConstraints(Meta: TmncMetaItems; SQLName: string = ''; Options: TmetaEnumOptions = []); virtual;
+    procedure EnumTriggers(Meta: TmncMetaItems; SQLName: string = ''; Options: TmetaEnumOptions = []); virtual;
+    procedure EnumIndices(Meta: TmncMetaItems; SQLName: string = ''; Options: TmetaEnumOptions = []); virtual;
+    procedure EnumFields(Meta: TmncMetaItems; SQLName: string; Options: TmetaEnumOptions = []); virtual;
     //source
-    procedure GetTriggerSource(Strings:TStringList; SQLName: string; Options: TschmEnumOptions = []); virtual;
-    procedure GetViewSource(Strings: TStringList; SQLName: string; Options: TschmEnumOptions = []); virtual;
-    procedure GetIndexInfo(Meta: TmncMetaItems; SQLName: string; Options: TschmEnumOptions = []); virtual;
+    procedure GetTriggerSource(Strings:TStringList; SQLName: string; Options: TmetaEnumOptions = []); virtual;
+    procedure GetViewSource(Strings: TStringList; SQLName: string; Options: TmetaEnumOptions = []); virtual;
+    procedure GetIndexInfo(Meta: TmncMetaItems; SQLName: string; Options: TmetaEnumOptions = []); virtual;
 
     procedure GenerateSchema(ORM: TmncORM; Callback: TmncSQLCallback); virtual;
   published
@@ -174,7 +174,7 @@ begin
   inherited;
 end;
 
-procedure TmncMeta.EnumObjects(Meta: TmncMetaItems; Kind: TschmKind; SQLName: string; Options: TschmEnumOptions);
+procedure TmncMeta.EnumObjects(Meta: TmncMetaItems; Kind: TmetaKind; SQLName: string; Options: TmetaEnumOptions);
 begin
   case Kind of
     sokDatabase: ;
@@ -195,65 +195,65 @@ begin
   end;
 end;
 
-procedure TmncMeta.EnumTables(Meta: TmncMetaItems; Options: TschmEnumOptions);
+procedure TmncMeta.EnumTables(Meta: TmncMetaItems; Options: TmetaEnumOptions);
 begin
 
 end;
 
-procedure TmncMeta.EnumViews(Meta: TmncMetaItems; Options: TschmEnumOptions);
+procedure TmncMeta.EnumViews(Meta: TmncMetaItems; Options: TmetaEnumOptions);
 begin
 end;
 
-procedure TmncMeta.EnumProcedures(Meta: TmncMetaItems; Options: TschmEnumOptions);
+procedure TmncMeta.EnumProcedures(Meta: TmncMetaItems; Options: TmetaEnumOptions);
 begin
 end;
 
-procedure TmncMeta.EnumSequences(Meta: TmncMetaItems; Options: TschmEnumOptions);
+procedure TmncMeta.EnumSequences(Meta: TmncMetaItems; Options: TmetaEnumOptions);
 begin
 end;
 
-procedure TmncMeta.EnumFunctions(Meta: TmncMetaItems; Options: TschmEnumOptions);
+procedure TmncMeta.EnumFunctions(Meta: TmncMetaItems; Options: TmetaEnumOptions);
 begin
 end;
 
-procedure TmncMeta.EnumExceptions(Meta: TmncMetaItems; Options: TschmEnumOptions);
+procedure TmncMeta.EnumExceptions(Meta: TmncMetaItems; Options: TmetaEnumOptions);
 begin
 end;
 
-procedure TmncMeta.EnumDomains(Meta: TmncMetaItems; Options: TschmEnumOptions);
+procedure TmncMeta.EnumDomains(Meta: TmncMetaItems; Options: TmetaEnumOptions);
 begin
 end;
 
-procedure TmncMeta.EnumConstraints(Meta: TmncMetaItems; SQLName: string; Options: TschmEnumOptions);
+procedure TmncMeta.EnumConstraints(Meta: TmncMetaItems; SQLName: string; Options: TmetaEnumOptions);
 begin
 end;
 
 procedure TmncMeta.EnumTriggers(Meta: TmncMetaItems;
-  SQLName: string; Options: TschmEnumOptions);
+  SQLName: string; Options: TmetaEnumOptions);
 begin
 
 end;
 
-procedure TmncMeta.EnumIndices(Meta: TmncMetaItems; SQLName: string; Options: TschmEnumOptions);
+procedure TmncMeta.EnumIndices(Meta: TmncMetaItems; SQLName: string; Options: TmetaEnumOptions);
 begin
 end;
 
-procedure TmncMeta.EnumFields(Meta: TmncMetaItems; SQLName: string; Options: TschmEnumOptions);
+procedure TmncMeta.EnumFields(Meta: TmncMetaItems; SQLName: string; Options: TmetaEnumOptions);
 begin
 end;
 
-procedure TmncMeta.GetTriggerSource(Strings: TStringList; SQLName: string; Options: TschmEnumOptions = []);
+procedure TmncMeta.GetTriggerSource(Strings: TStringList; SQLName: string; Options: TmetaEnumOptions = []);
 begin
 
 end;
 
 procedure TmncMeta.GetViewSource(Strings: TStringList; SQLName: string;
-  Options: TschmEnumOptions);
+  Options: TmetaEnumOptions);
 begin
 
 end;
 
-procedure TmncMeta.GetIndexInfo(Meta: TmncMetaItems; SQLName: string; Options: TschmEnumOptions);
+procedure TmncMeta.GetIndexInfo(Meta: TmncMetaItems; SQLName: string; Options: TmetaEnumOptions);
 begin
 end;
 

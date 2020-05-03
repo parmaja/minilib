@@ -28,25 +28,25 @@ type
     procedure SetSession(AValue: TmncSession);
   protected
     function CreateCMD(SQL: string): TmncSQLiteCommand;
-    procedure EnumCMD(Meta: TmncMetaItems; vKind: TschmKind; SQL: string; Fields: array of string); overload;//use field 'name'
-    procedure EnumCMD(Meta: TmncMetaItems; vKind: TschmKind; SQL: string); overload;
+    procedure EnumCMD(Meta: TmncMetaItems; vKind: TmetaKind; SQL: string; Fields: array of string); overload;//use field 'name'
+    procedure EnumCMD(Meta: TmncMetaItems; vKind: TmetaKind; SQL: string); overload;
     procedure FetchCMD(Strings:TStringList; SQL: string);//use field 'name'
-    function GetSortSQL(Options: TschmEnumOptions):string;
+    function GetSortSQL(Options: TmetaEnumOptions):string;
   public
-    procedure EnumTables(Meta: TmncMetaItems; Options: TschmEnumOptions = []); override;
-    procedure EnumFields(Meta: TmncMetaItems; SQLName: string; Options: TschmEnumOptions = []); override;
-    procedure EnumViews(Meta: TmncMetaItems; Options: TschmEnumOptions = []); override;
-    procedure EnumProcedures(Meta: TmncMetaItems; Options: TschmEnumOptions = []); override;
-    procedure EnumSequences(Meta: TmncMetaItems; Options: TschmEnumOptions = []); override;
-    procedure EnumFunctions(Meta: TmncMetaItems; Options: TschmEnumOptions = []); override;
-    procedure EnumExceptions(Meta: TmncMetaItems; Options: TschmEnumOptions = []); override;
-    procedure EnumDomains(Meta: TmncMetaItems; Options: TschmEnumOptions = []); override;
-    procedure EnumConstraints(Meta: TmncMetaItems; SQLName: string = ''; Options: TschmEnumOptions = []); override;
-    procedure EnumTriggers(Meta: TmncMetaItems; SQLName: string = ''; Options: TschmEnumOptions = []); override;
-    procedure EnumIndices(Meta: TmncMetaItems; SQLName: string = ''; Options: TschmEnumOptions = []); override;
+    procedure EnumTables(Meta: TmncMetaItems; Options: TmetaEnumOptions = []); override;
+    procedure EnumFields(Meta: TmncMetaItems; SQLName: string; Options: TmetaEnumOptions = []); override;
+    procedure EnumViews(Meta: TmncMetaItems; Options: TmetaEnumOptions = []); override;
+    procedure EnumProcedures(Meta: TmncMetaItems; Options: TmetaEnumOptions = []); override;
+    procedure EnumSequences(Meta: TmncMetaItems; Options: TmetaEnumOptions = []); override;
+    procedure EnumFunctions(Meta: TmncMetaItems; Options: TmetaEnumOptions = []); override;
+    procedure EnumExceptions(Meta: TmncMetaItems; Options: TmetaEnumOptions = []); override;
+    procedure EnumDomains(Meta: TmncMetaItems; Options: TmetaEnumOptions = []); override;
+    procedure EnumConstraints(Meta: TmncMetaItems; SQLName: string = ''; Options: TmetaEnumOptions = []); override;
+    procedure EnumTriggers(Meta: TmncMetaItems; SQLName: string = ''; Options: TmetaEnumOptions = []); override;
+    procedure EnumIndices(Meta: TmncMetaItems; SQLName: string = ''; Options: TmetaEnumOptions = []); override;
     //source
-    procedure GetTriggerSource(Strings:TStringList; SQLName: string; Options: TschmEnumOptions = []); override;
-    procedure GetIndexInfo(Meta: TmncMetaItems; SQLName: string; Options: TschmEnumOptions = []); override;
+    procedure GetTriggerSource(Strings:TStringList; SQLName: string; Options: TmetaEnumOptions = []); override;
+    procedure GetIndexInfo(Meta: TmncMetaItems; SQLName: string; Options: TmetaEnumOptions = []); override;
     property Session: TmncSession read GetSession write SetSession;//alias for FLink in base class
   end;
 
@@ -73,7 +73,7 @@ begin
   Result.SQL.Text := SQL;
 end;
 
-procedure TmncSQLiteMeta.EnumCMD(Meta: TmncMetaItems; vKind: TschmKind; SQL: string; Fields: array of string);
+procedure TmncSQLiteMeta.EnumCMD(Meta: TmncMetaItems; vKind: TmetaKind; SQL: string; Fields: array of string);
 var
   aCMD: TmncSQLiteCommand;
   aItem: TmncMetaItem;
@@ -95,7 +95,7 @@ begin
   end;
 end;
 
-procedure TmncSQLiteMeta.EnumCMD(Meta: TmncMetaItems; vKind: TschmKind; SQL: string);
+procedure TmncSQLiteMeta.EnumCMD(Meta: TmncMetaItems; vKind: TmetaKind; SQL: string);
 begin
   EnumCMD(Meta, vKind, SQL, []);
 end;
@@ -117,7 +117,7 @@ begin
   end;
 end;
 
-function TmncSQLiteMeta.GetSortSQL(Options: TschmEnumOptions): string;
+function TmncSQLiteMeta.GetSortSQL(Options: TmetaEnumOptions): string;
 begin
   if ekSort in Options then
     Result := ' order by name'
@@ -125,54 +125,54 @@ begin
     Result := '';
 end;
 
-procedure TmncSQLiteMeta.EnumTables(Meta: TmncMetaItems; Options: TschmEnumOptions);
+procedure TmncSQLiteMeta.EnumTables(Meta: TmncMetaItems; Options: TmetaEnumOptions);
 begin
   EnumCMD(Meta, sokTable, 'select name from sqlite_master where type = ''table''' + GetSortSQL(Options));
 end;
 
-procedure TmncSQLiteMeta.EnumViews(Meta: TmncMetaItems; Options: TschmEnumOptions);
+procedure TmncSQLiteMeta.EnumViews(Meta: TmncMetaItems; Options: TmetaEnumOptions);
 begin
   EnumCMD(Meta, sokView, 'select name from sqlite_master where type = ''view'''+ GetSortSQL(Options));
 end;
 
 procedure TmncSQLiteMeta.EnumProcedures(Meta: TmncMetaItems;
-  Options: TschmEnumOptions);
+  Options: TmetaEnumOptions);
 begin
 
 end;
 
 procedure TmncSQLiteMeta.EnumSequences(Meta: TmncMetaItems;
-  Options: TschmEnumOptions);
+  Options: TmetaEnumOptions);
 begin
 
 end;
 
 procedure TmncSQLiteMeta.EnumFunctions(Meta: TmncMetaItems;
-  Options: TschmEnumOptions);
+  Options: TmetaEnumOptions);
 begin
 
 end;
 
 procedure TmncSQLiteMeta.EnumExceptions(Meta: TmncMetaItems;
-  Options: TschmEnumOptions);
+  Options: TmetaEnumOptions);
 begin
 
 end;
 
 procedure TmncSQLiteMeta.EnumDomains(Meta: TmncMetaItems;
-  Options: TschmEnumOptions);
+  Options: TmetaEnumOptions);
 begin
 
 end;
 
 procedure TmncSQLiteMeta.EnumConstraints(Meta: TmncMetaItems;
-  SQLName: string; Options: TschmEnumOptions);
+  SQLName: string; Options: TmetaEnumOptions);
 begin
 
 end;
 
 procedure TmncSQLiteMeta.EnumTriggers(Meta: TmncMetaItems;
-  SQLName: string; Options: TschmEnumOptions);
+  SQLName: string; Options: TmetaEnumOptions);
 var
   s: string;
 begin
@@ -184,7 +184,7 @@ begin
 end;
 
 procedure TmncSQLiteMeta.EnumIndices(Meta: TmncMetaItems; SQLName: string;
-  Options: TschmEnumOptions);
+  Options: TmetaEnumOptions);
 var
   s: string;
 begin
@@ -201,7 +201,7 @@ begin
   end;
 end;
 
-procedure TmncSQLiteMeta.GetTriggerSource(Strings: TStringList; SQLName: string; Options: TschmEnumOptions);
+procedure TmncSQLiteMeta.GetTriggerSource(Strings: TStringList; SQLName: string; Options: TmetaEnumOptions);
 var
   s: string;
 begin
@@ -210,7 +210,7 @@ begin
   FetchCMD(Strings, s);
 end;
 
-procedure TmncSQLiteMeta.GetIndexInfo(Meta: TmncMetaItems; SQLName: string; Options: TschmEnumOptions);
+procedure TmncSQLiteMeta.GetIndexInfo(Meta: TmncMetaItems; SQLName: string; Options: TmetaEnumOptions);
 var
   aCMD: TmncSQLiteCommand;
   aItem: TmncMetaItem;
@@ -244,7 +244,7 @@ begin
   end;
 end;
 
-procedure TmncSQLiteMeta.EnumFields(Meta: TmncMetaItems; SQLName: string; Options: TschmEnumOptions);
+procedure TmncSQLiteMeta.EnumFields(Meta: TmncMetaItems; SQLName: string; Options: TmetaEnumOptions);
 var
   aCMD: TmncSQLiteCommand;
   aItem: TmncMetaItem;

@@ -31,22 +31,22 @@ type
     procedure EnumCMD(Meta: TmncMetaItems; SQL: string; Fields: array of string); overload;//use field 'name'
     procedure EnumCMD(Meta: TmncMetaItems; SQL: string); overload;
     procedure FetchCMD(Strings:TStringList; SQL: string);//use field 'name'
-    function GetSortSQL(Options: TschmEnumOptions):string;
+    function GetSortSQL(Options: TmetaEnumOptions):string;
   public
-    procedure EnumTables(Meta: TmncMetaItems; Options: TschmEnumOptions = []); override;
-    procedure EnumFields(Meta: TmncMetaItems; MemberName: string = ''; Options: TschmEnumOptions = []); override;
-    procedure EnumViews(Meta: TmncMetaItems; Options: TschmEnumOptions = []); override;
-    procedure EnumProcedures(Meta: TmncMetaItems; Options: TschmEnumOptions = []); override;
-    procedure EnumSequences(Meta: TmncMetaItems; Options: TschmEnumOptions = []); override;
-    procedure EnumFunctions(Meta: TmncMetaItems; Options: TschmEnumOptions = []); override;
-    procedure EnumExceptions(Meta: TmncMetaItems; Options: TschmEnumOptions = []); override;
+    procedure EnumTables(Meta: TmncMetaItems; Options: TmetaEnumOptions = []); override;
+    procedure EnumFields(Meta: TmncMetaItems; MemberName: string = ''; Options: TmetaEnumOptions = []); override;
+    procedure EnumViews(Meta: TmncMetaItems; Options: TmetaEnumOptions = []); override;
+    procedure EnumProcedures(Meta: TmncMetaItems; Options: TmetaEnumOptions = []); override;
+    procedure EnumSequences(Meta: TmncMetaItems; Options: TmetaEnumOptions = []); override;
+    procedure EnumFunctions(Meta: TmncMetaItems; Options: TmetaEnumOptions = []); override;
+    procedure EnumExceptions(Meta: TmncMetaItems; Options: TmetaEnumOptions = []); override;
 
-    procedure EnumConstraints(Meta: TmncMetaItems; MemberName: string = ''; Options: TschmEnumOptions = []); override;
-    procedure EnumTriggers(Meta: TmncMetaItems; MemberName: string = ''; Options: TschmEnumOptions = []); override;
-    procedure EnumIndices(Meta: TmncMetaItems; MemberName: string = ''; Options: TschmEnumOptions = []); override;
+    procedure EnumConstraints(Meta: TmncMetaItems; MemberName: string = ''; Options: TmetaEnumOptions = []); override;
+    procedure EnumTriggers(Meta: TmncMetaItems; MemberName: string = ''; Options: TmetaEnumOptions = []); override;
+    procedure EnumIndices(Meta: TmncMetaItems; MemberName: string = ''; Options: TmetaEnumOptions = []); override;
     //source
-    procedure GetTriggerSource(Strings:TStringList; MemberName: string; Options: TschmEnumOptions = []); override;
-    procedure GetIndexInfo(Meta: TmncMetaItems; MemberName: string; Options: TschmEnumOptions = []); override;
+    procedure GetTriggerSource(Strings:TStringList; MemberName: string; Options: TmetaEnumOptions = []); override;
+    procedure GetIndexInfo(Meta: TmncMetaItems; MemberName: string; Options: TmetaEnumOptions = []); override;
   end;
 
 implementation
@@ -74,60 +74,60 @@ procedure TmncPGMeta.FetchCMD(Strings: TStringList; SQL: string);
 begin
 end;
 
-function TmncPGMeta.GetSortSQL(Options: TschmEnumOptions): string;
+function TmncPGMeta.GetSortSQL(Options: TmetaEnumOptions): string;
 begin
 end;
 
-procedure TmncPGMeta.EnumTables(Meta: TmncMetaItems; Options: TschmEnumOptions);
+procedure TmncPGMeta.EnumTables(Meta: TmncMetaItems; Options: TmetaEnumOptions);
 begin
 end;
 
-procedure TmncPGMeta.EnumViews(Meta: TmncMetaItems; Options: TschmEnumOptions);
-begin
-
-end;
-
-procedure TmncPGMeta.EnumProcedures(Meta: TmncMetaItems; Options: TschmEnumOptions);
+procedure TmncPGMeta.EnumViews(Meta: TmncMetaItems; Options: TmetaEnumOptions);
 begin
 
 end;
 
-procedure TmncPGMeta.EnumSequences(Meta: TmncMetaItems; Options: TschmEnumOptions);
+procedure TmncPGMeta.EnumProcedures(Meta: TmncMetaItems; Options: TmetaEnumOptions);
 begin
 
 end;
 
-procedure TmncPGMeta.EnumFunctions(Meta: TmncMetaItems; Options: TschmEnumOptions);
+procedure TmncPGMeta.EnumSequences(Meta: TmncMetaItems; Options: TmetaEnumOptions);
 begin
 
 end;
 
-procedure TmncPGMeta.EnumExceptions(Meta: TmncMetaItems; Options: TschmEnumOptions);
+procedure TmncPGMeta.EnumFunctions(Meta: TmncMetaItems; Options: TmetaEnumOptions);
 begin
 
 end;
 
-procedure TmncPGMeta.EnumConstraints(Meta: TmncMetaItems; MemberName: string; Options: TschmEnumOptions);
+procedure TmncPGMeta.EnumExceptions(Meta: TmncMetaItems; Options: TmetaEnumOptions);
+begin
+
+end;
+
+procedure TmncPGMeta.EnumConstraints(Meta: TmncMetaItems; MemberName: string; Options: TmetaEnumOptions);
 begin
 end;
 
-procedure TmncPGMeta.EnumTriggers(Meta: TmncMetaItems; MemberName: string; Options: TschmEnumOptions);
+procedure TmncPGMeta.EnumTriggers(Meta: TmncMetaItems; MemberName: string; Options: TmetaEnumOptions);
 begin
 end;
 
-procedure TmncPGMeta.EnumIndices(Meta: TmncMetaItems; MemberName: string; Options: TschmEnumOptions);
+procedure TmncPGMeta.EnumIndices(Meta: TmncMetaItems; MemberName: string; Options: TmetaEnumOptions);
 begin
 end;
 
-procedure TmncPGMeta.GetTriggerSource(Strings: TStringList; MemberName: string; Options: TschmEnumOptions);
+procedure TmncPGMeta.GetTriggerSource(Strings: TStringList; MemberName: string; Options: TmetaEnumOptions);
 begin
 end;
 
-procedure TmncPGMeta.GetIndexInfo(Meta: TmncMetaItems; MemberName: string; Options: TschmEnumOptions);
+procedure TmncPGMeta.GetIndexInfo(Meta: TmncMetaItems; MemberName: string; Options: TmetaEnumOptions);
 begin
 end;
 
-procedure TmncPGMeta.EnumFields(Meta: TmncMetaItems; MemberName: string; Options: TschmEnumOptions);
+procedure TmncPGMeta.EnumFields(Meta: TmncMetaItems; MemberName: string; Options: TmetaEnumOptions);
 begin
 end;
 

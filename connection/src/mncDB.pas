@@ -17,7 +17,8 @@ interface
 
 uses
   SysUtils, Classes, Contnrs,
-  mnUtils, mncCommons, mncConnections, mncORM, mncMeta;
+  mnUtils, mncCommons, mncConnections,
+  mncORM, mncMeta;
 
 type
   { TmncEngine }
