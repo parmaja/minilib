@@ -728,7 +728,8 @@ end;
 
 procedure TmncMySQLConnection.InternalConnect(out vHandle: PMYSQL; vResource: string);
 var
-  aHost, aPort: AnsiString;
+  aHost: AnsiString;
+  aPort: Integer;
   aResource, aUser, aPassword: AnsiString;
   b: my_bool = 0;
   timout: cuint;
@@ -743,9 +744,9 @@ begin
     else
       aHost := Host;
     if Port = '' then
-      aPort := '5432'
+      aPort := 5432
     else
-      aPort := Port;
+      aPort := StrToInt(Port);
 
     if vResource <> '' then
       aResource := vResource
@@ -769,7 +770,7 @@ begin
     {timout := 1;
     CheckError(mysql_options(vHandle, MYSQL_OPT_CONNECT_TIMEOUT, @timout));}
 
-    CheckError(mysql_real_connect(vHandle, PAnsiChar(Host), PChar(UserName), PChar(Password), nil, 0, nil, CLIENT_MULTI_RESULTS)); //CLIENT_MULTI_STATEMENTS CLIENT_INTERACTIVE
+    CheckError(mysql_real_connect(vHandle, PAnsiChar(aHost), PChar(aUser), PChar(aPassword), nil, aPort, nil, CLIENT_MULTI_RESULTS)); //CLIENT_MULTI_STATEMENTS CLIENT_INTERACTIVE
   except
     on E:Exception do
     begin

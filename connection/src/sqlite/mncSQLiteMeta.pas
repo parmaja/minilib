@@ -16,23 +16,23 @@ unit mncSQLiteMeta;
 interface
 
 uses
-  SysUtils, Classes,
+  SysUtils, Classes, mnUtils,
   mncMeta, mncConnections, mncSQLite;
 
 type
   { TmncSQLiteMeta }
 
-  TmncSQLiteMeta = class(TmncMeta)
+  TmncSQLiteMeta = class(TmncSQLMeta)
   private
     function GetSession: TmncSession;
     procedure SetSession(AValue: TmncSession);
   protected
-    function CreateCMD(SQL: string): TmncSQLiteCommand;
     procedure EnumCMD(Meta: TmncMetaItems; vKind: TmetaKind; SQL: string; Fields: array of string); overload;//use field 'name'
     procedure EnumCMD(Meta: TmncMetaItems; vKind: TmetaKind; SQL: string); overload;
     procedure FetchCMD(Strings:TStringList; SQL: string);//use field 'name'
-    function GetSortSQL(Options: TmetaEnumOptions):string;
+    function GetSortSQL(Options: TmetaEnumOptions): string;
   public
+    procedure EnumDatabases(Meta: TmncMetaItems; Options: TmetaEnumOptions =[]); override;
     procedure EnumTables(Meta: TmncMetaItems; Options: TmetaEnumOptions = []); override;
     procedure EnumFields(Meta: TmncMetaItems; SQLName: string; Options: TmetaEnumOptions = []); override;
     procedure EnumViews(Meta: TmncMetaItems; Options: TmetaEnumOptions = []); override;
@@ -47,15 +47,12 @@ type
     //source
     procedure GetTriggerSource(Strings:TStringList; SQLName: string; Options: TmetaEnumOptions = []); override;
     procedure GetIndexInfo(Meta: TmncMetaItems; SQLName: string; Options: TmetaEnumOptions = []); override;
-    property Session: TmncSession read GetSession write SetSession;//alias for FLink in base class
   end;
 
 implementation
 
 uses
-  mncDB;
-
-{ TmncMetaItems }
+  mncDB, mncSQL;
 
 function TmncSQLiteMeta.GetSession: TmncSession;
 begin
@@ -67,15 +64,9 @@ begin
   inherited Link := AValue;
 end;
 
-function TmncSQLiteMeta.CreateCMD(SQL: string): TmncSQLiteCommand;
-begin
-  Result := TmncSQLiteCommand.CreateBy(Session);
-  Result.SQL.Text := SQL;
-end;
-
 procedure TmncSQLiteMeta.EnumCMD(Meta: TmncMetaItems; vKind: TmetaKind; SQL: string; Fields: array of string);
 var
-  aCMD: TmncSQLiteCommand;
+  aCMD: TmncSQLCommand;
   aItem: TmncMetaItem;
   i: Integer;
 begin
@@ -102,7 +93,7 @@ end;
 
 procedure TmncSQLiteMeta.FetchCMD(Strings: TStringList; SQL: string);
 var
-  aCMD: TmncSQLiteCommand;
+  aCMD: TmncSQLCommand;
 begin
   aCMD := CreateCMD(SQL);
   try
@@ -123,6 +114,21 @@ begin
     Result := ' order by name'
   else
     Result := '';
+end;
+
+procedure TmncSQLiteMeta.EnumDatabases(Meta: TmncMetaItems; Options: TmetaEnumOptions);
+var
+  i: Integer;
+  files: TStringList;
+begin
+  files := TStringList.Create;
+  try
+    EnumFiles(files, ServerInfo.Host, '*.sqlite');
+    for i := 0 to files.Count -1 do
+      Meta.Add(files[i]);
+  finally
+    files.Free;
+  end;
 end;
 
 procedure TmncSQLiteMeta.EnumTables(Meta: TmncMetaItems; Options: TmetaEnumOptions);
@@ -212,7 +218,7 @@ end;
 
 procedure TmncSQLiteMeta.GetIndexInfo(Meta: TmncMetaItems; SQLName: string; Options: TmetaEnumOptions);
 var
-  aCMD: TmncSQLiteCommand;
+  aCMD: TmncSQLCommand;
   aItem: TmncMetaItem;
 begin
   aCMD := CreateCMD('PRAGMA index_info('''+ SQLName +''')');
@@ -246,7 +252,7 @@ end;
 
 procedure TmncSQLiteMeta.EnumFields(Meta: TmncMetaItems; SQLName: string; Options: TmetaEnumOptions);
 var
-  aCMD: TmncSQLiteCommand;
+  aCMD: TmncSQLCommand;
   aItem: TmncMetaItem;
 begin
   aCMD := CreateCMD('pragma table_info(''' + (SQLName) + ''')' + GetSortSQL(Options));
@@ -271,5 +277,5 @@ begin
 end;
 
 initialization
-  Engines.RegisterMeta('SQLite', TmncSQLiteMeta);
+  Engines.RegisterMeta(TmncSQLiteConnection.EngineName, TmncSQLiteMeta);
 end.

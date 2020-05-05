@@ -46,6 +46,20 @@ type
     function GetItem(Index: Integer): _Object_;
     procedure SetItem(Index: Integer; AObject: _Object_);
   protected
+    type
+
+      { TmnObjectListEnumerator }
+
+      TmnObjectListEnumerator = class(TObject)
+      private
+        FList: TmnObjectList<_Object_>;
+        FIndex: Integer;
+      public
+        constructor Create(AList: TmnObjectList<_Object_>);
+        function GetCurrent: _Object_;
+        function MoveNext: Boolean;
+        property Current: _Object_ read GetCurrent;
+      end;
 
     function _AddRef: Integer; {$ifdef WINDOWS}stdcall{$else}cdecl{$endif};
     function _Release: Integer; {$ifdef WINDOWS}stdcall{$else}cdecl{$endif};
@@ -63,6 +77,7 @@ type
 
     procedure Created; virtual;
   public
+    function GetEnumerator: TmnObjectListEnumerator; inline;
     function QueryInterface({$ifdef FPC}constref{$else}const{$endif} iid : TGuid; out Obj):HResult; {$ifdef WINDOWS}stdcall{$else}cdecl{$endif};
     procedure AfterConstruction; override;
     function Add(Item: _Object_): Integer;
@@ -72,6 +87,7 @@ type
     property Items[Index: Integer]: _Object_ read GetItem write SetItem; default;
     function Last: _Object_;
     function First: _Object_;
+
   end;
 
   { TmnNamedObjectList }
@@ -195,6 +211,11 @@ procedure TmnObjectList<_Object_>.Created;
 begin
 end;
 
+function TmnObjectList<_Object_>.GetEnumerator: TmnObjectListEnumerator;
+begin
+  Result := TmnObjectListEnumerator.Create(Self);
+end;
+
 procedure TmnObjectList<_Object_>.AfterConstruction;
 begin
   inherited;
@@ -232,6 +253,26 @@ begin
         break;
       end;
     end;
+end;
+
+{ TmnObjectList.TmnObjectListEnumerator }
+
+constructor TmnObjectList<_Object_>.TmnObjectListEnumerator.Create(AList: TmnObjectList<_Object_>);
+begin
+  inherited Create;
+  FList := Alist;
+  FIndex := -1;
+end;
+
+function TmnObjectList<_Object_>.TmnObjectListEnumerator.GetCurrent: _Object_;
+begin
+  Result := FList[FIndex];
+end;
+
+function TmnObjectList<_Object_>.TmnObjectListEnumerator.MoveNext: Boolean;
+begin
+  Inc(FIndex);
+  Result := FIndex < FList.Count;
 end;
 
 { TmnObject }

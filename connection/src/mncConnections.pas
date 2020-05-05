@@ -84,21 +84,25 @@ type
 
   TmncStates = set of TmncState;
 
+  TmncServerInfo = record
+    Host: string;
+    Port: string;
+    UserName: string;
+    Password: string;
+    Role: string;
+  end;
+
   { TmncConnection }
 
   TmncConnection = class(TmncObject)
   private
     FOnConnected: TNotifyEvent;
     FOnDisconnected: TNotifyEvent;
-    FParams: TStrings;
     FParamsChanged: Boolean;
-    FPassword: string;
-    FPort: string;
-    FResource: string;
-    FHost: string;
-    FRole: string;
-    FUserName: string;
+    FServerInfo: TmncServerInfo;
+    FParams: TStrings;
     FAutoStart: Boolean;
+    FResource: string;
     FSessions: TmncSessions;
     FStartCount: Integer;
     FIsInit: Boolean;
@@ -107,6 +111,7 @@ type
     procedure SetParams(const AValue: TStrings);
     procedure ParamsChanging(Sender: TObject);
     procedure ParamsChange(Sender: TObject);
+    procedure SetServerInfo(AValue: TmncServerInfo);
   protected
     procedure CheckActive;
     procedure CheckInactive;
@@ -137,12 +142,15 @@ type
     property Connected: Boolean read GetConnected write SetConnected;
     property Active: Boolean read GetConnected write SetConnected;
     property States: TmncStates read FStates;
-    property Host: string read FHost write FHost;
-    property Port: string read FPort write FPort;
+
     property Resource: string read FResource write FResource; //can be a Database name or Alias or service name etc...
-    property UserName: string read FUserName write FUserName;
-    property Password: string read FPassword write FPassword;
-    property Role: string read FRole write FRole;
+    property Host: string read FServerInfo.Host write FServerInfo.Host;
+    property Port: string read FServerInfo.Port write FServerInfo.Port;
+    property UserName: string read FServerInfo.UserName write FServerInfo.UserName;
+    property Password: string read FServerInfo.Password write FServerInfo.Password;
+    property Role: string read FServerInfo.Role write FServerInfo.Role;
+    property ServerInfo: TmncServerInfo read FServerInfo write SetServerInfo;
+
     property Params: TStrings read FParams write SetParams;
     property OnConnected: TNotifyEvent read FOnConnected write FOnConnected;
     property OnDisconnected: TNotifyEvent read FOnDisconnected write FOnDisconnected;
@@ -777,6 +785,12 @@ end;
 procedure TmncConnection.ParamsChange(Sender: TObject);
 begin
   FParamsChanged := True;
+end;
+
+procedure TmncConnection.SetServerInfo(AValue: TmncServerInfo);
+begin
+  CheckInactive;
+  FServerInfo :=AValue;
 end;
 
 procedure TmncConnection.CheckActive;

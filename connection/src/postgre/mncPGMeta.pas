@@ -19,20 +19,20 @@ interface
 
 uses
   SysUtils, Classes, contnrs,
-  mncSQL, mncMeta, mncConnections, mncPostgre;
+  mncMeta, mncConnections, mncPostgre;
 
 type
   { TmncPGMeta }
 
-  TmncPGMeta = class(TmncMeta)
+  TmncPGMeta = class(TmncSQLMeta)
   private
   protected
-    function CreateCMD(SQL: string): TmncPGCommand;
     procedure EnumCMD(Meta: TmncMetaItems; SQL: string; Fields: array of string); overload;//use field 'name'
     procedure EnumCMD(Meta: TmncMetaItems; SQL: string); overload;
     procedure FetchCMD(Strings:TStringList; SQL: string);//use field 'name'
     function GetSortSQL(Options: TmetaEnumOptions):string;
   public
+    procedure EnumDatabases(Meta: TmncMetaItems; Options: TmetaEnumOptions =[]); override;
     procedure EnumTables(Meta: TmncMetaItems; Options: TmetaEnumOptions = []); override;
     procedure EnumFields(Meta: TmncMetaItems; MemberName: string = ''; Options: TmetaEnumOptions = []); override;
     procedure EnumViews(Meta: TmncMetaItems; Options: TmetaEnumOptions = []); override;
@@ -52,15 +52,7 @@ type
 implementation
 
 uses
-  mncDB;
-
-{ TmncMetaItems }
-
-function TmncPGMeta.CreateCMD(SQL: string): TmncPGCommand;
-begin
-  Result := TmncPGCommand.CreateBy(Link as TmncPGSession);
-  Result.SQL.Text := SQL;
-end;
+  mncDB, mncSQL;
 
 procedure TmncPGMeta.EnumCMD(Meta: TmncMetaItems; SQL: string; Fields: array of string);
 begin
@@ -76,6 +68,55 @@ end;
 
 function TmncPGMeta.GetSortSQL(Options: TmetaEnumOptions): string;
 begin
+end;
+
+procedure TmncPGMeta.EnumDatabases(Meta: TmncMetaItems; Options: TmetaEnumOptions);
+var
+  conn: TmncPGConnection;
+  session: TmncPGSession;
+  cmd: TmncPGCommand;
+begin
+  conn := TmncPGConnection.Create;
+  try
+    conn.Resource := 'postgres';
+    conn.ServerInfo := ServerInfo;
+
+    conn.ClientEncoding := 'UNICODE';
+    conn.ByteaOutput := 'escape';
+    conn.DateStyle := 'iso, mdy';
+
+    conn.Connect;
+    //PGConn.AutoStart : = true;
+    session := conn.CreateSession as TmncPGSession;
+    try
+      session.Start;
+
+      Meta.Clear;
+      cmd := session.CreateCommand as TmncPGCommand;
+      try
+        cmd.SQL.Text := 'SELECT datname as name FROM pg_database';
+        cmd.SQL.Add('WHERE datistemplate = false and datname <> ''postgres''');
+        //cmd.SQL.Add('or datname like ''%_temp%'')');
+        cmd.SQL.Add('order by datname');
+
+        if cmd.Execute then
+        begin
+          while not cmd.Done do
+          begin
+            Meta.Add(cmd.Field['name'].AsString);
+            //Log(cmd.Field['name'].AsString);
+            cmd.Next;
+          end;
+        end;
+      finally
+        cmd.Free;
+      end;
+    finally
+      FreeAndNil(session);
+    end;
+  finally
+    FreeAndNil(conn);
+  end;
 end;
 
 procedure TmncPGMeta.EnumTables(Meta: TmncMetaItems; Options: TmetaEnumOptions);
@@ -132,5 +173,5 @@ begin
 end;
 
 initialization
-  Engines.RegisterMeta('Postgres', TmncPGMeta);
+  Engines.RegisterMeta(TmncPGConnection.EngineName, TmncPGMeta);
 end.

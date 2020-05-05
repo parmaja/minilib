@@ -23,12 +23,9 @@ type
 
   { TmncFBMeta }
 
-  TmncFBMeta = class(TmncMeta)
+  TmncFBMeta = class(TmncSQLMeta)
   private
-    function GetSession: TmncSession;
-    procedure SetSession(AValue: TmncSession);
   protected
-    function CreateCMD(SQL: string): TmncFBCommand;
     procedure EnumCMD(Meta: TmncMetaItems; vKind: TmetaKind; SQL: string; Fields: array of string); overload;//use field 'name'
     procedure EnumCMD(Meta: TmncMetaItems; vKind: TmetaKind; SQL: string); overload;
     procedure FetchCMD(Strings:TStringList; SQL: string);//use field 'name'
@@ -49,35 +46,16 @@ type
     procedure GetTriggerSource(Strings: TStringList; SQLName: string; Options: TmetaEnumOptions = []); override;
     procedure GetViewSource(Strings: TStringList; SQLName: string; Options: TmetaEnumOptions = []); override;
     procedure GetIndexInfo(Meta: TmncMetaItems; SQLName: string; Options: TmetaEnumOptions = []); override;
-    property Session: TmncSession read GetSession write SetSession;//alias for FLink in base class
   end;
 
 implementation
 
 uses
-  mncDB;
-
-{ TmncMetaItems }
-
-function TmncFBMeta.GetSession: TmncSession;
-begin
-  Result := Link as TmncSession;
-end;
-
-procedure TmncFBMeta.SetSession(AValue: TmncSession);
-begin
-  inherited Link := AValue;
-end;
-
-function TmncFBMeta.CreateCMD(SQL: string): TmncFBCommand;
-begin
-  Result := TmncFBCommand.CreateBy(Session);
-  Result.SQL.Text := SQL;
-end;
+  mncDB, mncSQL;
 
 procedure TmncFBMeta.EnumCMD(Meta: TmncMetaItems; vKind: TmetaKind; SQL: string; Fields: array of string);
 var
-  aCMD: TmncFBCommand;
+  aCMD: TmncSQLCommand;
   aItem: TmncMetaItem;
   i: Integer;
 begin
@@ -104,7 +82,7 @@ end;
 
 procedure TmncFBMeta.FetchCMD(Strings: TStringList; SQL: string);
 var
-  aCMD: TmncFBCommand;
+  aCMD: TmncSQLCommand;
 begin
   aCMD := CreateCMD(SQL);
   try
@@ -249,7 +227,7 @@ var
   s: string;
   aName: string;
   aRelationName: string;
-  aCMD: TmncFBCommand;
+  aCMD: TmncSQLCommand;
   ActiveStr: string;
 begin
   s := sSQL + ' trg.rdb$trigger_name = ''' + SQLName + '''';
@@ -304,7 +282,7 @@ const
       'order by rdb$field_position';
 var
   C, S, aName: string;
-  aCMD: TmncFBCommand;
+  aCMD: TmncSQLCommand;
 begin
   aCMD := CreateCMD('');
   try
@@ -337,7 +315,7 @@ end;
 
 procedure TmncFBMeta.GetIndexInfo(Meta: TmncMetaItems; SQLName: string; Options: TmetaEnumOptions);
 var
-  aCMD: TmncFBCommand;
+  aCMD: TmncSQLCommand;
   aItem: TmncMetaItem;
 begin
   aCMD := CreateCMD('');
@@ -371,7 +349,7 @@ end;
 
 procedure TmncFBMeta.EnumFields(Meta: TmncMetaItems; SQLName: string; Options: TmetaEnumOptions);
 var
-  aCMD: TmncFBCommand;
+  aCMD: TmncSQLCommand;
   aItem: TmncMetaItem;
 begin
   aCMD := CreateCMD('select rdb$field_name as name, rdb$description as description from rdb$relation_fields');
@@ -404,5 +382,5 @@ begin
 end;
 
 initialization
-  Engines.RegisterMeta('Firebird', TmncFBMeta);
+  Engines.RegisterMeta(TmncFBConnection.EngineName, TmncFBMeta);
 end.

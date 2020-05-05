@@ -17,11 +17,11 @@ interface
 
 uses
   SysUtils, Classes, Contnrs,
-  mnFields, mncCommons, mncConnections, mncORM, mncSQL;
+  mnClasses, mnFields, mncCommons, mncConnections, mncORM, mncSQL;
 
 type
   TmetaKind = (sokNone, sokMeta, sokData,
-               sokHost, sokDatabases, sokDatabase, sokTable, sokView,
+               sokHost, sokDatabase, sokTable, sokView,
                sokProcedure, sokFunction, sokException, sokRole,
                sokTrigger, sokSequence, sokForeign, sokIndex, sokConstraint,
                sokField, sokOperator, sokProperty,
@@ -37,30 +37,23 @@ type
 
   { TmncMetaItem }
 
-  TmncMetaItem = class(TObject)
+  TmncMetaItem = class(TmnNamedObject)
   private
     FKind: TmetaKind;
-    FName: string;
     FAttributes: TmncMetaAttributes;
   public
     constructor Create;
     destructor Destroy; override;
-    property Name: string read FName write FName;
     property Kind: TmetaKind read FKind write FKind;
     property Attributes: TmncMetaAttributes read FAttributes;
   end;
 
   { TmncMetaItems }
 
-  TmncMetaItems = class(TObjectList)
+  TmncMetaItems = class(TmnObjectList<TmncMetaItem>)
   private
-    function GetItem(Index: Integer): TmncMetaItem;
-    procedure SetItem(Index: Integer; const Value: TmncMetaItem);
   public
-    function Find(const Name: string): TmncMetaItem; overload;
-    function Add(vMetaItem: TmncMetaItem): Integer; overload;
     function Add(Name: string): TmncMetaItem; overload;
-    property Items[Index: Integer]: TmncMetaItem read GetItem write SetItem; default;
   end;
 
   TmncSQLCallback = procedure (SQL: string);
@@ -70,11 +63,15 @@ type
   TmncMeta = class(TmncLinkObject)
   private
     FIncludeHeader: Boolean;
+    FServerInfo: TmncServerInfo;
+    function GetSession: TmncSession;
+    procedure SetSession(AValue: TmncSession);
   protected
   public
     destructor Destroy; override;
     procedure EnumObjects(Meta: TmncMetaItems; Kind: TmetaKind; SQLName: string = ''; Options: TmetaEnumOptions = []);
     //---------------------
+    procedure EnumDatabases(Meta: TmncMetaItems; Options: TmetaEnumOptions = []); virtual;
     procedure EnumTables(Meta: TmncMetaItems; Options: TmetaEnumOptions = []); virtual;
     procedure EnumViews(Meta: TmncMetaItems; Options: TmetaEnumOptions = []); virtual;
     procedure EnumProcedures(Meta: TmncMetaItems; Options: TmetaEnumOptions = []); virtual;
@@ -92,11 +89,25 @@ type
     procedure GetIndexInfo(Meta: TmncMetaItems; SQLName: string; Options: TmetaEnumOptions = []); virtual;
 
     procedure GenerateSchema(ORM: TmncORM; Callback: TmncSQLCallback); virtual;
+    property Session: TmncSession read GetSession write SetSession;//alias for FLink in base class
+    property ServerInfo: TmncServerInfo read FServerInfo write FServerInfo;
   published
     property IncludeHeader: Boolean read FIncludeHeader write FIncludeHeader default False;
   end;
 
   TmncMetaClass = class of TmncMeta;
+
+  { TmncSQLMeta }
+
+  TmncSQLMeta = class(TmncMeta)
+  private
+    function GetSQLSession: TmncSQLSession;
+    procedure SetSQLSession(AValue: TmncSQLSession);
+  protected
+    function CreateCMD(SQL: string): TmncSQLCommand;
+  public
+    property Session: TmncSQLSession read GetSQLSession write SetSQLSession;
+  end;
 
   { TmncMetaType }
 
@@ -107,6 +118,23 @@ type
 
 implementation
 
+{ TmncSQLMeta }
+
+function TmncSQLMeta.GetSQLSession: TmncSQLSession;
+begin
+  Result := Link as TmncSQLSession;
+end;
+
+procedure TmncSQLMeta.SetSQLSession(AValue: TmncSQLSession);
+begin
+  inherited Link := AValue;
+end;
+
+function TmncSQLMeta.CreateCMD(SQL: string): TmncSQLCommand;
+begin
+  Result := Session.CreateCommand
+end;
+
 { TmncMetaItems }
 
 function TmncMetaItems.Add(Name: string): TmncMetaItem;
@@ -116,35 +144,6 @@ begin
   Add(Result);
 end;
 
-function TmncMetaItems.Find(const Name: string): TmncMetaItem;
-var
-  i: Integer;
-begin
-  Result := nil;
-  for i := 0 to Count - 1 do
-  begin
-    if Name = Items[i].Name then
-    begin
-      Result := Items[i];
-      break;
-    end;
-  end;
-end;
-
-function TmncMetaItems.Add(vMetaItem: TmncMetaItem): Integer;
-begin
-  Result := inherited Add(vMetaItem);
-end;
-
-function TmncMetaItems.GetItem(Index: Integer): TmncMetaItem;
-begin
-  Result := inherited Items[Index] as TmncMetaItem;
-end;
-
-procedure TmncMetaItems.SetItem(Index: Integer; const Value: TmncMetaItem);
-begin
-  inherited Items[Index] := Value;
-end;
 {TODO: delete it
 const
   NEWLINE = #13#10;
@@ -154,6 +153,16 @@ const
   }
 
 { TmncMeta }
+
+function TmncMeta.GetSession: TmncSession;
+begin
+  Result := Link as TmncSession;
+end;
+
+procedure TmncMeta.SetSession(AValue: TmncSession);
+begin
+  inherited Link := AValue;
+end;
 
 destructor TmncMeta.Destroy;
 begin
@@ -193,6 +202,11 @@ begin
     sokConstraint: EnumConstraints(Meta, SQLName, Options);
     sokData: ;
   end;
+end;
+
+procedure TmncMeta.EnumDatabases(Meta: TmncMetaItems; Options: TmetaEnumOptions);
+begin
+
 end;
 
 procedure TmncMeta.EnumTables(Meta: TmncMetaItems; Options: TmetaEnumOptions);

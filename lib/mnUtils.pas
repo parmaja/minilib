@@ -191,7 +191,7 @@ type
   //If set Resume to false it will stop loop
   TEnumFilesCallback = procedure(AObject: TObject; const FileName: string; Count, Level:Integer; IsDirectory: Boolean; var Resume: Boolean);
 
-procedure EnumFiles(FileList: TStringList; Folder, Filter: string);
+procedure EnumFiles(FileList: TStringList; Folder, Filter: string; FullPath: Boolean = False);
 
 var
   SystemAnsiCodePage: Integer; //used to convert from Ansi string, it is the default
@@ -1082,7 +1082,7 @@ begin
   Result := S;
 end;
 
-function StringOf(const Value: Array of Byte): string;
+function StringOf(const Value: array of Byte): string;
 var
   Len:Integer;
 begin
@@ -1102,7 +1102,7 @@ begin
     Move(Value[0], Result[1], Len * SizeOf(Char));
 end;
 
-procedure EnumFiles(FileList: TStringList; Folder, Filter: string);
+procedure EnumFiles(FileList: TStringList; Folder, Filter: string; FullPath: Boolean);
 var
   R: integer;
   SearchRec: TSearchRec;
@@ -1113,7 +1113,10 @@ begin
   begin
     if (SearchRec.Name <> '.') and (SearchRec.Name <> '..') then
     begin
-      FileList.Add(SearchRec.Name);
+      if FullPath then
+        FileList.Add(Folder + SearchRec.Name)
+      else
+        FileList.Add(SearchRec.Name);
     end;
     R := FindNext(SearchRec);
   end;

@@ -97,7 +97,7 @@ type
   protected
     function InternalCreateCommand: TmncSQLCommand; virtual; abstract;
   public
-    function CreateCommand: TmncSQLCommand;
+    function CreateCommand(ASQL: string = ''): TmncSQLCommand;
     procedure ExecuteScript(AStrings: TStrings; AutoCommit: Boolean = False);
     property Connection: TmncSQLConnection read GetConnection write SetConnection;
   end;
@@ -219,11 +219,13 @@ begin
   inherited Connection := AValue;
 end;
 
-function TmncSQLSession.CreateCommand: TmncSQLCommand;
+function TmncSQLSession.CreateCommand(ASQL: string): TmncSQLCommand;
 begin
   CheckActive;
   Result := InternalCreateCommand;
   Result.Session := Self;
+  if ASQL <> '' then
+    Result.SQL.Text := ASQL;
 end;
 
 procedure TmncSQLSession.ExecuteScript(AStrings: TStrings; AutoCommit: Boolean);

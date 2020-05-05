@@ -22,12 +22,9 @@ uses
 type
   { TmncMySQLMeta }
 
-  TmncMySQLMeta = class(TmncMeta)
+  TmncMySQLMeta = class(TmncSQLMeta)
   private
-    function GetSession: TmncSession;
-    procedure SetSession(AValue: TmncSession);
   protected
-    function CreateCMD(SQL: string): TmncMySQLCommand;
     procedure EnumCMD(Meta: TmncMetaItems; vKind: TmetaKind; SQL: string; Fields: array of string); overload;//use field 'name'
     procedure EnumCMD(Meta: TmncMetaItems; vKind: TmetaKind; SQL: string); overload;
     procedure FetchCMD(Strings:TStringList; SQL: string);//use field 'name'
@@ -47,32 +44,16 @@ type
     //source
     procedure GetTriggerSource(Strings:TStringList; SQLName: string; Options: TmetaEnumOptions = []); override;
     procedure GetIndexInfo(Meta: TmncMetaItems; SQLName: string; Options: TmetaEnumOptions = []); override;
-    property Session: TmncSession read GetSession write SetSession;//alias for FLink in base class
   end;
 
 implementation
 
-{ TmncMetaItems }
-
-function TmncMySQLMeta.GetSession: TmncSession;
-begin
-  Result := Link as TmncSession;
-end;
-
-procedure TmncMySQLMeta.SetSession(AValue: TmncSession);
-begin
-  inherited Link := AValue;
-end;
-
-function TmncMySQLMeta.CreateCMD(SQL: string): TmncMySQLCommand;
-begin
-  Result := TmncMySQLCommand.CreateBy(Session);
-  Result.SQL.Text := SQL;
-end;
+uses
+  mncDB, mncSQL;
 
 procedure TmncMySQLMeta.EnumCMD(Meta: TmncMetaItems; vKind: TmetaKind; SQL: string; Fields: array of string);
 var
-  aCMD: TmncMySQLCommand;
+  aCMD: TmncSQLCommand;
   aItem: TmncMetaItem;
   i: Integer;
 begin
@@ -99,7 +80,7 @@ end;
 
 procedure TmncMySQLMeta.FetchCMD(Strings: TStringList; SQL: string);
 var
-  aCMD: TmncMySQLCommand;
+  aCMD: TmncSQLCommand;
 begin
   aCMD := CreateCMD(SQL);
   try
@@ -201,7 +182,7 @@ end;
 
 procedure TmncMySQLMeta.GetIndexInfo(Meta: TmncMetaItems; SQLName: string; Options: TmetaEnumOptions);
 var
-  aCMD: TmncMySQLCommand;
+  aCMD: TmncSQLCommand;
   aItem: TmncMetaItem;
 begin
   aCMD := CreateCMD('PRAGMA index_info('''+ SQLName +''')');
@@ -235,7 +216,7 @@ end;
 
 procedure TmncMySQLMeta.EnumFields(Meta: TmncMetaItems; SQLName: string; Options: TmetaEnumOptions);
 var
-  aCMD: TmncMySQLCommand;
+  aCMD: TmncSQLCommand;
   aItem: TmncMetaItem;
 begin
   aCMD := CreateCMD('pragma table_info(''' + (SQLName) + ''')' + GetSortSQL(Options));
@@ -259,4 +240,6 @@ begin
   end;
 end;
 
+initialization
+  Engines.RegisterMeta(TmncMySQLConnection.EngineName, TmncMySQLMeta);
 end.
