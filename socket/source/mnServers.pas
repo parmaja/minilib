@@ -97,7 +97,7 @@ type
     procedure Remove(Connection: TmnServerConnection); virtual;
     procedure Add(Connection: TmnServerConnection); virtual;
   public
-    constructor Create;
+    constructor Create(AOptions: TmnsoOptions); virtual;
     destructor Destroy; override;
     procedure Stop; override;
     // Use this function when you are in a thread do not use Server.Log
@@ -400,10 +400,11 @@ begin
   end;
 end;
 
-constructor TmnListener.Create;
+constructor TmnListener.Create(AOptions: TmnsoOptions);
 begin
-  inherited;
+  inherited Create;
   FLogMessages := TStringList.Create;
+  FOptions := AOptions;
   FAttempts := 0;
   FTimeout := -1;
 end;
@@ -665,7 +666,7 @@ end;
 
 function TmnServer.DoCreateListener: TmnListener;
 begin
-  Result := TmnListener.Create;
+  Result := TmnListener.Create([]);
 end;
 
 function TmnServer.CreateListener: TmnListener;

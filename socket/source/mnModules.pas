@@ -411,7 +411,7 @@ end;
 
 function TmodModuleServer.DoCreateListener: TmnListener;
 begin
-  Result := TmodModuleListener.Create;
+  Result := TmodModuleListener.Create([]);
 end;
 
 procedure TmodModuleServer.StreamCreated(AStream: TmnBufferStream);
