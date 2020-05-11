@@ -97,7 +97,7 @@ type
     procedure Remove(Connection: TmnServerConnection); virtual;
     procedure Add(Connection: TmnServerConnection); virtual;
   public
-    constructor Create(AOptions: TmnsoOptions); virtual;
+    constructor Create(AOptions: TmnsoOptions = []); virtual;
     destructor Destroy; override;
     procedure Stop; override;
     // Use this function when you are in a thread do not use Server.Log
