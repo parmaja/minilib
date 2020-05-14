@@ -48,6 +48,7 @@ type
 
   TmnWallSocket = class(TmnCustomWallSocket)
   private
+    procedure FreeSocket(var vHandle: TSocket; var vErr: cint);
     function LookupPort(Port: string): Word;
   public
     constructor Create; override;
@@ -290,44 +291,56 @@ const
   SO_TRUE:Longbool=True;
 //  SO_FALSE:Longbool=False;
 
-function TmnWallSocket.Bind(Options: TmnsoOptions; const Port: ansistring;
-  const Address: ansistring): TmnCustomSocket;
+function TmnWallSocket.Bind(Options: TmnsoOptions; const Port: AnsiString; const Address: ansistring): TmnCustomSocket;
 var
   aHandle: TSocket;
   aAddr : TINetSockAddr;
+  aErr: cint;
 begin
   aHandle := fpsocket(AF_INET, SOCK_STREAM, 0{IPPROTO_TCP});
-  if aHandle = INVALID_SOCKET then
-    if soSafeConnect in Options then
-      exit(nil)
+  if aHandle <> INVALID_SOCKET then
+  begin
+    if soReuseAddr in Options then
+      fpsetsockopt(aHandle, SOL_SOCKET, SO_REUSEADDR, PChar(@SO_TRUE), SizeOf(SO_TRUE));
+
+    if soNoDelay in Options then
+      fpsetsockopt(aHandle, IPPROTO_TCP, TCP_NODELAY, PAnsiChar(@SO_TRUE), SizeOf(SO_TRUE));
+
+   //  fpsetsockopt(aHandle, SOL_SOCKET, SO_NOSIGPIPE, PChar(@SO_TRUE), SizeOf(SO_TRUE));
+
+    aAddr.sin_family := AF_INET;
+    aAddr.sin_port := htons(StrToIntDef(Port, 0));
+    if Address = '' then
+      aAddr.sin_addr.s_addr := INADDR_ANY
     else
-      raise EmnException.Create('Failed to create a socket');
+      aAddr.sin_addr := StrToNetAddr(Address);
 
-  if soReuseAddr in Options then
-    fpsetsockopt(aHandle, SOL_SOCKET, SO_REUSEADDR, PChar(@SO_TRUE), SizeOf(SO_TRUE));
+    if fpbind(aHandle,@aAddr, Sizeof(aAddr)) <> 0 then
+    begin
+      FreeSocket(aHandle, aErr);
+    end;
+  end;
 
-  if soNoDelay in Options then
-    fpsetsockopt(aHandle, IPPROTO_TCP, TCP_NODELAY, PAnsiChar(@SO_TRUE), SizeOf(SO_TRUE));
-
- //  fpsetsockopt(aHandle, SOL_SOCKET, SO_NOSIGPIPE, PChar(@SO_TRUE), SizeOf(SO_TRUE));
-
-  aAddr.sin_family := AF_INET;
-  aAddr.sin_port := htons(StrToIntDef(Port, 0));
-  if Address = '' then
-    aAddr.sin_addr.s_addr := INADDR_ANY
+  if aHandle<>INVALID_SOCKET then
+    Result := TmnSocket.Create(aHandle)
   else
-    aAddr.sin_addr := StrToNetAddr(Address);
-  if fpbind(aHandle,@aAddr, Sizeof(aAddr)) <> 0 then
-    if soSafeConnect in Options then
-      exit(nil)
-    else
-      raise EmnException.Create('failed to bind the socket, maybe another server is already use the same port (' + Port + ').');
-  Result := TmnSocket.Create(aHandle);
+    Result := nil;
 end;
 
 destructor TmnWallSocket.Destroy;
 begin
   inherited;
+end;
+
+procedure TmnWallSocket.FreeSocket(var vHandle: TSocket; var vErr: cint);
+begin
+  vErr := WSAGetLastError;
+  {$IFDEF FPC}
+  WinSock2.CloseSocket(vHandle);
+  {$ELSE}
+  WinSock.CloseSocket(vHandle);
+  {$ENDIF}
+  vHandle := INVALID_SOCKET;
 end;
 
 function TmnWallSocket.LookupPort(Port: string): Word;
@@ -342,54 +355,55 @@ var
   ret: cint;
   aHost: THostEntry;
   time: ttimeval;
+  aErr: cint;
 begin
   //nonblick connect  https://stackoverflow.com/questions/1543466/how-do-i-change-a-tcp-socket-to-be-non-blocking
   //https://stackoverflow.com/questions/14254061/setting-time-out-for-connect-function-tcp-socket-programming-in-c-breaks-recv
   aHandle := fpsocket(AF_INET, SOCK_STREAM{TODO: for nonblock option: or O_NONBLOCK}, 0{IPPROTO_TCP});
-  if aHandle = INVALID_SOCKET then
-    if soSafeConnect in Options then
-      exit(nil)
-    else
-      raise EmnException.Create('Failed to connect socket');
-
-  if soNoDelay in Options then
-    fpsetsockopt(aHandle, IPPROTO_TCP, TCP_NODELAY, PAnsiChar(@SO_TRUE), SizeOf(SO_TRUE));
-
-//http://support.microsoft.com/default.aspx?kbid=140325
-  if soKeepAlive in Options then
-    fpsetsockopt(aHandle, SOL_SOCKET, SO_KEEPALIVE, PAnsiChar(@SO_TRUE), SizeOf(SO_TRUE));
-
-  if soReadTimeout in Options then
+  if aHandle <> INVALID_SOCKET then
   begin
-    time.tv_sec:=Timeout div 1000;
-    time.tv_usec:=(Timeout mod 1000) * 1000;
-    setsockopt(aHandle, SOL_SOCKET, SO_RCVTIMEO, @time, SizeOf(time));
-  end;
+    if soNoDelay in Options then
+      fpsetsockopt(aHandle, IPPROTO_TCP, TCP_NODELAY, PAnsiChar(@SO_TRUE), SizeOf(SO_TRUE));
 
-//  fpsetsockopt(aHandle, SOL_SOCKET, SO_NOSIGPIPE, PChar(@SO_TRUE), SizeOf(SO_TRUE));
+  //http://support.microsoft.com/default.aspx?kbid=140325
+    if soKeepAlive in Options then
+      fpsetsockopt(aHandle, SOL_SOCKET, SO_KEEPALIVE, PAnsiChar(@SO_TRUE), SizeOf(SO_TRUE));
 
-  aAddr.sin_family := AF_INET;
-  aAddr.sin_port := htons(StrToIntDef(Port, 0));
-  if Address = '' then
-    aAddr.sin_addr.s_addr := INADDR_ANY
-  else
-  begin
-    aAddr.sin_addr := StrToNetAddr(Address);
-    if (aAddr.sin_addr.s_addr = 0) then
+    if soReadTimeout in Options then
     begin
-      if ResolveHostByName(Address, aHost) then
+      time.tv_sec:=Timeout div 1000;
+      time.tv_usec:=(Timeout mod 1000) * 1000;
+      setsockopt(aHandle, SOL_SOCKET, SO_RCVTIMEO, @time, SizeOf(time));
+    end;
+
+  //  fpsetsockopt(aHandle, SOL_SOCKET, SO_NOSIGPIPE, PChar(@SO_TRUE), SizeOf(SO_TRUE));
+
+    aAddr.sin_family := AF_INET;
+    aAddr.sin_port := htons(StrToIntDef(Port, 0));
+    if Address = '' then
+      aAddr.sin_addr.s_addr := INADDR_ANY
+    else
+    begin
+      aAddr.sin_addr := StrToNetAddr(Address);
+      if (aAddr.sin_addr.s_addr = 0) then
       begin
-        aAddr.sin_addr.s_addr := aHost.Addr.s_addr;
+        if ResolveHostByName(Address, aHost) then
+        begin
+          aAddr.sin_addr.s_addr := aHost.Addr.s_addr;
+        end;
       end;
     end;
+    ret := fpconnect(aHandle, @aAddr, SizeOf(aAddr));
+    if ret = -1 then
+    begin
+      FreeSocket(aHandle, aErr);
+    end;
   end;
-  ret := fpconnect(aHandle, @aAddr, SizeOf(aAddr));
-  if ret = -1 then
-    if soSafeConnect in Options then
-      exit(nil)
-    else
-      raise EmnException.Create('Failed to connect the socket, error #' + IntToStr(SocketError) + '.'#13'Address "' + Address +'" Port "' + Port + '".');
-  Result := TmnSocket.Create(aHandle)
+
+  if aHandle<>INVALID_SOCKET then
+    Result := TmnSocket.Create(aHandle)
+  else
+    Result := nil;
 end;
 
 end.

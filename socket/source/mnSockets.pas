@@ -36,8 +36,7 @@ type
     soWaitBeforeRead, //Wait for data come before read, that double the time wait if you set SetReadTimeout if no data come
     soWaitBeforeWrite, //Wait for ready before write, idk what for
     soConnectTimeout, //Connect will use Timeout to wait it
-    soSafeReadTimeout, //Keep socket connected if read timeout without error
-    soSafeConnect //Do not raise expcetion on connect
+    soSafeReadTimeout //Keep socket connected if read timeout without error
     );
   TmnsoOptions = set of TmnsoOption;
 
@@ -355,14 +354,14 @@ procedure TmnSocketStream.Connect;
 begin
   if Connected then
     raise EmnStreamException.Create('Already connected');
+
   if FSocket <> nil then
     raise EmnStreamException.Create('Socket must be nil');
+
   FSocket := CreateSocket;
+
   if FSocket = nil then
-    if soSafeConnect in Options then
-      exit
-    else
-      raise EmnStreamException.Create('Connected fail');
+    raise EmnStreamException.Create('Connected fail');
 end;
 
 function TmnSocketStream.CreateSocket: TmnCustomSocket;

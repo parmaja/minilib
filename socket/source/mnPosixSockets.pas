@@ -106,6 +106,7 @@ type
 
   TmnWallSocket = class(TmnCustomWallSocket)
   private
+    procedure FreeSocket(var vHandle: TSocket; var vErr: Integer);
     function LookupPort(Port: string): Word;
     function TestGetAddrInfo(const AHostName, AServiceName: string; const AHints: AddrInfo): PAddrInfo;
   public
@@ -391,36 +392,42 @@ function TmnWallSocket.Bind(Options: TmnsoOptions; const Port: string; const Add
 var
   aHandle: TSocket;
   aAddr : TSockAddr;
+  aErr: Integer;
 begin
   aHandle := Posix.SysSocket.socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-  if aHandle = INVALID_SOCKET then
-    if soSafeConnect in Options then
-      exit(nil)
-    else
-      raise EmnException.Create('Failed to create a socket');
+  if aHandle <> INVALID_SOCKET then
+  begin
+    if soReuseAddr in Options then
+      Posix.SysSocket.setsockopt(aHandle, SOL_SOCKET, SO_REUSEADDR, SO_TRUE, SizeOf(SO_TRUE));
 
-  if soReuseAddr in Options then
-    Posix.SysSocket.setsockopt(aHandle, SOL_SOCKET, SO_REUSEADDR, SO_TRUE, SizeOf(SO_TRUE));
+    if soNoDelay in Options then
+      Posix.SysSocket.setsockopt(aHandle, IPPROTO_IP, TCP_NODELAY, SO_TRUE, SizeOf(SO_TRUE));
 
-  if soNoDelay in Options then
-    Posix.SysSocket.setsockopt(aHandle, IPPROTO_IP, TCP_NODELAY, SO_TRUE, SizeOf(SO_TRUE));
+   //  fpsetsockopt(aHandle, SOL_SOCKET, SO_NOSIGPIPE, PChar(@SO_TRUE), SizeOf(SO_TRUE));
 
- //  fpsetsockopt(aHandle, SOL_SOCKET, SO_NOSIGPIPE, PChar(@SO_TRUE), SizeOf(SO_TRUE));
-
-  aAddr.addr_in.sin_family := AF_INET;
-  aAddr.addr_in.sin_port := StrToIntDef(Port, 0);
-  StrToNetAddr(Address, aAddr.addr_in.sin_addr);
-  If Posix.SysSocket.bind(aHandle, aAddr.addr, Sizeof(aAddr)) <> 0 then
-    if soSafeConnect in Options then
-      exit(nil)
-    else
-      raise EmnException.Create('failed to bind the socket, maybe another server is already use the same port (' + Port + ').');
-  Result := TmnSocket.Create(aHandle);
+    aAddr.addr_in.sin_family := AF_INET;
+    aAddr.addr_in.sin_port := StrToIntDef(Port, 0);
+    StrToNetAddr(Address, aAddr.addr_in.sin_addr);
+    If Posix.SysSocket.bind(aHandle, aAddr.addr, Sizeof(aAddr)) <> 0 then
+    begin
+      FreeSocket(aHandle, aErr);
+    end;
+  end;
+  if aHandle<>INVALID_SOCKET then
+    Result := TmnSocket.Create(aHandle)
+  else
+    Result := nil;
 end;
 
 destructor TmnWallSocket.Destroy;
 begin
   inherited;
+end;
+
+procedure TmnWallSocket.FreeSocket(var vHandle: TSocket; var vErr: Integer);
+begin
+  __close(FHandle);
+  vHandle := INVALID_SOCKET;
 end;
 
 function SetNonBlock(ASocket: THandle; ANonBlock: Boolean): Integer;
@@ -475,6 +482,7 @@ var
   LAddrInfo: pAddrInfo;
   aInfo: AddrInfo;
   DW: Integer;
+  aErr: Integer;
 begin
   //nonblick connect  https://stackoverflow.com/questions/1543466/how-do-i-change-a-tcp-socket-to-be-non-blocking
   //https://stackoverflow.com/questions/14254061/setting-time-out-for-connect-function-tcp-socket-programming-in-c-breaks-recv
@@ -486,99 +494,94 @@ begin
   LAddrInfo := TestGetAddrInfo(Address, Port, aInfo);
 
   if LAddrInfo = nil then
-    if soSafeConnect in Options then
-      exit(nil)
-    else
-      raise EmnException.Create('Failed to get address');
-
-
-  //aHandle := Posix.SysSocket.socket(AF_INET, SOCK_STREAM{TODO: for nonblock option: or O_NONBLOCK}, IPPROTO_TCP);
-  aHandle := Posix.SysSocket.socket(LAddrInfo.ai_family, LAddrInfo.ai_socktype, LAddrInfo.ai_protocol);
-
-  if aHandle = INVALID_SOCKET then
-    if soSafeConnect in Options then
-      exit(nil)
-    else
-      raise EmnException.Create('Failed to connect socket');
-
-  //if soNoDelay in Options then
-    //setsockopt(aHandle, IPPROTO_TCP, TCP_NODELAY, SO_TRUE, SizeOf(SO_TRUE));
-  //setsockopt(aHandle, IPPROTO_TCP, TCP_NODELAY, SO_TRUE, SizeOf(SO_TRUE));
-
-
-//http://support.microsoft.com/default.aspx?kbid=140325
-  //if soKeepAlive in Options then
-    //setsockopt(aHandle, SOL_SOCKET, SO_KEEPALIVE, SO_TRUE, SizeOf(SO_TRUE));
-
-  if soConnectTimeout in Options then
-  begin
-    DW := Timeout;
-    setsockopt(aHandle, SOL_SOCKET, SO_RCVTIMEO, DW, SizeOf(DW));
-  end;
-
-
-  //SetNonBlock(aHandle, True);
-  //setsockopt(aHandle, SOL_SOCKET, SO_NOSIGPIPE, SO_TRUE, SizeOf(SO_TRUE));
-
-
-//  fpsetsockopt(aHandle, SOL_SOCKET, SO_NOSIGPIPE, PChar(@SO_TRUE), SizeOf(SO_TRUE));
-
-
-  aAddr.addr_in.sin_family := AF_INET;
-  aAddr.addr_in.sin_port := htons(StrToIntDef(Port, 0));
-  if Address = '' then
-    aAddr.addr_in.sin_addr.s_addr := INADDR_ANY
+    Result := nil
   else
   begin
-    StrToNetAddr(Address, aAddr.addr_in.sin_addr);
-    if (aAddr.addr_in.sin_addr.s_addr = 0) then
+    //aHandle := Posix.SysSocket.socket(AF_INET, SOCK_STREAM{TODO: for nonblock option: or O_NONBLOCK}, IPPROTO_TCP);
+    aHandle := Posix.SysSocket.socket(LAddrInfo.ai_family, LAddrInfo.ai_socktype, LAddrInfo.ai_protocol);
+
+    if aHandle <> INVALID_SOCKET then
     begin
-      //h := gethostbyname(TMarshal.AsAnsi(Address));
-      //aAddr.addr_in.sin_addr.s_addr := UInt32(h.h_addr_list);
 
-      FillChar(LHints, SizeOf(LHints), 0);
-      LHints.ai_family := AF_INET;
-      LHints.ai_socktype := SOCK_STREAM;
-      LAddrInfo := nil;
+      //if soNoDelay in Options then
+        //setsockopt(aHandle, IPPROTO_TCP, TCP_NODELAY, SO_TRUE, SizeOf(SO_TRUE));
+      //setsockopt(aHandle, IPPROTO_TCP, TCP_NODELAY, SO_TRUE, SizeOf(SO_TRUE));
 
-      LRetVal := getaddrinfo(MarshaledAString(TMarshal.AsAnsi(Address)), nil, LHints, LAddrInfo);
-      if LRetVal = 0 then
+
+      //http://support.microsoft.com/default.aspx?kbid=140325
+        //if soKeepAlive in Options then
+          //setsockopt(aHandle, SOL_SOCKET, SO_KEEPALIVE, SO_TRUE, SizeOf(SO_TRUE));
+
+      if soConnectTimeout in Options then
       begin
-        aAddr.addr_in.sin_addr.s_addr := Psockaddr_in(LAddrInfo^.ai_addr).sin_addr.s_addr;
-      end
+        DW := Timeout;
+        setsockopt(aHandle, SOL_SOCKET, SO_RCVTIMEO, DW, SizeOf(DW));
+      end;
+
+
+      //SetNonBlock(aHandle, True);
+      //setsockopt(aHandle, SOL_SOCKET, SO_NOSIGPIPE, SO_TRUE, SizeOf(SO_TRUE));
+
+
+      //  fpsetsockopt(aHandle, SOL_SOCKET, SO_NOSIGPIPE, PChar(@SO_TRUE), SizeOf(SO_TRUE));
+
+
+      aAddr.addr_in.sin_family := AF_INET;
+      aAddr.addr_in.sin_port := htons(StrToIntDef(Port, 0));
+      if Address = '' then
+        aAddr.addr_in.sin_addr.s_addr := INADDR_ANY
       else
-        if soSafeConnect in Options then
-          exit(nil)
-        else
-          raise EmnException.CreateFmt('Failed Get IP [%s]', [Address]);
-    end;
-  end;
-
-  ret := Posix.SysSocket.connect(aHandle, aAddr.addr, SizeOf(aAddr));
-
-  (*LAddrIPv4.sin_family := AF_INET;
-  LAddrIPv4.sin_port := htons(StrToIntDef(Port, 0));
-  if Address = '' then
-    aAddr.addr_in.sin_addr.s_addr := INADDR_ANY
-  else
-  begin
-    StrToNetAddr(Address, LAddrIPv4.sin_addr);
-    if (aAddr.addr_in.sin_addr.s_addr = 0) then
-    begin
-      //getaddrinfo()
-{      if ResolveHostByName(Address, aHost) then //DNS server
       begin
-        aAddr.sin_addr.s_addr := aHost.Addr.s_addr;
-      end;}
+        StrToNetAddr(Address, aAddr.addr_in.sin_addr);
+        if (aAddr.addr_in.sin_addr.s_addr = 0) then
+        begin
+          //h := gethostbyname(TMarshal.AsAnsi(Address));
+          //aAddr.addr_in.sin_addr.s_addr := UInt32(h.h_addr_list);
+
+          FillChar(LHints, SizeOf(LHints), 0);
+          LHints.ai_family := AF_INET;
+          LHints.ai_socktype := SOCK_STREAM;
+          LAddrInfo := nil;
+
+          LRetVal := getaddrinfo(MarshaledAString(TMarshal.AsAnsi(Address)), nil, LHints, LAddrInfo);
+          if LRetVal = 0 then
+          begin
+            aAddr.addr_in.sin_addr.s_addr := Psockaddr_in(LAddrInfo^.ai_addr).sin_addr.s_addr;
+          end
+          else
+            FreeSocket(aHandle, aErr);
+        end;
+      end;
+
+      ret := Posix.SysSocket.connect(aHandle, aAddr.addr, SizeOf(aAddr));
+
+      (*LAddrIPv4.sin_family := AF_INET;
+      LAddrIPv4.sin_port := htons(StrToIntDef(Port, 0));
+      if Address = '' then
+        aAddr.addr_in.sin_addr.s_addr := INADDR_ANY
+      else
+      begin
+        StrToNetAddr(Address, LAddrIPv4.sin_addr);
+        if (aAddr.addr_in.sin_addr.s_addr = 0) then
+        begin
+          //getaddrinfo()
+    {      if ResolveHostByName(Address, aHost) then //DNS server
+          begin
+            aAddr.sin_addr.s_addr := aHost.Addr.s_addr;
+          end;}
+        end;
+      end;
+      ret := Posix.SysSocket.connect(aHandle, LAddr, SizeOf(LAddrIPv4));*)
+      if ret = -1 then
+      begin
+        FreeSocket(aHandle, aErr);
+      end;
     end;
-  end;
-  ret := Posix.SysSocket.connect(aHandle, LAddr, SizeOf(LAddrIPv4));*)
-  if ret = -1 then
-    if soSafeConnect in Options then
-      exit(nil)
+    if aHandle<>INVALID_SOCKET then
+      Result := TmnSocket.Create(aHandle)
     else
-      raise EmnException.CreateFmt('Failed to connect the socket, error #%d.'#13'Address "%s" Port "%s".', [ret, Address, Port]);
-  Result := TmnSocket.Create(aHandle)
+      Result := nil;
+  end;
 end;
 
 end.

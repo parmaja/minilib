@@ -396,7 +396,9 @@ begin
   begin
     FSocket := WallSocket.Bind(FOptions, FPort, FAddress);
     if Connected then
-      Socket.Listen;
+      Socket.Listen
+    else
+      raise EmnStreamException.Create('Bind fail');
   end;
 end;
 

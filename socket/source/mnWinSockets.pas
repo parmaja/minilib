@@ -61,6 +61,7 @@ type
     FCount: Integer;
     function LookupPort(Port: string): Word;
   protected
+    procedure FreeSocket(var vHandle: TSocket; var vErr: Longint);
     function Select(vHandle: TSocket; Timeout: Integer; Check: TSelectCheck): TmnError;
   public
     constructor Create; override;
@@ -357,64 +358,77 @@ var
   aHandle: TSocket;
   aSockAddr: TSockAddr;
   aHostEnt: PHostEnt;
+  aErr: Longint;
 begin
   aHandle := socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
-  if aHandle = INVALID_SOCKET then
-    if soSafeConnect in Options then
-      exit(nil)
-    else
-      raise EmnException.Create('Failed to create a socket, Error #' + Inttostr(WSAGetLastError));
 
-  if soNoDelay in Options then
-    setsockopt(aHandle, IPPROTO_TCP, TCP_NODELAY, PAnsiChar(@SO_TRUE), SizeOf(SO_TRUE));
-
-  if soReuseAddr in Options then
+  if aHandle <> INVALID_SOCKET then
   begin
-    {$IFDEF FPC}
-      {$IFNDEF WINCE}
-        WinSock2.setsockopt(aHandle, SOL_SOCKET, SO_REUSEADDR, PChar(@SO_TRUE), SizeOf(SO_TRUE));
-      {$ENDIF}
-    {$ELSE}
-      WinSock.setsockopt(aHandle, SOL_SOCKET, SO_REUSEADDR, PAnsiChar(@SO_TRUE), SizeOf(SO_TRUE));
-    {$ENDIF}
-  end;
+    if soNoDelay in Options then
+      setsockopt(aHandle, IPPROTO_TCP, TCP_NODELAY, PAnsiChar(@SO_TRUE), SizeOf(SO_TRUE));
 
-  aSockAddr.sin_family := AF_INET;
-  aSockAddr.sin_port := htons(LookupPort(Port));
-  if Address = '' then
-    aSockAddr.sin_addr.s_addr := INADDR_ANY
-  else
-  begin
-    aSockAddr.sin_addr.s_addr := inet_addr(PAnsiChar(AnsiString(Address)));
-    if ((aSockAddr.sin_addr.s_addr) = u_long(INADDR_NONE)) or (aSockAddr.sin_addr.s_addr = u_long(SOCKET_ERROR)) then
+    if soReuseAddr in Options then
     begin
-      aHostEnt := gethostbyname(PAnsiChar(AnsiString(Address)));
-      if aHostEnt <> nil then
+      {$IFDEF FPC}
+        {$IFNDEF WINCE}
+          WinSock2.setsockopt(aHandle, SOL_SOCKET, SO_REUSEADDR, PChar(@SO_TRUE), SizeOf(SO_TRUE));
+        {$ENDIF}
+      {$ELSE}
+        WinSock.setsockopt(aHandle, SOL_SOCKET, SO_REUSEADDR, PAnsiChar(@SO_TRUE), SizeOf(SO_TRUE));
+      {$ENDIF}
+    end;
+
+    aSockAddr.sin_family := AF_INET;
+    aSockAddr.sin_port := htons(LookupPort(Port));
+    if Address = '' then
+      aSockAddr.sin_addr.s_addr := INADDR_ANY
+    else
+    begin
+      aSockAddr.sin_addr.s_addr := inet_addr(PAnsiChar(AnsiString(Address)));
+      if ((aSockAddr.sin_addr.s_addr) = u_long(INADDR_NONE)) or (aSockAddr.sin_addr.s_addr = u_long(SOCKET_ERROR)) then
       begin
-        aSockAddr.sin_addr.S_un_b.s_b1 := aHostEnt.h_addr^[0];
-        aSockAddr.sin_addr.S_un_b.s_b2 := aHostEnt.h_addr^[1];
-        aSockAddr.sin_addr.S_un_b.s_b3 := aHostEnt.h_addr^[2];
-        aSockAddr.sin_addr.S_un_b.s_b4 := aHostEnt.h_addr^[3];
-        aSockAddr.sin_family := aHostEnt.h_addrtype;
+        aHostEnt := gethostbyname(PAnsiChar(AnsiString(Address)));
+        if aHostEnt <> nil then
+        begin
+          aSockAddr.sin_addr.S_un_b.s_b1 := aHostEnt.h_addr^[0];
+          aSockAddr.sin_addr.S_un_b.s_b2 := aHostEnt.h_addr^[1];
+          aSockAddr.sin_addr.S_un_b.s_b3 := aHostEnt.h_addr^[2];
+          aSockAddr.sin_addr.S_un_b.s_b4 := aHostEnt.h_addr^[3];
+          aSockAddr.sin_family := aHostEnt.h_addrtype;
+        end;
       end;
     end;
+    {$IFDEF FPC}
+    if WinSock2.bind(aHandle, aSockAddr, SizeOf(aSockAddr)) = SOCKET_ERROR then
+    {$ELSE}
+    if WinSock.bind(aHandle, aSockAddr, SizeOf(aSockAddr)) = SOCKET_ERROR then
+    {$ENDIF}
+    begin
+      FreeSocket(aHandle, aErr);
+    end;
   end;
-{$IFDEF FPC}
-  if WinSock2.bind(aHandle, aSockAddr, SizeOf(aSockAddr)) = SOCKET_ERROR then
-{$ELSE}
-  if WinSock.bind(aHandle, aSockAddr, SizeOf(aSockAddr)) = SOCKET_ERROR then
-{$ENDIF}
-  if soSafeConnect in Options then
-    exit(nil)
+
+  if aHandle<>INVALID_SOCKET then
+    Result := TmnSocket.Create(aHandle)
   else
-    raise EmnException.Create('failed to bind the socket, error #' + IntToStr(WSAGetLastError) + '.'#13#13'another server is already use the same port (' + Port + ').');
-  Result := TmnSocket.Create(aHandle);
+    Result := nil;
 end;
 
 destructor TmnWallSocket.Destroy;
 begin
   inherited;
   Cleanup;
+end;
+
+procedure TmnWallSocket.FreeSocket(var vHandle: TSocket; var vErr: Longint);
+begin
+  vErr := WSAGetLastError;
+  {$IFDEF FPC}
+  WinSock2.CloseSocket(vHandle);
+  {$ELSE}
+  WinSock.CloseSocket(vHandle);
+  {$ENDIF}
+  vHandle := INVALID_SOCKET;
 end;
 
 function TmnWallSocket.Select(vHandle: TSocket; Timeout: Integer; Check: TSelectCheck): TmnError;
@@ -492,6 +506,7 @@ end;
 function TmnWallSocket.Connect(Options: TmnsoOptions; Timeout: Integer; const Port: string; const Address: string): TmnCustomSocket;
 const
   SO_TRUE: Longbool = True;
+
 var
   aHandle: TSocket;
   aAddr: TSockAddr;
@@ -499,90 +514,87 @@ var
   ret: Longint;
   aMode: u_long;
   DW: Longint;
+  aErr: Longint;
 begin
+  aErr := 0;
   if Timeout=-1 then Options := Options-[soConnectTimeout];
 
   aHandle := socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
-  if aHandle = INVALID_SOCKET then
-    if soSafeConnect in Options then
-      exit(nil)
-    else
-      raise EmnException.Create('Failed to connect socket, Error #' + Inttostr(WSAGetLastError));
-
-  if soNoDelay in Options then
-    setsockopt(aHandle, IPPROTO_TCP, TCP_NODELAY, PAnsiChar(@SO_TRUE), SizeOf(SO_TRUE));
-
-//http://support.microsoft.com/default.aspx?kbid=140325
-  if soKeepAlive in Options then
-    setsockopt(aHandle, SOL_SOCKET, SO_KEEPALIVE, PAnsiChar(@SO_TRUE), SizeOf(SO_TRUE));
-
-  if soSetReadTimeout in Options then
+  if aHandle <> INVALID_SOCKET then
   begin
-    DW := Timeout;
-    //* https://stackoverflow.com/questions/2876024/linux-is-there-a-read-or-recv-from-socket-with-timeout
-    setsockopt(aHandle, SOL_SOCKET, SO_RCVTIMEO, @DW, SizeOf(DW));
-  end;
+    if soNoDelay in Options then
+      setsockopt(aHandle, IPPROTO_TCP, TCP_NODELAY, PAnsiChar(@SO_TRUE), SizeOf(SO_TRUE));
 
-  if soConnectTimeout in Options then
-  begin
-    aMode := 1;
-    ret := ioctlsocket(aHandle, {$ifdef FPC}Longint(FIONBIO){$else}FIONBIO{$endif}, aMode);
-    if ret = Longint(SOCKET_ERROR) then
-      if soSafeConnect in Options then
-        exit(nil)
-      else
-        raise EmnException.Create('Failed to set nonblock socket, Error #' + Inttostr(WSAGetLastError));
-  end;
+  //http://support.microsoft.com/default.aspx?kbid=140325
+    if soKeepAlive in Options then
+      setsockopt(aHandle, SOL_SOCKET, SO_KEEPALIVE, PAnsiChar(@SO_TRUE), SizeOf(SO_TRUE));
 
-  aAddr.sin_family := AF_INET;
-  aAddr.sin_port := htons(LookupPort(Port));
-
-  if Address = '' then
-    aAddr.sin_addr.s_addr := INADDR_ANY
-  else
-  begin
-    aAddr.sin_addr.s_addr := inet_addr(PAnsiChar(AnsiString(Address)));
-    if (aAddr.sin_addr.s_addr = 0) or (aAddr.sin_addr.s_addr = u_long(SOCKET_ERROR)) then
+    if soSetReadTimeout in Options then
     begin
-      aHost := gethostbyname(PAnsiChar(AnsiString(Address)));
-      if aHost <> nil then
+      DW := Timeout;
+      //* https://stackoverflow.com/questions/2876024/linux-is-there-a-read-or-recv-from-socket-with-timeout
+      setsockopt(aHandle, SOL_SOCKET, SO_RCVTIMEO, @DW, SizeOf(DW));
+    end;
+
+    if soConnectTimeout in Options then
+    begin
+      aMode := 1;
+      ret := ioctlsocket(aHandle, {$ifdef FPC}Longint(FIONBIO){$else}FIONBIO{$endif}, aMode);
+      if ret = Longint(SOCKET_ERROR) then
       begin
-        aAddr.sin_addr.S_un_b.s_b1 := aHost.h_addr^[0];
-        aAddr.sin_addr.S_un_b.s_b2 := aHost.h_addr^[1];
-        aAddr.sin_addr.S_un_b.s_b3 := aHost.h_addr^[2];
-        aAddr.sin_addr.S_un_b.s_b4 := aHost.h_addr^[3];
-        aAddr.sin_family := aHost.h_addrtype;
+        FreeSocket(aHandle, aErr);
+      end;
+    end;
+
+    if aHandle <> SOCKET_ERROR then
+    begin
+      aAddr.sin_family := AF_INET;
+      aAddr.sin_port := htons(LookupPort(Port));
+
+      if Address = '' then
+        aAddr.sin_addr.s_addr := INADDR_ANY
+      else
+      begin
+        aAddr.sin_addr.s_addr := inet_addr(PAnsiChar(AnsiString(Address)));
+        if (aAddr.sin_addr.s_addr = 0) or (aAddr.sin_addr.s_addr = u_long(SOCKET_ERROR)) then
+        begin
+          aHost := gethostbyname(PAnsiChar(AnsiString(Address)));
+          if aHost <> nil then
+          begin
+            aAddr.sin_addr.S_un_b.s_b1 := aHost.h_addr^[0];
+            aAddr.sin_addr.S_un_b.s_b2 := aHost.h_addr^[1];
+            aAddr.sin_addr.S_un_b.s_b3 := aHost.h_addr^[2];
+            aAddr.sin_addr.S_un_b.s_b4 := aHost.h_addr^[3];
+            aAddr.sin_family := aHost.h_addrtype;
+          end;
+        end;
+      end;
+    {$IFDEF FPC}
+      ret := WinSock2.connect(aHandle, aAddr, SizeOf(aAddr));
+    {$ELSE}
+      ret := WinSock.connect(aHandle, aAddr, SizeOf(aAddr));
+    {$ENDIF}
+      if (ret = SOCKET_ERROR) then
+      begin
+        if (soConnectTimeout in Options) and (WSAGetLastError = WSAEWOULDBLOCK) then
+        begin
+          aMode := 0;
+          ret := ioctlsocket(aHandle, {$ifdef FPC}Longint(FIONBIO){$else}FIONBIO{$endif}, aMode);
+          if ret = Longint(SOCKET_ERROR) then
+            FreeSocket(aHandle, aErr)
+          else if Select(aHandle, Timeout, slWrite) <> erSuccess then
+            FreeSocket(aHandle, aErr);
+        end
+        else
+          FreeSocket(aHandle, aErr);
       end;
     end;
   end;
-{$IFDEF FPC}
-  ret := WinSock2.connect(aHandle, aAddr, SizeOf(aAddr));
-{$ELSE}
-  ret := WinSock.connect(aHandle, aAddr, SizeOf(aAddr));
-{$ENDIF}
-  if (ret = SOCKET_ERROR) and not ((soConnectTimeout in Options) and (WSAGetLastError = WSAEWOULDBLOCK)) then
-    if soSafeConnect in Options then
-      exit(nil)
-    else
-      raise EmnException.Create('Failed to connect the socket, error #' + IntToStr(WSAGetLastError) + '.'#13'Address "' + Address +'" Port "' + Port + '".');
 
-  if soConnectTimeout in Options then
-  begin
-    aMode := 0;
-    ret := ioctlsocket(aHandle, {$ifdef FPC}Longint(FIONBIO){$else}FIONBIO{$endif}, aMode);
-    if ret = Longint(SOCKET_ERROR) then
-      if soSafeConnect in Options then
-        exit(nil)
-      else
-        raise EmnException.Create('Failed to set nonblock socket, Error #' + Inttostr(WSAGetLastError));
-
-    if Select(aHandle, Timeout, slWrite) <> erSuccess then
-      if soSafeConnect in Options then
-      exit(nil)
-    else
-      raise EmnException.Create('Failed to connect nonblock socket, Error #' + Inttostr(WSAGetLastError));
-  end;
-  Result := TmnSocket.Create(aHandle)
+  if aHandle<>INVALID_SOCKET then
+    Result := TmnSocket.Create(aHandle)
+  else
+    Result := nil;
 end;
 
 end.
