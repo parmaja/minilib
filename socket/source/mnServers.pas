@@ -52,7 +52,7 @@ type
 
   TmnServerConnection = class(TmnConnection)
   private
-    FClient: string;
+    FRemoteIP: string;
     function GetListener: TmnListener;
   protected
     procedure Execute; override;
@@ -60,7 +60,7 @@ type
     constructor Create(vOwner: TmnConnections; vStream: TmnConnectionStream); override;
     destructor Destroy; override;
     property Listener: TmnListener read GetListener;
-    property Client: string read FClient;
+    property RemoteIP: string read FRemoteIP;
   end;
 
   TmnServerConnectionClass = class of TmnServerConnection;
@@ -496,7 +496,7 @@ begin
               if FServer <> nil then
                 FServer.DoAccepted(Self);
               aConnection := CreateConnection(aSocket) as TmnServerConnection;
-              aConnection.FClient := aSocket.GetRemoteAddress;
+              aConnection.FRemoteIP := aSocket.GetRemoteAddress;
             finally
               Leave;
             end;

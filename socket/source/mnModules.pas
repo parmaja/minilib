@@ -393,7 +393,7 @@ begin
     try
       if aModule <> nil then
       begin
-        aRequest.Client := Client;
+        aRequest.Client := RemoteIP;
         Result := aModule.Execute(aRequest, Stream, Stream);
       end;
     finally

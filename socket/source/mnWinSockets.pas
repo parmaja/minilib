@@ -364,6 +364,10 @@ begin
 
   if aHandle <> INVALID_SOCKET then
   begin
+    //https://stackoverflow.com/questions/55034112/c-disable-delayed-ack-on-windows
+    //aFreq := 1; // can be 1..255, default is 2
+    //aErr := ioctlsocket(sock, SIO_TCP_SET_ACK_FREQUENCY, &freq);
+
     if soNoDelay in Options then
       setsockopt(aHandle, IPPROTO_TCP, TCP_NODELAY, PAnsiChar(@SO_TRUE), SizeOf(SO_TRUE));
 
