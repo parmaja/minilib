@@ -30,6 +30,9 @@ uses
   mnSockets;
 
 type
+
+  { TmnSocket }
+
   TmnSocket = class(TmnCustomSocket)
   private
     FHandle: TSocket;
@@ -45,7 +48,7 @@ type
     function DoSend(const Buffer; var Count: Longint): TmnError; override;
   public
     constructor Create(vHandle: TSocket);
-    procedure Close; override;
+    function Close: TmnError; override;
     function Accept: TmnCustomSocket; override;
     function GetLocalAddress: string; override;
     function GetRemoteAddress: string; override;
@@ -81,7 +84,7 @@ const
 
 { TmnSocket }
 
-function TmnSocket.DoReceive(var Buffer; var Count: Integer): TmnError;
+function TmnSocket.DoReceive(var Buffer; var Count: Longint): TmnError;
 var
   c: Integer;
   errno: longint;
@@ -114,7 +117,7 @@ begin
   end;
 end;
 
-function TmnSocket.DoSend(const Buffer; var Count: Integer): TmnError;
+function TmnSocket.DoSend(const Buffer; var Count: Longint): TmnError;
 var
   c: Integer;
 begin
@@ -152,17 +155,25 @@ begin
   Result := FHandle <> INVALID_SOCKET;
 end;
 
-procedure TmnSocket.Close;
+function TmnSocket.Close: TmnError;
+var
+  err: Longint;
 begin
   if Active then
   begin
   {$IFDEF FPC}
-    WinSock2.CloseSocket(FHandle);
+    err := WinSock2.CloseSocket(FHandle);
   {$ELSE}
-    WinSock.CloseSocket(FHandle);
+    err := WinSock.CloseSocket(FHandle);
   {$ENDIF}
+    if err = 0 then
+      Result := erSuccess
+    else
+      Result := erInvalid;
     FHandle := INVALID_SOCKET;
-  end;
+  end
+  else
+    Result := erClosed;
 end;
 
 function TmnSocket.DoShutdown(How: TmnShutdowns): TmnError;
@@ -510,7 +521,6 @@ end;
 function TmnWallSocket.Connect(Options: TmnsoOptions; Timeout: Integer; const Port: string; const Address: string): TmnCustomSocket;
 const
   SO_TRUE: Longbool = True;
-
 var
   aHandle: TSocket;
   aAddr: TSockAddr;
@@ -521,7 +531,8 @@ var
   aErr: Longint;
 begin
   aErr := 0;
-  if Timeout=-1 then Options := Options-[soConnectTimeout];
+  if Timeout=-1 then
+    Options := Options-[soConnectTimeout];
 
   aHandle := socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
   if aHandle <> INVALID_SOCKET then
@@ -529,7 +540,7 @@ begin
     if soNoDelay in Options then
       setsockopt(aHandle, IPPROTO_TCP, TCP_NODELAY, PAnsiChar(@SO_TRUE), SizeOf(SO_TRUE));
 
-  //http://support.microsoft.com/default.aspx?kbid=140325
+    //http://support.microsoft.com/default.aspx?kbid=140325
     if soKeepAlive in Options then
       setsockopt(aHandle, SOL_SOCKET, SO_KEEPALIVE, PAnsiChar(@SO_TRUE), SizeOf(SO_TRUE));
 
@@ -595,7 +606,7 @@ begin
     end;
   end;
 
-  if aHandle<>INVALID_SOCKET then
+  if aHandle <> INVALID_SOCKET then
     Result := TmnSocket.Create(aHandle)
   else
     Result := nil;

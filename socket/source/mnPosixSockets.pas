@@ -78,6 +78,8 @@ type
       //2: (addr_in6: sockaddr_in6)
   end;
 
+  { TmnSocket }
+
   TmnSocket = class(TmnCustomSocket)
   private
     FHandle: TSocket;
@@ -94,7 +96,7 @@ type
     function DoSend(const Buffer; var Count: Longint): TmnError; override;
   public
     constructor Create(Handle: TSocket);
-    procedure Close; override;
+    function Close: TmnError; override;
     function Accept: TmnCustomSocket; override;
     function GetLocalAddress: string; override;
     function GetRemoteAddress: string; override;
@@ -138,7 +140,7 @@ end;
 
 { TmnSocket }
 
-function TmnSocket.DoReceive(var Buffer; var Count: LongInt): TmnError;
+function TmnSocket.DoReceive(var Buffer; var Count: Longint): TmnError;
 var
   c: Integer;
 begin
@@ -165,7 +167,7 @@ begin
   end;
 end;
 
-function TmnSocket.DoSend(const Buffer; var Count: LongInt): TmnError;
+function TmnSocket.DoSend(const Buffer; var Count: Longint): TmnError;
 var
   c: Integer;
 begin
@@ -244,13 +246,21 @@ begin
   Result := FHandle <> INVALID_SOCKET;
 end;
 
-procedure TmnSocket.Close;
+function TmnSocket.Close: TmnError;
+var
+  err: Longint;
 begin
   if Active then
   begin
-    __close(FHandle);
+    err := __close(FHandle);
+    if err = 0 then
+      Result := erSuccess
+    else
+      Result := erInvalid;
     FHandle := INVALID_SOCKET;
-  end;
+  end
+  else
+    Result := erClosed;
 end;
 
 function TmnSocket.DoShutdown(How: TmnShutdowns): TmnError;

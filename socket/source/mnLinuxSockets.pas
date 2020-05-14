@@ -22,6 +22,9 @@ uses
   mnSockets;
 
 type
+
+  { TmnSocket }
+
   TmnSocket = class(TmnCustomSocket)
   private
     FHandle: TSocket;
@@ -36,7 +39,7 @@ type
     function DoSend(const Buffer; var Count: Longint): TmnError; override;
   public
     constructor Create(Handle: TSocket);
-    procedure Close; override;
+    function Close: TmnError; override;
     function Accept: TmnCustomSocket; override;
     function GetLocalAddress: ansistring; override;
     function GetRemoteAddress: ansistring; override;
@@ -68,7 +71,7 @@ const
 
 { TmnSocket }
 
-function TmnSocket.DoReceive(var Buffer; var Count: Integer): TmnError;
+function TmnSocket.DoReceive(var Buffer; var Count: Longint): TmnError;
 var
   c: Integer;
 //  errno: longint;
@@ -96,7 +99,7 @@ begin
   end;
 end;
 
-function TmnSocket.DoSend(const Buffer; var Count: Integer): TmnError;
+function TmnSocket.DoSend(const Buffer; var Count: Longint): TmnError;
 var
   c: Integer;
 begin
@@ -159,13 +162,21 @@ begin
   Result := FHandle <> INVALID_SOCKET;
 end;
 
-procedure TmnSocket.Close;
+function TmnSocket.Close: TmnError;
+var
+  err: Longint;
 begin
   if Active then
   begin
-    closesocket(FHandle);
+    err := closesocket(FHandle);
+    if err = 0 then
+      Result := erSuccess
+    else
+      Result := erInvalid;
     FHandle := INVALID_SOCKET;
-  end;
+  end
+  else
+    Result := erClosed;
 end;
 
 function TmnSocket.DoShutdown(How: TmnShutdowns): TmnError;

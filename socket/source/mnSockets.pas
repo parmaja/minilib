@@ -61,7 +61,7 @@ type
     constructor Create;
     destructor Destroy; override;
     function Shutdown(How: TmnShutdowns): TmnError;
-    procedure Close; virtual; abstract;
+    function Close: TmnError; virtual; abstract;
     function Send(const Buffer; var Count: Longint): TmnError;
     function Receive(var Buffer; var Count: Longint): TmnError;
     function Select(Timeout: Integer; Check: TSelectCheck): TmnError;

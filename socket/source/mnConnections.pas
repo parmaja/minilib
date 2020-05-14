@@ -16,11 +16,11 @@ unit mnConnections;
 interface
 
 uses
-  Classes,
-  SysUtils,
-  SyncObjs,
-  mnStreams,
-  mnSockets;
+  Classes, SysUtils, SyncObjs,
+  {$ifdef DEBUG}
+  mnDebugs,
+  {$endif}
+  mnStreams, mnSockets;
 
 type
 
@@ -206,11 +206,17 @@ end;
 
 procedure TmnLockThread.Enter;
 begin
+  {$ifdef DEBUG}
+  Debug.Write('Enter');
+  {$endif}
   FLock.Enter;
 end;
 
 procedure TmnLockThread.Leave;
 begin
+  {$ifdef DEBUG}
+  Debug.Write('Leave');
+  {$endif}
   FLock.Leave;
 end;
 

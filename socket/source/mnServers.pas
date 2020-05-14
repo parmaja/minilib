@@ -78,6 +78,7 @@ type
     FSocket: TmnCustomSocket; //Listner socket waiting by call "select"
     FServer: TmnServer;
     FLogMessages: TStringList;
+    FOptions: TmnsoOptions;
     procedure Connect;
     procedure Disconnect;
     function GetConnected: Boolean;
@@ -85,8 +86,6 @@ type
     function DoCreateConnection(vStream: TmnConnectionStream): TmnConnection; override;
     property LogMessages: TStringList read FLogMessages;
   protected
-    FOptions: TmnsoOptions;
-
     procedure PostLogs;
     procedure PostChanged;
     procedure Changed; virtual;
@@ -635,7 +634,7 @@ begin
       {$ifdef FPC}
       {$ifndef WINDOWS}
       {$hint 'Why need to Shutdown to stop Accept?'}
-      Socket.Shutdown(sdBoth); //stop the accept from waiting
+      Socket.Shutdown([sdReceive, sdSend]);//stop the accept from waiting
       {$endif}
       {$endif}
       Socket.Close;
