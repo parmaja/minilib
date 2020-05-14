@@ -29,6 +29,7 @@ const
   sGSEndOfLine = #$1E;
 
 type
+  TTimeoutMode = (tmCreate, tmRead, tmWrite);
   TFileSize = Longint;
 
   EmnStreamException = class(Exception);
@@ -268,6 +269,7 @@ type
   private
     FTimeout: Integer;
   protected
+    function GetTimeouts(vMode: TTimeoutMode): Integer; virtual;
   public
     constructor Create;
     procedure Connect; virtual; abstract;
@@ -279,6 +281,7 @@ type
     function WaitToWrite: Boolean; overload;
     function Seek(Offset: Longint; Origin: Word): Longint; override;
     property Timeout: Integer read FTimeout write FTimeout;
+    property Timeouts[vMode: TTimeoutMode]: Integer read GetTimeouts;
   end;
 
   { TmnStreamHexProxy }
@@ -593,12 +596,29 @@ end;
 
 function TmnConnectionStream.WaitToRead: Boolean;
 begin
-  Result := WaitToRead(Timeout) = cerSuccess;
+  Result := WaitToRead(Timeouts[tmRead]) = cerSuccess;
 end;
 
 function TmnConnectionStream.WaitToWrite: Boolean;
 begin
-  Result := WaitToWrite(Timeout) = cerSuccess;
+  Result := WaitToWrite(Timeouts[tmWrite]) = cerSuccess;
+end;
+
+function TmnConnectionStream.GetTimeouts(vMode: TTimeoutMode): Integer;
+begin
+  if Timeout=-1 then
+    Result := -1
+  else
+  begin
+    //test values
+    case vMode of
+      tmCreate: Result := Timeout div 4;
+      tmRead: Result := Timeout;
+      tmWrite: Result := Timeout div 2;
+      else
+        Result := Timeout;
+    end;
+  end;
 end;
 
 function TmnConnectionStream.Seek(Offset: Longint; Origin: Word): Longint;

@@ -244,7 +244,7 @@ end;
 
 function TmnClientSocket.CreateSocket: TmnCustomSocket;
 begin
-  Result := WallSocket.Connect(Options, Timeout, Port, Address)
+  Result := WallSocket.Connect(Options, Timeouts[tmCreate], Port, Address)
 end;
 
 constructor TmnClientSocket.Create(const vAddress, vPort: string; vOptions: TmnsoOptions);

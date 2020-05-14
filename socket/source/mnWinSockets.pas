@@ -500,6 +500,8 @@ var
   aMode: u_long;
   DW: Longint;
 begin
+  if Timeout=-1 then Options := Options-[soConnectTimeout];
+
   aHandle := socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
   if aHandle = INVALID_SOCKET then
     if soSafeConnect in Options then
