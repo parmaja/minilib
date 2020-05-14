@@ -48,7 +48,7 @@
         <PackageName Value="LCL"/>
       </Item4>
     </RequiredPackages>
-    <Units Count="2">
+    <Units Count="3">
       <Unit0>
         <Filename Value="mnWebServer.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -60,6 +60,11 @@
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
       </Unit1>
+      <Unit2>
+        <Filename Value="..\..\..\source\mnlinuxsockets.pas"/>
+        <IsPartOfProject Value="True"/>
+        <UnitName Value="mnLinuxSockets"/>
+      </Unit2>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
@@ -67,6 +72,7 @@
     <PathDelim Value="\"/>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)"/>
+      <OtherUnitFiles Value="..\..\..\source"/>
     </SearchPaths>
     <Parsing>
       <SyntaxOptions>

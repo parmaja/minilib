@@ -17,7 +17,7 @@ uses
   Forms,
   LCLIntf,
   SysUtils,
-  MainForm in 'MainForm.pas' {Main};
+  MainForm in 'MainForm.pas', mnLinuxSockets {Main};
 
 {$R *.res}
 
@@ -29,4 +29,4 @@ begin
   end;
   Application.CreateForm(TMain, Main);
   Application.Run;
-end.
+end.

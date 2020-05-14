@@ -51,7 +51,7 @@ type
 
   TmnWallSocket = class(TmnCustomWallSocket)
   private
-    procedure FreeSocket(var vHandle: TSocket; var vErr: cint);
+    procedure FreeSocket(var vHandle: TSocket; var vErr: integer);
     function LookupPort(Port: string): Word;
   public
     constructor Create; override;
@@ -151,7 +151,7 @@ begin
     if (c = SOCKET_ERROR) then
       Result := erInvalid
     else if (c = 0) then
-      Result := erTimout
+      Result := erTimeout
     else
       Result := erSuccess;
   end;
@@ -185,11 +185,11 @@ var
   iHow: Integer;
 begin
   if [sdReceive, sdSend] = How then
-    iHow := SD_BOTH
-  else if sdReceive in How then
-    iHow := SD_RECEIVE
+    iHow := 2
   else if sdSend in How then
-    iHow := SD_SEND;
+    iHow := 1
+  else if sdReceive in How then
+    iHow := 0;
 
   CheckActive;
   c := fpshutdown(FHandle, iHow);
@@ -328,11 +328,12 @@ begin
 
     if fpbind(aHandle,@aAddr, Sizeof(aAddr)) <> 0 then
     begin
+      aErr := SocketError;
       FreeSocket(aHandle, aErr);
     end;
   end;
 
-  if aHandle<>INVALID_SOCKET then
+  if aHandle <> INVALID_SOCKET then
     Result := TmnSocket.Create(aHandle)
   else
     Result := nil;
@@ -343,14 +344,9 @@ begin
   inherited;
 end;
 
-procedure TmnWallSocket.FreeSocket(var vHandle: TSocket; var vErr: cint);
+procedure TmnWallSocket.FreeSocket(var vHandle: TSocket; var vErr: integer );
 begin
-  vErr := WSAGetLastError;
-  {$IFDEF FPC}
-  WinSock2.CloseSocket(vHandle);
-  {$ELSE}
-  WinSock.CloseSocket(vHandle);
-  {$ENDIF}
+  vErr := closesocket(vHandle);
   vHandle := INVALID_SOCKET;
 end;
 
@@ -380,11 +376,11 @@ begin
     if soKeepAlive in Options then
       fpsetsockopt(aHandle, SOL_SOCKET, SO_KEEPALIVE, PAnsiChar(@SO_TRUE), SizeOf(SO_TRUE));
 
-    if soReadTimeout in Options then
+    if soSetReadTimeout in Options then
     begin
       time.tv_sec:=Timeout div 1000;
       time.tv_usec:=(Timeout mod 1000) * 1000;
-      setsockopt(aHandle, SOL_SOCKET, SO_RCVTIMEO, @time, SizeOf(time));
+      fpsetsockopt(aHandle, SOL_SOCKET, SO_RCVTIMEO, @time, SizeOf(time));
     end;
 
   //  fpsetsockopt(aHandle, SOL_SOCKET, SO_NOSIGPIPE, PChar(@SO_TRUE), SizeOf(SO_TRUE));
@@ -411,7 +407,7 @@ begin
     end;
   end;
 
-  if aHandle<>INVALID_SOCKET then
+  if aHandle <> INVALID_SOCKET then
     Result := TmnSocket.Create(aHandle)
   else
     Result := nil;
