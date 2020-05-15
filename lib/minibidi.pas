@@ -1,4 +1,11 @@
 ﻿unit minibidi;
+{**
+ *  This file is part of the "Mini Library"
+ *
+ * @license   MIT
+ *
+ * @author    Zaher Dirkey
+ *}
 {$IFDEF FPC}
 {$MODE objfpc}
 {$ELSE}

@@ -4,7 +4,7 @@ unit mnClasses;
  *
  * @license   modifiedLGPL (modified of http://www.gnu.org/licenses/lgpl.html)
  *            See the file COPYING.MLGPL, included in this distribution,
- * @author    Zaher Dirkey <zaher at parmaja dot com>
+ * @author    Zaher Dirkey
  *}
 
 {$IFDEF FPC}
@@ -70,12 +70,11 @@ type
     procedure Notify(const Value: _Object_; Action: TCollectionNotification); override;
     {$endif}
     //override this function of u want to check the item or create it before returning it
-    function Require(Index: Integer): _Object_; virtual;
-
     {$H-}procedure Removing(Item: _Object_); virtual;{$H+}
     {$H-}procedure Added(Item: _Object_); virtual;{$H+}
 
     procedure Created; virtual;
+    function CreateItem: _Object_; virtual;
   public
     function GetEnumerator: TmnObjectListEnumerator; inline;
     function QueryInterface({$ifdef FPC}constref{$else}const{$endif} iid : TGuid; out Obj):HResult; {$ifdef WINDOWS}stdcall{$else}cdecl{$endif};
@@ -83,6 +82,10 @@ type
     function Add(Item: _Object_): Integer;
     procedure Insert(Index: Integer; Item: _Object_);
     function Extract(Item: _Object_): _Object_;
+    {$ifdef FPC} //not now
+    function Require(Index: Integer): _Object_;
+    {$endif}
+    function Peek(Index: Integer): _Object_;
 
     property Items[Index: Integer]: _Object_ read GetItem write SetItem; default;
     function Last: _Object_;
@@ -116,7 +119,7 @@ implementation
 
 function TmnObjectList<_Object_>.GetItem(Index: Integer): _Object_;
 begin
-  Result := Require(Index);
+  Result := _Object_(inherited Items[Index]);
 end;
 
 procedure TmnObjectList<_Object_>.SetItem(Index: Integer; AObject: _Object_);
@@ -152,9 +155,31 @@ begin
 end;
 {$endif}
 
+{$ifdef FPC} //not now
 function TmnObjectList<_Object_>.Require(Index: Integer): _Object_;
 begin
-  Result := _Object_(inherited Items[Index]);
+  if (Index < Count) then
+    Result := Items[Index]
+  else
+  begin
+    Count := Index + 1;
+    Result := nil;
+  end;
+
+  if Result = nil then
+  begin
+    Result := CreateItem;
+    Put(Index, Result);
+  end;
+end;
+{$endif}
+
+function TmnObjectList<_Object_>.Peek(Index: Integer): _Object_;
+begin
+  if (Index < Count) then
+    Result := Items[Index]
+  else
+    Result := nil;
 end;
 
 function TmnObjectList<_Object_>._AddRef: Integer; {$ifdef WINDOWS}stdcall{$else}cdecl{$endif};
@@ -209,6 +234,11 @@ end;
 
 procedure TmnObjectList<_Object_>.Created;
 begin
+end;
+
+function TmnObjectList<_Object_>.CreateItem: _Object_;
+begin
+  Result := nil;
 end;
 
 function TmnObjectList<_Object_>.GetEnumerator: TmnObjectListEnumerator;

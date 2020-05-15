@@ -52,7 +52,7 @@ type
 
   { TmnCustomField }
 
-  TmnCustomField = class abstract(TInterfacedObject, IField)
+  TmnCustomField = class abstract(TInterfacedPersistent, IField)
   private
     procedure CheckIsNil;
     function ReadAsHex: string;
@@ -156,7 +156,7 @@ type
     }
   public
     constructor Create;
-    procedure Assign(vField: TmnCustomField); virtual;
+    procedure Assign(Source: TPersistent); virtual;
     procedure Clear; virtual;//make value null //should be abstract
     procedure Empty; virtual;//make value empty
   end;
@@ -593,9 +593,12 @@ begin
   inherited Create;
 end;
 
-procedure TmnCustomField.Assign(vField: TmnCustomField);
+procedure TmnCustomField.Assign(Source: TPersistent);
 begin
-  Value := vField.Value;
+  if Source is TmnCustomField then
+    Value := (Source as TmnCustomField).Value
+  else
+    inherited;
 end;
 
 procedure TmnCustomField.SaveToStream(Stream: TStream);

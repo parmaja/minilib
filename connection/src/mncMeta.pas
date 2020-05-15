@@ -132,7 +132,8 @@ end;
 
 function TmncSQLMeta.CreateCMD(SQL: string): TmncSQLCommand;
 begin
-  Result := Session.CreateCommand
+  Result := Session.CreateCommand;
+  Result.SQL.Text := SQL;
 end;
 
 { TmncMetaItems }
@@ -200,7 +201,7 @@ begin
     sokField: EnumFields(Meta, SQLName, Options);
     sokIndex: EnumIndices(Meta, SQLName, Options);
     sokConstraint: EnumConstraints(Meta, SQLName, Options);
-    sokData: ;
+    else ;
   end;
 end;
 

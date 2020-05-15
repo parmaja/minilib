@@ -19,9 +19,14 @@ uses
   Classes, Types, SysUtils, DateUtils, Math, mnClasses;
 
 type
+
+  { TmnDebug }
+
   TmnDebug = record
     procedure Write(S: string); overload;
     procedure Write(R: TRect); overload;
+    procedure Write(I: Integer); overload;
+    procedure Write(X, Y: Integer); overload;
   end;
 
 var
@@ -37,6 +42,16 @@ uses
 procedure TmnDebug.Write(R: TRect);
 begin
   Write('Rect(Left:'+IntToStr(R.Left)+', Right:' + IntToStr(R.Right)+', Top:' + IntToStr(R.Top)+', Bottom:' + IntToStr(R.Bottom) + ')');
+end;
+
+procedure TmnDebug.Write(I: Integer);
+begin
+  Write(IntToStr(I));
+end;
+
+procedure TmnDebug.Write(X, Y: Integer);
+begin
+  Write(IntToStr(X) + ', ' + IntToStr(Y));
 end;
 
 procedure TmnDebug.Write(S: string);
