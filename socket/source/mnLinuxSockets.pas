@@ -135,7 +135,7 @@ begin
   else
   begin
     fpfd_zero(FSet);
-    fpfd_set(0, FSet);
+    fpfd_set(FHandle, FSet);
     if Check = slRead then
     begin
       PSetRead := @FSet;
@@ -147,7 +147,7 @@ begin
       PSetWrite := @FSet;
     end;
 
-    c := fpselect(1, PSetRead, PSetWrite, PSetRead, Timeout);
+    c := fpselect(FHandle + 1, PSetRead, PSetWrite, PSetRead, Timeout);
     if (c = SOCKET_ERROR) then
       Result := erInvalid
     else if (c = 0) then
