@@ -22,6 +22,7 @@ uses
 
 type
   EmnException = class(Exception);
+  EmnSocketException = class(Exception);
   TmnShutdown = (sdReceive, sdSend);
   TmnShutdowns = set of TmnShutdown;
   TmnError = (erSuccess, erTimeout, erClosed, erInvalid);
@@ -361,7 +362,7 @@ begin
   FSocket := CreateSocket;
 
   if FSocket = nil then
-    raise EmnStreamException.Create('Connected fail');
+    raise EmnSocketException.Create('Connected fail');
 end;
 
 function TmnSocketStream.CreateSocket: TmnCustomSocket;

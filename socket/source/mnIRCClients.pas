@@ -1235,10 +1235,23 @@ end;
 function TmnIRCConnection.CreateSocket: TIRCSocketStream;
 begin
   Result := TIRCSocketStream.Create(Host, Port, [soNoDelay, soSafeReadTimeout, soSetReadTimeout, soConnectTimeout]);
-  Result.ZeroClose := False;
-  Result.Timeout := 5 * 1000;
-  //Result.Timeout := WaitForEver;
-  Result.EndOfLine := #10;
+  try
+    Result.ZeroClose := False;
+    Result.Timeout := 5 * 1000;
+    //Result.Timeout := WaitForEver;
+    Result.EndOfLine := #10;
+    Result.Connect;
+  except
+    on E: EmnSocketException do
+    begin
+      FreeAndNil(Result)
+    end
+    else
+    begin
+      FreeAndNil(Result);
+      raise;
+    end;
+  end;
 end;
 
 procedure TmnIRCConnection.Log(S: string);

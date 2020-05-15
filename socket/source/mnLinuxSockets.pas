@@ -328,7 +328,6 @@ begin
 
     if fpbind(aHandle,@aAddr, Sizeof(aAddr)) <> 0 then
     begin
-      aErr := SocketError;
       FreeSocket(aHandle, aErr);
     end;
   end;
@@ -346,7 +345,8 @@ end;
 
 procedure TmnWallSocket.FreeSocket(var vHandle: TSocket; var vErr: integer );
 begin
-  vErr := closesocket(vHandle);
+  vErr := SocketError;
+  closesocket(vHandle);
   vHandle := INVALID_SOCKET;
 end;
 

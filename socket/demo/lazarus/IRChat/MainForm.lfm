@@ -1,7 +1,7 @@
 object MainFrm: TMainFrm
-  Left = 482
+  Left = 697
   Height = 459
-  Top = 230
+  Top = 362
   Width = 647
   Caption = 'IRC chat'
   ClientHeight = 459
@@ -209,8 +209,8 @@ object MainFrm: TMainFrm
     end
   end
   object LogPopupMenu: TPopupMenu
-    left = 275
-    top = 172
+    Left = 275
+    Top = 172
     object MenuItem1: TMenuItem
       Caption = 'Clear'
       OnClick = MenuItem1Click

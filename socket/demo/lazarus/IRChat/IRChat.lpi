@@ -108,37 +108,34 @@
         <Mode0 Name="default"/>
       </Modes>
     </RunParams>
-    <RequiredPackages Count="10">
+    <RequiredPackages Count="9">
       <Item1>
         <PackageName Value="lazreport"/>
       </Item1>
       <Item2>
-        <PackageName Value="FrameViewer09"/>
+        <PackageName Value="TurboPowerIPro"/>
       </Item2>
       <Item3>
-        <PackageName Value="TurboPowerIPro"/>
+        <PackageName Value="SynEdit"/>
       </Item3>
       <Item4>
-        <PackageName Value="SynEdit"/>
+        <PackageName Value="MiniCtrls"/>
       </Item4>
       <Item5>
-        <PackageName Value="MiniCtrls"/>
+        <PackageName Value="NativeLib"/>
       </Item5>
       <Item6>
-        <PackageName Value="NativeLib"/>
+        <PackageName Value="MiniXML"/>
       </Item6>
       <Item7>
-        <PackageName Value="MiniXML"/>
+        <PackageName Value="MiniSockets"/>
       </Item7>
       <Item8>
-        <PackageName Value="MiniSockets"/>
+        <PackageName Value="MiniCommons"/>
       </Item8>
       <Item9>
-        <PackageName Value="MiniCommons"/>
-      </Item9>
-      <Item10>
         <PackageName Value="LCL"/>
-      </Item10>
+      </Item9>
     </RequiredPackages>
     <Units Count="3">
       <Unit0>
