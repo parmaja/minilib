@@ -18,7 +18,7 @@ interface
 uses
   Classes, SysUtils, Variants,
   {$ifdef FPC} ctypes, {$endif}
-  mncCommons, mncMeta, mncMySQLdyn,
+  mncCommons, mncMeta, mncMySQLHeader,
   mncConnections, mncSQL;
 
 type
@@ -246,9 +246,6 @@ const
 
 const
   MySQL_OK = 0;
-
-var
-  IsInitializeMySQL: Boolean = False;
 
 { TmncMySQLResults }
 
@@ -675,11 +672,7 @@ end;
 
 procedure TmncMySQLConnection.DoInit;
 begin
-  if not IsInitializeMySQL then
-  begin
-    InitialiseMysql(mysqllib);
-    IsInitializeMySQL := True;
-  end;
+  mysqllib.SafeLoad;
 end;
 
 procedure TmncMySQLSession.SetConnection(const AValue: TmncMySQLConnection);
