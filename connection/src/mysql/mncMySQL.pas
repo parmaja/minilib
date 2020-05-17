@@ -17,7 +17,7 @@ interface
 
 uses
   Classes, SysUtils, Variants,
-  {$ifdef FPC} ctypes, {$endif}
+  ctypes,
   mncCommons, mncMySQLHeader,
   mncConnections, mncSQL;
 

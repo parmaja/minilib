@@ -19,7 +19,7 @@ interface
 
 uses
    SysUtils,
-   {$ifdef FPC} ctypes, {$endif}
+   cTypes,
    mnLibraries;
 
 const
@@ -50,26 +50,10 @@ const
   {$DEFINE mysql56}
 {$ENDIF mysql57}
 
-{$IFDEF mysql56}
-  {$DEFINE mysql55}
-{$ENDIF mysql56}
-
-{$IFDEF mysql55}
-  {$DEFINE mysql51}
-{$ENDIF mysql55}
-
-{$IFDEF mysql51}
-  {$DEFINE mysql50}
-{$ENDIF mysql51}
-
-{$IFDEF mysql50}
-  {$DEFINE mysql41}
-{$ENDIF mysql50}
-
-{$PACKRECORDS C}
+{.$PACKRECORDS C}
 
 type
-  {
+{
   cchar = shortint;
   pcchar = ^cchar;
   cuchar = byte;
@@ -83,8 +67,7 @@ type
   cuint16 = word;
   cdouble = double;
   cuint64 = qword;
-  }
-
+}
   my_bool = cchar;
   Pmy_bool  = ^my_bool;
   ppcchar = ^pcchar;
@@ -320,7 +303,7 @@ const
 
 type
    Pst_net = ^st_net;
-   st_net = packed record
+   st_net = record
         vio : PVio;
         buff : pcuchar;
         buff_end : pcuchar;
@@ -874,7 +857,7 @@ type
    Pst_mysql_methods = ^st_mysql_methods;
 
    Pst_mysql = ^st_mysql;
-   st_mysql = packed record
+   st_mysql = record
         net : TNET;                   // Communication parameters
         connector_fd : gptr;         // ConnectorFd for SSL
         host : PAnsiChar;
@@ -1296,10 +1279,14 @@ function mysql_reload(mysql : PMySQL) : cint;
 function simple_command(mysql,command,arg,length,skip_check : cint) : cint;
 
 type
+
+  { TmncMySQLLib }
+
   TmncMySQLLib = class(TmnLibrary)
   protected
     procedure AssignLibrary; override;
   public
+    destructor Destroy; override;
   end;
 
 var
@@ -1410,7 +1397,15 @@ begin
     mysql_real_escape_string_quote := GetAddress('mysql_real_escape_string_quote');
     mysql_reset_connection := GetAddress('mysql_reset_connection', true);
     {$endif}
-    mysql_library_init(-1, nil, nil);
+    if mysql_library_init(-1, nil, nil) <> 0 then
+      raise Exception.Create('mysql_library_init failed');
+end;
+
+destructor TmncMySQLLib.Destroy;
+begin
+  if IsLoaded then
+    mysql_library_end();
+  inherited Destroy;
 end;
 
 function net_new_transaction(net : st_net) : st_net;
