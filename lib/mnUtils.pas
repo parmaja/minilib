@@ -23,17 +23,16 @@ uses
   Classes, SysUtils, StrUtils, DateUtils, Types;
 
 const
+  sUTF8BOM: array[1..3] of Char = (#$EF, #$BB, #$BF);
   {$ifdef FPC}
   {$else}
   JulianEpoch = TDateTime(-2415018.5);  //check EpochAsJulianDate
   {$endif}
 
-  sUTF8BOM: array[1..3] of Char = (#$EF, #$BB, #$BF);
-
+{$if defined(fpc) and (fpc_fullversion<30000)} //temporary until fpc3 released
 type
-  {$ifdef FPC}
   PUTF8Char = PAnsiChar;
-  {$endif}
+{$endif}
 
 procedure Nothing;
 {
@@ -1091,6 +1090,9 @@ function StringOf(const Value: array of Byte): string;
 var
   Len:Integer;
 begin
+  {$ifdef FPC}
+  Result := '';
+  {$endif}
   Len:=Length(Value) div SizeOf(Char);
   SetLength(Result, Len);
   if Len > 0 then
@@ -1101,6 +1103,9 @@ function StringOf(const Value: TBytes): string;
 var
   Len:Integer;
 begin
+  {$ifdef FPC}
+  Result := '';
+  {$endif}
   Len:=Length(Value) div SizeOf(Char);
   SetLength(Result, Len);
   if Len > 0 then
