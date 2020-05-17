@@ -834,12 +834,12 @@ begin
     Result := E_NOINTERFACE;
 end;
 
-function TmncConnection._AddRef: longint; stdcall;
+function TmncConnection._AddRef: longint;
 begin
   Result := 0;
 end;
 
-function TmncConnection._Release: longint; stdcall;
+function TmncConnection._Release: longint;
 begin
   Result := 0;
 end;

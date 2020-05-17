@@ -32,27 +32,15 @@ unit mncSQLiteHeader;
 interface
 
 uses
-{$ifdef FPC}
-  dynlibs,
-{$else }
-  Windows,
-{$endif}
+  Classes,
+  mnLibraries,
   SysUtils;
 
 {$ifdef FPC}
 {$PACKRECORDS C}
-{$else DELPHI}
-type
-  TLibHandle = System.THandle;
 {$endif}
 
 const
-{$IFDEF WINDOWS}
-  Sqlite3Lib = 'sqlite3.dll';
-{$ELSE}
-  Sqlite3Lib = 'libsqlite3.' + sharedsuffix;
-{$ENDIF}
-
   SQLITE_INTEGER = 1;
   SQLITE_FLOAT = 2;
 { #define SQLITE_TEXT  3  // See below  }
@@ -380,193 +368,140 @@ var
 //  sqlite3_expired : function (_para1:Psqlite3_stmt):longint;cdecl;
 //function sqlite3_global_recover:longint;cdecl;
 
-function TryInitializeSqlite(const LibraryName: ansistring): Integer;
-function InitializeSqlite(LibraryName: ansistring = ''): Integer;
-function IsInitializeSqlite: Boolean;
-procedure ReleaseSQLite;
+type
+
+  { TmncSQLiteLib }
+
+  TmncSQLiteLib = class(TmnLibrary)
+  protected
+    procedure AssignLibrary; override;
+  end;
 
 var
-  SQLiteLibraryHandle: TLibHandle;
-  DefaultLibrary: string = Sqlite3Lib;
+  SQLiteLib: TmncSQLiteLib = nil;
 
 implementation
 
-resourcestring
-  SErrLoadFailed = 'Can not load SQLite client library "%s". Check your installation.';
-  SErrAlreadyLoaded = 'SQLIte interface already initialized from library %s.';
+{ TmncSQLiteLib }
 
-var
-  RefCount: integer = 0;
-  LoadedLibrary: string;
-
-{$ifdef FPC}
-{$else}
-function LoadLibrary(LibraryName: string):TLibHandle;
+procedure TmncSQLiteLib.AssignLibrary;
 begin
-  Result := Windows.LoadLibrary(PChar(LibraryName));
-end;
-{$endif}
-procedure LoadAddresses(LibHandle: TLibHandle);
-begin
-  @sqlite3_close := GetProcAddress(LibHandle, 'sqlite3_close');
-  @sqlite3_exec := GetProcAddress(LibHandle, 'sqlite3_exec');
-  @sqlite3_last_insert_rowid := GetProcAddress(LibHandle, 'sqlite3_last_insert_rowid');
-  @sqlite3_changes := GetProcAddress(LibHandle, 'sqlite3_changes');
-  @sqlite3_total_changes := GetProcAddress(LibHandle, 'sqlite3_total_changes');
-  @sqlite3_interrupt := GetProcAddress(LibHandle, 'sqlite3_interrupt');
-  @sqlite3_complete := GetProcAddress(LibHandle, 'sqlite3_complete');
-  @sqlite3_complete16 := GetProcAddress(LibHandle, 'sqlite3_complete16');
-  @sqlite3_busy_handler := GetProcAddress(LibHandle, 'sqlite3_busy_handler');
-  @sqlite3_busy_timeout := GetProcAddress(LibHandle, 'sqlite3_busy_timeout');
-  @sqlite3_get_table := GetProcAddress(LibHandle, 'sqlite3_get_table');
-  @sqlite3_free_table := GetProcAddress(LibHandle, 'sqlite3_free_table');
+  @sqlite3_close := GetProcAddress(Handle, 'sqlite3_close');
+  @sqlite3_exec := GetProcAddress(Handle, 'sqlite3_exec');
+  @sqlite3_last_insert_rowid := GetProcAddress(Handle, 'sqlite3_last_insert_rowid');
+  @sqlite3_changes := GetProcAddress(Handle, 'sqlite3_changes');
+  @sqlite3_total_changes := GetProcAddress(Handle, 'sqlite3_total_changes');
+  @sqlite3_interrupt := GetProcAddress(Handle, 'sqlite3_interrupt');
+  @sqlite3_complete := GetProcAddress(Handle, 'sqlite3_complete');
+  @sqlite3_complete16 := GetProcAddress(Handle, 'sqlite3_complete16');
+  @sqlite3_busy_handler := GetProcAddress(Handle, 'sqlite3_busy_handler');
+  @sqlite3_busy_timeout := GetProcAddress(Handle, 'sqlite3_busy_timeout');
+  @sqlite3_get_table := GetProcAddress(Handle, 'sqlite3_get_table');
+  @sqlite3_free_table := GetProcAddress(Handle, 'sqlite3_free_table');
 // Todo: see how translate sqlite3_mprintf, sqlite3_vmprintf, sqlite3_snprintf
-//   @sqlite3_mprintf := GetProcAddress(LibHandle,'sqlite3_mprintf');
-  @sqlite3_mprintf := GetProcAddress(LibHandle, 'sqlite3_mprintf');
-//  @(sqlite3_vmprintf := GetProcAddress(LibHandle,'sqlite3_vmprintf');
-  @sqlite3_free := GetProcAddress(LibHandle, 'sqlite3_free');
-//  @(sqlite3_snprintf := GetProcAddress(LibHandle,'sqlite3_snprintf');
-  @sqlite3_snprintf := GetProcAddress(LibHandle, 'sqlite3_snprintf');
-  @sqlite3_set_authorizer := GetProcAddress(LibHandle, 'sqlite3_set_authorizer');
-  @sqlite3_trace := GetProcAddress(LibHandle, 'sqlite3_trace');
-  @sqlite3_progress_handler := GetProcAddress(LibHandle, 'sqlite3_progress_handler');
-  @sqlite3_commit_hook := GetProcAddress(LibHandle, 'sqlite3_commit_hook');
-  @sqlite3_open := GetProcAddress(LibHandle, 'sqlite3_open');
-  @sqlite3_open_v2 := GetProcAddress(LibHandle,'sqlite3_open_v2');
-  @sqlite3_open16 := GetProcAddress(LibHandle, 'sqlite3_open16');
-  @sqlite3_errcode := GetProcAddress(LibHandle, 'sqlite3_errcode');
-  @sqlite3_errmsg := GetProcAddress(LibHandle, 'sqlite3_errmsg');
-  @sqlite3_errmsg16 := GetProcAddress(LibHandle, 'sqlite3_errmsg16');
-  @sqlite3_prepare := GetProcAddress(LibHandle, 'sqlite3_prepare');
-  @sqlite3_prepare16 := GetProcAddress(LibHandle, 'sqlite3_prepare16');
-  @sqlite3_bind_blob := GetProcAddress(LibHandle, 'sqlite3_bind_blob');
-  @sqlite3_bind_double := GetProcAddress(LibHandle, 'sqlite3_bind_double');
-  @sqlite3_bind_int := GetProcAddress(LibHandle, 'sqlite3_bind_int');
-  @sqlite3_bind_int64 := GetProcAddress(LibHandle, 'sqlite3_bind_int64');
-  @sqlite3_bind_null := GetProcAddress(LibHandle, 'sqlite3_bind_null');
-  @sqlite3_bind_text := GetProcAddress(LibHandle, 'sqlite3_bind_text');
-  @sqlite3_bind_text16 := GetProcAddress(LibHandle, 'sqlite3_bind_text16');
-//  pointer(sqlite3_bind_value) := GetProcAddress(LibHandle,'sqlite3_bind_value');
+//   @sqlite3_mprintf := GetProcAddress(Handle,'sqlite3_mprintf');
+  @sqlite3_mprintf := GetProcAddress(Handle, 'sqlite3_mprintf');
+//  @(sqlite3_vmprintf := GetProcAddress(Handle,'sqlite3_vmprintf');
+  @sqlite3_free := GetProcAddress(Handle, 'sqlite3_free');
+//  @(sqlite3_snprintf := GetProcAddress(Handle,'sqlite3_snprintf');
+  @sqlite3_snprintf := GetProcAddress(Handle, 'sqlite3_snprintf');
+  @sqlite3_set_authorizer := GetProcAddress(Handle, 'sqlite3_set_authorizer');
+  @sqlite3_trace := GetProcAddress(Handle, 'sqlite3_trace');
+  @sqlite3_progress_handler := GetProcAddress(Handle, 'sqlite3_progress_handler');
+  @sqlite3_commit_hook := GetProcAddress(Handle, 'sqlite3_commit_hook');
+  @sqlite3_open := GetProcAddress(Handle, 'sqlite3_open');
+  @sqlite3_open_v2 := GetProcAddress(Handle,'sqlite3_open_v2');
+  @sqlite3_open16 := GetProcAddress(Handle, 'sqlite3_open16');
+  @sqlite3_errcode := GetProcAddress(Handle, 'sqlite3_errcode');
+  @sqlite3_errmsg := GetProcAddress(Handle, 'sqlite3_errmsg');
+  @sqlite3_errmsg16 := GetProcAddress(Handle, 'sqlite3_errmsg16');
+  @sqlite3_prepare := GetProcAddress(Handle, 'sqlite3_prepare');
+  @sqlite3_prepare16 := GetProcAddress(Handle, 'sqlite3_prepare16');
+  @sqlite3_bind_blob := GetProcAddress(Handle, 'sqlite3_bind_blob');
+  @sqlite3_bind_double := GetProcAddress(Handle, 'sqlite3_bind_double');
+  @sqlite3_bind_int := GetProcAddress(Handle, 'sqlite3_bind_int');
+  @sqlite3_bind_int64 := GetProcAddress(Handle, 'sqlite3_bind_int64');
+  @sqlite3_bind_null := GetProcAddress(Handle, 'sqlite3_bind_null');
+  @sqlite3_bind_text := GetProcAddress(Handle, 'sqlite3_bind_text');
+  @sqlite3_bind_text16 := GetProcAddress(Handle, 'sqlite3_bind_text16');
+//  pointer(sqlite3_bind_value) := GetProcAddress(Handle,'sqlite3_bind_value');
 //These overloaded functions were introduced to allow the use of SQLITE_STATIC and SQLITE_TRANSIENT
 //It's the c world man ;-)
-  @sqlite3_bind_blob1 := GetProcAddress(LibHandle, 'sqlite3_bind_blob');
-  @sqlite3_bind_text1 := GetProcAddress(LibHandle, 'sqlite3_bind_text');
-  @sqlite3_bind_text161 := GetProcAddress(LibHandle, 'sqlite3_bind_text16');
+  @sqlite3_bind_blob1 := GetProcAddress(Handle, 'sqlite3_bind_blob');
+  @sqlite3_bind_text1 := GetProcAddress(Handle, 'sqlite3_bind_text');
+  @sqlite3_bind_text161 := GetProcAddress(Handle, 'sqlite3_bind_text16');
 
-  @sqlite3_bind_parameter_count := GetProcAddress(LibHandle, 'sqlite3_bind_parameter_count');
-  @sqlite3_bind_parameter_name := GetProcAddress(LibHandle, 'sqlite3_bind_parameter_name');
-  @sqlite3_bind_parameter_index := GetProcAddress(LibHandle, 'sqlite3_bind_parameter_index');
-//  @(sqlite3_clear_bindings) := GetProcAddress(LibHandle,'sqlite3_clear_bindings');
-  @sqlite3_column_count := GetProcAddress(LibHandle, 'sqlite3_column_count');
-  @sqlite3_column_name := GetProcAddress(LibHandle, 'sqlite3_column_name');
-  @sqlite3_column_name16 := GetProcAddress(LibHandle, 'sqlite3_column_name16');
-  @sqlite3_column_decltype := GetProcAddress(LibHandle, 'sqlite3_column_decltype');
-  @sqlite3_column_decltype16 := GetProcAddress(LibHandle, 'sqlite3_column_decltype16');
-  @sqlite3_step := GetProcAddress(LibHandle, 'sqlite3_step');
-  @sqlite3_data_count := GetProcAddress(LibHandle, 'sqlite3_data_count');
-  @sqlite3_column_blob := GetProcAddress(LibHandle, 'sqlite3_column_blob');
-  @sqlite3_column_bytes := GetProcAddress(LibHandle, 'sqlite3_column_bytes');
-  @sqlite3_column_bytes16 := GetProcAddress(LibHandle, 'sqlite3_column_bytes16');
-  @sqlite3_column_double := GetProcAddress(LibHandle, 'sqlite3_column_double');
-  @sqlite3_column_int := GetProcAddress(LibHandle, 'sqlite3_column_int');
-  @sqlite3_column_int64 := GetProcAddress(LibHandle, 'sqlite3_column_int64');
-  @sqlite3_column_text := GetProcAddress(LibHandle, 'sqlite3_column_text');
-  @sqlite3_column_text16 := GetProcAddress(LibHandle, 'sqlite3_column_text16');
-  @sqlite3_column_type := GetProcAddress(LibHandle, 'sqlite3_column_type');
-  @sqlite3_finalize := GetProcAddress(LibHandle, 'sqlite3_finalize');
-  @sqlite3_reset := GetProcAddress(LibHandle, 'sqlite3_reset');
-  @sqlite3_create_function := GetProcAddress(LibHandle, 'sqlite3_create_function');
-  @sqlite3_create_function16 := GetProcAddress(LibHandle, 'sqlite3_create_function16');
-  @sqlite3_aggregate_count := GetProcAddress(LibHandle, 'sqlite3_aggregate_count');
-  @sqlite3_value_blob := GetProcAddress(LibHandle, 'sqlite3_value_blob');
-  @sqlite3_value_bytes := GetProcAddress(LibHandle, 'sqlite3_value_bytes');
-  @sqlite3_value_bytes16 := GetProcAddress(LibHandle, 'sqlite3_value_bytes16');
-  @sqlite3_value_double := GetProcAddress(LibHandle, 'sqlite3_value_double');
-  @sqlite3_value_int := GetProcAddress(LibHandle, 'sqlite3_value_int');
-  @sqlite3_value_int64 := GetProcAddress(LibHandle, 'sqlite3_value_int64');
-  @sqlite3_value_text := GetProcAddress(LibHandle, 'sqlite3_value_text');
-  @sqlite3_value_text16 := GetProcAddress(LibHandle, 'sqlite3_value_text16');
-  @sqlite3_value_text16le := GetProcAddress(LibHandle, 'sqlite3_value_text16le');
-  @sqlite3_value_text16be := GetProcAddress(LibHandle, 'sqlite3_value_text16be');
-  @sqlite3_value_type := GetProcAddress(LibHandle, 'sqlite3_value_type');
-  @sqlite3_aggregate_context := GetProcAddress(LibHandle, 'sqlite3_aggregate_context');
-  @sqlite3_user_data := GetProcAddress(LibHandle, 'sqlite3_user_data');
-  @sqlite3_get_auxdata := GetProcAddress(LibHandle, 'sqlite3_get_auxdata');
-  @sqlite3_set_auxdata := GetProcAddress(LibHandle, 'sqlite3_set_auxdata');
-  @sqlite3_result_blob := GetProcAddress(LibHandle, 'sqlite3_result_blob');
-  @sqlite3_result_double := GetProcAddress(LibHandle, 'sqlite3_result_double');
-  @sqlite3_result_error := GetProcAddress(LibHandle, 'sqlite3_result_error');
-  @sqlite3_result_error16 := GetProcAddress(LibHandle, 'sqlite3_result_error16');
-  @sqlite3_result_int := GetProcAddress(LibHandle, 'sqlite3_result_int');
-  @sqlite3_result_int64 := GetProcAddress(LibHandle, 'sqlite3_result_int64');
-  @sqlite3_result_null := GetProcAddress(LibHandle, 'sqlite3_result_null');
-  @sqlite3_result_text := GetProcAddress(LibHandle, 'sqlite3_result_text');
-  @sqlite3_result_text16 := GetProcAddress(LibHandle, 'sqlite3_result_text16');
-  @sqlite3_result_text16le := GetProcAddress(LibHandle, 'sqlite3_result_text16le');
-  @sqlite3_result_text16be := GetProcAddress(LibHandle, 'sqlite3_result_text16be');
-  @sqlite3_result_value := GetProcAddress(LibHandle, 'sqlite3_result_value');
-  @sqlite3_create_collation := GetProcAddress(LibHandle, 'sqlite3_create_collation');
-  @sqlite3_create_collation16 := GetProcAddress(LibHandle, 'sqlite3_create_collation16');
-  @sqlite3_collation_needed := GetProcAddress(LibHandle, 'sqlite3_collation_needed');
-  @sqlite3_collation_needed16 := GetProcAddress(LibHandle, 'sqlite3_collation_needed16');
-  @sqlite3_libversion := GetProcAddress(LibHandle, 'sqlite3_libversion');
+  @sqlite3_bind_parameter_count := GetProcAddress(Handle, 'sqlite3_bind_parameter_count');
+  @sqlite3_bind_parameter_name := GetProcAddress(Handle, 'sqlite3_bind_parameter_name');
+  @sqlite3_bind_parameter_index := GetProcAddress(Handle, 'sqlite3_bind_parameter_index');
+//  @(sqlite3_clear_bindings) := GetProcAddress(Handle,'sqlite3_clear_bindings');
+  @sqlite3_column_count := GetProcAddress(Handle, 'sqlite3_column_count');
+  @sqlite3_column_name := GetProcAddress(Handle, 'sqlite3_column_name');
+  @sqlite3_column_name16 := GetProcAddress(Handle, 'sqlite3_column_name16');
+  @sqlite3_column_decltype := GetProcAddress(Handle, 'sqlite3_column_decltype');
+  @sqlite3_column_decltype16 := GetProcAddress(Handle, 'sqlite3_column_decltype16');
+  @sqlite3_step := GetProcAddress(Handle, 'sqlite3_step');
+  @sqlite3_data_count := GetProcAddress(Handle, 'sqlite3_data_count');
+  @sqlite3_column_blob := GetProcAddress(Handle, 'sqlite3_column_blob');
+  @sqlite3_column_bytes := GetProcAddress(Handle, 'sqlite3_column_bytes');
+  @sqlite3_column_bytes16 := GetProcAddress(Handle, 'sqlite3_column_bytes16');
+  @sqlite3_column_double := GetProcAddress(Handle, 'sqlite3_column_double');
+  @sqlite3_column_int := GetProcAddress(Handle, 'sqlite3_column_int');
+  @sqlite3_column_int64 := GetProcAddress(Handle, 'sqlite3_column_int64');
+  @sqlite3_column_text := GetProcAddress(Handle, 'sqlite3_column_text');
+  @sqlite3_column_text16 := GetProcAddress(Handle, 'sqlite3_column_text16');
+  @sqlite3_column_type := GetProcAddress(Handle, 'sqlite3_column_type');
+  @sqlite3_finalize := GetProcAddress(Handle, 'sqlite3_finalize');
+  @sqlite3_reset := GetProcAddress(Handle, 'sqlite3_reset');
+  @sqlite3_create_function := GetProcAddress(Handle, 'sqlite3_create_function');
+  @sqlite3_create_function16 := GetProcAddress(Handle, 'sqlite3_create_function16');
+  @sqlite3_aggregate_count := GetProcAddress(Handle, 'sqlite3_aggregate_count');
+  @sqlite3_value_blob := GetProcAddress(Handle, 'sqlite3_value_blob');
+  @sqlite3_value_bytes := GetProcAddress(Handle, 'sqlite3_value_bytes');
+  @sqlite3_value_bytes16 := GetProcAddress(Handle, 'sqlite3_value_bytes16');
+  @sqlite3_value_double := GetProcAddress(Handle, 'sqlite3_value_double');
+  @sqlite3_value_int := GetProcAddress(Handle, 'sqlite3_value_int');
+  @sqlite3_value_int64 := GetProcAddress(Handle, 'sqlite3_value_int64');
+  @sqlite3_value_text := GetProcAddress(Handle, 'sqlite3_value_text');
+  @sqlite3_value_text16 := GetProcAddress(Handle, 'sqlite3_value_text16');
+  @sqlite3_value_text16le := GetProcAddress(Handle, 'sqlite3_value_text16le');
+  @sqlite3_value_text16be := GetProcAddress(Handle, 'sqlite3_value_text16be');
+  @sqlite3_value_type := GetProcAddress(Handle, 'sqlite3_value_type');
+  @sqlite3_aggregate_context := GetProcAddress(Handle, 'sqlite3_aggregate_context');
+  @sqlite3_user_data := GetProcAddress(Handle, 'sqlite3_user_data');
+  @sqlite3_get_auxdata := GetProcAddress(Handle, 'sqlite3_get_auxdata');
+  @sqlite3_set_auxdata := GetProcAddress(Handle, 'sqlite3_set_auxdata');
+  @sqlite3_result_blob := GetProcAddress(Handle, 'sqlite3_result_blob');
+  @sqlite3_result_double := GetProcAddress(Handle, 'sqlite3_result_double');
+  @sqlite3_result_error := GetProcAddress(Handle, 'sqlite3_result_error');
+  @sqlite3_result_error16 := GetProcAddress(Handle, 'sqlite3_result_error16');
+  @sqlite3_result_int := GetProcAddress(Handle, 'sqlite3_result_int');
+  @sqlite3_result_int64 := GetProcAddress(Handle, 'sqlite3_result_int64');
+  @sqlite3_result_null := GetProcAddress(Handle, 'sqlite3_result_null');
+  @sqlite3_result_text := GetProcAddress(Handle, 'sqlite3_result_text');
+  @sqlite3_result_text16 := GetProcAddress(Handle, 'sqlite3_result_text16');
+  @sqlite3_result_text16le := GetProcAddress(Handle, 'sqlite3_result_text16le');
+  @sqlite3_result_text16be := GetProcAddress(Handle, 'sqlite3_result_text16be');
+  @sqlite3_result_value := GetProcAddress(Handle, 'sqlite3_result_value');
+  @sqlite3_create_collation := GetProcAddress(Handle, 'sqlite3_create_collation');
+  @sqlite3_create_collation16 := GetProcAddress(Handle, 'sqlite3_create_collation16');
+  @sqlite3_collation_needed := GetProcAddress(Handle, 'sqlite3_collation_needed');
+  @sqlite3_collation_needed16 := GetProcAddress(Handle, 'sqlite3_collation_needed16');
+  @sqlite3_libversion := GetProcAddress(Handle, 'sqlite3_libversion');
 //Alias for allowing better code portability (win32 is not working with external variables)
-  @sqlite3_version := GetProcAddress(LibHandle, 'sqlite3_libversion');
+  @sqlite3_version := GetProcAddress(Handle, 'sqlite3_libversion');
 
 // Not published functions
-  @sqlite3_libversion_number := GetProcAddress(LibHandle, 'sqlite3_libversion_number');
-//  @(sqlite3_key) := GetProcAddress(LibHandle,'sqlite3_key');
-//  @(sqlite3_rekey) := GetProcAddress(LibHandle,'sqlite3_rekey');
-//  @(sqlite3_sleep) := GetProcAddress(LibHandle,'sqlite3_sleep');
-//  @(sqlite3_expired) := GetProcAddress(LibHandle,'sqlite3_expired');
+  @sqlite3_libversion_number := GetProcAddress(Handle, 'sqlite3_libversion_number');
+//  @(sqlite3_key) := GetProcAddress(Handle,'sqlite3_key');
+//  @(sqlite3_rekey) := GetProcAddress(Handle,'sqlite3_rekey');
+//  @(sqlite3_sleep) := GetProcAddress(Handle,'sqlite3_sleep');
+//  @(sqlite3_expired) := GetProcAddress(Handle,'sqlite3_expired');
 //  function sqlite3_global_recover:longint;cdecl;
 end;
 
-function TryInitializeSqlite(const LibraryName: ansistring): Integer;
-begin
-  Result := InterlockedIncrement(RefCount);
-  if Result  = 1 then
-  begin
-    SQLiteLibraryHandle := LoadLibrary(LibraryName);
-    if (SQLiteLibraryHandle = 0) then
-    begin
-      RefCount := 0;
-      Result := -1;
-      exit;
-    end;
-    LoadedLibrary := LibraryName;
-    LoadAddresses(SQLiteLibraryHandle);
-  end;
-end;
-
-function IsInitializeSqlite: Boolean;
-begin
-  Result := SQLiteLibraryHandle <> 0;
-end;
-
-function InitializeSQLite(LibraryName: ansistring) :integer;
-begin
-  if LibraryName = '' then
-    LibraryName := Sqlite3Lib;
-
-  if (LoadedLibrary <> '') and (LoadedLibrary <> LibraryName) then
-    raise EInoutError.CreateFmt(SErrAlreadyLoaded,[LoadedLibrary]);
-
-  Result := TryInitializeSQLite(LibraryName);
-  if Result = -1 then
-    raise EInOutError.CreateFmt(SErrLoadFailed,[LibraryName]);
-end;
-
-procedure ReleaseSQLite;
-begin
-  if InterlockedDecrement(RefCount) <= 0 then
-  begin
-    if SQLiteLibraryHandle <> 0 then
-      FreeLibrary(SQLiteLibraryHandle);
-    SQLiteLibraryHandle := 0;
-    LoadedLibrary := '';
-    RefCount := 0;
-  end;
-end;
-
+initialization
+  SQLiteLib := TmncSQLiteLib.Create('sqlite3');
+finalization
+  FreeAndNil(SQLiteLib);
 end.

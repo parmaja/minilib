@@ -384,7 +384,7 @@ begin
     if CharacterSet <> '' then
       aParams.Add(Format('DEFAULT CHARACTER SET %s', [UpperCase(CharacterSet)]));
 
-    ConnectString := 'CREATE DATABASE ''' + FBComposeConnectionString(vName, Host, Port, FBClient.IsEmbed) +  ''' ' + aParams.Text;
+    ConnectString := 'CREATE DATABASE ''' + FBComposeConnectionString(vName, Host, Port) +  ''' ' + aParams.Text;
   finally
     aParams.Free;
   end;
@@ -392,8 +392,8 @@ begin
   try
     tr_handle := nil;
     aHandle := nil;
-    CheckErr(FBClient.isc_dsql_execute_immediate(@StatusVector, @aHandle, @tr_handle, Length(ConnectString), PByte(ConnectString), FB_DIALECT, nil), StatusVector, True);
-    CheckErr(FBClient.isc_detach_database(@StatusVector, @aHandle), StatusVector, False);
+    CheckErr(FBLib.isc_dsql_execute_immediate(@StatusVector, @aHandle, @tr_handle, Length(ConnectString), PByte(ConnectString), FB_DIALECT, nil), StatusVector, True);
+    CheckErr(FBLib.isc_detach_database(@StatusVector, @aHandle), StatusVector, False);
   finally
   end;
 end;
@@ -419,7 +419,7 @@ begin
     if CharacterSet <> '' then
       aParams.Add(Format('DEFAULT CHARACTER SET %s', [UpperCase(CharacterSet)]));
 
-    ConnectString := 'DROP DATABASE ''' + FBComposeConnectionString(vName, Host, Port, FBClient.IsEmbed) +  ''' ' + aParams.Text;
+    ConnectString := 'DROP DATABASE ''' + FBComposeConnectionString(vName, Host, Port) +  ''' ' + aParams.Text;
   finally
     aParams.Free;
   end;
@@ -427,7 +427,7 @@ begin
   try
     tr_handle := nil;
     aHandle := nil;
-    CheckErr(FBClient.isc_dsql_execute_immediate(@StatusVector, @aHandle, @tr_handle, Length(ConnectString), PByte(ConnectString), FB_DIALECT, nil), StatusVector, True);
+    CheckErr(FBLib.isc_dsql_execute_immediate(@StatusVector, @aHandle, @tr_handle, Length(ConnectString), PByte(ConnectString), FB_DIALECT, nil), StatusVector, True);
   finally
   end;
 end;
@@ -458,7 +458,7 @@ var
   StatusVector:TStatusVector;
   aStatus: ISC_STATUS;
 begin
-  aStatus := FBClient.isc_database_info(@StatusVector, @FHandle, 1, @vCommand, FBLocalBufferLength, @Result[0]);
+  aStatus := FBLib.isc_database_info(@StatusVector, @FHandle, 1, @vCommand, FBLocalBufferLength, @Result[0]);
   CheckErr(aStatus, StatusVector, True);
 end;
 
@@ -481,8 +481,8 @@ var
   aLen: Integer;
 begin
   aBuf := ExecDatabaseInfo(isc_info_db_read_only);
-  aLen := FBClient.isc_vax_integer(@aBuf[1], 2);
-  Result := FBClient.isc_vax_integer(@aBuf[3], aLen)<>0;
+  aLen := FBLib.isc_vax_integer(@aBuf[1], 2);
+  Result := FBLib.isc_vax_integer(@aBuf[3], aLen)<>0;
 end;
 
 function TmncFBConnection.GetBaseLevel: Long;
@@ -490,7 +490,7 @@ var
   aBuf: TFBLocalBufferArray;
 begin
   aBuf := ExecDatabaseInfo(isc_info_base_level);
-  Result := FBClient.isc_vax_integer(@aBuf[4], 1);
+  Result := FBLib.isc_vax_integer(@aBuf[4], 1);
 end;
 
 function TmncFBConnection.GetDBSQLDialect: Integer;
@@ -503,8 +503,8 @@ begin
     Result := 1
   else
   begin
-    aLen := FBClient.isc_vax_integer(@aBuf[1], 2);
-    Result := FBClient.isc_vax_integer(@aBuf[3], aLen);
+    aLen := FBLib.isc_vax_integer(@aBuf[1], 2);
+    Result := FBLib.isc_vax_integer(@aBuf[3], aLen);
   end;
 end;
 
@@ -549,8 +549,8 @@ begin
 
   aDPB := PByte(@aDPBs[0]);
   try
-    aDatabaseName := FBComposeConnectionString(Resource, Host, Port, FBClient.IsEmbed);
-    if CheckErr(FBClient.isc_attach_database(@StatusVector, Length(aDatabaseName), PByte(aDatabaseName), @FHandle, aDPBLength, aDPB), StatusVector, False) > 0 then
+    aDatabaseName := FBComposeConnectionString(Resource, Host, Port);
+    if CheckErr(FBLib.isc_attach_database(@StatusVector, Length(aDatabaseName), PByte(aDatabaseName), @FHandle, aDPBLength, aDPB), StatusVector, False) > 0 then
     begin
       FHandle := nil;
       FBRaiseError(StatusVector);
@@ -574,7 +574,7 @@ procedure TmncFBConnection.DoDisconnect;
 var
   StatusVector: TStatusVector;
 begin
-  if (eonDisconnect in ErrorHandles) and (CheckErr(FBClient.isc_detach_database(@StatusVector, @FHandle), StatusVector, False) > 0) then
+  if (eonDisconnect in ErrorHandles) and (CheckErr(FBLib.isc_detach_database(@StatusVector, @FHandle), StatusVector, False) > 0) then
     FBRaiseError(StatusVector)
   else
     FHandle := nil;
@@ -599,7 +599,7 @@ var
   s: UTF8String;
 begin
   s := UTF8Encode(vSQL);
-  CheckErr(FBClient.isc_dsql_execute_immediate(@StatusVector, @Connection.Handle, @FHandle, Length(s), PByte(s), FB_DIALECT, nil), StatusVector, True);
+  CheckErr(FBLib.isc_dsql_execute_immediate(@StatusVector, @Connection.Handle, @FHandle, Length(s), PByte(s), FB_DIALECT, nil), StatusVector, True);
 end;
 
 procedure TmncFBSession.DoStart;
@@ -626,7 +626,7 @@ begin
     pteb^[0].db_handle := @(Connection.Handle);
     pteb^[0].tpb_length := Length(FTPB);
     pteb^[0].tpb_address := aTPB;
-    if CheckErr(FBClient.isc_start_multiple(@StatusVector, @FHandle, 1, PISC_TEB(pteb)), StatusVector, False) > 0 then
+    if CheckErr(FBLib.isc_start_multiple(@StatusVector, @FHandle, 1, PISC_TEB(pteb)), StatusVector, False) > 0 then
     begin
       FHandle := nil;
       FBRaiseError(StatusVector);
@@ -644,16 +644,16 @@ begin
     sdaCommit:
     begin
       if not Retaining then
-        CheckErr(FBClient.isc_commit_transaction(@StatusVector, @FHandle), StatusVector, True)
+        CheckErr(FBLib.isc_commit_transaction(@StatusVector, @FHandle), StatusVector, True)
       else
-        CheckErr(FBClient.isc_commit_retaining(@StatusVector, @FHandle), StatusVector, True);
+        CheckErr(FBLib.isc_commit_retaining(@StatusVector, @FHandle), StatusVector, True);
     end;
     sdaRollback:
     begin
       if not Retaining then
-        CheckErr(FBClient.isc_rollback_transaction(@StatusVector, @FHandle), StatusVector, True)
+        CheckErr(FBLib.isc_rollback_transaction(@StatusVector, @FHandle), StatusVector, True)
       else
-        CheckErr(FBClient.isc_rollback_retaining(@StatusVector, @FHandle), StatusVector, True);
+        CheckErr(FBLib.isc_rollback_retaining(@StatusVector, @FHandle), StatusVector, True);
     end;
   end;
 end;
@@ -667,7 +667,7 @@ begin
   tr_handle := nil;
   try
     s := UTF8Encode(vCommand);
-    CheckErr(FBClient.isc_dsql_execute_immediate(@StatusVector, @FHandle, @tr_handle, 0, PByte(s), FB_DIALECT, nil), StatusVector, True);
+    CheckErr(FBLib.isc_dsql_execute_immediate(@StatusVector, @FHandle, @tr_handle, 0, PByte(s), FB_DIALECT, nil), StatusVector, True);
   finally
   end;
 end;
@@ -1141,7 +1141,7 @@ begin
     begin
       //if Connection.Connected then
       begin
-        isc_res := CheckErr(FBClient.isc_dsql_free_statement(@StatusVector, @FHandle, DSQL_drop), StatusVector, False);
+        isc_res := CheckErr(FBLib.isc_dsql_free_statement(@StatusVector, @FHandle, DSQL_drop), StatusVector, False);
         if (StatusVector[0] = 1) and (isc_res > 0) and (isc_res <> isc_bad_stmt_handle) and (isc_res <> isc_lost_db_connection) then
           FBRaiseError(StatusVector);
       end;
@@ -1178,7 +1178,7 @@ begin
   else
   begin
     info_request := Char(isc_info_sql_records);
-    if FBClient.isc_dsql_sql_info(@StatusVector, @FHandle, 1, @info_request,
+    if FBLib.isc_dsql_sql_info(@StatusVector, @FHandle, 1, @info_request,
       SizeOf(result_buffer), @result_buffer[0]) > 0 then
       FBRaiseError(StatusVector);
     if (result_buffer[0] <> isc_info_sql_records) then
@@ -1209,9 +1209,9 @@ begin
     case FSQLType of
       SQLSelect:
       begin
-        CheckErr(FBClient.isc_dsql_execute2(@StatusVector,  @Transaction.Handle, @FHandle, FB_DIALECT, aData, nil), StatusVector, True);
+        CheckErr(FBLib.isc_dsql_execute2(@StatusVector,  @Transaction.Handle, @FHandle, FB_DIALECT, aData, nil), StatusVector, True);
         if FCursor <> '' then
-          CheckErr(FBClient.isc_dsql_set_cursor_name(@StatusVector, @FHandle, PByte(FCursor), 0), StatusVector, True);
+          CheckErr(FBLib.isc_dsql_set_cursor_name(@StatusVector, @FHandle, PByte(FCursor), 0), StatusVector, True);
         FActive := True;
         FBOF := False;
       end;
@@ -1219,30 +1219,30 @@ begin
       begin
         if Fields <> nil then
         begin
-          CheckErr(FBClient.isc_dsql_execute2(@StatusVector, @Transaction.Handle, @FHandle, FB_DIALECT, aData, Fields.SQLDA), StatusVector, True);
+          CheckErr(FBLib.isc_dsql_execute2(@StatusVector, @Transaction.Handle, @FHandle, FB_DIALECT, aData, Fields.SQLDA), StatusVector, True);
           FActive := True;
           FBOF := True;
         end
         else
         begin
-          //CheckErr(FBClient.isc_dsql_execute2(@StatusVector, @Transaction.Handle, @FHandle, FB_DIALECT, aData, aData), StatusVector, True);
-          CheckErr(FBClient.isc_dsql_execute2(@StatusVector, @Transaction.Handle, @FHandle, FB_DIALECT, aData, nil), StatusVector, True);
+          //CheckErr(FBLib.isc_dsql_execute2(@StatusVector, @Transaction.Handle, @FHandle, FB_DIALECT, aData, aData), StatusVector, True);
+          CheckErr(FBLib.isc_dsql_execute2(@StatusVector, @Transaction.Handle, @FHandle, FB_DIALECT, aData, nil), StatusVector, True);
           FEOF := True;
         end;
       end;
       SQLCommit:
       begin
-        CheckErr(FBClient.isc_dsql_execute(@StatusVector, @Transaction.Handle, @FHandle, FB_DIALECT, aData), StatusVector, True);
+        CheckErr(FBLib.isc_dsql_execute(@StatusVector, @Transaction.Handle, @FHandle, FB_DIALECT, aData), StatusVector, True);
         FEOF := True;
       end;
       SQLStartTransaction:
       begin
-        CheckErr(FBClient.isc_dsql_execute(@StatusVector, @Transaction.Handle, @FHandle, FB_DIALECT, aData), StatusVector, True);
+        CheckErr(FBLib.isc_dsql_execute(@StatusVector, @Transaction.Handle, @FHandle, FB_DIALECT, aData), StatusVector, True);
         FEOF := True;
       end;
       else
       begin
-        CheckErr(FBClient.isc_dsql_execute(@StatusVector, @Transaction.Handle, @FHandle, FB_DIALECT, aData), StatusVector, True);
+        CheckErr(FBLib.isc_dsql_execute(@StatusVector, @Transaction.Handle, @FHandle, FB_DIALECT, aData), StatusVector, True);
         FActive := True;
         FEOF := True;
       end;
@@ -1272,7 +1272,7 @@ begin
 
   if not FEOF  and (FSQLType <> SQLExecProcedure) then
   begin
-      fetch_res := CheckErr(FBClient.isc_dsql_fetch(@StatusVector, @FHandle, FB_DIALECT, (Fields as TmncFBFields).FSQLDA), StatusVector, False);
+      fetch_res := CheckErr(FBLib.isc_dsql_fetch(@StatusVector, @FHandle, FB_DIALECT, (Fields as TmncFBFields).FSQLDA), StatusVector, False);
 
       if (fetch_res = 100) or (CheckStatusVector(StatusVector, [isc_dsql_cursor_err])) then
       begin
@@ -1312,7 +1312,7 @@ begin
   try
     if (FHandle <> nil) and (SQLType in [SQLSelect, SQLSelectForUpdate, SQLExecProcedure]) {and FActive //zaher} then
     begin
-      isc_res := CheckErr(FBClient.isc_dsql_free_statement(@StatusVector, @FHandle, DSQL_close), StatusVector, False);
+      isc_res := CheckErr(FBLib.isc_dsql_free_statement(@StatusVector, @FHandle, DSQL_close), StatusVector, False);
       if (StatusVector[0] = 1) and (isc_res > 0) and
         not CheckStatusVector(StatusVector, [isc_bad_stmt_handle, isc_dsql_cursor_close_err]) then
         if isc_res = isc_lost_db_connection then
@@ -1409,11 +1409,11 @@ var
 begin
   aSQL := UTF8Encode(ProcessedSQL.SQL);
   try
-    CheckErr(FBClient.isc_dsql_alloc_statement2(@StatusVector, @Connection.Handle, @FHandle), StatusVector, True);
-    CheckErr(FBClient.isc_dsql_prepare(@StatusVector, @Transaction.Handle, @FHandle, 0, PByte(aSQL), FB_DIALECT, nil), StatusVector, True);
+    CheckErr(FBLib.isc_dsql_alloc_statement2(@StatusVector, @Connection.Handle, @FHandle), StatusVector, True);
+    CheckErr(FBLib.isc_dsql_prepare(@StatusVector, @Transaction.Handle, @FHandle, 0, PByte(aSQL), FB_DIALECT, nil), StatusVector, True);
     { type of the statement }
     type_item := isc_info_sql_stmt_type;
-    CheckErr(FBClient.isc_dsql_sql_info(@StatusVector, @FHandle, 1, @type_item, SizeOf(res_buffer), @res_buffer[0]), StatusVector, True);
+    CheckErr(FBLib.isc_dsql_sql_info(@StatusVector, @FHandle, 1, @type_item, SizeOf(res_buffer), @res_buffer[0]), StatusVector, True);
     if not GetInfoReqInteger(@res_buffer[0], isc_info_sql_stmt_type, sql_type) then
       FBRaiseError(fbceUnknownError, [nil]);
     FSQLType := TFBDSQLTypes(sql_type);
@@ -1431,7 +1431,7 @@ begin
       begin
         //Params is already created and have the items
         InitSQLDA(Binds.FSQLDA, Binds.Count, False); //Binds > Params
-        CheckErr(FBClient.isc_dsql_describe_bind(@StatusVector, @FHandle, FB_DIALECT, Binds.FSQLDA), StatusVector, True);
+        CheckErr(FBLib.isc_dsql_describe_bind(@StatusVector, @FHandle, FB_DIALECT, Binds.FSQLDA), StatusVector, True);
 
         p := @Binds.FSQLDA^.sqlvar[0];
         for i := 0 to Binds.Count - 1 do
@@ -1452,7 +1452,7 @@ begin
           aData := nil;
           InitSQLDA(aData, 0);
           try
-            CheckErr(FBClient.isc_dsql_describe(@StatusVector, @FHandle, FB_DIALECT, aData), StatusVector, True);
+            CheckErr(FBLib.isc_dsql_describe(@StatusVector, @FHandle, FB_DIALECT, aData), StatusVector, True);
             c := aData^.sqld;
           finally
             FreeSQLDA(aData);
@@ -1475,7 +1475,7 @@ begin
             InitSQLDA(Fields.FSQLDA, c);
             aData := Fields.FSQLDA;
 
-            CheckErr(FBClient.isc_dsql_describe(@StatusVector, @FHandle, FB_DIALECT, aData), StatusVector, True);
+            CheckErr(FBLib.isc_dsql_describe(@StatusVector, @FHandle, FB_DIALECT, aData), StatusVector, True);
             p := @aData^.sqlvar[0];
             for i := 0 to aData^.sqld - 1 do
             begin

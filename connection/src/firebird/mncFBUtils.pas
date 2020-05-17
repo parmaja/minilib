@@ -71,11 +71,6 @@ function GetInfoReqInteger(Buffer: PByte; Flag: Byte; out Value: Integer): Boole
 procedure SetFBDataBaseErrorMessages(Value: TFBDataBaseErrorMessages);
 function GetFBDataBaseErrorMessages: TFBDataBaseErrorMessages;
 
-function IsAliasName(FileName: string): Boolean;
-function GetAliasName(FileName: string): string;
-function GetAliasFile(AliasName: string): string;
-procedure SetAliasFile(AliasName, FileName: string);
-
 procedure FBDatabaseInfo(const UserName, Password, Role, CharacterSet: string; vParams: TStrings);
 procedure GenerateDPB(sl: TStrings; out DPB: AnsiString; var DPBLength: Short);
 procedure GenerateTPB(sl: TStrings; out TPB: AnsiString; var TPBLength: Short);
@@ -84,7 +79,7 @@ function GenerateDPBEx(vParams: TStrings): TBytes;
 function GenerateTPBEx(vParams: TStrings): TBytes;
 
 
-function FBComposeConnectionString(DatabaseName, Host, Port: string; IsEmbed: Boolean): string;
+function FBComposeConnectionString(DatabaseName, Host, Port: string): string;
 procedure FBDecomposeConnectionString(DatabaseName: string; var Host, FileName: string);
 
 implementation
@@ -328,21 +323,21 @@ begin
     Get a local copy of the FBDataBaseErrorMessages options.
     Get the SQL error code }
   FBDataBaseErrorMessages := GetFBDataBaseErrorMessages;
-  SqlCode := FBClient.isc_sqlcode(@StatusVector);
+  SqlCode := FBLib.isc_sqlcode(@StatusVector);
   if StatusVector[0] = 1 then
     ErrorCode := StatusVector[1]
   else
     ErrorCode := 0;
   if (ShowSQLMessage in FBDataBaseErrorMessages) and (SqlCode <> -999) then
   begin
-    FBClient.isc_sql_interprete(SqlCode, @local_buffer[0], Length(local_buffer));
+    FBLib.isc_sql_interprete(SqlCode, @local_buffer[0], Length(local_buffer));
     AddMsg(FBGetString(local_buffer));
   end;
 
   if (ShowFBMessage in FBDataBaseErrorMessages) then
   begin
     StatusVectorWalk := @StatusVector;
-    while (FBClient.isc_interprete(@local_buffer[0], StatusVectorWalk) > 0) do//TODO use fb_interpret
+    while (FBLib.isc_interprete(@local_buffer[0], StatusVectorWalk) > 0) do//TODO use fb_interpret
       AddMsg(FBGetString(local_buffer));
   end;
 
@@ -546,17 +541,17 @@ begin
   if (p^ = isc_info_sql_records) then
   begin
     Inc(p);
-//    l := FBClient.isc_portable_integer(p, 2);
+//    l := FBLib.isc_portable_integer(p, 2);
     Inc(p, 2);
     Item := p^;
     while (Item <> isc_info_end) do
     begin
       Inc(p);
-      l := FBClient.isc_portable_integer(p, 2);
+      l := FBLib.isc_portable_integer(p, 2);
       Inc(p, 2);
       if (Item = Flag) then
       begin
-        Result := FBClient.isc_portable_integer(p, l);
+        Result := FBLib.isc_portable_integer(p, l);
         break;
       end;
       Inc(p, l);
@@ -577,7 +572,7 @@ begin
   while (Item <> isc_info_end) do
   begin
     Inc(p);
-    l := FBClient.isc_portable_integer(p, 2);
+    l := FBLib.isc_portable_integer(p, 2);
     if (Item = Flag) then
     begin
       Result := p;
@@ -598,7 +593,7 @@ begin
   Result := p <> nil;
   if Result then
   begin
-    l := FBClient.isc_portable_integer(p, 2);
+    l := FBLib.isc_portable_integer(p, 2);
     Inc(p, 2);
     //belal
     //Value := Copy(p, 1, l);
@@ -615,7 +610,7 @@ begin
   if Result then
   begin
     Inc(p, 2);
-    Value := FBClient.isc_portable_integer(p, 2);
+    Value := FBLib.isc_portable_integer(p, 2);
   end;
 end;
 
@@ -627,121 +622,6 @@ end;
 function GetFBDataBaseErrorMessages: TFBDataBaseErrorMessages;
 begin
   Result := FBDataBaseErrorMessages;
-end;
-
-function IsAliasName(FileName: string): Boolean;
-begin
-  // not a file name e.g. '..\1.fdb' or '.\1.fdb' or 'c:\1.fdb' or '\\server\files\1.fdb'
-  Result := (FileName <> '') and (FileName[1] <> '.') and (Copy(FileName, 2, 2) <> ':\') and (Copy(FileName, 1, 2) <> '\\');
-end;
-
-function GetAliasName(FileName: string): string;
-var
-  aAliases: TStringList;
-  i, p: Integer;
-  s: string;
-begin
-  Result := '';
-  if DirectoryExists(FBClient.InstancePath) then
-  begin
-    aAliases := TStringList.Create;
-    try
-      aAliases.LoadFromFile(FBClient.InstancePath + 'aliases.conf');
-      for i := 0 to aAliases.Count - 1 do
-      begin
-        s := aAliases[i];
-        if (s <> '') and (s[1] <> '#') then
-        begin
-          p := AnsiPos('=', s);
-          if P > 0 then
-          begin
-            if SameText(Copy(s, p + 1, MaxInt), FileName) then
-            begin
-              Result := Copy(s, 1, p - 1);
-              break;
-            end;
-          end;
-        end;
-      end;
-    finally
-      aAliases.Free;
-    end;
-  end;
-end;
-
-function GetAliasFile(AliasName: string): string;
-var
-  aAliases: TStringList;
-  i, p: Integer;
-  s: string;
-begin
-  Result := '';
-  if DirectoryExists(FBClient.InstancePath) then
-  begin
-    aAliases := TStringList.Create;
-    try
-      aAliases.LoadFromFile(FBClient.InstancePath + 'aliases.conf');
-      for i := 0 to aAliases.Count - 1 do
-      begin
-        s := aAliases[i];
-        if (s <> '') and (s[1] <> '#') then
-        begin
-          p := AnsiPos('=', s);
-          if P > 0 then
-          begin
-            if SameText(Copy(s, 1, p - 1), AliasName) then
-            begin
-              Result := Copy(s, p + 1, MaxInt);
-              break;
-            end;
-          end;
-        end;
-      end;
-    finally
-      aAliases.Free;
-    end;
-  end;
-end;
-
-procedure SetAliasFile(AliasName, FileName: string);
-var
-  aAliases: TStringList;
-  i, p: Integer;
-  s: string;
-begin
-  if DirectoryExists(FBClient.InstancePath) then
-  begin
-    aAliases := TStringList.Create;
-    try
-      aAliases.LoadFromFile(FBClient.InstancePath + 'aliases.conf');
-      for i := 0 to aAliases.Count - 1 do
-      begin
-        s := aAliases[i];
-        if (s <> '') and (s[1] <> '#') then
-        begin
-          p := AnsiPos('=', s);
-          if P > 0 then
-          begin
-            if SameText(Copy(s, 1, p - 1), AliasName) then
-            begin
-              if FileName = '' then
-              begin
-                aAliases.Delete(i);
-                break;
-              end
-              else
-                raise EFBError.Create('Alias already exists');
-            end;
-          end;
-        end;
-      end;
-      if FileName <> '' then
-        aAliases.Add(AliasName + '=' + FileName);
-      aAliases.SaveToFile(FBClient.InstancePath + 'aliases.conf');
-    finally
-      aAliases.Free;
-    end;
-  end;
 end;
 
 procedure FBDatabaseInfo(const UserName, Password, Role, CharacterSet: string; vParams: TStrings);
@@ -1149,11 +1029,11 @@ begin
   end;
 end;
 
-function FBComposeConnectionString(DatabaseName, Host, Port: string; IsEmbed: Boolean): string;
+function FBComposeConnectionString(DatabaseName, Host, Port: string): string;
 var
   IsLocal: Boolean;
 begin
-  IsLocal := IsEmbed and (Host = '');
+  IsLocal := (Host = '');
 
   if not IsLocal and (Host <> '') then
   begin
