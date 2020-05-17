@@ -18,7 +18,7 @@ interface
 uses
   Classes, SysUtils, Variants,
   {$ifdef FPC} ctypes, {$endif}
-  mncCommons, mncMeta, mncMySQLHeader,
+  mncCommons, mncMySQLHeader,
   mncConnections, mncSQL;
 
 type
@@ -728,9 +728,9 @@ var
   timout: cuint;
   protocol: mysql_protocol_type;
 begin
-  Init;
+  //Initialize(vHandle);
   //* ref: https://dev.mysql.com/doc/refman/5.0/en/mysql-real-connect.html
-  vHandle := mysql_init(vHandle);
+  vHandle := mysql_init(nil);
   try
     if Host = '' then
       aHost := '127.0.0.1'
