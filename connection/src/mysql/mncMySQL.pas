@@ -16,8 +16,9 @@ unit mncMySQL;
 interface
 
 uses
-  Classes, SysUtils, Variants,
-  ctypes,
+  Classes, SysUtils, Variants, DateUtils,
+  {$ifndef FPC} Windows, {$endif}
+  mnLibraries,
   mncCommons, mncMySQLHeader,
   mncConnections, mncSQL;
 
@@ -123,9 +124,9 @@ type
   protected
     len: culong;
     is_null: my_bool;
-    function AllocBuffer(Size: cardinal; Realloc: Boolean = False): Pointer; virtual; overload;
+    function AllocBuffer(Size: cardinal; Realloc: Boolean = False): Pointer; overload; virtual;
     procedure CopyBuffer(var P; Size: cardinal);
-    function AllocBuffer(var P; Size: cardinal; Realloc: Boolean = False): Pointer; virtual; overload;
+    function AllocBuffer(var P; Size: cardinal; Realloc: Boolean = False): Pointer; overload; virtual;
     procedure FreeBuffer;
     property Buffer: Pointer read FBuffer;
     property BufferSize: cardinal read FBufferSize;
@@ -177,9 +178,9 @@ type
         1: (AsInteger: Integer);
         2: (AsBig: int64);
         3: (AsFloat: single);
-        3: (AsDouble: double);
-        4: (AsDateTime: MYSQL_TIME);
-        5: (AsString: array[0..15] of AnsiChar);
+        4: (AsDouble: double);
+        5: (AsDateTime: MYSQL_TIME);
+        6: (AsString: array[0..15] of AnsiChar);
       end;
       length: culong;
       is_null: my_bool;
@@ -294,7 +295,7 @@ begin
   if FBufferSize > 0 then
   begin
     if Realloc then
-      FBuffer := ReallocMem(FBuffer, FBufferSize)
+      ReallocMem(FBuffer, FBufferSize)
     else
       FBuffer := AllocMem(FBufferSize);
   end;
@@ -482,7 +483,7 @@ end;
 
 procedure TmncMySQLConnection.SetCharsetName(Charset: string);
 begin
-  CheckError(mysql_options(FDBHandle, MYSQL_SET_CHARSET_NAME, PChar(Charset)));
+  CheckError(mysql_options(FDBHandle, MYSQL_SET_CHARSET_NAME, PAnsiChar(Charset)));
 end;
 
 procedure TmncMySQLConnection.SetStorageEngine(vName: string);
@@ -502,7 +503,7 @@ begin
   CheckActive;
   if Sessions.IsAnyActive then
     RaiseError(-1, 'You cant select database if you have opened sessions');
-  r :=  mysql_select_db(FDBHandle, PChar(vName));
+  r :=  mysql_select_db(FDBHandle, PAnsiChar(vName));
   Result := r = 0;
   if not Result then
   begin
@@ -584,7 +585,7 @@ begin
     CheckError(mysql_set_server_option(FDBHandle, MYSQL_OPTION_MULTI_STATEMENTS_ON))
   else
     CheckError(mysql_set_server_option(FDBHandle, MYSQL_OPTION_MULTI_STATEMENTS_OFF));
-  CheckError(mysql_options(FDBHandle, MYSQL_SET_CHARSET_NAME, PChar('utf8')));
+  CheckError(mysql_options(FDBHandle, MYSQL_SET_CHARSET_NAME, PAnsiChar('utf8')));
   //CheckError(mysql_options(vHandle, MYSQL_REPORT_DATA_TRUNCATION, @b));
   if Resource <> '' then
     SelectDatabase(Resource);
@@ -652,7 +653,7 @@ end;
 
 procedure TmncMySQLConnection.Execute(Command: string);
 begin
-  CheckError(mysql_query(FDBHandle, PChar(Command)));
+  CheckError(mysql_query(FDBHandle, PAnsiChar(Command)));
 end;
 
 function TmncMySQLSession.GetActive: Boolean;
@@ -672,7 +673,7 @@ end;
 
 procedure TmncMySQLConnection.DoInit;
 begin
-  mysqllib.SafeLoad;
+  MySQLLib.Load;
 end;
 
 procedure TmncMySQLSession.SetConnection(const AValue: TmncMySQLConnection);
@@ -724,10 +725,11 @@ var
   aHost: AnsiString;
   aPort: Integer;
   aResource, aUser, aPassword: AnsiString;
-  b: my_bool = 0;
+  b: my_bool;
   timout: cuint;
   protocol: mysql_protocol_type;
 begin
+  b := 0;
   //Initialize(vHandle);
   //* ref: https://dev.mysql.com/doc/refman/5.0/en/mysql-real-connect.html
   vHandle := mysql_init(nil);
@@ -763,7 +765,7 @@ begin
     {timout := 1;
     CheckError(mysql_options(vHandle, MYSQL_OPT_CONNECT_TIMEOUT, @timout));}
 
-    CheckError(mysql_real_connect(vHandle, PAnsiChar(aHost), PChar(aUser), PChar(aPassword), nil, aPort, nil, CLIENT_MULTI_RESULTS)); //CLIENT_MULTI_STATEMENTS CLIENT_INTERACTIVE
+    CheckError(mysql_real_connect(vHandle, PAnsiChar(aHost), PAnsiChar(aUser), PAnsiChar(aPassword), nil, aPort, nil, CLIENT_MULTI_RESULTS)); //CLIENT_MULTI_STATEMENTS CLIENT_INTERACTIVE
   except
     on E:Exception do
     begin
@@ -837,6 +839,15 @@ begin
   Result := mysql_stmt_insert_id(FStatment);
 end;
 
+//Ported from FPC ty FPC team
+function ComposeDateTime(Date,Time : TDateTime) : TDateTime;
+begin
+  if Date < 0 then
+    Result := trunc(Date) - Abs(frac(Time))
+  else
+    Result := trunc(Date) + Abs(frac(Time));
+end;
+
 function MySQLDateTimeToDateTime(ATime: MYSQL_TIME): TDateTime;
 var
   t, d: TDateTime;
@@ -853,13 +864,13 @@ var
   st: TSystemTime;
 begin
   DateTimeToSystemTime(DateTime, st);
-  ATime.Year := st.Year;
-  ATime.Month := st.Month;
-  ATime.Day := st.Day;
-  ATime.Hour := st.Hour;
-  ATime.Minute := st.Minute;
-  ATime.Second := st.Second;
-  ATime.second_part := st.Millisecond;
+  ATime.Year := st.wYear;
+  ATime.Month := st.wMonth;
+  ATime.Day := st.wDay;
+  ATime.Hour := st.wHour;
+  ATime.Minute := st.wMinute;
+  ATime.Second := st.wSecond;
+  ATime.second_part := st.wMilliseconds;
   ATime.neg := 0;
   ATime.time_type := MYSQL_TIMESTAMP_DATETIME;
 end;
@@ -991,7 +1002,7 @@ begin
           else //String type
           begin
             s := VarToStrDef(Binds[i].Param.Value, '');
-            Binds[i].CopyBuffer(PChar(s)^, Length(s));
+            Binds[i].CopyBuffer(PAnsiChar(s)^, Length(s));
             Binds[i].len := Length(s);
           end;
         end;
@@ -1044,7 +1055,7 @@ begin
       aType := CURSOR_TYPE_READ_ONLY;
       CheckError(mysql_stmt_attr_set(FStatment, STMT_ATTR_CURSOR_TYPE, @aType));
     end;
-    CheckError(mysql_stmt_prepare(FStatment, PChar(ProcessedSQL.SQL), Length(ProcessedSQL.SQL)));
+    CheckError(mysql_stmt_prepare(FStatment, PAnsiChar(ProcessedSQL.SQL), Length(ProcessedSQL.SQL)));
   except
     on E: Exception do
     begin
@@ -1154,7 +1165,7 @@ begin
 
         aColumn.FieldType := FieldType;
 
-        FillByte(FResults.Binds[i], SizeOf(FResults.Binds[i]), 0);
+        FillChar(FResults.Binds[i], SizeOf(FResults.Binds[i]), #0);
 
         FResults.Binds[i].buffer_type := FieldType;
 
@@ -1181,7 +1192,7 @@ var
 {$ifdef fpc}
   s: string;
 {$else}
-  str: utf8string;
+  s: utf8string;
 {$endif}
   aCurrent: TmncFields;
   aType: enum_field_types;
@@ -1198,7 +1209,7 @@ var
     else
     begin
       SetLength(s, real_length);
-      FillByte(bind, sizeof(bind), 0);
+      FillChar(bind, sizeof(bind), #0);
 
       bind.buffer := @s[1];
       bind.buffer_length := real_length;
