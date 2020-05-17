@@ -249,9 +249,9 @@ type
   sqlite3_collation_needed_func = procedure(_para1: pointer; _para2: Psqlite3; eTextRep: longint; _para4: PAnsiChar); cdecl;
 
 {$IFNDEF WINDOWS}
-var
+{var
   //This is not working under windows. Any clues?
-  sqlite3_temp_directory: PAnsiChar; cvar; external;
+  sqlite3_temp_directory: PAnsiChar; cvar; external;}
 {$ENDIF}
 
 var

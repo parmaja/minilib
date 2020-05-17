@@ -56,13 +56,7 @@ type
   Pmy_socket = ^my_socket;
   my_socket = cint;
 
-  {$if defined(NO_CLIENT_LONG_LONG)}
-  my_ulonglong = culong;
-  {$elseif defined(MSWINDOWS)}
-  my_ulonglong = cuint64;
-  {$else}
-  my_ulonglong = culonglong;
-  {$endif}
+  my_ulonglong = cuint64;//TODO check it
   Pmy_ulonglong = ^my_ulonglong;
 
 {  ------------ Start of declaration in "mysql_com.h"   ---------------------  }

@@ -9,8 +9,8 @@ interface
 
 uses
   HejriDates, HejriUtils, minibidi, mnBase64, mnClasses, mnDrivers, mnFields, 
-  mnLogs, mnParams, mnStreams, mnUtils, MsgBox, UniDates, mnRTTIUtils,
-  mnConfigs, mnStreamUtils, mnDebugs;
+  mnLogs, mnParams, mnStreams, mnUtils, MsgBox, UniDates, mnRTTIUtils, 
+  mnConfigs, mnStreamUtils, mnDebugs, mnLibraries;
 
 implementation
 

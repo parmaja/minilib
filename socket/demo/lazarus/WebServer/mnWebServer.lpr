@@ -17,7 +17,7 @@ uses
   Forms,
   LCLIntf,
   SysUtils,
-  MainForm in 'MainForm.pas', mnLinuxSockets {Main};
+  MainForm in 'MainForm.pas';
 
 {$R *.res}
 

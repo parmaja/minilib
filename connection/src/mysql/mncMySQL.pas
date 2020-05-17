@@ -864,6 +864,15 @@ var
   st: TSystemTime;
 begin
   DateTimeToSystemTime(DateTime, st);
+  {$ifdef FPC}
+  ATime.Year := st.Year;
+  ATime.Month := st.Month;
+  ATime.Day := st.Day;
+  ATime.Hour := st.Hour;
+  ATime.Minute := st.Minute;
+  ATime.Second := st.Second;
+  ATime.second_part := st.MilliSecond;
+  {$else}
   ATime.Year := st.wYear;
   ATime.Month := st.wMonth;
   ATime.Day := st.wDay;
@@ -871,6 +880,7 @@ begin
   ATime.Minute := st.wMinute;
   ATime.Second := st.wSecond;
   ATime.second_part := st.wMilliseconds;
+  {$endif}
   ATime.neg := 0;
   ATime.time_type := MYSQL_TIMESTAMP_DATETIME;
 end;

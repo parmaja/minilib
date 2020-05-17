@@ -1,7 +1,7 @@
 object MainFrm: TMainFrm
-  Left = 697
+  Left = 234
   Height = 459
-  Top = 362
+  Top = 234
   Width = 647
   Caption = 'IRC chat'
   ClientHeight = 459

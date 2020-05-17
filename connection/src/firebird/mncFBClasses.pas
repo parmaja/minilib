@@ -17,7 +17,7 @@ unit mncFBClasses;
 interface
 
 uses
-  Windows, SysUtils, Classes, Variants,
+  SysUtils, Classes, Variants,
   mnUtils, mncFBHeader;
 
 const
