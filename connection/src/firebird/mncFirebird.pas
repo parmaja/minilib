@@ -691,6 +691,7 @@ end;
 
 procedure TmncFBConnection.DoInit;
 begin
+  FBLib.Load;
 end;
 
 procedure TmncFBSession.SetConnection(const AValue: TmncFBConnection);

@@ -395,9 +395,12 @@ var
   lo_truncate: Tlo_truncate;
 
 type
+
+  { TmncPGLib }
+
   TmncPGLib = class(TmnLibrary)
   protected
-    procedure AssignLibrary; override;
+    procedure Loaded; override;
   end;
 
 var
@@ -405,7 +408,7 @@ var
 
 implementation
 
-procedure TmncPGLib.AssignLibrary;
+procedure TmncPGLib.Loaded;
 begin
 { ===	in fe-connect.c === }
   PQfreemem := GetAddress('PQfreemem');

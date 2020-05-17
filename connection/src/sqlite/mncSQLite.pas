@@ -543,7 +543,7 @@ end;
 
 procedure TmncSQLiteConnection.DoInit;
 begin
-  SQLiteLib.SafeLoad;
+  SQLiteLib.Load;
 end;
 
 procedure TmncSQLiteSession.SetConnection(const AValue: TmncSQLiteConnection);
