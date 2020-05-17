@@ -17,7 +17,7 @@ interface
 
 uses
   Classes, SysUtils, Variants, DateUtils,
-  mncSQLiteHeader, mncCommons, mncMeta,
+  mncSQLiteHeader, mncCommons,
   mnUtils, mncConnections, mncSQL;
 
 const
@@ -543,6 +543,7 @@ end;
 
 procedure TmncSQLiteConnection.DoInit;
 begin
+  inherited;
   SQLiteLib.Load;
 end;
 

@@ -691,6 +691,7 @@ end;
 
 procedure TmncFBConnection.DoInit;
 begin
+  inherited;
   FBLib.Load;
 end;
 

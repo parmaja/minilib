@@ -2141,6 +2141,4 @@ begin
   Sqlname_length := length(s);
 end;
 
-initialization
-finalization
 end.

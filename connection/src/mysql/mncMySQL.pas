@@ -673,6 +673,7 @@ end;
 
 procedure TmncMySQLConnection.DoInit;
 begin
+  inherited;
   MySQLLib.Load;
 end;
 
@@ -1318,5 +1319,5 @@ begin
 end;
 
 initialization
-  Engines.RegisterConnection(TmncMySQLConnection.EngineName, 'MySQL Database', TmncMySQLConnection);
+  Engines.RegisterConnection('MySQL', 'MySQL Database', TmncMySQLConnection);
 end.

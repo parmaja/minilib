@@ -963,6 +963,7 @@ end;
 procedure TmncPGConnection.DoInit;
 begin
   inherited;
+  PGLib.Load;
 end;
 
 procedure TmncPGConnection.DoNotify(vPID: Integer; const vName, vData: string);

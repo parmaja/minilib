@@ -19,7 +19,7 @@ interface
 
 uses
   SysUtils, Classes, mnUtils, Variants,
-  mncORM, mncConnections, mncSQLite;
+  mncORM;
 
 type
 

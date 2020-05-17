@@ -105,7 +105,6 @@ type
     FResource: string;
     FSessions: TmncSessions;
     FStartCount: Integer;
-    FIsInit: Boolean;
     FStates: TmncStates;
     procedure SetConnected(const Value: Boolean);
     procedure SetParams(const AValue: TStrings);
@@ -121,7 +120,7 @@ type
     procedure DoDisconnected; virtual;
     function GetConnected: Boolean; virtual; abstract;
     procedure DoInit; virtual;
-    procedure Init;
+    procedure Prepare; virtual;
     property ParamsChanged: Boolean read FParamsChanged write FParamsChanged;
     function _AddRef : longint;{$IFNDEF MSWINDOWS}cdecl{$ELSE}stdcall{$ENDIF};
     function _Release : longint;{$IFNDEF MSWINDOWS}cdecl{$ELSE}stdcall{$ENDIF};
@@ -711,7 +710,7 @@ end;
 
 procedure TmncConnection.Connect;
 begin
-  Init;
+  Prepare;
   CheckInactive;
   DoConnect;
   if Connected then
@@ -730,6 +729,7 @@ begin
   TStringList(FParams).OnChange := ParamsChange;
   TStringList(FParams).OnChanging := ParamsChanging;
   FSessions := TmncSessions.Create(False);
+  DoInit;
 end;
 
 destructor TmncConnection.Destroy;
@@ -817,16 +817,11 @@ procedure TmncConnection.DoInit;
 begin
 end;
 
-procedure TmncConnection.Init;
+procedure TmncConnection.Prepare;
 begin
-  if not FIsInit then
-  begin
-    DoInit;
-    FIsInit := True;
-  end;
 end;
 
-function TmncConnection.QueryInterface({$IFDEF FPC}constref{$ELSE}const{$ENDIF} iid : tguid;out obj) : longint;
+function TmncConnection.QueryInterface({$IFDEF FPC}constref{$ELSE}const{$ENDIF} iid : tguid;out obj): longint;
 begin
   if GetInterface(IID, Obj) then
     Result := 0
