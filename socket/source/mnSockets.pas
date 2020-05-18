@@ -83,8 +83,8 @@ type
   public
     constructor Create; virtual;
     destructor Destroy; override;
-    function Bind(Options: TmnsoOptions; const Port: string; const Address: string = ''): TmnCustomSocket; virtual; abstract;
-    function Connect(Options: TmnsoOptions; Timeout: Integer; const Port: string; const Address: string = ''): TmnCustomSocket; virtual; abstract;
+    procedure Bind(Options: TmnsoOptions; const Port: string; const Address: string; out vSocket: TmnCustomSocket; out vErr: Integer); virtual; abstract;
+    procedure Connect(Options: TmnsoOptions; Timeout: Integer; const Port: string; const Address: string; out vSocket: TmnCustomSocket; out vErr: Integer); virtual; abstract;
   end;
 
   { Streams
@@ -101,7 +101,7 @@ type
   protected
     procedure FreeSocket; virtual;
     function GetConnected: Boolean; override;
-    function CreateSocket: TmnCustomSocket; virtual;
+    function CreateSocket(out vErr: Integer): TmnCustomSocket; virtual;
     function DoRead(var Buffer; Count: Longint): Longint; override;
     function DoWrite(const Buffer; Count: Longint): Longint; override;
     procedure DoCloseWrite; override;
@@ -138,10 +138,10 @@ uses
     {$if DEFINED(MSWINDOWS)} //Win32 and WinCE
      mnWinSockets //delphi is only Win32
     {$elseif DEFINED(LINUX)}
-     mnLinuxSockets
+     mndLinuxSockets
     {$else}
      mnPosixSockets
-    {$endif};
+    {$ifend};
   {$endif}
 var
   FmnWallSocket: TmnCustomWallSocket = nil;
@@ -352,6 +352,8 @@ begin
 end;
 
 procedure TmnSocketStream.Connect;
+var
+  aErr: Integer;
 begin
   if Connected then
     raise EmnStreamException.Create('Already connected');
@@ -359,13 +361,13 @@ begin
   if FSocket <> nil then
     raise EmnStreamException.Create('Socket must be nil');
 
-  FSocket := CreateSocket;
+  FSocket := CreateSocket(aErr);
 
   if FSocket = nil then
-    raise EmnSocketException.Create('Connected fail');
+    raise EmnSocketException.CreateFmt('Connected fail [%s]', [aErr]);
 end;
 
-function TmnSocketStream.CreateSocket: TmnCustomSocket;
+function TmnSocketStream.CreateSocket(out vErr: Integer): TmnCustomSocket;
 begin
   Result := nil;//if server connect no need to create socket
 end;

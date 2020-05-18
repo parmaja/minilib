@@ -119,7 +119,7 @@ type
       Buffer: PByte;
       Pos: PByte;
       Stop: PByte;
-      Size: Integer;
+      Size: Longint;
       procedure CreateBuffer;
       procedure FreeBuffer;
     end;
@@ -686,7 +686,7 @@ end;
 
 function TmnCustomStream.ReadStream(AStream: TStream; Count: TFileSize): TFileSize;
 var
-  RealCount: TFileSize;
+  RealCount: Integer;
 begin
   Result := ReadStream(AStream, Count, RealCount);
 end;
@@ -765,7 +765,7 @@ end;
 
 function TmnCustomStream.WriteStream(AStream: TStream; Count: TFileSize): TFileSize;
 var
-  RealCount: TFileSize;
+  RealCount: Integer;
 begin
   Result := WriteStream(AStream, Count, RealCount);
 end;
@@ -1464,7 +1464,7 @@ function TmnHexStreamProxy.HexDecode(var Buffer; Count: Longint; out ResultCount
   end;
 
 var
-  BufSize: Integer;
+  BufSize: Longint;
   Buf: PByteArray;
   b, c: Byte;
   i, p: Integer;

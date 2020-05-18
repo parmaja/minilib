@@ -143,7 +143,7 @@ type
     FRequest: TmnHttpRequest;
     FResponse: TmnHttpResponse;
   protected
-    function CreateSocket: TmnCustomSocket; override;
+    function CreateSocket(out vErr: Integer): TmnCustomSocket; override;
     function GetSize: Int64; override;
   public
     constructor Create(const vAddress, vPort: string);
@@ -503,9 +503,9 @@ begin
 
 end;
 
-function TmnCustomHttpStream.CreateSocket: TmnCustomSocket;
+function TmnCustomHttpStream.CreateSocket(out vErr: Integer): TmnCustomSocket;
 begin
-  Result := inherited CreateSocket;
+  Result := inherited CreateSocket(vErr);
 end;
 
 destructor TmnCustomHttpStream.Destroy;

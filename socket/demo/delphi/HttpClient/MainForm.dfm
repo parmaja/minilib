@@ -67,8 +67,6 @@ object Form4: TForm4
     OnClick = Button3Click
   end
   object IdHTTP1: TIdHTTP
-    AuthRetries = 0
-    AuthProxyRetries = 0
     AllowCookies = True
     ProxyParams.BasicAuthentication = False
     ProxyParams.ProxyPort = 0
@@ -79,6 +77,8 @@ object Form4: TForm4
     Request.Accept = 'text/html, */*'
     Request.BasicAuthentication = False
     Request.UserAgent = 'Mozilla/3.0 (compatible; Indy Library)'
+    Request.Ranges.Units = 'bytes'
+    Request.Ranges = <>
     HTTPOptions = [hoForceEncodeParams]
     Left = 304
     Top = 192

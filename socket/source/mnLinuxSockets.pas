@@ -56,8 +56,8 @@ type
   public
     constructor Create; override;
     destructor Destroy; override;
-    function Bind(Options: TmnsoOptions; const Port: ansistring; const Address: ansistring = ''): TmnCustomSocket; override;
-    function Connect(Options: TmnsoOptions; Timeout: Integer; const Port: ansistring; const Address: ansistring = ''): TmnCustomSocket; override;
+    procedure Bind(Options: TmnsoOptions; const Port: ansistring; const Address: AnsiString; out vSocket: TmnCustomSocket; out vErr: Integer); override;
+    procedure Connect(Options: TmnsoOptions; Timeout: Integer; const Port: ansistring; const Address: AnsiString; out vSocket: TmnCustomSocket; out vErr: Integer); override;
   end;
 
 implementation
@@ -302,11 +302,10 @@ const
   SO_TRUE:Longbool=True;
 //  SO_FALSE:Longbool=False;
 
-function TmnWallSocket.Bind(Options: TmnsoOptions; const Port: AnsiString; const Address: ansistring): TmnCustomSocket;
+procedure TmnWallSocket.Bind(Options: TmnsoOptions; const Port: AnsiString; const Address: AnsiString; out vSocket: TmnCustomSocket; out vErr: Integer);
 var
   aHandle: TSocket;
   aAddr : TINetSockAddr;
-  aErr: cint;
 begin
   aHandle := fpsocket(AF_INET, SOCK_STREAM, 0{IPPROTO_TCP});
   if aHandle <> INVALID_SOCKET then
@@ -328,14 +327,14 @@ begin
 
     if fpbind(aHandle,@aAddr, Sizeof(aAddr)) <> 0 then
     begin
-      FreeSocket(aHandle, aErr);
+      FreeSocket(aHandle, vErr);
     end;
   end;
 
   if aHandle <> INVALID_SOCKET then
-    Result := TmnSocket.Create(aHandle)
+    vSocket := TmnSocket.Create(aHandle)
   else
-    Result := nil;
+    vSocket := nil;
 end;
 
 destructor TmnWallSocket.Destroy;
@@ -355,14 +354,13 @@ begin
   Result := StrToIntDef(Port, 0);
 end;
 
-function TmnWallSocket.Connect(Options: TmnsoOptions; Timeout: Integer; const Port: ansistring; const Address: ansistring): TmnCustomSocket;
+procedure TmnWallSocket.Connect(Options: TmnsoOptions; Timeout: Integer; const Port: ansistring; const Address: AnsiString; out vSocket: TmnCustomSocket; out vErr: Integer);
 var
   aHandle: TSocket;
   aAddr : TINetSockAddr;
   ret: cint;
   aHost: THostEntry;
   time: ttimeval;
-  aErr: cint;
 begin
   //nonblick connect  https://stackoverflow.com/questions/1543466/how-do-i-change-a-tcp-socket-to-be-non-blocking
   //https://stackoverflow.com/questions/14254061/setting-time-out-for-connect-function-tcp-socket-programming-in-c-breaks-recv
@@ -403,14 +401,14 @@ begin
     ret := fpconnect(aHandle, @aAddr, SizeOf(aAddr));
     if ret = -1 then
     begin
-      FreeSocket(aHandle, aErr);
+      FreeSocket(aHandle, vErr);
     end;
   end;
 
   if aHandle <> INVALID_SOCKET then
-    Result := TmnSocket.Create(aHandle)
+    vSocket := TmnSocket.Create(aHandle)
   else
-    Result := nil;
+    vSocket := nil;
 end;
 
 end.

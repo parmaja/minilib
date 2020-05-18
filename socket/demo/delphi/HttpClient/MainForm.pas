@@ -44,7 +44,7 @@ var
   st: TMemoryStream;
 begin
   DocList.Clear;
-  Http := TmnCustomHttpStream.Create;
+  Http := TmnCustomHttpStream.Create('', '');
   st:= TMemoryStream.Create;
   try
     Http.Get(HostEdit.Text);
@@ -83,7 +83,7 @@ begin
   end;
 
   DocList.Clear;
-  Http := TmnHttpClient.Create(nil);
+  Http := TmnHttpClient.Create;
   try
     Http.Get(HostEdit.Text);
     for I := 0 to Http.Response.Headers.Count - 1 do
@@ -135,7 +135,7 @@ begin
   u.Create('www.google.com/index.php?test=1&dcghdh=3');
   u.Create('https://google.com/index.php?test=1&dcghdh=3');
   HostEdit.Text := 'http://maps1.yimg.com/hx/tl?b=1&v=4.3&.intl=en&x=245&y=47&z=10&r=1';
-  HttpStream := TmnCustomHttpStream.Create;
+  HttpStream := TmnCustomHttpStream.Create('', '');
 end;
 
 procedure TForm4.FormDestroy(Sender: TObject);

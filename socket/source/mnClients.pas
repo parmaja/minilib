@@ -33,7 +33,7 @@ type
     procedure SetAddress(const Value: string);
     procedure SetPort(const Value: string);
   protected
-    function CreateSocket: TmnCustomSocket; override;
+    function CreateSocket(out vErr: Integer): TmnCustomSocket; override;
   public
     constructor Create(const vAddress, vPort: string; vOptions: TmnsoOptions = [soNoDelay]);
     property Port: string read FPort write SetPort;
@@ -242,9 +242,9 @@ end;
 
 { TmnClientSocket }
 
-function TmnClientSocket.CreateSocket: TmnCustomSocket;
+function TmnClientSocket.CreateSocket(out vErr: Integer): TmnCustomSocket;
 begin
-  Result := WallSocket.Connect(Options, Timeouts[tmCreate], Port, Address)
+  WallSocket.Connect(Options, Timeouts[tmCreate], Port, Address, Result, vErr);
 end;
 
 constructor TmnClientSocket.Create(const vAddress, vPort: string; vOptions: TmnsoOptions);

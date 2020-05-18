@@ -64,15 +64,15 @@ type
     FCount: Integer;
     function LookupPort(Port: string): Word;
   protected
-    procedure FreeSocket(var vHandle: TSocket; var vErr: Longint);
+    procedure FreeSocket(var vHandle: TSocket; var vErr: Integer);
     function Select(vHandle: TSocket; Timeout: Integer; Check: TSelectCheck): TmnError;
   public
     constructor Create; override;
     destructor Destroy; override;
-    //Connect used by servers
-    function Bind(Options: TmnsoOptions; const Port: string; const Address: string = ''): TmnCustomSocket; override;
+    //Bind used by servers
+    procedure Bind(Options: TmnsoOptions; const Port: string; const Address: string; out vSocket: TmnCustomSocket; out vErr: Integer); override;
     //Connect used by clients
-    function Connect(Options: TmnsoOptions; Timeout: Integer; const Port: string; const Address: string = ''): TmnCustomSocket; override;
+    procedure Connect(Options: TmnsoOptions; Timeout: Integer; const Port: string; const Address: string; out vSocket: TmnCustomSocket; out vErr: Integer); override;
     procedure Startup;
     procedure Cleanup;
   end;
@@ -362,14 +362,13 @@ begin
   Startup;
 end;
 
-function TmnWallSocket.Bind(Options: TmnsoOptions; const Port: string; const Address: string): TmnCustomSocket;
+procedure TmnWallSocket.Bind(Options: TmnsoOptions; const Port: string; const Address: string; out vSocket: TmnCustomSocket; out vErr: Integer);
 const
   SO_TRUE: Longbool = True;
 var
   aHandle: TSocket;
   aSockAddr: TSockAddr;
   aHostEnt: PHostEnt;
-  aErr: Longint;
 begin
   aHandle := socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
 
@@ -419,14 +418,14 @@ begin
     if WinSock.bind(aHandle, aSockAddr, SizeOf(aSockAddr)) = SOCKET_ERROR then
     {$ENDIF}
     begin
-      FreeSocket(aHandle, aErr);
+      FreeSocket(aHandle, vErr);
     end;
   end;
 
   if aHandle<>INVALID_SOCKET then
-    Result := TmnSocket.Create(aHandle)
+    vSocket := TmnSocket.Create(aHandle)
   else
-    Result := nil;
+    vSocket := nil;
 end;
 
 destructor TmnWallSocket.Destroy;
@@ -435,7 +434,7 @@ begin
   Cleanup;
 end;
 
-procedure TmnWallSocket.FreeSocket(var vHandle: TSocket; var vErr: Longint);
+procedure TmnWallSocket.FreeSocket(var vHandle: TSocket; var vErr: Integer);
 begin
   vErr := WSAGetLastError;
   {$IFDEF FPC}
@@ -518,7 +517,7 @@ begin
   Inc(FCount)
 end;
 
-function TmnWallSocket.Connect(Options: TmnsoOptions; Timeout: Integer; const Port: string; const Address: string): TmnCustomSocket;
+procedure TmnWallSocket.Connect(Options: TmnsoOptions; Timeout: Integer; const Port: string; const Address: string; out vSocket: TmnCustomSocket; out vErr: Integer);
 const
   SO_TRUE: Longbool = True;
 var
@@ -607,9 +606,9 @@ begin
   end;
 
   if aHandle <> INVALID_SOCKET then
-    Result := TmnSocket.Create(aHandle)
+    vSocket := TmnSocket.Create(aHandle)
   else
-    Result := nil;
+    vSocket := nil;
 end;
 
 end.

@@ -38,7 +38,7 @@ type
     procedure SetPort(Value: string);
   protected
     procedure FreeSocket; override;
-    function CreateSocket: TmnCustomSocket; override;
+    function CreateSocket(out vErr: Integer): TmnCustomSocket; override;
   public
     constructor Create(const vAddress, vPort: string; vOptions: TmnsoOptions = [soNoDelay]);
     property Port: string read FPort write SetPort;
@@ -67,6 +67,7 @@ type
 
   TmnOnLog = procedure(const S: string) of object;
   TmnOnListenerNotify = procedure(Listener: TmnListener) of object;
+  TmnOnListenerAcceptNotify = procedure(Listener: TmnListener; vConnection: TmnServerConnection) of object;
 
   { TmnListener }
 
@@ -133,7 +134,7 @@ type
     function CreateListener: TmnListener; virtual;
     procedure DoLog(const S: string); virtual;
     procedure DoChanged(vListener: TmnListener); virtual;
-    procedure DoAccepted(vListener: TmnListener); virtual;
+    procedure DoAccepted(vListener: TmnListener; vConnection: TmnServerConnection); virtual;
     procedure DoBeforeOpen; virtual;
     procedure DoAfterOpen; virtual;
     procedure DoBeforeClose; virtual;
@@ -171,11 +172,11 @@ type
     FOnAfterClose: TNotifyEvent;
     FOnLog: TmnOnLog;
     FOnChanged: TmnOnListenerNotify;
-    FOnAccepted: TmnOnListenerNotify;
+    FOnAccepted: TmnOnListenerAcceptNotify;
   protected
     procedure DoLog(const S: string); override;
     procedure DoChanged(vListener: TmnListener); override;
-    procedure DoAccepted(vListener: TmnListener); override;
+    procedure DoAccepted(vListener: TmnListener; vConnection: TmnServerConnection); override;
     procedure DoBeforeOpen; override;
     procedure DoAfterOpen; override;
     procedure DoBeforeClose; override;
@@ -187,7 +188,7 @@ type
     property OnBeforeClose: TNotifyEvent read FOnBeforeClose write FOnBeforeClose;
     property OnLog: TmnOnLog read FOnLog write FOnLog;
     property OnChanged: TmnOnListenerNotify read FOnChanged write FOnChanged;
-    property OnAccepted: TmnOnListenerNotify read FOnAccepted write FOnAccepted;
+    property OnAccepted: TmnOnListenerAcceptNotify read FOnAccepted write FOnAccepted;
   end;
 
 implementation
@@ -216,9 +217,9 @@ begin
   FreeAndNil(FListenerSocket);
 end;
 
-function TmnServerSocket.CreateSocket: TmnCustomSocket;
+function TmnServerSocket.CreateSocket(out vErr: Integer): TmnCustomSocket;
 begin
-  FListenerSocket := WallSocket.Bind(Options, Port, Address);
+  WallSocket.Bind(Options, Port, Address, FListenerSocket, vErr);
   if FListenerSocket <> nil then
   begin
     FListenerSocket.Listen;
@@ -260,13 +261,13 @@ begin
   end;
 end;
 
-procedure TmnEventServer.DoAccepted(vListener: TmnListener);
+procedure TmnEventServer.DoAccepted(vListener: TmnListener; vConnection: TmnServerConnection);
 begin
   inherited;
   if not (IsDestroying) then
   begin
     if Assigned(FOnAccepted) then
-      FOnAccepted(vListener);
+      FOnAccepted(vListener, vConnection);
   end;
 end;
 
@@ -351,7 +352,7 @@ procedure TmnServer.DoChanged(vListener: TmnListener);
 begin
 end;
 
-procedure TmnServer.DoAccepted(vListener: TmnListener);
+procedure TmnServer.DoAccepted(vListener: TmnListener; vConnection: TmnServerConnection);
 begin
 end;
 
@@ -390,14 +391,16 @@ begin
 end;
 
 procedure TmnListener.Connect;
+var
+  aErr: Integer;
 begin
   if not Terminated then
   begin
-    FSocket := WallSocket.Bind(FOptions, FPort, FAddress);
+    WallSocket.Bind(FOptions, FPort, FAddress, FSocket, aErr);
     if Connected then
       Socket.Listen
     else
-      raise EmnStreamException.Create('Bind fail');
+      raise EmnStreamException.CreateFmt('Bind fail [%d]', [aErr]);
   end;
 end;
 
@@ -492,10 +495,10 @@ begin
           try
             Enter; //because we add connection to a thread list
             try
-              if FServer <> nil then
-                FServer.DoAccepted(Self);
               aConnection := CreateConnection(aSocket) as TmnServerConnection;
               aConnection.FRemoteIP := aSocket.GetRemoteAddress;
+              //aConnection.Prepare
+              if FServer <> nil then FServer.DoAccepted(Self, aConnection);
             finally
               Leave;
             end;
