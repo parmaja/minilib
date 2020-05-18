@@ -17,8 +17,8 @@ object MainForm: TMainForm
   LCLVersion = '2.1.0.0'
   inline SynEdit: TSynEdit
     Left = 6
-    Height = 197
-    Top = 64
+    Height = 182
+    Top = 79
     Width = 630
     Align = alClient
     Font.CharSet = ANSI_CHARSET
@@ -523,50 +523,52 @@ object MainForm: TMainForm
   end
   object Panel1: TPanel
     Left = 6
-    Height = 24
+    Height = 31
     Top = 6
     Width = 756
     Align = alTop
     BevelOuter = bvNone
     ChildSizing.HorizontalSpacing = 3
     ChildSizing.VerticalSpacing = 3
-    ClientHeight = 24
+    ClientHeight = 31
     ClientWidth = 756
     TabOrder = 1
     object CreateDB1Btn: TButton
-      Left = 412
-      Height = 24
+      Left = 435
+      Height = 31
       Top = 0
-      Width = 100
+      Width = 106
       Align = alLeft
+      AutoSize = True
       Caption = 'Generate SQL'
       OnClick = CreateDB1BtnClick
       TabOrder = 0
     end
     object EnginesCbo: TComboBox
       Left = 0
-      Height = 23
+      Height = 31
       Top = 0
       Width = 198
       Align = alLeft
       AutoSize = False
-      ItemHeight = 15
+      ItemHeight = 0
       Style = csDropDownList
       TabOrder = 1
     end
     object ConnectBtn: TButton
-      Left = 515
-      Height = 24
+      Left = 544
+      Height = 31
       Top = 0
-      Width = 115
+      Width = 141
       Align = alLeft
+      AutoSize = True
       Caption = 'Connect and Create'
       OnClick = ConnectBtnClick
       TabOrder = 2
     end
     object DataEdit: TEdit
-      Left = 291
-      Height = 24
+      Left = 314
+      Height = 31
       Top = 0
       Width = 118
       Align = alLeft
@@ -575,9 +577,9 @@ object MainForm: TMainForm
     end
     object Label5: TLabel
       Left = 203
-      Height = 24
+      Height = 31
       Top = 0
-      Width = 83
+      Width = 106
       Align = alLeft
       BorderSpacing.Left = 5
       BorderSpacing.Right = 5
@@ -586,11 +588,12 @@ object MainForm: TMainForm
       ParentColor = False
     end
     object ConnectBtn1: TButton
-      Left = 633
-      Height = 24
+      Left = 688
+      Height = 31
       Top = 0
-      Width = 76
+      Width = 66
       Align = alLeft
+      AutoSize = True
       Caption = 'Connect'
       OnClick = ConnectBtn1Click
       TabOrder = 4
@@ -598,30 +601,30 @@ object MainForm: TMainForm
   end
   object Panel2: TPanel
     Left = 8
-    Height = 24
-    Top = 35
+    Height = 32
+    Top = 42
     Width = 752
     Align = alTop
     BorderSpacing.Around = 5
     BevelOuter = bvNone
     ChildSizing.HorizontalSpacing = 3
     ChildSizing.VerticalSpacing = 3
-    ClientHeight = 24
+    ClientHeight = 32
     ClientWidth = 752
     TabOrder = 2
     object Label2: TLabel
       Left = 0
-      Height = 24
+      Height = 32
       Top = 0
-      Width = 25
+      Width = 31
       Align = alLeft
       Caption = 'Host'
       Layout = tlCenter
       ParentColor = False
     end
     object HostEdit: TEdit
-      Left = 28
-      Height = 24
+      Left = 34
+      Height = 32
       Top = 0
       Width = 118
       Align = alLeft
@@ -629,8 +632,8 @@ object MainForm: TMainForm
       Text = 'localhost'
     end
     object UserEdit: TEdit
-      Left = 175
-      Height = 24
+      Left = 189
+      Height = 32
       Top = 0
       Width = 118
       Align = alLeft
@@ -638,8 +641,8 @@ object MainForm: TMainForm
       Text = 'root'
     end
     object PasswordEdit: TEdit
-      Left = 349
-      Height = 24
+      Left = 378
+      Height = 32
       Top = 0
       Width = 118
       Align = alLeft
@@ -648,20 +651,20 @@ object MainForm: TMainForm
       TabOrder = 2
     end
     object Label3: TLabel
-      Left = 149
-      Height = 24
+      Left = 155
+      Height = 32
       Top = 0
-      Width = 23
+      Width = 31
       Align = alLeft
       Caption = 'User'
       Layout = tlCenter
       ParentColor = False
     end
     object Label4: TLabel
-      Left = 296
-      Height = 24
+      Left = 310
+      Height = 32
       Top = 0
-      Width = 50
+      Width = 65
       Align = alLeft
       Caption = 'Password'
       Layout = tlCenter
@@ -1168,18 +1171,18 @@ object MainForm: TMainForm
   end
   object Panel3: TPanel
     Left = 639
-    Height = 197
-    Top = 64
+    Height = 182
+    Top = 79
     Width = 123
     Align = alRight
     BorderSpacing.Around = 3
     BevelOuter = bvNone
-    ClientHeight = 197
+    ClientHeight = 182
     ClientWidth = 123
     TabOrder = 4
     object AddRecordBtn: TButton
       Left = 0
-      Height = 25
+      Height = 36
       Top = 0
       Width = 123
       Align = alTop
@@ -1189,8 +1192,8 @@ object MainForm: TMainForm
     end
     object Button2: TButton
       Left = 0
-      Height = 25
-      Top = 50
+      Height = 36
+      Top = 72
       Width = 123
       Align = alTop
       Caption = 'Delete Record'
@@ -1199,8 +1202,8 @@ object MainForm: TMainForm
     end
     object AddRecordBtn1: TButton
       Left = 0
-      Height = 25
-      Top = 25
+      Height = 36
+      Top = 36
       Width = 123
       Align = alTop
       Caption = 'Read Record'
@@ -1209,8 +1212,8 @@ object MainForm: TMainForm
     end
     object Button3: TButton
       Left = 0
-      Height = 25
-      Top = 75
+      Height = 36
+      Top = 108
       Width = 123
       Align = alTop
       Caption = 'Execute'
@@ -1223,7 +1226,7 @@ object MainForm: TMainForm
     Enabled = False
     KeyAttri.Foreground = 13265205
     SQLDialect = sqlSQLite
-    Left = 252
-    Top = 116
+    left = 252
+    top = 116
   end
 end

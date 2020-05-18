@@ -29,7 +29,7 @@ const
   JulianEpoch = TDateTime(-2415018.5);  //check EpochAsJulianDate
   {$endif}
 
-{$if defined(fpc) and (fpc_fullversion<30000)} //temporary until fpc3 released
+{$if defined(fpc) and (FPC_FULLVERSION<300000)} //temporary until fpc3 released
 type
   PUTF8Char = PAnsiChar;
 {$endif}
