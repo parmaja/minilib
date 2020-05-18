@@ -456,7 +456,7 @@ begin
   CheckError(sqlite3_close(FDBHandle));
   FDBHandle := nil;
   {$ifdef FPC}
-  ReleaseSQLite;
+  SQLiteLib.Release;
   {$endif}
 end;
 
@@ -543,8 +543,7 @@ end;
 
 procedure TmncSQLiteConnection.DoInit;
 begin
-  if not IsInitializeSqlite then
-    InitializeSQLite();
+  SQLiteLib.Load;
 end;
 
 procedure TmncSQLiteSession.SetConnection(const AValue: TmncSQLiteConnection);

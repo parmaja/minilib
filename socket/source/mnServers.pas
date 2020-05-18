@@ -475,7 +475,7 @@ begin
         aSocket := nil;
       Enter;
       try
-        //Just a stop to finish proc outside
+        //Just a stop to finish some procedures outside, or make terminated get new value before continue
       finally
         Leave;
       end;

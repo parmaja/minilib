@@ -34,123 +34,127 @@
     </CompilerOptions>
     <Description Value="Mini Connection, DB and Streams"/>
     <Version Major="1" Release="1"/>
-    <Files>
-      <Item>
+    <Files Count="28">
+      <Item1>
         <Filename Value="MiniConnections.pas"/>
         <UnitName Value="MiniConnections"/>
-      </Item>
-      <Item>
+      </Item1>
+      <Item2>
         <Filename Value="mncConnections.pas"/>
         <UnitName Value="mncConnections"/>
-      </Item>
-      <Item>
+      </Item2>
+      <Item3>
         <Filename Value="mncCSV.pas"/>
         <UnitName Value="mncCSV"/>
-      </Item>
-      <Item>
+      </Item3>
+      <Item4>
         <Filename Value="mncCSVExchanges.pas"/>
         <UnitName Value="mncCSVExchanges"/>
-      </Item>
-      <Item>
+      </Item4>
+      <Item5>
         <Filename Value="mncCommons.pas"/>
         <UnitName Value="mncCommons"/>
-      </Item>
-      <Item>
+      </Item5>
+      <Item6>
         <Filename Value="mncDB.pas"/>
         <UnitName Value="mncDB"/>
-      </Item>
-      <Item>
+      </Item6>
+      <Item7>
         <Filename Value="mncMeta.pas"/>
         <UnitName Value="mncMeta"/>
-      </Item>
-      <Item>
+      </Item7>
+      <Item8>
         <Filename Value="mncORM.pas"/>
         <UnitName Value="mncORM"/>
-      </Item>
-      <Item>
+      </Item8>
+      <Item9>
         <Filename Value="mncSQL.pas"/>
         <UnitName Value="mncSQL"/>
-      </Item>
-      <Item>
+      </Item9>
+      <Item10>
         <Filename Value="postgre\mncPostgre.pas"/>
         <UnitName Value="mncPostgre"/>
-      </Item>
-      <Item>
+      </Item10>
+      <Item11>
         <Filename Value="postgre\mncPGHeader.pas"/>
         <UnitName Value="mncPGHeader"/>
-      </Item>
-      <Item>
+      </Item11>
+      <Item12>
         <Filename Value="postgre\mncPGMeta.pas"/>
         <UnitName Value="mncPGMeta"/>
-      </Item>
-      <Item>
+      </Item12>
+      <Item13>
         <Filename Value="postgre\mncPGORM.pas"/>
         <UnitName Value="mncPGORM"/>
-      </Item>
-      <Item>
-        <Filename Value="firebird\mncFBMeta.pas"/>
-        <UnitName Value="mncFBMeta"/>
-      </Item>
-      <Item>
-        <Filename Value="firebird\mncFBUtils.pas"/>
-        <UnitName Value="mncFBUtils"/>
-      </Item>
-      <Item>
+      </Item13>
+      <Item14>
+        <Filename Value="firebird\mncFBHeader.pas"/>
+        <UnitName Value="mncFBHeader"/>
+      </Item14>
+      <Item15>
         <Filename Value="firebird\mncFirebird.pas"/>
         <UnitName Value="mncFirebird"/>
-      </Item>
-      <Item>
+      </Item15>
+      <Item16>
+        <Filename Value="firebird\mncFBMeta.pas"/>
+        <UnitName Value="mncFBMeta"/>
+      </Item16>
+      <Item17>
+        <Filename Value="firebird\mncFBUtils.pas"/>
+        <UnitName Value="mncFBUtils"/>
+      </Item17>
+      <Item18>
         <Filename Value="sqlite\mncSQLite.pas"/>
         <UnitName Value="mncSQLite"/>
-      </Item>
-      <Item>
+      </Item18>
+      <Item19>
         <Filename Value="sqlite\mncSQLiteHeader.pas"/>
         <UnitName Value="mncSQLiteHeader"/>
-      </Item>
-      <Item>
+      </Item19>
+      <Item20>
         <Filename Value="sqlite\mncSQLiteMeta.pas"/>
         <UnitName Value="mncSQLiteMeta"/>
-      </Item>
-      <Item>
+      </Item20>
+      <Item21>
         <Filename Value="sqlite\mncSQLiteORM.pas"/>
         <UnitName Value="mncSQLiteORM"/>
-      </Item>
-      <Item>
-        <Filename Value="mysql\mncMySQLdyn.pp"/>
-        <UnitName Value="mncMySQLdyn"/>
-      </Item>
-      <Item>
-        <Filename Value="mysql\mncMySQLMeta.pas"/>
-        <UnitName Value="mncMySQLMeta"/>
-      </Item>
-      <Item>
+      </Item21>
+      <Item22>
+        <Filename Value="mysql\mncMySQLHeader.pas"/>
+        <UnitName Value="mncMySQLHeader"/>
+      </Item22>
+      <Item23>
         <Filename Value="mysql\mncMySQL.pas"/>
         <UnitName Value="mncMySQL"/>
-      </Item>
-      <Item>
+      </Item23>
+      <Item24>
         <Filename Value="mysql\mncMySQLORM.pas"/>
         <UnitName Value="mncMySQLORM"/>
-      </Item>
-      <Item>
+      </Item24>
+      <Item25>
+        <Filename Value="mysql\mncMySQLMeta.pas"/>
+        <UnitName Value="mncMySQLMeta"/>
+      </Item25>
+      <Item26>
         <Filename Value="mncSQLUtils.pas"/>
         <UnitName Value="mncSQLUtils"/>
-      </Item>
-      <Item>
+      </Item26>
+      <Item27>
         <Filename Value="ui\ParamsForms.pas"/>
         <UnitName Value="ParamsForms"/>
-      </Item>
-      <Item>
+      </Item27>
+      <Item28>
         <Filename Value="ui\CSVOptionsForms.pas"/>
         <UnitName Value="CSVOptionsForms"/>
-      </Item>
+      </Item28>
     </Files>
-    <RequiredPkgs>
-      <Item>
+    <RequiredPkgs Count="2">
+      <Item1>
         <PackageName Value="LCL"/>
-      </Item>
-      <Item>
+      </Item1>
+      <Item2>
         <PackageName Value="MiniCommons"/>
-      </Item>
+      </Item2>
     </RequiredPkgs>
     <UsageOptions>
       <UnitPath Value="$(PkgOutDir)"/>

@@ -17,7 +17,7 @@ unit mncFBHeader;
 interface
 
 uses
-  Types, Classes;
+  Types, Classes, SysUtils, mnLibraries;
 
 type
 
@@ -1413,149 +1413,78 @@ type
 (** OSRI database functions **)
 (*****************************)
 
-  Tisc_attach_database = function(status_vector: PISC_STATUS; db_name_length: Short; db_name: PByte;  db_handle: PISC_DB_HANDLE; parm_buffer_length: Short; parm_buffer: PByte): ISC_STATUS; stdcall;
-
-  Tisc_array_gen_sdl = function(status_vector: PISC_STATUS; isc_array_desc: PISC_ARRAY_DESC; isc_arg3: PShort; isc_arg4: PByte; isc_arg5: PShort): ISC_STATUS; stdcall;
-
-  Tisc_array_get_slice = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; trans_handle: PISC_TR_HANDLE; array_id: PISC_QUAD; descriptor: PISC_ARRAY_DESC; dest_array: PVoid; slice_length: ISC_LONG): ISC_STATUS; stdcall;
-
-  Tisc_array_lookup_bounds = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; trans_handle: PISC_TR_HANDLE; table_name, column_name: PByte; descriptor: PISC_ARRAY_DESC): ISC_STATUS; stdcall;
-
-  Tisc_array_lookup_desc = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; trans_handle: PISC_TR_HANDLE; table_name, column_name: PByte; descriptor: PISC_ARRAY_DESC): ISC_STATUS; stdcall;
-
-  Tisc_array_set_desc = function(status_vector: PISC_STATUS; table_name: PByte; column_name: PByte; sql_dtype, sql_length, sql_dimensions: PShort; descriptor: PISC_ARRAY_DESC): ISC_STATUS; stdcall;
-
-  Tisc_array_put_slice = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; trans_handle: PISC_TR_HANDLE; array_id: PISC_QUAD; descriptor: PISC_ARRAY_DESC; source_array: PVoid; slice_length: PISC_LONG): ISC_STATUS; stdcall;
-
-  Tisc_blob_default_desc = procedure(descriptor: PISC_BLOB_DESC; table_name: PUChar; column_name: PUChar); stdcall;
-
-  Tisc_blob_gen_bpb = function(status_vector: PISC_STATUS; to_descriptor, from_descriptor: PISC_BLOB_DESC; bpb_buffer_length: UShort; bpb_buffer: PUChar; bpb_length: PUShort): ISC_STATUS; stdcall;
-
-  Tisc_blob_info = function(status_vector: PISC_STATUS; blob_handle: PISC_BLOB_HANDLE; item_list_buffer_length: Short; item_list_buffer: PByte; result_buffer_length: Short; result_buffer: PByte): ISC_STATUS; stdcall;
-
-  Tisc_blob_lookup_desc = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; trans_handle: PISC_TR_HANDLE; table_name, column_name: PByte; descriptor: PISC_BLOB_DESC; global: PUChar): ISC_STATUS; stdcall;
-
-  Tisc_blob_set_desc = function(status_vector: PISC_STATUS; table_name, column_name: PByte; subtype, charset, segment_size: Short; descriptor: PISC_BLOB_DESC): ISC_STATUS; stdcall;
-
-  Tisc_cancel_blob = function(status_vector: PISC_STATUS; blob_handle: PISC_BLOB_HANDLE): ISC_STATUS; stdcall; Tisc_cancel_events = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; event_id: PISC_LONG): ISC_STATUS; stdcall;
-
-  Tisc_close_blob = function(status_vector: PISC_STATUS; blob_handle: PISC_BLOB_HANDLE): ISC_STATUS; stdcall; Tisc_commit_retaining = function(status_vector: PISC_STATUS; tran_handle: PISC_TR_HANDLE): ISC_STATUS; stdcall;
-
-  Tisc_commit_transaction = function(status_vector: PISC_STATUS; tran_handle: PISC_TR_HANDLE): ISC_STATUS; stdcall; Tisc_create_blob = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; tran_handle: PISC_TR_HANDLE; blob_handle: PISC_BLOB_HANDLE; blob_id: PISC_QUAD): ISC_STATUS; stdcall;
-
-  Tisc_create_blob2 = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; tran_handle: PISC_TR_HANDLE; blob_handle: PISC_BLOB_HANDLE; blob_id: PISC_QUAD; bpb_length: Short; bpb_address: PByte): ISC_STATUS; stdcall;
-
-  Tisc_create_database = function(status_vector: PISC_STATUS; isc_arg2: Short; isc_arg3: PByte; db_handle: PISC_DB_HANDLE; isc_arg5: Short; isc_arg6: PByte; isc_arg7: Short): ISC_STATUS; stdcall;
-
-  Tisc_database_info = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; item_list_buffer_length: Short; item_list_buffer: PByte; result_buffer_length: Short; result_buffer: PByte): ISC_STATUS; stdcall;
-
-  Tisc_decode_date = procedure(ib_date: PISC_QUAD; tm_date: PCTimeStructure); stdcall; Tisc_decode_sql_date = procedure(ib_date: PISC_DATE; tm_date: PCTimeStructure); stdcall;
-
-  Tisc_decode_sql_time = procedure(ib_time: PISC_TIME; tm_date: PCTimeStructure); stdcall;
-
-  Tisc_decode_timestamp = procedure(ib_timestamp: PISC_TIMESTAMP; tm_date: PCTimeStructure); stdcall;
-
-  Tisc_detach_database = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE): ISC_STATUS; stdcall;
-
-  Tisc_drop_database = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE): ISC_STATUS; stdcall;
-
-  Tisc_dsql_allocate_statement = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; stmt_handle: PISC_STMT_HANDLE): ISC_STATUS; stdcall;
-
-  Tisc_dsql_alloc_statement2 = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; stmt_handle: PISC_STMT_HANDLE): ISC_STATUS; stdcall;
-
-  Tisc_dsql_describe = function(status_vector: PISC_STATUS; stmt_handle: PISC_STMT_HANDLE; dialect: UShort; xsqlda: PXSQLDA): ISC_STATUS; stdcall;
-
-  Tisc_dsql_describe_bind = function(status_vector: PISC_STATUS; stmt_handle: PISC_STMT_HANDLE; dialect: UShort; xsqlda: PXSQLDA): ISC_STATUS; stdcall;
-
-  Tisc_dsql_exec_immed2 = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; tran_handle: PISC_TR_HANDLE; length: UShort; statement: PByte; dialect: UShort; in_xsqlda, out_xsqlda: PXSQLDA): ISC_STATUS; stdcall;
-
-  Tisc_dsql_execute = function(status_vector: PISC_STATUS; tran_handle: PISC_TR_HANDLE; stmt_handle: PISC_STMT_HANDLE; dialect: UShort; xsqlda: PXSQLDA): ISC_STATUS; stdcall;
-
-  Tisc_dsql_execute2 = function(status_vector: PISC_STATUS; tran_handle: PISC_TR_HANDLE; stmt_handle: PISC_STMT_HANDLE; dialect: UShort; in_xsqlda, out_xsqlda: PXSQLDA): ISC_STATUS; stdcall;
-
-  Tisc_dsql_execute_immediate = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; tran_handle: PISC_TR_HANDLE; length: UShort; statement: PByte; dialect: UShort; xsqlda: PXSQLDA): ISC_STATUS; stdcall;
-
-  Tisc_dsql_fetch = function(status_vector: PISC_STATUS; stmt_handle: PISC_STMT_HANDLE; dialect: UShort; xsqlda: PXSQLDA): ISC_STATUS; stdcall; Tisc_dsql_finish = function(db_handle: PISC_DB_HANDLE): ISC_STATUS; stdcall;
-
-  Tisc_dsql_free_statement = function(status_vector: PISC_STATUS; stmt_handle: PISC_STMT_HANDLE; options: UShort): ISC_STATUS; stdcall;
-
-  Tisc_dsql_insert = function(status_vector: PISC_STATUS; stmt_handle: PISC_STMT_HANDLE; arg3: UShort; xsqlda: PXSQLDA): ISC_STATUS; stdcall;
-
-  Tisc_dsql_prepare = function(status_vector: PISC_STATUS; tran_handle: PISC_TR_HANDLE; stmt_handle: PISC_STMT_HANDLE; length: UShort; statement: PByte; dialect: UShort; xsqlda: PXSQLDA): ISC_STATUS; stdcall;
-
-  Tisc_dsql_set_cursor_name = function(status_vector: PISC_STATUS; stmt_handle: PISC_STMT_HANDLE; cursor_name: PByte; _type: UShort): ISC_STATUS; stdcall;
-
-  Tisc_dsql_sql_info = function(status_vector: PISC_STATUS; stmt_handle: PISC_STMT_HANDLE; item_length: Short; items: PByte; buffer_length: Short; buffer: PByte): ISC_STATUS; stdcall;
-
-  Tisc_encode_date = procedure(tm_date: PCTimeStructure; ib_date: PISC_QUAD); stdcall;
-
-  Tisc_encode_sql_date = procedure(tm_date: PCTimeStructure; ib_date: PISC_DATE); stdcall;
-
-  Tisc_encode_sql_time = procedure(tm_date: PCTimeStructure; ib_time: PISC_TIME); stdcall;
-
-  Tisc_encode_timestamp = procedure(tm_date: PCTimeStructure; ib_timestamp: PISC_TIMESTAMP); stdcall;
-
+  Tisc_attach_database = function(status_vector: PISC_STATUS; db_name_length: Short; db_name: PByte;  db_handle: PISC_DB_HANDLE; parm_buffer_length: Short; parm_buffer: PByte): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_array_gen_sdl = function(status_vector: PISC_STATUS; isc_array_desc: PISC_ARRAY_DESC; isc_arg3: PShort; isc_arg4: PByte; isc_arg5: PShort): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_array_get_slice = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; trans_handle: PISC_TR_HANDLE; array_id: PISC_QUAD; descriptor: PISC_ARRAY_DESC; dest_array: PVoid; slice_length: ISC_LONG): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_array_lookup_bounds = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; trans_handle: PISC_TR_HANDLE; table_name, column_name: PByte; descriptor: PISC_ARRAY_DESC): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_array_lookup_desc = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; trans_handle: PISC_TR_HANDLE; table_name, column_name: PByte; descriptor: PISC_ARRAY_DESC): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_array_set_desc = function(status_vector: PISC_STATUS; table_name: PByte; column_name: PByte; sql_dtype, sql_length, sql_dimensions: PShort; descriptor: PISC_ARRAY_DESC): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_array_put_slice = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; trans_handle: PISC_TR_HANDLE; array_id: PISC_QUAD; descriptor: PISC_ARRAY_DESC; source_array: PVoid; slice_length: PISC_LONG): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_blob_default_desc = procedure(descriptor: PISC_BLOB_DESC; table_name: PUChar; column_name: PUChar); {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_blob_gen_bpb = function(status_vector: PISC_STATUS; to_descriptor, from_descriptor: PISC_BLOB_DESC; bpb_buffer_length: UShort; bpb_buffer: PUChar; bpb_length: PUShort): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_blob_info = function(status_vector: PISC_STATUS; blob_handle: PISC_BLOB_HANDLE; item_list_buffer_length: Short; item_list_buffer: PByte; result_buffer_length: Short; result_buffer: PByte): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_blob_lookup_desc = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; trans_handle: PISC_TR_HANDLE; table_name, column_name: PByte; descriptor: PISC_BLOB_DESC; global: PUChar): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_blob_set_desc = function(status_vector: PISC_STATUS; table_name, column_name: PByte; subtype, charset, segment_size: Short; descriptor: PISC_BLOB_DESC): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_cancel_blob = function(status_vector: PISC_STATUS; blob_handle: PISC_BLOB_HANDLE): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif}; Tisc_cancel_events = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; event_id: PISC_LONG): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_close_blob = function(status_vector: PISC_STATUS; blob_handle: PISC_BLOB_HANDLE): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif}; Tisc_commit_retaining = function(status_vector: PISC_STATUS; tran_handle: PISC_TR_HANDLE): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_commit_transaction = function(status_vector: PISC_STATUS; tran_handle: PISC_TR_HANDLE): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif}; Tisc_create_blob = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; tran_handle: PISC_TR_HANDLE; blob_handle: PISC_BLOB_HANDLE; blob_id: PISC_QUAD): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_create_blob2 = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; tran_handle: PISC_TR_HANDLE; blob_handle: PISC_BLOB_HANDLE; blob_id: PISC_QUAD; bpb_length: Short; bpb_address: PByte): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_create_database = function(status_vector: PISC_STATUS; isc_arg2: Short; isc_arg3: PByte; db_handle: PISC_DB_HANDLE; isc_arg5: Short; isc_arg6: PByte; isc_arg7: Short): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_database_info = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; item_list_buffer_length: Short; item_list_buffer: PByte; result_buffer_length: Short; result_buffer: PByte): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_decode_date = procedure(ib_date: PISC_QUAD; tm_date: PCTimeStructure); {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif}; Tisc_decode_sql_date = procedure(ib_date: PISC_DATE; tm_date: PCTimeStructure); {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_decode_sql_time = procedure(ib_time: PISC_TIME; tm_date: PCTimeStructure); {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_decode_timestamp = procedure(ib_timestamp: PISC_TIMESTAMP; tm_date: PCTimeStructure); {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_detach_database = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_drop_database = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_dsql_allocate_statement = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; stmt_handle: PISC_STMT_HANDLE): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_dsql_alloc_statement2 = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; stmt_handle: PISC_STMT_HANDLE): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_dsql_describe = function(status_vector: PISC_STATUS; stmt_handle: PISC_STMT_HANDLE; dialect: UShort; xsqlda: PXSQLDA): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_dsql_describe_bind = function(status_vector: PISC_STATUS; stmt_handle: PISC_STMT_HANDLE; dialect: UShort; xsqlda: PXSQLDA): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_dsql_exec_immed2 = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; tran_handle: PISC_TR_HANDLE; length: UShort; statement: PByte; dialect: UShort; in_xsqlda, out_xsqlda: PXSQLDA): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_dsql_execute = function(status_vector: PISC_STATUS; tran_handle: PISC_TR_HANDLE; stmt_handle: PISC_STMT_HANDLE; dialect: UShort; xsqlda: PXSQLDA): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_dsql_execute2 = function(status_vector: PISC_STATUS; tran_handle: PISC_TR_HANDLE; stmt_handle: PISC_STMT_HANDLE; dialect: UShort; in_xsqlda, out_xsqlda: PXSQLDA): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_dsql_execute_immediate = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; tran_handle: PISC_TR_HANDLE; length: UShort; statement: PByte; dialect: UShort; xsqlda: PXSQLDA): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_dsql_fetch = function(status_vector: PISC_STATUS; stmt_handle: PISC_STMT_HANDLE; dialect: UShort; xsqlda: PXSQLDA): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif}; Tisc_dsql_finish = function(db_handle: PISC_DB_HANDLE): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_dsql_free_statement = function(status_vector: PISC_STATUS; stmt_handle: PISC_STMT_HANDLE; options: UShort): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_dsql_insert = function(status_vector: PISC_STATUS; stmt_handle: PISC_STMT_HANDLE; arg3: UShort; xsqlda: PXSQLDA): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_dsql_prepare = function(status_vector: PISC_STATUS; tran_handle: PISC_TR_HANDLE; stmt_handle: PISC_STMT_HANDLE; length: UShort; statement: PByte; dialect: UShort; xsqlda: PXSQLDA): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_dsql_set_cursor_name = function(status_vector: PISC_STATUS; stmt_handle: PISC_STMT_HANDLE; cursor_name: PByte; _type: UShort): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_dsql_sql_info = function(status_vector: PISC_STATUS; stmt_handle: PISC_STMT_HANDLE; item_length: Short; items: PByte; buffer_length: Short; buffer: PByte): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_encode_date = procedure(tm_date: PCTimeStructure; ib_date: PISC_QUAD); {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_encode_sql_date = procedure(tm_date: PCTimeStructure; ib_date: PISC_DATE); {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_encode_sql_time = procedure(tm_date: PCTimeStructure; ib_time: PISC_TIME); {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_encode_timestamp = procedure(tm_date: PCTimeStructure; ib_timestamp: PISC_TIMESTAMP); {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
   Tisc_event_block = function(event_buffer: PPByte; result_buffer: PPByte; id_count: UShort; var event_list: array of PByte): ISC_LONG; cdecl;
-
-  Tisc_event_block_a = function(event_buffer: PPByte; result_buffer: PPByte; id_count: UShort; event_list: PPByte): ISC_LONG; stdcall;
-
-  Tisc_event_block_s = function(event_buffer: PPByte; result_buffer: PPByte; id_count: UShort; event_list: PPByte; arg1: PUShort): ISC_LONG; stdcall;
-
-  Tisc_event_counts = procedure(status_vector: PISC_STATUS; buffer_length: Short; event_buffer: PByte; result_buffer: PByte); stdcall;
-
-  Tisc_modify_dpb = function(dpb: PPByte; isc_arg2, isc_arg3: PShort; isc_arg4: UShort; isc_arg5: PByte; isc_arg6: Short): Int; stdcall;
-
-  Tisc_free = function(isc_arg1: PByte): ISC_LONG; stdcall;
-
-  Tisc_get_segment = function(status_vector: PISC_STATUS; blob_handle: PISC_BLOB_HANDLE; actual_seg_length: PUShort; seg_buffer_length: UShort; seg_buffer: PByte): ISC_STATUS; stdcall;
-
-  Tisc_get_slice = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; tran_handle: PISC_TR_HANDLE; isc_arg4: PISC_QUAD; isc_arg5: Short; isc_arg6: PByte; isc_arg7: Short; isc_arg8: PISC_LONG; isc_arg9: ISC_LONG; isc_arg10: PVoid; isc_arg11: PISC_LONG): ISC_STATUS; stdcall;
-
-  Tisc_interprete = function(buffer: PByte; status_vector: PPISC_STATUS): ISC_STATUS; stdcall;
-
-  Tfb_interpret = function(buffer: PByte; length:short; const status_vector: PPISC_STATUS): ISC_STATUS; stdcall;
-
-  Tisc_open_blob = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; tran_handle: PISC_TR_HANDLE; blob_handle: PISC_BLOB_HANDLE; blob_id: PISC_QUAD): ISC_STATUS; stdcall;
-
-  Tisc_open_blob2 = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; tran_handle: PISC_TR_HANDLE; blob_handle: PISC_BLOB_HANDLE; blob_id: PISC_QUAD; bpb_length: Short; bpb_buffer: PByte): ISC_STATUS; stdcall;
-
-  Tisc_prepare_transaction2 = function(status_vector: PISC_STATUS; tran_handle: PISC_TR_HANDLE; msg_length: Short; msg: PByte): ISC_STATUS; stdcall;
-
-  Tisc_print_sqlerror = procedure(sqlcode: Short; status_vector: PISC_STATUS); stdcall;
-
-  Tisc_print_status = function(status_vector: PISC_STATUS): ISC_STATUS; stdcall;
-
-  Tisc_put_segment = function(status_vector: PISC_STATUS; blob_handle: PISC_BLOB_HANDLE; seg_buffer_len: UShort; seg_buffer: PByte): ISC_STATUS; stdcall;
-
-  Tisc_put_slice = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; tran_handle: PISC_TR_HANDLE; isc_arg4: PISC_QUAD; isc_arg5: Short; isc_arg6: PByte; isc_arg7: Short; isc_arg8: PISC_LONG; isc_arg9: ISC_LONG; isc_arg10: PVoid): ISC_STATUS; stdcall;
-
-  Tisc_que_events = function( status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; event_id: PISC_LONG; length: Short; event_buffer: PByte; event_function: TISC_EVENT_CALLBACK; event_function_arg: PVoid): ISC_STATUS; stdcall;
-
-  Tisc_release_savepoint = function(status_vector: PISC_STATUS; tran_handle: PISC_TR_HANDLE; tran_name: PByte): ISC_STATUS; stdcall;
-
-  Tisc_rollback_retaining = function(status_vector: PISC_STATUS; tran_handle: PISC_TR_HANDLE): ISC_STATUS; stdcall;
-
-  Tisc_rollback_savepoint = function(status_vector: PISC_STATUS; tran_handle: PISC_TR_HANDLE; tran_name: PByte; Option: UShort): ISC_STATUS; stdcall;
-
-  Tisc_rollback_transaction = function(status_vector: PISC_STATUS; tran_handle: PISC_TR_HANDLE): ISC_STATUS; stdcall;
-
-  Tisc_start_multiple = function(status_vector: PISC_STATUS; tran_handle: PISC_TR_HANDLE; db_handle_count: Short; teb_vector_address: PISC_TEB): ISC_STATUS; stdcall;
-
-  Tisc_start_savepoint = function(status_vector: PISC_STATUS; tran_handle: PISC_TR_HANDLE; tran_name: PByte): ISC_STATUS; stdcall;
-
+  Tisc_event_block_a = function(event_buffer: PPByte; result_buffer: PPByte; id_count: UShort; event_list: PPByte): ISC_LONG; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_event_block_s = function(event_buffer: PPByte; result_buffer: PPByte; id_count: UShort; event_list: PPByte; arg1: PUShort): ISC_LONG; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_event_counts = procedure(status_vector: PISC_STATUS; buffer_length: Short; event_buffer: PByte; result_buffer: PByte); {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_modify_dpb = function(dpb: PPByte; isc_arg2, isc_arg3: PShort; isc_arg4: UShort; isc_arg5: PByte; isc_arg6: Short): Int; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_free = function(isc_arg1: PByte): ISC_LONG; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_get_segment = function(status_vector: PISC_STATUS; blob_handle: PISC_BLOB_HANDLE; actual_seg_length: PUShort; seg_buffer_length: UShort; seg_buffer: PByte): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_get_slice = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; tran_handle: PISC_TR_HANDLE; isc_arg4: PISC_QUAD; isc_arg5: Short; isc_arg6: PByte; isc_arg7: Short; isc_arg8: PISC_LONG; isc_arg9: ISC_LONG; isc_arg10: PVoid; isc_arg11: PISC_LONG): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_interprete = function(buffer: PByte; var status_vector: PISC_STATUS): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tfb_interpret = function(buffer: PByte; length:short; const status_vector: PPISC_STATUS): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_open_blob = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; tran_handle: PISC_TR_HANDLE; blob_handle: PISC_BLOB_HANDLE; blob_id: PISC_QUAD): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_open_blob2 = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; tran_handle: PISC_TR_HANDLE; blob_handle: PISC_BLOB_HANDLE; blob_id: PISC_QUAD; bpb_length: Short; bpb_buffer: PByte): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_prepare_transaction2 = function(status_vector: PISC_STATUS; tran_handle: PISC_TR_HANDLE; msg_length: Short; msg: PByte): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_print_sqlerror = procedure(sqlcode: Short; status_vector: PISC_STATUS); {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_print_status = function(status_vector: PISC_STATUS): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_put_segment = function(status_vector: PISC_STATUS; blob_handle: PISC_BLOB_HANDLE; seg_buffer_len: UShort; seg_buffer: PByte): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_put_slice = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; tran_handle: PISC_TR_HANDLE; isc_arg4: PISC_QUAD; isc_arg5: Short; isc_arg6: PByte; isc_arg7: Short; isc_arg8: PISC_LONG; isc_arg9: ISC_LONG; isc_arg10: PVoid): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_que_events = function( status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; event_id: PISC_LONG; length: Short; event_buffer: PByte; event_function: TISC_EVENT_CALLBACK; event_function_arg: PVoid): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_release_savepoint = function(status_vector: PISC_STATUS; tran_handle: PISC_TR_HANDLE; tran_name: PByte): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_rollback_retaining = function(status_vector: PISC_STATUS; tran_handle: PISC_TR_HANDLE): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_rollback_savepoint = function(status_vector: PISC_STATUS; tran_handle: PISC_TR_HANDLE; tran_name: PByte; Option: UShort): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_rollback_transaction = function(status_vector: PISC_STATUS; tran_handle: PISC_TR_HANDLE): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_start_multiple = function(status_vector: PISC_STATUS; tran_handle: PISC_TR_HANDLE; db_handle_count: Short; teb_vector_address: PISC_TEB): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_start_savepoint = function(status_vector: PISC_STATUS; tran_handle: PISC_TR_HANDLE; tran_name: PByte): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
   Tisc_start_transaction = function(status_vector: PISC_STATUS; tran_handle: PISC_TR_HANDLE; db_handle_count: Short; db_handle: PISC_DB_HANDLE; tpb_length: UShort; tpb_address: PByte): ISC_STATUS; cdecl;
-
-  Tisc_sqlcode = function(status_vector: PISC_STATUS): ISC_LONG; stdcall;
-
-  Tisc_sqlcode_s = function(status_vector: PISC_STATUS; arg1: PULong): ISC_LONG; stdcall;
-
-  Tisc_sql_interprete = procedure(sqlcode: Short; buffer: PByte; buffer_length: Short); stdcall;
-
-  Tisc_transaction_info = function(status_vector: PISC_STATUS; tran_handle: PISC_TR_HANDLE; item_list_buffer_length: Short; item_list_buffer: PByte; result_buffer_length: Short; result_buffer: PByte): ISC_STATUS; stdcall;
-
-  Tisc_transact_request = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; tran_handle: PISC_TR_HANDLE; isc_arg4: UShort; isc_arg5: PByte; isc_arg6: UShort; isc_arg7: PByte; isc_arg8: UShort; isc_arg9: PByte): ISC_STATUS; stdcall;
-
-  Tisc_vax_integer = function(buffer: PByte; length: Short): ISC_LONG; stdcall; Tisc_portable_integer = function(buffer: PByte; length: Short): ISC_INT64; stdcall;
+  Tisc_sqlcode = function(status_vector: PISC_STATUS): ISC_LONG; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_sqlcode_s = function(status_vector: PISC_STATUS; arg1: PULong): ISC_LONG; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_sql_interprete = procedure(sqlcode: Short; buffer: PByte; buffer_length: Short); {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_transaction_info = function(status_vector: PISC_STATUS; tran_handle: PISC_TR_HANDLE; item_list_buffer_length: Short; item_list_buffer: PByte; result_buffer_length: Short; result_buffer: PByte): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_transact_request = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; tran_handle: PISC_TR_HANDLE; isc_arg4: UShort; isc_arg5: PByte; isc_arg6: UShort; isc_arg7: PByte; isc_arg8: UShort; isc_arg9: PByte): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_vax_integer = function(buffer: PByte; length: Short): ISC_LONG; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif}; Tisc_portable_integer = function(buffer: PByte; length: Short): ISC_INT64; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
 
 (***************************************)
 (** Security Functions and structures **)
@@ -1596,186 +1525,118 @@ type
   end;
   PUserSecData = ^TUserSecData;
 
-  Tisc_add_user = function(status_vector: PISC_STATUS; user_sec_data: PUserSecData): ISC_STATUS; stdcall;
-
-  Tisc_delete_user = function(status_vector: PISC_STATUS; user_sec_data: PUserSecData): ISC_STATUS; stdcall;
-
-  Tisc_modify_user = function(status_vector: PISC_STATUS; user_sec_data: PUserSecData): ISC_STATUS; stdcall;
+  Tisc_add_user = function(status_vector: PISC_STATUS; user_sec_data: PUserSecData): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_delete_user = function(status_vector: PISC_STATUS; user_sec_data: PUserSecData): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_modify_user = function(status_vector: PISC_STATUS; user_sec_data: PUserSecData): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
 
 (************************************)
 (**  Other OSRI functions          **)
 (************************************)
 
-  Tisc_compile_request = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; request_handle: PISC_REQ_HANDLE; isc_arg4: Short; isc_arg5: PByte): ISC_STATUS; stdcall;
-
-  Tisc_compile_request2 = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; request_handle: PISC_REQ_HANDLE; isc_arg4: Short; isc_arg5: PByte): ISC_STATUS; stdcall;
-
-  Tisc_ddl = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; tran_handle: PISC_TR_HANDLE; isc_arg4: Short; isc_arg5: PByte): ISC_STATUS; stdcall;
-
-  Tisc_prepare_transaction = function(status_vector: PISC_STATUS; tran_handle: PISC_TR_HANDLE): ISC_STATUS; stdcall;
-
-  Tisc_receive = function(status_vector: PISC_STATUS; request_handle: PISC_REQ_HANDLE; isc_arg3, isc_arg4: Short; isc_arg5: PVoid; isc_arg6: Short): ISC_STATUS; stdcall;
-
-  Tisc_receive2 = function(status_vector: PISC_STATUS; request_handle: PISC_REQ_HANDLE; isc_arg3, isc_arg4: Short; isc_arg5: PVoid; isc_arg6, isc_arg7: Short; isc_arg8: Long): ISC_STATUS; stdcall;
-
-  Tisc_reconnect_transaction = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; tran_handle: PISC_TR_HANDLE; isc_arg4: Short; isc_arg5: PByte): ISC_STATUS; stdcall;
-
-  Tisc_release_request = function(status_vector: PISC_STATUS; request_handle: PISC_REQ_HANDLE): ISC_STATUS; stdcall;
-
-  Tisc_request_info = function(status_vector: PISC_STATUS; request_handle: PISC_REQ_HANDLE; isc_arg3: Short; isc_arg4: Short; isc_arg5: PByte; isc_arg6: Short; isc_arg7: PByte): ISC_STATUS; stdcall;
-
-  Tisc_seek_blob = function(status_vector: PISC_STATUS; blob_handle: PISC_BLOB_HANDLE; isc_arg3: Short; isc_arg4: ISC_LONG; isc_arg5: PISC_LONG): ISC_STATUS; stdcall;
-
-  Tisc_send = function(status_vector: PISC_STATUS; request_handle: PISC_REQ_HANDLE; isc_arg3, isc_arg4: Short; isc_arg5: PVoid; isc_arg6: Short): ISC_STATUS; stdcall;
-
-  Tisc_start_and_send = function(status_vector: PISC_STATUS; request_handle: PISC_REQ_HANDLE; tran_handle: PISC_TR_HANDLE; isc_arg4, isc_arg5: Short; isc_arg6: PVoid; isc_arg7: Short): ISC_STATUS; stdcall;
-
-  Tisc_start_request = function(status_vector: PISC_STATUS; request_handle: PISC_REQ_HANDLE; tran_handle: PISC_TR_HANDLE; isc_arg4: Short): ISC_STATUS; stdcall;
-
-  Tisc_unwind_request = function(status_vector: PISC_STATUS; tran_handle: PISC_TR_HANDLE; isc_arg3: Short): ISC_STATUS; stdcall;
-
-  Tisc_wait_for_event = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; length: Short; event_buffer, result_buffer: PByte): ISC_STATUS; stdcall;
+  Tisc_compile_request = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; request_handle: PISC_REQ_HANDLE; isc_arg4: Short; isc_arg5: PByte): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_compile_request2 = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; request_handle: PISC_REQ_HANDLE; isc_arg4: Short; isc_arg5: PByte): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_ddl = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; tran_handle: PISC_TR_HANDLE; isc_arg4: Short; isc_arg5: PByte): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_prepare_transaction = function(status_vector: PISC_STATUS; tran_handle: PISC_TR_HANDLE): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_receive = function(status_vector: PISC_STATUS; request_handle: PISC_REQ_HANDLE; isc_arg3, isc_arg4: Short; isc_arg5: PVoid; isc_arg6: Short): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_receive2 = function(status_vector: PISC_STATUS; request_handle: PISC_REQ_HANDLE; isc_arg3, isc_arg4: Short; isc_arg5: PVoid; isc_arg6, isc_arg7: Short; isc_arg8: Long): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_reconnect_transaction = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; tran_handle: PISC_TR_HANDLE; isc_arg4: Short; isc_arg5: PByte): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_release_request = function(status_vector: PISC_STATUS; request_handle: PISC_REQ_HANDLE): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_request_info = function(status_vector: PISC_STATUS; request_handle: PISC_REQ_HANDLE; isc_arg3: Short; isc_arg4: Short; isc_arg5: PByte; isc_arg6: Short; isc_arg7: PByte): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_seek_blob = function(status_vector: PISC_STATUS; blob_handle: PISC_BLOB_HANDLE; isc_arg3: Short; isc_arg4: ISC_LONG; isc_arg5: PISC_LONG): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_send = function(status_vector: PISC_STATUS; request_handle: PISC_REQ_HANDLE; isc_arg3, isc_arg4: Short; isc_arg5: PVoid; isc_arg6: Short): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_start_and_send = function(status_vector: PISC_STATUS; request_handle: PISC_REQ_HANDLE; tran_handle: PISC_TR_HANDLE; isc_arg4, isc_arg5: Short; isc_arg6: PVoid; isc_arg7: Short): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_start_request = function(status_vector: PISC_STATUS; request_handle: PISC_REQ_HANDLE; tran_handle: PISC_TR_HANDLE; isc_arg4: Short): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_unwind_request = function(status_vector: PISC_STATUS; tran_handle: PISC_TR_HANDLE; isc_arg3: Short): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_wait_for_event = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; length: Short; event_buffer, result_buffer: PByte): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
 
 (*******************************)
 (** Other Sql functions       **)
 (*******************************)
 
-  Tisc_close = function(status_vector: PISC_STATUS; isc_arg2: PByte): ISC_STATUS; stdcall;
-
-  Tisc_declare = function(status_vector: PISC_STATUS; isc_arg2, isc_arg3: PByte): ISC_STATUS; stdcall;
-
-  Tisc_describe = function(status_vector: PISC_STATUS; isc_arg2: PByte; isc_arg3: PXSQLDA): ISC_STATUS; stdcall;
-
-  Tisc_describe_bind = function(status_vector: PISC_STATUS; isc_arg2: PByte; isc_arg3: PXSQLDA): ISC_STATUS; stdcall;
-
-  Tisc_execute = function(status_vector: PISC_STATUS; tran_handle: PISC_TR_HANDLE; isc_arg3: PByte; isc_arg4: PXSQLDA): ISC_STATUS; stdcall;
-
-  Tisc_execute_immediate = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; tran_handle: PISC_TR_HANDLE; isc_arg4: PShort; isc_arg5: PByte): ISC_STATUS; stdcall;
-
-  Tisc_fetch = function(status_vector: PISC_STATUS; isc_arg2: PByte; isc_arg3: PXSQLDA): ISC_STATUS; stdcall;
-
-  Tisc_open = function(status_vector: PISC_STATUS; tran_handle: PISC_TR_HANDLE; isc_arg3: PByte; isc_arg4: PXSQLDA): ISC_STATUS; stdcall;
-
-  Tisc_prepare = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; tran_handle: PISC_TR_HANDLE; isc_arg4: PByte; isc_arg5: PShort; isc_arg6: PByte; isc_arg7: PXSQLDA): ISC_STATUS; stdcall;
+  Tisc_close = function(status_vector: PISC_STATUS; isc_arg2: PByte): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_declare = function(status_vector: PISC_STATUS; isc_arg2, isc_arg3: PByte): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_describe = function(status_vector: PISC_STATUS; isc_arg2: PByte; isc_arg3: PXSQLDA): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_describe_bind = function(status_vector: PISC_STATUS; isc_arg2: PByte; isc_arg3: PXSQLDA): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_execute = function(status_vector: PISC_STATUS; tran_handle: PISC_TR_HANDLE; isc_arg3: PByte; isc_arg4: PXSQLDA): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_execute_immediate = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; tran_handle: PISC_TR_HANDLE; isc_arg4: PShort; isc_arg5: PByte): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_fetch = function(status_vector: PISC_STATUS; isc_arg2: PByte; isc_arg3: PXSQLDA): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_open = function(status_vector: PISC_STATUS; tran_handle: PISC_TR_HANDLE; isc_arg3: PByte; isc_arg4: PXSQLDA): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_prepare = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; tran_handle: PISC_TR_HANDLE; isc_arg4: PByte; isc_arg5: PShort; isc_arg6: PByte; isc_arg7: PXSQLDA): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
 
 (***************************************)
 (** Other Dynamic sql functions       **)
 (***************************************)
 
-  Tisc_dsql_execute_m = function(status_vector: PISC_STATUS; tran_handle: PISC_TR_HANDLE; statement_handle: PISC_STMT_HANDLE; isc_arg4: UShort; isc_arg5: PByte; isc_arg6: UShort; isc_arg7: UShort; isc_arg8: PByte): ISC_STATUS; stdcall;
-
+  Tisc_dsql_execute_m = function(status_vector: PISC_STATUS; tran_handle: PISC_TR_HANDLE; statement_handle: PISC_STMT_HANDLE; isc_arg4: UShort; isc_arg5: PByte; isc_arg6: UShort; isc_arg7: UShort; isc_arg8: PByte): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
   Tisc_dsql_execute2_m = function(status_vector: PISC_STATUS; tran_handle: PISC_TR_HANDLE; statement_handle: PISC_STMT_HANDLE;
                                   isc_arg4: UShort; isc_arg5: PByte; isc_arg6: UShort; isc_arg7: UShort; isc_arg8: PByte; isc_arg9: UShort; isc_arg10: PByte;
-                                  isc_arg11: UShort; isc_arg12: UShort; isc_arg13: PByte): ISC_STATUS; stdcall;
-
+                                  isc_arg11: UShort; isc_arg12: UShort; isc_arg13: PByte): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
   Tisc_dsql_execute_immediate_m = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; tran_handle: PISC_TR_HANDLE;
                                             isc_arg4: UShort; isc_arg5: PByte; isc_arg6: UShort; isc_arg7: UShort; isc_arg8: PByte; isc_arg9: UShort; isc_arg10: UShort;
-                                            isc_arg11: PByte): ISC_STATUS; stdcall;
-
+                                            isc_arg11: PByte): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
   Tisc_dsql_exec_immed3_m = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; tran_handle: PISC_TR_HANDLE;
                                      isc_arg4: UShort; isc_arg5: PByte; isc_arg6: UShort; isc_arg7: UShort; isc_arg8: PByte; isc_arg9: UShort;
                                      isc_arg10: UShort; isc_arg11: PByte; isc_arg12: UShort; isc_arg13: PByte; isc_arg14: UShort;
-                                     isc_arg15: UShort; isc_arg16: PByte): ISC_STATUS; stdcall;
-
-  Tisc_dsql_fetch_m = function(status_vector: PISC_STATUS; statement_handle: PISC_STMT_HANDLE; isc_arg3: UShort; isc_arg4: PByte; isc_arg5: UShort; isc_arg6: UShort; isc_arg7: PByte): ISC_STATUS; stdcall;
-
-  Tisc_dsql_insert_m = function(status_vector: PISC_STATUS; statement_handle: PISC_STMT_HANDLE; isc_arg3: UShort; isc_arg4: PByte; isc_arg5: UShort; isc_arg6: UShort; isc_arg7: PByte): ISC_STATUS; stdcall;
-
-  Tisc_dsql_prepare_m = function(status_vector: PISC_STATUS; tran_handle: PISC_TR_HANDLE; statement_handle: PISC_STMT_HANDLE; isc_arg4: UShort; isc_arg5: PByte; isc_arg6: UShort; isc_arg7: UShort; isc_arg8: PByte; isc_arg9: UShort; isc_arg10: PByte): ISC_STATUS; stdcall;
-
-  Tisc_dsql_release = function(status_vector: PISC_STATUS; isc_arg2: PByte): ISC_STATUS; stdcall;
-
-  Tisc_embed_dsql_close = function(status_vector: PISC_STATUS; isc_arg2: PByte): ISC_STATUS; stdcall;
-
-  Tisc_embed_dsql_declare = function(status_vector: PISC_STATUS; isc_arg2: PByte; isc_arg3: PByte): ISC_STATUS; stdcall;
-
-  Tisc_embed_dsql_describe = function(status_vector: PISC_STATUS; isc_arg2: PByte; isc_arg3: UShort; isc_arg4: PXSQLDA): ISC_STATUS; stdcall;
-
-  Tisc_embed_dsql_describe_bind = function(status_vector: PISC_STATUS; isc_arg2: PByte; isc_arg3: UShort; isc_arg4: PXSQLDA): ISC_STATUS; stdcall;
-
-  Tisc_embed_dsql_execute = function(status_vector: PISC_STATUS; tran_handle: PISC_TR_HANDLE; isc_arg3: PByte; isc_arg4: UShort; isc_arg5: PXSQLDA): ISC_STATUS; stdcall;
-
-  Tisc_embed_dsql_execute2 = function(status_vector: PISC_STATUS; tran_handle: PISC_TR_HANDLE; isc_arg3: PByte; isc_arg4: UShort; isc_arg5: PXSQLDA; isc_arg6: PXSQLDA): ISC_STATUS; stdcall;
-
-  Tisc_embed_dsql_execute_immed = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; tran_handle: PISC_TR_HANDLE; isc_arg4: UShort; isc_arg5: PByte; isc_arg6: UShort; isc_arg7: PXSQLDA): ISC_STATUS; stdcall;
-
-  Tisc_embed_dsql_fetch = function(status_vector: PISC_STATUS; isc_arg2: PByte; isc_arg3: UShort; isc_arg4: PXSQLDA): ISC_STATUS; stdcall;
-
-  Tisc_embed_dsql_fetch_a = function(status_vector: PISC_STATUS; isc_arg2: PInt; isc_arg3: PByte; isc_arg4: UShort; isc_arg5: PXSQLDA): ISC_STATUS; stdcall;
-
-  Tisc_embed_dsql_length = procedure(arg1: PByte; arg2: PUShort); stdcall; Tisc_embed_dsql_open = function(status_vector: PISC_STATUS; tran_handle: PISC_TR_HANDLE; isc_arg3: PByte; isc_arg4: UShort; isc_arg5: PXSQLDA): ISC_STATUS; stdcall;
-
-  Tisc_embed_dsql_open2 = function(status_vector: PISC_STATUS; tran_handle: PISC_TR_HANDLE; isc_arg3: PByte; isc_arg4: UShort; isc_arg5: PXSQLDA; isc_arg6: PXSQLDA): ISC_STATUS; stdcall;
-
-  Tisc_embed_dsql_insert = function(status_vector: PISC_STATUS; isc_arg2: PByte; isc_arg3: UShort; isc_arg4: PXSQLDA): ISC_STATUS; stdcall;
-
-  Tisc_embed_dsql_prepare = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; tran_handle: PISC_TR_HANDLE; isc_arg4: PByte; isc_arg5: UShort; isc_arg6: PByte; isc_arg7: UShort; isc_arg8: PXSQLDA): ISC_STATUS; stdcall;
-
-  Tisc_embed_dsql_release = function(status_vector: PISC_STATUS; isc_arg2: PByte): ISC_STATUS; stdcall;
+                                     isc_arg15: UShort; isc_arg16: PByte): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_dsql_fetch_m = function(status_vector: PISC_STATUS; statement_handle: PISC_STMT_HANDLE; isc_arg3: UShort; isc_arg4: PByte; isc_arg5: UShort; isc_arg6: UShort; isc_arg7: PByte): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_dsql_insert_m = function(status_vector: PISC_STATUS; statement_handle: PISC_STMT_HANDLE; isc_arg3: UShort; isc_arg4: PByte; isc_arg5: UShort; isc_arg6: UShort; isc_arg7: PByte): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_dsql_prepare_m = function(status_vector: PISC_STATUS; tran_handle: PISC_TR_HANDLE; statement_handle: PISC_STMT_HANDLE; isc_arg4: UShort; isc_arg5: PByte; isc_arg6: UShort; isc_arg7: UShort; isc_arg8: PByte; isc_arg9: UShort; isc_arg10: PByte): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_dsql_release = function(status_vector: PISC_STATUS; isc_arg2: PByte): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_embed_dsql_close = function(status_vector: PISC_STATUS; isc_arg2: PByte): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_embed_dsql_declare = function(status_vector: PISC_STATUS; isc_arg2: PByte; isc_arg3: PByte): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_embed_dsql_describe = function(status_vector: PISC_STATUS; isc_arg2: PByte; isc_arg3: UShort; isc_arg4: PXSQLDA): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_embed_dsql_describe_bind = function(status_vector: PISC_STATUS; isc_arg2: PByte; isc_arg3: UShort; isc_arg4: PXSQLDA): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_embed_dsql_execute = function(status_vector: PISC_STATUS; tran_handle: PISC_TR_HANDLE; isc_arg3: PByte; isc_arg4: UShort; isc_arg5: PXSQLDA): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_embed_dsql_execute2 = function(status_vector: PISC_STATUS; tran_handle: PISC_TR_HANDLE; isc_arg3: PByte; isc_arg4: UShort; isc_arg5: PXSQLDA; isc_arg6: PXSQLDA): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_embed_dsql_execute_immed = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; tran_handle: PISC_TR_HANDLE; isc_arg4: UShort; isc_arg5: PByte; isc_arg6: UShort; isc_arg7: PXSQLDA): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_embed_dsql_fetch = function(status_vector: PISC_STATUS; isc_arg2: PByte; isc_arg3: UShort; isc_arg4: PXSQLDA): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_embed_dsql_fetch_a = function(status_vector: PISC_STATUS; isc_arg2: PInt; isc_arg3: PByte; isc_arg4: UShort; isc_arg5: PXSQLDA): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_embed_dsql_length = procedure(arg1: PByte; arg2: PUShort); {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif}; Tisc_embed_dsql_open = function(status_vector: PISC_STATUS; tran_handle: PISC_TR_HANDLE; isc_arg3: PByte; isc_arg4: UShort; isc_arg5: PXSQLDA): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_embed_dsql_open2 = function(status_vector: PISC_STATUS; tran_handle: PISC_TR_HANDLE; isc_arg3: PByte; isc_arg4: UShort; isc_arg5: PXSQLDA; isc_arg6: PXSQLDA): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_embed_dsql_insert = function(status_vector: PISC_STATUS; isc_arg2: PByte; isc_arg3: UShort; isc_arg4: PXSQLDA): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_embed_dsql_prepare = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; tran_handle: PISC_TR_HANDLE; isc_arg4: PByte; isc_arg5: UShort; isc_arg6: PByte; isc_arg7: UShort; isc_arg8: PXSQLDA): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_embed_dsql_release = function(status_vector: PISC_STATUS; isc_arg2: PByte): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
 
 (********************************)
 (** Other Blob functions       **)
 (********************************)
 
-  TBLOB_open = function(blob_handle: TISC_BLOB_HANDLE; isc_arg2: PByte; isc_arg3: int): PBSTREAM; stdcall;
-
-  TBLOB_put = function(isc_arg1: byte; isc_arg2: PBSTREAM): Int; stdcall;
-
-  TBLOB_close = function(isc_arg1: PBSTREAM): Int; stdcall;
-
-  TBLOB_get = function(isc_arg1: PBSTREAM): Int; stdcall;
-
-  TBLOB_display = function(isc_arg1: PISC_QUAD; db_handle: TISC_DB_HANDLE; tran_handle: TISC_TR_HANDLE; isc_arg4: PByte): Int; stdcall;
-
-  TBLOB_dump = function(isc_arg1: PISC_QUAD; db_handle: TISC_DB_HANDLE; tran_handle: TISC_TR_HANDLE; isc_arg4: PByte): Int; stdcall;
-
-  TBLOB_edit = function(isc_arg1: PISC_QUAD; db_handle: TISC_DB_HANDLE; tran_handle: TISC_TR_HANDLE; isc_arg4: PByte): Int; stdcall;
-
-  TBLOB_load = function(isc_arg1: PISC_QUAD; db_handle: TISC_DB_HANDLE; tran_handle: TISC_TR_HANDLE; isc_arg4: PByte): Int; stdcall;
-
-  TBLOB_text_dump = function(isc_arg1: PISC_QUAD; db_handle: TISC_DB_HANDLE; tran_handle: TISC_TR_HANDLE; isc_arg4: PByte): Int; stdcall;
-
-  TBLOB_text_load = function(isc_arg1: PISC_QUAD; db_handle: TISC_DB_HANDLE; tran_handle: TISC_TR_HANDLE; isc_arg4: PByte): Int; stdcall;
-
-  TBopen = function(blob_id: PISC_QUAD; db_handle: TISC_DB_HANDLE; tran_handle: TISC_TR_HANDLE; mode: PByte): PBSTREAM; stdcall;
-
-  TBclose = function(Stream: PBSTREAM): PISC_STATUS; stdcall;
+  TBLOB_open = function(blob_handle: TISC_BLOB_HANDLE; isc_arg2: PByte; isc_arg3: int): PBSTREAM; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  TBLOB_put = function(isc_arg1: byte; isc_arg2: PBSTREAM): Int; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  TBLOB_close = function(isc_arg1: PBSTREAM): Int; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  TBLOB_get = function(isc_arg1: PBSTREAM): Int; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  TBLOB_display = function(isc_arg1: PISC_QUAD; db_handle: TISC_DB_HANDLE; tran_handle: TISC_TR_HANDLE; isc_arg4: PByte): Int; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  TBLOB_dump = function(isc_arg1: PISC_QUAD; db_handle: TISC_DB_HANDLE; tran_handle: TISC_TR_HANDLE; isc_arg4: PByte): Int; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  TBLOB_edit = function(isc_arg1: PISC_QUAD; db_handle: TISC_DB_HANDLE; tran_handle: TISC_TR_HANDLE; isc_arg4: PByte): Int; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  TBLOB_load = function(isc_arg1: PISC_QUAD; db_handle: TISC_DB_HANDLE; tran_handle: TISC_TR_HANDLE; isc_arg4: PByte): Int; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  TBLOB_text_dump = function(isc_arg1: PISC_QUAD; db_handle: TISC_DB_HANDLE; tran_handle: TISC_TR_HANDLE; isc_arg4: PByte): Int; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  TBLOB_text_load = function(isc_arg1: PISC_QUAD; db_handle: TISC_DB_HANDLE; tran_handle: TISC_TR_HANDLE; isc_arg4: PByte): Int; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  TBopen = function(blob_id: PISC_QUAD; db_handle: TISC_DB_HANDLE; tran_handle: TISC_TR_HANDLE; mode: PByte): PBSTREAM; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  TBclose = function(Stream: PBSTREAM): PISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
 
 (********************************)
 (** Other Misc functions       **)
 (********************************)
 
-  Tisc_ftof = function(isc_arg1: PByte; isc_arg2: UShort; isc_arg3: PByte; isc_arg4: UShort): ISC_LONG; stdcall;
-
-  Tisc_print_blr = function(isc_arg1: PByte; isc_arg2: TISC_PRINT_CALLBACK; isc_arg3: PVoid; isc_arg4: Short): ISC_STATUS; stdcall;
-
-  Tisc_set_debug = procedure(isc_arg1: Int); stdcall;
-
-  Tisc_qtoq = procedure(isc_arg1: PISC_QUAD; isc_arg2: PISC_QUAD); stdcall;
-
-  Tisc_vtof = procedure(isc_arg1: PByte; isc_arg2: PByte; isc_arg3: UShort); stdcall;
-
-  Tisc_vtov = procedure(isc_arg1: PByte; isc_arg2: PByte; isc_arg3: Short); stdcall;
-
-  Tisc_version = function(db_handle: PISC_DB_HANDLE; isc_arg2: TISC_VERSION_CALLBACK; isc_arg3: PVoid): Int; stdcall;
-
-  Tisc_reset_fpe = function(isc_arg1: UShort): ISC_LONG; stdcall;
-
-  Tisc_baddress = function(isc_arg1: PByte): uintptr_t; stdcall;
-
-  Tisc_baddress_s = procedure(isc_arg1: PByte; isc_arg2: uintptr_t); stdcall;
+  Tisc_ftof = function(isc_arg1: PByte; isc_arg2: UShort; isc_arg3: PByte; isc_arg4: UShort): ISC_LONG; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_print_blr = function(isc_arg1: PByte; isc_arg2: TISC_PRINT_CALLBACK; isc_arg3: PVoid; isc_arg4: Short): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_set_debug = procedure(isc_arg1: Int); {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_qtoq = procedure(isc_arg1: PISC_QUAD; isc_arg2: PISC_QUAD); {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_vtof = procedure(isc_arg1: PByte; isc_arg2: PByte; isc_arg3: UShort); {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_vtov = procedure(isc_arg1: PByte; isc_arg2: PByte; isc_arg3: Short); {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_version = function(db_handle: PISC_DB_HANDLE; isc_arg2: TISC_VERSION_CALLBACK; isc_arg3: PVoid): Int; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_reset_fpe = function(isc_arg1: UShort): ISC_LONG; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_baddress = function(isc_arg1: PByte): uintptr_t; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_baddress_s = procedure(isc_arg1: PByte; isc_arg2: uintptr_t); {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
 
 (*******************************************)
 (** Service manager functions             **)
 (*******************************************)
 
-  Tisc_service_attach = function(status_vector: PISC_STATUS; isc_arg2: UShort; isc_arg3: PByte; service_handle: PISC_SVC_HANDLE; isc_arg5: UShort; isc_arg6: PByte): ISC_STATUS; stdcall;
-
-  Tisc_service_detach = function(status_vector: PISC_STATUS; service_handle: PISC_SVC_HANDLE): ISC_STATUS; stdcall;
-
-  Tisc_service_query = function(status_vector: PISC_STATUS; service_handle: PISC_SVC_HANDLE; recv_handle: PISC_SVC_HANDLE; isc_arg4: UShort; isc_arg5: PByte; isc_arg6: UShort; isc_arg7: PByte; isc_arg8: UShort; isc_arg9: PByte): ISC_STATUS; stdcall;
-
-  Tisc_service_start = function(status_vector: PISC_STATUS; service_handle: PISC_SVC_HANDLE; recv_handle: PISC_SVC_HANDLE; isc_arg4: UShort; isc_arg5: PByte): ISC_STATUS; stdcall;
+  Tisc_service_attach = function(status_vector: PISC_STATUS; isc_arg2: UShort; isc_arg3: PByte; service_handle: PISC_SVC_HANDLE; isc_arg5: UShort; isc_arg6: PByte): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_service_detach = function(status_vector: PISC_STATUS; service_handle: PISC_SVC_HANDLE): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_service_query = function(status_vector: PISC_STATUS; service_handle: PISC_SVC_HANDLE; recv_handle: PISC_SVC_HANDLE; isc_arg4: UShort; isc_arg5: PByte; isc_arg6: UShort; isc_arg7: PByte; isc_arg8: UShort; isc_arg9: PByte): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_service_start = function(status_vector: PISC_STATUS; service_handle: PISC_SVC_HANDLE; recv_handle: PISC_SVC_HANDLE; isc_arg4: UShort; isc_arg5: PByte): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
 
 (********************************)
 (* Client information functions *)
@@ -1797,9 +1658,9 @@ type
 (* Client information functions *)
 (********************************)
 
-  Tisc_get_client_version = procedure(buffer: PByte); stdcall;
-  Tisc_get_client_major_version = function: Integer; stdcall;
-  Tisc_get_client_minor_version = function: Integer; stdcall;
+  Tisc_get_client_version = procedure(buffer: PByte); {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_get_client_major_version = function: Integer; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_get_client_minor_version = function: Integer; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
 
 (*****************************************************)
 (** Actions to pass to the blob filter (ctl_source) **)
@@ -3610,6 +3471,96 @@ const
   QUOTE = '''';
   DBL_QUOTE = '"';
 
+type
+
+  { TmncFBLib }
+
+  TmncFBLib = class(TmnLibrary)
+  protected
+    procedure Loaded; override;
+  public
+    BLOB_get: TBLOB_get;
+    BLOB_put: TBLOB_put;
+    Bopen: TBopen;
+    Bclose: TBclose;
+
+    isc_sqlcode: Tisc_sqlcode;
+    isc_sql_interprete: Tisc_sql_interprete;
+    fb_interpret: Tfb_interpret;
+    isc_interprete: Tisc_interprete;
+    isc_vax_integer: Tisc_vax_integer;
+    isc_portable_integer: Tisc_portable_integer;
+    isc_blob_info: Tisc_blob_info;
+    isc_open_blob2: Tisc_open_blob2;
+    isc_close_blob: Tisc_close_blob;
+    isc_get_segment: Tisc_get_segment;
+    isc_put_segment: Tisc_put_segment;
+    isc_create_blob2: Tisc_create_blob2;
+    isc_array_gen_sdl: Tisc_array_gen_sdl;
+    isc_array_get_slice: Tisc_array_get_slice;
+    isc_array_lookup_bounds: Tisc_array_lookup_bounds;
+    isc_array_lookup_desc: Tisc_array_lookup_desc;
+    isc_array_set_desc: Tisc_array_set_desc;
+    isc_array_put_slice: Tisc_array_put_slice;
+    isc_blob_default_desc: Tisc_blob_default_desc;
+    isc_blob_gen_bpb: Tisc_blob_gen_bpb;
+    isc_blob_lookup_desc: Tisc_blob_lookup_desc;
+    isc_blob_set_desc: Tisc_blob_set_desc;
+    isc_cancel_blob: Tisc_cancel_blob;
+
+    isc_version: Tisc_version;
+
+    isc_service_attach: Tisc_service_attach;
+    isc_service_detach: Tisc_service_detach;
+    isc_service_query: Tisc_service_query;
+    isc_service_start: Tisc_service_start;
+    isc_decode_date: Tisc_decode_date;
+    isc_decode_sql_date: Tisc_decode_sql_date;
+    isc_decode_sql_time: Tisc_decode_sql_time;
+    isc_decode_timestamp: Tisc_decode_timestamp;
+    isc_encode_date: Tisc_encode_date;
+    isc_encode_sql_date: Tisc_encode_sql_date;
+    isc_encode_sql_time: Tisc_encode_sql_time;
+    isc_encode_timestamp: Tisc_encode_timestamp;
+    isc_dsql_free_statement: Tisc_dsql_free_statement;
+    isc_dsql_execute2: Tisc_dsql_execute2;
+    isc_dsql_execute: Tisc_dsql_execute;
+    isc_dsql_set_cursor_name: Tisc_dsql_set_cursor_name;
+    isc_dsql_fetch: Tisc_dsql_fetch;
+    isc_dsql_sql_info: Tisc_dsql_sql_info;
+    isc_dsql_alloc_statement2: Tisc_dsql_alloc_statement2;
+    isc_dsql_prepare: Tisc_dsql_prepare;
+    isc_dsql_describe_bind: Tisc_dsql_describe_bind;
+    isc_dsql_describe: Tisc_dsql_describe;
+    isc_dsql_execute_immediate: Tisc_dsql_execute_immediate;
+    isc_drop_database: Tisc_drop_database;
+    isc_detach_database: Tisc_detach_database;
+    isc_attach_database: Tisc_attach_database;
+    isc_database_info: Tisc_database_info;
+    isc_start_multiple: Tisc_start_multiple;
+    isc_commit_transaction: Tisc_commit_transaction;
+    isc_commit_retaining: Tisc_commit_retaining;
+    isc_rollback_transaction: Tisc_rollback_transaction;
+    isc_rollback_retaining: Tisc_rollback_retaining;
+    isc_cancel_events: Tisc_cancel_events;
+    isc_que_events: Tisc_que_events;
+    isc_event_counts: Tisc_event_counts;
+    isc_event_block: Tisc_event_block;
+    isc_free: Tisc_free;
+    isc_add_user: Tisc_add_user;
+    isc_delete_user: Tisc_delete_user;
+    isc_modify_user: Tisc_modify_user;
+    isc_prepare_transaction: Tisc_prepare_transaction;
+    isc_prepare_transaction2: Tisc_prepare_transaction2;
+
+    isc_get_client_version: Tisc_get_client_version;
+    isc_get_client_major_version: Tisc_get_client_major_version;
+    isc_get_client_minor_version: Tisc_get_client_minor_version;
+
+  end;
+
+var
+  FBLib: TmncFBLib = nil;
 
 implementation
 
@@ -3654,5 +3605,93 @@ begin
   Inc(p);
 end;
 
+{ TmncFBLib }
+
+procedure TmncFBLib.Loaded;
+begin
+  BLOB_get := GetAddress('BLOB_get');
+  BLOB_put := GetAddress('BLOB_put');
+  Bopen := GetAddress('Bopen');
+  Bclose := GetAddress('BLOB_close');
+
+  isc_sqlcode := GetAddress('isc_sqlcode');
+  isc_sql_interprete := GetAddress('isc_sql_interprete');
+  fb_interpret := GetAddress('fb_interpret');
+  isc_interprete := GetAddress('isc_interprete');
+  isc_vax_integer := GetAddress('isc_vax_integer');
+  isc_portable_integer := GetAddress('isc_portable_integer');
+  isc_blob_info := GetAddress('isc_blob_info');
+  isc_open_blob2 := GetAddress('isc_open_blob2');
+  isc_close_blob := GetAddress('isc_close_blob');
+  isc_get_segment := GetAddress('isc_get_segment');
+  isc_put_segment := GetAddress('isc_put_segment');
+  isc_create_blob2 := GetAddress('isc_create_blob2');
+  isc_cancel_blob := GetAddress('isc_cancel_blob');
+
+  isc_version := GetAddress('isc_version');
+
+  isc_array_gen_sdl := GetAddress('isc_array_gen_sdl');
+  isc_array_get_slice := GetAddress('isc_array_get_slice');
+  isc_array_lookup_bounds := GetAddress('isc_array_lookup_bounds');
+  isc_array_lookup_desc := GetAddress('isc_array_lookup_desc');
+  isc_array_set_desc := GetAddress('isc_array_set_desc');
+  isc_array_put_slice := GetAddress('isc_array_put_slice');
+  isc_blob_default_desc := GetAddress('isc_blob_default_desc');
+  isc_blob_gen_bpb := GetAddress('isc_blob_gen_bpb');
+  isc_blob_lookup_desc := GetAddress('isc_blob_lookup_desc');
+  isc_blob_set_desc := GetAddress('isc_blob_set_desc');
+  isc_decode_date := GetAddress('isc_decode_date');
+  isc_encode_date := GetAddress('isc_encode_date');
+  isc_dsql_free_statement := GetAddress('isc_dsql_free_statement');
+  isc_dsql_execute2 := GetAddress('isc_dsql_execute2');
+  isc_dsql_execute := GetAddress('isc_dsql_execute');
+  isc_dsql_set_cursor_name := GetAddress('isc_dsql_set_cursor_name');
+  isc_dsql_fetch := GetAddress('isc_dsql_fetch');
+  isc_dsql_sql_info := GetAddress('isc_dsql_sql_info');
+  isc_dsql_alloc_statement2 := GetAddress('isc_dsql_alloc_statement2');
+  isc_dsql_prepare := GetAddress('isc_dsql_prepare');
+  isc_dsql_describe_bind := GetAddress('isc_dsql_describe_bind');
+  isc_dsql_describe := GetAddress('isc_dsql_describe');
+  isc_dsql_execute_immediate := GetAddress('isc_dsql_execute_immediate');
+  isc_drop_database := GetAddress('isc_drop_database');
+  isc_detach_database := GetAddress('isc_detach_database');
+  isc_attach_database := GetAddress('isc_attach_database', true);
+  isc_database_info := GetAddress('isc_database_info');
+  isc_start_multiple := GetAddress('isc_start_multiple');
+  isc_commit_transaction := GetAddress('isc_commit_transaction');
+  isc_commit_retaining := GetAddress('isc_commit_retaining');
+  isc_rollback_transaction := GetAddress('isc_rollback_transaction');
+  isc_cancel_events := GetAddress('isc_cancel_events');
+  isc_que_events := GetAddress('isc_que_events');
+  isc_event_counts := GetAddress('isc_event_counts');
+  isc_event_block := GetAddress('isc_event_block');
+  isc_free := GetAddress('isc_free');
+  isc_add_user := GetAddress('isc_add_user');
+  isc_delete_user := GetAddress('isc_delete_user');
+  isc_modify_user := GetAddress('isc_modify_user');
+  isc_prepare_transaction := GetAddress('isc_prepare_transaction');
+  isc_prepare_transaction2 := GetAddress('isc_prepare_transaction2');
+
+  isc_rollback_retaining := GetAddress('isc_rollback_retaining');
+  isc_service_attach := GetAddress('isc_service_attach');
+  isc_service_detach := GetAddress('isc_service_detach');
+  isc_service_query := GetAddress('isc_service_query');
+  isc_service_start := GetAddress('isc_service_start');
+  isc_decode_sql_date := GetAddress('isc_decode_sql_date');
+  isc_decode_sql_time := GetAddress('isc_decode_sql_time');
+  isc_decode_timestamp := GetAddress('isc_decode_timestamp');
+  isc_encode_sql_date := GetAddress('isc_encode_sql_date');
+  isc_encode_sql_time := GetAddress('isc_encode_sql_time');
+  isc_encode_timestamp := GetAddress('isc_encode_timestamp');
+  isc_get_client_version := GetAddress('isc_get_client_version');
+  isc_get_client_major_version := GetAddress('isc_get_client_major_version');
+  isc_get_client_minor_version := GetAddress('isc_get_client_minor_version');
+  //FClientVersion := isc_get_client_major_version + (isc_get_client_minor_version / 10);
+end;
+
+initialization
+  FBLib := TmncFBLib.Create('fbclient');
+finalization
+  FreeAndNil(FBLib);
 end.
 

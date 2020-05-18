@@ -207,17 +207,17 @@ end;
 procedure TmnLockThread.Enter;
 begin
   {$ifdef DEBUG}
-  Debug.Write('Enter');
+  Debug.Write('LockThread Enter');
   {$endif}
   FLock.Enter;
 end;
 
 procedure TmnLockThread.Leave;
 begin
-  {$ifdef DEBUG}
-  Debug.Write('Leave');
-  {$endif}
   FLock.Leave;
+  {$ifdef DEBUG}
+  Debug.Write('LockThread Leave');
+  {$endif}
 end;
 
 procedure TmnConnection.Process;

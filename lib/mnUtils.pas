@@ -30,6 +30,11 @@ const
 
   sUTF8BOM: array[1..3] of Char = (#$EF, #$BB, #$BF);
 
+type
+  {$ifdef FPC}
+  PUTF8Char = PAnsiChar;
+  {$endif}
+
 procedure Nothing;
 {
   StrHave: test the string if it have Separators

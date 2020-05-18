@@ -9,17 +9,18 @@ uses
   {$ENDIF}{$ENDIF}
   Interfaces, // this includes the LCL widgetset
   SysUtils, Forms, MainForms, appSchema, mncORM, mncMeta, mncPGORM, mncFirebird,
-  mncMySQLORM, mncSQLiteORM
+  mncMySQLORM, mncMySQLHeader, mncSQLiteORM
   { you can add units after this };
 
 {$R *.res}
 
 begin
-{  {$ifdef DEBUG}
+(*  {$ifdef DEBUG}
   if FileExists('heap.trc') then
     DeleteFile('heap.trc');
   SetHeapTraceOutput('heap.trc');
-{$endif}}
+{$endif}
+*)
   RequireDerivedFormResource :=True;
   Application.Title :='Universal';
   Application.Scaled :=True;

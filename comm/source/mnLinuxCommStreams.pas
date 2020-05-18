@@ -23,7 +23,7 @@ interface
 uses
   Classes, SysUtils,
   mnStreams, mnCommClasses,
-  termio, libc;
+  termio;
 
 const
   INVALID_HANDLE: Integer = -1;

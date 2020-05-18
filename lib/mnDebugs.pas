@@ -27,6 +27,7 @@ type
     procedure Write(R: TRect); overload;
     procedure Write(I: Integer); overload;
     procedure Write(X, Y: Integer); overload;
+    procedure Write(S: string; I: Integer); overload;
   end;
 
 var
@@ -52,6 +53,11 @@ end;
 procedure TmnDebug.Write(X, Y: Integer);
 begin
   Write(IntToStr(X) + ', ' + IntToStr(Y));
+end;
+
+procedure TmnDebug.Write(S: string; I: Integer);
+begin
+  Write(S + ': ' + IntToStr(I));
 end;
 
 procedure TmnDebug.Write(S: string);

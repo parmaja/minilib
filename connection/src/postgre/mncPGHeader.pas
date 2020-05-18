@@ -17,7 +17,8 @@ unit mncPGHeader;
 interface
 
 uses
-  SysUtils {$ifdef FPC}, dynlibs {$else }, Windows{$endif};
+  mnLibraries,
+  SysUtils;
 
 
 const
@@ -393,39 +394,21 @@ var
   lo_export: Tlo_export;
   lo_truncate: Tlo_truncate;
 
-implementation
+type
 
-const
-{$IFDEF MSWINDOWS}
-  pgLibName = 'libpq.dll';
-{$ELSE}
-  pgLibName = 'libpq.so';
-{$ENDIF}
+  { TmncPGLib }
+
+  TmncPGLib = class(TmnLibrary)
+  protected
+    procedure Loaded; override;
+  end;
 
 var
-  fLibHandle: TLibHandle;
-  fTryInitLib: Boolean = False;
+  PGLib: TmncPGLib = nil;
 
-function GetAddress(const vProc: string): Pointer;
-begin
-  if not fTryInitLib then
-  begin
-    fTryInitLib := True;
-    fLibHandle := LoadLibrary(PChar(pgLibName));
-  end;
-  if fLibHandle <> 0 then
-    Result := GetProcAddress(fLibHandle, PAnsiChar(vProc))
-  else
-    Result := nil;
-end;
+implementation
 
-procedure FreeLib;
-begin
-  if fTryInitLib and (fLibHandle <> 0) then
-    FreeLibrary(fLibHandle);
-end;
-
-procedure LoadLib;
+procedure TmncPGLib.Loaded;
 begin
 { ===	in fe-connect.c === }
   PQfreemem := GetAddress('PQfreemem');
@@ -508,12 +491,11 @@ begin
   lo_import := GetAddress('lo_import');
   lo_export := GetAddress('lo_export');
   lo_truncate := GetAddress('lo_truncate');
-
 end;
 
 initialization
-  LoadLib;
+  PGLib := TmncPGLib.Create('libpq');
 finalization
-  FreeLib;
+  FreeAndNil(PGLib);
 end.
 
