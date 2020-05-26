@@ -498,7 +498,8 @@ begin
               aConnection := CreateConnection(aSocket) as TmnServerConnection;
               aConnection.FRemoteIP := aSocket.GetRemoteAddress;
               //aConnection.Prepare
-              if FServer <> nil then FServer.DoAccepted(Self, aConnection);
+              if FServer <> nil then
+                FServer.DoAccepted(Self, aConnection);
             finally
               Leave;
             end;

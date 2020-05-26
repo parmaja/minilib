@@ -64,7 +64,7 @@ type
     FCount: Integer;
     function LookupPort(Port: string): Word;
   protected
-    procedure FreeSocket(var vHandle: TSocket; var vErr: Integer);
+    procedure FreeSocket(var vHandle: TSocket; out vErr: Integer);
     function Select(vHandle: TSocket; Timeout: Integer; Check: TSelectCheck): TmnError;
   public
     constructor Create; override;
@@ -434,7 +434,7 @@ begin
   Cleanup;
 end;
 
-procedure TmnWallSocket.FreeSocket(var vHandle: TSocket; var vErr: Integer);
+procedure TmnWallSocket.FreeSocket(var vHandle: TSocket; out vErr: Integer);
 begin
   vErr := WSAGetLastError;
   {$IFDEF FPC}
@@ -527,9 +527,7 @@ var
   ret: Longint;
   aMode: u_long;
   DW: Longint;
-  aErr: Longint;
 begin
-  aErr := 0;
   if Timeout=-1 then
     Options := Options-[soConnectTimeout];
 
@@ -556,7 +554,7 @@ begin
       ret := ioctlsocket(aHandle, {$ifdef FPC}Longint(FIONBIO){$else}FIONBIO{$endif}, aMode);
       if ret = Longint(SOCKET_ERROR) then
       begin
-        FreeSocket(aHandle, aErr);
+        FreeSocket(aHandle, vErr);
       end;
     end;
 
@@ -595,12 +593,12 @@ begin
           aMode := 0;
           ret := ioctlsocket(aHandle, {$ifdef FPC}Longint(FIONBIO){$else}FIONBIO{$endif}, aMode);
           if ret = Longint(SOCKET_ERROR) then
-            FreeSocket(aHandle, aErr)
+            FreeSocket(aHandle, vErr)
           else if Select(aHandle, Timeout, slWrite) <> erSuccess then
-            FreeSocket(aHandle, aErr);
+            FreeSocket(aHandle, vErr);
         end
         else
-          FreeSocket(aHandle, aErr);
+          FreeSocket(aHandle, vErr);
       end;
     end;
   end;

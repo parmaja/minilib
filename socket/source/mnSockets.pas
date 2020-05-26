@@ -364,7 +364,7 @@ begin
   FSocket := CreateSocket(aErr);
 
   if FSocket = nil then
-    raise EmnSocketException.CreateFmt('Connected fail [%s]', [aErr]);
+    raise EmnSocketException.CreateFmt('Connected fail [%d]', [aErr]);
 end;
 
 function TmnSocketStream.CreateSocket(out vErr: Integer): TmnCustomSocket;

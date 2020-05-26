@@ -51,7 +51,7 @@ type
 
   TmnWallSocket = class(TmnCustomWallSocket)
   private
-    procedure FreeSocket(var vHandle: TSocket; var vErr: integer);
+    procedure FreeSocket(var vHandle: TSocket; out vErr: integer);
     function LookupPort(Port: string): Word;
   public
     constructor Create; override;
@@ -342,7 +342,7 @@ begin
   inherited;
 end;
 
-procedure TmnWallSocket.FreeSocket(var vHandle: TSocket; var vErr: integer );
+procedure TmnWallSocket.FreeSocket(var vHandle: TSocket; out vErr: integer );
 begin
   vErr := SocketError;
   closesocket(vHandle);

@@ -108,7 +108,7 @@ type
 
   TmnWallSocket = class(TmnCustomWallSocket)
   private
-    procedure FreeSocket(var vHandle: TSocket; var vErr: Integer);
+    procedure FreeSocket(var vHandle: TSocket; out vErr: Integer);
     function LookupPort(Port: string): Word;
     function TestGetAddrInfo(const AHostName, AServiceName: string; const AHints: AddrInfo): PAddrInfo;
   public
@@ -433,7 +433,7 @@ begin
   inherited;
 end;
 
-procedure TmnWallSocket.FreeSocket(var vHandle: TSocket; var vErr: Integer);
+procedure TmnWallSocket.FreeSocket(var vHandle: TSocket; out vErr: Integer);
 begin
   __close(FHandle);
   vHandle := INVALID_SOCKET;
