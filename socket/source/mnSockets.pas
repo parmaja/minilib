@@ -303,9 +303,13 @@ begin
     else
       werr := cerSuccess;
 
-    if (werr = cerSuccess) or ((werr = cerTimeout) and (soSafeReadTimeout in Options)) then
+    if (werr = cerTimeout) and (soSafeReadTimeout in Options) then
     begin
-      if (Socket = nil) then
+      Result := 0;
+    end
+    else if (werr = cerSuccess) then
+    begin
+      if (Socket = nil) then //why this ?
         Result := 0
       else
       begin

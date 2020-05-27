@@ -96,6 +96,8 @@ type
     procedure Execute; override;
     procedure Remove(Connection: TmnServerConnection); virtual;
     procedure Add(Connection: TmnServerConnection); virtual;
+    procedure DoCreateStream(var Result: TmnConnectionStream; vSocket: TmnCustomSocket); override;
+
   public
     constructor Create(AOptions: TmnsoOptions = []); virtual;
     destructor Destroy; override;
@@ -416,6 +418,12 @@ end;
 function TmnListener.DoCreateConnection(vStream: TmnConnectionStream): TmnConnection;
 begin
   Result := TmnServerConnection.Create(Self, vStream);
+end;
+
+procedure TmnListener.DoCreateStream(var Result: TmnConnectionStream; vSocket: TmnCustomSocket);
+begin
+  inherited;
+  TmnSocketStream(Result).Options := TmnSocketStream(Result).Options + Options;
 end;
 
 procedure TmnListener.PostLogs;
