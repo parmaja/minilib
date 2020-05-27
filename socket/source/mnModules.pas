@@ -402,7 +402,7 @@ begin
     if Stream.Connected then
     begin
       if (erKeepAlive in Result.Status) then
-        Stream.Timeout := Result.Timout
+        Stream.ReadTimeout := Result.Timout
       else
         Stream.Disconnect;
     end;
@@ -442,7 +442,7 @@ end;
 procedure TmodModuleListener.DoCreateStream(var Result: TmnConnectionStream; vSocket: TmnCustomSocket);
 begin
   inherited;
-  Result.Timeout := -1;
+  Result.ReadTimeout := -1;
   Server.StreamCreated(Result);
 end;
 

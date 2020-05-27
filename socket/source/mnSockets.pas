@@ -33,11 +33,9 @@ type
     soKeepAlive,
     soNoDelay,
     //soBroadcast, soDebug, soDontLinger, soDontRoute, soOOBInLine, soAcceptConn
-    soSetReadTimeout, //Set socket read timeout
     soWaitBeforeRead, //Wait for data come before read, that double the time wait if you set SetReadTimeout if no data come
     soWaitBeforeWrite, //Wait for ready before write, idk what for
-    soConnectTimeout, //Connect will use Timeout to wait it
-    soSafeReadTimeout //Keep socket connected if read timeout without error
+    soCloseTimeout //close socket if read timeout
     );
   TmnsoOptions = set of TmnsoOption;
 
@@ -83,8 +81,8 @@ type
   public
     constructor Create; virtual;
     destructor Destroy; override;
-    procedure Bind(Options: TmnsoOptions; const Port: string; const Address: string; out vSocket: TmnCustomSocket; out vErr: Integer); virtual; abstract;
-    procedure Connect(Options: TmnsoOptions; Timeout: Integer; const Port: string; const Address: string; out vSocket: TmnCustomSocket; out vErr: Integer); virtual; abstract;
+    procedure Bind(Options: TmnsoOptions; ReadTimeout: Integer; const Port: string; const Address: string; out vSocket: TmnCustomSocket; out vErr: Integer); virtual; abstract;
+    procedure Connect(Options: TmnsoOptions; ConnectTimeout, ReadTimeout: Integer; const Port: string; const Address: string; out vSocket: TmnCustomSocket; out vErr: Integer); virtual; abstract;
   end;
 
   { Streams
@@ -257,7 +255,7 @@ begin
     Result := 0;
     //DoError('Write: SocketStream not connected.') //we can't decide if it is error or disconnected gracefully, you need to check connected before write, maybe socket shutdown for write only
   end
-  else if not (soWaitBeforeWrite in Options) or (WaitToWrite(Timeout) = cerSuccess) then //TODO WriteTimeout
+  else if not (soWaitBeforeWrite in Options) or (WaitToWrite(WriteTimeout) = cerSuccess) then //TODO WriteTimeout
   begin
     if Socket.Send(Buffer, Count) >= erTimeout then //yes in send we take timeout as error, we cant try again
     begin
@@ -299,29 +297,27 @@ begin
   else
   begin
     if soWaitBeforeRead in Options then
-      werr := WaitToRead(Timeout)
+      werr := WaitToRead(ReadTimeout)
     else
       werr := cerSuccess;
 
-    if (werr = cerTimeout) and (soSafeReadTimeout in Options) then
+    if (werr = cerTimeout) then
     begin
+      if soCloseTimeout in Options then
+        FreeSocket;
+
       Result := 0;
     end
     else if (werr = cerSuccess) then
     begin
-      if (Socket = nil) then //why this ?
-        Result := 0
-      else
+      err := Socket.Receive(Buffer, Count);
+      if ((err = erTimeout) and (soCloseTimeout in Options)) or (err >= erClosed) then
       begin
-        err := Socket.Receive(Buffer, Count);
-        if not ((err = erSuccess) or ((err = erTimeout) and (soSafeReadTimeout in Options))) then
-        begin
-          FreeSocket;
-          Result := 0;
-        end
-        else
-          Result := Count;
-      end;
+        FreeSocket;
+        Result := 0;
+      end
+      else
+        Result := Count;
     end
     else
     begin
@@ -334,7 +330,7 @@ end;
 constructor TmnSocketStream.Create(vSocket: TmnCustomSocket);
 begin
   inherited Create;
-  FOptions := [soNoDelay, soWaitBeforeRead, soWaitBeforeWrite];
+  FOptions := [soNoDelay];
   FSocket := vSocket;
 end;
 
@@ -383,7 +379,7 @@ begin
   err := Socket.Select(vTimeout, slRead);
   if err = erSuccess then
     Result := cerSuccess
-  else if (err = erTimeout) and (soSafeReadTimeout in Options) then
+  else if (err = erTimeout) then
     Result := cerTimeout
   else
   	Result := cerError;

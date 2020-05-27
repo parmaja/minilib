@@ -320,7 +320,7 @@ end;
 
 procedure TmnConnection.Connect;
 begin
-  if FStream <> nil then
+  if (FStream <> nil) then
     FStream.Connect;
 end;
 

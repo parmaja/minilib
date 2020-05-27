@@ -20,6 +20,8 @@ uses
 
 const
   cReadTimeout = 15000;
+  cWriteTimeout = cReadTimeout div 2;
+  cConnectTimeout = cReadTimeout div 4;
 
   sEndOfLine = #$0A;
 
@@ -29,7 +31,7 @@ const
   sGSEndOfLine = #$1E;
 
 type
-  TTimeoutMode = (tmCreate, tmRead, tmWrite);
+  TTimeoutMode = (tmConnect, tmRead, tmWrite);
   TFileSize = Longint;
 
   EmnStreamException = class(Exception);
@@ -129,7 +131,7 @@ type
   strict private
     FDone: TmnStreamClose;
     FEndOfLine: string;
-    FZeroClose: Boolean;
+    //FZeroClose: Boolean;
     procedure LoadReadBuffer;
     procedure SaveWriteBuffer; //kinda flush
   protected
@@ -235,7 +237,7 @@ type
 
     property EndOfLine: string read FEndOfLine write FEndOfLine;
     //if read zero length, close it, or that mean we have timeout system
-    property ZeroClose: Boolean read FZeroClose write FZeroClose;
+    //property ZeroClose: Boolean read FZeroClose write FZeroClose;
     property BufferSize: TFileSize read FReadBuffer.Size write SetReadBufferSize; //deprecated;
     property ReadBufferSize: TFileSize read FReadBuffer.Size write SetReadBufferSize;
     property WriteBufferSize: TFileSize read FWriteBuffer.Size write SetWriteBufferSize; //TODO not yet
@@ -267,9 +269,9 @@ type
 
   TmnConnectionStream = class abstract(TmnBufferStream)
   private
-    FTimeout: Integer;
-  protected
-    function GetTimeouts(vMode: TTimeoutMode): Integer; virtual;
+    FReadTimeout: Integer;
+    FWriteTimeout: Integer;
+    FConnectTimeout: Integer;
   public
     constructor Create;
     procedure Connect; virtual; abstract;
@@ -280,8 +282,10 @@ type
     function WaitToRead: Boolean; overload;
     function WaitToWrite: Boolean; overload;
     function Seek(Offset: Longint; Origin: Word): Longint; override;
-    property Timeout: Integer read FTimeout write FTimeout;
-    property Timeouts[vMode: TTimeoutMode]: Integer read GetTimeouts;
+
+    property ReadTimeout: Integer read FReadTimeout write FReadTimeout;
+    property WriteTimeout: Integer read FWriteTimeout write FWriteTimeout;
+    property ConnectTimeout: Integer read FConnectTimeout write FConnectTimeout;
   end;
 
   { TmnStreamHexProxy }
@@ -591,34 +595,19 @@ end;
 constructor TmnConnectionStream.Create;
 begin
   inherited Create;
-  FTimeout := cReadTimeout;
+  FReadTimeout := cReadTimeout;
+  FWriteTimeout := cWriteTimeout;
+  FConnectTimeout := cConnectTimeout;
 end;
 
 function TmnConnectionStream.WaitToRead: Boolean;
 begin
-  Result := WaitToRead(Timeouts[tmRead]) = cerSuccess;
+  Result := WaitToRead(ReadTimeout) = cerSuccess;
 end;
 
 function TmnConnectionStream.WaitToWrite: Boolean;
 begin
-  Result := WaitToWrite(Timeouts[tmWrite]) = cerSuccess;
-end;
-
-function TmnConnectionStream.GetTimeouts(vMode: TTimeoutMode): Integer;
-begin
-  if Timeout=-1 then
-    Result := -1
-  else
-  begin
-    //test values
-    case vMode of
-      tmCreate: Result := Timeout div 4;
-      tmRead: Result := Timeout;
-      tmWrite: Result := Timeout div 2;
-      else
-        Result := Timeout;
-    end;
-  end;
+  Result := WaitToWrite(WriteTimeout) = cerSuccess;
 end;
 
 function TmnConnectionStream.Seek(Offset: Longint; Origin: Word): Longint;
@@ -638,7 +627,7 @@ end;
 
 function TmnCustomStream.GetConnected: Boolean;
 begin
-  Result := True;
+  Result := False;
 end;
 
 function TmnCustomStream.ReadString(Count: TFileSize): RawByteString;
@@ -1150,7 +1139,7 @@ end;
 constructor TmnBufferStream.Create(AEndOfLine: string);
 begin
   inherited Create;
-  FZeroClose := True;
+  //FZeroClose := True;
   FReadBuffer.Size := ReadWriteBufferSize;
   FWriteBuffer.Size := 0;
   FEndOfLine := AEndOfLine;
@@ -1168,8 +1157,8 @@ begin
     FReadBuffer.Stop := FReadBuffer.Pos + aSize
   else
     FReadBuffer.Stop := FReadBuffer.Pos;
-  if (aSize = 0) and ZeroClose then //what if we have Timeout?
-    Close([cloRead]);
+  {if (aSize = 0) and ZeroClose then //what if we have Timeout?
+    Close([cloRead]);}
 end;
 
 procedure TmnBufferStream.SaveWriteBuffer;

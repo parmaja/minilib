@@ -70,9 +70,9 @@ type
     constructor Create; override;
     destructor Destroy; override;
     //Bind used by servers
-    procedure Bind(Options: TmnsoOptions; const Port: string; const Address: string; out vSocket: TmnCustomSocket; out vErr: Integer); override;
+    procedure Bind(Options: TmnsoOptions; ReadTimeout: Integer; const Port: string; const Address: string; out vSocket: TmnCustomSocket; out vErr: Integer); override;
     //Connect used by clients
-    procedure Connect(Options: TmnsoOptions; Timeout: Integer; const Port: string; const Address: string; out vSocket: TmnCustomSocket; out vErr: Integer); override;
+    procedure Connect(Options: TmnsoOptions; ConnectTimeout, ReadTimeout: Integer; const Port: string; const Address: string; out vSocket: TmnCustomSocket; out vErr: Integer); override;
     procedure Startup;
     procedure Cleanup;
   end;
@@ -362,13 +362,14 @@ begin
   Startup;
 end;
 
-procedure TmnWallSocket.Bind(Options: TmnsoOptions; const Port: string; const Address: string; out vSocket: TmnCustomSocket; out vErr: Integer);
+procedure TmnWallSocket.Bind(Options: TmnsoOptions; ReadTimeout: Integer; const Port: string; const Address: string; out vSocket: TmnCustomSocket; out vErr: Integer);
 const
   SO_TRUE: Longbool = True;
 var
   aHandle: TSocket;
   aSockAddr: TSockAddr;
   aHostEnt: PHostEnt;
+  DW: Longint;
 begin
   aHandle := socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
 
@@ -380,6 +381,13 @@ begin
 
     if soNoDelay in Options then
       setsockopt(aHandle, IPPROTO_TCP, TCP_NODELAY, PAnsiChar(@SO_TRUE), SizeOf(SO_TRUE));
+
+    if ReadTimeout <> -1 then
+    begin
+      DW := ReadTimeout;
+      //* https://stackoverflow.com/questions/2876024/linux-is-there-a-read-or-recv-from-socket-with-timeout
+      vErr := setsockopt(aHandle, SOL_SOCKET, SO_RCVTIMEO, @DW, SizeOf(DW));
+    end;
 
     if soReuseAddr in Options then
     begin
@@ -517,7 +525,7 @@ begin
   Inc(FCount)
 end;
 
-procedure TmnWallSocket.Connect(Options: TmnsoOptions; Timeout: Integer; const Port: string; const Address: string; out vSocket: TmnCustomSocket; out vErr: Integer);
+procedure TmnWallSocket.Connect(Options: TmnsoOptions; ConnectTimeout, ReadTimeout: Integer; const Port: string; const Address: string; out vSocket: TmnCustomSocket; out vErr: Integer);
 const
   SO_TRUE: Longbool = True;
 var
@@ -528,9 +536,6 @@ var
   aMode: u_long;
   DW: Longint;
 begin
-  if Timeout=-1 then
-    Options := Options-[soConnectTimeout];
-
   aHandle := socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
   if aHandle <> INVALID_SOCKET then
   begin
@@ -541,14 +546,14 @@ begin
     if soKeepAlive in Options then
       setsockopt(aHandle, SOL_SOCKET, SO_KEEPALIVE, PAnsiChar(@SO_TRUE), SizeOf(SO_TRUE));
 
-    if soSetReadTimeout in Options then
+    if ReadTimeout <> -1 then
     begin
-      DW := Timeout;
+      DW := ReadTimeout;
       //* https://stackoverflow.com/questions/2876024/linux-is-there-a-read-or-recv-from-socket-with-timeout
       setsockopt(aHandle, SOL_SOCKET, SO_RCVTIMEO, @DW, SizeOf(DW));
     end;
 
-    if soConnectTimeout in Options then
+    if ConnectTimeout<>-1 then
     begin
       aMode := 1;
       ret := ioctlsocket(aHandle, {$ifdef FPC}Longint(FIONBIO){$else}FIONBIO{$endif}, aMode);
@@ -588,13 +593,13 @@ begin
     {$ENDIF}
       if (ret = SOCKET_ERROR) then
       begin
-        if (soConnectTimeout in Options) and (WSAGetLastError = WSAEWOULDBLOCK) then
+        if (ConnectTimeout <> -1) and (WSAGetLastError = WSAEWOULDBLOCK) then
         begin
           aMode := 0;
           ret := ioctlsocket(aHandle, {$ifdef FPC}Longint(FIONBIO){$else}FIONBIO{$endif}, aMode);
           if ret = Longint(SOCKET_ERROR) then
             FreeSocket(aHandle, vErr)
-          else if Select(aHandle, Timeout, slWrite) <> erSuccess then
+          else if Select(aHandle, ConnectTimeout, slWrite) <> erSuccess then
             FreeSocket(aHandle, vErr);
         end
         else

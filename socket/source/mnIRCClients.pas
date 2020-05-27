@@ -257,7 +257,7 @@ type
     FHost: string;
     FPort: string;
   protected
-    function CreateSocket: TIRCSocketStream;
+    function CreateStream: TIRCSocketStream;
     procedure Log(S: string);
     procedure Prepare; override;
     procedure Process; override;
@@ -1232,15 +1232,14 @@ end;
 
 { TmnIRCConnection }
 
-function TmnIRCConnection.CreateSocket: TIRCSocketStream;
+function TmnIRCConnection.CreateStream: TIRCSocketStream;
 begin
-  Result := TIRCSocketStream.Create(Host, Port, [soNoDelay, soSafeReadTimeout, soSetReadTimeout, soConnectTimeout]);
+  Result := TIRCSocketStream.Create(Host, Port, [soNoDelay]);
   try
-    Result.ZeroClose := False;
-    Result.Timeout := 5 * 1000;
     //Result.Timeout := WaitForEver;
     Result.EndOfLine := #10;
-    Result.Connect;
+    //Result.Connect;
+    SetStream(Result)
   except
     on E: EmnSocketException do
     begin
@@ -1404,7 +1403,7 @@ end;
 procedure TmnIRCConnection.Connect;
 begin
   Log('Connecting...');
-  SetStream(CreateSocket);
+  CreateStream;
   inherited;
   if Connected then
     Log('Connected successed')

@@ -221,7 +221,7 @@ end;
 
 function TmnServerSocket.CreateSocket(out vErr: Integer): TmnCustomSocket;
 begin
-  WallSocket.Bind(Options, Port, Address, FListenerSocket, vErr);
+  WallSocket.Bind(Options, ReadTimeout, Port, Address, FListenerSocket, vErr);
   if FListenerSocket <> nil then
   begin
     FListenerSocket.Listen;
@@ -398,7 +398,7 @@ var
 begin
   if not Terminated then
   begin
-    WallSocket.Bind(FOptions, FPort, FAddress, FSocket, aErr);
+    WallSocket.Bind(FOptions, Timeout, FPort, FAddress, FSocket, aErr);
     if Connected then
       Socket.Listen
     else
@@ -423,7 +423,8 @@ end;
 procedure TmnListener.DoCreateStream(var Result: TmnConnectionStream; vSocket: TmnCustomSocket);
 begin
   inherited;
-  TmnSocketStream(Result).Options := TmnSocketStream(Result).Options + Options;
+  //TmnSocketStream(Result).Options := TmnSocketStream(Result).Options + Options;
+  TmnSocketStream(Result).Options := Options;
 end;
 
 procedure TmnListener.PostLogs;
