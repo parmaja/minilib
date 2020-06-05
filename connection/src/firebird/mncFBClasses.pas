@@ -321,7 +321,6 @@ const
 implementation
 
 uses
-  {$ifdef WINDOWS} Registry, {$endif}
   mncFBUtils;
 
 procedure FBGetBlobInfo(hBlobHandle: PISC_BLOB_HANDLE; out NumSegments, MaxSegmentSize, TotalSize: Long; out BlobType: Short);

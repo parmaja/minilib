@@ -68,13 +68,14 @@ type
     FHandle: TLibHandle;
     FLibraryName: string;
     LoadedLibrary: string;
+    RaiseError: Boolean;
     procedure Loaded; virtual; abstract;
   public
     constructor Create(ALibraryName: string); virtual;
     procedure Load(ALibraryName: string = '');
     function IsLoaded: Boolean;
     procedure Release;
-    function GetAddress(const ProcedureName: string; RaiseError: Boolean = False): Pointer;
+    function GetAddress(const ProcedureName: string; ARaiseError: Boolean = False): Pointer;
     property Handle: TLibHandle read FHandle;
     property LibraryName: string read FLibraryName;
   end;
@@ -152,13 +153,13 @@ begin
   end;
 end;
 
-function TmnLibrary.GetAddress(const ProcedureName: string; RaiseError: Boolean): Pointer;
+function TmnLibrary.GetAddress(const ProcedureName: string; ARaiseError: Boolean): Pointer;
 begin
   if FHandle <> 0 then
     Result := GetProcAddress(Handle, PChar(ProcedureName)) //Use PChar not PAnsiChar
   else
     Result := nil;
-  if RaiseError and (Result = nil) then
+  if (Result = nil) and (RaiseError or ARaiseError) then
     raise Exception.Create(ProcedureName + ' not found in ' + LoadedLibrary);
 end;
 
