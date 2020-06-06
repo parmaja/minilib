@@ -30,10 +30,10 @@ const
   {$endif}
 
 {$ifdef FPC}
-{$if FPC_FULLVERSION<300000} //temporary until fpc3 released
+{.$if FPC_FULLVERSION<300000} //temporary until fpc3 released
 type
   PUTF8Char = PAnsiChar;
-{$endif}
+{.$endif}
 {$endif}
 
 procedure Nothing;

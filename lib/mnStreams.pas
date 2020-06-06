@@ -20,7 +20,7 @@ uses
 
 const
   cReadTimeout = 15000;
-  cWriteTimeout = cReadTimeout div 2;
+  cWriteTimeout = cReadTimeout div 8;
   cConnectTimeout = cReadTimeout div 4;
 
   sEndOfLine = #$0A;
@@ -1214,7 +1214,10 @@ begin
       if c = 0 then //check if buffer have no data
       begin
         LoadReadBuffer;
-        Continue;//new
+        if Connected then
+          Continue//new
+        else
+          Break;
       end;
       if c > Count then // is FReadBuffer enough for Count
         c := Count;
