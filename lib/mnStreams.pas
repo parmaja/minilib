@@ -236,8 +236,6 @@ type
     property EndOfStream: Boolean read GetEndOfStream;
 
     property EndOfLine: string read FEndOfLine write FEndOfLine;
-    //if read zero length, close it, or that mean we have timeout system
-    //property ZeroClose: Boolean read FZeroClose write FZeroClose;
     property BufferSize: TFileSize read FReadBuffer.Size write SetReadBufferSize; //deprecated;
     property ReadBufferSize: TFileSize read FReadBuffer.Size write SetReadBufferSize;
     property WriteBufferSize: TFileSize read FWriteBuffer.Size write SetWriteBufferSize; //TODO not yet
@@ -1362,6 +1360,11 @@ end;
 function TmnWrapperStream.DoRead(var Buffer; Count: Longint): Longint;
 begin
   Result := FStream.Read(Buffer, Count);
+  if (Result=0) then
+  begin
+    if not (FStream is TmnCustomStream) or not (FStream as TmnCustomStream).Connected then
+      Close([cloRead]);
+  end;
 end;
 
 function TmnWrapperStream.DoWrite(const Buffer; Count: Longint): Longint;
@@ -1376,6 +1379,7 @@ begin
     raise EmnStreamException.Create('Stream = nil');
   FStreamOwned := Owned;
   FStream := AStream;
+
 end;
 
 constructor TmnWrapperStream.Create(AStream: TStream; Owned: Boolean);
