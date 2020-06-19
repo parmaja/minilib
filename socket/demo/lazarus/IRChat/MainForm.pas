@@ -191,7 +191,7 @@ end;
 
 procedure TMainFrm.SendNow;
 begin
-  IRC.ChannelSend(CurrentRoom, SendEdit.Text);
+  IRC.SendMsg(CurrentRoom, SendEdit.Text);
   AddRecent(SendEdit.Text);
   SendEdit.Text := '';
 end;

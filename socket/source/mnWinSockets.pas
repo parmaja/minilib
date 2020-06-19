@@ -563,7 +563,7 @@ begin
       end;
     end;
 
-    if aHandle <> SOCKET_ERROR then
+    if aHandle <> TSocket(SOCKET_ERROR) then
     begin
       aAddr.sin_family := AF_INET;
       aAddr.sin_port := htons(LookupPort(Port));
