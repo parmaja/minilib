@@ -7,6 +7,7 @@ interface
 uses
   Classes, SysUtils, StrUtils, FileUtil, Forms, Controls, Graphics,
   Dialogs, Buttons, IniFiles, StdCtrls, ExtCtrls, ComCtrls, Menus, LCLType,
+  MsgBox, GUIMsgBox,
   ChatRoomFrames, mnIRCClients;
 
 type
@@ -15,6 +16,7 @@ type
 
   TMyIRCClient = class(TmnIRCClient)
   public
+    procedure GetCurrentChannel(out vChannel: string); override;
     procedure DoChanged(vStates: TIRCStates; vChannel: string; vNick: string); override;
     procedure DoReceive(vMsgType: TIRCMsgType; vChannel, vUser, vMsg: String); override;
   end;
@@ -50,6 +52,7 @@ type
     procedure JoinBtnClick(Sender: TObject);
     procedure MenuItem1Click(Sender: TObject);
     procedure MsgPageControlChange(Sender: TObject);
+    procedure NicknameBtnClick(Sender: TObject);
     procedure SendBtnClick(Sender: TObject);
     procedure SendEditKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure SendEditKeyPress(Sender: TObject; var Key: char);
@@ -80,6 +83,11 @@ implementation
 {$R *.lfm}
 
 { TMyIRCClient }
+
+procedure TMyIRCClient.GetCurrentChannel(out vChannel: string);
+begin
+  vChannel := MainFrm.CurrentRoom;
+end;
 
 procedure TMyIRCClient.DoChanged(vStates: TIRCStates; vChannel: string; vNick: string);
 begin
@@ -171,6 +179,17 @@ end;
 procedure TMainFrm.MsgPageControlChange(Sender: TObject);
 begin
 
+end;
+
+procedure TMainFrm.NicknameBtnClick(Sender: TObject);
+var
+  aNick: string;
+begin
+  aNick := IRC.Nick;
+  if Msg.Input(aNick, 'New Nickname?') then
+  begin
+    IRC.SetNick(SendEdit.Text);
+  end;
 end;
 
 procedure TMainFrm.SendBtnClick(Sender: TObject);
@@ -379,7 +398,8 @@ end;
 procedure TMainFrm.DoReceive(vMsgType: TIRCMsgType; vChannel, vUser, vMsg: String);
 var
   ChatRoom: TChatRoomFrame;
-  i: Integer;
+  aItem: TListItem;
+  oUser: TIRCUser;
 begin
   ChatRoom := NeedRoom(vChannel);
   if ChatRoom <> nil then
@@ -395,19 +415,48 @@ begin
           mtJoin:
           begin
             MsgEdit.Lines.Add(vUser + ' is joined');
-            i := UserListBox.items.IndexOf(vUser);
-            if i < 0 then
-              UserListBox.items.Add(vUser);
+            aItem := UserListBox.Items.FindCaption(0, vUser, False, False, False, False);
+            if aItem = nil then
+            begin
+              aItem := UserListBox.Items.Add;
+              aItem.Caption := vUser;
+              aItem.ImageIndex := 0;
+              {if ([umVoice, umHalfOp, umOp, umWallOp, umAdmin, umOwner] * vUserNames[i].Mode <> []) then
+                aItem.ImageIndex := 1
+              else
+                aItem.ImageIndex := 0;}
+            end;
+          end;
+          mtQuit:
+          begin
           end;
           mtPart:
           begin
-            MsgEdit.Lines.Add(vUser + ' is parted: ' + vMsg);
-            i := UserListBox.items.IndexOf(vUser);
-            if i>=0 then
-              UserListBox.items.Delete(i);
+            //if me close the tab
+            MsgEdit.Lines.Add(vUser + ' is left: ' + vMsg);
+            aItem := UserListBox.Items.FindCaption(0, vUser, False, False, False, False);
+            if aItem <> nil then
+              UserListBox.items.Delete(aItem.Index);
           end;
-          mtQuit:
-            MsgEdit.Lines.Add(vUser + ' is quit: ' + vMsg);
+          mtUserInfo:
+          begin
+            MsgEdit.Lines.Add(vUser);
+            aItem := UserListBox.Items.FindCaption(0, vUser, False, False, False, False);
+            if aItem = nil then
+            begin
+              aItem := UserListBox.Items.Add;
+              aItem.Caption := vUser;
+              aItem.ImageIndex := 0;
+            end;
+            oUser := IRC.Session.Channels.FindUser(vChannel, vUser);
+            if oUser <> nil then
+            begin
+              if ([umVoice, umHalfOp, umOp, umWallOp, umAdmin, umOwner] * oUser.Mode <> []) then
+                  aItem.ImageIndex := 1
+              else
+                  aItem.ImageIndex := 0;
+            end;
+          end;
           mtNotice:
             MsgEdit.Lines.Add('[' + vUser + '] ' + vMSG);
           mtCTCPNotice, mtCTCPMessage:
@@ -426,6 +475,7 @@ end;
 procedure TMainFrm.ReceiveNames(vChannel: string; vUserNames: TIRCChannel);
 var
   ChatRoom: TChatRoomFrame;
+  aItem: TListItem;
   i: Integer;
 begin
   ChatRoom := NeedRoom(vChannel);
@@ -435,7 +485,12 @@ begin
     UserListBox.Clear;
     for i := 0 to vUserNames.Count -1 do
     begin
-      UserListBox.Items.Add(vUserNames[i].Name);
+      aItem := UserListBox.Items.Add;
+      aItem.Caption := vUserNames[i].Name;
+      if ([umVoice, umHalfOp, umOp, umWallOp, umAdmin, umOwner] * vUserNames[i].Mode <> []) then
+        aItem.ImageIndex := 1
+      else
+        aItem.ImageIndex := 0;
     end;
   end;
 end;

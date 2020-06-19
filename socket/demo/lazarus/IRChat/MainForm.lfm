@@ -192,6 +192,7 @@ object MainFrm: TMainFrm
         Align = alLeft
         AutoSize = True
         Caption = 'Name'
+        OnClick = NicknameBtnClick
         TabOrder = 1
       end
       object SendEdit: TEdit

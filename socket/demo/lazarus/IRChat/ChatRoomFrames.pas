@@ -5,7 +5,7 @@ unit ChatRoomFrames;
 interface
 
 uses
-  Classes, SysUtils, Forms, Controls, StdCtrls, ExtCtrls, SynEdit,
+  Classes, SysUtils, Forms, Controls, StdCtrls, ExtCtrls, ComCtrls, SynEdit,
   laz.VirtualTrees;
 
 type
@@ -13,10 +13,11 @@ type
   { TChatRoomFrame }
 
   TChatRoomFrame = class(TFrame)
+    SmallImageList: TImageList;
     MsgEdit: TMemo;
     Splitter2: TSplitter;
     TopicEdit: TEdit;
-    UserListBox: TListBox;
+    UserListBox: TListView;
     procedure MsgEditDblClick(Sender: TObject);
   private
 
