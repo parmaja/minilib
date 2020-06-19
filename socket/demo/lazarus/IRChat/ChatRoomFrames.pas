@@ -5,7 +5,8 @@ unit ChatRoomFrames;
 interface
 
 uses
-  Classes, SysUtils, Forms, Controls, StdCtrls, ExtCtrls, SynEdit;
+  Classes, SysUtils, Forms, Controls, StdCtrls, ExtCtrls, SynEdit,
+  laz.VirtualTrees;
 
 type
 
