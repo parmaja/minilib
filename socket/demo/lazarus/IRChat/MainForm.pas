@@ -17,7 +17,9 @@ type
   TMyIRCClient = class(TmnIRCClient)
   public
     procedure GetCurrentChannel(out vChannel: string); override;
-    procedure DoChanged(vStates: TIRCStates; vChannel: string; vNick: string); override;
+    procedure DoMyInfoChanged; override;
+    procedure DoChanged(vStates: TIRCStates); override;
+    procedure DoUsersChanged(vChannelName: string; vChannel: TIRCChannel); override;
     procedure DoReceive(vMsgType: TIRCMsgType; vChannel, vUser, vMsg: String); override;
   end;
 
@@ -89,15 +91,15 @@ begin
   vChannel := MainFrm.CurrentRoom;
 end;
 
-procedure TMyIRCClient.DoChanged(vStates: TIRCStates; vChannel: string; vNick: string);
+procedure TMyIRCClient.DoMyInfoChanged;
 begin
   inherited;
-  if scChannelNames in vStates then
-    MainFrm.ReceiveNames(vChannel, Session.Channels.Find(vChannel));
-  if scUserInfo in vStates then
-  begin
-    MainFrm.SetNick(Session.Nick);
-  end;
+  MainFrm.SetNick(Session.Nick);
+end;
+
+procedure TMyIRCClient.DoChanged(vStates: TIRCStates);
+begin
+  inherited;
   if scProgress in vStates then
     case Progress of
       prgDisconnected:
@@ -109,6 +111,12 @@ begin
       prgConnected: MainFrm.ConnectBtn.Caption := 'Disconnect...';
       prgReady: MainFrm.ConnectBtn.Caption := 'Disconnect';
     end;
+end;
+
+procedure TMyIRCClient.DoUsersChanged(vChannelName: string; vChannel: TIRCChannel);
+begin
+  inherited;
+  MainFrm.ReceiveNames(vChannelName, vChannel);
 end;
 
 procedure TMyIRCClient.DoReceive(vMsgType: TIRCMsgType; vChannel, vUser, vMsg: String);
@@ -188,7 +196,7 @@ begin
   aNick := IRC.Nick;
   if Msg.Input(aNick, 'New Nickname?') then
   begin
-    IRC.SetNick(SendEdit.Text);
+    IRC.SetNick(aNick);
   end;
 end;
 
@@ -438,7 +446,7 @@ begin
             if aItem <> nil then
               UserListBox.items.Delete(aItem.Index);
           end;
-          mtUserInfo:
+          mtUserMode:
           begin
             MsgEdit.Lines.Add(vUser);
             aItem := UserListBox.Items.FindCaption(0, vUser, False, False, False, False);

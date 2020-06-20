@@ -74,14 +74,11 @@ type
 
   TIRCState = (
     scProgress,
-    scMyInfo, //Nickname and UserModes
-    scUserInfo,
-    scChannelModes,
     scChannelNames
   );
 
   TIRCStates = set of TIRCState;
-  TIRCMsgType = (mtLog, mtMessage, mtNotice, mtMOTD, mtSend, mtCTCPNotice, mtCTCPMessage, mtWelcome, mtTopic, mtChannelInfo, mtUserInfo, mtJoin, mtPart, mtQuit);
+  TIRCMsgType = (mtLog, mtMessage, mtNotice, mtMOTD, mtSend, mtCTCPNotice, mtCTCPMessage, mtWelcome, mtTopic, mtChannelInfo, mtUserMode, mtJoin, mtPart, mtQuit);
   TIRCLogType = (lgMsg, lgSend, lgReceive);
 
   TIRCReceived = record
@@ -225,7 +222,6 @@ type
   TIRCUser = class(TmnNamedObject)
   protected
   public
-    NickName: string; //without prefix
     Address: string;
     //https://freenode.net/kb/answer/usermodes
     //https://gowalker.org/github.com/oragono/oragono/irc/modes
@@ -290,12 +286,13 @@ type
 
   TIRCSession = record
     Channels: TIRCChannels;
-    Nick: string;
+    Nick: string; //Current used nickname on the server
     AllowedUserModes: TIRCUserModes;
     AllowedChannelModes: TIRCChannelModes;
     ServerVersion: string;
     Server: string;
     procedure Clear;
+    procedure SetNick(ANick: string);
   end;
 
   TIRCAuth = (authNone, authPASS, authIDENTIFY);
@@ -337,7 +334,7 @@ type
     NickIndex: Integer;
     procedure SetState(const Value: TIRCProgress);
 
-    procedure Changed(vStates: TIRCStates; vChannel: string = ''; vNick: string = '');
+    procedure Changed(vStates: TIRCStates);
 
     //Maybe Channel is same of Target, but we will,for NOTICE idk
     procedure Receive(vMsgType: TIRCMsgType; const vReceived: TIRCReceived); virtual;
@@ -358,9 +355,11 @@ type
     procedure DoLog(vMsg: String); virtual;
     procedure DoConnected; virtual;
     procedure DoDisconnected; virtual;
-    procedure DoChanged(vStates: TIRCStates; vChannel: string; vNick: string); virtual;
-    procedure DoUsersChanged(vChannel: string; vUserNames: TIRCChannel); virtual;
-    procedure DoUserChanged(vChannel: string; vUser: string); virtual;
+    procedure DoChanged(vStates: TIRCStates); virtual;
+    procedure DoUsersChanged(vChannelName: string; vChannel: TIRCChannel); virtual;
+    procedure DoUserChanged(vChannel: string; vUser, vNewNick: string); virtual;
+    procedure DoUserMode(vChannel: string; vUser: string); virtual;
+    procedure DoMyInfoChanged; virtual;
 
     procedure GetCurrentChannel(out vChannel: string); virtual;
 
@@ -828,6 +827,11 @@ begin
   Server := '';
 end;
 
+procedure TIRCSession.SetNick(ANick: string);
+begin
+  Nick := ANick;
+end;
+
 { TMode_UserCommand }
 
 procedure TMode_UserCommand.Send(vChannel: string; vMsg: string);
@@ -931,7 +935,7 @@ begin
   vCommand.PullParam(Client.FSession.ServerVersion);
   StringToUserStates(vCommand.PullParam, Client.FSession.AllowedUserModes);
   StringToChannelMode(vCommand.PullParam, Client.FSession.AllowedChannelModes);
-  Client.Changed([scMyInfo]);
+  Client.DoMyInfoChanged;
 end;
 
 { TNOTICE_IRCReceiver }
@@ -1005,7 +1009,6 @@ begin
   Result := Find(aNickName);
   if Result = nil then
     Result := Add(aNickName);
-  Result.NickName := aNickName;
   if UpdateMode then
     Result.Mode := aMode;
 end;
@@ -1091,10 +1094,7 @@ var
   aReceiver: TIRCReceiver;
   ABody: string;
 begin
-  //:zaherdirkey!~zaherdirkey@37.48.184.254 PRIVMSG channel :hi
-  if vdata=':zaherdirkey!~zaherdirkey@37.48.184.254 PRIVMSG #support :hi' then
-    Nothing;
-
+  //:zaherdirkey!~zaherdirkey@myip PRIVMSG channel :hi
   if vData <> '' then
   begin
     aCommand := TIRCCommand.Create;
@@ -1181,7 +1181,7 @@ end;
 procedure TNAMREPLY_IRCReceiver.DoReceive(vCommand: TIRCCommand);
 var
   aChannelName: string;
-  aChannel: TIRCChannel;
+  oChannel: TIRCChannel;
   aUsers: TStringList;
   i: Integer;
 begin
@@ -1192,25 +1192,25 @@ begin
   if vCommand.Name = IntToStr(IRC_RPL_ENDOFNAMES) then
   begin
     aChannelName := vCommand.Params[1];
-    aChannel := Client.Session.Channels.Found(aChannelName);
-    if aChannel <> nil then
+    oChannel := Client.Session.Channels.Found(aChannelName);
+    if oChannel <> nil then
     begin
-      aChannel.Adding := False;
-      Client.Changed([scChannelNames], aChannel.Name);
+      oChannel.Adding := False;
+      Client.DoUsersChanged(aChannelName, oChannel);
     end;
   end
   else
   begin
     aChannelName := vCommand.Params[2];
-    aChannel := Client.Session.Channels.Found(aChannelName);
+    oChannel := Client.Session.Channels.Found(aChannelName);
     aUsers := TStringList.Create;
     try
       StrToStrings(vCommand.Params[vCommand.Params.Count - 1], aUsers, [' '], []);
-      if not aChannel.Adding then
-        aChannel.Clear;
-      aChannel.Adding := True;
+      if not oChannel.Adding then
+        oChannel.Clear;
+      oChannel.Adding := True;
       for i := 0 to aUsers.Count -1 do
-        aChannel.UpdateUser(aUsers[i], True);
+        oChannel.UpdateUser(aUsers[i], True);
     finally
       aUsers.Free;
     end;
@@ -1283,7 +1283,7 @@ begin
     if oUser <> nil then
     begin
       StringToUserMode(aMode, oUser.Mode);
-      Client.Receive(mtUserInfo, vCommand.Received);
+      Client.Receive(mtUserMode, vCommand.Received);
     end;
   end;
 end;
@@ -1291,9 +1291,18 @@ end;
 { TNICK_IRCReceiver }
 
 procedure TNICK_IRCReceiver.DoReceive(vCommand: TIRCCommand);
+var
+  aNick: string;
 begin
-  Client.FSession.Nick := vCommand.PullParam;
-//  Client.Changed([scUserInfo]);
+  //:zaherdirkey_!~zaherdirkey@myip NICK zaherdirkey
+  aNick := vCommand.PullParam;
+  if SameText(vCommand.User, aNick) then
+  begin
+    Client.Session.SetNick(aNick);
+    Client.DoMyInfoChanged;
+  end
+  else
+    Client.DoUserChanged('', vCommand.User, aNick);
 end;
 
 { TWELCOME_IRCReceiver }
@@ -1959,7 +1968,7 @@ begin
   Receivers.Parse(vData);
 end;
 
-procedure TmnIRCClient.DoChanged(vStates: TIRCStates; vChannel: string; vNick: string);
+procedure TmnIRCClient.DoChanged(vStates: TIRCStates);
 begin
 
 end;
@@ -1968,12 +1977,22 @@ procedure TmnIRCClient.DoReceive(vMsgType: TIRCMsgType; vChannel, vUser, vMsg: S
 begin
 end;
 
-procedure TmnIRCClient.DoUsersChanged(vChannel: string; vUserNames: TIRCChannel);
+procedure TmnIRCClient.DoUsersChanged(vChannelName: string; vChannel: TIRCChannel);
 begin
 
 end;
 
-procedure TmnIRCClient.DoUserChanged(vChannel: string; vUser: string);begin
+procedure TmnIRCClient.DoUserChanged(vChannel: string; vUser, vNewNick: string);begin
+
+end;
+
+procedure TmnIRCClient.DoUserMode(vChannel: string; vUser: string);
+begin
+
+end;
+
+procedure TmnIRCClient.DoMyInfoChanged;
+begin
 
 end;
 
@@ -2019,21 +2038,9 @@ begin
   end;
 end;}
 
-procedure TmnIRCClient.Changed(vStates: TIRCStates; vChannel: string; vNick: string);
+procedure TmnIRCClient.Changed(vStates: TIRCStates);
 begin
-  DoChanged(vStates, vChannel, vNick);
-  if scMyInfo in vStates then
-  begin
-    //DoUserChanged(vChannel, vNick);
-  end;
-  if scUserInfo in vStates then
-  begin
-    DoUserChanged(vChannel, vNick);
-  end;
-  if scChannelNames in vStates then
-  begin
-    DoUsersChanged(vChannel, Session.Channels.Find(vChannel));
-  end;
+  DoChanged(vStates);
 end;
 
 procedure TmnIRCClient.Receive(vMsgType: TIRCMsgType; const vReceived: TIRCReceived);
@@ -2054,8 +2061,8 @@ begin
       DoMsgSent(vReceived.User, vReceived.MSG);
     mtTopic:
       DoTopic(vReceived.Channel, vReceived.MSG);
-    mtUserInfo:
-      DoUserChanged(vReceived.Channel, vReceived.User);
+    mtUserMode:
+      DoUserMode(vReceived.Channel, vReceived.User);
     mtLog:
       DoLog(vReceived.MSG);
     else;
