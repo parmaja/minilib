@@ -13,7 +13,6 @@ type
   { TChatRoomFrame }
 
   TChatRoomFrame = class(TFrame)
-    SmallImageList: TImageList;
     MsgEdit: TMemo;
     Splitter2: TSplitter;
     TopicEdit: TEdit;

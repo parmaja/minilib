@@ -42,6 +42,7 @@ const
   IRC_RPL_MYINFO = 004;
   IRC_RPL_WHOISUSER = 311;
   IRC_RPL_ENDOFWHO = 315;
+  IRC_RPL_CHANNEL_URL = 328;
   IRC_RPL_WHOISACCOUNT = 330;
   IRC_RPL_TOPIC = 332;
   IRC_RPL_TOPICWHOTIME = 333;
@@ -78,7 +79,23 @@ type
   );
 
   TIRCStates = set of TIRCState;
-  TIRCMsgType = (mtLog, mtMessage, mtNotice, mtMOTD, mtSend, mtCTCPNotice, mtCTCPMessage, mtWelcome, mtTopic, mtChannelInfo, mtUserMode, mtJoin, mtPart, mtQuit);
+  TIRCMsgType = (
+    mtLog,
+    mtMessage,
+    mtNotice,
+    mtMOTD,
+    mtSend,
+    mtCTCPNotice,
+    mtCTCPMessage,
+    mtWelcome,
+    mtTopic,
+    mtChannelInfo,
+    mtUserMode,
+    mtJoin,
+    mtLeft, //User Part or Quit, it send when both triggered to all channels
+    mtPart, //User left the channel, also we will send mtLeft after it
+    mtQuit  //User left the server, but sever not send Part for all channels, so we will send mtLeft after it
+  );
   TIRCLogType = (lgMsg, lgSend, lgReceive);
 
   TIRCReceived = record
@@ -287,10 +304,12 @@ type
   TIRCSession = record
     Channels: TIRCChannels;
     Nick: string; //Current used nickname on the server
+    UserModes: TIRCUserModes; //IDK what user mode is on server
     AllowedUserModes: TIRCUserModes;
     AllowedChannelModes: TIRCChannelModes;
     ServerVersion: string;
     Server: string;
+    ServerChannel: string; //After Welcome we take the server as main channel
     procedure Clear;
     procedure SetNick(ANick: string);
   end;
@@ -302,6 +321,7 @@ type
   TmnIRCClient = class(TObject)
   private
     FAuth: TIRCAuth;
+    FMapChannels: TStringList;
     FNicks: TStringList;
     FPort: String;
     FHost: String;
@@ -320,6 +340,7 @@ type
     FUseUserCommands: Boolean;
     function GetActive: Boolean;
     procedure SetAuth(AValue: TIRCAuth);
+    procedure SetMapChannels(AValue: TStringList);
     procedure SetNicks(AValue: TStringList);
     procedure SetPassword(const Value: String);
     procedure SetPort(const Value: String);
@@ -337,7 +358,7 @@ type
     procedure Changed(vStates: TIRCStates);
 
     //Maybe Channel is same of Target, but we will,for NOTICE idk
-    procedure Receive(vMsgType: TIRCMsgType; const vReceived: TIRCReceived); virtual;
+    procedure Receive(vMsgType: TIRCMsgType; vReceived: TIRCReceived); virtual;
 
     procedure Log(S: string);
     procedure ReceiveRaw(vData: String); virtual;
@@ -349,8 +370,9 @@ type
     procedure DoMsgSent(vUser, vNotice: String); virtual;
     procedure DoNotice(vChannel, vUser, vTarget, vNotice: String); virtual;
     procedure DoUserJoined(vChannel, vUser: String); virtual;
+    procedure DoUserLeft(vChannel, vUser: String); virtual;
     procedure DoUserParted(vChannel, vUser: String); virtual;
-    procedure DoUserQuit(vChannel, vUser: String); virtual;
+    procedure DoUserQuit(vUser: String); virtual;
     procedure DoTopic(vChannel, vTopic: String); virtual;
     procedure DoLog(vMsg: String); virtual;
     procedure DoConnected; virtual;
@@ -362,6 +384,7 @@ type
     procedure DoMyInfoChanged; virtual;
 
     procedure GetCurrentChannel(out vChannel: string); virtual;
+    function MapChannel(vChannel: string): string;
 
     procedure Init; virtual;
     property Connection: TmnIRCConnection read FConnection;
@@ -398,6 +421,7 @@ type
     property Password: String read FPassword write SetPassword;
     property Username: String read FUsername write SetUsername;
     property Session: TIRCSession read FSession;
+    property MapChannels: TStringList read FMapChannels write SetMapChannels;
     property UseUserCommands: Boolean read FUseUserCommands write FUseUserCommands default True;
     property Auth: TIRCAuth read FAuth write SetAuth;
   end;
@@ -460,13 +484,6 @@ type
     procedure DoReceive(vCommand: TIRCCommand); override;
   end;
 
-  { TMOTD_IRCReceiver }
-
-  TMOTD_IRCReceiver = class(TIRCReceiver)
-  protected
-    procedure DoReceive(vCommand: TIRCCommand); override;
-  end;
-
   { TTOPIC_IRCReceiver }
 
   TTOPIC_IRCReceiver = class(TIRCReceiver)
@@ -476,9 +493,16 @@ type
 
   { TWELCOME_IRCReceiver }
 
-  TWELCOME_IRCReceiver = class(TIRCReceiver)
+  TWELCOME_IRCReceiver = class(TIRCMsgReceiver)
   protected
     procedure AddParam(vCommand: TIRCCommand; AIndex: Integer; AValue: string); override;
+    procedure DoReceive(vCommand: TIRCCommand); override;
+  end;
+
+  { TMOTD_IRCReceiver }
+
+  TMOTD_IRCReceiver = class(TIRCMsgReceiver)
+  protected
     procedure DoReceive(vCommand: TIRCCommand); override;
   end;
 
@@ -493,13 +517,15 @@ type
 
   TNICK_IRCReceiver = class(TIRCReceiver)
   protected
+    procedure Parse(vCommand: TIRCCommand; vData: string); override;
     procedure DoReceive(vCommand: TIRCCommand); override;
   end;
 
   { TMODE_IRCReceiver }
 
-  TMODE_IRCReceiver = class(TIRCUserReceiver)
+  TMODE_IRCReceiver = class(TIRCReceiver)
   protected
+    procedure Parse(vCommand: TIRCCommand; vData: string); override;
     procedure DoReceive(vCommand: TIRCCommand); override;
   end;
 
@@ -920,10 +946,10 @@ begin
   vCommand.Target := vCommand.PullParam;
   if LeftStr(vCommand.Target, 1) = '#' then
     vCommand.Channel := vCommand.Target
-  else if vCommand.FAddress <> '' then //when private chat opened , sender is the channel, right?!!!
-    vCommand.Channel := vCommand.User
+  {else if vCommand.FAddress <> '' then //when private chat opened , sender is the channel, right?!!!
+    vCommand.Channel := vCommand.User}
   else
-    vCommand.Channel := '';
+    vCommand.Channel := vCommand.Sender;
 end;
 
 { TMYINFO_IRCReceiver }
@@ -951,7 +977,7 @@ end;
 procedure TQUIT_IRCReceiver.Parse(vCommand: TIRCCommand; vData: string);
 begin
   inherited;
-  //:Support_1!~Zaher@37.48.189.205 QUIT Quit
+  //:Support_1!~Zaher@myip QUIT Quit
   vCommand.User := vCommand.Sender;
   vCommand.Msg := vCommand.PullParam;
 end;
@@ -974,8 +1000,8 @@ end;
 
 procedure TJOIN_IRCReceiver.DoReceive(vCommand: TIRCCommand);
 begin
-  Client.Receive(mtJoin, vCommand.Received);
   Client.Session.Channels.UpdateUser(vCommand.Channel, vCommand.User);
+  Client.Receive(mtJoin, vCommand.Received);
 end;
 
 { TIRCQueueRaws }
@@ -1262,47 +1288,92 @@ end;
 
 { TMODE_IRCReceiver }
 
+procedure TMODE_IRCReceiver.Parse(vCommand: TIRCCommand; vData: string);
+begin
+  inherited;
+  vCommand.Target := vCommand.PullParam;
+  if LeftStr(vCommand.Target, 1) = '#' then
+    vCommand.Channel := vCommand.Target
+  else
+    vCommand.User := vCommand.Sender;
+end;
+
 procedure TMODE_IRCReceiver.DoReceive(vCommand: TIRCCommand);
 var
   oChannel: TIRCChannel;
   oUser: TIRCUser;
-  aMode: string;
+  aUser, aMode: string;
 begin
   //server MODE ##channel +v username
+  //:zaher MODE zaher :+i
   aMode := vCommand.PullParam;
-  vCommand.User := vCommand.PullParam;
-  oChannel := Client.FSession.Channels.Found(vCommand.Channel);
-  if vCommand.User = '' then
+  aUser := vCommand.PullParam;
+  if vCommand.Channel = '' then
   begin
-    StringToUserMode(aMode, oChannel.UserModes);
-    Client.Receive(mtChannelInfo, vCommand.Received);
+    if vCommand.User = Client.FSession.Nick then
+    begin
+      StringToUserMode(aMode, Client.FSession.UserModes);
+      Client.Receive(mtUserMode, vCommand.Received);
+    end
+    else
+    begin
+      //IDK
+    end;
   end
   else
   begin
-    oUser := oChannel.Find(vCommand.User);
-    if oUser <> nil then
+    oChannel := Client.FSession.Channels.Found(vCommand.Channel);
+    if aUser = '' then
     begin
-      StringToUserMode(aMode, oUser.Mode);
-      Client.Receive(mtUserMode, vCommand.Received);
+      StringToUserMode(aMode, oChannel.UserModes);
+      Client.Receive(mtChannelInfo, vCommand.Received);
+    end
+    else
+    begin
+      vCommand.FReceived.User := aUser;
+      oUser := oChannel.Find(aUser);
+      if oUser <> nil then
+      begin
+        StringToUserMode(aMode, oUser.Mode);
+        Client.Receive(mtUserMode, vCommand.Received);
+      end;
     end;
   end;
 end;
 
 { TNICK_IRCReceiver }
 
+procedure TNICK_IRCReceiver.Parse(vCommand: TIRCCommand; vData: string);
+begin
+  inherited Parse(vCommand, vData);
+  vCommand.User := vCommand.Sender;
+end;
+
 procedure TNICK_IRCReceiver.DoReceive(vCommand: TIRCCommand);
 var
-  aNick: string;
+  aNewNick: string;
+  oUser: TIRCUser;
+  oChannel: TIRCChannel;
 begin
   //:zaherdirkey_!~zaherdirkey@myip NICK zaherdirkey
-  aNick := vCommand.PullParam;
-  if SameText(vCommand.User, aNick) then
+  aNewNick := vCommand.PullParam;
+  if SameText(vCommand.User, Client.Session.Nick) then
   begin
-    Client.Session.SetNick(aNick);
+    Client.Session.SetNick(aNewNick);
     Client.DoMyInfoChanged;
   end
   else
-    Client.DoUserChanged('', vCommand.User, aNick);
+  begin
+    Client.DoUserChanged('', vCommand.User, aNewNick);
+    for oChannel in Client.Session.Channels do
+    begin
+      oUser := oChannel.Find(vCommand.User);
+      if oUser <> nil then
+      begin
+        oUser.Name := aNewNick;
+      end;
+    end;
+  end;
 end;
 
 { TWELCOME_IRCReceiver }
@@ -1321,6 +1392,7 @@ begin
   with Client do
   begin
     Receive(mtWelcome, vCommand.Received);
+    Client.FSession.ServerChannel := vCommand.Sender;
     SetState(prgReady);
   end;
 end;
@@ -1700,6 +1772,7 @@ begin
   inherited Create;
   FLock := TCriticalSection.Create;
   FNicks := TStringList.Create;
+  FMapChannels := TStringList.Create;
   FUseUserCommands := True;
 
   FSession.Channels := TIRCChannels.Create(True);
@@ -1727,6 +1800,7 @@ begin
   FreeAndNil(FQueueReceives);
   FreeAndNil(FReceivers);
   FreeAndNil(FLock);
+  FreeAndNil(FMapChannels);
   FreeAndNil(FNicks);
   FreeAndNil(FSession.Channels);
   inherited;
@@ -1775,11 +1849,16 @@ procedure TmnIRCClient.DoUserJoined(vChannel, vUser: String);
 begin
 end;
 
+procedure TmnIRCClient.DoUserLeft(vChannel, vUser: String);
+begin
+
+end;
+
 procedure TmnIRCClient.DoUserParted(vChannel, vUser: String);
 begin
 end;
 
-procedure TmnIRCClient.DoUserQuit(vChannel, vUser: String);
+procedure TmnIRCClient.DoUserQuit(vUser: String);
 begin
 end;
 
@@ -1914,6 +1993,13 @@ begin
   FAuth :=AValue;
 end;
 
+procedure TmnIRCClient.SetMapChannels(AValue: TStringList);
+begin
+  if FMapChannels = AValue then
+    Exit;
+  FMapChannels.Assign(AValue);
+end;
+
 procedure TmnIRCClient.SetNicks(AValue: TStringList);
 begin
   FNicks.Assign(AValue);
@@ -2001,6 +2087,18 @@ begin
   vChannel := '';
 end;
 
+function TmnIRCClient.MapChannel(vChannel: string): string;
+begin
+  if MapChannels.IndexOfName(vChannel) >=0 then
+  begin
+    Result := MapChannels.Values[vChannel];
+    if Result = '' then //it is main server channel
+      Result := Session.ServerChannel;
+  end
+  else
+    Result := vChannel
+end;
+
 procedure TmnIRCClient.Quit(Reason: String);
 begin
   SendRaw(Format('QUIT :%s', [Reason]));
@@ -2043,16 +2141,37 @@ begin
   DoChanged(vStates);
 end;
 
-procedure TmnIRCClient.Receive(vMsgType: TIRCMsgType; const vReceived: TIRCReceived);
+procedure TmnIRCClient.Receive(vMsgType: TIRCMsgType; vReceived: TIRCReceived);
+var
+  oChannel: TIRCChannel;
+  aReceived: TIRCReceived;
 begin
+  vReceived.Channel := MapChannel(vReceived.Channel);
   DoReceive(vMsgType, vReceived.Channel, vReceived.User, vReceived.Msg);
   case vMsgType of
     mtJoin:
       DoUserJoined(vReceived.Channel, vReceived.User);
+    mtLeft:
+      DoUserLeft(vReceived.Channel, vReceived.User);
     mtPart:
+    begin
       DoUserParted(vReceived.Channel, vReceived.User);
+      Receive(mtLeft, vReceived);
+    end;
     mtQuit:
-      DoUserQuit(vReceived.Channel, vReceived.User);
+    begin
+      DoUserQuit(vReceived.User);
+      if not SameText(Session.Nick, vReceived.User) then //not me
+      begin
+        aReceived := vReceived;
+        for oChannel in Session.Channels do
+        begin
+          aReceived.Channel := oChannel.Name;
+          Receive(mtLeft, aReceived);
+          oChannel.RemoveUser(vReceived.User);
+        end;
+      end;
+    end;
     mtNotice:
       DoNotice(vReceived.Channel, vReceived.User, vReceived.Target, vReceived.MSG);
     mtMessage:
@@ -2111,6 +2230,9 @@ begin
   UserCommands.Add(TNotice_UserCommand.Create('Notice', Self));
   UserCommands.Add(TCNotice_UserCommand.Create('CNotice', Self));
   UserCommands.Add(THELP_UserCommand.Create('HELP', Self));
+
+  MapChannels.Values['ChanServ'] := ''; //To server channel
+  MapChannels.Values['NickServ'] := '';
 end;
 
 end.
