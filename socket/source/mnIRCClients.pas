@@ -380,7 +380,6 @@ type
     procedure DoChanged(vStates: TIRCStates); virtual;
     procedure DoUsersChanged(vChannelName: string; vChannel: TIRCChannel); virtual;
     procedure DoUserChanged(vChannel: string; vUser, vNewNick: string); virtual;
-    procedure DoUserMode(vChannel: string; vUser: string); virtual;
     procedure DoMyInfoChanged; virtual;
 
     procedure GetCurrentChannel(out vChannel: string); virtual;
@@ -2072,11 +2071,6 @@ procedure TmnIRCClient.DoUserChanged(vChannel: string; vUser, vNewNick: string);
 
 end;
 
-procedure TmnIRCClient.DoUserMode(vChannel: string; vUser: string);
-begin
-
-end;
-
 procedure TmnIRCClient.DoMyInfoChanged;
 begin
 
@@ -2181,7 +2175,7 @@ begin
     mtTopic:
       DoTopic(vReceived.Channel, vReceived.MSG);
     mtUserMode:
-      DoUserMode(vReceived.Channel, vReceived.User);
+      DoUserChanged(vReceived.Channel, vReceived.User, '');
     mtLog:
       DoLog(vReceived.MSG);
     else;

@@ -305,6 +305,7 @@ end;
 procedure TMainFrm.SetNick(ANick: string);
 begin
   NicknameBtn.Caption := ANick;
+ //TODO change it in the list
 end;
 
 procedure TMainFrm.SendEditKeyPress(Sender: TObject; var Key: char);
