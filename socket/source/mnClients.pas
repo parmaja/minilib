@@ -69,7 +69,7 @@ type
     procedure Disconnect;
     function GetConnected: Boolean;
   protected
-    function CreateConnection: TmnConnection; virtual;
+    function CreateConnection: TmnConnection; virtual; abstract;
   protected
     FOptions: TmnsoOptions;
     procedure Shutdown;
@@ -166,11 +166,6 @@ end;
 function TmnClients.GetConnected: Boolean;
 begin
   Result := Terminated;
-end;
-
-function TmnClients.CreateConnection: TmnConnection;
-begin
-  Result := TmnClientConnection.Create(Self);
 end;
 
 procedure TmnClients.Log(Connection: TmnConnection; S: string);

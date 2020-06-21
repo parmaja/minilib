@@ -117,7 +117,8 @@ begin
         while MainFrm.MsgPageControl.PageCount > 0 do
           MainFrm.MsgPageControl.Page[0].Free;
       end;
-      prgConnected: MainFrm.ConnectBtn.Caption := 'Disconnect...';
+      prgConnecting: MainFrm.ConnectBtn.Caption := 'Connecting';
+      prgConnected: MainFrm.ConnectBtn.Caption := 'Disconnect';
       prgReady: MainFrm.ConnectBtn.Caption := 'Disconnect';
     end;
 end;

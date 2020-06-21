@@ -71,7 +71,7 @@ type
 
   TmnIRCClient = class;
 
-  TIRCProgress = (prgDisconnected, prgConnected, prgReady);
+  TIRCProgress = (prgDisconnected, prgConnecting, prgConnected, prgReady);
 
   TIRCState = (
     scProgress,
@@ -284,13 +284,12 @@ type
     FPort: string;
     function InitStream: Boolean;
     function CreateStream: TIRCSocketStream;
-    procedure Rejoin;
   protected
     procedure Log(S: string);
     procedure Prepare; override;
     procedure Process; override;
     procedure Unprepare; override;
-
+  protected
     procedure ReceiveRaws; //To Synch, to be out of thread
     procedure SendRaws;
     procedure SendRaw(S: utf8string); //this called by client out of thread
@@ -352,9 +351,11 @@ type
     procedure SetPort(const Value: String);
     procedure SetRealName(const Value: String);
     procedure SetHost(const Value: String);
+    procedure Connecting;
     procedure Connected;
     procedure Disconnected;
     procedure Close;
+    procedure Rejoin;
     procedure SetUsername(const Value: String);
     //function BuildUserModeCommand(NewModes: TIRCUserModes): String;
   protected
@@ -1507,50 +1508,32 @@ begin
   if FStream = nil then
     FStream := CreateStream;
 
-  if not FStream.Connected then
+  if not FStream.Connected and not Terminated then
   begin
     try
       if Tries > 0 then
         Log('Reconnecting...');
-      Client.SetProgress(prgDisconnected);
+      Queue(Client.Connecting);
       FStream.Connect;
-      Rejoin;
       Log('Connected successed');
       Queue(Client.Connected);
       Inc(Tries);
     except
-      FreeAndNil(FStream);
-      Log('Connected failed');
+      on E: Exception do
+      begin
+        FreeAndNil(FStream);
+        Log('Connected failed:' + E.Message);
+      end;
     end;
   end;
 
   Result := FStream <> nil;
 end;
 
-procedure TmnIRCConnection.Rejoin;
-var
-  i: Integer;
-  Channles: TStringList;
-begin
-  Channles := TStringList.Create;
-  try
-    Client.Lock.Enter;
-    try
-      for i := 0 to Client.Session.Channels.Count - 1 do
-        Channles.Add(Client.Session.Channels[i].Name);
-    finally
-      Client.Lock.Leave;
-    end;
-    for i := 0 to Channles.Count - 1 do
-      Client.Join(Channles[i]);
-  finally
-    Channles.Free;
-  end;
-end;
-
 function TmnIRCConnection.CreateStream: TIRCSocketStream;
 begin
   Result := TIRCSocketStream.Create(Host, Port, [soNoDelay]);
+  Result.ConnectTimeout := -1;
   Result.EndOfLine := #10;
 end;
 
@@ -1626,7 +1609,7 @@ begin
 
         Client.Lock.Enter;
         try
-          Client.QueueReceives.Add(false, aLine, prgConnected);
+          Client.QueueReceives.Add(False, aLine, prgConnected);
         finally
           Client.Lock.Leave;
         end;
@@ -1646,7 +1629,7 @@ begin
     end;
   end
   else
-    Sleep(100);
+    Sleep(3000);
 end;
 
 procedure TmnIRCConnection.Unprepare;
@@ -1655,6 +1638,7 @@ begin
   if Connected then
     Stop;
   Synchronize(Client.Disconnected);
+  FreeAndNil(FStream);
 end;
 
 procedure TmnIRCConnection.ReceiveRaws;
@@ -1698,7 +1682,7 @@ begin
   if FStream.Connected then
   begin
     FStream.WriteLineUTF8(S);
-    Client.Log(S); //it is in main thread
+    Log('>'+S); //it is in main thread
   end;
 end;
 
@@ -1862,6 +1846,23 @@ begin
   end;
 end;
 
+procedure TmnIRCClient.Rejoin;
+var
+  i: Integer;
+  RejoinChannles: TStringList;
+begin
+  RejoinChannles := TStringList.Create;
+  try
+    for i := 0 to Session.Channels.Count - 1 do
+      RejoinChannles.Add(Session.Channels[i].Name);
+
+    for i := 0 to RejoinChannles.Count - 1 do
+      Join(RejoinChannles[i]);
+  finally
+    RejoinChannles.Free;
+  end;
+end;
+
 procedure TmnIRCClient.SendRaw(vData: String; vQueueAt: TIRCProgress);
 begin
   if Assigned(FConnection) then
@@ -1992,7 +1993,7 @@ begin
   FSession.AllowedUserModes := [];
   FSession.AllowedChannelModes := [];
   FSession.Channels.Clear;
-  DoDisconnected
+  DoDisconnected;
 end;
 
 procedure TmnIRCClient.Connected;
@@ -2007,6 +2008,7 @@ begin
     else if Auth = authIDENTIFY then
       SendRaw(Format('NICKSERV IDENTIFY %s %s', [FUsername, FPassword]));
   end;
+  Rejoin;
   DoConnected;
 end;
 
@@ -2065,6 +2067,11 @@ end;
 procedure TmnIRCClient.SetHost(const Value: String);
 begin
   FHost := Value;
+end;
+
+procedure TmnIRCClient.Connecting;
+begin
+  SetProgress(prgConnecting);
 end;
 
 procedure TmnIRCClient.SetUsername(const Value: String);

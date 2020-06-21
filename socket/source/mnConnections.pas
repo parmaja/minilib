@@ -85,14 +85,15 @@ type
     FID: Integer;
     FOwner: TmnConnections;
     function GetActive: Boolean;
-  protected
+  strict protected
     property Owner: TmnConnections read FOwner;
     function GetConnected: Boolean; virtual; abstract;
     procedure Created; virtual;
     procedure Prepare; virtual;
     procedure Process; virtual;
-    procedure Execute; override;
     procedure Unprepare; virtual;
+  protected
+    procedure Execute; override;
     //procedure SetStream(AValue: TmnConnectionStream);
     procedure HandleException(E: Exception); virtual;
   public
