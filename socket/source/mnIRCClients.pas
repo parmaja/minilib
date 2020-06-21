@@ -71,7 +71,7 @@ type
 
   TmnIRCClient = class;
 
-  TIRCProgress = (prgDisconnected, prgConnecting, prgConnected, prgReady);
+  TIRCProgress = (prgOffline, prgConnecting, prgConnected, prgReady);
 
   TIRCState = (
     scProgress,
@@ -369,7 +369,7 @@ type
 
     procedure Log(S: string);
     procedure ReceiveRaw(vData: String); virtual;
-    procedure SendRaw(vData: String; vQueueAt: TIRCProgress = prgDisconnected);
+    procedure SendRaw(vData: String; vQueueAt: TIRCProgress = prgOffline);
 
     procedure DoReceive(vMsgType: TIRCMsgType; vChannel, vUser, vMsg: String); virtual;
 
@@ -1541,7 +1541,7 @@ procedure TmnIRCConnection.Log(S: string);
 begin
   Client.Lock.Enter;
   try
-    Client.QueueReceives.Add(True, S, prgDisconnected);
+    Client.QueueReceives.Add(True, S, prgOffline);
   finally
     Client.Lock.Leave;
   end;
@@ -1786,7 +1786,7 @@ end;
 
 procedure TmnIRCClient.Connect;
 begin
-  if (FProgress = prgDisconnected) then
+  if (FProgress = prgOffline) then
   begin
     FreeAndNil(FConnection);
     FConnection := TmnIRCConnection.Create(nil);
@@ -1814,7 +1814,7 @@ begin
   FRealName := 'username';
   FUsername := 'username';
   FPassword := '';
-  FProgress := prgDisconnected;
+  FProgress := prgOffline;
   FReceivers := TIRCReceivers.Create(Self);
   FUserCommands :=TIRCUserCommands.Create(Self);
   FQueueSends := TIRCQueueRaws.Create(True);
@@ -1988,7 +1988,7 @@ end;
 
 procedure TmnIRCClient.Disconnected;
 begin
-  SetProgress(prgDisconnected);
+  SetProgress(prgOffline);
   FSession.Nick := '';
   FSession.AllowedUserModes := [];
   FSession.AllowedChannelModes := [];
@@ -1997,9 +1997,15 @@ begin
 end;
 
 procedure TmnIRCClient.Connected;
+var
+  aNick: string;
 begin
   SetProgress(prgConnected);
-  SetNick(FNick);
+  if Nicks.Count = 0 then
+    aNick := FNick
+  else
+    aNick := Nicks[0];
+  SetNick(aNick);
   SendRaw(Format('USER %s 0 * :%s', [FUsername, FRealName]));
   if FPassword <> '' then
   begin

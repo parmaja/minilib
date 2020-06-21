@@ -120,7 +120,7 @@ type
     function GetDocument(Root: string): string;
     function DoCreateConnection(vStream: TmnConnectionStream): TmnConnection; override;
   public
-    constructor Create(AOptions: TmnsoOptions); override;
+    constructor Create(AOptions: TmnsoOptions);
     destructor Destroy; override;
     property Config: TConfigInfo read FConfig write FConfig;
     property DefaultDocument: TStringList read FDefaultDocument write SetDefaultDocument;

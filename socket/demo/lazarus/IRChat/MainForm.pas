@@ -111,7 +111,7 @@ begin
   inherited;
   if scProgress in vStates then
     case Progress of
-      prgDisconnected:
+      prgOffline:
       begin
         MainFrm.ConnectBtn.Caption := 'Connect';
         while MainFrm.MsgPageControl.PageCount > 0 do
@@ -172,6 +172,9 @@ begin
   IRC.Port := '6667';
   IRC.Auth := authIDENTIFY;
   IRC.Nick := UserEdit.Text;
+  IRC.Nicks.Add(UserEdit.Text);
+  IRC.Nicks.Add(UserEdit.Text+'_');
+  IRC.Nicks.Add(UserEdit.Text+'__');
   IRC.RealName := UserEdit.Text;
   IRC.Username := UserEdit.Text;
   IRC.Password := PasswordEdit.Text;
