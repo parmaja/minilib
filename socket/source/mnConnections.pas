@@ -60,18 +60,15 @@ type
 
   { TmnConnections }
 
-  TmnConnections = class(TmnLockThread)  //TmnListener and TmnCaller using it
+  TmnConnections = class abstract(TmnLockThread)  //TmnListener and TmnCaller using it
   private
     FLastID: Int64;
     FList: TmnConnectionList;
   protected
     FPort: string;
     FAddress: string;
-    function DoCreateConnection(vStream: TmnConnectionStream): TmnConnection; virtual;
-    function CreateConnection(vSocket: TmnCustomSocket): TmnConnection;
-    procedure DoCreateStream(var Result: TmnConnectionStream; vSocket: TmnCustomSocket); virtual; //todo move it to another unit
-    function CreateStream(vSocket: TmnCustomSocket): TmnConnectionStream;
     function GetCount: Integer;
+    function NewID: Int64;
   public
     constructor Create;
     destructor Destroy; override;
@@ -83,36 +80,35 @@ type
 
   { TmnConnection }
 
-  TmnConnection = class(TmnThread)
+  TmnConnection = class abstract(TmnThread)
   private
     FID: Integer;
     FOwner: TmnConnections;
-    FStream: TmnConnectionStream;
     function GetActive: Boolean;
-    function GetConnected: Boolean;
-    procedure SetConnected(const Value: Boolean);
   protected
     property Owner: TmnConnections read FOwner;
+    function GetConnected: Boolean; virtual; abstract;
     procedure Created; virtual;
     procedure Prepare; virtual;
     procedure Process; virtual;
     procedure Execute; override;
     procedure Unprepare; virtual;
-    procedure SetStream(AValue: TmnConnectionStream);
+    //procedure SetStream(AValue: TmnConnectionStream);
     procedure HandleException(E: Exception); virtual;
   public
-    constructor Create(vOwner: TmnConnections; vStream: TmnConnectionStream); virtual; //TODO use TmnBufferStream
+    constructor Create(vOwner: TmnConnections);
     destructor Destroy; override;
-    procedure Connect; virtual;
-    procedure Disconnect(Safe: Boolean = true); virtual; // don't raise exception, now by default true
-    procedure Open; //Alias for Connect
-    procedure Close; //Alias for Disconnect
+
+    //procedure Connect; virtual;
+    //procedure Disconnect(Safe: Boolean = true); virtual; // don't raise exception, now by default true
+    //property Stream: TmnConnectionStream read FStream; //write SetStream; //not now
+
+    property Connected: Boolean read GetConnected;
+
     procedure Stop; virtual;
     procedure Release;
-    property Connected: Boolean read GetConnected write SetConnected;
     property Active: Boolean read GetActive;
-    property Stream: TmnConnectionStream read FStream; //write SetStream; //not now
-    property ID: Integer read FID;
+    property ID: Integer read FID write FID;
   end;
 
 procedure mnCheckError(Value: Integer);
@@ -126,29 +122,6 @@ begin
 end;
 
 { TmnConnections }
-
-function TmnConnections.CreateStream(vSocket: TmnCustomSocket): TmnConnectionStream;
-begin
-  Result := nil;
-  DoCreateStream(Result, vSocket);
-end;
-
-function TmnConnections.DoCreateConnection(vStream: TmnConnectionStream): TmnConnection;
-begin
-  Result := TmnConnection.Create(Self, vStream);
-end;
-
-function TmnConnections.CreateConnection(vSocket: TmnCustomSocket): TmnConnection;
-begin
-  Inc(FLastID);
-  Result := DoCreateConnection(CreateStream(vSocket));
-  Result.FID := FLastID;
-end;
-
-procedure TmnConnections.DoCreateStream(var Result: TmnConnectionStream; vSocket: TmnCustomSocket);
-begin
-  Result := TmnSocketStream.Create(vSocket);
-end;
 
 constructor TmnConnections.Create;
 begin
@@ -169,6 +142,12 @@ end;
 function TmnConnections.GetCount: Integer;
 begin
   Result := FList.Count;
+end;
+
+function TmnConnections.NewID: Int64;
+begin
+  Inc(FLastID);
+  Result := FLastID;
 end;
 
 procedure TmnConnection.Execute;
@@ -236,36 +215,23 @@ end;
 
 { TmnConnection }
 
-procedure TmnConnection.Close;
-begin
-  Disconnect;
-end;
-
-constructor TmnConnection.Create(vOwner: TmnConnections; vStream: TmnConnectionStream);
+constructor TmnConnection.Create(vOwner: TmnConnections);
 begin
   inherited Create;
   FOwner := vOwner;
-  FStream := vStream;
   Created;
 end;
 
 destructor TmnConnection.Destroy;
 begin
   if Connected then
-    Close;
-  FreeAndNil(FStream);
+    Stop;
   inherited;
-end;
-
-procedure TmnConnection.Open;
-begin
-  Connect;
 end;
 
 procedure TmnConnection.Stop;
 begin
   Terminate;
-  Disconnect;
 end;
 
 procedure TmnConnection.Release;
@@ -277,11 +243,6 @@ begin
   end;
 end;
 
-function TmnConnection.GetConnected: Boolean;
-begin
-  Result := (FStream <> nil) and FStream.Connected;
-end;
-
 function TmnConnection.GetActive: Boolean;
 begin
   Result := Connected and not Terminated;
@@ -291,37 +252,8 @@ procedure TmnConnection.HandleException(E: Exception);
 begin
 end;
 
-procedure TmnConnection.SetConnected(const Value: Boolean);
-begin
-  if Value then
-    Open
-  else
-    Close;
-end;
-
 procedure TmnConnection.Created;
 begin
-end;
-
-procedure TmnConnection.SetStream(AValue: TmnConnectionStream);
-begin
-  if FStream <> nil then
-    raise exception.Create('We already have a stream');
-  FStream := AValue;
-end;
-
-procedure TmnConnection.Disconnect(Safe: Boolean);
-begin
-  if not Safe and (FStream = nil) then
-    raise Exception.Create('No stream to disconnect');
-  if (FStream <> nil) and FStream.Connected then
-    FStream.Disconnect;
-end;
-
-procedure TmnConnection.Connect;
-begin
-  if (FStream <> nil) then
-    FStream.Connect;
 end;
 
 procedure TmnConnection.Prepare;

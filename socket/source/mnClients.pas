@@ -49,7 +49,7 @@ type
     function GetOwner: TmnClients;
   protected
   public
-    constructor Create(vOwner: TmnConnections; vSocket: TmnConnectionStream = nil); override;
+    constructor Create(vOwner: TmnConnections);
     destructor Destroy; override;
     property Owner: TmnClients read GetOwner;
   end;
@@ -69,7 +69,7 @@ type
     procedure Disconnect;
     function GetConnected: Boolean;
   protected
-    function DoCreateConnection(vStream: TmnConnectionStream): TmnConnection; override;
+    function CreateConnection: TmnConnection; virtual;
   protected
     FOptions: TmnsoOptions;
     procedure Shutdown;
@@ -93,7 +93,7 @@ implementation
 
 { TmnClientConnection }
 
-constructor TmnClientConnection.Create(vOwner: TmnConnections; vSocket: TmnConnectionStream);
+constructor TmnClientConnection.Create(vOwner: TmnConnections);
 begin
   inherited;
   FreeOnTerminate := True;
@@ -168,9 +168,9 @@ begin
   Result := Terminated;
 end;
 
-function TmnClients.DoCreateConnection(vStream: TmnConnectionStream): TmnConnection;
+function TmnClients.CreateConnection: TmnConnection;
 begin
-  Result := TmnClientConnection.Create(Self, vStream);
+  Result := TmnClientConnection.Create(Self);
 end;
 
 procedure TmnClients.Log(Connection: TmnConnection; S: string);
@@ -236,7 +236,7 @@ begin
     vPort := FPort;
   if vAddress = '' then
     vAddress := FAddress;
-  Result := CreateConnection(nil) as TmnClientConnection;
+  Result := CreateConnection as TmnClientConnection;
   Result.Start;
 end;
 

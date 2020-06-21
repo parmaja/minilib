@@ -104,7 +104,7 @@ type
     function Listener: TmnHttpListener;
     procedure Process; override;
   public
-    constructor Create(vConnector: TmnConnections; vStream: TmnConnectionStream); override;
+    constructor Create(vConnector: TmnConnections; vStream: TmnConnectionStream);
     destructor Destroy; override;
     property RequestInfo: TRequestInfo read FRequestInfo;
   end;

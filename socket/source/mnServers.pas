@@ -53,12 +53,17 @@ type
   TmnServerConnection = class(TmnConnection)
   private
     FRemoteIP: string;
+    FStream: TmnConnectionStream;
     function GetListener: TmnListener;
   protected
     procedure Execute; override;
+    function GetConnected: Boolean; override;
+    procedure Disconnect; virtual;
   public
-    constructor Create(vOwner: TmnConnections; vStream: TmnConnectionStream); override;
+    constructor Create(vOwner: TmnConnections; vStream: TmnConnectionStream);
     destructor Destroy; override;
+    procedure Stop; override;
+    property Stream: TmnConnectionStream read FStream;
     property Listener: TmnListener read GetListener;
     property RemoteIP: string read FRemoteIP;
   end;
@@ -84,7 +89,11 @@ type
     procedure Disconnect;
     function GetConnected: Boolean;
   protected
-    function DoCreateConnection(vStream: TmnConnectionStream): TmnConnection; override;
+    function DoCreateConnection(vStream: TmnConnectionStream): TmnConnection; virtual;
+    function CreateConnection(vSocket: TmnCustomSocket): TmnConnection;
+    function CreateStream(vSocket: TmnCustomSocket): TmnConnectionStream;
+    procedure DoCreateStream(var Result: TmnConnectionStream; vSocket: TmnCustomSocket); virtual;
+
     property LogMessages: TStringList read FLogMessages;
   protected
     procedure PostLogs;
@@ -96,7 +105,6 @@ type
     procedure Execute; override;
     procedure Remove(Connection: TmnServerConnection); virtual;
     procedure Add(Connection: TmnServerConnection); virtual;
-    procedure DoCreateStream(var Result: TmnConnectionStream; vSocket: TmnCustomSocket); override;
 
   public
     constructor Create(AOptions: TmnsoOptions = []); virtual;
@@ -317,7 +325,8 @@ end;
 
 constructor TmnServerConnection.Create(vOwner: TmnConnections; vStream: TmnConnectionStream);
 begin
-  inherited;
+  inherited Create(vOwner);
+  FStream := vStream;
   FreeOnTerminate := True;
   if Listener <> nil then
     Listener.Add(Self);
@@ -325,7 +334,15 @@ end;
 
 destructor TmnServerConnection.Destroy;
 begin
+  Disconnect;
+  FreeAndNil(FStream);
   inherited;
+end;
+
+procedure TmnServerConnection.Stop;
+begin
+  Disconnect;
+  inherited Stop;
 end;
 
 function TmnServerConnection.GetListener: TmnListener;
@@ -338,6 +355,17 @@ begin
   inherited;
   if Listener <> nil then
     Listener.Remove(Self);
+end;
+
+function TmnServerConnection.GetConnected: Boolean;
+begin
+  Result := (FStream <> nil) and FStream.Connected;
+end;
+
+procedure TmnServerConnection.Disconnect;
+begin
+  if (FStream <> nil) and (FStream.Connected) then
+    FStream.Disconnect;
 end;
 
 procedure TmnServer.SetActive(const Value: Boolean);
@@ -420,9 +448,21 @@ begin
   Result := TmnServerConnection.Create(Self, vStream);
 end;
 
+function TmnListener.CreateConnection(vSocket: TmnCustomSocket): TmnConnection;
+begin
+  Result := DoCreateConnection(CreateStream(vSocket));
+  Result.ID := NewID;
+end;
+
+function TmnListener.CreateStream(vSocket: TmnCustomSocket): TmnConnectionStream;
+begin
+  Result := nil;
+  DoCreateStream(Result, vSocket);
+end;
+
 procedure TmnListener.DoCreateStream(var Result: TmnConnectionStream; vSocket: TmnCustomSocket);
 begin
-  inherited;
+  Result := TmnSocketStream.Create(vSocket);
   //TmnSocketStream(Result).Options := TmnSocketStream(Result).Options + Options;
   TmnSocketStream(Result).Options := Options;
 end;

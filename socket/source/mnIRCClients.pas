@@ -276,11 +276,16 @@ type
 
   TmnIRCConnection = class(TmnClientConnection)
   private
+    Tries: Integer;
     FClient: TmnIRCClient;
+    FStream: TIRCSocketStream;
+
     FHost: string;
     FPort: string;
-  protected
+    function InitStream: Boolean;
     function CreateStream: TIRCSocketStream;
+    procedure Rejoin;
+  protected
     procedure Log(S: string);
     procedure Prepare; override;
     procedure Process; override;
@@ -291,10 +296,11 @@ type
     procedure SendRaw(S: utf8string); //this called by client out of thread
 
     property Client: TmnIRCClient read FClient;
+    function GetConnected: Boolean; override;
   public
-    constructor Create(vOwner: TmnConnections; vSocket: TmnConnectionStream); override;
+    constructor Create(vOwner: TmnConnections);
     destructor Destroy; override;
-    procedure Connect; override;
+    procedure Connect;
     property Host: string read FHost;
     property Port: string read FPort;
   end;
@@ -353,7 +359,7 @@ type
     //function BuildUserModeCommand(NewModes: TIRCUserModes): String;
   protected
     NickIndex: Integer;
-    procedure SetState(const Value: TIRCProgress);
+    procedure SetProgress(const Value: TIRCProgress);
 
     procedure Changed(vStates: TIRCStates);
 
@@ -1392,7 +1398,7 @@ begin
   begin
     Receive(mtWelcome, vCommand.Received);
     Client.FSession.ServerChannel := vCommand.Sender;
-    SetState(prgReady);
+    SetProgress(prgReady);
   end;
 end;
 
@@ -1401,6 +1407,7 @@ end;
 procedure TTOPIC_IRCReceiver.DoReceive(vCommand: TIRCCommand);
 begin
   //:server 332 zaher #support :Creative Solutions Support Channel
+  //:zaherdirkey!~zaherdirkey@myip TOPIC #support :Creative Solutions Support Channel2
   vCommand.User := vCommand.PullParam;
   vCommand.Target := vCommand.PullParam;
   vCommand.Channel := vCommand.Target;
@@ -1495,25 +1502,56 @@ end;
 
 { TmnIRCConnection }
 
+function TmnIRCConnection.InitStream: Boolean;
+begin
+  if FStream = nil then
+    FStream := CreateStream;
+
+  if not FStream.Connected then
+  begin
+    try
+      if Tries > 0 then
+        Log('Reconnecting...');
+      Client.SetProgress(prgDisconnected);
+      FStream.Connect;
+      Rejoin;
+      Log('Connected successed');
+      Queue(Client.Connected);
+      Inc(Tries);
+    except
+      FreeAndNil(FStream);
+      Log('Connected failed');
+    end;
+  end;
+
+  Result := FStream <> nil;
+end;
+
+procedure TmnIRCConnection.Rejoin;
+var
+  i: Integer;
+  Channles: TStringList;
+begin
+  Channles := TStringList.Create;
+  try
+    Client.Lock.Enter;
+    try
+      for i := 0 to Client.Session.Channels.Count - 1 do
+        Channles.Add(Client.Session.Channels[i].Name);
+    finally
+      Client.Lock.Leave;
+    end;
+    for i := 0 to Channles.Count - 1 do
+      Client.Join(Channles[i]);
+  finally
+    Channles.Free;
+  end;
+end;
+
 function TmnIRCConnection.CreateStream: TIRCSocketStream;
 begin
   Result := TIRCSocketStream.Create(Host, Port, [soNoDelay]);
-  try
-    //Result.Timeout := WaitForEver;
-    Result.EndOfLine := #10;
-    //Result.Connect;
-    SetStream(Result)
-  except
-    on E: EmnSocketException do
-    begin
-      FreeAndNil(Result)
-    end
-    else
-    begin
-      FreeAndNil(Result);
-      raise;
-    end;
-  end;
+  Result.EndOfLine := #10;
 end;
 
 procedure TmnIRCConnection.Log(S: string);
@@ -1530,8 +1568,6 @@ end;
 procedure TmnIRCConnection.Prepare;
 begin
   inherited;
-  Connect;
-  Queue(Client.Connected);
 end;
 
 procedure TmnIRCConnection.SendRaws;
@@ -1572,39 +1608,52 @@ var
   aLine: utf8string;
 begin
   inherited;
-  Queue(SendRaws);
-
-  Stream.ReadLineUTF8(aLine, True);
-  aLine := Trim(aLine);
-
-  while (aLine <> '') and Active do
+  if InitStream then
   begin
-    {$ifdef FPC}
-      {.$IF FPC_FULLVERSION>=30101}
-        //For future when Anonymous enabled in FPC
-      {.$endif}
-    {$endif}
-
-    Client.Lock.Enter;
     try
-      Client.QueueReceives.Add(false, aLine, prgConnected);
-    finally
-      Client.Lock.Leave;
+      Queue(SendRaws);
+
+      FStream.ReadLineUTF8(aLine, True);
+      aLine := Trim(aLine);
+
+      while (aLine <> '') and Active do
+      begin
+        {$ifdef FPC}
+          {.$IF FPC_FULLVERSION>=30101}
+            //For future when Anonymous enabled in FPC
+          {.$endif}
+        {$endif}
+
+        Client.Lock.Enter;
+        try
+          Client.QueueReceives.Add(false, aLine, prgConnected);
+        finally
+          Client.Lock.Leave;
+        end;
+
+        Queue(ReceiveRaws);
+        Queue(SendRaws);
+
+        FStream.ReadLineUTF8(aLine, True);
+        aLine := Trim(aLine);
+      end;
+    except
+      on E: Exception do
+      begin
+        FreeAndNil(FStream);
+        Log(E.Message);
+      end;
     end;
-
-    Queue(ReceiveRaws);
-    Queue(SendRaws);
-
-    Stream.ReadLineUTF8(aLine, True);
-    aLine := Trim(aLine);
-  end;
+  end
+  else
+    Sleep(100);
 end;
 
 procedure TmnIRCConnection.Unprepare;
 begin
   inherited;
   if Connected then
-    Disconnect(true);
+    Stop;
   Synchronize(Client.Disconnected);
 end;
 
@@ -1646,14 +1695,19 @@ end;
 
 procedure TmnIRCConnection.SendRaw(S: utf8string);
 begin
-  if Stream.Connected then
+  if FStream.Connected then
   begin
-    Stream.WriteLineUTF8(S);
+    FStream.WriteLineUTF8(S);
     Client.Log(S); //it is in main thread
   end;
 end;
 
-constructor TmnIRCConnection.Create(vOwner: TmnConnections; vSocket: TmnConnectionStream);
+function TmnIRCConnection.GetConnected: Boolean;
+begin
+  Result := True;
+end;
+
+constructor TmnIRCConnection.Create(vOwner: TmnConnections);
 begin
   inherited;
 end;
@@ -1665,13 +1719,7 @@ end;
 
 procedure TmnIRCConnection.Connect;
 begin
-  Log('Connecting...');
-  CreateStream;
   inherited;
-  if Connected then
-    Log('Connected successed')
-  else
-    Log('Connected failed');
 end;
 
 { TIRCCommand }
@@ -1710,11 +1758,11 @@ function TCustomIRCReceivers.Add(vName: String; vCode: Integer; AClass: TIRCRece
 var
   AReceiver: TIRCReceiver;
 begin
-  Result := IndexOfName(vName);
+  {Result := IndexOfName(vName);
   if Result >= 0 then
   begin
     //not sure if we want more than one Receiver
-  end;
+  end;}
   AReceiver := AClass.Create(Client);
   AReceiver.Name := vName;
   AReceiver.Code := vCode;
@@ -1757,7 +1805,7 @@ begin
   if (FProgress = prgDisconnected) then
   begin
     FreeAndNil(FConnection);
-    FConnection := TmnIRCConnection.Create(nil, nil);
+    FConnection := TmnIRCConnection.Create(nil);
     FConnection.FClient := Self;
     FConnection.FreeOnTerminate := false;
     Connection.FHost := Host;
@@ -1809,7 +1857,7 @@ procedure TmnIRCClient.Close;
 begin
   if Assigned(FConnection) and (FConnection.Connected) then
   begin
-    FConnection.Close;
+    FConnection.Stop;
     FConnection.WaitFor;
   end;
 end;
@@ -1939,7 +1987,7 @@ end;
 
 procedure TmnIRCClient.Disconnected;
 begin
-  SetState(prgDisconnected);
+  SetProgress(prgDisconnected);
   FSession.Nick := '';
   FSession.AllowedUserModes := [];
   FSession.AllowedChannelModes := [];
@@ -1949,7 +1997,7 @@ end;
 
 procedure TmnIRCClient.Connected;
 begin
-  SetState(prgConnected);
+  SetProgress(prgConnected);
   SetNick(FNick);
   SendRaw(Format('USER %s 0 * :%s', [FUsername, FRealName]));
   if FPassword <> '' then
@@ -2024,7 +2072,7 @@ begin
   FUsername := Value;
 end;
 
-procedure TmnIRCClient.SetState(const Value: TIRCProgress);
+procedure TmnIRCClient.SetProgress(const Value: TIRCProgress);
 begin
   if Value <> FProgress then
   begin
@@ -2199,7 +2247,8 @@ begin
   Receivers.Add('MODE', 0, TMODE_IRCReceiver);
   Receivers.Add('PING', 0, TPING_IRCReceiver);
   Receivers.Add('MOTD', IRC_RPL_MOTD, TMOTD_IRCReceiver);
-  Receivers.Add('TOPIC', IRC_RPL_TOPIC, TTOPIC_IRCReceiver);
+  Receivers.Add('', IRC_RPL_TOPIC, TTOPIC_IRCReceiver);
+  Receivers.Add('TOPIC', 0, TTOPIC_IRCReceiver);//not same with IRC_RPL_TOPIC
   Receivers.Add('NICK', 0, TNICK_IRCReceiver);
   Receivers.Add('WELCOME', IRC_RPL_WELCOME, TWELCOME_IRCReceiver);
   Receivers.Add('MYINFO', IRC_RPL_MYINFO, TMYINFO_IRCReceiver);
