@@ -37,7 +37,6 @@ requires
 contains
   mnSockets in '..\source\mnSockets.pas',
   mnServers in '..\source\mnServers.pas',
-  mnCommands in '..\source\mnCommands.pas',
   mnConnections in '..\source\mnConnections.pas',
   mnModules in '..\source\mnModules.pas',
   mnHttpClient in '..\source\mnHttpClient.pas',
