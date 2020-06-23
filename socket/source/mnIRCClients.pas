@@ -218,14 +218,13 @@ type
   public
     When: TIRCProgress;
     Raw: string;
-    IsLog: Boolean;
   end;
 
   { TIRCQueueRaws }
 
   TIRCQueueRaws = class(TmnObjectList<TIRCRaw>)
   public
-    procedure Add(IsLog: Boolean; Raw: string; When: TIRCProgress = prgConnected); overload; //if MsgType log it will be log, if not it will be parsed
+    procedure Add(Raw: string; When: TIRCProgress = prgConnected); overload; //if MsgType log it will be log, if not it will be parsed
   end;
 
   { TIRCUserName }
@@ -1039,14 +1038,13 @@ end;
 
 { TIRCQueueRaws }
 
-procedure TIRCQueueRaws.Add(IsLog: Boolean; Raw: string; When: TIRCProgress);
+procedure TIRCQueueRaws.Add(Raw: string; When: TIRCProgress);
 var
   Item: TIRCRaw;
 begin
   Item := TIRCRaw.Create;
   Item.When := When;
   Item.Raw := Raw;
-  Item.IsLog := IsLog;
   Add(Item);
 end;
 
@@ -1637,7 +1635,7 @@ begin
 
         Client.Lock.Enter;
         try
-          Client.QueueReceives.Add(False, aLine, prgConnected);
+          Client.QueueReceives.Add(aLine, prgConnected);
         finally
           Client.Lock.Leave;
         end;
@@ -1691,7 +1689,7 @@ begin
       begin
         if Client.QueueReceives[i].When <= Client.Progress then
         begin
-          temp.Add(Client.QueueReceives[i].IsLog, Client.QueueReceives[i].Raw, Client.QueueReceives[i].When);
+          temp.Add(Client.QueueReceives[i].Raw, Client.QueueReceives[i].When);
           Client.QueueReceives.Delete(i);
         end
         else
@@ -1702,12 +1700,7 @@ begin
     end;
 
     for i := 0 to temp.Count -1 do
-    begin
-      if temp[i].IsLog then
-        Client.Log(temp[i].Raw)
-      else
-        Client.ReceiveRaw(temp[i].Raw);
-    end;
+      Client.ReceiveRaw(temp[i].Raw);
   finally
     FreeAndNil(temp);
   end;
@@ -1930,7 +1923,7 @@ begin
     begin
       Lock.Enter;
       try
-        QueueSends.Add(False, vData, vQueueAt);
+        QueueSends.Add(vData, vQueueAt);
       finally
         Lock.Leave;
       end;
