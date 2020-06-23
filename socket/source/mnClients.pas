@@ -15,7 +15,7 @@ unit mnClients;
 interface
 
 uses
-  Classes, {$ifndef FPC} Types, {$endif} SysUtils,
+  Classes, {$ifndef FPC} Types, {$endif} SysUtils, SyncObjs,
   mnSockets, mnStreams, mnConnections;
 
 type
@@ -54,6 +54,23 @@ type
     property Owner: TmnClients read GetOwner;
   end;
 
+  { TmnLogClientConnection }
+
+  TmnLogClientConnection = class(TmnClientConnection) //with log pool, same as Listener
+  private
+    FLock: TCriticalSection;
+    FLogMessages: TStringList;
+  protected
+    procedure DoLog(s: string); virtual; //outside of thread
+    procedure PostLogs; //to qeoue
+    procedure Log(s: string);
+    property LogMessages: TStringList read FLogMessages;
+  public
+    constructor Create(vOwner: TmnConnections);
+    destructor Destroy; override;
+    property Lock: TCriticalSection read FLock;
+  end;
+
   TmnClientConnectionClass = class of TmnClientConnection;
 
   TmnOnLog = procedure(Connection: TmnConnection; const S: string) of object;
@@ -90,6 +107,62 @@ type
   end;
 
 implementation
+
+{ TmnLogClientConnection }
+
+procedure TmnLogClientConnection.DoLog(s: string);
+begin
+end;
+
+procedure TmnLogClientConnection.PostLogs;
+var
+  b: Boolean;
+  s: String;
+begin
+  repeat
+    b := false;
+    Lock.Enter;
+    try
+      b := LogMessages.Count > 0;
+      if b then
+      begin
+        s := LogMessages[0];
+        LogMessages.Delete(0);
+      end
+      else
+        s := '';
+    finally
+      Lock.Leave;
+    end;
+    if b then
+      DoLog(s);
+  until not b;
+end;
+
+procedure TmnLogClientConnection.Log(s: string);
+begin
+  Lock.Enter;
+  try
+    LogMessages.Add(S);
+  finally
+    Lock.Leave;
+  end;
+  Queue(PostLogs);
+end;
+
+constructor TmnLogClientConnection.Create(vOwner: TmnConnections);
+begin
+  inherited;
+  FLogMessages := TStringList.Create;
+  FLock := TCriticalSection.Create;
+end;
+
+destructor TmnLogClientConnection.Destroy;
+begin
+  FreeAndNil(FLogMessages);
+  FLock.Free;
+  inherited;
+end;
 
 { TmnClientConnection }
 

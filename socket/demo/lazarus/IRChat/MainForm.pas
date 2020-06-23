@@ -17,6 +17,7 @@ type
   TMyIRCClient = class(TmnIRCClient)
   public
     procedure GetCurrentChannel(out vChannel: string); override;
+    procedure DoLog(S: String); override;
     procedure DoMyInfoChanged; override;
     procedure DoUserChanged(vChannel: string; vUser, vNewNick: string); override;
     procedure DoChanged(vStates: TIRCStates); override;
@@ -69,6 +70,7 @@ type
     procedure RecentUp;
     procedure RecentDown;
     procedure AddRecent(S: string);
+    procedure Log(S: string);
     function CurrentRoom: string;
     procedure ConnectNow;
     procedure SaveConfig;
@@ -94,6 +96,12 @@ implementation
 procedure TMyIRCClient.GetCurrentChannel(out vChannel: string);
 begin
   vChannel := MainFrm.CurrentRoom;
+end;
+
+procedure TMyIRCClient.DoLog(S: String);
+begin
+  inherited;
+  MainFrm.Log(S);
 end;
 
 procedure TMyIRCClient.DoMyInfoChanged;
@@ -375,6 +383,11 @@ begin
   RecentsIndex := 0;
 end;
 
+procedure TMainFrm.Log(S: string);
+begin
+  LogEdit.Lines.Add(S)
+end;
+
 function TMainFrm.CurrentRoom: string;
 begin
   if MsgPageControl.ActivePage <> nil then
@@ -448,7 +461,7 @@ var
   oUser: TIRCUser;
 begin
   if vChannel = '' then
-    LogEdit.Lines.Add(vMSG)
+    Log(vMSG)
   else
   begin
     ChatRoom := NeedRoom(vChannel);

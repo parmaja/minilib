@@ -81,7 +81,6 @@ type
 
   TIRCStates = set of TIRCState;
   TIRCMsgType = (
-    mtLog,
     mtMessage,
     mtNotice,
     mtMOTD,
@@ -97,7 +96,6 @@ type
     mtPart, //User left the channel, also we will send mtLeft after it
     mtQuit  //User left the server, but sever not send Part for all channels, so we will send mtLeft after it
   );
-  TIRCLogType = (lgMsg, lgSend, lgReceive);
 
   TIRCReceived = record
     Channel: string;
@@ -276,7 +274,7 @@ type
 
   { TmnIRCConnection }
 
-  TmnIRCConnection = class(TmnClientConnection)
+  TmnIRCConnection = class(TmnLogClientConnection)
   private
     Tries: Integer;
     FClient: TmnIRCClient;
@@ -287,7 +285,7 @@ type
     function InitStream: Boolean;
     function CreateStream: TIRCSocketStream;
   protected
-    procedure Log(S: string);
+    procedure DoLog(s: string); override;
     procedure Prepare; override;
     procedure Process; override;
     procedure Unprepare; override;
@@ -1571,15 +1569,10 @@ begin
   Result.EndOfLine := #10;
 end;
 
-procedure TmnIRCConnection.Log(S: string);
+procedure TmnIRCConnection.DoLog(s: string);
 begin
-  Client.Lock.Enter;
-  try
-    Client.QueueReceives.Add(True, S, prgOffline);
-  finally
-    Client.Lock.Leave;
-  end;
-  Queue(ReceiveRaws);
+  inherited;
+  Client.Log(S);
 end;
 
 procedure TmnIRCConnection.Prepare;
@@ -2309,19 +2302,13 @@ begin
       DoTopic(vReceived.Channel, vReceived.MSG);
     mtUserMode:
       DoUserChanged(vReceived.Channel, vReceived.User, '');
-    mtLog:
-      DoLog(vReceived.MSG);
     else;
   end;
 end;
 
 procedure TmnIRCClient.Log(S: string);
-var
-  aReceived: TIRCReceived;
 begin
-  Initialize(aReceived);
-  aReceived.Msg := S;
-  Receive(mtLog, aReceived);
+  DoLog(S);
 end;
 
 procedure TmnIRCClient.Init;
@@ -2362,6 +2349,7 @@ begin
 
   MapChannels.Values['ChanServ'] := ''; //To server channel
   MapChannels.Values['NickServ'] := '';
+  MapChannels.Values['SaslServ'] := '';
 end;
 
 end.
