@@ -154,6 +154,8 @@ type
   private
     FClient: TmnIRCClient;
   protected
+    When: TIRCProgress;
+    Queue: Boolean; //Execute it in main thread
     procedure DoReceive(vCommand: TIRCCommand); virtual; abstract;
     function Accept(S: string): Boolean; virtual;
     procedure Receive(vCommand: TIRCCommand); virtual;
@@ -186,7 +188,19 @@ type
 
   TIRCReceivers = class(TCustomIRCReceivers)
   public
-    procedure Parse(vData: string);
+
+  end;
+
+  { TIRCQueueCommand }
+
+  TIRCQueueCommand = class(TIRCCommand)
+  private
+    Receiver: TIRCReceiver;
+    procedure Execute;
+  end;
+
+  TIRCQueueCommands = class(TmnObjectList<TIRCQueueCommand>)
+  public
   end;
 
   { TIRCUserCommand }
@@ -281,6 +295,9 @@ type
 
     FHost: string;
     FPort: string;
+
+    FQueueCommands : TIRCQueueCommands;
+
     function InitStream: Boolean;
     function CreateStream: TIRCSocketStream;
   protected
@@ -289,12 +306,14 @@ type
     procedure Process; override;
     procedure Unprepare; override;
   protected
+    procedure ParseRaw(vData: string);
     procedure ReceiveRaws; //To Synch, to be out of thread
     procedure SendRaws;
     procedure SendRaw(S: utf8string); //this called by client out of thread
 
     property Client: TmnIRCClient read FClient;
     function GetConnected: Boolean; override;
+    property QueueCommands: TIRCQueueCommands read FQueueCommands;
   public
     constructor Create(vOwner: TmnConnections);
     destructor Destroy; override;
@@ -369,7 +388,7 @@ type
     procedure Receive(vMsgType: TIRCMsgType; vReceived: TIRCReceived); virtual;
 
     procedure Log(S: string);
-    procedure ReceiveRaw(vData: String); virtual;
+
     procedure SendRaw(vData: String; vQueueAt: TIRCProgress = prgOffline);
 
     procedure DoReceive(vMsgType: TIRCMsgType; vChannel, vUser, vMsg: String); virtual;
@@ -417,7 +436,6 @@ type
     property QueueSends: TIRCQueueRaws read FQueueSends;
     property QueueReceives: TIRCQueueRaws read FQueueReceives;
     property UserCommands: TIRCUserCommands read FUserCommands;
-    property Lock: TCriticalSection read FLock;
     property Active: Boolean read GetActive;
   public
     property Host: String read FHost write SetHost;
@@ -849,6 +867,14 @@ begin
     Result := Copy(Address, 1, EndOfNick - 1);
 end;
 
+{ TIRCQueueCommand }
+
+procedure TIRCQueueCommand.Execute;
+begin
+  Receiver.Receive(Self);
+  Free;//Kamikaze
+end;
+
 { TID_UserCommand }
 
 procedure TID_UserCommand.Send(vChannel: string; vMsg: string);
@@ -1134,85 +1160,6 @@ begin
     begin
       Result := Items[i];
       break;
-    end;
-  end;
-end;
-
-{ TIRCReceivers }
-
-procedure TIRCReceivers.Parse(vData: string);
-type
-  TParseState = (prefix, command, message);
-var
-  p: Integer;
-  aState: TParseState;
-  Start, Count: Integer;
-  aCommand: TIRCCommand;
-  aReceiver: TIRCReceiver;
-  ABody: string;
-begin
-  //:zaherdirkey!~zaherdirkey@myip PRIVMSG channel :hi
-  if vData <> '' then
-  begin
-    aCommand := TIRCCommand.Create;
-    try
-      aCommand.FRaw := vData;
-      aState := prefix;
-      p := 1;
-      while p < Length(vData) do
-      begin
-        if vData[p] = '@' then
-        begin
-          Inc(p);
-          Start := p;
-          if ScanString(vData, p, Count, cTokenSeparator, True) then
-            aCommand.FTime := MidStr(vData, Start, Count);
-        end
-        else if (p = 1) and (vData[p] = #1) then //idk what is this
-        begin
-          Inc(p); //skip it, what the hell is that!!! (yes talking to my self)
-        end
-        else if vData[p] = ':' then
-        begin
-          if aState < command then
-          begin
-            Inc(p); //skip it
-            Start := p;
-            if ScanString(vData, p, Count, cTokenSeparator, True) then
-            begin
-              aCommand.FSource := MidStr(vData, Start, Count);
-              ParseSender(aCommand.Source, aCommand.FSender, aCommand.FAddress);
-            end;
-            Inc(aState);
-          end
-          else
-            raise Exception.Create('Wrong place of ":"');
-        end
-        else
-        begin
-          Start := p;
-          if ScanString(vData, p, Count, cTokenSeparator, True) then
-          begin
-            aCommand.FName := MidStr(vData, Start, Count);
-            ABody := MidStr(vData, Start + Count + 1, MaxInt);
-            aState := command;
-            Inc(aState);
-          end;
-          break;
-        end;
-      end;
-
-      for aReceiver in Self do
-      begin
-        if aReceiver.Accept(aCommand.Name) then
-        begin
-          aReceiver.Parse(aCommand, ABody);
-          aReceiver.Receive(aCommand);
-        end;
-      end;
-
-    finally
-      FreeAndNil(aCommand);
     end;
   end;
 end;
@@ -1585,7 +1532,7 @@ var
 begin
   temp := TStringList.Create;
   try
-    Client.Lock.Enter;
+    Lock.Enter;
     try
       i := 0;
       while i < Client.QueueSends.Count do
@@ -1599,7 +1546,7 @@ begin
           inc(i);
       end;
     finally
-      Client.Lock.Leave;
+      Lock.Leave;
     end;
 
     for i := 0 to temp.Count -1 do
@@ -1633,14 +1580,8 @@ begin
           {.$endif}
         {$endif}
 
-        Client.Lock.Enter;
-        try
-          Client.QueueReceives.Add(aLine, prgConnected);
-        finally
-          Client.Lock.Leave;
-        end;
-
-        Queue(ReceiveRaws);
+        ParseRaw(aLine);
+        ReceiveRaws;
         Queue(SendRaws);
 
         FStream.ReadLineUTF8(aLine, True);
@@ -1656,11 +1597,11 @@ begin
   end
   else
   begin
-    Client.Lock.Enter;
+    Lock.Enter;
     try
       ReconnectTime := Client.ReconnectTime;
     finally
-      Client.Lock.Leave;
+      Lock.Leave;
     end;
     Sleep(ReconnectTime);
   end;
@@ -1675,34 +1616,108 @@ begin
   FreeAndNil(FStream);
 end;
 
+procedure TmnIRCConnection.ParseRaw(vData: string);
+type
+  TParseState = (prefix, command, message);
+var
+  p: Integer;
+  aState: TParseState;
+  Start, Count: Integer;
+  aCommand: TIRCQueueCommand;
+  aReceiver: TIRCReceiver;
+  ABody: string;
+begin
+  //:zaherdirkey!~zaherdirkey@myip PRIVMSG channel :hi
+  if vData <> '' then
+  begin
+    aCommand := TIRCQueueCommand.Create;
+    try
+      aCommand.FRaw := vData;
+      aState := prefix;
+      p := 1;
+      while p < Length(vData) do
+      begin
+        if vData[p] = '@' then
+        begin
+          Inc(p);
+          Start := p;
+          if ScanString(vData, p, Count, cTokenSeparator, True) then
+            aCommand.FTime := MidStr(vData, Start, Count);
+        end
+        else if (p = 1) and (vData[p] = #1) then //idk what is this
+        begin
+          Inc(p); //skip it, what the hell is that!!! (yes talking to my self)
+        end
+        else if vData[p] = ':' then
+        begin
+          if aState < command then
+          begin
+            Inc(p); //skip it
+            Start := p;
+            if ScanString(vData, p, Count, cTokenSeparator, True) then
+            begin
+              aCommand.FSource := MidStr(vData, Start, Count);
+              ParseSender(aCommand.Source, aCommand.FSender, aCommand.FAddress);
+            end;
+            Inc(aState);
+          end
+          else
+            raise Exception.Create('Wrong place of ":"');
+        end
+        else
+        begin
+          Start := p;
+          if ScanString(vData, p, Count, cTokenSeparator, True) then
+          begin
+            aCommand.FName := MidStr(vData, Start, Count);
+            ABody := MidStr(vData, Start + Count + 1, MaxInt);
+            aState := command;
+            Inc(aState);
+          end;
+          break;
+        end;
+      end;
+
+      for aReceiver in Client.Receivers do
+      begin
+        if aReceiver.Accept(aCommand.Name) then
+        begin
+          aCommand.Receiver := aReceiver;
+          aReceiver.Parse(aCommand, ABody);
+          Lock.Enter;
+          try
+            QueueCommands.Add(aCommand);
+          finally
+            Lock.Leave;
+          end;
+        end;
+      end;
+
+    finally
+      FreeAndNil(aCommand);
+    end;
+  end;
+end;
+
 procedure TmnIRCConnection.ReceiveRaws;
 var
   i: Integer;
-  temp: TIRCQueueRaws;
+  aCommand: TIRCQueueCommand;
 begin
-  temp := TIRCQueueRaws.Create;
-  try
-    Client.Lock.Enter; //do not lock for long time
-    try
-      i := 0;
-      while i < Client.QueueReceives.Count do
-      begin
-        if Client.QueueReceives[i].When <= Client.Progress then
-        begin
-          temp.Add(Client.QueueReceives[i].Raw, Client.QueueReceives[i].When);
-          Client.QueueReceives.Delete(i);
-        end
-        else
-          inc(i);
-      end;
-    finally
-      Client.Lock.Leave;
-    end;
-
-    for i := 0 to temp.Count -1 do
-      Client.ReceiveRaw(temp[i].Raw);
-  finally
-    FreeAndNil(temp);
+  i := 0;
+  while i < QueueCommands.Count do
+  begin
+    aCommand := QueueCommands[i];
+    if aCommand.Receiver.When <= Client.Progress then
+    begin
+      QueueCommands.Extract(aCommand);
+      if aCommand.Receiver.Queue then
+        Queue(aCommand.Execute)
+      else
+        aCommand.Execute;
+    end
+    else
+      inc(i);
   end;
 end;
 
@@ -1723,10 +1738,12 @@ end;
 constructor TmnIRCConnection.Create(vOwner: TmnConnections);
 begin
   inherited;
+  FQueueCommands := TIRCQueueCommands.Create();
 end;
 
 destructor TmnIRCConnection.Destroy;
 begin
+  FreeAndNil(FQueueCommands);
   inherited;
 end;
 
@@ -1904,12 +1921,15 @@ end;
 
 procedure TmnIRCClient.SetReconnectTime(AValue: Integer);
 begin
-  if FReconnectTime =AValue then Exit;
-  lock.Enter;
+  if FReconnectTime =AValue then
+    Exit;
+  if Connection <> nil then
+    Connection.lock.Enter;
   try
     FReconnectTime := AValue;
   finally
-    lock.Leave;
+    if Connection <> nil then
+      Connection.lock.Leave;
   end;
 end;
 
@@ -1921,11 +1941,11 @@ begin
       FConnection.SendRaw(vData)
     else
     begin
-      Lock.Enter;
+      Connection.Lock.Enter;
       try
         QueueSends.Add(vData, vQueueAt);
       finally
-        Lock.Leave;
+        Connection.Lock.Leave;
       end;
     end;
   end;
@@ -2164,12 +2184,6 @@ end;
 procedure TmnIRCClient.SetChannelMode(const Value: TIRCChannelMode);
 begin
 
-end;
-
-procedure TmnIRCClient.ReceiveRaw(vData: String);
-begin
-  Log('<' + vData);
-  Receivers.Parse(vData);
 end;
 
 procedure TmnIRCClient.DoChanged(vStates: TIRCStates);
