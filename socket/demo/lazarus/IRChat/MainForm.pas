@@ -34,6 +34,7 @@ type
     Label2: TLabel;
     Label3: TLabel;
     Label4: TLabel;
+    Label5: TLabel;
     MsgPageControl: TPageControl;
     NicknameBtn: TButton;
     Panel1: TPanel;
@@ -49,6 +50,7 @@ type
     SmallImageList: TImageList;
     UserEdit: TEdit;
     Splitter1: TSplitter;
+    NicknameEdit: TEdit;
     procedure Button1Click(Sender: TObject);
     procedure ConnectBtnClick(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -117,6 +119,7 @@ begin
         while MainFrm.MsgPageControl.PageCount > 0 do
           MainFrm.MsgPageControl.Page[0].Free;
       end;
+      prgDisconnected:;
       prgConnecting: MainFrm.ConnectBtn.Caption := 'Connecting';
       prgConnected: MainFrm.ConnectBtn.Caption := 'Disconnect';
       prgReady: MainFrm.ConnectBtn.Caption := 'Disconnect';
@@ -170,14 +173,17 @@ begin
   SaveConfig;
   IRC.Host := HostEdit.Text;
   IRC.Port := '6667';
-  IRC.Auth := authIDENTIFY;
-  IRC.Nick := UserEdit.Text;
-  IRC.Nicks.Add(UserEdit.Text);
-  IRC.Nicks.Add(UserEdit.Text+'_');
-  IRC.Nicks.Add(UserEdit.Text+'__');
-  IRC.RealName := UserEdit.Text;
+
+  IRC.Nicks.Clear;
+  IRC.Nicks.Add(NicknameEdit.Text);
+  IRC.Nicks.Add(NicknameEdit.Text+'_');
+  IRC.Nicks.Add(NicknameEdit.Text+'__');
+  IRC.RealName := NicknameEdit.Text;
+
+  IRC.Auth := authPASS;//authIDENTIFY;
   IRC.Username := UserEdit.Text;
   IRC.Password := PasswordEdit.Text;
+
   IRC.Connect;
   Rooms := TStringList.Create;
   try
@@ -389,6 +395,7 @@ begin
   try
     UserEdit.Text := Ini.ReadString('User', 'Username', '');
     PasswordEdit.Text := Ini.ReadString('User', 'Password', '');
+    NicknameEdit.Text := Ini.ReadString('User', 'Nickname', '');
     RoomsEdit.Text := Ini.ReadString('User', 'Room', '');
     HostEdit.Text := Ini.ReadString('User', 'Host', '');
     Width := Ini.ReadInteger('Window', 'Width', Width);
@@ -426,6 +433,7 @@ begin
 
     Ini.WriteString('User', 'Username', UserEdit.Text);
     Ini.WriteString('User', 'Password', PasswordEdit.Text);
+    Ini.WriteString('User', 'Nickname', NicknameEdit.Text);
     Ini.WriteString('User', 'Room', RoomsEdit.Text);
     Ini.WriteString('User', 'Host', HostEdit.Text);
   finally

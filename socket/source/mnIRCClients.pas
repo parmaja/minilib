@@ -65,13 +65,14 @@ type
 
   { TIRCSocketStream }
 
-  TIRCSocketStream = Class(TmnClientSocketStream)
+  TIRCSocketStream = Class(TmnClientSocket)
   protected
+    procedure DoHandleError(var Handle: Boolean; AError: Integer); override;
   end;
 
   TmnIRCClient = class;
 
-  TIRCProgress = (prgOffline, prgConnecting, prgConnected, prgReady);
+  TIRCProgress = (prgOffline, prgDisconnected, prgConnecting, prgConnected, prgReady);
 
   TIRCState = (
     scProgress,
@@ -197,6 +198,7 @@ type
     FClient: TmnIRCClient;
   protected
     procedure Send(vChannel: string; vMsg: string); virtual; abstract;
+    procedure PrintHelp(vChannel: string = ''); //To target channel room
   public
     constructor Create(AName: string; AClient: TmnIRCClient);
     property Client: TmnIRCClient read FClient;
@@ -300,6 +302,7 @@ type
     constructor Create(vOwner: TmnConnections);
     destructor Destroy; override;
     procedure Connect;
+    procedure Stop; override;
     property Host: string read FHost;
     property Port: string read FPort;
   end;
@@ -332,6 +335,7 @@ type
     FHost: String;
     FPassword: String;
     FQueueReceives: TIRCQueueRaws;
+    FReconnectTime: Integer;
     FUsername: String;
     FRealName: String;
     FNick: String;
@@ -354,8 +358,8 @@ type
     procedure Connecting;
     procedure Connected;
     procedure Disconnected;
-    procedure Close;
     procedure Rejoin;
+    procedure SetReconnectTime(AValue: Integer);
     procedure SetUsername(const Value: String);
     //function BuildUserModeCommand(NewModes: TIRCUserModes): String;
   protected
@@ -421,14 +425,15 @@ type
   public
     property Host: String read FHost write SetHost;
     property Port: String read FPort write SetPort;
-    property Nick: String read FNick write FNick;
-    property Nicks: TStringList read FNicks write SetNicks; //Alter nick names to use it if already used nick
+    property Nick: String read FNick; //Current used nickname
+    property Nicks: TStringList read FNicks write SetNicks; //nick names to use, dd more for if already used nick
     property RealName: String read FRealName write SetRealName;
     property Password: String read FPassword write SetPassword;
     property Username: String read FUsername write SetUsername;
     property Session: TIRCSession read FSession;
     property MapChannels: TStringList read FMapChannels write SetMapChannels;
     property UseUserCommands: Boolean read FUseUserCommands write FUseUserCommands default True;
+    property ReconnectTime: Integer read FReconnectTime write SetReconnectTime;
     property Auth: TIRCAuth read FAuth write SetAuth;
   end;
 
@@ -563,6 +568,16 @@ type
   { TRAW_UserCommand }
 
   TRaw_UserCommand = class(TIRCUserCommand)
+  protected
+    procedure Send(vChannel: string; vMsg: string); override;
+  public
+  end;
+
+  { TJoin_UserCommand }
+
+  { TID_UserCommand }
+
+  TID_UserCommand = class(TIRCUserCommand)
   protected
     procedure Send(vChannel: string; vMsg: string); override;
   public
@@ -835,6 +850,20 @@ begin
   EndOfNick := Pos('!', Address);
   if EndOfNick > 0 then
     Result := Copy(Address, 1, EndOfNick - 1);
+end;
+
+{ TID_UserCommand }
+
+procedure TID_UserCommand.Send(vChannel: string; vMsg: string);
+begin
+  Client.SendRaw('NICKSERV IDENTIFY ' + vMsg, prgReady);
+end;
+
+{ TIRCSocketStream }
+
+procedure TIRCSocketStream.DoHandleError(var Handle: Boolean; AError: Integer);
+begin
+  Handle := True;
 end;
 
 { TPart_UserCommand }
@@ -1259,6 +1288,11 @@ end;
 
 { TIRCUserCommand }
 
+procedure TIRCUserCommand.PrintHelp;
+begin
+  //TODO
+end;
+
 constructor TIRCUserCommand.Create(AName: string; AClient: TmnIRCClient);
 begin
   inherited Create;
@@ -1508,7 +1542,7 @@ begin
   if FStream = nil then
     FStream := CreateStream;
 
-  if not FStream.Connected and not Terminated then
+  if not FStream.Connected and not Terminated and (Client.Progress > prgOffline) then
   begin
     try
       if Tries > 0 then
@@ -1589,6 +1623,7 @@ end;
 procedure TmnIRCConnection.Process;
 var
   aLine: utf8string;
+  ReconnectTime: Integer;
 begin
   inherited;
   if InitStream then
@@ -1629,7 +1664,15 @@ begin
     end;
   end
   else
-    Sleep(3000);
+  begin
+    Client.Lock.Enter;
+    try
+      ReconnectTime := Client.ReconnectTime;
+    finally
+      Client.Lock.Leave;
+    end;
+    Sleep(ReconnectTime);
+  end;
 end;
 
 procedure TmnIRCConnection.Unprepare;
@@ -1706,6 +1749,13 @@ begin
   inherited;
 end;
 
+procedure TmnIRCConnection.Stop;
+begin
+  inherited;
+  if FStream <> nil then
+    FStream.Disconnect;
+end;
+
 { TIRCCommand }
 
 constructor TIRCCommand.Create;
@@ -1779,15 +1829,26 @@ end;
 
 procedure TmnIRCClient.Disconnect;
 begin
-  if FProgress = prgReady then
-    Quit('Disconnected, Bye');
-  Close;
+  SetProgress(prgOffline); //stop reconnecting
+  NickIndex := 0;
+  if Assigned(FConnection) then
+  begin
+    if (FConnection.Connected) then
+    begin
+      if FProgress = prgReady then
+        Quit('Disconnected, Bye');
+      FConnection.Stop;
+    end;
+    FConnection.WaitFor;
+  end;
 end;
 
 procedure TmnIRCClient.Connect;
 begin
-  if (FProgress = prgOffline) then
+  NickIndex := 0;
+  if (FProgress < prgConnecting) then
   begin
+    SetProgress(prgDisconnected);
     FreeAndNil(FConnection);
     FConnection := TmnIRCConnection.Create(nil);
     FConnection.FClient := Self;
@@ -1808,6 +1869,7 @@ begin
 
   FSession.Channels := TIRCChannels.Create(True);
 
+  FReconnectTime := 3000;
   FHost := 'localhost';
   FPort := sDefaultPort;
   FNick := sNickName;
@@ -1824,7 +1886,7 @@ end;
 
 destructor TmnIRCClient.Destroy;
 begin
-  Close;
+  Disconnect;
   FreeAndNil(FConnection);
   FreeAndNil(FUserCommands);
   FreeAndNil(FQueueSends);
@@ -1835,15 +1897,6 @@ begin
   FreeAndNil(FNicks);
   FreeAndNil(FSession.Channels);
   inherited;
-end;
-
-procedure TmnIRCClient.Close;
-begin
-  if Assigned(FConnection) and (FConnection.Connected) then
-  begin
-    FConnection.Stop;
-    FConnection.WaitFor;
-  end;
 end;
 
 procedure TmnIRCClient.Rejoin;
@@ -1860,6 +1913,17 @@ begin
       Join(RejoinChannles[i]);
   finally
     RejoinChannles.Free;
+  end;
+end;
+
+procedure TmnIRCClient.SetReconnectTime(AValue: Integer);
+begin
+  if FReconnectTime =AValue then Exit;
+  lock.Enter;
+  try
+    FReconnectTime := AValue;
+  finally
+    lock.Leave;
   end;
 end;
 
@@ -2002,18 +2066,26 @@ var
 begin
   SetProgress(prgConnected);
   if Nicks.Count = 0 then
-    aNick := FNick
-  else
-    aNick := Nicks[0];
-  SetNick(aNick);
-  SendRaw(Format('USER %s 0 * :%s', [FUsername, FRealName]));
+    raise Exception.Create('You should define nicknames list');
+  aNick := Nicks[0];
+  Inc(NickIndex);
+
+  SendRaw(Format('USER %s 0 * :%s', [Username, RealName]));
   if FPassword <> '' then
   begin
     if Auth = authPass then
-      SendRaw(Format('PASS %s', [FPassword]))
+    begin
+      SendRaw(Format('PASS %s:%s', [Username, FPassword]));
+      SetNick(aNick);
+    end
     else if Auth = authIDENTIFY then
-      SendRaw(Format('NICKSERV IDENTIFY %s %s', [FUsername, FPassword]));
-  end;
+    begin
+      SetNick(aNick);
+      SendRaw(Format('NICKSERV IDENTIFY %s %s', [Username, Password]));
+    end
+  end
+  else
+    SetNick(aNick);
   Rejoin;
   DoConnected;
 end;
@@ -2285,6 +2357,7 @@ begin
   UserCommands.Add(TMe_UserCommand.Create('Me', Self));
   UserCommands.Add(TNotice_UserCommand.Create('Notice', Self));
   UserCommands.Add(TCNotice_UserCommand.Create('CNotice', Self));
+  UserCommands.Add(TID_UserCommand.Create('ID', Self));
   UserCommands.Add(THELP_UserCommand.Create('HELP', Self));
 
   MapChannels.Values['ChanServ'] := ''; //To server channel
