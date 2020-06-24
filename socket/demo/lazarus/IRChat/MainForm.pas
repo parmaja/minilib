@@ -20,7 +20,7 @@ type
     procedure DoLog(S: String); override;
     procedure DoMyInfoChanged; override;
     procedure DoUserChanged(vChannel: string; vUser, vNewNick: string); override;
-    procedure DoChanged(vStates: TIRCStates); override;
+    procedure DoProgressChanged; override;
     procedure DoUsersChanged(vChannelName: string; vChannel: TIRCChannel); override;
     procedure DoReceive(vMsgType: TIRCMsgType; vChannel, vUser, vMsg: String); override;
   end;
@@ -116,22 +116,20 @@ begin
   //TODO
 end;
 
-procedure TMyIRCClient.DoChanged(vStates: TIRCStates);
+procedure TMyIRCClient.DoProgressChanged;
 begin
   inherited;
-  if scProgress in vStates then
-    case Progress of
-      prgOffline:
-      begin
-        MainFrm.ConnectBtn.Caption := 'Connect';
-        while MainFrm.MsgPageControl.PageCount > 0 do
-          MainFrm.MsgPageControl.Page[0].Free;
-      end;
-      prgDisconnected:;
-      prgConnecting: MainFrm.ConnectBtn.Caption := 'Connecting';
-      prgConnected: MainFrm.ConnectBtn.Caption := 'Disconnect';
-      prgReady: MainFrm.ConnectBtn.Caption := 'Disconnect';
+  case Progress of
+    prgDisconnected:
+    begin
+      MainFrm.ConnectBtn.Caption := 'Connect';
+      while MainFrm.MsgPageControl.PageCount > 0 do
+        MainFrm.MsgPageControl.Page[0].Free;
     end;
+    prgConnecting: MainFrm.ConnectBtn.Caption := 'Connecting';
+    prgConnected: MainFrm.ConnectBtn.Caption := 'Disconnect';
+    prgReady: MainFrm.ConnectBtn.Caption := 'Disconnect';
+  end;
 end;
 
 procedure TMyIRCClient.DoUsersChanged(vChannelName: string; vChannel: TIRCChannel);
@@ -231,7 +229,7 @@ procedure TMainFrm.NicknameBtnClick(Sender: TObject);
 var
   aNick: string;
 begin
-  aNick := IRC.Nick;
+  aNick := IRC.Session.Nick;
   if Msg.Input(aNick, 'New Nickname?') then
   begin
     IRC.SetNick(aNick);
