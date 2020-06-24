@@ -17,9 +17,10 @@ type
   TMyIRCClient = class(TmnIRCClient)
   public
     procedure GetCurrentChannel(out vChannel: string); override;
+    procedure DoLog(S: String); override;
     procedure DoMyInfoChanged; override;
     procedure DoUserChanged(vChannel: string; vUser, vNewNick: string); override;
-    procedure DoChanged(vStates: TIRCStates); override;
+    procedure DoProgressChanged; override;
     procedure DoUsersChanged(vChannelName: string; vChannel: TIRCChannel); override;
     procedure DoReceive(vMsgType: TIRCMsgType; vChannel, vUser, vMsg: String); override;
   end;
@@ -34,6 +35,7 @@ type
     Label2: TLabel;
     Label3: TLabel;
     Label4: TLabel;
+    Label5: TLabel;
     MsgPageControl: TPageControl;
     NicknameBtn: TButton;
     Panel1: TPanel;
@@ -49,6 +51,7 @@ type
     SmallImageList: TImageList;
     UserEdit: TEdit;
     Splitter1: TSplitter;
+    NicknameEdit: TEdit;
     procedure Button1Click(Sender: TObject);
     procedure ConnectBtnClick(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
@@ -67,6 +70,7 @@ type
     procedure RecentUp;
     procedure RecentDown;
     procedure AddRecent(S: string);
+    procedure Log(S: string);
     function CurrentRoom: string;
     procedure ConnectNow;
     procedure SaveConfig;
@@ -94,6 +98,12 @@ begin
   vChannel := MainFrm.CurrentRoom;
 end;
 
+procedure TMyIRCClient.DoLog(S: String);
+begin
+  inherited;
+  MainFrm.Log(S);
+end;
+
 procedure TMyIRCClient.DoMyInfoChanged;
 begin
   inherited;
@@ -106,21 +116,27 @@ begin
   //TODO
 end;
 
-procedure TMyIRCClient.DoChanged(vStates: TIRCStates);
+procedure TMyIRCClient.DoProgressChanged;
 begin
   inherited;
-  if scProgress in vStates then
-    case Progress of
-      prgOffline:
-      begin
-        MainFrm.ConnectBtn.Caption := 'Connect';
-        while MainFrm.MsgPageControl.PageCount > 0 do
-          MainFrm.MsgPageControl.Page[0].Free;
-      end;
-      prgConnecting: MainFrm.ConnectBtn.Caption := 'Connecting';
-      prgConnected: MainFrm.ConnectBtn.Caption := 'Disconnect';
-      prgReady: MainFrm.ConnectBtn.Caption := 'Disconnect';
+  case Progress of
+    prgDisconnected:
+    begin
+      MainFrm.ConnectBtn.Caption := 'Connect';
+      while MainFrm.MsgPageControl.PageCount > 0 do
+        MainFrm.MsgPageControl.Page[0].Free;
     end;
+    prgConnecting: MainFrm.ConnectBtn.Caption := 'Connecting';
+    prgConnected:
+    begin
+      MainFrm.ConnectBtn.Caption := 'Disconnect';
+    end;
+    prgReady:
+    begin
+      MainFrm.ConnectBtn.Caption := 'Disconnect';
+      Identify;
+    end;
+  end;
 end;
 
 procedure TMyIRCClient.DoUsersChanged(vChannelName: string; vChannel: TIRCChannel);
@@ -170,14 +186,18 @@ begin
   SaveConfig;
   IRC.Host := HostEdit.Text;
   IRC.Port := '6667';
-  IRC.Auth := authIDENTIFY;
-  IRC.Nick := UserEdit.Text;
-  IRC.Nicks.Add(UserEdit.Text);
-  IRC.Nicks.Add(UserEdit.Text+'_');
-  IRC.Nicks.Add(UserEdit.Text+'__');
-  IRC.RealName := UserEdit.Text;
+
+  IRC.Nicks.Clear;
+  IRC.Nicks.Add(NicknameEdit.Text);
+  IRC.Nicks.Add(NicknameEdit.Text+'_');
+  IRC.Nicks.Add(NicknameEdit.Text+'__');
+  IRC.RealName := NicknameEdit.Text;
+
+  IRC.Auth := authPASS;
+  //IRC.Auth := authIDENTIFY;
   IRC.Username := UserEdit.Text;
   IRC.Password := PasswordEdit.Text;
+
   IRC.Connect;
   Rooms := TStringList.Create;
   try
@@ -217,7 +237,7 @@ procedure TMainFrm.NicknameBtnClick(Sender: TObject);
 var
   aNick: string;
 begin
-  aNick := IRC.Nick;
+  aNick := IRC.Session.Nick;
   if Msg.Input(aNick, 'New Nickname?') then
   begin
     IRC.SetNick(aNick);
@@ -369,6 +389,11 @@ begin
   RecentsIndex := 0;
 end;
 
+procedure TMainFrm.Log(S: string);
+begin
+  LogEdit.Lines.Add(S)
+end;
+
 function TMainFrm.CurrentRoom: string;
 begin
   if MsgPageControl.ActivePage <> nil then
@@ -389,6 +414,7 @@ begin
   try
     UserEdit.Text := Ini.ReadString('User', 'Username', '');
     PasswordEdit.Text := Ini.ReadString('User', 'Password', '');
+    NicknameEdit.Text := Ini.ReadString('User', 'Nickname', '');
     RoomsEdit.Text := Ini.ReadString('User', 'Room', '');
     HostEdit.Text := Ini.ReadString('User', 'Host', '');
     Width := Ini.ReadInteger('Window', 'Width', Width);
@@ -426,6 +452,7 @@ begin
 
     Ini.WriteString('User', 'Username', UserEdit.Text);
     Ini.WriteString('User', 'Password', PasswordEdit.Text);
+    Ini.WriteString('User', 'Nickname', NicknameEdit.Text);
     Ini.WriteString('User', 'Room', RoomsEdit.Text);
     Ini.WriteString('User', 'Host', HostEdit.Text);
   finally
@@ -440,7 +467,7 @@ var
   oUser: TIRCUser;
 begin
   if vChannel = '' then
-    LogEdit.Lines.Add(vMSG)
+    Log(vMSG)
   else
   begin
     ChatRoom := NeedRoom(vChannel);

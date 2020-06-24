@@ -104,6 +104,8 @@ type
     function DoWrite(const Buffer; Count: Longint): Longint; override;
     procedure DoCloseWrite; override;
     procedure DoCloseRead; override;
+    procedure DoHandleError(var Handle: Boolean; AError: Integer); virtual;
+    function HandleError(AError: Integer): Boolean;
   public
     constructor Create; overload;
     constructor Create(vSocket: TmnCustomSocket); overload;
@@ -286,6 +288,16 @@ begin
     Socket.Shutdown([sdReceive]);
 end;
 
+procedure TmnSocketStream.DoHandleError(var Handle: Boolean; AError: Integer);
+begin
+end;
+
+function TmnSocketStream.HandleError(AError: Integer): Boolean;
+begin
+  Result := False;
+  DoHandleError(Result, AError);
+end;
+
 function TmnSocketStream.DoRead(var Buffer; Count: Longint): Longint;
 var
   err: TmnError;
@@ -364,7 +376,8 @@ begin
   FSocket := CreateSocket(aErr);
 
   if FSocket = nil then
-    raise EmnSocketException.CreateFmt('Connected fail [%d]', [aErr]);
+    if not HandleError(aErr) then
+      raise EmnSocketException.CreateFmt('Connected fail [%d]', [aErr]);
 end;
 
 function TmnSocketStream.CreateSocket(out vErr: Integer): TmnCustomSocket;

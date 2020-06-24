@@ -1,7 +1,7 @@
 object MainFrm: TMainFrm
-  Left = 234
+  Left = 450
   Height = 459
-  Top = 234
+  Top = 161
   Width = 665
   Caption = 'IRC chat'
   ClientHeight = 459
@@ -39,28 +39,28 @@ object MainFrm: TMainFrm
       TabOrder = 4
     end
     object HostEdit: TEdit
-      Left = 261
+      Left = 351
       Height = 23
       Top = 5
-      Width = 310
+      Width = 220
       Anchors = [akTop, akLeft, akRight]
       OnKeyPress = HostEditKeyPress
       TabOrder = 2
       Text = '192.168.1.2'
     end
     object RoomsEdit: TEdit
-      Left = 261
+      Left = 262
       Height = 23
       Hint = 'You can use , between rooms'
       Top = 31
-      Width = 310
+      Width = 309
       Anchors = [akTop, akLeft, akRight]
       OnKeyPress = HostEditKeyPress
       TabOrder = 3
       Text = '#parmaja'
     end
     object Label1: TLabel
-      Left = 218
+      Left = 172
       Height = 15
       Top = 36
       Width = 32
@@ -71,23 +71,23 @@ object MainFrm: TMainFrm
       Left = 66
       Height = 23
       Top = 5
-      Width = 135
+      Width = 86
       OnKeyPress = HostEditKeyPress
       TabOrder = 0
       Text = 'zaher'
     end
     object Label3: TLabel
-      Left = 6
+      Left = 166
       Height = 15
-      Top = 34
+      Top = 8
       Width = 50
       Caption = 'Password'
       ParentColor = False
     end
     object Label4: TLabel
-      Left = 218
+      Left = 318
       Height = 15
-      Top = 9
+      Top = 8
       Width = 25
       Caption = 'Host'
       ParentColor = False
@@ -103,14 +103,39 @@ object MainFrm: TMainFrm
       TabOrder = 5
     end
     object PasswordEdit: TEdit
-      Left = 65
+      Left = 226
       Height = 23
-      Top = 31
-      Width = 136
+      Top = 4
+      Width = 85
       EchoMode = emPassword
       OnKeyPress = HostEditKeyPress
       PasswordChar = '*'
       TabOrder = 1
+    end
+    object NicknameEdit: TEdit
+      Left = 66
+      Height = 23
+      Top = 31
+      Width = 86
+      OnKeyPress = HostEditKeyPress
+      TabOrder = 6
+      Text = 'zaher'
+    end
+    object Label5: TLabel
+      Left = 6
+      Height = 15
+      Top = 9
+      Width = 53
+      Caption = 'Username'
+      ParentColor = False
+    end
+    object Label2: TLabel
+      Left = 6
+      Height = 15
+      Top = 34
+      Width = 54
+      Caption = 'Nickname'
+      ParentColor = False
     end
   end
   object LogEdit: TMemo
@@ -133,14 +158,6 @@ object MainFrm: TMainFrm
     ScrollBars = ssAutoBoth
     TabOrder = 2
     WordWrap = False
-  end
-  object Label2: TLabel
-    Left = 6
-    Height = 15
-    Top = 9
-    Width = 53
-    Caption = 'Username'
-    ParentColor = False
   end
   object Panel3: TPanel
     Left = 0
