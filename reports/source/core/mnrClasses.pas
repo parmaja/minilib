@@ -653,6 +653,7 @@ type
 
     function GetProfiler: TmnrProfiler;
     function GetReportName: string;
+    function GetReportCaption: string;
   protected
     FWorking: Boolean;
     function Canceled: Boolean;
@@ -683,6 +684,7 @@ type
     procedure DoNewCell(vCell: TmnrCell); virtual;
     procedure DoReportLoaded; virtual;
     function DoGetReportName: string; virtual;
+    function DoGetReportCaption: string; virtual;
     function GetSections: TmnrSections;
     function GetGroups: TmnrGroups;
     function GetItems: TmnrRows;
@@ -749,6 +751,7 @@ type
     procedure ExportCSV(const vStream: TStream; ExportOptions: TmnrExportOptions = []); overload; virtual;//test purpose only
     procedure ExportCSV(const vStream: TStream; vItems: TmnrRows; ExportOptions: TmnrExportOptions = []); overload; virtual;//test purpose only
     property ReportName: string read GetReportName;
+    property ReportCaption: string read GetReportCaption;
   end;
 
   TmnrProfiler = class
@@ -968,6 +971,11 @@ begin
   Result := TmnrProfiler;
 end;
 
+function TmnrCustomReport.DoGetReportCaption: string;
+begin
+  Result := ReportName;
+end;
+
 function TmnrCustomReport.DoGetReportName: string;
 begin
   Result := Copy(ClassName, 2, MaxInt);
@@ -1149,6 +1157,11 @@ end;
 function TmnrCustomReport.GetDetailTitles: TmnrSection;
 begin
   Result := FDetailTitles;
+end;
+
+function TmnrCustomReport.GetReportCaption: string;
+begin
+  Result := DoGetReportCaption;
 end;
 
 function TmnrCustomReport.GetReportName: string;
