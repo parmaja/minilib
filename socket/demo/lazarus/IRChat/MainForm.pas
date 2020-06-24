@@ -127,8 +127,15 @@ begin
         MainFrm.MsgPageControl.Page[0].Free;
     end;
     prgConnecting: MainFrm.ConnectBtn.Caption := 'Connecting';
-    prgConnected: MainFrm.ConnectBtn.Caption := 'Disconnect';
-    prgReady: MainFrm.ConnectBtn.Caption := 'Disconnect';
+    prgConnected:
+    begin
+      MainFrm.ConnectBtn.Caption := 'Disconnect';
+    end;
+    prgReady:
+    begin
+      MainFrm.ConnectBtn.Caption := 'Disconnect';
+      Identify;
+    end;
   end;
 end;
 
@@ -186,7 +193,8 @@ begin
   IRC.Nicks.Add(NicknameEdit.Text+'__');
   IRC.RealName := NicknameEdit.Text;
 
-  IRC.Auth := authPASS;//authIDENTIFY;
+  IRC.Auth := authPASS;
+  //IRC.Auth := authIDENTIFY;
   IRC.Username := UserEdit.Text;
   IRC.Password := PasswordEdit.Text;
 

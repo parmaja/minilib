@@ -413,6 +413,7 @@ type
     procedure ChannelSend(vChannel, vMsg: String); deprecated;
     procedure SendMsg(vChannel, vMsg: String);
 
+    procedure Identify;
     procedure SetMode(const Value: TIRCUserModes);
     procedure SetChannelMode(const Value: TIRCChannelMode);
     procedure SetNick(const ANick: String);
@@ -1292,6 +1293,7 @@ var
   oUser: TIRCUser;
   aUser, aMode: string;
 begin
+  inherited;
   //server MODE ##channel +v username
   //:zaher MODE zaher :+i
   aMode := vCommand.PullParam;
@@ -2057,6 +2059,11 @@ begin
   end;
 end;
 
+procedure TmnIRCClient.Identify;
+begin
+  SendRaw(Format('NICKSERV IDENTIFY %s %s', [Username, Password]), prgConnected);
+end;
+
 procedure TmnIRCClient.Join(Channel: String; Password: string);
 begin
   SendRaw(Format('JOIN %s %s', [Channel, Password]), prgReady);
@@ -2176,7 +2183,14 @@ procedure TmnIRCClient.SetProgress(const Value: TIRCProgress);
 begin
   if Value <> FProgress then
   begin
-    FProgress := Value;
+    try
+      if Connection <> nil then
+        Connection.Lock.Enter;
+      FProgress := Value;
+    finally
+      if Connection <> nil then
+        Connection.Lock.Leave;
+    end;
     ProgresChanged;
   end;
 end;
