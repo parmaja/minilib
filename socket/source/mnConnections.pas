@@ -84,7 +84,6 @@ type
   private
     FID: Integer;
     FOwner: TmnConnections;
-    function GetActive: Boolean;
   strict protected
     property Owner: TmnConnections read FOwner;
     function GetConnected: Boolean; virtual; abstract;
@@ -108,7 +107,6 @@ type
 
     procedure Stop; virtual;
     procedure Release;
-    property Active: Boolean read GetActive;
     property ID: Integer read FID write FID;
   end;
 
@@ -242,11 +240,6 @@ begin
     FOwner.List.Extract(Self);
     FOwner := nil;
   end;
-end;
-
-function TmnConnection.GetActive: Boolean;
-begin
-  Result := Connected and not Terminated;
 end;
 
 procedure TmnConnection.HandleException(E: Exception);

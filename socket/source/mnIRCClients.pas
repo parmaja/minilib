@@ -285,6 +285,8 @@ type
   TmnIRCConnection = class(TmnLogClientConnection)
   private
     Tries: Integer;
+    FOnline: Boolean;
+
     FClient: TmnIRCClient;
     FStream: TIRCSocketStream;
 
@@ -305,6 +307,7 @@ type
 
     property Client: TmnIRCClient read FClient;
     function GetConnected: Boolean; override;
+    property Online: Boolean read FOnline;
   public
     constructor Create(vOwner: TmnConnections);
     destructor Destroy; override;
@@ -337,8 +340,6 @@ type
   private
     FAuth: TIRCAuth;
     FMapChannels: TStringList;
-    FNicks: TStringList;
-    FOnline: Boolean;
     FPort: String;
     FHost: String;
     FPassword: String;
@@ -353,6 +354,7 @@ type
     FUserCommands: TIRCUserCommands;
     FLock: TCriticalSection;
     FUseUserCommands: Boolean;
+    FNicks: TStringList;
     function GetActive: Boolean;
     procedure SetAuth(AValue: TIRCAuth);
     procedure SetMapChannels(AValue: TStringList);
@@ -403,6 +405,7 @@ type
     function MapChannel(vChannel: string): string;
 
     procedure Init; virtual;
+    procedure CreateConnection;
     property Connection: TmnIRCConnection read FConnection;
   public
     constructor Create;
@@ -423,7 +426,6 @@ type
     procedure Quit(Reason: String);
 
     property Progress: TIRCProgress read FProgress;
-    property Online: Boolean read FOnline;
     property Receivers: TIRCReceivers read FReceivers;
     property QueueSends: TIRCQueueRaws read FQueueSends;
     property UserCommands: TIRCUserCommands read FUserCommands;
@@ -1520,7 +1522,7 @@ begin
   if FStream = nil then
     FStream := CreateStream;
 
-  if not FStream.Connected and not Terminated and (Client.Online) then
+  if not FStream.Connected and not Terminated and Online then
   begin
     try
       if Tries > 0 then
@@ -1539,7 +1541,7 @@ begin
     end;
   end;
 
-  Result := FStream <> nil;
+  Result := (FStream <> nil) and FStream.Connected;
 end;
 
 function TmnIRCConnection.CreateStream: TIRCSocketStream;
@@ -1609,7 +1611,7 @@ begin
       FStream.ReadLineUTF8(aLine, True);
       aLine := Trim(aLine);
 
-      while (aLine <> '') and Active do
+      while (aLine <> '') and not Terminated do
       begin
         {$ifdef FPC}
           {.$IF FPC_FULLVERSION>=30101}
@@ -1628,10 +1630,10 @@ begin
             aCommand.Receive;
         end;
 
-        if Active then
+        if (FStream <> nil) and (FStream.Connected) then
           SendRaws;
 
-        if Active then
+        if not Terminated then
         begin
           FStream.ReadLineUTF8(aLine, True);
           aLine := Trim(aLine);
@@ -1647,13 +1649,16 @@ begin
   end
   else
   begin
-    Lock.Enter;
-    try
-      ReconnectTime := Client.ReconnectTime;
-    finally
-      Lock.Leave;
+    if not Terminated and Online then
+    begin
+      Lock.Enter;
+      try
+        ReconnectTime := Client.ReconnectTime;
+      finally
+        Lock.Leave;
+      end;
+      Sleep(ReconnectTime);
     end;
-    Sleep(ReconnectTime);
   end;
 end;
 
@@ -1751,7 +1756,7 @@ end;
 
 function TmnIRCConnection.GetConnected: Boolean;
 begin
-  Result := True;
+  Result := not Terminated;
 end;
 
 constructor TmnIRCConnection.Create(vOwner: TmnConnections);
@@ -1851,10 +1856,10 @@ procedure TmnIRCClient.Disconnect;
 begin
   if Assigned(FConnection) then
   begin
-    FOnline := False;
+    Connection.FOnline := False;
     if (FConnection.Connected) then
       Quit('Bye');
-    FConnection.Stop;
+    FConnection.Terminate;//no stop
     FConnection.WaitFor;
   end;
   NickIndex := 0;
@@ -1863,15 +1868,11 @@ end;
 procedure TmnIRCClient.Connect;
 begin
   NickIndex := 0;
-  FOnline := True;
   if (Progress < prgConnecting) then
   begin
     FreeAndNil(FConnection);
-    FConnection := TmnIRCConnection.Create(nil);
-    FConnection.FClient := Self;
-    FConnection.FreeOnTerminate := false;
-    Connection.FHost := Host;
-    Connection.FPort := Port;
+    CreateConnection;
+    Connection.FOnline := True;
     Connection.Start;
   end;
 end;
@@ -1893,7 +1894,7 @@ begin
   FRealName := 'username';
   FUsername := 'username';
   FPassword := '';
-  FOnline := False;
+
   FProgress := prgDisconnected;
   FReceivers := TIRCReceivers.Create(Self);
   FUserCommands :=TIRCUserCommands.Create(Self);
@@ -2076,7 +2077,7 @@ end;
 
 procedure TmnIRCClient.Disconnected;
 begin
-  FOnline := False;
+  Connection.FOnline := False;
   SetProgress(prgDisconnected);
   FSession.Nick := '';
   FSession.AllowedUserModes := [];
@@ -2133,7 +2134,7 @@ end;
 
 function TmnIRCClient.GetActive: Boolean;
 begin
-  Result := (FConnection <> nil) and FConnection.Active;
+  Result := (FConnection <> nil) and FConnection.Connected and FConnection.Online;
 end;
 
 procedure TmnIRCClient.SetAuth(AValue: TIRCAuth);
@@ -2380,6 +2381,15 @@ begin
   MapChannels.Values['ChanServ'] := ''; //To server channel
   MapChannels.Values['NickServ'] := '';
   MapChannels.Values['SaslServ'] := '';
+end;
+
+procedure TmnIRCClient.CreateConnection;
+begin
+  FConnection := TmnIRCConnection.Create(nil);
+  FConnection.FClient := Self;
+  FConnection.FreeOnTerminate := false;
+  FConnection.FHost := Host;
+  FConnection.FPort := Port;
 end;
 
 end.

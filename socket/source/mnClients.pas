@@ -238,7 +238,7 @@ end;
 
 function TmnClients.GetConnected: Boolean;
 begin
-  Result := Terminated;
+  Result := not Terminated;
 end;
 
 procedure TmnClients.Log(Connection: TmnConnection; S: string);

@@ -134,7 +134,6 @@ begin
     prgReady:
     begin
       MainFrm.ConnectBtn.Caption := 'Disconnect';
-      Identify;
     end;
   end;
 end;

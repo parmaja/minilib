@@ -14,7 +14,7 @@ object ChatRoomFrame: TChatRoomFrame
   ParentFont = False
   TabOrder = 0
   DesignLeft = 411
-  DesignTop = 284
+  DesignTop = 210
   object TopicEdit: TEdit
     Left = 3
     Height = 23
