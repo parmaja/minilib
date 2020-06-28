@@ -16,7 +16,7 @@ uses
   Windows,
   {$else}
   {$endif}
-  Classes, Types, SysUtils, DateUtils, Math, mnClasses;
+  Classes, Types, SysUtils, DateUtils;
 
 type
 
@@ -63,7 +63,7 @@ end;
 procedure TmnDebug.Write(S: string);
 begin
   {$ifdef WINDOWS}
-  s := IntToStr(GetTickCount) + ': ' +s;
+  s := IntToStr(GetTickCount64) + ': ' +s;
   {$ifdef FPC}
   OutputDebugString(PAnsiChar(S));
   {$else}

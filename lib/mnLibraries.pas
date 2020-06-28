@@ -73,6 +73,7 @@ type
   public
     constructor Create(ALibraryName: string); virtual;
     procedure Load(ALibraryName: string = '');
+    procedure Init; virtual;
     function IsLoaded: Boolean;
     procedure Release;
     function GetAddress(const ProcedureName: string; ARaiseError: Boolean = False): Pointer;
@@ -100,9 +101,13 @@ constructor TmnLibrary.Create(ALibraryName: string);
 begin
   inherited Create;
   {$IFDEF MSWINDOWS}
-  FLibraryName := ALibraryName + '.dll';
+  if ExtractFileExt(ALibraryName) = '' then
+    ALibraryName := ALibraryName + '.dll';
+  FLibraryName := ALibraryName;
   {$ELSE}
-  FLibraryName := ALibraryName + '.so';
+  if ExtractFileExt(ALibraryName) = '' then
+    ALibraryName := ALibraryName + '.so';
+  FLibraryName := ALibraryName;
   {$ENDIF}
 end;
 
@@ -134,6 +139,11 @@ begin
       end;
     end;
   end;
+end;
+
+procedure TmnLibrary.Init;
+begin
+  Load;
 end;
 
 function TmnLibrary.IsLoaded: Boolean;

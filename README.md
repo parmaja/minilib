@@ -1,7 +1,5 @@
 ## Mini Lib for Pascal ##
 
-A Mirror repository of original one at sourceforge for who live in banned country like me, i still push in both github abd sourceforge, original repo www.sourceforge.net/p/minilib
-
 Library used for FreePascal 3.2 or later or DelphiXE
 
 ### Folders ###

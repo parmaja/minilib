@@ -89,7 +89,6 @@ type
     You can use mnClient.TmnClientSocketStrean or mnServer also
   }
 
-
   { TmnSocketStream }
 
   TmnSocketStream = class (TmnConnectionStream)
@@ -116,6 +115,9 @@ type
     function WaitToWrite(vTimeout: Longint): TmnConnectionError; override; //select
     property Socket: TmnCustomSocket read FSocket;
     property Options: TmnsoOptions read FOptions write FOptions;
+  end;
+
+  TmnOpenSSLSocketStream = class(TmnCustomSocket);
   end;
 
 const
@@ -395,7 +397,7 @@ begin
   else if (err = erTimeout) then
     Result := cerTimeout
   else
-  	Result := cerError;
+    Result := cerError;
 end;
 
 function TmnSocketStream.WaitToWrite(vTimeout: Longint): TmnConnectionError;
@@ -406,7 +408,7 @@ begin
   if err = erSuccess then
     Result := cerSuccess
   else
-  	Result := cerError;
+    Result := cerError;
 end;
 
 procedure TmnSocketStream.FreeSocket;
