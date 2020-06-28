@@ -75,8 +75,154 @@ const
   SSL_OP_NETSCAPE_DEMO_CIPHER_CHANGE_BUG        = $40000000;
   SSL_OP_CRYPTOPRO_TLSEXT_BUG                   = $80000000;
 
+
+  SSL_ERROR_NONE                 = 0;
+  SSL_ERROR_SSL                  = 1;
+  SSL_ERROR_WANT_READ            = 2;
+  SSL_ERROR_WANT_WRITE           = 3;
+  SSL_ERROR_WANT_X509_LOOKUP     = 4;
+  SSL_ERROR_SYSCALL              = 5; (* look at error stack/return * value/errno *)
+  SSL_ERROR_ZERO_RETURN          = 6;
+  SSL_ERROR_WANT_CONNECT         = 7;
+  SSL_ERROR_WANT_ACCEPT          = 8;
+  SSL_ERROR_WANT_ASYNC           = 9;
+  SSL_ERROR_WANT_ASYNC_JOB      = 10;
+  SSL_ERROR_WANT_CLIENT_HELLO_CB= 11;
+  SSL_CTRL_SET_TMP_DH                    = 3;
+  SSL_CTRL_SET_TMP_ECDH                  = 4;
+  SSL_CTRL_SET_TMP_DH_CB                 = 6;
+  SSL_CTRL_GET_CLIENT_CERT_REQUEST       = 9;
+  SSL_CTRL_GET_NUM_RENEGOTIATIONS        = 10;
+  SSL_CTRL_CLEAR_NUM_RENEGOTIATIONS      = 11;
+  SSL_CTRL_GET_TOTAL_RENEGOTIATIONS      = 12;
+  SSL_CTRL_GET_FLAGS                     = 13;
+  SSL_CTRL_EXTRA_CHAIN_CERT              = 14;
+  SSL_CTRL_SET_MSG_CALLBACK              = 15;
+  SSL_CTRL_SET_MSG_CALLBACK_ARG          = 16;
+  (* only applies to datagram connections *)
+  SSL_CTRL_SET_MTU               = 17;
+  (* Stats *)
+  SSL_CTRL_SESS_NUMBER                   = 20;
+  SSL_CTRL_SESS_CONNECT                  = 21;
+  SSL_CTRL_SESS_CONNECT_GOOD             = 22;
+  SSL_CTRL_SESS_CONNECT_RENEGOTIATE      = 23;
+  SSL_CTRL_SESS_ACCEPT                   = 24;
+  SSL_CTRL_SESS_ACCEPT_GOOD              = 25;
+  SSL_CTRL_SESS_ACCEPT_RENEGOTIATE       = 26;
+  SSL_CTRL_SESS_HIT                      = 27;
+  SSL_CTRL_SESS_CB_HIT                   = 28;
+  SSL_CTRL_SESS_MISSES                   = 29;
+  SSL_CTRL_SESS_TIMEOUTS                 = 30;
+  SSL_CTRL_SESS_CACHE_FULL               = 31;
+  SSL_CTRL_MODE                          = 33;
+  SSL_CTRL_GET_READ_AHEAD                = 40;
+  SSL_CTRL_SET_READ_AHEAD                = 41;
+  SSL_CTRL_SET_SESS_CACHE_SIZE           = 42;
+  SSL_CTRL_GET_SESS_CACHE_SIZE           = 43;
+  SSL_CTRL_SET_SESS_CACHE_MODE           = 44;
+  SSL_CTRL_GET_SESS_CACHE_MODE           = 45;
+  SSL_CTRL_GET_MAX_CERT_LIST             = 50;
+  SSL_CTRL_SET_MAX_CERT_LIST             = 51;
+  SSL_CTRL_SET_MAX_SEND_FRAGMENT         = 52;
+  (* see tls1.h for macros based on these *)
+  SSL_CTRL_SET_TLSEXT_SERVERNAME_CB      = 53;
+  SSL_CTRL_SET_TLSEXT_SERVERNAME_ARG     = 54;
+  SSL_CTRL_SET_TLSEXT_HOSTNAME           = 55;
+  SSL_CTRL_SET_TLSEXT_DEBUG_CB           = 56;
+  SSL_CTRL_SET_TLSEXT_DEBUG_ARG          = 57;
+  SSL_CTRL_GET_TLSEXT_TICKET_KEYS        = 58;
+  SSL_CTRL_SET_TLSEXT_TICKET_KEYS        = 59;
+  (*SSL_CTRL_SET_TLSEXT_OPAQUE_PRF_INPUT    60 *)
+  (*SSL_CTRL_SET_TLSEXT_OPAQUE_PRF_INPUT_CB 61 *)
+  (*SSL_CTRL_SET_TLSEXT_OPAQUE_PRF_INPUT_CB_ARG 62 *)
+  SSL_CTRL_SET_TLSEXT_STATUS_REQ_CB      = 63;
+  SSL_CTRL_SET_TLSEXT_STATUS_REQ_CB_ARG  = 64;
+  SSL_CTRL_SET_TLSEXT_STATUS_REQ_TYPE    = 65;
+  SSL_CTRL_GET_TLSEXT_STATUS_REQ_EXTS    = 66;
+  SSL_CTRL_SET_TLSEXT_STATUS_REQ_EXTS    = 67;
+  SSL_CTRL_GET_TLSEXT_STATUS_REQ_IDS     = 68;
+  SSL_CTRL_SET_TLSEXT_STATUS_REQ_IDS     = 69;
+  SSL_CTRL_GET_TLSEXT_STATUS_REQ_OCSP_RESP       = 70;
+  SSL_CTRL_SET_TLSEXT_STATUS_REQ_OCSP_RESP       = 71;
+  SSL_CTRL_SET_TLSEXT_TICKET_KEY_CB      = 72;
+  SSL_CTRL_SET_TLS_EXT_SRP_USERNAME_CB   = 75;
+  SSL_CTRL_SET_SRP_VERIFY_PARAM_CB               = 76;
+  SSL_CTRL_SET_SRP_GIVE_CLIENT_PWD_CB            = 77;
+  SSL_CTRL_SET_SRP_ARG           = 78;
+  SSL_CTRL_SET_TLS_EXT_SRP_USERNAME              = 79;
+  SSL_CTRL_SET_TLS_EXT_SRP_STRENGTH              = 80;
+  SSL_CTRL_SET_TLS_EXT_SRP_PASSWORD              = 81;
+  {$ifdef OPENSSL_NO_HEARTBEATS};
+  SSL_CTRL_DTLS_EXT_SEND_HEARTBEAT              = 85;
+  SSL_CTRL_GET_DTLS_EXT_HEARTBEAT_PENDING       = 86;
+  SSL_CTRL_SET_DTLS_EXT_HEARTBEAT_NO_REQUESTS   = 87;
+  {$endif}
+  DTLS_CTRL_GET_TIMEOUT          = 73;
+  DTLS_CTRL_HANDLE_TIMEOUT       = 74;
+  SSL_CTRL_GET_RI_SUPPORT                = 76;
+  SSL_CTRL_CLEAR_MODE                    = 78;
+  SSL_CTRL_SET_NOT_RESUMABLE_SESS_CB     = 79;
+  SSL_CTRL_GET_EXTRA_CHAIN_CERTS         = 82;
+  SSL_CTRL_CLEAR_EXTRA_CHAIN_CERTS       = 83;
+  SSL_CTRL_CHAIN                         = 88;
+  SSL_CTRL_CHAIN_CERT                    = 89;
+  SSL_CTRL_GET_GROUPS                    = 90;
+  SSL_CTRL_SET_GROUPS                    = 91;
+  SSL_CTRL_SET_GROUPS_LIST               = 92;
+  SSL_CTRL_GET_SHARED_GROUP              = 93;
+  SSL_CTRL_SET_SIGALGS                   = 97;
+  SSL_CTRL_SET_SIGALGS_LIST              = 98;
+  SSL_CTRL_CERT_FLAGS                    = 99;
+  SSL_CTRL_CLEAR_CERT_FLAGS              = 100;
+  SSL_CTRL_SET_CLIENT_SIGALGS            = 101;
+  SSL_CTRL_SET_CLIENT_SIGALGS_LIST       = 102;
+  SSL_CTRL_GET_CLIENT_CERT_TYPES         = 103;
+  SSL_CTRL_SET_CLIENT_CERT_TYPES         = 104;
+  SSL_CTRL_BUILD_CERT_CHAIN              = 105;
+  SSL_CTRL_SET_VERIFY_CERT_STORE         = 106;
+  SSL_CTRL_SET_CHAIN_CERT_STORE          = 107;
+  SSL_CTRL_GET_PEER_SIGNATURE_NID        = 108;
+  SSL_CTRL_GET_PEER_TMP_KEY              = 109;
+  SSL_CTRL_GET_RAW_CIPHERLIST            = 110;
+  SSL_CTRL_GET_EC_POINT_FORMATS          = 111;
+  SSL_CTRL_GET_CHAIN_CERTS               = 115;
+  SSL_CTRL_SELECT_CURRENT_CERT           = 116;
+  SSL_CTRL_SET_CURRENT_CERT              = 117;
+  SSL_CTRL_SET_DH_AUTO                   = 118;
+  DTLS_CTRL_SET_LINK_MTU                 = 120;
+  DTLS_CTRL_GET_LINK_MIN_MTU             = 121;
+  SSL_CTRL_GET_EXTMS_SUPPORT             = 122;
+  SSL_CTRL_SET_MIN_PROTO_VERSION         = 123;
+  SSL_CTRL_SET_MAX_PROTO_VERSION         = 124;
+  SSL_CTRL_SET_SPLIT_SEND_FRAGMENT       = 125;
+  SSL_CTRL_SET_MAX_PIPELINES             = 126;
+  SSL_CTRL_GET_TLSEXT_STATUS_REQ_TYPE    = 127;
+  SSL_CTRL_GET_TLSEXT_STATUS_REQ_CB      = 128;
+  SSL_CTRL_GET_TLSEXT_STATUS_REQ_CB_ARG  = 129;
+  SSL_CTRL_GET_MIN_PROTO_VERSION         = 130;
+  SSL_CTRL_GET_MAX_PROTO_VERSION         = 131;
+  SSL_CTRL_GET_SIGNATURE_NID             = 132;
+  SSL_CTRL_GET_TMP_KEY                   = 133;
+
+  SSL_CERT_SET_FIRST                     = 1;
+  SSL_CERT_SET_NEXT                      = 2;
+  SSL_CERT_SET_SERVER                    = 3;
+
+
 //bio.h
   BIO_C_SET_CONNECT                             = 100;
+  BIO_C_DO_STATE_MACHINE                        = 101;
+  BIO_C_SET_NBIO                                = 102;
+  //BIO_C_SET_PROXY_PARAM               = 103;
+  BIO_C_SET_FD                                  = 104;
+  BIO_C_GET_FD                                  = 105;
+  BIO_C_SET_FILE_PTR                            = 106;
+  BIO_C_GET_FILE_PTR                            = 107;
+  BIO_C_SET_FILENAME                            = 108;
+  BIO_C_SET_SSL                                 = 109;
+  BIO_C_GET_SSL                                 = 110;
+
+  TLSEXT_NAMETYPE_host_name                     = 0;
 
 type
 
@@ -121,12 +267,21 @@ var
   SSL_CTX_set_verify_depth: procedure(ctx: PSSL_CTX; Depth: integer); cdecl;
   SSL_CTX_set_options: function(ctx: PSSL_CTX; Options: culong): culong; cdecl;
   SSL_CTX_load_verify_locations: function(ctx: PSSL_CTX; CAfile: PChar; CApath: PChar): Integer; cdecl;
+  SSL_set_cipher_list: function(ssl: PSSL; str: PChar): Integer; cdecl;
+
+  SSL_ctrl: function(ssl: PSSL; cmd: Integer; Larg: clong; PArg: Pointer): clong; cdecl;
+
   BIO_new_ssl_connect: function(ctx: PSSL_CTX): PBIO; cdecl;
+  //BIO_new_fp: function(stream: FILE, int close_flag): PBIO; cdecl;
 
   //https://www.openssl.org/docs/man1.1.1/man3/BIO_ctrl.html
-  BIO_ctrl: function(bp: PBIO; cmd: Integer; Larg: clong; Parg: Pointer): clong; cdecl;
+  BIO_ctrl: function(bp: PBIO; cmd: Integer; Larg: clong; PArg: Pointer): clong; cdecl;
 
-  function BIO_set_conn_hostname(b: PBIO; Name: PChar): clong; //inline;
+  function BIO_set_conn_hostname(b: PBIO; Name: PChar): clong; inline;
+  function BIO_get_ssl(b: PBIO; var ssl: PSSL): clong; inline; //TODO out ssl
+
+  //tls1.h
+  function SSL_set_tlsext_host_name(ssl: PSSL; Name: PChar): Integer;
 
 var
   OpenSSLLib: TmnOpenSSLLib = nil;
@@ -137,6 +292,16 @@ implementation
 function BIO_set_conn_hostname(b: PBIO; Name: PChar): clong;
 begin
   Result := BIO_ctrl(b, BIO_C_SET_CONNECT, 0, Name);
+end;
+
+function BIO_get_ssl(b: PBIO; var ssl: PSSL): clong;
+begin
+  Result := BIO_ctrl(b, BIO_C_GET_SSL, 0, @ssl);
+end;
+
+function SSL_set_tlsext_host_name(ssl: PSSL; Name: PChar): Integer;
+begin
+  Result := SSL_ctrl(ssl, SSL_CTRL_SET_TLSEXT_HOSTNAME, TLSEXT_NAMETYPE_host_name, Name);
 end;
 
 { TmnOpenSSLLib }
@@ -152,6 +317,8 @@ begin
   SSL_CTX_set_options := GetAddress('SSL_CTX_set_options');
   SSL_CTX_load_verify_locations := GetAddress('SSL_CTX_load_verify_locations');
   BIO_new_ssl_connect := GetAddress('BIO_new_ssl_connect');
+  SSL_set_cipher_list := GetAddress('SSL_set_cipher_list');
+  SSL_ctrl := GetAddress('SSL_ctrl');
 end;
 
 { TCryptoLibLib }
