@@ -20,9 +20,13 @@ end;
 
 const
   PreferredCiphers = 'HIGH:!aNULL:!kRSA:!PSK:!SRP:!MD5:!RC4';
-  HostName = 'www.openssl.org';
-  Resource = '/';
   PortName = 'https';
+  //HostName = 'ip.nf';
+  //Resource = '/me.json';
+  HostName = 'api.ipify.org';
+  Resource = '/?format=json';
+
+
 var
   s: string;
   ssl: PSSL;
@@ -41,7 +45,7 @@ begin
     OPENSSL_init_ssl(0, nil);
     OPENSSL_init_crypto(0, nil);
 
-    OPENSSL_config(nil);
+    //OPENSSL_config(nil);
     //ERR_load_CRYPTO_strings();//Move
     //ERR_load_SSL_strings();//MOVE
 
