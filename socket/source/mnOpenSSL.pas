@@ -208,7 +208,6 @@ const
   SSL_CERT_SET_NEXT                      = 2;
   SSL_CERT_SET_SERVER                    = 3;
 
-
 //bio.h
   BIO_C_SET_CONNECT                             = 100;
   BIO_C_DO_STATE_MACHINE                        = 101;
@@ -222,7 +221,21 @@ const
   BIO_C_SET_SSL                                 = 109;
   BIO_C_GET_SSL                                 = 110;
 
+  BIO_FLAGS_READ          = $01;
+  BIO_FLAGS_WRITE         = $02;
+  BIO_FLAGS_IO_SPECIAL    = $04;
+  BIO_FLAGS_RWS           = (BIO_FLAGS_READ or BIO_FLAGS_WRITE or BIO_FLAGS_IO_SPECIAL);
+  BIO_FLAGS_SHOULD_RETRY  = $08;
+
+
   TLSEXT_NAMETYPE_host_name                     = 0;
+
+  (*
+   * BIO_FILENAME_READ|BIO_CLOSE to open or close on free.
+   * BIO_set_fp(in,stdin,BIO_NOCLOSE);
+   *)
+  BIO_NOCLOSE           = $00;
+  BIO_CLOSE             = $01;
 
 type
 
@@ -238,6 +251,7 @@ type
   PSSL_METHOD = Pointer;
   PBIO = Pointer;
 
+  PX509 = Pointer;
   PX509_STORE_CTX = Pointer;
 
   TSSLVerifyCallback = function(preverify: Integer; x509_ctx: PX509_STORE_CTX): Integer; cdecl;
@@ -261,27 +275,61 @@ type
 var
   OPENSSL_init_ssl: procedure(opts: UInt64; settings: POPENSSL_INIT_SETTINGS); cdecl;
   OPENSSL_init_crypto: function(opts: uint64; settings: POPENSSL_INIT_SETTINGS): Integer; cdecl;
+  OPENSSL_config: procedure(AppName: PUTF8Char); cdecl;
+  ERR_load_SSL_strings: procedure(); cdecl;
+  ERR_load_CRYPTO_strings: function(): Integer; cdecl;
+  ERR_error_string: function(e: culong; bug: PUTF8Char): PUTF8Char; cdecl;
+  ERR_get_error: function(): clong; cdecl;
   SSL_CTX_new: function(Method: PSSL_METHOD): PSSL_CTX; cdecl;
   TLS_method: function(): PSSL_METHOD; cdecl;
+  X509_STORE_CTX_get_error_depth: function(ctx: PX509_STORE_CTX): Integer; cdecl;
+  X509_free: procedure(a: PX509); cdecl;
+  X509_verify_cert_error_string: function(n: clong): PUTF8Char; cdecl;
+  SSL_get_peer_certificate: function(ssl: PSSL): PX509; cdecl;
   SSL_CTX_set_verify: procedure(ctx: PSSL_CTX; Mode: Integer; Callback: TSSLVerifyCallback); cdecl;
   SSL_CTX_set_verify_depth: procedure(ctx: PSSL_CTX; Depth: integer); cdecl;
   SSL_CTX_set_options: function(ctx: PSSL_CTX; Options: culong): culong; cdecl;
-  SSL_CTX_load_verify_locations: function(ctx: PSSL_CTX; CAfile: PChar; CApath: PChar): Integer; cdecl;
-  SSL_set_cipher_list: function(ssl: PSSL; str: PChar): Integer; cdecl;
+  SSL_CTX_load_verify_locations: function(ctx: PSSL_CTX; CAfile: PUTF8Char; CApath: PUTF8Char): Integer; cdecl;
+  SSL_CTX_free: procedure(ctx: PSSL_CTX); cdecl;
+  SSL_set_cipher_list: function(ssl: PSSL; str: PUTF8Char): Integer; cdecl;
+  SSL_get_verify_result: function(ssl: PSSL): clong; cdecl;
 
   SSL_ctrl: function(ssl: PSSL; cmd: Integer; Larg: clong; PArg: Pointer): clong; cdecl;
 
   BIO_new_ssl_connect: function(ctx: PSSL_CTX): PBIO; cdecl;
+  //BIO_new_fp: function(stream: Pointer; close_flag: Integer): PBIO; cdecl; //dosnt work
+  BIO_new_file: function(filename: PUTF8Char; Mode: PUTF8Char): PBIO; cdecl;
+  BIO_free: function(bio: PBIO): Integer; cdecl;
+  BIO_read: function(b: PBIO; var data; dlen: integer): Integer; cdecl;
+  BIO_write: function(b: PBIO; var data; dlen: Integer): Integer; cdecl;
+  BIO_puts: function(bio: PBIO; buf: PUTF8Char): Integer; cdecl;
+  BIO_test_flags: function(b: PBIO; flags: Integer): integer; cdecl;
+  BIO_free_all: procedure(b: PBIO); cdecl;
+  {todo
+  long BIO_set_conn_port(BIO *b, char *port);
+  long BIO_set_conn_address(BIO *b, BIO_ADDR *addr);
+
+  int    BIO_read(BIO *b, void *buf, int len);
+  int    BIO_gets(BIO *b, char *buf, int size);
+  int    BIO_write(BIO *b, const void *buf,
+  }
+
+
   //BIO_new_fp: function(stream: FILE, int close_flag): PBIO; cdecl;
 
   //https://www.openssl.org/docs/man1.1.1/man3/BIO_ctrl.html
   BIO_ctrl: function(bp: PBIO; cmd: Integer; Larg: clong; PArg: Pointer): clong; cdecl;
 
-  function BIO_set_conn_hostname(b: PBIO; Name: PChar): clong; inline;
+  function BIO_set_conn_hostname(b: PBIO; Name: PUTF8Char): clong; inline;
   function BIO_get_ssl(b: PBIO; var ssl: PSSL): clong; inline; //TODO out ssl
+  function BIO_do_handshake(b: PBIO): clong; inline;
+  function BIO_do_connect(b: PBIO): clong; inline;
+  function BIO_set_nbio(b: PBIO; n: Integer): clong; inline;
+  function BIO_should_retry(b: PBIO): Boolean; inline;
+  function SSL_set_mode(ssl: PSSL; op: Integer): clong; inline;
 
   //tls1.h
-  function SSL_set_tlsext_host_name(ssl: PSSL; Name: PChar): Integer;
+  function SSL_set_tlsext_host_name(ssl: PSSL; Name: PUTF8Char): Integer;
 
 var
   OpenSSLLib: TmnOpenSSLLib = nil;
@@ -289,7 +337,7 @@ var
 
 implementation
 
-function BIO_set_conn_hostname(b: PBIO; Name: PChar): clong;
+function BIO_set_conn_hostname(b: PBIO; Name: PUTF8Char): clong;
 begin
   Result := BIO_ctrl(b, BIO_C_SET_CONNECT, 0, Name);
 end;
@@ -299,9 +347,34 @@ begin
   Result := BIO_ctrl(b, BIO_C_GET_SSL, 0, @ssl);
 end;
 
-function SSL_set_tlsext_host_name(ssl: PSSL; Name: PChar): Integer;
+function SSL_set_tlsext_host_name(ssl: PSSL; Name: PUTF8Char): Integer;
 begin
   Result := SSL_ctrl(ssl, SSL_CTRL_SET_TLSEXT_HOSTNAME, TLSEXT_NAMETYPE_host_name, Name);
+end;
+
+function BIO_do_handshake(b: PBIO): clong;
+begin
+  Result := BIO_ctrl(b, BIO_C_DO_STATE_MACHINE, 0, nil);
+end;
+
+function BIO_do_connect(b: PBIO): clong;
+begin
+  Result := BIO_do_handshake(b);
+end;
+
+function BIO_set_nbio(b: PBIO; n: Integer): clong;
+begin
+  Result := BIO_ctrl(b, BIO_C_SET_NBIO, n, nil);
+end;
+
+function BIO_should_retry(b: PBIO): Boolean;
+begin
+  Result := BIO_test_flags(b, BIO_FLAGS_SHOULD_RETRY) > 0;
+end;
+
+function SSL_set_mode(ssl: PSSL; op: Integer): clong; inline;
+begin
+  Result := SSL_ctrl(ssl, SSL_CTRL_MODE, op, nil);
 end;
 
 { TmnOpenSSLLib }
@@ -316,9 +389,14 @@ begin
   SSL_CTX_set_verify_depth := GetAddress('SSL_CTX_set_verify_depth');
   SSL_CTX_set_options := GetAddress('SSL_CTX_set_options');
   SSL_CTX_load_verify_locations := GetAddress('SSL_CTX_load_verify_locations');
+  SSL_CTX_free := GetAddress('SSL_CTX_free');
+
   BIO_new_ssl_connect := GetAddress('BIO_new_ssl_connect');
   SSL_set_cipher_list := GetAddress('SSL_set_cipher_list');
+  SSL_get_verify_result := GetAddress('SSL_get_verify_result');
   SSL_ctrl := GetAddress('SSL_ctrl');
+  SSL_get_peer_certificate := GetAddress('SSL_get_peer_certificate');
+  ERR_load_SSL_strings := GetAddress('ERR_load_SSL_strings');
 end;
 
 { TCryptoLibLib }
@@ -327,7 +405,22 @@ procedure TmnCryptoLib.Loaded;
 begin
   RaiseError := True; //Raise error of one of this functions not exists
   OPENSSL_init_crypto := GetAddress('OPENSSL_init_crypto');
+  OPENSSL_config := GetAddress('OPENSSL_config');
   BIO_ctrl := GetAddress('BIO_ctrl');
+  X509_STORE_CTX_get_error_depth := GetAddress('X509_STORE_CTX_get_error_depth');
+  X509_free := GetAddress('X509_free');
+  X509_verify_cert_error_string := GetAddress('X509_verify_cert_error_string');
+  //BIO_new_fp := GetAddress('BIO_new_fp');
+  BIO_new_file := GetAddress('BIO_new_file');
+  BIO_puts := GetAddress('BIO_puts');
+  BIO_test_flags := GetAddress('BIO_test_flags');
+  BIO_free := GetAddress('BIO_free');
+  BIO_free_all := GetAddress('BIO_free_all');
+  BIO_write := GetAddress('BIO_write');
+  BIO_read := GetAddress('BIO_read');
+  ERR_get_error := GetAddress('ERR_get_error');
+  ERR_error_string := GetAddress('ERR_error_string');
+  ERR_load_CRYPTO_strings := GetAddress('ERR_load_CRYPTO_strings');
 end;
 
 initialization
