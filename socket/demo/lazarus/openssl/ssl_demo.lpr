@@ -20,7 +20,9 @@ end;
 
 const
   PreferredCiphers = 'HIGH:!aNULL:!kRSA:!PSK:!SRP:!MD5:!RC4';
-  HostName = 'www.random.org';
+  HostName = 'www.openssl.org';
+  Resource = '/';
+  PortName = 'https';
 var
   s: string;
   ssl: PSSL;
@@ -68,7 +70,7 @@ begin
     if res <> 1 then
       ExitError('BIO_set_nbio failed');
 
-    res := BIO_set_conn_hostname(web, HostName + ':443');
+    res := BIO_set_conn_hostname(web, HostName + ':' + PortName);
     if res <> 1 then
       ExitError('BIO_set_conn_hostname failed');
 
@@ -118,11 +120,9 @@ begin
       ExitError('SSL_get_verify_result failed');
     end;}
 
-    BIO_puts(web, 'GET /cgi-bin/randbyte?nbytes=32&format=h HTTP/1.1'#13#10+
-                  'Host: www.random.org'#13#10+
+    BIO_puts(web, 'GET ' + Resource + ' HTTP/1.1'#13#10+
+                  'Host: '+ HostName + #13#10+
                   'Connection: close'#13#10#13#10);
-    BIO_puts(output, #13);
-
     len := 0;
     repeat
       len := BIO_read(web, buff, sizeof(buff));
