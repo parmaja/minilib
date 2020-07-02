@@ -117,7 +117,7 @@ type
     property Options: TmnsoOptions read FOptions write FOptions;
   end;
 
-  TmnOpenSSLSocketStream = class(TmnCustomSocket);
+  TmnOpenSSLSocketStream = class(TmnCustomSocket)
   end;
 
 const
