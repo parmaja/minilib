@@ -1,4 +1,4 @@
-unit mnOpenSSL;
+unit mnOpenSSLAPI;
 {$IFDEF FPC}
 {$MODE delphi}
 {$ENDIF}
