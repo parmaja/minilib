@@ -35,7 +35,8 @@ type
     //soBroadcast, soDebug, soDontLinger, soDontRoute, soOOBInLine, soAcceptConn
     soWaitBeforeRead, //Wait for data come before read, that double the time wait if you set SetReadTimeout if no data come
     soWaitBeforeWrite, //Wait for ready before write, idk what for
-    soCloseTimeout //close socket if read timeout
+    soCloseTimeout, //close socket if read timeout
+    soSSL  //TODO
     );
   TmnsoOptions = set of TmnsoOption;
 
@@ -59,6 +60,7 @@ type
   public
     constructor Create;
     destructor Destroy; override;
+    procedure Connect; virtual;
     function Shutdown(How: TmnShutdowns): TmnError;
     function Close: TmnError; virtual; abstract;
     function Send(const Buffer; var Count: Longint): TmnError;
@@ -115,9 +117,6 @@ type
     function WaitToWrite(vTimeout: Longint): TmnConnectionError; override; //select
     property Socket: TmnCustomSocket read FSocket;
     property Options: TmnsoOptions read FOptions write FOptions;
-  end;
-
-  TmnOpenSSLSocketStream = class(TmnCustomSocket)
   end;
 
 const
@@ -190,6 +189,10 @@ begin
     Close;
   end;
   inherited;
+end;
+
+procedure TmnCustomSocket.Connect;
+begin
 end;
 
 function TmnCustomSocket.GetConnected: Boolean;

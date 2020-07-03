@@ -18,6 +18,7 @@ interface
 uses
   Classes,
   SysUtils,
+  mnOpenSSL,
 {$IFDEF FPC}
   {$IFDEF WINDOWS}
     WinSock2,
@@ -38,22 +39,46 @@ type
     FHandle: TSocket;
     FAddress: TSockAddr;
   protected
-    function Check(Value: Integer): Boolean;
     function GetActive: Boolean; override;
+    function Check(Value: Integer): Boolean;
     //Timeout millisecond
     function DoSelect(Timeout: Integer; Check: TSelectCheck): TmnError; override;
     function DoShutdown(How: TmnShutdowns): TmnError; override;
     function DoListen: TmnError; override;
-    function DoReceive(var Buffer; var Count: Longint): TmnError; override;
-    function DoSend(const Buffer; var Count: Longint): TmnError; override;
   public
-    constructor Create(vHandle: TSocket);
-    function Close: TmnError; override;
-    function Accept: TmnCustomSocket; override;
+    constructor Create(vHandle: TSocket); virtual;
     function GetLocalAddress: string; override;
     function GetRemoteAddress: string; override;
     function GetLocalName: string; override;
     function GetRemoteName: string; override;
+    function Close: TmnError; override;
+  end;
+
+  { TmnNormalSocket }
+
+  TmnNormalSocket = class(TmnSocket)
+  private
+  protected
+    function DoReceive(var Buffer; var Count: Longint): TmnError; override;
+    function DoSend(const Buffer; var Count: Longint): TmnError; override;
+  public
+    function Accept: TmnCustomSocket; override;
+  end;
+
+  { TmnSSLSocket }
+
+  TmnSSLSocket = class(TmnSocket)
+  private
+    CTX: TCTX;
+    SSL: TSSL;
+  protected
+    function DoReceive(var Buffer; var Count: Longint): TmnError; override;
+    function DoSend(const Buffer; var Count: Longint): TmnError; override;
+  public
+    constructor Create(vHandle: TSocket); override;
+    destructor Destroy; override;
+    procedure Connect; override;
+    function Accept: TmnCustomSocket; override;
   end;
 
   { TmnWallSocket }
@@ -81,69 +106,6 @@ implementation
 
 const
   cBacklog = 5;
-
-{ TmnSocket }
-
-function TmnSocket.DoReceive(var Buffer; var Count: Longint): TmnError;
-var
-  c: Integer;
-  errno: longint;
-begin
-  CheckActive;
-{$IFDEF FPC}
-  c := WinSock2.recv(FHandle, Buffer, Count, 0);
-{$ELSE}
-  c := WinSock.recv(FHandle, Buffer, Count, 0);
-{$ENDIF}
-  if c = 0 then
-  begin
-    Count := 0;
-    Result := erClosed;
-    Close;
-  end
-  else if not Check(c) then
-  begin
-    Count := 0;
-    errno := WSAGetLastError();
-    if errno = WSAETIMEDOUT then
-      Result := erTimeout //maybe closed, but we will pass it as timeout, the caller will close it depend on options
-    else
-      Result := erInvalid
-  end
-  else
-  begin
-    Count := c;
-    Result := erSuccess;
-  end;
-end;
-
-function TmnSocket.DoSend(const Buffer; var Count: Longint): TmnError;
-var
-  c: Integer;
-begin
-  CheckActive;
-{$IFDEF FPC}
-  c := WinSock2.send(FHandle, (@Buffer)^, Count, 0);
-{$ELSE}
-  c := WinSock.send(FHandle, (@Buffer)^, Count, 0);
-{$ENDIF}
-  if c = 0 then
-  begin
-    Result := erClosed;
-    Count := 0;
-    Close;
-  end
-  else if not Check(c) then
-  begin
-    Count := 0;
-    Result := erInvalid;
-  end
-  else
-  begin
-    Count := c;
-    Result := erSuccess;
-  end;
-end;
 
 function TmnSocket.DoSelect(Timeout: Integer; Check: TSelectCheck): TmnError;
 begin
@@ -202,23 +164,6 @@ begin
     Result := erSuccess;
 end;
 
-function TmnSocket.Accept: TmnCustomSocket;
-var
-  aHandle: TSocket;
-  AddrSize: Integer;
-begin
-  CheckActive;
-  AddrSize := SizeOf(FAddress);
-{$IFDEF FPC}
-  aHandle := WinSock2.Accept(FHandle, @FAddress, @AddrSize);
-{$ELSE}
-  aHandle := WinSock.Accept(FHandle, @FAddress, @AddrSize);
-{$ENDIF}
-  if aHandle = INVALID_SOCKET then
-    Result := nil
-  else
-    Result := TmnSocket.Create(aHandle);
-end;
 
 constructor TmnSocket.Create(vHandle: TSocket);
 begin
@@ -347,6 +292,182 @@ begin
   Result := string(s);
 end;
 
+{ TmnNormalSocket }
+
+function TmnNormalSocket.DoReceive(var Buffer; var Count: Longint): TmnError;
+var
+  c: Integer;
+  errno: longint;
+begin
+  CheckActive;
+{$IFDEF FPC}
+  c := WinSock2.recv(FHandle, Buffer, Count, 0);
+{$ELSE}
+  c := WinSock.recv(FHandle, Buffer, Count, 0);
+{$ENDIF}
+  if c = 0 then
+  begin
+    Count := 0;
+    Result := erClosed;
+    Close;
+  end
+  else if not Check(c) then
+  begin
+    Count := 0;
+    errno := WSAGetLastError();
+    if errno = WSAETIMEDOUT then
+      Result := erTimeout //maybe closed, but we will pass it as timeout, the caller will close it depend on options
+    else
+      Result := erInvalid
+  end
+  else
+  begin
+    Count := c;
+    Result := erSuccess;
+  end;
+end;
+
+function TmnNormalSocket.DoSend(const Buffer; var Count: Longint): TmnError;
+var
+  c: Integer;
+begin
+  CheckActive;
+{$IFDEF FPC}
+  c := WinSock2.send(FHandle, (@Buffer)^, Count, 0);
+{$ELSE}
+  c := WinSock.send(FHandle, (@Buffer)^, Count, 0);
+{$ENDIF}
+  if c = 0 then
+  begin
+    Result := erClosed;
+    Count := 0;
+    Close;
+  end
+  else if not Check(c) then
+  begin
+    Count := 0;
+    Result := erInvalid;
+  end
+  else
+  begin
+    Count := c;
+    Result := erSuccess;
+  end;
+end;
+
+function TmnNormalSocket.Accept: TmnCustomSocket;
+var
+  aHandle: TSocket;
+  AddrSize: Integer;
+begin
+  CheckActive;
+  AddrSize := SizeOf(FAddress);
+{$IFDEF FPC}
+  aHandle := WinSock2.Accept(FHandle, @FAddress, @AddrSize);
+{$ELSE}
+  aHandle := WinSock.Accept(FHandle, @FAddress, @AddrSize);
+{$ENDIF}
+  if aHandle = INVALID_SOCKET then
+    Result := nil
+  else
+    Result := TmnNormalSocket.Create(aHandle);
+end;
+
+{ TmnSSLSocket }
+
+function TmnSSLSocket.DoReceive(var Buffer; var Count: Longint): TmnError;
+var
+  c: Integer;
+  errno: longint;
+begin
+  CheckActive;
+  c := SSL.read(Buffer, Count);
+  if c = 0 then
+  begin
+    Count := 0;
+    Result := erClosed;
+    Close;
+  end
+  else if not Check(c) then
+  begin
+    Count := 0;
+    errno := WSAGetLastError();
+    if errno = WSAETIMEDOUT then
+      Result := erTimeout //maybe closed, but we will pass it as timeout, the caller will close it depend on options
+    else
+      Result := erInvalid
+  end
+  else
+  begin
+    Count := c;
+    Result := erSuccess;
+  end;
+end;
+
+function TmnSSLSocket.DoSend(const Buffer; var Count: Longint): TmnError;
+var
+  c: Integer;
+begin
+  CheckActive;
+  c := SSL.Write(Buffer, Count);
+  if c = 0 then
+  begin
+    Result := erClosed;
+    Count := 0;
+    Close;
+  end
+  else if not Check(c) then
+  begin
+    Count := 0;
+    Result := erInvalid;
+  end
+  else
+  begin
+    Count := c;
+    Result := erSuccess;
+  end;
+end;
+
+procedure TmnSSLSocket.Connect;
+begin
+  inherited;
+  SSL := TSSL.Create(CTX);
+  SSL.SetSocket(FHandle);
+  SSL.Connect;
+  //TODO check if failed
+end;
+
+function TmnSSLSocket.Accept: TmnCustomSocket;
+var
+  aHandle: TSocket;
+  AddrSize: Integer;
+begin
+  CheckActive;
+  AddrSize := SizeOf(FAddress);
+{$IFDEF FPC}
+  aHandle := WinSock2.Accept(FHandle, @FAddress, @AddrSize);
+{$ELSE}
+  aHandle := WinSock.Accept(FHandle, @FAddress, @AddrSize);
+{$ENDIF}
+  if aHandle = INVALID_SOCKET then
+    Result := nil
+  else
+    Result := TmnSSLSocket.Create(aHandle);
+end;
+
+constructor TmnSSLSocket.Create(vHandle: TSocket);
+begin
+  inherited Create(vHandle);
+  CTX := TCTX.Create(TTLS_SSLMethod);
+end;
+
+destructor TmnSSLSocket.Destroy;
+begin
+  FreeAndNil(CTX);
+  FreeAndNil(SSL);
+  inherited Destroy;
+end;
+
 { TmnWallSocket }
 
 procedure TmnWallSocket.Cleanup;
@@ -431,7 +552,13 @@ begin
   end;
 
   if aHandle<>INVALID_SOCKET then
-    vSocket := TmnSocket.Create(aHandle)
+  begin
+    if soSSL in Options then
+      vSocket := TmnSSLSocket.Create(aHandle)
+    else
+      vSocket := TmnNormalSocket.Create(aHandle);
+    vSocket.Connect;
+  end
   else
     vSocket := nil;
 end;
@@ -609,9 +736,16 @@ begin
   end;
 
   if aHandle <> INVALID_SOCKET then
-    vSocket := TmnSocket.Create(aHandle)
+  begin
+    if soSSL in Options then
+      vSocket := TmnSSLSocket.Create(aHandle)
+    else
+      vSocket := TmnNormalSocket.Create(aHandle);
+    vSocket.Connect;
+  end
   else
     vSocket := nil;
 end;
 
+initialization
 end.

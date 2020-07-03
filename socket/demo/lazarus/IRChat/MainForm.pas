@@ -29,6 +29,7 @@ type
 
   TMainFrm = class(TForm)
     ConnectBtn: TButton;
+    PortEdit: TEdit;
     JoinBtn: TButton;
     HostEdit: TEdit;
     Label1: TLabel;
@@ -184,7 +185,7 @@ var
 begin
   SaveConfig;
   IRC.Host := HostEdit.Text;
-  IRC.Port := '6667';
+  IRC.Port := PortEdit.Text;
 
   IRC.Nicks.Clear;
   IRC.Nicks.Add(NicknameEdit.Text);
@@ -416,6 +417,7 @@ begin
     NicknameEdit.Text := Ini.ReadString('User', 'Nickname', '');
     RoomsEdit.Text := Ini.ReadString('User', 'Room', '');
     HostEdit.Text := Ini.ReadString('User', 'Host', '');
+    PortEdit.Text := Ini.ReadString('User', 'Port', '6667');
     Width := Ini.ReadInteger('Window', 'Width', Width);
     Height := Ini.ReadInteger('Window', 'Height', Height);
     LogEdit.Height := Ini.ReadInteger('Window', 'LogHeight', LogEdit.Height);
@@ -454,6 +456,7 @@ begin
     Ini.WriteString('User', 'Nickname', NicknameEdit.Text);
     Ini.WriteString('User', 'Room', RoomsEdit.Text);
     Ini.WriteString('User', 'Host', HostEdit.Text);
+    Ini.WriteString('User', 'Port', PortEdit.Text);
   finally
     FreeAndNil(ini);
   end;

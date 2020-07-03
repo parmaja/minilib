@@ -5,7 +5,7 @@ program ssl_demo;
 //https://stackoverflow.com/questions/53299498/how-to-get-openssl-bio-do-connect-failure-reason
 
 uses
-  SysUtils, Classes, mnOpenSSL, mnLibraries;
+  SysUtils, Classes, mnOpenSSLAPI, mnLibraries;
 
 function SSLVerifyCallback(preverify: Integer; x509_ctx: PX509_STORE_CTX): Integer; cdecl;
 begin

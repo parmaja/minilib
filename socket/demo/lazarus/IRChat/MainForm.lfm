@@ -42,7 +42,7 @@ object MainFrm: TMainFrm
       Left = 351
       Height = 23
       Top = 5
-      Width = 220
+      Width = 140
       Anchors = [akTop, akLeft, akRight]
       OnKeyPress = HostEditKeyPress
       TabOrder = 2
@@ -136,6 +136,16 @@ object MainFrm: TMainFrm
       Width = 54
       Caption = 'Nickname'
       ParentColor = False
+    end
+    object PortEdit: TEdit
+      Left = 497
+      Height = 23
+      Top = 5
+      Width = 74
+      Anchors = [akTop, akRight]
+      OnKeyPress = HostEditKeyPress
+      TabOrder = 7
+      Text = '6667'
     end
   end
   object LogEdit: TMemo

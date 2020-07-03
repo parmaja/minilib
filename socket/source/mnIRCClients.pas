@@ -1518,6 +1518,8 @@ end;
 { TmnIRCConnection }
 
 function TmnIRCConnection.InitStream: Boolean;
+var
+  ReconnectTime: Integer;
 begin
   if FStream = nil then
     FStream := CreateStream;
@@ -1526,11 +1528,23 @@ begin
   begin
     try
       if Tries > 0 then
+      begin
         Log('Reconnecting...');
+        Lock.Enter;
+        try
+          ReconnectTime := Client.ReconnectTime;
+        finally
+          Lock.Leave;
+        end;
+        Sleep(ReconnectTime);
+      end;
       Queue(Client.Connecting);
       FStream.Connect;
-      Log('Connected successed');
-      Queue(Client.Connected);
+      if FStream.Connected then
+      begin
+        Log('Connected successed');
+        Queue(Client.Connected);
+      end;
       Inc(Tries);
     except
       on E: Exception do
@@ -1546,7 +1560,7 @@ end;
 
 function TmnIRCConnection.CreateStream: TIRCSocketStream;
 begin
-  Result := TIRCSocketStream.Create(Host, Port, [soNoDelay]);
+  Result := TIRCSocketStream.Create(Host, Port, [soNoDelay, soSSL]);
   Result.ConnectTimeout := -1;
   Result.ReadTimeout := -1;//1000;
   Result.EndOfLine := #10;
@@ -1600,7 +1614,6 @@ procedure TmnIRCConnection.Process;
 var
   aLine: utf8string;
   aCommand: TIRCQueueCommand;
-  ReconnectTime: Integer;
 begin
   inherited;
   if InitStream then
@@ -1647,19 +1660,6 @@ begin
       end;
     end;
   end
-  else
-  begin
-    if not Terminated and Online then
-    begin
-      Lock.Enter;
-      try
-        ReconnectTime := Client.ReconnectTime;
-      finally
-        Lock.Leave;
-      end;
-      Sleep(ReconnectTime);
-    end;
-  end;
 end;
 
 procedure TmnIRCConnection.Unprepare;

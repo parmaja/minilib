@@ -23,9 +23,11 @@ unit mnOpenSSLAPI;
 interface
 
 uses
-  Types, Classes, SysUtils,
-  ctypes,
+  SysUtils,
   mnLibraries; // take it from github/parmaja/minilib
+
+type
+  clong = NativeInt;
 
 {$MINENUMSIZE 4} //All enum must be sized as Integer
 {$Z4}
@@ -246,13 +248,16 @@ type
 
   POPENSSL_INIT_SETTINGS = ^TOPENSSL_INIT_SETTINGS;
 
-  PSSL = Pointer;
-  PSSL_CTX = Pointer;
-  PSSL_METHOD = Pointer;
-  PBIO = Pointer;
+  //PSLLObject = class(TObject);
+  PSLLObject = type Pointer;
 
-  PX509 = Pointer;
-  PX509_STORE_CTX = Pointer;
+  PSSL = PSLLObject;
+  PSSL_CTX = PSLLObject;
+  PSSL_METHOD = PSLLObject;
+  PBIO = PSLLObject;
+
+  PX509 = PSLLObject;
+  PX509_STORE_CTX = PSLLObject;
 
   TSSLVerifyCallback = function(preverify: Integer; x509_ctx: PX509_STORE_CTX): Integer; cdecl;
 
@@ -295,6 +300,12 @@ var
   SSL_get_verify_result: function(ssl: PSSL): clong; cdecl;
 
   SSL_ctrl: function(ssl: PSSL; cmd: Integer; Larg: clong; PArg: Pointer): clong; cdecl;
+  SSL_new: function(ctx: PSSL_CTX): PSSL; cdecl;
+  SSL_set_fd: function(ssl: PSSL; d: Integer): integer; cdecl;
+  SSL_connect: function(ssl: PSSL): Integer; cdecl;
+  SSL_read: function(ssl: PSSL; var buf; size: integer): integer; cdecl;
+  SSL_write: function(ssl:PSSL; const buf; size: integer): integer; cdecl;
+
 
   BIO_new_ssl_connect: function(ctx: PSSL_CTX): PBIO; cdecl;
   //BIO_new_fp: function(stream: Pointer; close_flag: Integer): PBIO; cdecl; //dosnt work
@@ -395,6 +406,12 @@ begin
   SSL_set_cipher_list := GetAddress('SSL_set_cipher_list');
   SSL_get_verify_result := GetAddress('SSL_get_verify_result');
   SSL_ctrl := GetAddress('SSL_ctrl');
+  SSL_new := GetAddress('SSL_new');
+  SSL_set_fd := GetAddress('SSL_set_fd');
+  SSL_connect := GetAddress('SSL_connect');
+  SSL_read := GetAddress('SSL_read');
+  SSL_write := GetAddress('SSL_write');
+
   SSL_get_peer_certificate := GetAddress('SSL_get_peer_certificate');
   ERR_load_SSL_strings := GetAddress('ERR_load_SSL_strings');
 end;
