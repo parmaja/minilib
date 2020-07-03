@@ -353,6 +353,7 @@ type
     FQueueSends: TIRCQueueRaws;
     FUserCommands: TIRCUserCommands;
     FLock: TCriticalSection;
+    FUseSSL: Boolean;
     FUseUserCommands: Boolean;
     FNicks: TStringList;
     function GetActive: Boolean;
@@ -369,6 +370,7 @@ type
     procedure Rejoin;
     procedure SetReconnectTime(AValue: Integer);
     procedure SetUsername(const Value: String);
+    procedure SetUseSSL(AValue: Boolean);
     //function BuildUserModeCommand(NewModes: TIRCUserModes): String;
   protected
     NickIndex: Integer;
@@ -433,6 +435,7 @@ type
   public
     property Host: String read FHost write SetHost;
     property Port: String read FPort write SetPort;
+    property UseSSL: Boolean read FUseSSL write SetUseSSL;
     property Nicks: TStringList read FNicks write SetNicks; //nick names to use, dd more for if already used nick
     property RealName: String read FRealName write SetRealName;
     property Password: String read FPassword write SetPassword;
@@ -1559,8 +1562,14 @@ begin
 end;
 
 function TmnIRCConnection.CreateStream: TIRCSocketStream;
+var
+  Options: TmnsoOptions;
 begin
-  Result := TIRCSocketStream.Create(Host, Port, [soNoDelay, soSSL]);
+  Options := [soNoDelay];
+  if Client.UseSSL then
+    Options := Options + [soSSL];
+
+  Result := TIRCSocketStream.Create(Host, Port, Options);
   Result.ConnectTimeout := -1;
   Result.ReadTimeout := -1;//1000;
   Result.EndOfLine := #10;
@@ -2178,6 +2187,12 @@ end;
 procedure TmnIRCClient.SetUsername(const Value: String);
 begin
   FUsername := Value;
+end;
+
+procedure TmnIRCClient.SetUseSSL(AValue: Boolean);
+begin
+  if FUseSSL =AValue then Exit;
+  FUseSSL :=AValue;
 end;
 
 procedure TmnIRCClient.SetProgress(const Value: TIRCProgress);

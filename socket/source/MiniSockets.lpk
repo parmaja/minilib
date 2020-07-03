@@ -23,7 +23,7 @@
     </CompilerOptions>
     <Description Value="Simple Socket wrapper"/>
     <Version Major="1" Release="1" Build="1"/>
-    <Files Count="10">
+    <Files Count="12">
       <Item1>
         <Filename Value="mnClients.pas"/>
         <UnitName Value="mnClients"/>
@@ -56,6 +56,14 @@
         <Filename Value="mnWebModules.pas"/>
         <UnitName Value="mnWebModules"/>
       </Item10>
+      <Item11>
+        <Filename Value="mnOpenSSLAPI.pas"/>
+        <UnitName Value="mnOpenSSLAPI"/>
+      </Item11>
+      <Item12>
+        <Filename Value="mnOpenSSL.pas"/>
+        <UnitName Value="mnOpenSSL"/>
+      </Item12>
     </Files>
     <RequiredPkgs Count="1">
       <Item1>

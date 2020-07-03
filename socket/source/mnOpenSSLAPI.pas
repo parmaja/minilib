@@ -34,6 +34,9 @@ uses
 
 type
   clong = NativeInt;
+  culong = NativeUInt;
+
+  BN_ULONG = culong;
 
 {$MINENUMSIZE 4} //All enum must be sized as Integer
 {$Z4}
@@ -235,6 +238,13 @@ const
   BIO_FLAGS_RWS           = (BIO_FLAGS_READ or BIO_FLAGS_WRITE or BIO_FLAGS_IO_SPECIAL);
   BIO_FLAGS_SHOULD_RETRY  = $08;
 
+  BIO_CTRL_DGRAM_SET_RECV_TIMEOUT = 33;(* setsockopt, essentially *)
+  BIO_CTRL_DGRAM_GET_RECV_TIMEOUT = 34;(* getsockopt, essentially *)
+  BIO_CTRL_DGRAM_SET_SEND_TIMEOUT = 35;(* setsockopt, essentially *)
+  BIO_CTRL_DGRAM_GET_SEND_TIMEOUT = 36;(* getsockopt, essentially *)
+
+  RSA_3  = $3;
+  RSA_F4 = $10001;
 
   TLSEXT_NAMETYPE_host_name                     = 0;
 
@@ -262,8 +272,19 @@ type
   PSSL_METHOD = PSLLObject;
   PBIO = PSLLObject;
 
+  PBIGNUM = PSLLObject;
+  PBN_GENCB = PSLLObject;
+  PRSA = Pointer;
+
   PX509 = PSLLObject;
   PX509_STORE_CTX = PSLLObject;
+  PX509_REQ = PSLLObject;
+  PPX509_REQ = ^PX509_REQ;
+  PX509_NAME = PSLLObject;
+
+  Ppem_password_cb = Pointer;
+
+  PEVP_PKEY = PSLLObject;
 
   TSSLVerifyCallback = function(preverify: Integer; x509_ctx: PX509_STORE_CTX): Integer; cdecl;
 
@@ -275,7 +296,6 @@ type
   public
   protected
     procedure Link; override;
-    procedure Init; override;
   end;
 
   { TCryptoLibLib }
@@ -286,7 +306,6 @@ type
   public
   protected
     procedure Link; override;
-    procedure Init; override;
   end;
 
 var
@@ -322,27 +341,30 @@ var
   X509_STORE_CTX_get_error_depth: function(ctx: PX509_STORE_CTX): Integer; cdecl;
   X509_free: procedure(a: PX509); cdecl;
   X509_verify_cert_error_string: function(n: clong): PUTF8Char; cdecl;
+  PEM_read_bio_X509_REQ: function(bp: PBIO; x: PPX509_REQ; cb: Ppem_password_cb; var u): PX509_REQ;
+  X509_REQ_set_version: function(x: PX509_REQ; version: clong): Integer; cdecl;
+
+  BN_new: function(): PBIGNUM; cdecl;
+  BN_set_word: function(a: PBIGNUM; w: BN_ULONG): integer; cdecl;
+
+  RSA_new: function(): PRSA; cdecl;
+  RSA_generate_key_ex: function(rsa: PRSA; bits: integer; e: PBIGNUM; cb: PBN_GENCB): Integer; cdecl;
 
   BIO_new_ssl_connect: function(ctx: PSSL_CTX): PBIO; cdecl;
   //BIO_new_fp: function(stream: Pointer; close_flag: Integer): PBIO; cdecl; //dosnt work
   BIO_new_file: function(filename: PUTF8Char; Mode: PUTF8Char): PBIO; cdecl;
-  BIO_free: function(bio: PBIO): Integer; cdecl;
+
   BIO_read: function(b: PBIO; var data; dlen: integer): Integer; cdecl;
   BIO_write: function(b: PBIO; const data; dlen: Integer): Integer; cdecl;
   BIO_gets: function(b: PBIO; buf: PAnsiChar; Size: Integer): Integer; cdecl;
+  BIO_puts: function(bio: PBIO; buf: PUTF8Char): Integer; cdecl;
+  BIO_test_flags: function(b: PBIO; flags: Integer): integer; cdecl;
+  BIO_free_all: procedure(b: PBIO); cdecl;
+  BIO_free: function(bio: PBIO): Integer; cdecl;
 
   {TODO
   int BIO_read_ex(BIO *b, void *data, size_t dlen, size_t *readbytes);
   int BIO_write_ex(BIO *b, const void *data, size_t dlen, size_t *written);
-  }
-
-  BIO_puts: function(bio: PBIO; buf: PUTF8Char): Integer; cdecl;
-  BIO_test_flags: function(b: PBIO; flags: Integer): integer; cdecl;
-  BIO_free_all: procedure(b: PBIO); cdecl;
-  {todo
-  long BIO_set_conn_port(BIO *b, char *port);
-  long BIO_set_conn_address(BIO *b, BIO_ADDR *addr);
-
   }
 
 
@@ -352,10 +374,14 @@ var
   BIO_ctrl: function(bp: PBIO; cmd: Integer; Larg: clong; PArg: Pointer): clong; cdecl;
 
   function BIO_set_conn_hostname(b: PBIO; Name: PUTF8Char): clong; inline;
-  function BIO_get_ssl(b: PBIO; out ssl: PSSL): clong; inline; //TODO out ssl
-  function BIO_do_handshake(b: PBIO): clong; inline;
+  function BIO_set_conn_port(b: PBIO; Port: PUTF8Char): clong; inline;
+  function BIO_set_conn_address(b: PBIO; Address: PUTF8Char): clong; inline;
+  function BIO_set_recv_timeout(b: PBIO; timeout: Integer): clong; inline;
+  function BIO_set_send_timeout(b: PBIO; timeout: Integer): clong; inline;
+  function BIO_get_ssl(b: PBIO; out ssl: PSSL): clong; inline;
   function BIO_do_connect(b: PBIO): clong; inline;
-  function BIO_set_nbio(b: PBIO; n: Integer): clong; inline;
+  function BIO_do_handshake(b: PBIO): clong; inline; deprecated;
+  function BIO_set_nbio(b: PBIO; n: Integer): clong; inline; //set blocking mode or not
   function BIO_should_retry(b: PBIO): Boolean; inline;
   function SSL_set_mode(ssl: PSSL; op: Integer): clong; inline;
 
@@ -368,9 +394,43 @@ var
 
 implementation
 
+type
+  TTimeVal = record
+    tv_sec: Longint;
+    tv_usec: Longint;
+  end;
+
 function BIO_set_conn_hostname(b: PBIO; Name: PUTF8Char): clong;
 begin
   Result := BIO_ctrl(b, BIO_C_SET_CONNECT, 0, Name);
+end;
+
+function BIO_set_conn_port(b: PBIO; Port: PUTF8Char): clong;
+begin
+  Result := BIO_ctrl(b, BIO_C_SET_CONNECT, 1, Port);
+end;
+
+function BIO_set_recv_timeout(b: PBIO; timeout: Integer): clong;
+var
+  TimeVal: TTimeVal;
+begin
+  TimeVal.tv_sec := Timeout div 1000;
+  TimeVal.tv_usec := (Timeout mod 1000) * 1000;
+  Result := BIO_ctrl(b, BIO_CTRL_DGRAM_SET_RECV_TIMEOUT, 0, @TimeVal);
+end;
+
+function BIO_set_send_timeout(b: PBIO; timeout: Integer): clong;
+var
+  TimeVal: TTimeVal;
+begin
+  TimeVal.tv_sec := Timeout div 1000;
+  TimeVal.tv_usec := (Timeout mod 1000) * 1000;
+  Result := BIO_ctrl(b, BIO_CTRL_DGRAM_SET_SEND_TIMEOUT, 0, @TimeVal);
+end;
+
+function BIO_set_conn_address(b: PBIO; Address: PUTF8Char): clong;
+begin
+  Result := BIO_ctrl(b, BIO_C_SET_CONNECT, 2, Address);
 end;
 
 function BIO_get_ssl(b: PBIO; out ssl: PSSL): clong;
@@ -436,11 +496,6 @@ begin
   ERR_load_SSL_strings := GetAddress('ERR_load_SSL_strings');
 end;
 
-procedure TmnOpenSSLLib.Init;
-begin
-  inherited Init;
-end;
-
 { TCryptoLibLib }
 
 procedure TmnCryptoLib.Link;
@@ -453,10 +508,13 @@ begin
   X509_STORE_CTX_get_error_depth := GetAddress('X509_STORE_CTX_get_error_depth');
   X509_free := GetAddress('X509_free');
   X509_verify_cert_error_string := GetAddress('X509_verify_cert_error_string');
+  PEM_read_bio_X509_REQ := GetAddress('PEM_read_bio_X509_REQ');
+  X509_REQ_set_version := GetAddress('X509_REQ_set_version');
 
   BIO_ctrl := GetAddress('BIO_ctrl');
   //BIO_new_fp := GetAddress('BIO_new_fp');
   BIO_new_file := GetAddress('BIO_new_file');
+  //BIO_set_conn_address := GetAddress('BIO_set_conn_address');
   BIO_test_flags := GetAddress('BIO_test_flags');
   BIO_free := GetAddress('BIO_free');
   BIO_free_all := GetAddress('BIO_free_all');
@@ -465,14 +523,15 @@ begin
   BIO_puts := GetAddress('BIO_puts');
   BIO_gets := GetAddress('BIO_gets');
 
+  BN_new := GetAddress('BN_new');
+  BN_set_word := GetAddress('BN_set_word');
+
+  RSA_new := GetAddress('RSA_new');
+  RSA_generate_key_ex := GetAddress('RSA_generate_key_ex');
+
   ERR_get_error := GetAddress('ERR_get_error');
   ERR_error_string := GetAddress('ERR_error_string');
   ERR_load_CRYPTO_strings := GetAddress('ERR_load_CRYPTO_strings');
-end;
-
-procedure TmnCryptoLib.Init;
-begin
-  inherited Init;
 end;
 
 initialization

@@ -186,6 +186,7 @@ begin
   SaveConfig;
   IRC.Host := HostEdit.Text;
   IRC.Port := PortEdit.Text;
+  IRC.UseSSL := True;
 
   IRC.Nicks.Clear;
   IRC.Nicks.Add(NicknameEdit.Text);
