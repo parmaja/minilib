@@ -10,7 +10,7 @@ unit mnIRCClients;
  *  @license  modifiedLGPL (modified of http://www.gnu.org/licenses/lgpl.html)
  *            See the file COPYING.MLGPL, included in this distribution,
  *  @ported from SlyIRC the orignal author Steve Williams
- *  @author by Zaher Dirkey <zaher at parmaja dot com>
+ *  @author by Zaher Dirkey <zaher, zaherdirkey>
 
 
     http://chi.cs.uchicago.edu/chirc/irc_examples.html

@@ -10,7 +10,7 @@ unit mncFBUtils;
  * @license   modifiedLGPL (modified of http://www.gnu.org/licenses/lgpl.html)
  *            See the file COPYING.MLGPL, included in this distribution,
  * @author    Belal Hamed <belalhamed at gmail dot com>
- * @author    Zaher Dirkey <zaher at parmaja dot com>
+ * @author    Zaher Dirkey <zaher, zaherdirkey>
  * @comment   for Firebird 2.5
  *}
 

@@ -14,6 +14,9 @@ unit mnOpenSSLAPI;
  *
  *}
 
+ //https://aticleworld.com/ssl-server-client-using-openssl-in-c/
+ //https://eclipsesource.com/blogs/2016/09/07/tutorial-code-signing-and-verification-with-openssl/
+
  //https://www.xolphin.com/support/OpenSSL/OpenSSL_-_Installation_under_Windows
  //https://wiki.openssl.org/index.php/Libcrypto_API
  //https://slproweb.com/products/Win32OpenSSL.html

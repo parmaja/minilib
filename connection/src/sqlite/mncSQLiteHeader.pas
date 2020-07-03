@@ -7,7 +7,7 @@ unit mncSQLiteHeader;
  *            See the file COPYING.MLGPL, included in this distribution,
  *
  * @author FPC Team
- *         modified by Zaher Dirkey <zaher at parmaja dot com>
+ *         modified by Zaher Dirkey <zaher, zaherdirkey>
  *
  *  This file ported from FPC sqlite3.inc, just to be compatiple in both Delphi and FPC
  *}

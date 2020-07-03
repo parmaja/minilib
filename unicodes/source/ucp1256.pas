@@ -20,7 +20,7 @@ unit ucp1256;
  *}
 
 {*
-  Ported by Zaher Dirkey zaher at parmaja dot com
+  Ported by Zaher Dirkey zaher, zaherdirkey
   http://libiconv.cvs.sourceforge.net/*checkout*/libiconv/libiconv/lib/cp1256.h?revision=1.4
 *}
 

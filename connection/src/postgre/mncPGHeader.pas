@@ -6,7 +6,7 @@ unit mncPGHeader;
  *
  * @license   modifiedLGPL (modified of http://www.gnu.org/licenses/lgpl.html)
  *            See the file COPYING.MLGPL, included in this distribution,
- * @author    Zaher Dirkey <zaher at parmaja dot com>
+ * @author    Zaher Dirkey <zaher, zaherdirkey>
  * @author    Belal Hamed <belalhamed at gmail dot com>  
  *
  *}

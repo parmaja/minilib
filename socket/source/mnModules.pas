@@ -6,7 +6,7 @@
  *
  * @license   modifiedLGPL (modified of http://www.gnu.org/licenses/lgpl.html)
  *            See the file COPYING.MLGPL, included in this distribution,
- * @author    Zaher Dirkey <zaher at parmaja dot com>
+ * @author    Zaher Dirkey <zaher, zaherdirkey>
  *
  *  https://www.w3.org/Protocols/rfc2616/rfc2616-sec5.html
  *

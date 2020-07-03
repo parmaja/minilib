@@ -4,7 +4,7 @@ unit mnSockets;
  *
  * @license   modifiedLGPL (modified of http://www.gnu.org/licenses/lgpl.html)
  *            See the file COPYING.MLGPL, included in this distribution,
- * @author    Zaher Dirkey <zaher at parmaja dot com>
+ * @author    Zaher Dirkey <zaher, zaherdirkey>
  *}
 
 {$IFDEF FPC}
@@ -60,7 +60,7 @@ type
   public
     constructor Create;
     destructor Destroy; override;
-    procedure Connect; virtual;
+    procedure Prepare; virtual;
     function Shutdown(How: TmnShutdowns): TmnError;
     function Close: TmnError; virtual; abstract;
     function Send(const Buffer; var Count: Longint): TmnError;
@@ -191,7 +191,7 @@ begin
   inherited;
 end;
 
-procedure TmnCustomSocket.Connect;
+procedure TmnCustomSocket.Prepare;
 begin
 end;
 

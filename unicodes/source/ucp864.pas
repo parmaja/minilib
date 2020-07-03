@@ -20,7 +20,7 @@
  *}
 
 {*
-  Ported by Zaher Dirkey zaher at parmaja dot com
+  Ported by Zaher Dirkey zaher, zaherdirkey
   http://libiconv.cvs.sourceforge.net/viewvc/libiconv/libiconv/lib/cp864.h?content-type=text%2Fplain
 *}
 

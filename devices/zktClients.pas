@@ -4,7 +4,7 @@ unit zktClients;
  *
  * @license   MIT (modified of https://opensource.org/licenses/MIT)
  *            See the file COPYING.MLGPL, included in this distribution,
- * @author    Zaher Dirkey <zaher at parmaja dot com>
+ * @author    Zaher Dirkey <zaher, zaherdirkey>
  * @help      Belal Al Hamed, helped me with reverse eng it
  *
  *   Based on multiple php, py library, thanks for all

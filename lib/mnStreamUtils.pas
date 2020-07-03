@@ -5,7 +5,7 @@ unit mnStreamUtils;
  *
  * @license   modifiedLGPL (modified of http://www.gnu.org/licenses/lgpl.html)
  *            See the file COPYING.MLGPL, included in this distribution,
- * @author    Zaher Dirkey <zaher at parmaja dot com>
+ * @author    Zaher Dirkey <zaher, zaherdirkey>
  * @ported    Most code of deflate and inflate ported from FPC source zstream, i just wrapped it into my StreamProxy
  *}
 

@@ -4,7 +4,7 @@ unit mnWinSockets;
  *
  * @license   modifiedLGPL (modified of http://www.gnu.org/licenses/lgpl.html)
  *            See the file COPYING.MLGPL, included in this distribution,
- * @author    Zaher Dirkey <zaher at parmaja dot com>
+ * @author    Zaher Dirkey <zaher, zaherdirkey>
  *}
 
 {$M+}
@@ -77,7 +77,7 @@ type
   public
     constructor Create(vHandle: TSocket); override;
     destructor Destroy; override;
-    procedure Connect; override;
+    procedure Prepare; override;
     function Accept: TmnCustomSocket; override;
   end;
 
@@ -428,7 +428,7 @@ begin
   end;
 end;
 
-procedure TmnSSLSocket.Connect;
+procedure TmnSSLSocket.Prepare;
 begin
   inherited;
   SSL := TSSL.Create(CTX);
@@ -557,7 +557,7 @@ begin
       vSocket := TmnSSLSocket.Create(aHandle)
     else
       vSocket := TmnNormalSocket.Create(aHandle);
-    vSocket.Connect;
+    vSocket.Prepare;
   end
   else
     vSocket := nil;
@@ -741,7 +741,7 @@ begin
       vSocket := TmnSSLSocket.Create(aHandle)
     else
       vSocket := TmnNormalSocket.Create(aHandle);
-    vSocket.Connect;
+    vSocket.Prepare;
   end
   else
     vSocket := nil;

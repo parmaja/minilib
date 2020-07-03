@@ -5,7 +5,7 @@ unit mnLinuxCommStreams;
  *
  * @license   modifiedLGPL (modified of http://www.gnu.org/licenses/lgpl.html)
  *            See the file COPYING.MLGPL, included in this distribution,
- * @author    Zaher Dirkey <zaher at parmaja dot com>
+ * @author    Zaher Dirkey <zaher, zaherdirkey>
  * Some function ported from ComPort at sourceforge thanks for them
 
  http://forum.kernelnewbies.org/read.php?12,213

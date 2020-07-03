@@ -4,7 +4,7 @@ unit mnWebModules;
  *
  * @license   modifiedLGPL (modified of mod://www.gnu.org/licenses/lgpl.html)
  *            See the file COPYING.MLGPL, included in this distribution,
- * @author    Zaher Dirkey <zaher at parmaja dot com>
+ * @author    Zaher Dirkey <zaher, zaherdirkey>
  *}
 
 {$M+}
