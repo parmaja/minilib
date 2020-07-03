@@ -464,7 +464,7 @@ end;
 destructor TmnSSLSocket.Destroy;
 begin
   FreeAndNil(CTX);
-  FreeAndNil(SSL);
+  //FreeAndNil(SSL);
   inherited Destroy;
 end;
 

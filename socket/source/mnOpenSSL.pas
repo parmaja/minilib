@@ -28,7 +28,7 @@ type
 
   TOpenSSLObject = class abstract(TObject)
   public
-    procedure AfterConstruction; override;
+    constructor Create;
   end;
 
   { TSSLMethod }
@@ -64,12 +64,13 @@ type
     destructor Destroy; override;
   end;
 
-  TSSL = class(TOpenSSLObject)
-  protected
+  TSSL = record//class(TOpenSSLObject)
+  //protected
     Handle: PSSL;
     CTX: TCTX;
-  public
-    constructor Create(ACTX: TCTX);
+  //public
+    constructor Create(ACTX: TCTX); overload;
+    constructor Create(ASSL: PSSL); overload;
     procedure SetSocket(ASocket: Integer);
     procedure Connect;
     function Read(var Buf; Size: Integer): Integer;
@@ -78,13 +79,34 @@ type
 
   { TBIOStream }
 
-  TBIOStream = class(TStream) //BIO stream
+  TBIOStream = class abstract(TStream) //BIO stream
   protected
     Handle: PBIO;
-    procedure AfterConstruction; override;
   public
+    constructor Create;
+    destructor Destroy; override;
+    function GetSSL: TSSL;
     function Read(var Buffer; Count: Longint): Longint; override;
     function Write(const Buffer; Count: Longint): Longint; override;
+  end;
+
+  { TBIOStreamFile }
+
+  TBIOStreamFile = class(TBIOStream)
+  public
+    constructor Create(AFileName: string; Mode: string); //read doc of BIO_new_file
+  end;
+
+  { TBIOStreamSSL }
+
+  TBIOStreamSSL = class(TBIOStream) //Socket
+  protected
+    CTX: TCTX;
+  public
+    constructor Create(ACTX: TCTX);
+    //Host name with port like 'example.com:80';
+    procedure SetHostName(AHostName: string);
+    procedure Connect;
   end;
 
 procedure InitOpenSSL;
@@ -93,28 +115,84 @@ implementation
 
 procedure InitOpenSSL;
 begin
-  OpenSSLLib.Load;
-  CryptoLib.Load;
-  OPENSSL_init_ssl(0, nil);
+  if OpenSSLLib.Load then
+    OPENSSL_init_ssl(0, nil);
   //ERR_load_SSL_strings();//IDK
-  OPENSSL_init_crypto(0, nil);
+  if CryptoLib.Load then
+    OPENSSL_init_crypto(0, nil);
   //ERR_load_CRYPTO_strings();//IDK
+end;
+
+procedure RaiseSSLError(Message: string);
+begin
+  raise EmnOpenSSLException.Create(Message);
+end;
+
+procedure RaiseLastSSLError;
+begin
+  RaiseSSLError(ERR_error_string(ERR_get_error(), nil));
+end;
+
+{ TBIOStreamSSL }
+
+constructor TBIOStreamSSL.Create(ACTX: TCTX);
+begin
+  inherited Create;
+  CTX := ACTX;
+  Handle := BIO_new_ssl_connect(CTX);
+end;
+
+procedure TBIOStreamSSL.SetHostName(AHostName: string);
+begin
+  BIO_set_conn_hostname(Handle, PUTF8Char(AHostName)); //Always return 1
+end;
+
+procedure TBIOStreamSSL.Connect;
+var
+  res: Integer;
+begin
+  res := BIO_do_connect(Handle);
+  if res <> 1 then
+    RaiseLastSSLError;
+end;
+
+{ TBIOStreamFile }
+
+constructor TBIOStreamFile.Create(AFileName: string; Mode: string);
+begin
+  inherited Create;
+  Handle := BIO_new_file(PUTF8Char(AFileName), PUTF8Char(Mode));
 end;
 
 { TOpenSSLObject }
 
-procedure TOpenSSLObject.AfterConstruction;
+constructor TOpenSSLObject.Create;
 begin
-  inherited AfterConstruction;
-  InitOpenSSL
+  inherited Create;
+  InitOpenSSL;
 end;
 
 { TBIOStream }
 
-procedure TBIOStream.AfterConstruction;
+constructor TBIOStream.Create;
 begin
-  inherited AfterConstruction;
+  inherited Create;
   InitOpenSSL;
+end;
+
+destructor TBIOStream.Destroy;
+begin
+  inherited Destroy;
+  if Handle <> nil then
+    BIO_free(Handle);
+end;
+
+function TBIOStream.GetSSL: TSSL;
+var
+  ssl: PSSL;
+begin
+  BIO_get_ssl(Handle, ssl);
+  Result := TSSL.Create(ssl);
 end;
 
 function TBIOStream.Read(var Buffer; Count: Longint): Longint;
@@ -131,9 +209,15 @@ end;
 
 constructor TSSL.Create(ACTX: TCTX);
 begin
-  inherited Create;
+  //inherited Create;
   CTX := ACTX;
   Handle := SSL_new(CTX.Handle);
+end;
+
+constructor TSSL.Create(ASSL: PSSL);
+begin
+  //inherited Create;
+  Handle := ASSL;
 end;
 
 procedure TSSL.SetSocket(ASocket: Integer);

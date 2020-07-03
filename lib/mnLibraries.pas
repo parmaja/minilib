@@ -73,7 +73,7 @@ type
     procedure Init; virtual;
   public
     constructor Create(ALibraryName: string); virtual;
-    procedure Load;
+    function Load: Boolean;
     function IsLoaded: Boolean;
     procedure Release;
     function GetAddress(const ProcedureName: string; ARaiseError: Boolean = False): Pointer;
@@ -111,11 +111,12 @@ begin
   {$ENDIF}
 end;
 
-procedure TmnLibrary.Load;
+function TmnLibrary.Load: Boolean;
 var
   Usage: Integer;
 begin
-  if not IsLoaded then
+  Result := not IsLoaded;
+  if Result then
   begin
     Usage := InterlockedIncrement(RefCount);
     if Usage  = 1 then

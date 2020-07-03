@@ -70,7 +70,7 @@ begin
     if web = nil then
       ExitError('no connect web');
 
-    res := BIO_set_nbio(web, 0);
+    res := BIO_set_nbio(web, 0); //Blocking mode
     if res <> 1 then
       ExitError('BIO_set_nbio failed');
 

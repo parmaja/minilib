@@ -23,6 +23,9 @@ unit mnOpenSSLAPI;
  //https://github.com/sota2502/mpstation/blob/master/lib/IdSSLOpenSSLHeaders.pas
  //https://fuchsia-docs.firebaseapp.com/rust/src/boringssl_sys/lib.rs.html#1929
 
+ //official examples
+ //https://www.openssl.org/docs/man1.0.2/man3/BIO_get_ssl.html
+
 interface
 
 uses
@@ -349,7 +352,7 @@ var
   BIO_ctrl: function(bp: PBIO; cmd: Integer; Larg: clong; PArg: Pointer): clong; cdecl;
 
   function BIO_set_conn_hostname(b: PBIO; Name: PUTF8Char): clong; inline;
-  function BIO_get_ssl(b: PBIO; var ssl: PSSL): clong; inline; //TODO out ssl
+  function BIO_get_ssl(b: PBIO; out ssl: PSSL): clong; inline; //TODO out ssl
   function BIO_do_handshake(b: PBIO): clong; inline;
   function BIO_do_connect(b: PBIO): clong; inline;
   function BIO_set_nbio(b: PBIO; n: Integer): clong; inline;
@@ -370,7 +373,7 @@ begin
   Result := BIO_ctrl(b, BIO_C_SET_CONNECT, 0, Name);
 end;
 
-function BIO_get_ssl(b: PBIO; var ssl: PSSL): clong;
+function BIO_get_ssl(b: PBIO; out ssl: PSSL): clong;
 begin
   Result := BIO_ctrl(b, BIO_C_GET_SSL, 0, @ssl);
 end;
