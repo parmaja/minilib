@@ -747,5 +747,4 @@ begin
     vSocket := nil;
 end;
 
-initialization
 end.

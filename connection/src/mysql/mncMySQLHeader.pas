@@ -1244,7 +1244,7 @@ type
 
   TmncMySQLLib = class(TmnLibrary)
   protected
-    procedure Loaded; override;
+    procedure Link; override;
   public
     destructor Destroy; override;
   end;
@@ -1254,7 +1254,7 @@ var
 
 implementation
 
-procedure TmncMySQLLib.Loaded;
+procedure TmncMySQLLib.Link;
 begin
 // Only the procedure that are given in the c-library documentation are loaded, to
 // avoid problems with 'incomplete' libraries

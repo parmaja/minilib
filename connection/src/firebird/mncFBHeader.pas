@@ -3477,7 +3477,7 @@ type
 
   TmncFBLib = class(TmnLibrary)
   protected
-    procedure Loaded; override;
+    procedure Link; override;
   public
     BLOB_get: TBLOB_get;
     BLOB_put: TBLOB_put;
@@ -3607,7 +3607,7 @@ end;
 
 { TmncFBLib }
 
-procedure TmncFBLib.Loaded;
+procedure TmncFBLib.Link;
 begin
   BLOB_get := GetAddress('BLOB_get');
   BLOB_put := GetAddress('BLOB_put');

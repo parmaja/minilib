@@ -69,11 +69,11 @@ type
     FLibraryName: string;
     LoadedLibrary: string;
     RaiseError: Boolean;
-    procedure Loaded; virtual; abstract;
+    procedure Link; virtual; abstract;
+    procedure Init; virtual;
   public
     constructor Create(ALibraryName: string); virtual;
-    procedure Load(ALibraryName: string = '');
-    procedure Init; virtual;
+    procedure Load;
     function IsLoaded: Boolean;
     procedure Release;
     function GetAddress(const ProcedureName: string; ARaiseError: Boolean = False): Pointer;
@@ -111,31 +111,26 @@ begin
   {$ENDIF}
 end;
 
-procedure TmnLibrary.Load(ALibraryName: string);
+procedure TmnLibrary.Load;
 var
   Usage: Integer;
 begin
-  if ALibraryName = '' then
-    ALibraryName := LibraryName;
-
-  if (LoadedLibrary <> '') and (LoadedLibrary <> ALibraryName) then
-    raise EInoutError.CreateFmt(SErrAlreadyLoaded,[LoadedLibrary]);
-
   if not IsLoaded then
   begin
     Usage := InterlockedIncrement(RefCount);
     if Usage  = 1 then
     begin
-      FHandle := LoadLibrary(ALibraryName);
+      FHandle := LoadLibrary(LibraryName);
       if (FHandle = 0) then
       begin
         RefCount := 0;
-        raise EInOutError.CreateFmt(SErrLoadFailed,[ALibraryName]);
+        raise EInOutError.CreateFmt(SErrLoadFailed,[LibraryName]);
       end
       else
       begin
         LoadedLibrary := LibraryName;
-        Loaded;
+        Link;
+        Init;
       end;
     end;
   end;
@@ -143,7 +138,6 @@ end;
 
 procedure TmnLibrary.Init;
 begin
-  Load;
 end;
 
 function TmnLibrary.IsLoaded: Boolean;

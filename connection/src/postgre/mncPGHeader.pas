@@ -400,7 +400,7 @@ type
 
   TmncPGLib = class(TmnLibrary)
   protected
-    procedure Loaded; override;
+    procedure Link; override;
   end;
 
 var
@@ -408,7 +408,7 @@ var
 
 implementation
 
-procedure TmncPGLib.Loaded;
+procedure TmncPGLib.Link;
 begin
 { ===	in fe-connect.c === }
   PQfreemem := GetAddress('PQfreemem');

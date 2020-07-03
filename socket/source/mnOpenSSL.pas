@@ -24,9 +24,16 @@ uses
 type
   EmnOpenSSLException = EmnSocketException;
 
+  { TOpenSSLObject }
+
+  TOpenSSLObject = class abstract(TObject)
+  public
+    procedure AfterConstruction; override;
+  end;
+
   { TSSLMethod }
 
-  TSSLMethod = class abstract(TObject)
+  TSSLMethod = class abstract(TOpenSSLObject)
   protected
     Handle: PSSL_METHOD;
     procedure CreateHandle; virtual;abstract;
@@ -46,7 +53,7 @@ type
 
   { TCTX }
 
-  TCTX = class(TObject)
+  TCTX = class(TOpenSSLObject)
   protected
     Handle: PSSL_CTX;
     FMethod: TSSLMethod;
@@ -57,7 +64,7 @@ type
     destructor Destroy; override;
   end;
 
-  TSSL = class(TObject)
+  TSSL = class(TOpenSSLObject)
   protected
     Handle: PSSL;
     CTX: TCTX;
@@ -69,7 +76,56 @@ type
     function Write(const Buf; Size: Integer): Integer;
   end;
 
+  { TBIOStream }
+
+  TBIOStream = class(TStream) //BIO stream
+  protected
+    Handle: PBIO;
+    procedure AfterConstruction; override;
+  public
+    function Read(var Buffer; Count: Longint): Longint; override;
+    function Write(const Buffer; Count: Longint): Longint; override;
+  end;
+
+procedure InitOpenSSL;
+
 implementation
+
+procedure InitOpenSSL;
+begin
+  OpenSSLLib.Load;
+  CryptoLib.Load;
+  OPENSSL_init_ssl(0, nil);
+  //ERR_load_SSL_strings();//IDK
+  OPENSSL_init_crypto(0, nil);
+  //ERR_load_CRYPTO_strings();//IDK
+end;
+
+{ TOpenSSLObject }
+
+procedure TOpenSSLObject.AfterConstruction;
+begin
+  inherited AfterConstruction;
+  InitOpenSSL
+end;
+
+{ TBIOStream }
+
+procedure TBIOStream.AfterConstruction;
+begin
+  inherited AfterConstruction;
+  InitOpenSSL;
+end;
+
+function TBIOStream.Read(var Buffer; Count: Longint): Longint;
+begin
+  Result := BIO_read(Handle, Buffer, Count);
+end;
+
+function TBIOStream.Write(const Buffer; Count: Longint): Longint;
+begin
+  Result := BIO_write(Handle, Buffer, Count);
+end;
 
 { TSSL }
 
@@ -144,15 +200,5 @@ begin
     SSL_CTX_free(Handle);
   inherited Destroy;
 end;
-
-initialization
-  //Temporary here, we need to make it more smart, nah?
-  OpenSSLLib.Init;
-  CryptoLib.Init;
-  OPENSSL_init_ssl(0, nil);
-  OPENSSL_init_crypto(0, nil);
-
-  //ERR_load_CRYPTO_strings();//IDK
-  //ERR_load_SSL_strings();//IDK
 
 end.

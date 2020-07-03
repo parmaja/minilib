@@ -374,7 +374,7 @@ type
 
   TmncSQLiteLib = class(TmnLibrary)
   protected
-    procedure Loaded; override;
+    procedure Link; override;
   end;
 
 var
@@ -384,7 +384,7 @@ implementation
 
 { TmncSQLiteLib }
 
-procedure TmncSQLiteLib.Loaded;
+procedure TmncSQLiteLib.Link;
 begin
   @sqlite3_close := GetAddress('sqlite3_close');
   @sqlite3_exec := GetAddress('sqlite3_exec');

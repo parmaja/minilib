@@ -40,8 +40,8 @@ var
   buff: array[0..1536] of byte;
 begin
   try
-    OpenSSLLib.Init;
-    CryptoLib.Init;
+    OpenSSLLib.Load;
+    CryptoLib.Load;
     OPENSSL_init_ssl(0, nil);
     OPENSSL_init_crypto(0, nil);
 

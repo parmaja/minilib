@@ -10,7 +10,7 @@ unit mnOpenSSLAPI;
  * @license   Mit
  *            See the file COPYING.MLGPL, included in this distribution,
  * @author    Zaher Dirkey zaherdirkey
- * #thanks    To all who i get some code from him
+ * #thanks    To all who i get some code from them
  *
  *}
 
@@ -266,39 +266,37 @@ type
 
   { TmncRayLib }
 
+  { TmnOpenSSLLib }
+
   TmnOpenSSLLib = class(TmnLibrary)
   public
   protected
-    procedure Loaded; override;
+    procedure Link; override;
+    procedure Init; override;
   end;
 
   { TCryptoLibLib }
 
+  { TmnCryptoLib }
+
   TmnCryptoLib = class(TmnLibrary)
   public
   protected
-    procedure Loaded; override;
+    procedure Link; override;
+    procedure Init; override;
   end;
 
 var
   OPENSSL_init_ssl: procedure(opts: UInt64; settings: POPENSSL_INIT_SETTINGS); cdecl;
   OPENSSL_init_crypto: function(opts: uint64; settings: POPENSSL_INIT_SETTINGS): Integer; cdecl;
   OPENSSL_config: procedure(AppName: PUTF8Char); cdecl;
+
   ERR_load_SSL_strings: procedure(); cdecl;
   ERR_load_CRYPTO_strings: function(): Integer; cdecl;
   ERR_error_string: function(e: culong; bug: PUTF8Char): PUTF8Char; cdecl;
   ERR_get_error: function(): clong; cdecl;
-  SSL_CTX_new: function(Method: PSSL_METHOD): PSSL_CTX; cdecl;
-  TLS_method: function(): PSSL_METHOD; cdecl;
-  X509_STORE_CTX_get_error_depth: function(ctx: PX509_STORE_CTX): Integer; cdecl;
-  X509_free: procedure(a: PX509); cdecl;
-  X509_verify_cert_error_string: function(n: clong): PUTF8Char; cdecl;
+
   SSL_get_peer_certificate: function(ssl: PSSL): PX509; cdecl;
-  SSL_CTX_set_verify: procedure(ctx: PSSL_CTX; Mode: Integer; Callback: TSSLVerifyCallback); cdecl;
-  SSL_CTX_set_verify_depth: procedure(ctx: PSSL_CTX; Depth: integer); cdecl;
-  SSL_CTX_set_options: function(ctx: PSSL_CTX; Options: culong): culong; cdecl;
-  SSL_CTX_load_verify_locations: function(ctx: PSSL_CTX; CAfile: PUTF8Char; CApath: PUTF8Char): Integer; cdecl;
-  SSL_CTX_free: procedure(ctx: PSSL_CTX); cdecl;
   SSL_set_cipher_list: function(ssl: PSSL; str: PUTF8Char): Integer; cdecl;
   SSL_get_verify_result: function(ssl: PSSL): clong; cdecl;
 
@@ -309,13 +307,32 @@ var
   SSL_read: function(ssl: PSSL; var buf; size: integer): integer; cdecl;
   SSL_write: function(ssl:PSSL; const buf; size: integer): integer; cdecl;
 
+  SSL_CTX_new: function(Method: PSSL_METHOD): PSSL_CTX; cdecl;
+  SSL_CTX_set_verify: procedure(ctx: PSSL_CTX; Mode: Integer; Callback: TSSLVerifyCallback); cdecl;
+  SSL_CTX_set_verify_depth: procedure(ctx: PSSL_CTX; Depth: integer); cdecl;
+  SSL_CTX_set_options: function(ctx: PSSL_CTX; Options: culong): culong; cdecl;
+  SSL_CTX_load_verify_locations: function(ctx: PSSL_CTX; CAfile: PUTF8Char; CApath: PUTF8Char): Integer; cdecl;
+  SSL_CTX_free: procedure(ctx: PSSL_CTX); cdecl;
+
+  TLS_method: function(): PSSL_METHOD; cdecl;
+
+  X509_STORE_CTX_get_error_depth: function(ctx: PX509_STORE_CTX): Integer; cdecl;
+  X509_free: procedure(a: PX509); cdecl;
+  X509_verify_cert_error_string: function(n: clong): PUTF8Char; cdecl;
 
   BIO_new_ssl_connect: function(ctx: PSSL_CTX): PBIO; cdecl;
   //BIO_new_fp: function(stream: Pointer; close_flag: Integer): PBIO; cdecl; //dosnt work
   BIO_new_file: function(filename: PUTF8Char; Mode: PUTF8Char): PBIO; cdecl;
   BIO_free: function(bio: PBIO): Integer; cdecl;
   BIO_read: function(b: PBIO; var data; dlen: integer): Integer; cdecl;
-  BIO_write: function(b: PBIO; var data; dlen: Integer): Integer; cdecl;
+  BIO_write: function(b: PBIO; const data; dlen: Integer): Integer; cdecl;
+  BIO_gets: function(b: PBIO; buf: PAnsiChar; Size: Integer): Integer; cdecl;
+
+  {TODO
+  int BIO_read_ex(BIO *b, void *data, size_t dlen, size_t *readbytes);
+  int BIO_write_ex(BIO *b, const void *data, size_t dlen, size_t *written);
+  }
+
   BIO_puts: function(bio: PBIO; buf: PUTF8Char): Integer; cdecl;
   BIO_test_flags: function(b: PBIO; flags: Integer): integer; cdecl;
   BIO_free_all: procedure(b: PBIO); cdecl;
@@ -323,9 +340,6 @@ var
   long BIO_set_conn_port(BIO *b, char *port);
   long BIO_set_conn_address(BIO *b, BIO_ADDR *addr);
 
-  int    BIO_read(BIO *b, void *buf, int len);
-  int    BIO_gets(BIO *b, char *buf, int size);
-  int    BIO_write(BIO *b, const void *buf,
   }
 
 
@@ -393,7 +407,7 @@ end;
 
 { TmnOpenSSLLib }
 
-procedure TmnOpenSSLLib.Loaded;
+procedure TmnOpenSSLLib.Link;
 begin
   RaiseError := True; //Raise error of one of this functions not exists
   OPENSSL_init_ssl := GetAddress('OPENSSL_init_ssl');
@@ -419,28 +433,43 @@ begin
   ERR_load_SSL_strings := GetAddress('ERR_load_SSL_strings');
 end;
 
+procedure TmnOpenSSLLib.Init;
+begin
+  inherited Init;
+end;
+
 { TCryptoLibLib }
 
-procedure TmnCryptoLib.Loaded;
+procedure TmnCryptoLib.Link;
 begin
   RaiseError := True; //Raise error of one of this functions not exists
+
   OPENSSL_init_crypto := GetAddress('OPENSSL_init_crypto');
   OPENSSL_config := GetAddress('OPENSSL_config');
-  BIO_ctrl := GetAddress('BIO_ctrl');
+
   X509_STORE_CTX_get_error_depth := GetAddress('X509_STORE_CTX_get_error_depth');
   X509_free := GetAddress('X509_free');
   X509_verify_cert_error_string := GetAddress('X509_verify_cert_error_string');
+
+  BIO_ctrl := GetAddress('BIO_ctrl');
   //BIO_new_fp := GetAddress('BIO_new_fp');
   BIO_new_file := GetAddress('BIO_new_file');
-  BIO_puts := GetAddress('BIO_puts');
   BIO_test_flags := GetAddress('BIO_test_flags');
   BIO_free := GetAddress('BIO_free');
   BIO_free_all := GetAddress('BIO_free_all');
   BIO_write := GetAddress('BIO_write');
   BIO_read := GetAddress('BIO_read');
+  BIO_puts := GetAddress('BIO_puts');
+  BIO_gets := GetAddress('BIO_gets');
+
   ERR_get_error := GetAddress('ERR_get_error');
   ERR_error_string := GetAddress('ERR_error_string');
   ERR_load_CRYPTO_strings := GetAddress('ERR_load_CRYPTO_strings');
+end;
+
+procedure TmnCryptoLib.Init;
+begin
+  inherited Init;
 end;
 
 initialization
