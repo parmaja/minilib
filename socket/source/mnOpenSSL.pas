@@ -3,7 +3,6 @@ unit mnOpenSSL;
  *  This file is part of the "Mini Library"
  *
  * @license   modifiedLGPL (modified of http://www.gnu.org/licenses/lgpl.html)
- *            See the file COPYING.MLGPL, included in this distribution,
  * @author    Zaher Dirkey <zaher, zaherdirkey>
  *}
 
@@ -76,6 +75,12 @@ type
     function Read(var Buf; Size: Integer): Integer;
     function Write(const Buf; Size: Integer): Integer;
   end;
+
+  //*****************************************************
+  //                      BIO
+  //*****************************************************
+
+  //https://stackoverflow.com/questions/51672133/what-are-openssl-bios-how-do-they-work-how-are-bios-used-in-openssl
 
   { TBIOStream }
 

@@ -8,9 +8,8 @@ unit mnOpenSSLAPI;
  *  This file is part of the "MiniLib"
  *
  * @license   Mit
- *            See the file COPYING.MLGPL, included in this distribution,
  * @author    Zaher Dirkey zaherdirkey
- * #thanks    To all who i get some code from them
+ * @thanks    To all who i get some code from them
  *
  *}
 
@@ -261,6 +260,17 @@ const
   NID_rsaEncryption              = 6;
   //OBJ_rsaEncryption              = OBJ_pkcs1,1L
 
+  SN_subject_key_identifier              = 'subjectKeyIdentifier';
+  LN_subject_key_identifier              = 'X509v3 Subject Key Identifier';
+  NID_subject_key_identifier             = 82;
+  //OBJ_subject_key_identifier           = OBJ_id_ce,14L
+
+  SN_key_usage          =  'keyUsage';
+  LN_key_usage          =  'X509v3 Key Usage';
+  NID_key_usage         =  83;
+  //OBJ_key_usage         =  OBJ_id_ce,15L;
+
+
   EVP_PKEY_NONE   = NID_undef;
   EVP_PKEY_RSA    = NID_rsaEncryption;
 
@@ -338,11 +348,19 @@ type
   PBN_GENCB = PSLLObject;
   PRSA = Pointer;
 
-  PX509 = PSLLObject;
+  PASN1_INTEGER = PSLLObject;
+  PASN1_TIME = PSLLObject;
+
+  PX509 = type PSLLObject;
   PX509_STORE_CTX = PSLLObject;
   PX509_REQ = PSLLObject;
+  PX509_CRL =PSLLObject;
+  PX509V3_CONF_METHOD = PSLLObject;
   PPX509_REQ = ^PX509_REQ;
   PX509_NAME = PSLLObject;
+  PX509_sign = PSLLObject;
+  PX509_EXTENSION = PSLLObject;
+  PLHASH = PSLLObject;
 
   Ppem_password_cb = Pointer;
 
@@ -351,7 +369,24 @@ type
 
   TSSLVerifyCallback = function(preverify: Integer; x509_ctx: PX509_STORE_CTX): Integer; cdecl;
 
-  { TmncRayLib }
+  { Context specific info }
+  //https://abi-laboratory.pro/index.php?view=type_view&l=openssl&v=1.0.2e&obj=c93f7&t=1ede6
+  //CTX_TEST 0x1
+  //X509V3_CTX_REPLACE 0x2
+  Tv3_ext_ctx = packed record
+      flags: Integer;
+      issuer_cert: PX509;
+      subject_cert: PX509;
+      subject_req: PX509_REQ;
+      crl: PX509_CRL;
+      db_meth: PX509V3_CONF_METHOD;
+      db: Pointer;
+    // Maybe more here
+  end;
+  Pv3_ext_ctx = ^Tv3_ext_ctx;
+
+  TX509V3_CTX = Tv3_ext_ctx;
+  PX509V3_CTX = ^TX509V3_CTX;
 
   { TmnOpenSSLLib }
 
@@ -405,16 +440,34 @@ var
   X509_STORE_CTX_get_error_depth: function(ctx: PX509_STORE_CTX): Integer; cdecl;
   X509_free: procedure(a: PX509); cdecl;
   X509_verify_cert_error_string: function(n: clong): PUTF8Char; cdecl;
+  X509_sign: function(x: PX509; pkey: PEVP_PKEY; md: PEVP_MD): PX509_sign; cdecl;
   X509_REQ_new: function(): PX509_REQ; cdecl;
   X509_REQ_get_subject_name: function(req: PX509_REQ): PX509_NAME; cdecl;
   X509_REQ_set_pubkey: function(x: PX509_REQ; pkey: PEVP_PKEY): Integer; cdecl;
   X509_REQ_sign: function(x: PX509_REQ; pkey: PEVP_PKEY; const md: PEVP_MD): integer; cdecl;
   X509_NAME_add_entry_by_txt: function(name: PX509_NAME; field: PUTF8Char; aType: Integer; const Bytes: PByte; Len: integer; Loc: Integer; ASet: integer): Integer; cdecl;
   X509_REQ_free: procedure(a: PX509_REQ); cdecl;
+  X509_add_ext: function(x: PX509; ex: PX509_EXTENSION; loc: Integer): integer; cdecl;
+  X509_EXTENSION_free: procedure(a: PX509_EXTENSION); cdecl;
+  X509_set_issuer_name: function(x: PX509; name: PX509_NAME): Integer; cdecl;
+
+  X509V3_set_ctx: procedure(ctx: PX509V3_CTX; issuer: PX509; subject: PX509; req: PX509_REQ; crl: PX509_CRL; flags: integer); cdecl;
+
+  X509V3_EXT_conf_nid: function(conf: PLHASH; ctx: PX509V3_CTX; ext_nid: integer; value: PUTF8Char): PX509_EXTENSION; cdecl;
+  X509_set_version: function(x: PX509; version: clong): Integer; cdecl;
 
   X509_REQ_set_version: function(x: PX509_REQ; version: clong): Integer; cdecl;
   PEM_read_bio_X509_REQ: function(bp: PBIO; x: PPX509_REQ; cb: Ppem_password_cb; var u): PX509_REQ; cdecl;
   PEM_write_bio_X509_REQ: function(bp: PBIO; x: PX509_REQ): Integer; cdecl;
+
+  ASN1_INTEGER_set_int64: function(a: PASN1_INTEGER; r: Int64): Integer; cdecl;
+  ASN1_INTEGER_set: function(const a: PASN1_INTEGER; v: Integer): Integer; cdecl;
+  X509_get_serialNumber: function(x: PX509): PASN1_INTEGER; cdecl;
+  X509_gmtime_adj: function(s: PASN1_TIME; adj: clong): PASN1_TIME; cdecl;
+  X509_getm_notBefore: function(x: PX509): PASN1_TIME; cdecl;
+  X509_getm_notAfter: function(x: PX509): PASN1_TIME; cdecl;
+  X509_set_pubkey: function(x: PX509; pkey: PEVP_PKEY): Integer; cdecl;
+  X509_get_subject_name: function(x: PX509): PX509_NAME; cdecl;
 
   EVP_PKEY_new: function(): PEVP_PKEY; cdecl;
   EVP_PKEY_assign: function(pkey: PEVP_PKEY; AType: integer; key: Pointer): Integer; cdecl;
@@ -482,6 +535,8 @@ var
   //tls1.h
   function SSL_set_tlsext_host_name(ssl: PSSL; Name: PUTF8Char): Integer;
 
+  procedure X509V3_set_ctx_nodb(ctx: PX509V3_CTX); inline;
+
 var
   OpenSSLLib: TmnOpenSSLLib = nil;
   CryptoLib: TmnCryptoLib = nil;
@@ -540,6 +595,11 @@ end;
 function SSL_set_tlsext_host_name(ssl: PSSL; Name: PUTF8Char): Integer;
 begin
   Result := SSL_ctrl(ssl, SSL_CTRL_SET_TLSEXT_HOSTNAME, TLSEXT_NAMETYPE_host_name, Name);
+end;
+
+procedure X509V3_set_ctx_nodb(ctx: PX509V3_CTX);
+begin
+  ctx^.db := nil;
 end;
 
 function BIO_do_handshake(b: PBIO): clong;
@@ -614,6 +674,21 @@ begin
   X509_REQ_sign := GetAddress('X509_REQ_sign');
   X509_NAME_add_entry_by_txt := GetAddress('X509_NAME_add_entry_by_txt');
   X509_REQ_free := GetAddress('X509_REQ_free');
+  X509_add_ext := GetAddress('X509_add_ext');
+  X509V3_set_ctx := GetAddress('X509V3_set_ctx');
+  X509V3_EXT_conf_nid := GetAddress('X509V3_EXT_conf_nid');
+  X509_set_version := GetAddress('X509_set_version');
+  X509_EXTENSION_free := GetAddress('X509_EXTENSION_free');
+  X509_set_issuer_name := GetAddress('X509_set_issuer_name');
+
+  ASN1_INTEGER_set := GetAddress('ASN1_INTEGER_set');
+  ASN1_INTEGER_set_int64 := GetAddress('ASN1_INTEGER_set_int64');
+  X509_get_serialNumber := GetAddress('X509_get_serialNumber');
+  X509_gmtime_adj := GetAddress('X509_gmtime_adj');
+  X509_getm_notBefore := GetAddress('X509_getm_notBefore');
+  X509_getm_notAfter := GetAddress('X509_getm_notAfter');
+  X509_set_pubkey := GetAddress('X509_set_pubkey');
+  X509_get_subject_name := GetAddress('X509_get_subject_name');
 
   X509_STORE_CTX_get_error_depth := GetAddress('X509_STORE_CTX_get_error_depth');
   PEM_read_bio_X509_REQ := GetAddress('PEM_read_bio_X509_REQ');
@@ -639,7 +714,6 @@ begin
   BIO_ctrl := GetAddress('BIO_ctrl');
   //BIO_new_fp := GetAddress('BIO_new_fp');
   BIO_new_file := GetAddress('BIO_new_file');
-  //BIO_set_conn_address := GetAddress('BIO_set_conn_address');
   BIO_test_flags := GetAddress('BIO_test_flags');
   BIO_free := GetAddress('BIO_free');
   BIO_free_all := GetAddress('BIO_free_all');
