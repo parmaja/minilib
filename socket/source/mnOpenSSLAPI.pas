@@ -243,8 +243,70 @@ const
   BIO_CTRL_DGRAM_SET_SEND_TIMEOUT = 35;(* setsockopt, essentially *)
   BIO_CTRL_DGRAM_GET_SEND_TIMEOUT = 36;(* getsockopt, essentially *)
 
+
+  EVP_PK_RSA       = $0001;
+  EVP_PK_DSA       = $0002;
+  EVP_PK_DH        = $0004;
+  EVP_PK_EC        = $0008;
+  EVP_PKT_SIGN     = $0010;
+  EVP_PKT_ENC      = $0020;
+  EVP_PKT_EXCH     = $0040;
+  EVP_PKS_RSA      = $0100;
+  EVP_PKS_DSA      = $0200;
+  EVP_PKS_EC       = $0400;
+
+  NID_undef                     =  0;
+
+  LN_rsaEncryption               = 'rsaEncryption';
+  NID_rsaEncryption              = 6;
+  //OBJ_rsaEncryption              = OBJ_pkcs1,1L
+
+  EVP_PKEY_NONE   = NID_undef;
+  EVP_PKEY_RSA    = NID_rsaEncryption;
+
+{TODO
+
+  EVP_PKEY_RSA2   NID_rsa;
+  EVP_PKEY_RSA_PSS NID_rsassaPss;
+  EVP_PKEY_DSA    NID_dsa;
+  EVP_PKEY_DSA1   NID_dsa_2;
+  EVP_PKEY_DSA2   NID_dsaWithSHA;
+  EVP_PKEY_DSA3   NID_dsaWithSHA1;
+  EVP_PKEY_DSA4   NID_dsaWithSHA1_2;
+  EVP_PKEY_DH     NID_dhKeyAgreement;
+  EVP_PKEY_DHX    NID_dhpublicnumber;
+  EVP_PKEY_EC     NID_X9_62_id_ecPublicKey;
+  EVP_PKEY_SM2    NID_sm2;
+  EVP_PKEY_HMAC   NID_hmac;
+  EVP_PKEY_CMAC   NID_cmac;
+  EVP_PKEY_SCRYPT NID_id_scrypt;
+  EVP_PKEY_TLS1_PRF NID_tls1_prf;
+  EVP_PKEY_HKDF   NID_hkdf;
+  EVP_PKEY_POLY1305 NID_poly1305;
+  EVP_PKEY_SIPHASH NID_siphash;
+  EVP_PKEY_X25519 NID_X25519;
+  EVP_PKEY_ED25519 NID_ED25519;
+  EVP_PKEY_X448 NID_X448;
+  EVP_PKEY_ED448 NID_ED448;}
+
+  EVP_PKEY_MO_SIGN         = $0001;
+  EVP_PKEY_MO_VERIFY       = $0002;
+  EVP_PKEY_MO_ENCRYPT      = $0004;
+  EVP_PKEY_MO_DECRYPT      = $0008;
+
+
   RSA_3  = $3;
   RSA_F4 = $10001;
+
+  {* For use with ASN1_mbstring_copy() *}
+  MBSTRING_FLAG         =  $1000;
+  MBSTRING_UTF8         =  (MBSTRING_FLAG);
+  MBSTRING_ASC          =  (MBSTRING_FLAG or 1);
+  MBSTRING_BMP          =  (MBSTRING_FLAG or 2);
+  MBSTRING_UNIV         =  (MBSTRING_FLAG or 4);
+  SMIME_OLDMIME         =  $400;
+  SMIME_CRLFEOL         =  $800;
+  SMIME_STREAM          =  $1000;
 
   TLSEXT_NAMETYPE_host_name                     = 0;
 
@@ -285,6 +347,7 @@ type
   Ppem_password_cb = Pointer;
 
   PEVP_PKEY = PSLLObject;
+  PEVP_MD = PSLLObject;
 
   TSSLVerifyCallback = function(preverify: Integer; x509_ctx: PX509_STORE_CTX): Integer; cdecl;
 
@@ -338,14 +401,42 @@ var
 
   TLS_method: function(): PSSL_METHOD; cdecl;
 
+  X509_new: function(): PX509; cdecl;
   X509_STORE_CTX_get_error_depth: function(ctx: PX509_STORE_CTX): Integer; cdecl;
   X509_free: procedure(a: PX509); cdecl;
   X509_verify_cert_error_string: function(n: clong): PUTF8Char; cdecl;
-  PEM_read_bio_X509_REQ: function(bp: PBIO; x: PPX509_REQ; cb: Ppem_password_cb; var u): PX509_REQ;
+  X509_REQ_new: function(): PX509_REQ; cdecl;
+  X509_REQ_get_subject_name: function(req: PX509_REQ): PX509_NAME; cdecl;
+  X509_REQ_set_pubkey: function(x: PX509_REQ; pkey: PEVP_PKEY): Integer; cdecl;
+  X509_REQ_sign: function(x: PX509_REQ; pkey: PEVP_PKEY; const md: PEVP_MD): integer; cdecl;
+  X509_NAME_add_entry_by_txt: function(name: PX509_NAME; field: PUTF8Char; aType: Integer; const Bytes: PByte; Len: integer; Loc: Integer; ASet: integer): Integer; cdecl;
+  X509_REQ_free: procedure(a: PX509_REQ); cdecl;
+
   X509_REQ_set_version: function(x: PX509_REQ; version: clong): Integer; cdecl;
+  PEM_read_bio_X509_REQ: function(bp: PBIO; x: PPX509_REQ; cb: Ppem_password_cb; var u): PX509_REQ; cdecl;
+  PEM_write_bio_X509_REQ: function(bp: PBIO; x: PX509_REQ): Integer; cdecl;
+
+  EVP_PKEY_new: function(): PEVP_PKEY; cdecl;
+  EVP_PKEY_assign: function(pkey: PEVP_PKEY; AType: integer; key: Pointer): Integer; cdecl;
+  EVP_PKEY_free: procedure(key: PEVP_PKEY); cdecl;
+
+  EVP_md_null: function(): PEVP_MD; cdecl;
+  //EVP_md2: function(): PEVP_MD; cdecl; not exists in 1.1
+  EVP_md5: function(): PEVP_MD; cdecl;
+  EVP_sha1: function(): PEVP_MD; cdecl;
+  EVP_mdc2: function(): PEVP_MD; cdecl;
+  EVP_ripemd160: function(): PEVP_MD; cdecl;
+  EVP_blake2b512: function(): PEVP_MD; cdecl;
+  EVP_blake2s256: function(): PEVP_MD; cdecl;
+
+  EVP_sha224: function(): PEVP_MD; cdecl;
+  EVP_sha256: function(): PEVP_MD; cdecl;
+  EVP_sha384: function(): PEVP_MD; cdecl;
+  EVP_sha512: function(): PEVP_MD; cdecl;
 
   BN_new: function(): PBIGNUM; cdecl;
   BN_set_word: function(a: PBIGNUM; w: BN_ULONG): integer; cdecl;
+  BN_free: procedure(a: PBIGNUM); cdecl;
 
   RSA_new: function(): PRSA; cdecl;
   RSA_generate_key_ex: function(rsa: PRSA; bits: integer; e: PBIGNUM; cb: PBN_GENCB): Integer; cdecl;
@@ -366,12 +457,12 @@ var
   int BIO_read_ex(BIO *b, void *data, size_t dlen, size_t *readbytes);
   int BIO_write_ex(BIO *b, const void *data, size_t dlen, size_t *written);
   }
-
-
   //BIO_new_fp: function(stream: FILE, int close_flag): PBIO; cdecl;
 
   //https://www.openssl.org/docs/man1.1.1/man3/BIO_ctrl.html
   BIO_ctrl: function(bp: PBIO; cmd: Integer; Larg: clong; PArg: Pointer): clong; cdecl;
+
+  //Aliases functions
 
   function BIO_set_conn_hostname(b: PBIO; Name: PUTF8Char): clong; inline;
   function BIO_set_conn_port(b: PBIO; Port: PUTF8Char): clong; inline;
@@ -380,10 +471,13 @@ var
   function BIO_set_send_timeout(b: PBIO; timeout: Integer): clong; inline;
   function BIO_get_ssl(b: PBIO; out ssl: PSSL): clong; inline;
   function BIO_do_connect(b: PBIO): clong; inline;
-  function BIO_do_handshake(b: PBIO): clong; inline; deprecated;
+  function BIO_do_handshake(b: PBIO): clong; inline;
   function BIO_set_nbio(b: PBIO; n: Integer): clong; inline; //set blocking mode or not
   function BIO_should_retry(b: PBIO): Boolean; inline;
+
   function SSL_set_mode(ssl: PSSL; op: Integer): clong; inline;
+
+  function EVP_PKEY_assign_RSA(pkey: PEVP_PKEY; key: PRSA): Integer;
 
   //tls1.h
   function SSL_set_tlsext_host_name(ssl: PSSL; Name: PUTF8Char): Integer;
@@ -436,6 +530,11 @@ end;
 function BIO_get_ssl(b: PBIO; out ssl: PSSL): clong;
 begin
   Result := BIO_ctrl(b, BIO_C_GET_SSL, 0, @ssl);
+end;
+
+function EVP_PKEY_assign_RSA(pkey: PEVP_PKEY; key: PRSA): Integer;
+begin
+  Result := EVP_PKEY_assign(pkey, EVP_PKEY_RSA, key);
 end;
 
 function SSL_set_tlsext_host_name(ssl: PSSL; Name: PUTF8Char): Integer;
@@ -505,11 +604,37 @@ begin
   OPENSSL_init_crypto := GetAddress('OPENSSL_init_crypto');
   OPENSSL_config := GetAddress('OPENSSL_config');
 
-  X509_STORE_CTX_get_error_depth := GetAddress('X509_STORE_CTX_get_error_depth');
+  X509_new := GetAddress('X509_new');
   X509_free := GetAddress('X509_free');
   X509_verify_cert_error_string := GetAddress('X509_verify_cert_error_string');
-  PEM_read_bio_X509_REQ := GetAddress('PEM_read_bio_X509_REQ');
+  X509_REQ_new := GetAddress('X509_REQ_new');
   X509_REQ_set_version := GetAddress('X509_REQ_set_version');
+  X509_REQ_get_subject_name := GetAddress('X509_REQ_get_subject_name');
+  X509_REQ_set_pubkey := GetAddress('X509_REQ_set_pubkey');
+  X509_REQ_sign := GetAddress('X509_REQ_sign');
+  X509_NAME_add_entry_by_txt := GetAddress('X509_NAME_add_entry_by_txt');
+  X509_REQ_free := GetAddress('X509_REQ_free');
+
+  X509_STORE_CTX_get_error_depth := GetAddress('X509_STORE_CTX_get_error_depth');
+  PEM_read_bio_X509_REQ := GetAddress('PEM_read_bio_X509_REQ');
+  PEM_write_bio_X509_REQ := GetAddress('PEM_write_bio_X509_REQ');
+
+  EVP_PKEY_new := GetAddress('EVP_PKEY_new');
+  EVP_PKEY_assign := GetAddress('EVP_PKEY_assign');
+  EVP_PKEY_free := GetAddress('EVP_PKEY_free');
+
+  EVP_md_null := GetAddress('EVP_md_null');
+  EVP_md5 := GetAddress('EVP_md5');
+  EVP_sha1 := GetAddress('EVP_sha1');
+  EVP_mdc2 := GetAddress('EVP_mdc2');
+  EVP_ripemd160 := GetAddress('EVP_ripemd160');
+  EVP_blake2b512 := GetAddress('EVP_blake2b512');
+  EVP_blake2s256 := GetAddress('EVP_blake2s256');
+
+  EVP_sha224 := GetAddress('EVP_sha224');
+  EVP_sha256 := GetAddress('EVP_sha256');
+  EVP_sha384 := GetAddress('EVP_sha384');
+  EVP_sha512 := GetAddress('EVP_sha512');
 
   BIO_ctrl := GetAddress('BIO_ctrl');
   //BIO_new_fp := GetAddress('BIO_new_fp');
@@ -525,6 +650,7 @@ begin
 
   BN_new := GetAddress('BN_new');
   BN_set_word := GetAddress('BN_set_word');
+  BN_free := GetAddress('BN_free');
 
   RSA_new := GetAddress('RSA_new');
   RSA_generate_key_ex := GetAddress('RSA_generate_key_ex');
