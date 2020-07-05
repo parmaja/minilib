@@ -3,6 +3,9 @@ program ssl_generate;
 
 //https://www.dynamsoft.com/codepool/how-to-use-openssl-to-generate-x-509-certificate-request.html
 
+//todo
+//http://www.opensource.apple.com/source/OpenSSL/OpenSSL-22/openssl/demos/x509/mkcert.c
+
 uses
   SysUtils, Classes, mnOpenSSLAPI, mnLibraries;
 
