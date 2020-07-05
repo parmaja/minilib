@@ -165,7 +165,8 @@ begin
     (* Add various extensions: standard extensions *)
 
     AddExt(x, NID_basic_constraints, 'critical,CA:TRUE');
-    AddExt(x, NID_key_usage, PChar('critical,digitalSignature,keyEncipherment'));
+    //AddExt(x, NID_key_usage, PChar('critical,digitalSignature,keyEncipherment'));
+    AddExt(x, NID_key_usage, PChar('critical,cRLSign,digitalSignature,keyCertSign')); //Self-Signed
     AddExt(x, NID_subject_key_identifier, 'hash');
 
     sign := X509_sign(x, pk, EVP_sha256());

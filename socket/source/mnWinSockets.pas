@@ -38,7 +38,7 @@ type
   private
     FHandle: TSocket;
     FAddress: TSockAddr;
-    FServeMode: Boolean;
+    FServerMode: Boolean;
   protected
     FOptions: TmnsoOptions;
     function GetActive: Boolean; override;
@@ -48,9 +48,9 @@ type
     function DoShutdown(How: TmnShutdowns): TmnError; override;
     function DoListen: TmnError; override;
     property Options: TmnsoOptions read FOptions;
-    property ServeMode: Boolean read FServeMode;
+    property ServerMode: Boolean read FServerMode;
   public
-    constructor Create(vHandle: TSocket; AOptions: TmnsoOptions; AServeMode: Boolean = False); virtual;
+    constructor Create(vHandle: TSocket; AOptions: TmnsoOptions; AServerMode: Boolean = False); virtual;
     function GetLocalAddress: string; override;
     function GetRemoteAddress: string; override;
     function GetLocalName: string; override;
@@ -170,11 +170,11 @@ begin
 end;
 
 
-constructor TmnSocket.Create(vHandle: TSocket; AOptions: TmnsoOptions; AServeMode: Boolean);
+constructor TmnSocket.Create(vHandle: TSocket; AOptions: TmnsoOptions; AServerMode: Boolean);
 begin
   inherited Create;
   FOptions := AOptions;
-  FServeMode:= AServeMode;
+  FServerMode:= AServerMode;
   FHandle := vHandle;
 end;
 
@@ -444,20 +444,24 @@ end;
 procedure TmnSSLSocket.Prepare;
 begin
   inherited;
-  if ServeMode then
+  if ServerMode then
   begin
     CTX := TCTX.Create(TTLS_SSLServerMethod);
     CTX.LoadCertFile(CertificateFile);
     CTX.LoadPrivateKeyFile(PrivateKeyFile);
     CTX.CheckPrivateKey; //do not use this
+    //CTX.SetVerifyNone;
   end
   else
     CTX := TCTX.Create(TTLS_SSLMethod);
 
   SSL := TSSL.Create(CTX);
   SSL.SetSocket(FHandle);
-  if ServeMode then
-    SSL.Accept
+  if ServerMode then
+  begin
+    //SSL.SetVerifyNone;
+    SSL.Accept;
+  end
   else
     SSL.Connect;
 end;

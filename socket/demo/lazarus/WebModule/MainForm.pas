@@ -7,6 +7,11 @@ unit MainForm;
  * @author    Zaher Dirkey <zaher, zaherdirkey>
  *}
 
+ {
+  openssl s_client -connect localhost:443
+  openssl s_client -cipher RSA -connect localhost:443 -tls1 -CApath . -servername localhost
+ }
+
 {$MODE Delphi}
 
 interface

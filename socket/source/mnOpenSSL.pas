@@ -71,18 +71,21 @@ type
     procedure LoadCertFile(FileName: string);
     procedure LoadPrivateKeyFile(FileName: string);
     procedure CheckPrivateKey;
+    procedure SetVerifyNone;
   end;
 
   TSSL = record//class(TOpenSSLObject)
   //protected
     Handle: PSSL;
     CTX: TCTX;
+    Connected: Boolean;
   //public
     constructor Create(ACTX: TCTX); overload;
     constructor Create(ASSL: PSSL); overload;
     procedure SetSocket(ASocket: Integer);
     procedure Connect;
     procedure Accept;
+    procedure SetVerifyNone;
     function Read(var Buf; Size: Integer): Integer;
     function Write(const Buf; Size: Integer): Integer;
   end;
@@ -227,16 +230,32 @@ begin
 end;
 
 procedure TSSL.Connect;
+var
+  res: Integer;
 begin
-  if SSL_connect(Handle) = -1 then
-    raise EmnOpenSSLException.Create('Connect: ' + ERR_error_string(ERR_get_error(), nil));
+  res := SSL_connect(Handle);
+  if res < 0  then
+    raise EmnOpenSSLException.Create('Connect: ' + ERR_error_string(ERR_get_error(), nil))
+  else if res = 0 then //error
+    ;
 end;
 
 procedure TSSL.Accept;
+var
+  res, err: Integer;
 begin
-  if SSL_accept(Handle) = -1 then
-    ;
-    //raise EmnOpenSSLException.Create('Accept: ' + ERR_error_string(ERR_get_error(), nil));
+  res := SSL_accept(Handle);
+  if res <= 0  then
+  begin
+    err := ERR_get_error();
+    if err <> 0 then //idk need more clean
+      raise EmnOpenSSLException.Create('Accept: ' + ERR_error_string(err, nil));
+  end;
+end;
+
+procedure TSSL.SetVerifyNone;
+begin
+  SSL_set_verify(Handle, SSL_VERIFY_NONE, nil);
 end;
 
 function TSSL.Read(var Buf; Size: Integer): Integer;
@@ -295,13 +314,13 @@ end;
 
 procedure TCTX.LoadCertFile(FileName: string);
 begin
-  if SSL_CTX_use_certificate_file(Handle, PUTF8Char(FileName), SSL_FILETYPE_PEM) <=0 then
+  if SSL_CTX_use_certificate_file(Handle, PUTF8Char(FileName), SSL_FILETYPE_PEM) <= 0 then
     raise EmnOpenSSLException.Create('fail to load certificate');
 end;
 
 procedure TCTX.LoadPrivateKeyFile(FileName: string);
 begin
-  if SSL_CTX_use_PrivateKey_file(Handle, PUTF8Char(FileName), SSL_FILETYPE_PEM) <=0 then
+  if SSL_CTX_use_PrivateKey_file(Handle, PUTF8Char(FileName), SSL_FILETYPE_PEM) <= 0 then
     raise EmnOpenSSLException.Create('fail to load private key');
 end;
 
@@ -309,6 +328,11 @@ procedure TCTX.CheckPrivateKey;
 begin
   if SSL_CTX_check_private_key(Handle) = 0 then
     raise EmnOpenSSLException.Create('Private key does not match the public certificate');
+end;
+
+procedure TCTX.SetVerifyNone;
+begin
+  SSL_CTX_set_verify(Handle, SSL_VERIFY_PEER, nil);
 end;
 
 end.

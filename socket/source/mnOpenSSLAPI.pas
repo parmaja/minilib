@@ -41,8 +41,11 @@ type
 {$A8}
 
 const
-  SSL_VERIFY_NONE = $00;
-  SSL_VERIFY_PEER = $01;
+  SSL_VERIFY_NONE                 = $00;
+  SSL_VERIFY_PEER                 = $01;
+  SSL_VERIFY_FAIL_IF_NO_PEER_CERT = $02;
+  SSL_VERIFY_CLIENT_ONCE          = $04;
+  SSL_VERIFY_POST_HANDSHAKE       = $08;
 
   SSL_MODE_ENABLE_PARTIAL_WRITE                 = $00000001;
   SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER           = $00000002;
@@ -468,6 +471,7 @@ var
 
   SSL_get_peer_certificate: function(ssl: PSSL): PX509; cdecl;
   SSL_set_cipher_list: function(ssl: PSSL; str: PUTF8Char): Integer; cdecl;
+  SSL_set_verify: procedure(ssl: PSSL; Mode: Integer; Callback: TSSLVerifyCallback); cdecl;
   SSL_get_verify_result: function(ssl: PSSL): clong; cdecl;
 
   SSL_ctrl: function(ssl: PSSL; cmd: Integer; Larg: clong; PArg: Pointer): clong; cdecl;
@@ -715,6 +719,7 @@ begin
   SSL_CTX_check_private_key := GetAddress('SSL_CTX_check_private_key');
 
   SSL_set_cipher_list := GetAddress('SSL_set_cipher_list');
+  SSL_set_verify := GetAddress('SSL_set_verify');
   SSL_get_verify_result := GetAddress('SSL_get_verify_result');
   SSL_ctrl := GetAddress('SSL_ctrl');
   SSL_new := GetAddress('SSL_new');
