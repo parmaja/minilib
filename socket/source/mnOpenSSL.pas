@@ -17,10 +17,10 @@ uses
   Classes,
   SysUtils,
   mnOpenSSLAPI,
+  mnOpenSSLUtils,
   mnSockets;
 
 type
-  EmnOpenSSLException = EmnSocketException;
 
   { TOpenSSLObject }
 
@@ -125,29 +125,7 @@ type
     procedure Connect;
   end;
 
-procedure InitOpenSSL;
-
 implementation
-
-procedure InitOpenSSL;
-begin
-  if OpenSSLLib.Load then
-    OPENSSL_init_ssl(0, nil);
-  //ERR_load_SSL_strings();//IDK
-  if CryptoLib.Load then
-    OPENSSL_init_crypto(0, nil);
-  //ERR_load_CRYPTO_strings();//IDK
-end;
-
-procedure RaiseSSLError(Message: string);
-begin
-  raise EmnOpenSSLException.Create(Message);
-end;
-
-procedure RaiseLastSSLError;
-begin
-  RaiseSSLError(ERR_error_string(ERR_get_error(), nil));
-end;
 
 { TTLS_SSLServerMethod }
 
@@ -251,13 +229,14 @@ end;
 procedure TSSL.Connect;
 begin
   if SSL_connect(Handle) = -1 then
-    raise EmnOpenSSLException.Create(ERR_error_string(ERR_get_error(), nil));
+    raise EmnOpenSSLException.Create('Connect: ' + ERR_error_string(ERR_get_error(), nil));
 end;
 
 procedure TSSL.Accept;
 begin
   if SSL_accept(Handle) = -1 then
-    raise EmnOpenSSLException.Create(ERR_error_string(ERR_get_error(), nil));
+    ;
+    //raise EmnOpenSSLException.Create('Accept: ' + ERR_error_string(ERR_get_error(), nil));
 end;
 
 function TSSL.Read(var Buf; Size: Integer): Integer;

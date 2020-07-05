@@ -89,9 +89,20 @@ object Main: TMain
         Align = alLeft
         BorderSpacing.InnerBorder = 4
         Caption = '&Start'
-        Default = True
         OnClick = StartBtnClick
         TabOrder = 2
+      end
+      object MakeCertBtn: TButton
+        Left = 380
+        Height = 25
+        Top = 0
+        Width = 93
+        Align = alRight
+        BorderSpacing.InnerBorder = 4
+        Caption = 'Make Cert'
+        Default = True
+        OnClick = MakeCertBtnClick
+        TabOrder = 3
       end
     end
     object Label1: TLabel

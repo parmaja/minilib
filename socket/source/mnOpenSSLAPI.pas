@@ -84,6 +84,35 @@ const
   SSL_OP_NETSCAPE_DEMO_CIPHER_CHANGE_BUG        = $40000000;
   SSL_OP_CRYPTOPRO_TLSEXT_BUG                   = $80000000;
 
+  (* Standard initialisation options *)
+  OPENSSL_INIT_NO_LOAD_CRYPTO_STRINGS = $00000001;
+  OPENSSL_INIT_LOAD_CRYPTO_STRINGS    = $00000002;
+  OPENSSL_INIT_ADD_ALL_CIPHERS        = $00000004;
+  OPENSSL_INIT_ADD_ALL_DIGESTS        = $00000008;
+  OPENSSL_INIT_NO_ADD_ALL_CIPHERS     = $00000010;
+  OPENSSL_INIT_NO_ADD_ALL_DIGESTS     = $00000020;
+  OPENSSL_INIT_LOAD_CONFIG            = $00000040;
+  OPENSSL_INIT_NO_LOAD_CONFIG         = $00000080;
+  OPENSSL_INIT_ASYNC                  = $00000100;
+  OPENSSL_INIT_ENGINE_RDRAND          = $00000200;
+  OPENSSL_INIT_ENGINE_DYNAMIC         = $00000400;
+  OPENSSL_INIT_ENGINE_OPENSSL         = $00000800;
+  OPENSSL_INIT_ENGINE_CRYPTODEV       = $00001000;
+  OPENSSL_INIT_ENGINE_CAPI            = $00002000;
+  OPENSSL_INIT_ENGINE_PADLOCK         = $00004000;
+  OPENSSL_INIT_ENGINE_AFALG           = $00008000;
+  (* OPENSSL_INIT_ZLIB                         = $00010000; *)
+  OPENSSL_INIT_ATFORK                 = $00020000;
+  (* OPENSSL_INIT_BASE_ONLY                    = $00040000; *)
+  OPENSSL_INIT_NO_ATEXIT              = $00080000;
+  (* OPENSSL_INIT flag range = $fff00000 reserved for OPENSSL_init_ssl() *)
+  (* Max OPENSSL_INIT flag value is = $80000000 *)
+
+  (* OPENSSL_INIT flag 0x010000 reserved for internal use *)
+  OPENSSL_INIT_NO_LOAD_SSL_STRINGS    = $00100000;
+  OPENSSL_INIT_LOAD_SSL_STRINGS       = $00200000;
+
+  OPENSSL_INIT_SSL_DEFAULT           = (OPENSSL_INIT_LOAD_SSL_STRINGS or OPENSSL_INIT_LOAD_CRYPTO_STRINGS);
 
   SSL_ERROR_NONE                 = 0;
   SSL_ERROR_SSL                  = 1;
@@ -429,6 +458,7 @@ type
 var
   OPENSSL_init_ssl: procedure(opts: UInt64; settings: POPENSSL_INIT_SETTINGS); cdecl;
   OPENSSL_init_crypto: function(opts: uint64; settings: POPENSSL_INIT_SETTINGS): Integer; cdecl;
+
   OPENSSL_config: procedure(AppName: PUTF8Char); cdecl;
 
   ERR_load_SSL_strings: procedure(); cdecl;
@@ -670,9 +700,11 @@ procedure TmnOpenSSLLib.Link;
 begin
   RaiseError := True; //Raise error of one of this functions not exists
   OPENSSL_init_ssl := GetAddress('OPENSSL_init_ssl');
-  SSL_CTX_new := GetAddress('SSL_CTX_new');
+
   TLS_method := GetAddress('TLS_method');
   TLS_server_method := GetAddress('TLS_server_method');
+
+  SSL_CTX_new := GetAddress('SSL_CTX_new');
   SSL_CTX_set_verify := GetAddress('SSL_CTX_set_verify');
   SSL_CTX_set_verify_depth := GetAddress('SSL_CTX_set_verify_depth');
   SSL_CTX_set_options := GetAddress('SSL_CTX_set_options');
@@ -682,7 +714,6 @@ begin
   SSL_CTX_use_PrivateKey_file := GetAddress('SSL_CTX_use_PrivateKey_file');
   SSL_CTX_check_private_key := GetAddress('SSL_CTX_check_private_key');
 
-  BIO_new_ssl_connect := GetAddress('BIO_new_ssl_connect');
   SSL_set_cipher_list := GetAddress('SSL_set_cipher_list');
   SSL_get_verify_result := GetAddress('SSL_get_verify_result');
   SSL_ctrl := GetAddress('SSL_ctrl');
@@ -694,6 +725,9 @@ begin
   SSL_write := GetAddress('SSL_write');
 
   SSL_get_peer_certificate := GetAddress('SSL_get_peer_certificate');
+
+  BIO_new_ssl_connect := GetAddress('BIO_new_ssl_connect');
+
   ERR_load_SSL_strings := GetAddress('ERR_load_SSL_strings');
 end;
 

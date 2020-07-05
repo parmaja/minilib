@@ -13,7 +13,7 @@ interface
 
 uses
   LCLIntf, SysUtils, Classes, Graphics, Controls, Forms, Dialogs, IniFiles,
-  StdCtrls, ExtCtrls, mnSockets, mnServers, mnWebModules,
+  StdCtrls, ExtCtrls, mnSockets, mnServers, mnWebModules, mnOpenSSLUtils,
   LResources, Buttons, Menus;
 
 type
@@ -21,6 +21,7 @@ type
   { TMain }
 
   TMain = class(TForm)
+    MakeCertBtn: TButton;
     UseSSLChk: TCheckBox;
     ExitBtn: TButton;
     Label1: TLabel;
@@ -43,6 +44,7 @@ type
     StopBtn: TButton;
     procedure ExitBtnClick(Sender: TObject);
     procedure FormHide(Sender: TObject);
+    procedure MakeCertBtnClick(Sender: TObject);
     procedure MenuItem1Click(Sender: TObject);
     procedure NumberOfThreadsClick(Sender: TObject);
     procedure StartBtnClick(Sender: TObject);
@@ -79,6 +81,11 @@ end;
 
 procedure TMain.FormHide(Sender: TObject);
 begin
+end;
+
+procedure TMain.MakeCertBtnClick(Sender: TObject);
+begin
+  MakeCert('certificate.pem', 'privatekey.pem', 'SY', 'OpenSSL Group', 2048, 0, 1);
 end;
 
 procedure TMain.MenuItem1Click(Sender: TObject);
@@ -178,6 +185,7 @@ var
 var
   aAutoRun:Boolean;
 begin
+  InitOpenSSL;
   Server := TmodWebServer.Create;
   Server.OnBeforeOpen := ModuleServerBeforeOpen;
   Server.OnAfterClose := ModuleServerAfterClose;
