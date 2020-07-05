@@ -1,11 +1,10 @@
 unit mnOpenSSL;
 {**
- *  This file is part of the "Mini Library"
+ *  This file is part of the "Mini Library"/Sockets
  *
  * @license   modifiedLGPL (modified of http://www.gnu.org/licenses/lgpl.html)
  * @author    Zaher Dirkey <zaher, zaherdirkey>
  *}
-
 {$M+}
 {$H+}
 {$IFDEF FPC}

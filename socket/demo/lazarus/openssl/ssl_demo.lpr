@@ -1,4 +1,11 @@
 program ssl_demo;
+{**
+ *  This file is part of the "MiniLib"/Sockets
+ *
+ * @license   Mit
+ * @author    Zaher Dirkey zaherdirkey
+ *
+ *}
 {$mode objfpc}{$H+}
 
 //https://stackoverflow.com/questions/41229601/openssl-in-c-socket-connection-https-client

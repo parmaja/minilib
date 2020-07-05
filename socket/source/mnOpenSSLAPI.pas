@@ -3,7 +3,6 @@ unit mnOpenSSLAPI;
 {$MODE delphi}
 {$ENDIF}
 {$M+}{$H+}
-
 {**
  *  This file is part of the "MiniLib"
  *
@@ -270,6 +269,10 @@ const
   NID_key_usage         =  83;
   //OBJ_key_usage         =  OBJ_id_ce,15L;
 
+  SN_basic_constraints            = 'basicConstraints';
+  LN_basic_constraints            = 'X509v3 Basic Constraints';
+  NID_basic_constraints           = 87;
+  //OBJ_basic_constraints          = OBJ_id_ce,19L
 
   EVP_PKEY_NONE   = NID_undef;
   EVP_PKEY_RSA    = NID_rsaEncryption;
@@ -327,6 +330,15 @@ const
   BIO_NOCLOSE           = $00;
   BIO_CLOSE             = $01;
 
+  (*
+   * The following can be used to detect memory leaks in the library. If
+   * used, it turns on malloc checking
+   *)
+  CRYPTO_MEM_CHECK_OFF     = $0;   (* Control only *)
+  CRYPTO_MEM_CHECK_ON      = $1;   (* Control and mode bit *)
+  CRYPTO_MEM_CHECK_ENABLE  = $2;   (* Control and mode bit *)
+  CRYPTO_MEM_CHECK_DISABLE = $3;   (* Control only *)
+
 type
 
   TOPENSSL_INIT_SETTINGS =record
@@ -364,6 +376,7 @@ type
 
   Ppem_password_cb = Pointer;
 
+  PEVP_CIPHER = PSLLObject;
   PEVP_PKEY = PSLLObject;
   PEVP_MD = PSLLObject;
 
@@ -451,14 +464,19 @@ var
   X509_EXTENSION_free: procedure(a: PX509_EXTENSION); cdecl;
   X509_set_issuer_name: function(x: PX509; name: PX509_NAME): Integer; cdecl;
 
+
   X509V3_set_ctx: procedure(ctx: PX509V3_CTX; issuer: PX509; subject: PX509; req: PX509_REQ; crl: PX509_CRL; flags: integer); cdecl;
 
   X509V3_EXT_conf_nid: function(conf: PLHASH; ctx: PX509V3_CTX; ext_nid: integer; value: PUTF8Char): PX509_EXTENSION; cdecl;
   X509_set_version: function(x: PX509; version: clong): Integer; cdecl;
 
   X509_REQ_set_version: function(x: PX509_REQ; version: clong): Integer; cdecl;
+
   PEM_read_bio_X509_REQ: function(bp: PBIO; x: PPX509_REQ; cb: Ppem_password_cb; var u): PX509_REQ; cdecl;
   PEM_write_bio_X509_REQ: function(bp: PBIO; x: PX509_REQ): Integer; cdecl;
+  PEM_write_bio_PrivateKey: function(bp: PBIO; x: PEVP_PKEY; const enc: PEVP_CIPHER; kstr:PByte; klen: Integer; cb: Ppem_password_cb; u: Pointer): integer; cdecl;
+  PEM_write_bio_X509: function(bp: PBIO; x: PX509): Integer; cdecl;
+
 
   ASN1_INTEGER_set_int64: function(a: PASN1_INTEGER; r: Int64): Integer; cdecl;
   ASN1_INTEGER_set: function(const a: PASN1_INTEGER; v: Integer): Integer; cdecl;
@@ -471,6 +489,8 @@ var
 
   EVP_PKEY_new: function(): PEVP_PKEY; cdecl;
   EVP_PKEY_assign: function(pkey: PEVP_PKEY; AType: integer; key: Pointer): Integer; cdecl;
+  EVP_PKEY_get0_RSA: function(pkey: PEVP_PKEY): PRSA; cdecl;
+  EVP_PKEY_get1_RSA: function(pkey: PEVP_PKEY): PRSA; cdecl;
   EVP_PKEY_free: procedure(key: PEVP_PKEY); cdecl;
 
   EVP_md_null: function(): PEVP_MD; cdecl;
@@ -493,9 +513,14 @@ var
 
   RSA_new: function(): PRSA; cdecl;
   RSA_generate_key_ex: function(rsa: PRSA; bits: integer; e: PBIGNUM; cb: PBN_GENCB): Integer; cdecl;
+  RSA_print: function(bp: PBIO; x: PRSA; offset: integer): Integer; cdecl;
+  RSA_print_fp: function(fp: Pointer; x: PRSA; offset: integer): Integer; cdecl;
+
+  CRYPTO_mem_ctrl: function(mode: integer): integer; cdecl;
 
   BIO_new_ssl_connect: function(ctx: PSSL_CTX): PBIO; cdecl;
-  //BIO_new_fp: function(stream: Pointer; close_flag: Integer): PBIO; cdecl; //dosnt work
+  BIO_new_fp: function(handle: THandle; close_flag: Integer): PBIO; cdecl; //dosnt work
+  BIO_new_fd: function(handle: THandle; close_flag: Integer): PBIO; cdecl; //idk
   BIO_new_file: function(filename: PUTF8Char; Mode: PUTF8Char): PBIO; cdecl;
 
   BIO_read: function(b: PBIO; var data; dlen: integer): Integer; cdecl;
@@ -510,7 +535,6 @@ var
   int BIO_read_ex(BIO *b, void *data, size_t dlen, size_t *readbytes);
   int BIO_write_ex(BIO *b, const void *data, size_t dlen, size_t *written);
   }
-  //BIO_new_fp: function(stream: FILE, int close_flag): PBIO; cdecl;
 
   //https://www.openssl.org/docs/man1.1.1/man3/BIO_ctrl.html
   BIO_ctrl: function(bp: PBIO; cmd: Integer; Larg: clong; PArg: Pointer): clong; cdecl;
@@ -668,6 +692,7 @@ begin
   X509_free := GetAddress('X509_free');
   X509_verify_cert_error_string := GetAddress('X509_verify_cert_error_string');
   X509_REQ_new := GetAddress('X509_REQ_new');
+  X509_sign := GetAddress('X509_sign');
   X509_REQ_set_version := GetAddress('X509_REQ_set_version');
   X509_REQ_get_subject_name := GetAddress('X509_REQ_get_subject_name');
   X509_REQ_set_pubkey := GetAddress('X509_REQ_set_pubkey');
@@ -693,9 +718,14 @@ begin
   X509_STORE_CTX_get_error_depth := GetAddress('X509_STORE_CTX_get_error_depth');
   PEM_read_bio_X509_REQ := GetAddress('PEM_read_bio_X509_REQ');
   PEM_write_bio_X509_REQ := GetAddress('PEM_write_bio_X509_REQ');
+  PEM_write_bio_PrivateKey := GetAddress('PEM_write_bio_PrivateKey');
+  PEM_write_bio_X509 := GetAddress('PEM_write_bio_X509');
 
   EVP_PKEY_new := GetAddress('EVP_PKEY_new');
   EVP_PKEY_assign := GetAddress('EVP_PKEY_assign');
+  EVP_PKEY_get0_RSA := GetAddress('EVP_PKEY_get0_RSA');
+  EVP_PKEY_get1_RSA := GetAddress('EVP_PKEY_get1_RSA');
+
   EVP_PKEY_free := GetAddress('EVP_PKEY_free');
 
   EVP_md_null := GetAddress('EVP_md_null');
@@ -712,7 +742,8 @@ begin
   EVP_sha512 := GetAddress('EVP_sha512');
 
   BIO_ctrl := GetAddress('BIO_ctrl');
-  //BIO_new_fp := GetAddress('BIO_new_fp');
+  BIO_new_fp := GetAddress('BIO_new_fp');
+  BIO_new_fd := GetAddress('BIO_new_fd');
   BIO_new_file := GetAddress('BIO_new_file');
   BIO_test_flags := GetAddress('BIO_test_flags');
   BIO_free := GetAddress('BIO_free');
@@ -728,6 +759,10 @@ begin
 
   RSA_new := GetAddress('RSA_new');
   RSA_generate_key_ex := GetAddress('RSA_generate_key_ex');
+  RSA_print := GetAddress('RSA_print');
+  RSA_print_fp := GetAddress('RSA_print_fp');
+
+  CRYPTO_mem_ctrl := GetAddress('CRYPTO_mem_ctrl');
 
   ERR_get_error := GetAddress('ERR_get_error');
   ERR_error_string := GetAddress('ERR_error_string');
