@@ -217,6 +217,13 @@ const
   SSL_CERT_SET_NEXT                      = 2;
   SSL_CERT_SET_SERVER                    = 3;
 
+  X509_FILETYPE_PEM      = 1;
+  X509_FILETYPE_ASN1     = 2;
+  X509_FILETYPE_DEFAULT  = 3;
+
+  SSL_FILETYPE_ASN1      = X509_FILETYPE_ASN1;
+  SSL_FILETYPE_PEM       = X509_FILETYPE_PEM;
+
 //bio.h
   BIO_C_SET_CONNECT                             = 100;
   BIO_C_DO_STATE_MACHINE                        = 101;
@@ -437,6 +444,8 @@ var
   SSL_new: function(ctx: PSSL_CTX): PSSL; cdecl;
   SSL_set_fd: function(ssl: PSSL; d: Integer): integer; cdecl;
   SSL_connect: function(ssl: PSSL): Integer; cdecl;
+  SSL_accept: function(ssl: PSSL): Integer; cdecl;
+
   SSL_read: function(ssl: PSSL; var buf; size: integer): integer; cdecl;
   SSL_write: function(ssl:PSSL; const buf; size: integer): integer; cdecl;
 
@@ -446,8 +455,12 @@ var
   SSL_CTX_set_options: function(ctx: PSSL_CTX; Options: culong): culong; cdecl;
   SSL_CTX_load_verify_locations: function(ctx: PSSL_CTX; CAfile: PUTF8Char; CApath: PUTF8Char): Integer; cdecl;
   SSL_CTX_free: procedure(ctx: PSSL_CTX); cdecl;
+  SSL_CTX_use_certificate_file: function(ctx: PSSL_CTX; afile: PUTF8Char; atype: Integer): Integer; cdecl;
+  SSL_CTX_use_PrivateKey_file: function(ctx: PSSL_CTX; const afile: PUTF8Char; atype: Integer): Integer; cdecl;
+  SSL_CTX_check_private_key: function(ctx: PSSL_CTX): Integer; cdecl;
 
   TLS_method: function(): PSSL_METHOD; cdecl;
+  TLS_server_method: function(): PSSL_METHOD; cdecl;
 
   X509_new: function(): PX509; cdecl;
   X509_STORE_CTX_get_error_depth: function(ctx: PX509_STORE_CTX): Integer; cdecl;
@@ -659,11 +672,15 @@ begin
   OPENSSL_init_ssl := GetAddress('OPENSSL_init_ssl');
   SSL_CTX_new := GetAddress('SSL_CTX_new');
   TLS_method := GetAddress('TLS_method');
+  TLS_server_method := GetAddress('TLS_server_method');
   SSL_CTX_set_verify := GetAddress('SSL_CTX_set_verify');
   SSL_CTX_set_verify_depth := GetAddress('SSL_CTX_set_verify_depth');
   SSL_CTX_set_options := GetAddress('SSL_CTX_set_options');
   SSL_CTX_load_verify_locations := GetAddress('SSL_CTX_load_verify_locations');
   SSL_CTX_free := GetAddress('SSL_CTX_free');
+  SSL_CTX_use_certificate_file := GetAddress('SSL_CTX_use_certificate_file');
+  SSL_CTX_use_PrivateKey_file := GetAddress('SSL_CTX_use_PrivateKey_file');
+  SSL_CTX_check_private_key := GetAddress('SSL_CTX_check_private_key');
 
   BIO_new_ssl_connect := GetAddress('BIO_new_ssl_connect');
   SSL_set_cipher_list := GetAddress('SSL_set_cipher_list');
@@ -672,6 +689,7 @@ begin
   SSL_new := GetAddress('SSL_new');
   SSL_set_fd := GetAddress('SSL_set_fd');
   SSL_connect := GetAddress('SSL_connect');
+  SSL_accept := GetAddress('SSL_accept');
   SSL_read := GetAddress('SSL_read');
   SSL_write := GetAddress('SSL_write');
 

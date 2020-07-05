@@ -408,7 +408,9 @@ var
   aDocStream: TFileStream;
   aDocument: string;
 begin
-  aDocument := IncludeTrailingPathDelimiter(Root) + '.' + Request.Path;
+  aDocument := IncludeTrailingPathDelimiter(Root);
+  if Request.Path <> '' then
+    aDocument := aDocument + '.' + Request.Path;
   aDocument := StringReplace(aDocument, '/', PathDelim, [rfReplaceAll]);//correct it for linux
   if aDocument[Length(aDocument)] = PathDelim then //get the default file if it not defined
      aDocument := GetDefaultDocument(aDocument);

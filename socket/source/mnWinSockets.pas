@@ -38,15 +38,19 @@ type
   private
     FHandle: TSocket;
     FAddress: TSockAddr;
+    FServeMode: Boolean;
   protected
+    FOptions: TmnsoOptions;
     function GetActive: Boolean; override;
     function Check(Value: Integer): Boolean;
     //Timeout millisecond
     function DoSelect(Timeout: Integer; Check: TSelectCheck): TmnError; override;
     function DoShutdown(How: TmnShutdowns): TmnError; override;
     function DoListen: TmnError; override;
+    property Options: TmnsoOptions read FOptions;
+    property ServeMode: Boolean read FServeMode;
   public
-    constructor Create(vHandle: TSocket); virtual;
+    constructor Create(vHandle: TSocket; AOptions: TmnsoOptions; AServeMode: Boolean = False); virtual;
     function GetLocalAddress: string; override;
     function GetRemoteAddress: string; override;
     function GetLocalName: string; override;
@@ -75,7 +79,6 @@ type
     function DoReceive(var Buffer; var Count: Longint): TmnError; override;
     function DoSend(const Buffer; var Count: Longint): TmnError; override;
   public
-    constructor Create(vHandle: TSocket); override;
     destructor Destroy; override;
     procedure Prepare; override;
     function Accept: TmnCustomSocket; override;
@@ -106,6 +109,8 @@ implementation
 
 const
   cBacklog = 5;
+
+{ TmnSSLServerSocket }
 
 function TmnSocket.DoSelect(Timeout: Integer; Check: TSelectCheck): TmnError;
 begin
@@ -165,9 +170,11 @@ begin
 end;
 
 
-constructor TmnSocket.Create(vHandle: TSocket);
+constructor TmnSocket.Create(vHandle: TSocket; AOptions: TmnsoOptions; AServeMode: Boolean);
 begin
   inherited Create;
+  FOptions := AOptions;
+  FServeMode:= AServeMode;
   FHandle := vHandle;
 end;
 
@@ -370,7 +377,13 @@ begin
   if aHandle = INVALID_SOCKET then
     Result := nil
   else
-    Result := TmnNormalSocket.Create(aHandle);
+  begin
+    if soSSL in Options then
+      Result := TmnSSLSocket.Create(aHandle, Options, True)
+    else
+      Result := TmnNormalSocket.Create(aHandle, Options);
+    Result.Prepare;
+  end;
 end;
 
 { TmnSSLSocket }
@@ -431,10 +444,22 @@ end;
 procedure TmnSSLSocket.Prepare;
 begin
   inherited;
+  if ServeMode then
+  begin
+    CTX := TCTX.Create(TTLS_SSLServerMethod);
+    CTX.LoadCertFile(CertificateFile);
+    CTX.LoadPrivateKeyFile(PrivateKeyFile);
+    CTX.CheckPrivateKey; //do not use this
+  end
+  else
+    CTX := TCTX.Create(TTLS_SSLMethod);
+
   SSL := TSSL.Create(CTX);
   SSL.SetSocket(FHandle);
-  SSL.Connect;
-  //TODO check if failed
+  if ServeMode then
+    SSL.Accept
+  else
+    SSL.Connect;
 end;
 
 function TmnSSLSocket.Accept: TmnCustomSocket;
@@ -452,13 +477,7 @@ begin
   if aHandle = INVALID_SOCKET then
     Result := nil
   else
-    Result := TmnSSLSocket.Create(aHandle);
-end;
-
-constructor TmnSSLSocket.Create(vHandle: TSocket);
-begin
-  inherited Create(vHandle);
-  CTX := TCTX.Create(TTLS_SSLMethod);
+    Result := TmnSSLSocket.Create(aHandle, Options, True);
 end;
 
 destructor TmnSSLSocket.Destroy;
@@ -551,12 +570,9 @@ begin
     end;
   end;
 
-  if aHandle<>INVALID_SOCKET then
+  if aHandle <> INVALID_SOCKET then
   begin
-    if soSSL in Options then
-      vSocket := TmnSSLSocket.Create(aHandle)
-    else
-      vSocket := TmnNormalSocket.Create(aHandle);
+    vSocket := TmnNormalSocket.Create(aHandle, Options);
     vSocket.Prepare;
   end
   else
@@ -738,9 +754,9 @@ begin
   if aHandle <> INVALID_SOCKET then
   begin
     if soSSL in Options then
-      vSocket := TmnSSLSocket.Create(aHandle)
+      vSocket := TmnSSLSocket.Create(aHandle, Options)
     else
-      vSocket := TmnNormalSocket.Create(aHandle);
+      vSocket := TmnNormalSocket.Create(aHandle, Options);
     vSocket.Prepare;
   end
   else

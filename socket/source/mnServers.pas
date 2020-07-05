@@ -23,9 +23,9 @@ uses
 
 type
 
-  { TmnServerSocketStream }
+  { TmnServerSocket }
 {
-  This Class is for beginner to play simple example of socket server, it accept one connection only
+  TmnServerSocket Class is for beginner to play simple example of socket server, it accept one connection only
   If you want multiple connection, use TmnServer
 }
 
@@ -44,6 +44,8 @@ type
     property Port: string read FPort write SetPort;
     property Address: string read FAddress write SetAddress;
   end;
+
+{ Server }
 
   TmnServer = class;
   TmnListener = class;
@@ -78,11 +80,11 @@ type
 
   TmnListener = class(TmnConnections) // thread to watch for incoming requests
   private
+    FServer: TmnServer;
     FTimeout: Integer;
     FAttempts: Integer;
     FTries: Integer;
     FSocket: TmnCustomSocket; //Listner socket waiting by call "select"
-    FServer: TmnServer;
     FLogMessages: TStringList;
     FOptions: TmnsoOptions;
     procedure Connect;
@@ -134,13 +136,14 @@ type
     FAddress: string;
     FListener: TmnListener;
     FLogging: Boolean;
+    FUseSSL: Boolean;
     procedure SetActive(const Value: Boolean);
     procedure SetAddress(const Value: string);
     procedure SetPort(const Value: string);
     function GetCount: Integer;
   protected
     IsDestroying: Boolean;
-    function DoCreateListener: TmnListener; virtual;
+    function DoCreateListener(AOptions: TmnsoOptions = []): TmnListener; virtual;
     function CreateListener: TmnListener; virtual;
     procedure DoLog(const S: string); virtual;
     procedure DoChanged(vListener: TmnListener); virtual;
@@ -166,6 +169,7 @@ type
 
     property Port: string read FPort write SetPort;
     property Address: string read FAddress write SetAddress;
+    property UseSSL: Boolean read FUseSSL write FUseSSL;
 
     property Active: boolean read FActive write SetActive default False;
     property Logging: Boolean read FLogging write FLogging default false;
@@ -465,6 +469,8 @@ begin
   Result := TmnSocketStream.Create(vSocket);
   //TmnSocketStream(Result).Options := TmnSocketStream(Result).Options + Options;
   TmnSocketStream(Result).Options := Options;
+  if FServer.UseSSL then
+    TmnSocketStream(Result).Options := TmnSocketStream(Result).Options + [soSSL]; //TODO i think it should in listener options too
 end;
 
 procedure TmnListener.PostLogs;
@@ -718,14 +724,19 @@ begin
   DoStop;
 end;
 
-function TmnServer.DoCreateListener: TmnListener;
+function TmnServer.DoCreateListener(AOptions: TmnsoOptions): TmnListener;
 begin
-  Result := TmnListener.Create([]);
+  Result := TmnListener.Create(AOptions);
 end;
 
 function TmnServer.CreateListener: TmnListener;
+var
+  lOptions: TmnsoOptions;
 begin
-  Result := DoCreateListener;
+  lOptions := [];
+  if UseSSL then
+    lOptions := lOptions + [soSSL];
+  Result := DoCreateListener(lOptions);
 end;
 
 procedure TmnServer.DoLog(const S: string);

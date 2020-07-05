@@ -122,6 +122,11 @@ type
 const
   WaitForEver: Longint = -1;
 
+var
+  //You can use full path, we will move it inside server object
+  PrivateKeyFile: string = 'privatekey.pem';
+  CertificateFile: string = 'certificate.pem';
+
 function WallSocket: TmnCustomWallSocket;
 
 implementation

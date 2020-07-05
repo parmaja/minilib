@@ -21,6 +21,7 @@ type
   { TMain }
 
   TMain = class(TForm)
+    UseSSLChk: TCheckBox;
     ExitBtn: TButton;
     Label1: TLabel;
     Label2: TLabel;
@@ -69,6 +70,10 @@ implementation
 
 procedure TMain.StartBtnClick(Sender: TObject);
 begin
+  if UseSSLChk.Checked then
+    ModuleServerLog('use https://localhost:' + PortEdit.Text + '/doc/')
+  else
+    ModuleServerLog('use http://localhost:' + PortEdit.Text + '/doc/');
   Server.Start;
 end;
 
@@ -115,6 +120,7 @@ begin
     aRoot := ExtractFilePath(Application.ExeName) + Copy(aRoot, 3, MaxInt);
   Server.WebModule.DocumentRoot := aRoot;
   Server.Port := PortEdit.Text;
+  Server.UseSSL := UseSSLChk.Checked;
 end;
 
 function FindCmdLineValue(Switch: string; var Value: string; const Chars: TSysCharSet = ['/','-']; Seprator: Char = '='): Boolean;
@@ -142,7 +148,7 @@ end;
 procedure TMain.FormCreate(Sender: TObject);
 var
   aIni:TIniFile;
-  function GetOption(AName, ADefault:string):string;
+  function GetOption(AName, ADefault: string): string; overload;
   var
     s:string;
   begin
@@ -152,8 +158,13 @@ var
     else
       Result := aIni.ReadString('options', AName, ADefault);
   end;
-  
-  function GetSwitch(AName, ADefault:string):string;//if found in cmd mean it is true
+
+  function GetOption(AName: string; ADefault: Boolean): Boolean; overload;
+  begin
+    Result := aIni.ReadBool('options', AName, ADefault);
+  end;
+
+  function GetSwitch(AName, ADefault: string): string; overload; //if found in cmd mean it is true
   var
     s:string;
   begin
@@ -178,6 +189,7 @@ begin
   try
     RootEdit.Text := GetOption('root', '.\html');
     PortEdit.Text := GetOption('port', '81');
+    UseSSLChk.Checked := GetOption('ssl', false);
     aAutoRun := StrToBoolDef(GetSwitch('run', ''), False);
   finally
     aIni.Free;
@@ -190,16 +202,14 @@ procedure TMain.FormDestroy(Sender: TObject);
 var
   aIni:TIniFile;
 begin
-  if ParamCount = 0 then
-  begin
-    aIni := TIniFile.Create(Application.Location+'config.ini');
-    try
-      aIni.WriteString('options', 'root', RootEdit.Text);
-      aIni.WriteString('options', 'port', PortEdit.Text);
-    finally
-      aIni.Free;
-    end;
-  end
+  aIni := TIniFile.Create(Application.Location+'config.ini');
+  try
+    aIni.WriteString('options', 'root', RootEdit.Text);
+    aIni.WriteString('options', 'port', PortEdit.Text);
+    aIni.WriteBool('options', 'ssl', UseSSLChk.Checked);
+  finally
+    aIni.Free;
+  end;
 end;
 
 procedure TMain.UpdateStatus;

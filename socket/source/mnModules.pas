@@ -269,7 +269,7 @@ type
   private
     FModules: TmodModules;
   protected
-    function DoCreateListener: TmnListener; override;
+    function DoCreateListener(AOptions: TmnsoOptions = []): TmnListener; override;
     procedure StreamCreated(AStream: TmnBufferStream); virtual;
     procedure DoBeforeOpen; override;
     procedure DoAfterClose; override;
@@ -409,9 +409,9 @@ begin
   end;
 end;
 
-function TmodModuleServer.DoCreateListener: TmnListener;
+function TmodModuleServer.DoCreateListener(AOptions: TmnsoOptions): TmnListener;
 begin
-  Result := TmodModuleListener.Create([]);
+  Result := TmodModuleListener.Create(AOptions);
 end;
 
 procedure TmodModuleServer.StreamCreated(AStream: TmnBufferStream);

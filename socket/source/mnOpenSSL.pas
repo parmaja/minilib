@@ -49,6 +49,14 @@ type
   public
   end;
 
+  { TTLS_SSLServerMethod }
+
+  TTLS_SSLServerMethod = class(TSSLMethod)
+  protected
+    procedure CreateHandle; override;
+  public
+  end;
+
   { TCTX }
 
   TCTX = class(TOpenSSLObject)
@@ -60,6 +68,9 @@ type
     constructor Create(AMethod: TSSLMethod); overload;
     constructor Create(AMethodClass: TSSLMethodClass); overload;
     destructor Destroy; override;
+    procedure LoadCertFile(FileName: string);
+    procedure LoadPrivateKeyFile(FileName: string);
+    procedure CheckPrivateKey;
   end;
 
   TSSL = record//class(TOpenSSLObject)
@@ -71,6 +82,7 @@ type
     constructor Create(ASSL: PSSL); overload;
     procedure SetSocket(ASocket: Integer);
     procedure Connect;
+    procedure Accept;
     function Read(var Buf; Size: Integer): Integer;
     function Write(const Buf; Size: Integer): Integer;
   end;
@@ -135,6 +147,13 @@ end;
 procedure RaiseLastSSLError;
 begin
   RaiseSSLError(ERR_error_string(ERR_get_error(), nil));
+end;
+
+{ TTLS_SSLServerMethod }
+
+procedure TTLS_SSLServerMethod.CreateHandle;
+begin
+  Handle := TLS_method();
 end;
 
 { TBIOStreamSSL }
@@ -235,6 +254,12 @@ begin
     raise EmnOpenSSLException.Create(ERR_error_string(ERR_get_error(), nil));
 end;
 
+procedure TSSL.Accept;
+begin
+  if SSL_accept(Handle) = -1 then
+    raise EmnOpenSSLException.Create(ERR_error_string(ERR_get_error(), nil));
+end;
+
 function TSSL.Read(var Buf; Size: Integer): Integer;
 begin
   Result := SSL_read(Handle, Buf, Size);
@@ -287,6 +312,24 @@ begin
   if Handle <> nil then
     SSL_CTX_free(Handle);
   inherited Destroy;
+end;
+
+procedure TCTX.LoadCertFile(FileName: string);
+begin
+  if SSL_CTX_use_certificate_file(Handle, PUTF8Char(FileName), SSL_FILETYPE_PEM) <=0 then
+    raise EmnOpenSSLException.Create('fail to load certificate');
+end;
+
+procedure TCTX.LoadPrivateKeyFile(FileName: string);
+begin
+  if SSL_CTX_use_PrivateKey_file(Handle, PUTF8Char(FileName), SSL_FILETYPE_PEM) <=0 then
+    raise EmnOpenSSLException.Create('fail to load private key');
+end;
+
+procedure TCTX.CheckPrivateKey;
+begin
+  if SSL_CTX_check_private_key(Handle) = 0 then
+    raise EmnOpenSSLException.Create('Private key does not match the public certificate');
 end;
 
 end.

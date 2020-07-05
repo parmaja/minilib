@@ -136,7 +136,7 @@ type
     FDefaultDocument: TStringList;
     procedure SetDefaultDoc(const Value: TStringList);
   protected
-    function DoCreateListener: TmnListener; override;
+    function DoCreateListener(AOptions: TmnsoOptions = []): TmnListener; override;
     function CreateListener: TmnListener; override;
   public
     constructor Create;
@@ -468,9 +468,9 @@ begin
   FDefaultDocument.Assign(Value);
 end;
 
-function TmnHttpServer.DoCreateListener: TmnListener;
+function TmnHttpServer.DoCreateListener(AOptions: TmnsoOptions = []): TmnListener;
 begin
-  Result := TmnHttpListener.Create([soReuseAddr]);
+  Result := TmnHttpListener.Create(AOptions + [soReuseAddr]);
 end;
 
 function TmnHttpServer.CreateListener: TmnListener;
