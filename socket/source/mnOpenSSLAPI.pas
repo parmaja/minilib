@@ -129,6 +129,7 @@ const
   SSL_ERROR_WANT_ASYNC           = 9;
   SSL_ERROR_WANT_ASYNC_JOB      = 10;
   SSL_ERROR_WANT_CLIENT_HELLO_CB= 11;
+
   SSL_CTRL_SET_TMP_DH                    = 3;
   SSL_CTRL_SET_TMP_ECDH                  = 4;
   SSL_CTRL_SET_TMP_DH_CB                 = 6;
@@ -463,6 +464,7 @@ var
   OPENSSL_init_crypto: function(opts: uint64; settings: POPENSSL_INIT_SETTINGS): Integer; cdecl;
 
   OPENSSL_config: procedure(AppName: PUTF8Char); cdecl;
+  SSL_get_error: function(s: PSSL; ret_code: Integer): Integer; cdecl;
 
   ERR_load_SSL_strings: procedure(); cdecl;
   ERR_load_CRYPTO_strings: function(): Integer; cdecl;
@@ -705,19 +707,7 @@ begin
   RaiseError := True; //Raise error of one of this functions not exists
   OPENSSL_init_ssl := GetAddress('OPENSSL_init_ssl');
 
-  TLS_method := GetAddress('TLS_method');
-  TLS_server_method := GetAddress('TLS_server_method');
-
-  SSL_CTX_new := GetAddress('SSL_CTX_new');
-  SSL_CTX_set_verify := GetAddress('SSL_CTX_set_verify');
-  SSL_CTX_set_verify_depth := GetAddress('SSL_CTX_set_verify_depth');
-  SSL_CTX_set_options := GetAddress('SSL_CTX_set_options');
-  SSL_CTX_load_verify_locations := GetAddress('SSL_CTX_load_verify_locations');
-  SSL_CTX_free := GetAddress('SSL_CTX_free');
-  SSL_CTX_use_certificate_file := GetAddress('SSL_CTX_use_certificate_file');
-  SSL_CTX_use_PrivateKey_file := GetAddress('SSL_CTX_use_PrivateKey_file');
-  SSL_CTX_check_private_key := GetAddress('SSL_CTX_check_private_key');
-
+  SSL_get_error := GetAddress('SSL_get_error');
   SSL_set_cipher_list := GetAddress('SSL_set_cipher_list');
   SSL_set_verify := GetAddress('SSL_set_verify');
   SSL_get_verify_result := GetAddress('SSL_get_verify_result');
@@ -730,6 +720,19 @@ begin
   SSL_write := GetAddress('SSL_write');
 
   SSL_get_peer_certificate := GetAddress('SSL_get_peer_certificate');
+
+  TLS_method := GetAddress('TLS_method');
+  TLS_server_method := GetAddress('TLS_server_method');
+
+  SSL_CTX_new := GetAddress('SSL_CTX_new');
+  SSL_CTX_set_verify := GetAddress('SSL_CTX_set_verify');
+  SSL_CTX_set_verify_depth := GetAddress('SSL_CTX_set_verify_depth');
+  SSL_CTX_set_options := GetAddress('SSL_CTX_set_options');
+  SSL_CTX_load_verify_locations := GetAddress('SSL_CTX_load_verify_locations');
+  SSL_CTX_free := GetAddress('SSL_CTX_free');
+  SSL_CTX_use_certificate_file := GetAddress('SSL_CTX_use_certificate_file');
+  SSL_CTX_use_PrivateKey_file := GetAddress('SSL_CTX_use_PrivateKey_file');
+  SSL_CTX_check_private_key := GetAddress('SSL_CTX_check_private_key');
 
   BIO_new_ssl_connect := GetAddress('BIO_new_ssl_connect');
 

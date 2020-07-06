@@ -242,14 +242,13 @@ end;
 
 procedure TSSL.Accept;
 var
-  res, err: Integer;
+  ret, err: Integer;
 begin
-  res := SSL_accept(Handle);
-  if res <= 0  then
+  ret := SSL_accept(Handle);
+  if ret <= 0  then
   begin
-    err := ERR_get_error();
-    if err <> 0 then //idk need more clean
-      raise EmnOpenSSLException.Create('Accept: ' + ERR_error_string(err, nil));
+    err := SSL_get_error(Handle, ret);
+    //raise EmnOpenSSLException.Create('Accept: ' + ERR_error_string(ERR_get_error(), nil));
   end;
 end;
 

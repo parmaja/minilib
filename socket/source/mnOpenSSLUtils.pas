@@ -64,7 +64,7 @@ begin
   end;
 end;
 
-function AddExt(cert: PX509; nid: integer; value: pchar): Integer;
+function AddExt(cert: PX509; nid: integer; value: PUTF8Char): Integer;
 var
   ex: PX509_EXTENSION;
   ctx: TX509V3_CTX;
@@ -90,14 +90,20 @@ end;
 //TODO need to make more clean when exit, some objects most not freed if assigned successed
 function MakeCert(var x509p: PX509; var pkeyp: PEVP_PKEY; C, CN: string; Bits: Integer; Serial: Integer; Years: Integer): Boolean;
 var
-  x: PX509 = nil;
-  pk: PEVP_PKEY = nil;
-  rsa: PRSA = nil;
-  name: PX509_NAME = nil;
-  bne: PBIGNUM = nil;
-  sign: PX509_sign = nil;
+  x: PX509;
+  pk: PEVP_PKEY;
+  rsa: PRSA;
+  name: PX509_NAME;
+  bne: PBIGNUM;
+  sign: PX509_sign;
   res: Integer;
 begin
+  x := nil;
+  pk := nil;
+  rsa := nil;
+  name := nil;
+  bne := nil;
+  sign := nil;
   try
     InitOpenSSL;
   	if (pkeyp = nil) then
@@ -165,8 +171,8 @@ begin
     (* Add various extensions: standard extensions *)
 
     AddExt(x, NID_basic_constraints, 'critical,CA:TRUE');
-    //AddExt(x, NID_key_usage, PChar('critical,digitalSignature,keyEncipherment'));
-    AddExt(x, NID_key_usage, PChar('critical,cRLSign,digitalSignature,keyCertSign')); //Self-Signed
+    //AddExt(x, NID_key_usage, PUTF8Char('critical,digitalSignature,keyEncipherment'));
+    AddExt(x, NID_key_usage, PUTF8Char('critical,cRLSign,digitalSignature,keyCertSign')); //Self-Signed
     AddExt(x, NID_subject_key_identifier, 'hash');
 
     sign := X509_sign(x, pk, EVP_sha256());
@@ -188,17 +194,19 @@ end;
 
 function MakeCert(CertificateFile, PrivateKeyFile: string; C, CN: string; Bits: Integer; Serial: Integer; Years: Integer): Boolean;
 var
-	x509: PX509 = nil;
-	pkey: PEVP_PKEY = nil;
+	x509: PX509;
+	pkey: PEVP_PKEY;
   outbio: PBIO;
 begin
+	x509 :=nil;
+	pkey := nil;
   try
     Result := MakeCert(x509, pkey, C, CN, Bits, Serial, Years);
-    outbio := BIO_new_file(PChar(PrivateKeyFile), 'w');
+    outbio := BIO_new_file(PUTF8Char(PrivateKeyFile), 'w');
 	  PEM_write_bio_PrivateKey(outbio, pkey, nil, nil, 0, nil, nil);
     BIO_free(outbio);
 
-    outbio := BIO_new_file(PChar(CertificateFile), 'w');
+    outbio := BIO_new_file(PUTF8Char(CertificateFile), 'w');
 	  PEM_write_bio_X509(outbio, x509);
     BIO_free(outbio);
   finally
