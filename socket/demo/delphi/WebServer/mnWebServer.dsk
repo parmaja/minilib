@@ -6,48 +6,33 @@ File_3=TSourceModule,'M:\home\pascal\lib\minilib\socket\source\mnWinSockets.pas'
 File_4=TSourceModule,'M:\home\pascal\lib\minilib\socket\source\mnSocketStreams.pas',0,1,48,1,89,0,0,,
 
 [Modules]
-Module0=D:\lab\pascal\minilib\socket\source\mnWebModules.pas
-Module1=D:\lab\pascal\minilib\socket\demo\delphi\WebServer\MainForm.pas
-Module2=D:\lab\pascal\minilib\socket\source\mnModules.pas
-Module3=c:\program files (x86)\embarcadero\studio\20.0\source\rtl\common\System.Classes.pas
-Module4=c:\program files (x86)\embarcadero\studio\20.0\SOURCE\RTL\SYS\System.SysUtils.pas
-Module5=D:\lab\pascal\minilib\socket\source\mnConnections.pas
-Module6=c:\program files (x86)\embarcadero\studio\20.0\source\rtl\win\Winapi.WinSock.pas
-Module7=c:\program files (x86)\embarcadero\studio\20.0\source\rtl\win\Winapi.Winsock2.pas
-Module8=D:\lab\pascal\minilib\socket\source\mnWinSockets.pas
-Module9=D:\lab\pascal\minilib\socket\source\mnLinuxSockets.pas
-Module10=D:\lab\pascal\minilib\socket\source\mnPosixSockets.pas
-Module11=D:\lab\pascal\minilib\socket\source\mnSockets.pas
-Module12=D:\lab\pascal\minilib\socket\source\mnServers.pas
-Module13=c:\program files (x86)\embarcadero\studio\20.0\SOURCE\RTL\SYS\System.pas
-Count=14
+Module0=D:\lab\pascal\minilib\socket\source\mnWinSockets.pas
+Module1=D:\lab\pascal\minilib\socket\source\mnOpenSSLAPI.pas
+Module2=D:\lab\pascal\minilib\socket\source\mnOpenSSL.pas
+Module3=D:\lab\pascal\minilib\socket\source\mnLinuxSockets.pas
+Module4=D:\lab\pascal\minilib\socket\source\mnPosixSockets.pas
+Module5=D:\lab\pascal\minilib\socket\source\mnSockets.pas
+Module6=D:\lab\pascal\minilib\socket\source\mnServers.pas
+Module7=c:\program files (x86)\embarcadero\studio\20.0\SOURCE\RTL\SYS\System.pas
+Module8=c:\program files (x86)\embarcadero\studio\20.0\SOURCE\RTL\SYS\System.SysUtils.pas
+Module9=c:\program files (x86)\embarcadero\studio\20.0\source\rtl\common\System.Classes.pas
+Module10=D:\lab\pascal\minilib\socket\source\mnModules.pas
+Module11=D:\lab\pascal\minilib\socket\source\mnWebModules.pas
+Module12=D:\lab\pascal\minilib\socket\source\mnOpenSSLUtils.pas
+Module13=D:\lab\pascal\minilib\socket\demo\delphi\WebServer\MainForm.pas
+Module14=D:\lab\pascal\minilib\socket\source\mnConnections.pas
+Module15=c:\program files (x86)\embarcadero\studio\20.0\source\rtl\win\Winapi.WinSock.pas
+Module16=c:\program files (x86)\embarcadero\studio\20.0\source\rtl\win\Winapi.Winsock2.pas
+Count=17
 EditWindowCount=1
 
-[D:\lab\pascal\minilib\socket\source\mnWebModules.pas]
-ModuleType=TSourceModule
-
-[D:\lab\pascal\minilib\socket\demo\delphi\WebServer\MainForm.pas]
-ModuleType=TSourceModule
-
-[D:\lab\pascal\minilib\socket\source\mnModules.pas]
-ModuleType=TSourceModule
-
-[c:\program files (x86)\embarcadero\studio\20.0\source\rtl\common\System.Classes.pas]
-ModuleType=TSourceModule
-
-[c:\program files (x86)\embarcadero\studio\20.0\SOURCE\RTL\SYS\System.SysUtils.pas]
-ModuleType=TSourceModule
-
-[D:\lab\pascal\minilib\socket\source\mnConnections.pas]
-ModuleType=TSourceModule
-
-[c:\program files (x86)\embarcadero\studio\20.0\source\rtl\win\Winapi.WinSock.pas]
-ModuleType=TSourceModule
-
-[c:\program files (x86)\embarcadero\studio\20.0\source\rtl\win\Winapi.Winsock2.pas]
-ModuleType=TSourceModule
-
 [D:\lab\pascal\minilib\socket\source\mnWinSockets.pas]
+ModuleType=TSourceModule
+
+[D:\lab\pascal\minilib\socket\source\mnOpenSSLAPI.pas]
+ModuleType=TSourceModule
+
+[D:\lab\pascal\minilib\socket\source\mnOpenSSL.pas]
 ModuleType=TSourceModule
 
 [D:\lab\pascal\minilib\socket\source\mnLinuxSockets.pas]
@@ -65,9 +50,36 @@ ModuleType=TSourceModule
 [c:\program files (x86)\embarcadero\studio\20.0\SOURCE\RTL\SYS\System.pas]
 ModuleType=TSourceModule
 
+[c:\program files (x86)\embarcadero\studio\20.0\SOURCE\RTL\SYS\System.SysUtils.pas]
+ModuleType=TSourceModule
+
+[c:\program files (x86)\embarcadero\studio\20.0\source\rtl\common\System.Classes.pas]
+ModuleType=TSourceModule
+
+[D:\lab\pascal\minilib\socket\source\mnModules.pas]
+ModuleType=TSourceModule
+
+[D:\lab\pascal\minilib\socket\source\mnWebModules.pas]
+ModuleType=TSourceModule
+
+[D:\lab\pascal\minilib\socket\source\mnOpenSSLUtils.pas]
+ModuleType=TSourceModule
+
+[D:\lab\pascal\minilib\socket\demo\delphi\WebServer\MainForm.pas]
+ModuleType=TSourceModule
+
+[D:\lab\pascal\minilib\socket\source\mnConnections.pas]
+ModuleType=TSourceModule
+
+[c:\program files (x86)\embarcadero\studio\20.0\source\rtl\win\Winapi.WinSock.pas]
+ModuleType=TSourceModule
+
+[c:\program files (x86)\embarcadero\studio\20.0\source\rtl\win\Winapi.Winsock2.pas]
+ModuleType=TSourceModule
+
 [EditWindow0]
-ViewCount=14
-CurrentEditView=D:\lab\pascal\minilib\socket\source\mnWebModules.pas
+ViewCount=17
+CurrentEditView=D:\lab\pascal\minilib\socket\source\mnWinSockets.pas
 View0=0
 View1=1
 View2=2
@@ -82,6 +94,9 @@ View10=10
 View11=11
 View12=12
 View13=13
+View14=14
+View15=15
+View16=16
 PercentageSizes=1
 Create=1
 Visible=1
@@ -90,17 +105,17 @@ State=0
 Left=0
 Top=0
 Width=9917
-Height=8837
+Height=8848
 MaxLeft=-1
 MaxTop=-1
 ClientWidth=9917
-ClientHeight=8837
+ClientHeight=8848
 DockedToMainForm=1
 BorlandEditorCodeExplorer=BorlandEditorCodeExplorer@EditWindow0
 TopPanelSize=0
 LeftPanelSize=1615
 LeftPanelClients=DockSite2,PropertyInspector,DockSite3
-LeftPanelData=0000080001010100000009000000446F636B5369746533DF0E000000000000014F060000000000000100000000DB1000001100000050726F7065727479496E73706563746F720100000000711A000009000000446F636B5369746532FFFFFFFF
+LeftPanelData=0000080001010100000009000000446F636B5369746533130F000000000000014F060000000000000100000000DB1000001100000050726F7065727479496E73706563746F720100000000CD1A000009000000446F636B5369746532FFFFFFFF
 RightPanelSize=0
 RightPanelClients=DockSite4
 RightPanelData=0000080001000100000009000000446F636B5369746534711A00000000000000E40D000000000000FFFFFFFF
@@ -124,6 +139,39 @@ EditViewName=D:\lab\pascal\minilib\socket\demo\delphi\WebServer\MainForm.pas
 
 [View1]
 CustomEditViewType=TEditView
+Module=D:\lab\pascal\minilib\socket\source\mnOpenSSL.pas
+CursorX=3
+CursorY=77
+TopLine=59
+LeftCol=1
+Elisions=
+Bookmarks=
+EditViewName=D:\lab\pascal\minilib\socket\source\mnOpenSSL.pas
+
+[View2]
+CustomEditViewType=TEditView
+Module=D:\lab\pascal\minilib\socket\source\mnOpenSSLAPI.pas
+CursorX=1
+CursorY=396
+TopLine=378
+LeftCol=1
+Elisions=
+Bookmarks=
+EditViewName=D:\lab\pascal\minilib\socket\source\mnOpenSSLAPI.pas
+
+[View3]
+CustomEditViewType=TEditView
+Module=D:\lab\pascal\minilib\socket\source\mnOpenSSLUtils.pas
+CursorX=45
+CursorY=205
+TopLine=188
+LeftCol=1
+Elisions=
+Bookmarks=
+EditViewName=D:\lab\pascal\minilib\socket\source\mnOpenSSLUtils.pas
+
+[View4]
+CustomEditViewType=TEditView
 Module=D:\lab\pascal\minilib\socket\source\mnWebModules.pas
 CursorX=1
 CursorY=630
@@ -133,7 +181,7 @@ Elisions=
 Bookmarks=
 EditViewName=D:\lab\pascal\minilib\socket\source\mnWebModules.pas
 
-[View2]
+[View5]
 CustomEditViewType=TEditView
 Module=D:\lab\pascal\minilib\socket\source\mnModules.pas
 CursorX=25
@@ -144,7 +192,7 @@ Elisions=
 Bookmarks=
 EditViewName=D:\lab\pascal\minilib\socket\source\mnModules.pas
 
-[View3]
+[View6]
 CustomEditViewType=TEditView
 Module=c:\program files (x86)\embarcadero\studio\20.0\source\rtl\common\System.Classes.pas
 CursorX=3
@@ -155,7 +203,7 @@ Elisions=
 Bookmarks=
 EditViewName=c:\program files (x86)\embarcadero\studio\20.0\source\rtl\common\System.Classes.pas
 
-[View4]
+[View7]
 CustomEditViewType=TEditView
 Module=c:\program files (x86)\embarcadero\studio\20.0\SOURCE\RTL\SYS\System.SysUtils.pas
 CursorX=29
@@ -166,7 +214,7 @@ Elisions=
 Bookmarks=
 EditViewName=c:\program files (x86)\embarcadero\studio\20.0\SOURCE\RTL\SYS\System.SysUtils.pas
 
-[View5]
+[View8]
 CustomEditViewType=TEditView
 Module=c:\program files (x86)\embarcadero\studio\20.0\SOURCE\RTL\SYS\System.pas
 CursorX=1
@@ -177,18 +225,18 @@ Elisions=
 Bookmarks=
 EditViewName=c:\program files (x86)\embarcadero\studio\20.0\SOURCE\RTL\SYS\System.pas
 
-[View6]
+[View9]
 CustomEditViewType=TEditView
 Module=D:\lab\pascal\minilib\socket\source\mnServers.pas
-CursorX=82
-CursorY=600
-TopLine=589
+CursorX=14
+CursorY=190
+TopLine=171
 LeftCol=1
 Elisions=
 Bookmarks=
 EditViewName=D:\lab\pascal\minilib\socket\source\mnServers.pas
 
-[View7]
+[View10]
 CustomEditViewType=TEditView
 Module=D:\lab\pascal\minilib\socket\source\mnSockets.pas
 CursorX=1
@@ -199,7 +247,7 @@ Elisions=
 Bookmarks=
 EditViewName=D:\lab\pascal\minilib\socket\source\mnSockets.pas
 
-[View8]
+[View11]
 CustomEditViewType=TEditView
 Module=D:\lab\pascal\minilib\socket\source\mnPosixSockets.pas
 CursorX=72
@@ -210,7 +258,7 @@ Elisions=
 Bookmarks=
 EditViewName=D:\lab\pascal\minilib\socket\source\mnPosixSockets.pas
 
-[View9]
+[View12]
 CustomEditViewType=TEditView
 Module=D:\lab\pascal\minilib\socket\source\mnLinuxSockets.pas
 CursorX=69
@@ -221,18 +269,18 @@ Elisions=
 Bookmarks=
 EditViewName=D:\lab\pascal\minilib\socket\source\mnLinuxSockets.pas
 
-[View10]
+[View13]
 CustomEditViewType=TEditView
 Module=D:\lab\pascal\minilib\socket\source\mnWinSockets.pas
-CursorX=74
-CursorY=580
-TopLine=547
+CursorX=26
+CursorY=417
+TopLine=403
 LeftCol=1
 Elisions=
 Bookmarks=
 EditViewName=D:\lab\pascal\minilib\socket\source\mnWinSockets.pas
 
-[View11]
+[View14]
 CustomEditViewType=TEditView
 Module=c:\program files (x86)\embarcadero\studio\20.0\source\rtl\win\Winapi.Winsock2.pas
 CursorX=1
@@ -243,7 +291,7 @@ Elisions=
 Bookmarks=
 EditViewName=c:\program files (x86)\embarcadero\studio\20.0\source\rtl\win\Winapi.Winsock2.pas
 
-[View12]
+[View15]
 CustomEditViewType=TEditView
 Module=c:\program files (x86)\embarcadero\studio\20.0\source\rtl\win\Winapi.WinSock.pas
 CursorX=3
@@ -254,7 +302,7 @@ Elisions=
 Bookmarks={1,721,14}
 EditViewName=c:\program files (x86)\embarcadero\studio\20.0\source\rtl\win\Winapi.WinSock.pas
 
-[View13]
+[View16]
 CustomEditViewType=TEditView
 Module=D:\lab\pascal\minilib\socket\source\mnConnections.pas
 CursorX=1
@@ -282,18 +330,19 @@ State=0
 Left=0
 Top=0
 Width=3823
-Height=1231
+Height=1219
 MaxLeft=-1
 MaxTop=-1
 ClientWidth=3823
-ClientHeight=1231
-TBDockHeight=212
+ClientHeight=1219
+TBDockHeight=210
 LRDockWidth=13604
 Dockable=1
 StayOnTop=0
 
 [Breakpoints]
-Count=0
+Count=1
+Breakpoint0='D:\lab\pascal\minilib\socket\source\mnOpenSSL.pas',251,'',0,1,'',1,0,0,'',1,'','','',0,''
 
 [EmbarcaderoWin32Debugger_AddressBreakpoints]
 Count=0
@@ -311,16 +360,16 @@ Visible=1
 Docked=0
 State=2
 Left=146
-Top=269
+Top=267
 Width=8932
-Height=8519
+Height=8514
 MaxLeft=-5
 MaxTop=-10
 MaxWidth=8932
-MaxHeight=8519
+MaxHeight=8514
 ClientWidth=10021
-ClientHeight=9788
-BottomPanelSize=8509
+ClientHeight=9790
+BottomPanelSize=8602
 BottomPanelClients=EditWindow0
 BottomPanelData=0000080000000000000000000000000000000000000000000000000100000000000000000C0000004564697457696E646F775F30FFFFFFFF
 
@@ -333,12 +382,12 @@ State=0
 Left=0
 Top=0
 Width=1615
-Height=2048
+Height=2124
 MaxLeft=-1
 MaxTop=-1
 ClientWidth=1615
-ClientHeight=2048
-TBDockHeight=5904
+ClientHeight=2124
+TBDockHeight=5905
 LRDockWidth=2349
 Dockable=1
 StayOnTop=0
@@ -352,12 +401,12 @@ State=0
 Left=0
 Top=24
 Width=9917
-Height=1500
+Height=1486
 MaxLeft=-1
 MaxTop=-1
 ClientWidth=9917
-ClientHeight=1500
-TBDockHeight=1500
+ClientHeight=1486
+TBDockHeight=1486
 LRDockWidth=2771
 Dockable=1
 StayOnTop=0
@@ -371,12 +420,12 @@ State=0
 Left=0
 Top=0
 Width=2000
-Height=4144
+Height=4143
 MaxLeft=-1
 MaxTop=-1
 ClientWidth=2000
-ClientHeight=4144
-TBDockHeight=7154
+ClientHeight=4143
+TBDockHeight=7152
 LRDockWidth=2000
 Dockable=1
 StayOnTop=0
@@ -390,12 +439,12 @@ State=0
 Left=0
 Top=0
 Width=1969
-Height=4279
+Height=4276
 MaxLeft=-5
 MaxTop=-10
-ClientWidth=1885
-ClientHeight=3904
-TBDockHeight=4279
+ClientWidth=1906
+ClientHeight=3914
+TBDockHeight=4276
 LRDockWidth=1969
 Dockable=1
 StayOnTop=0
@@ -409,12 +458,12 @@ State=0
 Left=0
 Top=0
 Width=1375
-Height=4933
+Height=4886
 MaxLeft=-5
 MaxTop=-10
 ClientWidth=1292
-ClientHeight=4558
-TBDockHeight=4933
+ClientHeight=4514
+TBDockHeight=4886
 LRDockWidth=1375
 Dockable=1
 StayOnTop=0
@@ -425,15 +474,15 @@ Create=1
 Visible=0
 Docked=1
 State=0
-Left=-16
+Left=-24
 Top=-121
 Width=1849
-Height=3144
+Height=3143
 MaxLeft=-1
 MaxTop=-1
 ClientWidth=1849
-ClientHeight=3144
-TBDockHeight=3144
+ClientHeight=3143
+TBDockHeight=3143
 LRDockWidth=1849
 Dockable=1
 StayOnTop=0
@@ -447,12 +496,12 @@ State=0
 Left=0
 Top=0
 Width=2339
-Height=1212
+Height=1219
 MaxLeft=-1
 MaxTop=-1
 ClientWidth=2339
-ClientHeight=1212
-TBDockHeight=4837
+ClientHeight=1219
+TBDockHeight=4838
 LRDockWidth=3562
 Dockable=1
 StayOnTop=0
@@ -466,12 +515,12 @@ State=0
 Left=0
 Top=0
 Width=2339
-Height=1212
+Height=1219
 MaxLeft=-1
 MaxTop=-1
 ClientWidth=2339
-ClientHeight=1212
-TBDockHeight=4837
+ClientHeight=1219
+TBDockHeight=4838
 LRDockWidth=3562
 Dockable=1
 StayOnTop=0
@@ -485,16 +534,21 @@ State=0
 Left=0
 Top=24
 Width=1615
-Height=4173
+Height=4133
 MaxLeft=-1
 MaxTop=-1
 ClientWidth=1615
-ClientHeight=4173
-TBDockHeight=4173
+ClientHeight=4133
+TBDockHeight=4171
 LRDockWidth=1615
 Dockable=1
 StayOnTop=0
 SplitPos=118
+
+[PropInspDesignerSelection]
+ArrangeBy=Name
+SelectedItem=Name,LiveBindings
+ExpandedItems=Anchors=0,Constraints=0,Font=0,LiveBindings=0,"LiveBindings Designer=0",Margins=1,BorderIcons=0,BevelEdges=0,ImageMargins=0
 
 [frmDesignPreview]
 PercentageSizes=1
@@ -505,11 +559,11 @@ State=0
 Left=0
 Top=0
 Width=1615
-Height=3317
+Height=6505
 MaxLeft=-1
 MaxTop=-1
 ClientWidth=1615
-ClientHeight=3317
+ClientHeight=6505
 TBDockHeight=5962
 LRDockWidth=2510
 Dockable=1
@@ -522,14 +576,14 @@ Visible=0
 Docked=1
 State=0
 Left=-1920
-Top=248
+Top=252
 Width=276
-Height=365
+Height=362
 MaxLeft=-1
 MaxTop=-1
 ClientWidth=276
-ClientHeight=365
-TBDockHeight=365
+ClientHeight=362
+TBDockHeight=362
 LRDockWidth=276
 Dockable=1
 StayOnTop=0
@@ -546,12 +600,12 @@ State=0
 Left=0
 Top=0
 Width=3823
-Height=1231
+Height=1219
 MaxLeft=-1
 MaxTop=-1
 ClientWidth=3823
-ClientHeight=1231
-TBDockHeight=413
+ClientHeight=1219
+TBDockHeight=410
 LRDockWidth=4953
 Dockable=1
 StayOnTop=0
@@ -564,20 +618,20 @@ Docked=1
 State=0
 Left=0
 Top=0
-Width=3823
-Height=1231
+Width=4958
+Height=1276
 MaxLeft=-1
 MaxTop=-1
-ClientWidth=3823
-ClientHeight=1231
-TBDockHeight=212
+ClientWidth=4958
+ClientHeight=1276
+TBDockHeight=210
 LRDockWidth=7406
 Dockable=1
 StayOnTop=0
 Column0Width=145
 Column1Width=100
 Column2Width=115
-Column3Width=374
+Column3Width=592
 
 [LocalVarsWindow]
 PercentageSizes=1
@@ -588,12 +642,12 @@ State=0
 Left=0
 Top=0
 Width=3823
-Height=1231
+Height=1219
 MaxLeft=-1
 MaxTop=-1
 ClientWidth=3823
-ClientHeight=1231
-TBDockHeight=1538
+ClientHeight=1219
+TBDockHeight=1533
 LRDockWidth=3484
 Dockable=1
 StayOnTop=0
@@ -606,12 +660,12 @@ Docked=1
 State=0
 Left=0
 Top=0
-Width=3823
-Height=1231
+Width=4958
+Height=1276
 MaxLeft=-1
 MaxTop=-1
-ClientWidth=3823
-ClientHeight=1231
+ClientWidth=4958
+ClientHeight=1276
 TBDockHeight=2067
 LRDockWidth=3484
 Dockable=1
@@ -626,12 +680,12 @@ State=0
 Left=0
 Top=0
 Width=2339
-Height=1212
+Height=1219
 MaxLeft=-1
 MaxTop=-1
 ClientWidth=2339
-ClientHeight=1212
-TBDockHeight=2500
+ClientHeight=1219
+TBDockHeight=2495
 LRDockWidth=3401
 Dockable=1
 StayOnTop=0
@@ -650,7 +704,7 @@ MaxLeft=-1
 MaxTop=-1
 ClientWidth=2339
 ClientHeight=971
-TBDockHeight=2317
+TBDockHeight=2314
 LRDockWidth=2823
 Dockable=1
 StayOnTop=0
@@ -664,12 +718,12 @@ State=0
 Left=0
 Top=0
 Width=2339
-Height=1212
+Height=1219
 MaxLeft=-1
 MaxTop=-1
 ClientWidth=2339
-ClientHeight=1212
-TBDockHeight=3212
+ClientHeight=1219
+TBDockHeight=3210
 LRDockWidth=2823
 Dockable=1
 StayOnTop=0
@@ -683,12 +737,12 @@ State=0
 Left=0
 Top=0
 Width=2339
-Height=1212
+Height=1219
 MaxLeft=-1
 MaxTop=-1
 ClientWidth=2339
-ClientHeight=1212
-TBDockHeight=1154
+ClientHeight=1219
+TBDockHeight=1152
 LRDockWidth=3677
 Dockable=1
 StayOnTop=0
@@ -710,12 +764,12 @@ State=0
 Left=0
 Top=0
 Width=1615
-Height=3317
+Height=6505
 MaxLeft=-1
 MaxTop=-1
 ClientWidth=1615
-ClientHeight=3317
-TBDockHeight=4885
+ClientHeight=6505
+TBDockHeight=4886
 LRDockWidth=7151
 Dockable=1
 StayOnTop=0
@@ -727,14 +781,14 @@ Visible=0
 Docked=1
 State=0
 Left=380
-Top=817
+Top=825
 Width=2854
-Height=3212
+Height=3210
 MaxLeft=-1
 MaxTop=-1
 ClientWidth=2854
-ClientHeight=3212
-TBDockHeight=3212
+ClientHeight=3210
+TBDockHeight=3210
 LRDockWidth=2854
 Dockable=1
 StayOnTop=0
@@ -747,13 +801,13 @@ Docked=1
 State=0
 Left=0
 Top=0
-Width=3823
-Height=1231
+Width=4958
+Height=1276
 MaxLeft=-1
 MaxTop=-1
-ClientWidth=3823
-ClientHeight=1231
-TBDockHeight=1548
+ClientWidth=4958
+ClientHeight=1276
+TBDockHeight=1552
 LRDockWidth=8740
 Dockable=1
 StayOnTop=0
@@ -774,12 +828,12 @@ State=0
 Left=0
 Top=0
 Width=1896
-Height=3548
+Height=3552
 MaxLeft=-1
 MaxTop=-1
 ClientWidth=1896
-ClientHeight=3548
-TBDockHeight=3683
+ClientHeight=3552
+TBDockHeight=3686
 LRDockWidth=1896
 Dockable=1
 StayOnTop=0
@@ -793,12 +847,12 @@ State=0
 Left=0
 Top=0
 Width=2146
-Height=3615
+Height=3619
 MaxLeft=-5
 MaxTop=-10
 ClientWidth=2062
-ClientHeight=3240
-TBDockHeight=3615
+ClientHeight=3248
+TBDockHeight=3619
 LRDockWidth=2146
 Dockable=1
 StayOnTop=0
@@ -812,12 +866,12 @@ State=0
 Left=0
 Top=0
 Width=1719
-Height=2471
+Height=2467
 MaxLeft=-5
 MaxTop=-10
 ClientWidth=1635
-ClientHeight=2096
-TBDockHeight=2471
+ClientHeight=2095
+TBDockHeight=2467
 LRDockWidth=1719
 Dockable=1
 StayOnTop=0
@@ -831,12 +885,12 @@ State=0
 Left=0
 Top=0
 Width=1615
-Height=3317
+Height=6505
 MaxLeft=-1
 MaxTop=-1
 ClientWidth=1615
-ClientHeight=3317
-TBDockHeight=4885
+ClientHeight=6505
+TBDockHeight=4886
 LRDockWidth=5307
 Dockable=1
 StayOnTop=0
@@ -850,12 +904,12 @@ State=0
 Left=0
 Top=0
 Width=1823
-Height=6173
+Height=6171
 MaxLeft=-5
 MaxTop=-10
 ClientWidth=1740
-ClientHeight=5798
-TBDockHeight=6173
+ClientHeight=5800
+TBDockHeight=6171
 LRDockWidth=1823
 Dockable=1
 StayOnTop=0
@@ -874,12 +928,12 @@ State=0
 Left=8
 Top=8
 Width=2339
-Height=1481
+Height=1486
 MaxLeft=-1
 MaxTop=-1
 ClientWidth=2339
-ClientHeight=1481
-TBDockHeight=1481
+ClientHeight=1486
+TBDockHeight=1486
 LRDockWidth=2339
 Dockable=1
 StayOnTop=0
@@ -898,12 +952,12 @@ State=0
 Left=0
 Top=24
 Width=3823
-Height=1500
+Height=1486
 MaxLeft=-1
 MaxTop=-1
 ClientWidth=3823
-ClientHeight=1500
-TBDockHeight=1500
+ClientHeight=1486
+TBDockHeight=1486
 LRDockWidth=3823
 Dockable=1
 StayOnTop=0
@@ -922,11 +976,11 @@ State=0
 Left=0
 Top=490
 Width=1615
-Height=2317
+Height=2390
 MaxLeft=-1
 MaxTop=-1
 ClientWidth=1615
-ClientHeight=2317
+ClientHeight=2390
 TBDockHeight=2048
 LRDockWidth=1615
 Dockable=1
@@ -946,12 +1000,12 @@ State=0
 Left=8
 Top=8
 Width=1896
-Height=3548
+Height=3552
 MaxLeft=-1
 MaxTop=-1
 ClientWidth=1896
-ClientHeight=3548
-TBDockHeight=3548
+ClientHeight=3552
+TBDockHeight=3552
 LRDockWidth=1896
 Dockable=1
 StayOnTop=0
@@ -970,12 +1024,12 @@ State=0
 Left=8
 Top=8
 Width=2000
-Height=4144
+Height=4143
 MaxLeft=-1
 MaxTop=-1
 ClientWidth=2000
-ClientHeight=4144
-TBDockHeight=4144
+ClientHeight=4143
+TBDockHeight=4143
 LRDockWidth=2000
 Dockable=1
 StayOnTop=0

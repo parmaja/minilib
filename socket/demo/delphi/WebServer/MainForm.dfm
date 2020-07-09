@@ -1,7 +1,7 @@
 object Main: TMain
   Left = 165
   Top = 169
-  BiDiMode = bdRightToLeft
+  BiDiMode = bdLeftToRight
   Caption = 'Mini Web Server'
   ClientHeight = 319
   ClientWidth = 426
@@ -45,7 +45,6 @@ object Main: TMain
     ReadOnly = True
     ScrollBars = ssVertical
     TabOrder = 1
-    ExplicitTop = 120
   end
   object StartBtn: TButton
     Left = 360
@@ -91,7 +90,7 @@ object Main: TMain
     Text = '81'
   end
   object StayOnTopChk: TCheckBox
-    Left = 2
+    Left = 8
     Top = 52
     Width = 97
     Height = 17
@@ -101,19 +100,22 @@ object Main: TMain
   end
   object Panel3: TPanel
     Left = 0
-    Top = 88
+    Top = 80
     Width = 426
-    Height = 26
+    Height = 34
     Align = alBottom
     BevelOuter = bvNone
     BorderWidth = 3
     TabOrder = 6
-    ExplicitLeft = 8
+    ExplicitLeft = 3
+    ExplicitTop = 77
+    ExplicitWidth = 420
     object LastIDLabel: TLabel
-      Left = 206
-      Top = 3
+      AlignWithMargins = True
+      Left = 233
+      Top = 6
       Width = 60
-      Height = 20
+      Height = 22
       Align = alLeft
       AutoSize = False
       Caption = '0'
@@ -130,12 +132,15 @@ object Main: TMain
       Transparent = False
       Layout = tlCenter
       ExplicitLeft = 221
+      ExplicitTop = 3
+      ExplicitHeight = 20
     end
     object Label4: TLabel
-      Left = 172
-      Top = 3
+      AlignWithMargins = True
+      Left = 193
+      Top = 6
       Width = 34
-      Height = 20
+      Height = 22
       Align = alLeft
       Caption = 'Last ID'
       Color = clBtnFace
@@ -148,13 +153,16 @@ object Main: TMain
       ParentColor = False
       ParentFont = False
       Layout = tlCenter
+      ExplicitLeft = 172
+      ExplicitTop = 3
       ExplicitHeight = 13
     end
     object Label3: TLabel
-      Left = 92
-      Top = 3
+      AlignWithMargins = True
+      Left = 101
+      Top = 6
       Width = 20
-      Height = 20
+      Height = 22
       Align = alLeft
       Caption = 'Max'
       Color = clBtnFace
@@ -167,13 +175,16 @@ object Main: TMain
       ParentColor = False
       ParentFont = False
       Layout = tlCenter
-      ExplicitHeight = 13
+      ExplicitLeft = 91
+      ExplicitTop = 3
+      ExplicitHeight = 20
     end
     object MaxOfThreadsLabel: TLabel
-      Left = 112
-      Top = 3
+      AlignWithMargins = True
+      Left = 127
+      Top = 6
       Width = 60
-      Height = 20
+      Height = 22
       Align = alLeft
       AutoSize = False
       Caption = '0'
@@ -189,13 +200,16 @@ object Main: TMain
       ShowAccelChar = False
       Transparent = False
       Layout = tlCenter
-      ExplicitLeft = 121
+      ExplicitLeft = 113
+      ExplicitTop = 3
+      ExplicitHeight = 20
     end
     object NumberOfThreads: TLabel
-      Left = 32
-      Top = 3
+      AlignWithMargins = True
+      Left = 35
+      Top = 6
       Width = 60
-      Height = 20
+      Height = 22
       Align = alLeft
       AutoSize = False
       Caption = '0'
@@ -211,13 +225,14 @@ object Main: TMain
       ShowAccelChar = False
       Transparent = False
       Layout = tlCenter
-      ExplicitLeft = 35
+      ExplicitTop = 3
+      ExplicitHeight = 20
     end
     object NumberOfThreadsLbl: TLabel
       Left = 3
       Top = 3
       Width = 29
-      Height = 20
+      Height = 28
       Align = alLeft
       Caption = 'Count'
       Color = clBtnFace
@@ -232,5 +247,25 @@ object Main: TMain
       Layout = tlCenter
       ExplicitHeight = 13
     end
+  end
+  object Button1: TButton
+    Left = 360
+    Top = 53
+    Width = 60
+    Height = 22
+    Anchors = [akTop, akRight]
+    Caption = 'MakeCert'
+    Default = True
+    TabOrder = 7
+    OnClick = Button1Click
+  end
+  object UseSSLChk: TCheckBox
+    Left = 108
+    Top = 54
+    Width = 97
+    Height = 17
+    Caption = 'Use SSL'
+    TabOrder = 8
+    OnClick = StayOnTopChkClick
   end
 end

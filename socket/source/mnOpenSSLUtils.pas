@@ -2,7 +2,7 @@ unit mnOpenSSLUtils;
 {**
  *  This file is part of the "Mini Library"/Sockets
  *
- * @license   modifiedLGPL (modified of http://www.gnu.org/licenses/lgpl.html)
+ * @license   Mit
  * @author    Zaher Dirkey <zaher, zaherdirkey>
  *}
 {$M+}
@@ -10,6 +10,10 @@ unit mnOpenSSLUtils;
 {$IFDEF FPC}
 {$mode delphi}
 {$ENDIF}
+
+//I mixed of 2 of examples
+//https://github.com/irtimmer/moonlight-embedded/blob/master/libgamestream/mkcert.c
+//http://www.opensource.apple.com/source/OpenSSL/OpenSSL-22/openssl/demos/x509/mkcert.c
 
 interface
 
@@ -22,17 +26,17 @@ uses
 type
   EmnOpenSSLException = EmnSocketException;
 
-function MakeCert(var x509p: PX509; var pkeyp: PEVP_PKEY; C, CN: string; Bits: Integer; Serial: Integer; Years: Integer): Boolean; overload;
-function MakeCert(CertificateFile, PrivateKeyFile: string; C, CN: string; Bits: Integer; Serial: Integer; Years: Integer): Boolean; overload;
+function MakeCert(var x509p: PX509; var pkeyp: PEVP_PKEY; C, CN: utf8string; Bits: Integer; Serial: Integer; Years: Integer): Boolean; overload;
+function MakeCert(CertificateFile, PrivateKeyFile: utf8string; C, CN: utf8string; Bits: Integer; Serial: Integer; Years: Integer): Boolean; overload;
 
 procedure InitOpenSSL(All: Boolean = True);
 
 procedure RaiseLastSSLError;
-procedure RaiseSSLError(Message: string);
+procedure RaiseSSLError(Message: utf8string);
 
 implementation
 
-procedure RaiseSSLError(Message: string);
+procedure RaiseSSLError(Message: utf8string);
 begin
   raise EmnOpenSSLException.Create(Message);
 end;
@@ -73,9 +77,10 @@ begin
   // No configuration database
   X509V3_set_ctx_nodb(@ctx);
 
-  { Issuer and subject certs: both the target since it is self signed,
-  	no request and no CRL
-   }
+  {
+    Issuer and subject certs: both the target since it is self signed, no request and no CRL
+  }
+
   X509V3_set_ctx(@ctx, cert, cert, nil, nil, 0);
   ex := X509V3_EXT_conf_nid(nil, @ctx, nid, value);
 
@@ -88,7 +93,7 @@ begin
 end;
 
 //TODO need to make more clean when exit, some objects most not freed if assigned successed
-function MakeCert(var x509p: PX509; var pkeyp: PEVP_PKEY; C, CN: string; Bits: Integer; Serial: Integer; Years: Integer): Boolean;
+function MakeCert(var x509p: PX509; var pkeyp: PEVP_PKEY; C, CN: utf8string; Bits: Integer; Serial: Integer; Years: Integer): Boolean;
 var
   x: PX509;
   pk: PEVP_PKEY;
@@ -156,7 +161,7 @@ begin
     name := X509_get_subject_name(x);
 
     (* This function creates and adds the entry, working out the
-     * correct string type and performing checks on its length.
+     * correct utf8string type and performing checks on its length.
      *)
     if C <> '' then
    	  X509_NAME_add_entry_by_txt(name, 'C', MBSTRING_ASC, PByte(C), -1, -1, 0);
@@ -192,7 +197,7 @@ begin
   end;
 end;
 
-function MakeCert(CertificateFile, PrivateKeyFile: string; C, CN: string; Bits: Integer; Serial: Integer; Years: Integer): Boolean;
+function MakeCert(CertificateFile, PrivateKeyFile: utf8string; C, CN: utf8string; Bits: Integer; Serial: Integer; Years: Integer): Boolean;
 var
 	x509: PX509;
 	pkey: PEVP_PKEY;
