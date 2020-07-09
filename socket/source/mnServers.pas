@@ -669,6 +669,7 @@ begin
         FListener.FPort := FPort;
         FListener.FAddress := FAddress;
         FListener.Prepare;
+        //FListener.Timeout := 500;
         DoStart;
         FListener.Start;
         Log('Server started at port: ' + Port);
