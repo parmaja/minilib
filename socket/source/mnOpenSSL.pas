@@ -68,8 +68,8 @@ type
     constructor Create(AMethod: TSSLMethod); overload;
     constructor Create(AMethodClass: TSSLMethodClass); overload;
     destructor Destroy; override;
-    procedure LoadCertFile(FileName: string);
-    procedure LoadPrivateKeyFile(FileName: string);
+    procedure LoadCertFile(FileName: utf8string);
+    procedure LoadPrivateKeyFile(FileName: utf8string);
     procedure CheckPrivateKey;
     procedure SetVerifyNone;
   end;
@@ -113,7 +113,7 @@ type
 
   TBIOStreamFile = class(TBIOStream)
   public
-    constructor Create(AFileName: string; Mode: string); //read doc of BIO_new_file
+    constructor Create(AFileName: utf8string; Mode: utf8string); //read doc of BIO_new_file
   end;
 
   { TBIOStreamSSL }
@@ -124,7 +124,7 @@ type
   public
     constructor Create(ACTX: TCTX);
     //Host name with port like 'example.com:80';
-    procedure SetHostName(AHostName: string);
+    procedure SetHostName(AHostName: utf8string);
     procedure Connect;
   end;
 
@@ -146,7 +146,7 @@ begin
   Handle := BIO_new_ssl_connect(CTX);
 end;
 
-procedure TBIOStreamSSL.SetHostName(AHostName: string);
+procedure TBIOStreamSSL.SetHostName(AHostName: utf8string);
 begin
   BIO_set_conn_hostname(Handle, PUTF8Char(AHostName)); //Always return 1
 end;
@@ -162,7 +162,7 @@ end;
 
 { TBIOStreamFile }
 
-constructor TBIOStreamFile.Create(AFileName: string; Mode: string);
+constructor TBIOStreamFile.Create(AFileName: utf8string; Mode: utf8string);
 begin
   inherited Create;
   Handle := BIO_new_file(PUTF8Char(AFileName), PUTF8Char(Mode));
@@ -235,7 +235,7 @@ var
 begin
   res := SSL_connect(Handle);
   if res < 0  then
-    raise EmnOpenSSLException.Create('Connect: ' + ERR_error_string(ERR_get_error(), nil))
+    //raise EmnOpenSSLException.Create('Connect: ' + ERR_error_string(ERR_get_error(), nil))
   else if res = 0 then //error
     ;
 end;
@@ -243,12 +243,14 @@ end;
 procedure TSSL.Accept;
 var
   ret, err: Integer;
+  s: string;
 begin
   ret := SSL_accept(Handle);
   if ret <= 0  then
   begin
     err := SSL_get_error(Handle, ret);
-    //raise EmnOpenSSLException.Create('Accept: ' + ERR_error_string(ERR_get_error(), nil));
+    s := 'Accept: ' + ERR_error_string(ERR_get_error(), nil);
+    //raise EmnOpenSSLException.Create(s);
   end;
 end;
 
@@ -311,13 +313,13 @@ begin
   inherited Destroy;
 end;
 
-procedure TCTX.LoadCertFile(FileName: string);
+procedure TCTX.LoadCertFile(FileName: utf8string);
 begin
   if SSL_CTX_use_certificate_file(Handle, PUTF8Char(FileName), SSL_FILETYPE_PEM) <= 0 then
     raise EmnOpenSSLException.Create('fail to load certificate');
 end;
 
-procedure TCTX.LoadPrivateKeyFile(FileName: string);
+procedure TCTX.LoadPrivateKeyFile(FileName: utf8string);
 begin
   if SSL_CTX_use_PrivateKey_file(Handle, PUTF8Char(FileName), SSL_FILETYPE_PEM) <= 0 then
     raise EmnOpenSSLException.Create('fail to load private key');

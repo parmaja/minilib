@@ -10,6 +10,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, StrUtils, Classes, Graphics, Controls, Forms, Dialogs,
+  mnOpenSSLUtils, mnOpenSSL,
   Registry, IniFiles, StdCtrls, ExtCtrls, mnConnections, mnSockets, mnServers, mnWebModules;
 
 type
@@ -29,11 +30,14 @@ type
     MaxOfThreadsLabel: TLabel;
     NumberOfThreads: TLabel;
     NumberOfThreadsLbl: TLabel;
+    Button1: TButton;
+    UseSSLChk: TCheckBox;
     procedure StartBtnClick(Sender: TObject);
     procedure StopBtnClick(Sender: TObject);
     procedure StayOnTopChkClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
+    procedure Button1Click(Sender: TObject);
   private
     FMax:Integer;
     Server: TmodWebServer;
@@ -80,6 +84,7 @@ begin
     aRoot := ExtractFilePath(Application.ExeName) + Copy(aRoot, 3, MaxInt);
   Server.WebModule.DocumentRoot := aRoot;
   Server.Port := PortEdit.Text;
+  Server.UseSSL := UseSSLChk.Checked
 end;
 
 function FindCmdLineValue(Switch: string; var Value: string; const Chars: TSysCharSet = ['/', '-']; Seprator: Char = ' '; IgnoreCase: Boolean = true): Boolean;
@@ -114,10 +119,15 @@ begin
   Result := False;
 end;
 
+procedure TMain.Button1Click(Sender: TObject);
+begin
+  MakeCert('certificate.pem', 'privatekey.pem', 'SY', 'Creative Solutions', 2048, 0, 1);
+end;
+
 procedure TMain.FormCreate(Sender: TObject);
 var
   aIni: TIniFile;
-  function GetOption(AName, ADefault:string):string;
+  function GetOption(AName, ADefault:string): string; overload;
   var
     s:string;
   begin
@@ -128,7 +138,12 @@ var
       Result := aIni.ReadString('options', AName, ADefault);
   end;
 
-  function GetSwitch(AName, ADefault:string):string;//if found in cmd mean it is true
+  function GetOption(AName: string; ADefault: Boolean): Boolean; overload;
+  begin
+    Result := aIni.ReadBool('options', AName, ADefault);
+  end;
+
+  function GetSwitch(AName, ADefault:string): string;//if found in cmd mean it is true
   var
     s:string;
   begin
@@ -153,6 +168,7 @@ begin
   try
     RootEdit.Text := GetOption('root', '.\html');
     PortEdit.Text := GetOption('port', '81');
+    UseSSLChk.Checked := GetOption('ssl', false);
     aAutoRun := StrToBoolDef(GetSwitch('run', ''), False);
   finally
     aIni.Free;
@@ -173,15 +189,18 @@ end;
 
 procedure TMain.FormDestroy(Sender: TObject);
 var
-  aReg: TRegistry;
+  aIni: TIniFile;
 begin
   if ParamCount = 0 then
   begin
-    aReg := TRegistry.Create;
-    aReg.OpenKey('software\miniWebServer\Options', True);
-    aReg.WriteString('DocumentRoot', RootEdit.Text);
-    aReg.WriteString('Port', PortEdit.Text);
-    aReg.Free;
+    aIni := TIniFile.Create(ExtractFilePath(Application.ExeName) + 'config.ini');
+    try
+      aIni.WriteString('options', 'DocumentRoot', RootEdit.Text);
+      aIni.WriteString('options', 'Port', PortEdit.Text);
+      aIni.WriteBool('options', 'ssl', UseSSLChk.Checked);
+    finally
+      aIni.Free;
+    end;
   end
 end;
 

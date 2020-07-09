@@ -132,6 +132,7 @@ begin
     aRoot := ExtractFilePath(Application.ExeName) + Copy(aRoot, 3, MaxInt);
   Server.WebModule.DocumentRoot := aRoot;
   Server.Port := PortEdit.Text;
+  //Server.Address := '127.0.0.1';
   Server.UseSSL := UseSSLChk.Checked;
 end;
 
