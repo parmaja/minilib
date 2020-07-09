@@ -26,8 +26,8 @@ uses
 type
   EmnOpenSSLException = EmnSocketException;
 
-function MakeCert(var x509p: PX509; var pkeyp: PEVP_PKEY; C, CN: utf8string; Bits: Integer; Serial: Integer; Years: Integer): Boolean; overload;
-function MakeCert(CertificateFile, PrivateKeyFile: utf8string; C, CN: utf8string; Bits: Integer; Serial: Integer; Years: Integer): Boolean; overload;
+function MakeCert(var x509p: PX509; var pkeyp: PEVP_PKEY; C, CN: utf8string; Bits: Integer; Serial: Integer; Days: Integer): Boolean; overload;
+function MakeCert(CertificateFile, PrivateKeyFile: utf8string; C, CN: utf8string; Bits: Integer; Serial: Integer; Days: Integer): Boolean; overload;
 
 procedure InitOpenSSL(All: Boolean = True);
 
@@ -93,7 +93,7 @@ begin
 end;
 
 //TODO need to make more clean when exit, some objects most not freed if assigned successed
-function MakeCert(var x509p: PX509; var pkeyp: PEVP_PKEY; C, CN: utf8string; Bits: Integer; Serial: Integer; Years: Integer): Boolean;
+function MakeCert(var x509p: PX509; var pkeyp: PEVP_PKEY; C, CN: utf8string; Bits: Integer; Serial: Integer; Days: Integer): Boolean;
 var
   x: PX509;
   pk: PEVP_PKEY;
@@ -155,7 +155,7 @@ begin
 
     ASN1_INTEGER_set(X509_get_serialNumber(x), serial);
     X509_gmtime_adj(X509_getm_notBefore(x), 0);
-    X509_gmtime_adj(X509_getm_notAfter(x), 60 * 60 * 24 * 365 * Years);
+    X509_gmtime_adj(X509_getm_notAfter(x), 60 * 60 * 24 * Days);
 
     X509_set_pubkey(x, pk);
     name := X509_get_subject_name(x);
@@ -197,7 +197,7 @@ begin
   end;
 end;
 
-function MakeCert(CertificateFile, PrivateKeyFile: utf8string; C, CN: utf8string; Bits: Integer; Serial: Integer; Years: Integer): Boolean;
+function MakeCert(CertificateFile, PrivateKeyFile: utf8string; C, CN: utf8string; Bits: Integer; Serial: Integer; Days: Integer): Boolean;
 var
 	x509: PX509;
 	pkey: PEVP_PKEY;
@@ -206,7 +206,7 @@ begin
 	x509 :=nil;
 	pkey := nil;
   try
-    Result := MakeCert(x509, pkey, C, CN, Bits, Serial, Years);
+    Result := MakeCert(x509, pkey, C, CN, Bits, Serial, Days);
     outbio := BIO_new_file(PUTF8Char(PrivateKeyFile), 'w');
 	  PEM_write_bio_PrivateKey(outbio, pkey, nil, nil, 0, nil, nil);
     BIO_free(outbio);

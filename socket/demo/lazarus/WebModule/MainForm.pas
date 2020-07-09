@@ -18,6 +18,7 @@ interface
 
 uses
   LCLIntf, SysUtils, Classes, Graphics, Controls, Forms, Dialogs, IniFiles,
+  mnLogs,
   StdCtrls, ExtCtrls, mnSockets, mnServers, mnWebModules, mnOpenSSLUtils,
   LResources, Buttons, Menus;
 
@@ -90,7 +91,7 @@ end;
 
 procedure TMain.MakeCertBtnClick(Sender: TObject);
 begin
-  MakeCert('certificate.pem', 'privatekey.pem', 'SY', 'OpenSSL Group', 2048, 0, 1);
+  MakeCert('certificate.pem', 'privatekey.pem', 'SY', 'PARMAJA', 2048, 0, 365);
 end;
 
 procedure TMain.MenuItem1Click(Sender: TObject);
@@ -191,6 +192,7 @@ var
 var
   aAutoRun:Boolean;
 begin
+
   InitOpenSSL;
   Server := TmodWebServer.Create;
   Server.OnBeforeOpen := ModuleServerBeforeOpen;
