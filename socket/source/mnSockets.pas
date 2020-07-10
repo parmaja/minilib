@@ -58,6 +58,7 @@ type
     function GetConnected: Boolean;
   protected
     FHandle: Integer; //following OpenSSL handle of socket
+    FPrepared: Boolean;
 
     ContextOwned: Boolean; //if not referenced
     SSL: TSSL;
@@ -81,8 +82,8 @@ type
     procedure Prepare; virtual; //TODO rename Connect;
     function Shutdown(How: TmnShutdowns): TmnError;
     function Close: TmnError;
-    function Send(const Buffer; var Count: Longint): TmnError;
     function Receive(var Buffer; var Count: Longint): TmnError;
+    function Send(const Buffer; var Count: Longint): TmnError;
     function Select(Timeout: Integer; Check: TSelectCheck): TmnError;
     function Listen: TmnError;
     function Accept: TmnCustomSocket; virtual; abstract;
@@ -211,6 +212,7 @@ end;
 
 procedure TmnCustomSocket.Prepare;
 begin
+  FPrepared := True;
   if (soSSL in Options) and (Kind in [skClient, skServer]) then //Listener socket have no OpenSSL
   begin
     if Context = nil then
@@ -243,9 +245,27 @@ begin
 end;
 
 function TmnCustomSocket.Receive(var Buffer; var Count: Longint): TmnError;
+var
+  ReadSize: Integer;
+  ret: Boolean;
 begin
   CheckActive;
-  Result := DoReceive(Buffer, Count);
+  if soSSL in Options then
+  begin
+    ret := SSL.Read(Buffer, Count, ReadSize);
+    if ret then
+    begin
+      Count := ReadSize;
+      Result := erSuccess;
+    end
+    else
+    begin
+      Count := 0;
+      Result := erInvalid
+    end;
+  end
+  else
+    Result := DoReceive(Buffer, Count);
   if Result > erTimeout then
     Close;
 end;
@@ -258,9 +278,29 @@ begin
 end;
 
 function TmnCustomSocket.Send(const Buffer; var Count: Longint): TmnError;
+var
+  WriteSize: Integer;
+  ret: Boolean;
 begin
   CheckActive;
-  Result := DoSend(Buffer, Count);
+  if soSSL in Options then
+  begin
+    ret := SSL.Write(Buffer, Count, WriteSize);
+    if ret then
+    begin
+      Count := WriteSize;
+      Result := erSuccess;
+      if WriteSize <> Count then
+        raise EmnSocketException.Create('Ops WriteSize <> Count we should care about real size')
+    end
+    else
+    begin
+      Count := 0;
+      Result := erInvalid;
+    end;
+  end
+  else
+    Result := DoSend(Buffer, Count);
   if Result > erTimeout then
     Close;
 end;
@@ -369,7 +409,6 @@ begin
     begin
       if soCloseTimeout in Options then
         FreeSocket;
-
       Result := 0;
     end
     else if (werr = cerSuccess) then

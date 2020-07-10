@@ -327,7 +327,7 @@ procedure TmnClientSocket.SetAddress(const Value: string);
 begin
   if FAddress = Value then Exit;
   if Connected then
-    raise EmnException.Create('Can not change Port value when active');
+    raise EmnException.Create('Can not change Address value when active');
   FAddress := Value;
 end;
 

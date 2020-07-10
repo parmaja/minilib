@@ -1567,12 +1567,12 @@ var
 begin
   Options := [soNoDelay];
   if Client.UseSSL then
-    Options := Options + [soSSL];
+    Options := Options + [soWaitBeforeRead, soSSL];
 
   Result := TIRCSocketStream.Create(Host, Port, Options);
   Result.ConnectTimeout := -1;
   //Result.ReadTimeout := -1;
-  Result.ReadTimeout := 1000;
+  Result.ReadTimeout := 2000;
   Result.EndOfLine := #10;
 end;
 

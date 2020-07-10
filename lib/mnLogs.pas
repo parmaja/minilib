@@ -34,6 +34,7 @@ type
     destructor Destroy; override;
     function Add(AObject: TObject): Integer;
     procedure Write(S: string); overload;
+    procedure WriteLn(S: string);
 
     procedure Write(R: TRect); overload;
     procedure Write(I: Integer); overload;
@@ -54,6 +55,18 @@ type
     destructor Destroy; override;
   end;
 
+  TLogEvent = procedure(S: String) of object;
+
+  { TEventLog }
+
+  TEventLog = class(TInterfacedPersistent, ILog)
+  private
+    Event: TLogEvent;
+    procedure LogWrite(S: string);
+  public
+    constructor Create(AEvent: TLogEvent);
+  end;
+
   { TDebugOutputLog }
 
   TDebugOutputLog = class(TInterfacedPersistent, ILog)
@@ -71,6 +84,7 @@ type
   end;
 
 procedure InstallFileLog(FileName: string);
+procedure InstallEventLog(AEvent: TLogEvent);
 procedure InstallConsoleLog;
 procedure InstallDebugOutputLog;
 {$ifdef FPC}
@@ -85,9 +99,22 @@ var
   FLog: TLogDispatcher = nil;
   Lock: TCriticalSection;
 
+function Log: TLogDispatcher;
+begin
+  Lock := TCriticalSection.Create;
+  if not Assigned(FLog) then
+    FLog := TLogDispatcher.Create(True);
+  Result := FLog;
+end;
+
 procedure InstallFileLog(FileName: string);
 begin
   Log.Add(TFileLog.Create(FileName));
+end;
+
+procedure InstallEventLog(AEvent: TLogEvent);
+begin
+  Log.Add(TEventLog.Create(AEvent));
 end;
 
 procedure InstallConsoleLog;
@@ -147,12 +174,18 @@ begin
 end;
 {$endif}
 
-function Log: TLogDispatcher;
+{ TEventLog }
+
+procedure TEventLog.LogWrite(S: string);
 begin
-  FreeAndNil(Lock);
-  if not Assigned(FLog) then
-    FLog := TLogDispatcher.Create();
-  Result := FLog;
+  if Assigned(Event) then
+    Event(S);
+end;
+
+constructor TEventLog.Create(AEvent: TLogEvent);
+begin
+  inherited Create;
+  Event := AEvent;
 end;
 
 { TConsoleLog }
@@ -206,6 +239,11 @@ begin
   end;
 end;
 
+procedure TLogDispatcher.WriteLn(S: string);
+begin
+  Write(s + #13#10);
+end;
+
 procedure TLogDispatcher.Write(R: TRect);
 begin
   Write('Rect(Left:'+IntToStr(R.Left)+', Right:' + IntToStr(R.Right)+', Top:' + IntToStr(R.Top)+', Bottom:' + IntToStr(R.Bottom) + ')');
@@ -253,11 +291,15 @@ begin
 end;
 
 function TFileLog.OpenStream: TStream;
+var
+  aPath: string;
 begin
   try
     if not FileExists(FFileName) then
     begin
-      ForceDirectories(ExtractFilePath(FFileName));
+      aPath := ExtractFilePath(FFileName);
+      if aPath <> '' then
+        ForceDirectories(aPath);
       Result := TFileStream.Create(FFileName, fmCreate or fmOpenWrite or fmShareDenyNone)
     end
     else

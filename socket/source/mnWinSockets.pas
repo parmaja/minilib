@@ -18,7 +18,6 @@ interface
 uses
   Classes,
   SysUtils,
-  mnOpenSSL,
 {$IFDEF FPC}
   {$IFDEF WINDOWS}
     WinSock2,
@@ -39,7 +38,6 @@ type
     FAddress: TSockAddr;
   protected
     function GetActive: Boolean; override;
-    function Check(Value: Integer): Boolean;
 
     function DoReceive(var Buffer; var Count: Longint): TmnError; override;
     function DoSend(const Buffer; var Count: Longint): TmnError; override;
@@ -175,11 +173,6 @@ begin
     Result := TmnSocket.Create(aHandle, Options, Kind);
 end;
 
-function TmnSocket.Check(Value: Integer): Boolean;
-begin
-  Result := not (Value = SOCKET_ERROR);
-end;
-
 function TmnSocket.GetRemoteAddress: string;
 var
   SockAddrIn: TSockAddrIn;
@@ -284,64 +277,63 @@ end;
 
 function TmnSocket.DoReceive(var Buffer; var Count: Longint): TmnError;
 var
-  c: Integer;
+  ret: Integer;
   errno: longint;
 begin
-  if soSSL in Options then
-    c := SSL.read(Buffer, Count)
-  else
 {$IFDEF FPC}
-  c := WinSock2.recv(FHandle, Buffer, Count, 0);
+  ret := WinSock2.recv(FHandle, Buffer, Count, 0);
 {$ELSE}
   c := WinSock.recv(FHandle, Buffer, Count, 0);
 {$ENDIF}
-  if c = 0 then
+  if ret = 0 then
   begin
     Count := 0;
     Result := erClosed;
   end
-  else if not Check(c) then
+  else if ret = SOCKET_ERROR then
   begin
     Count := 0;
     //CheckError not directly here
-    errno := WSAGetLastError();
-    if errno = WSAETIMEDOUT then
-      Result := erTimeout //maybe closed, but we will pass it as timeout, the caller will close it depend on options
-    else
+    if soWaitBeforeRead in Options then
       Result := erInvalid
+    else
+    begin
+      errno := WSAGetLastError(); //not work with OpenSSL because it reset error to 0, now readtimeout in socket options not usefull
+      if errno = WSAETIMEDOUT then
+        Result := erTimeout //the caller will close it depend on options
+      else
+        Result := erInvalid
+    end;
   end
   else
   begin
-    Count := c;
+    Count := ret;
     Result := erSuccess;
   end;
 end;
 
 function TmnSocket.DoSend(const Buffer; var Count: Longint): TmnError;
 var
-  c: Integer;
+  ret: Integer;
 begin
-  if soSSL in Options then
-    c := SSL.Write(Buffer, Count)
-  else
 {$IFDEF FPC}
-    c := WinSock2.send(FHandle, (@Buffer)^, Count, 0);
+    ret:= WinSock2.send(FHandle, (@Buffer)^, Count, 0);
 {$ELSE}
-    c := WinSock.send(FHandle, (@Buffer)^, Count, 0);
+    ret := WinSock.send(FHandle, (@Buffer)^, Count, 0);
 {$ENDIF}
-  if c = 0 then
+  if ret = 0 then
   begin
     Result := erClosed;
     Count := 0;
   end
-  else if not Check(c) then
+  else if ret = SOCKET_ERROR then
   begin
     Count := 0;
     Result := erInvalid;
   end
   else
   begin
-    Count := c;
+    Count := ret;
     Result := erSuccess;
   end;
 end;
@@ -381,11 +373,14 @@ begin
     if soNoDelay in Options then
       setsockopt(aHandle, IPPROTO_TCP, TCP_NODELAY, PAnsiChar(@SO_TRUE), SizeOf(SO_TRUE));
 
-    if ReadTimeout <> -1 then
+    if not (soWaitBeforeRead in Options) then
     begin
-      DW := ReadTimeout;
-      //* https://stackoverflow.com/questions/2876024/linux-is-there-a-read-or-recv-from-socket-with-timeout
-      vErr := setsockopt(aHandle, SOL_SOCKET, SO_RCVTIMEO, @DW, SizeOf(DW));
+      if ReadTimeout <> -1 then
+      begin
+        DW := ReadTimeout;
+        //* https://stackoverflow.com/questions/2876024/linux-is-there-a-read-or-recv-from-socket-with-timeout
+        vErr := setsockopt(aHandle, SOL_SOCKET, SO_RCVTIMEO, @DW, SizeOf(DW));
+      end;
     end;
 
     if soReuseAddr in Options then
@@ -545,11 +540,14 @@ begin
     if soKeepAlive in Options then
       setsockopt(aHandle, SOL_SOCKET, SO_KEEPALIVE, PAnsiChar(@SO_TRUE), SizeOf(SO_TRUE));
 
-    if ReadTimeout <> -1 then
+    if not (soWaitBeforeRead in Options) then
     begin
-      DW := ReadTimeout;
-      //* https://stackoverflow.com/questions/2876024/linux-is-there-a-read-or-recv-from-socket-with-timeout
-      setsockopt(aHandle, SOL_SOCKET, SO_RCVTIMEO, @DW, SizeOf(DW));
+      if ReadTimeout <> -1 then
+      begin
+        DW := ReadTimeout;
+        //* https://stackoverflow.com/questions/2876024/linux-is-there-a-read-or-recv-from-socket-with-timeout
+        setsockopt(aHandle, SOL_SOCKET, SO_RCVTIMEO, @DW, SizeOf(DW));
+      end;
     end;
 
     if ConnectTimeout<>-1 then

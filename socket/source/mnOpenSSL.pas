@@ -14,8 +14,8 @@ unit mnOpenSSL;
 interface
 
 uses
-  Classes,
-  SysUtils,
+  Classes, SysUtils,
+  mnLogs,
   mnOpenSSLAPI;
 
 type
@@ -82,11 +82,12 @@ type
     constructor Init(ASSL: PSSL); overload;
     procedure Free;
     procedure SetSocket(ASocket: Integer);
-    procedure Connect;
-    procedure Handshake;
+    function Connect: Boolean;
+    function Handshake: Boolean;
     procedure SetVerifyNone;
-    function Read(var Buf; Size: Integer): Integer;
-    function Write(const Buf; Size: Integer): Integer;
+    //Return False if failed
+    function Read(var Buf; Size: Integer; out ReadSize: Integer): Boolean;
+    function Write(const Buf; Size: Integer; out WriteSize: Integer): Boolean;
   end;
 
   //*****************************************************
@@ -216,8 +217,10 @@ end;
 constructor TSSL.Init(ACTX: TContext);
 begin
   //inherited Create;
+  Initialize(Self);
   CTX := ACTX;
   Handle := SSL_new(CTX.Handle);
+  Log.WriteLn(SSL_get_version(Handle));
 end;
 
 constructor TSSL.Init(ASSL: PSSL);
@@ -237,29 +240,35 @@ begin
   SSL_set_fd(Handle, ASocket);
 end;
 
-procedure TSSL.Connect;
+function TSSL.Connect: Boolean;
 var
-  res: Integer;
+  ret: Integer;
 begin
-  res := SSL_connect(Handle);
-  if res < 0  then
-    //raise EmnOpenSSLException.Create('Connect: ' + ERR_error_string(ERR_get_error(), nil))
-  else if res = 0 then //error
-    ;
+  ret := SSL_connect(Handle);
+  if ret < 0  then
+  begin
+    Result := False;
+    Log.WriteLn('Connect: ' + ERR_error_string(ERR_get_error(), nil));
+  end
+  else if ret = 0 then //error
+    Result := False
+  else
+    Result := True;
 end;
 
-procedure TSSL.Handshake;
+function TSSL.Handshake: Boolean;
 var
   ret, err: Integer;
-  s: string;
 begin
   ret := SSL_accept(Handle);
   if ret <= 0  then
   begin
     err := SSL_get_error(Handle, ret);
-    s := 'Accept: ' + ERR_error_string(ERR_get_error(), nil);
-    //raise EmnOpenSSLException.Create(s);
-  end;
+    Log.WriteLn('Accept: ' + ERR_error_string(err, nil));
+    Result := False;
+  end
+  else
+    Result := True;
 end;
 
 procedure TSSL.SetVerifyNone;
@@ -267,14 +276,35 @@ begin
   SSL_set_verify(Handle, SSL_VERIFY_NONE, nil);
 end;
 
-function TSSL.Read(var Buf; Size: Integer): Integer;
+function TSSL.Read(var Buf; Size: Integer; out ReadSize: Integer): Boolean;
+var
+  err: Integer;
 begin
-  Result := SSL_read(Handle, Buf, Size);
+  ReadSize := SSL_read(Handle, Buf, Size);
+  if ReadSize <= 0  then
+  begin
+    err := SSL_get_error(Handle, ReadSize);
+    Log.WriteLn('Read: ' + ERR_error_string(err, nil));
+    ReadSize := 0;
+    Result := False;
+  end
+  else
+    Result := True;
 end;
 
-function TSSL.Write(const Buf; Size: Integer): Integer;
+function TSSL.Write(const Buf; Size: Integer; out WriteSize: Integer): Boolean;
+var
+  err: Integer;
 begin
-  Result := SSL_write(Handle, Buf, Size);
+  WriteSize := SSL_write(Handle, Buf, Size);
+  if WriteSize <= 0  then
+  begin
+    err := SSL_get_error(Handle, WriteSize);
+    Log.WriteLn('Write: ' + ERR_error_string(err, nil));
+    Result := False;
+  end
+  else
+    Result := True;
 end;
 
 { TSSLMethod }

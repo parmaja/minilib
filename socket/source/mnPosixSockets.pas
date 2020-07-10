@@ -85,7 +85,6 @@ type
     FHandle: TSocket;
     FAddress: TSockAddr;
   protected
-    function Check(Value: Integer; WithZero: Boolean = False): Boolean;
     function GetActive: Boolean; override;
     function DoSelect(Timeout: Integer; Check: TSelectCheck): TmnError; override;
     function DoShutdown(How: TmnShutdowns): TmnError; override;
@@ -115,7 +114,7 @@ type
     constructor Create; override;
     destructor Destroy; override;
     procedure Bind(Options: TmnsoOptions; const Port: string; const Address: string; out vSocket: TmnCustomSocket; out vErr: Integer); override;
-    procedure Connect(Options: TmnsoOptions; Timeout: Integer; const Port: string; const Address: string; out vSocket: TmnCustomSocket; out vErr: Integer); override;
+    procedure Connect(Options: TmnsoOptions; ConnectTimeout, ReadTimeout: Integer; const Port: string; const Address: string; out vSocket: TmnCustomSocket; out vErr: Integer); override;
   end;
 
 implementation
@@ -142,17 +141,17 @@ end;
 
 function TmnSocket.DoReceive(var Buffer; var Count: Longint): TmnError;
 var
-  c: Integer;
+  ret: Integer;
 begin
   CheckActive;
 
-  c := Posix.SysSocket.Recv(FHandle, Buffer, Count, MSG_NOSIGNAL);
+  ret := Posix.SysSocket.Recv(FHandle, Buffer, Count, MSG_NOSIGNAL);
   if c = 0 then
   begin
     Count := 0;
     Result := erClosed;
   end
-  else if not Check(c) then
+  else if ret = SOCKET_ERROR then
   begin
     Count := 0;
     //TODO copy it from windows
@@ -161,26 +160,26 @@ begin
   end
   else
   begin
-    Count := c;
+    Count := ret;
     Result := erSuccess;
   end;
 end;
 
 function TmnSocket.DoSend(const Buffer; var Count: Longint): TmnError;
 var
-  c: Integer;
+  re: Integer;
 begin
 
   CheckActive;
-  c := Posix.SysSocket.Send(FHandle, Buffer, Count, MSG_NOSIGNAL);
+  ret := Posix.SysSocket.Send(FHandle, Buffer, Count, MSG_NOSIGNAL);
   //c := PosixSend(@Buffer, Count);
 
-  if c = 0 then
+  if ret = 0 then
   begin
     Result := erClosed;
     Count := 0;
   end
-  else if not Check(c) then
+  else if Value = SOCKET_ERROR then
   begin
     Count := 0;
     Result := erInvalid;
@@ -342,11 +341,6 @@ begin
   end;
 end;
 
-function TmnSocket.Check(Value: Integer; WithZero: Boolean): Boolean;
-begin
-  Result := not ((Value = SOCKET_ERROR) or (WithZero and (Value = 0)));
-end;
-
 function TmnSocket.GetRemoteAddress: string;
 var
   SockAddr: TSockAddr;
@@ -477,7 +471,7 @@ begin
   Result := StrToIntDef(Port, 0);
 end;
 
-procedure TmnWallSocket.Connect(Options: TmnsoOptions; Timeout: Integer; const Port: string; const Address: string; out vSocket: TmnCustomSocket; out vErr: Integer);
+procedure TmnWallSocket.Connect(Options: TmnsoOptions; ConnectTimeout, ReadTimeout: Integer; const Port: string; const Address: string; out vSocket: TmnCustomSocket; out vErr: Integer);
 var
   aHandle: TSocket;
   aAddr : TSockAddr;
@@ -583,7 +577,7 @@ begin
         FreeSocket(aHandle, aErr);
       end;
     end;
-    if aHandle<>INVALID_SOCKET then
+    if aHandle <> INVALID_SOCKET then
       vSocket := TmnSocket.Create(aHandle)
     else
       vSocket := nil;

@@ -7,7 +7,7 @@ interface
 uses
   Classes, SysUtils, StrUtils, FileUtil, Forms, Controls, Graphics,
   Dialogs, Buttons, IniFiles, StdCtrls, ExtCtrls, ComCtrls, Menus, LCLType,
-  MsgBox, GUIMsgBox,
+  MsgBox, GUIMsgBox, mnLogs,
   ChatRoomFrames, mnIRCClients;
 
 type
@@ -28,6 +28,7 @@ type
   { TMainFrm }
 
   TMainFrm = class(TForm)
+    UseSSLChk: TCheckBox;
     ConnectBtn: TButton;
     PortEdit: TEdit;
     JoinBtn: TButton;
@@ -55,6 +56,7 @@ type
     NicknameEdit: TEdit;
     procedure Button1Click(Sender: TObject);
     procedure ConnectBtnClick(Sender: TObject);
+    procedure FormCreate(Sender: TObject);
     procedure FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure HostEditKeyPress(Sender: TObject; var Key: char);
     procedure JoinBtnClick(Sender: TObject);
@@ -71,7 +73,7 @@ type
     procedure RecentUp;
     procedure RecentDown;
     procedure AddRecent(S: string);
-    procedure Log(S: string);
+    procedure LogMessage(S: string);
     function CurrentRoom: string;
     procedure ConnectNow;
     procedure SaveConfig;
@@ -102,7 +104,7 @@ end;
 procedure TMyIRCClient.DoLog(S: String);
 begin
   inherited;
-  MainFrm.Log(S);
+  MainFrm.LogMessage(S);
 end;
 
 procedure TMyIRCClient.DoMyInfoChanged;
@@ -163,6 +165,11 @@ begin
   end;
 end;
 
+procedure TMainFrm.FormCreate(Sender: TObject);
+begin
+
+end;
+
 procedure TMainFrm.FormKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
 begin
   if (Key = VK_TAB) then
@@ -186,7 +193,7 @@ begin
   SaveConfig;
   IRC.Host := HostEdit.Text;
   IRC.Port := PortEdit.Text;
-  IRC.UseSSL := True;
+  IRC.UseSSL := UseSSLChk.Checked;
 
   IRC.Nicks.Clear;
   IRC.Nicks.Add(NicknameEdit.Text);
@@ -390,7 +397,7 @@ begin
   RecentsIndex := 0;
 end;
 
-procedure TMainFrm.Log(S: string);
+procedure TMainFrm.LogMessage(S: string);
 begin
   LogEdit.Lines.Add(S)
 end;
@@ -408,6 +415,12 @@ var
   ini: TIniFile;
 begin
   inherited;
+  InstallFileLog('log.txt');
+  InstallEventLog(@LogMessage);
+  {$ifdef DEBUG}
+  InstallConsoleLog;
+  InstallDebugOutputLog;
+  {$endif}
   {$macro on}
   Caption := Caption + ' ' + IntToStr(FPC_FULLVERSION);
   Recents := TStringList.Create;
@@ -419,6 +432,7 @@ begin
     RoomsEdit.Text := Ini.ReadString('User', 'Room', '');
     HostEdit.Text := Ini.ReadString('User', 'Host', '');
     PortEdit.Text := Ini.ReadString('User', 'Port', '6667');
+    UseSSLChk.Checked := Ini.ReadBool('User', 'SSL', false);
     Width := Ini.ReadInteger('Window', 'Width', Width);
     Height := Ini.ReadInteger('Window', 'Height', Height);
     LogEdit.Height := Ini.ReadInteger('Window', 'LogHeight', LogEdit.Height);
@@ -458,6 +472,7 @@ begin
     Ini.WriteString('User', 'Room', RoomsEdit.Text);
     Ini.WriteString('User', 'Host', HostEdit.Text);
     Ini.WriteString('User', 'Port', PortEdit.Text);
+    Ini.WriteBool('User', 'SSL', UseSSLChk.Checked);
   finally
     FreeAndNil(ini);
   end;
@@ -470,7 +485,7 @@ var
   oUser: TIRCUser;
 begin
   if vChannel = '' then
-    Log(vMSG)
+    LogMessage(vMSG)
   else
   begin
     ChatRoom := NeedRoom(vChannel);

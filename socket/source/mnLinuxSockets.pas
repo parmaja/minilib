@@ -30,7 +30,6 @@ type
     FHandle: TSocket;
     FAddress: TINetSockAddr;
   protected
-    function Check(Value: Integer; WithZero: Boolean = False): Boolean;
     function GetActive: Boolean; override;
     function DoSelect(Timeout: Integer; Check: TSelectCheck): TmnError; override;
     function DoShutdown(How: TmnShutdowns): TmnError; override;
@@ -57,7 +56,7 @@ type
     constructor Create; override;
     destructor Destroy; override;
     procedure Bind(Options: TmnsoOptions; const Port: ansistring; const Address: AnsiString; out vSocket: TmnCustomSocket; out vErr: Integer); override;
-    procedure Connect(Options: TmnsoOptions; Timeout: Integer; const Port: ansistring; const Address: AnsiString; out vSocket: TmnCustomSocket; out vErr: Integer); override;
+    procedure Connect(Options: TmnsoOptions; ConnectTimeout, ReadTimeout: Integer; const Port: ansistring; const Address: AnsiString; out vSocket: TmnCustomSocket; out vErr: Integer); override;
   end;
 
 implementation
@@ -73,16 +72,16 @@ const
 
 function TmnSocket.DoReceive(var Buffer; var Count: Longint): TmnError;
 var
-  c: Integer;
+  ret: Integer;
 //  errno: longint;
 begin
-  c := fprecv(FHandle, @Buffer, Count, MSG_NOSIGNAL);
-  if c = 0 then
+  ret := fprecv(FHandle, @Buffer, Count, MSG_NOSIGNAL);
+  if ret = 0 then
   begin
     Count := 0;
     Result := erClosed;
   end
-  else if not Check(c) then
+  else if ret = SOCKET_ERROR then
   begin
     Count := 0;
     //errno := SocketError;
@@ -92,29 +91,29 @@ begin
   end
   else
   begin
-    Count := c;
+    Count := ret;
     Result := erSuccess;
   end;
 end;
 
 function TmnSocket.DoSend(const Buffer; var Count: Longint): TmnError;
 var
-  c: Integer;
+  ret: Integer;
 begin
-  c := fpsend(FHandle, @Buffer, Count, MSG_NOSIGNAL);
-  if c = 0 then
+  ret := fpsend(FHandle, @Buffer, Count, MSG_NOSIGNAL);
+  if ret = 0 then
   begin
     Result := erClosed;
     Count := 0;
   end
-  else if not Check(c) then
+  else if ret = SOCKET_ERROR then
   begin
     Count := 0;
     Result := erInvalid;
   end
   else
   begin
-    Count := c;
+    Count := ret;
     Result := erSuccess;
   end;
 end;
@@ -227,11 +226,6 @@ begin
     Result := erSuccess;
 end;
 
-function TmnSocket.Check(Value: Integer; WithZero: Boolean): Boolean;
-begin
-  Result := not ((Value = SOCKET_ERROR) or (WithZero and (Value = 0)));
-end;
-
 function TmnSocket.GetRemoteAddress: ansistring;
 var
   SockAddr: TSockAddr;
@@ -298,7 +292,7 @@ const
   SO_TRUE:Longbool=True;
 //  SO_FALSE:Longbool=False;
 
-procedure TmnWallSocket.Bind(Options: TmnsoOptions; const Port: AnsiString; const Address: AnsiString; out vSocket: TmnCustomSocket; out vErr: Integer);
+procedure TmnWallSocket.Bind(Options: TmnsoOptions; const Port: ansistring; const Address: AnsiString; out vSocket: TmnCustomSocket; out vErr: Integer);
 var
   aHandle: TSocket;
   aAddr : TINetSockAddr;
@@ -350,7 +344,7 @@ begin
   Result := StrToIntDef(Port, 0);
 end;
 
-procedure TmnWallSocket.Connect(Options: TmnsoOptions; Timeout: Integer; const Port: ansistring; const Address: AnsiString; out vSocket: TmnCustomSocket; out vErr: Integer);
+procedure TmnWallSocket.Connect(Options: TmnsoOptions; ConnectTimeout, ReadTimeout: Integer; const Port: ansistring; const Address: AnsiString; out vSocket: TmnCustomSocket; out vErr: Integer);
 var
   aHandle: TSocket;
   aAddr : TINetSockAddr;
@@ -370,11 +364,14 @@ begin
     if soKeepAlive in Options then
       fpsetsockopt(aHandle, SOL_SOCKET, SO_KEEPALIVE, PAnsiChar(@SO_TRUE), SizeOf(SO_TRUE));
 
-    if soSetReadTimeout in Options then
+    if not soWaitBeforeRead in Options then
     begin
-      time.tv_sec:=Timeout div 1000;
-      time.tv_usec:=(Timeout mod 1000) * 1000;
-      fpsetsockopt(aHandle, SOL_SOCKET, SO_RCVTIMEO, @time, SizeOf(time));
+      if ReadTimeout <> -1 then
+      begin
+        time.tv_sec:= ReadTimeout div 1000;
+        time.tv_usec:=(Timeout mod 1000) * 1000;
+        fpsetsockopt(aHandle, SOL_SOCKET, SO_RCVTIMEO, @time, SizeOf(time));
+      end;
     end;
 
   //  fpsetsockopt(aHandle, SOL_SOCKET, SO_NOSIGPIPE, PChar(@SO_TRUE), SizeOf(SO_TRUE));
