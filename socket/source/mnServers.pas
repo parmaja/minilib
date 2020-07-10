@@ -447,7 +447,7 @@ begin
     if Connected then
     begin
       Socket.Prepare;
-      Socket.Listen
+      Socket.Listen;
     end
     else
       raise EmnStreamException.CreateFmt('Bind fail [%d]', [aErr]);
@@ -542,8 +542,11 @@ begin
       if (Socket.Select(Timeout, slRead) = erSuccess) and not Terminated then
       begin
         aSocket := Socket.Accept;
-        aSocket.Context := Context;
-        aSocket.Prepare;
+        if aSocket <> nil then
+        begin
+          aSocket.Context := Context;
+          aSocket.Prepare;
+        end;
       end
       else
         aSocket := nil;

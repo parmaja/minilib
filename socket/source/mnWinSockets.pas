@@ -170,7 +170,7 @@ begin
   if aHandle = INVALID_SOCKET then
     Result := nil
   else
-    Result := TmnSocket.Create(aHandle, Options, Kind);
+    Result := TmnSocket.Create(aHandle, Options, skServer);
 end;
 
 function TmnSocket.GetRemoteAddress: string;

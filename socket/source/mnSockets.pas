@@ -213,7 +213,7 @@ end;
 procedure TmnCustomSocket.Prepare;
 begin
   FPrepared := True;
-  if (soSSL in Options) and (Kind in [skClient, skServer]) then //Listener socket have no OpenSSL
+  if (soSSL in FOptions) and (FKind in [skClient, skServer]) then //Listener socket have no OpenSSL
   begin
     if Context = nil then
     begin
