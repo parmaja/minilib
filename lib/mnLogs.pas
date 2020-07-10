@@ -4,8 +4,11 @@ unit mnLogs;
  Purpose:
  History:
 -----------------------------------------------------------------------------}
-
+{$ifdef FPC}
 {$mode delphi}
+{$endif}
+{$M+}
+{$H+}
 
 interface
 
@@ -14,7 +17,7 @@ uses
   Windows,
   {$else}
   {$endif}
-  Classes, SysUtils, Contnrs, syncobjs;
+  System.Types, Classes, SysUtils, Contnrs, syncobjs;
 
 type
 
@@ -97,13 +100,15 @@ implementation
 
 var
   FLog: TLogDispatcher = nil;
-  Lock: TCriticalSection;
+  Lock: TCriticalSection = nil;
 
 function Log: TLogDispatcher;
 begin
-  Lock := TCriticalSection.Create;
   if not Assigned(FLog) then
+  begin
+    Lock := TCriticalSection.Create;
     FLog := TLogDispatcher.Create(True);
+  end;
   Result := FLog;
 end;
 
@@ -221,18 +226,23 @@ end;
 
 function TLogDispatcher.Add(AObject: TObject): Integer;
 begin
+  if not Supports(AObject, ILog) then
+    raise Exception.Create('Object is no ILog');
+
   Result := inherited Add(AObject);
 end;
 
 procedure TLogDispatcher.Write(S: string);
 var
   i: Integer;
+  ALog: ILog;
 begin
   Lock.Enter;
   try
     for i := 0 to Count -1 do
     begin
-      (Items[i] as ILog).LogWrite(S);
+      ALog := ILog(Pointer(Items[i]));
+      ALog.LogWrite(S);
     end;
   finally
     Lock.Leave;
@@ -318,7 +328,7 @@ var
 begin
   a := StringReplace(s, #13#10, ' ', []);
   a := StringReplace(a, #13, ' ', []);
-  InternalWrite(a + LineEnding);
+  InternalWrite(a + #13#10);
 end;
 
 initialization

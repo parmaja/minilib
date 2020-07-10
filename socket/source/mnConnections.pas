@@ -17,9 +17,6 @@ interface
 
 uses
   Classes, SysUtils, SyncObjs,
-  {$ifdef DEBUG}
-  mnDebugs,
-  {$endif}
   mnStreams, mnSockets;
 
 type
@@ -184,18 +181,12 @@ end;
 
 procedure TmnLockThread.Enter;
 begin
-  {$ifdef DEBUG}
-  Debug.Write('LockThread Enter');
-  {$endif}
   FLock.Enter;
 end;
 
 procedure TmnLockThread.Leave;
 begin
   FLock.Leave;
-  {$ifdef DEBUG}
-  Debug.Write('LockThread Leave');
-  {$endif}
 end;
 
 procedure TmnConnection.Process;

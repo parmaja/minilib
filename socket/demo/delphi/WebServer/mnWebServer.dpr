@@ -1,6 +1,7 @@
 program mnWebServer;
 
 uses
+  FastMM4,
   Forms,
   Windows,
   SysUtils,

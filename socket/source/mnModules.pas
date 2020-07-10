@@ -659,7 +659,7 @@ begin
   FModules := AModules;
   FModules.Add(Self);
   FParams := TStringList.Create;
-  FCommands := TmodCommandClasses.Create;
+  FCommands := TmodCommandClasses.Create(True);
   FKeepAliveTimeOut := cDefaultKeepAliveTimeOut; //TODO move module
 end;
 

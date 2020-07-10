@@ -10,7 +10,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, StrUtils, Classes, Graphics, Controls, Forms, Dialogs,
-  mnOpenSSLUtils, mnOpenSSL,
+  mnOpenSSLUtils, mnOpenSSL, mnLogs,
   Registry, IniFiles, StdCtrls, ExtCtrls, mnConnections, mnSockets, mnServers, mnWebModules;
 
 type
@@ -121,7 +121,7 @@ end;
 
 procedure TMain.Button1Click(Sender: TObject);
 begin
-  MakeCert('certificate.pem', 'privatekey.pem', 'SY', 'Creative Solutions', 2048, 0, 1);
+  MakeCert('certificate.pem', 'privatekey.pem', 'Creative Solutions', 'Creative Solutions', 'SY', '', 2048, 0, 1);
 end;
 
 procedure TMain.FormCreate(Sender: TObject);
@@ -201,7 +201,8 @@ begin
     finally
       aIni.Free;
     end;
-  end
+  end;
+  FreeAndNil(Server);
 end;
 
 procedure TMain.ModuleServerAfterClose(Sender: TObject);

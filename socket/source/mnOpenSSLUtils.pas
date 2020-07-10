@@ -26,8 +26,8 @@ uses
 type
   EmnOpenSSLException = EmnSocketException;
 
-function MakeCert(var x509p: PX509; var pkeyp: PEVP_PKEY; C, CN: utf8string; Bits: Integer; Serial: Integer; Days: Integer): Boolean; overload;
-function MakeCert(CertificateFile, PrivateKeyFile: utf8string; C, CN: utf8string; Bits: Integer; Serial: Integer; Days: Integer): Boolean; overload;
+function MakeCert(var x509p: PX509; var pkeyp: PEVP_PKEY; CN, O, C, OU: utf8string; Bits: Integer; Serial: Integer; Days: Integer): Boolean; overload;
+function MakeCert(CertificateFile, PrivateKeyFile: utf8string; CN, O, C, OU: utf8string; Bits: Integer; Serial: Integer; Days: Integer): Boolean; overload;
 
 procedure InitOpenSSL(All: Boolean = True);
 procedure CleanupOpenSSL;
@@ -99,7 +99,7 @@ begin
 end;
 
 //TODO need to make more clean when exit, some objects most not freed if assigned successed
-function MakeCert(var x509p: PX509; var pkeyp: PEVP_PKEY; C, CN: utf8string; Bits: Integer; Serial: Integer; Days: Integer): Boolean;
+function MakeCert(var x509p: PX509; var pkeyp: PEVP_PKEY; CN, O, C, OU: utf8string; Bits: Integer; Serial: Integer; Days: Integer): Boolean;
 var
   x: PX509;
   pk: PEVP_PKEY;
@@ -169,10 +169,14 @@ begin
     (* This function creates and adds the entry, working out the
      * correct utf8string type and performing checks on its length.
      *)
-    if C <> '' then
-   	  X509_NAME_add_entry_by_txt(name, 'C', MBSTRING_ASC, PByte(C), -1, -1, 0);
     if CN <> '' then
       X509_NAME_add_entry_by_txt(name, 'CN', MBSTRING_ASC, PByte(CN), -1, -1, 0);
+    if O <> '' then
+      X509_NAME_add_entry_by_txt(name, 'O', MBSTRING_ASC, PByte(O), -1, -1, 0);
+    if C <> '' then
+   	  X509_NAME_add_entry_by_txt(name, 'C', MBSTRING_ASC, PByte(C), -1, -1, 0);
+    if OU <> '' then
+      X509_NAME_add_entry_by_txt(name, 'OU', MBSTRING_ASC, PByte(OU), -1, -1, 0);
 
     (* Its self signed so set the issuer name to be the same as the
      * subject.
@@ -203,7 +207,7 @@ begin
   end;
 end;
 
-function MakeCert(CertificateFile, PrivateKeyFile: utf8string; C, CN: utf8string; Bits: Integer; Serial: Integer; Days: Integer): Boolean;
+function MakeCert(CertificateFile, PrivateKeyFile: utf8string; CN, O, C, OU: utf8string; Bits: Integer; Serial: Integer; Days: Integer): Boolean;
 var
 	x509: PX509;
 	pkey: PEVP_PKEY;
@@ -212,7 +216,7 @@ begin
 	x509 :=nil;
 	pkey := nil;
   try
-    Result := MakeCert(x509, pkey, C, CN, Bits, Serial, Days);
+    Result := MakeCert(x509, pkey, CN, O, C, OU, Bits, Serial, Days);
     outbio := BIO_new_file(PUTF8Char(PrivateKeyFile), 'w');
 	  PEM_write_bio_PrivateKey(outbio, pkey, nil, nil, 0, nil, nil);
     BIO_free(outbio);

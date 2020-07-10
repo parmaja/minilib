@@ -100,6 +100,7 @@
     </Parsing>
     <Linking>
       <Debugging>
+        <UseHeaptrc Value="True"/>
         <UseValgrind Value="True"/>
         <UseExternalDbgSyms Value="True"/>
       </Debugging>

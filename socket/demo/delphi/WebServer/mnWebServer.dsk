@@ -6,69 +6,93 @@ File_3=TSourceModule,'M:\home\pascal\lib\minilib\socket\source\mnWinSockets.pas'
 File_4=TSourceModule,'M:\home\pascal\lib\minilib\socket\source\mnSocketStreams.pas',0,1,48,1,89,0,0,,
 
 [Modules]
-Module0=D:\lab\pascal\minilib\socket\source\mnWinSockets.pas
-Module1=D:\lab\pascal\minilib\socket\source\mnOpenSSLAPI.pas
-Module2=D:\lab\pascal\minilib\socket\source\mnOpenSSL.pas
-Module3=D:\lab\pascal\minilib\socket\source\mnLinuxSockets.pas
-Module4=D:\lab\pascal\minilib\socket\source\mnPosixSockets.pas
-Module5=D:\lab\pascal\minilib\socket\source\mnSockets.pas
-Module6=D:\lab\pascal\minilib\socket\source\mnServers.pas
-Module7=c:\program files (x86)\embarcadero\studio\20.0\SOURCE\RTL\SYS\System.pas
-Module8=c:\program files (x86)\embarcadero\studio\20.0\SOURCE\RTL\SYS\System.SysUtils.pas
+Module0=D:\lab\pascal\minilib\socket\source\mnModules.pas
+Module1=D:\lab\pascal\minilib\socket\demo\delphi\WebServer\MainForm.pas
+Module2=D:\lab\pascal\minilib\socket\demo\delphi\WebServer\mnWebServer.dproj
+Module3=D:\lab\pascal\minilib\socket\demo\delphi\WebServer\fastmem\FastMM4.pas
+Module4=D:\lab\pascal\minilib\socket\source\mnOpenSSL.pas
+Module5=D:\lab\pascal\minilib\socket\source\mnOpenSSLAPI.pas
+Module6=D:\lab\pascal\minilib\socket\source\mnOpenSSLUtils.pas
+Module7=D:\lab\pascal\minilib\socket\source\mnWebModules.pas
+Module8=D:\lab\pascal\minilib\lib\mnClasses.pas
 Module9=c:\program files (x86)\embarcadero\studio\20.0\source\rtl\common\System.Classes.pas
-Module10=D:\lab\pascal\minilib\socket\source\mnModules.pas
-Module11=D:\lab\pascal\minilib\socket\source\mnWebModules.pas
-Module12=D:\lab\pascal\minilib\socket\source\mnOpenSSLUtils.pas
-Module13=D:\lab\pascal\minilib\socket\demo\delphi\WebServer\MainForm.pas
-Module14=D:\lab\pascal\minilib\socket\source\mnConnections.pas
-Module15=c:\program files (x86)\embarcadero\studio\20.0\source\rtl\win\Winapi.WinSock.pas
-Module16=c:\program files (x86)\embarcadero\studio\20.0\source\rtl\win\Winapi.Winsock2.pas
-Count=17
+Module10=c:\program files (x86)\embarcadero\studio\20.0\SOURCE\RTL\SYS\System.SysUtils.pas
+Module11=c:\program files (x86)\embarcadero\studio\20.0\SOURCE\RTL\SYS\System.pas
+Module12=D:\lab\pascal\minilib\socket\source\mnServers.pas
+Module13=D:\lab\pascal\minilib\socket\source\mnSockets.pas
+Module14=D:\lab\pascal\minilib\socket\source\mnPosixSockets.pas
+Module15=D:\lab\pascal\minilib\socket\source\mnLinuxSockets.pas
+Module16=D:\lab\pascal\minilib\socket\source\mnWinSockets.pas
+Module17=D:\lab\pascal\minilib\lib\mnLogs.pas
+Module18=D:\lab\pascal\minilib\socket\source\mnConnections.pas
+Module19=c:\program files (x86)\embarcadero\studio\20.0\source\rtl\common\System.Contnrs.pas
+Module20=c:\program files (x86)\embarcadero\studio\20.0\source\rtl\win\Winapi.Windows.pas
+Module21=c:\program files (x86)\embarcadero\studio\20.0\source\rtl\win\Winapi.WinSock.pas
+Module22=c:\program files (x86)\embarcadero\studio\20.0\source\rtl\win\Winapi.Winsock2.pas
+Count=23
 EditWindowCount=1
 
-[D:\lab\pascal\minilib\socket\source\mnWinSockets.pas]
-ModuleType=TSourceModule
-
-[D:\lab\pascal\minilib\socket\source\mnOpenSSLAPI.pas]
-ModuleType=TSourceModule
-
-[D:\lab\pascal\minilib\socket\source\mnOpenSSL.pas]
-ModuleType=TSourceModule
-
-[D:\lab\pascal\minilib\socket\source\mnLinuxSockets.pas]
-ModuleType=TSourceModule
-
-[D:\lab\pascal\minilib\socket\source\mnPosixSockets.pas]
-ModuleType=TSourceModule
-
-[D:\lab\pascal\minilib\socket\source\mnSockets.pas]
-ModuleType=TSourceModule
-
-[D:\lab\pascal\minilib\socket\source\mnServers.pas]
-ModuleType=TSourceModule
-
-[c:\program files (x86)\embarcadero\studio\20.0\SOURCE\RTL\SYS\System.pas]
-ModuleType=TSourceModule
-
-[c:\program files (x86)\embarcadero\studio\20.0\SOURCE\RTL\SYS\System.SysUtils.pas]
-ModuleType=TSourceModule
-
-[c:\program files (x86)\embarcadero\studio\20.0\source\rtl\common\System.Classes.pas]
-ModuleType=TSourceModule
-
 [D:\lab\pascal\minilib\socket\source\mnModules.pas]
-ModuleType=TSourceModule
-
-[D:\lab\pascal\minilib\socket\source\mnWebModules.pas]
-ModuleType=TSourceModule
-
-[D:\lab\pascal\minilib\socket\source\mnOpenSSLUtils.pas]
 ModuleType=TSourceModule
 
 [D:\lab\pascal\minilib\socket\demo\delphi\WebServer\MainForm.pas]
 ModuleType=TSourceModule
 
+[D:\lab\pascal\minilib\socket\demo\delphi\WebServer\mnWebServer.dproj]
+ModuleType=TBaseProject
+
+[D:\lab\pascal\minilib\socket\demo\delphi\WebServer\fastmem\FastMM4.pas]
+ModuleType=TSourceModule
+
+[D:\lab\pascal\minilib\socket\source\mnOpenSSL.pas]
+ModuleType=TSourceModule
+
+[D:\lab\pascal\minilib\socket\source\mnOpenSSLAPI.pas]
+ModuleType=TSourceModule
+
+[D:\lab\pascal\minilib\socket\source\mnOpenSSLUtils.pas]
+ModuleType=TSourceModule
+
+[D:\lab\pascal\minilib\socket\source\mnWebModules.pas]
+ModuleType=TSourceModule
+
+[D:\lab\pascal\minilib\lib\mnClasses.pas]
+ModuleType=TSourceModule
+
+[c:\program files (x86)\embarcadero\studio\20.0\source\rtl\common\System.Classes.pas]
+ModuleType=TSourceModule
+
+[c:\program files (x86)\embarcadero\studio\20.0\SOURCE\RTL\SYS\System.SysUtils.pas]
+ModuleType=TSourceModule
+
+[c:\program files (x86)\embarcadero\studio\20.0\SOURCE\RTL\SYS\System.pas]
+ModuleType=TSourceModule
+
+[D:\lab\pascal\minilib\socket\source\mnServers.pas]
+ModuleType=TSourceModule
+
+[D:\lab\pascal\minilib\socket\source\mnSockets.pas]
+ModuleType=TSourceModule
+
+[D:\lab\pascal\minilib\socket\source\mnPosixSockets.pas]
+ModuleType=TSourceModule
+
+[D:\lab\pascal\minilib\socket\source\mnLinuxSockets.pas]
+ModuleType=TSourceModule
+
+[D:\lab\pascal\minilib\socket\source\mnWinSockets.pas]
+ModuleType=TSourceModule
+
+[D:\lab\pascal\minilib\lib\mnLogs.pas]
+ModuleType=TSourceModule
+
 [D:\lab\pascal\minilib\socket\source\mnConnections.pas]
+ModuleType=TSourceModule
+
+[c:\program files (x86)\embarcadero\studio\20.0\source\rtl\common\System.Contnrs.pas]
+ModuleType=TSourceModule
+
+[c:\program files (x86)\embarcadero\studio\20.0\source\rtl\win\Winapi.Windows.pas]
 ModuleType=TSourceModule
 
 [c:\program files (x86)\embarcadero\studio\20.0\source\rtl\win\Winapi.WinSock.pas]
@@ -78,8 +102,8 @@ ModuleType=TSourceModule
 ModuleType=TSourceModule
 
 [EditWindow0]
-ViewCount=17
-CurrentEditView=D:\lab\pascal\minilib\socket\source\mnWinSockets.pas
+ViewCount=23
+CurrentEditView=D:\lab\pascal\minilib\socket\source\mnModules.pas
 View0=0
 View1=1
 View2=2
@@ -97,6 +121,12 @@ View13=13
 View14=14
 View15=15
 View16=16
+View17=17
+View18=18
+View19=19
+View20=20
+View21=21
+View22=22
 PercentageSizes=1
 Create=1
 Visible=1
@@ -129,15 +159,37 @@ BottomMiddelPanelData=0000080001020200000009000000446F636B5369746530100000004772
 [View0]
 CustomEditViewType=TEditView
 Module=D:\lab\pascal\minilib\socket\demo\delphi\WebServer\MainForm.pas
-CursorX=1
-CursorY=1
-TopLine=1
+CursorX=34
+CursorY=200
+TopLine=190
 LeftCol=1
 Elisions=
 Bookmarks=
 EditViewName=D:\lab\pascal\minilib\socket\demo\delphi\WebServer\MainForm.pas
 
 [View1]
+CustomEditViewType=TEditView
+Module=D:\lab\pascal\minilib\socket\demo\delphi\WebServer\mnWebServer.dpr
+CursorX=3
+CursorY=18
+TopLine=1
+LeftCol=1
+Elisions=
+Bookmarks=
+EditViewName=D:\lab\pascal\minilib\socket\demo\delphi\WebServer\mnWebServer.dpr
+
+[View2]
+CustomEditViewType=TEditView
+Module=D:\lab\pascal\minilib\socket\demo\delphi\WebServer\fastmem\FastMM4.pas
+CursorX=1
+CursorY=1
+TopLine=1
+LeftCol=1
+Elisions=
+Bookmarks=
+EditViewName=D:\lab\pascal\minilib\socket\demo\delphi\WebServer\fastmem\FastMM4.pas
+
+[View3]
 CustomEditViewType=TEditView
 Module=D:\lab\pascal\minilib\socket\source\mnOpenSSL.pas
 CursorX=3
@@ -148,7 +200,7 @@ Elisions=
 Bookmarks=
 EditViewName=D:\lab\pascal\minilib\socket\source\mnOpenSSL.pas
 
-[View2]
+[View4]
 CustomEditViewType=TEditView
 Module=D:\lab\pascal\minilib\socket\source\mnOpenSSLAPI.pas
 CursorX=1
@@ -159,7 +211,7 @@ Elisions=
 Bookmarks=
 EditViewName=D:\lab\pascal\minilib\socket\source\mnOpenSSLAPI.pas
 
-[View3]
+[View5]
 CustomEditViewType=TEditView
 Module=D:\lab\pascal\minilib\socket\source\mnOpenSSLUtils.pas
 CursorX=45
@@ -170,40 +222,51 @@ Elisions=
 Bookmarks=
 EditViewName=D:\lab\pascal\minilib\socket\source\mnOpenSSLUtils.pas
 
-[View4]
+[View6]
 CustomEditViewType=TEditView
 Module=D:\lab\pascal\minilib\socket\source\mnWebModules.pas
-CursorX=1
-CursorY=630
-TopLine=610
+CursorX=3
+CursorY=280
+TopLine=277
 LeftCol=1
 Elisions=
 Bookmarks=
 EditViewName=D:\lab\pascal\minilib\socket\source\mnWebModules.pas
 
-[View5]
+[View7]
 CustomEditViewType=TEditView
 Module=D:\lab\pascal\minilib\socket\source\mnModules.pas
-CursorX=25
-CursorY=127
-TopLine=110
+CursorX=31
+CursorY=157
+TopLine=134
 LeftCol=1
 Elisions=
 Bookmarks=
 EditViewName=D:\lab\pascal\minilib\socket\source\mnModules.pas
 
-[View6]
+[View8]
+CustomEditViewType=TEditView
+Module=D:\lab\pascal\minilib\lib\mnClasses.pas
+CursorX=3
+CursorY=110
+TopLine=92
+LeftCol=1
+Elisions=
+Bookmarks=
+EditViewName=D:\lab\pascal\minilib\lib\mnClasses.pas
+
+[View9]
 CustomEditViewType=TEditView
 Module=c:\program files (x86)\embarcadero\studio\20.0\source\rtl\common\System.Classes.pas
-CursorX=3
-CursorY=7568
-TopLine=7550
+CursorX=1
+CursorY=456
+TopLine=438
 LeftCol=1
 Elisions=
 Bookmarks=
 EditViewName=c:\program files (x86)\embarcadero\studio\20.0\source\rtl\common\System.Classes.pas
 
-[View7]
+[View10]
 CustomEditViewType=TEditView
 Module=c:\program files (x86)\embarcadero\studio\20.0\SOURCE\RTL\SYS\System.SysUtils.pas
 CursorX=29
@@ -214,18 +277,18 @@ Elisions=
 Bookmarks=
 EditViewName=c:\program files (x86)\embarcadero\studio\20.0\SOURCE\RTL\SYS\System.SysUtils.pas
 
-[View8]
+[View11]
 CustomEditViewType=TEditView
 Module=c:\program files (x86)\embarcadero\studio\20.0\SOURCE\RTL\SYS\System.pas
 CursorX=1
-CursorY=12
-TopLine=1
+CursorY=968
+TopLine=995
 LeftCol=1
 Elisions=
 Bookmarks=
 EditViewName=c:\program files (x86)\embarcadero\studio\20.0\SOURCE\RTL\SYS\System.pas
 
-[View9]
+[View12]
 CustomEditViewType=TEditView
 Module=D:\lab\pascal\minilib\socket\source\mnServers.pas
 CursorX=14
@@ -236,7 +299,7 @@ Elisions=
 Bookmarks=
 EditViewName=D:\lab\pascal\minilib\socket\source\mnServers.pas
 
-[View10]
+[View13]
 CustomEditViewType=TEditView
 Module=D:\lab\pascal\minilib\socket\source\mnSockets.pas
 CursorX=1
@@ -247,7 +310,7 @@ Elisions=
 Bookmarks=
 EditViewName=D:\lab\pascal\minilib\socket\source\mnSockets.pas
 
-[View11]
+[View14]
 CustomEditViewType=TEditView
 Module=D:\lab\pascal\minilib\socket\source\mnPosixSockets.pas
 CursorX=72
@@ -258,7 +321,7 @@ Elisions=
 Bookmarks=
 EditViewName=D:\lab\pascal\minilib\socket\source\mnPosixSockets.pas
 
-[View12]
+[View15]
 CustomEditViewType=TEditView
 Module=D:\lab\pascal\minilib\socket\source\mnLinuxSockets.pas
 CursorX=69
@@ -269,18 +332,51 @@ Elisions=
 Bookmarks=
 EditViewName=D:\lab\pascal\minilib\socket\source\mnLinuxSockets.pas
 
-[View13]
+[View16]
 CustomEditViewType=TEditView
 Module=D:\lab\pascal\minilib\socket\source\mnWinSockets.pas
-CursorX=26
-CursorY=417
-TopLine=403
+CursorX=6
+CursorY=286
+TopLine=268
 LeftCol=1
 Elisions=
 Bookmarks=
 EditViewName=D:\lab\pascal\minilib\socket\source\mnWinSockets.pas
 
-[View14]
+[View17]
+CustomEditViewType=TEditView
+Module=D:\lab\pascal\minilib\lib\mnLogs.pas
+CursorX=1
+CursorY=112
+TopLine=86
+LeftCol=1
+Elisions=
+Bookmarks=
+EditViewName=D:\lab\pascal\minilib\lib\mnLogs.pas
+
+[View18]
+CustomEditViewType=TEditView
+Module=c:\program files (x86)\embarcadero\studio\20.0\source\rtl\common\System.Contnrs.pas
+CursorX=14
+CursorY=45
+TopLine=27
+LeftCol=1
+Elisions=
+Bookmarks=
+EditViewName=c:\program files (x86)\embarcadero\studio\20.0\source\rtl\common\System.Contnrs.pas
+
+[View19]
+CustomEditViewType=TEditView
+Module=c:\program files (x86)\embarcadero\studio\20.0\source\rtl\win\Winapi.Windows.pas
+CursorX=23
+CursorY=4057
+TopLine=4040
+LeftCol=1
+Elisions=
+Bookmarks=
+EditViewName=c:\program files (x86)\embarcadero\studio\20.0\source\rtl\win\Winapi.Windows.pas
+
+[View20]
 CustomEditViewType=TEditView
 Module=c:\program files (x86)\embarcadero\studio\20.0\source\rtl\win\Winapi.Winsock2.pas
 CursorX=1
@@ -291,7 +387,7 @@ Elisions=
 Bookmarks=
 EditViewName=c:\program files (x86)\embarcadero\studio\20.0\source\rtl\win\Winapi.Winsock2.pas
 
-[View15]
+[View21]
 CustomEditViewType=TEditView
 Module=c:\program files (x86)\embarcadero\studio\20.0\source\rtl\win\Winapi.WinSock.pas
 CursorX=3
@@ -302,12 +398,12 @@ Elisions=
 Bookmarks={1,721,14}
 EditViewName=c:\program files (x86)\embarcadero\studio\20.0\source\rtl\win\Winapi.WinSock.pas
 
-[View16]
+[View22]
 CustomEditViewType=TEditView
 Module=D:\lab\pascal\minilib\socket\source\mnConnections.pas
 CursorX=1
-CursorY=178
-TopLine=162
+CursorY=190
+TopLine=167
 LeftCol=1
 Elisions=
 Bookmarks=
@@ -544,11 +640,6 @@ LRDockWidth=1615
 Dockable=1
 StayOnTop=0
 SplitPos=118
-
-[PropInspDesignerSelection]
-ArrangeBy=Name
-SelectedItem=Name,LiveBindings
-ExpandedItems=Anchors=0,Constraints=0,Font=0,LiveBindings=0,"LiveBindings Designer=0",Margins=1,BorderIcons=0,BevelEdges=0,ImageMargins=0
 
 [frmDesignPreview]
 PercentageSizes=1

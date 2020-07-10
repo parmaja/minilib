@@ -91,7 +91,7 @@ end;
 
 procedure TMain.MakeCertBtnClick(Sender: TObject);
 begin
-  MakeCert('certificate.pem', 'privatekey.pem', 'SY', 'PARMAJA', 2048, 0, 365);
+  MakeCert('certificate.pem', 'privatekey.pem', 'PARMAJA', 'PARMAJA TEAM', 'SY', '', 2048, 0, 365);
 end;
 
 procedure TMain.MenuItem1Click(Sender: TObject);

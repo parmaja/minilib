@@ -283,7 +283,7 @@ begin
 {$IFDEF FPC}
   ret := WinSock2.recv(FHandle, Buffer, Count, 0);
 {$ELSE}
-  c := WinSock.recv(FHandle, Buffer, Count, 0);
+  ret := WinSock.recv(FHandle, Buffer, Count, 0);
 {$ENDIF}
   if ret = 0 then
   begin
