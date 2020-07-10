@@ -18,7 +18,11 @@ interface
 uses
   Classes,
   SysUtils,
+  mnOpenSSL,
   mnStreams;
+
+const
+  WaitForEver: Longint = -1;
 
 type
   EmnException = class(Exception);
@@ -40,15 +44,24 @@ type
     );
   TmnsoOptions = set of TmnsoOption;
 
+  TSocketKind = (skClient, skServer, skListener);
+
   //maybe we should name it TmnSocket
 
   { TmnCustomSocket }
 
   TmnCustomSocket = class abstract(TObject)
   private
+    FOptions: TmnsoOptions;
     FShutdownState: TmnShutdowns;
+    FKind: TSocketKind;
     function GetConnected: Boolean;
   protected
+    FHandle: Integer; //following OpenSSL handle of socket
+
+    ContextOwned: Boolean; //if not referenced
+    SSL: TSSL;
+
     function GetActive: Boolean; virtual; abstract;
     procedure CheckActive; //this will force exception, cuz you should not use socket in api implmentation without active socket, i meant use it in api section only
     function DoSelect(Timeout: Integer; Check: TSelectCheck): TmnError; virtual; abstract;
@@ -56,13 +69,18 @@ type
     function DoListen: TmnError; virtual; abstract;
     function DoSend(const Buffer; var Count: Longint): TmnError; virtual; abstract;
     function DoReceive(var Buffer; var Count: Longint): TmnError; virtual; abstract;
+    function DoClose: TmnError; virtual; abstract;
     property ShutdownState: TmnShutdowns read FShutdownState;
+    property Options: TmnsoOptions read FOptions;
+    property Kind: TSocketKind read FKind;
   public
-    constructor Create;
+    Context: TContext; //Maybe Reference to Listener CTX or external CTX
+
+    constructor Create(AHandle: Integer; AOptions: TmnsoOptions; AKind: TSocketKind);
     destructor Destroy; override;
-    procedure Prepare; virtual;
+    procedure Prepare; virtual; //TODO rename Connect;
     function Shutdown(How: TmnShutdowns): TmnError;
-    function Close: TmnError; virtual; abstract;
+    function Close: TmnError;
     function Send(const Buffer; var Count: Longint): TmnError;
     function Receive(var Buffer; var Count: Longint): TmnError;
     function Select(Timeout: Integer; Check: TSelectCheck): TmnError;
@@ -119,14 +137,6 @@ type
     property Options: TmnsoOptions read FOptions write FOptions;
   end;
 
-const
-  WaitForEver: Longint = -1;
-
-var
-  //You can use full path, we will move it inside server object
-  PrivateKeyFile: string = 'privatekey.pem';
-  CertificateFile: string = 'certificate.pem';
-
 function WallSocket: TmnCustomWallSocket;
 
 implementation
@@ -182,22 +192,42 @@ begin
   end
 end;
 
-constructor TmnCustomSocket.Create;
+constructor TmnCustomSocket.Create(AHandle: Integer; AOptions: TmnsoOptions; AKind: TSocketKind);
 begin
-  inherited;
+  inherited Create;
+  FOptions := AOptions;
+  FKind := AKind;
+  FHandle := AHandle;
 end;
 
 destructor TmnCustomSocket.Destroy;
 begin
+  if ContextOwned then
+    FreeAndNil(Context);
   if Active then
-  begin
     Close;
-  end;
   inherited;
 end;
 
 procedure TmnCustomSocket.Prepare;
 begin
+  if (soSSL in Options) and (Kind in [skClient, skServer]) then //Listener socket have no OpenSSL
+  begin
+    if Context = nil then
+    begin
+      Context := TContext.Create(TTLS_SSLMethod);//TODO check if no Context referenced
+      ContextOwned := True;
+    end;
+
+    SSL := TSSL.Init(Context);
+
+    SSL.SetSocket(FHandle);
+
+    if Kind = skServer then
+      SSL.Handshake
+    else
+      SSL.Connect;
+  end;
 end;
 
 function TmnCustomSocket.GetConnected: Boolean;
@@ -214,6 +244,7 @@ end;
 
 function TmnCustomSocket.Receive(var Buffer; var Count: Longint): TmnError;
 begin
+  CheckActive;
   Result := DoReceive(Buffer, Count);
   if Result > erTimeout then
     Close;
@@ -228,6 +259,7 @@ end;
 
 function TmnCustomSocket.Send(const Buffer; var Count: Longint): TmnError;
 begin
+  CheckActive;
   Result := DoSend(Buffer, Count);
   if Result > erTimeout then
     Close;
@@ -246,6 +278,16 @@ begin
   end
   else
     Result := erSuccess;
+end;
+
+function TmnCustomSocket.Close: TmnError;
+begin
+  if Active then
+  begin
+    if soSSL in Options then
+      SSL.Free;
+  end;
+  Result := DoClose;
 end;
 
 { TmnStream }
@@ -386,8 +428,12 @@ begin
   FSocket := CreateSocket(aErr);
 
   if FSocket = nil then
+  begin
     if not HandleError(aErr) then
       raise EmnSocketException.CreateFmt('Connected fail [%d]', [aErr]);
+  end
+  else
+    FSocket.Prepare;
 end;
 
 function TmnSocketStream.CreateSocket(out vErr: Integer): TmnCustomSocket;

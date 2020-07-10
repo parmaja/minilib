@@ -37,9 +37,9 @@ type
     function DoListen: TmnError; override;
     function DoReceive(var Buffer; var Count: Longint): TmnError; override;
     function DoSend(const Buffer; var Count: Longint): TmnError; override;
+    function DoClose: TmnError; override;
   public
     constructor Create(Handle: TSocket);
-    function Close: TmnError; override;
     function Accept: TmnCustomSocket; override;
     function GetLocalAddress: ansistring; override;
     function GetRemoteAddress: ansistring; override;
@@ -76,13 +76,11 @@ var
   c: Integer;
 //  errno: longint;
 begin
-  CheckActive;
   c := fprecv(FHandle, @Buffer, Count, MSG_NOSIGNAL);
   if c = 0 then
   begin
     Count := 0;
     Result := erClosed;
-    Close;
   end
   else if not Check(c) then
   begin
@@ -103,13 +101,11 @@ function TmnSocket.DoSend(const Buffer; var Count: Longint): TmnError;
 var
   c: Integer;
 begin
-  CheckActive;
   c := fpsend(FHandle, @Buffer, Count, MSG_NOSIGNAL);
   if c = 0 then
   begin
     Result := erClosed;
     Count := 0;
-    Close;
   end
   else if not Check(c) then
   begin
@@ -162,7 +158,7 @@ begin
   Result := FHandle <> INVALID_SOCKET;
 end;
 
-function TmnSocket.Close: TmnError;
+function TmnSocket.DoClose: TmnError;
 var
   err: Longint;
 begin

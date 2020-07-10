@@ -19,6 +19,7 @@ interface
 
 uses
   Classes, SysUtils,
+  mnOpenSSL,
   mnSockets, mnStreams, mnConnections;
 
 type
@@ -90,6 +91,7 @@ type
     procedure Connect;
     procedure Disconnect;
     function GetConnected: Boolean;
+    procedure SetOptions(AValue: TmnsoOptions);
   protected
     function DoCreateConnection(vStream: TmnConnectionStream): TmnConnection; virtual;
     function CreateConnection(vSocket: TmnCustomSocket): TmnConnection;
@@ -97,6 +99,13 @@ type
     procedure DoCreateStream(var Result: TmnConnectionStream; vSocket: TmnCustomSocket); virtual;
 
     property LogMessages: TStringList read FLogMessages;
+
+  protected //OpenSSL
+    Context: TContext;
+    //You can use full path
+    PrivateKeyFile: string;
+    CertificateFile: string;
+
   protected
     procedure PostLogs;
     procedure PostChanged;
@@ -105,11 +114,12 @@ type
     procedure DropConnections; virtual;
     procedure Prepare; virtual;
     procedure Execute; override;
+    procedure Unprepare; virtual;
     procedure Remove(Connection: TmnServerConnection); virtual;
     procedure Add(Connection: TmnServerConnection); virtual;
 
   public
-    constructor Create(AOptions: TmnsoOptions = []);
+    constructor Create;
     destructor Destroy; override;
     procedure Stop; override;
     // Use this function when you are in a thread do not use Server.Log
@@ -117,7 +127,7 @@ type
     property Server: TmnServer read FServer;
     property Connected: Boolean read GetConnected;
     property Socket: TmnCustomSocket read FSocket;
-    property Options: TmnsoOptions read FOptions;
+    property Options: TmnsoOptions read FOptions write SetOptions;
     //if listener connection down by network it will reconnect again
     property Attempts: Integer read FAttempts write FAttempts;
     property Timeout: Integer read FTimeout write FTimeout default -1;
@@ -143,7 +153,7 @@ type
     function GetCount: Integer;
   protected
     IsDestroying: Boolean;
-    function DoCreateListener(AOptions: TmnsoOptions = []): TmnListener; virtual;
+    function DoCreateListener: TmnListener; virtual;
     function CreateListener: TmnListener; virtual;
     procedure DoLog(const S: string); virtual;
     procedure DoChanged(vListener: TmnListener); virtual;
@@ -155,6 +165,9 @@ type
     procedure DoStart; virtual;
     procedure DoStop; virtual;
   public
+    PrivateKeyFile: string;
+    CertificateFile: string;
+
     constructor Create;
     procedure BeforeDestruction; override;
     destructor Destroy; override;
@@ -432,17 +445,19 @@ begin
   begin
     WallSocket.Bind(FOptions, Timeout, FPort, FAddress, FSocket, aErr);
     if Connected then
+    begin
+      Socket.Prepare;
       Socket.Listen
+    end
     else
       raise EmnStreamException.CreateFmt('Bind fail [%d]', [aErr]);
   end;
 end;
 
-constructor TmnListener.Create(AOptions: TmnsoOptions);
+constructor TmnListener.Create;
 begin
   inherited Create;
   FLogMessages := TStringList.Create;
-  FOptions := AOptions;
   FAttempts := 0;
   FTimeout := -1;
 end;
@@ -525,7 +540,11 @@ begin
   begin
     try
       if (Socket.Select(Timeout, slRead) = erSuccess) and not Terminated then
-        aSocket := Socket.Accept
+      begin
+        aSocket := Socket.Accept;
+        aSocket.Context := Context;
+        aSocket.Prepare;
+      end
       else
         aSocket := nil;
       Enter;
@@ -569,12 +588,26 @@ begin
   end;
   DropConnections;
   Disconnect;
+  Unprepare;
   Changed;
+end;
+
+procedure TmnListener.Unprepare;
+begin
+  if soSSL in Options then
+    FreeAndNil(Context);
 end;
 
 function TmnListener.GetConnected: Boolean;
 begin
   Result := (FSocket <> nil) and FSocket.Active;
+end;
+
+procedure TmnListener.SetOptions(AValue: TmnsoOptions);
+begin
+  if FOptions =AValue then Exit;
+  FOptions :=AValue;
+  //TODO check if not connected
 end;
 
 procedure TmnListener.Log(S: string);
@@ -593,6 +626,11 @@ end;
 
 procedure TmnListener.Prepare;
 begin
+  Context := TContext.Create(TTLS_SSLServerMethod);
+  Context.LoadCertFile(CertificateFile);
+  Context.LoadPrivateKeyFile(PrivateKeyFile);
+  Context.CheckPrivateKey; //do not use this
+  //Context.SetVerifyNone;
 end;
 
 procedure TmnListener.Remove(Connection: TmnServerConnection);
@@ -638,6 +676,8 @@ constructor TmnServer.Create;
 begin
   inherited Create;
   FAddress := '0.0.0.0';
+  PrivateKeyFile := 'privatekey.pem';
+  CertificateFile := 'certificate.pem';
 end;
 
 procedure TmnServer.BeforeDestruction;
@@ -668,6 +708,11 @@ begin
         FListener.FServer := Self;
         FListener.FPort := FPort;
         FListener.FAddress := FAddress;
+        if UseSSL then
+          FListener.FOptions := FListener.FOptions + [soSSL];
+        FListener.PrivateKeyFile := PrivateKeyFile;
+        FListener.CertificateFile := CertificateFile;
+
         FListener.Prepare;
         //FListener.Timeout := 500;
         DoStart;
@@ -725,19 +770,14 @@ begin
   DoStop;
 end;
 
-function TmnServer.DoCreateListener(AOptions: TmnsoOptions): TmnListener;
+function TmnServer.DoCreateListener: TmnListener;
 begin
-  Result := TmnListener.Create(AOptions);
+  Result := TmnListener.Create;
 end;
 
 function TmnServer.CreateListener: TmnListener;
-var
-  lOptions: TmnsoOptions;
 begin
-  lOptions := [];
-  if UseSSL then
-    lOptions := lOptions + [soSSL];
-  Result := DoCreateListener(lOptions);
+  Result := DoCreateListener;
 end;
 
 procedure TmnServer.DoLog(const S: string);

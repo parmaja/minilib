@@ -30,6 +30,7 @@ function MakeCert(var x509p: PX509; var pkeyp: PEVP_PKEY; C, CN: utf8string; Bit
 function MakeCert(CertificateFile, PrivateKeyFile: utf8string; C, CN: utf8string; Bits: Integer; Serial: Integer; Days: Integer): Boolean; overload;
 
 procedure InitOpenSSL(All: Boolean = True);
+procedure CleanupOpenSSL;
 
 procedure RaiseLastSSLError;
 procedure RaiseSSLError(Message: utf8string);
@@ -66,6 +67,11 @@ begin
 
     //ERR_load_CRYPTO_strings();//IDK
   end;
+end;
+
+procedure CleanupOpenSSL;
+begin
+  //EVP_Cleanup;
 end;
 
 function AddExt(cert: PX509; nid: integer; value: PUTF8Char): Integer;

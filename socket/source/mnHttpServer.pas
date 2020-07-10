@@ -120,7 +120,7 @@ type
     function GetDocument(Root: string): string;
     function DoCreateConnection(vStream: TmnConnectionStream): TmnConnection; override;
   public
-    constructor Create(AOptions: TmnsoOptions);
+    constructor Create;
     destructor Destroy; override;
     property Config: TConfigInfo read FConfig write FConfig;
     property DefaultDocument: TStringList read FDefaultDocument write SetDefaultDocument;
@@ -136,7 +136,7 @@ type
     FDefaultDocument: TStringList;
     procedure SetDefaultDoc(const Value: TStringList);
   protected
-    function DoCreateListener(AOptions: TmnsoOptions = []): TmnListener; override;
+    function DoCreateListener: TmnListener; override;
     function CreateListener: TmnListener; override;
   public
     constructor Create;
@@ -468,9 +468,10 @@ begin
   FDefaultDocument.Assign(Value);
 end;
 
-function TmnHttpServer.DoCreateListener(AOptions: TmnsoOptions = []): TmnListener;
+function TmnHttpServer.DoCreateListener: TmnListener;
 begin
-  Result := TmnHttpListener.Create(AOptions + [soReuseAddr]);
+  Result := TmnHttpListener.Create;
+  Result.Options := Result.Options + [soReuseAddr];
 end;
 
 function TmnHttpServer.CreateListener: TmnListener;
@@ -524,7 +525,7 @@ begin
   FDefaultDocument := Value;
 end;
 
-constructor TmnHttpListener.Create(AOptions: TmnsoOptions);
+constructor TmnHttpListener.Create;
 begin
   inherited;
   FDefaultDocument := TStringList.Create;

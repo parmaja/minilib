@@ -16,9 +16,7 @@ interface
 uses
   Classes,
   SysUtils,
-  mnOpenSSLAPI,
-  mnOpenSSLUtils,
-  mnSockets;
+  mnOpenSSLAPI;
 
 type
 
@@ -59,7 +57,7 @@ type
 
   { TCTX }
 
-  TCTX = class(TOpenSSLObject)
+  TContext = class(TOpenSSLObject)
   protected
     Handle: PSSL_CTX;
     FMethod: TSSLMethod;
@@ -77,14 +75,15 @@ type
   TSSL = record//class(TOpenSSLObject)
   //protected
     Handle: PSSL;
-    CTX: TCTX;
+    CTX: TContext;
     Connected: Boolean;
   //public
-    constructor Create(ACTX: TCTX); overload;
-    constructor Create(ASSL: PSSL); overload;
+    constructor Init(ACTX: TContext); overload;
+    constructor Init(ASSL: PSSL); overload;
+    procedure Free;
     procedure SetSocket(ASocket: Integer);
     procedure Connect;
-    procedure Accept;
+    procedure Handshake;
     procedure SetVerifyNone;
     function Read(var Buf; Size: Integer): Integer;
     function Write(const Buf; Size: Integer): Integer;
@@ -120,15 +119,18 @@ type
 
   TBIOStreamSSL = class(TBIOStream) //Socket
   protected
-    CTX: TCTX;
+    CTX: TContext;
   public
-    constructor Create(ACTX: TCTX);
+    constructor Create(ACTX: TContext);
     //Host name with port like 'example.com:80';
     procedure SetHostName(AHostName: utf8string);
     procedure Connect;
   end;
 
 implementation
+
+uses
+  mnOpenSSLUtils;
 
 { TTLS_SSLServerMethod }
 
@@ -139,7 +141,7 @@ end;
 
 { TBIOStreamSSL }
 
-constructor TBIOStreamSSL.Create(ACTX: TCTX);
+constructor TBIOStreamSSL.Create(ACTX: TContext);
 begin
   inherited Create;
   CTX := ACTX;
@@ -196,7 +198,7 @@ var
   ssl: PSSL;
 begin
   BIO_get_ssl(Handle, ssl);
-  Result := TSSL.Create(ssl);
+  Result := TSSL.Init(ssl);
 end;
 
 function TBIOStream.Read(var Buffer; Count: Longint): Longint;
@@ -211,17 +213,23 @@ end;
 
 { TSSL }
 
-constructor TSSL.Create(ACTX: TCTX);
+constructor TSSL.Init(ACTX: TContext);
 begin
   //inherited Create;
   CTX := ACTX;
   Handle := SSL_new(CTX.Handle);
 end;
 
-constructor TSSL.Create(ASSL: PSSL);
+constructor TSSL.Init(ASSL: PSSL);
 begin
   //inherited Create;
   Handle := ASSL;
+end;
+
+procedure TSSL.Free;
+begin
+  SSL_free(Handle);
+  Handle := nil;
 end;
 
 procedure TSSL.SetSocket(ASocket: Integer);
@@ -240,7 +248,7 @@ begin
     ;
 end;
 
-procedure TSSL.Accept;
+procedure TSSL.Handshake;
 var
   ret, err: Integer;
   s: string;
@@ -286,9 +294,9 @@ begin
   Handle := TLS_method();
 end;
 
-{ TCTX }
+{ TContext }
 
-constructor TCTX.Create(AMethod: TSSLMethod);
+constructor TContext.Create(AMethod: TSSLMethod);
 begin
   inherited Create;
   FMethod := AMethod;
@@ -298,13 +306,13 @@ begin
   SSL_CTX_set_options(Handle, SSL_OP_NO_SSLv2 or SSL_OP_NO_SSLv3 or SSL_OP_NO_COMPRESSION);
 end;
 
-constructor TCTX.Create(AMethodClass: TSSLMethodClass);
+constructor TContext.Create(AMethodClass: TSSLMethodClass);
 begin
   Create(AMethodClass.Create);
   FOwnMethod := True;
 end;
 
-destructor TCTX.Destroy;
+destructor TContext.Destroy;
 begin
   if FOwnMethod then
     FMethod.Free;
@@ -313,25 +321,25 @@ begin
   inherited Destroy;
 end;
 
-procedure TCTX.LoadCertFile(FileName: utf8string);
+procedure TContext.LoadCertFile(FileName: utf8string);
 begin
   if SSL_CTX_use_certificate_file(Handle, PUTF8Char(FileName), SSL_FILETYPE_PEM) <= 0 then
     raise EmnOpenSSLException.Create('fail to load certificate');
 end;
 
-procedure TCTX.LoadPrivateKeyFile(FileName: utf8string);
+procedure TContext.LoadPrivateKeyFile(FileName: utf8string);
 begin
   if SSL_CTX_use_PrivateKey_file(Handle, PUTF8Char(FileName), SSL_FILETYPE_PEM) <= 0 then
     raise EmnOpenSSLException.Create('fail to load private key');
 end;
 
-procedure TCTX.CheckPrivateKey;
+procedure TContext.CheckPrivateKey;
 begin
   if SSL_CTX_check_private_key(Handle) = 0 then
     raise EmnOpenSSLException.Create('Private key does not match the public certificate');
 end;
 
-procedure TCTX.SetVerifyNone;
+procedure TContext.SetVerifyNone;
 begin
   SSL_CTX_set_verify(Handle, SSL_VERIFY_PEER, nil);
 end;

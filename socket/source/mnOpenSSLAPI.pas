@@ -449,8 +449,6 @@ type
     procedure Link; override;
   end;
 
-  { TCryptoLibLib }
-
   { TmnCryptoLib }
 
   TmnCryptoLib = class(TmnLibrary)
@@ -478,6 +476,7 @@ var
 
   SSL_ctrl: function(ssl: PSSL; cmd: Integer; Larg: clong; PArg: Pointer): clong; cdecl;
   SSL_new: function(ctx: PSSL_CTX): PSSL; cdecl;
+  SSL_free: procedure(ssl: PSSL); cdecl;
   SSL_set_fd: function(ssl: PSSL; d: Integer): integer; cdecl;
   SSL_connect: function(ssl: PSSL): Integer; cdecl;
   SSL_accept: function(ssl: PSSL): Integer; cdecl;
@@ -542,6 +541,7 @@ var
   EVP_PKEY_get1_RSA: function(pkey: PEVP_PKEY): PRSA; cdecl;
   EVP_PKEY_free: procedure(key: PEVP_PKEY); cdecl;
 
+  //EVP_cleanup: procedure(); cdecl;
   EVP_md_null: function(): PEVP_MD; cdecl;
   //EVP_md2: function(): PEVP_MD; cdecl; not exists in 1.1
   EVP_md5: function(): PEVP_MD; cdecl;
@@ -706,6 +706,7 @@ procedure TmnOpenSSLLib.Link;
 begin
   RaiseError := True; //Raise error of one of this functions not exists
   OPENSSL_init_ssl := GetAddress('OPENSSL_init_ssl');
+  //EVP_cleanup := GetAddress('EVP_cleanup');
 
   SSL_get_error := GetAddress('SSL_get_error');
   SSL_set_cipher_list := GetAddress('SSL_set_cipher_list');
@@ -713,6 +714,7 @@ begin
   SSL_get_verify_result := GetAddress('SSL_get_verify_result');
   SSL_ctrl := GetAddress('SSL_ctrl');
   SSL_new := GetAddress('SSL_new');
+  SSL_free := GetAddress('SSL_free');
   SSL_set_fd := GetAddress('SSL_set_fd');
   SSL_connect := GetAddress('SSL_connect');
   SSL_accept := GetAddress('SSL_accept');

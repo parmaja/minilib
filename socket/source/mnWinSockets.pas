@@ -36,52 +36,24 @@ type
 
   TmnSocket = class(TmnCustomSocket)
   private
-    FHandle: TSocket;
     FAddress: TSockAddr;
-    FServerMode: Boolean;
   protected
-    FOptions: TmnsoOptions;
     function GetActive: Boolean; override;
     function Check(Value: Integer): Boolean;
+
+    function DoReceive(var Buffer; var Count: Longint): TmnError; override;
+    function DoSend(const Buffer; var Count: Longint): TmnError; override;
     //Timeout millisecond
     function DoSelect(Timeout: Integer; Check: TSelectCheck): TmnError; override;
     function DoShutdown(How: TmnShutdowns): TmnError; override;
     function DoListen: TmnError; override;
-    property Options: TmnsoOptions read FOptions;
-    property ServerMode: Boolean read FServerMode;
+    function DoClose: TmnError; override;
   public
-    constructor Create(vHandle: TSocket; AOptions: TmnsoOptions; AServerMode: Boolean = False); virtual;
+    function Accept: TmnCustomSocket; override;
     function GetLocalAddress: string; override;
     function GetRemoteAddress: string; override;
     function GetLocalName: string; override;
     function GetRemoteName: string; override;
-    function Close: TmnError; override;
-  end;
-
-  { TmnNormalSocket }
-
-  TmnNormalSocket = class(TmnSocket)
-  private
-  protected
-    function DoReceive(var Buffer; var Count: Longint): TmnError; override;
-    function DoSend(const Buffer; var Count: Longint): TmnError; override;
-  public
-    function Accept: TmnCustomSocket; override;
-  end;
-
-  { TmnSSLSocket }
-
-  TmnSSLSocket = class(TmnSocket)
-  private
-    CTX: TCTX;
-    SSL: TSSL;
-  protected
-    function DoReceive(var Buffer; var Count: Longint): TmnError; override;
-    function DoSend(const Buffer; var Count: Longint): TmnError; override;
-  public
-    destructor Destroy; override;
-    procedure Prepare; override;
-    function Accept: TmnCustomSocket; override;
   end;
 
   { TmnWallSocket }
@@ -119,10 +91,10 @@ end;
 
 function TmnSocket.GetActive: Boolean;
 begin
-  Result := FHandle <> INVALID_SOCKET;
+  Result := TSocket(FHandle) <> INVALID_SOCKET;
 end;
 
-function TmnSocket.Close: TmnError;
+function TmnSocket.DoClose: TmnError;
 var
   err: Longint;
 begin
@@ -137,7 +109,7 @@ begin
       Result := erSuccess
     else
       Result := erInvalid;
-    FHandle := INVALID_SOCKET;
+    TSocket(FHandle) := INVALID_SOCKET;
   end
   else
     Result := erClosed;
@@ -169,15 +141,6 @@ begin
     Result := erSuccess;
 end;
 
-
-constructor TmnSocket.Create(vHandle: TSocket; AOptions: TmnsoOptions; AServerMode: Boolean);
-begin
-  inherited Create;
-  FOptions := AOptions;
-  FServerMode:= AServerMode;
-  FHandle := vHandle;
-end;
-
 function TmnSocket.DoListen: TmnError;
 var
   c: Integer;
@@ -192,6 +155,24 @@ begin
     Result := erInvalid
   else
     Result := erSuccess;
+end;
+
+function TmnSocket.Accept: TmnCustomSocket;
+var
+  aHandle: TSocket;
+  AddrSize: Integer;
+begin
+  CheckActive;
+  AddrSize := SizeOf(FAddress);
+{$IFDEF FPC}
+  aHandle := WinSock2.Accept(FHandle, @FAddress, @AddrSize);
+{$ELSE}
+  aHandle := WinSock.Accept(FHandle, @FAddress, @AddrSize);
+{$ENDIF}
+  if aHandle = INVALID_SOCKET then
+    Result := nil
+  else
+    Result := TmnSocket.Create(aHandle, Options, Kind);
 end;
 
 function TmnSocket.Check(Value: Integer): Boolean;
@@ -301,12 +282,14 @@ end;
 
 { TmnNormalSocket }
 
-function TmnNormalSocket.DoReceive(var Buffer; var Count: Longint): TmnError;
+function TmnSocket.DoReceive(var Buffer; var Count: Longint): TmnError;
 var
   c: Integer;
   errno: longint;
 begin
-  CheckActive;
+  if soSSL in Options then
+    c := SSL.read(Buffer, Count)
+  else
 {$IFDEF FPC}
   c := WinSock2.recv(FHandle, Buffer, Count, 0);
 {$ELSE}
@@ -316,11 +299,11 @@ begin
   begin
     Count := 0;
     Result := erClosed;
-    Close;
   end
   else if not Check(c) then
   begin
     Count := 0;
+    //CheckError not directly here
     errno := WSAGetLastError();
     if errno = WSAETIMEDOUT then
       Result := erTimeout //maybe closed, but we will pass it as timeout, the caller will close it depend on options
@@ -334,21 +317,22 @@ begin
   end;
 end;
 
-function TmnNormalSocket.DoSend(const Buffer; var Count: Longint): TmnError;
+function TmnSocket.DoSend(const Buffer; var Count: Longint): TmnError;
 var
   c: Integer;
 begin
-  CheckActive;
+  if soSSL in Options then
+    c := SSL.Write(Buffer, Count)
+  else
 {$IFDEF FPC}
-  c := WinSock2.send(FHandle, (@Buffer)^, Count, 0);
+    c := WinSock2.send(FHandle, (@Buffer)^, Count, 0);
 {$ELSE}
-  c := WinSock.send(FHandle, (@Buffer)^, Count, 0);
+    c := WinSock.send(FHandle, (@Buffer)^, Count, 0);
 {$ENDIF}
   if c = 0 then
   begin
     Result := erClosed;
     Count := 0;
-    Close;
   end
   else if not Check(c) then
   begin
@@ -360,135 +344,6 @@ begin
     Count := c;
     Result := erSuccess;
   end;
-end;
-
-function TmnNormalSocket.Accept: TmnCustomSocket;
-var
-  aHandle: TSocket;
-  AddrSize: Integer;
-begin
-  CheckActive;
-  AddrSize := SizeOf(FAddress);
-{$IFDEF FPC}
-  aHandle := WinSock2.Accept(FHandle, @FAddress, @AddrSize);
-{$ELSE}
-  aHandle := WinSock.Accept(FHandle, @FAddress, @AddrSize);
-{$ENDIF}
-  if aHandle = INVALID_SOCKET then
-    Result := nil
-  else
-  begin
-    if soSSL in Options then
-      Result := TmnSSLSocket.Create(aHandle, Options, True)
-    else
-      Result := TmnNormalSocket.Create(aHandle, Options);
-    Result.Prepare;
-  end;
-end;
-
-{ TmnSSLSocket }
-
-function TmnSSLSocket.DoReceive(var Buffer; var Count: Longint): TmnError;
-var
-  c: Integer;
-  errno: longint;
-begin
-  CheckActive;
-  c := SSL.read(Buffer, Count);
-  if c = 0 then
-  begin
-    Count := 0;
-    Result := erClosed;
-    Close;
-  end
-  else if not Check(c) then
-  begin
-    Count := 0;
-    errno := WSAGetLastError();
-    if errno = WSAETIMEDOUT then
-      Result := erTimeout //maybe closed, but we will pass it as timeout, the caller will close it depend on options
-    else
-      Result := erInvalid
-  end
-  else
-  begin
-    Count := c;
-    Result := erSuccess;
-  end;
-end;
-
-function TmnSSLSocket.DoSend(const Buffer; var Count: Longint): TmnError;
-var
-  c: Integer;
-begin
-  CheckActive;
-  c := SSL.Write(Buffer, Count);
-  if c = 0 then
-  begin
-    Result := erClosed;
-    Count := 0;
-    Close;
-  end
-  else if not Check(c) then
-  begin
-    Count := 0;
-    Result := erInvalid;
-  end
-  else
-  begin
-    Count := c;
-    Result := erSuccess;
-  end;
-end;
-
-procedure TmnSSLSocket.Prepare;
-begin
-  inherited;
-  if ServerMode then
-  begin
-    CTX := TCTX.Create(TTLS_SSLServerMethod);
-    CTX.LoadCertFile(CertificateFile);
-    CTX.LoadPrivateKeyFile(PrivateKeyFile);
-    CTX.CheckPrivateKey; //do not use this
-    //CTX.SetVerifyNone;
-  end
-  else
-    CTX := TCTX.Create(TTLS_SSLMethod);
-
-  SSL := TSSL.Create(CTX);
-  SSL.SetSocket(FHandle);
-  if ServerMode then
-  begin
-    //SSL.SetVerifyNone;
-    SSL.Accept;
-  end
-  else
-    SSL.Connect;
-end;
-
-function TmnSSLSocket.Accept: TmnCustomSocket;
-var
-  aHandle: TSocket;
-  AddrSize: Integer;
-begin
-  CheckActive;
-  AddrSize := SizeOf(FAddress);
-{$IFDEF FPC}
-  aHandle := WinSock2.Accept(FHandle, @FAddress, @AddrSize);
-{$ELSE}
-  aHandle := WinSock.Accept(FHandle, @FAddress, @AddrSize);
-{$ENDIF}
-  if aHandle = INVALID_SOCKET then
-    Result := nil
-  else
-    Result := TmnSSLSocket.Create(aHandle, Options, True);
-end;
-
-destructor TmnSSLSocket.Destroy;
-begin
-  FreeAndNil(CTX);
-  //FreeAndNil(SSL);
-  inherited Destroy;
 end;
 
 { TmnWallSocket }
@@ -575,10 +430,7 @@ begin
   end;
 
   if aHandle <> INVALID_SOCKET then
-  begin
-    vSocket := TmnNormalSocket.Create(aHandle, Options);
-    vSocket.Prepare;
-  end
+    vSocket := TmnSocket.Create(aHandle, Options, skListener)
   else
     vSocket := nil;
 end;
@@ -756,13 +608,7 @@ begin
   end;
 
   if aHandle <> INVALID_SOCKET then
-  begin
-    if soSSL in Options then
-      vSocket := TmnSSLSocket.Create(aHandle, Options)
-    else
-      vSocket := TmnNormalSocket.Create(aHandle, Options);
-    vSocket.Prepare;
-  end
+    vSocket := TmnSocket.Create(aHandle, Options, skClient)
   else
     vSocket := nil;
 end;

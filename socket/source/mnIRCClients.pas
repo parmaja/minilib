@@ -1571,7 +1571,8 @@ begin
 
   Result := TIRCSocketStream.Create(Host, Port, Options);
   Result.ConnectTimeout := -1;
-  Result.ReadTimeout := -1;//1000;
+  //Result.ReadTimeout := -1;
+  Result.ReadTimeout := 1000;
   Result.EndOfLine := #10;
 end;
 
