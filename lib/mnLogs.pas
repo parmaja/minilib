@@ -13,11 +13,12 @@ unit mnLogs;
 interface
 
 uses
-  {$ifdef WINDOWS}
-  Windows,
+  {$ifdef WINDOWS} Windows, {$endif}
+  {$ifdef FPC}
   {$else}
+  System.Types,
   {$endif}
-  System.Types, Classes, SysUtils, Contnrs, syncobjs;
+  Classes, SysUtils, Contnrs, syncobjs;
 
 type
 

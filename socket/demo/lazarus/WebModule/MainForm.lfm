@@ -8,7 +8,7 @@ object Main: TMain
   BorderIcons = [biSystemMenu, biMinimize]
   BorderStyle = bsSingle
   Caption = 'Module Web Server'
-  ClientHeight = 346
+  ClientHeight = 339
   ClientWidth = 536
   Font.CharSet = ARABIC_CHARSET
   Font.Color = clBlack
@@ -22,7 +22,7 @@ object Main: TMain
   LCLVersion = '2.1.0.0'
   object Memo: TMemo
     Left = 0
-    Height = 241
+    Height = 234
     Top = 105
     Width = 536
     Align = alClient
@@ -107,9 +107,9 @@ object Main: TMain
     end
     object Label1: TLabel
       Left = 15
-      Height = 13
+      Height = 14
       Top = 11
-      Width = 23
+      Width = 26
       Caption = 'Root'
       Font.CharSet = ARABIC_CHARSET
       Font.Color = clBlack
@@ -121,15 +121,15 @@ object Main: TMain
     end
     object Label2: TLabel
       Left = 18
-      Height = 13
+      Height = 14
       Top = 33
-      Width = 20
+      Width = 23
       Caption = 'Port'
       ParentColor = False
     end
     object RootEdit: TEdit
       Left = 47
-      Height = 21
+      Height = 24
       Top = 6
       Width = 480
       Anchors = [akTop, akLeft, akRight]
@@ -138,7 +138,7 @@ object Main: TMain
     end
     object PortEdit: TEdit
       Left = 47
-      Height = 21
+      Height = 24
       Top = 29
       Width = 78
       TabOrder = 1
@@ -155,7 +155,7 @@ object Main: TMain
       ClientWidth = 534
       TabOrder = 3
       object LastIDLabel: TLabel
-        Left = 221
+        Left = 232
         Height = 20
         Top = 3
         Width = 60
@@ -176,10 +176,10 @@ object Main: TMain
         Transparent = False
       end
       object Label4: TLabel
-        Left = 184
+        Left = 191
         Height = 20
         Top = 3
-        Width = 34
+        Width = 38
         Align = alLeft
         BorderSpacing.Around = 3
         Caption = 'Last ID'
@@ -193,10 +193,10 @@ object Main: TMain
         ParentFont = False
       end
       object Label3: TLabel
-        Left = 98
+        Left = 102
         Height = 20
         Top = 3
-        Width = 20
+        Width = 23
         Align = alLeft
         BorderSpacing.Around = 3
         Caption = 'Max'
@@ -210,7 +210,7 @@ object Main: TMain
         ParentFont = False
       end
       object MaxOfThreadsLabel: TLabel
-        Left = 121
+        Left = 128
         Height = 20
         Top = 3
         Width = 60
@@ -231,7 +231,7 @@ object Main: TMain
         Transparent = False
       end
       object NumberOfThreads: TLabel
-        Left = 35
+        Left = 39
         Height = 20
         Top = 3
         Width = 60
@@ -256,7 +256,7 @@ object Main: TMain
         Left = 3
         Height = 20
         Top = 3
-        Width = 29
+        Width = 33
         Align = alLeft
         BorderSpacing.Around = 3
         Caption = 'Count'
@@ -272,9 +272,9 @@ object Main: TMain
     end
     object UseSSLChk: TCheckBox
       Left = 138
-      Height = 19
+      Height = 22
       Top = 30
-      Width = 58
+      Width = 69
       Caption = 'Use SSL'
       TabOrder = 4
     end

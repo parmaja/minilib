@@ -192,8 +192,6 @@ var
 var
   aAutoRun:Boolean;
 begin
-
-  InitOpenSSL;
   Server := TmodWebServer.Create;
   Server.OnBeforeOpen := ModuleServerBeforeOpen;
   Server.OnAfterClose := ModuleServerAfterClose;

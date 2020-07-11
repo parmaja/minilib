@@ -53,6 +53,9 @@ type
 
 implementation
 
+uses
+  libc;
+
 { TmnOSCommStream }
 
 procedure TmnOSCommStream.DoConnect;

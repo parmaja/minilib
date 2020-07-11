@@ -629,11 +629,14 @@ end;
 
 procedure TmnListener.Prepare;
 begin
-  Context := TContext.Create(TTLS_SSLServerMethod);
-  Context.LoadCertFile(CertificateFile);
-  Context.LoadPrivateKeyFile(PrivateKeyFile);
-  Context.CheckPrivateKey; //do not use this
-  //Context.SetVerifyNone;
+  if soSSL in Options then
+  begin
+    Context := TContext.Create(TTLS_SSLServerMethod);
+    Context.LoadCertFile(CertificateFile);
+    Context.LoadPrivateKeyFile(PrivateKeyFile);
+    Context.CheckPrivateKey; //do not use this
+    //Context.SetVerifyNone;
+  end;
 end;
 
 procedure TmnListener.Remove(Connection: TmnServerConnection);

@@ -19,6 +19,7 @@ uses
   netdb,
   SysUtils,
   sockets,
+  Termio,
   mnSockets;
 
 type
@@ -27,7 +28,6 @@ type
 
   TmnSocket = class(TmnCustomSocket)
   private
-    FHandle: TSocket;
     FAddress: TINetSockAddr;
   protected
     function GetActive: Boolean; override;
@@ -38,7 +38,6 @@ type
     function DoSend(const Buffer; var Count: Longint): TmnError; override;
     function DoClose: TmnError; override;
   public
-    constructor Create(Handle: TSocket);
     function Accept: TmnCustomSocket; override;
     function GetLocalAddress: ansistring; override;
     function GetRemoteAddress: ansistring; override;
@@ -55,7 +54,7 @@ type
   public
     constructor Create; override;
     destructor Destroy; override;
-    procedure Bind(Options: TmnsoOptions; const Port: ansistring; const Address: AnsiString; out vSocket: TmnCustomSocket; out vErr: Integer); override;
+    procedure Bind(Options: TmnsoOptions; ReadTimeout: Integer; const Port: string; const Address: string; out vSocket: TmnCustomSocket; out vErr: Integer); override;
     procedure Connect(Options: TmnsoOptions; ConnectTimeout, ReadTimeout: Integer; const Port: ansistring; const Address: AnsiString; out vSocket: TmnCustomSocket; out vErr: Integer); override;
   end;
 
@@ -205,13 +204,7 @@ begin
   if aHandle < 0 then
     Result := nil
   else
-    Result := TmnSocket.Create(aHandle);
-end;
-
-constructor TmnSocket.Create(Handle: TSocket);
-begin
-  inherited Create;
-  FHandle := Handle;
+    Result := TmnSocket.Create(aHandle, Options, skServer);
 end;
 
 function TmnSocket.DoListen: TmnError;
@@ -292,7 +285,9 @@ const
   SO_TRUE:Longbool=True;
 //  SO_FALSE:Longbool=False;
 
-procedure TmnWallSocket.Bind(Options: TmnsoOptions; const Port: ansistring; const Address: AnsiString; out vSocket: TmnCustomSocket; out vErr: Integer);
+procedure TmnWallSocket.Bind(Options: TmnsoOptions; ReadTimeout: Integer;
+  const Port: string; const Address: string; out vSocket: TmnCustomSocket; out
+  vErr: Integer);
 var
   aHandle: TSocket;
   aAddr : TINetSockAddr;
@@ -322,7 +317,7 @@ begin
   end;
 
   if aHandle <> INVALID_SOCKET then
-    vSocket := TmnSocket.Create(aHandle)
+    vSocket := TmnSocket.Create(aHandle, Options, skListener)
   else
     vSocket := nil;
 end;
@@ -350,7 +345,9 @@ var
   aAddr : TINetSockAddr;
   ret: cint;
   aHost: THostEntry;
+  aMode: longint;
   time: ttimeval;
+  DW: Integer;
 begin
   //nonblick connect  https://stackoverflow.com/questions/1543466/how-do-i-change-a-tcp-socket-to-be-non-blocking
   //https://stackoverflow.com/questions/14254061/setting-time-out-for-connect-function-tcp-socket-programming-in-c-breaks-recv
@@ -364,13 +361,23 @@ begin
     if soKeepAlive in Options then
       fpsetsockopt(aHandle, SOL_SOCKET, SO_KEEPALIVE, PAnsiChar(@SO_TRUE), SizeOf(SO_TRUE));
 
-    if not soWaitBeforeRead in Options then
+    if not (soWaitBeforeRead in Options) then
     begin
       if ReadTimeout <> -1 then
       begin
         time.tv_sec:= ReadTimeout div 1000;
-        time.tv_usec:=(Timeout mod 1000) * 1000;
+        time.tv_usec:=(ReadTimeout mod 1000) * 1000;
         fpsetsockopt(aHandle, SOL_SOCKET, SO_RCVTIMEO, @time, SizeOf(time));
+      end;
+    end;
+
+    if ConnectTimeout <> -1 then
+    begin
+      aMode := 1;
+      ret := FpIOCtl(aHandle, FIONBIO, @aMode);
+      if ret = Longint(SOCKET_ERROR) then
+      begin
+        FreeSocket(aHandle, vErr);
       end;
     end;
 
@@ -399,7 +406,7 @@ begin
   end;
 
   if aHandle <> INVALID_SOCKET then
-    vSocket := TmnSocket.Create(aHandle)
+    vSocket := TmnSocket.Create(aHandle, Options, skClient)
   else
     vSocket := nil;
 end;

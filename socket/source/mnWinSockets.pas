@@ -550,7 +550,7 @@ begin
       end;
     end;
 
-    if ConnectTimeout<>-1 then
+    if ConnectTimeout <> -1 then
     begin
       aMode := 1;
       ret := ioctlsocket(aHandle, {$ifdef FPC}Longint(FIONBIO){$else}FIONBIO{$endif}, aMode);

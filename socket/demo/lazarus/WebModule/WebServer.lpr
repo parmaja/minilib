@@ -17,12 +17,12 @@ uses
   Forms,
   LCLIntf,
   SysUtils,
-  MainForm in 'MainForm.pas', snow2, mnWinSockets;
+  MainForm in 'MainForm.pas';
 
 {$R *.res}
 
 begin
-  Application.Title :='';
+  Application.Title:='';
   Application.Initialize;
   if FindCmdLineSwitch('hide', True) then
   begin

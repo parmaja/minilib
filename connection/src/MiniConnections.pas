@@ -10,7 +10,7 @@ interface
 uses
   mncConnections, mncCSV, mncCSVExchanges, mncCommons, mncDB, mncMeta, mncORM, 
   mncSQL, mncPostgre, mncPGHeader, mncPGMeta, mncPGORM, mncFBHeader, 
-  mncFirebird, mncFBMeta, mncFBUtils, mncSQLite, mncSQLiteHeader, 
+  mncFirebird, mncFBMeta, mncFBUtils, mncFBORM, mncSQLite, mncSQLiteHeader, 
   mncSQLiteMeta, mncSQLiteORM, mncMySQLHeader, mncMySQL, mncMySQLORM, 
   mncMySQLMeta, mncSQLUtils, ParamsForms, CSVOptionsForms;
 

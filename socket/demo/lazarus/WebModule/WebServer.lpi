@@ -90,7 +90,6 @@
     </Target>
     <SearchPaths>
       <IncludeFiles Value="$(ProjOutDir)"/>
-      <OtherUnitFiles Value="..\..\..\..\crypt;..\..\..\source"/>
       <UnitOutputDirectory Value="units"/>
     </SearchPaths>
     <Parsing>
