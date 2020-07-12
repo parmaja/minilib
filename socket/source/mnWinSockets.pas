@@ -107,7 +107,8 @@ begin
       Result := erSuccess
     else
       Result := erInvalid;
-    TSocket(FHandle) := INVALID_SOCKET;
+    //TSocket(FHandle) := INVALID_SOCKET;
+    FHandle := INVALID_SOCKET;
   end
   else
     Result := erClosed;
