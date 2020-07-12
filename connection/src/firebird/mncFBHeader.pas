@@ -1444,6 +1444,7 @@ type
   Tisc_dsql_execute = function(status_vector: PISC_STATUS; tran_handle: PISC_TR_HANDLE; stmt_handle: PISC_STMT_HANDLE; dialect: UShort; xsqlda: PXSQLDA): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
   Tisc_dsql_execute2 = function(status_vector: PISC_STATUS; tran_handle: PISC_TR_HANDLE; stmt_handle: PISC_STMT_HANDLE; dialect: UShort; in_xsqlda, out_xsqlda: PXSQLDA): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
   Tisc_dsql_execute_immediate = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; tran_handle: PISC_TR_HANDLE; length: UShort; statement: PByte; dialect: UShort; xsqlda: PXSQLDA): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tisc_dsql_execute_immed2 = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; tran_handle: PISC_TR_HANDLE; length: UShort; statement: PByte; dialect: UShort; xsqlda: PXSQLDA; oxsqlda: PXSQLDA): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
   Tisc_dsql_fetch = function(status_vector: PISC_STATUS; stmt_handle: PISC_STMT_HANDLE; dialect: UShort; xsqlda: PXSQLDA): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif}; Tisc_dsql_finish = function(db_handle: PISC_DB_HANDLE): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
   Tisc_dsql_free_statement = function(status_vector: PISC_STATUS; stmt_handle: PISC_STMT_HANDLE; options: UShort): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
   Tisc_dsql_insert = function(status_vector: PISC_STATUS; stmt_handle: PISC_STMT_HANDLE; arg3: UShort; xsqlda: PXSQLDA): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
@@ -3533,6 +3534,7 @@ type
     isc_dsql_describe_bind: Tisc_dsql_describe_bind;
     isc_dsql_describe: Tisc_dsql_describe;
     isc_dsql_execute_immediate: Tisc_dsql_execute_immediate;
+    isc_dsql_execute_immed2: Tisc_dsql_execute_immed2;
     isc_drop_database: Tisc_drop_database;
     isc_detach_database: Tisc_detach_database;
     isc_attach_database: Tisc_attach_database;
@@ -3653,6 +3655,7 @@ begin
   isc_dsql_describe_bind := GetAddress('isc_dsql_describe_bind');
   isc_dsql_describe := GetAddress('isc_dsql_describe');
   isc_dsql_execute_immediate := GetAddress('isc_dsql_execute_immediate');
+  isc_dsql_execute_immed2 := GetAddress('isc_dsql_exec_immed2');
   isc_drop_database := GetAddress('isc_drop_database');
   isc_detach_database := GetAddress('isc_detach_database');
   isc_attach_database := GetAddress('isc_attach_database', true);
