@@ -127,8 +127,8 @@ const
   SSL_ERROR_WANT_CONNECT         = 7;
   SSL_ERROR_WANT_ACCEPT          = 8;
   SSL_ERROR_WANT_ASYNC           = 9;
-  SSL_ERROR_WANT_ASYNC_JOB      = 10;
-  SSL_ERROR_WANT_CLIENT_HELLO_CB= 11;
+  SSL_ERROR_WANT_ASYNC_JOB       = 10;
+  SSL_ERROR_WANT_CLIENT_HELLO_CB = 11;
 
   SSL_CTRL_SET_TMP_DH                    = 3;
   SSL_CTRL_SET_TMP_ECDH                  = 4;
@@ -547,7 +547,7 @@ var
   //EVP_md2: function(): PEVP_MD; cdecl; not exists in 1.1
   EVP_md5: function(): PEVP_MD; cdecl;
   EVP_sha1: function(): PEVP_MD; cdecl;
-  EVP_mdc2: function(): PEVP_MD; cdecl;
+  //EVP_mdc2: function(): PEVP_MD; cdecl;
   EVP_ripemd160: function(): PEVP_MD; cdecl;
   EVP_blake2b512: function(): PEVP_MD; cdecl;
   EVP_blake2s256: function(): PEVP_MD; cdecl;
@@ -795,7 +795,7 @@ begin
   EVP_md_null := GetAddress('EVP_md_null');
   EVP_md5 := GetAddress('EVP_md5');
   EVP_sha1 := GetAddress('EVP_sha1');
-  EVP_mdc2 := GetAddress('EVP_mdc2');
+  //EVP_mdc2 := GetAddress('EVP_mdc2');
   EVP_ripemd160 := GetAddress('EVP_ripemd160');
   EVP_blake2b512 := GetAddress('EVP_blake2b512');
   EVP_blake2s256 := GetAddress('EVP_blake2s256');
@@ -834,8 +834,13 @@ begin
 end;
 
 initialization
+  {$ifdef WINDOWS}
   OpenSSLLib := TmnOpenSSLLib.Create('libssl-1_1');
   CryptoLib := TmnCryptoLib.Create('libcrypto-1_1');
+  {$else}
+  OpenSSLLib := TmnOpenSSLLib.Create('libssl.so.1.1');
+  CryptoLib := TmnCryptoLib.Create('libcrypto.so.1.1');
+  {$endif}
 finalization
   FreeAndNil(OpenSSLLib);
   FreeAndNil(CryptoLib);

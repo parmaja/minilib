@@ -105,8 +105,8 @@ begin
     ALibraryName := ALibraryName + '.dll';
   FLibraryName := ALibraryName;
   {$ELSE}
-  if ExtractFileExt(ALibraryName) = '' then
-    ALibraryName := ALibraryName + '.so';
+{  if ExtractFileExt(ALibraryName) = '' then
+    ALibraryName := ALibraryName + '.so';}
   FLibraryName := ALibraryName;
   {$ENDIF}
 end;
