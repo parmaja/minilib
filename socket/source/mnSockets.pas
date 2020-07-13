@@ -337,6 +337,7 @@ destructor TmnSocketStream.Destroy;
 begin
   try
     Disconnect;
+    FreeSocket;
   finally
     inherited;
   end;
