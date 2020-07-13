@@ -834,7 +834,7 @@ begin
 end;
 
 initialization
-  {$ifdef WINDOWS}
+  {$ifdef MSWINDOWS}
   OpenSSLLib := TmnOpenSSLLib.Create('libssl-1_1');
   CryptoLib := TmnCryptoLib.Create('libcrypto-1_1');
   {$else}

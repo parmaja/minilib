@@ -191,16 +191,13 @@ procedure TMain.FormDestroy(Sender: TObject);
 var
   aIni: TIniFile;
 begin
-  if ParamCount = 0 then
-  begin
-    aIni := TIniFile.Create(ExtractFilePath(Application.ExeName) + 'config.ini');
-    try
-      aIni.WriteString('options', 'DocumentRoot', RootEdit.Text);
-      aIni.WriteString('options', 'Port', PortEdit.Text);
-      aIni.WriteBool('options', 'ssl', UseSSLChk.Checked);
-    finally
-      aIni.Free;
-    end;
+  aIni := TIniFile.Create(ExtractFilePath(Application.ExeName) + 'config.ini');
+  try
+    aIni.WriteString('options', 'DocumentRoot', RootEdit.Text);
+    aIni.WriteString('options', 'Port', PortEdit.Text);
+    aIni.WriteBool('options', 'ssl', UseSSLChk.Checked);
+  finally
+    aIni.Free;
   end;
   FreeAndNil(Server);
 end;

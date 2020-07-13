@@ -131,6 +131,7 @@ type
     constructor Create(vSocket: TmnCustomSocket); overload;
     destructor Destroy; override;
     procedure Connect; override;
+    //Disconnect can be called from out of thread like listener
     procedure Disconnect; override;
     function WaitToRead(vTimeout: Longint): TmnConnectionError; override; //select
     function WaitToWrite(vTimeout: Longint): TmnConnectionError; override; //select
@@ -326,8 +327,8 @@ begin
   begin
     if soSSL in Options then
       SSL.Free;
+    Result := DoClose;
   end;
-  Result := DoClose;
 end;
 
 { TmnStream }
@@ -446,7 +447,7 @@ procedure TmnSocketStream.Disconnect;
 begin
   if (Socket <> nil) and Socket.Connected then
     Close; //may be not but in slow matchine disconnect to take as effects as need (POS in 98)
-  FreeSocket;
+//  FreeSocket; //Do not free it maybe it is closing from other thread while socket is reading
 end;
 
 function TmnSocketStream.GetConnected: Boolean;

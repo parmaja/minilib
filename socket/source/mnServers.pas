@@ -523,9 +523,7 @@ end;
 procedure TmnListener.Disconnect;
 begin
   if Connected then
-  begin
     Socket.Close;
-  end;
   FreeAndNil(FSocket);
 end;
 
@@ -590,7 +588,12 @@ begin
     end;
   end;
   DropConnections;
-  Disconnect;
+  Enter;
+  try
+    Disconnect;
+  finally
+    Leave;
+  end;
   Unprepare;
   Changed;
 end;
@@ -743,7 +746,7 @@ begin
     if Socket <> nil then
     begin
       {$ifdef FPC}
-      {$ifndef WINDOWS}
+      {$ifndef MSWINDOWS}
       {$hint 'Why need to Shutdown to stop Accept?'}
       Socket.Shutdown([sdReceive, sdSend]);//stop the accept from waiting
       {$endif}
