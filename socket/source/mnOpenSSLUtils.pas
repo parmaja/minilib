@@ -115,6 +115,7 @@ begin
   name := nil;
   bne := nil;
   sign := nil;
+  Result := False;
   try
     InitOpenSSL;
   	if (pkeyp = nil) then

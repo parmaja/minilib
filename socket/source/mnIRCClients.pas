@@ -27,7 +27,7 @@ unit mnIRCClients;
   remove using Params[0] and use AddParam instead
 
 https://modern.ircdocs.horse/dcc.html
-:zaherdirkey_!~zaherdirkey@4m8ei7xicz3j2.irc PRIVMSG zezo :DCC SEND 1.sql 0 4814 62894
+:zaherdirkey_!~zaherdirkey@4m8ei7xicz3j2.irc PRIVMSG zezo :DCC SEND 1.sql 0 4814 62894
 :zaherdirkey_!~zaherdirkey@4m8ei7xicz3j2.irc PRIVMSG zezo :SHA-256 checksum for 1.sql (remote): a1a0e7c6223479a8329d73942d4c4bb35532d0932ee46c82216f50e252ee4e1d
 
 }
@@ -677,6 +677,7 @@ type
 implementation
 
 uses
+  mnOpenSSLUtils,
   SysUtils;
 
 const
@@ -1558,8 +1559,8 @@ begin
     except
       on E: Exception do
       begin
-        FreeAndNil(FStream);
         Log('Connected failed:' + E.Message);
+        FreeAndNil(FStream);
       end;
     end;
   end;
@@ -1886,6 +1887,8 @@ begin
   NickIndex := 0;
   if (Progress < prgConnecting) then
   begin
+    if UseSSL then
+      InitOpenSSL;
     FreeAndNil(FConnection);
     CreateConnection;
     Connection.FOnline := True;
@@ -1903,7 +1906,7 @@ begin
 
   FSession.Channels := TIRCChannels.Create(True);
 
-  FReconnectTime := 3000;
+  FReconnectTime := 5000;
   FHost := 'localhost';
   FPort := sDefaultPort;
 
@@ -2112,6 +2115,7 @@ begin
   aNick := Nicks[0];
   Inc(NickIndex);
 
+  Session.SetNick(aNick);
   SendRaw(Format('USER %s 0 * :%s', [Username, RealName]));
   if FPassword <> '' then
   begin
@@ -2135,7 +2139,9 @@ end;
 procedure TmnIRCClient.SetNick(const ANick: String);
 begin
   if ANick <> '' then
+  begin
     SendRaw(Format('NICK %s', [ANick]), prgConnected);
+  end;
 end;
 
 procedure TmnIRCClient.SetTopic(AChannel: String; const ATopic: String);

@@ -328,7 +328,9 @@ begin
     if soSSL in Options then
       SSL.Free;
     Result := DoClose;
-  end;
+  end
+  else
+    Result := erSuccess;
 end;
 
 { TmnStream }
