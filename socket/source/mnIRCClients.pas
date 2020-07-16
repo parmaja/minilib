@@ -25,6 +25,11 @@ unit mnIRCClients;
 
 {TODO
   remove using Params[0] and use AddParam instead
+
+https://modern.ircdocs.horse/dcc.html
+:zaherdirkey_!~zaherdirkey@4m8ei7xicz3j2.irc PRIVMSG zezo :DCC SEND 1.sql 0 4814 62894
+:zaherdirkey_!~zaherdirkey@4m8ei7xicz3j2.irc PRIVMSG zezo :SHA-256 checksum for 1.sql (remote): a1a0e7c6223479a8329d73942d4c4bb35532d0932ee46c82216f50e252ee4e1d
+
 }
 
 interface
@@ -983,6 +988,7 @@ begin
   if LeftStr(vCommand.Msg, 1) = #01 then
   begin
     vCommand.FCTCP := True;
+    Client.Log('CTCP');
     vCommand.Msg := DequoteStr(vCommand.Msg, #01);
   end;
 end;

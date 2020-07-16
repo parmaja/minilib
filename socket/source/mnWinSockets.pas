@@ -30,6 +30,7 @@ uses
   mnSockets;
 
 type
+  TSocket = Integer;
 
   { TmnSocket }
 
@@ -79,6 +80,7 @@ implementation
 
 const
   cBacklog = 5;
+  INVALID_SOCKET = -1;
 
 { TmnSSLServerSocket }
 

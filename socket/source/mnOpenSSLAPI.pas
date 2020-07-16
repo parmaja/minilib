@@ -835,8 +835,13 @@ end;
 
 initialization
   {$ifdef MSWINDOWS}
+  {$ifdef win64}
+  OpenSSLLib := TmnOpenSSLLib.Create('libssl-1_1-x64');
+  CryptoLib := TmnCryptoLib.Create('libcrypto-1_1-x64');
+  {$else}
   OpenSSLLib := TmnOpenSSLLib.Create('libssl-1_1');
   CryptoLib := TmnCryptoLib.Create('libcrypto-1_1');
+  {$endif}
   {$else}
   OpenSSLLib := TmnOpenSSLLib.Create('libssl.so.1.1');
   CryptoLib := TmnCryptoLib.Create('libcrypto.so.1.1');

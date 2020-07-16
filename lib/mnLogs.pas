@@ -242,7 +242,11 @@ begin
   try
     for i := 0 to Count -1 do
     begin
+      {$ifdef FPC}
+      ALog := (Items[i] as ILog);
+      {$else}
       ALog := ILog(Pointer(Items[i]));
+      {$endif}
       ALog.LogWrite(S);
     end;
   finally
