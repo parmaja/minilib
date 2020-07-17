@@ -67,7 +67,6 @@ type
     procedure SendEditKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
     procedure SendEditKeyPress(Sender: TObject; var Key: char);
   private
-    IRC: TMyIRCClient;
     Recents: TStringList;
     RecentsIndex: Integer;
     procedure RecentUp;
@@ -89,6 +88,7 @@ type
 
 var
   MainFrm: TMainFrm;
+  IRC: TMyIRCClient = nil;
 
 implementation
 
@@ -156,7 +156,7 @@ end;
 
 procedure TMainFrm.ConnectBtnClick(Sender: TObject);
 begin
-  if IRC.Active then
+  if IRC.Online then
     IRC.Disconnect
   else
   begin

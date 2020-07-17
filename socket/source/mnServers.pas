@@ -220,6 +220,9 @@ type
 
 implementation
 
+uses
+  mnOpenSSLUtils;
+
 { TmnServerSocket }
 
 procedure TmnServerSocket.SetAddress(Value: string);
@@ -711,6 +714,8 @@ begin
   if (FListener = nil) then // if its already active, dont start again
   begin
     try
+      if UseSSL then
+        InitOpenSSL;
       DoBeforeOpen;
       try
         FListener := CreateListener;

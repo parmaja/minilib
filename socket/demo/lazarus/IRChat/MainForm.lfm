@@ -248,8 +248,8 @@ object MainFrm: TMainFrm
     end
   end
   object LogPopupMenu: TPopupMenu
-    Left = 275
-    Top = 172
+    Left = 267
+    Top = 347
     object MenuItem1: TMenuItem
       Caption = 'Clear'
       OnClick = MenuItem1Click

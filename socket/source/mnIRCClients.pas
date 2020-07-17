@@ -29,7 +29,6 @@ unit mnIRCClients;
 https://modern.ircdocs.horse/dcc.html
 :zaherdirkey_!~zaherdirkey@4m8ei7xicz3j2.irc PRIVMSG zezo :DCC SEND 1.sql 0 4814 62894
 :zaherdirkey_!~zaherdirkey@4m8ei7xicz3j2.irc PRIVMSG zezo :SHA-256 checksum for 1.sql (remote): a1a0e7c6223479a8329d73942d4c4bb35532d0932ee46c82216f50e252ee4e1d
-
 }
 
 interface
@@ -46,7 +45,13 @@ const
   IRC_RPL_WELCOME = 001;
   IRC_RPL_MYINFO = 004;
   IRC_RPL_WHOISUSER = 311;
+  IRC_RPL_WHOISSERVER = 312;
+  IRC_RPL_WHOISOPERATOR = 313;
+  IRC_RPL_WHOWASUSER = 314;
   IRC_RPL_ENDOFWHO = 315;
+  IRC_RPL_WHOISIDLE = 317;
+  IRC_RPL_ENDOFWHOIS = 318;
+  RPL_WHOISCHANNELS = 319;
   IRC_RPL_CHANNEL_URL = 328;
   IRC_RPL_WHOISACCOUNT = 330;
   IRC_RPL_TOPIC = 332;
@@ -89,6 +94,7 @@ type
     mtWelcome,
     mtTopic,
     mtChannelInfo,
+    mtWhois,
     mtUserMode,
     mtJoin,
     mtLeft, //User Part or Quit, it send when both triggered to all channels
@@ -361,7 +367,7 @@ type
     FUseSSL: Boolean;
     FUseUserCommands: Boolean;
     FNicks: TStringList;
-    function GetActive: Boolean;
+    function GetOnline: Boolean;
     procedure SetAuth(AValue: TIRCAuth);
     procedure SetMapChannels(AValue: TStringList);
     procedure SetNicks(AValue: TStringList);
@@ -431,12 +437,16 @@ type
     procedure Join(Channel: String; Password: string = '');
     procedure Notice(vChannel, vMsg: String);
     procedure Quit(Reason: String);
+    procedure Kick(vChannel, vNickName: String);
+    procedure OpUser(vChannel, vNickName: String);
+    procedure DeopUser(vChannel, vNickName: String);
+    procedure WhoIs(vNickName: String);
 
     property Progress: TIRCProgress read FProgress;
     property Receivers: TIRCReceivers read FReceivers;
     property QueueSends: TIRCQueueRaws read FQueueSends;
     property UserCommands: TIRCUserCommands read FUserCommands;
-    property Active: Boolean read GetActive;
+    property Online: Boolean read GetOnline;
   public
     property Host: String read FHost write SetHost;
     property Port: String read FPort write SetPort;
@@ -562,6 +572,15 @@ type
   { TNAMREPLY_IRCReceiver }
 
   TNAMREPLY_IRCReceiver = class(TIRCReceiver)
+  protected
+  public
+    function Accept(S: string): Boolean; override;
+    procedure Receive(vCommand: TIRCCommand); override;
+  end;
+
+  { TWHOISREPLY_IRCReceiver }
+
+  TWHOISREPLY_IRCReceiver = class(TIRCReceiver)
   protected
   public
     function Accept(S: string): Boolean; override;
@@ -870,6 +889,36 @@ begin
   EndOfNick := Pos('!', Address);
   if EndOfNick > 0 then
     Result := Copy(Address, 1, EndOfNick - 1);
+end;
+
+{ TWHOISREPLY_IRCReceiver }
+
+function TWHOISREPLY_IRCReceiver.Accept(S: string): Boolean;
+begin
+  Result := inherited Accept(S);
+  if S = IntToStr(IRC_RPL_ENDOFWHOIS) then
+  begin
+    Result := True;
+  end;
+end;
+
+procedure TWHOISREPLY_IRCReceiver.Receive(vCommand: TIRCCommand);
+var
+  i: Integer;
+begin
+{
+  << whois zezo
+  >> @time=2020-07-16T23:19:32.665Z :cs.server 311 zaherdirkey Zezo ~zezo 21.35.4.65 * :I am zaher
+  >> @time=2020-07-16T23:19:32.665Z :cs.server 319 zaherdirkey Zezo :#support
+  >> @time=2020-07-16T23:19:32.665Z :cs.server 317 zaherdirkey Zezo 3181 1594937727 :seconds idle, signon time
+  >> @time=2020-07-16T23:19:32.665Z :cs.server 318 zaherdirkey zezo :End of /WHOIS list
+}
+  if vCommand.Name = IntToStr(IRC_RPL_ENDOFWHOIS) then
+  begin
+  end
+  else
+  begin
+  end;
 end;
 
 { TIRCQueueCommand }
@@ -2089,6 +2138,26 @@ begin
   SendRaw(Format('JOIN %s %s', [Channel, Password]), prgReady);
 end;
 
+procedure TmnIRCClient.Kick(vChannel, vNickName: String);
+begin
+  SendRaw(Format('KICK %s %s', [vChannel, vNickName]), prgReady);
+end;
+
+procedure TmnIRCClient.OpUser(vChannel, vNickName: String);
+begin
+  SendRaw(Format('MODE %s +o %s', [vChannel, vNickName]), prgReady);
+end;
+
+procedure TmnIRCClient.DeopUser(vChannel, vNickName: String);
+begin
+  SendRaw(Format('MODE %s -o %s', [vChannel, vNickName]), prgReady);
+end;
+
+procedure TmnIRCClient.WhoIs(vNickName: String);
+begin
+  SendRaw(Format('WHOIS %s ', [vNickName]), prgReady);
+end;
+
 procedure TmnIRCClient.Notice(vChannel, vMsg: String);
 begin
   SendRaw(Format('NOTICE %s :%s', [vChannel, vMsg]), prgReady);
@@ -2154,9 +2223,9 @@ begin
   FPassword := Value;
 end;
 
-function TmnIRCClient.GetActive: Boolean;
+function TmnIRCClient.GetOnline: Boolean;
 begin
-  Result := (FConnection <> nil) and FConnection.Connected and FConnection.Online;
+  Result := (FConnection <> nil) and FConnection.Connected and FConnection.Online and (Progress > prgConnected);
 end;
 
 procedure TmnIRCClient.SetAuth(AValue: TIRCAuth);
