@@ -157,7 +157,7 @@ begin
   if aUser <> nil then
   begin
     MainFrm.LogMessage(aUser.WhoIs.RealName);
-    MainFrm.LogMessage(aUser.WhoIs.IP);
+    MainFrm.LogMessage(aUser.WhoIs.Server);
     MainFrm.LogMessage(aUser.WhoIs.Channels);
   end;
 end;

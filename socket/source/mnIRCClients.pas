@@ -9,7 +9,6 @@ unit mnIRCClients;
  *  This file is part of the "Mini Library"
  *  @license  modifiedLGPL (modified of http://www.gnu.org/licenses/lgpl.html)
  *            See the file COPYING.MLGPL, included in this distribution,
- *  @ported from SlyIRC the orignal author Steve Williams
  *  @author by Zaher Dirkey <zaher, zaherdirkey>
 
 
@@ -57,6 +56,7 @@ const
   IRC_RPL_TOPIC = 332;
   IRC_RPL_TOPICWHOTIME = 333;
   IRC_RPL_NAMREPLY = 353;
+  IRC_RPL_WHOREPLY = 352;
   IRC_RPL_WHOSPCRPL = 354;
   IRC_RPL_ENDOFNAMES = 366;
   IRC_RPL_MOTDSTART = 375;
@@ -258,7 +258,11 @@ type
 
   TIRCWhoIsInfo = record
     RealName: string;
-    IP: string;
+    UserName: String;
+    Host: string;
+    Account: string;
+    Server: string;
+    LastTime: string;
     Channels: string;
     Country: string;
   end;
@@ -423,6 +427,7 @@ type
     procedure DoUsersChanged(vChannelName: string; vChannel: TIRCChannel); virtual;
     procedure DoUserChanged(vChannel: string; vUser, vNewNick: string); virtual;
     procedure DoWhoIs(vUser: string); virtual;
+    procedure DoWho(vChannel: string); virtual;
     procedure DoMyInfoChanged; virtual;
 
     procedure GetCurrentChannel(out vChannel: string); virtual;
@@ -592,6 +597,14 @@ type
   { TWHOISREPLY_IRCReceiver }
 
   TWHOISREPLY_IRCReceiver = class(TIRCMsgReceiver)
+  protected
+  public
+    procedure Receive(vCommand: TIRCCommand); override;
+  end;
+
+  { TWHOREPLY_IRCReceiver }
+
+  TWHOREPLY_IRCReceiver = class(TIRCMsgReceiver)
   protected
   public
     procedure Receive(vCommand: TIRCCommand); override;
@@ -901,32 +914,63 @@ begin
     Result := Copy(Address, 1, EndOfNick - 1);
 end;
 
+{ TWHOREPLY_IRCReceiver }
+
+procedure TWHOREPLY_IRCReceiver.Receive(vCommand: TIRCCommand);
+var
+  aUser: TIRCUser;
+begin
+  //http://faerion.sourceforge.net/doc/irc/whox.var
+  if vCommand.Code = IRC_RPL_ENDOFWHO then
+  begin
+    Client.DoWho(vCommand.Target);
+  end
+  else if vCommand.Code = IRC_RPL_WHOSPCRPL then
+  begin
+    aChannelName := vCommand.PullParam;
+    ParseUserName(vCommand.PullParam, aUserName, aModes);
+    oChannel := Client.Session.Channels.Found(aChannelName);
+    aUser := oChannel.UpdateUser(aUserName);
+    aUser.WhoIs.RealName := vCommand.Text;
+  end
+  else if vCommand.Code = IRC_RPL_WHOREPLY then
+  begin
+    //:verne.freenode.net 352 zaher #parmaja ~zaher 0.0.0.0 verne.freenode.net zaher H :0 zaher
+    //:cs.server 352 zaher #parmaja ~zaher mynmr5zkhm9pe.irc cs.server zaher H@ :0 zaher
+    aUser := Client.Session.Channels.UpdateUser('', vCommand.Target);
+    aUser.WhoIs.Account := vCommand.PullParam;
+    aUser.WhoIs.Host := vCommand.PullParam;
+    aUser.WhoIs.Server := vCommand.PullParam;
+    aUser.WhoIs.UserName := vCommand.PullParam;
+    aUser.WhoIs.RealName := vCommand.Text;
+  end;
+end;
+
 { TWHOISREPLY_IRCReceiver }
 
 procedure TWHOISREPLY_IRCReceiver.Receive(vCommand: TIRCCommand);
 var
-  i: Integer;
   aUser: TIRCUser;
 begin
-{
-  << whois zezo
-  >> @time=2020-07-16T23:19:32.665Z :cs.server 311 zaherdirkey Zezo ~zezo 21.35.4.65 * :I am zaher
-  >> @time=2020-07-16T23:19:32.665Z :cs.server 319 zaherdirkey Zezo :#support
-  >> @time=2020-07-16T23:19:32.665Z :cs.server 317 zaherdirkey Zezo 3181 1594937727 :seconds idle, signon time
-  >> @time=2020-07-16T23:19:32.665Z :cs.server 318 zaherdirkey zezo :End of /WHOIS list
-}
   if vCommand.Code = IRC_RPL_ENDOFWHOIS then
   begin
-    Client.DoWhoIs(vCommand.PullParam);
+    Client.DoWhoIs(vCommand.Target);
   end
   else if vCommand.Code = IRC_RPL_WHOISCHANNELS then
   begin
     aUser := Client.Session.Channels.UpdateUser('', vCommand.Target);
     aUser.WhoIs.Channels := vCommand.Text;
   end
-  else
+  else if vCommand.Code = IRC_RPL_WHOISUSER then
   begin
-  end;
+    aUser := Client.Session.Channels.UpdateUser('', vCommand.Target);
+    aUser.WhoIs.RealName := vCommand.Text;
+  end
+  else if vCommand.Code = IRC_RPL_WHOISSERVER then
+  begin
+    aUser := Client.Session.Channels.UpdateUser('', vCommand.Target);
+    aUser.WhoIs.Server := vCommand.PullParam + ' - ' + vCommand.Text;
+  end
 end;
 
 { TIRCQueueCommand }
@@ -1289,14 +1333,6 @@ begin
     finally
       aUsers.Free;
     end;
-  end
-  else if vCommand.Code = IRC_RPL_WHOSPCRPL then
-  begin
-    aChannelName := vCommand.PullParam;
-    ParseUserName(vCommand.PullParam, aUserName, aModes);
-    oChannel := Client.Session.Channels.Found(aChannelName);
-    aUser := oChannel.UpdateUser(aUserName);
-    aUser.WhoIs.RealName := vCommand.Text;
   end;
 end;
 
@@ -2369,6 +2405,11 @@ begin
 
 end;
 
+procedure TmnIRCClient.DoWho(vChannel: string);
+begin
+
+end;
+
 procedure TmnIRCClient.DoMyInfoChanged;
 begin
 
@@ -2506,6 +2547,8 @@ begin
   Receivers.Add('QUIT', [], TQUIT_IRCReceiver);
   Receivers.Add('NAMREPLY', [IRC_RPL_NAMREPLY, IRC_RPL_ENDOFNAMES], TNAMREPLY_IRCReceiver);
   Receivers.Add('WHOISREPLY', [IRC_RPL_WHOISUSER, IRC_RPL_WHOISACCOUNT, IRC_RPL_WHOISIDLE, IRC_RPL_WHOISOPERATOR, IRC_RPL_WHOISSERVER, IRC_RPL_WHOISCHANNELS, IRC_RPL_ENDOFWHOIS], TWHOISREPLY_IRCReceiver);
+  Receivers.Add('WHOREPLY', [IRC_RPL_WHOREPLY, RPL_WHOSPCRPL, IRC_RPL_ENDOFWHO], TWHOREPLY_IRCReceiver);
+
 
   Receivers.Add('HELPSTART', [IRC_RPL_HELPSTART], THELP_IRCReceiver);
 
