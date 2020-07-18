@@ -927,11 +927,11 @@ begin
   end
   else if vCommand.Code = IRC_RPL_WHOSPCRPL then
   begin
-    aChannelName := vCommand.PullParam;
+{    aChannelName := vCommand.PullParam;
     ParseUserName(vCommand.PullParam, aUserName, aModes);
     oChannel := Client.Session.Channels.Found(aChannelName);
     aUser := oChannel.UpdateUser(aUserName);
-    aUser.WhoIs.RealName := vCommand.Text;
+    aUser.WhoIs.RealName := vCommand.Text;}
   end
   else if vCommand.Code = IRC_RPL_WHOREPLY then
   begin
@@ -2547,7 +2547,7 @@ begin
   Receivers.Add('QUIT', [], TQUIT_IRCReceiver);
   Receivers.Add('NAMREPLY', [IRC_RPL_NAMREPLY, IRC_RPL_ENDOFNAMES], TNAMREPLY_IRCReceiver);
   Receivers.Add('WHOISREPLY', [IRC_RPL_WHOISUSER, IRC_RPL_WHOISACCOUNT, IRC_RPL_WHOISIDLE, IRC_RPL_WHOISOPERATOR, IRC_RPL_WHOISSERVER, IRC_RPL_WHOISCHANNELS, IRC_RPL_ENDOFWHOIS], TWHOISREPLY_IRCReceiver);
-  Receivers.Add('WHOREPLY', [IRC_RPL_WHOREPLY, RPL_WHOSPCRPL, IRC_RPL_ENDOFWHO], TWHOREPLY_IRCReceiver);
+  Receivers.Add('WHOREPLY', [IRC_RPL_WHOREPLY, IRC_RPL_WHOSPCRPL, IRC_RPL_ENDOFWHO], TWHOREPLY_IRCReceiver);
 
 
   Receivers.Add('HELPSTART', [IRC_RPL_HELPSTART], THELP_IRCReceiver);
