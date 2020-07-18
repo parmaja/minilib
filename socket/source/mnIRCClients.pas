@@ -51,7 +51,7 @@ const
   IRC_RPL_ENDOFWHO = 315;
   IRC_RPL_WHOISIDLE = 317;
   IRC_RPL_ENDOFWHOIS = 318;
-  RPL_WHOISCHANNELS = 319;
+  IRC_RPL_WHOISCHANNELS = 319;
   IRC_RPL_CHANNEL_URL = 328;
   IRC_RPL_WHOISACCOUNT = 330;
   IRC_RPL_TOPIC = 332;
@@ -94,7 +94,6 @@ type
     mtWelcome,
     mtTopic,
     mtChannelInfo,
-    mtWhois,
     mtUserMode,
     mtJoin,
     mtLeft, //User Part or Quit, it send when both triggered to all channels
@@ -126,7 +125,8 @@ type
     FAddress: string;
 
     FSource: string; //Full Sender address, split it to Sender and Address
-    FRaw: String; //Full message received
+    FRaw: String;
+    FCode: Integer; //Full message received
 
   protected
     Queue: Boolean;
@@ -146,6 +146,7 @@ type
     property Sender: string read FSender;
     property Address: string read FAddress;
     property Name: string read FName;//Name or Code
+    property Code: Integer read FCode;// Code or 0 if it just name
 
     function PullParam(out Param: string): Boolean; overload;
     function PullParam: String; overload;
@@ -171,7 +172,7 @@ type
 
     function Accept(S: string): Boolean; virtual;
   public
-    Code: Integer;
+    Codes: TArray<Integer>;
     constructor Create(AClient: TmnIRCClient); virtual;
   end;
 
@@ -187,7 +188,7 @@ type
   public
     constructor Create(AClient: TmnIRCClient);
     destructor Destroy; override;
-    function Add(vName: String; vCode: Integer; AClass: TIRCReceiverClass): Integer;
+    function Add(vName: String; vCodes: TArray<Integer>; AClass: TIRCReceiverClass): Integer;
     procedure Receive(ACommand: TIRCCommand);
     property Client: TmnIRCClient read FClient;
   end;
@@ -255,10 +256,18 @@ type
   TIRCChannelMode = (cmKey, cmInviteOnly, cmModerated, cmNoOutside, cmRegisteredOnly, cmSecret, cmTopicProtection);
   TIRCChannelModes = set of TIRCChannelMode;
 
+  TIRCWhoIsInfo = record
+    RealName: string;
+    IP: string;
+    Channels: string;
+    Country: string;
+  end;
+
   TIRCUser = class(TmnNamedObject)
   protected
   public
     Address: string;
+    WhoIs: TIRCWhoisInfo;
     //https://freenode.net/kb/answer/usermodes
     //https://gowalker.org/github.com/oragono/oragono/irc/modes
     Mode: TIRCUserModes; //mode in the server
@@ -285,7 +294,7 @@ type
     function Find(const Name: string): TIRCChannel;
     function Found(vChannel: string): TIRCChannel;
     function FindUser(const vChannel, vUser: string): TIRCUser;
-    procedure UpdateUser(vChannel, vUser: string; UpdateMode: Boolean = False);
+    function UpdateUser(vChannel, vUser: string; UpdateMode: Boolean = False): TIRCUser;
     procedure RemoveUser(vChannel, vUser: string);
   end;
 
@@ -297,7 +306,7 @@ type
   private
     Tries: Integer;
     FDelayEvent: TEvent;
-    FOnline: Boolean;
+    FActive: Boolean;
 
     FClient: TmnIRCClient;
     FStream: TIRCSocketStream;
@@ -319,7 +328,7 @@ type
 
     property Client: TmnIRCClient read FClient;
     function GetConnected: Boolean; override;
-    property Online: Boolean read FOnline;
+    property Active: Boolean read FActive;
   public
     constructor Create(vOwner: TmnConnections);
     destructor Destroy; override;
@@ -383,7 +392,7 @@ type
     procedure SetReconnectTime(AValue: Integer);
     procedure SetUsername(const Value: String);
     procedure SetUseSSL(AValue: Boolean);
-    //function BuildUserModeCommand(NewModes: TIRCUserModes): String;
+    function UserModeToString(NewModes: TIRCUserModes): String;
   protected
     NickIndex: Integer;
     procedure SetProgress(const Value: TIRCProgress);
@@ -413,6 +422,7 @@ type
     procedure DoProgressChanged; virtual;
     procedure DoUsersChanged(vChannelName: string; vChannel: TIRCChannel); virtual;
     procedure DoUserChanged(vChannel: string; vUser, vNewNick: string); virtual;
+    procedure DoWhoIs(vUser: string); virtual;
     procedure DoMyInfoChanged; virtual;
 
     procedure GetCurrentChannel(out vChannel: string); virtual;
@@ -432,7 +442,7 @@ type
 
     procedure Identify;
     procedure SetMode(const Value: TIRCUserModes);
-    procedure SetChannelMode(const Value: TIRCChannelMode);
+    procedure SetChannelMode(const Value: TIRCChannelMode); //TODO
     procedure SetNick(const ANick: String);
     procedure SetTopic(AChannel: String; const ATopic: String);
     procedure Join(Channel: String; Password: string = '');
@@ -442,6 +452,7 @@ type
     procedure OpUser(vChannel, vNickName: String);
     procedure DeopUser(vChannel, vNickName: String);
     procedure WhoIs(vNickName: String);
+    procedure Who(vChannel: String);
 
     property Progress: TIRCProgress read FProgress;
     property Receivers: TIRCReceivers read FReceivers;
@@ -575,16 +586,14 @@ type
   TNAMREPLY_IRCReceiver = class(TIRCReceiver)
   protected
   public
-    function Accept(S: string): Boolean; override;
     procedure Receive(vCommand: TIRCCommand); override;
   end;
 
   { TWHOISREPLY_IRCReceiver }
 
-  TWHOISREPLY_IRCReceiver = class(TIRCReceiver)
+  TWHOISREPLY_IRCReceiver = class(TIRCMsgReceiver)
   protected
   public
-    function Accept(S: string): Boolean; override;
     procedure Receive(vCommand: TIRCCommand); override;
   end;
 
@@ -894,18 +903,10 @@ end;
 
 { TWHOISREPLY_IRCReceiver }
 
-function TWHOISREPLY_IRCReceiver.Accept(S: string): Boolean;
-begin
-  Result := inherited Accept(S);
-  if S = IntToStr(IRC_RPL_ENDOFWHOIS) then
-  begin
-    Result := True;
-  end;
-end;
-
 procedure TWHOISREPLY_IRCReceiver.Receive(vCommand: TIRCCommand);
 var
   i: Integer;
+  aUser: TIRCUser;
 begin
 {
   << whois zezo
@@ -914,8 +915,14 @@ begin
   >> @time=2020-07-16T23:19:32.665Z :cs.server 317 zaherdirkey Zezo 3181 1594937727 :seconds idle, signon time
   >> @time=2020-07-16T23:19:32.665Z :cs.server 318 zaherdirkey zezo :End of /WHOIS list
 }
-  if vCommand.Name = IntToStr(IRC_RPL_ENDOFWHOIS) then
+  if vCommand.Code = IRC_RPL_ENDOFWHOIS then
   begin
+    Client.DoWhoIs(vCommand.PullParam);
+  end
+  else if vCommand.Code = IRC_RPL_WHOISCHANNELS then
+  begin
+    aUser := Client.Session.Channels.UpdateUser('', vCommand.Target);
+    aUser.WhoIs.Channels := vCommand.Text;
   end
   else
   begin
@@ -1209,12 +1216,12 @@ begin
     aChannel.RemoveUser(vUser);
 end;
 
-procedure TIRCChannels.UpdateUser(vChannel, vUser: string; UpdateMode: Boolean);
+function TIRCChannels.UpdateUser(vChannel, vUser: string; UpdateMode: Boolean): TIRCUser;
 var
   aChannel: TIRCChannel;
 begin
   aChannel := Found(vChannel);
-  aChannel.UpdateUser(vUser, UpdateMode);
+  Result := aChannel.UpdateUser(vUser, UpdateMode);
 end;
 
 function TIRCChannels.Find(const Name: string): TIRCChannel;
@@ -1241,19 +1248,15 @@ end;
 
 { TNAMREPLY_IRCReceiver }
 
-function TNAMREPLY_IRCReceiver.Accept(S: string): Boolean;
-begin
-  Result := inherited Accept(S);
-  if S = IntToStr(IRC_RPL_ENDOFNAMES) then
-  begin
-    Result := True;
-  end;
-end;
-
 procedure TNAMREPLY_IRCReceiver.Receive(vCommand: TIRCCommand);
 var
+  aUserName: string;
+  aModes: TIRCUserModes;
+  aUser: TIRCUser;
+
   aChannelName: string;
   oChannel: TIRCChannel;
+
   aUsers: TStringList;
   i: Integer;
 begin
@@ -1261,7 +1264,7 @@ begin
   //:server 353 zaher = #support user1
   //:server 353 zaherdirkey = ##support :user1 user2 user3
 
-  if vCommand.Name = IntToStr(IRC_RPL_ENDOFNAMES) then
+  if vCommand.Code = IRC_RPL_ENDOFNAMES then
   begin
     aChannelName := vCommand.Params[1];
     oChannel := Client.Session.Channels.Found(aChannelName);
@@ -1271,7 +1274,7 @@ begin
       Client.DoUsersChanged(aChannelName, oChannel);
     end;
   end
-  else
+  else if vCommand.Code = IRC_RPL_NAMREPLY then
   begin
     aChannelName := vCommand.Params[2];
     oChannel := Client.Session.Channels.Found(aChannelName);
@@ -1286,6 +1289,14 @@ begin
     finally
       aUsers.Free;
     end;
+  end
+  else if vCommand.Code = IRC_RPL_WHOSPCRPL then
+  begin
+    aChannelName := vCommand.PullParam;
+    ParseUserName(vCommand.PullParam, aUserName, aModes);
+    oChannel := Client.Session.Channels.Found(aChannelName);
+    aUser := oChannel.UpdateUser(aUserName);
+    aUser.WhoIs.RealName := vCommand.Text;
   end;
 end;
 
@@ -1536,8 +1547,23 @@ begin
 end;
 
 function TIRCReceiver.Accept(S: string): Boolean;
+var
+  aCode, i: Integer;
 begin
-  Result := ((Name <> '') and SameText(S, Name)) or ((Code > 0) and (StrToIntDef(S, 0) = Code));
+  Result := (Name <> '') and SameText(S, Name);
+  if not Result and (Length(Codes) > 0) then
+  begin
+    aCode := StrToIntDef(S, 0);
+    if aCode > 0 then
+    begin
+      for i := 0 to Length(Codes) - 1 do
+      begin
+        Result := (aCode = Codes[i]);
+        if Result then
+          Break;
+      end;
+    end;
+  end;
 end;
 
 constructor TIRCReceiver.Create(AClient: TmnIRCClient);
@@ -1584,7 +1610,7 @@ begin
   if FStream = nil then
     FStream := CreateStream;
 
-  if not FStream.Connected and not Terminated and Online then
+  if not FStream.Connected and not Terminated and Active then
   begin
     try
       if Tries > 0 then
@@ -1790,6 +1816,7 @@ begin
         if ScanString(vData, p, Count, cTokenSeparator, True) then
         begin
           Result.FName := MidStr(vData, Start, Count);
+          Result.FCode := StrToIntDef(Result.FName, 0);
           ABody := MidStr(vData, Start + Count + 1, MaxInt);
           aState := command;
           Inc(aState);
@@ -1884,7 +1911,7 @@ end;
 
 { TCustomIRCReceivers }
 
-function TCustomIRCReceivers.Add(vName: String; vCode: Integer; AClass: TIRCReceiverClass): Integer;
+function TCustomIRCReceivers.Add(vName: String; vCodes: TArray<Integer>; AClass: TIRCReceiverClass): Integer;
 var
   AReceiver: TIRCReceiver;
 begin
@@ -1895,7 +1922,7 @@ begin
   end;}
   AReceiver := AClass.Create(Client);
   AReceiver.Name := vName;
-  AReceiver.Code := vCode;
+  AReceiver.Codes := vCodes;
   Result := inherited Add(AReceiver);
 end;
 
@@ -1927,7 +1954,7 @@ procedure TmnIRCClient.Disconnect;
 begin
   if Assigned(FConnection) then
   begin
-    Connection.FOnline := False;
+    Connection.FActive := False;
     if (FConnection.Connected) then
       Quit('Bye');
 
@@ -1947,7 +1974,7 @@ begin
       InitOpenSSL;
     FreeAndNil(FConnection);
     CreateConnection;
-    Connection.FOnline := True;
+    Connection.FActive := True;
     Connection.Start;
   end;
 end;
@@ -2165,6 +2192,11 @@ begin
   SendRaw(Format('WHOIS %s ', [vNickName]), prgReady);
 end;
 
+procedure TmnIRCClient.Who(vChannel: String);
+begin
+  SendRaw(Format('WHO %s ', [vChannel]), prgReady);
+end;
+
 procedure TmnIRCClient.Notice(vChannel, vMsg: String);
 begin
   SendRaw(Format('NOTICE %s :%s', [vChannel, vMsg]), prgReady);
@@ -2172,7 +2204,7 @@ end;
 
 procedure TmnIRCClient.Disconnected;
 begin
-  Connection.FOnline := False;
+  Connection.FActive := False;
   SetProgress(prgDisconnected);
   FSession.Nick := '';
   FSession.AllowedUserModes := [];
@@ -2232,7 +2264,7 @@ end;
 
 function TmnIRCClient.GetOnline: Boolean;
 begin
-  Result := (FConnection <> nil) and FConnection.Connected and FConnection.Online and (Progress > prgConnected);
+  Result := (FConnection <> nil) and FConnection.Connected and FConnection.FActive and (Progress > prgConnected);
 end;
 
 procedure TmnIRCClient.SetAuth(AValue: TIRCAuth);
@@ -2304,9 +2336,9 @@ procedure TmnIRCClient.SetMode(const Value: TIRCUserModes);
 var
   ModeString: String;
 begin
-  {ModeString := BuildUserModeCommand(Value);
+  ModeString := UserModeToString(Value);
   if Length(ModeString) > 0 then
-    SendRaw(Format('MODE %s %s', [FSession.Nick, ModeString]), prgConnected);}
+    SendRaw(Format('MODE %s %s', [FSession.Nick, ModeString]), prgConnected);
 end;
 
 procedure TmnIRCClient.SetChannelMode(const Value: TIRCChannelMode);
@@ -2329,6 +2361,11 @@ begin
 end;
 
 procedure TmnIRCClient.DoUserChanged(vChannel: string; vUser, vNewNick: string);begin
+
+end;
+
+procedure TmnIRCClient.DoWhoIs(vUser: string);
+begin
 
 end;
 
@@ -2359,37 +2396,42 @@ begin
   SendRaw(Format('QUIT :%s', [Reason]), prgReady);
 end;
 
-{function TmnIRCClient.BuildUserModeCommand(NewModes: TIRCUserModes): String;
-const
-  ModeChars: array [umInvisible..umWallOp] of Char = ('i', 'o', 's', 'w');
+function TmnIRCClient.UserModeToString(NewModes: TIRCUserModes): String;
+  function GetModeChars(aMode: TIRCUserMode): string;
+  begin
+    case aMode of
+      umInvisible:
+        Result := 'i';
+      umAway:
+        Result := 'a';
+      umVoice:
+        Result := 'v';
+      umHalfOp:
+        Result := 'h';
+      umOp:
+        Result := 'o';
+      umWallOp:
+        Result := 'w';
+      umServerNotices:
+        Result := 's';
+      umSSL:
+        Result := 'Z';
+      else
+        Result := '';
+    end;
+  end;
 var
-  ModeDiff: TIRCUserModes;
   Mode: TIRCUserMode;
 begin
   Result := '';
 
-  ModeDiff := FSession.UserModes - NewModes;
-  if ModeDiff <> [] then
+  for Mode := Low(TIRCUserMode) to High(TIRCUserMode) do
   begin
-    Result := Result + '-';
-    for Mode := Low(TIRCUserMode) to High(TIRCUserMode) do
-    begin
-      if Mode in ModeDiff then
-        Result := Result + ModeChars[Mode];
-    end;
+    if Mode in NewModes then
+      Result := Result + GetModeChars(Mode);
   end;
 
-  ModeDiff := NewModes - FSession.UserModes;
-  if ModeDiff <> [] then
-  begin
-    Result := Result + '+';
-    for Mode := Low(TIRCUserMode) to High(TIRCUserMode) do
-    begin
-      if Mode in ModeDiff then
-        Result := Result + ModeChars[Mode];
-    end;
-  end;
-end;}
+end;
 
 procedure TmnIRCClient.ProgresChanged;
 begin
@@ -2448,25 +2490,26 @@ end;
 
 procedure TmnIRCClient.Init;
 begin
-  Receivers.Add('PRIVMSG', 0, TPRIVMSG_IRCReceiver);
-  Receivers.Add('NOTICE', 0, TNOTICE_IRCReceiver);
+  Receivers.Add('PRIVMSG', [], TPRIVMSG_IRCReceiver);
+  Receivers.Add('NOTICE', [], TNOTICE_IRCReceiver);
 
-  Receivers.Add('MODE', 0, TMODE_IRCReceiver);
-  Receivers.Add('PING', 0, TPING_IRCReceiver);
-  Receivers.Add('MOTD', IRC_RPL_MOTD, TMOTD_IRCReceiver);
-  Receivers.Add('', IRC_RPL_TOPIC, TTOPIC_IRCReceiver);
-  Receivers.Add('TOPIC', 0, TTOPIC_IRCReceiver);//not same with IRC_RPL_TOPIC
-  Receivers.Add('NICK', 0, TNICK_IRCReceiver);
-  Receivers.Add('WELCOME', IRC_RPL_WELCOME, TWELCOME_IRCReceiver);
-  Receivers.Add('MYINFO', IRC_RPL_MYINFO, TMYINFO_IRCReceiver);
-  Receivers.Add('JOIN', 0, TJOIN_IRCReceiver);
-  Receivers.Add('PART', 0, TPART_IRCReceiver);
-  Receivers.Add('QUIT', 0, TQUIT_IRCReceiver);
-  Receivers.Add('NAMREPLY', IRC_RPL_NAMREPLY, TNAMREPLY_IRCReceiver);
+  Receivers.Add('MODE', [], TMODE_IRCReceiver);
+  Receivers.Add('PING', [], TPING_IRCReceiver);
+  Receivers.Add('MOTD', [IRC_RPL_MOTD], TMOTD_IRCReceiver);
+  Receivers.Add('', [IRC_RPL_TOPIC], TTOPIC_IRCReceiver);
+  Receivers.Add('TOPIC', [], TTOPIC_IRCReceiver);//not same with IRC_RPL_TOPIC
+  Receivers.Add('NICK', [], TNICK_IRCReceiver);
+  Receivers.Add('WELCOME', [IRC_RPL_WELCOME], TWELCOME_IRCReceiver);
+  Receivers.Add('MYINFO', [IRC_RPL_MYINFO], TMYINFO_IRCReceiver);
+  Receivers.Add('JOIN', [], TJOIN_IRCReceiver);
+  Receivers.Add('PART', [], TPART_IRCReceiver);
+  Receivers.Add('QUIT', [], TQUIT_IRCReceiver);
+  Receivers.Add('NAMREPLY', [IRC_RPL_NAMREPLY, IRC_RPL_ENDOFNAMES], TNAMREPLY_IRCReceiver);
+  Receivers.Add('WHOISREPLY', [IRC_RPL_WHOISUSER, IRC_RPL_WHOISACCOUNT, IRC_RPL_WHOISIDLE, IRC_RPL_WHOISOPERATOR, IRC_RPL_WHOISSERVER, IRC_RPL_WHOISCHANNELS, IRC_RPL_ENDOFWHOIS], TWHOISREPLY_IRCReceiver);
 
-  Receivers.Add('HELPSTART', IRC_RPL_HELPSTART, THELP_IRCReceiver);
+  Receivers.Add('HELPSTART', [IRC_RPL_HELPSTART], THELP_IRCReceiver);
 
-  Receivers.Add('ERR_NICKNAMEINUSE', IRC_ERR_NICKNAMEINUSE, TErrNicknameInUse_IRCReceiver);
+  Receivers.Add('ERR_NICKNAMEINUSE', [IRC_ERR_NICKNAMEINUSE], TErrNicknameInUse_IRCReceiver);
 
   UserCommands.Add(TRaw_UserCommand.Create('Raw', Self));
   UserCommands.Add(TRaw_UserCommand.Create('Msg', Self)); //Alias of Raw

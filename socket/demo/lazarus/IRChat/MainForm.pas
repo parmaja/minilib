@@ -22,6 +22,7 @@ type
     procedure DoUserChanged(vChannel: string; vUser, vNewNick: string); override;
     procedure DoProgressChanged; override;
     procedure DoUsersChanged(vChannelName: string; vChannel: TIRCChannel); override;
+    procedure DoWhoIs(vUser: string); override;
     procedure DoReceive(vMsgType: TIRCMsgType; vChannel, vUser, vMsg: String); override;
   end;
 
@@ -147,6 +148,20 @@ begin
   MainFrm.ReceiveNames(vChannelName, vChannel);
 end;
 
+procedure TMyIRCClient.DoWhoIs(vUser: string);
+var
+  aUser: TIRCUser;
+begin
+  inherited;
+  aUser := IRC.Session.Channels.FindUser('', vUser);
+  if aUser <> nil then
+  begin
+    MainFrm.LogMessage(aUser.WhoIs.RealName);
+    MainFrm.LogMessage(aUser.WhoIs.IP);
+    MainFrm.LogMessage(aUser.WhoIs.Channels);
+  end;
+end;
+
 procedure TMyIRCClient.DoReceive(vMsgType: TIRCMsgType; vChannel, vUser, vMsg: String);
 begin
   MainFrm.DoReceive(vMsgType, vChannel, vUser, vMsg);
@@ -211,7 +226,10 @@ begin
   try
     Rooms.CommaText := RoomsEdit.Text;
     for Room in Rooms do
+    begin
       IRC.Join(Room);
+      IRC.Who(Room);
+    end;
   finally
     Rooms.Free;
   end;
