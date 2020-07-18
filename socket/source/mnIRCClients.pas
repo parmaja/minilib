@@ -296,6 +296,7 @@ type
   TmnIRCConnection = class(TmnLogClientConnection)
   private
     Tries: Integer;
+    FDelayEvent: TEvent;
     FOnline: Boolean;
 
     FClient: TmnIRCClient;
@@ -1595,7 +1596,7 @@ begin
         finally
           Lock.Leave;
         end;
-        Sleep(ReconnectTime);
+        FDelayEvent.WaitFor(ReconnectTime);
       end;
       Queue(Client.Connecting);
       FStream.Connect;
@@ -1828,10 +1829,12 @@ end;
 constructor TmnIRCConnection.Create(vOwner: TmnConnections);
 begin
   inherited;
+  FDelayEvent := TEvent.Create(nil, True, False, '');
 end;
 
 destructor TmnIRCConnection.Destroy;
 begin
+  FreeAndNil(FDelayEvent);
   inherited;
 end;
 
@@ -1843,6 +1846,8 @@ end;
 procedure TmnIRCConnection.Stop;
 begin
   inherited;
+  if FDelayEvent <> nil then
+    FDelayEvent.SetEvent;
   if FStream <> nil then
     FStream.Disconnect;
 end;
@@ -1925,7 +1930,9 @@ begin
     Connection.FOnline := False;
     if (FConnection.Connected) then
       Quit('Bye');
+
     FConnection.Terminate;//no stop
+    FConnection.Stop; //should use TerminateSet, but not exists in FPC yet
     FConnection.WaitFor;
   end;
   NickIndex := 0;
