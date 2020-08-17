@@ -220,7 +220,9 @@ begin
   Initialize(Self);
   CTX := ACTX;
   Handle := SSL_new(CTX.Handle);
+  {$ifdef DEBUG}
   Log.WriteLn(SSL_get_version(Handle));
+  {$endif}
 end;
 
 constructor TSSL.Init(ASSL: PSSL);
