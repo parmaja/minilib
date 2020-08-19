@@ -106,6 +106,7 @@ type
     FReference: TmnrReference;
     FDesignCell: TmnrDesignCell;
     FLayout: TmnrLayout;
+    FIsNull: Boolean;
 
     function GetNext: TmnrCell;
     function GetPrior: TmnrCell;
@@ -118,6 +119,7 @@ type
     function DoCompare(vCell: TmnrCell): Integer; virtual;
     procedure DoSumCell(vCell: TmnrCell); virtual;
   public
+    constructor Create(vNodes: TmnrNode);
     function DisplayText: string; override;
     function Compare(vCell: TmnrCell): Integer;
     procedure SumCell(vCell: TmnrCell);
@@ -127,6 +129,7 @@ type
     property Next: TmnrCell read GetNext;
     property Prior: TmnrCell read GetPrior;
     property Reference: TmnrReference read FReference;
+    property IsNull: Boolean read FIsNull write FIsNull default False;
   end;
 
   TmnrRow = class(TmnrRowNode)
@@ -2534,10 +2537,21 @@ begin
   Result := DoCompare(vCell);
 end;
 
+constructor TmnrCell.Create(vNodes: TmnrNode);
+begin
+  inherited Create(vNodes);
+  FIsNull := False;
+end;
+
 function TmnrCell.DisplayText: string;
 begin
-  Result := DoGetDisplayText;
-  if DesignCell<>nil then DesignCell.UpdateCellDisplayText(Self, Result);
+  if IsNull then
+    Result := ''
+  else
+  begin
+    Result := DoGetDisplayText;
+    if DesignCell<>nil then DesignCell.UpdateCellDisplayText(Self, Result);
+  end;
 end;
 
 function TmnrCell.DoCompare(vCell: TmnrCell): Integer;
