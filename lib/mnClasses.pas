@@ -74,7 +74,7 @@ type
     {$H-}procedure Added(Item: _Object_); virtual;{$H+}
 
     procedure Created; virtual;
-    function CreateItem: _Object_; virtual;
+    function RequireItem: _Object_; virtual;
   public
     function GetEnumerator: TmnObjectListEnumerator; inline;
     function QueryInterface({$ifdef FPC}constref{$else}const{$endif} iid : TGuid; out Obj):HResult; {$ifdef WINDOWS}stdcall{$else}cdecl{$endif};
@@ -168,7 +168,7 @@ begin
 
   if Result = nil then
   begin
-    Result := CreateItem;
+    Result := RequireItem;
     Put(Index, Result);
   end;
 end;
@@ -236,7 +236,7 @@ procedure TmnObjectList<_Object_>.Created;
 begin
 end;
 
-function TmnObjectList<_Object_>.CreateItem: _Object_;
+function TmnObjectList<_Object_>.RequireItem: _Object_;
 begin
   Result := nil;
 end;
