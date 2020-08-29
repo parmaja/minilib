@@ -59,7 +59,7 @@ type
   public
     class function Capabilities: TmncCapabilities; override;
     class function EngineName: string; override;
-    constructor Create;
+    constructor Create; override;
   end;
 
   { TmncCSVSession }
@@ -101,7 +101,8 @@ type
     procedure SaveHeader;
     procedure LoadRecord;
     procedure SaveRecord;
-    function ReadLine(out Strings: TStringList): Boolean;
+    function ReadLine(out Line: string): Boolean; overload;
+    function ReadLine(out Strings: TStringList): Boolean; overload;
     procedure WriteLine(S: string); //Because i dont trust with Strings.Text
     procedure DoPrepare; override;
     procedure DoExecute; override;
@@ -165,7 +166,7 @@ end;
 
 constructor TmncCSVConnection.Create;
 begin
-  inherited Create;
+  inherited;
 end;
 
 procedure TmncCSVConnection.DoConnect;
@@ -318,26 +319,24 @@ begin
     FreeAndNil(FCSVStream);//close it for make EOF
 end;
 
+procedure StrToFieldssCallbackProc(Sender: Pointer; Index: Integer; S: string; var Resume: Boolean);
+var
+  aRecord: TmncFields;
+begin
+  aRecord := TmncFields(Sender);
+//  if (i < aRecord.Count) {and (i < Columns.Count)} then //TODO check it
+    aRecord.Add(index, s);
+end;
+
 procedure TmncCSVCommand.LoadRecord;
 var
-  aStrings: TStringList;
   aRecord: TmncFields;
-  i: Integer;
+  Line: string;
 begin
-  aStrings := nil;
-  if ReadLine(aStrings) then
+  if ReadLine(Line) then
   begin
     aRecord := CreateFields(Columns);
-    i := 0;
-    try
-      while (i < aStrings.Count) {and (i < Columns.Count)} do //TODO check it
-      begin
-        aRecord.Add(i, DequoteStr(aStrings[i]));
-        Inc(i); 
-      end;
-    finally
-      aStrings.Free;
-    end;
+    StrToStringsCallback(Line, aRecord, StrToFieldssCallbackProc, [Session.DelimiterChar], [#0, #13, #10], [Session.QuoteChar]);
     Fields := aRecord;
   end
   else
@@ -358,37 +357,43 @@ end;
 function TmncCSVCommand.ReadLine(out Strings: TStringList): Boolean;
 var
   s: string;
+begin
+  Result := ReadLine(s);
+  if Result then
+  begin
+    Strings := TStringList.Create;
+    StrToStrings(s, Strings, [Session.DelimiterChar], [#0, #13, #10], [Session.QuoteChar])
+  end
+  else
+    Strings := nil;
+end;
+
+function TmncCSVCommand.ReadLine(out Line: string): Boolean;
+var
   t: rawbytestring;
 begin
   Result := (FCSVStream <> nil) and not (cloRead in FCSVStream.Done);
   if Result then
   begin
-    s := '';
-    Strings := TStringList.Create;
+    Line := '';
     repeat
       if Session.CSVOptions.ANSIContents then
       begin
         Result := FCSVStream.ReadLineRawByte(t, False);
         {$ifdef fpc}
         SetCodePage(t, SystemAnsiCodePage, false);
-        s := AnsiToUtf8(t);
+        Line := AnsiToUtf8(t);
         {$else}
         s := string(t);
         {$endif}
       end
       else
-        Result := FCSVStream.ReadLine(s, False);
-      s := Trim(s);
-    until not Result or not ((s = '') and (EmptyLine = elSkip));
+        Result := FCSVStream.ReadLine(Line, False);
+      Line := Trim(Line);
+    until not Result or not ((Line = '') and (EmptyLine = elSkip));
 
-    Result := Result and not ((s = '') and (EmptyLine = elDone));
-    if Result then
-      StrToStrings(s, Strings, [Session.DelimiterChar], [#0, #13, #10], [Session.QuoteChar])
-    else
-      FreeAndNil(Strings);
+    Result := Result and not ((Line = '') and (EmptyLine = elDone));
   end
-  else
-    Strings := nil;
 end;
 
 procedure TmncCSVCommand.SaveHeader;
