@@ -688,6 +688,7 @@ constructor TmnServer.Create;
 begin
   inherited Create;
   FAddress := '0.0.0.0';
+  //FAddress := '';
   PrivateKeyFile := 'privatekey.pem';
   CertificateFile := 'certificate.pem';
 end;

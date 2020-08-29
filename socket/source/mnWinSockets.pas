@@ -454,10 +454,11 @@ begin
     {$ifdef FPC}
     Initialize(FSet);
     FD_ZERO(FSet);
+    FD_SET(vHandle, FSet);
     {$else}
+    FD_ZERO(FSet);
     _FD_SET(vHandle, FSet);
     {$endif}
-    FD_ZERO(FSet);
     if Check = slRead then
     begin
       PSetRead := @FSet;

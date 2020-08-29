@@ -428,7 +428,8 @@ end;
 
 procedure TmodModuleServer.DoAfterClose;
 begin
-  Modules.Active := False;
+  if Modules <> nil then
+    Modules.Active := False;
   inherited;
 end;
 
