@@ -25,7 +25,8 @@ uses
     sockets,
   {$ENDIF}
 {$ELSE} // DELPHI
-  WinSock,
+  WinSock2,
+//  WinSock,
 {$ENDIF}
   mnSockets;
 
@@ -100,11 +101,7 @@ var
 begin
   if Active then
   begin
-  {$IFDEF FPC}
     err := WinSock2.CloseSocket(FHandle);
-  {$ELSE}
-    err := WinSock.CloseSocket(FHandle);
-  {$ENDIF}
     if err = 0 then
       Result := erSuccess
     else
@@ -131,11 +128,7 @@ begin
     iHow := 0;
 
   CheckActive;
-{$IFDEF FPC}
   c := WinSock2.Shutdown(FHandle, iHow);
-{$ELSE}
-  c := WinSock.Shutdown(FHandle, iHow);
-{$ENDIF}
   if c = SOCKET_ERROR then
     Result := erInvalid
   else
@@ -147,11 +140,7 @@ var
   c: Integer;
 begin
   CheckActive;
-{$IFDEF FPC}
   c := WinSock2.listen(FHandle, cBacklog);
-{$ELSE}
-  c := WinSock.listen(FHandle, cBacklog);
-{$ENDIF}
   if c = SOCKET_ERROR then
     Result := erInvalid
   else
@@ -165,11 +154,7 @@ var
 begin
   CheckActive;
   AddrSize := SizeOf(FAddress);
-{$IFDEF FPC}
   aHandle := WinSock2.Accept(FHandle, @FAddress, @AddrSize);
-{$ELSE}
-  aHandle := WinSock.Accept(FHandle, @FAddress, @AddrSize);
-{$ENDIF}
   if aHandle = INVALID_SOCKET then
     Result := nil
   else
@@ -178,7 +163,11 @@ end;
 
 function TmnSocket.GetRemoteAddress: string;
 var
+  {$ifdef FPC}
   SockAddrIn: TSockAddrIn;
+  {$else}
+  SockAddrIn: TSockAddr;
+  {$endif}
   Size: Integer;
 begin
   CheckActive;
@@ -187,14 +176,19 @@ begin
   Initialize(SockAddrIn);
   {$endif}
   if getpeername(FHandle, SockAddrIn, Size) = 0 then
-    Result := inet_ntoa(SockAddrIn.sin_addr)
+    //Result := inet_ntoa(SockAddrIn.sin_addr)
+    Result := String(inet_ntoa(sockaddr_in(SockAddrIn).sin_addr))
   else
     Result := '';
 end;
 
 function TmnSocket.GetRemoteName: string;
 var
+  {$ifdef FPC}
   SockAddrIn: TSockAddrIn;
+  {$else}
+  SockAddrIn: TSockAddr;
+  {$endif}
   Size: Integer;
   aHostEnt: PHostEnt;
   s: ansistring;
@@ -206,7 +200,12 @@ begin
   {$endif}
   if getpeername(FHandle, SockAddrIn, Size) = 0 then
   begin
+    {$ifdef FPC}
     aHostEnt := gethostbyaddr(@SockAddrIn.sin_addr.s_addr, 4, PF_INET);
+    {$else}
+    aHostEnt := gethostbyaddr(sockaddr_in(SockAddrIn).sin_addr.s_addr, 4, PF_INET);
+    {$endif}
+
     if aHostEnt <> nil then
       s := aHostEnt.h_name
     else
@@ -229,27 +228,26 @@ begin
   aName := '';
   {$endif}
   SetLength(aName, 250);
-{$IFDEF FPC}
-  WinSock2.gethostname(PChar(aName), Length(aName));
-{$ELSE}
-  WinSock.gethostname(PAnsiChar(aName), Length(aName));
-{$ENDIF}
+  WinSock2.gethostname(PAnsiChar(aName), Length(aName));
   aName := PAnsiChar(aName);
-{$IFDEF FPC}
-  aHostEnt := WinSock2.gethostbyname(PChar(aName));
-{$ELSE}
-  aHostEnt := WinSock.gethostbyname(PAnsiChar(aName));
-{$ENDIF}
+  aHostEnt := WinSock2.gethostbyname(PAnsiChar(aName));
   if aHostEnt <> nil then
   begin
     aAddr := aHostEnt^.h_addr_list^;
     if aAddr <> nil then
     begin
+      {$ifdef FPC}
       sa.S_un_b.s_b1 := aAddr[0];
       sa.S_un_b.s_b2 := aAddr[1];
       sa.S_un_b.s_b3 := aAddr[2];
       sa.S_un_b.s_b4 := aAddr[3];
-      Result := inet_ntoa(sa)
+      {$else}
+      sa.S_un_b.s_b1 := Byte(aAddr[0]);
+      sa.S_un_b.s_b2 := Byte(aAddr[1]);
+      sa.S_un_b.s_b3 := Byte(aAddr[2]);
+      sa.S_un_b.s_b4 := Byte(aAddr[3]);
+      {$endif}
+      Result := String(inet_ntoa(sa))
     end
     else
       Result := '';
@@ -267,11 +265,7 @@ begin
   s := '';
   {$endif}
   SetLength(s, 250);
-{$IFDEF FPC}
-  WinSock2.gethostname(PChar(s), Length(s));
-{$ELSE}
-  WinSock.gethostname(PAnsiChar(s), Length(s));
-{$ENDIF}
+  WinSock2.gethostname(PAnsiChar(s), Length(s));
   s := PAnsiChar(s);
   Result := string(s);
 end;
@@ -283,11 +277,7 @@ var
   ret: Integer;
   errno: longint;
 begin
-{$IFDEF FPC}
   ret := WinSock2.recv(FHandle, Buffer, Count, 0);
-{$ELSE}
-  ret := WinSock.recv(FHandle, Buffer, Count, 0);
-{$ENDIF}
   if ret = 0 then
   begin
     Count := 0;
@@ -319,11 +309,7 @@ function TmnSocket.DoSend(const Buffer; var Count: Longint): TmnError;
 var
   ret: Integer;
 begin
-{$IFDEF FPC}
-    ret:= WinSock2.send(FHandle, (@Buffer)^, Count, 0);
-{$ELSE}
-    ret := WinSock.send(FHandle, (@Buffer)^, Count, 0);
-{$ENDIF}
+  ret := WinSock2.send(FHandle, (@Buffer)^, Count, 0);
   if ret = 0 then
   begin
     Result := erClosed;
@@ -361,7 +347,11 @@ const
   SO_TRUE: Longbool = True;
 var
   aHandle: TSocket;
+  {$ifdef FPC}
   aSockAddr: TSockAddr;
+  {$else}
+  aSockAddr: TSockAddrIn;
+  {$endif}
   aHostEnt: PHostEnt;
   DW: Longint;
 begin
@@ -386,16 +376,12 @@ begin
       end;
     end;
 
+    {$IFNDEF WINCE} //Not exists in WinCE
     if soReuseAddr in Options then
     begin
-      {$IFDEF FPC}
-        {$IFNDEF WINCE}
-          WinSock2.setsockopt(aHandle, SOL_SOCKET, SO_REUSEADDR, PChar(@SO_TRUE), SizeOf(SO_TRUE));
-        {$ENDIF}
-      {$ELSE}
-        WinSock.setsockopt(aHandle, SOL_SOCKET, SO_REUSEADDR, PAnsiChar(@SO_TRUE), SizeOf(SO_TRUE));
-      {$ENDIF}
+      WinSock2.setsockopt(aHandle, SOL_SOCKET, SO_REUSEADDR, PAnsiChar(@SO_TRUE), SizeOf(SO_TRUE));
     end;
+    {$ENDIF}
 
     aSockAddr.sin_family := AF_INET;
     aSockAddr.sin_port := htons(LookupPort(Port));
@@ -409,10 +395,17 @@ begin
         aHostEnt := gethostbyname(PAnsiChar(AnsiString(Address)));
         if aHostEnt <> nil then
         begin
+          {$ifdef FPC}
           aSockAddr.sin_addr.S_un_b.s_b1 := aHostEnt.h_addr^[0];
           aSockAddr.sin_addr.S_un_b.s_b2 := aHostEnt.h_addr^[1];
           aSockAddr.sin_addr.S_un_b.s_b3 := aHostEnt.h_addr^[2];
           aSockAddr.sin_addr.S_un_b.s_b4 := aHostEnt.h_addr^[3];
+          {$else}
+          aSockAddr.sin_addr.S_un_b.s_b1 := Byte(aHostEnt.h_addr^[0]);
+          aSockAddr.sin_addr.S_un_b.s_b2 := Byte(aHostEnt.h_addr^[1]);
+          aSockAddr.sin_addr.S_un_b.s_b3 := Byte(aHostEnt.h_addr^[2]);
+          aSockAddr.sin_addr.S_un_b.s_b4 := Byte(aHostEnt.h_addr^[3]);
+          {$endif}
           aSockAddr.sin_family := aHostEnt.h_addrtype;
         end;
       end;
@@ -420,7 +413,7 @@ begin
     {$IFDEF FPC}
     if WinSock2.bind(aHandle, aSockAddr, SizeOf(aSockAddr)) = SOCKET_ERROR then
     {$ELSE}
-    if WinSock.bind(aHandle, aSockAddr, SizeOf(aSockAddr)) = SOCKET_ERROR then
+    if WinSock2.bind(aHandle, TSockAddr(aSockAddr), SizeOf(aSockAddr)) = SOCKET_ERROR then
     {$ENDIF}
     begin
       FreeSocket(aHandle, vErr);
@@ -442,11 +435,7 @@ end;
 procedure TmnWallSocket.FreeSocket(var vHandle: TSocket; out vErr: Integer);
 begin
   vErr := WSAGetLastError;
-  {$IFDEF FPC}
   WinSock2.CloseSocket(vHandle);
-  {$ELSE}
-  WinSock.CloseSocket(vHandle);
-  {$ENDIF}
   vHandle := INVALID_SOCKET;
 end;
 
@@ -464,9 +453,11 @@ begin
   begin
     {$ifdef FPC}
     Initialize(FSet);
+    FD_ZERO(FSet);
+    {$else}
+    _FD_SET(vHandle, FSet);
     {$endif}
     FD_ZERO(FSet);
-    FD_SET(vHandle, FSet);
     if Check = slRead then
     begin
       PSetRead := @FSet;
@@ -479,21 +470,13 @@ begin
     end;
     if Timeout = -1 then
     begin
-    {$IFDEF FPC}
       c := WinSock2.select(0, PSetRead, PSetWrite, nil, nil)
-    {$ELSE}
-      c := WinSock.select(0, PSetRead, PSetWrite, nil, nil)
-    {$ENDIF}
     end
     else
     begin
       TimeVal.tv_sec := Timeout div 1000;
       TimeVal.tv_usec := (Timeout mod 1000) * 1000;
-    {$IFDEF FPC}
       c := WinSock2.select(0, PSetRead, PSetWrite, nil, @TimeVal);
-    {$ELSE}
-      c := WinSock.select(0, PSetRead, PSetWrite, nil, @TimeVal);
-    {$ENDIF}
     end;
     if (c = SOCKET_ERROR) then
       Result := erInvalid
@@ -527,7 +510,11 @@ const
   SO_TRUE: Longbool = True;
 var
   aHandle: TSocket;
+  {$ifdef FPC}
   aAddr: TSockAddr;
+  {$else}
+  aAddr: TSockAddrIn;
+  {$endif}
   aHost: PHostEnt;
   ret: Longint;
   aMode: u_long;
@@ -556,7 +543,7 @@ begin
     if ConnectTimeout <> -1 then
     begin
       aMode := 1;
-      ret := ioctlsocket(aHandle, {$ifdef FPC}Longint(FIONBIO){$else}FIONBIO{$endif}, aMode);
+      ret := ioctlsocket(aHandle, Longint(FIONBIO), aMode);
       if ret = Longint(SOCKET_ERROR) then
       begin
         FreeSocket(aHandle, vErr);
@@ -578,10 +565,17 @@ begin
           aHost := gethostbyname(PAnsiChar(AnsiString(Address)));
           if aHost <> nil then
           begin
+            {$ifdef FPC}
             aAddr.sin_addr.S_un_b.s_b1 := aHost.h_addr^[0];
             aAddr.sin_addr.S_un_b.s_b2 := aHost.h_addr^[1];
             aAddr.sin_addr.S_un_b.s_b3 := aHost.h_addr^[2];
             aAddr.sin_addr.S_un_b.s_b4 := aHost.h_addr^[3];
+            {$else}
+            aAddr.sin_addr.S_un_b.s_b1 := Byte(aHost.h_addr^[0]);
+            aAddr.sin_addr.S_un_b.s_b2 := Byte(aHost.h_addr^[1]);
+            aAddr.sin_addr.S_un_b.s_b3 := Byte(aHost.h_addr^[2]);
+            aAddr.sin_addr.S_un_b.s_b4 := Byte(aHost.h_addr^[3]);
+            {$endif}
             aAddr.sin_family := aHost.h_addrtype;
           end;
         end;
@@ -589,14 +583,14 @@ begin
     {$IFDEF FPC}
       ret := WinSock2.connect(aHandle, aAddr, SizeOf(aAddr));
     {$ELSE}
-      ret := WinSock.connect(aHandle, aAddr, SizeOf(aAddr));
+      ret := WinSock2.connect(aHandle, TSockAddr(aAddr), SizeOf(aAddr));
     {$ENDIF}
       if (ret = SOCKET_ERROR) then
       begin
         if (ConnectTimeout <> -1) and (WSAGetLastError = WSAEWOULDBLOCK) then
         begin
           aMode := 0;
-          ret := ioctlsocket(aHandle, {$ifdef FPC}Longint(FIONBIO){$else}FIONBIO{$endif}, aMode);
+          ret := ioctlsocket(aHandle, Longint(FIONBIO), aMode);
           if ret = Longint(SOCKET_ERROR) then
             FreeSocket(aHandle, vErr)
           else if Select(aHandle, ConnectTimeout, slWrite) <> erSuccess then

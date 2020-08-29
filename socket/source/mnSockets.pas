@@ -7,6 +7,11 @@ unit mnSockets;
  * @author    Zaher Dirkey <zaher, zaherdirkey>
  *}
 
+ {
+    TODO: SIO_TCP_SET_ACK_FREQUENCY
+    TODO: soNoPush
+ }
+
 {$IFDEF FPC}
 {$mode delphi}
 {$ENDIF}
@@ -35,7 +40,9 @@ type
   TmnsoOption = (
     soReuseAddr,
     soKeepAlive,
-    soNoDelay,
+    soNoDelay, //Nagle's algorithm use it for faster communication, do not wait until ACK for previously sent data and accumulate data in send buffer...
+    //soCORK, TODO, TCP_CORK is the opposite of TCP_NODELAY. The former forces packet-accumulation delay
+    //soNoPush, TODO
     //soBroadcast, soDebug, soDontLinger, soDontRoute, soOOBInLine, soAcceptConn
     soWaitBeforeRead, //Wait for data come before read, that double the time wait if you set SetReadTimeout if no data come
     soWaitBeforeWrite, //Wait for ready before write, idk what for
