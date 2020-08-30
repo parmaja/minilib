@@ -319,25 +319,41 @@ begin
     FreeAndNil(FCSVStream);//close it for make EOF
 end;
 
-procedure StrToFieldssCallbackProc(Sender: Pointer; Index: Integer; S: string; var Resume: Boolean);
+type
+  TStrToFields = class(TObject)
+  public
+    Fields: TmncFields;
+    Session: TmncCSVSession;
+  end;
+
+procedure StrToFieldsCallbackProc(Sender: Pointer; Index: Integer; S: string; var Resume: Boolean);
 var
-  aRecord: TmncFields;
+  Info: TStrToFields;
 begin
-  aRecord := TmncFields(Sender);
+  Info := TStrToFields(Sender);
 //  if (i < aRecord.Count) {and (i < Columns.Count)} then //TODO check it
-    aRecord.Add(index, s);
+  if Info.Session.CSVOptions.QuoteChar <> #0 then
+    Info.Fields.Add(index, DequoteStr(s, Info.Session.CSVOptions.QuoteChar))
+  else
+    Info.Fields.Add(index, s)
 end;
 
 procedure TmncCSVCommand.LoadRecord;
 var
-  aRecord: TmncFields;
+  Info: TStrToFields;
   Line: string;
 begin
   if ReadLine(Line) then
   begin
-    aRecord := CreateFields(Columns);
-    StrToStringsCallback(Line, aRecord, StrToFieldssCallbackProc, [Session.DelimiterChar], [#0, #13, #10], [Session.QuoteChar]);
-    Fields := aRecord;
+    Info := TStrToFields.Create;
+    try
+      Info.Fields := CreateFields(Columns);
+      Info.Session := Session;
+      StrToStringsCallback(Line, Info, StrToFieldsCallbackProc, [Session.DelimiterChar], [#0, #13, #10], [Session.QuoteChar]);
+      Fields := Info.Fields;
+    finally
+      Info.Free;
+    end;
   end
   else
     FreeAndNil(FCSVStream);//close it for make EOF
