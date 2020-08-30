@@ -9,7 +9,7 @@ unit mnSockets;
 
  {
     TODO: SIO_TCP_SET_ACK_FREQUENCY
-    TODO: soNoPush
+
  }
 
 {$IFDEF FPC}
@@ -41,8 +41,7 @@ type
     soReuseAddr,
     soKeepAlive,
     soNoDelay, //Nagle's algorithm use it for faster communication, do not wait until ACK for previously sent data and accumulate data in send buffer...
-    //soCORK, TODO, TCP_CORK is the opposite of TCP_NODELAY. The former forces packet-accumulation delay
-    //soNoPush, TODO
+    //soCORK, //not exist in windows //Don't send any data (partial frames) smaller than the MSS until the application says so or until 200ms later; is opposite of soNoDelay. The former forces packet-accumulation delay
     //soBroadcast, soDebug, soDontLinger, soDontRoute, soOOBInLine, soAcceptConn
     soWaitBeforeRead, //Wait for data come before read, that double the time wait if you set SetReadTimeout if no data come
     soWaitBeforeWrite, //Wait for ready before write, idk what for
@@ -412,7 +411,7 @@ begin
   else
   begin
     if soWaitBeforeRead in Options then
-      werr := WaitToRead(ReadTimeout)
+      werr := WaitToRead(ReadTimeout) //useing select, if data in TCP buffer it will back immediately
     else
       werr := cerSuccess;
 
@@ -495,6 +494,15 @@ function TmnSocketStream.WaitToRead(vTimeout: Longint): TmnConnectionError;
 var
   err: TmnError;
 begin
+  if soSSL in Socket.Options then //testing
+  begin
+    if Socket.SSL.Pending then
+    begin
+      Result := cerSuccess;
+      exit;
+    end;
+  end;
+
   err := Socket.Select(vTimeout, slRead);
   if err = erSuccess then
     Result := cerSuccess

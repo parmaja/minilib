@@ -57,13 +57,17 @@ type
 
   { TCTX }
 
+  TContextOptions = set of (coNoComppressing);
+
+  { TContext }
+
   TContext = class(TOpenSSLObject)
   protected
     Handle: PSSL_CTX;
     FMethod: TSSLMethod;
     FOwnMethod: Boolean; //created internally
   public
-    constructor Create(AMethod: TSSLMethod); overload;
+    constructor Create(AMethod: TSSLMethod; Options: TContextOptions = [coNoComppressing]); overload;
     constructor Create(AMethodClass: TSSLMethodClass); overload;
     destructor Destroy; override;
     procedure LoadCertFile(FileName: utf8string);
@@ -88,6 +92,7 @@ type
     //Return False if failed
     function Read(var Buf; Size: Integer; out ReadSize: Integer): Boolean;
     function Write(const Buf; Size: Integer; out WriteSize: Integer): Boolean;
+    function Pending: Boolean;
   end;
 
   //*****************************************************
@@ -309,6 +314,11 @@ begin
     Result := True;
 end;
 
+function TSSL.Pending: Boolean;
+begin
+  Result := SSL_has_pending(Handle) > 0; //SSL_has_pending no SSL_pending, SSL_pending check for processed data only
+end;
+
 { TSSLMethod }
 
 constructor TSSLMethod.Create;
@@ -328,14 +338,19 @@ end;
 
 { TContext }
 
-constructor TContext.Create(AMethod: TSSLMethod);
+constructor TContext.Create(AMethod: TSSLMethod; Options: TContextOptions);
+var
+  o: Cardinal;
 begin
   inherited Create;
   FMethod := AMethod;
   Handle := SSL_CTX_new(AMethod.Handle);
   if Handle = nil then
     EmnOpenSSLException.Create('Can not create CTX handle');
-  SSL_CTX_set_options(Handle, SSL_OP_NO_SSLv2 or SSL_OP_NO_SSLv3 or SSL_OP_NO_COMPRESSION);
+  o := SSL_OP_NO_SSLv2 or SSL_OP_NO_SSLv3;
+  if coNoComppressing in Options then
+    o := o or SSL_OP_NO_COMPRESSION;
+  SSL_CTX_set_options(Handle, o);
 end;
 
 constructor TContext.Create(AMethodClass: TSSLMethodClass);

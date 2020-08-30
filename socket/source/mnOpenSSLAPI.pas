@@ -483,7 +483,10 @@ var
   SSL_accept: function(ssl: PSSL): Integer; cdecl;
 
   SSL_read: function(ssl: PSSL; var buf; size: integer): integer; cdecl;
-  SSL_write: function(ssl:PSSL; const buf; size: integer): integer; cdecl;
+  SSL_write: function(ssl: PSSL; const buf; size: integer): integer; cdecl;
+
+  SSL_pending: function(ssl: PSSL): Integer; cdecl;
+  SSL_has_pending: function(ssl: PSSL): Integer; cdecl;
 
   SSL_CTX_new: function(Method: PSSL_METHOD): PSSL_CTX; cdecl;
   SSL_CTX_set_verify: procedure(ctx: PSSL_CTX; Mode: Integer; Callback: TSSLVerifyCallback); cdecl;
@@ -722,6 +725,8 @@ begin
   SSL_accept := GetAddress('SSL_accept');
   SSL_read := GetAddress('SSL_read');
   SSL_write := GetAddress('SSL_write');
+  SSL_pending := GetAddress('SSL_pending');
+  SSL_has_pending := GetAddress('SSL_has_pending');
 
   SSL_get_peer_certificate := GetAddress('SSL_get_peer_certificate');
 
