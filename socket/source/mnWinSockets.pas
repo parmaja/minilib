@@ -48,6 +48,7 @@ type
     function DoShutdown(How: TmnShutdowns): TmnError; override;
     function DoListen: TmnError; override;
     function DoClose: TmnError; override;
+    function DoPending: Boolean; override;
   public
     function Accept: TmnCustomSocket; override;
     function GetLocalAddress: string; override;
@@ -111,6 +112,16 @@ begin
   end
   else
     Result := erClosed;
+end;
+
+function TmnSocket.DoPending: Boolean;
+var
+  Count: Integer;
+begin
+  if ioctlsocket(FHandle, FIONREAD, @Count) = SOCKET_ERROR then
+    Result := False //TODO
+  else
+    Result := Count > 0;
 end;
 
 function TmnSocket.DoShutdown(How: TmnShutdowns): TmnError;

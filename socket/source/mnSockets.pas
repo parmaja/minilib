@@ -76,6 +76,7 @@ type
     function DoListen: TmnError; virtual; abstract;
     function DoSend(const Buffer; var Count: Longint): TmnError; virtual; abstract;
     function DoReceive(var Buffer; var Count: Longint): TmnError; virtual; abstract;
+    function DoPending: Boolean; virtual;
     function DoClose: TmnError; virtual; abstract;
     property ShutdownState: TmnShutdowns read FShutdownState;
     property Options: TmnsoOptions read FOptions;
@@ -91,6 +92,10 @@ type
     function Receive(var Buffer; var Count: Longint): TmnError;
     function Send(const Buffer; var Count: Longint): TmnError;
     function Select(Timeout: Integer; Check: TSelectCheck): TmnError;
+
+    function Pending: Boolean; //now checking it for SSL only
+    //function Flush: Boolean; //TODO, no flush for TCP, bad design OSs
+
     function Listen: TmnError;
     function Accept: TmnCustomSocket; virtual; abstract;
     property Active: Boolean read GetActive;
@@ -200,6 +205,11 @@ begin
   end
 end;
 
+function TmnCustomSocket.DoPending: Boolean;
+begin
+  Result := False;//TODO wrong
+end;
+
 constructor TmnCustomSocket.Create(AHandle: Integer; AOptions: TmnsoOptions; AKind: TSocketKind);
 begin
   inherited Create;
@@ -282,6 +292,14 @@ begin
   Result := DoSelect(Timeout, Check);
   if Result > erTimeout then
     Close;
+end;
+
+function TmnCustomSocket.Pending: Boolean;
+begin
+  if soSSL in Options then
+    Result := SSL.Pending
+  else
+    Result := DoPending;
 end;
 
 function TmnCustomSocket.Send(const Buffer; var Count: Longint): TmnError;

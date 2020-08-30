@@ -37,6 +37,7 @@ type
     function DoReceive(var Buffer; var Count: Longint): TmnError; override;
     function DoSend(const Buffer; var Count: Longint): TmnError; override;
     function DoClose: TmnError; override;
+    function DoPending: Boolean; override;
   public
     function Accept: TmnCustomSocket; override;
     function GetLocalAddress: ansistring; override;
@@ -171,6 +172,12 @@ begin
   end
   else
     Result := erClosed;
+end;
+
+function TmnSocket.DoPending: Boolean;
+begin
+  Result := inherited DoPending;
+  //ioctl(fd,FIONREAD,&bytes_available)
 end;
 
 function TmnSocket.DoShutdown(How: TmnShutdowns): TmnError;
