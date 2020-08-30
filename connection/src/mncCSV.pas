@@ -384,7 +384,7 @@ begin
         SetCodePage(t, SystemAnsiCodePage, false);
         Line := AnsiToUtf8(t);
         {$else}
-        s := string(t);
+        Line := string(t);
         {$endif}
       end
       else
