@@ -116,9 +116,9 @@ end;
 
 function TmnSocket.DoPending: Boolean;
 var
-  Count: Integer;
+  Count: Cardinal;
 begin
-  if ioctlsocket(FHandle, FIONREAD, @Count) = SOCKET_ERROR then
+  if ioctlsocket(FHandle, FIONREAD, Count) = SOCKET_ERROR then
     Result := False //TODO
   else
     Result := Count > 0;
