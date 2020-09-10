@@ -6,9 +6,9 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, StdCtrls, ExtCtrls,
-  IniFiles,
+  IniFiles, Variants,
   SynEdit, SynHighlighterSQL,
-  mncDB, mncConnections, mncSQL,
+  mncDB, mncConnections, mncSQL, ParamsForms,
   mncSQLite, mncPostgre, mncMySQL, mncFirebird,
   mncORM, mncMySQLORM, mncSQLiteORM, mncPGORM, mncFBORM,
   appSchema;
@@ -53,7 +53,7 @@ type
     LogEdit: TSynEdit;
     SynSQLSyn: TSynSQLSyn;
     UserEdit: TEdit;
-    procedure AddRecordBtn1Click(Sender: TObject);
+    procedure ReadRecordBtn1Click(Sender: TObject);
     procedure AddRecordBtnClick(Sender: TObject);
     procedure Button2Click(Sender: TObject);
     procedure Button3Click(Sender: TObject);
@@ -165,14 +165,18 @@ procedure TMainForm.AddRecordBtnClick(Sender: TObject);
 var
   CMD: TmncSQLCommand;
 begin
+  if Engine = nil then
+    exit;
   CMD := Engine.Session.CreateCommand;
   try
     CMD.Options := CMD.Options + [cmoTruncate];
-    CMD.SQL.Text := 'insert into Companies(ID, Name, Address) values(?ID, ?Name, ?Name)';
+    CMD.SQL.Text := 'insert into Companies(ID, Name, Address) values(?ID, ?Name, ?Address)';
 
     CMD.Prepare;
     CMD.Param['ID'].Value := 10;
-    CMD.Param['Name'].AsString := 'Test' + DateTimeToStr(Now);
+    //CMD.Param['Name'].AsString := 'Test' + DateTimeToStr(Now);
+    CMD.Param['Name'].AsString := 'PARMAJA';
+    CMD.Param['Address'].AsString := 'On the Earth';
     CMD.Execute;
   finally
     CMD.Free;
@@ -183,6 +187,8 @@ procedure TMainForm.Button2Click(Sender: TObject);
 var
   CMD: TmncSQLCommand;
 begin
+  if Engine = nil then
+    exit;
   CMD := Engine.Session.CreateCommand;
   try
     CMD.SQL.Text := 'delete from Companies where ID=?ID';
@@ -199,47 +205,68 @@ procedure TMainForm.Button3Click(Sender: TObject);
 var
   CMD: TmncSQLCommand;
 begin
+  if Engine = nil then
+    exit;
   CMD := Engine.Session.CreateCommand;
   try
-    CMD.SQL.Text := 'update "Materials" set "MatCode" = "MatCode" where "MatCode" = ''100200'' returning "MatID" ';
+    CMD.SQL.Text := SynEdit.Text;
     CMD.Prepare;
-    if CMD.Execute then
-    begin
-      while not CMD.Done do
+    if ShowSQLParams(CMD) then
+      if CMD.Execute then
       begin
-        LogEdit.Lines.Add(CMD.Field['MatID'].AsString);
-        CMD.Next;
+        while not CMD.Done do
+        begin
+          LogEdit.Lines.Add(CMD.Field['MatID'].AsString);
+          CMD.Next;
+        end;
       end;
-    end;
   finally
     CMD.Free;
   end;
 end;
 
-procedure TMainForm.AddRecordBtn1Click(Sender: TObject);
+procedure TMainForm.ReadRecordBtn1Click(Sender: TObject);
 var
   CMD: TmncSQLCommand;
   i: Integer;
+  s: string;
 begin
+  if Engine = nil then
+    exit;
   CMD := Engine.Session.CreateCommand;
   try
-    Cmd.SQL.Add('select ID, Name, Name from Companies');
+    CMD.SQL.Text := 'select * from Companies';
+    //CMD.SQL.Text := 'select * from Companies where ID=?ID';
+    //CMD.Param['ID'].Value := 10;
+
+    //Cmd.SQL.Add('select ID, Name, Name from Companies');
     Cmd.Prepare;
-    CMD.Execute;
-    for i := 0 to CMD.Columns.Count - 1 do
-      LogEdit.Lines.Add(CMD.Columns[i].Name);
-
-    while not CMD.Done do
-    begin
-      CMD.Next;
-    end;
-
-
-{    CMD.SQL.Text := 'select * from Companies where ID=?ID';
-    CMD.Prepare;
-    CMD.Param['ID'].Value := 10;
     if CMD.Execute then
-      LogEdit.Lines.Add(CMD.Field['Name'].AsString);}
+    begin
+      s := '';
+      for i := 0 to CMD.Columns.Count - 1 do
+      begin
+        if s <> '' then
+          s := s + #9;
+        s := s + CMD.Columns[i].Name;
+      end;
+      LogEdit.Lines.Add(s);
+
+      while not CMD.Done do
+      begin
+        s := '';
+        for i := 0 to CMD.Columns.Count - 1 do
+        begin
+          if s <> '' then
+            s := s + #9;
+          s := s + VarToStr(CMD.Fields.Items[i].Value);
+        end;
+        LogEdit.Lines.Add(s);
+        CMD.Next;
+      end;
+    end
+    else
+      LogEdit.Lines.Add('Nothing to read');
 
   finally
     CMD.Free;

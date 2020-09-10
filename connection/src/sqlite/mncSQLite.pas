@@ -686,7 +686,6 @@ var
   end;
   s: UTF8String;
   i: Integer;
-  v: Variant;
 begin
   for i := 0 to Binds.Count - 1 do
   begin
@@ -736,11 +735,7 @@ begin
         begin
           if not Binds[i].BufferAllocated then //TODO test after remove this line, i think it is not useful
           begin
-            v := Binds[i].Param.Value;
-            if TVarData(v).vType = varNull then
-              s := ''
-            else
-              s := v + #0;
+            s := VarToStr(Binds[i].Param.Value) + #0;
             Binds[i].AllocBuffer(PUtf8Char(s)^, Length(s));
           end;
           CheckError(sqlite3_bind_text(FStatment, i + 1, PAnsiChar(Binds[i].Buffer), -1, nil)); //up to #0
