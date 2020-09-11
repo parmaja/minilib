@@ -210,9 +210,9 @@ procedure TmnCustomHttpHeader.ReceiveHeaders;
 begin
   with FHeaders do
   begin
-    Values['Date'] := '';
+{    Values['Date'] := '';
     Values['Last-Modified'] := '';
-    Values['Expires'] := '';
+    Values['Expires'] := '';}
   end;
   DoReceiveHeaders;
 end;
@@ -244,7 +244,7 @@ begin
     until { FStream.Connected or } (s = '');
   end;
   ReceiveHeaders;
-  s := Headers.Values['Set-Cookie'];
+  s := Trim(Headers.Values['Set-Cookie']);
   if s <> '' then
     StrToStrings(s, Cookies, [';'], []);
 end;
@@ -271,14 +271,14 @@ begin
   inherited;
   with FHeaders do
   begin
-    FAccept := Values['Accept'];
-    FAcceptCharSet := Values['Accept-CharSet'];
-    FAcceptEncoding := Values['Accept-Encoding'];
-    FAcceptLanguage := Values['Accept-Language'];
-    FAddress := Values['Host'];
-    FReferer := Values['Referer'];
-    FUserAgent := Values['User-Agent'];
-    FConnection := Values['Connection'];
+    FAccept := Trim(Values['Accept']);
+    FAcceptCharSet := Trim(Values['Accept-CharSet']);
+    FAcceptEncoding := Trim(Values['Accept-Encoding']);
+    FAcceptLanguage := Trim(Values['Accept-Language']);
+    FAddress := Trim(Values['Host']);
+    FReferer := Trim(Values['Referer']);
+    FUserAgent := Trim(Values['User-Agent']);
+    FConnection := Trim(Values['Connection']);
   end;
 end;
 
@@ -305,10 +305,10 @@ begin
   inherited;
   with FHeaders do
   begin
-    FLocation := Values['Location'];
-    FServer := Values['Server'];
-    FContentType:= Values['Content-Type'];
-    FContentLength := StrToIntDef(Values['Content-Length'], 0);
+    FLocation := Trim(Values['Location']);
+    FServer := Trim(Values['Server']);
+    FContentType:= Trim(Values['Content-Type']);
+    FContentLength := StrToIntDef(Trim(Values['Content-Length']), 0);
   end;
 end;
 
