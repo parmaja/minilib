@@ -287,7 +287,8 @@ type
     function Have(AValue: string; vSeperators: TSysCharSet = [';']): Boolean;
   end;
 
-function ParseURI(Request: string; out URIPath: UTF8String; URIParams: TmnParams): Boolean;
+function ParseURI(Request: string; out URIPath: UTF8String; URIParams: UTF8String): Boolean; overload;
+function ParseURI(Request: string; out URIPath: UTF8String; URIParams: TmnParams): Boolean; overload;
 procedure ParsePath(aRequest: string; out Name: string; out URIPath: UTF8String; URIParams: TmnParams);
 
 implementation
@@ -295,16 +296,13 @@ implementation
 uses
   mnUtils;
 
-function ParseURI(Request: string; out URIPath: UTF8String; URIParams: TmnParams): Boolean;
+function ParseURI(Request: string; out URIPath: UTF8String; URIParams: UTF8String): Boolean;
 var
   I, J: Integer;
-  aParams: string;
 begin
-
   if Request <> '' then
     if Request[1] = '/' then //Not sure
       Delete(Request, 1, 1);
-
 
   I := 1;
   while (I <= Length(Request)) and (Request[I] = ' ') do
@@ -326,13 +324,20 @@ begin
   J := Pos('?', URIPath);
   if J > 0 then
   begin
-    aParams := Copy(Request, J + 1, Length(Request));
+    URIParams := Copy(Request, J + 1, Length(Request));
     URIPath := Copy(URIPath, 1, J - 1);
+  end;
+end;
+
+function ParseURI(Request: string; out URIPath: UTF8String; URIParams: TmnParams): Boolean;
+var
+  aParams: string;
+begin
+  Result := ParseURI(Request, URIPath, aParams);
+  if Result then
     if URIParams <> nil then
       //ParseParams(aParams, False);
       StrToStringsCallback(aParams, URIParams, @ParamsCallBack, ['&'], [' ']);
-  end;
-
 end;
 
 procedure ParsePath(aRequest: string; out Name: string; out URIPath: UTF8String; URIParams: TmnParams);

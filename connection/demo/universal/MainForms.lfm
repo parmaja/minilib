@@ -1,6 +1,6 @@
 object MainForm: TMainForm
   Left = 344
-  Height = 385
+  Height = 471
   Top = 162
   Width = 768
   BorderWidth = 3
@@ -9,7 +9,7 @@ object MainForm: TMainForm
   ChildSizing.TopBottomSpacing = 3
   ChildSizing.HorizontalSpacing = 3
   ChildSizing.VerticalSpacing = 3
-  ClientHeight = 385
+  ClientHeight = 471
   ClientWidth = 768
   OnCreate = FormCreate
   OnDestroy = FormDestroy
@@ -17,7 +17,7 @@ object MainForm: TMainForm
   LCLVersion = '2.1.0.0'
   inline SynEdit: TSynEdit
     Left = 6
-    Height = 182
+    Height = 268
     Top = 79
     Width = 630
     Align = alClient
@@ -667,7 +667,7 @@ object MainForm: TMainForm
   inline LogEdit: TSynEdit
     Left = 6
     Height = 115
-    Top = 264
+    Top = 350
     Width = 756
     Align = alBottom
     Font.CharSet = ANSI_CHARSET
@@ -1168,19 +1168,19 @@ object MainForm: TMainForm
   end
   object Panel3: TPanel
     Left = 639
-    Height = 182
+    Height = 268
     Top = 79
     Width = 123
     Align = alRight
     BorderSpacing.Around = 3
     BevelOuter = bvNone
-    ClientHeight = 182
+    ClientHeight = 268
     ClientWidth = 123
     TabOrder = 4
     object AddRecordBtn: TButton
       Left = 0
       Height = 36
-      Top = 25
+      Top = 35
       Width = 123
       Align = alTop
       Caption = 'Add Record'
@@ -1190,7 +1190,7 @@ object MainForm: TMainForm
     object Button2: TButton
       Left = 0
       Height = 36
-      Top = 97
+      Top = 107
       Width = 123
       Align = alTop
       Caption = 'Delete Record'
@@ -1200,7 +1200,7 @@ object MainForm: TMainForm
     object AddRecordBtn1: TButton
       Left = 0
       Height = 36
-      Top = 61
+      Top = 71
       Width = 123
       Align = alTop
       Caption = 'Read Record'
@@ -1210,7 +1210,7 @@ object MainForm: TMainForm
     object Button3: TButton
       Left = 0
       Height = 36
-      Top = 133
+      Top = 143
       Width = 123
       Align = alTop
       Caption = 'Execute'
@@ -1219,14 +1219,23 @@ object MainForm: TMainForm
     end
     object ConnectBtn1: TButton
       Left = 0
-      Height = 25
+      Height = 35
       Top = 0
       Width = 123
       Align = alTop
-      AutoSize = True
       Caption = 'Connect'
       OnClick = ConnectBtn1Click
       TabOrder = 4
+    end
+    object TestThreadBtn: TButton
+      Left = 0
+      Height = 41
+      Top = 179
+      Width = 123
+      Align = alTop
+      Caption = 'Test Thread'
+      OnClick = TestThreadBtnClick
+      TabOrder = 5
     end
   end
   object SynSQLSyn: TSynSQLSyn

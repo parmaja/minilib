@@ -25,6 +25,17 @@ type
     InitSQL: TStringList;
     constructor Create;
     destructor Destroy; override;
+    procedure PostExample;
+    procedure PostExamples;
+  end;
+
+  { TTestThread }
+
+  TTestThread = class(TThread)
+  protected
+    Engine: TEngine;
+    procedure Execute; override;
+  public
   end;
 
   { TMainForm }
@@ -32,6 +43,7 @@ type
   TMainForm = class(TForm)
     AddRecordBtn: TButton;
     AddRecordBtn1: TButton;
+    TestThreadBtn: TButton;
     Button2: TButton;
     Button3: TButton;
     ConnectBtn: TButton;
@@ -62,10 +74,12 @@ type
     procedure CreateDB1BtnClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
+    procedure TestThreadBtnClick(Sender: TObject);
   private
     procedure Connect(CreateIt: Boolean);
   public
     Engine: TEngine;
+    TestThread: TTestThread;
   end;
 
 var
@@ -74,6 +88,13 @@ var
 implementation
 
 {$R *.lfm}
+
+{ TTestThread }
+
+procedure TTestThread.Execute;
+begin
+  Engine.PostExamples;
+end;
 
 { TEngine }
 
@@ -90,6 +111,35 @@ begin
   FreeAndNil(InitSQL);
   FreeAndNil(ORM);
   inherited Destroy;
+end;
+
+procedure TEngine.PostExample;
+var
+  CMD: TmncSQLCommand;
+begin
+  CMD := Session.CreateCommand;
+  try
+    CMD.Options := CMD.Options + [cmoTruncate];
+    CMD.SQL.Text := 'insert into Companies(ID, Name, Address) values(?ID, ?Name, ?Address)';
+
+    CMD.Prepare;
+    CMD.Param['ID'].Value := 10;
+    CMD.Param['Name'].AsString := 'Test' + FormatDateTime('yyyy-mm-dd', Now);
+    CMD.Param['Address'].AsString := '';
+    CMD.Execute;
+  finally
+    CMD.Free;
+  end;
+end;
+
+procedure TEngine.PostExamples;
+var
+  i: Integer;
+begin
+  for i := 0 to 10000 do
+  begin
+    PostExample;
+  end;
 end;
 
 { TMainForm }
@@ -204,6 +254,8 @@ end;
 procedure TMainForm.Button3Click(Sender: TObject);
 var
   CMD: TmncSQLCommand;
+  s: string;
+  i: Integer;
 begin
   if Engine = nil then
     exit;
@@ -214,12 +266,30 @@ begin
     if ShowSQLParams(CMD) then
       if CMD.Execute then
       begin
+        s := '';
+        for i := 0 to CMD.Columns.Count - 1 do
+        begin
+          if s <> '' then
+            s := s + #9;
+          s := s + CMD.Columns[i].Name;
+        end;
+        LogEdit.Lines.Add(s);
+
         while not CMD.Done do
         begin
-          LogEdit.Lines.Add(CMD.Field['MatID'].AsString);
+          s := '';
+          for i := 0 to CMD.Columns.Count - 1 do
+          begin
+            if s <> '' then
+              s := s + #9;
+            s := s + VarToStr(CMD.Fields.Items[i].Value);
+          end;
+          LogEdit.Lines.Add(s);
           CMD.Next;
         end;
-      end;
+      end
+      else
+        LogEdit.Lines.Add('Nothing to read');
   finally
     CMD.Free;
   end;
@@ -305,6 +375,12 @@ procedure TMainForm.FormDestroy(Sender: TObject);
 var
   IniFile: TIniFile;
 begin
+  if TestThread <> nil then
+  begin
+    TestThread.WaitFor;
+    TestThread.Free;
+    TestThread := nil;
+  end;
   //update "Materials" set "MatCode" = "MatCode" where "MatCode" = '100200' returning "MatID"
   SynEdit.Lines.SaveToFile(Application.Location + 'sql.sql');
   IniFile := TIniFile.Create(Application.Location + 'options.ini');
@@ -320,6 +396,19 @@ begin
     IniFile.Free;
   end;
   FreeAndNil(Engine);
+end;
+
+procedure TMainForm.TestThreadBtnClick(Sender: TObject);
+begin
+  if Engine = nil then
+    exit;
+
+  if TestThread <> nil then
+  begin
+    TestThread := TTestThread.Create(True);
+    TestThread.Engine := Engine;
+    TestThread.Start;
+  end;
 end;
 
 end.
