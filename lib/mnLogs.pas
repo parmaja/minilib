@@ -89,6 +89,7 @@ type
 
 procedure InstallFileLog(FileName: string);
 procedure InstallEventLog(AEvent: TLogEvent);
+procedure UninstallEventLog(AEvent: TLogEvent);
 procedure InstallConsoleLog;
 procedure InstallDebugOutputLog;
 {$ifdef FPC}
@@ -121,6 +122,24 @@ end;
 procedure InstallEventLog(AEvent: TLogEvent);
 begin
   Log.Add(TEventLog.Create(AEvent));
+end;
+
+procedure UninstallEventLog(AEvent: TLogEvent);
+var
+  i: Integer;
+begin
+  for i := 0 to log.Count -1 do
+  begin
+    if Log[i] is TEventLog then
+    begin
+      if @(Log[i] as TEventLog).Event = @AEvent then
+      begin
+        Log.Delete(i);
+        exit;
+      end;
+    end;
+  end;
+  raise Exception.Create('There is no Event install for it');
 end;
 
 procedure InstallConsoleLog;
