@@ -15,7 +15,7 @@ unit mnHttpClient;
 interface
 
 uses
-  SysUtils, Classes, mnSockets, mnClients, mnStreams, mnUtils;
+  SysUtils, Classes, mnSockets, mnClients, mnStreams, mnUtils, strUtils;
 
 type
 
@@ -29,7 +29,7 @@ type
     procedure Create(const vURL: UTF8String); overload;
     procedure Create(const vProtocol, vAddress, vPort, vParams: UTF8String); overload;
 
-    function GetUrlPart(var vPos: PChar; var vCount: Integer; const vTo: UTF8String; const vStops: TSysCharSet = []): UTF8String;
+    function GetUrlPart(var vPos: PUtf8Char; var vCount: Integer; const vTo: UTF8String; const vStops: TSysCharSet = []): UTF8String;
     procedure Parse(const vURL: UTF8String; var vProtocol, vAddress, vPort, vParams: UTF8String);
   end;
 
@@ -256,12 +256,12 @@ var
 begin
   SendHeaders;
   for I := 0 to Headers.Count - 1 do
-    FStream.WriteLine(Headers[I]);
+    FStream.WriteLineUTF8(Headers[I]);
   for I := 0 to Cookies.Count - 1 do
     s := Cookies[I] + ';';
   if s <> '' then
-    FStream.WriteLine('Cookie: ' + s);
-  FStream.WriteLine;
+    FStream.WriteLineUTF8('Cookie: ' + s);
+  FStream.WriteLineUTF8(FStream.EndOfLine);
 end;
 
 { TmnHttpRequest }
@@ -349,7 +349,7 @@ end;
 
 procedure TmnHttpUrl.Parse(const vURL: UTF8String; var vProtocol, vAddress, vPort, vParams: UTF8String);
 var
-  p: PChar;
+  p: PUTF8Char;
   l: Integer;
 begin
   vProtocol := '';
@@ -357,7 +357,7 @@ begin
   vPort := '';
   vParams := '';
 
-  p := PChar(vURL);
+  p := PUtf8Char(vURL);
   l := Length(vURL);
   if l > 0 then
     vProtocol := GetUrlPart(p, l, '://', ['.']);
@@ -400,9 +400,9 @@ begin
   end;
 end;
 
-function TmnHttpUrl.GetUrlPart(var vPos: PChar; var vCount: Integer; const vTo: UTF8String; const vStops: TSysCharSet = []): UTF8String;
+function TmnHttpUrl.GetUrlPart(var vPos: PUtf8Char; var vCount: Integer; const vTo: UTF8String; const vStops: TSysCharSet = []): UTF8String;
 
-  function _IsMatch(vSrc, vDst: PChar; ACount: Integer): Boolean;
+  function _IsMatch(vSrc, vDst: PUtf8Char; ACount: Integer): Boolean;
   var
     I: Integer;
   begin
@@ -421,11 +421,11 @@ function TmnHttpUrl.GetUrlPart(var vPos: PChar; var vCount: Integer; const vTo: 
 
 var
   l: Integer;
-  p, e, d: PChar;
+  p, e, d: PUtf8Char;
   aFound: Boolean;
 begin
   l := Length(vTo);
-  d := PChar(vTo);
+  d := PUtf8Char(vTo);
   p := vPos;
   e := vPos;
   Inc(e, vCount - l);
@@ -496,7 +496,7 @@ begin
   FRequest.Address := Address;
   // FRequest.Connection := 'Keep-Alive';
   Connect;
-  WriteLine('GET ' + Params + ' ' + ProtocolVersion);
+  WriteLineUTF8('GET ' + Params + ' ' + ProtocolVersion);
   FRequest.Send;
   if Connected then
     FResponse.Receive;
@@ -589,7 +589,7 @@ end;
 procedure TmnHttpClient.GetMemoryStream(const vURL: UTF8String; OutStream: TMemoryStream);
 begin
   GetStream(vURL, OutStream);
-  OutStream.Seek(0, fsFromBeginning);
+  OutStream.Seek(0, soFromBeginning);
 end;
 
 procedure TmnHttpClient.SendFile(const vURL: UTF8String; AFileName: UTF8String);
