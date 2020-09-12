@@ -40,7 +40,9 @@ implementation
 
 procedure TMainForm.Button1Click(Sender: TObject);
 const
-  sUserAgent := 'Embarcadero URI Client/1.0';
+  //sUserAgent = 'Embarcadero URI Client/1.0';
+  sUserAgent = 'Mozilla/5.0';
+  //'http://a.tile.openstreetmap.org/18/157418/105125.png' /crc error
   //sURL = 'http://c.tile.openstreetmap.org/18/157418/105127.png';
   sURL = 'http://mt0.google.com/vt/lyrs=m@999&hl=ar&x=78707&y=52561&z=17&s=Gal';
   //sURL = 'http://www.parmaja.org/wp/wp-content/uploads/2015/07/logo-site.png';
@@ -54,6 +56,7 @@ begin
   HttpClient := TmnHttpClient.Create;
   MemoryStream := TMemoryStream.Create;
   try
+    HttpClient.Request.UserAgent := sUserAgent;
     HttpClient.GetMemoryStream(sURL, MemoryStream);
     LogEdit.Lines.Add(HttpClient.Response.ContentType);
     if SameText(HttpClient.Response.ContentType, 'image/jpeg') then
@@ -70,8 +73,7 @@ begin
     else if SameText(HttpClient.Response.ContentType, 'text/html;charset=utf-8') then
     begin
       MemoryStream.SaveToFile(Application.Location + 'file.txt');
-      //LogEdit.Lines.Add()
-
+      LogEdit.Lines.Append(StrPas(MemoryStream.Memory));
     end;
   finally
     HttpClient.Free;
