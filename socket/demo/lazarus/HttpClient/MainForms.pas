@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, Forms, Controls, Graphics, Dialogs, ExtCtrls, StdCtrls,
-  mnLogs, mnModules, mnHttpClient;
+  mnModules, mnLogs, mnHttpClient;
 
 type
 
@@ -44,8 +44,8 @@ const
   sUserAgent = 'Mozilla/5.0';
   //'http://a.tile.openstreetmap.org/18/157418/105125.png' /crc error
   //sURL = 'http://c.tile.openstreetmap.org/18/157418/105127.png';
-  sURL = 'http://mt0.google.com/vt/lyrs=m@999&hl=ar&x=78707&y=52561&z=17&s=Gal';
-  //sURL = 'http://www.parmaja.org/wp/wp-content/uploads/2015/07/logo-site.png';
+  //sURL = 'http://mt0.google.com/vt/lyrs=m@999&hl=ar&x=78707&y=52561&z=17&s=Gal';
+  sURL = 'http://www.parmaja.org/wp/wp-content/uploads/2015/07/logo-site.png';
   //sURL = 'https://www.parmaja.org/wp/wp-content/uploads/2019/08/zaher-new-desktop-768x1024.jpg';
   //sURL = 'http://placehold.it/120x120&text=image1';
 var
@@ -70,7 +70,7 @@ begin
       MemoryStream.SaveToFile(Application.Location + 'file.png');
       Image1.Picture.LoadFromStream(MemoryStream);
     end
-    else if SameText(HttpClient.Response.ContentType, 'text/html;charset=utf-8') then
+    else //if SameText(HttpClient.Response.ContentType, 'text/html;charset=utf-8') then
     begin
       MemoryStream.SaveToFile(Application.Location + 'file.txt');
       LogEdit.Lines.Append(StrPas(MemoryStream.Memory));

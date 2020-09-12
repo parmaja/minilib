@@ -21,7 +21,14 @@ uses
   mnUtils, mnStreams, mnClasses, mnFields;
 
 type
-  { TmodParams }
+
+  { TmnParam }
+
+  TmnParam = class(TmnField)
+  public
+  end;
+
+  { TmnParams }
 
   TmnParams = class(TmnFields)
   private
@@ -30,6 +37,8 @@ type
     function GetAsString: string;
     procedure SetAsString(const Value: string);
     function GetItem(Index: Integer): TmnField;
+  protected
+    function CreateField: TmnField; override;
   public
     constructor Create;
     procedure LoadFromStream(Stream: TStream); override;
@@ -97,6 +106,11 @@ begin
   Result := (inherited GetItem(Index)) as TmnField;
 end;
 
+function TmnParams.CreateField: TmnField;
+begin
+  Result := TmnParam.Create;
+end;
+
 procedure TmnParams.LoadFromStream(Stream: TStream);
 var
   Strings: TmnWrapperStream;
@@ -123,7 +137,7 @@ begin
   Strings := TmnWrapperStream.Create(Stream);
   try
     for i := 0 to Count - 1 do
-      Strings.WriteLine(Self.Items[i].GetFullString);
+      Strings.WriteLine(Self.Items[i].FullString);
   finally
     Strings.Free;
   end;

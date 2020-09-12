@@ -219,8 +219,6 @@ type
     function WriteLine(const S: widestring): TFileSize; overload;
     {$endif}
 
-    //function WriteLn(const S: string): TFileSize; overload; deprecated;
-
     function ReadBytes(vCount: Integer): TBytes;
     procedure WriteBytes(Buffer: TBytes);
 

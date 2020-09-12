@@ -15,7 +15,8 @@ unit mnHttpClient;
 interface
 
 uses
-  SysUtils, Classes, mnSockets, mnClients, mnStreams, mnUtils, strUtils;
+  SysUtils, Classes, StrUtils,
+  mnFields, mnConfigs, mnModules, mnSockets, mnClients, mnStreams, mnUtils;
 
 type
 
@@ -34,11 +35,11 @@ type
     FContentType: UTF8String;
 
     FDate: TDateTime;
+    FKeepAlive: Boolean;
     FLastModified: TDateTime;
     FExpires: TDateTime;
 
-    FHeaders: TStringList;
-    FCookies: TStringList;
+    FHeaders: TmnHeader;
 
     FStream: TmnCustomHttpStream;
   protected
@@ -46,8 +47,7 @@ type
     constructor Create(Stream: TmnCustomHttpStream); virtual;
     destructor Destroy; override;
     procedure Clear; virtual;
-    property Headers: TStringList read FHeaders write FHeaders;
-    property Cookies: TStringList read FCookies write FCookies;
+    property Headers: TmnHeader read FHeaders write FHeaders;
     property Date: TDateTime read FDate write FDate;
     property Expires: TDateTime read FExpires write FExpires;
     property LastModified: TDateTime read FLastModified write FLastModified;
@@ -58,6 +58,7 @@ type
     property ContentType: UTF8String read FContentType write FContentType;
     property ContentLength: Integer read FContentLength write FContentLength;
     property Connection: UTF8String read FConnection write FConnection;
+    property KeepAlive: Boolean read FKeepAlive write FKeepAlive;
   end;
 
   { TmnHttpRequest }
@@ -98,6 +99,7 @@ type
 
   TmnCustomHttpStream = class abstract(TmnClientSocket)
   private
+    FCookies: TmnParams;
     FParams: UTF8String;
     FProtocol: UTF8String;
 
@@ -112,6 +114,7 @@ type
     function Seek(Offset: Integer; Origin: Word): Integer; override;
     property Request: TmnHttpRequest read FRequest;
     property Response: TmnHttpResponse read FResponse;
+    property Cookies: TmnParams read FCookies write FCookies;
 
     property Protocol: UTF8String read FProtocol write FProtocol;
     property Params: UTF8String read FParams write FParams;
@@ -125,6 +128,7 @@ type
 
   TmnCustomHttpClient = class abstract(TObject)
   private
+    FCompressing: Boolean;
     FHttpStream: TmnHttpStream;
     function GetRequest: TmnHttpRequest;
     function GetResponse: TmnHttpResponse;
@@ -136,6 +140,7 @@ type
     function Connected: Boolean;
     property Request: TmnHttpRequest read GetRequest;
     property Response: TmnHttpResponse read GetResponse;
+    property Compressing: Boolean read FCompressing write FCompressing; //TODO
   end;
 
   { TmnHttpClient }
@@ -160,7 +165,7 @@ type
 implementation
 
 const
-  ProtocolVersion = 'HTTP/1.1';
+  ProtocolVersion = 'HTTP/1.0';
 
 function GetUrlPart(var vPos: PUtf8Char; var vCount: Integer; const vTo: UTF8String; const vStops: TSysCharSet = []): UTF8String;
 
@@ -273,15 +278,12 @@ constructor TmnCustomHttpHeader.Create(Stream: TmnCustomHttpStream);
 begin
   inherited Create;
   FStream := Stream;
-  FHeaders := TStringList.Create;
-  FHeaders.NameValueSeparator := ':';
-  FCookies := TStringList.Create;
+  FHeaders := TmnHeader.Create;
 end;
 
 destructor TmnCustomHttpHeader.Destroy;
 begin
   FHeaders.Free;
-  FCookies.Free;
   inherited;
 end;
 
@@ -317,16 +319,17 @@ end;
 
 procedure TmnHttpRequest.Send;
 var
-  I: Integer;
   s: UTF8String;
+  f: TmnField;
 begin
   FHeaders.Clear;
   FStream.WriteLineUTF8('GET ' + FStream.Params + ' ' + ProtocolVersion);
   SendHeaders;
-  for I := 0 to Headers.Count - 1 do
-    FStream.WriteLineUTF8(Headers[I]);
-  for I := 0 to Cookies.Count - 1 do
-    s := Cookies[I] + ';';
+  for f in Headers do
+    if f.AsString <> '' then
+      FStream.WriteLineUTF8(f.FullString);
+  for f in FStream.Cookies do
+    s := f.Value + ';';
   if s <> '' then
     FStream.WriteLineUTF8('Cookie: ' + s);
   FStream.WriteLineUTF8(FStream.EndOfLine);
@@ -339,15 +342,15 @@ begin
   inherited;
   with FHeaders do
   begin
-    FLocation := Trim(Values['Location']);
-    FServer := Trim(Values['Server']);
-    FContentType:= Trim(Values['Content-Type']);
-    FContentLength := StrToIntDef(Trim(Values['Content-Length']), 0);
-    FAccept := Trim(Values['Accept']);
-    FAcceptCharSet := Trim(Values['Accept-CharSet']);
-    FAcceptEncoding := Trim(Values['Accept-Encoding']);
-    FAcceptLanguage := Trim(Values['Accept-Language']);
-    FConnection := Trim(Values['Connection']);
+    FLocation := Field['Location'].AsString;
+    FServer := Field['Server'].AsString;
+    FContentType:= Field['Content-Type'].AsString;
+    FContentLength := StrToIntDef(Trim(Field['Content-Length'].AsString), 0);
+    FAccept := Field['Accept'].AsString;
+    FAcceptCharSet := Field['Accept-CharSet'].AsString;
+    FAcceptEncoding := Field['Accept-Encoding'].AsString;
+    FAcceptLanguage := Field['Accept-Language'].AsString;
+    FConnection := Field['Connection'].AsString;
   end;
 end;
 
@@ -361,15 +364,15 @@ begin
     FStream.ReadLine(s, True);
     s := Trim(s);
     repeat
-      Headers.Add(s);
+      Headers.AddItem(s, ':', True);
       FStream.ReadLine(s, True);
       s := Trim(s);
     until { FStream.Connected or } (s = '');
   end;
   ReceiveHeaders;
-  s := Trim(Headers.Values['Set-Cookie']);
-  if s <> '' then
-    StrToStrings(s, Cookies, [';'], []);
+  s := Headers.Field['Set-Cookie'].AsString;
+  FStream.Cookies.Delimiter := ';';
+  FStream.Cookies.AsString := s;
 end;
 
 procedure TmnHttpResponse.ReadBuffer(var Buffer; Count: Integer);
@@ -390,6 +393,7 @@ begin
 
   FRequest := TmnHttpRequest.Create(Self);
   FResponse := TmnHttpResponse.Create(Self);
+  FCookies := TmnParams.Create;
 end;
 
 function TmnCustomHttpStream.CreateSocket(out vErr: Integer): TmnCustomSocket;
@@ -401,6 +405,7 @@ destructor TmnCustomHttpStream.Destroy;
 begin
   FreeAndNil(FRequest);
   FreeAndNil(FResponse);
+  FreeAndNil(FCookies);
   inherited;
 end;
 

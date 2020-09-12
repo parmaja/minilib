@@ -57,6 +57,7 @@ object MainForm: TMainForm
     Width = 504
     Align = alBottom
     BorderSpacing.Around = 5
+    ScrollBars = ssVertical
     TabOrder = 2
   end
 end

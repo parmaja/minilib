@@ -186,8 +186,9 @@ type
     procedure SetValue(const AValue: Variant); override;
     function GetAsString: string; override;
     procedure SetAsString(const AValue: string); override;
+    function GetFullString: String; virtual;
   public
-    function GetFullString(Seperator: string = '='): String;
+    function GetNameValue(Seperator: string = '='): String;
   published
     property Value;
     property IsEmpty;
@@ -209,6 +210,7 @@ type
     property AsText; 
     property AsHex;
     property Name: string read FName write FName;
+    property FullString: String read GetFullString;
   end;
 
   { TmnFields }
@@ -1009,7 +1011,12 @@ begin
   FValue := AValue;
 end;
 
-function TmnField.GetFullString(Seperator: string): String;
+function TmnField.GetFullString: String;
+begin
+  Result := GetNameValue;
+end;
+
+function TmnField.GetNameValue(Seperator: string): String;
 begin
   Result := Name + Seperator + AsString;
 end;

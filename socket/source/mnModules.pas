@@ -91,21 +91,34 @@ type
     Timout: Integer;
   end;
 
+  { TmnHeaderField }
+
+  TmnHeaderField = class(TmnParam)
+    function GetFullString: String; override;
+  end;
+
+  { TmnHeader }
+
+  TmnHeader = class(TmnParams)
+  protected
+    function CreateField: TmnField; override;
+  end;
+
   { TmodCommand }
 
   TmodCommand = class(TmnObject)
   private
     FModule: TmodModule;
     FRaiseExceptions: Boolean;
-    FRequestHeader: TmnParams;
-    FRespondHeader: TmnParams;
+    FRequestHeader: TmnHeader;
+    FRespondHeader: TmnHeader;
     FRequestStream: TmnBufferStream;
     FRespondStream: TmnBufferStream;
     FContentSize: Int64;
 
     FStates: TmodCommandStates;
     procedure SetModule(const Value: TmodModule); virtual;
-    procedure SetRequestHeader(const Value: TmnParams);
+    procedure SetRequestHeader(const Value: TmnHeader);
     function GetActive: Boolean;
   protected
     Request: TmodRequest;
@@ -136,8 +149,8 @@ type
     property Module: TmodModule read FModule write SetModule;
     //Lock the server listener when execute the command
     //Prepare called after created in lucking mode
-    property RequestHeader: TmnParams read FRequestHeader write SetRequestHeader;
-    property RespondHeader: TmnParams read FRespondHeader;
+    property RequestHeader: TmnHeader read FRequestHeader write SetRequestHeader;
+    property RespondHeader: TmnHeader read FRespondHeader;
     property ContentSize: Int64 read FContentSize write FContentSize; //todo
     property RaiseExceptions: Boolean read FRaiseExceptions write FRaiseExceptions default False;
     property States: TmodCommandStates read FStates;
@@ -347,6 +360,20 @@ begin
   URIPath := Copy(URIPath, Length(Name) + 1, MaxInt);
 end;
 
+{ TmnHeaderField }
+
+function TmnHeaderField.GetFullString: String;
+begin
+  Result := GetNameValue(': ');
+end;
+
+{ TmnHeader }
+
+function TmnHeader.CreateField: TmnField;
+begin
+  Result := TmnHeaderField.Create;
+end;
+
 { TmodModuleListener }
 
 constructor TmodModuleServer.Create;
@@ -466,8 +493,8 @@ begin
   FRequestStream := RequestStream; //do not free
   FRespondStream := RequestStream; //do not free
 
-  FRequestHeader := TmnParams.Create;
-  FRespondHeader := TmnParams.Create;
+  FRequestHeader := TmnHeader.Create;
+  FRespondHeader := TmnHeader.Create;
 end;
 
 destructor TmodCommand.Destroy;
@@ -556,7 +583,7 @@ begin
   FModule := Value;
 end;
 
-procedure TmodCommand.SetRequestHeader(const Value: TmnParams);
+procedure TmodCommand.SetRequestHeader(const Value: TmnHeader);
 begin
   if FRequestHeader <> Value then
   begin
@@ -646,7 +673,7 @@ var
 begin
   for item in ACommand.RespondHeader do
   begin
-    s := item.GetFullString(': ');
+    s := item.GetNameValue(': ');
     //WriteLn(s);
     ACommand.RespondStream.WriteLineUTF8(S);
   end;
