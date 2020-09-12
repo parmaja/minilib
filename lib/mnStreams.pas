@@ -862,8 +862,8 @@ begin
   Result := 0;
   EOL := EndOfLine;
   if s <> '' then
-    Result := Write(Pointer(S)^, ByteLength(S));
-  Result := Result + Write(Pointer(EOL)^, ByteLength(EOL));
+    Result := Write(PByte(S)^, ByteLength(S));
+  Result := Result + Write(PByte(EOL)^, ByteLength(EOL));
 end;
 
 procedure TmnBufferStream.WriteBytes(Buffer: TBytes);

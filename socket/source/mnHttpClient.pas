@@ -494,7 +494,8 @@ begin
   Params := u.Params;
   Request.UserAgent := UserAgent;
   FRequest.Address := Address;
-  // FRequest.Connection := 'Keep-Alive';
+  //FRequest.Connection := 'Keep-Alive';
+  FRequest.Connection := 'close';
   Connect;
   WriteLineUTF8('GET ' + Params + ' ' + ProtocolVersion);
   FRequest.Send;
@@ -557,6 +558,7 @@ end;
 
 function TmnHttpClient.Connect(const vURL: UTF8String): Boolean;
 begin
+  FHttpStream.UserAgent := UserAgent;
   FHttpStream.Open(vUrl);
   Result := FHttpStream.Connected;
 end;

@@ -4,7 +4,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Dialogs, StdCtrls, mnHttpClient, mnSockets, IdBaseComponent, IdComponent, IdTCPConnection, IdTCPClient, IdHTTP, Vcl.ExtCtrls, Vcl.Imaging.pngimage;
+  Dialogs, StdCtrls, mnHttpClient, mnSockets, IdBaseComponent, IdComponent, IdTCPConnection, IdTCPClient, IdHTTP, Vcl.ExtCtrls, Vcl.Imaging.pngimage, Vcl.Imaging.jpeg;
 
 type
   TForm4 = class(TForm)
@@ -35,8 +35,8 @@ uses mnClients;
 procedure TForm4.Button2Click(Sender: TObject);
 const
   //sURL = 'https://picsum.photos/id/237/200/300';
-  sURL = 'http://www.parmaja.org/wp/wp-content/uploads/2015/07/logo-site.png';
-  //sURL = 'http://www.parmaja.org/wp/wp-content/uploads/2019/08/zaher-new-desktop-768x1024.jpg';
+  //sURL = 'http://www.parmaja.org/wp/wp-content/uploads/2015/07/logo-site.png';
+  sURL = 'https://www.parmaja.org/wp/wp-content/uploads/2019/08/zaher-new-desktop-768x1024.jpg';
   //sURL = 'http://placehold.it/120x120&text=image1';
 var
   HttpClient: TmnHttpClient;
