@@ -40,8 +40,11 @@ implementation
 
 procedure TMainForm.Button1Click(Sender: TObject);
 const
-  //sURL = 'https://picsum.photos/id/237/200/300';
-  sURL = 'http://www.parmaja.org/wp/wp-content/uploads/2019/08/zaher-new-desktop-768x1024.jpg';
+  sUserAgent := 'Embarcadero URI Client/1.0';
+  //sURL = 'http://c.tile.openstreetmap.org/18/157418/105127.png';
+  sURL = 'http://mt0.google.com/vt/lyrs=m@999&hl=ar&x=78707&y=52561&z=17&s=Gal';
+  //sURL = 'http://www.parmaja.org/wp/wp-content/uploads/2015/07/logo-site.png';
+  //sURL = 'https://www.parmaja.org/wp/wp-content/uploads/2019/08/zaher-new-desktop-768x1024.jpg';
   //sURL = 'http://placehold.it/120x120&text=image1';
 var
   HttpClient: TmnHttpClient;
@@ -63,6 +66,12 @@ begin
     begin
       MemoryStream.SaveToFile(Application.Location + 'file.png');
       Image1.Picture.LoadFromStream(MemoryStream);
+    end
+    else if SameText(HttpClient.Response.ContentType, 'text/html;charset=utf-8') then
+    begin
+      MemoryStream.SaveToFile(Application.Location + 'file.txt');
+      //LogEdit.Lines.Add()
+
     end;
   finally
     HttpClient.Free;
