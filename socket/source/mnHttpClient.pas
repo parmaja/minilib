@@ -17,6 +17,8 @@ unit mnHttpClient;
 {$mode delphi}
 {$endif}
 
+{$define OUT_Console}
+
 interface
 
 uses
@@ -113,7 +115,7 @@ type
   TmnHttpClient = class(TObject)
   private
     FCookies: TmnParams;
-    FAddress: UTF8String;
+    FHost: UTF8String;
     FPort: UTF8String;
     FPath: UTF8String;
     FProtocol: UTF8String;
@@ -150,7 +152,7 @@ type
     property Response: TmnHttpResponse read FResponse;
     property Cookies: TmnParams read FCookies write FCookies;
 
-    property Address: UTF8String read FAddress write FAddress;
+    property Host: UTF8String read FHost write FHost;
     property Port: UTF8String read FPort write FPort;
     property Protocol: UTF8String read FProtocol write FProtocol;
     property Path: UTF8String read FPath write FPath;
@@ -162,10 +164,7 @@ type
 implementation
 
 const
-  ProtocolVersion = 'HTTP/1.0';
-
-threadvar
-  FCachedStream: TmnHttpStream;
+  ProtocolVersion = 'HTTP/1.1';
 
 function GetUrlPart(var vPos: PUtf8Char; var vCount: Integer; const vTo: UTF8String; const vStops: TSysCharSet = []): UTF8String;
 
@@ -307,7 +306,7 @@ begin
   inherited;
   with FHeaders do
   begin
-    Values['Host'] := Client.Address;
+    Values['Host'] := Client.Host;
     Values['User-Agent'] := FUserAgent;
     Values['Connection'] := FConnection;
 
@@ -398,11 +397,14 @@ end;
 
 procedure TmnHttpClient.Open(const vURL: UTF8String);
 begin
+  {$ifdef OUT_Console}
+
+  {$endif}
   if FStream = nil then
     FStream := CreateStream;
 
-  ParseURL(vURL, FProtocol, FAddress, FPort, FPath);
-  Stream.Address := Address;
+  ParseURL(vURL, FProtocol, FHost, FPort, FPath);
+  Stream.Address := Host;
   Stream.Port := Port;
 
   if SameText(Protocol, 'https') then
@@ -463,7 +465,7 @@ end;
 
 procedure TmnHttpClient.ReceiveStream(AStream: TStream);
 begin
-  if KeepAlive then
+  if KeepAlive then //TODO check if response.KeepAlive
     FStream.ReadStream(AStream, Response.ContentLength)
   else
     FStream.ReadStream(AStream);

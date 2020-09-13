@@ -74,8 +74,8 @@ const
   sUserAgent = 'Mozilla/5.0';
   //'http://a.tile.openstreetmap.org/18/157418/105125.png' /crc error
   //sURL = 'http://c.tile.openstreetmap.org/18/157418/105127.png';
-  //sURL = 'http://mt0.google.com/vt/lyrs=m@999&hl=ar&x=78707&y=52561&z=17&s=Gal';
-  sURL = 'http://www.parmaja.org/wp/wp-content/uploads/2015/07/logo-site.png';
+  sURLGoogle = 'http://mt0.google.com/vt/lyrs=m@999&hl=ar&x=78707&y=52561&z=17&s=Gal';
+  sURL = 'http://185.176.40.106/wp/wp-content/uploads/2015/07/logo-site.png';
   sURL2 = 'https://www.parmaja.org/wp/wp-content/uploads/2019/08/zaher-new-desktop-768x1024.jpg';
   sPATH2 = '/wp/wp-content/uploads/2019/08/zaher-new-desktop-768x1024.jpg';
   //sURL = 'http://placehold.it/120x120&text=image1';
@@ -90,7 +90,7 @@ begin
   HttpClient := TmnHttpClient.Create;
   try
     HttpClient.Request.UserAgent := sUserAgent;
-    HttpClient.GetMemoryStream(sURL, MemoryStream);
+    HttpClient.GetMemoryStream(sURLGoogle, MemoryStream);
     LoadFromStream(HttpClient.Response.ContentType, MemoryStream);
   finally
     HttpClient.Free;
@@ -111,6 +111,7 @@ begin
     HttpClient.Request.UserAgent := sUserAgent;
     HttpClient.KeepAlive := True;
     HttpClient.Connect(sURL, False);
+    HttpClient.Host := 'www.parmaja.org';
 
     HttpClient.Request.Send;
     HttpClient.Response.Receive;
