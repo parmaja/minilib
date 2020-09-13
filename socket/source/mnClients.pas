@@ -35,7 +35,7 @@ type
   protected
     function CreateSocket(out vErr: Integer): TmnCustomSocket; override;
   public
-    constructor Create(const vAddress, vPort: string; vOptions: TmnsoOptions = [soNoDelay]);
+    constructor Create(const vAddress: string = ''; vPort: string = ''; vOptions: TmnsoOptions = [soNoDelay]);
     property Port: string read FPort write SetPort;
     property Address: string read FAddress write SetAddress;
   end;
@@ -315,7 +315,7 @@ begin
   WallSocket.Connect(Options, ConnectTimeout, ReadTimeout, Port, Address, Result, vErr);
 end;
 
-constructor TmnClientSocket.Create(const vAddress, vPort: string; vOptions: TmnsoOptions);
+constructor TmnClientSocket.Create(const vAddress: string; vPort: string; vOptions: TmnsoOptions);
 begin
   inherited Create;
   FAddress := vAddress;

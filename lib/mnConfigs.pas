@@ -32,12 +32,14 @@ type
 
   TmnParams = class(TmnFields)
   private
+    FAutoRemove: Boolean;
     FSeparator: string;
     FDelimiter: Char;
     function GetAsString: string;
     procedure SetAsString(const Value: string);
     function GetItem(Index: Integer): TmnField;
   protected
+    function SetValue(const Index: string; const AValue: Variant): TmnField; override;
     function CreateField: TmnField; override;
   public
     constructor Create;
@@ -46,10 +48,15 @@ type
     function ReadInteger(Name: string; Def: Integer = 0): Integer;
     function ReadString(Name: string; Def: String = ''): String;
     function ReadBoolean(Name: string; Def: Boolean = False): Boolean;
+    function RequireField(const vName: string): TmnField; //find it if not exists create it
+
+    //AutoRemove remove field if Value = '' when use Values or SetValues
+    property AutoRemove: Boolean read FAutoRemove write FAutoRemove;
     property Field; default;
     property Separator: string read FSeparator write FSeparator; //value
     property Delimiter: Char read FDelimiter write FDelimiter; //eol
     property AsString: string read GetAsString write SetAsString;
+    property Require[const Index: string]: TmnField read RequireField;
     property Items[Index: Integer]: TmnField read GetItem;
   end;
 
@@ -104,6 +111,14 @@ end;
 function TmnParams.GetItem(Index: Integer): TmnField;
 begin
   Result := (inherited GetItem(Index)) as TmnField;
+end;
+
+function TmnParams.SetValue(const Index: string; const AValue: Variant): TmnField;
+begin
+  if AutoRemove and VarIsEmpty(AValue) then
+    RemoveByName(Index)
+  else
+    Result := inherited SetValue(Index, AValue);
 end;
 
 function TmnParams.CreateField: TmnField;
@@ -172,6 +187,7 @@ begin
   inherited Create;
   Separator := '=';
   Delimiter := #13;
+  AutoRemove := False;
 end;
 
 function TmnParams.ReadInteger(Name: string; Def: Integer): Integer;
@@ -205,6 +221,17 @@ begin
     Result := Field.AsBoolean
   else
     Result := Def;
+end;
+
+function TmnParams.RequireField(const vName: string): TmnField;
+begin
+  Result := FindField(vName);
+  if Result = nil then
+  begin
+    Result := CreateField;
+    Result.Name := vName;
+    Add(Result);
+  end;
 end;
 
 { TmnSectionParams }

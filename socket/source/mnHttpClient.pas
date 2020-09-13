@@ -5,7 +5,12 @@ unit mnHttpClient;
   * @license   modifiedLGPL (modified of http://www.gnu.org/licenses/lgpl.html)
   *            See the file COPYING.MLGPL, included in this distribution,
   * @author    Jihad Khlaifa <jkhalifa at gmail dot com>
+  * @author    Zaher Dirkey zaherdirkey
   * }
+
+{
+  https://en.wikipedia.org/wiki/Uniform_Resource_Identifier
+}
 
 {$H+}{$M+}
 {$ifdef fpc}
@@ -16,20 +21,21 @@ interface
 
 uses
   SysUtils, Classes, StrUtils,
-  mnFields, mnConfigs, mnModules, mnSockets, mnClients, mnStreams, mnUtils;
+  mnClasses, mnFields, mnConfigs, mnModules, mnSockets, mnClients, mnStreams, mnUtils;
 
 type
 
-  TmnCustomHttpStream = class;
+  TmnHttpClient = class;
 
   { TmnCustomHttpHeader }
 
-  TmnCustomHttpHeader = class(TObject)
+  TmnCustomHttpHeader = class(TmnObject)
   private
     FAccept: UTF8String;
     FAcceptCharSet: UTF8String;
     FAcceptEncoding: UTF8String;
     FAcceptLanguage: UTF8String;
+    FClient: TmnHttpClient;
     FConnection: UTF8String;
     FContentLength: Integer;
     FContentType: UTF8String;
@@ -41,10 +47,10 @@ type
 
     FHeaders: TmnHeader;
 
-    FStream: TmnCustomHttpStream;
   protected
+    procedure SetHeader(Name, Value: string);
   public
-    constructor Create(Stream: TmnCustomHttpStream); virtual;
+    constructor Create(AClient: TmnHttpClient); virtual;
     destructor Destroy; override;
     procedure Clear; virtual;
     property Headers: TmnHeader read FHeaders write FHeaders;
@@ -59,6 +65,7 @@ type
     property ContentLength: Integer read FContentLength write FContentLength;
     property Connection: UTF8String read FConnection write FConnection;
     property KeepAlive: Boolean read FKeepAlive write FKeepAlive;
+    property Client: TmnHttpClient read FClient;
   end;
 
   { TmnHttpRequest }
@@ -69,9 +76,9 @@ type
     FReferer: UTF8String;
     FUserAgent: UTF8String;
   protected
-    procedure SendHeaders; virtual;
+    procedure CollectHeaders; virtual;
   public
-    constructor Create(Stream: TmnCustomHttpStream); override;
+    procedure Created; override;
     procedure Send;
 
     property UserAgent: UTF8String read FUserAgent write FUserAgent;
@@ -85,72 +92,52 @@ type
     FLocation: UTF8String;
     FServer: UTF8String;
   protected
-    function ReadLine: UTF8String;
     procedure ReceiveHeaders; virtual;
   public
     procedure Receive;
-
-    procedure ReadBuffer(var Buffer; Count: Integer);
     property Location: UTF8String read FLocation write FLocation;
     property Server: UTF8String read FServer write FServer;
   end;
 
   { TmnCustomHttpStream }
 
-  TmnCustomHttpStream = class abstract(TmnClientSocket)
+  TmnHttpStream = class(TmnClientSocket)
   private
-    FCookies: TmnParams;
-    FParams: UTF8String;
-    FProtocol: UTF8String;
-
-    FRequest: TmnHttpRequest;
-    FResponse: TmnHttpResponse;
   protected
-    function CreateSocket(out vErr: Integer): TmnCustomSocket; override;
-    function GetSize: Int64; override;
   public
-    constructor Create;
-    destructor Destroy; override;
     function Seek(Offset: Integer; Origin: Word): Integer; override;
-    property Request: TmnHttpRequest read FRequest;
-    property Response: TmnHttpResponse read FResponse;
-    property Cookies: TmnParams read FCookies write FCookies;
-
-    property Protocol: UTF8String read FProtocol write FProtocol;
-    property Params: UTF8String read FParams write FParams;
-    procedure Open(const vURL: UTF8String);
-    procedure Close;
-  end;
-
-  TmnHttpStream = class(TmnCustomHttpStream);
-
-  { TmnCustomHttpClient }
-
-  TmnCustomHttpClient = class abstract(TObject)
-  private
-    FCompressing: Boolean;
-    FHttpStream: TmnHttpStream;
-    function GetRequest: TmnHttpRequest;
-    function GetResponse: TmnHttpResponse;
-  protected
-    property Stream: TmnHttpStream read FHttpStream;
-  public
-    constructor Create;
-    destructor Destroy; override;
-    function Connected: Boolean;
-    property Request: TmnHttpRequest read GetRequest;
-    property Response: TmnHttpResponse read GetResponse;
-    property Compressing: Boolean read FCompressing write FCompressing; //TODO
   end;
 
   { TmnHttpClient }
 
-  TmnHttpClient = class(TmnCustomHttpClient)
+  TmnHttpClient = class(TObject)
   private
+    FCookies: TmnParams;
+    FAddress: UTF8String;
+    FPort: UTF8String;
+    FPath: UTF8String;
+    FProtocol: UTF8String;
+    FCompressing: Boolean;
+    FKeepAlive: Boolean;
+
+    FRequest: TmnHttpRequest;
+    FResponse: TmnHttpResponse;
+
+    FStream: TmnHttpStream;
+  protected
+    procedure Open(const vURL: UTF8String);
+    function CreateStream: TmnHttpStream; virtual;
+    function FreeStream: TmnHttpStream; virtual;
   public
     constructor Create;
+    destructor Destroy; override;
+    function Connected: Boolean;
+
     //Use it to open connection and keep it connected
     function Connect(const vURL: UTF8String; SendAndReceive: Boolean = True): Boolean;
+    procedure ReceiveStream(AStream: TStream); overload;
+    procedure ReceiveStream(AStream: TStream; Count: Integer); overload;
+    procedure ReceiveMemoryStream(AStream: TStream);
     procedure Disconnect;
     //This will download the content into a stream and disconnect
     procedure GetStream(const vURL: UTF8String; OutStream: TStream);
@@ -159,13 +146,26 @@ type
     procedure GetMemoryStream(const vURL: UTF8String; OutStream: TMemoryStream);
     procedure SendFile(const vURL: UTF8String; AFileName: UTF8String);
 
-    property Stream;
+    property Request: TmnHttpRequest read FRequest;
+    property Response: TmnHttpResponse read FResponse;
+    property Cookies: TmnParams read FCookies write FCookies;
+
+    property Address: UTF8String read FAddress write FAddress;
+    property Port: UTF8String read FPort write FPort;
+    property Protocol: UTF8String read FProtocol write FProtocol;
+    property Path: UTF8String read FPath write FPath;
+    property Compressing: Boolean read FCompressing write FCompressing; //TODO
+    property KeepAlive: Boolean read FKeepAlive write FKeepAlive;
+    property Stream: TmnHttpStream read FStream;
   end;
 
 implementation
 
 const
   ProtocolVersion = 'HTTP/1.0';
+
+threadvar
+  FCachedStream: TmnHttpStream;
 
 function GetUrlPart(var vPos: PUtf8Char; var vCount: Integer; const vTo: UTF8String; const vStops: TSysCharSet = []): UTF8String;
 
@@ -219,7 +219,7 @@ begin
     Result := '';
 end;
 
-procedure ParseURL(const vURL: UTF8String; out vProtocol, vPort, vAddress, vParams: UTF8String);
+procedure ParseURL(const vURL: UTF8String; out vProtocol, vAddress, vPort, vParams: UTF8String);
 var
   p: PUTF8Char;
   l: Integer;
@@ -274,10 +274,18 @@ end;
 
 { TmnCustomHttpHeader }
 
-constructor TmnCustomHttpHeader.Create(Stream: TmnCustomHttpStream);
+procedure TmnCustomHttpHeader.SetHeader(Name, Value: string);
+begin
+  if Value <> '' then
+    Headers.Require[Name].Value := Value
+  else
+    Headers.RemoveByName(Name);
+end;
+
+constructor TmnCustomHttpHeader.Create(AClient: TmnHttpClient);
 begin
   inherited Create;
-  FStream := Stream;
+  FClient := AClient;
   FHeaders := TmnHeader.Create;
 end;
 
@@ -294,12 +302,12 @@ end;
 
 { TmnHttpRequest }
 
-procedure TmnHttpRequest.SendHeaders;
+procedure TmnHttpRequest.CollectHeaders;
 begin
   inherited;
   with FHeaders do
   begin
-    Values['Host'] := FStream.Address;
+    Values['Host'] := Client.Address;
     Values['User-Agent'] := FUserAgent;
     Values['Connection'] := FConnection;
 
@@ -311,9 +319,9 @@ begin
   end;
 end;
 
-constructor TmnHttpRequest.Create(Stream: TmnCustomHttpStream);
+procedure TmnHttpRequest.Created;
 begin
-  inherited Create(Stream);
+  inherited;
   UserAgent := 'Mozilla/5.0';
 end;
 
@@ -322,17 +330,16 @@ var
   s: UTF8String;
   f: TmnField;
 begin
-  FHeaders.Clear;
-  FStream.WriteLineUTF8('GET ' + FStream.Params + ' ' + ProtocolVersion);
-  SendHeaders;
+  CollectHeaders;
+  Client.Stream.WriteLineUTF8('GET ' + Client.Path + ' ' + ProtocolVersion);
   for f in Headers do
     if f.AsString <> '' then
-      FStream.WriteLineUTF8(f.FullString);
-  for f in FStream.Cookies do
+      Client.Stream.WriteLineUTF8(f.FullString);
+  for f in Client.Cookies do
     s := f.Value + ';';
   if s <> '' then
-    FStream.WriteLineUTF8('Cookie: ' + s);
-  FStream.WriteLineUTF8(FStream.EndOfLine);
+    Client.Stream.WriteLineUTF8('Cookie: ' + s);
+  Client.Stream.WriteLineUTF8(Client.Stream.EndOfLine);
 end;
 
 { TmnHttpResponse }
@@ -361,47 +368,78 @@ begin
   FHeaders.Clear;
   // if FStream.Connected then
   begin
-    FStream.ReadLine(s, True);
+    Client.Stream.ReadLine(s, True);
     s := Trim(s);
     repeat
       Headers.AddItem(s, ':', True);
-      FStream.ReadLine(s, True);
+      Client.Stream.ReadLine(s, True);
       s := Trim(s);
     until { FStream.Connected or } (s = '');
   end;
   ReceiveHeaders;
   s := Headers.Field['Set-Cookie'].AsString;
-  FStream.Cookies.Delimiter := ';';
-  FStream.Cookies.AsString := s;
+  Client.Cookies.Delimiter := ';';
+  Client.Cookies.AsString := s;
 end;
 
-procedure TmnHttpResponse.ReadBuffer(var Buffer; Count: Integer);
+{ TmnHttpStream }
+
+function TmnHttpStream.Seek(Offset: Integer; Origin: Word): Integer;
 begin
-  FStream.ReadBuffer(Buffer, Count);
+  Result := 0; // for loading from this stream like Image.loadfrom stream
 end;
 
-function TmnHttpResponse.ReadLine: UTF8String;
+{ TmnHttpClient }
+
+function TmnHttpClient.Connected: Boolean;
 begin
-  FStream.ReadLine(Result, True);
+  Result := FStream.Connected;
 end;
 
-{ TmnCustomHttpStream }
-
-constructor TmnCustomHttpStream.Create;
+procedure TmnHttpClient.Open(const vURL: UTF8String);
 begin
-  inherited Create('', '');
+  if FStream = nil then
+    FStream := CreateStream;
 
+  ParseURL(vURL, FProtocol, FAddress, FPort, FPath);
+  Stream.Address := Address;
+  Stream.Port := Port;
+
+  if SameText(Protocol, 'https') then
+    Stream.Options := Stream.Options + [soSSL, soWaitBeforeRead]
+  else
+    Stream.Options := Stream.Options - [soSSL];
+
+  if KeepAlive then
+  begin
+    FRequest.Connection := 'Keep-Alive';
+    //Keep-Alive: timeout=1200
+  end
+  else
+    FRequest.Connection := 'close';
+  Stream.Connect;
+end;
+
+function TmnHttpClient.CreateStream: TmnHttpStream;
+begin
+  Result := TmnHttpStream.Create;
+  Result.EndOfLine := sWinEndOfLine;
+end;
+
+function TmnHttpClient.FreeStream: TmnHttpStream;
+begin
+  FreeAndNil(FStream);
+end;
+
+constructor TmnHttpClient.Create;
+begin
+  inherited;
   FRequest := TmnHttpRequest.Create(Self);
   FResponse := TmnHttpResponse.Create(Self);
   FCookies := TmnParams.Create;
 end;
 
-function TmnCustomHttpStream.CreateSocket(out vErr: Integer): TmnCustomSocket;
-begin
-  Result := inherited CreateSocket(vErr);
-end;
-
-destructor TmnCustomHttpStream.Destroy;
+destructor TmnHttpClient.Destroy;
 begin
   FreeAndNil(FRequest);
   FreeAndNil(FResponse);
@@ -409,100 +447,51 @@ begin
   inherited;
 end;
 
-procedure TmnCustomHttpStream.Open(const vURL: UTF8String);
-var
-  aProtocol, aPort, aAddress, aParams: utf8string;
-begin
-  ParseURL(vURL, aProtocol, aPort, aAddress, aParams);
-  Address := aAddress;
-  Port := aPort;
-  Protocol := aProtocol;
-  Params := aParams;
-
-  if SameText(Protocol, 'https') then
-    Options := Options + [soSSL, soWaitBeforeRead]
-  else
-    Options := Options - [soSSL];
-
-  //FRequest.Connection := 'Keep-Alive';
-  FRequest.Connection := 'close';
-  Connect;
-end;
-
-procedure TmnCustomHttpStream.Close;
-begin
-  Disconnect;
-end;
-
-function TmnCustomHttpStream.GetSize: Int64;
-begin
-  Result := FResponse.ContentLength;
-end;
-
-function TmnCustomHttpStream.Seek(Offset: Integer; Origin: Word): Integer;
-begin
-  Result := 0; // for loading from this stream like Image.loadfrom stream
-end;
-
-{ TmnCustomHttpClient }
-
-function TmnCustomHttpClient.Connected: Boolean;
-begin
-  Result := FHttpStream.Connected;
-end;
-
-function TmnCustomHttpClient.GetRequest: TmnHttpRequest;
-begin
-  Result := FHttpStream.Request;
-end;
-
-function TmnCustomHttpClient.GetResponse: TmnHttpResponse;
-begin
-  Result := FHttpStream.Response;
-end;
-
-constructor TmnCustomHttpClient.Create;
-begin
-  inherited;
-  FHttpStream := TmnHttpStream.Create;
-  FHttpStream.EndOfLine := sWinEndOfLine;
-end;
-
-destructor TmnCustomHttpClient.Destroy;
-begin
-  FHttpStream.Free;
-  inherited;
-end;
-
 { TmnHttpClient }
-
-constructor TmnHttpClient.Create;
-begin
-  inherited Create;
-end;
 
 function TmnHttpClient.Connect(const vURL: UTF8String; SendAndReceive: Boolean): Boolean;
 begin
-  Stream.Open(vUrl);
+  Open(vUrl);
   if SendAndReceive then
   begin
-    Stream.Request.Send;
+    Request.Send;
     if Stream.Connected then
-      Stream.Response.Receive;
+      Response.Receive;
   end;
   Result := Stream.Connected;
 end;
 
+procedure TmnHttpClient.ReceiveStream(AStream: TStream);
+begin
+  if KeepAlive then
+    FStream.ReadStream(AStream, Response.ContentLength)
+  else
+    FStream.ReadStream(AStream);
+end;
+
+procedure TmnHttpClient.ReceiveStream(AStream: TStream; Count: Integer);
+begin
+  FStream.ReadStream(AStream, Count);
+end;
+
+procedure TmnHttpClient.ReceiveMemoryStream(AStream: TStream);
+begin
+  ReceiveStream(AStream);
+  AStream.Seek(0, soFromBeginning);
+end;
+
 procedure TmnHttpClient.Disconnect;
 begin
-  FHttpStream.Disconnect;
+  if FStream <> nil then
+    FStream.Disconnect;
+  FreeStream;
 end;
 
 procedure TmnHttpClient.GetStream(const vURL: UTF8String; OutStream: TStream);
 begin
   if Connect(vURL) then
   begin
-    FHttpStream.ReadStream(OutStream);
+    FStream.ReadStream(OutStream);
   end;
 end;
 

@@ -101,6 +101,7 @@ type
 
   TmnHeader = class(TmnParams)
   protected
+    constructor Create;
     function CreateField: TmnField; override;
   end;
 
@@ -300,16 +301,16 @@ type
     function Have(AValue: string; vSeperators: TSysCharSet = [';']): Boolean;
   end;
 
-function ParseURI(Request: string; out URIPath: UTF8String; URIParams: UTF8String): Boolean; overload;
-function ParseURI(Request: string; out URIPath: UTF8String; URIParams: TmnParams): Boolean; overload;
-procedure ParsePath(aRequest: string; out Name: string; out URIPath: UTF8String; URIParams: TmnParams);
+function ParseURI(Request: string; out URIPath: UTF8String; out URIQuery: UTF8String): Boolean; overload;
+function ParseURI(Request: string; out URIPath: UTF8String; URIQuery: TmnParams): Boolean; overload;
+procedure ParsePath(aRequest: string; out Name: string; out URIPath: UTF8String; URIQuery: TmnParams);
 
 implementation
 
 uses
   mnUtils;
 
-function ParseURI(Request: string; out URIPath: UTF8String; URIParams: UTF8String): Boolean;
+function ParseURI(Request: string; out URIPath: UTF8String; out URIQuery: UTF8String): Boolean;
 var
   I, J: Integer;
 begin
@@ -337,25 +338,30 @@ begin
   J := Pos('?', URIPath);
   if J > 0 then
   begin
-    URIParams := Copy(Request, J + 1, Length(Request));
+    URIQuery := Copy(Request, J + 1, Length(Request));
     URIPath := Copy(URIPath, 1, J - 1);
+  end
+  else
+  begin
+    URIQuery := '';
+    URIPath := '';
   end;
 end;
 
-function ParseURI(Request: string; out URIPath: UTF8String; URIParams: TmnParams): Boolean;
+function ParseURI(Request: string; out URIPath: UTF8String; URIQuery: TmnParams): Boolean;
 var
-  aParams: string;
+  aParams: utf8string;
 begin
   Result := ParseURI(Request, URIPath, aParams);
   if Result then
-    if URIParams <> nil then
+    if URIQuery <> nil then
       //ParseParams(aParams, False);
-      StrToStringsCallback(aParams, URIParams, @ParamsCallBack, ['&'], [' ']);
+      StrToStringsCallback(aParams, URIQuery, @ParamsCallBack, ['&'], [' ']);
 end;
 
-procedure ParsePath(aRequest: string; out Name: string; out URIPath: UTF8String; URIParams: TmnParams);
+procedure ParsePath(aRequest: string; out Name: string; out URIPath: UTF8String; URIQuery: TmnParams);
 begin
-  ParseURI(aRequest, URIPath, URIParams);
+  ParseURI(aRequest, URIPath, URIQuery);
   Name := SubStr(URIPath, '/', 0);
   URIPath := Copy(URIPath, Length(Name) + 1, MaxInt);
 end;
@@ -368,6 +374,12 @@ begin
 end;
 
 { TmnHeader }
+
+constructor TmnHeader.Create;
+begin
+  inherited Create;
+  AutoRemove := True;
+end;
 
 function TmnHeader.CreateField: TmnField;
 begin

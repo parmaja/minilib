@@ -123,7 +123,7 @@ type
 
   { TmnSocketStream }
 
-  TmnSocketStream = class (TmnConnectionStream)
+  TmnSocketStream = class(TmnConnectionStream)
   private
     FSocket: TmnCustomSocket;
     FOptions: TmnsoOptions;

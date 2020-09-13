@@ -1,42 +1,59 @@
 object MainForm: TMainForm
   Left = 411
-  Height = 378
+  Height = 477
   Top = 284
   Width = 514
   Caption = 'Get URL'
-  ClientHeight = 378
+  ClientHeight = 477
   ClientWidth = 514
   OnCreate = FormCreate
   OnDestroy = FormDestroy
   LCLVersion = '2.1.0.0'
   object Panel1: TPanel
     Left = 101
-    Height = 273
+    Height = 404
     Top = 5
     Width = 408
     Align = alClient
     BorderSpacing.Around = 5
     BevelOuter = bvLowered
-    ClientHeight = 273
+    ClientHeight = 404
     ClientWidth = 408
     TabOrder = 0
     object Image1: TImage
       Left = 1
-      Height = 271
+      Height = 138
       Top = 1
       Width = 406
+      Align = alTop
+    end
+    object Image2: TImage
+      Left = 1
+      Height = 129
+      Top = 139
+      Width = 406
+      Align = alTop
+    end
+    object ResultEdit: TMemo
+      Left = 6
+      Height = 125
+      Top = 273
+      Width = 396
       Align = alClient
+      BorderSpacing.Around = 5
+      ScrollBars = ssVertical
+      TabOrder = 0
     end
   end
   object Panel2: TPanel
     Left = 3
-    Height = 275
+    Height = 406
     Top = 3
     Width = 93
     Align = alLeft
     BorderSpacing.Around = 3
     BevelOuter = bvNone
-    ClientHeight = 275
+    ClientHeight = 406
     ClientWidth = 93
     TabOrder = 1
     object Button1: TButton
@@ -49,11 +66,21 @@ object MainForm: TMainForm
       OnClick = Button1Click
       TabOrder = 0
     end
+    object GetGetBtn: TButton
+      Left = 0
+      Height = 33
+      Top = 33
+      Width = 93
+      Align = alTop
+      Caption = 'Get Get'
+      OnClick = GetGetBtnClick
+      TabOrder = 1
+    end
   end
   object LogEdit: TMemo
     Left = 5
-    Height = 90
-    Top = 283
+    Height = 58
+    Top = 414
     Width = 504
     Align = alBottom
     BorderSpacing.Around = 5

@@ -222,6 +222,8 @@ type
     //function GetItem(Index: Integer): TmnField;
   protected
     function CreateField: TmnField; virtual;
+    function SetValue(const Index: string; const AValue: Variant): TmnField; virtual;
+
     procedure SetValues(const Index: string; const AValue: Variant);
     function GetValues(const Index: string): Variant;
     function GetIField(const FieldName: string): IField;
@@ -887,25 +889,16 @@ begin
 end;
 
 procedure TmnFields.SetValues(const Index: string; const AValue: Variant);
-var
-  F: TmnField;
 begin
-  F := FindField(Index);
-  if F = nil then
-  begin
-    F := CreateField;
-    F.Name := Index;
-    Add(F);
-  end;
-  F.Value := AValue;
+  SetValue(Index, AValue);
 end;
 
-function TmnFields._AddRef: Integer;
+function TmnFields._AddRef: Integer; stdcall;
 begin
   Result := 0;
 end;
 
-function TmnFields._Release: Integer;
+function TmnFields._Release: Integer; stdcall;
 begin
   Result := 0;
 end;
@@ -913,6 +906,18 @@ end;
 function TmnFields.CreateField: TmnField;
 begin
   Result := TmnField.Create;
+end;
+
+function TmnFields.SetValue(const Index: string; const AValue: Variant): TmnField;
+begin
+  Result := FindField(Index);
+  if Result = nil then
+  begin
+    Result := CreateField;
+    Result.Name := Index;
+    Add(Result);
+  end;
+  Result.Value := AValue;
 end;
 
 procedure TmnFields.Clean;
