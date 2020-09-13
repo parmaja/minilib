@@ -75,7 +75,7 @@ const
   //'http://a.tile.openstreetmap.org/18/157418/105125.png' /crc error
   //sURL = 'http://c.tile.openstreetmap.org/18/157418/105127.png';
   sURLGoogle = 'http://mt0.google.com/vt/lyrs=m@999&hl=ar&x=78707&y=52561&z=17&s=Gal';
-  sURL = 'http://185.176.40.106/wp/wp-content/uploads/2015/07/logo-site.png';
+  sURL = 'http://www.parmaja.org/wp/wp-content/uploads/2015/07/logo-site.png';
   sURL2 = 'https://www.parmaja.org/wp/wp-content/uploads/2019/08/zaher-new-desktop-768x1024.jpg';
   sPATH2 = '/wp/wp-content/uploads/2019/08/zaher-new-desktop-768x1024.jpg';
   //sURL = 'http://placehold.it/120x120&text=image1';
@@ -90,6 +90,7 @@ begin
   HttpClient := TmnHttpClient.Create;
   try
     HttpClient.Request.UserAgent := sUserAgent;
+    //HttpClient.Compressing := True;
     HttpClient.GetMemoryStream(sURLGoogle, MemoryStream);
     LoadFromStream(HttpClient.Response.ContentType, MemoryStream);
   finally
@@ -105,6 +106,10 @@ var
   MemoryStream: TMemoryStream;
 begin
   LogEdit.Lines.Add('Getting from URL');
+  Screen.Cursor := crHourGlass;
+  Image1.Picture.Clear;
+  Image2.Picture.Clear;
+  Application.ProcessMessages;
   MemoryStream := TMemoryStream.Create;
   HttpClient := TmnHttpClient.Create;
   try
@@ -117,6 +122,8 @@ begin
     HttpClient.Response.Receive;
     HttpClient.ReceiveMemoryStream(MemoryStream);
     LoadFromStream(HttpClient.Response.ContentType, MemoryStream, 0);
+
+    Application.ProcessMessages;
 
     HttpClient.Path := sPATH2;
     MemoryStream.Clear;
@@ -132,6 +139,7 @@ begin
     MemoryStream.Free;
   end;
   LogEdit.Lines.Add('Finished');
+  Screen.Cursor := crDefault;
 end;
 
 procedure TMainForm.FormCreate(Sender: TObject);

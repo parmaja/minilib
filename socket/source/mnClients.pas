@@ -214,7 +214,8 @@ end;
 constructor TmnClients.Create;
 begin
   inherited;
-  FOptions := [soNoDelay]; //you can use soKeepAlive
+  //FOptions := [soNoDelay]; //you can use soKeepAlive
+  FOptions := [];
 end;
 
 destructor TmnClients.Destroy;

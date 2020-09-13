@@ -23,7 +23,8 @@ interface
 
 uses
   SysUtils, Classes, StrUtils,
-  mnClasses, mnFields, mnConfigs, mnModules, mnSockets, mnClients, mnStreams, mnUtils;
+   mnUtils, mnClasses, mnLogs, mnFields, mnConfigs, mnModules, mnSockets,
+   mnClients, mnStreams, mnStreamUtils;
 
 type
 
@@ -35,10 +36,10 @@ type
   private
     FAccept: UTF8String;
     FAcceptCharSet: UTF8String;
-    FAcceptEncoding: UTF8String;
     FAcceptLanguage: UTF8String;
     FClient: TmnHttpClient;
-    FConnection: UTF8String;
+    FAcceptEncoding: TStringList;
+
     FContentLength: Integer;
     FContentType: UTF8String;
 
@@ -48,9 +49,10 @@ type
     FExpires: TDateTime;
 
     FHeaders: TmnHeader;
+    function GetHeader(Index: string): string;
+    procedure SetHeader(Index: string; AValue: string);
 
   protected
-    procedure SetHeader(Name, Value: string);
   public
     constructor Create(AClient: TmnHttpClient); virtual;
     destructor Destroy; override;
@@ -61,13 +63,14 @@ type
     property LastModified: TDateTime read FLastModified write FLastModified;
     property Accept: UTF8String read FAccept write FAccept;
     property AcceptCharSet: UTF8String read FAcceptCharSet write FAcceptCharSet;
-    property AcceptEncoding: UTF8String read FAcceptEncoding write FAcceptEncoding;
+    property AcceptEncoding: TStringList read FAcceptEncoding write FAcceptEncoding;
     property AcceptLanguage: UTF8String read FAcceptLanguage write FAcceptLanguage;
     property ContentType: UTF8String read FContentType write FContentType;
     property ContentLength: Integer read FContentLength write FContentLength;
-    property Connection: UTF8String read FConnection write FConnection;
+
     property KeepAlive: Boolean read FKeepAlive write FKeepAlive;
     property Client: TmnHttpClient read FClient;
+    property Header[Index: string]: string read GetHeader write SetHeader; default;
   end;
 
   { TmnHttpRequest }
@@ -91,6 +94,7 @@ type
 
   TmnHttpResponse = class(TmnCustomHttpHeader)
   private
+    FDecompress: Boolean;
     FLocation: UTF8String;
     FServer: UTF8String;
   protected
@@ -99,6 +103,7 @@ type
     procedure Receive;
     property Location: UTF8String read FLocation write FLocation;
     property Server: UTF8String read FServer write FServer;
+    property Decompress: Boolean read FDecompress write FDecompress;
   end;
 
   { TmnCustomHttpStream }
@@ -127,9 +132,10 @@ type
 
     FStream: TmnHttpStream;
   protected
+    DeflateProxy: TmnDeflateStreamProxy;
     procedure Open(const vURL: UTF8String);
     function CreateStream: TmnHttpStream; virtual;
-    function FreeStream: TmnHttpStream; virtual;
+    procedure FreeStream; virtual;
   public
     constructor Create;
     destructor Destroy; override;
@@ -273,12 +279,23 @@ end;
 
 { TmnCustomHttpHeader }
 
-procedure TmnCustomHttpHeader.SetHeader(Name, Value: string);
+function TmnCustomHttpHeader.GetHeader(Index: string): string;
+var
+  F: TmnField;
 begin
-  if Value <> '' then
-    Headers.Require[Name].Value := Value
+  F := Headers.Field[Index];
+  if F <> nil then
+    Result := F.AsString
   else
-    Headers.RemoveByName(Name);
+    Result := '';
+end;
+
+procedure TmnCustomHttpHeader.SetHeader(Index: string; AValue: string);
+begin
+  if AValue <> '' then
+    Headers.Require[Index].Value := AValue
+  else
+    Headers.RemoveByName(Index);
 end;
 
 constructor TmnCustomHttpHeader.Create(AClient: TmnHttpClient);
@@ -286,6 +303,8 @@ begin
   inherited Create;
   FClient := AClient;
   FHeaders := TmnHeader.Create;
+  FAcceptEncoding := TStringList.Create;
+  FAcceptEncoding.Delimiter := ',';
 end;
 
 destructor TmnCustomHttpHeader.Destroy;
@@ -306,15 +325,15 @@ begin
   inherited;
   with FHeaders do
   begin
-    Values['Host'] := Client.Host;
-    Values['User-Agent'] := FUserAgent;
-    Values['Connection'] := FConnection;
+    Header['Host'] := Client.Host;
+    Header['User-Agent'] := FUserAgent;
 
-    Values['Accept'] := FAccept;
-    Values['Accept-CharSet'] := FAcceptCharSet;
-    Values['Accept-Encoding'] := FAcceptEncoding;
-    Values['Accept-Language'] := FAcceptLanguage;
-    Values['Referer'] := FReferer;
+    Header['Accept'] := FAccept;
+    Header['Accept-CharSet'] := FAcceptCharSet;
+    if Client.Compressing then
+      Header['Accept-Encoding'] := 'deflate';
+    Header['Accept-Language'] := FAcceptLanguage;
+    Header['Referer'] := FReferer;
   end;
 end;
 
@@ -348,15 +367,17 @@ begin
   inherited;
   with FHeaders do
   begin
-    FLocation := Field['Location'].AsString;
-    FServer := Field['Server'].AsString;
-    FContentType:= Field['Content-Type'].AsString;
-    FContentLength := StrToIntDef(Trim(Field['Content-Length'].AsString), 0);
-    FAccept := Field['Accept'].AsString;
-    FAcceptCharSet := Field['Accept-CharSet'].AsString;
-    FAcceptEncoding := Field['Accept-Encoding'].AsString;
-    FAcceptLanguage := Field['Accept-Language'].AsString;
-    FConnection := Field['Connection'].AsString;
+    FLocation := Header['Location'];
+    FServer := Header['Server'];
+    FContentType:= Header['Content-Type'];
+    FContentLength := StrToIntDef(Header['Content-Length'], 0);
+    FAccept := Header['Accept'];
+    FAcceptCharSet := Header['Accept-CharSet'];
+    FAcceptLanguage := Header['Accept-Language'];
+    FAcceptEncoding.DelimitedText := Header['Accept-Encoding'];
+    Log.Write('Accept-Encoding:' +  Header['Accept-Encoding']);
+    FDecompress := FAcceptEncoding.IndexOf('deflate') >=0;
+    Log.WriteLn(FAcceptEncoding.Text);
   end;
 end;
 
@@ -379,6 +400,22 @@ begin
   s := Headers.Field['Set-Cookie'].AsString;
   Client.Cookies.Delimiter := ';';
   Client.Cookies.AsString := s;
+
+  if Decompress then
+  begin
+    if Client.DeflateProxy <> nil then
+      Client.DeflateProxy.Enable
+    else
+    begin
+      Client.DeflateProxy := TmnDeflateStreamProxy.Create([cprsWrite], 9, false);
+      Client.Stream.AddProxy(Client.DeflateProxy);
+    end;
+  end
+  else
+  begin
+    if Client.DeflateProxy <> nil then
+      Client.DeflateProxy.Disable;
+  end;
 end;
 
 { TmnHttpStream }
@@ -407,6 +444,7 @@ begin
   Stream.Address := Host;
   Stream.Port := Port;
 
+  Stream.Options := Stream.Options - [soNoDelay];
   if SameText(Protocol, 'https') then
     Stream.Options := Stream.Options + [soSSL, soWaitBeforeRead]
   else
@@ -414,11 +452,11 @@ begin
 
   if KeepAlive then
   begin
-    FRequest.Connection := 'Keep-Alive';
+    FRequest['Connection'] := 'Keep-Alive';
     //Keep-Alive: timeout=1200
   end
   else
-    FRequest.Connection := 'close';
+    FRequest['Connection'] := 'close';
   Stream.Connect;
 end;
 
@@ -426,9 +464,12 @@ function TmnHttpClient.CreateStream: TmnHttpStream;
 begin
   Result := TmnHttpStream.Create;
   Result.EndOfLine := sWinEndOfLine;
+  Result.ReadTimeout := 5000;
+  Result.ConnectTimeout := 5000;
+  Result.WriteTimeout := 5000;
 end;
 
-function TmnHttpClient.FreeStream: TmnHttpStream;
+procedure TmnHttpClient.FreeStream;
 begin
   FreeAndNil(FStream);
 end;
