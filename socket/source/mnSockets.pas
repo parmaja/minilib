@@ -461,7 +461,8 @@ end;
 constructor TmnSocketStream.Create(vSocket: TmnCustomSocket);
 begin
   inherited Create;
-  FOptions := [soNoDelay];
+  //FOptions := [soNoDelay];
+  FOptions := [];
   FSocket := vSocket;
 end;
 
