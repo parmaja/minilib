@@ -51,6 +51,9 @@ var
   KeepAlive: Boolean = False;
   QuickAck: Boolean = False;
 
+const
+  sMsg: AnsiString = '0123456789';
+
 { TThreadReciever }
 
 procedure TThreadReciever.Execute;
@@ -73,9 +76,12 @@ begin
   try
     while true do
     begin
-      s := Trim(Stream.ReadLine);
-      Stream.WriteLine(s);
-      //WriteLn(s);
+      s := Stream.ReadLine;
+      if not Stream.Connected then
+        break;
+      if sMsg <> s then
+        raise Exception.Create('Error msg: ' + s);
+      Stream.WriteLine(sMsg);
       if not Stream.Connected then
         break;
     end;
@@ -113,10 +119,13 @@ begin
     begin
       for i := 0 to ACount -1 do
       begin
-        s := '0123456789';
-        Stream.WriteLine(s);
+        Stream.WriteLine(sMsg);
         Stream.ReadLine(s);
-      end;
+        if sMsg <> s then
+          raise Exception.Create('Error msg: ' + s);
+        if not Stream.Connected then
+        break;
+    end;
     end;
     WriteLn(TicksToString(GetTickCount64 - t));
     Stream.Disconnect;
