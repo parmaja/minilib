@@ -41,12 +41,14 @@ type
     soReuseAddr,
     soKeepAlive,
     soNoDelay, //Nagle's algorithm use it for faster communication, do not wait until ACK for previously sent data and accumulate data in send buffer...
+    soQuickAck, //SIO_TCP_SET_ACK_FREQUENCY fo windows, TCP_QUICKACK for Linux
     //soCORK, //not exist in windows //Don't send any data (partial frames) smaller than the MSS until the application says so or until 200ms later; is opposite of soNoDelay. The former forces packet-accumulation delay
     //soBroadcast, soDebug, soDontLinger, soDontRoute, soOOBInLine, soAcceptConn
-    soWaitBeforeRead, //Wait for data come before read, that double the time wait if you set SetReadTimeout if no data come
+    //MSG_PUSH_IMMEDIATE push in read, idk what for
+    soWaitBeforeRead, //Wait for data come before read, that double the time wait if you set set ReadTimeout if no data come
     soWaitBeforeWrite, //Wait for ready before write, idk what for
     soCloseTimeout, //close socket if read timeout
-    soSSL  //TODO
+    soSSL  //Use OpenSSL 1.1.1
     );
   TmnsoOptions = set of TmnsoOption;
 

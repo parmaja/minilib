@@ -2,9 +2,9 @@ unit mnHttpClient;
 { **
   *  This file is part of the "Mini Library"
   *
-  * @license   modifiedLGPL (modified of http://www.gnu.org/licenses/lgpl.html)
+  * @license   MIT
   *            See the file COPYING.MLGPL, included in this distribution,
-  * @author    Jihad Khlaifa <jkhalifa at gmail dot com>
+  * @author    initial work Jihad Khlaifa <jkhalifa at gmail dot com>
   * @author    Zaher Dirkey zaherdirkey
   * }
 
@@ -377,7 +377,7 @@ begin
     FAcceptEncoding.DelimitedText := Header['Accept-Encoding'];
     Log.Write('Accept-Encoding:' +  Header['Accept-Encoding']);
     FDecompress := FAcceptEncoding.IndexOf('deflate') >=0;
-    Log.WriteLn(FAcceptEncoding.Text);
+    //Log.WriteLn(FAcceptEncoding.Text);
   end;
 end;
 

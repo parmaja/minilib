@@ -32,8 +32,10 @@ type
 
   TTestStream = class(TCustomApplication)
   protected
+    procedure _ExampleSocket; //Socket threads
+    procedure ExampleSocket;
+    procedure ExampleSocketNoDelay;
     procedure ExampleSmallBuffer; //read write line with small buffer
-    procedure ExampleSocket; //Socket threads
     procedure ExampleHexLine; //Hex lines
     procedure ExampleHexImage; //Hex image
     procedure ExampleCopyHexImage; //Hex image2 images and read one
@@ -59,13 +61,21 @@ begin
   WriteLn('Server started');
   Stream := TmnServerSocket.Create('localhost', '82');
   Stream.ReadTimeout := WaitForEver;
-  Stream.Options := Stream.Options - [soWaitBeforeRead, soWaitBeforeWrite];
+  Stream.Options := [];
+  if NoDelay then
+    Stream.Options := Stream.Options + [soNoDelay];
+  if KeepAlive then
+    Stream.Options := Stream.Options + [soKeepAlive];
+  if QuickAck then
+    Stream.Options := Stream.Options + [soQuickAck];
+
   Stream.Connect;
   try
     while true do
     begin
       s := Trim(Stream.ReadLine);
-      WriteLn(s);
+      Stream.WriteLine(s);
+      //WriteLn(s);
       if not Stream.Connected then
         break;
     end;
@@ -84,21 +94,31 @@ var
   i: Integer;
   t: int64;
 const
-  ACount: Integer = 2000;
+  ACount: Integer = 10000;
 begin
   Stream := TmnClientSocket.Create('localhost', '82');
   Stream.ReadTimeout := WaitForEver;
-  Stream.Options := Stream.Options - [soWaitBeforeRead, soWaitBeforeWrite];
+  Stream.Options := [];
+  if NoDelay then
+    Stream.Options := Stream.Options + [soNoDelay];
+  if KeepAlive then
+    Stream.Options := Stream.Options + [soKeepAlive];
+  if QuickAck then
+    Stream.Options := Stream.Options + [soQuickAck];
   try
+    t := GetTickCount64;
     Stream.Connect;
+    WriteLn(TicksToString(GetTickCount64 - t));
     if Stream.Connected then
     begin
-      s := '0123456789';
-      Stream.WriteLine(s);
+      for i := 0 to ACount -1 do
+      begin
+        s := '0123456789';
+        Stream.WriteLine(s);
+        Stream.ReadLine(s);
+      end;
     end;
-    t := GetTickCount64 - t;
-    WriteLn(t.ToString);
-    WriteLn(TicksToString(t));
+    WriteLn(TicksToString(GetTickCount64 - t));
     Stream.Disconnect;
   finally
     Stream.Free;
@@ -134,15 +154,11 @@ begin
   end;
 end;
 
-procedure TTestStream.ExampleSocket;
+procedure TTestStream._ExampleSocket;
 var
   Reciever: TThreadReciever;
   Sender: TThreadSender;
 begin
-  NoDelay := False;
-  KeepAlive := False;
-  QuickAck := False;
-
   Reciever := TThreadReciever.Create(True);
   Reciever.Start;
   Sleep(1000);
@@ -151,6 +167,22 @@ begin
   Sender.Start;
   Sender.WaitFor;
   Reciever.WaitFor;
+end;
+
+procedure TTestStream.ExampleSocket;
+begin
+  NoDelay := False;
+  KeepAlive := False;
+  QuickAck := False;
+  _ExampleSocket;
+end;
+
+procedure TTestStream.ExampleSocketNoDelay;
+begin
+  NoDelay := True;
+  KeepAlive := False;
+  QuickAck := False;
+  _ExampleSocket;
 end;
 
 procedure TTestStream.ExampleHexLine;
@@ -325,8 +357,9 @@ var
   end;
 begin
   try
-    AddProc('ExampleSmallBuffer: read write line with small buffer', @ExampleSmallBuffer);
     AddProc('ExampleSocket: Socket threads', @ExampleSocket);
+    AddProc('ExampleSocket nodelay : Socket threads', @ExampleSocketNoDelay);
+    AddProc('ExampleSmallBuffer: read write line with small buffer', @ExampleSmallBuffer);
     AddProc('ExampleHexLine: Hex lines', @ExampleHexLine);
     AddProc('ExampleHexImage: Hex image', @ExampleHexImage);
     AddProc('ExampleCopyHexImage: Hex image2 images and read one', @ExampleCopyHexImage);
@@ -337,6 +370,7 @@ begin
         WriteLn(IntToStr(n + 1) + ': ' + Commands[n].name);
       WriteLn();
       Write('Enter command: ');
+      s := '1';
       ReadLn(s);
       WriteLn();
       s := trim(s);
@@ -346,6 +380,7 @@ begin
       WriteLn('Running "' + Commands[n - 1].Name + '"');
       WriteLn();
       Commands[n - 1].proc();
+      WriteLn();
     end;
   finally
     Write('Press Enter to Exit');

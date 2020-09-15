@@ -26,7 +26,6 @@ uses
   {$ENDIF}
 {$ELSE} // DELPHI
   WinSock2,
-//  WinSock,
 {$ENDIF}
   mnSockets;
 
@@ -83,6 +82,7 @@ implementation
 const
   cBacklog = 5;
   INVALID_SOCKET = -1;
+  TCP_QUICKACK = 12; //Some one said it is work on windows too
 
 { TmnSSLServerSocket }
 
@@ -551,6 +551,10 @@ begin
         setsockopt(aHandle, SOL_SOCKET, SO_RCVTIMEO, @DW, SizeOf(DW));
       end;
     end;
+
+    if soQuickAck in Options then
+      ret := setsockopt(aHandle, SOL_SOCKET, TCP_QUICKACK, PAnsiChar(@SO_TRUE), SizeOf(SO_TRUE));
+      //ret := WSAIoctl(sock, SIO_TCP_SET_ACK_FREQUENCY, &freq, sizeof(freq), NULL, 0, &bytes, NULL, NULL);
 
     if ConnectTimeout <> -1 then
     begin
