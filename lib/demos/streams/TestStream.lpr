@@ -48,6 +48,7 @@ type
 var
   Application: TTestStream;
   Address: string;
+  SocketOptionsStr: string;
   NoDelay: Boolean = False;
   KeepAlive: Boolean = False;
   QuickAck: Boolean = False;
@@ -57,7 +58,7 @@ var
 const
   sMsg: AnsiString = '0123456789';
   sPort: string = '82';
-  sHost = '192.168.1.2';
+  sHost = '127.0.0.1';
 
 { TThreadReciever }
 
@@ -66,34 +67,46 @@ var
   Stream: TmnServerSocket;
   s: string;
 begin
-  Stream := TmnServerSocket.Create(Address, sPort);
-  Stream.ReadTimeout := WaitForEver;
-  Stream.Options := SocketOptions;
-  if NoDelay then
-    Stream.Options := Stream.Options + [soNoDelay];
-  if KeepAlive then
-    Stream.Options := Stream.Options + [soKeepAlive];
-  if QuickAck then
-    Stream.Options := Stream.Options + [soQuickAck];
-
-  Stream.Connect;
   try
-    while true do
-    begin
-      s := Stream.ReadLine;
-      if not Stream.Connected then
-        break;
-      if sMsg <> s then
-        raise Exception.Create('Error msg: ' + s);
-      Stream.WriteLine(sMsg);
-      if not Stream.Connected then
-        break;
+    Stream := TmnServerSocket.Create('', sPort); //if u pass address, server will listen only on this network
+    Stream.ReadTimeout := WaitForEver;
+    Stream.Options := SocketOptions;
+    if NoDelay then
+      Stream.Options := Stream.Options + [soNoDelay];
+    if KeepAlive then
+      Stream.Options := Stream.Options + [soKeepAlive];
+    if QuickAck then
+      Stream.Options := Stream.Options + [soQuickAck];
+
+    WriteLn('Before connect');
+    Stream.Connect;
+    WriteLn('After connect');
+    try
+      while true do
+      begin
+        s := Stream.ReadLine;
+        //WriteLn(s);
+        if not Stream.Connected then
+          break;
+        if sMsg <> s then
+          raise Exception.Create('Error msg: ' + s);
+        Stream.WriteLine(sMsg);
+        if not Stream.Connected then
+          break;
+      end;
+      Stream.Disconnect;
+      WriteLn('After disonnect');
+    finally
+      Stream.Free;
     end;
-    Stream.Disconnect;
-  finally
-    Stream.Free;
+    WriteLn('Server end execute');
+  except
+    on E: Exception do
+    begin
+      WriteLn(E.Message);
+      raise;
+    end;
   end;
-  WriteLn('Server end execute');
 end;
 
 { ThreadSender }
@@ -105,39 +118,50 @@ var
   i: Integer;
   t: int64;
 const
-  ACount: Integer = 10000;
+  ACount: Integer = 100;
 begin
-  Stream := TmnClientSocket.Create(Address, sPort);
-  Stream.ReadTimeout := WaitForEver;
-  Stream.Options := SocketOptions;
-  if NoDelay then
-    Stream.Options := Stream.Options + [soNoDelay];
-  if KeepAlive then
-    Stream.Options := Stream.Options + [soKeepAlive];
-  if QuickAck then
-    Stream.Options := Stream.Options + [soQuickAck];
   try
-    t := GetTickCount64;
-    Stream.Connect;
-    WriteLn(TicksToString(GetTickCount64 - t));
-    if Stream.Connected then
-    begin
-      for i := 0 to ACount -1 do
+    Stream := TmnClientSocket.Create(Address, sPort);
+    Stream.ReadTimeout := WaitForEver;
+    Stream.Options := SocketOptions;
+    if NoDelay then
+      Stream.Options := Stream.Options + [soNoDelay];
+    if KeepAlive then
+      Stream.Options := Stream.Options + [soKeepAlive];
+    if QuickAck then
+      Stream.Options := Stream.Options + [soQuickAck];
+    try
+      t := GetTickCount64;
+      WriteLn('Before connect');
+      Stream.Connect;
+      WriteLn('After connect');
+      WriteLn(TicksToString(GetTickCount64 - t));
+      if Stream.Connected then
       begin
-        Stream.WriteLine(sMsg);
-        Stream.ReadLine(s);
-        if sMsg <> s then
-          raise Exception.Create('Error msg: ' + s);
-        if not Stream.Connected then
-        break;
+        for i := 0 to ACount -1 do
+        begin
+          Stream.WriteLine(sMsg);
+          Stream.ReadLine(s);
+          if sMsg <> s then
+            raise Exception.Create('Error msg: ' + s);
+          if not Stream.Connected then
+          break;
+      end;
+      end;
+      WriteLn(TicksToString(GetTickCount64 - t));
+      Stream.Disconnect;
+      WriteLn('After disconnect');
+    finally
+      Stream.Free;
     end;
+    WriteLn('Client end execute');
+  except
+    on E: Exception do
+    begin
+      WriteLn(E.Message);
+      raise;
     end;
-    WriteLn(TicksToString(GetTickCount64 - t));
-    Stream.Disconnect;
-  finally
-    Stream.Free;
   end;
-  WriteLn('Client end execute');
 end;
 
 { TTestStream }
@@ -176,7 +200,7 @@ var
 begin
   if WithServer then
   begin
-    WriteLn('Server started');
+    WriteLn('Main: Server started');
     Reciever := TThreadReciever.Create(True);
     Reciever.Start;
     Sleep(1000);
@@ -184,18 +208,18 @@ begin
 
   if WithClient then
   begin
-    WriteLn('Client started');
+    WriteLn('Main: Client started');
     Sender := TThreadSender.Create(True);
     Sender.Start;
   end;
   if WithClient then
   begin
-    WriteLn('Waiting for client');
+    WriteLn('Main: Waiting for client');
     Sender.WaitFor;
   end;
   if WithServer then
   begin
-    WriteLn('Waiting for server');
+    WriteLn('Main: Waiting for server');
     Reciever.WaitFor;
   end;
 end;
@@ -208,44 +232,67 @@ begin
   Write(': ');
   ReadLn(s);
   if s = '' then
-    Result := Default
+  begin
+    Result := Default;
+    Write(BoolToStr(Result, 'Yes', 'No'));
+  end
   else if s = 'x' then
-    halt
+    Application.Terminate
   else
     Result := SameText(s, 'y');
+  Writeln();
 end;
 
-function GetAnswer(Q: string; Default: string = ''): string;
+function GetAnswer(Q: string; Default: string = ''; AddClear: string = ''): string;
 var
   s: string;
 begin
   Write(Q);
   if Default <> '' then
-    Write('(' + Default + ')');
+    Write(' (' + Default + ')');
   Write(': ');
   ReadLn(s);
   if s = '' then
-    Result := Default
+  begin
+    Result := Default;
+    Write(Result);
+  end
   else if s = 'x' then
-    halt
+    Application.Terminate
+  else if (AddClear <> '') and (s = AddClear) then
+    Result := ''
   else
     Result := s;
+  Writeln();
 end;
 
 procedure TTestStream.ExampleSocket;
 var
   WithServer, WithClient: boolean;
+  s: string;
 begin
   WithServer := GetAnswer('With Server? ', True);
   WithClient := not WithServer or GetAnswer('With Client? ', True);
-  if WithClient and not WithServer then
+  if WithClient then
   begin
-    Address := GetAnswer('Enter IP address', Address);
-    ini.WriteString('Options', 'Address', Address);
+    if not WithServer then
+    begin
+      Address := GetAnswer('Enter IP address', Address);
+      ini.WriteString('Options', 'Address', Address);
+    end
+    else
+      Address := sHost;
   end;
-  NoDelay := GetAnswer('NoDelay ? ', False);
-  KeepAlive := False;
-  QuickAck := False;
+  {NoDelay := GetAnswer('NoDelay ? ', False);
+  KeepAlive := GetAnswer('KeepAlive? ', False);
+  QuickAck := GetAnswer('QuickAck? ', False);}
+  SocketOptionsStr := ini.ReadString('Options', 'SocketOptions', SocketOptionsStr);
+  S := LowerCase(GetAnswer('n=NoDelay, k=KeepAlive, q=QuickAck or c to clear', SocketOptionsStr, 'c'));
+  NoDelay := Pos('n', S) > 0;
+  KeepAlive := Pos('k', S) > 0;
+  QuickAck := Pos('q', S) > 0;
+  if s <> 'c' then
+    ini.WriteString('Options', 'SocketOptions', S);
   InternalExampleSocket(WithServer, WithClient);
 end;
 
@@ -394,7 +441,7 @@ end;
 constructor TTestStream.Create(TheOwner: TComponent);
 begin
   inherited Create(TheOwner);
-  StopOnException :=True;
+  //StopOnException := True;
 end;
 
 destructor TTestStream.Destroy;
@@ -420,10 +467,12 @@ var
     Commands[Length(Commands) - 1].proc := proc;
   end;
 begin
+  ini := TIniFile.Create(Application.Location + 'Options.ini');
   try
-    InstallConsoleLog;
-    ini := TIniFile.Create(Application.Location + 'Options.ini');
     try
+      WriteLn('Welcome to testing Streams');
+      WriteLn('');
+      InstallConsoleLog;
       Address := ini.ReadString('options', 'Address', sHost);
       AddProc('ExampleSocket: Socket threads', @ExampleSocket);
       AddProc('ExampleSmallBuffer: read write line with small buffer', @ExampleSmallBuffer);
@@ -435,27 +484,39 @@ begin
       begin
         for n := 0 to Length(Commands) - 1 do
           WriteLn(IntToStr(n + 1) + ': ' + Commands[n].name);
+        WriteLn('0: Type 0 to exit');
         WriteLn();
         Write('Enter command: ');
         s := '1';
         ReadLn(s);
         WriteLn();
         s := trim(s);
-        n := StrToIntDef(s, 0);
-        if (n < 1) or (n > Length(Commands)) then
-          exit;
-        WriteLn('Running "' + Commands[n - 1].Name + '"');
-        WriteLn();
-        Commands[n - 1].proc();
+        if s = '' then
+          //Nothing
+        else if (s = '') or SameText(s, 'exit') then
+          Break
+        else
+        begin
+          n := StrToIntDef(s, 0);
+          if (n = 0) or (n > Length(Commands)) then
+            Break;
+          WriteLn('Running "' + Commands[n - 1].Name + '"');
+          WriteLn();
+          Commands[n - 1].proc();
+        end;
         WriteLn();
       end;
-      ini.WriteString('options', 'Address', Address);
-    finally
-      ini.Free;
+    except
+      on E: Exception do
+      begin
+        WriteLn(E.Message);
+        raise;
+      end;
     end;
   finally
     Write('Press Enter to Exit');
     ReadLn();
+    ini.Free;
     Terminate;
   end;
 end;
