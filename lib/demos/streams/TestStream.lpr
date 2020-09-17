@@ -283,9 +283,7 @@ begin
     else
       Address := sHost;
   end;
-  {NoDelay := GetAnswer('NoDelay ? ', False);
-  KeepAlive := GetAnswer('KeepAlive? ', False);
-  QuickAck := GetAnswer('QuickAck? ', False);}
+
   SocketOptionsStr := ini.ReadString('Options', 'SocketOptions', SocketOptionsStr);
   S := LowerCase(GetAnswer('n=NoDelay, k=KeepAlive, q=QuickAck or c to clear', SocketOptionsStr, 'c'));
   NoDelay := Pos('n', S) > 0;

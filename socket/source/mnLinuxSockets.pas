@@ -50,7 +50,7 @@ type
 
   TmnWallSocket = class(TmnCustomWallSocket)
   private
-    procedure FreeSocket(var vHandle: TSocket; out vErr: integer);
+    procedure FreeSocket(var vHandle: TSocketHandle; out vErr: integer);
     function LookupPort(Port: string): Word;
   public
     constructor Create; override;
@@ -65,7 +65,7 @@ uses
   BaseUnix;
 
 const
-  INVALID_SOCKET		= TSocket(NOT(0));
+  INVALID_SOCKET		= TSocketHandle(NOT(0));
   SOCKET_ERROR			= -1;
 
 { TmnSocket }
@@ -202,7 +202,7 @@ end;
 
 function TmnSocket.Accept: TmnCustomSocket;
 var
-  aHandle: TSocket;
+  aHandle: TSocketHandle;
   aSize: Integer;
 begin
   CheckActive;
@@ -296,7 +296,7 @@ procedure TmnWallSocket.Bind(Options: TmnsoOptions; ReadTimeout: Integer;
   const Port: string; const Address: string; out vSocket: TmnCustomSocket; out
   vErr: Integer);
 var
-  aHandle: TSocket;
+  aHandle: TSocketHandle;
   aAddr : TINetSockAddr;
 begin
   aHandle := fpsocket(AF_INET, SOCK_STREAM, 0{IPPROTO_TCP});
@@ -334,7 +334,7 @@ begin
   inherited;
 end;
 
-procedure TmnWallSocket.FreeSocket(var vHandle: TSocket; out vErr: integer );
+procedure TmnWallSocket.FreeSocket(var vHandle: TSocketHandle; out vErr: integer );
 begin
   vErr := SocketError;
   closesocket(vHandle);
@@ -348,7 +348,7 @@ end;
 
 procedure TmnWallSocket.Connect(Options: TmnsoOptions; ConnectTimeout, ReadTimeout: Integer; const Port: ansistring; const Address: AnsiString; out vSocket: TmnCustomSocket; out vErr: Integer);
 var
-  aHandle: TSocket;
+  aHandle: TSocketHandle;
   aAddr : TINetSockAddr;
   ret: cint;
   aHost: THostEntry;

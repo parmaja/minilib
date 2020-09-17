@@ -35,6 +35,9 @@ type
   TmnShutdown = (sdReceive, sdSend);
   TmnShutdowns = set of TmnShutdown;
   TmnError = (erSuccess, erTimeout, erClosed, erInvalid);
+
+  TSocketHandle = Integer;
+
   TSelectCheck = (slRead, slWrite);
 
   TmnsoOption = (
@@ -52,6 +55,12 @@ type
     );
   TmnsoOptions = set of TmnsoOption;
 
+  TmnSocketParams = record //TODO
+    Options: TmnsoOptions;
+    ReadTimeout: Integer;
+    WriteTimeout: Integer;
+  end;
+
   TSocketKind = (skClient, skServer, skListener);
 
   //maybe we should name it TmnSocket
@@ -65,7 +74,7 @@ type
     FKind: TSocketKind;
     function GetConnected: Boolean;
   protected
-    FHandle: Integer; //following OpenSSL handle of socket
+    FHandle: TSocketHandle; //following OpenSSL handle of socket
     FPrepared: Boolean;
 
     ContextOwned: Boolean; //if not referenced
@@ -99,7 +108,7 @@ type
     //function Flush: Boolean; //TODO, no flush for TCP, bad design OSs
 
     function Listen: TmnError;
-    function Accept: TmnCustomSocket; virtual; abstract;
+    function Accept(Options: TmnsoOptions; ReadTimeout: Integer): TmnCustomSocket;
     property Active: Boolean read GetActive;
     property Connected: Boolean read GetConnected;
     function GetLocalAddress: string; virtual; abstract;
@@ -115,7 +124,10 @@ type
   public
     constructor Create; virtual;
     destructor Destroy; override;
-    procedure Bind(Options: TmnsoOptions; ReadTimeout: Integer; const Port: string; const Address: string; out vSocket: TmnCustomSocket; out vErr: Integer); virtual; abstract;
+    //Bind used by Listener of server
+    procedure Bind(Options: TmnsoOptions; ListenTimeout: Integer; const Port: string; const Address: string; out vSocket: TmnCustomSocket; out vErr: Integer); virtual; abstract;
+    procedure Accept(ListenerHandle: TSocketHandle; Options: TmnsoOptions; ReadTimeout: Integer; out vSocket: TmnCustomSocket; out vErr: Integer); virtual; abstract;
+    //Connect used by clients
     procedure Connect(Options: TmnsoOptions; ConnectTimeout, ReadTimeout: Integer; const Port: string; const Address: string; out vSocket: TmnCustomSocket; out vErr: Integer); virtual; abstract;
   end;
 
@@ -261,6 +273,14 @@ begin
   Result := DoListen;
   if Result > erTimeout then
     Close;
+end;
+
+function TmnCustomSocket.Accept(Options: TmnsoOptions; ReadTimeout: Integer): TmnCustomSocket;
+var
+  aErr: Integer;
+begin
+  CheckActive;
+  WallSocket.Accept(FHandle, Options, ReadTimeout, Result, aErr);
 end;
 
 function TmnCustomSocket.Receive(var Buffer; var Count: Longint): TmnError;

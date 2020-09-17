@@ -282,7 +282,8 @@ type
 
     property ReadTimeout: Integer read FReadTimeout write FReadTimeout;
     property WriteTimeout: Integer read FWriteTimeout write FWriteTimeout;
-    property ConnectTimeout: Integer read FConnectTimeout write FConnectTimeout;
+
+    property ConnectTimeout: Integer read FConnectTimeout write FConnectTimeout; //not here
   end;
 
   { TmnStreamHexProxy }

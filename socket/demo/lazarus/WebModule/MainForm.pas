@@ -27,7 +27,9 @@ type
   { TMain }
 
   TMain = class(TForm)
+    Label5: TLabel;
     MakeCertBtn: TButton;
+    ModuleNameEdit: TEdit;
     UseSSLChk: TCheckBox;
     ExitBtn: TButton;
     Label1: TLabel;
@@ -132,6 +134,7 @@ begin
   if (LeftStr(aRoot, 2)='.\') or (LeftStr(aRoot, 2)='./') then
     aRoot := ExtractFilePath(Application.ExeName) + Copy(aRoot, 3, MaxInt);
   Server.WebModule.DocumentRoot := aRoot;
+  Server.WebModule.Name := ModuleNameEdit.Text;
   Server.Port := PortEdit.Text;
   //Server.Address := '127.0.0.1';
   Server.UseSSL := UseSSLChk.Checked;
@@ -203,6 +206,7 @@ begin
   try
     RootEdit.Text := GetOption('root', '.\html');
     PortEdit.Text := GetOption('port', '81');
+    ModuleNameEdit.Text := GetOption('module', 'doc');
     UseSSLChk.Checked := GetOption('ssl', false);
     aAutoRun := StrToBoolDef(GetSwitch('run', ''), False);
   finally
@@ -220,6 +224,7 @@ begin
   try
     aIni.WriteString('options', 'root', RootEdit.Text);
     aIni.WriteString('options', 'port', PortEdit.Text);
+    aIni.WriteString('options', 'module', ModuleNameEdit.Text);
     aIni.WriteBool('options', 'ssl', UseSSLChk.Checked);
   finally
     aIni.Free;

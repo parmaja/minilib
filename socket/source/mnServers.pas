@@ -88,8 +88,6 @@ type
     FSocket: TmnCustomSocket; //Listner socket waiting by call "select"
     FLogMessages: TStringList;
     FOptions: TmnsoOptions;
-    procedure Connect;
-    procedure Disconnect;
     function GetConnected: Boolean;
     procedure SetOptions(AValue: TmnsoOptions);
   protected
@@ -106,6 +104,9 @@ type
     PrivateKeyFile: string;
     CertificateFile: string;
 
+    procedure Connect;
+    procedure Disconnect;
+    function Accept: TmnCustomSocket;
   protected
     procedure PostLogs;
     procedure PostChanged;
@@ -130,6 +131,7 @@ type
     property Options: TmnsoOptions read FOptions write SetOptions;
     //if listener connection down by network it will reconnect again
     property Attempts: Integer read FAttempts write FAttempts;
+    //it is ListenerTimeout not ReadTimeOut
     property Timeout: Integer read FTimeout write FTimeout default -1;
   end;
 
@@ -222,52 +224,6 @@ implementation
 
 uses
   mnOpenSSLUtils;
-
-{ TmnServerSocket }
-
-procedure TmnServerSocket.SetAddress(Value: string);
-begin
-  if FAddress = Value then Exit;
-  if Connected then
-    raise EmnException.Create('Can not change Port value when active');
-  FAddress := Value;
-end;
-
-procedure TmnServerSocket.SetPort(Value: string);
-begin
-  if FPort =Value then Exit;
-  if Connected then
-    raise EmnException.Create('Can not change Port value when active');
-  FPort := Value;
-end;
-
-procedure TmnServerSocket.FreeSocket;
-begin
-  inherited FreeSocket;
-  FreeAndNil(FListenerSocket);
-end;
-
-function TmnServerSocket.CreateSocket(out vErr: Integer): TmnCustomSocket;
-begin
-  WallSocket.Bind(Options, ReadTimeout, Port, Address, FListenerSocket, vErr);
-  if FListenerSocket <> nil then
-  begin
-    FListenerSocket.Listen;
-    Result := FListenerSocket.Accept;
-    if Result = nil then
-      FreeAndNil(FListenerSocket);
-  end
-  else
-    Result := nil;
-end;
-
-constructor TmnServerSocket.Create(const vAddress, vPort: string; vOptions: TmnsoOptions);
-begin
-  inherited Create;
-  FAddress := vAddress;
-  FPort := vPort;
-  Options := vOptions;
-end;
 
 { TmnEventServer }
 
@@ -491,6 +447,11 @@ begin
     TmnSocketStream(Result).Options := TmnSocketStream(Result).Options + [soSSL]; //TODO i think it should in listener options too
 end;
 
+function TmnListener.Accept: TmnCustomSocket;
+begin
+  Result := Socket.Accept(Options, Timeout);
+end;
+
 procedure TmnListener.PostLogs;
 var
   b: Boolean;
@@ -542,7 +503,7 @@ begin
     try
       if (Socket.Select(Timeout, slRead) = erSuccess) and not Terminated then
       begin
-        aSocket := Socket.Accept;
+        aSocket := Accept;
         if aSocket <> nil then
         begin
           aSocket.Context := Context;
@@ -575,6 +536,7 @@ begin
             try
               aConnection := CreateConnection(aSocket) as TmnServerConnection;
               aConnection.FRemoteIP := aSocket.GetRemoteAddress;
+              //aConnection.Stream.ReadTimeout ////hmmmm
               //aConnection.Prepare
               if FServer <> nil then
                 FServer.DoAccepted(Self, aConnection);
@@ -837,6 +799,52 @@ end;
 procedure TmnServer.Open;
 begin
   Start;
+end;
+
+{ TmnServerSocket }
+
+procedure TmnServerSocket.SetAddress(Value: string);
+begin
+  if FAddress = Value then Exit;
+  if Connected then
+    raise EmnException.Create('Can not change Port value when active');
+  FAddress := Value;
+end;
+
+procedure TmnServerSocket.SetPort(Value: string);
+begin
+  if FPort =Value then Exit;
+  if Connected then
+    raise EmnException.Create('Can not change Port value when active');
+  FPort := Value;
+end;
+
+procedure TmnServerSocket.FreeSocket;
+begin
+  inherited FreeSocket;
+  FreeAndNil(FListenerSocket);
+end;
+
+function TmnServerSocket.CreateSocket(out vErr: Integer): TmnCustomSocket;
+begin
+  WallSocket.Bind(Options, ReadTimeout, Port, Address, FListenerSocket, vErr);
+  if FListenerSocket <> nil then
+  begin
+    FListenerSocket.Listen;
+    Result := FListenerSocket.Accept(Options, ReadTimeout);
+    if Result = nil then
+      FreeAndNil(FListenerSocket);
+  end
+  else
+    Result := nil;
+end;
+
+constructor TmnServerSocket.Create(const vAddress, vPort: string; vOptions: TmnsoOptions);
+begin
+  inherited Create;
+  FAddress := vAddress;
+  FPort := vPort;
+  Options := vOptions;
 end;
 
 end.
