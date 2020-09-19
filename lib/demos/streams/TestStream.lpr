@@ -7,7 +7,8 @@ uses
   cthreads,
   {$ENDIF}
   Classes, SysUtils, CustApp, zdeflate, zlib, zstream, mnUtils, mnStreams,
-  mnLogs, mnStreamUtils, mnSockets, mnClients, mnServers, mnWinSockets, IniFiles;
+  mnLogs, mnStreamUtils, mnSockets, mnClients, mnServers, mnWinSockets,
+  IniFiles;
 
 type
 
@@ -51,6 +52,7 @@ var
   SocketOptionsStr: string;
   NoDelay: Boolean = False;
   KeepAlive: Boolean = False;
+  UseSSL: Boolean = False;
   QuickAck: Boolean = False;
   SocketOptions: TmnsoOptions = [soWaitBeforeRead];
   ini: TIniFile;
@@ -77,6 +79,8 @@ begin
       Stream.Options := Stream.Options + [soKeepAlive];
     if QuickAck then
       Stream.Options := Stream.Options + [soQuickAck];
+    if UseSSL then
+      Stream.Options := Stream.Options + [soSSL];
 
     WriteLn('Before connect');
     Stream.Connect;
@@ -130,6 +134,8 @@ begin
       Stream.Options := Stream.Options + [soKeepAlive];
     if QuickAck then
       Stream.Options := Stream.Options + [soQuickAck];
+    if UseSSL then
+      Stream.Options := Stream.Options + [soSSL];
     try
       t := GetTickCount64;
       WriteLn('Before connect');
@@ -285,10 +291,11 @@ begin
   end;
 
   SocketOptionsStr := ini.ReadString('Options', 'SocketOptions', SocketOptionsStr);
-  S := LowerCase(GetAnswer('n=NoDelay, k=KeepAlive, q=QuickAck or c to clear', SocketOptionsStr, 'c'));
+  S := LowerCase(GetAnswer('n=NoDelay, k=KeepAlive, q=QuickAck s=SSL or c to clear', SocketOptionsStr, 'c'));
   NoDelay := Pos('n', S) > 0;
   KeepAlive := Pos('k', S) > 0;
   QuickAck := Pos('q', S) > 0;
+  UseSSL := Pos('s', S) > 0;
   if s <> 'c' then
     ini.WriteString('Options', 'SocketOptions', S);
   InternalExampleSocket(WithServer, WithClient);

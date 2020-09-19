@@ -84,7 +84,8 @@ function InitSocketOptions(Handle: Integer; Options: TmnsoOptions; ReadTimeout: 
 var
   t: Longint;
 begin
-  if soNoDelay in Options then
+  if (soNoDelay in Options) and not (soNagle in Options) then
+  //if not (soNagle in Options) then //TODO
     Result := setsockopt(Handle, IPPROTO_TCP, TCP_NODELAY, PAnsiChar(@SO_TRUE), SizeOf(SO_TRUE));
   if soKeepAlive in Options then
     Result := setsockopt(Handle, SOL_SOCKET, SO_KEEPALIVE, PAnsiChar(@SO_TRUE), SizeOf(SO_TRUE));
@@ -308,6 +309,7 @@ begin
       Result := erInvalid
     else
     begin
+      //TODO getsockopt(FHandle, SO_ERROR, @errno, SizeOf(errno)); //better with SSL, not tested yet
       errno := WSAGetLastError(); //not work with OpenSSL because it reset error to 0, now readtimeout in socket options not usefull
       if errno = WSAETIMEDOUT then
         Result := erTimeout //the caller will close it depend on options

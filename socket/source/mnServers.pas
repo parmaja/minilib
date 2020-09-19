@@ -191,6 +191,40 @@ type
 
   end;
 
+//TODO move to another unit SimpleClientServer
+{--------------------------------------------------------------------------------------------------
+        Simple Server
+}
+  TmnServerExecuteProc = procedure(Stream: TmnConnectionStream);
+
+  { TmnSimpleServerConnection }
+
+  TmnSimpleServerConnection = class(TmnServerConnection)
+  protected
+    procedure Process; override;
+  end;
+
+  { TmnSimpleListener }
+
+  TmnSimpleListener = class(TmnListener)
+  protected
+    ExecuteProc: TmnServerExecuteProc; //Referenced to Server proc
+    function DoCreateConnection(vStream: TmnConnectionStream): TmnConnection; override;
+  end;
+
+  { TmnSimpleServer }
+
+  TmnSimpleServer = class(TmnServer)
+  protected
+    ExecuteProc: TmnServerExecuteProc;
+    function DoCreateListener: TmnListener; override;
+  public
+    constructor Create(AutoStart: Boolean; AAddress: string; APort: String; AReadTimeOut: Integer = -1);
+    destructor Destroy; override;
+  end;
+
+//--------------------------------------------------------------------------------------------------
+
   { TmnEventServer }
 
   TmnEventServer = class(TmnServer)
@@ -224,6 +258,46 @@ implementation
 
 uses
   mnOpenSSLUtils;
+
+{ TmnSimpleServerConnection }
+
+procedure TmnSimpleServerConnection.Process;
+begin
+  inherited Process;
+  (Listener as TmnSimpleListener).ExecuteProc(Stream);
+end;
+
+{ TmnSimpleListener }
+
+function TmnSimpleListener.DoCreateConnection(vStream: TmnConnectionStream): TmnConnection;
+begin
+  Result := TmnSimpleServerConnection.Create(Self, vStream);
+end;
+
+{ TmnSimpleServer }
+
+function TmnSimpleServer.DoCreateListener: TmnListener;
+begin
+  Result := TmnSimpleListener.Create;
+  (Result as TmnSimpleListener).ExecuteProc := ExecuteProc;
+end;
+
+constructor TmnSimpleServer.Create(AutoStart: Boolean; AAddress: string; APort: String; AReadTimeOut: Integer);
+begin
+  inherited Create;
+  Address := AAddress;
+  Port := APort;
+  if AutoStart then
+    Start;
+
+  //SimpleServers.Add(Self); //TODO
+end;
+
+destructor TmnSimpleServer.Destroy;
+begin
+  //SimpleServers.Remove(Self); //TODO
+  inherited Destroy;
+end;
 
 { TmnEventServer }
 

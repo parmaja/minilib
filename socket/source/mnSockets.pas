@@ -43,7 +43,8 @@ type
   TmnsoOption = (
     soReuseAddr,
     soKeepAlive,
-    soNoDelay, //Nagle's algorithm use it for faster communication, do not wait until ACK for previously sent data and accumulate data in send buffer...
+    soNagle, //TODO
+    soNoDelay, //deprecated, Nagle's algorithm use it for faster communication, do not wait until ACK for previously sent data and accumulate data in send buffer...
     soQuickAck, //SIO_TCP_SET_ACK_FREQUENCY fo windows, TCP_QUICKACK for Linux
     //soCORK, //not exist in windows //Don't send any data (partial frames) smaller than the MSS until the application says so or until 200ms later; is opposite of soNoDelay. The former forces packet-accumulation delay
     //soBroadcast, soDebug, soDontLinger, soDontRoute, soOOBInLine, soAcceptConn
