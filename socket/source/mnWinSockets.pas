@@ -35,6 +35,7 @@ type
   TmnSocket = class(TmnCustomSocket)
   private
   protected
+    function GetSocketError: Integer; override;
     function GetActive: Boolean; override;
 
     function DoReceive(var Buffer; var Count: Longint): TmnError; override;
@@ -109,6 +110,18 @@ end;
 function TmnSocket.DoSelect(Timeout: Integer; Check: TSelectCheck): TmnError;
 begin
   Result := (WallSocket as TmnWallSocket).Select(FHandle, Timeout, Check);
+end;
+
+function TmnSocket.GetSocketError: Integer;
+var
+  errno: Longint;
+  l: Integer;
+begin
+  l := SizeOf(errno);
+  if getsockopt(FHandle, SOL_SOCKET, SO_ERROR, @errno, l) <> 0 then
+    Result := errno
+  else
+    Result := 0;
 end;
 
 function TmnSocket.GetActive: Boolean;
@@ -293,7 +306,7 @@ end;
 function TmnSocket.DoReceive(var Buffer; var Count: Longint): TmnError;
 var
   ret: Integer;
-  errno: longint;
+  l, errno: longint;
 begin
   ret := WinSock2.recv(FHandle, Buffer, Count, 0);
   if ret = 0 then
@@ -309,8 +322,12 @@ begin
       Result := erInvalid
     else
     begin
-      //TODO getsockopt(FHandle, SO_ERROR, @errno, SizeOf(errno)); //better with SSL, not tested yet
-      errno := WSAGetLastError(); //not work with OpenSSL because it reset error to 0, now readtimeout in socket options not usefull
+      {TODO errno := 0;
+      l := SizeOf(errno);
+      if getsockopt(FHandle, SOL_SOCKET, SO_ERROR, @errno, l) = 0 then //better with SSL, not tested yet
+        errno := 0
+      else}
+        errno := WSAGetLastError(); //not work with OpenSSL because it reset error to 0, now readtimeout in socket options not usefull
       if errno = WSAETIMEDOUT then
         Result := erTimeout //the caller will close it depend on options
       else

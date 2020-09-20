@@ -29,7 +29,7 @@ type
 function MakeCert(var x509p: PX509; var pkeyp: PEVP_PKEY; CN, O, C, OU: utf8string; Bits: Integer; Serial: Integer; Days: Integer): Boolean; overload;
 function MakeCert(CertificateFile, PrivateKeyFile: utf8string; CN, O, C, OU: utf8string; Bits: Integer; Serial: Integer; Days: Integer): Boolean; overload;
 
-procedure InitOpenSSL(All: Boolean = True);
+procedure InitOpenSSLLibrary(All: Boolean = True);
 procedure CleanupOpenSSL;
 
 procedure RaiseLastSSLError;
@@ -47,7 +47,7 @@ begin
   RaiseSSLError(ERR_error_string(ERR_get_error(), nil));
 end;
 
-procedure InitOpenSSL(All: Boolean);
+procedure InitOpenSSLLibrary(All: Boolean);
 begin
   if OpenSSLLib.Load then
   begin
@@ -117,7 +117,7 @@ begin
   sign := nil;
   Result := False;
   try
-    InitOpenSSL;
+    InitOpenSSLLibrary;
   	if (pkeyp = nil) then
     begin
       pk := EVP_PKEY_new();

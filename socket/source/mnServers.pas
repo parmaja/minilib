@@ -32,6 +32,7 @@ type
 
   TmnServerSocket = class(TmnSocketStream)
   private
+    FContext: TContext;
     FAddress: string;
     FPort: string;
     FListenerSocket: TmnCustomSocket;
@@ -41,11 +42,17 @@ type
     procedure FreeSocket; override;
     function CreateSocket(out vErr: Integer): TmnCustomSocket; override;
   public
+    PrivateKeyFile: string;
+    CertificateFile: string;
     constructor Create(const vAddress, vPort: string; vOptions: TmnsoOptions = [soNoDelay]);
+    destructor Destroy; override;
     property Port: string read FPort write SetPort;
     property Address: string read FAddress write SetAddress;
   end;
 
+{
+   Server and Listener classes
+}
 { Server }
 
   TmnServer = class;
@@ -255,9 +262,6 @@ type
   end;
 
 implementation
-
-uses
-  mnOpenSSLUtils;
 
 { TmnSimpleServerConnection }
 
@@ -895,19 +899,36 @@ end;
 
 procedure TmnServerSocket.FreeSocket;
 begin
-  inherited FreeSocket;
+  inherited;
   FreeAndNil(FListenerSocket);
+  FreeAndNil(FContext);
 end;
 
 function TmnServerSocket.CreateSocket(out vErr: Integer): TmnCustomSocket;
 begin
+  if soSSL in Options then
+  begin
+    FContext := TContext.Create(TTLS_SSLServerMethod);
+    FContext.LoadCertFile(CertificateFile);
+    FContext.LoadPrivateKeyFile(PrivateKeyFile);
+    FContext.CheckPrivateKey; //do not use this
+    //Context.SetVerifyNone;
+  end;
+
   WallSocket.Bind(Options, ReadTimeout, Port, Address, FListenerSocket, vErr);
   if FListenerSocket <> nil then
   begin
+//    FListenerSocket.Context := FContext;
+    FListenerSocket.Prepare;
     FListenerSocket.Listen;
     Result := FListenerSocket.Accept(Options, ReadTimeout);
     if Result = nil then
-      FreeAndNil(FListenerSocket);
+      FreeAndNil(FListenerSocket)
+    else
+    begin
+      Result.Context := FContext;
+      //Result.Prepare; connect will do that
+    end;
   end
   else
     Result := nil;
@@ -919,6 +940,11 @@ begin
   FAddress := vAddress;
   FPort := vPort;
   Options := vOptions;
+end;
+
+destructor TmnServerSocket.Destroy;
+begin
+  inherited Destroy;
 end;
 
 end.

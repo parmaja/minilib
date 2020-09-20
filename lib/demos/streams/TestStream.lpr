@@ -7,23 +7,21 @@ uses
   cthreads,
   {$ENDIF}
   Classes, SysUtils, CustApp, zdeflate, zlib, zstream, mnUtils, mnStreams,
-  mnLogs, mnStreamUtils, mnSockets, mnClients, mnServers, mnWinSockets,
+  mnLogs, mnStreamUtils, mnSockets, mnClients, mnServers, mnWinSockets, mnOpenSSL, mnOpenSSLUtils,
   IniFiles;
 
 type
+  { TThreadReciever }
+
+  TThreadReciever = class(TThread) //Server
+  protected
+    procedure Execute; override;
+  public
+  end;
 
   { ThreadSender }
 
   TThreadSender = class(TThread) //Client
-  protected
-    procedure Execute; override;
-  public
-
-  end;
-
-  { TThreadReciever }
-
-  TThreadReciever = class(TThread) //Server
   protected
     procedure Execute; override;
   public
@@ -68,10 +66,14 @@ procedure TThreadReciever.Execute;
 var
   Stream: TmnServerSocket;
   s: string;
+  Count: Integer;
 begin
   try
+    Count := 0;
     Stream := TmnServerSocket.Create('', sPort); //if u pass address, server will listen only on this network
     Stream.ReadTimeout := WaitForEver;
+    Stream.CertificateFile := Application.Location + 'certificate.pem';
+    Stream.PrivateKeyFile := Application.Location + 'privatekey.pem';
     Stream.Options := SocketOptions;
     if NoDelay then
       Stream.Options := Stream.Options + [soNoDelay];
@@ -82,9 +84,7 @@ begin
     if UseSSL then
       Stream.Options := Stream.Options + [soSSL];
 
-    WriteLn('Before connect');
     Stream.Connect;
-    WriteLn('After connect');
     try
       while true do
       begin
@@ -95,14 +95,15 @@ begin
         if sMsg <> s then
           raise Exception.Create('Error msg: ' + s);
         Stream.WriteLine(sMsg);
+        Inc(Count);
         if not Stream.Connected then
           break;
       end;
       Stream.Disconnect;
-      WriteLn('After disonnect');
     finally
       Stream.Free;
     end;
+    WriteLn('Server Count: ' + IntToStr(Count));
     WriteLn('Server end execute');
   except
     on E: Exception do
@@ -138,9 +139,7 @@ begin
       Stream.Options := Stream.Options + [soSSL];
     try
       t := GetTickCount64;
-      WriteLn('Before connect');
       Stream.Connect;
-      WriteLn('After connect');
       WriteLn(TicksToString(GetTickCount64 - t));
       if Stream.Connected then
       begin
@@ -156,7 +155,6 @@ begin
       end;
       WriteLn(TicksToString(GetTickCount64 - t));
       Stream.Disconnect;
-      WriteLn('After disconnect');
     finally
       Stream.Free;
     end;
@@ -472,6 +470,10 @@ var
     Commands[Length(Commands) - 1].proc := proc;
   end;
 begin
+  InitOpenSSL;
+  if not FileExists(Application.Location + 'certificate.pem') then
+    MakeCert('certificate.pem', 'privatekey.pem', 'PARMAJA', 'PARMAJA TEAM', 'SY', '', 2048, 0, 365);
+
   ini := TIniFile.Create(Application.Location + 'Options.ini');
   try
     try

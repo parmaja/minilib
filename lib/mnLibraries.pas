@@ -119,7 +119,7 @@ begin
   if Result then
   begin
     Usage := InterlockedIncrement(RefCount);
-    if Usage  = 1 then
+    if Usage = 1 then
     begin
       FHandle := LoadLibrary(LibraryName);
       if (FHandle = 0) then

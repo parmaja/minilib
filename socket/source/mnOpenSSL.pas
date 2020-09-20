@@ -81,6 +81,7 @@ type
     Handle: PSSL;
     CTX: TContext;
     Connected: Boolean;
+    FSocket: Integer;
   //public
     constructor Init(ACTX: TContext); overload;
     constructor Init(ASSL: PSSL); overload;
@@ -133,10 +134,17 @@ type
     procedure Connect;
   end;
 
+procedure InitOpenSSL(All: Boolean = True);
+
 implementation
 
 uses
   mnOpenSSLUtils;
+
+procedure InitOpenSSL(All: Boolean);
+begin
+  InitOpenSSLLibrary(All);
+end;
 
 { TTLS_SSLServerMethod }
 
@@ -244,7 +252,8 @@ end;
 
 procedure TSSL.SetSocket(ASocket: Integer);
 begin
-  SSL_set_fd(Handle, ASocket);
+  FSocket := ASocket;
+  SSL_set_fd(Handle, FSocket);
 end;
 
 function TSSL.Connect: Boolean;
@@ -271,7 +280,7 @@ begin
   if ret <= 0  then
   begin
     err := SSL_get_error(Handle, ret);
-    Log.WriteLn('Accept: ' + ERR_error_string(err, nil));
+    Log.WriteLn('Handshake: ' + ERR_error_string(err, nil));
     Result := False;
   end
   else
@@ -292,6 +301,9 @@ begin
   begin
     err := SSL_get_error(Handle, ReadSize);
     Log.WriteLn('Read: ' + ERR_error_string(err, nil));
+    {
+      Here we have a problem some are not real error, Disconnected gracefully, or read time out
+    }
     ReadSize := 0;
     Result := False;
   end

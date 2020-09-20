@@ -81,6 +81,7 @@ type
     ContextOwned: Boolean; //if not referenced
     SSL: TSSL;
 
+    function GetSocketError: Integer; virtual;
     function GetActive: Boolean; virtual; abstract;
     procedure CheckActive; //this will force exception, cuz you should not use socket in api implmentation without active socket, i meant use it in api section only
     function DoSelect(Timeout: Integer; Check: TSelectCheck): TmnError; virtual; abstract;
@@ -267,6 +268,11 @@ end;
 function TmnCustomSocket.GetConnected: Boolean;
 begin
   Result := Active and ([sdReceive, sdSend] <> FShutdownState)
+end;
+
+function TmnCustomSocket.GetSocketError: Integer;
+begin
+  Result := 0;
 end;
 
 function TmnCustomSocket.Listen: TmnError;

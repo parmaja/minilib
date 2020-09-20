@@ -719,7 +719,7 @@ type
 implementation
 
 uses
-  mnOpenSSLUtils,
+  mnOpenSSL,
   SysUtils;
 
 const
