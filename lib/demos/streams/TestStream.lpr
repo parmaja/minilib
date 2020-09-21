@@ -21,6 +21,8 @@ type
 
   { ThreadSender }
 
+  { TThreadSender }
+
   TThreadSender = class(TThread) //Client
   protected
     procedure Execute; override;
@@ -31,8 +33,9 @@ type
 
   TTestStream = class(TCustomApplication)
   protected
-    procedure InternalExampleSocket(WithServer: Boolean = True; WithClient: Boolean = True); //Socket threads
+    procedure InternalExampleSocket(WithServer: Boolean = True; WithClient: Boolean = True; ATestTimeOut: Integer = -1); //Socket threads
     procedure ExampleSocket;
+    procedure ExampleSocketTestTimeout;
     procedure ExampleSmallBuffer; //read write line with small buffer
     procedure ExampleHexLine; //Hex lines
     procedure ExampleHexImage; //Hex image
@@ -52,7 +55,8 @@ var
   KeepAlive: Boolean = False;
   UseSSL: Boolean = False;
   QuickAck: Boolean = False;
-  SocketOptions: TmnsoOptions = [soWaitBeforeRead];
+  TestTimeOut: Integer = -1;
+  SocketOptions: TmnsoOptions = []; //soWaitBeforeRead
   ini: TIniFile;
 
 const
@@ -93,7 +97,12 @@ begin
         if not Stream.Connected then
           break;
         if sMsg <> s then
-          raise Exception.Create('Error msg: ' + s);
+        begin
+          Log.WriteLn('Error msg: ' + s);
+          Break;
+        end;
+        if TestTimeOut > 0 then
+          Sleep(5000);
         Stream.WriteLine(sMsg);
         Inc(Count);
         if not Stream.Connected then
@@ -127,7 +136,7 @@ const
 begin
   try
     Stream := TmnClientSocket.Create(Address, sPort);
-    Stream.ReadTimeout := WaitForEver;
+    Stream.ReadTimeout := TestTimeOut;
     Stream.Options := SocketOptions;
     if NoDelay then
       Stream.Options := Stream.Options + [soNoDelay];
@@ -148,10 +157,13 @@ begin
           Stream.WriteLine(sMsg);
           Stream.ReadLine(s);
           if sMsg <> s then
-            raise Exception.Create('Error msg: ' + s);
+          begin
+            Log.WriteLn('Error msg: ' + s);
+            Break;
+          end;
           if not Stream.Connected then
-          break;
-      end;
+            break;
+        end;
       end;
       WriteLn(TicksToString(GetTickCount64 - t));
       Stream.Disconnect;
@@ -197,11 +209,12 @@ begin
   end;
 end;
 
-procedure TTestStream.InternalExampleSocket(WithServer: Boolean; WithClient: Boolean);
+procedure TTestStream.InternalExampleSocket(WithServer: Boolean; WithClient: Boolean; ATestTimeOut: Integer);
 var
   Reciever: TThreadReciever;
   Sender: TThreadSender;
 begin
+  TestTimeOut := ATestTimeOut;
   if WithServer then
   begin
     WriteLn('Main: Server started');
@@ -297,6 +310,15 @@ begin
   if s <> 'c' then
     ini.WriteString('Options', 'SocketOptions', S);
   InternalExampleSocket(WithServer, WithClient);
+end;
+
+procedure TTestStream.ExampleSocketTestTimeout;
+begin
+  NoDelay := False;
+  KeepAlive := False;
+  QuickAck := False;
+  UseSSL := True;
+  InternalExampleSocket(true, true, 1000);
 end;
 
 procedure TTestStream.ExampleHexLine;
@@ -482,6 +504,7 @@ begin
       InstallConsoleLog;
       Address := ini.ReadString('options', 'Address', sHost);
       AddProc('ExampleSocket: Socket threads', @ExampleSocket);
+      AddProc('Example Socket Timout: Socket threads', @ExampleSocketTestTimeout);
       AddProc('ExampleSmallBuffer: read write line with small buffer', @ExampleSmallBuffer);
       AddProc('ExampleHexLine: Hex lines', @ExampleHexLine);
       AddProc('ExampleHexImage: Hex image', @ExampleHexImage);

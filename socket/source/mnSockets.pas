@@ -81,7 +81,6 @@ type
     ContextOwned: Boolean; //if not referenced
     SSL: TSSL;
 
-    function GetSocketError: Integer; virtual;
     function GetActive: Boolean; virtual; abstract;
     procedure CheckActive; //this will force exception, cuz you should not use socket in api implmentation without active socket, i meant use it in api section only
     function DoSelect(Timeout: Integer; Check: TSelectCheck): TmnError; virtual; abstract;
@@ -117,6 +116,7 @@ type
     function GetRemoteAddress: string; virtual; abstract;
     function GetLocalName: string; virtual; abstract;
     function GetRemoteName: string; virtual; abstract;
+    //property Handle: TSocketHandle read FHandle; //I prefer not public it, but i need it into OpenSSL
   end;
 
   { TmnCustomWallSocket }
@@ -126,6 +126,9 @@ type
   public
     constructor Create; virtual;
     destructor Destroy; override;
+
+    function GetSocketError(Handle: Integer): Integer; virtual;
+
     //Bind used by Listener of server
     procedure Bind(Options: TmnsoOptions; ListenTimeout: Integer; const Port: string; const Address: string; out vSocket: TmnCustomSocket; out vErr: Integer); virtual; abstract;
     procedure Accept(ListenerHandle: TSocketHandle; Options: TmnsoOptions; ReadTimeout: Integer; out vSocket: TmnCustomSocket; out vErr: Integer); virtual; abstract;
@@ -210,6 +213,11 @@ begin
   inherited;
 end;
 
+function TmnCustomWallSocket.GetSocketError(Handle: Integer): Integer;
+begin
+  Result := 0;
+end;
+
 { TmnCustomSocket }
 
 procedure TmnCustomSocket.CheckActive;
@@ -268,11 +276,6 @@ end;
 function TmnCustomSocket.GetConnected: Boolean;
 begin
   Result := Active and ([sdReceive, sdSend] <> FShutdownState)
-end;
-
-function TmnCustomSocket.GetSocketError: Integer;
-begin
-  Result := 0;
 end;
 
 function TmnCustomSocket.Listen: TmnError;

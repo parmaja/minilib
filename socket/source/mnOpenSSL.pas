@@ -139,7 +139,7 @@ procedure InitOpenSSL(All: Boolean = True);
 implementation
 
 uses
-  mnOpenSSLUtils;
+  mnOpenSSLUtils, mnSockets;
 
 procedure InitOpenSSL(All: Boolean);
 begin
@@ -304,6 +304,11 @@ begin
     {
       Here we have a problem some are not real error, Disconnected gracefully, or read time out
     }
+    if err = 5 then
+    begin
+      err := WallSocket.GetSocketError(FSocket);
+      Log.WriteLn('Read: Socket: ' + IntToStr(err));
+    end;
     ReadSize := 0;
     Result := False;
   end

@@ -35,7 +35,6 @@ type
   TmnSocket = class(TmnCustomSocket)
   private
   protected
-    function GetSocketError: Integer; override;
     function GetActive: Boolean; override;
 
     function DoReceive(var Buffer; var Count: Longint): TmnError; override;
@@ -66,6 +65,7 @@ type
   public
     constructor Create; override;
     destructor Destroy; override;
+    function GetSocketError(Handle: Integer): Integer; override;
     procedure Bind(Options: TmnsoOptions; ListenTimeout: Integer; const Port: string; const Address: string; out vSocket: TmnCustomSocket; out vErr: Integer); override;
     procedure Accept(ListenerHandle: TSocketHandle; Options: TmnsoOptions; ReadTimeout: Integer; out vSocket: TmnCustomSocket; out vErr: Integer); override;
     procedure Connect(Options: TmnsoOptions; ConnectTimeout, ReadTimeout: Integer; const Port: string; const Address: string; out vSocket: TmnCustomSocket; out vErr: Integer); override;
@@ -110,18 +110,6 @@ end;
 function TmnSocket.DoSelect(Timeout: Integer; Check: TSelectCheck): TmnError;
 begin
   Result := (WallSocket as TmnWallSocket).Select(FHandle, Timeout, Check);
-end;
-
-function TmnSocket.GetSocketError: Integer;
-var
-  errno: Longint;
-  l: Integer;
-begin
-  l := SizeOf(errno);
-  if getsockopt(FHandle, SOL_SOCKET, SO_ERROR, @errno, l) <> 0 then
-    Result := errno
-  else
-    Result := 0;
 end;
 
 function TmnSocket.GetActive: Boolean;
@@ -466,6 +454,18 @@ destructor TmnWallSocket.Destroy;
 begin
   inherited;
   Cleanup;
+end;
+
+function TmnWallSocket.GetSocketError(Handle: Integer): Integer;
+var
+  errno: Longint;
+  l: Integer;
+begin
+  l := SizeOf(errno);
+  if getsockopt(Handle, SOL_SOCKET, SO_ERROR, @errno, l) <> 0 then
+    Result := errno
+  else
+    Result := 0;
 end;
 
 procedure TmnWallSocket.FreeSocket(var vHandle: TSocketHandle; out vErr: Integer);
