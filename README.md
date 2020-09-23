@@ -25,4 +25,5 @@ Use "release" branch instead of "trunk"
 The "release" branch not modified directly by developers, it is only we merge to it from the truck.
 
 Zaher Dirkey <zaherdirkey at gmail dot com>
+
 Belal hamed <belalhamed at gmail dot com>

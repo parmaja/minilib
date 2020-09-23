@@ -307,7 +307,7 @@ begin
     if err = 5 then
     begin
       err := WallSocket.GetSocketError(FSocket);
-      Log.WriteLn('Read: Socket: ' + IntToStr(err));
+      Log.WriteLn('Read: Socket Error: ' + IntToStr(err));
     end;
     ReadSize := 0;
     Result := False;
