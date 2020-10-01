@@ -13,8 +13,8 @@ object ChatRoomFrame: TChatRoomFrame
   Font.Quality = fqDraft
   ParentFont = False
   TabOrder = 0
-  DesignLeft = 986
-  DesignTop = 378
+  DesignLeft = 266
+  DesignTop = 312
   object TopicEdit: TEdit
     Left = 3
     Height = 23
