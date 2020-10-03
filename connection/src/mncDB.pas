@@ -40,8 +40,8 @@ type
   public
     function ComposeConnectionString(EngineName, Resource, Host, User, Password, Role: string): string; overload;
     function ComposeConnectionString(Connection: TmncConnection): string; overload;
-    procedure DecomposeConnectionString(Composed:string; out EngineName, Resource, Host, User, Password, Role: string); overload;
-    procedure DecomposeConnectionString(Composed:string; Connection: TmncConnection); overload;
+    procedure DecomposeConnectionString(Composed: string; out EngineName, Resource, Host, User, Password, Role: string); overload;
+    procedure DecomposeConnectionString(Composed: string; Connection: TmncConnection); overload;
 
     function RegisterConnection(vName, vTitle: string; vConnectionClass: TmncConnectionClass): TmncEngine;
     function RegisterORM(vName: string; vORMClass: TmncORMClass): TmncEngine;

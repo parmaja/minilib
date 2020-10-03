@@ -194,7 +194,7 @@ end;
 
 procedure TMainFrm.ConnectBtnClick(Sender: TObject);
 begin
-  if IRC.Online then
+  if IRC.Active then
     IRC.Stop
   else
   begin
@@ -269,7 +269,7 @@ begin
     for Room in Rooms do
     begin
       IRC.Join(Room);
-      IRC.Who(Room);
+      //IRC.Who(Room); //TODO
     end;
   finally
     Rooms.Free;
@@ -670,8 +670,6 @@ begin
             end;
             mtNotice:
               MsgEdit.Lines.Add('[' + vUser + '] ' + vMSG);
-            mtCTCPNotice, mtCTCPMessage:
-              MsgEdit.Lines.Add(vMSG);
             mtMessage, mtSend:
             begin
               MsgEdit.Lines.Add(vUser + ': ' + vMSG);

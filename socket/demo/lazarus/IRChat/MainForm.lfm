@@ -2,10 +2,14 @@ object MainFrm: TMainFrm
   Left = 294
   Height = 459
   Top = 151
-  Width = 700
+  Width = 696
   Caption = 'IRC chat'
   ClientHeight = 459
-  ClientWidth = 700
+  ClientWidth = 696
+  Font.CharSet = ANSI_CHARSET
+  Font.Height = -13
+  Font.Pitch = fpVariable
+  Font.Quality = fqDraft
   KeyPreview = True
   OnCreate = FormCreate
   OnKeyDown = FormKeyDown
@@ -15,7 +19,7 @@ object MainFrm: TMainFrm
     Left = 0
     Height = 6
     Top = 282
-    Width = 700
+    Width = 696
     Align = alBottom
     ResizeAnchor = akBottom
   end
@@ -23,182 +27,187 @@ object MainFrm: TMainFrm
     Left = 0
     Height = 87
     Top = 0
-    Width = 700
+    Width = 696
     Align = alTop
     BevelOuter = bvNone
     ClientHeight = 87
-    ClientWidth = 700
+    ClientWidth = 696
     TabOrder = 0
     object ConnectBtn: TButton
-      Left = 609
+      Left = 605
       Height = 24
-      Top = 4
+      Top = 5
       Width = 85
       Anchors = [akTop, akRight]
       Caption = '&Connect'
       OnClick = ConnectBtnClick
-      TabOrder = 4
+      TabOrder = 11
     end
     object HostEdit: TEdit
       Left = 351
-      Height = 23
+      Height = 25
       Top = 33
-      Width = 147
+      Width = 236
       Anchors = [akTop, akLeft, akRight]
       OnKeyPress = HostEditKeyPress
-      TabOrder = 2
+      TabOrder = 5
       Text = '192.168.1.2'
     end
     object RoomsEdit: TEdit
-      Left = 262
-      Height = 23
+      Left = 226
+      Height = 25
       Hint = 'You can use , between rooms'
       Top = 60
-      Width = 344
+      Width = 377
       Anchors = [akTop, akLeft, akRight]
       OnKeyPress = HostEditKeyPress
-      TabOrder = 3
+      TabOrder = 6
       Text = '#parmaja'
     end
     object Label1: TLabel
-      Left = 172
-      Height = 15
+      Left = 179
+      Height = 17
       Top = 64
-      Width = 32
-      Caption = 'Room'
+      Width = 41
+      Caption = '&Rooms'
+      FocusControl = RoomsEdit
       ParentColor = False
     end
     object UserEdit: TEdit
       Left = 66
-      Height = 23
+      Height = 25
       Top = 33
       Width = 86
       OnKeyPress = HostEditKeyPress
-      TabOrder = 0
+      TabOrder = 3
       Text = 'zaher'
     end
     object Label3: TLabel
       Left = 166
-      Height = 15
+      Height = 17
       Top = 37
-      Width = 50
-      Caption = 'Password'
+      Width = 56
+      Caption = '&Password'
+      FocusControl = PasswordEdit
       ParentColor = False
     end
     object Label4: TLabel
       Left = 318
-      Height = 15
+      Height = 17
       Top = 37
-      Width = 25
-      Caption = 'Host'
+      Width = 27
+      Caption = '&Host'
+      FocusControl = HostEdit
       ParentColor = False
     end
     object JoinBtn: TButton
-      Left = 609
+      Left = 605
       Height = 24
-      Top = 30
+      Top = 59
       Width = 85
       Anchors = [akTop, akRight]
       Caption = '&Join'
       OnClick = JoinBtnClick
-      TabOrder = 5
+      TabOrder = 7
     end
     object PasswordEdit: TEdit
       Left = 226
-      Height = 23
+      Height = 25
       Top = 33
       Width = 85
       EchoMode = emPassword
       OnKeyPress = HostEditKeyPress
       PasswordChar = '*'
-      TabOrder = 1
+      TabOrder = 4
     end
     object NicknameEdit: TEdit
       Left = 66
-      Height = 23
+      Height = 25
       Top = 60
       Width = 86
       OnKeyPress = HostEditKeyPress
-      TabOrder = 6
+      TabOrder = 8
       Text = 'zaher'
     end
     object Label5: TLabel
       Left = 6
-      Height = 15
+      Height = 17
       Top = 37
-      Width = 53
-      Caption = 'Username'
+      Width = 59
+      Caption = '&Username'
+      FocusControl = UserEdit
       ParentColor = False
     end
     object Label2: TLabel
       Left = 5
-      Height = 15
+      Height = 17
       Top = 64
-      Width = 54
-      Caption = 'Nickname'
+      Width = 57
+      Caption = '&Nickname'
+      FocusControl = NicknameBtn
       ParentColor = False
     end
     object PortEdit: TEdit
-      Left = 501
-      Height = 23
+      Left = 590
+      Height = 25
       Top = 33
       Width = 52
       Anchors = [akTop, akRight]
       OnKeyPress = HostEditKeyPress
-      TabOrder = 7
+      TabOrder = 9
       Text = '6667'
     end
     object UseSSLChk: TCheckBox
-      Left = 562
-      Height = 19
+      Left = 650
+      Height = 21
       Top = 34
-      Width = 38
+      Width = 40
       Anchors = [akTop, akRight]
-      Caption = 'SSL'
-      TabOrder = 8
+      Caption = 'SS&L'
+      TabOrder = 10
     end
     object ProfileCbo: TComboBox
       Left = 66
-      Height = 23
-      Top = 7
+      Height = 25
+      Top = 6
       Width = 162
-      ItemHeight = 15
+      ItemHeight = 17
       OnSelect = ProfileCboSelect
       Style = csDropDownList
-      TabOrder = 9
+      TabOrder = 0
     end
     object Button1: TButton
-      Left = 235
+      Left = 231
       Height = 25
       Top = 5
       Width = 75
-      Caption = 'Save'
+      Caption = '&Save'
       OnClick = Button1Click
-      TabOrder = 10
+      TabOrder = 1
     end
     object Label6: TLabel
       Left = 25
-      Height = 15
+      Height = 17
       Top = 11
-      Width = 34
-      Caption = 'Profile'
+      Width = 37
+      Caption = '&Profile'
       ParentColor = False
     end
     object Button2: TButton
-      Left = 311
+      Left = 307
       Height = 25
       Top = 5
       Width = 75
-      Caption = 'Delete'
+      Caption = '&Delete'
       OnClick = Button2Click
-      TabOrder = 11
+      TabOrder = 2
     end
   end
   object LogEdit: TMemo
     Left = 2
     Height = 167
     Top = 290
-    Width = 696
+    Width = 692
     Align = alBottom
     BorderSpacing.Around = 2
     Color = clBlack
@@ -219,17 +228,17 @@ object MainFrm: TMainFrm
     Left = 0
     Height = 195
     Top = 87
-    Width = 700
+    Width = 696
     Align = alClient
     BevelOuter = bvNone
     ClientHeight = 195
-    ClientWidth = 700
+    ClientWidth = 696
     TabOrder = 3
     object MsgPageControl: TPageControl
       Left = 2
       Height = 165
       Top = 2
-      Width = 696
+      Width = 692
       Align = alClient
       BorderSpacing.Around = 2
       TabOrder = 0
@@ -239,18 +248,18 @@ object MainFrm: TMainFrm
       Left = 2
       Height = 24
       Top = 169
-      Width = 696
+      Width = 692
       Align = alBottom
       BorderSpacing.Around = 2
       BevelOuter = bvNone
       ClientHeight = 24
-      ClientWidth = 696
+      ClientWidth = 692
       TabOrder = 1
       object SendBtn: TButton
-        Left = 644
+        Left = 637
         Height = 24
         Top = 0
-        Width = 52
+        Width = 55
         Align = alRight
         Anchors = [akRight, akBottom]
         AutoSize = True
@@ -262,7 +271,7 @@ object MainFrm: TMainFrm
         Left = 0
         Height = 24
         Top = 0
-        Width = 58
+        Width = 61
         Align = alLeft
         AutoSize = True
         Caption = 'Name'
@@ -270,10 +279,10 @@ object MainFrm: TMainFrm
         TabOrder = 1
       end
       object SendEdit: TEdit
-        Left = 58
+        Left = 61
         Height = 24
         Top = 0
-        Width = 586
+        Width = 576
         Align = alClient
         Anchors = [akLeft, akRight, akBottom]
         AutoSize = False

@@ -184,8 +184,6 @@ type
     procedure Log(const S: string);
     procedure Start;
     procedure Stop;
-    procedure Open;
-    procedure Close;
     property Listener: TmnListener read FListener;
     property Count: Integer read GetCount;
 
@@ -867,16 +865,6 @@ end;
 
 procedure TmnServer.DoStop;
 begin
-end;
-
-procedure TmnServer.Close;
-begin
-  Stop;
-end;
-
-procedure TmnServer.Open;
-begin
-  Start;
 end;
 
 { TmnServerSocket }
