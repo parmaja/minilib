@@ -675,6 +675,11 @@ begin
               MsgEdit.Lines.Add(vUser + ': ' + vMSG);
               MsgEdit.ScrollBy(0, 1);
             end;
+            mtAction:
+            begin
+              MsgEdit.Lines.Add('* ' + vUser + ': -' + vMSG + '-');
+              MsgEdit.ScrollBy(0, 1);
+            end;
           else
               MsgEdit.Lines.Add(vUser + ': ' + vMSG);
           end;

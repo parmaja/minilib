@@ -121,7 +121,8 @@ type
   TIRC_CTCP = record
     IsCTCP: Boolean;
     Command: string;
-    Text: string;
+    Message: string; //full text after command name
+    Text: string; //that come after :
     Params: TArray<String>;
     procedure AddParam(Value: string);
     function PullParam(out Param: string): Boolean; overload;
@@ -537,24 +538,24 @@ type
     procedure Receive(vCommand: TIRCCommand); override;
   end;
 
-  { TCTCPVersion_IRCReceiver }
+  { TVersion_IRCReceiver }
 
-  TCTCPVersion_IRCReceiver = class(TIRCMsgReceiver)
+  TVersion_IRCReceiver = class(TIRCMsgReceiver)
   protected
     procedure DoExecute(vCommand: TIRCCommand; var NextCommand: TIRCQueueCommand); override;
   end;
 
+  { TAction_IRCReceiver }
+
+  TAction_IRCReceiver = class(TIRCMsgReceiver)
+  protected
+    procedure DoExecute(vCommand: TIRCCommand; var NextCommand: TIRCQueueCommand); override;
+    procedure Receive(vCommand: TIRCCommand); override;
+  end;
 
   { TNOTICE_IRCReceiver }
 
   TNOTICE_IRCReceiver = class(TIRCMsgReceiver)
-  protected
-    procedure Receive(vCommand: TIRCCommand); override;
-  end;
-
-  { TACTION_IRCReceiver }
-
-  TACTION_IRCReceiver = class(TIRCMsgReceiver)
   protected
     procedure Receive(vCommand: TIRCCommand); override;
   end;
@@ -682,8 +683,6 @@ type
     procedure Send(vChannel: string; vMsg: string); override;
   public
   end;
-
-  { TJoin_UserCommand }
 
   { TID_UserCommand }
 
@@ -989,15 +988,21 @@ end;
 
 { TACTION_IRCReceiver }
 
-procedure TACTION_IRCReceiver.Receive(vCommand: TIRCCommand);
+procedure TAction_IRCReceiver.DoExecute(vCommand: TIRCCommand; var NextCommand: TIRCQueueCommand);
 begin
-  //:cs.server NOTICE zaher :You're now logged in as zaher
-  Client.Receive(mtNotice, vCommand.Received);
+  inherited;
+  vCommand.Msg := vCommand.CTCP.Message;
 end;
 
-{ TCTCPVersion_IRCReceiver }
+procedure TAction_IRCReceiver.Receive(vCommand: TIRCCommand);
+begin
+  inherited;
+  Client.Receive(mtAction, vCommand.Received);
+end;
 
-procedure TCTCPVersion_IRCReceiver.DoExecute(vCommand: TIRCCommand; var NextCommand: TIRCQueueCommand);
+{ TVersion_IRCReceiver }
+
+procedure TVersion_IRCReceiver.DoExecute(vCommand: TIRCCommand; var NextCommand: TIRCQueueCommand);
 begin
   inherited;
   Client.Connection.SendRaw(Format('NOTICE %s :' + cCTCPChar + 'VERSION :miniIRC version 0.8' + cCTCPChar, [vCommand.User]));
@@ -1161,14 +1166,14 @@ end;
 
 procedure TMe_UserCommand.Send(vChannel: string; vMsg: string);
 begin
-  Client.SendRaw('PRIVMSG ' + vChannel + ' :' + #01 + 'ACTION ' + vMsg + #01, prgReady);
+  Client.SendRaw('PRIVMSG ' + vChannel + ' :' + cCTCPChar + 'ACTION ' + vMsg + cCTCPChar, prgReady);
 end;
 
 { TCNotice_UserCommand }
 
 procedure TCNotice_UserCommand.Send(vChannel: string; vMsg: string);
 begin
-  Client.SendRaw('NOTICE ' + vChannel + ' :' + #01 + vMsg + #01, prgReady);
+  Client.SendRaw('NOTICE ' + vChannel + ' :' + cCTCPChar + vMsg + cCTCPChar, prgReady);
 end;
 
 { TIRCMsgReceiver }
@@ -1854,7 +1859,10 @@ begin
       begin
         s := MidStr(vData, Start, Count);
         if Index = 0 then
-          CTCP.Command := s
+        begin
+          CTCP.Command := s;
+          CTCP.Message := MidStr(vData, p, MaxInt);
+        end
         else
           CTCP.AddParam(s);
         Index := Index + 1;
@@ -2665,7 +2673,8 @@ end;
 procedure TmnIRCClient.Init;
 begin
   Receivers.Add('PRIVMSG', [], TPRIVMSG_IRCReceiver);
-  Receivers.Add('PRIVMSG', 'VERSION', True, [], TCTCPVersion_IRCReceiver);
+  Receivers.Add('PRIVMSG', 'VERSION', True, [], TVersion_IRCReceiver);
+  Receivers.Add('PRIVMSG', 'ACTION', True, [], TAction_IRCReceiver);
 
   Receivers.Add('NOTICE', [], TNOTICE_IRCReceiver);
 
