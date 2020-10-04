@@ -43,6 +43,7 @@ uses
   mnClasses, mnSockets, mnClients, mnStreams, mnConnections, mnUtils;
 
 const
+  cCTCPChar: UTF8Char = #1;
   cTokenSeparator = ' ';    { Separates tokens, except for the following case. }
 
   //* https://www.alien.net.au/irc/irc2numerics.html
@@ -114,6 +115,19 @@ type
     Msg: string;
   end;
 
+  //CTCP submessage
+  { TIRC_CTCP }
+
+  TIRC_CTCP = record
+    IsCTCP: Boolean;
+    Command: string;
+    Text: string;
+    Params: TArray<String>;
+    procedure AddParam(Value: string);
+    function PullParam(out Param: string): Boolean; overload;
+    function PullParam: String; overload;
+  end;
+
   { TIRCCommand }
 
   TIRCCommand = class(TObject)
@@ -124,7 +138,6 @@ type
     FText: String; //is a last param but a text started with :
     FParams: TStringList;
 
-    FCTCP: Boolean;
 
     FTime: string;
     FSender: string;
@@ -136,13 +149,14 @@ type
 
   protected
     Queue: Boolean; //Run it in the main thread, it is gui command
+    CTCP: TIRC_CTCP;
     property Raw: String read FRaw;
     property Source: string read FSource;
   public
     constructor Create;
     destructor Destroy; override;
 
-    procedure AddParam(AIndex: Integer; AValue: string);
+    procedure AddParam(AValue: string);
 
     property User: string read FReceived.User write FReceived.User;
     property Target: string read FReceived.Target write FReceived.Target; //To Whome Channel or User sent
@@ -160,7 +174,6 @@ type
     function PullParam: String; overload;
     property Params: TStringList read FParams;
     property Received: TIRCReceived read FReceived;
-    property CTCP: Boolean read FCTCP;
   end;
 
   TIRCQueueCommand = class;
@@ -172,6 +185,7 @@ type
     FClient: TmnIRCClient;
   protected
     When: TIRCProgress;
+    CTCP: Boolean;
     property Client: TmnIRCClient read FClient;
 
     //procedure Prepare; virtual;
@@ -180,7 +194,7 @@ type
     function Execute(vCommand: TIRCCommand): TIRCQueueCommand;
 
     function DoAccept(aName: string): Boolean; virtual; //Extending accept, useing OR
-    function Accept(aName: string; aSubName: string = ''): Boolean;
+    function Accept(aName: string; aSubName: string = ''; aCTCP: Boolean = False): Boolean;
   public
     Codes: TArray<Integer>;
     SubName: string;
@@ -200,8 +214,8 @@ type
     constructor Create(AClient: TmnIRCClient);
     destructor Destroy; override;
     function Add(vName: String; vCodes: TArray<Integer>; AClass: TIRCReceiverClass): Integer; overload;
-    function Add(vName: String; vSubName: String; vCodes: TArray<Integer>; AClass: TIRCReceiverClass): Integer; overload;
-    function Find(AName, ASubName: string): TIRCReceiver;
+    function Add(vName: String; vSubName: String; vCTCP: Boolean; vCodes: TArray<Integer>; AClass: TIRCReceiverClass): Integer; overload;
+    function Find(aName, aSubName: string; aCTCP: Boolean): TIRCReceiver;
     property Client: TmnIRCClient read FClient;
   end;
 
@@ -948,6 +962,31 @@ begin
     Result := Copy(Address, 1, EndOfNick - 1);
 end;
 
+{ TIRC_CTCP }
+
+procedure TIRC_CTCP.AddParam(Value: string);
+begin
+  SetLength(Params, Length(Params) + 1);
+  Params[Length(Params) - 1] := Value;
+end;
+
+function TIRC_CTCP.PullParam(out Param: string): Boolean;
+begin
+  Result := Length(Params) > 0;
+  if Result then
+  begin
+    Param := Params[0];
+    Delete(Params, 0, 1);
+  end
+  else
+    Param := '';
+end;
+
+function TIRC_CTCP.PullParam: String;
+begin
+  PullParam(Result);
+end;
+
 { TACTION_IRCReceiver }
 
 procedure TACTION_IRCReceiver.Receive(vCommand: TIRCCommand);
@@ -961,7 +1000,7 @@ end;
 procedure TCTCPVersion_IRCReceiver.DoExecute(vCommand: TIRCCommand; var NextCommand: TIRCQueueCommand);
 begin
   inherited;
-  //Client.Connection.SendRaw(Format('PONG %s', [vCommand.Msg]));
+  Client.Connection.SendRaw(Format('NOTICE %s :' + cCTCPChar + 'VERSION :miniIRC version 0.8' + cCTCPChar, [vCommand.User]));
 end;
 
 { TWHOREPLY_IRCReceiver }
@@ -1586,12 +1625,12 @@ begin
   Result := False;
 end;
 
-function TIRCReceiver.Accept(aName: string; aSubName: string): Boolean;
+function TIRCReceiver.Accept(aName: string; aSubName: string; aCTCP: Boolean): Boolean;
 var
   aCode, i: Integer;
 begin
   Result := ((Name <> '') and SameText(aName, Name));
-  Result := Result and SameText(aSubName, SubName);
+  Result := Result and SameText(aSubName, SubName) and (CTCP = aCTCP);
   if not Result and (Length(Codes) > 0) then
   begin
     aCode := StrToIntDef(aName, 0);
@@ -1614,7 +1653,6 @@ begin
   FClient := AClient;
 end;
 
-{ TPRIVMSG_IRCReceiver }
 
 procedure TPRIVMSG_IRCReceiver.Receive(vCommand: TIRCCommand);
 begin
@@ -1797,13 +1835,45 @@ begin
   FreeAndNil(FStream);
 end;
 
+procedure ParseCTCP(var CTCP: TIRC_CTCP; vData: string);
+var
+  p: Integer;
+  Start, Count: Integer;
+  s: string;
+  Index: Integer;
+begin
+  p := 1;
+  Index := 0;
+  while p < Length(vData) do
+  begin
+    if vData[p] <> ':' then
+    begin
+      Start := p;
+      ScanString(vData, p, Count, cTokenSeparator, True);
+      if Count > 0 then
+      begin
+        s := MidStr(vData, Start, Count);
+        if Index = 0 then
+          CTCP.Command := s
+        else
+          CTCP.AddParam(s);
+        Index := Index + 1;
+      end;
+    end
+    else
+    begin
+      CTCP.Text := MidStr(vData, p + 1, MaxInt);
+      CTCP.AddParam(CTCP.Text);
+      Break;
+    end
+  end;
+end;
+
 procedure ParseBody(vCommand: TIRCCommand; vData: string); //move it to Command.Parse
 var
   p: Integer;
   Start, Count: Integer;
-  Index: Integer;
 begin
-  Index := 0;
   p := 1;
   while p < Length(vData) do
   begin
@@ -1813,8 +1883,7 @@ begin
       ScanString(vData, p, Count, cTokenSeparator, True);
       if Count > 0 then
       begin
-        vCommand.AddParam(Index, MidStr(vData, Start, Count));
-        Index := Index + 1;
+        vCommand.AddParam(MidStr(vData, Start, Count));
       end;
     end
     else
@@ -1822,16 +1891,15 @@ begin
       vCommand.FText := MidStr(vData, p + 1, MaxInt);
       if LeftStr(vCommand.FText, 1) = #01 then
       begin
-        vCommand.FCTCP := True;
+        vCommand.CTCP.IsCTCP := True;
         vCommand.FText := DequoteStr(vCommand.FText, #01);
+        ParseCTCP(vCommand.CTCP, vCommand.Text);
       end;
-      vCommand.AddParam(Index, vCommand.FText);
-      Index := Index + 1;
+      vCommand.AddParam(vCommand.FText);
       Break;
     end
   end;
 end;
-
 
 function TmnIRCConnection.ParseRaw(vData: string): TIRCQueueCommand;
 type
@@ -1858,7 +1926,7 @@ begin
         if ScanString(vData, p, Count, cTokenSeparator, True) then
           Result.FTime := MidStr(vData, Start, Count);
       end
-      else if (p = 1) and (vData[p] = #1) then //idk what is this
+      else if (p = 1) and (vData[p] = cCTCPChar) then //idk what is this
       begin
         Inc(p); //skip it, what the hell is that!!! (yes talking to my self)
       end
@@ -1894,7 +1962,7 @@ begin
     end;
 
     ParseBody(Result, ABody);
-    Result.Receiver := Client.Receivers.Find(Result.Name, '');
+    Result.Receiver := Client.Receivers.Find(Result.Name, Result.CTCP.Command, Result.CTCP.IsCTCP);
   end
   else
     Result := nil;
@@ -1954,7 +2022,7 @@ begin
   FreeAndNil(FParams);
 end;
 
-procedure TIRCCommand.AddParam(AIndex: Integer; AValue: string);
+procedure TIRCCommand.AddParam(AValue: string);
 begin
   Params.Add(AValue);
 end;
@@ -1980,10 +2048,10 @@ end;
 
 function TCustomIRCReceivers.Add(vName: String; vCodes: TArray<Integer>; AClass: TIRCReceiverClass): Integer;
 begin
-  Result := Add(vName, '', vCodes, AClass);
+  Result := Add(vName, '', False, vCodes, AClass);
 end;
 
-function TCustomIRCReceivers.Add(vName: String; vSubName: String; vCodes: TArray<Integer>; AClass: TIRCReceiverClass): Integer;
+function TCustomIRCReceivers.Add(vName: String; vSubName: String; vCTCP: Boolean; vCodes: TArray<Integer>; AClass: TIRCReceiverClass): Integer;
 var
   AReceiver: TIRCReceiver;
 begin
@@ -1995,18 +2063,19 @@ begin
   AReceiver := AClass.Create(Client);
   AReceiver.Name := vName;
   AReceiver.SubName := vSubName;
+  AReceiver.CTCP := vCTCP;
   AReceiver.Codes := vCodes;
   Result := inherited Add(AReceiver);
 end;
 
-function TCustomIRCReceivers.Find(AName, ASubName: string): TIRCReceiver;
+function TCustomIRCReceivers.Find(aName, aSubName: string; aCTCP: Boolean): TIRCReceiver;
 var
   aReceiver: TIRCReceiver;
 begin
   Result := nil;
   for aReceiver in Client.Receivers do
   begin
-    if aReceiver.Accept(AName, ASubName) then
+    if aReceiver.Accept(AName, ASubName, aCTCP) then
     begin
       Result := aReceiver;
       break;
@@ -2596,7 +2665,7 @@ end;
 procedure TmnIRCClient.Init;
 begin
   Receivers.Add('PRIVMSG', [], TPRIVMSG_IRCReceiver);
-  Receivers.Add('PRIVMSG', 'VERSION', [], TCTCPVersion_IRCReceiver);
+  Receivers.Add('PRIVMSG', 'VERSION', True, [], TCTCPVersion_IRCReceiver);
 
   Receivers.Add('NOTICE', [], TNOTICE_IRCReceiver);
 
