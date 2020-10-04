@@ -618,7 +618,7 @@ begin
             mtJoin:
             begin
               MsgEdit.Lines.Add(vUser + ' is joined');
-              aItem := UserListBox.Items.FindCaption(0, vUser, False, False, False, False);
+              aItem := UserListBox.Items.FindCaption(0, vUser, False, True, False, False);
               if aItem = nil then
               begin
                 aItem := UserListBox.Items.Add;
@@ -641,14 +641,13 @@ begin
             begin
               //if me close the tab
               MsgEdit.Lines.Add(vUser + ' is left: ' + vMsg);
-              aItem := UserListBox.Items.FindCaption(0, vUser, False, False, False, False);
+              aItem := UserListBox.Items.FindCaption(0, vUser, False, True, False, False);
               if aItem <> nil then
                 UserListBox.items.Delete(aItem.Index);
             end;
             mtUserMode:
             begin
-              MsgEdit.Lines.Add(vUser);
-              aItem := UserListBox.Items.FindCaption(0, vUser, False, False, False, False);
+              aItem := UserListBox.Items.FindCaption(0, vUser, False, True, False, False);
               if aItem = nil then
               begin
                 aItem := UserListBox.Items.Add;
