@@ -16,16 +16,16 @@ type
 
   TMyIRCClient = class(TmnIRCClient)
   public
-    procedure GetCurrentChannel(out vChannel: string); override;
-    procedure DoLog(S: String); override;
+    procedure GetCurrentChannel(out vChannel: utf8string); override;
+    procedure DoLog(S: utf8string); override;
     procedure DoMyInfoChanged; override;
     procedure DoConnected; override;
     procedure DoDisconnected; override;
-    procedure DoUserChanged(vChannel: string; vUser, vNewNick: string); override;
+    procedure DoUserChanged(vChannel: utf8string; vUser, vNewNick: utf8string); override;
     procedure DoProgressChanged; override;
-    procedure DoUsersChanged(vChannelName: string; vChannel: TIRCChannel); override;
-    procedure DoWhoIs(vUser: string); override;
-    procedure DoReceive(vMsgType: TIRCMsgType; vChannel, vUser, vMsg: String); override;
+    procedure DoUsersChanged(vChannelName: utf8string; vChannel: TIRCChannel); override;
+    procedure DoWhoIs(vUser: utf8string); override;
+    procedure DoReceive(vMsgType: TIRCMsgType; vChannel, vUser, vMsg: utf8string); override;
   end;
 
   { TMainFrm }
@@ -108,12 +108,12 @@ implementation
 
 { TMyIRCClient }
 
-procedure TMyIRCClient.GetCurrentChannel(out vChannel: string);
+procedure TMyIRCClient.GetCurrentChannel(out vChannel: utf8string);
 begin
   vChannel := MainFrm.CurrentRoom;
 end;
 
-procedure TMyIRCClient.DoLog(S: String);
+procedure TMyIRCClient.DoLog(S: utf8string);
 begin
   inherited;
   MainFrm.LogMessage(S);
@@ -134,10 +134,10 @@ end;
 procedure TMyIRCClient.DoDisconnected;
 begin
   MainFrm.LogMessage('Disconnected');
-  inherited DoDisconnected;
+  inherited;
 end;
 
-procedure TMyIRCClient.DoUserChanged(vChannel: string; vUser, vNewNick: string);
+procedure TMyIRCClient.DoUserChanged(vChannel: utf8string; vUser, vNewNick: utf8string);
 begin
   inherited;
   //TODO
@@ -165,13 +165,13 @@ begin
   end;
 end;
 
-procedure TMyIRCClient.DoUsersChanged(vChannelName: string; vChannel: TIRCChannel);
+procedure TMyIRCClient.DoUsersChanged(vChannelName: utf8string; vChannel: TIRCChannel);
 begin
   inherited;
   MainFrm.ReceiveNames(vChannelName, vChannel);
 end;
 
-procedure TMyIRCClient.DoWhoIs(vUser: string);
+procedure TMyIRCClient.DoWhoIs(vUser: utf8string);
 var
   aUser: TIRCUser;
 begin
@@ -185,7 +185,7 @@ begin
   end;
 end;
 
-procedure TMyIRCClient.DoReceive(vMsgType: TIRCMsgType; vChannel, vUser, vMsg: String);
+procedure TMyIRCClient.DoReceive(vMsgType: TIRCMsgType; vChannel, vUser, vMsg: utf8string);
 begin
   MainFrm.DoReceive(vMsgType, vChannel, vUser, vMsg);
 end;

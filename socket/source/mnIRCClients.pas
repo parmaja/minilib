@@ -109,10 +109,10 @@ type
   );
 
   TIRCReceived = record
-    Channel: string;
-    Target: string;
-    User: string;
-    Msg: string;
+    Channel: utf8string;
+    Target: utf8string;
+    User: utf8string;
+    Msg: utf8string;
   end;
 
   //CTCP submessage
@@ -120,59 +120,59 @@ type
 
   TIRC_CTCP = record
     IsCTCP: Boolean;
-    Command: string;
-    Message: string; //full text after command name
-    Text: string; //that come after :
-    Params: TArray<String>;
-    procedure AddParam(Value: string);
-    function PullParam(out Param: string): Boolean; overload;
-    function PullParam: String; overload;
+    Command: utf8string;
+    Message: utf8string; //full text after command name
+    Text: utf8string; //that come after :
+    Params: TArray<utf8string>;
+    procedure AddParam(Value: utf8string);
+    function PullParam(out Param: utf8string): Boolean; overload;
+    function PullParam: utf8string; overload;
   end;
 
   { TIRCCommand }
 
   TIRCCommand = class(TObject)
   private
-    FName: string;
+    FName: utf8string;
 
     FReceived: TIRCReceived;
-    FText: String; //is a last param but a text started with :
+    FText: utf8string; //is a last param but a text started with :
     FParams: TStringList;
 
 
-    FTime: string;
-    FSender: string;
-    FAddress: string;
+    FTime: utf8string;
+    FSender: utf8string;
+    FAddress: utf8string;
 
-    FSource: string; //Full Sender address, split it to Sender and Address
-    FRaw: String;
+    FSource: utf8string; //Full Sender address, split it to Sender and Address
+    FRaw: utf8string;
     FCode: Integer; //Full message received
 
   protected
     Queue: Boolean; //Run it in the main thread, it is gui command
     CTCP: TIRC_CTCP;
-    property Raw: String read FRaw;
-    property Source: string read FSource;
+    property Raw: utf8string read FRaw;
+    property Source: utf8string read FSource;
   public
     constructor Create;
     destructor Destroy; override;
 
-    procedure AddParam(AValue: string);
+    procedure AddParam(AValue: utf8string);
 
-    property User: string read FReceived.User write FReceived.User;
-    property Target: string read FReceived.Target write FReceived.Target; //To Whome Channel or User sent
-    property Channel: string read FReceived.Channel write FReceived.Channel; //If target started with #
-    property Msg: string read FReceived.Msg write FReceived.Msg;
+    property User: utf8string read FReceived.User write FReceived.User;
+    property Target: utf8string read FReceived.Target write FReceived.Target; //To Whome Channel or User sent
+    property Channel: utf8string read FReceived.Channel write FReceived.Channel; //If target started with #
+    property Msg: utf8string read FReceived.Msg write FReceived.Msg;
 
-    property Text: string read FText; //Rest body of msg after : also added as last param
+    property Text: utf8string read FText; //Rest body of msg after : also added as last param
 
-    property Sender: string read FSender;
-    property Address: string read FAddress;
-    property Name: string read FName;//Name or Code
+    property Sender: utf8string read FSender;
+    property Address: utf8string read FAddress;
+    property Name: utf8string read FName;//Name or Code
     property Code: Integer read FCode;// Code or 0 if it just name
 
-    function PullParam(out Param: string): Boolean; overload;
-    function PullParam: String; overload;
+    function PullParam(out Param: utf8string): Boolean; overload;
+    function PullParam: utf8string; overload;
     property Params: TStringList read FParams;
     property Received: TIRCReceived read FReceived;
   end;
@@ -186,7 +186,8 @@ type
     FClient: TmnIRCClient;
   protected
     When: TIRCProgress;
-    CTCP: Boolean;
+    Echo: Boolean; //This will send internally too, not yet implemented //TODO
+    CTCP: Boolean; //Only CTCP receiver
     property Client: TmnIRCClient read FClient;
 
     //procedure Prepare; virtual;
@@ -194,11 +195,11 @@ type
     procedure DoExecute(vCommand: TIRCCommand; var NextCommand: TIRCQueueCommand); virtual;
     function Execute(vCommand: TIRCCommand): TIRCQueueCommand;
 
-    function DoAccept(aName: string): Boolean; virtual; //Extending accept, useing OR
-    function Accept(aName: string; aSubName: string = ''; aCTCP: Boolean = False): Boolean;
+    function DoAccept(aName: utf8string): Boolean; virtual; //Extending accept, useing OR
+    function Accept(aName: utf8string; aSubName: utf8string = ''; aCTCP: Boolean = False): Boolean;
   public
     Codes: TArray<Integer>;
-    SubName: string;
+    SubName: utf8string;
     constructor Create(AClient: TmnIRCClient); virtual;
   end;
 
@@ -214,9 +215,9 @@ type
   public
     constructor Create(AClient: TmnIRCClient);
     destructor Destroy; override;
-    function Add(vName: String; vCodes: TArray<Integer>; AClass: TIRCReceiverClass): Integer; overload;
-    function Add(vName: String; vSubName: String; vCTCP: Boolean; vCodes: TArray<Integer>; AClass: TIRCReceiverClass): Integer; overload;
-    function Find(aName, aSubName: string; aCTCP: Boolean): TIRCReceiver;
+    function Add(vName: utf8string; vCodes: TArray<Integer>; AClass: TIRCReceiverClass): Integer; overload;
+    function Add(vName: utf8string; vSubName: utf8string; vCTCP: Boolean; vCodes: TArray<Integer>; AClass: TIRCReceiverClass): Integer; overload;
+    function Find(aName, aSubName: utf8string; aCTCP: Boolean): TIRCReceiver;
     property Client: TmnIRCClient read FClient;
   end;
 
@@ -242,10 +243,10 @@ type
   private
     FClient: TmnIRCClient;
   protected
-    procedure Send(vChannel: string; vMsg: string); virtual; abstract;
-    procedure PrintHelp(vChannel: string = ''); //To target channel room
+    procedure Send(vChannel: utf8string; vMsg: utf8string); virtual; abstract;
+    procedure PrintHelp(vChannel: utf8string = ''); //To target channel room
   public
-    constructor Create(AName: string; AClient: TmnIRCClient);
+    constructor Create(AName: utf8string; AClient: TmnIRCClient);
     property Client: TmnIRCClient read FClient;
   end;
 
@@ -264,14 +265,14 @@ type
   TIRCRaw = class(TObject)
   public
     When: TIRCProgress;
-    Raw: string;
+    Raw: utf8string;
   end;
 
   { TIRCQueueRaws }
 
   TIRCQueueRaws = class(TmnObjectList<TIRCRaw>)
   public
-    procedure Add(Raw: string; When: TIRCProgress = prgConnected); overload; //if MsgType log it will be log, if not it will be parsed
+    procedure Add(Raw: utf8string; When: TIRCProgress = prgConnected); overload; //if MsgType log it will be log, if not it will be parsed
   end;
 
   { TIRCUserName }
@@ -283,20 +284,20 @@ type
   TIRCChannelModes = set of TIRCChannelMode;
 
   TIRCWhoIsInfo = record
-    RealName: string;
-    UserName: String;
-    Host: string;
-    Account: string;
-    Server: string;
-    LastTime: string;
-    Channels: string;
-    Country: string;
+    RealName: utf8string;
+    UserName: utf8string;
+    Host: utf8string;
+    Account: utf8string;
+    Server: utf8string;
+    LastTime: utf8string;
+    Channels: utf8string;
+    Country: utf8string;
   end;
 
   TIRCUser = class(TmnNamedObject)
   protected
   public
-    Address: string;
+    Address: utf8string;
     WhoIs: TIRCWhoisInfo;
     //https://freenode.net/kb/answer/usermodes
     //https://gowalker.org/github.com/oragono/oragono/irc/modes
@@ -310,32 +311,32 @@ type
   protected
     Adding: Boolean;
   public
-    Name: string; //Channel name
+    Name: utf8string; //Channel name
     UserModes: TIRCUserModes;
-    function Add(vUserName: string): TIRCUser; overload;
-    function UpdateUser(vUser: string; UpdateMode: Boolean = False): TIRCUser;
-    procedure RemoveUser(vUser: string);
+    function Add(vUserName: utf8string): TIRCUser; overload;
+    function UpdateUser(vUser: utf8string; UpdateMode: Boolean = False): TIRCUser;
+    procedure RemoveUser(vUser: utf8string);
   end;
 
   { TIRCChannels }
 
   TIRCChannels = class(TmnObjectList<TIRCChannel>)
   public
-    function Find(const Name: string): TIRCChannel;
-    function Found(vChannel: string): TIRCChannel;
-    function FindUser(const vChannel, vUser: string): TIRCUser;
-    function UpdateUser(vChannel, vUser: string; UpdateMode: Boolean = False): TIRCUser;
-    procedure RemoveUser(vChannel, vUser: string);
+    function Find(const Name: utf8string): TIRCChannel;
+    function Found(vChannel: utf8string): TIRCChannel;
+    function FindUser(const vChannel, vUser: utf8string): TIRCUser;
+    function UpdateUser(vChannel, vUser: utf8string; UpdateMode: Boolean = False): TIRCUser;
+    procedure RemoveUser(vChannel, vUser: utf8string);
   end;
 
-  TmnOnData = procedure(const Data: string) of object;
+  TmnOnData = procedure(const Data: utf8string) of object;
 
   { TmnIRCConnection }
 
   TmnIRCConnection = class(TmnLogClientConnection)
   private
-    FHost: string;
-    FPort: string;
+    FHost: utf8string;
+    FPort: utf8string;
     FClient: TmnIRCClient;
     FStream: TIRCSocketStream;
 
@@ -352,7 +353,7 @@ type
     procedure Process; override;
     procedure Unprepare; override;
   protected
-    function ParseRaw(vData: string): TIRCQueueCommand;
+    function ParseRaw(vData: utf8string): TIRCQueueCommand;
 
     procedure SendRaw(S: utf8string); //this called by client out of thread
     procedure SendRaws;
@@ -365,23 +366,23 @@ type
     destructor Destroy; override;
     procedure Connect;
     procedure Stop; override;
-    property Host: string read FHost;
-    property Port: string read FPort;
+    property Host: utf8string read FHost;
+    property Port: utf8string read FPort;
   end;
 
   { TIRCSession }
 
   TIRCSession = record
     Channels: TIRCChannels;
-    Nick: string; //Current used nickname on the server
+    Nick: utf8string; //Current used nickname on the server
     UserModes: TIRCUserModes; //IDK what user mode is on server
     AllowedUserModes: TIRCUserModes;
     AllowedChannelModes: TIRCChannelModes;
-    ServerVersion: string;
-    Server: string;
-    ServerChannel: string; //After Welcome we take the server as main channel
+    ServerVersion: utf8string;
+    Server: utf8string;
+    ServerChannel: utf8string; //After Welcome we take the server as main channel
     procedure Clear;
-    procedure SetNick(ANick: string);
+    procedure SetNick(ANick: utf8string);
   end;
 
   TIRCAuth = (authNone, authPASS, authIDENTIFY);
@@ -392,12 +393,12 @@ type
   private
     FAuth: TIRCAuth;
     FMapChannels: TStringList;
-    FPort: String;
-    FHost: String;
-    FPassword: String;
+    FPort: utf8string;
+    FHost: utf8string;
+    FPassword: utf8string;
     FReconnectTime: Integer;
-    FUsername: String;
-    FRealName: String;
+    FUsername: utf8string;
+    FRealName: utf8string;
     FProgress: TIRCProgress;
     FSession: TIRCSession;
     FConnection: TmnIRCConnection;
@@ -415,10 +416,10 @@ type
     procedure SetAuth(AValue: TIRCAuth);
     procedure SetMapChannels(AValue: TStringList);
     procedure SetNicks(AValue: TStringList);
-    procedure SetPassword(const Value: String);
-    procedure SetPort(const Value: String);
-    procedure SetRealName(const Value: String);
-    procedure SetHost(const Value: String);
+    procedure SetPassword(const Value: utf8string);
+    procedure SetPort(const Value: utf8string);
+    procedure SetRealName(const Value: utf8string);
+    procedure SetHost(const Value: utf8string);
 
     procedure Opened; //opened by user, not really connected to the server
     procedure Connected; //connected to the server, we must check if it initial or not
@@ -427,9 +428,9 @@ type
     procedure Closed; //to clean up every thing, closed by user
 
     procedure SetReconnectTime(AValue: Integer);
-    procedure SetUsername(const Value: String);
+    procedure SetUsername(const Value: utf8string);
     procedure SetUseSSL(AValue: Boolean);
-    function UserModeToString(NewModes: TIRCUserModes): String;
+    function UserModeToString(NewModes: TIRCUserModes): utf8string;
     procedure JoinChannels; //Join rooms or rejoin
   protected
     NickIndex: Integer;
@@ -440,34 +441,34 @@ type
     //Maybe Channel is same of Target, but we will,for NOTICE idk
     procedure Receive(vMsgType: TIRCMsgType; vReceived: TIRCReceived); virtual;
 
-    procedure Log(S: string);
+    procedure Log(S: utf8string);
 
-    procedure SendRaw(vData: String; vQueueAt: TIRCProgress = prgDisconnected);
+    procedure SendRaw(vData: utf8string; vQueueAt: TIRCProgress = prgDisconnected);
 
-    procedure DoReceive(vMsgType: TIRCMsgType; vChannel, vUser, vMsg: String); virtual;
+    procedure DoReceive(vMsgType: TIRCMsgType; vChannel, vUser, vMsg: utf8string); virtual;
 
-    procedure DoMsgReceived(vChannel, vUser, vTarget, vMessage: String); virtual;
-    procedure DoMsgSent(vUser, vNotice: String); virtual;
-    procedure DoNotice(vChannel, vUser, vTarget, vNotice: String); virtual;
-    procedure DoUserJoined(vChannel, vUser: String); virtual;
-    procedure DoUserLeft(vChannel, vUser: String); virtual;
-    procedure DoUserParted(vChannel, vUser: String); virtual;
-    procedure DoUserQuit(vUser: String); virtual;
-    procedure DoTopic(vChannel, vTopic: String); virtual;
-    procedure DoLog(vMsg: String); virtual;
+    procedure DoMsgReceived(vChannel, vUser, vTarget, vMessage: utf8string); virtual;
+    procedure DoMsgSent(vUser, vNotice: utf8string); virtual;
+    procedure DoNotice(vChannel, vUser, vTarget, vNotice: utf8string); virtual;
+    procedure DoUserJoined(vChannel, vUser: utf8string); virtual;
+    procedure DoUserLeft(vChannel, vUser: utf8string); virtual;
+    procedure DoUserParted(vChannel, vUser: utf8string); virtual;
+    procedure DoUserQuit(vUser: utf8string); virtual;
+    procedure DoTopic(vChannel, vTopic: utf8string); virtual;
+    procedure DoLog(vMsg: utf8string); virtual;
     procedure DoConnected; virtual;
     procedure DoDisconnected; virtual;
     procedure DoClosed; virtual;
     procedure DoOpened; virtual;
     procedure DoProgressChanged; virtual;
-    procedure DoUsersChanged(vChannelName: string; vChannel: TIRCChannel); virtual;
-    procedure DoUserChanged(vChannel: string; vUser, vNewNick: string); virtual;
-    procedure DoWhoIs(vUser: string); virtual;
-    procedure DoWho(vChannel: string); virtual;
+    procedure DoUsersChanged(vChannelName: utf8string; vChannel: TIRCChannel); virtual;
+    procedure DoUserChanged(vChannel: utf8string; vUser, vNewNick: utf8string); virtual;
+    procedure DoWhoIs(vUser: utf8string); virtual;
+    procedure DoWho(vChannel: utf8string); virtual;
     procedure DoMyInfoChanged; virtual;
 
-    procedure GetCurrentChannel(out vChannel: string); virtual;
-    function MapChannel(vChannel: string): string;
+    procedure GetCurrentChannel(out vChannel: utf8string); virtual;
+    function MapChannel(vChannel: utf8string): utf8string;
 
     procedure Init; virtual;
     procedure CreateConnection;
@@ -479,22 +480,22 @@ type
     procedure Start;
     procedure Stop;
 
-    procedure ChannelSend(vChannel, vMsg: String); deprecated;
-    procedure SendMsg(vChannel, vMsg: String);
+    procedure ChannelSend(vChannel, vMsg: utf8string); deprecated;
+    procedure SendMsg(vChannel, vMsg: utf8string);
 
     procedure Identify;
     procedure SetMode(const Value: TIRCUserModes);
     procedure SetChannelMode(const Value: TIRCChannelMode); //TODO
-    procedure SetNick(const ANick: String);
-    procedure SetTopic(AChannel: String; const ATopic: String);
-    procedure Join(Channel: String; Password: string = '');
-    procedure Notice(vChannel, vMsg: String);
-    procedure Quit(Reason: String);
-    procedure Kick(vChannel, vNickName: String);
-    procedure OpUser(vChannel, vNickName: String);
-    procedure DeopUser(vChannel, vNickName: String);
-    procedure WhoIs(vNickName: String);
-    procedure Who(vChannel: String);
+    procedure SetNick(const ANick: utf8string);
+    procedure SetTopic(AChannel: utf8string; const ATopic: utf8string);
+    procedure Join(Channel: utf8string; Password: utf8string = '');
+    procedure Notice(vChannel, vMsg: utf8string);
+    procedure Quit(Reason: utf8string);
+    procedure Kick(vChannel, vNickName: utf8string);
+    procedure OpUser(vChannel, vNickName: utf8string);
+    procedure DeopUser(vChannel, vNickName: utf8string);
+    procedure WhoIs(vNickName: utf8string);
+    procedure Who(vChannel: utf8string);
 
     property Progress: TIRCProgress read FProgress;
     property Receivers: TIRCReceivers read FReceivers;
@@ -503,13 +504,13 @@ type
     property Active: Boolean read GetActive;
     property Online: Boolean read GetOnline;
   public
-    property Host: String read FHost write SetHost;
-    property Port: String read FPort write SetPort;
+    property Host: utf8string read FHost write SetHost;
+    property Port: utf8string read FPort write SetPort;
     property UseSSL: Boolean read FUseSSL write SetUseSSL;
     property Nicks: TStringList read FNicks write SetNicks; //nick names to use, dd more for if already used nick
-    property RealName: String read FRealName write SetRealName;
-    property Password: String read FPassword write SetPassword;
-    property Username: String read FUsername write SetUsername;
+    property RealName: utf8string read FRealName write SetRealName;
+    property Password: utf8string read FPassword write SetPassword;
+    property Username: utf8string read FUsername write SetUsername;
     property Session: TIRCSession read FSession;
     property MapChannels: TStringList read FMapChannels write SetMapChannels;
     property UseUserCommands: Boolean read FUseUserCommands write FUseUserCommands default True;
@@ -548,6 +549,14 @@ type
   { TAction_IRCReceiver }
 
   TAction_IRCReceiver = class(TIRCMsgReceiver)
+  protected
+    procedure DoExecute(vCommand: TIRCCommand; var NextCommand: TIRCQueueCommand); override;
+    procedure Receive(vCommand: TIRCCommand); override;
+  end;
+
+  { TDCC_IRCReceiver }
+
+  TDCC_IRCReceiver = class(TIRCMsgReceiver)
   protected
     procedure DoExecute(vCommand: TIRCCommand; var NextCommand: TIRCQueueCommand); override;
     procedure Receive(vCommand: TIRCCommand); override;
@@ -665,7 +674,7 @@ type
   THELP_IRCReceiver = class(TIRCReceiver)
   protected
   public
-    function DoAccept(S: string): Boolean; override;
+    function DoAccept(S: utf8string): Boolean; override;
     procedure Receive(vCommand: TIRCCommand); override;
   end;
 
@@ -680,7 +689,7 @@ type
 
   TRaw_UserCommand = class(TIRCUserCommand)
   protected
-    procedure Send(vChannel: string; vMsg: string); override;
+    procedure Send(vChannel: utf8string; vMsg: utf8string); override;
   public
   end;
 
@@ -688,7 +697,7 @@ type
 
   TID_UserCommand = class(TIRCUserCommand)
   protected
-    procedure Send(vChannel: string; vMsg: string); override;
+    procedure Send(vChannel: utf8string; vMsg: utf8string); override;
   public
   end;
 
@@ -696,7 +705,7 @@ type
 
   TJoin_UserCommand = class(TIRCUserCommand)
   protected
-    procedure Send(vChannel: string; vMsg: string); override;
+    procedure Send(vChannel: utf8string; vMsg: utf8string); override;
   public
   end;
 
@@ -704,7 +713,7 @@ type
 
   TPart_UserCommand = class(TIRCUserCommand)
   protected
-    procedure Send(vChannel: string; vMsg: string); override;
+    procedure Send(vChannel: utf8string; vMsg: utf8string); override;
   public
   end;
 
@@ -712,7 +721,7 @@ type
 
   TMode_UserCommand = class(TIRCUserCommand)
   protected
-    procedure Send(vChannel: string; vMsg: string); override;
+    procedure Send(vChannel: utf8string; vMsg: utf8string); override;
   public
   end;
 
@@ -720,7 +729,7 @@ type
 
   TSend_UserCommand = class(TIRCUserCommand)
   protected
-    procedure Send(vChannel: string; vMsg: string); override;
+    procedure Send(vChannel: utf8string; vMsg: utf8string); override;
   public
   end;
 
@@ -728,7 +737,7 @@ type
 
   TMe_UserCommand = class(TIRCUserCommand)
   protected
-    procedure Send(vChannel: string; vMsg: string); override;
+    procedure Send(vChannel: utf8string; vMsg: utf8string); override;
   public
   end;
 
@@ -736,7 +745,7 @@ type
 
   THelp_UserCommand = class(TIRCUserCommand)
   protected
-    procedure Send(vChannel: string; vMsg: string); override;
+    procedure Send(vChannel: utf8string; vMsg: utf8string); override;
   public
   end;
 
@@ -744,7 +753,7 @@ type
 
   THistory_UserCommand = class(TIRCUserCommand)
   protected
-    procedure Send(vChannel: string; vMsg: string); override;
+    procedure Send(vChannel: utf8string; vMsg: utf8string); override;
   public
   end;
 
@@ -752,7 +761,7 @@ type
 
   TNotice_UserCommand = class(TIRCUserCommand)
   protected
-    procedure Send(vChannel: string; vMsg: string); override;
+    procedure Send(vChannel: utf8string; vMsg: utf8string); override;
   public
   end;
 
@@ -760,7 +769,7 @@ type
 
   TCNotice_UserCommand = class(TIRCUserCommand) //CTCP
   protected
-    procedure Send(vChannel: string; vMsg: string); override;
+    procedure Send(vChannel: utf8string; vMsg: utf8string); override;
   public
   end;
 
@@ -773,7 +782,7 @@ uses
 const
   sDefaultPort = '6667';
 
-function ScanString(vStr: string; var vPos:Integer; out vCount: Integer; vChar: Char; vSkip: Boolean = False): Boolean;
+function ScanString(vStr: utf8string; var vPos:Integer; out vCount: Integer; vChar: UTF8Char; vSkip: Boolean = False): Boolean;
 var
   start: Integer;
 begin
@@ -788,7 +797,7 @@ begin
   Result := vCount > 0;
 end;
 
-procedure ParseSender(Original: string; out Nick, Address: string);
+procedure ParseSender(Original: utf8string; out Nick, Address: utf8string);
 var
   p, c: Integer;
 begin
@@ -800,9 +809,9 @@ begin
   end;
 end;
 
-procedure ParseUserName(const AUser: string; out NickName: string; out Mode: TIRCUserModes);
+procedure ParseUserName(const AUser: utf8string; out NickName: utf8string; out Mode: TIRCUserModes);
 var
-  c: Char;
+  c: UTF8Char;
   i: Integer;
 begin
   Mode := [];
@@ -831,7 +840,7 @@ begin
   end;
 end;
 
-procedure StringToUserStates(ModeStr: string; var Mode: TIRCUserModes; UpdateMode: Boolean = False);
+procedure StringToUserStates(ModeStr: utf8string; var Mode: TIRCUserModes; UpdateMode: Boolean = False);
 var
   Index: Integer;
   Add: Boolean;
@@ -873,7 +882,7 @@ begin
   end;
 end;
 
-procedure StringToUserMode(ModeStr: string; var Mode: TIRCUserModes; UpdateMode: Boolean = False);
+procedure StringToUserMode(ModeStr: utf8string; var Mode: TIRCUserModes; UpdateMode: Boolean = False);
 var
   Index: Integer;
   Add: Boolean;
@@ -911,7 +920,7 @@ end;
 
 //* https://wiki.zandronum.com/IRC:Channel_Modes
 
-procedure StringToChannelMode(ModeStr: string; var Mode: TIRCChannelModes; UpdateMode: Boolean = False);
+procedure StringToChannelMode(ModeStr: utf8string; var Mode: TIRCChannelModes; UpdateMode: Boolean = False);
 var
   Index: Integer;
   Add: Boolean;
@@ -951,7 +960,7 @@ begin
   end;
 end;
 
-function ExtractNickFromAddress(Address: String): String;
+function ExtractNickFromAddress(Address: utf8string): utf8string;
 var
   EndOfNick: Integer;
 begin
@@ -961,15 +970,27 @@ begin
     Result := Copy(Address, 1, EndOfNick - 1);
 end;
 
+{ TDCC_IRCReceiver }
+
+procedure TDCC_IRCReceiver.DoExecute(vCommand: TIRCCommand; var NextCommand: TIRCQueueCommand);
+begin
+  inherited DoExecute(vCommand, NextCommand);
+end;
+
+procedure TDCC_IRCReceiver.Receive(vCommand: TIRCCommand);
+begin
+  inherited Receive(vCommand);
+end;
+
 { TIRC_CTCP }
 
-procedure TIRC_CTCP.AddParam(Value: string);
+procedure TIRC_CTCP.AddParam(Value: utf8string);
 begin
   SetLength(Params, Length(Params) + 1);
   Params[Length(Params) - 1] := Value;
 end;
 
-function TIRC_CTCP.PullParam(out Param: string): Boolean;
+function TIRC_CTCP.PullParam(out Param: utf8string): Boolean;
 begin
   Result := Length(Params) > 0;
   if Result then
@@ -981,7 +1002,7 @@ begin
     Param := '';
 end;
 
-function TIRC_CTCP.PullParam: String;
+function TIRC_CTCP.PullParam: utf8string;
 begin
   PullParam(Result);
 end;
@@ -992,6 +1013,7 @@ procedure TAction_IRCReceiver.DoExecute(vCommand: TIRCCommand; var NextCommand: 
 begin
   inherited;
   vCommand.Msg := vCommand.CTCP.Message;
+  Echo := True;
 end;
 
 procedure TAction_IRCReceiver.Receive(vCommand: TIRCCommand);
@@ -1086,7 +1108,7 @@ end;
 
 { TID_UserCommand }
 
-procedure TID_UserCommand.Send(vChannel: string; vMsg: string);
+procedure TID_UserCommand.Send(vChannel: utf8string; vMsg: utf8string);
 begin
   Client.SendRaw('NICKSERV IDENTIFY ' + vMsg, prgReady);
 end;
@@ -1100,9 +1122,9 @@ end;
 
 { TPart_UserCommand }
 
-procedure TPart_UserCommand.Send(vChannel: string; vMsg: string);
+procedure TPart_UserCommand.Send(vChannel: utf8string; vMsg: utf8string);
 var
-  aChannel: string;
+  aChannel: utf8string;
 begin
   Client.GetCurrentChannel(aChannel);
   Client.SendRaw('PART ' + aChannel + ' :' + vMsg, prgReady);
@@ -1120,28 +1142,28 @@ begin
   Server := '';
 end;
 
-procedure TIRCSession.SetNick(ANick: string);
+procedure TIRCSession.SetNick(ANick: utf8string);
 begin
   Nick := ANick;
 end;
 
 { TMode_UserCommand }
 
-procedure TMode_UserCommand.Send(vChannel: string; vMsg: string);
+procedure TMode_UserCommand.Send(vChannel: utf8string; vMsg: utf8string);
 begin
   Client.SendRaw('MODE ' + vChannel + ' '+ vMsg, prgReady);
 end;
 
 { THistory_UserCommand }
 
-procedure THistory_UserCommand.Send(vChannel: string; vMsg: string);
+procedure THistory_UserCommand.Send(vChannel: utf8string; vMsg: utf8string);
 begin
   Client.SendRaw('HISTORY ' + vChannel + ' ' + vMsg, prgReady);
 end;
 
 { THELP_IRCReceiver }
 
-function THELP_IRCReceiver.DoAccept(S: string): Boolean;
+function THELP_IRCReceiver.DoAccept(S: utf8string): Boolean;
 begin
   Result := inherited DoAccept(S);
   if (S = IntToStr(IRC_RPL_HELPTXT)) or (S = IntToStr(IRC_RPL_ENDOFHELP)) then
@@ -1157,21 +1179,21 @@ end;
 
 { THelp_UserCommand }
 
-procedure THelp_UserCommand.Send(vChannel: string; vMsg: string);
+procedure THelp_UserCommand.Send(vChannel: utf8string; vMsg: utf8string);
 begin
   Client.SendRaw('HELP ' + vMsg, prgReady);
 end;
 
 { TMe_UserCommand }
 
-procedure TMe_UserCommand.Send(vChannel: string; vMsg: string);
+procedure TMe_UserCommand.Send(vChannel: utf8string; vMsg: utf8string);
 begin
   Client.SendRaw('PRIVMSG ' + vChannel + ' :' + cCTCPChar + 'ACTION ' + vMsg + cCTCPChar, prgReady);
 end;
 
 { TCNotice_UserCommand }
 
-procedure TCNotice_UserCommand.Send(vChannel: string; vMsg: string);
+procedure TCNotice_UserCommand.Send(vChannel: utf8string; vMsg: utf8string);
 begin
   Client.SendRaw('NOTICE ' + vChannel + ' :' + cCTCPChar + vMsg + cCTCPChar, prgReady);
 end;
@@ -1186,14 +1208,14 @@ end;
 
 { TNotice_UserCommand }
 
-procedure TNotice_UserCommand.Send(vChannel: string; vMsg: string);
+procedure TNotice_UserCommand.Send(vChannel: utf8string; vMsg: utf8string);
 begin
   Client.SendRaw('NOTICE ' + vChannel + ' :' + vMsg, prgReady);
 end;
 
 { TSend_UserCommand }
 
-procedure TSend_UserCommand.Send(vChannel: string; vMsg: string);
+procedure TSend_UserCommand.Send(vChannel: utf8string; vMsg: utf8string);
 begin
   Client.SendRaw('PRIVMSG ' + vMsg, prgReady);
 end;
@@ -1272,7 +1294,7 @@ end;
 
 { TIRCQueueRaws }
 
-procedure TIRCQueueRaws.Add(Raw: string; When: TIRCProgress);
+procedure TIRCQueueRaws.Add(Raw: utf8string; When: TIRCProgress);
 var
   Item: TIRCRaw;
 begin
@@ -1284,16 +1306,16 @@ end;
 
 { TIRCChannel }
 
-function TIRCChannel.Add(vUserName: string): TIRCUser;
+function TIRCChannel.Add(vUserName: utf8string): TIRCUser;
 begin
   Result := TIRCUser.Create;
   Result.Name := vUserName;
   Add(Result);
 end;
 
-function TIRCChannel.UpdateUser(vUser: string; UpdateMode: Boolean): TIRCUser;
+function TIRCChannel.UpdateUser(vUser: utf8string; UpdateMode: Boolean): TIRCUser;
 var
-  aNickName: string;
+  aNickName: utf8string;
   aMode: TIRCUserModes;
 begin
   ParseUserName(vUser, aNickName, aMode);
@@ -1304,9 +1326,9 @@ begin
     Result.Mode := aMode;
 end;
 
-procedure TIRCChannel.RemoveUser(vUser: string);
+procedure TIRCChannel.RemoveUser(vUser: utf8string);
 var
-  aNickName: string;
+  aNickName: utf8string;
   aMode: TIRCUserModes;
   aUser: TIRCUser;
 begin
@@ -1318,7 +1340,7 @@ end;
 
 { TIRCChannels }
 
-function TIRCChannels.Found(vChannel: string): TIRCChannel;
+function TIRCChannels.Found(vChannel: utf8string): TIRCChannel;
 begin
   Result := Find(vChannel);
   if Result = nil then
@@ -1329,7 +1351,7 @@ begin
   end;
 end;
 
-function TIRCChannels.FindUser(const vChannel, vUser: string): TIRCUser;
+function TIRCChannels.FindUser(const vChannel, vUser: utf8string): TIRCUser;
 var
   oChannel: TIRCChannel;
 begin
@@ -1340,7 +1362,7 @@ begin
     Result := nil;
 end;
 
-procedure TIRCChannels.RemoveUser(vChannel, vUser: string);
+procedure TIRCChannels.RemoveUser(vChannel, vUser: utf8string);
 var
   aChannel: TIRCChannel;
 begin
@@ -1349,7 +1371,7 @@ begin
     aChannel.RemoveUser(vUser);
 end;
 
-function TIRCChannels.UpdateUser(vChannel, vUser: string; UpdateMode: Boolean): TIRCUser;
+function TIRCChannels.UpdateUser(vChannel, vUser: utf8string; UpdateMode: Boolean): TIRCUser;
 var
   aChannel: TIRCChannel;
 begin
@@ -1357,7 +1379,7 @@ begin
   Result := aChannel.UpdateUser(vUser, UpdateMode);
 end;
 
-function TIRCChannels.Find(const Name: string): TIRCChannel;
+function TIRCChannels.Find(const Name: utf8string): TIRCChannel;
 var
   i: Integer;
 begin
@@ -1374,7 +1396,7 @@ end;
 
 { TRaw_UserCommand }
 
-procedure TRaw_UserCommand.Send(vChannel: string; vMsg: string);
+procedure TRaw_UserCommand.Send(vChannel: utf8string; vMsg: utf8string);
 begin
   Client.SendRaw(vMsg, prgConnected);
 end;
@@ -1383,11 +1405,11 @@ end;
 
 procedure TNAMREPLY_IRCReceiver.Receive(vCommand: TIRCCommand);
 var
-  aUserName: string;
+  aUserName: utf8string;
   aModes: TIRCUserModes;
   aUser: TIRCUser;
 
-  aChannelName: string;
+  aChannelName: utf8string;
   oChannel: TIRCChannel;
 
   aUsers: TStringList;
@@ -1440,7 +1462,7 @@ begin
   //TODO
 end;
 
-constructor TIRCUserCommand.Create(AName: string; AClient: TmnIRCClient);
+constructor TIRCUserCommand.Create(AName: utf8string; AClient: TmnIRCClient);
 begin
   inherited Create;
   FClient := AClient;
@@ -1449,7 +1471,7 @@ end;
 
 { TJoin_UserCommand }
 
-procedure TJoin_UserCommand.Send(vChannel: string; vMsg: string);
+procedure TJoin_UserCommand.Send(vChannel: utf8string; vMsg: utf8string);
 begin
   Client.SendRaw('JOIN ' + vMsg, prgReady);
 end;
@@ -1489,7 +1511,7 @@ procedure TMODE_IRCReceiver.Receive(vCommand: TIRCCommand);
 var
   oChannel: TIRCChannel;
   oUser: TIRCUser;
-  aUser, aMode: string;
+  aUser, aMode: utf8string;
 begin
   inherited;
   //server MODE ##channel +v username
@@ -1539,7 +1561,7 @@ end;
 
 procedure TNICK_IRCReceiver.Receive(vCommand: TIRCCommand);
 var
-  aNewNick: string;
+  aNewNick: utf8string;
   oUser: TIRCUser;
   oChannel: TIRCChannel;
 begin
@@ -1580,7 +1602,6 @@ begin
   with Client do
   begin
     Receive(mtWelcome, vCommand.Received);
-    Log('Ready')
   end;
 end;
 
@@ -1625,12 +1646,12 @@ begin
   DoExecute(vCommand, Result);
 end;
 
-function TIRCReceiver.DoAccept(aName: string): Boolean;
+function TIRCReceiver.DoAccept(aName: utf8string): Boolean;
 begin
   Result := False;
 end;
 
-function TIRCReceiver.Accept(aName: string; aSubName: string; aCTCP: Boolean): Boolean;
+function TIRCReceiver.Accept(aName: utf8string; aSubName: utf8string; aCTCP: Boolean): Boolean;
 var
   aCode, i: Integer;
 begin
@@ -1760,7 +1781,7 @@ end;
 procedure TmnIRCConnection.SendRaws;
 var
   i: Integer;
-  Raw: string;
+  Raw: utf8string;
 begin
   i := 0;
   while (FStream <> nil) and (FStream.Connected) and (i < Client.QueueSends.Count) do
@@ -1840,11 +1861,11 @@ begin
   FreeAndNil(FStream);
 end;
 
-procedure ParseCTCP(var CTCP: TIRC_CTCP; vData: string);
+procedure ParseCTCP(var CTCP: TIRC_CTCP; vData: utf8string);
 var
   p: Integer;
   Start, Count: Integer;
-  s: string;
+  s: utf8string;
   Index: Integer;
 begin
   p := 1;
@@ -1877,7 +1898,7 @@ begin
   end;
 end;
 
-procedure ParseBody(vCommand: TIRCCommand; vData: string); //move it to Command.Parse
+procedure ParseBody(vCommand: TIRCCommand; vData: utf8string); //move it to Command.Parse
 var
   p: Integer;
   Start, Count: Integer;
@@ -1909,14 +1930,14 @@ begin
   end;
 end;
 
-function TmnIRCConnection.ParseRaw(vData: string): TIRCQueueCommand;
+function TmnIRCConnection.ParseRaw(vData: utf8string): TIRCQueueCommand;
 type
   TParseState = (prefix, command, message);
 var
   p: Integer;
   aState: TParseState;
   Start, Count: Integer;
-  ABody: string;
+  ABody: utf8string;
 begin
   //:zaherdirkey!~zaherdirkey@myip PRIVMSG channel :hi
   if vData <> '' then
@@ -2030,17 +2051,17 @@ begin
   FreeAndNil(FParams);
 end;
 
-procedure TIRCCommand.AddParam(AValue: string);
+procedure TIRCCommand.AddParam(AValue: utf8string);
 begin
   Params.Add(AValue);
 end;
 
-function TIRCCommand.PullParam: String;
+function TIRCCommand.PullParam: utf8string;
 begin
   PullParam(Result);
 end;
 
-function TIRCCommand.PullParam(out Param: string): Boolean;
+function TIRCCommand.PullParam(out Param: utf8string): Boolean;
 begin
   Result := Params.Count > 0;
   if Result then
@@ -2054,12 +2075,12 @@ end;
 
 { TCustomIRCReceivers }
 
-function TCustomIRCReceivers.Add(vName: String; vCodes: TArray<Integer>; AClass: TIRCReceiverClass): Integer;
+function TCustomIRCReceivers.Add(vName: utf8string; vCodes: TArray<Integer>; AClass: TIRCReceiverClass): Integer;
 begin
   Result := Add(vName, '', False, vCodes, AClass);
 end;
 
-function TCustomIRCReceivers.Add(vName: String; vSubName: String; vCTCP: Boolean; vCodes: TArray<Integer>; AClass: TIRCReceiverClass): Integer;
+function TCustomIRCReceivers.Add(vName: utf8string; vSubName: utf8string; vCTCP: Boolean; vCodes: TArray<Integer>; AClass: TIRCReceiverClass): Integer;
 var
   AReceiver: TIRCReceiver;
 begin
@@ -2076,7 +2097,7 @@ begin
   Result := inherited Add(AReceiver);
 end;
 
-function TCustomIRCReceivers.Find(aName, aSubName: string; aCTCP: Boolean): TIRCReceiver;
+function TCustomIRCReceivers.Find(aName, aSubName: utf8string; aCTCP: Boolean): TIRCReceiver;
 var
   aReceiver: TIRCReceiver;
 begin
@@ -2203,7 +2224,7 @@ begin
   end;
 end;
 
-procedure TmnIRCClient.SendRaw(vData: String; vQueueAt: TIRCProgress);
+procedure TmnIRCClient.SendRaw(vData: utf8string; vQueueAt: TIRCProgress);
 begin
   if Assigned(FConnection) then
   begin
@@ -2221,36 +2242,36 @@ begin
   end;
 end;
 
-procedure TmnIRCClient.DoMsgReceived(vChannel, vUser, vTarget, vMessage: String);
+procedure TmnIRCClient.DoMsgReceived(vChannel, vUser, vTarget, vMessage: utf8string);
 begin
 end;
 
-procedure TmnIRCClient.DoMsgSent(vUser, vNotice: String);
+procedure TmnIRCClient.DoMsgSent(vUser, vNotice: utf8string);
 begin
 end;
 
-procedure TmnIRCClient.DoNotice(vChannel, vUser, vTarget, vNotice: String);
+procedure TmnIRCClient.DoNotice(vChannel, vUser, vTarget, vNotice: utf8string);
 begin
 end;
 
-procedure TmnIRCClient.DoUserJoined(vChannel, vUser: String);
+procedure TmnIRCClient.DoUserJoined(vChannel, vUser: utf8string);
 begin
 end;
 
-procedure TmnIRCClient.DoUserLeft(vChannel, vUser: String);
+procedure TmnIRCClient.DoUserLeft(vChannel, vUser: utf8string);
 begin
 
 end;
 
-procedure TmnIRCClient.DoUserParted(vChannel, vUser: String);
+procedure TmnIRCClient.DoUserParted(vChannel, vUser: utf8string);
 begin
 end;
 
-procedure TmnIRCClient.DoUserQuit(vUser: String);
+procedure TmnIRCClient.DoUserQuit(vUser: utf8string);
 begin
 end;
 
-procedure TmnIRCClient.DoTopic(vChannel, vTopic: String);
+procedure TmnIRCClient.DoTopic(vChannel, vTopic: utf8string);
 begin
 end;
 
@@ -2270,20 +2291,20 @@ procedure TmnIRCClient.DoOpened;
 begin
 end;
 
-procedure TmnIRCClient.DoLog(vMsg: String);
+procedure TmnIRCClient.DoLog(vMsg: utf8string);
 begin
 end;
 
-procedure TmnIRCClient.ChannelSend(vChannel, vMsg: String);
+procedure TmnIRCClient.ChannelSend(vChannel, vMsg: utf8string);
 begin
   SendMsg(vChannel, vMsg);
 end;
 
-procedure TmnIRCClient.SendMsg(vChannel, vMsg: String);
+procedure TmnIRCClient.SendMsg(vChannel, vMsg: utf8string);
 var
   aCMD: TIRCUserCommand;
   aCMDProcessed: Boolean;
-  s, m: string;
+  s, m: utf8string;
   p, c: Integer;
   aReceived: TIRCReceived;
 begin
@@ -2329,37 +2350,37 @@ begin
   SendRaw(Format('NICKSERV IDENTIFY %s %s', [Username, Password]), prgConnected);
 end;
 
-procedure TmnIRCClient.Join(Channel: String; Password: string);
+procedure TmnIRCClient.Join(Channel: utf8string; Password: utf8string);
 begin
   SendRaw(Format('JOIN %s %s', [Channel, Password]), prgReady);
 end;
 
-procedure TmnIRCClient.Kick(vChannel, vNickName: String);
+procedure TmnIRCClient.Kick(vChannel, vNickName: utf8string);
 begin
   SendRaw(Format('KICK %s %s', [vChannel, vNickName]), prgReady);
 end;
 
-procedure TmnIRCClient.OpUser(vChannel, vNickName: String);
+procedure TmnIRCClient.OpUser(vChannel, vNickName: utf8string);
 begin
   SendRaw(Format('MODE %s +o %s', [vChannel, vNickName]), prgReady);
 end;
 
-procedure TmnIRCClient.DeopUser(vChannel, vNickName: String);
+procedure TmnIRCClient.DeopUser(vChannel, vNickName: utf8string);
 begin
   SendRaw(Format('MODE %s -o %s', [vChannel, vNickName]), prgReady);
 end;
 
-procedure TmnIRCClient.WhoIs(vNickName: String);
+procedure TmnIRCClient.WhoIs(vNickName: utf8string);
 begin
   SendRaw(Format('WHOIS %s ', [vNickName]), prgReady);
 end;
 
-procedure TmnIRCClient.Who(vChannel: String);
+procedure TmnIRCClient.Who(vChannel: utf8string);
 begin
   SendRaw(Format('WHO %s ', [vChannel]), prgReady);
 end;
 
-procedure TmnIRCClient.Notice(vChannel, vMsg: String);
+procedure TmnIRCClient.Notice(vChannel, vMsg: utf8string);
 begin
   SendRaw(Format('NOTICE %s :%s', [vChannel, vMsg]), prgReady);
 end;
@@ -2376,7 +2397,7 @@ end;
 
 procedure TmnIRCClient.Connected;
 var
-  aNick: string;
+  aNick: utf8string;
 begin
   //Need to check if it first time connected or reconnected after forcefully disconnected
   SetProgress(prgConnected);
@@ -2409,14 +2430,14 @@ end;
 procedure TmnIRCClient.Disconnected;
 begin
   SetProgress(prgDisconnected);
-  DoConnected;
+  DoDisconnected;
 end;
 
 procedure TmnIRCClient.Opened;
 begin
 end;
 
-procedure TmnIRCClient.SetNick(const ANick: String);
+procedure TmnIRCClient.SetNick(const ANick: utf8string);
 begin
   if ANick <> '' then
   begin
@@ -2424,12 +2445,12 @@ begin
   end;
 end;
 
-procedure TmnIRCClient.SetTopic(AChannel: String; const ATopic: String);
+procedure TmnIRCClient.SetTopic(AChannel: utf8string; const ATopic: utf8string);
 begin
   SendRaw(Format('TOPIC %s %s', [AChannel, ATopic]));
 end;
 
-procedure TmnIRCClient.SetPassword(const Value: String);
+procedure TmnIRCClient.SetPassword(const Value: utf8string);
 begin
   FPassword := Value;
 end;
@@ -2462,17 +2483,17 @@ begin
   FNicks.Assign(AValue);
 end;
 
-procedure TmnIRCClient.SetPort(const Value: String);
+procedure TmnIRCClient.SetPort(const Value: utf8string);
 begin
   FPort := Value;
 end;
 
-procedure TmnIRCClient.SetRealName(const Value: String);
+procedure TmnIRCClient.SetRealName(const Value: utf8string);
 begin
   FRealName := Value;
 end;
 
-procedure TmnIRCClient.SetHost(const Value: String);
+procedure TmnIRCClient.SetHost(const Value: utf8string);
 begin
   FHost := Value;
 end;
@@ -2482,7 +2503,7 @@ begin
   SetProgress(prgConnecting);
 end;
 
-procedure TmnIRCClient.SetUsername(const Value: String);
+procedure TmnIRCClient.SetUsername(const Value: utf8string);
 begin
   FUsername := Value;
 end;
@@ -2511,7 +2532,7 @@ end;
 
 procedure TmnIRCClient.SetMode(const Value: TIRCUserModes);
 var
-  ModeString: String;
+  ModeString: utf8string;
 begin
   ModeString := UserModeToString(Value);
   if Length(ModeString) > 0 then
@@ -2528,25 +2549,25 @@ begin
 
 end;
 
-procedure TmnIRCClient.DoReceive(vMsgType: TIRCMsgType; vChannel, vUser, vMsg: String);
+procedure TmnIRCClient.DoReceive(vMsgType: TIRCMsgType; vChannel, vUser, vMsg: utf8string);
 begin
 end;
 
-procedure TmnIRCClient.DoUsersChanged(vChannelName: string; vChannel: TIRCChannel);
-begin
-
-end;
-
-procedure TmnIRCClient.DoUserChanged(vChannel: string; vUser, vNewNick: string);begin
-
-end;
-
-procedure TmnIRCClient.DoWhoIs(vUser: string);
+procedure TmnIRCClient.DoUsersChanged(vChannelName: utf8string; vChannel: TIRCChannel);
 begin
 
 end;
 
-procedure TmnIRCClient.DoWho(vChannel: string);
+procedure TmnIRCClient.DoUserChanged(vChannel: utf8string; vUser, vNewNick: utf8string);begin
+
+end;
+
+procedure TmnIRCClient.DoWhoIs(vUser: utf8string);
+begin
+
+end;
+
+procedure TmnIRCClient.DoWho(vChannel: utf8string);
 begin
 
 end;
@@ -2556,12 +2577,12 @@ begin
 
 end;
 
-procedure TmnIRCClient.GetCurrentChannel(out vChannel: string);
+procedure TmnIRCClient.GetCurrentChannel(out vChannel: utf8string);
 begin
   vChannel := '';
 end;
 
-function TmnIRCClient.MapChannel(vChannel: string): string;
+function TmnIRCClient.MapChannel(vChannel: utf8string): utf8string;
 begin
   if MapChannels.IndexOfName(vChannel) >=0 then
   begin
@@ -2573,13 +2594,13 @@ begin
     Result := vChannel
 end;
 
-procedure TmnIRCClient.Quit(Reason: String);
+procedure TmnIRCClient.Quit(Reason: utf8string);
 begin
   SendRaw(Format('QUIT :%s', [Reason]), prgReady);
 end;
 
-function TmnIRCClient.UserModeToString(NewModes: TIRCUserModes): String;
-  function GetModeChars(aMode: TIRCUserMode): string;
+function TmnIRCClient.UserModeToString(NewModes: TIRCUserModes): utf8string;
+  function GetModeChars(aMode: TIRCUserMode): utf8string;
   begin
     case aMode of
       umInvisible:
@@ -2665,7 +2686,7 @@ begin
   end;
 end;
 
-procedure TmnIRCClient.Log(S: string);
+procedure TmnIRCClient.Log(S: utf8string);
 begin
   DoLog(S);
 end;
@@ -2675,6 +2696,7 @@ begin
   Receivers.Add('PRIVMSG', [], TPRIVMSG_IRCReceiver);
   Receivers.Add('PRIVMSG', 'VERSION', True, [], TVersion_IRCReceiver);
   Receivers.Add('PRIVMSG', 'ACTION', True, [], TAction_IRCReceiver);
+  Receivers.Add('PRIVMSG', 'DCC', True, [], TDCC_IRCReceiver); //TODO
 
   Receivers.Add('NOTICE', [], TNOTICE_IRCReceiver);
 
