@@ -109,6 +109,7 @@ type
   );
 
   TIRCReceived = record
+    Time: TDateTime;
     Channel: utf8string;
     Target: utf8string;
     User: utf8string;
@@ -1709,7 +1710,7 @@ begin
     if not FStream.Connected and Active then
     begin
       try
-        if Tries > 0 then
+        if Tries > 0 then //delay if not first time
         begin
           Lock.Enter;
           try
@@ -1855,6 +1856,7 @@ end;
 procedure TmnIRCConnection.Unprepare;
 begin
   inherited;
+  Tries := 0;
   if Connected then
     Stop;
   Synchronize(Client.Closed);
@@ -1943,6 +1945,7 @@ begin
   if vData <> '' then
   begin
     Result := TIRCQueueCommand.Create;
+    Result.FReceived.Time := Now;
     Result.FRaw := vData;
     aState := prefix;
     p := 1;
@@ -2310,6 +2313,7 @@ var
 begin
   Initialize(aReceived);
   aCMDProcessed := False;
+  //check if it user command, like /j
   if FUseUserCommands and (UserCommands.Count > 0) and (LeftStr(vMsg, 1) = '/') then
   begin
     p := 2;
@@ -2337,11 +2341,12 @@ begin
   if not aCMDProcessed then
   begin
     SendRaw(Format('PRIVMSG %s :%s', [vChannel, vMsg]), prgReady);
+    aReceived.Time := Now;
     aReceived.Channel := vChannel;
     aReceived.Target := vChannel;
     aReceived.User := Session.Nick;
     aReceived.Msg := vMsg;
-    Receive(mtSend, aReceived);
+    Receive(mtSend, aReceived); //echo, not here //TODO
   end;
 end;
 

@@ -13,19 +13,8 @@ object ChatRoomFrame: TChatRoomFrame
   Font.Quality = fqDraft
   ParentFont = False
   TabOrder = 0
-  DesignLeft = 266
-  DesignTop = 312
-  object TopicEdit: TEdit
-    Left = 3
-    Height = 23
-    Top = 3
-    Width = 547
-    Align = alTop
-    BorderSpacing.Around = 3
-    Color = clInfoBk
-    ReadOnly = True
-    TabOrder = 0
-  end
+  DesignLeft = 339
+  DesignTop = 291
   object Splitter2: TSplitter
     Left = 403
     Height = 300
@@ -34,31 +23,18 @@ object ChatRoomFrame: TChatRoomFrame
     Align = alRight
     ResizeAnchor = akRight
   end
-  object MsgEdit: TMemo
-    Left = 3
-    Height = 297
-    Top = 29
-    Width = 397
-    Align = alClient
-    BorderSpacing.Around = 3
-    OnDblClick = MsgEditDblClick
-    ReadOnly = True
-    ScrollBars = ssAutoBoth
-    TabOrder = 2
-  end
   object UserListBox: TListView
     Left = 412
-    Height = 297
-    Top = 29
+    Height = 294
+    Top = 32
     Width = 138
     Align = alRight
     AutoWidthLastColumn = True
     BorderSpacing.Around = 3
     Columns = <    
       item
-        AutoSize = True
         Caption = 'User'
-        Width = 38
+        Width = 134
       end>
     PopupMenu = UsersPopupMenu
     ReadOnly = True
@@ -66,8 +42,41 @@ object ChatRoomFrame: TChatRoomFrame
     ShowColumnHeaders = False
     SmallImages = MainFrm.SmallImageList
     SortType = stText
-    TabOrder = 3
+    TabOrder = 1
     ViewStyle = vsReport
+  end
+  object Panel1: TPanel
+    Left = 0
+    Height = 29
+    Top = 0
+    Width = 553
+    Align = alTop
+    AutoSize = True
+    BevelOuter = bvNone
+    ClientHeight = 29
+    ClientWidth = 553
+    TabOrder = 2
+    object TopicEdit: TEdit
+      Left = 3
+      Height = 23
+      Top = 3
+      Width = 522
+      Align = alClient
+      BorderSpacing.Around = 3
+      Color = clInfoBk
+      ReadOnly = True
+      TabOrder = 0
+    end
+    object ChangeTopicBtn: TButton
+      Left = 528
+      Height = 29
+      Top = 0
+      Width = 25
+      Align = alRight
+      Caption = '...'
+      OnClick = ChangeTopicBtnClick
+      TabOrder = 1
+    end
   end
   object UsersPopupMenu: TPopupMenu
     Left = 441

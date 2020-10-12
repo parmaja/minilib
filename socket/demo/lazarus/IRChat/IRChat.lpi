@@ -108,37 +108,40 @@
         <Mode0 Name="default"/>
       </Modes>
     </RunParams>
-    <RequiredPackages Count="10">
+    <RequiredPackages Count="11">
       <Item1>
-        <PackageName Value="laz.virtualtreeview_package"/>
+        <PackageName Value="FrameViewer09"/>
       </Item1>
       <Item2>
-        <PackageName Value="lazreport"/>
+        <PackageName Value="laz.virtualtreeview_package"/>
       </Item2>
       <Item3>
-        <PackageName Value="TurboPowerIPro"/>
+        <PackageName Value="lazreport"/>
       </Item3>
       <Item4>
-        <PackageName Value="SynEdit"/>
+        <PackageName Value="TurboPowerIPro"/>
       </Item4>
       <Item5>
-        <PackageName Value="MiniCtrls"/>
+        <PackageName Value="SynEdit"/>
       </Item5>
       <Item6>
-        <PackageName Value="NativeLib"/>
+        <PackageName Value="MiniCtrls"/>
       </Item6>
       <Item7>
-        <PackageName Value="MiniXML"/>
+        <PackageName Value="NativeLib"/>
       </Item7>
       <Item8>
-        <PackageName Value="MiniSockets"/>
+        <PackageName Value="MiniXML"/>
       </Item8>
       <Item9>
-        <PackageName Value="MiniCommons"/>
+        <PackageName Value="MiniSockets"/>
       </Item9>
       <Item10>
-        <PackageName Value="LCL"/>
+        <PackageName Value="MiniCommons"/>
       </Item10>
+      <Item11>
+        <PackageName Value="LCL"/>
+      </Item11>
     </RequiredPackages>
     <Units Count="3">
       <Unit0>
@@ -188,7 +191,6 @@
     </CodeGeneration>
     <Linking>
       <Debugging>
-        <DebugInfoType Value="dsDwarf2Set"/>
         <TrashVariables Value="True"/>
         <UseExternalDbgSyms Value="True"/>
       </Debugging>

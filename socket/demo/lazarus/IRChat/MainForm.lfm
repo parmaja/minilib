@@ -1,7 +1,7 @@
 object MainFrm: TMainFrm
-  Left = 294
+  Left = 441
   Height = 459
-  Top = 151
+  Top = 227
   Width = 696
   Caption = 'IRC chat'
   ClientHeight = 459
@@ -201,6 +201,14 @@ object MainFrm: TMainFrm
       Caption = '&Delete'
       OnClick = Button2Click
       TabOrder = 2
+    end
+    object OptionsBtn: TButton
+      Left = 397
+      Height = 25
+      Top = 5
+      Width = 75
+      Caption = '&Options'
+      TabOrder = 12
     end
   end
   object LogEdit: TMemo

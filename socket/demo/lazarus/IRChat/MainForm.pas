@@ -33,6 +33,7 @@ type
   TMainFrm = class(TForm)
     Button1: TButton;
     Button2: TButton;
+    OptionsBtn: TButton;
     ProfileCbo: TComboBox;
     Label6: TLabel;
     UseSSLChk: TCheckBox;
@@ -128,12 +129,12 @@ end;
 procedure TMyIRCClient.DoConnected;
 begin
   inherited DoConnected;
-  MainFrm.LogMessage('Connected');
+  MainFrm.LogMessage('Yes it is connected');
 end;
 
 procedure TMyIRCClient.DoDisconnected;
 begin
-  MainFrm.LogMessage('Disconnected');
+  MainFrm.LogMessage('Yes it is disconnected');
   inherited;
 end;
 
@@ -326,6 +327,13 @@ begin
   if Shift = [] then
   begin
     case Key of
+      VK_TAB: //TODO
+      begin
+        if copy(SendEdit.Text, SendEdit.SelStart, 1) = '@' then
+        begin
+          Key := 0;
+        end;
+      end;
       VK_UP: RecentUp;
       VK_DOWN: RecentDown;
     end;
@@ -333,13 +341,17 @@ begin
 end;
 
 procedure TMainFrm.SendNow;
+var
+  s: string;
 begin
-  if IRC.Online then
-  begin
-    IRC.SendMsg(CurrentRoom, SendEdit.Text);
-    AddRecent(SendEdit.Text);
-    SendEdit.Text := '';
-  end;
+  s := trim(SendEdit.Text);
+  if s <> '' then
+    if IRC.Online then
+    begin
+      IRC.SendMsg(CurrentRoom, SendEdit.Text);
+      AddRecent(SendEdit.Text);
+      SendEdit.Text := '';
+    end;
 end;
 
 function TMainFrm.NeedRoom(vRoomName: string; ActiveIt: Boolean): TChatRoomFrame;
@@ -374,7 +386,7 @@ begin
   if Index < 0 then
   begin
     TabSheet := MsgPageControl.AddTabSheet;
-    with TChatRoomFrame.Create(TabSheet) do
+    with TChatRoomFrame.CreateParented(TabSheet.Handle) do
     begin
       Parent := TabSheet;
       Align := alClient;
@@ -608,16 +620,16 @@ begin
           case vMsgType of
             mtWelcome:
             begin
-              MsgEdit.Lines.Add(vMSG);
+              AddMessage(vMSG);
               TopicEdit.Text := vMSG;
             end;
             mtMOTD:
-              MsgEdit.Lines.Add(vMSG);
+              AddMessage(vMSG);
             mtTopic:
               TopicEdit.Text := vMSG;
             mtJoin:
             begin
-              MsgEdit.Lines.Add(vUser + ' is joined');
+              AddMessage(vUser + ' is joined');
               aItem := UserListBox.Items.FindCaption(0, vUser, False, True, False, False);
               if aItem = nil then
               begin
@@ -640,7 +652,7 @@ begin
             mtLeft:
             begin
               //if me close the tab
-              MsgEdit.Lines.Add(vUser + ' is left: ' + vMsg);
+              AddMessage(vUser + ' is left: ' + vMsg);
               aItem := UserListBox.Items.FindCaption(0, vUser, False, True, False, False);
               if aItem <> nil then
                 UserListBox.items.Delete(aItem.Index);
@@ -668,19 +680,17 @@ begin
               end;
             end;
             mtNotice:
-              MsgEdit.Lines.Add('[' + vUser + '] ' + vMSG);
+              AddMessage('[' + vUser + '] ' + vMSG);
             mtMessage, mtSend:
             begin
-              MsgEdit.Lines.Add(vUser + ': ' + vMSG);
-              MsgEdit.ScrollBy(0, 1);
+              AddMessage(vUser + ': ' + vMSG);
             end;
             mtAction:
             begin
-              MsgEdit.Lines.Add('* ' + vUser + ': -' + vMSG + '-');
-              MsgEdit.ScrollBy(0, 1);
+              AddMessage('* ' + vUser + ': -' + vMSG + '-');
             end;
           else
-              MsgEdit.Lines.Add(vUser + ': ' + vMSG);
+              AddMessage(vUser + ': ' + vMSG);
           end;
         end;
    end;

@@ -38,9 +38,9 @@ type
   private
     function GetItems(Index: Integer): TmncEngine;
   public
-    function ComposeConnectionString(EngineName, Resource, Host, User, Password, Role: string): string; overload;
+    function ComposeConnectionString(EngineName, Resource, Host, Port, User, Password, Role: string): string; overload;
     function ComposeConnectionString(Connection: TmncConnection): string; overload;
-    procedure DecomposeConnectionString(Composed: string; out EngineName, Resource, Host, User, Password, Role: string); overload;
+    procedure DecomposeConnectionString(Composed: string; out EngineName, Resource, Host, Port, User, Password, Role: string); overload;
     procedure DecomposeConnectionString(Composed: string; Connection: TmncConnection); overload;
 
     function RegisterConnection(vName, vTitle: string; vConnectionClass: TmncConnectionClass): TmncEngine;
@@ -80,18 +80,19 @@ begin
   Result := inherited Items[Index] as TmncEngine;
 end;
 
-function TmncEngines.ComposeConnectionString(EngineName, Resource, Host, User, Password, Role: string): string;
+function TmncEngines.ComposeConnectionString(EngineName, Resource, Host, Port, User, Password, Role: string): string;
 begin
-  Result := 'Resource="'+Resource+'",Engine="'+EngineName+'",Host="'+Host+'",User="'+User+'",Password="'+Password+'",Role="'+Role+'"';
+  //TODO add only non empty value
+  Result := 'Resource="'+Resource+'",Engine="'+EngineName+'",Host="'+Host+'",Port="'+Port+'",User="'+User+'",Password="'+Password+'",Role="'+Role+'"';
 end;
 
 function TmncEngines.ComposeConnectionString(Connection: TmncConnection): string;
 begin
   with Connection do
-    Result := ComposeConnectionString(EngineName, Resource, Host, UserName, Password, Role);
+    Result := ComposeConnectionString(EngineName, Resource, Host, Port, UserName, Password, Role);
 end;
 
-procedure TmncEngines.DecomposeConnectionString(Composed: string; out EngineName, Resource, Host, User, Password, Role: string);
+procedure TmncEngines.DecomposeConnectionString(Composed: string; out EngineName, Resource, Host, Port, User, Password, Role: string);
 var
   Strings: TStringList;
 begin
@@ -101,6 +102,7 @@ begin
     Resource := DequoteStr(Strings.Values['Resource']);
     EngineName := DequoteStr(Strings.Values['Engine']);
     Host := DequoteStr(Strings.Values['Host']);
+    Port := DequoteStr(Strings.Values['Port']);
     User := DequoteStr(Strings.Values['User']);
     Password := DequoteStr(Strings.Values['Password']);
     Role := DequoteStr(Strings.Values['Role']);

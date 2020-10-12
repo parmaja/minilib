@@ -7,7 +7,7 @@ uses
   cthreads,
   {$ENDIF}
   Interfaces, // this includes the LCL widgetset
-  Forms, MainForm, mnIRCClients, ChatRoomFrames;
+  Forms, MainForm, mnIRCClients, FrameViewer09, ChatRoomFrames;
 
 {$R *.res}
 
