@@ -1,7 +1,7 @@
 unit ChatRoomFrames;
 
 {$mode objfpc}{$H+}
-{.$define use_webbrowser}
+{$define use_webbrowser}
 
 interface
 
@@ -122,33 +122,13 @@ end;
 {$endif}
 
 procedure TChatRoomFrame.ChangeTopicBtnClick(Sender: TObject);
-{$ifdef use_webbrowser}
-var
-  i: Integer;
-{  aDocument: ThtDocument;
-  aNewDocument: ThtDocument;}
-  {$endif}
 begin
-  {$ifdef use_webbrowser}
-  Viewer.EnumDocuments(@HtmlEnumerator);
-  //Viewer.MasterFrame.
-  Body.BgColor := clRed;
-  Body.TextColor := clBlue;
-  with TIpHtmlNodeText.Create(Body) do
-  begin
-    Text := 'dfsdfsd';
-  end;
-  //(Viewer.HotNode as TIpHtmlNodeBODY).BgColor := clRed;
-{  for i :=0 to HtmlViewer.SectionList.Count -1 do
-  begin
-    aDocument := HtmlViewer.SectionList[i].Document;
-
-  end;}
-  {$else}
-  {$endif}
+  Viewer.Scroll(hsaEnd);
 end;
 
 constructor TChatRoomFrame.Create(TheOwner: TComponent);
+var
+  i: Integer;
 begin
   inherited Create(TheOwner);
   {$ifdef use_webbrowser}
@@ -159,13 +139,22 @@ begin
   begin
     Parent := Self;
     Align := alClient;
+    BorderStyle := bsNone;
+    MarginHeight := 10;
+    MarginWidth := 10;
     Visible := True;
-    {BorderStyle := htNone;
-    ScrollBars := ssAutoVertical;}
+    //ScrollBars := ssAutoVertical;
   end;
   //Viewer.LoadFromFile(Application.Location + 'chat.html');
   Viewer.SetHtmlFromFile(Application.Location + 'chat.html');
-
+  //Find Body
+  //Viewer.EnumDocuments(@HtmlEnumerator);
+  for i :=0 to Viewer.MasterFrame.Html.HtmlNode.ChildCount - 1 do
+    if Viewer.MasterFrame.Html.HtmlNode.ChildNode[i] is TIpHtmlNodeBODY then
+    begin
+      Body := TIpHtmlNodeBODY(Viewer.MasterFrame.Html.HtmlNode.ChildNode[i]);
+      break;
+    end;
   {$else}
   MsgEdit := TSynEdit.Create(TheOwner);
   with MsgEdit do
@@ -182,8 +171,24 @@ begin
 end;
 
 procedure TChatRoomFrame.AddMessage(aMsg: string);
+{$ifdef use_webbrowser}
+var
+  aNode: TIpHtmlNodeText;
+{$endif}
 begin
   {$ifdef use_webbrowser}
+  aNode := TIpHtmlNodeText.Create(Body);
+  with aNode do
+  begin
+    aNode.EscapedText := aMsg;
+  end;
+
+  with TIpHtmlNodeBR.Create(Body) do
+  begin
+  end;
+
+  Viewer.Update;
+  Viewer.Scroll(hsaEnd);
   {$else}
   MsgEdit.Lines.Add(aMSG);
   MsgEdit.CaretY := MsgEdit.Lines.Count;

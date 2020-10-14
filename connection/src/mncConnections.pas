@@ -60,11 +60,12 @@ type
   TmncCapability = (
     ccDB, //It is Database engine not just transfer data object
     ccAlias, //Allow alias names in resrouce like Firebird
-    ccPath, //Allow path as file name in resrouce, like sqlite and Firebird
+    ccPath, //Allow path as file name in resrouce, like Sqlite and Firebird
     ccCreate, //Allow create database
     ccDrop, //Allow drop database
     ccSQL, //It is SQL engine, you know CSV or Paradox is not, we have no plan to support Paradox
-    ccNetwork, //Can connect over network
+    ccNetwork, //Can connect over network, like firebird, postgre, mysql but not sqlite
+    ccBrowse, //Server can browse databases, mysql and postgre
     ccStrict, //Without it: it is no need to call Start and Stop (Commit/Rollback) this DB automatically do it (pg/SQLite allow it)
               //But that not mean you can call Start more than one or Stop without started it.
     ccTransaction, //Support transaction, most of them Like Firebird, SQLite, PG

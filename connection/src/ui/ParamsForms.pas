@@ -28,7 +28,7 @@ type
   public
   end;
 
-function ShowSQLParams(Command: TmncCommand):Boolean;
+function ShowSQLParams(Command: TmncCommand): Boolean;
 
 implementation
 
@@ -43,7 +43,7 @@ type
     Param: TmncCustomField;
   end;
 
-function ShowSQLParams(Command: TmncCommand):Boolean;
+function ShowSQLParams(Command: TmncCommand): Boolean;
 var
   y: Integer;
   r: TRect;
