@@ -395,7 +395,7 @@ begin
 
     aSockAddr.sin_family := AF_INET;
     aSockAddr.sin_port := htons(LookupPort(Port));
-    if Address = '' then
+    if (Address = '')or(Address = '0.0.0.0') then
       aSockAddr.sin_addr.s_addr := INADDR_ANY
     else
     begin
