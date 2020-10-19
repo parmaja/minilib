@@ -93,7 +93,7 @@ type
     function DoSend(const Buffer; var Count: Longint): TmnError; override;
     function DoClose: TmnError; override;
   public
-    function Accept: TmnCustomSocket; override;
+    function Accept: TmnCustomSocket;
     function GetLocalAddress: string; override;
     function GetRemoteAddress: string; override;
     function GetLocalName: string; override;
@@ -111,7 +111,8 @@ type
     constructor Create; override;
     destructor Destroy; override;
     procedure Bind(Options: TmnsoOptions; ReadTimeout: Integer; const Port: string; const Address: string; out vSocket: TmnCustomSocket; out vErr: Integer); override;
-    procedure Connect(Options: TmnsoOptions; ConnectTimeout, ReadTimeout: Integer; const Port: ansistring; const Address: AnsiString; out vSocket: TmnCustomSocket; out vErr: Integer); override;
+    procedure Connect(Options: TmnsoOptions; ConnectTimeout, ReadTimeout: Integer; const Port: string; const Address: string; out vSocket: TmnCustomSocket; out vErr: Integer); override;
+    procedure Accept(ListenerHandle: TSocketHandle; Options: TmnsoOptions; ReadTimeout: Integer; out vSocket: TmnCustomSocket; out vErr: Integer); override;
   end;
 
 implementation
@@ -143,7 +144,7 @@ begin
   CheckActive;
 
   ret := Posix.SysSocket.Recv(FHandle, Buffer, Count, MSG_NOSIGNAL);
-  if c = 0 then
+  if ret = 0 then
   begin
     Count := 0;
     Result := erClosed;
@@ -164,7 +165,7 @@ end;
 
 function TmnSocket.DoSend(const Buffer; var Count: Longint): TmnError;
 var
-  re: Integer;
+  ret: Integer;
 begin
 
   CheckActive;
@@ -176,14 +177,14 @@ begin
     Result := erClosed;
     Count := 0;
   end
-  else if Value = SOCKET_ERROR then
+  else if ret = SOCKET_ERROR then
   begin
     Count := 0;
     Result := erInvalid;
   end
   else
   begin
-    Count := c;
+    Count := ret;
     Result := erSuccess;
   end;
 end;
@@ -381,6 +382,20 @@ const
   SO_TRUE:Longbool=True;
   SO_FALSE:Longbool=False;
 
+procedure TmnWallSocket.Accept(ListenerHandle: TSocketHandle; Options: TmnsoOptions; ReadTimeout: Integer; out vSocket: TmnCustomSocket; out vErr: Integer);
+var
+  aHandle: TSocket;
+  aSize: Cardinal;
+  aAddress: TSockAddr;
+begin
+  aSize := SizeOf(aAddress);
+  aHandle := Posix.SysSocket.accept(ListenerHandle, aAddress.addr, aSize);
+  if aHandle < 0 then
+    vSocket := nil
+  else
+    vSocket := TmnSocket.Create(aHandle, Options, skServer);
+end;
+
 procedure TmnWallSocket.Bind(Options: TmnsoOptions; ReadTimeout: Integer; const Port: string; const Address: string; out vSocket: TmnCustomSocket; out
   vErr: Integer);
 var
@@ -399,7 +414,7 @@ begin
    //  fpsetsockopt(aHandle, SOL_SOCKET, SO_NOSIGPIPE, PChar(@SO_TRUE), SizeOf(SO_TRUE));
 
     aAddr.addr_in.sin_family := AF_INET;
-    aAddr.addr_in.sin_port := StrToIntDef(Port, 0);
+    aAddr.addr_in.sin_port := htons(StrToIntDef(Port, 0));
     StrToNetAddr(Address, aAddr.addr_in.sin_addr);
     If Posix.SysSocket.bind(aHandle, aAddr.addr, Sizeof(aAddr)) <> 0 then
     begin
@@ -419,7 +434,7 @@ end;
 
 procedure TmnWallSocket.FreeSocket(var vHandle: TSocket; out vErr: Integer);
 begin
-  __close(FHandle);
+  __close(vHandle);
   vHandle := INVALID_SOCKET;
 end;
 
@@ -463,8 +478,7 @@ begin
   Result := StrToIntDef(Port, 0);
 end;
 
-procedure TmnWallSocket.Connect(Options: TmnsoOptions; ConnectTimeout, ReadTimeout: Integer; const Port: ansistring; const Address: AnsiString; out
-  vSocket: TmnCustomSocket; out vErr: Integer);
+procedure TmnWallSocket.Connect(Options: TmnsoOptions; ConnectTimeout, ReadTimeout: Integer; const Port: string; const Address: string; out vSocket: TmnCustomSocket; out vErr: Integer);
 var
   aHandle: TSocket;
   aAddr : TSockAddr;
@@ -475,8 +489,8 @@ var
   LRetVal: Integer;
   LAddrInfo: pAddrInfo;
   aInfo: AddrInfo;
-  aMode: u_long;
-  time: ttimeval;
+  aMode: UInt32;
+  time: timeval;
   DW: Integer;
 begin
   //nonblick connect  https://stackoverflow.com/questions/1543466/how-do-i-change-a-tcp-socket-to-be-non-blocking
@@ -489,7 +503,7 @@ begin
   LAddrInfo := TestGetAddrInfo(Address, Port, aInfo);
 
   if LAddrInfo = nil then
-    Result := nil
+    vSocket := nil
   else
   begin
     //aHandle := Posix.SysSocket.socket(AF_INET, SOCK_STREAM{TODO: for nonblock option: or O_NONBLOCK}, IPPROTO_TCP);
@@ -513,18 +527,18 @@ begin
         begin
           time.tv_sec:= ReadTimeout div 1000;
           time.tv_usec:=(ReadTimeout mod 1000) * 1000;
-          fpsetsockopt(aHandle, SOL_SOCKET, SO_RCVTIMEO, @time, SizeOf(time));
+          setsockopt(aHandle, SOL_SOCKET, SO_RCVTIMEO, time, SizeOf(time));
         end;
       end;
 
       if ConnectTimeout <> -1 then
       begin
-        aMode := 1;
+        {aMode := 1;
         ret := ioctlsocket(aHandle, Longint(FIONBIO), aMode);
         if ret = Longint(SOCKET_ERROR) then
         begin
           FreeSocket(aHandle, vErr);
-        end;
+        end;}
       end;
 
       //SetNonBlock(aHandle, True);
@@ -582,7 +596,7 @@ begin
       ret := Posix.SysSocket.connect(aHandle, LAddr, SizeOf(LAddrIPv4));*)
       if ret = -1 then
       begin
-        FreeSocket(aHandle, aErr);
+        FreeSocket(aHandle, vErr);
       end;
     end;
     if aHandle <> INVALID_SOCKET then

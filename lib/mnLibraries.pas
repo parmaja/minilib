@@ -18,7 +18,10 @@ uses
   {$ifdef FPC}
     dynlibs,
   {$else}
+    {$ifdef LINUX}
+    {$else}
     Windows,
+    {$endif}
   {$endif}
     SysUtils;
 
@@ -91,7 +94,11 @@ resourcestring
 {$else}
 function LoadLibrary(LibraryName: string):TLibHandle;
 begin
+  {$ifdef LINUX}
+  Result := LoadLibrary(PChar(LibraryName));
+  {$else}
   Result := Windows.LoadLibrary(PChar(LibraryName));
+  {$endif}
 end;
 {$endif}
 
@@ -118,7 +125,8 @@ begin
   Result := not IsLoaded;
   if Result then
   begin
-    Usage := InterlockedIncrement(RefCount);
+
+    Usage := AtomicIncrement(RefCount);
     if Usage = 1 then
     begin
       FHandle := LoadLibrary(LibraryName);
@@ -147,8 +155,11 @@ begin
 end;
 
 procedure TmnLibrary.Release;
+var
+  Usage: Integer;
 begin
-  if InterlockedDecrement(RefCount) <= 0 then
+  Usage := AtomicIncrement(RefCount, -1);
+  if Usage <= 0 then
   begin
     if Handle <> 0 then
       FreeLibrary(Handle);

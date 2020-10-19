@@ -36,14 +36,16 @@ procedure TForm4.Button2Click(Sender: TObject);
 const
   //sURL = 'https://picsum.photos/id/237/200/300';
   //sURL = 'http://www.parmaja.org/wp/wp-content/uploads/2015/07/logo-site.png';
-  sURL = 'https://www.parmaja.org/wp/wp-content/uploads/2019/08/zaher-new-desktop-768x1024.jpg';
+  //sURL = 'https://www.parmaja.org/wp/wp-content/uploads/2019/08/zaher-new-desktop-768x1024.jpg';
   //sURL = 'http://placehold.it/120x120&text=image1';
+  sUrl = 'https://a.tile.openstreetmap.org/18/157418/105125.png';
 var
   HttpClient: TmnHttpClient;
   MemoryStream: TMemoryStream;
 begin
   LogEdit.Lines.Add('Getting from URL');
   HttpClient := TmnHttpClient.Create;
+  HttpClient.Request.UserAgent := 'Embarcadero URI Client/1.0';
   MemoryStream := TMemoryStream.Create;
   try
     HttpClient.GetMemoryStream(sURL, MemoryStream);

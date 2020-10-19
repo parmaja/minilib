@@ -112,7 +112,11 @@ type
   private
   protected
   public
-    function Seek(Offset: Integer; Origin: Word): Integer; override;
+    {$if CompilerVersion > 33}
+    function Seek(const Offset: Int64; Origin: TSeekOrigin): Int64; overload; override;
+    {$else}
+    function Seek(Offset: longint; Origin: Word): Integer; override;
+    {$ifend}
   end;
 
   { TmnHttpClient }
@@ -420,7 +424,11 @@ end;
 
 { TmnHttpStream }
 
-function TmnHttpStream.Seek(Offset: Integer; Origin: Word): Integer;
+{$if CompilerVersion > 33}
+function TmnHttpStream.Seek(const Offset: Int64; Origin: TSeekOrigin): Int64;
+{$else}
+function TmnHttpStream.Seek(Offset: longint; Origin: Word): Integer;
+{$ifend}
 begin
   Result := 0; // for loading from this stream like Image.loadfrom stream
 end;
