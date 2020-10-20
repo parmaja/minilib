@@ -126,7 +126,7 @@ begin
   if Result then
   begin
 
-    Usage := AtomicIncrement(RefCount);
+    Usage := InterlockedIncrement(RefCount);
     if Usage = 1 then
     begin
       FHandle := LoadLibrary(LibraryName);
@@ -158,7 +158,7 @@ procedure TmnLibrary.Release;
 var
   Usage: Integer;
 begin
-  Usage := AtomicIncrement(RefCount, -1);
+  Usage := InterlockedDecrement(RefCount);
   if Usage <= 0 then
   begin
     if Handle <> 0 then
