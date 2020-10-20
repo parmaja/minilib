@@ -119,15 +119,13 @@ begin
 end;
 
 function TmnLibrary.Load: Boolean;
-var
-  Usage: Integer;
 begin
   Result := not IsLoaded;
   if Result then
   begin
 
-    Usage := InterlockedIncrement(RefCount);
-    if Usage = 1 then
+    RefCount := RefCount + 1;
+    if RefCount = 1 then
     begin
       FHandle := LoadLibrary(LibraryName);
       if (FHandle = 0) then
@@ -155,11 +153,9 @@ begin
 end;
 
 procedure TmnLibrary.Release;
-var
-  Usage: Integer;
 begin
-  Usage := InterlockedDecrement(RefCount);
-  if Usage <= 0 then
+  RefCount := RefCount - 1;
+  if RefCount <= 0 then
   begin
     if Handle <> 0 then
       FreeLibrary(Handle);
