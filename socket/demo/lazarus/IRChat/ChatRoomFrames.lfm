@@ -98,4 +98,12 @@ object ChatRoomFrame: TChatRoomFrame
       OnClick = WhoIsMnuClick
     end
   end
+  object PopupMenu1: TPopupMenu
+    Left = 271
+    Top = 113
+    object SaveAsHtmlMnu: TMenuItem
+      Caption = 'Save As Html'
+      OnClick = SaveAsHtmlMnuClick
+    end
+  end
 end

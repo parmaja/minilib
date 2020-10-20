@@ -734,6 +734,14 @@ type
   public
   end;
 
+  { TTopic_UserCommand }
+
+  TTopic_UserCommand = class(TIRCUserCommand)
+  protected
+    procedure Send(vChannel: utf8string; vMsg: utf8string); override;
+  public
+  end;
+
   { TMe_UserCommand }
 
   TMe_UserCommand = class(TIRCUserCommand)
@@ -969,6 +977,16 @@ begin
   EndOfNick := Pos('!', Address);
   if EndOfNick > 0 then
     Result := Copy(Address, 1, EndOfNick - 1);
+end;
+
+{ TTopic_UserCommand }
+
+procedure TTopic_UserCommand.Send(vChannel: utf8string; vMsg: utf8string);
+var
+  aChannel: utf8string;
+begin
+  Client.GetCurrentChannel(aChannel);
+  Client.SendRaw('TOPIC ' + aChannel + ' ' + vMsg, prgReady);
 end;
 
 { TDCC_IRCReceiver }
@@ -2734,6 +2752,7 @@ begin
   UserCommands.Add(TPart_UserCommand.Create('Leave', Self));
   UserCommands.Add(TMode_UserCommand.Create('Mode', Self));
   UserCommands.Add(TSend_UserCommand.Create('Send', Self));
+  UserCommands.Add(TTopic_UserCommand.Create('Topic', Self));
   UserCommands.Add(TMe_UserCommand.Create('Me', Self));
   UserCommands.Add(TNotice_UserCommand.Create('Notice', Self));
   UserCommands.Add(TCNotice_UserCommand.Create('CNotice', Self));

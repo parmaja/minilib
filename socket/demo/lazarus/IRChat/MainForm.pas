@@ -5,7 +5,7 @@ unit MainForm;
 interface
 
 uses
-  Classes, SysUtils, StrUtils, FileUtil, Forms, Controls, Graphics,
+  Classes, SysUtils, StrUtils, FileUtil, IpHtml, Forms, Controls, Graphics,
   Dialogs, Buttons, IniFiles, StdCtrls, ExtCtrls, ComCtrls, Menus, LCLType,
   MsgBox, GUIMsgBox, mnLogs,
   ChatRoomFrames, mnIRCClients;
@@ -33,7 +33,11 @@ type
   TMainFrm = class(TForm)
     Button1: TButton;
     Button2: TButton;
+    SendEdit: TMemo;
+    WelcomeHtmlPnl: TIpHtmlPanel;
     OptionsBtn: TButton;
+    WelcomePnl: TPanel;
+    StatusPnl: TPanel;
     ProfileCbo: TComboBox;
     Label6: TLabel;
     UseSSLChk: TCheckBox;
@@ -48,8 +52,8 @@ type
     Label5: TLabel;
     MsgPageControl: TPageControl;
     NicknameBtn: TButton;
-    Panel1: TPanel;
-    Panel3: TPanel;
+    SendPnl: TPanel;
+    ChatPnl: TPanel;
     PasswordEdit: TEdit;
     LogEdit: TMemo;
     MenuItem1: TMenuItem;
@@ -57,7 +61,6 @@ type
     Panel2: TPanel;
     RoomsEdit: TEdit;
     SendBtn: TButton;
-    SendEdit: TEdit;
     SmallImageList: TImageList;
     UserEdit: TEdit;
     Splitter1: TSplitter;
@@ -75,10 +78,11 @@ type
     procedure ProfileCboSelect(Sender: TObject);
     procedure SendBtnClick(Sender: TObject);
     procedure SendEditKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
-    procedure SendEditKeyPress(Sender: TObject; var Key: char);
   private
+    Body: TIpHtmlNodeBODY;
     Recents: TStringList;
     RecentsIndex: Integer;
+    procedure AddMessage(aMsg: string; AClassName: string);
     procedure RecentUp;
     procedure RecentDown;
     procedure AddRecent(S: string);
@@ -150,14 +154,20 @@ begin
   case Progress of
     prgDisconnected:
     begin
+      MainFrm.ChatPnl.Visible := False;
+      MainFrm.WelcomePnl.Visible := True;
       MainFrm.ConnectBtn.Caption := 'Connect';
       while MainFrm.MsgPageControl.PageCount > 0 do
         MainFrm.MsgPageControl.Page[0].Free;
     end;
-    prgConnecting: MainFrm.ConnectBtn.Caption := 'Connecting';
+    prgConnecting:
+      MainFrm.ConnectBtn.Caption := 'Connecting';
     prgConnected:
     begin
       MainFrm.ConnectBtn.Caption := 'Disconnect';
+      MainFrm.WelcomePnl.Visible := False;
+      MainFrm.ChatPnl.Visible := True;
+      MainFrm.SendEdit.SetFocus;
     end;
     prgReady:
     begin
@@ -200,7 +210,6 @@ begin
   else
   begin
     ConnectNow;
-    SendEdit.SetFocus;
   end;
 end;
 
@@ -336,6 +345,11 @@ begin
       end;
       VK_UP: RecentUp;
       VK_DOWN: RecentDown;
+      VK_RETURN:
+      begin
+        Key := 0;
+        SendNow;
+      end;
     end;
   end;
 end;
@@ -344,7 +358,7 @@ procedure TMainFrm.SendNow;
 var
   s: string;
 begin
-  s := trim(SendEdit.Text);
+  s := TrimRight(SendEdit.Text);
   if s <> '' then
     if IRC.Online then
     begin
@@ -391,9 +405,8 @@ begin
       Parent := TabSheet;
       Align := alClient;
       RoomName := vRoomName;
-      Visible := True;
-
       IsRoom := AIsRoom;
+      Visible := True;
     end;
     ActiveIt := True; //force to focus it
     //TabSheet.Name := ARoomName + '_Room';
@@ -417,15 +430,6 @@ procedure TMainFrm.SetNick(ANick: string);
 begin
   NicknameBtn.Caption := ANick;
  //TODO change it in the list
-end;
-
-procedure TMainFrm.SendEditKeyPress(Sender: TObject; var Key: char);
-begin
-  if Key = #13 then
-  begin
-    Key := #0;
-    SendNow;
-  end;
 end;
 
 procedure TMainFrm.RecentUp;
@@ -491,6 +495,7 @@ end;
 
 constructor TMainFrm.Create(TheOwner: TComponent);
 var
+  i: Integer;
   ini: TIniFile;
   aProfile: string;
 begin
@@ -502,6 +507,8 @@ begin
   InstallDebugOutputLog;
   {$endif}
   {$macro on}
+  WelcomePnl.Align := alClient;
+  ChatPnl.Align := alClient;
   Caption := Caption + ' ' + IntToStr(FPC_FULLVERSION);
   Recents := TStringList.Create;
   ini := TIniFile.Create(Application.Location + 'setting.ini');
@@ -519,6 +526,16 @@ begin
   EnumProfiles;
   ProfileCbo.ItemIndex := ProfileCbo.Items.IndexOf(aProfile);
   LoadProfile(aProfile);
+  WelcomeHtmlPnl.SetHtmlFromFile(Application.Location + 'chat.html');
+  //Find Body
+  //Viewer.EnumDocuments(@HtmlEnumerator);
+  for i :=0 to WelcomeHtmlPnl.MasterFrame.Html.HtmlNode.ChildCount - 1 do
+    if WelcomeHtmlPnl.MasterFrame.Html.HtmlNode.ChildNode[i] is TIpHtmlNodeBODY then
+    begin
+      Body := TIpHtmlNodeBODY(WelcomeHtmlPnl.MasterFrame.Html.HtmlNode.ChildNode[i]);
+      break;
+    end;
+  //AddMessage('Welcome to irc, click connect', 'action');
 end;
 
 destructor TMainFrm.Destroy;
@@ -626,10 +643,13 @@ begin
             mtMOTD:
               AddMessage(vMSG);
             mtTopic:
+            begin
               TopicEdit.Text := vMSG;
+              AddMessage(vMSG, '', True);
+            end;
             mtJoin:
             begin
-              AddMessage(vUser + ' is joined');
+              AddMessage(vUser + ' is joined', 'hint');
               aItem := UserListBox.Items.FindCaption(0, vUser, False, True, False, False);
               if aItem = nil then
               begin
@@ -652,7 +672,7 @@ begin
             mtLeft:
             begin
               //if me close the tab
-              AddMessage(vUser + ' is left: ' + vMsg);
+              AddMessage(vUser + ' is left: ' + vMsg, 'hint');
               aItem := UserListBox.Items.FindCaption(0, vUser, False, True, False, False);
               if aItem <> nil then
                 UserListBox.items.Delete(aItem.Index);
@@ -680,17 +700,17 @@ begin
               end;
             end;
             mtNotice:
-              AddMessage('[' + vUser + '] ' + vMSG);
+              AddMessage('[' + vUser + '] ' + vMSG, 'notice');
             mtMessage, mtSend:
             begin
-              AddMessage(vUser + ': ' + vMSG);
+              AddMessage(vUser + ': ' + vMSG, 'received');
             end;
             mtAction:
             begin
-              AddMessage('* ' + vUser + ': -' + vMSG + '-');
+              AddMessage('* ' + vUser + ': -' + vMSG + '-', 'action');
             end;
           else
-              AddMessage(vUser + ': ' + vMSG);
+              AddMessage(vUser + ': ' + vMSG, 'log');
           end;
         end;
    end;
@@ -726,6 +746,27 @@ begin
       end;
     end;
   end;
+end;
+
+procedure TMainFrm.AddMessage(aMsg: string; AClassName: string);
+var
+  TextNode: TIpHtmlNodeText;
+  PNode: TIpHtmlNodeP;
+  //DivNode: TIpHtmlNodeDIV;
+begin
+  {DivNode := TIpHtmlNodeDIV.Create(Body);
+  DivNode.ClassId := AClassName;}
+  PNode := TIpHtmlNodeP.Create(Body);
+  PNode.ClassId := AClassName;
+  TextNode := TIpHtmlNodeText.Create(PNode);
+  TextNode.EscapedText := aMsg;
+
+  with TIpHtmlNodeBR.Create(Body) do
+  begin
+  end;
+
+  WelcomeHtmlPnl.Update;
+  WelcomeHtmlPnl.Scroll(hsaEnd);
 end;
 
 end.

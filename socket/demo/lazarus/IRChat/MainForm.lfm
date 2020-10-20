@@ -3,6 +3,7 @@ object MainFrm: TMainFrm
   Height = 459
   Top = 227
   Width = 696
+  Align = alClient
   Caption = 'IRC chat'
   ClientHeight = 459
   ClientWidth = 696
@@ -18,7 +19,7 @@ object MainFrm: TMainFrm
     Cursor = crVSplit
     Left = 0
     Height = 6
-    Top = 282
+    Top = 261
     Width = 696
     Align = alBottom
     ResizeAnchor = akBottom
@@ -214,7 +215,7 @@ object MainFrm: TMainFrm
   object LogEdit: TMemo
     Left = 2
     Height = 167
-    Top = 290
+    Top = 269
     Width = 692
     Align = alBottom
     BorderSpacing.Around = 2
@@ -230,42 +231,42 @@ object MainFrm: TMainFrm
     ReadOnly = True
     ScrollBars = ssAutoBoth
     TabOrder = 2
-    WordWrap = False
   end
-  object Panel3: TPanel
+  object ChatPnl: TPanel
     Left = 0
-    Height = 195
+    Height = 174
     Top = 87
-    Width = 696
-    Align = alClient
+    Width = 362
+    Align = alLeft
     BevelOuter = bvNone
-    ClientHeight = 195
-    ClientWidth = 696
+    ClientHeight = 174
+    ClientWidth = 362
     TabOrder = 3
+    Visible = False
     object MsgPageControl: TPageControl
       Left = 2
-      Height = 165
+      Height = 140
       Top = 2
-      Width = 692
+      Width = 358
       Align = alClient
       BorderSpacing.Around = 2
       TabOrder = 0
       OnChange = MsgPageControlChange
     end
-    object Panel1: TPanel
+    object SendPnl: TPanel
       Left = 2
-      Height = 24
-      Top = 169
-      Width = 692
+      Height = 28
+      Top = 144
+      Width = 358
       Align = alBottom
       BorderSpacing.Around = 2
       BevelOuter = bvNone
-      ClientHeight = 24
-      ClientWidth = 692
+      ClientHeight = 28
+      ClientWidth = 358
       TabOrder = 1
       object SendBtn: TButton
-        Left = 637
-        Height = 24
+        Left = 303
+        Height = 28
         Top = 0
         Width = 55
         Align = alRight
@@ -277,7 +278,7 @@ object MainFrm: TMainFrm
       end
       object NicknameBtn: TButton
         Left = 0
-        Height = 24
+        Height = 28
         Top = 0
         Width = 61
         Align = alLeft
@@ -286,19 +287,57 @@ object MainFrm: TMainFrm
         OnClick = NicknameBtnClick
         TabOrder = 1
       end
-      object SendEdit: TEdit
+      object SendEdit: TMemo
         Left = 61
-        Height = 24
+        Height = 28
         Top = 0
-        Width = 576
+        Width = 242
         Align = alClient
         Anchors = [akLeft, akRight, akBottom]
-        AutoSize = False
         OnKeyDown = SendEditKeyDown
-        OnKeyPress = SendEditKeyPress
         TabOrder = 2
       end
     end
+  end
+  object WelcomePnl: TPanel
+    Left = 362
+    Height = 174
+    Top = 87
+    Width = 334
+    Align = alClient
+    BevelOuter = bvNone
+    ClientHeight = 174
+    ClientWidth = 334
+    TabOrder = 5
+    object WelcomeHtmlPnl: TIpHtmlPanel
+      Left = 0
+      Height = 174
+      Top = 0
+      Width = 334
+      Align = alClient
+      FixedTypeface = 'Courier New'
+      DefaultTypeFace = 'default'
+      DefaultFontSize = 12
+      FlagErrors = False
+      PrintSettings.MarginLeft = 0.5
+      PrintSettings.MarginTop = 0.5
+      PrintSettings.MarginRight = 0.5
+      PrintSettings.MarginBottom = 0.5
+      PrintSettings.Preview.Left = 480
+      PrintSettings.Preview.Top = 270
+      PrintSettings.Preview.Width = 1440
+      PrintSettings.Preview.Height = 810
+      TabOrder = 0
+    end
+  end
+  object StatusPnl: TPanel
+    Left = 0
+    Height = 21
+    Top = 438
+    Width = 696
+    Align = alBottom
+    BevelOuter = bvNone
+    TabOrder = 4
   end
   object LogPopupMenu: TPopupMenu
     Left = 267
@@ -309,8 +348,8 @@ object MainFrm: TMainFrm
     end
   end
   object SmallImageList: TImageList
-    Left = 213
-    Top = 174
+    Left = 181
+    Top = 137
     Bitmap = {
       4C7A040000001000000010000000370100000000000078DAED965D1284200880
       F74A9EC963F4D0453C93576243A550516CAB691F648675FDF9400BA4CFE71959

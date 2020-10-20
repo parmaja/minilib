@@ -21,7 +21,9 @@ type
   TChatRoomFrame = class(TFrame)
     ChangeTopicBtn: TButton;
     MenuItem1: TMenuItem;
+    SaveAsHtmlMnu: TMenuItem;
     Panel1: TPanel;
+    PopupMenu1: TPopupMenu;
     TopicEdit: TEdit;
     WhoIsMnu: TMenuItem;
     OpMnu: TMenuItem;
@@ -32,6 +34,7 @@ type
     procedure ChangeTopicBtnClick(Sender: TObject);
     procedure MenuItem1Click(Sender: TObject);
     procedure OpMnuClick(Sender: TObject);
+    procedure SaveAsHtmlMnuClick(Sender: TObject);
     procedure WhoIsMnuClick(Sender: TObject);
   private
     function GetCurrentUser: string;
@@ -48,7 +51,7 @@ type
     RoomName: string;
     IsRoom: Boolean;
     constructor Create(TheOwner: TComponent); override;
-    procedure AddMessage(aMsg: string);
+    procedure AddMessage(aMsg: string; AClassName: string = ''; IsHeader: Boolean = False);
   end;
 
 implementation
@@ -76,6 +79,11 @@ begin
   aUser := GetCurrentUser;
   if aUser <> '' then
     IRC.OpUser(RoomName, aUser);
+end;
+
+procedure TChatRoomFrame.SaveAsHtmlMnuClick(Sender: TObject);
+begin
+
 end;
 
 procedure TChatRoomFrame.WhoIsMnuClick(Sender: TObject);
@@ -123,7 +131,7 @@ end;
 
 procedure TChatRoomFrame.ChangeTopicBtnClick(Sender: TObject);
 begin
-  Viewer.Scroll(hsaEnd);
+
 end;
 
 constructor TChatRoomFrame.Create(TheOwner: TComponent);
@@ -143,6 +151,8 @@ begin
     MarginHeight := 10;
     MarginWidth := 10;
     Visible := True;
+    Font.Name := 'Courier New';
+    Font.Size := 10;
     //ScrollBars := ssAutoVertical;
   end;
   //Viewer.LoadFromFile(Application.Location + 'chat.html');
@@ -170,18 +180,26 @@ begin
   {$endif}
 end;
 
-procedure TChatRoomFrame.AddMessage(aMsg: string);
+procedure TChatRoomFrame.AddMessage(aMsg: string; AClassName: string; IsHeader: Boolean);
 {$ifdef use_webbrowser}
 var
-  aNode: TIpHtmlNodeText;
+  TextNode: TIpHtmlNodeText;
+  Node: TIpHtmlNodeInline;
 {$endif}
 begin
   {$ifdef use_webbrowser}
-  aNode := TIpHtmlNodeText.Create(Body);
-  with aNode do
+  if IsHeader then
   begin
-    aNode.EscapedText := aMsg;
-  end;
+    Node := TIpHtmlNodeHeader.Create(Body);
+    (Node as TIpHtmlNodeHeader).Size := 4;
+  end
+  else
+    Node := TIpHtmlNodeP.Create(Body);
+
+  Node.ClassId := AClassName;
+
+  TextNode := TIpHtmlNodeText.Create(Node);
+  TextNode.AnsiText := aMsg;
 
   with TIpHtmlNodeBR.Create(Body) do
   begin
