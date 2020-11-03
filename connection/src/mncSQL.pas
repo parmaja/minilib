@@ -221,7 +221,7 @@ end;
 
 function TmncSQLSession.CreateCommand(ASQL: string): TmncSQLCommand;
 begin
-  CheckActive;
+  //CheckActive; nop, some commands can't run inside transaction like CREATE DATABASE
   Result := InternalCreateCommand;
   Result.Session := Self;
   if ASQL <> '' then
