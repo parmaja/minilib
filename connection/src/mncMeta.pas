@@ -35,6 +35,11 @@ type
   public
   end;
 
+  TmncMetaHeader = class(TmnFields)
+  private
+  public
+  end;
+
   { TmncMetaItem }
 
   TmncMetaItem = class(TmnNamedObject)
@@ -52,7 +57,11 @@ type
 
   TmncMetaItems = class(TmnObjectList<TmncMetaItem>)
   private
+    FHeader: TmncMetaHeader;
   public
+    constructor Create;
+    destructor Destroy; override;
+    property Header: TmncMetaHeader read FHeader;
     function Add(Name: string): TmncMetaItem; overload;
   end;
 
@@ -137,6 +146,18 @@ begin
 end;
 
 { TmncMetaItems }
+
+constructor TmncMetaItems.Create;
+begin
+  inherited Create;
+  FHeader := TmncMetaHeader.Create;
+end;
+
+destructor TmncMetaItems.Destroy;
+begin
+  FreeAndNil(FHeader);
+  inherited;
+end;
 
 function TmncMetaItems.Add(Name: string): TmncMetaItem;
 begin

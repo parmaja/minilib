@@ -255,6 +255,10 @@ var
   aCMD: TmncSQLCommand;
   aItem: TmncMetaItem;
 begin
+  Meta.Header.Add('type', 'Type');
+  Meta.Header.Add('size', 'Size');
+  Meta.Header.Add('nullable', 'Nullable');
+  Meta.Header.Add('primary', 'Primary');
   aCMD := CreateCMD('pragma table_info(''' + (SQLName) + ''')' + GetSortSQL(Options));
   try
     aCMD.Prepare;
@@ -264,8 +268,8 @@ begin
       aItem := TmncMetaItem.Create;
       aItem.Name := aCMD.Field['name'].AsString;
       aItem.Attributes.Add('type', aCMD.Field['type'].AsString);
-      aItem.Attributes.Add('pk', IntToStr(ord(aCMD.Field['pk'].AsInteger <> 0)));
-      aItem.Attributes.Add('notnull', IntToStr(ord(aCMD.Field['notnull'].AsInteger <> 0)));
+      aItem.Attributes.Add('nullable', IntToStr(ord(aCMD.Field['notnull'].AsInteger = 0)));
+      aItem.Attributes.Add('primary', IntToStr(ord(aCMD.Field['pk'].AsInteger <> 0)));
       aItem.Attributes.Add('dflt_value', aCMD.Field['dflt_value'].AsString);
       aItem.Attributes.Add('cid', aCMD.Field['cid'].AsString);
       Meta.Add(aItem);
