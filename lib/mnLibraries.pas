@@ -88,7 +88,7 @@ implementation
 
 resourcestring
   SErrLoadFailed = 'Can not load library "%s". Check your installation.';
-  SErrAlreadyLoaded = 'interface already initialized from library %s.';
+  SErrAlreadyLoaded = 'Already initialized from library %s.';
 
 {$ifdef FPC}
 {$else}

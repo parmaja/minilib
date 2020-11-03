@@ -16,7 +16,6 @@ object Form1: TForm1
     Width = 75
     Anchors = [akLeft, akBottom]
     Caption = 'Remove'
-    Default = True
     OnClick = Button1Click
     TabOrder = 2
   end
@@ -51,5 +50,16 @@ object Form1: TForm1
     Width = 25
     Caption = 'الناتج'
     ParentColor = False
+  end
+  object Button2: TButton
+    Left = 101
+    Height = 25
+    Top = 101
+    Width = 75
+    Anchors = [akLeft, akBottom]
+    Caption = 'Connect'
+    Default = True
+    OnClick = Button2Click
+    TabOrder = 3
   end
 end

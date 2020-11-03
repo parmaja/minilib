@@ -71,20 +71,21 @@ procedure TForm1.Draw(s: WideString);
 var
   t: WideString;
   u: utf8string;
-  i: Integer;
   x, y, w: Integer;
   st: TTextStyle;
 begin
   x := 0;
   y := 50;
-  InitMemory(st, SizeOf(st));
-  for i := 1 to Length(s) do
+
+  Panel1.Canvas.Font := Panel1.Font;
+  Initialize(st);
+  st.Opaque := False;
+  st.Alignment := taLeftJustify;
+  for t in s do
   begin
-    t := s[i];
     u := UTF8Encode(t);
     w := Panel1.Canvas.TextWidth(u);
-    //st.Wordbreak := true;
-    st.Alignment := taLeftJustify;
+
     Panel1.Canvas.TextRect(Panel1.ClientRect, x, y, u, st);
     x := x + w;
   end;

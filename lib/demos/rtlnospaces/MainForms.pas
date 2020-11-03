@@ -13,11 +13,13 @@ type
 
   TForm1 = class(TForm)
     Button1: TButton;
+    Button2: TButton;
     InputEdit: TEdit;
     Label1: TLabel;
     Label2: TLabel;
     OutputEdit: TEdit;
     procedure Button1Click(Sender: TObject);
+    procedure Button2Click(Sender: TObject);
   private
 
   public
@@ -48,6 +50,17 @@ begin
   end;
   OutputEdit.Text := ows;
   Clipboard.AsText := oWS;
+end;
+
+procedure TForm1.Button2Click(Sender: TObject);
+var
+  ws: widestring;
+  c: widechar;
+begin
+  ws := InputEdit.Text;
+  BidiString(ws, [bdoApplyShape, bdoReorderCombining], bdnContext, bdpRightToLeft);
+  OutputEdit.Text := ws;
+  Clipboard.AsText := WS;
 end;
 
 end.
