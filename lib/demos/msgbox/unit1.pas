@@ -6,7 +6,7 @@ interface
 
 uses
   Classes, SysUtils, FileUtil, AnchorDockPanel, Forms, Controls, Graphics,
-  Dialogs, StdCtrls, ExtCtrls, MsgBox, GUIMsgBox;
+  Dialogs, StdCtrls, ExtCtrls, mnMsgBox, GUIMsgBox;
 
 type
 

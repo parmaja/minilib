@@ -2,15 +2,13 @@
   This source is only used to compile and install the package.
  }
 
-unit MiniCommons;
+unit MiniTranslator;
 
 {$warn 5023 off : no warning about unused units}
 interface
 
 uses
-  HejriDates, HejriUtils, minibidi, mnBase64, mnClasses, mnDrivers, mnFields, 
-  mnLogs, mnParams, mnStreams, mnUtils, UniDates, mnRTTIUtils, mnConfigs, 
-  mnStreamUtils, mnLibraries, mnMsgBox;
+  mnLangClasses, mnLangSupports, PO_Languages;
 
 implementation
 

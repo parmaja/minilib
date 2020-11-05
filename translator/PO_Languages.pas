@@ -16,7 +16,7 @@ interface
 
 uses
   SysUtils, Variants, Classes, Contnrs,
-  LangClasses;
+  mnLangClasses;
 
 type
   //keep poMsgStr in first
@@ -242,7 +242,7 @@ begin
   if aItem <> nil then
   begin
     s := aItem.DisplayText;
-    BreakToStrings(s, Contents.Attributes);
+    StrToStrings(s, Contents.Attributes);
     for i := 0 to Contents.Attributes.Count - 1 do
     begin
       s := Trim(Contents.Attributes[i]);
@@ -321,7 +321,7 @@ procedure TPO_Parser.DoGenerate(Strings: TStringList);
         if (Pos(#10, s) > 0) or (Pos(#13, s) > 0) then
         begin
           Strings.Add(Ident + ' ""');
-          BreakToStrings(s, Strings, True, BreakToStringsProc);
+          StrToStringsCallback(s, Strings, @BreakToStringsProc);
         end
         else
           Strings.Add(Ident + ' ' +QuoteStr(EscapePOString(s)));
@@ -337,7 +337,7 @@ procedure TPO_Parser.DoGenerate(Strings: TStringList);
       begin
         aStrings := TStringList.Create;
         try
-          BreakToStrings(s, aStrings);
+          StrToStrings(s, aStrings);
           for i := 0 to aStrings.Count - 1 do
           begin
             if aStrings[i] <> '' then

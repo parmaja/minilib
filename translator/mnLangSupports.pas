@@ -1,4 +1,4 @@
-unit LangSupports;
+unit mnLangSupports;
 {**
  *  This file is part of the "Mini Library"
  *

@@ -1,4 +1,4 @@
-unit InnoSetup_Parser;
+unit INI_Parser;
 {***********************************************************************
 
   Copyright (C) 2005  Zaher Dirkey (zaher@parmaja.com)
@@ -24,8 +24,8 @@ unit InnoSetup_Parser;
 interface
 
 uses
-  Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  Contnrs, RTLConsts, Dialogs, TranslatorClasses, INIParser;
+  SysUtils, Variants, Classes,
+  Contnrs, RTLConsts, Dialogs, INIParser;
 
 type
   TISLangFile = class(TINILangFile)

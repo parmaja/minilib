@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CONFIG>
+  <Package Version="5">
+    <PathDelim Value="\"/>
+    <Name Value="MiniTranslator"/>
+    <Author Value="Zaher Dirkey"/>
+    <CompilerOptions>
+      <Version Value="11"/>
+      <PathDelim Value="\"/>
+      <SearchPaths>
+        <IncludeFiles Value="$(ProjOutDir)"/>
+        <OtherUnitFiles Value="."/>
+        <UnitOutputDirectory Value="lib\$(TargetCPU)-$(TargetOS)"/>
+      </SearchPaths>
+    </CompilerOptions>
+    <Description Value="MiniTranslator"/>
+    <License Value="MIT"/>
+    <Version Major="1" Release="1"/>
+    <Files>
+      <Item>
+        <Filename Value="mnLangClasses.pas"/>
+        <UnitName Value="mnLangClasses"/>
+      </Item>
+      <Item>
+        <Filename Value="mnLangSupports.pas"/>
+        <UnitName Value="mnLangSupports"/>
+      </Item>
+      <Item>
+        <Filename Value="PO_Languages.pas"/>
+        <UnitName Value="PO_Languages"/>
+      </Item>
+    </Files>
+    <RequiredPkgs>
+      <Item>
+        <PackageName Value="MiniCommons"/>
+      </Item>
+      <Item>
+        <PackageName Value="FCL"/>
+      </Item>
+    </RequiredPkgs>
+    <UsageOptions>
+      <UnitPath Value="$(PkgOutDir)"/>
+    </UsageOptions>
+    <PublishOptions>
+      <Version Value="2"/>
+      <UseFileFilters Value="True"/>
+    </PublishOptions>
+  </Package>
+</CONFIG>
