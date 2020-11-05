@@ -5,12 +5,12 @@ unit INI_Parser;
 
   This file is part of Parmaja tools.
 
-  anyTranslator is free software; you can redistribute it and/or modify it
+  MiniTranslator is free software; you can redistribute it and/or modify it
   under the terms of the GNU General Public License as published
   by the Free Software Foundation; either version 2 of the License,
   or (at your option) any later version.
 
-  anyTranslator is distributed in the hope that it will be useful, but
+  MiniTranslator is distributed in the hope that it will be useful, but
   WITHOUT ANY WARRANTY; without even the implied warranty of
   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
   GNU General Public License for more details.
@@ -24,17 +24,22 @@ unit INI_Parser;
 interface
 
 uses
-  SysUtils, Variants, Classes,
-  Contnrs, RTLConsts, Dialogs, INIParser;
+  Windows, Messages, SysUtils, Variants, Classes, 
+  Contnrs, RTLConsts, Dialogs;
 
 type
-  TISLangFile = class(TINILangFile)
+  TINILangFile = class(TLangFile)
   private
+    FLine: Integer;
   protected
+    procedure Parse; override;
+    procedure ParseLine;
   public
+    constructor Create;
+    destructor Destroy; override;
   end;
 
-  TISTranslator = class(TCustomTranslator)
+  TINITranslator = class(TCustomTranslator)
   protected
     function DoCreateLangFile:TCustomLangFile; override;
   public
@@ -50,40 +55,106 @@ implementation
 uses
   StrUtils;
 
-{ TISTranslator }
-
-function TISTranslator.DoCreateLangFile: TCustomLangFile;
+procedure TINILangFile.ParseLine;
+var
+  s, aLine: string;
+  P: Integer;
+  aSection: TSectionItem;
+  aWord: TWordItem;
 begin
-  Result := TISLangFile.Create;
+  aLine := Contents[FLine];
+  s := Trim(aLine);
+
+  if (s <> '') and (LeftStr(s, 1) <> ';') then
+  begin
+    if (LeftStr(s, 1) = '[') and (RightStr(s, 1) = ']') then
+    begin
+      aSection := TSectionItem.Create(Self);
+      aSection.Name := Copy(s, 2, Length(s) - 2);
+      Sections.Add(aSection);
+//      FRange := rsArray;
+    end
+    else
+    begin
+      aSection := Sections[Sections.Count - 1];
+      with aSection do
+      begin
+        aWord := TWordItem.Create(aSection);
+        aWord.Line := FLine;
+        P := AnsiPos('=', aLine);
+        if P > 0 then
+        begin
+          aWord.Pos := P + 1;
+          aWord.Size := Length(aLine) - P;
+          aWord.Key := Copy(aLine, 1, P - 1);
+          aWord.Value := Copy(aLine, P + 1, MaxInt);
+        end
+        else
+        begin
+          aWord.Pos := Length(aLine);
+          aWord.Size := 0;
+          aWord.Key := Copy(aLine, 1, P - 1);
+          aWord.Value := Copy(aLine, P + 1, MaxInt);
+        end;
+      end;
+    end;
+  end;
 end;
 
-class function TISTranslator.GetFileExtensions: string;
+procedure TINILangFile.Parse;
+begin
+  FLine := 0;
+  while FLine < Contents.Count do
+  begin
+    ParseLine;
+    Inc(FLine);
+  end;
+end;
+
+constructor TINILangFile.Create;
+begin
+  inherited;
+end;
+
+destructor TINILangFile.Destroy;
+begin
+  inherited;
+end;
+
+{ TINITranslator }
+
+function TINITranslator.DoCreateLangFile: TCustomLangFile;
+begin
+  Result := TINILangFile.Create;
+end;
+
+class function TINITranslator.GetFileExtensions: string;
 begin
   Result := '.isl'
 end;
 
-class function TISTranslator.GetID: string;
+class function TINITranslator.GetID: string;
 begin
-  Result := 'InnoSetup';               
+  Result := 'INI';               
 end;
 
-class function TISTranslator.GetTitle: string;
+class function TINITranslator.GetTitle: string;
 begin
-  Result := 'InnoSetup www.jrsoftware.org';
+  Result := 'INI Based language';
 end;
 
-function TISTranslator.IsRightToLeft: Boolean;
+function TINITranslator.IsRightToLeft: Boolean;
 begin
-   Result := DetectRightToLeft(StrToIntDef(Self['LangOptions'].Values['LanguageID'], 0));
+   Result :=  False;
 end;
 
-class function TISTranslator.GetFlags: TTranslatorFlags;
+class function TINITranslator.GetFlags: TTranslatorFlags;
 begin
   Result := [tfExpandable];
 end;
 
 initialization
-  RegisterTranslatorClass(TISTranslator);
+  RegisterTranslatorClass(TINITranslator);
 finalization
 end.
 

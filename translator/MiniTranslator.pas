@@ -8,7 +8,7 @@ unit MiniTranslator;
 interface
 
 uses
-  mnLangClasses, mnLangSupports, PO_Languages;
+  mnLangClasses, mnLangSupports, PO_Languages, FluxBB_Parser;
 
 implementation
 

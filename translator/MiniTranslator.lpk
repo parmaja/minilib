@@ -29,6 +29,10 @@
         <Filename Value="PO_Languages.pas"/>
         <UnitName Value="PO_Languages"/>
       </Item>
+      <Item>
+        <Filename Value="FluxBB_Parser.pas"/>
+        <UnitName Value="FluxBB_Parser"/>
+      </Item>
     </Files>
     <RequiredPkgs>
       <Item>
