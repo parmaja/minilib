@@ -175,15 +175,15 @@ implementation
 
 uses
   {$ifdef FPC}
-    {$ifdef WINDOWS} //Win32 and WinCE
+    {$ifdef WINDOWS}
      mnWinSockets
     {$else}
-    {$ifdef LINUX}
-     mnLinuxSockets
-    {$endif}
+      {$ifdef LINUX}
+       mnFPSockets
+      {$endif}
     {$endif};
   {$else}
-    {$if DEFINED(MSWINDOWS)} //Win32 and WinCE
+    {$if DEFINED(MSWINDOWS)}
      mnWinSockets //delphi is only Win32
     {$elseif DEFINED(LINUX)}
      //mndLinuxSockets

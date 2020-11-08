@@ -4,7 +4,7 @@ unit mnPosixSockets;
  *
  * @license   modifiedLGPL (modified of http://www.gnu.org/licenses/lgpl.html)
  *            See the file COPYING.MLGPL, included in this distribution,
- * @author    Zaher Dirkey <zaher, zaherdirkey>
+ * @author    Belal Hamad <https://github.com/belalhamed>
  *}
 {$IFDEF FPC}
 {$mode delphi}
@@ -61,7 +61,7 @@ type
 
   sockaddr_in = record
     {$if defined(OSX) or defined(IOS)}
-		sin_len: UInt8;
+    sin_len: UInt8;
     {$ifend}
 
     sin_family: sa_family_t;
@@ -607,5 +607,3 @@ begin
 end;
 
 end.
-
-//StrToHostAddr

@@ -1,11 +1,15 @@
-unit mnLinuxSockets;
+unit mnFPSockets;
 {**
  *  This file is part of the "Mini Library"
  *
  * @license   modifiedLGPL (modified of http://www.gnu.org/licenses/lgpl.html)
  *            See the file COPYING.MLGPL, included in this distribution,
  * @author    Zaher Dirkey <zaher, zaherdirkey>
+ *
+ * Mini Socket for Linux, but it use FreePascal wrappper API
+ *
  *}
+
 {$ifdef fpc}
 {$mode delphi}
 {$endif}
@@ -16,7 +20,7 @@ interface
 
 uses
   Classes, SysUtils,
-  netdb, sockets, Termio,
+  sockets,
   mnSockets;
 
 type
@@ -63,7 +67,7 @@ type
 implementation
 
 uses
-  BaseUnix;
+  netdb, Termio, BaseUnix;
 
 const
   cBacklog = 5;

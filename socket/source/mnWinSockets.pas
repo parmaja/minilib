@@ -5,7 +5,11 @@ unit mnWinSockets;
  * @license   modifiedLGPL (modified of http://www.gnu.org/licenses/lgpl.html)
  *            See the file COPYING.MLGPL, included in this distribution,
  * @author    Zaher Dirkey <zaher, zaherdirkey>
+ *
+ * Mini Socket for Windows, but it compile in Windows fpc/delphi
+ *
  *}
+
 {$ifdef fpc}
 {$mode delphi}
 {$endif}
