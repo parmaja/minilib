@@ -893,12 +893,12 @@ begin
   SetValue(Index, AValue);
 end;
 
-function TmnFields._AddRef: Integer; stdcall;
+function TmnFields._AddRef: Integer; {$ifdef WINDOWS}stdcall{$else}cdecl{$endif};
 begin
   Result := 0;
 end;
 
-function TmnFields._Release: Integer; stdcall;
+function TmnFields._Release: Integer; {$ifdef WINDOWS}stdcall{$else}cdecl{$endif};
 begin
   Result := 0;
 end;

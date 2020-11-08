@@ -6,30 +6,21 @@ unit mnWinSockets;
  *            See the file COPYING.MLGPL, included in this distribution,
  * @author    Zaher Dirkey <zaher, zaherdirkey>
  *}
-
+{$ifdef fpc}
+{$mode delphi}
+{$endif}
 {$M+}
 {$H+}
-{$IFDEF FPC}
-{$mode delphi}
-{$ENDIF}
 
 interface
 
 uses
-  Classes,
-  SysUtils,
-{$IFDEF FPC}
-  {$IFDEF WINDOWS}
-    WinSock2,
-  {$ELSE}
-    sockets,
-  {$ENDIF}
-{$ELSE} // DELPHI
-  WinSock2,
-{$ENDIF}
+  Classes, SysUtils,
+  {$IFDEF FPC}{$IFDEF WINDOWS} WinSock2,{$ELSE} sockets,{$ENDIF}{$ELSE DELPHI}WinSock2,{$ENDIF}
   mnSockets;
 
 type
+
   { TmnSocket }
 
   TmnSocket = class(TmnCustomSocket)
@@ -79,6 +70,7 @@ const
   cBacklog = 5;
   INVALID_SOCKET: Integer = -1;
   SO_TRUE: Longbool = True;
+//  SO_FALSE:Longbool=False;
   TCP_QUICKACK = 12; //Some one said it is work on windows too
 
 function InitSocketOptions(Handle: Integer; Options: TmnsoOptions; ReadTimeout: Integer): Integer;  //return error number
@@ -105,7 +97,7 @@ begin
   end;
 end;
 
-{ TmnSSLServerSocket }
+{ TmnSocket }
 
 function TmnSocket.DoSelect(Timeout: Integer; Check: TSelectCheck): TmnError;
 begin
@@ -128,7 +120,6 @@ begin
       Result := erSuccess
     else
       Result := erInvalid;
-    //FHandle := INVALID_SOCKET;
     FHandle := INVALID_SOCKET;
   end
   else
@@ -158,7 +149,10 @@ begin
   else if sdSend in How then
     iHow := SD_SEND
   else
-    iHow := 0;
+  begin
+    Result := erInvalid;
+    exit;
+  end;
 
   CheckActive;
   c := WinSock2.Shutdown(FHandle, iHow);
@@ -180,20 +174,69 @@ begin
     Result := erSuccess;
 end;
 
+function TmnSocket.DoReceive(var Buffer; var Count: Longint): TmnError;
+var
+  ret: Integer;
+  errno: longint;
+begin
+  ret := WinSock2.recv(FHandle, Buffer, Count, 0);
+  if ret = 0 then
+  begin
+    Count := 0;
+    Result := erClosed;
+  end
+  else if ret = SOCKET_ERROR then
+  begin
+    Count := 0;
+    //CheckError not directly here
+    if soWaitBeforeRead in Options then
+      Result := erInvalid
+    else
+    begin
+      errno := WSAGetLastError(); //not work with OpenSSL because it reset error to 0, now readtimeout in socket options not usefull
+      if errno = WSAETIMEDOUT then
+        Result := erTimeout //the caller will close it depend on options
+      else
+        Result := erInvalid
+    end;
+  end
+  else
+  begin
+    Count := ret;
+    Result := erSuccess;
+  end;
+end;
+
+function TmnSocket.DoSend(const Buffer; var Count: Longint): TmnError;
+var
+  ret: Integer;
+begin
+  ret := WinSock2.send(FHandle, (@Buffer)^, Count, 0);
+  if ret = 0 then
+  begin
+    Result := erClosed;
+    Count := 0;
+  end
+  else if ret = SOCKET_ERROR then
+  begin
+    Count := 0;
+    Result := erInvalid;
+  end
+  else
+  begin
+    Count := ret;
+    Result := erSuccess;
+  end;
+end;
+
 function TmnSocket.GetRemoteAddress: string;
 var
-  {$ifdef FPC}
-  SockAddrIn: TSockAddrIn;
-  {$else}
-  SockAddrIn: TSockAddr;
-  {$endif}
+  SockAddrIn: {$ifdef FPC}TSockAddrIn;{$else} TSockAddr;{$endif}
   Size: Integer;
 begin
   CheckActive;
   Size := SizeOf(SockAddrIn);
-  {$ifdef FPC}
-  Initialize(SockAddrIn);
-  {$endif}
+  {$ifdef FPC} Initialize(SockAddrIn); {$endif}
   if getpeername(FHandle, SockAddrIn, Size) = 0 then
     //Result := inet_ntoa(SockAddrIn.sin_addr)
     Result := String(inet_ntoa(sockaddr_in(SockAddrIn).sin_addr))
@@ -203,20 +246,14 @@ end;
 
 function TmnSocket.GetRemoteName: string;
 var
-  {$ifdef FPC}
-  SockAddrIn: TSockAddrIn;
-  {$else}
-  SockAddrIn: TSockAddr;
-  {$endif}
+  SockAddrIn: {$ifdef FPC}TSockAddrIn;{$else}TSockAddr;{$endif}
   Size: Integer;
   aHostEnt: PHostEnt;
   s: ansistring;
 begin
   CheckActive;
   Size := SizeOf(SockAddrIn);
-  {$ifdef FPC}
-  Initialize(SockAddrIn);
-  {$endif}
+  {$ifdef FPC}Initialize(SockAddrIn);{$endif}
   if getpeername(FHandle, SockAddrIn, Size) = 0 then
   begin
     {$ifdef FPC}
@@ -289,91 +326,17 @@ begin
   Result := string(s);
 end;
 
-{ TmnNormalSocket }
-
-function TmnSocket.DoReceive(var Buffer; var Count: Longint): TmnError;
-var
-  ret: Integer;
-  l, errno: longint;
-begin
-  ret := WinSock2.recv(FHandle, Buffer, Count, 0);
-  if ret = 0 then
-  begin
-    Count := 0;
-    Result := erClosed;
-  end
-  else if ret = SOCKET_ERROR then
-  begin
-    Count := 0;
-    //CheckError not directly here
-    if soWaitBeforeRead in Options then
-      Result := erInvalid
-    else
-    begin
-      {TODO errno := 0;
-      l := SizeOf(errno);
-      if getsockopt(FHandle, SOL_SOCKET, SO_ERROR, @errno, l) = 0 then //better with SSL, not tested yet
-        errno := 0
-      else}
-        errno := WSAGetLastError(); //not work with OpenSSL because it reset error to 0, now readtimeout in socket options not usefull
-      if errno = WSAETIMEDOUT then
-        Result := erTimeout //the caller will close it depend on options
-      else
-        Result := erInvalid
-    end;
-  end
-  else
-  begin
-    Count := ret;
-    Result := erSuccess;
-  end;
-end;
-
-function TmnSocket.DoSend(const Buffer; var Count: Longint): TmnError;
-var
-  ret: Integer;
-begin
-  ret := WinSock2.send(FHandle, (@Buffer)^, Count, 0);
-  if ret = 0 then
-  begin
-    Result := erClosed;
-    Count := 0;
-  end
-  else if ret = SOCKET_ERROR then
-  begin
-    Count := 0;
-    Result := erInvalid;
-  end
-  else
-  begin
-    Count := ret;
-    Result := erSuccess;
-  end;
-end;
-
 { TmnWallSocket }
 
-procedure TmnWallSocket.Cleanup;
+function TmnWallSocket.LookupPort(Port: string): Word;
 begin
-  Dec(FCount);
-  if FCount = 0 then
-    WSACleanup;
-end;
-
-constructor TmnWallSocket.Create;
-begin
-  inherited;
-  Startup;
+  Result := StrToIntDef(Port, 0);
 end;
 
 procedure TmnWallSocket.Bind(Options: TmnsoOptions; ListenTimeout: Integer; const Port: string; const Address: string; out vSocket: TmnCustomSocket; out vErr: Integer);
 var
   aHandle: TSocketHandle;
-  {$ifdef FPC}
-  aSockAddr: TSockAddr;
-  {$else}
-  aSockAddr: TSockAddrIn;
-  {$endif}
+  {$ifdef FPC}aSockAddr: TSockAddr;{$else}TSockAddrIn; {$endif}
   aHostEnt: PHostEnt;
 begin
   aHandle := socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -386,16 +349,12 @@ begin
 
     vErr := InitSocketOptions(aHandle, Options, ListenTimeout);
 
-    {$IFNDEF WINCE} //Not exists in WinCE
     if soReuseAddr in Options then
-    begin
       WinSock2.setsockopt(aHandle, SOL_SOCKET, SO_REUSEADDR, PAnsiChar(@SO_TRUE), SizeOf(SO_TRUE));
-    end;
-    {$ENDIF}
 
     aSockAddr.sin_family := AF_INET;
     aSockAddr.sin_port := htons(LookupPort(Port));
-    if (Address = '')or(Address = '0.0.0.0') then
+    if (Address = '') or (Address = '0.0.0.0') then
       aSockAddr.sin_addr.s_addr := INADDR_ANY
     else
     begin
@@ -442,18 +401,16 @@ var
 begin
   aHandle := WinSock2.Accept(ListenerHandle, nil, nil);
   if aHandle = INVALID_SOCKET then
+  begin
     vSocket := nil
+    vErr := -1;
+  end
   else
   begin
     InitSocketOptions(aHandle, Options, ReadTimeout);
     vSocket := TmnSocket.Create(aHandle, Options, skServer);
+    vErr := 0;
   end;
-end;
-
-destructor TmnWallSocket.Destroy;
-begin
-  inherited;
-  Cleanup;
 end;
 
 function TmnWallSocket.GetSocketError(Handle: Integer): Integer;
@@ -506,9 +463,7 @@ begin
       PSetWrite := @FSet;
     end;
     if Timeout = -1 then
-    begin
       c := WinSock2.select(0, PSetRead, PSetWrite, nil, nil)
-    end
     else
     begin
       TimeVal.tv_sec := Timeout div 1000;
@@ -524,36 +479,16 @@ begin
   end
 end;
 
-function TmnWallSocket.LookupPort(Port: string): Word;
-begin
-  Result := StrToIntDef(Port, 0);
-end;
-
-procedure TmnWallSocket.Startup;
-var
-  e: Integer;
-begin
-  if FCount = 0 then
-  begin
-    e := WSAStartup($0202, FWSAData);
-    if e <> 0 then
-      raise EmnException.Create('Failed to initialize WinSocket,error #' + IntToStr(e));
-  end;
-  Inc(FCount)
-end;
-
 procedure TmnWallSocket.Connect(Options: TmnsoOptions; ConnectTimeout, ReadTimeout: Integer; const Port: string; const Address: string; out vSocket: TmnCustomSocket; out vErr: Integer);
 var
   aHandle: TSocketHandle;
-  {$ifdef FPC}
-  aAddr: TSockAddr;
-  {$else}
-  aAddr: TSockAddrIn;
-  {$endif}
+  {$ifdef FPC}aAddr: TSockAddr;{$else}TSockAddrIn;{$endif}
   aHost: PHostEnt;
   ret: Longint;
   aMode: u_long;
 begin
+
+
   aHandle := socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
   if aHandle <> INVALID_SOCKET then
   begin
@@ -625,6 +560,38 @@ begin
     vSocket := TmnSocket.Create(aHandle, Options, skClient)
   else
     vSocket := nil;
+end;
+
+procedure TmnWallSocket.Startup;
+var
+  e: Integer;
+begin
+  if FCount = 0 then
+  begin
+    e := WSAStartup($0202, FWSAData);
+    if e <> 0 then
+      raise EmnException.Create('Failed to initialize WinSocket,error #' + IntToStr(e));
+  end;
+  Inc(FCount)
+end;
+
+procedure TmnWallSocket.Cleanup;
+begin
+  Dec(FCount);
+  if FCount = 0 then
+    WSACleanup;
+end;
+
+constructor TmnWallSocket.Create;
+begin
+  inherited;
+  Startup;
+end;
+
+destructor TmnWallSocket.Destroy;
+begin
+  inherited;
+  Cleanup;
 end;
 
 end.
