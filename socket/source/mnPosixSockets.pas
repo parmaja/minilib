@@ -15,17 +15,8 @@ unit mnPosixSockets;
 interface
 
 uses
-  Classes,
-  Posix.SysSelect,
-  Posix.SysSocket,
-  Posix.Unistd,
-  Posix.ArpaInet,
-  Posix.NetDB,
-  Posix.SysTime,
-  Posix.NetinetIn,
-  Posix.Fcntl,
-  Posix.Errno,
-  SysUtils,
+  Classes, SysUtils,
+  Posix.SysSelect, Posix.SysSocket, Posix.Unistd, Posix.ArpaInet, Posix.NetDB, Posix.SysTime, Posix.NetinetIn, Posix.Fcntl, Posix.Errno,
   mnSockets;
 
 const
@@ -104,15 +95,16 @@ type
 
   TmnWallSocket = class(TmnCustomWallSocket)
   private
-    procedure FreeSocket(var vHandle: TSocket; out vErr: Integer);
     function LookupPort(Port: string): Word;
+  protected
+    procedure FreeSocket(var vHandle: TSocket; out vErr: Integer);
     function TestGetAddrInfo(const AHostName, AServiceName: string; const AHints: AddrInfo): PAddrInfo;
   public
     constructor Create; override;
     destructor Destroy; override;
     procedure Bind(Options: TmnsoOptions; ReadTimeout: Integer; const Port: string; const Address: string; out vSocket: TmnCustomSocket; out vErr: Integer); override;
-    procedure Connect(Options: TmnsoOptions; ConnectTimeout, ReadTimeout: Integer; const Port: string; const Address: string; out vSocket: TmnCustomSocket; out vErr: Integer); override;
     procedure Accept(ListenerHandle: TSocketHandle; Options: TmnsoOptions; ReadTimeout: Integer; out vSocket: TmnCustomSocket; out vErr: Integer); override;
+    procedure Connect(Options: TmnsoOptions; ConnectTimeout, ReadTimeout: Integer; const Port: string; const Address: string; out vSocket: TmnCustomSocket; out vErr: Integer); override;
   end;
 
 implementation

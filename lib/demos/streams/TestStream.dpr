@@ -1,11 +1,8 @@
 program TestStream;
 
-{$mode objfpc}{$H+}
+{$APPTYPE CONSOLE}
 
 uses
-  {$IFDEF UNIX}
-  cthreads,
-  {$ENDIF}
   Classes, SysUtils,
   SendAndRecv;
 

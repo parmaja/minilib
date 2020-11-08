@@ -48,6 +48,10 @@
         <Filename Value="..\..\..\socket\source\mnWinSockets.pas"/>
         <IsPartOfProject Value="True"/>
       </Unit>
+      <Unit>
+        <Filename Value="SendAndRecv.pas"/>
+        <IsPartOfProject Value="True"/>
+      </Unit>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
