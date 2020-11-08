@@ -77,6 +77,7 @@ function InitSocketOptions(Handle: Integer; Options: TmnsoOptions; ReadTimeout: 
 var
   t: Longint;
 begin
+  Result := 0;
   if (soNoDelay in Options) and not (soNagle in Options) then
   //if not (soNagle in Options) then //TODO
     Result := setsockopt(Handle, IPPROTO_TCP, TCP_NODELAY, PAnsiChar(@SO_TRUE), SizeOf(SO_TRUE));
@@ -336,7 +337,7 @@ end;
 procedure TmnWallSocket.Bind(Options: TmnsoOptions; ListenTimeout: Integer; const Port: string; const Address: string; out vSocket: TmnCustomSocket; out vErr: Integer);
 var
   aHandle: TSocketHandle;
-  {$ifdef FPC}aSockAddr: TSockAddr;{$else}TSockAddrIn; {$endif}
+  aSockAddr: {$ifdef FPC}TSockAddr;{$else}TSockAddrIn;{$endif}
   aHostEnt: PHostEnt;
 begin
   aHandle := socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -402,7 +403,7 @@ begin
   aHandle := WinSock2.Accept(ListenerHandle, nil, nil);
   if aHandle = INVALID_SOCKET then
   begin
-    vSocket := nil
+    vSocket := nil;
     vErr := -1;
   end
   else
@@ -482,13 +483,11 @@ end;
 procedure TmnWallSocket.Connect(Options: TmnsoOptions; ConnectTimeout, ReadTimeout: Integer; const Port: string; const Address: string; out vSocket: TmnCustomSocket; out vErr: Integer);
 var
   aHandle: TSocketHandle;
-  {$ifdef FPC}aAddr: TSockAddr;{$else}TSockAddrIn;{$endif}
+  aAddr: {$ifdef FPC}TSockAddr;{$else}TSockAddrIn;{$endif}
   aHost: PHostEnt;
   ret: Longint;
   aMode: u_long;
 begin
-
-
   aHandle := socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
   if aHandle <> INVALID_SOCKET then
   begin
