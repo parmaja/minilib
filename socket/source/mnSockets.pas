@@ -186,7 +186,6 @@ uses
     {$if DEFINED(MSWINDOWS)}
      mnWinSockets //delphi is only Win32
     {$elseif DEFINED(LINUX)}
-     //mndLinuxSockets
      mnPosixSockets
     {$else}
      mnPosixSockets

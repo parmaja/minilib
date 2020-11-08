@@ -84,9 +84,9 @@ begin
   Result := 0;
   if (soNoDelay in Options) and not (soNagle in Options) then
   //if not (soNagle in Options) then //TODO
-    fpsetsockopt(Handle, IPPROTO_TCP, TCP_NODELAY, PAnsiChar(@SO_TRUE), SizeOf(SO_TRUE));
+    Result := fpsetsockopt(Handle, IPPROTO_TCP, TCP_NODELAY, PAnsiChar(@SO_TRUE), SizeOf(SO_TRUE));
   if soKeepAlive in Options then
-    fpsetsockopt(Handle, SOL_SOCKET, SO_KEEPALIVE, PAnsiChar(@SO_TRUE), SizeOf(SO_TRUE));
+    Result := fpsetsockopt(Handle, SOL_SOCKET, SO_KEEPALIVE, PAnsiChar(@SO_TRUE), SizeOf(SO_TRUE));
   if soQuickAck in Options then
     Result := fpsetsockopt(Handle, SOL_SOCKET, TCP_QUICKACK, PAnsiChar(@SO_TRUE), SizeOf(SO_TRUE));
     //ret := WSAIoctl(sock, SIO_TCP_SET_ACK_FREQUENCY, &freq, sizeof(freq), NULL, 0, &bytes, NULL, NULL);
@@ -316,7 +316,7 @@ begin
     vErr := InitSocketOptions(aHandle, Options, ReadTimeout);
 
     if soReuseAddr in Options then
-      fpsetsockopt(aHandle, SOL_SOCKET, SO_REUSEADDR, PChar(@SO_TRUE), SizeOf(SO_TRUE));
+      vErr := fpsetsockopt(aHandle, SOL_SOCKET, SO_REUSEADDR, PChar(@SO_TRUE), SizeOf(SO_TRUE));
 
     aSockAddr.sin_family := AF_INET;
     aSockAddr.sin_port := htons(LookupPort(Port));
@@ -327,6 +327,7 @@ begin
 
     if fpbind(aHandle,@aSockAddr, Sizeof(aSockAddr)) <> 0 then
     begin
+      vErr := SocketError;
       FreeSocket(aHandle, vErr);
     end;
   end;
@@ -420,7 +421,7 @@ var
 begin
   //nonblick connect  https://stackoverflow.com/questions/1543466/how-do-i-change-a-tcp-socket-to-be-non-blocking
   //https://stackoverflow.com/questions/14254061/setting-time-out-for-connect-function-tcp-socket-programming-in-c-breaks-recv
-  aHandle := fpsocket(AF_INET, SOCK_STREAM{TODO: for nonblock option: or O_NONBLOCK}, 0{IPPROTO_TCP});
+  aHandle := fpsocket(AF_INET, SOCK_STREAM, 0{IPPROTO_TCP});
   if aHandle <> INVALID_SOCKET then
   begin
     vErr := InitSocketOptions(aHandle, Options, ReadTimeout);
@@ -440,7 +441,7 @@ begin
       aAddr.sin_family := AF_INET;
       aAddr.sin_port := htons(StrToIntDef(Port, 0));
 
-      if Address = '' then
+      if (Address = '') or (Address = '0.0.0.0') then
         aAddr.sin_addr.s_addr := INADDR_ANY
       else
       begin
@@ -456,7 +457,8 @@ begin
       ret := fpconnect(aHandle, @aAddr, SizeOf(aAddr));
       if ret = -1 then
       begin
-        if (ConnectTimeout <> -1) and (SocketError = EsockEWOULDBLOCK) then
+        vErr := SocketError;
+        if (ConnectTimeout <> -1) and ((vErr = EsockEWOULDBLOCK) or (vErr = ESysEINPROGRESS)) then //Need to wait
         begin
           aMode := 0;
           ret := FpIOCtl(aHandle, Longint(FIONBIO), @aMode);

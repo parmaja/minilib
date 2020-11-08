@@ -7,7 +7,7 @@ uses
   cthreads,
   {$ENDIF}
   Classes, SysUtils, CustApp, zdeflate, zlib, zstream, mnUtils, mnStreams,
-  mnLogs, mnStreamUtils, mnSockets, mnClients, mnServers, mnWinSockets, mnOpenSSL, mnOpenSSLUtils,
+  mnLogs, mnStreamUtils, mnSockets, mnClients, mnServers, mnOpenSSL, mnOpenSSLUtils,
   IniFiles;
 
 type
@@ -18,8 +18,6 @@ type
     procedure Execute; override;
   public
   end;
-
-  { ThreadSender }
 
   { TThreadSender }
 
@@ -61,7 +59,7 @@ var
 
 const
   sMsg: AnsiString = '0123456789';
-  sPort: string = '82';
+  sPort: string = '8082';
   sHost = '127.0.0.1';
 
 { TThreadReciever }
@@ -317,7 +315,7 @@ begin
   NoDelay := False;
   KeepAlive := False;
   QuickAck := False;
-  UseSSL := True;
+  UseSSL := False;
   InternalExampleSocket(true, true, 1000);
 end;
 

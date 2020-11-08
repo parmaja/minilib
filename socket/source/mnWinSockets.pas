@@ -544,7 +544,8 @@ begin
     {$ENDIF}
       if (ret = SOCKET_ERROR) then
       begin
-        if (ConnectTimeout <> -1) and (WSAGetLastError = WSAEWOULDBLOCK) then
+        vErr := WSAGetLastError;
+        if (ConnectTimeout <> -1) and ((vErr = WSAEWOULDBLOCK) or (vErr = WSAEINPROGRESS)) then
         begin
           aMode := 0;
           ret := ioctlsocket(aHandle, Longint(FIONBIO), aMode);
