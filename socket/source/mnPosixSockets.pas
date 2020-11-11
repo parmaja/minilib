@@ -277,7 +277,11 @@ end;
 function TmnSocket.Accept: TmnCustomSocket;
 var
   aHandle: TSocket;
+  {$ifdef ANDROID32}
+  aSize: Integer;
+  {$else}
   aSize: Cardinal;
+  {$endif}
 begin
   CheckActive;
   aSize := SizeOf(FAddress);
@@ -381,7 +385,11 @@ const
 procedure TmnWallSocket.Accept(ListenerHandle: TSocketHandle; Options: TmnsoOptions; ReadTimeout: Integer; out vSocket: TmnCustomSocket; out vErr: Integer);
 var
   aHandle: TSocket;
+  {$ifdef ANDROID32}
+  aSize: Integer;
+  {$else}
   aSize: Cardinal;
+  {$endif}
   aAddress: TSockAddr;
 begin
   aSize := SizeOf(aAddress);

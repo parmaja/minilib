@@ -18,8 +18,7 @@ uses
   {$ifdef FPC}
     dynlibs,
   {$else}
-    {$ifdef LINUX}
-    {$else}
+    {$IFDEF MSWINDOWS}
     Windows,
     {$endif}
   {$endif}
@@ -97,7 +96,7 @@ begin
   {$ifdef LINUX}
   Result := LoadLibrary(PChar(LibraryName));
   {$else}
-  Result := Windows.LoadLibrary(PChar(LibraryName));
+  Result := LoadLibrary(PChar(LibraryName));
   {$endif}
 end;
 {$endif}
