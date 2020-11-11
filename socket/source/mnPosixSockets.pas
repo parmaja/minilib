@@ -5,11 +5,15 @@ unit mnPosixSockets;
  * @license   modifiedLGPL (modified of http://www.gnu.org/licenses/lgpl.html)
  *            See the file COPYING.MLGPL, included in this distribution,
  * @author    Belal Hamad <https://github.com/belalhamed>
+ *
+ * Mini Socket for Linux, but it used by Delphi
+ *
  *}
-{$IFDEF FPC}
+
+{$ifdef fpc}
 {$mode delphi}
-{$M+}
-{$H+}
+{$m+}
+{$h+}
 {$endif}
 
 interface
