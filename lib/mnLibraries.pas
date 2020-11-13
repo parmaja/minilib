@@ -94,7 +94,7 @@ resourcestring
 function LoadLibrary(LibraryName: string):TLibHandle;
 begin
   {$ifdef LINUX}
-  Result := LoadLibrary(PChar(LibraryName));
+  Result := SysUtils.LoadLibrary(PChar(LibraryName));
   {$else}
   Result := LoadLibrary(PChar(LibraryName));
   {$endif}
