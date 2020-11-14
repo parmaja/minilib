@@ -11,31 +11,82 @@ unit mnPosixSockets;
  *}
 
 {$ifdef fpc}
-{$mode delphi}
-{$m+}
-{$h+}
+{$mode delphi} //this file not compiled in FPC
 {$endif}
+{$M+}
+{$H+}
 
 interface
 
 uses
   Classes, SysUtils,
-  Posix.SysSelect, Posix.SysSocket, Posix.Unistd, Posix.ArpaInet, Posix.NetDB, Posix.SysTime, Posix.NetinetIn, Posix.Fcntl, Posix.Errno,
+  {$ifdef LINUX} Linuxapi.KernelIoctl, Linuxapi.KernelDefs, {$endif} Posix.SysSelect, Posix.SysSocket, Posix.Unistd, Posix.ArpaInet, Posix.NetDB, Posix.SysTime, Posix.NetinetIn, Posix.Fcntl, Posix.Errno, Posix.StrOpts,
   mnSockets;
 
+type
+
+  { TmnSocket }
+
+  TmnSocket = class(TmnCustomSocket)
+  private
+//    FAddress: TSockAddr;
+  protected
+    function GetActive: Boolean; override;
+    function DoSelect(Timeout: Integer; Check: TSelectCheck): TmnError; override;
+    function DoShutdown(How: TmnShutdowns): TmnError; override;
+
+    function InternalSend(vBuf: Pointer; vLen: Integer): Integer;
+    function DoListen: TmnError; override;
+    function DoReceive(var Buffer; var Count: Longint): TmnError; override;
+    function DoSend(const Buffer; var Count: Longint): TmnError; override;
+    function DoClose: TmnError; override;
+    function DoPending: Boolean; override;
+  public
+    function GetRemoteAddress: string; override;
+    function GetRemoteName: string; override;
+    function GetLocalAddress: string; override;
+    function GetLocalName: string; override;
+  end;
+
+  { TmnWallSocket }
+
+  TmnWallSocket = class(TmnCustomWallSocket)
+  private
+    function LookupPort(Port: string): Word;
+    function TestGetAddrInfo(const AHostName, AServiceName: string; const AHints: AddrInfo): PAddrInfo;
+  protected
+    procedure FreeSocket(var vHandle: TSocketHandle; out vErr: Integer);
+    function Select(vHandle: TSocketHandle; Timeout: Integer; Check: TSelectCheck): TmnError;
+  public
+    constructor Create; override;
+    destructor Destroy; override;
+    function GetSocketError(Handle: TSocketHandle): Integer; override;
+    procedure Accept(ListenerHandle: TSocketHandle; Options: TmnsoOptions; ReadTimeout: Integer; out vSocket: TmnCustomSocket; out vErr: Integer); override;
+    procedure Bind(Options: TmnsoOptions; ReadTimeout: Integer; const Port: string; const Address: string; out vSocket: TmnCustomSocket; out vErr: Integer); override;
+    procedure Connect(Options: TmnsoOptions; ConnectTimeout, ReadTimeout: Integer; const Port: string; const Address: string; out vSocket: TmnCustomSocket; out vErr: Integer); override;
+  end;
+
+implementation
+
+uses
+  mnUtils;
+
 const
+  INVALID_SOCKET		= TSocketHandle(NOT(0));
+  SOCKET_ERROR			= -1;
+
   IPPROTO_IP = 0;
   IPPROTO_TCP = 6;
   TCP_NODELAY = 1;
+  SO_TRUE: Longbool = True;
+//  SO_FALSE:Longbool=False;
+  TCP_QUICKACK = 12; //Some one said it is work on windows too
+
   INADDR_ANY  = 0;
   INADDR_NONE = $ffffffff;
 
   {$if defined(MACOS) or defined(IOS)}
   //MSG_NOSIGNAL  = $20000;  // Do not generate SIGPIPE.
-  MSG_NOSIGNAL  = 0;  // Do not generate SIGPIPE.
-                           // Works under MAC OS X, but is undocumented,
-                           // So FPC doesn't include it
-
   FIONREAD = $4004667F; // oSX FIONREAD        = Posix.StrOpts.FIONREAD;
 
   FIONBIO	 = $8004667E; //OSX FIONBIO         = Posix.StrOpts.FIONBIO;
@@ -45,9 +96,6 @@ const
   {$ifend}
 
 type
-  TSocket = integer;
-
-
   TaddrIP4 = packed record
     case boolean of
        true: (s_addr  : int32);
@@ -72,54 +120,6 @@ type
       //2: (addr_in6: sockaddr_in6)
   end;
 
-  { TmnSocket }
-
-  TmnSocket = class(TmnCustomSocket)
-  private
-    FAddress: TSockAddr;
-  protected
-    function GetActive: Boolean; override;
-    function DoSelect(Timeout: Integer; Check: TSelectCheck): TmnError; override;
-    function DoShutdown(How: TmnShutdowns): TmnError; override;
-
-    function PosixSend(vBuf: Pointer; vLen: Integer): Integer;
-    function DoListen: TmnError; override;
-    function DoReceive(var Buffer; var Count: Longint): TmnError; override;
-    function DoSend(const Buffer; var Count: Longint): TmnError; override;
-    function DoClose: TmnError; override;
-  public
-    function Accept: TmnCustomSocket;
-    function GetLocalAddress: string; override;
-    function GetRemoteAddress: string; override;
-    function GetLocalName: string; override;
-    function GetRemoteName: string; override;
-  end;
-
-  { TmnWallSocket }
-
-  TmnWallSocket = class(TmnCustomWallSocket)
-  private
-    function LookupPort(Port: string): Word;
-  protected
-    procedure FreeSocket(var vHandle: TSocket; out vErr: Integer);
-    function TestGetAddrInfo(const AHostName, AServiceName: string; const AHints: AddrInfo): PAddrInfo;
-  public
-    constructor Create; override;
-    destructor Destroy; override;
-    procedure Bind(Options: TmnsoOptions; ReadTimeout: Integer; const Port: string; const Address: string; out vSocket: TmnCustomSocket; out vErr: Integer); override;
-    procedure Accept(ListenerHandle: TSocketHandle; Options: TmnsoOptions; ReadTimeout: Integer; out vSocket: TmnCustomSocket; out vErr: Integer); override;
-    procedure Connect(Options: TmnsoOptions; ConnectTimeout, ReadTimeout: Integer; const Port: string; const Address: string; out vSocket: TmnCustomSocket; out vErr: Integer); override;
-  end;
-
-implementation
-
-uses
-  mnUtils;
-
-const
-  INVALID_SOCKET		= TSocket(NOT(0));
-  SOCKET_ERROR			= -1;
-
 procedure StrToNetAddr(S: string; var addr: TaddrIP4);
 var
   l: string;
@@ -131,7 +131,116 @@ begin
   addr.s_bytes[4] := StrToIntDef(FetchStr(S, '.'), 0);
 end;
 
+function NetAddrToStr(addr : TaddrIP4) : string;
+var
+  Dummy : Ansistring;
+  i: Integer;
+begin
+  Result := '';
+  for i := 1 to 4 do
+  begin
+     Result := Result + IntToStr(addr.s_bytes[i]);
+     if i < 4 then
+       Result := Result + '.';
+  end;
+end;
+
+function InitSocketOptions(Handle: Integer; Options: TmnsoOptions; ReadTimeout: Integer): Integer;  //return error number
+var
+  t: Longint;
+begin
+  Result := 0;
+  if (soNoDelay in Options) and not (soNagle in Options) then
+  //if not (soNagle in Options) then //TODO
+    Result := setsockopt(Handle, IPPROTO_TCP, TCP_NODELAY, SO_TRUE, SizeOf(SO_TRUE));
+  if soKeepAlive in Options then
+    Result := setsockopt(Handle, SOL_SOCKET, SO_KEEPALIVE, SO_TRUE, SizeOf(SO_TRUE));
+  if soQuickAck in Options then
+    Result := setsockopt(Handle, SOL_SOCKET, TCP_QUICKACK, SO_TRUE, SizeOf(SO_TRUE));
+    //ret := WSAIoctl(sock, SIO_TCP_SET_ACK_FREQUENCY, &freq, sizeof(freq), NULL, 0, &bytes, NULL, NULL);
+
+  if not (soWaitBeforeRead in Options) then
+  begin
+    if ReadTimeout <> -1 then
+    begin
+      t := ReadTimeout;
+      //* https://stackoverflow.com/questions/2876024/linux-is-there-a-read-or-recv-from-socket-with-timeout
+      Result := setsockopt(Handle, SOL_SOCKET, SO_RCVTIMEO, t, SizeOf(t));
+    end;
+  end;
+end;
+
 { TmnSocket }
+
+function TmnSocket.GetActive: Boolean;
+begin
+  Result := FHandle <> INVALID_SOCKET;
+end;
+
+function TmnSocket.DoSelect(Timeout: Integer; Check: TSelectCheck): TmnError;
+begin
+  Result := (WallSocket as TmnWallSocket).Select(FHandle, Timeout, Check);
+end;
+
+function TmnSocket.DoClose: TmnError;
+var
+  err: Longint;
+begin
+  if Active then
+  begin
+    err := __close(FHandle);
+    if err = 0 then
+      Result := erSuccess
+    else
+      Result := erInvalid;
+    FHandle := INVALID_SOCKET;
+  end
+  else
+    Result := erClosed;
+end;
+
+function TmnSocket.DoPending: Boolean;
+var
+  Count: Cardinal;
+begin
+  Count := 0;
+  if IOCtl(FHandle, FIONREAD, @Count) = SOCKET_ERROR then  //  //ioctl(fd,FIONREAD,&bytes_available)
+    Result := False //TODO
+  else
+    Result := Count > 0;
+end;
+
+function TmnSocket.DoShutdown(How: TmnShutdowns): TmnError;
+var
+  c: Integer;
+  iHow: Integer;
+begin
+  if [sdReceive, sdSend] = How then
+    iHow := SHUT_RDWR
+  else if sdReceive in How then
+    iHow := SHUT_RD
+  else if sdSend in How then
+    iHow := SHUT_WR;
+
+  CheckActive;
+  c := Posix.SysSocket.shutdown(FHandle, iHow);
+  if c = SOCKET_ERROR then
+    Result := erInvalid
+  else
+    Result := erSuccess;
+end;
+
+function TmnSocket.DoListen: TmnError;
+var
+  c: Integer;
+begin
+  CheckActive;
+  c := Posix.SysSocket.listen(FHandle, 5);
+  if c = SOCKET_ERROR then
+    Result := erInvalid
+  else
+    Result := erSuccess;
+end;
 
 function TmnSocket.DoReceive(var Buffer; var Count: Longint): TmnError;
 var
@@ -166,7 +275,7 @@ begin
 
   CheckActive;
   ret := Posix.SysSocket.Send(FHandle, Buffer, Count, MSG_NOSIGNAL);
-  //c := PosixSend(@Buffer, Count);
+  //c := InternalSend(@Buffer, Count);
 
   if ret = 0 then
   begin
@@ -185,126 +294,7 @@ begin
   end;
 end;
 
-function TmnSocket.DoSelect(Timeout: Integer; Check: TSelectCheck): TmnError;
-var
-  FSet: fd_set;
-  c: Integer;
-
-  LTime: TimeVal;
-  LTimePtr: PTimeVal;
-begin
-   //Result := erSuccess;
-   //exit;
-
-  //CheckActive; no need select will return error for it, as i tho
-  if FHandle = INVALID_SOCKET then
-    Result := erClosed
-  else
-  begin
-    if Timeout = -1 then
-    begin
-      LTimePtr := nil;
-    end
-    else
-    begin
-      LTime.tv_sec := Timeout div 1000;
-      LTime.tv_usec := (Timeout mod 1000) * 1000;
-      LTimePtr := @LTime;
-    end;
-
-    fd_zero(FSet);
-    _FD_SET(FHandle, FSet);
-    if Check = slRead then
-      c := Posix.SysSelect.Select(FHandle+1, @FSet, nil, nil, LTimePtr)
-    else
-      c := Posix.SysSelect.Select(FHandle+1, nil, @FSet, nil, LTimePtr);
-    {if Check = slRead then
-      c := Posix.SysSelect.Select(FD_SETSIZE, @FSet, nil, nil, LTimePtr)
-    else
-      c := Posix.SysSelect.Select(FD_SETSIZE, nil, @FSet, nil, LTimePtr);}
-
-    if (c = SOCKET_ERROR) then
-      Result := erInvalid
-    else if (c = 0) then
-      Result := erTimeout
-    else
-      Result := erSuccess;
-  end;
-end;
-
-function TmnSocket.GetActive: Boolean;
-begin
-  Result := FHandle <> INVALID_SOCKET;
-end;
-
-function TmnSocket.DoClose: TmnError;
-var
-  err: Longint;
-begin
-  if Active then
-  begin
-    err := __close(FHandle);
-    if err = 0 then
-      Result := erSuccess
-    else
-      Result := erInvalid;
-    FHandle := INVALID_SOCKET;
-  end
-  else
-    Result := erClosed;
-end;
-
-function TmnSocket.DoShutdown(How: TmnShutdowns): TmnError;
-var
-  c: Integer;
-  iHow: Integer;
-begin
-  if [sdReceive, sdSend] = How then
-    iHow := SHUT_RDWR
-  else if sdReceive in How then
-    iHow := SHUT_RD
-  else if sdSend in How then
-    iHow := SHUT_WR;
-
-  CheckActive;
-  c := Posix.SysSocket.shutdown(FHandle, iHow);
-  if c = SOCKET_ERROR then
-    Result := erInvalid
-  else
-    Result := erSuccess;
-end;
-
-function TmnSocket.Accept: TmnCustomSocket;
-var
-  aHandle: TSocket;
-  {$ifdef ANDROID32}
-  aSize: Integer;
-  {$else}
-  aSize: Cardinal;
-  {$endif}
-begin
-  CheckActive;
-  aSize := SizeOf(FAddress);
-  aHandle := Posix.SysSocket.accept(FHandle, FAddress.addr, aSize);
-  if aHandle < 0 then
-    Result := nil
-  else
-    Result := TmnSocket.Create(aHandle, Options, skServer);
-end;
-
-function TmnSocket.DoListen: TmnError;
-var
-  c: Integer;
-begin
-  CheckActive;
-  c := Posix.SysSocket.listen(FHandle, 5);
-  if c = SOCKET_ERROR then
-    Result := erInvalid
-  else
-    Result := erSuccess;
-end;
-
-function TmnSocket.PosixSend(vBuf: Pointer; vLen: Integer): Integer;
+function TmnSocket.InternalSend(vBuf: Pointer; vLen: Integer): Integer;
 var
   aBuf: PByte;
   aSent, aError: Integer;
@@ -335,11 +325,16 @@ end;
 
 function TmnSocket.GetRemoteAddress: string;
 var
-  SockAddr: TSockAddr;
-  aSize: Integer;
+  aSockAddr: SockAddr;
+  aSize: Cardinal;
 begin
   CheckActive;
-  Result := '';
+  aSize := SizeOf(aSockAddr);
+  Initialize(aSockAddr);
+  if getpeername(FHandle, aSockAddr, aSize) = 0 then
+    Result := NetAddrToStr(sockaddr_in(aSockAddr).sin_addr)
+  else
+    Result := '';
 end;
 
 function TmnSocket.GetRemoteName: string;
@@ -353,10 +348,16 @@ end;
 
 function TmnSocket.GetLocalAddress: string;
 var
-  SockAddr: TSockAddr;
-  aSize: Integer;
+  aSockAddr: SockAddr;
+  aSize: Cardinal;
 begin
   CheckActive;
+  aSize := SizeOf(aSockAddr);
+  Initialize(aSockAddr);
+  if GetSockName(FHandle, aSockAddr, aSize) = 0 then
+    Result := NetAddrToStr(sockaddr_in(aSockAddr).sin_addr)
+  else
+    Result := '';
   Result := '';
 end;
 
@@ -370,65 +371,12 @@ begin
   Result := s;
 end;
 
+
 { TmnWallSocket }
 
 constructor TmnWallSocket.Create;
 begin
   inherited;
-
-end;
-
-const
-  SO_TRUE:Longbool=True;
-  SO_FALSE:Longbool=False;
-
-procedure TmnWallSocket.Accept(ListenerHandle: TSocketHandle; Options: TmnsoOptions; ReadTimeout: Integer; out vSocket: TmnCustomSocket; out vErr: Integer);
-var
-  aHandle: TSocket;
-  {$ifdef ANDROID32}
-  aSize: Integer;
-  {$else}
-  aSize: Cardinal;
-  {$endif}
-  aAddress: TSockAddr;
-begin
-  aSize := SizeOf(aAddress);
-  aHandle := Posix.SysSocket.accept(ListenerHandle, aAddress.addr, aSize);
-  if aHandle < 0 then
-    vSocket := nil
-  else
-    vSocket := TmnSocket.Create(aHandle, Options, skServer);
-end;
-
-procedure TmnWallSocket.Bind(Options: TmnsoOptions; ReadTimeout: Integer; const Port: string; const Address: string; out vSocket: TmnCustomSocket; out
-  vErr: Integer);
-var
-  aHandle: TSocket;
-  aAddr : TSockAddr;
-begin
-  aHandle := Posix.SysSocket.socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-  if aHandle <> INVALID_SOCKET then
-  begin
-    if soReuseAddr in Options then
-      Posix.SysSocket.setsockopt(aHandle, SOL_SOCKET, SO_REUSEADDR, SO_TRUE, SizeOf(SO_TRUE));
-
-    if soNoDelay in Options then
-      Posix.SysSocket.setsockopt(aHandle, IPPROTO_IP, TCP_NODELAY, SO_TRUE, SizeOf(SO_TRUE));
-
-   //  fpsetsockopt(aHandle, SOL_SOCKET, SO_NOSIGPIPE, PChar(@SO_TRUE), SizeOf(SO_TRUE));
-
-    aAddr.addr_in.sin_family := AF_INET;
-    aAddr.addr_in.sin_port := htons(StrToIntDef(Port, 0));
-    StrToNetAddr(Address, aAddr.addr_in.sin_addr);
-    If Posix.SysSocket.bind(aHandle, aAddr.addr, Sizeof(aAddr)) <> 0 then
-    begin
-      FreeSocket(aHandle, vErr);
-    end;
-  end;
-  if aHandle<>INVALID_SOCKET then
-    vSocket := TmnSocket.Create(aHandle, Options, skListener)
-  else
-    vSocket := nil;
 end;
 
 destructor TmnWallSocket.Destroy;
@@ -436,13 +384,7 @@ begin
   inherited;
 end;
 
-procedure TmnWallSocket.FreeSocket(var vHandle: TSocket; out vErr: Integer);
-begin
-  __close(vHandle);
-  vHandle := INVALID_SOCKET;
-end;
-
-function SetNonBlock(ASocket: THandle; ANonBlock: Boolean): Integer;
+function SetNonBlock(ASocket: TSocketHandle; ANonBlock: Boolean): Integer;
 var
   LFlag: Cardinal;
 begin
@@ -477,14 +419,138 @@ begin
     Result := nil;
 end;
 
+function TmnWallSocket.GetSocketError(Handle: TSocketHandle): Integer;
+var
+  errno: Longint;
+  {$ifdef ANDROID32}
+  l: Integer;
+  {$else}
+  l: Cardinal;
+  {$endif}
+begin
+  l := SizeOf(errno);
+  if getsockopt(Handle, SOL_SOCKET, SO_ERROR, errno, l) <> 0 then
+    Result := errno
+  else
+    Result := 0;
+end;
+
 function TmnWallSocket.LookupPort(Port: string): Word;
 begin
   Result := StrToIntDef(Port, 0);
 end;
 
+procedure TmnWallSocket.FreeSocket(var vHandle: TSocketHandle; out vErr: Integer);
+begin
+  vErr := GetSocketError(vHandle);
+  __close(vHandle);
+  vHandle := INVALID_SOCKET;
+end;
+
+procedure TmnWallSocket.Accept(ListenerHandle: TSocketHandle; Options: TmnsoOptions; ReadTimeout: Integer; out vSocket: TmnCustomSocket; out vErr: Integer);
+var
+  aHandle: TSocketHandle;
+  {$ifdef ANDROID32}
+  aSize: Integer;
+  {$else}
+  aSize: Cardinal;
+  {$endif}
+  aAddress: TSockAddr;
+begin
+  aSize := SizeOf(aAddress);
+  aHandle := Posix.SysSocket.accept(ListenerHandle, aAddress.addr, aSize);
+  //aHandle := Posix.SysSocket.Accept(ListenerHandle, nil, nil); <- that the correct
+
+  if aHandle < 0 then
+  begin
+    vSocket := nil;
+    vErr := -1;
+  end
+  else
+  begin
+    InitSocketOptions(aHandle, Options, ReadTimeout);
+    vSocket := TmnSocket.Create(aHandle, Options, skServer);
+    vErr := 0;
+  end;
+end;
+
+function TmnWallSocket.Select(vHandle: TSocketHandle; Timeout: Integer; Check: TSelectCheck): TmnError;
+var
+  FSet: fd_set;
+  c: Integer;
+  LTime: TimeVal;
+  LTimePtr: PTimeVal;
+begin
+  //CheckActive; no need select will return error for it, as i tho
+  if vHandle = INVALID_SOCKET then
+    Result := erClosed
+  else
+  begin
+    if Timeout = -1 then
+    begin
+      LTimePtr := nil;
+    end
+    else
+    begin
+      LTime.tv_sec := Timeout div 1000;
+      LTime.tv_usec := (Timeout mod 1000) * 1000;
+      LTimePtr := @LTime;
+    end;
+
+    fd_zero(FSet);
+    _FD_SET(vHandle, FSet);
+    if Check = slRead then
+      c := Posix.SysSelect.Select(vHandle + 1, @FSet, nil, nil, LTimePtr)
+    else
+      c := Posix.SysSelect.Select(vHandle + 1, nil, @FSet, nil, LTimePtr);
+    {if Check = slRead then
+      c := Posix.SysSelect.Select(FD_SETSIZE, @FSet, nil, nil, LTimePtr)
+    else
+      c := Posix.SysSelect.Select(FD_SETSIZE, nil, @FSet, nil, LTimePtr);}
+
+    if (c = SOCKET_ERROR) then
+      Result := erInvalid
+    else if (c = 0) then
+      Result := erTimeout
+    else
+      Result := erSuccess;
+  end;
+end;
+
+procedure TmnWallSocket.Bind(Options: TmnsoOptions; ReadTimeout: Integer; const Port: string; const Address: string; out vSocket: TmnCustomSocket; out
+  vErr: Integer);
+var
+  aHandle: TSocketHandle;
+  aAddr : TSockAddr;
+begin
+  aHandle := Posix.SysSocket.socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+  if aHandle <> INVALID_SOCKET then
+  begin
+    if soReuseAddr in Options then
+      setsockopt(aHandle, SOL_SOCKET, SO_REUSEADDR, SO_TRUE, SizeOf(SO_TRUE));
+
+    if soNoDelay in Options then
+      Posix.SysSocket.setsockopt(aHandle, IPPROTO_IP, TCP_NODELAY, SO_TRUE, SizeOf(SO_TRUE));
+
+   //  setsockopt(aHandle, SOL_SOCKET, SO_NOSIGPIPE, PChar(@SO_TRUE), SizeOf(SO_TRUE));
+
+    aAddr.addr_in.sin_family := AF_INET;
+    aAddr.addr_in.sin_port := htons(StrToIntDef(Port, 0));
+    StrToNetAddr(Address, aAddr.addr_in.sin_addr);
+    If Posix.SysSocket.bind(aHandle, aAddr.addr, Sizeof(aAddr)) <> 0 then
+    begin
+      FreeSocket(aHandle, vErr);
+    end;
+  end;
+  if aHandle<>INVALID_SOCKET then
+    vSocket := TmnSocket.Create(aHandle, Options, skListener)
+  else
+    vSocket := nil;
+end;
+
 procedure TmnWallSocket.Connect(Options: TmnsoOptions; ConnectTimeout, ReadTimeout: Integer; const Port: string; const Address: string; out vSocket: TmnCustomSocket; out vErr: Integer);
 var
-  aHandle: TSocket;
+  aHandle: TSocketHandle;
   aAddr : TSockAddr;
   ret: integer;
   h: Phostent;
@@ -537,12 +603,12 @@ begin
 
       if ConnectTimeout <> -1 then
       begin
-        {aMode := 1;
-        ret := ioctlsocket(aHandle, Longint(FIONBIO), aMode);
+        aMode := 1;
+        ret := IOCtl(aHandle, FIONBIO, @aMode);
         if ret = Longint(SOCKET_ERROR) then
         begin
           FreeSocket(aHandle, vErr);
-        end;}
+        end;
       end;
 
       //SetNonBlock(aHandle, True);

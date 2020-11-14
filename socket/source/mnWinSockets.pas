@@ -41,10 +41,10 @@ type
     function DoClose: TmnError; override;
     function DoPending: Boolean; override;
   public
-    function GetLocalAddress: string; override;
     function GetRemoteAddress: string; override;
-    function GetLocalName: string; override;
     function GetRemoteName: string; override;
+    function GetLocalAddress: string; override;
+    function GetLocalName: string; override;
   end;
 
   { TmnWallSocket }
@@ -60,10 +60,11 @@ type
   public
     constructor Create; override;
     destructor Destroy; override;
-    function GetSocketError(Handle: Integer): Integer; override;
-    procedure Bind(Options: TmnsoOptions; ListenTimeout: Integer; const Port: string; const Address: string; out vSocket: TmnCustomSocket; out vErr: Integer); override;
+    function GetSocketError(Handle: TSocketHandle): Integer; override;
     procedure Accept(ListenerHandle: TSocketHandle; Options: TmnsoOptions; ReadTimeout: Integer; out vSocket: TmnCustomSocket; out vErr: Integer); override;
+    procedure Bind(Options: TmnsoOptions; ListenTimeout: Integer; const Port: string; const Address: string; out vSocket: TmnCustomSocket; out vErr: Integer); override;
     procedure Connect(Options: TmnsoOptions; ConnectTimeout, ReadTimeout: Integer; const Port: string; const Address: string; out vSocket: TmnCustomSocket; out vErr: Integer); override;
+
     procedure Startup;
     procedure Cleanup;
   end;
@@ -104,14 +105,14 @@ end;
 
 { TmnSocket }
 
-function TmnSocket.DoSelect(Timeout: Integer; Check: TSelectCheck): TmnError;
-begin
-  Result := (WallSocket as TmnWallSocket).Select(FHandle, Timeout, Check);
-end;
-
 function TmnSocket.GetActive: Boolean;
 begin
   Result := FHandle <> INVALID_SOCKET;
+end;
+
+function TmnSocket.DoSelect(Timeout: Integer; Check: TSelectCheck): TmnError;
+begin
+  Result := (WallSocket as TmnWallSocket).Select(FHandle, Timeout, Check);
 end;
 
 function TmnSocket.DoClose: TmnError;
@@ -333,9 +334,105 @@ end;
 
 { TmnWallSocket }
 
+constructor TmnWallSocket.Create;
+begin
+  inherited;
+  Startup;
+end;
+
+destructor TmnWallSocket.Destroy;
+begin
+  inherited;
+  Cleanup;
+end;
+
 function TmnWallSocket.LookupPort(Port: string): Word;
 begin
   Result := StrToIntDef(Port, 0);
+end;
+
+function TmnWallSocket.GetSocketError(Handle: TSocketHandle): Integer;
+var
+  errno: Longint;
+  l: Integer;
+begin
+  l := SizeOf(errno);
+  if getsockopt(Handle, SOL_SOCKET, SO_ERROR, @errno, l) <> 0 then
+    Result := errno
+  else
+    Result := 0;
+end;
+
+procedure TmnWallSocket.FreeSocket(var vHandle: TSocketHandle; out vErr: Integer);
+begin
+  vErr := WSAGetLastError;
+  WinSock2.CloseSocket(vHandle);
+  vHandle := INVALID_SOCKET;
+end;
+
+procedure TmnWallSocket.Accept(ListenerHandle: TSocketHandle; Options: TmnsoOptions; ReadTimeout: Integer; out vSocket: TmnCustomSocket; out vErr: Integer);
+var
+  aHandle: TSocketHandle;
+begin
+  aHandle := WinSock2.Accept(ListenerHandle, nil, nil);
+  if aHandle = INVALID_SOCKET then
+  begin
+    vSocket := nil;
+    vErr := -1;
+  end
+  else
+  begin
+    InitSocketOptions(aHandle, Options, ReadTimeout);
+    vSocket := TmnSocket.Create(aHandle, Options, skServer);
+    vErr := 0;
+  end;
+end;
+
+function TmnWallSocket.Select(vHandle: TSocketHandle; Timeout: Integer; Check: TSelectCheck): TmnError;
+var
+  FSet: TFDSet;
+  PSetRead, PSetWrite: PFDSet;
+  TimeVal: TTimeVal;
+  c: Integer;
+begin
+  //CheckActive; no need select will return error for it, as i tho
+  if vHandle = INVALID_SOCKET then
+    Result := erClosed
+  else
+  begin
+    {$ifdef FPC}
+    Initialize(FSet);
+    FD_ZERO(FSet);
+    FD_SET(vHandle, FSet);
+    {$else}
+    FD_ZERO(FSet);
+    _FD_SET(vHandle, FSet);
+    {$endif}
+    if Check = slRead then
+    begin
+      PSetRead := @FSet;
+      PSetWrite := nil;
+    end
+    else
+    begin
+      PSetRead := nil;
+      PSetWrite := @FSet;
+    end;
+    if Timeout = -1 then
+      c := WinSock2.select(0, PSetRead, PSetWrite, nil, nil)
+    else
+    begin
+      TimeVal.tv_sec := Timeout div 1000;
+      TimeVal.tv_usec := (Timeout mod 1000) * 1000;
+      c := WinSock2.select(0, PSetRead, PSetWrite, nil, @TimeVal);
+    end;
+    if (c = SOCKET_ERROR) then
+      Result := erInvalid
+    else if (c = 0) then
+      Result := erTimeout
+    else
+      Result := erSuccess;
+  end
 end;
 
 procedure TmnWallSocket.Bind(Options: TmnsoOptions; ListenTimeout: Integer; const Port: string; const Address: string; out vSocket: TmnCustomSocket; out vErr: Integer);
@@ -398,90 +495,6 @@ begin
     vSocket := TmnSocket.Create(aHandle, Options, skListener)
   else
     vSocket := nil;
-end;
-
-procedure TmnWallSocket.Accept(ListenerHandle: TSocketHandle; Options: TmnsoOptions; ReadTimeout: Integer; out vSocket: TmnCustomSocket; out vErr: Integer);
-var
-  aHandle: TSocketHandle;
-begin
-  aHandle := WinSock2.Accept(ListenerHandle, nil, nil);
-  if aHandle = INVALID_SOCKET then
-  begin
-    vSocket := nil;
-    vErr := -1;
-  end
-  else
-  begin
-    InitSocketOptions(aHandle, Options, ReadTimeout);
-    vSocket := TmnSocket.Create(aHandle, Options, skServer);
-    vErr := 0;
-  end;
-end;
-
-function TmnWallSocket.GetSocketError(Handle: Integer): Integer;
-var
-  errno: Longint;
-  l: Integer;
-begin
-  l := SizeOf(errno);
-  if getsockopt(Handle, SOL_SOCKET, SO_ERROR, @errno, l) <> 0 then
-    Result := errno
-  else
-    Result := 0;
-end;
-
-procedure TmnWallSocket.FreeSocket(var vHandle: TSocketHandle; out vErr: Integer);
-begin
-  vErr := WSAGetLastError;
-  WinSock2.CloseSocket(vHandle);
-  vHandle := INVALID_SOCKET;
-end;
-
-function TmnWallSocket.Select(vHandle: TSocketHandle; Timeout: Integer; Check: TSelectCheck): TmnError;
-var
-  FSet: TFDSet;
-  PSetRead, PSetWrite: PFDSet;
-  TimeVal: TTimeVal;
-  c: Integer;
-begin
-  //CheckActive; no need select will return error for it, as i tho
-  if vHandle = INVALID_SOCKET then
-    Result := erClosed
-  else
-  begin
-    {$ifdef FPC}
-    Initialize(FSet);
-    FD_ZERO(FSet);
-    FD_SET(vHandle, FSet);
-    {$else}
-    FD_ZERO(FSet);
-    _FD_SET(vHandle, FSet);
-    {$endif}
-    if Check = slRead then
-    begin
-      PSetRead := @FSet;
-      PSetWrite := nil;
-    end
-    else
-    begin
-      PSetRead := nil;
-      PSetWrite := @FSet;
-    end;
-    if Timeout = -1 then
-      c := WinSock2.select(0, PSetRead, PSetWrite, nil, nil)
-    else
-    begin
-      TimeVal.tv_sec := Timeout div 1000;
-      TimeVal.tv_usec := (Timeout mod 1000) * 1000;
-      c := WinSock2.select(0, PSetRead, PSetWrite, nil, @TimeVal);
-    end;
-    if (c = SOCKET_ERROR) then
-      Result := erInvalid
-    else if (c = 0) then
-      Result := erTimeout
-    else
-      Result := erSuccess;
-  end
 end;
 
 procedure TmnWallSocket.Connect(Options: TmnsoOptions; ConnectTimeout, ReadTimeout: Integer; const Port: string; const Address: string; out vSocket: TmnCustomSocket; out vErr: Integer);
@@ -584,18 +597,6 @@ begin
   Dec(FCount);
   if FCount = 0 then
     WSACleanup;
-end;
-
-constructor TmnWallSocket.Create;
-begin
-  inherited;
-  Startup;
-end;
-
-destructor TmnWallSocket.Destroy;
-begin
-  inherited;
-  Cleanup;
 end;
 
 end.
