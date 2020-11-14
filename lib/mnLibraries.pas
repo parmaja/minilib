@@ -89,17 +89,14 @@ resourcestring
   SErrLoadFailed = 'Can not load library "%s". Check your installation.';
   SErrAlreadyLoaded = 'Already initialized from library %s.';
 
-{$ifdef FPC}
-{$else}
-function LoadLibrary(LibraryName: string):TLibHandle;
+function InternalLoadLibrary(LibraryName: string):TLibHandle;
 begin
-  {$ifdef LINUX}
-  Result := SysUtils.LoadLibrary(PChar(LibraryName));
+  {$ifdef FPC}
+    Result := LoadLibrary(LibraryName);
   {$else}
-  Result := LoadLibrary(PChar(LibraryName));
+    Result := LoadLibrary(PChar(LibraryName));
   {$endif}
 end;
-{$endif}
 
 { TmnLibrary }
 
@@ -126,7 +123,7 @@ begin
     RefCount := RefCount + 1;
     if RefCount = 1 then
     begin
-      FHandle := LoadLibrary(LibraryName);
+      FHandle := InternalLoadLibrary(LibraryName);
       if (FHandle = 0) then
       begin
         RefCount := 0;
