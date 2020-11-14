@@ -218,7 +218,7 @@ end;
 procedure TConsoleLog.LogWrite(S: string);
 begin
   if IsConsole then
-    Write(S);
+    System.Write(S);
 end;
 
 { TDebugOutputLog }
@@ -246,6 +246,10 @@ end;
 
 function TLogDispatcher.Add(AObject: TObject): Integer;
 begin
+  {$ifndef FPC} //Delphi
+  if not (AObject is TInterfacedPersistent) then
+    raise Exception.Create('Object is not InterfacedPersistent');
+  {$endif}
   if not Supports(AObject, ILog) then
     raise Exception.Create('Object is no ILog');
 
@@ -264,7 +268,7 @@ begin
       {$ifdef FPC}
       ALog := (Items[i] as ILog);
       {$else}
-      ALog := ILog(Pointer(Items[i]));
+      ALog := (TInterfacedPersistent(Items[i]) as ILog);
       {$endif}
       ALog.LogWrite(S);
     end;

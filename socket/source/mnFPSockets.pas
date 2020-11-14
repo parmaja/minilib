@@ -53,7 +53,7 @@ type
   private
     function LookupPort(Port: string): Word;
   protected
-    procedure FreeSocket(var vHandle: TSocketHandle; out vErr: integer);
+    procedure FreeSocket(var vHandle: TSocketHandle);
     function Select(vHandle: TSocketHandle; Timeout: Integer; Check: TSelectCheck): TmnError;
   public
     constructor Create; override;
@@ -100,6 +100,7 @@ begin
       Result := fpsetsockopt(Handle, SOL_SOCKET, SO_RCVTIMEO, @t, SizeOf(t));
     end;
   end;
+  //TODO setsockopt(aHandle, SOL_SOCKET, SO_NOSIGPIPE, PChar(@SO_TRUE), SizeOf(SO_TRUE));
 end;
 
 { TmnSocket }
@@ -148,11 +149,11 @@ var
   iHow: Integer;
 begin
   if [sdReceive, sdSend] = How then
-    iHow := 2 //SD_BOTH
+    iHow := 2 //SD_BOTH , SHUT_RDWR
   else if sdSend in How then
-    iHow := 1 //SD_RECEIVE
+    iHow := 1 //SD_RECEIVE , SHUT_RD
   else if sdReceive in How then
-    iHow := 0 //SD_SEND
+    iHow := 0 //SD_SEND , SHUT_WR
   else
   begin
     Result := erInvalid;
@@ -320,10 +321,10 @@ begin
   Result := StrToIntDef(Port, 0);
 end;
 
-procedure TmnWallSocket.FreeSocket(var vHandle: TSocketHandle; out vErr: integer );
+procedure TmnWallSocket.FreeSocket(var vHandle: TSocketHandle);
 begin
-  vErr := SocketError;
-  closesocket(vHandle);
+  if (vHandle <> 0) or (vHandle <>  INVALID_SOCKET) then
+    closesocket(vHandle)
   vHandle := INVALID_SOCKET;
 end;
 
@@ -370,6 +371,7 @@ begin
     end;
 
     c := fpselect(vHandle + 1, PSetRead, PSetWrite, PSetRead, Timeout);
+
     if (c = SOCKET_ERROR) then
       Result := erInvalid
     else if (c = 0) then
@@ -389,10 +391,6 @@ begin
 
   if aHandle <> INVALID_SOCKET then
   begin
-    //fpsetsockopt(aHandle, SOL_SOCKET, SO_NOSIGPIPE, PChar(@SO_TRUE), SizeOf(SO_TRUE));
-
-
-
     vErr := InitSocketOptions(aHandle, Options, ReadTimeout);
 
     if soReuseAddr in Options then
@@ -408,7 +406,7 @@ begin
     if fpbind(aHandle,@aSockAddr, Sizeof(aSockAddr)) <> 0 then
     begin
       vErr := SocketError;
-      FreeSocket(aHandle, vErr);
+      FreeSocket(aHandle);
     end;
   end;
 
@@ -441,7 +439,8 @@ begin
       ret := FpIOCtl(aHandle, FIONBIO, @aMode);
       if ret = Longint(SOCKET_ERROR) then
       begin
-        FreeSocket(aHandle, vErr);
+        vErr := SocketError;
+        FreeSocket(aHandle);
       end;
     end;
 
@@ -463,21 +462,32 @@ begin
           end;
         end;
       end;
-      ret := fpconnect(aHandle, @aAddr, SizeOf(aAddr));
-      if ret = -1 then
+
+      if aHandle <> TSocketHandle(SOCKET_ERROR) then
       begin
-        vErr := SocketError;
-        if (ConnectTimeout <> -1) and ((vErr = EsockEWOULDBLOCK) or (vErr = ESysEINPROGRESS)) then //Need to wait
+        ret := fpconnect(aHandle, @aAddr, SizeOf(aAddr));
+
+        if ret = -1 then
         begin
-          aMode := 0;
-          ret := FpIOCtl(aHandle, Longint(FIONBIO), @aMode);
-          if ret = Longint(SOCKET_ERROR) then
-            FreeSocket(aHandle, vErr)
-          else if Select(aHandle, ConnectTimeout, slWrite) <> erSuccess then
-            FreeSocket(aHandle, vErr);
-        end
-        else
-          FreeSocket(aHandle, vErr);
+          vErr := SocketError;
+          if (ConnectTimeout <> -1) and ((vErr = EsockEWOULDBLOCK) or (vErr = ESysEINPROGRESS)) then //Need to wait
+          begin
+            aMode := 0;
+            ret := FpIOCtl(aHandle, Longint(FIONBIO), @aMode);
+            if ret = Longint(SOCKET_ERROR) then
+            begin
+              vErr := SocketError;
+              FreeSocket(aHandle, vErr)
+            end
+            else if Select(aHandle, ConnectTimeout, slWrite) <> erSuccess then
+            begin
+              vErr := SocketError;
+              FreeSocket(aHandle);
+            end;
+          end
+          else
+            FreeSocket(aHandle);
+        end;
       end;
     end;
   end;

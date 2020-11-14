@@ -6,6 +6,7 @@
     <General>
       <Flags>
         <MainUnitHasCreateFormStatements Value="False"/>
+        <MainUnitHasTitleStatement Value="False"/>
         <MainUnitHasScaledStatement Value="False"/>
       </Flags>
       <SessionStorage Value="InProjectDir"/>
@@ -70,6 +71,9 @@
         <UseValgrind Value="True"/>
       </Debugging>
     </Linking>
+    <Other>
+      <CustomOptions Value="-dDEBUG"/>
+    </Other>
   </CompilerOptions>
   <Debugging>
     <Exceptions>

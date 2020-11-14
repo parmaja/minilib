@@ -55,7 +55,7 @@ type
     FCount: Integer;
     function LookupPort(Port: string): Word;
   protected
-    procedure FreeSocket(var vHandle: TSocketHandle; out vErr: Integer);
+    procedure FreeSocket(var vHandle: TSocketHandle);
     function Select(vHandle: TSocketHandle; Timeout: Integer; Check: TSelectCheck): TmnError;
   public
     constructor Create; override;
@@ -363,10 +363,10 @@ begin
     Result := 0;
 end;
 
-procedure TmnWallSocket.FreeSocket(var vHandle: TSocketHandle; out vErr: Integer);
+procedure TmnWallSocket.FreeSocket(var vHandle: TSocketHandle);
 begin
-  vErr := WSAGetLastError;
-  WinSock2.CloseSocket(vHandle);
+  if (vHandle <> 0) or (vHandle <>  INVALID_SOCKET) then
+    WinSock2.CloseSocket(vHandle);
   vHandle := INVALID_SOCKET;
 end;
 
@@ -393,6 +393,7 @@ var
   FSet: TFDSet;
   PSetRead, PSetWrite: PFDSet;
   TimeVal: TTimeVal;
+  TimeValPtr: PTimeVal;
   c: Integer;
 begin
   //CheckActive; no need select will return error for it, as i tho
@@ -418,14 +419,17 @@ begin
       PSetRead := nil;
       PSetWrite := @FSet;
     end;
+
     if Timeout = -1 then
-      c := WinSock2.select(0, PSetRead, PSetWrite, nil, nil)
+      TimeValPtr := nil
     else
     begin
       TimeVal.tv_sec := Timeout div 1000;
       TimeVal.tv_usec := (Timeout mod 1000) * 1000;
-      c := WinSock2.select(0, PSetRead, PSetWrite, nil, @TimeVal);
+      TimeValPtr := @TimeVal;
     end;
+
+    c := WinSock2.select(0, PSetRead, PSetWrite, nil, TimeValPtr);
     if (c = SOCKET_ERROR) then
       Result := erInvalid
     else if (c = 0) then
@@ -487,7 +491,8 @@ begin
     if WinSock2.bind(aHandle, TSockAddr(aSockAddr), SizeOf(aSockAddr)) = SOCKET_ERROR then
     {$ENDIF}
     begin
-      FreeSocket(aHandle, vErr);
+      vErr := WSAGetLastError;
+      FreeSocket(aHandle);
     end;
   end;
 
@@ -516,7 +521,8 @@ begin
       ret := ioctlsocket(aHandle, Longint(FIONBIO), aMode);
       if ret = Longint(SOCKET_ERROR) then
       begin
-        FreeSocket(aHandle, vErr);
+        vErr := WSAGetLastError;
+        FreeSocket(aHandle);
       end;
     end;
 
@@ -550,25 +556,34 @@ begin
           end;
         end;
       end;
-    {$IFDEF FPC}
-      ret := WinSock2.connect(aHandle, aAddr, SizeOf(aAddr));
-    {$ELSE}
-      ret := WinSock2.connect(aHandle, TSockAddr(aAddr), SizeOf(aAddr));
-    {$ENDIF}
-      if (ret = SOCKET_ERROR) then
+      if aHandle <> TSocketHandle(SOCKET_ERROR) then
       begin
-        vErr := WSAGetLastError;
-        if (ConnectTimeout <> -1) and ((vErr = WSAEWOULDBLOCK) or (vErr = WSAEINPROGRESS)) then
+      {$IFDEF FPC}
+        ret := WinSock2.connect(aHandle, aAddr, SizeOf(aAddr));
+      {$ELSE}
+        ret := WinSock2.connect(aHandle, TSockAddr(aAddr), SizeOf(aAddr));
+      {$ENDIF}
+        if (ret = SOCKET_ERROR) then
         begin
-          aMode := 0;
-          ret := ioctlsocket(aHandle, Longint(FIONBIO), aMode);
-          if ret = Longint(SOCKET_ERROR) then
-            FreeSocket(aHandle, vErr)
-          else if Select(aHandle, ConnectTimeout, slWrite) <> erSuccess then
-            FreeSocket(aHandle, vErr);
-        end
-        else
-          FreeSocket(aHandle, vErr);
+          vErr := WSAGetLastError;
+          if (ConnectTimeout <> -1) and ((vErr = WSAEWOULDBLOCK) or (vErr = WSAEINPROGRESS)) then
+          begin
+            aMode := 0;
+            ret := ioctlsocket(aHandle, Longint(FIONBIO), aMode);
+            if ret = Longint(SOCKET_ERROR) then
+            begin
+              vErr := WSAGetLastError;
+              FreeSocket(aHandle)
+            end
+            else if Select(aHandle, ConnectTimeout, slWrite) <> erSuccess then
+            begin
+              vErr := WSAGetLastError;
+              FreeSocket(aHandle);
+            end;
+          end
+          else
+            FreeSocket(aHandle);
+        end;
       end;
     end;
   end;

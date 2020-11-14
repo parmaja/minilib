@@ -120,7 +120,6 @@ var
   s: String;
 begin
   repeat
-    b := false;
     Lock.Enter;
     try
       b := LogMessages.Count > 0;

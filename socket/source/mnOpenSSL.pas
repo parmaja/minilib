@@ -230,7 +230,9 @@ end;
 constructor TSSL.Init(ACTX: TContext);
 begin
   //inherited Create;
+  {$ifdef FPC}
   Initialize(Self);
+  {$endif}
   CTX := ACTX;
   Handle := SSL_new(CTX.Handle);
   {$ifdef DEBUG}

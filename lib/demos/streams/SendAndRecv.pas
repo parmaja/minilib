@@ -10,7 +10,7 @@ interface
 
 uses
   Classes, SysUtils, IniFiles,
-  mnUtils, mnStreams,
+  mnUtils, mnStreams, mnLibraries,
   mnLogs, mnStreamUtils, mnSockets, mnClients, mnServers, mnOpenSSL, mnOpenSSLUtils;
 
 type
@@ -518,6 +518,7 @@ begin
       WriteLn('Welcome to testing Streams');
       WriteLn('');
       InstallConsoleLog;
+      Log.WriteLn('Log installed');
       Address := ini.ReadString('options', 'Address', sHost);
       AddProc('ExampleSocket: Socket threads', ExampleSocket);
       AddProc('Example Socket Timout: Socket threads', ExampleSocketTestTimeout);

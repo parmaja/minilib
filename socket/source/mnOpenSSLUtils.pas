@@ -111,7 +111,6 @@ var
 begin
   x := nil;
   pk := nil;
-  rsa := nil;
   name := nil;
   bne := nil;
   sign := nil;

@@ -535,7 +535,6 @@ var
 begin
   if FServer <> nil then
   repeat
-    b := false;
     Enter;
     try
       b := LogMessages.Count > 0;
