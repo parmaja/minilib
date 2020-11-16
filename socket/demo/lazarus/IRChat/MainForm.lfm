@@ -1,7 +1,7 @@
 object MainFrm: TMainFrm
-  Left = 441
+  Left = 159
   Height = 459
-  Top = 227
+  Top = 122
   Width = 696
   Align = alClient
   Caption = 'IRC chat'
