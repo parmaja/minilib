@@ -518,7 +518,6 @@ begin
       WriteLn('Welcome to testing Streams');
       WriteLn('');
       InstallConsoleLog;
-      Log.WriteLn('Log installed');
       Address := ini.ReadString('options', 'Address', sHost);
       AddProc('ExampleSocket: Socket threads', ExampleSocket);
       AddProc('Example Socket Timout: Socket threads', ExampleSocketTestTimeout);
@@ -534,7 +533,7 @@ begin
         WriteLn('0: Type 0 to exit');
         WriteLn;
         Write('Enter command: ');
-        s := '1';
+        s := '';
         ReadLn(s);
         WriteLn;
         s := trim(s);

@@ -310,10 +310,10 @@ var
   l: Integer;
 begin
   l := SizeOf(errno);
-  if fpgetsockopt(Handle, SOL_SOCKET, SO_ERROR, @errno, @l) <> 0 then
+  if fpgetsockopt(Handle, SOL_SOCKET, SO_ERROR, @errno, @l) = 0 then
     Result := errno
   else
-    Result := 0;
+    Result := -1;
 end;
 
 function TmnWallSocket.LookupPort(Port: string): Word;

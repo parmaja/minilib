@@ -357,10 +357,10 @@ var
   l: Integer;
 begin
   l := SizeOf(errno);
-  if getsockopt(Handle, SOL_SOCKET, SO_ERROR, @errno, l) <> 0 then
+  if getsockopt(Handle, SOL_SOCKET, SO_ERROR, @errno, l) = 0 then
     Result := errno
   else
-    Result := 0;
+    Result := -1;
 end;
 
 procedure TmnWallSocket.FreeSocket(var vHandle: TSocketHandle);

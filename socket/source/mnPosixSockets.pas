@@ -430,10 +430,10 @@ var
   l: {$ifdef ANDROID32} Integer;{$else}Cardinal;{$endif}
 begin
   l := SizeOf(errno);
-  if getsockopt(Handle, SOL_SOCKET, SO_ERROR, errno, l) <> 0 then
+  if getsockopt(Handle, SOL_SOCKET, SO_ERROR, errno, l) = 0 then
     Result := errno
   else
-    Result := 0;
+    Result := -1;
 end;
 
 function TmnWallSocket.LookupPort(Port: string): Word;
@@ -639,7 +639,7 @@ begin
         if ret = -1 then
         begin
           vErr := GetSocketError(aHandle);
-          if (ConnectTimeout <> -1) and ((vErr = EWOULDBLOCK) or (vErr = EINPROGRESS)) then //Need to wait
+          if (ConnectTimeout <> -1) and ((vErr = 0) or (vErr = EWOULDBLOCK) or (vErr = EINPROGRESS)) then //Need to wait
           begin
             aMode := 0;
             ret := IOCtl(aHandle, Longint(FIONBIO), @aMode);
