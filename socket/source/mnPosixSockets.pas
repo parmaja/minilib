@@ -88,14 +88,18 @@ const
   INADDR_NONE = $ffffffff;
 
   {$if defined(MACOS) or defined(IOS)}
-  //MSG_NOSIGNAL  = $20000;  // Do not generate SIGPIPE.
-  FIONREAD = $4004667F; // oSX FIONREAD        = Posix.StrOpts.FIONREAD;
+  MSG_NOSIGNAL  = $20000;  // Do not generate SIGPIPE.
+  //FIONREAD = $4004667F; // oSX FIONREAD        = Posix.StrOpts.FIONREAD;
 
-  FIONBIO	 = $8004667E; //OSX FIONBIO         = Posix.StrOpts.FIONBIO;
-  FIOASYNC = $8004667D; //OSX  FIOASYNC        = Posix.StrOpts.FIOASYNC;  // not defined in XE2
+  //FIONBIO	 = $8004667E; //OSX FIONBIO         = Posix.StrOpts.FIONBIO;
+  //FIOASYNC = $8004667D; //OSX  FIOASYNC        = Posix.StrOpts.FIOASYNC;  // not defined in XE2
   {$else}
-   MSG_NOSIGNAL  = $4000; // Do not generate SIGPIPE.
+   //MSG_NOSIGNAL  = $4000; // Do not generate SIGPIPE.
   {$ifend}
+
+  {$ifdef ANDROID}
+  FIONBIO         = $5421;//from LinuxAPI
+  {$endif}
 
 type
   TaddrIP4 = packed record
