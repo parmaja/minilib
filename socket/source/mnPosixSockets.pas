@@ -546,7 +546,7 @@ begin
 
     If Posix.SysSocket.bind(aHandle, aAddr.addr, Sizeof(aAddr)) <> 0 then
     begin
-      vErr := GetSocketError(aHandle);
+      vErr := errno; //GetSocketError(aHandle);
       FreeSocket(aHandle);
     end;
   end;
@@ -598,7 +598,7 @@ begin
       ret := IOCtl(aHandle, FIONBIO, @aMode);
       if ret = Longint(SOCKET_ERROR) then
       begin
-        vErr := GetSocketError(aHandle);
+        vErr := errno; //GetSocketError(aHandle);
         FreeSocket(aHandle);
       end;
     end;
@@ -630,7 +630,7 @@ begin
           end
           else
           begin
-            vErr := GetSocketError(aHandle);
+            vErr := errno; //GetSocketError(aHandle);
             FreeSocket(aHandle);
           end;
         end;
@@ -642,19 +642,19 @@ begin
 
         if ret = -1 then
         begin
-          vErr := GetSocketError(aHandle);
-          if (ConnectTimeout <> -1) and ((vErr = 0) or (vErr = EWOULDBLOCK) or (vErr = EINPROGRESS)) then //Need to wait
+          vErr := errno; //GetSocketError(aHandle);
+          if (ConnectTimeout <> -1) and ((vErr = EWOULDBLOCK) or (vErr = EINPROGRESS)) then //Need to wait
           begin
             aMode := 0;
             ret := IOCtl(aHandle, Longint(FIONBIO), @aMode);
             if ret = Longint(SOCKET_ERROR) then
             begin
-              vErr := GetSocketError(aHandle);
+              vErr := errno;//GetSocketError(aHandle);
               FreeSocket(aHandle)
             end
             else if Select(aHandle, ConnectTimeout, slWrite) <> erSuccess then
             begin
-              vErr := GetSocketError(aHandle);
+              vErr := errno; //GetSocketError(aHandle);
               FreeSocket(aHandle);
             end;
           end
