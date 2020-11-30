@@ -39,7 +39,12 @@ PREFIX=(ov)@+
 interface
 
 uses
-  Classes, StrUtils, syncobjs,
+  Classes, syncobjs,
+  {$ifdef FPC}
+  StrUtils,
+  {$else Delphi} //MidStr for ansi is deprecated :(
+  AnsiStrings,
+  {$endif}
   mnClasses, mnSockets, mnClients, mnStreams, mnConnections, mnUtils;
 
 const
