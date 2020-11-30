@@ -17,12 +17,14 @@ xml: XML file/stream reader, line by line not use huge memory to parse it.
 ### Compiler ###
 
 Free Pascal 3.2
-Delphi XE and Above
+
+Delphi XE 10.4 Above
 
 ### Branches ###
 
-Use "release" branch instead of "trunk"
-The "release" branch not modified directly by developers, it is only we merge to it from the truck.
+Use "release" branch instead of "trunk" for last stable code.
+
+### Developers ###
 
 Zaher Dirkey <zaherdirkey at gmail dot com>
 
