@@ -529,6 +529,7 @@ type
     function GetReport: TmnrCustomReport;
     procedure DoBeginFill(vReference: TmnrReferencesRow); virtual;
     procedure DoEndFill(vReference: TmnrReferencesRow); virtual;
+    procedure Registered; virtual;
   public
     constructor Create(vNodes: TmnrNode);
     destructor Destroy; override;
@@ -1797,6 +1798,10 @@ begin
   end;
 end;
 
+procedure TmnrSection.Registered;
+begin
+end;
+
 procedure TmnrSection.SetNodes(const Value: TmnrSections);
 begin
   inherited SetNodes(Value);
@@ -2181,6 +2186,7 @@ begin
   else
     Result.FID := vID;
   //Result.FLoopWay := vLoopWay;
+  Result.Registered;
 end;
 
 procedure TmnrRow.DescaleCells;
