@@ -115,8 +115,8 @@ type
     procedure Disconnect;
     function Accept: TmnCustomSocket;
   protected
-    procedure PostLogs;
-    procedure PostChanged;
+    procedure PostLogs; //run in main thread by queue
+    procedure PostChanged; //run in main thread by queue
     procedure Changed; virtual;
 
     procedure DropConnections; virtual;
@@ -573,6 +573,8 @@ var
 begin
   FTries := FAttempts;
   Connect;
+  if Connected then
+    Changed;
   while Connected and not Terminated do
   begin
     try
@@ -704,14 +706,15 @@ begin
     begin
       List[i].FreeOnTerminate := False;
       List[i].Stop;
+      List[i].WaitFor;
     end;
   finally
     Leave;
   end;
+//  CheckSynchronize; to process quque, but not work inside a thread (listener)
   try
     while List.Count > 0 do
     begin
-      List[0].WaitFor;
       List[0].Free;
       List.Delete(0);
     end;
@@ -814,6 +817,7 @@ begin
     DoBeforeClose;
     FListener.Stop;
     FListener.WaitFor;
+    CheckSynchronize;//to process all queues
     FreeAndNil(FListener);
     FActive := False;
     DoAfterClose;
