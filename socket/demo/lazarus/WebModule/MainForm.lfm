@@ -1,7 +1,7 @@
 object Main: TMain
-  Left = 288
+  Left = 1090
   Height = 366
-  Top = 155
+  Top = 198
   Width = 536
   HorzScrollBar.Page = 206
   VertScrollBar.Page = 207
@@ -156,7 +156,7 @@ object Main: TMain
       ClientWidth = 536
       TabOrder = 3
       object LastIDLabel: TLabel
-        Left = 3
+        Left = 135
         Height = 20
         Top = 3
         Width = 60
@@ -177,7 +177,7 @@ object Main: TMain
         Transparent = False
       end
       object Label4: TLabel
-        Left = 247
+        Left = 98
         Height = 20
         Top = 3
         Width = 34
@@ -194,7 +194,7 @@ object Main: TMain
         ParentFont = False
       end
       object Label3: TLabel
-        Left = 129
+        Left = 198
         Height = 20
         Top = 3
         Width = 20
@@ -211,7 +211,7 @@ object Main: TMain
         ParentFont = False
       end
       object MaxOfThreadsLabel: TLabel
-        Left = 66
+        Left = 221
         Height = 20
         Top = 3
         Width = 60
@@ -232,7 +232,7 @@ object Main: TMain
         Transparent = False
       end
       object NumberOfThreads: TLabel
-        Left = 152
+        Left = 35
         Height = 20
         Top = 3
         Width = 60
@@ -254,7 +254,7 @@ object Main: TMain
         OnClick = NumberOfThreadsClick
       end
       object NumberOfThreadsLbl: TLabel
-        Left = 215
+        Left = 3
         Height = 20
         Top = 3
         Width = 29

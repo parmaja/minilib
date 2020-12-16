@@ -188,10 +188,10 @@ begin
     end;
   finally
     Unprepare;
-    Synchronize(Stopped);//Synchronize not queue, to sure all other queue is processed
     if FreeOnTerminate then
       if FOwner <> nil then
         Owner.Remove(Self); //remove from the server list
+    Synchronize(Stopped);//Synchronize not queue, to sure all other queue is processed
   end;
 end;
 
