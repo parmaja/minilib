@@ -73,6 +73,8 @@ type
     property Count: Integer read GetCount;
     property LastID: Int64 read FLastID;
     property List: TmnConnectionList read FList;
+    procedure Add(Connection: TmnConnection); virtual;
+    procedure Remove(Connection: TmnConnection); virtual;
   end;
 
   { TmnConnection }
@@ -82,12 +84,13 @@ type
     FID: Integer;
     FOwner: TmnConnections;
   strict protected
-    property Owner: TmnConnections read FOwner;
     function GetConnected: Boolean; virtual; abstract;
     procedure Created; virtual;
     procedure Prepare; virtual;
     procedure Process; virtual;
     procedure Unprepare; virtual;
+    procedure Stopped; virtual; //this run main thread called by Synchronize, so dont use it for hard code
+    property Owner: TmnConnections read FOwner;
   protected
     procedure Execute; override;
     //procedure SetStream(AValue: TmnConnectionStream);
@@ -103,7 +106,6 @@ type
     property Connected: Boolean read GetConnected;
 
     procedure Stop; virtual;
-    procedure Release;
     property ID: Integer read FID write FID;
   end;
 
@@ -135,6 +137,26 @@ procedure TmnConnections.Stop;
 begin
 end;
 
+procedure TmnConnections.Add(Connection: TmnConnection);
+begin
+  Enter;
+  try
+    List.Add(Connection);
+  finally
+    Leave;
+  end;
+end;
+
+procedure TmnConnections.Remove(Connection: TmnConnection);
+begin
+  Enter;
+  try
+    List.Remove(Connection);
+  finally
+    Leave;
+  end;
+end;
+
 function TmnConnections.GetCount: Integer;
 begin
   Result := FList.Count;
@@ -149,6 +171,8 @@ end;
 procedure TmnConnection.Execute;
 begin
   try
+    if Owner <> nil then
+      Owner.Add(Self);
     Prepare;
     while not Terminated and Connected do
     begin
@@ -164,6 +188,10 @@ begin
     end;
   finally
     Unprepare;
+    Synchronize(Stopped);//Synchronize not queue, to sure all other queue is processed
+    if FreeOnTerminate then
+      if FOwner <> nil then
+        Owner.Remove(Self); //remove from the server list
   end;
 end;
 
@@ -224,15 +252,6 @@ begin
   Terminate;
 end;
 
-procedure TmnConnection.Release;
-begin
-  if FOwner <> nil then
-  begin
-    FOwner.List.Extract(Self);
-    FOwner := nil;
-  end;
-end;
-
 procedure TmnConnection.HandleException(E: Exception);
 begin
 end;
@@ -246,6 +265,10 @@ begin
 end;
 
 procedure TmnConnection.Unprepare;
+begin
+end;
+
+procedure TmnConnection.Stopped;
 begin
 end;
 

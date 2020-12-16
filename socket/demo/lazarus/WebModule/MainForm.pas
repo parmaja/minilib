@@ -50,6 +50,7 @@ type
     RootEdit: TEdit;
     StartBtn: TButton;
     StopBtn: TButton;
+    StayOnTopChk: TCheckBox;
     procedure ExitBtnClick(Sender: TObject);
     procedure FormHide(Sender: TObject);
     procedure MakeCertBtnClick(Sender: TObject);
@@ -113,7 +114,10 @@ end;
 
 procedure TMain.StayOnTopChkChange(Sender: TObject);
 begin
-
+  if StayOnTopChk.Checked then
+    FormStyle := fsSystemStayOnTop
+  else
+    FormStyle := fsNormal;
 end;
 
 procedure TMain.StopBtnClick(Sender: TObject);

@@ -344,7 +344,6 @@ begin
   else
   begin
     URIQuery := '';
-    URIPath := '';
   end;
 end;
 
