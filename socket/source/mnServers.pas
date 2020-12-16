@@ -706,7 +706,6 @@ begin
     begin
       List[i].FreeOnTerminate := False;
       List[i].Stop;
-      List[i].WaitFor;
     end;
   finally
     Leave;
@@ -715,6 +714,7 @@ begin
   try
     while List.Count > 0 do
     begin
+      List[0].WaitFor;
       List[0].Free;
       List.Delete(0);
     end;
