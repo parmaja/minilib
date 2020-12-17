@@ -123,8 +123,7 @@ type
     procedure Unprepare; virtual;
     procedure Add(Connection: TmnConnection); override;
     procedure Remove(Connection: TmnConnection); override;
-    procedure ReleaseAll; virtual;
-
+    procedure DropConnections; virtual;
   public
     constructor Create;
     destructor Destroy; override;
@@ -614,7 +613,7 @@ begin
     finally
     end;
   end;
-  ReleaseAll;
+  DropConnections;
   Enter;
   try
     Disconnect;
@@ -675,7 +674,7 @@ begin
   Changed;
 end;
 
-procedure TmnListener.ReleaseAll;
+procedure TmnListener.DropConnections;
 var
   i: Integer;
   aConnection: TmnConnection;
