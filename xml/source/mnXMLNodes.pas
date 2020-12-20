@@ -38,6 +38,8 @@ type
     property Items[Index: Integer]: TmnXMLNode read GetItem write SetItem; default;
   end;
 
+  { TmnXMLNode }
+
   TmnXMLNode = class(TmnCustomNode)
   private
     FNodes: TmnXMLNodes;
@@ -48,7 +50,9 @@ type
     FKind: TmnXMLNodeKind;
     FState: TmnXMLNodeState;
     FItems: TmnXMLNodesList;
+    function GetCount: Integer;
     function GetEmpty: Boolean;
+    function GetItem(Index: Integer): TmnXMLNode;
   public
     constructor Create(Nodes: TmnXMLNodes; Parent: TmnXMLNode); virtual;
     destructor Destroy; override;
@@ -63,6 +67,8 @@ type
     property Value: string read FValue write FValue;
     property Name: string read FName write FName;
     property Kind: TmnXMLNodeKind read FKind write FKind;
+    property Count: Integer read GetCount;
+    property Item[Index: Integer]: TmnXMLNode read GetItem; default;
   end;
 
   TmnXMLNodes = class(TmnXMLObject)
@@ -85,10 +91,10 @@ type
     destructor Destroy; override;
     procedure Clear;
     function GetAttribute(Name, Attribute: string; Default: string = ''): string;
-    property Empty:Boolean read GetEmpty;
+    property Empty: Boolean read GetEmpty;
     property Current: TmnXMLNode read FCurrent;
     property Root: TmnXMLNode read FRoot;
-    property Items[Index: string]:TmnXMLNode read GetItems; default;
+    property Items[Index: string]: TmnXMLNode read GetItems; default;
     //Enhanced = true it is useful when need to rewrite the xml data, when Enhanced = false mean we take the nodes for proceess the data, the comment will ignored and all text and cdata merged
     property Enhanced: Boolean read FEnhanced write FEnhanced default False;
   end;
@@ -145,6 +151,16 @@ end;
 function TmnXMLNode.GetEmpty: Boolean;
 begin
   Result := Items.Count = 0;
+end;
+
+function TmnXMLNode.GetCount: Integer;
+begin
+  Result := Items.Count;
+end;
+
+function TmnXMLNode.GetItem(Index: Integer): TmnXMLNode;
+begin
+  Result := Items[Index];
 end;
 
 { TmnXMLNodeReader }
