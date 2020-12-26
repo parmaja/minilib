@@ -37,6 +37,7 @@ type
     procedure FooterDetailsFetch(var vParams: TmnrFetch);
     function DoCreateProfiler: TmnrProfiler; override;
 
+    function DoCreateReportDesgin: ImnrReportDesigner; override;
 
   public
     procedure RequestMaster(vCell: TmnrCell);
@@ -47,7 +48,6 @@ type
     procedure RequestValue(vCell: TmnrCell);
 
     procedure Start; override;
-    function CreateReportDesgin: ImnrReportDesigner; override;
   end;
 
   TForm1 = class(TForm)
@@ -95,7 +95,11 @@ begin
 
     t := GetTickCount;
     r.ExportCSV('c:\temp\1.csv');
-    ShowMessage('Export in '+IntToStr(GetTickCount-t));
+    ShowMessage('Export csv in '+IntToStr(GetTickCount-t));
+
+    t := GetTickCount;
+    r.ExportHTML('c:\temp\1.html');
+    ShowMessage('Export html in '+IntToStr(GetTickCount-t));
 
     t := GetTickCount;
   finally
@@ -233,7 +237,7 @@ begin
   end;}
 end;
 
-function TSimpleDetailsReport.CreateReportDesgin: ImnrReportDesigner;
+function TSimpleDetailsReport.DoCreateReportDesgin: ImnrReportDesigner;
 begin
   Result := TDesignerForm.Create(Application);
 end;
@@ -246,7 +250,7 @@ begin
       SubPos := 0
     else
       Inc(SubPos);
-    if SubPos>200 then
+    if SubPos>20 then
       AcceptMode := acmEof;
   end;
 end;
@@ -268,7 +272,7 @@ begin
       BigPos := 0
     else
       Inc(BigPos);
-    if BigPos>100 then
+    if BigPos>10 then
       AcceptMode := acmEof;
   end;
 end;

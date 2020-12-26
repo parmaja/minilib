@@ -15,7 +15,7 @@ object Form1: TForm1
   TextHeight = 13
   object TestSpeedBtn: TButton
     Left = 397
-    Top = 8
+    Top = 9
     Width = 75
     Height = 25
     Caption = 'Test Speed'

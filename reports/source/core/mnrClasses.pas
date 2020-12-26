@@ -17,7 +17,7 @@ Rename AcceptMode to Resume
 interface
 
 uses
-  SysUtils, Classes, mnrLists;
+  SysUtils, Classes, mnrLists, mnUtils, mnClasses;
 
 const
   ID_SECTION_BASE          = 0;
@@ -635,6 +635,12 @@ type
 
   TmnrExportOptions = set of (mnrExportDisplayText, mnrTAB, mnrBOM);
 
+  TmnrRowList = class(TmnObjectList<TmnrRow>)
+  public
+    constructor Create;
+    procedure AppendRows(vRows: TmnrRows);
+  end;
+
   TmnrCustomReport = class(TPersistent) //belal: must be tobject but {$m+) not working need fix 
   private
     FCanceled: Boolean;
@@ -711,6 +717,7 @@ type
     procedure DoAfterLoop; virtual;
     procedure DoLoopError; virtual;
     function DoCreateReportDesgin: ImnrReportDesigner; virtual;
+    procedure DoEnumExportRows(vList: TmnrRowList); virtual;
   public
     constructor Create;
 
@@ -751,11 +758,17 @@ type
     property FooterPage: TmnrSection read GetFooterPage;
     property FooterReport: TmnrSection read GetFooterReport;
 
-    procedure ExportCSV(const vFile: TFileName; ExportOptions: TmnrExportOptions = []); overload; virtual;//test purpose only
-    procedure ExportCSV(const vStream: TStream; ExportOptions: TmnrExportOptions = []); overload; virtual;//test purpose only
-    procedure ExportCSV(const vStream: TStream; vItems: TmnrRows; ExportOptions: TmnrExportOptions = []); overload; virtual;//test purpose only
     property ReportName: string read GetReportName;
     property ReportCaption: string read GetReportCaption;
+
+    //test purpose only
+    function EnumExportRows: TmnrRowList;
+    procedure ExportCSV(const vFile: TFileName; ExportOptions: TmnrExportOptions = []); overload;
+    procedure ExportCSV(const vStream: TStream; ExportOptions: TmnrExportOptions = []); overload; virtual;
+
+    procedure ExportHTML(const vFile: TFileName); overload;
+    procedure ExportHTML(const vStream: TStream); overload;
+
   end;
 
   TmnrProfiler = class
@@ -970,6 +983,11 @@ begin
   Result := TmnrSections.Create(Self);
 end;
 
+procedure TmnrCustomReport.DoEnumExportRows(vList: TmnrRowList);
+begin
+  vList.AppendRows(Items);
+end;
+
 function TmnrCustomReport.DoGetProfilerClass: TmnrProfilerClass;
 begin
   Result := TmnrProfiler;
@@ -1016,7 +1034,22 @@ begin
 
 end;
 
-procedure TmnrCustomReport.ExportCSV(const vStream: TStream; vItems: TmnrRows; ExportOptions: TmnrExportOptions);
+function TmnrCustomReport.EnumExportRows: TmnrRowList;
+begin
+  Result := TmnrRowList.Create;
+  try
+    DoEnumExportRows(Result);
+  except
+    FreeAndNil(Result);
+    raise;
+  end;
+end;
+
+procedure TmnrCustomReport.ExportCSV(const vStream: TStream; ExportOptions: TmnrExportOptions);
+
+const
+  sEOL = #13#10;
+  sLEBom:WORD = $FEFF;
 
   procedure WriteStr(const vStr: string);
   begin
@@ -1026,36 +1059,108 @@ procedure TmnrCustomReport.ExportCSV(const vStream: TStream; vItems: TmnrRows; E
 var
   r: TmnrRow;
   n: TmnrCell;
+  l: TmnrRowList;
 begin
-  r := vItems.First;
-  while r <> nil do
+  if (mnrBOM in ExportOptions) then
   begin
-    n := r.First;
-    while n <> nil do
-    begin
-      if mnrExportDisplayText in ExportOptions then
-        WriteStr(n.DisplayText)
-      else
-        WriteStr(n.AsString);
-      n := n.Next;
-      if n <> nil then
-      begin
-        if mnrTAB in ExportOptions then
-          WriteStr(#9)
-        else
-          WriteStr(';');
-      end;
-    end;
+    vStream.WriteBuffer(sLEBom, SizeOf(sLEBom))
+  end;
 
-    r := r.Next;
-    if r <> nil then
-      WriteStr(#13#10);
+  l := EnumExportRows;
+  try
+    for r in l do
+    begin
+      n := r.First;
+
+      while n <> nil do
+      begin
+        if mnrExportDisplayText in ExportOptions then
+          WriteStr(n.DisplayText)
+        else
+          WriteStr(n.AsString);
+        n := n.Next;
+        if n <> nil then
+        begin
+          if mnrTAB in ExportOptions then
+            WriteStr(#9)
+          else
+            WriteStr(';');
+        end;
+      end;
+
+      if r <> l.Last then
+        WriteStr(sEOL);
+    end;
+  finally
+    l.Free;
   end;
 end;
 
-procedure TmnrCustomReport.ExportCSV(const vStream: TStream; ExportOptions: TmnrExportOptions);
+procedure TmnrCustomReport.ExportHTML(const vStream: TStream);
+
+  procedure WriteStr(const vStr: UTF8String);
+  begin
+    vStream.Write(vStr[1], Length(vStr));
+  end;
+
+  procedure WritelnStr(const vStr: UTF8String; vIdent: Integer=0);
+  begin
+    if vIdent<>0 then WriteStr(RepeatString('  ', vIdent));
+    WriteStr(vStr);
+    WriteStr(#13#10);
+  end;
+
+var
+  r: TmnrRow;
+  n: TmnrCell;
+  s: TStringBuilder;
+  l: TmnrRowList;
+
 begin
-  ExportCSV(vStream, Items, ExportOptions);
+  l := EnumExportRows;
+  try
+    WritelnStr('<!doctype html>');
+    WritelnStr('<html>');
+    WritelnStr('<head>', 1);
+    WritelnStr('<meta charset="utf-8">', 2);
+    WritelnStr('<title>Invoice</title>', 2);
+    WritelnStr('<meta name="description" content="Invoice demo sample">', 2);
+    WritelnStr('<meta name="author" content="mnReports">', 2);
+    WritelnStr('</head>', 1);
+
+
+    WritelnStr('<body>', 1);
+    WritelnStr('<table>', 2);
+    for r in l do
+    begin
+      WritelnStr('<tr>', 3);
+      n := r.First;
+      while n <> nil do
+      begin
+        WritelnStr('<td>'+n.DisplayText+'<td>', 4);
+        n := n.Next;
+      end;
+      WritelnStr('</tr>', 3);
+    end;
+    WritelnStr('</table>', 2);
+
+    WritelnStr('</body>', 1);
+    WritelnStr('</html>');
+  finally
+    l.Free;
+  end;
+end;
+
+procedure TmnrCustomReport.ExportHTML(const vFile: TFileName);
+var
+  f: TFileStream;
+begin
+  f := TFileStream.Create(vFile, fmCreate);
+  try
+    ExportHTML(f);
+  finally
+    f.Free;
+  end;
 end;
 
 procedure TmnrCustomReport.ExportCSV(const vFile: TFileName; ExportOptions: TmnrExportOptions);
@@ -3413,6 +3518,26 @@ end;
 procedure TmnrGroups.InitLayouts;
 begin
   DoInitLayouts;
+end;
+
+{ TmnrRowList }
+
+procedure TmnrRowList.AppendRows(vRows: TmnrRows);
+var
+  r: TmnrRow;
+begin
+  r := vRows.First;
+  while r<>nil do
+  begin
+    Add(r);
+    r := r.Next;
+  end;
+end;
+
+constructor TmnrRowList.Create;
+begin
+  inherited Create(False);
+
 end;
 
 initialization

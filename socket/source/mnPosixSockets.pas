@@ -337,7 +337,7 @@ end;
 function TmnSocket.GetRemoteAddress: string;
 var
   aSockAddr: SockAddr;
-  aSize: Cardinal;
+  aSize: {$ifdef ANDROID32} Integer;{$else}Cardinal;{$endif}
 begin
   CheckActive;
   aSize := SizeOf(aSockAddr);
@@ -360,7 +360,7 @@ end;
 function TmnSocket.GetLocalAddress: string;
 var
   aSockAddr: SockAddr;
-  aSize: Cardinal;
+  aSize: {$ifdef ANDROID32} Integer;{$else}Cardinal;{$endif}
 begin
   CheckActive;
   aSize := SizeOf(aSockAddr);
