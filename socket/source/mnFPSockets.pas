@@ -242,7 +242,7 @@ var
 begin
   CheckActive;
   aSize := SizeOf(SockAddr);
-  Initialize(SockAddr);
+  Initialize(aSockAddr);
   if fpGetPeerName(FHandle, @aSockAddr, @aSize) = 0 then
     Result := String(NetAddrToStr(sockaddr_in(aSockAddr).sin_addr))
   else
@@ -324,7 +324,7 @@ end;
 procedure TmnWallSocket.FreeSocket(var vHandle: TSocketHandle);
 begin
   if (vHandle <> 0) or (vHandle <>  INVALID_SOCKET) then
-    closesocket(vHandle)
+    closesocket(vHandle);
   vHandle := INVALID_SOCKET;
 end;
 
@@ -477,7 +477,7 @@ begin
             if ret = Longint(SOCKET_ERROR) then
             begin
               vErr := SocketError;
-              FreeSocket(aHandle, vErr)
+              FreeSocket(aHandle);
             end
             else if Select(aHandle, ConnectTimeout, slWrite) <> erSuccess then
             begin
