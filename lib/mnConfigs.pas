@@ -71,6 +71,8 @@ type
     function GetParams(Index: string): TmnSection;
   public
     constructor Create;
+    destructor Destroy; override;
+
 
     procedure LoadFromStream(Stream: TStream);
     procedure SaveToStream(Stream: TStream);
@@ -241,6 +243,12 @@ begin
   inherited Create;
   FDefault := TmnSection.Create;
   FDefault.Name := ''; //ok i know it is already empty
+end;
+
+destructor TmnConfig.Destroy;
+begin
+  FreeAndNil(FDefault);
+  inherited;
 end;
 
 function TmnConfig.Find(const Name: string): TmnSection;

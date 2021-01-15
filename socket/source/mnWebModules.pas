@@ -105,10 +105,11 @@ type
     FDefaultDocument: TStringList;
     function GetActive: Boolean; override;
     procedure Created; override;
-    procedure CreateCommands; override;
+    procedure DoCreateCommands; override;
 
-    procedure ParseRequest(var ARequest: TmodRequest; ACommand: TmodCommand = nil); override;
-    function Match(var ARequest: TmodRequest): Boolean; override;
+    function RequestCommand(var ARequest: TmodRequest; ARequestStream: TmnBufferStream; ARespondStream: TmnBufferStream): TmodCommand; override;
+
+    function Match(const ARequest: TmodRequest): Boolean; override;
     procedure Log(S: string); override;
   public
     destructor Destroy; override;
@@ -120,7 +121,7 @@ type
   TmodWebModules = class(TmodModules)
   protected
   public
-    function ParseRequest(const Request: string): TmodRequest; override;
+    function ParseHead(const Request: string): TmodRequest; override;
   end;
 
   { TmodWebServer }
@@ -274,7 +275,7 @@ begin
   Compressing := True;
 end;
 
-procedure TmodWebModule.CreateCommands;
+procedure TmodWebModule.DoCreateCommands;
 begin
   inherited;
   RegisterCommand('GET', TmodHttpGetCommand, true);
@@ -294,18 +295,18 @@ begin
   inherited Destroy;
 end;
 
-procedure TmodWebModule.ParseRequest(var ARequest: TmodRequest; ACommand: TmodCommand);
+function TmodWebModule.RequestCommand(var ARequest: TmodRequest; ARequestStream, ARespondStream: TmnBufferStream): TmodCommand;
 begin
-  if (ACommand <> nil) and (ACommand is TmodHttpCommand) then
-    ParsePath(ARequest.URI, ARequest.Module, ARequest.Path, (ACommand as TmodHttpCommand).URIParams)
-  else
-    ParsePath(ARequest.URI, ARequest.Module, ARequest.Path, nil);
+  ParsePath(ARequest.URI, ARequest.Module, ARequest.Path, nil);
   ARequest.Command := ARequest.Method;
+  Result := CreateCommand(ARequest.Command, ARequest, ARequestStream, ARespondStream);
+  if Result <> nil then
+    ParseHeader(Result.RequestHeader, ARequestStream);
 end;
 
-function TmodWebModule.Match(var ARequest: TmodRequest): Boolean;
+function TmodWebModule.Match(const ARequest: TmodRequest): Boolean;
 begin
-  ParseRequest(ARequest);
+  //ParseRequest(ARequest);
   Result := SameText(Name, ARequest.Module) and SameText(SubStr(ARequest.Protcol, '/', 0),  'http');
 end;
 
@@ -563,6 +564,8 @@ end;
 procedure TmodHttpCommand.Prepare(var Result: TmodExecuteResults);
 begin
   inherited;
+  ParsePath(Request.URI, Request.Module, Request.Path, URIParams);
+
   if Module.UseKeepAlive and SameText(RequestHeader.ReadString('Connection'), 'Keep-Alive') then
   begin
     KeepAlive := True;
@@ -636,10 +639,11 @@ end;
 
 { TmodCustomWebModules }
 
-function TmodWebModules.ParseRequest(const Request: string): TmodRequest;
+function TmodWebModules.ParseHead(const Request: string): TmodRequest;
 begin
-  Result := inherited ParseRequest(Request);
+  Result := inherited ParseHead(Request);
   Result.URI := URIDecode(Result.URI);
+
 end;
 
 initialization

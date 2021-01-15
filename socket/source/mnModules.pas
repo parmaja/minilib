@@ -198,15 +198,16 @@ type
     function GetActive: Boolean; virtual;
     function GetCommandClass(var CommandName: string): TmodCommandClass; virtual;
     procedure Created; override;
-    procedure CreateCommands; virtual;
+    procedure DoCreateCommands; virtual;
+    procedure CreateCommands;
 
     procedure SendHeader(ACommand: TmodCommand); virtual;
 
     function CreateCommand(CommandName: string; ARequest: TmodRequest; ARequestStream: TmnBufferStream = nil; ARespondStream: TmnBufferStream = nil): TmodCommand; overload;
 
     procedure ParseHeader(RequestHeader: TmnParams; Stream: TmnBufferStream); virtual;
-    procedure ParseRequest(var ARequest: TmodRequest; ACommand: TmodCommand = nil); virtual;
-    function Match(var ARequest: TmodRequest): Boolean; virtual;
+    function RequestCommand(var ARequest: TmodRequest; ARequestStream, ARespondStream: TmnBufferStream): TmodCommand; virtual;
+    function Match(const ARequest: TmodRequest): Boolean; virtual;
     procedure Log(S: string); virtual;
   public
     constructor Create(AName: string; AProtcol: string; AModules: TmodModules); virtual;
@@ -239,8 +240,8 @@ type
     function GetActive: Boolean; virtual;
     procedure Created; override;
   public
-    function ParseRequest(const Request: string): TmodRequest; virtual;
-    function Match(var ARequest: TmodRequest): TmodModule; virtual;
+    function ParseHead(const Request: string): TmodRequest; virtual;
+    function Match(ARequest: TmodRequest): TmodModule; virtual;
 
     function Add(const Name: string; AModule:TmodModule): Integer; overload;
 
@@ -423,7 +424,7 @@ begin
   aRequestLine := TrimRight(Stream.ReadLineRawByte);
   if Connected and (aRequestLine <> '') then //aRequestLine empty when timeout but not disconnected
   begin
-    aRequest := (Listener.Server as TmodModuleServer).Modules.ParseRequest(aRequestLine);
+    aRequest := (Listener.Server as TmodModuleServer).Modules.ParseHead(aRequestLine);
     aModule := (Listener.Server as TmodModuleServer).Modules.Match(aRequest);
     if (aModule = nil) and ((Listener.Server as TmodModuleServer).Modules.Count > 0) then
       aModule := (Listener.Server as TmodModuleServer).Modules.DefaultModule; //fall back
@@ -517,7 +518,6 @@ end;
 
 procedure TmodCommand.Prepare(var Result: TmodExecuteResults);
 begin
-  Module.ParseRequest(Request, Self);
 end;
 
 procedure TmodCommand.SendHeader;
@@ -617,8 +617,11 @@ end;
 
 function TmodModule.CreateCommand(CommandName: string; ARequest: TmodRequest; ARequestStream: TmnBufferStream; ARespondStream: TmnBufferStream): TmodCommand;
 var
+  aName: string;
   aClass: TmodCommandClass;
 begin
+  //aName := GetCommandName(ARequest, ARequestStream);
+
   aClass := GetCommandClass(CommandName);
   if aClass <> nil then
   begin
@@ -630,8 +633,6 @@ begin
   end
   else
     Result := nil;
-  if Result <> nil then
-    ParseHeader(Result.RequestHeader, ARequestStream);
 end;
 
 function TmodModule.GetCommandClass(var CommandName: string): TmodCommandClass;
@@ -674,7 +675,7 @@ end;
 
 procedure TmodModule.CreateCommands;
 begin
-
+  if Commands.Count=0 then DoCreateCommands;
 end;
 
 procedure TmodModule.SendHeader(ACommand: TmodCommand);
@@ -691,9 +692,10 @@ begin
   ACommand.RespondStream.WriteLineUTF8(UTF8String(''));
 end;
 
-procedure TmodModule.ParseRequest(var ARequest: TmodRequest; ACommand: TmodCommand);
+function TmodModule.RequestCommand(var ARequest: TmodRequest; ARequestStream, ARespondStream: TmnBufferStream): TmodCommand;
 begin
   ARequest.Command := ARequest.Method;
+  Result := CreateCommand(ARequest.Command, ARequest, ARequestStream, ARespondStream);
 end;
 
 constructor TmodModule.Create(AName: string; AProtcol: string; AModules: TmodModules);
@@ -714,7 +716,11 @@ begin
   inherited;
 end;
 
-function TmodModule.Match(var ARequest: TmodRequest): Boolean;
+procedure TmodModule.DoCreateCommands;
+begin
+end;
+
+function TmodModule.Match(const ARequest: TmodRequest): Boolean;
 begin
   Result := SameText(Protcol, ARequest.Protcol);
 end;
@@ -727,11 +733,10 @@ function TmodModule.Execute(ARequest: TmodRequest; ARequestStream: TmnBufferStre
 var
   aCMD: TmodCommand;
 begin
-  if Commands.Count = 0 then
-      CreateCommands;
+  CreateCommands;
+
   Result.Status := [erSuccess];
-  ParseRequest(ARequest);
-  aCMD := CreateCommand(ARequest.Command, ARequest, ARequestStream, ARespondStream);
+  aCmd := RequestCommand(ARequest, ARequestStream, ARespondStream);
   if aCMD = nil then
     raise TmodModuleException.Create('Can not find command: ' + ARequest.Command);
   try
@@ -806,7 +811,7 @@ begin
   FEndOfLine := sWinEndOfLine; //for http protocol
 end;
 
-function TmodModules.ParseRequest(const Request: string): TmodRequest;
+function TmodModules.ParseHead(const Request: string): TmodRequest;
 var
   aRequests: TStringList;
 begin
@@ -824,15 +829,14 @@ begin
     aRequests.Free;
   end;
   Result.Raw := Request;
+  ParsePath(Result.URI, Result.Module, Result.Path, nil);
 end;
 
-function TmodModules.Match(var ARequest: TmodRequest): TmodModule;
+function TmodModules.Match(ARequest: TmodRequest): TmodModule;
 var
   item: TmodModule;
-  SaveRequest: TmodRequest;
 begin
   Result := nil;
-  SaveRequest := ARequest;
   for item in Self do
   begin
     if item.Match(ARequest) then
@@ -840,7 +844,6 @@ begin
       Result := item;
       break;
     end;
-    ARequest := SaveRequest;
   end;
 end;
 
