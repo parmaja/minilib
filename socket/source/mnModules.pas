@@ -46,6 +46,20 @@ type
 
   TmodCommand = class;
 
+  { TmnHeaderField }
+
+  TmnHeaderField = class(TmnParam)
+    function GetFullString: String; override;
+  end;
+
+  { TmnHeader }
+
+  TmnHeader = class(TmnParams)
+  protected
+    constructor Create;
+    function CreateField: TmnField; override;
+  end;
+
   TmodRequestInfo = record
     Method: string;
     URI: utf8string;
@@ -63,9 +77,14 @@ type
   { TmodRequest }
 
   TmodRequest = class(TObject)
+  private
+    FHeader: TmnHeader;
+    procedure SetRequestHeader(AValue: TmnHeader);
   protected
     Info: TmodRequestInfo;
   public
+    constructor Create;
+    destructor Destroy; override;
     procedure Clear;
     procedure ParsePath(URI: string; URIQuery: TmnParams = nil);
     property Method: string read Info.Method write Info.Method;
@@ -76,6 +95,19 @@ type
     property Command: string read Info.Command write Info.Command;
     property Raw: string read Info.Raw write Info.Raw;
     property Client: string read Info.Client write Info.Client;
+
+    property Header: TmnHeader read FHeader write SetRequestHeader;
+  end;
+
+  { TmodRespond }
+
+  TmodRespond = class(TObject)
+  private
+    FHeader: TmnHeader;
+  public
+    constructor Create;
+    destructor Destroy; override;
+    property Header: TmnHeader read FHeader;
   end;
 
   TmodModule = class;
@@ -109,41 +141,25 @@ type
     Timout: Integer;
   end;
 
-  { TmnHeaderField }
-
-  TmnHeaderField = class(TmnParam)
-    function GetFullString: String; override;
-  end;
-
-  { TmnHeader }
-
-  TmnHeader = class(TmnParams)
-  protected
-    constructor Create;
-    function CreateField: TmnField; override;
-  end;
-
   { TmodCommand }
 
   TmodCommand = class(TmnObject)
   private
     FModule: TmodModule;
+    FRespond: TmodRespond;
+    FRequest: TmodRequest;
     FRaiseExceptions: Boolean;
-    FRequestHeader: TmnHeader;
-    FRespondHeader: TmnHeader;
     FRequestStream: TmnBufferStream;
     FRespondStream: TmnBufferStream;
     FContentSize: Int64;
 
     FStates: TmodCommandStates;
     procedure SetModule(const Value: TmodModule); virtual;
-    procedure SetRequestHeader(const Value: TmnHeader);
     function GetActive: Boolean;
   protected
-    Request: TmodRequest;
     procedure Prepare(var Result: TmodExecuteResults); virtual;
     procedure RespondError(ErrorNumber: Integer; ErrorMessage: string); virtual;
-    procedure Respond(var Result: TmodExecuteResults); virtual;
+    procedure RespondResult(var Result: TmodExecuteResults); virtual;
     function Execute: TmodExecuteResults; virtual;
     procedure Unprepare(var Result: TmodExecuteResults); virtual; //Shutdown it;
 
@@ -160,7 +176,7 @@ type
 
     procedure Log(S: string); virtual;
   public
-    constructor Create(AModule: TmodModule; RequestStream: TmnBufferStream = nil; RespondStream: TmnBufferStream = nil); virtual;
+    constructor Create(AModule: TmodModule; ARequest: TmodRequest; RequestStream: TmnBufferStream = nil; RespondStream: TmnBufferStream = nil); virtual;
     destructor Destroy; override;
 
     property Active: Boolean read GetActive;
@@ -168,11 +184,11 @@ type
     property Module: TmodModule read FModule write SetModule;
     //Lock the server listener when execute the command
     //Prepare called after created in lucking mode
-    property RequestHeader: TmnHeader read FRequestHeader write SetRequestHeader;
-    property RespondHeader: TmnHeader read FRespondHeader;
     property ContentSize: Int64 read FContentSize write FContentSize; //todo
     property RaiseExceptions: Boolean read FRaiseExceptions write FRaiseExceptions default False;
     property States: TmodCommandStates read FStates;
+    property Request: TmodRequest read FRequest;
+    property Respond: TmodRespond read FRespond;
   end;
 
   TmodCommandClass = class of TmodCommand;
@@ -386,7 +402,42 @@ begin
   URIPath := Copy(URIPath, Length(Name) + 1, MaxInt);
 end;
 
+{ TmodRespond }
+
+constructor TmodRespond.Create;
+begin
+  inherited;
+  FHeader := TmnHeader.Create;
+end;
+
+destructor TmodRespond.Destroy;
+begin
+  FreeAndNil(FHeader);
+  inherited;
+end;
+
 { TmodRequest }
+
+procedure TmodRequest.SetRequestHeader(AValue: TmnHeader);
+begin
+  if FHeader <> AValue then
+  begin
+    FreeAndNil(FHeader);
+    FHeader := AValue;
+  end;
+end;
+
+constructor TmodRequest.Create;
+begin
+  inherited;
+  FHeader := TmnHeader.Create;
+end;
+
+destructor TmodRequest.Destroy;
+begin
+  FreeAndNil(FHeader);
+  inherited Destroy;
+end;
 
 procedure TmodRequest.Clear;
 begin
@@ -473,6 +524,7 @@ begin
         begin
           aRequest.Client := RemoteIP;
           Result := aModule.Execute(aRequest, Stream, Stream);
+          aRequest := nil; //Command will take it in Execute
         end;
       finally
       end;
@@ -535,21 +587,22 @@ end;
 
 { TmodCommand }
 
-constructor TmodCommand.Create(AModule: TmodModule; RequestStream: TmnBufferStream; RespondStream: TmnBufferStream);
+constructor TmodCommand.Create(AModule: TmodModule; ARequest: TmodRequest; RequestStream: TmnBufferStream; RespondStream: TmnBufferStream);
 begin
   inherited Create;
   FModule := AModule;
   FRequestStream := RequestStream; //do not free
   FRespondStream := RequestStream; //do not free
-
-  FRequestHeader := TmnHeader.Create;
-  FRespondHeader := TmnHeader.Create;
+  FRequest := ARequest;
+  if FRequest = nil then
+    FRequest := TmodRequest.Create;
+  FRespond := TmodRespond.Create;
 end;
 
 destructor TmodCommand.Destroy;
 begin
-  FreeAndNil(FRequestHeader);
-  FreeAndNil(FRespondHeader);
+  FreeAndNil(FRequest);
+  FreeAndNil(FRespond);
   inherited;
 end;
 
@@ -572,7 +625,7 @@ begin
   Module.Log(S);
 end;
 
-procedure TmodCommand.Respond(var Result: TmodExecuteResults);
+procedure TmodCommand.RespondResult(var Result: TmodExecuteResults);
 begin
 end;
 
@@ -596,14 +649,14 @@ procedure TmodCommand.PostHeader(AName, AValue: string);
 begin
   if cmdsHeaderSent in FStates then
     raise TmodModuleException.Create('Header is sent');
-  RespondHeader.Add(AName, AValue);
+  Respond.Header.Add(AName, AValue);
 end;
 
 function TmodCommand.Execute: TmodExecuteResults;
 begin
   Result.Status := []; //default to be not keep alive, not sure, TODO
   Prepare(Result);
-  Respond(Result);
+  RespondResult(Result);
   Unprepare(Result);
 end;
 
@@ -616,28 +669,19 @@ procedure TmodCommand.PutHeader(AName, AValue: string);
 begin
   if cmdsHeaderSent in FStates then
     raise TmodModuleException.Create('Header is sent');
-  RespondHeader.Put(AName, AValue);
+  Respond.Header.Put(AName, AValue);
 end;
 
 procedure TmodCommand.SetHeader(AName, AValue: string);
 begin
   if cmdsHeaderSent in FStates then
     raise TmodModuleException.Create('Header is sent');
-  RespondHeader.Put(AName, AValue);
+  Respond.Header.Put(AName, AValue);
 end;
 
 procedure TmodCommand.SetModule(const Value: TmodModule);
 begin
   FModule := Value;
-end;
-
-procedure TmodCommand.SetRequestHeader(const Value: TmnHeader);
-begin
-  if FRequestHeader <> Value then
-  begin
-    FreeAndNil(FRequestHeader);
-    FRequestHeader := Value;
-  end;
 end;
 
 function TmodCommandClasses.Add(const Name: string; CommandClass: TmodCommandClass): Integer;
@@ -662,9 +706,8 @@ begin
   aClass := GetCommandClass(CommandName);
   if aClass <> nil then
   begin
-    Result := aClass.Create(Self);
+    Result := aClass.Create(Self, ARequest);
     Result.FModule := Self;
-    Result.Request := ARequest;
     Result.FRequestStream := ARequestStream;
     Result.FRespondStream := ARespondStream;
   end
@@ -712,7 +755,8 @@ end;
 
 procedure TmodModule.CreateCommands;
 begin
-  if Commands.Count=0 then DoCreateCommands;
+  if Commands.Count = 0 then
+    DoCreateCommands;
 end;
 
 procedure TmodModule.SendHeader(ACommand: TmodCommand);
@@ -720,7 +764,7 @@ var
   item: TmnField;
   s: string;
 begin
-  for item in ACommand.RespondHeader do
+  for item in ACommand.Respond.Header do
   begin
     s := item.GetNameValue(': ');
     //WriteLn(s);
@@ -775,7 +819,11 @@ begin
   Result.Status := [erSuccess];
   aCmd := RequestCommand(ARequest, ARequestStream, ARespondStream);
   if aCMD = nil then
+  begin
+    FreeAndNil(ARequest);
     raise TmodModuleException.Create('Can not find command: ' + ARequest.Command);
+  end;
+
   try
     try
       Result := aCMD.Execute;
@@ -864,7 +912,7 @@ begin
     if aRequests.Count > 2 then
       ARequest.Protcol := aRequests[2];
   finally
-    aRequests.Free;
+    FreeAndNil(aRequests);
   end;
   if ARequest.Protcol = '' then
     ARequest.Protcol := DefaultProtocol;
