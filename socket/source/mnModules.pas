@@ -234,6 +234,7 @@ type
     FActive: Boolean;
     FEndOfLine: string;
     FDefaultModule: TmodModule;
+    FDefaultProtocol: string;
     procedure SetActive(AValue: Boolean);
     procedure SetEndOfLine(AValue: string);
   protected
@@ -242,6 +243,7 @@ type
   public
     function ParseHead(const Request: string): TmodRequest; virtual;
     function Match(ARequest: TmodRequest): TmodModule; virtual;
+    property DefaultProtocol: string read FDefaultProtocol write FDefaultProtocol;
 
     function Add(const Name: string; AModule:TmodModule): Integer; overload;
 
@@ -828,6 +830,9 @@ begin
   finally
     aRequests.Free;
   end;
+  if Result.Protcol='' then
+    Result.Protcol := DefaultProtocol;
+
   Result.Raw := Request;
   ParsePath(Result.URI, Result.Module, Result.Path, nil);
 end;
