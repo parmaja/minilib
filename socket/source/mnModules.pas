@@ -46,7 +46,7 @@ type
 
   TmodCommand = class;
 
-  TmodRequest = record
+  TmodRequestInfo = record
     Method: string;
     URI: utf8string;
     Protcol: string;
@@ -58,6 +58,24 @@ type
     Raw: string; //Full of first line of header
 
     Client: string;
+  end;
+
+  { TmodRequest }
+
+  TmodRequest = class(TObject)
+  protected
+    Info: TmodRequestInfo;
+  public
+    procedure Clear;
+    procedure ParsePath(URI: string; URIQuery: TmnParams = nil);
+    property Method: string read Info.Method write Info.Method;
+    property URI: utf8string read Info.URI write Info.URI;
+    property Protcol: string read Info.Protcol write Info.Protcol;
+    property Path: UTF8String read Info.Path write Info.Path;
+    property Module: string read Info.Module write Info.Module;
+    property Command: string read Info.Command write Info.Command;
+    property Raw: string read Info.Raw write Info.Raw;
+    property Client: string read Info.Client write Info.Client;
   end;
 
   TmodModule = class;
@@ -241,7 +259,7 @@ type
     function GetActive: Boolean; virtual;
     procedure Created; override;
   public
-    function ParseHead(const Request: string): TmodRequest; virtual;
+    procedure ParseHead(ARequest: TmodRequest; const RequestLine: string); virtual;
     function Match(ARequest: TmodRequest): TmodModule; virtual;
     property DefaultProtocol: string read FDefaultProtocol write FDefaultProtocol;
 
@@ -368,6 +386,18 @@ begin
   URIPath := Copy(URIPath, Length(Name) + 1, MaxInt);
 end;
 
+{ TmodRequest }
+
+procedure TmodRequest.Clear;
+begin
+  Initialize(Info);
+end;
+
+procedure TmodRequest.ParsePath(URI: string; URIQuery: TmnParams);
+begin
+  mnModules.ParsePath(Self.URI, Self.Info.Module, Self.Info.Path, URIQuery);
+end;
+
 { TmnHeaderField }
 
 function TmnHeaderField.GetFullString: String;
@@ -426,23 +456,28 @@ begin
   aRequestLine := TrimRight(Stream.ReadLineRawByte);
   if Connected and (aRequestLine <> '') then //aRequestLine empty when timeout but not disconnected
   begin
-    aRequest := (Listener.Server as TmodModuleServer).Modules.ParseHead(aRequestLine);
-    aModule := (Listener.Server as TmodModuleServer).Modules.Match(aRequest);
-    if (aModule = nil) and ((Listener.Server as TmodModuleServer).Modules.Count > 0) then
-      aModule := (Listener.Server as TmodModuleServer).Modules.DefaultModule; //fall back
-
-    if (aModule = nil) then
-    begin
-      Stream.Disconnect; //if failed
-    end
-    else
+    aRequest := TmodRequest.Create;
     try
-      if aModule <> nil then
+      (Listener.Server as TmodModuleServer).Modules.ParseHead(aRequest, aRequestLine);
+      aModule := (Listener.Server as TmodModuleServer).Modules.Match(aRequest);
+      if (aModule = nil) and ((Listener.Server as TmodModuleServer).Modules.Count > 0) then
+        aModule := (Listener.Server as TmodModuleServer).Modules.DefaultModule; //fall back
+
+      if (aModule = nil) then
       begin
-        aRequest.Client := RemoteIP;
-        Result := aModule.Execute(aRequest, Stream, Stream);
+        Stream.Disconnect; //if failed
+      end
+      else
+      try
+        if aModule <> nil then
+        begin
+          aRequest.Client := RemoteIP;
+          Result := aModule.Execute(aRequest, Stream, Stream);
+        end;
+      finally
       end;
     finally
+      FreeAndNil(aRequest);
     end;
 
     if Stream.Connected then
@@ -813,28 +848,29 @@ begin
   FEndOfLine := sWinEndOfLine; //for http protocol
 end;
 
-function TmodModules.ParseHead(const Request: string): TmodRequest;
+procedure TmodModules.ParseHead(ARequest: TmodRequest; const RequestLine: string);
 var
   aRequests: TStringList;
 begin
-  Initialize(Result);
+  ARequest.Clear;
+
   aRequests := TStringList.Create;
   try
-    StrToStrings(Request, aRequests, [' '], []);
+    StrToStrings(RequestLine, aRequests, [' '], []);
     if aRequests.Count > 0 then
-      Result.Method := aRequests[0];
+      ARequest.Method := aRequests[0];
     if aRequests.Count > 1 then
-      Result.URI := aRequests[1];
+      ARequest.URI := aRequests[1];
     if aRequests.Count > 2 then
-      Result.Protcol := aRequests[2];
+      ARequest.Protcol := aRequests[2];
   finally
     aRequests.Free;
   end;
-  if Result.Protcol='' then
-    Result.Protcol := DefaultProtocol;
+  if ARequest.Protcol = '' then
+    ARequest.Protcol := DefaultProtocol;
 
-  Result.Raw := Request;
-  ParsePath(Result.URI, Result.Module, Result.Path, nil);
+  ARequest.Raw := RequestLine;
+  ARequest.ParsePath(ARequest.URI);
 end;
 
 function TmodModules.Match(ARequest: TmodRequest): TmodModule;

@@ -118,10 +118,12 @@ type
     property DefaultDocument: TStringList read FDefaultDocument write SetDefaultDocument;
   end;
 
+  { TmodWebModules }
+
   TmodWebModules = class(TmodModules)
   protected
   public
-    function ParseHead(const Request: string): TmodRequest; override;
+    procedure ParseHead(ARequest: TmodRequest; const RequestLine: string); override;
   end;
 
   { TmodWebServer }
@@ -297,7 +299,7 @@ end;
 
 function TmodWebModule.RequestCommand(var ARequest: TmodRequest; ARequestStream, ARespondStream: TmnBufferStream): TmodCommand;
 begin
-  ParsePath(ARequest.URI, ARequest.Module, ARequest.Path, nil);
+  ARequest.ParsePath(ARequest.URI);
   ARequest.Command := ARequest.Method;
   Result := CreateCommand(ARequest.Command, ARequest, ARequestStream, ARespondStream);
   if Result <> nil then
@@ -564,7 +566,7 @@ end;
 procedure TmodHttpCommand.Prepare(var Result: TmodExecuteResults);
 begin
   inherited;
-  ParsePath(Request.URI, Request.Module, Request.Path, URIParams);
+  Request.ParsePath(Request.URI, URIParams);
 
   if Module.UseKeepAlive and SameText(RequestHeader.ReadString('Connection'), 'Keep-Alive') then
   begin
@@ -639,11 +641,10 @@ end;
 
 { TmodCustomWebModules }
 
-function TmodWebModules.ParseHead(const Request: string): TmodRequest;
+procedure TmodWebModules.ParseHead(ARequest: TmodRequest; const RequestLine: string);
 begin
-  Result := inherited ParseHead(Request);
-  Result.URI := URIDecode(Result.URI);
-
+  inherited ParseHead(ARequest, RequestLine);
+  ARequest.URI := URIDecode(ARequest.URI);
 end;
 
 initialization

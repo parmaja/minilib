@@ -22,7 +22,7 @@ uses
 {$R *.res}
 
 begin
-  Application.Title:='';
+  Application.Title :='';
   Application.Initialize;
   if FindCmdLineSwitch('hide', True) then
   begin
