@@ -817,6 +817,9 @@ begin
   CreateCommands;
 
   Result.Status := [erSuccess];
+
+  ParseHeader(ARequest.Header, ARequestStream);
+
   aCmd := RequestCommand(ARequest, ARequestStream, ARespondStream);
   if aCMD = nil then
   begin

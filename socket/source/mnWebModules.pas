@@ -302,8 +302,6 @@ begin
   ARequest.ParsePath(ARequest.URI);
   ARequest.Command := ARequest.Method;
   Result := CreateCommand(ARequest.Command, ARequest, ARequestStream, ARespondStream);
-  if Result <> nil then
-    ParseHeader(ARequest.Header, ARequestStream);
 end;
 
 function TmodWebModule.Match(const ARequest: TmodRequest): Boolean;
