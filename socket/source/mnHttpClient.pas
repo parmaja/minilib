@@ -85,6 +85,7 @@ type
   public
     procedure Created; override;
     procedure Send;
+    procedure Post(vData: PByte; vCount: Cardinal);
 
     property UserAgent: UTF8String read FUserAgent write FUserAgent;
     property Referer: UTF8String read FReferer write FReferer;
@@ -147,6 +148,8 @@ type
 
     //Use it to open connection and keep it connected
     function Connect(const vURL: UTF8String; SendAndReceive: Boolean = True): Boolean;
+    function Post(const vURL: UTF8String; vData: PByte; vCount: Integer): Boolean;
+
     procedure ReceiveStream(AStream: TStream); overload;
     procedure ReceiveStream(AStream: TStream; Count: Integer); overload;
     procedure ReceiveMemoryStream(AStream: TStream);
@@ -347,6 +350,25 @@ begin
   UserAgent := 'Mozilla/5.0';
 end;
 
+procedure TmnHttpRequest.Post(vData: PByte; vCount: Cardinal);
+var
+  s: UTF8String;
+  f: TmnField;
+begin
+  CollectHeaders;
+  Client.Stream.WriteLineUTF8('POST ' + Client.Path + ' ' + ProtocolVersion);
+  for f in Headers do
+    if f.AsString <> '' then
+      Client.Stream.WriteLineUTF8(f.FullString);
+  for f in Client.Cookies do
+    s := f.Value + ';';
+  if s <> '' then
+    Client.Stream.WriteLineUTF8('Cookie: ' + s);
+  Client.Stream.WriteLineUTF8('Content-Length: ' + IntToStr(vCount));
+  Client.Stream.WriteLineUTF8('');
+  Client.Stream.Write(vData^, vCount)
+end;
+
 procedure TmnHttpRequest.Send;
 var
   s: UTF8String;
@@ -361,7 +383,7 @@ begin
     s := f.Value + ';';
   if s <> '' then
     Client.Stream.WriteLineUTF8('Cookie: ' + s);
-  Client.Stream.WriteLineUTF8(Client.Stream.EndOfLine);
+  Client.Stream.WriteLineUTF8('');
 end;
 
 { TmnHttpResponse }
@@ -466,6 +488,16 @@ begin
   else
     FRequest['Connection'] := 'close';
   Stream.Connect;
+end;
+
+function TmnHttpClient.Post(const vURL: UTF8String; vData: PByte; vCount: Integer): Boolean;
+begin
+  Open(vUrl);
+  Request.Post(vData, vCount);
+  //
+  Result := Stream.Connected;
+  if Result then
+    Response.Receive;
 end;
 
 function TmnHttpClient.CreateStream: TmnHttpStream;

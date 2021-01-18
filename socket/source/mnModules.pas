@@ -227,7 +227,7 @@ type
     FUseKeepAlive: Boolean;
     FCompressing: Boolean;
   protected
-    DefaultCommand: TmodCommandClass;
+    FFallbackCommand: TmodCommandClass;
     //Name here will corrected with registered item name for example Get -> GET
     function GetActive: Boolean; virtual;
     function GetCommandClass(var CommandName: string): TmodCommandClass; virtual;
@@ -246,9 +246,9 @@ type
   public
     constructor Create(AName: string; AProtcol: string; AModules: TmodModules); virtual;
     destructor Destroy; override;
-    function Execute(ARequest: TmodRequest; ARequestStream: TmnBufferStream = nil; ARespondStream: TmnBufferStream = nil): TmodExecuteResults;
+    function Execute(var ARequest: TmodRequest; ARequestStream: TmnBufferStream = nil; ARespondStream: TmnBufferStream = nil): TmodExecuteResults;
     procedure ExecuteCommand(CommandName: string; ARequestStream: TmnBufferStream = nil; ARespondStream: TmnBufferStream = nil; RequestString: TArray<String> = nil);
-    function RegisterCommand(vName: string; CommandClass: TmodCommandClass; ADefaultCommand: Boolean = False): Integer; overload;
+    function RegisterCommand(vName: string; CommandClass: TmodCommandClass; AFallback: Boolean = False): Integer; overload;
 
     property Commands: TmodCommandClasses read FCommands;
     property Active: Boolean read GetActive;
@@ -524,12 +524,11 @@ begin
         begin
           aRequest.Client := RemoteIP;
           Result := aModule.Execute(aRequest, Stream, Stream);
-          aRequest := nil; //Command will take it in Execute
         end;
       finally
       end;
     finally
-      FreeAndNil(aRequest);
+      FreeAndNil(aRequest); //if create command then aRequest change to nil
     end;
 
     if Stream.Connected then
@@ -726,7 +725,7 @@ begin
     Result := aItem.CommandClass;
   end
   else
-    Result := DefaultCommand;
+    Result := FFallbackCommand;
 end;
 
 procedure TmodModule.ParseHeader(RequestHeader: TmnParams; Stream: TmnBufferStream);
@@ -810,7 +809,7 @@ procedure TmodModule.Log(S: string);
 begin
 end;
 
-function TmodModule.Execute(ARequest: TmodRequest; ARequestStream: TmnBufferStream; ARespondStream: TmnBufferStream): TmodExecuteResults;
+function TmodModule.Execute(var ARequest: TmodRequest; ARequestStream: TmnBufferStream; ARespondStream: TmnBufferStream): TmodExecuteResults;
 var
   aCMD: TmodCommand;
 begin
@@ -821,23 +820,24 @@ begin
   ParseHeader(ARequest.Header, ARequestStream);
 
   aCmd := RequestCommand(ARequest, ARequestStream, ARespondStream);
-  if aCMD = nil then
-  begin
-    FreeAndNil(ARequest);
-    raise TmodModuleException.Create('Can not find command: ' + ARequest.Command);
-  end;
 
-  try
+  if aCMD <> nil then
+  begin
     try
-      Result := aCMD.Execute;
-      Result.Status := Result.Status + [erSuccess];
-    except
-      on E: Exception do
-        aCMD.RespondError(500, E.Message);
+      try
+        ARequest := nil;
+        Result := aCMD.Execute;
+        Result.Status := Result.Status + [erSuccess];
+      except
+        on E: Exception do
+          aCMD.RespondError(500, E.Message);
+      end;
+    finally
+      FreeAndNil(aCMD);
     end;
-  finally
-    FreeAndNil(aCMD);
-  end;
+  end
+  else
+    raise TmodModuleException.Create('Can not find command or fallback command: ' + ARequest.Command);
 end;
 
 procedure TmodModule.ExecuteCommand(CommandName: string; ARequestStream: TmnBufferStream; ARespondStream: TmnBufferStream; RequestString: TArray<String>);
@@ -854,15 +854,15 @@ begin
   Result := Modules.Active; //todo
 end;
 
-function TmodModule.RegisterCommand(vName: string; CommandClass: TmodCommandClass; ADefaultCommand: Boolean): Integer;
+function TmodModule.RegisterCommand(vName: string; CommandClass: TmodCommandClass; AFallback: Boolean): Integer;
 begin
 {  if Active then
     raise TmodModuleException.Create('Server is Active');}
   if FCommands.Find(vName) <> nil then
     raise TmodModuleException.Create('Command already exists: ' + vName);
   Result := FCommands.Add(vName, CommandClass);
-  if ADefaultCommand then
-    DefaultCommand := CommandClass;
+  if AFallback then
+    FFallbackCommand := CommandClass;
 end;
 
 { TmodModules }
