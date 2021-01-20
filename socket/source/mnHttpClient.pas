@@ -402,7 +402,8 @@ begin
     FAcceptLanguage := Header['Accept-Language'];
     FAcceptEncoding.DelimitedText := Header['Accept-Encoding'];
     Log.Write('Accept-Encoding:' +  Header['Accept-Encoding']);
-    FDecompress := FAcceptEncoding.IndexOf('deflate') >=0;
+    //FDecompress := FAcceptEncoding.IndexOf('deflate') >=0;
+    FDecompress := Header['Content-Encoding'] = 'deflate';
     //Log.WriteLn(FAcceptEncoding.Text);
   end;
 end;
@@ -433,7 +434,7 @@ begin
       Client.DeflateProxy.Enable
     else
     begin
-      Client.DeflateProxy := TmnDeflateStreamProxy.Create([cprsWrite], 9, false);
+      Client.DeflateProxy := TmnDeflateStreamProxy.Create([cprsRead], 9, false);
       Client.Stream.AddProxy(Client.DeflateProxy);
     end;
   end
