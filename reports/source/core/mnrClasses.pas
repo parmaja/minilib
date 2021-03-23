@@ -2683,7 +2683,18 @@ begin
   c := vCell.AsString;
   if (c<>'')or(s<>'') then
   begin
-    if (c<>'')and(AnsiPos(c, s)<=0) then s := Format('%s '#151' %s', [c, s]);
+    if (c<>'') then
+    begin
+      if (AnsiPos(s, c)>0) then
+        s := c
+      else
+      begin
+        if s = '' then
+          s := c
+        else
+          s := Format('%s '#150' %s', [c, s]);
+      end
+    end;
     AsString := s;
   end;
 end;
