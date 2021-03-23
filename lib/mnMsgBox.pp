@@ -610,7 +610,7 @@ begin
 end;
 
 initialization
-  Msg.Register(TMsgConsole);
+  MsgBox.Register(TMsgConsole);
 finalization
   FreeAndNil(FMsgBox);
 end.

@@ -133,7 +133,7 @@ type
     FEndOfLine: string;
     //FZeroClose: Boolean;
     procedure LoadReadBuffer;
-    procedure SaveWriteBuffer; //kinda flush
+    //procedure SaveWriteBuffer; //kinda flush
   protected
     function CheckReadBuffer: Boolean; //check it in belal job
   private
@@ -315,6 +315,7 @@ procedure CopyUTF8String(out S: utf8string; Buffer: Pointer; Len: Integer); inli
 begin
   if Len <> 0 then
   begin
+    {$ifdef FPC}S := '';{$endif}
     SetLength(S, Len);
     Move(PByte(Buffer)^, PByte(S)^, Len);
   end
@@ -326,6 +327,7 @@ procedure CopyRawByteString(out S: RawByteString; Buffer: Pointer; Len: Integer)
 begin
   if Len <> 0 then
   begin
+    {$ifdef FPC}S := '';{$endif}
     SetLength(S, Len);
     Move(PByte(Buffer)^, PByte(S)^, Len);
   end
@@ -337,6 +339,7 @@ procedure CopyUnicodeString(out S: unicodestring; Buffer: Pointer; Len: Integer)
 begin
   if Len <> 0 then
   begin
+    {$ifdef FPC}S := '';{$endif}
     {$ifdef FPC}
     SetLength(S, Len div SizeOf(unicodechar));
     {$else}
@@ -353,6 +356,7 @@ procedure CopyAnsiString(out S: ansistring; Buffer: Pointer; Len: Integer); inli
 begin
   if Len <> 0 then
   begin
+    {$ifdef FPC}S := '';{$endif}
     SetLength(S, Len div SizeOf(ansichar));
     Move(PByte(Buffer)^, PByte(S)^, Len);
   end
@@ -364,6 +368,7 @@ procedure CopyWideString(out S: widestring; Buffer: Pointer; Len: Integer); inli
 begin
   if Len <> 0 then
   begin
+    {$ifdef FPC}S := '';{$endif}
     SetLength(S, Len div SizeOf(widechar));
     Move(PByte(Buffer)^, PByte(S)^, Len);
   end
@@ -964,6 +969,7 @@ end;
 
 function TmnBufferStream.ReadAnsiString(vCount: Integer): AnsiString;
 begin
+  {$ifdef FPC}Result := '';{$endif}
   SetLength(Result, vCount);
   Read(PAnsichar(Result)^, vCount);
 end;
@@ -1008,7 +1014,6 @@ var
   res: Pointer;
   len: TFileSize;
   EOL: utf8string;
-  rb: RawByteString;
 begin
   EOL := utf8string(EndOfLine);
   Result := ReadBufferUntil(@eol[1], ByteLength(eol), ExcludeEOL, res, len, m);
@@ -1033,9 +1038,9 @@ begin
 end;
 
 function TmnBufferStream.Write(const Buffer; Count: Longint): Longint;
-var
+{var
   P, aBuffer: PByte;
-  aCount, c, Size: Integer;
+  aCount, c, Size: Integer;}
 begin
   if FWriteBuffer.Size = 0 then
     Result := DirectWrite(Buffer, Count)
@@ -1162,14 +1167,14 @@ begin
     Close([cloRead]);}
 end;
 
-procedure TmnBufferStream.SaveWriteBuffer;
+{procedure TmnBufferStream.SaveWriteBuffer;
 var
   aSize: TFileSize;
 begin
   aSize := DirectRead(FWriteBuffer.Buffer, FWriteBuffer.Stop - FWriteBuffer.Buffer);
   FWriteBuffer.Pos := FWriteBuffer.Buffer;
   FWriteBuffer.Stop := FWriteBuffer.Buffer;
-end;
+end;}
 
 procedure TmnBufferStream.ReadError;
 begin
