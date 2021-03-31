@@ -36,6 +36,7 @@ type
   protected
     procedure InternalExampleSocket(WithServer: Boolean = True; WithClient: Boolean = True; ATestTimeOut: Integer = -1); //Socket threads
     procedure ExampleSocket;
+    procedure ExampleSocketOpenStreet;
     procedure ExampleSocketTestTimeout;
     procedure ExampleSmallBuffer; //read write line with small buffer
     procedure ExampleHexLine; //Hex lines
@@ -322,6 +323,62 @@ begin
   InternalExampleSocket(WithServer, WithClient);
 end;
 
+procedure TTestStream.ExampleSocketOpenStreet;
+var
+  Stream: TmnClientSocket;
+  S: UTF8String;
+  t: int64;
+const
+  sURL = 'www.openstreetmap.org';
+begin
+  NoDelay := True;
+  KeepAlive := False;
+  QuickAck := False;
+  UseSSL := False;
+  try
+    Stream := TmnClientSocket.Create(sURL, '80');
+    Stream.ReadTimeout := TestTimeOut;
+    Stream.Options := SocketOptions;
+    if NoDelay then
+      Stream.Options := Stream.Options + [soNoDelay];
+    if KeepAlive then
+      Stream.Options := Stream.Options + [soKeepAlive];
+    if QuickAck then
+      Stream.Options := Stream.Options + [soQuickAck];
+    if UseSSL then
+      Stream.Options := Stream.Options + [soSSL];
+    try
+      t := GetTickCount;
+      Stream.EndOfLine := #13#10;
+      Stream.Connect;
+      WriteLn(TicksToString(GetTickCount - t));
+      if Stream.Connected then
+      begin
+        Stream.WriteLineUTF8('GET / HTTP/1.1');
+        Stream.WriteLineUTF8('Host: ' + sURL);
+        Stream.WriteLineUTF8('User-Agent: Mozilla');
+        Stream.WriteLineUTF8('Connection: close');
+        Stream.WriteLineUTF8('');
+        Stream.ReadLineUTF8(s);
+        WriteLn(s);
+        while Stream.Connected and Stream.ReadLineUTF8(s) do
+          WriteLn(s);
+      end;
+      WriteLn(TicksToString(GetTickCount - t));
+      Stream.Disconnect;
+    finally
+      Stream.Free;
+    end;
+    WriteLn('Client end execute');
+  except
+    on E: Exception do
+    begin
+      WriteLn(E.Message);
+      raise;
+    end;
+  end;
+end;
+
 procedure TTestStream.ExampleSocketTestTimeout;
 begin
   NoDelay := False;
@@ -520,6 +577,7 @@ begin
       InstallConsoleLog;
       Address := ini.ReadString('options', 'Address', sHost);
       AddProc('ExampleSocket: Socket threads', ExampleSocket);
+      AddProc('ExampleSocket: Socket OpenStreeMap', ExampleSocketOpenStreet);
       AddProc('Example Socket Timout: Socket threads', ExampleSocketTestTimeout);
       AddProc('ExampleSmallBuffer: read write line with small buffer', ExampleSmallBuffer);
       AddProc('ExampleHexLine: Hex lines', ExampleHexLine);
@@ -560,8 +618,6 @@ begin
       end;
     end;
   finally
-    Write('Press Enter to Exit');
-    ReadLn;
     ini.Free;
     Halt;
   end;
