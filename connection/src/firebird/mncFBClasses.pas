@@ -1218,7 +1218,7 @@ begin
       end;
       SQL_TYPE_DATE: Result := FormatDateTime('yyyy-mm-dd', AsDateTime);
       SQL_TYPE_TIME: Result := TimeToStr(AsDateTime);
-      SQL_TIMESTAMP: Result := FormatDateTime('yyyy-mm-dd hh:nn:ss am/pm', AsDateTime);
+      SQL_TIMESTAMP: Result := FormatDateTime('yyyy-mm-dd hh:nn:ss', AsDateTime);//use ios format
       SQL_SHORT, SQL_LONG:
       begin
         if SqlScale = 0 then
