@@ -848,8 +848,13 @@ initialization
   CryptoLib := TmnCryptoLib.Create('libcrypto-1_1');
   {$endif}
   {$else}
+  {$ifdef macos}
+  OpenSSLLib := TmnOpenSSLLib.Create('libssl.1.1');
+  CryptoLib := TmnCryptoLib.Create('libcrypto.1.1');
+  {$else}
   OpenSSLLib := TmnOpenSSLLib.Create('libssl.so.1.1');
   CryptoLib := TmnCryptoLib.Create('libcrypto.so.1.1');
+  {$endif}
   {$endif}
 finalization
   FreeAndNil(OpenSSLLib);

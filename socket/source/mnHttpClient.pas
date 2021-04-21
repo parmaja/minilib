@@ -508,6 +508,9 @@ begin
   Result.ReadTimeout := 5000;
   Result.ConnectTimeout := 5000;
   Result.WriteTimeout := 5000;
+  {$if defined(ios) or defined(macos)}
+  Result.Options := Result.Options + [soWaitBeforeRead];
+  {$endif}
 end;
 
 procedure TmnHttpClient.FreeStream;

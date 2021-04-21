@@ -13,6 +13,13 @@ uses
   mnUtils, mnStreams, mnLibraries,
   mnLogs, mnStreamUtils, mnSockets, mnClients, mnServers, mnOpenSSL, mnOpenSSLUtils;
 
+{$ifdef GUI}
+var
+  WriteLn : procedure(S: string= '');
+  Write : procedure(S: string= '');
+  ReadLn:  procedure(var S: UTF8String);
+{$endif}
+
 type
   { TThreadReciever }
 
@@ -62,6 +69,7 @@ var
   SocketOptionsStr: UTF8String;
   NoDelay: Boolean = False;
   KeepAlive: Boolean = False;
+  WaitBeforeRead: Boolean = False;
   UseSSL: Boolean = False;
   QuickAck: Boolean = False;
   TestTimeOut: Integer = -1;
@@ -87,6 +95,8 @@ begin
     Stream.Options := SocketOptions;
     if NoDelay then
       Stream.Options := Stream.Options + [soNoDelay];
+    if WaitBeforeRead then
+      Stream.Options := Stream.Options + [soWaitBeforeRead];
     if KeepAlive then
       Stream.Options := Stream.Options + [soKeepAlive];
     if QuickAck then
@@ -109,6 +119,9 @@ begin
         end;
         if TestTimeOut > 0 then
           Sleep(5000);
+
+        Sleep(1000);
+
         Stream.WriteLine(sMsg);
         Inc(Count);
         if not Stream.Connected then
@@ -146,6 +159,8 @@ begin
     Stream.Options := SocketOptions;
     if NoDelay then
       Stream.Options := Stream.Options + [soNoDelay];
+    if WaitBeforeRead then
+      Stream.Options := Stream.Options + [soWaitBeforeRead];
     if KeepAlive then
       Stream.Options := Stream.Options + [soKeepAlive];
     if QuickAck then
@@ -153,7 +168,7 @@ begin
     if UseSSL then
       Stream.Options := Stream.Options + [soSSL];
     try
-      t := GetTickCount;
+      t := TThread.GetTickCount;
       Stream.Connect;
       WriteLn(TicksToString(GetTickCount - t));
       if Stream.Connected then
@@ -313,14 +328,15 @@ begin
   end;
 
   SocketOptionsStr := ini.ReadString('Options', 'SocketOptions', SocketOptionsStr);
-  S := LowerCase(GetAnswer('n=NoDelay, k=KeepAlive, q=QuickAck s=SSL or c to clear', SocketOptionsStr, 'c'));
+  S := LowerCase(GetAnswer('w=WaitBeforeRead, n=NoDelay, k=KeepAlive, q=QuickAck s=SSL or c to clear', SocketOptionsStr, 'c'));
   NoDelay := Pos('n', S) > 0;
   KeepAlive := Pos('k', S) > 0;
   QuickAck := Pos('q', S) > 0;
+  WaitBeforeRead := Pos('w', S) > 0;
   UseSSL := Pos('s', S) > 0;
   if s <> 'c' then
     ini.WriteString('Options', 'SocketOptions', S);
-  InternalExampleSocket(WithServer, WithClient);
+  InternalExampleSocket(WithServer, WithClient, 100);
 end;
 
 procedure TTestStream.ExampleSocketOpenStreet;
@@ -348,10 +364,10 @@ begin
     if UseSSL then
       Stream.Options := Stream.Options + [soSSL];
     try
-      t := GetTickCount;
+      t := TThread.GetTickCount;
       Stream.EndOfLine := #13#10;
       Stream.Connect;
-      WriteLn(TicksToString(GetTickCount - t));
+      WriteLn(TicksToString(TThread.GetTickCount - t));
       if Stream.Connected then
       begin
         Stream.WriteLineUTF8('GET / HTTP/1.1');
@@ -364,7 +380,7 @@ begin
         while Stream.Connected and Stream.ReadLineUTF8(s) do
           WriteLn(s);
       end;
-      WriteLn(TicksToString(GetTickCount - t));
+      WriteLn(TicksToString(TThread.GetTickCount - t));
       Stream.Disconnect;
     finally
       Stream.Free;
@@ -565,9 +581,9 @@ var
     Commands[Length(Commands) - 1].proc := proc;
   end;
 begin
-  InitOpenSSL;
-  if not FileExists(Application.Location + 'certificate.pem') then
-    MakeCert('certificate.pem', 'privatekey.pem', 'PARMAJA', 'PARMAJA TEAM', 'SY', '', 2048, 0, 365);
+  //InitOpenSSL;
+  //if not FileExists(Application.Location + 'certificate.pem') then
+    //MakeCert('certificate.pem', 'privatekey.pem', 'PARMAJA', 'PARMAJA TEAM', 'SY', '', 2048, 0, 365);
 
   ini := TIniFile.Create(Application.Location + 'Options.ini');
   try
@@ -619,7 +635,7 @@ begin
     end;
   finally
     ini.Free;
-    Halt;
+    //Halt;
   end;
 end;
 
