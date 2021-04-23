@@ -95,6 +95,7 @@ type
     procedure OpenBlob;
     procedure SetBlobID(Value: TISC_QUAD);
     procedure SetMode(Value: TBlobStreamMode);
+    procedure SetSize(const NewSize: Int64); override;
   public
     constructor Create(DBHandle: PISC_DB_HANDLE; TRHandle: PISC_TR_HANDLE);
     destructor Destroy; override;
@@ -109,7 +110,7 @@ type
     procedure SaveToFile(Filename: string);
     procedure SaveToStream(Stream: TStream);
     function Seek(Offset: Longint; Origin: Word): Longint; override;
-    procedure SetSize(NewSize: Long); override;
+
     procedure Truncate;
     function Write(const buffer; Count: Longint): Longint; override;
     property Handle: TISC_BLOB_HANDLE read FHandle;
@@ -2020,7 +2021,7 @@ begin
   FBlobInitialized := False;
 end;
 
-procedure TFBBlobStream.SetSize(NewSize: Long);
+procedure TFBBlobStream.SetSize(const NewSize: Int64);
 begin
   if (NewSize <> FBlobSize) then
   begin

@@ -777,6 +777,7 @@ begin
       Socket.Shutdown([sdReceive, sdSend]);//stop the accept from waiting
       {$endif}
       {$endif}
+      Socket.Shutdown([sdReceive, sdSend]);//stop the accept from waiting
       Socket.Close;
     end;
   finally
