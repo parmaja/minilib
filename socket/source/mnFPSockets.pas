@@ -370,7 +370,7 @@ begin
       PSetWrite := @FSet;
     end;
 
-    c := fpselect(vHandle + 1, PSetRead, PSetWrite, PSetRead, Timeout);
+    c := fpselect(vHandle + 1, PSetRead, PSetWrite, nil, Timeout);
 
     if (c = SOCKET_ERROR) then
       Result := erInvalid

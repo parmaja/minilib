@@ -240,7 +240,9 @@ begin
   end;
 
   CheckActive;
+
   c := Posix.SysSocket.shutdown(FHandle, iHow);
+
   if c = SOCKET_ERROR then
     Result := erInvalid
   else
@@ -518,7 +520,7 @@ begin
       LTimePtr := @LTime;
     end;
 
-    c := Posix.SysSelect.Select(vHandle + 1, PSetRead, PSetWrite, PSetRead, LTimePtr);
+    c := Posix.SysSelect.Select(vHandle + 1, PSetRead, PSetWrite, nil, LTimePtr);
 
     if (c = SOCKET_ERROR) then
       Result := erInvalid

@@ -573,12 +573,16 @@ begin
       end
       else
         aSocket := nil;
-      Enter;
+
+      {Enter; //todo remove it;
       try
         //Just a stop to finish some procedures outside, or make terminated get new value before continue
       finally
-        Leave;
-      end;
+        //Leave;
+      end;}
+
+      //Yield;//todo test:
+
       if not Terminated then
       begin
         if (aSocket = nil) then
@@ -771,14 +775,9 @@ begin
     Terminate;
     if Socket <> nil then
     begin
-      {$ifdef FPC}
-      {$ifndef MSWINDOWS}
-      {$hint 'Why need to Shutdown to stop Accept?'}
       Socket.Shutdown([sdReceive, sdSend]);//stop the accept from waiting
-      {$endif}
-      {$endif}
-      Socket.Shutdown([sdReceive, sdSend]);//stop the accept from waiting
-      Socket.Close;
+      //Sleep(100); fix frees on linux in case using Socket.Close after it
+      //Socket.Close; my needed for lag on windows
     end;
   finally
     Leave;
