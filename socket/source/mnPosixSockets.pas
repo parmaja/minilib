@@ -152,8 +152,7 @@ end;
 
 function InitSocketOptions(Handle: Integer; Options: TmnsoOptions; ReadTimeout: Integer): Integer;  //return error number
 var
-  t: Longint;
-  v: timeval;
+  t: timeval;
 begin
   Result := 0;
   if (soNoDelay in Options) and not (soNagle in Options) then
@@ -172,9 +171,9 @@ begin
       //t := ReadTimeout;
       //* https://stackoverflow.com/questions/2876024/linux-is-there-a-read-or-recv-from-socket-with-timeout
       //Result := setsockopt(Handle, SOL_SOCKET, SO_RCVTIMEO, t, SizeOf(t));
-      v.tv_sec := ReadTimeout div 1000;
-      v.tv_usec := (ReadTimeout mod 1000) * 1000;
-      Result := setsockopt(Handle, SOL_SOCKET, SO_RCVTIMEO, v, SizeOf(v));
+      t.tv_sec := ReadTimeout div 1000;
+      t.tv_usec := (ReadTimeout mod 1000) * 1000;
+      Result := setsockopt(Handle, SOL_SOCKET, SO_RCVTIMEO, t, SizeOf(t));
 
       //t := errno;
     end;
@@ -531,8 +530,7 @@ begin
   end;
 end;
 
-procedure TmnWallSocket.Bind(Options: TmnsoOptions; ReadTimeout: Integer; const Port: string; const Address: string; out vSocket: TmnCustomSocket; out
-  vErr: Integer);
+procedure TmnWallSocket.Bind(Options: TmnsoOptions; ReadTimeout: Integer; const Port: string; const Address: string; out vSocket: TmnCustomSocket; out vErr: Integer);
 var
   aHandle: TSocketHandle;
   aAddr : TSockAddr;
@@ -559,6 +557,7 @@ begin
       FreeSocket(aHandle);
     end;
   end;
+
   if aHandle<>INVALID_SOCKET then
     vSocket := TmnSocket.Create(aHandle, Options, skListener)
   else

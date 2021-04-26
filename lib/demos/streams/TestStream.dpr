@@ -3,7 +3,8 @@ program TestStream;
 {$APPTYPE CONSOLE}
 
 uses
-  Classes, SysUtils,
+  Classes,
+  SysUtils,
   SendAndRecv;
 
 begin
