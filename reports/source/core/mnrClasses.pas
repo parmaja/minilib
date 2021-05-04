@@ -341,6 +341,7 @@ type
     procedure DoUpdateCellDisplayText(vCell: TmnrCell; var vText: string); virtual;
 
     function CurrencyCellClass: TmnrCellClass; virtual;
+    function DoGetReport: TmnrCustomReport; virtual;
   public
     constructor Create(vNodes: TmnrNodes);
     destructor Destroy; override;
@@ -3019,6 +3020,14 @@ begin
   Result := '';
 end;
 
+function TmnrDesignCell.DoGetReport: TmnrCustomReport;
+begin
+  if Row <> nil then
+    Result := Row.Report
+  else
+    Result := nil;
+end;
+
 procedure TmnrDesignCell.DoUpdateCellDisplayText(vCell: TmnrCell; var vText: string);
 begin
 
@@ -3051,10 +3060,7 @@ end;
 
 function TmnrDesignCell.GetReport: TmnrCustomReport;
 begin
-  if Row <> nil then
-    Result := Row.Report
-  else
-    Result := nil;
+  Result := DoGetReport;
 end;
 
 function TmnrDesignCell.GetSection: TmnrSection;
@@ -3197,12 +3203,18 @@ end;
 
 function TmnrDesignRow.GetReport: TmnrCustomReport;
 begin
-  Result := Section.Report;
+  if Section<>nil then
+    Result := Section.Report
+  else
+    Result := nil;
 end;
 
 function TmnrDesignRow.GetSection: TmnrSection;
 begin
-  Result := DesignRows.Section;
+  if DesignRows<>nil then
+    Result := DesignRows.Section
+  else
+    Result := nil;
 end;
 
 function TmnrDesignRow.SumWidth: Integer;

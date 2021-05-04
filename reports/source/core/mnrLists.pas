@@ -67,8 +67,8 @@ type
     procedure MoveAfter(vNode: TmnrNode);
     procedure MoveBefore(vNode: TmnrNode);
 
-    procedure MoveUp;
-    procedure MoveDown;
+    function MoveUp: Boolean;
+    function MoveDown: Boolean;
     procedure MoveFirst;
     procedure MoveLast;
   end;
@@ -401,14 +401,16 @@ begin
   end;
 end;
 
-procedure TmnrNode.MoveUp;
+function TmnrNode.MoveUp: Boolean;
 begin
-  if Prior<>nil then MoveBefore(Prior);
+  Result := Prior<>nil;
+  if Result then MoveBefore(Prior);
 end;
 
-procedure TmnrNode.MoveDown;
+function TmnrNode.MoveDown: Boolean;
 begin
-  if Next<>nil then MoveAfter(Next);
+  Result := Next<>nil;
+  if Result then MoveAfter(Next);
 end;
 
 procedure TmnrNode.MoveFirst;
