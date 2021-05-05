@@ -596,10 +596,10 @@ begin
       Result := ExpandFileName(IncludePathSeparator(Root) + IncludePathSeparator(Path) + FileName)
     else if ((LeftStr(FileName, 2) = './') or (LeftStr(FileName, 2) = '.\')) then
       Result := IncludePathSeparator(Root) + IncludePathSeparator(Path) + RightStr(FileName, Length(FileName) - 2)
-    else if (LeftStr(FileName, 2) <> '\\') and ((LeftStr(FileName, 1) = '/') or (LeftStr(FileName, 1) = '\')) then
+{$ifdef MSWINDOWS}
+    else if ((LeftStr(FileName, 1) = '/') or (LeftStr(FileName, 1) = '\')) then
       Result := ExtractFileDrive(Path) + FileName
-    else if ExtractFileDrive(FileName) = '' then
-      Result := IncludePathSeparator(Path) + FileName
+{$endif}
     else
       Result := FileName;
   end

@@ -40,6 +40,9 @@ http://www.unicode.org/Public/PROGRAMS/BidiReferenceCpp/
 
 http://unicode.org/cldr/utility/bidi.jsp
 
+https://unicode-table.com/en/blocks/arabic-presentation-forms-a/
+https://unicode-table.com/en/blocks/arabic-presentation-forms-b/
+
 ***********************************************************************}
 
 {

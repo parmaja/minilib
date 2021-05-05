@@ -76,6 +76,16 @@ object MainForm: TMainForm
       OnClick = GetGetBtnClick
       TabOrder = 1
     end
+    object GetGetBtn1: TButton
+      Left = 0
+      Height = 33
+      Top = 66
+      Width = 93
+      Align = alTop
+      Caption = 'Get openstreet'
+      OnClick = GetGetBtn1Click
+      TabOrder = 2
+    end
   end
   object LogEdit: TMemo
     Left = 5

@@ -35,7 +35,8 @@ type
 
   { TmnObjectList }
 
-  //USAGE: TMyObjectList = class(TmnObjectList<TMyObject>)
+  //USAGE Delphi: TMyObjectList = class(TmnObjectList<TMyObject>)
+  //USAGE FPC: TMyObjectList = class(specialize TmnObjectList<TMyObject>)
 
   {$ifdef FPC}
   TmnObjectList<_Object_> = class(TObjectList)

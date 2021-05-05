@@ -15,6 +15,7 @@ type
   TMainForm = class(TForm)
     Button1: TButton;
     GetGetBtn: TButton;
+    GetGetBtn1: TButton;
     Image1: TImage;
     Image2: TImage;
     LogEdit: TMemo;
@@ -22,6 +23,7 @@ type
     Panel1: TPanel;
     Panel2: TPanel;
     procedure Button1Click(Sender: TObject);
+    procedure GetGetBtn1Click(Sender: TObject);
     procedure GetGetBtnClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
@@ -98,6 +100,35 @@ begin
     MemoryStream.Free;
   end;
   LogEdit.Lines.Add('Finished');
+end;
+
+procedure TMainForm.GetGetBtn1Click(Sender: TObject);
+var
+  HttpClient: TmnHttpClient;
+  MemoryStream: TMemoryStream;
+begin
+  LogEdit.Lines.Add('Getting from URL');
+  Screen.Cursor := crHourGlass;
+  MemoryStream := TMemoryStream.Create;
+  HttpClient := TmnHttpClient.Create;
+  try
+    HttpClient.Request.UserAgent := sUserAgent;
+    HttpClient.KeepAlive := True;
+    //HttpClient.Connect('https://www.openstreetmap.org', False);
+    HttpClient.Connect('https://www.parmaja.org', False);
+
+    HttpClient.Request.Send;
+    HttpClient.Response.Receive;
+    HttpClient.ReceiveMemoryStream(MemoryStream);
+    MemoryStream.Position := 0;
+    MemoryStream.SaveToFile('c:\temp\1.html');
+    HttpClient.Disconnect;
+  finally
+    HttpClient.Free;
+    MemoryStream.Free;
+  end;
+  LogEdit.Lines.Add('Finished');
+  Screen.Cursor := crDefault;
 end;
 
 procedure TMainForm.GetGetBtnClick(Sender: TObject);

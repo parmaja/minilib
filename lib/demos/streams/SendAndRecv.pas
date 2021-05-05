@@ -346,6 +346,7 @@ var
   t: int64;
 const
   sURL = 'www.openstreetmap.org';
+  //sURL = 'zaherdirkey.wordpress.com';
 begin
   NoDelay := True;
   KeepAlive := False;
@@ -366,6 +367,7 @@ begin
     try
       t := TThread.GetTickCount;
       Stream.EndOfLine := #13#10;
+      //Stream.ConnectTimeout := 10000;
       Stream.Connect;
       WriteLn(TicksToString(TThread.GetTickCount - t));
       if Stream.Connected then
@@ -593,7 +595,7 @@ begin
       InstallConsoleLog;
       Address := ini.ReadString('options', 'Address', sHost);
       AddProc('ExampleSocket: Socket threads', ExampleSocket);
-      AddProc('ExampleSocket: Socket OpenStreeMap', ExampleSocketOpenStreet);
+      AddProc('ExampleSocket: Socket OpenStreetMap', ExampleSocketOpenStreet);
       AddProc('Example Socket Timout: Socket threads', ExampleSocketTestTimeout);
       AddProc('ExampleSmallBuffer: read write line with small buffer', ExampleSmallBuffer);
       AddProc('ExampleHexLine: Hex lines', ExampleHexLine);
