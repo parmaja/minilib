@@ -341,7 +341,6 @@ type
     procedure DoUpdateCellDisplayText(vCell: TmnrCell; var vText: string); virtual;
 
     function CurrencyCellClass: TmnrCellClass; virtual;
-    function DoGetReport: TmnrCustomReport; virtual;
   public
     constructor Create(vNodes: TmnrNodes);
     destructor Destroy; override;
@@ -382,6 +381,8 @@ type
   end;
 
   TmnrDesignRow = class(TmnrRowNode)
+  private
+    FRowReport: TmnrCustomReport;
   protected
     function GetNext: TmnrDesignRow;
     function GetPrior: TmnrDesignRow;
@@ -396,6 +397,7 @@ type
     property Prior: TmnrDesignRow read GetPrior;
     property DesignRows: TmnrDesignRows read GetDesignRows;
     property Section: TmnrSection read GetSection;
+    property RowReport: TmnrCustomReport read FRowReport write FRowReport; //hack for text formula :(
     property Report: TmnrCustomReport read GetReport;
     function SumWidth: Integer;
 
@@ -2416,8 +2418,8 @@ end;
 function TmnrLayout.CreateDesignCell(vRow: TmnrDesignRow; InitIt: Boolean): TmnrDesignCell;
 begin
   Result := DoCreateDesignCell(vRow);
-  Result.Name := Name;
   Result.Layout := Self;
+  Result.Name := Name;
   if InitIt then
     InitDesignCell(Result);
 end;
@@ -3020,14 +3022,6 @@ begin
   Result := '';
 end;
 
-function TmnrDesignCell.DoGetReport: TmnrCustomReport;
-begin
-  if Row <> nil then
-    Result := Row.Report
-  else
-    Result := nil;
-end;
-
 procedure TmnrDesignCell.DoUpdateCellDisplayText(vCell: TmnrCell; var vText: string);
 begin
 
@@ -3060,7 +3054,10 @@ end;
 
 function TmnrDesignCell.GetReport: TmnrCustomReport;
 begin
-  Result := DoGetReport;
+  if Row <> nil then
+    Result := Row.Report
+  else
+    Result := nil;
 end;
 
 function TmnrDesignCell.GetSection: TmnrSection;
@@ -3114,7 +3111,7 @@ begin
   begin
     FName := Value;
     //if Layout <> nil then Layout.FDesignerCell := nil;
-    if Report<>nil then Layout := Report.Groups.FindLayout(Value);
+    if (Layout=nil)and(Report<>nil) then Layout := Report.Groups.FindLayout(Value);
     //if Layout <> nil then Layout.FDesignerCell := Self
   end;
 end;
@@ -3203,7 +3200,9 @@ end;
 
 function TmnrDesignRow.GetReport: TmnrCustomReport;
 begin
-  if Section<>nil then
+  if FRowReport<>nil then
+    Result := FRowReport
+  else if Section<>nil then
     Result := Section.Report
   else
     Result := nil;
