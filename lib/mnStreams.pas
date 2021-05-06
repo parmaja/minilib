@@ -11,6 +11,7 @@ unit mnStreams;
 {$H+}
 {$IFDEF FPC}
 {$mode delphi}
+{$WARN 5024 off : Parameter "$1" not used}
 {$ENDIF}
 
 interface

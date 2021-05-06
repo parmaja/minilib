@@ -9,6 +9,7 @@ unit mnClasses;
 
 {$IFDEF FPC}
 {$MODE delphi}
+{$WARN 5024 off : Parameter "$1" not used}
 {$ENDIF}
 {$M+}{$H+}
 
