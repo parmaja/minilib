@@ -1834,7 +1834,7 @@ var
 begin
   if (FHandle <> nil) and (Call(FBLib.isc_close_blob(@StatusVector, @FHandle), StatusVector, False) > 0) then
     FBRaiseError(StatusVector);
-  SetSize(0);
+  Size := 0;
   inherited;
 end;
 
@@ -1912,7 +1912,7 @@ var
   iBlobSize: Long;
 begin
   FBGetBlobInfo(@FHandle, FBlobNumSegments, FBlobMaxSegmentSize, iBlobSize, FBlobType);
-  SetSize(iBlobSize);
+  Size := iBlobSize;
 end;
 
 procedure TFBBlobStream.LoadFromFile(Filename: string);
@@ -1932,7 +1932,7 @@ begin
   CheckWritable;
   EnsureBlobInitialized;
   Stream.Position := 0;
-  SetSize(Stream.Size);
+  Size := Stream.Size;
   if FBlobSize <> 0 then
     Stream.ReadBuffer(FBuffer^, FBlobSize);
   FModified := True;
@@ -1946,7 +1946,7 @@ begin
   Call(FBLib.isc_open_blob2(@StatusVector, FDBHandle, FTRHandle, @FHandle, @FBlobID, 0, nil), StatusVector, True);
   try
     GetBlobInfo;
-    SetSize(FBlobSize);
+    //Size := FBlobSize; set in GetBlobInfo
     FBReadBlob(@FHandle, FBuffer, FBlobSize);
   except
     Call(FBLib.isc_close_blob(@StatusVector, @FHandle), StatusVector, False);
@@ -2047,7 +2047,7 @@ end;
 }
 procedure TFBBlobStream.Truncate;
 begin
-  SetSize(0);
+  Size := 0;
 end;
 
 function TFBBlobStream.Write(const buffer; Count: Longint): Longint;
@@ -2058,7 +2058,7 @@ begin
   if Count <= 0 then
     exit;
   if (FPosition + Count > FBlobSize) then
-    SetSize(FPosition + Count);
+    Size := FPosition + Count;
   Move(buffer, FBuffer[FPosition], Count);
   Inc(FPosition, Count);
   FModified := True;
