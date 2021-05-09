@@ -533,8 +533,10 @@ type
     procedure DoBeginFill(vReference: TmnrReferencesRow); virtual;
     procedure DoEndFill(vReference: TmnrReferencesRow); virtual;
     procedure Registered; virtual;
+    function GetAppendTitlesDefault: Boolean; virtual;
+    function GetAppendTitlesStored: Boolean;
   public
-    constructor Create(vNodes: TmnrNode);
+    constructor Create(vNodes: TmnrNode; vClass: TmnrSectionClassID);
     destructor Destroy; override;
     property Sections: TmnrSections read GetSections;
     property Items: TmnrRowReferences read FItems;
@@ -565,12 +567,12 @@ type
     procedure AddDetailTitles;
     procedure ClearSubTotals;
   published
-    property AppendDetailTotals: Boolean read FAppendDetailTotals write FAppendDetailTotals {default False}; //no defaults please
-    property AppendPageTotals: Boolean read FAppendPageTotals write FAppendPageTotals {default False};
-    property AppendReportTotals: Boolean read FAppendReportTotals write FAppendReportTotals {default False};
-    property AppendDetailTitles: Boolean read FAppendDetailTitles write FAppendDetailTitles { default False};
-    property AppendPageTitles: Boolean read FAppendPageTitles write FAppendPageTitles {default False};
-    property AppendReportTitles: Boolean read FAppendReportTitles write FAppendReportTitles {default False};
+    property AppendDetailTotals: Boolean read FAppendDetailTotals write FAppendDetailTotals default False;
+    property AppendPageTotals: Boolean read FAppendPageTotals write FAppendPageTotals default False;
+    property AppendReportTotals: Boolean read FAppendReportTotals write FAppendReportTotals default False;
+    property AppendDetailTitles: Boolean read FAppendDetailTitles write FAppendDetailTitles default False;
+    property AppendPageTitles: Boolean read FAppendPageTitles write FAppendPageTitles default False;
+    property AppendReportTitles: Boolean read FAppendReportTitles write FAppendReportTitles stored GetAppendTitlesStored;
   end;
 
   TmnrSections = class(TmnrLinkNodes)
@@ -584,7 +586,7 @@ type
 
     procedure DoAppendReportTotals(vSection: TmnrSection);
     procedure DoAppendPageTotals(vSection: TmnrSection);
-    function DoCreateSection: TmnrSection; virtual;
+    function DoCreateSection(vClass: TmnrSectionClassID): TmnrSection; virtual;
 
   public
     constructor Create(vReport: TmnrCustomReport); virtual;
@@ -1720,9 +1722,10 @@ begin
   DesignRows.ClearSubTotals;
 end;
 
-constructor TmnrSection.Create(vNodes: TmnrNode);
+constructor TmnrSection.Create(vNodes: TmnrNode; vClass: TmnrSectionClassID);
 begin
-  inherited;
+  inherited Create(vNodes);
+  FClassID := vClass;
   FSections := DoCreateSections;
   FDesignRows := DoCreateDesignRows;
   FReferencesRows := TmnrReferencesRows.Create;
@@ -1731,8 +1734,9 @@ begin
   FAppendReportTotals := False;
   FAppendDetailTitles := False;
   FAppendPageTitles   := False;
-  FAppendReportTitles := False;
   FAppendPageTotals   := False;
+  FAppendReportTitles := GetAppendTitlesDefault;
+
   FSectionLoopWay     := slwAuto;
 end;
 
@@ -1829,6 +1833,16 @@ end;
 begin
   Result := DesignRows.Find(vGuid)
 end;}
+
+function TmnrSection.GetAppendTitlesDefault: Boolean;
+begin
+  Result := False;
+end;
+
+function TmnrSection.GetAppendTitlesStored: Boolean;
+begin
+  Result := FAppendReportTotals <> GetAppendTitlesDefault;
+end;
 
 function TmnrSection.GetCaption: string;
 begin
@@ -2064,9 +2078,9 @@ begin
   end;
 end;
 
-function TmnrSections.DoCreateSection: TmnrSection;
+function TmnrSections.DoCreateSection(vClass: TmnrSectionClassID): TmnrSection;
 begin
-  Result := TmnrSection.Create(Self);
+  Result := TmnrSection.Create(Self, vClass);
 end;
 
 procedure TmnrSections.EnumByName(List: TList; const vName: string);
@@ -2283,9 +2297,9 @@ end;
 
 function TmnrSections.RegisterSection(const vName, vCaption: string; const vClass: TmnrSectionClassID; const vID: Integer; vOnFetch: TOnFetch; vLoopWay: TmnrSectionLoopWay): TmnrSection;
 begin
-  Result := DoCreateSection;
+  Result := DoCreateSection(vClass);
   Result.FName := vName;
-  Result.FClassID := vClass;
+//  Result.FClassID := vClass;
   Result.OnFetch := vOnFetch;
   Result.FCaption := vCaption;
   Result.SectionLoopWay := vLoopWay;
