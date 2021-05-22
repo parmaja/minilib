@@ -341,6 +341,7 @@ type
     procedure DoUpdateCellDisplayText(vCell: TmnrCell; var vText: string); virtual;
 
     function CurrencyCellClass: TmnrCellClass; virtual;
+    procedure DoHasName(const vName: string; var vAccept: Boolean); virtual;
   public
     constructor Create(vNodes: TmnrNodes);
     destructor Destroy; override;
@@ -371,6 +372,7 @@ type
     procedure DescaleCell(vCell: TmnrCell); virtual;
     property Hidden: Boolean read FHidden write FHidden;
     function AliasName: string;
+    function HasName(const vName: string): Boolean;
     //property ExplodeID: Integer read FExplodeID write FExplodeID;
     property Number: Integer read FNumber write FNumber default 0; //used in exploded cells
   published
@@ -3036,6 +3038,11 @@ begin
   Result := '';
 end;
 
+procedure TmnrDesignCell.DoHasName(const vName: string; var vAccept: Boolean);
+begin
+
+end;
+
 procedure TmnrDesignCell.DoUpdateCellDisplayText(vCell: TmnrCell; var vText: string);
 begin
 
@@ -3088,6 +3095,12 @@ begin
     Result := 0
   else
     Result := FWidth;
+end;
+
+function TmnrDesignCell.HasName(const vName: string): Boolean;
+begin
+  Result := SameText(Name, vName) or SameText(AliasName, vName);
+  DoHasName(vName, Result);
 end;
 
 procedure TmnrDesignCell.Lock;
@@ -3164,6 +3177,8 @@ begin
   Cell := First;
   while Cell <> nil do
   begin
+    //need  use  Result.HasName(vName)
+
     if SameText(Cell.Name, vName) or SameText(Cell.AliasName, vName) then
       List.Add(Cell);
     Cell := Cell.Next;
@@ -3175,7 +3190,7 @@ begin
   Result := First;
   while Result<>nil do
   begin
-    if SameText(Result.Name, vName) or SameText(Result.AliasName, vName) then
+    if Result.HasName(vName) then
       Break
     else
       Result := Result.Next;
