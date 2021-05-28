@@ -178,10 +178,24 @@ type
     property Stream: TmnHttpStream read FStream;
   end;
 
+procedure DownloadFile(URL: string; FileName: string);
+
 implementation
 
 const
   ProtocolVersion = 'HTTP/1.1';
+
+procedure DownloadFile(URL: string; FileName: string);
+var
+  c: TmnHttpClient;
+begin
+  c := TmnHttpClient.Create;
+  try
+    c.GetFile(URL, FileName);
+  finally
+    FreeAndNil(c);
+  end;
+end;
 
 function GetUrlPart(var vPos: PUtf8Char; var vCount: Integer; const vTo: UTF8String; const vStops: TSysCharSet = []): UTF8String;
 
@@ -233,6 +247,20 @@ begin
   end
   else
     Result := '';
+end;
+
+procedure SocketDownloadFile(URL: string; FileName: string);
+var
+  c: TmnHttpClient;
+begin
+  c := TmnHttpClient.Create;
+  try
+    //c.Compressing := True;
+    //m.SaveToFile('c:\temp\1.json');
+    c.GetFile(URL, FileName);
+  finally
+    FreeAndNil(c);
+  end;
 end;
 
 procedure ParseURL(const vURL: UTF8String; out vProtocol, vAddress, vPort, vParams: UTF8String);
