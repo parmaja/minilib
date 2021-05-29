@@ -131,7 +131,7 @@ begin
     HttpClient.Request.UserAgent := sUserAgent;
     //HttpClient.KeepAlive := True;
     HttpClient.Host := 'www.parmaja.org';
-    HttpClient.Open1(sURL2, False);
+    HttpClient.Open(sURL2, False);
     HttpClient.Request.SendHead;
     HttpClient.Response.Receive;
     aSizeStr := HttpClient.Response.Header['Content-Length'];
@@ -157,7 +157,7 @@ begin
     HttpClient.Request.UserAgent := sUserAgent;
     HttpClient.KeepAlive := True;
     //HttpClient.Connect('https://www.openstreetmap.org', False);
-    HttpClient.Open1('https://www.parmaja.org', False);
+    HttpClient.Open('https://www.parmaja.org', False);
 
     HttpClient.Request.SendGet;
     HttpClient.Response.Receive;
@@ -188,7 +188,7 @@ begin
   try
     HttpClient.Request.UserAgent := sUserAgent;
     HttpClient.KeepAlive := True;
-    HttpClient.Open1(sURL, False);
+    HttpClient.Open(sURL, False);
     HttpClient.Host := 'www.parmaja.org';
 
     HttpClient.Request.SendGet;
