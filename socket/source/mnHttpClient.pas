@@ -84,8 +84,9 @@ type
     procedure CollectHeaders; virtual;
   public
     procedure Created; override;
-    procedure Send;
-    procedure Post(vData: PByte; vCount: Cardinal);
+    procedure SendGet;
+    procedure SendHead;
+    procedure SendPost(vData: PByte; vCount: Cardinal);
 
     property UserAgent: UTF8String read FUserAgent write FUserAgent;
     property Referer: UTF8String read FReferer write FReferer;
@@ -142,7 +143,6 @@ type
     FStream: TmnHttpStream;
   protected
     DeflateProxy: TmnDeflateStreamProxy;
-    procedure Open(const vURL: UTF8String);
     function CreateStream: TmnHttpStream; virtual;
     procedure FreeStream; virtual;
   public
@@ -151,7 +151,8 @@ type
     function Connected: Boolean;
 
     //Use it to open connection and keep it connected
-    function Connect(const vURL: UTF8String; SendAndReceive: Boolean = True): Boolean;
+    procedure Connect1(const vURL: UTF8String);
+    function Open1(const vURL: UTF8String; SendAndReceive: Boolean = True): Boolean;
     function Post(const vURL: UTF8String; vData: PByte; vCount: Integer): Boolean;
 
     procedure ReceiveStream(AStream: TStream); overload;
@@ -159,8 +160,10 @@ type
     procedure ReceiveMemoryStream(AStream: TStream);
     procedure Disconnect;
     //This will download the content into a stream and disconnect
-    procedure GetStream(const vURL: UTF8String; OutStream: TStream);
-    procedure GetFile(const vURL: UTF8String; OutFileName: UTF8String);
+    function GetStream(const vURL: UTF8String; OutStream: TStream): TFileSize;
+    //Some utils
+    function GetFile(const vURL: UTF8String; OutFileName: UTF8String): TFileSize;
+    function GetFileSize(vURL: string; out FileSize: TFileSize): Boolean;
     //Just add seek to 0 after getting
     procedure GetMemoryStream(const vURL: UTF8String; OutStream: TMemoryStream);
     procedure SendFile(const vURL: UTF8String; AFileName: UTF8String);
@@ -178,22 +181,36 @@ type
     property Stream: TmnHttpStream read FStream;
   end;
 
-procedure DownloadFile(URL: string; FileName: string);
+function HttpDownloadFile(URL: string; FileName: string): TFileSize;
+function HttpGetFileSize(URL: string; out FileSize: TFileSize): Boolean;
 
 implementation
 
 const
   ProtocolVersion = 'HTTP/1.1';
+  sUserAgent = 'Mozilla/5.0';
 
-procedure DownloadFile(URL: string; FileName: string);
+function HttpDownloadFile(URL: string; FileName: string): TFileSize;
 var
-  c: TmnHttpClient;
+  aHttpClient: TmnHttpClient;
 begin
-  c := TmnHttpClient.Create;
+  aHttpClient := TmnHttpClient.Create;
   try
-    c.GetFile(URL, FileName);
+    Result := aHttpClient.GetFile(URL, FileName);
   finally
-    FreeAndNil(c);
+    FreeAndNil(aHttpClient);
+  end;
+end;
+
+function HttpGetFileSize(URL: string; out FileSize: TFileSize): Boolean;
+var
+  aHttpClient: TmnHttpClient;
+begin
+  aHttpClient := TmnHttpClient.Create;
+  try
+    Result := aHttpClient.GetFileSize(URL, FileSize);
+  finally
+    FreeAndNil(aHttpClient);
   end;
 end;
 
@@ -348,7 +365,8 @@ end;
 
 destructor TmnCustomHttpHeader.Destroy;
 begin
-  FHeaders.Free;
+  FreeAndNil(FHeaders);
+  FreeAndNil(FAcceptEncoding);
   inherited;
 end;
 
@@ -382,7 +400,7 @@ begin
   UserAgent := 'Mozilla/5.0';
 end;
 
-procedure TmnHttpRequest.Post(vData: PByte; vCount: Cardinal);
+procedure TmnHttpRequest.SendPost(vData: PByte; vCount: Cardinal);
 var
   s: UTF8String;
   f: TmnField;
@@ -401,13 +419,30 @@ begin
   Client.Stream.Write(vData^, vCount)
 end;
 
-procedure TmnHttpRequest.Send;
+procedure TmnHttpRequest.SendGet;
 var
   s: UTF8String;
   f: TmnField;
 begin
   CollectHeaders;
   Client.Stream.WriteLineUTF8('GET ' + Client.Path + ' ' + ProtocolVersion);
+  for f in Headers do
+    if f.AsString <> '' then
+      Client.Stream.WriteLineUTF8(f.FullString);
+  for f in Client.Cookies do
+    s := f.Value + ';';
+  if s <> '' then
+    Client.Stream.WriteLineUTF8('Cookie: ' + s);
+  Client.Stream.WriteLineUTF8('');
+end;
+
+procedure TmnHttpRequest.SendHead;
+var
+  s: UTF8String;
+  f: TmnField;
+begin
+  CollectHeaders;
+  Client.Stream.WriteLineUTF8('HEAD ' + Client.Path + ' ' + ProtocolVersion);
   for f in Headers do
     if f.AsString <> '' then
       Client.Stream.WriteLineUTF8(f.FullString);
@@ -433,7 +468,7 @@ begin
     FAcceptCharSet := Header['Accept-CharSet'];
     FAcceptLanguage := Header['Accept-Language'];
     FAcceptEncoding.DelimitedText := Header['Accept-Encoding'];
-    Log.Write('Accept-Encoding:' +  Header['Accept-Encoding']);
+//    Log.Write('Accept-Encoding:' +  Header['Accept-Encoding']);
     //FDecompress := FAcceptEncoding.IndexOf('deflate') >=0;
     FDecompress := Header['Content-Encoding'] = 'deflate';
     //Log.WriteLn(FAcceptEncoding.Text);
@@ -498,11 +533,8 @@ begin
   Result := FStream.Connected;
 end;
 
-procedure TmnHttpClient.Open(const vURL: UTF8String);
+procedure TmnHttpClient.Connect1(const vURL: UTF8String);
 begin
-  {$ifdef OUT_Console}
-
-  {$endif}
   if FStream = nil then
     FStream := CreateStream;
 
@@ -528,8 +560,8 @@ end;
 
 function TmnHttpClient.Post(const vURL: UTF8String; vData: PByte; vCount: Integer): Boolean;
 begin
-  Open(vUrl);
-  Request.Post(vData, vCount);
+  Connect1(vUrl);
+  Request.SendPost(vData, vCount);
   //
   Result := Stream.Connected;
   if Result then
@@ -571,12 +603,12 @@ end;
 
 { TmnHttpClient }
 
-function TmnHttpClient.Connect(const vURL: UTF8String; SendAndReceive: Boolean): Boolean;
+function TmnHttpClient.Open1(const vURL: UTF8String; SendAndReceive: Boolean): Boolean;
 begin
-  Open(vUrl);
+  Connect1(vUrl);
   if SendAndReceive then
   begin
-    Request.Send;
+    Request.SendGet;
     if Stream.Connected then
       Response.Receive;
   end;
@@ -609,23 +641,40 @@ begin
   FreeStream;
 end;
 
-procedure TmnHttpClient.GetStream(const vURL: UTF8String; OutStream: TStream);
+function TmnHttpClient.GetStream(const vURL: UTF8String; OutStream: TStream): TFileSize;
 begin
-  if Connect(vURL) then
+  Request.UserAgent := sUserAgent;
+  if Open1(vURL) then
   begin
-    FStream.ReadStream(OutStream);
+    Result := FStream.ReadStream(OutStream);
   end;
 end;
 
-procedure TmnHttpClient.GetFile(const vURL: UTF8String; OutFileName: UTF8String);
+function TmnHttpClient.GetFile(const vURL: UTF8String; OutFileName: UTF8String): TFileSize;
 var
   f: TFileStream;
 begin
   f := TFileStream.Create(OutFileName, fmCreate or fmShareDenyWrite);
   try
-    GetStream(vURL, f);
+    Result := GetStream(vURL, f);
   finally
     f.Free;
+  end;
+end;
+
+function TmnHttpClient.GetFileSize(vURL: string; out FileSize: TFileSize): Boolean;
+var
+  aSizeStr: string;
+begin
+  Request.UserAgent := sUserAgent;
+  Result := Open1(vURL, False);
+  try
+    Request.SendHead;
+    Response.Receive;
+    aSizeStr := Response.Header['Content-Length'];
+    FileSize := StrToInt64(aSizeStr);
+  finally
+    Disconnect;
   end;
 end;
 

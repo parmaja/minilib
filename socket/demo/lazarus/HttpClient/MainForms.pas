@@ -14,8 +14,10 @@ type
 
   TMainForm = class(TForm)
     Button1: TButton;
+    GetFileSizeBtn1: TButton;
     GetGetBtn: TButton;
     GetGetBtn1: TButton;
+    GetFileSizeBtn: TButton;
     Image1: TImage;
     Image2: TImage;
     LogEdit: TMemo;
@@ -23,6 +25,8 @@ type
     Panel1: TPanel;
     Panel2: TPanel;
     procedure Button1Click(Sender: TObject);
+    procedure GetFileSizeBtn1Click(Sender: TObject);
+    procedure GetFileSizeBtnClick(Sender: TObject);
     procedure GetGetBtn1Click(Sender: TObject);
     procedure GetGetBtnClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
@@ -102,6 +106,44 @@ begin
   LogEdit.Lines.Add('Finished');
 end;
 
+procedure TMainForm.GetFileSizeBtn1Click(Sender: TObject);
+var
+  aSize: Integer;
+begin
+  if mnHttpClient.HttpGetFileSize(sURL2, aSize) then
+    LogEdit.Lines.Add(IntToStr(aSize))
+  else
+    LogEdit.Lines.Add('Failed to get file size');
+end;
+
+procedure TMainForm.GetFileSizeBtnClick(Sender: TObject);
+var
+  HttpClient: TmnHttpClient;
+  aSizeStr: string;
+begin
+  LogEdit.Lines.Add('Getting from URL');
+  Screen.Cursor := crHourGlass;
+  Image1.Picture.Clear;
+  Image2.Picture.Clear;
+  Application.ProcessMessages;
+  HttpClient := TmnHttpClient.Create;
+  try
+    HttpClient.Request.UserAgent := sUserAgent;
+    //HttpClient.KeepAlive := True;
+    HttpClient.Host := 'www.parmaja.org';
+    HttpClient.Open1(sURL2, False);
+    HttpClient.Request.SendHead;
+    HttpClient.Response.Receive;
+    aSizeStr := HttpClient.Response.Header['Content-Length'];
+    LogEdit.Lines.Add(aSizeStr);
+    HttpClient.Disconnect;
+  finally
+    HttpClient.Free;
+  end;
+  LogEdit.Lines.Add('Finished');
+  Screen.Cursor := crDefault;
+end;
+
 procedure TMainForm.GetGetBtn1Click(Sender: TObject);
 var
   HttpClient: TmnHttpClient;
@@ -115,9 +157,9 @@ begin
     HttpClient.Request.UserAgent := sUserAgent;
     HttpClient.KeepAlive := True;
     //HttpClient.Connect('https://www.openstreetmap.org', False);
-    HttpClient.Connect('https://www.parmaja.org', False);
+    HttpClient.Open1('https://www.parmaja.org', False);
 
-    HttpClient.Request.Send;
+    HttpClient.Request.SendGet;
     HttpClient.Response.Receive;
     HttpClient.ReceiveMemoryStream(MemoryStream);
     MemoryStream.Position := 0;
@@ -146,10 +188,10 @@ begin
   try
     HttpClient.Request.UserAgent := sUserAgent;
     HttpClient.KeepAlive := True;
-    HttpClient.Connect(sURL, False);
+    HttpClient.Open1(sURL, False);
     HttpClient.Host := 'www.parmaja.org';
 
-    HttpClient.Request.Send;
+    HttpClient.Request.SendGet;
     HttpClient.Response.Receive;
     HttpClient.ReceiveMemoryStream(MemoryStream);
     LoadFromStream(HttpClient.Response.ContentType, MemoryStream, 0);
@@ -159,7 +201,7 @@ begin
     HttpClient.Path := sPATH2;
     MemoryStream.Clear;
 
-    HttpClient.Request.Send;
+    HttpClient.Request.SendGet;
     HttpClient.Response.Receive;
     HttpClient.ReceiveMemoryStream(MemoryStream);
     LoadFromStream(HttpClient.Response.ContentType, MemoryStream, 1);

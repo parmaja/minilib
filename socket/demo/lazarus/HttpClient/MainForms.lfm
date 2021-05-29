@@ -79,12 +79,32 @@ object MainForm: TMainForm
     object GetGetBtn1: TButton
       Left = 0
       Height = 33
-      Top = 66
+      Top = 132
       Width = 93
       Align = alTop
       Caption = 'Get openstreet'
       OnClick = GetGetBtn1Click
       TabOrder = 2
+    end
+    object GetFileSizeBtn: TButton
+      Left = 0
+      Height = 33
+      Top = 66
+      Width = 93
+      Align = alTop
+      Caption = 'GetFileSize1'
+      OnClick = GetFileSizeBtnClick
+      TabOrder = 3
+    end
+    object GetFileSizeBtn1: TButton
+      Left = 0
+      Height = 33
+      Top = 99
+      Width = 93
+      Align = alTop
+      Caption = 'GetFileSize2'
+      OnClick = GetFileSizeBtn1Click
+      TabOrder = 4
     end
   end
   object LogEdit: TMemo
