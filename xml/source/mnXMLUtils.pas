@@ -35,6 +35,7 @@ const
   sOpenCDATA = sCDATA + '[';
   sCloseCDATA = ']]>';
   sWhitespace = [' ', #9, #13, #10];
+  sAllWhitespace = [#0] + sWhitespace;
 
 const
   cRttiVersion = '1.0';
