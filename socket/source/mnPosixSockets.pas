@@ -293,7 +293,8 @@ var
 begin
 
   CheckActive;
-  ret := Posix.SysSocket.Send(FHandle, Buffer, Count, MSG_NOSIGNAL);
+  //ret := Posix.SysSocket.Send(FHandle, Buffer, Count, MSG_NOSIGNAL); //MSG_NOSIGNAL fail on mac and ios :)
+  ret := Posix.SysSocket.Send(FHandle, Buffer, Count, 0);
   //c := InternalSend(@Buffer, Count);
 
   if ret = 0 then
@@ -323,7 +324,7 @@ begin
   aBuf := vBuf;
   while (Result < vLen) do
   begin
-    aSent := Posix.SysSocket.Send(FHandle, aBuf^, vLen - Result, MSG_NOSIGNAL);
+    aSent := Posix.SysSocket.Send(FHandle, aBuf^, vLen - Result, MSG_NOSIGNAL); //MSG_NOSIGNAL fail on mac and ios :)
 
     if (aSent < 0) then
     begin

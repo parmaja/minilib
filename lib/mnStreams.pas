@@ -125,6 +125,7 @@ type
       Size: Longint;
       procedure CreateBuffer;
       procedure FreeBuffer;
+      function Count: Cardinal;
     end;
   protected
     FReadBuffer: TBuffer;
@@ -399,6 +400,11 @@ begin
 end;
 
 { TmnBufferStream.TBuffer }
+
+function TmnBufferStream.TBuffer.Count: Cardinal;
+begin
+  Result := Stop-Pos;
+end;
 
 procedure TmnBufferStream.TBuffer.CreateBuffer;
 begin
@@ -1164,6 +1170,7 @@ begin
     FReadBuffer.Stop := FReadBuffer.Pos + aSize
   else
     FReadBuffer.Stop := FReadBuffer.Pos;
+
   {if (aSize = 0) and ZeroClose then //what if we have Timeout?
     Close([cloRead]);}
 end;

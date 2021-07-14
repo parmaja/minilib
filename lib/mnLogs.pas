@@ -364,3 +364,4 @@ finalization
   FreeAndNil(FLog);
   FreeAndNil(Lock);
 end.
+
