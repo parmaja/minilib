@@ -34,6 +34,9 @@ https://modern.ircdocs.horse/dcc.html
 
 PREFIX=(ov)@+
 
+Flag as operator directly
+/msg chanserv flags #parmaja zaher +O
+
 }
 
 interface

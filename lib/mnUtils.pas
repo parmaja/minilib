@@ -155,8 +155,10 @@ function ToUnixPathDelimiter(const S: string): string;
 //function EscapeStringPas(const S: string): string;
 //function DescapeStringPas(const S: string): string;
 
-//IncludePathSeparator add the Delimiter when S not = ''
-function IncludePathSeparator(const S: string): string;
+//IncludePathDelimiter add the Delimiter when S not = ''
+function IncludePathDelimiter(const S: string): string;
+function IncludePathSeparator(const S: string): string; deprecated 'Use IncludePathDelimiter';
+function IncludeURLDelimiter(S: string): string;
 
 //Similer to ZeroMemory
 procedure InitMemory(out V; Count: {$ifdef FPC}SizeInt{$else}Longint{$endif});
@@ -165,17 +167,6 @@ procedure InitMemory(out V; Count: {$ifdef FPC}SizeInt{$else}Longint{$endif});
 procedure CenterRect(var R1: TRect; R2: TRect);
 
 function GetFormatSettings: TFormatSettings;
-
-
-{$ifdef FPC}
-{$else}
-const
-{$ifdef MSWINDOWS}
-  DirectorySeparator: string = '\';
-{$else}
-  DirectorySeparator: string = '/';
-{$endif}
-{$endif}
 
 //Ported from UniDates
 
@@ -595,7 +586,7 @@ begin
     if ((LeftStr(FileName, 3) = '../') or (LeftStr(FileName, 3) = '..\')) then
       Result := ExpandFileName(IncludePathSeparator(Root) + IncludePathSeparator(Path) + FileName)
     else if ((LeftStr(FileName, 2) = './') or (LeftStr(FileName, 2) = '.\')) then
-      Result := IncludePathSeparator(Root) + IncludePathSeparator(Path) + RightStr(FileName, Length(FileName) - 2)
+      Result := IncludePathSeparator(Root) + IncludeURLDelimiter(Path) + RightStr(FileName, Length(FileName) - 2)
 {$ifdef MSWINDOWS}
     else if ((LeftStr(FileName, 1) = '/') or (LeftStr(FileName, 1) = '\')) then
       Result := ExtractFileDrive(Path) + FileName
@@ -969,12 +960,25 @@ begin
   Result := StringReplace(S, '\', '/', [rfReplaceAll]);
 end;
 
-function IncludePathSeparator(const S: string): string;
+function IncludePathDelimiter(const S: string): string;
 begin
-  if (s <> '') and (RightStr(S, 1) <> DirectorySeparator) then
+  if (s <> '') and (RightStr(S, 1) <> PathDelim) then
     Result := s + PathDelim
   else
     Result := s;
+end;
+
+function IncludePathSeparator(const S: string): string;
+begin
+  Result := IncludeURLDelimiter(S);
+end;
+
+function IncludeURLDelimiter(S: string): string;
+begin
+  if (s <> '') and (RightStr(S, 1) <> '/') then
+    Result := S + '/'
+  else
+    Result := S;
 end;
 
 procedure CenterRect(var R1: TRect; R2: TRect);

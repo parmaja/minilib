@@ -542,7 +542,7 @@ begin
   Stream.Address := Host;
   Stream.Port := Port;
 
-  Stream.Options := Stream.Options - [soNoDelay];
+  Stream.Options := Stream.Options + [soNoDelay];
   if SameText(Protocol, 'https') then
     Stream.Options := Stream.Options + [soSSL, soWaitBeforeRead]
   else
