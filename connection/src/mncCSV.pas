@@ -42,8 +42,9 @@ type
     SkipColumn: Integer;
     HeaderLine: TmncCSVHeader;
     ANSIContents: Boolean; //TODO take it from mncCSVExchanges
-    procedure SaveToIni(Section: string; ini: TiniFile);
-    procedure LoadFromIni(Section: string; ini: TiniFile);
+    SkipEmptyLines: Boolean;
+    procedure SaveToIni(Section: string; ini: TIniFile);
+    procedure LoadFromIni(Section: string; ini: TIniFile);
   end;
 
 
@@ -86,7 +87,7 @@ type
   TmncCSVCommand = class(TmncCommand)
   private
     FEmptyLine: TmncEmptyLine;
-
+    FBeginOfStream: Boolean;
     FCSVStream: TmnWrapperStream;
     FStream: TStream;
     FMode: TmncCSVMode;
@@ -143,6 +144,7 @@ begin
   Ini.WriteInteger(Section, 'QuoteChar', Ord(QuoteChar));
   Ini.WriteInteger(Section, 'SkipColumn', SkipColumn);
   Ini.WriteInteger(Section, 'HeaderLine', Ord(HeaderLine));
+  Ini.WriteBool(Section, 'SkipEmptyLines', SkipEmptyLines);
   Ini.WriteBool(Section, 'ANSIContents', ANSIContents);
 end;
 
@@ -159,6 +161,7 @@ begin
   QuoteChar := Char(Ini.ReadInteger(Section, 'QuoteChar', Ord(QuoteChar)));
   SkipColumn := Ini.ReadInteger(Section, 'SkipColumn', SkipColumn);
   HeaderLine := TmncCSVHeader(Ini.ReadInteger(Section, 'HeaderLine', Ord(HeaderLine)));
+  SkipEmptyLines := Ini.ReadBool(Section, 'SkipEmptyLines', SkipEmptyLines);
   ANSIContents := Ini.ReadBool(Section, 'ANSIContents', ANSIContents);
 end;
 
@@ -248,6 +251,7 @@ end;
 
 procedure TmncCSVCommand.DoPrepare;
 begin
+  FBeginOfStream := True;
   FCSVStream := TmnWrapperStream.Create(FStream, False);
   FCSVStream.EndOfLine := Session.EndOfLine;
   if Session.HeaderLine <> hdrNone then
@@ -382,6 +386,7 @@ begin
   end
   else
     Strings := nil;
+  FBeginOfStream := False;
 end;
 
 function TmncCSVCommand.ReadLine(out Line: string): Boolean;
@@ -452,10 +457,14 @@ procedure TmncCSVCommand.WriteLine(S: string);
 var
   raw: RawByteString;
 begin
+  if FBeginOfStream then
+    FBeginOfStream := False
+  else
+    FCSVStream.WriteLine;
   if Session.CSVOptions.ANSIContents then
   begin
     {$ifdef fpc}
-    FCSVStream.WriteLineAnsiString(s);
+    FCSVStream.WriteAnsiString(s);
 
     {raw := '';
     SetCodePage(raw, SystemAnsiCodePage, false);
@@ -469,9 +478,9 @@ begin
   begin
     {$ifdef FPC}
     raw := s;
-    FCSVStream.WriteLineRawByte(raw);
+    FCSVStream.WriteRawByte(raw);
     {$else}
-    FCSVStream.WriteLine(s);
+    FCSVStream.WriteString(s);
     {$endif}
   end
 end;

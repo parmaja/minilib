@@ -20,6 +20,7 @@ type
   { TCSVOptionsForm }
 
   TCSVOptionsForm = class(TForm)
+    IgnoreEmptyLinesChk: TCheckBox;
     CancelBtn: TButton;
     ANSIFileChk: TCheckBox;
     SkipColumnEdit: TEdit;
@@ -61,6 +62,8 @@ begin
       DelimiterList.Text := vCSVIE.DelimiterChar;
     HeaderList.ItemIndex := Ord(vCSVIE.HeaderLine);
     ANSIFileChk.Checked := vCSVIE.ANSIContents;
+    IgnoreEmptyLinesChk.Checked := vCSVIE.SkipEmptyLines;
+
     SkipColumnEdit.Text := IntToStr(vCSVIE.SkipColumn);
     if vCSVIE.EndOfLine = sWinEndOfLine then
       EOLCharList.ItemIndex := 0
@@ -107,6 +110,7 @@ begin
           vCSVIE.EndOfLine := sWinEndOfLine;
       end;
       vCSVIE.ANSIContents := ANSIFileChk.Checked;
+      vCSVIE.SkipEmptyLines := IgnoreEmptyLinesChk.Checked;
       vCSVIE.SkipColumn := StrToIntDef(SkipColumnEdit.Text, 0);
     end;
   end;

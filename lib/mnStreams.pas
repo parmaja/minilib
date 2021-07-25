@@ -212,10 +212,12 @@ type
     function WriteLine(const S: utf8string): TFileSize; overload;
     function WriteLine(const S: unicodestring): TFileSize; overload;
 
+    function WriteRawByte(const S: rawbytestring): TFileSize; overload;
     function WriteLineRawByte(const S: rawbytestring): TFileSize; overload;
     function WriteLineUTF8(const S: UTF8String): TFileSize; overload;
 
     {$ifndef NEXTGEN}
+    function WriteAnsiString(const S: ansistring): TFileSize; overload;
     function WriteLineAnsiString(const S: ansistring): TFileSize; overload;
     function WriteLine(const S: ansistring): TFileSize; overload;
     function WriteLine(const S: widestring): TFileSize; overload;
@@ -806,12 +808,15 @@ function TmnBufferStream.WriteLineAnsiString(const S: ansistring): TFileSize;
 var
   EOL: ansistring;
 begin
-  EOL := EndOfLine;
   if s <> '' then
     Result := Write(Pointer(S)^, Length(S))
   else
     Result := 0;
-  Result := Result + Write(Pointer(EOL)^, Length(EOL));
+  if EndOfLine <> '' then
+  begin
+    EOL := EndOfLine;
+    Result := Result + Write(Pointer(EOL)^, Length(EOL));
+  end;
 end;
 
 function TmnBufferStream.WriteLine(const S: ansistring): TFileSize;
@@ -823,12 +828,15 @@ function TmnBufferStream.WriteLine(const S: widestring): TFileSize;
 var
   EOL: widestring;
 begin
-  EOL := widestring(EndOfLine);
   if s <> '' then
     Result := Write(Pointer(S)^, ByteLength(S))
   else
     Result := 0;
-  Result := Result + Write(Pointer(EOL)^, ByteLength(EOL));
+  if EndOfLine <> '' then
+  begin
+    EOL := widestring(EndOfLine);
+    Result := Result + Write(Pointer(EOL)^, ByteLength(EOL));
+  end;
 end;
 
 {$endif}
@@ -837,33 +845,58 @@ function TmnBufferStream.WriteLineRawByte(const S: rawbytestring): TFileSize;
 var
   EOL: RawByteString;
 begin
-  EOL := RawByteString(EndOfLine);
   Result := 0;
   if s <> '' then
     Result := Write(Pointer(S)^, Length(S));
-  Result := Result + Write(Pointer(EOL)^, Length(EOL));
+  if EndOfLine <> '' then
+  begin
+    EOL := RawByteString(EndOfLine);
+    Result := Result + Write(Pointer(EOL)^, Length(EOL));
+  end;
 end;
 
 function TmnBufferStream.WriteLineUTF8(const S: UTF8String): TFileSize;
 var
   EOL: UTF8String;
 begin
-  EOL := EndOfLine;
   Result := 0;
   if s <> '' then
     Result := Write(Pointer(S)^, Length(S));
-  Result := Result + Write(Pointer(EOL)^, Length(EOL));
+  if EndOfLine <> '' then
+  begin
+    EOL := EndOfLine;
+    Result := Result + Write(Pointer(EOL)^, Length(EOL));
+  end;
+end;
+
+function TmnBufferStream.WriteAnsiString(const S: ansistring): TFileSize;
+begin
+  if s <> '' then
+    Result := Write(Pointer(S)^, Length(S))
+  else
+    Result := 0;
 end;
 
 function TmnBufferStream.WriteLine(const S: unicodestring): TFileSize;
 var
   EOL: unicodestring;
 begin
-  EOL := unicodestring(EndOfLine);
   Result := 0;
   if s <> '' then
     Result := Write(Pointer(S)^, ByteLength(S));
-  Result := Result + Write(Pointer(EOL)^, ByteLength(EOL));
+  if EndOfLine <> '' then
+  begin
+    EOL := unicodestring(EndOfLine);
+    Result := Result + Write(Pointer(EOL)^, ByteLength(EOL));
+  end;
+end;
+
+function TmnBufferStream.WriteRawByte(const S: rawbytestring): TFileSize;
+begin
+  if S <> '' then
+    Result := Write(Pointer(S)^, Length(S))
+  else
+    Result := 0;
 end;
 
 function TmnBufferStream.WriteLine(const S: utf8string): TFileSize;
@@ -871,10 +904,13 @@ var
   EOL: utf8string;
 begin
   Result := 0;
-  EOL := EndOfLine;
   if s <> '' then
     Result := Write(PByte(S)^, ByteLength(S));
-  Result := Result + Write(PByte(EOL)^, ByteLength(EOL));
+  if EndOfLine <> '' then
+  begin
+    EOL := EndOfLine;
+    Result := Result + Write(PByte(EOL)^, ByteLength(EOL));
+  end;
 end;
 
 procedure TmnBufferStream.WriteBytes(Buffer: TBytes);
@@ -1030,7 +1066,8 @@ end;
 
 function TmnBufferStream.WriteLine: TFileSize;
 begin
-  Result := Write(Pointer(EndOfLine)^, ByteLength(EndOfLine));
+  if EndOfLine <> '' then
+    Result := Write(Pointer(EndOfLine)^, ByteLength(EndOfLine));
 end;
 
 procedure TmnBufferStream.ReadStrings(Value: TStrings);

@@ -1,12 +1,13 @@
 object CSVOptionsForm: TCSVOptionsForm
   Left = 453
-  Height = 200
+  Height = 225
   Top = 217
-  Width = 189
+  Width = 195
   ActiveControl = ANSIFileChk
+  BorderStyle = bsSingle
   Caption = 'CSV Export/Import'
-  ClientHeight = 200
-  ClientWidth = 189
+  ClientHeight = 225
+  ClientWidth = 195
   Font.CharSet = ANSI_CHARSET
   Font.Color = clBlack
   Font.Height = -11
@@ -51,20 +52,20 @@ object CSVOptionsForm: TCSVOptionsForm
   object CancelBtn: TButton
     Left = 79
     Height = 22
-    Top = 174
+    Top = 199
     Width = 75
     Anchors = [akLeft, akBottom]
-    Caption = 'Cancel'
+    Caption = '&Cancel'
     ModalResult = 2
     TabOrder = 4
   end
   object OkBtn: TButton
     Left = 4
     Height = 22
-    Top = 174
+    Top = 199
     Width = 75
     Anchors = [akLeft, akBottom]
-    Caption = 'OK'
+    Caption = '&OK'
     Default = True
     ModalResult = 1
     OnClick = OkBtnClick
@@ -127,5 +128,13 @@ object CSVOptionsForm: TCSVOptionsForm
     Width = 80
     TabOrder = 7
     Text = '0'
+  end
+  object IgnoreEmptyLinesChk: TCheckBox
+    Left = 4
+    Height = 19
+    Top = 173
+    Width = 112
+    Caption = 'Ignore Empty Lines'
+    TabOrder = 8
   end
 end
