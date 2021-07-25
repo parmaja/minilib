@@ -16,7 +16,7 @@ unit mnConnections;
 interface
 
 uses
-  Classes, SysUtils, SyncObjs,
+  Classes, SysUtils, Types, SyncObjs,
   mnStreams, mnSockets;
 
 type
@@ -141,7 +141,7 @@ procedure TmnConnections.Add(Connection: TmnConnection);
 begin
   Enter;
   try
-    List.Add(Connection);
+      List.Add(Connection);
   finally
     Leave;
   end;
@@ -151,7 +151,8 @@ procedure TmnConnections.Remove(Connection: TmnConnection);
 begin
   Enter;
   try
-    List.Remove(Connection);
+    //if Connection.FreeOnTerminate then //Zaher: @Zaher and @Belal, idk if wrong :( think more zaher
+      List.Remove(Connection);
   finally
     Leave;
   end;

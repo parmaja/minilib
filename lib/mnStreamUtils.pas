@@ -124,7 +124,7 @@ begin
         if err <> Z_OK then
           raise Exception.Create(String(zerror(err)));
       end;
-      ResultCount := Count - ZStream.avail_out;
+      ResultCount := Count - Integer(ZStream.avail_out);
     end;
     Result := True;
   end

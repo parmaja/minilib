@@ -1053,6 +1053,7 @@ begin
     Result := DirectWrite(Buffer, Count)
   else
   begin
+    Result := 0;
     //TODO
     {if FWriteBuffer.Buffer = nil then
       FWriteBuffer.CreateBuffer;

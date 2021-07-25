@@ -584,9 +584,9 @@ begin
   if (FileName <> '') then
   begin
     if ((LeftStr(FileName, 3) = '../') or (LeftStr(FileName, 3) = '..\')) then
-      Result := ExpandFileName(IncludePathSeparator(Root) + IncludePathSeparator(Path) + FileName)
+      Result := ExpandFileName(IncludePathDelimiter(Root) + IncludePathDelimiter(Path) + FileName)
     else if ((LeftStr(FileName, 2) = './') or (LeftStr(FileName, 2) = '.\')) then
-      Result := IncludePathSeparator(Root) + IncludeURLDelimiter(Path) + RightStr(FileName, Length(FileName) - 2)
+      Result := IncludePathDelimiter(Root) + IncludePathDelimiter(Path) + RightStr(FileName, Length(FileName) - 2)
 {$ifdef MSWINDOWS}
     else if ((LeftStr(FileName, 1) = '/') or (LeftStr(FileName, 1) = '\')) then
       Result := ExtractFileDrive(Path) + FileName
@@ -970,7 +970,7 @@ end;
 
 function IncludePathSeparator(const S: string): string;
 begin
-  Result := IncludeURLDelimiter(S);
+  Result := IncludePathDelimiter(S);
 end;
 
 function IncludeURLDelimiter(S: string): string;

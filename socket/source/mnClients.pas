@@ -92,11 +92,11 @@ type
     procedure Shutdown;
     procedure Execute; override;
     procedure Changed;
-    procedure Remove(Connection: TmnClientConnection);
-    procedure Add(Connection: TmnClientConnection);
   public
     constructor Create; virtual;
     destructor Destroy; override;
+    procedure Remove(Connection: TmnConnection); override;
+    procedure Add(Connection: TmnConnection); override;
     procedure Stop; override;
     procedure Log(Connection: TmnConnection; S: string);
     function AddConnection(vPort: string; vAddress: string): TmnClientConnection;
@@ -187,15 +187,10 @@ end;
 
 { TmnClients }
 
-procedure TmnClients.Add(Connection: TmnClientConnection);
+procedure TmnClients.Add(Connection: TmnConnection);
 begin
-  Enter;
-  try
-    List.Add(Connection);
-    Changed;
-  finally
-    Leave;
-  end;
+  inherited;
+  Changed;
 end;
 
 procedure TmnClients.Changed;
@@ -254,16 +249,10 @@ begin
   end;
 end;
 
-procedure TmnClients.Remove(Connection: TmnClientConnection);
+procedure TmnClients.Remove(Connection: TmnConnection);
 begin
-  Enter;
-  try
-    if Connection.FreeOnTerminate then
-      List.Remove(Connection);
-    Changed;
-  finally
-    Leave;
-  end;
+  if Connection.FreeOnTerminate then
+    inherited;
 end;
 
 procedure TmnClients.Stop;

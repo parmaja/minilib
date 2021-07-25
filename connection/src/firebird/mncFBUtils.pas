@@ -497,8 +497,7 @@ var
 
 procedure FBAlloc(var P; OldSize, NewSize: Integer; ZeroInit: boolean);
 var
-  i: Integer;
-  s, t: PByte;
+  s: PByte;
 begin
   s := PByte(P);
 
@@ -896,7 +895,8 @@ function GenerateTPBEx(vParams: TStrings): TBytes;
   end;
 
 var
-  i, j, TPBVal, ParamLength: Integer;
+  i, j, TPBVal: Integer;
+  //ParamLength: Integer;
   s, ParamName, ParamValue: AnsiString;
   aCount: Integer;
 begin

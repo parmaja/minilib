@@ -121,12 +121,12 @@ type
     procedure Prepare; virtual;
     procedure Execute; override;
     procedure Unprepare; virtual;
-    procedure Add(Connection: TmnConnection); override;
-    procedure Remove(Connection: TmnConnection); override;
     procedure DropConnections; virtual;
   public
     constructor Create;
     destructor Destroy; override;
+    procedure Add(Connection: TmnConnection); override;
+    procedure Remove(Connection: TmnConnection); override;
     procedure Stop; override;
     // Use this function when you are in a thread do not use Server.Log
     procedure Log(S: string); virtual;

@@ -111,9 +111,9 @@ var
 begin
   x := nil;
   pk := nil;
-  name := nil;
-  bne := nil;
-  sign := nil;
+//  name := nil;
+//  bne := nil;
+//  sign := nil;
   Result := False;
   try
     InitOpenSSLLibrary;

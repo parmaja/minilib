@@ -697,7 +697,7 @@ end;
 
 function TmodModule.CreateCommand(CommandName: string; ARequest: TmodRequest; ARequestStream: TmnBufferStream; ARespondStream: TmnBufferStream): TmodCommand;
 var
-  aName: string;
+//  aName: string;
   aClass: TmodCommandClass;
 begin
   //aName := GetCommandName(ARequest, ARequestStream);
@@ -844,7 +844,6 @@ procedure TmodModule.ExecuteCommand(CommandName: string; ARequestStream: TmnBuff
 var
   ARequest: TmodRequest;
 begin
-  Initialize(ARequest);
   ARequest.Command := CommandName;
   Execute(ARequest, ARequestStream, ARespondStream);
 end;
