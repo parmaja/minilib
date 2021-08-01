@@ -274,7 +274,7 @@ end;
 
 function TmncCSVCommand.GetActive: Boolean;
 begin
-  Result := FCSVStream = nil;
+  Result := FCSVStream <> nil;
 end;
 
 function TmncCSVCommand.GetConnection: TmncCSVConnection;
@@ -320,7 +320,7 @@ begin
     end;
   end
   else
-    FreeAndNil(FCSVStream);//close it for make EOF
+    FreeAndNil(FCSVStream);//close it to make EOF
 end;
 
 type
@@ -360,7 +360,7 @@ begin
     end;
   end
   else
-    FreeAndNil(FCSVStream);//close it for make EOF
+    FreeAndNil(FCSVStream);//close it to make EOF
 end;
 
 procedure TmncCSVCommand.PrepareParams;
