@@ -44,25 +44,37 @@ type
 
   TmncMetaItem = class(TmnNamedObject)
   private
+    FSQLName: string; //it is the real name
+    FFullName: string;
     FKind: TmetaKind;
     FAttributes: TmncMetaAttributes;
+    FValue: string;
   public
     constructor Create;
     destructor Destroy; override;
     property Kind: TmetaKind read FKind write FKind;
     property Attributes: TmncMetaAttributes read FAttributes;
+    procedure Clear;
+    procedure Clone(AMetaItem: TmncMetaItem);
+    property Value: string read FValue write FValue;
+    property SQLName: string read FSQLName write FSQLName;
+    property FullName: string read FFullName write FFullName; //ToDo
   end;
 
   { TmncMetaItems }
 
-  TmncMetaItems = class(TmnObjectList<TmncMetaItem>)
+  TmncMetaItems = class(TmnNamedObjectList<TmncMetaItem>)
   private
     FHeader: TmncMetaHeader;
+    function GetValues(Index: string): string;
+    procedure SetValues(Index: string; AValue: string);
   public
     constructor Create;
     destructor Destroy; override;
     property Header: TmncMetaHeader read FHeader;
-    function Add(Name: string): TmncMetaItem; overload;
+    function Add(Name: string; Value: string = ''): TmncMetaItem; overload;
+    property Values[Index: string]: string read GetValues write SetValues;
+    procedure Clone(AMetaItems: TmncMetaItems);
   end;
 
   TmncSQLCallback = procedure (SQL: string);
@@ -147,6 +159,22 @@ end;
 
 { TmncMetaItems }
 
+function TmncMetaItems.GetValues(Index: string): string;
+var
+  itm: TmncMetaItem;
+begin
+  itm := Find(Index);
+  if itm <> nil then
+    Result := itm.Value
+  else
+    Result := '';
+end;
+
+procedure TmncMetaItems.SetValues(Index: string; AValue: string);
+begin
+
+end;
+
 constructor TmncMetaItems.Create;
 begin
   inherited Create;
@@ -159,11 +187,29 @@ begin
   inherited;
 end;
 
-function TmncMetaItems.Add(Name: string): TmncMetaItem;
+function TmncMetaItems.Add(Name: string; Value: string): TmncMetaItem;
 begin
   Result := TmncMetaItem.Create;
   Result.Name := Name;
+  Result.Value := Value;
   Add(Result);
+end;
+
+procedure TmncMetaItems.Clone(AMetaItems: TmncMetaItems);
+var
+  i: Integer;
+  a: TmncMetaItem;
+begin
+  Clear;
+  if AMetaItems <> nil then
+  begin
+    for i := 0 to AMetaItems.Count -1 do
+    begin
+      a := TmncMetaItem.Create;
+      a.Clone(AMetaItems.Items[i]);
+      Add(a);
+    end;
+  end;
 end;
 
 {TODO: delete it
@@ -203,6 +249,37 @@ destructor TmncMetaItem.Destroy;
 begin
   FreeAndNil(FAttributes);
   inherited;
+end;
+
+procedure TmncMetaItem.Clear;
+begin
+  Name := '';
+  FSQLName := '';
+  FFullName := '';
+  FValue := '';
+end;
+
+procedure TmncMetaItem.Clone(AMetaItem: TmncMetaItem);
+var
+  i: Integer;
+  aField: TmnField;
+begin
+  Clear;
+  if AMetaItem <> nil then
+  begin
+    Name := AMetaItem.Name;
+    FSQLName := AMetaItem.SQLName;
+    FFullName := AMetaItem.FullName;
+    FValue := AMetaItem.Value;
+
+    for i := 0 to AMetaItem.Attributes.Count -1 do
+    begin
+      with AMetaItem.Attributes.Items[i] do
+      begin
+        Attributes.Add(Name, Value);
+      end;
+    end;
+  end;
 end;
 
 procedure TmncMeta.EnumObjects(Meta: TmncMetaItems; Kind: TmetaKind; SQLName: string; Options: TmetaEnumOptions);

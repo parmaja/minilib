@@ -77,12 +77,14 @@ begin
     while not aCMD.Done do
     begin
       aItem := Meta.Add(aCMD.Field['name'].AsString);
+      aItem.SQLName := aItem.Name;
       aItem.Kind := vKind;
       for i := Low(Fields) to High(Fields) do
         aItem.Attributes.Add(Fields[i], aCMD.Field[Fields[i]].AsString);
       aCMD.Next;
     end;
   finally
+    aCMD.Free;
   end;
 end;
 
@@ -267,6 +269,7 @@ begin
     begin
       aItem := TmncMetaItem.Create;
       aItem.Name := aCMD.Field['name'].AsString;
+      aItem.SQLName := aItem.Name;
       aItem.Attributes.Add('type', aCMD.Field['type'].AsString);
       aItem.Attributes.Add('nullable', IntToStr(ord(aCMD.Field['notnull'].AsInteger = 0)));
       aItem.Attributes.Add('primary', IntToStr(ord(aCMD.Field['pk'].AsInteger <> 0)));

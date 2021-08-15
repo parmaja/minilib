@@ -18,7 +18,7 @@ unit mncPGMeta;
 interface
 
 uses
-  SysUtils, Classes, contnrs,
+  SysUtils, Classes, contnrs, mnUtils,
   mncMeta, mncConnections, mncPostgre;
 
 type
@@ -54,6 +54,19 @@ implementation
 uses
   mncDB, mncSQL;
 
+function QuoteIt(S: string): string;
+begin
+  if S <> '' then
+  begin
+    if IsAllLowerCase(S) then
+      Result := S
+    else
+      Result := '"' + S + '"';
+  end
+  else
+    Result := '';
+end;
+
 procedure TmncPGMeta.EnumCMD(Meta: TmncMetaItems; vKind: TmetaKind; SQL: string; Fields: array of string);
 var
   aCMD: TmncSQLCommand;
@@ -67,12 +80,16 @@ begin
     while not aCMD.Done do
     begin
       aItem := Meta.Add(aCMD.Field['name'].AsString);
+      aItem.SQLName := QuoteIt(aCMD.Field['name'].AsString);
+      {if IsAllLowerCase(aItem.Name) then
+        aItem.Quoted := '"';}
       aItem.Kind := vKind;
       for i := Low(Fields) to High(Fields) do
         aItem.Attributes.Add(Fields[i], aCMD.Field[Fields[i]].AsString);
       aCMD.Next;
     end;
   finally
+    aCMD.Free;
   end;
 end;
 
@@ -222,6 +239,10 @@ begin
     begin
       aItem := TmncMetaItem.Create;
       aItem.Name := aCMD.Field['column_name'].AsString;
+      aItem.SQLName := QuoteIt(aItem.Name);
+      aItem.FullName := aItem.SQLName;
+      {if IsAllLowerCase(aItem.Name) then
+        aItem.Quoted := '"';}
       aItem.Attributes.Add('type', aCMD.Field['data_type'].AsString);
       aItem.Attributes.Add('size', IntToStr(ord(aCMD.Field['character_maximum_length'].AsInteger)));
       aItem.Attributes.Add('nullable', aCMD.Field['is_nullable'].AsString);

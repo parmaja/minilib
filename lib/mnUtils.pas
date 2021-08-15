@@ -20,7 +20,7 @@ interface
 
 uses
   {$ifdef windows}Windows, {$endif}
-  Classes, SysUtils, StrUtils, DateUtils, Types;
+  Classes, SysUtils, StrUtils, DateUtils, Types, Character;
 
 const
   sUTF8BOM: array[1..3] of Char = (#$EF, #$BB, #$BF);
@@ -177,6 +177,8 @@ function ISODateToStr(DateTime: TDateTime; vDateSeparator: Char = '-'; TimeDivid
 
 function AnsiToUnicode(S: rawbytestring; CodePage: Integer = 0): string;
 function StringAs(S: rawbytestring; CodePage: Integer = 0): utf8string;
+
+function IsAllLowerCase(S: string): Boolean;
 
 //Zero Based
 function StringOf(const Value: Array of Byte): string; overload;
@@ -1116,6 +1118,21 @@ begin
   SetLength(Result, Len);
   if Len > 0 then
     Move(Value[0], Result[1], Len * SizeOf(Char));
+end;
+
+function IsAllLowerCase(S: string): Boolean;
+var
+  i: Integer;
+begin
+  Result := True;
+  for i := 1 to Length(S) do
+  begin
+    if IsUpper(S[i]) then
+    begin
+      Result := False;
+      break;
+    end;
+  end;
 end;
 
 procedure EnumFiles(FileList: TStringList; Folder, Filter: string; FullPath: Boolean);
