@@ -27,9 +27,6 @@ type
     function GetSession: TmncSession;
     procedure SetSession(AValue: TmncSession);
   protected
-    procedure EnumCMD(Meta: TmncMetaItems; vKind: TmetaKind; SQL: string; Fields: array of string); overload;//use field 'name'
-    procedure EnumCMD(Meta: TmncMetaItems; vKind: TmetaKind; SQL: string); overload;
-    procedure FetchCMD(Strings:TStringList; SQL: string);//use field 'name'
     function GetSortSQL(Options: TmetaEnumOptions): string;
   public
     procedure EnumDatabases(Meta: TmncMetaItems; Options: TmetaEnumOptions =[]); override;
@@ -64,52 +61,6 @@ begin
   inherited Link := AValue;
 end;
 
-procedure TmncSQLiteMeta.EnumCMD(Meta: TmncMetaItems; vKind: TmetaKind; SQL: string; Fields: array of string);
-var
-  aCMD: TmncSQLCommand;
-  aItem: TmncMetaItem;
-  i: Integer;
-begin
-  aCMD := CreateCMD(SQL);
-  try
-    aCMD.Prepare;
-    aCMD.Execute;
-    while not aCMD.Done do
-    begin
-      aItem := Meta.Add(aCMD.Field['name'].AsString);
-      aItem.SQLName := aItem.Name;
-      aItem.Kind := vKind;
-      for i := Low(Fields) to High(Fields) do
-        aItem.Attributes.Add(Fields[i], aCMD.Field[Fields[i]].AsString);
-      aCMD.Next;
-    end;
-  finally
-    aCMD.Free;
-  end;
-end;
-
-procedure TmncSQLiteMeta.EnumCMD(Meta: TmncMetaItems; vKind: TmetaKind; SQL: string);
-begin
-  EnumCMD(Meta, vKind, SQL, []);
-end;
-
-procedure TmncSQLiteMeta.FetchCMD(Strings: TStringList; SQL: string);
-var
-  aCMD: TmncSQLCommand;
-begin
-  aCMD := CreateCMD(SQL);
-  try
-    aCMD.Prepare;
-    aCMD.Execute;
-    while not aCMD.Done do
-    begin
-      Strings.Add(aCMD.Field['name'].AsString);
-      aCMD.Next;
-    end;
-  finally
-  end;
-end;
-
 function TmncSQLiteMeta.GetSortSQL(Options: TmetaEnumOptions): string;
 begin
   if ekSort in Options then
@@ -135,7 +86,7 @@ end;
 
 procedure TmncSQLiteMeta.EnumTables(Meta: TmncMetaItems; Options: TmetaEnumOptions);
 begin
-  EnumCMD(Meta, sokTable, 'select name from sqlite_master where type = ''table''' + GetSortSQL(Options));
+  EnumCMD(Meta, sokTable, 'Table', '', 'select name from sqlite_master where type = ''table''' + GetSortSQL(Options), []);
 end;
 
 procedure TmncSQLiteMeta.EnumViews(Meta: TmncMetaItems; Options: TmetaEnumOptions);
@@ -270,6 +221,11 @@ begin
       aItem := TmncMetaItem.Create;
       aItem.Name := aCMD.Field['name'].AsString;
       aItem.SQLName := aItem.Name;
+
+      aItem.Values['Type'] := 'Field';
+      aItem.Values['Table'] := SQLName;
+      aItem.Values['Field'] := aItem.Name;
+
       aItem.Attributes.Add('type', aCMD.Field['type'].AsString);
       aItem.Attributes.Add('nullable', IntToStr(ord(aCMD.Field['notnull'].AsInteger = 0)));
       aItem.Attributes.Add('primary', IntToStr(ord(aCMD.Field['pk'].AsInteger <> 0)));

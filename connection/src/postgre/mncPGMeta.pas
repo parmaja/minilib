@@ -27,10 +27,8 @@ type
   TmncPGMeta = class(TmncSQLMeta)
   private
   protected
-    procedure EnumCMD(Meta: TmncMetaItems; vKind: TmetaKind; SQL: string; Fields: array of string); overload;//use field 'name'
-    procedure EnumCMD(Meta: TmncMetaItems; vKind: TmetaKind; SQL: string); overload;
-    procedure FetchCMD(Strings:TStringList; SQL: string);//use field 'name'
     function GetSortSQL(Options: TmetaEnumOptions):string;
+    function QuoteIt(S: string): string; override;
   public
     procedure EnumDatabases(Meta: TmncMetaItems; Options: TmetaEnumOptions =[]); override;
     procedure EnumTables(Meta: TmncMetaItems; Options: TmetaEnumOptions = []); override;
@@ -54,7 +52,15 @@ implementation
 uses
   mncDB, mncSQL;
 
-function QuoteIt(S: string): string;
+function TmncPGMeta.GetSortSQL(Options: TmetaEnumOptions): string;
+begin
+  if ekSort in Options then
+    Result := ' order by name'
+  else
+    Result := '';
+end;
+
+function TmncPGMeta.QuoteIt(S: string): string;
 begin
   if S <> '' then
   begin
@@ -63,62 +69,6 @@ begin
     else
       Result := '"' + S + '"';
   end
-  else
-    Result := '';
-end;
-
-procedure TmncPGMeta.EnumCMD(Meta: TmncMetaItems; vKind: TmetaKind; SQL: string; Fields: array of string);
-var
-  aCMD: TmncSQLCommand;
-  aItem: TmncMetaItem;
-  i: Integer;
-begin
-  aCMD := CreateCMD(SQL);
-  try
-    aCMD.Prepare;
-    aCMD.Execute;
-    while not aCMD.Done do
-    begin
-      aItem := Meta.Add(aCMD.Field['name'].AsString);
-      aItem.SQLName := QuoteIt(aCMD.Field['name'].AsString);
-      {if IsAllLowerCase(aItem.Name) then
-        aItem.Quoted := '"';}
-      aItem.Kind := vKind;
-      for i := Low(Fields) to High(Fields) do
-        aItem.Attributes.Add(Fields[i], aCMD.Field[Fields[i]].AsString);
-      aCMD.Next;
-    end;
-  finally
-    aCMD.Free;
-  end;
-end;
-
-procedure TmncPGMeta.EnumCMD(Meta: TmncMetaItems; vKind: TmetaKind; SQL: string);
-begin
-  EnumCMD(Meta, vKind, SQL, []);
-end;
-
-procedure TmncPGMeta.FetchCMD(Strings: TStringList; SQL: string);
-var
-  aCMD: TmncSQLCommand;
-begin
-  aCMD := CreateCMD(SQL);
-  try
-    aCMD.Prepare;
-    aCMD.Execute;
-    while not aCMD.Done do
-    begin
-      Strings.Add(aCMD.Field['name'].AsString);
-      aCMD.Next;
-    end;
-  finally
-  end;
-end;
-
-function TmncPGMeta.GetSortSQL(Options: TmetaEnumOptions): string;
-begin
-  if ekSort in Options then
-    Result := ' order by name'
   else
     Result := '';
 end;
@@ -240,9 +190,9 @@ begin
       aItem := TmncMetaItem.Create;
       aItem.Name := aCMD.Field['column_name'].AsString;
       aItem.SQLName := QuoteIt(aItem.Name);
-      aItem.FullName := aItem.SQLName;
-      {if IsAllLowerCase(aItem.Name) then
-        aItem.Quoted := '"';}
+
+      aItem.Values['Table'] := SQLName;
+
       aItem.Attributes.Add('type', aCMD.Field['data_type'].AsString);
       aItem.Attributes.Add('size', IntToStr(ord(aCMD.Field['character_maximum_length'].AsInteger)));
       aItem.Attributes.Add('nullable', aCMD.Field['is_nullable'].AsString);

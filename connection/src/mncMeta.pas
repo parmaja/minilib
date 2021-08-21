@@ -33,6 +33,7 @@ type
   TmncMetaAttributes = class(TmnFields)
   private
   public
+    property Values; default;
   end;
 
   TmncMetaHeader = class(TmnFields)
@@ -45,36 +46,40 @@ type
   TmncMetaItem = class(TmnNamedObject)
   private
     FSQLName: string; //it is the real name
-    FFullName: string;
     FKind: TmetaKind;
+    FSQLShema: string;
+    FValues: TmncMetaAttributes;
     FAttributes: TmncMetaAttributes;
     FValue: string;
   public
     constructor Create;
     destructor Destroy; override;
     property Kind: TmetaKind read FKind write FKind;
-    property Attributes: TmncMetaAttributes read FAttributes;
     procedure Clear;
+    property Values: TmncMetaAttributes read FValues; //From local enum
+    property Attributes: TmncMetaAttributes read FAttributes; //from SQL engine
     procedure Clone(AMetaItem: TmncMetaItem);
     property Value: string read FValue write FValue;
-    property SQLName: string read FSQLName write FSQLName;
-    property FullName: string read FFullName write FFullName; //ToDo
+    property SQLName: string read FSQLName write FSQLName; //Table name, Field name etc ...
+    property SQLShema: string read FSQLShema write FSQLShema; //Table, Field, Trigger ...
   end;
 
   { TmncMetaItems }
 
   TmncMetaItems = class(TmnNamedObjectList<TmncMetaItem>)
   private
+    FAttributes: TmncMetaAttributes;
     FHeader: TmncMetaHeader;
     function GetValues(Index: string): string;
     procedure SetValues(Index: string; AValue: string);
   public
     constructor Create;
     destructor Destroy; override;
-    property Header: TmncMetaHeader read FHeader;
-    function Add(Name: string; Value: string = ''): TmncMetaItem; overload;
-    property Values[Index: string]: string read GetValues write SetValues;
     procedure Clone(AMetaItems: TmncMetaItems);
+    function Add(Name: string; Value: string = ''): TmncMetaItem; overload;
+    property Header: TmncMetaHeader read FHeader;
+    property Values[Index: string]: string read GetValues write SetValues;
+    property Attributes: TmncMetaAttributes read FAttributes;
   end;
 
   TmncSQLCallback = procedure (SQL: string);
@@ -125,6 +130,12 @@ type
     function GetSQLSession: TmncSQLSession;
     procedure SetSQLSession(AValue: TmncSQLSession);
   protected
+    function QuoteIt(S: string): string; virtual;
+    procedure FetchCMD(Strings:TStringList; SQL: string);//use field 'name'
+
+    procedure EnumCMD(Meta: TmncMetaItems; vKind: TmetaKind; ItemType, ItemName, SQL: string; Fields: array of string); virtual; overload;//use field 'name'
+    procedure EnumCMD(Meta: TmncMetaItems; vKind: TmetaKind; SQL: string; Fields: array of string); overload;//use field 'name'
+    procedure EnumCMD(Meta: TmncMetaItems; vKind: TmetaKind; SQL: string); overload;
     function CreateCMD(SQL: string): TmncSQLCommand;
   public
     property Session: TmncSQLSession read GetSQLSession write SetSQLSession;
@@ -149,6 +160,70 @@ end;
 procedure TmncSQLMeta.SetSQLSession(AValue: TmncSQLSession);
 begin
   inherited Link := AValue;
+end;
+
+function TmncSQLMeta.QuoteIt(S: string): string;
+begin
+  Result := S;
+end;
+
+procedure TmncSQLMeta.FetchCMD(Strings: TStringList; SQL: string);
+var
+  aCMD: TmncSQLCommand;
+begin
+  aCMD := CreateCMD(SQL);
+  try
+    aCMD.Prepare;
+    aCMD.Execute;
+    while not aCMD.Done do
+    begin
+      Strings.Add(aCMD.Field['name'].AsString);
+      aCMD.Next;
+    end;
+  finally
+  end;
+end;
+
+procedure TmncSQLMeta.EnumCMD(Meta: TmncMetaItems; vKind: TmetaKind; ItemType, ItemName, SQL: string; Fields: array of string);
+var
+  aCMD: TmncSQLCommand;
+  aItem: TmncMetaItem;
+  i: Integer;
+begin
+  aCMD := CreateCMD(SQL);
+  try
+    aCMD.Prepare;
+    aCMD.Execute;
+    while not aCMD.Done do
+    begin
+      aItem := Meta.Add(aCMD.Field['name'].AsString);
+      aItem.SQLName := QuoteIt(aItem.Name);
+      aItem.Kind := vKind;
+
+      if ItemType <> '' then
+      begin
+        aItem.Values['Type'] := ItemType;
+        if ItemName <> '' then
+          aItem.Values[ItemType] := ItemName;
+      end;
+
+      for i := Low(Fields) to High(Fields) do
+        aItem.Attributes.Add(Fields[i], aCMD.Field[Fields[i]].AsString);
+      aCMD.Next;
+    end;
+  finally
+    aCMD.Free;
+  end;
+end;
+
+procedure TmncSQLMeta.EnumCMD(Meta: TmncMetaItems; vKind: TmetaKind; SQL: string; Fields: array of string);
+begin
+  EnumCMD(Meta, vKind, '', '', SQL, []);
+end;
+
+procedure TmncSQLMeta.EnumCMD(Meta: TmncMetaItems; vKind: TmetaKind; SQL: string);
+begin
+  EnumCMD(Meta, vKind, SQL, []);
 end;
 
 function TmncSQLMeta.CreateCMD(SQL: string): TmncSQLCommand;
@@ -179,11 +254,13 @@ constructor TmncMetaItems.Create;
 begin
   inherited Create;
   FHeader := TmncMetaHeader.Create;
+  FAttributes := TmncMetaAttributes.Create;
 end;
 
 destructor TmncMetaItems.Destroy;
 begin
   FreeAndNil(FHeader);
+  FreeAndNil(FAttributes);
   inherited;
 end;
 
@@ -243,11 +320,13 @@ constructor TmncMetaItem.Create;
 begin
   inherited;
   FAttributes := TmncMetaAttributes.Create;
+  FValues := TmncMetaAttributes.Create;
 end;
 
 destructor TmncMetaItem.Destroy;
 begin
   FreeAndNil(FAttributes);
+  FreeAndNil(FValues);
   inherited;
 end;
 
@@ -255,7 +334,6 @@ procedure TmncMetaItem.Clear;
 begin
   Name := '';
   FSQLName := '';
-  FFullName := '';
   FValue := '';
 end;
 
@@ -269,7 +347,6 @@ begin
   begin
     Name := AMetaItem.Name;
     FSQLName := AMetaItem.SQLName;
-    FFullName := AMetaItem.FullName;
     FValue := AMetaItem.Value;
 
     for i := 0 to AMetaItem.Attributes.Count -1 do
