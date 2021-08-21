@@ -19,7 +19,7 @@ interface
 
 uses
   SysUtils, Classes, contnrs, mnUtils,
-  mncMeta, mncConnections, mncPostgre;
+  mncMeta, mncConnections, mncPostgre, mncSQL;
 
 type
   { TmncPGMeta }
@@ -27,11 +27,11 @@ type
   TmncPGMeta = class(TmncSQLMeta)
   private
   protected
-    function GetSortSQL(Options: TmetaEnumOptions):string;
     function QuoteIt(S: string): string; override;
+    function CreateConnection: TmncSQLConnection;
   public
     procedure EnumDatabases(Meta: TmncMetaItems; Options: TmetaEnumOptions =[]); override;
-    procedure EnumTables(Meta: TmncMetaItems; Options: TmetaEnumOptions = []); override;
+    procedure EnumTables(Meta: TmncMetaItems; SQLName: string; Options: TmetaEnumOptions = []); override;
     procedure EnumFields(Meta: TmncMetaItems; SQLName: string; Options: TmetaEnumOptions = []); override;
     procedure EnumViews(Meta: TmncMetaItems; Options: TmetaEnumOptions = []); override;
     procedure EnumProcedures(Meta: TmncMetaItems; Options: TmetaEnumOptions = []); override;
@@ -50,15 +50,7 @@ type
 implementation
 
 uses
-  mncDB, mncSQL;
-
-function TmncPGMeta.GetSortSQL(Options: TmetaEnumOptions): string;
-begin
-  if ekSort in Options then
-    Result := ' order by name'
-  else
-    Result := '';
-end;
+  mncDB;
 
 function TmncPGMeta.QuoteIt(S: string): string;
 begin
@@ -73,11 +65,17 @@ begin
     Result := '';
 end;
 
+function TmncPGMeta.CreateConnection: TmncSQLConnection;
+begin
+  Result := TmncPGConnection.Create;
+end;
+
 procedure TmncPGMeta.EnumDatabases(Meta: TmncMetaItems; Options: TmetaEnumOptions);
 var
   conn: TmncPGConnection;
   session: TmncPGSession;
   cmd: TmncPGCommand;
+  aMetaItem: TmncMetaItem;
 begin
   conn := TmncPGConnection.Create;
   try
@@ -106,7 +104,14 @@ begin
         begin
           while not cmd.Done do
           begin
-            Meta.Add(cmd.Field['name'].AsString);
+            aMetaItem := Meta.Add(cmd.Field['name'].AsString);
+            aMetaItem.SQLName := QuoteIt(aMetaItem.Name);
+            aMetaItem.SQLType := 'Database';
+            aMetaItem.Master := 'Databases';
+
+            aMetaItem.Definitions['Type'] := 'Database';
+            aMetaItem.Definitions['Database'] := aMetaItem.Name;
+
             //Log(cmd.Field['name'].AsString);
             cmd.Next;
           end;
@@ -122,7 +127,7 @@ begin
   end;
 end;
 
-procedure TmncPGMeta.EnumTables(Meta: TmncMetaItems; Options: TmetaEnumOptions);
+procedure TmncPGMeta.EnumTables(Meta: TmncMetaItems; SQLName: string; Options: TmetaEnumOptions);
 begin
   EnumCMD(Meta, sokTable, 'select tablename as name FROM pg_catalog.pg_tables where schemaname != ''pg_catalog'' and schemaname != ''information_schema'' ' + GetSortSQL(Options));
 end;
@@ -177,9 +182,6 @@ var
   aCMD: TmncSQLCommand;
   aItem: TmncMetaItem;
 begin
-  Meta.Header.Add('type', 'Type');
-  Meta.Header.Add('size', 'Size');
-  Meta.Header.Add('nullable', 'Nullable');
   aCMD := CreateCMD('SELECT * FROM information_schema.columns WHERE table_name = ''' + SQLName + '''' + GetSortSQL(Options));
   //aCMD := CreateCMD('pragma table_info(''' + (SQLName) + ''')' + GetSortSQL(Options));
   try
@@ -190,8 +192,12 @@ begin
       aItem := TmncMetaItem.Create;
       aItem.Name := aCMD.Field['column_name'].AsString;
       aItem.SQLName := QuoteIt(aItem.Name);
+      aItem.SQLType := 'Field';
+      aItem.Master := 'Table';
 
-      aItem.Values['Table'] := SQLName;
+      aItem.Definitions['Type'] := 'Field';
+      aItem.Definitions['Table'] := SQLName;
+      aItem.Definitions['Field'] := aItem.Name;
 
       aItem.Attributes.Add('type', aCMD.Field['data_type'].AsString);
       aItem.Attributes.Add('size', IntToStr(ord(aCMD.Field['character_maximum_length'].AsInteger)));

@@ -740,7 +740,7 @@ begin
     else
       aHost := Host;
     if Port = '' then
-      aPort := 5432
+      aPort := 3306
     else
       aPort := StrToInt(Port);
 

@@ -17,7 +17,7 @@ interface
 
 uses
   SysUtils, Classes,
-  mncMeta, mncConnections, mncMySQL;
+  mncMeta, mncConnections, mncSQL, mncMySQL;
 
 type
   { TmncMySQLMeta }
@@ -25,12 +25,10 @@ type
   TmncMySQLMeta = class(TmncSQLMeta)
   private
   protected
-    procedure EnumCMD(Meta: TmncMetaItems; vKind: TmetaKind; SQL: string; Fields: array of string); overload;//use field 'name'
-    procedure EnumCMD(Meta: TmncMetaItems; vKind: TmetaKind; SQL: string); overload;
-    procedure FetchCMD(Strings:TStringList; SQL: string);//use field 'name'
-    function GetSortSQL(Options: TmetaEnumOptions):string;
+    function DoCreateConnection: TmncSQLConnection; override;
   public
-    procedure EnumTables(Meta: TmncMetaItems; Options: TmetaEnumOptions = []); override;
+    procedure EnumDatabases(Meta: TmncMetaItems; Options: TmetaEnumOptions = []); override;
+    procedure EnumTables(Meta: TmncMetaItems; SQLName: string; Options: TmetaEnumOptions = []); override;
     procedure EnumFields(Meta: TmncMetaItems; SQLName: string; Options: TmetaEnumOptions = []); override;
     procedure EnumViews(Meta: TmncMetaItems; Options: TmetaEnumOptions = []); override;
     procedure EnumProcedures(Meta: TmncMetaItems; Options: TmetaEnumOptions = []); override;
@@ -49,68 +47,42 @@ type
 implementation
 
 uses
-  mncDB, mncSQL;
+  mncDB;
 
-procedure TmncMySQLMeta.EnumCMD(Meta: TmncMetaItems; vKind: TmetaKind; SQL: string; Fields: array of string);
-var
-  aCMD: TmncSQLCommand;
-  aItem: TmncMetaItem;
-  i: Integer;
+function TmncMySQLMeta.DoCreateConnection: TmncSQLConnection;
 begin
-  aCMD := CreateCMD(SQL);
+  Result := TmncMySQLConnection.Create;
+end;
+
+procedure TmncMySQLMeta.EnumDatabases(Meta: TmncMetaItems; Options: TmetaEnumOptions);
+var
+  aConnection: TmncSQLConnection;
+  aSession: TmncSQLSession;
+begin
+  aConnection := CreateConnection;
   try
-    aCMD.Prepare;
-    aCMD.Execute;
-    while not aCMD.Done do
-    begin
-      aItem := Meta.Add(aCMD.Field['name'].AsString);
-      aItem.Kind := vKind;
-      for i := Low(Fields) to High(Fields) do
-        aItem.Attributes.Add(Fields[i], aCMD.Field[Fields[i]].AsString);
-      aCMD.Next;
+    aConnection.Resource := 'mysql';
+    aConnection.Connect;
+    aSession := aConnection.CreateSession;
+    try
+      EnumCMD(aSession, Meta, sokDatabase, 'name', 'Database', '', 'select schema_name as name from information_schema.schemata ' + GetSortSQL(Options), []);
+    finally
+      aSession.Free;
     end;
   finally
+    aConnection.Free;
   end;
 end;
 
-procedure TmncMySQLMeta.EnumCMD(Meta: TmncMetaItems; vKind: TmetaKind; SQL: string);
+procedure TmncMySQLMeta.EnumTables(Meta: TmncMetaItems; SQLName: string; Options: TmetaEnumOptions);
 begin
-  EnumCMD(Meta, vKind, SQL, []);
-end;
-
-procedure TmncMySQLMeta.FetchCMD(Strings: TStringList; SQL: string);
-var
-  aCMD: TmncSQLCommand;
-begin
-  aCMD := CreateCMD(SQL);
-  try
-    aCMD.Prepare;
-    aCMD.Execute;
-    while not aCMD.Done do
-    begin
-      Strings.Add(aCMD.Field['name'].AsString);
-      aCMD.Next;
-    end;
-  finally
-  end;
-end;
-
-function TmncMySQLMeta.GetSortSQL(Options: TmetaEnumOptions): string;
-begin
-  if ekSort in Options then
-    Result := ' order by name'
-  else
-    Result := '';
-end;
-
-procedure TmncMySQLMeta.EnumTables(Meta: TmncMetaItems; Options: TmetaEnumOptions);
-begin
-  EnumCMD(Meta, sokTable, 'select name from MySQL_master where type = ''table''' + GetSortSQL(Options));
+  {EnumCMD(Meta, sokTable, 'name',
+    'SELECT TABLE_NAME as name FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = '''+SQLName + ''' ' + GetSortSQL(Options), []);}
+  EnumCMD(Session, Meta, sokTable, 'Tables_in_'+ SQLName, 'Database', SQLName, 'SHOW TABLES', []);
 end;
 
 procedure TmncMySQLMeta.EnumViews(Meta: TmncMetaItems; Options: TmetaEnumOptions);
 begin
-  EnumCMD(Meta, sokView, 'select name from MySQL_master where type = ''view'''+ GetSortSQL(Options));
 end;
 
 procedure TmncMySQLMeta.EnumProcedures(Meta: TmncMetaItems; Options: TmetaEnumOptions);
@@ -141,77 +113,20 @@ begin
 
 end;
 
-procedure TmncMySQLMeta.EnumTriggers(Meta: TmncMetaItems;
-  SQLName: string; Options: TmetaEnumOptions);
-var
-  s: string;
+procedure TmncMySQLMeta.EnumTriggers(Meta: TmncMetaItems; SQLName: string; Options: TmetaEnumOptions);
 begin
-  s := 'select name from MySQL_master where type = ''trigger''';
-  if SQLName <> '' then
-    s := s + ' and tbl_name = ''' +SQLName+ '''';
-  s := s +  GetSortSQL(Options);
-  EnumCMD(Meta, sokTrigger, s);
 end;
 
-procedure TmncMySQLMeta.EnumIndices(Meta: TmncMetaItems; SQLName: string;
-  Options: TmetaEnumOptions);
-var
-  s: string;
+procedure TmncMySQLMeta.EnumIndices(Meta: TmncMetaItems; SQLName: string; Options: TmetaEnumOptions);
 begin
-  s := '';
-  if SQLName <> '' then
-  begin
-    s := s + 'PRAGMA index_list('''+ SQLName +''')' + GetSortSQL(Options);
-    EnumCMD(Meta, sokIndex, s, ['unique']);
-  end
-  else
-  begin
-    s := 'select name from MySQL_master where type = ''index''' + GetSortSQL(Options);
-    EnumCMD(Meta, sokIndex, s);
-  end;
 end;
 
 procedure TmncMySQLMeta.GetTriggerSource(Strings: TStringList; SQLName: string; Options: TmetaEnumOptions);
-var
-  s: string;
 begin
-  s := 'select "sql" as name from MySQL_master where type = ''trigger''';
-  s := s + ' and name = ''' +SQLName+ '''';
-  FetchCMD(Strings, s);
 end;
 
 procedure TmncMySQLMeta.GetIndexInfo(Meta: TmncMetaItems; SQLName: string; Options: TmetaEnumOptions);
-var
-  aCMD: TmncSQLCommand;
-  aItem: TmncMetaItem;
 begin
-  aCMD := CreateCMD('PRAGMA index_info('''+ SQLName +''')');
-  try
-    if aCMD.Execute then
-    begin
-      aItem := TmncMetaItem.Create;
-      aItem.Name := 'Name';
-      aItem.Attributes.Add('name', SQLName);
-      Meta.Add(aItem);
-
-      aItem := TmncMetaItem.Create;
-      aItem.Name := 'Field';
-      aItem.Attributes.Add('field', aCMD.Field['name'].AsString);
-      Meta.Add(aItem);
-
-      aItem := TmncMetaItem.Create;
-      aItem.Name := 'CID';
-      aItem.Attributes.Add('cid', aCMD.Field['cid'].AsString);
-      Meta.Add(aItem);
-
-      aItem := TmncMetaItem.Create;
-      aItem.Name := 'Sequence NO';
-      aItem.Attributes.Add('seqno',  aCMD.Field['seqno'].AsString);
-      Meta.Add(aItem);
-    end;
-  finally
-    aCMD.Free;
-  end;
 end;
 
 procedure TmncMySQLMeta.EnumFields(Meta: TmncMetaItems; SQLName: string; Options: TmetaEnumOptions);
@@ -219,19 +134,28 @@ var
   aCMD: TmncSQLCommand;
   aItem: TmncMetaItem;
 begin
-  aCMD := CreateCMD('pragma table_info(''' + (SQLName) + ''')' + GetSortSQL(Options));
+  aCMD := CreateCMD('show columns from ' + SQLName);
   try
     aCMD.Prepare;
     aCMD.Execute;
     while not aCMD.Done do
     begin
       aItem := TmncMetaItem.Create;
-      aItem.Name := aCMD.Field['name'].AsString;
+      aItem.Name := aCMD.Field['field'].AsString;
+      aItem.Kind := sokField;
+      aItem.SQLName := aItem.Name;
+      aItem.SQLType := 'Field';
+      aItem.Master := 'Table';
+
+      aItem.Definitions['Type'] := 'Field';
+      aItem.Definitions['Table'] := SQLName;
+      aItem.Definitions['Field'] := aItem.Name;
+
       aItem.Attributes.Add('type', aCMD.Field['type'].AsString);
-      aItem.Attributes.Add('pk', IntToStr(ord(aCMD.Field['pk'].AsInteger <> 0)));
-      aItem.Attributes.Add('notnull', IntToStr(ord(aCMD.Field['notnull'].AsInteger <> 0)));
-      aItem.Attributes.Add('dflt_value', aCMD.Field['dflt_value'].AsString);
-      aItem.Attributes.Add('cid', aCMD.Field['cid'].AsString);
+      aItem.Attributes.Add('key', aCMD.Field['key'].AsString);
+      aItem.Attributes.Add('null', aCMD.Field['null'].AsString);
+      aItem.Attributes.Add('default', aCMD.Field['default'].AsString);
+      aItem.Attributes.Add('extra', aCMD.Field['extra'].AsString);
       Meta.Add(aItem);
       aCMD.Next;
     end;

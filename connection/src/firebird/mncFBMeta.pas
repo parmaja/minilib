@@ -17,7 +17,7 @@ interface
 
 uses
   SysUtils, Classes,
-  mncMeta, mncConnections, mncFBUtils, mncFirebird;
+  mncMeta, mncConnections, mncFBUtils, mncFirebird, mncSQL;
 
 type
 
@@ -26,12 +26,10 @@ type
   TmncFBMeta = class(TmncSQLMeta)
   private
   protected
-    procedure EnumCMD(Meta: TmncMetaItems; vKind: TmetaKind; SQL: string; Fields: array of string); overload;//use field 'name'
-    procedure EnumCMD(Meta: TmncMetaItems; vKind: TmetaKind; SQL: string); overload;
-    procedure FetchCMD(Strings:TStringList; SQL: string);//use field 'name'
-    function GetSortSQL(Options: TmetaEnumOptions; ByField: string = 'name'): string;
+    function CreateConnection: TmncSQLConnection;
   public
-    procedure EnumTables(Meta: TmncMetaItems; Options: TmetaEnumOptions = []); override;
+    procedure EnumDatabases(Meta: TmncMetaItems; Options: TmetaEnumOptions =[]); override;
+    procedure EnumTables(Meta: TmncMetaItems; SQLName: string; Options: TmetaEnumOptions = []); override;
     procedure EnumFields(Meta: TmncMetaItems; SQLName: string; Options: TmetaEnumOptions = []); override;
     procedure EnumViews(Meta: TmncMetaItems; Options: TmetaEnumOptions = []); override;
     procedure EnumProcedures(Meta: TmncMetaItems; Options: TmetaEnumOptions = []); override;
@@ -51,61 +49,19 @@ type
 implementation
 
 uses
-  mncDB, mncSQL;
+  mncDB;
 
-procedure TmncFBMeta.EnumCMD(Meta: TmncMetaItems; vKind: TmetaKind; SQL: string; Fields: array of string);
-var
-  aCMD: TmncSQLCommand;
-  aItem: TmncMetaItem;
-  i: Integer;
+function TmncFBMeta.CreateConnection: TmncSQLConnection;
 begin
-  aCMD := CreateCMD(SQL);
-  try
-    aCMD.Prepare;
-    aCMD.Execute;
-    while not aCMD.Done do
-    begin
-      aItem := Meta.Add(aCMD.Field['name'].AsTrimString);
-      aItem.Kind := vKind;
-      for i := Low(Fields) to High(Fields) do
-        aItem.Attributes.Add(Fields[i], aCMD.Field[Fields[i]].AsTrimString);
-      aCMD.Next;
-    end;
-  finally
-  end;
+  Result := TmncFBConnection.Create;
 end;
 
-procedure TmncFBMeta.EnumCMD(Meta: TmncMetaItems; vKind: TmetaKind; SQL: string);
+procedure TmncFBMeta.EnumDatabases(Meta: TmncMetaItems; Options: TmetaEnumOptions);
 begin
-  EnumCMD(Meta, vKind, SQL, []);
+
 end;
 
-procedure TmncFBMeta.FetchCMD(Strings: TStringList; SQL: string);
-var
-  aCMD: TmncSQLCommand;
-begin
-  aCMD := CreateCMD(SQL);
-  try
-    aCMD.Prepare;
-    aCMD.Execute;
-    while not aCMD.Done do
-    begin
-      Strings.Add(aCMD.Field['name'].AsTrimString);
-      aCMD.Next;
-    end;
-  finally
-  end;
-end;
-
-function TmncFBMeta.GetSortSQL(Options: TmetaEnumOptions; ByField: string): string;
-begin
-  if ekSort in Options then
-    Result := ' order by ' + ByField
-  else
-    Result := '';
-end;
-
-procedure TmncFBMeta.EnumTables(Meta: TmncMetaItems; Options: TmetaEnumOptions);
+procedure TmncFBMeta.EnumTables(Meta: TmncMetaItems; SQLName: string; Options: TmetaEnumOptions);
 const
   sSQL =
     'select rdb$relation_name name from rdb$relations ' +
@@ -115,12 +71,12 @@ const
     ' and rdb$view_blr is null ';
 
 begin
-  EnumCMD(Meta, sokTable, sSQL + GetSortSQL(Options));
+  EnumCMD(Meta, sokTable, 'name', sSQL + GetSortSQL(Options));
 end;
 
 procedure TmncFBMeta.EnumViews(Meta: TmncMetaItems; Options: TmetaEnumOptions);
 begin
-  EnumCMD(Meta, sokView, 'select rdb$relation_name as name, rdb$description as description from rdb$relations where (rdb$system_flag <> 1 or rdb$system_flag is null) and (rdb$flags <> 0) and rdb$view_blr is not null '+ GetSortSQL(Options));
+  EnumCMD(Meta, sokView, 'name' ,'select rdb$relation_name as name, rdb$description as description from rdb$relations where (rdb$system_flag <> 1 or rdb$system_flag is null) and (rdb$flags <> 0) and rdb$view_blr is not null '+ GetSortSQL(Options));
 end;
 
 procedure TmncFBMeta.EnumProcedures(Meta: TmncMetaItems; Options: TmetaEnumOptions);
@@ -160,7 +116,7 @@ begin
   s := sSQL;
   if SQLName <> '' then
     s := s + ' and trg.rdb$relation_name = ''' + SQLName + '''';
-  EnumCMD(Meta, sokIndex, s);
+  EnumCMD(Meta, sokIndex, 'name', s);
 end;
 
 procedure TmncFBMeta.EnumIndices(Meta: TmncMetaItems; SQLName: string; Options: TmetaEnumOptions);
@@ -180,7 +136,7 @@ begin
   if SQLName <> '' then
   begin
     s := s + ' and idx.rdb$relation_name = ''' + SQLName + '''';
-    EnumCMD(Meta, sokIndex, s, ['Unique']);
+    EnumCMD(Session, Meta, sokIndex, 'name', 'Table', SQLName, s, ['Unique']);
   end
   else
     EnumCMD(Meta, sokIndex, s);
@@ -368,6 +324,15 @@ begin
     begin
       aItem := TmncMetaItem.Create;
       aItem.Name := aCMD.Field['name'].AsTrimString;
+      aItem.Kind := sokField;
+      aItem.SQLName := aItem.Name;
+      aItem.SQLType := 'Field';
+      aItem.Master := 'Table';
+
+      aItem.Definitions['Type'] := 'Field';
+      aItem.Definitions['Table'] := SQLName;
+      aItem.Definitions['Field'] := aItem.Name;
+
   {    aItem.Attributes.Add('type', aCMD.Field['type'].AsString);
       aItem.Attributes.Add('pk', IntToStr(ord(aCMD.Field['pk'].AsInteger <> 0)));
       aItem.Attributes.Add('notnull', IntToStr(ord(aCMD.Field['notnull'].AsInteger <> 0)));
