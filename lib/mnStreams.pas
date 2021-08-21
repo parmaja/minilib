@@ -1067,7 +1067,9 @@ end;
 function TmnBufferStream.WriteLine: TFileSize;
 begin
   if EndOfLine <> '' then
-    Result := Write(Pointer(EndOfLine)^, ByteLength(EndOfLine));
+    Result := Write(Pointer(EndOfLine)^, ByteLength(EndOfLine))
+  else
+    Result := 0;
 end;
 
 procedure TmnBufferStream.ReadStrings(Value: TStrings);

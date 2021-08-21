@@ -7,7 +7,7 @@ interface
 uses
   Classes, SysUtils, StrUtils, FileUtil, IpHtml, Forms, Controls, Graphics,
   Dialogs, Buttons, IniFiles, StdCtrls, ExtCtrls, ComCtrls, Menus, LCLType,
-  MsgBox, GUIMsgBox, mnLogs,
+  mnMsgBox, GUIMsgBox, mnLogs,
   ChatRoomFrames, mnIRCClients;
 
 type
@@ -16,16 +16,16 @@ type
 
   TMyIRCClient = class(TmnIRCClient)
   public
-    procedure GetCurrentChannel(out vChannel: utf8string); override;
-    procedure DoLog(S: utf8string); override;
+    procedure GetCurrentChannel(out vChannel: string); override;
+    procedure DoLog(S: string); override;
     procedure DoMyInfoChanged; override;
     procedure DoConnected; override;
     procedure DoDisconnected; override;
-    procedure DoUserChanged(vChannel: utf8string; vUser, vNewNick: utf8string); override;
+    procedure DoUserChanged(vChannel: string; vUser, vNewNick: string); override;
     procedure DoProgressChanged; override;
-    procedure DoUsersChanged(vChannelName: utf8string; vChannel: TIRCChannel); override;
-    procedure DoWhoIs(vUser: utf8string); override;
-    procedure DoReceive(vMsgType: TIRCMsgType; vChannel, vUser, vMsg: utf8string); override;
+    procedure DoUsersChanged(vChannelName: string; vChannel: TIRCChannel); override;
+    procedure DoWhoIs(vUser: string); override;
+    procedure DoReceive(vMsgType: TIRCMsgType; vChannel, vUser, vMsg: string); override;
   end;
 
   { TMainFrm }
@@ -113,12 +113,12 @@ implementation
 
 { TMyIRCClient }
 
-procedure TMyIRCClient.GetCurrentChannel(out vChannel: utf8string);
+procedure TMyIRCClient.GetCurrentChannel(out vChannel: string);
 begin
   vChannel := MainFrm.CurrentRoom;
 end;
 
-procedure TMyIRCClient.DoLog(S: utf8string);
+procedure TMyIRCClient.DoLog(S: string);
 begin
   inherited;
   MainFrm.LogMessage(S);
@@ -142,7 +142,7 @@ begin
   inherited;
 end;
 
-procedure TMyIRCClient.DoUserChanged(vChannel: utf8string; vUser, vNewNick: utf8string);
+procedure TMyIRCClient.DoUserChanged(vChannel: string; vUser, vNewNick: string);
 begin
   inherited;
   //TODO
@@ -176,13 +176,13 @@ begin
   end;
 end;
 
-procedure TMyIRCClient.DoUsersChanged(vChannelName: utf8string; vChannel: TIRCChannel);
+procedure TMyIRCClient.DoUsersChanged(vChannelName: string; vChannel: TIRCChannel);
 begin
   inherited;
   MainFrm.ReceiveNames(vChannelName, vChannel);
 end;
 
-procedure TMyIRCClient.DoWhoIs(vUser: utf8string);
+procedure TMyIRCClient.DoWhoIs(vUser: string);
 var
   aUser: TIRCUser;
 begin
@@ -196,7 +196,7 @@ begin
   end;
 end;
 
-procedure TMyIRCClient.DoReceive(vMsgType: TIRCMsgType; vChannel, vUser, vMsg: utf8string);
+procedure TMyIRCClient.DoReceive(vMsgType: TIRCMsgType; vChannel, vUser, vMsg: string);
 begin
   MainFrm.DoReceive(vMsgType, vChannel, vUser, vMsg);
 end;

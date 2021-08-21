@@ -14,7 +14,7 @@ object MainFrm: TMainFrm
   KeyPreview = True
   OnCreate = FormCreate
   OnKeyDown = FormKeyDown
-  LCLVersion = '2.1.0.0'
+  LCLVersion = '2.3.0.0'
   object Splitter1: TSplitter
     Cursor = crVSplit
     Left = 0
@@ -72,7 +72,6 @@ object MainFrm: TMainFrm
       Width = 41
       Caption = '&Rooms'
       FocusControl = RoomsEdit
-      ParentColor = False
     end
     object UserEdit: TEdit
       Left = 66
@@ -90,7 +89,6 @@ object MainFrm: TMainFrm
       Width = 56
       Caption = '&Password'
       FocusControl = PasswordEdit
-      ParentColor = False
     end
     object Label4: TLabel
       Left = 318
@@ -99,7 +97,6 @@ object MainFrm: TMainFrm
       Width = 27
       Caption = '&Host'
       FocusControl = HostEdit
-      ParentColor = False
     end
     object JoinBtn: TButton
       Left = 605
@@ -137,7 +134,6 @@ object MainFrm: TMainFrm
       Width = 59
       Caption = '&Username'
       FocusControl = UserEdit
-      ParentColor = False
     end
     object Label2: TLabel
       Left = 5
@@ -146,7 +142,6 @@ object MainFrm: TMainFrm
       Width = 57
       Caption = '&Nickname'
       FocusControl = NicknameBtn
-      ParentColor = False
     end
     object PortEdit: TEdit
       Left = 590
@@ -192,7 +187,6 @@ object MainFrm: TMainFrm
       Top = 11
       Width = 37
       Caption = '&Profile'
-      ParentColor = False
     end
     object Button2: TButton
       Left = 307
