@@ -95,27 +95,52 @@ type
 
   end;
 
-  { TmnNamedObjectList }
+    { TmnNamedObjectList }
 
-  TmnNamedObject = class(TmnObject)
-  private
-    FName: string;
-  public
-    property Name: string read FName write FName;
-  end;
+    TmnNamedObject = class(TmnObject)
+    private
+      FName: string;
+    public
+      property Name: string read FName write FName;
+    end;
 
-  //USAGE: TMyNamedObjectList = class(TmnNamedObjectList<TMyNamedObject>)
+    //USAGE: TMyNamedObjectList = class(TmnNamedObjectList<TMyNamedObject>)
 
-  {$ifdef FPC}
-  TmnNamedObjectList<_Object_> = class(TmnObjectList<_Object_>)
-  {$else}
-  TmnNamedObjectList<_Object_: TmnNamedObject> = class(TmnObjectList<_Object_>)
-  {$endif}
-  private
-  public
-    function Find(const Name: string): _Object_;
-    function IndexOfName(vName: string): Integer;
-  end;
+    {$ifdef FPC}
+    TmnNamedObjectList<_Object_> = class(TmnObjectList<_Object_>)
+    {$else}
+    TmnNamedObjectList<_Object_: TmnNamedObject> = class(TmnObjectList<_Object_>)
+    {$endif}
+    private
+    public
+      function Find(const Name: string): _Object_;
+      function IndexOfName(vName: string): Integer;
+    end;
+
+    { TmnNameValueObjectList }
+
+    TmnNameValueObject = class(TmnNamedObject)
+    private
+      FValue: string;
+    public
+      constructor Create; virtual;
+      property Value: string read FValue write FValue;
+    end;
+
+    //USAGE: TMyNameValueObjectList = class(TmnNameValueObjectList<TMyNameValueObject>)
+
+    {$ifdef FPC}
+    TmnNameValueObjectList<_Object_> = class(TmnNamedObjectList<_Object_>)
+    {$else}
+    TmnNameValueObjectList<_Object_: TmnNameValueObject> = class(TmnNamedObjectList<_Object_>)
+    {$endif}
+    private
+      function GetValues(Index: string): string;
+      procedure SetValues(Index: string; AValue: string);
+    public
+      function Add(Name, Value: string): _Object_; overload;
+      property Values[Index: string]: string read GetValues write SetValues; default;
+    end;
 
 implementation
 
@@ -307,6 +332,40 @@ begin
   Result := FIndex < FList.Count;
 end;
 
+{ TmnNameValueObjectList }
+
+function TmnNameValueObjectList<_Object_>.GetValues(Index: string): string;
+var
+  itm: _Object_;
+begin
+  itm := Find(Index);
+  if itm <> nil then
+    Result := itm.Value
+  else
+    Result := '';
+end;
+
+procedure TmnNameValueObjectList<_Object_>.SetValues(Index: string; AValue: string);
+var
+  itm : _Object_;
+begin
+  itm := Find(Index);
+  if itm <> nil then
+    itm.Value := AValue
+  else
+    Add(Index, AValue);
+end;
+
+function TmnNameValueObjectList<_Object_>.Add(Name, Value: string): _Object_;
+var
+  itm : _Object_;
+begin
+  Result := _Object_.Create;
+  Result.Name := Name;
+  Result.Value := Value;
+  Add(Result);
+end;
+
 { TmnObject }
 
 procedure TmnObject.Created;
@@ -318,6 +377,13 @@ procedure TmnObject.AfterConstruction;
 begin
   inherited AfterConstruction;
   Created;
+end;
+
+{ TmnNameValueObject }
+
+constructor TmnNameValueObject.Create;
+begin
+  inherited Create;
 end;
 
 end.
