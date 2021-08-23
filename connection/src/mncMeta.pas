@@ -109,6 +109,8 @@ type
     procedure GetViewSource(Strings: TStringList; SQLName: string; Options: TmetaEnumOptions = []); virtual;
     procedure GetIndexInfo(Meta: TmncMetaItems; SQLName: string; Options: TmetaEnumOptions = []); virtual;
 
+    function GetNewFieldSQL(TableName: string): string; virtual;
+
     procedure GenerateSchema(ORM: TmncORM; Callback: TmncSQLCallback); virtual;
     property Session: TmncSession read GetSession write SetSession;//alias for FLink in base class
     property ServerInfo: TmncServerInfo read FServerInfo write FServerInfo;
@@ -499,6 +501,12 @@ end;
 
 procedure TmncMeta.GetIndexInfo(Meta: TmncMetaItems; SQLName: string; Options: TmetaEnumOptions);
 begin
+end;
+
+function TmncMeta.GetNewFieldSQL(TableName: string): string;
+begin
+  //Standard
+  Result := 'alter table ' + TableName + ' add ?FieldName ?FieldType';
 end;
 
 procedure TmncMeta.GenerateSchema(ORM: TmncORM; Callback: TmncSQLCallback);

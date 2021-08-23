@@ -787,7 +787,7 @@ begin
   FLastStepResult := 0;
 //  sqlite3_prepare_v2
 //TODO: apply value of params if using injection mode
-  CheckError(sqlite3_prepare(Connection.DBHandle, PAnsiChar(ProcessedSQL.SQL), -1 , @FStatment, @FTail));
+  CheckError(sqlite3_prepare(Connection.DBHandle, PAnsiChar(GetProcessedSQL), -1 , @FStatment, @FTail));
 end;
 
 procedure TmncSQLiteCommand.DoRollback;

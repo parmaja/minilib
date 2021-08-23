@@ -474,6 +474,7 @@ type
 
   //TODO not yet
   TmncCommandOption = (
+    cmdReplaceParams, //replace param in sql text instead pass it to SQL engine
     cmoTruncate, //Truncate the string to fit into field size, not recomended if you are strict, you will lose data
     cmoCorrectDate //Correct DateTime fields to be compatiple with SQL and Pascal
   );
@@ -1569,8 +1570,6 @@ begin
   aItem.Param := AParam;
   Result := Add(aItem);
 end;
-
-{ TCustomField }
 
 { TmncColumn }
 

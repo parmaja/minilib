@@ -1054,6 +1054,7 @@ end;
 procedure TmncMySQLCommand.DoPrepare;
 var
   aType: enum_cursor_type;
+  aSQL: string;
 begin
   //* ref: https://dev.mysql.com/doc/refman/5.0/en/mysql-stmt-prepare.html
   if FStatment <> nil then
@@ -1066,7 +1067,8 @@ begin
       aType := CURSOR_TYPE_READ_ONLY;
       CheckError(mysql_stmt_attr_set(FStatment, STMT_ATTR_CURSOR_TYPE, @aType));
     end;
-    CheckError(mysql_stmt_prepare(FStatment, PAnsiChar(ProcessedSQL.SQL), Length(ProcessedSQL.SQL)));
+    aSQL := GetProcessedSQL;
+    CheckError(mysql_stmt_prepare(FStatment, PAnsiChar(aSQL), Length(aSQL)));
   except
     on E: Exception do
     begin

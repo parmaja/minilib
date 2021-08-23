@@ -13,7 +13,7 @@ interface
 uses
   LCLProc, LCLIntf, LCLType,
   Classes, SysUtils, FileUtil, StdCtrls, LResources, Forms, Controls, Graphics, Dialogs,
-  mncConnections;
+  mncConnections, mncSQL;
 
 type
 

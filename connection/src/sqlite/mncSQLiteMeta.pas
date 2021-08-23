@@ -43,6 +43,8 @@ type
     //source
     procedure GetTriggerSource(Strings:TStringList; SQLName: string; Options: TmetaEnumOptions = []); override;
     procedure GetIndexInfo(Meta: TmncMetaItems; SQLName: string; Options: TmetaEnumOptions = []); override;
+    //
+    function GetNewFieldSQL(TableName: string): string; override;
   end;
 
 implementation
@@ -192,6 +194,11 @@ begin
   finally
     aCMD.Free;
   end;
+end;
+
+function TmncSQLiteMeta.GetNewFieldSQL(TableName: string): string;
+begin
+  Result := 'alter table ' + TableName + ' add ?FieldName ?FieldType';
 end;
 
 procedure TmncSQLiteMeta.EnumFields(Meta: TmncMetaItems; SQLName: string; Options: TmetaEnumOptions);

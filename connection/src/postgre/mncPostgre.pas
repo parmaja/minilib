@@ -1212,7 +1212,7 @@ begin
   FHandle := Session.NewToken;
   ParseSQL([psoAddParamsID]);
   c := Session.DBHandle;
-  s := UTF8Encode(ProcessedSQL.SQL);
+  s := UTF8Encode(GetProcessedSQL);
 
   r := PQprepare(c, PAnsiChar(FHandle), PAnsiChar(s), Params.Count, nil);
   try
@@ -2014,7 +2014,7 @@ begin
   else
     b := '';
 
-  s := Format('declare %s %s cursor for %s', [Handle, b, ProcessedSQL.SQL]);
+  s := Format('declare %s %s cursor for %s', [Handle, b, GetProcessedSQL]);
   r := PQprepare(c, PAnsiChar(FHandle), PAnsiChar(s), 0 , nil);
 
   for i := 0 to Params.Count - 1 do

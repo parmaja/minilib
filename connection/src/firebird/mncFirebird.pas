@@ -1409,7 +1409,7 @@ var
   aSQL: UTF8String;
 
 begin
-  aSQL := UTF8Encode(ProcessedSQL.SQL);
+  aSQL := UTF8Encode(GetProcessedSQL);
   try
     CheckErr(FBLib.isc_dsql_alloc_statement2(@StatusVector, @Connection.Handle, @FHandle), StatusVector, True);
     CheckErr(FBLib.isc_dsql_prepare(@StatusVector, @Transaction.Handle, @FHandle, 0, PByte(aSQL), FB_DIALECT, nil), StatusVector, True);
