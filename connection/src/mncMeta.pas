@@ -21,7 +21,7 @@ uses
 
 type
   TmetaKind = (sokNone, sokMeta, sokData,
-               sokHost, sokDatabase, sokTable, sokView,
+               sokHost, sokSchema, sokDatabase, sokTable, sokView,
                sokProcedure, sokFunction, sokException, sokRole,
                sokTrigger, sokSequence, sokForeign, sokIndex, sokConstraint,
                sokField, sokOperator, sokProperty,
@@ -68,7 +68,6 @@ type
   TmncMetaItems = class(TmnNamedObjectList<TmncMetaItem>)
   private
   public
-    constructor Create;
     destructor Destroy; override;
     procedure Clone(AMetaItems: TmncMetaItems);
     function Add(Name: string): TmncMetaItem; overload;
@@ -129,7 +128,7 @@ type
     procedure FetchCMD(Strings: TStringList; FieldName, SQL: string);
 
     //FieldName the name of field contain name, some sql cant alt the fields name, like SHOW TABLES in mysql
-    procedure EnumCMD(ASession: TmncSQLSession; Meta: TmncMetaItems; vKind: TmetaKind; FieldName, ItemType, ItemMaster, SQL: string; Fields: array of string); virtual; overload;//use field 'name'
+    procedure EnumCMD(ASession: TmncSQLSession; Meta: TmncMetaItems; vKind: TmetaKind; FieldName, ItemType, ItemMaster, SQL: string; Fields: array of string); overload; virtual;//use field 'name'
     procedure EnumCMD(Meta: TmncMetaItems; vKind: TmetaKind; FieldName, SQL: string); overload;
     procedure EnumCMD(Meta: TmncMetaItems; vKind: TmetaKind; SQL: string); overload;
     function CreateCMD(ASession: TmncSQLSession; SQL: string): TmncSQLCommand; overload;
@@ -257,11 +256,6 @@ begin
 end;
 
 { TmncMetaItems }
-
-constructor TmncMetaItems.Create;
-begin
-  inherited Create;
-end;
 
 destructor TmncMetaItems.Destroy;
 begin
