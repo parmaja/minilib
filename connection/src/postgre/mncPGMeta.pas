@@ -107,7 +107,6 @@ begin
             aMetaItem := Meta.Add(cmd.Field['name'].AsString);
             aMetaItem.SQLName := QuoteIt(aMetaItem.Name);
             aMetaItem.SQLType := 'Database';
-            aMetaItem.Master := 'Databases';
 
             aMetaItem.Definitions['Type'] := 'Database';
             aMetaItem.Definitions['Database'] := aMetaItem.Name;
@@ -129,7 +128,7 @@ end;
 
 procedure TmncPGMeta.EnumTables(Meta: TmncMetaItems; SQLName: string; Options: TmetaEnumOptions);
 begin
-  EnumCMD(Meta, sokTable, 'select tablename as name FROM pg_catalog.pg_tables where schemaname != ''pg_catalog'' and schemaname != ''information_schema'' ' + GetSortSQL(Options));
+  EnumCMD(Session, Meta, sokTable, 'name', 'Table', 'select tablename as name FROM pg_catalog.pg_tables where schemaname != ''pg_catalog'' and schemaname != ''information_schema'' ' + GetSortSQL(Options), []);
 end;
 
 procedure TmncPGMeta.EnumViews(Meta: TmncMetaItems; Options: TmetaEnumOptions);
@@ -193,10 +192,8 @@ begin
       aItem.Name := aCMD.Field['column_name'].AsString;
       aItem.SQLName := QuoteIt(aItem.Name);
       aItem.SQLType := 'Field';
-      aItem.Master := 'Table';
 
       aItem.Definitions['Type'] := 'Field';
-      aItem.Definitions['Table'] := SQLName;
       aItem.Definitions['Field'] := aItem.Name;
 
       aItem.Attributes.Add('type', aCMD.Field['data_type'].AsString);

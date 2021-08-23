@@ -81,7 +81,7 @@ function ParseArguments(Content: string; Strings: TStrings): Integer; overload;
 function StringsToString(Strings: TStrings; LineBreak: string = sLineBreak): string;
 
 function CompareLeftStr(const Str: string; const WithStr: string; Start: Integer = 1): Boolean;
-function ContainsText(const SubStr, InStr: string): Boolean; //TODO, need one scan, not using uppercase
+function ContainsText(const SubStr, InStr: string): Boolean; deprecated 'Use StrUtils.ContainsText and swap params';
 
 //Copy, MidStr but From To index
 function SubStr(const AText: String; const AFromIndex, AToIndex: Integer): String; overload;

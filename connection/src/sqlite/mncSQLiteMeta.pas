@@ -77,7 +77,7 @@ end;
 
 procedure TmncSQLiteMeta.EnumTables(Meta: TmncMetaItems; SQLName: string; Options: TmetaEnumOptions);
 begin
-  EnumCMD(Session, Meta, sokTable, 'name', 'Table', SQLName, 'select name from sqlite_master where type = ''table''' + GetSortSQL(Options), []);
+  EnumCMD(Session, Meta, sokTable, 'name', 'Table', 'select name from sqlite_master where type = ''table''' + GetSortSQL(Options), []);
 end;
 
 procedure TmncSQLiteMeta.EnumViews(Meta: TmncMetaItems; Options: TmetaEnumOptions);
@@ -142,7 +142,7 @@ begin
   if SQLName <> '' then
   begin
     s := s + 'PRAGMA index_list('''+ SQLName +''')' + GetSortSQL(Options);
-    EnumCMD(Session, Meta, sokIndex, 'name', 'Index', SQLName, s, ['unique']);
+    EnumCMD(Session, Meta, sokIndex, 'name', 'Index', s, ['unique']);
   end
   else
   begin
@@ -210,10 +210,8 @@ begin
       aItem.Kind := sokField;
       aItem.SQLName := aItem.Name;
       aItem.SQLType := 'Field';
-      aItem.Master := 'Table';
 
       aItem.Definitions['Type'] := 'Field';
-      aItem.Definitions['Table'] := SQLName;
       aItem.Definitions['Field'] := aItem.Name;
 
       aItem.Attributes.Add('type', aCMD.Field['type'].AsString);

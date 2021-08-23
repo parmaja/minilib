@@ -136,7 +136,7 @@ begin
   if SQLName <> '' then
   begin
     s := s + ' and idx.rdb$relation_name = ''' + SQLName + '''';
-    EnumCMD(Session, Meta, sokIndex, 'name', 'Table', SQLName, s, ['Unique']);
+    EnumCMD(Session, Meta, sokIndex, 'name', 'Table', s, ['Unique']);
   end
   else
     EnumCMD(Meta, sokIndex, s);
@@ -327,10 +327,8 @@ begin
       aItem.Kind := sokField;
       aItem.SQLName := aItem.Name;
       aItem.SQLType := 'Field';
-      aItem.Master := 'Table';
 
       aItem.Definitions['Type'] := 'Field';
-      aItem.Definitions['Table'] := SQLName;
       aItem.Definitions['Field'] := aItem.Name;
 
   {    aItem.Attributes.Add('type', aCMD.Field['type'].AsString);

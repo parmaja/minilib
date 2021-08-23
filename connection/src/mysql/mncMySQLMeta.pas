@@ -65,7 +65,7 @@ begin
     aConnection.Connect;
     aSession := aConnection.CreateSession;
     try
-      EnumCMD(aSession, Meta, sokDatabase, 'name', 'Database', '', 'select schema_name as name from information_schema.schemata ' + GetSortSQL(Options), []);
+      EnumCMD(aSession, Meta, sokDatabase, 'name', 'Database', 'select schema_name as name from information_schema.schemata ' + GetSortSQL(Options), []);
     finally
       aSession.Free;
     end;
@@ -78,7 +78,7 @@ procedure TmncMySQLMeta.EnumTables(Meta: TmncMetaItems; SQLName: string; Options
 begin
   {EnumCMD(Meta, sokTable, 'name',
     'SELECT TABLE_NAME as name FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = '''+SQLName + ''' ' + GetSortSQL(Options), []);}
-  EnumCMD(Session, Meta, sokTable, 'Tables_in_'+ SQLName, 'Database', SQLName, 'SHOW TABLES', []);
+  EnumCMD(Session, Meta, sokTable, 'Tables_in_'+ SQLName, 'Table', 'SHOW TABLES', []);
 end;
 
 procedure TmncMySQLMeta.EnumViews(Meta: TmncMetaItems; Options: TmetaEnumOptions);
@@ -145,10 +145,8 @@ begin
       aItem.Kind := sokField;
       aItem.SQLName := aItem.Name;
       aItem.SQLType := 'Field';
-      aItem.Master := 'Table';
 
       aItem.Definitions['Type'] := 'Field';
-      aItem.Definitions['Table'] := SQLName;
       aItem.Definitions['Field'] := aItem.Name;
 
       aItem.Attributes.Add('type', aCMD.Field['type'].AsString);

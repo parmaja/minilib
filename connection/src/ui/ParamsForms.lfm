@@ -12,13 +12,14 @@ object ParamsForm: TParamsForm
   OnClose = FormClose
   OnCreate = FormCreate
   Position = poMainFormCenter
-  LCLVersion = '1.1'
+  LCLVersion = '2.3.0.0'
   object CancelBtn: TButton
     Left = 81
     Height = 22
     Top = 31
     Width = 72
     Anchors = [akLeft, akBottom]
+    Cancel = True
     Caption = 'Cancel'
     ModalResult = 2
     TabOrder = 1

@@ -45,7 +45,7 @@ type
   private
     FDefinitions: TmncMetaAttributes;
     FKind: TmetaKind;
-    FMaster: string;
+    //FMaster: string;
     FSQLName: string; //it is the real name
     FAttributes: TmncMetaAttributes;
     FSQLType: string;
@@ -55,8 +55,10 @@ type
     property Kind: TmetaKind read FKind write FKind;
     procedure Clear;
     procedure Clone(AMetaItem: TmncMetaItem);
+    //Copy but do not override exists one
+    procedure CopyDefinitions(vMetaItem: TmncMetaItem; Force: Boolean = False);
 
-    property Master: string read FMaster write FMaster; //for Field it is Table for Table it is Database
+    //property Master: string read FMaster write FMaster; //for Field it is Table for Table it is Database
     property SQLType: string read FSQLType write FSQLType; //Table, Field, Trigger ...
     property SQLName: string read FSQLName write FSQLName; //same as Name but with special for SQL like quotes, Table name, Field name etc ...
     property Attributes: TmncMetaAttributes read FAttributes; //from SQL engine
@@ -88,6 +90,8 @@ type
     destructor Destroy; override;
     procedure EnumObjects(Meta: TmncMetaItems; Kind: TmetaKind; SQLName: string = ''; Options: TmetaEnumOptions = []);
     //---------------------
+    // Do not pass SQLName to SQLName param, it should qoute it at this level
+    //
     procedure EnumDatabases(Meta: TmncMetaItems; Options: TmetaEnumOptions = []); virtual;
     procedure EnumTables(Meta: TmncMetaItems; SQLName: string; Options: TmetaEnumOptions = []); virtual;
     procedure EnumViews(Meta: TmncMetaItems; Options: TmetaEnumOptions = []); virtual;
@@ -100,7 +104,7 @@ type
     procedure EnumTriggers(Meta: TmncMetaItems; SQLName: string = ''; Options: TmetaEnumOptions = []); virtual;
     procedure EnumIndices(Meta: TmncMetaItems; SQLName: string = ''; Options: TmetaEnumOptions = []); virtual;
     procedure EnumFields(Meta: TmncMetaItems; SQLName: string; Options: TmetaEnumOptions = []); virtual;
-    //source
+    //Sources
     procedure GetTriggerSource(Strings:TStringList; SQLName: string; Options: TmetaEnumOptions = []); virtual;
     procedure GetViewSource(Strings: TStringList; SQLName: string; Options: TmetaEnumOptions = []); virtual;
     procedure GetIndexInfo(Meta: TmncMetaItems; SQLName: string; Options: TmetaEnumOptions = []); virtual;
@@ -118,6 +122,7 @@ type
 
   TmncSQLMeta = class(TmncMeta)
   private
+    function KindToStr(AKind: TmetaKind): string;
     function GetSQLSession: TmncSQLSession;
     procedure SetSQLSession(AValue: TmncSQLSession);
   protected
@@ -128,7 +133,7 @@ type
     procedure FetchCMD(Strings: TStringList; FieldName, SQL: string);
 
     //FieldName the name of field contain name, some sql cant alt the fields name, like SHOW TABLES in mysql
-    procedure EnumCMD(ASession: TmncSQLSession; Meta: TmncMetaItems; vKind: TmetaKind; FieldName, ItemType, ItemMaster, SQL: string; Fields: array of string); overload; virtual;//use field 'name'
+    procedure EnumCMD(ASession: TmncSQLSession; Meta: TmncMetaItems; vKind: TmetaKind; FieldName, ItemType, SQL: string; Fields: array of string); overload; virtual;//use field 'name'
     procedure EnumCMD(Meta: TmncMetaItems; vKind: TmetaKind; FieldName, SQL: string); overload;
     procedure EnumCMD(Meta: TmncMetaItems; vKind: TmetaKind; SQL: string); overload;
     function CreateCMD(ASession: TmncSQLSession; SQL: string): TmncSQLCommand; overload;
@@ -147,6 +152,34 @@ type
 implementation
 
 { TmncSQLMeta }
+
+function TmncSQLMeta.KindToStr(AKind: TmetaKind): string;
+begin
+  case AKind of
+    sokNone: Result := 'None';
+    sokMeta: Result := 'Meta';
+    sokData: Result := 'Data';
+    sokHost: Result := 'Host';
+    sokSchema: Result := 'Schema';
+    sokDatabase: Result := 'Database';
+    sokTable: Result := 'Table';
+    sokView: Result := 'View';
+    sokProcedure: Result := 'Procedure';
+    sokFunction: Result := 'Function';
+    sokException: Result := 'Exception';
+    sokRole: Result := 'Role';
+    sokTrigger: Result := 'Trigger';
+    sokSequence: Result := 'Sequence';
+    sokForeign: Result := 'Foreign';
+    sokIndex: Result := 'Index';
+    sokConstraint: Result := 'Constraint';
+    sokField: Result := 'Field';
+    sokOperator: Result := 'Operator';
+    sokProperty: Result := 'Property';
+    sokType: Result := 'Type';
+    sokDomain: Result := 'Domain';
+  end;
+end;
 
 function TmncSQLMeta.GetSQLSession: TmncSQLSession;
 begin
@@ -200,7 +233,7 @@ begin
   end;
 end;
 
-procedure TmncSQLMeta.EnumCMD(ASession: TmncSQLSession; Meta: TmncMetaItems; vKind: TmetaKind; FieldName, ItemType, ItemMaster, SQL: string; Fields: array of string);
+procedure TmncSQLMeta.EnumCMD(ASession: TmncSQLSession; Meta: TmncMetaItems; vKind: TmetaKind; FieldName, ItemType, SQL: string; Fields: array of string);
 var
   aCMD: TmncSQLCommand;
   aItem: TmncMetaItem;
@@ -215,14 +248,13 @@ begin
       aItem := Meta.Add(aCMD.Field[FieldName].AsString);
       aItem.SQLName := QuoteIt(aItem.Name);
       aItem.Kind := vKind;
+
       aItem.SQLType := ItemType;
-      aItem.Master := ItemMaster;
 
       if ItemType <> '' then
       begin
         aItem.Definitions['Type'] := ItemType;
-        if ItemMaster <> '' then
-          aItem.Definitions[ItemType] := ItemMaster;
+        aItem.Definitions[ItemType] := aItem.Name;
       end;
 
       for i := Low(Fields) to High(Fields) do
@@ -236,7 +268,7 @@ end;
 
 procedure TmncSQLMeta.EnumCMD(Meta: TmncMetaItems; vKind: TmetaKind; FieldName, SQL: string);
 begin
-  EnumCMD(Session, Meta, vKind, FieldName, '', '', SQL, []);
+  EnumCMD(Session, Meta, vKind, FieldName, KindToStr(vKind), SQL, []);
 end;
 
 procedure TmncSQLMeta.EnumCMD(Meta: TmncMetaItems; vKind: TmetaKind; SQL: string);
@@ -359,6 +391,24 @@ begin
       begin
         Definitions.Add(Name, Value);
       end;
+    end;
+  end;
+end;
+
+procedure TmncMetaItem.CopyDefinitions(vMetaItem: TmncMetaItem; Force: Boolean);
+var
+  i: Integer;
+  aAttribute: TmncMetaAttribute;
+begin
+  for i := 0 to vMetaItem.Definitions.Count -1 do
+  begin
+    aAttribute := Definitions.Find(vMetaItem.Definitions.Items[i].Name);
+    if (aAttribute = nil) then
+      Definitions.Add(vMetaItem.Definitions.Items[i].Name, vMetaItem.Definitions.Items[i].Value)
+    else if Force then
+    begin
+      aAttribute.Name := vMetaItem.Definitions.Items[i].Name;
+      aAttribute.Value := vMetaItem.Definitions.Items[i].Value;
     end;
   end;
 end;
