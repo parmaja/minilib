@@ -353,14 +353,11 @@ type
   TmncCustomFields = class(TmncItems)
   private
     function GetItem(Index: Integer): TmncCustomField;
-    function GetValue(const Index: string): Variant;
-    procedure SetValue(const Index: string; const Value: Variant);
   protected
     //Called before release it, good to deattach the handles
     procedure Detach; virtual;
   public
     property Items[Index: Integer]: TmncCustomField read GetItem;
-    property Values[const Index: string]: Variant read GetValue write SetValue;
   end;
 
   TmncRecord = class(TmncCustomFields)
@@ -559,13 +556,13 @@ type
     procedure Prepare;
     function Execute: Boolean;
     function Next: Boolean;
-    function Done: Boolean;
     function Step: Boolean; //Execute and Next for while loop() without using next at end of loop block //TODO not yet
     procedure Close;
     procedure Clear; virtual;
     procedure Commit;
     procedure Rollback;
     //Detach make Fields or Params unrelated to DB handles, you can use them in salfty in arrays
+    property Done: Boolean read GetDone;
     function DetachFields: TmncFields;
     function DetachParams: TmncParams;
     function FieldIsExist(const Name: string): Boolean;
@@ -914,11 +911,6 @@ begin
   FParams := CreateParams;
   FBinds := CreateBinds;
   FNextOnExecute := True;
-end;
-
-function TmncCommand.Done: Boolean;
-begin
-  Result := GetDone;
 end;
 
 function TmncCommand.Step: Boolean;
@@ -1672,16 +1664,6 @@ end;
 function TmncRecord.GetItemByName(const Index: string): TmncCustomField;
 begin
   Result := ItemByName(Index) as TmncCustomField;
-end;
-
-function TmncCustomFields.GetValue(const Index: string): Variant;
-begin
-  Result := ItemByName(Index).Value;
-end;
-
-procedure TmncCustomFields.SetValue(const Index: string; const Value: Variant);
-begin
-  ItemByName(Index).Value := Value;
 end;
 
 procedure TmncCustomFields.Detach;
