@@ -117,7 +117,7 @@ type
   private
   public
     SQL: string;
-    procedure Clear; {$ifdef FPC} override; {$endif}
+    procedure Clear; {$ifdef FPC} override; {$endif}    //TODO
     procedure Add(vID: Integer; vName:string; vPosition: Integer = -1);
   end;
 
@@ -557,7 +557,7 @@ begin
               begin
                 if cCurChar = '"' then
                   iCurParamState := ParamQuoteState
-                else if (cCurChar in ['A'..'Z', 'a'..'z', '0'..'9', '_', ' ']) then //Quoted can include spaces
+                else if CharInSet(cCurChar, ['A'..'Z', 'a'..'z', '0'..'9', '_', ' ']) then //Quoted can include spaces
                 begin
                   sParamName := sParamName + cCurChar;
                   if psoAddParamsNames in SQLOptions then
@@ -592,7 +592,7 @@ begin
               if (iCurParamState <> ParamQuoteState) and
                 (iCurState <> DefaultState) then
               begin
-                if not (cNextChar in ['A'..'Z', 'a'..'z', '0'..'9', '_']) then
+                if not CharInSet(cNextChar, ['A'..'Z', 'a'..'z', '0'..'9', '_']) then
                 begin
                   Inc(i);
                   iCurState := DefaultState;

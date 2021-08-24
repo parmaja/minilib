@@ -1127,7 +1127,7 @@ begin
   Result := True;
   for i := 1 to Length(S) do
   begin
-    if IsUpper(S[i]) then
+    if S[i].IsUpper then
     begin
       Result := False;
       break;

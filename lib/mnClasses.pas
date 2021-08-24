@@ -263,10 +263,10 @@ procedure TmnObjectList<_Object_>.Created;
 begin
 end;
 
-procedure TmnObjectList<_Object_>.Clear;
+{procedure TmnObjectList<_Object_>.Clear;
 begin
   inherited Create;
-end;
+end;}
 
 function TmnObjectList<_Object_>.RequireItem: _Object_;
 begin
