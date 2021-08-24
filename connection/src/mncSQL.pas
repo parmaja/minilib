@@ -663,7 +663,7 @@ begin
   if cmdReplaceParams in Options then
   begin
     Result := '';
-    for i := 0 ProcessedSQL.Count -1 do
+    for i := 0 to ProcessedSQL.Count -1 do
     begin
       //ProcessedSQL.SQL TODO replace Params ? with real Text
     end;

@@ -92,7 +92,7 @@ type
     property Items[Index: Integer]: _Object_ read GetItem write SetItem; default;
     function Last: _Object_;
     function First: _Object_;
-
+    procedure Clear; {$ifdef FPC}override; {$else} virtual; {$endif}
   end;
 
     { TmnNamedObjectList }
@@ -261,6 +261,11 @@ end;
 
 procedure TmnObjectList<_Object_>.Created;
 begin
+end;
+
+procedure TmnObjectList<_Object_>.Clear;
+begin
+  inherited Create;
 end;
 
 function TmnObjectList<_Object_>.RequireItem: _Object_;
