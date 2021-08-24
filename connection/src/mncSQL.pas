@@ -117,7 +117,7 @@ type
   private
   public
     SQL: string;
-    procedure Clear; override;
+    procedure Clear; {$ifdef FPC} override; {$endif}
     procedure Add(vID: Integer; vName:string; vPosition: Integer = -1);
   end;
 
@@ -155,7 +155,6 @@ type
     function GetLastRowID: Int64; virtual;
     function GetRowsChanged: Integer; virtual;
     property SQL: TStrings read GetSQL;//Alias of Request, autocomplete may add it in private becareful
-    property Done: Boolean read GetDone;
     property Ready: Boolean read FReady;
     property Fetched: Int64 read FFetched;
     property FetchBlobs: Boolean read FFetchBlob write FFetchBlob default false;

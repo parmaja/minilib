@@ -92,7 +92,7 @@ type
     property Items[Index: Integer]: _Object_ read GetItem write SetItem; default;
     function Last: _Object_;
     function First: _Object_;
-    procedure Clear; {$ifdef FPC} {override; TODO talk with belal} {$else} virtual; {$endif}
+    //procedure Clear; {$ifdef FPC} override; {$else} virtual; {TODO talk with belal} {$endif}
   end;
 
     { TmnNamedObjectList }
