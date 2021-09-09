@@ -91,7 +91,7 @@ var
   HttpClient: TmnHttpClient;
   MemoryStream: TMemoryStream;
 begin
-  LogEdit.Lines.Add('Getting from URL');
+  LogEdit.Lines.Add('Getting from URL ' + sURLGoogle);
   MemoryStream := TMemoryStream.Create;
   HttpClient := TmnHttpClient.Create;
   try
@@ -157,13 +157,13 @@ begin
     HttpClient.Request.UserAgent := sUserAgent;
     HttpClient.KeepAlive := True;
     //HttpClient.Connect('https://www.openstreetmap.org', False);
-    HttpClient.Open('https://www.parmaja.org', False);
+    HttpClient.Open('https://c.tile.openstreetmap.de/14/9765/6391.png', False);
 
     HttpClient.Request.SendGet;
     HttpClient.Response.Receive;
     HttpClient.ReceiveMemoryStream(MemoryStream);
     MemoryStream.Position := 0;
-    MemoryStream.SaveToFile('c:\temp\1.html');
+    MemoryStream.SaveToFile(Application.Location + '1.html');
     HttpClient.Disconnect;
   finally
     HttpClient.Free;

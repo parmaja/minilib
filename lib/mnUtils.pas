@@ -9,6 +9,7 @@ unit mnUtils;
 
 {$IFDEF FPC}
 {$MODE delphi}
+{$modeswitch arrayoperators}
 {$ENDIF}
 {$M+}{$H+}
 
@@ -40,8 +41,6 @@ procedure Nothing;
 {
   StrHave: test the string if it have Separators
 }
-function StrHave(S: string; Separators: TSysCharSet): Boolean; deprecated;
-
 function QuoteStr(Str: string; QuoteChar: string = '"'): string;
 
 {**
@@ -59,8 +58,19 @@ TStrToStringsOptions = set of (
   stsoGroupSeparators //TODO, not tested yet, if one of separators come it will ignores chars in next separators like if separators = #13, #10, now #13#10 will considered as one line break
 ); //
 
-function StrToStringsCallback(Content: string; Sender: Pointer; const CallBackProc: TStrToStringsCallbackProc; Separators: TSysCharSet = [#0, #13, #10]; IgnoreInitialWhiteSpace: TSysCharSet = [' ']; Quotes: TSysCharSet = ['''', '"']; vOptions: TStrToStringsOptions = []): Integer;
-function StrToStrings(Content: string; Strings: TStrings; Separators: TSysCharSet = [#0, #13, #10]; IgnoreInitialWhiteSpace: TSysCharSet = [' ']; Quotes: TSysCharSet = ['''', '"']): Integer;
+//I want to StrToStrings to replace it with StrToStringsEx
+
+function StrToStringsCallback(Content: string; Sender: Pointer; const CallBackProc: TStrToStringsCallbackProc; Separators: TSysCharSet = [#0, #10, #13]; IgnoreInitialWhiteSpace: TSysCharSet = [' ']; Quotes: TSysCharSet = ['''', '"']; vOptions: TStrToStringsOptions = []): Integer; overload;
+function StrToStrings(Content: string; Strings: TStrings; Separators: TSysCharSet = [#0, #10, #13]; IgnoreInitialWhiteSpace: TSysCharSet = [' ']; Quotes: TSysCharSet = ['''', '"']): Integer; overload;
+
+{
+  Example
+  StrToStringsExCallback(Memo1.Text, self, @AddString, ['::', ';', #13#10, #13, #10, #0]);
+  HINT: Put longest seperator first
+}
+function StrToStringsExCallback(Content: string; Sender: Pointer; const CallBackProc: TStrToStringsCallbackProc; Separators: Array of string; IgnoreInitialWhiteSpace: TSysCharSet = [' ']; Quotes: TSysCharSet = ['''', '"']; vOptions: TStrToStringsOptions = []): Integer; overload;
+function StrToStringsEx(Content: string; Strings: TStrings; Separators: Array of string; IgnoreInitialWhiteSpace: TSysCharSet = [' ']; Quotes: TSysCharSet = ['''', '"']): Integer; overload;
+//function StrToStringsEx(Content: string; Strings: TStrings; IgnoreInitialWhiteSpace: TSysCharSet = [' ']; Quotes: TSysCharSet = ['''', '"']): Integer; overload;
 
 procedure StrToStringsCallbackProc(Sender: Pointer; Index: Integer; S: string; var Resume: Boolean);
 procedure StrToStringsDeqouteCallbackProc(Sender: Pointer; Index:Integer; S: string; var Resume: Boolean);
@@ -83,15 +93,20 @@ function StringsToString(Strings: TStrings; LineBreak: string = sLineBreak): str
 function CompareLeftStr(const Str: string; const WithStr: string; Start: Integer = 1): Boolean;
 function ContainsText(const SubStr, InStr: string): Boolean; deprecated 'Use StrUtils.ContainsText and swap params';
 
-//Copy, MidStr but From To index
-function SubStr(const AText: String; const AFromIndex, AToIndex: Integer): String; overload;
-//Index started from 0
+//Same as Copy/MidStr but From To index
+function CopyStr(const AText: String; const AFromIndex, AToIndex: Integer): String; overload;
+{
+  Index started from 0
+}
 function SubStr(const Str: String; vSeperator: Char; vFromIndex, vToIndex: Integer): String; overload;
 function SubStr(const Str: String; vSeperator: Char; vIndex: Integer = 0): String; overload;
 
+function StrHave(S: string; Separators: TSysCharSet): Boolean; deprecated;
+procedure SpliteStr(S, Separator: string; var Name, Value: string);
 function FetchStr(var AInput: string; const ADelim: string = '.'; const ADelete: Boolean = True; const ACaseSensitive: Boolean = True): string; deprecated;
 
-function StrInArray(const Str: String; const ArrayOfString : Array of String; CaseInsensitive: Boolean = False) : Boolean;
+function StrInArray(const Str: String; const InArray : Array of String; CaseInsensitive: Boolean = False) : Boolean; overload;
+function StrInArray(const Str: string; const StartIndex: Integer; const InArray: array of string; out SepLength: Integer; CaseInsensitive: Boolean = False): Boolean; overload;
 function CharInArray(const C: string; const ArrayOfChar : array of Char; CaseInsensitive: Boolean = False) : Boolean;
 
 //vPeriod is a datetime not tickcount
@@ -101,11 +116,12 @@ function TicksToString(vTicks: Int64): string;
 function DequoteStr(Str: string; QuoteChar: string = #0): string;
 
 function RepeatString(const Str: string; Count: Integer): string;
+
 {* VarReplace
-  VarChar = '$'
+  VarInit = '$'
   Example: VarReplace('c:\$project\$[name]';
 }
-function VarReplace(S: string; Values: TStrings; VarChar: Char): string;
+function VarReplace(S: string; Values: TStrings; VarInit: string): string;
 
 type
   //alsCut = if the string > count we cut it as count or keep the string
@@ -315,42 +331,70 @@ end;
 *  Use name values in strings
 *}
 
-function VarReplace(S: string; Values: TStrings; VarChar: Char): string;
+function VarReplace(S: string; Values: TStrings; VarInit: string): string;
 var
-  i: Integer;
-  OpenAt: Integer;
-  n: string;
-  l: integer;
+  Index: Integer;
+  Start: Integer;
+  OpenStart: Integer;
+  NewValue: string;
+  InitIndex: Integer;
   procedure check;
+  var
+    l: Integer;
+    r: Integer;
   begin
-    l := i - OpenAt;
-    n := MidStr(S, OpenAt + 1, l - 1);
-    if Values.IndexOfName(n)>=0 then
+    Result := Result + MidStr(S, Start, OpenStart - Start);
+    Start := Index;
+    l := Index - OpenStart;
+    NewValue := MidStr(S, OpenStart, l);
+
+    if Values.IndexOfName(NewValue) >= 0 then
     begin
-      n := Values.Values[n];
-      S := MidStr(S, 1, OpenAt - 1) + n + MidStr(S, i, MaxInt);
-      i := i - l + length(n);
-      OpenAt := 0;
+      //Index := Index + Length(NewValue) - 1;
+
+      NewValue := Values.Values[NewValue];
+      Result := Result + NewValue;
     end;
+    OpenStart := 0;
   end;
+var
+  Current: Char;
+  Len: Integer;
+  InitLen: Integer;
 begin
-  OpenAt := 0; //or -1 in other languages
-  i := 1;
-  while i <= length(s) do
+  OpenStart := 0;
+  Result := '';
+  Len := Length(S);
+  InitLen := Length(VarInit);
+  InitIndex := 1;
+  Index := 1;
+  Start := Index;
+  while Index <= Len do
   begin
-    if S[i] = VarChar then
-      OpenAt := i
-    else if (OpenAt > 0) then
+    Current := S[Index];
+    if (OpenStart > 0) then
     begin
-      if not(CharInSet(S[i], ['0'..'9', 'a'..'z', 'A'..'Z', '_', '[', ']'])) then
+      if not (Current in ['0'..'9']) then
+        Check;
+    end
+    else if (Current = VarInit[InitIndex]) then
+    begin
+      if InitIndex = InitLen then
       begin
-        check;
-      end;
-    end;
-    i:= i + 1;
+        OpenStart := Index - InitLen + 1;
+        InitIndex := 1;
+      end
+      else
+        Inc(InitIndex);
+    end
+    else
+      InitIndex := 1;
+
+    Inc(Index);
   end;
-  check;
-  Result := S;
+  if (OpenStart > 0) then
+    Check;
+  Result := Result + MidStr(S, Start, MaxInt);
 end;
 
 {
@@ -456,6 +500,105 @@ begin
     Strings.EndUpdate;
   end;
 end;
+
+//Ex
+
+function StrToStringsExCallback(Content: string; Sender: Pointer; const CallBackProc: TStrToStringsCallbackProc; Separators: array of string; IgnoreInitialWhiteSpace: TSysCharSet; Quotes: TSysCharSet; vOptions: TStrToStringsOptions): Integer;
+var
+  Start, Cur, SepLength: Integer;
+  Resume: Boolean;
+  InQuote: Boolean;
+  QuoteChar: Char;
+  S: string;
+  Index: Integer;
+begin
+  Result := 0;
+  Index := 0;
+  if (@CallBackProc = nil) then
+    raise Exception.Create('StrToStrings: CallBackProc is nil');
+  if (Content <> '') then
+  begin
+    Cur := 1;
+    InQuote := False;
+    QuoteChar := #0;
+    repeat
+      //bypass white spaces
+      if IgnoreInitialWhiteSpace <> [] then
+        while (Cur <= Length(Content)) and CharInSet(Content[Cur], IgnoreInitialWhiteSpace) do
+          Cur := Cur + 1;
+
+      //start from the first char
+      Start := Cur;
+      while True do
+      begin
+        SepLength := 1;
+        //seek until the separator and skip the separator if inside quoting
+        while (Cur <= Length(Content)) do
+        begin
+          if (InQuote and not (Content[Cur] <> QuoteChar)) then
+            Cur := Cur + 1
+          else
+          begin
+            if (StrInArray(Content, Cur, Separators, SepLength)) then
+            begin
+              Cur := Cur + SepLength - 1;
+              break;
+            end
+            else
+            begin
+              SepLength := 1;
+              Cur := Cur + 1
+            end;
+          end;
+        end;
+
+        if (Cur <= Length(Content)) and CharInSet(Content[Cur], Quotes) then
+        begin
+          if (QuoteChar <> #0) and (QuoteChar = Content[Cur]) then
+            QuoteChar := #0
+          else if QuoteChar = #0 then
+            QuoteChar := Content[Cur];
+          InQuote := QuoteChar <> #0;
+          Cur := Cur + 1;
+        end
+        else
+          Break;
+      end;
+
+      if (Cur >= Start) then
+      begin
+        S := Copy(Content, Start, Cur - Start - SepLength + 1);
+        Resume := True;
+        CallBackProc(Sender, Index, S, Resume);
+        Index := Index + 1;
+        Inc(Result);
+        if not Resume then
+          break;
+      end;
+      Cur := Cur + 1;
+    until Cur > Length(Content) + 1;
+  end;
+end;
+
+function StrToStringsEx(Content: string; Strings: TStrings; Separators: Array of string; IgnoreInitialWhiteSpace: TSysCharSet; Quotes: TSysCharSet): Integer;
+var
+  a: array of string;
+  c: TSysCharSet;
+begin
+  if (Strings = nil) then
+    raise Exception.Create('StrToStrings: Strings is nil');
+  Strings.BeginUpdate;
+  try
+    Result := StrToStringsExCallback(Content, Strings, StrToStringsCallbackProc, Separators, IgnoreInitialWhiteSpace, Quotes);
+  finally
+    Strings.EndUpdate;
+  end;
+end;
+
+{function StrToStringsEx(Content: string; Strings: TStrings; IgnoreInitialWhiteSpace: TSysCharSet = [' ']; Quotes: TSysCharSet = ['''', '"']): Integer; overload;
+begin
+  Result := StrToStringsEx(Content, Strings, [#13, #10, #0], IgnoreInitialWhiteSpace, Quotes);
+end;}
 
 procedure ArgumentsCallbackProc(Sender: Pointer; Index:Integer; Name, Value: string; var Resume: Boolean);
 begin
@@ -847,7 +990,7 @@ begin
   {$endif}
 end;
 
-function SubStr(const AText: String; const AFromIndex, AToIndex: Integer): String;
+function CopyStr(const AText: String; const AFromIndex, AToIndex: Integer): String;
 begin
   Result := Copy(AText, AFromIndex, AToIndex - AFromIndex + 1);
 end;
@@ -887,6 +1030,23 @@ begin
   Result := SubStr(Str, vSeperator, vIndex, vIndex);
 end;
 
+procedure SpliteStr(S, Separator: string; var Name, Value: string);
+var
+  p: integer;
+begin
+  p := AnsiPos(Separator, S);
+  if P <> 0 then
+  begin
+    Name := Copy(s, 1, p - 1);
+    Value := Copy(s, p + 1, MaxInt);
+  end
+  else
+  begin
+    Name := s;
+    Value := '';
+  end;
+end;
+
 function FetchStr(var AInput: string; const ADelim: string; const ADelete: Boolean; const ACaseSensitive: Boolean): string;
 var
   LPos: Integer;
@@ -913,20 +1073,44 @@ begin
   end;
 end;
 
-function StrInArray(const Str: String; const ArrayOfString: array of String; CaseInsensitive: Boolean): Boolean;
+function StrInArray(const Str: String; const InArray: array of String; CaseInsensitive: Boolean): Boolean;
 var
  itm : String;
 begin
-  for itm in ArrayOfString do
+  for itm in InArray do
   begin
     if CaseInsensitive then
     begin
       if SameText(Str, itm) then
-        exit(true);
+        exit(True);
     end
     else if Str = itm then
        exit(true);
   end;
+  Result := False;
+end;
+
+function StrInArray(const Str: string; const StartIndex: Integer; const InArray: array of string; out SepLength: Integer; CaseInsensitive: Boolean): Boolean;
+var
+ itm : String;
+begin
+  for itm in InArray do
+  begin
+    if CaseInsensitive then
+    begin
+      if SameText(MidStr(Str, StartIndex, Length(Itm)), itm) then
+      begin
+        SepLength := Length(Itm);
+        exit(true);
+      end;
+    end
+    else if MidStr(Str, StartIndex, Length(Itm)) = itm then
+    begin
+      SepLength := Length(Itm);
+      exit(true);
+    end;
+  end;
+  SepLength := 0;
   Result := false;
 end;
 
@@ -1127,7 +1311,7 @@ begin
   Result := True;
   for i := 1 to Length(S) do
   begin
-    if S[i].IsUpper then
+    if IsUpper(S[i]) then
     begin
       Result := False;
       break;
