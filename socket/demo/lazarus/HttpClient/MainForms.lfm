@@ -106,6 +106,16 @@ object MainForm: TMainForm
       OnClick = GetFileSizeBtn1Click
       TabOrder = 4
     end
+    object Button2: TButton
+      Left = 0
+      Height = 41
+      Top = 165
+      Width = 93
+      Align = alTop
+      Caption = 'Local'
+      OnClick = Button2Click
+      TabOrder = 5
+    end
   end
   object LogEdit: TMemo
     Left = 5

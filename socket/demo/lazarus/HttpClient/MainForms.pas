@@ -14,6 +14,7 @@ type
 
   TMainForm = class(TForm)
     Button1: TButton;
+    Button2: TButton;
     GetFileSizeBtn1: TButton;
     GetGetBtn: TButton;
     GetGetBtn1: TButton;
@@ -25,6 +26,7 @@ type
     Panel1: TPanel;
     Panel2: TPanel;
     procedure Button1Click(Sender: TObject);
+    procedure Button2Click(Sender: TObject);
     procedure GetFileSizeBtn1Click(Sender: TObject);
     procedure GetFileSizeBtnClick(Sender: TObject);
     procedure GetGetBtn1Click(Sender: TObject);
@@ -104,6 +106,28 @@ begin
     MemoryStream.Free;
   end;
   LogEdit.Lines.Add('Finished');
+end;
+
+procedure TMainForm.Button2Click(Sender: TObject);
+var
+  HttpClient: TmnHttpClient;
+  MemoryStream: TMemoryStream;
+begin
+  //LogEdit.Lines.Add('Getting from URL ' + HostEdit.Text);
+  MemoryStream := TMemoryStream.Create;
+  HttpClient := TmnHttpClient.Create;
+  try
+    HttpClient.Compressing := True;
+    //HttpClient.UserAgent := 'blalbla';
+    //HttpClient.Compressing := True;
+    HttpClient.GetMemoryStream('http://10.0.0.119:81/html/laz-logo.png', MemoryStream);
+    //LoadFromStream(HttpClient.Response.ContentType, MemoryStream);
+    MemoryStream.SaveToFile(Application.Location + '1.png');
+  finally
+    HttpClient.Free;
+    MemoryStream.Free;
+  end;
+  //LogEdit.Lines.Add('Finished');
 end;
 
 procedure TMainForm.GetFileSizeBtn1Click(Sender: TObject);

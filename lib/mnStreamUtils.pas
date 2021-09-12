@@ -206,9 +206,16 @@ begin
       ZStream.next_out := ZBuffer;
       ZStream.avail_out := BufSize;
 
-      WindowBits := MAX_WBITS;
       if FGZip then
-        WindowBits := WindowBits + 16;
+        WindowBits := WindowBits + 16
+      else
+      begin
+      {$ifdef FPC}
+        WindowBits := MAX_WBITS;
+      {$else}
+        WindowBits := -MAX_WBITS;
+      {$endif}
+      end;
       err := deflateInit2(ZStream, FLevel, Z_DEFLATED, WindowBits, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY);
       if err <> Z_OK then
         raise Exception.Create(String(zerror(err)));
@@ -228,9 +235,16 @@ begin
       ZStream.next_in := ZBuffer;
       ZStream.avail_in := 0;
 
-      WindowBits := MAX_WBITS;
       if FGZip then
-        WindowBits := WindowBits + 16;
+        WindowBits := WindowBits + 16
+      else
+      begin
+      {$ifdef FPC}
+        WindowBits := MAX_WBITS;
+      {$else}
+        WindowBits := -MAX_WBITS;
+      {$endif}
+      end;
       err := inflateInit2(ZStream, WindowBits);
       if err <> Z_OK then
         raise Exception.Create(String(zerror(err)));
