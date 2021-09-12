@@ -79,7 +79,6 @@ type
   private
     FAccept: UTF8String;
     FReferer: UTF8String;
-    FUserAgent: UTF8String;
   protected
     procedure CollectHeaders; virtual;
   public
@@ -88,7 +87,6 @@ type
     procedure SendHead;
     procedure SendPost(vData: PByte; vCount: Cardinal);
 
-    property UserAgent: UTF8String read FUserAgent write FUserAgent;
     property Referer: UTF8String read FReferer write FReferer;
   end;
 
@@ -136,6 +134,7 @@ type
     FProtocol: UTF8String;
     FCompressing: Boolean;
     FKeepAlive: Boolean;
+    FUserAgent: UTF8String;
 
     FRequest: TmnHttpRequest;
     FResponse: TmnHttpResponse;
@@ -176,7 +175,8 @@ type
     property Port: UTF8String read FPort write FPort;
     property Protocol: UTF8String read FProtocol write FProtocol;
     property Path: UTF8String read FPath write FPath;
-    property Compressing: Boolean read FCompressing write FCompressing; //TODO
+    property Compressing: Boolean read FCompressing write FCompressing;
+    property UserAgent: UTF8String read FUserAgent write FUserAgent;
     property KeepAlive: Boolean read FKeepAlive write FKeepAlive;
     property Stream: TmnHttpStream read FStream;
   end;
@@ -383,7 +383,7 @@ begin
   with FHeaders do
   begin
     Header['Host'] := Client.Host;
-    Header['User-Agent'] := FUserAgent;
+    Header['User-Agent'] := Client.UserAgent;
 
     Header['Accept'] := FAccept;
     Header['Accept-CharSet'] := FAcceptCharSet;
@@ -397,7 +397,6 @@ end;
 procedure TmnHttpRequest.Created;
 begin
   inherited;
-  UserAgent := 'Mozilla/5.0';
 end;
 
 procedure TmnHttpRequest.SendPost(vData: PByte; vCount: Cardinal);
@@ -591,6 +590,7 @@ begin
   FRequest := TmnHttpRequest.Create(Self);
   FResponse := TmnHttpResponse.Create(Self);
   FCookies := TmnParams.Create;
+  FUserAgent := sUserAgent;
 end;
 
 destructor TmnHttpClient.Destroy;
@@ -644,7 +644,6 @@ end;
 
 function TmnHttpClient.GetStream(const vURL: UTF8String; OutStream: TStream): TFileSize;
 begin
-  Request.UserAgent := sUserAgent;
   if Open(vURL) then
     Result := FStream.ReadStream(OutStream)
   else
@@ -667,7 +666,6 @@ function TmnHttpClient.GetFileSize(vURL: string; out FileSize: TFileSize): Boole
 var
   aSizeStr: string;
 begin
-  Request.UserAgent := sUserAgent;
   Result := Open(vURL, False);
   try
     Request.SendHead;

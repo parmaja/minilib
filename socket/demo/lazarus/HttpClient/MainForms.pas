@@ -77,7 +77,7 @@ end;
 
 const
   //sUserAgent = 'Embarcadero URI Client/1.0';
-  sUserAgent = 'Mozilla/5.0';
+  sUserAgent = 'Mozilla/5.0 (Windows NT 10.0; WOW64; rv:56.0) Gecko/20100101 Firefox/56.0';
   //'http://a.tile.openstreetmap.org/18/157418/105125.png' /crc error
   //sURL = 'http://c.tile.openstreetmap.org/18/157418/105127.png';
   sURLGoogle = 'http://mt0.google.com/vt/lyrs=m@999&hl=ar&x=78707&y=52561&z=17&s=Gal';
@@ -95,7 +95,7 @@ begin
   MemoryStream := TMemoryStream.Create;
   HttpClient := TmnHttpClient.Create;
   try
-    HttpClient.Request.UserAgent := sUserAgent;
+    HttpClient.UserAgent := sUserAgent;
     //HttpClient.Compressing := True;
     HttpClient.GetMemoryStream(sURLGoogle, MemoryStream);
     LoadFromStream(HttpClient.Response.ContentType, MemoryStream);
@@ -128,7 +128,7 @@ begin
   Application.ProcessMessages;
   HttpClient := TmnHttpClient.Create;
   try
-    HttpClient.Request.UserAgent := sUserAgent;
+    HttpClient.UserAgent := sUserAgent;
     //HttpClient.KeepAlive := True;
     HttpClient.Host := 'www.parmaja.org';
     HttpClient.Open(sURL2, False);
@@ -154,16 +154,19 @@ begin
   MemoryStream := TMemoryStream.Create;
   HttpClient := TmnHttpClient.Create;
   try
-    HttpClient.Request.UserAgent := sUserAgent;
+    HttpClient.UserAgent := sUserAgent;
     HttpClient.KeepAlive := True;
     //HttpClient.Connect('https://www.openstreetmap.org', False);
-    HttpClient.Open('https://c.tile.openstreetmap.de/14/9765/6391.png', False);
+    //https://c.tile.openstreetmap.fr/osmfr/14/9765/6391.png
+    //https://c.tile.openstreetmap.de/14/9765/6391.png
+    HttpClient.Open('https://c.tile.openstreetmap.org/14/9765/6391.png', False);
 
     HttpClient.Request.SendGet;
     HttpClient.Response.Receive;
     HttpClient.ReceiveMemoryStream(MemoryStream);
     MemoryStream.Position := 0;
-    MemoryStream.SaveToFile(Application.Location + '1.html');
+    LoadFromStream(HttpClient.Response.ContentType, MemoryStream);
+    //MemoryStream.SaveToFile(Application.Location + '1.html');
     HttpClient.Disconnect;
   finally
     HttpClient.Free;
@@ -186,7 +189,7 @@ begin
   MemoryStream := TMemoryStream.Create;
   HttpClient := TmnHttpClient.Create;
   try
-    HttpClient.Request.UserAgent := sUserAgent;
+    HttpClient.UserAgent := sUserAgent;
     HttpClient.KeepAlive := True;
     HttpClient.Open(sURL, False);
     HttpClient.Host := 'www.parmaja.org';

@@ -19,7 +19,7 @@ object Main: TMain
   OnCreate = FormCreate
   OnDestroy = FormDestroy
   OnHide = FormHide
-  LCLVersion = '2.1.0.0'
+  LCLVersion = '2.3.0.0'
   object Memo: TMemo
     Left = 0
     Height = 241
@@ -117,7 +117,6 @@ object Main: TMain
       Font.Height = -11
       Font.Name = 'Tahoma'
       Font.Pitch = fpVariable
-      ParentColor = False
       ParentFont = False
     end
     object Label2: TLabel
@@ -126,7 +125,6 @@ object Main: TMain
       Top = 33
       Width = 20
       Caption = 'Port'
-      ParentColor = False
     end
     object RootEdit: TEdit
       Left = 47
@@ -171,7 +169,6 @@ object Main: TMain
         Font.Name = 'Tahoma'
         Font.Pitch = fpVariable
         Layout = tlCenter
-        ParentColor = False
         ParentFont = False
         ShowAccelChar = False
         Transparent = False
@@ -190,7 +187,6 @@ object Main: TMain
         Font.Name = 'Tahoma'
         Font.Pitch = fpVariable
         Layout = tlCenter
-        ParentColor = False
         ParentFont = False
       end
       object Label3: TLabel
@@ -207,7 +203,6 @@ object Main: TMain
         Font.Name = 'Tahoma'
         Font.Pitch = fpVariable
         Layout = tlCenter
-        ParentColor = False
         ParentFont = False
       end
       object MaxOfThreadsLabel: TLabel
@@ -226,7 +221,6 @@ object Main: TMain
         Font.Name = 'Tahoma'
         Font.Pitch = fpVariable
         Layout = tlCenter
-        ParentColor = False
         ParentFont = False
         ShowAccelChar = False
         Transparent = False
@@ -247,7 +241,6 @@ object Main: TMain
         Font.Name = 'Tahoma'
         Font.Pitch = fpVariable
         Layout = tlCenter
-        ParentColor = False
         ParentFont = False
         ShowAccelChar = False
         Transparent = False
@@ -267,7 +260,6 @@ object Main: TMain
         Font.Name = 'Tahoma'
         Font.Pitch = fpVariable
         Layout = tlCenter
-        ParentColor = False
         ParentFont = False
       end
     end
@@ -293,7 +285,6 @@ object Main: TMain
       Top = 33
       Width = 64
       Caption = 'Module Name'
-      ParentColor = False
     end
     object StayOnTopChk: TCheckBox
       Left = 466

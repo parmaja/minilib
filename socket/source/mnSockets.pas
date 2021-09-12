@@ -526,7 +526,7 @@ begin
   if FSocket = nil then
   begin
     if not HandleError(aErr) then
-      raise EmnSocketException.CreateFmt('Connected fail [%d]', [aErr]);
+      raise EmnSocketException.CreateFmt('Connect failed [%d]', [aErr]);
   end
   else
     FSocket.Prepare;
