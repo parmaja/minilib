@@ -42,6 +42,8 @@ type
   TTestStream = class(TObject)
   protected
     procedure InternalExampleSocket(WithServer: Boolean = True; WithClient: Boolean = True; ATestTimeOut: Integer = -1); //Socket threads
+    procedure InternalCompressImage(GZ, WithHex: Boolean); //GZ image
+
     procedure ExampleSocket;
     procedure ExampleSocketOpenStreet;
     procedure ExampleSocketTestTimeout;
@@ -49,7 +51,10 @@ type
     procedure ExampleHexLine; //Hex lines
     procedure ExampleHexImage; //Hex image
     procedure ExampleCopyHexImage; //Hex image2 images and read one
+    procedure ExampleInflateImage; //Inflate image
     procedure ExampleGZImage; //GZ image
+    procedure ExampleUnGZImage; //Unzip GZ image
+
     procedure DoRun;
   public
     Location: UTF8String;
@@ -235,6 +240,61 @@ begin
   if B then Result:=TrueS else BoolToStr:=FalseS;
 end;
 
+procedure TTestStream.InternalCompressImage(GZ, WithHex: Boolean);
+var
+  cFile: string;
+  aImageFile: TFileStream;
+  Stream: TmnBufferStream;
+  HexProxy: TmnHexStreamProxy;
+  CompressProxy: TmnDeflateStreamProxy;
+begin
+  if GZ then
+    cFile := Location + 'image.gz'
+  else
+    cFile := Location + 'image.inflate';
+  //image.gz is a compressed file of hex file of image
+  WriteLn('Read image to compressed file');
+  aImageFile := TFileStream.Create(Location + 'image.jpg', fmOpenRead);
+  Stream := TmnWrapperStream.Create(TFileStream.Create(cFile, fmCreate or fmOpenWrite));
+  CompressProxy := TmnDeflateStreamProxy.Create([cprsRead, cprsWrite], 9, GZ);
+  Stream.AddProxy(CompressProxy);
+
+  if WithHex then
+  begin
+    HexProxy := TmnHexStreamProxy.Create;
+    Stream.AddProxy(HexProxy);
+  end;
+
+  //CompressProxy.Disable;
+  try
+    WriteLn('Size write: ' + IntToStr(Stream.WriteStream(aImageFile)));
+  finally
+    Stream.Free;
+    FreeAndNil(aImageFile);
+  end;
+
+//---------------------------------------------------------
+
+  WriteLn('Read compressed file to image');
+  aImageFile := TFileStream.Create(Location + 'image_copy.jpg', fmCreate or fmOpenWrite);
+  Stream := TmnWrapperStream.Create(TFileStream.Create(cFile, fmOpenRead));
+  CompressProxy := TmnDeflateStreamProxy.Create([cprsRead, cprsWrite], 9, GZ);
+  Stream.AddProxy(CompressProxy);
+
+  if WithHex then
+  begin
+    HexProxy := TmnHexStreamProxy.Create;
+    Stream.AddProxy(HexProxy);
+  end;
+  //CompressProxy.Disable;
+  try
+    WriteLn('Size read: ' + IntToStr(Stream.ReadStream(aImageFile)));
+  finally
+    FreeAndNil(Stream);
+    FreeAndNil(aImageFile);
+  end;
+end;
+
 procedure TTestStream.InternalExampleSocket(WithServer: Boolean; WithClient: Boolean; ATestTimeOut: Integer);
 var
   Reciever: TThreadReciever;
@@ -406,6 +466,29 @@ begin
   InternalExampleSocket(true, true, 1000);
 end;
 
+procedure TTestStream.ExampleUnGZImage;
+var
+  cFile: string;
+  aImageFile: TFileStream;
+  Stream: TmnBufferStream;
+  HexProxy: TmnHexStreamProxy;
+  CompressProxy: TmnDeflateStreamProxy;
+begin
+  cFile := Location + 'image.gz';
+  WriteLn('Read compressed file to image');
+  aImageFile := TFileStream.Create(Location + 'image_copy.jpg', fmCreate or fmOpenWrite);
+  Stream := TmnWrapperStream.Create(TFileStream.Create(cFile, fmOpenRead));
+  CompressProxy := TmnDeflateStreamProxy.Create([cprsRead, cprsWrite], 9, True);
+  Stream.AddProxy(CompressProxy);
+
+  try
+    WriteLn('Size read: ' + IntToStr(Stream.ReadStream(aImageFile)));
+  finally
+    FreeAndNil(Stream);
+    FreeAndNil(aImageFile);
+  end;
+end;
+
 procedure TTestStream.ExampleHexLine;
 var
   Stream: TmnBufferStream;
@@ -436,6 +519,11 @@ begin
   finally
     FreeAndNil(Stream);
   end;
+end;
+
+procedure TTestStream.ExampleInflateImage;
+begin
+  InternalCompressImage(False, False);
 end;
 
 procedure TTestStream.ExampleHexImage;
@@ -508,44 +596,8 @@ begin
 end;
 
 procedure TTestStream.ExampleGZImage;
-var
-  aImageFile: TFileStream;
-  Stream: TmnBufferStream;
-  HexProxy: TmnHexStreamProxy;
-  GzProxy: TmnDeflateStreamProxy;
 begin
-  //image.gz is a compressed file of hex file of image
-  WriteLn('Read image to gz file');
-  aImageFile := TFileStream.Create(Location + 'image.jpg', fmOpenRead);
-  Stream := TmnWrapperStream.Create(TFileStream.Create(Location + 'image.gz', fmCreate or fmOpenWrite));
-  GzProxy := TmnDeflateStreamProxy.Create([cprsRead, cprsWrite], 9, true);
-  Stream.AddProxy(GzProxy);
-  HexProxy := TmnHexStreamProxy.Create;
-  Stream.AddProxy(HexProxy);
-
-  //GzProxy.Disable;
-  try
-    WriteLn('Size write: ' + IntToStr(Stream.WriteStream(aImageFile)));
-  finally
-    Stream.Free;
-    FreeAndNil(aImageFile);
-  end;
-
-  WriteLn('Read gz file to image');
-  aImageFile := TFileStream.Create(Location + 'image_copy.jpg', fmCreate or fmOpenWrite);
-  Stream := TmnWrapperStream.Create(TFileStream.Create(Location + 'image.gz', fmOpenRead));
-  GzProxy := TmnDeflateStreamProxy.Create([cprsRead, cprsWrite], 9, true);
-  Stream.AddProxy(GzProxy);
-  HexProxy := TmnHexStreamProxy.Create;
-  Stream.AddProxy(HexProxy);
-
-  //GzProxy.Disable;
-  try
-    WriteLn('Size read: ' + IntToStr(Stream.ReadStream(aImageFile)));
-  finally
-    FreeAndNil(Stream);
-    FreeAndNil(aImageFile);
-  end;
+  InternalCompressImage(True, False);
 end;
 
 constructor TTestStream.Create;
@@ -598,10 +650,12 @@ begin
       AddProc('ExampleSocket: Socket OpenStreetMap', ExampleSocketOpenStreet);
       AddProc('Example Socket Timout: Socket threads', ExampleSocketTestTimeout);
       AddProc('ExampleSmallBuffer: read write line with small buffer', ExampleSmallBuffer);
+      AddProc('ExampleCopyHexImage: Hex image2 images and read one', ExampleCopyHexImage);
+      AddProc('ExampleInflateImage: Inflate image', ExampleInflateImage);
+      AddProc('ExampleGZImage: GZ image', ExampleGZImage);
+      AddProc('ExampleUnGZImage: Unzip GZ image', ExampleGZImage);
       AddProc('ExampleHexLine: Hex lines', ExampleHexLine);
       AddProc('ExampleHexImage: Hex image', ExampleHexImage);
-      AddProc('ExampleCopyHexImage: Hex image2 images and read one', ExampleCopyHexImage);
-      AddProc('ExampleGZImage: GZ image', ExampleGZImage);
       while true do
       begin
         for n := 0 to Length(Commands) - 1 do

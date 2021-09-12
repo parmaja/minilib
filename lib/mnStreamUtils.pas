@@ -28,23 +28,26 @@ type
 
   TmnDeflateStreamProxy = class(TmnStreamOverProxy)
   private
+    type
+      TInflateInfo = record
+        ZStream: z_stream;
+        ZBuffer: pointer;
+        ZEnd: Boolean;
+      end;
+
+  private
     FLevel: TmnCompressLevel;
     FGZip: Boolean;
-  private
-    DeflateInfo: record
-      ZStream: z_stream;
-      ZBuffer: pointer;
-    end;
+    DeflateInfo: TInflateInfo;
+    InflateInfo: TInflateInfo;
     FBufSize: Cardinal;
-    InflateInfo: record
-      ZStream: z_stream;
-      ZBuffer: pointer;
-    end;
+
   const
     DEF_MEM_LEVEL = 8;
     MAX_WBITS = 15;
   protected
     FCompress: TmnStreamCompress;
+
     procedure InitDeflate;
     procedure InitInflate;
     procedure CloseWrite; override;
@@ -117,17 +120,22 @@ begin
           ZStream.next_in := ZBuffer;
           Over.Read(Zbuffer^, BufSize, HaveRead, RealCount);
           ZStream.avail_in := HaveRead;
-        end;
+        end
+        else
+          RealCount := 0;
         err := inflate(ZStream, Z_NO_FLUSH);
+        System.WriteLn(err);
         if err = Z_STREAM_END then
-          break;
-        if err <> Z_OK then
+        begin
+          ZEnd := True;
+          break
+        end
+        else if err <> Z_OK then
           raise Exception.Create(String(zerror(err)));
       end;
       ResultCount := Count - Integer(ZStream.avail_out);
     end;
-    Result := True;
-  end
+     Result := True;  end
   else
     Result := Over.Read(Buffer, Count, ResultCount, RealCount);
 end;
@@ -207,11 +215,11 @@ begin
       ZStream.avail_out := BufSize;
 
       if FGZip then
-        WindowBits := WindowBits + 16
+        WindowBits := MAX_WBITS + 16
       else
       begin
       {$ifdef FPC}
-        WindowBits := MAX_WBITS;
+        WindowBits := -MAX_WBITS;
       {$else}
         WindowBits := -MAX_WBITS;
       {$endif}
@@ -236,7 +244,7 @@ begin
       ZStream.avail_in := 0;
 
       if FGZip then
-        WindowBits := WindowBits + 16
+        WindowBits := MAX_WBITS + 16
       else
       begin
       {$ifdef FPC}
