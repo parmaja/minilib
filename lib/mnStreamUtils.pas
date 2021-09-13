@@ -230,11 +230,7 @@ begin
         WindowBits := MAX_WBITS + 16
       else
       begin
-      {$ifdef FPC}
         WindowBits := -MAX_WBITS;
-      {$else}
-        WindowBits := -MAX_WBITS;
-      {$endif}
       end;
       err := deflateInit2(ZStream, FLevel, Z_DEFLATED, WindowBits, DEF_MEM_LEVEL, Z_DEFAULT_STRATEGY);
       if err <> Z_OK then
@@ -259,11 +255,7 @@ begin
         WindowBits := MAX_WBITS + 16
       else
       begin
-      {$ifdef FPC}
         WindowBits := -MAX_WBITS;
-      {$else}
-        WindowBits := -MAX_WBITS;
-      {$endif}
       end;
       err := inflateInit2(ZStream, WindowBits);
       if err <> Z_OK then

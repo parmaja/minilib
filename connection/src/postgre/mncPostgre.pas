@@ -1636,7 +1636,7 @@ begin
   begin
     PQconsumeInput(FHandle);
     FEvent := PQnotifies(FHandle);
-    if FEvent<>nil then
+    if FEvent <> nil then
     begin
       Synchronize(PostEvent);
       PQFreemem(FEvent);

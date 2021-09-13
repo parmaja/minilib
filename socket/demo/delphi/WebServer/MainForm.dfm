@@ -4,8 +4,9 @@ object Main: TMain
   BiDiMode = bdLeftToRight
   Caption = 'Mini Web Server'
   ClientHeight = 319
-  ClientWidth = 426
+  ClientWidth = 434
   Color = clBtnFace
+  CustomTitleBar.CaptionAlignment = taCenter
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
   Font.Height = -11
@@ -16,7 +17,7 @@ object Main: TMain
   OnCreate = FormCreate
   OnDestroy = FormDestroy
   DesignSize = (
-    426
+    434
     319)
   PixelsPerInch = 96
   TextHeight = 13
@@ -36,18 +37,19 @@ object Main: TMain
   end
   object Memo: TMemo
     Left = 0
-    Top = 114
-    Width = 426
-    Height = 205
+    Top = 112
+    Width = 434
+    Height = 207
     Align = alBottom
     BiDiMode = bdLeftToRight
     ParentBiDiMode = False
     ReadOnly = True
     ScrollBars = ssVertical
     TabOrder = 1
+    ExplicitTop = 114
   end
   object StartBtn: TButton
-    Left = 360
+    Left = 368
     Top = 6
     Width = 60
     Height = 22
@@ -56,20 +58,22 @@ object Main: TMain
     Default = True
     TabOrder = 0
     OnClick = StartBtnClick
+    ExplicitLeft = 360
   end
   object RootEdit: TEdit
     Left = 46
     Top = 6
-    Width = 309
+    Width = 317
     Height = 21
     Anchors = [akLeft, akTop, akRight]
     BiDiMode = bdLeftToRight
     ParentBiDiMode = False
     TabOrder = 2
     Text = 'c:\offline\'
+    ExplicitWidth = 309
   end
   object StopBtn: TButton
-    Left = 360
+    Left = 368
     Top = 30
     Width = 60
     Height = 22
@@ -78,6 +82,7 @@ object Main: TMain
     Enabled = False
     TabOrder = 5
     OnClick = StopBtnClick
+    ExplicitLeft = 360
   end
   object PortEdit: TEdit
     Left = 46
@@ -100,13 +105,15 @@ object Main: TMain
   end
   object Panel3: TPanel
     Left = 0
-    Top = 80
-    Width = 426
+    Top = 78
+    Width = 434
     Height = 34
     Align = alBottom
     BevelOuter = bvNone
     BorderWidth = 3
     TabOrder = 6
+    ExplicitTop = 80
+    ExplicitWidth = 426
     object LastIDLabel: TLabel
       AlignWithMargins = True
       Left = 233
@@ -137,7 +144,7 @@ object Main: TMain
       Left = 193
       Top = 6
       Width = 34
-      Height = 13
+      Height = 22
       Align = alLeft
       Caption = 'Last ID'
       Color = clBtnFace
@@ -150,13 +157,14 @@ object Main: TMain
       ParentColor = False
       ParentFont = False
       Layout = tlCenter
+      ExplicitHeight = 13
     end
     object Label3: TLabel
       AlignWithMargins = True
       Left = 101
       Top = 6
       Width = 20
-      Height = 13
+      Height = 22
       Align = alLeft
       Caption = 'Max'
       Color = clBtnFace
@@ -169,6 +177,7 @@ object Main: TMain
       ParentColor = False
       ParentFont = False
       Layout = tlCenter
+      ExplicitHeight = 13
     end
     object MaxOfThreadsLabel: TLabel
       AlignWithMargins = True
@@ -223,7 +232,7 @@ object Main: TMain
       Left = 3
       Top = 3
       Width = 29
-      Height = 13
+      Height = 28
       Align = alLeft
       Caption = 'Count'
       Color = clBtnFace
@@ -236,10 +245,11 @@ object Main: TMain
       ParentColor = False
       ParentFont = False
       Layout = tlCenter
+      ExplicitHeight = 13
     end
   end
   object Button1: TButton
-    Left = 360
+    Left = 368
     Top = 53
     Width = 60
     Height = 22
@@ -248,6 +258,7 @@ object Main: TMain
     Default = True
     TabOrder = 7
     OnClick = Button1Click
+    ExplicitLeft = 360
   end
   object UseSSLChk: TCheckBox
     Left = 108
@@ -257,5 +268,14 @@ object Main: TMain
     Caption = 'Use SSL'
     TabOrder = 8
     OnClick = StayOnTopChkClick
+  end
+  object Button2: TButton
+    Left = 287
+    Top = 53
+    Width = 75
+    Height = 22
+    Caption = 'Test'
+    TabOrder = 9
+    OnClick = Button2Click
   end
 end

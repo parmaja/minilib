@@ -57,6 +57,7 @@ type
     FCompressIt: Boolean;
     FContentLength: Integer;
     DeflateProxy: TmnDeflateStreamProxy;
+    GZip: Boolean;
   protected
     procedure Created; override;
     procedure Prepare(var Result: TmodExecuteResults); override;
@@ -573,11 +574,22 @@ begin
     PostHeader('Keep-Alive', 'timout=' + IntToStr(Module.KeepAliveTimeOut div 5000) + ', max=100');
   end;
 
-  FCompressIt := Module.Compressing and Request.Header['Accept-Encoding'].Have('deflate', [',']);
+  FCompressIt := Module.Compressing and Request.Header['Accept-Encoding'].Have('gzip', [',']);
   if CompressIt then
   begin
-    PostHeader('Content-Encoding', 'deflate');
+    Gzip := True;
+    PostHeader('Content-Encoding', 'gzip');
+  end
+  else
+  begin
+    FCompressIt := Module.Compressing and Request.Header['Accept-Encoding'].Have('deflate', [',']);
+    if CompressIt then
+    begin
+      Gzip := False;
+      PostHeader('Content-Encoding', 'deflate');
+    end;
   end;
+
   if (Request.Header['Content-Length'].IsExists) then
     ContentLength := Request.Header['Content-Length'].AsInteger;
 end;
@@ -629,7 +641,7 @@ begin
   begin
     if DeflateProxy = nil then
     begin
-      DeflateProxy := TmnDeflateStreamProxy.Create([cprsWrite], 9, false);
+      DeflateProxy := TmnDeflateStreamProxy.Create([cprsWrite], 9, Gzip);
       RespondStream.AddProxy(DeflateProxy);
     end
     else

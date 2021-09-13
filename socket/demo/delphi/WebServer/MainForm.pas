@@ -10,7 +10,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, StrUtils, Classes, Graphics, Controls, Forms, Dialogs,
-  mnOpenSSLUtils, mnOpenSSL, mnLogs,
+  mnOpenSSLUtils, mnOpenSSL, mnLogs, mnHttpClient,
   Registry, IniFiles, StdCtrls, ExtCtrls, mnConnections, mnSockets, mnServers, mnWebModules;
 
 type
@@ -32,12 +32,14 @@ type
     NumberOfThreadsLbl: TLabel;
     Button1: TButton;
     UseSSLChk: TCheckBox;
+    Button2: TButton;
     procedure StartBtnClick(Sender: TObject);
     procedure StopBtnClick(Sender: TObject);
     procedure StayOnTopChkClick(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure Button1Click(Sender: TObject);
+    procedure Button2Click(Sender: TObject);
   private
     FMax:Integer;
     Server: TmodWebServer;
@@ -122,6 +124,28 @@ end;
 procedure TMain.Button1Click(Sender: TObject);
 begin
   MakeCert('certificate.pem', 'privatekey.pem', 'Creative Solutions', 'Creative Solutions', 'SY', '', 2048, 0, 1);
+end;
+
+procedure TMain.Button2Click(Sender: TObject);
+var
+  HttpClient: TmnHttpClient;
+  MemoryStream: TMemoryStream;
+begin
+  //LogEdit.Lines.Add('Getting from URL ' + HostEdit.Text);
+  MemoryStream := TMemoryStream.Create;
+  HttpClient := TmnHttpClient.Create;
+  try
+    HttpClient.Compressing := True;
+    //HttpClient.UserAgent := 'blalbla';
+    //HttpClient.Compressing := True;
+    HttpClient.GetMemoryStream('http://127.0.0.1:81/html/laz-logo.png', MemoryStream);
+    //LoadFromStream(HttpClient.Response.ContentType, MemoryStream);
+    MemoryStream.SaveToFile(ExtractFilePath(Application.ExeName) + 'test.png');
+  finally
+    HttpClient.Free;
+    MemoryStream.Free;
+  end;
+  //LogEdit.Lines.Add('Finished');
 end;
 
 procedure TMain.FormCreate(Sender: TObject);
