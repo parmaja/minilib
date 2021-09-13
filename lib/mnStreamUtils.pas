@@ -73,9 +73,10 @@ var
 begin
   if cprsWrite in FCompress then
   begin
-    InitDeflate; //init it if not initialized
     with DeflateInfo do
+    if not ZEnd then
     begin
+      InitDeflate; //init it if not initialized
       ZStream.next_in := @Buffer;
       ZStream.avail_in := Count;
       while ZStream.avail_in <> 0 do
@@ -89,7 +90,12 @@ begin
           ZStream.avail_out := BufSize;
         end;
         err := deflate(ZStream, Z_NO_FLUSH);
-        if err <> Z_OK then
+        if err = Z_STREAM_END then
+        begin
+          ZEnd := True;
+          break
+        end
+        else if err <> Z_OK then
           raise Exception.Create(String(zerror(err)));
       end;
       ResultCount := Count;
@@ -107,9 +113,15 @@ var
 begin
   if cprsRead in FCompress then
   begin
-    InitInflate; //init it if not initialized
     with InflateInfo do
+    if ZEnd then
     begin
+      ResultCount := 0;
+      Result := True;
+    end
+    else
+    begin
+      InitInflate; //init it if not initialized
       ZStream.next_out := @buffer;
       ZStream.avail_out := Count;
       while ZStream.avail_out <> 0 do
@@ -124,7 +136,6 @@ begin
         else
           RealCount := 0;
         err := inflate(ZStream, Z_NO_FLUSH);
-        System.WriteLn(err);
         if err = Z_STREAM_END then
         begin
           ZEnd := True;
@@ -135,7 +146,8 @@ begin
       end;
       ResultCount := Count - Integer(ZStream.avail_out);
     end;
-     Result := True;  end
+     Result := True;
+  end
   else
     Result := Over.Read(Buffer, Count, ResultCount, RealCount);
 end;
@@ -248,7 +260,7 @@ begin
       else
       begin
       {$ifdef FPC}
-        WindowBits := MAX_WBITS;
+        WindowBits := -MAX_WBITS;
       {$else}
         WindowBits := -MAX_WBITS;
       {$endif}
