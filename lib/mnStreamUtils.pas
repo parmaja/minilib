@@ -24,9 +24,17 @@ type
   TmnCompressLevel = 0..9;
   TmnStreamCompress = set of (cprsRead, cprsWrite);
 
+  TmCompressStreamProxy = class(TmnStreamOverProxy)
+  public
+    constructor Create(ACompress: TmnStreamCompress; Level: TmnCompressLevel = 9); virtual;
+    class function GetCompressName: string; virtual; abstract;
+  end;
+
+  TmCompressStreamProxyClass = class of TmCompressStreamProxy;
+
   { TmnDeflateStreamProxy }
 
-  TmnDeflateStreamProxy = class(TmnStreamOverProxy)
+  TmnDeflateStreamProxy = class(TmCompressStreamProxy)
   private
     type
       TInflateInfo = record
@@ -55,11 +63,19 @@ type
     function DoWrite(const Buffer; Count: Longint; out ResultCount, RealCount: Longint): Boolean; override;
     function DoRead(var Buffer; Count: Longint; out ResultCount, RealCount: Longint): Boolean; override;
   public
-    constructor Create(ACompress: TmnStreamCompress; Level: TmnCompressLevel = 9; GZip: Boolean = False);
+    constructor Create(ACompress: TmnStreamCompress; Level: TmnCompressLevel = 9); override;
     destructor Destroy; override;
     procedure CloseDeflate; //close it after finishing compress a stream or partial a stream
+    class function GetCompressName: string; override;
     procedure CloseInflate;
     property BufSize: Cardinal read FBufSize write FBufSize;
+  end;
+
+  TmnGzipStreamProxy = class(TmnDeflateStreamProxy)
+  private
+  public
+    constructor Create(ACompress: TmnStreamCompress; Level: TmnCompressLevel); override;
+    class function GetCompressName: string; override;
   end;
 
 implementation
@@ -104,6 +120,11 @@ begin
   end
   else
     Result := Over.Write(Buffer, Count, ResultCount, RealCount);
+end;
+
+class function TmnDeflateStreamProxy.GetCompressName: string;
+begin
+  Result := 'deflate';
 end;
 
 function TmnDeflateStreamProxy.DoRead(var Buffer; Count: Longint; out ResultCount, RealCount: Longint): Boolean;
@@ -263,13 +284,13 @@ begin
     end;
 end;
 
-constructor TmnDeflateStreamProxy.Create(ACompress: TmnStreamCompress; Level: TmnCompressLevel; GZip: Boolean);
+constructor TmnDeflateStreamProxy.Create(ACompress: TmnStreamCompress; Level: TmnCompressLevel);
 begin
-  inherited Create;
+  inherited Create(ACompress, Level);
   FBufSize := 16384;
   FLevel := Level;
-  FGZip := GZip;
   FCompress := ACompress;
+  FGZip := False;
 end;
 
 destructor TmnDeflateStreamProxy.Destroy;
@@ -277,6 +298,26 @@ begin
   CloseDeflate;
   CloseInflate;
   inherited Destroy;
+end;
+
+{ TmnGzipStreamProxy }
+
+constructor TmnGzipStreamProxy.Create(ACompress: TmnStreamCompress; Level: TmnCompressLevel);
+begin
+  inherited;
+  FGZip := True;
+end;
+
+class function TmnGzipStreamProxy.GetCompressName: string;
+begin
+  Result := 'gzip';
+end;
+
+{ TmCompressStreamProxy }
+
+constructor TmCompressStreamProxy.Create(ACompress: TmnStreamCompress; Level: TmnCompressLevel);
+begin
+  inherited Create;
 end;
 
 end.

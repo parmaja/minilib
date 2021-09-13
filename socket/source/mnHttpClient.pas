@@ -94,7 +94,6 @@ type
 
   TmnHttpResponse = class(TmnCustomHttpHeader)
   private
-    FDecompress: Boolean;
     FLocation: UTF8String;
     FServer: UTF8String;
   protected
@@ -103,7 +102,6 @@ type
     procedure Receive;
     property Location: UTF8String read FLocation write FLocation;
     property Server: UTF8String read FServer write FServer;
-    property Decompress: Boolean read FDecompress write FDecompress;
   end;
 
   { TmnCustomHttpStream }
@@ -141,7 +139,8 @@ type
 
     FStream: TmnHttpStream;
   protected
-    DeflateProxy: TmnDeflateStreamProxy;
+    CompressClass: TmCompressStreamProxyClass;
+    CompressProxy: TmCompressStreamProxy;
     function CreateStream: TmnHttpStream; virtual;
     procedure FreeStream; virtual;
   public
@@ -388,7 +387,7 @@ begin
     Header['Accept'] := FAccept;
     Header['Accept-CharSet'] := FAcceptCharSet;
     if Client.Compressing then
-      Header['Accept-Encoding'] := 'deflate';
+      Header['Accept-Encoding'] := 'deflate, gzip';
     Header['Accept-Language'] := FAcceptLanguage;
     Header['Referer'] := FReferer;
   end;
@@ -467,10 +466,6 @@ begin
     FAcceptCharSet := Header['Accept-CharSet'];
     FAcceptLanguage := Header['Accept-Language'];
     FAcceptEncoding.DelimitedText := Header['Accept-Encoding'];
-//    Log.Write('Accept-Encoding:' +  Header['Accept-Encoding']);
-    //FDecompress := FAcceptEncoding.IndexOf('deflate') >=0;
-    FDecompress := Header['Content-Encoding'] = 'deflate';
-    //Log.WriteLn(FAcceptEncoding.Text);
   end;
 end;
 
@@ -494,20 +489,25 @@ begin
   Client.Cookies.Delimiter := ';';
   Client.Cookies.AsString := s;
 
-  if Decompress then
+  if Headers['Accept-Encoding'].Have('gzip', [',']) then
+    Client.CompressClass := TmnDeflateStreamProxy
+  else if Headers['Accept-Encoding'].Have('deflate', [',']) then
+    Client.CompressClass := TmnGzipStreamProxy;
+
+  if Client.CompressClass <> nil then
   begin
-    if Client.DeflateProxy <> nil then
-      Client.DeflateProxy.Enable
+    if Client.CompressProxy <> nil then
+      Client.CompressProxy.Enable
     else
     begin
-      Client.DeflateProxy := TmnDeflateStreamProxy.Create([cprsRead], 9, false);
-      Client.Stream.AddProxy(Client.DeflateProxy);
+      Client.CompressProxy := Client.CompressClass.Create([cprsRead], 9);
+      Client.Stream.AddProxy(Client.CompressProxy);
     end;
   end
   else
   begin
-    if Client.DeflateProxy <> nil then
-      Client.DeflateProxy.Disable;
+    if Client.CompressProxy <> nil then
+      Client.CompressProxy.Disable;
   end;
 end;
 
