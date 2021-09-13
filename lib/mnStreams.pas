@@ -642,7 +642,7 @@ end;
 
 function TmnCustomStream.GetConnected: Boolean;
 begin
-  Result := False;
+  Result := True;
 end;
 
 function TmnCustomStream.ReadString(Count: TFileSize): RawByteString;
@@ -759,7 +759,7 @@ begin
   {$endif}
   GetMem(aBuffer, ReadWriteBufferSize);
   try
-    while True do //todo use Done
+    while Connected do //todo use Done
     begin
       if (Count > 0) and (aSize < ReadWriteBufferSize) then
         l := aSize
@@ -775,7 +775,7 @@ begin
       end;
       if ((Count > 0) and (aSize = 0)) then //we finsih count
         break;
-      if ((c = 0) and not Connected) then
+      if (c = 0) then
         break;
     end;
   finally
@@ -803,7 +803,7 @@ begin
   {$endif}
   GetMem(aBuffer, ReadWriteBufferSize);
   try
-    while true do //todo use Done
+    while Connected do //todo use Done
     begin
       if (Count > 0) and (aSize < ReadWriteBufferSize) then
         l := aSize
@@ -819,7 +819,7 @@ begin
       end;
       if ((Count > 0) and (aSize = 0)) then //we finsih count
         break;
-      if ((c = 0) and not Connected) then
+      if (c = 0) then
         break;
     end;
   finally
@@ -1289,7 +1289,7 @@ begin
       if c = 0 then //check if buffer have no data
       begin
         aSize := LoadReadBuffer;
-        if ((aSize = 0) and not Connected) then
+        if (aSize = 0) or not Connected then
           break
         else
           Continue//new

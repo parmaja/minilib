@@ -312,7 +312,9 @@ begin
   else
     Result := DoReceive(Buffer, Count);
   if Result > erTimeout then
-    Close;
+    Close
+  else if (Result = erTimeout) and (Count = 0) then
+    Count := -1;
 end;
 
 function TmnCustomSocket.Select(Timeout: Integer; Check: TSelectCheck): TmnError;
@@ -355,7 +357,9 @@ begin
   else
     Result := DoSend(Buffer, Count);
   if Result > erTimeout then
-    Close;
+    Close
+  else if (Result = erTimeout) and (Count = 0) then
+    Count := -1;
 end;
 
 function TmnCustomSocket.Shutdown(How: TmnShutdowns): TmnError;
