@@ -13,6 +13,7 @@ unit mnStreams;
 {$mode delphi}
 {$WARN 5024 off : Parameter "$1" not used}
 {$ENDIF}
+//Change TFIleSize to TStreamSize (Longint)
 
 interface
 
@@ -50,10 +51,15 @@ type
     function ReadString(Count: TFileSize; CodePage: Word): RawByteString; overload;
     function ReadBufferBytes(Count: TFileSize = 0): TBytes; overload;
     function WriteString(const Value: String): TFileSize; overload;
+    //Use copy from to stream
     function ReadStream(AStream: TStream; Count: TFileSize = 0): TFileSize; overload;
     function WriteStream(AStream: TStream; Count: TFileSize = 0): TFileSize; overload;
     function ReadStream(AStream: TStream; Count: TFileSize; out RealCount: Integer): TFileSize; overload;
     function WriteStream(AStream: TStream; Count: TFileSize; out RealCount: Integer): TFileSize; overload;
+
+    function CopyToStream(AStream: TStream; Count: TFileSize = 0): TFileSize; inline; //alias
+    function CopyFromStream(AStream: TStream; Count: TFileSize = 0): TFileSize; inline; //alias
+
     property Connected: Boolean read GetConnected;
   end;
 
@@ -134,7 +140,7 @@ type
     FDone: TmnStreamClose;
     FEndOfLine: string;
     //FZeroClose: Boolean;
-    procedure LoadReadBuffer;
+    function LoadReadBuffer: TFileSize;
     //procedure SaveWriteBuffer; //kinda flush
   protected
     function CheckReadBuffer: Boolean; //check it in belal job
@@ -405,7 +411,7 @@ end;
 
 function TmnBufferStream.TBuffer.Count: Cardinal;
 begin
-  Result := Stop-Pos;
+  Result := Stop - Pos;
 end;
 
 procedure TmnBufferStream.TBuffer.CreateBuffer;
@@ -682,11 +688,25 @@ begin
   SetCodePage(Result, CodePage, False);
 end;
 
+function TmnCustomStream.CopyToStream(AStream: TStream; Count: TFileSize): TFileSize;
+var
+  RealCount: Integer;
+begin
+  Result := ReadStream(AStream, Count, RealCount);
+end;
+
 function TmnCustomStream.ReadStream(AStream: TStream; Count: TFileSize): TFileSize;
 var
   RealCount: Integer;
 begin
   Result := ReadStream(AStream, Count, RealCount);
+end;
+
+function TmnCustomStream.CopyFromStream(AStream: TStream; Count: TFileSize): TFileSize;
+var
+  RealCount: Integer;
+begin
+  Result := WriteStream(AStream, Count, RealCount);
 end;
 
 function TmnCustomStream.ReadBufferBytes(Count: TFileSize): TBytes;
@@ -729,31 +749,33 @@ end;
 function TmnCustomStream.ReadStream(AStream: TStream; Count: TFileSize; out RealCount: Integer): TFileSize;
 var
   aBuffer: PByte;
-  l, c, Size: Integer;
+  l, c, aSize: Integer;
 begin
   Result := 0;
   RealCount := 0;
-  Size := Count;
+  aSize := Count;
   {$ifdef FPC} //less hint in fpc
   aBuffer := nil;
   {$endif}
   GetMem(aBuffer, ReadWriteBufferSize);
   try
-    while Connected do //todo use Done
+    while True do //todo use Done
     begin
-      if (Count > 0) and (Size < ReadWriteBufferSize) then
-        l := Size
+      if (Count > 0) and (aSize < ReadWriteBufferSize) then
+        l := aSize
       else
         l := ReadWriteBufferSize;
       c := Read(aBuffer^, l);
       if c > 0 then
       begin
         if Count > 0 then
-          Size := Size - c;
+          aSize := aSize - c;
         Result := Result + c;
         RealCount := RealCount + AStream.Write(aBuffer^, c);
       end;
-      if (c = 0) or ((Count > 0) and (Size = 0)) then
+      if ((Count > 0) and (aSize = 0)) then //we finsih count
+        break;
+      if ((c = 0) and not Connected) then
         break;
     end;
   finally
@@ -771,31 +793,33 @@ end;
 function TmnCustomStream.WriteStream(AStream: TStream; Count: TFileSize; out RealCount: Integer): TFileSize;
 var
   aBuffer: PByte;
-  l, c, Size: Integer;
+  l, c, aSize: Integer;
 begin
   Result := 0;
   RealCount := 0;
-  Size := Count;
+  aSize := Count;
   {$ifdef FPC} //less hint in fpc
   aBuffer := nil;
   {$endif}
   GetMem(aBuffer, ReadWriteBufferSize);
   try
-    while Connected do //todo use Done
+    while true do //todo use Done
     begin
-      if (Count > 0) and (Size < ReadWriteBufferSize) then
-        l := Size
+      if (Count > 0) and (aSize < ReadWriteBufferSize) then
+        l := aSize
       else
         l := ReadWriteBufferSize;
       c := AStream.Read(aBuffer^, l);
       if c > 0 then
       begin
         if Count > 0 then
-          Size := Size - c;
+          aSize := aSize - c;
         Result := Result + c;
         RealCount := RealCount + Write(aBuffer^, c);
       end;
-      if (c = 0) or ((Count > 0) and (Size = 0)) then
+      if ((Count > 0) and (aSize = 0)) then //we finsih count
+        break;
+      if ((c = 0) and not Connected) then
         break;
     end;
   finally
@@ -1198,20 +1222,17 @@ begin
   FEndOfLine := AEndOfLine;
 end;
 
-procedure TmnBufferStream.LoadReadBuffer;
-var
-  aSize: TFileSize;
+function TmnBufferStream.LoadReadBuffer: TFileSize;
 begin
   if FReadBuffer.Pos < FReadBuffer.Stop then
     raise EmnStreamException.Create('Buffer is not empty to load');
   FReadBuffer.Pos := FReadBuffer.Buffer;
-  aSize := DirectRead(FReadBuffer.Buffer^, FReadBuffer.Size);
-  if aSize > 0 then //-1 not effects here
-    FReadBuffer.Stop := FReadBuffer.Pos + aSize
+  Result := DirectRead(FReadBuffer.Buffer^, FReadBuffer.Size);
+  if Result > 0 then //-1 not effects here
+    FReadBuffer.Stop := FReadBuffer.Pos + Result
   else
     FReadBuffer.Stop := FReadBuffer.Pos;
-
-  {if (aSize = 0) and ZeroClose then //what if we have Timeout?
+  {if (Result = 0) and ZeroClose then //what if we have Timeout?
     Close([cloRead]);}
 end;
 
@@ -1250,7 +1271,7 @@ end;
 
 function TmnBufferStream.Read(var Buffer; Count: Longint): Longint;
 var
-  c, aCount: Longint;
+  c, aCount, aSize: Longint;
   P: PByte;
 begin
   Flush;//Flush write buffer
@@ -1267,11 +1288,11 @@ begin
       c := FReadBuffer.Stop - FReadBuffer.Pos; //size of data in buffer
       if c = 0 then //check if buffer have no data
       begin
-        LoadReadBuffer;
-        if Connected then
-          Continue//new
+        aSize := LoadReadBuffer;
+        if ((aSize = 0) and not Connected) then
+          break
         else
-          Break;
+          Continue//new
       end;
       if c > Count then // is FReadBuffer enough for Count
         c := Count;

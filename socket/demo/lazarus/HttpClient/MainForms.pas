@@ -257,5 +257,59 @@ begin
   LogEdit.Lines.Add(S);
 end;
 
+{function GetUrlData(const Url: string): TMemoryStream;
+var
+  n: THTTPClient;
+  t: TmnHttpClient;
+  c: string;
+  r: IHTTPResponse;
+  h: TNetHeaders;
+begin
+  Result := TMemoryStream.Create;
+  if Url<>'' then
+  begin
+    {t := TmnHttpClient.Create;
+    try
+      t.Compressing := True;
+      //t.ConnectionTimeout := 600;
+      //t.ResponseTimeout := 600;
+      //t.Request.UserAgent := 'Embarcadero URI Client/1.0';
+      t.Request.UserAgent := 'curl/7.55.1';
+      t.GetStream(Url, Result);
+    finally
+      t.Free;
+    end;}
+    //System.TMonitor.Enter(mapMapClasses);
+
+    LogBeginTickDebug;
+    n := THTTPClient.Create;
+    try
+      n.AcceptEncoding := 'gzip, deflate';
+      //n.ConnectionTimeout := 600;
+      //n.ResponseTimeout := 600;
+      n.ConnectionTimeout := 300;
+      n.ResponseTimeout := 3000;
+      //n.UserAgent := 'Mozilla/5.0 (Windows NT 10.0; WOW64; rv:56.0) Gecko/20100101 Firefox/56.0';
+      n.UserAgent := 'curl/7.55.1';
+
+      try
+        r := n.Get(Url, Result);
+        h := r.Headers;
+
+        c := 'succ';
+      except
+        c := 'fail';
+        Result.Clear;
+      end;
+
+    finally
+      LogEndTick('%s [%s]', [c, Url]);
+      n.Free;
+      //System.TMonitor.Exit(mapMapClasses);
+    end;
+  end;
+end;}
+
+
 end.
 

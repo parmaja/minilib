@@ -51,9 +51,14 @@ type
     procedure ExampleHexLine; //Hex lines
     procedure ExampleHexImage; //Hex image
     procedure ExampleCopyHexImage; //Hex image2 images and read one
+
     procedure ExampleInflateImage; //Inflate image
     procedure ExampleGZImage; //GZ image
+
     procedure ExampleUnGZImage; //Unzip GZ image
+
+    procedure CopyFileWrite;
+    procedure CopyFileRead;
 
     procedure DoRun;
   public
@@ -402,10 +407,12 @@ end;
 procedure TTestStream.ExampleSocketOpenStreet;
 var
   Stream: TmnClientSocket;
+  aFile: TFileStream;
   S: UTF8String;
   t: int64;
 const
-  sURL = 'www.openstreetmap.org';
+  //sURL = 'www.openstreetmap.org';
+  sURL = 'https://c.tile.openstreetmap.de/17/65536/65536.png';
   //sURL = 'zaherdirkey.wordpress.com';
 begin
   NoDelay := True;
@@ -413,17 +420,14 @@ begin
   QuickAck := False;
   UseSSL := False;
   try
-    Stream := TmnClientSocket.Create(sURL, '80');
+    Stream := TmnClientSocket.Create('c.tile.openstreetmap.de', '443');
     Stream.ReadTimeout := TestTimeOut;
     Stream.Options := SocketOptions;
-    if NoDelay then
-      Stream.Options := Stream.Options + [soNoDelay];
-    if KeepAlive then
-      Stream.Options := Stream.Options + [soKeepAlive];
-    if QuickAck then
-      Stream.Options := Stream.Options + [soQuickAck];
-    if UseSSL then
-      Stream.Options := Stream.Options + [soSSL];
+    Stream.Options := Stream.Options + [soNoDelay];
+//  Stream.Options := Stream.Options + [soKeepAlive];
+//    if QuickAck then
+//      Stream.Options := Stream.Options + [soQuickAck];
+    Stream.Options := Stream.Options + [soSSL];
     try
       t := TThread.GetTickCount;
       Stream.EndOfLine := #13#10;
@@ -432,15 +436,30 @@ begin
       WriteLn(TicksToString(TThread.GetTickCount - t));
       if Stream.Connected then
       begin
-        Stream.WriteLineUTF8('GET / HTTP/1.1');
-        Stream.WriteLineUTF8('Host: ' + sURL);
+        Stream.WriteLineUTF8('GET /17/65536/65536.png HTTP/1.1');
+        Stream.WriteLineUTF8('Host: c.tile.openstreetmap.de');
         Stream.WriteLineUTF8('User-Agent: Mozilla');
         Stream.WriteLineUTF8('Connection: close');
         Stream.WriteLineUTF8('');
+
+        //read phase
         Stream.ReadLineUTF8(s);
         WriteLn(s);
         while Stream.Connected and Stream.ReadLineUTF8(s) do
-          WriteLn(s);
+        begin
+          if s ='' then
+          begin
+            aFile := TFileStream.Create(Location + 'map.png', fmCreate or fmOpenWrite);
+            try
+              Stream.CopyToStream(aFile);
+            finally
+              aFile.Free;
+            end;
+            break;
+          end
+          else
+            WriteLn(s);
+        end;
       end;
       WriteLn(TicksToString(TThread.GetTickCount - t));
       Stream.Disconnect;
@@ -600,6 +619,36 @@ begin
   InternalCompressImage(True, False);
 end;
 
+procedure TTestStream.CopyFileWrite;
+var
+  Stream1: TmnBufferStream;
+  Stream2: TFileStream;
+begin
+  Stream1 := TmnWrapperStream.Create(TFileStream.Create(Location + 'image_copy.jpg', fmCreate or fmOpenWrite));
+  Stream2 := TFileStream.Create(Location + 'image.jpg', fmOpenRead);
+  try
+    Stream1.CopyFromStream(Stream2);
+  finally
+    FreeAndNil(Stream2);
+    FreeAndNil(Stream1);
+  end;
+end;
+
+procedure TTestStream.CopyFileRead;
+var
+  Stream1: TmnBufferStream;
+  Stream2: TFileStream;
+begin
+  Stream1 := TmnWrapperStream.Create(TFileStream.Create(Location + 'image.jpg', fmOpenRead));
+  Stream2 := TFileStream.Create(Location + 'image_copy.jpg', fmCreate or fmOpenWrite);
+  try
+    Stream1.CopyToStream(Stream2);
+  finally
+    FreeAndNil(Stream2);
+    FreeAndNil(Stream1);
+  end;
+end;
+
 constructor TTestStream.Create;
 begin
   inherited Create;
@@ -656,6 +705,8 @@ begin
       AddProc('ExampleUnGZImage: Unzip GZ image', ExampleGZImage);
       AddProc('ExampleHexLine: Hex lines', ExampleHexLine);
       AddProc('ExampleHexImage: Hex image', ExampleHexImage);
+      AddProc('CopyFile Write', CopyFileWrite);
+      AddProc('CopyFile Read', CopyFileRead);
       while true do
       begin
         for n := 0 to Length(Commands) - 1 do
