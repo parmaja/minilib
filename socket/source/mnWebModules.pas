@@ -575,10 +575,10 @@ begin
   if Module.Compressing then
   begin
     if Request.Header['Accept-Encoding'].Have('gzip', [',']) then
-      FCompressClass := TmnDeflateStreamProxy
+      FCompressClass := TmnGzipStreamProxy
     else if Request.Header['Accept-Encoding'].Have('deflate', [',']) then
-      FCompressClass := TmnGzipStreamProxy;
-    PostHeader('Content-Encoding', 'gzip');
+      FCompressClass := TmnDeflateStreamProxy;
+    PostHeader('Content-Encoding', FCompressClass.GetCompressName);
   end;
 
   if (Request.Header['Content-Length'].IsExists) then

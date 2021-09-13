@@ -261,7 +261,10 @@ begin
   WriteLn('Read image to compressed file');
   aImageFile := TFileStream.Create(Location + 'image.jpg', fmOpenRead);
   Stream := TmnWrapperStream.Create(TFileStream.Create(cFile, fmCreate or fmOpenWrite));
-  CompressProxy := TmnDeflateStreamProxy.Create([cprsRead, cprsWrite], 9, GZ);
+  if GZ then
+    CompressProxy := TmnGzipStreamProxy.Create([cprsRead, cprsWrite], 9)
+  else
+    CompressProxy := TmnDeflateStreamProxy.Create([cprsRead, cprsWrite], 9);
   Stream.AddProxy(CompressProxy);
 
   if WithHex then
@@ -283,7 +286,10 @@ begin
   WriteLn('Read compressed file to image');
   aImageFile := TFileStream.Create(Location + 'image_copy.jpg', fmCreate or fmOpenWrite);
   Stream := TmnWrapperStream.Create(TFileStream.Create(cFile, fmOpenRead));
-  CompressProxy := TmnDeflateStreamProxy.Create([cprsRead, cprsWrite], 9, GZ);
+  if GZ then
+    CompressProxy := TmnGzipStreamProxy.Create([cprsRead, cprsWrite], 9)
+  else
+    CompressProxy := TmnDeflateStreamProxy.Create([cprsRead, cprsWrite], 9);
   Stream.AddProxy(CompressProxy);
 
   if WithHex then
@@ -497,7 +503,7 @@ begin
   WriteLn('Read compressed file to image');
   aImageFile := TFileStream.Create(Location + 'image_copy.jpg', fmCreate or fmOpenWrite);
   Stream := TmnWrapperStream.Create(TFileStream.Create(cFile, fmOpenRead));
-  CompressProxy := TmnDeflateStreamProxy.Create([cprsRead, cprsWrite], 9, True);
+  CompressProxy := TmnGzipStreamProxy.Create([cprsRead, cprsWrite], 9);
   Stream.AddProxy(CompressProxy);
 
   try

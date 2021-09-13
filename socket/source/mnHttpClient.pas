@@ -57,7 +57,7 @@ type
     constructor Create(AClient: TmnHttpClient); virtual;
     destructor Destroy; override;
     procedure Clear; virtual;
-    property Headers: TmnHeader read FHeaders write FHeaders;
+    property Items: TmnHeader read FHeaders write FHeaders;
     property Date: TDateTime read FDate write FDate;
     property Expires: TDateTime read FExpires write FExpires;
     property LastModified: TDateTime read FLastModified write FLastModified;
@@ -143,6 +143,7 @@ type
     CompressProxy: TmCompressStreamProxy;
     function CreateStream: TmnHttpStream; virtual;
     procedure FreeStream; virtual;
+    procedure Receive; virtual;
   public
     constructor Create;
     destructor Destroy; override;
@@ -338,7 +339,7 @@ function TmnCustomHttpHeader.GetHeader(Index: string): string;
 var
   F: TmnField;
 begin
-  F := Headers.Field[Index];
+  F := Items.Field[Index];
   if F <> nil then
     Result := F.AsString
   else
@@ -348,9 +349,9 @@ end;
 procedure TmnCustomHttpHeader.SetHeader(Index: string; AValue: string);
 begin
   if AValue <> '' then
-    Headers.Require[Index].Value := AValue
+    Items.Require[Index].Value := AValue
   else
-    Headers.RemoveByName(Index);
+    Items.RemoveByName(Index);
 end;
 
 constructor TmnCustomHttpHeader.Create(AClient: TmnHttpClient);
@@ -405,7 +406,7 @@ var
 begin
   CollectHeaders;
   Client.Stream.WriteLineUTF8('POST ' + Client.Path + ' ' + ProtocolVersion);
-  for f in Headers do
+  for f in Items do
     if f.AsString <> '' then
       Client.Stream.WriteLineUTF8(f.FullString);
   for f in Client.Cookies do
@@ -424,7 +425,7 @@ var
 begin
   CollectHeaders;
   Client.Stream.WriteLineUTF8('GET ' + Client.Path + ' ' + ProtocolVersion);
-  for f in Headers do
+  for f in Items do
     if f.AsString <> '' then
       Client.Stream.WriteLineUTF8(f.FullString);
   for f in Client.Cookies do
@@ -441,7 +442,7 @@ var
 begin
   CollectHeaders;
   Client.Stream.WriteLineUTF8('HEAD ' + Client.Path + ' ' + ProtocolVersion);
-  for f in Headers do
+  for f in Items do
     if f.AsString <> '' then
       Client.Stream.WriteLineUTF8(f.FullString);
   for f in Client.Cookies do
@@ -465,7 +466,7 @@ begin
     FAccept := Header['Accept'];
     FAcceptCharSet := Header['Accept-CharSet'];
     FAcceptLanguage := Header['Accept-Language'];
-    FAcceptEncoding.DelimitedText := Header['Accept-Encoding'];
+    FAcceptEncoding.DelimitedText := Header['Content-Encoding'];
   end;
 end;
 
@@ -479,36 +480,12 @@ begin
     Client.Stream.ReadLine(s, True);
     s := Trim(s);
     repeat
-      Headers.AddItem(s, ':', True);
+      Items.AddItem(s, ':', True);
       Client.Stream.ReadLine(s, True);
       s := Trim(s);
     until { FStream.Connected or } (s = '');
   end;
   ReceiveHeaders;
-  s := Headers.Field['Set-Cookie'].AsString;
-  Client.Cookies.Delimiter := ';';
-  Client.Cookies.AsString := s;
-
-  if Headers['Accept-Encoding'].Have('gzip', [',']) then
-    Client.CompressClass := TmnDeflateStreamProxy
-  else if Headers['Accept-Encoding'].Have('deflate', [',']) then
-    Client.CompressClass := TmnGzipStreamProxy;
-
-  if Client.CompressClass <> nil then
-  begin
-    if Client.CompressProxy <> nil then
-      Client.CompressProxy.Enable
-    else
-    begin
-      Client.CompressProxy := Client.CompressClass.Create([cprsRead], 9);
-      Client.Stream.AddProxy(Client.CompressProxy);
-    end;
-  end
-  else
-  begin
-    if Client.CompressProxy <> nil then
-      Client.CompressProxy.Disable;
-  end;
 end;
 
 { TmnHttpStream }
@@ -564,7 +541,7 @@ begin
   //
   Result := Stream.Connected;
   if Result then
-    Response.Receive;
+    Receive;
 end;
 
 function TmnHttpClient.CreateStream: TmnHttpStream;
@@ -611,7 +588,7 @@ begin
   begin
     Request.SendGet;
     if Stream.Connected then
-      Response.Receive;
+      Receive;
   end;
   Result := Stream.Connected;
 end;
@@ -627,6 +604,39 @@ end;
 procedure TmnHttpClient.ReceiveStream(AStream: TStream; Count: Integer);
 begin
   FStream.ReadStream(AStream, Count);
+end;
+
+procedure TmnHttpClient.Receive;
+var
+  s: string;
+begin
+  Response.Receive;
+
+  s := Response.Header['Set-Cookie'];
+  Cookies.Delimiter := ';';
+  Cookies.AsString := s;
+
+
+  if Response.Items['Content-Encoding'].Have('gzip', [',']) then
+    CompressClass := TmnGzipStreamProxy
+  else if Response.Items['Content-Encoding'].Have('deflate', [',']) then
+    CompressClass := TmnDeflateStreamProxy;
+
+  if CompressClass <> nil then
+  begin
+    if CompressProxy <> nil then
+      CompressProxy.Enable
+    else
+    begin
+      CompressProxy := CompressClass.Create([cprsRead], 9);
+      Stream.AddProxy(CompressProxy);
+    end;
+  end
+  else
+  begin
+    if CompressProxy <> nil then
+      CompressProxy.Disable;
+  end;
 end;
 
 procedure TmnHttpClient.ReceiveMemoryStream(AStream: TStream);
@@ -669,7 +679,7 @@ begin
   Result := Open(vURL, False);
   try
     Request.SendHead;
-    Response.Receive;
+    Receive;
     aSizeStr := Response.Header['Content-Length'];
     FileSize := StrToInt64(aSizeStr);
   finally
