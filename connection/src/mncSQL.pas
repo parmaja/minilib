@@ -443,7 +443,8 @@ end;
 procedure TmncSQLCommand.DoUnparse;
 begin
   inherited;
-  ProcessedSQL.Clear;
+  if ProcessedSQL <> nil then
+    ProcessedSQL.Clear;
   //maybe clear params, idk
 end;
 
@@ -682,8 +683,8 @@ end;
 
 destructor TmncSQLCommand.Destroy;
 begin
+  FreeAndNil(FProcessedSQL); //if you moved it after inherited say WHY
   inherited;
-  FreeAndNil(FProcessedSQL);
 end;
 
 function TmncSQLCommand.GetLastRowID: Int64;
