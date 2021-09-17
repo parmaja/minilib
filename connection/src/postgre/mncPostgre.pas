@@ -361,13 +361,13 @@ type
     function GetDone: Boolean; override;
     function GetActive: Boolean; override;
     procedure DoClose; override;
-    function IsSingleRowMode: Boolean;
     procedure ClearStatement; virtual;
   public
     function GetRowsChanged: Integer; override;
     function GetLastInsertID: Int64;
     property Statement: PPGresult read FStatement;//opened by PQexecPrepared
     property RecordCount: Integer read GetRecordCount;
+    //https://www.postgresql.org/docs/9.2/libpq-single-row-mode.html
     property SingleRowMode: Boolean read FSingleRowMode write FSingleRowMode;
   end;
 
@@ -1094,11 +1094,6 @@ begin
   //Connection.Execute();
 end;
 
-function TmncPGCommand.IsSingleRowMode: Boolean;
-begin
-  Result := SingleRowMode and Assigned(PQsetSingleRowMode);
-end;
-
 function TmncPGCommand.GetDone: Boolean;
 begin
   Result := (FStatement = nil) or FEOF;
@@ -1132,7 +1127,7 @@ begin
         f := 0;
     end;
 
-    if IsSingleRowMode then
+    if SingleRowMode then
     begin
       PQsendQueryPrepared(Session.DBHandle, PAnsiChar(FHandle), Binds.Count, P, nil, nil, f);
       PQsetSingleRowMode(Session.DBHandle);
@@ -1152,7 +1147,7 @@ begin
 
   FStatus := PQresultStatus(FStatement);
   FBOF := True;
-  if IsSingleRowMode then
+  if SingleRowMode then
     FEOF := (FStatement=nil) or not (FStatus in [PGRES_SINGLE_TUPLE])
   else
     FEOF := (FStatement=nil) or not (FStatus in [PGRES_TUPLES_OK]);
@@ -1184,7 +1179,7 @@ begin
     else
       inc(FTuple);
 
-    if IsSingleRowMode then
+    if SingleRowMode then
     begin
       FetchValues(FStatement, FTuple);
       PQclear(FStatement);
@@ -1205,8 +1200,8 @@ var
   c: PPGconn;
   r: PPGresult;
   s: UTF8String;
-  i: Integer;
-  z: Integer;
+//  i: Integer;
+//  z: Integer;
 begin
   FBOF := True;
   FHandle := Session.NewToken;
@@ -1256,8 +1251,8 @@ end;
 
 procedure TmncPGCommand.ClearStatement;
 begin
-  PQclear(FStatement);
-  //TPGClearThread.Create(FStatement); //tooo slow in ddl command  :(
+  //PQclear(FStatement);
+  TPGClearThread.Create(FStatement); //tooo slow in ddl command  :(
 end;
 
 procedure TmncPGCommand.DeallocateStatement;

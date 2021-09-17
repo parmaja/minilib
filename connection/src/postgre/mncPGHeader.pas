@@ -1,6 +1,15 @@
 unit mncPGHeader;
-{$ifdef FPC}{$mode Delphi}{$H+}{$endif}
-{}
+{ postgresql 13.x }
+{$IFDEF FPC}
+{$MODE delphi}
+{$PACKRECORDS C}
+{$ENDIF}
+
+{$M+}{$H+}
+
+{$MINENUMSIZE 4} //All enum must be sized as Integer
+{$Z4}{$A8}
+
 {**
  *  This file is part of the "Mini Connections"
  *
@@ -11,7 +20,10 @@ unit mncPGHeader;
  *
  *}
  {
-   This file sqlite3.inc ported from Lazarus just to be compatiple in both Delphi and FPC
+   Initially this file ported from Lazarus just to be compatiple in both Delphi and FPC
+   But we updated it from postgresql 13.x
+
+   src/interfaces/libpq/libpq-fe.h
  }
 
 interface
@@ -23,7 +35,6 @@ uses
 
 const
 
-  NAMEDATALEN = 32;
   OIDNAMELEN = 36;
 
   INV_WRITE = $00020000;
@@ -32,7 +43,6 @@ const
   BLOB_SEEK_SET = 0;
   BLOB_SEEK_CUR = 1;
   BLOB_SEEK_END = 2;
-
 
   OID_BOOL     = 16;
   OID_BYTEA    = 17;
@@ -53,70 +63,149 @@ const
   OID_TIME      = 1083;
   OID_NUMERIC   = 1700;
 
+  {
+   * Option flags for PQcopyResult
+  }
+  PG_COPYRES_ATTRS		     = $01;
+  PG_COPYRES_TUPLES		     = $02;	{ Implies PG_COPYRES_ATTRS }
+  PG_COPYRES_EVENTS		     = $04;
+  PG_COPYRES_NOTICEHOOKS	 = $08;
+
+
 { ****************** Plain API Types definition ***************** }
 
 type
-  {$ifdef FPC}
-  {$PACKRECORDS C}
-  {$else DELPHI}
-  TLibHandle = System.THandle;
-  {$endif}
 
   OID = Integer;
 
 { Application-visible enum types }
-  ConnStatusType = (
+
+  TConnStatusType = (
     CONNECTION_OK,
-    CONNECTION_BAD
+    CONNECTION_BAD,
+
+  	{ Non-blocking mode only below here }
+
+  	{
+  	 * The existence of these should never be relied upon - they should only
+  	 * be used for user feedback or similar purposes.
+  	 }
+  	CONNECTION_STARTED,			{ Waiting for connection to be made.  }
+  	CONNECTION_MADE,			{ Connection OK; waiting to send.     }
+  	CONNECTION_AWAITING_RESPONSE,	{ Waiting for a response from the
+  									 * postmaster.        }
+  	CONNECTION_AUTH_OK,			{ Received authentication; waiting for
+  								 * backend startup. }
+  	CONNECTION_SETENV,			{ Negotiating environment. }
+  	CONNECTION_SSL_STARTUP,		{ Negotiating SSL. }
+  	CONNECTION_NEEDED,			{ Internal state: connect() needed }
+  	CONNECTION_CHECK_WRITABLE,	{ Check if we could make a writable
+  								 * connection. }
+  	CONNECTION_CONSUME,			{ Wait for any pending message and consume
+  								 * them. }
+  	CONNECTION_GSS_STARTUP,		{ Negotiating GSSAPI. }
+  	CONNECTION_CHECK_TARGET		{ Check if we have a proper target connection }
     );
+
+  TPostgresPollingStatusType = (
+  	PGRES_POLLING_FAILED = 0,
+  	PGRES_POLLING_READING,		{ These two indicate that one may	  }
+  	PGRES_POLLING_WRITING,		{ use select before polling again.   }
+  	PGRES_POLLING_OK,
+  	PGRES_POLLING_ACTIVE		{ unused; keep for awhile for backwards
+  								 * compatibility }
+  );
 
   TExecStatusType = (
-    PGRES_EMPTY_QUERY,
-    PGRES_COMMAND_OK, { a query command that doesn't return anything
-      was executed properly by the backend }
-    PGRES_TUPLES_OK, { a query command that returns tuples
-      was executed properly by the backend,
-      PGresult contains the result tuples }
-    PGRES_COPY_OUT, { Copy Out data transfer in progress }
-    PGRES_COPY_IN, { Copy In data transfer in progress }
-    PGRES_BAD_RESPONSE, { an unexpected response was recv'd from
-      the backend }
-    PGRES_NONFATAL_ERROR,
-    PGRES_FATAL_ERROR,
-    PGRES_COPY_BOTH,
-    PGRES_SINGLE_TUPLE
-    );
+    PGRES_EMPTY_QUERY = 0,		{ empty query string was executed }
+    PGRES_COMMAND_OK,			{ a query command that doesn't return
+                                 * anything was executed properly by the
+                                 * backend }
+    PGRES_TUPLES_OK,			{ a query command that returns tuples was
+                                 * executed properly by the backend, PGresult
+                                 * contains the result tuples }
+    PGRES_COPY_OUT,				{ Copy Out data transfer in progress }
+    PGRES_COPY_IN,				{ Copy In data transfer in progress }
+    PGRES_BAD_RESPONSE,			{ an unexpected response was recv'd from the
+                                 * backend }
+    PGRES_NONFATAL_ERROR,		{ notice or warning message }
+    PGRES_FATAL_ERROR,			{ query failed }
+    PGRES_COPY_BOTH,			{ Copy In/Out data transfer in progress }
+    PGRES_SINGLE_TUPLE			{ single tuple from larger resultset }
+  );
 
-{ String descriptions of the TExecStatusTypes }
-  pgresStatus = array[$00..$FF] of PAnsiChar;
+  TPGTransactionStatusType = (
+      PQTRANS_IDLE,				{ connection idle }
+      PQTRANS_ACTIVE,				{ command in progress }
+      PQTRANS_INTRANS,			{ idle, within transaction block }
+      PQTRANS_INERROR,			{ idle, within failed transaction }
+      PQTRANS_UNKNOWN				{ cannot determine status }
+  );
 
-{ PGconn encapsulates a connection to the backend.
+  TPGVerbosity = (
+      PQERRORS_TERSE,				{ single-line error messages }
+      PQERRORS_DEFAULT,			{ recommended style }
+      PQERRORS_VERBOSE,			{ all the facts, ma'am }
+      PQERRORS_SQLSTATE			{ only error severity and SQLSTATE code }
+  );
+
+  TPGContextVisibility = (
+      PQSHOW_CONTEXT_NEVER,		{ never show CONTEXT field }
+      PQSHOW_CONTEXT_ERRORS,		{ show CONTEXT for errors only (default) }
+      PQSHOW_CONTEXT_ALWAYS		{ always show CONTEXT field }
+  );
+
+  {
+   * PGPing - The ordering of this enum should not be altered because the
+   * values are exposed externally via pg_isready.
+  }
+
+  TPGPing = (
+      PQPING_OK,					{ server is accepting connections }
+      PQPING_REJECT,				{ server is alive but rejecting connections }
+      PQPING_NO_RESPONSE,			{ could not establish connection }
+      PQPING_NO_ATTEMPT			{ connection not attempted (bad params) }
+  );
+
+{
+  PGconn encapsulates a connection to the backend.
   The contents of this struct are not supposed to be known to applications.
 }
-  PGconn = Pointer;
-  PPGconn = Pointer;
+  TPGconn = type Pointer;
+  PPGconn = ^TPGconn;
 
-{ PGresult encapsulates the result of a query (or more precisely, of a single
-  SQL command --- a query string given to PQsendQuery can contain multiple
-  commands and thus return multiple PGresult objects).
+{
+   PGresult encapsulates the result of a query (or more precisely, of a single
+   SQL command --- a query string given to PQsendQuery can contain multiple
+   commands and thus return multiple PGresult objects).
+   The contents of this struct are not supposed to be known to applications.
+}
+  TPGresult = type Pointer;
+  PPGresult = ^TPGresult;
+
+{
+  PGcancel encapsulates the information needed to cancel a running
+  query on an existing connection.
   The contents of this struct are not supposed to be known to applications.
 }
-  PGresult = Pointer;
-  PPGresult = Pointer;
+  TPGcancel = type Pointer;
+  PPGcancel= ^TPGcancel;
 
-{ PGnotify represents the occurrence of a NOTIFY message.
+{
+  PGnotify represents the occurrence of a NOTIFY message.
   Ideally this would be an opaque typedef, but it's so simple that it's
   unlikely to change.
   NOTE: in Postgres 6.4 and later, the be_pid is the notifying backend's,
   whereas in earlier versions it was always your own backend's PID.
 }
-  PGnotify = packed record
-    relname: PAnsiChar; { name of relation containing data }
-    be_pid: Integer; { process id of backend }
-    extra: PAnsiChar;
+  PPGnotify = ^TPGnotify;
+  TPGnotify = packed record
+    relname: PAnsiChar; { notification condition name }
+    be_pid: Integer;  { process ID of notifying server process }
+    extra: PAnsiChar; { notification parameter }
+    { Fields below here are private to libpq; apps should not use 'em }
+    next: PPGnotify;		{ list link }
   end;
-
-  PPGnotify = ^PGnotify;
 
 { PQnoticeProcessor is the function type for the notice-message callback. }
 
@@ -182,17 +271,28 @@ type
 
   PPQArgBlock = ^PQArgBlock;
 
+  {* ----------------
+   * Exported functions of libpq
+   * ----------------
+   *}
 
-{ ************** Plain API Function types definition ************* }
+  { ===	in fe-connect.c === }
 
-{ ===	in fe-connect.c === }
-  TPQconnectdb = function(ConnInfo: PAnsiChar): PPGconn; cdecl; // FirmOS 8.1 OK
-  TPQsetdbLogin = function(Host, Port, Options, Tty, Db, User, Passwd: PAnsiChar): PPGconn; cdecl; // FirmOS 8.1 OK
-//15022006 FirmOS: omitting   PQconnectStart
-//15022006 FirmOS: omitting  PQconnectPoll
+  { make a new client connection to the backend }
+  { Asynchronous (non-blocking) }
+
+  TPQconnectStart = function(ConnInfo: PAnsiChar): PPGconn; cdecl;
+  TPQconnectStartParams = function(Keywords: Pointer; Values: Pointer; expand_dbname: Integer): PPGconn; cdecl;
+  TPQconnectPoll = function(conn: PPGconn): TPostgresPollingStatusType; cdecl;
+
+  TPQconnectdb = function(ConnInfo: PAnsiChar): PPGconn; cdecl;
+  TPQconnectdbParams = function(Keywords: Pointer; Values: Pointer; expand_dbname: Integer): PPGconn; cdecl;
+  TPQsetdbLogin = function(Host, Port, Options, Tty, Db, User, Passwd: PAnsiChar): PPGconn; cdecl;
+
+  TPQfinish = procedure(conn: PPGconn); cdecl;
   TPQconndefaults = function: PPQconninfoOption; cdecl;
-  TPQfinish = procedure(Handle: PPGconn); cdecl;
-  TPQreset = procedure(Handle: PPGconn); cdecl;
+
+  TPQreset = procedure(conn: PPGconn); cdecl;
 
 //15022006 FirmOS: omitting PQresetStart
 //15022006 FirmOS: omitting PQresetPoll
@@ -206,7 +306,7 @@ type
   TPQport = function(Handle: PPGconn): PAnsiChar; cdecl;
   TPQtty = function(Handle: PPGconn): PAnsiChar; cdecl;
   TPQoptions = function(Handle: PPGconn): PAnsiChar; cdecl;
-  TPQstatus = function(Handle: PPGconn): ConnStatusType; cdecl;
+  TPQstatus = function(Handle: PPGconn): TConnStatusType; cdecl;
 
 //TBD  PGTransactionStatusType PQtransactionStatus(const PGconn *conn);
 
@@ -227,6 +327,7 @@ type
   TPQsetNoticeProcessor = procedure(Handle: PPGconn; Proc: PQnoticeProcessor; Arg: Pointer); cdecl;
 
 { === in fe-exec.c === }
+
   TPQexec = function(Handle: PPGconn; Query: PAnsiChar): PPGresult; cdecl;
   TPQnotifies = function(Handle: PPGconn): PPGnotify; cdecl;
   TPQfreeNotify = procedure(Handle: PPGnotify); cdecl;
@@ -239,6 +340,14 @@ type
   TPQgetlineAsync = function(Handle: PPGconn; Buffer: PAnsiChar; BufSize: Integer): Integer; cdecl;
   TPQputnbytes = function(Handle: PPGconn; Buffer: PAnsiChar; NBytes: Integer): Integer; cdecl;
   TPQendcopy = function(Handle: PPGconn): Integer; cdecl;
+
+  //* Set blocking/nonblocking connection to the backend */
+  TPQsetnonblocking = function(conn: PPGconn; arg: Integer): Integer; cdecl;
+  TPQisnonblocking = function(conn: PPGconn): Integer; cdecl;
+  TPQisthreadsafe = function(): Integer; cdecl;
+  TPQping = function(ConnInfo: PAnsiChar): TPGPing; cdecl;
+  TPQpingParams = function(Keywords: Pointer; Values: Pointer; expand_dbname: Integer): TPGPing; cdecl;
+
   TPQfn = function(Handle: PPGconn; fnid: Integer; result_buf, result_len: PInteger; result_is_int: Integer; args: PPQArgBlock; nargs: Integer): PPGresult; cdecl;
   TPQresultStatus = function(Result: PPGresult): TExecStatusType; cdecl;
   TPQresultErrorMessage = function(Result: PPGresult): PAnsiChar; cdecl;
@@ -291,7 +400,6 @@ type
 //unsigned char *PQunescapeBytea(const unsigned char *from, size_t *to_length);
 
   TPQFreemem = procedure(ptr: Pointer); cdecl;
-// void PQfreemem(void *ptr);
 
 { === in fe-lobj.c === }
   Tlo_open = function(Handle: PPGconn; lobjId: OID; mode: Integer): Integer; cdecl;
@@ -306,15 +414,17 @@ type
   Tlo_export = function(Handle: PPGconn; lobjId: OID; filename: PAnsiChar): Integer; cdecl;
   Tlo_truncate = function(Handle: PPGconn; fd, len: Integer): Integer; cdecl;
 
-
-{ ************* Plain API Function variables definition ************ }
-
 var
-{ ===	in fe-connect.c === }
+
+  PQconnectStart: TPQconnectStart;
+  PQconnectStartParams: TPQconnectStartParams;
+  PQconnectPoll: TPQconnectPoll;
+
   PQconnectdb: TPQconnectdb;
   PQsetdbLogin: TPQsetdbLogin;
-  PQconndefaults: TPQconndefaults;
   PQfinish: TPQfinish;
+  PQconndefaults: TPQconndefaults;
+
   PQreset: TPQreset;
   PQrequestCancel: TPQrequestCancel;
   PQdb: TPQdb;
@@ -345,6 +455,13 @@ var
   PQgetlineAsync: TPQgetlineAsync;
   PQputnbytes: TPQputnbytes;
   PQendcopy: TPQendcopy;
+
+  PQsetnonblocking: TPQsetnonblocking;
+  PQisnonblocking: TPQisnonblocking;
+  PQisthreadsafe: TPQisthreadsafe;
+  PQping: TPQping;
+  PQpingParams: TPQpingParams;
+
   PQfn: TPQfn;
   PQresultStatus: TPQresultStatus;
   PQresultErrorMessage: TPQresultErrorMessage;
@@ -379,6 +496,7 @@ var
   PQescapeByteaConn: TPQescapeByteaConn;
   PQescapeBytea: TPQescapeBytea;
   PQunescapeBytea: TPQunescapeBytea;
+
   PQFreemem: TPQFreemem;
 
 { === in fe-lobj.c === }
@@ -406,20 +524,32 @@ type
 var
   PGLib: TmncPGLib = nil;
 
+function PQsetdb(Host, Port, Options, Tty, Db: PAnsiChar): PPGconn;
+
 implementation
+
+function PQsetdb(Host, Port, Options, Tty, Db: PAnsiChar): PPGconn;
+begin
+  Result := PQsetdbLogin(Host, Port, Options, Tty, Db, nil, nil);
+end;
 
 procedure TmncPGLib.Link;
 begin
-{ ===	in fe-connect.c === }
+
   PQfreemem := GetAddress('PQfreemem');
   PQescapeByteaConn := GetAddress('PQescapeByteaConn');
   PQescapeBytea := GetAddress('PQescapeBytea');
   PQunescapeBytea := GetAddress('PQunescapeBytea');
 
+  PQconnectStart := GetAddress('PQconnectStart');
+  PQconnectStartParams := GetAddress('PQconnectStartParams');
+  PQconnectPoll := GetAddress('PQconnectPoll');
+
   PQconnectdb := GetAddress('PQconnectdb');
   PQsetdbLogin := GetAddress('PQsetdbLogin');
-  PQconndefaults := GetAddress('PQconndefaults');
   PQfinish := GetAddress('PQfinish');
+  PQconndefaults := GetAddress('PQconndefaults');
+
   PQreset := GetAddress('PQreset');
   PQrequestCancel := GetAddress('PQrequestCancel');
   PQdb := GetAddress('PQdb');
@@ -450,6 +580,13 @@ begin
   PQgetlineAsync := GetAddress('PQgetlineAsync');
   PQputnbytes := GetAddress('PQputnbytes');
   PQendcopy := GetAddress('PQendcopy');
+
+  PQsetnonblocking := GetAddress('PQsetnonblocking');
+  PQisnonblocking := GetAddress('PQisnonblocking');
+  PQisthreadsafe := GetAddress('PQisthreadsafe');
+  PQping := GetAddress('PQping');
+  PQpingParams := GetAddress('PQpingParams');
+
   PQfn := GetAddress('PQfn');
   PQresultStatus := GetAddress('PQresultStatus');
   PQresultErrorMessage := GetAddress('PQresultErrorMessage');
