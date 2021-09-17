@@ -616,7 +616,6 @@ begin
   Cookies.Delimiter := ';';
   Cookies.AsString := s;
 
-
   if Response.Items['Content-Encoding'].Have('gzip', [',']) then
     CompressClass := TmnGzipStreamProxy
   else if Response.Items['Content-Encoding'].Have('deflate', [',']) then

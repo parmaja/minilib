@@ -15,6 +15,7 @@ type
   TMainForm = class(TForm)
     Button1: TButton;
     Button2: TButton;
+    Button3: TButton;
     GetFileSizeBtn1: TButton;
     GetGetBtn: TButton;
     GetGetBtn1: TButton;
@@ -27,6 +28,7 @@ type
     Panel2: TPanel;
     procedure Button1Click(Sender: TObject);
     procedure Button2Click(Sender: TObject);
+    procedure Button3Click(Sender: TObject);
     procedure GetFileSizeBtn1Click(Sender: TObject);
     procedure GetFileSizeBtnClick(Sender: TObject);
     procedure GetGetBtn1Click(Sender: TObject);
@@ -128,6 +130,27 @@ begin
     MemoryStream.Free;
   end;
   //LogEdit.Lines.Add('Finished');
+end;
+
+procedure TMainForm.Button3Click(Sender: TObject);
+var
+  HttpClient: TmnHttpClient;
+  MemoryStream: TMemoryStream;
+begin
+  MemoryStream := TMemoryStream.Create;
+  HttpClient := TmnHttpClient.Create;
+  try
+    HttpClient.UserAgent := sUserAgent;
+    //HttpClient.Compressing := True;
+    HttpClient.Open('http://uk7.internet-radio.com:8226/live');
+    //HttpClient.GetMemoryStream('http://uk7.internet-radio.com:8226/live  ', MemoryStream);
+    LogEdit.Lines.Add(HttpClient.Response.ContentType);
+    //LoadFromStream(HttpClient.Response.ContentType, MemoryStream);
+  finally
+    HttpClient.Free;
+    MemoryStream.Free;
+  end;
+  LogEdit.Lines.Add('Finished');
 end;
 
 procedure TMainForm.GetFileSizeBtn1Click(Sender: TObject);

@@ -116,6 +116,16 @@ object MainForm: TMainForm
       OnClick = Button2Click
       TabOrder = 5
     end
+    object Button3: TButton
+      Left = 0
+      Height = 33
+      Top = 206
+      Width = 93
+      Align = alTop
+      Caption = 'Radio'
+      OnClick = Button3Click
+      TabOrder = 6
+    end
   end
   object LogEdit: TMemo
     Left = 5
