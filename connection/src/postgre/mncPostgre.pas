@@ -394,12 +394,6 @@ type
     function CloseSQL: AnsiString;
   end;
 
-function EncodeBytea(const vStr: string): string; overload;
-function EncodeBytea(vStr: PByte; vLen: Cardinal): string; overload;
-
-function DecodeBytea(const vStr: string): string; overload;
-function DecodeBytea(vStr: PByte; vLen: Cardinal): string; overload;
-
 implementation
 
 uses
@@ -411,53 +405,6 @@ var
 function BEtoN(Val: Integer): Integer;
 begin
   Result := Val;
-end;
-
-function EncodeBytea(vStr: PByte; vLen: Cardinal): string; overload;
-var
-  e: PByte;
-  aLen: Longword;
-begin
-  if vLen=0 then
-    Result := ''
-  else
-  begin
-    e := PQescapeBytea(vStr, vLen, @aLen);
-    try
-      SetLength(Result, aLen + 1);
-      Move(e^, Result[2], aLen - 1);
-      Result[1] := '''';//todo, what is that?
-      Result[aLen+1] := '''';
-      //StrCopy(PChar(Result), e);
-    finally
-      PQFreemem(e);
-    end;
-  end;
-end;
-
-function EncodeBytea(const vStr: string): string;
-begin
-  Result := EncodeBytea(PByte(vStr), ByteLength(vStr));
-end;
-
-function DecodeBytea(vStr: PByte; vLen: Cardinal): string; overload;
-var
-  e: PByte;
-  aLen: Longword;
-begin
-  e := PQunescapeBytea(PByte(vStr), @aLen);
-  try
-    SetLength(Result, aLen);
-    if aLen<>0 then
-      Move(e^, Result[1], aLen);
-  finally
-    PQFreemem(e);
-  end;
-end;
-
-function DecodeBytea(const vStr: string): string;
-begin
-  Result := DecodeBytea(PByte(vStr), ByteLength(vStr));
 end;
 
 { TmncPGBinds }

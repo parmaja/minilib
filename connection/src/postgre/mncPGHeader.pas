@@ -29,6 +29,7 @@ unit mncPGHeader;
 interface
 
 uses
+  Types,
   mnLibraries,
   SysUtils;
 
@@ -74,6 +75,15 @@ const
 { ****************** Plain API Types definition ***************** }
 
 type
+  {$ifndef FPC}
+    {$ifdef CPU64}
+    ULONG_PTR = QWord;
+    {$else}
+    ULONG_PTR = DWord;
+    {$endif}
+  SIZE_T = ULONG_PTR;
+  {$endif}
+
 
   OID = Integer;
   POID = ^OID;
@@ -390,7 +400,7 @@ type
   TPQinitOpenSSL = procedure(do_ssl: Integer; do_crypto: Integer); cdecl;
 
   { Return true if GSSAPI encryption is in use }
-  PQgssEncInUse = function(conn: PPGconn): Integer; cdecl;
+  TPQgssEncInUse = function(conn: PPGconn): Integer; cdecl;
 
   { Returns GSSAPI context if GSSAPI is in use }
   TPQgetgssctx = procedure(conn: PPGconn); cdecl;
@@ -482,7 +492,7 @@ type
 
   TPQntuples = function(Result: PPGresult): Integer; cdecl;
   TPQnfields = function(Result: PPGresult): Integer; cdecl;
-  TPQbinaryTuples = function(Result: PPGresult): Integer; cdecl;
+  TPQbinaryTuples = function(Result: PPGresult): Integer; cdecl; { deprecated; }
   TPQfname = function(Result: PPGresult; field_num: Integer): PAnsiChar; cdecl;
   TPQfnumber = function(Result: PPGresult; field_name: PAnsiChar): Integer; cdecl;
   TPQftable = function(Result: PPGresult; field_num: Integer): OID; cdecl;
@@ -492,7 +502,7 @@ type
   TPQfsize = function(Result: PPGresult; field_num: Integer): Integer; cdecl;
   TPQfmod = function(Result: PPGresult; field_num: Integer): Integer; cdecl;
   TPQcmdStatus = function(Result: PPGresult): PAnsiChar; cdecl;
-  TPQoidStatus = function(Result: PPGresult): PAnsiChar; cdecl;
+  TPQoidStatus = function(Result: PPGresult): PAnsiChar; cdecl; { deprecated 'use PQoidValue'; }
   TPQoidValue = function(Result: PPGresult): OID; cdecl;
   TPQcmdTuples = function(Result: PPGresult): PAnsiChar; cdecl;
   TPQgetvalue = function(Result: PPGresult; tup_num, field_num: Integer): PAnsiChar; cdecl;
@@ -568,7 +578,9 @@ type
   Tpg_valid_server_encoding_id = function(encoding: Integer): Integer;
 
   { Support for overriding sslpassword handling with a callback. }
-  TPQsslKeyPassHook_OpenSSL_type = function(buf: PAnsiChar; size: Integer; conn: PPGconn): Integer; //Callback
+  {this callback}
+  TPQsslKeyPassHook_OpenSSL_type = function(buf: PAnsiChar; size: Integer; conn: PPGconn): Integer;
+
   TPQgetSSLKeyPassHook_OpenSSL = function(): TPQsslKeyPassHook_OpenSSL_type;
   TPQsetSSLKeyPassHook_OpenSSL = procedure (hook: TPQsslKeyPassHook_OpenSSL_type);
   TPQdefaultSSLKeyPassHook_OpenSSL = function(buf: PAnsiChar; size: Integer; conn: PPGconn): Integer;
@@ -624,7 +636,7 @@ var
   PQgetssl: TPQgetssl;
   PQinitSSL: TPQinitSSL;
   PQinitOpenSSL: TPQinitOpenSSL;
-  QgssEncInUse: PQgssEncInUse;
+  PQgssEncInUse: TPQgssEncInUse;
   PQgetgssctx: TPQgetgssctx;
   PQsetErrorVerbosity: TPQsetErrorVerbosity;
   PQsetErrorContextVisibility: TPQsetErrorContextVisibility;
@@ -657,7 +669,6 @@ var
   PQgetCopyData: TPQgetCopyData;
 
   //PQfreeNotify: TPQfreeNotify;
-
   //PQgetline: TPQgetline;
   //PQputline: TPQputline;
   //PQgetlineAsync: TPQgetlineAsync;
@@ -742,15 +753,17 @@ var
   lo_export: Tlo_export;
 
   PQlibVersion: TPQlibVersion;
+
   PQmblen: TPQmblen;
   PQdsplen: TPQdsplen;
   PQenv2encoding: TPQenv2encoding;
   PQencryptPassword: TPQencryptPassword;
   PQencryptPasswordConn: TPQencryptPasswordConn;
+
   pg_char_to_encoding: Tpg_char_to_encoding;
   pg_encoding_to_char: Tpg_encoding_to_char;
   pg_valid_server_encoding_id: Tpg_valid_server_encoding_id;
-  PQsslKeyPassHook_OpenSSL_type: TPQsslKeyPassHook_OpenSSL_type;
+
   PQgetSSLKeyPassHook_OpenSSL: TPQgetSSLKeyPassHook_OpenSSL;
   PQsetSSLKeyPassHook_OpenSSL: TPQsetSSLKeyPassHook_OpenSSL;
   PQdefaultSSLKeyPassHook_OpenSSL: TPQdefaultSSLKeyPassHook_OpenSSL;
@@ -778,7 +791,7 @@ end;
 
 procedure TmncPGLib.Link;
 begin
-
+  RaiseError := False;
   PQconnectStart := GetAddress('PQconnectStart');
   PQconnectStartParams := GetAddress('PQconnectStartParams');
   PQconnectPoll := GetAddress('PQconnectPoll');
@@ -829,20 +842,17 @@ begin
   PQgetssl := GetAddress('PQgetssl');
   PQinitSSL := GetAddress('PQinitSSL');
   PQinitOpenSSL := GetAddress('PQinitOpenSSL');
-  QgssEncInUse := GetAddress('QgssEncInUse');
+  PQgssEncInUse := GetAddress('PQgssEncInUse');
   PQgetgssctx := GetAddress('PQgetgssctx');
   PQsetErrorVerbosity := GetAddress('PQsetErrorVerbosity');
   PQsetErrorContextVisibility := GetAddress('PQsetErrorContextVisibility');
 
-  { Enable/disable tracing }
   PQtrace := GetAddress('PQtrace');
   PQuntrace := GetAddress('PQuntrace');
 
-  { Override default notice handling routines }
   PQsetNoticeReceiver := GetAddress('PQsetNoticeReceiver');
   PQsetNoticeProcessor := GetAddress('PQsetNoticeProcessor');
 
-{ === in fe-exec.c === }
   PQexec := GetAddress('PQexec');
   PQexecParams := GetAddress('PQexecParams');
 
@@ -923,17 +933,14 @@ begin
   PQresultMemorySize:= GetAddress('PQresultMemorySize');
   PQsetvalue:= GetAddress('PQsetvalue');
 
-  PQescapeStringConn:= GetAddress('PQescapeStringConn');
-  PQescapeLiteral:= GetAddress('PQescapeLiteral');
+  PQescapeStringConn := GetAddress('PQescapeStringConn');
+  PQescapeLiteral := GetAddress('PQescapeLiteral');
   PQescapeIdentifier := GetAddress('PQescapeIdentifier');
   PQescapeByteaConn := GetAddress('PQescapeByteaConn');
   PQunescapeBytea := GetAddress('PQunescapeBytea');
 
   //PQescapeBytea := GetAddress('PQescapeBytea');
 
-  //PQfreeNotify := GetAddress('PQfreeNotify');
-
-{ === in fe-lobj.c === }
   lo_open := GetAddress('lo_open');
   lo_close := GetAddress('lo_close');
   lo_read := GetAddress('lo_read');
@@ -952,15 +959,17 @@ begin
   lo_export := GetAddress('lo_export');
 
   PQlibVersion := GetAddress('PQlibVersion');
+
   PQmblen := GetAddress('PQmblen');
   PQdsplen := GetAddress('PQdsplen');
   PQenv2encoding := GetAddress('PQenv2encoding');
   PQencryptPassword := GetAddress('PQencryptPassword');
   PQencryptPasswordConn := GetAddress('PQencryptPasswordConn');
+
   pg_char_to_encoding := GetAddress('pg_char_to_encoding');
   pg_encoding_to_char := GetAddress('pg_encoding_to_char');
   pg_valid_server_encoding_id := GetAddress('pg_valid_server_encoding_id');
-  PQsslKeyPassHook_OpenSSL_type := GetAddress('PQsslKeyPassHook_OpenSSL_type');
+
   PQgetSSLKeyPassHook_OpenSSL := GetAddress('PQgetSSLKeyPassHook_OpenSSL');
   PQsetSSLKeyPassHook_OpenSSL := GetAddress('PQsetSSLKeyPassHook_OpenSSL');
   PQdefaultSSLKeyPassHook_OpenSSL := GetAddress('PQdefaultSSLKeyPassHook_OpenSSL');
