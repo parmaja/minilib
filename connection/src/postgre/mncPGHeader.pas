@@ -351,28 +351,52 @@ type
   { backwards compatible version of PQcancel; not thread-safe }
   TPQrequestCancel = function(conn: PPGconn): Integer; cdecl; //deprecated;
 
+  { Accessor functions for PGconn objects }
   TPQdb = function(conn: PPGconn): PAnsiChar; cdecl;
   TPQuser = function(conn: PPGconn): PAnsiChar; cdecl;
   TPQpass = function(conn: PPGconn): PAnsiChar; cdecl;
   TPQhost = function(conn: PPGconn): PAnsiChar; cdecl;
+  TPQhostaddr = function(conn: PPGconn): PAnsiChar; cdecl;
   TPQport = function(conn: PPGconn): PAnsiChar; cdecl;
   TPQtty = function(conn: PPGconn): PAnsiChar; cdecl;
   TPQoptions = function(conn: PPGconn): PAnsiChar; cdecl;
   TPQstatus = function(conn: PPGconn): TConnStatusType; cdecl;
-
-//TBD  PGTransactionStatusType PQtransactionStatus(const PGconn *conn);
-
-//15022006 FirmOS: omitting const char *PQparameterStatus(const PGconn *conn, const char *paramName);
-
-//15022006 FirmOS: omitting  PQprotocolVersion
-//15022006 FirmOS: omitting  PQserverVersion
-
+  TPQtransactionStatus = function(conn: PPGconn): TPGTransactionStatusType; cdecl;
+  TPQparameterStatus = function(conn: PPGconn; paramName: PAnsiChar): PAnsiChar; cdecl; //or maybe PPAnsiChar
+  TPQprotocolVersion = function(conn: PPGconn): Integer; cdecl;
+  TPQserverVersion = function(conn: PPGconn): Integer; cdecl;
   TPQerrorMessage = function(conn: PPGconn): PAnsiChar; cdecl;
   TPQsocket = function(conn: PPGconn): Integer; cdecl;
   TPQbackendPID = function(conn: PPGconn): Integer; cdecl;
 
-//15022006 FirmOS: omitting  SSL *PQgetssl(const PGconn *conn);
+  { SSL information functions }
 
+  TPQsslInUse = function(conn: PPGconn): Integer; cdecl;
+  TPQsslStruct = procedure(conn: PPGconn; struct_name: PAnsiChar); cdecl;
+  TPQsslAttribute = function(conn: PPGconn; attribute_name: PAnsiChar): PAnsiChar; cdecl;
+  TPQsslAttributeNames = function(conn: PPGconn): PPAnsiChar; cdecl;
+
+  { Get the OpenSSL structure associated with a connection. Returns NULL for
+   * unencrypted connections or if any other TLS library is in use. }
+  TPQgetssl = procedure(conn: PPGconn); cdecl;
+
+  { Tell libpq whether it needs to initialize OpenSSL }
+  TPQinitSSL = procedure(do_init: Integer); cdecl;
+
+  { More detailed way to tell libpq whether it needs to initialize OpenSSL }
+  TPQinitOpenSSL = procedure(do_ssl: Integer; do_crypto: Integer); cdecl;
+
+  { Return true if GSSAPI encryption is in use }
+  PQgssEncInUse = function(conn: PPGconn): Integer; cdecl;
+
+  { Returns GSSAPI context if GSSAPI is in use }
+  TPQgetgssctx = procedure(conn: PPGconn); cdecl;
+
+  { Set verbosity for PQerrorMessage and PQresultErrorMessage }
+  TPQsetErrorVerbosity = function(conn: PPGconn; verbosity: TPGVerbosity): TPGVerbosity; cdecl; //TODO check return
+
+  { Set CONTEXT visibility for PQerrorMessage and PQresultErrorMessage }
+  TPQsetErrorContextVisibility = function(conn: PPGconn; show_context: TPGContextVisibility): TPGContextVisibility; cdecl;
 
   TPQtrace = procedure(conn: PPGconn; DebugPort: Pointer); cdecl;
   TPQuntrace = procedure(conn: PPGconn); cdecl;
@@ -444,7 +468,7 @@ type
 
 //TODO  TPQescapeString    =function(const from:PAnsiChar;from_length:longword;to_lenght:PLongword):PAnsiChar;cdecl;
 
-//unsigned char *PQescapeByteaConn(PGconn *conn,
+//unsigned char *PQescapeByteaConn(conn: PPGconn,
 //                                 const unsigned char *from,
 //                                 size_t from_length,
 //                                 size_t *to_length);
@@ -492,13 +516,32 @@ var
   PQuser: TPQuser;
   PQpass: TPQpass;
   PQhost: TPQhost;
+  PQhostaddr: TPQhostaddr;
   PQport: TPQport;
   PQtty: TPQtty;
   PQoptions: TPQoptions;
   PQstatus: TPQstatus;
+  PQtransactionStatus: TPQtransactionStatus;
+  PQparameterStatus: TPQparameterStatus;
+  PQprotocolVersion: TPQprotocolVersion;
+  PQserverVersion: TPQserverVersion;
   PQerrorMessage: TPQerrorMessage;
   PQsocket: TPQsocket;
   PQbackendPID: TPQbackendPID;
+
+  PQsslInUse: TPQsslInUse;
+  PQsslStruct: TPQsslStruct;
+  PQsslAttribute: TPQsslAttribute;
+  PQsslAttributeNames: TPQsslAttributeNames;
+
+  PQgetssl: TPQgetssl;
+  PQinitSSL: TPQinitSSL;
+  PQinitOpenSSL: TPQinitOpenSSL;
+  QgssEncInUse: PQgssEncInUse;
+  PQgetgssctx: TPQgetgssctx;
+  PQsetErrorVerbosity: TPQsetErrorVerbosity;
+  PQsetErrorContextVisibility: TPQsetErrorContextVisibility;
+
   PQtrace: TPQtrace;
   PQuntrace: TPQuntrace;
   PQsetNoticeProcessor: TPQsetNoticeProcessor;
@@ -626,13 +669,33 @@ begin
   PQuser := GetAddress('PQuser');
   PQpass := GetAddress('PQpass');
   PQhost := GetAddress('PQhost');
+  PQhostaddr := GetAddress('PQhostaddr');
   PQport := GetAddress('PQport');
   PQtty := GetAddress('PQtty');
   PQoptions := GetAddress('PQoptions');
   PQstatus := GetAddress('PQstatus');
+  PQtransactionStatus := GetAddress('PQtransactionStatus');
+  PQparameterStatus := GetAddress('PQparameterStatus');
+  PQprotocolVersion := GetAddress('PQprotocolVersion');
+  PQserverVersion := GetAddress('PQserverVersion');
+
   PQerrorMessage := GetAddress('PQerrorMessage');
   PQsocket := GetAddress('PQsocket');
   PQbackendPID := GetAddress('PQbackendPID');
+
+  PQsslInUse := GetAddress('PQsslInUse');
+  PQsslStruct := GetAddress('PQsslStruct');
+  PQsslAttribute := GetAddress('PQsslAttribute');
+  PQsslAttributeNames := GetAddress('PQsslAttributeNames');
+
+  PQgetssl := GetAddress('PQgetssl');
+  PQinitSSL := GetAddress('PQinitSSL');
+  PQinitOpenSSL := GetAddress('PQinitOpenSSL');
+  QgssEncInUse := GetAddress('QgssEncInUse');
+  PQgetgssctx := GetAddress('PQgetgssctx');
+  PQsetErrorVerbosity := GetAddress('PQsetErrorVerbosity');
+  PQsetErrorContextVisibility := GetAddress('PQsetErrorContextVisibility');
+
   PQtrace := GetAddress('PQtrace');
   PQuntrace := GetAddress('PQuntrace');
   PQsetNoticeProcessor := GetAddress('PQsetNoticeProcessor');
