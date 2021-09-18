@@ -32,7 +32,6 @@ uses
   mnLibraries,
   SysUtils;
 
-
 const
 
   OIDNAMELEN = 36;
@@ -283,6 +282,7 @@ type
    ----------------
   }
 
+  PPGresAttDesc = ^TPGresAttDesc;
   TPGresAttDesc = record
       name: PAnsiChar;			{ column name }
       TableId: Oid;     		{ source table, if known }
@@ -367,6 +367,10 @@ type
   TPQerrorMessage = function(conn: PPGconn): PAnsiChar; cdecl;
   TPQsocket = function(conn: PPGconn): Integer; cdecl;
   TPQbackendPID = function(conn: PPGconn): Integer; cdecl;
+  TPQconnectionNeedsPassword = function(conn: PPGconn): Integer;
+  TPQconnectionUsedPassword = function(conn: PPGconn): Integer;
+  TPQclientEncoding = function(conn: PPGconn): Integer;
+  TPQsetClientEncoding = function(conn: PPGconn; encoding: PAnsiChar): Integer;
 
   { SSL information functions }
 
@@ -445,13 +449,13 @@ type
   TPQputCopyEnd = function(conn: PPGconn; errormsg: PPAnsiChar): Integer; cdecl;
   TPQgetCopyData = function(conn: PPGconn; buffer: PPAnsiChar; async: Integer): Integer; cdecl;
 
-
-  TPQfreeNotify = procedure(Handle: PPGnotify); cdecl;
-  //TPQgetline = function(conn: PPGconn; Str: PAnsiChar; length: Integer): Integer; cdecl;
-  //TPQputline = function(conn: PPGconn; Str: PAnsiChar): Integer; cdecl;
-  //TPQgetlineAsync = function(conn: PPGconn; Buffer: PAnsiChar; BufSize: Integer): Integer; cdecl;
-  //TPQputnbytes = function(conn: PPGconn; Buffer: PAnsiChar; NBytes: Integer): Integer; cdecl;
-  //TPQendcopy = function(conn: PPGconn): Integer; cdecl;
+  { Exists for backward compatibility.  bjm 2003-03-24 }
+  //TPQfreeNotify = procedure(Handle: PPGnotify); deprecated; cdecl;
+  //TPQgetline = function(conn: PPGconn; Str: PAnsiChar; length: Integer): Integer; deprecated; cdecl;
+  //TPQputline = function(conn: PPGconn; Str: PAnsiChar): Integer; deprecated; cdecl;
+  //TPQgetlineAsync = function(conn: PPGconn; Buffer: PAnsiChar; BufSize: Integer): Integer; deprecated; cdecl;
+  //TPQputnbytes = function(conn: PPGconn; Buffer: PAnsiChar; NBytes: Integer): Integer; deprecated; cdecl;
+  //TPQendcopy = function(conn: PPGconn): Integer; deprecated; cdecl;
 
   //* Set blocking/nonblocking connection to the backend }
   TPQsetnonblocking = function(conn: PPGconn; arg: Integer): Integer; cdecl;
@@ -463,17 +467,17 @@ type
   { Force the write buffer to be written (or at least try) }
   TPQflush = function(conn: PPGconn): Integer;
 
+  {
+   * "Fast path" interface --- not really recommended for application
+   * use
+  }
   TPQfn = function(conn: PPGconn; fnid: Integer; result_buf, result_len: PInteger; result_is_int: Integer; args: PPQArgBlock; nargs: Integer): PPGresult; cdecl;
-  TPQresultStatus = function(Result: PPGresult): TExecStatusType; cdecl;
+
+  { Accessor functions for PGresult objects }
+  TPQresultStatus = function(result: PPGresult): TExecStatusType; cdecl;
+  TPQresStatus = function(status: TExecStatusType): PAnsiChar; cdecl;
   TPQresultErrorMessage = function(Result: PPGresult): PAnsiChar; cdecl;
-
-  TPQnparams  = function(Result: PPGresult): Integer; cdecl;
-  TPQparamtype = function(Result: PPGresult; param_num: Integer): Integer; cdecl;
-
-  //p = params
-  //r = result
-
-//new  char *PQresultErrorField(const PGresult *res, int fieldcode);
+  TPQresultVerboseErrorMessage = function (Result: PPGresult; verbosity: TPGVerbosity; show_context: TPGContextVisibility): PAnsiChar; cdecl;
   TPQresultErrorField = function(result: PPGResult; fieldcode: integer): PAnsiChar; cdecl;
 
   TPQntuples = function(Result: PPGresult): Integer; cdecl;
@@ -481,47 +485,93 @@ type
   TPQbinaryTuples = function(Result: PPGresult): Integer; cdecl;
   TPQfname = function(Result: PPGresult; field_num: Integer): PAnsiChar; cdecl;
   TPQfnumber = function(Result: PPGresult; field_name: PAnsiChar): Integer; cdecl;
+  TPQftable = function(Result: PPGresult; field_num: Integer): OID; cdecl;
+  TPQftablecol = function(Result: PPGresult; field_num: Integer): Integer; cdecl;
+  TPQfformat = function(Result: PPGresult; field_num: Integer): Integer; cdecl;
   TPQftype = function(Result: PPGresult; field_num: Integer): OID; cdecl;
   TPQfsize = function(Result: PPGresult; field_num: Integer): Integer; cdecl;
   TPQfmod = function(Result: PPGresult; field_num: Integer): Integer; cdecl;
   TPQcmdStatus = function(Result: PPGresult): PAnsiChar; cdecl;
-  TPQoidValue = function(Result: PPGresult): OID; cdecl;
   TPQoidStatus = function(Result: PPGresult): PAnsiChar; cdecl;
+  TPQoidValue = function(Result: PPGresult): OID; cdecl;
   TPQcmdTuples = function(Result: PPGresult): PAnsiChar; cdecl;
   TPQgetvalue = function(Result: PPGresult; tup_num, field_num: Integer): PAnsiChar; cdecl;
   TPQgetlength = function(Result: PPGresult; tup_num, field_num: Integer): Integer; cdecl;
   TPQgetisnull = function(Result: PPGresult; tup_num, field_num: Integer): Integer; cdecl;
+  TPQnparams = function(Result: PPGresult): Integer; cdecl;
+  TPQparamtype = function(Result: PPGresult; field_num: Integer): OID; cdecl;
+
+  { Describe prepared statements and portals }
+  TPQdescribePrepared = function(conn: PPGconn; stmt: PAnsiString): PPGresult; cdecl;
+  TPQdescribePortal = function(conn: PPGconn; portal: PAnsiString): PPGresult; cdecl;
+  TPQsendDescribePrepared = function(conn: PPGconn; stmt: PAnsiString): Integer; cdecl;
+  TPQsendDescribePortal = function(conn: PPGconn; portal: PAnsiString): Integer; cdecl;
+
+  { Delete a PGresult }
   TPQclear = procedure(Result: PPGresult); cdecl;
-  TPQmakeEmptyPGresult = function(conn: PPGconn; status: TExecStatusType): PPGresult; cdecl;
 
-//FirmOS: New defines
-
-  TPQescapeByteaConn = function(conn: PPGconn; const from: PAnsiChar; from_length: longword; to_lenght: PLongword): PAnsiChar; cdecl;
-  TPQescapeBytea = function(const from: PByte; from_length: longword; to_lenght: PLongword): PByte; cdecl;
-
-//TODO  TPQescapeString    =function(const from:PAnsiChar;from_length:longword;to_lenght:PLongword):PAnsiChar;cdecl;
-
-//unsigned char *PQescapeByteaConn(conn: PPGconn,
-//                                 const unsigned char *from,
-//                                 size_t from_length,
-//                                 size_t *to_length);
-  TPQunescapeBytea = function(const from: PByte; to_lenght: PLongword): PByte; cdecl;
-//unsigned char *PQunescapeBytea(const unsigned char *from, size_t *to_length);
-
+  { For freeing other alloc'd results, such as PGnotify structs }
   TPQFreemem = procedure(ptr: Pointer); cdecl;
 
-{ === in fe-lobj.c === }
+  { Create and manipulate PGresults }
+  TPQmakeEmptyPGresult = function(conn: PPGconn; status: TExecStatusType): PPGresult; cdecl;
+  TPQcopyResult = function(src: PPGresult; flags: integer): PPGresult; cdecl;
+  TPQsetResultAttrs = function(res: PPGresult; numAttributes: Integer; attDescs: PPGresAttDesc): Integer; cdecl;
+  TPQresultAlloc = procedure(res: PPGresult; nBytes: size_t); cdecl;
+  TPQresultMemorySize = function(res: PPGresult): size_t; cdecl;
+  TPQsetvalue = function(res: PPGresult; tup_num: Integer;  field_num: Integer; value: PAnsiChar; len: Integer): Integer; cdecl;
+
+  { Quoting strings before inclusion in queries. }
+  TPQescapeStringConn = function(conn: PPGconn; toStr: PAnsiChar; fromStr: PAnsiChar; length: size_t; var error: integer): size_t; cdecl; //TODO Check toStr
+  TPQescapeLiteral = function(conn: PPGconn; str: PAnsiChar; len: size_t): PAnsiChar; cdecl;
+  TPQescapeIdentifier = function(conn: PPGconn; str: PAnsiChar; len: size_t): PAnsiChar; cdecl;
+  TPQescapeByteaConn = function(conn: PPGconn; const from: PAnsiChar; from_length: longword; to_lenght: PLongword): PAnsiChar; cdecl;
+  TPQunescapeBytea = function(const from: PByte; to_lenght: PLongword): PByte; cdecl;
+
+  //TPQescapeBytea = function(const from: PByte; from_length: longword; to_lenght: PLongword): PByte; cdecl; deprecated;
+
+  { Large-object access routines }
   Tlo_open = function(conn: PPGconn; lobjId: OID; mode: Integer): Integer; cdecl;
   Tlo_close = function(conn: PPGconn; fd: Integer): Integer; cdecl;
   Tlo_read = function(conn: PPGconn; fd: Integer; buf: PAnsiChar; len: Integer): Integer; cdecl;
   Tlo_write = function(conn: PPGconn; fd: Integer; buf: PAnsiChar; len: Integer): Integer; cdecl;
   Tlo_lseek = function(conn: PPGconn; fd, offset, whence: Integer): Integer; cdecl;
+  Tlo_lseek64 = function(conn: PPGconn; fd: Integer; offset: Int64; whence: Integer): Int64; cdecl;
   Tlo_creat = function(conn: PPGconn; mode: Integer): OID; cdecl;
+  Tlo_create = function(conn: PPGconn; lobjId:Oid): Oid; cdecl;
   Tlo_tell = function(conn: PPGconn; fd: Integer): Integer; cdecl;
+  Tlo_tell64 = function(conn: PPGconn; fd: Integer): Int64; cdecl;
+  Tlo_truncate = function(conn: PPGconn; fd, len: Integer): Integer; cdecl;
+  Tlo_truncate64 = function(conn: PPGconn; fd: Integer; len: Int64): Int64; cdecl;
   Tlo_unlink = function(conn: PPGconn; lobjId: OID): Integer; cdecl;
   Tlo_import = function(conn: PPGconn; filename: PAnsiChar): OID; cdecl;
+  Tlo_import_with_oid = function(conn: PPGconn; const filename: PAnsiChar; lobjId: Oid): Oid; cdecl;
   Tlo_export = function(conn: PPGconn; lobjId: OID; filename: PAnsiChar): Integer; cdecl;
-  Tlo_truncate = function(conn: PPGconn; fd, len: Integer): Integer; cdecl;
+
+  { Get the version of the libpq library in use }
+  TPQlibVersion = function(): Integer;
+
+  { Determine length of multibyte encoded char at *s }
+  TPQmblen = function(s: PAnsiChar; encoding: integer): integer;
+
+  { Determine display length of multibyte encoded char at *s }
+  TPQdsplen = function(s: PAnsiChar; encoding: integer): Integer;
+
+  { Get encoding id from environment variable PGCLIENTENCODING }
+  TPQenv2encoding = function(): Integer;
+
+  TPQencryptPassword = function(passwd: PAnsiChar; user: PAnsiChar): PAnsiChar;
+  TPQencryptPasswordConn = function(conn: PPGconn; passwd: PAnsiChar; user: PAnsiChar; algorithm: PAnsiChar): PAnsiChar;
+
+  Tpg_char_to_encoding = function(name: PAnsiChar): Integer;
+  Tpg_encoding_to_char = function(encoding: Integer): PAnsiChar;
+  Tpg_valid_server_encoding_id = function(encoding: Integer): Integer;
+
+  { Support for overriding sslpassword handling with a callback. }
+  TPQsslKeyPassHook_OpenSSL_type = function(buf: PAnsiChar; size: Integer; conn: PPGconn): Integer; //Callback
+  TPQgetSSLKeyPassHook_OpenSSL = function(): TPQsslKeyPassHook_OpenSSL_type;
+  TPQsetSSLKeyPassHook_OpenSSL = procedure (hook: TPQsslKeyPassHook_OpenSSL_type);
+  TPQdefaultSSLKeyPassHook_OpenSSL = function(buf: PAnsiChar; size: Integer; conn: PPGconn): Integer;
 
 var
 
@@ -561,6 +611,10 @@ var
   PQerrorMessage: TPQerrorMessage;
   PQsocket: TPQsocket;
   PQbackendPID: TPQbackendPID;
+  PQconnectionNeedsPassword: TPQconnectionNeedsPassword;
+  PQconnectionUsedPassword: TPQconnectionUsedPassword;
+  PQclientEncoding: TPQclientEncoding;
+  PQsetClientEncoding: TPQsetClientEncoding;
 
   PQsslInUse: TPQsslInUse;
   PQsslStruct: TPQsslStruct;
@@ -602,7 +656,7 @@ var
   PQputCopyEnd: TPQputCopyEnd;
   PQgetCopyData: TPQgetCopyData;
 
-  PQfreeNotify: TPQfreeNotify;
+  //PQfreeNotify: TPQfreeNotify;
 
   //PQgetline: TPQgetline;
   //PQputline: TPQputline;
@@ -620,13 +674,19 @@ var
 
   PQfn: TPQfn;
   PQresultStatus: TPQresultStatus;
+  PQresStatus: TPQresStatus;
   PQresultErrorMessage: TPQresultErrorMessage;
-  PQresultErrorField: TPQresultErrorField; //Firmos
+  PQresultVerboseErrorMessage: TPQresultVerboseErrorMessage;
+  PQresultErrorField: TPQresultErrorField;
+
   PQntuples: TPQntuples;
   PQnfields: TPQnfields;
   PQbinaryTuples: TPQbinaryTuples;
   PQfname: TPQfname;
   PQfnumber: TPQfnumber;
+  PQftable: TPQftable;
+  PQftablecol: TPQftablecol;
+  PQfformat: TPQfformat;
   PQftype: TPQftype;
   PQfsize: TPQfsize;
   PQfmod: TPQfmod;
@@ -637,18 +697,31 @@ var
   PQgetvalue: TPQgetvalue;
   PQgetlength: TPQgetlength;
   PQgetisnull: TPQgetisnull;
-  PQclear: TPQclear;
-  PQmakeEmptyPGresult: TPQmakeEmptyPGresult;
-  //belal
   PQnparams: TPQnparams;
   PQparamtype: TPQparamtype;
 
-//FirmOS: New defines
+  PQdescribePrepared: TPQdescribePrepared;
+  PQdescribePortal: TPQdescribePortal;
+  PQsendDescribePrepared: TPQsendDescribePrepared;
+  PQsendDescribePortal: TPQsendDescribePortal;
+
+  PQclear: TPQclear;
+  PQFreemem: TPQFreemem;
+
+  PQmakeEmptyPGresult: TPQmakeEmptyPGresult;
+  PQcopyResult: TPQcopyResult;
+  PQsetResultAttrs: TPQsetResultAttrs;
+  PQresultAlloc: TPQresultAlloc;
+  PQresultMemorySize: TPQresultMemorySize;
+  PQsetvalue: TPQsetvalue;
+
+  PQescapeStringConn: TPQescapeStringConn;
+  PQescapeLiteral: TPQescapeLiteral;
+  PQescapeIdentifier: TPQescapeIdentifier;
   PQescapeByteaConn: TPQescapeByteaConn;
-  PQescapeBytea: TPQescapeBytea;
   PQunescapeBytea: TPQunescapeBytea;
 
-  PQFreemem: TPQFreemem;
+  //PQescapeBytea: TPQescapeBytea;
 
 { === in fe-lobj.c === }
   lo_open: Tlo_open;
@@ -656,12 +729,31 @@ var
   lo_read: Tlo_read;
   lo_write: Tlo_write;
   lo_lseek: Tlo_lseek;
+  lo_lseek64: Tlo_lseek64;
   lo_creat: Tlo_creat;
+  lo_create: Tlo_create;
   lo_tell: Tlo_tell;
+  lo_tell64: Tlo_tell64;
+  lo_truncate: Tlo_truncate;
+  lo_truncate64: Tlo_truncate64;
   lo_unlink: Tlo_unlink;
   lo_import: Tlo_import;
+  lo_import_with_oid: Tlo_import_with_oid;
   lo_export: Tlo_export;
-  lo_truncate: Tlo_truncate;
+
+  PQlibVersion: TPQlibVersion;
+  PQmblen: TPQmblen;
+  PQdsplen: TPQdsplen;
+  PQenv2encoding: TPQenv2encoding;
+  PQencryptPassword: TPQencryptPassword;
+  PQencryptPasswordConn: TPQencryptPasswordConn;
+  pg_char_to_encoding: Tpg_char_to_encoding;
+  pg_encoding_to_char: Tpg_encoding_to_char;
+  pg_valid_server_encoding_id: Tpg_valid_server_encoding_id;
+  PQsslKeyPassHook_OpenSSL_type: TPQsslKeyPassHook_OpenSSL_type;
+  PQgetSSLKeyPassHook_OpenSSL: TPQgetSSLKeyPassHook_OpenSSL;
+  PQsetSSLKeyPassHook_OpenSSL: TPQsetSSLKeyPassHook_OpenSSL;
+  PQdefaultSSLKeyPassHook_OpenSSL: TPQdefaultSSLKeyPassHook_OpenSSL;
 
 type
 
@@ -686,11 +778,6 @@ end;
 
 procedure TmncPGLib.Link;
 begin
-
-  PQfreemem := GetAddress('PQfreemem');
-  PQescapeByteaConn := GetAddress('PQescapeByteaConn');
-  PQescapeBytea := GetAddress('PQescapeBytea');
-  PQunescapeBytea := GetAddress('PQunescapeBytea');
 
   PQconnectStart := GetAddress('PQconnectStart');
   PQconnectStartParams := GetAddress('PQconnectStartParams');
@@ -729,6 +816,10 @@ begin
   PQerrorMessage := GetAddress('PQerrorMessage');
   PQsocket := GetAddress('PQsocket');
   PQbackendPID := GetAddress('PQbackendPID');
+  PQconnectionNeedsPassword:= GetAddress('PQconnectionNeedsPassword');
+  PQconnectionUsedPassword:= GetAddress('PQconnectionUsedPassword');
+  PQclientEncoding:= GetAddress('PQclientEncoding');
+  PQsetClientEncoding:= GetAddress('PQsetClientEncoding');
 
   PQsslInUse := GetAddress('PQsslInUse');
   PQsslStruct := GetAddress('PQsslStruct');
@@ -789,17 +880,21 @@ begin
   PQpingParams := GetAddress('PQpingParams');
   PQflush := GetAddress('PQflush');
 
-  PQfreeNotify := GetAddress('PQfreeNotify');
-
   PQfn := GetAddress('PQfn');
   PQresultStatus := GetAddress('PQresultStatus');
+  PQresStatus := GetAddress('PQresStatus');
   PQresultErrorMessage := GetAddress('PQresultErrorMessage');
+  PQresultVerboseErrorMessage := GetAddress('PQresultVerboseErrorMessage');
   PQresultErrorField := GetAddress('PQresultErrorField');
+
   PQntuples := GetAddress('PQntuples');
   PQnfields := GetAddress('PQnfields');
   PQbinaryTuples := GetAddress('PQbinaryTuples');
   PQfname := GetAddress('PQfname');
   PQfnumber := GetAddress('PQfnumber');
+  PQftable:= GetAddress('PQftable');
+  PQftablecol:= GetAddress('PQftablecol');
+  PQfformat:= GetAddress('PQfformat');
   PQftype := GetAddress('PQftype');
   PQfsize := GetAddress('PQfsize');
   PQfmod := GetAddress('PQfmod');
@@ -810,11 +905,33 @@ begin
   PQgetvalue := GetAddress('PQgetvalue');
   PQgetlength := GetAddress('PQgetlength');
   PQgetisnull := GetAddress('PQgetisnull');
-  PQclear := GetAddress('PQclear');
-  PQmakeEmptyPGresult := GetAddress('PQmakeEmptyPGresult');
-
   PQnparams := GetAddress('PQnparams');
   PQparamtype := GetAddress('PQparamtype');
+
+  PQdescribePrepared := GetAddress('PQdescribePrepared');
+  PQdescribePortal := GetAddress('PQdescribePortal');
+  PQsendDescribePrepared := GetAddress('PQsendDescribePrepared');
+  PQsendDescribePortal := GetAddress('PQsendDescribePortal');
+
+  PQclear := GetAddress('PQclear');
+  PQfreemem := GetAddress('PQfreemem');
+
+  PQmakeEmptyPGresult := GetAddress('PQmakeEmptyPGresult');
+  PQcopyResult:= GetAddress('PQcopyResult');
+  PQsetResultAttrs:= GetAddress('PQsetResultAttrs');
+  PQresultAlloc:= GetAddress('PQresultAlloc');
+  PQresultMemorySize:= GetAddress('PQresultMemorySize');
+  PQsetvalue:= GetAddress('PQsetvalue');
+
+  PQescapeStringConn:= GetAddress('PQescapeStringConn');
+  PQescapeLiteral:= GetAddress('PQescapeLiteral');
+  PQescapeIdentifier := GetAddress('PQescapeIdentifier');
+  PQescapeByteaConn := GetAddress('PQescapeByteaConn');
+  PQunescapeBytea := GetAddress('PQunescapeBytea');
+
+  //PQescapeBytea := GetAddress('PQescapeBytea');
+
+  //PQfreeNotify := GetAddress('PQfreeNotify');
 
 { === in fe-lobj.c === }
   lo_open := GetAddress('lo_open');
@@ -822,12 +939,32 @@ begin
   lo_read := GetAddress('lo_read');
   lo_write := GetAddress('lo_write');
   lo_lseek := GetAddress('lo_lseek');
+  lo_lseek64 := GetAddress('lo_lseek64');
   lo_creat := GetAddress('lo_creat');
+  lo_create := GetAddress('lo_create');
   lo_tell := GetAddress('lo_tell');
+  lo_tell64 := GetAddress('lo_tell64');
+  lo_truncate := GetAddress('lo_truncate');
+  lo_truncate64 := GetAddress('lo_truncate64');
   lo_unlink := GetAddress('lo_unlink');
   lo_import := GetAddress('lo_import');
+  lo_import_with_oid := GetAddress('lo_import_with_oid');
   lo_export := GetAddress('lo_export');
-  lo_truncate := GetAddress('lo_truncate');
+
+  PQlibVersion := GetAddress('PQlibVersion');
+  PQmblen := GetAddress('PQmblen');
+  PQdsplen := GetAddress('PQdsplen');
+  PQenv2encoding := GetAddress('PQenv2encoding');
+  PQencryptPassword := GetAddress('PQencryptPassword');
+  PQencryptPasswordConn := GetAddress('PQencryptPasswordConn');
+  pg_char_to_encoding := GetAddress('pg_char_to_encoding');
+  pg_encoding_to_char := GetAddress('pg_encoding_to_char');
+  pg_valid_server_encoding_id := GetAddress('pg_valid_server_encoding_id');
+  PQsslKeyPassHook_OpenSSL_type := GetAddress('PQsslKeyPassHook_OpenSSL_type');
+  PQgetSSLKeyPassHook_OpenSSL := GetAddress('PQgetSSLKeyPassHook_OpenSSL');
+  PQsetSSLKeyPassHook_OpenSSL := GetAddress('PQsetSSLKeyPassHook_OpenSSL');
+  PQdefaultSSLKeyPassHook_OpenSSL := GetAddress('PQdefaultSSLKeyPassHook_OpenSSL');
+
 end;
 
 initialization
