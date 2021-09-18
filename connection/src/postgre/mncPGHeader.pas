@@ -77,6 +77,7 @@ const
 type
 
   OID = Integer;
+  POID = ^OID;
 
 { Application-visible enum types }
 
@@ -208,11 +209,9 @@ type
   end;
 
   { Function types for notice-handling callbacks }
-  //typedef void (*PQnoticeReceiver) (void *arg, const PGresult *res);
-  //typedef void (*PQnoticeProcessor) (void *arg, const char *message);
 
-  PQnoticeReceiver = procedure(arg: Pointer; var res: TPGresult); cdecl;
-  PQnoticeProcessor = procedure(arg: Pointer; message: PAnsiChar); cdecl;
+  TPQnoticeReceiver = procedure(arg: Pointer; var res: TPGresult); cdecl;
+  TPQnoticeProcessor = procedure(arg: Pointer; message: PAnsiChar); cdecl;
 
 { Print options for PQprint() }
 
@@ -400,22 +399,59 @@ type
 
   TPQtrace = procedure(conn: PPGconn; DebugPort: Pointer); cdecl;
   TPQuntrace = procedure(conn: PPGconn); cdecl;
-  TPQsetNoticeProcessor = procedure(conn: PPGconn; Proc: PQnoticeProcessor; Arg: Pointer); cdecl;
 
-{ === in fe-exec.c === }
+  { Override default notice handling routines }
+  TPQsetNoticeReceiver = function(conn: PPGconn; proc: TPQnoticeReceiver; Arg: Pointer): TPQnoticeReceiver; cdecl;
+  TPQsetNoticeProcessor = function(conn: PPGconn; proc: TPQnoticeProcessor; Arg: Pointer): TPQnoticeProcessor; cdecl;
 
-  TPQexec = function(conn: PPGconn; Query: PAnsiChar): PPGresult; cdecl;
-  TPQnotifies = function(conn: PPGconn): PPGnotify; cdecl;
-  TPQfreeNotify = procedure(Handle: PPGnotify); cdecl;
-  TPQsendQuery = function(conn: PPGconn; Query: PAnsiChar): Integer; cdecl;
+  {
+   *	   Used to set callback that prevents concurrent access to
+   *	   non-thread safe functions that libpq needs.
+   *	   The default implementation uses a libpq internal mutex.
+   *	   Only required for multithreaded apps that use kerberos
+   *	   both within their app and for postgresql connections.
+  }
+  TPGthreadlock = procedure(acquire: Integer); cdecl; //callback
+
+  TPQregisterThreadLock = function(newhandler: TPGthreadlock): TPGthreadlock; cdecl;
+
+  { Simple synchronous query }
+  TPQexec = function(conn: PPGconn; query: PAnsiChar): PPGresult; cdecl;
+  TPQexecParams = function(conn: PPGconn; command: PAnsiChar; nParams: Integer; paramTypes: POID; paramValues: PPAnsiChar; paramLengths, paramFormats: Pointer; resultFormat: Integer): PPGresult; cdecl; //todo check arg
+
+  TPQPrepare = function(conn: PPGconn; stmtName, query: PAnsiChar; nParams: Integer; paramTypes: POid): PPGresult; cdecl;
+  TPQExecPrepared = function(conn: PPGconn; stmtName: PAnsiChar; nParams: Integer; paramValues: PPAnsiChar; paramLengths, paramFormats: PInteger; resultFormat: Integer): PPGresult; cdecl;
+
+  TPQsendQuery = function(conn: PPGconn; query: PAnsiChar): Integer; cdecl;
+  TPQsendQueryParams = function(conn: PPGconn; command: PAnsiChar; nParams: Integer; paramTypes: POID; paramValues: PPAnsiChar; paramLengths, paramFormats: PInteger; resultFormat: Integer): Integer; cdecl;
+
+  TPQsendPrepare = function(conn: PPGconn; stmtName, query: PAnsiChar; nParams: Integer; paramTypes: POid): Integer; cdecl;
+  TPQsendQueryPrepared = function(conn: PPGconn; stmtName: PAnsiChar; nParams: Integer; paramValues: PPAnsiChar; paramLengths, paramFormats: PInteger; resultFormat: Integer): Integer; cdecl;
+
+  TPQsetSingleRowMode = function(conn: PPGconn): Integer; cdecl;
   TPQgetResult = function(conn: PPGconn): PPGresult; cdecl;
+
+  { Routines for managing an asynchronous query }
+
   TPQisBusy = function(conn: PPGconn): Integer; cdecl;
   TPQconsumeInput = function(conn: PPGconn): Integer; cdecl;
-  TPQgetline = function(conn: PPGconn; Str: PAnsiChar; length: Integer): Integer; cdecl;
-  TPQputline = function(conn: PPGconn; Str: PAnsiChar): Integer; cdecl;
-  TPQgetlineAsync = function(conn: PPGconn; Buffer: PAnsiChar; BufSize: Integer): Integer; cdecl;
-  TPQputnbytes = function(conn: PPGconn; Buffer: PAnsiChar; NBytes: Integer): Integer; cdecl;
-  TPQendcopy = function(conn: PPGconn): Integer; cdecl;
+
+  { LISTEN/NOTIFY support }
+
+  TPQnotifies = function(conn: PPGconn): PPGnotify; cdecl;
+
+  { Routines for copy in/out }
+  TPQputCopyData = function(conn: PPGconn; buffer: PAnsiChar; nbytes: Integer): Integer; cdecl;
+  TPQputCopyEnd = function(conn: PPGconn; errormsg: PPAnsiChar): Integer; cdecl;
+  TPQgetCopyData = function(conn: PPGconn; buffer: PPAnsiChar; async: Integer): Integer; cdecl;
+
+
+  TPQfreeNotify = procedure(Handle: PPGnotify); cdecl;
+  //TPQgetline = function(conn: PPGconn; Str: PAnsiChar; length: Integer): Integer; cdecl;
+  //TPQputline = function(conn: PPGconn; Str: PAnsiChar): Integer; cdecl;
+  //TPQgetlineAsync = function(conn: PPGconn; Buffer: PAnsiChar; BufSize: Integer): Integer; cdecl;
+  //TPQputnbytes = function(conn: PPGconn; Buffer: PAnsiChar; NBytes: Integer): Integer; cdecl;
+  //TPQendcopy = function(conn: PPGconn): Integer; cdecl;
 
   //* Set blocking/nonblocking connection to the backend }
   TPQsetnonblocking = function(conn: PPGconn; arg: Integer): Integer; cdecl;
@@ -424,18 +460,15 @@ type
   TPQping = function(ConnInfo: PAnsiChar): TPGPing; cdecl;
   TPQpingParams = function(Keywords: Pointer; Values: Pointer; expand_dbname: Integer): TPGPing; cdecl;
 
+  { Force the write buffer to be written (or at least try) }
+  TPQflush = function(conn: PPGconn): Integer;
+
   TPQfn = function(conn: PPGconn; fnid: Integer; result_buf, result_len: PInteger; result_is_int: Integer; args: PPQArgBlock; nargs: Integer): PPGresult; cdecl;
   TPQresultStatus = function(Result: PPGresult): TExecStatusType; cdecl;
   TPQresultErrorMessage = function(Result: PPGresult): PAnsiChar; cdecl;
 
-  //PAnsiChar = PUtf8Char
-  TPQPrepare = function(conn: PPGconn; Name, Query: PAnsiChar; nParams: Integer; pTypes: Pointer): PPGresult; cdecl;
-  TPQExecPrepared = function(conn: PPGconn; Name: PAnsiChar; nParams: Integer; pValues, pLength, pFormats: Pointer; rFormat: Integer): PPGresult; cdecl;
-  TPQdescribePrepared = function(conn: PPGconn; Name: PAnsiChar): PPGresult; cdecl;
   TPQnparams  = function(Result: PPGresult): Integer; cdecl;
   TPQparamtype = function(Result: PPGresult; param_num: Integer): Integer; cdecl;
-  TPQsendQueryPrepared = function(conn: PPGconn; Name: PAnsiChar; nParams: Integer; pValues, pLength, pFormats: Pointer; rFormat: Integer): Integer; cdecl;
-  TPQsetSingleRowMode = function(conn: PPGconn): Integer; cdecl;
 
   //p = params
   //r = result
@@ -544,27 +577,46 @@ var
 
   PQtrace: TPQtrace;
   PQuntrace: TPQuntrace;
+
+  PQsetNoticeReceiver: TPQsetNoticeReceiver;
   PQsetNoticeProcessor: TPQsetNoticeProcessor;
 
-{ === in fe-exec.c === }
   PQexec: TPQexec;
-  PQnotifies: TPQnotifies;
-  PQfreeNotify: TPQfreeNotify;
+  PQexecParams: TPQexecParams;
+  PQPrepare: TPQPrepare;
+  PQExecPrepared: TPQExecPrepared;
   PQsendQuery: TPQsendQuery;
+  PQsendQueryParams: TPQsendQueryParams;
+  PQsendPrepare: TPQsendPrepare;
+  PQsendQueryPrepared: TPQsendQueryPrepared;
+  PQsetSingleRowMode: TPQsetSingleRowMode;
+
   PQgetResult: TPQgetResult;
+
   PQisBusy: TPQisBusy;
   PQconsumeInput: TPQconsumeInput;
-  PQgetline: TPQgetline;
-  PQputline: TPQputline;
-  PQgetlineAsync: TPQgetlineAsync;
-  PQputnbytes: TPQputnbytes;
-  PQendcopy: TPQendcopy;
+
+  PQnotifies: TPQnotifies;
+
+  PQputCopyData: TPQputCopyData;
+  PQputCopyEnd: TPQputCopyEnd;
+  PQgetCopyData: TPQgetCopyData;
+
+  PQfreeNotify: TPQfreeNotify;
+
+  //PQgetline: TPQgetline;
+  //PQputline: TPQputline;
+  //PQgetlineAsync: TPQgetlineAsync;
+  //PQputnbytes: TPQputnbytes;
+  //PQendcopy: TPQendcopy;
 
   PQsetnonblocking: TPQsetnonblocking;
   PQisnonblocking: TPQisnonblocking;
   PQisthreadsafe: TPQisthreadsafe;
   PQping: TPQping;
   PQpingParams: TPQpingParams;
+
+  PQflush: TPQflush;
 
   PQfn: TPQfn;
   PQresultStatus: TPQresultStatus;
@@ -588,13 +640,8 @@ var
   PQclear: TPQclear;
   PQmakeEmptyPGresult: TPQmakeEmptyPGresult;
   //belal
-  PQPrepare: TPQPrepare;
-  PQExecPrepared: TPQExecPrepared;
-  PQdescribePrepared: TPQdescribePrepared;
   PQnparams: TPQnparams;
   PQparamtype: TPQparamtype;
-  PQsendQueryPrepared: TPQsendQueryPrepared;
-  PQsetSingleRowMode: TPQsetSingleRowMode;
 
 //FirmOS: New defines
   PQescapeByteaConn: TPQescapeByteaConn;
@@ -696,29 +743,53 @@ begin
   PQsetErrorVerbosity := GetAddress('PQsetErrorVerbosity');
   PQsetErrorContextVisibility := GetAddress('PQsetErrorContextVisibility');
 
+  { Enable/disable tracing }
   PQtrace := GetAddress('PQtrace');
   PQuntrace := GetAddress('PQuntrace');
+
+  { Override default notice handling routines }
+  PQsetNoticeReceiver := GetAddress('PQsetNoticeReceiver');
   PQsetNoticeProcessor := GetAddress('PQsetNoticeProcessor');
 
 { === in fe-exec.c === }
   PQexec := GetAddress('PQexec');
-  PQnotifies := GetAddress('PQnotifies');
-  PQfreeNotify := GetAddress('PQfreeNotify');
+  PQexecParams := GetAddress('PQexecParams');
+
   PQsendQuery := GetAddress('PQsendQuery');
+  PQsendQueryParams := GetAddress('PQsendQueryParams');
+
+  PQPrepare := GetAddress('PQprepare');
+  PQExecPrepared := GetAddress('PQexecPrepared');
+
+  PQsendPrepare := GetAddress('PQsendPrepare');
+  PQsendQueryPrepared := GetAddress('PQsendQueryPrepared');
+
+  PQsetSingleRowMode := GetAddress('PQsetSingleRowMode');
   PQgetResult := GetAddress('PQgetResult');
+
   PQisBusy := GetAddress('PQisBusy');
   PQconsumeInput := GetAddress('PQconsumeInput');
-  PQgetline := GetAddress('PQgetline');
-  PQputline := GetAddress('PQputline');
-  PQgetlineAsync := GetAddress('PQgetlineAsync');
-  PQputnbytes := GetAddress('PQputnbytes');
-  PQendcopy := GetAddress('PQendcopy');
+
+  PQnotifies := GetAddress('PQnotifies');
+
+  PQputCopyData:= GetAddress('PQputCopyData');
+  PQputCopyEnd := GetAddress('PQputCopyEnd');
+  PQgetCopyData := GetAddress('PQgetCopyData');
+
+  //  PQgetline := GetAddress('PQgetline');
+  //  PQputline := GetAddress('PQputline');
+  //  PQgetlineAsync := GetAddress('PQgetlineAsync');
+  //  PQputnbytes := GetAddress('PQputnbytes');
+  //  PQendcopy := GetAddress('PQendcopy');
 
   PQsetnonblocking := GetAddress('PQsetnonblocking');
   PQisnonblocking := GetAddress('PQisnonblocking');
   PQisthreadsafe := GetAddress('PQisthreadsafe');
   PQping := GetAddress('PQping');
   PQpingParams := GetAddress('PQpingParams');
+  PQflush := GetAddress('PQflush');
+
+  PQfreeNotify := GetAddress('PQfreeNotify');
 
   PQfn := GetAddress('PQfn');
   PQresultStatus := GetAddress('PQresultStatus');
@@ -741,13 +812,9 @@ begin
   PQgetisnull := GetAddress('PQgetisnull');
   PQclear := GetAddress('PQclear');
   PQmakeEmptyPGresult := GetAddress('PQmakeEmptyPGresult');
-  PQPrepare := GetAddress('PQprepare');
-  PQExecPrepared := GetAddress('PQexecPrepared');
-  PQdescribePrepared := GetAddress('PQdescribePrepared');
+
   PQnparams := GetAddress('PQnparams');
   PQparamtype := GetAddress('PQparamtype');
-  PQsendQueryPrepared := GetAddress('PQsendQueryPrepared');
-  PQsetSingleRowMode := GetAddress('PQsetSingleRowMode');
 
 { === in fe-lobj.c === }
   lo_open := GetAddress('lo_open');
