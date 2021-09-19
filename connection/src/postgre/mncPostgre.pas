@@ -20,6 +20,8 @@ unit mncPostgre;
 
 }
 
+{$define ThreadedPGClear}
+
 interface
 
 uses
@@ -1198,8 +1200,11 @@ end;
 
 procedure TmncPGCommand.ClearStatement;
 begin
-  //PQclear(FStatement);
+  {$ifdef ThreadedPGClear}
   TPGClearThread.Create(FStatement); //tooo slow in ddl command  :(
+  {$else}
+  PQclear(FStatement);
+  {$endif}
 end;
 
 procedure TmncPGCommand.DeallocateStatement;
