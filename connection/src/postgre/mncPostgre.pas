@@ -2025,7 +2025,21 @@ begin
 end;
 
 procedure TPGClearThread.Execute;
+var
+  block: PPGresult_data;
+  c: Integer;
 begin
+  c := 0;
+  block := FStatement^.curBlock;
+  while block <> nil do
+  begin
+    FStatement^.curBlock := block^.Next;
+    PQFreemem(block);
+    block :=FStatement^.curBlock;
+    inc(c);
+    if (c mod 10) = 0 then
+      Sleep(1);
+  end;
   PQclear(FStatement);
 end;
 

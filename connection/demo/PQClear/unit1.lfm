@@ -1,0 +1,38 @@
+object Form1: TForm1
+  Left = 411
+  Height = 240
+  Top = 284
+  Width = 320
+  Caption = 'Form1'
+  ClientHeight = 240
+  ClientWidth = 320
+  LCLVersion = '2.3.0.0'
+  object Button1: TButton
+    Left = 12
+    Height = 25
+    Top = 20
+    Width = 75
+    Caption = 'Test Huge'
+    OnClick = Button1Click
+    TabOrder = 0
+  end
+  object Button2: TButton
+    Left = 41
+    Height = 25
+    Top = 128
+    Width = 230
+    Caption = 'Button2'
+    OnClick = Button2Click
+    TabOrder = 1
+  end
+  object Memo1: TMemo
+    Left = 20
+    Height = 62
+    Top = 160
+    Width = 274
+    Lines.Strings = (
+      'Memo1'
+    )
+    TabOrder = 2
+  end
+end

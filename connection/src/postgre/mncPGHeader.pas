@@ -63,6 +63,8 @@ const
   OID_TIME      = 1083;
   OID_NUMERIC   = 1700;
 
+  CMDSTATUS_LEN = 64;
+
   {
    * Option flags for PQcopyResult
   }
@@ -184,13 +186,91 @@ type
   TPGconn = type Pointer;
   PPGconn = ^TPGconn;
 
+  { moved from bottom }
+  TPQnoticeReceiver = procedure(arg: Pointer; res: Pointer); cdecl;
+  TPQnoticeProcessor = procedure(arg: Pointer; message: PAnsiChar); cdecl;
+
+  { Fields needed for notice handling }
+
+  PPGNoticeHooks = ^TPGNoticeHooks;
+  TPGNoticeHooks = record
+    noticeRec: TPQnoticeReceiver; { notice message receiver }
+    noticeRecArg: Pointer;
+    noticeProc: TPQnoticeProcessor;   { notice message processor }
+    noticeProcArg: Pointer;
+  end;
+
+  {
+    PGresult and the subsidiary types PGresAttDesc, PGresAttValue
+    represent the result of a query (or more precisely, of a single SQL
+    command --- a query string given to PQexec can contain multiple commands).
+    Note we assume that a single command can return at most one tuple group,
+    hence there is no need for multiple descriptor sets.
+  }
+
+  {
+    Subsidiary-storage management structure for PGresult.
+    See space management routines in fe-exec.c for details.
+    Note that space[k] refers to the k'th byte starting from the physical
+    head of the block --- it's a union, not a struct!
+  }
+
+  PPGresult_data = ^TPGresult_data;
+  TPGresult_data = record
+    Next: PPGresult_data;
+    Space: array[0..0] of Byte;
+  end;
+
 {
    PGresult encapsulates the result of a query (or more precisely, of a single
    SQL command --- a query string given to PQsendQuery can contain multiple
    commands and thus return multiple PGresult objects).
    The contents of this struct are not supposed to be known to applications.
 }
-  TPGresult = type Pointer;
+  TPGresult = record
+     ntups: Integer;
+     numAttributes: Integer;
+     attDescs: Pointer; //PPGresAttDesc;
+     tuples: Pointer; //PGresAttValue;     { each PGresult tuple is an array of PGresAttValue's }
+     tupArrSize: Integer;     { allocated size of tuples array }
+     numParameters: Integer;
+     paramDescs: Pointer; //PGresParamDesc;
+     resultStatus: TExecStatusType;
+     cmdStatus: array [0..CMDSTATUS_LEN - 1] of Byte;   { cmd status from the query }
+     binary: Integer;         { binary tuple values if binary == 1, otherwise text }
+
+     {
+      * These fields are copied from the originating PGconn, so that operations
+      * on the PGresult don't have to reference the PGconn.
+      }
+     noticeHooks: TPGNoticeHooks;
+     events: Pointer; //*PGEvent;
+     nEvents: Integer;
+     client_encoding: Integer;    { encoding id }
+
+     {
+      * Error information (all NULL if not an error result).  errMsg is the
+      * "overall" error message returned by PQresultErrorMessage.  If we have
+      * per-field info then it is stored in a linked list.
+      }
+     errMsg: PAnsiChar;         { error message, or NULL if no error }
+     errFields: Pointer; //PGMessageField;  { message broken into fields }
+     errQuery: PAnsiChar;       { text of triggering query, if available }
+
+     { All NULL attributes in the query result point to this null string }
+     null_field: array[0..0] of Byte;
+
+     {
+      * Space management information.  Note that attDescs and error stuff, if
+      * not null, point into allocated blocks.  But tuples points to a
+      * separately malloc'd block, so that we can realloc it.
+      }
+     curBlock: PPGresult_data;    { most recently allocated block }
+     curOffset: Integer;      { start offset of free space in block }
+     spaceLeft: Integer;      { number of free bytes remaining in block }
+
+     memorySize: size_t;     { total space allocated for this PGresult }
+  end;
   PPGresult = ^TPGresult;
 
 {
@@ -219,8 +299,10 @@ type
 
   { Function types for notice-handling callbacks }
 
+  { moved to top
   TPQnoticeReceiver = procedure(arg: Pointer; var res: TPGresult); cdecl;
   TPQnoticeProcessor = procedure(arg: Pointer; message: PAnsiChar); cdecl;
+  }
 
 { Print options for PQprint() }
 
