@@ -142,7 +142,6 @@ type
     function GetParseOptions: TmncParseSQLOptions; virtual;
     procedure DoParse; override;
     procedure DoUnparse; override;
-    procedure DoExecute; override;
     procedure ParseSQL(SQLOptions: TmncParseSQLOptions);
     procedure Fetch; override;
     procedure Clean; override; //Clean and reset stamemnt like Done or Ready called in Execute before DoExecute and after Prepare
@@ -446,11 +445,6 @@ begin
   if ProcessedSQL <> nil then
     ProcessedSQL.Clear;
   //maybe clear params, idk
-end;
-
-procedure TmncSQLCommand.DoExecute;
-begin
-  inherited;
 end;
 
 procedure TmncSQLCommand.ParseSQL(SQLOptions: TmncParseSQLOptions);

@@ -5,6 +5,7 @@ unit mncConnections;
  * @license   modifiedLGPL (modified of http://www.gnu.org/licenses/lgpl.html)
  *            See the file COPYING.MLGPL, included in this distribution,
  * @author    Zaher Dirkey <zaher, zaherdirkey>
+ * @author    Belal Hamad <belal, hamad>
  *}
 
 {$M+}
@@ -150,6 +151,7 @@ type
     property Password: string read FServerInfo.Password write FServerInfo.Password;
     property Role: string read FServerInfo.Role write FServerInfo.Role;
     property ServerInfo: TmncServerInfo read FServerInfo write SetServerInfo;
+    property StartCount: Integer read FStartCount;
 
     property Params: TStrings read FParams write SetParams;
     property OnConnected: TNotifyEvent read FOnConnected write FOnConnected;
@@ -158,18 +160,18 @@ type
 
   TmncConnectionClass = class of TmncConnection;
 
-  {
-    sbhStrict: Without it, it no need to call Start and Stop (Commit/Rollback) this DB automatically do it (pg/SQLite allow it)
-    sbhMultiple: Multiple Transactions works simultaneously, Every session have transacion like as Firebird
-    sbhEmulate:  Single transaction(main connection) but last session commited make the real commit, maybe PG/SQLite
-
-    sbhIndependent: This session have independent resources, maybe open new connection separated from the main one, or other database file, not sure
-  }
-  TmncSessionBehavior = (sbhStrict, sbhIndependent, sbhMultiple, sbhEmulate);
+  TmncSessionBehavior = (
+    sbhStrict, //Without it, it no need to call Start and Stop (Commit/Rollback) this DB automatically do it (pg/SQLite allow it)
+    sbhMultiple, //Multiple Transactions works simultaneously, Every session have transacion like as Firebird
+    sbhEmulate //or Virtual, a Single transaction(main connection) many start last stop, maybe PG/SQLite
+  );
   TmncSessionBehaviors = set of TmncSessionBehavior;
 
   //Session it is branch/clone of Connection but usefull for take a special params, it is like Transactions.
-  TmncSessionAction = (sdaCommit, sdaRollback);
+  TmncSessionAction = (
+    sdaCommit,
+    sdaRollback
+  );
 
   { TmncSession }
 

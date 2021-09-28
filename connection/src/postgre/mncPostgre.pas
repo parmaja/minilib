@@ -20,7 +20,7 @@ unit mncPostgre;
 
 }
 
-{$define ThreadedPGClear}
+{.$define ThreadedPGClear}
 
 interface
 
@@ -2030,11 +2030,11 @@ begin
 end;
 
 procedure TPGClearThread.Execute;
-var
+{var
   block: PPGresult_data;
-  c: Integer;
+  c: Integer;}
 begin
-  c := 0;
+  {c := 0;
   block := FStatement^.curBlock;
   while block <> nil do
   begin
@@ -2044,7 +2044,7 @@ begin
     inc(c);
     if (c mod 10) = 0 then
       Sleep(1);
-  end;
+  end;}
   PQclear(FStatement);
 end;
 

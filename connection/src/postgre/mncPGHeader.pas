@@ -7,7 +7,7 @@ unit mncPGHeader;
 
 {$M+}{$H+}
 
-{$MINENUMSIZE 4} //All enum must be sized as Integer
+//{$MINENUMSIZE 4} //same as {$Z4} All enum must be sized as Integer
 {$Z4}{$A8}
 
 {**
@@ -227,7 +227,7 @@ type
    commands and thus return multiple PGresult objects).
    The contents of this struct are not supposed to be known to applications.
 }
-  TPGresult = record
+  TPGresult = record //Do not use Packed!!!
      ntups: Integer;
      numAttributes: Integer;
      attDescs: Pointer; //PPGresAttDesc;
@@ -289,7 +289,7 @@ type
   whereas in earlier versions it was always your own backend's PID.
 }
   PPGnotify = ^TPGnotify;
-  TPGnotify = packed record
+  TPGnotify = record
     relname: PAnsiChar; { notification condition name }
     be_pid: Integer;  { process ID of notifying server process }
     extra: PAnsiChar; { notification parameter }
@@ -310,7 +310,7 @@ type
 
   //PPChar = array[00..$FF] of PAnsiChar;
 
-  TPQprintOpt = packed record
+  TPQprintOpt = record
     header: Byte; { print output field headings and row count }
     align: Byte; { fill align the fields }
     standard: Byte; { old brain dead format }
@@ -335,7 +335,7 @@ type
    * ----------------
   }
 
-  TPQconninfoOption = packed record
+  TPQconninfoOption = record
     Keyword: PAnsiChar; { The keyword of the option }
     EnvVar: PAnsiChar; { Fallback environment variable name }
     Compiled: PAnsiChar; { Fallback compiled in default value  }
@@ -358,7 +358,7 @@ type
    * ----------------
   }
 
-  TPQArgBlock = packed record
+  TPQArgBlock = record
     len: Integer;
     isint: Integer;
     case u: Boolean of

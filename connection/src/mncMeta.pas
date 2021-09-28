@@ -82,6 +82,7 @@ type
   TmncMeta = class(TmncLinkObject)
   private
     FIncludeHeader: Boolean;
+    FOwnSession: Boolean;
     FServerInfo: TmncServerInfo;
     function GetSession: TmncSession;
     procedure SetSession(AValue: TmncSession);
@@ -113,6 +114,7 @@ type
 
     procedure GenerateSchema(ORM: TmncORM; Callback: TmncSQLCallback); virtual;
     property Session: TmncSession read GetSession write SetSession;//alias for FLink in base class
+    property OwnSession: Boolean read FOwnSession write FOwnSession;
     property ServerInfo: TmncServerInfo read FServerInfo write FServerInfo;
   published
     property IncludeHeader: Boolean read FIncludeHeader write FIncludeHeader default False;
@@ -341,8 +343,16 @@ begin
 end;
 
 destructor TmncMeta.Destroy;
+var
+  aSession: TmncSession;
 begin
   inherited;
+  if FOwnSession then
+  begin
+    aSession := Session;
+    Session := nil;
+    FreeAndNil(aSession);
+  end;
 end;
 
 { TmncMetaItem }
