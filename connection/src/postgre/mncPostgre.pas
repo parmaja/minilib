@@ -396,6 +396,8 @@ type
     function CloseSQL: AnsiString;
   end;
 
+function PQLibVersion: Integer;
+
 implementation
 
 uses
@@ -407,6 +409,11 @@ var
 function BEtoN(Val: Integer): Integer;
 begin
   Result := Val;
+end;
+
+function PQLibVersion: Integer;
+begin
+  Result := mncPGHeader.PQlibVersion();
 end;
 
 { TmncPGBinds }

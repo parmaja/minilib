@@ -154,8 +154,10 @@ type
     function Open(const vURL: UTF8String; SendAndReceive: Boolean = True): Boolean;
     function Post(const vURL: UTF8String; vData: PByte; vCount: Integer): Boolean;
 
+    function ReadStream(AStream: TStream): TFileSize; overload;
+    procedure ReadStream(AStream: TStream; Count: Integer); overload;
+
     procedure ReceiveStream(AStream: TStream); overload;
-    procedure ReceiveStream(AStream: TStream; Count: Integer); overload;
     procedure ReceiveMemoryStream(AStream: TStream);
     procedure Disconnect;
     //Some utils
@@ -595,15 +597,20 @@ end;
 
 procedure TmnHttpClient.ReceiveStream(AStream: TStream);
 begin
-  if KeepAlive then //TODO check if response.KeepAlive
-    FStream.ReadStream(AStream, Response.ContentLength)
-  else
-    FStream.ReadStream(AStream);
+  ReadStream(AStream);
 end;
 
-procedure TmnHttpClient.ReceiveStream(AStream: TStream; Count: Integer);
+procedure TmnHttpClient.ReadStream(AStream: TStream; Count: Integer);
 begin
   FStream.ReadStream(AStream, Count);
+end;
+
+function TmnHttpClient.ReadStream(AStream: TStream): TFileSize;
+begin
+  if KeepAlive then //TODO check if response.KeepAlive
+    Result := FStream.ReadStream(AStream, Response.ContentLength)
+  else
+    Result := FStream.ReadStream(AStream);
 end;
 
 procedure TmnHttpClient.Receive;

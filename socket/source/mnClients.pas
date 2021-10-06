@@ -54,21 +54,27 @@ type
     property Owner: TmnClients read GetOwner;
   end;
 
-  { TmnLogClientConnection }
+  { TmnLogClient }
 
-  TmnLogClientConnection = class(TmnClientConnection) //with log pool, same as Listener
+  TmnClient = class(TmnClientConnection) //with log pool, same as Listener
   private
-    FLock: TCriticalSection;
+    FLock: TCriticalSection; //only if have no owner
     FLogMessages: TStringList;
+    function GetLock: TCriticalSection;
   protected
-    procedure DoLog(s: string); virtual; //outside of thread
-    procedure PostLogs; //to qeoue
+    procedure DoLog(s: string); virtual; //Outside of thread
+    procedure PostLogs; //to Queue
     procedure Log(s: string);
     property LogMessages: TStringList read FLogMessages;
   public
     constructor Create(vOwner: TmnConnections);
     destructor Destroy; override;
-    property Lock: TCriticalSection read FLock;
+    property Lock: TCriticalSection read GetLock;
+  end;
+
+  TmnJobClient = class(TmnClient)
+  public
+    constructor Create(vOwner: TmnConnections; JobObject: TObject);
   end;
 
   TmnClientConnectionClass = class of TmnClientConnection;
@@ -80,6 +86,7 @@ type
 
   TmnClients = class(TmnConnections) // thread pooling to collect outgoing clients threads
   private
+    FLock: TCriticalSection;
     FOnLog: TmnOnLog;
     FOnChanged: TmnOnCallerNotify;
     procedure Connect;
@@ -104,17 +111,26 @@ type
 
     property OnLog: TmnOnLog read FOnLog write FOnLog;
     property OnChanged: TmnOnCallerNotify read FOnChanged write FOnChanged;
+    property Lock: TCriticalSection read FLock;
   end;
 
 implementation
 
-{ TmnLogClientConnection }
+{ TmnClient }
 
-procedure TmnLogClientConnection.DoLog(s: string);
+function TmnClient.GetLock: TCriticalSection;
+begin
+  if FLock <> nil then
+    Result := FLock
+  else
+    Result := Owner.FLock;
+end;
+
+procedure TmnClient.DoLog(s: string);
 begin
 end;
 
-procedure TmnLogClientConnection.PostLogs;
+procedure TmnClient.PostLogs;
 var
   b: Boolean;
   s: String;
@@ -138,7 +154,7 @@ begin
   until not b;
 end;
 
-procedure TmnLogClientConnection.Log(s: string);
+procedure TmnClient.Log(s: string);
 begin
   Lock.Enter;
   try
@@ -149,17 +165,18 @@ begin
   Queue(PostLogs);
 end;
 
-constructor TmnLogClientConnection.Create(vOwner: TmnConnections);
+constructor TmnClient.Create(vOwner: TmnConnections);
 begin
   inherited;
   FLogMessages := TStringList.Create;
-  FLock := TCriticalSection.Create;
+  if vOwner = nil then  // no owner we will make our Lock
+    FLock := TCriticalSection.Create;
 end;
 
-destructor TmnLogClientConnection.Destroy;
+destructor TmnClient.Destroy;
 begin
   FreeAndNil(FLogMessages);
-  FLock.Free;
+  FreeAndNil(FLock);
   inherited;
 end;
 
@@ -208,12 +225,14 @@ end;
 constructor TmnClients.Create;
 begin
   inherited;
+  FLock := TCriticalSection.Create; //only if have no owner
   //FOptions := [soNoDelay]; //you can use soKeepAlive
   FOptions := [];
 end;
 
 destructor TmnClients.Destroy;
 begin
+  FreeAndNil(FLock);
   inherited;
 end;
 
@@ -326,6 +345,12 @@ begin
   if Connected then
     raise EmnException.Create('Can not change Port value when active');
   FPort := Value;
+end;
+
+{ TmnJobClient }
+
+constructor TmnJobClient.Create(vOwner: TmnConnections; JobObject: TObject);
+begin
 end;
 
 end.

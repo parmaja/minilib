@@ -338,7 +338,7 @@ type
 
   { TmnIRCConnection }
 
-  TmnIRCConnection = class(TmnLogClientConnection)
+  TmnIRCConnection = class(TmnClient)
   private
     FHost: string;
     FPort: string;
