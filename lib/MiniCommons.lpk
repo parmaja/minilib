@@ -107,6 +107,10 @@
         <Filename Value="mnMsgBox.pp"/>
         <UnitName Value="mnMsgBox"/>
       </Item>
+      <Item>
+        <Filename Value="mnJobs.pas"/>
+        <UnitName Value="mnJobs"/>
+      </Item>
     </Files>
     <RequiredPkgs>
       <Item>

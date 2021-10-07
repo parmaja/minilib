@@ -175,6 +175,7 @@ function ToUnixPathDelimiter(const S: string): string;
 function IncludePathDelimiter(const S: string): string;
 function IncludePathSeparator(const S: string): string; deprecated 'Use IncludePathDelimiter';
 function IncludeURLDelimiter(S: string): string;
+function ExcludePathDelimiter(Path: string): string;
 
 //Similer to ZeroMemory
 procedure InitMemory(out V; Count: {$ifdef FPC}SizeInt{$else}Longint{$endif});
@@ -206,7 +207,13 @@ type
   //If set Resume to false it will stop loop
   TEnumFilesCallback = procedure(AObject: TObject; const FileName: string; Count, Level:Integer; IsDirectory: Boolean; var Resume: Boolean);
 
-procedure EnumFiles(FileList: TStringList; Folder, Filter: string; FullPath: Boolean = False);
+type
+  TEnumFilesOptions = set of (efDirectory, efFile);
+
+procedure EnumFiles(FileList: TStringList; Folder, Filter: string; Options: TEnumFilesOptions; FullPath: Boolean); overload;
+procedure EnumFiles(FileList: TStringList; Folder, Filter: string; FullPath: Boolean); overload;
+function FirstFile(Path, Files: string): string;
+function DeleteFiles(Path, Files: string): Integer;
 
 var
   SystemAnsiCodePage: Integer; //used to convert from Ansi string, it is the default
@@ -1167,6 +1174,14 @@ begin
     Result := S;
 end;
 
+function ExcludePathDelimiter(Path: string): string;
+begin
+  if Path = '' then
+    Result := ''
+  else
+    Result := ExcludeTrailingPathDelimiter(Path);
+end;
+
 procedure CenterRect(var R1: TRect; R2: TRect);
 begin
   OffsetRect(R1, ((R2.Right - R2.Left) div 2) - ((R1.Right - R1.Left) div 2) + (R2.Left - R1.Left), ((R2.Bottom - R2.Top) div 2) - ((R1.Bottom - R1.Top) div 2) + (R2.Top - R1.Top));
@@ -1319,7 +1334,7 @@ begin
   end;
 end;
 
-procedure EnumFiles(FileList: TStringList; Folder, Filter: string; FullPath: Boolean);
+procedure EnumFiles(FileList: TStringList; Folder, Filter: string; Options: TEnumFilesOptions; FullPath: Boolean); overload;
 var
   R: integer;
   SearchRec: TSearchRec;
@@ -1328,7 +1343,9 @@ begin
   R := FindFirst(Folder + Filter, faAnyFile, SearchRec);
   while R = 0 do
   begin
-    if (SearchRec.Name <> '.') and (SearchRec.Name <> '..') then
+    if (((efDirectory in Options) and ((SearchRec.Attr and faDirectory) = faDirectory))
+      or ((efFile in Options) and ((SearchRec.Attr and faDirectory) <> faDirectory)))
+      and ((SearchRec.Name <> '.') and (SearchRec.Name <> '..')) then
     begin
       if FullPath then
         FileList.Add(Folder + SearchRec.Name)
@@ -1338,6 +1355,44 @@ begin
     R := FindNext(SearchRec);
   end;
   FindClose(SearchRec);
+end;
+
+procedure EnumFiles(FileList: TStringList; Folder, Filter: string; FullPath: Boolean);
+begin
+  EnumFiles(FileList, Folder, Filter, [efDirectory, efFile], FullPath);
+end;
+
+function DeleteFiles(Path, Files: string): Integer;
+var
+  FileList: TStringList;
+  f: string;
+begin
+  FileList := TStringList.Create;
+  try
+    EnumFiles(FileList, Path, Files, [efFile], True);
+    Result := FileList.Count;
+    for f in FileList do
+      DeleteFile(f);
+  finally
+    FileList.Free;
+  end;
+end;
+
+function FirstFile(Path, Files: string): string;
+var
+  FileList: TStringList;
+  f: string;
+begin
+  FileList := TStringList.Create;
+  try
+    EnumFiles(FileList, Path, Files, [efFile], True);
+    if FileList.Count > 0 then
+      Result := FileList[0]
+    else
+      Result := ''
+  finally
+    FileList.Free;
+  end;
 end;
 
 initialization
