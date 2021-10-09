@@ -30,13 +30,6 @@ const
   JulianEpoch = TDateTime(-2415018.5);  //check EpochAsJulianDate
   {$endif}
 
-{$ifdef FPC}
-{.$if FPC_FULLVERSION<300000} //temporary until fpc3 released
-type
-  PUTF8Char = PAnsiChar;
-{.$endif}
-{$endif}
-
 procedure Nothing;
 {
   StrHave: test the string if it have Separators
@@ -204,14 +197,12 @@ function StringOf(const Value: TBytes): string; overload;
 //Files Utils
 
 type
+  TEnumFilesOptions = set of (efDirectory, efFile);
   //If set Resume to false it will stop loop
   TEnumFilesCallback = procedure(AObject: TObject; const FileName: string; Count, Level:Integer; IsDirectory: Boolean; var Resume: Boolean);
 
-type
-  TEnumFilesOptions = set of (efDirectory, efFile);
-
-procedure EnumFiles(FileList: TStringList; Folder, Filter: string; Options: TEnumFilesOptions; FullPath: Boolean); overload;
-procedure EnumFiles(FileList: TStringList; Folder, Filter: string; FullPath: Boolean); overload;
+procedure EnumFiles(FileList: TStringList; Folder, Filter: string; Options: TEnumFilesOptions; FullPath: Boolean = False); overload;
+procedure EnumFiles(FileList: TStringList; Folder, Filter: string; FullPath: Boolean = False); overload;
 function FirstFile(Path, Files: string): string;
 function DeleteFiles(Path, Files: string): Integer;
 
