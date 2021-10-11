@@ -162,6 +162,7 @@ type
     procedure Disconnect;
     //Some utils
     //This will download the content into a stream and disconnect
+    function GetString(const vURL: UTF8String; var OutString: string): TFileSize;
     function GetStream(const vURL: UTF8String; OutStream: TStream): TFileSize;
     function GetFile(const vURL: UTF8String; OutFileName: UTF8String): TFileSize;
     function GetFileSize(vURL: string; out FileSize: TFileSize): Boolean;
@@ -664,6 +665,24 @@ begin
     Result := FStream.ReadStream(OutStream)
   else
     Result := 0;
+end;
+
+function TmnHttpClient.GetString(const vURL: UTF8String; var OutString: string): TFileSize;
+var
+  m: TMemoryStream;
+  b: TBytes;
+begin
+  m := TMemoryStream.Create;
+  try
+    GetStream(vURL, m);
+
+    SetLength(b, m.Size);
+    Move(PByte(m.Memory)^, b[0], m.Size);
+    OutString := TEncoding.UTF8.GetString(b);
+    Result := m.Size;
+  finally
+    m.Free;
+  end;
 end;
 
 function TmnHttpClient.GetFile(const vURL: UTF8String; OutFileName: UTF8String): TFileSize;

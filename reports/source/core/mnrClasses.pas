@@ -2020,6 +2020,7 @@ begin
             begin
               if s.AppendDetailTotals then s.DoAppendDetailTotals(Report.FDetailTotals);
               s.DoEndFill(r);
+              s.ClearSubTotals;
             end;
           end;
 
