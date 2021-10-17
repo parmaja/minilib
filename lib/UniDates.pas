@@ -123,8 +123,8 @@ function udtPeriodToString(vPeriod: Double; WithSeconds: Boolean): String; overl
 function udtStringToPeriod(S: String): Double;
 function udtHourPeriodToString(vPeriod: Double): String;
 
-function udtDateToString(DateTime: TDateTime; Options: TUniviersalDateFlags = []): String; overload; deprecated;
-function udtStringToDate(vStr: String): TDateTime; deprecated;
+function udtDateToString(DateTime: TDateTime; Options: TUniviersalDateFlags = []): String; overload;
+function udtStringToDate(vStr: String): TDateTime;
 
 procedure udtISOStrToDate(ISODate: String; out Y, M, D, H, N, S: Word; vDateSeparator: Char = '-'; TimeDivider: Char = #0; UseDefault: Boolean = False); overload;
 function udtISOStrToDate(UDS: TUniviersalDateSystem; ISODate: String; vDateSeparator: Char = '-'; TimeDivider: Char = #0; UseDefault: Boolean = False): TDateTime; overload;

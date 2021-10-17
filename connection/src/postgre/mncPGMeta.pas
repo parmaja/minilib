@@ -181,7 +181,7 @@ var
   aCMD: TmncSQLCommand;
   aItem: TmncMetaItem;
 begin
-  aCMD := CreateCMD('SELECT * FROM information_schema.columns WHERE table_name = ''' + SQLName + '''' + GetSortSQL(Options));
+  aCMD := CreateCMD('SELECT * FROM information_schema.columns WHERE table_name = ''' + SQLName + ''' order by ordinal_position');
   //aCMD := CreateCMD('pragma table_info(''' + (SQLName) + ''')' + GetSortSQL(Options));
   try
     aCMD.Prepare;
