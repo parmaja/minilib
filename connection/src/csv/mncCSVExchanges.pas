@@ -1,4 +1,4 @@
-unit mncCSVExchanges;
+unit mncCSVExchanges; deprecated;
 {**
  *  This file is part of the "Mini Library"
  *
@@ -405,4 +405,3 @@ end;
 
 initialization
 end.
-

@@ -8,7 +8,7 @@
       <PathDelim Value="\"/>
       <SearchPaths>
         <IncludeFiles Value="$(ProjOutDir)"/>
-        <OtherUnitFiles Value=".;ui;sqlite;mysql;postgre;firebird"/>
+        <OtherUnitFiles Value=".;ui;sqlite;mysql;postgre;firebird;csv"/>
         <UnitOutputDirectory Value="units\$(TargetCPU)-$(TargetOS)"/>
       </SearchPaths>
       <Parsing>
@@ -42,14 +42,6 @@
       <Item>
         <Filename Value="mncConnections.pas"/>
         <UnitName Value="mncConnections"/>
-      </Item>
-      <Item>
-        <Filename Value="mncCSV.pas"/>
-        <UnitName Value="mncCSV"/>
-      </Item>
-      <Item>
-        <Filename Value="mncCSVExchanges.pas"/>
-        <UnitName Value="mncCSVExchanges"/>
       </Item>
       <Item>
         <Filename Value="mncCommons.pas"/>
@@ -150,6 +142,10 @@
       <Item>
         <Filename Value="ui\CSVOptionsForms.pas"/>
         <UnitName Value="CSVOptionsForms"/>
+      </Item>
+      <Item>
+        <Filename Value="csv\mncCSV.pas"/>
+        <UnitName Value="mncCSV"/>
       </Item>
     </Files>
     <RequiredPkgs>
