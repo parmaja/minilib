@@ -90,33 +90,35 @@ begin
   if cprsWrite in FCompress then
   begin
     with DeflateInfo do
-    if not ZEnd then
-    begin
-      InitDeflate; //init it if not initialized
-      ZStream.next_in := @Buffer;
-      ZStream.avail_in := Count;
-      while ZStream.avail_in <> 0 do
+      if ZEnd then
+        Result := True
+      else
       begin
-        if ZStream.avail_out = 0 then
+        InitDeflate; //init it if not initialized
+        ZStream.next_in := @Buffer;
+        ZStream.avail_in := Count;
+        while ZStream.avail_in <> 0 do
         begin
-          { Flush the buffer to the stream and update progress }
-          Over.Write(ZBuffer^, BufSize, HaveWrite, RealCount);
-          { reset output buffer }
-          ZStream.next_out := ZBuffer;
-          ZStream.avail_out := BufSize;
+          if ZStream.avail_out = 0 then
+          begin
+            { Flush the buffer to the stream and update progress }
+            Over.Write(ZBuffer^, BufSize, HaveWrite, RealCount);
+            { reset output buffer }
+            ZStream.next_out := ZBuffer;
+            ZStream.avail_out := BufSize;
+          end;
+          err := deflate(ZStream, Z_NO_FLUSH);
+          if err = Z_STREAM_END then
+          begin
+            ZEnd := True;
+            break
+          end
+          else if err <> Z_OK then
+            raise Exception.Create(String(zerror(err)));
         end;
-        err := deflate(ZStream, Z_NO_FLUSH);
-        if err = Z_STREAM_END then
-        begin
-          ZEnd := True;
-          break
-        end
-        else if err <> Z_OK then
-          raise Exception.Create(String(zerror(err)));
+        ResultCount := Count;
+        Result := True;
       end;
-      ResultCount := Count;
-      Result := True;
-    end;
   end
   else
     Result := Over.Write(Buffer, Count, ResultCount, RealCount);
@@ -167,7 +169,7 @@ begin
       end;
       ResultCount := Count - Integer(ZStream.avail_out);
     end;
-     Result := True;
+    Result := True;
   end
   else
     Result := Over.Read(Buffer, Count, ResultCount, RealCount);

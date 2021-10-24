@@ -10,6 +10,8 @@ unit mnUtils;
 {$IFDEF FPC}
 {$MODE delphi}
 {$modeswitch arrayoperators}
+{$ModeSwitch advancedrecords}
+{$ModeSwitch typehelpers}
 {$ENDIF}
 {$M+}{$H+}
 
@@ -372,7 +374,7 @@ begin
     Current := S[Index];
     if (OpenStart > 0) then
     begin
-      if not (Current in ['0'..'9']) then
+      if not CharInSet(Current, ['0'..'9']) then
         Check;
     end
     else if (Current = VarInit[InitIndex]) then

@@ -12,7 +12,7 @@ uses
   mncPGHeader, mncPGMeta, mncPGORM, mncFBHeader, mncFirebird, mncFBMeta, 
   mncFBUtils, mncFBORM, mncSQLite, mncSQLiteHeader, mncSQLiteMeta, 
   mncSQLiteORM, mncMySQLHeader, mncMySQL, mncMySQLORM, mncMySQLMeta, 
-  mncSQLUtils, ParamsForms, CSVOptionsForms, mncCSV;
+  ParamsForms, CSVOptionsForms, mncCSV;
 
 implementation
 
