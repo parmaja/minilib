@@ -266,7 +266,7 @@ begin
   b := False;
   for i := 1 to Length(Name) do
   begin
-    if not (Name[i] in ['A'..'Z', '0'..'9', '_']) then
+    if not CharInSet(Name[i], ['A'..'Z', '0'..'9', '_']) then
     begin
       b := true;
       break;

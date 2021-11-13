@@ -20,6 +20,7 @@ uses
 
 type
   TmnBoolean = (Default, Yes, No);
+
   TmnXMLObject = class(TObject);
 
   EmnXMLException = class(Exception)

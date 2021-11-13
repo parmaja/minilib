@@ -205,8 +205,8 @@ end;
 
 procedure TMainFrm.ConnectBtnClick(Sender: TObject);
 begin
-  if IRC.Active then
-    IRC.Stop
+  if IRC.IsOpen then
+    IRC.Close
   else
   begin
     ConnectNow;
@@ -234,7 +234,7 @@ var
   aName: string;
 begin
   aName := ProfileCbo.Text;
-  if Msg.Input(aName, 'Name a profile') then
+  if MsgBox.Input(aName, 'Name a profile') then
   begin
     SaveProfile(AName);
     EnumProfiles;
@@ -272,7 +272,7 @@ begin
   IRC.Username := UserEdit.Text;
   IRC.Password := PasswordEdit.Text;
 
-  IRC.Start;
+  IRC.Open;
   Rooms := TStringList.Create;
   try
     Rooms.CommaText := RoomsEdit.Text;
@@ -315,7 +315,7 @@ var
   aNick: string;
 begin
   aNick := IRC.Session.Nick;
-  if Msg.Input(aNick, 'New Nickname?') then
+  if MsgBox.Input(aNick, 'New Nickname?') then
   begin
     IRC.SetNick(aNick);
   end;
@@ -540,7 +540,7 @@ end;
 
 destructor TMainFrm.Destroy;
 begin
-  IRC.Stop;
+  IRC.Close;
   IRC.Free;
   SaveConfig;
   FreeAndNil(Recents);
@@ -701,9 +701,13 @@ begin
             end;
             mtNotice:
               AddMessage('[' + vUser + '] ' + vMSG, 'notice');
-            mtMessage, mtSend:
+            mtMessage:
             begin
-              AddMessage(vUser + ': ' + vMSG, 'received');
+              AddMessage(vUser + ': ' + vMSG, ' received');
+            end;
+            mtSend:
+            begin
+              AddMessage(vUser + ': ' + vMSG, 'self');
             end;
             mtAction:
             begin

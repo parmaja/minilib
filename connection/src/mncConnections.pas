@@ -222,7 +222,7 @@ type
   end;
 
   TmncDataType = (dtUnknown, dtString, dtBoolean, dtInteger, dtCurrency, dtFloat, dtDate, dtTime, dtDateTime, dtMemo, dtBlob, dtBig {bigint or int64}{, dtEnum, dtSet});
-  TmncBlobType = (blobBinary, blobText);
+  TmncSubType = (dstBinary, dstImage, dstText, dstXML, dstJSON);
 
 {
   TmncItem base class for Column and Field and Param
@@ -278,6 +278,7 @@ type
     FMetaType: string;
     FScale: Word;
     FSize: Int64;
+    FSubType: TmncSubType;
   protected
     procedure SetIsNull(const AValue: Boolean); override;
     function GetIsNull: Boolean; override;
@@ -298,7 +299,7 @@ type
     property Decimals: Integer read FDecimals write SetDecimals;
     property Options: TmnDataOptions read FOptions write FOptions default [];
     //property IsBlob;
-    //property BlobType;
+    property SubType: TmncSubType read FSubType write FSubType;
     property MaxSize: Integer read FMaxSize write FMaxSize;
   end;
 

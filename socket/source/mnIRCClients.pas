@@ -44,7 +44,7 @@ interface
 uses
   Classes, syncobjs,
   StrUtils,
-  mnClasses, mnSockets, mnClients, mnStreams, mnConnections, mnUtils;
+  mnClasses, mnSockets, mnServers, mnClients, mnStreams, mnConnections, mnUtils;
 
 const
   cCTCPChar: Char = #1;
@@ -346,7 +346,7 @@ type
     FStream: TIRCSocketStream;
 
     FDelayEvent: TEvent;
-    FActive: Boolean; //End user started or stopped it
+    FIsOpen: Boolean; //End user started or stopped it
     FInternalConnected: Boolean; //True if connected, used to detected disconnected after connect
 
     Tries: Integer;
@@ -365,7 +365,7 @@ type
 
     property Client: TmnIRCClient read FClient;
     function GetConnected: Boolean; override;
-    property Active: Boolean read FActive;
+    property IsOpen: Boolean read FIsOpen;
   public
     constructor Create(vOwner: TmnConnections);
     destructor Destroy; override;
@@ -415,7 +415,7 @@ type
     FUseUserCommands: Boolean;
     FNicks: TStringList;
 
-    function GetActive: Boolean;
+    function GetIsOpen: Boolean;
     function GetOnline: Boolean;
 
     procedure SetAuth(AValue: TIRCAuth);
@@ -482,8 +482,8 @@ type
     constructor Create;
     destructor Destroy; override;
 
-    procedure Start;
-    procedure Stop;
+    procedure Open;
+    procedure Close;
 
     procedure ChannelSend(vChannel, vMsg: string); deprecated;
     procedure SendMsg(vChannel, vMsg: string);
@@ -506,7 +506,7 @@ type
     property Receivers: TIRCReceivers read FReceivers;
     property QueueSends: TIRCQueueRaws read FQueueSends;
     property UserCommands: TIRCUserCommands read FUserCommands;
-    property Active: Boolean read GetActive;
+    property IsOpen: Boolean read GetIsOpen;
     property Online: Boolean read GetOnline;
   public
     property Host: string read FHost write SetHost;
@@ -1724,12 +1724,12 @@ function TmnIRCConnection.InitStream: Boolean;
 var
   ReconnectTime: Integer;
 begin
-  if (FStream = nil) and Active then
+  if (FStream = nil) and IsOpen then
     FStream := CreateStream;
 
   if not Terminated then
   begin
-    if not FStream.Connected and Active then
+    if not FStream.Connected and IsOpen then
     begin
       try
         if Tries > 0 then //delay if not first time
@@ -2151,11 +2151,11 @@ end;
 
 { TmnIRCClient }
 
-procedure TmnIRCClient.Stop;
+procedure TmnIRCClient.Close;
 begin
   if Assigned(FConnection) then
   begin
-    Connection.FActive := False;
+    Connection.FIsOpen := False;
     if (FConnection.Connected) then
       Quit('Bye');
 
@@ -2166,7 +2166,7 @@ begin
   NickIndex := 0;
 end;
 
-procedure TmnIRCClient.Start;
+procedure TmnIRCClient.Open;
 begin
   NickIndex := 0;
   if (Progress < prgConnecting) then
@@ -2175,7 +2175,7 @@ begin
       InitOpenSSL;
     FreeAndNil(FConnection);
     CreateConnection;
-    Connection.FActive := True;
+    Connection.FIsOpen := True;
     Connection.Start;
   end;
 end;
@@ -2207,7 +2207,7 @@ end;
 
 destructor TmnIRCClient.Destroy;
 begin
-  Stop;
+  Close;
   FreeAndNil(FConnection);
   FreeAndNil(FUserCommands);
   FreeAndNil(FQueueSends);
@@ -2485,12 +2485,12 @@ end;
 
 function TmnIRCClient.GetOnline: Boolean;
 begin
-  Result := (FConnection <> nil) and FConnection.Connected and FConnection.Active and (Progress > prgConnected);
+  Result := (FConnection <> nil) and FConnection.Connected and FConnection.IsOpen and (Progress > prgConnected);
 end;
 
-function TmnIRCClient.GetActive: Boolean;
+function TmnIRCClient.GetIsOpen: Boolean;
 begin
-  Result := (FConnection <> nil) and FConnection.Active;
+  Result := (FConnection <> nil) and FConnection.IsOpen;
 end;
 
 procedure TmnIRCClient.SetAuth(AValue: TIRCAuth);

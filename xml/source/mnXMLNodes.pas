@@ -16,7 +16,9 @@ unit mnXMLNodes;
 interface
 
 uses
-  Classes, SysUtils, mnXML, mnXMLReader, mnXMLWriter, Contnrs;
+  Classes, SysUtils, Contnrs,
+  mnClasses,
+  mnXML, mnXMLReader, mnXMLWriter;
 
 type
   TmnXMLNodeKind = (xmlnNormal, xmlnText, xmlnComment, xmlnCDATA);
@@ -26,8 +28,28 @@ type
   TmnXMLNode = class;
   TmnXMLNodesList = class;
 
+  { TmnCustomNode }
+
   TmnCustomNode = class(TmnXMLObject)
+  protected
+    type
+
+      { TmnXMLNodeEnumerator }
+
+      TmnXMLNodeEnumerator = class(TObject)
+      private
+        FList: TmnXMLNode;
+        FIndex: Integer;
+      public
+        constructor Create(AList: TmnXMLNode);
+        function GetCurrent: TmnXMLNode;
+        function MoveNext: Boolean;
+        property Current: TmnXMLNode read GetCurrent;
+      end;
+
   end;
+
+  { TmnXMLNodesList }
 
   TmnXMLNodesList = class(TObjectList)
   private
@@ -53,9 +75,11 @@ type
     function GetCount: Integer;
     function GetEmpty: Boolean;
     function GetItem(Index: Integer): TmnXMLNode;
+  protected
   public
     constructor Create(Nodes: TmnXMLNodes; Parent: TmnXMLNode); virtual;
     destructor Destroy; override;
+    function GetEnumerator: TmnXMLNodeEnumerator; inline;
     procedure Close;
     procedure Add(Node:TmnXMLNode);
     property Nodes: TmnXMLNodes read FNodes;
@@ -71,7 +95,9 @@ type
     property Item[Index: Integer]: TmnXMLNode read GetItem; default;
   end;
 
-  TmnXMLNodes = class(TmnXMLObject)
+  { TmnXMLNodes }
+
+  TmnXMLNodes = class(TmnCustomNode)
   private
     FCurrent: TmnXMLNode;
     FRoot: TmnXMLNode;
@@ -89,6 +115,10 @@ type
   public
     constructor Create; virtual;
     destructor Destroy; override;
+    function GetEnumerator: TmnXMLNodeEnumerator; inline;
+
+    procedure LoadFromString(S: string);
+
     procedure Clear;
     function GetAttribute(Name, Attribute: string; Default: string = ''): string;
     property Empty: Boolean read GetEmpty;
@@ -98,6 +128,8 @@ type
     //Enhanced = true it is useful when need to rewrite the xml data, when Enhanced = false mean we take the nodes for proceess the data, the comment will ignored and all text and cdata merged
     property Enhanced: Boolean read FEnhanced write FEnhanced default False;
   end;
+
+  { TmnXMLNodeReader }
 
   TmnXMLNodeReader = class(TmnXMLReader)
   protected
@@ -114,11 +146,33 @@ type
     property Nodes: TmnXMLNodes read FNodes write FNodes;
   end;
 
+  { TmnXMLNodeWriter }
+
   TmnXMLNodeWriter = class(TmnXMLWriter)
   private
   end;
 
 implementation
+
+{ TmnCustomNode.TmnXMLNodeEnumerator }
+
+constructor TmnCustomNode.TmnXMLNodeEnumerator.Create(AList: TmnXMLNode);
+begin
+  inherited Create;
+  FList := Alist;
+  FIndex := -1;
+end;
+
+function TmnCustomNode.TmnXMLNodeEnumerator.GetCurrent: TmnXMLNode;
+begin
+  Result := FList[FIndex];
+end;
+
+function TmnCustomNode.TmnXMLNodeEnumerator.MoveNext: Boolean;
+begin
+  Inc(FIndex);
+  Result := FIndex < FList.Count;
+end;
 
 { TmnXMLNode }
 
@@ -161,6 +215,11 @@ end;
 function TmnXMLNode.GetItem(Index: Integer): TmnXMLNode;
 begin
   Result := Items[Index];
+end;
+
+function TmnXMLNode.GetEnumerator: TmnXMLNodeEnumerator;
+begin
+  Result := TmnXMLNodeEnumerator.Create(Self);
 end;
 
 { TmnXMLNodeReader }
@@ -326,7 +385,27 @@ begin
   inherited;
 end;
 
-function TmnXMLNodes.GetAttribute(Name, Attribute, Default: string): string;
+function TmnXMLNodes.GetEnumerator: TmnXMLNodeEnumerator;
+begin
+  Result := TmnXMLNodeEnumerator.Create(FRoot);
+end;
+
+procedure TmnXMLNodes.LoadFromString(S: string);
+var
+  Reader: TmnXMLNodeReader;
+  sl: TStringList;
+begin
+  Reader := TmnXMLNodeReader.Create;
+  try
+    Reader.Start;
+    Reader.Nodes := Self;
+    Reader.Parse(S);
+  finally
+    Reader.Free;
+  end;
+end;
+
+function TmnXMLNodes.GetAttribute(Name, Attribute: string; Default: string): string;
 var
   aNode: TmnXMLNode;
   aAttribute: TmnXMLAttribute;

@@ -106,7 +106,7 @@ function CharInArray(const C: string; const ArrayOfChar : array of Char; CaseIns
 
 //vPeriod is a datetime not tickcount
 function PeriodToString(vPeriod: Double; WithSeconds: Boolean): string;
-//Used by GetTickCount
+//Used by GetTickCount, return minuts,secons,miliseconds
 function TicksToString(vTicks: Int64): string;
 function DequoteStr(Str: string; QuoteChar: string = #0): string;
 
@@ -974,6 +974,7 @@ begin
   ms := (ms mod 1000);
   m := (s div 60);
   s := (s mod 60);
+//  h := (s mod 60);
   Result := Format('%2d:%2d:%4d', [m, s, ms]);
   //Result := Format('%2d min  : %2d sec  : %2d msec', [m, s, ms]));
 end;
