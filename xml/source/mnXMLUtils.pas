@@ -162,13 +162,14 @@ end;
 
 procedure ReadAttStrings(Strings: TStrings; const Attributes: string);
 begin
-  StrToStringsCallback(Attributes, Strings, @StrToStringsDeqouteCallbackProc, [' '], [#0, #13, #10]);
+  StrToStringsCallback(Attributes, Strings, @StrToStringsDeqouteCallbackProc, [' '], [' ', #0, #13, #10]);
 end;
 
 function CreateAttStrings(const Attributes: string): TStrings;
 begin
   Result := TStringList.Create;
-  ReadAttStrings(Result, Attributes);
+  if Attributes <> '' then
+    ReadAttStrings(Result, Attributes);
 end;
 
 function CutStr(const ID, S: string; Dequote: Boolean = False): string;
