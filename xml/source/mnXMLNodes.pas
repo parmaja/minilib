@@ -17,7 +17,7 @@ interface
 
 uses
   Classes, SysUtils, Contnrs,
-  mnClasses,
+  mnClasses, mnUtils,
   mnXML, mnXMLReader, mnXMLWriter;
 
 type
@@ -64,6 +64,7 @@ type
 
   TmnXMLNode = class(TmnCustomNode)
   private
+    FNameSpace: string;
     FNodes: TmnXMLNodes;
     FParent: TmnXMLNode;
     FValue: string;
@@ -82,12 +83,15 @@ type
     function GetEnumerator: TmnXMLNodeEnumerator; inline;
     procedure Close;
     procedure Add(Node:TmnXMLNode);
+    //this will split Name to NameSpace, Name
+    procedure SetName(Name: string); virtual;
     property Nodes: TmnXMLNodes read FNodes;
     property Parent: TmnXMLNode read FParent;
     property State: TmnXMLNodeState read FState;
     property Items: TmnXMLNodesList read FItems;
     property Attributes: TmnXMLAttributes read FAttributes;
     property Empty:Boolean read GetEmpty;
+    property NameSpace: string read FNameSpace write FNameSpace;
     property Value: string read FValue write FValue;
     property Name: string read FName write FName;
     property Kind: TmnXMLNodeKind read FKind write FKind;
@@ -95,11 +99,18 @@ type
     property Item[Index: Integer]: TmnXMLNode read GetItem; default;
   end;
 
+  TmnXMLNodeOption = (
+    xnoNameSpace, //Split NameSpace
+    xnoTrimValue  //Trim CDATA, TEXT value
+  );
+  TmnXMLNodeOptions = set of TmnXMLNodeOption;
+
   { TmnXMLNodes }
 
   TmnXMLNodes = class(TmnCustomNode)
   private
     FCurrent: TmnXMLNode;
+    FOptions: TmnXMLNodeOptions;
     FRoot: TmnXMLNode;
     FEnhanced: Boolean;
     function GetItems(Index: string): TmnXMLNode;
@@ -125,6 +136,7 @@ type
     property Current: TmnXMLNode read FCurrent;
     property Root: TmnXMLNode read FRoot;
     property Items[Index: string]: TmnXMLNode read GetItems; default;
+    property Options: TmnXMLNodeOptions read FOptions write FOptions;
     //Enhanced = true it is useful when need to rewrite the xml data, when Enhanced = false mean we take the nodes for proceess the data, the comment will ignored and all text and cdata merged
     property Enhanced: Boolean read FEnhanced write FEnhanced default False;
   end;
@@ -179,6 +191,14 @@ end;
 procedure TmnXMLNode.Add(Node: TmnXMLNode);
 begin
   Items.Add(Node);
+end;
+
+procedure TmnXMLNode.SetName(Name: string);
+begin
+  if xnoNameSpace in Nodes.Options then
+    SpliteStr(Name, ':', FNameSpace, FName)
+  else
+    FName := Name;
 end;
 
 procedure TmnXMLNode.Close;
@@ -313,7 +333,7 @@ begin
   begin
     Result := TmnXMLNode.Create(Self, FCurrent);
     Result.FKind := xmlnCDATA;
-    Result.Value := Value;
+    Result.FValue := Value;
   end
   else
   begin
@@ -338,11 +358,13 @@ end;
 function TmnXMLNodes.AddText(Value: string): TmnXMLNode;
 begin
   CheckClosed;
+  if xnoTrimValue in Options then
+    Value := Trim(Value);
   if Enhanced then //we add the text as node
   begin
     Result := TmnXMLNode.Create(Self, FCurrent);
     Result.FKind := xmlnText;
-    Result.Value := Value;
+    Result.FValue := Value;
   end
   else
   begin
@@ -452,7 +474,7 @@ end;
 function TmnXMLNodes.Open(Name: string): TmnXMLNode;
 begin
   Result := TmnXMLNode.Create(Self, FCurrent);
-  Result.Name := Name;
+  Result.SetName(Name);
   if FRoot = nil then
     FRoot := Result
   else

@@ -16,7 +16,7 @@ interface
 
 uses
   Classes, SysUtils, Contnrs,
-  mnStreams, mnXMLUtils, mnUtils;
+  mnClasses, mnStreams, mnXMLUtils, mnUtils;
 
 type
   TmnBoolean = (Default, Yes, No);
@@ -100,33 +100,27 @@ type
     property Count: Integer read FCount;
   end;
 
-  TmnXMLAttribute = class(TmnXMLObject)
+  TmnXMLAttribute = class(TmnNamedObject)
   private
-    FName: string;
     FValue: string;
     function GetValue: string;
   public
-    property Name: string read FName write FName; //write not sure if needed
     property Value: string read GetValue write FValue;
   end;
 
   { TmnXMLAttributes }
 
-  TmnXMLAttributes = class(TObjectList)
+  TmnXMLAttributes = class(TmnNamedObjectList<TmnXMLAttribute>)
   private
-    function GetItem(Index: Integer): TmnXMLAttribute;
     function GetValue(Index: string): string;
     procedure SetValue(Index: string; const Value: string);
   public
     constructor Create(vAttributes: string = ''); virtual;
     procedure SetText(Value: string);
-    function Find(const Name: string): TmnXMLAttribute;
-    procedure Add(vItem: TmnXMLAttribute); overload;
     procedure Add(vName, vValue: string); overload;
     procedure Add(S: string); overload; //"Name = Value"
     procedure Append(vAttributes: string); overload; // multiple attributes
     procedure AssignFrom(vAttributes: string); overload; // multiple attributes
-    property Items[Index: Integer]: TmnXMLAttribute read GetItem;
     property Values[Index: string]: string read GetValue write SetValue; default;
   end;
 
@@ -448,11 +442,11 @@ function TmnXMLEntities.CreateReplaceArr(const Value: string; vWay: TEntityRende
           v := PChar(Items[i].Name);
           l := Length(Items[i].Name);
         end;
-        else
+{        else
         begin
           v := nil;
           l := MaxInt;
-        end;
+        end;}
       end;
       if l<=vLen then
       begin
@@ -641,33 +635,13 @@ end;
 
 { TmnXMLAttributes }
 
-function TmnXMLAttributes.Find(const Name: string): TmnXMLAttribute;
-var
-  i: Integer;
-begin
-  Result := nil;
-  for i := 0 to Count - 1 do
-  begin
-    if SameText(Name, Items[i].Name) then
-    begin
-      Result := Items[i];
-      break;
-    end;
-  end;
-end;
-
-procedure TmnXMLAttributes.Add(vItem: TmnXMLAttribute);
-begin
-  inherited Add(vItem);
-end;
-
 procedure TmnXMLAttributes.Add(vName, vValue: string);
 var
   lItem: TmnXMLAttribute;
 begin
   lItem := TmnXMLAttribute.Create;
-  lItem.FName := vName;
-  lItem.FValue := vValue;
+  lItem.Name := vName;
+  lItem.Value := vValue;
   Add(lItem);
 end;
 
@@ -705,11 +679,6 @@ procedure TmnXMLAttributes.AssignFrom(vAttributes: string);
 begin
   Clear;
   Append(vAttributes);
-end;
-
-function TmnXMLAttributes.GetItem(Index: Integer): TmnXMLAttribute;
-begin
-  Result := inherited Items[Index] as TmnXMLAttribute;
 end;
 
 function TmnXMLAttributes.GetValue(Index: string): string;
@@ -758,8 +727,8 @@ begin
       aAttribute := TmnXMLAttribute.Create;
       s := aStrings[i];
       p := pos('=', s);
-      aAttribute.FName := Copy(s, 1, p - 1);
-      aAttribute.FValue := DequoteStr(Copy(s, p + 1, MaxInt));
+      aAttribute.Name := Copy(s, 1, p - 1);
+      aAttribute.Value := DequoteStr(Copy(s, p + 1, MaxInt));
       Add(aAttribute);
     end;
   finally
