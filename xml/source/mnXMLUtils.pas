@@ -160,9 +160,31 @@ begin
   end;
 end;
 
+procedure AttrStrToStringsDeqouteCallbackProc(Sender: Pointer; Index:Integer; S: string; var Resume: Boolean);
+var
+  Name, Value: string;
+  p: Integer;
+begin
+  if s <> '' then
+  begin
+    p := pos('=', s);
+    if p >= 0 then
+    begin
+      Name := Copy(s, 1, p - 1);
+      Value := DequoteStr(Copy(s, p + 1, MaxInt));
+    end
+    else
+    begin
+      Name := S;
+      Value := '';
+    end;
+    (TObject(Sender) as TStrings).Add(Name + (TObject(Sender) as TStrings).NameValueSeparator + Value);
+  end;
+end;
+
 procedure ReadAttStrings(Strings: TStrings; const Attributes: string);
 begin
-  StrToStringsCallback(Attributes, Strings, @StrToStringsDeqouteCallbackProc, [' '], [' ', #0, #13, #10]);
+  StrToStringsCallback(Attributes, Strings, @AttrStrToStringsDeqouteCallbackProc, [' '], [' ', #0, #13, #10]);
 end;
 
 function CreateAttStrings(const Attributes: string): TStrings;

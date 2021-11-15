@@ -195,7 +195,7 @@ end;
 
 procedure TmnXMLNode.SetName(Name: string);
 begin
-  if xnoNameSpace in Nodes.Options then
+  if (xnoNameSpace in Nodes.Options) and (Pos(':', Name) > 0) then
     SpliteStr(Name, ':', FNameSpace, FName)
   else
     FName := Name;
@@ -344,7 +344,7 @@ end;
 
 function TmnXMLNodes.AddComment(Value: string): TmnXMLNode;
 begin
-  CheckClosed;
+  //CheckClosed; //svg have comment not inside
   if Enhanced then //we ignore the comment if not
   begin
     Result := TmnXMLNode.Create(Self, FCurrent);
