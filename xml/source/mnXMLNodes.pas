@@ -17,7 +17,7 @@ interface
 
 uses
   Classes, SysUtils, Contnrs,
-  mnClasses, mnUtils,
+  mnClasses, mnUtils, mnStreams,
   mnXML, mnXMLReader, mnXMLWriter;
 
 type
@@ -80,7 +80,7 @@ type
   public
     constructor Create(Nodes: TmnXMLNodes; Parent: TmnXMLNode); virtual;
     destructor Destroy; override;
-    function GetEnumerator: TmnXMLNodeEnumerator; inline;
+    function GetEnumerator: TmnCustomNode.TmnXMLNodeEnumerator; inline;
     procedure Close;
     procedure Add(Node:TmnXMLNode);
     //this will split Name to NameSpace, Name
@@ -126,9 +126,11 @@ type
   public
     constructor Create; virtual;
     destructor Destroy; override;
-    function GetEnumerator: TmnXMLNodeEnumerator; inline;
+    function GetEnumerator: TmnCustomNode.TmnXMLNodeEnumerator; inline;
 
     procedure LoadFromString(S: string);
+    procedure LoadFromFile(AFileName: string);
+    procedure LoadFromStream(AStream: TStream);
 
     procedure Clear;
     function GetAttribute(Name, Attribute: string; Default: string = ''): string;
@@ -237,9 +239,9 @@ begin
   Result := Items[Index];
 end;
 
-function TmnXMLNode.GetEnumerator: TmnXMLNodeEnumerator;
+function TmnXMLNode.GetEnumerator: TmnCustomNode.TmnXMLNodeEnumerator;
 begin
-  Result := TmnXMLNodeEnumerator.Create(Self);
+  Result := TmnCustomNode.TmnXMLNodeEnumerator.Create(Self);
 end;
 
 { TmnXMLNodeReader }
@@ -407,9 +409,9 @@ begin
   inherited;
 end;
 
-function TmnXMLNodes.GetEnumerator: TmnXMLNodeEnumerator;
+function TmnXMLNodes.GetEnumerator: TmnCustomNode.TmnXMLNodeEnumerator;
 begin
-  Result := TmnXMLNodeEnumerator.Create(FRoot);
+  Result := TmnCustomNode.TmnXMLNodeEnumerator.Create(FRoot);
 end;
 
 procedure TmnXMLNodes.LoadFromString(S: string);
@@ -422,6 +424,34 @@ begin
     Reader.Start;
     Reader.Nodes := Self;
     Reader.Parse(S);
+  finally
+    Reader.Free;
+  end;
+end;
+
+procedure TmnXMLNodes.LoadFromFile(AFileName: string);
+var
+  AStream: TFileStream;
+begin
+  AStream := TFileStream.Create(AFileName, fmOpenRead);
+  try
+    LoadFromStream(AStream);
+  finally
+    AStream.Free;
+  end;
+end;
+
+procedure TmnXMLNodes.LoadFromStream(AStream: TStream);
+var
+  AWrapperStream: TmnWrapperStream;
+  Reader: TmnXMLNodeReader;
+  sl: TStringList;
+begin
+  AWrapperStream := TmnWrapperStream.Create(AStream);
+  Reader := TmnXMLNodeReader.Create(AWrapperStream, True);
+  try
+    Reader.Nodes := Self;
+    Reader.Start;
   finally
     Reader.Free;
   end;

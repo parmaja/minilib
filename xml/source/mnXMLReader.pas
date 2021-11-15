@@ -57,7 +57,7 @@ end;
 
 procedure TmnXMLReader.ParseStream;
 var
-  Text: string;
+  Text: utf8string;
   Line: Integer;
 begin
   Line := 1;
@@ -65,7 +65,7 @@ begin
     while not (cloRead in Stream.Done) and not Completed do
     begin
       Text := '';
-      if Stream.ReadLine(Text, False) then
+      if Stream.ReadLineUTF8(Text, False) then
         ParseLine(Text, Line);
       Line := Line + 1;
     end;
