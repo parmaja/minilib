@@ -248,8 +248,11 @@ end;
 
 procedure TSSL.Free;
 begin
-  SSL_free(Handle);
-  Handle := nil;
+  //if Handle<>nil then
+  begin
+    SSL_free(Handle);
+    Handle := nil;
+  end;
 end;
 
 procedure TSSL.SetSocket(ASocket: Integer);

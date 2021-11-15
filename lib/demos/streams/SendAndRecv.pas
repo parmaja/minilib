@@ -55,6 +55,8 @@ type
     procedure ExampleInflateImage; //Inflate image
     procedure ExampleGZImage; //GZ image
 
+    procedure ExampleGZText; //GZ image
+
     procedure ExampleUnGZImage; //Unzip GZ image
 
     procedure CopyFileWrite;
@@ -625,6 +627,45 @@ begin
   InternalCompressImage(True, False);
 end;
 
+procedure TTestStream.ExampleGZText;
+var
+  cFile: string;
+  aTextFile: TFileStream;
+  Stream: TmnBufferStream;
+  HexProxy: TmnHexStreamProxy;
+  CompressProxy: TmnDeflateStreamProxy;
+begin
+  cFile := Location + 'file.gz';
+  //image.gz is a compressed file of hex file of image
+  WriteLn('Read text to compressed file');
+  aTextFile := TFileStream.Create(Location + 'file.txt', fmOpenRead);
+  Stream := TmnWrapperStream.Create(TFileStream.Create(cFile, fmCreate or fmOpenWrite));
+  CompressProxy := TmnGzipStreamProxy.Create([cprsRead, cprsWrite], 9);
+  Stream.AddProxy(CompressProxy);
+
+  try
+    WriteLn('Size write: ' + IntToStr(Stream.WriteStream(aTextFile)));
+  finally
+    Stream.Free;
+    FreeAndNil(aTextFile);
+  end;
+
+//---------------------------------------------------------
+
+  WriteLn('Read compressed file to image');
+  aTextFile := TFileStream.Create(Location + 'file_copy.txt', fmCreate or fmOpenWrite);
+  Stream := TmnWrapperStream.Create(TFileStream.Create(cFile, fmOpenRead));
+  CompressProxy := TmnGzipStreamProxy.Create([cprsRead, cprsWrite], 9);
+  Stream.AddProxy(CompressProxy);
+
+  try
+    WriteLn('Size read: ' + IntToStr(Stream.ReadStream(aTextFile)));
+  finally
+    FreeAndNil(Stream);
+    FreeAndNil(aTextFile);
+  end;
+end;
+
 procedure TTestStream.CopyFileWrite;
 var
   Stream1: TmnBufferStream;
@@ -713,6 +754,7 @@ begin
       AddProc('ExampleHexImage: Hex image', ExampleHexImage);
       AddProc('CopyFile Write', CopyFileWrite);
       AddProc('CopyFile Read', CopyFileRead);
+      AddProc('ExampleGZText: GZ Text', ExampleGZText);
       while true do
       begin
         for n := 0 to Length(Commands) - 1 do
