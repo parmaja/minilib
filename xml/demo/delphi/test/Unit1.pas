@@ -10,7 +10,9 @@ interface
 
 uses
   Windows, Messages, SysUtils, Variants, Classes, Graphics, Controls, Forms,
-  mnXMLStreams, mnXML, mnXMLWriter, mnXMLReader, mnXMLScanner, mnXMLUtils, Dialogs, StdCtrls;
+  Dialogs, StdCtrls,
+  mnStreams,
+  mnXML, mnXMLWriter, mnXMLReader, mnXMLScanner, mnXMLUtils;
 
 type
   TForm1 = class(TForm)
@@ -19,14 +21,13 @@ type
     Button3: TButton;
     Memo: TMemo;
     Button4: TButton;
+    Button5: TButton;
     procedure Button1Click(Sender: TObject);
     procedure Button2Click(Sender: TObject);
     procedure Button3Click(Sender: TObject);
     procedure Button4Click(Sender: TObject);
   private
-    { Private declarations }
   public
-    { Public declarations }
   end;
 
 var
@@ -55,14 +56,14 @@ procedure TForm1.Button1Click(Sender: TObject);
 var
   XMLWriter: TmnXMLWriter;
 begin
-  XMLWriter := TmnXMLWriter.Create(TmnWrapperStream.Create(TFileStream.Create('c:\1.xml', fmCreate)));
+  XMLWriter := TmnXMLWriter.Create(TmnWrapperStream.Create(TFileStream.Create(ExtractFilePath(Application.ExeName) + '\1.xml', fmCreate)));
 //  XMLWriter.Header.Add('myprop="myxml"');
   XMLWriter.Smart := True;
   XMLWriter.Start;
   XMLWriter.WriteOpenTag('order');
   XMLWriter.WriteOpenTag('head');
   XMLWriter.WriteOpenTag('author');
-  XMLWriter.WriteText('zaher & jihad <123>');
+  XMLWriter.WriteText('John & Smith<123>');
 //  XMLWriter.CloseTag('order');
   XMLWriter.Stop;
   XMLWriter.Free;

@@ -105,7 +105,7 @@ begin
     aItem.Childs.Add(aSubItem);
 
     aItem:=TMyItem.Create;
-    aItem.Name := 'Jihad Khalifa';
+    aItem.Name := 'John Smith';
     aItems.Add(aItem);
 
     aItems.SaveToString(s);

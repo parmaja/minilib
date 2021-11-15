@@ -164,12 +164,6 @@
                     <VersionInfoKeys Name="ProductVersion">1.0.0.0</VersionInfoKeys>
                     <VersionInfoKeys Name="Comments"/>
                 </VersionInfoKeys>
-                <Excluded_Packages>
-                    <Excluded_Packages Name="w:\system\Formals100.bpl">Formal utils and components</Excluded_Packages>
-                    <Excluded_Packages Name="w:\system\Parser.bpl">TParser - Mathematical expression parser and evaluator</Excluded_Packages>
-                    <Excluded_Packages Name="W:\system\PaymentsSuite70.bpl">Payments for SahliSoft</Excluded_Packages>
-                    <Excluded_Packages Name="W:\system\OrdersSuite70.bpl">Orders for SahliSoft</Excluded_Packages>
-                </Excluded_Packages>
                 <Source>
                     <Source Name="MainSource">SampleHttpClient.dpr</Source>
                 </Source>

@@ -193,44 +193,6 @@
         <UsageCount Value="17"/>
         <DefaultSyntaxHighlighter Value="C++"/>
       </Unit18>
-      <Unit19>
-        <Filename Value="W:\work\delphi\jobs\sahlisoft_2\languages\Arabic\mpos.po"/>
-        <TopLine Value="956"/>
-        <CursorPos X="29" Y="998"/>
-        <UsageCount Value="11"/>
-        <DefaultSyntaxHighlighter Value="PO"/>
-      </Unit19>
-      <Unit20>
-        <Filename Value="W:\work\delphi\jobs\sahlisoft_2\languages\English\mpos.po"/>
-        <TopLine Value="956"/>
-        <CursorPos X="22" Y="997"/>
-        <UsageCount Value="11"/>
-        <DefaultSyntaxHighlighter Value="PO"/>
-      </Unit20>
-      <Unit21>
-        <Filename Value="W:\work\delphi\jobs\sahlisoft_2\source\gadgets\lib\mposFPCStrings.inc"/>
-        <TopLine Value="240"/>
-        <CursorPos X="39" Y="255"/>
-        <UsageCount Value="11"/>
-      </Unit21>
-      <Unit22>
-        <Filename Value="V:\programs\FPC\2.4\src\packages\fcl-image\src\ftfont.pp"/>
-        <TopLine Value="212"/>
-        <CursorPos X="32" Y="238"/>
-        <UsageCount Value="10"/>
-      </Unit22>
-      <Unit23>
-        <Filename Value="V:\programs\FPC\2.4\src\packages\fcl-image\src\freetype.pp"/>
-        <TopLine Value="634"/>
-        <CursorPos X="3" Y="634"/>
-        <UsageCount Value="10"/>
-      </Unit23>
-      <Unit24>
-        <Filename Value="V:\programs\FPC\2.4\src\packages\libndsfpc\examples\graphics\Printing\custom_font\CustomFont.pp"/>
-        <UnitName Value="custom_font"/>
-        <CursorPos X="15" Y="7"/>
-        <UsageCount Value="10"/>
-      </Unit24>
       <Unit25>
         <Filename Value="V:\programs\FPC\2.4\src\rtl\inc\ctypes.pp"/>
         <UsageCount Value="10"/>

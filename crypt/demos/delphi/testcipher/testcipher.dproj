@@ -108,21 +108,6 @@
                     <VersionInfoKeys Name="Comments"/>
                 </VersionInfoKeys>
                 <Excluded_Packages>
-                    <Excluded_Packages Name="w:\system\tb97Suite100.bpl">Toolbar 97 writen by Jurdan Russel</Excluded_Packages>
-                    <Excluded_Packages Name="w:\system\DenturesLib.bpl">Denture Lib</Excluded_Packages>
-                    <Excluded_Packages Name="w:\system\managerialdesign.bpl">Sahlisoft 2 Managerial Design</Excluded_Packages>
-                    <Excluded_Packages Name="w:\system\maintaindesign.bpl">Sahlisoft 2 Maintain Design</Excluded_Packages>
-                    <Excluded_Packages Name="w:\system\exvdesign.bpl">Sahlisoft 2 Executive Reports Design</Excluded_Packages>
-                    <Excluded_Packages Name="w:\system\specialdesign.bpl">Sahlisoft 2 Special Design</Excluded_Packages>
-                    <Excluded_Packages Name="w:\system\tcbguidesign100.bpl">Sahlisoft 2 Design time library</Excluded_Packages>
-                    <Excluded_Packages Name="w:\system\managerialeditors.bpl">Sahlisoft 2 Managerial Editors</Excluded_Packages>
-                    <Excluded_Packages Name="w:\system\exreportsdesign70.bpl">Tacbord Executive Reports</Excluded_Packages>
-                    <Excluded_Packages Name="w:\system\TacbordPDXSuite70.bpl">Sahlisoft PDX Library</Excluded_Packages>
-                    <Excluded_Packages Name="w:\system\tacbordpdxdesign70.bpl">Sahlisoft PDX Design Time</Excluded_Packages>
-                    <Excluded_Packages Name="w:\system\maintainsuite70.bpl">Tacbord Maintain Lib</Excluded_Packages>
-                    <Excluded_Packages Name="w:\system\tcbdentaldesign.bpl">Sahlisoft 2 Dental Design</Excluded_Packages>
-                    <Excluded_Packages Name="W:\system\POSLib100.bpl">File W:\system\POSLib100.bpl not found</Excluded_Packages>
-                    <Excluded_Packages Name="$(BDSBIN)\dclindy100.bpl">Internet Direct Version 9 (Indy) Property and Component Editors</Excluded_Packages>
                 </Excluded_Packages>
                 <Source>
                     <Source Name="MainSource">testcipher.dpr</Source>

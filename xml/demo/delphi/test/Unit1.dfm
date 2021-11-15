@@ -5,6 +5,7 @@ object Form1: TForm1
   ClientHeight = 314
   ClientWidth = 476
   Color = clBtnFace
+  CustomTitleBar.CaptionAlignment = taCenter
   Font.Charset = DEFAULT_CHARSET
   Font.Color = clWindowText
   Font.Height = -11
@@ -67,5 +68,13 @@ object Form1: TForm1
     Caption = 'Close'
     TabOrder = 4
     OnClick = Button4Click
+  end
+  object Button5: TButton
+    Left = 4
+    Top = 86
+    Width = 75
+    Height = 25
+    Caption = 'Button5'
+    TabOrder = 5
   end
 end

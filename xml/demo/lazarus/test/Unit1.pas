@@ -69,7 +69,7 @@ begin
   XMLWriter.WriteOpenTag('order');
   XMLWriter.WriteOpenTag('head');
   XMLWriter.WriteOpenTag('author');
-  XMLWriter.WriteText('zaher & jihad <123>');
+  XMLWriter.WriteText('John & Smith <123>');
 //  XMLWriter.CloseTag('order');
   XMLWriter.Stop;
   XMLWriter.Free;
@@ -177,4 +177,3 @@ begin
 end;
 
 end.
-
