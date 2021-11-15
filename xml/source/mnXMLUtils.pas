@@ -50,8 +50,6 @@ function Enclose(S, Left: string; Right: string = ''): string;
 function RangeStr(s: string; Start, Stop: Integer): string;
 function ScanIdentifier(const s: string; Start: Integer): Integer;
 function ScanQuoted(SubStr, Text: string): Integer;
-function CreateAttStrings(const Attributes: string): TStrings;
-procedure ReadAttStrings(Strings: TStrings; const Attributes: string);
 
 function CutStr(const ID, S: string; Dequote: Boolean = False): string;
 function URIToFileName(const URI: string): string;
@@ -158,40 +156,6 @@ begin
       c := 1;
     end;
   end;
-end;
-
-procedure AttrStrToStringsDeqouteCallbackProc(Sender: Pointer; Index:Integer; S: string; var Resume: Boolean);
-var
-  Name, Value: string;
-  p: Integer;
-begin
-  if s <> '' then
-  begin
-    p := pos('=', s);
-    if p >= 0 then
-    begin
-      Name := Copy(s, 1, p - 1);
-      Value := DequoteStr(Copy(s, p + 1, MaxInt));
-    end
-    else
-    begin
-      Name := S;
-      Value := '';
-    end;
-    (TObject(Sender) as TStrings).Add(Name + (TObject(Sender) as TStrings).NameValueSeparator + Value);
-  end;
-end;
-
-procedure ReadAttStrings(Strings: TStrings; const Attributes: string);
-begin
-  StrToStringsCallback(Attributes, Strings, @AttrStrToStringsDeqouteCallbackProc, [' '], [' ', #0, #13, #10]);
-end;
-
-function CreateAttStrings(const Attributes: string): TStrings;
-begin
-  Result := TStringList.Create;
-  if Attributes <> '' then
-    ReadAttStrings(Result, Attributes);
 end;
 
 function CutStr(const ID, S: string; Dequote: Boolean = False): string;

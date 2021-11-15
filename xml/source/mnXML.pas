@@ -711,29 +711,32 @@ begin
   Append(vAttributes);
 end;
 
-procedure TmnXMLAttributes.SetText(Value: string);
+procedure AttrStrToStringsDeqouteCallbackProc(Sender: Pointer; Index:Integer; S: string; var Resume: Boolean);
 var
-  i: Integer;
-  aStrings: TStrings;
+  Name, Value: string;
   p: Integer;
-  s: string;
-  aAttribute: TmnXMLAttribute;
+begin
+  if s <> '' then
+  begin
+    p := pos('=', s);
+    if p >= 0 then
+    begin
+      Name := Copy(s, 1, p - 1);
+      Value := DequoteStr(Copy(s, p + 1, MaxInt));
+    end
+    else
+    begin
+      Name := S;
+      Value := '';
+    end;
+    (TObject(Sender) as TmnXMLAttributes).Add(Name, Value);
+  end;
+end;
+
+procedure TmnXMLAttributes.SetText(Value: string);
 begin
   Clear;
-  aStrings := CreateAttStrings(Value);
-  try
-    for i := 0 to aStrings.Count - 1 do
-    begin
-      aAttribute := TmnXMLAttribute.Create;
-      s := aStrings[i];
-      p := pos('=', s);
-      aAttribute.Name := Copy(s, 1, p - 1);
-      aAttribute.Value := DequoteStr(Copy(s, p + 1, MaxInt));
-      Add(aAttribute);
-    end;
-  finally
-    aStrings.Free;
-  end;
+  StrToStringsCallback(Value, Self, @AttrStrToStringsDeqouteCallbackProc, [' '], [' ', #0, #13, #10]);
 end;
 
 { TmnXMLAttribute }

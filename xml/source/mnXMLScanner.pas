@@ -336,16 +336,19 @@ procedure TmnXMLScanner.ssOnAttributes(const Text: string; Line: Integer; var Co
 var
   p, l: Integer;
   Quoted: string;
+  Found: Boolean;
 begin
-//tag must be multi line
+//tag must not be multi line :(
   p := Column;
   l := Length(Text);
   Quoted := '';
+  Found := False;
   while p <= l do
   begin
     if (Text[p] = Quoted) then
       Quoted := ''
     else if Quoted <> '' then
+    //nothing
     else if (Text[p] = '/') or (Text[p] = '>') then
     begin
       if (Text[p] = '/') then
@@ -362,14 +365,15 @@ begin
         FDepthIn := FDepthIn + 1;
         p := p + 1;
       end;
+      Found := True;
       Break;
     end
     else if (Text[p] = '"') or (Text[p] = '''') then
-    begin
       Quoted := Text[p];
-    end;
     Inc(p);
   end;
+  if not Found then
+    AddBuffer(RangeStr(Text, Column, p), ssAttributes);
   Column := p;
 end;
 
@@ -400,8 +404,7 @@ begin
   FCurrentTag := '';
 end;
 
-procedure TmnXMLScanner.ssOnCDATA(const Text: string; Line: Integer;
-  var Column: Integer);
+procedure TmnXMLScanner.ssOnCDATA(const Text: string; Line: Integer; var Column: Integer);
 begin
   ScanBody(ssText, sCloseCDATA, Text, Line, Column)
 end;

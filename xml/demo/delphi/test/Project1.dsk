@@ -1,19 +1,27 @@
 ﻿[Modules]
-Module0=D:\lab\pascal\minilib\xml\source\mnXMLScanner.pas
-Module1=D:\lab\pascal\minilib\xml\demo\delphi\test\Unit1.pas
-Module2=D:\lab\pascal\minilib\xml\source\mnXMLNodes.pas
-Module3=D:\lab\pascal\minilib\xml\source\mnXMLWriter.pas
-Module4=default.htm
-Count=5
+Module0=D:\lab\pascal\minilib\xml\demo\delphi\test\Unit1.pas
+Module1=D:\lab\pascal\minilib\xml\source\mnXMLNodes.pas
+Module2=D:\lab\pascal\minilib\xml\source\mnXMLReader.pas
+Module3=D:\lab\pascal\minilib\xml\source\mnXML.pas
+Module4=D:\lab\pascal\minilib\xml\source\mnXMLScanner.pas
+Module5=D:\lab\pascal\minilib\xml\source\mnXMLWriter.pas
+Module6=default.htm
+Count=7
 EditWindowCount=1
-
-[D:\lab\pascal\minilib\xml\source\mnXMLScanner.pas]
-ModuleType=TSourceModule
 
 [D:\lab\pascal\minilib\xml\demo\delphi\test\Unit1.pas]
 ModuleType=TSourceModule
 
 [D:\lab\pascal\minilib\xml\source\mnXMLNodes.pas]
+ModuleType=TSourceModule
+
+[D:\lab\pascal\minilib\xml\source\mnXMLReader.pas]
+ModuleType=TSourceModule
+
+[D:\lab\pascal\minilib\xml\source\mnXML.pas]
+ModuleType=TSourceModule
+
+[D:\lab\pascal\minilib\xml\source\mnXMLScanner.pas]
 ModuleType=TSourceModule
 
 [D:\lab\pascal\minilib\xml\source\mnXMLWriter.pas]
@@ -23,13 +31,15 @@ ModuleType=TSourceModule
 ModuleType=TURLModule
 
 [EditWindow0]
-ViewCount=5
-CurrentEditView=D:\lab\pascal\minilib\xml\source\mnXMLScanner.pas
+ViewCount=7
+CurrentEditView=D:\lab\pascal\minilib\xml\demo\delphi\test\Unit1.pas
 View0=0
 View1=1
 View2=2
 View3=3
 View4=4
+View5=5
+View6=6
 PercentageSizes=1
 Create=1
 Visible=1
@@ -66,9 +76,9 @@ WelcomePageURL=bds:/default.htm
 [View1]
 CustomEditViewType=TEditView
 Module=D:\lab\pascal\minilib\xml\demo\delphi\test\Unit1.pas
-CursorX=3
-CursorY=92
-TopLine=88
+CursorX=37
+CursorY=125
+TopLine=103
 LeftCol=1
 Elisions=
 Bookmarks=
@@ -77,9 +87,9 @@ EditViewName=D:\lab\pascal\minilib\xml\demo\delphi\test\Unit1.pas
 [View2]
 CustomEditViewType=TEditView
 Module=D:\lab\pascal\minilib\xml\source\mnXMLScanner.pas
-CursorX=128
-CursorY=51
-TopLine=35
+CursorX=1
+CursorY=1
+TopLine=1
 LeftCol=1
 Elisions=
 Bookmarks=
@@ -87,16 +97,38 @@ EditViewName=D:\lab\pascal\minilib\xml\source\mnXMLScanner.pas
 
 [View3]
 CustomEditViewType=TEditView
+Module=D:\lab\pascal\minilib\xml\source\mnXMLReader.pas
+CursorX=8
+CursorY=73
+TopLine=52
+LeftCol=1
+Elisions=
+Bookmarks=
+EditViewName=D:\lab\pascal\minilib\xml\source\mnXMLReader.pas
+
+[View4]
+CustomEditViewType=TEditView
 Module=D:\lab\pascal\minilib\xml\source\mnXMLNodes.pas
-CursorX=27
-CursorY=414
-TopLine=412
+CursorX=1
+CursorY=450
+TopLine=433
 LeftCol=1
 Elisions=
 Bookmarks=
 EditViewName=D:\lab\pascal\minilib\xml\source\mnXMLNodes.pas
 
-[View4]
+[View5]
+CustomEditViewType=TEditView
+Module=D:\lab\pascal\minilib\xml\source\mnXML.pas
+CursorX=1
+CursorY=239
+TopLine=217
+LeftCol=1
+Elisions=
+Bookmarks=
+EditViewName=D:\lab\pascal\minilib\xml\source\mnXML.pas
+
+[View6]
 CustomEditViewType=TEditView
 Module=D:\lab\pascal\minilib\xml\source\mnXMLWriter.pas
 CursorX=1
@@ -249,7 +281,7 @@ SplitPos=111
 [PropInspDesignerSelection]
 ArrangeBy=Name
 SelectedItem=Caption,
-ExpandedItems=ApplicationButton=0,BackgroundImage=0,BarManager=0,Anchors=0,BorderIcons=0,Constraints=0
+ExpandedItems=Anchors=0,Constraints=0
 
 [frmDesignPreview]
 PercentageSizes=1

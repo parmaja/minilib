@@ -417,12 +417,11 @@ end;
 procedure TmnXMLNodes.LoadFromString(S: string);
 var
   Reader: TmnXMLNodeReader;
-  sl: TStringList;
 begin
   Reader := TmnXMLNodeReader.Create;
   try
-    Reader.Start;
     Reader.Nodes := Self;
+    Reader.Start;
     Reader.Parse(S);
   finally
     Reader.Free;
@@ -445,10 +444,9 @@ procedure TmnXMLNodes.LoadFromStream(AStream: TStream);
 var
   AWrapperStream: TmnWrapperStream;
   Reader: TmnXMLNodeReader;
-  sl: TStringList;
 begin
   AWrapperStream := TmnWrapperStream.Create(AStream);
-  Reader := TmnXMLNodeReader.Create(AWrapperStream, True);
+  Reader := TmnXMLNodeReader.Create(AWrapperStream, False);
   try
     Reader.Nodes := Self;
     Reader.Start;

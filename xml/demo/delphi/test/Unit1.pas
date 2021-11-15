@@ -26,6 +26,7 @@ type
     procedure Button2Click(Sender: TObject);
     procedure Button3Click(Sender: TObject);
     procedure Button4Click(Sender: TObject);
+    procedure Button5Click(Sender: TObject);
   private
   public
   end;
@@ -102,6 +103,15 @@ end;
 procedure TForm1.Button4Click(Sender: TObject);
 begin
   Close;
+end;
+
+procedure TForm1.Button5Click(Sender: TObject);
+var
+  nodes: TmnXMLNodes;
+begin
+  nodes := TmnXMLNodes.Create;
+  nodes.Options := [xnoNameSpace, xnoTrimValue];
+  nodes.LoadFromFile('W:\source\delphi\lib\einvoice\demo\sa\Tax_Invoice.xml');
 end;
 
 { TMyXMLScanner }
