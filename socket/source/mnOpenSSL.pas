@@ -248,7 +248,7 @@ end;
 
 procedure TSSL.Free;
 begin
-  //if Handle<>nil then
+  if Handle<>nil then
   begin
     SSL_free(Handle);
     Handle := nil;

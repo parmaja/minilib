@@ -171,6 +171,7 @@ type
     procedure DoAfterClose; virtual;
     procedure DoStart; virtual;
     procedure DoStop; virtual;
+    procedure DoCheckSynchronize;
   public
     PrivateKeyFile: string;
     CertificateFile: string;
@@ -426,6 +427,11 @@ end;
 
 procedure TmnServer.DoChanged(vListener: TmnListener);
 begin
+end;
+
+procedure TmnServer.DoCheckSynchronize;
+begin
+  CheckSynchronize
 end;
 
 procedure TmnServer.DoAccepted(vListener: TmnListener; vConnection: TmnServerConnection);
@@ -802,7 +808,11 @@ begin
     DoBeforeClose;
     FListener.Stop;
     FListener.WaitFor;
-    CheckSynchronize;//to process all queues
+
+    //to process all queues
+    //in case of service ThreadID<>MainThreadID :)
+    TThread.Synchronize(nil, DoCheckSynchronize);
+
     FreeAndNil(FListener);
     FActive := False;
     DoAfterClose;
