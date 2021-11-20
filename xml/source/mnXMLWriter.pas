@@ -18,7 +18,13 @@ interface
 uses
   Classes, SysUtils, mnXML, mnXMLUtils;
 
+const
+  cMaxLine = 40;
+
 type
+
+  { TmnXMLWriter }
+
   TmnXMLWriter = class(TmnXMLFiler)
   private
     FOpenedTags: TStringList;
@@ -27,6 +33,7 @@ type
     FEncoding: Boolean;
     FTaging: Boolean;
     FTagStarted: Boolean; //Work with StartTag
+    AttributesCount: Integer;
     procedure SetSmart(const Value: Boolean);
   protected
     procedure DoStart; override;
@@ -37,19 +44,32 @@ type
     constructor Create; override;
     destructor Destroy; override;
     //Return tabs/spaces to put before write line in smart mode
-    function GetIndents: string;
+    function GetIndents: string; overload;
+    function GetIndents(Count: Integer): string; overload;
     //WriteStartTag like <name wotk wit StopTag
     //without add attribute and te > sign
-    procedure WriteStartTag(const Name: string);
-    procedure WriteAttributes(const Attributes: string = '');
+    procedure WriteStartTagNS(NameSpace, Name: string); overload;
+    procedure WriteStartTag(Name: string); overload;
+    procedure WriteAttributes(Attributes: string); overload;
+    procedure WriteAttribute(Name, Value: string); overload;
+    procedure WriteXMLNS(NameSpace, Value: string); overload;
     //StopTag add attribute and close it by > or /> if empty = true
-    procedure WriteStopTag(Empty: Boolean = False; const Attributes: string = '');
+    procedure WriteStopTag(Empty: Boolean = False; const Attributes: string = ''); overload;
+    procedure WriteStopTag(Name: string; Empty: Boolean = False; const Attributes: string = ''); overload;
+
     //OpenTag add Tag with attributes <name att1="val1">
-    procedure WriteOpenTag(const Name: string; const Attributes: string = '');
+    //procedure WriteOpenTag(const Name, NameSpace: string); overload;
+    procedure WriteOpenTagNS(NameSpace, Name: string; const Attributes: string = ''); overload;
+    procedure WriteOpenTag(Name: string; const Attributes: string); overload;
+    procedure WriteOpenTag(Name: string); overload;
     //CloseTag work with WriteStartTag and WriteOpenTag
-    procedure WriteCloseTag(Name: string = '');
+    procedure WriteCloseTag(NameSpace, Name: string); overload;
+    procedure WriteCloseTag(Name: string); overload;
+    procedure WriteCloseTag; overload;
     procedure WriteEmptyTag(Name: string);
     procedure WriteText(Value: string);
+    procedure WriteTextTagNS(NameSpace, Name, Value: string); overload;
+    procedure WriteTextTag(Name, Value: string); overload;
     procedure Write(const Name, Value: string; const Attributes: string = '');
     procedure WriteComment(Value: string);
     //States
@@ -68,8 +88,11 @@ uses
 
 { TmnXMLWriter }
 
-procedure TmnXMLWriter.WriteCloseTag(Name: string);
+procedure TmnXMLWriter.WriteCloseTag(NameSpace, Name: string);
 begin
+  if NameSpace <> '' then
+    Name := NameSpace + sNameSpaceSeparator + Name;
+
   if FSmart then
   begin
     if Name = '' then
@@ -79,8 +102,10 @@ begin
     end
     else
     begin
-      if (FOpenedTags.Count = 0) or (FOpenedTags[FOpenedTags.Count - 1] <> Name) then //not the last tag
-        raise EmnXMLException.Create('Tag name must not close now');
+      if (FOpenedTags.Count = 0) then
+        raise EmnXMLException.Create('Tag name not opened "')
+      else if (FOpenedTags[FOpenedTags.Count - 1] <> Name) then //not the last tag
+        raise EmnXMLException.Create('Tag name "' + Name + '" is not "' + FOpenedTags[FOpenedTags.Count - 1] + '"');
       FOpenedTags.Delete(FOpenedTags.Count - 1);
     end;
   end;
@@ -89,6 +114,16 @@ begin
   else
     Stream.WriteString('</' + Name + '>');
   FTaging := True;
+end;
+
+procedure TmnXMLWriter.WriteCloseTag(Name: string);
+begin
+  WriteCloseTag('', Name);
+end;
+
+procedure TmnXMLWriter.WriteCloseTag;
+begin
+  WriteCloseTag('');
 end;
 
 constructor TmnXMLWriter.Create;
@@ -117,7 +152,12 @@ end;
 
 function TmnXMLWriter.GetIndents: string;
 begin
-  Result := RepeatString(Tabs, FOpenedTags.Count);
+  Result := GetIndents(FOpenedTags.Count);
+end;
+
+function TmnXMLWriter.GetIndents(Count: Integer): string;
+begin
+  Result := RepeatString(Tabs, Count);
 end;
 
 procedure TmnXMLWriter.DoStart;
@@ -134,10 +174,13 @@ begin
   WriteHeader;
 end;
 
-procedure TmnXMLWriter.WriteOpenTag(const Name, Attributes: string);
+procedure TmnXMLWriter.WriteOpenTagNS(NameSpace, Name: string; const Attributes: string);
 var
   s: string;
 begin
+  if NameSpace <> '' then
+    Name := NameSpace + sNameSpaceSeparator + Name;
+
   if Smart and FTaging and (Tabs <> '') then
     s := Stream.EndOfLine + RepeatString(Tabs, FOpenedTags.Count);
   s := s + '<' + Name + Enclose(Attributes, ' ') + '>';
@@ -145,6 +188,16 @@ begin
   FTaging := True;
   if FSmart then
     FOpenedTags.Add(Name);
+end;
+
+procedure TmnXMLWriter.WriteOpenTag(Name: string; const Attributes: string);
+begin
+  WriteOpenTagNS('', Name, Attributes);
+end;
+
+procedure TmnXMLWriter.WriteOpenTag(Name: string);
+begin
+  WriteOpenTagNS('', Name, '');
 end;
 
 procedure TmnXMLWriter.SetSmart(const Value: Boolean);
@@ -185,6 +238,18 @@ begin
   FTaging := False;
 end;
 
+procedure TmnXMLWriter.WriteTextTagNS(NameSpace, Name, Value: string);
+begin
+  WriteOpenTagNS(NameSpace, Name);
+  WriteText(Value);
+  WriteCloseTag(NameSpace, Name);
+end;
+
+procedure TmnXMLWriter.WriteTextTag(Name, Value: string);
+begin
+  WriteTextTagNS('', Name, Value);
+end;
+
 function TmnXMLWriter.CharsetEncode(const Value: string): string;
 begin
   Result := Value;
@@ -195,7 +260,7 @@ begin
   Stream.WriteString('<!--' + EntityEncode(Value) + '-->');
 end;
 
-procedure TmnXMLWriter.Write(const Name, Value, Attributes: string);
+procedure TmnXMLWriter.Write(const Name, Value: string; const Attributes: string);
 var
   s: string;
 begin
@@ -207,10 +272,19 @@ begin
   Stream.WriteString(s)
 end;
 
-procedure TmnXMLWriter.WriteStartTag(const Name: string);
+procedure TmnXMLWriter.WriteStartTag(Name: string);
+begin
+  WriteStartTagNS('', Name);
+end;
+
+procedure TmnXMLWriter.WriteStartTagNS(NameSpace, Name: string);
 var
   s: string;
 begin
+  if NameSpace <> '' then
+    Name := NameSpace + sNameSpaceSeparator + Name;
+
+  AttributesCount := 0;
   if Smart and FTaging and (Tabs <> '') then
     s := Stream.EndOfLine + RepeatString(Tabs, FOpenedTags.Count);
   s := s + '<' + Name;
@@ -221,7 +295,7 @@ begin
     FOpenedTags.Add(Name);
 end;
 
-procedure TmnXMLWriter.WriteStopTag(Empty: Boolean; const Attributes: string);
+procedure TmnXMLWriter.WriteStopTag(Name: string; Empty: Boolean; const Attributes: string);
 var
   s: string;
 begin
@@ -231,18 +305,56 @@ begin
   if Empty then
   begin
     if Smart then
+    begin
+      if Name <> '' then
+        if (FOpenedTags.Count = 0) or (FOpenedTags[FOpenedTags.Count - 1] <> Name) then //not the last tag
+          raise EmnXMLException.Create('Tag name must not close now');
       FOpenedTags.Delete(FOpenedTags.Count - 1); //close last tag must remove it
+    end;
     s := s + '/>'
   end
   else
     s := s + '>';
   Stream.WriteString(S);
   FTagStarted := False;
+  AttributesCount := 0;
 end;
 
-procedure TmnXMLWriter.WriteAttributes(const Attributes: string);
+procedure TmnXMLWriter.WriteAttributes(Attributes: string);
 begin
-  Stream.WriteString(Enclose(Attributes, ' '));
+  if Smart then
+  begin
+    if (AttributesCount > 0) then
+    begin
+      if (Length(Attributes) > cMaxLine) then
+      begin
+        Stream.WriteLine;
+        Stream.WriteString(GetIndents(FOpenedTags.Count));
+      end
+      else
+        Stream.WriteString(' ');
+    end;
+    Stream.WriteString(Attributes);
+  end
+  else
+    Stream.WriteString(Enclose(Attributes, ' '));
+  Inc(AttributesCount);
+end;
+
+procedure TmnXMLWriter.WriteAttribute(Name, Value: string);
+begin
+  WriteAttributes(Name + '='+ QuoteStr(Value));
+end;
+
+procedure TmnXMLWriter.WriteXMLNS(NameSpace, Value: string);
+begin
+  NameSpace := 'xmlns' + sNameSpaceSeparator + NameSpace;
+  WriteAttribute(NameSpace, Value);
+end;
+
+procedure TmnXMLWriter.WriteStopTag(Empty: Boolean; const Attributes: string);
+begin
+  WriteStopTag('', Empty, Attributes);
 end;
 
 end.

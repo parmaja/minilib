@@ -282,8 +282,13 @@ var
   var
     Value: WideString;
   begin
+    {$ifdef FPC}
+    Value := GetWideStrProp(Instance, PropInfo);
+    WriteValue(UTF8String(Value));
+    {$else}
     Value := GetWideStrProp(Instance, PropInfo);
     WriteValue(Value);
+    {$endif}
   end;
 
   procedure WriteStringProp;
@@ -372,6 +377,8 @@ begin
         tkBool:
           WriteBoolProp;
         {$ENDIF}
+        else
+          ;
       end;
       if TagStarted then
         WriteStopTag;

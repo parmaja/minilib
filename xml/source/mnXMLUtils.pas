@@ -34,6 +34,7 @@ const
   sCDATA = 'CDATA';
   sOpenCDATA = sCDATA + '[';
   sCloseCDATA = ']]>';
+  sNameSpaceSeparator = ':';
   sWhitespace = [' ', #9, #13, #10];
   sAllWhitespace = [#0] + sWhitespace;
 

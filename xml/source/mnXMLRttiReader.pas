@@ -469,6 +469,8 @@ begin
     tkBool:
       ReadBoolProp;
     {$ENDIF}
+    else
+      ;
   end;
 end;
 
