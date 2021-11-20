@@ -170,14 +170,67 @@ type
   private
     FNodes: TmnXMLNodes;
   protected
-    procedure DoStart; override;
   public
     constructor Create; override;
     destructor Destroy; override;
     property Nodes: TmnXMLNodes read FNodes write FNodes;
   end;
 
+procedure XMLNodeSaveToStream(ANodes: TmnXMLNodes; AStream: TStream; WriterClass: TmnCustomXMLWriterClass);
+
 implementation
+
+procedure XMLNodeSaveToStream(ANodes: TmnXMLNodes; AStream: TStream; WriterClass: TmnCustomXMLWriterClass);
+var
+  aWriter: TmnCustomXMLWriter;
+
+  procedure WriteNow(node: TmnXMLNode);
+  var
+    n: TmnXMLNode;
+    a: TmnXMLAttribute;
+  begin
+    with aWriter do
+    begin
+      if node.Kind = xmlnComment then
+        WriteComment(node.Value)
+      else if node.Kind = xmlnCDATA then
+        WriteCDATA(node.Value)
+      else
+      begin
+        WriteStartTagNS(node.NameSpace, node.Name);
+        if node.Attributes.Count > 0 then
+        begin
+          for a in node.Attributes do
+          begin
+            WriteAttribute(a.Name, a.Value);
+          end;
+        end;
+        WriteStopTagNS(node.NameSpace, node.Name);
+        if node.Count > 0 then
+        begin
+          for n in node do
+            WriteNow(n);
+        end;
+        WriteText(node.Value);
+        WriteCloseTagNS(node.NameSpace, node.Name);
+      end;
+    end;
+  end;
+
+var
+  aWrapperStream: TmnWrapperStream;
+begin
+  aWrapperStream := TmnWrapperStream.Create(AStream, False);
+  aWriter := WriterClass.Create(aWrapperStream, False);
+  try
+    aWriter.Smart := True;
+    aWriter.Start;
+    WriteNow(ANodes.Root);
+  finally
+    aWriter.Free;
+    aWrapperStream.Free;
+  end;
+end;
 
 constructor TmnXMLNodeWriter.Create;
 begin
@@ -494,19 +547,8 @@ begin
 end;
 
 procedure TmnXMLNodes.SaveToStream(AStream: TStream);
-var
-  AWrapperStream: TmnWrapperStream;
-  Writer: TmnXMLNodeWriter;
 begin
-  AWrapperStream := TmnWrapperStream.Create(AStream);
-  Writer := TmnXMLNodeWriter.Create(AWrapperStream, False);
-  try
-    Writer.Smart := True;
-    Writer.Nodes := Self;
-    Writer.Start;
-  finally
-    Writer.Free;
-  end;
+  XMLNodeSaveToStream(Self, AStream, TmnXMLWriter);
 end;
 
 function TmnXMLNodes.GetAttribute(Name, Attribute: String; Default: String): String;
@@ -565,44 +607,6 @@ begin
     FCurrent.Add(Result);
   end;
   FCurrent := Result;
-end;
-
-{ TmnXMLNodeWriter }
-
-procedure TmnXMLNodeWriter.DoStart;
-
-  procedure WriteNow(node: TmnXMLNode);
-  var
-    n: TmnXMLNode;
-    a: TmnXMLAttribute;
-  begin
-    if node.Kind = xmlnComment then
-      WriteComment(node.Value)
-    else if node.Kind = xmlnCDATA then
-      WriteCDATA(node.Value)
-    else
-    begin
-      WriteStartTagNS(node.NameSpace, node.Name);
-      if node.Attributes.Count > 0 then
-      begin
-        for a in node.Attributes do
-        begin
-          WriteAttribute(a.Name, a.Value);
-        end;
-      end;
-      WriteStopTagNS(node.NameSpace, node.Name);
-      if node.Count > 0 then
-      begin
-        for n in node do
-          WriteNow(n);
-      end;
-      WriteText(node.Value);
-      WriteCloseTagNS(node.NameSpace, node.Name);
-    end;
-  end;
-
-begin
-  WriteNow(Nodes.Root);
 end;
 
 end.

@@ -69,7 +69,7 @@ begin
     Start;
   if Instance is TComponent then
     FRoot := Instance as TComponent;
-  WriteOpenTag('rtti', 'version="' + cRttiVersion + '" author="' + cRttiAuthor + '"');
+  WriteOpenTag('rtti', ['version', 'author'], [cRttiVersion, cRttiAuthor]);
   WriteProperties('', Instance, True);
   WriteCloseTag('rtti');
   FRoot := nil;
@@ -78,7 +78,7 @@ end;
 procedure TmnXMLRttiWriter.WriteValue(Value:string; ValueType: string = '');
 begin
   if ValueType <> '' then
-    WriteAttributes('ValueType="' +  ValueType + '"');
+    WriteAttribute('ValueType', ValueType);
   WriteStopTag;
   WriteText(Value);
 end;
@@ -184,9 +184,9 @@ begin
     if WithInitTag then
     begin
       if (Instance is TComponent) and ((Instance as TComponent).Name <> '') then
-        WriteOpenTag('Object', 'Type="' + Instance.ClassName + '" Name="' + (Instance as TComponent).Name + '"')
+        WriteOpenTag('Object', ['Type', 'Name'], [Instance.ClassName, (Instance as TComponent).Name])
       else
-        WriteOpenTag('Object', 'Type="' + Instance.ClassName + '"');
+        WriteOpenTag('Object', ['Type'], [Instance.ClassName]);
     end;
     for i := 0 to Count - 1 do
       WriteProperty(Instance, PPropInfo(List[i]));
@@ -322,9 +322,9 @@ var
     else
     begin
       if (Value is TComponent) and ((Value as TComponent).Name <> '') then
-        WriteAttributes('ID="' + (Value as TComponent).Name + '"');
+        WriteAttribute('ID', (Value as TComponent).Name);
       if (Value is TPersistent) and (IsStoredProp(Instance, PropInfo)) then //just more info
-        WriteAttributes('Class="' + (Value as TPersistent).ClassName + '"');
+        WriteAttribute('Class', (Value as TPersistent).ClassName);
       WriteStopTag;
       WriteProperties(PropInfo^.Name, Value, False);
     end;
@@ -347,7 +347,7 @@ begin
     begin
       WriteStartTag(PropInfo^.Name);
       if FWriteTypes then
-        WriteAttributes('Type="' + PropType.Name + '"');
+        WriteAttribute('Type', PropType.Name);
       case PropType^.Kind of
         tkInteger:
           WriteIntegerProp;
