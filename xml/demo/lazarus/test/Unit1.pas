@@ -62,7 +62,7 @@ procedure TForm1.Button1Click(Sender: TObject);
 var
   XMLWriter: TmnXMLWriter;
 begin
-  XMLWriter := TmnXMLWriter.Create(TmnWrapperStream.Create(TFileStream.Create('c:\1.xml', fmCreate)));
+  XMLWriter := TmnXMLWriter.Create(TmnWrapperStream.Create(TFileStream.Create(Application.Location + 'test.xml', fmCreate)));
 //  XMLWriter.Header.Add('myprop="myxml"');
   XMLWriter.Smart := True;
   XMLWriter.Start;
