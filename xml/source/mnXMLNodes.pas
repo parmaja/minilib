@@ -1,4 +1,5 @@
 unit mnXMLNodes;
+
 {**
  *  This file is part of the "Mini Library"
  *
@@ -21,7 +22,7 @@ uses
   mnXML, mnXMLReader, mnXMLWriter;
 
 type
-  TmnXMLNodeKind = (xmlnNormal, xmlnText, xmlnComment, xmlnCDATA);
+  TmnXMLNodeKind = (xmlnText, xmlnCDATA, xmlnComment);
   TmnXMLNodeState = (xmlsOpened, xmlsClosed);
 
   TmnXMLNodes = class;
@@ -32,20 +33,20 @@ type
 
   TmnCustomNode = class(TmnXMLObject)
   protected
-    type
+  type
 
-      { TmnXMLNodeEnumerator }
+    { TmnXMLNodeEnumerator }
 
-      TmnXMLNodeEnumerator = class(TObject)
-      private
-        FList: TmnXMLNode;
-        FIndex: Integer;
-      public
-        constructor Create(AList: TmnXMLNode);
-        function GetCurrent: TmnXMLNode;
-        function MoveNext: Boolean;
-        property Current: TmnXMLNode read GetCurrent;
-      end;
+    TmnXMLNodeEnumerator = class(TObject)
+    private
+      FList: TmnXMLNode;
+      FIndex: Integer;
+    public
+      constructor Create(AList: TmnXMLNode);
+      function GetCurrent: TmnXMLNode;
+      function MoveNext: Boolean;
+      property Current: TmnXMLNode read GetCurrent;
+    end;
 
   end;
 
@@ -56,7 +57,7 @@ type
     function GetItem(Index: Integer): TmnXMLNode;
     procedure SetItem(Index: Integer; const Value: TmnXMLNode);
   public
-    function Find(Name:string):TmnXMLNode;
+    function Find(Name: String): TmnXMLNode;
     property Items[Index: Integer]: TmnXMLNode read GetItem write SetItem; default;
   end;
 
@@ -64,12 +65,12 @@ type
 
   TmnXMLNode = class(TmnCustomNode)
   private
-    FNameSpace: string;
+    FNameSpace: String;
     FNodes: TmnXMLNodes;
     FParent: TmnXMLNode;
-    FValue: string;
+    FValue: String;
     FAttributes: TmnXMLAttributes;
-    FName: string;
+    FName: String;
     FKind: TmnXMLNodeKind;
     FState: TmnXMLNodeState;
     FItems: TmnXMLNodesList;
@@ -82,27 +83,30 @@ type
     destructor Destroy; override;
     function GetEnumerator: TmnCustomNode.TmnXMLNodeEnumerator; inline;
     procedure Close;
-    procedure Add(Node:TmnXMLNode);
+    procedure Add(Node: TmnXMLNode);
     //this will split Name to NameSpace, Name
-    procedure SetName(Name: string); virtual;
+    procedure SetName(Name: String); virtual;
     property Nodes: TmnXMLNodes read FNodes;
     property Parent: TmnXMLNode read FParent;
     property State: TmnXMLNodeState read FState;
     property Items: TmnXMLNodesList read FItems;
     property Attributes: TmnXMLAttributes read FAttributes;
-    property Empty:Boolean read GetEmpty;
-    property NameSpace: string read FNameSpace write FNameSpace;
-    property Value: string read FValue write FValue;
-    property Name: string read FName write FName;
+    property Empty: Boolean read GetEmpty;
+    property NameSpace: String read FNameSpace write FNameSpace;
+    property Value: String read FValue write FValue;
+    property Name: String read FName write FName;
     property Kind: TmnXMLNodeKind read FKind write FKind;
     property Count: Integer read GetCount;
     property Item[Index: Integer]: TmnXMLNode read GetItem; default;
   end;
 
   TmnXMLNodeOption = (
+    xnoCDATA, //CDATA as node
+    xnoText, //Text node, not prefered
+    xnoComment,  //it is useful when need to rewrite the xml data, when Enhanced = false mean we take the nodes for process the data, the comment will ignored and all text and cdata merged
     xnoNameSpace, //Split NameSpace
     xnoTrimValue  //Trim CDATA, TEXT value
-  );
+    );
   TmnXMLNodeOptions = set of TmnXMLNodeOption;
 
   { TmnXMLNodes }
@@ -112,35 +116,35 @@ type
     FCurrent: TmnXMLNode;
     FOptions: TmnXMLNodeOptions;
     FRoot: TmnXMLNode;
-    FEnhanced: Boolean;
-    function GetItems(Index: string): TmnXMLNode;
+    function GetItems(Index: String): TmnXMLNode;
     procedure CheckClosed;
     function GetEmpty: Boolean;
   protected
-    function Open(Name: string): TmnXMLNode;
-    function Close(Name: string): TmnXMLNode;
-    function AddAttributes(Value: string): TmnXMLNode;
-    function AddText(Value: string): TmnXMLNode;
-    function AddCDATA(Value: string): TmnXMLNode;
-    function AddComment(Value: string): TmnXMLNode;
+    function Open(Name: String): TmnXMLNode;
+    function Close(Name: String): TmnXMLNode;
+    function AddAttributes(Value: String): TmnXMLNode;
+    function AddText(Value: String): TmnXMLNode;
+    function AddCDATA(Value: String): TmnXMLNode;
+    function AddComment(Value: String): TmnXMLNode;
   public
     constructor Create; virtual;
     destructor Destroy; override;
     function GetEnumerator: TmnCustomNode.TmnXMLNodeEnumerator; inline;
 
-    procedure LoadFromString(S: string);
-    procedure LoadFromFile(AFileName: string);
+    procedure LoadFromString(S: String);
+    procedure LoadFromFile(AFileName: String);
     procedure LoadFromStream(AStream: TStream);
 
+    procedure SaveToFile(AFileName: String);
+    procedure SaveToStream(AStream: TStream);
+
     procedure Clear;
-    function GetAttribute(Name, Attribute: string; Default: string = ''): string;
+    function GetAttribute(Name, Attribute: String; Default: String = ''): String;
     property Empty: Boolean read GetEmpty;
     property Current: TmnXMLNode read FCurrent;
     property Root: TmnXMLNode read FRoot;
-    property Items[Index: string]: TmnXMLNode read GetItems; default;
+    property Items[Index: String]: TmnXMLNode read GetItems; default;
     property Options: TmnXMLNodeOptions read FOptions write FOptions;
-    //Enhanced = true it is useful when need to rewrite the xml data, when Enhanced = false mean we take the nodes for proceess the data, the comment will ignored and all text and cdata merged
-    property Enhanced: Boolean read FEnhanced write FEnhanced default False;
   end;
 
   { TmnXMLNodeReader }
@@ -148,12 +152,12 @@ type
   TmnXMLNodeReader = class(TmnXMLReader)
   protected
     FNodes: TmnXMLNodes;
-    procedure ReadOpenTag(const Name: string); override;
-    procedure ReadAttributes(const Text: string); override;
-    procedure ReadText(const Text: string); override;
-    procedure ReadComment(const Text: string); override;
-    procedure ReadCDATA(const Text: string); override;
-    procedure ReadCloseTag(const Name: string); override;
+    procedure ReadOpenTag(const Name: String); override;
+    procedure ReadAttributes(const Text: String); override;
+    procedure ReadText(const Text: String); override;
+    procedure ReadComment(const Text: String); override;
+    procedure ReadCDATA(const Text: String); override;
+    procedure ReadCloseTag(const Name: String); override;
   public
     constructor Create; override;
     destructor Destroy; override;
@@ -164,9 +168,26 @@ type
 
   TmnXMLNodeWriter = class(TmnXMLWriter)
   private
+    FNodes: TmnXMLNodes;
+  protected
+    procedure DoStart; override;
+  public
+    constructor Create; override;
+    destructor Destroy; override;
+    property Nodes: TmnXMLNodes read FNodes write FNodes;
   end;
 
 implementation
+
+constructor TmnXMLNodeWriter.Create;
+begin
+  inherited Create;
+end;
+
+destructor TmnXMLNodeWriter.Destroy;
+begin
+  inherited Destroy;
+end;
 
 { TmnCustomNode.TmnXMLNodeEnumerator }
 
@@ -192,10 +213,12 @@ end;
 
 procedure TmnXMLNode.Add(Node: TmnXMLNode);
 begin
+  if Kind in [xmlnCDATA, xmlnComment] then
+    raise EmnXMLException.Create('You can not add child nodes to CDATA or Comment node');
   Items.Add(Node);
 end;
 
-procedure TmnXMLNode.SetName(Name: string);
+procedure TmnXMLNode.SetName(Name: String);
 begin
   if (xnoNameSpace in Nodes.Options) and (Pos(':', Name) > 0) then
     SpliteStr(Name, ':', FNameSpace, FName)
@@ -256,37 +279,37 @@ begin
   inherited;
 end;
 
-procedure TmnXMLNodeReader.ReadAttributes(const Text: string);
+procedure TmnXMLNodeReader.ReadAttributes(const Text: String);
 begin
   inherited;
   Nodes.AddAttributes(EntityDecode(Text));
 end;
 
-procedure TmnXMLNodeReader.ReadCDATA(const Text: string);
+procedure TmnXMLNodeReader.ReadCDATA(const Text: String);
 begin
   inherited;
   Nodes.AddCDATA(Text);
 end;
 
-procedure TmnXMLNodeReader.ReadCloseTag(const Name: string);
+procedure TmnXMLNodeReader.ReadCloseTag(const Name: String);
 begin
   inherited;
   FNodes.Close(Name);
 end;
 
-procedure TmnXMLNodeReader.ReadComment(const Text: string);
+procedure TmnXMLNodeReader.ReadComment(const Text: String);
 begin
   inherited;
   Nodes.AddComment(Text);
 end;
 
-procedure TmnXMLNodeReader.ReadOpenTag(const Name: string);
+procedure TmnXMLNodeReader.ReadOpenTag(const Name: String);
 begin
   inherited;
   FNodes.Open(Name);
 end;
 
-procedure TmnXMLNodeReader.ReadText(const Text: string);
+procedure TmnXMLNodeReader.ReadText(const Text: String);
 begin
   inherited;
   Nodes.AddText(Text);
@@ -294,7 +317,7 @@ end;
 
 { TmnXMLNodesList }
 
-function TmnXMLNodesList.Find(Name: string): TmnXMLNode;
+function TmnXMLNodesList.Find(Name: String): TmnXMLNode;
 var
   i: Integer;
 begin
@@ -321,21 +344,22 @@ end;
 
 { TmnXMLNodes }
 
-function TmnXMLNodes.AddAttributes(Value: string): TmnXMLNode;
+function TmnXMLNodes.AddAttributes(Value: String): TmnXMLNode;
 begin
   CheckClosed;
   FCurrent.Attributes.SetText(Value);
   Result := FCurrent;
 end;
 
-function TmnXMLNodes.AddCDATA(Value: string): TmnXMLNode;
+function TmnXMLNodes.AddCDATA(Value: String): TmnXMLNode;
 begin
   CheckClosed;
-  if Enhanced then //we add the text as node
+  if xnoCDATA in Options then //we add the text as node
   begin
     Result := TmnXMLNode.Create(Self, FCurrent);
     Result.FKind := xmlnCDATA;
     Result.FValue := Value;
+    FCurrent.Add(Result);
   end
   else
   begin
@@ -344,29 +368,31 @@ begin
   end;
 end;
 
-function TmnXMLNodes.AddComment(Value: string): TmnXMLNode;
+function TmnXMLNodes.AddComment(Value: String): TmnXMLNode;
 begin
   //CheckClosed; //svg have comment not inside
-  if Enhanced then //we ignore the comment if not
+  if xnoComment in Options then //we ignore the comment if not
   begin
     Result := TmnXMLNode.Create(Self, FCurrent);
     Result.FKind := xmlnComment;
     Result.Value := Value;
+    FCurrent.Add(Result);
   end
   else
     Result := FCurrent;
 end;
 
-function TmnXMLNodes.AddText(Value: string): TmnXMLNode;
+function TmnXMLNodes.AddText(Value: String): TmnXMLNode;
 begin
   CheckClosed;
   if xnoTrimValue in Options then
     Value := Trim(Value);
-  if Enhanced then //we add the text as node
+  if xnoText in Options then //we add the text as node
   begin
     Result := TmnXMLNode.Create(Self, FCurrent);
     Result.FKind := xmlnText;
     Result.FValue := Value;
+    FCurrent.Add(Result);
   end
   else
   begin
@@ -389,7 +415,7 @@ begin
   FreeAndNil(FRoot);
 end;
 
-function TmnXMLNodes.Close(Name: string): TmnXMLNode;
+function TmnXMLNodes.Close(Name: String): TmnXMLNode;
 begin
   CheckClosed;
   FCurrent.FState := xmlsClosed;
@@ -414,7 +440,7 @@ begin
   Result := TmnCustomNode.TmnXMLNodeEnumerator.Create(FRoot);
 end;
 
-procedure TmnXMLNodes.LoadFromString(S: string);
+procedure TmnXMLNodes.LoadFromString(S: String);
 var
   Reader: TmnXMLNodeReader;
 begin
@@ -428,7 +454,7 @@ begin
   end;
 end;
 
-procedure TmnXMLNodes.LoadFromFile(AFileName: string);
+procedure TmnXMLNodes.LoadFromFile(AFileName: String);
 var
   AStream: TFileStream;
 begin
@@ -455,7 +481,35 @@ begin
   end;
 end;
 
-function TmnXMLNodes.GetAttribute(Name, Attribute: string; Default: string): string;
+procedure TmnXMLNodes.SaveToFile(AFileName: String);
+var
+  AStream: TFileStream;
+begin
+  AStream := TFileStream.Create(AFileName, fmCreate);
+  try
+    SaveToStream(AStream);
+  finally
+    AStream.Free;
+  end;
+end;
+
+procedure TmnXMLNodes.SaveToStream(AStream: TStream);
+var
+  AWrapperStream: TmnWrapperStream;
+  Writer: TmnXMLNodeWriter;
+begin
+  AWrapperStream := TmnWrapperStream.Create(AStream);
+  Writer := TmnXMLNodeWriter.Create(AWrapperStream, False);
+  try
+    Writer.Smart := True;
+    Writer.Nodes := Self;
+    Writer.Start;
+  finally
+    Writer.Free;
+  end;
+end;
+
+function TmnXMLNodes.GetAttribute(Name, Attribute: String; Default: String): String;
 var
   aNode: TmnXMLNode;
   aAttribute: TmnXMLAttribute;
@@ -486,7 +540,7 @@ begin
   Result := (Root = nil) or (Root.Empty);
 end;
 
-function TmnXMLNodes.GetItems(Index: string): TmnXMLNode;
+function TmnXMLNodes.GetItems(Index: String): TmnXMLNode;
 begin
   if FRoot <> nil then
   begin
@@ -499,7 +553,7 @@ begin
     Result := nil;
 end;
 
-function TmnXMLNodes.Open(Name: string): TmnXMLNode;
+function TmnXMLNodes.Open(Name: String): TmnXMLNode;
 begin
   Result := TmnXMLNode.Create(Self, FCurrent);
   Result.SetName(Name);
@@ -513,5 +567,42 @@ begin
   FCurrent := Result;
 end;
 
-end.
+{ TmnXMLNodeWriter }
 
+procedure TmnXMLNodeWriter.DoStart;
+
+  procedure WriteNow(node: TmnXMLNode);
+  var
+    n: TmnXMLNode;
+    a: TmnXMLAttribute;
+  begin
+    if node.Kind = xmlnComment then
+      WriteComment(node.Value)
+    else if node.Kind = xmlnCDATA then
+      WriteCDATA(node.Value)
+    else
+    begin
+      WriteStartTagNS(node.NameSpace, node.Name);
+      if node.Attributes.Count > 0 then
+      begin
+        for a in node.Attributes do
+        begin
+          WriteAttribute(a.Name, a.Value);
+        end;
+      end;
+      WriteStopTagNS(node.NameSpace, node.Name);
+      if node.Count > 0 then
+      begin
+        for n in node do
+          WriteNow(n);
+      end;
+      WriteText(node.Value);
+      WriteCloseTagNS(node.NameSpace, node.Name);
+    end;
+  end;
+
+begin
+  WriteNow(Nodes.Root);
+end;
+
+end.

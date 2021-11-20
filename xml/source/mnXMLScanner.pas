@@ -394,7 +394,8 @@ end;
 procedure TmnXMLScanner.FlushBuffer(State: TmnScanState);
 begin
   if Assigned(FFlushBuffers[State]) then
-    FFlushBuffers[State](FBuffer);
+//    if FBuffer <> '' then
+      FFlushBuffers[State](FBuffer);
   FBuffer := '';
 end;
 
