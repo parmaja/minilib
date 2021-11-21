@@ -458,7 +458,7 @@ begin
       while True do
       begin
         //seek until the separator and skip the separator if inside quoting
-        while (Cur <= Length(Content)) and ((InQuote and not (Content[Cur] <> QuoteChar)) or (not (CharInSet(Content[Cur], Separators)))) do
+        while (Cur <= Length(Content)) and not (CharInSet(Content[Cur], Quotes) or (not InQuote and (CharInSet(Content[Cur], Separators)))) do
           Cur := Cur + 1;
 
         if (Cur <= Length(Content)) and CharInSet(Content[Cur], Quotes) then
@@ -535,18 +535,24 @@ begin
         //seek until the separator and skip the separator if inside quoting
         while (Cur <= Length(Content)) do
         begin
-          if (InQuote and not (Content[Cur] <> QuoteChar)) then
-            Cur := Cur + 1
+          SepLength := 1;
+          if (InQuote) then
+          begin
+            if (Content[Cur] = QuoteChar) then
+              break;
+            Cur := Cur + 1;
+          end
           else
           begin
-            if (StrInArray(Content, Cur, Separators, SepLength)) then
+            if CharInSet(Content[Cur], Quotes) then
+              break
+            else if (StrInArray(Content, Cur, Separators, SepLength)) then
             begin
               Cur := Cur + SepLength - 1;
               break;
             end
             else
             begin
-              SepLength := 1;
               Cur := Cur + 1
             end;
           end;

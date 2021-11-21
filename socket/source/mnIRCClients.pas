@@ -402,6 +402,7 @@ type
     FHost: string;
     FPassword: string;
     FReconnectTime: Integer;
+    FTitle: string;
     FUsername: string;
     FRealName: string;
     FProgress: TIRCProgress;
@@ -509,6 +510,7 @@ type
     property IsOpen: Boolean read GetIsOpen;
     property Online: Boolean read GetOnline;
   public
+    property Title: string read FTitle write FTitle; //A Title name of Server, like 'freenode' or 'libra'
     property Host: string read FHost write SetHost;
     property Port: string read FPort write SetPort;
     property UseSSL: Boolean read FUseSSL write SetUseSSL;

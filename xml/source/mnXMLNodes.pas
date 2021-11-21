@@ -107,25 +107,18 @@ type
     xnoNameSpace, //Split NameSpace
     xnoTrimValue  //Trim CDATA, TEXT value
     );
+
   TmnXMLNodeOptions = set of TmnXMLNodeOption;
 
   { TmnXMLNodes }
 
   TmnXMLNodes = class(TmnCustomNode)
   private
-    FCurrent: TmnXMLNode;
     FOptions: TmnXMLNodeOptions;
     FRoot: TmnXMLNode;
     function GetItems(Index: String): TmnXMLNode;
-    procedure CheckClosed;
     function GetEmpty: Boolean;
   protected
-    function Open(Name: String): TmnXMLNode;
-    function Close(Name: String): TmnXMLNode;
-    function AddAttributes(Value: String): TmnXMLNode;
-    function AddText(Value: String): TmnXMLNode;
-    function AddCDATA(Value: String): TmnXMLNode;
-    function AddComment(Value: String): TmnXMLNode;
   public
     constructor Create; virtual;
     destructor Destroy; override;
@@ -141,27 +134,30 @@ type
     procedure Clear;
     function GetAttribute(Name, Attribute: String; Default: String = ''): String;
     property Empty: Boolean read GetEmpty;
-    property Current: TmnXMLNode read FCurrent;
+    property Options: TmnXMLNodeOptions read FOptions write FOptions;
     property Root: TmnXMLNode read FRoot;
     property Items[Index: String]: TmnXMLNode read GetItems; default;
-    property Options: TmnXMLNodeOptions read FOptions write FOptions;
   end;
 
   { TmnXMLNodeReader }
 
   TmnXMLNodeReader = class(TmnXMLReader)
   protected
+    FCurrent: TmnXMLNode;
     FNodes: TmnXMLNodes;
+    procedure CheckClosed;
     procedure ReadOpenTag(const Name: String); override;
     procedure ReadAttributes(const Text: String); override;
     procedure ReadText(const Text: String); override;
     procedure ReadComment(const Text: String); override;
     procedure ReadCDATA(const Text: String); override;
     procedure ReadCloseTag(const Name: String); override;
+    procedure DoStart; override;
   public
     constructor Create; override;
     destructor Destroy; override;
     property Nodes: TmnXMLNodes read FNodes write FNodes;
+    property Current: TmnXMLNode read FCurrent;
   end;
 
   { TmnXMLNodeWriter }
@@ -335,37 +331,108 @@ end;
 procedure TmnXMLNodeReader.ReadAttributes(const Text: String);
 begin
   inherited;
-  Nodes.AddAttributes(EntityDecode(Text));
+  CheckClosed;
+  FCurrent.Attributes.SetText(EntityDecode(Text));
 end;
 
 procedure TmnXMLNodeReader.ReadCDATA(const Text: String);
+var
+  aNode: TmnXMLNode;
 begin
   inherited;
-  Nodes.AddCDATA(Text);
+  CheckClosed;
+  if xnoCDATA in Nodes.Options then //we add the text as node
+  begin
+    aNode := TmnXMLNode.Create(Nodes, FCurrent);
+    aNode.FKind := xmlnCDATA;
+    aNode.FValue := Text;
+    FCurrent.Add(aNode);
+  end
+  else
+  begin
+    FCurrent.FValue := FCurrent.FValue + Text;
+  end;
 end;
 
 procedure TmnXMLNodeReader.ReadCloseTag(const Name: String);
 begin
   inherited;
-  FNodes.Close(Name);
+  CheckClosed;
+  FCurrent.FState := xmlsClosed;
+  if FCurrent.Parent <> nil then
+    FCurrent := FCurrent.Parent;
+end;
+
+procedure TmnXMLNodeReader.DoStart;
+begin
+  inherited DoStart;
 end;
 
 procedure TmnXMLNodeReader.ReadComment(const Text: String);
+var
+  aNode: TmnXMLNode;
 begin
   inherited;
-  Nodes.AddComment(Text);
+  //CheckClosed; //svg have comment not inside
+  if xnoComment in Nodes.Options then //we ignore the comment if not
+  begin
+    if FCurrent <> nil then
+    begin
+      aNode := TmnXMLNode.Create(Nodes, FCurrent);
+      aNode.FKind := xmlnComment;
+      aNode.Value := Text;
+      FCurrent.Add(aNode);
+    end;
+  end;
+end;
+
+procedure TmnXMLNodeReader.CheckClosed;
+begin
+  if FCurrent = nil then
+    raise EmnXMLException.Create('There is not tag opened');
+  if FCurrent.State = xmlsClosed then
+    raise EmnXMLException.Create(FCurrent.Name + ' is already close tag');
 end;
 
 procedure TmnXMLNodeReader.ReadOpenTag(const Name: String);
+var
+  aNode: TmnXMLNode;
 begin
   inherited;
-  FNodes.Open(Name);
+  aNode := TmnXMLNode.Create(Nodes, FCurrent);
+  aNode.SetName(Name);
+  if Nodes.FRoot = nil then
+    Nodes.FRoot := aNode
+  else
+  begin
+    CheckClosed;
+    FCurrent.Add(aNode);
+  end;
+  FCurrent := aNode;
 end;
 
 procedure TmnXMLNodeReader.ReadText(const Text: String);
+var
+  Node: TmnXMLNode;
+  aText: string;
 begin
   inherited;
-  Nodes.AddText(Text);
+  CheckClosed;
+  if xnoTrimValue in Nodes.Options then
+    aText := Trim(Text)
+  else
+    aText := Text;
+  if xnoText in Nodes.Options then //we add the text as node
+  begin
+    Node := TmnXMLNode.Create(Nodes, FCurrent);
+    Node.FKind := xmlnText;
+    Node.FValue := aText;
+    FCurrent.Add(Node);
+  end
+  else
+  begin
+    FCurrent.FValue := FCurrent.FValue + aText;
+  end;
 end;
 
 { TmnXMLNodesList }
@@ -397,84 +464,9 @@ end;
 
 { TmnXMLNodes }
 
-function TmnXMLNodes.AddAttributes(Value: String): TmnXMLNode;
-begin
-  CheckClosed;
-  FCurrent.Attributes.SetText(Value);
-  Result := FCurrent;
-end;
-
-function TmnXMLNodes.AddCDATA(Value: String): TmnXMLNode;
-begin
-  CheckClosed;
-  if xnoCDATA in Options then //we add the text as node
-  begin
-    Result := TmnXMLNode.Create(Self, FCurrent);
-    Result.FKind := xmlnCDATA;
-    Result.FValue := Value;
-    FCurrent.Add(Result);
-  end
-  else
-  begin
-    FCurrent.FValue := FCurrent.FValue + Value;
-    Result := FCurrent;
-  end;
-end;
-
-function TmnXMLNodes.AddComment(Value: String): TmnXMLNode;
-begin
-  //CheckClosed; //svg have comment not inside
-  if xnoComment in Options then //we ignore the comment if not
-  begin
-    Result := TmnXMLNode.Create(Self, FCurrent);
-    Result.FKind := xmlnComment;
-    Result.Value := Value;
-    FCurrent.Add(Result);
-  end
-  else
-    Result := FCurrent;
-end;
-
-function TmnXMLNodes.AddText(Value: String): TmnXMLNode;
-begin
-  CheckClosed;
-  if xnoTrimValue in Options then
-    Value := Trim(Value);
-  if xnoText in Options then //we add the text as node
-  begin
-    Result := TmnXMLNode.Create(Self, FCurrent);
-    Result.FKind := xmlnText;
-    Result.FValue := Value;
-    FCurrent.Add(Result);
-  end
-  else
-  begin
-    FCurrent.FValue := FCurrent.FValue + Value;
-    Result := FCurrent;
-  end;
-end;
-
-procedure TmnXMLNodes.CheckClosed;
-begin
-  if FCurrent = nil then
-    raise EmnXMLException.Create('There is not tag opened');
-  if FCurrent.State = xmlsClosed then
-    raise EmnXMLException.Create(FCurrent.Name + ' is already close tag');
-end;
-
 procedure TmnXMLNodes.Clear;
 begin
-  FCurrent := nil;
   FreeAndNil(FRoot);
-end;
-
-function TmnXMLNodes.Close(Name: String): TmnXMLNode;
-begin
-  CheckClosed;
-  FCurrent.FState := xmlsClosed;
-  if FCurrent.Parent <> nil then
-    FCurrent := FCurrent.Parent;
-  Result := FCurrent;
 end;
 
 constructor TmnXMLNodes.Create;
@@ -593,20 +585,6 @@ begin
   end
   else
     Result := nil;
-end;
-
-function TmnXMLNodes.Open(Name: String): TmnXMLNode;
-begin
-  Result := TmnXMLNode.Create(Self, FCurrent);
-  Result.SetName(Name);
-  if FRoot = nil then
-    FRoot := Result
-  else
-  begin
-    CheckClosed;
-    FCurrent.Add(Result);
-  end;
-  FCurrent := Result;
 end;
 
 end.

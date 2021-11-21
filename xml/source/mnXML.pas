@@ -751,7 +751,7 @@ end;
 procedure TmnXMLAttributes.SetText(Value: string);
 begin
   Clear;
-  StrToStringsCallback(Value, Self, @AttrStrToStringsDeqouteCallbackProc, [' '], [' ', #0, #13, #10]);
+  StrToStringsExCallback(Value, Self, @AttrStrToStringsDeqouteCallbackProc, [' '], [' ', #0, #13, #10]);
 end;
 
 { TmnXMLAttribute }

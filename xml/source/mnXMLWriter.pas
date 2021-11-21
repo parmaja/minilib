@@ -27,6 +27,7 @@ type
 
   TmnCustomXMLWriter = class(TmnXMLFiler)
   private
+    FBreaks: Boolean;
     FOpenedTags: TStringList;
     FSmart: Boolean;
     FTabs: string;
@@ -89,6 +90,7 @@ type
     property Smart: Boolean read FSmart write SetSmart default False;
     property Encoding: Boolean read FEncoding write FEncoding default True;
     property Tabs: string read FTabs write FTabs;
+    property Breaks: Boolean read FBreaks write FBreaks; //auto break everyrhing, but hearts :)
     //End smart engine
   end;
 
@@ -97,6 +99,19 @@ type
   { TmnXMLWriter }
 
   TmnXMLWriter = class(TmnCustomXMLWriter)
+  protected
+    procedure DoWriteStartTag(Name: string); override;
+    procedure DoWriteAttribute(Name, Value: string); override;
+    procedure DoWriteStopTag(Name: string); override;
+    procedure DoWriteCloseTag(Name: string); override;
+    procedure DoWriteText(Value: string); override;
+    procedure DoWriteComment(Value: string); override;
+    procedure DoWriteCDATA(Value: string); override;
+  end;
+
+  { TmnPascalWriter }
+
+  TmnPascalWriter = class(TmnCustomXMLWriter)
   protected
     procedure DoWriteStartTag(Name: string); override;
     procedure DoWriteAttribute(Name, Value: string); override;
@@ -124,6 +139,43 @@ implementation
 
 uses
   mnUtils;
+
+{ TmnPascalWriter }
+
+procedure TmnPascalWriter.DoWriteStartTag(Name: string);
+begin
+  Stream.WriteString('WriteStartTag(' + QuoteStr(Name, '''') + ');') ;
+end;
+
+procedure TmnPascalWriter.DoWriteAttribute(Name, Value: string);
+begin
+  Stream.WriteString('WriteAttribute(' + QuoteStr(Name, '''') + ', ' + QuoteStr(Name, '''') + ');') ;
+end;
+
+procedure TmnPascalWriter.DoWriteStopTag(Name: string);
+begin
+  Stream.WriteString('WriteStopTag(' + QuoteStr(Name, '''') + ');') ;
+end;
+
+procedure TmnPascalWriter.DoWriteCloseTag(Name: string);
+begin
+  Stream.WriteString('WriteCloseTag(' + QuoteStr(Name, '''') + ');') ;
+end;
+
+procedure TmnPascalWriter.DoWriteText(Value: string);
+begin
+  Stream.WriteString('WriteText(' + QuoteStr(Value, '''') + ');') ;
+end;
+
+procedure TmnPascalWriter.DoWriteComment(Value: string);
+begin
+  Stream.WriteString('WriteComment(' + QuoteStr(Value, '''') + ');') ;
+end;
+
+procedure TmnPascalWriter.DoWriteCDATA(Value: string);
+begin
+  Stream.WriteString('WriteCDATA(' + QuoteStr(Value, '''') + ');') ;
+end;
 
 { TmnJSONWriter }
 
@@ -398,7 +450,12 @@ procedure TmnCustomXMLWriter.WriteAttribute(Name, Value: string);
 begin
   if Smart then
   begin
-    if (AttributesCount > 0) then
+    if Breaks then
+    begin
+      Stream.WriteLine;
+      Stream.WriteString(GetIndents(FOpenedTags.Count));
+    end
+    else if (AttributesCount > 0) then
     begin
       if (Length(Value) > cMaxLine) then
       begin
