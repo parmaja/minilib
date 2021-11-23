@@ -434,6 +434,8 @@ function TmnXMLEntities.CreateReplaceArr(const Value: string; vWay: TEntityRende
     aSame: Boolean;
   begin
     Result := -1;
+    v := nil;
+    l := MaxInt;
     for I := 0 to Count - 1 do
     begin
       case vWay of

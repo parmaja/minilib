@@ -7,8 +7,7 @@ unit mnIRCClients;
 {$ENDIF}
 {**
  *  This file is part of the "Mini Library"
- *  @license  modifiedLGPL (modified of http://www.gnu.org/licenses/lgpl.html)
- *            See the file COPYING.MLGPL, included in this distribution,
+ *  @license  MIT (https://opensource.org/licenses/MIT)
  *  @author by Zaher Dirkey <zaher, zaherdirkey>
 
 
@@ -346,7 +345,7 @@ type
     FStream: TIRCSocketStream;
 
     FDelayEvent: TEvent;
-    FIsOpen: Boolean; //End user started or stopped it
+    FActive: Boolean; //End user started or stopped it
     FInternalConnected: Boolean; //True if connected, used to detected disconnected after connect
 
     Tries: Integer;
@@ -365,12 +364,12 @@ type
 
     property Client: TmnIRCClient read FClient;
     function GetConnected: Boolean; override;
-    property IsOpen: Boolean read FIsOpen;
+    property Active: Boolean read FActive;
+    procedure TerminatedSet; override;
   public
     constructor Create(vOwner: TmnConnections);
     destructor Destroy; override;
     procedure Connect;
-    procedure Stop; override;
     property Host: string read FHost;
     property Port: string read FPort;
   end;
@@ -390,13 +389,13 @@ type
     procedure SetNick(ANick: string);
   end;
 
-  TIRCAuth = (authNone, authPASS, authIDENTIFY);
+  TIRCAuthType = (authNone = 0, authPASS, authIDENTIFY);
 
   { TmnIRCClient }
 
   TmnIRCClient = class(TObject)
   private
-    FAuth: TIRCAuth;
+    FAuthType: TIRCAuthType;
     FMapChannels: TStringList;
     FPort: string;
     FHost: string;
@@ -416,10 +415,10 @@ type
     FUseUserCommands: Boolean;
     FNicks: TStringList;
 
-    function GetIsOpen: Boolean;
+    function GetActive: Boolean;
     function GetOnline: Boolean;
 
-    procedure SetAuth(AValue: TIRCAuth);
+    procedure SetAuthType(AValue: TIRCAuthType);
     procedure SetMapChannels(AValue: TStringList);
     procedure SetNicks(AValue: TStringList);
     procedure SetPassword(const Value: string);
@@ -476,6 +475,9 @@ type
     procedure GetCurrentChannel(out vChannel: string); virtual;
     function MapChannel(vChannel: string): string;
 
+    procedure DoBeforeOpen; virtual;
+    procedure DoAfterOpen; virtual;
+    procedure DoAfterClose; virtual;
     procedure Init; virtual;
     procedure CreateConnection;
     property Connection: TmnIRCConnection read FConnection;
@@ -507,7 +509,7 @@ type
     property Receivers: TIRCReceivers read FReceivers;
     property QueueSends: TIRCQueueRaws read FQueueSends;
     property UserCommands: TIRCUserCommands read FUserCommands;
-    property IsOpen: Boolean read GetIsOpen;
+    property Active: Boolean read GetActive;
     property Online: Boolean read GetOnline;
   public
     property Title: string read FTitle write FTitle; //A Title name of Server, like 'freenode' or 'libra'
@@ -522,7 +524,7 @@ type
     property MapChannels: TStringList read FMapChannels write SetMapChannels;
     property UseUserCommands: Boolean read FUseUserCommands write FUseUserCommands default True;
     property ReconnectTime: Integer read FReconnectTime write SetReconnectTime;
-    property Auth: TIRCAuth read FAuth write SetAuth;
+    property AuthType: TIRCAuthType read FAuthType write SetAuthType;
   end;
 
   { TIRCUserReceiver }
@@ -796,6 +798,9 @@ uses
 
 const
   sDefaultPort = '6667';
+  sDefaultSSLPort = '6697';
+  sLiberaChat = 'irc.libera.chat';
+  sFreeNode = 'irc.freenode.net';
 
 function ScanString(vStr: string; var vPos:Integer; out vCount: Integer; vChar: Char; vSkip: Boolean = False): Boolean;
 var
@@ -1726,12 +1731,12 @@ function TmnIRCConnection.InitStream: Boolean;
 var
   ReconnectTime: Integer;
 begin
-  if (FStream = nil) and IsOpen then
+  if (FStream = nil) and Active then
     FStream := CreateStream;
 
   if not Terminated then
   begin
-    if not FStream.Connected and IsOpen then
+    if not FStream.Connected and Active then
     begin
       try
         if Tries > 0 then //delay if not first time
@@ -1883,7 +1888,7 @@ begin
   inherited;
   Tries := 0;
   if Connected then
-    Stop;
+    Terminate;
   Synchronize(Client.Closed);
   FreeAndNil(FStream);
 end;
@@ -2039,6 +2044,15 @@ begin
   Result := not Terminated;
 end;
 
+procedure TmnIRCConnection.TerminatedSet;
+begin
+  inherited;
+  if FDelayEvent <> nil then
+    FDelayEvent.SetEvent;
+  if FStream <> nil then
+    FStream.Disconnect;
+end;
+
 constructor TmnIRCConnection.Create(vOwner: TmnConnections);
 begin
   inherited;
@@ -2054,15 +2068,6 @@ end;
 procedure TmnIRCConnection.Connect;
 begin
   inherited;
-end;
-
-procedure TmnIRCConnection.Stop;
-begin
-  inherited;
-  if FDelayEvent <> nil then
-    FDelayEvent.SetEvent;
-  if FStream <> nil then
-    FStream.Disconnect;
 end;
 
 { TIRCCommand }
@@ -2157,19 +2162,21 @@ procedure TmnIRCClient.Close;
 begin
   if Assigned(FConnection) then
   begin
-    Connection.FIsOpen := False;
+    Connection.FActive := False; //do not reconnect
+
     if (FConnection.Connected) then
       Quit('Bye');
 
-    FConnection.Terminate;//no stop
-    FConnection.Stop; //should use TerminateSet, but not exists in FPC yet
+    FConnection.Terminate;
     FConnection.WaitFor;
   end;
   NickIndex := 0;
+  DoAfterClose;
 end;
 
 procedure TmnIRCClient.Open;
 begin
+  DoBeforeOpen;
   NickIndex := 0;
   if (Progress < prgConnecting) then
   begin
@@ -2177,9 +2184,10 @@ begin
       InitOpenSSL;
     FreeAndNil(FConnection);
     CreateConnection;
-    Connection.FIsOpen := True;
+    Connection.FActive := True;
     Connection.Start;
   end;
+  DoAfterOpen;
 end;
 
 constructor TmnIRCClient.Create;
@@ -2440,12 +2448,12 @@ begin
   SendRaw(Format('USER %s 0 * :%s', [Username, RealName]));
   if FPassword <> '' then
   begin
-    if Auth = authPass then
+    if AuthType = authPass then
     begin
       SendRaw(Format('PASS %s:%s', [Username, FPassword]));
       SetNick(aNick);
     end
-    else if Auth = authIDENTIFY then
+    else if AuthType = authIDENTIFY then
     begin
       SetNick(aNick);
       SendRaw(Format('NICKSERV IDENTIFY %s %s', [Username, Password]));
@@ -2487,18 +2495,18 @@ end;
 
 function TmnIRCClient.GetOnline: Boolean;
 begin
-  Result := (FConnection <> nil) and FConnection.Connected and FConnection.IsOpen and (Progress > prgConnected);
+  Result := (FConnection <> nil) and FConnection.Connected and FConnection.Active and (Progress > prgConnected);
 end;
 
-function TmnIRCClient.GetIsOpen: Boolean;
+function TmnIRCClient.GetActive: Boolean;
 begin
-  Result := (FConnection <> nil) and FConnection.IsOpen;
+  Result := (FConnection <> nil) and FConnection.Active;
 end;
 
-procedure TmnIRCClient.SetAuth(AValue: TIRCAuth);
+procedure TmnIRCClient.SetAuthType(AValue: TIRCAuthType);
 begin
-  if FAuth =AValue then Exit;
-  FAuth :=AValue;
+  if FAuthType =AValue then Exit;
+  FAuthType :=AValue;
 end;
 
 procedure TmnIRCClient.SetMapChannels(AValue: TStringList);
@@ -2622,6 +2630,19 @@ begin
   end
   else
     Result := vChannel
+end;
+
+procedure TmnIRCClient.DoBeforeOpen;
+begin
+end;
+
+procedure TmnIRCClient.DoAfterOpen;
+begin
+end;
+
+procedure TmnIRCClient.DoAfterClose;
+begin
+
 end;
 
 procedure TmnIRCClient.Quit(Reason: string);
@@ -2778,7 +2799,15 @@ begin
   FConnection.FClient := Self;
   FConnection.FreeOnTerminate := false;
   FConnection.FHost := Host;
-  FConnection.FPort := Port;
+  if Port = '' then
+  begin
+    if UseSSL then
+      FConnection.FPort := sDefaultSSLPort
+    else
+      FConnection.FPort := sDefaultPort;
+  end
+  else
+    FConnection.FPort := Port;
 end;
 
 end.

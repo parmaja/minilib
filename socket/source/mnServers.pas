@@ -68,10 +68,10 @@ type
   protected
     function GetConnected: Boolean; override;
     procedure Disconnect; virtual;
+    procedure TerminatedSet; override;
   public
     constructor Create(vOwner: TmnConnections; vStream: TmnConnectionStream);
     destructor Destroy; override;
-    procedure Stop; override;
     property Stream: TmnConnectionStream read FStream;
     property Listener: TmnListener read GetListener;
     property RemoteIP: string read FRemoteIP;
@@ -122,12 +122,12 @@ type
     procedure Execute; override;
     procedure Unprepare; virtual;
     procedure DropConnections; virtual;
+    procedure TerminatedSet; override;
   public
     constructor Create;
     destructor Destroy; override;
     procedure Add(Connection: TmnConnection); override;
     procedure Remove(Connection: TmnConnection); override;
-    procedure Stop; override;
     // Use this function when you are in a thread do not use Server.Log
     procedure Log(S: string); virtual;
     property Server: TmnServer read FServer;
@@ -393,12 +393,6 @@ begin
   inherited;
 end;
 
-procedure TmnServerConnection.Stop;
-begin
-  Disconnect;
-  inherited Stop;
-end;
-
 function TmnServerConnection.GetListener: TmnListener;
 begin
   Result := Owner as TmnListener;
@@ -413,6 +407,12 @@ procedure TmnServerConnection.Disconnect;
 begin
   if (FStream <> nil) and (FStream.Connected) then
     FStream.Disconnect;
+end;
+
+procedure TmnServerConnection.TerminatedSet;
+begin
+  Disconnect;
+  inherited;
 end;
 
 procedure TmnServer.SetActive(const Value: Boolean);
@@ -699,7 +699,7 @@ begin
     for i := 0 to List.Count - 1 do
     begin
       List[i].FreeOnTerminate := False; //I will kill you
-      List[i].Stop;
+      List[i].Terminate;
     end;
   finally
     Leave;
@@ -714,6 +714,23 @@ begin
       List.Delete(0);
     end;
   finally
+  end;
+end;
+
+procedure TmnListener.TerminatedSet;
+begin
+  inherited;
+  Enter;
+  try
+    Terminate;
+    if Socket <> nil then
+    begin
+      Socket.Shutdown([sdReceive, sdSend]);//stop the accept from waiting
+      //Sleep(100); fix frees on linux in case using Socket.Close after it
+      //Socket.Close; my needed for lag on windows
+    end;
+  finally
+    Leave;
   end;
 end;
 
@@ -779,22 +796,6 @@ begin
   end;
 end;
 
-procedure TmnListener.Stop;
-begin
-  Enter;
-  try
-    Terminate;
-    if Socket <> nil then
-    begin
-      Socket.Shutdown([sdReceive, sdSend]);//stop the accept from waiting
-      //Sleep(100); fix frees on linux in case using Socket.Close after it
-      //Socket.Close; my needed for lag on windows
-    end;
-  finally
-    Leave;
-  end;
-end;
-
 procedure TmnListener.PostChanged;
 begin
   if FServer <> nil then
@@ -806,7 +807,7 @@ begin
   if (FListener <> nil) then
   begin
     DoBeforeClose;
-    FListener.Stop;
+    FListener.Terminate;
     FListener.WaitFor;
 
     //to process all queues

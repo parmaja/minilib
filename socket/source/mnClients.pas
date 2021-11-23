@@ -104,7 +104,7 @@ type
     destructor Destroy; override;
     procedure Remove(Connection: TmnConnection); override;
     procedure Add(Connection: TmnConnection); override;
-    procedure Stop; override;
+    //procedure Stop; override;
     procedure Log(Connection: TmnConnection; S: string);
     function AddConnection(vPort: string; vAddress: string): TmnClientConnection;
     property Connected: Boolean read GetConnected;
@@ -274,10 +274,10 @@ begin
     inherited;
 end;
 
-procedure TmnClients.Stop;
+{procedure TmnClients.Stop;
 begin
   Terminate;
-end;
+end;}
 
 procedure TmnClients.Shutdown;
 var

@@ -1,10 +1,10 @@
 unit mnMsgBox;
-{$mode objfpc}{$H+}
-{-----------------------------------------------------------------------------
- Author:    zaher
- Purpose:
- History:
------------------------------------------------------------------------------}
+{$mode ObjFPC}{$H+}
+{**
+ *  This file is part of the "minilib"
+ *  @license  MIT (https://opensource.org/licenses/MIT)
+ *  @author by Zaher Dirkey <zaher, zaherdirkey>
+*}
 {
  TODO;
  Check if not MsgBox installed
