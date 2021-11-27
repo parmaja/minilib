@@ -36,6 +36,9 @@ PREFIX=(ov)@+
 Flag as operator directly
 /msg chanserv flags #parmaja zaher +O
 
+fix topic changing
+<:zaher_!~zaher@188.229.231.11 TOPIC #parmaja :Open source and free projects of www.parmaja.org and github/parmaja
+
 }
 
 interface
@@ -608,6 +611,14 @@ type
     procedure Receive(vCommand: TIRCCommand); override;
   end;
 
+  { TTOPIC_RPL_IRCReceiver }
+
+  TTOPIC_RPL_IRCReceiver = class(TIRCReceiver)
+  protected
+    procedure DoExecute(vCommand: TIRCCommand; var NextCommand: TIRCQueueCommand); override;
+    procedure Receive(vCommand: TIRCCommand); override;
+  end;
+
   { TTOPIC_IRCReceiver }
 
   TTOPIC_IRCReceiver = class(TIRCReceiver)
@@ -988,6 +999,21 @@ begin
   EndOfNick := Pos('!', Address);
   if EndOfNick > 0 then
     Result := Copy(Address, 1, EndOfNick - 1);
+end;
+
+{ TTOPIC_IRCReceiver }
+
+procedure TTOPIC_IRCReceiver.DoExecute(vCommand: TIRCCommand; var NextCommand: TIRCQueueCommand);
+begin
+  //:zaherdirkey!~zaherdirkey@myip TOPIC #support :Creative Solutions Support Channel2
+  vCommand.Channel := vCommand.PullParam;
+  vCommand.Msg := vCommand.PullParam;
+  vCommand.Target := vCommand.Channel;
+end;
+
+procedure TTOPIC_IRCReceiver.Receive(vCommand: TIRCCommand);
+begin
+  Client.Receive(mtTopic, vCommand.Received);
 end;
 
 { TTopic_UserCommand }
@@ -1635,20 +1661,19 @@ begin
   end;
 end;
 
-{ TTOPIC_IRCReceiver }
+{ TTOPIC_RPL_IRCReceiver }
 
-procedure TTOPIC_IRCReceiver.DoExecute(vCommand: TIRCCommand; var NextCommand: TIRCQueueCommand);
+procedure TTOPIC_RPL_IRCReceiver.DoExecute(vCommand: TIRCCommand; var NextCommand: TIRCQueueCommand);
 begin
   inherited;
   //:server 332 zaher #support :Creative Solutions Support Channel
-  //:zaherdirkey!~zaherdirkey@myip TOPIC #support :Creative Solutions Support Channel2
   vCommand.User := vCommand.PullParam;
   vCommand.Target := vCommand.PullParam;
   vCommand.Channel := vCommand.Target;
   vCommand.Msg := vCommand.PullParam;
 end;
 
-procedure TTOPIC_IRCReceiver.Receive(vCommand: TIRCCommand);
+procedure TTOPIC_RPL_IRCReceiver.Receive(vCommand: TIRCCommand);
 begin
   Client.Receive(mtTopic, vCommand.Received);
 end;
@@ -1747,12 +1772,12 @@ begin
           finally
             Lock.Leave;
           end;
-          Log('Reconnecting after ' + IntToStr(ReconnectTime));
+          Log('Reconnecting  '+ Host +' after ' + IntToStr(ReconnectTime));
           FDelayEvent.WaitFor(ReconnectTime);
-          Log('Reconnecting...');
+          Log('Reconnecting '+ Host +'...');
         end
         else
-          Log('Connecting...');
+          Log('Connecting '+ Host +' ...');
         Queue(Client.Connecting);
         FStream.Connect;
         if FStream.Connected then
@@ -2755,7 +2780,7 @@ begin
   Receivers.Add('PING', [], TPING_IRCReceiver);
 
   Receivers.Add('MOTD', [IRC_RPL_MOTD], TMOTD_IRCReceiver);
-  Receivers.Add('', [IRC_RPL_TOPIC], TTOPIC_IRCReceiver);
+  Receivers.Add('', [IRC_RPL_TOPIC], TTOPIC_RPL_IRCReceiver);
   Receivers.Add('TOPIC', [], TTOPIC_IRCReceiver);//not same with IRC_RPL_TOPIC
   Receivers.Add('NICK', [], TNICK_IRCReceiver);
   Receivers.Add('WELCOME', [IRC_RPL_WELCOME], TWELCOME_IRCReceiver);
