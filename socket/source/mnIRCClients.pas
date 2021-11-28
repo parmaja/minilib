@@ -475,7 +475,6 @@ type
     procedure DoWho(vChannel: string); virtual;
     procedure DoMyInfoChanged; virtual;
 
-    procedure GetCurrentChannel(out vChannel: string); virtual;
     function MapChannel(vChannel: string): string;
 
     procedure DoBeforeOpen; virtual;
@@ -1019,11 +1018,8 @@ end;
 { TTopic_UserCommand }
 
 procedure TTopic_UserCommand.Send(vChannel: string; vMsg: string);
-var
-  aChannel: string;
 begin
-  Client.GetCurrentChannel(aChannel);
-  Client.SendRaw('TOPIC ' + aChannel + ' ' + vMsg, prgReady);
+  Client.SendRaw('TOPIC ' + vChannel + ' ' + vMsg, prgReady);
 end;
 
 { TDCC_IRCReceiver }
@@ -1179,11 +1175,8 @@ end;
 { TPart_UserCommand }
 
 procedure TPart_UserCommand.Send(vChannel: string; vMsg: string);
-var
-  aChannel: string;
 begin
-  Client.GetCurrentChannel(aChannel);
-  Client.SendRaw('PART ' + aChannel + ' :' + vMsg, prgReady);
+  Client.SendRaw('PART ' + vChannel + ' :' + vMsg, prgReady);
 end;
 
 { TIRCSession }
@@ -1461,10 +1454,6 @@ end;
 
 procedure TNAMREPLY_IRCReceiver.Receive(vCommand: TIRCCommand);
 var
-  aUserName: string;
-  aModes: TIRCUserModes;
-  aUser: TIRCUser;
-
   aChannelName: string;
   oChannel: TIRCChannel;
 
@@ -2640,11 +2629,6 @@ begin
 
 end;
 
-procedure TmnIRCClient.GetCurrentChannel(out vChannel: string);
-begin
-  vChannel := '';
-end;
-
 function TmnIRCClient.MapChannel(vChannel: string): string;
 begin
   if MapChannels.IndexOfName(vChannel) >=0 then
@@ -2806,6 +2790,7 @@ begin
   UserCommands.Add(TMode_UserCommand.Create('Mode', Self));
   UserCommands.Add(TSend_UserCommand.Create('Send', Self));
   UserCommands.Add(TTopic_UserCommand.Create('Topic', Self));
+  UserCommands.Add(TTopic_UserCommand.Create('t', Self));
   UserCommands.Add(TMe_UserCommand.Create('Me', Self));
   UserCommands.Add(TNotice_UserCommand.Create('Notice', Self));
   UserCommands.Add(TCNotice_UserCommand.Create('CNotice', Self));
