@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CONFIG>
   <Package Version="5">
-    <Name Value="MiniCommons"/>
+    <Name Value="MiniLib"/>
     <Author Value="Zaher Dirkey"/>
     <CompilerOptions>
       <Version Value="11"/>
@@ -32,7 +32,7 @@
       </Other>
     </CompilerOptions>
     <Description Value="MiniLib common "/>
-    <License Value="ModifiedLGPL"/>
+    <License Value="MIT"/>
     <Version Major="1" Release="1"/>
     <Files>
       <Item>

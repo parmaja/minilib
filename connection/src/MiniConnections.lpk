@@ -132,24 +132,13 @@
         <UnitName Value="mncMySQLMeta"/>
       </Item>
       <Item>
-        <Filename Value="ui\ParamsForms.pas"/>
-        <UnitName Value="ParamsForms"/>
-      </Item>
-      <Item>
-        <Filename Value="ui\CSVOptionsForms.pas"/>
-        <UnitName Value="CSVOptionsForms"/>
-      </Item>
-      <Item>
         <Filename Value="csv\mncCSV.pas"/>
         <UnitName Value="mncCSV"/>
       </Item>
     </Files>
     <RequiredPkgs>
       <Item>
-        <PackageName Value="LCL"/>
-      </Item>
-      <Item>
-        <PackageName Value="MiniCommons"/>
+        <PackageName Value="MiniLib"/>
       </Item>
     </RequiredPkgs>
     <UsageOptions>

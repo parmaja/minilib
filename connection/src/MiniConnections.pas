@@ -11,8 +11,7 @@ uses
   mncConnections, mncCommons, mncDB, mncMeta, mncORM, mncSQL, mncPostgre, 
   mncPGHeader, mncPGMeta, mncPGORM, mncFBHeader, mncFirebird, mncFBMeta, 
   mncFBUtils, mncFBORM, mncSQLite, mncSQLiteHeader, mncSQLiteMeta, 
-  mncSQLiteORM, mncMySQLHeader, mncMySQL, mncMySQLORM, mncMySQLMeta, 
-  ParamsForms, CSVOptionsForms, mncCSV;
+  mncSQLiteORM, mncMySQLHeader, mncMySQL, mncMySQLORM, mncMySQLMeta, mncCSV;
 
 implementation
 
