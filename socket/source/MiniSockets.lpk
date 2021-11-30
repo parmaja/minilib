@@ -22,7 +22,7 @@
       </Other>
     </CompilerOptions>
     <Description Value="Simple Socket wrapper"/>
-    <Version Major="1" Release="1" Build="1"/>
+    <Version Major="1" Release="2" Build="1"/>
     <Files Count="13">
       <Item1>
         <Filename Value="mnClients.pas"/>
@@ -71,7 +71,7 @@
     </Files>
     <RequiredPkgs Count="1">
       <Item1>
-        <PackageName Value="MiniCommons"/>
+        <PackageName Value="MiniLib"/>
       </Item1>
     </RequiredPkgs>
     <UsageOptions>

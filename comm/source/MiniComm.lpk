@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <CONFIG>
-  <Package Version="4">
+  <Package Version="5">
     <Name Value="MiniComm"/>
     <Type Value="RunAndDesignTime"/>
     <CompilerOptions>
@@ -29,9 +29,10 @@
         <UnitName Value="mnCommThreads"/>
       </Item3>
     </Files>
+    <CompatibilityMode Value="True"/>
     <RequiredPkgs Count="2">
       <Item1>
-        <PackageName Value="MiniCommons"/>
+        <PackageName Value="MiniLib"/>
       </Item1>
       <Item2>
         <PackageName Value="FCL"/>

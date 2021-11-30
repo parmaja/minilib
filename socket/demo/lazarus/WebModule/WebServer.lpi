@@ -36,27 +36,21 @@
         </Mode0>
       </Modes>
     </RunParams>
-    <RequiredPackages Count="6">
+    <RequiredPackages Count="4">
       <Item1>
-        <PackageName Value="MiniCommons"/>
+        <PackageName Value="MiniLib"/>
       </Item1>
       <Item2>
-        <PackageName Value="MiniXML"/>
+        <PackageName Value="MiniConnections"/>
       </Item2>
       <Item3>
-        <PackageName Value="MiniConnections"/>
+        <PackageName Value="MiniSockets"/>
       </Item3>
       <Item4>
-        <PackageName Value="MiniSockets"/>
-      </Item4>
-      <Item5>
-        <PackageName Value="MiniComm"/>
-      </Item5>
-      <Item6>
         <PackageName Value="LCL"/>
-      </Item6>
+      </Item4>
     </RequiredPackages>
-    <Units Count="5">
+    <Units Count="2">
       <Unit0>
         <Filename Value="WebServer.lpr"/>
         <IsPartOfProject Value="True"/>
@@ -68,18 +62,6 @@
         <HasResources Value="True"/>
         <ResourceBaseClass Value="Form"/>
       </Unit1>
-      <Unit2>
-        <Filename Value="..\..\..\source\mnHttpClient.pas"/>
-        <IsPartOfProject Value="True"/>
-      </Unit2>
-      <Unit3>
-        <Filename Value="..\..\..\..\crypt\snow2.pas"/>
-        <IsPartOfProject Value="True"/>
-      </Unit3>
-      <Unit4>
-        <Filename Value="..\..\..\source\mnWinSockets.pas"/>
-        <IsPartOfProject Value="True"/>
-      </Unit4>
     </Units>
   </ProjectOptions>
   <CompilerOptions>
