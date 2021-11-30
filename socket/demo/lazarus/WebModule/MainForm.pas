@@ -233,6 +233,7 @@ begin
   finally
     aIni.Free;
   end;
+  FreeAndNil(Server);
 end;
 
 procedure TMain.UpdateStatus;
