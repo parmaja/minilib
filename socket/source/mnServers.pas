@@ -722,7 +722,6 @@ begin
   inherited;
   Enter;
   try
-    Terminate;
     if Socket <> nil then
     begin
       Socket.Shutdown([sdReceive, sdSend]);//stop the accept from waiting
