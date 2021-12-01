@@ -188,27 +188,27 @@ var
     with aWriter do
     begin
       if node.Kind = xmlnComment then
-        WriteComment(node.Value)
+        AddComment(node.Value)
       else if node.Kind = xmlnCDATA then
-        WriteCDATA(node.Value)
+        AddCDATA(node.Value)
       else
       begin
-        WriteStartTagNS(node.NameSpace, node.Name);
+        StartTag(node.NameSpace, node.Name);
         if node.Attributes.Count > 0 then
         begin
           for a in node.Attributes do
           begin
-            WriteAttribute(a.Name, a.Value);
+            AddAttribute(a.Name, a.Value);
           end;
         end;
-        WriteStopTagNS(node.NameSpace, node.Name);
+        StopTag(node.NameSpace, node.Name);
         if node.Count > 0 then
         begin
           for n in node do
             WriteNow(n);
         end;
-        WriteText(node.Value);
-        WriteCloseTagNS(node.NameSpace, node.Name);
+        AddText(node.Value);
+        CloseTag(node.NameSpace, node.Name);
       end;
     end;
   end;

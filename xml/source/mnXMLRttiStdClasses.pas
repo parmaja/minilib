@@ -89,10 +89,10 @@ begin
   if TStrings(Instance).Count > 0 then
     with Writer do
     begin
-      WriteOpenTag('Strings');
+      OpenTag('Strings');
       for i := 0 to TStrings(Instance).Count - 1 do
-        WriteTextTag('Line', TStrings(Instance)[i]);
-      WriteCloseTag('Strings');
+        AddTextTag('Line', TStrings(Instance)[i]);
+      CloseTag('Strings');
     end;
 end;
 
@@ -131,10 +131,10 @@ begin
   if (TObject(Instance) as TCollection).Count > 0 then
     with Writer do
     begin
-      WriteOpenTag('Items');
+      OpenTag('Items');
       for I := 0 to (TObject(Instance) as TCollection).Count - 1 do
         Writer.WriteObject((TObject(Instance) as TCollection).Items[I]);
-      WriteCloseTag('Items');
+      CloseTag('Items');
     end;
 end;
 
@@ -167,12 +167,12 @@ begin
   if TmnXMLItems(Instance).Count > 0 then
     with Writer do
     begin
-      WriteOpenTag('Objects');
+      OpenTag('Objects');
       for I := 0 to TmnXMLItems(Instance).Count - 1 do
       begin
         Writer.WriteObject(TmnXMLItems(Instance).Items[I]);
       end;
-      WriteCloseTag('Objects');
+      CloseTag('Objects');
     end;
 end;
 
