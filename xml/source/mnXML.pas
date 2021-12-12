@@ -205,8 +205,8 @@ begin
   Entities.Add('&amp;', '&'); //must be first //belal add & and ; to name
   Entities.Add('&lt;', '<');
   Entities.Add('&gt;', '>');
-  Entities.Add('&apos;', '''');
   Entities.Add('&quot;', '"');
+//  Entities.Add('&apos;', ''''); //ido
 
 {  Entities.Add('amp', '&'); //must be first
   Entities.Add('lt', '<');

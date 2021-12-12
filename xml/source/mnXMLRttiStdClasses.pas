@@ -91,7 +91,7 @@ begin
     begin
       OpenTag('Strings');
       for i := 0 to TStrings(Instance).Count - 1 do
-        AddTextTag('Line', TStrings(Instance)[i]);
+        AddText('Line', TStrings(Instance)[i]);
       CloseTag('Strings');
     end;
 end;
