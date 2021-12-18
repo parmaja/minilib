@@ -382,8 +382,10 @@ begin
   if Active then
   begin
     if soSSL in Options then
-      SSL.Free;
+      SSL.ShutDown;
     Result := DoClose;
+    if soSSL in Options then
+      SSL.Free;
   end
   else
     Result := erSuccess;

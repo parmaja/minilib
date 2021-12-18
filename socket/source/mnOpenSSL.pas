@@ -82,10 +82,12 @@ type
     CTX: TContext;
     Connected: Boolean;
     FSocket: Integer;
+    Shutdowned: Boolean;
   //public
     constructor Init(ACTX: TContext); overload;
     constructor Init(ASSL: PSSL); overload;
     procedure Free;
+    procedure ShutDown;
     procedure SetSocket(ASocket: Integer);
     function Connect: Boolean;
     function Handshake: Boolean;
@@ -248,10 +250,19 @@ end;
 
 procedure TSSL.Free;
 begin
-  if Handle<>nil then
+  if Handle <> nil then
   begin
     SSL_free(Handle);
     Handle := nil;
+  end;
+end;
+
+procedure TSSL.ShutDown;
+begin
+  if Handle <> nil then
+  begin
+    SSL_shutdown(Handle);
+    Shutdowned := True;
   end;
 end;
 

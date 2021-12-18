@@ -476,6 +476,7 @@ var
 
   SSL_ctrl: function(ssl: PSSL; cmd: Integer; Larg: clong; PArg: Pointer): clong; cdecl;
   SSL_new: function(ctx: PSSL_CTX): PSSL; cdecl;
+  SSL_shutdown: function(ssl: PSSL): Integer; cdecl;
   SSL_free: procedure(ssl: PSSL); cdecl;
   SSL_get_version: function(const ssl: PSSL): PUTF8Char; cdecl;
   SSL_set_fd: function(ssl: PSSL; d: Integer): integer; cdecl;
@@ -718,6 +719,7 @@ begin
   SSL_get_verify_result := GetAddress('SSL_get_verify_result');
   SSL_ctrl := GetAddress('SSL_ctrl');
   SSL_new := GetAddress('SSL_new');
+  SSL_shutdown := GetAddress('SSL_shutdown');
   SSL_free := GetAddress('SSL_free');
   SSL_get_version := GetAddress('SSL_get_version');
   SSL_set_fd := GetAddress('SSL_set_fd');
