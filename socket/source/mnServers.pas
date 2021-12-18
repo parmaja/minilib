@@ -724,9 +724,9 @@ begin
   try
     if Socket <> nil then
     begin
-      Socket.Shutdown([sdReceive, sdSend]);//stop the accept from waiting
+//      Socket.Shutdown([sdReceive, sdSend]);//stop the accept from waiting
+      Socket.Close; //my needed for lag on windows
       //Sleep(100); fix frees on linux in case using Socket.Close after it
-      //Socket.Close; my needed for lag on windows
     end;
   finally
     Leave;

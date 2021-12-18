@@ -506,7 +506,10 @@ end;
 procedure TmnSocketStream.Disconnect;
 begin
   if (Socket <> nil) and Socket.Connected then
+  begin
     Close; //may be not but in slow matchine disconnect to take as effects as need (POS in 98)
+    Socket.Close; //without it lag when blocking reading 
+  end;
 //  FreeSocket; //Do not free it maybe it is closing from other thread while socket is reading
 end;
 
