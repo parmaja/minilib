@@ -43,7 +43,7 @@ function QuoteStr(Str: string; QuoteChar: string = '"'): string;
 *}
 type
   TStrToStringsCallbackProc = procedure(Sender: Pointer; Index:Integer; S: string; var Resume: Boolean);
-  TArgumentsCallbackProc = procedure(Sender: Pointer; Index:Integer; Name, Value: string; var Resume: Boolean);
+  TArgumentsCallbackProc = procedure(Sender: Pointer; Index: Integer; Name, Value: string; var Resume: Boolean);
 
 {**
   IgnoreInitialWhiteSpace: Ignore the first chars of this white space, not need it
@@ -78,10 +78,15 @@ procedure StrToStringsDeqouteCallbackProc(Sender: Pointer; Index:Integer; S: str
 
 }
 
-function ParseArgumentsCallback(Content: string; const CallBackProc: TArgumentsCallbackProc; Sender: Pointer; Switches: array of char; WhiteSpaces: TSysCharSet = [' ', #9]; Quotes: TSysCharSet = ['''', '"'];  ValueSeperators: TSysCharSet = [':', '=']): Integer; overload;
+function ParseArgumentsCallback(Content: string; const CallBackProc: TArgumentsCallbackProc; Sender: Pointer; Switches: TArray<Char>; WhiteSpaces: TArray<Char> {= [' ', #9]}; Quotes: TArray<Char> {= ['''', '"']};  ValueSeperators: TArray<Char> {= [':', '=']}): Integer; overload;
 function ParseArgumentsCallback(Content: string; const CallBackProc: TArgumentsCallbackProc; Sender: Pointer): Integer; overload;
-function ParseArguments(Content: string; Strings: TStrings; Switches: TArray<Char>; WhiteSpaces: TSysCharSet = [' ', #9]; Quotes: TSysCharSet = ['''', '"']; ValueSeperators: TSysCharSet = [':', '=']): Integer; overload;
+function ParseArguments(Content: string; Strings: TStrings; Switches: TArray<Char>; WhiteSpaces: TArray<Char>{ = [' ', #9]}; Quotes: TArray<Char> {= ['''', '"']}; ValueSeperators: TArray<Char> {= [':', '=']}): Integer; overload;
 function ParseArguments(Content: string; Strings: TStrings): Integer; overload;
+
+function GetArgument(Strings: TStrings; out Value: String; Switch: string; AltSwitch: string = ''): Boolean; overload;
+function GetArgument(Strings: TStrings; Switch: string; AltSwitch: string = ''): Boolean; overload;
+//Get Param (non switch value by index)
+function GetArgument(Strings: TStrings; out Value: String; Index: Integer): Boolean; overload;
 
 function StringsToString(Strings: TStrings; LineBreak: string = sLineBreak): string;
 
@@ -589,7 +594,6 @@ end;
 function StrToStringsEx(Content: string; Strings: TStrings; Separators: Array of string; IgnoreInitialWhiteSpace: TSysCharSet; Quotes: TSysCharSet): Integer;
 var
   a: array of string;
-  c: TSysCharSet;
 begin
   if (Strings = nil) then
     raise Exception.Create('StrToStrings: Strings is nil');
@@ -606,13 +610,20 @@ begin
   Result := StrToStringsEx(Content, Strings, [#13, #10, #0], IgnoreInitialWhiteSpace, Quotes);
 end;}
 
-procedure ArgumentsCallbackProc(Sender: Pointer; Index:Integer; Name, Value: string; var Resume: Boolean);
+procedure ArgumentsCallbackProc(Sender: Pointer; Index: Integer; Name, Value: string; var Resume: Boolean);
 begin
-  (TObject(Sender) as TStrings).Add(Name + (TObject(Sender) as TStrings).NameValueSeparator + Value);
+  if Index > 0 then //ignore first param (exe file)
+    with TObject(Sender) as TStrings do
+    begin
+      if (Name <> '') and (Value = '') then
+        Add(NameValueSeparator + Name)
+      else
+        Add(Name + NameValueSeparator + Value);
+    end;
 end;
 
 //  -t   --test cmd1 cmd2 -t: value -t:value -t value
-function ParseArgumentsCallback(Content: string; const CallBackProc: TArgumentsCallbackProc; Sender: Pointer; Switches: array of char; WhiteSpaces: TSysCharSet; Quotes: TSysCharSet; ValueSeperators: TSysCharSet): Integer;
+function ParseArgumentsCallback(Content: string; const CallBackProc: TArgumentsCallbackProc; Sender: Pointer; Switches: TArray<Char>; WhiteSpaces: TArray<Char>; Quotes: TArray<Char>; ValueSeperators: TArray<Char>): Integer;
 var
   Start, Cur: Integer;
   Resume: Boolean;
@@ -635,20 +646,20 @@ begin
     Cur := 1;
     repeat
       //bypass white spaces
-      while (Cur <= Length(Content)) and CharInSet(Content[Cur], WhiteSpaces) do
+      while (Cur <= Length(Content)) and CharInArray(Content[Cur], WhiteSpaces) do
         Cur := Cur + 1;
 
       //start from the first char
       Start := Cur - 1;
       QuoteChar := #0;
 
-      if (Cur <= Length(Content)) and CharInSet(Content[Cur], Quotes) then
+      if (Cur <= Length(Content)) and CharInArray(Content[Cur], Quotes) then
       begin
         QuoteChar := Content[Cur];
         Cur := Cur + 1;
       end;
 
-      while (Cur <= Length(Content)) and (not CharInSet(Content[Cur], WhiteSpaces) or (QuoteChar <> #0)) do
+      while (Cur <= Length(Content)) and (not CharInArray(Content[Cur], WhiteSpaces) or (QuoteChar <> #0)) do
       begin
         if (QuoteChar <> #0) then
         begin
@@ -657,12 +668,12 @@ begin
             Cur := Cur + 1;
             break;
           end;
-        end
-        else if not NextIsValue and CharInSet(Content[Cur], ValueSeperators) then
+        end;
+{        else if not NextIsValue and CharInArray(Content[Cur], ValueSeperators) then
         begin
           Cur := Cur + 1;
           break;
-        end;
+        end;}
 
         Cur := Cur + 1;
       end;
@@ -683,7 +694,7 @@ begin
           begin
             Name := S;
             Value := '';
-            if CharInArray(Name[1], Switches) and CharInSet(Name[Length(Name)], ValueSeperators) then
+            if CharInArray(Name[1], Switches) and CharInArray(Name[Length(Name)], ValueSeperators) then
             begin
               Name := Copy(Name, 1, Length(Name) -1);
               NextIsValue := True;
@@ -717,17 +728,92 @@ end;
 
 function ParseArgumentsCallback(Content: string; const CallBackProc: TArgumentsCallbackProc; Sender: Pointer): Integer; overload;
 begin
-  Result := ParseArgumentsCallback(Content, @CallBackProc, Sender, ['-', '/']);
+  Result := ParseArgumentsCallback(Content, @CallBackProc, Sender, ['-', '/'], [' ', #9], ['"', ''''], ['=', ':']);
 end;
 
-function ParseArguments(Content: string; Strings: TStrings; Switches: TArray<Char>; WhiteSpaces: TSysCharSet; Quotes: TSysCharSet; ValueSeperators: TSysCharSet): Integer;
+function ParseArguments(Content: string; Strings: TStrings; Switches: TArray<Char>; WhiteSpaces: TArray<Char>; Quotes: TArray<Char>; ValueSeperators: TArray<Char>): Integer;
 begin
   Result := ParseArgumentsCallback(Content, @ArgumentsCallbackProc, Strings, Switches, WhiteSpaces, Quotes, ValueSeperators);
 end;
 
 function ParseArguments(Content: string; Strings: TStrings): Integer;
 begin
-  Result := ParseArgumentsCallback(Content, @ArgumentsCallbackProc, Strings);
+  Result := ParseArguments(Content, Strings, ['-', '/'], [' ', #9], ['"', ''''], ['=', ':']);
+end;
+
+function GetArgument(Strings: TStrings; out Value: String; Switch: string; AltSwitch: string = ''): Boolean;
+var
+  I, P: Integer;
+  S: string;
+begin
+  Result := False;
+  Value := '';
+  for I := 0 to Strings.Count - 1 do
+  begin
+    S := Strings[I];
+    P := Pos(Strings.NameValueSeparator, S);
+    if (P <> 0) then
+    begin
+      if (SameText(Copy(S, 1, P - 1), Switch))
+        or ((AltSwitch <> '') and (SameText(Copy(S, 1, P - 1), AltSwitch))) then
+        begin
+          Value := Copy(S, p + 1, MaxInt);
+          Exit(True);
+        end;
+    end;
+  end;
+end;
+
+function GetArgument(Strings: TStrings; Switch: string; AltSwitch: string = ''): Boolean; overload;
+var
+  I, P: Integer;
+  S: string;
+begin
+  Result := False;
+  for I := 0 to Strings.Count - 1 do
+  begin
+    S := Strings[I];
+    P := Pos(Strings.NameValueSeparator, S);
+    if (P <> 0) then
+    begin
+      if (SameText(Copy(S, 1, P - 1), Switch))
+        or ((AltSwitch <> '') and (SameText(Copy(S, 1, P - 1), AltSwitch))) then
+        begin
+          Exit(True);
+        end;
+    end;
+  end;
+end;
+
+function GetArgument(Strings: TStrings; out Value: String; Index: Integer): Boolean;
+var
+  I, P: Integer;
+  S: string;
+begin
+  Result := False;
+  Value := '';
+  for I := 0 to Strings.Count - 1 do
+  begin
+    S := Strings[I];
+    P := Pos(Strings.NameValueSeparator, S);
+    if (P <> 0) then
+    begin
+      if (Copy(S, 1, P - 1) = '') then
+      begin
+        if Index = 0 then
+        begin
+          Value := Copy(S, P + 1, MaxInt);
+          Exit(True);
+        end;
+        Dec(Index);
+      end;
+    end
+    else if (P = 0) then
+    begin
+      Exit(True);
+      Dec(Index);
+    end
+  end;
 end;
 
 function ExpandToPath(FileName: string; Path: string; Root: string): string;
