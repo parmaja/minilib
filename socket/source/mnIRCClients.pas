@@ -1859,10 +1859,8 @@ begin
   begin
     try
       SendRaws;
-
       FStream.ReadLineUTF8(S, True);
       aLine := Trim(UTF8ToString(S));
-
       while (aLine <> '') and not Terminated do
       begin
         Log('<' + aLine);

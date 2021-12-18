@@ -82,7 +82,7 @@ type
     CTX: TContext;
     Connected: Boolean;
     FSocket: Integer;
-    Shutdowned: Boolean;
+    Active: Boolean;
   //public
     constructor Init(ACTX: TContext); overload;
     constructor Init(ASSL: PSSL); overload;
@@ -240,12 +240,14 @@ begin
   {$ifdef DEBUG}
   Log.WriteLn(SSL_get_version(Handle));
   {$endif}
+  Active := True;
 end;
 
 constructor TSSL.Init(ASSL: PSSL);
 begin
   //inherited Create;
   Handle := ASSL;
+  Active := True;
 end;
 
 procedure TSSL.Free;
@@ -254,15 +256,16 @@ begin
   begin
     SSL_free(Handle);
     Handle := nil;
+    Active := False;
   end;
 end;
 
 procedure TSSL.ShutDown;
 begin
-  if Handle <> nil then
+  if Active and (Handle <> nil) then
   begin
     SSL_shutdown(Handle);
-    Shutdowned := True;
+    Active := False;
   end;
 end;
 

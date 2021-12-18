@@ -295,7 +295,7 @@ var
   ret: Boolean;
 begin
   CheckActive;
-  if soSSL in Options then
+  if SSL.Active then
   begin
     ret := SSL.Read(Buffer, Count, ReadSize);
     if ret then
@@ -326,7 +326,7 @@ end;
 
 function TmnCustomSocket.Pending: Boolean;
 begin
-  if soSSL in Options then
+  if SSL.Active then
     Result := SSL.Pending
   else
     Result := DoPending;
@@ -338,7 +338,7 @@ var
   ret: Boolean;
 begin
   CheckActive;
-  if soSSL in Options then
+  if SSL.Active then
   begin
     ret := SSL.Write(Buffer, Count, WriteSize);
     if ret then
@@ -366,6 +366,8 @@ function TmnCustomSocket.Shutdown(How: TmnShutdowns): TmnError;
 begin
   if How <> [] then
   begin
+    {if SSL.Active then
+      SSL.ShutDown;} //nop
     Result := DoShutdown(How);
     if Result = erSuccess then
       FShutdownState := FShutdownState + How
@@ -381,10 +383,10 @@ function TmnCustomSocket.Close: TmnError;
 begin
   if Active then
   begin
-    if soSSL in Options then
+    if SSL.Active then
       SSL.ShutDown;
     Result := DoClose;
-    if soSSL in Options then
+    if soSSL in Options then //TODO maybe should move to Destroy, it it crash sometime after that
       SSL.Free;
   end
   else
