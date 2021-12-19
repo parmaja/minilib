@@ -28,9 +28,6 @@
       <Item>
         <PackageName Value="MiniSockets"/>
       </Item>
-      <Item>
-        <PackageName Value="MiniCommons"/>
-      </Item>
     </RequiredPackages>
     <Units>
       <Unit>

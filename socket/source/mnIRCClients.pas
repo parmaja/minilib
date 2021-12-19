@@ -1859,9 +1859,10 @@ begin
   begin
     try
       SendRaws;
-      FStream.ReadLineUTF8(S, True);
+      if FStream.Connected then
+        FStream.ReadLineUTF8(S, True);
       aLine := Trim(UTF8ToString(S));
-      while (aLine <> '') and not Terminated do
+      while Connected and not Terminated and (aLine <> '') do
       begin
         Log('<' + aLine);
         aNextCommand := nil;
@@ -1879,7 +1880,7 @@ begin
 
         SendRaws;
 
-        if not Terminated then
+        if FStream.Connected and not Terminated then
         begin
           FStream.ReadLineUTF8(S, True);
           aLine := Trim(UTF8ToString(S));

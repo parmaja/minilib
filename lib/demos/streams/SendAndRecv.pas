@@ -27,6 +27,7 @@ type
   protected
     procedure Execute; override;
   public
+    Stream: TmnServerSocket;
   end;
 
   { TThreadSender }
@@ -35,18 +36,21 @@ type
   protected
     procedure Execute; override;
   public
+    Stream: TmnClientSocket;
   end;
 
   { TTestStream }
 
   TTestStream = class(TObject)
   protected
-    procedure InternalExampleSocket(WithServer: Boolean = True; WithClient: Boolean = True; ATestTimeOut: Integer = -1); //Socket threads
+    procedure InternalExampleSocket(WithServer: Boolean = True; WithClient: Boolean = True); //Socket threads
     procedure InternalCompressImage(GZ, WithHex: Boolean); //GZ image
 
     procedure ExampleSocket;
     procedure ExampleSocketOpenStreet;
     procedure ExampleSocketTestTimeout;
+    procedure ExampleSocketTestCancel;
+
     procedure ExampleSmallBuffer; //read write line with small buffer
     procedure ExampleHexLine; //Hex lines
     procedure ExampleHexImage; //Hex image
@@ -77,14 +81,19 @@ const
 
 var
   Application: TTestStream;
+
+  Reciever: TThreadReciever = nil;
+  Sender: TThreadSender = nil;
+
   Address: UTF8String;
   SocketOptionsStr: UTF8String;
   NoDelay: Boolean = False;
+  CancelAfter: Boolean = False;
   KeepAlive: Boolean = False;
   WaitBeforeRead: Boolean = False;
   UseSSL: Boolean = False;
   QuickAck: Boolean = False;
-  TestTimeOut: Integer = -1;
+  TestTimeOut: Longint = -1;
   SocketOptions: TmnsoOptions = []; //soWaitBeforeRead
   ini: TIniFile;
 
@@ -94,14 +103,13 @@ implementation
 
 procedure TThreadReciever.Execute;
 var
-  Stream: TmnServerSocket;
   s: UTF8String;
   Count: Integer;
 begin
   try
     Count := 0;
     Stream := TmnServerSocket.Create('', sPort); //if u pass address, server will listen only on this network
-    Stream.ReadTimeout := WaitForEver;
+    Stream.ReadTimeout := TestTimeOut;
     Stream.CertificateFile := Application.Location + 'certificate.pem';
     Stream.PrivateKeyFile := Application.Location + 'privatekey.pem';
     Stream.Options := SocketOptions;
@@ -121,7 +129,7 @@ begin
       while true do
       begin
         Stream.ReadLineUTF8(s);
-        //WriteLn(s);
+        WriteLn('Server After read Line' + s);
         if not Stream.Connected then
           break;
         if sMsg <> s then
@@ -130,9 +138,9 @@ begin
           Break;
         end;
         if TestTimeOut > 0 then
-          Sleep(5000);
+          Sleep(TestTimeOut * 2);
 
-        Sleep(1000);
+//        Sleep(1000);
 
         Stream.WriteLine(sMsg);
         Inc(Count);
@@ -158,10 +166,10 @@ end;
 
 procedure TThreadSender.Execute;
 var
-  Stream: TmnClientSocket;
   S: UTF8String;
   i: Integer;
   t: int64;
+  b: Boolean;
 const
   ACount: Integer = 100;
 begin
@@ -187,8 +195,10 @@ begin
       begin
         for i := 0 to ACount -1 do
         begin
-          Stream.WriteLineUTF8(sMsg);
-          Stream.ReadLineUTF8(s);
+          if CancelAfter then
+            Reciever.Stream.Disconnect;
+          b := Stream.WriteLineUTF8(sMsg) > 0;
+          b := Stream.ReadLineUTF8(s);
           if sMsg <> s then
           begin
             Log.WriteLn('Error msg: ' + s);
@@ -308,17 +318,14 @@ begin
   end;
 end;
 
-procedure TTestStream.InternalExampleSocket(WithServer: Boolean; WithClient: Boolean; ATestTimeOut: Integer);
-var
-  Reciever: TThreadReciever;
-  Sender: TThreadSender;
+procedure TTestStream.InternalExampleSocket(WithServer: Boolean; WithClient: Boolean);
 begin
-  TestTimeOut := ATestTimeOut;
   if WithServer then
   begin
-    WriteLn('Main: Server started');
+    WriteLn('Main: Server starting');
     Reciever := TThreadReciever.Create(True);
     Reciever.Start;
+    WriteLn('Main: Server started, Sleep for 1s before Client start');
     Sleep(1000);
   end;
 
@@ -328,6 +335,7 @@ begin
     Sender := TThreadSender.Create(True);
     Sender.Start;
   end;
+
   if WithClient then
   begin
     WriteLn('Main: Waiting for client');
@@ -338,6 +346,10 @@ begin
     WriteLn('Main: Waiting for server');
     Reciever.WaitFor;
   end;
+
+  FreeAndNil(Reciever);
+  FreeAndNil(Sender);
+
 end;
 
 function GetAnswer(Q: UTF8String; Default: Boolean = true): Boolean; overload;
@@ -407,9 +419,12 @@ begin
   QuickAck := Pos('q', S) > 0;
   WaitBeforeRead := Pos('w', S) > 0;
   UseSSL := Pos('s', S) > 0;
+  TestTimeOut := 100;
+  CancelAfter := False;
+
   if s <> 'c' then
     ini.WriteString('Options', 'SocketOptions', S);
-  InternalExampleSocket(WithServer, WithClient, 100);
+  InternalExampleSocket(WithServer, WithClient);
 end;
 
 procedure TTestStream.ExampleSocketOpenStreet;
@@ -490,7 +505,20 @@ begin
   KeepAlive := False;
   QuickAck := False;
   UseSSL := False;
-  InternalExampleSocket(true, true, 1000);
+  TestTimeOut := 1000;
+  CancelAfter := False;
+  InternalExampleSocket(true, true);
+end;
+
+procedure TTestStream.ExampleSocketTestCancel;
+begin
+  NoDelay := False;
+  KeepAlive := False;
+  QuickAck := False;
+  UseSSL := False;
+  TestTimeOut := 1000;
+  CancelAfter := True;
+  InternalExampleSocket(true, true);
 end;
 
 procedure TTestStream.ExampleUnGZImage;
@@ -745,6 +773,7 @@ begin
       AddProc('ExampleSocket: Socket threads', ExampleSocket);
       AddProc('ExampleSocket: Socket OpenStreetMap', ExampleSocketOpenStreet);
       AddProc('Example Socket Timout: Socket threads', ExampleSocketTestTimeout);
+      AddProc('Example Socket Test Cancel', ExampleSocketTestCancel);
       AddProc('ExampleSmallBuffer: read write line with small buffer', ExampleSmallBuffer);
       AddProc('ExampleCopyHexImage: Hex image2 images and read one', ExampleCopyHexImage);
       AddProc('ExampleInflateImage: Inflate image', ExampleInflateImage);

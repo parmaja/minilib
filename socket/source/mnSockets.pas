@@ -32,7 +32,7 @@ const
 type
   EmnException = class(Exception);
   EmnSocketException = class(Exception);
-  TmnShutdown = (sdReceive, sdSend);
+  TmnShutdown = (sdReceive, sdSend, sdClose);
   TmnShutdowns = set of TmnShutdown;
   TmnError = (erSuccess, erTimeout, erClosed, erInvalid);
 
@@ -271,7 +271,7 @@ end;
 
 function TmnCustomSocket.GetConnected: Boolean;
 begin
-  Result := Active and ([sdReceive, sdSend] <> FShutdownState)
+  Result := Active and not (sdClose in FShutdownState) and not ([sdReceive, sdSend] = FShutdownState);
 end;
 
 function TmnCustomSocket.Listen: TmnError;
@@ -294,27 +294,35 @@ var
   ReadSize: Integer;
   ret: Boolean;
 begin
-  CheckActive;
-  if SSL.Active then
+  //CheckActive; //no i do not want exeption in loop of buffer
+  if not Active then
   begin
-    ret := SSL.Read(Buffer, Count, ReadSize);
-    if ret then
-    begin
-      Count := ReadSize;
-      Result := erSuccess;
-    end
-    else
-    begin
-      Count := 0;
-      Result := erInvalid
-    end;
+    Result := erClosed;
+    Count := 0;
   end
   else
-    Result := DoReceive(Buffer, Count);
-  if Result > erTimeout then
-    Close
-  else if (Result = erTimeout) and (Count = 0) then
-    Count := -1;
+  begin
+    if SSL.Active then
+    begin
+      ret := SSL.Read(Buffer, Count, ReadSize);
+      if ret then
+      begin
+        Count := ReadSize;
+        Result := erSuccess;
+      end
+      else
+      begin
+        Count := 0;
+        Result := erInvalid
+      end;
+    end
+    else
+      Result := DoReceive(Buffer, Count);
+    if Result > erTimeout then
+      Close
+    else if (Result = erTimeout) and (Count = 0) then
+      Count := -1;
+  end;
 end;
 
 function TmnCustomSocket.Select(Timeout: Integer; Check: TSelectCheck): TmnError;
@@ -337,29 +345,37 @@ var
   WriteSize: Integer;
   ret: Boolean;
 begin
-  CheckActive;
-  if SSL.Active then
+  //CheckActive; //no i do not want exeption in loop of buffer
+  if not Active then
   begin
-    ret := SSL.Write(Buffer, Count, WriteSize);
-    if ret then
-    begin
-      Count := WriteSize;
-      Result := erSuccess;
-      if WriteSize <> Count then
-        raise EmnSocketException.Create('Ops WriteSize <> Count we should care about real size')
-    end
-    else
-    begin
-      Count := 0;
-      Result := erInvalid;
-    end;
+    Result := erClosed;
+    Count := 0;
   end
   else
-    Result := DoSend(Buffer, Count);
-  if Result > erTimeout then
-    Close
-  else if (Result = erTimeout) and (Count = 0) then
-    Count := -1;
+  begin
+    if SSL.Active then
+    begin
+      ret := SSL.Write(Buffer, Count, WriteSize);
+      if ret then
+      begin
+        Count := WriteSize;
+        Result := erSuccess;
+        if WriteSize <> Count then
+          raise EmnSocketException.Create('Ops WriteSize <> Count we should care about real size')
+      end
+      else
+      begin
+        Count := 0;
+        Result := erInvalid;
+      end;
+    end
+    else
+      Result := DoSend(Buffer, Count);
+    if Result > erTimeout then
+      Close
+    else if (Result = erTimeout) and (Count = 0) then
+      Count := -1; //Timeout result -1
+  end;
 end;
 
 function TmnCustomSocket.Shutdown(How: TmnShutdowns): TmnError;
@@ -371,8 +387,7 @@ begin
     Result := DoShutdown(How);
     if Result = erSuccess then
       FShutdownState := FShutdownState + How
-    else
-      if Result > erTimeout then
+    else if Result > erTimeout then
         Close;
   end
   else
@@ -383,11 +398,13 @@ function TmnCustomSocket.Close: TmnError;
 begin
   if Active then
   begin
-    if SSL.Active then
+    if soSSL in Options then
+    begin
       SSL.ShutDown;
+      SSL.Free; //before close socket
+    end;
     Result := DoClose;
-    if soSSL in Options then //TODO maybe should move to Destroy, it it crash sometime after that
-      SSL.Free;
+    FShutdownState := FShutdownState + [sdClose];
   end
   else
     Result := erSuccess;

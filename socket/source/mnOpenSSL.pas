@@ -315,6 +315,9 @@ function TSSL.Read(var Buf; Size: Integer; out ReadSize: Integer): Boolean;
 var
   err: Integer;
 begin
+  if not Active then
+    raise EmnOpenSSLException.Create('SSL object is not Active');
+
   ReadSize := SSL_read(Handle, Buf, Size);
   if ReadSize <= 0  then
   begin
@@ -339,6 +342,8 @@ function TSSL.Write(const Buf; Size: Integer; out WriteSize: Integer): Boolean;
 var
   err: Integer;
 begin
+  if not Active then
+    raise EmnOpenSSLException.Create('SSL object is not Active');
   WriteSize := SSL_write(Handle, Buf, Size);
   if WriteSize <= 0  then
   begin
