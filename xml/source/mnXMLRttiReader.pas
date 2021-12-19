@@ -155,10 +155,13 @@ begin
 end;
 
 procedure TmnXMLRttiReader.ReadText(const Text: string);
+var
+  t: string;
 begin
   inherited;
-  if Trim(Text) <> '' then
-    Stack.Current.ReadValue(Text);
+  t:= Trim(Text);
+  if t <> '' then
+    Stack.Current.ReadValue(t);
 end;
 
 procedure TmnXMLRttiReader.ReadRoot(Instance: TObject);

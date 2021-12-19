@@ -38,10 +38,12 @@ type
   cint = longint;
   cuint = longword;
   culong = qword;
+  size_t = QWord;
 {$else}
   cint = longint;
   cuint = longword;
   culong = cardinal;
+  size_t = DWord;
 {$endif}
   pcint = ^cint;
   pcuint = ^cuint;

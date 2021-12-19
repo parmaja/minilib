@@ -10,8 +10,8 @@ interface
 
 uses
   Classes, SysUtils, IniFiles,
-  mnUtils, mnStreams, mnLibraries,
-  mnLogs, mnStreamUtils, mnSockets, mnClients, mnServers, mnOpenSSL, mnOpenSSLUtils;
+  mnUtils, mnStreams,
+  mnLogs, mnStreamUtils, mnSockets, mnClients, mnServers;
 
 {$ifdef GUI}
 var
@@ -76,7 +76,7 @@ type
 
 const
   sMsg: AnsiString = '0123456789';
-  sPort: UTF8String = '9092';
+  sPort: UTF8String = '9000';
   sHost = '127.0.0.1';
 
 var
@@ -129,7 +129,10 @@ begin
       while true do
       begin
         Stream.ReadLineUTF8(s);
-        WriteLn('Server After read Line' + s);
+        WriteLn('Server After read Line "' + s + '"');
+        if s = '' then
+          WriteLn('Seem server socket canceled :(');
+
         if not Stream.Connected then
           break;
         if sMsg <> s then
@@ -139,8 +142,6 @@ begin
         end;
         if TestTimeOut > 0 then
           Sleep(TestTimeOut * 2);
-
-//        Sleep(1000);
 
         Stream.WriteLine(sMsg);
         Inc(Count);
