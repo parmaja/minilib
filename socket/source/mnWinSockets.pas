@@ -36,7 +36,7 @@ type
     function DoSend(const Buffer; var Count: Longint): TmnError; override;
     //Timeout millisecond
     function DoSelect(Timeout: Integer; Check: TSelectCheck): TmnError; override;
-    function DoShutdown(How: TmnShutdowns): TmnError; override;
+    function DoShutdown(How: TmnSocketStates): TmnError; override;
     function DoListen: TmnError; override;
     function DoClose: TmnError; override;
     function DoPending: Boolean; override;
@@ -143,7 +143,7 @@ begin
     Result := Count > 0;
 end;
 
-function TmnSocket.DoShutdown(How: TmnShutdowns): TmnError;
+function TmnSocket.DoShutdown(How: TmnSocketStates): TmnError;
 var
   c: Integer;
   iHow: Integer;

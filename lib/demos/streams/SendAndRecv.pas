@@ -76,7 +76,7 @@ type
 
 const
   sMsg: AnsiString = '0123456789';
-  sPort: UTF8String = '8082';
+  sPort: UTF8String = '9092';
   sHost = '127.0.0.1';
 
 var

@@ -32,8 +32,8 @@ const
 type
   EmnException = class(Exception);
   EmnSocketException = class(Exception);
-  TmnShutdown = (sdReceive, sdSend, sdClose);
-  TmnShutdowns = set of TmnShutdown;
+  TmnSocketState = (sdReceive, sdSend, sdClose);
+  TmnSocketStates = set of TmnSocketState;
   TmnError = (erSuccess, erTimeout, erClosed, erInvalid);
 
   TSocketHandle = Integer;
@@ -72,7 +72,7 @@ type
   TmnCustomSocket = class abstract(TObject)
   private
     FOptions: TmnsoOptions;
-    FShutdownState: TmnShutdowns;
+    FState: TmnSocketStates;
     FKind: TSocketKind;
     function GetConnected: Boolean;
   protected
@@ -85,13 +85,13 @@ type
     function GetActive: Boolean; virtual; abstract;
     procedure CheckActive; //this will force exception, cuz you should not use socket in api implmentation without active socket, i meant use it in api section only
     function DoSelect(Timeout: Integer; Check: TSelectCheck): TmnError; virtual; abstract;
-    function DoShutdown(How: TmnShutdowns): TmnError; virtual; abstract;
+    function DoShutdown(How: TmnSocketStates): TmnError; virtual; abstract;
     function DoListen: TmnError; virtual; abstract;
     function DoSend(const Buffer; var Count: Longint): TmnError; virtual; abstract;
     function DoReceive(var Buffer; var Count: Longint): TmnError; virtual; abstract;
     function DoPending: Boolean; virtual; abstract;
     function DoClose: TmnError; virtual; abstract;
-    property ShutdownState: TmnShutdowns read FShutdownState;
+    property ShutdownState: TmnSocketStates read FState;
     property Options: TmnsoOptions read FOptions;
     property Kind: TSocketKind read FKind;
   public
@@ -100,7 +100,7 @@ type
     constructor Create(AHandle: Integer; AOptions: TmnsoOptions; AKind: TSocketKind);
     destructor Destroy; override;
     procedure Prepare; virtual; //TODO rename Connect;
-    function Shutdown(How: TmnShutdowns): TmnError;
+    function Shutdown(How: TmnSocketStates): TmnError;
     function Close: TmnError;
     function Receive(var Buffer; var Count: Longint): TmnError;
     function Send(const Buffer; var Count: Longint): TmnError;
@@ -271,7 +271,7 @@ end;
 
 function TmnCustomSocket.GetConnected: Boolean;
 begin
-  Result := Active and not (sdClose in FShutdownState) and not ([sdReceive, sdSend] = FShutdownState);
+  Result := Active and not (sdClose in FState) and not ([sdReceive, sdSend] = FState);
 end;
 
 function TmnCustomSocket.Listen: TmnError;
@@ -378,7 +378,7 @@ begin
   end;
 end;
 
-function TmnCustomSocket.Shutdown(How: TmnShutdowns): TmnError;
+function TmnCustomSocket.Shutdown(How: TmnSocketStates): TmnError;
 begin
   if How <> [] then
   begin
@@ -386,7 +386,7 @@ begin
       SSL.ShutDown;} //nop
     Result := DoShutdown(How);
     if Result = erSuccess then
-      FShutdownState := FShutdownState + How
+      FState := FState + How
     else if Result > erTimeout then
         Close;
   end
@@ -404,7 +404,7 @@ begin
       SSL.Free; //before close socket
     end;
     Result := DoClose;
-    FShutdownState := FShutdownState + [sdClose];
+    FState := FState + [sdClose];
   end
   else
     Result := erSuccess;
@@ -434,7 +434,7 @@ begin
   begin
     if Socket.Send(Buffer, Count) >= erTimeout then //yes in send we take timeout as error, we cant try again
     begin
-      FreeSocket;
+      Disconnect;
       Result := 0;
     end
     else
@@ -442,7 +442,7 @@ begin
   end
   else
   begin
-    FreeSocket;
+    Disconnect;
     Result := 0;
   end
 end;
@@ -489,7 +489,7 @@ begin
     if (werr = cerTimeout) then
     begin
       if soCloseTimeout in Options then
-        FreeSocket;
+        Disconnect;
       Result := 0;
     end
     else if (werr = cerSuccess) then
@@ -497,7 +497,7 @@ begin
       err := Socket.Receive(Buffer, Count);
       if ((err = erTimeout) and (soCloseTimeout in Options)) or (err >= erClosed) then
       begin
-        FreeSocket;
+        Disconnect;
         Result := 0;
       end
       else
@@ -505,7 +505,7 @@ begin
     end
     else
     begin
-      FreeSocket;
+      Disconnect;
       Result := 0;
     end;
   end;
@@ -529,7 +529,7 @@ begin
   if (Socket <> nil) and Socket.Connected then
   begin
     Close; //may be not but in slow matchine disconnect to take as effects as need (POS in 98)
-    Socket.Close; //without it lag when blocking reading 
+    //Socket.Close; //without it lag when blocking reading
   end;
 //  FreeSocket; //Do not free it maybe it is closing from other thread while socket is reading
 end;
@@ -554,7 +554,7 @@ begin
   if FSocket = nil then
   begin
     if not HandleError(aErr) then
-      raise EmnSocketException.CreateFmt('Connect failed [%d]', [aErr]);
+      raise EmnSocketException.CreateFmt('Connect failed [#%d]', [aErr]);
   end
   else
     FSocket.Prepare;

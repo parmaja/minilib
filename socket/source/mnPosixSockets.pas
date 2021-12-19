@@ -35,7 +35,7 @@ type
   protected
     function GetActive: Boolean; override;
     function DoSelect(Timeout: Integer; Check: TSelectCheck): TmnError; override;
-    function DoShutdown(How: TmnShutdowns): TmnError; override;
+    function DoShutdown(How: TmnSocketStates): TmnError; override;
 
     function InternalSend(vBuf: Pointer; vLen: Integer): Integer;
     function DoListen: TmnError; override;
@@ -221,7 +221,7 @@ begin
     Result := Count > 0;
 end;
 
-function TmnSocket.DoShutdown(How: TmnShutdowns): TmnError;
+function TmnSocket.DoShutdown(How: TmnSocketStates): TmnError;
 var
   c: Integer;
   iHow: Integer;
