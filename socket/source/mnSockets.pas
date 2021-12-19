@@ -396,7 +396,7 @@ end;
 
 function TmnCustomSocket.Close: TmnError;
 begin
-  if Active then
+  if Connected then
   begin
     if soSSL in Options then
     begin
@@ -408,6 +408,7 @@ begin
   end
   else
     Result := erSuccess;
+    //or raise exception?
 end;
 
 { TmnStream }
