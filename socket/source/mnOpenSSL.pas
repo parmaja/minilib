@@ -250,23 +250,23 @@ begin
   Active := True;
 end;
 
+procedure TSSL.ShutDown;
+begin
+  if Active and (Handle <> nil) then
+  begin
+    SSL_shutdown(Handle);
+  end;
+  Active := False;
+end;
+
 procedure TSSL.Free;
 begin
   if Handle <> nil then
   begin
     SSL_free(Handle);
     Handle := nil;
-    Active := False;
   end;
-end;
-
-procedure TSSL.ShutDown;
-begin
-  if Active and (Handle <> nil) then
-  begin
-    SSL_shutdown(Handle);
-    Active := False;
-  end;
+  Active := False;
 end;
 
 procedure TSSL.SetSocket(ASocket: Integer);

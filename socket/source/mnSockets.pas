@@ -72,10 +72,10 @@ type
   TmnCustomSocket = class abstract(TObject)
   private
     FOptions: TmnsoOptions;
-    FState: TmnSocketStates;
     FKind: TSocketKind;
     function GetConnected: Boolean;
   protected
+    FStates: TmnSocketStates;
     FHandle: TSocketHandle; //following OpenSSL handle of socket
     FPrepared: Boolean;
 
@@ -91,9 +91,9 @@ type
     function DoReceive(var Buffer; var Count: Longint): TmnError; virtual; abstract;
     function DoPending: Boolean; virtual; abstract;
     function DoClose: TmnError; virtual; abstract;
-    property ShutdownState: TmnSocketStates read FState;
     property Options: TmnsoOptions read FOptions;
     property Kind: TSocketKind read FKind;
+    property States: TmnSocketStates read FStates;
   public
     Context: TContext; //Maybe Reference to Listener CTX or external CTX
 
@@ -161,6 +161,7 @@ type
     constructor Create; overload;
     constructor Create(vSocket: TmnCustomSocket); overload;
     destructor Destroy; override;
+    procedure Prepare; override;
     procedure Connect; override;
     //Disconnect can be called from out of thread like listener
     procedure Disconnect; override;
@@ -240,6 +241,7 @@ end;
 
 destructor TmnCustomSocket.Destroy;
 begin
+  SSL.Free;
   if ContextOwned then
     FreeAndNil(Context);
   if Active then
@@ -271,7 +273,7 @@ end;
 
 function TmnCustomSocket.GetConnected: Boolean;
 begin
-  Result := Active and not (sdClose in FState) and not ([sdReceive, sdSend] = FState);
+  Result := Active and not (sdClose in FStates);
 end;
 
 function TmnCustomSocket.Listen: TmnError;
@@ -386,9 +388,9 @@ begin
       SSL.ShutDown;} //nop
     Result := DoShutdown(How);
     if Result = erSuccess then
-      FState := FState + How
+      FStates := FStates + How
     else if Result > erTimeout then
-        Close;
+      Close;
   end
   else
     Result := erSuccess;
@@ -398,13 +400,13 @@ function TmnCustomSocket.Close: TmnError;
 begin
   if Connected then
   begin
-    if soSSL in Options then
+    if SSL.Active then //Active do not use soSSL
     begin
       SSL.ShutDown;
-      SSL.Free; //before close socket
+//      SSL.Free; //wrong, in waiting handshaking, will crash
     end;
+    FStates := FStates + [sdClose];//before, in fail of read it close it, so not close twice
     Result := DoClose;
-    FState := FState + [sdClose];
   end
   else
     Result := erSuccess;
@@ -421,6 +423,12 @@ begin
   finally
     inherited;
   end;
+end;
+
+procedure TmnSocketStream.Prepare;
+begin
+  Socket.Prepare;
+  inherited Prepare;
 end;
 
 function TmnSocketStream.DoWrite(const Buffer; Count: Longint): Longint;
@@ -451,15 +459,15 @@ end;
 procedure TmnSocketStream.DoCloseWrite;
 begin
   inherited;
-  if Socket <> nil then
-    Socket.Shutdown([sdSend]);
+{  if Socket <> nil then
+    Socket.Shutdown([sdSend]);}
 end;
 
 procedure TmnSocketStream.DoCloseRead;
 begin
   inherited;
-  if Socket <> nil then
-    Socket.Shutdown([sdReceive]);
+{  if Socket <> nil then
+    Socket.Shutdown([sdReceive]);}
 end;
 
 procedure TmnSocketStream.DoHandleError(var Handle: Boolean; AError: Integer);
@@ -530,7 +538,7 @@ begin
   if (Socket <> nil) and Socket.Connected then
   begin
     Close; //may be not but in slow matchine disconnect to take as effects as need (POS in 98)
-    //Socket.Close; //without it lag when blocking reading
+    Socket.Close; //without it lag when blocking reading
   end;
 //  FreeSocket; //Do not free it maybe it is closing from other thread while socket is reading
 end;
@@ -570,7 +578,7 @@ function TmnSocketStream.WaitToRead(vTimeout: Longint): TmnConnectionError;
 var
   err: TmnError;
 begin
-  if soSSL in Socket.Options then //testing
+  if Socket.SSL.Active then //testing
   begin
     if Socket.SSL.Pending then
     begin

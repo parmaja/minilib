@@ -281,6 +281,7 @@ type
     FConnectTimeout: Integer;
   public
     constructor Create;
+    procedure Prepare; virtual;
     procedure Connect; virtual; abstract;
     procedure Disconnect; virtual; abstract;
 
@@ -613,6 +614,10 @@ begin
   FReadTimeout := cReadTimeout;
   FWriteTimeout := cWriteTimeout;
   FConnectTimeout := cConnectTimeout;
+end;
+
+procedure TmnConnectionStream.Prepare;
+begin
 end;
 
 function TmnConnectionStream.WaitToRead: Boolean;

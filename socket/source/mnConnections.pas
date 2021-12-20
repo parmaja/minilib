@@ -141,7 +141,7 @@ procedure TmnConnections.Add(Connection: TmnConnection);
 begin
   Enter;
   try
-      List.Add(Connection);
+    List.Add(Connection);
   finally
     Leave;
   end;
@@ -152,7 +152,7 @@ begin
   Enter;
   try
     //if Connection.FreeOnTerminate then //Zaher: @Zaher and @Belal, idk if wrong :( think more zaher
-      List.Remove(Connection);
+    List.Remove(Connection);
   finally
     Leave;
   end;
@@ -189,10 +189,11 @@ begin
     end;
   finally
     Unprepare;
-    if FreeOnTerminate then
-      if FOwner <> nil then
-        Owner.Remove(Self); //remove from the server list
     Synchronize(Stopped);//Synchronize not queue, to sure all other queue is processed
+
+    if FOwner <> nil then
+      if FreeOnTerminate then
+        Owner.Remove(Self); //remove from the server list
   end;
 end;
 

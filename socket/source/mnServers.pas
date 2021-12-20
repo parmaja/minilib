@@ -68,6 +68,7 @@ type
   protected
     function GetConnected: Boolean; override;
     procedure Disconnect; virtual;
+    procedure Prepare; override;
     procedure TerminatedSet; override;
   public
     constructor Create(vOwner: TmnConnections; vStream: TmnConnectionStream);
@@ -409,6 +410,12 @@ begin
     FStream.Disconnect;
 end;
 
+procedure TmnServerConnection.Prepare;
+begin
+  FStream.Prepare;
+  inherited Prepare;
+end;
+
 procedure TmnServerConnection.TerminatedSet;
 begin
   Disconnect;
@@ -459,6 +466,7 @@ end;
 procedure TmnListener.Add(Connection: TmnConnection);
 begin
   inherited;
+  Log('Add: #' + IntToStr(Connection.ID));
   Changed;
 end;
 
@@ -473,7 +481,7 @@ var
 begin
   if not Terminated then
   begin
-    WallSocket.Bind(FOptions, Timeout, FPort, FAddress, FSocket, aErr);
+    WallSocket.Bind(FOptions + [soReuseAddr], Timeout, FPort, FAddress, FSocket, aErr);
     if Connected then
     begin
       Socket.Prepare;
@@ -487,6 +495,7 @@ end;
 constructor TmnListener.Create;
 begin
   inherited Create;
+  FreeOnTerminate := False;
   FLogMessages := TStringList.Create;
   FAttempts := 0;
   FTimeout := -1;
@@ -579,7 +588,7 @@ begin
         if aSocket <> nil then
         begin
           aSocket.Context := Context;
-          aSocket.Prepare;
+          //aSocket.Prepare;
         end;
       end
       else
@@ -589,7 +598,7 @@ begin
       try
         //Just a stop to finish some procedures outside, or make terminated get new value before continue
       finally
-        //Leave;
+        Leave;
       end;}
 
       //Yield;//todo test:
@@ -685,6 +694,7 @@ end;
 
 procedure TmnListener.Remove(Connection: TmnConnection);
 begin
+  Log('Removed: #' + IntToStr(Connection.ID));
   inherited;
   Changed;
 end;
@@ -699,7 +709,7 @@ begin
     for i := 0 to List.Count - 1 do
     begin
       List[i].FreeOnTerminate := False; //I will kill you
-      List[i].Terminate;
+//      List[i].Terminate;
     end;
   finally
     Leave;
@@ -709,7 +719,9 @@ begin
     while List.Count > 0 do
     begin
       aConnection := List[0];
+      aConnection.Terminate;
       aConnection.WaitFor;
+      Log('Connection Stopped #' + IntToStr(aConnection.ID));
       aConnection.Free;
       List.Delete(0);
     end;
@@ -724,7 +736,7 @@ begin
   try
     if Socket <> nil then
     begin
-//      Socket.Shutdown([sdReceive, sdSend]);//stop the accept from waiting
+      //Socket.Shutdown([sdReceive, sdSend]);//stop the accept from waiting
       Socket.Close; //my needed for lag on windows
       //Sleep(100); fix frees on linux in case using Socket.Close after it
     end;
@@ -808,6 +820,7 @@ begin
     DoBeforeClose;
     FListener.Terminate;
     FListener.WaitFor;
+    Log('Listener Stopped');
 
     //to process all queues
     //in case of service ThreadID<>MainThreadID :)

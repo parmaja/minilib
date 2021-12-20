@@ -199,6 +199,9 @@ var
 begin
   if Active then
   begin
+    if Kind = skListener then
+	    if not sdReceive in State then //good for listener
+    	  DoShutdown([sdReceive, sdSend]);
     err := __close(FHandle);
     if err = 0 then
       Result := erSuccess
@@ -238,7 +241,7 @@ begin
     exit;
   end;
 
-  CheckActive;
+  //CheckActive;
 
   c := Posix.SysSocket.shutdown(FHandle, iHow);
 

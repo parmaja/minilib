@@ -272,7 +272,7 @@ procedure TmodWebModule.Created;
 begin
   inherited;
   FDefaultDocument := TStringList.Create;
-  //UseKeepAlive := true;
+  UseKeepAlive := False;
   Compressing := True;
 end;
 
@@ -428,7 +428,7 @@ begin
           SendRespond('HTTP/1.1 200 OK');
           PostHeader('Content-Type', DocumentToContentType(aDocument));
           if KeepAlive then
-            PostHeader('Content-Length', IntToStr(10));
+            PostHeader('Content-Length', IntToStr(DocSize));
         end;
 
         SendHeader;

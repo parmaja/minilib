@@ -121,6 +121,9 @@ var
 begin
   if Active then
   begin
+    if Kind = skListener then
+      if not (sdReceive in States) then //good for listener
+        DoShutdown([sdReceive, sdSend]);
     err := closesocket(FHandle);
     if err = 0 then
       Result := erSuccess
@@ -160,7 +163,7 @@ begin
     exit;
   end;
 
-  CheckActive;
+  //CheckActive;
   c := fpshutdown(FHandle, iHow);
   if c = SOCKET_ERROR then
     Result := erInvalid
