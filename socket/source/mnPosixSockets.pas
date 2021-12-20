@@ -200,7 +200,7 @@ begin
   if Active then
   begin
     if Kind = skListener then
-	    if not sdReceive in State then //good for listener
+	    if not (sdReceive in States) then //good for listener
     	  DoShutdown([sdReceive, sdSend]);
     err := __close(FHandle);
     if err = 0 then

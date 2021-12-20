@@ -43,7 +43,7 @@ type
   cint = longint;
   cuint = longword;
   culong = cardinal;
-  size_t = DWord;
+  size_t = Cardinal;
 {$endif}
   pcint = ^cint;
   pcuint = ^cuint;
