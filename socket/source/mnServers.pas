@@ -159,6 +159,7 @@ type
     procedure SetAddress(const Value: string);
     procedure SetPort(const Value: string);
     function GetCount: Integer;
+    function GetConnected: Boolean;
   protected
     IsDestroying: Boolean;
     function DoCreateListener: TmnListener; virtual;
@@ -183,9 +184,6 @@ type
     //Server.Log This called from outside of any threads, i mean you should be in the main thread to call it, if not use Listener.Log
     procedure Log(const S: string);
 
-    procedure Open;
-    procedure Close;
-
     procedure Start; //alias for Open
     procedure Stop; //alias for Close
 
@@ -198,6 +196,7 @@ type
 
     property Active: boolean read FActive write SetActive default False;
     property Logging: Boolean read FLogging write FLogging default false;
+    property Connected: Boolean read GetConnected;
 
   end;
 
@@ -449,6 +448,11 @@ procedure TmnServer.DoBeforeClose;
 begin
 end;
 
+function TmnServer.GetConnected: Boolean;
+begin
+  Result := (FListener<>nil) and (FListener.Connected);
+end;
+
 function TmnServer.GetCount: Integer;
 begin
   if Listener <> nil then
@@ -481,7 +485,7 @@ var
 begin
   if not Terminated then
   begin
-    WallSocket.Bind(FOptions + [soReuseAddr], Timeout, FPort, FAddress, FSocket, aErr);
+    WallSocket.Bind(FOptions, Timeout, FPort, FAddress, FSocket, aErr);
     if Connected then
     begin
       Socket.Prepare;
@@ -575,77 +579,86 @@ var
   aSocket: TmnCustomSocket;
   aConnection: TmnServerConnection;
 begin
-  FTries := FAttempts;
-  Connect;
-  if Connected then
-    Changed;
-  while Connected and not Terminated do
-  begin
-    try
-      if (Socket.Select(Timeout, slRead) = erSuccess) and not Terminated then
-      begin
-        aSocket := Accept;
-        if aSocket <> nil then
-        begin
-          aSocket.Context := Context;
-          //aSocket.Prepare;
-        end;
-      end
-      else
-        aSocket := nil;
 
-      {Enter; //todo remove it;
+  try
+    FTries := FAttempts;
+    Connect;
+    if Connected then
+      Changed;
+    while Connected and not Terminated do
+    begin
       try
-        //Just a stop to finish some procedures outside, or make terminated get new value before continue
-      finally
-        Leave;
-      end;}
-
-      //Yield;//todo test:
-
-      if not Terminated then
-      begin
-        if (aSocket = nil) then
+        if (Socket.Select(Timeout, slRead) = erSuccess) and not Terminated then
         begin
-          //only if we need retry mode, attempt to connect new socket, for 3 times as example, that if socket disconnected for wiered reason
-          if (not Connected) and (FAttempts > 0) and (FTries > 0) then
+          aSocket := Accept;
+          if aSocket <> nil then
           begin
-            FTries := FTries - 1;
-            Connect;
-          end; //else we will not continue look at "while" conditions
+            aSocket.Context := Context;
+            //aSocket.Prepare;
+          end;
         end
         else
+          aSocket := nil;
+
+        {Enter; //todo remove it;
+        try
+          //Just a stop to finish some procedures outside, or make terminated get new value before continue
+        finally
+          Leave;
+        end;}
+
+        //Yield;//todo test:
+
+        if not Terminated then
         begin
-          try
-            Enter; //because we add connection to a thread list
+          if (aSocket = nil) then
+          begin
+            //only if we need retry mode, attempt to connect new socket, for 3 times as example, that if socket disconnected for wiered reason
+            if (not Connected) and (FAttempts > 0) and (FTries > 0) then
+            begin
+              FTries := FTries - 1;
+              Connect;
+            end; //else we will not continue look at "while" conditions
+          end
+          else
+          begin
             try
-              aConnection := CreateConnection(aSocket) as TmnServerConnection;
-              aConnection.FRemoteIP := aSocket.GetRemoteAddress;
-              //aConnection.Stream.ReadTimeout ////hmmmm
-              //aConnection.Prepare
-              if FServer <> nil then
-                FServer.DoAccepted(Self, aConnection);
+              Enter; //because we add connection to a thread list
+              try
+                aConnection := CreateConnection(aSocket) as TmnServerConnection;
+                aConnection.FRemoteIP := aSocket.GetRemoteAddress;
+                //aConnection.Stream.ReadTimeout ////hmmmm
+                //aConnection.Prepare
+                if FServer <> nil then
+                  FServer.DoAccepted(Self, aConnection);
+              finally
+                Leave;
+              end;
+              //Log('Starting: ' + aConnection.ClassName);
+              aConnection.Start; //moved here need some test
             finally
-              Leave;
             end;
-            //Log('Starting: ' + aConnection.ClassName);
-            aConnection.Start; //moved here need some test
-          finally
           end;
         end;
+      finally
       end;
+    end;
+    DropConnections;
+    Enter;
+    try
+      Disconnect;
     finally
+      Leave;
+    end;
+    Unprepare;
+    Changed;
+  except
+    on E: Exception  do
+    begin
+      Log(E.Message);
+      raise;
     end;
   end;
-  DropConnections;
-  Enter;
-  try
-    Disconnect;
-  finally
-    Leave;
-  end;
-  Unprepare;
-  Changed;
 end;
 
 procedure TmnListener.Unprepare;
@@ -736,11 +749,19 @@ begin
   try
     if Socket <> nil then
     begin
-      //Socket.Shutdown([sdReceive, sdSend]);//stop the accept from waiting
-      Socket.Close; //my needed for lag on windows
-      //Sleep(100); fix frees on linux in case using Socket.Close after it
+      Socket.Shutdown([sdReceive, sdSend]);//stop the accept from waiting
+
+      //in linux close will cause lag on select
+      //Shutdown worked in windows
+      //need check on mac and ios
+
+      //Socket.Close();
+      Sleep(1); //for breathing signals in system os
+
     end;
+    Log('before finally: TmnListener.TerminatedSet');
   finally
+    Log('finally: TmnListener.TerminatedSet');
     Leave;
   end;
 end;
@@ -773,7 +794,7 @@ begin
   DoLog(S);
 end;
 
-procedure TmnServer.Open;
+procedure TmnServer.Start;
 begin
   if (FListener = nil) then // if its already active, dont start again
   begin
@@ -794,8 +815,8 @@ begin
         FListener.Prepare;
         //FListener.Timeout := 500;
         DoStart;
+        Log('Server starting at port: ' + Port);
         FListener.Start;
-        Log('Server started at port: ' + Port);
         FActive := True;
       except
         FreeAndNil(FListener);
@@ -813,7 +834,7 @@ begin
     FServer.DoChanged(Self);
 end;
 
-procedure TmnServer.Close;
+procedure TmnServer.Stop;
 begin
   if (FListener <> nil) then
   begin
@@ -832,16 +853,6 @@ begin
   end;
   Log('Server stopped');
   DoStop;
-end;
-
-procedure TmnServer.Start;
-begin
-  Open;
-end;
-
-procedure TmnServer.Stop;
-begin
-  Close;
 end;
 
 function TmnServer.DoCreateListener: TmnListener;

@@ -16,7 +16,7 @@ unit mnConnections;
 interface
 
 uses
-  Classes, SysUtils, Types, SyncObjs,
+  Classes, SysUtils, Types, SyncObjs, mnLogs,
   mnStreams, mnSockets;
 
 type

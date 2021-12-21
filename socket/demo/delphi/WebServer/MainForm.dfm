@@ -46,7 +46,6 @@ object Main: TMain
     ReadOnly = True
     ScrollBars = ssVertical
     TabOrder = 1
-    ExplicitTop = 114
   end
   object StartBtn: TButton
     Left = 368
@@ -58,7 +57,6 @@ object Main: TMain
     Default = True
     TabOrder = 0
     OnClick = StartBtnClick
-    ExplicitLeft = 360
   end
   object RootEdit: TEdit
     Left = 46
@@ -70,7 +68,6 @@ object Main: TMain
     ParentBiDiMode = False
     TabOrder = 2
     Text = 'c:\offline\'
-    ExplicitWidth = 309
   end
   object StopBtn: TButton
     Left = 368
@@ -82,7 +79,6 @@ object Main: TMain
     Enabled = False
     TabOrder = 5
     OnClick = StopBtnClick
-    ExplicitLeft = 360
   end
   object PortEdit: TEdit
     Left = 46
@@ -112,8 +108,6 @@ object Main: TMain
     BevelOuter = bvNone
     BorderWidth = 3
     TabOrder = 6
-    ExplicitTop = 80
-    ExplicitWidth = 426
     object LastIDLabel: TLabel
       AlignWithMargins = True
       Left = 233
@@ -258,7 +252,6 @@ object Main: TMain
     Default = True
     TabOrder = 7
     OnClick = Button1Click
-    ExplicitLeft = 360
   end
   object UseSSLChk: TCheckBox
     Left = 108

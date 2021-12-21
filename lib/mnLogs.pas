@@ -218,7 +218,9 @@ end;
 procedure TConsoleLog.LogWrite(S: string);
 begin
   if IsConsole then
+  begin
     System.Write(S);
+  end;
 end;
 
 { TDebugOutputLog }
