@@ -3,6 +3,7 @@
   <Package Version="5">
     <PathDelim Value="\"/>
     <Name Value="MiniConnections"/>
+    <Author Value="Zaher Dirkey, Belal Hamad"/>
     <CompilerOptions>
       <Version Value="11"/>
       <PathDelim Value="\"/>
@@ -33,7 +34,8 @@
       </Other>
     </CompilerOptions>
     <Description Value="Mini Connection, DB and Streams"/>
-    <Version Major="1" Release="1"/>
+    <License Value="MIT"/>
+    <Version Major="1" Release="3"/>
     <Files>
       <Item>
         <Filename Value="MiniConnections.pas"/>

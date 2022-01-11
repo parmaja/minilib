@@ -27,8 +27,8 @@
       </Other>
     </CompilerOptions>
     <Description Value="MiniLib XML reader/writer, rtti profiler"/>
-    <License Value="ModifiedLGPL"/>
-    <Version Major="1" Release="1"/>
+    <License Value="MIT"/>
+    <Version Major="1" Release="3"/>
     <Files Count="11">
       <Item1>
         <Filename Value="mnXML.pas"/>

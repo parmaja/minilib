@@ -156,6 +156,7 @@ type
     }
   public
     constructor Create;
+
     procedure Assign(Source: TPersistent); override;
     procedure Clear; virtual;//make value null //should be abstract
     procedure Empty; virtual;//make value empty

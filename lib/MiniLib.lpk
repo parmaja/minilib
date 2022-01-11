@@ -2,7 +2,7 @@
 <CONFIG>
   <Package Version="5">
     <Name Value="MiniLib"/>
-    <Author Value="Zaher Dirkey"/>
+    <Author Value="Zaher Dirkey, Belal Hamad"/>
     <CompilerOptions>
       <Version Value="11"/>
       <SearchPaths>
@@ -31,9 +31,9 @@
         </CompilerMessages>
       </Other>
     </CompilerOptions>
-    <Description Value="MiniLib common "/>
+    <Description Value="MiniLib"/>
     <License Value="MIT"/>
-    <Version Major="1" Release="1"/>
+    <Version Major="1" Release="2"/>
     <Files>
       <Item>
         <Filename Value="HejriDates.pas"/>
