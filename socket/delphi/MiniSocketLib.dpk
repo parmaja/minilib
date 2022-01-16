@@ -41,6 +41,7 @@ contains
   mnModules in '..\source\mnModules.pas',
   mnHttpClient in '..\source\mnHttpClient.pas',
   mnIRCClients in '..\source\mnIRCClients.pas',
+  mnZKTClients in '..\source\mnZKTClients.pas',
   mnWinSockets in '..\source\mnWinSockets.pas',
   mnClients in '..\source\mnClients.pas';
 

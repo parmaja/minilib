@@ -651,8 +651,9 @@ end;
 
 function TZKClient.CreateSocket: TZKSocketStream;
 begin
-  Result := TZKSocketStream.Create(Host, Port, [soSetReadTimeout, soConnectTimeout, soSafeReadTimeout]);
-  Result.Timeout := 5000;
+  Result := TZKSocketStream.Create(Host, Port, []);
+  Result.ReadTimeout := 5000;
+  Result.ConnectTimeout := 5000;
 end;
 
 constructor TZKClient.Create(vKey: LongWord; vHost: AnsiString; vPort: AnsiString);
