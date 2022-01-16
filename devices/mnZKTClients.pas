@@ -1,4 +1,4 @@
-unit zktClients;
+unit mnZKTClients;
 {**
  *  This file is part of the "Mini Library"
  *
@@ -996,5 +996,4 @@ CMD_USERTEMP_RRQ
 
 
 }
-
 
