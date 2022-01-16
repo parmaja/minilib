@@ -52,6 +52,6 @@ Use "master" branch for last update of code.
 
 ### Developers ###
 
-Zaher Dirkey <zaherdirkey at gmail dot com>
+Zaher Dirkey zaherdirkey at gmail dot com
 
-Belal hamed <belalhamed at gmail dot com>
+Belal hamed belalhamed at gmail dot com
