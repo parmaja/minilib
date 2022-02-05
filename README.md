@@ -40,7 +40,7 @@ Optional packages (rarly tested)
 
     MiniComm.lpk
 
-Abandonned pachages
+Abandonned packages
 
     MiniTranslator.lpk
 
