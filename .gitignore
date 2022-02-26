@@ -12,3 +12,5 @@ ref
 /lib/doc
 /reports/source/delphi
 /pos/delphi/demo
+Win32
+Linux64

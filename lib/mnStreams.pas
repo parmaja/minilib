@@ -642,7 +642,7 @@ end;
 
 function TmnCustomStream.WriteString(const Value: String): TFileSize;
 begin
-  Result := Write(Pointer(Value)^, ByteLength(Value));
+  Result := Write(Pointer(Value)^, mnStreams.ByteLength(Value));
 end;
 
 function TmnCustomStream.GetConnected: Boolean;
@@ -912,11 +912,11 @@ var
 begin
   Result := 0;
   if s <> '' then
-    Result := Write(Pointer(S)^, ByteLength(S));
+    Result := Write(Pointer(S)^, mnStreams.ByteLength(S));
   if EndOfLine <> '' then
   begin
     EOL := unicodestring(EndOfLine);
-    Result := Result + Write(Pointer(EOL)^, ByteLength(EOL));
+    Result := Result + Write(Pointer(EOL)^, mnStreams.ByteLength(EOL));
   end;
 end;
 
@@ -934,11 +934,11 @@ var
 begin
   Result := 0;
   if s <> '' then
-    Result := Write(PByte(S)^, ByteLength(S));
+    Result := Write(PByte(S)^, mnStreams.ByteLength(S));
   if EndOfLine <> '' then
   begin
     EOL := EndOfLine;
-    Result := Result + Write(PByte(EOL)^, ByteLength(EOL));
+    Result := Result + Write(PByte(EOL)^, mnStreams.ByteLength(EOL));
   end;
 end;
 
@@ -999,7 +999,7 @@ var
   EOL: unicodestring;
 begin
   EOL := unicodestring(EndOfLine);
-  Result := ReadBufferUntil(@eol[1], ByteLength(eol), ExcludeEOL, res, len, m);
+  Result := ReadBufferUntil(@eol[1], mnStreams.ByteLength(eol), ExcludeEOL, res, len, m);
   {$ifdef FPC}
   CopyUnicodeString(S, PUnicodeChar(res), len);
   {$else}
@@ -1088,7 +1088,7 @@ var
   EOL: utf8string;
 begin
   EOL := utf8string(EndOfLine);
-  Result := ReadBufferUntil(@eol[1], ByteLength(eol), ExcludeEOL, res, len, m);
+  Result := ReadBufferUntil(@eol[1], mnStreams.ByteLength(eol), ExcludeEOL, res, len, m);
   CopyUTF8String(S, res, len);
   FreeMem(res);
 end;
@@ -1096,7 +1096,7 @@ end;
 function TmnBufferStream.WriteLine: TFileSize;
 begin
   if EndOfLine <> '' then
-    Result := Write(Pointer(EndOfLine)^, ByteLength(EndOfLine))
+    Result := Write(Pointer(EndOfLine)^, mnStreams.ByteLength(EndOfLine))
   else
     Result := 0;
 end;
