@@ -470,7 +470,7 @@ end;
 procedure TmnListener.Add(Connection: TmnConnection);
 begin
   inherited;
-  Log('Add: #' + IntToStr(Connection.ID));
+  //Log('Add: #' + IntToStr(Connection.ID));
   Changed;
 end;
 
@@ -707,7 +707,7 @@ end;
 
 procedure TmnListener.Remove(Connection: TmnConnection);
 begin
-  Log('Removed: #' + IntToStr(Connection.ID));
+  //Log('Removed: #' + IntToStr(Connection.ID));
   inherited;
   Changed;
 end;

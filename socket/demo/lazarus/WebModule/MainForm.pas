@@ -131,14 +131,19 @@ end;
 procedure TMain.ModuleServerBeforeOpen(Sender: TObject);
 var
   aRoot:string;
+  aWebModule: TmodWebModule;
 begin
   StartBtn.Enabled := False;
   StopBtn.Enabled := True;
   aRoot := RootEdit.Text;
   if (LeftStr(aRoot, 2)='.\') or (LeftStr(aRoot, 2)='./') then
     aRoot := ExtractFilePath(Application.ExeName) + Copy(aRoot, 3, MaxInt);
-  Server.WebModule.DocumentRoot := aRoot;
-  Server.WebModule.Name := ModuleNameEdit.Text;
+  aWebModule := Server.Modules.Find('web') as TmodWebModule;
+  if aWebModule <> nil then
+  begin
+    aWebModule.DocumentRoot := aRoot;
+    aWebModule.AliasName := ModuleNameEdit.Text;
+  end;
   Server.Port := PortEdit.Text;
   //Server.Address := '127.0.0.1';
   Server.UseSSL := UseSSLChk.Checked;

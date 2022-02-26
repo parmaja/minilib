@@ -56,8 +56,9 @@ type
 
   TmnHeader = class(TmnParams)
   protected
-    constructor Create;
     function CreateField: TmnField; override;
+  public
+    constructor Create;
   end;
 
   TmodRequestInfo = record
@@ -219,6 +220,7 @@ type
 
   TmodModule = class(TmnNamedObject)
   private
+    FAliasName: string;
     FCommands: TmodCommandClasses;
     FKeepAliveTimeOut: Integer;
     FModules: TmodModules;
@@ -226,6 +228,7 @@ type
     FProtcol: string;
     FUseKeepAlive: Boolean;
     FCompressing: Boolean;
+    procedure SetAliasName(AValue: string);
   protected
     FFallbackCommand: TmodCommandClass;
     //Name here will corrected with registered item name for example Get -> GET
@@ -248,7 +251,7 @@ type
     procedure Reload; virtual;
     procedure Init; virtual;
   public
-    constructor Create(AName: string; AProtcol: string; AModules: TmodModules); virtual;
+    constructor Create(AName: string; AAliasName, AProtcol: string; AModules: TmodModules); virtual;
     destructor Destroy; override;
     function Execute(var ARequest: TmodRequest; ARequestStream: TmnBufferStream = nil; ARespondStream: TmnBufferStream = nil): TmodExecuteResults;
     procedure ExecuteCommand(CommandName: string; ARequestStream: TmnBufferStream = nil; ARespondStream: TmnBufferStream = nil; RequestString: TArray<String> = nil);
@@ -262,7 +265,10 @@ type
     property KeepAliveTimeOut: Integer read FKeepAliveTimeOut write FKeepAliveTimeOut;
     property UseKeepAlive: Boolean read FUseKeepAlive write FUseKeepAlive default False;
     property Compressing: Boolean read FCompressing write FCompressing;
+    property AliasName: string read FAliasName write SetAliasName;
   end;
+
+  TmodModuleServer = class;
 
   { TmodModules }
 
@@ -274,6 +280,7 @@ type
     FDefaultModule: TmodModule;
     FDefaultProtocol: string;
     FInit: Boolean;
+    FServer: TmodModuleServer;
     procedure SetEndOfLine(AValue: string);
   protected
     function GetActive: Boolean; virtual;
@@ -281,12 +288,15 @@ type
     procedure Start;
     procedure Stop;
     procedure Init;
+    property Server: TmodModuleServer read FServer;
   public
+    constructor Create(AServer: TmodModuleServer);
     procedure ParseHead(ARequest: TmodRequest; const RequestLine: string); virtual;
     function Match(ARequest: TmodRequest): TmodModule; virtual;
     property DefaultProtocol: string read FDefaultProtocol write FDefaultProtocol;
 
-    function Add(const Name: string; AModule:TmodModule): Integer; overload;
+    function Add(const Name, AliasName: string; AModule:TmodModule): Integer; overload;
+    procedure Log(S: string); virtual;
 
     property Active: Boolean read GetActive;
     property EndOfLine: string read FEndOfLine write SetEndOfLine; //TODO move to module
@@ -295,8 +305,6 @@ type
 
 //--- Server ---
 
-  TmodModuleServer = class;
-
   { TmodModuleConnection }
 
   TmodModuleConnection = class(TmnServerConnection)
@@ -304,7 +312,6 @@ type
   protected
     procedure Process; override;
     procedure Prepare; override;
-
   public
     destructor Destroy; override;
   published
@@ -490,7 +497,7 @@ end;
 
 function TmodModuleServer.CreateModules: TmodModules;
 begin
-  Result := TmodModules.Create
+  Result := TmodModules.Create(Self)
 end;
 
 destructor TmodModuleServer.Destroy;
@@ -584,12 +591,10 @@ end;
 procedure TmodModuleServer.DoBeforeOpen;
 begin
   inherited;
-
 end;
 
 procedure TmodModuleServer.DoAfterClose;
 begin
-
   inherited;
 end;
 
@@ -821,10 +826,11 @@ begin
   Result := CreateCommand(ARequest.Command, ARequest, ARequestStream, ARespondStream);
 end;
 
-constructor TmodModule.Create(AName: string; AProtcol: string; AModules: TmodModules);
+constructor TmodModule.Create(AName: string; AAliasName, AProtcol: string; AModules: TmodModules);
 begin
   inherited Create;
   Name := AName;
+  FAliasName := AAliasName;
   FModules := AModules;
   FModules.Add(Self);
   FParams := TStringList.Create;
@@ -891,6 +897,13 @@ begin
   Execute(ARequest, ARequestStream, ARespondStream);
 end;
 
+procedure TmodModule.SetAliasName(AValue: string);
+begin
+  if FAliasName =AValue then
+    Exit;
+  FAliasName := AValue;
+end;
+
 function TmodModule.GetActive: Boolean;
 begin
   Result := Modules.Active; //todo
@@ -914,9 +927,10 @@ end;
 
 { TmodModules }
 
-function TmodModules.Add(const Name: string; AModule:TmodModule): Integer;
+function TmodModules.Add(const Name, AliasName: string; AModule: TmodModule): Integer;
 begin
   AModule.Name := Name;
+  AModule.AliasName := AliasName;
   Result := inherited Add(AModule);
 end;
 
@@ -962,6 +976,17 @@ begin
     for aModule in Self do
       aModule.Init;
   end;
+end;
+
+procedure TmodModules.Log(S: string);
+begin
+  Server.Listener.Log(S);
+end;
+
+constructor TmodModules.Create(AServer: TmodModuleServer);
+begin
+  inherited Create;
+  FServer := AServer;
 end;
 
 procedure TmodModules.Created;

@@ -302,14 +302,13 @@ end;
 function TmodWebModule.Match(const ARequest: TmodRequest): Boolean;
 begin
   //ParseRequest(ARequest);
-  Result := SameText(Name, ARequest.Module) and SameText(SubStr(ARequest.Protcol, '/', 0),  'http');
+  Result := SameText(AliasName, ARequest.Module) and SameText(SubStr(ARequest.Protcol, '/', 0),  'http');
 end;
 
 procedure TmodWebModule.Log(S: string);
 begin
   inherited;
-
-  //Server.Listener.Log(S);
+  Modules.Log(S);
 end;
 
 { TmodURICommand }
@@ -522,13 +521,13 @@ end;
 constructor TmodWebServer.Create;
 begin
   inherited;
-  Modules.DefaultModule := TmodWebModule.Create('web', 'http/1.1', Modules);
+  Modules.DefaultModule := TmodWebModule.Create('web', 'doc', 'http/1.1', Modules);
   Port := '80';
 end;
 
 function TmodCustomWebServer.CreateModules: TmodModules;
 begin
-  Result := TmodWebModules.Create;
+  Result := TmodWebModules.Create(Self);
 end;
 
 { TmodHttpCommand }
