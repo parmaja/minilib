@@ -96,13 +96,12 @@ type
 
   TmodWebModule = class(TmodModule)
   private
-    FServer: TmodWebServer;
+    //FServer: TmodWebServer;
     procedure SetDefaultDocument(AValue: TStringList);
     procedure SetDocumentRoot(AValue: string);
   protected
     FDocumentRoot: string;
     FDefaultDocument: TStringList;
-    function GetActive: Boolean; override;
     procedure Created; override;
     procedure DoCreateCommands; override;
 
@@ -112,7 +111,6 @@ type
     procedure Log(S: string); override;
   public
     destructor Destroy; override;
-    property Server: TmodWebServer read FServer;
     property DocumentRoot: string read FDocumentRoot write SetDocumentRoot;
     property DefaultDocument: TStringList read FDefaultDocument write SetDefaultDocument;
   end;
@@ -134,12 +132,9 @@ type
   end;
 
   TmodWebServer = class(TmodCustomWebServer)
-  private
-    FWebModule: TmodWebModule;
   protected
   public
     constructor Create; override;
-    property WebModule: TmodWebModule read FWebModule;
   end;
 
   {**
@@ -263,17 +258,18 @@ begin
   FDefaultDocument.Assign(AValue);
 end;
 
-function TmodWebModule.GetActive: Boolean;
-begin
-  Result := Server.Active;
-end;
-
 procedure TmodWebModule.Created;
 begin
   inherited;
   FDefaultDocument := TStringList.Create;
   UseKeepAlive := False;
   Compressing := True;
+
+  FDocumentRoot := '';
+  FDefaultDocument.Add('index.html');
+  FDefaultDocument.Add('index.htm');
+  FDefaultDocument.Add('default.html');
+  FDefaultDocument.Add('default.htm');
 end;
 
 procedure TmodWebModule.DoCreateCommands;
@@ -312,7 +308,8 @@ end;
 procedure TmodWebModule.Log(S: string);
 begin
   inherited;
-  Server.Listener.Log(S);
+
+  //Server.Listener.Log(S);
 end;
 
 { TmodURICommand }
@@ -451,7 +448,7 @@ procedure TmodServerInfoCommand.RespondResult(var Result: TmodExecuteResults);
 begin
   inherited;
   SendRespond('OK');
-  RespondStream.WriteLine('Server is running on port: ' + Module.Server.Port);
+  //RespondStream.WriteLine('Server is running on port: ' + Module.Server.Port);
   RespondStream.WriteLine('the server is: "' + ParamStr(0) + '"');
 end;
 
@@ -525,18 +522,8 @@ end;
 constructor TmodWebServer.Create;
 begin
   inherited;
-  FWebModule := TmodWebModule.Create('web', 'http/1.1', Modules);
-  FWebModule.FServer := Self;
-  Modules.DefaultModule := FWebModule;
+  Modules.DefaultModule := TmodWebModule.Create('web', 'http/1.1', Modules);
   Port := '80';
-  with FWebModule do
-  begin
-    FDocumentRoot := '';
-    FDefaultDocument.Add('index.html');
-    FDefaultDocument.Add('index.htm');
-    FDefaultDocument.Add('default.html');
-    FDefaultDocument.Add('default.htm');
-  end;
 end;
 
 function TmodCustomWebServer.CreateModules: TmodModules;

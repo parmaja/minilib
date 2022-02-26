@@ -243,6 +243,10 @@ type
     function RequestCommand(var ARequest: TmodRequest; ARequestStream, ARespondStream: TmnBufferStream): TmodCommand; virtual;
     function Match(const ARequest: TmodRequest): Boolean; virtual;
     procedure Log(S: string); virtual;
+    procedure Start; virtual;
+    procedure Stop; virtual;
+    procedure Reload; virtual;
+    procedure Init; virtual;
   public
     constructor Create(AName: string; AProtcol: string; AModules: TmodModules); virtual;
     destructor Destroy; override;
@@ -269,11 +273,14 @@ type
     FEndOfLine: string;
     FDefaultModule: TmodModule;
     FDefaultProtocol: string;
-    procedure SetActive(AValue: Boolean);
+    FInit: Boolean;
     procedure SetEndOfLine(AValue: string);
   protected
     function GetActive: Boolean; virtual;
     procedure Created; override;
+    procedure Start;
+    procedure Stop;
+    procedure Init;
   public
     procedure ParseHead(ARequest: TmodRequest; const RequestLine: string); virtual;
     function Match(ARequest: TmodRequest): TmodModule; virtual;
@@ -281,7 +288,7 @@ type
 
     function Add(const Name: string; AModule:TmodModule): Integer; overload;
 
-    property Active: Boolean read GetActive write SetActive;
+    property Active: Boolean read GetActive;
     property EndOfLine: string read FEndOfLine write SetEndOfLine; //TODO move to module
     property DefaultModule: TmodModule read FDefaultModule write FDefaultModule;
   end;
@@ -294,9 +301,10 @@ type
 
   TmodModuleConnection = class(TmnServerConnection)
   private
-  public
   protected
     procedure Process; override;
+    procedure Prepare; override;
+
   public
     destructor Destroy; override;
   published
@@ -325,6 +333,8 @@ type
     procedure DoBeforeOpen; override;
     procedure DoAfterClose; override;
     function CreateModules: TmodModules; virtual;
+    procedure DoStart; override;
+    procedure DoStop; override;
   public
     constructor Create; virtual;
     destructor Destroy; override;
@@ -496,6 +506,12 @@ end;
 
 { TmodModuleConnection }
 
+procedure TmodModuleConnection.Prepare;
+begin
+  inherited;
+  (Listener.Server as TmodModuleServer).Modules.Init;
+end;
+
 procedure TmodModuleConnection.Process;
 var
   aRequestLine: string;
@@ -546,6 +562,19 @@ begin
   Result := TmodModuleListener.Create;
 end;
 
+procedure TmodModuleServer.DoStart;
+begin
+  inherited;
+  Modules.Start;
+end;
+
+procedure TmodModuleServer.DoStop;
+begin
+  if Modules<>nil then
+    Modules.Stop;
+  inherited;
+end;
+
 procedure TmodModuleServer.StreamCreated(AStream: TmnBufferStream);
 begin
   AStream.EndOfLine := Modules.EndOfLine;
@@ -555,13 +584,12 @@ end;
 procedure TmodModuleServer.DoBeforeOpen;
 begin
   inherited;
-  Modules.Active := True;
+
 end;
 
 procedure TmodModuleServer.DoAfterClose;
 begin
-  if Modules <> nil then
-    Modules.Active := False;
+
   inherited;
 end;
 
@@ -728,6 +756,11 @@ begin
     Result := FFallbackCommand;
 end;
 
+procedure TmodModule.Init;
+begin
+
+end;
+
 procedure TmodModule.ParseHeader(RequestHeader: TmnParams; Stream: TmnBufferStream);
 var
   line: string;
@@ -770,6 +803,16 @@ begin
     ACommand.RespondStream.WriteLineUTF8(S);
   end;
   ACommand.RespondStream.WriteLineUTF8(UTF8String(''));
+end;
+
+procedure TmodModule.Start;
+begin
+
+end;
+
+procedure TmodModule.Stop;
+begin
+
 end;
 
 function TmodModule.RequestCommand(var ARequest: TmodRequest; ARequestStream, ARespondStream: TmnBufferStream): TmodCommand;
@@ -864,6 +907,11 @@ begin
     FFallbackCommand := CommandClass;
 end;
 
+procedure TmodModule.Reload;
+begin
+
+end;
+
 { TmodModules }
 
 function TmodModules.Add(const Name: string; AModule:TmodModule): Integer;
@@ -881,14 +929,39 @@ begin
   FEndOfLine :=AValue;
 end;
 
-procedure TmodModules.SetActive(AValue: Boolean);
+procedure TmodModules.Start;
+var
+  aModule: TmodModule;
 begin
-  FActive := true;
+  for aModule in Self do
+    aModule.Start;
+  FActive := True;
+end;
+
+procedure TmodModules.Stop;
+var
+  aModule: TmodModule;
+begin
+  FActive := False;
+  for aModule in Self do
+    aModule.Stop;
 end;
 
 function TmodModules.GetActive: Boolean;
 begin
-  Result := True;
+  Result := FActive;
+end;
+
+procedure TmodModules.Init;
+var
+  aModule: TmodModule;
+begin
+  if not FInit then
+  begin
+    FInit := True;
+    for aModule in Self do
+      aModule.Init;
+  end;
 end;
 
 procedure TmodModules.Created;
