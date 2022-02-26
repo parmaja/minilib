@@ -25,6 +25,7 @@ uses
     SysUtils;
 
 type
+  //* ported from freepascl ctypes, to be compatible with Delphi
   cchar = shortint;
   pcchar = ^cchar;
   cuchar = byte;

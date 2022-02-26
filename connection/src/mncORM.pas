@@ -222,13 +222,13 @@ type
         rfoNothing,
         rfoSetNull,
         rfoSetDefault, //TODO
-        rfoReject,
+        rfoReject, //Refuse Restrict
         rfoCascade //Update it if changed, delete it if modified
       );
 
       TormReferenceOptions = (
-        rfDetail, //Delete when delete master, Cascade on modify
-        rfElement //Reject when delete master, Cascade on modify
+        rfDetail, //Delete when master deleted, Cascade on modify
+        rfElement //Reject when master deleted, Cascade on modify
       );
 
       TReferenceInfoStr = record

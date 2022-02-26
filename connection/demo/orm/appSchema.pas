@@ -79,6 +79,7 @@ begin
 
   with Result do
     with CreateDatabase('Database') do
+    begin
       with CreateSchema(This, 'Schema') do
       begin
         with CreateTable(This, 'Employees') do
@@ -99,6 +100,7 @@ begin
           end;
         end;
       end;
+   end;
 end;
 
 end.

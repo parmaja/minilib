@@ -114,6 +114,7 @@ function PeriodToString(vPeriod: Double; WithSeconds: Boolean): string;
 //Used by GetTickCount, return minuts,secons,miliseconds
 function TicksToString(vTicks: Int64): string;
 function DequoteStr(Str: string; QuoteChar: string = #0): string;
+function ExcludeTrailing(Str: string; TrailingChar: string = #0): string;
 
 function RepeatString(const Str: string; Count: Integer): string;
 
@@ -296,6 +297,14 @@ begin
     else
       Result := Str;
   end;
+end;
+
+function ExcludeTrailing(Str: string; TrailingChar: string = #0): string;
+begin
+  if (TrailingChar > #0) and (RightStr(Str, 1) = TrailingChar) then
+    Result := MidStr(Str, 1, Length(Str) - 1)
+  else
+    Result := Str;
 end;
 
 function AlignStr(const S: string; Count: Integer; Options: TAlignStrOptions; vChar: Char): string;
