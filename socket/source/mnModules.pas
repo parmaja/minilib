@@ -31,7 +31,7 @@
 interface
 
 uses
-  SysUtils, Classes, StrUtils,
+  SysUtils, Classes, StrUtils, Types,
   mnClasses, mnStreams, mnFields, mnConfigs,
   mnSockets, mnConnections, mnServers;
 
@@ -225,7 +225,7 @@ type
     FKeepAliveTimeOut: Integer;
     FModules: TmodModules;
     FParams: TStringList;
-    FProtcol: string;
+    FProtcols: TArray<string>;
     FUseKeepAlive: Boolean;
     FCompressing: Boolean;
     procedure SetAliasName(AValue: string);
@@ -251,7 +251,7 @@ type
     procedure Reload; virtual;
     procedure Init; virtual;
   public
-    constructor Create(AName: string; AAliasName, AProtcol: string; AModules: TmodModules); virtual;
+    constructor Create(const AName, AAliasName: string; AProtcols: TArray<string>; AModules: TmodModules); virtual;
     destructor Destroy; override;
     function Execute(var ARequest: TmodRequest; ARequestStream: TmnBufferStream = nil; ARespondStream: TmnBufferStream = nil): TmodExecuteResults;
     procedure ExecuteCommand(CommandName: string; ARequestStream: TmnBufferStream = nil; ARespondStream: TmnBufferStream = nil; RequestString: TArray<String> = nil);
@@ -261,7 +261,7 @@ type
     property Active: Boolean read GetActive;
     property Params: TStringList read FParams;
     property Modules: TmodModules read FModules;
-    property Protcol: string read FProtcol;
+    property Protcols: TArray<string> read FProtcols;
     property KeepAliveTimeOut: Integer read FKeepAliveTimeOut write FKeepAliveTimeOut;
     property UseKeepAlive: Boolean read FUseKeepAlive write FUseKeepAlive default False;
     property Compressing: Boolean read FCompressing write FCompressing;
@@ -826,11 +826,12 @@ begin
   Result := CreateCommand(ARequest.Command, ARequest, ARequestStream, ARespondStream);
 end;
 
-constructor TmodModule.Create(AName: string; AAliasName, AProtcol: string; AModules: TmodModules);
+constructor TmodModule.Create(const AName, AAliasName: string; AProtcols: TArray<string>; AModules: TmodModules);
 begin
   inherited Create;
   Name := AName;
   FAliasName := AAliasName;
+  FProtcols := AProtcols;
   FModules := AModules;
   FModules.Add(Self);
   FParams := TStringList.Create;
@@ -851,7 +852,7 @@ end;
 
 function TmodModule.Match(const ARequest: TmodRequest): Boolean;
 begin
-  Result := SameText(Protcol, ARequest.Protcol);
+  Result := SameText(AliasName, ARequest.Module) and ((Protcols = nil) or StrInArray(ARequest.Protcol, Protcols));
 end;
 
 procedure TmodModule.Log(S: string);

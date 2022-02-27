@@ -105,7 +105,7 @@ const
 type
   TaddrIP4 = packed record
     case boolean of
-       true: (s_addr  : int32);
+       true: (s_addr  : in_addr_t);
        false: (s_bytes : packed array[1..4] of byte);
   end;
 

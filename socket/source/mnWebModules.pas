@@ -106,8 +106,6 @@ type
     procedure DoCreateCommands; override;
 
     function RequestCommand(var ARequest: TmodRequest; ARequestStream: TmnBufferStream; ARespondStream: TmnBufferStream): TmodCommand; override;
-
-    function Match(const ARequest: TmodRequest): Boolean; override;
     procedure Log(S: string); override;
   public
     destructor Destroy; override;
@@ -299,12 +297,6 @@ begin
   Result := CreateCommand(ARequest.Command, ARequest, ARequestStream, ARespondStream);
 end;
 
-function TmodWebModule.Match(const ARequest: TmodRequest): Boolean;
-begin
-  //ParseRequest(ARequest);
-  Result := SameText(AliasName, ARequest.Module) and SameText(SubStr(ARequest.Protcol, '/', 0),  'http');
-end;
-
 procedure TmodWebModule.Log(S: string);
 begin
   inherited;
@@ -405,39 +397,50 @@ var
   aDocument: string;
 begin
   aDocument := IncludeTrailingPathDelimiter(Root);
-  if Request.Path <> '' then
-    aDocument := aDocument + '.' + Request.Path;
-  aDocument := StringReplace(aDocument, '/', PathDelim, [rfReplaceAll]);//correct it for linux
-  if aDocument[Length(aDocument)] = PathDelim then //get the default file if it not defined
-     aDocument := GetDefaultDocument(aDocument);
-  aDocument := ExpandFileName(aDocument);
-
-  if FileExists(aDocument) then
+  if (Request.Path = '')and(Request.URI[Length(Request.URI)] <> PathDelim) then
   begin
-    if Active then
-    begin
-      aDocStream := TFileStream.Create(aDocument, fmOpenRead or fmShareDenyWrite);
-      try
-        DocSize := aDocStream.Size;
-        if Active then
-        begin
-          SendRespond('HTTP/1.1 200 OK');
-          PostHeader('Content-Type', DocumentToContentType(aDocument));
-          if KeepAlive then
-            PostHeader('Content-Length', IntToStr(DocSize));
-        end;
-
-        SendHeader;
-
-        if Active then
-          RespondStream.WriteStream(aDocStream);
-      finally
-        aDocStream.Free;
-      end;
-    end;
+    //https://developer.mozilla.org/en-US/docs/Web/HTTP/Redirections
+    SendRespond('HTTP/1.1 300 Multiple Choice');
+    PostHeader('Location', Request.URI+'/');
+    SendHeader;
   end
   else
-    RespondNotFound;
+  begin
+
+    if Request.Path <> '' then
+      aDocument := aDocument + '.' + Request.Path;
+    aDocument := StringReplace(aDocument, '/', PathDelim, [rfReplaceAll]);//correct it for linux
+    if aDocument[Length(aDocument)] = PathDelim then //get the default file if it not defined
+       aDocument := GetDefaultDocument(aDocument);
+    aDocument := ExpandFileName(aDocument);
+
+    if FileExists(aDocument) then
+    begin
+      if Active then
+      begin
+        aDocStream := TFileStream.Create(aDocument, fmOpenRead or fmShareDenyWrite);
+        try
+          DocSize := aDocStream.Size;
+          if Active then
+          begin
+            SendRespond('HTTP/1.1 200 OK');
+            PostHeader('Content-Type', DocumentToContentType(aDocument));
+            if KeepAlive then
+              PostHeader('Content-Length', IntToStr(DocSize));
+          end;
+
+          SendHeader;
+
+          if Active then
+            RespondStream.WriteStream(aDocStream);
+        finally
+          aDocStream.Free;
+        end;
+      end;
+    end
+    else
+      RespondNotFound;
+  end;
   inherited;
 end;
 
@@ -521,7 +524,7 @@ end;
 constructor TmodWebServer.Create;
 begin
   inherited;
-  Modules.DefaultModule := TmodWebModule.Create('web', 'doc', 'http/1.1', Modules);
+  Modules.DefaultModule := TmodWebModule.Create('web', 'doc', ['http/1.1'], Modules);
   Port := '80';
 end;
 
