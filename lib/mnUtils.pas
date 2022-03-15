@@ -388,7 +388,7 @@ begin
     Current := S[Index];
     if (OpenStart > 0) then
     begin
-      if not CharInSet(Current, ['0'..'9']) then
+      if not (Current in ['0'..'9', 'a'..'z', 'A'..'Z', '_', '{',  '#', '}']) then
         Check;
     end
     else if (Current = VarInit[InitIndex]) then
