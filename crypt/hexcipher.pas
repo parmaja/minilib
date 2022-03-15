@@ -60,7 +60,7 @@ type
     function GetCipher: THexCipher;
     procedure SetCipher(const Value: THexCipher);
   protected
-    function ReadmnBuffer: Boolean;
+    function ReadmnBuffer: Boolean; //todo: check name ReadmnBuffer
     function ReadChar(var B: Byte): Boolean;
     function ReadOutBuffer(var Buffer; Count: LongInt): LongInt;
     function WritemnBuffer(const Buffer; Count: LongInt): LongInt;

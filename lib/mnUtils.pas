@@ -102,7 +102,7 @@ function SubStr(const Str: String; vSeperator: Char; vFromIndex, vToIndex: Integ
 function SubStr(const Str: String; vSeperator: Char; vIndex: Integer = 0): String; overload;
 
 function StrHave(S: string; Separators: TSysCharSet): Boolean; deprecated;
-procedure SpliteStr(S, Separator: string; var Name, Value: string);
+procedure SpliteStr(const S, Separator: string; out Name, Value: string);
 function FetchStr(var AInput: string; const ADelim: string = '.'; const ADelete: Boolean = True; const ACaseSensitive: Boolean = True): string; deprecated;
 
 function StrInArray(const Str: String; const InArray : Array of String; CaseInsensitive: Boolean = False) : Boolean; overload;
@@ -1132,7 +1132,7 @@ begin
   Result := SubStr(Str, vSeperator, vIndex, vIndex);
 end;
 
-procedure SpliteStr(S, Separator: string; var Name, Value: string);
+procedure SpliteStr(const S, Separator: string; out Name, Value: string);
 var
   p: integer;
 begin
