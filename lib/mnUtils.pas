@@ -43,7 +43,7 @@ function QuoteStr(Str: string; QuoteChar: string = '"'): string;
 *}
 type
   TStrToStringsCallbackProc = procedure(Sender: Pointer; Index:Integer; S: string; var Resume: Boolean);
-  TArgumentsCallbackProc = procedure(Sender: Pointer; Index: Integer; Name, Value: string; var Resume: Boolean);
+  TArgumentsCallbackProc = procedure(Sender: Pointer; Index: Integer; Name, Value: string; IsSwitch:Boolean; var Resume: Boolean);
 
 {**
   IgnoreInitialWhiteSpace: Ignore the first chars of this white space, not need it
@@ -77,8 +77,12 @@ procedure StrToStringsDeqouteCallbackProc(Sender: Pointer; Index:Integer; S: str
   -t -s --value: "value test"
 
 }
+type
+  TParseArgumentsOptions = set of (
+    pargSmartSwitch
+  );
 
-function ParseArgumentsCallback(Content: string; const CallBackProc: TArgumentsCallbackProc; Sender: Pointer; Switches: TArray<Char>; WhiteSpaces: TArray<Char> {= [' ', #9]}; Quotes: TArray<Char> {= ['''', '"']};  ValueSeperators: TArray<Char> {= [':', '=']}): Integer; overload;
+function ParseArgumentsCallback(Content: string; const CallBackProc: TArgumentsCallbackProc; Sender: Pointer; Switches: TArray<Char>; WhiteSpaces: TArray<Char> {= [' ', #9]}; Quotes: TArray<Char> {= ['''', '"']};  ValueSeperators: TArray<Char> {= [':', '=']}; Options: TParseArgumentsOptions = [pargSmartSwitch]): Integer; overload;
 function ParseArgumentsCallback(Content: string; const CallBackProc: TArgumentsCallbackProc; Sender: Pointer): Integer; overload;
 function ParseArguments(Content: string; Strings: TStrings; Switches: TArray<Char>; WhiteSpaces: TArray<Char>{ = [' ', #9]}; Quotes: TArray<Char> {= ['''', '"']}; ValueSeperators: TArray<Char> {= [':', '=']}): Integer; overload;
 function ParseArguments(Content: string; Strings: TStrings): Integer; overload;
@@ -117,6 +121,11 @@ function DequoteStr(Str: string; QuoteChar: string = #0): string;
 function ExcludeTrailing(Str: string; TrailingChar: string = #0): string;
 
 function RepeatString(const Str: string; Count: Integer): string;
+
+function ConcatString(const S1, Delimiter, S2: string): string;
+function CollectStrings(Strings: TStrings; Delimiter: Char = ','; TrailingChar: Char = #0): string; overload;
+function CollectStrings(Strings: array of string; Delimiter: Char = ','; TrailingChar: Char = #0): string; overload;
+
 
 {* VarReplace
   VarInit = '$'
@@ -340,6 +349,43 @@ begin
   end;
 end;
 
+function ConcatString(const S1, Delimiter, S2: string): string;
+begin
+  Result := S1;
+  if (Result <> '') and (S2 <> '') then
+    Result := Result + Delimiter;
+  Result := Result + S2;
+end;
+
+function CollectStrings(Strings: TStrings; Delimiter: Char; TrailingChar: Char): string;
+var
+  s: string;
+  i: Integer;
+begin
+  Result := '';
+  for i :=0 to Strings.Count -1 do
+  begin
+    s := Trim(Strings[i]);
+    if TrailingChar <> #0 then
+      s := ExcludeTrailing(s, TrailingChar);
+    Result := ConcatString(Result, Delimiter, s);
+  end;
+end;
+
+function CollectStrings(Strings: array of string; Delimiter: Char; TrailingChar: Char): string;
+var
+  s, v: string;
+begin
+  Result := '';
+  for s in Strings do
+  begin
+    v := Trim(s);
+    if TrailingChar <> #0 then
+      v := ExcludeTrailing(v, TrailingChar);
+    Result := ConcatString(Result, Delimiter, v);
+  end;
+end;
+
 {**
 *  Replace multipe variables $var for example with value in Values
 *  Use name values in strings
@@ -355,7 +401,6 @@ var
   procedure check;
   var
     l: Integer;
-    r: Integer;
   begin
     Result := Result + MidStr(S, Start, OpenStart - Start);
     Start := Index;
@@ -619,7 +664,7 @@ begin
   Result := StrToStringsEx(Content, Strings, [#13, #10, #0], IgnoreInitialWhiteSpace, Quotes);
 end;}
 
-procedure ArgumentsCallbackProc(Sender: Pointer; Index: Integer; Name, Value: string; var Resume: Boolean);
+procedure ArgumentsCallbackProc(Sender: Pointer; Index: Integer; Name, Value: string; IsSwitch:Boolean; var Resume: Boolean);
 begin
   if Index > 0 then //ignore first param (exe file)
     with TObject(Sender) as TStrings do
@@ -632,7 +677,7 @@ begin
 end;
 
 //  -t   --test cmd1 cmd2 -t: value -t:value -t value
-function ParseArgumentsCallback(Content: string; const CallBackProc: TArgumentsCallbackProc; Sender: Pointer; Switches: TArray<Char>; WhiteSpaces: TArray<Char>; Quotes: TArray<Char>; ValueSeperators: TArray<Char>): Integer;
+function ParseArgumentsCallback(Content: string; const CallBackProc: TArgumentsCallbackProc; Sender: Pointer; Switches: TArray<Char>; WhiteSpaces: TArray<Char>; Quotes: TArray<Char>; ValueSeperators: TArray<Char>; Options: TParseArgumentsOptions): Integer;
 var
   Start, Cur: Integer;
   Resume: Boolean;
@@ -642,6 +687,7 @@ var
   QuoteChar: Char;
   S: string;
   NextIsValue: Boolean;
+  IsSwitch: Boolean;
 begin
   Result := 0;
   Index := 0;
@@ -677,12 +723,13 @@ begin
             Cur := Cur + 1;
             break;
           end;
-        end;
-{        else if not NextIsValue and CharInArray(Content[Cur], ValueSeperators) then
+        end
+        //* if you removed -t:value will break
+        else if not NextIsValue and CharInArray(Content[Cur], ValueSeperators) then
         begin
           Cur := Cur + 1;
           break;
-        end;}
+        end;
 
         Cur := Cur + 1;
       end;
@@ -694,7 +741,7 @@ begin
         begin
           if NextIsValue then
           begin
-            if CharInArray(S[1], Switches) then
+            if CharInArray(S[1], Switches) then //* hmmm maybe not
               raise Exception.Create('Value excepted not a switch');
             Value := S;
             NextIsValue := False;
@@ -703,9 +750,12 @@ begin
           begin
             Name := S;
             Value := '';
-            if CharInArray(Name[1], Switches) and CharInArray(Name[Length(Name)], ValueSeperators) then
+            if {CharInArray(Name[1], Switches) and } CharInArray(Name[Length(Name)], ValueSeperators) then
             begin
               Name := Copy(Name, 1, Length(Name) -1);
+              { no i want to pass platform=win32 without switch char -
+              if not CharInArray(Name[1], Switches) then
+                Name := Switches[0] + Name;}
               NextIsValue := True;
             end
             else
@@ -717,12 +767,24 @@ begin
             Resume := True;
             if CharInArray(Name[1], Switches) then
             begin
-              if (Name[1] = Name[2]) then
-                Name := Copy(Name, 2, Length(Name)); //change double switch to one switch
-              if Name[1] <> Switches[0] then //should be first element in Switches, but i cant convert it to array right now
-                Name[1] := Switches[0];
+              IsSwitch := True;
+              if pargSmartSwitch in Options then
+              begin
+                if (Name[1] = Name[2]) then
+                  Name := Copy(Name, 3, Length(Name)) //change double switch to one switch
+                else
+                  Name := Copy(Name, 2, Length(Name));
+              end
+              else
+              begin
+                if (Name[1] = Name[2]) then
+                  Name := Copy(Name, 2, Length(Name)); //change double switch to one switch
+                if Name[1] <> Switches[0] then //should be first element in Switches, but i cant convert it to array right now
+                  Name[1] := Switches[0];
+              end;
             end;
-            CallBackProc(Sender, Index, DequoteStr(Name), DequoteStr(Value), Resume);
+            CallBackProc(Sender, Index, DequoteStr(Name), DequoteStr(Value), IsSwitch, Resume);
+            IsSwitch := False;
             Index := Index + 1;
             Inc(Result);
             if not Resume then
