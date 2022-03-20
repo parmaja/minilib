@@ -9,6 +9,9 @@ unit mnRTTIUtils;
 
 {$IFDEF FPC}
 {$MODE delphi}
+{$modeswitch arrayoperators}
+{$ModeSwitch advancedrecords}
+{$ModeSwitch typehelpers}
 {$ENDIF}
 {$M+}{$H+}
 
@@ -16,7 +19,28 @@ interface
 
 uses
   Classes, SysUtils, StrUtils, DateUtils, Types, TypInfo, Variants,
+  Rtti,
   mnUtils;
+
+type
+
+  { TRttiObject }
+
+  TRttiObject = class abstract(TObject)
+  protected
+  public
+    constructor Create; overload;
+    //constructor Create(AObject: TObject); overload;
+
+    //Params: name value separator is :
+    //* Flag: Is any number will be passed from enum to register
+    procedure RegisterMethod(Sender: TObject; Flag: Integer; AName: string; AParams: TStringList); virtual; abstract;
+    procedure RegisterProperty(Sender: TObject; Flag: Integer; AName: string; AType: string); virtual; abstract;
+
+    procedure EnumMethods(AObject: TObject; Sender: TObject; Flag: Integer); overload;
+    procedure EnumMethods(ATypeInfo: PTypeInfo; Sender: TObject; Flag: Integer); overload;
+    procedure EnumProperties(AObject: TObject; Sender: TObject; Flag: Integer);
+  end;
 
 function GetPropTypeInfo(PropInfo: PPropInfo): PTypeInfo;
 function GetPropTypeKind(PropInfo: PPropInfo): TTypeKind;
@@ -379,6 +403,119 @@ begin
   end
 {  else
     SkipProperty(PropName);}
+end;
+
+{ TRttiObject }
+
+constructor TRttiObject.Create;
+begin
+  inherited;
+end;
+
+procedure TRttiObject.EnumMethods(AObject: TObject; Sender: TObject; Flag: Integer);
+var
+  aContext: TRttiContext;
+  aMethods: TArray<TRttiMethod>;
+  procedure EnumParams(aMethod: TRttiMethod);
+  var
+    aType: TRttiType;
+    aParams: TStringList;
+    aMethodParameter: TRttiParameter;
+    aMethodParameters: TArray<TRttiParameter>;
+  begin
+    aParams := TStringList.Create;
+    try
+      aParams.NameValueSeparator := ':';
+      aMethodParameters := aMethod.GetParameters;
+      for aMethodParameter in aMethodParameters do
+      begin
+        aParams.AddPair(aMethodParameter.Name, aMethodParameter.ParamType.Name);
+      end;
+      RegisterMethod(Sender, Flag, aMethod.Name, aParams);
+    finally
+      aParams.Free;
+    end;
+  end;
+var
+  aType: TRttiType;
+  aMethod: TRttiMethod;
+begin
+  aContext := TRttiContext.Create;
+  try
+    aType := aContext.GetType(AObject.ClassType);
+    if aType <> nil then
+    begin
+      aMethods := aType.GetMethods;
+      for aMethod in aMethods do
+        EnumParams(aMethod);
+    end;
+  finally
+    aContext.Free;
+  end;
+end;
+
+procedure TRttiObject.EnumMethods(ATypeInfo: PTypeInfo; Sender: TObject; Flag: Integer);
+var
+  aContext: TRttiContext;
+  aMethods: TArray<TRttiMethod>;
+  procedure EnumParams(aMethod: TRttiMethod);
+  var
+    aType: TRttiType;
+    aParams: TStringList;
+    aMethodParameter: TRttiParameter;
+    aMethodParameters: TArray<TRttiParameter>;
+  begin
+    aParams := TStringList.Create;
+    try
+      aParams.NameValueSeparator := ':';
+      aMethodParameters := aMethod.GetParameters;
+      for aMethodParameter in aMethodParameters do
+      begin
+        aParams.AddPair(aMethodParameter.Name, aMethodParameter.ParamType.Name);
+      end;
+      RegisterMethod(Sender, Flag, aMethod.Name, aParams);
+    finally
+      aParams.Free;
+    end;
+  end;
+var
+  aType: TRttiType;
+  aMethod: TRttiMethod;
+begin
+  aContext := TRttiContext.Create;
+  try
+    aType := aContext.GetType(ATypeInfo);
+    if aType <> nil then
+    begin
+      aMethods := aType.GetMethods;
+      for aMethod in aMethods do
+        EnumParams(aMethod);
+    end;
+  finally
+    aContext.Free;
+  end;
+end;
+
+procedure TRttiObject.EnumProperties(AObject: TObject; Sender: TObject; Flag: Integer);
+var
+  aContext: TRttiContext;
+  aProperties: TArray<TRttiProperty>;
+  aProperty: TRttiProperty;
+var
+  aType: TRttiType;
+begin
+  aContext := TRttiContext.Create;
+  try
+    aType := aContext.GetType(AObject.ClassType);
+    if aType <> nil then
+    begin
+      aProperties := aType.GetProperties;
+      for aProperty in aProperties do
+        RegisterProperty(Sender, Flag, aProperty.Name, aProperty.PropertyType.Name);
+    end;
+  finally
+    aContext.Free;
+  end;
 end;
 
 end.

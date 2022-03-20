@@ -122,7 +122,7 @@ function ExcludeTrailing(Str: string; TrailingChar: string = #0): string;
 
 function RepeatString(const Str: string; Count: Integer): string;
 
-function ConcatString(const S1, Delimiter, S2: string): string;
+function ConcatString(const S1, Delimiter: string; S2: string = ''): string;
 function CollectStrings(Strings: TStrings; Delimiter: Char = ','; TrailingChar: Char = #0): string; overload;
 function CollectStrings(Strings: array of string; Delimiter: Char = ','; TrailingChar: Char = #0): string; overload;
 
@@ -349,7 +349,7 @@ begin
   end;
 end;
 
-function ConcatString(const S1, Delimiter, S2: string): string;
+function ConcatString(const S1, Delimiter: string; S2: string): string;
 begin
   Result := S1;
   if (Result <> '') and (S2 <> '') then
@@ -645,7 +645,7 @@ begin
   end;
 end;
 
-function StrToStringsEx(Content: string; Strings: TStrings; Separators: Array of string; IgnoreInitialWhiteSpace: TSysCharSet; Quotes: TSysCharSet): Integer;
+function StrToStringsEx(Content: string; Strings: TStrings; Separators: array of string; IgnoreInitialWhiteSpace: TSysCharSet; Quotes: TSysCharSet): Integer;
 var
   a: array of string;
 begin
