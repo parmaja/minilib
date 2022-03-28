@@ -86,7 +86,7 @@ type
   SIZE_T = ULONG_PTR;
   {$endif}
 
-
+  PText = PByte;
   OID = Integer;
   POID = ^OID;
 
@@ -400,9 +400,9 @@ type
   TPQconnectStartParams = function(Keywords: Pointer; Values: Pointer; expand_dbname: Integer): PPGconn; cdecl;
   TPQconnectPoll = function(conn: PPGconn): TPostgresPollingStatusType; cdecl;
 
-  TPQconnectdb = function(ConnInfo: PByte): PPGconn; cdecl;
+  TPQconnectdb = function(ConnInfo: PText): PPGconn; cdecl;
   TPQconnectdbParams = function(Keywords: Pointer; Values: Pointer; expand_dbname: Integer): PPGconn; cdecl;
-  TPQsetdbLogin = function(Host, Port, Options, Tty, Db, User, Passwd: PByte): PPGconn; cdecl;
+  TPQsetdbLogin = function(Host, Port, Options, Tty, Db, User, Passwd: PText): PPGconn; cdecl;
 
   { close the current connection and free the PGconn data structure }
   TPQfinish = procedure(conn: PPGconn); cdecl;
