@@ -175,7 +175,7 @@ type
     property Isolated: Boolean read FIsolated write FIsolated default True;
   end;
 
-  TArrayOfPChar = array of PAnsiChar;
+  TArrayOfPChar = array of PByte;
 
   { TmncPostgreParam }
 
@@ -203,7 +203,7 @@ type
 
   TmncPostgreField = class(TmncField)
   private
-    FData: PAnsiChar;
+    FData: PByte;
     FDataLen: Integer;
 
     FValue: string;
@@ -438,7 +438,7 @@ var
   s : string;
 begin
   //s := 'Postgre connection failed' + #13 + UTF8ToString(PQerrorMessage(FHandle));
-  s := 'Postgre connection failed' + #13 + PQerrorMessage(vHandle);
+  s := 'Postgre connection failed' + #13 + PAnsiChar(PQerrorMessage(vHandle));
   if ExtraMsg <> '' then
     s := s + ' - ' + ExtraMsg;
   raise EmncException.Create(s);
@@ -463,12 +463,12 @@ begin
     begin
       if (PQstatus(FHandle) = CONNECTION_BAD) and not ResetConnection(PGResult) then
       begin
-        s := PQresultErrorMessage(PGResult);
+        s := PAnsiChar(PQresultErrorMessage(PGResult));
         raise EmncException.Create('Postgre lost connection with: ' + s);
       end
       else
       begin
-        s := PQresultErrorMessage(PGResult);
+        s := PAnsiChar(PQresultErrorMessage(PGResult));
         raise EmncException.Create('Postgre command: ' + s);
       end;
     end;
@@ -587,9 +587,9 @@ begin
           try
             while True do
             begin
-              c := lo_read(vSrc.Handle, fds, PAnsiChar(s), cBufferSize);
+              c := lo_read(vSrc.Handle, fds, PByte(s), cBufferSize);
               if c > 0 then
-                lo_write(Handle, fdd, PAnsiChar(s), c);
+                lo_write(Handle, fdd, PByte(s), c);
               if c < cBufferSize then Break;
             end;
           finally
@@ -624,10 +624,10 @@ begin
       try
         while True do
         begin
-          c := lo_read(Handle, fds, PAnsiChar(s), cBufferSize);
+          c := lo_read(Handle, fds, PByte(s), cBufferSize);
           Inc(Result, c);
           if c>0 then
-            vStream.Write(PAnsiChar(s)^, c);
+            vStream.Write(PByte(s)^, c);
           if c<cBufferSize then Break;
         end;
       finally
@@ -662,7 +662,7 @@ begin
     end;
   end
   //else
-    //Result := lo_export(Handle, vOID, PAnsiChar(AnsiString(vFileName)));
+    //Result := lo_export(Handle, vOID, PByte(AnsiString(vFileName)));
 end;
 
 function TmncPGConnection.loImport(vStream: TStream; vOID: Integer): Integer;
@@ -693,7 +693,7 @@ begin
           begin
             c := vStream.Read(s[1], cBufferSize);
             if c>0 then
-              lo_write(Handle, fdd, PAnsiChar(s), c);
+              lo_write(Handle, fdd, PByte(s), c);
             if c<cBufferSize then Break;
           end;
         finally
@@ -722,7 +722,7 @@ begin
       end;
     end
     //else
-      //Result := lo_import(Handle, PAnsiChar(AnsiString(vFileName)));
+      //Result := lo_import(Handle, PByte(AnsiString(vFileName)));
   end
   else
     Result := 0;
@@ -790,15 +790,15 @@ begin
     aSslComp := '0';
   end;
 
-  //Result := PQsetdbLogin(PAnsiChar(aHost), PAnsiChar(aPort), nil, nil, PAnsiChar(aDB), PAnsiChar(aUser), PAnsiChar(aPass));
+  //Result := PQsetdbLogin(PByte(aHost), PByte(aPort), nil, nil, PByte(aDB), PByte(aUser), PByte(aPass));
   //aUrl := Format('postgresql://%s:%s@%s:%s/%s?sslmode=%s&sslcompression=%s&application_name=%s', [aUser, aPass, aHost, aPort, aDB, aSsl, aSslComp, AppName]);
   if SimpleConnection then
-    vHandle := PQsetdbLogin(PAnsiChar(aHost), PAnsiChar(aPort), nil, nil, PAnsiChar(aResource), PAnsiChar(aUser), PAnsiChar(aPassword))
+    vHandle := PQsetdbLogin(PByte(aHost), PByte(aPort), nil, nil, PByte(aResource), PByte(aUser), PByte(aPassword))
   else
   begin
     aUrl := Format('user=%s password=''%s'' host=%s port=%s dbname=''%s'' sslmode=%s sslcompression=%s application_name=''%s''', [aUser, aPassword, aHost, aPort, aResource, aSsl, aSslComp, AppName]);
     //aUrl := Format('postgresql://%s:%s@%s:%s/%s?sslmode=%s&sslcompression=%s&application_name=%s', [aUser, aPass, aHost, aPort, aDB, aSsl, aSslComp, AppName]);
-    vHandle := PQconnectdb(PAnsiChar(aUrl));
+    vHandle := PQconnectdb(PByte(aUrl));
   end;
 
   try
@@ -847,7 +847,7 @@ begin
   InternalConnect(conn, 'postgres');
   try
     s := Format('select 1 from pg_database where datname=''%s''', [LowerCase(vName)]);
-    r := PQexec(conn, PAnsiChar(s));
+    r := PQexec(conn, PByte(s));
     try
       Result := (r <> nil) and (PQntuples(r) = 1);
       RaiseResultError(r);
@@ -937,7 +937,7 @@ var
   r: PPGresult;
 begin
   s := vSQL;
-  r := PQexec(FHandle, PAnsiChar(s));
+  r := PQexec(FHandle, PByte(s));
   try
     RaiseResultError(r);
   finally
@@ -1085,7 +1085,7 @@ begin
 
     if SingleRowMode then
     begin
-      PQsendQueryPrepared(Session.DBHandle, PAnsiChar(FHandle), Binds.Count, P, nil, nil, f);
+      PQsendQueryPrepared(Session.DBHandle, PByte(FHandle), Binds.Count, P, nil, nil, f);
       PQsetSingleRowMode(Session.DBHandle);
       //f := PQsetSingleRowMode(Session.DBHandle);
       //FStatement := PQgetResult(Session.DBHandle);
@@ -1093,7 +1093,7 @@ begin
     end
     else
     begin
-      FStatement := PQexecPrepared(Session.DBHandle, PAnsiChar(FHandle), Binds.Count, P, nil, nil, f);
+      FStatement := PQexecPrepared(Session.DBHandle, PByte(FHandle), Binds.Count, P, nil, nil, f);
     end;
 
   finally
@@ -1165,14 +1165,14 @@ begin
   c := Session.DBHandle;
   s := UTF8Encode(GetProcessedSQL);
 
-  r := PQprepare(c, PAnsiChar(FHandle), PAnsiChar(s), Params.Count, nil);
+  r := PQprepare(c, PByte(FHandle), PByte(s), Params.Count, nil);
   try
     RaiseResultError(r);
   finally
     PQclear(r);
   end;
 
-  {r := PQdescribePrepared(Session.DBHandle, PAnsiChar(FHandle)); //TODO: To indecate the size of param, no chance to get it
+  {r := PQdescribePrepared(Session.DBHandle, PByte(FHandle)); //TODO: To indecate the size of param, no chance to get it
   try
     z := PQnparams(r);
 
@@ -1223,7 +1223,7 @@ begin
   begin
     try
       s := UTF8Encode('deallocate ' + FHandle);
-      r := PQexec(Session.DBHandle, PAnsiChar(s));
+      r := PQexec(Session.DBHandle, PByte(s));
       PQclear(r);
     except
     end;
@@ -1249,7 +1249,7 @@ end;
 function TmncPGCommand.GetRowsChanged: Integer;
 begin
   CheckActive;
-  Result := StrToIntDef(PQcmdTuples(FStatement), 0);
+  Result := StrToIntDef(PAnsiChar(PQcmdTuples(FStatement)), 0);
 end;
 
 { TmncPostgreParam }
@@ -1353,7 +1353,7 @@ begin
   begin
     if FDataLen<>0 then
     begin
-      SetString(s, FData, FDataLen);
+      SetString(s, PAnsiChar(FData), FDataLen);
       {$ifdef FPC}
       Result := s;
       {$else}
@@ -1513,7 +1513,7 @@ begin
   FBOF := True;
   FEOF := True;
   s := UTF8Encode(SQL.Text);
-  r := PQexec(Session.DBHandle, PAnsiChar(s));
+  r := PQexec(Session.DBHandle, PByte(s));
   try
     RaiseResultError(r);
   finally
@@ -1527,7 +1527,7 @@ begin
   if FStatement <> nil then PQclear(FStatement);
   try
     s := UTF8Encode(SQL.Text);
-    FStatement := PQexec(Session.DBHandle, PAnsiChar(s));
+    FStatement := PQexec(Session.DBHandle, PByte(s));
   finally
   end;
   FStatus := PQresultStatus(FStatement);
@@ -1564,7 +1564,7 @@ begin
   FConnection := vConn;
   FChannel := vChannel;
   FConnection.InternalConnect(FHandle); //TODO should be outside of connection class
-  r := PQexec(FHandle, PAnsiChar('LISTEN "' + vChannel + '";'));
+  r := PQexec(FHandle, PByte('LISTEN "' + vChannel + '";'));
   try
     FConnection.RaiseResultError(r);
   finally
@@ -1601,7 +1601,7 @@ end;
 
 procedure TPGListenThread.PostEvent;
 begin
-  FConnection.Notify(FEvent^.be_pid, FEvent^.relname, FEvent^.extra);
+  //FConnection.Notify(FEvent^.be_pid, FEvent^.relname, FEvent^.extra);
 end;
 
 { TmncCustomPGCommand }
@@ -1670,8 +1670,8 @@ begin
           end;
       end;
       GetMem(Result[i], Length(s) + 1);
-      //StrMove(PAnsiChar(Result[i]), PAnsiChar(s), Length(s) + 1);
-      Move(PAnsiChar(s)^, PAnsiChar(Result[i])^, Length(s) + 1);
+      //StrMove(PByte(Result[i]), PByte(s), Length(s) + 1);
+      Move(PByte(s)^, PByte(Result[i])^, Length(s) + 1);
     end;
   end;
 end;
@@ -1692,7 +1692,7 @@ begin
   c := PQnfields(vRes);
   for i := 0 to c - 1 do
   begin
-    aName :=  DequoteStr(PQfname(vRes, i));
+    aName :=  DequoteStr(PAnsiChar(PQfname(vRes, i)));
     t := aName;
     n := 1;
     while Columns.Find(aName)<>nil do
@@ -1713,9 +1713,9 @@ end;
 
 function TmncCustomPGCommand.FetchValue(vRes: PPGresult; vTuple: Integer; vIndex: Integer; out Value: string): Boolean;
 
-    function _BRead(vSrc: PAnsiChar; vCount: Longint): Integer;
+    function _BRead(vSrc: PByte; vCount: Longint): Integer;
     var
-      t: PAnsiChar;
+      t: PByte;
       i: Integer;
     begin
       Result := 0;
@@ -1728,9 +1728,9 @@ function TmncCustomPGCommand.FetchValue(vRes: PPGresult; vTuple: Integer; vIndex
       end;
     end;
 
-    function _DRead(vSrc: PAnsiChar; vCount: Longint): Int64;
+    function _DRead(vSrc: PByte; vCount: Longint): Int64;
     var
-      t: PAnsiChar;
+      t: PByte;
       c, i: Integer;
     begin
       Result := 0;
@@ -1748,7 +1748,7 @@ var
   //d: Double;
   //aType: Integer;
   //aFieldSize: Integer;
-  p: PAnsiChar;
+  p: PByte;
 begin
   Result := PQgetisnull(vRes, vTuple, vIndex) = 0;
   if Result then
@@ -1757,7 +1757,7 @@ begin
     {$ifdef FPC}
     Value := p;
     {$else}
-    Value := UTF8ToString(p);
+    Value := UTF8ToString(PAnsiChar(p));
     {$endif}
     {if ResultFormat=mrfText then
       Value := UTF8ToString(p)
@@ -1909,7 +1909,7 @@ begin
     end
     else
       p := nil;
-    aStatement := PQexecPrepared(Session.DBHandle, PAnsiChar(FHandle), Binds.Count, P, nil, nil, 0);
+    aStatement := PQexecPrepared(Session.DBHandle, PByte(FHandle), Binds.Count, P, nil, nil, 0);
     //FStatement := PQexec(Session.DBHandle, PChar(SQL.Text));
   finally
     FreeParamValues(Values);
@@ -1929,7 +1929,7 @@ procedure TmncPGCursorCommand.DoNext;
 begin
   if FStatement<>nil then PQclear(FStatement);
 
-  FStatement := PQexec(Session.DBHandle, PAnsiChar(FetchSQL));
+  FStatement := PQexec(Session.DBHandle, PByte(FetchSQL));
   if FStatement<>nil then
   begin
     FStatus := PQresultStatus(FStatement);
@@ -1969,7 +1969,7 @@ begin
     b := '';
 
   s := Format('declare %s %s cursor for %s', [Handle, b, GetProcessedSQL]);
-  r := PQprepare(c, PAnsiChar(FHandle), PAnsiChar(s), 0 , nil);
+  r := PQprepare(c, PByte(FHandle), PByte(s), 0 , nil);
 
   for i := 0 to Params.Count - 1 do
   begin
@@ -2000,7 +2000,7 @@ end;
 
 procedure TmncPGCursorCommand.InternalClose;
 begin
-  PQexec(Session.DBHandle, PAnsiChar(CloseSQL));
+  PQexec(Session.DBHandle, PByte(CloseSQL));
   FStatus := PGRES_EMPTY_QUERY;
   FBOF := True;
 end;
