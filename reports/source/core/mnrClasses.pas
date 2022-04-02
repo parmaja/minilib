@@ -125,6 +125,7 @@ type
     procedure SumCell(vCell: TmnrCell);
     property Layout: TmnrLayout read GetLayout;
     property DesignCell: TmnrDesignCell read GetDesignCell;
+    procedure Scale;
     property Row: TmnrRow read GetRow;
     property Next: TmnrCell read GetNext;
     property Prior: TmnrCell read GetPrior;
@@ -432,23 +433,6 @@ type
     procedure ClearSubTotals;
   end;
 
-  TmnrRowReference = class(TmnrLinkNode)
-  private
-    FRow: TmnrRowNode;
-  public
-    property Row: TmnrRowNode read FRow;
-  end;
-
-  TmnrRowReferences = class(TmnrLinkNodes)
-  private
-    function GetFirst: TmnrRowReference;
-    function GetLast: TmnrRowReference;
-  public
-    function Add: TmnrRowReference;
-    property First: TmnrRowReference read GetFirst;
-    property Last: TmnrRowReference read GetLast;
-  end;
-
   TmnrReference = class(TmnrLinkNode)
   private
     FTotal: Currency;
@@ -502,7 +486,6 @@ type
     FClassID: TmnrSectionClassID;
     FOnFetch: TOnFetch;
     FReferencesRows: TmnrReferencesRows;
-    FItems: TmnrRowReferences;
     FAppendDetailTotals: Boolean;
     FAppendReportTotals: Boolean;
     FAppendDetailTitles: Boolean;
@@ -511,6 +494,7 @@ type
     FSectionLoopWay: TmnrSectionLoopWay;
     FAppendPageTotals: Boolean;
     FHitAppendTitles: Boolean;
+    FRows: TmnObjectList<TmnrRow>;
 
     function GetNext: TmnrSection;
     function GetNodes: TmnrSections;
@@ -541,7 +525,7 @@ type
     constructor Create(vNodes: TmnrNode; vClass: TmnrSectionClassID);
     destructor Destroy; override;
     property Sections: TmnrSections read GetSections;
-    property Items: TmnrRowReferences read FItems;
+    property Rows: TmnObjectList<TmnrRow> read FRows;
 
     property Next: TmnrSection read GetNext;
     property Prior: TmnrSection read GetPrior;
@@ -1484,10 +1468,7 @@ begin
       //todo make arow pass as var and if report handle row and free it then do nothing
       Report.HandleNewRow(aRow);
       if aRow <> nil then
-        with vSection.Items.Add do
-        begin
-          FRow := aRow;
-        end;
+        vSection.Rows.Add(aRow);
 
       aDesignRow := aDesignRow.Next;
     end;
@@ -1536,10 +1517,7 @@ begin
       end;
       //todo make arow pass as var and if report handle row and free it then do nothing
       Report.HandleNewRow(aRow);
-      with vSection.Items.Add do
-      begin
-        FRow := aRow;
-      end;
+      vSection.Rows.Add(aRow);
 
       aDesignRow := aDesignRow.Next;
     end;
@@ -1589,10 +1567,7 @@ begin
       end;
       //todo make arow pass as var and if report handle row and free it then do nothing
       Report.HandleNewRow(aRow);
-      with vSection.Items.Add do
-      begin
-        FRow := aRow;
-      end;
+      vSection.Rows.Add(aRow);
 
       aDesignRow := aDesignRow.Next;
     end;
@@ -1638,10 +1613,8 @@ begin
       end;
       //todo make arow pass as var and if report handle row and free it then do nothing
       Report.HandleNewRow(aRow);
-      with vSection.Items.Add do
-      begin
-        FRow := aRow;
-      end;
+      vSection.Rows.Add(aRow);
+
       aDesignRow := aDesignRow.Next;
     end;
   end;
@@ -1689,10 +1662,7 @@ begin
       end;
       //todo make arow pass as var and if report handle row and free it then do nothing
       Report.HandleNewRow(aRow);
-      with vSection.Items.Add do
-      begin
-        FRow := aRow;
-      end;
+      vSection.Rows.Add(aRow);
 
       aDesignRow := aDesignRow.Next;
     end;
@@ -1731,7 +1701,6 @@ begin
   FSections := DoCreateSections;
   FDesignRows := DoCreateDesignRows;
   FReferencesRows := TmnrReferencesRows.Create;
-  FItems := TmnrRowReferences.Create;
   FAppendDetailTotals := False;
   FAppendReportTotals := False;
   FAppendDetailTitles := False;
@@ -1740,6 +1709,8 @@ begin
   FAppendReportTitles := GetAppendTitlesDefault;
 
   FSectionLoopWay     := slwAuto;
+  FRows := TmnObjectList<TmnrRow>.Create;
+  FRows.OwnsObjects := False;
 end;
 
 destructor TmnrSection.Destroy;
@@ -1747,7 +1718,7 @@ begin
   FSections.Free;
   FDesignRows.Free;
   FReferencesRows.Free;
-  FItems.Free;
+  FreeAndNil(FRows);
   inherited;
 end;
 
@@ -1811,10 +1782,7 @@ begin
           if aRow <> nil then //maybe HandleNewRow free it too
           begin
             aRow.ScaleCells;//Zaher
-            with Items.Add do
-            begin
-              FRow := aRow;
-            end;
+            Rows.Add(aRow);
           end;
         end
         else
@@ -1945,7 +1913,7 @@ begin
   s := First;
   while s <> nil do
   begin
-    s.Items.Clear;
+    s.Rows.Clear;
     s.ReferencesRows.Clear;
     s.FHitAppendTitles := False;
     if s.Sections<>nil then s.Sections.ClearItems;
@@ -2014,7 +1982,7 @@ begin
             //s.Sections.Loop;
           end;
 
-          if (aParams.AcceptMode = acmEof) and (s.Items.Count <> 0) then
+          if (aParams.AcceptMode = acmEof) and (s.Rows.Count <> 0) then
           begin
             if (r <> nil) then
             begin
@@ -2248,7 +2216,7 @@ begin
           else if (aParams.AcceptMode = acmSkip) and (s.ClassID = sciHeaderDetails) then
             s.Sections.Loop;
 
-          if (aParams.AcceptMode = acmEof) and (s.Items.Count <> 0) then
+          if (aParams.AcceptMode = acmEof) and (s.Rows.Count <> 0) then
           begin
             if (r <> nil) then
             begin
@@ -2356,14 +2324,14 @@ procedure TmnrRow.ScaleCells;
 var
   c: TmnrCell;
 begin
-  if First <> nil then
+  if not Locked then
   begin
-    c := First as TmnrCell;
-    repeat
-      if (c.DesignCell <> nil) and not Locked then
-        c.DesignCell.ScaleCell(c);
-      c := c.Next as TmnrCell;
-    until (c = nil);
+    c := First;
+    while c<>nil do
+    begin
+      c.Scale;
+      c := c.Next;
+    end;
   end;
 end;
 
@@ -2752,6 +2720,11 @@ begin
   Result := Nodes as TmnrRow;
 end;
 
+procedure TmnrCell.Scale;
+begin
+  if DesignCell<>nil then DesignCell.ScaleCell(Self);
+end;
+
 procedure TmnrCell.SumCell(vCell: TmnrCell);
 begin
   //if not Layout.DenySumming then
@@ -2810,23 +2783,6 @@ end;
 function TmnrReferencesRows.GetLast: TmnrReferencesRow;
 begin
   Result := TmnrReferencesRow(inherited GetLast);
-end;
-
-{ TmnrRowReferences }
-
-function TmnrRowReferences.Add: TmnrRowReference;
-begin
-  Result := TmnrRowReference.Create(Self);
-end;
-
-function TmnrRowReferences.GetFirst: TmnrRowReference;
-begin
-  Result := TmnrRowReference(inherited GetFirst);
-end;
-
-function TmnrRowReferences.GetLast: TmnrRowReference;
-begin
-  Result := TmnrRowReference(inherited GetLast);
 end;
 
 { TmnrReference }
