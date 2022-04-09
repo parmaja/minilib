@@ -1755,7 +1755,7 @@ begin
   begin
     p := PQgetvalue(vRes, vTuple, vIndex);
     {$ifdef FPC}
-    Value := p;
+    Value := PAnsiChar(p);
     {$else}
     Value := UTF8ToString(PAnsiChar(p));
     {$endif}

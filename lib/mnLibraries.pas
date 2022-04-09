@@ -81,7 +81,8 @@ type
     function Load: Boolean;
     function IsLoaded: Boolean;
     procedure Release;
-    function GetAddress(const ProcedureName: string; ARaiseError: Boolean = False): Pointer;
+    function GetAddress(const ProcedureName: string; ARaiseError: Boolean = False): Pointer; overload;
+    procedure GetAddress(var ProcVariable: Pointer; const ProcedureName: string; ARaiseError: Boolean = False); overload;
     property Handle: TLibHandle read FHandle;
     property LibraryName: string read FLibraryName;
   end;
@@ -170,11 +171,19 @@ end;
 
 function TmnLibrary.GetAddress(const ProcedureName: string; ARaiseError: Boolean): Pointer;
 begin
+  Result := nil;
+  GetAddress(Result, ProcedureName, ARaiseError);
+end;
+
+procedure TmnLibrary.GetAddress(var ProcVariable: Pointer; const ProcedureName: string; ARaiseError: Boolean);
+begin
+  if ProcVariable <> nil then
+    raise Exception.Create(ProcedureName + ' address is already loaded');
   if FHandle <> 0 then
-    Result := GetProcAddress(Handle, PChar(ProcedureName)) //Use PChar not PAnsiChar
+    ProcVariable := GetProcAddress(Handle, PChar(ProcedureName)) //Use PChar not PAnsiChar
   else
-    Result := nil;
-  if (Result = nil) and (RaiseError or ARaiseError) then
+    ProcVariable := nil;
+  if (ProcVariable = nil) and (RaiseError or ARaiseError) then
     raise Exception.Create(ProcedureName + ' not found in ' + LoadedLibrary);
 end;
 
