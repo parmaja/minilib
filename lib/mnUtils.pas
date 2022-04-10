@@ -201,15 +201,14 @@ procedure ISOStrToDate(ISODate: String; out Y, M, D, H, N, S: Word; vDateSeparat
 function ISOStrToDate(ISODate: String; vDateSeparator: Char = '-'; TimeDivider: Char = #0; UseDefault: Boolean = False): TDateTime; overload;
 
 function ISODateToStr(DateTime: TDateTime; vDateSeparator: Char = '-'; TimeDivider: Char = ' '; WithTime: Boolean = False): String; overload;
-
-function AnsiToUnicode(S: rawbytestring; CodePage: Integer = 0): string;
-function StringAs(S: rawbytestring; CodePage: Integer = 0): utf8string;
-
 function IsAllLowerCase(S: string): Boolean;
 
+function AnsiToUnicode(S: rawbytestring; CodePage: Integer = 0): string; 
+function StringAs(S: rawbytestring; CodePage: Integer = 0): utf8string; deprecated;
 //Zero Based
-function StringOf(const Value: Array of Byte): string; overload;
-function StringOf(const Value: TBytes): string; overload;
+function StringOf(const Value: Array of Byte; CodePage: Word = CP_UTF8): string; overload;
+function StringOf(const Value: TBytes; CodePage: Word = CP_UTF8): string; overload;
+function StringOf(const Value: PByte; Size: Integer; CodePage: Word = CP_UTF8): string; overload;
 
 //Files Utils
 
@@ -646,8 +645,6 @@ begin
 end;
 
 function StrToStringsEx(Content: string; Strings: TStrings; Separators: array of string; IgnoreInitialWhiteSpace: TSysCharSet; Quotes: TSysCharSet): Integer;
-var
-  a: array of string;
 begin
   if (Strings = nil) then
     raise Exception.Create('StrToStrings: Strings is nil');
@@ -689,6 +686,7 @@ var
   NextIsValue: Boolean;
   IsSwitch: Boolean;
 begin
+  IsSwitch := False;
   Result := 0;
   Index := 0;
   Name := '';
@@ -1450,30 +1448,32 @@ begin
   Result := S;
 end;
 
-function StringOf(const Value: array of Byte): string;
-var
-  Len:Integer;
+function StringOf(const Value: array of Byte; CodePage: Word): string;
 begin
-  {$ifdef FPC}
-  Result := '';
-  {$endif}
-  Len:=Length(Value) div SizeOf(Char);
-  SetLength(Result, Len);
-  if Len > 0 then
-    Move(Value[0], Result[1], Len * SizeOf(Char));
+  Result := TEncoding.GetEncoding(CodePage).GetString(Value);
 end;
 
-function StringOf(const Value: TBytes): string;
-var
-  Len:Integer;
+function StringOf(const Value: TBytes; CodePage: Word): string;
 begin
-  {$ifdef FPC}
-  Result := '';
-  {$endif}
-  Len:=Length(Value) div SizeOf(Char);
-  SetLength(Result, Len);
-  if Len > 0 then
-    Move(Value[0], Result[1], Len * SizeOf(Char));
+  Result := TEncoding.GetEncoding(CodePage).GetString(Value);
+end;
+
+//* thanks to https://stackoverflow.com/a/41726706/585304
+type
+  TEncodingHelper = class helper for TEncoding
+  public
+    function GetString(Bytes: PByte; ByteCount: Integer): String;
+  end;
+
+function TEncodingHelper.GetString(Bytes: PByte; ByteCount: Integer): String;
+begin
+  SetLength(Result, Self.GetCharCount(Bytes, ByteCount));
+  Self.GetChars(Bytes, ByteCount, PChar(Result), Length(Result));
+end;
+
+function StringOf(const Value: PByte; Size: Integer; CodePage: Word = CP_UTF8): string;
+begin
+  Result := TEncoding.GetEncoding(CodePage).GetString(Value, Size);
 end;
 
 function IsAllLowerCase(S: string): Boolean;
