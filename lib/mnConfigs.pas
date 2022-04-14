@@ -143,7 +143,7 @@ begin
     Clear;
     while not Strings.EndOfStream do
     begin
-      Line := Strings.ReadLineRawByte;
+      Line := Strings.ReadLineUTF8;
       AddItem(Line, Separator, True);
     end;
   finally
@@ -315,7 +315,7 @@ begin
   try
     while not Strings.EndOfStream do
     begin
-      Line := Trim(Strings.ReadLineRawByte);
+      Line := Trim(Strings.ReadLineUTF8);
       if RightStr(Line, 1) = '.' then
         AddSection(LeftStr(Line, Length(Line) - 1))
       else if LeftStr(Line, 1) = '[' then

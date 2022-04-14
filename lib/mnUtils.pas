@@ -22,7 +22,7 @@ unit mnUtils;
 interface
 
 uses
-  {$ifdef windows}Windows, {$endif}
+  {$ifdef windows}Windows,{$endif}
   Classes, SysUtils, StrUtils, DateUtils, Types, Character;
 
 const
@@ -91,6 +91,8 @@ function GetArgument(Strings: TStrings; out Value: String; Switch: string; AltSw
 function GetArgument(Strings: TStrings; Switch: string; AltSwitch: string = ''): Boolean; overload;
 //Get Param (non switch value by index)
 function GetArgument(Strings: TStrings; out Value: String; Index: Integer): Boolean; overload;
+function GetArgument(Strings: TStrings; OutStrings: TStrings): Boolean; overload;
+function GetArgument(Strings: TStrings; out OutStrings: TArray<String>): Boolean; overload;
 
 function StringsToString(Strings: TStrings; LineBreak: string = sLineBreak): string;
 
@@ -203,8 +205,6 @@ function ISOStrToDate(ISODate: String; vDateSeparator: Char = '-'; TimeDivider: 
 function ISODateToStr(DateTime: TDateTime; vDateSeparator: Char = '-'; TimeDivider: Char = ' '; WithTime: Boolean = False): String; overload;
 function IsAllLowerCase(S: string): Boolean;
 
-function AnsiToUnicode(S: rawbytestring; CodePage: Integer = 0): string; 
-function StringAs(S: rawbytestring; CodePage: Integer = 0): utf8string; deprecated;
 //Zero Based
 function StringOf(const Value: Array of Byte; CodePage: Word = CP_UTF8): string; overload;
 function StringOf(const Value: TBytes; CodePage: Word = CP_UTF8): string; overload;
@@ -739,8 +739,8 @@ begin
         begin
           if NextIsValue then
           begin
-            if CharInArray(S[1], Switches) then //* hmmm maybe not
-              raise Exception.Create('Value excepted not a switch');
+{            if CharInArray(S[1], Switches) then //* hmmm maybe not //nop, what if i want value is minus
+              raise Exception.Create('Value excepted not a switch '+ S);}
             Value := S;
             NextIsValue := False;
           end
@@ -882,6 +882,57 @@ begin
       Exit(True);
       Dec(Index);
     end
+  end;
+end;
+
+function GetArgument(Strings: TStrings; OutStrings: TStrings): Boolean;
+var
+  I, P: Integer;
+  S, Value: string;
+begin
+  Result := False;
+  Value := '';
+  for I := 0 to Strings.Count - 1 do
+  begin
+    S := Strings[I];
+    P := Pos(Strings.NameValueSeparator, S);
+    if (P <> 0) then
+    begin
+      if (Copy(S, 1, P - 1) = '') then
+      begin
+        Value := Copy(S, P + 1, MaxInt);
+        OutStrings.Add(Value);
+        Result := True;
+      end;
+    end
+    else if (P = 0) then
+      Exit;
+  end;
+end;
+
+function GetArgument(Strings: TStrings; out OutStrings: TArray<String>): Boolean;
+var
+  I, P: Integer;
+  S, Value: string;
+begin
+  Result := False;
+  Value := '';
+  for I := 0 to Strings.Count - 1 do
+  begin
+    S := Strings[I];
+    P := Pos(Strings.NameValueSeparator, S);
+    if (P <> 0) then
+    begin
+      if (Copy(S, 1, P - 1) = '') then
+      begin
+        Value := Copy(S, P + 1, MaxInt);
+        SetLength(OutStrings, Length(OutStrings) + 1);
+        OutStrings[Length(OutStrings) -1] := Value;
+        Result := True;
+      end;
+    end
+    else if (P = 0) then
+      Exit;
   end;
 end;
 
@@ -1432,20 +1483,43 @@ begin
   end;
 end;
 
-function AnsiToUnicode(S: rawbytestring; CodePage: Integer): string;
-begin
-  if CodePage = 0 then
-    CodePage := SystemAnsiCodePage;
-  SetCodePage(S, CodePage, False);
-  Result := S;
-end;
+//* thanks to https://stackoverflow.com/a/41726706/585304
+type
+  TEncodingHelper = class helper for TEncoding
+  public
+    function GetString(Bytes: PByte; ByteCount: Integer): String; overload;
+    {$ifdef FPC}
+    function GetString(Bytes: array of Byte): String; overload;
+    {$endif}
+  end;
 
-function StringAs(S: rawbytestring; CodePage: Integer = 0): utf8string;
+  function TEncodingHelper.GetString(Bytes: PByte; ByteCount: Integer): String;
+  begin
+    SetLength(Result, Self.GetCharCount(Bytes, ByteCount));
+    {$ifdef FPC}
+    Self.GetChars(Bytes, ByteCount, PUnicodeChar(Result), Length(Result));
+    {$else}
+    Self.GetChars(Bytes, ByteCount, PChar(Result), Length(Result));
+    {$endif}
+  end;
+
+  {$ifdef FPC}
+  function TEncodingHelper.GetString(Bytes: array of Byte): String;
+  var
+    L, Count: Integer;
+  begin
+    L := Length(Bytes);
+    Count := GetCharCount(@Bytes[0], L);
+    if (Count = 0) and (L > 0) then
+      raise Exception.Create('Wrong encoding!');
+    SetLength(Result, Count);
+    GetChars(@Bytes[0], L, PUnicodeChar(Result), Count);
+  end;
+  {$endif}
+
+function StringOf(const Value: PByte; Size: Integer; CodePage: Word = CP_UTF8): string;
 begin
-  if CodePage = 0 then
-    CodePage := SystemAnsiCodePage;
-  SetCodePage(S, CodePage, False);
-  Result := S;
+  Result := TEncoding.GetEncoding(CodePage).GetString(Value, Size);
 end;
 
 function StringOf(const Value: array of Byte; CodePage: Word): string;
@@ -1458,24 +1532,6 @@ begin
   Result := TEncoding.GetEncoding(CodePage).GetString(Value);
 end;
 
-//* thanks to https://stackoverflow.com/a/41726706/585304
-type
-  TEncodingHelper = class helper for TEncoding
-  public
-    function GetString(Bytes: PByte; ByteCount: Integer): String;
-  end;
-
-function TEncodingHelper.GetString(Bytes: PByte; ByteCount: Integer): String;
-begin
-  SetLength(Result, Self.GetCharCount(Bytes, ByteCount));
-  Self.GetChars(Bytes, ByteCount, PChar(Result), Length(Result));
-end;
-
-function StringOf(const Value: PByte; Size: Integer; CodePage: Word = CP_UTF8): string;
-begin
-  Result := TEncoding.GetEncoding(CodePage).GetString(Value, Size);
-end;
-
 function IsAllLowerCase(S: string): Boolean;
 var
   i: Integer;
@@ -1483,7 +1539,11 @@ begin
   Result := True;
   for i := 1 to Length(S) do
   begin
+    {$ifdef FPC}
     if IsUpper(S[i]) then
+    {$else}
+    if S[i].IsUpper then
+    {$endif}
     begin
       Result := False;
       break;
@@ -1538,7 +1598,6 @@ end;
 function FirstFile(Path, Files: string): string;
 var
   FileList: TStringList;
-  f: string;
 begin
   FileList := TStringList.Create;
   try

@@ -527,7 +527,7 @@ var
   Result: TmodExecuteResults;
 begin
   inherited;
-  aRequestLine := TrimRight(Stream.ReadLineRawByte);
+  aRequestLine := TrimRight(Stream.ReadLineUTF8);
   if Connected and (aRequestLine <> '') then //aRequestLine empty when timeout but not disconnected
   begin
     aRequest := TmodRequest.Create;
@@ -774,7 +774,7 @@ begin
   begin
     while not (cloRead in Stream.Done) do
     begin
-      line := Stream.ReadLineRawByte;
+      line := Stream.ReadLineUTF8;
       if line = '' then
         break
       else
