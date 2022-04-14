@@ -32,6 +32,10 @@ procedure TMyArguments.DoRun;
 var
   ErrorMsg: String;
   sText: string;
+  list: TStringList;
+  files: TStringList;
+  s: string;
+  i: Integer;
 begin
   // quick check parameters
   ErrorMsg :=CheckOptions('h', 'help');
@@ -49,10 +53,35 @@ begin
   end;
 
   //sText := '-t -s -v: value test';
-  sText := 'build c:\projects\project.pro -t /s -v: " -z -d -r: value" test --value:testin --verbose=true platform=win32 compiler=dccarm -x=-x';
+  sText := 'build "c:\projects\project.pro" -t /s -v: " -z -d -r: value" test --value:testin --verbose=true platform=win32 compiler=dccarm -x=-x';
+  //sText := '-w zaher test';
   //sText := '"-v":test'; //bug
   ParseArgumentsCallback(sText, @MyArgumentsCallbackProc, nil, ['-', '/'], [' ', #9], ['''','"'], [':', '=']);
+  WriteLn('--------');
+  WriteLn('');
 
+  list := TStringList.Create;
+  files := TStringList.Create;
+  sText := 'test1 test1 -s -w -v: value1';
+  ParseArguments(sText, list);
+  GetArgument(list, files);
+
+  for i := 0 to list.Count-1 do
+    WriteLn(list[i]);
+
+  WriteLn('--------');
+  for i := 0 to files.Count-1 do
+    WriteLn(files[i]);
+
+  GetArgumentValue(list, s, 'v');
+  WriteLn(s);
+  if GetArgumentSwitch(list, 's') then
+    WriteLn('s is exists')
+  else
+    WriteLn('s is NOT exists');
+
+  list.Free;
+  files.Free;
   ReadLn();
 
   // stop program loop

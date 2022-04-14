@@ -82,16 +82,34 @@ type
     pargSmartSwitch
   );
 
+//*  -t --test cmd1 cmd2 -t: value -t:value -t value
 function ParseArgumentsCallback(Content: string; const CallBackProc: TArgumentsCallbackProc; Sender: Pointer; Switches: TArray<Char>; WhiteSpaces: TArray<Char> {= [' ', #9]}; Quotes: TArray<Char> {= ['''', '"']};  ValueSeperators: TArray<Char> {= [':', '=']}; Options: TParseArgumentsOptions = [pargSmartSwitch]): Integer; overload;
 function ParseArgumentsCallback(Content: string; const CallBackProc: TArgumentsCallbackProc; Sender: Pointer): Integer; overload;
+
+//*
 function ParseArguments(Content: string; Strings: TStrings; Switches: TArray<Char>; WhiteSpaces: TArray<Char>{ = [' ', #9]}; Quotes: TArray<Char> {= ['''', '"']}; ValueSeperators: TArray<Char> {= [':', '=']}): Integer; overload;
 function ParseArguments(Content: string; Strings: TStrings): Integer; overload;
 
-function GetArgument(Strings: TStrings; out Value: String; Switch: string; AltSwitch: string = ''): Boolean; overload;
-function GetArgument(Strings: TStrings; Switch: string; AltSwitch: string = ''): Boolean; overload;
+//* Skip first param
+function ParseCommandLine(Content: string; Strings: TStrings; Switches: TArray<Char>; WhiteSpaces: TArray<Char>{ = [' ', #9]}; Quotes: TArray<Char> {= ['''', '"']}; ValueSeperators: TArray<Char> {= [':', '=']}): Integer; overload;
+function ParseCommandLine(Content: string; Strings: TStrings): Integer; overload;
+
+{
+  param1 param2 -s -w: value
+
+  =param1
+  =param2
+  -s
+  -w=value
+}
+
+function GetArgumentValue(Strings: TStrings; out Value: String; Switch: string; AltSwitch: string = ''): Boolean; overload;
+function GetArgumentSwitch(Strings: TStrings; Switch: string; AltSwitch: string = ''): Boolean; overload;
+
 //Get Param (non switch value by index)
 function GetArgument(Strings: TStrings; out Value: String; Index: Integer): Boolean; overload;
-function GetArgument(Strings: TStrings; OutStrings: TStrings): Boolean; overload;
+
+function GetArgument(Strings: TStrings; OutStrings: TStrings; AltSwitch: string = ''): Boolean; overload;
 function GetArgument(Strings: TStrings; out OutStrings: TArray<String>): Boolean; overload;
 
 function StringsToString(Strings: TStrings; LineBreak: string = sLineBreak): string;
@@ -661,19 +679,6 @@ begin
   Result := StrToStringsEx(Content, Strings, [#13, #10, #0], IgnoreInitialWhiteSpace, Quotes);
 end;}
 
-procedure ArgumentsCallbackProc(Sender: Pointer; Index: Integer; Name, Value: string; IsSwitch:Boolean; var Resume: Boolean);
-begin
-  if Index > 0 then //ignore first param (exe file)
-    with TObject(Sender) as TStrings do
-    begin
-      if (Name <> '') and (Value = '') then
-        Add(NameValueSeparator + Name)
-      else
-        Add(Name + NameValueSeparator + Value);
-    end;
-end;
-
-//  -t   --test cmd1 cmd2 -t: value -t:value -t value
 function ParseArgumentsCallback(Content: string; const CallBackProc: TArgumentsCallbackProc; Sender: Pointer; Switches: TArray<Char>; WhiteSpaces: TArray<Char>; Quotes: TArray<Char>; ValueSeperators: TArray<Char>; Options: TParseArgumentsOptions): Integer;
 var
   Start, Cur: Integer;
@@ -795,6 +800,22 @@ begin
   end;
 end;
 
+procedure ArgumentsCallbackProc(Sender: Pointer; Index: Integer; Name, Value: string; IsSwitch: Boolean; var Resume: Boolean);
+begin
+  with TObject(Sender) as TStrings do
+  begin
+    if (Name <> '') and (Value = '') then
+    begin
+      if IsSwitch then
+        Add(Name + NameValueSeparator)
+      else
+        Add(NameValueSeparator + Name)
+    end
+    else
+      Add(Name + NameValueSeparator + Value);
+  end;
+end;
+
 function ParseArgumentsCallback(Content: string; const CallBackProc: TArgumentsCallbackProc; Sender: Pointer): Integer; overload;
 begin
   Result := ParseArgumentsCallback(Content, @CallBackProc, Sender, ['-', '/'], [' ', #9], ['"', ''''], ['=', ':']);
@@ -810,7 +831,23 @@ begin
   Result := ParseArguments(Content, Strings, ['-', '/'], [' ', #9], ['"', ''''], ['=', ':']);
 end;
 
-function GetArgument(Strings: TStrings; out Value: String; Switch: string; AltSwitch: string = ''): Boolean;
+procedure CommandLineCallbackProc(Sender: Pointer; Index: Integer; Name, Value: string; IsSwitch: Boolean; var Resume: Boolean);
+begin
+  if Index > 0 then //ignore first param (exe file)
+    ArgumentsCallbackProc(Sender, Index, Name, Value, IsSwitch, Resume);
+end;
+
+function ParseCommandLine(Content: string; Strings: TStrings; Switches: TArray<Char>; WhiteSpaces: TArray<Char>; Quotes: TArray<Char>; ValueSeperators: TArray<Char>): Integer;
+begin
+  Result := ParseArgumentsCallback(Content, @CommandLineCallbackProc, Strings, Switches, WhiteSpaces, Quotes, ValueSeperators);
+end;
+
+function ParseCommandLine(Content: string; Strings: TStrings): Integer;
+begin
+  Result := ParseArguments(Content, Strings, ['-', '/'], [' ', #9], ['"', ''''], ['=', ':']);
+end;
+
+function GetArgumentValue(Strings: TStrings; out Value: String; Switch: string; AltSwitch: string = ''): Boolean;
 var
   I, P: Integer;
   S: string;
@@ -833,7 +870,7 @@ begin
   end;
 end;
 
-function GetArgument(Strings: TStrings; Switch: string; AltSwitch: string = ''): Boolean; overload;
+function GetArgumentSwitch(Strings: TStrings; Switch: string; AltSwitch: string = ''): Boolean; overload;
 var
   I, P: Integer;
   S: string;
@@ -885,7 +922,11 @@ begin
   end;
 end;
 
-function GetArgument(Strings: TStrings; OutStrings: TStrings): Boolean;
+function GetArgument(Strings: TStrings; OutStrings: TStrings; AltSwitch: string): Boolean;
+  procedure AddNow(S: string);
+  begin
+    OutStrings.Add(S);
+  end;
 var
   I, P: Integer;
   S, Value: string;
@@ -901,20 +942,26 @@ begin
       if (Copy(S, 1, P - 1) = '') then
       begin
         Value := Copy(S, P + 1, MaxInt);
-        OutStrings.Add(Value);
+        AddNow(Value);
         Result := True;
       end;
     end
     else if (P = 0) then
-      Exit;
+      AddNow(S);
   end;
 end;
 
 function GetArgument(Strings: TStrings; out OutStrings: TArray<String>): Boolean;
+  procedure AddNow(S: string);
+  begin
+    SetLength(OutStrings, Length(OutStrings) + 1);
+    OutStrings[Length(OutStrings) -1] := S;
+  end;
 var
   I, P: Integer;
   S, Value: string;
 begin
+  OutStrings := [];
   Result := False;
   Value := '';
   for I := 0 to Strings.Count - 1 do
@@ -926,13 +973,12 @@ begin
       if (Copy(S, 1, P - 1) = '') then
       begin
         Value := Copy(S, P + 1, MaxInt);
-        SetLength(OutStrings, Length(OutStrings) + 1);
-        OutStrings[Length(OutStrings) -1] := Value;
+        AddNow(Value);
         Result := True;
       end;
     end
     else if (P = 0) then
-      Exit;
+      AddNow(S);
   end;
 end;
 
@@ -1495,6 +1541,9 @@ type
 
   function TEncodingHelper.GetString(Bytes: PByte; ByteCount: Integer): String;
   begin
+    {$ifdef FPC}
+    Result := '';
+    {$endif}
     SetLength(Result, Self.GetCharCount(Bytes, ByteCount));
     {$ifdef FPC}
     Self.GetChars(Bytes, ByteCount, PUnicodeChar(Result), Length(Result));
@@ -1508,6 +1557,9 @@ type
   var
     L, Count: Integer;
   begin
+    {$ifdef FPC}
+    Result := '';
+    {$endif}
     L := Length(Bytes);
     Count := GetCharCount(@Bytes[0], L);
     if (Count = 0) and (L > 0) then
