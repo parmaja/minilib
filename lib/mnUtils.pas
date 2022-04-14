@@ -844,7 +844,7 @@ end;
 
 function ParseCommandLine(Content: string; Strings: TStrings): Integer;
 begin
-  Result := ParseArguments(Content, Strings, ['-', '/'], [' ', #9], ['"', ''''], ['=', ':']);
+  Result := ParseCommandLine(Content, Strings, ['-', '/'], [' ', #9], ['"', ''''], ['=', ':']);
 end;
 
 function GetArgumentValue(Strings: TStrings; out Value: String; Switch: string; AltSwitch: string = ''): Boolean;
