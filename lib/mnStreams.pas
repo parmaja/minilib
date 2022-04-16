@@ -145,6 +145,7 @@ type
   protected
     function CheckReadBuffer: Boolean; //check it in belal job
   private
+    FTimeoutTries: integer;
     type
       { TmnInitialStreamProxy }
 
@@ -244,6 +245,7 @@ type
     property EndOfStream: Boolean read GetEndOfStream;
 
     property EndOfLine: string read FEndOfLine write FEndOfLine;
+    property TimeoutTries: integer read FTimeoutTries write FTimeoutTries;
     property BufferSize: TFileSize read FReadBuffer.Size write SetReadBufferSize; //deprecated;
     property ReadBufferSize: TFileSize read FReadBuffer.Size write SetReadBufferSize;
     property WriteBufferSize: TFileSize read FWriteBuffer.Size write SetWriteBufferSize; //TODO not yet
@@ -1261,7 +1263,7 @@ end;
 
 function TmnBufferStream.Read(var Buffer; Count: Longint): Longint;
 var
-  c, aCount, aSize: Longint;
+  c, aCount, aSize, aTry: Longint;
   P: PByte;
 begin
   Flush;//Flush write buffer
@@ -1273,6 +1275,7 @@ begin
       FReadBuffer.CreateBuffer;
     P := @Buffer;
     aCount := 0;
+    aTry := 0;
     while (Count > 0) and not (cloRead in Done) do
     begin
       c := FReadBuffer.Stop - FReadBuffer.Pos; //size of data in buffer
@@ -1281,8 +1284,14 @@ begin
         aSize := LoadReadBuffer;
         if (aSize = 0) or not Connected then
           break
+        else if aSize<0 then
+        begin
+          Inc(aTry);
+          if aTry>=TimeoutTries then
+            Break
+        end
         else
-          Continue//new
+          Continue;
       end;
       if c > Count then // is FReadBuffer enough for Count
         c := Count;
