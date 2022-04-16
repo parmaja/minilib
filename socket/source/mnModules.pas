@@ -243,17 +243,18 @@ type
     function CreateCommand(CommandName: string; ARequest: TmodRequest; ARequestStream: TmnBufferStream = nil; ARespondStream: TmnBufferStream = nil): TmodCommand; overload;
 
     procedure ParseHeader(RequestHeader: TmnParams; Stream: TmnBufferStream); virtual;
-    function RequestCommand(var ARequest: TmodRequest; ARequestStream, ARespondStream: TmnBufferStream): TmodCommand; virtual;
+    function RequestCommand(ARequest: TmodRequest; ARequestStream, ARespondStream: TmnBufferStream): TmodCommand; virtual;
     function Match(const ARequest: TmodRequest): Boolean; virtual;
     procedure Log(S: string); virtual;
     procedure Start; virtual;
     procedure Stop; virtual;
     procedure Reload; virtual;
     procedure Init; virtual;
+    procedure Idle; virtual;
   public
     constructor Create(const AName, AAliasName: string; AProtcols: TArray<string>; AModules: TmodModules); virtual;
     destructor Destroy; override;
-    function Execute(var ARequest: TmodRequest; ARequestStream: TmnBufferStream = nil; ARespondStream: TmnBufferStream = nil): TmodExecuteResults;
+    function Execute(ARequest: TmodRequest; ARequestStream: TmnBufferStream = nil; ARespondStream: TmnBufferStream = nil): TmodExecuteResults;
     procedure ExecuteCommand(CommandName: string; ARequestStream: TmnBufferStream = nil; ARespondStream: TmnBufferStream = nil; RequestString: TArray<String> = nil);
     function RegisterCommand(vName: string; CommandClass: TmodCommandClass; AFallback: Boolean = False): Integer; overload;
 
@@ -288,6 +289,7 @@ type
     procedure Start;
     procedure Stop;
     procedure Init;
+    procedure Idle;
     property Server: TmodModuleServer read FServer;
   public
     constructor Create(AServer: TmodModuleServer);
@@ -342,6 +344,8 @@ type
     function CreateModules: TmodModules; virtual;
     procedure DoStart; override;
     procedure DoStop; override;
+    procedure DoIdle(vListener: TmnListener); override;
+
   public
     constructor Create; virtual;
     destructor Destroy; override;
@@ -569,6 +573,12 @@ begin
   Result := TmodModuleListener.Create;
 end;
 
+procedure TmodModuleServer.DoIdle(vListener: TmnListener);
+begin
+  inherited;
+  Modules.Idle;
+end;
+
 procedure TmodModuleServer.DoStart;
 begin
   inherited;
@@ -624,16 +634,13 @@ begin
   inherited Create;
   FModule := AModule;
   FRequestStream := RequestStream; //do not free
-  FRespondStream := RequestStream; //do not free
-  FRequest := ARequest;
-  if FRequest = nil then
-    FRequest := TmodRequest.Create;
+  FRespondStream := RespondStream; //do not free
+  FRequest := ARequest; //do not free
   FRespond := TmodRespond.Create;
 end;
 
 destructor TmodCommand.Destroy;
 begin
-  FreeAndNil(FRequest);
   FreeAndNil(FRespond);
   inherited;
 end;
@@ -738,10 +745,7 @@ begin
   aClass := GetCommandClass(CommandName);
   if aClass <> nil then
   begin
-    Result := aClass.Create(Self, ARequest);
-    Result.FModule := Self;
-    Result.FRequestStream := ARequestStream;
-    Result.FRespondStream := ARespondStream;
+    Result := aClass.Create(Self, ARequest, ARequestStream, ARespondStream);
   end
   else
     Result := nil;
@@ -759,6 +763,11 @@ begin
   end
   else
     Result := FFallbackCommand;
+end;
+
+procedure TmodModule.Idle;
+begin
+
 end;
 
 procedure TmodModule.Init;
@@ -820,9 +829,8 @@ begin
 
 end;
 
-function TmodModule.RequestCommand(var ARequest: TmodRequest; ARequestStream, ARespondStream: TmnBufferStream): TmodCommand;
+function TmodModule.RequestCommand(ARequest: TmodRequest; ARequestStream, ARespondStream: TmnBufferStream): TmodCommand;
 begin
-  ARequest.Command := ARequest.Method;
   Result := CreateCommand(ARequest.Command, ARequest, ARequestStream, ARespondStream);
 end;
 
@@ -859,7 +867,7 @@ procedure TmodModule.Log(S: string);
 begin
 end;
 
-function TmodModule.Execute(var ARequest: TmodRequest; ARequestStream: TmnBufferStream; ARespondStream: TmnBufferStream): TmodExecuteResults;
+function TmodModule.Execute(ARequest: TmodRequest; ARequestStream: TmnBufferStream; ARespondStream: TmnBufferStream): TmodExecuteResults;
 var
   aCMD: TmodCommand;
 begin
@@ -875,7 +883,6 @@ begin
   begin
     try
       try
-        ARequest := nil;
         Result := aCMD.Execute;
         Result.Status := Result.Status + [erSuccess];
       except
@@ -965,6 +972,14 @@ end;
 function TmodModules.GetActive: Boolean;
 begin
   Result := FActive;
+end;
+
+procedure TmodModules.Idle;
+var
+  aModule: TmodModule;
+begin
+  for aModule in Self do
+    aModule.Idle;
 end;
 
 procedure TmodModules.Init;

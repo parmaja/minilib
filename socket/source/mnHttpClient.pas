@@ -550,13 +550,11 @@ end;
 function TmnHttpClient.CreateStream: TmnHttpStream;
 begin
   Result := TmnHttpStream.Create;
-  Result.EndOfLine := sWinEndOfLine;
-  Result.ReadTimeout := 5000;
+  Result.EndOfLine      := sWinEndOfLine;
+  Result.ReadTimeout    := 5000;
   Result.ConnectTimeout := 5000;
-  Result.WriteTimeout := 5000;
-  {$if defined(ios) or defined(macos)}
+  Result.WriteTimeout   := 5000;
   Result.Options := Result.Options + [soWaitBeforeRead];
-  {$endif}
 end;
 
 procedure TmnHttpClient.FreeStream;

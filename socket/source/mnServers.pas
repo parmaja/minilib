@@ -22,6 +22,9 @@ uses
   mnOpenSSL,
   mnSockets, mnStreams, mnConnections;
 
+const
+  cListenerTimeout = 3000;
+
 type
 
   { TmnServerSocket }
@@ -138,7 +141,7 @@ type
     //if listener connection down by network it will reconnect again
     property Attempts: Integer read FAttempts write FAttempts;
     //it is ListenerTimeout not ReadTimeOut
-    property Timeout: Integer read FTimeout write FTimeout default -1;
+    property Timeout: Integer read FTimeout write FTimeout default cListenerTimeout;
   end;
 
   {**
@@ -167,6 +170,7 @@ type
     procedure DoLog(const S: string); virtual;
     procedure DoChanged(vListener: TmnListener); virtual;
     procedure DoAccepted(vListener: TmnListener; vConnection: TmnServerConnection); virtual;
+    procedure DoIdle(vListener: TmnListener); virtual; //no connection found after time out:)
     procedure DoBeforeOpen; virtual;
     procedure DoAfterOpen; virtual;
     procedure DoBeforeClose; virtual;
@@ -502,7 +506,7 @@ begin
   FreeOnTerminate := False;
   FLogMessages := TStringList.Create;
   FAttempts := 0;
-  FTimeout := -1;
+  FTimeout := cListenerTimeout;
 end;
 
 function TmnListener.DoCreateConnection(vStream: TmnConnectionStream): TmnConnection;
@@ -598,7 +602,9 @@ begin
           end;
         end
         else
+        begin
           aSocket := nil;
+        end;
 
         {Enter; //todo remove it;
         try
@@ -613,6 +619,9 @@ begin
         begin
           if (aSocket = nil) then
           begin
+            if Connected and (Server<>nil) then
+              Server.DoIdle(Self);
+
             //only if we need retry mode, attempt to connect new socket, for 3 times as example, that if socket disconnected for wiered reason
             if (not Connected) and (FAttempts > 0) and (FTries > 0) then
             begin
@@ -853,11 +862,17 @@ begin
   end;
   Log('Server stopped');
   DoStop;
+  TThread.Synchronize(nil, DoCheckSynchronize);
 end;
 
 function TmnServer.DoCreateListener: TmnListener;
 begin
   Result := TmnListener.Create;
+end;
+
+procedure TmnServer.DoIdle(vListener: TmnListener);
+begin
+
 end;
 
 function TmnServer.CreateListener: TmnListener;

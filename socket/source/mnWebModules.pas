@@ -105,7 +105,6 @@ type
     procedure Created; override;
     procedure DoCreateCommands; override;
 
-    function RequestCommand(var ARequest: TmodRequest; ARequestStream: TmnBufferStream; ARespondStream: TmnBufferStream): TmodCommand; override;
     procedure Log(S: string); override;
   public
     destructor Destroy; override;
@@ -288,13 +287,6 @@ destructor TmodWebModule.Destroy;
 begin
   FreeAndNil(FDefaultDocument);
   inherited Destroy;
-end;
-
-function TmodWebModule.RequestCommand(var ARequest: TmodRequest; ARequestStream, ARespondStream: TmnBufferStream): TmodCommand;
-begin
-  ARequest.ParsePath(ARequest.URI);
-  ARequest.Command := ARequest.Method;
-  Result := CreateCommand(ARequest.Command, ARequest, ARequestStream, ARespondStream);
 end;
 
 procedure TmodWebModule.Log(S: string);
@@ -638,6 +630,8 @@ procedure TmodWebModules.ParseHead(ARequest: TmodRequest; const RequestLine: str
 begin
   inherited ParseHead(ARequest, RequestLine);
   ARequest.URI := URIDecode(ARequest.URI);
+  ARequest.ParsePath(ARequest.URI);
+  ARequest.Command := ARequest.Method;
 end;
 
 initialization
