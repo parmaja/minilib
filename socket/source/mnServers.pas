@@ -475,7 +475,7 @@ begin
   if (TThread.GetTickCount64-FIdleTick)>IdleInterval then
   begin
     FIdleTick := TThread.GetTickCount64;
-    vListener.Synchronize(DoIdle);
+    vListener.Queue(DoIdle);
   end;
 end;
 
