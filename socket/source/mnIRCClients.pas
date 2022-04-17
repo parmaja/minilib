@@ -1865,7 +1865,6 @@ begin
       while Connected and not Terminated and (aLine <> '') do
       begin
         Log('<' + aLine);
-        aNextCommand := nil;
         aCommand := ParseRaw(aLine);
         while aCommand <> nil do
         begin
@@ -2367,7 +2366,6 @@ begin
     begin
       m := MidStr(vMsg, 2, c);
       s := MidStr(vMsg,  3 + c, MaxInt);
-      aCmd := nil;
       for aCmd in UserCommands do
       begin
         if SameText(aCmd.Name, m) then

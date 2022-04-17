@@ -312,7 +312,7 @@ type
     function GetParams: TmncPostgreParams;
     function GetBinds: TmncPGBinds;
   protected
-    FHandle: ansistring;
+    FHandle: UTF8String;
     FResultFormat: TmpgResultFormat;
     FStatus: TExecStatusType;
     FBOF: Boolean;
@@ -341,7 +341,7 @@ type
     destructor Destroy; override;
     procedure Clear; override;
     property Status: TExecStatusType read FStatus;
-    property Handle: ansistring read FHandle;//used for name in PQprepare
+    property Handle: UTF8String read FHandle;//used for name in PQprepare
     property ResultFormat: TmpgResultFormat read FResultFormat write FResultFormat default mrfText;
     property Columns: TmncPGColumns read GetColumns;
   end;
@@ -392,8 +392,8 @@ type
     function GetDone: Boolean; override;
     function GetActive: Boolean; override;
     procedure DoClose; override;
-    function FetchSQL: AnsiString;
-    function CloseSQL: AnsiString;
+    function FetchSQL: UTF8String;
+    function CloseSQL: UTF8String;
   end;
 
 function PQLibVersion: Integer;
@@ -750,10 +750,10 @@ end;
 
 procedure TmncPGConnection.InternalConnect(out vHandle: PPGconn; vResource: string);
 var
-  aHost, aPort: AnsiString;
-  aResource, aUser, aPassword: AnsiString;
-  aSsl, aSslComp: AnsiString;
-  aUrl: AnsiString;
+  aHost, aPort: UTF8String;
+  aResource, aUser, aPassword: UTF8String;
+  aSsl, aSslComp: UTF8String;
+  aUrl: UTF8String;
 begin
   if not Assigned(PQsetdbLogin) then
   	raise EmncException.Create('Postgre not assigned');
@@ -840,7 +840,7 @@ end;
 
 function TmncPGConnection.IsDatabaseExists(vName: string): Boolean;
 var
-  s: AnsiString;
+  s: UTF8String;
   r: PPGresult;
   conn: PPGconn;
 begin
@@ -1885,7 +1885,7 @@ end;
 
 { TmncPGCursorCommand }
 
-function TmncPGCursorCommand.CloseSQL: AnsiString;
+function TmncPGCursorCommand.CloseSQL: UTF8String;
 begin
   Result := Format('close %s', [Handle]);
 end;
@@ -1983,7 +1983,7 @@ begin
   end;
 end;
 
-function TmncPGCursorCommand.FetchSQL: AnsiString;
+function TmncPGCursorCommand.FetchSQL: UTF8String;
 begin
   Result := Format('fetch in %s', [Handle]);
 end;

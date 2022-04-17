@@ -344,7 +344,7 @@ type
     function CreateModules: TmodModules; virtual;
     procedure DoStart; override;
     procedure DoStop; override;
-    procedure DoIdle(vListener: TmnListener); override;
+    procedure DoIdle; override;
 
   public
     constructor Create; virtual;
@@ -573,7 +573,7 @@ begin
   Result := TmodModuleListener.Create;
 end;
 
-procedure TmodModuleServer.DoIdle(vListener: TmnListener);
+procedure TmodModuleServer.DoIdle;
 begin
   inherited;
   Modules.Idle;
