@@ -471,7 +471,7 @@ begin
     raw := Utf8ToAnsi(s);}
     {$else}
     raw := AnsiString(s);//Here you can fix the bug
-    FCSVStream.WriteLineRawByte(raw);
+    FCSVStream.WriteAnsiString(raw);
     {$endif}
   end
   else
