@@ -142,6 +142,7 @@ type
 
   TmodHttpGetCommand = class(TmodURICommand)
   protected
+    procedure RespondDocument(const vDocument: string; var Result: TmodExecuteResults); virtual;
   public
     procedure RespondResult(var Result: TmodExecuteResults); override;
   end;
@@ -382,10 +383,41 @@ begin
     Result := 'application/binary';
 end;
 
-procedure TmodHttpGetCommand.RespondResult(var Result: TmodExecuteResults);
+procedure TmodHttpGetCommand.RespondDocument(const vDocument: string; var Result: TmodExecuteResults);
 var
   DocSize: Int64;
   aDocStream: TFileStream;
+begin
+  if FileExists(vDocument) then
+  begin
+    if Active then
+    begin
+      aDocStream := TFileStream.Create(vDocument, fmOpenRead or fmShareDenyWrite);
+      try
+        DocSize := aDocStream.Size;
+        if Active then
+        begin
+          SendRespond('HTTP/1.1 200 OK');
+          PostHeader('Content-Type', DocumentToContentType(vDocument));
+          if KeepAlive then
+            PostHeader('Content-Length', IntToStr(DocSize));
+        end;
+
+        SendHeader;
+
+        if Active then
+          RespondStream.WriteStream(aDocStream);
+      finally
+        aDocStream.Free;
+      end;
+    end;
+  end
+  else
+    RespondNotFound;
+end;
+
+procedure TmodHttpGetCommand.RespondResult(var Result: TmodExecuteResults);
+var
   aDocument: string;
 begin
   aDocument := IncludeTrailingPathDelimiter(Root);
@@ -405,33 +437,7 @@ begin
     if aDocument[Length(aDocument)] = PathDelim then //get the default file if it not defined
        aDocument := GetDefaultDocument(aDocument);
     aDocument := ExpandFileName(aDocument);
-
-    if FileExists(aDocument) then
-    begin
-      if Active then
-      begin
-        aDocStream := TFileStream.Create(aDocument, fmOpenRead or fmShareDenyWrite);
-        try
-          DocSize := aDocStream.Size;
-          if Active then
-          begin
-            SendRespond('HTTP/1.1 200 OK');
-            PostHeader('Content-Type', DocumentToContentType(aDocument));
-            if KeepAlive then
-              PostHeader('Content-Length', IntToStr(DocSize));
-          end;
-
-          SendHeader;
-
-          if Active then
-            RespondStream.WriteStream(aDocStream);
-        finally
-          aDocStream.Free;
-        end;
-      end;
-    end
-    else
-      RespondNotFound;
+    RespondDocument(aDocument, Result);
   end;
   inherited;
 end;
