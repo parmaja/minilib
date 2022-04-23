@@ -573,6 +573,8 @@ type
     procedure DoAppendReportTotals(vSection: TmnrSection);
     procedure DoAppendPageTotals(vSection: TmnrSection);
     function DoCreateSection(vClass: TmnrSectionClassID): TmnrSection; virtual;
+    procedure DoBeginLoop(vSection: TmnrSection); virtual;
+    procedure DoEndLoop(vSection: TmnrSection); virtual;
 
   public
     constructor Create(vReport: TmnrCustomReport); virtual;
@@ -2032,6 +2034,11 @@ begin
   end;
 end;
 
+procedure TmnrSections.DoBeginLoop(vSection: TmnrSection);
+begin
+
+end;
+
 procedure TmnrSections.DoAppendPageTotals(vSection: TmnrSection);
 var
   s: TmnrSection;
@@ -2052,6 +2059,11 @@ end;
 function TmnrSections.DoCreateSection(vClass: TmnrSectionClassID): TmnrSection;
 begin
   Result := TmnrSection.Create(Self, vClass);
+end;
+
+procedure TmnrSections.DoEndLoop(vSection: TmnrSection);
+begin
+
 end;
 
 procedure TmnrSections.EnumByName(List: TList; const vName: string);
@@ -2156,96 +2168,100 @@ begin
     aParams.Data := nil;
     aParams.AcceptMode := acmAccept;
     aParams.FetchMode := fmFirst;
+    DoBeginLoop(s);
+    try
+      s.AddReportTitles;
 
-    s.AddReportTitles;
-
-    case s.LoopWay of
-      slwSingle:
-      begin
-        s.DoFetch(aParams);
-        if aParams.AcceptMode = acmAccept then
-        begin
-          r := s.NewReference;
-
-          s.DoBeginFill(r);
-          try
-            s.FillNow(aParams, 0, r);
-          finally
-            s.DoEndFill(r);
-          end;
-
-          if aParams.Data <> nil then FreeAndNil(aParams.Data);
-          s.Sections.Loop;
-        end;
-      end;
-      slwMulti:
-      begin
-        r := nil;
-        while not Report.Canceled and (aParams.AcceptMode <> acmEof) do
+      case s.LoopWay of
+        slwSingle:
         begin
           s.DoFetch(aParams);
-
-          if (aParams.FetchMode = fmFirst) then
-          begin
-            //if (s.ClassID = sciDetails) then //improve add referance on first accepted ...
-            if aParams.AcceptMode <> acmSkipAll then
-            begin
-              r := s.NewReference;
-              s.DoBeginFill(r);
-              s.AddDetailTitles;
-            end;
-          end
-          else
-          begin
-            if (s.ClassID <> sciDetails) then
-            begin
-              r := s.NewReference;
-              s.DoBeginFill(r);
-              if aParams.AcceptMode = acmAccept then
-                s.AddDetailTitles;
-            end;
-          end;
-
           if aParams.AcceptMode = acmAccept then
           begin
-            s.FillNow(aParams, aIdx, r);
-            if (s.ClassID = sciHeaderDetails) then
-              s.DoEndFill(r);
-            s.Sections.Loop;
-          end
-          else if (aParams.AcceptMode = acmSkip) and (s.ClassID = sciHeaderDetails) then
-            s.Sections.Loop;
+            r := s.NewReference;
 
-          if (aParams.AcceptMode = acmEof) and (s.Rows.Count <> 0) then
-          begin
-            if (r <> nil) then
-            begin
-              if s.AppendDetailTotals then s.DoAppendDetailTotals(Report.FDetailTotals);
+            s.DoBeginFill(r);
+            try
+              s.FillNow(aParams, 0, r);
+            finally
               s.DoEndFill(r);
-              s.ClearSubTotals;
             end;
+
+            if aParams.Data <> nil then FreeAndNil(aParams.Data);
+            s.Sections.Loop;
+          end;
+        end;
+        slwMulti:
+        begin
+          r := nil;
+          while not Report.Canceled and (aParams.AcceptMode <> acmEof) do
+          begin
+            s.DoFetch(aParams);
+
+            if (aParams.FetchMode = fmFirst) then
+            begin
+              //if (s.ClassID = sciDetails) then //improve add referance on first accepted ...
+              if aParams.AcceptMode <> acmSkipAll then
+              begin
+                r := s.NewReference;
+                s.DoBeginFill(r);
+                s.AddDetailTitles;
+              end;
+            end
+            else
+            begin
+              if (s.ClassID <> sciDetails) then
+              begin
+                r := s.NewReference;
+                s.DoBeginFill(r);
+                if aParams.AcceptMode = acmAccept then
+                  s.AddDetailTitles;
+              end;
+            end;
+
+            if aParams.AcceptMode = acmAccept then
+            begin
+              s.FillNow(aParams, aIdx, r);
+              if (s.ClassID = sciHeaderDetails) then
+                s.DoEndFill(r);
+              s.Sections.Loop;
+            end
+            else if (aParams.AcceptMode = acmSkip) and (s.ClassID = sciHeaderDetails) then
+              s.Sections.Loop;
+
+            if (aParams.AcceptMode = acmEof) and (s.Rows.Count <> 0) then
+            begin
+              if (r <> nil) then
+              begin
+                if s.AppendDetailTotals then s.DoAppendDetailTotals(Report.FDetailTotals);
+                s.DoEndFill(r);
+                s.ClearSubTotals;
+              end;
+            end;
+
+            aParams.ID := 0;
+            aParams.Number := 0;
+            aParams.Locked := False;
+            if aParams.FetchMode = fmFirst then aParams.FetchMode := fmNext;
+            if aParams.Data <> nil then FreeAndNil(aParams.Data);
+
+            if aParams.AcceptMode=acmAccept then
+              Inc(aIdx)
+            else if aParams.AcceptMode in [acmSkip, acmSkipAll] then
+              aParams.AcceptMode := acmAccept;
           end;
 
-          aParams.ID := 0;
-          aParams.Number := 0;
-          aParams.Locked := False;
-          if aParams.FetchMode = fmFirst then aParams.FetchMode := fmNext;
-          if aParams.Data <> nil then FreeAndNil(aParams.Data);
+        //Summary
+          if (s.ClassID = sciHeaderDetails) then
+          begin
+            s.Sections.DoAppendReportTotals(Report.FReportTotals);
+          end;
 
-          if aParams.AcceptMode=acmAccept then
-            Inc(aIdx)
-          else if aParams.AcceptMode in [acmSkip, acmSkipAll] then
-            aParams.AcceptMode := acmAccept;
-        end;
+        end; //case slwMulti:
 
-      //Summary
-        if (s.ClassID = sciHeaderDetails) then
-        begin
-          s.Sections.DoAppendReportTotals(Report.FReportTotals);
-        end;
-
-      end; //case slwMulti:
-
+      end;
+    finally
+      DoEndLoop(s);
     end;
     s := s.Next;
   end;
