@@ -80,6 +80,7 @@ type
   TmodRequest = class(TObject)
   private
     FHeader: TmnHeader;
+    FStream: TmnBufferStream;
     procedure SetRequestHeader(AValue: TmnHeader);
   protected
     Info: TmodRequestInfo;
@@ -96,6 +97,7 @@ type
     property Command: string read Info.Command write Info.Command;
     property Raw: string read Info.Raw write Info.Raw;
     property Client: string read Info.Client write Info.Client;
+    property Stream: TmnBufferStream read FStream write FStream;
 
     property Header: TmnHeader read FHeader write SetRequestHeader;
   end;
@@ -105,10 +107,12 @@ type
   TmodRespond = class(TObject)
   private
     FHeader: TmnHeader;
+    FStream: TmnBufferStream;
   public
     constructor Create;
     destructor Destroy; override;
     property Header: TmnHeader read FHeader;
+    property Stream: TmnBufferStream read FStream write FStream;
   end;
 
   TmodModule = class;
@@ -164,16 +168,6 @@ type
     function Execute: TmodExecuteResults; virtual;
     procedure Unprepare(var Result: TmodExecuteResults); virtual; //Shutdown it;
 
-    property RequestStream: TmnBufferStream read FRequestStream;
-    property RespondStream: TmnBufferStream read FRespondStream;
-    procedure SendRespond(ALine: string); virtual;
-    //Add new header, can dublicate
-    procedure PostHeader(AName, AValue: string); virtual;
-    //Update header by name
-    procedure SetHeader(AName, AValue: string); virtual;
-    //Update header by name but adding new value to old value
-    procedure PutHeader(AName, AValue: string); virtual;
-    procedure SendHeader; virtual;
 
     procedure Log(S: string); virtual;
   public
@@ -190,6 +184,17 @@ type
     property States: TmodCommandStates read FStates;
     property Request: TmodRequest read FRequest;
     property Respond: TmodRespond read FRespond;
+
+    { TODO : discuss }
+    //Add new header, can dublicate
+    procedure PostHeader(AName, AValue: string); virtual;
+    //Update header by name
+    procedure SetHeader(AName, AValue: string); virtual;
+    //Update header by name but adding new value to old value
+    procedure PutHeader(AName, AValue: string); virtual;
+    procedure SendHeader; virtual;
+
+    procedure SendRespond(ALine: string); virtual;
   end;
 
   TmodCommandClass = class of TmodCommand;
@@ -633,10 +638,11 @@ constructor TmodCommand.Create(AModule: TmodModule; ARequest: TmodRequest; Reque
 begin
   inherited Create;
   FModule := AModule;
-  FRequestStream := RequestStream; //do not free
-  FRespondStream := RespondStream; //do not free
   FRequest := ARequest; //do not free
+  FRequest.Stream := RequestStream; //do not free
+
   FRespond := TmodRespond.Create;
+  FRespond.Stream := RequestStream;
 end;
 
 destructor TmodCommand.Destroy;
@@ -680,7 +686,7 @@ procedure TmodCommand.SendRespond(ALine: string);
 begin
   if cmdsRespondSent in FStates then
     raise TmodModuleException.Create('Respond is sent');
-  RespondStream.WriteLineUTF8(ALine);
+  Respond.Stream.WriteLineUTF8(ALine);
   FStates := FStates + [cmdsRespondSent];
 end;
 
@@ -814,9 +820,9 @@ begin
   begin
     s := item.GetNameValue(': ');
     //WriteLn(s);
-    ACommand.RespondStream.WriteLineUTF8(S);
+    ACommand.Respond.Stream.WriteLineUTF8(S);
   end;
-  ACommand.RespondStream.WriteLineUTF8(UTF8String(''));
+  ACommand.Respond.Stream.WriteLineUTF8(UTF8String(''));
 end;
 
 procedure TmodModule.Start;

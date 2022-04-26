@@ -220,6 +220,7 @@ type
     function WriteLine(const S: unicodestring): TFileSize; overload;
 
     function WriteRawByte(const S: UTF8String): TFileSize; overload;
+    function WriteUTF8(const S: UTF8String): TFileSize; overload;
     function WriteLineUTF8(const S: UTF8String): TFileSize; overload;
 
     {$ifndef NEXTGEN}
@@ -872,16 +873,11 @@ end;
 {$endif}
 
 function TmnBufferStream.WriteLineUTF8(const S: UTF8String): TFileSize;
-var
-  EOL: UTF8String;
 begin
-  Result := 0;
-  if s <> '' then
-    Result := Write(Pointer(S)^, Length(S));
+  Result := WriteUTF8(s);
   if EndOfLine <> '' then
   begin
-    EOL := EndOfLine;
-    Result := Result + Write(Pointer(EOL)^, Length(EOL));
+    Result := Result + WriteUTF8(EndOfLine);
   end;
 end;
 
@@ -944,6 +940,13 @@ begin
     if Value[i] <> '' then //stupid delphi always add empty line in last of TStringList
       Result := Result + WriteLine(Value[i]);
   end;
+end;
+
+function TmnBufferStream.WriteUTF8(const S: UTF8String): TFileSize;
+begin
+  Result := 0;
+  if s <> '' then
+    Result := Write(Pointer(S)^, Length(S));
 end;
 
 procedure TmnBufferStream.ReadCommand(out Command: string; out Params: string);

@@ -235,8 +235,8 @@ begin
   if SameText(Request.Method, 'POST') and (Request.Header['Content-Type'].Have('application/json')) then
   begin
     Contents := TMemoryStream.Create;
-    if RequestStream <> nil then
-      RequestStream.ReadStream(Contents, ContentLength);
+    if Request.Stream <> nil then
+      Request.Stream.ReadStream(Contents, ContentLength);
     Contents.Position := 0; //it is memory btw
     //Contents.SaveToFile('d:\temp\json.json');
   end;
@@ -308,7 +308,7 @@ begin
   Body := '<HTML><HEAD><TITLE>404 Not Found</TITLE></HEAD>' +
     '<BODY><H1>404 Not Found</H1>The requested URL ' +
     ' was not found on this server.<P><h1>Powerd by Mini Web Server</h3></BODY></HTML>';
-  RespondStream.WriteString(Body);
+  Respond.Stream.WriteString(Body);
   KeepAlive := False;
 end;
 
@@ -406,7 +406,7 @@ begin
         SendHeader;
 
         if Active then
-          RespondStream.WriteStream(aDocStream);
+          Respond.Stream.WriteStream(aDocStream);
       finally
         aDocStream.Free;
       end;
@@ -448,8 +448,8 @@ procedure TmodServerInfoCommand.RespondResult(var Result: TmodExecuteResults);
 begin
   inherited;
   SendRespond('OK');
-  //RespondStream.WriteLine('Server is running on port: ' + Module.Server.Port);
-  RespondStream.WriteLine('the server is: "' + ParamStr(0) + '"');
+  //Respond.Stream.WriteLine('Server is running on port: ' + Module.Server.Port);
+  Respond.Stream.WriteLine('the server is: "' + ParamStr(0) + '"');
 end;
 
 { TmodPutCommand }
@@ -460,11 +460,11 @@ var
   aFileName: string;
 begin
   inherited;
-  RespondStream.WriteCommand('OK');
+  Respond.Stream.WriteCommand('OK');
   aFileName := URIParams.Values['FileName'];
   aFile := TFileStream.Create(Root + aFileName, fmCreate);
   try
-    RespondStream.ReadStream(aFile, ContentLength);
+    Respond.Stream.ReadStream(aFile, ContentLength);
   finally
     aFile.Free;
   end;
@@ -480,7 +480,7 @@ var
   aFilter: string;
 begin
   inherited;
-  RespondStream.WriteCommand('OK');
+  Respond.Stream.WriteCommand('OK');
   aFilter := URIParams.Values['Filter'];
   //aPath := IncludeTrailingPathDelimiter(Root);
   if aFilter = '' then
@@ -490,7 +490,7 @@ begin
     //EnumFileList(aPath + aFilter, aStrings);
     for i := 0 to aStrings.Count - 1 do
     begin
-      RespondStream.WriteLine(IntToStr(i) + ': ' + aStrings[i]);
+      Respond.Stream.WriteLine(IntToStr(i) + ': ' + aStrings[i]);
     end;
   finally
     aStrings.Free;
@@ -507,7 +507,7 @@ begin
   aFileName := IncludeTrailingPathDelimiter(Root) + Request.Path;
   if FileExists(aFileName) then
     DeleteFile(aFileName);
-  RespondStream.WriteCommand('OK');
+  Respond.Stream.WriteCommand('OK');
 end;
 
 { TmodURICommand }
@@ -623,7 +623,7 @@ begin
     if FCompressProxy = nil then
     begin
       FCompressProxy := FCompressClass.Create([cprsWrite], 9);
-      RespondStream.AddProxy(FCompressProxy);
+      Respond.Stream.AddProxy(FCompressProxy);
     end
     else
       FCompressProxy.Enable;
