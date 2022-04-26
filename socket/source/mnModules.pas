@@ -86,7 +86,7 @@ type
   protected
     Info: TmodRequestInfo;
   public
-    constructor Create;
+    constructor Create(AStream: TmnBufferStream);
     destructor Destroy; override;
     procedure Clear;
     procedure ParsePath(URI: String; URIQuery: TmnParams = nil);
@@ -116,12 +116,12 @@ type
   end;
 
   TmodRespondState = (
-    cmdsRespondSent, //reposnd line, first line before header
-    cmdsHeaderSent,
-    cmdsContentsSent,
-    cmdsSuccess,
-    cmdsKeepAlive,
-    cmdsEnd
+    resRespondSent, //reposnd line, first line before header
+    resHeaderSent,
+    resContentsSent,
+    //resSuccess,
+    //resKeepAlive,
+    resEnd
     );
 
   TmodRespondStates = set of TmodRespondState;
@@ -445,21 +445,21 @@ end;
 
 procedure TmodRespond.PostHeader(AName, AValue: String);
 begin
-  if cmdsHeaderSent in FStates then
+  if resHeaderSent in FStates then
     raise TmodModuleException.Create('Header is sent');
   Header.Add(AName, AValue);
 end;
 
 procedure TmodRespond.SetHeader(AName, AValue: String);
 begin
-  if cmdsHeaderSent in FStates then
+  if resHeaderSent in FStates then
     raise TmodModuleException.Create('Header is sent');
   Header.Put(AName, AValue);
 end;
 
 procedure TmodRespond.PutHeader(AName, AValue: String);
 begin
-  if cmdsHeaderSent in FStates then
+  if resHeaderSent in FStates then
     raise TmodModuleException.Create('Header is sent');
   Header.Put(AName, AValue);
 end;
@@ -469,11 +469,11 @@ var
   item: TmnField;
   s: String;
 begin
-  if not (cmdsRespondSent in FStates) then
+  if not (resRespondSent in FStates) then
     raise TmodModuleException.Create('Respond line not sent');
-  if cmdsHeaderSent in FStates then
+  if resHeaderSent in FStates then
     raise TmodModuleException.Create('Header is sent');
-  FStates := FStates + [cmdsHeaderSent];
+  FStates := FStates + [resHeaderSent];
 
   for item in Header do
   begin
@@ -486,10 +486,10 @@ end;
 
 procedure TmodRespond.SendRespond(ALine: String);
 begin
-  if cmdsRespondSent in FStates then
+  if resRespondSent in FStates then
     raise TmodModuleException.Create('Respond is sent');
   Stream.WriteLineUTF8(ALine);
-  FStates := FStates + [cmdsRespondSent];
+  FStates := FStates + [resRespondSent];
 end;
 
 { TmodRequest }
@@ -503,10 +503,11 @@ begin
   end;
 end;
 
-constructor TmodRequest.Create;
+constructor TmodRequest.Create(AStream: TmnBufferStream);
 begin
-  inherited;
+  inherited Create;
   FHeader := TmnHeader.Create;
+  FStream := AStream;
 end;
 
 destructor TmodRequest.Destroy;
@@ -589,7 +590,7 @@ begin
   aRequestLine := TrimRight(Stream.ReadLineUTF8);
   if Connected and (aRequestLine <> '') then //aRequestLine empty when timeout but not disconnected
   begin
-    aRequest := TmodRequest.Create;
+    aRequest := TmodRequest.Create(Stream);
     try
       (Listener.Server as TmodModuleServer).Modules.ParseHead(aRequest, aRequestLine);
       aModule := (Listener.Server as TmodModuleServer).Modules.Match(aRequest);
@@ -689,7 +690,6 @@ begin
   inherited Create;
   FModule := AModule;
   FRequest := ARequest; //do not free
-  FRequest.Stream := RequestStream; //do not free
 
   FRespond := CreateRespond;
   FRespond.Stream := RequestStream;
