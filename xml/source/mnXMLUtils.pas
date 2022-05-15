@@ -46,8 +46,8 @@ function GetPropTypeInfo(PropInfo: PPropInfo): PTypeInfo;
 Function PropType(PropInfo: PPropInfo): TTypeKind; //need to move to FPC typeinfo.pp
 function IsDefaultValue(Instance: TObject; PropInfo: PPropInfo): Boolean;
 
-function RemoveEncloses(S, Left, Right: string): string;
-function Enclose(S, Left: string; Right: string = ''): string;
+function RemoveEncloses(S, Left, Right: string): string; deprecated 'use mnUtils.RemoveEncloseStr';
+function Enclose(S, Left: string; Right: string = ''): string; deprecated 'use mnUtils.EncloseStr';
 function RangeStr(s: string; Start, Stop: Integer): string;
 function ScanIdentifier(const s: string; Start: Integer): Integer;
 function ScanQuoted(SubStr, Text: string): Integer;

@@ -68,7 +68,7 @@ function StrToStringsEx(Content: string; Strings: TStrings; Separators: Array of
 //function StrToStringsEx(Content: string; Strings: TStrings; IgnoreInitialWhiteSpace: TSysCharSet = [' ']; Quotes: TSysCharSet = ['''', '"']): Integer; overload;
 
 procedure StrToStringsCallbackProc(Sender: Pointer; Index: Integer; S: string; var Resume: Boolean);
-procedure StrToStringsDeqouteCallbackProc(Sender: Pointer; Index:Integer; S: string; var Resume: Boolean);
+procedure StrToStringsDequoteCallbackProc(Sender: Pointer; Index:Integer; S: string; var Resume: Boolean);
 
 {
   examples:
@@ -139,6 +139,8 @@ function PeriodToString(vPeriod: Double; WithSeconds: Boolean): string;
 function TicksToString(vTicks: Int64): string;
 function DequoteStr(Str: string; QuoteChar: string = #0): string;
 function ExcludeTrailing(Str: string; TrailingChar: string = #0): string;
+function RemoveEncloseStr(S, Left, Right: string): string;
+function EncloseStr(S, Left, Right: string): string;
 
 function RepeatString(const Str: string; Count: Integer): string;
 
@@ -333,6 +335,30 @@ begin
     Result := Str;
 end;
 
+function RemoveEncloseStr(S, Left, Right: string): string;
+var
+  f, c: Integer;
+begin
+  if UpperCase(LeftStr(s, Length(Left))) = UpperCase(Left) then
+    f := 6
+  else
+    f := 0;
+  if UpperCase(RightStr(s, Length(Right))) = UpperCase(Right) then
+    c := 2
+  else
+    c := 0;
+  c := Length(s) - f - c;
+  Result := MidStr(S, f, c)
+end;
+
+function EncloseStr(S, Left, Right: string): string;
+begin
+  if S <> '' then
+    Result := Left + S + Right
+  else
+    Result := '';
+end;
+
 function AlignStr(const S: string; Count: Integer; Options: TAlignStrOptions; vChar: Char): string;
 var
   l: integer;
@@ -486,7 +512,7 @@ begin
   TStrings(Sender).Add(S); //Be sure sender is TStrings
 end;
 
-procedure StrToStringsDeqouteCallbackProc(Sender: Pointer; Index:Integer; S: string; var Resume: Boolean);
+procedure StrToStringsDequoteCallbackProc(Sender: Pointer; Index:Integer; S: string; var Resume: Boolean);
 var
   Name, Value: string;
   p: Integer;
