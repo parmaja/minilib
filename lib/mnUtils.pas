@@ -337,18 +337,18 @@ end;
 
 function RemoveEncloseStr(S, Left, Right: string): string;
 var
-  f, c: Integer;
+  start, count: Integer;
 begin
-  if UpperCase(LeftStr(s, Length(Left))) = UpperCase(Left) then
-    f := 6
+  if UpperCase(LeftStr(s, 1)) = UpperCase(Left) then
+    start := Length(Left) + 1
   else
-    f := 0;
-  if UpperCase(RightStr(s, Length(Right))) = UpperCase(Right) then
-    c := 2
+    start := 0;
+  if UpperCase(RightStr(s, 1)) = UpperCase(Right) then
+    count := Length(Right)
   else
-    c := 0;
-  c := Length(s) - f - c;
-  Result := MidStr(S, f, c)
+    count := 0;
+  count := Length(s) - start - count + 1;
+  Result := MidStr(S, start, count);
 end;
 
 function EncloseStr(S, Left, Right: string): string;
