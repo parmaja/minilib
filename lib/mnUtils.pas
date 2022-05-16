@@ -148,6 +148,8 @@ function ConcatString(const S1, Delimiter: string; S2: string = ''): string;
 function CollectStrings(Strings: TStrings; Delimiter: Char = ','; TrailingChar: Char = #0): string; overload;
 function CollectStrings(Strings: array of string; Delimiter: Char = ','; TrailingChar: Char = #0): string; overload;
 
+function ReversePos(const SubStr, S : String): Integer; overload;
+function ReversePos(const SubStr, S: String; const Start: Integer): Integer; overload;
 
 {* VarReplace
   VarInit = '$'
@@ -427,6 +429,35 @@ begin
       v := ExcludeTrailing(v, TrailingChar);
     Result := ConcatString(Result, Delimiter, v);
   end;
+end;
+
+function ReversePos(const SubStr, S: String; const Start: Integer): Integer;
+var
+  i: Integer;
+  pStr: PChar;
+  pSub: PChar;
+begin
+  pSub := Pointer(SubStr);
+
+  for i := Start downto 1 do
+  begin
+    pStr := @(S[i]);
+    if (pStr^ = pSub^) then
+    begin
+      if CompareMem(pSub, pStr, Length(SubStr)) then
+      begin
+        Result := i;
+        exit;
+      end;
+    end;
+  end;
+  Result := 0;
+end;
+
+
+function ReversePos(const SubStr, S: String): Integer;
+begin
+  Result := ReversePos(SubStr, S, Length(S) - Length(SubStr) + 1);
 end;
 
 {**
