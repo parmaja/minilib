@@ -67,7 +67,11 @@ type
     URI: Utf8string;
     Protcol: String;
 
+    Address: Utf8string;
+    Params: Utf8string;
+
     Path: Utf8string;
+
     Module: String;
     Command: String;
 
@@ -88,11 +92,15 @@ type
   public
     constructor Create(AStream: TmnBufferStream);
     destructor Destroy; override;
-    procedure Clear;
+    procedure  Clear;
     procedure ParsePath(URI: String; URIQuery: TmnParams = nil);
     property Method: String read Info.Method write Info.Method;
     property URI: Utf8string read Info.URI write Info.URI;
     property Protcol: String read Info.Protcol write Info.Protcol;
+
+    property Address: Utf8string read Info.Address write Info.Address;
+    property Params: Utf8string read Info.Params write Info.Params;
+
     property Path: Utf8string read Info.Path write Info.Path;
     property Module: String read Info.Module write Info.Module;
     property Command: String read Info.Command write Info.Command;
@@ -101,6 +109,7 @@ type
     property Stream: TmnBufferStream read FStream write FStream;
 
     property Header: TmnHeader read FHeader write SetRequestHeader;
+    function CollectURI: string;
   end;
 
   TmodeResult = (
@@ -366,8 +375,8 @@ type
   end;
 
 function ParseURI(Request: String; out URIPath: Utf8string; out URIQuery: Utf8string): Boolean; overload;
-function ParseURI(Request: String; out URIPath: Utf8string; URIQuery: TmnParams): Boolean; overload;
-procedure ParsePath(aRequest: String; out Name: String; out URIPath: Utf8string; URIQuery: TmnParams);
+function ParseURI(Request: String; out URIPath: Utf8string; out URIParams: Utf8string; URIQuery: TmnParams): Boolean; overload;
+procedure ParsePath(aRequest: String; out Name: String; out URIPath: Utf8string; out URIParams: Utf8string; URIQuery: TmnParams);
 
 implementation
 
@@ -411,20 +420,18 @@ begin
   end;
 end;
 
-function ParseURI(Request: String; out URIPath: Utf8string; URIQuery: TmnParams): Boolean;
-var
-  aParams: Utf8string;
+function ParseURI(Request: String; out URIPath: Utf8string; out URIParams: Utf8string; URIQuery: TmnParams): Boolean;
 begin
-  Result := ParseURI(Request, URIPath, aParams);
+  Result := ParseURI(Request, URIPath, URIParams);
   if Result then
     if URIQuery <> nil then
       //ParseParams(aParams, False);
-      StrToStringsCallback(aParams, URIQuery, @ParamsCallBack, ['&'], [' ']);
+      StrToStringsCallback(URIParams, URIQuery, @ParamsCallBack, ['&'], [' ']);
 end;
 
-procedure ParsePath(aRequest: String; out Name: String; out URIPath: Utf8string; URIQuery: TmnParams);
+procedure ParsePath(aRequest: String; out Name: String; out URIPath: Utf8string; out URIParams: Utf8string; URIQuery: TmnParams);
 begin
-  ParseURI(aRequest, URIPath, URIQuery);
+  ParseURI(aRequest, URIPath, URIParams, URIQuery);
   Name := SubStr(URIPath, '/', 0);
   URIPath := Copy(URIPath, Length(Name) + 1, MaxInt);
 end;
@@ -503,6 +510,14 @@ begin
   end;
 end;
 
+function TmodRequest.CollectURI: string;
+begin
+  if Params<>'' then
+    Result := Path+'?'+Params
+  else
+    Result := Path;
+end;
+
 constructor TmodRequest.Create(AStream: TmnBufferStream);
 begin
   inherited Create;
@@ -523,7 +538,7 @@ end;
 
 procedure TmodRequest.ParsePath(URI: String; URIQuery: TmnParams);
 begin
-  mnModules.ParsePath(Self.URI, Self.Info.Module, Self.Info.Path, URIQuery);
+  mnModules.ParsePath(Self.URI, Self.Info.Module, Self.Info.Path, Self.Info.Params, URIQuery);
 end;
 
 { TmnHeaderField }

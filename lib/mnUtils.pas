@@ -1727,3 +1727,4 @@ initialization
   SystemAnsiCodePage := 1252; //scpAnsi has no meaning in linux, you can change it in your application
   {$endif}
 end.
+

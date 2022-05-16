@@ -489,22 +489,24 @@ var
   aDocument: string;
 begin
   aDocument := IncludeTrailingPathDelimiter(Respond.Root);
-  if (Request.Path = '')and(Request.URI[Length(Request.URI)] <> PathDelim) then
+  if Request.Path <> '' then
+    aDocument := aDocument + '.' + Request.Path;
+  aDocument := StringReplace(aDocument, '/', PathDelim, [rfReplaceAll]);//correct it for linux
+  if aDocument[Length(aDocument)] = PathDelim then //get the default file if it not defined
+     aDocument := GetDefaultDocument(aDocument);
+  aDocument := ExpandFileName(aDocument);
+
+  if ((Request.Path = '')and(Request.Path[Length(Request.Path)] <> PathDelim)) or DirectoryExists(aDocument) then
   begin
     //https://developer.mozilla.org/en-US/docs/Web/HTTP/Redirections
-    Respond.SendRespond('HTTP/1.1 300 Multiple Choice');
-    Respond.PostHeader('Location', Request.URI+'/');
+    Request.Path := IncludeURLDelimiter(Request.Path);
+    Respond.SendRespond('HTTP/1.1 301 Moved Permanently');
+    Respond.PostHeader('Location', Request.CollectURI);
     Respond.SendHeader;
   end
   else
   begin
 
-    if Request.Path <> '' then
-      aDocument := aDocument + '.' + Request.Path;
-    aDocument := StringReplace(aDocument, '/', PathDelim, [rfReplaceAll]);//correct it for linux
-    if aDocument[Length(aDocument)] = PathDelim then //get the default file if it not defined
-       aDocument := GetDefaultDocument(aDocument);
-    aDocument := ExpandFileName(aDocument);
     RespondDocument(aDocument, Result);
   end;
   inherited;
