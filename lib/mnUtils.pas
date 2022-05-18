@@ -155,7 +155,10 @@ function ReversePos(const SubStr, S: String; const Start: Integer): Integer; ove
   VarInit = '$'
   Example: VarReplace('c:\$project\$[name]';
 }
-function VarReplace(S: string; Values: TStrings; VarInit: string): string;
+type
+  TVarOptions = set of (vrSmartLowerCase);
+
+function VarReplace(S: string; Values: TStrings; VarPrefix: string; VarOptions: TVarOptions = []): string;
 
 type
   //alsCut = if the string > count we cut it as count or keep the string
@@ -465,29 +468,31 @@ end;
 *  Use name values in strings
 *}
 
-function VarReplace(S: string; Values: TStrings; VarInit: string): string;
+function VarReplace(S: string; Values: TStrings; VarPrefix: string; VarOptions: TVarOptions = []): string;
 var
   Index: Integer;
   Start: Integer;
   OpenStart: Integer;
-  NewValue: string;
   InitIndex: Integer;
   procedure check;
   var
     l: Integer;
+    Value: string;
   begin
+    //* string before variable
     Result := Result + MidStr(S, Start, OpenStart - Start);
     Start := Index;
-    l := Index - OpenStart;
-    NewValue := MidStr(S, OpenStart, l);
+    l := Index - OpenStart - Length(VarPrefix); //* removing prefix
+    Value := MidStr(S, OpenStart + Length(VarPrefix), l);
 
-    if Values.IndexOfName(NewValue) >= 0 then
+    if Values.IndexOfName(Value) >= 0 then
     begin
-      //Index := Index + Length(NewValue) - 1;
-
-      NewValue := Values.Values[NewValue];
-      Result := Result + NewValue;
+      if (vrSmartLowerCase in VarOptions) and IsAllLowerCase(Value) then //Smart idea, right ^.^
+        Value := LowerCase(Values.Values[Value])
+      else
+        Value := Values.Values[Value];
     end;
+    Result := Result + Value;
     OpenStart := 0;
   end;
 var
@@ -498,7 +503,7 @@ begin
   OpenStart := 0;
   Result := '';
   Len := Length(S);
-  InitLen := Length(VarInit);
+  InitLen := Length(VarPrefix);
   InitIndex := 1;
   Index := 1;
   Start := Index;
@@ -510,7 +515,7 @@ begin
       if not CharInSet(Current, ['0'..'9', 'a'..'z', 'A'..'Z', '_', '{',  '#', '}']) then
         Check;
     end
-    else if (Current = VarInit[InitIndex]) then
+    else if (Current = VarPrefix[InitIndex]) then
     begin
       if InitIndex = InitLen then
       begin
