@@ -1,0 +1,45 @@
+object Form1: TForm1
+  Left = 452
+  Height = 240
+  Top = 184
+  Width = 320
+  Caption = 'Form1'
+  ClientHeight = 240
+  ClientWidth = 320
+  LCLVersion = '1.5'
+  object Memo1: TMemo
+    Left = 21
+    Height = 68
+    Top = 20
+    Width = 150
+    Lines.Strings = (
+      'Value1=Test1'
+      'Value2=Test2'
+    )
+    TabOrder = 0
+  end
+  object Button1: TButton
+    Left = 21
+    Height = 25
+    Top = 159
+    Width = 75
+    Caption = 'Parse'
+    OnClick = Button1Click
+    TabOrder = 1
+  end
+  object InEdit: TEdit
+    Left = 21
+    Height = 23
+    Top = 99
+    Width = 284
+    TabOrder = 2
+    Text = '$Value1'
+  end
+  object OutEdit: TEdit
+    Left = 21
+    Height = 23
+    Top = 127
+    Width = 284
+    TabOrder = 3
+  end
+end

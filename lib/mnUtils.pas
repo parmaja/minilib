@@ -158,7 +158,7 @@ function ReversePos(const SubStr, S: String; const Start: Integer): Integer; ove
 type
   TVarOptions = set of (vrSmartLowerCase);
 
-function VarReplace(S: string; Values: TStrings; VarPrefix: string; VarOptions: TVarOptions = []): string;
+function VarReplace(S: string; Values: TStrings; Prefix: string; Suffix: String; VarOptions: TVarOptions = []): string; overload;
 
 type
   //alsCut = if the string > count we cut it as count or keep the string
@@ -468,42 +468,44 @@ end;
 *  Use name values in strings
 *}
 
-function VarReplace(S: string; Values: TStrings; VarPrefix: string; VarOptions: TVarOptions = []): string;
+function VarReplace(S: string; Values: TStrings; Prefix: string; Suffix: String; VarOptions: TVarOptions = []): string;
 var
-  Index: Integer;
   Start: Integer;
   OpenStart: Integer;
+  InsideBlock: Boolean;
   InitIndex: Integer;
-  procedure check;
+  procedure check(Index: Integer);
   var
-    l: Integer;
-    Value: string;
+    Name, Value: string;
   begin
     //* string before variable
     Result := Result + MidStr(S, Start, OpenStart - Start);
-    Start := Index;
-    l := Index - OpenStart - Length(VarPrefix); //* removing prefix
-    Value := MidStr(S, OpenStart + Length(VarPrefix), l);
-
-    if Values.IndexOfName(Value) >= 0 then
+    Name := MidStr(S, OpenStart + Length(Prefix), Index - OpenStart + 1 - Length(Prefix) - Length(Suffix));
+    if (LeftStr(Name, 1) = '[') and (RightStr(Name, 1) = ']') then
+      Name := MidStr(Name, 2, Length(Name) - 2);
+    Value := MidStr(S, OpenStart, Index - OpenStart + 1);
+    if Values.IndexOfName(Name) >= 0 then
     begin
-      if (vrSmartLowerCase in VarOptions) and IsAllLowerCase(Value) then //Smart idea, right ^.^
-        Value := LowerCase(Values.Values[Value])
+      if (vrSmartLowerCase in VarOptions) and IsAllLowerCase(Name) then //Smart idea, right ^.^
+        Value := LowerCase(Values.Values[Name])
       else
-        Value := Values.Values[Value];
+        Value := Values.Values[Name];
     end;
     Result := Result + Value;
+    Start := Index + 1;
     OpenStart := 0;
   end;
 var
   Current: Char;
   Len: Integer;
-  InitLen: Integer;
+  Index: Integer;
 begin
+  if Length(Suffix) > 1 then
+    raise Exception.Create('');
+  InsideBlock := False;
   OpenStart := 0;
   Result := '';
   Len := Length(S);
-  InitLen := Length(VarPrefix);
   InitIndex := 1;
   Index := 1;
   Start := Index;
@@ -512,14 +514,27 @@ begin
     Current := S[Index];
     if (OpenStart > 0) then
     begin
-      if not CharInSet(Current, ['0'..'9', 'a'..'z', 'A'..'Z', '_', '{',  '#', '}']) then
-        Check;
-    end
-    else if (Current = VarPrefix[InitIndex]) then
-    begin
-      if InitIndex = InitLen then
+      if not InsideBlock and CharInSet(Current, ['[']) then
+        InsideBlock := True
+      else if InsideBlock and CharInSet(Current, [']']) then
+        InsideBlock := False;
+
+      if not InsideBlock then
       begin
-        OpenStart := Index - InitLen + 1;
+        if ((Suffix <> '') and (Current = Suffix[1])) then
+          Check(Index)
+        else if ((Suffix = '') and not CharInSet(Current, ['0'..'9', 'a'..'z', 'A'..'Z', '_'])) then
+        begin
+          Dec(Index);
+          Check(Index);
+        end;
+      end;
+    end
+    else if (Current = Prefix[InitIndex]) then
+    begin
+      if InitIndex = Length(Prefix) then
+      begin
+        OpenStart := Index - Length(Prefix) + 1;
         InitIndex := 1;
       end
       else
@@ -527,11 +542,10 @@ begin
     end
     else
       InitIndex := 1;
-
     Inc(Index);
   end;
   if (OpenStart > 0) then
-    Check;
+    Check(Index);
   Result := Result + MidStr(S, Start, MaxInt);
 end;
 
