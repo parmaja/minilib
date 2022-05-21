@@ -156,9 +156,13 @@ function ReversePos(const SubStr, S: String; const Start: Integer): Integer; ove
   Example: VarReplace('c:\$project\$[name]';
 }
 type
-  TVarOptions = set of (vrSmartLowerCase);
+  TVarOptions = set of (
+    vrSmartLowerCase,
+    vrAllowBrackets //TODO
+  );
+  TVarReplacesCallbackProc = procedure(Sender: Pointer; Name: string; var Value: string);
 
-function VarReplace(S: string; Values: TStrings; Prefix: string; Suffix: String; VarOptions: TVarOptions = []): string; overload;
+function VarReplace(S: string; Values: TStrings; Prefix: string; Suffix: String = ''; VarOptions: TVarOptions = []; Sender: Pointer = nil; ReplacesCallbackProc: TVarReplacesCallbackProc = nil): string; overload;
 
 type
   //alsCut = if the string > count we cut it as count or keep the string
@@ -468,7 +472,7 @@ end;
 *  Use name values in strings
 *}
 
-function VarReplace(S: string; Values: TStrings; Prefix: string; Suffix: String; VarOptions: TVarOptions = []): string;
+function VarReplace(S: string; Values: TStrings; Prefix: string; Suffix: String; VarOptions: TVarOptions; Sender: Pointer; ReplacesCallbackProc: TVarReplacesCallbackProc): string;
 var
   Start: Integer;
   OpenStart: Integer;
@@ -490,7 +494,9 @@ var
         Value := LowerCase(Values.Values[Name])
       else
         Value := Values.Values[Name];
-    end;
+    end
+    else if Assigned(ReplacesCallbackProc) then
+      ReplacesCallbackProc(Sender, Name, Value);
     Result := Result + Value;
     Start := Index + 1;
     OpenStart := 0;
