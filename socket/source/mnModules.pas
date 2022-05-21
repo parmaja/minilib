@@ -33,7 +33,7 @@ interface
 
 uses
   SysUtils, Classes, StrUtils, Types,
-  mnClasses, mnStreams, mnFields, mnConfigs,
+  mnClasses, mnStreams, mnFields, mnParams,
   mnSockets, mnConnections, mnServers;
 
 const

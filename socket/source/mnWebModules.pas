@@ -40,7 +40,8 @@ interface
 
 uses
   SysUtils, Classes, syncobjs,
-  mnFields, mnConfigs, mnUtils, mnSockets, mnServers, mnStreams, mnStreamUtils,
+  mnUtils, mnSockets, mnServers, mnStreams, mnStreamUtils,
+  mnFields, mnParams,
   mnModules;
 
 type

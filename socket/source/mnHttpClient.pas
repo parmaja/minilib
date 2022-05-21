@@ -23,7 +23,7 @@ interface
 
 uses
   SysUtils, Classes, StrUtils,
-  mnUtils, mnClasses, mnLogs, mnFields, mnConfigs, mnModules, mnSockets, mnJobs,
+  mnUtils, mnClasses, mnLogs, mnFields, mnParams, mnModules, mnSockets, mnJobs,
   mnClients, mnStreams, mnStreamUtils;
 
 type

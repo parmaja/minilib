@@ -2,8 +2,7 @@ unit mnConfigs;
 {**
  *  This file is part of the "Mini Library"
  *
- * @license   modifiedLGPL (modified of http://www.gnu.org/licenses/lgpl.html)
- *            See the file COPYING.MLGPL, included in this distribution,
+ * @license   MIT
  * @author    Zaher Dirkey <zaher, zaherdirkey>
  * @version   1.0
  *}
@@ -97,7 +96,7 @@ type
     FIsComment: Boolean;
     FName: string;
   public
-    function FullString(Separator: string = '='): String;
+    function FullString(Separator: string = '='): String; virtual;
     property IsComment: Boolean read FIsComment;
     property Name: string read FName write FName;
   end;
@@ -180,7 +179,7 @@ type
     procedure SetValues(Index: string; AValue: string);
   protected
     function SetValue(const Index: string; const AValue: Variant): TConfField;
-    function CreateField: TConfField;
+    function CreateField: TConfField; virtual;
     function ReplaceVariable(S: string): string; virtual;
   public
     Name: string;
