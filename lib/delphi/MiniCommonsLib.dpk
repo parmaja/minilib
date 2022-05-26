@@ -49,6 +49,7 @@ contains
   mnStreams in '..\mnStreams.pas',
   mnStreamUtils in '..\mnStreamUtils.pas',
   mnUtils in '..\mnUtils.pas',
+  mnParams in '..\mnParams.pas',
   HejriUtils in '..\HejriUtils.pas',
   HejriDates in '..\HejriDates.pas',
   mnFields in '..\mnFields.pas',
