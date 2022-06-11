@@ -38,7 +38,6 @@ object Form1: TForm1
     Caption = 'Parse'
     TabOrder = 1
     OnClick = Button1Click
-    ExplicitTop = 379
   end
   object Memo2: TMemo
     Left = 133
@@ -70,7 +69,7 @@ object Form1: TForm1
     TabOrder = 3
   end
   object Button2: TButton
-    Left = 285
+    Left = 541
     Top = 265
     Width = 75
     Height = 25
@@ -78,17 +77,15 @@ object Form1: TForm1
     Caption = 'Parse'
     TabOrder = 4
     OnClick = Button2Click
-    ExplicitTop = 349
   end
   object InEdit: TEdit
     Left = 9
     Top = 266
-    Width = 270
+    Width = 345
     Height = 23
     Anchors = [akLeft, akBottom]
     TabOrder = 5
     Text = '$Value1'
-    ExplicitTop = 350
   end
   object Button3: TButton
     Left = 89
@@ -99,5 +96,22 @@ object Form1: TForm1
     Caption = 'Parse'
     TabOrder = 6
     OnClick = Button3Click
+  end
+  object PrefixEdit1: TEdit
+    Left = 360
+    Top = 266
+    Width = 81
+    Height = 23
+    Anchors = [akLeft, akBottom]
+    TabOrder = 7
+    Text = '$'
+  end
+  object SuffixEdit1: TEdit
+    Left = 447
+    Top = 266
+    Width = 89
+    Height = 23
+    Anchors = [akLeft, akBottom]
+    TabOrder = 8
   end
 end

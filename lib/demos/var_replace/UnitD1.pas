@@ -16,6 +16,8 @@ type
     Button2: TButton;
     InEdit: TEdit;
     Button3: TButton;
+    PrefixEdit1: TEdit;
+    SuffixEdit1: TEdit;
     procedure Button1Click(Sender: TObject);
     procedure Button2Click(Sender: TObject);
     procedure FormCreate(Sender: TObject);
@@ -48,7 +50,7 @@ end;
 
 procedure TForm1.Button2Click(Sender: TObject);
 begin
-  Memo3.Lines.Add(VarReplace(InEdit.Text, Memo1.Lines, '$', ''));
+  Memo3.Lines.Add(VarReplace(InEdit.Text, Memo1.Lines, PrefixEdit1.Text, SuffixEdit1.Text));
 end;
 
 procedure TForm1.Button3Click(Sender: TObject);

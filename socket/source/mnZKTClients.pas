@@ -972,8 +972,6 @@ begin
   Result := ExecCommand(CMD_CLEAR_ATTLOG, NewReplyID);
 end;
 
-end.
-
 {
 AttLog
 CMD_ATTLOG_RRQ
@@ -997,4 +995,7 @@ CMD_USERTEMP_RRQ
 
 
 }
+
+end.
+
 

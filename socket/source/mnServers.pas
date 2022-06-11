@@ -160,7 +160,7 @@ type
     FLogging: Boolean;
     FUseSSL: Boolean;
     FIdleTick: Int64;
-    FIdleInterval: Integer;
+    FIdleInterval: Int64;
     procedure SetActive(const Value: Boolean);
     procedure SetAddress(const Value: string);
     procedure SetPort(const Value: string);
@@ -206,7 +206,7 @@ type
     property Active: boolean read FActive write SetActive default False;
     property Logging: Boolean read FLogging write FLogging default false;
     property Connected: Boolean read GetConnected;
-    property IdleInterval: Integer read FIdleInterval write FIdleInterval default cIdleInterval;
+    property IdleInterval: Int64 read FIdleInterval write FIdleInterval default cIdleInterval;
   end;
 
 //TODO move to another unit SimpleClientServer

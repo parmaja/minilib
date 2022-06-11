@@ -146,10 +146,7 @@ begin
   begin
     with InflateInfo do
     if ZEnd then
-    begin
-      ResultCount := 0;
-      Result := True;
-    end
+      ResultCount := 0
     else
     begin
       InitInflate; //init it if not initialized

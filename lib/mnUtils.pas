@@ -162,7 +162,7 @@ type
   );
   TVarReplacesCallbackProc = procedure(Sender: Pointer; Name: string; var Value: string);
 
-function VarReplace(S: string; Values: TStrings; Prefix: string; Suffix: String = ''; VarOptions: TVarOptions = []; Sender: Pointer = nil; ReplacesCallbackProc: TVarReplacesCallbackProc = nil): string; overload;
+function VarReplace(S: string; Values: TStrings; Prefix: string; Suffix: String = ''; ExtraChar: TSysCharSet = []; VarOptions: TVarOptions = []; Sender: Pointer = nil; ReplacesCallbackProc: TVarReplacesCallbackProc = nil): string; overload;
 
 type
   //alsCut = if the string > count we cut it as count or keep the string
@@ -232,6 +232,7 @@ procedure ISOStrToDate(ISODate: String; out Y, M, D, H, N, S: Word; vDateSeparat
 function ISOStrToDate(ISODate: String; vDateSeparator: Char = '-'; TimeDivider: Char = #0; UseDefault: Boolean = False): TDateTime; overload;
 
 function ISODateToStr(DateTime: TDateTime; vDateSeparator: Char = '-'; TimeDivider: Char = ' '; WithTime: Boolean = False): String; overload;
+function ISODateToStr(DateTime: TDateTime; vDateSeparator: Char = '-'; TimeDivider: Char = ' '; TimeSeparator: Char = ':'; WithTime: Boolean = False): String; overload;
 function IsAllLowerCase(S: string): Boolean;
 
 //Zero Based
@@ -472,7 +473,7 @@ end;
 *  Use name values in strings
 *}
 
-function VarReplace(S: string; Values: TStrings; Prefix: string; Suffix: String; VarOptions: TVarOptions; Sender: Pointer; ReplacesCallbackProc: TVarReplacesCallbackProc): string;
+function VarReplace(S: string; Values: TStrings; Prefix: string; Suffix: String; ExtraChar: TSysCharSet; VarOptions: TVarOptions; Sender: Pointer; ReplacesCallbackProc: TVarReplacesCallbackProc): string;
 var
   Start: Integer;
   OpenStart: Integer;
@@ -529,7 +530,7 @@ begin
       begin
         if ((Suffix <> '') and (Current = Suffix[1])) then
           Check(Index)
-        else if ((Suffix = '') and not CharInSet(Current, ['0'..'9', 'a'..'z', 'A'..'Z', '_'])) then
+        else if ((Suffix = '') and not CharInSet(Current, ['0'..'9', 'a'..'z', 'A'..'Z', '_'] + ExtraChar)) then
         begin
           Dec(Index);
           Check(Index);
@@ -1598,17 +1599,22 @@ begin
   Result := EncodeDate(Y, M, D) + EncodeTime(H, N, S, 0);
 end;
 
-function ISODateToStr(DateTime: TDateTime; vDateSeparator: Char; TimeDivider: Char; WithTime: Boolean): String;
+function ISODateToStr(DateTime: TDateTime; vDateSeparator: Char = '-'; TimeDivider: Char = ' '; TimeSeparator: Char = ':'; WithTime: Boolean = False): String; overload;
 var
   Y, M, D, H, N, S, O: Word;
 begin
   DecodeDate(DateTime, Y, M, D);
-  Result := AlignStr(IntToStr(Y), 4, [alsRight],'0') + vDateSeparator +  AlignStr(IntToStr(M), 2, [alsRight],'0') + vDateSeparator + AlignStr(IntToStr(D), 2, [alsRight], '0');
+  Result := AlignStr(IntToStr(Y), 4, [alsRight], '0') + vDateSeparator +  AlignStr(IntToStr(M), 2, [alsRight],'0') + vDateSeparator + AlignStr(IntToStr(D), 2, [alsRight], '0');
   if WithTime then
   begin
     DecodeTime(DateTime, H, N, S, O);
-    Result := Result + TimeDivider + AlignStr(IntToStr(H), 2, [alsRight],'0') + ':' + AlignStr(IntToStr(N), 2, [alsRight],'0') + ':' + AlignStr(IntToStr(S), 2, [alsRight],'0');
+    Result := Result + TimeDivider + AlignStr(IntToStr(H), 2, [alsRight],'0') + TimeSeparator + AlignStr(IntToStr(N), 2, [alsRight],'0') + TimeSeparator + AlignStr(IntToStr(S), 2, [alsRight], '0');
   end;
+end;
+
+function ISODateToStr(DateTime: TDateTime; vDateSeparator: Char; TimeDivider: Char; WithTime: Boolean): String;
+begin
+  Result := ISODateToStr(DateTime, vDateSeparator, TimeDivider, ':',  WithTime);
 end;
 
 //* thanks to https://stackoverflow.com/a/41726706/585304

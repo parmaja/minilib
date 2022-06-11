@@ -49,6 +49,7 @@ type
     procedure SetPrior(const Value: TmnrNode);
 
     function DoGetHead: TmnrNode; virtual;
+    procedure Created; virtual;
   public
     constructor Create(vNodes: TmnrNode);
     destructor Destroy; override;
@@ -255,6 +256,12 @@ begin
   {$IFOPT D+}
   Inc(FNodesCount);
   {$ENDIF}
+  Created;
+end;
+
+procedure TmnrNode.Created;
+begin
+
 end;
 
 procedure TmnrNode.DecCount;

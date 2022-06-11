@@ -118,8 +118,8 @@ type
     function DoGetDisplayText: string; virtual;
     function DoCompare(vCell: TmnrCell): Integer; virtual;
     procedure DoSumCell(vCell: TmnrCell); virtual;
+    procedure Created; override;
   public
-    constructor Create(vNodes: TmnrNode);
     function DisplayText: string; override;
     function Compare(vCell: TmnrCell): Integer;
     procedure SumCell(vCell: TmnrCell);
@@ -2652,9 +2652,9 @@ begin
   Result := DoCompare(vCell);
 end;
 
-constructor TmnrCell.Create(vNodes: TmnrNode);
+procedure TmnrCell.Created;
 begin
-  inherited Create(vNodes);
+  inherited;
   FIsNull := False;
 end;
 
