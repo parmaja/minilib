@@ -38,6 +38,7 @@ uses
 
 const
   cDefaultKeepAliveTimeOut = 5000; //TODO move module
+  URLPathDelim  = '/';
 
 type
   TmodModuleException = class(Exception);
@@ -63,10 +64,14 @@ type
   end;
 
   TmodRequestInfo = record
-    Method: String;
-    URI: Utf8string;
-    Protcol: String;
+    Raw: String; //Full of first line of header
 
+    //from raw :) raw = Method + Protocol + URI
+    Method: Utf8string;
+    Protocol: Utf8string;
+    URI: Utf8string;
+
+    //from URI :) URI = Address + Params
     Address: Utf8string;
     Params: Utf8string;
 
@@ -74,9 +79,6 @@ type
 
     Module: String;
     Command: String;
-
-    Raw: String; //Full of first line of header
-
     Client: String;
   end;
 
@@ -93,21 +95,21 @@ type
     constructor Create(AStream: TmnBufferStream);
     destructor Destroy; override;
     procedure  Clear;
-    procedure ParsePath(URI: String; URIQuery: TmnParams = nil);
-    property Method: String read Info.Method write Info.Method;
-    property URI: Utf8string read Info.URI write Info.URI;
-    property Protcol: String read Info.Protcol write Info.Protcol;
+    property Raw: String read Info.Raw write Info.Raw;
 
+    //from raw
+    property Method: Utf8string read Info.Method write Info.Method;
+    property URI: Utf8string read Info.URI write Info.URI;
+    property Protocol: Utf8string read Info.Protocol write Info.Protocol;
     property Address: Utf8string read Info.Address write Info.Address;
     property Params: Utf8string read Info.Params write Info.Params;
-
+    //for module
     property Path: Utf8string read Info.Path write Info.Path;
     property Module: String read Info.Module write Info.Module;
     property Command: String read Info.Command write Info.Command;
-    property Raw: String read Info.Raw write Info.Raw;
     property Client: String read Info.Client write Info.Client;
-    property Stream: TmnBufferStream read FStream write FStream;
 
+    property Stream: TmnBufferStream read FStream write FStream;
     property Header: TmnHeader read FHeader write SetRequestHeader;
     function CollectURI: string;
   end;
@@ -242,7 +244,7 @@ type
     FKeepAliveTimeOut: Integer;
     FModules: TmodModules;
     FParams: TStringList;
-    FProtcols: TArray<String>;
+    FProtocols: TArray<String>;
     FUseKeepAlive: Boolean;
     FCompressing: Boolean;
     procedure SetAliasName(AValue: String);
@@ -258,6 +260,7 @@ type
     function CreateCommand(CommandName: String; ARequest: TmodRequest; ARequestStream: TmnBufferStream = nil; ARespondStream: TmnBufferStream = nil): TmodCommand; overload;
 
     procedure ParseHeader(RequestHeader: TmnParams; Stream: TmnBufferStream); virtual;
+    procedure ParseHead(ARequest: TmodRequest); virtual;
     function RequestCommand(ARequest: TmodRequest; ARequestStream, ARespondStream: TmnBufferStream): TmodCommand; virtual;
     function Match(const ARequest: TmodRequest): Boolean; virtual;
     procedure Log(S: String); virtual;
@@ -267,7 +270,7 @@ type
     procedure Init; virtual;
     procedure Idle; virtual;
   public
-    constructor Create(const AName, AAliasName: String; AProtcols: TArray<String>; AModules: TmodModules); virtual;
+    constructor Create(const AName, AAliasName: String; AProtocols: TArray<String>; AModules: TmodModules); virtual;
     destructor Destroy; override;
     function Execute(ARequest: TmodRequest; ARequestStream: TmnBufferStream = nil; ARespondStream: TmnBufferStream = nil): TmodRespondResult;
     procedure ExecuteCommand(CommandName: String; ARequestStream: TmnBufferStream = nil; ARespondStream: TmnBufferStream = nil; RequestString: TArray<String> = nil);
@@ -277,7 +280,7 @@ type
     property Active: Boolean read GetActive;
     property Params: TStringList read FParams;
     property Modules: TmodModules read FModules;
-    property Protcols: TArray<String> read FProtcols;
+    property Protocols: TArray<String> read FProtocols;
     property KeepAliveTimeOut: Integer read FKeepAliveTimeOut write FKeepAliveTimeOut;
     property UseKeepAlive: Boolean read FUseKeepAlive write FUseKeepAlive default False;
     property Compressing: Boolean read FCompressing write FCompressing;
@@ -374,22 +377,68 @@ type
     function Have(AValue: String; vSeperators: TSysCharSet = [';']): Boolean;
   end;
 
-function ParseURI(Request: String; out URIPath: Utf8string; out URIQuery: Utf8string): Boolean; overload;
-function ParseURI(Request: String; out URIPath: Utf8string; out URIParams: Utf8string; URIQuery: TmnParams): Boolean; overload;
-procedure ParsePath(aRequest: String; out Name: String; out URIPath: Utf8string; out URIParams: Utf8string; URIQuery: TmnParams);
+function ParseRaw(const Raw: String; out Method, Protocol, URI: Utf8string): Boolean;
+function ParseURI(const URI: String; out Address, Params: Utf8string): Boolean;
+procedure ParseParams(const Params: String; mnParams: TmnParams);
+
+
+function ParseAddress(const Request: String; out URIPath: Utf8string; out URIQuery: Utf8string): Boolean; overload;
+function ParseAddress(const Request: String; out URIPath: Utf8string; out URIParams: Utf8string; URIQuery: TmnParams): Boolean; overload;
+procedure ParsePath(const aRequest: String; out Name: String; out URIPath: Utf8string; out URIParams: Utf8string; URIQuery: TmnParams);
 
 implementation
 
 uses
   mnUtils;
 
-function ParseURI(Request: String; out URIPath: Utf8string; out URIQuery: Utf8string): Boolean;
+function ParseRaw(const Raw: String; out Method, Protocol, URI: Utf8string): Boolean;
+var
+  aRequests: TStringList;
+begin
+  aRequests := TStringList.Create;
+  try
+    StrToStrings(Raw, aRequests, [' '], []);
+    if aRequests.Count > 0 then
+      Method := aRequests[0];
+    if aRequests.Count > 1 then
+      URI := aRequests[1];
+    if aRequests.Count > 2 then
+      Protocol := aRequests[2];
+  finally
+    FreeAndNil(aRequests);
+  end;
+  Result := True;
+end;
+
+function ParseURI(const URI: String; out Address, Params: Utf8string): Boolean;
 var
   I, J: Integer;
 begin
-  if Request <> '' then
-    if Request[1] = '/' then //Not sure
-      Delete(Request, 1, 1);
+  J := Pos('?', URI);
+  if J > 0 then
+  begin
+    Address := Copy(URI, 1, J - 1);
+    Params := Copy(URI, J + 1, Length(URI));
+  end
+  else
+  begin
+    Address := URI;
+    Params := '';
+  end;
+end;
+
+procedure ParseParams(const Params: String; mnParams: TmnParams);
+begin
+  StrToStringsCallback(Params, mnParams, @ParamsCallBack, ['&'], [' ']);
+end;
+
+function ParseAddress(const Request: String; out URIPath: Utf8string; out URIQuery: Utf8string): Boolean;
+var
+  I, J: Integer;
+begin
+  {if Request <> '' then
+    if Request[1] = URLPathDelim then //Not sure
+      Delete(Request, 1, 1);}
 
   I := 1;
   while (I <= Length(Request)) and (Request[I] = ' ') do
@@ -401,7 +450,7 @@ begin
   URIPath := Copy(Request, J, I - J);
 
   if URIPath <> '' then
-    if URIPath[1] = '/' then //Not sure
+    if URIPath[1] = URLPathDelim then //Not sure
       Delete(URIPath, 1, 1);
 
   Result := URIPath <> '';
@@ -420,19 +469,19 @@ begin
   end;
 end;
 
-function ParseURI(Request: String; out URIPath: Utf8string; out URIParams: Utf8string; URIQuery: TmnParams): Boolean;
+function ParseAddress(const Request: String; out URIPath: Utf8string; out URIParams: Utf8string; URIQuery: TmnParams): Boolean;
 begin
-  Result := ParseURI(Request, URIPath, URIParams);
+  Result := ParseAddress(Request, URIPath, URIParams);
   if Result then
     if URIQuery <> nil then
       //ParseParams(aParams, False);
       StrToStringsCallback(URIParams, URIQuery, @ParamsCallBack, ['&'], [' ']);
 end;
 
-procedure ParsePath(aRequest: String; out Name: String; out URIPath: Utf8string; out URIParams: Utf8string; URIQuery: TmnParams);
+procedure ParsePath(const aRequest: String; out Name: String; out URIPath: Utf8string; out URIParams: Utf8string; URIQuery: TmnParams);
 begin
-  ParseURI(aRequest, URIPath, URIParams, URIQuery);
-  Name := SubStr(URIPath, '/', 0);
+  ParseAddress(aRequest, URIPath, URIParams, URIQuery);
+  Name := SubStr(URIPath, URLPathDelim, 0);
   URIPath := Copy(URIPath, Length(Name) + 1, MaxInt);
 end;
 
@@ -513,9 +562,9 @@ end;
 function TmodRequest.CollectURI: string;
 begin
   if Params<>'' then
-    Result := Path+'?'+Params
+    Result := Address+'?'+Params
   else
-    Result := Path;
+    Result := Address;
 end;
 
 constructor TmodRequest.Create(AStream: TmnBufferStream);
@@ -534,11 +583,6 @@ end;
 procedure TmodRequest.Clear;
 begin
   Initialize(Info);
-end;
-
-procedure TmodRequest.ParsePath(URI: String; URIQuery: TmnParams);
-begin
-  mnModules.ParsePath(Self.URI, Self.Info.Module, Self.Info.Path, Self.Info.Params, URIQuery);
 end;
 
 { TmnHeaderField }
@@ -609,6 +653,7 @@ begin
     try
       (Listener.Server as TmodModuleServer).Modules.ParseHead(aRequest, aRequestLine);
       aModule := (Listener.Server as TmodModuleServer).Modules.Match(aRequest);
+
       if (aModule = nil) and ((Listener.Server as TmodModuleServer).Modules.Count > 0) then
         aModule := (Listener.Server as TmodModuleServer).Modules.DefaultModule; //fall back
 
@@ -618,11 +663,9 @@ begin
       end
       else
         try
-          if aModule <> nil then
-          begin
-            aRequest.Client := RemoteIP;
-            Result := aModule.Execute(aRequest, Stream, Stream);
-          end;
+          aModule.ParseHead(aRequest);
+          aRequest.Client := RemoteIP;
+          Result := aModule.Execute(aRequest, Stream, Stream);
         finally
         end;
     finally
@@ -812,6 +855,18 @@ begin
 
 end;
 
+procedure TmodModule.ParseHead(ARequest: TmodRequest);
+var
+  aAddress: string;
+begin
+  aAddress := ARequest.Address;
+  if (aAddress<>'') and StartsText(URLPathDelim, aAddress) then
+    aAddress := Copy(aAddress, 2, MaxInt);
+
+  ARequest.Module := SubStr(aAddress, URLPathDelim, 0);
+  ARequest.Path := Copy(aAddress, Length(ARequest.Module) + 1, MaxInt);
+end;
+
 procedure TmodModule.ParseHeader(RequestHeader: TmnParams; Stream: TmnBufferStream);
 var
   line: String;
@@ -857,12 +912,12 @@ begin
   Result := CreateCommand(ARequest.Command, ARequest, ARequestStream, ARespondStream);
 end;
 
-constructor TmodModule.Create(const AName, AAliasName: String; AProtcols: TArray<String>; AModules: TmodModules);
+constructor TmodModule.Create(const AName, AAliasName: String; AProtocols: TArray<String>; AModules: TmodModules);
 begin
   inherited Create;
   Name := AName;
   FAliasName := AAliasName;
-  FProtcols := AProtcols;
+  FProtocols := AProtocols;
   FModules := AModules;
   FModules.Add(Self);
   FParams := TStringList.Create;
@@ -883,7 +938,8 @@ end;
 
 function TmodModule.Match(const ARequest: TmodRequest): Boolean;
 begin
-  Result := SameText(AliasName, ARequest.Module) and ((Protcols = nil) or StrInArray(ARequest.Protcol, Protcols));
+  //Result := SameText(AliasName, ARequest.Module) and ((Protocols = nil) or StrInArray(ARequest.Protocol, Protocols));
+  Result := StartsText('/'+AliasName, ARequest.Address) and ((Protocols = nil) or StrInArray(ARequest.Protocol, Protocols));
 end;
 
 procedure TmodModule.Log(S: String);
@@ -897,6 +953,7 @@ begin
   CreateCommands;
 
   Result.Status := [erSuccess];
+
 
   ParseHeader(ARequest.Header, ARequestStream);
 
@@ -1040,24 +1097,9 @@ var
   aRequests: TStringList;
 begin
   ARequest.Clear;
-
-  aRequests := TStringList.Create;
-  try
-    StrToStrings(RequestLine, aRequests, [' '], []);
-    if aRequests.Count > 0 then
-      ARequest.Method := aRequests[0];
-    if aRequests.Count > 1 then
-      ARequest.URI := aRequests[1];
-    if aRequests.Count > 2 then
-      ARequest.Protcol := aRequests[2];
-  finally
-    FreeAndNil(aRequests);
-  end;
-  if ARequest.Protcol = '' then
-    ARequest.Protcol := DefaultProtocol;
-
   ARequest.Raw := RequestLine;
-  ARequest.ParsePath(ARequest.URI);
+  ParseRaw(RequestLine, ARequest.Info.Method, ARequest.Info.Protocol, ARequest.Info.URI);
+  ParseURI(ARequest.URI, ARequest.Info.Address, ARequest.Info.Params);
 end;
 
 function TmodModules.Match(ARequest: TmodRequest): TmodModule;

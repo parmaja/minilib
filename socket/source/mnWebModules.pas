@@ -39,7 +39,7 @@ headers[2]
 interface
 
 uses
-  SysUtils, Classes, syncobjs,
+  SysUtils, Classes, syncobjs, StrUtils,
   mnUtils, mnSockets, mnServers, mnStreams, mnStreamUtils,
   mnFields, mnParams,
   mnModules;
@@ -489,19 +489,32 @@ procedure TmodHttpGetCommand.RespondResult(var Result: TmodRespondResult);
 var
   aDocument: string;
 begin
+(*
+
+  '/web'               path = ''
+  '/web/'              path = '/'
+  '/web/dashbord'     path = '/dashbord' is dir
+  '/web/dashbord/'    path = '/dashbord' is dir
+  '/web/dashbord/index' path = '/dashbord/index' is not dir
+  '/web/dashbord/index.html' file
+
+*)
+
   aDocument := IncludeTrailingPathDelimiter(Respond.Root);
   if Request.Path <> '' then
     aDocument := aDocument + '.' + Request.Path;
   aDocument := StringReplace(aDocument, '/', PathDelim, [rfReplaceAll]);//correct it for linux
-  if aDocument[Length(aDocument)] = PathDelim then //get the default file if it not defined
+  if EndsText(PathDelim, aDocument) then //get the default file if it not defined
      aDocument := GetDefaultDocument(aDocument);
   aDocument := ExpandFileName(aDocument);
 
-  if ((Request.Path = '')and(Request.Path[Length(Request.Path)] <> PathDelim)) or DirectoryExists(aDocument) then
+  if (Request.Path='') or (not EndsText(PathDelim, aDocument) and DirectoryExists(aDocument)) then
   begin
     //https://developer.mozilla.org/en-US/docs/Web/HTTP/Redirections
-    Request.Path := IncludeURLDelimiter(Request.Path);
-    Respond.SendRespond('HTTP/1.1 301 Moved Permanently');
+    Request.Address := IncludeURLDelimiter(Request.Address);
+    //Respond.SendRespond('HTTP/1.1 301 Moved Permanently');
+    Respond.SendRespond('HTTP/1.1 307 Temporary Redirect');
+
     Respond.PostHeader('Location', Request.CollectURI);
     Respond.SendHeader;
   end
@@ -622,7 +635,7 @@ end;
 procedure TmodHttpCommand.Prepare(var Result: TmodRespondResult);
 begin
   inherited;
-  Request.ParsePath(Request.URI, Respond.URIParams);
+  ParseParams(Request.Params, Respond.URIParams);
 
   if Module.UseKeepAlive and SameText(Request.Header.ReadString('Connection'), 'Keep-Alive') then
   begin
@@ -696,7 +709,7 @@ procedure TmodWebModules.ParseHead(ARequest: TmodRequest; const RequestLine: str
 begin
   inherited ParseHead(ARequest, RequestLine);
   ARequest.URI := URIDecode(ARequest.URI);
-  ARequest.ParsePath(ARequest.URI);
+  //ARequest.ParsePath(ARequest.URI); duplicate in parse head :)
   ARequest.Command := ARequest.Method;
 end;
 
