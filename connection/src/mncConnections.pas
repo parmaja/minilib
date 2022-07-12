@@ -1114,7 +1114,9 @@ procedure TmncCommand.Close;
 begin
   if not Active then
     raise EmncException.Create('Command already Closed');
-  DoUnprepare;
+
+  if Prepared then
+    DoUnprepare;
   Clean;
   DoClose;
   DoUnparse;

@@ -513,7 +513,8 @@ begin
     //https://developer.mozilla.org/en-US/docs/Web/HTTP/Redirections
     Request.Address := IncludeURLDelimiter(Request.Address);
     //Respond.SendRespond('HTTP/1.1 301 Moved Permanently');
-    Respond.SendRespond('HTTP/1.1 307 Temporary Redirect');
+    Respond.SendRespond('HTTP/1.1 302 Found');
+    //Respond.SendRespond('HTTP/1.1 307 Temporary Redirect');
 
     Respond.PostHeader('Location', Request.CollectURI);
     Respond.SendHeader;

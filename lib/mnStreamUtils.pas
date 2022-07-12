@@ -24,17 +24,17 @@ type
   TmnCompressLevel = 0..9;
   TmnStreamCompress = set of (cprsRead, cprsWrite);
 
-  TmCompressStreamProxy = class(TmnStreamOverProxy)
+  TmnCompressStreamProxy = class abstract(TmnStreamOverProxy)
   public
     constructor Create(ACompress: TmnStreamCompress; Level: TmnCompressLevel = 9); virtual;
     class function GetCompressName: string; virtual; abstract;
   end;
 
-  TmCompressStreamProxyClass = class of TmCompressStreamProxy;
+  TmnCompressStreamProxyClass = class of TmnCompressStreamProxy;
 
   { TmnDeflateStreamProxy }
 
-  TmnDeflateStreamProxy = class(TmCompressStreamProxy)
+  TmnDeflateStreamProxy = class(TmnCompressStreamProxy)
   private
     type
       TInflateInfo = record
@@ -76,6 +76,14 @@ type
   public
     constructor Create(ACompress: TmnStreamCompress; Level: TmnCompressLevel); override;
     class function GetCompressName: string; override;
+  end;
+
+  TmnChunkStreamProxy = class(TmnStreamOverProxy)
+  protected
+    procedure CloseWrite; override;
+    procedure CloseRead; override;
+    function DoWrite(const Buffer; Count: Longint; out ResultCount, RealCount: Longint): Boolean; override;
+    function DoRead(var Buffer; Count: Longint; out ResultCount, RealCount: Longint): Boolean; override;
   end;
 
 implementation
@@ -315,11 +323,62 @@ begin
   Result := 'gzip';
 end;
 
-{ TmCompressStreamProxy }
+{ TmnCompressStreamProxy }
 
-constructor TmCompressStreamProxy.Create(ACompress: TmnStreamCompress; Level: TmnCompressLevel);
+constructor TmnCompressStreamProxy.Create(ACompress: TmnStreamCompress; Level: TmnCompressLevel);
 begin
   inherited Create;
+end;
+
+{ TmnChunkStreamProxy }
+
+procedure TmnChunkStreamProxy.CloseRead;
+begin
+  inherited;
+
+end;
+
+procedure TmnChunkStreamProxy.CloseWrite;
+begin
+  inherited;
+
+end;
+
+function TmnChunkStreamProxy.DoRead(var Buffer; Count: Longint; out ResultCount, RealCount: Longint): Boolean;
+var
+  b: Byte;
+  r, c: Integer;
+  aCount: Integer;
+  s: string;
+begin
+  Result := Over.Read(Buffer, Count, ResultCount, RealCount);
+  Exit;
+
+  s := '';
+  aCount := 0;
+  repeat
+    Over.Read(b, 1, r, c);
+    case b of
+      13, 10:
+      begin
+        Over.Read(b, 1, r, c);
+        aCount := StrToIntDef('$'+s, 0);
+        Over.Read(Buffer, aCount, ResultCount, RealCount);
+
+        Over.Read(b, 1, r, c);
+        Over.Read(b, 1, r, c);
+        b := 0;
+      end;
+      else
+        s := s + Chr(b);
+    end;
+
+  until b=0;
+end;
+
+function TmnChunkStreamProxy.DoWrite(const Buffer; Count: Longint; out ResultCount, RealCount: Longint): Boolean;
+begin
+  Result := Over.Write(Buffer, Count, ResultCount, RealCount);
 end;
 
 end.

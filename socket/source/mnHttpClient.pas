@@ -22,7 +22,7 @@ unit mnHttpClient;
 interface
 
 uses
-  SysUtils, Classes, StrUtils,
+  SysUtils, Classes, StrUtils, Windows,
   mnUtils, mnClasses, mnLogs, mnFields, mnParams, mnModules, mnSockets, mnJobs,
   mnClients, mnStreams, mnStreamUtils;
 
@@ -45,6 +45,7 @@ type
 
     FDate: TDateTime;
     FKeepAlive: Boolean;
+    FChunked: Boolean;
     FLastModified: TDateTime;
     FExpires: TDateTime;
 
@@ -69,6 +70,7 @@ type
     property ContentLength: Integer read FContentLength write FContentLength;
 
     property KeepAlive: Boolean read FKeepAlive write FKeepAlive;
+    property Chunked: Boolean read FChunked write FChunked;
     property Client: TmnHttpClient read FClient;
     property Header[Index: string]: string read GetHeader write SetHeader; default;
   end;
@@ -139,8 +141,8 @@ type
 
     FStream: TmnHttpStream;
   protected
-    CompressClass: TmCompressStreamProxyClass;
-    CompressProxy: TmCompressStreamProxy;
+    ChunkedProxy: TmnChunkStreamProxy;
+    CompressProxy: TmnCompressStreamProxy;
     function CreateStream: TmnHttpStream; virtual;
     procedure FreeStream; virtual;
     procedure Receive; virtual;
@@ -152,7 +154,10 @@ type
     //Use it to open connection and keep it connected
     procedure Connect(const vURL: UTF8String);
     function Open(const vURL: UTF8String; SendAndReceive: Boolean = True): Boolean;
-    function Post(const vURL: UTF8String; vData: PByte; vCount: Integer): Boolean;
+    function Post(const vURL: UTF8String; vData: PByte; vCount: Integer): Boolean; overload;
+    function Post(const vURL: UTF8String; vData: UTF8String): Boolean; overload;
+
+    function Get(const vURL: UTF8String): Boolean;
 
     function ReadStream(AStream: TStream): TFileSize; overload;
     procedure ReadStream(AStream: TStream; Count: Integer); overload;
@@ -470,12 +475,15 @@ begin
     FAcceptCharSet := Header['Accept-CharSet'];
     FAcceptLanguage := Header['Accept-Language'];
     FAcceptEncoding.DelimitedText := Header['Content-Encoding'];
+    FChunked := Self.Items['Transfer-Encoding'].Have('chunked', [',']);
+
   end;
 end;
 
 procedure TmnHttpResponse.Receive;
 var
   s: UTF8String;
+  t: string;
 begin
   FHeaders.Clear;
   // if FStream.Connected then
@@ -483,6 +491,8 @@ begin
     Client.Stream.ReadLine(s, True);
     s := Trim(s);
     repeat
+      t := s;
+      OutputDebugString(PWideChar(t));
       Items.AddItem(s, ':', True);
       Client.Stream.ReadLine(s, True);
       s := Trim(s);
@@ -594,6 +604,11 @@ begin
   Result := Stream.Connected;
 end;
 
+function TmnHttpClient.Post(const vURL: UTF8String; vData: UTF8String): Boolean;
+begin
+  Post(vURL, PByte(vData), Length(vData));
+end;
+
 procedure TmnHttpClient.ReceiveStream(AStream: TStream);
 begin
   ReadStream(AStream);
@@ -605,8 +620,10 @@ begin
 end;
 
 function TmnHttpClient.ReadStream(AStream: TStream): TFileSize;
+var
+  s: UTF8String;
 begin
-  if KeepAlive then //TODO check if response.KeepAlive
+  if KeepAlive and (Response.ContentLength<>0) then //TODO check if response.KeepAlive
     Result := FStream.ReadStream(AStream, Response.ContentLength)
   else
     Result := FStream.ReadStream(AStream);
@@ -615,25 +632,47 @@ end;
 procedure TmnHttpClient.Receive;
 var
   s: string;
+  aCompressClass: TmnCompressStreamProxyClass;
 begin
   Response.Receive;
+
 
   s := Response.Header['Set-Cookie'];
   Cookies.Delimiter := ';';
   Cookies.AsString := s;
 
-  if Response.Items['Content-Encoding'].Have('gzip', [',']) then
-    CompressClass := TmnGzipStreamProxy
-  else if Response.Items['Content-Encoding'].Have('deflate', [',']) then
-    CompressClass := TmnDeflateStreamProxy;
+  if Response.Chunked then
+  begin
+    if ChunkedProxy <> nil then
+      ChunkedProxy.Enable
+    else
+    begin
+      ChunkedProxy := TmnChunkStreamProxy.Create;
+      Stream.AddProxy(ChunkedProxy);
+    end;
+  end
+  else
+  begin
+    if ChunkedProxy <> nil then
+      ChunkedProxy.Disable;
+  end;
 
-  if CompressClass <> nil then
+
+
+  if Response.Items['Content-Encoding'].Have('gzip', [',']) then
+    aCompressClass := TmnGzipStreamProxy
+  else if Response.Items['Content-Encoding'].Have('deflate', [',']) then
+    aCompressClass := TmnDeflateStreamProxy
+  else
+    aCompressClass := nil;
+
+  if aCompressClass <> nil then
   begin
     if CompressProxy <> nil then
       CompressProxy.Enable
     else
     begin
-      CompressProxy := CompressClass.Create([cprsRead], 9);
+      CompressProxy := aCompressClass.Create([cprsRead], 9);
       Stream.AddProxy(CompressProxy);
     end;
   end
@@ -681,6 +720,16 @@ begin
   finally
     m.Free;
   end;
+end;
+
+function TmnHttpClient.Get(const vURL: UTF8String): Boolean;
+begin
+  Connect(vUrl);
+  Request.SendGet;
+  //
+  Result := Stream.Connected;
+  if Result then
+    Receive;
 end;
 
 function TmnHttpClient.GetFile(const vURL: UTF8String; OutFileName: UTF8String): TFileSize;

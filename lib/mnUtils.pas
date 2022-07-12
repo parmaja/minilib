@@ -1083,20 +1083,6 @@ begin
     Result := '';
 end;
 
-procedure cMoveStr(var Start: Integer; var Dest: string; const Source: string);
-var
-  i, l: Integer;
-begin
-  l := (Length(Dest) - Start) + 1;
-  if l > Length(Source) then
-    l := Length(Source);
-  for i := 1 to l do
-  begin
-    Dest[Start] := Source[i];
-    Start := Start + 1;
-  end;
-end;
-
 function CompareLeftStr(const Str: string; const WithStr: string; Start: Integer): Boolean;
 var
   i: Integer;
@@ -1122,6 +1108,20 @@ end;
 function ContainsText(const SubStr, InStr: string): Boolean;
 begin
   Result := Pos(UpperCase(SubStr), UpperCase(InStr)) > 0; //Ewww
+end;
+
+procedure cMoveStr(var Start: Integer; var Dest: string; const Source: string);
+var
+  i, l: Integer;
+begin
+  l := (Length(Dest) - Start) + 1;
+  if l > Length(Source) then
+    l := Length(Source);
+  for i := 1 to l do
+  begin
+    Dest[Start] := Source[i];
+    Start := Start + 1;
+  end;
 end;
 
 function EscapeString(const S: string; Esc: string; Chars: array of Char; Escapes: array of string): string;

@@ -169,7 +169,7 @@ type
     FProxy: TmnStreamProxy;
 
     procedure ReadError; virtual;
-    //Override it but do not use it in your code, use DirectRead or DirectWrite
+    //Override it but do not use it in your code, use ProxyRead or ProxyWrite
     function DoRead(var Buffer; Count: Longint): Longint; virtual; abstract;
     function DoWrite(const Buffer; Count: Longint): Longint; virtual; abstract;
     procedure DoFlush; virtual;
@@ -184,8 +184,8 @@ type
 
     procedure AddProxy(AProxy: TmnStreamOverProxy);
 
-    function DirectRead(var Buffer; Count: Longint): Longint;
-    function DirectWrite(const Buffer; Count: Longint): Longint;
+    function ProxyRead(var Buffer; Count: Longint): Longint;
+    function ProxyWrite(const Buffer; Count: Longint): Longint;
 
     function Read(var Buffer; Count: Longint): Longint; override; final;
     function Write(const Buffer; Count: Longint): Longint; override; final;
@@ -1108,7 +1108,7 @@ function TmnBufferStream.Write(const Buffer; Count: Longint): Longint;
   aCount, c, Size: Integer;}
 begin
   if FWriteBuffer.Size = 0 then
-    Result := DirectWrite(Buffer, Count)
+    Result := ProxyWrite(Buffer, Count)
   else
   begin
     Result := 0;
@@ -1188,7 +1188,7 @@ begin
   FProxy := AProxy;
 end;
 
-function TmnBufferStream.DirectRead(var Buffer; Count: Longint): Longint;
+function TmnBufferStream.ProxyRead(var Buffer; Count: Longint): Longint;
 var
   RealCount: longint;
 begin
@@ -1198,7 +1198,7 @@ begin
     Result := DoRead(Buffer, Count);
 end;
 
-function TmnBufferStream.DirectWrite(const Buffer; Count: Longint): Longint;
+function TmnBufferStream.ProxyWrite(const Buffer; Count: Longint): Longint;
 var
   RealCount: longint;
 begin
@@ -1222,7 +1222,7 @@ begin
   if FReadBuffer.Pos < FReadBuffer.Stop then
     raise EmnStreamException.Create('Buffer is not empty to load');
   FReadBuffer.Pos := FReadBuffer.Buffer;
-  Result := DirectRead(FReadBuffer.Buffer^, FReadBuffer.Size);
+  Result := ProxyRead(FReadBuffer.Buffer^, FReadBuffer.Size);
   if Result > 0 then //-1 not effects here
     FReadBuffer.Stop := FReadBuffer.Pos + Result
   else
@@ -1235,7 +1235,7 @@ end;
 var
   aSize: TFileSize;
 begin
-  aSize := DirectRead(FWriteBuffer.Buffer, FWriteBuffer.Stop - FWriteBuffer.Buffer);
+  aSize := ProxyRead(FWriteBuffer.Buffer, FWriteBuffer.Stop - FWriteBuffer.Buffer);
   FWriteBuffer.Pos := FWriteBuffer.Buffer;
   FWriteBuffer.Stop := FWriteBuffer.Buffer;
 end;}
@@ -1271,7 +1271,7 @@ var
 begin
   Flush;//Flush write buffer
   if (ReadBufferSize = 0) then
-    aCount := DirectRead(Buffer, Count)
+    aCount := ProxyRead(Buffer, Count)
   else
   begin
     if FReadBuffer.Buffer = nil then
@@ -1582,3 +1582,4 @@ begin
 end;
 
 end.
+
