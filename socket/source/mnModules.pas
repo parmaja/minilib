@@ -14,11 +14,11 @@
  *
  }
  {
-           userinfo       host      port
-          ┌──┴───┐ ┌──────┴──────┐ ┌┴┐
-  https://john.doe@www.example.com:123/forum/questions/?tag=networking&order=newest#top
-  └─┬─┘   └───────────┬──────────────┘└───────┬───────┘ └───────────┬─────────────┘ └┬┘
-  scheme          authority                  path                 query           fragment
+              userinfo       host      port
+              ┌──┴───┐ ┌──────┴──────┐ ┌┴┐
+  GET https://john.doe@www.example.com:123/forum/questions/?tag=networking&order=newest#top HTTP/1.1
+  └┬┘    └─┬─┘   └───────────┬───────────┘└───────┬───────┘└───────────┬─────────────┘ └┬─┘ └─────┬┘
+  method scheme          authority               path                query             fragment   protocol
 
   https://en.wikipedia.org/wiki/Uniform_Resource_Identifier
 
@@ -66,7 +66,7 @@ type
   TmodRequestInfo = record
     Raw: String; //Full of first line of header
 
-    //from raw :) raw = Method + Protocol + URI
+    //from raw :) raw = Method + URI + Protocol
     Method: Utf8string;
     Protocol: Utf8string;
     URI: Utf8string;

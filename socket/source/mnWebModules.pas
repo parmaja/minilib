@@ -54,14 +54,14 @@ type
   private
     FKeepAlive: Boolean;
     FContentLength: Integer;
-    FCompressClass: TmCompressStreamProxyClass;
-    FCompressProxy: TmCompressStreamProxy;
+    FCompressClass: TmnCompressStreamProxyClass;
+    FCompressProxy: TmnCompressStreamProxy;
     FURIParams: TmnParams;
     FCookies: TmnParams;
     FRoot: string; //Document root folder
     FHost: string;
-    procedure SetCompressClass(AValue: TmCompressStreamProxyClass);
-    procedure SetsCompressProxy(AValue: TmCompressStreamProxy);
+    procedure SetCompressClass(AValue: TmnCompressStreamProxyClass);
+    procedure SetsCompressProxy(AValue: TmnCompressStreamProxy);
   public
     constructor Create;
     destructor Destroy; override;
@@ -71,8 +71,8 @@ type
     property KeepAlive: Boolean read FKeepAlive write FKeepAlive;
     //Compress on the fly, now we use deflate
     property ContentLength: Integer read FContentLength write FContentLength;
-    property CompressClass: TmCompressStreamProxyClass read FCompressClass write SetCompressClass;
-    property CompressProxy: TmCompressStreamProxy read FCompressProxy write SetsCompressProxy;
+    property CompressClass: TmnCompressStreamProxyClass read FCompressClass write SetCompressClass;
+    property CompressProxy: TmnCompressStreamProxy read FCompressProxy write SetsCompressProxy;
     //Document root folder
     property Root: string read FRoot;
     property Host: string read FHost;
@@ -250,14 +250,14 @@ end;
 
 { TmodHttpRespond }
 
-procedure TmodHttpRespond.SetCompressClass(AValue: TmCompressStreamProxyClass);
+procedure TmodHttpRespond.SetCompressClass(AValue: TmnCompressStreamProxyClass);
 begin
   if FCompressClass <> nil then
     raise TmodModuleException.Create('Compress class is already set!');
   FCompressClass := AValue;
 end;
 
-procedure TmodHttpRespond.SetsCompressProxy(AValue: TmCompressStreamProxy);
+procedure TmodHttpRespond.SetsCompressProxy(AValue: TmnCompressStreamProxy);
 begin
   if FCompressProxy <> nil then
     raise TmodModuleException.Create('Compress proxy is already set!');
