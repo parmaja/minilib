@@ -1242,29 +1242,29 @@ var
   aCount: Integer;
   aBuf: TBytes;
 
-  function _ReadByte: Boolean;
+  function _IsMatch(vBI, vMI: Integer; out vErr: Boolean): Boolean;
   var
     b: Byte;
-  begin
-    if (Read(b, 1)=1) then
-    begin
-      if aCount=ABufferSize then
-      begin
-        ABufferSize := ABufferSize + ReadWriteBufferSize;
-        ReallocMem(ABuffer, ABufferSize);
-      end;
-      ABuffer[aCount] := b;
-      Inc(aCount);
-      Result := True;
-    end
-    else
-      Result := False;
-  end;
-
-  function _IsMatch(vBI, vMI: Integer; out vErr: Boolean): Boolean;
+    t: PByte;
   begin
     if vBI >= aCount then
-      vErr := not _ReadByte
+    begin
+      if (Read(b, 1)=1) then
+      begin
+        if aCount=ABufferSize then
+        begin
+          ABufferSize := ABufferSize + ReadWriteBufferSize;
+          ReallocMem(ABuffer, ABufferSize);
+        end;
+        t := ABuffer;
+        Inc(t, aCount);
+        t^ := b;
+        Inc(aCount);
+        vErr := False;
+      end
+      else
+        vErr := True;
+    end
     else
       vErr := False;
 
