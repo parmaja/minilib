@@ -60,6 +60,7 @@ type
     procedure ExampleGZImage; //GZ image
 
     procedure ExampleGZText; //GZ image
+    procedure ExampleTextWithHeader;
 
     procedure ExampleUnGZImage; //Unzip GZ image
 
@@ -230,6 +231,7 @@ procedure TTestStream.ExampleSmallBuffer;
 var
   Stream: TmnBufferStream;
   s: UTF8String;
+  ss: string;
 begin
   Stream := TmnWrapperStream.Create(TFileStream.Create(Location + 'test.txt', fmOpenRead));
   try
@@ -239,8 +241,8 @@ begin
     s := Stream.ReadLine;
     WriteLn(S);
 
-    s := Stream.ReadString;
-    WriteLn('['+S+']');
+    Stream.ReadString(ss);
+    WriteLn('['+ss+']');
 
     s := Stream.ReadLine;
     WriteLn(S);
@@ -695,6 +697,41 @@ begin
   end;
 end;
 
+procedure TTestStream.ExampleTextWithHeader;
+var
+  aTextFile: TFileStream;
+  Stream: TmnBufferStream;
+  HexProxy: TmnHexStreamProxy;
+  aProxy: TmnStreamOverProxy;
+  s: utf8string;
+  b: TBytes;
+  c: Integer;
+begin
+  WriteLn('Read header text file');
+  aTextFile := TFileStream.Create(Location + 'header.txt', fmOpenRead);
+  Stream := TmnWrapperStream.Create(aTextFile, True);
+  aProxy := TmnPlainStreamProxy.Create;
+
+  Stream.ReadLine(S);
+  WriteLn(s);
+  Stream.ReadLine(S);
+  WriteLn(s);
+  SetLength(b, 1024);
+
+  Stream.AddProxy(aProxy);
+
+  try
+    c := Stream.Read(b[0], 1024);
+    SetLength(b, c);
+
+    {while Stream.ReadLine(S, False) do
+      WriteLn(s);}
+  finally
+    Stream.Free;
+  end;
+
+end;
+
 procedure TTestStream.CopyFileWrite;
 var
   Stream1: TmnBufferStream;
@@ -785,6 +822,7 @@ begin
       AddProc('CopyFile Write', CopyFileWrite);
       AddProc('CopyFile Read', CopyFileRead);
       AddProc('ExampleGZText: GZ Text', ExampleGZText);
+      AddProc('ExampleGZText: Headered Text', ExampleTextWithHeader);
       while true do
       begin
         for n := 0 to Length(Commands) - 1 do

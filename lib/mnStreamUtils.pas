@@ -78,6 +78,13 @@ type
     class function GetCompressName: string; override;
   end;
 
+  TmnPlainStreamProxy = class(TmnStreamOverProxy)
+    procedure CloseWrite; override;
+    procedure CloseRead; override;
+    function DoWrite(const Buffer; Count: Longint; out ResultCount, RealCount: Longint): Boolean; override;
+    function DoRead(var Buffer; Count: Longint; out ResultCount, RealCount: Longint): Boolean; override;
+  end;
+
   TmnChunkStreamProxy = class(TmnStreamOverProxy)
   protected
     procedure CloseWrite; override;
@@ -374,6 +381,30 @@ begin
 end;
 
 function TmnChunkStreamProxy.DoWrite(const Buffer; Count: Longint; out ResultCount, RealCount: Longint): Boolean;
+begin
+  Result := Over.Write(Buffer, Count, ResultCount, RealCount);
+end;
+
+{ TmnPlainStreamProxy }
+
+procedure TmnPlainStreamProxy.CloseRead;
+begin
+  inherited;
+
+end;
+
+procedure TmnPlainStreamProxy.CloseWrite;
+begin
+  inherited;
+
+end;
+
+function TmnPlainStreamProxy.DoRead(var Buffer; Count: Longint; out ResultCount, RealCount: Longint): Boolean;
+begin
+  Result := Over.Read(Buffer, Count, ResultCount, RealCount);
+end;
+
+function TmnPlainStreamProxy.DoWrite(const Buffer; Count: Longint; out ResultCount, RealCount: Longint): Boolean;
 begin
   Result := Over.Write(Buffer, Count, ResultCount, RealCount);
 end;
