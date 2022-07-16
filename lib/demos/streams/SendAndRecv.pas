@@ -61,6 +61,7 @@ type
 
     procedure ExampleGZText; //GZ image
     procedure ExampleTextWithHeader;
+    procedure ExampleReadLineFile;
 
     procedure ExampleUnGZImage; //Unzip GZ image
 
@@ -584,6 +585,36 @@ begin
   InternalCompressImage(False, False);
 end;
 
+procedure TTestStream.ExampleReadLineFile;
+var
+  aTextFile: TFileStream;
+  Stream: TmnBufferStream;
+  aProxy: TmnStreamOverProxy;
+  t: Cardinal;
+  s: UTF8String;
+begin
+  WriteLn('Read text file');
+  aTextFile := TFileStream.Create(Location + 'large.json', fmOpenRead);
+  Stream := TmnWrapperStream.Create(aTextFile, True);
+  aProxy := TmnPlainStreamProxy.Create;
+
+
+  try
+    t := TThread.GetTickCount;
+    while Stream.ReadLine(S) do
+    begin
+    end;
+
+    WriteLn(TicksToString(TThread.GetTickCount-t));
+
+    Stream.AddProxy(aProxy);
+
+  finally
+    Stream.Free;
+  end;
+
+end;
+
 procedure TTestStream.ExampleHexImage;
 var
   aImageFile: TFileStream;
@@ -826,6 +857,8 @@ begin
       AddProc('CopyFile Read', CopyFileRead);
       AddProc('ExampleGZText: GZ Text', ExampleGZText);
       AddProc('ExampleGZText: Headered Text', ExampleTextWithHeader);
+      AddProc('ExampleFileText: Readline Text', ExampleReadLineFile);
+
       while true do
       begin
         for n := 0 to Length(Commands) - 1 do

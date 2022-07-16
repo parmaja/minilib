@@ -193,7 +193,8 @@ type
 
     procedure Close(ACloseWhat: TmnStreamClose = [cloRead, cloWrite]);
 
-    function ReadBufferUntil(const Match: PByte; MatchSize: Word; ExcludeMatch: Boolean; out ABuffer: Pointer; out ABufferSize: TFileSize; out Matched: Boolean): Boolean;
+    function ReadBufferUntil(const Match: PByte; MatchSize: Word; ExcludeMatch: Boolean; out ABuffer: PByte; out ABufferSize: TFileSize; out Matched: Boolean): Boolean;
+    function ReadBufferUntil22(const Match: PByte; MatchSize: Word; ExcludeMatch: Boolean; out ABuffer: PByte; out ABufferSize: TFileSize; out Matched: Boolean): Boolean;
     {$ifndef NEXTGEN}
     function ReadUntil(const Match: ansistring; ExcludeMatch: Boolean; out Buffer: ansistring; out Matched: Boolean): Boolean; overload;
     function ReadUntil(const Match: widestring; ExcludeMatch: Boolean; out Buffer: widestring; out Matched: Boolean): Boolean; overload;
@@ -919,7 +920,7 @@ end;
 function TmnBufferStream.ReadLine(out S: unicodestring; ExcludeEOL: Boolean): Boolean;
 var
   m: Boolean;
-  res: Pointer;
+  res: PByte;
   len: TFileSize;
   EOL: unicodestring;
 begin
@@ -941,7 +942,7 @@ end;
 function TmnBufferStream.ReadLine(out S: widestring; ExcludeEOL: Boolean): Boolean;
 var
   m: Boolean;
-  res: Pointer;
+  res: PByte;
   len: TFileSize;
   EOL: widestring;
 begin
@@ -954,7 +955,7 @@ end;
 function TmnBufferStream.ReadLine(out S: ansistring; ExcludeEOL: Boolean): Boolean;
 var
   m: Boolean;
-  res: Pointer;
+  res: PByte;
   len: TFileSize;
   EOL: ansistring;
 begin
@@ -980,7 +981,7 @@ end;
 function TmnBufferStream.ReadLineRawByte(out S: rawbytestring; ExcludeEOL: Boolean): Boolean;
 var
   m: Boolean;
-  res: Pointer;
+  res: PByte;
   len: TFileSize;
   EOL: RawByteString;
 begin
@@ -1008,7 +1009,7 @@ end;
 function TmnBufferStream.ReadLineUTF8(out S: utf8string; ExcludeEOL: Boolean): Boolean;
 var
   m: Boolean;
-  res: Pointer;
+  res: PByte;
   len: TFileSize;
   EOL: utf8string;
 begin
@@ -1174,7 +1175,7 @@ begin
   Result := FReadBuffer.Read(Self, Buffer, Count);
 end;
 
-function TmnBufferStream.ReadBufferUntil(const Match: PByte; MatchSize: Word; ExcludeMatch: Boolean; out ABuffer: Pointer; out ABufferSize: TFileSize; out Matched: Boolean): Boolean;
+function TmnBufferStream.ReadBufferUntil22(const Match: PByte; MatchSize: Word; ExcludeMatch: Boolean; out ABuffer: PByte; out ABufferSize: TFileSize; out Matched: Boolean): Boolean;
 
   function CheckReadBuffer: Boolean;
   begin
@@ -1236,6 +1237,92 @@ begin
     Result := False;
 end;
 
+function TmnBufferStream.ReadBufferUntil(const Match: PByte; MatchSize: Word; ExcludeMatch: Boolean; out ABuffer: PByte; out ABufferSize: TFileSize; out Matched: Boolean): Boolean;
+var
+  aCount: Integer;
+  aBuf: TBytes;
+
+  function _ReadByte: Boolean;
+  var
+    b: Byte;
+  begin
+    if (Read(b, 1)=1) then
+    begin
+      if aCount=ABufferSize then
+      begin
+        ABufferSize := ABufferSize + ReadWriteBufferSize;
+        ReallocMem(ABuffer, ABufferSize);
+      end;
+      ABuffer[aCount] := b;
+      Inc(aCount);
+      Result := True;
+    end
+    else
+      Result := False;
+  end;
+
+  function _IsMatch(vBI, vMI: Integer; out vErr: Boolean): Boolean;
+  begin
+    if vBI >= aCount then
+      vErr := not _ReadByte
+    else
+      vErr := False;
+
+    if not vErr then
+      Result := ABuffer[vBI] = Match[vMI]
+    else
+      Result := False;
+  end;
+
+var
+  P: PByte;
+  mt: PByte;
+  Index: Integer;
+  MatchIndex: Integer;
+  aErr: Boolean;
+begin
+  if (Match = nil) or (MatchSize = 0) then
+    raise Exception.Create('Match is empty!');
+
+  Result := not (cloRead in Done);
+  Matched := False;
+
+  ABuffer := nil;
+  ABufferSize := 0;
+  aCount := 0;
+  Index := 0;
+  MatchIndex := 0;
+
+  while not Matched do
+  begin
+    if _IsMatch(Index + MatchIndex, MatchIndex, aErr) then
+    begin
+      Inc(MatchIndex);
+      if MatchIndex = MatchSize then
+      begin
+        Matched := True;
+
+      end;
+    end
+    else
+    begin
+      MatchIndex := 0;
+      Inc(Index);
+      if aErr then
+        Break;
+    end;
+  end;
+
+  if ExcludeMatch and Matched then
+    aCount := aCount - MatchSize;
+
+  ReAllocMem(ABuffer, aCount);
+  ABufferSize := aCount;
+
+  if not Matched and (cloRead in Done) and (ABufferSize = 0) then
+    Result := False;
+end;
+
 function TmnBufferStream.ReadBytes(vCount: Integer): TBytes;
 begin
   {$ifdef FPC}
@@ -1249,7 +1336,7 @@ end;
 {$ifndef NEXTGEN}
 function TmnBufferStream.ReadUntil(const Match: ansistring; ExcludeMatch: Boolean; out Buffer: ansistring; out Matched: Boolean): Boolean;
 var
-  Res: Pointer;
+  Res: PByte;
   len: TFileSize;
 begin
   if Match = '' then
@@ -1261,7 +1348,7 @@ end;
 
 function TmnBufferStream.ReadUntil(const Match: widestring; ExcludeMatch: Boolean; out Buffer: widestring; out Matched: Boolean): Boolean;
 var
-  Res: Pointer;
+  Res: PByte;
   len: TFileSize;
 begin
   if Match = '' then
@@ -1481,7 +1568,7 @@ begin
     P := @vBuffer;
     aCount := 0;
     aTry := 0;
-    while (Count > 0) and not (cloRead in vStream.Done) do
+    while (vCount > 0) and not (cloRead in vStream.Done) do
     begin
       c := Stop - Pos; //size of data in buffer
       if c = 0 then //check if buffer have no data
@@ -1498,8 +1585,8 @@ begin
         else
           Continue;
       end;
-      if c > Count then // is FReadBuffer enough for Count
-        c := Count;
+      if c > vCount then // is FReadBuffer enough for Count
+        c := vCount;
       vCount := vCount - c;
       aCount := aCount + c;
       System.Move(Pos^, P^, c);
