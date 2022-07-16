@@ -723,6 +723,9 @@ begin
   try
     c := Stream.Read(b[0], 1024);
     SetLength(b, c);
+    s := TEncoding.UTF8.GetString(b);
+    WriteLn(s);
+
 
     {while Stream.ReadLine(S, False) do
       WriteLn(s);}
