@@ -304,6 +304,7 @@ type
   TIRCUser = class(TmnNamedObject)
   protected
   public
+    Account: string; //TODO
     Address: string;
     WhoIs: TIRCWhoisInfo;
     //https://freenode.net/kb/answer/usermodes
