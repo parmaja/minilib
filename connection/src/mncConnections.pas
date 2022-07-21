@@ -626,19 +626,8 @@ type
   public
   end;
 
-function ConnectionLock: TCriticalSection;
-
 implementation
 
-var
-  FConnectionLock: TCriticalSection = nil;
-
-function ConnectionLock: TCriticalSection;
-begin
-  if FConnectionLock = nil then
-    FConnectionLock := TCriticalSection.Create;
-  Result := FConnectionLock;
-end;
 
 { TmncVariantParams }
 
@@ -1723,6 +1712,7 @@ begin
 end;
 
 initialization
+
 finalization
-  FreeAndNil(FConnectionLock);
+
 end.

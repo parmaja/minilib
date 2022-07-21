@@ -973,13 +973,8 @@ end;
 
 function TmncPGSession.NewToken: string;
 begin
-  ConnectionLock.Enter;
-  try
-    Inc(fTokenID);
-    Result := 'minilib_' + IntToStr(fTokenID);
-  finally
-    ConnectionLock.Leave;
-  end;
+  AtomicIncrement(fTokenID);
+  Result := 'minilib_' + IntToStr(fTokenID);
 end;
 
 procedure TmncPGSession.Execute(const vSQL: string);
@@ -1009,7 +1004,7 @@ begin
     Result := Connection.Handle
   else
     Result := nil;}
-  ConnectionLock.Enter;
+  //ConnectionLock.Enter;
   try
     if Isolated then
       Result := Connection.Handle
@@ -1020,7 +1015,7 @@ begin
       Result := FDBHandle;
     end;
   finally
-    ConnectionLock.Leave;
+    //ConnectionLock.Leave;
   end;
 end;
 
