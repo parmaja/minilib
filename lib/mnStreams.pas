@@ -137,6 +137,7 @@ type
     procedure FreeBuffer;
     function Count: Cardinal;
     function LoadBuffer: TFileSize;
+    function CheckBuffer: Boolean;
     function Read(var vBuffer; vCount: Longint): Longint;
     function Write(const vBuffer; vCount: Longint): Longint;
   end;
@@ -1549,6 +1550,17 @@ end;
 
 { TStreamBuffer }
 
+function TStreamBuffer.CheckBuffer: Boolean;
+begin
+  if Buffer = nil then
+    CreateBuffer;
+
+  if (Pos >= Stop) then
+    LoadBuffer;
+
+  Result := (Pos < Stop);
+end;
+
 function TStreamBuffer.Count: Cardinal;
 begin
   Result := Stop - Pos;
@@ -1638,7 +1650,7 @@ begin
         else
           Continue;
       end
-      else // c>=vCount // if c > vCount then // is FReadBuffer enough for Count
+      else if c > vCount then // is FReadBuffer enough for Count
         c := vCount;
       vCount := vCount - c;
       aCount := aCount + c;
