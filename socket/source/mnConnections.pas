@@ -16,7 +16,7 @@ unit mnConnections;
 interface
 
 uses
-  Classes, SysUtils, Types, SyncObjs, mnLogs, Windows,
+  Classes, SysUtils, Types, SyncObjs, mnLogs,
   mnStreams, mnSockets;
 
 type
@@ -174,8 +174,11 @@ end;
 
 procedure TmnConnection.Execute;
 begin
+  {$ifdef FPC}
+  ID := InterlockedIncrement(FCount);
+  {$else}
   ID := AtomicIncrement(FCount);
-  OutputDebugString(PWideChar(ID.ToString));
+  {$endif}
   try
     if Owner <> nil then
       Owner.Add(Self);
@@ -200,7 +203,6 @@ begin
       if FreeOnTerminate then
         Owner.Remove(Self); //remove from the server list
   end;
-  OutputDebugString(PWideChar(ID.ToString));
 end;
 
 constructor TmnLockThread.Create;
@@ -252,7 +254,6 @@ destructor TmnConnection.Destroy;
 begin
   {if Connected then
     Stop;}
-  OutputDebugString(PWideChar('Destroy'+ID.ToString));
   inherited;
 end;
 

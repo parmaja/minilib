@@ -119,7 +119,7 @@ begin
             { Flush the buffer to the stream and update progress }
             Over.Write(ZBuffer^, BufSize, HaveWrite, RealCount);
             { reset output buffer }
-            ZStream.next_out := ZBuffer;
+            ZStream.next_out := Pointer(ZBuffer);
             ZStream.avail_out := BufSize;
           end;
           err := deflate(ZStream, Z_NO_FLUSH);
@@ -165,7 +165,7 @@ begin
         begin
           {Refill the buffer.}
           Over.Read(ZBuffer^, BufSize, HaveRead, RealCount);
-          ZStream.next_in := ZBuffer;
+          ZStream.next_in := Pointer(ZBuffer);
           ZStream.avail_in := HaveRead;
         end
         else
@@ -214,7 +214,7 @@ begin
           { Flush the buffer to the stream and update progress }
           Over.Write(ZBuffer^, BufSize, Written, R);
           { reset output buffer }
-          ZStream.next_out := ZBuffer;
+          ZStream.next_out := Pointer(ZBuffer);
           ZStream.avail_out := BufSize;
         end;
         err := deflate(ZStream, Z_FINISH);
@@ -258,7 +258,7 @@ begin
     begin
       GetMem(ZBuffer, BufSize);
 
-      ZStream.next_out := ZBuffer;
+      ZStream.next_out := Pointer(ZBuffer);
       ZStream.avail_out := BufSize;
 
       if FGZip then
@@ -283,7 +283,7 @@ begin
     begin
       GetMem(ZBuffer, BufSize);
 
-      ZStream.next_in := ZBuffer;
+      ZStream.next_in := Pointer(ZBuffer);
       ZStream.avail_in := 0;
 
       if FGZip then

@@ -973,7 +973,11 @@ end;
 
 function TmncPGSession.NewToken: string;
 begin
+  {$ifdef FPC}
+  InterlockedIncrement(fTokenID);
+  {$else}
   AtomicIncrement(fTokenID);
+  {$endif}
   Result := 'minilib_' + IntToStr(fTokenID);
 end;
 
