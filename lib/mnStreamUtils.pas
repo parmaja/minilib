@@ -39,7 +39,7 @@ type
     type
       TInflateInfo = record
         ZStream: z_stream;
-        ZBuffer: pointer;
+        ZBuffer: PByte;
         ZEnd: Boolean;
       end;
 
@@ -164,8 +164,8 @@ begin
         if ZStream.avail_in = 0 then
         begin
           {Refill the buffer.}
+          Over.Read(ZBuffer^, BufSize, HaveRead, RealCount);
           ZStream.next_in := ZBuffer;
-          Over.Read(Zbuffer^, BufSize, HaveRead, RealCount);
           ZStream.avail_in := HaveRead;
         end
         else

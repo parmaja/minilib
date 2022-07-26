@@ -36,6 +36,11 @@ type
   TTimeoutMode = (tmConnect, tmRead, tmWrite);
   TFileSize = Longint;
 
+  TmnStreamClose = set of (
+    cloRead, //Mark is as EOF
+    cloWrite //Flush buffer
+  );
+
   EmnStreamException = class(Exception);
   EmnStreamExceptionAbort = class(Exception); //can be ignored by ide
   TmnBufferStream = class;
@@ -44,8 +49,11 @@ type
 
   TmnCustomStream = class(TStream)
   private
+    FDone: TmnStreamClose;
   protected
     function GetConnected: Boolean; virtual; //Socket or COM ports have Connected override
+    function CanRead: Boolean;
+    function CanWrite: Boolean;
   public
     //Count = 0 , load until eof
     function ReadString(out S: string; Count: TFileSize = 0): Boolean; overload;
@@ -62,6 +70,7 @@ type
     function CopyFromStream(AStream: TStream; Count: TFileSize = 0): TFileSize; inline; //alias
 
     property Connected: Boolean read GetConnected;
+    property Done: TmnStreamClose read FDone;
   end;
 
   TmnStreamOverProxy = class;
@@ -113,11 +122,6 @@ type
     function Write(const Buffer; Count: Longint; out ResultCount, RealCount: longint): Boolean; override; final;
   end;
 
-  TmnStreamClose = set of (
-    cloRead, //Mark is as EOF
-    cloWrite //Flush buffer
-  );
-
   { TBuffer }
 
   TmnStreamBuffer = class(TObject)
@@ -165,11 +169,11 @@ type
     FReadBuffer: TmnStreamBuffer;
     FWriteBuffer: TmnStreamBuffer;
   strict private
-    FDone: TmnStreamClose;
     FEndOfLine: string;
     //FZeroClose: Boolean;
     //procedure SaveWriteBuffer; //kinda flush
   protected
+
   private
     FTimeoutTries: integer;
 
@@ -189,6 +193,7 @@ type
     procedure DoCloseRead; virtual;
     procedure DoCloseWrite; virtual;
     function GetEndOfStream: Boolean;
+    function GetConnected: Boolean; override;
 
     property Proxy: TmnStreamProxy read FProxy;
     function ReadBuffer(var Buffer; Count: Longint): Longint;
@@ -254,7 +259,6 @@ type
     procedure ReadStrings(Value: TStrings); overload;
     function WriteStrings(const Value: TStrings): TFileSize; overload;
 
-    property Done: TmnStreamClose read FDone;
     property EOF: Boolean read GetEndOfStream; {$ifdef FPC} deprecated; {$endif} //alias of Done
     property EndOfStream: Boolean read GetEndOfStream;
 
@@ -587,7 +591,7 @@ end;
 
 function TmnCustomStream.WriteString(const Value: String): TFileSize;
 begin
-  Result := Write(Pointer(Value)^, mnStreams.ByteLength(Value));
+  Result := Write(PByte(Value)^, mnStreams.ByteLength(Value));
 end;
 
 function TmnCustomStream.GetConnected: Boolean;
@@ -609,7 +613,7 @@ begin
   GetMem(aBuffer, ReadWriteBufferSize);
   try
     p := 0;
-    while Connected do
+    while True do
     begin
       if (Count > 0) and (Size < ReadWriteBufferSize) then
         l := Size
@@ -624,7 +628,7 @@ begin
         Move(aBuffer^, (PByte(Result) + p)^, c);
         p := p + c;
       end;
-      if (c = 0) or ((Count > 0) and (Size = 0)) then
+      if ((c = 0) and not CanRead) or ((Count > 0) and (Size = 0)) then
         break;
     end;
   finally
@@ -645,6 +649,16 @@ var
   RealCount: Integer;
 begin
   Result := ReadStream(AStream, Count, RealCount);
+end;
+
+function TmnCustomStream.CanRead: Boolean;
+begin
+  Result := Connected and not (cloRead in Done);
+end;
+
+function TmnCustomStream.CanWrite: Boolean;
+begin
+  Result := Connected and not (cloWrite in Done);
 end;
 
 function TmnCustomStream.CopyFromStream(AStream: TStream; Count: TFileSize): TFileSize;
@@ -668,7 +682,7 @@ begin
   GetMem(aBuffer, ReadWriteBufferSize);
   try
     p := 0;
-    while Connected do
+    while True do
     begin
       if (Count > 0) and (Size < ReadWriteBufferSize) then
         l := Size
@@ -683,7 +697,7 @@ begin
         Move(aBuffer^, Result[p], c);
         p := p + c;
       end;
-      if (c = 0) or ((Count > 0) and (Size = 0)) then
+      if ((c = 0) and not CanRead) or ((Count > 0) and (Size = 0)) then
         break;
     end;
   finally
@@ -709,7 +723,8 @@ begin
   {$endif}
   GetMem(aBuffer, ReadWriteBufferSize);
   try
-    while Connected do //todo use Done
+    //while Connected do //todo use Done
+    while True do
     begin
       if (Count > 0) and (aSize < ReadWriteBufferSize) then
         l := aSize
@@ -725,7 +740,7 @@ begin
       end;
       if ((Count > 0) and (aSize = 0)) then //we finsih count
         break;
-      if (c = 0) then
+      if (c = 0) and not CanRead then
         break;
     end;
   finally
@@ -753,7 +768,7 @@ begin
   {$endif}
   GetMem(aBuffer, ReadWriteBufferSize);
   try
-    while Connected do //todo use Done
+    while CanWrite do //not same as read :)
     begin
       if (Count > 0) and (aSize < ReadWriteBufferSize) then
         l := aSize
@@ -1158,6 +1173,11 @@ begin
   Result := FReadBuffer.Size;
 end;
 
+function TmnBufferStream.GetConnected: Boolean;
+begin
+  Result := inherited GetConnected;
+end;
+
 function TmnBufferStream.GetEndOfStream: Boolean;
 begin
   Result := cloRead in Done;
@@ -1182,6 +1202,19 @@ begin
     FProxy.Read(Buffer, Count, Result, RealCount)
   else
     Result := ReadBuffer(Buffer, Count);
+
+{
+  if (Result=0) then
+  begin
+    if not (FStream is TmnCustomStream) or not (FStream as TmnCustomStream).Connected then
+      Close([cloRead]);
+  end;
+}
+  if (Result=0) then
+  begin
+    if Connected then
+      Close([cloRead]);
+  end;
 end;
 
 procedure TmnBufferStream.SetReadBufferSize(AValue: TFileSize);
@@ -1406,11 +1439,6 @@ end;
 function TmnWrapperStream.DoRead(var Buffer; Count: Longint): Longint;
 begin
   Result := FStream.Read(Buffer, Count);
-  if (Result=0) then
-  begin
-    if not (FStream is TmnCustomStream) or not (FStream as TmnCustomStream).Connected then
-      Close([cloRead]);
-  end;
 end;
 
 function TmnWrapperStream.DoWrite(const Buffer; Count: Longint): Longint;
