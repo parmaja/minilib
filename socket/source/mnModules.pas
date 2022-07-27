@@ -246,7 +246,7 @@ type
     FParams: TStringList;
     FProtocols: TArray<String>;
     FUseKeepAlive: Boolean;
-    FCompressing: Boolean;
+    FUseCompressing: Boolean;
     procedure SetAliasName(AValue: String);
   protected
     FFallbackCommand: TmodCommandClass;
@@ -283,9 +283,11 @@ type
     property Protocols: TArray<String> read FProtocols;
     property KeepAliveTimeOut: Integer read FKeepAliveTimeOut write FKeepAliveTimeOut;
     property UseKeepAlive: Boolean read FUseKeepAlive write FUseKeepAlive default False;
-    property Compressing: Boolean read FCompressing write FCompressing;
+    property UseCompressing: Boolean read FUseCompressing write FUseCompressing;
     property AliasName: String read FAliasName write SetAliasName;
   end;
+
+  TmodModuleClass = class of TmodModule;
 
   TmodModuleServer = class;
 
@@ -314,6 +316,9 @@ type
     procedure ParseHead(ARequest: TmodRequest; const RequestLine: String); virtual;
     function Match(ARequest: TmodRequest): TmodModule; virtual;
     property DefaultProtocol: String read FDefaultProtocol write FDefaultProtocol;
+
+    function  Find<T: Class>: T; overload;
+    function  Find(const ModuleClass: TmodModuleClass): TmodModule; overload;
 
     function Add(const Name, AliasName: String; AModule: TmodModule): Integer; overload;
     procedure Log(S: String); virtual;
@@ -1093,8 +1098,6 @@ begin
 end;
 
 procedure TmodModules.ParseHead(ARequest: TmodRequest; const RequestLine: String);
-var
-  aRequests: TStringList;
 begin
   ARequest.Clear;
   ARequest.Raw := RequestLine;
@@ -1112,6 +1115,36 @@ begin
     if item.Match(ARequest) then
     begin
       Result := item;
+      break;
+    end;
+  end;
+end;
+
+function TmodModules.Find<T>: T;
+var
+  i: Integer;
+begin
+  Result := nil;
+  for i := 0 to Count - 1 do
+  begin
+    if Items[i] is T then
+    begin
+      Result := Items[i] as T;
+      break;
+    end;
+  end;
+end;
+
+function TmodModules.Find(const ModuleClass: TmodModuleClass): TmodModule;
+var
+  i: Integer;
+begin
+  Result := nil;
+  for i := 0 to Count - 1 do
+  begin
+    if Items[i] is ModuleClass then
+    begin
+      Result := Items[i];
       break;
     end;
   end;

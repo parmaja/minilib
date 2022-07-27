@@ -330,7 +330,7 @@ begin
   inherited;
   FDefaultDocument := TStringList.Create;
   UseKeepAlive := False;
-  Compressing := True;
+  UseCompressing := True;
 
   FDocumentRoot := '';
   FDefaultDocument.Add('index.html');
@@ -645,7 +645,7 @@ begin
     Respond.PostHeader('Keep-Alive', 'timout=' + IntToStr(Module.KeepAliveTimeOut div 5000) + ', max=100');
   end;
 
-  if Module.Compressing then
+  if Module.UseCompressing then
   begin
     if Request.Header['Accept-Encoding'].Have('gzip', [',']) then
       Respond.CompressClass := TmnGzipStreamProxy

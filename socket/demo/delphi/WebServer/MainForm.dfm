@@ -3,7 +3,7 @@ object Main: TMain
   Top = 169
   BiDiMode = bdLeftToRight
   Caption = 'Mini Web Server'
-  ClientHeight = 319
+  ClientHeight = 359
   ClientWidth = 434
   Color = clBtnFace
   CustomTitleBar.CaptionAlignment = taCenter
@@ -12,14 +12,13 @@ object Main: TMain
   Font.Height = -11
   Font.Name = 'MS Sans Serif'
   Font.Style = []
-  OldCreateOrder = False
   ParentBiDiMode = False
   OnCreate = FormCreate
   OnDestroy = FormDestroy
+  PixelsPerInch = 96
   DesignSize = (
     434
-    319)
-  PixelsPerInch = 96
+    359)
   TextHeight = 13
   object Label1: TLabel
     Left = 7
@@ -30,14 +29,21 @@ object Main: TMain
   end
   object Label2: TLabel
     Left = 9
-    Top = 32
+    Top = 33
     Width = 19
     Height = 13
     Caption = 'Port'
   end
+  object Label5: TLabel
+    Left = 134
+    Top = 33
+    Width = 22
+    Height = 13
+    Caption = 'Alias'
+  end
   object Memo: TMemo
     Left = 0
-    Top = 112
+    Top = 152
     Width = 434
     Height = 207
     Align = alBottom
@@ -46,6 +52,7 @@ object Main: TMain
     ReadOnly = True
     ScrollBars = ssVertical
     TabOrder = 1
+    ExplicitTop = 112
   end
   object StartBtn: TButton
     Left = 368
@@ -82,8 +89,8 @@ object Main: TMain
   end
   object PortEdit: TEdit
     Left = 46
-    Top = 29
-    Width = 155
+    Top = 30
+    Width = 75
     Height = 21
     BiDiMode = bdLeftToRight
     ParentBiDiMode = False
@@ -101,13 +108,14 @@ object Main: TMain
   end
   object Panel3: TPanel
     Left = 0
-    Top = 78
+    Top = 118
     Width = 434
     Height = 34
     Align = alBottom
     BevelOuter = bvNone
     BorderWidth = 3
     TabOrder = 6
+    ExplicitTop = 78
     object LastIDLabel: TLabel
       AlignWithMargins = True
       Left = 233
@@ -270,5 +278,34 @@ object Main: TMain
     Caption = 'Test'
     TabOrder = 9
     OnClick = Button2Click
+  end
+  object ModuleNameEdit: TEdit
+    Left = 162
+    Top = 31
+    Width = 200
+    Height = 21
+    Anchors = [akLeft, akTop, akRight]
+    BiDiMode = bdLeftToRight
+    ParentBiDiMode = False
+    TabOrder = 10
+    Text = 'c:\offline\'
+  end
+  object KeeyAliveChk: TCheckBox
+    Left = 8
+    Top = 77
+    Width = 97
+    Height = 17
+    Caption = 'Keep Alive'
+    TabOrder = 11
+    OnClick = StayOnTopChkClick
+  end
+  object CompressChk: TCheckBox
+    Left = 108
+    Top = 77
+    Width = 97
+    Height = 17
+    Caption = 'Compress'
+    TabOrder = 12
+    OnClick = StayOnTopChkClick
   end
 end

@@ -138,7 +138,7 @@ begin
   aRoot := RootEdit.Text;
   if (LeftStr(aRoot, 2)='.\') or (LeftStr(aRoot, 2)='./') then
     aRoot := ExtractFilePath(Application.ExeName) + Copy(aRoot, 3, MaxInt);
-  aWebModule := Server.Modules.Find('web') as TmodWebModule;
+  aWebModule := Server.Modules.Find<TmodWebModule>;
   if aWebModule <> nil then
   begin
     aWebModule.DocumentRoot := aRoot;

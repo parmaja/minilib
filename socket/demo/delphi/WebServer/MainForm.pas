@@ -33,6 +33,10 @@ type
     Button1: TButton;
     UseSSLChk: TCheckBox;
     Button2: TButton;
+    ModuleNameEdit: TEdit;
+    Label5: TLabel;
+    KeeyAliveChk: TCheckBox;
+    CompressChk: TCheckBox;
     procedure StartBtnClick(Sender: TObject);
     procedure StopBtnClick(Sender: TObject);
     procedure StayOnTopChkClick(Sender: TObject);
@@ -78,13 +82,22 @@ end;
 procedure TMain.ModuleServerBeforeOpen(Sender: TObject);
 var
   aRoot:string;
+  aWebModule: TmodWebModule;
 begin
   StartBtn.Enabled := False;
   StopBtn.Enabled := True;
   aRoot := RootEdit.Text;
   if (LeftStr(aRoot, 2)='.\') or (LeftStr(aRoot, 2)='./') then
     aRoot := ExtractFilePath(Application.ExeName) + Copy(aRoot, 3, MaxInt);
-  Server.WebModule.DocumentRoot := aRoot;
+
+  aWebModule := Server.Modules.Find<TmodWebModule>;
+  if aWebModule <> nil then
+  begin
+    aWebModule.DocumentRoot := aRoot;
+    aWebModule.AliasName := ModuleNameEdit.Text;
+    aWebModule.UseKeepAlive := KeeyAliveChk.Checked;
+    aWebModule.UseCompressing := CompressChk.Checked;
+  end;
   Server.Port := PortEdit.Text;
   Server.UseSSL := UseSSLChk.Checked
 end;
@@ -191,6 +204,7 @@ begin
   aIni := TIniFile.Create(ExtractFilePath(Application.ExeName) + 'config.ini');
   try
     RootEdit.Text := GetOption('root', '.\html');
+    ModuleNameEdit.Text := GetOption('ModuleName', 'doc');
     PortEdit.Text := GetOption('port', '81');
     UseSSLChk.Checked := GetOption('ssl', false);
     StayOnTopChk.Checked := GetOption('on_top', false);
@@ -209,6 +223,7 @@ begin
   aIni := TIniFile.Create(ExtractFilePath(Application.ExeName) + 'config.ini');
   try
     aIni.WriteString('options', 'DocumentRoot', RootEdit.Text);
+    aIni.WriteString('options', 'ModuleName', ModuleNameEdit.Text);
     aIni.WriteString('options', 'Port', PortEdit.Text);
     aIni.WriteBool('options', 'ssl', UseSSLChk.Checked);
     aIni.WriteBool('options', 'on_top', StayOnTopChk.Checked);
