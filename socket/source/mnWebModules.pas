@@ -452,9 +452,26 @@ begin
     Result := 'application/binary';
 end;
 
+
+{function CompressSize(vData: PByte; vLen: Integer): TFileSize;
+var
+  p: Pointer;
+  aLen: Integer;
+begin
+  if vLen<>0 then
+  begin
+    ZCompress(Pointer(vData), vLen, p, aLen);
+    Result := aLen;
+    FreeMem(p);
+  end
+  else
+    Result := 0;
+end;}
+
+
 procedure TmodHttpGetCommand.RespondDocument(const vDocument: string; var Result: TmodRespondResult);
 var
-  DocSize: Int64;
+  aDocSize: Int64;
   aDocStream: TFileStream;
 begin
   if FileExists(vDocument) then
@@ -463,13 +480,17 @@ begin
     begin
       aDocStream := TFileStream.Create(vDocument, fmOpenRead or fmShareDenyWrite);
       try
-        DocSize := aDocStream.Size;
+        {if Respond.KeepAlive then
+          aDocSize := CompressSize(PByte(aDocStream.Memory), aDocStream.Size)
+        else}
+          aDocSize := aDocStream.Size;
+
         if Active then
         begin
           Respond.SendRespond('HTTP/1.1 200 OK');
           Respond.PostHeader('Content-Type', DocumentToContentType(vDocument));
           if Respond.KeepAlive then
-            Respond.PostHeader('Content-Length', IntToStr(DocSize));
+            Respond.PostHeader('Content-Length', IntToStr(aDocSize));
         end;
 
         Respond.SendHeader;

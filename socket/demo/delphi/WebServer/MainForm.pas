@@ -9,7 +9,7 @@ unit MainForm;
 interface
 
 uses
-  Windows, Messages, SysUtils, StrUtils, Classes, Graphics, Controls, Forms, Dialogs,
+  Windows, Messages, SysUtils, StrUtils, Classes, Graphics, Controls, Forms, Dialogs, ShellAPI,
   mnOpenSSLUtils, mnOpenSSL, mnLogs, mnHttpClient,
   Registry, IniFiles, StdCtrls, ExtCtrls, mnConnections, mnSockets, mnServers, mnWebModules;
 
@@ -49,6 +49,7 @@ type
     Server: TmodWebServer;
     procedure UpdateStatus;
     procedure ModuleServerBeforeOpen(Sender: TObject);
+    procedure ModuleServerAfterOpen(Sender: TObject);
     procedure ModuleServerAfterClose(Sender: TObject);
     procedure ModuleServerChanged(Listener: TmnListener);
     procedure ModuleServerLog(const S: string);
@@ -196,6 +197,7 @@ var
 begin
   Server := TmodWebServer.Create;
   Server.OnBeforeOpen := ModuleServerBeforeOpen;
+  Server.OnAfterOpen := ModuleServerAfterOpen;
   Server.OnAfterClose := ModuleServerAfterClose;
   Server.OnChanged :=  ModuleServerChanged;
   Server.OnLog := ModuleServerLog;
@@ -208,6 +210,8 @@ begin
     PortEdit.Text := GetOption('port', '81');
     UseSSLChk.Checked := GetOption('ssl', false);
     StayOnTopChk.Checked := GetOption('on_top', false);
+    KeeyAliveChk.Checked := GetOption('keep_alive', false);
+    CompressChk.Checked := GetOption('compress', false);
     aAutoRun := StrToBoolDef(GetSwitch('run', ''), False);
   finally
     aIni.Free;
@@ -227,6 +231,8 @@ begin
     aIni.WriteString('options', 'Port', PortEdit.Text);
     aIni.WriteBool('options', 'ssl', UseSSLChk.Checked);
     aIni.WriteBool('options', 'on_top', StayOnTopChk.Checked);
+    aIni.WriteBool('options', 'keep_alive', KeeyAliveChk.Checked);
+    aIni.WriteBool('options', 'compress', CompressChk.Checked);
   finally
     aIni.Free;
   end;
@@ -247,6 +253,11 @@ procedure TMain.ModuleServerAfterClose(Sender: TObject);
 begin
   StartBtn.Enabled := True;
   StopBtn.Enabled := False;
+end;
+
+procedure TMain.ModuleServerAfterOpen(Sender: TObject);
+begin
+  ShellExecute(Handle, 'Open', PWideChar('http://127.0.0.1:'+PortEdit.Text+'/web'), nil, nil, 0);
 end;
 
 procedure TMain.ModuleServerChanged(Listener: TmnListener);

@@ -15,7 +15,6 @@ object Main: TMain
   ParentBiDiMode = False
   OnCreate = FormCreate
   OnDestroy = FormDestroy
-  PixelsPerInch = 96
   DesignSize = (
     434
     359)
@@ -52,7 +51,6 @@ object Main: TMain
     ReadOnly = True
     ScrollBars = ssVertical
     TabOrder = 1
-    ExplicitTop = 112
   end
   object StartBtn: TButton
     Left = 368
@@ -115,7 +113,6 @@ object Main: TMain
     BevelOuter = bvNone
     BorderWidth = 3
     TabOrder = 6
-    ExplicitTop = 78
     object LastIDLabel: TLabel
       AlignWithMargins = True
       Left = 233
