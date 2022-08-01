@@ -279,6 +279,7 @@ type
   protected
     function DoRead(var Buffer; Count: Longint): Longint; override;
     function DoWrite(const Buffer; Count: Longint): Longint; override;
+
   public
     constructor Create(AStream: TStream; AEndOfLine:string; Owned: Boolean = True); overload; virtual;
     constructor Create(AStream: TStream; Owned: Boolean = True); overload;
@@ -596,7 +597,7 @@ end;
 
 function TmnCustomStream.GetConnected: Boolean;
 begin
-  Result := True;
+  Result := False;
 end;
 
 function TmnCustomStream.ReadString(out S: string; Count: TFileSize): Boolean;
@@ -758,7 +759,7 @@ end;
 function TmnCustomStream.WriteStream(AStream: TStream; Count: TFileSize; out RealCount: Integer): TFileSize;
 var
   aBuffer: PByte;
-  l, c, aSize: Integer;
+  l, c, aSize, w: Integer;
 begin
   Result := 0;
   RealCount := 0;
@@ -768,19 +769,29 @@ begin
   {$endif}
   GetMem(aBuffer, ReadWriteBufferSize);
   try
-    while CanWrite do //not same as read :)
+    //while CanWrite do //not same as read :)
+    while True do
     begin
-      if (Count > 0) and (aSize < ReadWriteBufferSize) then
-        l := aSize
+      if (Count = 0) or (aSize > ReadWriteBufferSize) then
+        l := ReadWriteBufferSize
       else
-        l := ReadWriteBufferSize;
+        l := aSize;
+
       c := AStream.Read(aBuffer^, l);
       if c > 0 then
       begin
         if Count > 0 then
           aSize := aSize - c;
         Result := Result + c;
-        RealCount := RealCount + Write(aBuffer^, c);
+        w := Write(aBuffer^, c);
+
+        if w<>c then //c=0 or error occurred :)
+        begin
+          if not Connected then
+            Break;
+        end;
+
+        RealCount := RealCount + w;
       end;
       if ((Count > 0) and (aSize = 0)) then //we finsih count
         break;
@@ -1210,9 +1221,9 @@ begin
       Close([cloRead]);
   end;
 }
-  if (Result=0) then
+  if (Result<=0) then
   begin
-    if Connected then
+    if not Connected then //connected = timeout,  not connected = stream closed
       Close([cloRead]);
   end;
 end;
@@ -1389,13 +1400,15 @@ begin
 end;
 
 function TmnBufferStream.ReadBytes(vCount: Integer): TBytes;
+var
+  aCount: Integer;
 begin
   {$ifdef FPC}
   Result := nil;
   {$endif}
   SetLength(Result, vCount);
-  vCount := Read(Pointer(Result)^, vCount);
-  SetLength(Result, vCount);
+  aCount := Read(PByte(Result)^, vCount);
+  SetLength(Result, aCount);
 end;
 
 {$ifndef NEXTGEN}
@@ -1649,7 +1662,7 @@ end;
 
 function TmnStreamBuffer.Read(var vBuffer; vCount: Longint): Longint;
 var
-  c, aCount, aSize, aTry: Longint;
+  c, aCount, aLoaded, aTry: Longint;
   P: PByte;
 begin
   if Size=0 then
@@ -1661,22 +1674,23 @@ begin
     P := @vBuffer;
     aCount := 0;
     aTry := 0;
-    while (vCount > 0) and not (cloRead in Stream.Done) do
+    while (vCount > 0) {and not (cloRead in Stream.Done)} do
     begin
       c := Stop - Pos; //size of data in buffer
       if c = 0 then //check if buffer have no data
       begin
-        aSize := LoadBuffer;
-        if (aSize = 0) or not Stream.Connected then
+        aLoaded := LoadBuffer;
+
+        if (aLoaded > 0)  then
+          Continue
+        else if (aLoaded = 0) and not Stream.Connected then
           break
-        else if aSize<0 then
+        else if aLoaded<=0 then
         begin
           Inc(aTry);
           if aTry>=Stream.TimeoutTries then
             Break
         end
-        else
-          Continue;
       end
       else if c > vCount then // is FReadBuffer enough for Count
         c := vCount;

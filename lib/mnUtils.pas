@@ -251,6 +251,7 @@ procedure EnumFiles(FileList: TStringList; Folder, Filter: string; Options: TEnu
 procedure EnumFiles(FileList: TStringList; Folder, Filter: string; FullPath: Boolean = False); overload;
 function FirstFile(Path, Files: string): string;
 function DeleteFiles(Path, Files: string): Integer;
+function GetSizeOfFile(const vFile: string): Int64; //GetFileSize
 
 var
   SystemAnsiCodePage: Integer; //used to convert from Ansi string, it is the default
@@ -1689,6 +1690,19 @@ begin
       break;
     end;
   end;
+end;
+
+function GetSizeOfFile(const vFile: string): Int64;
+var
+  R: TSearchRec;
+begin
+  if SysUtils.FindFirst(vFile, faAnyFile, R) = 0 then
+  begin
+    Result := R.Size;
+    SysUtils.FindClose(R);
+  end
+  else
+    Result := -1;
 end;
 
 procedure EnumFiles(FileList: TStringList; Folder, Filter: string; Options: TEnumFilesOptions; FullPath: Boolean); overload;

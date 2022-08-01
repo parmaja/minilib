@@ -779,6 +779,8 @@ begin
     FreeAndNil(Stream2);
     FreeAndNil(Stream1);
   end;
+  WriteLn('source size = ' + GetFileSize('image.jpg').ToString);
+  WriteLn('destination size = ' + GetFileSize('image_copy.jpg').ToString);
 end;
 
 procedure TTestStream.CopyFileRead;
@@ -790,10 +792,14 @@ begin
   Stream2 := TFileStream.Create(Location + 'image_copy.jpg', fmCreate or fmOpenWrite);
   try
     Stream1.CopyToStream(Stream2);
+
   finally
     FreeAndNil(Stream2);
     FreeAndNil(Stream1);
   end;
+
+  WriteLn('source size = ' + GetFileSize('image.jpg').ToString);
+  WriteLn('destination size = ' + GetFileSize('image_copy.jpg').ToString);
 end;
 
 constructor TTestStream.Create;
