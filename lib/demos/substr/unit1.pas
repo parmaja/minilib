@@ -16,6 +16,8 @@ type
     Button2: TButton;
     Button3: TButton;
     Button4: TButton;
+    Button5: TButton;
+    Button6: TButton;
     Edit1: TEdit;
     Edit2: TEdit;
     Edit3: TEdit;
@@ -25,6 +27,8 @@ type
     procedure Button2Click(Sender: TObject);
     procedure Button3Click(Sender: TObject);
     procedure Button4Click(Sender: TObject);
+    procedure Button5Click(Sender: TObject);
+    procedure Button6Click(Sender: TObject);
   private
   public
   end;
@@ -46,7 +50,7 @@ begin
   edit2.Text := SubStr(Edit1.Text, ',', StrToIntDef(Edit3.Text, 0));
 end;
 
-procedure AddOutput(Sender: Pointer; Index:Integer; S: string; var Resume: Boolean);
+procedure AddOutput(Sender: Pointer; Index: Integer; S: string; var Resume: Boolean);
 begin
   with TObject(Sender) as TForm1 do
   begin
@@ -73,10 +77,38 @@ begin
   StrToStringsCallback(s, self, @AddOutput, [#13]);
 end;
 
+procedure AddOutputEx(Sender: Pointer; Index, CharIndex, NextIndex: Integer; S: string; var Resume: Boolean);
+begin
+  with TObject(Sender) as TForm1 do
+  begin
+    if (Index = 0) and (ListBox1.Items.Count > 0) then
+      ListBox1.Items[ListBox1.Items.Count -1] := ListBox1.Items[ListBox1.Items.Count -1] + S
+    else
+      ListBox1.Items.Add(S);
+  end;
+end;
+
 procedure TForm1.Button4Click(Sender: TObject);
 begin
   ListBox1.Items.Clear;
-  StrToStringsExCallback(Memo1.Text, self, @AddOutput, ['::', ';', #13#10, #13, #10, #0]);
+  StrToStringsExCallback(Memo1.Text, 1, self, @AddOutputEx, ['::', ';', #13#10, #13, #10, #0]);
+end;
+
+var
+  CharIndex: Integer = 0;
+
+procedure TForm1.Button5Click(Sender: TObject);
+var
+  s: string;
+  Start: Integer;
+begin
+  StrScanTo(Memo1.Text, CharIndex, S, Start, CharIndex, ['::', ';', #13#10, #13, #10, #0]);
+  ListBox1.Items.Add(S + ' at ' + IntToStr(CharIndex));
+end;
+
+procedure TForm1.Button6Click(Sender: TObject);
+begin
+  ListBox1.Clear;
 end;
 
 end.

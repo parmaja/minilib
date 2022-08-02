@@ -60,7 +60,7 @@ object Form1: TForm1
     TabOrder = 5
   end
   object Button3: TButton
-    Left = 109
+    Left = 88
     Height = 25
     Top = 200
     Width = 75
@@ -87,5 +87,23 @@ object Form1: TForm1
       'I have::value::from;text input'
     )
     TabOrder = 8
+  end
+  object Button5: TButton
+    Left = 166
+    Height = 25
+    Top = 200
+    Width = 75
+    Caption = 'ScanTo'
+    OnClick = Button5Click
+    TabOrder = 9
+  end
+  object Button6: TButton
+    Left = 242
+    Height = 25
+    Top = 200
+    Width = 71
+    Caption = 'Clear'
+    OnClick = Button6Click
+    TabOrder = 10
   end
 end

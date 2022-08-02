@@ -42,7 +42,8 @@ function QuoteStr(Str: string; QuoteChar: string = '"'): string;
   Resume: if false then stop, default is true
 *}
 type
-  TStrToStringsCallbackProc = procedure(Sender: Pointer; Index:Integer; S: string; var Resume: Boolean);
+  TStrToStringsCallbackProc = procedure(Sender: Pointer; Index: Integer; S: string; var Resume: Boolean);
+  TStrToStringsExCallbackProc = procedure(Sender: Pointer; Index, CharIndex, NextIndex: Integer; S: string; var Resume: Boolean);
   TArgumentsCallbackProc = procedure(Sender: Pointer; Index: Integer; Name, Value: string; IsSwitch:Boolean; var Resume: Boolean);
 
 {**
@@ -60,11 +61,13 @@ function StrToStrings(Content: string; Strings: TStrings; Separators: TSysCharSe
 
 {
   Example
-  StrToStringsExCallback(Memo1.Text, self, @AddString, ['::', ';', #13#10, #13, #10, #0]);
-  HINT: Put longest seperator first
+  StrToStringsExCallback(Memo1.Text, 1, self, @AddString, ['::', ';', #13#10, #13, #10, #0]);
+  HINT: Put longest seperator first ::  befire ;
+
 }
-function StrToStringsExCallback(Content: string; Sender: Pointer; const CallBackProc: TStrToStringsCallbackProc; Separators: Array of string; IgnoreInitialWhiteSpace: TSysCharSet = [' ']; Quotes: TSysCharSet = ['''', '"']; vOptions: TStrToStringsOptions = []): Integer; overload;
+function StrToStringsExCallback(Content: string; FromIndex: Integer; Sender: Pointer; const CallBackProc: TStrToStringsExCallbackProc; Separators: Array of string; IgnoreInitialWhiteSpace: TSysCharSet = [' ']; Quotes: TSysCharSet = ['''', '"']; vOptions: TStrToStringsOptions = []): Integer; overload;
 function StrToStringsEx(Content: string; Strings: TStrings; Separators: Array of string; IgnoreInitialWhiteSpace: TSysCharSet = [' ']; Quotes: TSysCharSet = ['''', '"']): Integer; overload;
+function StrScanTo(Content: string; FromIndex: Integer; out S: string; out CharIndex, NextIndex: Integer; Separators: Array of string; IgnoreInitialWhiteSpace: TSysCharSet = [' ']; Quotes: TSysCharSet = ['''', '"']): Integer;
 //function StrToStringsEx(Content: string; Strings: TStrings; IgnoreInitialWhiteSpace: TSysCharSet = [' ']; Quotes: TSysCharSet = ['''', '"']): Integer; overload;
 
 procedure StrToStringsCallbackProc(Sender: Pointer; Index: Integer; S: string; var Resume: Boolean);
@@ -663,7 +666,7 @@ end;
 
 //Ex
 
-function StrToStringsExCallback(Content: string; Sender: Pointer; const CallBackProc: TStrToStringsCallbackProc; Separators: array of string; IgnoreInitialWhiteSpace: TSysCharSet; Quotes: TSysCharSet; vOptions: TStrToStringsOptions): Integer;
+function StrToStringsExCallback(Content: string; FromIndex: Integer; Sender: Pointer; const CallBackProc: TStrToStringsExCallbackProc; Separators: array of string; IgnoreInitialWhiteSpace: TSysCharSet; Quotes: TSysCharSet; vOptions: TStrToStringsOptions): Integer;
 var
   Start, Cur, SepLength: Integer;
   Resume: Boolean;
@@ -673,12 +676,15 @@ var
   Index: Integer;
 begin
   Result := 0;
+  Index := FromIndex;
   Index := 0;
   if (@CallBackProc = nil) then
     raise Exception.Create('StrToStrings: CallBackProc is nil');
-  if (Content <> '') then
-  begin
+  Cur := FromIndex;
+  if Cur = 0 then
     Cur := 1;
+  if (Content <> '') and (Cur <= Content.Length) then
+  begin
     InQuote := False;
     QuoteChar := #0;
     repeat
@@ -733,9 +739,9 @@ begin
 
       if (Cur >= Start) then
       begin
-        S := Copy(Content, Start, Cur - Start - SepLength + 1);
+        S := Copy(Content, Start, Cur - Start - SepLength + 1); //TODO compare it with other function
         Resume := True;
-        CallBackProc(Sender, Index, S, Resume);
+        CallBackProc(Sender, Index, Start, Cur + 1, S, Resume);
         Index := Index + 1;
         Inc(Result);
         if not Resume then
@@ -746,16 +752,49 @@ begin
   end;
 end;
 
+procedure StrToStringsExCallbackProc(Sender: Pointer; Index, CharIndex, NextIndex: Integer; S: string; var Resume: Boolean);
+begin
+  TStrings(Sender).Add(S); //Be sure sender is TStrings
+end;
+
 function StrToStringsEx(Content: string; Strings: TStrings; Separators: array of string; IgnoreInitialWhiteSpace: TSysCharSet; Quotes: TSysCharSet): Integer;
 begin
   if (Strings = nil) then
     raise Exception.Create('StrToStrings: Strings is nil');
   Strings.BeginUpdate;
   try
-    Result := StrToStringsExCallback(Content, Strings, StrToStringsCallbackProc, Separators, IgnoreInitialWhiteSpace, Quotes);
+    Result := StrToStringsExCallback(Content, 0, Strings, StrToStringsExCallbackProc, Separators, IgnoreInitialWhiteSpace, Quotes);
   finally
     Strings.EndUpdate;
   end;
+end;
+
+type
+  TResultString = record
+    Found: string;
+    CharIndex: Integer;
+    NextIndex: Integer;
+  end;
+
+procedure StrScanToCallbackProc(Sender: Pointer; Index, CharIndex, NextIndex: Integer; S: string; var Resume: Boolean);
+begin
+  Resume := False;
+  TResultString(Sender^).Found := S;
+  TResultString(Sender^).CharIndex := CharIndex;
+  TResultString(Sender^).NextIndex := NextIndex;
+end;
+
+function StrScanTo(Content: string; FromIndex: Integer; out S: string; out CharIndex, NextIndex: Integer; Separators: array of string; IgnoreInitialWhiteSpace: TSysCharSet; Quotes: TSysCharSet): Integer;
+var
+  r: TResultString;
+begin
+  r.Found := '';
+  r.CharIndex := 0;
+  r.NextIndex := 0;
+  Result := StrToStringsExCallback(Content, FromIndex, @r, StrScanToCallbackProc, Separators, IgnoreInitialWhiteSpace, Quotes);
+  S := r.Found;
+  CharIndex := r.CharIndex;
+  NextIndex := r.NextIndex;
 end;
 
 {function StrToStringsEx(Content: string; Strings: TStrings; IgnoreInitialWhiteSpace: TSysCharSet = [' ']; Quotes: TSysCharSet = ['''', '"']): Integer; overload;
