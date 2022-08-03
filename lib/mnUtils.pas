@@ -67,7 +67,7 @@ function StrToStrings(Content: string; Strings: TStrings; Separators: TSysCharSe
 }
 function StrToStringsExCallback(Content: string; FromIndex: Integer; Sender: Pointer; const CallBackProc: TStrToStringsExCallbackProc; Separators: Array of string; IgnoreInitialWhiteSpace: TSysCharSet = [' ']; Quotes: TSysCharSet = ['''', '"']; vOptions: TStrToStringsOptions = []): Integer; overload;
 function StrToStringsEx(Content: string; Strings: TStrings; Separators: Array of string; IgnoreInitialWhiteSpace: TSysCharSet = [' ']; Quotes: TSysCharSet = ['''', '"']): Integer; overload;
-function StrScanTo(Content: string; FromIndex: Integer; out S: string; out CharIndex, NextIndex: Integer; Separators: Array of string; IgnoreInitialWhiteSpace: TSysCharSet = [' ']; Quotes: TSysCharSet = ['''', '"']): Integer;
+function StrScanTo(Content: string; FromIndex: Integer; out S: string; out CharIndex, NextIndex: Integer; Separators: Array of string; IgnoreInitialWhiteSpace: TSysCharSet = [' ']; Quotes: TSysCharSet = ['''', '"']): Boolean;
 //function StrToStringsEx(Content: string; Strings: TStrings; IgnoreInitialWhiteSpace: TSysCharSet = [' ']; Quotes: TSysCharSet = ['''', '"']): Integer; overload;
 
 procedure StrToStringsCallbackProc(Sender: Pointer; Index: Integer; S: string; var Resume: Boolean);
@@ -676,7 +676,6 @@ var
   Index: Integer;
 begin
   Result := 0;
-  Index := FromIndex;
   Index := 0;
   if (@CallBackProc = nil) then
     raise Exception.Create('StrToStrings: CallBackProc is nil');
@@ -784,14 +783,14 @@ begin
   TResultString(Sender^).NextIndex := NextIndex;
 end;
 
-function StrScanTo(Content: string; FromIndex: Integer; out S: string; out CharIndex, NextIndex: Integer; Separators: array of string; IgnoreInitialWhiteSpace: TSysCharSet; Quotes: TSysCharSet): Integer;
+function StrScanTo(Content: string; FromIndex: Integer; out S: string; out CharIndex, NextIndex: Integer; Separators: array of string; IgnoreInitialWhiteSpace: TSysCharSet; Quotes: TSysCharSet): Boolean;
 var
   r: TResultString;
 begin
   r.Found := '';
   r.CharIndex := 0;
   r.NextIndex := 0;
-  Result := StrToStringsExCallback(Content, FromIndex, @r, StrScanToCallbackProc, Separators, IgnoreInitialWhiteSpace, Quotes);
+  Result := StrToStringsExCallback(Content, FromIndex, @r, StrScanToCallbackProc, Separators, IgnoreInitialWhiteSpace, Quotes) > 0;
   S := r.Found;
   CharIndex := r.CharIndex;
   NextIndex := r.NextIndex;
