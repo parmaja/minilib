@@ -351,7 +351,7 @@ end;
 function TmnChunkStreamProxy.DoRead(var Buffer; Count: Longint; out ResultCount, RealCount: Longint): Boolean;
 var
   b: Byte;
-  r, c: Integer;
+  r, c: LongInt;
   aCount: Integer;
   s: string;
 begin

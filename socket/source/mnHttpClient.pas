@@ -22,7 +22,7 @@ unit mnHttpClient;
 interface
 
 uses
-  SysUtils, Classes, StrUtils, Windows,
+  SysUtils, Classes, StrUtils, 
   mnUtils, mnClasses, mnLogs, mnFields, mnParams, mnModules, mnSockets, mnJobs,
   mnClients, mnStreams, mnStreamUtils;
 
@@ -483,7 +483,6 @@ end;
 procedure TmnHttpResponse.Receive;
 var
   s: UTF8String;
-  t: string;
 begin
   FHeaders.Clear;
   // if FStream.Connected then
@@ -491,8 +490,6 @@ begin
     Client.Stream.ReadLine(s, True);
     s := Trim(s);
     repeat
-      t := s;
-      OutputDebugString(PWideChar(t));
       Items.AddItem(s, ':', True);
       Client.Stream.ReadLine(s, True);
       s := Trim(s);
