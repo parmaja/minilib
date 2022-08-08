@@ -724,7 +724,7 @@ begin
   Append(vAttributes);
 end;
 
-procedure AttrStrToStringsDeqouteCallbackProc(Sender: Pointer; Index:Integer; S: string; var Resume: Boolean);
+procedure AttrStrToStringsDeqouteCallbackProc(Sender: Pointer; Index, CharIndex, NextIndex: Integer; S: string; var Resume: Boolean);
 var
   Name, Value: string;
   p: Integer;

@@ -70,10 +70,12 @@ type
     FStream: TmnConnectionStream;
     function GetListener: TmnListener;
   protected
+    procedure DoStop; //* in main thread, nothing to do just to process all queue
     function GetConnected: Boolean; override;
     procedure Disconnect; virtual;
     procedure Prepare; override;
     procedure TerminatedSet; override;
+    procedure Execute; override;
   public
     constructor Create(vOwner: TmnConnections; vStream: TmnConnectionStream);
     destructor Destroy; override;
@@ -407,6 +409,10 @@ begin
   Result := Owner as TmnListener;
 end;
 
+procedure TmnServerConnection.DoStop;
+begin
+end;
+
 function TmnServerConnection.GetConnected: Boolean;
 begin
   Result := (FStream <> nil) and FStream.Connected;
@@ -428,6 +434,12 @@ procedure TmnServerConnection.TerminatedSet;
 begin
   Disconnect;
   inherited;
+end;
+
+procedure TmnServerConnection.Execute;
+begin
+  inherited Execute;
+  Synchronize(DoStop); //* to process all queue
 end;
 
 procedure TmnServer.SetActive(const Value: Boolean);
@@ -878,7 +890,7 @@ begin
   end;
   Log('Server stopped');
   DoStop;
-  TThread.Synchronize(nil, DoCheckSynchronize);
+  //TThread.Synchronize(nil, DoCheckSynchronize);
 end;
 
 function TmnServer.DoCreateListener: TmnListener;
