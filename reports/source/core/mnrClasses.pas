@@ -1688,7 +1688,15 @@ end;
 
 procedure TmnrSection.AddDetailTitles;
 begin
-  if AppendDetailTitles then DoAppendTitles(Report.DetailTitles);
+  if AppendDetailTitles then
+  begin
+    if ClassID=sciFooterReport then
+    begin
+      DoAppendTitles(Report.FooterReport)
+    end
+    else
+      DoAppendTitles(Report.DetailTitles);
+  end;
 end;
 
 procedure TmnrSection.ClearSubTotals;
@@ -2210,7 +2218,7 @@ begin
             end
             else
             begin
-              if (s.ClassID <> sciDetails) then
+              if (s.ClassID <> sciDetails) and (s.ClassID <> sciFooterReport)  then //belal: need review :(
               begin
                 r := s.NewReference;
                 s.DoBeginFill(r);
