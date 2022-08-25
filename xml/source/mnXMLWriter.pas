@@ -49,6 +49,9 @@ type
     procedure DoWriteText(Value: string); virtual; abstract;
     procedure DoWriteComment(Value: string); virtual; abstract;
     procedure DoWriteCDATA(Value: string); virtual; abstract;
+    procedure StreamWriteString(const vStr: string);
+    procedure StreamWriteLine(const vStr: string = '');
+
 
   public
     constructor Create; override;
@@ -153,62 +156,62 @@ uses
 
 procedure TmnPascalWriter.DoWriteStartTag(Name: string);
 begin
-  Stream.WriteString('AddStartTag(' + QuoteStr(Name, '''') + ');') ;
+  StreamWriteString('AddStartTag(' + QuoteStr(Name, '''') + ');') ;
 end;
 
 procedure TmnPascalWriter.DoWriteAttribute(Name, Value: string);
 begin
-  Stream.WriteString('AddAttribute(' + QuoteStr(Name, '''') + ', ' + QuoteStr(Name, '''') + ');') ;
+  StreamWriteString('AddAttribute(' + QuoteStr(Name, '''') + ', ' + QuoteStr(Name, '''') + ');') ;
 end;
 
 procedure TmnPascalWriter.DoWriteStopTag(Name: string; CloseIt: Boolean);
 begin
   if CloseIt then
-    Stream.WriteString('StopTag(' + QuoteStr(Name, '''') + ');') //TODO
+    StreamWriteString('StopTag(' + QuoteStr(Name, '''') + ');') //TODO
   else
-    Stream.WriteString('StopTag(' + QuoteStr(Name, '''') + ');') ;
+    StreamWriteString('StopTag(' + QuoteStr(Name, '''') + ');') ;
 end;
 
 procedure TmnPascalWriter.DoWriteCloseTag(Name: string);
 begin
-  Stream.WriteString('CloseTag(' + QuoteStr(Name, '''') + ');') ;
+  StreamWriteString('CloseTag(' + QuoteStr(Name, '''') + ');') ;
 end;
 
 procedure TmnPascalWriter.DoWriteText(Value: string);
 begin
-  Stream.WriteString('AddText(' + QuoteStr(Value, '''') + ');') ;
+  StreamWriteString('AddText(' + QuoteStr(Value, '''') + ');') ;
 end;
 
 procedure TmnPascalWriter.DoWriteComment(Value: string);
 begin
-  Stream.WriteString('AddComment(' + QuoteStr(Value, '''') + ');') ;
+  StreamWriteString('AddComment(' + QuoteStr(Value, '''') + ');') ;
 end;
 
 procedure TmnPascalWriter.DoWriteCDATA(Value: string);
 begin
-  Stream.WriteString('AddCDATA(' + QuoteStr(Value, '''') + ');') ;
+  StreamWriteString('AddCDATA(' + QuoteStr(Value, '''') + ');') ;
 end;
 
 { TmnJSONWriter }
 
 procedure TmnJSONWriter.DoWriteStartTag(Name: string);
 begin
-  Stream.WriteString(QuoteStr(Name) + ' = {');
+  StreamWriteString(QuoteStr(Name) + ' = {');
 end;
 
 procedure TmnJSONWriter.DoWriteAttribute(Name, Value: string);
 begin
-  Stream.WriteString(QuoteStr(Name) + ' = ' + QuoteStr(Value));
+  StreamWriteString(QuoteStr(Name) + ' = ' + QuoteStr(Value));
 end;
 
 procedure TmnJSONWriter.DoWriteStopTag(Name: string; CloseIt: Boolean);
 begin
-  //Stream.WriteString(Name + '}');
+  //StreamWriteString(Name + '}');
 end;
 
 procedure TmnJSONWriter.DoWriteCloseTag(Name: string);
 begin
-  Stream.WriteString('}');
+  StreamWriteString('}');
 end;
 
 procedure TmnJSONWriter.DoWriteText(Value: string);
@@ -228,40 +231,40 @@ end;
 
 procedure TmnXMLWriter.DoWriteStartTag(Name: string);
 begin
-  Stream.WriteString('<' + Name);
+  StreamWriteString('<' + Name);
 end;
 
 procedure TmnXMLWriter.DoWriteAttribute(Name, Value: string);
 begin
-  Stream.WriteString(Name+'=' + QuoteStr(EntityEncode(Value)));
+  StreamWriteString(Name+'=' + QuoteStr(EntityEncode(Value)));
 end;
 
 procedure TmnXMLWriter.DoWriteStopTag(Name: string; CloseIt: Boolean);
 begin
   if CloseIt then
-    Stream.WriteString('/>')
+    StreamWriteString('/>')
   else
-    Stream.WriteString('>');
+    StreamWriteString('>');
 end;
 
 procedure TmnXMLWriter.DoWriteCloseTag(Name: string);
 begin
-  Stream.WriteString('</' + Name + '>');
+  StreamWriteString('</' + Name + '>');
 end;
 
 procedure TmnXMLWriter.DoWriteText(Value: string);
 begin
-  Stream.WriteString(EntityEncode(Value));
+  StreamWriteString(EntityEncode(Value));
 end;
 
 procedure TmnXMLWriter.DoWriteComment(Value: string);
 begin
-  Stream.WriteString('<!--' + EntityEncode(Value) + '-->');
+  StreamWriteString('<!--' + EntityEncode(Value) + '-->');
 end;
 
 procedure TmnXMLWriter.DoWriteCDATA(Value: string);
 begin
-  Stream.WriteString('<![CDATA[' + EntityEncode(Value) + ']]');
+  StreamWriteString('<![CDATA[' + EntityEncode(Value) + ']]');
 end;
 
 { TmnCustomXMLWriter }
@@ -327,7 +330,7 @@ begin
   AttributesCount := 0;
 
   if Smart and FTaging and (Tabs <> '') then
-    Stream.WriteString(Stream.EndOfLine + RepeatString(Tabs, FOpenedTags.Count));
+    StreamWriteString(Stream.EndOfLine + RepeatString(Tabs, FOpenedTags.Count));
 
   DoWriteStartTag(Name);
 
@@ -394,7 +397,7 @@ begin
   end;
 
   if Smart and FTaging and (Tabs <> '') then
-    Stream.WriteString(Stream.EndOfLine + GetIndents);
+    StreamWriteString(Stream.EndOfLine + GetIndents);
 
   DoWriteCloseTag(Name);
 
@@ -424,7 +427,7 @@ begin
     s := s + Header[i];
   end;
   s := '<?xml ' + s + ' ?>';
-  Stream.WriteLine(s);
+  StreamWriteLine(s);
 end;
 
 procedure TmnCustomXMLWriter.AddTag(Name: string);
@@ -459,7 +462,7 @@ end;
 procedure TmnCustomXMLWriter.AddComment(Value: string);
 begin
   if Smart then
-    Stream.WriteString(' ');
+    StreamWriteString(' ');
   DoWriteComment(Value);
 end;
 
@@ -467,8 +470,8 @@ procedure TmnCustomXMLWriter.AddCommentLine(Value: string);
 begin
   if Smart and (Tabs <> '') then
   begin
-    Stream.WriteLine;
-    Stream.WriteString(GetIndents);
+    StreamWriteLine;
+    StreamWriteString(GetIndents);
   end;
   DoWriteComment(Value);
 end;
@@ -476,7 +479,7 @@ end;
 procedure TmnCustomXMLWriter.AddCDATA(Value: string);
 begin
   if Smart and (Tabs <> '') then
-    Stream.WriteString(GetIndents);
+    StreamWriteString(GetIndents);
   DoWriteCDATA(Value);
 end;
 
@@ -498,26 +501,26 @@ begin
   begin
     if Breaks then
     begin
-      Stream.WriteLine;
-      Stream.WriteString(GetIndents(FOpenedTags.Count));
+      StreamWriteLine;
+      StreamWriteString(GetIndents(FOpenedTags.Count));
     end
     else if (AttributesCount > 0) then
     begin
       if (Length(Value) > cMaxLine) then
       begin
-        Stream.WriteLine;
-        Stream.WriteString(GetIndents(FOpenedTags.Count));
+        StreamWriteLine;
+        StreamWriteString(GetIndents(FOpenedTags.Count));
       end
       else
-        Stream.WriteString(' ');
+        StreamWriteString(' ');
     end
     else
-      Stream.WriteString(' ');
+      StreamWriteString(' ');
     DoWriteAttribute(Name, Value);
   end
   else
   begin
-    Stream.WriteString(' ');
+    StreamWriteString(' ');
     DoWriteAttribute(Name, Value);
   end;
   Inc(AttributesCount);
@@ -584,6 +587,16 @@ end;
 procedure TmnCustomXMLWriter.StopTag;
 begin
   StopTag('');
+end;
+
+procedure TmnCustomXMLWriter.StreamWriteLine(const vStr: string);
+begin
+  Stream.WriteLineUTF8(vStr);
+end;
+
+procedure TmnCustomXMLWriter.StreamWriteString(const vStr: string);
+begin
+  Stream.WriteUTF8(vStr);
 end;
 
 procedure TmnCustomXMLWriter.OpenTag(NameSpace, Name: string; AttNames, AttValues: TArray<string>; CloseIt: Boolean);
