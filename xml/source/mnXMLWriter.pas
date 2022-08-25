@@ -16,7 +16,7 @@ unit mnXMLWriter;
 interface
 
 uses
-  Classes, SysUtils, mnXML, mnXMLUtils;
+  Classes, SysUtils, mnClasses, mnXML, mnXMLUtils;
 
 const
   cMaxLine = 40;
@@ -61,7 +61,7 @@ type
     procedure StartTag(NameSpace, Name: string); overload;
     procedure StartTag(Name: string); overload;
     procedure AddAttribute(Name, Value: string);
-    procedure AddAttributes(AttNames, AttValues: TStringArray);
+    procedure AddAttributes(AttNames, AttValues: TArray<string>);
     procedure AddXMLNS(NameSpace, Value: string); overload;
     //StopTag add attribute and close it by > or /> if empty = true
     procedure StopTag(NameSpace, Name: string; CloseIt: Boolean = False); overload;
@@ -70,8 +70,8 @@ type
 
     //OpenTag add Tag with attributes <name att1="val1">
     //procedure WriteOpenTag(const Name, NameSpace: string); overload;
-    procedure OpenTag(NameSpace, Name: string; AttNames, AttValues: TStringArray; CloseIt: Boolean = False); overload;
-    procedure OpenTag(Name: string; AttNames, AttValues: TStringArray); overload;
+    procedure OpenTag(NameSpace, Name: string; AttNames, AttValues: TArray<string>; CloseIt: Boolean = False); overload;
+    procedure OpenTag(Name: string; AttNames, AttValues: TArray<string>); overload;
     procedure OpenTag(NameSpace, Name: string; AttName, AttValue: string); overload;
     procedure OpenTag(Name: string; AttName, AttValue: string); overload;
     procedure OpenTag(NameSpace, Name: string); overload;
@@ -81,15 +81,15 @@ type
     procedure CloseTag(Name: string); overload;
     procedure CloseTag; overload;
     //Add closed tage
-    procedure AddTag(NameSpace, Name: string; AttNames, AttValues: TStringArray); overload;
+    procedure AddTag(NameSpace, Name: string; AttNames, AttValues: TArray<string>); overload;
     procedure AddTag(NameSpace, Name: string; AttName, AttValue: string); overload;
     procedure AddTag(Name: string); overload;
     //Add Closed tag with text
     //If Text is empty tag will NOT added
-    procedure AddText(NameSpace, TagName, Text: string; AttNames: TStringArray = []; AttValues: TStringArray = []); overload;
+    procedure AddText(NameSpace, TagName, Text: string; AttNames: TArray<string> = []; AttValues: TArray<string> = []); overload;
     procedure AddText(TagName, Text: string); overload;
     //Add Text value only
-    procedure AddText(Value: string);
+    procedure AddText(Value: string); overload;
     procedure AddComment(Value: string);
     procedure AddCommentLine(Value: string);
     procedure AddCDATA(Value: string);
@@ -276,7 +276,7 @@ begin
   CloseTag('');
 end;
 
-procedure TmnCustomXMLWriter.AddTag(NameSpace, Name: string; AttNames, AttValues: TStringArray);
+procedure TmnCustomXMLWriter.AddTag(NameSpace, Name: string; AttNames, AttValues: TArray<string>);
 begin
   OpenTag(NameSpace, Name, AttNames, AttValues, True);
 end;
@@ -351,7 +351,7 @@ begin
   WriteHeader;
 end;
 
-procedure TmnCustomXMLWriter.OpenTag(Name: string; AttNames, AttValues: TStringArray);
+procedure TmnCustomXMLWriter.OpenTag(Name: string; AttNames, AttValues: TArray<string>);
 begin
   OpenTag('', Name, AttNames, AttValues);
 end;
@@ -441,7 +441,7 @@ begin
   end;
 end;
 
-procedure TmnCustomXMLWriter.AddText(NameSpace, TagName, Text: string; AttNames: TStringArray; AttValues: TStringArray);
+procedure TmnCustomXMLWriter.AddText(NameSpace, TagName, Text: string; AttNames: TArray<string>; AttValues: TArray<string>);
 begin
   if Text <> '' then
   begin
@@ -523,7 +523,7 @@ begin
   Inc(AttributesCount);
 end;
 
-procedure TmnCustomXMLWriter.AddAttributes(AttNames, AttValues: TStringArray);
+procedure TmnCustomXMLWriter.AddAttributes(AttNames, AttValues: TArray<string>);
 var
   i: Integer;
 begin
@@ -586,7 +586,7 @@ begin
   StopTag('');
 end;
 
-procedure TmnCustomXMLWriter.OpenTag(NameSpace, Name: string; AttNames, AttValues: TStringArray; CloseIt: Boolean);
+procedure TmnCustomXMLWriter.OpenTag(NameSpace, Name: string; AttNames, AttValues: TArray<string>; CloseIt: Boolean);
 var
   i: Integer;
 begin
