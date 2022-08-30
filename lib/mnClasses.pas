@@ -9,6 +9,7 @@ unit mnClasses;
 
 {$IFDEF FPC}
 {$MODE delphi}
+{$modeswitch functionreferences}{$modeswitch anonymousfunctions}
 {$WARN 5024 off : Parameter "$1" not used}
 {$ENDIF}
 {$M+}{$H+}
@@ -24,6 +25,10 @@ uses
   {$endif}
 
 type
+
+  {$IFDEF FPC}
+  TProc = Reference to procedure;
+  {$endif}
 
   { TmnObject }
 

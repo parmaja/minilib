@@ -11,6 +11,7 @@ unit mnXMLWriter;
 {$H+}
 {$IFDEF FPC}
 {$mode delphi}
+{$modeswitch functionreferences}{$modeswitch anonymousfunctions}
 {$ENDIF}
 
 interface
@@ -79,9 +80,7 @@ type
     procedure OpenTag(NameSpace, Name: string; AttName, AttValue: string); overload;
     procedure OpenTag(Name: string; AttName, AttValue: string); overload;
     procedure OpenTag(NameSpace, Name: string); overload;
-    {$ifndef FPC}
     procedure OpenTag(NameSpace, Name: string; vCallback: TProc); overload;
-    {$endif}
     procedure OpenTag(Name: string); overload;
     //CloseTag work with WriteStartTag and WriteOpenTag
     procedure CloseTag(NameSpace, Name: string); overload;
@@ -381,14 +380,12 @@ begin
 
 end;
 
-{$ifndef FPC}
 procedure TmnCustomXMLWriter.OpenTag(NameSpace, Name: string; vCallback: TProc);
 begin
   OpenTag(NameSpace, Name);
   vCallback;
   CloseTag(NameSpace, Name);
 end;
-{$endif}
 
 procedure TmnCustomXMLWriter.CloseTag(NameSpace, Name: string);
 begin
