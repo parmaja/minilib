@@ -193,11 +193,7 @@ begin
   FHeader := TStringList.Create;
   FEntities := TmnXMLEntities.Create(TmnXMLEntity);
   FVersion := '1.0';
-  {$ifdef FPC}
-  FCharset := 'utf-8';
-  {$else}
-  FCharset := 'iso-8859-1';
-  {$endif}
+  FCharset := 'UTF-8';
 end;
 
 procedure TmnXMLFiler.DeclareEntities;

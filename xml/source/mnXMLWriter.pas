@@ -35,6 +35,7 @@ type
     FTaging: Boolean;
     FTagStarted: Boolean; //Work with StartTag
     AttributesCount: Integer;
+    FMaxLine: Integer;
     procedure SetSmart(const Value: Boolean);
   protected
     procedure DoStart; override;
@@ -78,6 +79,9 @@ type
     procedure OpenTag(NameSpace, Name: string; AttName, AttValue: string); overload;
     procedure OpenTag(Name: string; AttName, AttValue: string); overload;
     procedure OpenTag(NameSpace, Name: string); overload;
+    {$ifndef FPC}
+    procedure OpenTag(NameSpace, Name: string; vCallback: TProc); overload;
+    {$endif}
     procedure OpenTag(Name: string); overload;
     //CloseTag work with WriteStartTag and WriteOpenTag
     procedure CloseTag(NameSpace, Name: string); overload;
@@ -103,6 +107,7 @@ type
     property Encoding: Boolean read FEncoding write FEncoding default True;
     property Tabs: string read FTabs write FTabs;
     property Breaks: Boolean read FBreaks write FBreaks; //auto break everyrhing, but hearts :)
+    property MaxLine: Integer read FMaxLine write FMaxLine; //auto break everyrhing, but hearts :)
     //End smart engine
   end;
 
@@ -292,6 +297,7 @@ end;
 constructor TmnCustomXMLWriter.Create;
 begin
   inherited Create;
+  FMaxLine := cMaxLine;
   FOpenedTags := TStringList.Create;
   FTabs := '  ';
   FEncoding := True;
@@ -372,7 +378,17 @@ end;
 procedure TmnCustomXMLWriter.OpenTag(Name: string);
 begin
   OpenTag(Name, [], []);
+
 end;
+
+{$ifndef FPC}
+procedure TmnCustomXMLWriter.OpenTag(NameSpace, Name: string; vCallback: TProc);
+begin
+  OpenTag(NameSpace, Name);
+  vCallback;
+  CloseTag(NameSpace, Name);
+end;
+{$endif}
 
 procedure TmnCustomXMLWriter.CloseTag(NameSpace, Name: string);
 begin
@@ -506,7 +522,7 @@ begin
     end
     else if (AttributesCount > 0) then
     begin
-      if (Length(Value) > cMaxLine) then
+      if (Length(Value) > MaxLine) then
       begin
         StreamWriteLine;
         StreamWriteString(GetIndents(FOpenedTags.Count));
@@ -544,8 +560,10 @@ end;
 
 procedure TmnCustomXMLWriter.AddXMLNS(NameSpace, Value: string);
 begin
-  NameSpace := 'xmlns' + sNameSpaceSeparator + NameSpace;
-  AddAttribute(NameSpace, Value);
+  if NameSpace='' then
+    AddAttribute('xmlns', Value)
+  else
+    AddAttribute('xmlns' + sNameSpaceSeparator + NameSpace, Value);
 end;
 
 procedure TmnCustomXMLWriter.StopTag(NameSpace, Name: string; CloseIt: Boolean);
