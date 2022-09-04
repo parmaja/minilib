@@ -70,26 +70,28 @@ type
     procedure AddXMLNS(NameSpace, Value: string); overload;
     //StopTag add attribute and close it by > or /> if empty = true
     procedure StopTag(NameSpace, Name: string; CloseIt: Boolean = False); overload;
+    procedure StopTag(NameSpace, Name: string; vCallback: TProc); overload;
     procedure StopTag(Name: string); overload;
     procedure StopTag; overload;
 
     //OpenTag add Tag with attributes <name att1="val1">
     //procedure WriteOpenTag(const Name, NameSpace: string); overload;
     procedure OpenTag(NameSpace, Name: string; AttNames, AttValues: TArray<string>; CloseIt: Boolean = False); overload;
+
     procedure OpenTag(Name: string; AttNames, AttValues: TArray<string>); overload;
     procedure OpenTag(NameSpace, Name: string; AttName, AttValue: string); overload;
     procedure OpenTag(Name: string; AttName, AttValue: string); overload;
     procedure OpenTag(NameSpace, Name: string); overload;
-    procedure OpenTag(NameSpace, Name: string; vCallback: TProc); overload;
     procedure OpenTag(Name: string); overload;
     //CloseTag work with WriteStartTag and WriteOpenTag
     procedure CloseTag(NameSpace, Name: string); overload;
     procedure CloseTag(Name: string); overload;
     procedure CloseTag; overload;
     //Add closed tage
-    procedure AddTag(NameSpace, Name: string; AttNames, AttValues: TArray<string>); overload;
-    procedure AddTag(NameSpace, Name: string; AttName, AttValue: string); overload;
-    procedure AddTag(Name: string); overload;
+    procedure AddTag(NameSpace, Name: string; AttNames, AttValues: TArray<string>; vCallback: TProc = nil); overload;
+    procedure AddTag(NameSpace, Name: string; AttName, AttValue: string; vCallback: TProc = nil); overload;
+    procedure AddTag(NameSpace, Name: string; vCallback: TProc = nil); overload;
+    procedure AddTag(Name: string; vCallback: TProc = nil); overload;
     //Add Closed tag with text
     //If Text is empty tag will NOT added
     procedure AddText(NameSpace, TagName, Text: string; AttNames: TArray<string> = []; AttValues: TArray<string> = []); overload;
@@ -283,14 +285,21 @@ begin
   CloseTag('');
 end;
 
-procedure TmnCustomXMLWriter.AddTag(NameSpace, Name: string; AttNames, AttValues: TArray<string>);
+procedure TmnCustomXMLWriter.AddTag(NameSpace, Name: string; AttNames, AttValues: TArray<string>; vCallback: TProc);
 begin
-  OpenTag(NameSpace, Name, AttNames, AttValues, True);
+  if Assigned(vCallback) then
+  begin
+    OpenTag(NameSpace, Name, AttNames, AttValues, False);
+    vCallback;
+    CloseTag(NameSpace, Name);
+  end
+  else
+    OpenTag(NameSpace, Name, AttNames, AttValues, True);
 end;
 
-procedure TmnCustomXMLWriter.AddTag(NameSpace, Name: string; AttName, AttValue: string);
+procedure TmnCustomXMLWriter.AddTag(NameSpace, Name: string; AttName, AttValue: string; vCallback: TProc);
 begin
-  AddTag(NameSpace, Name, [AttName], [AttValue]);
+  AddTag(NameSpace, Name, [AttName], [AttValue], vCallback);
 end;
 
 constructor TmnCustomXMLWriter.Create;
@@ -380,13 +389,6 @@ begin
 
 end;
 
-procedure TmnCustomXMLWriter.OpenTag(NameSpace, Name: string; vCallback: TProc);
-begin
-  OpenTag(NameSpace, Name);
-  vCallback;
-  CloseTag(NameSpace, Name);
-end;
-
 procedure TmnCustomXMLWriter.CloseTag(NameSpace, Name: string);
 begin
   if NameSpace <> '' then
@@ -443,9 +445,14 @@ begin
   StreamWriteLine(s);
 end;
 
-procedure TmnCustomXMLWriter.AddTag(Name: string);
+procedure TmnCustomXMLWriter.AddTag(Name: string; vCallback: TProc);
 begin
-  AddTag('', Name, [], []);
+  AddTag('', Name, [], [], vCallback);
+end;
+
+procedure TmnCustomXMLWriter.AddTag(NameSpace, Name: string; vCallback: TProc);
+begin
+  AddTag(NameSpace, Name, [], [], vCallback);
 end;
 
 procedure TmnCustomXMLWriter.AddText(Value: string);
@@ -602,6 +609,13 @@ end;
 procedure TmnCustomXMLWriter.StopTag;
 begin
   StopTag('');
+end;
+
+procedure TmnCustomXMLWriter.StopTag(NameSpace, Name: string; vCallback: TProc);
+begin
+  StopTag(NameSpace, Name, False);
+  vCallback;
+  CloseTag(NameSpace, Name);
 end;
 
 procedure TmnCustomXMLWriter.StreamWriteLine(const vStr: string);
