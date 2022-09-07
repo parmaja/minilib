@@ -21,8 +21,11 @@ uses
 
 type
 
-  PtrInt = integer;
-  PtrUInt = Cardinal;
+  {$ifdef FPC}
+  {$else}
+  PtrInt = IntPtr;
+  PtrUInt = UIntPtr;
+  {$endif}
 
   IntPtr_t = PtrInt;
   PIntPtr_t = ^PtrInt;
