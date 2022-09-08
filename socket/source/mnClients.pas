@@ -16,7 +16,7 @@ interface
 
 uses
   Classes, {$ifndef FPC} Types, {$endif} SysUtils, SyncObjs,
-  mnSockets, mnStreams, mnConnections;
+  mnUtils, mnSockets, mnStreams, mnConnections;
 
 type
 
@@ -30,7 +30,9 @@ type
   private
     FAddress: string;
     FPort: string;
+    function GetFullAddress: string;
     procedure SetAddress(const Value: string);
+    procedure SetFullAddress(AValue: string);
     procedure SetPort(const Value: string);
   protected
     function CreateSocket(out vErr: Integer): TmnCustomSocket; override;
@@ -38,6 +40,7 @@ type
     constructor Create(const vAddress: string = ''; vPort: string = ''; vOptions: TmnsoOptions = [soNoDelay]);
     property Port: string read FPort write SetPort;
     property Address: string read FAddress write SetAddress;
+    property FullAddress: string read GetFullAddress write SetFullAddress;
   end;
 
   TmnClientSocketStream = TmnClientSocket;
@@ -327,7 +330,11 @@ constructor TmnClientSocket.Create(const vAddress: string; vPort: string; vOptio
 begin
   inherited Create;
   FAddress := vAddress;
-  FPort := vPort;
+  FPort := SubStr(FAddress, ':', 1);
+  if FPort <> '' then
+    FAddress := SubStr(FAddress, ':', 0)
+  else
+    FPort := vPort;
   Options := vOptions;
 end;
 
@@ -337,6 +344,24 @@ begin
   if Connected then
     raise EmnException.Create('Can not change Address value when active');
   FAddress := Value;
+end;
+
+function TmnClientSocket.GetFullAddress: string;
+begin
+  Result := FAddress + ':' + FPort;
+end;
+
+procedure TmnClientSocket.SetFullAddress(AValue: string);
+var
+  aPort: string;
+begin
+  FAddress := AValue;
+  aPort := SubStr(FAddress, ':', 1);
+  if aPort <> '' then
+  begin
+    FPort := aPort;
+    FAddress := SubStr(FAddress, ':', 0)
+  end;
 end;
 
 procedure TmnClientSocket.SetPort(const Value: string);
