@@ -44,8 +44,7 @@ fix topic changing
 interface
 
 uses
-  Classes, syncobjs,
-  StrUtils,
+  Classes, StrUtils, SyncObjs,
   mnClasses, mnSockets, mnServers, mnClients, mnStreams, mnConnections, mnUtils;
 
 const
@@ -1862,7 +1861,11 @@ begin
       SendRaws;
       if FStream.Connected then
         FStream.ReadLineUTF8(S, True);
+      {$ifdef FPC}
+      aLine := Trim(S);
+      {$else}
       aLine := Trim(UTF8ToString(S));
+      {$endif}
       while Connected and not Terminated and (aLine <> '') do
       begin
         Log('<' + aLine);
@@ -1883,7 +1886,11 @@ begin
         if FStream.Connected and not Terminated then
         begin
           FStream.ReadLineUTF8(S, True);
+          {$ifdef FPC}
+          aLine := Trim(S);
+          {$else}
           aLine := Trim(UTF8ToString(S));
+          {$endif}
         end;
       end;
     except

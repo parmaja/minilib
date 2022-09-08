@@ -19,7 +19,7 @@ interface
 
 uses
   Classes, SysUtils,
-  mnOpenSSL,
+  mnUtils, mnOpenSSL,
   mnSockets, mnStreams, mnConnections;
 
 const
@@ -40,7 +40,9 @@ type
     FAddress: string;
     FPort: string;
     FListenerSocket: TmnCustomSocket;
+    function GetFullAddress: string;
     procedure SetAddress(Value: string);
+    procedure SetFullAddress(AValue: string);
     procedure SetPort(Value: string);
   protected
     procedure FreeSocket; override;
@@ -52,6 +54,7 @@ type
     destructor Destroy; override;
     property Port: string read FPort write SetPort;
     property Address: string read FAddress write SetAddress;
+    property FullAddress: string read GetFullAddress write SetFullAddress;
   end;
 
 {
@@ -951,6 +954,24 @@ begin
   FAddress := Value;
 end;
 
+function TmnServerSocket.GetFullAddress: string;
+begin
+  Result := FAddress + ':' + FPort;
+end;
+
+procedure TmnServerSocket.SetFullAddress(AValue: string);
+var
+  aPort: string;
+begin
+  FAddress := AValue;
+  aPort := SubStr(FAddress, ':', 1);
+  if aPort <> '' then
+  begin
+    FPort := aPort;
+    FAddress := SubStr(FAddress, ':', 0)
+  end;
+end;
+
 procedure TmnServerSocket.SetPort(Value: string);
 begin
   if FPort =Value then Exit;
@@ -1000,7 +1021,11 @@ constructor TmnServerSocket.Create(const vAddress, vPort: string; vOptions: Tmns
 begin
   inherited Create;
   FAddress := vAddress;
-  FPort := vPort;
+  FPort := SubStr(FAddress, ':', 1);
+  if FPort <> '' then
+    FAddress := SubStr(FAddress, ':', 0)
+  else
+    FPort := vPort;
   Options := vOptions;
 end;
 
