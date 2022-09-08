@@ -29,17 +29,20 @@ type
   TmnClientSocket = class(TmnSocketStream)
   private
     FAddress: string;
+    FBindAddress: string;
     FPort: string;
+    procedure SetBindAddress(AValue: string);
     function GetFullAddress: string;
-    procedure SetAddress(const Value: string);
     procedure SetFullAddress(AValue: string);
+    procedure SetAddress(const Value: string);
     procedure SetPort(const Value: string);
   protected
     function CreateSocket(out vErr: Integer): TmnCustomSocket; override;
   public
-    constructor Create(const vAddress: string = ''; vPort: string = ''; vOptions: TmnsoOptions = [soNoDelay]);
+    constructor Create(const vAddress: string = ''; vPort: string = ''; vOptions: TmnsoOptions = [soNoDelay]); overload;
     property Port: string read FPort write SetPort;
     property Address: string read FAddress write SetAddress;
+    property BindAddress: string read FBindAddress write SetBindAddress;
     property FullAddress: string read GetFullAddress write SetFullAddress;
   end;
 
@@ -323,7 +326,7 @@ end;
 
 function TmnClientSocket.CreateSocket(out vErr: Integer): TmnCustomSocket;
 begin
-  WallSocket.Connect(Options, ConnectTimeout, ReadTimeout, Port, Address, Result, vErr);
+  WallSocket.Connect(Options, ConnectTimeout, ReadTimeout, Port, Address, BindAddress, Result, vErr);
 end;
 
 constructor TmnClientSocket.Create(const vAddress: string; vPort: string; vOptions: TmnsoOptions);
@@ -351,10 +354,20 @@ begin
   Result := FAddress + ':' + FPort;
 end;
 
+procedure TmnClientSocket.SetBindAddress(AValue: string);
+begin
+  if FBindAddress =AValue then Exit;
+  if Connected then
+    raise EmnException.Create('Can not change Address value when active');
+  FBindAddress :=AValue;
+end;
+
 procedure TmnClientSocket.SetFullAddress(AValue: string);
 var
   aPort: string;
 begin
+  if Connected then
+    raise EmnException.Create('Can not change Address value when active');
   FAddress := AValue;
   aPort := SubStr(FAddress, ':', 1);
   if aPort <> '' then

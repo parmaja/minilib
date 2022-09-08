@@ -63,7 +63,7 @@ type
     function GetSocketError(Handle: TSocketHandle): Integer; override;
     procedure Accept(ListenerHandle: TSocketHandle; Options: TmnsoOptions; ReadTimeout: Integer; out vSocket: TmnCustomSocket; out vErr: Integer); override;
     procedure Bind(Options: TmnsoOptions; ListenTimeout: Integer; const Port: string; const Address: string; out vSocket: TmnCustomSocket; out vErr: Integer); override;
-    procedure Connect(Options: TmnsoOptions; ConnectTimeout, ReadTimeout: Integer; const Port: string; const Address: string; out vSocket: TmnCustomSocket; out vErr: Integer); override;
+    procedure Connect(Options: TmnsoOptions; ConnectTimeout, ReadTimeout: Integer; const Port: string; const Address: string; const BindAddress: string; out vSocket: TmnCustomSocket; out vErr: Integer); override;
 
     procedure Startup;
     procedure Cleanup;
@@ -504,7 +504,7 @@ begin
     vSocket := nil;
 end;
 
-procedure TmnWallSocket.Connect(Options: TmnsoOptions; ConnectTimeout, ReadTimeout: Integer; const Port: string; const Address: string; out vSocket: TmnCustomSocket; out vErr: Integer);
+procedure TmnWallSocket.Connect(Options: TmnsoOptions; ConnectTimeout, ReadTimeout: Integer; const Port: string; const Address: string; const BindAddress: string; out vSocket: TmnCustomSocket; out vErr: Integer);
 var
   aHandle: TSocketHandle;
   aAddr: {$ifdef FPC}TSockAddr;{$else}TSockAddrIn;{$endif}
@@ -512,6 +512,8 @@ var
   ret: Longint;
   aMode: u_long;
 begin
+  //* https://stackoverflow.com/questions/2605182/when-binding-a-client-tcp-socket-to-a-specific-local-port-with-winsock-so-reuse
+
   aHandle := socket(PF_INET, SOCK_STREAM, IPPROTO_TCP);
   if aHandle <> INVALID_SOCKET then
   begin
@@ -522,6 +524,22 @@ begin
       aMode := 1;
       ret := ioctlsocket(aHandle, Longint(FIONBIO), aMode);
       if ret = Longint(SOCKET_ERROR) then
+      begin
+        vErr := WSAGetLastError;
+        FreeSocket(aHandle);
+      end;
+    end;
+
+    if (BindAddress <> '') then
+    begin
+      aAddr.sin_family := AF_INET;
+      aAddr.sin_port := htons(0); //Random port for client
+      aAddr.sin_addr.s_addr := inet_addr(PAnsiChar(AnsiString(BindAddress)));
+      {$IFDEF FPC}
+      if WinSock2.bind(aHandle, aAddr, SizeOf(aAddr)) = SOCKET_ERROR then
+      {$ELSE}
+      if WinSock2.bind(aHandle, TSockAddr(aAddr), SizeOf(aAddr)) = SOCKET_ERROR then
+      {$ENDIF}
       begin
         vErr := WSAGetLastError;
         FreeSocket(aHandle);

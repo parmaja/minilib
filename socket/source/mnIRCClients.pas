@@ -344,6 +344,7 @@ type
   private
     FHost: string;
     FPort: string;
+    FBindAddress: string;
     FClient: TmnIRCClient;
     FStream: TIRCSocketStream;
 
@@ -375,6 +376,7 @@ type
     procedure Connect;
     property Host: string read FHost;
     property Port: string read FPort;
+    property BindAddress: string read FBindAddress;
   end;
 
   { TIRCSession }
@@ -399,6 +401,7 @@ type
   TmnIRCClient = class(TObject)
   private
     FAuthType: TIRCAuthType;
+    FBind: string;
     FMapChannels: TStringList;
     FPort: string;
     FHost: string;
@@ -426,6 +429,7 @@ type
     procedure SetNicks(AValue: TStringList);
     procedure SetPassword(const Value: string);
     procedure SetPort(const Value: string);
+    procedure SetBind(AValue: string);
     procedure SetRealName(const Value: string);
     procedure SetHost(const Value: string);
 
@@ -517,6 +521,7 @@ type
     property Title: string read FTitle write FTitle; //A Title name of Server, like 'freenode' or 'libra'
     property Host: string read FHost write SetHost;
     property Port: string read FPort write SetPort;
+    property Bind: string read FBind write SetBind;
     property UseSSL: Boolean read FUseSSL write SetUseSSL;
     property Nicks: TStringList read FNicks write SetNicks; //nick names to use, dd more for if already used nick
     property RealName: string read FRealName write SetRealName;
@@ -1804,6 +1809,7 @@ begin
     Options := Options + [soSSL, soWaitBeforeRead]; //soWaitBeforeRead to fix
 
   Result := TIRCSocketStream.Create(Host, Port, Options);
+  Result.BindAddress := BindAddress;
   Result.ConnectTimeout := -1;
   //Result.ReadTimeout := -1;
   Result.ReadTimeout := 1000;
@@ -2528,6 +2534,12 @@ begin
   FAuthType :=AValue;
 end;
 
+procedure TmnIRCClient.SetBind(AValue: string);
+begin
+  if FBind =AValue then Exit;
+  FBind :=AValue;
+end;
+
 procedure TmnIRCClient.SetMapChannels(AValue: TStringList);
 begin
   if FMapChannels = AValue then
@@ -2814,6 +2826,7 @@ begin
   FConnection.FClient := Self;
   FConnection.FreeOnTerminate := false;
   FConnection.FHost := Host;
+  FConnection.FBindAddress := Bind;
   if Port = '' then
   begin
     if UseSSL then
