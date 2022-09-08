@@ -33,7 +33,7 @@ type
     FPort: string;
     procedure SetBindAddress(AValue: string);
     function GetFullAddress: string;
-    procedure SetFullAddress(AValue: string);
+    procedure SetFullAddress(const AValue: string);
     procedure SetAddress(const Value: string);
     procedure SetPort(const Value: string);
   protected
@@ -332,12 +332,8 @@ end;
 constructor TmnClientSocket.Create(const vAddress: string; vPort: string; vOptions: TmnsoOptions);
 begin
   inherited Create;
-  FAddress := vAddress;
-  FPort := SubStr(FAddress, ':', 1);
-  if FPort <> '' then
-    FAddress := SubStr(FAddress, ':', 0)
-  else
-    FPort := vPort;
+  FPort := vPort;
+  FullAddress := vAddress;
   Options := vOptions;
 end;
 
@@ -362,19 +358,18 @@ begin
   FBindAddress :=AValue;
 end;
 
-procedure TmnClientSocket.SetFullAddress(AValue: string);
-var
-  aPort: string;
+procedure TmnClientSocket.SetFullAddress(const AValue: string);
 begin
   if Connected then
     raise EmnException.Create('Can not change Address value when active');
-  FAddress := AValue;
-  aPort := SubStr(FAddress, ':', 1);
-  if aPort <> '' then
+
+  if Pos(':', AValue) <> 0 then
   begin
-    FPort := aPort;
-    FAddress := SubStr(FAddress, ':', 0)
-  end;
+    FPort := SubStr(AValue, ':', 1);
+    FAddress := SubStr(AValue, ':', 0)
+  end
+  else
+    FAddress := AValue;
 end;
 
 procedure TmnClientSocket.SetPort(const Value: string);
