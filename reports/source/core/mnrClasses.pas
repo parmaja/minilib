@@ -197,11 +197,11 @@ type
     FExcludeSections: TmnrSectionClassIDs;
     FIncludeSections: TmnrSectionClassIDs;
     FName: string;
-    FDataName: string;
     FNumber: Integer;
     FTag: Integer;
     FChain: string;
     FOnDataRequest: TOnRequest;
+    FData: Integer;
     //FDesignerCell: TmnrDesignCell;
     function GetReport: TmnrCustomReport;
     function GetTag: Integer;
@@ -218,7 +218,6 @@ type
     function GetExcludeSections: TmnrSectionClassIDs; virtual;
     function GetIncludeSections: TmnrSectionClassIDs; virtual;
     function GetName: string; virtual;
-    function GetDataName: string; virtual;
     function GetTitle: string; virtual;
     function GetNumber: Integer; virtual;
     function GetLayouts: TmnrLayouts;
@@ -239,10 +238,10 @@ type
     property Prior: TmnrLayout read GetPrior;
 
     property Name: string read GetName;
-    property DataName: string read GetDataName;
     property Number: Integer read GetNumber;
     property Tag: Integer read GetTag;
     property Title: string read GetTitle;
+    property Data: Integer read FData write FData;
     property Chain: string read FChain write FChain;
     property IncludeSections: TmnrSectionClassIDs read GetIncludeSections;
     property ExcludeSections: TmnrSectionClassIDs read GetExcludeSections;
@@ -259,6 +258,14 @@ type
     property Layouts: TmnrLayouts read GetLayouts;
     property Report: TmnrCustomReport read GetReport;
   end;
+
+  TmnrLayoutList = class(TmnObjectList<TmnrLayout>)
+  public
+    constructor Create;
+    function FindLayout(vNumber, vData: Integer): TmnrLayout;
+  end;
+
+
 
   TmnrLayouts = class(TmnrLinkNodes)
   private
@@ -410,6 +417,7 @@ type
     property ByIndex[vIndex: Integer]: TmnrDesignCell read GetByIndex;
     function FindName(const vName: string): TmnrDesignCell;
     procedure EnumByName(List: TList; const vName: string);
+    procedure EnumLayouts(List: TmnrLayoutList);
     procedure ClearSubTotals;
   end;
 
@@ -430,6 +438,7 @@ type
     property ByIndex[vIndex: Integer]: TmnrDesignRow read GetByIndex;
     function FindName(const vName: string): TmnrDesignCell;
     procedure EnumByName(List: TList; const vName: string);
+    procedure EnumLauouts(List: TmnrLayoutList);
     procedure ClearSubTotals;
   end;
 
@@ -585,6 +594,7 @@ type
     function FindDesignCellName(const vName: string): TmnrDesignCell;
     function RefRowsCount: Integer;
     procedure EnumByName(List: TList; const vName: string);
+    procedure EnumLayouts(List: TmnrLayoutList);
 
     property Report: TmnrCustomReport read GetReport;
     property First: TmnrSection read GetFirst;
@@ -653,6 +663,7 @@ type
     FFooterPage: TmnrSection;
     FFooterReport: TmnrSection;
     FDesigningMode: Boolean;
+    FDesignLayouts: TmnrLayoutList;
 
     function GetProfiler: TmnrProfiler;
     function GetReportName: string;
@@ -753,6 +764,7 @@ type
 
     property ReportName: string read GetReportName;
     property ReportCaption: string read GetReportCaption;
+    property DesignLayouts: TmnrLayoutList read FDesignLayouts;
 
     //test purpose only
     function EnumExportRows: TmnrRowList;
@@ -820,6 +832,7 @@ procedure TmnrCustomReport.Load;
 begin
   Clear;
   DoLoad;
+  Sections.EnumLayouts(FDesignLayouts);
 end;
 
 procedure TmnrCustomReport.AcceptNewRow(vRow: TmnrRow; var Accepted: Boolean);
@@ -841,11 +854,13 @@ procedure TmnrCustomReport.Clear;
 begin
   Items.Clear;
   Sections.ClearItems;
+  DesignLayouts.Clear;
 end;
 
 constructor TmnrCustomReport.Create;
 begin
   inherited Create;
+  FDesignLayouts := TmnrLayoutList.Create;
   FDesigningMode := False;
 
   FProfiler := DoCreateProfiler;
@@ -968,6 +983,7 @@ begin
   FItems.Free;
   FreeAndNil(FRowsListIndex);
   FreeAndNil(FProfiler);
+  FreeAndNil(FDesignLayouts);
   inherited;
 end;
 
@@ -2087,6 +2103,19 @@ begin
   end;
 end;
 
+procedure TmnrSections.EnumLayouts(List: TmnrLayoutList);
+var
+  s: TmnrSection;
+begin
+  s := First;
+  while s <> nil do
+  begin
+    s.DesignRows.EnumLauouts(List);
+    s.Sections.EnumLayouts(List);
+    s := s.Next;
+  end;
+end;
+
 function TmnrSections.Find(const vName: string): TmnrSection;
 var
   p: TmnrSection;
@@ -2548,11 +2577,6 @@ begin
   finally
     aCell.Free;
   end;
-end;
-
-function TmnrLayout.GetDataName: string;
-begin
-  Result := FDataName;
 end;
 
 function TmnrLayout.GetExcludeSections: TmnrSectionClassIDs;
@@ -3166,6 +3190,19 @@ begin
   end;
 end;
 
+procedure TmnrDesignRow.EnumLayouts(List: TmnrLayoutList);
+var
+  Cell: TmnrDesignCell;
+begin
+  Cell := First;
+  while Cell <> nil do
+  begin
+    if List.IndexOf(Cell.Layout)=-1 then
+      List.Add(Cell.Layout);
+    Cell := Cell.Next;
+  end;
+end;
+
 function TmnrDesignRow.FindName(const vName: string): TmnrDesignCell;
 begin
   Result := First;
@@ -3272,6 +3309,18 @@ begin
   while aRow<>nil do
   begin
     aRow.EnumByName(List, vName);
+    aRow := aRow.Next;
+  end;
+end;
+
+procedure TmnrDesignRows.EnumLauouts(List: TmnrLayoutList);
+var
+  aRow: TmnrDesignRow;
+begin
+  aRow := First;
+  while aRow<>nil do
+  begin
+    aRow.EnumLayouts(List);
     aRow := aRow.Next;
   end;
 end;
@@ -3570,6 +3619,23 @@ constructor TmnrRowList.Create;
 begin
   inherited Create(False);
 
+end;
+
+{ TmnrLayoutList }
+
+constructor TmnrLayoutList.Create;
+begin
+  inherited Create(False);
+
+end;
+
+function TmnrLayoutList.FindLayout(vNumber, vData: Integer): TmnrLayout;
+begin
+  for var itm in Self do
+    if (itm.Number=vNumber)and(itm.Data=vData) then
+      Exit(itm);
+
+  Result := nil;
 end;
 
 initialization
