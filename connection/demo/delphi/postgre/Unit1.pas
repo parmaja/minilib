@@ -50,15 +50,15 @@ implementation
 procedure TForm1.Button1Click(Sender: TObject);
 var
   Conn: TmncPGConnection;
-  Session: TmncPGTransaction;
+  Transaction: TmncPGTransaction;
   Cmd: TmncPGCommand;
 begin
   Conn := ConnectData;
   try
-    Session := TmncPGTransaction.Create(Conn);
+    Transaction := TmncPGTransaction.Create(Conn);
     try
-      Session.Start;
-      Cmd := TmncPGCommand(Session.CreateCommand);
+      Transaction.Start;
+      Cmd := TmncPGCommand(Transaction.CreateCommand);
       try
         Cmd.SQL.Text := 'insert into companies';
         Cmd.SQL.Add('(id, name, nationality)');
@@ -69,7 +69,7 @@ begin
         Cmd.Params['nationality'].AsInteger := 22;
         Cmd.Execute;
 
-        Session.Commit;
+        Transaction.Commit;
         Cmd.SQL.Text := 'select * from companies';
         Cmd.SQL.Add('where name = ?name');
         Cmd.Prepare;
@@ -83,7 +83,7 @@ begin
 //        Cmd.Free;
       end;
     finally
-//      Session.Free;
+//      Transaction.Free;
     end;
   //  Conn.Disconnect;
   finally
@@ -95,7 +95,7 @@ end;
 procedure TForm1.Button2Click(Sender: TObject);
 var
   Conn: TmncPGConnection;
-  Session: TmncPGTransaction;
+  Transaction: TmncPGTransaction;
   Cmd: TmncPGCommand;
   i: Integer;
   t: Cardinal;
@@ -103,11 +103,11 @@ begin
   Conn := ConnectData;
   SynEdit1.BeginUpdate;
   try
-    Session := TmncPGTransaction.Create(Conn);
+    Transaction := TmncPGTransaction.Create(Conn);
     ListBox1.Items.Clear;
     try
-      Session.Start;
-      Cmd := TmncPGCommand.CreateBy(Session);
+      Transaction.Start;
+      Cmd := TmncPGCommand.CreateBy(Transaction);
       try
         if BinaryResultChk.Checked then
           cmd.ResultFormat := mrfBinary;
@@ -136,7 +136,7 @@ begin
       end;
       SynEdit1.Lines.Add(IntToStr(GetTickCount-t));
     finally
-      Session.Free;
+      Transaction.Free;
     end;
     Conn.Disconnect;
   finally
@@ -148,7 +148,7 @@ end;
 procedure TForm1.Button3Click(Sender: TObject);
 var
   Conn: TmncPGConnection;
-  Session: TmncPGTransaction;
+  Transaction: TmncPGTransaction;
   Cmd: TmncPGCommand;
   i: Integer;
   t: Cardinal;
@@ -162,11 +162,11 @@ begin
     Conn.Password := 'masterkey';
     Conn.Connect;
     Conn.Execute('SET CLIENT_ENCODING TO ''WIN1256'';');
-    Session := TmncPGTransaction.Create(Conn);
+    Transaction := TmncPGTransaction.Create(Conn);
     ListBox1.Items.Clear;
     try
-      Session.Start;
-      Cmd := TmncPGCommand.CreateBy(Session);
+      Transaction.Start;
+      Cmd := TmncPGCommand.CreateBy(Transaction);
       if BinaryResultChk.Checked then
         cmd.ResultFormat := mrfBinary;
 
@@ -233,7 +233,7 @@ begin
       end;
       Cmd.Close;
     finally
-      Session.Free;
+      Transaction.Free;
     end;
     Conn.Disconnect;
   finally
@@ -244,7 +244,7 @@ end;
 procedure TForm1.Button4Click(Sender: TObject);
 var
   Conn: TmncPGConnection;
-  Session: TmncPGTransaction;
+  Transaction: TmncPGTransaction;
   Cmd: TmncPGCursorCommand;
   i: Integer;
   t: Cardinal;
@@ -257,11 +257,11 @@ begin
     Conn.UserName := 'postgres';
     Conn.Password := 'masterkey';
     Conn.Connect;
-    Session := TmncPGTransaction.Create(Conn);
+    Transaction := TmncPGTransaction.Create(Conn);
     ListBox1.Items.Clear;
     try
-      Session.Start;
-      Cmd := TmncPGCursorCommand.CreateBy(Session);
+      Transaction.Start;
+      Cmd := TmncPGCursorCommand.CreateBy(Transaction);
       try
         if BinaryResultChk.Checked then
           cmd.ResultFormat := mrfBinary;
@@ -284,7 +284,7 @@ begin
       end;
       SynEdit1.Lines.Add(IntToStr(GetTickCount-t));
     finally
-      Session.Free;
+      Transaction.Free;
     end;
     Conn.Disconnect;
   finally
@@ -296,16 +296,16 @@ end;
 procedure TForm1.Button5Click(Sender: TObject);
 var
   Conn: TmncPGConnection;
-  Session: TmncPGTransaction;
+  Transaction: TmncPGTransaction;
   Cmd: TmncPGCommand;
   aOID: OID;
 begin
   Conn := ConnectData;
   try
-    Session := TmncPGTransaction.Create(Conn);
+    Transaction := TmncPGTransaction.Create(Conn);
     try
-      Session.Start;
-      Cmd := TmncPGCommand(Session.CreateCommand);
+      Transaction.Start;
+      Cmd := TmncPGCommand(Transaction.CreateCommand);
       try
         aOID := lo_import(Conn.Handle, PChar('c:\worldcitiespop.txt'));
 
@@ -314,13 +314,13 @@ begin
         Cmd.Params['Data'].AsInteger := aOID;
         Cmd.Execute;
 
-        Session.Commit;
+        Transaction.Commit;
 
       finally
         Cmd.Free;
       end;
     finally
-      Session.Free;
+      Transaction.Free;
     end;
   finally
     Conn.Free;
@@ -345,15 +345,15 @@ end;
 procedure TForm1.TreeBtnClick(Sender: TObject);
 var
   Conn: TmncPGConnection;
-  Session: TmncPGTransaction;
+  Transaction: TmncPGTransaction;
   Cmd: TmncPGCommand;
 begin
   Conn := ConnectData;
   try
-    Session := TmncPGTransaction.Create(Conn);
+    Transaction := TmncPGTransaction.Create(Conn);
     try
-      Session.Start;
-      Cmd := TmncPGCommand(Session.CreateCommand);
+      Transaction.Start;
+      Cmd := TmncPGCommand(Transaction.CreateCommand);
       try
         Cmd.SQL.Text := 'insert into companies';
         Cmd.SQL.Add('(id, name, nationality)');
@@ -364,7 +364,7 @@ begin
         Cmd.Params['nationality'].AsInteger := 22;
         Cmd.Execute;
 
-        Session.Commit;
+        Transaction.Commit;
         Cmd.SQL.Text := 'select * from companies';
         Cmd.SQL.Add('where name = ?name');
         Cmd.Prepare;
@@ -378,7 +378,7 @@ begin
         Cmd.Free;
       end;
     finally
-      Session.Free;
+      Transaction.Free;
     end;
   finally
     Conn.Free;

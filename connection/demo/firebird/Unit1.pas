@@ -52,7 +52,7 @@ end;
 procedure TForm1.Button2Click(Sender: TObject);
 var
   Conn: TmncFBConnection;
-  Session: TmncFBTransaction;
+  Transaction: TmncFBTransaction;
   Cmd: TmncFBCommand;
 begin
   ListBox1.Clear;
@@ -63,10 +63,10 @@ begin
     Conn.UserName := 'sysdba';
     Conn.Password := 'masterkey';
     Conn.Connect;
-    Session := TmncFBTransaction.Create(Conn);
+    Transaction := TmncFBTransaction.Create(Conn);
     try
-      Session.Start;
-      Cmd := TmncFBCommand.CreateBy(Session);
+      Transaction.Start;
+      Cmd := TmncFBCommand.CreateBy(Transaction);
       try
         Cmd.SQL.Text := 'select * from EMPLOYEE';
         Cmd.SQL.Add('where EMP_NO < ?NO');
@@ -84,7 +84,7 @@ begin
         Cmd.Free;
       end;
     finally
-      Session.Free;
+      Transaction.Free;
     end;
     Conn.Disconnect;
   finally
@@ -95,7 +95,7 @@ end;
 procedure TForm1.Button3Click(Sender: TObject);
 var
   Conn: TmncFBConnection;
-  Session: TmncFBTransaction;
+  Transaction: TmncFBTransaction;
   Cmd: TmncFBCommand;
 begin
   ListBox1.Clear;
@@ -106,10 +106,10 @@ begin
     Conn.UserName := 'sysdba';
     Conn.Password := 'masterkey';
     Conn.Connect;
-    Session := TmncFBTransaction.Create(Conn);
+    Transaction := TmncFBTransaction.Create(Conn);
     try
-      Session.Start;
-      Cmd := TmncFBCommand.CreateBy(Session);
+      Transaction.Start;
+      Cmd := TmncFBCommand.CreateBy(Transaction);
       try
         Cmd.SQL.Text := 'select * from EMPLOYEE';
         Cmd.Prepare;
@@ -125,7 +125,7 @@ begin
         Cmd.Free;
       end;
     finally
-      Session.Free;
+      Transaction.Free;
     end;
     Conn.Disconnect;
   finally
@@ -136,7 +136,7 @@ end;
 procedure TForm1.Button4Click(Sender: TObject);
 var
   Conn: TmncFBConnection;
-  Session: TmncFBTransaction;
+  Transaction: TmncFBTransaction;
   Cmd: TmncFBCommand;
 begin
   Conn := TmncFBConnection.Create;
@@ -146,9 +146,9 @@ begin
     Conn.UserName := 'sysdba';
     Conn.Password := 'masterkey';
     Conn.Connect;
-    Session := TmncFBTransaction.Create(Conn);
+    Transaction := TmncFBTransaction.Create(Conn);
     try
-      Cmd := TmncFBCommand.CreateBy(Session);
+      Cmd := TmncFBCommand.CreateBy(Transaction);
       Cmd.SQL.Text := 'select * from EMPLOYEE';
 //      Cmd.SQL.Add('where EMPLOYEE = ?EMPLOYEE');
       Cmd.Prepare;
@@ -163,7 +163,7 @@ begin
       end;
       Cmd.Close;
     finally
-      Session.Free;
+      Transaction.Free;
     end;
     Conn.Disconnect;
   finally
@@ -174,7 +174,7 @@ end;
 procedure TForm1.Button1Click(Sender: TObject);
 var
   Conn: TmncFBConnection;
-  Session: TmncFBTransaction;
+  Transaction: TmncFBTransaction;
   Cmd: TmncFBCommand;
 begin
   Conn := TmncFBConnection.Create;
@@ -184,10 +184,10 @@ begin
     Conn.UserName := 'sysdba';
     Conn.Password := 'masterkey';
     Conn.Connect;
-    Session := TmncFBTransaction.Create(Conn);
+    Transaction := TmncFBTransaction.Create(Conn);
     try
-      Session.Start;
-      Cmd := TmncFBCommand.CreateBy(Session);
+      Transaction.Start;
+      Cmd := TmncFBCommand.CreateBy(Transaction);
       try
         Cmd.SQL.Text := 'insert into categories';
         Cmd.SQL.Add('(CatID, CatName)');
@@ -201,10 +201,10 @@ begin
         Cmd.Params['CatID'].AsInteger := 11;
         Cmd.Params['CatName'].AsString := 'Hamed2';
         Cmd.Execute;
-        Session.Commit;
+        Transaction.Commit;
         Cmd.Close;
 
-        Session.Start;
+        Transaction.Start;
         Cmd.SQL.Text := 'select * from categories';
         Cmd.SQL.Add('where CatID = ?CatID');
         Cmd.Prepare;
@@ -217,7 +217,7 @@ begin
         Cmd.Free;
       end;
     finally
-      Session.Free;
+      Transaction.Free;
     end;
     Conn.Disconnect;
   finally
@@ -228,4 +228,3 @@ end;
 initialization
   {$I unit1.lrs}
 end.
-

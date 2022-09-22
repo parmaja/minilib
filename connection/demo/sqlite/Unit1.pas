@@ -36,18 +36,18 @@ implementation
 procedure TForm1.Button1Click(Sender: TObject);
 var
   Conn: TmncSQLiteConnection;
-  Session: TmncSQliteTransaction;
+  Transaction: TmncSQliteTransaction;
   Cmd: TmncSQLiteCommand;
 begin
   Conn := TmncSQLiteConnection.Create;
   try
     Conn.Resource := ExpandFileName(ExtractFilePath(Application.ExeName) + '..\data\cars.sqlite');
     Conn.Connect;
-    Session := TmncSQliteTransaction.Create(Conn);
+    Transaction := TmncSQliteTransaction.Create(Conn);
     try
-      Session.Start;
+      Transaction.Start;
       Cmd :=  TmncSQLiteCommand.Create;
-      Cmd.Session := Session;
+      Cmd.Transaction := Transaction;
       try
         
         Cmd.SQL.Text := 'insert into companies';
@@ -64,7 +64,7 @@ begin
         Cmd.Params['nationality'] := 222;
         Cmd.Execute;
         Cmd.Close;
-        Session.Commit;}
+        Transaction.Commit;}
 
 
         {Cmd.SQL.Text := 'select * from companies';
@@ -80,7 +80,7 @@ begin
 //        Cmd.Free;
       end;
     finally
-//      Session.Free;
+//      Transaction.Free;
     end;
   //  Conn.Disconnect;
   finally
@@ -96,7 +96,7 @@ end;
 procedure TForm1.SelectBtnClick(Sender: TObject);
 var
   Conn: TmncSQLiteConnection;
-  Session: TmncSQliteTransaction;
+  Transaction: TmncSQliteTransaction;
   Cmd: TmncSQLiteCommand;
   c: Currency;
 begin
@@ -105,10 +105,10 @@ begin
   try
     Conn.Resource := ExpandFileName(ExtractFilePath(Application.ExeName) + '..\data\cars.sqlite');
     Conn.Connect;
-    Session := TmncSQliteTransaction.Create(Conn);
-    Session.Start;
+    Transaction := TmncSQliteTransaction.Create(Conn);
+    Transaction.Start;
     try
-      Cmd := Session.CreateCommand as TmncSQLiteCommand;
+      Cmd := Transaction.CreateCommand as TmncSQLiteCommand;
       Cmd.SQL.Text := 'select * from companies';
       //Cmd.SQL.Add('where  = ?name');
          Cmd.Prepare;
@@ -123,7 +123,7 @@ begin
       end;
       Cmd.Close;
     finally
-      Session.Free;
+      Transaction.Free;
     end;
     Conn.Disconnect;
   finally
@@ -134,8 +134,8 @@ end;
 procedure TForm1.SelectDSBtnClick(Sender: TObject);
 var
   Conn: TmncSQLiteConnection;
-  Session1: TmncSQliteTransaction;
-  Session2: TmncSQliteTransaction;
+  Transaction1: TmncSQliteTransaction;
+  Transaction2: TmncSQliteTransaction;
   Cmd1, Cmd2: TmncSQLiteCommand;
   c: Currency;
 begin
@@ -144,10 +144,10 @@ begin
   try
     Conn.Resource := ExpandFileName(ExtractFilePath(Application.ExeName) + '..\data\cars.sqlite');
     Conn.Connect;
-    Session1 := TmncSQliteTransaction.Create(Conn);
-    Session1.Start;
+    Transaction1 := TmncSQliteTransaction.Create(Conn);
+    Transaction1.Start;
     try
-      Cmd1 := Session1.CreateCommand as TmncSQLiteCommand;
+      Cmd1 := Transaction1.CreateCommand as TmncSQLiteCommand;
       Cmd1.SQL.Text := 'select * from companies';
       Cmd1.SQL.Add('where name = ?name');
       Cmd1.Prepare;
@@ -160,11 +160,11 @@ begin
           Cmd1.Next;
         end;
       end;
-      //Start Session2
-      Session2 := TmncSQliteTransaction.Create(Conn);
-  //    Session2.Start;
+      //Start Transaction2
+      Transaction2 := TmncSQliteTransaction.Create(Conn);
+  //    Transaction2.Start;
       try
-        Cmd2 := Session2.CreateCommand as TmncSQLiteCommand;
+        Cmd2 := Transaction2.CreateCommand as TmncSQLiteCommand;
         Cmd2.SQL.Text := 'select * from companies';
         Cmd2.SQL.Add('where name = ?name');
            Cmd2.Prepare;
@@ -179,14 +179,14 @@ begin
         end;
         Cmd2.Close;
       finally
-//        Session2.Commit;
-        Session2.Free;
+//        Transaction2.Commit;
+        Transaction2.Free;
       end;
-      //End Session2
+      //End Transaction2
       Cmd1.Close;
     finally
-      Session1.Commit;
-      Session1.Free;
+      Transaction1.Commit;
+      Transaction1.Free;
     end;
     Conn.Disconnect;
   finally
@@ -197,7 +197,7 @@ end;
 procedure TForm1.Button2Click(Sender: TObject);
 var
   Conn: TmncSQLiteConnection;
-  Session: TmncSQliteTransaction;
+  Transaction: TmncSQliteTransaction;
   Cmd: TmncSQLiteCommand;
   s: TStringStream;
   im: string;
@@ -207,9 +207,9 @@ begin
     Conn.Resource := ExpandFileName(ExtractFilePath(Application.ExeName) + '..\data\cars.sqlite');
     Conn.AutoStart := True;
     Conn.Connect;
-    Session := TmncSQliteTransaction.Create(Conn);
+    Transaction := TmncSQliteTransaction.Create(Conn);
     try
-      Cmd := TmncSQLiteCommand.CreateBy(Session);
+      Cmd := TmncSQLiteCommand.CreateBy(Transaction);
       Cmd.SQL.Text := 'select * from companies';
 //      Cmd.SQL.Add('where name = ?name');
       Cmd.Prepare;
@@ -231,7 +231,7 @@ begin
       end;
       Cmd.Close;
     finally
-      Session.Free;
+      Transaction.Free;
     end;
     Conn.Disconnect;
   finally

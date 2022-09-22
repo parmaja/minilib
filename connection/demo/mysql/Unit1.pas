@@ -45,7 +45,7 @@ implementation
 procedure TForm1.Button1Click(Sender: TObject);
 var
   Conn: TmncMySQLConnection;
-  Session: TmncMySQLSession;
+  Transaction: TmncMySQLTransaction;
   Cmd: TmncMySQLCommand;
 begin
   Conn := TmncMySQLConnection.Create;
@@ -54,10 +54,10 @@ begin
     Conn.UserName := 'test';
     Conn.Password := 'test'; //not a real password man!
     Conn.Connect;
-    Session := TmncMySQLSession.Create(Conn);
+    Transaction := TmncMySQLTransaction.Create(Conn);
     try
-      Session.Start;
-      Cmd :=  TmncMySQLCommand.Create(Session);
+      Transaction.Start;
+      Cmd :=  TmncMySQLCommand.Create(Transaction);
       try
         
         Cmd.SQL.Text := 'insert into companies';
@@ -80,7 +80,7 @@ begin
         Cmd.Free;
       end;
     finally
-      Session.Free;
+      Transaction.Free;
     end;
   finally
     Conn.Free;
@@ -90,7 +90,7 @@ end;
 procedure TForm1.CreateBtn1Click(Sender: TObject);
 var
   Conn: TmncMySQLConnection;
-  Session: TmncMySQLSession;
+  Transaction: TmncMySQLTransaction;
   Cmd: TmncMySQLCommand;
 begin
   Conn := TmncMySQLConnection.Create;
@@ -144,7 +144,7 @@ end;
 procedure TForm1.SelectBtnClick(Sender: TObject);
 var
   Conn: TmncMySQLConnection;
-  Session: TmncMySQLSession;
+  Transaction: TmncMySQLTransaction;
   Cmd: TmncMySQLCommand;
   field: string;
 begin
@@ -155,11 +155,11 @@ begin
     Conn.UserName := 'test';
     Conn.Password := 'test'; //not a real password man!
     Conn.Connect;
-    Session := TmncMySQLSession.Create(Conn);
-    Session.Start;
+    Transaction := TmncMySQLTransaction.Create(Conn);
+    Transaction.Start;
     try
       field := 'money';
-      Cmd := Session.CreateCommand as TmncMySQLCommand;
+      Cmd := Transaction.CreateCommand as TmncMySQLCommand;
       Cmd.SQL.Text := 'select '+field+' from companies';
       //Cmd.SQL.Add('where ID = ?ID');
       Cmd.Prepare;
@@ -176,7 +176,7 @@ begin
       end;
       Cmd.Close;
     finally
-      Session.Free;
+      Transaction.Free;
     end;
     Conn.Disconnect;
   finally
@@ -187,8 +187,8 @@ end;
 procedure TForm1.SelectDSBtnClick(Sender: TObject);
 var
   Conn: TmncMySQLConnection;
-  Session1: TmncMySQLSession;
-  Session2: TmncMySQLSession;
+  Transaction1: TmncMySQLTransaction;
+  Transaction2: TmncMySQLTransaction;
   Cmd1, Cmd2: TmncMySQLCommand;
   c: Currency;
 begin
@@ -197,10 +197,10 @@ begin
   try
     Conn.Resource := ExpandFileName(ExtractFilePath(Application.ExeName) + '..\data\cars.MySQL');
     Conn.Connect;
-    Session1 := TmncMySQLSession.Create(Conn);
-    Session1.Start;
+    Transaction1 := TmncMySQLTransaction.Create(Conn);
+    Transaction1.Start;
     try
-      Cmd1 := Session1.CreateCommand as TmncMySQLCommand;
+      Cmd1 := Transaction1.CreateCommand as TmncMySQLCommand;
       Cmd1.SQL.Text := 'select * from companies';
       Cmd1.SQL.Add('where name = ?name');
       Cmd1.Prepare;
@@ -213,11 +213,11 @@ begin
           Cmd1.Next;
         end;
       end;
-      //Start Session2
-      Session2 := TmncMySQLSession.Create(Conn);
-  //    Session2.Start;
+      //Start Transaction2
+      Transaction2 := TmncMySQLTransaction.Create(Conn);
+  //    Transaction2.Start;
       try
-        Cmd2 := Session2.CreateCommand as TmncMySQLCommand;
+        Cmd2 := Transaction2.CreateCommand as TmncMySQLCommand;
         Cmd2.SQL.Text := 'select * from companies';
         Cmd2.SQL.Add('where name = ?name');
            Cmd2.Prepare;
@@ -232,14 +232,14 @@ begin
         end;
         Cmd2.Close;
       finally
-//        Session2.Commit;
-        Session2.Free;
+//        Transaction2.Commit;
+        Transaction2.Free;
       end;
-      //End Session2
+      //End Transaction2
       Cmd1.Close;
     finally
-      Session1.Commit;
-      Session1.Free;
+      Transaction1.Commit;
+      Transaction1.Free;
     end;
     Conn.Disconnect;
   finally
@@ -250,7 +250,7 @@ end;
 procedure TForm1.Button2Click(Sender: TObject);
 var
   Conn: TmncMySQLConnection;
-  Session: TmncMySQLSession;
+  Transaction: TmncMySQLTransaction;
   Cmd: TmncMySQLCommand;
   s: TStringStream;
   im: string;
@@ -260,9 +260,9 @@ begin
     Conn.Resource := ExpandFileName(ExtractFilePath(Application.ExeName) + '..\data\cars.MySQL');
     Conn.AutoStart := True;
     Conn.Connect;
-    Session := TmncMySQLSession.Create(Conn);
+    Transaction := TmncMySQLTransaction.Create(Conn);
     try
-      Cmd := TmncMySQLCommand.CreateBy(Session);
+      Cmd := TmncMySQLCommand.CreateBy(Transaction);
       Cmd.SQL.Text := 'select * from companies';
 //      Cmd.SQL.Add('where name = ?name');
       Cmd.Prepare;
@@ -284,7 +284,7 @@ begin
       end;
       Cmd.Close;
     finally
-      Session.Free;
+      Transaction.Free;
     end;
     Conn.Disconnect;
   finally

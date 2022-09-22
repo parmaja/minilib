@@ -21,7 +21,7 @@ type
   public
     ORM: TmncORM;
     Connection: TmncSQLConnection;
-    Session: TmncSQLSession;
+    Transaction: TmncSQLTransaction;
     InitSQL: TStringList;
     constructor Create;
     destructor Destroy; override;
@@ -106,7 +106,7 @@ end;
 
 destructor TEngine.Destroy;
 begin
-  FreeAndNil(Session);
+  FreeAndNil(Transaction);
   FreeAndNil(Connection);
   FreeAndNil(InitSQL);
   FreeAndNil(ORM);
@@ -117,7 +117,7 @@ procedure TEngine.PostExample;
 var
   CMD: TmncSQLCommand;
 begin
-  CMD := Session.CreateCommand;
+  CMD := Transaction.CreateCommand;
   try
     CMD.Options := CMD.Options + [cmoTruncate];
     CMD.SQL.Text := 'insert into Companies(ID, Name, Address) values(?ID, ?Name, ?Address)';
@@ -197,11 +197,11 @@ begin
     end;
     Engine.Connection.Connect;
     LogEdit.Lines.Add(Engine.Connection.Resource + ' is Connected');
-    Engine.Session := Engine.Connection.CreateSession;
-    Engine.Session.Start;
+    Engine.Transaction := Engine.Connection.CreateTransaction;
+    Engine.Transaction.Start;
     if CreateIt then
-      Engine.Session.ExecuteScript(Engine.InitSQL);
-    Engine.Session.Commit(True);
+      Engine.Transaction.ExecuteScript(Engine.InitSQL);
+    Engine.Transaction.Commit(True);
   except
     on E: EXception do
     begin
@@ -217,7 +217,7 @@ var
 begin
   if Engine = nil then
     exit;
-  CMD := Engine.Session.CreateCommand;
+  CMD := Engine.Transaction.CreateCommand;
   try
     CMD.Options := CMD.Options + [cmoTruncate];
     CMD.SQL.Text := 'insert into Companies(ID, Name, Address) values(?ID, ?Name, ?Address)';
@@ -239,7 +239,7 @@ var
 begin
   if Engine = nil then
     exit;
-  CMD := Engine.Session.CreateCommand;
+  CMD := Engine.Transaction.CreateCommand;
   try
     CMD.SQL.Text := 'delete from Companies where ID=?ID';
     CMD.Prepare;
@@ -259,7 +259,7 @@ var
 begin
   if Engine = nil then
     exit;
-  CMD := Engine.Session.CreateCommand;
+  CMD := Engine.Transaction.CreateCommand;
   try
     CMD.SQL.Text := SynEdit.Text;
     CMD.Prepare;
@@ -303,7 +303,7 @@ var
 begin
   if Engine = nil then
     exit;
-  CMD := Engine.Session.CreateCommand;
+  CMD := Engine.Transaction.CreateCommand;
   try
     CMD.SQL.Text := 'select * from Companies';
     //CMD.SQL.Text := 'select * from Companies where ID=?ID';
@@ -412,4 +412,3 @@ begin
 end;
 
 end.
-

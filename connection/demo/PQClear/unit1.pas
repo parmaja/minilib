@@ -52,7 +52,7 @@ begin
 
     //LogWrite(aDB.GetVersion);
 
-    aTR := aDB.CreateSession as TmncPGTransaction;
+    aTR := aDB.CreateTransaction as TmncPGTransaction;
     try
       aTR.Start;
       aCmd := aTR.CreateCommand as TmncPGCommand;
@@ -82,4 +82,3 @@ begin
 end;
 
 end.
-

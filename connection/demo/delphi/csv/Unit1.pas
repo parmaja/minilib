@@ -27,18 +27,18 @@ implementation
 procedure TForm1.Button1Click(Sender: TObject);
 var
   Conn: TmncCSVConnection;
-  Session: TmncCSVSession;
+  Transaction: TmncCSVTransaction;
   Cmd: TmncCSVCommand;
   aStream: TStream;
 begin
   Conn := TmncCSVConnection.Create;
   try
     Conn.Connect;
-    Session := TmncCSVSession.Create(Conn);
+    Transaction := TmncCSVTransaction.Create(Conn);
     try
       aStream := TFileStream.Create('c:\test1.csv', fmCreate);
       try
-        Cmd := TmncCSVCommand.Create(Session, aStream, csvmWrite);
+        Cmd := TmncCSVCommand.Create(Transaction, aStream, csvmWrite);
         Cmd.EOFOnEmpty := True;
         Cmd.Fields.Add('Name');
         Cmd.Fields.Add('Address');
@@ -54,7 +54,7 @@ begin
         aStream.Free;
       end;
     finally
-      Session.Free;
+      Transaction.Free;
     end;
     Conn.Disconnect;
   finally
@@ -66,7 +66,7 @@ end;
 procedure TForm1.Button2Click(Sender: TObject);
 var
   Conn: TmncCSVConnection;
-  Session: TmncCSVSession;
+  Transaction: TmncCSVTransaction;
   Cmd: TmncCSVCommand;
   aStream: TStream;
 begin
@@ -74,15 +74,15 @@ begin
   Conn := TmncCSVConnection.Create;
   try
     Conn.Connect;
-    Session := TmncCSVSession.Create(Conn);
+    Transaction := TmncCSVTransaction.Create(Conn);
     //if no header
     {$ifdef NO_HEADER}
-    Session.HaveHeader := False;
+    Transaction.HaveHeader := False;
     {$endif}
     try
       aStream := TFileStream.Create('c:\test1.csv', fmOpenRead);
       try
-        Cmd := TmncCSVCommand.Create(Session, aStream, csvmRead);
+        Cmd := TmncCSVCommand.Create(Transaction, aStream, csvmRead);
     {$ifdef NO_HEADER}
         Cmd.Fields.Add('Name');
         Cmd.Fields.Add('Address');
@@ -98,7 +98,7 @@ begin
         aStream.Free;
       end;
     finally
-      Session.Free;
+      Transaction.Free;
     end;
     Conn.Disconnect;
   finally
@@ -107,4 +107,3 @@ begin
 end;
 
 end.
-

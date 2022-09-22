@@ -28,16 +28,16 @@ implementation
 procedure TForm1.Button1Click(Sender: TObject);
 var
   Conn: TmncSQLiteConnection;
-  Session: TmncSQliteTransaction;
+  Transaction: TmncSQliteTransaction;
   Cmd: TmncSQLiteCommand;
 begin
   Conn := TmncSQLiteConnection.Create;
   try
     Conn.Resource := ExpandFileName(ExtractFilePath(Application.ExeName) + '..\..\data\cars.sqlite');
     Conn.Connect;
-    Session := TmncSQliteTransaction.Create(Conn);
+    Transaction := TmncSQliteTransaction.Create(Conn);
     try
-      Session.Start;
+      Transaction.Start;
       Cmd :=  TmncSQLiteCommand.Create;
       try
         
@@ -55,7 +55,7 @@ begin
         Cmd.Params['nationality'] := 222;
         Cmd.Execute;
         Cmd.Close;
-        Session.Commit;
+        Transaction.Commit;
         Cmd.SQL.Text := 'select * from companies';
         Cmd.SQL.Add('where name = ?name');
         Cmd.Prepare;
@@ -69,7 +69,7 @@ begin
 //        Cmd.Free;
       end;
     finally
-//      Session.Free;
+//      Transaction.Free;
     end;
   //  Conn.Disconnect;
   finally
@@ -81,7 +81,7 @@ end;
 procedure TForm1.Button2Click(Sender: TObject);
 var
   Conn: TmncSQLiteConnection;
-  Session: TmncSQliteTransaction;
+  Transaction: TmncSQliteTransaction;
   Cmd: TmncSQLiteCommand;
   s: TStringStream;
   im: string;
@@ -91,9 +91,9 @@ begin
     Conn.Resource := ExpandFileName(ExtractFilePath(Application.ExeName) + '..\..\data\cars.sqlite');
     Conn.AutoStart := True;
     Conn.Connect;
-    Session := TmncSQliteTransaction.Create(Conn);
+    Transaction := TmncSQliteTransaction.Create(Conn);
     try
-      Cmd := TmncSQLiteCommand.CreateBy(Session);
+      Cmd := TmncSQLiteCommand.CreateBy(Transaction);
       Cmd.SQL.Text := 'select * from companies';
 //      Cmd.SQL.Add('where name = ?name');
       Cmd.Prepare;
@@ -115,7 +115,7 @@ begin
       end;
       Cmd.Close;
     finally
-      Session.Free;
+      Transaction.Free;
     end;
     Conn.Disconnect;
   finally
