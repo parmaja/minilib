@@ -49,7 +49,7 @@ type
     constructor Create; override;
     class function Capabilities: TmncCapabilities; override;
     class function EngineName: string; override;
-    function CreateSession: TmncSQLSession; overload; override; 
+    function CreateTransaction: TmncSQLTransaction; overload; override; 
     procedure Interrupt;
     procedure SetCharsetName(Charset: string);
     procedure SetStorageEngine(vName: string);
@@ -68,9 +68,9 @@ type
     property MultiCursors: Boolean read FMultiCursors write SetMultiCursors;
   end;
 
-  { TmncMySQLSession }
+  { TmncMySQLTransaction }
 
-  TmncMySQLSession = class(TmncSQLSession)
+  TmncMySQLTransaction = class(TmncSQLTransaction)
   private
     function GetConnection: TmncMySQLConnection;
     procedure SetConnection(const AValue: TmncMySQLConnection);
@@ -78,7 +78,7 @@ type
     //TODO Check Setting Connection when no database selected
     procedure DoInit; override;
     procedure DoStart; override;
-    procedure DoStop(How: TmncSessionAction; Retaining: Boolean); override;
+    procedure DoStop(How: TmncTransactionAction; Retaining: Boolean); override;
     function GetActive: Boolean; override;
     function InternalCreateCommand: TmncSQLCommand; override;
   public
@@ -203,9 +203,9 @@ type
     function FetchColumns: Boolean; //return false if no data
     procedure FetchValues;
     procedure ApplyParams;
-    function GetSession: TmncMySQLSession;
+    function GetTransaction: TmncMySQLTransaction;
     procedure SetReadOnly(AValue: Boolean);
-    procedure SetSession(const AValue: TmncMySQLSession);
+    procedure SetTransaction(const AValue: TmncMySQLTransaction);
   protected
     procedure CheckError(Error:longint);
     procedure DoPrepare; override;
@@ -225,7 +225,7 @@ type
 
   public
     property Connection: TmncMySQLConnection read GetConnection;
-    property Session: TmncMySQLSession read GetSession write SetSession;
+    property Transaction: TmncMySQLTransaction read GetTransaction write SetTransaction;
     procedure Clear; override;
     property Statment: PMYSQL_STMT read FStatment;
     property Columns: TmncMySQLColumns read GetColumns;
@@ -470,9 +470,9 @@ begin
   Result := 'MySQL';
 end;
 
-function TmncMySQLConnection.CreateSession: TmncSQLSession;
+function TmncMySQLConnection.CreateTransaction: TmncSQLTransaction;
 begin
-  Result := TmncMySQLSession.Create(Self);
+  Result := TmncMySQLTransaction.Create(Self);
 end;
 
 procedure TmncMySQLConnection.Interrupt;
@@ -501,8 +501,8 @@ var
   r: Integer;
 begin
   CheckActive;
-  if Sessions.IsAnyActive then
-    RaiseError(-1, 'You cant select database if you have opened sessions');
+  if Transactions.IsAnyActive then
+    RaiseError(-1, 'You cant select database if you have opened Transactions');
   r :=  mysql_select_db(FDBHandle, PAnsiChar(vName));
   Result := r = 0;
   if not Result then
@@ -517,15 +517,15 @@ end;
 function TmncMySQLConnection.IsDatabaseExists(vName: string): Boolean;
 var
   aConn: TmncSQLConnection;
-  aSession: TmncSQLSession;
+  aTransaction: TmncSQLTransaction;
   aCMD: TmncSQLCommand;
 begin
   aConn := Clone('mysql', False);
   try
     aConn.Connect;
-    aSession := aConn.CreateSession;
-    aSession.Start;
-    aCMD := aSession.CreateCommand;
+    aTransaction := aConn.CreateTransaction;
+    aTransaction.Start;
+    aCMD := aTransaction.CreateCommand;
     try
       aCMD.SQL.Text := 'select Count(*) as Result from information_schema.schemata where schema_name = '''+ vName + '''';
       if aCMD.Execute then
@@ -534,7 +534,7 @@ begin
       end;
     finally
       aCMD.Free;
-      aSession.Free;
+      aTransaction.Free;
     end;
   finally
     aConn.Free;
@@ -618,30 +618,30 @@ begin
   FDBHandle := nil;
 end;
 
-{ TmncMySQLSession }
+{ TmncMySQLTransaction }
 
-destructor TmncMySQLSession.Destroy;
+destructor TmncMySQLTransaction.Destroy;
 begin
   inherited;
 end;
 
-function TmncMySQLSession.InternalCreateCommand: TmncSQLCommand;
+function TmncMySQLTransaction.InternalCreateCommand: TmncSQLCommand;
 begin
   Result := TmncMySQLCommand.Create;
 end;
 
-procedure TmncMySQLSession.Execute(SQL: string);
+procedure TmncMySQLTransaction.Execute(SQL: string);
 begin
   Connection.Execute(SQL);
 end;
 
-procedure TmncMySQLSession.DoStart;
+procedure TmncMySQLTransaction.DoStart;
 begin
   //Execute('SET TRANSACTION ISOLATION LEVEL READ COMMITTED');
   Execute('BEGIN');
 end;
 
-procedure TmncMySQLSession.DoStop(How: TmncSessionAction; Retaining: Boolean);
+procedure TmncMySQLTransaction.DoStop(How: TmncTransactionAction; Retaining: Boolean);
 begin
   case How of
     sdaCommit: Execute('COMMIT');
@@ -656,17 +656,17 @@ begin
   CheckError(mysql_query(FDBHandle, PAnsiChar(Command)));
 end;
 
-function TmncMySQLSession.GetActive: Boolean;
+function TmncMySQLTransaction.GetActive: Boolean;
 begin
   Result:= inherited GetActive;
 end;
 
-constructor TmncMySQLSession.Create(vConnection: TmncConnection);
+constructor TmncMySQLTransaction.Create(vConnection: TmncConnection);
 begin
   inherited;
 end;
 
-function TmncMySQLSession.GetConnection: TmncMySQLConnection;
+function TmncMySQLTransaction.GetConnection: TmncMySQLConnection;
 begin
   Result := inherited Connection as TmncMySQLConnection;
 end;
@@ -677,7 +677,7 @@ begin
   MySQLLib.Load;
 end;
 
-procedure TmncMySQLSession.SetConnection(const AValue: TmncMySQLConnection);
+procedure TmncMySQLTransaction.SetConnection(const AValue: TmncMySQLConnection);
 begin
   inherited Connection := AValue;
 end;
@@ -687,7 +687,7 @@ begin
   if FExclusive <> AValue then
   begin
     if Active then
-      raise EmncException.Create('You can not set Exclusive when session active');
+      raise EmncException.Create('You can not set Exclusive when Transaction active');
     FExclusive := AValue;
   end;
 end;
@@ -712,7 +712,7 @@ begin
   if FReadCommited <> AValue then
   begin
     if Active then
-      raise EmncException.Create('You can not set ReadCommited when session active');
+      raise EmncException.Create('You can not set ReadCommited when Transaction active');
     FReadCommited := AValue;
   end;
 end;
@@ -778,7 +778,7 @@ begin
   end;
 end;
 
-procedure TmncMySQLSession.DoInit;
+procedure TmncMySQLTransaction.DoInit;
 begin
 end;
 
@@ -799,9 +799,9 @@ begin
   end;
 end;
 
-function TmncMySQLCommand.GetSession: TmncMySQLSession;
+function TmncMySQLCommand.GetTransaction: TmncMySQLTransaction;
 begin
-  Result := inherited Session as TmncMySQLSession;
+  Result := inherited Transaction as TmncMySQLTransaction;
 end;
 
 procedure TmncMySQLCommand.SetReadOnly(AValue: Boolean);
@@ -813,9 +813,9 @@ begin
   end;
 end;
 
-procedure TmncMySQLCommand.SetSession(const AValue: TmncMySQLSession);
+procedure TmncMySQLCommand.SetTransaction(const AValue: TmncMySQLTransaction);
 begin
-  inherited Session := AValue;
+  inherited Transaction := AValue;
 end;
 
 procedure TmncMySQLCommand.Clear;
@@ -1085,7 +1085,7 @@ end;
 
 procedure TmncMySQLCommand.DoRollback;
 begin
-  Session.Rollback;
+  Transaction.Rollback;
 end;
 
 function TmncMySQLCommand.CreateFields(vColumns: TmncColumns): TmncFields;
@@ -1118,7 +1118,7 @@ end;
 
 procedure TmncMySQLCommand.DoCommit;
 begin
-  Session.Commit;
+  Transaction.Commit;
 end;
 
 function TmncMySQLCommand.FetchColumns: Boolean;
@@ -1307,7 +1307,7 @@ end;
 
 function TmncMySQLCommand.GetConnection: TmncMySQLConnection;
 begin
-  Result := Session.Connection as TmncMySQLConnection;
+  Result := Transaction.Connection as TmncMySQLConnection;
 end;
 
 function TmncMySQLCommand.GetBinds: TmncMySQLBinds;

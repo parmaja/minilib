@@ -36,14 +36,14 @@ implementation
 procedure TForm1.Button1Click(Sender: TObject);
 var
   Conn: TmncSQLiteConnection;
-  Session: TmncSQLiteSession;
+  Session: TmncSQliteTransaction;
   Cmd: TmncSQLiteCommand;
 begin
   Conn := TmncSQLiteConnection.Create;
   try
     Conn.Resource := ExpandFileName(ExtractFilePath(Application.ExeName) + '..\data\cars.sqlite');
     Conn.Connect;
-    Session := TmncSQLiteSession.Create(Conn);
+    Session := TmncSQliteTransaction.Create(Conn);
     try
       Session.Start;
       Cmd :=  TmncSQLiteCommand.Create;
@@ -96,7 +96,7 @@ end;
 procedure TForm1.SelectBtnClick(Sender: TObject);
 var
   Conn: TmncSQLiteConnection;
-  Session: TmncSQLiteSession;
+  Session: TmncSQliteTransaction;
   Cmd: TmncSQLiteCommand;
   c: Currency;
 begin
@@ -105,7 +105,7 @@ begin
   try
     Conn.Resource := ExpandFileName(ExtractFilePath(Application.ExeName) + '..\data\cars.sqlite');
     Conn.Connect;
-    Session := TmncSQLiteSession.Create(Conn);
+    Session := TmncSQliteTransaction.Create(Conn);
     Session.Start;
     try
       Cmd := Session.CreateCommand as TmncSQLiteCommand;
@@ -134,8 +134,8 @@ end;
 procedure TForm1.SelectDSBtnClick(Sender: TObject);
 var
   Conn: TmncSQLiteConnection;
-  Session1: TmncSQLiteSession;
-  Session2: TmncSQLiteSession;
+  Session1: TmncSQliteTransaction;
+  Session2: TmncSQliteTransaction;
   Cmd1, Cmd2: TmncSQLiteCommand;
   c: Currency;
 begin
@@ -144,7 +144,7 @@ begin
   try
     Conn.Resource := ExpandFileName(ExtractFilePath(Application.ExeName) + '..\data\cars.sqlite');
     Conn.Connect;
-    Session1 := TmncSQLiteSession.Create(Conn);
+    Session1 := TmncSQliteTransaction.Create(Conn);
     Session1.Start;
     try
       Cmd1 := Session1.CreateCommand as TmncSQLiteCommand;
@@ -161,7 +161,7 @@ begin
         end;
       end;
       //Start Session2
-      Session2 := TmncSQLiteSession.Create(Conn);
+      Session2 := TmncSQliteTransaction.Create(Conn);
   //    Session2.Start;
       try
         Cmd2 := Session2.CreateCommand as TmncSQLiteCommand;
@@ -197,7 +197,7 @@ end;
 procedure TForm1.Button2Click(Sender: TObject);
 var
   Conn: TmncSQLiteConnection;
-  Session: TmncSQLiteSession;
+  Session: TmncSQliteTransaction;
   Cmd: TmncSQLiteCommand;
   s: TStringStream;
   im: string;
@@ -207,7 +207,7 @@ begin
     Conn.Resource := ExpandFileName(ExtractFilePath(Application.ExeName) + '..\data\cars.sqlite');
     Conn.AutoStart := True;
     Conn.Connect;
-    Session := TmncSQLiteSession.Create(Conn);
+    Session := TmncSQliteTransaction.Create(Conn);
     try
       Cmd := TmncSQLiteCommand.CreateBy(Session);
       Cmd.SQL.Text := 'select * from companies';

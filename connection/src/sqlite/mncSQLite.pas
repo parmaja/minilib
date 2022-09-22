@@ -58,7 +58,7 @@ type
     constructor Create; override;
     class function Capabilities: TmncCapabilities; override;
     class function EngineName: string; override;
-    function CreateSession: TmncSQLSession; overload; override; 
+    function CreateTransaction: TmncSQLTransaction; overload; override; 
     procedure Interrupt;
     procedure CreateDatabase(const vName: string; CheckExists: Boolean =False); override;
     function IsDatabaseExists(vName: string): Boolean; override;
@@ -80,16 +80,16 @@ type
     function GetExtension: string; override;
   end;
 
-  { TmncSQLiteSession }
+  { TmncSQLiteTransaction }
 
-  TmncSQLiteSession = class(TmncSQLSession)
+  TmncSQLiteTransaction = class(TmncSQLTransaction)
   private
     function GetConnection: TmncSQLiteConnection;
     procedure SetConnection(const AValue: TmncSQLiteConnection);
   protected
     procedure DoInit; override;
     procedure DoStart; override;
-    procedure DoStop(How: TmncSessionAction; Retaining: Boolean); override;
+    procedure DoStop(How: TmncTransactionAction; Retaining: Boolean); override;
     function GetActive: Boolean; override;
     function InternalCreateCommand: TmncSQLCommand; override;
   public
@@ -165,8 +165,8 @@ type
     procedure FetchColumns;
     procedure FetchValues;
     procedure ApplyParams;
-    function GetSession: TmncSQLiteSession;
-    procedure SetSession(const AValue: TmncSQLiteSession);
+    function GetTransaction: TmncSQLiteTransaction;
+    procedure SetTransaction(const AValue: TmncSQLiteTransaction);
   protected
     procedure CheckError(Error:longint);
     procedure DoPrepare; override;
@@ -183,7 +183,7 @@ type
     property Binds: TmncSQLiteBinds read GetBinds;
   public
     property Connection: TmncSQLiteConnection read GetConnection;
-    property Session: TmncSQLiteSession read GetSession write SetSession;
+    property Transaction: TmncSQLiteTransaction read GetTransaction write SetTransaction;
     procedure Clear; override;
     function GetRowsChanged: Integer; override;
     function GetLastRowID: Int64; override;
@@ -383,9 +383,9 @@ begin
   Result := 'SQLite';
 end;
 
-function TmncSQLiteConnection.CreateSession: TmncSQLSession;
+function TmncSQLiteConnection.CreateTransaction: TmncSQLTransaction;
 begin
-  Result := TmncSQLiteSession.Create(Self);
+  Result := TmncSQLiteTransaction.Create(Self);
 end;
 
 procedure TmncSQLiteConnection.Interrupt;
@@ -460,29 +460,29 @@ begin
   {$endif}
 end;
 
-{ TmncSQLiteSession }
+{ TmncSQLiteTransaction }
 
-destructor TmncSQLiteSession.Destroy;
+destructor TmncSQLiteTransaction.Destroy;
 begin
   inherited;
 end;
 
-function TmncSQLiteSession.InternalCreateCommand: TmncSQLCommand;
+function TmncSQLiteTransaction.InternalCreateCommand: TmncSQLCommand;
 begin
   Result := TmncSQLiteCommand.Create;
 end;
 
-procedure TmncSQLiteSession.Execute(SQL: string);
+procedure TmncSQLiteTransaction.Execute(SQL: string);
 begin
   Connection.Execute(UTF8Encode(SQL));
 end;
 
-procedure TmncSQLiteSession.DoStart;
+procedure TmncSQLiteTransaction.DoStart;
 begin
   Execute('BEGIN');
 end;
 
-procedure TmncSQLiteSession.DoStop(How: TmncSessionAction; Retaining: Boolean);
+procedure TmncSQLiteTransaction.DoStop(How: TmncTransactionAction; Retaining: Boolean);
 begin
   case How of
     sdaCommit: Execute('COMMIT');
@@ -514,29 +514,29 @@ begin
   Result := '.sqlite';
 end;
 
-function TmncSQLiteSession.GetLastRowID: Int64;
+function TmncSQLiteTransaction.GetLastRowID: Int64;
 begin
   CheckActive;
   Result := sqlite3_last_insert_rowid(Connection.DBHandle);
 end;
 
-function TmncSQLiteSession.GetRowsChanged: Integer;
+function TmncSQLiteTransaction.GetRowsChanged: Integer;
 begin
   CheckActive;
   Result := sqlite3_changes(Connection.DBHandle);
 end;
 
-function TmncSQLiteSession.GetActive: Boolean;
+function TmncSQLiteTransaction.GetActive: Boolean;
 begin
   Result:= inherited GetActive;
 end;
 
-constructor TmncSQLiteSession.Create(vConnection: TmncConnection);
+constructor TmncSQLiteTransaction.Create(vConnection: TmncConnection);
 begin
   inherited;
 end;
 
-function TmncSQLiteSession.GetConnection: TmncSQLiteConnection;
+function TmncSQLiteTransaction.GetConnection: TmncSQLiteConnection;
 begin
   Result := inherited Connection as TmncSQLiteConnection;
 end;
@@ -547,7 +547,7 @@ begin
   SQLiteLib.Load;
 end;
 
-procedure TmncSQLiteSession.SetConnection(const AValue: TmncSQLiteConnection);
+procedure TmncSQLiteTransaction.SetConnection(const AValue: TmncSQLiteConnection);
 begin
   inherited Connection := AValue;
 end;
@@ -557,7 +557,7 @@ begin
   if FExclusive <> AValue then
   begin
     if Active then
-      raise EmncException.Create('You can not set Exclusive when session active');
+      raise EmncException.Create('You can not set Exclusive when Transaction active');
     FExclusive := AValue;
   end;
 end;
@@ -567,7 +567,7 @@ begin
   if FJournalMode <> AValue then
   begin
     if Active then
-      raise EmncException.Create('You can not set JournalMode when session active');
+      raise EmncException.Create('You can not set JournalMode when Transaction active');
     FJournalMode := AValue;
   end;
 end;
@@ -577,7 +577,7 @@ begin
   if FReadCommited <> AValue then
   begin
     if Active then
-      raise EmncException.Create('You can not set ReadCommited when session active');
+      raise EmncException.Create('You can not set ReadCommited when Transaction active');
     FReadCommited := AValue;
   end;
 end;
@@ -588,7 +588,7 @@ begin
   begin
     FTempStore := AValue;
     if Active then
-      raise EmncException.Create('You can not set TempStore when session active');
+      raise EmncException.Create('You can not set TempStore when Transaction active');
   end;
 end;
 
@@ -615,7 +615,7 @@ begin
   }
 end;
 
-procedure TmncSQLiteSession.DoInit;
+procedure TmncSQLiteTransaction.DoInit;
 begin
 end;
 
@@ -645,14 +645,14 @@ begin
   end;
 end;
 
-function TmncSQLiteCommand.GetSession: TmncSQLiteSession;
+function TmncSQLiteCommand.GetTransaction: TmncSQLiteTransaction;
 begin
-  Result := inherited Session as TmncSQLiteSession;
+  Result := inherited Transaction as TmncSQLiteTransaction;
 end;
 
-procedure TmncSQLiteCommand.SetSession(const AValue: TmncSQLiteSession);
+procedure TmncSQLiteCommand.SetTransaction(const AValue: TmncSQLiteTransaction);
 begin
-  inherited Session := AValue;
+  inherited Transaction := AValue;
 end;
 
 procedure TmncSQLiteCommand.Clear;
@@ -667,12 +667,12 @@ end;
 
 function TmncSQLiteCommand.GetRowsChanged: Integer;
 begin
-  Result := Session.GetRowsChanged;
+  Result := Transaction.GetRowsChanged;
 end;
 
 function TmncSQLiteCommand.GetLastRowID: Int64;
 begin
-  Result := Session.GetLastRowID;
+  Result := Transaction.GetLastRowID;
 end;
 
 procedure TmncSQLiteCommand.ApplyParams;
@@ -702,7 +702,7 @@ begin
         varDate:
         begin
           buf.f := Binds[i].Param.Value;
-          if Session.Connection.CorrectDateTime then
+          if Transaction.Connection.CorrectDateTime then
             buf.f := buf.f - JulianEpoch;
           CheckError(sqlite3_bind_double(FStatment, i + 1, buf.f));
         end;
@@ -792,7 +792,7 @@ end;
 
 procedure TmncSQLiteCommand.DoRollback;
 begin
-  Session.Rollback;
+  Transaction.Rollback;
 end;
 
 function TmncSQLiteCommand.CreateFields(vColumns: TmncColumns): TmncFields;
@@ -818,7 +818,7 @@ end;
 
 procedure TmncSQLiteCommand.DoCommit;
 begin
-  Session.Commit;
+  Transaction.Commit;
 end;
 
 procedure TmncSQLiteCommand.FetchColumns;
@@ -885,7 +885,7 @@ begin
           v.i := sqlite3_column_int(FStatment, i);
           if aColumn.DataType in [dtDate, dtTime, dtDateTime] then
           begin
-            if Session.Connection.CorrectDateTime then
+            if Transaction.Connection.CorrectDateTime then
               v.i := trunc(v.i + JulianEpoch);
             v.d := v.i;
             aCurrent.Add(i, v.d);
@@ -898,7 +898,7 @@ begin
           v.f := sqlite3_column_double(FStatment, i);
           if aColumn.DataType in [dtDate, dtTime, dtDateTime] then
           begin
-            if Session.Connection.CorrectDateTime then
+            if Transaction.Connection.CorrectDateTime then
               v.f := v.f + JulianEpoch;
             v.d := v.f;
             aCurrent.Add(i, v.d);
@@ -948,7 +948,7 @@ end;
 
 function TmncSQLiteCommand.GetConnection: TmncSQLiteConnection;
 begin
-  Result := Session.Connection as TmncSQLiteConnection;
+  Result := Transaction.Connection as TmncSQLiteConnection;
 end;
 
 function TmncSQLiteCommand.GetBinds: TmncSQLiteBinds;

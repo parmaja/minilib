@@ -82,10 +82,10 @@ type
   TmncMeta = class(TmncLinkObject)
   private
     FIncludeHeader: Boolean;
-    FOwnSession: Boolean;
+    FOwnTransaction: Boolean;
     FServerInfo: TmncServerInfo;
-    function GetSession: TmncSession;
-    procedure SetSession(AValue: TmncSession);
+    function GetTransaction: TmncTransaction;
+    procedure SetTransaction(AValue: TmncTransaction);
   protected
   public
     destructor Destroy; override;
@@ -113,8 +113,8 @@ type
     function GetNewFieldSQL(TableName: string): string; virtual;
 
     procedure GenerateSchema(ORM: TmncORM; Callback: TmncSQLCallback); virtual;
-    property Session: TmncSession read GetSession write SetSession;//alias for FLink in base class
-    property OwnSession: Boolean read FOwnSession write FOwnSession;
+    property Transaction: TmncTransaction read GetTransaction write SetTransaction;//alias for FLink in base class
+    property OwnTransaction: Boolean read FOwnTransaction write FOwnTransaction;
     property ServerInfo: TmncServerInfo read FServerInfo write FServerInfo;
   published
     property IncludeHeader: Boolean read FIncludeHeader write FIncludeHeader default False;
@@ -127,8 +127,8 @@ type
   TmncSQLMeta = class(TmncMeta)
   private
     function KindToStr(AKind: TmetaKind): string;
-    function GetSQLSession: TmncSQLSession;
-    procedure SetSQLSession(AValue: TmncSQLSession);
+    function GetSQLTransaction: TmncSQLTransaction;
+    procedure SetSQLTransaction(AValue: TmncSQLTransaction);
   protected
     function GetSortSQL(Options: TmetaEnumOptions; FieldName: string = 'name'): string;
     function DoCreateConnection: TmncSQLConnection; virtual;//abstract
@@ -137,13 +137,13 @@ type
     procedure FetchCMD(Strings: TStringList; FieldName, SQL: string);
 
     //FieldName the name of field contain name, some sql cant alt the fields name, like SHOW TABLES in mysql
-    procedure EnumCMD(ASession: TmncSQLSession; Meta: TmncMetaItems; vKind: TmetaKind; FieldName, ItemType, SQL: string; Fields: array of string); overload; virtual;//use field 'name'
+    procedure EnumCMD(ATransaction: TmncSQLTransaction; Meta: TmncMetaItems; vKind: TmetaKind; FieldName, ItemType, SQL: string; Fields: array of string); overload; virtual;//use field 'name'
     procedure EnumCMD(Meta: TmncMetaItems; vKind: TmetaKind; FieldName, SQL: string); overload;
     procedure EnumCMD(Meta: TmncMetaItems; vKind: TmetaKind; SQL: string); overload;
-    function CreateCMD(ASession: TmncSQLSession; SQL: string): TmncSQLCommand; overload;
+    function CreateCMD(ATransaction: TmncSQLTransaction; SQL: string): TmncSQLCommand; overload;
     function CreateCMD(SQL: string): TmncSQLCommand; overload;
   public
-    property Session: TmncSQLSession read GetSQLSession write SetSQLSession;
+    property Transaction: TmncSQLTransaction read GetSQLTransaction write SetSQLTransaction;
   end;
 
   { TmncMetaType }
@@ -185,12 +185,12 @@ begin
   end;
 end;
 
-function TmncSQLMeta.GetSQLSession: TmncSQLSession;
+function TmncSQLMeta.GetSQLTransaction: TmncSQLTransaction;
 begin
-  Result := Link as TmncSQLSession;
+  Result := Link as TmncSQLTransaction;
 end;
 
-procedure TmncSQLMeta.SetSQLSession(AValue: TmncSQLSession);
+procedure TmncSQLMeta.SetSQLTransaction(AValue: TmncSQLTransaction);
 begin
   inherited Link := AValue;
 end;
@@ -237,13 +237,13 @@ begin
   end;
 end;
 
-procedure TmncSQLMeta.EnumCMD(ASession: TmncSQLSession; Meta: TmncMetaItems; vKind: TmetaKind; FieldName, ItemType, SQL: string; Fields: array of string);
+procedure TmncSQLMeta.EnumCMD(ATransaction: TmncSQLTransaction; Meta: TmncMetaItems; vKind: TmetaKind; FieldName, ItemType, SQL: string; Fields: array of string);
 var
   aCMD: TmncSQLCommand;
   aItem: TmncMetaItem;
   i: Integer;
 begin
-  aCMD := CreateCMD(ASession, SQL);
+  aCMD := CreateCMD(ATransaction, SQL);
   try
     aCMD.Prepare;
     aCMD.Execute;
@@ -272,7 +272,7 @@ end;
 
 procedure TmncSQLMeta.EnumCMD(Meta: TmncMetaItems; vKind: TmetaKind; FieldName, SQL: string);
 begin
-  EnumCMD(Session, Meta, vKind, FieldName, KindToStr(vKind), SQL, []);
+  EnumCMD(Transaction, Meta, vKind, FieldName, KindToStr(vKind), SQL, []);
 end;
 
 procedure TmncSQLMeta.EnumCMD(Meta: TmncMetaItems; vKind: TmetaKind; SQL: string);
@@ -280,15 +280,15 @@ begin
   EnumCMD(Meta, vKind, 'name', SQL);
 end;
 
-function TmncSQLMeta.CreateCMD(ASession: TmncSQLSession; SQL: string): TmncSQLCommand;
+function TmncSQLMeta.CreateCMD(ATransaction: TmncSQLTransaction; SQL: string): TmncSQLCommand;
 begin
-  Result := ASession.CreateCommand;
+  Result := ATransaction.CreateCommand;
   Result.SQL.Text := SQL;
 end;
 
 function TmncSQLMeta.CreateCMD(SQL: string): TmncSQLCommand;
 begin
-  Result := CreateCMD(Session, SQL);
+  Result := CreateCMD(Transaction, SQL);
 end;
 
 { TmncMetaItems }
@@ -332,26 +332,26 @@ const
 
 { TmncMeta }
 
-function TmncMeta.GetSession: TmncSession;
+function TmncMeta.GetTransaction: TmncTransaction;
 begin
-  Result := Link as TmncSession;
+  Result := Link as TmncTransaction;
 end;
 
-procedure TmncMeta.SetSession(AValue: TmncSession);
+procedure TmncMeta.SetTransaction(AValue: TmncTransaction);
 begin
   inherited Link := AValue;
 end;
 
 destructor TmncMeta.Destroy;
 var
-  aSession: TmncSession;
+  aTransaction: TmncTransaction;
 begin
   inherited;
-  if FOwnSession then
+  if FOwnTransaction then
   begin
-    aSession := Session;
-    Session := nil;
-    FreeAndNil(aSession);
+    aTransaction := Transaction;
+    Transaction := nil;
+    FreeAndNil(aTransaction);
   end;
 end;
 

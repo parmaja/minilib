@@ -52,7 +52,7 @@ end;
 procedure TForm1.Button2Click(Sender: TObject);
 var
   Conn: TmncFBConnection;
-  Session: TmncFBSession;
+  Session: TmncFBTransaction;
   Cmd: TmncFBCommand;
 begin
   ListBox1.Clear;
@@ -63,7 +63,7 @@ begin
     Conn.UserName := 'sysdba';
     Conn.Password := 'masterkey';
     Conn.Connect;
-    Session := TmncFBSession.Create(Conn);
+    Session := TmncFBTransaction.Create(Conn);
     try
       Session.Start;
       Cmd := TmncFBCommand.CreateBy(Session);
@@ -95,7 +95,7 @@ end;
 procedure TForm1.Button3Click(Sender: TObject);
 var
   Conn: TmncFBConnection;
-  Session: TmncFBSession;
+  Session: TmncFBTransaction;
   Cmd: TmncFBCommand;
 begin
   ListBox1.Clear;
@@ -106,7 +106,7 @@ begin
     Conn.UserName := 'sysdba';
     Conn.Password := 'masterkey';
     Conn.Connect;
-    Session := TmncFBSession.Create(Conn);
+    Session := TmncFBTransaction.Create(Conn);
     try
       Session.Start;
       Cmd := TmncFBCommand.CreateBy(Session);
@@ -136,7 +136,7 @@ end;
 procedure TForm1.Button4Click(Sender: TObject);
 var
   Conn: TmncFBConnection;
-  Session: TmncFBSession;
+  Session: TmncFBTransaction;
   Cmd: TmncFBCommand;
 begin
   Conn := TmncFBConnection.Create;
@@ -146,7 +146,7 @@ begin
     Conn.UserName := 'sysdba';
     Conn.Password := 'masterkey';
     Conn.Connect;
-    Session := TmncFBSession.Create(Conn);
+    Session := TmncFBTransaction.Create(Conn);
     try
       Cmd := TmncFBCommand.CreateBy(Session);
       Cmd.SQL.Text := 'select * from EMPLOYEE';
@@ -174,7 +174,7 @@ end;
 procedure TForm1.Button1Click(Sender: TObject);
 var
   Conn: TmncFBConnection;
-  Session: TmncFBSession;
+  Session: TmncFBTransaction;
   Cmd: TmncFBCommand;
 begin
   Conn := TmncFBConnection.Create;
@@ -184,7 +184,7 @@ begin
     Conn.UserName := 'sysdba';
     Conn.Password := 'masterkey';
     Conn.Connect;
-    Session := TmncFBSession.Create(Conn);
+    Session := TmncFBTransaction.Create(Conn);
     try
       Session.Start;
       Cmd := TmncFBCommand.CreateBy(Session);

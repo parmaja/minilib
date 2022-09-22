@@ -53,7 +53,7 @@ type
     function CreateConnection(vEngineName: string): TmncConnection; overload;
     function CreateConnection(vORM: TmncORM): TmncConnection; overload;
     function CreateMeta(vConnection: TmncConnection): TmncMeta; overload;
-    function CreateMeta(vSession: TmncSession; vOwnSession: Boolean): TmncMeta; overload;
+    function CreateMeta(vTransaction: TmncTransaction; vOwnTransaction: Boolean): TmncMeta; overload;
     procedure EnumConnections(Strings: TStrings);
     procedure EnumORMs(Strings: TStrings);
     procedure EnumMatas(Strings: TStrings);
@@ -260,17 +260,17 @@ begin
     raise EmncException.Create('Meta class not not found');
 end;
 
-function TmncEngines.CreateMeta(vSession: TmncSession; vOwnSession: Boolean): TmncMeta;
+function TmncEngines.CreateMeta(vTransaction: TmncTransaction; vOwnTransaction: Boolean): TmncMeta;
 var
   P: TmncEngine;
 begin
   Result := nil;
-  P := Find(vSession.Connection);
+  P := Find(vTransaction.Connection);
   if (P <> nil) and (P.MetaClass<>nil) then
   begin
     Result := P.MetaClass.Create;
-    Result.Session := vSession;
-    Result.OwnSession := vOwnSession;
+    Result.Transaction := vTransaction;
+    Result.OwnTransaction := vOwnTransaction;
   end
   else
     raise EmncException.Create('Meta class not not found');

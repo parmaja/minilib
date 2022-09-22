@@ -58,7 +58,7 @@ type
     constructor Create; override;
     class function Capabilities: TmncCapabilities; override;
     class function EngineName: string; override;
-    function CreateSession: TmncSQLSession; override;
+    function CreateTransaction: TmncSQLTransaction; override;
     procedure CreateDatabase(const vName: string; CheckExists: Boolean = False); override;
     procedure DropDatabase(const vName: string; CheckExists: Boolean = False); override;
     function IsDatabaseExists(vName: string): Boolean; override;
@@ -77,7 +77,7 @@ type
 
   { TmncFBTransaction }
 
-  TmncFBSession = class(TmncSQLSession)
+  TmncFBTransaction = class(TmncSQLTransaction)
   private
     FHandle: TISC_TR_HANDLE;
     FTPB: TBytes;
@@ -87,7 +87,7 @@ type
     function CheckErr(ErrCode: ISC_STATUS; const StatusVector: TStatusVector; RaiseError: Boolean): ISC_STATUS;
     procedure DoInit; override;
     procedure DoStart; override;
-    procedure DoStop(How: TmncSessionAction; Retaining: Boolean); override;
+    procedure DoStop(How: TmncTransactionAction; Retaining: Boolean); override;
     function GetActive: Boolean; override;
     function InternalCreateCommand: TmncSQLCommand; override;
   public
@@ -227,8 +227,8 @@ type
   TmncCustomFBCommand = class(TmncSQLCommand)
   private
     function GetConnection: TmncFBConnection;
-    function GetTransaction: TmncFBSession;
-    procedure SetTransaction(const Value: TmncFBSession);
+    function GetTransaction: TmncFBTransaction;
+    procedure SetTransaction(const Value: TmncFBTransaction);
     function GetParams: TmncFBParams;
     function GetBinds: TmncFBBinds;
   protected
@@ -239,7 +239,7 @@ type
     property Binds: TmncFBBinds read GetBinds;
   public
     property Connection: TmncFBConnection read GetConnection;
-    property Transaction: TmncFBSession read GetTransaction write SetTransaction;
+    property Transaction: TmncFBTransaction read GetTransaction write SetTransaction;
   end;
 
   TmncFBCommand = class(TmncCustomFBCommand)
@@ -358,9 +358,9 @@ begin
   Result := '.fdb';
 end;
 
-function TmncFBConnection.CreateSession: TmncSQLSession;
+function TmncFBConnection.CreateTransaction: TmncSQLTransaction;
 begin
-  Result := TmncFBSession.Create(Self);
+  Result := TmncFBTransaction.Create(Self);
 end;
 
 procedure TmncFBConnection.CreateDatabase(const vName: string; CheckExists: Boolean);
@@ -439,13 +439,13 @@ end;
 
 procedure TmncFBConnection.SetVariable(const vName, vData: string);
 var
-  aTR: TmncFBSession;
+  aTR: TmncFBTransaction;
   s: string;
 begin
-  aTR := TmncFBSession.Create(Self);
+  aTR := TmncFBTransaction.Create(Self);
   try
     aTR.Start;
-    s := Format('select RDB$SET_CONTEXT(''USER_SESSION'', ''%s'', ''%s'') from rdb$database', [vName, vData]);
+    s := Format('select RDB$SET_CONTEXT(''USER_Transaction'', ''%s'', ''%s'') from rdb$database', [vName, vData]);
     aTR.Execute(s);
     aTR.Commit;
   finally
@@ -580,20 +580,20 @@ begin
     FHandle := nil;
 end;
 
-{ TmncFBSession }
+{ TmncFBTransaction }
 
-destructor TmncFBSession.Destroy;
+destructor TmncFBTransaction.Destroy;
 begin
 
   inherited;
 end;
 
-function TmncFBSession.InternalCreateCommand: TmncSQLCommand;
+function TmncFBTransaction.InternalCreateCommand: TmncSQLCommand;
 begin
   Result := TmncFBCommand.CreateBy(Self);
 end;
 
-procedure TmncFBSession.Execute(vSQL: string);
+procedure TmncFBTransaction.Execute(vSQL: string);
 var
   StatusVector: TStatusVector;
   s: UTF8String;
@@ -602,7 +602,7 @@ begin
   CheckErr(FBLib.isc_dsql_execute_immediate(@StatusVector, @Connection.Handle, @FHandle, Length(s), PByte(s), FB_DIALECT, nil), StatusVector, True);
 end;
 
-procedure TmncFBSession.DoStart;
+procedure TmncFBTransaction.DoStart;
 var
   pteb: PISC_TEB_ARRAY;
   aTPB: PByte;
@@ -636,7 +636,7 @@ begin
   end;
 end;
 
-procedure TmncFBSession.DoStop(How: TmncSessionAction; Retaining: Boolean);
+procedure TmncFBTransaction.DoStop(How: TmncTransactionAction; Retaining: Boolean);
 var
   StatusVector: TStatusVector;
 begin
@@ -672,19 +672,19 @@ begin
   end;
 end;
 
-function TmncFBSession.GetActive: Boolean;
+function TmncFBTransaction.GetActive: Boolean;
 begin
   Result:= FHandle <> nil;
 end;
 
-constructor TmncFBSession.Create(vConnection: TmncConnection);
+constructor TmncFBTransaction.Create(vConnection: TmncConnection);
 begin
   inherited;
   FHandle := nil;
   FTPB := nil;
 end;
 
-function TmncFBSession.GetConnection: TmncFBConnection;
+function TmncFBTransaction.GetConnection: TmncFBConnection;
 begin
   Result := inherited Connection as TmncFBConnection;
 end;
@@ -695,12 +695,12 @@ begin
   FBLib.Load;
 end;
 
-procedure TmncFBSession.SetConnection(const AValue: TmncFBConnection);
+procedure TmncFBTransaction.SetConnection(const AValue: TmncFBConnection);
 begin
   inherited Connection := AValue;
 end;
 
-function TmncFBSession.CheckErr(ErrCode: ISC_STATUS; const StatusVector: TStatusVector; RaiseError: Boolean): ISC_STATUS;
+function TmncFBTransaction.CheckErr(ErrCode: ISC_STATUS; const StatusVector: TStatusVector; RaiseError: Boolean): ISC_STATUS;
 begin
   Result := ErrCode;
   if CheckStatusVector(StatusVector, [isc_lost_db_connection]) then
@@ -709,7 +709,7 @@ begin
     FBRaiseError(StatusVector);
 end;
 
-procedure TmncFBSession.DoInit;
+procedure TmncFBTransaction.DoInit;
 begin
 end;
 
@@ -1541,14 +1541,14 @@ begin
   Result := [];
 end;
 
-function TmncCustomFBCommand.GetTransaction: TmncFBSession;
+function TmncCustomFBCommand.GetTransaction: TmncFBTransaction;
 begin
-  Result := inherited Session as TmncFBSession;
+  Result := inherited Transaction as TmncFBTransaction;
 end;
 
-procedure TmncCustomFBCommand.SetTransaction(const Value: TmncFBSession);
+procedure TmncCustomFBCommand.SetTransaction(const Value: TmncFBTransaction);
 begin
-  inherited Session := Value;
+  inherited Transaction := Value;
 end;
 
 { TmncFBDDLCommand }

@@ -120,7 +120,7 @@ type
     constructor Create; override;
     destructor Destroy; override;
 
-    function CreateSession: TmncSQLSession; override;
+    function CreateTransaction: TmncSQLTransaction; override;
     class function Capabilities: TmncCapabilities; override;
     class function EngineName: string; override;
     property Handle: PPGconn read FHandle;
@@ -148,9 +148,9 @@ type
     property SimpleConnection: Boolean read FSimpleConnection write FSimpleConnection;
   end;
 
-  { TmncPGSession }
+  { TmncPGTransaction }
 
-  TmncPGSession = class(TmncSQLSession) //note now each session has it's connection
+  TmncPGTransaction = class(TmncSQLTransaction) //note now each Transaction has it's connection
   private
     //FTokenID: Cardinal;
     FDBHandle: PPGconn;
@@ -163,7 +163,7 @@ type
   protected
     function NewToken: string;//used for new command name
     procedure DoStart; override;
-    procedure DoStop(How: TmncSessionAction; Retaining: Boolean); override;
+    procedure DoStop(How: TmncTransactionAction; Retaining: Boolean); override;
     function InternalCreateCommand: TmncSQLCommand; override;
   public
     constructor Create(vConnection: TmncConnection); override;
@@ -307,8 +307,8 @@ type
   TmncCustomPGCommand = class(TmncSQLCommand)
   private
     function GetConnection: TmncPGConnection;
-    function GetSession: TmncPGSession;
-    procedure SetSession(const Value: TmncPGSession);
+    function GetTransaction: TmncPGTransaction;
+    procedure SetTransaction(const Value: TmncPGTransaction);
     function GetParams: TmncPostgreParams;
     function GetBinds: TmncPGBinds;
   protected
@@ -320,7 +320,7 @@ type
     function GetColumns: TmncPGColumns;
 
     property Connection: TmncPGConnection read GetConnection;
-    property Session: TmncPGSession read GetSession write SetSession;
+    property Transaction: TmncPGTransaction read GetTransaction write SetTransaction;
     function CreateColumns: TmncColumns; override;
     function CreateParams: TmncParams; override;
     function CreateFields(vColumns: TmncColumns): TmncFields; override;
@@ -337,7 +337,7 @@ type
     property Params: TmncPostgreParams read GetParams;
 
   public
-    constructor CreateBy(vSession:TmncPGSession);
+    constructor CreateBy(vTransaction:TmncPGTransaction);
     destructor Destroy; override;
     procedure Clear; override;
     property Status: TExecStatusType read FStatus;
@@ -494,12 +494,12 @@ end;
 
 function TmncPGConnection.EnumDatabases: TStrings;
 var
-  aTr: TmncSQLSession;
+  aTr: TmncSQLTransaction;
   aCMD: TmncSQLCommand;
 begin
   Result := TStringList.Create;
   try
-    aTr := CreateSession;
+    aTr := CreateTransaction;
     try
       aCMD := aTr.CreateCommand;
       try
@@ -833,9 +833,9 @@ begin
   CloneExecute('postgres', 'Create Database %s;', [vName]);
 end;
 
-function TmncPGConnection.CreateSession: TmncSQLSession;
+function TmncPGConnection.CreateTransaction: TmncSQLTransaction;
 begin
-  Result := TmncPGSession.Create(Self);
+  Result := TmncPGTransaction.Create(Self);
 end;
 
 function TmncPGConnection.IsDatabaseExists(vName: string): Boolean;
@@ -945,21 +945,21 @@ begin
   end;
 end;
 
-{ TmncPGSession }
+{ TmncPGTransaction }
 
-function TmncPGSession.InternalCreateCommand: TmncSQLCommand;
+function TmncPGTransaction.InternalCreateCommand: TmncSQLCommand;
 begin
   Result := TmncPGCommand.CreateBy(Self);
 end;
 
-procedure TmncPGSession.DoStart;
+procedure TmncPGTransaction.DoStart;
 begin
-	//TODO: Use session params to pass it here
+	//TODO: Use Transaction params to pass it here
   Execute('begin isolation level read committed;');
   //Execute('begin isolation level serializable;');
 end;
 
-procedure TmncPGSession.DoStop(How: TmncSessionAction; Retaining: Boolean);
+procedure TmncPGTransaction.DoStop(How: TmncTransactionAction; Retaining: Boolean);
 begin
   case How of
     sdaCommit: Execute('COMMIT');
@@ -971,7 +971,7 @@ begin
   end;
 end;
 
-function TmncPGSession.NewToken: string;
+function TmncPGTransaction.NewToken: string;
 begin
   {$ifdef FPC}
   InterlockedIncrement(fTokenID);
@@ -981,28 +981,28 @@ begin
   Result := 'minilib_' + IntToStr(fTokenID);
 end;
 
-procedure TmncPGSession.Execute(const vSQL: string);
+procedure TmncPGTransaction.Execute(const vSQL: string);
 begin
   Connection.Execute(vSQL);
 end;
 
-constructor TmncPGSession.Create(vConnection: TmncConnection);
+constructor TmncPGTransaction.Create(vConnection: TmncConnection);
 begin
   inherited;
   FIsolated := True;
 end;
 
-destructor TmncPGSession.Destroy;
+destructor TmncPGTransaction.Destroy;
 begin
   inherited;
 end;
 
-function TmncPGSession.GetConnection: TmncPGConnection;
+function TmncPGTransaction.GetConnection: TmncPGConnection;
 begin
   Result := inherited Connection as TmncPGConnection;
 end;
 
-function TmncPGSession.GetDBHandle: PPGconn;
+function TmncPGTransaction.GetDBHandle: PPGconn;
 begin
   {if Connection<>nil then
     Result := Connection.Handle
@@ -1023,18 +1023,18 @@ begin
   end;
 end;
 
-procedure TmncPGSession.SetConnection(const AValue: TmncPGConnection);
+procedure TmncPGTransaction.SetConnection(const AValue: TmncPGConnection);
 begin
   inherited Connection := AValue;
 end;
 
-procedure TmncPGSession.SetExclusive(const AValue: Boolean);
+procedure TmncPGTransaction.SetExclusive(const AValue: Boolean);
 begin
   if FExclusive <> AValue then
   begin
     FExclusive := AValue;
     if Active then
-      raise EmncException.Create('You can not set Exclusive when session active');
+      raise EmncException.Create('You can not set Exclusive when Transaction active');
   end;
 end;
 
@@ -1084,15 +1084,15 @@ begin
 
     if SingleRowMode then
     begin
-      PQsendQueryPrepared(Session.DBHandle, PByte(FHandle), Binds.Count, P, nil, nil, f);
-      PQsetSingleRowMode(Session.DBHandle);
-      //f := PQsetSingleRowMode(Session.DBHandle);
-      //FStatement := PQgetResult(Session.DBHandle);
+      PQsendQueryPrepared(Transaction.DBHandle, PByte(FHandle), Binds.Count, P, nil, nil, f);
+      PQsetSingleRowMode(Transaction.DBHandle);
+      //f := PQsetSingleRowMode(Transaction.DBHandle);
+      //FStatement := PQgetResult(Transaction.DBHandle);
       FetchStatement;
     end
     else
     begin
-      FStatement := PQexecPrepared(Session.DBHandle, PByte(FHandle), Binds.Count, P, nil, nil, f);
+      FStatement := PQexecPrepared(Transaction.DBHandle, PByte(FHandle), Binds.Count, P, nil, nil, f);
     end;
 
   finally
@@ -1138,7 +1138,7 @@ begin
     begin
       FetchValues(FStatement, FTuple);
       PQclear(FStatement);
-      FStatement := PQgetResult(Session.DBHandle);
+      FStatement := PQgetResult(Transaction.DBHandle);
       FEOF := (Statement = nil);
     end
     else
@@ -1159,9 +1159,9 @@ var
 //  z: Integer;
 begin
   FBOF := True;
-  FHandle := Session.NewToken;
+  FHandle := Transaction.NewToken;
   ParseSQL([psoAddParamsID]);
-  c := Session.DBHandle;
+  c := Transaction.DBHandle;
   s := UTF8Encode(GetProcessedSQL);
 
   r := PQprepare(c, PByte(FHandle), PByte(s), Params.Count, nil);
@@ -1171,7 +1171,7 @@ begin
     PQclear(r);
   end;
 
-  {r := PQdescribePrepared(Session.DBHandle, PByte(FHandle)); //TODO: To indecate the size of param, no chance to get it
+  {r := PQdescribePrepared(Transaction.DBHandle, PByte(FHandle)); //TODO: To indecate the size of param, no chance to get it
   try
     z := PQnparams(r);
 
@@ -1190,16 +1190,16 @@ end;
 
 function TmncPGCommand.FetchStatement: Boolean;
 begin
-  //PQconsumeInput(Session.DBHandle);
-  {while PQisBusy(Session.DBHandle)<>0 do
+  //PQconsumeInput(Transaction.DBHandle);
+  {while PQisBusy(Transaction.DBHandle)<>0 do
   begin
     Sleep(1);
 
-    //if PQconsumeInput(Session.DBHandle)=0 then
+    //if PQconsumeInput(Transaction.DBHandle)=0 then
       //Break;
   end;}
 
-  FStatement := PQgetResult(Session.DBHandle);
+  FStatement := PQgetResult(Transaction.DBHandle);
   Result := True;
 
 end;
@@ -1222,7 +1222,7 @@ begin
   begin
     try
       s := UTF8Encode('deallocate ' + FHandle);
-      r := PQexec(Session.DBHandle, PByte(s));
+      r := PQexec(Transaction.DBHandle, PByte(s));
       PQclear(r);
     except
     end;
@@ -1512,7 +1512,7 @@ begin
   FBOF := True;
   FEOF := True;
   s := UTF8Encode(SQL.Text);
-  r := PQexec(Session.DBHandle, PByte(s));
+  r := PQexec(Transaction.DBHandle, PByte(s));
   try
     RaiseResultError(r);
   finally
@@ -1526,7 +1526,7 @@ begin
   if FStatement <> nil then PQclear(FStatement);
   try
     s := UTF8Encode(SQL.Text);
-    FStatement := PQexec(Session.DBHandle, PByte(s));
+    FStatement := PQexec(Transaction.DBHandle, PByte(s));
   finally
   end;
   FStatus := PQresultStatus(FStatement);
@@ -1611,9 +1611,9 @@ begin
   FBOF := True;
 end;
 
-constructor TmncCustomPGCommand.CreateBy(vSession: TmncPGSession);
+constructor TmncCustomPGCommand.CreateBy(vTransaction: TmncPGTransaction);
 begin
-  inherited CreateBy(vSession);
+  inherited CreateBy(vTransaction);
   FResultFormat := mrfText;
 end;
 
@@ -1854,7 +1854,7 @@ end;
 
 function TmncCustomPGCommand.GetConnection: TmncPGConnection;
 begin
-  Result := Session.Connection as TmncPGConnection;
+  Result := Transaction.Connection as TmncPGConnection;
 end;
 
 function TmncCustomPGCommand.GetParams: TmncPostgreParams;
@@ -1862,9 +1862,9 @@ begin
   Result := inherited Params as TmncPostgreParams;
 end;
 
-function TmncCustomPGCommand.GetSession: TmncPGSession;
+function TmncCustomPGCommand.GetTransaction: TmncPGTransaction;
 begin
-  Result := inherited Session as TmncPGSession;
+  Result := inherited Transaction as TmncPGTransaction;
 end;
 
 procedure TmncCustomPGCommand.RaiseResultError(PGResult: PPGresult);
@@ -1872,9 +1872,9 @@ begin
   Connection.RaiseResultError(PGResult);
 end;
 
-procedure TmncCustomPGCommand.SetSession(const Value: TmncPGSession);
+procedure TmncCustomPGCommand.SetTransaction(const Value: TmncPGTransaction);
 begin
-  inherited Session := Value;
+  inherited Transaction := Value;
 end;
 
 function TmncCustomPGCommand.GetBinds: TmncPGBinds;
@@ -1908,8 +1908,8 @@ begin
     end
     else
       p := nil;
-    aStatement := PQexecPrepared(Session.DBHandle, PByte(FHandle), Binds.Count, P, nil, nil, 0);
-    //FStatement := PQexec(Session.DBHandle, PChar(SQL.Text));
+    aStatement := PQexecPrepared(Transaction.DBHandle, PByte(FHandle), Binds.Count, P, nil, nil, 0);
+    //FStatement := PQexec(Transaction.DBHandle, PChar(SQL.Text));
   finally
     FreeParamValues(Values);
   end;
@@ -1928,7 +1928,7 @@ procedure TmncPGCursorCommand.DoNext;
 begin
   if FStatement<>nil then PQclear(FStatement);
 
-  FStatement := PQexec(Session.DBHandle, PByte(FetchSQL));
+  FStatement := PQexec(Transaction.DBHandle, PByte(FetchSQL));
   if FStatement<>nil then
   begin
     FStatus := PQresultStatus(FStatement);
@@ -1958,9 +1958,9 @@ var
   i: Integer;
 begin
   FBOF := True;
-  FHandle := Session.NewToken;
+  FHandle := Transaction.NewToken;
   ParseSQL([psoAddParamsID]);
-  c := Session.DBHandle;
+  c := Transaction.DBHandle;
 
   if ResultFormat = mrfBinary then
     b := 'binary'
@@ -1999,7 +1999,7 @@ end;
 
 procedure TmncPGCursorCommand.InternalClose;
 begin
-  PQexec(Session.DBHandle, PByte(CloseSQL));
+  PQexec(Transaction.DBHandle, PByte(CloseSQL));
   FStatus := PGRES_EMPTY_QUERY;
   FBOF := True;
 end;

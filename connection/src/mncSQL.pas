@@ -51,7 +51,7 @@ type
 
   TmncParseSQLOptions = set of (psoGenerateParams, psoAddParamsID, psoAddParamsNames);
 
-  TmncSQLSession = class;
+  TmncSQLTransaction = class;
   TmncSQLCommand = class;
 
   { TmncSQLConnection }
@@ -61,7 +61,7 @@ type
     procedure DoClone(vConn: TmncSQLConnection); virtual;
   public
     constructor Create; override;
-    function CreateSession: TmncSQLSession; virtual; abstract;
+    function CreateTransaction: TmncSQLTransaction; virtual; abstract;
 
     function IsDatabaseExists(vName: string): Boolean; overload; virtual; abstract;
     function IsDatabaseExists: Boolean; overload;
@@ -88,9 +88,9 @@ type
     function ScriptSeperator: string; virtual;
   end;
 
-  { TmncSQLSession }
+  { TmncSQLTransaction }
 
-  TmncSQLSession = class abstract(TmncSession)
+  TmncSQLTransaction = class abstract(TmncTransaction)
   private
     function GetConnection: TmncSQLConnection;
     procedure SetConnection(AValue: TmncSQLConnection);
@@ -132,8 +132,8 @@ type
     FReady: Boolean; //BOF
     FDone: Boolean; //EOF
     FProcessedSQL: TmncProcessedSQL;
-    function GetSession: TmncSQLSession;
-    procedure SetSession(AValue: TmncSQLSession);
+    function GetTransaction: TmncSQLTransaction;
+    procedure SetTransaction(AValue: TmncSQLTransaction);
     function GetSQL: TStrings;
     procedure SetParamPrefix(AValue: Char);
     property ProcessedSQL: TmncProcessedSQL read FProcessedSQL;
@@ -161,7 +161,7 @@ type
     property ParamPrefix: Char read FParamPrefix write SetParamPrefix default '?';
     property ProcessSQL: Boolean read FProcessSQL write FProcessSQL default True; //TODO
 
-    property Session: TmncSQLSession read GetSession write SetSession;
+    property Transaction: TmncSQLTransaction read GetTransaction write SetTransaction;
   end;
 
   //TODO
@@ -208,28 +208,28 @@ begin
   FExceptionMsg := AExceptionMsg;
 end;
 *)
-{ TmncSQLSession }
+{ TmncSQLTransaction }
 
-function TmncSQLSession.GetConnection: TmncSQLConnection;
+function TmncSQLTransaction.GetConnection: TmncSQLConnection;
 begin
   Result := inherited Connection as TmncSQLConnection;
 end;
 
-procedure TmncSQLSession.SetConnection(AValue: TmncSQLConnection);
+procedure TmncSQLTransaction.SetConnection(AValue: TmncSQLConnection);
 begin
   inherited Connection := AValue;
 end;
 
-function TmncSQLSession.CreateCommand(ASQL: string): TmncSQLCommand;
+function TmncSQLTransaction.CreateCommand(ASQL: string): TmncSQLCommand;
 begin
   //CheckActive; nop, some commands can't run inside transaction like CREATE DATABASE
   Result := InternalCreateCommand;
-  Result.Session := Self;
+  Result.Transaction := Self;
   if ASQL <> '' then
     Result.SQL.Text := ASQL;
 end;
 
-procedure TmncSQLSession.ExecuteScript(AStrings: TStrings; AutoCommit: Boolean);
+procedure TmncSQLTransaction.ExecuteScript(AStrings: TStrings; AutoCommit: Boolean);
 var
   CMD: TmncSQLCommand;
   c, i: Integer;
@@ -408,9 +408,9 @@ begin
   Result := FRequest;//just alias
 end;
 
-function TmncSQLCommand.GetSession: TmncSQLSession;
+function TmncSQLCommand.GetTransaction: TmncSQLTransaction;
 begin
-  Result := inherited Session as TmncSQLSession;
+  Result := inherited Transaction as TmncSQLTransaction;
 end;
 
 procedure TmncSQLCommand.SetParamPrefix(AValue: Char);
@@ -419,9 +419,9 @@ begin
   FParamPrefix :=AValue;
 end;
 
-procedure TmncSQLCommand.SetSession(AValue: TmncSQLSession);
+procedure TmncSQLCommand.SetTransaction(AValue: TmncSQLTransaction);
 begin
-  inherited Session := AValue;
+  inherited Transaction := AValue;
 end;
 
 function TmncSQLCommand.GetDone: Boolean;
@@ -506,7 +506,7 @@ begin
               else if cCurChar = ParamPrefix then
               begin
                 iCurState := ParamState;
-                AddToSQL((Session.Connection as TmncSQLConnection).GetParamChar);//here we can replace it with new param char for example % for some sql engine
+                AddToSQL((Transaction.Connection as TmncSQLConnection).GetParamChar);//here we can replace it with new param char for example % for some sql engine
 {                  if psoAddParamsID in SQLOptions then
                   AddToSQL();}
               end

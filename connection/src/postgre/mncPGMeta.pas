@@ -73,7 +73,7 @@ end;
 procedure TmncPGMeta.EnumDatabases(Meta: TmncMetaItems; Options: TmetaEnumOptions);
 var
   conn: TmncPGConnection;
-  session: TmncPGSession;
+  Transaction: TmncPGTransaction;
   cmd: TmncPGCommand;
   aMetaItem: TmncMetaItem;
 begin
@@ -88,12 +88,12 @@ begin
 
     conn.Connect;
     //PGConn.AutoStart : = true;
-    session := conn.CreateSession as TmncPGSession;
+    Transaction := conn.CreateTransaction as TmncPGTransaction;
     try
-      session.Start;
+      Transaction.Start;
 
       Meta.Clear;
-      cmd := session.CreateCommand as TmncPGCommand;
+      cmd := Transaction.CreateCommand as TmncPGCommand;
       try
         cmd.SQL.Text := 'SELECT datname as name FROM pg_database';
         cmd.SQL.Add('WHERE datistemplate = false and datname <> ''postgres''');
@@ -119,7 +119,7 @@ begin
         cmd.Free;
       end;
     finally
-      FreeAndNil(session);
+      FreeAndNil(Transaction);
     end;
   finally
     FreeAndNil(conn);
@@ -128,7 +128,7 @@ end;
 
 procedure TmncPGMeta.EnumTables(Meta: TmncMetaItems; SQLName: string; Options: TmetaEnumOptions);
 begin
-  EnumCMD(Session, Meta, sokTable, 'name', 'Table', 'select tablename as name FROM pg_catalog.pg_tables where schemaname != ''pg_catalog'' and schemaname != ''information_schema'' ' + GetSortSQL(Options), []);
+  EnumCMD(Transaction, Meta, sokTable, 'name', 'Table', 'select tablename as name FROM pg_catalog.pg_tables where schemaname != ''pg_catalog'' and schemaname != ''information_schema'' ' + GetSortSQL(Options), []);
 end;
 
 procedure TmncPGMeta.EnumViews(Meta: TmncMetaItems; Options: TmetaEnumOptions);

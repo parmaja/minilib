@@ -28,14 +28,14 @@ implementation
 procedure TForm1.Button1Click(Sender: TObject);
 var
   Conn: TmncSQLiteConnection;
-  Session: TmncSQLiteSession;
+  Session: TmncSQliteTransaction;
   Cmd: TmncSQLiteCommand;
 begin
   Conn := TmncSQLiteConnection.Create;
   try
     Conn.Resource := ExpandFileName(ExtractFilePath(Application.ExeName) + '..\..\data\cars.sqlite');
     Conn.Connect;
-    Session := TmncSQLiteSession.Create(Conn);
+    Session := TmncSQliteTransaction.Create(Conn);
     try
       Session.Start;
       Cmd :=  TmncSQLiteCommand.Create;
@@ -81,7 +81,7 @@ end;
 procedure TForm1.Button2Click(Sender: TObject);
 var
   Conn: TmncSQLiteConnection;
-  Session: TmncSQLiteSession;
+  Session: TmncSQliteTransaction;
   Cmd: TmncSQLiteCommand;
   s: TStringStream;
   im: string;
@@ -91,7 +91,7 @@ begin
     Conn.Resource := ExpandFileName(ExtractFilePath(Application.ExeName) + '..\..\data\cars.sqlite');
     Conn.AutoStart := True;
     Conn.Connect;
-    Session := TmncSQLiteSession.Create(Conn);
+    Session := TmncSQliteTransaction.Create(Conn);
     try
       Cmd := TmncSQLiteCommand.CreateBy(Session);
       Cmd.SQL.Text := 'select * from companies';

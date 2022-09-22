@@ -24,8 +24,8 @@ type
 
   TmncSQLiteMeta = class(TmncSQLMeta)
   private
-    function GetSession: TmncSession;
-    procedure SetSession(AValue: TmncSession);
+    function GetTransaction: TmncTransaction;
+    procedure SetTransaction(AValue: TmncTransaction);
   protected
   public
     procedure EnumDatabases(Meta: TmncMetaItems; Options: TmetaEnumOptions =[]); override;
@@ -52,12 +52,12 @@ implementation
 uses
   mncDB, mncSQL;
 
-function TmncSQLiteMeta.GetSession: TmncSession;
+function TmncSQLiteMeta.GetTransaction: TmncTransaction;
 begin
-  Result := Link as TmncSession;
+  Result := Link as TmncTransaction;
 end;
 
-procedure TmncSQLiteMeta.SetSession(AValue: TmncSession);
+procedure TmncSQLiteMeta.SetTransaction(AValue: TmncTransaction);
 begin
   inherited Link := AValue;
 end;
@@ -79,7 +79,7 @@ end;
 
 procedure TmncSQLiteMeta.EnumTables(Meta: TmncMetaItems; SQLName: string; Options: TmetaEnumOptions);
 begin
-  EnumCMD(Session, Meta, sokTable, 'name', 'Table', 'select name from sqlite_master where type = ''table''' + GetSortSQL(Options), []);
+  EnumCMD(Transaction, Meta, sokTable, 'name', 'Table', 'select name from sqlite_master where type = ''table''' + GetSortSQL(Options), []);
 end;
 
 procedure TmncSQLiteMeta.EnumViews(Meta: TmncMetaItems; Options: TmetaEnumOptions);
@@ -144,7 +144,7 @@ begin
   if SQLName <> '' then
   begin
     s := s + 'PRAGMA index_list('''+ SQLName +''')' + GetSortSQL(Options);
-    EnumCMD(Session, Meta, sokIndex, 'name', 'Index', s, ['unique']);
+    EnumCMD(Transaction, Meta, sokIndex, 'name', 'Index', s, ['unique']);
   end
   else
   begin

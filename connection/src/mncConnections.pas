@@ -30,32 +30,32 @@ uses
   mnFields, mncCommons;
 
 type
-  TmncSession = class;
+  TmncTransaction = class;
   TmncCommand = class;
 
-  { TmncLinkSession }
+  { TmncLinkTransaction }
 
-  TmncLinkSession = class(TmncLinkObject)
+  TmncLinkTransaction = class(TmncLinkObject)
   private
-    function GetSession: TmncSession;
-    procedure SetSession(AValue: TmncSession);
+    function GetTransaction: TmncTransaction;
+    procedure SetTransaction(AValue: TmncTransaction);
   protected
   public
-    constructor CreateBy(vSession: TmncSession);
-    property Session: TmncSession read GetSession write SetSession;//alias for FLink in base class
+    constructor CreateBy(vTransaction: TmncTransaction);
+    property Transaction: TmncTransaction read GetTransaction write SetTransaction;//alias for FLink in base class
   end;
 
-  { TmncSessions }
+  { TmncTransactions }
 
-  TmncSessions = class(TObjectList)
+  TmncTransactions = class(TObjectList)
   private
-    function GetItem(Index: Integer): TmncSession;
-    procedure SetItem(Index: Integer; const Value: TmncSession);
+    function GetItem(Index: Integer): TmncTransaction;
+    procedure SetItem(Index: Integer; const Value: TmncTransaction);
   protected
     procedure Stop;
   public
     function IsAnyActive: Boolean;
-    property Items[Index: Integer]: TmncSession read GetItem write SetItem; default;
+    property Items[Index: Integer]: TmncTransaction read GetItem write SetItem; default;
   end;
 
   TmncCapability = (
@@ -72,7 +72,7 @@ type
     ccTransaction, //Support transaction, most of them Like Firebird, SQLite, PG
     ccMultiTransaction //Like Firebird can have multiple transaction for one connection, while PG and SQLite has not, see also sbhMultiple
 {  nop i hate it
-    ccMultiConnection //Some time we need to make for every session a new connection
+    ccMultiConnection //Some time we need to make for every Transaction a new connection
         //(PG and SQLite), it slowing app, i will not use it. see sbhIndependent
         }
   );
@@ -105,7 +105,7 @@ type
     FParams: TStrings;
     FAutoStart: Boolean;
     FResource: string;
-    FSessions: TmncSessions;
+    FTransactions: TmncTransactions;
     FStartCount: Integer;
     FStates: TmncStates;
     procedure SetConnected(const Value: Boolean);
@@ -138,8 +138,8 @@ type
     procedure Close; //Alias for Disonnect;
 
     procedure SetState(aState: TmncState);
-    property Sessions: TmncSessions read FSessions;
-    property AutoStart: Boolean read FAutoStart write FAutoStart; //AutoStart the Session when created
+    property Transactions: TmncTransactions read FTransactions;
+    property AutoStart: Boolean read FAutoStart write FAutoStart; //AutoStart the Transaction when created
     property Connected: Boolean read GetConnected write SetConnected;
     property Active: Boolean read GetConnected write SetConnected;
     property States: TmncStates read FStates;
@@ -160,28 +160,28 @@ type
 
   TmncConnectionClass = class of TmncConnection;
 
-  TmncSessionBehavior = (
+  TmncTransactionBehavior = (
     sbhStrict, //Without it, it no need to call Start and Stop (Commit/Rollback) this DB automatically do it (pg/SQLite allow it)
-    sbhMultiple, //Multiple Transactions works simultaneously, Every session have transacion like as Firebird
+    sbhMultiple, //Multiple Transactions works simultaneously, Every Transaction have transacion like as Firebird
     sbhEmulate //or Virtual, a Single transaction(main connection) many start last stop, maybe PG/SQLite
   );
-  TmncSessionBehaviors = set of TmncSessionBehavior;
+  TmncTransactionBehaviors = set of TmncTransactionBehavior;
 
-  //Session it is branch/clone of Connection but usefull for take a special params, it is like Transactions.
-  TmncSessionAction = (
+  //Transaction it is branch/clone of Connection but usefull for take a special params, it is like Transactions.
+  TmncTransactionAction = (
     sdaCommit,
     sdaRollback
   );
 
-  { TmncSession }
+  { TmncTransaction }
 
-  TmncSession = class(TmncLinksObject)
+  TmncTransaction = class(TmncLinksObject)
   private
     FParams: TStrings;
     FConnection: TmncConnection;
     FStartCount: Integer;
-    FAction: TmncSessionAction;
-    FCurrentAction: TmncSessionAction;
+    FAction: TmncTransactionAction;
+    FCurrentAction: TmncTransactionAction;
     FIsInit: Boolean;
     FParamsChanged: Boolean;
     procedure SetParams(const Value: TStrings);
@@ -190,21 +190,21 @@ type
     procedure ParamsChanging(Sender: TObject);
     procedure ParamsChange(Sender: TObject);
   protected
-    FBehaviors: TmncSessionBehaviors;
+    FBehaviors: TmncTransactionBehaviors;
     function GetActive: Boolean; virtual;
     procedure CheckActive;
     procedure CheckInactive;
     procedure DoInit; virtual;
     procedure DoStart; virtual; abstract;
-    procedure DoStop(How: TmncSessionAction; Retaining: Boolean); virtual; abstract;
+    procedure DoStop(How: TmncTransactionAction; Retaining: Boolean); virtual; abstract;
     procedure Init;
     procedure InternalStart; virtual;
-    procedure InternalStop(How: TmncSessionAction; Retaining: Boolean = False); virtual;
+    procedure InternalStop(How: TmncTransactionAction; Retaining: Boolean = False); virtual;
     property ParamsChanged: Boolean read FParamsChanged write FParamsChanged;
     property StartCount: Integer read FStartCount;
   public
     constructor Create(vConnection: TmncConnection); overload; virtual;
-    constructor Create(vConnection: TmncConnection; vBehaviors: TmncSessionBehaviors); overload; virtual;
+    constructor Create(vConnection: TmncConnection; vBehaviors: TmncTransactionBehaviors); overload; virtual;
     destructor Destroy; override;
 
     procedure Start;
@@ -214,8 +214,8 @@ type
     procedure Rollback(Retaining: Boolean = False); virtual;
     procedure CommitRetaining;
     procedure RollbackRetaining;
-    property Behaviors: TmncSessionBehaviors read FBehaviors;
-    property Action: TmncSessionAction read FAction write FAction; //todo zaher i dont like the name
+    property Behaviors: TmncTransactionBehaviors read FBehaviors;
+    property Action: TmncTransactionAction read FAction write FAction; //todo zaher i dont like the name
     property Connection: TmncConnection read FConnection write SetConnection;
     property Active: Boolean read GetActive write SetActive;
     property Params: TStrings read FParams write SetParams;
@@ -500,7 +500,7 @@ type
   }
   { TmncCommand }
 
-  TmncCommand = class(TmncLinkSession)
+  TmncCommand = class(TmncLinkTransaction)
   private
     FColumns: TmncColumns;
     FFields: TmncFields;
@@ -522,7 +522,7 @@ type
     procedure SetActive(const Value: Boolean); override;
     procedure CheckActive;
     procedure CheckInactive;
-    procedure CheckStarted; // Check the session is started if need transaction
+    procedure CheckStarted; // Check the Transaction is started if need transaction
     function GetDone: Boolean; virtual; abstract;
     procedure DoParse; virtual; abstract;
     procedure DoUnparse; virtual;
@@ -531,7 +531,7 @@ type
     procedure DoExecute; virtual; abstract; //Here apply the Binds and execute the sql
     procedure DoNext; virtual; abstract;
     procedure DoClose; virtual; abstract;
-    procedure DoCommit; virtual; //some time we need make commit with command or session
+    procedure DoCommit; virtual; //some time we need make commit with command or Transaction
     procedure DoRollback; virtual;
     procedure Clean; virtual; //Clean and reset stamemnt like Done or Ready called in Execute before DoExecute and after Prepare
     procedure DoRequestChanged(Sender: TObject); virtual;
@@ -719,18 +719,18 @@ begin
   FParamsChanged := True;
   TStringList(FParams).OnChange := ParamsChange;
   TStringList(FParams).OnChanging := ParamsChanging;
-  FSessions := TmncSessions.Create(False);
+  FTransactions := TmncTransactions.Create(False);
   DoInit;
 end;
 
 destructor TmncConnection.Destroy;
 begin
-  FSessions.Stop;
-  while FSessions.Count > 0 do
-    FSessions[0].Connection := nil;
+  FTransactions.Stop;
+  while FTransactions.Count > 0 do
+    FTransactions[0].Connection := nil;
   if Connected then
     Disconnect;
-  FreeAndNil(FSessions);
+  FreeAndNil(FTransactions);
   FreeAndNil(FParams);
   inherited;
 end;
@@ -846,7 +846,7 @@ end;
 destructor TmncCommand.Destroy;
 begin
   Active := False;
-  Session := nil; //already in Linked but must be sure before free other objects
+  Transaction := nil; //already in Linked but must be sure before free other objects
   FreeAndNil(FRequest);
   FreeAndNil(FParams);
   FreeAndNil(FBinds); //If we r freeing binds before Params it crash in FB when freeing command
@@ -957,13 +957,13 @@ end;
 
 procedure TmncCommand.CheckStarted;
 begin
-  if (Session = nil) then
-    raise EmncException.Create('Session not assigned');
+  if (Transaction = nil) then
+    raise EmncException.Create('Transaction not assigned');
   //Raise an exception if not active when it is strict
   {
-  if (sbhStrict in Session.Behaviors) and not Session.Active then
+  if (sbhStrict in Transaction.Behaviors) and not Transaction.Active then
   //we do not need to check if active, some command not need active transaction, like 'set transaction' in firebird
-    raise EmncException.Create('Session is not active/started');
+    raise EmncException.Create('Transaction is not active/started');
   }
 end;
 
@@ -1076,20 +1076,20 @@ begin
     raise EmncException.Create('Current record not found');
 end;
 
-procedure TmncLinkSession.SetSession(AValue: TmncSession);
+procedure TmncLinkTransaction.SetTransaction(AValue: TmncTransaction);
 begin
   inherited Link := AValue;
 end;
 
-function TmncLinkSession.GetSession: TmncSession;
+function TmncLinkTransaction.GetTransaction: TmncTransaction;
 begin
-  Result := Link as TmncSession;
+  Result := Link as TmncTransaction;
 end;
 
-constructor TmncLinkSession.CreateBy(vSession: TmncSession);
+constructor TmncLinkTransaction.CreateBy(vTransaction: TmncTransaction);
 begin
   Create;
-  Session := vSession;//Session not FSession
+  Transaction := vTransaction;//Transaction not FTransaction
 end;
 
 procedure TmncCommand.Commit;
@@ -1112,16 +1112,16 @@ begin
   FPrepared := False;
 end;
 
-{ TmncSession }
+{ TmncTransaction }
 
-procedure TmncSession.Commit(Retaining: Boolean = False);
+procedure TmncTransaction.Commit(Retaining: Boolean = False);
 begin
   InternalStop(sdaCommit, Retaining);
 end;
 
-constructor TmncSession.Create(vConnection: TmncConnection);
+constructor TmncTransaction.Create(vConnection: TmncConnection);
 var
-  aBehaviors: TmncSessionBehaviors;
+  aBehaviors: TmncTransactionBehaviors;
 begin
   aBehaviors := [];
   if ccStrict in vConnection.Capabilities then
@@ -1138,7 +1138,7 @@ begin
   Create(vConnection, aBehaviors);
 end;
 
-constructor TmncSession.Create(vConnection: TmncConnection; vBehaviors: TmncSessionBehaviors);
+constructor TmncTransaction.Create(vConnection: TmncConnection; vBehaviors: TmncTransactionBehaviors);
 begin
   inherited Create;
   FParams := TStringList.Create;
@@ -1151,7 +1151,7 @@ begin
     Start;
 end;
 
-destructor TmncSession.Destroy;
+destructor TmncTransaction.Destroy;
 begin
   if Active then
     Stop;
@@ -1161,28 +1161,28 @@ begin
   inherited;
 end;
 
-function TmncSession.GetActive: Boolean;
+function TmncTransaction.GetActive: Boolean;
 begin
   Result := FStartCount > 0;
 end;
 
-procedure TmncSession.CheckActive;
+procedure TmncTransaction.CheckActive;
 begin
   if not Active then
-    raise EmncException.Create('Session is not active/opened');
+    raise EmncException.Create('Transaction is not active/opened');
 end;
 
-procedure TmncSession.CheckInactive;
+procedure TmncTransaction.CheckInactive;
 begin
   if Active then
-    raise EmncException.Create('Session is active/opened');
+    raise EmncException.Create('Transaction is active/opened');
 end;
 
-procedure TmncSession.DoInit;
+procedure TmncTransaction.DoInit;
 begin
 end;
 
-procedure TmncSession.Init;
+procedure TmncTransaction.Init;
 begin
   if not FIsInit then
   begin
@@ -1191,10 +1191,10 @@ begin
   end;
 end;
 
-procedure TmncSession.InternalStart;
+procedure TmncTransaction.InternalStart;
 begin
-  if Active then //Even if not strict, you cant start the session more than one
-    raise EmncException.Create('Session is already active.');
+  if Active then //Even if not strict, you cant start the Transaction more than one
+    raise EmncException.Create('Transaction is already active.');
   Connection.CheckActive;
   //Connection.Init; //Sure if the connection is initialized, maybe it is not connected yet!
   Init;
@@ -1212,9 +1212,9 @@ begin
   Inc(FStartCount);
 end;
 
-procedure TmncSession.InternalStop(How: TmncSessionAction; Retaining: Boolean);
+procedure TmncTransaction.InternalStop(How: TmncTransactionAction; Retaining: Boolean);
 begin
-  if not Active then //Even if not strict we check if active, because you cant stop session if you not started it!
+  if not Active then //Even if not strict we check if active, because you cant stop Transaction if you not started it!
     raise EmncException.Create('Oops you have not started it yet!');
 
   if not Retaining then
@@ -1229,10 +1229,10 @@ begin
     else
     begin
       if Connection.FStartCount = 0 then
-        raise EmncException.Create('Session not started yet!');
+        raise EmncException.Create('Transaction not started yet!');
       Dec(Connection.FStartCount);
      if (FCurrentAction > How) then
-        raise EmncException.Create('there is older action rollbacked!'); //in emulate mode you can't do rollback, then commit if we have 2 session started
+        raise EmncException.Create('there is older action rollbacked!'); //in emulate mode you can't do rollback, then commit if we have 2 Transaction started
       FCurrentAction := How;
       if Connection.FStartCount = 0 then
       begin
@@ -1248,22 +1248,22 @@ begin
     Dec(FStartCount);
 end;
 
-procedure TmncSession.Rollback(Retaining: Boolean);
+procedure TmncTransaction.Rollback(Retaining: Boolean);
 begin
   InternalStop(sdaRollback, Retaining);
 end;
 
-procedure TmncSession.CommitRetaining;
+procedure TmncTransaction.CommitRetaining;
 begin
   Commit(True);
 end;
 
-procedure TmncSession.RollbackRetaining;
+procedure TmncTransaction.RollbackRetaining;
 begin
   Rollback(True);
 end;
 
-procedure TmncSession.SetActive(const Value: Boolean);
+procedure TmncTransaction.SetActive(const Value: Boolean);
 begin
   if Value <> Active then
   begin
@@ -1274,39 +1274,39 @@ begin
   end;
 end;
 
-procedure TmncSession.ParamsChanging(Sender: TObject);
+procedure TmncTransaction.ParamsChanging(Sender: TObject);
 begin
   CheckInactive;
 end;
 
-procedure TmncSession.ParamsChange(Sender: TObject);
+procedure TmncTransaction.ParamsChange(Sender: TObject);
 begin
   FParamsChanged := True;
 end;
 
-procedure TmncSession.SetConnection(const Value: TmncConnection);
+procedure TmncTransaction.SetConnection(const Value: TmncConnection);
 begin
   if FConnection <> Value then
   begin
     if FConnection <> nil then
-      FConnection.Sessions.Remove(Self);
+      FConnection.Transactions.Remove(Self);
     FConnection := Value;
     if FConnection <> nil then
-      FConnection.Sessions.Add(Self);
+      FConnection.Transactions.Add(Self);
   end;
 end;
 
-procedure TmncSession.SetParams(const Value: TStrings);
+procedure TmncTransaction.SetParams(const Value: TStrings);
 begin
   FParams.Assign(Value);
 end;
 
-procedure TmncSession.Start;
+procedure TmncTransaction.Start;
 begin
   InternalStart;
 end;
 
-procedure TmncSession.Stop;
+procedure TmncTransaction.Stop;
 begin
   InternalStop(Action);
 end;
@@ -1610,9 +1610,9 @@ begin
   inherited;
 end;
 
-{ TmncSessions }
+{ TmncTransactions }
 
-procedure TmncSessions.Stop;
+procedure TmncTransactions.Stop;
 var
   i: Integer;
 begin
@@ -1623,7 +1623,7 @@ begin
   end;
 end;
 
-function TmncSessions.IsAnyActive: Boolean;
+function TmncTransactions.IsAnyActive: Boolean;
 var
   i: Integer;
 begin
@@ -1638,12 +1638,12 @@ begin
   end;
 end;
 
-function TmncSessions.GetItem(Index: Integer): TmncSession;
+function TmncTransactions.GetItem(Index: Integer): TmncTransaction;
 begin
-  Result := inherited Items[Index] as TmncSession;
+  Result := inherited Items[Index] as TmncTransaction;
 end;
 
-procedure TmncSessions.SetItem(Index: Integer; const Value: TmncSession);
+procedure TmncTransactions.SetItem(Index: Integer; const Value: TmncTransaction);
 begin
   inherited Items[Index] := Value;
 end;

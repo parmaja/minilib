@@ -136,7 +136,7 @@ begin
   if SQLName <> '' then
   begin
     s := s + ' and idx.rdb$relation_name = ''' + SQLName + '''';
-    EnumCMD(Session, Meta, sokIndex, 'name', 'Table', s, ['Unique']);
+    EnumCMD(Transaction, Meta, sokIndex, 'name', 'Table', s, ['Unique']);
   end
   else
     EnumCMD(Meta, sokIndex, s);

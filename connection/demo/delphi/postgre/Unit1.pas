@@ -50,12 +50,12 @@ implementation
 procedure TForm1.Button1Click(Sender: TObject);
 var
   Conn: TmncPGConnection;
-  Session: TmncPGSession;
+  Session: TmncPGTransaction;
   Cmd: TmncPGCommand;
 begin
   Conn := ConnectData;
   try
-    Session := TmncPGSession.Create(Conn);
+    Session := TmncPGTransaction.Create(Conn);
     try
       Session.Start;
       Cmd := TmncPGCommand(Session.CreateCommand);
@@ -95,7 +95,7 @@ end;
 procedure TForm1.Button2Click(Sender: TObject);
 var
   Conn: TmncPGConnection;
-  Session: TmncPGSession;
+  Session: TmncPGTransaction;
   Cmd: TmncPGCommand;
   i: Integer;
   t: Cardinal;
@@ -103,7 +103,7 @@ begin
   Conn := ConnectData;
   SynEdit1.BeginUpdate;
   try
-    Session := TmncPGSession.Create(Conn);
+    Session := TmncPGTransaction.Create(Conn);
     ListBox1.Items.Clear;
     try
       Session.Start;
@@ -148,7 +148,7 @@ end;
 procedure TForm1.Button3Click(Sender: TObject);
 var
   Conn: TmncPGConnection;
-  Session: TmncPGSession;
+  Session: TmncPGTransaction;
   Cmd: TmncPGCommand;
   i: Integer;
   t: Cardinal;
@@ -162,7 +162,7 @@ begin
     Conn.Password := 'masterkey';
     Conn.Connect;
     Conn.Execute('SET CLIENT_ENCODING TO ''WIN1256'';');
-    Session := TmncPGSession.Create(Conn);
+    Session := TmncPGTransaction.Create(Conn);
     ListBox1.Items.Clear;
     try
       Session.Start;
@@ -244,7 +244,7 @@ end;
 procedure TForm1.Button4Click(Sender: TObject);
 var
   Conn: TmncPGConnection;
-  Session: TmncPGSession;
+  Session: TmncPGTransaction;
   Cmd: TmncPGCursorCommand;
   i: Integer;
   t: Cardinal;
@@ -257,7 +257,7 @@ begin
     Conn.UserName := 'postgres';
     Conn.Password := 'masterkey';
     Conn.Connect;
-    Session := TmncPGSession.Create(Conn);
+    Session := TmncPGTransaction.Create(Conn);
     ListBox1.Items.Clear;
     try
       Session.Start;
@@ -296,13 +296,13 @@ end;
 procedure TForm1.Button5Click(Sender: TObject);
 var
   Conn: TmncPGConnection;
-  Session: TmncPGSession;
+  Session: TmncPGTransaction;
   Cmd: TmncPGCommand;
   aOID: OID;
 begin
   Conn := ConnectData;
   try
-    Session := TmncPGSession.Create(Conn);
+    Session := TmncPGTransaction.Create(Conn);
     try
       Session.Start;
       Cmd := TmncPGCommand(Session.CreateCommand);
@@ -345,12 +345,12 @@ end;
 procedure TForm1.TreeBtnClick(Sender: TObject);
 var
   Conn: TmncPGConnection;
-  Session: TmncPGSession;
+  Session: TmncPGTransaction;
   Cmd: TmncPGCommand;
 begin
   Conn := ConnectData;
   try
-    Session := TmncPGSession.Create(Conn);
+    Session := TmncPGTransaction.Create(Conn);
     try
       Session.Start;
       Cmd := TmncPGCommand(Session.CreateCommand);

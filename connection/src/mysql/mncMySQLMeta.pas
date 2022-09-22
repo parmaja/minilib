@@ -57,17 +57,17 @@ end;
 procedure TmncMySQLMeta.EnumDatabases(Meta: TmncMetaItems; Options: TmetaEnumOptions);
 var
   aConnection: TmncSQLConnection;
-  aSession: TmncSQLSession;
+  aTransaction: TmncSQLTransaction;
 begin
   aConnection := CreateConnection;
   try
     aConnection.Resource := 'mysql';
     aConnection.Connect;
-    aSession := aConnection.CreateSession;
+    aTransaction := aConnection.CreateTransaction;
     try
-      EnumCMD(aSession, Meta, sokDatabase, 'name', 'Database', 'select schema_name as name from information_schema.schemata ' + GetSortSQL(Options), []);
+      EnumCMD(aTransaction, Meta, sokDatabase, 'name', 'Database', 'select schema_name as name from information_schema.schemata ' + GetSortSQL(Options), []);
     finally
-      aSession.Free;
+      aTransaction.Free;
     end;
   finally
     aConnection.Free;
@@ -78,7 +78,7 @@ procedure TmncMySQLMeta.EnumTables(Meta: TmncMetaItems; SQLName: string; Options
 begin
   {EnumCMD(Meta, sokTable, 'name',
     'SELECT TABLE_NAME as name FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = '''+SQLName + ''' ' + GetSortSQL(Options), []);}
-  EnumCMD(Session, Meta, sokTable, 'Tables_in_'+ SQLName, 'Table', 'SHOW TABLES', []);
+  EnumCMD(Transaction, Meta, sokTable, 'Tables_in_'+ SQLName, 'Table', 'SHOW TABLES', []);
 end;
 
 procedure TmncMySQLMeta.EnumViews(Meta: TmncMetaItems; Options: TmetaEnumOptions);

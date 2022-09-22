@@ -63,14 +63,14 @@ type
     constructor Create; override;
   end;
 
-  { TmncCSVSession }
+  { TmncCSVTransaction }
 
-  TmncCSVSession = class(TmncSession)
+  TmncCSVTransaction = class(TmncTransaction)
   private
     FCSVOptions: TmncCSVOptions;
   protected
     procedure DoStart; override;
-    procedure DoStop(How: TmncSessionAction; Retaining: Boolean); override;
+    procedure DoStop(How: TmncTransactionAction; Retaining: Boolean); override;
   public
     constructor Create(vConnection: TmncConnection); override;
     property CSVOptions: TmncCSVOptions read FCSVOptions write FCSVOptions;
@@ -92,7 +92,7 @@ type
     FStream: TStream;
     FMode: TmncCSVMode;
     function GetConnection: TmncCSVConnection;
-    function GetSession: TmncCSVSession;
+    function GetTransaction: TmncCSVTransaction;
   protected
     procedure DoParse; override;
     function CreateFields(vColumns: TmncColumns): TmncFields; override;
@@ -111,10 +111,10 @@ type
     function GetDone: Boolean; override;
     function GetActive: Boolean; override;
     procedure DoClose; override;
-    property Session: TmncCSVSession read GetSession;
+    property Transaction: TmncCSVTransaction read GetTransaction;
     property Connection: TmncCSVConnection read GetConnection;
   public
-    constructor Create(vSession: TmncSession; vStream: TStream; vMode: TmncCSVMode); overload;
+    constructor Create(vTransaction: TmncTransaction; vStream: TStream; vMode: TmncCSVMode); overload;
     destructor Destroy; override;
     property Mode: TmncCSVMode read FMode;
     //property Stream: TStream read FStream write SetStream;//TODO
@@ -197,17 +197,17 @@ begin
   FConnected := False;
 end;
 
-{ TmncCSVSession }
+{ TmncCSVTransaction }
 
-procedure TmncCSVSession.DoStart;
+procedure TmncCSVTransaction.DoStart;
 begin
 end;
 
-procedure TmncCSVSession.DoStop(How: TmncSessionAction; Retaining: Boolean);
+procedure TmncCSVTransaction.DoStop(How: TmncTransactionAction; Retaining: Boolean);
 begin
 end;
 
-constructor TmncCSVSession.Create(vConnection: TmncConnection);
+constructor TmncCSVTransaction.Create(vConnection: TmncConnection);
 begin
   inherited;
   HeaderLine := hdrNormal;
@@ -218,9 +218,9 @@ end;
 
 { TmncCSVCommand }
 
-constructor TmncCSVCommand.Create(vSession: TmncSession; vStream: TStream; vMode: TmncCSVMode);
+constructor TmncCSVCommand.Create(vTransaction: TmncTransaction; vStream: TStream; vMode: TmncCSVMode);
 begin
-  CreateBy(vSession);
+  CreateBy(vTransaction);
   FMode := vMode;
   FStream := vStream;
 end;
@@ -253,12 +253,12 @@ procedure TmncCSVCommand.DoPrepare;
 begin
   FBeginOfStream := True;
   FCSVStream := TmnWrapperStream.Create(FStream, False);
-  FCSVStream.EndOfLine := Session.EndOfLine;
-  if Session.HeaderLine <> hdrNone then
+  FCSVStream.EndOfLine := Transaction.EndOfLine;
+  if Transaction.HeaderLine <> hdrNone then
   begin
     if (Mode = csvmWrite) then
     begin
-      if Session.HeaderLine <> hdrSkip then //do not save when it
+      if Transaction.HeaderLine <> hdrSkip then //do not save when it
         SaveHeader;
     end
     else
@@ -279,12 +279,12 @@ end;
 
 function TmncCSVCommand.GetConnection: TmncCSVConnection;
 begin
-  Result := Session.Connection as TmncCSVConnection;
+  Result := Transaction.Connection as TmncCSVConnection;
 end;
 
-function TmncCSVCommand.GetSession: TmncCSVSession;
+function TmncCSVCommand.GetTransaction: TmncCSVTransaction;
 begin
-  Result := (Inherited Session) as TmncCSVSession;
+  Result := (Inherited Transaction) as TmncCSVTransaction;
 end;
 
 procedure TmncCSVCommand.DoParse;
@@ -327,7 +327,7 @@ type
   TStrToFields = class(TObject)
   public
     Fields: TmncFields;
-    Session: TmncCSVSession;
+    Transaction: TmncCSVTransaction;
   end;
 
 procedure StrToFieldsCallbackProc(Sender: Pointer; Index: Integer; S: string; var Resume: Boolean);
@@ -336,8 +336,8 @@ var
 begin
   Info := TStrToFields(Sender);
 //  if (i < aRecord.Count) {and (i < Columns.Count)} then //TODO check it
-  if Info.Session.CSVOptions.QuoteChar <> #0 then
-    Info.Fields.Add(index, DequoteStr(s, Info.Session.CSVOptions.QuoteChar))
+  if Info.Transaction.CSVOptions.QuoteChar <> #0 then
+    Info.Fields.Add(index, DequoteStr(s, Info.Transaction.CSVOptions.QuoteChar))
   else
     Info.Fields.Add(index, s)
 end;
@@ -352,8 +352,8 @@ begin
     Info := TStrToFields.Create;
     try
       Info.Fields := CreateFields(Columns);
-      Info.Session := Session;
-      StrToStringsCallback(Line, Info, StrToFieldsCallbackProc, [Session.DelimiterChar], [#0, #13, #10], [Session.QuoteChar]);
+      Info.Transaction := Transaction;
+      StrToStringsCallback(Line, Info, StrToFieldsCallbackProc, [Transaction.DelimiterChar], [#0, #13, #10], [Transaction.QuoteChar]);
       Fields := Info.Fields;
     finally
       Info.Free;
@@ -382,7 +382,7 @@ begin
   if Result then
   begin
     Strings := TStringList.Create;
-    StrToStrings(s, Strings, [Session.DelimiterChar], [#0, #13, #10], [Session.QuoteChar])
+    StrToStrings(s, Strings, [Transaction.DelimiterChar], [#0, #13, #10], [Transaction.QuoteChar])
   end
   else
     Strings := nil;
@@ -398,7 +398,7 @@ begin
   begin
     Line := '';
     repeat
-      if Session.CSVOptions.ANSIContents then
+      if Transaction.CSVOptions.ANSIContents then
       begin
         Result := FCSVStream.ReadLineRawByte(t, False);
         {$ifdef fpc}
@@ -426,7 +426,7 @@ begin
   for i := 0 to Columns.Count - 1 do
   begin
     if s <> '' then
-      s := s + Session.DelimiterChar;
+      s := s + Transaction.DelimiterChar;
     s := s + Columns[i].Name;
   end;
   WriteLine(s);
@@ -444,7 +444,7 @@ begin
   for i := 0 to Params.Count - 1 do
   begin
     if not First then
-      s := s + Session.DelimiterChar
+      s := s + Transaction.DelimiterChar
     else
       First := False;
     v := Params.Items[i].Value;
@@ -461,7 +461,7 @@ begin
     FBeginOfStream := False
   else
     FCSVStream.WriteLine;
-  if Session.CSVOptions.ANSIContents then
+  if Transaction.CSVOptions.ANSIContents then
   begin
     {$ifdef fpc}
     FCSVStream.WriteAnsiString(s);
