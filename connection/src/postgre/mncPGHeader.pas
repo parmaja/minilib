@@ -1,5 +1,5 @@
 unit mncPGHeader;
-{ postgresql 13.x }
+{ postgresql 14.x }
 {$IFDEF FPC}
 {$MODE delphi}
 {$PACKRECORDS C}
@@ -21,7 +21,7 @@ unit mncPGHeader;
  *}
  {
    Initially this file ported from Lazarus just to be compatiple in both Delphi and FPC
-   But we updated it from postgresql 13.x
+   But with many modifications, we updated it to postgresql 14.x
 
    src/interfaces/libpq/libpq-fe.h
  }
@@ -65,8 +65,19 @@ const
 
   CMDSTATUS_LEN = 64;
 
-  {
-   * Option flags for PQcopyResult
+  {*
+    * These symbols may be used in compile-time #ifdef tests for the availability
+    * of newer libpq features.
+    */
+
+    /* Indicates presence of PQenterPipelineMode and friends */
+    #define LIBPQ_HAS_PIPELINING 1
+    /* Indicates presence of PQsetTraceFlags; also new PQtrace output format */
+    #define LIBPQ_HAS_TRACE_FLAGS 1
+  }
+
+  {*
+    * Option flags for PQcopyResult
   }
   PG_COPYRES_ATTRS		     = $01;
   PG_COPYRES_TUPLES		     = $02;	{ Implies PG_COPYRES_ATTRS }
@@ -108,15 +119,14 @@ type
   									 * postmaster.        }
   	CONNECTION_AUTH_OK,			{ Received authentication; waiting for
   								 * backend startup. }
-  	CONNECTION_SETENV,			{ Negotiating environment. }
+  	CONNECTION_SETENV,			{ This state is no longer used. }
   	CONNECTION_SSL_STARTUP,		{ Negotiating SSL. }
   	CONNECTION_NEEDED,			{ Internal state: connect() needed }
-  	CONNECTION_CHECK_WRITABLE,	{ Check if we could make a writable
-  								 * connection. }
-  	CONNECTION_CONSUME,			{ Wait for any pending message and consume
-  								 * them. }
+  	CONNECTION_CHECK_WRITABLE,	{ Checking if session is read-write. }
+  	CONNECTION_CONSUME,			{ Consuming any extra messages. 								 * them. }
   	CONNECTION_GSS_STARTUP,		{ Negotiating GSSAPI. }
-  	CONNECTION_CHECK_TARGET		{ Check if we have a proper target connection }
+  	CONNECTION_CHECK_TARGET,		{ Check if we have a proper target connection }
+    CONNECTION_CHECK_STANDBY	{ Checking if server is in standby mode. }
     );
 
   TPostgresPollingStatusType = (
@@ -129,21 +139,24 @@ type
   );
 
   TExecStatusType = (
-    PGRES_EMPTY_QUERY = 0,		{ empty query string was executed }
-    PGRES_COMMAND_OK,			{ a query command that doesn't return
+    PGRES_EMPTY_QUERY = 0,	{ empty query string was executed }
+    PGRES_COMMAND_OK,			  { a query command that doesn't return
                                  * anything was executed properly by the
                                  * backend }
-    PGRES_TUPLES_OK,			{ a query command that returns tuples was
+    PGRES_TUPLES_OK,			  { a query command that returns tuples was
                                  * executed properly by the backend, PGresult
                                  * contains the result tuples }
-    PGRES_COPY_OUT,				{ Copy Out data transfer in progress }
-    PGRES_COPY_IN,				{ Copy In data transfer in progress }
+    PGRES_COPY_OUT,				  { Copy Out data transfer in progress }
+    PGRES_COPY_IN,				  { Copy In data transfer in progress }
     PGRES_BAD_RESPONSE,			{ an unexpected response was recv'd from the
                                  * backend }
     PGRES_NONFATAL_ERROR,		{ notice or warning message }
     PGRES_FATAL_ERROR,			{ query failed }
-    PGRES_COPY_BOTH,			{ Copy In/Out data transfer in progress }
-    PGRES_SINGLE_TUPLE			{ single tuple from larger resultset }
+    PGRES_COPY_BOTH,			  { Copy In/Out data transfer in progress }
+  	PGRES_SINGLE_TUPLE,			{ single tuple from larger resultset }
+  	PGRES_PIPELINE_SYNC,		{ pipeline synchronization point }
+  	PGRES_PIPELINE_ABORTED	{ Command didn't run because of an abort
+  	                          earlier in a pipeline }
   );
 
   TPGTransactionStatusType = (
@@ -177,6 +190,15 @@ type
       PQPING_REJECT,				{ server is alive but rejecting connections }
       PQPING_NO_RESPONSE,			{ could not establish connection }
       PQPING_NO_ATTEMPT			{ connection not attempted (bad params) }
+  );
+
+  {
+    PGpipelineStatus - Current status of pipeline mode
+  }
+  TPGpipelineStatusMode = (
+  	PQ_PIPELINE_OFF,
+  	PQ_PIPELINE_ON,
+  	PQ_PIPELINE_ABORTED
   );
 
 {
@@ -459,6 +481,7 @@ type
   TPQerrorMessage = function(conn: PPGconn): PByte; cdecl;
   TPQsocket = function(conn: PPGconn): Integer; cdecl;
   TPQbackendPID = function(conn: PPGconn): Integer; cdecl;
+  TPGpipelineStatus = procedure(conn: PPGconn); cdecl;
   TPQconnectionNeedsPassword = function(conn: PPGconn): Integer;
   TPQconnectionUsedPassword = function(conn: PPGconn): Integer;
   TPQclientEncoding = function(conn: PPGconn): Integer;
@@ -493,9 +516,6 @@ type
   { Set CONTEXT visibility for PQerrorMessage and PQresultErrorMessage }
   TPQsetErrorContextVisibility = function(conn: PPGconn; show_context: TPGContextVisibility): TPGContextVisibility; cdecl;
 
-  TPQtrace = procedure(conn: PPGconn; DebugPort: Pointer); cdecl;
-  TPQuntrace = procedure(conn: PPGconn); cdecl;
-
   { Override default notice handling routines }
   TPQsetNoticeReceiver = function(conn: PPGconn; proc: TPQnoticeReceiver; Arg: Pointer): TPQnoticeReceiver; cdecl;
   TPQsetNoticeProcessor = function(conn: PPGconn; proc: TPQnoticeProcessor; Arg: Pointer): TPQnoticeProcessor; cdecl;
@@ -511,6 +531,18 @@ type
 
   TPQregisterThreadLock = function(newhandler: TPGthreadlock): TPGthreadlock; cdecl;
 
+  TPQtrace = procedure(conn: PPGconn; DebugPort: Pointer); cdecl;
+  TPQuntrace = procedure(conn: PPGconn); cdecl;
+
+  { flags controlling trace output: }
+  { omit timestamps from each line }
+  const PQTRACE_SUPPRESS_TIMESTAMPS		= 1;
+  { redact portions of some messages, for testing frameworks }
+  const PQTRACE_REGRESS_MODE			    = 2;
+
+type
+  TPQsetTraceFlags = procedure(conn: PPGconn; flags: integer); cdecl;
+
   { Simple synchronous query }
   TPQexec = function(conn: PPGconn; query: PByte): PPGresult; cdecl;
   TPQexecParams = function(conn: PPGconn; command: PByte; nParams: Integer; paramTypes: POID; paramValues: PPAnsiChar; paramLengths, paramFormats: Pointer; resultFormat: Integer): PPGresult; cdecl; //todo check arg
@@ -518,6 +550,9 @@ type
   TPQPrepare = function(conn: PPGconn; stmtName, query: PByte; nParams: Integer; paramTypes: POid): PPGresult; cdecl;
   TPQExecPrepared = function(conn: PPGconn; stmtName: PByte; nParams: Integer; paramValues: PPAnsiChar; paramLengths, paramFormats: PInteger; resultFormat: Integer): PPGresult; cdecl;
 
+  const PQ_QUERY_PARAM_MAX_LIMIT  = 65535;
+
+type
   TPQsendQuery = function(conn: PPGconn; query: PByte): Integer; cdecl;
   TPQsendQueryParams = function(conn: PPGconn; command: PByte; nParams: Integer; paramTypes: POID; paramValues: PPAnsiChar; paramLengths, paramFormats: PInteger; resultFormat: Integer): Integer; cdecl;
 
@@ -531,6 +566,13 @@ type
 
   TPQisBusy = function(conn: PPGconn): Integer; cdecl;
   TPQconsumeInput = function(conn: PPGconn): Integer; cdecl;
+
+  { Routines for pipeline mode management }
+
+  TPQenterPipelineMode = function(conn: PPGconn): integer;
+  TPQexitPipelineMode = function(conn: PPGconn): Integer; cdecl;
+  TPQpipelineSync = function(conn: PPGconn): Integer; cdecl;
+  TPQsendFlushRequest = function(conn: PPGconn): Integer; cdecl;
 
   { LISTEN/NOTIFY support }
 
@@ -644,28 +686,31 @@ type
   TPQlibVersion = function(): Integer;
 
   { Determine length of multibyte encoded char at *s }
-  TPQmblen = function(s: PByte; encoding: integer): integer;
+  TPQmblen = function(s: PByte; encoding: integer): integer; cdecl;
+
+  { Same, but not more than the distance to the end of string s }
+  TPQmblenBounded = function(s: PByte; encoding: integer): integer; cdecl;
 
   { Determine display length of multibyte encoded char at *s }
-  TPQdsplen = function(s: PByte; encoding: integer): Integer;
+  TPQdsplen = function(s: PByte; encoding: integer): Integer; cdecl;
 
   { Get encoding id from environment variable PGCLIENTENCODING }
-  TPQenv2encoding = function(): Integer;
+  TPQenv2encoding = function(): Integer; cdecl;
 
-  TPQencryptPassword = function(passwd: PByte; user: PByte): PByte;
-  TPQencryptPasswordConn = function(conn: PPGconn; passwd: PByte; user: PByte; algorithm: PByte): PByte;
+  TPQencryptPassword = function(passwd: PByte; user: PByte): PByte; cdecl;
+  TPQencryptPasswordConn = function(conn: PPGconn; passwd: PByte; user: PByte; algorithm: PByte): PByte; cdecl;
 
-  Tpg_char_to_encoding = function(name: PByte): Integer;
-  Tpg_encoding_to_char = function(encoding: Integer): PByte;
-  Tpg_valid_server_encoding_id = function(encoding: Integer): Integer;
+  Tpg_char_to_encoding = function(name: PByte): Integer; cdecl;
+  Tpg_encoding_to_char = function(encoding: Integer): PByte; cdecl;
+  Tpg_valid_server_encoding_id = function(encoding: Integer): Integer; cdecl;
 
-  { Support for overriding sslpassword handling with a callback. }
+  { Support for overriding sslpassword handling with a callback }
   {this callback}
-  TPQsslKeyPassHook_OpenSSL_type = function(buf: PByte; size: Integer; conn: PPGconn): Integer;
+  TPQsslKeyPassHook_OpenSSL_type = function(buf: PByte; size: Integer; conn: PPGconn): Integer; cdecl;
 
-  TPQgetSSLKeyPassHook_OpenSSL = function(): TPQsslKeyPassHook_OpenSSL_type;
-  TPQsetSSLKeyPassHook_OpenSSL = procedure (hook: TPQsslKeyPassHook_OpenSSL_type);
-  TPQdefaultSSLKeyPassHook_OpenSSL = function(buf: PByte; size: Integer; conn: PPGconn): Integer;
+  TPQgetSSLKeyPassHook_OpenSSL = function(): TPQsslKeyPassHook_OpenSSL_type; cdecl;
+  TPQsetSSLKeyPassHook_OpenSSL = procedure (hook: TPQsslKeyPassHook_OpenSSL_type); cdecl;
+  TPQdefaultSSLKeyPassHook_OpenSSL = function(buf: PByte; size: Integer; conn: PPGconn): Integer; cdecl;
 
 var
 
@@ -705,6 +750,7 @@ var
   PQerrorMessage: TPQerrorMessage;
   PQsocket: TPQsocket;
   PQbackendPID: TPQbackendPID;
+  PGpipelineStatus: TPGpipelineStatus;
   PQconnectionNeedsPassword: TPQconnectionNeedsPassword;
   PQconnectionUsedPassword: TPQconnectionUsedPassword;
   PQclientEncoding: TPQclientEncoding;
@@ -723,11 +769,14 @@ var
   PQsetErrorVerbosity: TPQsetErrorVerbosity;
   PQsetErrorContextVisibility: TPQsetErrorContextVisibility;
 
-  PQtrace: TPQtrace;
-  PQuntrace: TPQuntrace;
-
   PQsetNoticeReceiver: TPQsetNoticeReceiver;
   PQsetNoticeProcessor: TPQsetNoticeProcessor;
+
+  PQregisterThreadLock: TPQregisterThreadLock;
+
+  PQtrace: TPQtrace;
+  PQuntrace: TPQuntrace;
+  PQsetTraceFlags: TPQsetTraceFlags;
 
   PQexec: TPQexec;
   PQexecParams: TPQexecParams;
@@ -744,11 +793,18 @@ var
   PQisBusy: TPQisBusy;
   PQconsumeInput: TPQconsumeInput;
 
+  PQenterPipelineMode: TPQenterPipelineMode;
+  PQexitPipelineMode: TPQexitPipelineMode;
+  PQpipelineSync: TPQpipelineSync;
+  PQsendFlushRequest: TPQsendFlushRequest;
+
   PQnotifies: TPQnotifies;
 
   PQputCopyData: TPQputCopyData;
   PQputCopyEnd: TPQputCopyEnd;
   PQgetCopyData: TPQgetCopyData;
+
+  { Deprecated routines for copy in/out }
 
   //PQfreeNotify: TPQfreeNotify;
   //PQgetline: TPQgetline;
@@ -837,6 +893,7 @@ var
   PQlibVersion: TPQlibVersion;
 
   PQmblen: TPQmblen;
+  PQmblenBounded: TPQmblenBounded;
   PQdsplen: TPQdsplen;
   PQenv2encoding: TPQenv2encoding;
   PQencryptPassword: TPQencryptPassword;
@@ -911,6 +968,7 @@ begin
   PQerrorMessage := GetAddress('PQerrorMessage');
   PQsocket := GetAddress('PQsocket');
   PQbackendPID := GetAddress('PQbackendPID');
+  PGpipelineStatus := GetAddress('PGpipelineStatus');
   PQconnectionNeedsPassword:= GetAddress('PQconnectionNeedsPassword');
   PQconnectionUsedPassword:= GetAddress('PQconnectionUsedPassword');
   PQclientEncoding:= GetAddress('PQclientEncoding');
@@ -929,11 +987,14 @@ begin
   PQsetErrorVerbosity := GetAddress('PQsetErrorVerbosity');
   PQsetErrorContextVisibility := GetAddress('PQsetErrorContextVisibility');
 
-  PQtrace := GetAddress('PQtrace');
-  PQuntrace := GetAddress('PQuntrace');
-
   PQsetNoticeReceiver := GetAddress('PQsetNoticeReceiver');
   PQsetNoticeProcessor := GetAddress('PQsetNoticeProcessor');
+
+  PQregisterThreadLock := GetAddress('PQregisterThreadLock');
+
+  PQtrace := GetAddress('PQtrace');
+  PQuntrace := GetAddress('PQuntrace');
+  PQsetTraceFlags := GetAddress('PQsetTraceFlags');
 
   PQexec := GetAddress('PQexec');
   PQexecParams := GetAddress('PQexecParams');
@@ -952,6 +1013,11 @@ begin
 
   PQisBusy := GetAddress('PQisBusy');
   PQconsumeInput := GetAddress('PQconsumeInput');
+
+  PQenterPipelineMode := GetAddress('PQenterPipelineMode');
+  PQexitPipelineMode := GetAddress('PQexitPipelineMode');
+  PQpipelineSync := GetAddress('PQpipelineSync');
+  PQsendFlushRequest := GetAddress('PQsendFlushRequest');
 
   PQnotifies := GetAddress('PQnotifies');
 
@@ -1043,6 +1109,7 @@ begin
   PQlibVersion := GetAddress('PQlibVersion');
 
   PQmblen := GetAddress('PQmblen');
+  PQmblenBounded := GetAddress('PQmblenBounded');
   PQdsplen := GetAddress('PQdsplen');
   PQenv2encoding := GetAddress('PQenv2encoding');
   PQencryptPassword := GetAddress('PQencryptPassword');
