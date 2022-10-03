@@ -164,7 +164,7 @@ type
     FListener: TmnListener;
     FLogging: Boolean;
     FUseSSL: Boolean;
-    FIdleTick: Int64;
+    FIdleTick: UInt64;
     FIdleInterval: Int64;
     procedure SetActive(const Value: Boolean);
     procedure SetAddress(const Value: string);

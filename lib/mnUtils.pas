@@ -257,7 +257,7 @@ function DeleteFiles(Path, Files: string): Integer;
 function GetSizeOfFile(const vFile: string): Int64; //GetFileSize
 
 var
-  SystemAnsiCodePage: Integer; //used to convert from Ansi string, it is the default
+  SystemAnsiCodePage: Cardinal; //used to convert from Ansi string, it is the default
 
 implementation
 
