@@ -18,11 +18,7 @@ interface
 
 uses
   Classes, SysUtils, StrUtils, DateUtils, Types,
-  {$ifdef FPC}
-  Contnrs;
-  {$else}
-  System.Generics.Collections;
-  {$endif}
+  Generics.Collections, Contnrs;
 
 type
 
@@ -121,8 +117,11 @@ type
 
     protected
       procedure Created; override;
+      {$ifdef FPC}
+      procedure Notify(Ptr: Pointer; Action: TListNotification); override;
+      {$else}
       procedure Notify(const Value: _Object_; Action: TCollectionNotification); override;
-
+      {$endif}
     public
       function Find(const Name: string): _Object_;
       function IndexOfName(vName: string): Integer;
@@ -351,12 +350,20 @@ begin
       end;
     end;
 end;
-
+{$ifdef FPC}
+procedure TmnNamedObjectList<_Object_>.Notify(Ptr: Pointer; Action: TListNotification);
+{$else}
 procedure TmnNamedObjectList<_Object_>.Notify(const Value: _Object_; Action: TCollectionNotification);
+{$endif}
 begin
   inherited;
-  if Action=cnAdded then
+  {$ifdef FPC}
+  if Action = lnAdded then
+    FDic.AddOrSetValue(_Object_(Ptr).Name, Ptr);
+  {$else}
+  if Action = cnAdded then
     FDic.AddOrSetValue(Value.Name, Value);
+  {$endif}
 end;
 
 { TmnObjectList.TmnObjectListEnumerator }
