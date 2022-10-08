@@ -117,9 +117,19 @@ type
     TmnNamedObjectList<_Object_: TmnNamedObject> = class(TmnObjectList<_Object_>)
     {$endif}
     private
+      FDic: TDictionary<string, _Object_>;
+
+    protected
+      procedure Created; override;
+      procedure Notify(const Value: _Object_; Action: TCollectionNotification); override;
+
     public
       function Find(const Name: string): _Object_;
       function IndexOfName(vName: string): Integer;
+      destructor Destroy; override;
+      {$ifdef FPC} //not now
+      procedure Clear; override;
+      {$endif}
     end;
 
     { TmnNameValueObjectList }
@@ -291,11 +301,31 @@ end;
 
 { TmnNamedObjectList }
 
-function  TmnNamedObjectList<_Object_>.Find(const Name: string): _Object_;
-var
-  i: Integer;
+procedure TmnNamedObjectList<_Object_>.Created;
 begin
-  Result := nil;
+  inherited;
+  FDic := TDictionary<string, _Object_>.Create(1025); //1024+1 (size+-1)
+end;
+
+destructor TmnNamedObjectList<_Object_>.Destroy;
+begin
+  FreeAndNil(FDic);
+  inherited;
+end;
+
+{$ifdef FPC} //not now
+procedure TmnNamedObjectList<_Object_>.Clear;
+begin
+  inherited;
+  FDic.Clear;
+end;
+{$endif}
+
+
+function  TmnNamedObjectList<_Object_>.Find(const Name: string): _Object_;
+begin
+  FDic.TryGetValue(Name, Result);
+  {Result := nil;
   for i := 0 to Count - 1 do
   begin
     if SameText(Items[i].Name, Name) then
@@ -303,7 +333,7 @@ begin
       Result := Items[i];
       break;
     end;
-  end;
+  end;}
 end;
 
 function TmnNamedObjectList<_Object_>.IndexOfName(vName: string): Integer;
@@ -320,6 +350,13 @@ begin
         break;
       end;
     end;
+end;
+
+procedure TmnNamedObjectList<_Object_>.Notify(const Value: _Object_; Action: TCollectionNotification);
+begin
+  inherited;
+  if Action=cnAdded then
+    FDic.AddOrSetValue(Value.Name, Value);
 end;
 
 { TmnObjectList.TmnObjectListEnumerator }
