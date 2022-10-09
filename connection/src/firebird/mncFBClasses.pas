@@ -78,7 +78,7 @@ type
     FBlobMaxSegmentSize: Long;
     FBlobNumSegments: Long;
     FBlobSize: Long;
-    FBlobType: Short; { 0 = segmented, 1 = streamed }
+    FBlobType: SmallInt; { 0 = segmented, 1 = streamed }
     FBuffer: PByte;
     FHandle: TISC_BLOB_HANDLE;
     FMode: TBlobStreamMode;
@@ -118,7 +118,7 @@ type
     property BlobMaxSegmentSize: Long read FBlobMaxSegmentSize;
     property BlobNumSegments: Long read FBlobNumSegments;
     property BlobSize: Long read FBlobSize;
-    property BlobType: Short read FBlobType;
+    property BlobType: SmallInt read FBlobType;
     property mode: TBlobStreamMode read FMode write SetMode;
     property Modified: Boolean read FModified;
   end;
@@ -130,8 +130,8 @@ type
     FXSQLVAR: PXSQLVAR;
     FIgnored: Boolean;
     FModified: Boolean;
-    FMaxLen: Short;
-    function GetSqlDef: Short;
+    FMaxLen: SmallInt;
+    function GetSqlDef: SmallInt;
   protected
     function GetSQLVAR: PXSQLVAR;
     procedure SetSQLVAR(const AValue: PXSQLVAR);
@@ -139,37 +139,37 @@ type
     function GetOwnName: string;
     function GetRelName: string;
     function GetSqlData: PByte;
-    function GetSqlInd: PShort;
-    function GetSqlLen: Short;
+    function GetSqlInd: PSmallInt;
+    function GetSqlLen: SmallInt;
     function GetSqlName: string;
-    function GetSqlPrecision: Short;
-    function GetSqlScale: Short;
-    function GetSqlSubtype: Short;
-    function GetSqlType: Short;
+    function GetSqlPrecision: SmallInt;
+    function GetSqlScale: SmallInt;
+    function GetSqlSubtype: SmallInt;
+    function GetSqlType: SmallInt;
     procedure SetAliasName(const AValue: string);
     procedure SetOwnName(const AValue: string);
     procedure SetRelName(const AValue: string);
     procedure SetSqlName(const AValue: string);
     procedure SetSqlData(const AValue: PByte);
-    procedure SetSqlInd(const AValue: PShort);
-    procedure SetSqlLen(const AValue: Short);
-    procedure SetSqlPrecision(const AValue: Short);
-    procedure SetSqlScale(const AValue: Short);
-    procedure SetSqlSubtype(const AValue: Short);
-    procedure SetSqlType(const AValue: Short);
+    procedure SetSqlInd(const AValue: PSmallInt);
+    procedure SetSqlLen(const AValue: SmallInt);
+    procedure SetSqlPrecision(const AValue: SmallInt);
+    procedure SetSqlScale(const AValue: SmallInt);
+    procedure SetSqlSubtype(const AValue: SmallInt);
+    procedure SetSqlType(const AValue: SmallInt);
   public
     procedure UpdateData(OldSize, NewSize: Integer);
     procedure UpdateSQLInd;
     property XSQLVar: PXSQLVAR read GetSQLVAR write SetSQLVAR;
 
-    property SqlType: Short read GetSqlType write SetSqlType;
-    property SqlDef: Short read GetSqlDef;
-    property SqlScale: Short read GetSqlScale write SetSqlScale;
-    property SqlPrecision: Short read GetSqlPrecision write SetSqlPrecision;
-    property SqlSubtype: Short read GetSqlSubtype write SetSqlSubtype;
-    property SqlLen: Short read GetSqlLen write SetSqlLen;
+    property SqlType: SmallInt read GetSqlType write SetSqlType;
+    property SqlDef: SmallInt read GetSqlDef;
+    property SqlScale: SmallInt read GetSqlScale write SetSqlScale;
+    property SqlPrecision: SmallInt read GetSqlPrecision write SetSqlPrecision;
+    property SqlSubtype: SmallInt read GetSqlSubtype write SetSqlSubtype;
+    property SqlLen: SmallInt read GetSqlLen write SetSqlLen;
     property SqlData: PByte read GetSqlData write SetSqlData;
-    property SqlInd: PShort read GetSqlInd write SetSqlInd;
+    property SqlInd: PSmallInt read GetSqlInd write SetSqlInd;
 
     property SqlName: string read GetSqlName write SetSqlName;
     property RelName: string read GetRelName write SetRelName;
@@ -185,7 +185,7 @@ type
     function GetAsLong: Long;
     function GetAsPointer: Pointer;
     function GetAsQuad: TISC_QUAD;
-    function GetAsShort: Short;
+    function GetAsShort: SmallInt;
     function GetAsString: string;
     function GetAsVariant: Variant;
     function GetIsNull: Boolean;
@@ -201,7 +201,7 @@ type
     procedure SetAsFloat(AValue: Double);
     procedure SetAsPointer(AValue: Pointer);
     procedure SetAsQuad(AValue: TISC_QUAD);
-    procedure SetAsShort(AValue: Short);
+    procedure SetAsShort(AValue: SmallInt);
     procedure SetAsString(AValue: string);
     procedure SetAsVariant(AValue: Variant);
     procedure SetIsNull(AValue: Boolean);
@@ -247,7 +247,7 @@ type
 
     property Modified: Boolean read FModified write SetModified;
     property Size: Integer read GetSize;
-    property MaxLen: Short read FMaxLen write FMaxLen;
+    property MaxLen: SmallInt read FMaxLen write FMaxLen;
 
     property AsBoolean: Boolean read GetAsBoolean write SetAsBoolean;
     property AsDate: TDateTime read GetAsDateTime write SetAsDate;
@@ -262,7 +262,7 @@ type
     property AsLong: Long read GetAsLong write SetAsLong;
     property AsPointer: Pointer read GetAsPointer write SetAsPointer;
     property AsQuad: TISC_QUAD read GetAsQuad write SetAsQuad;
-    property AsShort: Short read GetAsShort write SetAsShort;
+    property AsShort: SmallInt read GetAsShort write SetAsShort;
     property AsString: string read GetAsString write SetAsString;
     property AsChar: char read GetAsChar write SetAsChar;
     property AsNullString: string read GetAsString write SetAsNullString;
@@ -296,11 +296,10 @@ type
   end;
 
 function getb(p: PBSTREAM): Byte;
-function putb(x: Byte; p: PBSTREAM): Int;
-function putbx(x: Byte; p: PBSTREAM): Int;
-function FBSqlDef(X: short): short;
+function putb(x: Byte; p: PBSTREAM): Integer;
+function putbx(x: Byte; p: PBSTREAM): Integer;
 
-procedure FBGetBlobInfo(hBlobHandle: PISC_BLOB_HANDLE; out NumSegments, MaxSegmentSize, TotalSize: Long; out BlobType: Short);
+procedure FBGetBlobInfo(hBlobHandle: PISC_BLOB_HANDLE; out NumSegments, MaxSegmentSize, TotalSize: Long; out BlobType: SmallInt);
 procedure FBReadBlob(hBlobHandle: PISC_BLOB_HANDLE; buffer: PByte; BlobSize: Long);
 procedure FBWriteBlob(hBlobHandle: PISC_BLOB_HANDLE; buffer: PByte; BlobSize: Long);
 function FBGetBlob(DBHandle: TISC_DB_HANDLE; TRHandle: TISC_TR_HANDLE; BlobID: PISC_QUAD): PByte;
@@ -325,7 +324,7 @@ implementation
 uses
   mncFBUtils;
 
-procedure FBGetBlobInfo(hBlobHandle: PISC_BLOB_HANDLE; out NumSegments, MaxSegmentSize, TotalSize: Long; out BlobType: Short);
+procedure FBGetBlobInfo(hBlobHandle: PISC_BLOB_HANDLE; out NumSegments, MaxSegmentSize, TotalSize: Long; out BlobType: SmallInt);
 var
   items: array [0 .. 3] of byte;
   results: array [0 .. 99] of byte;
@@ -446,21 +445,21 @@ begin
   Dec(p^.bstr_cnt);
   if (p^.bstr_cnt >= 0) then
   begin
-    Result := (Int(p^.bstr_ptr^) and Int(0377));
+    Result := (Integer(p^.bstr_ptr^) and Integer(0377));
     Inc(p^.bstr_ptr);
   end
   else
     Result := FBLib.BLOB_get(p);
 end;
 
-function putb(x: byte; p: PBSTREAM): Int;
+function putb(x: byte; p: PBSTREAM): Integer;
 { The C-macro reads like this:
   putb(x,p) ((x == '\n' || (!(--(p)->bstr_cnt))) ?      // then
   BLOB_put (x,p) :                                    // else
-  ((int) (*(p)->bstr_ptr++ = (unsigned) (x)))) }
+  ((Integer) (*(p)->bstr_ptr++ = (unsigned) (x)))) }
 begin
   Dec(p^.bstr_cnt);
-  if (x = (Int('n') - Int('a'))) or (p^.bstr_cnt = 0) then
+  if (x = (Integer('n') - Integer('a'))) or (p^.bstr_cnt = 0) then
     Result := FBLib.BLOB_put(x, p)
   else
   begin
@@ -470,11 +469,11 @@ begin
   end;
 end;
 
-function putbx(x: Byte; p: PBSTREAM): Int;
+function putbx(x: Byte; p: PBSTREAM): Integer;
 { The C-macro reads like this:
   putbx(x,p) ((!(--(p)->bstr_cnt)) ?    // then
   BLOB_put (x,p) :                    // else
-  ((int) (*(p)->bstr_ptr++ = (unsigned) (x)))) }
+  ((Integer) (*(p)->bstr_ptr++ = (unsigned) (x)))) }
 begin
   Dec(p^.bstr_cnt);
   if (p^.bstr_cnt = 0) then
@@ -485,11 +484,6 @@ begin
     Inc(p^.bstr_ptr^);
     Result := UInt(x);
   end;
-end;
-
-function FBSqlDef(X: short): short;
-begin
-  Result := x and (not 1);
 end;
 
 procedure InitSQLDA(var Data: PXSQLDA; New: Integer; Clean: Boolean = True);
@@ -561,12 +555,12 @@ begin
   Result := FXSQLVAR^.SqlData;
 end;
 
-function TmncSQLVAR.GetSqlInd: PShort;
+function TmncSQLVAR.GetSqlInd: PSmallInt;
 begin
   Result := FXSQLVAR^.SqlInd;
 end;
 
-function TmncSQLVAR.GetSqlLen: Short;
+function TmncSQLVAR.GetSqlLen: SmallInt;
 begin
   Result := FXSQLVAR^.SqlLen;
 end;
@@ -576,9 +570,9 @@ begin
   Result := FXSQLVAR^.GetSqlName;
 end;
 
-function TmncSQLVAR.GetSqlPrecision: Short;
+function TmncSQLVAR.GetSqlPrecision: SmallInt;
 begin
-  case SqlDef of
+  case SqlType and not 1 of
     SQL_SHORT:
       Result := 4;
     SQL_LONG:
@@ -590,24 +584,24 @@ begin
   end;
 end;
 
-function TmncSQLVAR.GetSqlScale: Short;
+function TmncSQLVAR.GetSqlScale: SmallInt;
 begin
   Result := FXSQLVAR^.SqlScale;
 end;
 
-function TmncSQLVAR.GetSqlSubtype: Short;
+function TmncSQLVAR.GetSqlSubtype: SmallInt;
 begin
   Result := FXSQLVAR^.SqlSubtype;
 end;
 
-function TmncSQLVAR.GetSqlType: Short;
+function TmncSQLVAR.GetSqlType: SmallInt;
 begin
   Result := FXSQLVAR^.SqlType;
 end;
 
-function TmncSQLVAR.GetSqlDef: Short;
+function TmncSQLVAR.GetSqlDef: SmallInt;
 begin
-  Result := FBSqlDef(SqlType);
+  Result := SqlType and (not 1);
 end;
 
 function TmncSQLVAR.GetSQLVAR: PXSQLVAR;
@@ -636,7 +630,7 @@ begin
   if IsNullable then
   begin
     if not Assigned(FXSQLVAR^.SqlInd) then
-      FBAlloc(FXSQLVAR^.SqlInd, 0, SizeOf(Short))
+      FBAlloc(FXSQLVAR^.SqlInd, 0, SizeOf(SmallInt))
   end
   else if Assigned(FXSQLVAR^.SqlInd) then
     FBFree(FXSQLVAR^.SqlInd);
@@ -657,12 +651,12 @@ begin
   FXSQLVAR^.SqlData := AValue;
 end;
 
-procedure TmncSQLVAR.SetSqlInd(const AValue: PShort);
+procedure TmncSQLVAR.SetSqlInd(const AValue: PSmallInt);
 begin
   FXSQLVAR^.SqlInd := AValue
 end;
 
-procedure TmncSQLVAR.SetSqlLen(const AValue: Short);
+procedure TmncSQLVAR.SetSqlLen(const AValue: SmallInt);
 begin
   FXSQLVAR^.SqlLen := AValue
 end;
@@ -672,22 +666,22 @@ begin
   FXSQLVAR^.SetSqlName(AValue);
 end;
 
-procedure TmncSQLVAR.SetSqlPrecision(const AValue: Short);
+procedure TmncSQLVAR.SetSqlPrecision(const AValue: SmallInt);
 begin
   FBRaiseError(fbceNotSupported, []);
 end;
 
-procedure TmncSQLVAR.SetSqlScale(const AValue: Short);
+procedure TmncSQLVAR.SetSqlScale(const AValue: SmallInt);
 begin
   FXSQLVAR^.SqlScale := AValue
 end;
 
-procedure TmncSQLVAR.SetSqlSubtype(const AValue: Short);
+procedure TmncSQLVAR.SetSqlSubtype(const AValue: SmallInt);
 begin
   FXSQLVAR^.SqlSubtype := AValue
 end;
 
-procedure TmncSQLVAR.SetSqlType(const AValue: Short);
+procedure TmncSQLVAR.SetSqlType(const AValue: SmallInt);
 begin
   FXSQLVAR^.SqlType := AValue
 end;
@@ -818,7 +812,7 @@ var
   s_bhandle, d_bhandle: TISC_BLOB_HANDLE;
   bSourceBlob, bDestBlob: Boolean;
   iSegs, iMaxSeg, iSize, OldSize: Long;
-  iBlobType: Short;
+  iBlobType: SmallInt;
   StatusVector: TStatusVector;
 begin
   szBuff := nil;
@@ -918,7 +912,7 @@ begin
 
   if FXSQLVAR^.SqlData = nil then
     case SqlDef of
-      SQL_TEXT, SQL_TYPE_DATE, SQL_TYPE_TIME, SQL_TIMESTAMP, SQL_BLOB, SQL_ARRAY, SQL_QUAD, SQL_SHORT, SQL_LONG, SQL_INT64, SQL_DOUBLE, SQL_FLOAT, SQL_D_FLOAT, SQL_BOOLEAN, SQL_INT128, SQL_DEC16, SQL_DEC34:
+      SQL_TEXT, SQL_TYPE_DATE, SQL_TYPE_TIME, SQL_TIMESTAMP, SQL_BLOB, SQL_ARRAY, SQL_QUAD, SQL_SHORT, SQL_LONG, SQL_INT64, SQL_DOUBLE, SQL_FLOAT, SQL_D_FLOAT, SQL_BOOLEAN:
         begin
           if (SqlLen = 0) then
             { Make sure you get a valid pointer anyway
@@ -963,10 +957,10 @@ begin
           end;
         end;
       SQL_SHORT:
-        Result := FBScaleCurrency(Int64(PShort(SqlData)^), SqlScale);
+        Result := FBScaleCurrency(Int64(PSmallInt(SqlData)^), SqlScale);
       SQL_LONG:
         Result := FBScaleCurrency(Int64(PLong(SqlData)^), SqlScale);
-      SQL_INT64, SQL_INT128:
+      SQL_INT64:
         Result := FBScaleCurrency(PInt64(SqlData)^, SqlScale);
       SQL_DOUBLE, SQL_FLOAT, SQL_D_FLOAT:
         Result := GetAsDouble;
@@ -989,12 +983,12 @@ begin
             FBRaiseError(fbceInvalidDataConversion, [nil]);
         end;
       end;
-      SQL_SHORT: Result := FBScaleInt64(Int64(PShort(SqlData)^), SqlScale);
+      SQL_SHORT: Result := FBScaleInt64(Int64(PSmallInt(SqlData)^), SqlScale);
       SQL_LONG: Result := FBScaleInt64(Int64(PLong(SqlData)^), SqlScale);
       SQL_INT64: Result := FBScaleInt64(PInt64(SqlData)^, SqlScale);
       SQL_DOUBLE, SQL_FLOAT, SQL_D_FLOAT: Result := Trunc(AsDouble);
       SQL_BOOLEAN:
-        case PShort(SqlData)^ of
+        case PSmallInt(SqlData)^ of
           ISC_TRUE:
             Result := 1;
           ISC_FALSE:
@@ -1082,7 +1076,7 @@ begin
           end;
         end;
       SQL_SHORT:
-        Result := FBScaleDouble(Int64(PShort(SqlData)^), SqlScale);
+        Result := FBScaleDouble(Int64(PSmallInt(SqlData)^), SqlScale);
       SQL_LONG:
         Result := FBScaleDouble(Int64(PLong(SqlData)^), SqlScale);
       SQL_INT64:
@@ -1092,7 +1086,7 @@ begin
       SQL_DOUBLE, SQL_D_FLOAT:
         Result := PDouble(SqlData)^;
       SQL_BOOLEAN:
-        case PShort(SqlData)^ of
+        case PSmallInt(SqlData)^ of
           ISC_TRUE:
             Result := 1;
           ISC_FALSE:
@@ -1132,7 +1126,7 @@ begin
           end;
         end;
       SQL_SHORT:
-        Result := Trunc(FBScaleDouble(Int64(PShort(SqlData)^), SqlScale));
+        Result := Trunc(FBScaleDouble(Int64(PSmallInt(SqlData)^), SqlScale));
       SQL_TYPE_DATE, SQL_TYPE_TIME, SQL_TIMESTAMP, SQL_LONG:
         Result := Trunc(FBScaleDouble(Int64(PLong(SqlData)^), SqlScale));
       SQL_INT64:
@@ -1140,7 +1134,7 @@ begin
       SQL_DOUBLE, SQL_FLOAT, SQL_D_FLOAT:
         Result := Trunc(AsDouble);
       SQL_BOOLEAN:
-        case PShort(SqlData)^ of
+        case PSmallInt(SqlData)^ of
           ISC_TRUE:
             Result := 1;
           ISC_FALSE:
@@ -1172,7 +1166,7 @@ begin
     end;
 end;
 
-function TmncSQLVAR.GetAsShort: Short;
+function TmncSQLVAR.GetAsShort: SmallInt;
 begin
   Result := 0;
   try
@@ -1235,7 +1229,7 @@ begin
         else
           Result := FloatToStr(AsDouble);
       end;
-      SQL_INT64, SQL_INT128:
+      SQL_INT64:
       begin
         if SqlScale = 0 then
           Result := IntToStr(AsInt64)
@@ -1509,15 +1503,15 @@ begin
   Modified := True;
 end;
 
-procedure TmncSQLVAR.SetAsShort(AValue: Short);
+procedure TmncSQLVAR.SetAsShort(AValue: SmallInt);
 begin
   if IsNullable then
     IsNull := False;
   SqlType := SQL_SHORT or (SqlType and 1);
-  SqlLen := SizeOf(Short);
+  SqlLen := SizeOf(SmallInt);
   SqlScale := 0;
   UpdateData(0, SqlLen);
-  PShort(SqlData)^ := AValue;
+  PSmallInt(SqlData)^ := AValue;
   Modified := True;
 end;
 
@@ -1681,7 +1675,7 @@ begin
       SQL_LONG:
         Result := PLong(SqlData)^ <> ISC_FALSE;
       SQL_SHORT, SQL_BOOLEAN:
-        Result := PShort(SqlData)^ <> ISC_FALSE
+        Result := PSmallInt(SqlData)^ <> ISC_FALSE
     else
       FBRaiseError(fbceInvalidDataConversion, [nil]);
     end;
@@ -1692,14 +1686,14 @@ begin
   if IsNullable then
     IsNull := False;
   if AValue then
-    PShort(SqlData)^ := ISC_TRUE
+    PSmallInt(SqlData)^ := ISC_TRUE
   else
-    PShort(SqlData)^ := ISC_FALSE;
+    PSmallInt(SqlData)^ := ISC_FALSE;
 end;
 
 procedure TmncSQLVAR.CopySQLVAR(const AValue: TmncSQLVAR);
 var
-  local_sqlind: PShort;
+  local_sqlind: PSmallInt;
   local_sqldata: PByte;
   local_sqllen: Integer;
 begin
@@ -1712,7 +1706,7 @@ begin
   if (AValue.SqlType and 1 = 1) then
   begin
     if (SqlInd = nil) then
-      FBAlloc(FXSQLVAR.SqlInd, 0, SizeOf(Short));
+      FBAlloc(FXSQLVAR.SqlInd, 0, SizeOf(SmallInt));
     SqlInd^ := AValue.SqlInd^;
   end
   else if (SqlInd <> nil) then

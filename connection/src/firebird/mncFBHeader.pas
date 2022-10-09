@@ -19,7 +19,31 @@ interface
 uses
   Types, Classes, SysUtils, mnLibraries;
 
+type
+  Long = Longint;
+
+  { C Date/Time Structure }
+  TCTimeStructure = record
+    tm_sec : integer;   { Seconds }
+    tm_min : integer;   { Minutes }
+    tm_hour : integer;  { Hour (0--23) }
+    tm_mday : integer;  { Day of month (1--31) }
+    tm_mon : integer;   { Month (0--11) }
+    tm_year : integer;  { Year (calendar year minus 1900) }
+    tm_wday : integer;  { Weekday (0--6) Sunday = 0) }
+    tm_yday : integer;  { Day of year (0--365) }
+    tm_isdst : integer; { 0 if daylight savings time is not in effect) }
+  end;
+
+  PCTimeStructure = ^TCTimeStructure;
+  TM              = TCTimeStructure;
+  PTM             = ^TM;
+
 {$i mncIBase.inc}
+
+type
+  TStatusVector = array[0..19] of ISC_STATUS;
+  PStatusVector = ^TStatusVector;
 
 type
 
@@ -32,12 +56,12 @@ type
     BLOB_get: TBLOB_get;
     BLOB_put: TBLOB_put;
     Bopen: TBopen;
-    Bclose: TBclose;
+    //Bclose: TBclose;
 
     isc_sqlcode: Tisc_sqlcode;
     isc_sql_interprete: Tisc_sql_interprete;
     fb_interpret: Tfb_interpret;
-    isc_interprete: Tisc_interprete;
+    //isc_interprete: Tisc_interprete;
     isc_vax_integer: Tisc_vax_integer;
     isc_portable_integer: Tisc_portable_integer;
     isc_blob_info: Tisc_blob_info;
@@ -83,7 +107,7 @@ type
     isc_dsql_describe_bind: Tisc_dsql_describe_bind;
     isc_dsql_describe: Tisc_dsql_describe;
     isc_dsql_execute_immediate: Tisc_dsql_execute_immediate;
-    isc_dsql_execute_immed2: Tisc_dsql_execute_immed2;
+    //isc_dsql_execute_immed2: Tisc_dsql_execute_immed2;
     isc_drop_database: Tisc_drop_database;
     isc_detach_database: Tisc_detach_database;
     isc_attach_database: Tisc_attach_database;
@@ -109,6 +133,10 @@ type
     isc_get_client_minor_version: Tisc_get_client_minor_version;
 
   end;
+
+function XSQLDA_LENGTH(n: Long): Long;
+procedure add_spb_length(var p: PByte; length: integer);
+procedure add_spb_numeric(var p: PByte; data: integer);
 
 var
   FBLib: TmncFBLib = nil;
@@ -163,12 +191,12 @@ begin
   BLOB_get := GetAddress('BLOB_get');
   BLOB_put := GetAddress('BLOB_put');
   Bopen := GetAddress('Bopen');
-  Bclose := GetAddress('BLOB_close');
+  //Bclose := GetAddress('BLOB_close');
 
   isc_sqlcode := GetAddress('isc_sqlcode');
   isc_sql_interprete := GetAddress('isc_sql_interprete');
   fb_interpret := GetAddress('fb_interpret');
-  isc_interprete := GetAddress('isc_interprete');
+  //isc_interprete := GetAddress('isc_interprete');
   isc_vax_integer := GetAddress('isc_vax_integer');
   isc_portable_integer := GetAddress('isc_portable_integer');
   isc_blob_info := GetAddress('isc_blob_info');
@@ -204,7 +232,7 @@ begin
   isc_dsql_describe_bind := GetAddress('isc_dsql_describe_bind');
   isc_dsql_describe := GetAddress('isc_dsql_describe');
   isc_dsql_execute_immediate := GetAddress('isc_dsql_execute_immediate');
-  isc_dsql_execute_immed2 := GetAddress('isc_dsql_exec_immed2');
+  //isc_dsql_execute_immed2 := GetAddress('isc_dsql_exec_immed2');
   isc_drop_database := GetAddress('isc_drop_database');
   isc_detach_database := GetAddress('isc_detach_database');
   isc_attach_database := GetAddress('isc_attach_database', true);

@@ -66,6 +66,7 @@ type
 
   ISC_STATUS = IntPtr;
   PISC_STATUS = ^ISC_STATUS;
+  PPISC_STATUS = ^PISC_STATUS;
 
 const
    ISC_STATUS_LENGTH	= 20;
@@ -101,11 +102,12 @@ type
  *
  *}
 
-  Long = Longint;
-
   //{$if defined(cpu64) and not(defined(win64) and defined(cpux86_64))}  //* i don't understand this part
   ISC_LONG   = Int32;
+  PISC_LONG  = ^ISC_LONG;
+
   ISC_ULONG  = UInt32;
+  PISC_ULONG = ^ISC_ULONG;
 
   ISC_SHORT = SmallInt;
   PISC_SHORT = ^ISC_SHORT;
@@ -116,7 +118,7 @@ type
   ISC_UCHAR = Byte;
   PISC_UCHAR = ^ISC_UCHAR;
 
-  ISC_SCHAR = ShortInt;
+  ISC_SCHAR = Char;
   PISC_SCHAR = ^ISC_SCHAR;
 
   FB_BOOLEAN = ISC_UCHAR;
@@ -197,7 +199,7 @@ type
 
 type
   //typedef int (*FB_SHUTDOWN_CALLBACK)(const int reason, const int mask, void* arg);
-  TFB_SHUTDOWN_CALLBACK = function(Reason: Integer; Mask: Integer; Arg: Pointer): Integer; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  TFB_Shutdown_Callback_Proc = function(Reason: Integer; Mask: Integer; Arg: Pointer): Integer; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
 
   TFB_DEC16 = record
   	fb_data: array [0..0] of ISC_UINT64;
