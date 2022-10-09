@@ -65,6 +65,7 @@ type
 {******************************************************************}
 
   ISC_STATUS = IntPtr;
+  PISC_STATUS = ^ISC_STATUS;
 
 const
    ISC_STATUS_LENGTH	= 20;
@@ -100,15 +101,23 @@ type
  *
  *}
 
+  Long = Longint;
+
   //{$if defined(cpu64) and not(defined(win64) and defined(cpux86_64))}  //* i don't understand this part
   ISC_LONG   = Int32;
   ISC_ULONG  = UInt32;
 
   ISC_SHORT = SmallInt;
+  PISC_SHORT = ^ISC_SHORT;
+
   ISC_USHORT = UInt16;
+  PISC_USHORT = ^ISC_USHORT;
 
   ISC_UCHAR = Byte;
+  PISC_UCHAR = ^ISC_UCHAR;
+
   ISC_SCHAR = ShortInt;
+  PISC_SCHAR = ^ISC_SCHAR;
 
   FB_BOOLEAN = ISC_UCHAR;
 
