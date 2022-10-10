@@ -300,7 +300,7 @@ type
   Tisc_get_segment = function(status_vector: PISC_STATUS; blob_handle: PISC_BLOB_HANDLE; actual_seg_length: PWord; seg_buffer_length: Word; seg_buffer: PByte): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
   Tisc_get_slice = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; tran_handle: PISC_TR_HANDLE; isc_arg4: PISC_QUAD; isc_arg5: SmallInt; isc_arg6: PByte; isc_arg7: SmallInt; isc_arg8: PISC_LONG; isc_arg9: ISC_LONG; isc_arg10: PPointer; isc_arg11: PISC_LONG): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
   {* CVC: This non-const signature is needed for compatibility, see gds.cpp. *}
-  Tisc_interprete = function(buffer: PByte; var status_vector: PISC_STATUS): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif}; deprecated;
+  Tisc_interprete = function(buffer: PByte; var status_vector: PISC_STATUS): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
   {* This const params version used in the engine and other places. *}
   Tfb_interpret = function(buffer: PByte; length: SmallInt; const status_vector: PPISC_STATUS): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
   Tisc_open_blob = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; tran_handle: PISC_TR_HANDLE; blob_handle: PISC_BLOB_HANDLE; blob_id: PISC_QUAD): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};

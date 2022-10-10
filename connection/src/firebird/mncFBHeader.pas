@@ -22,6 +22,7 @@ uses
 type
   Long = Longint;
   PLong = ^Long;
+  PPByte = ^PByte;
 
   { C Date/Time Structure }
   TCTimeStructure = record
@@ -201,7 +202,7 @@ begin
   isc_sqlcode := GetAddress('isc_sqlcode');
   isc_sql_interprete := GetAddress('isc_sql_interprete');
   fb_interpret := GetAddress('fb_interpret');
-  //isc_interprete := GetAddress('isc_interprete');
+  isc_interprete := GetAddress('isc_interprete');
   isc_vax_integer := GetAddress('isc_vax_integer');
   isc_portable_integer := GetAddress('isc_portable_integer');
   isc_blob_info := GetAddress('isc_blob_info');

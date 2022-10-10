@@ -568,7 +568,7 @@ type
 
   { TXSQLDAHelper }
 
-  TXSQLDAHelper = record helper for TXSQLVAR
+  TXSQLVARHelper = record helper for TXSQLVAR
     procedure SetAliasName(const Value: string);
     procedure SetOwnName(const Value: string);
     procedure SetRelName(const Value: string);
@@ -2360,39 +2360,39 @@ begin
   FModified := False;
 end;
 
-{ TXSQLDAHelper }
+{ TXSQLVARHelper }
 
-procedure TXSQLDAHelper.Clean;
+procedure TXSQLVARHelper.Clean;
 begin
   FBFree(sqldata);
   FBFree(SqlInd);
 end;
 
-function TXSQLDAHelper.GetAliasName: string;
+function TXSQLVARHelper.GetAliasName: string;
 begin
   Result := PUTF8Char(@AliasName);
   SetLength(Result, aliasname_length);
 end;
 
-function TXSQLDAHelper.GetOwnName: string;
+function TXSQLVARHelper.GetOwnName: string;
 begin
   Result := PUTF8Char(@OwnName);
   SetLength(Result, ownname_length);
 end;
 
-function TXSQLDAHelper.GetRelName: string;
+function TXSQLVARHelper.GetRelName: string;
 begin
   Result := PUTF8Char(@RelName);
   SetLength(Result, relname_length);
 end;
 
-function TXSQLDAHelper.GetSqlName: string;
+function TXSQLVARHelper.GetSqlName: string;
 begin
   Result := PUTF8Char(@SqlName);
   SetLength(Result, Sqlname_length);
 end;
 
-procedure TXSQLDAHelper.SetAliasName(const Value: string);
+procedure TXSQLVARHelper.SetAliasName(const Value: string);
 var
   s: RawByteString;
 begin
@@ -2401,7 +2401,7 @@ begin
   aliasname_length := length(s);
 end;
 
-procedure TXSQLDAHelper.SetOwnName(const Value: string);
+procedure TXSQLVARHelper.SetOwnName(const Value: string);
 var
   s: RawByteString;
 begin
@@ -2410,7 +2410,7 @@ begin
   ownname_length := length(s);
 end;
 
-procedure TXSQLDAHelper.SetRelName(const Value: string);
+procedure TXSQLVARHelper.SetRelName(const Value: string);
 var
   s: RawByteString;
 begin
@@ -2419,7 +2419,7 @@ begin
   relname_length := length(s);
 end;
 
-procedure TXSQLDAHelper.SetSqlName(const Value: string);
+procedure TXSQLVARHelper.SetSqlName(const Value: string);
 var
   s: RawByteString;
 begin

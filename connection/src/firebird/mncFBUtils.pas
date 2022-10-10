@@ -42,6 +42,8 @@ function StatusVectorAsText(const StatusVector: TStatusVector): string;
 
 procedure FBAlloc(var P; OldSize, NewSize: Integer; ZeroInit: Boolean = True);
 procedure FBFree(var P: Pointer); overload;
+procedure FBFree(var P: PSmallInt); overload;
+procedure FBFree(var P: PXSQLDA); overload;
 
 function FBMax(n1, n2: Integer): Integer;
 function FBMin(n1, n2: Integer): Integer;
@@ -513,6 +515,16 @@ procedure FBFree(var P: Pointer);
 begin
   FreeMem(P);
   P := nil;
+end;
+
+procedure FBFree(var P: PSmallInt); overload;
+begin
+  FBFree(Pointer(p));
+end;
+
+procedure FBFree(var P: PXSQLDA); overload;
+begin
+  FBFree(Pointer(p));
 end;
 
 function GetInfoReqRecord(Buffer: PByte; Flag: Byte): Integer;

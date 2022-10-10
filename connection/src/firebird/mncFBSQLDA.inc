@@ -37,7 +37,7 @@ type
       sqlscale: ISC_SHORT;			{* scale factor *}
       sqlsubtype: ISC_SHORT;			{* datatype subtype - currently BLOBs only *}
       sqllen: ISC_SHORT;				{* length of data area *}
-      sqldata: PByte;			{* address of data *}
+      sqldata: Pointer;			{* address of data *}
       sqlind: PISC_SHORT;				{* address of indicator variable *}
       sqlname_length: ISC_SHORT;		{* length of sqlname field *}
       sqlname: array[0..31] of ISC_SCHAR;		{* name of field, name length + space for NULL *}

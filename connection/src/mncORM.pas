@@ -222,13 +222,13 @@ type
         rfoNothing,
         rfoSetNull,
         rfoSetDefault, //TODO
-        rfoReject, //Refuse Restrict
+        rfoRestrict, //Refuse/Restrict
         rfoCascade //Update it if changed, delete it if modified
       );
 
-      TormReferenceOptions = (
-        rfDetail, //Delete when master deleted, Cascade on modify
-        rfElement //Reject when master deleted, Cascade on modify
+      TormReferenceType = (
+        rfRestrict, //Reject when master deleted, Cascade on modify
+        rfCascade //Delete when master deleted, Cascade on modify
       );
 
       TReferenceInfoStr = record
@@ -278,7 +278,7 @@ type
         property Filter: TFieldFilter read FFilter write FFilter;
         property DefaultValue: Variant read FDefaultValue write FDefaultValue;
         procedure ReferenceTo(TableName, FieldName: string; UpdateOption, DeleteOption: TormReferenceOption); overload;
-        procedure ReferenceTo(TableName, FieldName: string; Option: TormReferenceOptions); overload;
+        procedure ReferenceTo(TableName, FieldName: string; Option: TormReferenceType); overload;
 
         property Title: string read FTitle write FTitle;
 
@@ -1290,17 +1290,17 @@ begin
   ReferenceInfoStr.DeleteOption := DeleteOption;
 end;
 
-procedure TmncORM.TField.ReferenceTo(TableName, FieldName: string; Option: TormReferenceOptions);
+procedure TmncORM.TField.ReferenceTo(TableName, FieldName: string; Option: TormReferenceType);
 begin
   ReferenceInfoStr.Table := TableName;
   ReferenceInfoStr.Field := FieldName;
   case Option of
-    rfElement:
+    rfRestrict:
     begin
       ReferenceInfoStr.UpdateOption := rfoCascade;
-      ReferenceInfoStr.DeleteOption := rfoReject;
+      ReferenceInfoStr.DeleteOption := rfoRestrict;
     end;
-    rfDetail:
+    rfCascade:
     begin
       ReferenceInfoStr.UpdateOption := rfoCascade;
       ReferenceInfoStr.DeleteOption := rfoCascade;
@@ -1641,7 +1641,7 @@ begin
   if AMasterID = '' then
     AMasterID := 'ID';
   inherited Create(AFields, AName, ftInteger, AOptions + [foReferenced]);
-  ReferenceTo(AMasterTable, AMasterID, rfoCascade, rfoReject);
+  ReferenceTo(AMasterTable, AMasterID, rfoCascade, rfoRestrict);
 end;
 
 { TRefDetailField }
@@ -1651,7 +1651,7 @@ begin
   if AMasterID = '' then
     AMasterID := 'ID';
   inherited Create(AFields, AName, ftInteger, [foReferenced]);
-  ReferenceTo(AMasterTable, AMasterID, rfoReject, rfoCascade);
+  ReferenceTo(AMasterTable, AMasterID, rfoRestrict, rfoCascade);
 end;
 
 { TIntegerField }
@@ -1673,7 +1673,7 @@ end;
 constructor TRefStringField.Create(AFields: TmncORM.TFields; AName, AMasterTable, AMasterField: string; AOptions: TmncORM.TormFieldOptions);
 begin
   inherited Create(AFields, AName, ftString, AOptions + [foReferenced]);
-  ReferenceTo(AMasterTable, AMasterField, rfoReject, rfoReject);
+  ReferenceTo(AMasterTable, AMasterField, rfoRestrict, rfoRestrict);
 end;
 
 { TCurrencyField }

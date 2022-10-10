@@ -1453,7 +1453,9 @@ begin
           aData := nil;
           InitSQLDA(aData, 0);
           try
-            CheckErr(FBLib.isc_dsql_describe(@StatusVector, @FHandle, FB_DIALECT, aData), StatusVector, True);
+            var aErrCode: ISC_STATUS;
+            aErrCode := FBLib.isc_dsql_describe(@StatusVector, @FHandle, FB_DIALECT, aData);
+            CheckErr(aErrCode, StatusVector, True);
             c := aData^.sqld;
           finally
             FreeSQLDA(aData);

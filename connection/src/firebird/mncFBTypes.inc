@@ -129,16 +129,16 @@ type
   PISC_ULONG = ^ISC_ULONG;
 
   ISC_SHORT = SmallInt;
-  PISC_SHORT = ^ISC_SHORT;
+  PISC_SHORT = PSmallInt;
 
-  ISC_USHORT = UInt16;
-  PISC_USHORT = ^ISC_USHORT;
+  ISC_USHORT = Word;
+  PISC_USHORT = PWord;
 
   ISC_UCHAR = Byte;
-  PISC_UCHAR = ^ISC_UCHAR;
+  PISC_UCHAR = PByte;
 
-  ISC_SCHAR = Char;
-  PISC_SCHAR = ^ISC_SCHAR;
+  ISC_SCHAR = AnsiChar;
+  PISC_SCHAR = PAnsiChar;
 
   FB_BOOLEAN = ISC_UCHAR;
 
