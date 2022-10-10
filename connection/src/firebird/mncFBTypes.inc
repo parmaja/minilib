@@ -1,10 +1,29 @@
-{* mncFBTypes.inc *}
-{* ported from types_pub.h *}
-
+{* types_pub.h *}
 {*
-	PROGRAM:	Client/Server Common Code
-	DESCRIPTION:	Types that are used both internally and externally
-*}
+ *	PROGRAM:	Client/Server Common Code
+ *	MODULE:		types_pub.h
+ *	DESCRIPTION:	Types that are used both internally and externally
+ *
+ *  The contents of this file are subject to the Initial
+ *  Developer's Public License Version 1.0 (the "License");
+ *  you may not use this file except in compliance with the
+ *  License. You may obtain a copy of the License at
+ *  http://www.ibphoenix.com/main.nfs?a=ibphoenix&page=ibp_idpl.
+ *
+ *  Software distributed under the License is distributed AS IS,
+ *  WITHOUT WARRANTY OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing rights
+ *  and limitations under the License.
+ *
+ *  The Original Code was created by Dmitry Yemanov
+ *  for the Firebird Open Source RDBMS project.
+ *
+ *  Copyright (c) 2004 Dmitry Yemanov <dimitr@users.sf.net>
+ *  and all contributors signed below.
+ *
+ *  All Rights Reserved.
+ *  Contributor(s): ______________________________________.
+ *}
 
 type
    {$ifdef FPC}
@@ -146,34 +165,34 @@ type
   PISC_TIME = ^ISC_TIME;
 
   TISC_TIME_TZ = record
-  	utc_time: ISC_TIME;
-  	time_zone: ISC_USHORT;
+      utc_time: ISC_TIME;
+      time_zone: ISC_USHORT;
   end;
   PISC_TIME_TZ = ^TISC_TIME_TZ;
 
   TISC_TIME_TZ_EX = record
-	  utc_time: ISC_TIME;
-	  time_zone: ISC_USHORT;
-	  ext_offset: ISC_SHORT;
+      utc_time: ISC_TIME;
+      time_zone: ISC_USHORT;
+      ext_offset: ISC_SHORT;
   end;
   PISC_TIME_TZ_EX = ^TISC_TIME_TZ_EX;
 
   TISC_TIMESTAMP = record
-	  timestamp_date: ISC_DATE;
-	  timestamp_time: ISC_TIME;
+      timestamp_date: ISC_DATE;
+      timestamp_time: ISC_TIME;
   end;
   PISC_TIMESTAMP = ^TISC_TIMESTAMP;
 
   TISC_TIMESTAMP_TZ = record
-  	utc_timestamp: TISC_TIMESTAMP;
-	  time_zone: ISC_USHORT;
+      utc_timestamp: TISC_TIMESTAMP;
+      time_zone: ISC_USHORT;
   end;
   PISC_TIMESTAMP_TZ = TISC_TIMESTAMP_TZ;
 
   TISC_TIMESTAMP_TZ_EX = record
-	  utc_timestamp: TISC_TIMESTAMP;
-	  time_zone: ISC_USHORT;
-	  ext_offset:ISC_SHORT;
+      utc_timestamp: TISC_TIMESTAMP;
+      time_zone: ISC_USHORT;
+      ext_offset:ISC_SHORT;
   end;
   PISC_TIMESTAMP_TZ_EX = TISC_TIMESTAMP_TZ_EX;
 
@@ -182,8 +201,8 @@ type
 {*******************************************************************}
 
   TGDS_QUAD = record
-	  gds_quad_high: ISC_LONG;
-	  gds_quad_low: ISC_ULONG;
+      gds_quad_high: ISC_LONG;
+      gds_quad_low: ISC_ULONG;
   end;
 
   PGDS_QUAD = ^TGDS_QUAD;
@@ -202,13 +221,13 @@ type
   TFB_Shutdown_Callback_Proc = function(Reason: Integer; Mask: Integer; Arg: Pointer): Integer; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
 
   TFB_DEC16 = record
-  	fb_data: array [0..0] of ISC_UINT64;
+      fb_data: array [0..0] of ISC_UINT64;
   end;
 
   TFB_DEC34 = record
-  	fb_data: array[0..1] of ISC_UINT64;
+      fb_data: array[0..1] of ISC_UINT64;
   end;
 
   TFB_I128 = record
-  	fb_data: array[0..1] of ISC_UINT64;
+      fb_data: array[0..1] of ISC_UINT64;
   end;

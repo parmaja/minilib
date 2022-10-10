@@ -1,4 +1,46 @@
 {* ibase.h *}
+{*
+ *	MODULE:		ibase.h
+ *	DESCRIPTION:	OSRI entrypoints and defines
+ *
+ * The contents of this file are subject to the Interbase Public
+ * License Version 1.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy
+ * of the License at http://www.Inprise.com/IPL.html
+ *
+ * Software distributed under the License is distributed on an
+ * "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
+ * or implied. See the License for the specific language governing
+ * rights and limitations under the License.
+ *
+ * The Original Code was created by Inprise Corporation
+ * and its predecessors. Portions created by Inprise Corporation are
+ * Copyright (C) Inprise Corporation.
+ *
+ * All Rights Reserved.
+ * Contributor(s): ______________________________________.
+ *
+ * 2001.07.28: John Bellardo:  Added blr_skip
+ * 2001.09.18: Ann Harrison:   New info codes
+ * 17-Oct-2001 Mike Nordell: CPU affinity
+ * 2001-04-16 Paul Beach: ISC_TIME_SECONDS_PRECISION_SCALE modified for HP10
+ * Compiler Compatibility
+ * 2002.02.15 Sean Leyne - Code Cleanup, removed obsolete ports:
+ *                          - EPSON, XENIX, MAC (MAC_AUX), Cray and OS/2
+ * 2002.10.29 Nickolay Samofatov: Added support for savepoints
+ *
+ * 2002.10.29 Sean Leyne - Removed support for obsolete IPX/SPX Protocol
+ *
+ * 2006.09.06 Steve Boyd - Added various prototypes required by Cobol ESQL
+ *                         isc_embed_dsql_length
+ *                         isc_event_block_a
+ *                         isc_sqlcode_s
+ *                         isc_embed_dsql_fetch_a
+ *                         isc_event_block_s
+ *                         isc_baddress
+ *                         isc_baddress_s
+ *
+ *}
 
 const
   FB_API_VER = 40;
@@ -243,8 +285,8 @@ type
   Tisc_dsql_sql_info = function(status_vector: PISC_STATUS; stmt_handle: PISC_STMT_HANDLE; item_length: SmallInt; items: PByte; buffer_length: SmallInt; buffer: PByte): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
   Tfb_dsql_set_timeout  = function(status_vector: PISC_STATUS; stmt_handle: PISC_STMT_HANDLE; Timeout: ISC_ULONG): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif}; {new}
   {*ISC_STATUS ISC_EXPORT fb_get_statement_interface(ISC_STATUS*,
-  												  FB_API_HANDLE*,
-  												  void**);}
+                                                    FB_API_HANDLE*,
+                                                    void**);}
   Tisc_encode_date = procedure(tm_date: PCTimeStructure; ib_date: PISC_QUAD); {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
   Tisc_encode_sql_date = procedure(tm_date: PCTimeStructure; ib_date: PISC_DATE); {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
   Tisc_encode_sql_time = procedure(tm_date: PCTimeStructure; ib_time: PISC_TIME); {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
@@ -504,5 +546,4 @@ const
   {$i mncFBINf.inc}
 
   {$i mncFBError.inc}
-
 

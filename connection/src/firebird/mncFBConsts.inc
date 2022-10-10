@@ -1,3 +1,4 @@
+{* consts_pub.h *}
 {*
  *	MODULE:		consts_pub.h
  *	DESCRIPTION:	Public constants' definitions
@@ -137,45 +138,45 @@ isc_dpb_last_dpb_constant         = isc_dpb_clear_map;
 {* Format of this clumplet is the following:
 
  <address-path-clumplet> ::=
-	isc_dpb_address_path <byte-clumplet-length> <address-stack>
+    isc_dpb_address_path <byte-clumplet-length> <address-stack>
 
  <address-stack> ::=
-	<address-descriptor> |
-	<address-stack> <address-descriptor>
+    <address-descriptor> |
+    <address-stack> <address-descriptor>
 
  <address-descriptor> ::=
-	isc_dpb_address <byte-clumplet-length> <address-elements>
+    isc_dpb_address <byte-clumplet-length> <address-elements>
 
  <address-elements> ::=
-	<address-element> |
-	<address-elements> <address-element>
+    <address-element> |
+    <address-elements> <address-element>
 
  <address-element> ::=
-	isc_dpb_addr_protocol <byte-clumplet-length> <protocol-string> |
-	isc_dpb_addr_endpoint <byte-clumplet-length> <remote-endpoint-string> |
-	isc_dpb_addr_flags <byte-clumplet-length> <flags-int> |
-	isc_dpb_addr_crypt <byte-clumplet-length> <plugin-string>
+    isc_dpb_addr_protocol <byte-clumplet-length> <protocol-string> |
+    isc_dpb_addr_endpoint <byte-clumplet-length> <remote-endpoint-string> |
+    isc_dpb_addr_flags <byte-clumplet-length> <flags-int> |
+    isc_dpb_addr_crypt <byte-clumplet-length> <plugin-string>
 
  <protocol-string> ::=
-	"TCPv4" |
-	"TCPv6" |
-	"XNET" |
-	"WNET" |
-	....
+    "TCPv4" |
+    "TCPv6" |
+    "XNET" |
+    "WNET" |
+    ....
 
  <plugin-string> ::=
-	"Arc4" |
-	"ChaCha" |
-	....
+    "Arc4" |
+    "ChaCha" |
+    ....
 
  <remote-endpoint-string> ::=
-	<IPv4-address> | // such as "172.20.1.1"
-	<IPv6-address> | // such as "2001:0:13FF:09FF::1"
-	<xnet-process-id> | // such as "17864"
-	...
+    <IPv4-address> | // such as "172.20.1.1"
+    <IPv6-address> | // such as "2001:0:13FF:09FF::1"
+    <xnet-process-id> | // such as "17864"
+    ...
 
  <flags-int> ::=
- 	bitmask of possible flags
+     bitmask of possible flags
 *}
 
 isc_dpb_address = 1;

@@ -1,3 +1,4 @@
+{* sqlda_pub.h *}
 {*
  *	PROGRAM:	C preprocessor
  *	MODULE:		sqlda_pub.h
@@ -32,20 +33,20 @@ const
 
 type
   TXSQLVAR = record
-	  sqltype: ISC_SHORT;			{* datatype of field *}
-	  sqlscale: ISC_SHORT;			{* scale factor *}
-	  sqlsubtype: ISC_SHORT;			{* datatype subtype - currently BLOBs only *}
-	  sqllen: ISC_SHORT;				{* length of data area *}
-	  sqldata: PByte;			{* address of data *}
-	  sqlind: PISC_SHORT;				{* address of indicator variable *}
-	  sqlname_length: ISC_SHORT;		{* length of sqlname field *}
-	  sqlname: array[0..31] of ISC_SCHAR;		{* name of field, name length + space for NULL *}
-	  relname_length: ISC_SHORT;		{* length of relation name *}
-	  relname: array[0..31] of ISC_SCHAR;		{* field's relation name + space for NULL *}
-	  ownname_length: ISC_SHORT;		{* length of owner name *}
-	  ownname: array[0..31] of ISC_SCHAR;		{* relation's owner name + space for NULL *}
-	  aliasname_length: ISC_SHORT;	{* length of alias name *}
-	  aliasname: array[0..31] of ISC_SCHAR;		{* relation's alias name + space for NULL *}
+      sqltype: ISC_SHORT;			{* datatype of field *}
+      sqlscale: ISC_SHORT;			{* scale factor *}
+      sqlsubtype: ISC_SHORT;			{* datatype subtype - currently BLOBs only *}
+      sqllen: ISC_SHORT;				{* length of data area *}
+      sqldata: PByte;			{* address of data *}
+      sqlind: PISC_SHORT;				{* address of indicator variable *}
+      sqlname_length: ISC_SHORT;		{* length of sqlname field *}
+      sqlname: array[0..31] of ISC_SCHAR;		{* name of field, name length + space for NULL *}
+      relname_length: ISC_SHORT;		{* length of relation name *}
+      relname: array[0..31] of ISC_SCHAR;		{* field's relation name + space for NULL *}
+      ownname_length: ISC_SHORT;		{* length of owner name *}
+      ownname: array[0..31] of ISC_SCHAR;		{* relation's owner name + space for NULL *}
+      aliasname_length: ISC_SHORT;	{* length of alias name *}
+      aliasname: array[0..31] of ISC_SCHAR;		{* relation's alias name + space for NULL *}
   end;
   PXSQLVAR = ^TXSQLVAR;
 
@@ -54,12 +55,12 @@ const
 
 type
   TXSQLDA = record
-	  version: ISC_SHORT;			{* version of this XSQLDA *}
-	  sqldaid: array[0..7] of ISC_SCHAR;		{* XSQLDA name field *}
-	  sqldabc: ISC_LONG;		 	{* length in bytes of SQLDA *}
-	  sqln: ISC_SHORT;				  {* number of fields allocated *}
-	  sqld: ISC_SHORT;				  {* actual number of fields *}
-	  sqlvar: array[0..0] of TXSQLVAR; {* first field address *}
+      version: ISC_SHORT;			{* version of this XSQLDA *}
+      sqldaid: array[0..7] of ISC_SCHAR;		{* XSQLDA name field *}
+      sqldabc: ISC_LONG;		 	{* length in bytes of SQLDA *}
+      sqln: ISC_SHORT;				  {* number of fields allocated *}
+      sqld: ISC_SHORT;				  {* actual number of fields *}
+      sqlvar: array[0..0] of TXSQLVAR; {* first field address *}
   end;
   PXSQLDA = ^TXSQLDA;
 
@@ -106,12 +107,11 @@ const
 
   SQL_DIALECT_V5				= 1;	{* meaning is same as DIALECT_xsqlda *}
   SQL_DIALECT_V6_TRANSITION	= 2;	{* flagging anything that is delimited
-										   by double quotes as an error and
-										   flagging keyword DATE as an error *}
+                                           by double quotes as an error and
+                                           flagging keyword DATE as an error *}
   SQL_DIALECT_V6				= 3;	{* supports SQL delimited identifier,
-										   SQLDATE/DATE, TIME, TIMESTAMP,
-										   CURRENT_DATE, CURRENT_TIME,
-										   CURRENT_TIMESTAMP, and 64-bit exact
-										   numeric type *}
+                                           SQLDATE/DATE, TIME, TIMESTAMP,
+                                           CURRENT_DATE, CURRENT_TIME,
+                                           CURRENT_TIMESTAMP, and 64-bit exact
+                                           numeric type *}
   SQL_DIALECT_CURRENT		= SQL_DIALECT_V6;	{* latest IB DIALECT *}
-

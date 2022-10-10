@@ -1,4 +1,4 @@
-{* IBError.h *}
+{* iberror.h *}
 {*
  * The contents of this file are subject to the Interbase Public
  * License Version 1.0 (the "License"); you may not use this file
@@ -1501,4 +1501,3 @@ isc_trace_switch_param_miss: ISC_STATUS          = 337182758;
 isc_trace_param_act_notcompat: ISC_STATUS        = 337182759;
 isc_trace_mandatory_switch_miss: ISC_STATUS      = 337182760;
 isc_err_max: ISC_STATUS                          = 1448;
-

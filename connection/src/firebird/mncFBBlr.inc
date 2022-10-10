@@ -1,4 +1,35 @@
-{* Blr.h *}
+{* blr.h *}
+{*
+ *	PROGRAM:	C preprocessor
+ *	MODULE:		blr.h
+ *	DESCRIPTION:	BLR constants
+ *
+ * The contents of this file are subject to the Interbase Public
+ * License Version 1.0 (the "License"); you may not use this file
+ * except in compliance with the License. You may obtain a copy
+ * of the License at http://www.Inprise.com/IPL.html
+ *
+ * Software distributed under the License is distributed on an
+ * "AS IS" basis, WITHOUT WARRANTY OF ANY KIND, either express
+ * or implied. See the License for the specific language governing
+ * rights and limitations under the License.
+ *
+ * The Original Code was created by Inprise Corporation
+ * and its predecessors. Portions created by Inprise Corporation are
+ * Copyright (C) Inprise Corporation.
+ *
+ * All Rights Reserved.
+ * Contributor(s): ______________________________________.
+ *
+ * Claudio Valderrama: 2001.6.18: Add blr_current_role.
+ * 2002.09.28 Dmitry Yemanov: Reworked internal_info stuff, enhanced
+ *                            exception handling in SPs/triggers,
+ *                            implemented ROWS_AFFECTED system variable
+ * 2002.10.21 Nickolay Samofatov: Added support for explicit pessimistic locks
+ * 2002.10.29 Nickolay Samofatov: Added support for savepoints
+ * 2003.10.05 Dmitry Yemanov: Added support for explicit cursors in PSQL
+ * Adriano dos Santos Fernandes
+ *}
 
 const
   blr_text                                 = 14;
@@ -405,5 +436,3 @@ const
   blr_at_zone					 =  1;
 
   blr_marks					 =  217;		// mark some blr code with specific flags
-
-

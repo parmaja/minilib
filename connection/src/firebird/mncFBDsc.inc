@@ -1,3 +1,4 @@
+{* dsc_pub.h *}
 {*
  *	PROGRAM:	JRD access method
  *	MODULE:		dsc.h
@@ -35,8 +36,8 @@ const
   DSC_null		   = 1;
   DSC_no_subtype = 2;	{* dsc has no sub type specified *}
   DSC_nullable   = 4;	{* not stored. instead, is derived
-							   from metadata primarily to flag
-							   SQLDA (in DSQL)               *}
+                               from metadata primarily to flag
+                               SQLDA (in DSQL)               *}
 
   dtype_unknown	= 0;
   dtype_text		= 1;
@@ -70,4 +71,3 @@ const
 
   ISC_TIME_SECONDS_PRECISION	=	10000;
   ISC_TIME_SECONDS_PRECISION_SCALE =(-4);
-
