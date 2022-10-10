@@ -43,7 +43,7 @@ type
     FRole: string;
     function GetIsReadOnly: Boolean;
   protected
-    function ExecDatabaseInfo(vCommand: Byte): TFBLocalBufferArray;
+    function ExecDatabaseInfo(vCommand: Tdb_info_types): TFBLocalBufferArray;
 
     function GetBaseLevel: Long;
     function GetDBSQLDialect: Integer;
@@ -453,12 +453,14 @@ begin
   end;
 end;
 
-function TmncFBConnection.ExecDatabaseInfo(vCommand: Byte): TFBLocalBufferArray;
+function TmncFBConnection.ExecDatabaseInfo(vCommand: Tdb_info_types): TFBLocalBufferArray;
 var
+  b: Byte;
   StatusVector:TStatusVector;
   aStatus: ISC_STATUS;
 begin
-  aStatus := FBLib.isc_database_info(@StatusVector, @FHandle, 1, @vCommand, FBLocalBufferLength, @Result[0]);
+  b := ord(vCommand);
+  aStatus := FBLib.isc_database_info(@StatusVector, @FHandle, 1, @b, FBLocalBufferLength, @Result[0]);
   CheckErr(aStatus, StatusVector, True);
 end;
 
@@ -472,7 +474,7 @@ var
   aBuf: TFBLocalBufferArray;
 begin
   aBuf := ExecDatabaseInfo(isc_info_version);
-  Result := FBGetString(aBuf, 5, Int(aBuf[4]));
+  Result := FBGetString(aBuf, 5, Integer(aBuf[4]));
 end;
 
 function TmncFBConnection.GetIsReadOnly: Boolean;
@@ -499,7 +501,7 @@ var
   aLen: Integer;
 begin
   aBuf := ExecDatabaseInfo(isc_info_db_SQL_Dialect);
-  if (aBuf[0] <> isc_info_db_SQL_dialect) then
+  if (aBuf[0] <> ord(isc_info_db_SQL_dialect)) then
     Result := 1
   else
   begin
@@ -527,9 +529,7 @@ end;
 
 procedure TmncFBConnection.DoConnect;
 var
-  aDPBLength: Short;
-
-  DPB: AnsiString;
+  aDPBLength: SmallInt;
   //i: Integer;
   aDatabaseName: UTF8String;
   aParams: TStringList;
@@ -607,7 +607,6 @@ var
   pteb: PISC_TEB_ARRAY;
   aTPB: PByte;
   StatusVector: TStatusVector;
-  aTPBs: TBytes;
 begin
   if ParamsChanged then
   begin

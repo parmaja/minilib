@@ -1369,7 +1369,7 @@ begin
       SQL_INT64:
         Result := FBScaleDouble(PInt64(SqlData)^, SqlScale);
       SQL_FLOAT:
-        Result := PFloat(SqlData)^;
+        Result := PSingle(SqlData)^;
       SQL_DOUBLE, SQL_D_FLOAT:
         Result := PDouble(SqlData)^;
       SQL_BOOLEAN:
@@ -1750,7 +1750,7 @@ begin
   if IsNullable then
     IsNull := False;
   SqlType := SQL_FLOAT or (SqlType and 1);
-  SqlLen := SizeOf(Float);
+  SqlLen := SizeOf(Single);
   SqlScale := 0;
   UpdateData(0, SqlLen);
   PSingle(SqlData)^ := AValue;

@@ -21,6 +21,7 @@ uses
 
 type
   Long = Longint;
+  PLong = ^Long;
 
   { C Date/Time Structure }
   TCTimeStructure = record
