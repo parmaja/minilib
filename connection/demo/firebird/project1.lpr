@@ -13,6 +13,7 @@ uses
 
 begin
   {$I project1.lrs}
+  Application.Title :='';
   Application.Initialize;
   Application.CreateForm(TForm1, Form1);
   Application.Run;

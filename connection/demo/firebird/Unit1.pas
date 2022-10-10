@@ -6,8 +6,8 @@ interface
 
 uses
   Classes, SysUtils, FileUtil, LResources, Forms, Controls, Graphics, Dialogs,
-  StdCtrls, ExtCtrls, mncFirebird, mncCSV, mncCSVExchanges,
-  mncConnections, mncDS, memds;
+  StdCtrls, ExtCtrls, mncFirebird, mncCSV,
+  mncConnections, memds;
 
 type
 
@@ -18,6 +18,7 @@ type
     Button2: TButton;
     Button3: TButton;
     Button4: TButton;
+    PasswordEdit: TEdit;
     Label1: TLabel;
     ListBox1: TListBox;
     procedure Button1Click(Sender: TObject);
@@ -58,23 +59,23 @@ begin
   ListBox1.Clear;
   Conn := TmncFBConnection.Create;
   try
-    Conn.Resource := 'EMPLOYEE';
+    Conn.Resource := 'employee';
     Conn.Host := 'localhost';
     Conn.UserName := 'sysdba';
-    Conn.Password := 'masterkey';
+    Conn.Password := PasswordEdit.Text;
     Conn.Connect;
     Transaction := TmncFBTransaction.Create(Conn);
     try
       Transaction.Start;
       Cmd := TmncFBCommand.CreateBy(Transaction);
       try
-        Cmd.SQL.Text := 'select * from EMPLOYEE';
+        Cmd.SQL.Text := 'select * from employee';
         Cmd.SQL.Add('where EMP_NO < ?NO');
         Cmd.Prepare;
         Cmd.Param['NO'].AsInteger := 10;
         if Cmd.Execute then
         begin
-          while not Cmd.EOF do
+          while not Cmd.Done do
           begin
             ListBox1.Items.Add(Cmd.Field['EMP_NO'].AsString + ' - ' + Cmd.Field['FIRST_NAME'].AsString);
             Cmd.Next;
@@ -101,21 +102,21 @@ begin
   ListBox1.Clear;
   Conn := TmncFBConnection.Create;
   try
-    Conn.Resource := 'EMPLOYEE';
+    Conn.Resource := 'employee';
     Conn.Host := 'localhost';
     Conn.UserName := 'sysdba';
-    Conn.Password := 'masterkey';
+    Conn.Password := PasswordEdit.Text;
     Conn.Connect;
     Transaction := TmncFBTransaction.Create(Conn);
     try
       Transaction.Start;
       Cmd := TmncFBCommand.CreateBy(Transaction);
       try
-        Cmd.SQL.Text := 'select * from EMPLOYEE';
+        Cmd.SQL.Text := 'select * from employee';
         Cmd.Prepare;
         if Cmd.Execute then
         begin
-          while not Cmd.EOF do
+          while not Cmd.Done do
           begin
             ListBox1.Items.Add(Cmd.Field['EMP_NO'].AsString + ' - ' + Cmd.Field['FIRST_NAME'].AsString);
             Cmd.Next;
@@ -141,21 +142,21 @@ var
 begin
   Conn := TmncFBConnection.Create;
   try
-    Conn.Resource := 'EMPLOYEE';
+    Conn.Resource := 'employee';
     Conn.Host := 'localhost';
     Conn.UserName := 'sysdba';
-    Conn.Password := 'masterkey';
+    Conn.Password := PasswordEdit.Text;
     Conn.Connect;
     Transaction := TmncFBTransaction.Create(Conn);
     try
       Cmd := TmncFBCommand.CreateBy(Transaction);
-      Cmd.SQL.Text := 'select * from EMPLOYEE';
-//      Cmd.SQL.Add('where EMPLOYEE = ?EMPLOYEE');
+      Cmd.SQL.Text := 'select * from employee';
+//      Cmd.SQL.Add('where employee = ?employee');
       Cmd.Prepare;
-//      Cmd.Param['EMPLOYEE'].AsString := 'Robert';
+//      Cmd.Param['employee'].AsString := 'Robert';
       if Cmd.Execute then
       begin
-        while not Cmd.EOF do
+        while not Cmd.Done do
         begin
           ListBox1.Items.Add(Cmd.Field['EMP_NO'].AsString + ' - ' + Cmd.Field['FIRST_NAME'].AsString);
           Cmd.Next;
@@ -179,10 +180,10 @@ var
 begin
   Conn := TmncFBConnection.Create;
   try
-    Conn.Resource := 'EMPLOYEE';
+    Conn.Resource := 'employee';
     Conn.Host := 'localhost';
     Conn.UserName := 'sysdba';
-    Conn.Password := 'masterkey';
+    Conn.Password := PasswordEdit.Text;
     Conn.Connect;
     Transaction := TmncFBTransaction.Create(Conn);
     try
