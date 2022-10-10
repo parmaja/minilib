@@ -14,11 +14,11 @@ object MainForm: TMainForm
   OnCreate = FormCreate
   OnDestroy = FormDestroy
   Position = poDefault
-  LCLVersion = '2.1.0.0'
+  LCLVersion = '2.3.0.0'
   inline SynEdit: TSynEdit
     Left = 6
-    Height = 268
-    Top = 79
+    Height = 283
+    Top = 64
     Width = 630
     Align = alClient
     Font.CharSet = ANSI_CHARSET
@@ -466,10 +466,6 @@ object MainForm: TMainForm
     SelectedColor.ItalicPriority = 50
     SelectedColor.UnderlinePriority = 50
     SelectedColor.StrikeOutPriority = 50
-    ScrollOnEditLeftOptions.ScrollExtraPercent = 20
-    ScrollOnEditLeftOptions.ScrollExtraMax = 10
-    ScrollOnEditRightOptions.ScrollExtraPercent = 30
-    ScrollOnEditRightOptions.ScrollExtraMax = 25
     BracketHighlightStyle = sbhsBoth
     BracketMatchColor.Background = clNone
     BracketMatchColor.Foreground = clNone
@@ -523,23 +519,25 @@ object MainForm: TMainForm
     Height = 1
     Top = 41
     Width = 1
+    Color = clDefault
     ParentColor = False
   end
   object Panel1: TPanel
     Left = 6
-    Height = 31
+    Height = 25
     Top = 6
     Width = 756
     Align = alTop
+    AutoSize = True
     BevelOuter = bvNone
     ChildSizing.HorizontalSpacing = 3
     ChildSizing.VerticalSpacing = 3
-    ClientHeight = 31
+    ClientHeight = 25
     ClientWidth = 756
     TabOrder = 1
     object CreateDB1Btn: TButton
       Left = 412
-      Height = 31
+      Height = 25
       Top = 0
       Width = 97
       Align = alLeft
@@ -561,7 +559,7 @@ object MainForm: TMainForm
     end
     object ConnectBtn: TButton
       Left = 512
-      Height = 31
+      Height = 25
       Top = 0
       Width = 131
       Align = alLeft
@@ -572,7 +570,7 @@ object MainForm: TMainForm
     end
     object DataEdit: TEdit
       Left = 291
-      Height = 31
+      Height = 25
       Top = 0
       Width = 118
       Align = alLeft
@@ -581,43 +579,46 @@ object MainForm: TMainForm
     end
     object Label5: TLabel
       Left = 203
-      Height = 31
+      Height = 25
       Top = 0
       Width = 83
       Align = alLeft
       BorderSpacing.Left = 5
       BorderSpacing.Right = 5
       Caption = 'Database Name'
+      Color = clDefault
       Layout = tlCenter
       ParentColor = False
     end
   end
   object Panel2: TPanel
     Left = 8
-    Height = 32
-    Top = 42
+    Height = 23
+    Top = 36
     Width = 752
     Align = alTop
+    AutoSize = True
     BorderSpacing.Around = 5
     BevelOuter = bvNone
     ChildSizing.HorizontalSpacing = 3
     ChildSizing.VerticalSpacing = 3
-    ClientHeight = 32
+    ClientHeight = 23
     ClientWidth = 752
     TabOrder = 2
     object Label2: TLabel
       Left = 0
-      Height = 32
+      Height = 23
       Top = 0
       Width = 25
       Align = alLeft
       Caption = 'Host'
+      Color = clDefault
       Layout = tlCenter
       ParentColor = False
     end
     object HostEdit: TEdit
       Left = 28
-      Height = 32
+      Height = 23
       Top = 0
       Width = 118
       Align = alLeft
@@ -626,7 +627,7 @@ object MainForm: TMainForm
     end
     object UserEdit: TEdit
       Left = 175
-      Height = 32
+      Height = 23
       Top = 0
       Width = 118
       Align = alLeft
@@ -635,7 +636,7 @@ object MainForm: TMainForm
     end
     object PasswordEdit: TEdit
       Left = 349
-      Height = 32
+      Height = 23
       Top = 0
       Width = 118
       Align = alLeft
@@ -645,21 +646,23 @@ object MainForm: TMainForm
     end
     object Label3: TLabel
       Left = 149
-      Height = 32
+      Height = 23
       Top = 0
       Width = 23
       Align = alLeft
       Caption = 'User'
+      Color = clDefault
       Layout = tlCenter
       ParentColor = False
     end
     object Label4: TLabel
       Left = 296
-      Height = 32
+      Height = 23
       Top = 0
       Width = 50
       Align = alLeft
       Caption = 'Password'
+      Color = clDefault
       Layout = tlCenter
       ParentColor = False
     end
@@ -1114,10 +1117,6 @@ object MainForm: TMainForm
     SelectedColor.ItalicPriority = 50
     SelectedColor.UnderlinePriority = 50
     SelectedColor.StrikeOutPriority = 50
-    ScrollOnEditLeftOptions.ScrollExtraPercent = 20
-    ScrollOnEditLeftOptions.ScrollExtraMax = 10
-    ScrollOnEditRightOptions.ScrollExtraPercent = 30
-    ScrollOnEditRightOptions.ScrollExtraMax = 25
     BracketHighlightStyle = sbhsBoth
     BracketMatchColor.Background = clNone
     BracketMatchColor.Foreground = clNone
@@ -1168,13 +1167,13 @@ object MainForm: TMainForm
   end
   object Panel3: TPanel
     Left = 639
-    Height = 268
-    Top = 79
+    Height = 283
+    Top = 64
     Width = 123
     Align = alRight
     BorderSpacing.Around = 3
     BevelOuter = bvNone
-    ClientHeight = 268
+    ClientHeight = 283
     ClientWidth = 123
     TabOrder = 4
     object AddRecordBtn: TButton
@@ -1241,112 +1240,7 @@ object MainForm: TMainForm
   object SynSQLSyn: TSynSQLSyn
     DefaultFilter = 'SQL Files (*.sql)|*.sql'
     Enabled = False
-    CommentAttri.BackPriority = 0
-    CommentAttri.ForePriority = 0
-    CommentAttri.FramePriority = 0
-    CommentAttri.BoldPriority = 0
-    CommentAttri.ItalicPriority = 0
-    CommentAttri.UnderlinePriority = 0
-    CommentAttri.StrikeOutPriority = 0
-    DataTypeAttri.BackPriority = 0
-    DataTypeAttri.ForePriority = 0
-    DataTypeAttri.FramePriority = 0
-    DataTypeAttri.BoldPriority = 0
-    DataTypeAttri.ItalicPriority = 0
-    DataTypeAttri.UnderlinePriority = 0
-    DataTypeAttri.StrikeOutPriority = 0
-    DefaultPackageAttri.BackPriority = 0
-    DefaultPackageAttri.ForePriority = 0
-    DefaultPackageAttri.FramePriority = 0
-    DefaultPackageAttri.BoldPriority = 0
-    DefaultPackageAttri.ItalicPriority = 0
-    DefaultPackageAttri.UnderlinePriority = 0
-    DefaultPackageAttri.StrikeOutPriority = 0
-    ExceptionAttri.BackPriority = 0
-    ExceptionAttri.ForePriority = 0
-    ExceptionAttri.FramePriority = 0
-    ExceptionAttri.BoldPriority = 0
-    ExceptionAttri.ItalicPriority = 0
-    ExceptionAttri.UnderlinePriority = 0
-    ExceptionAttri.StrikeOutPriority = 0
-    FunctionAttri.BackPriority = 0
-    FunctionAttri.ForePriority = 0
-    FunctionAttri.FramePriority = 0
-    FunctionAttri.BoldPriority = 0
-    FunctionAttri.ItalicPriority = 0
-    FunctionAttri.UnderlinePriority = 0
-    FunctionAttri.StrikeOutPriority = 0
-    IdentifierAttri.BackPriority = 0
-    IdentifierAttri.ForePriority = 0
-    IdentifierAttri.FramePriority = 0
-    IdentifierAttri.BoldPriority = 0
-    IdentifierAttri.ItalicPriority = 0
-    IdentifierAttri.UnderlinePriority = 0
-    IdentifierAttri.StrikeOutPriority = 0
     KeyAttri.Foreground = 13265205
-    KeyAttri.BackPriority = 0
-    KeyAttri.ForePriority = 0
-    KeyAttri.FramePriority = 0
-    KeyAttri.BoldPriority = 0
-    KeyAttri.ItalicPriority = 0
-    KeyAttri.UnderlinePriority = 0
-    KeyAttri.StrikeOutPriority = 0
-    NumberAttri.BackPriority = 0
-    NumberAttri.ForePriority = 0
-    NumberAttri.FramePriority = 0
-    NumberAttri.BoldPriority = 0
-    NumberAttri.ItalicPriority = 0
-    NumberAttri.UnderlinePriority = 0
-    NumberAttri.StrikeOutPriority = 0
-    PLSQLAttri.BackPriority = 0
-    PLSQLAttri.ForePriority = 0
-    PLSQLAttri.FramePriority = 0
-    PLSQLAttri.BoldPriority = 0
-    PLSQLAttri.ItalicPriority = 0
-    PLSQLAttri.UnderlinePriority = 0
-    PLSQLAttri.StrikeOutPriority = 0
-    SpaceAttri.BackPriority = 0
-    SpaceAttri.ForePriority = 0
-    SpaceAttri.FramePriority = 0
-    SpaceAttri.BoldPriority = 0
-    SpaceAttri.ItalicPriority = 0
-    SpaceAttri.UnderlinePriority = 0
-    SpaceAttri.StrikeOutPriority = 0
-    SQLPlusAttri.BackPriority = 0
-    SQLPlusAttri.ForePriority = 0
-    SQLPlusAttri.FramePriority = 0
-    SQLPlusAttri.BoldPriority = 0
-    SQLPlusAttri.ItalicPriority = 0
-    SQLPlusAttri.UnderlinePriority = 0
-    SQLPlusAttri.StrikeOutPriority = 0
-    StringAttri.BackPriority = 0
-    StringAttri.ForePriority = 0
-    StringAttri.FramePriority = 0
-    StringAttri.BoldPriority = 0
-    StringAttri.ItalicPriority = 0
-    StringAttri.UnderlinePriority = 0
-    StringAttri.StrikeOutPriority = 0
-    SymbolAttri.BackPriority = 0
-    SymbolAttri.ForePriority = 0
-    SymbolAttri.FramePriority = 0
-    SymbolAttri.BoldPriority = 0
-    SymbolAttri.ItalicPriority = 0
-    SymbolAttri.UnderlinePriority = 0
-    SymbolAttri.StrikeOutPriority = 0
-    TableNameAttri.BackPriority = 0
-    TableNameAttri.ForePriority = 0
-    TableNameAttri.FramePriority = 0
-    TableNameAttri.BoldPriority = 0
-    TableNameAttri.ItalicPriority = 0
-    TableNameAttri.UnderlinePriority = 0
-    TableNameAttri.StrikeOutPriority = 0
-    VariableAttri.BackPriority = 0
-    VariableAttri.ForePriority = 0
-    VariableAttri.FramePriority = 0
-    VariableAttri.BoldPriority = 0
-    VariableAttri.ItalicPriority = 0
-    VariableAttri.UnderlinePriority = 0
-    VariableAttri.StrikeOutPriority = 0
     SQLDialect = sqlSQLite
     Left = 252
     Top = 116

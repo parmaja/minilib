@@ -1036,6 +1036,8 @@ begin
 
   if not IsLocal and (Host <> '') then
   begin
+    {if Port = '' then
+      Port := '3050';}
     if (Port <> '') and (AnsiPos('/', Host) = 0) then
       Host := Host + '/' + Port;
     Result := Host + ':' + DatabaseName;
