@@ -53,15 +53,17 @@ type
   protected
     procedure Link; override;
   public
-    BLOB_get: TBLOB_get;
+    BLOB_open: TBLOB_open;
     BLOB_put: TBLOB_put;
+    BLOB_close: TBLOB_close;
+    BLOB_get: TBLOB_get;
     Bopen: TBopen;
     //Bclose: TBclose;
 
     isc_sqlcode: Tisc_sqlcode;
     isc_sql_interprete: Tisc_sql_interprete;
     fb_interpret: Tfb_interpret;
-    //isc_interprete: Tisc_interprete;
+    isc_interprete: Tisc_interprete; //deprecated;
     isc_vax_integer: Tisc_vax_integer;
     isc_portable_integer: Tisc_portable_integer;
     isc_blob_info: Tisc_blob_info;
@@ -188,8 +190,10 @@ end;
 
 procedure TmncFBLib.Link;
 begin
+  BLOB_open := GetAddress('BLOB_open');
   BLOB_get := GetAddress('BLOB_get');
   BLOB_put := GetAddress('BLOB_put');
+  BLOB_close := GetAddress('BLOB_close');
   Bopen := GetAddress('Bopen');
   //Bclose := GetAddress('BLOB_close');
 

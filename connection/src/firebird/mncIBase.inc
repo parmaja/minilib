@@ -260,7 +260,7 @@ type
   {* CVC: This non-const signature is needed for compatibility, see gds.cpp. *}
   Tisc_interprete = function(buffer: PByte; var status_vector: PISC_STATUS): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif}; deprecated;
   {* This const params version used in the engine and other places. *}
-  Tfb_interpret = function(buffer: PByte; length:SmallInt; const status_vector: PPISC_STATUS): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
+  Tfb_interpret = function(buffer: PByte; length: SmallInt; const status_vector: PPISC_STATUS): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
   Tisc_open_blob = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; tran_handle: PISC_TR_HANDLE; blob_handle: PISC_BLOB_HANDLE; blob_id: PISC_QUAD): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
   Tisc_open_blob2 = function(status_vector: PISC_STATUS; db_handle: PISC_DB_HANDLE; tran_handle: PISC_TR_HANDLE; blob_handle: PISC_BLOB_HANDLE; blob_id: PISC_QUAD; bpb_length: SmallInt; bpb_buffer: PByte): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
   Tisc_prepare_transaction2 = function(status_vector: PISC_STATUS; tran_handle: PISC_TR_HANDLE; msg_length: SmallInt; msg: PByte): ISC_STATUS; {$ifdef MSWINDOWS}stdcall{$else}cdecl{$endif};
@@ -496,5 +496,13 @@ const
   {$i mncFBBlr.inc}
 
   {$i mncFBConsts.inc}
+
+  {*********************************}
+  {* Information call declarations *}
+  {*********************************}
+
+  {$i mncFBINf.inc}
+
+  {$i mncFBError.inc}
 
 

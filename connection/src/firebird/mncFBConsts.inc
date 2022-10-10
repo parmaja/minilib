@@ -27,7 +27,7 @@
 {* Database parameter block stuff *}
 {**********************************}
 
-isc_dpb_version1                  1;
+isc_dpb_version1                  = 1;
 isc_dpb_version2                  = 2;
 
 isc_dpb_cdd_pathname              = 1;
@@ -98,7 +98,7 @@ isc_dpb_set_db_sql_dialect        = 65;
 isc_dpb_gfix_attach               = 66;
 isc_dpb_gstat_attach              = 67;
 isc_dpb_set_db_charset            = 68;
-isc_dpb_gsec_attach               69		{* deprecated *}
+isc_dpb_gsec_attach               = 69;		{* deprecated *}
 isc_dpb_address_path              = 70;
 isc_dpb_process_id                = 71;
 isc_dpb_no_db_triggers            = 72;
@@ -127,6 +127,7 @@ isc_dpb_decfloat_round            = 94;
 isc_dpb_decfloat_traps            = 95;
 isc_dpb_clear_map				  = 96;
 
+isc_dpb_last_dpb_constant         = isc_dpb_clear_map;
 
 {**************************************************}
 {* clumplet tags used inside isc_dpb_address_path *}
@@ -264,6 +265,8 @@ isc_tpb_lock_timeout              = 21;
 isc_tpb_read_consistency          = 22;
 isc_tpb_at_snapshot_number        = 23;
 
+isc_tpb_last_tpb_constant         = isc_tpb_at_snapshot_number;
+
 
 {************************}
 {* Blob Parameter Block *}
@@ -380,7 +383,7 @@ isc_info_svc_limbo_trans		= 66;	{* Retrieve the limbo transactions *}
 isc_info_svc_running			= 67;	{* Checks to see if a service is running on an attachment *}
 isc_info_svc_get_users			= 68;	{* Returns the user information from isc_action_svc_display_users *}
 isc_info_svc_auth_block			= 69;	{* Sets authentication block for service query() call *}
-isc_info_svc_stdin				78;	{* Returns maximum size of data, needed as stdin for service *}
+isc_info_svc_stdin				 = 78;	{* Returns maximum size of data, needed as stdin for service *}
 
 
 (******************************************************
@@ -772,5 +775,3 @@ fb_dbg_map_curname			 = 7;
 // sub code for fb_dbg_map_argument
 fb_dbg_arg_input			 = 0;
 fb_dbg_arg_output			 = 1;
-
-
