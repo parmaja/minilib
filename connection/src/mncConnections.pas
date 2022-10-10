@@ -276,7 +276,7 @@ type
     FMaxSize: Integer;
     FOptions: TmnDataOptions;
     FMetaType: string;
-    FScale: Word;
+    FScale: SmallInt;
     FSize: Int64;
     FSubType: TmncSubType;
   protected
@@ -295,7 +295,7 @@ type
     property MetaType: string read FMetaType write FMetaType;
     //Size, in sqlite every value have own length not depends on the Meta
     property Size: Int64 read FSize write SetSize; //TODO: I am thinking to move it to TmncItem
-    property Scale: Word read FScale write FScale;
+    property Scale: SmallInt read FScale write FScale;
     property Decimals: Integer read FDecimals write SetDecimals;
     property Options: TmnDataOptions read FOptions write FOptions default [];
     //property IsBlob;

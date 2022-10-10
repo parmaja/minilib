@@ -33,20 +33,20 @@ const
 
 type
   TXSQLVAR = record
-      sqltype: ISC_SHORT;			{* datatype of field *}
-      sqlscale: ISC_SHORT;			{* scale factor *}
-      sqlsubtype: ISC_SHORT;			{* datatype subtype - currently BLOBs only *}
-      sqllen: ISC_SHORT;				{* length of data area *}
-      sqldata: Pointer;			{* address of data *}
-      sqlind: PISC_SHORT;				{* address of indicator variable *}
-      sqlname_length: ISC_SHORT;		{* length of sqlname field *}
-      sqlname: array[0..31] of ISC_SCHAR;		{* name of field, name length + space for NULL *}
-      relname_length: ISC_SHORT;		{* length of relation name *}
-      relname: array[0..31] of ISC_SCHAR;		{* field's relation name + space for NULL *}
-      ownname_length: ISC_SHORT;		{* length of owner name *}
-      ownname: array[0..31] of ISC_SCHAR;		{* relation's owner name + space for NULL *}
-      aliasname_length: ISC_SHORT;	{* length of alias name *}
-      aliasname: array[0..31] of ISC_SCHAR;		{* relation's alias name + space for NULL *}
+    sqltype: ISC_SHORT;			{* datatype of field *}
+    sqlscale: ISC_SHORT;			{* scale factor *}
+    sqlsubtype: ISC_SHORT;			{* datatype subtype - currently BLOBs only *}
+    sqllen: ISC_SHORT;				{* length of data area *}
+    sqldata: Pointer;			{* address of data *}
+    sqlind: PISC_SHORT;				{* address of indicator variable *}
+    sqlname_length: ISC_SHORT;		{* length of sqlname field *}
+    sqlname: array[0..31] of ISC_SCHAR;		{* name of field, name length + space for NULL *}
+    relname_length: ISC_SHORT;		{* length of relation name *}
+    relname: array[0..31] of ISC_SCHAR;		{* field's relation name + space for NULL *}
+    ownname_length: ISC_SHORT;		{* length of owner name *}
+    ownname: array[0..31] of ISC_SCHAR;		{* relation's owner name + space for NULL *}
+    aliasname_length: ISC_SHORT;	{* length of alias name *}
+    aliasname: array[0..31] of ISC_SCHAR;		{* relation's alias name + space for NULL *}
   end;
   PXSQLVAR = ^TXSQLVAR;
 
@@ -55,12 +55,12 @@ const
 
 type
   TXSQLDA = record
-      version: ISC_SHORT;			{* version of this XSQLDA *}
-      sqldaid: array[0..7] of ISC_SCHAR;		{* XSQLDA name field *}
-      sqldabc: ISC_LONG;		 	{* length in bytes of SQLDA *}
-      sqln: ISC_SHORT;				  {* number of fields allocated *}
-      sqld: ISC_SHORT;				  {* actual number of fields *}
-      sqlvar: array[0..0] of TXSQLVAR; {* first field address *}
+    version: ISC_SHORT;			{* version of this XSQLDA *}
+    sqldaid: array[0..7] of ISC_SCHAR;		{* XSQLDA name field *}
+    sqldabc: ISC_LONG;		 	{* length in bytes of SQLDA *}
+    sqln: ISC_SHORT;				  {* number of fields allocated *}
+    sqld: ISC_SHORT;				  {* actual number of fields *}
+    sqlvar: array[0..0] of TXSQLVAR; {* first field address *}
   end;
   PXSQLDA = ^TXSQLDA;
 
