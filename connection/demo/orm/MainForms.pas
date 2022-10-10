@@ -38,14 +38,14 @@ implementation
 
 procedure TMainForm.CreateDB1BtnClick(Sender: TObject);
 begin
-  ORM := CreateSchema1(TmncORMMySQL);
+  ORM := CreateSchema1(TmncMySQLORM);
   ORM.GenerateSQL(SynEdit1.Lines);
 end;
 
 procedure TMainForm.CreateDB2BtnClick(Sender: TObject);
 begin
-  ORM := CreateSchema2(TmncORMMySQL);
-  ORM.GenerateSQL(SynEdit1.Lines);
+  {ORM := CreateSchema2(TmncMySQLORM);
+  ORM.GenerateSQL(SynEdit1.Lines);}
 end;
 
 end.

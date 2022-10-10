@@ -6,7 +6,7 @@ object MainForm: TMainForm
   Caption = 'MainForm'
   ClientHeight = 385
   ClientWidth = 719
-  LCLVersion = '1.9.0.0'
+  LCLVersion = '2.3.0.0'
   object CreateDB1Btn: TButton
     Left = 10
     Height = 25
@@ -527,7 +527,7 @@ object MainForm: TMainForm
     DefaultFilter = 'SQL Files (*.sql)|*.sql'
     Enabled = False
     SQLDialect = sqlMySQL
-    left = 258
-    top = 47
+    Left = 258
+    Top = 47
   end
 end

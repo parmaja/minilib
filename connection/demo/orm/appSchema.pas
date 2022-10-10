@@ -14,7 +14,7 @@ uses
   mncORM;
 
 function CreateSchema1(ORMClass: TmncORMClass): TmncORM;
-function CreateSchema2(ORMClass: TmncORMClass): TmncORM;
+//function CreateSchema2(ORMClass: TmncORMClass): TmncORM;
 
 implementation
 
@@ -58,21 +58,21 @@ begin
             end;
             with TField.Create(This, 'EmployeeID', ftInteger) do
             begin
-              Index := 'EmpIndex';
-              ReferenceTo('Employees', 'ID', [rfoDelete, rfoUpdate]);
+              IndexName := 'EmpIndex';
+              ReferenceTo('Employees', 'ID', rfCascade);
               FieldSize := 60;
               Options := [foReferenced];
             end;
             with TField.Create(This, 'Value', ftCurrency) do
             begin
-              Index := 'EmpIndex';
-              Options := [foSummed];
+              IndexName := 'EmpIndex';
+              Options := [];
             end;
           end;
       end;
     end;
 end;
-
+{
 function CreateSchema2(ORMClass: TmncORMClass): TmncORM;
 begin
   Result := ORMClass.Create('ORM');
@@ -102,5 +102,5 @@ begin
       end;
    end;
 end;
-
+}
 end.
