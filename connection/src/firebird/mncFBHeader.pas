@@ -93,7 +93,7 @@ type
     tm_isdst : integer; { 0 if daylight savings time is not in effect) }
   end;
 
-  FB_API_HANDLE = PVoid;
+  FB_API_HANDLE = Cardinal;
 
   PCTimeStructure = ^TCTimeStructure;
   TM              = TCTimeStructure;

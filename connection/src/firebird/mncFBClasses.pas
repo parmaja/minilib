@@ -818,8 +818,8 @@ begin
   szBuff := nil;
   bSourceBlob := True;
   bDestBlob := True;
-  s_bhandle := nil;
-  d_bhandle := nil;
+  s_bhandle := 0;
+  d_bhandle := 0;
   iSize := 0;
   try
     if (Source.IsNull) then
@@ -1832,7 +1832,7 @@ destructor TFBBlobStream.Destroy;
 var
   StatusVector: TStatusVector;
 begin
-  if (FHandle <> nil) and (Call(FBLib.isc_close_blob(@StatusVector, @FHandle), StatusVector, False) > 0) then
+  if (FHandle <> 0) and (Call(FBLib.isc_close_blob(@StatusVector, @FHandle), StatusVector, False) > 0) then
     FBRaiseError(StatusVector);
   Size := 0;
   inherited;
@@ -1860,7 +1860,7 @@ var
   StatusVector: TStatusVector;
 begin
   Finalize;
-  if (FHandle <> nil) and (Call(FBLib.isc_close_blob(@StatusVector, @FHandle), StatusVector, False) > 0) then
+  if (FHandle <> 0) and (Call(FBLib.isc_close_blob(@StatusVector, @FHandle), StatusVector, False) > 0) then
     FBRaiseError(StatusVector);
 end;
 
