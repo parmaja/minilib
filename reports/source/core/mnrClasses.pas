@@ -832,6 +832,8 @@ procedure TmnrCustomReport.Load;
 begin
   Clear;
   DoLoad;
+
+  FDesignLayouts.Clear;
   Sections.EnumLayouts(FDesignLayouts);
 end;
 
@@ -854,7 +856,7 @@ procedure TmnrCustomReport.Clear;
 begin
   Items.Clear;
   Sections.ClearItems;
-  DesignLayouts.Clear;
+  //DesignLayouts.Clear;
 end;
 
 constructor TmnrCustomReport.Create;
