@@ -323,7 +323,7 @@ end;
 
 function  TmnNamedObjectList<_Object_>.Find(const Name: string): _Object_;
 begin
-  FDic.TryGetValue(Name, Result);
+  FDic.TryGetValue(Name.ToLower, Result);
   {Result := nil;
   for i := 0 to Count - 1 do
   begin
@@ -359,10 +359,10 @@ begin
   inherited;
   {$ifdef FPC}
   if Action = lnAdded then
-    FDic.AddOrSetValue(_Object_(Ptr).Name, Ptr);
+    FDic.AddOrSetValue(_Object_(Ptr).Name.ToLower, Ptr);
   {$else}
   if Action = cnAdded then
-    FDic.AddOrSetValue(Value.Name, Value);
+    FDic.AddOrSetValue(Value.Name.ToLower, Value);
   {$endif}
 end;
 
