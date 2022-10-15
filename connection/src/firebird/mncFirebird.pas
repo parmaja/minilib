@@ -390,8 +390,8 @@ begin
   end;
 
   try
-    tr_handle := nil;
-    aHandle := nil;
+    tr_handle := 0;
+    aHandle := 0;
     CheckErr(FBLib.isc_dsql_execute_immediate(@StatusVector, @aHandle, @tr_handle, Length(ConnectString), PByte(ConnectString), FB_DIALECT, nil), StatusVector, True);
     CheckErr(FBLib.isc_detach_database(@StatusVector, @aHandle), StatusVector, False);
   finally
@@ -425,8 +425,8 @@ begin
   end;
 
   try
-    tr_handle := nil;
-    aHandle := nil;
+    tr_handle := 0;
+    aHandle := 0;
     CheckErr(FBLib.isc_dsql_execute_immediate(@StatusVector, @aHandle, @tr_handle, Length(ConnectString), PByte(ConnectString), FB_DIALECT, nil), StatusVector, True);
   finally
   end;
@@ -552,7 +552,7 @@ begin
     aDatabaseName := FBComposeConnectionString(Resource, Host, Port);
     if CheckErr(FBLib.isc_attach_database(@StatusVector, Length(aDatabaseName), PByte(aDatabaseName), @FHandle, aDPBLength, aDPB), StatusVector, False) > 0 then
     begin
-      FHandle := nil;
+      FHandle := 0;
       FBRaiseError(StatusVector);
     end;
     if (GetDBSQLDialect < FB_DIALECT) then
@@ -567,7 +567,7 @@ end;
 
 function TmncFBConnection.GetConnected: Boolean;
 begin
-  Result := FHandle <> nil;
+  Result := FHandle <> 0;
 end;
 
 procedure TmncFBConnection.DoDisconnect;
@@ -577,7 +577,7 @@ begin
   if (eonDisconnect in ErrorHandles) and (CheckErr(FBLib.isc_detach_database(@StatusVector, @FHandle), StatusVector, False) > 0) then
     FBRaiseError(StatusVector)
   else
-    FHandle := nil;
+    FHandle := 0;
 end;
 
 { TmncFBTransaction }
@@ -628,7 +628,7 @@ begin
     pteb^[0].tpb_address := aTPB;
     if CheckErr(FBLib.isc_start_multiple(@StatusVector, @FHandle, 1, PISC_TEB(pteb)), StatusVector, False) > 0 then
     begin
-      FHandle := nil;
+      FHandle := 0;
       FBRaiseError(StatusVector);
     end;
   finally
@@ -664,7 +664,7 @@ var
   StatusVector: TStatusVector;
   s: UTF8String;
 begin
-  tr_handle := nil;
+  tr_handle := 0;
   try
     s := UTF8Encode(vCommand);
     CheckErr(FBLib.isc_dsql_execute_immediate(@StatusVector, @FHandle, @tr_handle, 0, PByte(s), FB_DIALECT, nil), StatusVector, True);
@@ -674,13 +674,13 @@ end;
 
 function TmncFBTransaction.GetActive: Boolean;
 begin
-  Result:= FHandle <> nil;
+  Result:= FHandle <> 0;
 end;
 
 constructor TmncFBTransaction.Create(vConnection: TmncConnection);
 begin
   inherited;
-  FHandle := nil;
+  FHandle := 0;
   FTPB := nil;
 end;
 
@@ -1139,7 +1139,7 @@ var
   StatusVector: TStatusVector;
 begin
   try
-    if (FHandle <> nil) then
+    if (FHandle <> 0) then
     begin
       //if Connection.Connected then
       begin
@@ -1149,7 +1149,7 @@ begin
       end;
     end;
   finally
-    FHandle := nil;
+    FHandle := 0;
   end;
 end;
 
@@ -1312,7 +1312,7 @@ var
   StatusVector: TStatusVector;
 begin
   try
-    if (FHandle <> nil) and (SQLType in [SQLSelect, SQLSelectForUpdate, SQLExecProcedure]) {and FActive //zaher} then
+    if (FHandle <> 0) and (SQLType in [SQLSelect, SQLSelectForUpdate, SQLExecProcedure]) {and FActive //zaher} then
     begin
       isc_res := CheckErr(FBLib.isc_dsql_free_statement(@StatusVector, @FHandle, DSQL_close), StatusVector, False);
       if (StatusVector[0] = 1) and (isc_res > 0) and
@@ -1352,7 +1352,7 @@ end;
 procedure TmncFBCommand.CheckHandle;
 begin
   //CheckTransaction;
-  if (FHandle = nil) then
+  if (FHandle = 0) then
     FBRaiseError(fbceInvalidStatementHandle, [nil]);
 end;
 
@@ -1498,7 +1498,7 @@ begin
   except
     on E: Exception do
     begin
-      if (FHandle <> nil) then
+      if (FHandle <> 0) then
         FreeHandle;
       raise;
     end;
