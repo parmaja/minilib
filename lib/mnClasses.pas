@@ -41,7 +41,7 @@ type
   //USAGE FPC: TMyObjectList = class(specialize TmnObjectList<TMyObject>)
 
   {$ifdef FPC}
-  TmnObjectList<_Object_> = class(TObjectList)
+  TmnObjectList<_Object_> = class(Contnrs.TObjectList)
   {$else}
   TmnObjectList<_Object_: class> = class(TObjectList<_Object_>)
   {$endif}
@@ -123,6 +123,7 @@ type
       procedure Notify(const Value: _Object_; Action: TCollectionNotification); override;
       {$endif}
     public
+      procedure AfterConstruction; override;
       function Find(const Name: string): _Object_;
       function IndexOfName(vName: string): Integer;
       destructor Destroy; override;
@@ -303,6 +304,11 @@ end;
 procedure TmnNamedObjectList<_Object_>.Created;
 begin
   inherited;
+end;
+
+procedure TmnNamedObjectList<_Object_>.AfterConstruction;
+begin
+  inherited AfterConstruction;
   FDic := TDictionary<string, _Object_>.Create(1025); //1024+1 (size+-1)
 end;
 
@@ -316,29 +322,32 @@ end;
 procedure TmnNamedObjectList<_Object_>.Clear;
 begin
   inherited;
-  FDic.Clear;
+  if FDic <> nil then //because there is a clear in Destroy
+    FDic.Clear;
 end;
 {$endif}
 
-
 function  TmnNamedObjectList<_Object_>.Find(const Name: string): _Object_;
 begin
-  FDic.TryGetValue(Name.ToLower, Result);
-  {Result := nil;
-  for i := 0 to Count - 1 do
-  begin
-    if SameText(Items[i].Name, Name) then
-    begin
-      Result := Items[i];
-      break;
-    end;
-  end;}
+  FDic.TryGetValue(Name.ToLower, Result)
 end;
 
 function TmnNamedObjectList<_Object_>.IndexOfName(vName: string): Integer;
 var
+  t: _Object_;
+begin
+  t := Find(vName);
+  if t<>nil then
+    Result := IndexOf(t)
+  else
+    Result := -1;
+end;
+
+{
+var
   i: integer;
 begin
+
   Result := -1;
   if vName <> '' then
     for i := 0 to Count - 1 do
@@ -350,6 +359,8 @@ begin
       end;
     end;
 end;
+}
+
 {$ifdef FPC}
 procedure TmnNamedObjectList<_Object_>.Notify(Ptr: Pointer; Action: TListNotification);
 {$else}
