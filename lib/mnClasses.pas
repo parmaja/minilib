@@ -309,7 +309,10 @@ end;
 procedure TmnNamedObjectList<_Object_>.AfterConstruction;
 begin
   inherited AfterConstruction;
+  {$ifdef FPC}
+  {$else}
   FDic := TDictionary<string, _Object_>.Create(1025); //1024+1 (size+-1)
+  {$endif}
 end;
 
 destructor TmnNamedObjectList<_Object_>.Destroy;
@@ -328,8 +331,24 @@ end;
 {$endif}
 
 function  TmnNamedObjectList<_Object_>.Find(const Name: string): _Object_;
+var
+  i: integer;
 begin
-  FDic.TryGetValue(Name.ToLower, Result)
+  if FDic <> nil then
+    FDic.TryGetValue(Name.ToLower, Result)
+  else
+  begin
+    Result := nil;
+    if Name <> '' then
+      for i := 0 to Count - 1 do
+      begin
+        if SameText(Items[i].Name, Name) then
+        begin
+          Result := Items[i];
+          break;
+        end;
+      end;
+  end;
 end;
 
 function TmnNamedObjectList<_Object_>.IndexOfName(vName: string): Integer;
@@ -368,13 +387,20 @@ procedure TmnNamedObjectList<_Object_>.Notify(const Value: _Object_; Action: TCo
 {$endif}
 begin
   inherited;
-  {$ifdef FPC}
-  if Action = lnAdded then
-    FDic.AddOrSetValue(_Object_(Ptr).Name.ToLower, Ptr);
-  {$else}
-  if Action = cnAdded then
-    FDic.AddOrSetValue(Value.Name.ToLower, Value);
-  {$endif}
+  if FDic <> nil then
+  begin
+    {$ifdef FPC}
+    if Action = lnAdded then
+      FDic.AddOrSetValue(_Object_(Ptr).Name.ToLower, Ptr)
+    else if Action in [lnExtracted, lnDeleted] then
+      FDic.Remove(_Object_(Ptr).Name);
+    {$else}
+    if Action = cnAdded then
+      FDic.AddOrSetValue(Value.Name.ToLower, Value)
+    else if Action in [cnExtracting, cnDeleting] then
+      FDic.Remove(Value.Name);
+    {$endif}
+  end;
 end;
 
 { TmnObjectList.TmnObjectListEnumerator }
