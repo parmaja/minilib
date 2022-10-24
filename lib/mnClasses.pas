@@ -308,11 +308,8 @@ end;
 
 procedure TmnNamedObjectList<_Object_>.AfterConstruction;
 begin
-  inherited AfterConstruction;
-  {$ifdef FPC}
-  {$else}
-  FDic := TDictionary<string, _Object_>.Create(1025); //1024+1 (size+-1)
-  {$endif}
+  inherited;
+  FDic := TDictionary<string, _Object_>.Create(1024);
 end;
 
 destructor TmnNamedObjectList<_Object_>.Destroy;
@@ -386,21 +383,26 @@ procedure TmnNamedObjectList<_Object_>.Notify(Ptr: Pointer; Action: TListNotific
 procedure TmnNamedObjectList<_Object_>.Notify(const Value: _Object_; Action: TCollectionNotification);
 {$endif}
 begin
-  inherited;
   if FDic <> nil then
   begin
     {$ifdef FPC}
+    if Action in [lnExtracted, lnDeleted] then //Need it in FPC https://forum.lazarus.freepascal.org/index.php/topic,60984.0.html
+      FDic.Remove(_Object_(Ptr).Name.ToLower);//bug in fpc
+    {$else}
+    if Action in [cnExtracting, cnDeleting] then
+      FDic.Remove(Value.Name.ToLower);
+    {$endif}
+    inherited;
+    {$ifdef FPC}
     if Action = lnAdded then
-      FDic.AddOrSetValue(_Object_(Ptr).Name.ToLower, Ptr)
-    else if Action in [lnExtracted, lnDeleted] then
-      FDic.Remove(_Object_(Ptr).Name);
+      FDic.AddOrSetValue(_Object_(Ptr).Name.ToLower, Ptr);
     {$else}
     if Action = cnAdded then
-      FDic.AddOrSetValue(Value.Name.ToLower, Value)
-    else if Action in [cnExtracting, cnDeleting] then
-      FDic.Remove(Value.Name);
+      FDic.AddOrSetValue(Value.Name.ToLower, Value);
     {$endif}
-  end;
+  end
+  else
+    inherited;
 end;
 
 { TmnObjectList.TmnObjectListEnumerator }
