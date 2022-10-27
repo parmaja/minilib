@@ -72,6 +72,9 @@ type
     Number: Integer;
     Locked: Boolean;
     Data: TObject;
+
+    procedure Reset;
+    procedure Clear;
   end;
 
   TOnRequest = procedure(vCell: TmnrCell) of object;
@@ -143,6 +146,7 @@ type
     FNumber: Integer;
     FRowIndex: Integer;
     FLocked: Boolean;
+    FData: TObject;
   protected
     function GetFirst: TmnrCell;
     function GetLast: TmnrCell;
@@ -172,6 +176,7 @@ type
     property Locked: Boolean read FLocked;
     property Number: Integer read FNumber;
     property RowIndex: Integer read FRowIndex;
+    property Data: TObject read FData;
 
     property ByIndex[vIndex: Integer]: TmnrCell read GetByIndex;
   end;
@@ -512,6 +517,7 @@ type
     function GetLoopWay: TmnrSectionLoopWay;
   protected
     function DoFetch(var vParams: TmnrFetch): TmnrAcceptMode; virtual;
+
     procedure DoAppendDetailTotals(vSection: TmnrSection);
     procedure DoAppendPageTotals(vSection: TmnrSection);
     procedure DoAppendToPageTotals(vSection: TmnrSection);
@@ -647,6 +653,7 @@ type
   TmnrCustomReport = class(TPersistent) //belal: must be tobject but {$m+) not working need fix 
   private
     FCanceled: Boolean;
+    FRowsData: TmnObjectList<TObject>;
     FItems: TmnrRows;
     FSections: TmnrSections;
     FGroups: TmnrGroups;
@@ -724,11 +731,12 @@ type
     procedure DoEnumExportRows(vList: TmnrRowList); virtual;
   public
     constructor Create;
-
     destructor Destroy; override;
+
     property Sections: TmnrSections read GetSections;
     property Groups: TmnrGroups read GetGroups;
     property Items: TmnrRows read GetItems;
+    property RowsData: TmnObjectList<TObject> read FRowsData;
     procedure Load;
     procedure Cancel;
     property Working: Boolean read FWorking;
@@ -855,6 +863,7 @@ end;
 procedure TmnrCustomReport.Clear;
 begin
   Items.Clear;
+  FRowsData.Clear;
   Sections.ClearItems;
   //DesignLayouts.Clear;
 end;
@@ -862,6 +871,7 @@ end;
 constructor TmnrCustomReport.Create;
 begin
   inherited Create;
+  FRowsData := TmnObjectList<TObject>.Create;
   FDesignLayouts := TmnrLayoutList.Create;
   FDesigningMode := False;
 
@@ -986,6 +996,7 @@ begin
   FreeAndNil(FRowsListIndex);
   FreeAndNil(FProfiler);
   FreeAndNil(FDesignLayouts);
+  FreeAndNil(FRowsData);
   inherited;
 end;
 
@@ -1752,10 +1763,14 @@ end;
 
 function TmnrSection.DoFetch(var vParams: TmnrFetch): TmnrAcceptMode;
 begin
+  vParams.Reset;
+
   if Assigned(FOnFetch) then
     FOnFetch(vParams)
   else
     Report.Fetch(Self, vParams);
+
+  if vParams.Data<>nil then Report.RowsData.Add(vParams.Data);
 
   Result := vParams.AcceptMode;
 end;
@@ -1777,11 +1792,13 @@ begin
     begin
       aRow := Report.CreateNewRow(Self, vReference);
       try
-        aRow.FID := vParams.ID;
-        aRow.FNumber := vParams.Number;
-        aRow.FLocked := vParams.Locked;
-        aRow.FRowIndex := vIndex;
+        aRow.FID        := vParams.ID;
+        aRow.FNumber    := vParams.Number;
+        aRow.FLocked    := vParams.Locked;
+        aRow.FData      := vParams.Data;
+        aRow.FRowIndex  := vIndex;
         aRow.FDesignRow := aDesignRow;
+
         //note data may be nil
         DoUpdateRowData(aRow, vParams.Data, aDesignRow.Next=nil);
 
@@ -1981,12 +1998,7 @@ begin
   while s <> nil do
   begin
     aIdx := 0;
-    aParams.ID := 0;
-    aParams.Number := 0;
-    aParams.Locked := False;
-    aParams.Data := nil;
-    aParams.AcceptMode := acmAccept;
-    aParams.FetchMode := fmFirst;
+    aParams.Clear;
 
     case s.LoopWay of
       slCustom:
@@ -1995,7 +2007,6 @@ begin
         while not Report.Canceled and (aParams.AcceptMode <> acmEof) do
         begin
           s.DoFetch(aParams);
-
 
           if (aParams.FetchMode = fmFirst) and (aParams.AcceptMode <> acmEof) then
           begin
@@ -2020,21 +2031,13 @@ begin
             end;
           end;
 
-          aParams.ID := 0;
-          aParams.Number := 0;
-          aParams.Locked := False;
           if aParams.FetchMode = fmFirst then aParams.FetchMode := fmNext;
-          if aParams.Data <> nil then FreeAndNil(aParams.Data);
-
           if aParams.AcceptMode=acmAccept then
             Inc(aIdx)
           else if aParams.AcceptMode in [acmSkip, acmSkipAll] then
             aParams.AcceptMode := acmAccept;
         end;
-
-
       end;
-
     end;
     s := s.Next;
   end;
@@ -2201,12 +2204,8 @@ begin
   while s <> nil do
   begin
     aIdx := 0;
-    aParams.ID := 0;
-    aParams.Number := 0;
-    aParams.Locked := False;
-    aParams.Data := nil;
-    aParams.AcceptMode := acmAccept;
-    aParams.FetchMode := fmFirst;
+    aParams.Clear;
+
     DoBeginLoop(s);
     try
       s.AddReportTitles;
@@ -2226,7 +2225,6 @@ begin
               s.DoEndFill(r);
             end;
 
-            if aParams.Data <> nil then FreeAndNil(aParams.Data);
             s.Sections.Loop;
           end;
         end;
@@ -2278,11 +2276,7 @@ begin
               end;
             end;
 
-            aParams.ID := 0;
-            aParams.Number := 0;
-            aParams.Locked := False;
             if aParams.FetchMode = fmFirst then aParams.FetchMode := fmNext;
-            if aParams.Data <> nil then FreeAndNil(aParams.Data);
 
             if aParams.AcceptMode=acmAccept then
               Inc(aIdx)
@@ -3638,6 +3632,23 @@ begin
       Exit(itm);
 
   Result := nil;
+end;
+
+{ TmnrFetch }
+
+procedure TmnrFetch.Clear;
+begin
+  AcceptMode := acmAccept;
+  FetchMode  := fmFirst;
+  Reset;
+end;
+
+procedure TmnrFetch.Reset;
+begin
+  ID     := 0;
+  Number := 0;
+  Locked := False;
+  Data   := nil;
 end;
 
 initialization
