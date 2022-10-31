@@ -880,7 +880,7 @@ begin
   FSections := DoCreateSections;
   FGroups := DoCreateGroups;
   FItems := DoCreateItems;
-  FRowsListIndex := nil;
+  FRowsListIndex := TmnrRowsIndex.Create(Self);
 
   //InitSections(FSections);
   FGroups.FReport := Self;
@@ -1208,8 +1208,7 @@ end;
 
 procedure TmnrCustomReport.Finish;
 begin
-  FreeAndNil(FRowsListIndex); //in case of refill
-  FRowsListIndex := TmnrRowsIndex.Create(Self);
+  FRowsListIndex.Build;
 end;
 
 function TmnrCustomReport.Finished: Boolean;
@@ -2356,7 +2355,7 @@ begin
   begin
     c := First as TmnrCell;
     repeat
-      b := SameText(c.Layout.ClassName, vName);
+      b := (c.Layout<>nil) and SameText(c.Layout.ClassName, vName);
       b := b or SameText(c.DesignCell.Name, vName);
       b := b or SameText((c.DesignCell as TmnrDesignCell).AliasName, vName);
 
@@ -2887,7 +2886,9 @@ end;
 procedure TmnrIndex.Build;
 begin
   if Report<>nil then
+  begin
     Compute(Report);
+  end;
 end;
 
 procedure TmnrIndex.Compute(vReport: TmnrCustomReport);

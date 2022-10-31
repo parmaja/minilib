@@ -151,7 +151,6 @@ type
     procedure DecCount(Value: Integer); override;
     procedure Clear; override;
     property ByIndex[vIndex: Integer]: TmnrNode read GetByIndex;
-
   end;
 
   TmnrNodeArray = array of TmnrNode;
