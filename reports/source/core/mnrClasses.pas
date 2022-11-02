@@ -1784,7 +1784,6 @@ var
   Accepted: Boolean;
 begin
   aDesignRow := DesignRows.First;
-  aRow := nil;
   if aDesignRow <> nil then
   begin
     while aDesignRow <> nil do
