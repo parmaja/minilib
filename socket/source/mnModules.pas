@@ -368,6 +368,7 @@ type
     procedure DoStart; override;
     procedure DoStop; override;
     procedure DoIdle; override;
+    function Module<T: class>: T;
 
   public
     constructor Create; virtual;
@@ -709,6 +710,18 @@ begin
   if Modules <> nil then
     Modules.Stop;
   inherited;
+end;
+
+function TmodModuleServer.Module<T>: T;
+var
+  i: Integer;
+begin
+  if Modules<>nil then
+    for I := 0 to Modules.Count-1 do
+      if Modules[i] is T then
+        Exit(Modules[i] as T);
+
+  Result := nil;
 end;
 
 procedure TmodModuleServer.StreamCreated(AStream: TmnBufferStream);
