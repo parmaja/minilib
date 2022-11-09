@@ -64,7 +64,7 @@ type
     procedure Accept(ListenerHandle: TSocketHandle; Options: TmnsoOptions; ReadTimeout: Integer; out vSocket: TmnCustomSocket; out vErr: Integer); override;
     procedure Bind(Options: TmnsoOptions; ListenTimeout: Integer; const Port: string; const Address: string; out vSocket: TmnCustomSocket; out vErr: Integer); override;
     procedure Connect(Options: TmnsoOptions; ConnectTimeout, ReadTimeout: Integer; const Port: string; const Address: string; const BindAddress: string; out vSocket: TmnCustomSocket; out vErr: Integer); override;
-
+    function ResolveIP(Address: string): string; override;
     procedure Startup;
     procedure Cleanup;
   end;
@@ -576,6 +576,7 @@ begin
           end;
         end;
       end;
+
       if aHandle <> TSocketHandle(SOCKET_ERROR) then
       begin
       {$IFDEF FPC}
@@ -612,6 +613,29 @@ begin
     vSocket := TmnSocket.Create(aHandle, Options, skClient)
   else
     vSocket := nil;
+end;
+
+function TmnWallSocket.ResolveIP(Address: string): string;
+var
+  aHost: PHostEnt;
+  aAddr: {$ifdef FPC}TSockAddr;{$else}TSockAddrIn;{$endif}
+begin
+  if Address <> '' then
+  begin
+    aAddr.sin_addr.s_addr := inet_addr(PAnsiChar(AnsiString(Address)));
+    if (aAddr.sin_addr.s_addr = 0) or (aAddr.sin_addr.s_addr = u_long(SOCKET_ERROR)) then
+    begin
+      aHost := gethostbyname(PAnsiChar(AnsiString(Address)));
+      if aHost <> nil then
+        Result := Byte(aHost.h_addr^[0]).ToString + '.' + Byte(aHost.h_addr^[1]).ToString + '.' + Byte(aHost.h_addr^[2]).ToString + '.' + Byte(aHost.h_addr^[3]).ToString
+      else
+        Result := '';
+    end
+    else
+      Result := Address;
+  end
+  else
+    Result := '';
 end;
 
 procedure TmnWallSocket.Startup;

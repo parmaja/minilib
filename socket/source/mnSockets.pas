@@ -135,6 +135,7 @@ type
     procedure Accept(ListenerHandle: TSocketHandle; Options: TmnsoOptions; ReadTimeout: Integer; out vSocket: TmnCustomSocket; out vErr: Integer); virtual; abstract;
     //Connect used by clients
     procedure Connect(Options: TmnsoOptions; ConnectTimeout, ReadTimeout: Integer; const Port: string; const Address: string; const BindAddress: string; out vSocket: TmnCustomSocket; out vErr: Integer); overload; virtual; abstract;
+    function ResolveIP(Address: string): string; virtual;
   end;
 
   { Streams
@@ -218,6 +219,11 @@ end;
 function TmnCustomWallSocket.GetSocketError(Handle: Integer): Integer;
 begin
   Result := 0;
+end;
+
+function TmnCustomWallSocket.ResolveIP(Address: string): string;
+begin
+  Result := '';
 end;
 
 { TmnCustomSocket }
