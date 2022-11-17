@@ -295,24 +295,30 @@ const
 
   NID_undef                     =  0;
 
-  LN_rsaEncryption               = 'rsaEncryption';
-  NID_rsaEncryption              = 6;
-  //OBJ_rsaEncryption              = OBJ_pkcs1,1L
+  LN_rsaEncryption              = 'rsaEncryption';
+  NID_rsaEncryption             = 6;
+  //OBJ_rsaEncryption           = OBJ_pkcs1,1L
 
-  SN_subject_key_identifier              = 'subjectKeyIdentifier';
-  LN_subject_key_identifier              = 'X509v3 Subject Key Identifier';
-  NID_subject_key_identifier             = 82;
-  //OBJ_subject_key_identifier           = OBJ_id_ce,14L
+  SN_subject_key_identifier     = 'subjectKeyIdentifier';
+  LN_subject_key_identifier     = 'X509v3 Subject Key Identifier';
+  NID_subject_key_identifier    = 82;
+  //OBJ_subject_key_identifier  = OBJ_id_ce,14L
 
-  SN_key_usage          =  'keyUsage';
-  LN_key_usage          =  'X509v3 Key Usage';
-  NID_key_usage         =  83;
-  //OBJ_key_usage         =  OBJ_id_ce,15L;
+  SN_key_usage                  =  'keyUsage';
+  LN_key_usage                  =  'X509v3 Key Usage';
+  NID_key_usage                 =  83;
+  //OBJ_key_usage               =  OBJ_id_ce,15L;
 
-  SN_basic_constraints            = 'basicConstraints';
-  LN_basic_constraints            = 'X509v3 Basic Constraints';
-  NID_basic_constraints           = 87;
-  //OBJ_basic_constraints          = OBJ_id_ce,19L
+  SN_basic_constraints          = 'basicConstraints';
+  LN_basic_constraints          = 'X509v3 Basic Constraints';
+  NID_basic_constraints         = 87;
+
+  NID_subject_alt_name          = 85;
+  NID_certificate_policies      = 89;
+  NID_ext_key_usage             = 126;
+
+
+  //OBJ_basic_constraints         = OBJ_id_ce,19L
 
   EVP_PKEY_NONE   = NID_undef;
   EVP_PKEY_RSA    = NID_rsaEncryption;
@@ -534,6 +540,7 @@ var
   PEM_write_bio_X509_REQ: function(bp: PBIO; x: PX509_REQ): Integer; cdecl;
   PEM_write_bio_PrivateKey: function(bp: PBIO; x: PEVP_PKEY; const enc: PEVP_CIPHER; kstr:PByte; klen: Integer; cb: Ppem_password_cb; u: Pointer): integer; cdecl;
   PEM_write_bio_X509: function(bp: PBIO; x: PX509): Integer; cdecl;
+  PEM_write_X509: function(fh: PNativeInt; x: PX509): Integer; cdecl;
 
 
   ASN1_INTEGER_set_int64: function(a: PASN1_INTEGER; r: Int64): Integer; cdecl;
@@ -798,6 +805,7 @@ begin
   PEM_write_bio_X509_REQ := GetAddress('PEM_write_bio_X509_REQ');
   PEM_write_bio_PrivateKey := GetAddress('PEM_write_bio_PrivateKey');
   PEM_write_bio_X509 := GetAddress('PEM_write_bio_X509');
+  PEM_write_X509 := GetAddress('PEM_write_X509');
 
   EVP_PKEY_new := GetAddress('EVP_PKEY_new');
   EVP_PKEY_assign := GetAddress('EVP_PKEY_assign');
