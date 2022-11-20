@@ -20,6 +20,7 @@ uses
 
 type
 
+  EmnOpenSSLException = Exception;
   { TOpenSSLObject }
 
   TOpenSSLObject = class abstract(TObject)
@@ -137,16 +138,61 @@ type
   end;
 
 procedure InitOpenSSL(All: Boolean = True);
+procedure InitOpenSSLLibrary(All: Boolean = True);
+procedure CleanupOpenSSL;
+
+procedure RaiseLastSSLError;
+procedure RaiseSSLError(Message: utf8string);
 
 implementation
 
 uses
-  mnOpenSSLUtils, mnSockets;
+  mnSockets;
+
 
 procedure InitOpenSSL(All: Boolean);
 begin
   InitOpenSSLLibrary(All);
 end;
+
+procedure RaiseSSLError(Message: utf8string);
+begin
+  raise EmnOpenSSLException.Create(Message);
+end;
+
+procedure RaiseLastSSLError;
+begin
+  RaiseSSLError(ERR_error_string(ERR_get_error(), nil));
+end;
+
+procedure InitOpenSSLLibrary(All: Boolean);
+begin
+  if OpenSSLLib.Load then
+  begin
+    if All then
+      OPENSSL_init_ssl(OPENSSL_INIT_LOAD_SSL_STRINGS or OPENSSL_INIT_LOAD_CRYPTO_STRINGS, nil)
+    else
+      OPENSSL_init_ssl(0, nil);
+    //ERR_load_SSL_strings();//IDK
+
+    if CryptoLib.Load then
+    begin
+      if All then
+        OPENSSL_init_crypto(OPENSSL_INIT_ADD_ALL_CIPHERS or OPENSSL_INIT_ADD_ALL_DIGESTS, nil)
+      else
+        OPENSSL_init_crypto(0, nil);
+    end;
+
+    //ERR_load_CRYPTO_strings();//IDK
+  end;
+end;
+
+procedure CleanupOpenSSL;
+begin
+  //EVP_Cleanup;
+end;
+
+
 
 { TTLS_SSLServerMethod }
 

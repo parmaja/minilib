@@ -276,6 +276,8 @@ const
   BIO_FLAGS_RWS           = (BIO_FLAGS_READ or BIO_FLAGS_WRITE or BIO_FLAGS_IO_SPECIAL);
   BIO_FLAGS_SHOULD_RETRY  = $08;
 
+  BIO_CTRL_INFO = 3;
+
   BIO_CTRL_DGRAM_SET_RECV_TIMEOUT = 33;(* setsockopt, essentially *)
   BIO_CTRL_DGRAM_GET_RECV_TIMEOUT = 34;(* getsockopt, essentially *)
   BIO_CTRL_DGRAM_SET_SEND_TIMEOUT = 35;(* setsockopt, essentially *)
@@ -423,6 +425,12 @@ type
   PX509_EXTENSION = PSLLObject;
   PLHASH = PSLLObject;
 
+  PBIO_METHOD = PSLLObject;
+  PPBIO_METHOD = ^PBIO_METHOD;
+
+  Pevp_md_ctx = PSLLObject;
+  PPevp_md_ctx = ^Pevp_md_ctx;
+
   Ppem_password_cb = Pointer;
 
   PEVP_CIPHER = PSLLObject;
@@ -513,6 +521,8 @@ var
   TLS_method: function(): PSSL_METHOD; cdecl;
   TLS_server_method: function(): PSSL_METHOD; cdecl;
 
+  RAND_bytes: function(buf: PByte; num: Integer): Integer; cdecl;
+
   X509_new: function(): PX509; cdecl;
   X509_STORE_CTX_get_error_depth: function(ctx: PX509_STORE_CTX): Integer; cdecl;
   X509_free: procedure(a: PX509); cdecl;
@@ -527,6 +537,7 @@ var
   X509_add_ext: function(x: PX509; ex: PX509_EXTENSION; loc: Integer): integer; cdecl;
   X509_EXTENSION_free: procedure(a: PX509_EXTENSION); cdecl;
   X509_set_issuer_name: function(x: PX509; name: PX509_NAME): Integer; cdecl;
+  X509_to_X509_REQ: function(x: PX509; pkey: PEVP_PKEY; md: PEVP_MD): PX509_REQ; cdecl;
 
 
   X509V3_set_ctx: procedure(ctx: PX509V3_CTX; issuer: PX509; subject: PX509; req: PX509_REQ; crl: PX509_CRL; flags: integer); cdecl;
@@ -540,7 +551,11 @@ var
   PEM_write_bio_X509_REQ: function(bp: PBIO; x: PX509_REQ): Integer; cdecl;
   PEM_write_bio_PrivateKey: function(bp: PBIO; x: PEVP_PKEY; const enc: PEVP_CIPHER; kstr:PByte; klen: Integer; cb: Ppem_password_cb; u: Pointer): integer; cdecl;
   PEM_write_bio_X509: function(bp: PBIO; x: PX509): Integer; cdecl;
-  PEM_write_X509: function(fh: PNativeInt; x: PX509): Integer; cdecl;
+  PEM_write_X509: function(fh: NativeInt; x: PX509): Integer; cdecl;
+  PEM_write_bio_RSAPublicKey: function(bp: PBIO; x: PRSA): Integer; cdecl;
+
+  PEM_read_bio_X509: function(bp: PBIO; x: PX509; cb: Ppem_password_cb; u: Pointer): PX509; cdecl;
+  PEM_read_bio_PrivateKey: function(bp: PBIO; x: PEVP_PKEY; cb: Ppem_password_cb; u: Pointer): PEVP_PKEY; cdecl;
 
 
   ASN1_INTEGER_set_int64: function(a: PASN1_INTEGER; r: Int64): Integer; cdecl;
@@ -551,6 +566,9 @@ var
   X509_getm_notAfter: function(x: PX509): PASN1_TIME; cdecl;
   X509_set_pubkey: function(x: PX509; pkey: PEVP_PKEY): Integer; cdecl;
   X509_get_subject_name: function(x: PX509): PX509_NAME; cdecl;
+
+  X509_set_subject_name: function(x: PX509; name: PX509_NAME): Integer; cdecl;
+  X509_REQ_get_pubkey: function(req: PX509_REQ): PEVP_PKEY; cdecl;
 
   EVP_PKEY_new: function(): PEVP_PKEY; cdecl;
   EVP_PKEY_assign: function(pkey: PEVP_PKEY; AType: integer; key: Pointer): Integer; cdecl;
@@ -572,6 +590,7 @@ var
   EVP_sha256: function(): PEVP_MD; cdecl;
   EVP_sha384: function(): PEVP_MD; cdecl;
   EVP_sha512: function(): PEVP_MD; cdecl;
+  EVP_DigestUpdate: function(ctx: PEVP_MD_CTX; d: Pointer; cnt: NativeUInt): Integer; cdecl;
 
   BN_new: function(): PBIGNUM; cdecl;
   BN_set_word: function(a: PBIGNUM; w: BN_ULONG): integer; cdecl;
@@ -581,17 +600,23 @@ var
   RSA_generate_key_ex: function(rsa: PRSA; bits: integer; e: PBIGNUM; cb: PBN_GENCB): Integer; cdecl;
   RSA_print: function(bp: PBIO; x: PRSA; offset: integer): Integer; cdecl;
   RSA_print_fp: function(fp: Pointer; x: PRSA; offset: integer): Integer; cdecl;
+  RSA_free: procedure(r: PRSA); cdecl;
 
   CRYPTO_mem_ctrl: function(mode: integer): integer; cdecl;
 
+  BIO_new: function(typ: PBIO_METHOD): PBIO; cdecl;
   BIO_new_ssl_connect: function(ctx: PSSL_CTX): PBIO; cdecl;
   BIO_new_fp: function(handle: THandle; close_flag: Integer): PBIO; cdecl; //dosnt work
   BIO_new_fd: function(handle: THandle; close_flag: Integer): PBIO; cdecl; //idk
   BIO_new_file: function(filename: PUTF8Char; Mode: PUTF8Char): PBIO; cdecl;
+  BIO_new_mem_buf: function(buf: PByte; len: Integer): PBIO; cdecl;
+
+  BIO_s_mem: function(): PBIO_METHOD; cdecl;
+  HMAC: function(evp_md: PEVP_MD; key: Pointer; key_len: Integer; d: PByte; n: NativeUInt; md: PByte; var md_len: Cardinal): PByte; cdecl;
 
   BIO_read: function(b: PBIO; var data; dlen: integer): Integer; cdecl;
   BIO_write: function(b: PBIO; const data; dlen: Integer): Integer; cdecl;
-  BIO_gets: function(b: PBIO; buf: PAnsiChar; Size: Integer): Integer; cdecl;
+  BIO_gets: function(b: PBIO; buf: PByte; Size: Integer): Integer; cdecl;
   BIO_puts: function(bio: PBIO; buf: PUTF8Char): Integer; cdecl;
   BIO_test_flags: function(b: PBIO; flags: Integer): integer; cdecl;
   BIO_free_all: procedure(b: PBIO); cdecl;
@@ -630,6 +655,8 @@ var
 var
   OpenSSLLib: TmnOpenSSLLib = nil;
   CryptoLib: TmnCryptoLib = nil;
+
+function BIO_get_mem_data(b : PBIO; var pp : PByte) : NativeInt;
 
 implementation
 
@@ -773,6 +800,8 @@ begin
   OPENSSL_init_crypto := GetAddress('OPENSSL_init_crypto');
   OPENSSL_config := GetAddress('OPENSSL_config');
 
+  RAND_bytes := GetAddress('RAND_bytes');
+
   X509_new := GetAddress('X509_new');
   X509_free := GetAddress('X509_free');
   X509_verify_cert_error_string := GetAddress('X509_verify_cert_error_string');
@@ -790,6 +819,7 @@ begin
   X509_set_version := GetAddress('X509_set_version');
   X509_EXTENSION_free := GetAddress('X509_EXTENSION_free');
   X509_set_issuer_name := GetAddress('X509_set_issuer_name');
+  X509_to_X509_REQ := GetAddress('X509_to_X509_REQ');
 
   ASN1_INTEGER_set := GetAddress('ASN1_INTEGER_set');
   ASN1_INTEGER_set_int64 := GetAddress('ASN1_INTEGER_set_int64');
@@ -800,12 +830,18 @@ begin
   X509_set_pubkey := GetAddress('X509_set_pubkey');
   X509_get_subject_name := GetAddress('X509_get_subject_name');
 
+  X509_set_subject_name := GetAddress('X509_set_subject_name');
+  X509_REQ_get_pubkey := GetAddress('X509_REQ_get_pubkey');
+
   X509_STORE_CTX_get_error_depth := GetAddress('X509_STORE_CTX_get_error_depth');
   PEM_read_bio_X509_REQ := GetAddress('PEM_read_bio_X509_REQ');
   PEM_write_bio_X509_REQ := GetAddress('PEM_write_bio_X509_REQ');
   PEM_write_bio_PrivateKey := GetAddress('PEM_write_bio_PrivateKey');
   PEM_write_bio_X509 := GetAddress('PEM_write_bio_X509');
   PEM_write_X509 := GetAddress('PEM_write_X509');
+  PEM_write_bio_RSAPublicKey := GetAddress('PEM_write_bio_RSAPublicKey');
+  PEM_read_bio_X509 := GetAddress('PEM_read_bio_X509');
+  PEM_read_bio_PrivateKey := GetAddress('PEM_read_bio_PrivateKey');
 
   EVP_PKEY_new := GetAddress('EVP_PKEY_new');
   EVP_PKEY_assign := GetAddress('EVP_PKEY_assign');
@@ -826,11 +862,14 @@ begin
   EVP_sha256 := GetAddress('EVP_sha256');
   EVP_sha384 := GetAddress('EVP_sha384');
   EVP_sha512 := GetAddress('EVP_sha512');
+  EVP_DigestUpdate := GetAddress('EVP_DigestUpdate');
 
   BIO_ctrl := GetAddress('BIO_ctrl');
+  BIO_new := GetAddress('BIO_new');
   BIO_new_fp := GetAddress('BIO_new_fp');
   BIO_new_fd := GetAddress('BIO_new_fd');
   BIO_new_file := GetAddress('BIO_new_file');
+  BIO_new_mem_buf := GetAddress('BIO_new_mem_buf');
   BIO_test_flags := GetAddress('BIO_test_flags');
   BIO_free := GetAddress('BIO_free');
   BIO_free_all := GetAddress('BIO_free_all');
@@ -838,6 +877,9 @@ begin
   BIO_read := GetAddress('BIO_read');
   BIO_puts := GetAddress('BIO_puts');
   BIO_gets := GetAddress('BIO_gets');
+
+  BIO_s_mem := GetAddress('BIO_s_mem');
+  HMAC := GetAddress('HMAC');
 
   BN_new := GetAddress('BN_new');
   BN_set_word := GetAddress('BN_set_word');
@@ -847,6 +889,7 @@ begin
   RSA_generate_key_ex := GetAddress('RSA_generate_key_ex');
   RSA_print := GetAddress('RSA_print');
   RSA_print_fp := GetAddress('RSA_print_fp');
+  RSA_free := GetAddress('RSA_free');
 
   CRYPTO_mem_ctrl := GetAddress('CRYPTO_mem_ctrl');
 
@@ -854,6 +897,12 @@ begin
   ERR_error_string := GetAddress('ERR_error_string');
   ERR_load_CRYPTO_strings := GetAddress('ERR_load_CRYPTO_strings');
 end;
+
+function BIO_get_mem_data(b : PBIO; var pp : PByte) : NativeInt;
+begin
+  Result := BIO_ctrl(b, BIO_CTRL_INFO, 0, @pp);
+end;
+
 
 initialization
   {$ifdef MSWINDOWS}

@@ -10,7 +10,7 @@ interface
 
 uses
   Windows, Messages, SysUtils, StrUtils, Classes, Graphics, Controls, Forms, Dialogs, ShellAPI,
-  mnOpenSSLUtils, mnOpenSSL, mnLogs, mnHttpClient,
+  mnOpenSSLUtils, mnOpenSSL, mnLogs, mnHttpClient, osh, mnOpenSSLAPI,
   Registry, IniFiles, StdCtrls, ExtCtrls, mnConnections, mnSockets, mnServers, mnWebModules;
 
 type
@@ -136,8 +136,31 @@ begin
 end;
 
 procedure TMain.Button1Click(Sender: TObject);
+var
+  s: TsslConfig;
 begin
-  MakeCert('certificate.pem', 'privatekey.pem', 'Creative Solutions', 'Creative Solutions', 'SY', '', 2048, 0, 1);
+  //MakeCert('certificate.pem', 'privatekey.pem', 'Creative Solutions', 'Creative Solutions', 'SY', '', 2048, 0, 1);
+  s := TsslConfig.Create;
+  try
+    s.WriteInteger('req', 'default_bits', 2048);
+    s.WriteInteger('req', 'Serial', 0);
+    s.WriteInteger('req', 'Days', 1);
+    s.WriteString('req', 'distinguished_name', 'dn');
+    s.WriteString('req', 'req_extensions', 'req_ext');
+
+    s.WriteString('dn', 'CN', 'Creative Solutions');
+    s.WriteString('dn', 'O', 'Creative Solutions');
+    s.WriteString('dn', 'C', 'Creative Solutions');
+    s.WriteString('dn', 'OU', '');
+
+    s.WriteString('req_ext', 'basicConstraints', 'critical,CA:TRUE');
+    s.WriteString('req_ext', 'keyUsage', 'critical,cRLSign,digitalSignature,keyCertSign');
+
+
+    MakeCert('certificate', s);
+  finally
+    s.Free;
+  end;
 end;
 
 procedure TMain.Button2Click(Sender: TObject);

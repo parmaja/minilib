@@ -74,10 +74,13 @@ type
     FLibraryName: string;
     LoadedLibrary: string;
     RaiseError: Boolean;
+    FInvalidNames: string;
     procedure Link; virtual; abstract;
     procedure Init; virtual;
   public
     constructor Create(ALibraryName: string); virtual;
+    destructor Destroy; override;
+
     function Load: Boolean;
     function IsLoaded: Boolean;
     procedure Release;
@@ -85,6 +88,7 @@ type
     procedure GetAddress(var ProcVariable: Pointer; const ProcedureName: string; ARaiseError: Boolean = False); overload;
     property Handle: TLibHandle read FHandle;
     property LibraryName: string read FLibraryName;
+    property InvalidNames: string read FInvalidNames;
   end;
 
 implementation
@@ -135,6 +139,7 @@ begin
       if (FHandle = 0) then
       begin
         RefCount := 0;
+        //if RaiseError then //check with zaher
         raise EInOutError.CreateFmt(SErrLoadFailed,[LibraryName]);
       end
       else
@@ -175,6 +180,12 @@ begin
   GetAddress(Result, ProcedureName, ARaiseError);
 end;
 
+destructor TmnLibrary.Destroy;
+begin
+
+  inherited;
+end;
+
 procedure TmnLibrary.GetAddress(var ProcVariable: Pointer; const ProcedureName: string; ARaiseError: Boolean);
 begin
   if ProcVariable <> nil then
@@ -185,6 +196,12 @@ begin
     ProcVariable := nil;
   if (ProcVariable = nil) and (RaiseError or ARaiseError) then
     raise Exception.Create(ProcedureName + ' not found in ' + LoadedLibrary);
+
+  if (ProcVariable = nil) then
+  begin
+    if FInvalidNames<>'' then FInvalidNames := FInvalidNames + '#13';
+    FInvalidNames := FInvalidNames + ProcedureName;
+  end;
 end;
 
 end.
