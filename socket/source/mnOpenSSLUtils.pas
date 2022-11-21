@@ -42,6 +42,7 @@ type
 
     procedure SetSubjectName(const vField, vData: string);
     procedure SetExt(NID: Integer; const vData: string);
+    function BIOstr(vProc: TProc<PBIO>): string;
   end;
 
 
@@ -51,6 +52,7 @@ function MakeCert(CertificateFile, PrivateKeyFile: utf8string; CN, O, C, OU: utf
 function MakeX509(vConfig: TsslConfig): PX509;
 function SignX509(X509: PX509; vConfig: TsslConfig): PEVP_PKEY;
 function MakeCert(const vName: string; vConfig: TsslConfig): Boolean; overload;
+function MakeCert(vConfig: TsslConfig; var vCer, vCsr, vPubKey, vPrvKey: string): Boolean; overload;
 
 implementation
 
@@ -259,6 +261,54 @@ begin
   end;
 end;
 
+function MakeCert(vConfig: TsslConfig; var vCer, vCsr, vPubKey, vPrvKey: string): Boolean; overload;
+var
+  px: PX509;
+  pk: PEVP_PKEY;
+begin
+  px := MakeX509(vConfig);
+  if px<>nil then
+  begin
+    pk := SignX509(px, vConfig);
+    if pk<>nil then
+    begin
+      vPrvKey := px.BIOstr(procedure(bio: PBIO)
+      begin
+        PEM_write_bio_PrivateKey(bio, pk, nil, nil, 0, nil, nil);
+      end);
+
+      vPubKey := px.BIOstr(procedure(bio: PBIO)
+      var
+        rsa: PRSA;
+      begin
+        rsa := EVP_PKEY_get1_RSA(pk);
+        PEM_write_bio_RSAPublicKey(bio, rsa);
+      end);
+
+      vCer := px.BIOstr(procedure(bio: PBIO)
+      begin
+        PEM_write_bio_X509(bio, px);
+      end);
+
+      vCsr := px.BIOstr(procedure(bio: PBIO)
+      var
+        req: PX509_REQ;
+      begin
+        req := X509_to_X509_REQ(px, pk, EVP_sha256);
+        PEM_write_bio_X509_REQ(bio, req);
+        X509_REQ_free(req);
+      end);
+
+  	  EVP_PKEY_free(pk);
+      X509_free(px);
+      Exit(True);
+    end;
+
+    X509_free(px);
+  end;
+  Result := False;
+end;
+
 function MakeCert(const vName: string; vConfig: TsslConfig): Boolean; overload;
 var
   px: PX509;
@@ -281,17 +331,8 @@ begin
       pn := PUTF8Char(UTF8Encode(vName+'.private.pem'));
       vn := PUTF8Char(UTF8Encode(vName+'.public.pem'));
 
-      outbio := BIO_new(BIO_s_mem());
-      PEM_write_bio_PrivateKey(outbio, pk, nil, nil, 0, nil, nil);
-
-      var aLen := BIO_get_mem_data(outbio, b);
-      //var ss := TEncoding.ANSI.GetString(b);
-
-      BIO_free(outbio);
-
       outbio := BIO_new_file(vn, 'w');
       PEM_write_bio_PrivateKey(outbio, pk, nil, nil, 0, nil, nil);
-
       BIO_free(outbio);
 
       rsa := EVP_PKEY_get1_RSA(pk);
@@ -373,6 +414,24 @@ procedure TPX509Helper.AdjTime(vFrom, vTo: NativeInt);
 begin
   X509_gmtime_adj(X509_getm_notBefore(Self), 0);
   X509_gmtime_adj(X509_getm_notAfter(Self), 60 * 60 * 24 * vTo);
+end;
+
+function TPX509Helper.BIOstr(vProc: TProc<PBIO>): string;
+var
+  bio: PBIO;
+  b: PByte;
+  aLen: Integer;
+begin
+  bio := BIO_new(BIO_s_mem());
+  try
+    vProc(bio);
+    aLen := BIO_get_mem_data(bio, b);
+    //Result := TEncoding.ANSI.GetString(b);
+    Result := PAnsiChar(b);
+
+  finally
+    BIO_free(bio);
+  end;
 end;
 
 procedure TPX509Helper.AdjTime(vDays: NativeInt);
