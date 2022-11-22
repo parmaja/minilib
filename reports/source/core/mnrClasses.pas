@@ -301,7 +301,6 @@ type
     function GetLast: TmnrLayouts;
   protected
     procedure DoInitLayouts; virtual;
-    function EnumLayouts: TmnrLayoutList;
 
   public
     constructor Create;
@@ -312,6 +311,7 @@ type
     function FindLayout(const vName: string): TmnrLayout;
     property Report: TmnrCustomReport read FReport;
     procedure InitLayouts;
+    function EnumLayouts: TmnrLayoutList;
 
     function CreateLayout(const vGroup: string; vClass: TmnrLayoutClass; const vName: string; vOnRequest: TOnRequest = nil; const vTitle: string = ''; vNumber: Integer = 0; vTag: Integer = 0; vIncludeSections: TmnrSectionClassIDs = []; vExcludeSections: TmnrSectionClassIDs = []): TmnrLayout;
     procedure CreateRequest(const vName: string; vOnRequest: TOnRequest);
@@ -728,6 +728,8 @@ type
     procedure DoLoopError; virtual;
     function DoCreateReportDesgin: ImnrReportDesigner; virtual;
     procedure DoEnumExportRows(vList: TmnrRowList); virtual;
+    procedure DoUpdateDesignLayouts; virtual;
+    procedure UpdateDesignLayouts;
   public
     constructor Create;
     destructor Destroy; override;
@@ -840,8 +842,7 @@ begin
   Clear;
   DoLoad;
 
-  FDesignLayouts.Clear;
-  Sections.EnumLayouts(FDesignLayouts);
+  UpdateDesignLayouts;
 end;
 
 procedure TmnrCustomReport.AcceptNewRow(vRow: TmnrRow; var Accepted: Boolean);
@@ -1051,6 +1052,11 @@ begin
 end;
 
 procedure TmnrCustomReport.DoReportLoaded;
+begin
+
+end;
+
+procedure TmnrCustomReport.DoUpdateDesignLayouts;
 begin
 
 end;
@@ -1387,6 +1393,14 @@ begin
     else
       Result := '«·„Ã„Ê⁄';
   end;
+end;
+
+procedure TmnrCustomReport.UpdateDesignLayouts;
+begin
+  FDesignLayouts.Clear;
+
+  Sections.EnumLayouts(FDesignLayouts);
+  DoUpdateDesignLayouts;
 end;
 
 { TmnrCustomReportRowNode }
