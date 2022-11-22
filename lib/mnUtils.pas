@@ -239,6 +239,16 @@ function ISODateToStr(DateTime: TDateTime; vDateSeparator: Char = '-'; TimeDivid
 function IsAllLowerCase(S: string): Boolean;
 
 //Zero Based
+type
+  TEncodingHelper = class helper for TEncoding
+  public
+    function GetString(Bytes: PByte; ByteCount: Integer): String; overload;
+    class function CodePageEncoding(CodePage: Word): TEncoding;
+    {$ifdef FPC}
+    function GetString(Bytes: array of Byte): String; overload;
+    {$endif}
+  end;
+
 function StringOf(const Value: Array of Byte; CodePage: Word = CP_UTF8): string; overload;
 function StringOf(const Value: TBytes; CodePage: Word = CP_UTF8): string; overload;
 function StringOf(const Value: PByte; Size: Integer; CodePage: Word = CP_UTF8): string; overload;
@@ -1657,58 +1667,74 @@ begin
 end;
 
 //* thanks to https://stackoverflow.com/a/41726706/585304
-type
-  TEncodingHelper = class helper for TEncoding
-  public
-    function GetString(Bytes: PByte; ByteCount: Integer): String; overload;
-    {$ifdef FPC}
-    function GetString(Bytes: array of Byte): String; overload;
-    {$endif}
-  end;
 
-  function TEncodingHelper.GetString(Bytes: PByte; ByteCount: Integer): String;
+{ TEncodingHelper }
+
+class function TEncodingHelper.CodePageEncoding(CodePage: Word): TEncoding;
+begin
+  case CodePage of
+{$IFDEF ANDROID}
+    437: Result := ANSI;
+{$ENDIF ANDROID}
+    1200: Result := Unicode;
+    1201: Result := BigEndianUnicode;
+    CP_UTF7: Result := UTF7;
+    CP_UTF8: Result := UTF8;
+  else
+    Result := ANSI;
+  end;
+end;
+
+function TEncodingHelper.GetString(Bytes: PByte; ByteCount: Integer): String;
+var
+  aLen: Integer;
+begin
+  Result := '';
+  if ByteCount<>0 then
   begin
-    {$ifdef FPC}
-    Result := '';
-    {$endif}
-    SetLength(Result, Self.GetCharCount(Bytes, ByteCount));
-    {$ifdef FPC}
-    Self.GetChars(Bytes, ByteCount, PUnicodeChar(Result), Length(Result));
-    {$else}
-    Self.GetChars(Bytes, ByteCount, PChar(Result), Length(Result));
-    {$endif}
-  end;
+    aLen := GetCharCount(Bytes, ByteCount);
+    if (aLen <>0) then
+    begin
+      SetLength(Result, aLen);
+      {$ifdef FPC}
+      GetChars(Bytes, ByteCount, PUnicodeChar(Result), aLen);
+      {$else}
+      GetChars(Bytes, ByteCount, PChar(Result), aLen);
+      {$endif}
+    end;
+  end
+end;
 
+{$ifdef FPC}
+function TEncodingHelper.GetString(Bytes: array of Byte): String;
+var
+  L, Count: Integer;
+begin
   {$ifdef FPC}
-  function TEncodingHelper.GetString(Bytes: array of Byte): String;
-  var
-    L, Count: Integer;
-  begin
-    {$ifdef FPC}
-    Result := '';
-    {$endif}
-    L := Length(Bytes);
-    Count := GetCharCount(@Bytes[0], L);
-    if (Count = 0) and (L > 0) then
-      raise Exception.Create('Wrong encoding!');
-    SetLength(Result, Count);
-    GetChars(@Bytes[0], L, PUnicodeChar(Result), Count);
-  end;
+  Result := '';
   {$endif}
+  L := Length(Bytes);
+  Count := GetCharCount(@Bytes[0], L);
+  if (Count = 0) and (L > 0) then
+    raise Exception.Create('Wrong encoding!');
+  SetLength(Result, Count);
+  GetChars(@Bytes[0], L, PUnicodeChar(Result), Count);
+end;
+{$endif}
 
 function StringOf(const Value: PByte; Size: Integer; CodePage: Word = CP_UTF8): string;
 begin
-  Result := TEncoding.GetEncoding(CodePage).GetString(Value, Size);
+  Result := TEncoding.CodePageEncoding(CodePage).GetString(Value, Size);
 end;
 
 function StringOf(const Value: array of Byte; CodePage: Word): string;
 begin
-  Result := TEncoding.GetEncoding(CodePage).GetString(Value);
+  Result := TEncoding.CodePageEncoding(CodePage).GetString(Value);
 end;
 
 function StringOf(const Value: TBytes; CodePage: Word): string;
 begin
-  Result := TEncoding.GetEncoding(CodePage).GetString(Value);
+  Result := TEncoding.CodePageEncoding(CodePage).GetString(Value);
 end;
 
 function IsAllLowerCase(S: string): Boolean;
