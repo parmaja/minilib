@@ -23,6 +23,7 @@ uses
   Classes,
   SysUtils,
   IniFiles,
+  mnUtils,
   mnSockets,
   mnOpenSSL,
   mnOpenSSLAPI;
@@ -41,8 +42,9 @@ type
     procedure AdjTime(vFrom, vTo: NativeInt); overload;
 
     procedure SetSubjectName(const vField, vData: string);
-    procedure SetExt(NID: Integer; const vData: string);
+    function SetExt(NID: Integer; const vData: string): Integer;
     function BIOstr(vProc: TProc<PBIO>): string;
+    class function Generate(vConfig: TsslConfig; vProc: TProc<PX509, PEVP_PKEY>): Boolean; static;
   end;
 
 
@@ -51,8 +53,9 @@ function MakeCert(CertificateFile, PrivateKeyFile: utf8string; CN, O, C, OU: utf
 
 function MakeX509(vConfig: TsslConfig): PX509;
 function SignX509(X509: PX509; vConfig: TsslConfig): PEVP_PKEY;
+function MakeCert(vConfig: TsslConfig): Boolean; overload;
 function MakeCert(const vName: string; vConfig: TsslConfig): Boolean; overload;
-function MakeCert(vConfig: TsslConfig; var vCer, vCsr, vPubKey, vPrvKey: string): Boolean; overload;
+function BuildAltStack(AltType: Integer; Names: TStrings): POPENSSL_STACK;
 
 implementation
 
@@ -254,110 +257,98 @@ begin
       Result.SetExt(NID_basic_constraints, vConfig.ReadString(n, SN_basic_constraints, ''));
       Result.SetExt(NID_key_usage, vConfig.ReadString(n, SN_key_usage, ''));
       Result.SetExt(NID_subject_key_identifier, 'hash');
+
+      Result.SetExt(NID_key_usage, vConfig.ReadString(n, SN_key_usage, ''));
     end;
 
+    Result.SetExt(NID_subject_alt_name, 'SN=1-TST|2-TST|3-ed22f1d8-e6a2-1118-9b58-d9a8f11e445f');
   except
     FreeAndNil(Result);
   end;
 end;
 
-function MakeCert(vConfig: TsslConfig; var vCer, vCsr, vPubKey, vPrvKey: string): Boolean; overload;
+function MakeCertReq(vConfig: TsslConfig; px: PX509; pk: PEVP_PKEY): Boolean; overload;
 var
-  px: PX509;
-  pk: PEVP_PKEY;
+  req: PX509_REQ;
+  n, v: UTF8String;
 begin
-  px := MakeX509(vConfig);
-  if px<>nil then
-  begin
-    pk := SignX509(px, vConfig);
-    if pk<>nil then
+  //C:\temp\openssl-master\apps\req.c
+
+  req := X509_to_X509_REQ(px, pk, EVP_sha256);
+  try
+    n := UTF8Encode('1.3.6.1.4.1.311.20.2');
+    n := UTF8Encode('TSTZATCACodeSigning');
+
+    var i := X509_REQ_add1_attr_by_txt(req, PByte(n), MBSTRING_ASC, PByte(v), -1);
+
+    vConfig.WriteString('Result', 'Csr', px.BIOstr(procedure(bio: PBIO)
     begin
-      vPrvKey := px.BIOstr(procedure(bio: PBIO)
-      begin
-        PEM_write_bio_PrivateKey(bio, pk, nil, nil, 0, nil, nil);
-      end);
-
-      vPubKey := px.BIOstr(procedure(bio: PBIO)
-      var
-        rsa: PRSA;
-      begin
-        rsa := EVP_PKEY_get1_RSA(pk);
-        PEM_write_bio_RSAPublicKey(bio, rsa);
-      end);
-
-      vCer := px.BIOstr(procedure(bio: PBIO)
-      begin
-        PEM_write_bio_X509(bio, px);
-      end);
-
-      vCsr := px.BIOstr(procedure(bio: PBIO)
-      var
-        req: PX509_REQ;
-      begin
-        req := X509_to_X509_REQ(px, pk, EVP_sha256);
-        PEM_write_bio_X509_REQ(bio, req);
-        X509_REQ_free(req);
-      end);
-
-  	  EVP_PKEY_free(pk);
-      X509_free(px);
-      Exit(True);
-    end;
-
-    X509_free(px);
+      PEM_write_bio_X509_REQ(bio, req);
+    end));
+  finally
+    X509_REQ_free(req);
   end;
-  Result := False;
+
+  Result := True;
+end;
+
+function MakeCert(vConfig: TsslConfig): Boolean; overload;
+begin
+  Result := PX509.Generate(vConfig, procedure(px: PX509; pk: PEVP_PKEY)
+  begin
+    vConfig.WriteString('Result', 'PrvKey', px.BIOstr(procedure(bio: PBIO)
+    begin
+      PEM_write_bio_PrivateKey(bio, pk, nil, nil, 0, nil, nil);
+    end));
+
+    vConfig.WriteString('Result', 'PubKey', px.BIOstr(procedure(bio: PBIO)
+    var
+      rsa: PRSA;
+    begin
+      rsa := EVP_PKEY_get1_RSA(pk);
+      PEM_write_bio_RSAPublicKey(bio, rsa);
+    end));
+
+    vConfig.WriteString('Result', 'Cer', px.BIOstr(procedure(bio: PBIO)
+    begin
+      PEM_write_bio_X509(bio, px);
+    end));
+
+    MakeCertReq(vConfig, px, pk);
+  end);
 end;
 
 function MakeCert(const vName: string; vConfig: TsslConfig): Boolean; overload;
-var
-  px: PX509;
-  pk: PEVP_PKEY;
-  rsa: PRSA;
 
-  outbio: PBIO;
-
-  cn, rn, pn, vn: PUTF8Char;
-  b: PByte;
-begin
-  px := MakeX509(vConfig);
-  if px<>nil then
+  procedure _Write(const vFile, vData: string);
+  var
+    m: TMemoryStream;
+    b: TBytes;
   begin
-    pk := SignX509(px, vConfig);
-    if pk<>nil then
+    if vData<>'' then
     begin
-      cn := PUTF8Char(UTF8Encode(vName+'.cer'));
-      rn := PUTF8Char(UTF8Encode(vName+'.csr'));
-      pn := PUTF8Char(UTF8Encode(vName+'.private.pem'));
-      vn := PUTF8Char(UTF8Encode(vName+'.public.pem'));
-
-      outbio := BIO_new_file(vn, 'w');
-      PEM_write_bio_PrivateKey(outbio, pk, nil, nil, 0, nil, nil);
-      BIO_free(outbio);
-
-      rsa := EVP_PKEY_get1_RSA(pk);
-      outbio := BIO_new_file(pn, 'w');
-      PEM_write_bio_RSAPublicKey(outbio, rsa);
-      BIO_free(outbio);
-
-      outbio := BIO_new_file(cn, 'w');
-	    PEM_write_bio_X509(outbio, px);
-      BIO_free(outbio);
-
-      var xx := X509_to_X509_REQ(px, pk, EVP_sha256);
-      outbio := BIO_new_file(rn, 'w');
-      PEM_write_bio_X509_REQ(outbio, xx);
-      BIO_free(outbio);
-      X509_REQ_free(xx);
-
-  	  EVP_PKEY_free(pk);
-
-      Exit(True);
+      b := TEncoding.UTF8.GetBytes(vData);
+      m := TMemoryStream.Create;
+      try
+        m.WriteData(b, Length(b));
+        m.SaveToFile(vFile);
+      finally
+        m.Free;
+      end;
     end;
-
-    X509_free(px);
   end;
-  Result := False;
+
+var
+  cn, rn, pn, vn: string;
+begin
+  Result := MakeCert(vConfig);
+  if Result then
+  begin
+    _Write(vName+'.cer', vConfig.ReadString('Result', 'Cer', ''));
+    _Write(vName+'.csr', vConfig.ReadString('Result', 'Csr', ''));
+    _Write(vName+'.private.pem', vConfig.ReadString('Result', 'PrvKey', ''));
+    _Write(vName+'.public.pem', vConfig.ReadString('Result', 'PubKey', ''));
+  end;
 end;
 
 function MakeCert(CertificateFile, PrivateKeyFile: utf8string; CN, O, C, OU: utf8string; Bits: Integer; Serial: Integer; Days: Integer): Boolean;
@@ -426,12 +417,36 @@ begin
   try
     vProc(bio);
     aLen := BIO_get_mem_data(bio, b);
-    //Result := TEncoding.ANSI.GetString(b);
-    Result := PAnsiChar(b);
-
+    Result := TEncoding.ANSI.GetString(b, aLen);
   finally
     BIO_free(bio);
   end;
+end;
+
+class function TPX509Helper.Generate(vConfig: TsslConfig; vProc: TProc<PX509, PEVP_PKEY>): Boolean;
+var
+  px: PX509;
+  pk: PEVP_PKEY;
+begin
+  px := MakeX509(vConfig);
+  if px<>nil then
+  begin
+    try
+      pk := SignX509(px, vConfig);
+      if pk<>nil then
+      begin
+        try
+          vProc(px, pk);
+        finally
+          EVP_PKEY_free(pk);
+        end;
+        Exit(True);
+      end;
+    finally
+      X509_free(px);
+    end;
+  end;
+  Result := False;
 end;
 
 procedure TPX509Helper.AdjTime(vDays: NativeInt);
@@ -454,7 +469,7 @@ begin
   end;
 end;
 
-procedure TPX509Helper.SetExt(NID: Integer; const vData: string);
+function TPX509Helper.SetExt(NID: Integer; const vData: string): Integer;
 var
   ex: PX509_EXTENSION;
   ctx: TX509V3_CTX;
@@ -469,16 +484,61 @@ begin
 
     ex := X509V3_EXT_conf_nid(nil, @ctx, nid, putf8char(d));
     try
-      X509_add_ext(Self, ex, -1);
+      Result := X509_add_ext(Self, ex, -1);
     finally
       X509_EXTENSION_free(ex);
     end;
-  end;
+  end
+  else
+    Result := 0;
 end;
 
 procedure TPX509Helper.SetSerial(vSerial: Integer);
 begin
   ASN1_INTEGER_set(X509_get_serialNumber(Self), vSerial);
+end;
+
+function BuildAltStack(AltType: Integer; Names: TStrings): POPENSSL_STACK;
+var
+  i: Integer;
+  c: Integer;
+  g: PGENERAL_NAME;
+  v: PASN1_STRING;
+  t: UTF8String;
+begin
+  Result := OPENSSL_sk_new_null;
+  if Names.Count<>0 then
+  begin
+    for var s in Names do
+    begin
+      g := GENERAL_NAME_new;
+      v := ASN1_STRING_new;
+      t := UTF8Encode(s);
+
+      ASN1_STRING_set(v, PByte(t), Length(t));
+      GENERAL_NAME_set0_value(g, AltType, v);
+      OPENSSL_sk_push(Result, g)
+    end;
+
+
+    {Tot := Names.Count;
+    if Tot = 0 then Exit;
+    SetLength (FAltAnsiStr, Tot);
+    SetLength (FAltIa5Str, Tot);
+    SetLength (FAltGenStr, Tot);
+    for I := 0 to Tot - 1 do begin
+        FAltGenStr[I] := f_GENERAL_NAME_new;
+        if NOT Assigned(FAltGenStr[I]) then Exit;
+        FAltIa5Str[I] := f_ASN1_STRING_new;
+        if NOT Assigned(FAltIa5Str[I]) then Exit;
+        FAltAnsiStr[I] := AnsiString(trim(Names[I]));
+        if FAltAnsiStr[I] <> '' then begin
+            f_ASN1_STRING_set(FAltIa5Str[I], PAnsiChar(FAltAnsiStr[I]), Length(FAltAnsiStr[I]));
+            f_GENERAL_NAME_set0_value(FAltGenStr[I], AltType, FAltIa5Str[I]);
+            f_OPENSSL_sk_push(result, Pointer(FAltGenStr[I]));
+        end;
+    end;}
+  end;
 end;
 
 end.

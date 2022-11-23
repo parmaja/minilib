@@ -138,6 +138,7 @@ end;
 procedure TMain.Button1Click(Sender: TObject);
 var
   s: TsslConfig;
+  aCer, aCsr, aPubKey, aPrvKey: string;
 begin
   //MakeCert('certificate.pem', 'privatekey.pem', 'Creative Solutions', 'Creative Solutions', 'SY', '', 2048, 0, 1);
   s := TsslConfig.Create;
@@ -158,6 +159,13 @@ begin
 
 
     MakeCert('certificate', s);
+    {if MakeCert(s) then
+    begin
+      aPubKey := s.ReadString('Result', 'PubKey', '');
+      aPrvKey := s.ReadString('Result', 'PrvKey', '');
+      aCer := s.ReadString('Result', 'Cer', '');
+      aCsr := s.ReadString('Result', 'Csr', '');
+    end;}
   finally
     s.Free;
   end;
